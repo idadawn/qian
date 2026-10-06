@@ -1,13 +1,13 @@
 ---
 id: S1-DOCS-001
 title: 文档站脚手架：Rspress 2.0 + MDX + 中文主题 + 搜索 + 托管
-status: todo
+status: doing
 stage: S1
 area: DOCS
 wave: 2
 priority: P0
 type: infra
-owner: ""
+owner: "claude"
 estimate: 3d
 depends: [S1-QA-001]
 refs:
@@ -36,3 +36,4 @@ updated: 2026-10-07
 - 2026-10-07 claude：创建任务（选型确认见 ADR-013 D13.18）
 - 2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收
 - 2026-10-07 claude：首页与产品导航按产品负责人提供的对标产品文档首页借鉴，写入 specs/docs-site.md §2a
+- 2026-10-07 claude：开始。托管选 K3s 静态托管（照 deploy/pm-board 的 git-sync + nginx）：CI 把构建产物推到 docs-site 分支，PR 预览在 /pr-preview/pr-<n>/；主题色先用占位令牌（按 specs/yue.md 命名），@yue/tokens 发布后替换
