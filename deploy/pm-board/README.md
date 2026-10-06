@@ -13,10 +13,20 @@ GitHub idadawn/qian (main) --git-sync 每 60s--> emptyDir /git/current --nginx--
 | `kustomization.yaml` | 命名空间 `qian-tools`（开发期工具，与平台本体 `qian` 分开） |
 | `deployment.yaml` | `git-sync` + `nginx-unprivileged` 两个容器，非 root、只读根文件系统之外无特权 |
 | `nginx-configmap.yaml` | 只暴露 `/`、`/tasks.json`、`/STATUS.md`、`/tasks/*`，禁缓存 |
-| `service.yaml`、`ingress.yaml` | Traefik Ingress，域名占位 `qian-pm.deepsingularity.cn`，按实际改 |
+| `service.yaml`、`ingress.yaml` | Service 为 LoadBalancer（MetalLB 固定 192.168.1.210）+ 固定 NodePort 30810；Traefik Ingress 域名占位 `qian-pm.deepsingularity.cn` |
 | `networkpolicy.yaml` | 只放行入站 8080 与出站 DNS / 22 / 443 |
 | `bootstrap.sh` | 一次性：生成只读 deploy key → 登记到 GitHub → 写 Secret → apply |
 | `argocd-application.example.yaml` | 交给 ArgoCD 托管时用，放进部署仓库 `env-ds/argocd/` |
+
+## 当前状态（2026-10-07 已部署）
+
+| 入口 | 地址 | 适用 |
+|---|---|---|
+| WireGuard 侧（Mac 直接可用） | <http://10.78.1.161:30810/> | 固定 NodePort，经节点别名 10.78.1.161 |
+| 公司内网 | <http://192.168.1.210/> | MetalLB 固定地址，仅 192.168.1.0/24 内可达 |
+| Traefik Host 路由 | `qian-pm.deepsingularity.cn` → 192.168.1.200 | 公网接入前置：公网 DNS 与边缘 nginx 转发尚未配置 |
+
+已在集群创建：命名空间 `qian-tools`、Secret `qian-tools/qian-pm-board-git`（只读 deploy key + GitHub known_hosts）、ArgoCD 仓库凭据 `argocd/qian-repo-ssh`（同一把 key，供 Application 使用）。deploy key 已登记到 GitHub 仓库（Settings → Deploy keys，`qian-pm-board git-sync (read-only, 2026-10-07)`）。ArgoCD Application 通过部署仓库的 PR 加入 `env-ds/argocd/`，合并后由 `platform-apps` 自动纳管。
 
 ## 首次部署
 

@@ -167,6 +167,6 @@ python3 scripts/pm.py set <ID> --status doing --owner <你的代理名> --note "
 `pm/index.html` 不依赖任何外部资源，可以：
 
 - 本地双击打开；
-- 放进 K3s：`deploy/pm-board/` 已备好清单（git-sync 每分钟拉取 `main`，nginx 直接提供 `pm/`），首次运行 `bash deploy/pm-board/bootstrap.sh`，说明见 [deploy/pm-board/README.md](../deploy/pm-board/README.md)；
+- K3s（已部署）：WireGuard 侧打开 <http://10.78.1.161:30810/>，公司内网打开 <http://192.168.1.210/>；每次 `main` 有提交，一分钟内更新。清单与说明见 [deploy/pm-board/README.md](../deploy/pm-board/README.md)；
 - 开启 GitHub Pages 指向 `main` 分支的 `/pm` 目录（私有仓库需要 GitHub 的付费方案）；
 - 或者放到任何静态托管。
