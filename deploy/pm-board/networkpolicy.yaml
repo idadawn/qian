@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qian-pm-board
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qian-pm-board
+  policyTypes: [Ingress, Egress]
+  ingress:
+    # 只允许进入 nginx 的 8080（Traefik 在 kube-system）
+    - ports:
+        - port: 8080
+          protocol: TCP
+  egress:
+    # DNS
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # git-sync 拉取 GitHub（SSH 22；若改用 HTTPS 则为 443）
+    - ports:
+        - port: 22
+          protocol: TCP
+        - port: 443
+          protocol: TCP

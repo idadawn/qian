@@ -15,6 +15,7 @@
 | `scripts/` | `pm.py`（任务校验 / 生成 / 改状态）、`check_docs.py`（文档门禁） | — |
 | `AGENTS.md` | 给 Codex、Claude Code 等编码代理的入口约定（`CLAUDE.md` 指向它） | [AGENTS.md](AGENTS.md) |
 | `.github/` | CI：文档门禁 + 任务校验 + 看板生成物新鲜度 | — |
+| `deploy/` | 开发期工具的 K3s 清单：`pm-board/` 把看板放进集群（git-sync + nginx） | [deploy/pm-board/README.md](deploy/pm-board/README.md) |
 
 代码目录（`packages/`、`plugins/`、`profiles/`、`samples/`）由 S1 第一波任务建立，布局以 [组件模型规格](docs/prd/specs/component-model.md) 为准。
 

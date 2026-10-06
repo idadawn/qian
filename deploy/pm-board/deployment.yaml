@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qian-pm-board
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: qian-pm-board
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: qian-pm-board
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        # git-sync 默认以 65533 运行；nginx-unprivileged 可用任意 uid，统一成同一用户以便共享 emptyDir
+        runAsUser: 65533
+        runAsGroup: 65533
+        fsGroup: 65533
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: git-sync
+          image: registry.k8s.io/git-sync/git-sync:v4.4.0
+          env:
+            - name: GITSYNC_REPO
+              value: git@github.com:idadawn/qian.git
+            - name: GITSYNC_REF
+              value: main
+            - name: GITSYNC_ROOT
+              value: /git
+            - name: GITSYNC_LINK
+              value: current
+            - name: GITSYNC_PERIOD
+              value: 60s
+            - name: GITSYNC_DEPTH
+              value: "1"
+            - name: GITSYNC_SSH_KEY_FILE
+              value: /etc/git-secret/ssh
+            - name: GITSYNC_SSH_KNOWN_HOSTS_FILE
+              value: /etc/git-secret/known_hosts
+            - name: GITSYNC_MAX_FAILURES
+              value: "-1"
+          volumeMounts:
+            - name: repo
+              mountPath: /git
+            - name: git-secret
+              mountPath: /etc/git-secret
+              readOnly: true
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 200m, memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: repo
+              mountPath: /git
+              readOnly: true
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+      volumes:
+        - name: repo
+          emptyDir: {}
+        - name: nginx-conf
+          configMap:
+            name: qian-pm-board-nginx
+        - name: git-secret
+          secret:
+            secretName: qian-pm-board-git   # 由 bootstrap.sh 创建：只读 deploy key + known_hosts
+            defaultMode: 0440

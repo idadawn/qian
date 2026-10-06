@@ -1,0 +1,22 @@
+# 复制到部署仓库的 env-ds/argocd/ 目录并加入其 kustomization（命名沿用 <app>-application.yaml）
+# 前提：ArgoCD 已配置能读取 git@github.com:idadawn/qian.git 的仓库凭据（deploy key 或 PAT）
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: qian-pm-board
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:idadawn/qian.git
+    path: deploy/pm-board
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: qian-tools
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

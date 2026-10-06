@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qian-pm-board
+  annotations:
+    # 集群内 Traefik 只收 HTTP；公网 TLS 在边缘 nginx 终止（与现网约定一致）
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: qian-pm.deepsingularity.cn   # 占位：按实际域名改；内网直连 Traefik 也可
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qian-pm-board
+                port:
+                  name: http

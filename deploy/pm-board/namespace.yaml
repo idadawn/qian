@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qian-tools
+  labels:
+    app.kubernetes.io/part-of: qian
+    # 开发期工具（看板、文档站预览）与 Qian 平台本体（ns qian）分开
+    qian.dev/purpose: tools

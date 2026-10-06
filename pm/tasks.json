@@ -2982,6 +2982,39 @@
   "file": "pm/tasks/S1-PM-001.md"
  },
  {
+  "id": "S1-PM-002",
+  "title": "任务看板部署到 K3s（git-sync + nginx，ArgoCD 托管）",
+  "status": "review",
+  "stage": "S1",
+  "area": "PM",
+  "areaName": "流程与协作",
+  "wave": 1,
+  "priority": "P1",
+  "type": "infra",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [],
+  "blockedBy": [],
+  "refs": [
+   {
+    "path": "pm/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/README.md"
+   },
+   {
+    "path": "docs/adr/ADR-017-deployment.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-017-deployment.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 2,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>把 pm/index.html 看板放进 K3s 方便随时查看：git-sync 每分钟拉取仓库 main，nginx 直接提供 pm/ 目录，不需要镜像构建；Ingress 走 Traefik，命名空间 qian-tools，ArgoCD Application 纳管。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span><code>deploy/pm-board/</code> kustomize 清单：命名空间 qian-tools、git-sync + nginx-unprivileged、Service、Traefik Ingress、NetworkPolicy，<code>kubectl kustomize</code> 渲染通过</li>\n<li class='chk done'><span class='box'>✓</span><code>bootstrap.sh</code> 一次性初始化（只读 deploy key → Secret → apply）与 README；ArgoCD Application 示例</li>\n<li class='chk'><span class='box'></span>在有 kubeconfig 的机器执行 <code>bash deploy/pm-board/bootstrap.sh</code>，浏览器打开看板显示最新提交的任务</li>\n<li class='chk'><span class='box'></span>Application 放入部署仓库 env-ds/argocd/ 并同步成功</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：清单与 bootstrap 脚本编写中</li>\n<li>2026-10-07 claude：清单、脚本、README 就绪；本机无 kubeconfig，需在能连集群的机器执行 bootstrap.sh</li>\n</ul>",
+  "file": "pm/tasks/S1-PM-002.md"
+ },
+ {
   "id": "S1-QA-001",
   "title": "CI 基础：Testcontainers、依赖图断言、PublicAPI",
   "status": "todo",
