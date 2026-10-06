@@ -28,7 +28,7 @@ main{padding:16px 0}
 .card .t{margin:2px 0 6px}.chips{display:flex;gap:4px;flex-wrap:wrap}
 .chip{font-size:11px;padding:1px 6px;border-radius:10px;background:var(--chip);color:var(--fg)}
 .chip.p0{background:var(--p0);color:#fff}.chip.p1{background:var(--p1);color:#fff}.chip.p2{background:var(--p2);color:#fff}
-.chip.blk{background:var(--bad);color:#fff}
+.chip.blk{background:var(--bad);color:#fff}.chip.ok{background:var(--ok);color:#fff}.chip.wait{background:var(--line);color:var(--muted)}
 table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{cursor:pointer;color:var(--muted);font-weight:600;font-size:12px;user-select:none}
 tr:hover td{background:var(--bg)}
@@ -78,7 +78,7 @@ const STATUS = {todo:'待办',doing:'进行中',review:'待评审',done:'已完�
 const ORDER = ['todo','doing','review','done','blocked'];
 const $ = s => document.querySelector(s);
 const by = {}; TASKS.forEach(t => by[t.id] = t);
-let view = 'board', sortKey = 'id', sortAsc = true;
+let view = 'board', sortKey = 'order', sortAsc = true;
 
 function fill(sel, vals, label){ const s=$(sel); [...new Set(vals)].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=label?label(v):v;s.appendChild(o);}); }
 fill('#f-stage', TASKS.map(t=>t.stage));
@@ -98,7 +98,8 @@ function filtered(){
 }
 const w = t => $('#weighted').checked ? (t.days||1) : 1;
 function pct(list){ const tot=list.reduce((a,t)=>a+w(t),0); const done=list.filter(t=>t.status==='done').reduce((a,t)=>a+w(t),0); const doing=list.filter(t=>t.status==='doing'||t.status==='review').reduce((a,t)=>a+w(t),0); return {tot,done,doing,p:tot?Math.round(done*100/tot):0,pd:tot?Math.round(doing*100/tot):0}; }
-function chip(t){ return `<span class="chip ${t.priority.toLowerCase()}">${t.priority}</span><span class="chip">${t.area}</span><span class="chip">w${t.wave}</span>${t.owner?`<span class="chip">${esc(t.owner)}</span>`:''}${t.blockedBy.length&&t.status!=='done'?`<span class="chip blk">被阻塞 ${t.blockedBy.length}</span>`:''}`; }
+function orderChip(t){ if(t.status!=='todo'&&t.status!=='blocked') return ''; return t.readyNow?'<span class="chip ok">可开始</span>':`<span class="chip wait">第 ${t.order+1} 批 · 等 ${t.blockedBy.length} 个前置</span>`; }
+function chip(t){ return `${orderChip(t)}<span class="chip ${t.priority.toLowerCase()}">${t.priority}</span><span class="chip">${t.area}</span><span class="chip">w${t.wave}</span>${t.owner?`<span class="chip">${esc(t.owner)}</span>`:''}${t.blockedBy.length&&t.status!=='done'?`<span class="chip blk">被阻塞 ${t.blockedBy.length}</span>`:''}`; }
 const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function render(){
@@ -116,12 +117,12 @@ function render(){
 }
 function card(t){ return `<div class="card" data-id="${t.id}"><div class="id">${t.id} · ${esc(t.estimate)} · ${t.updated}</div><div class="t">${esc(t.title)}</div><div class="chips">${chip(t)}</div></div>`; }
 function renderBoard(list){
-  $('#v-board').innerHTML = ORDER.map(s=>{ const items=list.filter(t=>t.status===s).sort((a,b)=>a.priority.localeCompare(b.priority)||a.wave-b.wave||a.id.localeCompare(b.id)); return `<div class="col"><h3>${STATUS[s]} · ${items.length}</h3>${items.map(card).join('')||'<div class="empty">—</div>'}</div>`; }).join('');
+  $('#v-board').innerHTML = ORDER.map(s=>{ const items=list.filter(t=>t.status===s).sort((a,b)=>(s==='todo'||s==='blocked')?(a.order-b.order||a.priority.localeCompare(b.priority)||a.wave-b.wave||a.id.localeCompare(b.id)):(a.priority.localeCompare(b.priority)||a.wave-b.wave||a.id.localeCompare(b.id))); return `<div class="col"><h3>${STATUS[s]} · ${items.length}${s==='todo'?' <small>（按可做先后）</small>':''}</h3>${items.map(card).join('')||'<div class="empty">—</div>'}</div>`; }).join('');
 }
 function renderTable(list){
-  const cols=[['id','ID'],['title','标题'],['status','状态'],['priority','优先级'],['wave','波次'],['area','领域'],['owner','负责人'],['estimate','估算'],['updated','更新']];
-  const rows=[...list].sort((a,b)=>{const x=a[sortKey],y=b[sortKey];return (x>y?1:x<y?-1:0)*(sortAsc?1:-1);});
-  $('#v-table').innerHTML = `<table><thead><tr>${cols.map(([k,l])=>`<th data-k="${k}">${l}${sortKey===k?(sortAsc?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(t=>`<tr data-id="${t.id}"><td><code>${t.id}</code></td><td>${esc(t.title)}${t.blockedBy.length&&t.status!=='done'?' <span class="chip blk">阻塞</span>':''}</td><td>${STATUS[t.status]}</td><td><span class="chip ${t.priority.toLowerCase()}">${t.priority}</span></td><td>${t.wave===0?'决策':t.wave}</td><td>${t.area}</td><td>${esc(t.owner||'—')}</td><td>${esc(t.estimate)}</td><td>${t.updated}</td></tr>`).join('')||'<tr><td colspan="9" class="empty">没有匹配的任务</td></tr>'}</tbody></table>`;
+  const cols=[['order','顺序'],['id','ID'],['title','标题'],['status','状态'],['priority','优先级'],['wave','波次'],['area','领域'],['owner','负责人'],['estimate','估算'],['updated','更新']];
+  const rows=[...list].sort((a,b)=>{ if(sortKey==='order'){ const d=(a.order-b.order)||a.priority.localeCompare(b.priority)||a.wave-b.wave||a.id.localeCompare(b.id); return d*(sortAsc?1:-1);} const x=a[sortKey],y=b[sortKey];return (x>y?1:x<y?-1:0)*(sortAsc?1:-1);});
+  $('#v-table').innerHTML = `<table><thead><tr>${cols.map(([k,l])=>`<th data-k="${k}">${l}${sortKey===k?(sortAsc?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(t=>`<tr data-id="${t.id}"><td>${t.status==='done'?'—':(t.readyNow?'<span class="chip ok">可开始</span>':(t.status==='todo'||t.status==='blocked')?`第 ${t.order+1} 批`:STATUS[t.status])}</td><td><code>${t.id}</code></td><td>${esc(t.title)}${t.blockedBy.length&&t.status!=='done'?' <span class="chip blk">阻塞</span>':''}</td><td>${STATUS[t.status]}</td><td><span class="chip ${t.priority.toLowerCase()}">${t.priority}</span></td><td>${t.wave===0?'决策':t.wave}</td><td>${t.area}</td><td>${esc(t.owner||'—')}</td><td>${esc(t.estimate)}</td><td>${t.updated}</td></tr>`).join('')||'<tr><td colspan="10" class="empty">没有匹配的任务</td></tr>'}</tbody></table>`;
   $('#v-table').querySelectorAll('th').forEach(th=>th.onclick=()=>{ if(sortKey===th.dataset.k) sortAsc=!sortAsc; else {sortKey=th.dataset.k; sortAsc=true;} render(); });
 }
 function group(list, key, label){
@@ -138,7 +139,7 @@ function renderProgress(list){
   ].map(([h,b])=>`<div class="pbox"><h3>${h}</h3>${b||'<div class="empty">—</div>'}</div>`).join('');
 }
 function renderDeps(list){
-  const blocked = list.filter(t=>t.status!=='done'&&(t.status==='blocked'||t.blockedBy.length)).sort((a,b)=>a.wave-b.wave||a.id.localeCompare(b.id));
+  const blocked = list.filter(t=>t.status!=='done'&&(t.status==='blocked'||t.blockedBy.length)).sort((a,b)=>a.order-b.order||a.priority.localeCompare(b.priority)||a.wave-b.wave||a.id.localeCompare(b.id));
   const ready = list.filter(t=>t.status==='todo'&&!t.blockedBy.length).sort((a,b)=>a.priority.localeCompare(b.priority)||a.wave-b.wave||a.id.localeCompare(b.id));
   $('#v-deps').innerHTML = `<div class="prog"><div class="pbox"><h3>可以开始（无未完成依赖的待办）· ${ready.length}</h3>${ready.map(card).join('')||'<div class="empty">—</div>'}</div><div class="pbox"><h3>被阻塞 · ${blocked.length}</h3>${blocked.map(t=>`<div class="card" data-id="${t.id}"><div class="id">${t.id}</div><div class="t">${esc(t.title)}</div><div class="hint">${t.status==='blocked'?'状态为阻塞':''} ${t.blockedBy.length?'等待：'+t.blockedBy.map(d=>`<code>${d}</code>`).join(' '):''}</div></div>`).join('')||'<div class="empty">—</div>'}</div></div>`;
 }

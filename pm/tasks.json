@@ -14,6 +14,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.18",
@@ -59,6 +61,8 @@
    "S1-RT-014",
    "S1-RT-004"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.18",
@@ -104,6 +108,8 @@
    "S1-AUD-001",
    "S1-RT-006"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.18",
@@ -149,6 +155,8 @@
    "S1-RT-001",
    "S1-DATA-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.11.1",
@@ -194,6 +202,8 @@
    "S1-EVT-001",
    "S1-SCH-001"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.11.1",
@@ -235,6 +245,8 @@
    "S1-TEN-001",
    "S1-EVT-002"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.11.2",
@@ -274,6 +286,8 @@
    "S1-AUD-003",
    "S1-EVT-001"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.11.2",
@@ -315,6 +329,8 @@
    "S1-RT-001",
    "S1-AGT-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -362,6 +378,8 @@
    "S1-AZ-001",
    "S1-RT-004"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -405,6 +423,8 @@
    "S1-TEN-001",
    "S1-DATA-001"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -446,6 +466,8 @@
    "S1-AUD-001",
    "S1-EVT-001"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -491,6 +513,8 @@
    "S1-IDP-009",
    "S1-YUE-009"
   ],
+  "order": 8,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -534,6 +558,8 @@
    "S1-AZ-001",
    "S1-DATA-004"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -577,6 +603,8 @@
    "S1-KUN-006",
    "S1-RT-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -618,6 +646,8 @@
   "blockedBy": [
    "S1-CFG-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -657,6 +687,8 @@
    "S1-CFG-001",
    "S1-AUD-001"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -696,6 +728,8 @@
    "S1-CFG-001",
    "S1-TEN-001"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -741,6 +775,8 @@
    "S1-KUN-005",
    "S1-RT-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -782,6 +818,8 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -821,6 +859,8 @@
    "S1-DATA-001",
    "S1-CFG-002"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -858,6 +898,8 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -895,6 +937,8 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#7",
@@ -936,6 +980,8 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#7",
@@ -973,6 +1019,8 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#7",
@@ -1010,6 +1058,8 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#7",
@@ -1047,6 +1097,8 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#7",
@@ -1084,6 +1136,8 @@
   "days": 1.0,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#7",
@@ -1121,6 +1175,8 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#7",
@@ -1154,6 +1210,8 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#7",
@@ -1191,6 +1249,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1232,6 +1292,8 @@
   "blockedBy": [
    "S1-DEP-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1275,6 +1337,8 @@
    "S1-RT-002",
    "S1-DEP-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1314,6 +1378,8 @@
    "S1-RT-013",
    "S1-DEP-003"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1353,6 +1419,8 @@
    "S1-DEP-004",
    "S1-DATA-002"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1392,6 +1460,8 @@
    "S1-AUD-003",
    "S1-DEP-001"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1433,6 +1503,8 @@
   "blockedBy": [
    "S1-QA-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md",
@@ -1482,6 +1554,8 @@
    "S1-YUE-005",
    "S1-RT-010"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md#3",
@@ -1531,6 +1605,8 @@
   "blockedBy": [
    "S1-DOCS-001"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md#4",
@@ -1582,6 +1658,8 @@
    "S1-EVT-001",
    "S1-AUD-001"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.14",
@@ -1631,6 +1709,8 @@
    "S1-YUE-002",
    "S1-CFG-004"
   ],
+  "order": 10,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.14",
@@ -1680,6 +1760,8 @@
    "S1-RT-001",
    "S1-DATA-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.10",
@@ -1723,6 +1805,8 @@
    "S1-EVT-001",
    "S1-TEN-001"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.10",
@@ -1762,6 +1846,8 @@
    "S1-EVT-001",
    "S1-RT-006"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.10",
@@ -1809,6 +1895,8 @@
    "S1-EVT-001",
    "S1-KUN-006"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.7",
@@ -1854,6 +1942,8 @@
    "S1-CFG-002",
    "S1-RT-002"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.7",
@@ -1893,6 +1983,8 @@
    "S1-FILE-001",
    "S1-SCH-001"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.7",
@@ -1936,6 +2028,8 @@
    "S1-IDP-005",
    "S1-RT-002"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.9",
@@ -1977,6 +2071,8 @@
   "blockedBy": [
    "S1-GW-001"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.9",
@@ -2022,6 +2118,8 @@
    "S1-RT-013",
    "S1-AUD-003"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.9",
@@ -2065,6 +2163,8 @@
    "S1-RT-001",
    "S1-AGT-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -2114,6 +2214,8 @@
    "S1-TEN-001",
    "S1-AZ-001"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -2155,6 +2257,8 @@
   "blockedBy": [
    "S1-IDP-002"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -2192,6 +2296,8 @@
   "blockedBy": [
    "S1-IDP-003"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -2231,6 +2337,8 @@
    "S1-IDP-002",
    "S1-KUN-004"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -2278,6 +2386,8 @@
    "S1-TEN-004",
    "S1-AUD-001"
   ],
+  "order": 8,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -2321,6 +2431,8 @@
    "S1-IDP-003",
    "S1-CFG-002"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.2",
@@ -2364,6 +2476,8 @@
    "S1-IDP-007",
    "S1-RT-004"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.2",
@@ -2403,6 +2517,8 @@
    "S1-IDP-003",
    "S1-DATA-001"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.3",
@@ -2446,6 +2562,8 @@
    "S1-IDP-009",
    "S1-EVT-001"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.3",
@@ -2479,6 +2597,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -2516,6 +2636,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -2553,6 +2675,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -2590,6 +2714,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -2627,6 +2753,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -2668,6 +2796,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -2713,6 +2843,8 @@
   "blockedBy": [
    "S1-KUN-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -2754,6 +2886,8 @@
    "S1-CFG-002",
    "S1-TEN-001"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.16",
@@ -2799,6 +2933,8 @@
    "S1-AUD-004",
    "S1-DEP-005"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.16",
@@ -2844,6 +2980,8 @@
    "S1-CFG-002",
    "S1-AUD-001"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.12",
@@ -2885,6 +3023,8 @@
    "S1-EVT-001",
    "S1-SCH-001"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.12",
@@ -2926,6 +3066,8 @@
    "S1-CFG-002",
    "S1-RT-002"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.12",
@@ -2963,6 +3105,8 @@
   "days": 1.0,
   "depends": [],
   "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "pm/README.md",
@@ -2996,6 +3140,8 @@
   "days": 1.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
   "refs": [
    {
     "path": "pm/README.md",
@@ -3033,6 +3179,8 @@
   "blockedBy": [
    "S1-RT-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3078,6 +3226,8 @@
    "S1-RT-002",
    "S1-QA-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3127,6 +3277,8 @@
    "S1-FILE-001",
    "S1-QA-002"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -3174,6 +3326,8 @@
    "S1-AGT-002",
    "S1-QA-001"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -3227,6 +3381,8 @@
    "S1-FILE-001",
    "S1-QA-003"
   ],
+  "order": 8,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -3274,6 +3430,8 @@
    "S1-RT-010",
    "S1-RT-014"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.2",
@@ -3331,6 +3489,8 @@
    "S1-AUD-002",
    "S1-QA-004"
   ],
+  "order": 8,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.0.1",
@@ -3380,6 +3540,8 @@
    "S1-IDP-002",
    "S1-ENT-002"
   ],
+  "order": 11,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/ROADMAP.md",
@@ -3421,6 +3583,8 @@
   "days": 8.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3466,6 +3630,8 @@
   "blockedBy": [
    "S1-RT-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3508,6 +3674,8 @@
   "blockedBy": [
    "S1-RT-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3554,6 +3722,8 @@
    "S1-RT-002",
    "S1-DATA-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3601,6 +3771,8 @@
    "S1-RT-004",
    "S1-CFG-002"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3646,6 +3818,8 @@
    "S1-KUN-006",
    "S1-AZ-003"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3687,6 +3861,8 @@
   "blockedBy": [
    "S1-RT-006"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3729,6 +3905,8 @@
   "blockedBy": [
    "S1-RT-001"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.2",
@@ -3776,6 +3954,8 @@
    "S1-RT-004",
    "S1-AUD-001"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.2",
@@ -3819,6 +3999,8 @@
    "S1-RT-001",
    "S1-RT-002"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.2",
@@ -3865,6 +4047,8 @@
    "S1-RT-008",
    "S1-RT-016"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -3907,6 +4091,8 @@
   "blockedBy": [
    "S1-RT-011"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -3952,6 +4138,8 @@
    "S1-RT-005",
    "S1-RT-014"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -3995,6 +4183,8 @@
    "S1-RT-001",
    "S1-RT-004"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -4038,6 +4228,8 @@
    "S1-RT-014",
    "S1-KUN-006"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -4080,6 +4272,8 @@
   "blockedBy": [
    "S1-RT-008"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.4",
@@ -4127,6 +4321,8 @@
    "S1-RT-011",
    "S1-RT-012"
   ],
+  "order": 5,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.4",
@@ -4176,6 +4372,8 @@
    "S1-RT-001",
    "S1-TEN-001"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.13.1",
@@ -4219,6 +4417,8 @@
    "S1-CFG-002",
    "S1-EVT-001"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.13.1",
@@ -4260,6 +4460,8 @@
    "S1-GW-001",
    "S1-EVT-001"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.13.2",
@@ -4301,6 +4503,8 @@
    "S1-RT-001",
    "S1-DATA-001"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.3",
@@ -4348,6 +4552,8 @@
    "S1-SCH-001",
    "S1-IDP-004"
   ],
+  "order": 6,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.3",
@@ -4387,6 +4593,8 @@
    "S1-TEN-001",
    "S1-RT-005"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.3",
@@ -4434,6 +4642,8 @@
    "S1-CFG-003",
    "S1-AUD-001"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.3",
@@ -4481,6 +4691,8 @@
    "S1-YUE-008",
    "S1-YUE-009"
   ],
+  "order": 8,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.3",
@@ -4522,6 +4734,8 @@
    "S1-YUE-006",
    "S1-YUE-009"
   ],
+  "order": 8,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.1",
@@ -4569,6 +4783,8 @@
    "S1-GW-001",
    "S1-RT-004"
   ],
+  "order": 9,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.1",
@@ -4606,6 +4822,8 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -4651,6 +4869,8 @@
   "blockedBy": [
    "S1-YUE-003"
   ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -4688,6 +4908,8 @@
   "blockedBy": [
    "S1-YUE-004"
   ],
+  "order": 2,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -4725,6 +4947,8 @@
   "blockedBy": [
    "S1-YUE-005"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -4762,6 +4986,8 @@
   "blockedBy": [
    "S1-YUE-005"
   ],
+  "order": 3,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -4805,6 +5031,8 @@
    "S1-YUE-005",
    "S1-FILE-001"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -4846,6 +5074,8 @@
    "S1-YUE-007",
    "S1-IDP-010"
   ],
+  "order": 7,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -4891,6 +5121,8 @@
    "S1-MGW-001",
    "S1-YUE-005"
   ],
+  "order": 4,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-013-frontend-yue.md#D13.18",

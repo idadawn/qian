@@ -81,7 +81,7 @@ id 规则：`S<阶段>-<领域>-<三位序号>`。领域代码与 PRD §07 小�
 | 想做什么 | 命令 |
 |---|---|
 | 看进度 | 打开 `pm/index.html`，或在 GitHub 上看 `pm/STATUS.md` |
-| 找能开始的任务 | 看板「阻塞与依赖」视图左栏；或 `python3 scripts/pm.py list --status todo` |
+| 找能开始的任务 | 看板「待办」列已按可做先后排序（绿色「可开始」在前，之后是「第 n 批」）；`pm/STATUS.md` 的「接下来可做」表；或 `python3 scripts/pm.py list --status todo` |
 | 认领并开始 | `python3 scripts/pm.py set S1-RT-001 --status doing --owner 你的名字 --note "开始"` |
 | 记录进展 | `python3 scripts/pm.py set S1-RT-001 --note "runtime 骨架可编译"` |
 | 提交评审 / 完成 | `--status review` / `--status done`，并把「验收」里完成的项打勾 `[x]` |

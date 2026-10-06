@@ -237,8 +237,30 @@ def _est_days(e: str) -> float:
     return float(m.group(1)) if m else 0.0
 
 
+def _order_ranks(tasks: list[dict]) -> dict[str, int]:
+    """可做顺序：0 = 没有未完成前置（现在就能开始）；n = 等它的未完成前置里最深的一层 + 1。done 任务为 -1。"""
+    by = {t["id"]: t for t in tasks}
+    memo: dict[str, int] = {}
+
+    def rank(tid: str, stack: tuple = ()) -> int:
+        if tid in memo:
+            return memo[tid]
+        t = by.get(tid)
+        if t is None or t["status"] == "done":
+            memo[tid] = -1
+            return -1
+        if tid in stack:  # 环由 validate 报错，这里只防死循环
+            return 0
+        unmet = [d for d in t.get("depends", []) if d in by and by[d]["status"] != "done"]
+        memo[tid] = 0 if not unmet else 1 + max(rank(d, stack + (tid,)) for d in unmet)
+        return memo[tid]
+
+    return {t["id"]: rank(t["id"]) for t in tasks}
+
+
 def export(tasks: list[dict]) -> list[dict]:
     done_ids = {t["id"] for t in tasks if t["status"] == "done"}
+    ranks = _order_ranks(tasks)
     rows = []
     for t in tasks:
         acc_total = len(re.findall(r"^\s*-\s+\[( |x|X)\]", t["_body"], re.M))
@@ -249,6 +271,8 @@ def export(tasks: list[dict]) -> list[dict]:
             "priority": t["priority"], "type": t["type"], "owner": t["owner"] or "",
             "estimate": t["estimate"], "days": _est_days(t["estimate"]), "depends": t["depends"],
             "blockedBy": [d for d in t["depends"] if d not in done_ids],
+            "order": ranks[t["id"]],
+            "readyNow": t["status"] == "todo" and not [d for d in t["depends"] if d not in done_ids],
             "refs": [{"path": str(r), "url": REPO_BLOB + str(r).split("#")[0]} for r in t["refs"]],
             "updated": str(t["updated"]), "acceptance": {"done": acc_done, "total": acc_total},
             "bodyHtml": _md_to_html(t["_body"]), "file": f"pm/tasks/{t['_file']}",
@@ -285,6 +309,29 @@ def status_md(rows: list[dict]) -> str:
             lines.append(
                 f"| {label} | {bar(sum(r['status'] == 'done' for r in g), len(g))} | {sum(r['status'] == 'doing' for r in g)} | {sum(1 for r in g if r['status'] == 'blocked' or (r['blockedBy'] and r['status'] != 'done'))} |")
         lines.append("")
+    lines.append("## 接下来可做（无未完成前置的待办，按优先级 / 波次）")
+    lines.append("")
+    ready = sorted([r for r in rows if r["readyNow"]], key=lambda r: (r["priority"], r["wave"], r["id"]))
+    if ready:
+        lines.append("| # | 任务 | 优先级 | 波次 | 估算 | 领域 |")
+        lines.append("|---|---|---|---|---|---|")
+        for i, r in enumerate(ready, 1):
+            lines.append(f"| {i} | [{r['id']}]({r['file'].replace('pm/', '')}) {r['title']} | {r['priority']} | {'决策' if r['wave'] == 0 else r['wave']} | {r['estimate']} | {r['area']} |")
+    else:
+        lines.append("（无）")
+    lines.append("")
+    lines.append("## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）")
+    lines.append("")
+    levels: dict = {}
+    for r in rows:
+        if r["status"] in ("todo", "blocked"):
+            levels.setdefault(r["order"], []).append(r)
+    lines.append("| 层级 | 任务数 | 合计估算 |")
+    lines.append("|---|---|---|")
+    for k in sorted(levels):
+        g = levels[k]
+        lines.append(f"| 第 {k + 1} 层 | {len(g)} | {sum(r['days'] for r in g):g}d |")
+    lines.append("")
     lines.append("## 进行中")
     lines.append("")
     doing = [r for r in rows if r["status"] in ("doing", "review")]
