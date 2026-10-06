@@ -1430,9 +1430,7 @@
   "depends": [
    "S1-QA-001"
   ],
-  "blockedBy": [
-   "S1-QA-001"
-  ],
+  "blockedBy": [],
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md",
@@ -3017,7 +3015,7 @@
  {
   "id": "S1-QA-001",
   "title": "CI 基础：Testcontainers、依赖图断言、PublicAPI",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "QA",
   "areaName": "测试 / TCK / 门禁",
@@ -3049,10 +3047,10 @@
   ],
   "updated": "2026-10-07",
   "acceptance": {
-   "done": 2,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>IT 基础：Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 容器）供全部 IT 复用；CI 依赖图断言 <code>dotnet list package --include-transitive</code>（任何 <code>Qian.&lt;X&gt;</code> / <code>Qian.&lt;X&gt;.Abstractions</code> 的传递依赖中不出现 <code>Qian.Registry</code> / <code>Qian.Lifecycle</code> / <code>Qian.Capabilities</code> 与其他 Provider 包，只允许 <code>Qian.Runtime</code>、<code>Kun.*</code>、<code>Qian.*.Abstractions</code>）；<code>Microsoft.CodeAnalysis.PublicApiAnalyzers</code> 覆盖全部 <code>Qian.*</code> 包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：依赖图断言——任何 <code>Qian.&lt;X&gt;</code> / <code>Qian.&lt;X&gt;.Abstractions</code> 包的传递依赖中不出现 <code>Qian.Registry</code>、<code>Qian.Lifecycle</code>、<code>Qian.Capabilities</code> 与任何其他 Provider 包</li>\n<li class='chk done'><span class='box'>✓</span>CI：全部 <code>Qian.*</code> 包启用 PublicAPI 分析器，公共 API 变更需更新 <code>PublicAPI.Shipped.txt</code></li>\n<li class='chk'><span class='box'></span>IT：Testcontainers fixture 在 CI 上拉起 PG / Redis / RabbitMQ / Apollo 并被至少一个 IT 使用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：开始。前置 S1-RT-001 未完成，按产品负责人要求先行：门禁先用 tests/gates 下的样例项目自测，RT-001 起的 Qian.* 包自动纳入</li>\n<li>2026-10-07 claude：提交评审：PublicAPI 与依赖图两道门禁接入 CI，并用 tests/gates 样例项目证明能拦截违规（依赖图读 project.assets.json，覆盖 ProjectReference）；Testcontainers fixture（PG16 / Redis7 / RabbitMQ / Apollo 协议替身）与 11 个 IT 本地全绿，第 3 条待本 PR 的 CI 跑绿后勾选</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>IT 基础：Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 容器）供全部 IT 复用；CI 依赖图断言 <code>dotnet list package --include-transitive</code>（任何 <code>Qian.&lt;X&gt;</code> / <code>Qian.&lt;X&gt;.Abstractions</code> 的传递依赖中不出现 <code>Qian.Registry</code> / <code>Qian.Lifecycle</code> / <code>Qian.Capabilities</code> 与其他 Provider 包，只允许 <code>Qian.Runtime</code>、<code>Kun.*</code>、<code>Qian.*.Abstractions</code>）；<code>Microsoft.CodeAnalysis.PublicApiAnalyzers</code> 覆盖全部 <code>Qian.*</code> 包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：依赖图断言——任何 <code>Qian.&lt;X&gt;</code> / <code>Qian.&lt;X&gt;.Abstractions</code> 包的传递依赖中不出现 <code>Qian.Registry</code>、<code>Qian.Lifecycle</code>、<code>Qian.Capabilities</code> 与任何其他 Provider 包</li>\n<li class='chk done'><span class='box'>✓</span>CI：全部 <code>Qian.*</code> 包启用 PublicAPI 分析器，公共 API 变更需更新 <code>PublicAPI.Shipped.txt</code></li>\n<li class='chk done'><span class='box'>✓</span>IT：Testcontainers fixture 在 CI 上拉起 PG / Redis / RabbitMQ / Apollo 并被至少一个 IT 使用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：开始。前置 S1-RT-001 未完成，按产品负责人要求先行：门禁先用 tests/gates 下的样例项目自测，RT-001 起的 Qian.* 包自动纳入</li>\n<li>2026-10-07 claude：提交评审：PublicAPI 与依赖图两道门禁接入 CI，并用 tests/gates 样例项目证明能拦截违规（依赖图读 project.assets.json，覆盖 ProjectReference）；Testcontainers fixture（PG16 / Redis7 / RabbitMQ / Apollo 协议替身）与 11 个 IT 本地全绿，第 3 条待本 PR 的 CI 跑绿后勾选</li>\n<li>2026-10-07 claude：完成：三条验收全部通过。CI（dotnet 工作流 run 37515939567，提交 78e8e1c）：构建零警告、依赖图门禁通过、门禁自测 11 项通过、21 个测试全过 0 跳过（CI=true 下 Docker 缺失会直接失败，四个容器均真实拉起）；经 PR #1 合入 main</li>\n</ul>",
   "file": "pm/tasks/S1-QA-001.md"
  },
  {
@@ -3075,8 +3073,7 @@
   ],
   "blockedBy": [
    "S1-RT-001",
-   "S1-RT-002",
-   "S1-QA-001"
+   "S1-RT-002"
   ],
   "refs": [
    {
@@ -3171,8 +3168,7 @@
   "blockedBy": [
    "S1-RT-004",
    "S1-RT-005",
-   "S1-AGT-002",
-   "S1-QA-001"
+   "S1-AGT-002"
   ],
   "refs": [
    {
