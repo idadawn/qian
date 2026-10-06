@@ -1,0 +1,68 @@
+[
+  {
+    "name": "有效期 900 秒超过 300 秒上限",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791332100,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "nbf 晚于 exp",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331320,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "服务主体 session_id 不等于 jti",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "qian.scheduler",
+      "principal_kind": "service",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "plugin_id": "qian.scheduler",
+      "roles": [],
+      "scope": "qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b25"
+    }
+  }
+]

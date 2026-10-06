@@ -1,0 +1,285 @@
+[
+  {
+    "name": "业务错误用 400",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 400,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes"
+    }
+  },
+  {
+    "name": "协议错误用 422",
+    "data": {
+      "type": "https://qian.dev/problems/protocol/INPUT_INVALID",
+      "title": "输入不符合契约",
+      "status": 422,
+      "detail": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "instance": "/api/files",
+      "code": "INPUT_INVALID",
+      "message": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/purpose",
+      "allowed": [
+        "attachment",
+        "avatar",
+        "export"
+      ],
+      "errors": [
+        {
+          "code": "VALUE_NOT_ALLOWED",
+          "message": "取值不在允许的集合内，可选值见 allowed。",
+          "pointer": "#/purpose",
+          "allowed": [
+            "attachment",
+            "avatar",
+            "export"
+          ]
+        },
+        {
+          "code": "REQUIRED",
+          "message": "缺少必填项。",
+          "pointer": "#/idempotencyKey"
+        }
+      ]
+    }
+  },
+  {
+    "name": "错误码小写下划线",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "quota_exceeded",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes"
+    }
+  },
+  {
+    "name": "type 不是 Qian 问题类型 URI",
+    "data": {
+      "type": "about:blank",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes"
+    }
+  },
+  {
+    "name": "缺 trace_id",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "pointer": "#/sizeBytes"
+    }
+  },
+  {
+    "name": "trace_id 大写",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4BF92F3577B34DA6A3CE929D0E0E4736",
+      "pointer": "#/sizeBytes"
+    }
+  },
+  {
+    "name": "ASP.NET 默认的 traceId 驼峰成员",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "pointer": "#/sizeBytes",
+      "traceId": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+    }
+  },
+  {
+    "name": "iClaw 的自由 details 成员",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes",
+      "details": {
+        "limit": 1
+      }
+    }
+  },
+  {
+    "name": "iClaw ErrorResponse 外层包装",
+    "data": {
+      "error": {
+        "code": "QUOTA_EXCEEDED",
+        "message": "超出配额",
+        "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+      }
+    }
+  },
+  {
+    "name": "pointer 没有 #",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "/sizeBytes"
+    }
+  },
+  {
+    "name": "pointer 含非法转义 ~2",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/a~2b"
+    }
+  },
+  {
+    "name": "有 errors 却没有顶层 pointer",
+    "data": {
+      "type": "https://qian.dev/problems/protocol/INPUT_INVALID",
+      "title": "输入不符合契约",
+      "status": 400,
+      "detail": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "instance": "/api/files",
+      "code": "INPUT_INVALID",
+      "message": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "allowed": [
+        "attachment",
+        "avatar",
+        "export"
+      ],
+      "errors": [
+        {
+          "code": "VALUE_NOT_ALLOWED",
+          "message": "取值不在允许的集合内，可选值见 allowed。",
+          "pointer": "#/purpose",
+          "allowed": [
+            "attachment",
+            "avatar",
+            "export"
+          ]
+        },
+        {
+          "code": "REQUIRED",
+          "message": "缺少必填项。",
+          "pointer": "#/idempotencyKey"
+        }
+      ]
+    }
+  },
+  {
+    "name": "errors 项缺 pointer",
+    "data": {
+      "type": "https://qian.dev/problems/protocol/INPUT_INVALID",
+      "title": "输入不符合契约",
+      "status": 400,
+      "detail": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "instance": "/api/files",
+      "code": "INPUT_INVALID",
+      "message": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/purpose",
+      "allowed": [
+        "attachment",
+        "avatar",
+        "export"
+      ],
+      "errors": [
+        {
+          "code": "REQUIRED",
+          "message": "缺少必填项。"
+        }
+      ]
+    }
+  },
+  {
+    "name": "errors 为空数组",
+    "data": {
+      "type": "https://qian.dev/problems/protocol/INPUT_INVALID",
+      "title": "输入不符合契约",
+      "status": 400,
+      "detail": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "instance": "/api/files",
+      "code": "INPUT_INVALID",
+      "message": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/purpose",
+      "allowed": [
+        "attachment",
+        "avatar",
+        "export"
+      ],
+      "errors": []
+    }
+  },
+  {
+    "name": "allowed 为空数组",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes",
+      "allowed": []
+    }
+  },
+  {
+    "name": "status 为 200",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 200,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes"
+    }
+  }
+]

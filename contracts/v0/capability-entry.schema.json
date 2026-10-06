@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/v0/capability-entry.schema.json",
+  "title": "CapabilityEntry",
+  "description": "能力目录（qian.capabilities，PRD 7.2.1）中一条可调用能力（命令 / 查询）的条目，含 S1 全部落库的 Agent 字段（PRD 7.18 技术落点）。GET /api/capabilities 的条目、plugin.json tools 表面（tool/v2）派生出的落库行都是这个形状；tool/v2 文件另有 binding、无 id / plugin。事件与实体条目不用本 Schema。",
+  "x-status": "draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "plugin", "name", "kind", "description", "inputSchema",
+    "sideEffect", "policyHint", "idempotent", "async",
+    "requiredScopes", "requiredSecrets", "dataClassification", "costTier",
+    "contractVersion", "schemaSha256", "audit", "agent"
+  ],
+  "properties": {
+    "id": {
+      "description": "全局 URN：<plugin>/<name>，由注册表拼接（R23）。",
+      "type": "string",
+      "maxLength": 300,
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+/[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)*$"
+    },
+    "plugin": { "$ref": "#/$defs/ComponentId" },
+    "name": {
+      "description": "插件内短名：<资源>.<动作>（如 customer.create）或 tool/v2 文件名（如 upload），插件内唯一。",
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)*$"
+    },
+    "kind": {
+      "description": "command 有副作用或改变状态；query 只读。",
+      "enum": ["command", "query"]
+    },
+    "description": {
+      "description": "意图式描述（何时用、何时不用），面向 Agent，至少 10 个字符。",
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 2000
+    },
+    "inputSchema": {
+      "description": "输入的 JSON Schema 2020-12：顶层为 object 且 additionalProperties: false；不得含租户字段（租户只来自令牌）。嵌套层的租户字段由语义校验器检查。",
+      "allOf": [
+        { "$ref": "https://json-schema.org/draft/2020-12/schema" },
+        {
+          "required": ["type", "additionalProperties"],
+          "properties": {
+            "type": { "const": "object" },
+            "additionalProperties": { "const": false },
+            "properties": { "propertyNames": { "not": { "$ref": "#/$defs/TenantFieldName" } } }
+          }
+        }
+      ]
+    },
+    "outputSchema": {
+      "description": "输出的 JSON Schema 2020-12；async 为 task 时描述 Operation 完成后的 result。",
+      "$ref": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "operationId": {
+      "description": "聚合 OpenAPI 3.1 中对应操作的 operationId（有 HTTP 端点时）。",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "sideEffect": { "$ref": "#/$defs/SideEffect" },
+    "policyHint": { "$ref": "#/$defs/PolicyHint" },
+    "idempotent": {
+      "description": "sideEffect 不为 read 时必须为 true，且 inputSchema 必须有必填的 idempotencyKey。",
+      "type": "boolean"
+    },
+    "async": {
+      "description": "none：同步返回结果；task：返回 Operation 资源（R8）。",
+      "enum": ["none", "task"]
+    },
+    "requiredScopes": {
+      "description": "调用所需的 OAuth scope（约定 <plugin-id>:<read|write|admin>）。",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[\\x21\\x23-\\x5B\\x5D-\\x7E]+$" }
+    },
+    "requiredPermission": {
+      "description": "权限点全名 <plugin-id>:<resource>:<action>（R9），供 PEP 使用。",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+:[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*$"
+    },
+    "requiredSecrets": {
+      "description": "运行所需密钥的名字（secretRef 名），永不写值。",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$", "maxLength": 128 }
+    },
+    "dataClassification": { "$ref": "#/$defs/DataClassification" },
+    "costTier": { "$ref": "#/$defs/CostTier" },
+    "contractVersion": {
+      "description": "契约族版本标签（如 files-v1），便于按族弃用。",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "schemaSha256": { "$ref": "#/$defs/SchemaSha256" },
+    "audit": {
+      "description": "为 true 时命令级审计强制记录（sideEffect 不为 read 时默认 true）。",
+      "type": "boolean"
+    },
+    "agent": { "$ref": "#/$defs/AgentExposure" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "sideEffect": { "not": { "const": "read" } } } },
+      "then": {
+        "properties": {
+          "idempotent": { "const": true },
+          "inputSchema": {
+            "required": ["required", "properties"],
+            "properties": {
+              "required": { "contains": { "const": "idempotencyKey" } },
+              "properties": { "required": ["idempotencyKey"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "query" } } },
+      "then": { "properties": { "sideEffect": { "const": "read" } } }
+    }
+  ],
+  "$defs": {
+    "ComponentId": {
+      "description": "组件 id（反向域名风格，如 qian.files、qian.sample.crm）。",
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    "SideEffect": {
+      "description": "副作用等级，采 iClaw 四值（P 基线裁决 A-9）。",
+      "enum": ["read", "write", "external", "destructive"]
+    },
+    "PolicyHint": {
+      "description": "调用方策略（iClaw ToolPolicy）的默认值来源；运行时权威仍是调用方策略。destructive 默认 confirm。",
+      "enum": ["allow", "confirm", "deny"]
+    },
+    "DataClassification": {
+      "enum": ["public", "internal", "pii", "finance", "secret"]
+    },
+    "CostTier": {
+      "enum": ["low", "medium", "high"]
+    },
+    "SchemaSha256": {
+      "description": "SHA-256（小写十六进制）：对 {\"description\", \"inputSchema\", \"name\"} 三个成员组成的对象做 RFC 8785（JCS）规范化后按 UTF-8 计算。进入授权快照，变即旧授权失效。",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "AgentExposure": {
+      "description": "S4 是否派生为模型可见工具、是否需人工确认；S1 只落库。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expose", "requiresConfirmation"],
+      "properties": {
+        "expose": { "type": "boolean" },
+        "requiresConfirmation": { "type": "boolean" }
+      }
+    },
+    "TenantFieldName": {
+      "description": "被禁止的输入属性名：tenant、tenantId、tenant_id、tenant-id 及其大小写变体。",
+      "type": "string",
+      "pattern": "^[Tt][Ee][Nn][Aa][Nn][Tt]([_-]?[Ii][Dd])?$"
+    }
+  }
+}

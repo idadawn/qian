@@ -1,0 +1,119 @@
+[
+  {
+    "name": "用户主体：网关为外壳 Cookie 会话换签的 60 秒令牌",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "服务主体：client_credentials，session_id 取 jti，带 plugin_id",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "qian.scheduler",
+      "principal_kind": "service",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "plugin_id": "qian.scheduler",
+      "roles": [],
+      "scope": "qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b25",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b25"
+    }
+  },
+  {
+    "name": "平台级用户：tenant_id 为 null，无 membership_id",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform",
+        "qian-identity"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": null,
+      "identity_revision": 3,
+      "roles": [
+        "platform.operator"
+      ],
+      "scope": "qian.registry:read",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "带可选 project_id；scope 为空串",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24",
+      "project_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b26"
+    }
+  },
+  {
+    "name": "S4 预留形状：act 委托链（S1 不签发）",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24",
+      "act": {
+        "sub": "agent-client-1",
+        "principal_kind": "agent"
+      }
+    }
+  }
+]

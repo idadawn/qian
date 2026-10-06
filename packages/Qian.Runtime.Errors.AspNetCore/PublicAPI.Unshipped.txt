@@ -1,0 +1,11 @@
+#nullable enable
+Qian.Runtime.Errors.AspNetCore.QianErrorResult
+Qian.Runtime.Errors.AspNetCore.QianErrorResult.ContentType.get -> string!
+Qian.Runtime.Errors.AspNetCore.QianErrorResult.Error.get -> Qian.Runtime.Errors.QianError!
+Qian.Runtime.Errors.AspNetCore.QianErrorResult.ExecuteAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> System.Threading.Tasks.Task!
+Qian.Runtime.Errors.AspNetCore.QianErrorResult.StatusCode.get -> int?
+Qian.Runtime.Errors.AspNetCore.QianErrorsExtensions
+static Qian.Runtime.Errors.AspNetCore.QianErrorsExtensions.AddQianErrors(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Qian.Runtime.Errors.ErrorCatalog!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Runtime.Errors.AspNetCore.QianErrorsExtensions.UseQianErrors(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+Qian.Runtime.Errors.AspNetCore.QianResults
+static Qian.Runtime.Errors.AspNetCore.QianResults.Error(Qian.Runtime.Errors.QianError! error) -> Qian.Runtime.Errors.AspNetCore.QianErrorResult!

@@ -2,24 +2,32 @@
  {
   "id": "S1-AGT-001",
   "title": "contracts/v0 冻结文件与 ErrorDetail 结构化错误",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "AGT",
   "areaName": "Agent 就绪",
   "wave": 1,
   "priority": "P0",
   "type": "doc",
-  "owner": "",
+  "owner": "claude",
   "estimate": "3d",
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.18",
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "contracts/v0/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/README.md"
+   },
+   {
+    "path": "contracts/v0/iclaw-alignment.md",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
    },
    {
     "path": "docs/adr/ADR-018-stages-s1-scope.md",
@@ -30,12 +38,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-016-iclaw-boundary.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.18 第 2 项与技术落点：<code>contracts/v0/</code> 下 S2S claim、事件 envelope、ErrorDetail、能力条目四份 JSON Schema（2020-12 + <code>additionalProperties: false</code>，<code>x-status: draft</code> 期允许破坏性修订），附与 iClaw 对齐的差异说明；<code>Kun.AspNetCore</code> ProblemDetails + Qian <code>ErrorDetail { code, message, trace_id, pointer?, allowed? }</code>，区分协议错误与业务错误；错误码与文案 JSON 导出。契约先行，供 7.4 / 7.5 / 7.10 / 7.11 消费。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>文档：<code>contracts/v0/</code> 下存在 S2S claim、事件 envelope、ErrorDetail、能力条目四份 JSON Schema，并有与 iClaw 对齐的差异说明</li>\n<li class='chk'><span class='box'></span>UT：任一业务错误响应符合 <code>ErrorDetail</code> Schema，含稳定 <code>code</code> 与（字段错误时）JSON Pointer</li>\n<li class='chk'><span class='box'></span>UT：协议错误与业务错误以不同 <code>type</code> / 状态码区分；错误码与多语言文案可导出 JSON</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.18 第 2 项与技术落点：<code>contracts/v0/</code> 下 S2S claim、事件 envelope、ErrorDetail、能力条目四份 JSON Schema（2020-12 + <code>additionalProperties: false</code>，<code>x-status: draft</code> 期允许破坏性修订），附与 iClaw 对齐的差异说明；<code>Kun.AspNetCore</code> ProblemDetails + Qian <code>ErrorDetail { code, message, trace_id, pointer?, allowed? }</code>，区分协议错误与业务错误；错误码与文案 JSON 导出。契约先行，供 7.4 / 7.5 / 7.10 / 7.11 消费。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>文档：<code>contracts/v0/</code> 下存在 S2S claim、事件 envelope、ErrorDetail、能力条目四份 JSON Schema，并有与 iClaw 对齐的差异说明</li>\n<li class='chk done'><span class='box'>✓</span>UT：任一业务错误响应符合 <code>ErrorDetail</code> Schema，含稳定 <code>code</code> 与（字段错误时）JSON Pointer</li>\n<li class='chk done'><span class='box'>✓</span>UT：协议错误与业务错误以不同 <code>type</code> / 状态码区分；错误码与多语言文案可导出 JSON</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：开始</li>\n<li>2026-10-07 claude：contracts/v0 落盘：error-detail / error-catalog / s2s-claims / event-envelope / capability-entry 五份 Schema（2020-12、封闭对象、x-status: draft）+ 正例 / 反例 / 语义反例 fixture + 内置错误码目录 error-codes.json；iclaw-alignment.md 逐项差异（已用 iClaw events-schema 实测）</li>\n<li>2026-10-07 claude：代码：packages/Qian.Runtime.Errors（ErrorCode / ErrorCatalog / QianError / ErrorDetail / PlatformErrors 26 个内置码 / JSON 导出）与 Qian.Runtime.Errors.AspNetCore（AddQianErrors / UseQianErrors / QianResults，ProblemDetails 规范化）；tests/Qian.Runtime.Errors.Tests 151 项全过</li>\n<li>2026-10-07 claude：默认裁决 8 条见 contracts/v0/README.md 第 8 节，新建 S1-DEC-009 待确认（R32 的 403 原因承载须在 S1-RT-004 前定，已给 RT-004 加依赖）；EVT-001 / GW-001 / KUN-004 / RT-008 补 contracts 引用</li>\n<li>2026-10-07 claude：四份契约 Schema + 差异说明 + ErrorDetail 结构化错误（.NET 两包）完成，验收三项满足，提交评审</li>\n</ul>",
   "file": "pm/tasks/S1-AGT-001.md"
  },
  {
@@ -1235,6 +1243,49 @@
   "file": "pm/tasks/S1-DEC-008.md"
  },
  {
+  "id": "S1-DEC-009",
+  "title": "拍板：contracts/v0 定稿前的默认裁决（错误码写法、业务状态码、R32 原因承载、平台级 tenant_id）",
+  "status": "todo",
+  "stage": "S1",
+  "area": "DEC",
+  "areaName": "待拍板决策",
+  "wave": 0,
+  "priority": "P0",
+  "type": "decision",
+  "owner": "",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-AGT-001"
+  ],
+  "blockedBy": [
+   "S1-AGT-001"
+  ],
+  "order": 1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "contracts/v0/README.md#8",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/README.md"
+   },
+   {
+    "path": "contracts/v0/iclaw-alignment.md",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
+   },
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.18",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 0,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-AGT-001 写 contracts/v0 时取了 8 条默认裁决（见 contracts/v0/README.md 第 8 节），x-status: draft 期内可改。其中第 4 条（R32 的 403 原因在封闭 ErrorDetail 中无结构化承载位）须在 S1-RT-004 实现前定；其余确认后 contracts/v0 去掉 draft、转 additive-only。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>第 8 节 8 条默认裁决逐条确认或改判，结论写回 contracts/v0/README.md 第 8 节（改判的同步改 Schema、fixture、<code>Qian.Runtime.Errors</code> 与受影响的 PRD / spec 文字）</li>\n<li class='chk'><span class='box'></span>第 4 条（R32 的 403 原因）定下承载方式，S1-RT-004 按此实现</li>\n<li class='chk'><span class='box'></span>第 1 条确认后，PRD / spec 中 <code>plugin_not_mounted</code> 等非大写写法统一为契约写法</li>\n<li class='chk'><span class='box'></span>contracts/v0 全部 Schema 去掉 <code>x-status: draft</code>，此后只做向后兼容的增量</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n</ul>",
+  "file": "pm/tasks/S1-DEC-009.md"
+ },
+ {
   "id": "S1-DEP-001",
   "title": "K3s 基线治理：命名空间、专属库、默认拒绝、配额",
   "status": "todo",
@@ -1772,14 +1823,22 @@
    {
     "path": "docs/prd/07-s1-foundation.md#7.18",
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "contracts/v0/event-envelope.schema.json",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/event-envelope.schema.json"
+   },
+   {
+    "path": "contracts/v0/iclaw-alignment.md",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.events</code>（<code>Qian.Events.Abstractions</code> / <code>ctx.Events</code> + <code>Qian.Events</code>，随 SDK 进每个 .NET profile）：<code>QianEventEnvelope { version, event_id (uuid v7), subject, type, occurred_at, tenant_id, producer, correlation_id?, causation_id?, actor { kind, id, on_behalf_of? }, trace_parent, payload }</code> 对齐 iClaw 契约；<code>[IntegrationEventId]</code> 稳定 ID 与 payload Schema 导出；<code>Publish</code> 只允许命令 handler 同 scope；Outbox 发布器批 100、<code>FOR UPDATE SKIP LOCKED</code>、publisher confirm、指数退避；exchange <code>qian.events</code>（topic）、quorum 队列 <code>q.&lt;service&gt;.&lt;subscription&gt;</code>、广播队列；独立模式 Outbox 用宿主 DbContext。与 <code>Qian.Runtime</code> 进程内事件不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：参考应用创建客户后 <code>outbox_messages</code> +1，RabbitMQ 收到 1 条</li>\n<li class='chk'><span class='box'></span>IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）</li>\n<li class='chk'><span class='box'></span>UT：信封通过 iClaw <code>events-schema.json</code> 校验；每个 <code>[IntegrationEventId]</code> 都能导出 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：在非命令 handler 处 <code>Publish</code> 触发分析器错误；<code>actor.kind</code> 支持 <code>agent</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.events</code>（<code>Qian.Events.Abstractions</code> / <code>ctx.Events</code> + <code>Qian.Events</code>，随 SDK 进每个 .NET profile）：<code>QianEventEnvelope { version, event_id (uuid v7), subject, type, occurred_at, tenant_id, producer, correlation_id?, causation_id?, actor { kind, id, on_behalf_of? }, trace_parent, payload }</code> 对齐 iClaw 契约；<code>[IntegrationEventId]</code> 稳定 ID 与 payload Schema 导出；<code>Publish</code> 只允许命令 handler 同 scope；Outbox 发布器批 100、<code>FOR UPDATE SKIP LOCKED</code>、publisher confirm、指数退避；exchange <code>qian.events</code>（topic）、quorum 队列 <code>q.&lt;service&gt;.&lt;subscription&gt;</code>、广播队列；独立模式 Outbox 用宿主 DbContext。与 <code>Qian.Runtime</code> 进程内事件不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：参考应用创建客户后 <code>outbox_messages</code> +1，RabbitMQ 收到 1 条</li>\n<li class='chk'><span class='box'></span>IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）</li>\n<li class='chk'><span class='box'></span>UT：信封通过 iClaw <code>events-schema.json</code> 校验；每个 <code>[IntegrationEventId]</code> 都能导出 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：在非命令 handler 处 <code>Publish</code> 触发分析器错误；<code>actor.kind</code> 支持 <code>agent</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/event-envelope.schema.json；iClaw 信封兼容性的验收口径见 contracts/v0/iclaw-alignment.md 第 3 节</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-001.md"
  },
  {
@@ -2040,14 +2099,22 @@
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#2",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
+   },
+   {
+    "path": "contracts/v0/s2s-claims.schema.json",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/s2s-claims.schema.json"
+   },
+   {
+    "path": "contracts/v0/iclaw-alignment.md",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.gateway</code>（<code>Qian.Gateway.Abstractions</code> + <code>Qian.Gateway</code>，<code>gateway</code> profile 独立 Pod、可 AOT）在 Kun.Gateway 之上写死安全默认值：回退策略 = 已认证、匿名白名单显式枚举；只信任 <code>qian-identity</code> 一个 issuer；外部 Bearer 或 Cookie <code>qian.sid</code> 统一解析主体后由 <code>S2sTokenIssuer</code> 签 60s S2S（RS256、<code>kid</code> 轮换），<code>aud</code> = 目标 cluster，禁透传；<code>ForwardedClaimTypes</code> 白名单；<code>KnownNetworks</code> 只含 Traefik 网段；机器身份同样换签（<code>principal_kind = service</code>）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：未带凭据访问 <code>/api/tenancy/tenants</code> 返回 401；带外壳 Cookie 访问同一路由，下游收到 60s S2S 且 <code>aud = qian-platform</code>、<code>tenant_id</code> 正确</li>\n<li class='chk'><span class='box'></span>IT：S2S 令牌通过 iClaw <code>s2s-jwt-claims</code> Schema 校验；<code>exp − iat ≤ 300s</code></li>\n<li class='chk'><span class='box'></span>IT：轮换私钥期间（双钥重叠 10 分钟）在途请求零失败；重叠期后旧 <code>kid</code> 被拒绝</li>\n<li class='chk'><span class='box'></span>E2E：伪造 <code>X-Forwarded-For</code> 的请求（非可信网段发出）不改变限流分区与客户端 IP</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.gateway</code>（<code>Qian.Gateway.Abstractions</code> + <code>Qian.Gateway</code>，<code>gateway</code> profile 独立 Pod、可 AOT）在 Kun.Gateway 之上写死安全默认值：回退策略 = 已认证、匿名白名单显式枚举；只信任 <code>qian-identity</code> 一个 issuer；外部 Bearer 或 Cookie <code>qian.sid</code> 统一解析主体后由 <code>S2sTokenIssuer</code> 签 60s S2S（RS256、<code>kid</code> 轮换），<code>aud</code> = 目标 cluster，禁透传；<code>ForwardedClaimTypes</code> 白名单；<code>KnownNetworks</code> 只含 Traefik 网段；机器身份同样换签（<code>principal_kind = service</code>）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：未带凭据访问 <code>/api/tenancy/tenants</code> 返回 401；带外壳 Cookie 访问同一路由，下游收到 60s S2S 且 <code>aud = qian-platform</code>、<code>tenant_id</code> 正确</li>\n<li class='chk'><span class='box'></span>IT：S2S 令牌通过 iClaw <code>s2s-jwt-claims</code> Schema 校验；<code>exp − iat ≤ 300s</code></li>\n<li class='chk'><span class='box'></span>IT：轮换私钥期间（双钥重叠 10 分钟）在途请求零失败；重叠期后旧 <code>kid</code> 被拒绝</li>\n<li class='chk'><span class='box'></span>E2E：伪造 <code>X-Forwarded-For</code> 的请求（非可信网段发出）不改变限流分区与客户端 IP</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/s2s-claims.schema.json：iClaw 无 S2S JSON Schema，验收以该文件为准（iclaw-alignment.md 第 2 节）</li>\n</ul>",
   "file": "pm/tasks/S1-GW-001.md"
  },
  {
@@ -2726,14 +2793,22 @@
    {
     "path": "docs/adr/ADR-005-identity-sso.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-005-identity-sso.md"
+   },
+   {
+    "path": "contracts/v0/s2s-claims.schema.json",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/s2s-claims.schema.json"
+   },
+   {
+    "path": "contracts/v0/iclaw-alignment.md",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
    "done": 0,
    "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 6、7 项：<code>ExchangeCodeAsync</code> 发送 <code>code_verifier</code>、校验 <code>nonce</code>、补 refresh / client_credentials / discovery 刷新、会话索引与后通道登出、日志只记 sid 哈希、CSRF、<code>SignInHelper</code> DI；三套签发器收敛为网关 <code>S2sTokenIssuer</code> 一套并对齐 iClaw S2S claim 契约，<code>exp − iat ≤ 300s</code>，约 30 处下游产品字样改为可配置。7.4 / 7.9 的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：对强制 PKCE 的 IdP（用 7.4 的 <code>qian-identity</code> 本身）完成授权码换取；篡改 <code>nonce</code> 的 id_token 被拒绝</li>\n<li class='chk'><span class='box'></span>IT：吊销某用户全部会话后，其任一 sid 的请求返回 401</li>\n<li class='chk'><span class='box'></span>代码审查：日志中不出现明文 sid（grep 门禁）</li>\n<li class='chk'><span class='box'></span>UT：Qian 代码树中引用废弃签发器即编译告警升错误</li>\n<li class='chk'><span class='box'></span>IT：网关签出的 S2S 令牌通过 iClaw <code>contracts/v0/s2s-jwt-claims</code> JSON Schema 校验</li>\n<li class='chk'><span class='box'></span>代码审查：<code>Kun.*</code> 发布包中 grep 不到下游产品名的默认值</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 6、7 项：<code>ExchangeCodeAsync</code> 发送 <code>code_verifier</code>、校验 <code>nonce</code>、补 refresh / client_credentials / discovery 刷新、会话索引与后通道登出、日志只记 sid 哈希、CSRF、<code>SignInHelper</code> DI；三套签发器收敛为网关 <code>S2sTokenIssuer</code> 一套并对齐 iClaw S2S claim 契约，<code>exp − iat ≤ 300s</code>，约 30 处下游产品字样改为可配置。7.4 / 7.9 的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：对强制 PKCE 的 IdP（用 7.4 的 <code>qian-identity</code> 本身）完成授权码换取；篡改 <code>nonce</code> 的 id_token 被拒绝</li>\n<li class='chk'><span class='box'></span>IT：吊销某用户全部会话后，其任一 sid 的请求返回 401</li>\n<li class='chk'><span class='box'></span>代码审查：日志中不出现明文 sid（grep 门禁）</li>\n<li class='chk'><span class='box'></span>UT：Qian 代码树中引用废弃签发器即编译告警升错误</li>\n<li class='chk'><span class='box'></span>IT：网关签出的 S2S 令牌通过 iClaw <code>contracts/v0/s2s-jwt-claims</code> JSON Schema 校验</li>\n<li class='chk'><span class='box'></span>代码审查：<code>Kun.*</code> 发布包中 grep 不到下游产品名的默认值</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/s2s-claims.schema.json：iClaw 无 S2S JSON Schema，验收以该文件为准（iclaw-alignment.md 第 2 节）</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-004.md"
  },
  {
@@ -3711,12 +3786,14 @@
    "S1-RT-001",
    "S1-RT-002",
    "S1-DATA-001",
-   "S1-DEC-002"
+   "S1-DEC-002",
+   "S1-DEC-009"
   ],
   "blockedBy": [
    "S1-RT-001",
    "S1-RT-002",
-   "S1-DATA-001"
+   "S1-DATA-001",
+   "S1-DEC-009"
   ],
   "order": 2,
   "readyNow": false,
@@ -3738,12 +3815,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-002-plugin-model.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
    "done": 0,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>原 <code>qian.kernel</code> 注册表改为平台插件 <code>Qian.Registry</code>（<code>ctx.Registry</code>）：<code>IPluginManifestLoader</code> / <code>PluginManifestValidator</code>（JSON Schema 2020-12 + 语义校验，错误带 JSON Pointer）；PG schema <code>registry</code> 的 <code>plugin_artifacts</code> / <code>plugin_revisions</code> / <code>tenant_plugin_installs</code> / <code>scope_patches</code> / <code>extension_points</code> / <code>contracts</code> / <code>capabilities</code> / <code>event_types</code> / <code>entity_types</code> / <code>lifecycle_runs</code>；租户 scope patch 持久化与合入；<code>GET /api/registry/scopes/{scopeKey}/entries</code>；未挂载条目 404 / 403 <code>plugin_not_mounted</code> 规则（R32）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：缺任一 S1 必填字段、OCI 引用用 tag 而非 digest、<code>inputSchema</code> 含 <code>tenantId</code>、<code>inject[]</code> 引用无人提供的服务键、<code>scopes[]</code> 含非法种类的 <code>plugin.json</code>，安装失败并返回带 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：<code>policy.required: true</code> 只允许出现在 <code>policy.tier: system</code> 的平台插件上，否则校验失败</li>\n<li class='chk'><span class='box'></span>IT：对租户 A 写一条 scope patch、B 不写，<code>GET /api/registry/scopes/tenant:B/entries/&lt;id&gt;</code> 对持 <code>qian.registry:scope:read</code> 者返回 403 <code>plugin_not_mounted</code>、<code>reason = not_mounted</code>，无该权限者 404</li>\n<li class='chk'><span class='box'></span>IT：scope patch 变更事件触发装载器重新合入，撤销 patch 后 ≤ 5s 生效，不重启进程</li>\n<li class='chk'><span class='box'></span>IT：v1 别名 <code>/api/kernel/*</code> 返回同一结果并带 <code>Deprecation</code> 响应头（R33）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>原 <code>qian.kernel</code> 注册表改为平台插件 <code>Qian.Registry</code>（<code>ctx.Registry</code>）：<code>IPluginManifestLoader</code> / <code>PluginManifestValidator</code>（JSON Schema 2020-12 + 语义校验，错误带 JSON Pointer）；PG schema <code>registry</code> 的 <code>plugin_artifacts</code> / <code>plugin_revisions</code> / <code>tenant_plugin_installs</code> / <code>scope_patches</code> / <code>extension_points</code> / <code>contracts</code> / <code>capabilities</code> / <code>event_types</code> / <code>entity_types</code> / <code>lifecycle_runs</code>；租户 scope patch 持久化与合入；<code>GET /api/registry/scopes/{scopeKey}/entries</code>；未挂载条目 404 / 403 <code>plugin_not_mounted</code> 规则（R32）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：缺任一 S1 必填字段、OCI 引用用 tag 而非 digest、<code>inputSchema</code> 含 <code>tenantId</code>、<code>inject[]</code> 引用无人提供的服务键、<code>scopes[]</code> 含非法种类的 <code>plugin.json</code>，安装失败并返回带 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：<code>policy.required: true</code> 只允许出现在 <code>policy.tier: system</code> 的平台插件上，否则校验失败</li>\n<li class='chk'><span class='box'></span>IT：对租户 A 写一条 scope patch、B 不写，<code>GET /api/registry/scopes/tenant:B/entries/&lt;id&gt;</code> 对持 <code>qian.registry:scope:read</code> 者返回 403 <code>plugin_not_mounted</code>、<code>reason = not_mounted</code>，无该权限者 404</li>\n<li class='chk'><span class='box'></span>IT：scope patch 变更事件触发装载器重新合入，撤销 patch 后 ≤ 5s 生效，不重启进程</li>\n<li class='chk'><span class='box'></span>IT：v1 别名 <code>/api/kernel/*</code> 返回同一结果并带 <code>Deprecation</code> 响应头（R33）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：依赖加 S1-DEC-009：R32 的 403 原因（not_entitled / not_mounted / restricted）在封闭 ErrorDetail 中的承载方式待定（contracts/v0/README.md 第 8 节第 4 条）</li>\n</ul>",
   "file": "pm/tasks/S1-RT-004.md"
  },
  {
@@ -3915,14 +3992,22 @@
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#2",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
+   },
+   {
+    "path": "contracts/v0/capability-entry.schema.json",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/capability-entry.schema.json"
+   },
+   {
+    "path": "contracts/v0/error-detail.schema.json",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/error-detail.schema.json"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.6 / D20.9：<code>skills/&lt;name&gt;/SKILL.md</code>、<code>agents/&lt;name&gt;.md</code>、<code>commands/&lt;name&gt;.md</code>、<code>hooks/hooks.json</code>、<code>.mcp.json</code> 五种表面加 <code>tools/</code>、<code>config/qian.patch.yml</code> 的解析器；每种一份 JSON Schema 2020-12 + 语义校验（<code>allowed-tools</code> 存在、hooks 引用的事件 / 能力存在、MCP 服务器名唯一、内联 shell 仅限人类 CLI 侧）；错误 = <code>ErrorDetail</code> + 文件路径 + 行号 + JSON Pointer；.NET 与 TS 跑同一组 fixture，供 <code>qian doctor</code>、CI、市场准入与 S4 共用。S1-M1 交付项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：校验器对 20 个坏样例（缺 front matter 字段、<code>allowed-tools</code> 引用不存在的工具、hooks 引用不存在的事件或能力、<code>.mcp.json</code> 格式错、<code>commands/</code> 内联 shell 出现在服务端 hook）逐一返回带文件路径与 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：五种表面各自的 JSON Schema 2020-12 与 fixture 在 .NET 与 TS 两侧结果一致</li>\n<li class='chk'><span class='box'></span>UT：<code>plugin.json</code> 的表面指针缺省指向约定目录、可覆盖；无 <code>src/</code> 的 skill-only 组件可被解析</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.6 / D20.9：<code>skills/&lt;name&gt;/SKILL.md</code>、<code>agents/&lt;name&gt;.md</code>、<code>commands/&lt;name&gt;.md</code>、<code>hooks/hooks.json</code>、<code>.mcp.json</code> 五种表面加 <code>tools/</code>、<code>config/qian.patch.yml</code> 的解析器；每种一份 JSON Schema 2020-12 + 语义校验（<code>allowed-tools</code> 存在、hooks 引用的事件 / 能力存在、MCP 服务器名唯一、内联 shell 仅限人类 CLI 侧）；错误 = <code>ErrorDetail</code> + 文件路径 + 行号 + JSON Pointer；.NET 与 TS 跑同一组 fixture，供 <code>qian doctor</code>、CI、市场准入与 S4 共用。S1-M1 交付项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：校验器对 20 个坏样例（缺 front matter 字段、<code>allowed-tools</code> 引用不存在的工具、hooks 引用不存在的事件或能力、<code>.mcp.json</code> 格式错、<code>commands/</code> 内联 shell 出现在服务端 hook）逐一返回带文件路径与 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：五种表面各自的 JSON Schema 2020-12 与 fixture 在 .NET 与 TS 两侧结果一致</li>\n<li class='chk'><span class='box'></span>UT：<code>plugin.json</code> 的表面指针缺省指向约定目录、可覆盖；无 <code>src/</code> 的 skill-only 组件可被解析</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0：tool/v2 Schema 应 $ref capability-entry.schema.json 的 $defs；校验器错误按 ErrorDetail 的 pointer 形式（&lt;文件&gt;#/&lt;pointer&gt;）</li>\n</ul>",
   "file": "pm/tasks/S1-RT-008.md"
  },
  {
