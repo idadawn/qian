@@ -1,0 +1,21 @@
+name: docs-and-pm
+
+on:
+  push:
+    branches: [main, "docs/**", "feat/**", "fix/**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 文档门禁（禁用词 / 表格 / 链接）
+        run: python3 scripts/check_docs.py
+      - name: 任务文件校验
+        run: python3 scripts/pm.py validate
+      - name: 看板生成物是否最新
+        run: python3 scripts/pm.py check-fresh

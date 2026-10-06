@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qian 项目看板</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1c1f23;--muted:#6b7280;--line:#e5e7eb;--accent:#2563eb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--chip:#eef2ff;--p0:#dc2626;--p1:#d97706;--p2:#6b7280}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1115;--card:#171a21;--fg:#e5e7eb;--muted:#9aa3b2;--line:#262b36;--accent:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--chip:#1e2433}}
+:root[data-theme=dark]{--bg:#0f1115;--card:#171a21;--fg:#e5e7eb;--muted:#9aa3b2;--line:#262b36;--accent:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--chip:#1e2433}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif}
+header{padding:16px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5}
+.wrap{max-width:1400px;margin:0 auto;padding:0 16px}
+h1{font-size:18px;margin:0 0 8px}h1 small{color:var(--muted);font-weight:400;margin-left:8px}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.bar i.doing{background:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+select,input,button{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
+button{cursor:pointer}button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+main{padding:16px 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px}.kpi b{font-size:22px;display:block}.kpi span{color:var(--muted);font-size:12px}
+.board{display:grid;grid-template-columns:repeat(5,minmax(220px,1fr));gap:10px;overflow-x:auto}
+.col{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;min-height:200px}
+.col h3{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.card{border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px;cursor:pointer;background:var(--bg)}
+.card:hover{border-color:var(--accent)}.card .id{font:12px ui-monospace,Menlo,monospace;color:var(--muted)}
+.card .t{margin:2px 0 6px}.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{font-size:11px;padding:1px 6px;border-radius:10px;background:var(--chip);color:var(--fg)}
+.chip.p0{background:var(--p0);color:#fff}.chip.p1{background:var(--p1);color:#fff}.chip.p2{background:var(--p2);color:#fff}
+.chip.blk{background:var(--bad);color:#fff}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{cursor:pointer;color:var(--muted);font-weight:600;font-size:12px;user-select:none}
+tr:hover td{background:var(--bg)}
+.prog{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.pbox{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px}.pbox h3{margin:0 0 8px;font-size:14px}
+.pline{display:grid;grid-template-columns:140px 1fr 90px;gap:8px;align-items:center;margin:4px 0;font-size:13px}.pline .n{color:var(--muted);text-align:right}
+.drawer{position:fixed;top:0;right:0;width:min(640px,100%);height:100%;background:var(--card);border-left:1px solid var(--line);transform:translateX(100%);transition:.2s;z-index:10;overflow:auto;padding:16px}
+.drawer.open{transform:none}.drawer h2{font-size:16px;margin:0 0 6px}.drawer .meta{color:var(--muted);font-size:12px;margin-bottom:10px}
+.drawer h4{margin:14px 0 4px;font-size:13px;color:var(--muted)}.drawer ul{padding-left:18px}.drawer li.chk{list-style:none;margin-left:-18px}.drawer li.chk .box{display:inline-block;width:14px;height:14px;border:1px solid var(--muted);border-radius:3px;margin-right:6px;font-size:10px;line-height:12px;text-align:center}
+.drawer li.chk.done .box{background:var(--ok);border-color:var(--ok);color:#fff}
+.drawer code,.card code{font:12px ui-monospace,Menlo,monospace;background:var(--chip);padding:0 4px;border-radius:3px}
+.drawer a{color:var(--accent)}.x{position:absolute;top:10px;right:12px}
+.empty{color:var(--muted);text-align:center;padding:30px}
+.hint{color:var(--muted);font-size:12px;margin-top:6px}
+@media (max-width:720px){.board{grid-template-columns:repeat(5,80vw)}.pline{grid-template-columns:100px 1fr 70px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Qian 项目看板 <small id="meta"></small></h1>
+  <div class="bar"><i id="pdone"></i></div>
+  <div class="hint">任务真相源是 <code>pm/tasks/*.md</code>；本页由 <code>python3 scripts/pm.py build</code> 生成。改状态请改文件并提交，不要只改这里。</div>
+  <div class="row">
+    <button data-view="board" class="on">看板</button><button data-view="table">列表</button><button data-view="progress">进度</button><button data-view="deps">阻塞与依赖</button>
+    <select id="f-stage"><option value="">全部阶段</option></select>
+    <select id="f-area"><option value="">全部领域</option></select>
+    <select id="f-wave"><option value="">全部波次</option></select>
+    <select id="f-status"><option value="">全部状态</option></select>
+    <select id="f-priority"><option value="">全部优先级</option></select>
+    <select id="f-owner"><option value="">全部负责人</option></select>
+    <input id="f-q" placeholder="搜索 id / 标题" size="18">
+    <button id="reset">清除筛选</button>
+    <label><input type="checkbox" id="weighted"> 按工作量加权</label>
+  </div>
+</div></header>
+<main><div class="wrap">
+  <div class="kpis" id="kpis"></div>
+  <section id="v-board" class="board"></section>
+  <section id="v-table" hidden></section>
+  <section id="v-progress" class="prog" hidden></section>
+  <section id="v-deps" hidden></section>
+</div></main>
+<aside class="drawer" id="drawer"><button class="x" id="close">关闭</button><div id="dbody"></div></aside>
+<script>
+const TASKS = /*__TASKS_JSON__*/[];
+const STATUS = {todo:'待办',doing:'进行中',review:'待评审',done:'已完成',blocked:'阻塞'};
+const ORDER = ['todo','doing','review','done','blocked'];
+const $ = s => document.querySelector(s);
+const by = {}; TASKS.forEach(t => by[t.id] = t);
+let view = 'board', sortKey = 'id', sortAsc = true;
+
+function fill(sel, vals, label){ const s=$(sel); [...new Set(vals)].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=label?label(v):v;s.appendChild(o);}); }
+fill('#f-stage', TASKS.map(t=>t.stage));
+fill('#f-area', TASKS.map(t=>t.area), v=>`${v} ${(TASKS.find(t=>t.area===v)||{}).areaName||''}`);
+fill('#f-wave', TASKS.map(t=>String(t.wave)), v=>v==='0'?'决策':`第 ${v} 波`);
+fill('#f-status', ORDER.filter(s=>TASKS.some(t=>t.status===s)), v=>STATUS[v]);
+fill('#f-priority', TASKS.map(t=>t.priority));
+fill('#f-owner', TASKS.map(t=>t.owner||'（未认领）'));
+
+function filtered(){
+  const g = id => $(id).value, q = $('#f-q').value.trim().toLowerCase();
+  return TASKS.filter(t =>
+    (!g('#f-stage')||t.stage===g('#f-stage')) && (!g('#f-area')||t.area===g('#f-area')) &&
+    (!g('#f-wave')||String(t.wave)===g('#f-wave')) && (!g('#f-status')||t.status===g('#f-status')) &&
+    (!g('#f-priority')||t.priority===g('#f-priority')) && (!g('#f-owner')||(t.owner||'（未认领）')===g('#f-owner')) &&
+    (!q||t.id.toLowerCase().includes(q)||t.title.toLowerCase().includes(q)));
+}
+const w = t => $('#weighted').checked ? (t.days||1) : 1;
+function pct(list){ const tot=list.reduce((a,t)=>a+w(t),0); const done=list.filter(t=>t.status==='done').reduce((a,t)=>a+w(t),0); const doing=list.filter(t=>t.status==='doing'||t.status==='review').reduce((a,t)=>a+w(t),0); return {tot,done,doing,p:tot?Math.round(done*100/tot):0,pd:tot?Math.round(doing*100/tot):0}; }
+function chip(t){ return `<span class="chip ${t.priority.toLowerCase()}">${t.priority}</span><span class="chip">${t.area}</span><span class="chip">w${t.wave}</span>${t.owner?`<span class="chip">${esc(t.owner)}</span>`:''}${t.blockedBy.length&&t.status!=='done'?`<span class="chip blk">被阻塞 ${t.blockedBy.length}</span>`:''}`; }
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function render(){
+  const list = filtered();
+  const all = pct(TASKS), cur = pct(list);
+  $('#pdone').style.width = all.p+'%';
+  $('#meta').textContent = `总体 ${all.p}% · ${TASKS.length} 个任务 · 最近更新 ${TASKS.map(t=>t.updated).sort().pop()||'—'}`;
+  const k = s => list.filter(t=>t.status===s).length;
+  $('#kpis').innerHTML = `<div class="kpi"><b>${cur.p}%</b><span>当前筛选完成度${$('#weighted').checked?'（加权）':''}</span></div>` +
+    ORDER.map(s=>`<div class="kpi"><b>${k(s)}</b><span>${STATUS[s]}</span></div>`).join('') +
+    `<div class="kpi"><b>${list.filter(t=>t.blockedBy.length&&t.status!=='done').length}</b><span>被未完成依赖阻塞</span></div>`;
+  ['board','table','progress','deps'].forEach(v=>$('#v-'+v).hidden = v!==view);
+  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('on', b.dataset.view===view));
+  if(view==='board') renderBoard(list); else if(view==='table') renderTable(list); else if(view==='progress') renderProgress(list); else renderDeps(list);
+}
+function card(t){ return `<div class="card" data-id="${t.id}"><div class="id">${t.id} · ${esc(t.estimate)} · ${t.updated}</div><div class="t">${esc(t.title)}</div><div class="chips">${chip(t)}</div></div>`; }
+function renderBoard(list){
+  $('#v-board').innerHTML = ORDER.map(s=>{ const items=list.filter(t=>t.status===s).sort((a,b)=>a.priority.localeCompare(b.priority)||a.wave-b.wave||a.id.localeCompare(b.id)); return `<div class="col"><h3>${STATUS[s]} · ${items.length}</h3>${items.map(card).join('')||'<div class="empty">—</div>'}</div>`; }).join('');
+}
+function renderTable(list){
+  const cols=[['id','ID'],['title','标题'],['status','状态'],['priority','优先级'],['wave','波次'],['area','领域'],['owner','负责人'],['estimate','估算'],['updated','更新']];
+  const rows=[...list].sort((a,b)=>{const x=a[sortKey],y=b[sortKey];return (x>y?1:x<y?-1:0)*(sortAsc?1:-1);});
+  $('#v-table').innerHTML = `<table><thead><tr>${cols.map(([k,l])=>`<th data-k="${k}">${l}${sortKey===k?(sortAsc?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(t=>`<tr data-id="${t.id}"><td><code>${t.id}</code></td><td>${esc(t.title)}${t.blockedBy.length&&t.status!=='done'?' <span class="chip blk">阻塞</span>':''}</td><td>${STATUS[t.status]}</td><td><span class="chip ${t.priority.toLowerCase()}">${t.priority}</span></td><td>${t.wave===0?'决策':t.wave}</td><td>${t.area}</td><td>${esc(t.owner||'—')}</td><td>${esc(t.estimate)}</td><td>${t.updated}</td></tr>`).join('')||'<tr><td colspan="9" class="empty">没有匹配的任务</td></tr>'}</tbody></table>`;
+  $('#v-table').querySelectorAll('th').forEach(th=>th.onclick=()=>{ if(sortKey===th.dataset.k) sortAsc=!sortAsc; else {sortKey=th.dataset.k; sortAsc=true;} render(); });
+}
+function group(list, key, label){
+  const g={}; list.forEach(t=>{const k=key(t); (g[k]=g[k]||[]).push(t);});
+  return Object.keys(g).sort().map(k=>{const p=pct(g[k]); return `<div class="pline"><span>${label?label(k,g[k]):k}</span><div class="bar"><i style="width:${p.p}%"></i><i class="doing" style="width:${p.pd}%;margin-top:-10px;margin-left:${p.p}%"></i></div><span class="n">${p.p}% · ${g[k].filter(t=>t.status==='done').length}/${g[k].length}</span></div>`;}).join('');
+}
+function renderProgress(list){
+  $('#v-progress').innerHTML = [
+    ['按阶段', group(list, t=>t.stage)],
+    ['按波次', group(list, t=>String(t.wave), k=>k==='0'?'决策（wave 0）':`第 ${k} 波`)],
+    ['按领域', group(list, t=>t.area, (k,g)=>`${k} ${g[0].areaName}`)],
+    ['按负责人', group(list, t=>t.owner||'（未认领）')],
+    ['按优先级', group(list, t=>t.priority)],
+  ].map(([h,b])=>`<div class="pbox"><h3>${h}</h3>${b||'<div class="empty">—</div>'}</div>`).join('');
+}
+function renderDeps(list){
+  const blocked = list.filter(t=>t.status!=='done'&&(t.status==='blocked'||t.blockedBy.length)).sort((a,b)=>a.wave-b.wave||a.id.localeCompare(b.id));
+  const ready = list.filter(t=>t.status==='todo'&&!t.blockedBy.length).sort((a,b)=>a.priority.localeCompare(b.priority)||a.wave-b.wave||a.id.localeCompare(b.id));
+  $('#v-deps').innerHTML = `<div class="prog"><div class="pbox"><h3>可以开始（无未完成依赖的待办）· ${ready.length}</h3>${ready.map(card).join('')||'<div class="empty">—</div>'}</div><div class="pbox"><h3>被阻塞 · ${blocked.length}</h3>${blocked.map(t=>`<div class="card" data-id="${t.id}"><div class="id">${t.id}</div><div class="t">${esc(t.title)}</div><div class="hint">${t.status==='blocked'?'状态为阻塞':''} ${t.blockedBy.length?'等待：'+t.blockedBy.map(d=>`<code>${d}</code>`).join(' '):''}</div></div>`).join('')||'<div class="empty">—</div>'}</div></div>`;
+}
+function openTask(id){
+  const t = by[id]; if(!t) return;
+  $('#dbody').innerHTML = `<h2>${t.id} ${esc(t.title)}</h2><div class="meta">${STATUS[t.status]} · ${t.priority} · ${t.stage} 第 ${t.wave} 波 · ${t.area} ${esc(t.areaName)} · ${esc(t.estimate)} · 负责人 ${esc(t.owner||'未认领')} · 更新 ${t.updated}</div><div class="chips">${chip(t)}</div>
+    ${t.depends.length?`<h4>依赖</h4><div>${t.depends.map(d=>`<a href="#" data-id="${d}"><code>${d}</code></a> ${by[d]?esc(by[d].title)+'（'+STATUS[by[d].status]+'）':''}`).join('<br>')}</div>`:''}
+    ${t.refs.length?`<h4>文档</h4><div>${t.refs.map(r=>`<a href="${r.url}" target="_blank" rel="noopener">${esc(r.path)}</a>`).join('<br>')}</div>`:''}
+    <h4>文件</h4><div><a href="https://github.com/idadawn/qian/blob/main/${t.file}" target="_blank" rel="noopener">${t.file}</a></div>
+    ${t.bodyHtml}`;
+  $('#drawer').classList.add('open');
+  $('#dbody').querySelectorAll('a[data-id]').forEach(a=>a.onclick=e=>{e.preventDefault();openTask(a.dataset.id);});
+}
+document.addEventListener('click', e => { const c = e.target.closest('[data-id]'); if(c && !e.target.closest('a[href]') && !e.target.closest('#dbody')) openTask(c.dataset.id); });
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render();});
+document.querySelectorAll('select,#f-q,#weighted').forEach(el=>el.addEventListener('input',render));
+$('#reset').onclick=()=>{document.querySelectorAll('select').forEach(s=>s.value='');$('#f-q').value='';render();};
+$('#close').onclick=()=>$('#drawer').classList.remove('open');
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#drawer').classList.remove('open');});
+render();
+</script>
+</body>
+</html>
