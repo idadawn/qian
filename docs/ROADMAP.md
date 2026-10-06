@@ -57,7 +57,7 @@
 | 包与市场前置 | 包格式 v0 = 组件文件夹 + marketplace 条目（ADR-014 经 ADR-020 修订，原 bundle v0）、组合包格式、代码部分制品库（OCI → Harbor，仅代码部分）、安装 / 升级 / 卸载引擎（`qian add / remove`）、修订回切、强制验签、授权 v0（手工授予）与租户 scope patch 分离 | P0 |
 | 部署 | `qian-<env>` 命名空间、专属 PG / Redis、Argo CD app-of-apps、Kustomize、`/healthz /readyz`、default-deny NetworkPolicy、ResourceQuota、按 digest 发布事件、Alertmanager | P0（Alertmanager P1） |
 | Agent 防返工 | 带 Schema 的写命令（sideEffect / idempotencyKey / dryRun）、结构化错误、统一主体模型与委托链字段、`inputSchema` 禁租户字段 lint、审计含主体链与来源通道、trace + 计量标签贯通、事件契约化 | P0 |
-| 可选 | Operation/Task 服务实现（S1 末；其资源契约由 `qian.kernel` 在 S1 预留，导入导出等长操作返回 Operation 资源，R8）、模型网关底座接线（GPUStack 注册进 Higress + Provider Adapter）、SchemaPerTenant 真库验证、DTCG 导出、Elsa PoC 对照、流程内核 API 提前 | P1 / P2 |
+| 可选 | Operation/Task 服务实现（S1 末；其资源契约由 `qian.capabilities`（原 `qian.kernel`）在 S1 预留，导入导出等长操作返回 Operation 资源，R8）、模型网关底座接线（GPUStack 注册进 Higress + Provider Adapter）、SchemaPerTenant 真库验证、DTCG 导出、Elsa PoC 对照、流程内核 API 提前 | P1 / P2 |
 
 原可部署单元 ↔ v2 落位（R31，S1 默认）：
 
