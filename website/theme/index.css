@@ -1,0 +1,237 @@
+@import './yue-tokens.css';
+
+/*
+ * Rspress 主题变量 → yue 语义令牌。只引用语义层（--yue-<role>），明暗两态由令牌自己在 html[data-theme] 下切换，
+ * 这里不写暗色分支。Rspress 的默认变量挂在 :where(...) 上、优先级为 0，:root 足以覆盖。
+ */
+:root {
+  --rp-c-brand: var(--yue-primary);
+  --rp-c-brand-light: color-mix(in oklch, var(--yue-primary) 80%, white);
+  --rp-c-brand-lighter: color-mix(in oklch, var(--yue-primary) 30%, white);
+  --rp-c-brand-dark: color-mix(in oklch, var(--yue-primary) 85%, black);
+  --rp-c-brand-darker: color-mix(in oklch, var(--yue-primary) 70%, black);
+  --rp-c-brand-tint: color-mix(in oklch, var(--yue-primary) 16%, transparent);
+
+  --rp-c-bg: var(--yue-background);
+  --rp-c-bg-soft: var(--yue-muted);
+  --rp-c-text-1: var(--yue-foreground);
+  --rp-c-text-2: var(--yue-muted-foreground);
+  --rp-c-divider-light: var(--yue-border);
+
+  --rp-home-hero-secondary-color: var(--yue-info);
+}
+
+/* 建设期横幅用「提醒」语气的语义色；选择器加倍是为了不依赖与 Rspress 样式的加载先后。 */
+:root:root {
+  --rp-banner-background: var(--yue-warn-bg);
+}
+
+.rp-banner.rp-banner,
+.rp-banner.rp-banner .rp-banner__link {
+  color: var(--yue-warn);
+}
+
+.rp-banner.rp-banner {
+  border-bottom: 1px solid color-mix(in oklch, var(--yue-warn) 25%, transparent);
+}
+
+/* ---------------------------------------------------------------- 首页（pageType: custom） */
+
+.qian-home {
+  box-sizing: border-box;
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+  color: var(--yue-foreground);
+}
+
+.qian-home-hero {
+  padding: 56px 0 32px;
+  text-align: center;
+}
+
+.qian-home-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--yue-foreground);
+}
+
+.qian-home-hero p {
+  max-width: 720px;
+  margin: 16px auto 0;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--yue-muted-foreground);
+}
+
+.qian-home-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(560px, 100%);
+  margin: 28px auto 0;
+  padding: 12px 16px;
+  border: 1px solid var(--yue-border);
+  border-radius: var(--yue-radius);
+  background: var(--yue-card);
+  color: var(--yue-muted-foreground);
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.qian-home-search:hover,
+.qian-home-search:focus-visible {
+  border-color: var(--yue-ring);
+  outline: none;
+}
+
+.qian-home-search kbd {
+  margin-left: auto;
+  padding: 2px 6px;
+  border: 1px solid var(--yue-border);
+  border-radius: 4px;
+  font-family: var(--rp-font-family-mono);
+  font-size: 0.75rem;
+}
+
+.qian-home-section {
+  margin-top: 48px;
+}
+
+.qian-home-section > h2 {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+  font-weight: 650;
+  color: var(--yue-foreground);
+  border: 0;
+  padding: 0;
+}
+
+.qian-home-section > .qian-home-lead {
+  margin: 0 0 20px;
+  color: var(--yue-muted-foreground);
+}
+
+.qian-card-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--qian-card-min, 260px)), 1fr));
+}
+
+.qian-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--yue-border);
+  border-radius: var(--yue-radius);
+  background: var(--yue-card);
+  color: var(--yue-card-foreground);
+}
+
+.qian-card > h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.qian-card > :last-child {
+  margin-bottom: 0;
+}
+
+.qian-card ul {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.qian-card li + li {
+  margin-top: 8px;
+}
+
+.qian-card p,
+.qian-card li {
+  line-height: 1.65;
+}
+
+.qian-home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 24px;
+  margin-top: 64px;
+  padding-top: 24px;
+  border-top: 1px solid var(--yue-border);
+  color: var(--yue-muted-foreground);
+  font-size: 0.875rem;
+}
+
+.qian-home-footer a {
+  color: inherit;
+}
+
+.qian-home-footer a:hover {
+  color: var(--yue-primary);
+}
+
+/* ---------------------------------------------------------------- 文档页 */
+
+.qian-part-notice {
+  margin: 0 0 24px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--yue-info);
+  border-radius: 4px;
+  background: var(--yue-info-bg);
+  color: var(--yue-foreground);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.qian-sitemap h2 {
+  margin-top: 32px;
+}
+
+.qian-sitemap ul {
+  columns: 2 260px;
+  column-gap: 32px;
+}
+
+.qian-latest {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qian-latest li {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--yue-border);
+  border-radius: var(--yue-radius);
+  background: var(--yue-card);
+}
+
+.qian-latest time {
+  color: var(--yue-muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.qian-latest a {
+  font-weight: 600;
+}
+
+.qian-latest p {
+  margin: 4px 0 0;
+  color: var(--yue-muted-foreground);
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .qian-latest li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

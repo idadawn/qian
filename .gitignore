@@ -11,3 +11,9 @@ obj/
 __pycache__/
 *.pyc
 TestResults/
+
+# 文档站：构建产物与构建前由脚本生成的目录（见 website/README.md「生成目录」）
+website/doc_build/
+website/docs/components/
+website/docs/cli/
+website/docs/design/
