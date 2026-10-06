@@ -10,7 +10,7 @@
 |---|---|---|---|
 | D1 | Qian 与 Kun 的关系 | Kun 是底座 SDK，Qian 内核自成一层；NuGet + CalVer 锁版本消费；Kun 的 13 项关键缺口在 S1 先修 | 修复走上游 PR 还是 Qian 维护补丁包；Kun 的维护人与响应节奏 |
 | D2 | 插件模型 | kind × role × distribution 三轴；平台自带能力也是插件；第三方代码永不进共享进程 | S3 是否允许第三方任意代码容器上架 |
-| D3 | 内核边界与 S1 服务拆分 | 内核只留契约、强制执行点、注册表；S1 共 5 个可部署服务 + 15 个系统插件 | 接受「S1 预装全部官方插件 + 按租户开关」 |
+| D3 | 内核边界与 S1 服务拆分 | 内核只留契约、强制执行点、注册表；S1 共 5 个可部署服务 + 18 个系统插件 | 接受「S1 预装全部官方插件 + 按租户开关」 |
 | D4 | 数据库与租户隔离 | PostgreSQL 唯一一等库；默认共享库 + RLS；schema-per-service | 是否接受不支持 MySQL/国产库 |
 | D5 | 身份与 SSO | 基于 OpenIddict 自建 `qian.identity` 作平台唯一 issuer；外部 IdP 一律做成连接器插件；Authentik 退居运维侧 | 是否有私有化交付、是否首期必须 SAML/CAS/LDAP、是否需要租户自定义登录域 |
 | D6 | 鉴权模型 | Kun 侧只加判定端口，Qian 自建权限引擎：权限点由插件清单声明 + 租户域 RBAC + 数据权限编译为查询谓词 + 字段权限；权限不进令牌 | 等保/商密要求；MFA 是否 S1 必做 |
@@ -25,7 +25,7 @@
 | D15 | 模型服务网关 | 并入团队现有 Higress/MaaS 基础设施；GPUStack 作为 OpenAI 兼容上游 + Provider Adapter；不自写模型代理；不把 SSO 交给 Higress | GPU 归属；接入范围是否含 ASR/TTS/Rerank |
 | D16 | 与 iClaw 的边界 | Qian = 能力提供方 + 业务主数据权威；iClaw = Agent 运行时 + AI 资产控制面；共用 Kun、Higress；Qian 不写任何 Agent loop | 租户/身份权威归谁；是否共用 Authentik、S2S 签发、Usage Ledger |
 | D17 | 部署 | 沿用现有 K3s/ArgoCD/Kustomize/Harbor 约定；Qian 独立 ns + 专属 PG/Redis；不以 per-tenant namespace 为默认 | 生产与 iClaw 共集群还是独立集群/节点池 |
-| D18 | 阶段切分与 S1 范围 | S1 15 个系统插件 + SDK + 部署物料；每阶段有可验收的退出标准 | 阶段顺序是否认可；S1 是否含模型网关底座接线 |
+| D18 | 阶段切分与 S1 范围 | S1 18 个系统插件 + SDK + 部署物料；每阶段有可验收的退出标准 | 阶段顺序是否认可；S1 是否含模型网关底座接线 |
 
 ---
 
@@ -34,7 +34,7 @@
 **推荐**
 1. 定位：Kun 是「微服务开发框架」，不是平台内核。Qian 内核（插件注册表、生命周期、能力目录、租户目录、身份、权限、配置、审计装配）自成一层，Kun 模块是它的实现依赖。
 2. 消费方式：NuGet + CalVer 锁版本，禁止把 Kun 源码复制进 Qian 仓；要求 Kun 提供预发布 feed、公共 API 兼容承诺、弃用窗口（≥2 个小版本）和完整变更日志。
-3. 不推翻 Kun 的核心设计（四层依赖、Result 错误模型、显式注册的 Mediator、Outbox 表结构与稳定事件 ID、schema-per-service、RLS 双保险、PublicAPI 门禁），但改三件事：不把「AOT 兼容」写成平台承诺（业务服务全 JIT，AOT 只留网关/gRPC 边缘）；Kun 的安全默认值在 Qian 里改成强制装配而非 opt-in；多组并存的双胞胎 API 选定唯一一套（见 D8/D9）。
+3. 不推翻 Kun 的核心设计（四层依赖、Result 错误模型、显式注册的 Mediator、Outbox 表结构与稳定事件 ID、schema-per-service、RLS 双保险、PublicAPI 门禁），但改三件事：不把「AOT 兼容」写成平台承诺（业务服务全 JIT，AOT 只留网关/gRPC 边缘）；Kun 的安全默认值在 Qian 里改成强制装配而非 opt-in；多组并存的双胞胎 API 选定唯一一套（见 D10）。
 4. S1 必修的 Kun 缺口（代码已确认，不修则多租户在后台链路漏）：
    - 多租户后台链路：消息消费端、Saga 执行器、Outbox 发布器不恢复租户上下文；两套 `ITenantContext` 互斥且 claim 名不一致；请求头兜底与 `default` 回退会 fail-open。
    - 事件语义：领域事件→集成事件路径会静默丢消息；消费端实际是 at-most-once；Outbox/Saga 多副本无锁。
@@ -49,7 +49,7 @@
 ## D2 插件模型
 
 **推荐**
-- 三个正交轴：`kind`（module 进程内编译期并入 / service 独立 Pod / package 元数据 / function Wasm / connector / ui）× `role`（provider / capability / extension / app / theme / agent）× `distribution`（template 拷贝即拥有 / managed 托管可升级）。一个「应用」= bundle。
+- 三个正交轴：`kind`（顶层七值：module 进程内编译期并入 / service 独立 Pod / package 元数据 / function Wasm / connector / ui / bundle 复合包，bundle 的 `components` 下各组件的 kind 取前六值）× `role`（provider / capability / extension / app / theme / agent）× `distribution`（template 拷贝即拥有 / managed 托管可升级）。一个「应用」= `kind: bundle`。
 - 平台自带的技术组件（租户、身份、鉴权、存储、文件、配置、网关、模型网关）全部按同一清单以 `tier: system` 交付，同一生命周期、同一 TCK。
 - 信任等级决定形态：第三方代码永不进共享进程；`private/community` 只允许 package / function / connector / 受限 ui。
 - 清单（`qian-plugin.yaml`）从代码派生、静态可索引：宿主不执行插件代码即可生成路由、权限点、菜单、Apollo namespace、OpenAPI 聚合与 MCP 工具描述。
@@ -65,7 +65,7 @@
 **推荐**
 - 内核最小集：租户上下文与解析、主体身份与 S2S、权限判定点（PDP 接口 + PEP）、插件注册表与生命周期控制器、扩展点/契约仓库、能力目录（命令/查询/事件/实体四类）、事件总线、审计、配置绑定契约、可观测与计量。其余一律是插件。
 - S1 可部署单元克制在 5 个（三节点 K3s 的现实）：`qian-gateway`（Kun.Gateway 加固）、`qian-identity`（OpenIddict，独立安全边界）、`qian-platform`（内核 + tenancy / authz / config / events / audit / files 等 module 型系统插件的宿主）、`qian-model-gateway-adapter`（GPUStack ↔ Higress 控制面适配，可选）、`qian-shell`（前端外壳静态站）。
-- S1 系统插件 15 个：`qian.kernel`、`qian.plugin-sdk`、`qian.tenancy`、`qian.identity`（+ `connector.*`）、`qian.authz`、`qian.data`、`qian.files`、`qian.config`、`qian.gateway`、`qian.events`、`qian.audit`、`qian.observability`、`qian.shell`、`qian.entitlement`（授权 v0）、`qian.model-gateway`（可选）。
+- S1 系统插件 18 个：`qian.kernel`、`qian.plugin-sdk`、`qian.tenancy`、`qian.identity`（+ `connector.*`）、`qian.authz`、`qian.data`、`qian.files`、`qian.config`、`qian.gateway`、`qian.events`、`qian.audit`、`qian.observability`、`qian.shell`、`qian.entitlement`（授权 v0）、`qian.model-gateway`（P1，可选）、`qian.notify`（P0）、`qian.scheduler`（P0）、`qian.realtime`（P1）。组织目录最小集作为 `qian.identity` 的子模块交付，不独立成插件。
 
 **需要拍板**：接受 S1 的「预装 + 开关」模式（见 D2）。
 
@@ -82,7 +82,7 @@
 
 **推荐**（基线称「混合 C2 路线」）
 - 自建 `qian.identity`：基于 OpenIddict（Apache-2.0，.NET 10，原生 OIDC/OAuth2）作平台唯一 issuer。内容：自然人（Person）+ 租户成员（Membership）双层账号、密码/短信/TOTP、会话中心（强制下线、后通道登出、refresh 轮换、`identity_revision`）、客户端注册表（应用安装即建 client）。
-- 上游联邦全部做成连接器插件：S1 通用 OIDC、企业微信/钉钉/飞书扫码与工作台免登、微信网站扫码；S3 加 SAML/CAS/LDAP、租户自助配 IdP、域名验证与 HRD、Passkey、SCIM。
+- 上游联邦全部做成连接器插件：S1 只做通用 OIDC + 企业微信（扫码与工作台免登）；S2 钉钉、飞书（P0）与微信网站扫码（P1）；S3 加 SAML/CAS/LDAP、租户自助配 IdP、域名验证与 HRD、Passkey、SCIM、ISV 第三方应用模式。
 - Authentik 升级后只服务运维侧（Apollo Portal、Headlamp、Argo），也可作为一个上游连接器；客户 CIAM 不用它（企业版多租户是 alpha 且按租户收费）。
 - 同时修 Kun.Identity 的 G2–G8 缺口。
 
@@ -95,7 +95,7 @@
 **推荐**
 - Kun 侧只新增 `Kun.Authorization` 端口（`IPermissionChecker` Check / BatchCheck / ListAllowedActions、`IDataPermissionFilter`、`IFieldPolicy` + ASP.NET Core / Mediator / gRPC 集成），不放实现。
 - Qian 的 `qian.authz`：权限点与默认角色模板由插件清单声明；租户域 RBAC（内置 + 自定义角色，主体可为用户/组织/岗位/组）；数据权限 = 条件树 + 系统变量，编译成 SQL/EF 谓词在本地执行，RLS 永远兜底；字段权限读投影/写白名单；每次决策可解释并入审计。
-- 权限不进令牌：令牌只含身份、`tenant_id`、`membership_id`、`scope`、`identity_revision`；权限变更即时失效靠 `identity_revision` 递增 + 推送刷新。
+- 权限不进令牌：令牌只含身份与会话类 claim（规范集 `sub`、`tenant_id`、`membership_id`、`scope`、`identity_revision`、`sid`、`amr`、`acr`，预留 `profile`、`act`），不含权限集合（S2S 令牌的 `roles[]` 例外见 D10 / R24）；权限变更即时失效靠 `identity_revision` 递增 + 推送刷新，网关只转发 `identity_revision`。
 - 鉴权唯一入口：UI、API、MCP 三入口同一个判定服务；低代码数据引擎在唯一入口做「资源 + 动作 + 行级」三段式校验。参考平台鉴权分散在控制器且可被客户端参数绕过，是明确反例。
 - S3 可选：OpenFGA 插件处理资源实例共享与市场授权；但行级过滤不交给远程引擎。
 
@@ -194,8 +194,8 @@
 
 | 阶段 | 退出标准 | 核心交付 |
 |---|---|---|
-| S1 技术底座 | 开发人员用代码在 Qian 上写出一个多租户应用：登录/SSO、鉴权、数据存储、文件上传、配置、网关、事件、审计全部由平台提供；一个官方 module 插件能独立出修订、逐租户迁移、回切 | 15 个系统插件、SDK（源生成器 + CLI + TCK）、部署物料、Kun 缺口修复、能力目录与清单 v1、授权 v0、yue 令牌层 + 基础组件 + 后台壳 |
-| S2 低代码构建 | 跑通「建应用 → 建表单与列表 → 走审批 → 授权给租户用户使用」；同一应用包在两个租户分别安装、各自配置、独立升级互不影响 | 元数据注册表、动态数据引擎、Schema Migrator、表单/列表/审批流设计器与运行时、流程内核、控件注册表、数据权限与字段权限、Operation/Task、Wasm 函数运行时 |
+| S1 技术底座 | 开发人员用代码在 Qian 上写出一个多租户应用：登录/SSO、鉴权、数据存储、文件上传、配置、网关、事件、审计全部由平台提供；一个官方 module 插件能独立出修订、逐租户迁移、回切 | 18 个系统插件、SDK（源生成器 + CLI + TCK）、部署物料、Kun 缺口修复、能力目录与清单 v1、授权 v0、yue 令牌层 + 基础组件 + 后台壳 |
+| S2 低代码构建 | 跑通「建应用 → 建表单与列表 → 走审批 → 授权给租户用户使用」；同一应用包在两个租户分别安装、各自配置、独立升级互不影响 | 元数据注册表、动态数据引擎、Schema Migrator、表单/列表/审批流设计器与运行时、流程内核、控件注册表、数据权限与字段权限、Operation/Task；S2 可选项（不计入核心交付）：Wasm `function` 运行时（P2，ABI 在 S2 中期拍板；服务端公式与规则先用 JSON AST 表达式解释器） |
 | S3 面向客户 | 租户能从应用市场选购并开通应用，自助配置 IdP 与品牌 | 私有目录型市场 → ISV 开放、权益与计费、门户、报表、租户自助、高隔离档、不可信 UI 沙箱 |
 | S4 AI 原生 Agent 平台 | Agent 能发现、调用、编排乃至生成平台能力与应用 | 每租户 MCP 门面、Agent 主体与委托链、元数据生成闭环、与 iClaw 运行时对接 |
 
@@ -257,7 +257,7 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 | Q29 | 门户与报表阶段 | 按阶段路线归 S3；S2 提供「配置路径型」门户（固定模板 + 配置）与报表子集（列表 + 分组汇总 + 导出 XLSX）作为可选，保证 S2 应用有可用首页 |
 | Q30 | 报表深度 | 先子集（列表、分组汇总、导出），交叉表/父子格/分栏 S3 再评估是否自研展开引擎 |
 | Q31 | 大屏 | 延后到 S3 可选，且不复用参考平台大屏源码（许可证高风险）；只消费内核数据接口 |
-| Q32 | 数据接口 SQL 文本模式 | 开放，但作为高级权限：只读数据库账号、超时与行数上限、参数化、审计 |
+| Q32 | 数据接口 SQL 文本模式 | 开放，但作为高级权限：只读数据库账号、超时与行数上限、参数化、审计；发布需租户管理员批准 |
 | Q33 | 服务端 PDF | S2 浏览器打印；服务端 HTML→PDF S3 可选 |
 | Q34 | 文件预览技术栈 | 预览提供者接口可替换；首选 .NET 生态方案，Java 预览进程只作可选 sidecar |
 | Q35 | 开放接口凭据 | 废弃用户级 AppSecret，统一为网关的应用级客户端凭据（client_credentials），取消「公有」免鉴权 |
