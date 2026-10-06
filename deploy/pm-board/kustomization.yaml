@@ -11,6 +11,8 @@ resources:
   - ingress.yaml
   - networkpolicy.yaml
 
-commonLabels:
-  app.kubernetes.io/name: qian-pm-board
-  app.kubernetes.io/part-of: qian
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: qian-pm-board
+      app.kubernetes.io/part-of: qian
