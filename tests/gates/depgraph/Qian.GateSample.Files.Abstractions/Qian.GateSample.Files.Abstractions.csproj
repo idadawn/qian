@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>门禁自测样例（违规）：Definition 依赖 Provider</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Qian.GateSample.Authz/Qian.GateSample.Authz.csproj" />
+  </ItemGroup>
+
+</Project>

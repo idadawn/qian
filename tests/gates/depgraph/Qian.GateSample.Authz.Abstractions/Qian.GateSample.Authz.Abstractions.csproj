@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>门禁自测样例：Definition</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Runtime.GateSample/Qian.Runtime.GateSample.csproj" />
+  </ItemGroup>
+
+</Project>

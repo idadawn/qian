@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>门禁自测样例：组合包：引用 Provider 与平台插件是它的职责，不受检查</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Qian.GateSample.Files/Qian.GateSample.Files.csproj" />
+    <ProjectReference Include="../Qian.GateSample.Authz/Qian.GateSample.Authz.csproj" />
+    <ProjectReference Include="../FakeRegistry/FakeRegistry.csproj" />
+  </ItemGroup>
+
+</Project>
