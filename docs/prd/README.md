@@ -7,14 +7,14 @@
 | 项 | 约定 |
 |---|---|
 | 产品 | **Qian**（乾） |
-| 底座框架 | **Kun**（自研 .NET 10 微服务框架，NuGet + CalVer 消费） |
+| 底座框架 | **Kun**（自研 .NET 10 微服务框架，NuGet + CalVer 消费；版本以 `KunVersion` 单点钉死，文档镜像进文档站第 3 部分「Kun 框架」小节，ADR-021） |
 | 前端组件库 | **yue**（React；包前缀 `@yue/`） |
 | 插件 ID 前缀 | `qian.`（反向域名风格，发布后不可改；第三方以自有域名前缀） |
 | 可部署单元 | `qian-<name>`（S1：`qian-gateway`、`qian-identity`、`qian-platform`、`qian-model-gateway-adapter`、`qian-shell`）；经 ADR-020：可部署单元 = profile（S1 交付 `platform` / `gateway` / `identity` / `standalone` / `minimal`）；`qian-<name>` ↔ profile / 组合包的定稿映射见下表（R31） |
 | 运行时 / CLI | `Qian.Runtime`（.NET）/ `@qian/runtime`（TS）；`qian` CLI（`qian add <component>[@version]`）；清单 `.qian-plugin/plugin.json`（JSON）；市场 `.qian/marketplace.json`（官方市场仓库 `qian-plugins`，S1 私有）；CLI 为 Node / TS 实现、`npx qian@latest` 一键入口（ADR-020，Accepted） |
 | 阶段 | **S1** 技术底座 → **S2** 低代码构建 → **S3** 面向客户 → **S4** AI 原生 Agent 平台 |
 | 优先级 | **P0** 当期退出标准关键路径 · **P1** 当期必做非关键路径 · **P2** 可选 / 可滑到下一阶段；功能项标题写成 `（P0 · S1）` |
-| 决策引用 | `ADR-0xx`（001 Kun 关系、002 插件模型、003 内核边界、004 数据库与隔离、005 身份、006 鉴权、007 Apollo、008 事件、009 审计、010 网关、011 元数据与动态数据、012 流程、013 前端 yue、014 市场、015 模型网关、016 与兄弟系统边界、017 部署、018 阶段、019 库优先、020 组件模型 v2） |
+| 决策引用 | `ADR-0xx`（001 Kun 关系、002 插件模型、003 内核边界、004 数据库与隔离、005 身份、006 鉴权、007 Apollo、008 事件、009 审计、010 网关、011 元数据与动态数据、012 流程、013 前端 yue、014 市场、015 模型网关、016 与兄弟系统边界、017 部署、018 阶段、019 库优先、020 组件模型 v2、021 产品族结构） |
 | 章节引用 | `§07`、`§13.2` 等；专题 spec 引用 `specs/component-model.md`（权威）、`specs/plugin-manifest.md`（v1，迁移对照）、`specs/yue.md` |
 | 参照来源 | 被借鉴的商业低代码产品一律称「参考平台」，全文不出现其品牌、公司、域名与源码路径 |
 | 状态符号 | ✅ 已完成 / 可做 · 🚧 进行中 · ⬜ 未开始 · ❌ 不可做 · ⚠️ 有条件 · 🔒 保留与隔离 |

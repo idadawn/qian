@@ -28,12 +28,14 @@
 - Markdown 表格单元格里的反引号内若有竖线，写成 `\|`。
 - 组件设计先回答四个问题：文件夹里有哪些表面、装进哪个 profile、属于哪个 seam 的哪个角色、能否 `qian add`。凡是把能力绑死在特权内核、DI 扩展方法或数据库开关上的写法都是倒退。
 - 术语：平台插件（不是「系统插件」）、运行时 `Qian.Runtime`（不是「内核」）、profile（不是「可部署单元」）、`.qian-plugin/plugin.json`（不是 `qian-plugin.yaml`）、租户 scope patch（不是「租户开关」）。
+- 三层口径（ADR-021）：Kun = 框架层（底座 SDK）、Qian = 平台层、yue = 前端层；写「Qian 基于 Kun 构建」，不写「Kun 是 Qian 的子项目」或「Qian 是 Kun 的扩展」。Kun 的代码与文档改动去 kun 仓库提 PR，Qian 任务里只回链；文档站的「Kun 框架」小节（`website/docs/sdk/kun/`）是按 `KunVersion` 锁定版本生成的镜像，不要手改（唯一手写页 `with-qian.mdx` 除外）。
+- Kun 版本单点：首个引用 `Kun.*` 包的任务在 `Directory.Packages.props` 加 `<KunVersion>` 属性并让全部 `Kun.*` 的 PackageVersion 引用 `$(KunVersion)`，同时在 `NuGet.config` 加 Kun 的 GitHub Packages 源与 packageSourceMapping；之后升级 Kun 只改这一处（ADR-021 D21.3）。
 - 代码部分遵循 ADR-019：每个有代码的组件发 `Qian.<X>.Abstractions` + Provider 包；组件库只依赖 `Qian.Runtime`，不依赖 `qian.registry` / `qian.lifecycle`。
 - 两道 .NET 门禁会自动拦截（细节见 `tests/README.md`）：
   - 写了 `<IsPackable>true</IsPackable>` 且包名以 `Qian.` 开头的项目就是 Qian 包，必须带 `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`，新公共 API 未登记即编译失败；
   - `scripts/check_deps.py` 要求 Qian 包只依赖 `Qian.Runtime*`、`Qian.Plugin.Sdk*` 与 `*.Abstractions`，依赖 Provider 或 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 即失败（组合包 `Qian.Bundle.*` 除外）。
 - 集成测试用 `tests/Qian.Testing.Containers` 的 fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身），不要各自再写一套容器启动代码。
-- 已有决策不要重开。D1–D18 已获认可；ADR-019/020 已于 2026-10-07 转 Accepted，其待拍板项均已拍板并记录在各 ADR §7（任务 `S1-DEC-*` 已关闭）。文档里标「已裁决（R{n}）」的是复核时的默认裁决，有异议时新建决策任务而不是直接改。
+- 已有决策不要重开。D1–D18 已获认可；ADR-019 / 020 / 021 均为 Accepted，ADR-019 / 020 的待拍板项已拍板并记录在各 ADR §7（对应 `S1-DEC-*` 已关闭）；仓库归属（S1-DEC-009）由产品负责人拍板。文档里标「已裁决（R{n}）」的是复核时的默认裁决，有异议时新建决策任务而不是直接改。
 
 ## 仓库布局
 
