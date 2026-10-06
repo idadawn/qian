@@ -1,0 +1,60 @@
+name: dotnet
+
+# .NET 构建、门禁与测试（S1-QA-001）：PublicAPI 门禁、依赖图门禁、门禁自测、单元与 Testcontainers 集成测试。
+# PRD §14.2.1 要求 PR 级门禁 ≤ 20 分钟。仓库暂无自托管 runner，先用 GitHub 托管的 ubuntu-latest（自带 Docker）。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dotnet-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-test:
+    name: 构建、门禁与测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 还原
+        run: dotnet restore Qian.slnx
+
+      - name: 构建（PublicAPI 门禁：Qian 包未登记的公共 API 即编译失败）
+        run: dotnet build Qian.slnx -c Release --no-restore
+
+      - name: 依赖图门禁
+        run: python3 scripts/check_deps.py --solution Qian.slnx --no-restore
+
+      - name: 门禁自测（tests/gates 样例项目）
+        run: python3 -m unittest discover -s tests/gates -v
+
+      - name: 单元与集成测试（Testcontainers：PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）
+        run: dotnet test --solution Qian.slnx -c Release --no-build --results-directory TestResults --report-xunit-trx
+
+      - name: 上传测试结果
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          if-no-files-found: ignore
