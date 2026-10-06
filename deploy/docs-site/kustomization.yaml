@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 命名空间 qian-tools 由 deploy/pm-board 创建并持有，这里不重复声明，免得两个 Argo CD Application 争同一个对象
+namespace: qian-tools
+
+resources:
+  - nginx-configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
+
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: qian-docs-site
+      app.kubernetes.io/part-of: qian
