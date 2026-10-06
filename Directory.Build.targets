@@ -1,0 +1,38 @@
+<Project>
+
+  <!--
+    Qian 包的判定：IsPackable=true 且包名以 Qian. 开头。
+    QianIsPackage / QianPackageId 也是 scripts/check_deps.py 读取的属性（dotnet msbuild -getProperty），改名要两边一起改。
+    PackageId 的 SDK 默认值在本文件之后才赋，这里按 PackageId → AssemblyName → 项目名依次兜底。
+  -->
+  <PropertyGroup Label="Qian package">
+    <QianPackageId>$(PackageId)</QianPackageId>
+    <QianPackageId Condition="'$(QianPackageId)' == ''">$(AssemblyName)</QianPackageId>
+    <QianPackageId Condition="'$(QianPackageId)' == ''">$(MSBuildProjectName)</QianPackageId>
+    <QianIsPackage Condition="'$(IsPackable)' == 'true' and $(QianPackageId.StartsWith('Qian.'))">true</QianIsPackage>
+    <QianIsPackage Condition="'$(QianIsPackage)' == ''">false</QianIsPackage>
+  </PropertyGroup>
+
+  <!--
+    门禁：PublicAPI（PRD §14.4 C1、specs/component-model.md §10.3 G4、ADR-019 D19.7）。
+    全部 Qian 包自动挂 Microsoft.CodeAnalysis.PublicApiAnalyzers：公共 API 必须登记在 PublicAPI.Shipped.txt /
+    PublicAPI.Unshipped.txt，新增未登记（RS0016）、登记了却已删除（RS0017）、缺登记文件（RS0048）等一律编译失败。
+    这里单列 WarningsAsErrors，是为了项目即使关掉 TreatWarningsAsErrors 也绕不过去。
+  -->
+  <PropertyGroup Label="PublicAPI gate" Condition="'$(QianIsPackage)' == 'true'">
+    <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017;RS0024;RS0025;RS0026;RS0027;RS0036;RS0037;RS0041;RS0048;RS0050</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup Label="PublicAPI gate" Condition="'$(QianIsPackage)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/PublicAPI.Shipped.txt" Condition="Exists('$(MSBuildProjectDirectory)/PublicAPI.Shipped.txt')" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/PublicAPI.Unshipped.txt" Condition="Exists('$(MSBuildProjectDirectory)/PublicAPI.Unshipped.txt')" />
+  </ItemGroup>
+
+  <Target Name="QianRequirePublicApiFiles" BeforeTargets="CoreCompile" Condition="'$(QianIsPackage)' == 'true'">
+    <Error Code="QIAN0001"
+           Condition="!Exists('$(MSBuildProjectDirectory)/PublicAPI.Shipped.txt') or !Exists('$(MSBuildProjectDirectory)/PublicAPI.Unshipped.txt')"
+           Text="$(QianPackageId) 是 Qian 包（IsPackable=true），项目目录下必须有 PublicAPI.Shipped.txt 与 PublicAPI.Unshipped.txt，首行写 #nullable enable。做法见 tests/README.md「门禁」一节。" />
+  </Target>
+
+</Project>

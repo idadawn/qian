@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>门禁自测样例：不打包的项目不受 PublicAPI 门禁约束，构建应通过</Description>
+  </PropertyGroup>
+
+</Project>

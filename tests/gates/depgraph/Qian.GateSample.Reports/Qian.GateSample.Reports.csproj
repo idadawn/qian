@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>门禁自测样例（违规）：经 Definition 传递依赖到 Provider</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Qian.GateSample.Files.Abstractions/Qian.GateSample.Files.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

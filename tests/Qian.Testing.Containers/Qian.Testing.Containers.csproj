@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>集成测试共用的 Testcontainers fixture：PostgreSQL 16（含 NOBYPASSRLS 应用角色）、Redis 7、RabbitMQ、Apollo 协议替身。</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Qian.Testing.Containers.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="ApolloMock/apollo_mock.py" LogicalName="Qian.Testing.Containers.ApolloMock.apollo_mock.py" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.RabbitMq" />
+    <PackageReference Include="Testcontainers.Redis" />
+    <PackageReference Include="xunit.v3.assert" />
+    <PackageReference Include="xunit.v3.extensibility.core" />
+  </ItemGroup>
+
+</Project>

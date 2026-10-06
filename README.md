@@ -12,9 +12,10 @@
 |---|---|---|
 | `docs/` | 决策清单、20 份 ADR、PRD 17 章与两份专题规格、迁移方案、路线图 | [docs/README.md](docs/README.md) |
 | `pm/` | 任务文件、离线看板、进度概览（任务即文件，git 是唯一真相源） | [pm/README.md](pm/README.md) · [进度概览](pm/STATUS.md) |
-| `scripts/` | `pm.py`（任务校验 / 生成 / 改状态）、`check_docs.py`（文档门禁） | — |
+| `scripts/` | `pm.py`（任务校验 / 生成 / 改状态）、`check_docs.py`（文档门禁）、`check_deps.py`（.NET 依赖图门禁） | — |
+| `tests/` | 集成测试共用的 Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）、门禁自测 | [tests/README.md](tests/README.md) |
 | `AGENTS.md` | 给 Codex、Claude Code 等编码代理的入口约定（`CLAUDE.md` 指向它） | [AGENTS.md](AGENTS.md) |
-| `.github/` | CI：文档门禁 + 任务校验 + 看板生成物新鲜度 | — |
+| `.github/` | CI：文档门禁 + 任务校验 + 看板生成物新鲜度；.NET 构建、PublicAPI 与依赖图门禁、单元与集成测试 | — |
 | `deploy/` | 开发期工具的 K3s 清单：`pm-board/` 把看板放进集群（git-sync + nginx） | [deploy/pm-board/README.md](deploy/pm-board/README.md) |
 
 代码目录（`packages/`、`plugins/`、`profiles/`、`samples/`）由 S1 第一波任务建立，布局以 [组件模型规格](docs/prd/specs/component-model.md) 为准。

@@ -10,3 +10,4 @@ obj/
 !.env.example
 __pycache__/
 *.pyc
+TestResults/

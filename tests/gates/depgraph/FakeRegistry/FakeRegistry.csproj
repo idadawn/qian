@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Qian.Registry</PackageId>
+    <Description>门禁自测样例：冒充平台插件 Qian.Registry 的样例</Description>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>门禁自测样例：运行时（Qian.Runtime.*）</Description>
+  </PropertyGroup>
+
+</Project>
