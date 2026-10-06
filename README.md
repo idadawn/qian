@@ -16,6 +16,7 @@
 | `tests/` | 集成测试共用的 Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）、门禁自测 | [tests/README.md](tests/README.md) |
 | `AGENTS.md` | 给 Codex、Claude Code 等编码代理的入口约定（`CLAUDE.md` 指向它） | [AGENTS.md](AGENTS.md) |
 | `.github/` | CI：文档门禁 + 任务校验 + 看板生成物新鲜度；.NET 构建、PublicAPI 与依赖图门禁、单元与集成测试 | — |
+| `deploy/` | 开发期工具的 K3s 清单：`pm-board/` 把看板放进集群（git-sync + nginx） | [deploy/pm-board/README.md](deploy/pm-board/README.md) |
 
 代码目录（`packages/`、`plugins/`、`profiles/`、`samples/`）由 S1 第一波任务建立，布局以 [组件模型规格](docs/prd/specs/component-model.md) 为准。
 
@@ -33,7 +34,7 @@
 
 **进度是算出来的。** 运行 `python3 scripts/pm.py build` 会生成：
 
-- `pm/index.html`：离线看板（看板 / 列表 / 进度 / 阻塞与依赖四个视图，可按阶段、领域、波次、状态、负责人筛选，点任务看详情），双击即可打开，也可放到 GitHub Pages；
+- `pm/index.html`：离线看板（看板 / 列表 / 进度 / 阻塞与依赖四个视图，可按阶段、领域、波次、状态、负责人筛选，点任务看详情），双击即可打开；集群里的实时副本在 <http://10.78.1.161:30810/>（WireGuard 侧）；
 - `pm/STATUS.md`：按阶段、波次、领域、负责人的进度表，在 GitHub 上直接可读；
 - `pm/tasks.json`：给其他工具用的数据。
 

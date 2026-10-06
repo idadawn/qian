@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: qian-pm-board
+  annotations:
+    # MetalLB lan-pool（192.168.1.200-220）里固定一个地址，内网直接 http://192.168.1.210/ 访问，不依赖 DNS
+    metallb.io/loadBalancerIPs: "192.168.1.210"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: qian-pm-board
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      # 固定 NodePort：从 WireGuard 侧经节点别名访问，如 http://10.78.1.161:30810/
+      nodePort: 30810
