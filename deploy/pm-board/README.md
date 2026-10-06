@@ -15,7 +15,7 @@ GitHub idadawn/qian (main) --git-sync 每 60s--> emptyDir /git/current --nginx--
 | `nginx-configmap.yaml` | 只暴露 `/`、`/tasks.json`、`/STATUS.md`、`/tasks/*`，禁缓存 |
 | `service.yaml`、`ingress.yaml` | Service 为 LoadBalancer（MetalLB 固定 192.168.1.210）+ 固定 NodePort 30810；Traefik Ingress 域名占位 `qian-pm.deepsingularity.cn` |
 | `networkpolicy.yaml` | 只放行入站 8080 与出站 DNS / 22 / 443 |
-| `bootstrap.sh` | 一次性：生成只读 deploy key → 登记到 GitHub → 写 Secret → apply |
+| `bootstrap.sh` | 初始化（生成只读 deploy key → 登记 GitHub → 写 Secret → apply → 核验）；支持 `--kube-ssh` 分步与 `--check` |
 | `argocd-application.example.yaml` | 交给 ArgoCD 托管时用，放进部署仓库 `env-ds/argocd/` |
 
 ## 当前状态（2026-10-07 已部署）
@@ -31,9 +31,12 @@ GitHub idadawn/qian (main) --git-sync 每 60s--> emptyDir /git/current --nginx--
 ## 首次部署
 
 ```bash
-bash deploy/pm-board/bootstrap.sh            # 默认 kube context
-bash deploy/pm-board/bootstrap.sh my-ctx     # 指定 context
+bash deploy/pm-board/bootstrap.sh                    # 本机同时有 gh 与 kubectl
+bash deploy/pm-board/bootstrap.sh --kube-ssh qd      # 本机只有 gh，kubectl 在 ssh 主机 qd（本环境的实际用法）
+bash deploy/pm-board/bootstrap.sh --check --kube-ssh qd   # 只核验：deploy key、Secret、就绪、同步提交 == main、入口
 ```
+
+脚本幂等：Secret 已存在不再生成 key，GitHub 已有同名 key 不重复登记。
 
 脚本会在 GitHub 仓库设置里加一把**只读** deploy key（可在仓库 Settings → Deploy keys 看到并随时吊销），其余都在集群内。公网访问需要在边缘 nginx 加一条到该域名的转发（现网 TLS 在边缘终止）；内网直连 Traefik 或 `kubectl port-forward` 不需要。
 
