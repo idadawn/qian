@@ -1,6 +1,6 @@
 # §12 能力边界
 
-> 状态：草案 v0（2026-10-06；组件模型 v2 修订中）。依据：`docs/decisions/key-decisions-v0.md`（D1–D18 与补充裁决，2026-10-06 全部获认可；D20 组件模型 v2 为同日方向修正新增，ADR-020 Proposed，其边界条目见 12.2 的 C 块与 12.9）。本章只回答「某个阶段结束时，平台承诺做到什么、长期不做什么」；功能细节在各功能规格章，安全规则在 §13，验收方法在 §14。
+> 状态：草案 v0（2026-10-06；组件模型 v2 已定稿，2026-10-07）。依据：`docs/decisions/key-decisions-v0.md`（D1–D18 与补充裁决，2026-10-06 全部获认可；D20 组件模型 v2 为同日方向修正新增，ADR-020 已于 2026-10-07 Accepted、§7 待确认项全部拍板，其边界条目见 12.2 的 C 块与 12.9）。本章只回答「某个阶段结束时，平台承诺做到什么、长期不做什么」；功能细节在各功能规格章，安全规则在 §13，验收方法在 §14。
 >
 > 阅读约定：
 > - 阶段口径见 ADR-018：S1 技术底座 → S2 低代码构建 → S3 面向客户 → S4 AI 原生 Agent 平台。
@@ -63,7 +63,7 @@ S1 退出标准（ADR-018；ADR-020 §6 新增末句）：开发人员用代码�
 28. 每个服务提供 `/healthz`、`/readyz`；traceparent 与 baggage（含 `tenant_id`）贯通 HTTP、gRPC、消息；计量带租户 / 插件 / 主体类型维度。
 
 **插件机制、SDK、授权 v0（ADR-002、ADR-003、ADR-014）**
-29. （清单在 v2 为唯一一份 `.qian-plugin/plugin.json`，文件名待 ADR-020 §7 拍板，见 C 块）`qian-plugin.yaml` 清单 v1 Schema + 校验器 + 源生成器：宿主不执行插件代码即可生成路由、权限点、菜单、Apollo namespace 骨架、OpenAPI 聚合与 NetworkPolicy 片段；CI 比对清单与代码，漂移即失败。
+29. （清单在 v2 为唯一一份 `.qian-plugin/plugin.json`，文件名与 JSON 格式已由 ADR-020 §7 第 2 条拍板，见 C 块）`qian-plugin.yaml` 清单 v1 Schema + 校验器 + 源生成器：宿主不执行插件代码即可生成路由、权限点、菜单、Apollo namespace 骨架、OpenAPI 聚合与 NetworkPolicy 片段；CI 比对清单与代码，漂移即失败。
 30. （租户级 Enabled ⇄ Disabled 经 ADR-020 改为租户 scope patch，见 C3；注册表与生命周期控制器为普通插件 `qian.registry` / `qian.lifecycle`）插件注册表与两层生命周期（平台级 Draft → … → Retired；租户级 Available → Entitled → Provisioning → Enabled ⇄ Disabled → Upgrading / Uninstalled → Purged）可用；租户级钩子逐租户、幂等、可重试、结果入库。
 31. （「18 个」与「预装并按租户开关」经 ADR-020 修订，见 C2 / C3）18 个系统插件全部按 `tier: system` 清单交付，预装并按租户开关；其中任一 module 插件能独立出修订、逐租户迁移、回切到旧修订。
 32. 制品按 digest 引用、全部签名、未签名直接安装失败；插件包作为 OCI artifact 推 Harbor。
@@ -72,11 +72,11 @@ S1 退出标准（ADR-018；ADR-020 §6 新增末句）：开发人员用代码�
 35. 能力目录（命令 / 查询 / 事件 / 实体四类注册表 + JSON Schema）经鉴权、按权限过滤后可查询；它不是公开 OpenAPI。
 36. 所有写操作走带 JSON Schema 的命令，命令元数据含 `sideEffect`、`idempotencyKey`、`dryRun`；`inputSchema` 中不出现租户字段。
 
-**组件模型 v2（ADR-020，Proposed；对上一块第 29–31、34 条的修订，条目编号 C 以别于 B / T / N）**
+**组件模型 v2（ADR-020，Accepted；对上一块第 29–31、34 条的修订，条目编号 C 以别于 B / T / N）**
 - C1. 组件库只依赖 `Qian.Runtime`（.NET）/ `@qian/runtime`（TS），不依赖 `qian.registry` / `qian.lifecycle` 等插件；CI 断言依赖图（取代 ADR-019 的「不依赖 `Qian.Kernel`」断言）。
 - C2. 可部署单元 = profile：S1 随发行版交付 `platform` / `gateway` / `identity` / `standalone` / `minimal`；原 18 个系统插件成为 `platform` profile 的 base 组合包内容（规范术语「平台插件」，R30），各自按 seam 三角色拆包，数量由组合包定义而不是决策；`qian --profile platform --dump-config` 能打印整棵插件树，打印出的任何条目都能被 patch 替换。原可部署单元 ↔ profile / 组合包的定稿映射见 ROADMAP S1 核心交付与 prd/README 命名约定（R31：`qian-shell` 不是 profile，为 `platform` 的 `shell` 组合包；`qian-model-gateway-adapter` 为 `model-gateway` 组合包，默认挂 `platform`、可选独立 profile）。
 - C3. 租户启用一个插件 = 在租户 scope 挂载其配置条目（patch，存数据库、与文件 patch 同格式同校验器）；`qian.entitlement` 的授权状态机只管「买没买」；二者分开存、分开审计（§11.1.6「授权与开关分开可见」不变）。
-- C4. 声明式表面（skills / agents / commands / hooks / MCP、元数据、patch）S1 支持运行中重载；代码插件 S1 不承诺热装卸，走滚动重启（collectible `AssemblyLoadContext` 为 S2 可选，ADR-020 §7 第 5 条）。
+- C4. 声明式表面（skills / agents / commands / hooks / MCP、元数据、patch）S1 支持运行中重载；代码插件 S1 不承诺热装卸，走滚动重启（collectible `AssemblyLoadContext` 不进 S2 核心交付、S2 内 RT 领域 5 天 spike，ADR-020 §7 第 5 条已拍板）。
 - C5. 第三方代码不进共享进程保持不变（N1 / N2），映射到 `policy.tier` 与 `policy.sandbox`；`private / community` 组件只允许声明式表面与沙箱形态。
 - C6. 一键安装与目录市场：`qian add / remove / list / doctor / dump-config / init --template` 可用；官方市场仓库与 `.qian/marketplace.json` 就绪；空白项目 `qian add identity authz files` 后 30 分钟内跑通登录、权限检查与上传。
 - C7. skill / agent / command / hook / MCP 五种表面的解析器与校验器 S1 交付；模型可见的一切注册在 `ctx.Tools` 等注册表并受 scope 过滤；配置目录、模块图、事件图、seam 图由代码生成并设 CI 新鲜度门禁。
@@ -280,10 +280,10 @@ S4 退出标准：Agent 能发现、调用、编排乃至生成平台能力与�
 5. 已裁决（R16）：配置路径型门户与报表子集保持 S2 可选（P2）；S2 验收演示的「可用首页」由应用默认首页（菜单 + 功能列表）满足，不依赖门户（§12.3 第 15 条）。
 6. 模型服务网关底座接线列为 S1 可选（ADR-018 待拍板项），本章按可选写入 §12.2 第 42 条。
 7. 本章对其他章节的引用（功能规格章编号）待 PRD 索引定稿后回填。
-8. ADR-020 §7 第 1 条：TypeScript 侧（yue 外壳、`qian` CLI）直接采用现成的 MIT 运行时还是自研同语义的 `@qian/runtime`；.NET 侧确定自研。C1 的 `@qian/runtime` 依赖规则以此为准。
-9. ADR-020 §7 第 2 条：清单文件名与格式（`.qian-plugin/plugin.json` 还是沿用 `qian-plugin.yaml`，默认前者）；本章第 29 条与 C 块按默认写。
-10. ADR-020 §7 第 3 条：`qian` CLI 的实现语言（Node + `dotnet qian` 薄包装，还是 .NET global tool 为主，默认前者）；影响 C6 的 `npx` 一键体验。
-11. ADR-020 §7 第 4 条：官方市场仓库的名称与可见性（默认同组织独立仓库，S1 私有、S3 评估公开）；影响 C6 与 §12.4。
-12. 已裁决（R27）：N1 收窄为「不为第三方代码与可 AOT 的边缘 profile 做运行时热插 DLL」；官方代码插件在 `platform` profile 的热装卸保持 S2 可选、默认进程重启（ADR-020 D20.7 / D20.11），C4 按「S1 不承诺」写。ADR-020 §7 第 5 条中「是否进入 S2」据此回答为「S2 可选」，collectible `AssemblyLoadContext` 与 Kun AOT 约束的兼容验证归属仍待拍板。
-13. ADR-020 §7 第 6 条：许可证与公开 feed（沿 ADR-019 §7）；影响 §12.2 第 33 条 SDK 的分发渠道。
+8. 已拍板（ADR-020 §7 第 1 条）：TypeScript 侧 `@qian/runtime` 为公共 API 包，S1 内部以固定版本 vendor 的 Cordis（MIT）作为实现，TCK 以我们的语义为准；.NET 侧自研不变。C1 的 `@qian/runtime` 依赖规则不变。
+9. 已拍板（ADR-020 §7 第 2 条）：清单为 `.qian-plugin/plugin.json`（JSON），profile 与 patch 继续用 YAML；本章第 29 条与 C 块按此定稿。
+10. 已拍板（ADR-020 §7 第 3 条）：`qian` CLI 为单一 Node / TypeScript 实现、`npx qian@latest` 一键入口、Node ≥ 22 前置，`dotnet qian` 薄包装为 S1 可选 P2；C6 的 `npx` 一键体验据此成立。
+11. 已拍板（ADR-020 §7 第 4 条）：官方市场仓库为同组织独立仓库 `qian-plugins`，S1 私有、S3 随许可证评估公开，社区发现用 GitHub topic `qian-plugin`；C6 与 §12.4 按此写。
+12. 已裁决（R27）、已拍板（ADR-020 §7 第 5 条）：N1 收窄为「不为第三方代码与可 AOT 的边缘 profile 做运行时热插 DLL」；代码插件热装卸不进 S2 核心交付，S2 内由 RT 领域做 5 天时间盒 spike 验证 collectible `AssemblyLoadContext` 与 Kun 约束、结论写回 ADR-020；生产默认滚动重启（ADR-020 D20.7 / D20.11），C4 按「S1 不承诺」写。
+13. 已拍板（ADR-020 §7 第 6 条）：Qian 包族、`qian` CLI、yue 一律 Apache-2.0；S1 GitHub Packages 私有，S2 末或首个外部宿主试用时公开到 nuget.org / npm；§12.2 第 33 条 SDK 的分发渠道按此写。
 14. 已裁决（R28）：`connector` 不是 `runtime.form`，而是「为某个 seam 提供 Provider 的组件」——清单上体现为 `provides[]` 写出服务键 + `policy.egress` 声明出网目标，`runtime.form` 按其实现取 `module` 或 `service`；`bundle` = 组合包（有 `config/qian.patch.yml`，可携带多个组件），应用 = 组合包 + marketplace 条目。T3 / N2 与 §03 3.4 已按 `runtime.form` / `policy.tier` / `provides` 口径改写；字段细节以 specs/component-model.md 为准。

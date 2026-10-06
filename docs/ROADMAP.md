@@ -1,6 +1,6 @@
 # Qian 阶段路线图
 
-> 状态：草案 v1 · 更新日期：2026-10-06 · 本文件是**阶段、里程碑与退出标准的唯一真相源**；PRD §15 只保留总览表与指针，决策理由见 `docs/adr/`（ADR-018 为阶段切分决策；ADR-020 组件模型 v2 为 Proposed，S1 交付与退出标准已按其 §6 更新），可测的退出准则细化见 PRD §16。
+> 状态：草案 v1 · 更新日期：2026-10-07 · 本文件是**阶段、里程碑与退出标准的唯一真相源**；PRD §15 只保留总览表与指针，决策理由见 `docs/adr/`（ADR-018 为阶段切分决策；ADR-020 组件模型 v2 已于 2026-10-07 Accepted、§7 待确认项全部拍板，S1 交付与退出标准已按其 §6 更新），可测的退出准则细化见 PRD §16。
 >
 > 命名约定：产品 = Qian · 底座 = Kun · 组件库 = yue · 插件前缀 = `qian.` · 阶段 = S1–S4 · 优先级 = P0 / P1 / P2。
 >
@@ -39,9 +39,9 @@
 | 运行时（原「内核」，ADR-020） | `Qian.Runtime`（.NET）/ `@qian/runtime`（TS）：上下文 `ctx`、服务注册、类型化事件（`emit / waterfall / parallel / serial / bail`）、可逆副作用 `ctx.Effect()`、加载器；profile / 组合包 / patch 装载器与 `dump-config`；运行时语义 TCK。原内核的注册表、生命周期控制器、能力目录、契约仓库改为普通插件（`qian.registry` / `qian.lifecycle` / `qian.capabilities`）；租户上下文（fail-closed）、主体身份与 S2S、PDP/PEP、审计、计量等强制执行点作为 base 组合包里的 waterfall 监听器 | P0 |
 | `platform` profile base 组合包 = 平台插件（原 18 个系统插件按 seam 拆包，ADR-020；规范术语 R30） | `qian.registry` / `qian.lifecycle` / `qian.capabilities`（原 `qian.kernel`；`qian.plugin-sdk` 的大部分并入 `Qian.Runtime` 与 `qian` CLI）、`qian.tenancy`、`qian.identity`（+ `connector.*`：通用 OIDC、企业微信，作为 `ctx.Identity` 的 Provider；组织目录最小集为其子模块）、`qian.authz`、`qian.data`、`qian.files`、`qian.config`、`qian.gateway`、`qian.events`、`qian.audit`、`qian.observability`、`qian.shell`、`qian.entitlement`（授权 v0）、`qian.model-gateway`（可选）、`qian.notify`、`qian.scheduler`、`qian.realtime`；每项拆为 Service Definition（`Qian.<X>.Abstractions`）+ Provider + Consumer，数量由组合包定义而不是决策 | P0（model-gateway、realtime P1） |
 | profile ×5（原可部署单元 ×5，ADR-020） | `platform`、`gateway`、`identity`、`standalone`、`minimal`；可部署单元 = profile，新增只是新增一个 profile 文件；原可部署单元 ↔ v2 落位见本表之后的映射表（R31）；`gateway` 等边缘 profile 可 AOT，`platform` 不承诺 AOT | P0 |
-| `qian` CLI / SDK / TCK | `qian add <component>[@version]` / `remove` / `list` / `doctor` / `dump-config` / `init --template <stack>`（等价 `npx qian@latest --skill x --agent y --plugin z --yes`；原 validate / pack / publish / provision / tck 子命令并入）、源生成器（代码部分字段派生并合并进 `plugin.json`）、TCK 用例集（含运行时语义：可逆副作用、scope 过滤、五种分发）、契约生成（OpenAPI 3.1、TS 客户端、MCP 工具描述、权限点） | P0 |
+| `qian` CLI / SDK / TCK | `qian add <component>[@version]` / `remove` / `list` / `doctor` / `dump-config` / `init --template <stack>`（等价 `npx qian@latest --skill x --agent y --plugin z --yes`；原 validate / pack / publish / provision / tck 子命令并入；Node / TS 实现、Node ≥ 22 前置，`dotnet qian` 薄包装 S1 可选 P2，ADR-020 §7 第 3 条）、源生成器（代码部分字段派生并合并进 `plugin.json`）、TCK 用例集（含运行时语义：可逆副作用、scope 过滤、五种分发）、契约生成（OpenAPI 3.1、TS 客户端、MCP 工具描述、权限点） | P0 |
 | 声明式表面 ×5（ADR-020） | skills / agents / commands / hooks / MCP 五种表面的解析器与校验器，另有 `tools/`、`ui/`；运行中重载；`AGENTS.md` 进每个仓库与每个包；包 README 含「模型体验」「已知限制与延期项」节 | P0 |
-| 官方市场（ADR-020） | 官方市场仓库与 `.qian/marketplace.json`、目录网站生成、`qian doctor` 健康检查；租户私有市场与社区市场发现 S3 | P0 |
+| 官方市场（ADR-020） | 官方市场仓库 `qian-plugins`（S1 私有，S3 随许可证评估公开，ADR-020 §7 第 4 条）与 `.qian/marketplace.json`、目录网站生成、`qian doctor` 健康检查；租户私有市场与社区市场发现 S3 | P0 |
 | 租户 scope patch（ADR-020） | 租户启用插件 = 在租户 scope 挂载配置条目（存数据库、与文件 patch 同格式同校验器）；带作用域的遮蔽注册与 `restrict`；S1 scope 种类：租户 / 应用 / Agent 会话 | P0 |
 | 文档生成与 CI 门禁（ADR-020） | 配置目录、模块图、事件图、seam 图、事件生产方 / 消费方映射由代码生成；新鲜度门禁；事件分发模式声明与调用点一致性校验 | P0 |
 | Kun 缺口修复 | 后台链路租户回灌（含 Saga 执行器）、至少一次消费、Outbox 多副本锁（Saga 锁等其余修补 P1 可选）、网关强制认证与限流、gRPC 流式鉴权、OIDC 客户端链路、签发器与审计路径收敛、安全默认值强制装配 | P0 |
@@ -80,7 +80,7 @@
 
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
-| S1-M1 | ADR-001 … ADR-020 定稿（ADR-019 / ADR-020 由 Proposed 转 Accepted，ADR-020 §7 六条拍板）；`plugin.json` 清单 Schema 与校验器、五种表面的解析器；`Qian.Runtime` 语义 TCK 首版；Kun 缺口修复 PR 提交；K3s 基线（Apollo、MySQL、RabbitMQ、NetworkPolicy）就绪 | ⬜ |
+| S1-M1 | ADR-001 … ADR-020 定稿（ADR-019 / ADR-020 已于 2026-10-07 转 Accepted，§7 待确认项全部拍板）；`plugin.json` 清单 Schema 与校验器、五种表面的解析器；`Qian.Runtime` 语义 TCK 首版；Kun 缺口修复 PR 提交；K3s 基线（Apollo、MySQL、RabbitMQ、NetworkPolicy）就绪 | ⬜ |
 | S1-M2 | `Qian.Runtime` + profile / 组合包 / patch 装载器 + `qian.tenancy / identity / authz / data / config / events / audit` 可运行；`qian add identity authz files` 可在空白项目装入并跑通；`identity` profile 通过 OIDC 基本一致性测试；TCK 首版 | ⬜ |
 | S1-M3 | `platform` profile base 组合包内全部插件过 TCK；`qian` CLI 与官方市场仓库可用，五种表面热重载；租户 scope patch 替代数据库开关；文档生成与 CI 门禁上线；yue 令牌层 + 核心组件 + 后台壳；§06 S1 Demo 由运行时外的开发者走通 | ⬜ |
 | S1-M4 | 跨租户渗透测试、多副本消费集成测试、修订回切演练通过；退出评审 | ⬜ |
@@ -121,7 +121,7 @@
 | 审批 | 自研 .NET 轻量审批内核最小集（发起 / 审批 / 结束、三种网关、抄送、四种审批人来源、兜底三档、或签 / 会签 / 依次、八类动作、子流程、超时催办）、纵向节点树设计器、工作台四列表、`actions` 契约、`node.stalled` | P0 |
 | 权限 | 数据权限编译器、字段权限、授权界面（含字段 / 数据）、创建者自动 Owner、责任人解析契约 | P0 |
 | 插件机制 | `package` 元数据插件、`template / managed` + 元数据分层、升级同意规则、三方比较与冲突清单、逐租户批量迁移、Operation/Task、元数据生成闭环（人用）、字段敏感度 | P0 |
-| 声明式表面（低代码，ADR-020） | 表单 / 列表 / 流程 / 页面作为声明式表面（`forms/ lists/ flows/ pages/`）进入组件目录；设计器的保存即产出组件文件夹（可进 git、进市场、被 patch）；profile `lowcode` / `workflow` 新增（R31）；官方代码插件在 `platform` profile 的热装卸（collectible `AssemblyLoadContext`）可选、默认进程重启（R27；兼容验证归属待 ADR-020 §7 第 5 条） | P0（热装卸 P2） |
+| 声明式表面（低代码，ADR-020） | 表单 / 列表 / 流程 / 页面作为声明式表面（`forms/ lists/ flows/ pages/`）进入组件目录；设计器的保存即产出组件文件夹（可进 git、进市场、被 patch）；profile `lowcode` / `workflow` 新增（R31）；官方代码插件热装卸不进 S2 核心交付：RT 领域 5 天时间盒 spike 验证 collectible `AssemblyLoadContext` 与 Kun 约束、结论写回 ADR-020，生产默认滚动重启（R27；ADR-020 §7 第 5 条已拍板） | P0（热装卸 spike P2） |
 | 数据与集成 | 数据建模、接口设计器、API 接口与日志、短信通道 UI、群机器人、监控与任务管理 UI、打印全套（模板、版本、绑定、浏览器打印）、文件预览提供者、模型目录与按用途路由 | P0（打印设计器 S2 后期） |
 | 身份连接器 | 钉钉、飞书连接器（P0）；微信网站扫码连接器（P1，R4） | P0 / P1 |
 | 前端 yue | DataTable 进阶、ImportWizard / ExportDialog、SuperQuery、ConditionBuilder、CodeEditor / Cron、业务选择器扩展、三大设计器基础设施、组件 manifest 全量、视觉回归 | P0 |
@@ -262,3 +262,4 @@ Agent 能发现、调用、编排乃至生成平台能力与应用；Qian 作为
 - 2026-10-06：一致性复核 R1–R20 落实——S1 系统插件 18 个；Wasm `function` S2 可选（P2）；微信网站扫码 S2 P1；Operation/Task 契约 S1 预留；Saga 其余修补 P1 可选；Higress ≥ 2.2.4 + MCP 托管列为 S4 启动前置（S3 末）。
 - 2026-10-06：组件模型 v2 回填（ADR-020，Proposed）——S1 目标 / 退出标准 / 核心交付按 ADR-020 §6 第一行更新：新增 `Qian.Runtime` / `@qian/runtime`、`qian` CLI、官方市场仓库、五种表面、五个 profile、租户 scope patch、文档生成与 CI 门禁；「系统插件 ×18」改为 `platform` profile base 组合包；退出标准加「空白项目 `qian add identity authz files` 30 分钟跑通」；S2 加低代码声明式表面；S3 加商业市场叠加；S4 加 `extensions`；跨阶段约束加第 12 条。
 - 2026-10-06：裁决 R27（热装卸口径）、R30（平台插件术语）、R31（原可部署单元 ↔ v2 落位映射表，S1 核心交付之后）落实。
+- 2026-10-07：ADR-020 §7 八条与 ADR-019 §7 待确认项全部拍板，ADR-019 / ADR-020 转为 Accepted——S1 CLI 行补 Node / TS 实现与 `npx qian@latest`（Node ≥ 22，`dotnet qian` 薄包装 P2）；官方市场行补仓库名 `qian-plugins`（S1 私有）；S2 热装卸改为 RT 领域 5 天 spike、不进核心交付；S1-M1 的 ADR 定稿项按已拍板更新。

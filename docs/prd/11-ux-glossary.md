@@ -1,6 +1,6 @@
 # 11. 体验原则与产品词表
 
-> 状态：草案 v1（组件模型 v2 修订中） · 更新日期：2026-10-06 · 决策引用：ADR-002、ADR-006、ADR-011、ADR-012、ADR-013、ADR-014、ADR-019、ADR-020（Proposed） · 上级索引：[README](README.md)
+> 状态：已定稿（组件模型 v2，2026-10-07） · 更新日期：2026-10-07 · 决策引用：ADR-002、ADR-006、ADR-011、ADR-012、ADR-013、ADR-014、ADR-019、ADR-020（Accepted） · 上级索引：[README](README.md)
 
 本章分两部分：11.1 是跨角色、跨阶段都成立的体验原则，每条给「原则 → 在产品里的样子 → 反例」；11.2 是产品词表，所有章节与界面文案用词以此为准。词表「状态」列：**已定义** = 术语与语义已由决策或本 PRD 定稿；**规划中** = 术语已确定、细节在对应章节或阶段补齐。
 
@@ -107,22 +107,22 @@
 | 角色（插件） | 插件在平台中的职责 | `role: provider / capability / extension / app / theme / agent` | 已定义 |
 | 分发模式 | 装进租户后的归属与升级方式 | `distribution: template / managed` | 已定义 |
 | 信任等级 | 决定允许形态与审核强度的五级 | `tier: system / official / partner / private / community` | 已定义 |
-| 平台插件 | 规范术语（R30）：`policy.tier: system`、`platform` profile base 组合包成员的官方插件，各自按 seam 三角色拆包；数量由组合包定义而不是决策（原「S1 共 18 个系统插件」口径经 ADR-020 修订）；UI 文案一律用「平台插件」 | Platform plugin · `platform` base 组合包 | 已定义（v2 口径，ADR-020 Proposed） |
+| 平台插件 | 规范术语（R30）：`policy.tier: system`、`platform` profile base 组合包成员的官方插件，各自按 seam 三角色拆包；数量由组合包定义而不是决策（原「S1 共 18 个系统插件」口径经 ADR-020 修订）；UI 文案一律用「平台插件」 | Platform plugin · `platform` base 组合包 | 已定义（v2 口径，ADR-020 Accepted） |
 | 系统插件 | 别名，见平台插件（R30）；仅在引用 v1 文档与历史记录时使用 | System plugin（alias） | 已定义（别名） |
-| 内核 → 运行时 | v1 口径的「内核」（契约 + 强制执行点 + 注册表）在 v2 收缩为极小、无业务语义的 `Qian.Runtime`：上下文 `ctx`、服务注册、类型化事件、可逆副作用、加载器；注册表 / 生命周期控制器 / 能力目录改为普通插件（`qian.registry` / `qian.lifecycle` / `qian.capabilities`）。文档与界面不再用「内核」指代任何可部署单元 | Kernel（v1）→ `Qian.Runtime`（.NET）/ `@qian/runtime`（TS） | 已定义（v2 口径，ADR-020 Proposed） |
-| 组件 | 交付与安装的单元 = 文件夹 + 清单 + 声明式表面 + 可选代码；装载后即插件；无代码组件是常态 | Component · `<plugin>/.qian-plugin/plugin.json` | 已定义（ADR-020 Proposed） |
-| 表面 | 组件对外暴露的声明式内容，组件的顶层分类；S1 五种：skills / agents / commands / hooks / MCP，另有 tools、ui；S2 起 forms / lists / flows / pages | Surface · `skills/` `agents/` `commands/` `hooks/hooks.json` `.mcp.json` | 已定义（ADR-020 Proposed） |
-| 作用域 | 注册的归属：全局，或恰好一个 scope key；S1 三种 scope：租户、应用、Agent 会话；不继承 | Scope · 租户 / 应用 / Agent 会话 | 已定义（ADR-020 Proposed） |
-| 遮蔽 | 带作用域的注册在该 scope 内覆盖同名全局项 | Shadowing | 已定义（ADR-020 Proposed） |
-| restrict | 为某个 scope 过滤全局集合；多个 restriction 取交集；被过滤项不出现在目录与提示词里且拒绝执行，与不存在无法区分 | `restrict` | 已定义（ADR-020 Proposed） |
-| 能力 seam | 一项能力的三角色拆分；扩展插件只依赖 Definition，换 Provider 不动 Consumer | Seam | 已定义（ADR-020 Proposed） |
-| Service Definition / Provider / Consumer | seam 的三个角色：Definition 拥有 `ctx.<key>` 与词汇类型（`Qian.<X>.Abstractions`）；Provider 是实现（`Qian.<X>.<Provider>`，可多个、可替换）；Consumer 是使用方（含面向模型的工具） | `ctx.<key>` · `Qian.<X>.Abstractions` · `Qian.<X>.<Provider>` | 已定义（ADR-020 Proposed） |
-| profile | 具名组装：列出组合包与 patch，叠出运行中的插件树；可部署单元 = profile；S1 交付 `platform` / `gateway` / `identity` / `standalone` / `minimal` | Profile · `qian --profile <name>` | 已定义（ADR-020 Proposed） |
-| 组合包 | 配置条目 + 挂载代码的分发格式，有 `config/qian.patch.yml`、可携带多个组件，由 profile 列出或 `qian add` 装入；原 `kind: bundle` 即组合包；原 18 个系统插件是 `platform` 的 base 组合包；应用 = 组合包 + marketplace 条目（R28） | Bundle（v2） | 已定义（ADR-020 Proposed） |
-| patch | 按 id 定位插件树中的某个条目并替换其整个 config 或插入新条目；文件 patch 与租户 scope patch 同格式同校验器；租户启用插件 = 租户 scope 的一条 patch | `qian.patch.yml` · `--patch` · 租户 scope patch | 已定义（ADR-020 Proposed） |
-| 市场条目 | `marketplace.json` 中的一项：只写 `name`、`source`（local / url / git-subdir）、`policy`（installation / authentication / profiles）、`category`、`interface`，不复制组件内容；多市场并存 | Marketplace entry · `.qian/marketplace.json` | 已定义（ADR-020 Proposed） |
-| `qian add` | 一键安装：复制声明式表面进项目 `.qian/`、把代码部分加为 NuGet / npm 依赖、把配置条目写进当前 profile 的 patch；配套 `remove / list / doctor / dump-config / init --template <stack>` | `qian add <component>[@version]` | 已定义（ADR-020 Proposed） |
-| `Qian.Runtime` | 组件库唯一必需的 Qian 依赖；插件最小接口 `Inject` + `Apply`，注册经 `ctx.Effect()` 可逆；事件五种分发模式 `emit / waterfall / parallel / serial / bail` | `Qian.Runtime`（.NET，`IQianPlugin`）/ `@qian/runtime`（TS） | 已定义（ADR-020 Proposed） |
+| 内核 → 运行时 | v1 口径的「内核」（契约 + 强制执行点 + 注册表）在 v2 收缩为极小、无业务语义的 `Qian.Runtime`：上下文 `ctx`、服务注册、类型化事件、可逆副作用、加载器；注册表 / 生命周期控制器 / 能力目录改为普通插件（`qian.registry` / `qian.lifecycle` / `qian.capabilities`）。文档与界面不再用「内核」指代任何可部署单元 | Kernel（v1）→ `Qian.Runtime`（.NET）/ `@qian/runtime`（TS） | 已定义（v2 口径，ADR-020 Accepted） |
+| 组件 | 交付与安装的单元 = 文件夹 + 清单 + 声明式表面 + 可选代码；装载后即插件；无代码组件是常态 | Component · `<plugin>/.qian-plugin/plugin.json` | 已定义（ADR-020 Accepted） |
+| 表面 | 组件对外暴露的声明式内容，组件的顶层分类；S1 五种：skills / agents / commands / hooks / MCP，另有 tools、ui；S2 起 forms / lists / flows / pages | Surface · `skills/` `agents/` `commands/` `hooks/hooks.json` `.mcp.json` | 已定义（ADR-020 Accepted） |
+| 作用域 | 注册的归属：全局，或恰好一个 scope key；S1 三种 scope：租户、应用、Agent 会话；不继承 | Scope · 租户 / 应用 / Agent 会话 | 已定义（ADR-020 Accepted） |
+| 遮蔽 | 带作用域的注册在该 scope 内覆盖同名全局项 | Shadowing | 已定义（ADR-020 Accepted） |
+| restrict | 为某个 scope 过滤全局集合；多个 restriction 取交集；被过滤项不出现在目录与提示词里且拒绝执行，与不存在无法区分 | `restrict` | 已定义（ADR-020 Accepted） |
+| 能力 seam | 一项能力的三角色拆分；扩展插件只依赖 Definition，换 Provider 不动 Consumer | Seam | 已定义（ADR-020 Accepted） |
+| Service Definition / Provider / Consumer | seam 的三个角色：Definition 拥有 `ctx.<key>` 与词汇类型（`Qian.<X>.Abstractions`）；Provider 是实现（`Qian.<X>.<Provider>`，可多个、可替换）；Consumer 是使用方（含面向模型的工具） | `ctx.<key>` · `Qian.<X>.Abstractions` · `Qian.<X>.<Provider>` | 已定义（ADR-020 Accepted） |
+| profile | 具名组装：列出组合包与 patch，叠出运行中的插件树；可部署单元 = profile；S1 交付 `platform` / `gateway` / `identity` / `standalone` / `minimal` | Profile · `qian --profile <name>` | 已定义（ADR-020 Accepted） |
+| 组合包 | 配置条目 + 挂载代码的分发格式，有 `config/qian.patch.yml`、可携带多个组件，由 profile 列出或 `qian add` 装入；原 `kind: bundle` 即组合包；原 18 个系统插件是 `platform` 的 base 组合包；应用 = 组合包 + marketplace 条目（R28） | Bundle（v2） | 已定义（ADR-020 Accepted） |
+| patch | 按 id 定位插件树中的某个条目并替换其整个 config 或插入新条目；文件 patch 与租户 scope patch 同格式同校验器；租户启用插件 = 租户 scope 的一条 patch | `qian.patch.yml` · `--patch` · 租户 scope patch | 已定义（ADR-020 Accepted） |
+| 市场条目 | `marketplace.json` 中的一项：只写 `name`、`source`（local / url / git-subdir）、`policy`（installation / authentication / profiles）、`category`、`interface`，不复制组件内容；多市场并存 | Marketplace entry · `.qian/marketplace.json` | 已定义（ADR-020 Accepted） |
+| `qian add` | 一键安装：复制声明式表面进项目 `.qian/`、把代码部分加为 NuGet / npm 依赖、把配置条目写进当前 profile 的 patch；配套 `remove / list / doctor / dump-config / init --template <stack>` | `qian add <component>[@version]` | 已定义（ADR-020 Accepted） |
+| `Qian.Runtime` | 组件库唯一必需的 Qian 依赖；插件最小接口 `Inject` + `Apply`，注册经 `ctx.Effect()` 可逆；事件五种分发模式 `emit / waterfall / parallel / serial / bail` | `Qian.Runtime`（.NET，`IQianPlugin`）/ `@qian/runtime`（TS） | 已定义（ADR-020 Accepted） |
 | 反向权限 | 插件对平台提出的权限请求（平台能力 / 数据 / 出网 / 密钥 / UI） | Reverse permissions · `permissions.platform/data/egress/secrets/ui` | 已定义 |
 | 制品 | 不可变的镜像或插件包 | Artifact · OCI `@sha256:` | 已定义 |
 | 修订 | 制品在平台级的一次激活版本，可回切 | Revision | 已定义 |

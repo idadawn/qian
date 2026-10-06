@@ -1,10 +1,10 @@
 # Qian 架构决策记录（ADR）索引
 
-> 来源：`docs/decisions/key-decisions-v0.md`（D1–D18、Q1–Q18 默认与补充裁决，2026-10-06 全部获认可；D19「库优先」与 D20「组件模型 v2」为同日两条方向修正新增，待拍板）。每份 ADR 的决策条目编号为 `D{n}.k`，PRD 只引用不重复。被借鉴的商业低代码产品一律称「参考平台」。
+> 来源：`docs/decisions/key-decisions-v0.md`（D1–D18、Q1–Q18 默认与补充裁决，2026-10-06 全部获认可；D19「库优先」与 D20「组件模型 v2」为同日两条方向修正新增，其待确认项已于 2026-10-07 全部拍板，ADR-019 / ADR-020 转为 Accepted）。每份 ADR 的决策条目编号为 `D{n}.k`，PRD 只引用不重复。被借鉴的商业低代码产品一律称「参考平台」。
 >
 > 结构：YAML front matter（title / status / date / decision_id / supersedes，被后续 ADR 取代或修订时加 superseded_by / amended_by）+ 1 背景与问题 · 2 决策 · 3 理由 · 4 备选方案 · 5 后果与代价 · 6 对各阶段的影响 · 7 待确认事项 · 8 参考。
 >
-> 状态口径：Accepted = 已认可并作为 PRD 依据；Proposed = 方向已由产品负责人给出、细则待拍板，PRD 引用时须标注；修订时新建 ADR 并在旧 ADR 的 `supersedes` 反向标注；部分被取代的 ADR 在 front matter 加 `superseded_by: ADR-0xx（部分）`、标题下加说明、被取代条目行首标「【已被 ADR-0xx 取代】」，原文不删；只被修订不被取代的加 `amended_by`。
+> 状态口径：Accepted = 已认可并作为 PRD 依据；Proposed = 方向已由产品负责人给出、细则尚未拍板，PRD 引用时须标注（截至 2026-10-07 全部 20 份 ADR 均为 Accepted，无 Proposed）；修订时新建 ADR 并在旧 ADR 的 `supersedes` 反向标注；部分被取代的 ADR 在 front matter 加 `superseded_by: ADR-0xx（部分）`、标题下加说明、被取代条目行首标「【已被 ADR-0xx 取代】」，原文不删；只被修订不被取代的加 `amended_by`。
 
 | 编号 | 标题 | 状态 | 一句话决策 | 关联 PRD 章节 |
 |---|---|---|---|---|
@@ -26,8 +26,8 @@
 | [ADR-016](ADR-016-iclaw-boundary.md) | 与 iClaw 的边界 | Accepted | Qian = 能力提供方 + 业务主数据权威；iClaw = Agent 运行时 + AI 资产控制面；Qian 不写任何 Agent loop；对齐 S2S claim、事件信封、工具元数据、契约格式；MCP 2026-07-28 目标；租户权威归 Qian；只搬四处 iClaw 代码 | `PRD §10` `§12` `§13` `§17` |
 | [ADR-017](ADR-017-deployment.md) | 部署 | Accepted | 沿用 K3s / Argo CD app-of-apps / Kustomize / Harbor / 不可变发布事件约定；Qian 独立 ns + 专属 PG / Redis；default-deny + ResourceQuota + Alertmanager；多租户拓扑三档、不以 per-tenant ns 为默认；插件包 OCI 制品；生产与 iClaw 共用集群但独立节点池 | `PRD §07` `§09` `§12` `§14` |
 | [ADR-018](ADR-018-stages-s1-scope.md) | 阶段切分与 S1 范围 | Accepted | 四段顺序认可；每阶段有可验收退出标准与核心交付；S1 起生效的防返工设计清单；补充裁决的阶段归属集中登记；S1 含模型网关接线为可选 | `PRD §01` `§07`–`§10` `§15` `§16` |
-| [ADR-019](ADR-019-library-first-packages.md) | 库优先与 Qian 包族 | Proposed（经 ADR-020 修订） | 每个系统组件首先是可独立安装使用的 NuGet 包（`Qian.<Component>.Abstractions` + 实现），其次才经清单成为插件：插件 = 库 + 清单；独立 / 平台两种模式同一份代码；组件库唯一必需的 Qian 依赖是 `Qian.Runtime`（经 ADR-020）；`AddQian<X>()` 为 `Apply` 内部细节；SemVer 锁步、S1 发 GitHub Packages；安装入口 = `qian add` + 目录市场（ADR-020）；许可证与公开 feed 待拍板 | `PRD §02` `§03` `§07` `§12` `§14`（待回填） |
-| [ADR-020](ADR-020-component-model-v2.md) | 组件模型 v2 | Proposed | 一切皆插件、没有特权内核（极小的 `Qian.Runtime` / `@qian/runtime`）；插件最小接口 `Inject` + `Apply`，注册皆为可逆副作用；事件五种分发模式；能力按 seam 三角色拆分；作用域两层扁平、租户启用 = scope patch；组件 = 文件夹 + `plugin.json` + 声明式表面 + 可选代码，`kind` 退为 `runtime.form`；profile / 组合包 / patch 分层取代固定可部署单元与 18 个系统插件；`qian add` 一键安装 + `marketplace.json` 目录市场；Agent 原生表面 S1 起；取代 ADR-002 D2.1 / D2.9 / D2.10 与 ADR-003 D3.1–D3.4，修订 ADR-014 / ADR-019 | `PRD §02` `§03` `§07`–`§12` `specs/component-model.md` `ROADMAP` |
+| [ADR-019](ADR-019-library-first-packages.md) | 库优先与 Qian 包族 | Accepted（经 ADR-020 修订） | 每个系统组件首先是可独立安装使用的 NuGet 包（`Qian.<Component>.Abstractions` + 实现），其次才经清单成为插件：插件 = 库 + 清单；独立 / 平台两种模式同一份代码；组件库唯一必需的 Qian 依赖是 `Qian.Runtime`（经 ADR-020）；`AddQian<X>()` 为 `Apply` 内部细节；SemVer 锁步、S1 发 GitHub Packages；安装入口 = `qian add` + 目录市场（ADR-020）；许可证 Apache-2.0，S1 GitHub Packages 私有、S2 末或首个外部宿主试用时公开到 nuget.org / npm（§7 已拍板，2026-10-07） | `PRD §02` `§03` `§07` `§12` `§14`（待回填） |
+| [ADR-020](ADR-020-component-model-v2.md) | 组件模型 v2 | Accepted | 一切皆插件、没有特权内核（极小的 `Qian.Runtime` / `@qian/runtime`）；插件最小接口 `Inject` + `Apply`，注册皆为可逆副作用；事件五种分发模式；能力按 seam 三角色拆分；作用域两层扁平、租户启用 = scope patch；组件 = 文件夹 + `plugin.json` + 声明式表面 + 可选代码，`kind` 退为 `runtime.form`；profile / 组合包 / patch 分层取代固定可部署单元与 18 个系统插件；`qian add` 一键安装 + `marketplace.json` 目录市场；Agent 原生表面 S1 起；取代 ADR-002 D2.1 / D2.9 / D2.10 与 ADR-003 D3.1–D3.4，修订 ADR-014 / ADR-019；§7 八条待确认项 2026-10-07 全部拍板（TS 运行时 vendor Cordis、JSON 清单、Node CLI、市场仓库 `qian-plugins`、热装卸 S2 spike、Apache-2.0 + GitHub Packages、遥测默认不采集、模板名定稿） | `PRD §02` `§03` `§07`–`§12` `specs/component-model.md` `ROADMAP` |
 
 ## 补充裁决并入位置
 
@@ -63,5 +63,6 @@ ADR-020 §6 列出了对既有文档的修订清单，分三路并行落实：
 | `prd/specs/component-model.md` | 草案 v1 已落盘 | 组件模型 v2 的权威规格；与 ADR-020 不一致处以 ADR-020 为准 |
 | `prd/specs/plugin-manifest.md` | 待改标 | 保留为 v1 字段迁移对照（`kind` → `runtime.form`），不再是权威规格 |
 | `migration/`、`research/` | 不改 | 迁移方案与研究基线不受 ADR-020 影响 |
+| 待确认项 | 2026-10-07 全部拍板（ADR-020 §7、ADR-019 §7） | 产品负责人授权 ADR 作者拍板 ADR-020 §7 八条与 ADR-019 §7 全部事项，两份 ADR 转为 Accepted；结论已传播到 `decisions/key-decisions-v0.md` D19 / D20、PRD §07–§10 / §12 / §17 的「待确认」、`specs/component-model.md` §13 与 `ROADMAP.md` |
 
-待拍板事项集中在 ADR-020 §7（六条），PRD 各章「待确认」只引用不复制。
+ADR-020 §7（八条）与 ADR-019 §7 的待确认项已于 2026-10-07 全部拍板，结论以两份 ADR 的 §7 为准，PRD 各章「待确认」只引用结论不复制论证。

@@ -883,14 +883,14 @@
  {
   "id": "S1-DEC-001",
   "title": "拍板：TS 侧运行时采用现成 MIT 库还是自研 @qian/runtime",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
@@ -913,25 +913,25 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 1 条：TypeScript 侧（yue 外壳、qian CLI）直接采用现成 MIT 运行时库还是自研同语义的 <code>@qian/runtime</code>；.NET 侧已定自研。影响 7.2.1 与 7.15.1，S1 文档按自研写，须在 S1-M1 前拍板。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>结论写入 ADR-020 §7 第 1 条并由 Proposed 转 Accepted 的修订记录</li>\n<li class='chk'><span class='box'></span>若采用现成库：给出许可证、版本钉定与语义差异清单；若自研：确认与 .NET 侧共用同一组 TCK fixture</li>\n<li class='chk'><span class='box'></span>7.2.1 / 7.15.1 中受影响的表述回填完成</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 1 条：TypeScript 侧（yue 外壳、qian CLI）直接采用现成 MIT 运行时库还是自研同语义的 <code>@qian/runtime</code>；.NET 侧已定自研。影响 7.2.1 与 7.15.1，S1 文档按自研写，须在 S1-M1 前拍板。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>结论写入 ADR-020 §7 第 1 条并由 Proposed 转 Accepted 的修订记录</li>\n<li class='chk done'><span class='box'>✓</span>若采用现成库：给出许可证、版本钉定与语义差异清单；若自研：确认与 .NET 侧共用同一组 TCK fixture</li>\n<li class='chk done'><span class='box'>✓</span>7.2.1 / 7.15.1 中受影响的表述回填完成</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：拍板：@qian/runtime 为公共 API，S1 内部 vendor 固定版本 Cordis 实现，TCK 以我方语义为准（ADR-020 §7 第 1 条）</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-001.md"
  },
  {
   "id": "S1-DEC-002",
   "title": "拍板：清单文件名与格式（plugin.json / yaml）",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
@@ -950,25 +950,25 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 2 条：清单文件名与格式，默认 <code>.qian-plugin/plugin.json</code>（JSON Schema 2020-12）。它是注册表校验器、源生成器、CLI 与市场条目校验器的共同输入，必须先于 S1-RT-004 / RT-008 拍板。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>结论写入 ADR-020 §7 第 2 条与 specs/component-model.md §3</li>\n<li class='chk'><span class='box'></span>确认 v1 <code>qian-plugin.yaml</code> 仅作字段迁移对照、仓库内不允许第二份清单</li>\n<li class='chk'><span class='box'></span>通知 S1-RT-004、S1-RT-008、S1-RT-014、S1-RT-016 的负责人</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 2 条：清单文件名与格式，默认 <code>.qian-plugin/plugin.json</code>（JSON Schema 2020-12）。它是注册表校验器、源生成器、CLI 与市场条目校验器的共同输入，必须先于 S1-RT-004 / RT-008 拍板。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>结论写入 ADR-020 §7 第 2 条与 specs/component-model.md §3</li>\n<li class='chk done'><span class='box'>✓</span>确认 v1 <code>qian-plugin.yaml</code> 仅作字段迁移对照、仓库内不允许第二份清单</li>\n<li class='chk done'><span class='box'>✓</span>通知 S1-RT-004、S1-RT-008、S1-RT-014、S1-RT-016 的负责人</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：拍板：.qian-plugin/plugin.json（JSON）；profile 与 patch 用 YAML（ADR-020 §7 第 2 条）</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-002.md"
  },
  {
   "id": "S1-DEC-003",
   "title": "拍板：qian CLI 实现语言（Node 还是 .NET）",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
@@ -987,25 +987,25 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 3 条：CLI 以 Node 实现（便于 <code>npx qian@latest</code> 一键）并提供 <code>dotnet qian</code> 薄包装，还是以 .NET global tool 为主。拍板前 S1-RT-011 不开工。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>结论写入 ADR-020 §7 第 3 条</li>\n<li class='chk'><span class='box'></span>明确 <code>npx qian@latest --skill x --agent y --plugin z --yes</code> 等价形式是否保留</li>\n<li class='chk'><span class='box'></span>7.2.3 技术落点中的实现语言表述回填</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 3 条：CLI 以 Node 实现（便于 <code>npx qian@latest</code> 一键）并提供 <code>dotnet qian</code> 薄包装，还是以 .NET global tool 为主。拍板前 S1-RT-011 不开工。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>结论写入 ADR-020 §7 第 3 条</li>\n<li class='chk done'><span class='box'>✓</span>明确 <code>npx qian@latest --skill x --agent y --plugin z --yes</code> 等价形式是否保留</li>\n<li class='chk done'><span class='box'>✓</span>7.2.3 技术落点中的实现语言表述回填</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：拍板：Node/TS 单一实现，npx qian@latest 一键，Node ≥ 22；dotnet qian 薄包装 S1 可选 P2（ADR-020 §7 第 3 条）</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-003.md"
  },
  {
   "id": "S1-DEC-004",
   "title": "拍板：官方市场仓库名称与可见性",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
@@ -1024,25 +1024,25 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 2
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 4 条：官方市场仓库默认为与 Qian 同组织下的独立仓库，S1 私有、S3 评估公开。决定 S1-RT-017 的仓库位置、CI 与目录网站托管方式。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>仓库名称、所属组织、S1 可见性与 S3 评估时点写入 ADR-020 §7 第 4 条</li>\n<li class='chk'><span class='box'></span>官方市场仓库布局 <code>plugins/&lt;domain&gt;/&lt;id&gt;/</code> 与 CI 门禁要求得到确认</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 4 条：官方市场仓库默认为与 Qian 同组织下的独立仓库，S1 私有、S3 评估公开。决定 S1-RT-017 的仓库位置、CI 与目录网站托管方式。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>仓库名称、所属组织、S1 可见性与 S3 评估时点写入 ADR-020 §7 第 4 条</li>\n<li class='chk done'><span class='box'>✓</span>官方市场仓库布局 <code>plugins/&lt;domain&gt;/&lt;id&gt;/</code> 与 CI 门禁要求得到确认</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：拍板：同组织独立仓库 qian-plugins，根目录 .qian/marketplace.json，S1 私有，S3 评估公开，社区 topic qian-plugin（ADR-020 §7 第 4 条）</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-004.md"
  },
  {
   "id": "S1-DEC-005",
   "title": "拍板：代码插件热装卸是否进 S2 及 AOT 兼容验证归属",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P1",
   "type": "decision",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
@@ -1061,25 +1061,25 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 2
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 5 条：官方代码插件在 <code>platform</code> profile 的热装卸（collectible <code>AssemblyLoadContext</code>）是否进入 S2 范围，以及与 Kun AOT 约束的兼容验证由谁负责。S1 已定（R27）默认进程重启、第三方与 AOT 边缘永不热插。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>结论写入 ADR-020 §7 第 5 条，S1 维持「声明式表面热重载、代码进程重启」口径</li>\n<li class='chk'><span class='box'></span>若进 S2：登记兼容验证的归属团队与验收方式</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 5 条：官方代码插件在 <code>platform</code> profile 的热装卸（collectible <code>AssemblyLoadContext</code>）是否进入 S2 范围，以及与 Kun AOT 约束的兼容验证由谁负责。S1 已定（R27）默认进程重启、第三方与 AOT 边缘永不热插。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>结论写入 ADR-020 §7 第 5 条，S1 维持「声明式表面热重载、代码进程重启」口径</li>\n<li class='chk done'><span class='box'>✓</span>若进 S2：登记兼容验证的归属团队与验收方式</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：拍板：不进 S2 核心交付；S2 内 RT 领域 5 天 spike 验证 collectible ALC 与 Kun 约束；生产滚动重启（ADR-020 §7 第 5 条）</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-005.md"
  },
  {
   "id": "S1-DEC-006",
   "title": "拍板：Qian 包族许可证与公开 feed（ADR-019 §7）",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "claude",
   "estimate": "1d",
   "days": 1.0,
   "depends": [],
@@ -1098,25 +1098,25 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 6 条沿 ADR-019 §7：Qian 包族许可证（MIT / Apache-2.0 / 源码可见但限制多租户 PaaS 运营）与分发渠道（S1 只发 GitHub Packages，是否以及何时公开到 nuget.org / npm）。它决定能否公开 feed、ISV 能否再分发，并影响 7.2.4 社区市场与 <code>qian add</code> 的包源。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>许可证结论写入 ADR-019 §7 与 ADR-020 §7 第 6 条，并在所有 <code>Qian.*</code> / <code>@qian/*</code> / <code>@yue/*</code> 包元数据中落地</li>\n<li class='chk'><span class='box'></span>分发渠道结论：S1 GitHub Packages 私有 feed 的组织与权限方案；公开 feed 的前置条件与时点</li>\n<li class='chk'><span class='box'></span>7.2.4 社区市场「只发现、不自动信任」与包源白名单按结论回填</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 6 条沿 ADR-019 §7：Qian 包族许可证（MIT / Apache-2.0 / 源码可见但限制多租户 PaaS 运营）与分发渠道（S1 只发 GitHub Packages，是否以及何时公开到 nuget.org / npm）。它决定能否公开 feed、ISV 能否再分发，并影响 7.2.4 社区市场与 <code>qian add</code> 的包源。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>许可证结论写入 ADR-019 §7 与 ADR-020 §7 第 6 条，并在所有 <code>Qian.*</code> / <code>@qian/*</code> / <code>@yue/*</code> 包元数据中落地</li>\n<li class='chk done'><span class='box'>✓</span>分发渠道结论：S1 GitHub Packages 私有 feed 的组织与权限方案；公开 feed 的前置条件与时点</li>\n<li class='chk done'><span class='box'>✓</span>7.2.4 社区市场「只发现、不自动信任」与包源白名单按结论回填</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：拍板：Apache-2.0（包族、CLI、yue），S3 商业组件另定；S1 GitHub Packages 私有，S2 末或首个外部宿主试用时公开 nuget.org/npm（ADR-020 §7 第 6 条）</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-006.md"
  },
  {
   "id": "S1-DEC-007",
   "title": "拍板：qian CLI 是否提供可选匿名遥测",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P2",
   "type": "decision",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
@@ -1131,12 +1131,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 2
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 7 条：<code>qian</code> CLI 是否提供可选的匿名遥测以统计外部宿主安装数；默认不带，S3 随隐私口径一起拍板（R43）。S1 只需确认「默认不带」并在 CLI 预留开关位置。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>结论写入 ADR-020 §7 第 7 条；S1 CLI 不发送任何遥测</li>\n<li class='chk'><span class='box'></span>若 S3 启用：登记需要的隐私口径、数据项与开关形式</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 §7 第 7 条：<code>qian</code> CLI 是否提供可选的匿名遥测以统计外部宿主安装数；默认不带，S3 随隐私口径一起拍板（R43）。S1 只需确认「默认不带」并在 CLI 预留开关位置。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>结论写入 ADR-020 §7 第 7 条；S1 CLI 不发送任何遥测</li>\n<li class='chk done'><span class='box'>✓</span>若 S3 启用：登记需要的隐私口径、数据项与开关形式</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：拍板：默认不采集；S2 opt-in qian telemetry on，仅命令名/版本/OS/匿名 id；私有化可禁用（ADR-020 §7 第 7 条）</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-007.md"
  },
  {
@@ -3330,8 +3330,7 @@
    "S1-DEC-001"
   ],
   "blockedBy": [
-   "S1-RT-001",
-   "S1-DEC-001"
+   "S1-RT-001"
   ],
   "refs": [
    {
@@ -3377,8 +3376,7 @@
   "blockedBy": [
    "S1-RT-001",
    "S1-RT-002",
-   "S1-DATA-001",
-   "S1-DEC-002"
+   "S1-DATA-001"
   ],
   "refs": [
    {
@@ -3553,8 +3551,7 @@
    "S1-DEC-002"
   ],
   "blockedBy": [
-   "S1-RT-001",
-   "S1-DEC-002"
+   "S1-RT-001"
   ],
   "refs": [
    {
@@ -3690,8 +3687,7 @@
   "blockedBy": [
    "S1-RT-002",
    "S1-RT-008",
-   "S1-RT-016",
-   "S1-DEC-003"
+   "S1-RT-016"
   ],
   "refs": [
    {
@@ -3906,8 +3902,7 @@
    "S1-DEC-002"
   ],
   "blockedBy": [
-   "S1-RT-008",
-   "S1-DEC-002"
+   "S1-RT-008"
   ],
   "refs": [
    {
@@ -3954,9 +3949,7 @@
   "blockedBy": [
    "S1-RT-016",
    "S1-RT-011",
-   "S1-RT-012",
-   "S1-DEC-004",
-   "S1-DEC-006"
+   "S1-RT-012"
   ],
   "refs": [
    {

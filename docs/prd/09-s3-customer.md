@@ -291,4 +291,4 @@
 6. **服务端 PDF 与大屏**是否启用（补充裁决 Q31/Q33），取决于 S3 中期的成本评估与客户需求。
 7. **门户/报表/打印多端策略**：本章按「响应式 + 端差异覆盖」写，与 §08 表单一致；若客户要求独立 APP 配置需重估 yue 控件属性 Schema。
 8. **工具描述哈希钉死**的实现位置（`qian.registry` / `qian.capabilities` 注册表（原 `qian.kernel`，ADR-020）vs `qian.marketplace`）与 §07 能力目录的 `schemaSha256` 字段需对齐，避免两处计算口径不同。
-9. **组件模型 v2 对本章的影响（ADR-020）**：(a)–(c) 已裁决（R36）——商业字段（价格、套餐、席位、审核状态）由 `qian.marketplace` 以 marketplace 条目 `name@version` 为外键存平台库，不写进 marketplace.json；租户私有市场 S3 默认平台托管（租户上传组件文件夹，平台生成其私有 marketplace.json），租户自带 git 仓库为 S3 可选；`ON_USE` 凭据录入 UI 归 `qian.identity` 连接器设置卡（`ui` 表面）。本章 9.0.3、9.1 已按此改。(d) 官方市场仓库 S3 是否公开（ADR-020 §7 第 4 条）与许可证 / 公开 feed（§7 第 6 条）——决定社区市场与 ISV 再分发能否成立，仍待拍板。
+9. **组件模型 v2 对本章的影响（ADR-020）**：(a)–(c) 已裁决（R36）——商业字段（价格、套餐、席位、审核状态）由 `qian.marketplace` 以 marketplace 条目 `name@version` 为外键存平台库，不写进 marketplace.json；租户私有市场 S3 默认平台托管（租户上传组件文件夹，平台生成其私有 marketplace.json），租户自带 git 仓库为 S3 可选；`ON_USE` 凭据录入 UI 归 `qian.identity` 连接器设置卡（`ui` 表面）。本章 9.0.3、9.1 已按此改。(d) 已拍板（ADR-020 §7 第 4、6 条）：官方市场仓库 `qian-plugins` S1 私有、S3 随许可证评估公开；Qian 包族、CLI、yue 一律 Apache-2.0，公开 feed S1 GitHub Packages 私有、S2 末或首个外部宿主试用时公开到 nuget.org / npm；社区市场与 ISV 再分发据此成立，S3 商业市场与计费组件的许可证到 S3 再定。

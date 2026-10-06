@@ -5,9 +5,9 @@
 | 目录 | 内容 | 状态 |
 |---|---|---|
 | `research/baseline-digest.md` | 调研基线要点汇编：7 个领域（Kun 能力与差距、插件化与 Agent 架构、租户/身份/权限、在线开发、流程、数据/集成/报表、前端与 yue）的全貌、分级结论、难点与待拍板问题 | 草案 |
-| `decisions/key-decisions-v0.md` | 关键决策清单 D1–D18、Q1–Q18 默认与补充裁决；2026-10-06 全部获认可并转为 ADR-001…018，此后只作历史记录；D19 库优先、D20 组件模型 v2 为同日方向修正新增（ADR-019 / ADR-020，Proposed） | 已认可（历史记录；D19 / D20 待拍板） |
-| `adr/` | 架构决策记录 ADR-001…020 + 索引 `adr/README.md`（Status / Context / Decision / Rationale / Consequences / 各阶段影响 / 待确认；ADR-020 组件模型 v2 部分取代 ADR-002 / 003、修订 ADR-014 / 019） | 草案 v1（组件模型 v2 修订中） |
-| `prd/` | 产品需求文档：索引 `prd/README.md` + 17 章（01–17）+ 专题 spec | 草案 v1（组件模型 v2 修订中：§02 / §03 / §11 / §12 已回填，§07–§10 回填中） |
+| `decisions/key-decisions-v0.md` | 关键决策清单 D1–D18、Q1–Q18 默认与补充裁决；2026-10-06 全部获认可并转为 ADR-001…018，此后只作历史记录；D19 库优先、D20 组件模型 v2 为同日方向修正新增（ADR-019 / ADR-020，2026-10-07 Accepted） | 已认可（历史记录；D19 / D20 已拍板） |
+| `adr/` | 架构决策记录 ADR-001…020 + 索引 `adr/README.md`（Status / Context / Decision / Rationale / Consequences / 各阶段影响 / 待确认；ADR-020 组件模型 v2 部分取代 ADR-002 / 003、修订 ADR-014 / 019；ADR-019 / ADR-020 已于 2026-10-07 Accepted） | 草案 v1（组件模型 v2 已定稿，2026-10-07） |
+| `prd/` | 产品需求文档：索引 `prd/README.md` + 17 章（01–17）+ 专题 spec | 草案 v1（组件模型 v2 已定稿（2026-10-07）：§02 / §03 / §07–§12、specs 已回填，待确认项全部拍板） |
 | `prd/specs/component-model.md` | 组件模型 v2 专题 spec（权威）：`.qian-plugin/plugin.json` 清单字段族、五种表面、scope / 遮蔽 / restrict、seam 三角色、profile / 组合包 / patch、`marketplace.json`、`qian` CLI、运行时语义与 TCK | 草案 v1（另有人负责；落盘前以 ADR-020 为准） |
 | `prd/specs/plugin-manifest.md` | 插件清单 `qian-plugin.yaml` 专题 spec：字段、JSON Schema、派生物、签名与 digest、反向权限、`capabilities` 条目 | v1，迁移对照（`kind` → `runtime.form`；权威规格见 component-model.md） |
 | `prd/specs/yue.md` | yue 组件库专题 spec：关键决策 D1–D16、六层分层、控件注册表契约、MF2 外壳与插槽、S1 最小集验收 | 草案 v1 |

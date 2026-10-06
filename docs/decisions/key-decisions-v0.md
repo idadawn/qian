@@ -1,10 +1,10 @@
-# Qian 关键决策清单 v0（待拍板）
+# Qian 关键决策清单 v0（已全部拍板，作为历史记录保留）
 
 > 状态：草案，2026-10-06。用途：在写 PRD 之前把会牵动整体的决策摆到一处，每条给出推荐、备选、依据和需要产品负责人确认的前提。拍板后转为 ADR（`docs/adr/`），PRD 只引用不重复。
 > 依据来源：7 份领域基线（`research/baseline-digest.md` 为摘要；全文在仓库外的调研目录）。凡引用「参考平台」指被借鉴的商业低代码产品，只借鉴功能与教训，不引入代码。
 > 阶段口径：S1 技术底座期 → S2 低代码构建期 → S3 面向客户期 → S4 AI 原生 Agent 平台。各阶段退出标准见 D18。
-> 2026-10-06 追加：D1–D18 已全部认可并转为 ADR-001…018；D19「库优先」由产品负责人同日的方向修正新增（ADR-019，Proposed），许可证、公开 feed 与组件安装入口待拍板。
-> 2026-10-06 第二条方向修正：D20「组件模型 v2」新增（ADR-020，Proposed）——一切皆插件、没有特权内核；组件 = 文件夹 + 清单 + 声明式表面 + 可选代码；`qian add` 一键安装与目录市场。D2、D3 的部分条目被 D20 取代，D14、D19 被修订，修订清单见 ADR-020 §6。
+> 2026-10-06 追加：D1–D18 已全部认可并转为 ADR-001…018；D19「库优先」由产品负责人同日的方向修正新增（ADR-019）；其待确认项（许可证、公开 feed、组件安装入口等）已于 2026-10-07 由产品负责人授权全部拍板，ADR-019 转为 Accepted（结论见 ADR-019 §7）。
+> 2026-10-06 第二条方向修正：D20「组件模型 v2」新增（ADR-020）——一切皆插件、没有特权内核；组件 = 文件夹 + 清单 + 声明式表面 + 可选代码；`qian add` 一键安装与目录市场。D2、D3 的部分条目被 D20 取代，D14、D19 被修订，修订清单见 ADR-020 §6。其 §7 八条待确认项已于 2026-10-07 由产品负责人授权全部拍板，ADR-020 转为 Accepted。
 
 ## 一页总览
 
@@ -28,8 +28,8 @@
 | D16 | 与 iClaw 的边界 | Qian = 能力提供方 + 业务主数据权威；iClaw = Agent 运行时 + AI 资产控制面；共用 Kun、Higress；Qian 不写任何 Agent loop | 租户/身份权威归谁；是否共用 Authentik、S2S 签发、Usage Ledger |
 | D17 | 部署 | 沿用现有 K3s/ArgoCD/Kustomize/Harbor 约定；Qian 独立 ns + 专属 PG/Redis；不以 per-tenant namespace 为默认 | 生产与 iClaw 共集群还是独立集群/节点池 |
 | D18 | 阶段切分与 S1 范围 | S1 18 个系统插件 + SDK + 部署物料；每阶段有可验收的退出标准 | 阶段顺序是否认可；S1 是否含模型网关底座接线 |
-| D19 | 库优先与 Qian 包族 | 每个系统组件首先是可独立安装使用的 NuGet 包，其次才经清单成为插件（插件 = 库 + 清单）；`Abstractions` / 实现两层；独立 / 平台两种模式同一份代码；组件库不依赖 `Qian.Kernel` 运行时 | 许可证；是否公开到 nuget.org；组件安装入口（统一 CLI + 目录市场，后续 ADR）；外部应用清单是否立项 |
-| D20 | 组件模型 v2 | 一切皆插件、没有特权内核（极小的 `Qian.Runtime` / `@qian/runtime`）；组件 = 文件夹 + 清单 + 声明式表面 + 可选代码，`kind` 退为 `runtime.form`；能力按 seam 三角色拆分；作用域两层扁平，租户启用 = scope patch；profile / 组合包 / patch 分层取代固定可部署单元与 18 个系统插件；`qian add` 一键安装 + `marketplace.json` 目录市场；Agent 原生表面 S1 起 | TS 侧是否直接采用现成运行时；清单文件名与格式；CLI 实现语言；官方市场仓库名称与可见性；代码插件热装卸是否进 S2；许可证与公开 feed |
+| D19 | 库优先与 Qian 包族 | 每个系统组件首先是可独立安装使用的 NuGet 包，其次才经清单成为插件（插件 = 库 + 清单）；`Abstractions` / 实现两层；独立 / 平台两种模式同一份代码；组件库不依赖 `Qian.Kernel` 运行时 | 已拍板（2026-10-07，ADR-019 §7）：许可证 Apache-2.0；S1 GitHub Packages 私有、S2 末或首个外部宿主试用时公开到 nuget.org / npm；安装入口由 ADR-020 定义（`qian add` + 目录市场）；外部应用清单不单独立项；S1 不提供元包 |
+| D20 | 组件模型 v2 | 一切皆插件、没有特权内核（极小的 `Qian.Runtime` / `@qian/runtime`）；组件 = 文件夹 + 清单 + 声明式表面 + 可选代码，`kind` 退为 `runtime.form`；能力按 seam 三角色拆分；作用域两层扁平，租户启用 = scope patch；profile / 组合包 / patch 分层取代固定可部署单元与 18 个系统插件；`qian add` 一键安装 + `marketplace.json` 目录市场；Agent 原生表面 S1 起 | 已拍板（2026-10-07，ADR-020 §7）：TS 侧 `@qian/runtime` 为公共 API、S1 内部 vendor Cordis 实现；清单 `.qian-plugin/plugin.json`；CLI 为 Node / TS 实现、`npx qian@latest`、`dotnet qian` 薄包装 P2；官方市场仓库 `qian-plugins`（S1 私有）；热装卸不进 S2 核心、RT 领域 5 天 spike；Apache-2.0 + GitHub Packages；遥测默认不采集；模板名以 spec §9.1 为准 |
 
 ---
 
@@ -215,7 +215,7 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 
 ## D19 库优先（Library-first）与 Qian 包族
 
-> 2026-10-06 方向修正新增：产品负责人希望「别人安装一个 NuGet 包就可以直接使用，尤其是通用的一些组件」，而不是只能作为客户端调用 Qian 平台 API。详见 ADR-019（Proposed）。同日产品负责人进一步要求组件模型参考「声明式组件 + 一键安装 + 目录市场 + 一切皆插件」的设计，组件的安装入口与声明格式由后续 ADR 定义；本条只定库的形态与依赖规则。（已由 D20 / ADR-020 定义；本条 D19.2 / D19.4 的装配表述经 ADR-020 §6 修订为「`Apply` 内部细节」，组件库唯一必需的 Qian 依赖改为 `Qian.Runtime`。）
+> 2026-10-06 方向修正新增：产品负责人希望「别人安装一个 NuGet 包就可以直接使用，尤其是通用的一些组件」，而不是只能作为客户端调用 Qian 平台 API。详见 ADR-019（Accepted，2026-10-07）。同日产品负责人进一步要求组件模型参考「声明式组件 + 一键安装 + 目录市场 + 一切皆插件」的设计，组件的安装入口与声明格式由后续 ADR 定义；本条只定库的形态与依赖规则。（已由 D20 / ADR-020 定义；本条 D19.2 / D19.4 的装配表述经 ADR-020 §6 修订为「`Apply` 内部细节」，组件库唯一必需的 Qian 依赖改为 `Qian.Runtime`。）
 
 **推荐**
 - 每个 Qian 系统组件首先是可在任意 ASP.NET Core（.NET 10）应用中独立安装使用的 NuGet 包，其次才通过清单成为 Qian 插件；「插件 = 库 + 清单」；Qian 平台 = `Qian.Kernel` + 这些库的装配。前端 yue 的 `@yue/*` npm 包同理（D13）。
@@ -230,13 +230,21 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 
 **明确不做**：不提供「拆单个库替代 Qian 平台」的支持承诺（独立模式是能力，不是第二个产品）；不为独立模式做低代码设计器与运行时；非 .NET 消费者沿用 OIDC + HTTP API。
 
-**需要拍板**：Qian 包族许可证（Kun 为 MIT，Qian 未定）；是否 / 何时公开到 nuget.org；组件安装入口与声明格式（统一 CLI 如 `qian add <component>` + 目录市场，后续 ADR）；「外部应用清单（只含声明的 bundle）」是否立项；ADR-019 何时由 Proposed 转 Accepted。
+**已拍板（2026-10-07，ADR-019 §7）**：
+- 安装入口与组件模型：由 ADR-020 定义（`qian add`、`.qian-plugin/plugin.json`、`.qian/marketplace.json`）；D19.2 / D19.4 的装配表述以 ADR-020 为准。
+- 许可证：Qian 包族、`qian` CLI、yue 一律 Apache-2.0；S3 商业组件另定（理由与可回退条件见 ADR-020 §7 第 6 条）。
+- 分发渠道：S1 GitHub Packages 私有；S2 末或首个外部宿主试用时公开到 nuget.org / npm（前提：PublicApiAnalyzers 门禁与 0.x → 1.0 SemVer 策略就位）。
+- 「外部应用清单」：不单独立项——非 .NET 外部应用以「只含声明的组件文件夹」接入（无 `src/`），S1 不专门交付，S3 随 ISV 入驻给出模板。
+- 元包：S1 不提供 `Qian.All` / `Qian.Platform`，profile 的组合包承担「一组包一起装」的职责。
+- `IPermissionChecker` 端口归属：`Kun.Authorization` 保持端口定义（ADR-006 D6.1），`Qian.Authz.Abstractions` 只依赖并再导出，不重复定义。
+- 包名与插件 ID 的映射：写在 `.qian-plugin/plugin.json` 的 `runtime.nuget[]` / `runtime.npm[]`（包名 + 版本 + digest），不在 Schema 里加 `assembly` 约束。
+- ADR-019 状态：2026-10-07 转为 Accepted，细则由 ADR-020 与 specs/component-model.md 吸收。
 
 ---
 
 ## D20 组件模型 v2（一切皆插件、声明式组件、一键安装、目录市场）
 
-> 2026-10-06 第二条方向修正新增：产品负责人要求组件化设计对标当代 Agent 生态的三类做法（文件即组件、一条命令安装；插件 = 文件夹 + 清单 + 声明式表面；一切皆插件的运行时），「不要再做传统设计」。详见 ADR-020（Proposed）。Kun 仍是底座（D1 不变），多租户 / SSO / 鉴权 / K3s / Apollo 的硬要求不变。
+> 2026-10-06 第二条方向修正新增：产品负责人要求组件化设计对标当代 Agent 生态的三类做法（文件即组件、一条命令安装；插件 = 文件夹 + 清单 + 声明式表面；一切皆插件的运行时），「不要再做传统设计」。详见 ADR-020（Accepted，2026-10-07）。Kun 仍是底座（D1 不变），多租户 / SSO / 鉴权 / K3s / Apollo 的硬要求不变。
 
 **推荐**（ADR-020 D20.1–D20.11 浓缩）
 1. 一切皆插件，没有特权内核：运行时只剩极小的 `Qian.Runtime`（上下文 `ctx`、服务注册、类型化事件、可逆副作用、加载器）；租户、身份、鉴权、文件、配置、网关、事件、审计、低代码运行时、Agent 门面全部是插件，向共享上下文贡献服务（`ctx.Tenancy`、`ctx.Identity`、`ctx.Authz`、`ctx.Files`…）；原 `qian.kernel` 的注册表、生命周期控制器、能力目录、契约仓库改为普通插件（`qian.registry`、`qian.lifecycle`、`qian.capabilities`），每一项都能从配置替换。
@@ -254,16 +262,18 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 
 **明确不做**：不再按物理形态做顶层分类；不把「预装全部 module + 数据库开关」作为租户启用的唯一路径（S1 预装仍是 `platform` profile 的默认组合包，租户开关改为 scope patch）；不维护第二套清单格式；不把现成 TypeScript 运行时的源码搬进 .NET（.NET 侧自研同语义运行时）；不在 S1 做代码插件热装卸；不为第三方代码打开共享进程（D2 信任等级规则保留，映射到 `policy.tier` 与 `policy.sandbox`）。
 
-**需要拍板**（ADR-020 §7 六条）：
-1. TypeScript 侧（yue 外壳、`qian` CLI）直接采用 Cordis（MIT）还是自研同语义的 `@qian/runtime`；.NET 侧确定自研。
-2. 清单文件名与格式：`.qian-plugin/plugin.json`（对齐对标项目）还是沿用 `qian-plugin.yaml`；默认前者。
-3. `qian` CLI 的实现语言：Node（便于 `npx` 一键）+ `dotnet qian` 薄包装，还是 .NET global tool 为主；默认前者。
-4. 官方市场仓库的名称与可见性（默认与 Qian 同组织下的独立仓库，S1 私有、S3 评估公开）。
-5. 代码插件热装卸是否进入 S2 范围，以及 collectible `AssemblyLoadContext` 与 Kun AOT 约束的兼容验证归属。
-6. 许可证与公开 feed（沿 D19 / ADR-019 §7）。
+**已拍板（2026-10-07，ADR-020 §7 八条；产品负责人授权 ADR 作者拍板，ADR-020 转为 Accepted）**：
+1. TypeScript 侧：`@qian/runtime` 为公共 API 包，S1 内部以固定版本 vendor 的 Cordis（MIT）作为实现，薄适配层对齐 ADR-020 与 specs/component-model.md 的语义，TCK 以我们的语义为准；.NET 侧自研不变。
+2. 清单文件：`.qian-plugin/plugin.json`（JSON）；profile 与 patch 继续用 YAML；`qian doctor --migrate-manifest` 负责从 v1 YAML 迁移。
+3. `qian` CLI：单一 Node / TypeScript 实现、发布到 npm，`npx qian@latest` 为一键入口，Node ≥ 22 为前置；`dotnet qian` 薄包装（定位并调用 Node 版 CLI、缺 Node 时提示安装）为 S1 可选 P2。
+4. 官方市场仓库：与 Qian 同组织下的独立仓库 `qian-plugins`，根目录 `.qian/marketplace.json`；S1 私有，S3 随许可证评估公开；社区发现用 GitHub topic `qian-plugin`。
+5. 代码插件热装卸不进 S2 核心交付；S2 内由 RT 领域做时间盒 5 天的 spike 验证 collectible `AssemblyLoadContext` 与 Kun 约束，结论写回 ADR-020；生产默认滚动重启，声明式表面热重载 S1 不变。
+6. 许可证：Qian 包族、`qian` CLI、yue 一律 Apache-2.0，S3 商业市场与计费组件的许可证到 S3 再定；公开 feed：S1 GitHub Packages 私有，S2 末或首个外部宿主试用时公开到 nuget.org 与 npm（前提：PublicApiAnalyzers 门禁与 0.x → 1.0 的 SemVer 策略就位）。
+7. CLI 遥测：默认不采集；S2 提供 opt-in `qian telemetry on`，只采集命令名、CLI 版本、操作系统与匿名安装 id，不含路径、租户与代码；私有化部署可在 profile 中禁用。
+8. `qian init --template` 模板名统一为 specs/component-model.md §9.1 的集合（R42），后续新增模板在 spec 登记。
 
 **补充裁决（2026-10-06，R27–R31，由 PRD 回填时上报并裁决）**
-- R27：PRD §12 N1 收窄为「不为第三方代码与可 AOT 的边缘 profile 做运行时热插 DLL」；官方代码插件在 `platform` profile 的热装卸保持 S2 可选、默认进程重启（与 D20.7 / D20.11 一致）。§7 第 5 条的「兼容验证归属」仍待拍板。
+- R27：PRD §12 N1 收窄为「不为第三方代码与可 AOT 的边缘 profile 做运行时热插 DLL」；官方代码插件在 `platform` profile 的热装卸保持 S2 可选、默认进程重启（与 D20.7 / D20.11 一致）。§7 第 5 条的「兼容验证归属」已于 2026-10-07 拍板：S2 内由 RT 领域做 5 天时间盒 spike，结论写回 ADR-020。
 - R28：`connector` 不是 `runtime.form`，而是「为某个 seam 提供 Provider 的组件」——清单上 `provides[]` 写出服务键 + `policy.egress` 声明出网目标，`runtime.form` 按实现取 `module` 或 `service`；`bundle` = 组合包（有 `config/qian.patch.yml`，可携带多个组件），应用 = 组合包 + marketplace 条目；字段细节以 specs/component-model.md 为准。
 - R29：PRD §02 新原则采用 2.7a / 2.7b 编号，不重编整章。
 - R30：规范术语「平台插件」（`policy.tier: system`，`platform` profile base 组合包成员）；「系统插件」保留为别名，UI 文案用「平台插件」。
@@ -297,7 +307,7 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 | Q18 | MFA 是否 S1 必做；等保/商密要求 | TOTP S1 做；商密不做假设，需你确认 |
 
 > 2026-10-06：Q1–Q18 的默认全部获认可。
-> D19、D20 新增的待拍板事项见各自的「需要拍板」小节（ADR-019 §7、ADR-020 §7），尚未裁决，不编入 Q 序号。
+> D19、D20 的待确认事项已于 2026-10-07 由产品负责人授权全部拍板，结论见各自的「已拍板」小节（ADR-019 §7、ADR-020 §7），不编入 Q 序号。
 
 ---
 

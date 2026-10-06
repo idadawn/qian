@@ -1,6 +1,7 @@
 ---
 title: 组件模型 v2：一切皆插件、声明式组件、一键安装、目录市场
-status: Proposed
+status: Accepted
+accepted: 2026-10-07（待确认项由产品负责人授权拍板，见 §7）
 date: 2026-10-06
 decision_id: D20
 supersedes: ADR-002 §D2.1/D2.9/D2.10（形态轴与两层生命周期）、ADR-003 §D3.1–D3.4（内核定位与固定可部署单元）；修订 ADR-014、ADR-019
@@ -97,16 +98,18 @@ supersedes: ADR-002 §D2.1/D2.9/D2.10（形态轴与两层生命周期）、ADR-
 | specs/plugin-manifest.md | 由 specs/component-model.md 取代为权威规格，原文件保留为字段迁移对照（`kind` → `runtime.form`） |
 | ROADMAP | S1 核心交付与退出标准按 §6 第一行更新 |
 
-## 7 待确认事项
+## 7 待确认事项（2026-10-07 已全部拍板）
 
-1. TypeScript 侧（yue 外壳、`qian` CLI）是直接采用 Cordis（MIT）还是自研同语义的 `@qian/runtime`；.NET 侧确定自研。
-2. 清单文件名与格式：`.qian-plugin/plugin.json`（对齐对标项目）还是沿用 `qian-plugin.yaml`；本 ADR 默认前者。
-3. `qian` CLI 的实现语言：Node（便于 `npx` 一键）并提供 `dotnet qian` 薄包装，还是 .NET global tool 为主；本 ADR 默认前者。
-4. 官方市场仓库的名称与可见性（默认与 Qian 同组织下的独立仓库，S1 私有、S3 评估公开）。
-5. 代码插件热装卸是否进入 S2 范围，以及 collectible `AssemblyLoadContext` 与 Kun AOT 约束的兼容验证归属。
-6. 许可证与公开 feed（沿 ADR-019 §7）。
-7. `qian` CLI 是否提供可选的匿名遥测以统计外部宿主安装数（默认不带，S3 随隐私口径一起拍板，R43）。
-8. `qian init --template` 的模板名已统一为 specs/component-model.md §9.1 的集合（`dotnet-webapi` / `dotnet-platform` / `ts-shell` / `skill-only` / `component-dotnet` / `component-ts`，R42）；后续新增模板在 spec 登记。
+产品负责人于 2026-10-07 授权本 ADR 作者拍板以下事项；拍板后本 ADR 由 Proposed 转为 Accepted。每条给出结论、理由与可回退条件。
+
+1. **TypeScript 侧运行时：`@qian/runtime` 作为公共 API 包，S1 内部以固定版本 vendor 的 Cordis（MIT）作为实现，薄适配层对齐本 ADR 与 specs/component-model.md 的语义；TCK 以我们的语义为准。** 理由：Cordis 已实现 ctx / inject / 可逆副作用 / 五种分发 / scope / loader 与 HMR 的全部语义并经大规模使用验证，自研只是复刻一遍；对外只暴露 `@qian/runtime`，若 TCK 对不上或上游演进不可控，可换为自研实现而不改任何组件代码。.NET 侧自研不变。
+2. **清单文件：`.qian-plugin/plugin.json`（JSON）。** profile 与 patch 继续用 YAML（人手编辑、需要注释）。理由：JSON Schema 校验与源生成器合并最直接，对齐对标生态；`qian doctor --migrate-manifest` 负责从 v1 YAML 迁移。
+3. **`qian` CLI：单一 Node / TypeScript 实现，发布到 npm，`npx qian@latest` 为一键入口；Node ≥ 22 为前置。** `dotnet qian` 薄包装（只负责定位并调用 Node 版 CLI、缺 Node 时给出安装提示）为 S1 可选 P2。理由：与 `@qian/runtime`、yue 工具链同栈；`pack / sign / publish / dev` 本就需要 dotnet SDK，再维护一套 .NET CLI 不值。
+4. **官方市场仓库：与 Qian 同组织下的独立仓库 `qian-plugins`，根目录 `.qian/marketplace.json`；S1 私有，S3 随许可证评估公开；社区发现用 GitHub topic `qian-plugin`。**
+5. **代码插件热装卸不进 S2 核心交付；S2 内由 RT 领域做一个时间盒 5 天的 spike，验证 collectible `AssemblyLoadContext` 与 Kun 约束，结论写回本 ADR。** 生产默认滚动重启；声明式表面热重载 S1 不变。理由：收益集中在开发态，而开发态已有 `qian dev --watch`；生产可靠性优先。
+6. **许可证：Qian 包族、`qian` CLI、yue 一律 Apache-2.0；S3 商业市场与计费组件的许可证到 S3 再定。公开 feed：S1 GitHub Packages 私有；S2 末或首个外部宿主试用时公开到 nuget.org 与 npm，前提是 PublicApiAnalyzers 门禁与 0.x → 1.0 的 SemVer 策略就位。** 理由：Apache-2.0 含专利授权、对企业采用友好、与 Kun 的 MIT 兼容，与「别人装一个包就能用」的定位一致。可回退条件：首个公开发布前可改为源码可见类许可证；一旦公开发布不再收回。
+7. **CLI 遥测：默认不采集；S2 提供 opt-in `qian telemetry on`，只采集命令名、CLI 版本、操作系统与匿名安装 id，不含路径、租户与代码；私有化部署可在 profile 中禁用。** 外部宿主安装数在 S1 只用 feed 下载统计。
+8. `qian init --template` 模板名已统一为 specs/component-model.md §9.1 的集合（R42）；后续新增模板在 spec 登记。
 
 ## 8 参考
 

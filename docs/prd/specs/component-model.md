@@ -1,8 +1,8 @@
 # 专题 spec · 组件模型 v2（清单 · 表面 · 运行时 · profile · 市场 · CLI）
 
-> 状态：草案 v2（2026-10-06）。依据 [ADR-020 组件模型 v2](../../adr/ADR-020-component-model-v2.md)（Proposed）为唯一权威决策；兼引 [ADR-019 库优先](../../adr/ADR-019-library-first-packages.md)（代码部分的打包规则）、[ADR-002](../../adr/ADR-002-plugin-model.md)（信任等级、从代码派生、digest 引用等被保留并映射到新字段的条目）、[ADR-016](../../adr/ADR-016-iclaw-boundary.md)（工具元数据、事件信封、MCP 版本）。本 spec 取代 [`plugin-manifest.md`](plugin-manifest.md)（v1）为权威规格；v1 保留为字段迁移对照（§3.6）。
+> 状态：草案 v2（2026-10-06；2026-10-07 §13 待确认项全部拍板）。依据 [ADR-020 组件模型 v2](../../adr/ADR-020-component-model-v2.md)（Accepted）为唯一权威决策；兼引 [ADR-019 库优先](../../adr/ADR-019-library-first-packages.md)（代码部分的打包规则）、[ADR-002](../../adr/ADR-002-plugin-model.md)（信任等级、从代码派生、digest 引用等被保留并映射到新字段的条目）、[ADR-016](../../adr/ADR-016-iclaw-boundary.md)（工具元数据、事件信封、MCP 版本）。本 spec 取代 [`plugin-manifest.md`](plugin-manifest.md)（v1）为权威规格；v1 保留为字段迁移对照（§3.6）。
 >
-> 读者：组件作者（.NET / TypeScript）、`Qian.Runtime` 与 `@qian/runtime` 的实现者、`qian` CLI 与市场仓库维护者、TCK 编写者。写法是「可直接照着实现」：每种文件格式给完整示例，每个运行时 API 给签名与语义表，每条规则给校验点。ADR-020 未定、本 spec 不得自行拍板的事项集中在 §13，正文标「→ §13」。被借鉴的商业低代码产品一律称「参考平台」，被对标的 Agent 生态项目一律称「对标项目」。
+> 读者：组件作者（.NET / TypeScript）、`Qian.Runtime` 与 `@qian/runtime` 的实现者、`qian` CLI 与市场仓库维护者、TCK 编写者。写法是「可直接照着实现」：每种文件格式给完整示例，每个运行时 API 给签名与语义表，每条规则给校验点。ADR-020 §7 的待确认项已于 2026-10-07 全部拍板，结论登记在 §13，正文标「→ §13」处以该节结论为准；本 spec 不自行新增决策。被借鉴的商业低代码产品一律称「参考平台」，被对标的 Agent 生态项目一律称「对标项目」。
 
 ---
 
@@ -99,6 +99,8 @@
 
 ## 3. 清单 `.qian-plugin/plugin.json`
 
+清单文件名与格式已定稿：`.qian-plugin/plugin.json`（JSON，便于 JSON Schema 校验与源生成器合并）；profile 与 patch 继续用 YAML（人手编辑、需要注释）；`qian doctor --migrate-manifest` 负责从 v1 `qian-plugin.yaml` 迁移（ADR-020 §7 第 2 条，已拍板）。
+
 ### 3.1 示例 A：带代码的组件 `qian.files`
 
 `ctx.Files` 的 S1 Provider（§6.2），`runtime.form: module`，由 `Qian.Files` 实现，存储后端经 Kun 新线 `Kun.Storage.*` 按 config 选择。
@@ -110,7 +112,7 @@
   "version": "1.0.0",
   "description": "多租户文件服务：租户前缀、配额、上传策略、文件元数据与预览票据；存储后端可选本地盘 / S3 / OSS",
   "author": { "name": "Qian Platform Team", "url": "https://docs.example.internal/qian" },
-  "license": "LicenseRef-Qian-Pending",
+  "license": "Apache-2.0",
   "engines": { "qian": ">=1.0 <2", "kun": ">=2026.9", "yue": "^1.0" },
   "interface": {
     "displayName": "文件存储",
@@ -187,7 +189,7 @@
   "version": "1.0.0",
   "description": "base 组合包：原 18 个平台插件按 seam 拆包——注册表、生命周期、能力目录、钩子桥接、租户、身份客户端、鉴权、数据、文件、配置、事件、审计、可观测、通知、调度、实时、授权 v0",
   "author": { "name": "Qian Platform Team" },
-  "license": "LicenseRef-Qian-Pending",
+  "license": "Apache-2.0",
   "engines": { "qian": ">=1.0 <2", "kun": ">=2026.9" },
   "interface": { "displayName": "平台 base 组合包", "category": "bundle", "icon": "./assets/icon.svg" },
   "surfaces": { "patch": "./config/qian.patch.yml", "skills": "./skills", "commands": "./commands", "hooks": "./hooks/hooks.json" },
@@ -223,7 +225,7 @@
 | `version` | SemVer 2.0 | 是 | 与 Kun CalVer 独立 | S1 |
 | `description` | `string`，10–500 字 | 是 | 面向人；模型看 `skills` / `tools` 的描述 | S1 |
 | `author` | `{ name, email?, url? }` | 是 | 市场的 `publisher.verified` 在 S3 另行维护，不在清单 | S1 |
-| `license` | SPDX 或 `LicenseRef-*` | 是 | Qian 包族许可证未定（→ §13 第 6 条），官方组件暂写 `LicenseRef-Qian-Pending` | S1 |
+| `license` | SPDX 或 `LicenseRef-*` | 是 | Qian 包族许可证已定为 Apache-2.0（→ §13 第 6 条），官方组件写 `Apache-2.0`；S3 商业组件的许可证另定 | S1 |
 | `engines` | `{ qian?, kun?, yue? }` SemVer range | 否 | 沿 v1 保留；有 `ui` 表面时 `yue` 必填，有 `runtime.nuget` 时 `kun` 必填 | S1 |
 
 **展示（`interface`）**
@@ -400,7 +402,7 @@
 name: upload-with-policy
 description: 当用户要把文件存进 Qian 并需要受上传策略（类型、大小、配额）约束时使用；不用于批量迁移历史文件（请用 files-migration 技能），也不用于生成下载链接以外的分享方式。
 allowed-tools: [qian.files/upload, qian.files/get-download-url, qian.files/get-quota]
-license: LicenseRef-Qian-Pending
+license: Apache-2.0
 metadata: { version: 1.0.0, visibility: public, surface: skill }
 ---
 
@@ -708,7 +710,7 @@ export interface Context {
 }
 ```
 
-TS 侧服务键小驼峰（`files`），.NET 侧大驼峰（`Files`）；两侧 Definition 包各自声明常量，文档生成器把它们对应到同一 seam。`@qian/runtime` 自研还是采用对标项目的 MIT 运行时 → §13 第 1 条；无论哪种，本节 API 语义、§5.4–§5.6 与 §10.2 TCK 不变。
+TS 侧服务键小驼峰（`files`），.NET 侧大驼峰（`Files`）；两侧 Definition 包各自声明常量，文档生成器把它们对应到同一 seam。S1 内部以固定版本 vendor 的 Cordis（MIT）作为实现，公共 API 为 `@qian/runtime`，薄适配层对齐本节与 ADR-020 的语义（ADR-020 §7 第 1 条，→ §13）；本节 API 语义、§5.4–§5.6 与 §10.2 TCK 以我们的语义为准，不随实现变化，若 TCK 对不上可换为自研实现而不改任何组件代码。
 
 ### 5.4 五种分发模式
 
@@ -1133,7 +1135,7 @@ S2 新增 profile `lowcode`（含 `qian.bundle.lowcode` 与 `qian.bundle.file-pr
 defaultProfile: platform
 marketplaces:
   - { name: acme-private,  source: "git+https://git.example.internal/platform/qian-market.git#main", priority: 10 }
-  - { name: qian-official, source: "git+https://github.com/example-org/qian-marketplace.git#stable", priority: 20 }   # 名称与可见性 → §13 第 4 条
+  - { name: qian-official, source: "git+https://github.com/example-org/qian-plugins.git#stable", priority: 20 }      # 官方市场仓库 qian-plugins，S1 私有（§13 第 4 条）
   - { name: community,     source: "github-topic:qian-plugin", priority: 90, trust: unverified }
 trust:
   keys: ["./.qian/keys/acme.pub"]            # 本项目额外信任的市场公钥
@@ -1142,6 +1144,8 @@ trust:
 `qian add <name>` 按 `priority` 升序逐个市场查找 `plugins[].name`，首个命中即用；多市场同名时告警并列出来源，用 `--from <market>` 或 `<market>/<name>` 指定；`trust: unverified` 的市场只有加 `--allow-unverified` 才参与解析，且只允许安装无代码组件、tier 最高 `community`（§11.5；已裁决 R40）。`qian list --markets` 打印解析顺序。
 
 ### 8.4 社区发现：GitHub topic `qian-plugin`
+
+官方市场仓库名为 `qian-plugins`（与 Qian 同组织下的独立仓库，根目录 `.qian/marketplace.json`），S1 私有、S3 随许可证评估公开（ADR-020 §7 第 4 条，已拍板）；社区发现走以下 topic 机制。
 
 公开仓库打上 topic `qian-plugin` 且根目录含 `.qian/marketplace.json`（多组件）或 `.qian-plugin/plugin.json`（单组件仓库）即可被发现。官方目录网站的生成器每日抓取 topic 结果生成只读索引 `community/index.json`（仓库、最近提交、是否签名、组件数、分类）；`source: github-topic:qian-plugin` 读的就是这份索引（CLI 不直接调用 GitHub 搜索 API）。社区条目默认 `trust: unverified`，`tier` 最高只接受 `community`，更高者被索引器降级并标记。
 
@@ -1158,7 +1162,7 @@ trust:
 
 ### 9.1 命令与参数
 
-全局参数：`--profile <name>`（默认 `.qian/config.yml` 的 `defaultProfile`）、`--cwd <dir>`、`--json`、`--verbose`、`--yes`。实现语言与 `dotnet qian` 薄包装 → §13 第 3 条；命令、参数与行为不依赖实现语言。
+全局参数：`--profile <name>`（默认 `.qian/config.yml` 的 `defaultProfile`）、`--cwd <dir>`、`--json`、`--verbose`、`--yes`。实现：单一 Node / TypeScript 实现、发布到 npm，前置 Node ≥ 22；`dotnet qian` 薄包装（只负责定位并调用 Node 版 CLI、缺 Node 时给出安装提示）为 S1 可选 P2（ADR-020 §7 第 3 条，→ §13）；命令、参数与行为不依赖实现语言。遥测默认不采集，S2 提供 opt-in `qian telemetry on`（ADR-020 §7 第 7 条，→ §13）。
 
 | 命令 | 参数 | 作用 |
 |---|---|---|
@@ -1362,18 +1366,18 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 
 ---
 
-## 13. 待确认事项
+## 13. 已拍板事项（原「待确认事项」，2026-10-07 全部拍板）
 
-本节只登记 [ADR-020 §7](../../adr/ADR-020-component-model-v2.md) 的待确认项及其对本 spec 的影响；本 spec 不新增决策，正文按 ADR-020 默认口径书写。
+本节登记 [ADR-020 §7](../../adr/ADR-020-component-model-v2.md) 八条待确认项的拍板结论及其在本 spec 的落位；本 spec 不新增决策，正文按下列结论书写，理由与可回退条件见 ADR-020 §7。
 
-| ADR-020 §7 | 事项 | ADR 默认 | 影响章节 | 本 spec 的处理 |
-|---|---|---|---|---|
-| 1 | TypeScript 侧（yue 外壳、`qian` CLI）直接采用对标项目的 MIT 运行时还是自研 `@qian/runtime`；.NET 侧确定自研 | 未定 | §5.3、§5.8、§10.2 | §5.3 以语义为准；若采用对标项目运行时，`@qian/runtime` 为其薄适配层，TCK 不变 |
-| 2 | 清单文件名与格式：`.qian-plugin/plugin.json` 还是 `qian-plugin.yaml` | 前者 | §2、§3、§3.6 | 全文按前者；若改为后者只影响文件名与序列化格式，字段表不变 |
-| 3 | `qian` CLI 实现语言：Node + `dotnet qian` 薄包装，还是 .NET global tool 为主 | 前者 | §9 | 命令、参数、安装过程与实现语言无关 |
-| 4 | 官方市场仓库的名称与可见性 | 与 Qian 同组织下独立仓库，S1 私有、S3 评估公开 | §8.1、§8.3 | 示例中的仓库地址为占位 |
-| 5 | 代码插件热装卸是否进 S2，以及 collectible `AssemblyLoadContext` 与 Kun AOT 约束的兼容验证归属 | 未定 | §5.6、§7.2 `hmr.code` | S1 校验器拒绝 `hmr.code: true`；代码变更走进程重启 |
-| 6 | 许可证与公开 feed（沿 ADR-019 §7） | 未定 | §3.4 `license`、§8.4、§11.5 | 官方组件暂写 `LicenseRef-Qian-Pending`；公开 feed 决定 `runtime.nuget[]` 的解析源 |
+1. 已拍板（ADR-020 §7 第 1 条）：TypeScript 侧 `@qian/runtime` 为公共 API 包，S1 内部以固定版本 vendor 的 Cordis（MIT）作为实现，薄适配层对齐 §5.3–§5.6 语义，TCK（§10.2）以我们的语义为准；.NET 侧 `Qian.Runtime` 自研不变。
+2. 已拍板（ADR-020 §7 第 2 条）：清单为 `.qian-plugin/plugin.json`（JSON，§3），profile 与 patch 继续用 YAML（§7）；`qian doctor --migrate-manifest` 负责从 v1 YAML 迁移（§3.6）。
+3. 已拍板（ADR-020 §7 第 3 条）：`qian` CLI 为单一 Node / TypeScript 实现、发布到 npm，`npx qian@latest` 为一键入口，Node ≥ 22 为前置；`dotnet qian` 薄包装为 S1 可选 P2（§9.1）。
+4. 已拍板（ADR-020 §7 第 4 条）：官方市场仓库为与 Qian 同组织下的独立仓库 `qian-plugins`，根目录 `.qian/marketplace.json`，S1 私有、S3 随许可证评估公开；社区发现用 GitHub topic `qian-plugin`（§8.3、§8.4；示例中的组织名仍为占位）。
+5. 已拍板（ADR-020 §7 第 5 条）：代码插件热装卸不进 S2 核心交付，S2 内由 RT 领域做 5 天时间盒 spike 验证 collectible `AssemblyLoadContext` 与 Kun 约束，结论写回 ADR-020；生产默认滚动重启，S1 校验器继续拒绝 `hmr.code: true`（§5.6、§7.2），声明式表面热重载不变。
+6. 已拍板（ADR-020 §7 第 6 条）：Qian 包族、`qian` CLI、yue 一律 Apache-2.0，官方组件 `license` 写 `Apache-2.0`（§3.4）；S3 商业市场与计费组件的许可证到 S3 再定；公开 feed S1 为 GitHub Packages 私有，S2 末或首个外部宿主试用时公开到 nuget.org 与 npm，`runtime.nuget[]` / `runtime.npm[]` 的解析源随之切换（§11.5 验签要求不变）。
+7. 已拍板（ADR-020 §7 第 7 条）：CLI 遥测默认不采集；S2 提供 opt-in `qian telemetry on`，只采集命令名、CLI 版本、操作系统与匿名安装 id，不含路径、租户与代码；私有化部署可在 profile 中禁用（§9.1）。
+8. 已拍板（ADR-020 §7 第 8 条）：`qian init --template` 模板名统一为 §9.1 的集合（R42），后续新增模板在本 spec 登记。
 
 补充裁决 R28（连接器与组合包的定义、`policy.egress[]`）、R31（五个 profile 的组合包落位、「平台插件」术语）、R32（未挂载 / 被过滤一律 404，管理面 403 `plugin_not_mounted`）、R33（CLI 十个动词、管理面端点前缀与 `/api/kernel/*` 别名）、R34（`Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 只进 `platform`、`policy.required`、挂载状态只存 `scope_patches`）、R35（文件夹 = 分发形态、注册表 = 运行态真相源、同一校验器、git 修订 = 分发版本）、R37（反向权限落 `policy.permissions`，权限点 / 默认角色 / 事件 / 消息类型落 `metadata/`）、R38（单例 seam 与注册表 seam 两种风格；连接器一律向注册表子服务按名称注册，`provides` 写「注册表键:名称」）、R39（hooks Schema 固定 Qian 事件矩阵；Agent 宿主事件由 Agent 运行时定义并透传）、R40（`policy.installation: auto \| confirm \| restricted`；未验签条目只装无代码组件、tier 最高 `community`）、R41（hooks `command` 与内联 shell 边界；profile 的 `build.aot` / `hmr` / `health` 字段保留）已在正文落实（§1.3、§2.1、§3.1、§3.4、§3.5、§3.6、§4.4、§5.1、§5.5、§5.7、§6.1–§6.3、§7.2、§7.6、§7.7、§8.2、§8.3、§9.1、§9.5、§10.1、§10.2、§11.4、§11.5）。本 spec 上报的口径空白已全部裁决，当前没有未裁决的草案口径。
 
@@ -1390,3 +1394,4 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 | 日期 | 版本 | 变更 |
 |---|---|---|
 | 2026-10-06 | 草案 v2 | 首版：按 ADR-020 重写组件模型；取代 `plugin-manifest.md` v1 为权威规格 |
+| 2026-10-07 | 草案 v2（拍板传播） | ADR-020 §7 八条全部拍板：§13 改为已拍板清单；§3 清单 JSON 定稿；§3.4 `license` 改 Apache-2.0；§5.3 TS 运行时 S1 vendor Cordis、公共 API `@qian/runtime`；§8.3 / §8.4 官方市场仓库 `qian-plugins`（S1 私有）；§9.1 Node ≥ 22 前置、`dotnet qian` 薄包装 P2、遥测默认不采集 |

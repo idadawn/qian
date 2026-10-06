@@ -1,6 +1,6 @@
 # Qian（乾）产品需求文档（PRD）— 索引
 
-> 状态：**草案 v1（组件模型 v2 修订中）** · 更新日期：2026-10-06 · 决策真相源：`docs/adr/`（拍板前为 `docs/decisions/key-decisions-v0.md`，D1–D18 与补充裁决已于 2026-10-06 全部获认可；D19 库优先、D20 组件模型 v2 为同日方向修正新增，ADR-019 / ADR-020 Proposed，PRD 引用时标注） · 路线真相源：[`docs/ROADMAP.md`](../ROADMAP.md) · 研究基线：`docs/research/baseline-digest.md`
+> 状态：**草案 v1（组件模型 v2 已定稿，2026-10-07）** · 更新日期：2026-10-07 · 决策真相源：`docs/adr/`（拍板前为 `docs/decisions/key-decisions-v0.md`，D1–D18 与补充裁决已于 2026-10-06 全部获认可；D19 库优先、D20 组件模型 v2 为同日方向修正新增，ADR-019 / ADR-020 已于 2026-10-07 Accepted、待确认项全部拍板） · 路线真相源：[`docs/ROADMAP.md`](../ROADMAP.md) · 研究基线：`docs/research/baseline-digest.md`
 
 ## 命名约定
 
@@ -11,7 +11,7 @@
 | 前端组件库 | **yue**（React；包前缀 `@yue/`） |
 | 插件 ID 前缀 | `qian.`（反向域名风格，发布后不可改；第三方以自有域名前缀） |
 | 可部署单元 | `qian-<name>`（S1：`qian-gateway`、`qian-identity`、`qian-platform`、`qian-model-gateway-adapter`、`qian-shell`）；经 ADR-020：可部署单元 = profile（S1 交付 `platform` / `gateway` / `identity` / `standalone` / `minimal`）；`qian-<name>` ↔ profile / 组合包的定稿映射见下表（R31） |
-| 运行时 / CLI | `Qian.Runtime`（.NET）/ `@qian/runtime`（TS）；`qian` CLI（`qian add <component>[@version]`）；清单 `.qian-plugin/plugin.json`；市场 `.qian/marketplace.json`（ADR-020，Proposed） |
+| 运行时 / CLI | `Qian.Runtime`（.NET）/ `@qian/runtime`（TS）；`qian` CLI（`qian add <component>[@version]`）；清单 `.qian-plugin/plugin.json`（JSON）；市场 `.qian/marketplace.json`（官方市场仓库 `qian-plugins`，S1 私有）；CLI 为 Node / TS 实现、`npx qian@latest` 一键入口（ADR-020，Accepted） |
 | 阶段 | **S1** 技术底座 → **S2** 低代码构建 → **S3** 面向客户 → **S4** AI 原生 Agent 平台 |
 | 优先级 | **P0** 当期退出标准关键路径 · **P1** 当期必做非关键路径 · **P2** 可选 / 可滑到下一阶段；功能项标题写成 `（P0 · S1）` |
 | 决策引用 | `ADR-0xx`（001 Kun 关系、002 插件模型、003 内核边界、004 数据库与隔离、005 身份、006 鉴权、007 Apollo、008 事件、009 审计、010 网关、011 元数据与动态数据、012 流程、013 前端 yue、014 市场、015 模型网关、016 与兄弟系统边界、017 部署、018 阶段、019 库优先、020 组件模型 v2） |
@@ -40,7 +40,7 @@
 ## 相对上一版的主要变更
 
 - 首版（草案 v1）：按决策清单 D1–D18 与补充裁决、七领域基线汇编、市场与 Agent 原生形态调研整理为 17 章 + 2 份专题 spec；全部描述目标态，Kun 当前缺口以带日期的「过渡态」块标注。
-- 组件模型 v2 修订（ADR-020，Proposed；§02/§03/§07–§12、ROADMAP、specs 已回填，migration 待回填）：§02 新增原则 2.7a / 2.7b；§03 的 3.4 改写、新增 3.4a、3.11 补两组术语；§11 词表新增 v2 术语；§12 新增 C1–C7 与待确认；ROADMAP S1 交付更新。§07–§10 由另一人同时回填；`specs/component-model.md` 草案 v1，`specs/plugin-manifest.md` 降为 v1 迁移对照。
+- 组件模型 v2 修订（ADR-020，2026-10-07 Accepted；§02/§03/§07–§12、ROADMAP、specs 已回填，migration 待回填）：§02 新增原则 2.7a / 2.7b；§03 的 3.4 改写、新增 3.4a、3.11 补两组术语；§11 词表新增 v2 术语；§12 新增 C1–C7 与待确认；ROADMAP S1 交付更新。§07–§10 由另一人同时回填；`specs/component-model.md` 草案 v1，`specs/plugin-manifest.md` 降为 v1 迁移对照。
 
 ## 章节索引
 
@@ -57,7 +57,7 @@
 | 09 | S3 面向客户 | [09-s3-customer.md](09-s3-customer.md) | 私有目录型市场 → 开放 ISV；安装向导、试用、升级中心、审核台；权益（Plan / Seat / Meter / Trial）；租户自助（IdP、品牌、套餐、SCIM）；高隔离档；不可信 UI 沙箱；门户、报表、开放 API |
 | 10 | S4 AI 原生 Agent 平台与模型服务网关 | [10-s4-agent.md](10-s4-agent.md) | 模型服务网关（GPUStack + Higress，本期唯一详细规划的 AI 范围）；每租户 MCP 门面；Agent 主体与委托链；元数据生成闭环；与外部 Agent 运行时的边界 |
 | 11 | 体验原则与产品词表 | [11-ux-glossary.md](11-ux-glossary.md) | 渐进披露、一套表单/表格/弹层体验、无端差异的元数据、可解释的拒绝、可预览与可回滚、授权与开关分开可见、一个收件箱；产品词表（术语 / 定义 / 标识 / 状态；含 v2 术语：表面、作用域、遮蔽、restrict、seam、profile、组合包、patch、市场条目、`qian add`、`Qian.Runtime`） |
-| 12 | 能力边界 | [12-boundaries.md](12-boundaries.md) | 按阶段「明确支持」清单（含组件模型 v2 边界 C1–C7）；安全底线（从后期提前到 S1）；明确不支持（长期承诺）；本期不规划的 AI 功能；待确认引用 ADR-020 §7 |
+| 12 | 能力边界 | [12-boundaries.md](12-boundaries.md) | 按阶段「明确支持」清单（含组件模型 v2 边界 C1–C7）；安全底线（从后期提前到 S1）；明确不支持（长期承诺）；本期不规划的 AI 功能；待确认中引用 ADR-020 §7 的条目已改写为「已拍板」（2026-10-07） |
 | 13 | 权限与安全 | [13-security.md](13-security.md) | 角色与主体模型；权限七层 L0–L6；令牌与会话；纵深防御分层；需二次确认场景；插件安全；密钥与配置；数据安全；审计；前端安全硬线；Agent 威胁与防线；DDL 示意；过渡态 |
 | 14 | 质量与评估 | [14-quality.md](14-quality.md) | 测试金字塔与门禁；机器可执行用例格式；CI 门禁清单；阶段退出准则；「合并 ≠ 完成」验收纪律；缺陷与安全事件分级 |
 | 15 | 演进路线（指针） | [15-roadmap.md](15-roadmap.md) | 阶段总览表；唯一真相源在 `docs/ROADMAP.md` |
@@ -94,3 +94,4 @@
 - 2026-10-06：一致性复核 R1–R20 落实（系统插件 18 个、`kind` 七值、微信网站扫码 S2 P1、规范 claim 集、权限点命名 `<plugin-id>:<resource>:<action>`、SSRF 基线两步、Operation/Task 契约预留等）；各章「待确认」中已裁决条目改写为「已裁决（R{n}）」。
 - 2026-10-06：组件模型 v2 回填（ADR-020，Proposed）——索引更新为 20 份 ADR；specs 列表加 `component-model.md`（权威，草案 v1）并把 `plugin-manifest.md` 标为 v1 迁移对照；§02 / §03 / §11 / §12 与 ROADMAP 已回填，§07–§10 回填中。「系统插件 18 个」「`kind` 七值」口径经 ADR-020 修订，见各章说明。
 - 2026-10-06：裁决 R27–R31 落实——R27 §12 N1 收窄（官方代码插件 `platform` 热装卸 S2 可选）；R28 connector = seam Provider 组件（`provides[]` + `policy.egress`）、bundle = 组合包、应用 = 组合包 + marketplace 条目；R29 接受 2.7a / 2.7b 编号；R30 规范术语「平台插件」；R31 原可部署单元 ↔ v2 落位映射表（本页命名约定与 ROADMAP S1）。
+- 2026-10-07：ADR-020 §7 八条与 ADR-019 §7 待确认项全部拍板，ADR-019 / ADR-020 转为 Accepted——本索引状态改为「组件模型 v2 已定稿」；§07–§10、§12、§17 的「待确认」中引用 ADR-020 §7 的条目改写为「已拍板」；`specs/component-model.md` §13 改为已拍板清单（TS 运行时 vendor Cordis、JSON 清单、Node CLI + Node ≥ 22、市场仓库 `qian-plugins`、热装卸 S2 spike、Apache-2.0 + GitHub Packages、遥测默认不采集、模板名定稿）。

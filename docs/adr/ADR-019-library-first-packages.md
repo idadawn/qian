@@ -1,6 +1,7 @@
 ---
 title: 库优先（Library-first）：每个 Qian 系统组件首先是可独立安装使用的 NuGet 包，其次才经清单成为插件；插件 = 库 + 清单
-status: Proposed
+status: Accepted
+accepted: 2026-10-07（待确认项由产品负责人授权拍板，见 §7）
 date: 2026-10-06
 decision_id: D19
 supersedes: none
@@ -32,7 +33,7 @@ ADR-002 / ADR-003 把 Qian 的一切能力组织为插件，S1 的 18 个系统�
   - 模式切换不改业务代码；两种模式由同一份库代码在装配期分叉。
 - **D19.5 依赖与隔离规则**：组件库只依赖 `Kun.*` 与 `Qian.*.Abstractions`；组件库彼此之间只通过 Abstractions 引用（例如 `Qian.Files` 依赖 `Qian.Authz.Abstractions` 暴露的 `IPermissionChecker` 端口，不依赖 `Qian.Authz` 实现）；每个库只拥有自己的 PG schema；多租户默认安全装配（fail-closed、RLS 装配，ADR-003 D3.8）在独立模式下同样生效，宿主必须显式选择 `SingleTenant` 才能关闭。
 - **D19.6 与 Kun 的分界**：无产品观点的通用基础设施（租户上下文原语、Outbox、RLS 拦截器、存储抽象、网关加固、可观测）上游进 Kun；带多租户 / 业务语义的组件（租户主档、IdP、RBAC 引擎、带配额与策略的文件服务、消息、调度）是 Qian 包。此句待回填为 ADR-001 的补充条目。
-- **D19.7 版本与分发**：Qian 包族采用 SemVer，同一版本号锁步发布（类似 `Microsoft.Extensions.*`）；S1 发布到 GitHub Packages（私有 feed）；是否公开到 nuget.org 与许可证（Kun 为 MIT，Qian 未定）列为待拍板。公共 API 变更由 `Microsoft.CodeAnalysis.PublicApiAnalyzers` 守门（覆盖全部 `Qian.*` 包，扩展 PRD §14 C1）；TCK 增加「独立模式」套件。
+- **D19.7 版本与分发**：Qian 包族采用 SemVer，同一版本号锁步发布（类似 `Microsoft.Extensions.*`）；S1 发布到 GitHub Packages（私有 feed）；许可证 Apache-2.0，公开到 nuget.org / npm 的时点见 §7（S2 末或首个外部宿主试用时）。公共 API 变更由 `Microsoft.CodeAnalysis.PublicApiAnalyzers` 守门（覆盖全部 `Qian.*` 包，扩展 PRD §14 C1）；TCK 增加「独立模式」套件。
 - **D19.8 S1 验收**：
   - [ ] 一个空白 ASP.NET Core 项目安装 `Qian.Files` + `Qian.Authz` + `Qian.Identity.Client` 三个包、不部署 Qian 平台，照 README 在 30 分钟内跑通文件上传与权限检查；样例 `samples/standalone-minimal` 入 Qian 源码仓。
   - [ ] 同一组包在 `qian-platform` 宿主中以平台模式运行，行为一致（TCK 两种模式都过）。
@@ -68,16 +69,16 @@ ADR-002 / ADR-003 把 Qian 的一切能力组织为插件，S1 的 18 个系统�
 - **S3**：第三方 `service` 插件与 ISV 开发者只依赖 `Qian.*` 包与 `Qian.Plugin.Sdk`；是否公开 feed 须在 S3 之前拍板。
 - **S4**：Agent 门面同样库优先；MCP 门面不属于独立模式。
 
-## 7 待确认事项
+## 7 待确认事项（2026-10-07 已拍板）
 
-- **安装入口与组件模型重定义**：产品负责人要求组件模型参考「声明式组件 + 一键安装 + 目录市场 + 一切皆插件」的设计。组件的安装入口将由统一 CLI（如 `qian add <component>`）与目录市场承担，`AddQian<Component>()` 降为 .NET 宿主的底层装配方式；声明格式、目录市场与一键安装的具体设计见后续 ADR。本 ADR 的 D19.2 / D19.4 中凡涉及装配写法的表述，以后续 ADR 为准。
-- 许可证：Kun 为 MIT，Qian 包族许可证未定（MIT / Apache-2.0 / 源码可见但限制多租户 PaaS 运营）；它决定能否公开 feed 以及 ISV 能否再分发。
-- 分发渠道：S1 只发 GitHub Packages；是否以及何时公开到 nuget.org。
-- 「外部应用清单」：非 .NET 外部应用是否可以只提交一份「只含声明的 bundle」（权限点、菜单、能力描述）接入 Qian 平台的目录与权限体系；本 ADR 不定，记录为待拍板，可与上条合并进后续组件模型 ADR。
-- 是否提供 `Qian.All` / `Qian.Platform` 元包作为便利包。
-- `IPermissionChecker` 端口归属：ADR-006 D6.1 定在 `Kun.Authorization`，D19.5 示例写 `Qian.Authz.Abstractions`；建议 `Qian.Authz.Abstractions` 只依赖并再导出 Kun 端口，待确认。
-- 包名与插件 ID 的映射（`Qian.Identity.Server` ↔ `qian.identity`、`Qian.Data.Dialect.Pg` ↔ `qian.data.dialect.postgres`、`Qian.Config.Apollo` ↔ `qian.config` 等非一一同名处）是否需要写进清单 Schema 的 `assembly` 字段约束（`specs/plugin-manifest.md` §3.1 已有 `assembly` 字段）。
-- 本 ADR 状态：方向已由产品负责人给出，细则（包命名、两种模式、验收四条）待确认后由 Proposed 转 Accepted；ADR-001 / 002 / 003 / 005 / 006 / 013 与 PRD 各章的回填在组件模型重定义后一并进行。
+- **安装入口与组件模型**：已由 ADR-020 定义（`qian add`、`.qian-plugin/plugin.json`、`.qian/marketplace.json`）；D19.2 / D19.4 的装配表述以 ADR-020 为准。
+- **许可证**：Apache-2.0（Qian 包族、CLI、yue），理由与可回退条件见 ADR-020 §7 第 6 条；S3 商业组件另定。
+- **分发渠道**：S1 GitHub Packages 私有；S2 末或首个外部宿主试用时公开到 nuget.org / npm（ADR-020 §7 第 6 条）。
+- **「外部应用清单」**：非 .NET 外部应用以「只含声明的组件文件夹」接入（无 `src/`，只有 `metadata/`、`tools/`、`ui/` 等表面），这在 ADR-020 D20.6 下已是常态，不需要单独机制；S1 不专门交付，S3 随 ISV 入驻给出模板。
+- **元包**：S1 不提供 `Qian.All` / `Qian.Platform`；profile 的组合包已承担「一组包一起装」的职责。
+- **`IPermissionChecker` 端口归属**：`Kun.Authorization` 保持端口定义（ADR-006 D6.1），`Qian.Authz.Abstractions` 只依赖并再导出该端口，不重复定义。
+- **包名与插件 ID 的映射**：写在 `.qian-plugin/plugin.json` 的 `runtime.nuget[]` / `runtime.npm[]`（包名 + 版本 + digest），不在 Schema 里加 `assembly` 约束；非同名处以清单为准。
+- **本 ADR 状态**：2026-10-07 转为 Accepted，细则已由 ADR-020 与 specs/component-model.md 吸收。
 
 ## 8 参考
 

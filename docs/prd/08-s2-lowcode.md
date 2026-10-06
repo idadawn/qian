@@ -12,7 +12,7 @@
 
 把 S1 交付给开发人员的技术底座，变成**不写代码的搭建者**也能用的低代码构建能力：元数据驱动运行时为主轨（ADR-011），搭建产物是可打包、可安装到多个租户、可独立升级的应用包（ADR-014，经 ADR-020 修订）。
 
-**组件模型 v2 口径（ADR-020）**。表单 / 列表 / 流程 / 页面是声明式表面（组件文件夹里的 `forms/`、`lists/`、`flows/`、`pages/`，与 S1 的 `skills/` `commands/` `hooks/` `.mcp.json` 同级，§07 7.2.2）：设计器保存即产出组件文件夹（`.qian-plugin/plugin.json` + 上述目录），可进 git、进市场（marketplace 条目）、被 patch；元数据注册表（8.1）是这些表面的运行态真相源与版本仓，文件夹是分发形态、git 修订是分发版本，二者由同一校验器守门，8.1 的 Release / Pointer 不改（R35）。可部署单元 = profile：`lowcode`、`workflow`（镜像 `qian-lowcode`、`qian-workflow`）以 profile 形式新增，`file-preview` 作为组合包挂在 `lowcode`（8.0.3，R31），每个 profile 只是一个 profile 文件 + 组合包。元数据的「包层 / 租户层」分层与 ADR-020 的 scope 模型是同一件事的两种说法：包层 = 组合包装载的全局注册，租户层 = 租户 scope 的遮蔽注册（8.1）。官方代码插件在 `platform` / `lowcode` 等 JIT profile 内的热装卸为 S2 可选、默认进程重启，第三方代码与可 AOT 的边缘 profile 永不热插（R27；8.0.4，ADR-020 §7 第 5 条）。
+**组件模型 v2 口径（ADR-020）**。表单 / 列表 / 流程 / 页面是声明式表面（组件文件夹里的 `forms/`、`lists/`、`flows/`、`pages/`，与 S1 的 `skills/` `commands/` `hooks/` `.mcp.json` 同级，§07 7.2.2）：设计器保存即产出组件文件夹（`.qian-plugin/plugin.json` + 上述目录），可进 git、进市场（marketplace 条目）、被 patch；元数据注册表（8.1）是这些表面的运行态真相源与版本仓，文件夹是分发形态、git 修订是分发版本，二者由同一校验器守门，8.1 的 Release / Pointer 不改（R35）。可部署单元 = profile：`lowcode`、`workflow`（镜像 `qian-lowcode`、`qian-workflow`）以 profile 形式新增，`file-preview` 作为组合包挂在 `lowcode`（8.0.3，R31），每个 profile 只是一个 profile 文件 + 组合包。元数据的「包层 / 租户层」分层与 ADR-020 的 scope 模型是同一件事的两种说法：包层 = 组合包装载的全局注册，租户层 = 租户 scope 的遮蔽注册（8.1）。官方代码插件在 `platform` / `lowcode` 等 JIT profile 内的热装卸不进 S2 核心交付（S2 内 RT 领域 5 天 spike）、生产默认滚动重启，第三方代码与可 AOT 的边缘 profile 永不热插（R27；8.0.4，ADR-020 §7 第 5 条已拍板）。
 
 #### 8.0.2 退出标准（ADR-018）
 
@@ -70,7 +70,7 @@ S2 结束时，以下两条必须在预发环境被第三方按脚本复现：
 | `qian.portal`（配置路径型） / `qian.report`（子集） | module + ui | 固定模板 + 配置的应用首页；列表 + 分组汇总 + 导出 XLSX | P2（补充裁决 Q29） | 8.11 |
 | `qian.codegen` | 开发者工具 | 调用运行时 SDK 的薄壳脚手架导出 | P2，不早于 S2 后期（Q11） | 8.15 |
 | `qian.script-runtime` | ui | QuickJS 前端沙箱（白名单 API、超时、内存上限、不暴露令牌） | P2（补充裁决 Q18） | 8.5 |
-| `Qian.Runtime` 官方代码插件热装卸（S2 可选） | 运行时 | 仅限 `platform` / `lowcode` 等 JIT profile 内的官方代码插件，collectible `AssemblyLoadContext` 装卸，默认仍走进程重启；第三方代码与可 AOT 的边缘 profile 永不热插（R27）；S1 只对声明式表面承诺热重载；需验证与 Kun AOT 约束的兼容（ADR-020 §7 第 5 条） | P2 | §07 7.2.1 |
+| `Qian.Runtime` 官方代码插件热装卸（S2 可选） | 运行时 | 仅限 `platform` / `lowcode` 等 JIT profile 内的官方代码插件，collectible `AssemblyLoadContext` 装卸，默认仍走进程重启；第三方代码与可 AOT 的边缘 profile 永不热插（R27）；S1 只对声明式表面承诺热重载；不进 S2 核心交付，S2 内由 RT 领域做 5 天时间盒 spike 验证与 Kun 约束的兼容、结论写回 ADR-020（ADR-020 §7 第 5 条已拍板） | P2 | §07 7.2.1 |
 
 同期交付、但不属于低代码域的 S2 增量（归 §07 各插件，本章只列不展开）：`qian.gateway` 多 Pod 共享限流计数与密钥热轮换（P 基线 B.2 标 S2 必做）；`qian.files` 分片上传与用途目录；`qian.identity` 个人中心扩展（我的组织/身份/偏好/消息接收）；`qian.i18n` 在线翻译管理（可选）；`qian` CLI / `Qian.Plugin.Sdk` 开发者租户与远程调试通道（可选）；`qian init --template package` 模板与 `forms/` `lists/` `flows/` `pages/` 四种表面的校验器接入 `qian doctor`（必做，随 8.1 / 8.5 / 8.6 / 8.8 交付）。
 
@@ -713,4 +713,4 @@ S2 不做任何 Agent 功能（§10），但以下四项必须在 S2 做对，�
 6. **门户配置路径型与报表子集**：已裁决（R16）——保持 S2 可选（P2）；S2 验收演示的「可用首页」由应用默认首页（菜单 + 功能列表）满足，不依赖门户；`@yue/charts` 维持 S2 可选。
 7. **富文本 / Markdown 编辑器选型**（补充裁决 Q39）：S2 前补选型调研，结论决定 8.4 富文本控件能否进 P1。
 8. **S2 示例自营应用的选题**（本章假定「请假与考勤」）与其是否随 S2 对外交付，待产品负责人确认。
-9. **组件模型 v2 对本章的影响（ADR-020）**：(a) 已裁决（R35）——`forms/` `lists/` `flows/` `pages/` 组件文件夹是分发形态、注册表是运行态真相源、同一校验器；git 修订是分发版本，8.1 的 Release / Pointer 不改；(b) `lowcode` / `workflow` profile 的组合包边界与是否允许租户私有市场分发 `package` 组件（S3）；(c) 官方代码插件热装卸是否进入 S2 范围及与 Kun AOT 约束的兼容验证归属（R27 已定默认进程重启；ADR-020 §7 第 5 条，8.0.4 列 P2）；(d) 清单文件名（ADR-020 §7 第 2 条）影响 8.10 bundle 定义的字段落位；(e) TypeScript 侧运行时选型（§7 第 1 条）影响 `@qian/designer` 与 `@qian/lowcode-runtime` 是否作为 `@qian/runtime` 插件树的成员交付。
+9. **组件模型 v2 对本章的影响（ADR-020）**：(a) 已裁决（R35）——`forms/` `lists/` `flows/` `pages/` 组件文件夹是分发形态、注册表是运行态真相源、同一校验器；git 修订是分发版本，8.1 的 Release / Pointer 不改；(b) `lowcode` / `workflow` profile 的组合包边界与是否允许租户私有市场分发 `package` 组件（S3）；(c) 已拍板（ADR-020 §7 第 5 条）：官方代码插件热装卸不进 S2 核心交付，S2 内由 RT 领域做 5 天时间盒 spike 验证 collectible `AssemblyLoadContext` 与 Kun 约束、结论写回 ADR-020，生产默认滚动重启（R27；8.0.4 列为 P2 spike）；(d) 已拍板（ADR-020 §7 第 2 条）：清单为 `.qian-plugin/plugin.json`（JSON），8.10 bundle 定义的字段按此落位；(e) 已拍板（ADR-020 §7 第 1 条）：TS 侧公共 API 为 `@qian/runtime`、S1 内部 vendor Cordis 实现，`@qian/designer` 与 `@qian/lowcode-runtime` 作为 `@qian/runtime` 插件树成员交付，不依赖实现选择。

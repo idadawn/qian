@@ -1,6 +1,6 @@
 # 3. 核心概念模型
 
-> 状态：草案 v1（组件模型 v2 修订中） · 更新日期：2026-10-06 · 决策引用：ADR-002、ADR-004、ADR-005、ADR-006、ADR-008、ADR-011、ADR-014、ADR-016、ADR-019、ADR-020（Proposed） · 上级索引：[README](README.md)
+> 状态：已定稿（组件模型 v2，2026-10-07） · 更新日期：2026-10-07 · 决策引用：ADR-002、ADR-004、ADR-005、ADR-006、ADR-008、ADR-011、ADR-014、ADR-016、ADR-019、ADR-020（Accepted） · 上级索引：[README](README.md)
 
 本章定义 Qian 的十个核心概念，3.4a 另列组件模型 v2（ADR-020）新增的六个概念。每个概念给出 **定义**、**例子**、**承诺**；承诺用四种符号：✅ 可做 · ❌ 不可做 · ⚠️ 有条件 · 🔒 保留与隔离。概念之间的关系见 3.0 的总图；易混术语的精确语义见 3.11。功能性细节与数据结构见 §07–§10。
 
@@ -22,7 +22,7 @@
  Operation/Task ◀── 任何长任务、审批待办、Agent 补参
 ```
 
-> 组件模型 v2（ADR-020，Proposed）对总图的修订：「插件 Plugin（kind × role × distribution × tier）」读作「组件 = 文件夹 + 清单 + 声明式表面 + 可选代码」，`kind` 退为 `runtime.form`、`tier` 落入 `policy.tier`；插件挂进由 **profile → 组合包 → patch** 层叠出的插件树，并按 **scope**（租户 / 应用 / Agent 会话）注册或遮蔽；图中「授权 Entitlement」只表达「买没买」，租户「开没开」由租户 scope 的 patch 表达；能力按 **seam**（Definition / Provider / Consumer）拆分，`ctx.<key>` 是能力的运行时名字；「应用 App = bundle」改读为「组合包 + marketplace 条目」（R28）。六个新概念见 3.4a，易混术语见 3.11。
+> 组件模型 v2（ADR-020，Accepted）对总图的修订：「插件 Plugin（kind × role × distribution × tier）」读作「组件 = 文件夹 + 清单 + 声明式表面 + 可选代码」，`kind` 退为 `runtime.form`、`tier` 落入 `policy.tier`；插件挂进由 **profile → 组合包 → patch** 层叠出的插件树，并按 **scope**（租户 / 应用 / Agent 会话）注册或遮蔽；图中「授权 Entitlement」只表达「买没买」，租户「开没开」由租户 scope 的 patch 表达；能力按 **seam**（Definition / Provider / Consumer）拆分，`ctx.<key>` 是能力的运行时名字；「应用 App = bundle」改读为「组合包 + marketplace 条目」（R28）。六个新概念见 3.4a，易混术语见 3.11。
 
 ## 3.1 租户（Tenant）
 
@@ -68,7 +68,7 @@
 
 ## 3.4 插件（Plugin）／组件（Component）
 
-**定义。** 平台能力的交付与运行单元。组件模型 v2（ADR-020，Proposed）下，**组件 = 文件夹 + 清单（`.qian-plugin/plugin.json`）+ 声明式表面 + 可选代码**；装进 `Qian.Runtime` 的插件树后它就是一个插件（最小接口 `Inject` + `Apply`，所有注册为可逆副作用）。本 PRD 中「插件」与「组件」同义：前者强调运行时身份，后者强调交付形态。无代码的组件（只有 skill、只有配置）是常态而非例外。清单字段族：`id`（反向域名，发布后不可改）、`version`（SemVer）、`interface`（展示信息）、各表面指针、`runtime`（`nuget[]` / `npm[]`、`form`）、`inject[]` / `provides[]`（服务键）、`policy`（`tier`、`sandbox`、`authentication`、`profiles[]`）、`scopes[]`。原 ADR-002 的四个维度按下表映射，其中 `kind` 不再是顶层分类（顶层分类改为「表面」，见 3.4a）：
+**定义。** 平台能力的交付与运行单元。组件模型 v2（ADR-020，Accepted）下，**组件 = 文件夹 + 清单（`.qian-plugin/plugin.json`）+ 声明式表面 + 可选代码**；装进 `Qian.Runtime` 的插件树后它就是一个插件（最小接口 `Inject` + `Apply`，所有注册为可逆副作用）。本 PRD 中「插件」与「组件」同义：前者强调运行时身份，后者强调交付形态。无代码的组件（只有 skill、只有配置）是常态而非例外。清单字段族：`id`（反向域名，发布后不可改）、`version`（SemVer）、`interface`（展示信息）、各表面指针、`runtime`（`nuget[]` / `npm[]`、`form`）、`inject[]` / `provides[]`（服务键）、`policy`（`tier`、`sandbox`、`authentication`、`profiles[]`）、`scopes[]`。原 ADR-002 的四个维度按下表映射，其中 `kind` 不再是顶层分类（顶层分类改为「表面」，见 3.4a）：
 
 | 维度 | 取值 | 含义 |
 |---|---|---|
@@ -88,7 +88,7 @@
 - ❌ 不做运行时热插 DLL 进共享进程；`partner / private / community` 不得为 `module` / `service`（映射到 `policy.tier` / `policy.sandbox`）；未签名直接安装失败。
 - 🔒 `id` 为反向域名，发布后不可改；OCI 引用只接受 digest（仅代码部分）；签名不在清单里。
 
-## 3.4a 组件模型 v2 的六个概念（ADR-020，Proposed）
+## 3.4a 组件模型 v2 的六个概念（ADR-020，Accepted）
 
 **表面（surface）。** 组件对外暴露的声明式内容，是组件的顶层分类：`skills/<name>/SKILL.md`（技能，Agent 可读，含 front matter）、`agents/<name>.md`（子 Agent 定义）、`commands/<name>.md`（人类斜杠命令，命令平面，不进入模型消息）、`hooks/hooks.json`（Qian 事件与 Agent 宿主事件的桥接）、`.mcp.json`（MCP 服务器声明）、`tools/`（面向模型的工具描述）、`ui/`（yue 远程模块、页面、控件、设置卡）、`forms/ lists/ flows/ pages/`（低代码元数据，S2 起）。表面是 Markdown 与 JSON，Agent 可直接读写；S1 支持运行中重载。例：一个只含 `skills/` 的组件没有任何代码；S2 设计器保存一张表单，产出的就是组件文件夹里的 `forms/<name>.json`。✅ 五种表面（skills / agents / commands / hooks / MCP）的解析器与校验器 S1 交付；❌ 不存在绕过注册表的隐藏表面。
 
