@@ -49,7 +49,7 @@ supersedes: ADR-002 §D2.1/D2.9/D2.10（形态轴与两层生命周期）、ADR-
 - **D20.8 一键安装与目录市场。** `qian add <component>[@version]`（等价 `npx qian@latest --skill x --agent y --plugin z --yes`）把声明式表面复制进项目的 `.qian/` 目录、把代码部分加为 NuGet / npm 依赖、把配置条目写进当前 profile 的 patch；配套 `qian remove`、`qian list`、`qian doctor`（健康检查）、`qian dump-config`、`qian init --template <stack>`（按技术栈脚手架）。目录市场是 git 仓库里的一份 `.qian/marketplace.json`：`name`、`interface.displayName`、`plugins[]`，每个条目只有 `name`、`source`（`local` 路径 / `url` / `git-subdir`）、`policy`（`installation`、`authentication`、`profiles`）、`category`、`interface`。多市场并存：官方市场仓库、租户私有市场、社区市场（GitHub topic `qian-plugin` 发现）。目录网站由 marketplace.json 生成。**ADR-014 据此修订：应用包格式 = 组件文件夹 + marketplace 条目；OCI 制品只用于代码部分；S3 的商业市场（授权、计费、审核）叠在同一格式之上，不另起格式。**
 - **D20.9 Agent 原生表面是一等公民，从 S1 开始。** skill、agent、command、hook、MCP 服务器、tool、提示词片段在 S1 就是受支持的表面，不是 S4 才有。所有模型可见的东西都注册在 `ctx.Tools` 等注册表里并受 scope 过滤；`AGENTS.md` 进每个仓库与每个包；包 README 契约包含「模型体验」节与「已知限制与延期项」节；配置目录、模块图、事件图、能力 seam 图由代码生成并设 CI 新鲜度门禁。S4 的 `extensions` 能力（模型在策略下挂载与卸载插件，运行时自修改）建立在同一套装载器上，S1 只开放给人类 CLI。
 - **D20.10 与 Kun、NuGet 的关系。** ADR-019 保留为「代码部分的打包规则」：有代码的组件发 `Qian.<X>.Abstractions` 与 Provider 包，`AddQian<X>()` 只是 `Apply` 内部的装配细节，不是开发者入口；`Qian.Runtime` 是组件库唯一必需的 Qian 依赖（极小、无业务语义），组件库不依赖 `qian.registry` / `qian.lifecycle` 等插件。Kun 的 `AddKunXxx()` 模块在 Qian 里被包装为插件，`Kun.*` 不改。Kun 的严格 AOT 约束与动态插件树矛盾的部分这样处理：`gateway` 等边缘 profile 可 AOT，`platform` profile 不承诺 AOT（与 ADR-001 对 AOT 承诺的修订一致）。
-- **D20.11 明确不做。** 不再按物理形态做顶层分类；不把「预装全部 module + 数据库开关」作为租户启用的唯一路径（S1 预装仍是 `platform` profile 的默认组合包，但租户开关改为 scope patch）；不维护第二套清单格式；不把 Cordis 的 TypeScript 源码搬进 .NET（.NET 侧自研同语义运行时；TypeScript 侧是否直接采用 Cordis 见 §7）；不在 S1 做代码插件热装卸；不为第三方代码打开共享进程（ADR-002 D2.4 的信任等级规则保留，映射到 `policy.tier` 与 `policy.sandbox`）。
+- **D20.11 明确不做。** 不再按物理形态做顶层分类；不把「预装全部 module + 数据库开关」作为租户启用的唯一路径（S1 预装仍是 `platform` profile 的默认组合包，但租户开关改为 scope patch）；不维护第二套清单格式；不把 Cordis 的 TypeScript 源码搬进 .NET（.NET 侧自研同语义运行时；TypeScript 侧是否直接采用 Cordis 见 §7）；不在 S1 做代码插件热装卸；不为第三方代码打开共享进程（ADR-002 D2.4 的信任等级规则保留，映射到 `policy.tier` 与 `policy.sandbox`；`community` 等级在 S1–S2 只接受无代码组件，S3 随 Wasm 运行时与审核台开放 `function` 与受限 `ui`，R44）。
 
 ## 3 理由（Rationale）
 
@@ -105,6 +105,8 @@ supersedes: ADR-002 §D2.1/D2.9/D2.10（形态轴与两层生命周期）、ADR-
 4. 官方市场仓库的名称与可见性（默认与 Qian 同组织下的独立仓库，S1 私有、S3 评估公开）。
 5. 代码插件热装卸是否进入 S2 范围，以及 collectible `AssemblyLoadContext` 与 Kun AOT 约束的兼容验证归属。
 6. 许可证与公开 feed（沿 ADR-019 §7）。
+7. `qian` CLI 是否提供可选的匿名遥测以统计外部宿主安装数（默认不带，S3 随隐私口径一起拍板，R43）。
+8. `qian init --template` 的模板名已统一为 specs/component-model.md §9.1 的集合（`dotnet-webapi` / `dotnet-platform` / `ts-shell` / `skill-only` / `component-dotnet` / `component-ts`，R42）；后续新增模板在 spec 登记。
 
 ## 8 参考
 

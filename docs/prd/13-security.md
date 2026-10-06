@@ -1,6 +1,6 @@
 # §13 权限与安全
 
-> 状态：草案 v0（2026-10-06）。依据：ADR-004（数据库与隔离）、ADR-005（身份）、ADR-006（鉴权）、ADR-007（Apollo）、ADR-009（审计）、ADR-010（网关）、ADR-002（插件模型）、ADR-016（iClaw 边界）、ADR-017（部署）、ADR-018（阶段）及补充裁决。本章是平台的**可信计算基**规范：描述目标态；Kun 当前缺口写成「过渡态（2026-10）」并集中在 §13.14。
+> 状态：草案 v0（2026-10-06）。依据：ADR-004（数据库与隔离）、ADR-005（身份）、ADR-006（鉴权）、ADR-007（Apollo）、ADR-009（审计）、ADR-010（网关）、ADR-002（插件模型）、ADR-020（组件模型 v2）、ADR-016（iClaw 边界）、ADR-017（部署）、ADR-018（阶段）及补充裁决。本章是平台的**可信计算基**规范：描述目标态；Kun 当前缺口写成「过渡态（2026-10）」并集中在 §13.14。
 >
 > 四条总原则：
 > 1. **身份 ≠ 授权**：身份记录结构上不携带授权载荷；授权来自判定端口 + 委托链 + 运行时授权快照。
@@ -17,7 +17,7 @@
 | 主体类型 | 载体 | 凭据 | 阶段 |
 |---|---|---|---|
 | `user` | Person（全局自然人）+ Membership（租户成员） | 密码 / 短信 / TOTP / 上游连接器断言 | S1 |
-| `service` | 平台服务、系统插件、ISV `service`、外部系统的 OAuth client | client_credentials；网关换签的 S2S 令牌；K8s ServiceAccount（工作负载身份） | S1 |
+| `service` | 平台服务、平台插件（原称系统插件）、ISV `runtime.form: service` 组件、外部系统的 OAuth client | client_credentials；网关换签的 S2S 令牌；K8s ServiceAccount（工作负载身份） | S1 |
 | `agent` | 有归属人、可吊销的 Agent 客户端 | RFC 8693 令牌交换，令牌带 `act` 链 | S1 字段预留 / S4 启用 |
 | `system` | 平台自身的定时任务、状态机迁移、迁移 Job | 内部服务身份，审计 `actor_type=system` | S1 |
 
@@ -29,11 +29,11 @@
 
 | 角色 | 域 | 能做 | 不能做 | 对租户的可见性 | 阶段 |
 |---|---|---|---|---|---|
-| 平台超管 | 平台 | 创建 / 冻结 / 注销租户；平台级配置与密钥引用；系统插件修订与回切；查看全平台审计；旁路租户权限（策略显式声明、每次审计） | 以租户成员身份出现在业务数据中；绕过审计；读取密钥明文 | 对租户不可见，审计可见；不计入租户配额（Q12） | S1 |
-| 平台运营 | 平台 | 租户主档 CRUD、开通白名单、套餐下发、管理员重置密码、运营看板、审核自助申请、市场审核台 | 读取租户业务数据；修改系统插件；旁路租户权限 | 不可见 | S1 最小 / S3 完整 |
+| 平台超管 | 平台 | 创建 / 冻结 / 注销租户；平台级配置与密钥引用；平台插件修订与回切；查看全平台审计；旁路租户权限（策略显式声明、每次审计） | 以租户成员身份出现在业务数据中；绕过审计；读取密钥明文 | 对租户不可见，审计可见；不计入租户配额（Q12） | S1 |
+| 平台运营 | 平台 | 租户主档 CRUD、开通白名单、套餐下发、管理员重置密码、运营看板、审核自助申请、市场审核台 | 读取租户业务数据；修改平台插件；旁路租户权限 | 不可见 | S1 最小 / S3 完整 |
 | 平台开发者 | 平台 | 用 SDK 开发官方插件、出修订、跑 TCK、在开发者租户调试 | 直接向生产租户安装未签名制品；访问他人租户数据 | 仅开发者租户 | S1 |
-| ISV | 平台（外部） | 入驻、上传 package / function / connector / 受限 ui、查看自己制品的审核与安装统计、席位与分成 | 上传任意代码容器（Q9）；访问安装方租户数据；修改已批准能力的描述或 Schema 而不触发复审 | 不可见 | S3 |
-| 租户管理员 | 租户 | 组织 / 岗位 / 用户 / 角色 / 授权；开通已授权插件 / 应用并批准反向权限；租户级登录与密码策略、IdP 连接器（S3）；查看本租户审计；强制下线；工作交接 | 创建租户；跨租户操作；修改隔离策略；读取密钥明文；删除审计 | 本租户 | S1 |
+| ISV | 平台（外部） | 入驻、上传声明式表面、`package` / `function` / 受限 `ui` 与 seam Provider 组件（原 connector）、查看自己制品的审核与安装统计、席位与分成 | 上传任意代码容器（Q9）；访问安装方租户数据；修改已批准能力的描述或 Schema 而不触发复审 | 不可见 | S3 |
+| 租户管理员 | 租户 | 组织 / 岗位 / 用户 / 角色 / 授权；挂载（租户 scope patch）已授权插件 / 应用并批准反向权限；租户级登录与密码策略、IdP 连接器（S3）；查看本租户审计；强制下线；工作交接 | 创建租户；跨租户操作；修改隔离策略；读取密钥明文；删除审计 | 本租户 | S1 |
 | 业务搭建者（租户开发者） | 租户 | 建应用、设计表单 / 列表 / 流程、发布、生成菜单与权限资源、配置数据接口（SQL 文本模式需额外高级权限）、打包导出 `template` | 授予自己没有的权限；绕过发布流程直接改线上元数据；配置出网域名（需管理员批准） | 本租户内其拥有 / 被授权的应用 | S2 |
 | 终端用户 | 租户 | 使用被授权的应用、菜单、按钮、字段、数据范围；发起 / 处理审批；管理个人中心与偏好 | 一切未授权项（缺省拒绝） | 本租户内授权范围 | S1 |
 | Agent 主体 | 租户（有归属人） | 委托人权限 ∩ 授予 scope 内的读与可逆写；发起申请类动作；查询 `Check / ListAllowedActions / Explain` | 标 `humanOnly` 的动作（签名、签章、转审、协办、撤销等 S4 前一律禁止）；破坏性动作（只能发起申请）；获取委托人以外的权限 | 继承委托人可见性 | S4（字段 S1） |
@@ -54,7 +54,7 @@
 | **L0 租户隔离** | 所有业务数据 | ① `qian.gateway` 验签后注入 `tenant_id`；② 每服务入口的租户解析中间件 / 消息订阅器 / Saga 执行器建作用域；③ EF 全局过滤 + 插入自动填充；④ PostgreSQL RLS（`FORCE ROW LEVEL SECURITY` + `WITH CHECK`） | 令牌 claim `tenant_id`；`tenancy.tenant`；每张业务表的 `tenant_id` 列与 RLS 策略 | S1 |
 | **L1 角色** | 平台超管；租户 Owner / Admin / 开发者 / 使用者；自定义角色 | `qian.authz` 求值：有效角色 = 直接授予 ∪ 经组织 / 岗位 / 用户组获得 | `authz.role`、`authz.role_assignment`（主体类型 × 主体 id） | S1（职责分离约束 S3） |
 | **L2 功能权限** | 应用、菜单、页面、按钮、API 端点、流程、打印等（资源类型由插件注册） | 端点声明权限点 → ASP.NET Core 策略 / Mediator 行为 / gRPC 拦截器调用 `IPermissionChecker.Check`；缺省拒绝 | `authz.permission_definition`（清单派生）、`authz.grant`、`authz.resource_type` | S1 |
-| **L3 资源实例** | 应用 / 表单 / 流程 / 报表 / 文件夹的所有者、编辑者、查看者、共享人；市场授权 | 内核 ACL 表查询（S2）；OpenFGA 适配插件（S3，仅层级继承与共享，不做行过滤） | `authz.resource_acl`；OpenFGA 元组经 Outbox 同步 | S2 可选 / S3 |
+| **L3 资源实例** | 应用 / 表单 / 流程 / 报表 / 文件夹的所有者、编辑者、查看者、共享人；市场授权 | `qian.authz` 内置 ACL 表查询（S2）；OpenFGA 适配插件（S3，仅层级继承与共享，不做行过滤） | `authz.resource_acl`；OpenFGA 元组经 Outbox 同步 | S2 可选 / S3 |
 | **L4 数据权限（行级）** | 列表、查询、导出、报表、API 的记录集 | `IDataPermissionFilter` 把条件树 + 系统变量编译为 EF / SQL 谓词，在数据引擎唯一入口注入；与 L0 RLS 叠加；覆盖读、改、删、导出全部路径 | `authz.data_scope_rule`（条件树 JSON、全部数据标志）；系统变量目录 | S2（契约 S1） |
 | **L5 字段** | 字段可见 / 可编辑 / 脱敏 | 读：投影或按脱敏规则替换；写：白名单之外的字段拒绝；yue 按元数据渲染，以服务端为准 | `authz.field_policy`；字段敏感度标签 | S2 |
 | **L6 上下文条件（ABAC）** | IP、时间窗、端类型、套餐、数据密级、step-up、Agent 委派 | 作为条件挂在 L1–L4 规则上；Agent 有效权限 = 委托人权限 ∩ scope | 规则 JSON 中的 `conditions[]`；令牌 `acr / amr / act / profile` | S1 部分（IP、端、step-up）/ S4 |
@@ -165,11 +165,11 @@ plugin_id（服务主体为插件时）
 │ 1. qian.gateway（Kun.Gateway 加固；业务 API 边界）                           │
 │    强制认证（只信任 qian.identity 单 issuer）、aud 校验、identity_revision   │
 │    白名单转发、路由级限流、可信代理、私钥热轮换、Cookie 会话换 60s S2S、      │
-│    「未启用插件」路由拦截、匿名路由只放行标「匿名可用」的能力（S3 外链）         │
+│    「插件未挂载」路由拦截（R32）、匿名路由只放行标「匿名可用」的能力（S3 外链）  │
 │    不做：业务权限判定、行级过滤                                              │
 │    旁路：Higress 只承载模型与 MCP 流量，对租户无感，不做 SSO                  │
 ├──────────────────────────────────────────────────────────────────────────┤
-│ 2. 服务 PEP（每个 Kun 服务 / 系统插件入口）                                   │
+│ 2. 服务 PEP（每个 Kun 服务 / 平台插件入口）                                   │
 │    重新验签 S2S、租户作用域建立（fail-closed）、端点权限点 → IPermissionChecker │
 │    .Check、Mediator 授权行为、gRPC 一元 / 流式拦截器、命令 Schema 校验、       │
 │    幂等键、dryRun；非 HTTP 入口（消费者 / Saga / Outbox / 作业）按消息或实例的  │
@@ -215,7 +215,7 @@ plugin_id（服务主体为插件时）
 | 重置他人密码、解绑他人第三方身份 | 租户管理员 | 二次确认；通知当事人 | 禁止 | S1 |
 | 平台超管旁路租户权限 | 超管 | 策略显式 + 每次审计 + 二次确认 | 禁止 | S1 |
 | 安装 / 升级插件并批准反向权限（platform / data / egress / secrets / ui） | 租户管理员 | 逐项勾选批准；升级新增项即重批 | confirm-required（展示完整权限 diff） | S1 |
-| 系统插件修订激活 / 回切 | 平台超管 | 二次确认 + 变更记录 | 禁止 | S1 |
+| 平台插件修订激活 / 回切 | 平台超管 | 二次确认 + 变更记录 | 禁止 | S1 |
 | 修改 Apollo 公共 namespace、密钥引用指向 | 平台运维 | 发布审核（Apollo 自带）+ 审计 | 禁止 | S1 |
 | 删除被引用的模板 / 字典 / 流程定义 | 搭建者 | 引用保护：列出引用方后方可强制 | confirm-required | S1 |
 | 导出全量数据、导出含 pii / finance 字段 | 用户 / 管理员 | 二次确认；审计导出范围与行数 | confirm-required；对外发送类默认需确认 | S2 |
@@ -235,43 +235,46 @@ plugin_id（服务主体为插件时）
 
 ### 13.6.1 信任等级 × 允许形态 × 沙箱 × 签名
 
-| tier | 谁 | 顶层 kind | 允许的组件 kind（bundle 内 / 单组件插件） | UI 沙箱 | 审核与签名 | 运行时身份 |
+| `policy.tier` | 谁 | 组合包 / 声明式表面 / 无代码组件 | 允许的 `runtime.form`（代码部分；原 `kind`） | `policy.sandbox` 与 hooks `type` | 审核与签名 | 运行时身份 |
 |---|---|---|---|---|---|---|
-| system | 平台团队（18 个系统插件） | 全部七值（含 bundle） | 全部六种：module / service / package / function / connector / ui | none（MF2） | 平台密钥签名，随内核发版 | 宿主进程身份；`alwaysEnabled` |
-| official | 平台团队业务插件 | 同上 | 同上 | none | 同上 | 同上或独立 service |
-| partner | 认证 ISV | bundle 及单组件插件 | package / function / connector / ui；不允许 module、service 进共享进程（service 仅在 S3 沙箱策略另行开放） | none（需审核）或 worker | 发布者认证 + 扫描 + TCK + 人工审核；cosign | 独立工作负载身份 |
-| private | 租户自建 | bundle 及单组件插件 | package / function / connector / ui；不允许 module、service（service 仅在 S3 沙箱策略另行开放） | worker 或 iframe | 租户内可见；自动 TCK；租户密钥签名 | 独立工作负载身份 |
-| community | 公开社区 | bundle 及单组件插件 | package / function / connector / ui；不允许 module、service | worker 或 iframe | 自动扫描 + TCK；「未认证」标识 | 不进任何共享进程 |
+| `system` | 平台团队（平台插件 = `platform` profile base 组合包） | 均可 | `module` / `service` / `package` / `function` / `ui`（seam Provider 组件按实现取 `module` / `service`，R28） | `none`（MF2；`service` 为 `workload`）；hooks `command` / `http` / `plugin` | 平台密钥签名，随发行版（profile）发版 | 宿主进程身份；`policy.required: true`（原 `alwaysEnabled`，R34） |
+| `official` | 平台团队业务插件 | 均可 | 同上 | 同上 | 同上 | 同上或独立 `service` |
+| `partner` | 认证 ISV | 均可 | `package` / `function` / `ui`；不允许 `module` 进共享进程；`service` 仅在 S3 沙箱策略另行开放（`workload`） | `ui`：`worker`（审核后可 `none`）；`function`：`wasm`；hooks `http` / `plugin` | 发布者认证 + 扫描 + TCK + 人工审核；cosign | 独立工作负载身份 |
+| `private` | 租户自建 | 均可 | `package` / `function` / `ui`；不允许 `module`、`service`（`service` 仅在 S3 沙箱策略另行开放） | `ui`：`worker \| iframe`；`function`：`wasm`；hooks `http` | 租户内可见；自动 TCK；租户密钥签名 | 独立工作负载身份 |
+| `community` | 公开社区 | 均可；**S1 只接受无代码组件**（`runtime` 为空） | 同 `private`（S1 不接受任何代码部分） | 同 `private`；hooks `http` | 自动扫描 + TCK；「未认证」标识 | 不进任何共享进程 |
 
 规则：
-- **第三方代码永不进共享进程**；`bundle` 对所有 tier 开放（应用本质是 bundle，ISV 应用即 `tier: partner, kind: bundle`），按 tier 收紧的是 bundle 内的组件级 kind：`partner / private / community` 的组件不得使用 module，service 仅在 S3 沙箱策略另行开放（R22）。
-- **默认强制验签**：未签名或签名不符直接安装失败，不是警告。签名在清单外：代码制品 = 清单 + 文件摘要 + SBOM 打成 OCI 制品，cosign 出独立签名与证明；元数据包与 SKILL.md 用「文件 URI + SHA-256 + 字节数」清单 + 分离签名。
+- **第三方代码永不进共享进程**；组合包与声明式表面对所有 tier 开放（应用 = 组合包 + marketplace 条目，ISV 应用即 `policy.tier: partner` 的组合包，R28；原「`bundle` 对所有 tier 开放」R22 据此改读），按 tier 收紧的是组合包内各组件的 `runtime.form` 与 `policy.sandbox`：`partner / private / community` 的组件不得使用 `module`，`service` 仅在 S3 沙箱策略另行开放；校验器与装载器（Resolve 阶段拒绝为非 `system / official` 组件加载程序集）两道检查互为冗余（specs/component-model.md §11.1）。
+- **默认强制验签**：未签名或签名不符直接安装失败，不是警告。签名在清单外：代码制品 = 清单 + 文件摘要 + SBOM 打成 OCI 制品，cosign 出独立签名与证明；元数据包与 SKILL.md 用「文件 URI + SHA-256 + 字节数」清单 + 分离签名；市场文件 `.qian/marketplace.json` 用 Ed25519 分离签名，公钥须命中客户端信任根（specs/component-model.md §11.5）。
 - **按 digest 引用**：清单里只接受 `@sha256:`；标签引用安装失败。
 - **审核分级**：免费元数据模板快审；付费或带代码走安全审查；权限扩大、付费模式变更触发复审。
 - **工具描述哈希钉死**（S3）：注册表保存已批准能力的「名称 + 描述 + 规范化 inputSchema」哈希，变更即下线待复审；`schemaSha256` 变即旧授权失效。
 - **发布者撤销与黑名单**：命中即自动卸载并通知租户管理员。
+- **未验签市场条目只允许无代码组件**（R40）：未签名市场或未命中信任根的条目需 `--allow-unverified` 才参与 `qian add` 解析，且只允许安装无代码组件（`runtime` 为空）、tier 最高 `community`；`qian list` 持续标记 `unverified`。
+- **hooks `command` 类型仅限 `system / official`，argv 不经 shell**（R41）：`hooks.json` 的 `command` 是 argv 数组，不经 shell 解释（无管道、重定向、通配），在受限执行器中运行（工作目录为组件目录、环境变量白名单、默认超时 30s / 上限 600s、无网络除非 `policy.egress` 非空）；平台宿主默认关闭 `command` 执行，`platform` profile 需显式开启，`gateway` / `identity` profile 拒绝开启；`commands/*.md` 的内联 shell 遵守同一规则并须被 `allowed-tools` 逐条覆盖，`community / private` 组件出现内联 shell 即校验失败。
+- **连接器 = 为某个 seam 注册 Provider 的组件**（R28 / R38）：`connector` 不是 `runtime.form`；清单上 `provides[]` 写「注册表键:名称」（如 `Identity.Connectors:oidc`）向该 seam 的注册表子服务按名称注册，`policy.egress[]` 声明允许的出网目标（为空 = 默认拒绝出网），`runtime.form` 按实现取 `module` 或 `service`；出网只经出口代理，白名单来自 `policy.egress`（§13.8）。
 
 ### 13.6.2 反向权限审批
 
-清单 `permissions` 段声明插件向平台申请什么，租户管理员开通时逐项批准，升级新增即重新批准：
+清单 `policy.permissions` 段（原 `permissions`，R37）声明插件向平台申请什么，租户管理员挂载时逐项批准，升级新增即重新批准：
 
 | 段 | 内容 | 运行时强制点 |
 |---|---|---|
 | `platform[]` | 如 `tenant:read`、`user:read`、`file:write`、`notify:send` | 服务 PEP 以插件主体身份判定 |
 | `data[]` | `{ entity, access: r / rw }` | 数据引擎唯一入口；每插件独立 PG schema 与数据库角色，不得直连他人表 |
-| `egress[]` | 允许出网域名 | 生成 NetworkPolicy / 出口网关规则；私网与云元数据地址默认阻断 |
+| `policy.egress[]`（原 `permissions.egress`，R28 升为 `policy` 顶层字段；seam Provider 组件必填） | 允许出网目标 `<host>[:<port>]`；为空 = 默认拒绝出网 | 生成 NetworkPolicy / 出口网关规则；私网与云元数据地址默认阻断；`hooks.json`、`.mcp.json` 的 `url` 域名必须在其中 |
 | `secrets[]` | `{ name, scope }` 只有名字 | `ISecretResolver` 在使用点解析，永不回传明文 |
 | `ui.connectSrc[]` | 前端允许连接的源 | 生成 CSP `connect-src`；MF2 远程只能从白名单加载 |
 
-与之相对，`provides.permissions` 是插件定义的、可被授予他人的权限点；两者都由 `qian.authz` 登记。
+与之相对，`metadata/permissions.json`（原 `provides.permissions`，R37）是插件定义的、可被授予他人的权限点；两者都由 `qian.authz` 登记。
 
 ### 13.6.3 运行时强制点
 
-- `service` 型插件：独立 K8s ServiceAccount + 含 `plugin_id` 的 S2S 令牌；每插件独立 Deployment、ResourceQuota、default-deny NetworkPolicy + 清单派生的放行规则；健康 = K8s 状态 + `/health` 双条件。
-- `function`（Wasm）：燃料、内存、超时限额来自清单 `limits`；无网络与文件系统能力，除非清单声明并被批准。
-- 事件：发布 / 订阅主题 ACL 来自清单 `provides.events`；越权主题在总线层拒绝。
+- `runtime.form: service` 组件：独立 K8s ServiceAccount + 含 `plugin_id` 的 S2S 令牌；每插件独立 Deployment、ResourceQuota、default-deny NetworkPolicy + 清单派生的放行规则；健康 = K8s 状态 + `/health` 双条件。
+- `function`（Wasm）：燃料、内存、超时限额来自清单 `runtime.limits`；无网络与文件系统能力，除非清单声明并被批准。
+- 事件：发布 / 订阅主题 ACL 来自 `metadata/events.json`（原 `provides.events`，R37）；越权主题在总线层拒绝。
 - 前端：`system / official` 以 MF2 挂载并共享 singleton 依赖；其余按 tier 走 Worker 远程渲染（白名单组件目录 = yue manifest）或 iframe（无 `allow-same-origin`，postMessage 握手）。
-- 「未启用」在网关路由、SDK 入口、前端外壳三处同时拦截。
+- 「未挂载」（租户 scope 未挂载，或被 `restrict` 过滤）在网关路由、SDK 入口、前端外壳三处同时拦截，一律 404、与不存在无法区分（管理面 403 `plugin_not_mounted`，R32）。
 
 ---
 
@@ -351,7 +354,7 @@ plugin_id（服务主体为插件时）
 | 数据外泄 | 沙箱与连接器出网白名单 / 出口代理；字段敏感度驱动脱敏；敏感参数不入 HTTP 头；对外发送类工具默认需确认 | S2 / S4 |
 | 破坏性操作 / 失控循环 | 副作用分级 + 默认策略（read 放行、write 确认、destructive 二次确认或禁止）；`dryRun`；软删与回收站；元数据版本回滚；调用频率上限；急停开关（按 Agent / 租户 / 工具） | S1（分级）/ S4（急停） |
 | 成本失控 | Higress token 限流与缓存；租户 / 应用 / Agent 预算与告警；工具列表确定性排序提高缓存命中 | S3 |
-| 供应链 | 插件签名与哈希、命名空间验证、安装时展示完整权限；沙箱默认最小权限；按 digest 引用 | S1 |
+| 供应链 | 插件签名与哈希、市场条目验签（未验签只允许无代码组件，R40）、命名空间验证、安装时展示完整权限；沙箱默认最小权限；按 digest 引用 | S1 |
 | 第三方插件代码 | 永不进共享进程；独立工作负载身份；独立 schema 与数据库角色；事件主题 ACL；出口 NetworkPolicy；CSP 由清单生成；Wasm 限额 | S1 规范 / S3 对第三方生效 |
 | 身份冒用（Agent 冒充人） | Agent 主体独立 client 类型、有归属人、可吊销；`act` 链进令牌；审计 `actor_type=agent`；`humanOnly` 动作服务端拒绝 | S1 字段 / S4 |
 | 合规 | AI 生成内容显式 / 隐式标识；模型路由按数据驻留策略；审计留痕 | S4 |

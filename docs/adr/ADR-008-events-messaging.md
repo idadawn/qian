@@ -26,7 +26,7 @@ Kun 的 `Kun.EventBus` + `.RabbitMQ` 提供 Outbox 表 / 发布器 / 锁（默�
 - **D8.8 事件目录升格为能力目录的一部分**：稳定 ID + JSON Schema 导出 + AsyncAPI 描述；主题 ACL 由插件清单 `provides.events.publish/subscribe` 生成；事件契约化为 S4 Agent 触发器预留。
 - **D8.9 两种订阅模式**：广播（每消费者组一份）与竞争消费；死信队列与重放工具。
 - **D8.10 S2 动态数据事件**用一个静态注册的通用信封事件 `qian.record.changed.v1`（EntityCode / RecordId / Op / TenantId / Payload），必须在命令 handler 同 scope 发出；需要面向 `NpgsqlTransaction` 的 `IOutboxWriter` 实现使动态记录与 `outbox_messages` 同事务。
-- **D8.11 Saga**：租户上下文回灌（D8.6）为 S1 P0；修锁、Scoped 工厂、上下文回写、步骤重试为 S1 P1 可选，修补后只用于平台内部长事务（安装 / 卸载、发布）；S1 的租户开通编排由 `qian.kernel` 生命周期控制器以幂等步骤表承担，不用 Saga（ADR-003、PRD §07 7.3）；不作业务流程引擎。
+- **D8.11 Saga**：租户上下文回灌（D8.6）为 S1 P0；修锁、Scoped 工厂、上下文回写、步骤重试为 S1 P1 可选，修补后只用于平台内部长事务（安装 / 卸载、发布）；S1 的租户开通编排由 `qian.kernel` 生命周期控制器（v2 后 `qian.kernel` 拆为 `Qian.Runtime` + 平台插件，生命周期控制器即 `platform` profile base 组合包里的 `qian.lifecycle`，见 ADR-020）以幂等步骤表承担，不用 Saga（ADR-003、PRD §07 7.3）；不作业务流程引擎。
 - **D8.12 进程内状态外置**：实时推送、延时队列、重试一律走 Redis / 消息总线背板，不依赖单实例内存。
 
 ## 3 理由（Rationale）

@@ -1,6 +1,6 @@
 # 6. 用户与场景
 
-> 状态：草案 v1 · 更新日期：2026-10-06 · 决策引用：ADR-002、ADR-005、ADR-006、ADR-011、ADR-012、ADR-014、ADR-016、ADR-018 · 上级索引：[README](README.md)
+> 状态：草案 v1 · 更新日期：2026-10-06 · 决策引用：ADR-002、ADR-005、ADR-006、ADR-011、ADR-012、ADR-014、ADR-016、ADR-018、ADR-019、ADR-020 · 上级索引：[README](README.md)
 
 本章先定义七类角色，再给每个阶段一个可演示的 Demo 场景。场景按「指令原文 / 操作 → 编号执行流 → 体验要点」书写；执行流只到用户可感知的粒度，接口与数据结构见 §07–§10。
 
@@ -8,9 +8,9 @@
 
 **平台运营（Platform Operator）。** 本团队中负责运行 Qian 本身的人：建租户、授权插件、审核市场商品、处理挂起与注销、看集群与计量。他们在「平台控制台」工作，对租户数据不可见（审计可见），所有操作进审计。关心的是：一个租户出问题时能否不影响其他租户；一个插件升级失败时能否回切。
 
-**平台开发者（Platform Developer）。** 开发 Qian 内核与系统插件的人，以及开发官方 module / connector 的人。他们用 Kun 与 SDK 写 .NET 代码，受 TCK 与清单 lint 约束，产出 `tier: system / official` 的插件。关心的是：契约改动是否破坏兼容；修订能否逐租户迁移与回切。
+**平台开发者（Platform Developer）。** 开发 `Qian.Runtime`、`qian` CLI 与平台插件（原称系统插件）的人，以及开发官方 `module` 组件与 seam Provider 组件（原 connector）的人。他们用 Kun 与 SDK 写 .NET 代码，受 TCK 与清单校验器约束，产出 `policy.tier: system / official` 的组件。关心的是：契约改动是否破坏兼容；修订能否逐租户迁移与回切。
 
-**ISV 开发者 / 实施伙伴（ISV Developer）。** 用 SDK 与设计器为多个租户交付应用的外部团队。S1 他们用 SDK 写 package / ui / function / connector；S2 用设计器搭应用并打包；S3 在市场上架、定价、升级。他们只能产出 `tier: partner / private / community` 的插件，代码不进共享进程。关心的是：包能否在不同租户独立升级；租户定制与新版本冲突时如何处理；收入与安装分析。
+**ISV 开发者 / 实施伙伴（ISV Developer）。** 用 SDK 与设计器为多个租户交付应用的外部团队。S1 他们用 SDK 写声明式表面、`package` / `ui` / `function` 与 seam Provider 组件（原 connector）；S2 用设计器搭应用并打包（组合包 + marketplace 条目）；S3 在市场上架、定价、升级。他们只能产出 `policy.tier: partner / private / community` 的组件，代码不进共享进程。关心的是：包能否在不同租户独立升级；租户定制与新版本冲突时如何处理；收入与安装分析。
 
 **租户管理员（Tenant Admin）。** 某个租户内拥有管理权的成员：管组织与成员、建角色与授权、从市场开通应用、配置 IdP 与品牌、批准插件的反向权限。关心的是：权限是否精确到字段与行；开通应用时要批准哪些权限；升级会不会破坏已有定制。
 
@@ -28,21 +28,38 @@
 > 「用 Qian SDK 建一个『设备台账』应用：一张设备表、一个录入表单、一个列表，带附件上传；开通给租户 A 和租户 B，两个租户各自的管理员登录后只能看到自己的设备。」
 
 **编号执行流。**
-1. 开发者运行 `qian init --kind module --id com.example.asset`，得到带契约目录、`MapCommand` 端点骨架、测试工程与 `qian-plugin.yaml` 生成配置的仓库。
+1. 开发者运行 `qian init --template component-dotnet --id com.example.asset`，得到带 `.qian-plugin/plugin.json`（代码部分字段由源生成器派生并合并）、契约目录、`MapCommand` 端点骨架、`skills/` 示例与测试工程的仓库；再 `qian add files` 把文件组件装进项目（表面复制进 `.qian/`，`Qian.Files` 包加为依赖，配置条目写进当前 profile 的 patch）。
 2. 开发者定义 `Asset` 实体与 `CreateAsset / UpdateAsset / QueryAssets` 命令 / 查询契约（含输入输出 Schema、`sideEffect`、`requiredScopes`），并声明权限点 `asset:read / asset:write` 与默认角色模板「设备管理员」。附件字段使用 `qian.files` 的文件引用类型。
-3. 运行 `qian validate`：源生成器派生清单与 JSON Schema，lint 检查「inputSchema 不含租户字段」「所有写命令有 Schema 与副作用等级」；运行 `qian tck`：多租户隔离、权限强制、审计完整、事件至少一次用例通过。
-4. 运行 `qian pack && qian publish`：产出 OCI artifact（按 digest）并签名，推送制品库；GitOps 执行器把修订激活到开发集群。
-5. 平台运营在控制台为租户 A、B 授予 `com.example.asset`（授权 v0，手工授予），触发逐租户开通钩子：建表（RLS 策略自动挂上）、种子默认角色、注册菜单。两个租户的开通各自幂等、互不阻塞。
+3. 运行 `qian doctor`：源生成器派生清单的代码部分字段与 JSON Schema，校验器检查「inputSchema 不含租户字段」「所有写命令有 Schema 与副作用等级」；运行 TCK（组件一致性套件）：多租户隔离、权限强制、审计完整、事件至少一次用例通过。
+4. 运行 `qian pack && qian sign && qian publish`：代码部分产出 OCI artifact（按 digest）并签名、推送制品库，marketplace 条目同步更新；声明式表面不进 OCI，随 git / 市场分发；GitOps 执行器把修订激活到开发集群。
+5. 平台运营在控制台为租户 A、B 授予 `com.example.asset`（授权 v0，手工授予）并挂载——即在两个租户的 scope 各插入它的配置条目（租户 scope patch，取代数据库开关），触发逐租户开通钩子：建表（RLS 策略自动挂上）、种子默认角色、注册菜单。两个租户的开通各自幂等、互不阻塞。
 6. 租户 A 管理员通过平台登录页（或已配置的通用 OIDC 连接器）登录，令牌内含 `tenant_id = A`；外壳按清单渲染「设备台账」菜单，列表与表单由 yue 的 SchemaForm / DataTable 依契约生成。
 7. 租户 A 管理员录入三台设备并上传铭牌照片；租户 B 管理员登录后列表为空；两边的操作都在审计中可查到主体链与能力 ID。
 8. 开发者发布 v1.1（新增字段 `location`）：`qian publish` 出新修订；运营对租户 A 先升级，租户 B 保持 v1.0；验证 A 看到新字段、B 不受影响；再对 A 回切到 v1.0 验证可回滚。
 
 **体验要点。**
-- 开发者没有写任何租户过滤、权限判断、审计或 Outbox 代码；这些由 SDK 与内核强制装配。
+- 开发者没有写任何租户过滤、权限判断、审计或 Outbox 代码；这些由 SDK 与 `platform` profile base 组合包里的强制执行点（waterfall 监听器）装配。
 - 安全默认值是强制的：忘记声明权限点的写命令在 `validate` 阶段失败，而不是上线后裸奔。
-- 「授权（有没有授予）」与「启用（开没开）」在控制台是两个独立开关，运营能分别看到。
+- 「授权（有没有授予，Entitlement）」与「挂载（开没开，租户 scope patch）」在控制台是两个独立视图，运营能分别看到（ADR-020 D20.5）。
 - 升级是逐租户的：一个租户升级失败不会让另一个租户处于半升级态；回切是切回旧 digest。
 - 退出标准对照：登录 / SSO、鉴权、数据存储、文件上传、配置、网关、事件、审计全部由平台提供；一个官方 module 插件独立出修订、逐租户迁移、回切（ADR-018）。
+
+## 6.2a S1 Demo（独立模式）：在空白项目里 `qian add identity authz files`，30 分钟跑通
+
+**指令原文 / 操作。**
+> 「我有一个现成的 ASP.NET Core 项目，不想部署 Qian 平台。给它加上登录、权限检查和文件上传，半小时内能跑。」
+
+**编号执行流。**
+1. 开发者在空白（或既有）项目里运行 `qian add identity authz files`：CLI 从官方市场（`.qian/marketplace.json`）解析三个条目，过校验器与验签，把各组件的声明式表面（`skills/`、`commands/`、`hooks/`）复制进项目 `.qian/`，把 `Qian.Identity.*` / `Qian.Authz` / `Qian.Files` 加为 NuGet 依赖，把配置条目写进 `standalone` profile 的 patch。
+2. 开发者在组合根装配 `Qian.Runtime` 并选择 `standalone` profile；未选 `SingleTenant` 且宿主没有 `ITenantContext` 时应用拒绝启动，开发者按 README 显式选择单租户。
+3. 照各包 README 的「模型体验」节与示例，为一个端点加 `[Permission("asset:read")]`、为一个字段用文件引用类型；`qian doctor` 报告依赖图与配置就绪。
+4. `qian dev` 拉起本地依赖与宿主；浏览器打开登录页登录，调用受保护端点得到 403 / 200 两种结果，上传一份文件并取回预览票据。
+5. 事后 `qian dump-config` 打印这棵最小插件树：`Qian.Runtime` + 三个组件及其 Provider，不含 `qian.registry` / `qian.lifecycle` / `qian.capabilities`。
+
+**体验要点。**
+- 没有 Helm values、DI 扩展方法与 Apollo namespace；安装入口是一条命令，组件库唯一必需的 Qian 依赖是 `Qian.Runtime`（ADR-020 D20.10）。
+- 同一组包在 `standalone` 与 `platform` 两种模式下过同一套 TCK；日后接入 Qian 平台只是换 profile。
+- 退出标准对照：空白项目 `qian add identity authz files` 后 30 分钟内跑通登录、权限检查与上传，不部署 Qian 平台（ADR-020 §6）。
 
 ## 6.3 S2 Demo：业务搭建者建表单与审批并授权
 
@@ -77,7 +94,7 @@
 2. 管理员进入「租户设置 → 登录方式」，添加企业微信连接器：填写企业 ID 与应用凭据（凭据进凭证保管，详情页不回显），完成域名验证；成员扫码登录时由平台 issuer 签发令牌。
 3. 管理员进入「品牌」，上传 Logo、选择主色；`data-theme / data-brand` 由服务端按租户下发，外壳与所有 yue 组件即时换肤。
 4. 管理员打开应用市场（私有目录型），按分类找到 ISV 上架的「合同管理」（`managed` 分发），详情页展示版本日志、兼容范围、所需权限清单、反向权限（需访问组织目录、需出网到电子签名服务域名）、价格与试用条款。
-5. 点击「试用 30 天」：安装向导列出依赖包（自动安装）、逐项展示反向权限请管理员批准、选择授权给哪些部门；确认后生成 Entitlement（试用、到期日）并触发开通钩子；进度以 Operation 呈现。
+5. 点击「试用 30 天」：安装向导列出依赖组件（自动安装）、逐项展示反向权限请管理员批准、选择授权给哪些部门；确认后生成 Entitlement（试用、到期日），在租户 scope 挂载该组合包的配置条目（scope patch）并触发开通钩子；进度以 Operation 呈现。
 6. 开通完成后，应用出现在外壳的应用切换器；管理员把「合同经办」角色授予法务部；终端用户登录后看到合同列表与发起流程。
 7. 两周后 ISV 发布 v1.3（新增一个权限点）：升级中心提示「含新增权限，需管理员同意」；管理员查看冲突预检报告（无冲突）后在计划窗口升级；升级前自动快照。
 8. 试用到期前 7 天管理员收到提醒；选择「联系销售 / 授权码」完成续订（首版不做在线支付）；Entitlement 更新为正式，席位按部门分配。
@@ -85,7 +102,7 @@
 
 **体验要点。**
 - 开通是自助的，但每一步都可解释：装什么、依赖什么、要哪些权限、数据去哪。
-- 「授权（试用 / 正式 / 到期）」与「启用」分开可见；到期后应用不可用但数据保留，续订恢复。
+- 「授权（试用 / 正式 / 到期，Entitlement）」与「挂载（租户 scope patch）」分开可见；到期后卸载其 scope 条目、应用不可用但数据保留，续订重新挂载即恢复。
 - 升级是否需要人同意由「是否新增权限」决定；定制与新版本的冲突在升级前就能看到。
 - 外部 IdP 只是连接器；令牌始终由平台签发，会话吊销、后通道登出照常工作。
 - 退出标准对照：租户能从应用市场选购并开通应用，自助配置 IdP 与品牌（ADR-018）。
@@ -98,7 +115,7 @@
 **编号执行流。**
 1. Agent 客户端通过该租户的 MCP 门面（Higress 托管，无状态端点）完成 OAuth 授权：令牌主体类型为 `agent`，`act` 链指向管理员，scope 限定为「读取元数据、提交元数据提案、读取能力目录」；不含「发布」。
 2. Agent 调用能力搜索工具与元数据只读资源，读取 `Asset` 实体定义、现有审批流程、组织岗位链与字段敏感度标签作为上下文；`tools/list` 结果已按管理员权限过滤并标 private 缓存。
-3. Agent 生成一个 `package` 草稿：实体 `InspectionTask`、巡检表单、调度规则（每周按设备生成）、「设备维修申请」流程（复用现有「上级责任人」节点），并以 patch 形式调用「提交元数据变更提案」工具；记录 `generatedBy = agent`、`promptHash`。
+3. Agent 生成一个草稿组件文件夹（无代码组件：`forms/`、`flows/`、`schemas/` 等声明式表面 + `package` 元数据，tier 固定 `private`）：实体 `InspectionTask`、巡检表单、调度规则（每周按设备生成）、「设备维修申请」流程（复用现有「上级责任人」节点），并以 patch 形式调用「提交元数据变更提案」工具；记录 `generatedBy = agent`、`promptHash`。
 4. 平台对提案执行 Schema 校验 + 语义校验（引用完整性、权限一致性）+ TCK 子集；校验返回两处结构化错误（一个字段类型映射不合法、一个流程节点缺少兜底处理人）；Agent 据此自我修正并重新提交，校验通过，提案进入「草稿」状态。
 5. 管理员在控制台的「待确认」收件箱（Operation `input_required`）里看到提案：差异审阅视图展示新增实体、表单、流程、权限点、调度规则，以及「将新增的权限资源」；可预览表单渲染。
 6. 管理员修改巡检周期后点击「批准并发布」：发布向导走「编译 → 迁移 → 切流 → 挂载」，流程版本进入「启用中」；审计记录主体链（actor = agent，on_behalf_of = 管理员；发布动作 actor = 管理员）。
@@ -107,7 +124,7 @@
 
 **体验要点。**
 - Agent 的每一步都在人的权限子集内：它读得到的、改得了的，都是管理员本人能读能改的。
-- 生成物是 `package`（元数据），不是代码；代码只落 `function` 沙箱；没有「Agent 直接发布」的路径。
+- 生成物是草稿组件文件夹（声明式表面与 `package` 元数据，经同一校验器），不是代码；代码只落 `function` 沙箱；没有「Agent 直接发布」的路径，S4 的 `extensions`（模型在策略下挂载 / 卸载插件）也走同一装载器与人工批准（ADR-020 D20.9）。
 - 校验错误是结构化、可定位的，Agent 可以自我纠正；人只在差异审阅与批准这一步介入。
 - 审计能回答「谁（含 Agent）以谁的名义做了什么、依据哪个契约版本、通过哪个通道」。
 - 退出标准对照：Agent 能发现、调用、编排乃至生成平台能力与应用（ADR-018）。
@@ -119,3 +136,4 @@
 ## 修订历史
 
 - 2026-10-06：草案 v1。
+- 2026-10-06：组件模型 v2 回填（ADR-020）——角色与 S1 Demo 改 `Qian.Runtime` / 平台插件 / `plugin.json` / `qian doctor` 口径；新增 6.2a 独立模式 Demo（空白项目 `qian add identity authz files` 30 分钟跑通）；S1 / S3 场景中「启用」改为租户 scope 挂载；S4 生成物改为草稿组件文件夹。

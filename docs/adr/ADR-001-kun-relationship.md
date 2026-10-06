@@ -18,7 +18,7 @@ iClaw 以 `ProjectReference` 指向同级 `kun/` 目录并在 Docker 构建时�
 
 ## 2 决策（Decision）
 
-- **D1.1 定位**：Kun 是「微服务开发框架 / 底座 SDK」，不是平台内核。Qian 内核（插件注册表、生命周期、能力目录、租户目录、身份、权限、配置、审计装配）自成一层，Kun 模块是该层的实现依赖。
+- **D1.1 定位**：Kun 是「微服务开发框架 / 底座 SDK」，不是平台内核。Qian 内核（插件注册表、生命周期、能力目录、租户目录、身份、权限、配置、审计装配）自成一层，Kun 模块是该层的实现依赖（v2 后此层 = `Qian.Runtime` + 平台插件 / `platform` profile base 组合包，Kun 的 `AddKunXxx()` 模块在 Qian 里被包装为插件，见 ADR-020 D20.1 / D20.10）。
 - **D1.2 消费方式**：Qian 以 NuGet 包 + CalVer 锁版本消费 Kun；禁止把 Kun 源码复制进 Qian 仓库或以 `ProjectReference` 引用。
 - **D1.3 对 Kun 的配套要求**：预发布 feed（`-beta.N`）、公共 API 兼容承诺、弃用窗口不少于 2 个小版本、完整变更日志。
 - **D1.4 不推翻的核心设计**：四层依赖、`Result` 错误模型、显式注册的 Mediator、Outbox 表结构与稳定事件 ID、schema-per-service、RLS 双保险、PublicAPI 门禁，全部继承。
@@ -57,7 +57,7 @@ iClaw 以 `ProjectReference` 指向同级 `kun/` 目录并在 Docker 构建时�
 
 - Kun 的后续维护人与响应 SLA（决策清单 D1 需拍板项；Q7 已按「上游 PR 优先、1 迭代回合入期限」写入）。
 - 「领域事件→集成事件丢消息」为代码路径推断、无测试覆盖，S1 需用最小集成测试实证后再决定走上游修复还是 Qian 侧编码规定（基线 K 附录 B-6）。
-- 已裁决（R13）：S1 的租户开通编排由 `qian.kernel` 生命周期控制器以幂等步骤表承担，不用 Saga；Saga 的租户上下文回灌为 P0，其余修补（锁、Scoped 工厂、回写、重试）为 P1 可选（ADR-008 D8.11、PRD §07 7.1 / 7.3）。
+- 已裁决（R13）：S1 的租户开通编排由 `qian.kernel` 生命周期控制器（v2 后 `qian.kernel` 拆为 `Qian.Runtime` + 平台插件，生命周期控制器即 `platform` profile base 组合包里的 `qian.lifecycle`，见 ADR-020）以幂等步骤表承担，不用 Saga；Saga 的租户上下文回灌为 P0，其余修补（锁、Scoped 工厂、回写、重试）为 P1 可选（ADR-008 D8.11、PRD §07 7.1 / 7.3）。
 
 ## 8 参考
 

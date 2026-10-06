@@ -1,6 +1,6 @@
 # §14 质量与评估
 
-> 状态：草案 v0（2026-10-06）。依据：ADR-018（阶段与退出标准）、ADR-001（Kun 缺口与消费方式）、ADR-002（TCK 与清单门禁）、ADR-004 / ADR-006 / ADR-009（多租户、鉴权、审计的可验证性）、ADR-013（前端工程化基线）。本章规定「怎样证明做到了」：测试层级、机器可执行用例、CI 门禁、阶段退出准则与验收纪律。各功能规格章与专题 spec 末尾的验收 checkbox 必须能映射到本章的某一层级与门禁。
+> 状态：草案 v0（2026-10-06）。依据：ADR-018（阶段与退出标准）、ADR-001（Kun 缺口与消费方式）、ADR-002（TCK 与清单门禁）、ADR-020（组件模型 v2：运行时语义 TCK、文档新鲜度与 `dump-config` 门禁）、ADR-019（组件库依赖边界）、ADR-004 / ADR-006 / ADR-009（多租户、鉴权、审计的可验证性）、ADR-013（前端工程化基线）。本章规定「怎样证明做到了」：测试层级、机器可执行用例、CI 门禁、阶段退出准则与验收纪律。各功能规格章与专题 spec 末尾的验收 checkbox 必须能映射到本章的某一层级与门禁。
 
 ---
 
@@ -10,7 +10,7 @@
 2. **Kun 缺口在多副本 + 多租户下必然触发。** 领域事件静默丢失、消费端 at-most-once、后台链路丢租户、Outbox / Saga 多副本无锁——单副本开发环境永远复现不了，只有带真实 PostgreSQL / RabbitMQ / Redis 的集成测试在 CI 里跑多副本才能证明修好了（ADR-001）。
 3. **自建身份核心的安全责任全在自己。** `qian.identity` 是 OpenIddict 之上的自建 issuer，OIDC 一致性测试、渗透测试、依赖补丁节奏必须从 S1 进预算，而不是上线前「做一次安全测试」。
 4. **S4 防返工的设计只能靠门禁守住。** 带 Schema 的写命令、`inputSchema` 禁租户字段、能力目录经鉴权、事件契约化、清单与代码不漂移——这些约定靠评审守不住，靠 lint 和契约测试才守得住。
-5. **插件机制的正确性是乘法。** 一个系统插件「独立出修订 → 逐租户迁移 → 回切」是 S1 退出标准；TCK 不先于第一个插件存在，后面 18 个系统插件就会各自解释生命周期。
+5. **插件机制的正确性是乘法。** 一个平台插件（原称系统插件）「独立出修订 → 逐租户迁移 → 回切」是 S1 退出标准；TCK 不先于第一个插件存在，`platform` profile base 组合包里的其余平台插件就会各自解释运行时语义与生命周期。v2 的运行时语义（可逆副作用、scope 过滤、五种分发）是自研的，.NET 没有参考实现可对照，只能用 TCK 固化——语义以 ADR-020 与 specs/component-model.md 为准，不以某个实现为准（ADR-020 §5）。
 
 ---
 
@@ -18,12 +18,12 @@
 
 | 层级 | 覆盖对象 | 工具与约束 | 阻断级别 | 阶段 |
 |---|---|---|---|---|
-| 单元测试 | 领域规则、权限求值、Filter AST 编译、表达式解释器、令牌对比度 | xUnit / Vitest；覆盖率阈值按包设定（内核与 `qian.authz` ≥ 85%，其余 ≥ 70%；建议值，待研发负责人校准） | PR 阻断 | S1 |
+| 单元测试 | 领域规则、权限求值、Filter AST 编译、表达式解释器、令牌对比度 | xUnit / Vitest；覆盖率阈值按包设定（`Qian.Runtime` 与 `qian.authz` ≥ 85%，其余 ≥ 70%；建议值，待研发负责人校准） | PR 阻断 | S1 |
 | 属性测试 | 流程逆向语义交叉（退回 / 撤回 / 撤销 / 拒绝续流 × 子流程 / 加签 / 计时器）、Schema Migrator 的「扩展 → 迁移 → 收缩」可重放性 | FsCheck / fast-check；只追加流转记录为不变量 | PR 阻断 | S2 |
-| 集成测试（Testcontainers） | PostgreSQL 16 + RLS、RabbitMQ、Redis、Apollo（mock server）；**多副本**（同一消费者 / Saga 执行器 / Outbox 发布器起 2–3 个实例）；**至少一次**（重投、乱序、重复）；**租户回灌**（消息 / Saga / 作业中的租户作用域） | 每个系统插件至少一组；跑真库而非 InMemory；断言含 `tenant_id` 行计数与审计条目 | PR 阻断 | S1 |
+| 集成测试（Testcontainers） | PostgreSQL 16 + RLS、RabbitMQ、Redis、Apollo（mock server）；**多副本**（同一消费者 / Saga 执行器 / Outbox 发布器起 2–3 个实例）；**至少一次**（重投、乱序、重复）；**租户回灌**（消息 / Saga / 作业中的租户作用域） | 每个平台插件至少一组；跑真库而非 InMemory；断言含 `tenant_id` 行计数与审计条目 | PR 阻断 | S1 |
 | 契约测试 | OpenAPI 3.1 diff（additive-only，`x-status: draft` 期例外）、proto breaking（buf）、AsyncAPI diff、JSON Schema 2020-12 兼容性、yue 的 FormSchema / ListSchema / 控件 manifest 版本兼容 | 契约文件为真相源；前端类型从 OpenAPI 生成并作快照 | PR 阻断 | S1 |
 | 跨租户渗透测试样例 | HTTP / gRPC 流式 / 消息 / 文件票据 / 数据引擎 Filter AST / 直连 DB 角色六类通道的越权探测 | 作为集成测试的固定子集（§14.3 示例 1），每次 PR 跑；外部渗透测试每阶段至少一次 | PR 阻断 / 阶段阻断 | S1 |
-| TCK（插件兼容性套件） | 清单校验、契约一致性、生命周期钩子幂等性（重复调用 `tenantProvision / tenantUpgrade`）、跨租户越权探测、性能基线、「未启用」三处拦截 | `qian` CLI 一键运行；上架闸门 = TCK 全绿 + can-i-deploy | 发布阻断 | S1 |
+| TCK（三套，ADR-020） | ① 运行时语义套件：`Inject` / `Apply` 装载顺序与缺失键报错、可逆副作用按逆序撤销、scope 遮蔽与 `restrict` 交集、五种分发模式、profile / 组合包 / patch 层叠与 `dump-config` 一致性（.NET 与 TS 同一组 fixture，以 `minimal` profile 为基准宿主）；② 独立模式套件：组件在 `standalone` 宿主（消费者自己的 ASP.NET Core 项目，不装 `qian.registry` / `qian.lifecycle` / `qian.capabilities`）里 `qian add` 后可用，未显式选 `SingleTenant` 且无宿主 `ITenantContext` 即拒绝启动；③ 组件一致性套件：清单校验、契约一致性、生命周期钩子幂等性（重复调用 `tenantProvision / tenantUpgrade`）、跨租户越权探测、性能基线、「未挂载」三处拦截 | `qian` CLI 一键运行；上架闸门 = 三套 TCK 全绿 + can-i-deploy；官方与第三方同一套 | 发布阻断 | S1 |
 | OIDC 一致性 | `qian.identity` 的授权码 + PKCE、refresh、后通道登出、discovery、`resource` 参数 | OpenID 官方一致性套件（Basic / Back-Channel Logout profile） | 阶段阻断 | S1 |
 | E2E | 开发者写一个多租户应用的完整路径（S1）；建应用 → 表单 / 列表 → 审批 → 授权（S2）；市场选购 → 开通 → 自助配 IdP（S3） | Playwright，chromium + webkit；在 staging 跑；`data-testid` 寻址 | 阶段阻断（夜间） | S1 |
 | 无障碍 | yue 全部组件与关键页面 | axe + Playwright，critical = 0；Storybook a11y addon；令牌对比度单测 WCAG AA ≥ 4.5:1 | PR 阻断（组件）/ 夜间（页面） | S1 |
@@ -159,7 +159,7 @@ stage: S2
 tier: tck
 owner: qian.entitlement
 preconditions:
-  - bundle demo.crm@1.0.0（managed，含 package 元数据、ui、迁移脚本、默认角色模板）已签名并推入 Harbor
+  - 组合包 demo.crm@1.0.0（原 bundle；managed，含 package 元数据、ui、迁移脚本、默认角色模板）代码部分已签名并推入 Harbor，marketplace 条目已登记
   - 租户 t-a、t-b 均获授权（Entitled）
 steps:
   - as: tenant-admin(t-a)
@@ -200,13 +200,13 @@ judge:
 
 | # | 门禁 | 检查内容 | 失败即 | 阶段 |
 |---|---|---|---|---|
-| C1 | PublicAPI | Kun 与 Qian 内核公共 API 变更必须更新 `PublicAPI.Shipped/Unshipped.txt`；破坏性变更需 ADR 引用 | PR 阻断 | S1 |
+| C1 | PublicAPI | Kun、`Qian.Runtime` 与各 `Qian.<X>.Abstractions` 公共 API 变更必须更新 `PublicAPI.Shipped/Unshipped.txt`；破坏性变更需 ADR 引用 | PR 阻断 | S1 |
 | C2 | 分层边界 lint | 后端四层依赖（Kun 约定）；yue 六层依赖方向（eslint-plugin-boundaries / dependency-cruiser）；横切包只被上层消费 | PR 阻断 | S1 |
-| C3 | 清单与代码漂移 | 源生成器重新生成 `qian-plugin.yaml` 片段与仓库中的清单比对；端点权限点声明与 OpenAPI `x-qian-*` 扩展一致 | PR 阻断 | S1 |
+| C3 | 清单与代码漂移 | 源生成器重新生成 `.qian-plugin/plugin.json` 的代码部分字段并与仓库中的清单比对（只有一份清单，不存在手写 YAML 与派生文件并存）；端点权限点声明与 OpenAPI `x-qian-*` 扩展一致 | PR 阻断 | S1 |
 | C4 | 契约 lint | 写入端点必须有 JSON Schema；`inputSchema` 禁止 `tenant_id / tenantId` 等租户字段；命令元数据必须含 `sideEffect`；事件必须有稳定 ID 与 Schema | PR 阻断 | S1 |
 | C5 | 品牌字样闸门 | 仓库文本（文档、注释、提交信息、i18n 文案）不得出现参考平台品牌名、公司名、域名或源码路径，不得出现已作废项目名 | PR 阻断 | S1 |
 | C6 | 密钥形态扫描 | gitleaks + 自定义规则（Apollo 导出、Kustomize、清单中的疑似密钥键名与值）；配置 Schema 中 `sensitive` 字段只能为 secretRef | PR 阻断 | S1 |
-| C7 | SBOM / 签名 | 每个镜像与插件包产出 SBOM（SPDX）并 cosign 签名；部署前校验签名与 digest；许可证白名单 | 发布阻断 | S1 |
+| C7 | SBOM / 签名 | 每个 profile 镜像与组件代码制品产出 SBOM（SPDX）并 cosign 签名；市场文件 `.qian/marketplace.json` 分离签名；部署前校验签名与 digest；许可证白名单 | 发布阻断 | S1 |
 | C8 | 多租户基类检查 | 在线 DbContext 必须继承多租户基类并启用 RLS 拦截器；新表必须有 `tenant_id` 与 RLS 策略（平台表白名单例外） | PR 阻断 | S1 |
 | C9 | 迁移脚本检查 | 迁移脚本幂等（可重复执行）；收缩步骤单独标记；不出现 `DROP TABLE` 于非收缩步骤 | PR 阻断 | S1 |
 | C10 | 测试门禁 | 单测覆盖率阈值；集成测试（Testcontainers）必须跑；安全用例 `flaky_budget: 0` | PR 阻断 | S1 |
@@ -215,8 +215,11 @@ judge:
 | C13 | a11y 与对比度 | axe critical = 0；令牌对比度单测；jsx-a11y | PR 阻断 | S1 |
 | C14 | 性能预算 | Lighthouse script 体积 error 级；publint；循环依赖 | PR 阻断 | S1 |
 | C15 | 视觉回归 | 组件截图基线比对 | S2 起 PR 阻断 | S2 |
-| C16 | TCK | 插件制品发布前 TCK 全绿；can-i-deploy | 发布阻断 | S1 |
+| C16 | TCK | 组件发布前三套 TCK（运行时语义 / 独立模式 / 组件一致性）全绿；can-i-deploy | 发布阻断 | S1 |
 | C17 | 文档一致性 | PRD 验收 checkbox 引用的用例 id 必须存在；ADR 状态与 PRD 引用一致 | PR 警告 → S2 阻断 | S1 |
+| C18 | 文档新鲜度 | 配置目录、模块图、事件图（生产方与消费方映射）、能力 seam 图由 `qian docs generate` 从代码生成，CI 重新生成并与提交内容比对，漂移即失败（ADR-020 D20.9） | PR 阻断 | S1 |
+| C19 | 依赖图断言 | 组件库（`Qian.<X>.Abstractions` 与 Provider 包）只依赖 `Qian.Runtime`，不依赖 `qian.registry` / `qian.lifecycle` / `qian.capabilities` 等插件（取代 ADR-019 的「不依赖 `Qian.Kernel`」断言）；扩展插件只依赖 Service Definition、不依赖具体 Provider；事件分发模式声明与调用点一致（ADR-020 D20.3 / D20.4 / D20.10） | PR 阻断 | S1 |
+| C20 | `dump-config` 漂移 | 每个发行 profile（`platform` / `gateway` / `identity` / `standalone` / `minimal`）的 `qian --profile <p> --dump-config` 输出与仓库内基线快照比对，条目增删或 config 变化须随 PR 更新快照并说明；patch 不得移除 profile 标记为不可移除的强制执行点（租户、鉴权、审计监听器） | PR 阻断 | S1 |
 
 ---
 
@@ -227,12 +230,13 @@ judge:
 | 阶段 | 准则 | 量化指标 | 证据 |
 |---|---|---|---|
 | **S1** | 开发人员用代码写出多租户应用，八项技术组件全部由平台提供 | 示范应用 E2E（登录 / SSO / 鉴权 / 存储 / 文件 / 配置 / 网关 / 事件 / 审计）100% 通过；从零到可运行 ≤ 2 人日 | E2E 报告、示范应用仓库 |
+| S1 | 一键安装（ADR-020 §6） | 空白 ASP.NET Core 项目 `qian add identity authz files` 后 ≤ 30 分钟跑通登录、权限检查与上传，不部署 Qian 平台；由未参与运行时开发的开发者计时；独立模式 TCK 通过 | 计时记录、独立模式 TCK 报告、`samples/standalone-minimal` |
 | S1 | 多租户隔离 | 跨租户渗透用例（§14.3 示例 1 及其变体）0 漏洞；外部渗透测试高危 0、中危已修复 | 渗透报告、用例结果 |
 | S1 | 消息与事件 | 至少一次 + 幂等用例 0 丢失 0 重复副作用；Outbox 最终 pending = 0；死信可追溯 | 用例产物 |
 | S1 | 审计 | 哈希链 100% 可验证；每个写命令 100% 有审计条目；`actor_type / channel` 填充率 100% | 链校验报告 |
 | S1 | 身份 | OIDC 一致性套件 Basic + Back-Channel Logout 通过；会话失效清单 9 项全部有用例 | 一致性报告 |
 | S1 | 鉴权 | 100% 端点声明权限点（扫描）；缺省拒绝用例通过；`identity_revision` 失效 ≤ 3 秒 | 端点扫描报告 |
-| S1 | 插件机制 | 任一系统插件「出修订 → 逐租户迁移 → 回切」演示通过；18 个系统插件 TCK 全绿；未签名安装失败 | TCK 报告、演示录屏 |
+| S1 | 组件机制 | 任一平台插件「出修订 → 逐租户迁移 → 回切」演示通过；`platform` profile base 组合包内全部平台插件三套 TCK 全绿；未签名安装失败；`qian --profile platform --dump-config` 打印整棵插件树且任一条目可被 patch 替换；文档新鲜度（C18）、依赖图断言（C19）、`dump-config` 漂移（C20）门禁启用 | TCK 报告、演示录屏、`dump-config` 基线快照 |
 | S1 | 可观测 | trace 覆盖 ≥ 95%（含消息与作业；建议值，待研发负责人校准）；每服务 `/healthz /readyz`；Alertmanager 告警可达 | 采样报告 |
 | S1 | 稳定性 | staging 7 天 crash（容器重启）≤ 3%（建议值，待研发负责人校准）；p95 基线记录 | 监控快照 |
 | S1 | 前端 | yue S1 最小集 Storybook 覆盖 100%；axe critical = 0；对比度单测通过；Lighthouse 预算通过 | CI 报告 |
@@ -260,7 +264,7 @@ judge:
 1. **任务级目标**：一句话写清交付什么、对哪个阶段退出准则有贡献（引用 §14.5 行号或用例 id）。
 2. **验收 checkbox**：每条可观察、可判 PASS / FAIL，注明谁来测、在哪测。写法示例：
    - `- [ ] QA-S1-TENANT-001 在 ci 与 staging 均 PASS`
-   - `- [ ] 系统插件 qian.files 从 r3 回切到 r2 后，t-a 的文件列表与 r2 快照一致（staging，由平台开发者 B 验证）`
+   - `- [ ] 平台插件 qian.files 从 r3 回切到 r2 后，t-a 的文件列表与 r2 快照一致（staging，由平台开发者 B 验证）`
    - `- [ ] 安全门槛写成「≤ 基线定值」：p95 ≤ 300 ms，而不是不可证的「性能良好」`
 3. **证据四件事**：只回答 **PR、命令、环境、结果**——哪个 PR（含 digest）、跑了什么命令或用例、在哪个环境（ci / staging / prod-smoke）、结果产物在哪（链接到 `artifact_required` 的文件）。
 
@@ -298,6 +302,7 @@ judge:
 | 缺陷逃逸率 | staging 或生产发现的 P0 / P1 中，没有被任何自动化用例覆盖的比例 | S1 ≤ 30%，S2 ≤ 20%，S3 ≤ 10%；每个逃逸缺陷必须补用例 |
 | Flaky 率 | 夜间与 PR 级用例中需要重试才通过的比例 | ≤ 2%；安全用例为 0 |
 | 契约破坏次数 | 被 C11 拦截的 OpenAPI / proto / AsyncAPI 破坏性变更次数 | 趋势下降；定稿契约为 0 |
+| 生成文档与配置树漂移次数 | 被 C18（文档新鲜度）与 C20（`dump-config`）拦截的次数 | 趋势下降；发布级为 0 |
 | TCK 首次通过率 | 插件修订首次运行 TCK 即全绿的比例 | S1 ≥ 60%，S2 ≥ 80%（衡量 SDK 与模板质量） |
 | 平均修复时长（MTTR） | P0 从发现到修复合入的中位时长 | P0 ≤ 24 小时 |
 | 过渡态关闭进度 | §13.14 缺口已关闭数 / 总数 | S1 退出时 100% |
@@ -318,9 +323,10 @@ judge:
 
 ## 14.9 待确认
 
-1. 覆盖率阈值（内核与 `qian.authz` ≥ 85%、其余 ≥ 70%）为本章建议值，需研发负责人确认。
+1. 覆盖率阈值（`Qian.Runtime` 与 `qian.authz` ≥ 85%、其余 ≥ 70%）为本章建议值，需研发负责人确认。
 2. S1「7 天 crash ≤ 3%」「trace ≥ 95%」借鉴了团队既有阶段准则的量级，需结合 Qian 的 staging 规模校准。
 3. 外部渗透测试的频次（每阶段一次）与供应商预算需产品负责人确认（ADR-001 风险 1 要求显式列安全预算）。
 4. 契约 lint 对「`x-status: draft` 期允许破坏性修订」的放行窗口长度需与 iClaw 对齐（ADR-016）。
 5. 品牌字样闸门（C5）的具体词表由本章维护但不写入正文，需确认存放位置（建议 CI 配置而非文档）。
 6. 示例 3 要求「回切后数据不丢」，前提是收缩步骤默认延后执行；与 ADR-011 的 Schema Migrator 收缩策略需核对。
+7. TCK 三套的归属与基准宿主（运行时语义套件以 `minimal` profile 为基准、独立模式套件以 `standalone` 为载体）需研发负责人确认；`dump-config` 基线快照（C20）的存放位置与更新纪律待定（建议随 profile 文件同目录入库）。
