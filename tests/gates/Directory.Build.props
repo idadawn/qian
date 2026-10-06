@@ -1,0 +1,6 @@
+<Project>
+
+  <!-- 门禁自测的样例项目：只继承根目录基线，不继承 tests/ 下测试项目的设置，行为与真实 Qian 包一致。 -->
+  <Import Project="../../Directory.Build.props" />
+
+</Project>

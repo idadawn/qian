@@ -1,0 +1,45 @@
+<Project>
+
+  <!--
+    Qian 仓库的 .NET 构建基线（S1-QA-001），沿用 Kun 的约定：net10.0、可空引用、警告即错误、中央包版本。
+    「是不是 Qian 包」与 PublicAPI 门禁的判定在 Directory.Build.targets：那里才能看到项目里写的 IsPackable / PackageId。
+  -->
+
+  <PropertyGroup Label="Targeting">
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Quality">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- 缺 XML 注释只告警不阻断；API 参考由 DocFX 从注释生成（S1-DOCS-002）。 -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS1591</WarningsNotAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <!-- 包漏洞审计覆盖直接与传递依赖；命中即随 TreatWarningsAsErrors 让还原失败。 -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Deterministic Build">
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Packaging">
+    <!--
+      默认不打包。Qian 组件包在 csproj 里显式写 <IsPackable>true</IsPackable>，
+      随即进入 PublicAPI 门禁（Directory.Build.targets）与依赖图门禁（scripts/check_deps.py）。
+    -->
+    <IsPackable>false</IsPackable>
+    <Authors>Qian Contributors</Authors>
+    <Product>Qian</Product>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/idadawn/qian.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,4 @@
+#nullable enable
+Qian.GateSample.Stale.Greeter
+static Qian.GateSample.Stale.Greeter.Greet(string! name) -> string!
+static Qian.GateSample.Stale.Greeter.Farewell(string! name) -> string!

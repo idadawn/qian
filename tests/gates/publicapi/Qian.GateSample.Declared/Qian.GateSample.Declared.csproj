@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>门禁自测样例：公共 API 已登记，构建应通过</Description>
+  </PropertyGroup>
+
+</Project>
