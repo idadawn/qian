@@ -1415,6 +1415,137 @@
   "file": "pm/tasks/S1-DEP-006.md"
  },
  {
+  "id": "S1-DOCS-001",
+  "title": "文档站脚手架：Rspress 2.0 + MDX + 中文主题 + 搜索 + 托管",
+  "status": "todo",
+  "stage": "S1",
+  "area": "DOCS",
+  "areaName": "文档站与组件文档",
+  "wave": 2,
+  "priority": "P0",
+  "type": "infra",
+  "owner": "",
+  "estimate": "3d",
+  "days": 3.0,
+  "depends": [
+   "S1-QA-001"
+  ],
+  "blockedBy": [
+   "S1-QA-001"
+  ],
+  "refs": [
+   {
+    "path": "docs/adr/ADR-013-frontend-yue.md#D13.18",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-013-frontend-yue.md"
+   },
+   {
+    "path": "docs/adr/ADR-020-component-model-v2.md#D20.9",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
+   },
+   {
+    "path": "docs/prd/14-quality.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/14-quality.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 0,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人 2026-10-07 确认文档站选型为 Rspress 2.0（ADR-013 D13.18）。本任务只搭骨架：站点工程、主题、搜索、构建与托管，让后续的组件文档收集（S1-DOCS-002）与 llms 输出（S1-DOCS-003）有落点。站点源码放在仓库 <code>website/</code>，文档内容本身仍以各组件文件夹与 <code>docs/</code> 为源。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>website/</code> 为 Rspress 2.0 工程（<code>@rspress/core</code>，MDX，Node ≥ 20，pnpm），<code>pnpm --filter website build</code> 产出纯静态站点，可离线打开</li>\n<li class='chk'><span class='box'></span>导航包含五个栏目：平台指南、组件（yue 与平台插件）、CLI 与清单规格、API 参考、路线与决策；首页中文，主题色接入 <code>@yue/tokens</code> 的 CSS 变量，明暗两态</li>\n<li class='chk'><span class='box'></span>内置全文搜索可用；Shiki 高亮覆盖 C# / TypeScript / JSON / YAML / Bash；Mermaid 图可渲染</li>\n<li class='chk'><span class='box'></span>CI：PR 构建站点并产出预览链接（Cloudflare Pages 或 K3s 静态托管二选一，记录在 <code>website/README.md</code>），<code>main</code> 合并后自动发布</li>\n<li class='chk'><span class='box'></span><code>scripts/check_docs.py</code> 的检查范围扩展到 <code>website/docs</code>，禁用词与断链在站点内容上同样生效</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（选型确认见 ADR-013 D13.18）</li>\n</ul>",
+  "file": "pm/tasks/S1-DOCS-001.md"
+ },
+ {
+  "id": "S1-DOCS-002",
+  "title": "组件文档收集、活演示与 API 参考生成",
+  "status": "todo",
+  "stage": "S1",
+  "area": "DOCS",
+  "areaName": "文档站与组件文档",
+  "wave": 2,
+  "priority": "P0",
+  "type": "feature",
+  "owner": "",
+  "estimate": "5d",
+  "days": 5.0,
+  "depends": [
+   "S1-DOCS-001",
+   "S1-YUE-005",
+   "S1-RT-010"
+  ],
+  "blockedBy": [
+   "S1-DOCS-001",
+   "S1-YUE-005",
+   "S1-RT-010"
+  ],
+  "refs": [
+   {
+    "path": "docs/adr/ADR-020-component-model-v2.md#D20.9",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
+   },
+   {
+    "path": "docs/prd/specs/component-model.md#2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/adr/ADR-013-frontend-yue.md#D13.18",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-013-frontend-yue.md"
+   },
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.2.2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 0,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>「介绍组件如何使用」是文档站的主体。按 ADR-020 D20.9，每个组件的文档源在它自己的文件夹里（<code>README.md</code> 含「模型体验」「已知限制」两节，<code>docs/*.mdx</code> 为使用指南），文档站在构建前汇总；yue 组件要能在 MDX 里活演示并自动出 API 表；.NET 包与 TypeScript 包的 API 参考由工具生成，不手写。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>收集脚本把各组件 <code>README.md</code> 与 <code>docs/*.mdx</code> 汇总进 <code>website/docs/components/&lt;id&gt;/</code>，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-preview</code> 与 <code>@rspress/plugin-playground</code> 接入：yue 组件在 MDX 代码块内活渲染并可编辑；<code>@rspress/plugin-api-docgen</code> 为 <code>@yue/core</code> 全部组件生成 props 表</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-typedoc</code> 生成 <code>@qian/runtime</code>、<code>@qian/plugin-sdk</code>、<code>@yue/sdk</code> 的 API 文档；DocFX 从 XML 注释生成 <code>Qian.*</code> .NET 包 API 参考并挂在站点 <code>/api/dotnet/</code>；平台 OpenAPI 用 Scalar 渲染在 <code>/api/http/</code></li>\n<li class='chk'><span class='box'></span><code>qian docs generate</code>（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新</li>\n<li class='chk'><span class='box'></span>UT：收集脚本对缺节、重复 id、断链三类错误各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n</ul>",
+  "file": "pm/tasks/S1-DOCS-002.md"
+ },
+ {
+  "id": "S1-DOCS-003",
+  "title": "llms 输出、页面元数据规范与知识库导入契约",
+  "status": "todo",
+  "stage": "S1",
+  "area": "DOCS",
+  "areaName": "文档站与组件文档",
+  "wave": 3,
+  "priority": "P0",
+  "type": "feature",
+  "owner": "",
+  "estimate": "2d",
+  "days": 2.0,
+  "depends": [
+   "S1-DOCS-001"
+  ],
+  "blockedBy": [
+   "S1-DOCS-001"
+  ],
+  "refs": [
+   {
+    "path": "docs/adr/ADR-013-frontend-yue.md#D13.18",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-013-frontend-yue.md"
+   },
+   {
+    "path": "docs/adr/ADR-020-component-model-v2.md#D20.9",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
+   },
+   {
+    "path": "docs/prd/10-s4-agent.md#10.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/10-s4-agent.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 0,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人规划了一个知识库，后期要读取文档站的内容，并要求文档站具备 AI 能力。S1 先把「机器可读」做扎实：开启 Rspress 的 <code>llms</code> 输出（<code>llms.txt</code>、<code>llms-full.txt</code>、每页一份 Markdown，SSG-MD 在构建期直接渲染，不是 HTML 回转），定义页面 frontmatter 元数据规范，并产出一份知识库导入契约，供 S2 的知识库与站内「问 AI」（S2-DOCS-001）消费。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>rspress.config.ts</code> 开启 <code>llms: true</code>，构建产物含 <code>llms.txt</code>、<code>llms-full.txt</code> 与每页 <code>.md</code>；CI 校验三者与源文档同步（过期即失败）</li>\n<li class='chk'><span class='box'></span>站点自定义 MDX 组件在 <code>import.meta.env.SSG_MD</code> 下输出语义文本：CI 抽检生成的 <code>.md</code> 无 JSX 残留、无空白段落、演示代码块保留</li>\n<li class='chk'><span class='box'></span>页面 frontmatter 规范写入 <code>docs/prd/specs/component-model.md</code> 附录或 <code>website/README.md</code>：<code>component</code>、<code>version</code>、<code>profile</code>、<code>surface</code>、<code>stage</code>、<code>updated</code>、<code>audience</code>（developer / operator / agent），校验器纳入 <code>scripts/check_docs.py</code></li>\n<li class='chk'><span class='box'></span>构建产出 <code>kb-index.json</code>（每页：url、md url、标题、frontmatter 元数据、内容 sha256、更新时间）与 <code>sitemap.xml</code>，作为知识库导入契约并写进规格</li>\n<li class='chk'><span class='box'></span>文档站首页与每页提供「复制为 Markdown」入口，指向该页的 <code>.md</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n</ul>",
+  "file": "pm/tasks/S1-DOCS-003.md"
+ },
+ {
   "id": "S1-ENT-001",
   "title": "qian.entitlement 授权 v0：授予表、权益 API 与缓存失效",
   "status": "todo",
@@ -4691,5 +4822,54 @@
   },
   "bodyHtml": "<h4>背景</h4>\n<p><code>@yue/sdk</code>：注册表 API（导航 / 设置 / 命令 / 预览器 / 控件 / 客户端动作，可导出 JSON）、<code>PlatformClient</code>、请求拦截器链（鉴权刷新队列、租户头、大数处理）、i18n（key、zh-CN / zh-TW / en-US、远程语言包）、mock 中间件、<code>.d.ts</code> 契约、SSE 事件类型由 JSON Schema 生成；<code>@yue/biz</code> 基础版：ApiSelect、DictSelect、OrganizeSelect、UserSelect、RoleSelect、菜单 / 按钮授权树、IconPicker，全部经注入的 <code>PlatformClient</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：参考应用用 <code>OrganizeSelect</code> 选部门、<code>UserSelect</code> 选人，数据来自本租户目录</li>\n<li class='chk'><span class='box'></span>UT：注册表可导出 JSON；拦截器链在令牌过期时合并并发刷新</li>\n<li class='chk'><span class='box'></span>UT：<code>@yue/biz</code> 组件不直接发请求，只经注入的 <code>PlatformClient</code>；i18n 全部走 key</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-009.md"
+ },
+ {
+  "id": "S2-DOCS-001",
+  "title": "站内「问 AI」挂件：自有模型网关 + 文档检索 + 引用来源",
+  "status": "todo",
+  "stage": "S2",
+  "area": "DOCS",
+  "areaName": "文档站与组件文档",
+  "wave": 1,
+  "priority": "P1",
+  "type": "feature",
+  "owner": "",
+  "estimate": "5d",
+  "days": 5.0,
+  "depends": [
+   "S1-DOCS-003",
+   "S1-MGW-001",
+   "S1-YUE-005"
+  ],
+  "blockedBy": [
+   "S1-DOCS-003",
+   "S1-MGW-001",
+   "S1-YUE-005"
+  ],
+  "refs": [
+   {
+    "path": "docs/adr/ADR-013-frontend-yue.md#D13.18",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-013-frontend-yue.md"
+   },
+   {
+    "path": "docs/adr/ADR-015-model-gateway.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-015-model-gateway.md"
+   },
+   {
+    "path": "docs/adr/ADR-016-iclaw-boundary.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-016-iclaw-boundary.md"
+   },
+   {
+    "path": "docs/prd/10-s4-agent.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/10-s4-agent.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 0,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>Rspress 自身不带站内 AI 聊天，这一块按 ADR-013 D13.18 用自己的栈实现：检索基于 S1-DOCS-003 产出的 <code>.md</code> 与 <code>kb-index.json</code>（由产品负责人规划的知识库承载），模型调用经模型网关（Higress + GPUStack，ADR-015），Agent 运行时侧按 ADR-016 复用 iClaw（经 MCP / HTTP），挂件本身是一个 yue 组件。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>yue 组件 <code>&lt;AskDocs&gt;</code> 可嵌入文档站右下角与搜索框，支持流式回答，回答末尾列出来源页链接（至少 1 条、最多 5 条）</li>\n<li class='chk'><span class='box'></span>检索走知识库接口，命中内容来自 S1-DOCS-003 的 <code>.md</code> 产物；知识库不可用时自动降级为站内搜索并明示</li>\n<li class='chk'><span class='box'></span>模型调用只经模型网关，不直连任何第三方模型服务；网关侧有租户与配额计量（ADR-015）</li>\n<li class='chk'><span class='box'></span>默认不保存对话内容；是否记录可在站点配置开关，并在界面明示</li>\n<li class='chk'><span class='box'></span>IT：对 20 条「组件如何使用」类问题的回答全部给出正确来源页（人工评审集，纳入发布前检查）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n</ul>",
+  "file": "pm/tasks/S2-DOCS-001.md"
  }
 ]

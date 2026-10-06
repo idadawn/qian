@@ -33,6 +33,7 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 - **D13.15 其他选型**：dnd-kit（包一层抽象）；`@xyflow/react` 12（S3 自由画布）；react-grid-layout；Univer 开源核心（排除 Pro 与商业包，xlsx 导出放后端）；pdfme；quickjs-emscripten；不用 Formily / amis / lowcode-engine / bpmn-js。
 - **D13.16 安全硬线**：不用 `eval` 执行租户脚本；令牌不进 URL / iframe（一次性票据或 postMessage 握手）；前端权限裁剪只是体验层，鉴权在服务端；不在前端持有加密密钥；不持久化 token / 锁屏密码。
 - **D13.17 为 S4 预留**：机器可读 manifest；带版本的 Schema 与校验器（Agent 生成物走同一校验再落库）；客户端动作 / 导航 / 命令注册表（名称、参数 JSON Schema、权限、人话描述）；SSE 事件 JSON Schema 为唯一真相源生成 TS。
+- **D13.18 文档站（2026-10-07 产品负责人确认）**：Rspress 2.0（MDX、React、与 Rslib 同属 Rsbuild 家族）作为 Qian 平台与 yue 组件的使用文档站；开启 `llms` 输出 `llms.txt` / `llms-full.txt` 与每页 Markdown（SSG-MD），供知识库与 Agent 读取；`@rspress/plugin-preview` / `plugin-playground` / `plugin-api-docgen` / `plugin-typedoc` 承担组件活演示与 API 表；.NET 包 API 参考用 DocFX，平台 OpenAPI 用 Scalar；文档源放在各组件文件夹（README 契约见 ADR-020 D20.9），构建前汇总进站点；站内「问 AI」S2 用自有模型网关（ADR-015）与 iClaw（ADR-016）实现，不购买 SaaS。备选 Docusaurus 3.x；不选 dumi / VitePress / MkDocs（分别因绑定 umi、无 MDX）。
 
 ## 3 理由（Rationale）
 
