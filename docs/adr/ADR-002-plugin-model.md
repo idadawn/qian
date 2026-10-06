@@ -4,9 +4,12 @@ status: Accepted
 date: 2026-10-06
 decision_id: D2
 supersedes: none
+superseded_by: ADR-020（部分）
 ---
 
 # ADR-002 插件模型
+
+> **2026-10-06 部分被 ADR-020 取代。** D2.1 的形态轴（`kind` 七值）退为 `runtime.form` 的实现细节，顶层分类改为「表面（surface）」；D2.9 的租户级生命周期改为租户 scope patch（授权状态机只保留「买没买」）；D2.10 的「预装全部官方 `module` + 按租户开关」改为 `platform` profile 默认组合包 + scope patch。其余条目保留并映射到新字段：D2.4 信任等级 → `policy.tier` / `policy.sandbox`；D2.6 清单从代码派生 → 代码部分字段派生后合并进唯一的 `plugin.json`；D2.7 digest 引用 → 仅代码部分的 OCI 制品；D2.8 能力条目的 Agent 字段、D2.11 Wasm 阶段、D2.12 明确不做不变。修订清单见 ADR-020 §6；被取代条目在下文行首标注、原文保留。
 
 ## 1 背景与问题（Context）
 
@@ -18,7 +21,7 @@ Qian 以「插件思维」组织一切能力，但 Kun 决定了插件的物理�
 
 ## 2 决策（Decision）
 
-- **D2.1 三个正交轴**：`kind`（顶层七值：`module` 进程内编译期并入 / `service` 独立 Pod / `package` 元数据 / `function` Wasm / `connector` / `ui` / `bundle` 复合包；`bundle` 的 `components` 下各组件的 `kind` 取前六值）× `role`（`provider` / `capability` / `extension` / `app` / `theme` / `agent`）× `distribution`（`template` 拷贝即拥有 / `managed` 托管可升级，仅对 package / bundle 有意义）。
+- 【已被 ADR-020 取代】**D2.1 三个正交轴**：`kind`（顶层七值：`module` 进程内编译期并入 / `service` 独立 Pod / `package` 元数据 / `function` Wasm / `connector` / `ui` / `bundle` 复合包；`bundle` 的 `components` 下各组件的 `kind` 取前六值）× `role`（`provider` / `capability` / `extension` / `app` / `theme` / `agent`）× `distribution`（`template` 拷贝即拥有 / `managed` 托管可升级，仅对 package / bundle 有意义）。
 - **D2.2 应用 = bundle**：一个「应用」是 `kind: bundle` 的复合插件包，`components` 下可同时含 `package + ui + function (+ service)`，附种子数据、迁移脚本、依赖清单与 id 重映射表（细节见 ADR-014）。
 - **D2.3 系统能力也是插件**：租户、身份、鉴权、存储、文件、配置、网关、模型网关等平台自带技术组件全部以 `tier: system`、`alwaysEnabled: true` 按同一清单交付，同一生命周期、同一 TCK；任一系统插件必须能独立出修订、逐租户迁移、回切。
 - **D2.4 信任等级决定形态**：`system / official / partner / private / community` 五级；第三方代码永不进共享进程；`private / community` 只允许 `package / function / connector / 受限 ui`；`partner` 可加 `service`（独立工作负载身份、独立 PG schema 与数据库角色、事件主题 ACL、出口 NetworkPolicy）。
@@ -26,8 +29,8 @@ Qian 以「插件思维」组织一切能力，但 Kun 决定了插件的物理�
 - **D2.6 清单先于代码、从代码派生、静态可索引**：`qian-plugin.yaml`（JSON Schema 2020-12 校验）由源生成器与 CLI 从代码派生，不手写；宿主不执行插件代码即可据清单生成路由、权限点、菜单、Apollo namespace、OpenAPI 聚合与 MCP 工具描述；CI 比对清单与代码，漂移即失败。
 - **D2.7 清单关键约束**：`id` 为反向域名、发布后不可改；插件 SemVer 与 Kun CalVer 独立；`engines.qian/kun/yue` 声明兼容；OCI 制品只接受 `@sha256:` 引用；签名不在清单内（代码制品用 OCI + cosign，元数据包用文件摘要清单 + 分离签名）；未签名或签名不符直接安装失败。
 - **D2.8 `capabilities` 条目是 Agent 可发现的最小单元**：带 `sideEffect read|write|external|destructive`、`policyHint allow|confirm|deny`、`requiredScopes`、`schemaSha256`（schema 变即旧授权失效）；`inputSchema` 禁止出现租户字段。两个方向的权限：`provides.permissions`（本插件定义的权限点）与反向权限 `permissions.platform/data/egress/secrets/ui`（租户管理员开通时逐项批准，升级新增即重批）。
-- **D2.9 两层生命周期**：平台级 `Draft → Submitted → Verified → Published → Installed(revision n) → Active → Deprecated → Retired`，保留 N 个旧修订可回切；租户级 `Available → Entitled → Provisioning → Enabled ⇄ Disabled → Upgrading / Uninstalled → Purged`；租户级钩子逐租户、幂等、可重试、结果入库；`Entitled`（授权库）与 `Enabled`（Apollo 开关）分开存；「未启用」在网关路由、SDK 入口、前端外壳三处同时拦截。
-- **D2.10 S1 接受「预装全部官方 `module` + 按租户开关」**；运行时装载只对 `package / service` 成立。
+- 【已被 ADR-020 取代】**D2.9 两层生命周期**：平台级 `Draft → Submitted → Verified → Published → Installed(revision n) → Active → Deprecated → Retired`，保留 N 个旧修订可回切；租户级 `Available → Entitled → Provisioning → Enabled ⇄ Disabled → Upgrading / Uninstalled → Purged`；租户级钩子逐租户、幂等、可重试、结果入库；`Entitled`（授权库）与 `Enabled`（Apollo 开关）分开存；「未启用」在网关路由、SDK 入口、前端外壳三处同时拦截。
+- 【已被 ADR-020 取代】**D2.10 S1 接受「预装全部官方 `module` + 按租户开关」**；运行时装载只对 `package / service` 成立。
 - **D2.11 Wasm `function` 运行时为 S2 可选（P2，不计入 S2 核心交付）**：服务端公式与规则先用 JSON AST 表达式解释器；Wasm 在 ISV 函数插件（S3）前落地；ABI（Extism 或 WIT 组件）在 S2 中期拍板。
 - **D2.12 明确不做**：运行时热插 DLL；参考平台式程序集目录加载；进程共享的服务端 JS 引擎；Dapr sidecar 作为默认依赖；引入 NocoBase / Dify / Grafana / n8n 代码。
 

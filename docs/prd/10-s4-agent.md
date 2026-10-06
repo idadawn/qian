@@ -6,6 +6,8 @@
 
 ### 10.1 目标与边界
 
+**组件模型 v2 口径（ADR-020 D20.9）**。Agent 表面从 S1 起即是一等公民：skills / agents / commands / hooks / MCP / tools 是组件文件夹里的声明式表面（§07 7.2.2），所有模型可见的东西注册在 `ctx.Tools` 等注册表里并受 scope 过滤。S4 增加的是三件事：`extensions`（模型在策略下挂载与卸载插件、运行时自修改，建立在 S1 同一套装载器上，S1 只开放给人类 CLI）、每租户 MCP 门面（由 `ctx.Tools` 的租户 scope 视图派生，不是另一套注册表）、Agent 生成组件（产物落为草稿组件文件夹，经与人工相同的校验器与 TCK）。本章凡写「能力目录」「工具」处，均指 S1 已有注册表的 scope 视图。
+
 #### 10.1.1 目标（ADR-018）
 
 S4 退出标准：**Agent 能发现、调用、编排乃至生成平台能力与应用**——
@@ -34,10 +36,11 @@ S4 退出标准：**Agent 能发现、调用、编排乃至生成平台能力与
 
 | 单元 / 插件 | 形态 | 职责 | 级别 |
 |---|---|---|---|
-| `qian.mcp-facade` | service（可放非 AOT 独立服务，若 C# MCP SDK 过不了 Kun 的 AOT 门禁） | 每租户逻辑 MCP 门面：由能力目录派生工具/resources，经 Higress MCP 路由暴露 | P0 |
+| `qian.mcp-facade` | service（可放非 AOT 独立服务，若 C# MCP SDK 过不了 Kun 的 AOT 门禁；`runtime.form: service`，自带 profile） | 每租户逻辑 MCP 门面：由 `ctx.Tools` 的租户 scope 视图派生工具 / resources（§07 7.2.1），经 Higress MCP 路由暴露 | P0 |
+| `extensions`（`Qian.Runtime` 装载器的 Agent 入口） | 运行时能力 | 模型在策略（`policyHint`、租户管理员批准）下挂载与卸载组件到 Agent 会话 scope（`agent-session:<id>`），会话结束逆序撤销；挂载到应用 scope 需应用管理员确认、租户 scope 需租户管理员确认（R36） | P1 |
 | `qian.identity`（S4 增量） | module | Agent 客户端类型、RFC 8693 令牌交换与 `act` 链、CIMD、租户自助 Agent 授权管理页（P2） | P0 |
-| `qian.metadata`（S4 增量） | module | Agent 用的元数据生成闭环（人用版 S2 已有）、`generatedBy / promptHash / 审核人`、AI 生成内容标识 | P0 |
-| `qian.skills` | 打包能力 | 插件随包附带 SKILL.md（agentskills.io 格式），Skills over MCP 分发 | P1 |
+| `qian.metadata`（S4 增量） | module | Agent 用的元数据生成闭环（人用版 S2 已有）：Agent 生成的组件落为草稿组件文件夹并经 §07 7.2.2 同一校验器、`generatedBy / promptHash / 审核人`、AI 生成内容标识 | P0 |
+| `qian.skills` | 打包能力 | `skills/<name>/SKILL.md` 自 S1 起即是组件表面（§07 7.2.2，agentskills.io 格式）；S4 增加 Skills over MCP 分发与摘要清单 | P1 |
 | `qian.sandbox` | 对接层 | 代码模式：契约生成的强类型 SDK 在 CubeSandbox 执行 | P2 |
 | `qian.model-gateway`（S4 完整） | service adapter | 10.5 | P0 |
 | `qian.operations`（S4 增量） | module | Tasks / MRTR 映射、A2A Task 中断态；急停与监督收件箱（P2） | P1 / P2 |
@@ -49,10 +52,10 @@ S4 退出标准：**Agent 能发现、调用、编排乃至生成平台能力与
 
 **发现**
 - ✅ 能力目录（S1 起）是发现入口：`list/search` 返回 schema、副作用、所需 scope、示例；结果按调用者权限过滤并带 `ttlMs / cacheScope: private`（MCP 2026-07-28 要求列表可缓存，按授权变化的列表须标 private）。
-- ✅ **每租户一个逻辑 MCP 门面**：工具 = 已启用插件的能力（按用户委托作用域过滤）；元数据（实体 Schema、流程定义、控件目录）以 MCP resources 只读暴露；Higress 托管，客户端指向 `https://gw.example.com/mcp/<tenant-facade>`。
+- ✅ **每租户一个逻辑 MCP 门面**：工具 = `ctx.Tools` 注册表在租户 scope 下的视图（已挂载组件的工具 ∩ 租户 scope `restrict` ∩ 用户委托作用域，§07 7.2.1）；元数据（实体 Schema、流程定义、控件目录）以 MCP resources 只读暴露；Higress 托管，客户端指向 `https://gw.example.com/mcp/<tenant-facade>`。
 - ✅ **S4 启动前置（R14）**：Higress 升级到 ≥ 2.2.4 并开启 MCP 托管，列为 S3 末 / S4 启动前置项（10.5.8 第 4 阶段、10.5.10；ROADMAP S3 核心交付与 S3-M3）；未完成不进入 S4-M1。
 - ✅ 不只暴露 CRUD：流程发起、审批动作、列表动作、数据接口都直接成为工具（「元数据资产 = 工具库」）；平台级同时提供 (a) 精选意图级工具 (b) 能力目录搜索工具 (c) 契约生成的强类型 SDK + 沙箱执行（代码模式，P2）；不做「每操作一个工具」的全量平铺。
-- ✅ 能力随包携带 SKILL.md，S4 经 Skills over MCP 分发（带摘要清单）。
+- ✅ 能力随组件携带 `skills/`（S1 起即是声明式表面，§07 7.2.2），S4 经 Skills over MCP 分发（带摘要清单）。
 - ✅ 市场兼任私有 MCP registry（`server.json` 兼容，§09）。
 
 **调用**
@@ -116,18 +119,20 @@ S4 退出标准：**Agent 能发现、调用、编排乃至生成平台能力与
 
 #### 范围与边界
 
-- ✅ 产物形态：`template` 或 `managed` 的 `package` 包（数据模型、表单、列表、流程、菜单、角色模板、种子数据），**生成格式 = 导入格式**（§08 8.1）；代码只能落 `function` Wasm。
+- ✅ 产物形态：`template` 或 `managed` 的 `package` 组件（数据模型、表单、列表、流程、菜单、角色模板、种子数据），**生成格式 = 导入格式**（§08 8.1）；代码只能落 `function` Wasm。产物落为**草稿组件文件夹**（`.qian-plugin/plugin.json` + `forms/` `lists/` `flows/` `pages/` + 可选 `skills/`），经 §07 7.2.2 的同一校验器与 7.2.3 TCK，再进 marketplace 条目（ADR-020 D20.9）。
+- ✅ `extensions`：模型在策略下经同一装载器把组件挂载到 Agent 会话 scope（`agent-session:<id>`），会话结束即逆序撤销；挂载到应用 scope 需应用管理员确认、租户 scope 需租户管理员确认（R36）；S1 的装载器不开放给模型。
 - ✅ 闭环：Agent 提交 patch/包 → Schema 与语义校验（控件目录、Field Type Catalog、节点 Schema 全部是数据，Agent 只能产出目录内类型）→ TCK（清单、契约、幂等、越权探测）→ 预览（表单/列表渲染、流程节点树）→ 差异审阅（JSON Patch + 人读摘要）→ 人工确认 → 安装/发布 → 可回滚。校验是发布前的强制门禁。
 - ✅ 元数据记录 `generatedBy / promptHash / 审核人`；按《人工智能生成合成内容标识办法》做显式/隐式标识。
 - ✅ 工具最小集（§08 预留契约落地）：`listWidgets`、`listDataSources`、`generateFormFromTable`、`insertFields`、`validateForm / validateList`、`previewForm`、`publish(dryRun)`、`mountMenu`、`workflow:validate`、`bundles.install(dryRun)`；AI 建表/生成字段、AI 建流程（只生成「设计中」草稿，标出待补项）、OCR 控件库在此阶段落地，模型调用全部经 10.5。
 - ✅ 市场可被 Agent 检索（机器可读包摘要）；Agent 只能提议安装/升级，付费与权限动作需人工批准；Agent 生成的应用上架走同一审核流水线与自动审核门禁（`generatedBy` 包的权限最小化检查）。
-- ❌ Agent 直接写运行时数据库或绕过发布向导；Agent 生成的进程内代码（module/service）。
+- ❌ Agent 直接写运行时数据库或绕过发布向导；Agent 生成的进程内代码（module/service）；Agent 绕过装载器直接改 profile / patch 文件或 `scope_patches` 表。
 
 #### 验收标准
 
 - [ ] 输入「做一个报销申请应用：报销单含明细子表、金额公式、部门主管审批、财务复核」，Agent 产出 package 通过校验与 TCK，预览可见，人工确认后安装到租户并可完整走一遍审批；元数据带 `generatedBy / promptHash`。**测法**：S4 退出标准第 4 条端到端。
 - [ ] 产物中出现目录外控件类型或含 `module` 组件时，在校验步被拒且错误可被 Agent 据以自纠正（结构化、带允许值）。**测法**：坏样例。
 - [ ] 安装到两个租户后，其中一个租户的 `tenantEditable` 修改在包升级后保留（复用 §08 退出标准第 2 条脚本）。**测法**：脚本复用。
+- [ ] Agent 产出的草稿组件文件夹不过 §07 7.2.2 校验器时被拒并返回带文件路径与 JSON Pointer 的错误；通过后 `qian add` 到沙箱租户 scope 可用，会话结束后 `extensions` 挂载的组件被逆序撤销且 `dump-config` 无残留。**测法**：坏样例 + scope 断言。
 
 ### 10.5 模型服务网关（P0 · 本期唯一详细规划的 AI 范围）
 
@@ -337,7 +342,7 @@ openrouter/*:        { markup: 1.1 }
 Qian **只做**以下四件事，不另写模型代理层：
 
 1. **GPUStack 作为 OpenAI 兼容上游注册进 Higress**（McpBridge / 供应商配置经 GitOps 落地）。
-2. **Provider Adapter**（`qian-model-gateway-adapter` 可部署单元，S1 已预留）：发现 GPUStack 模型部署、健康探测、生命周期（上线/下线/替换）同步到 Higress 映射的变更提案（人工批准后入 git），不直接改数据面。
+2. **Provider Adapter**（`model-gateway` 组合包，`runtime.form: service`，默认挂在 `platform` profile，可选独立 profile `model-gateway`（镜像 `qian-model-gateway-adapter`），S1 已预留，R31）：发现 GPUStack 模型部署、健康探测、生命周期（上线/下线/替换）同步到 Higress 映射的变更提案（人工批准后入 git），不直接改数据面。
 3. **填写 `model-capabilities` 契约**（对齐 iClaw）：模型目录含逻辑名、类型（chat / embedding / rerank / vision / tts / asr）、能力标签（工具调用、视觉、推理、缓存）、上下文长度、最大输出、配额、可用租户；用途槽位（`form-generation`、`flow-generation`、`embedding`、`ocr` 等）→ 逻辑名的映射放平台配置 Schema。
 4. **租户/配额/计量在平台侧**：Qian 的所有模型调用经 `platform-qian` 消费者；`qian.model-gateway` 客户端为每次调用打 `tenant_id / project_id?` 并写计量事件（§09 9.12）；租户级配额与预算告警在平台执行，Higress 对租户无感；密钥全部 secretRef（ADR-007）。
 
@@ -373,3 +378,4 @@ Qian **只做**以下四件事，不另写模型代理层：
 6. **iClaw 协议对齐计划**（其 MCP 客户端钉旧版且只有 stdio）：谁牵头、何时切到 2026-07-28；否则 S4 发现/调用路径只能靠 `server/discover` 兼容。
 7. **是否与 iClaw 共用同一 Higress 实例**（Q16 默认共用集群、独立节点池）：影响消费者命名空间与配额隔离。
 8. **MaaS 现网推理层切换到 GPUStack 的窗口**与「仓外是否已有 GPUStack 控制面」需与基础设施团队确认。
+9. **组件模型 v2 对本章的影响（ADR-020）**：(a) 已裁决（R36）——`extensions` 的自动挂载边界：Agent 会话 scope 自动、应用 scope 需应用管理员确认、租户 scope 需租户管理员确认；Agent 会话 scope 的生命周期与审计字段随 specs/component-model.md 定稿；(b) 草稿组件文件夹的存放：沿 R36 租户私有市场默认平台托管（Agent 产物上传为组件文件夹，平台生成私有 marketplace 条目），进入官方市场前的审核流水线归 §09 9.1 审核台；(c) TypeScript 侧运行时选型（ADR-020 §7 第 1 条）影响 `@yue/agent`、MCP Apps 视图是否作为 `@qian/runtime` 插件树成员；(d) 每租户 MCP 门面派生自 `ctx.Tools` scope 视图后，10.3 的 `ToolGrant` 哈希与 §07 `schemaSha256` 需同一计算口径（与 §09 9.14 第 8 条合并处理）。

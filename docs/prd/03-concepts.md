@@ -1,8 +1,8 @@
 # 3. 核心概念模型
 
-> 状态：草案 v1 · 更新日期：2026-10-06 · 决策引用：ADR-002、ADR-004、ADR-005、ADR-006、ADR-008、ADR-011、ADR-014、ADR-016 · 上级索引：[README](README.md)
+> 状态：草案 v1（组件模型 v2 修订中） · 更新日期：2026-10-06 · 决策引用：ADR-002、ADR-004、ADR-005、ADR-006、ADR-008、ADR-011、ADR-014、ADR-016、ADR-019、ADR-020（Proposed） · 上级索引：[README](README.md)
 
-本章定义 Qian 的十个核心概念。每个概念给出 **定义**、**例子**、**承诺**；承诺用四种符号：✅ 可做 · ❌ 不可做 · ⚠️ 有条件 · 🔒 保留与隔离。概念之间的关系见 3.0 的总图；易混术语的精确语义见 3.11。功能性细节与数据结构见 §07–§10。
+本章定义 Qian 的十个核心概念，3.4a 另列组件模型 v2（ADR-020）新增的六个概念。每个概念给出 **定义**、**例子**、**承诺**；承诺用四种符号：✅ 可做 · ❌ 不可做 · ⚠️ 有条件 · 🔒 保留与隔离。概念之间的关系见 3.0 的总图；易混术语的精确语义见 3.11。功能性细节与数据结构见 §07–§10。
 
 ## 3.0 概念关系总图
 
@@ -21,6 +21,8 @@
                                                     └── 事件 Event（信封 + Schema）
  Operation/Task ◀── 任何长任务、审批待办、Agent 补参
 ```
+
+> 组件模型 v2（ADR-020，Proposed）对总图的修订：「插件 Plugin（kind × role × distribution × tier）」读作「组件 = 文件夹 + 清单 + 声明式表面 + 可选代码」，`kind` 退为 `runtime.form`、`tier` 落入 `policy.tier`；插件挂进由 **profile → 组合包 → patch** 层叠出的插件树，并按 **scope**（租户 / 应用 / Agent 会话）注册或遮蔽；图中「授权 Entitlement」只表达「买没买」，租户「开没开」由租户 scope 的 patch 表达；能力按 **seam**（Definition / Provider / Consumer）拆分，`ctx.<key>` 是能力的运行时名字；「应用 App = bundle」改读为「组合包 + marketplace 条目」（R28）。六个新概念见 3.4a，易混术语见 3.11。
 
 ## 3.1 租户（Tenant）
 
@@ -64,26 +66,41 @@
 - ❌ 导出包不得缺菜单、权限、字典；导入不得不重映射 id。
 - 🔒 从市场购买的 managed 应用默认禁止导出（S3 裁决项，默认禁止）。
 
-## 3.4 插件（Plugin）
+## 3.4 插件（Plugin）／组件（Component）
 
-**定义。** 平台能力的交付单元，由清单 `qian-plugin.yaml` 描述，四个维度正交（ADR-002）：
+**定义。** 平台能力的交付与运行单元。组件模型 v2（ADR-020，Proposed）下，**组件 = 文件夹 + 清单（`.qian-plugin/plugin.json`）+ 声明式表面 + 可选代码**；装进 `Qian.Runtime` 的插件树后它就是一个插件（最小接口 `Inject` + `Apply`，所有注册为可逆副作用）。本 PRD 中「插件」与「组件」同义：前者强调运行时身份，后者强调交付形态。无代码的组件（只有 skill、只有配置）是常态而非例外。清单字段族：`id`（反向域名，发布后不可改）、`version`（SemVer）、`interface`（展示信息）、各表面指针、`runtime`（`nuget[]` / `npm[]`、`form`）、`inject[]` / `provides[]`（服务键）、`policy`（`tier`、`sandbox`、`authentication`、`profiles[]`）、`scopes[]`。原 ADR-002 的四个维度按下表映射，其中 `kind` 不再是顶层分类（顶层分类改为「表面」，见 3.4a）：
 
 | 维度 | 取值 | 含义 |
 |---|---|---|
-| `kind` 形态（顶层七值） | `module` 进程内编译期并入 · `service` 独立工作负载 · `package` 纯元数据 · `function` Wasm 沙箱 · `connector` 受控出网适配器 · `ui` 前端微应用 · `bundle` 复合包（`components` 下含多个组件，组件级 `kind` 取前六值） | 代码跑在哪、怎么装载 |
-| `role` 角色 | `provider` 提供基础设施实现 · `capability` 提供业务能力 · `extension` 扩展已有能力 · `app` 面向租户的应用 · `theme` 外观 · `agent` Agent 侧资产（S4） | 它在平台里扮演什么 |
+| `runtime.form` 形态（原顶层 `kind`，v2 退为代码部分的实现细节） | `module` 进程内编译期并入 · `service` 独立工作负载 · `package` 纯元数据 · `function` Wasm 沙箱 · `ui` 前端微应用（ADR-020 D20.6 列出的五值）；原 `connector` 与 `bundle` 不再是形态（R28）：连接器 = 为某个 seam 提供 Provider 的组件，清单上 `provides[]` 写服务键 + `policy.egress` 声明出网目标，`runtime.form` 按实现取 `module` 或 `service`；`bundle` = 组合包（有 `config/qian.patch.yml`，可携带多个组件），应用 = 组合包 + marketplace 条目（字段细节以 specs/component-model.md 为准） | 代码部分跑在哪、怎么装载；无代码组件不填 |
+| `role` 角色 | `provider` 提供基础设施实现 · `capability` 提供业务能力 · `extension` 扩展已有能力 · `app` 面向租户的应用 · `theme` 外观 · `agent` Agent 侧资产（S1 起即为表面，ADR-020 D20.9） | 它在平台里扮演什么 |
 | `distribution` 分发 | `template` 拷贝即拥有 · `managed` 托管锁定可升级 | 装进租户后归谁、怎么升级 |
-| `tier` 信任 | `system` · `official` · `partner` · `private` · `community` | 决定允许的组件级 `kind`（`bundle` 对所有 tier 开放，R22）、UI 沙箱策略与审核强度 |
+| `policy.tier` 信任（原 `tier`） | `system` · `official` · `partner` · `private` · `community` | 决定允许的 `runtime.form` 与 `policy.sandbox`（声明式表面对所有 tier 开放；原「`bundle` 对所有 tier 开放」R22 据此改读）、UI 沙箱策略与审核强度 |
 
-**例子。** `qian.tenancy` 是 `kind: module, role: provider, tier: system`；一个 ISV 的「合同管理」应用是 `kind: bundle, role: app, distribution: managed, tier: partner`（`components` 含 `package + ui`）；一个企业微信登录连接器是 `kind: connector, role: extension, tier: official`。
+**例子。** `qian.tenancy` 是 `platform` profile 的 base 组合包里的一个插件（`runtime.form: module`、`role: provider`、`policy.tier: system`，提供 `ctx.Tenancy`）；一个 ISV 的「合同管理」应用 = 组合包（`config/qian.patch.yml` 携带 `forms/ lists/ flows/ pages/` 与 `ui/` 等组件，S2）+ marketplace 条目，`role: app, distribution: managed, policy.tier: partner`（R28）；一个企业微信登录连接器是为 `ctx.Identity` seam 提供 Provider 的组件（`provides: [ctx.Identity]`、`policy.egress` 声明企业微信域名、`runtime.form` 按实现取 `module`；`role: extension, policy.tier: official`）；一个只含 `skills/` 的组件没有代码部分，`runtime` 为空，也不需要 TCK 之外的任何构建步骤。
 
 **承诺。**
-- ✅ 清单从代码派生、静态可索引；宿主不执行插件代码即可生成路由、权限点、菜单、配置命名空间、OpenAPI 聚合与 MCP 工具描述。
+- ✅ 清单只有一份（`plugin.json`）；代码部分的字段由源生成器派生并合并进同一份清单；宿主不执行插件代码即可解析表面、生成路由、权限点、菜单、配置命名空间、OpenAPI 聚合与 MCP 工具描述。
 - ✅ 插件 SemVer 与 Kun CalVer 独立；`engines.qian / kun / yue` 声明兼容范围。
-- ✅ 两层生命周期（平台级 / 租户级）分开建模；租户级钩子逐租户、幂等、可重试。
-- ⚠️ S1 过渡态：预装全部官方 module + 按租户开关；运行时装载只对 package / service 成立（带日期标注，见 §07）。
-- ❌ 不做运行时热插 DLL；`partner / private / community` 不得为 module / service；未签名直接安装失败。
-- 🔒 `id` 为反向域名，发布后不可改；OCI 引用只接受 digest；签名不在清单里。
+- ✅ 平台级生命周期（制品 → 修订 → 激活，可回切）保留；租户级「开没开」由租户 scope 的 patch 表达，授权状态机只管「买没买」（ADR-020 D20.5；取代 ADR-002 D2.9）。
+- ✅ 声明式表面（skills、commands、hooks、MCP、元数据、patch）S1 支持运行中重载。
+- ⚠️ S1：`platform` profile 的默认组合包预装官方插件，租户启用 = scope patch（取代「预装 + 数据库开关」）；代码插件的热装卸 S1 不承诺，默认进程重启（collectible `AssemblyLoadContext` 为 S2 可选，ADR-020 §7）。
+- ❌ 不做运行时热插 DLL 进共享进程；`partner / private / community` 不得为 `module` / `service`（映射到 `policy.tier` / `policy.sandbox`）；未签名直接安装失败。
+- 🔒 `id` 为反向域名，发布后不可改；OCI 引用只接受 digest（仅代码部分）；签名不在清单里。
+
+## 3.4a 组件模型 v2 的六个概念（ADR-020，Proposed）
+
+**表面（surface）。** 组件对外暴露的声明式内容，是组件的顶层分类：`skills/<name>/SKILL.md`（技能，Agent 可读，含 front matter）、`agents/<name>.md`（子 Agent 定义）、`commands/<name>.md`（人类斜杠命令，命令平面，不进入模型消息）、`hooks/hooks.json`（Qian 事件与 Agent 宿主事件的桥接）、`.mcp.json`（MCP 服务器声明）、`tools/`（面向模型的工具描述）、`ui/`（yue 远程模块、页面、控件、设置卡）、`forms/ lists/ flows/ pages/`（低代码元数据，S2 起）。表面是 Markdown 与 JSON，Agent 可直接读写；S1 支持运行中重载。例：一个只含 `skills/` 的组件没有任何代码；S2 设计器保存一张表单，产出的就是组件文件夹里的 `forms/<name>.json`。✅ 五种表面（skills / agents / commands / hooks / MCP）的解析器与校验器 S1 交付；❌ 不存在绕过注册表的隐藏表面。
+
+**作用域（scope）。** 任一注册（服务、工具、提示词片段、表单、流程、菜单、监听器）要么是全局的，要么归属恰好一个 scope key；S1 的 scope 种类为租户、应用、Agent 会话。带作用域的注册在该 scope 内**遮蔽（shadow）**同名全局项；`restrict` 为某个 scope 过滤全局集合，多个 restriction 取交集，被过滤掉的项既不出现在目录与提示词里也拒绝执行，与不存在无法区分。scope 不继承：子 scope 的行为用 lineage 数据表达，从不用 scope 层级。例：租户 A 启用文件组件 = 在租户 A 的 scope 挂载它的配置条目；租户 A 把登录页换成自家品牌 = 带租户 scope 的遮蔽注册；某个 Agent 会话只能看到三件工具 = 会话 scope 的 `restrict`。✅ 租户开关、租户定制、Agent 工具集三件事统一为「带作用域的注册 + restrict」；🔒 scope 过滤在 `ctx.Tools` 等注册表层生效，不依赖调用方自律。
+
+**能力 seam。** 一项能力 = Service Definition（拥有 `ctx.<key>` 与词汇类型，放在 `Qian.<X>.Abstractions`）+ 一个或多个 Service Provider（`Qian.<X>.<Provider>`）+ 一个或多个 Consumer（含面向模型的工具）。扩展插件只依赖 Definition，绝不依赖具体 Provider；换一个 Provider 就改变整个产品。例：`ctx.Files` 的 Provider 从本地盘换成 OSS，所有消费者不变；`ctx.Identity` 的 Provider 从嵌入式 OpenIddict 换成外部 IdP 连接器，登录页与会话中心不变。✅ seam 图由代码生成并设 CI 新鲜度门禁；ADR-019 的 Abstractions / 实现分层据此落位。
+
+**profile 与组合包。** 运行中的 Qian 是一棵插件树，由启动时按序叠加的层组成：**profile**（具名组装；S1 随发行版交付 `platform`、`gateway`、`identity`、`standalone`、`minimal`）→ profile 列出的**组合包**（配置条目 + 挂载代码的分发格式；有 `config/qian.patch.yml`，可携带多个组件；原 `kind: bundle` 即组合包，应用 = 组合包 + marketplace 条目，R28）→ profile 自己的 `qian.patch.yml` → home 级 patch → 命令行 `--patch` overlay。`qian --profile platform --dump-config` 打印整棵树。✅ 可部署单元 = profile，新增一个可部署单元只是新增一个 profile 文件（取代 ADR-003 固定 5 个可部署单元）；✅ 平台插件（规范术语，R30；「系统插件」为别名）= `platform` profile 的 base 组合包内容，数量由组合包定义而不是决策（取代「18 个系统插件」）；原可部署单元 ↔ profile / 组合包的 S1 默认映射见 ROADMAP S1 核心交付（R31）。
+
+**patch。** 一条 patch 按 id 定位插件树中的某个条目并替换其整个 config，或插入新条目；`dump-config` 打印出的任何条目都可被 patch 替换。租户层是租户 scope 的 patch 层：存放在数据库，但与文件 patch 同一格式、同一校验器。例：租户启用 `qian.files` = 在租户 scope 插入它的配置条目；运维把 `ctx.Files` 的 Provider 从本地盘换成 OSS = 一条替换该条目 config 的 profile patch。✅ patch 是热重载的声明式表面之一；🔒 patch 不能移除 profile 标记为不可移除的强制执行点（租户、鉴权、审计监听器）。
+
+**市场条目。** 目录市场是 git 仓库里的一份 `.qian/marketplace.json`：`name`、`interface.displayName`、`plugins[]`；每个条目只有 `name`、`source`（`local` 路径 / `url` / `git-subdir`）、`policy`（`installation`、`authentication: ON_INSTALL | ON_USE`、`profiles`）、`category`、`interface`。条目只写来源与策略，不复制组件内容；多市场并存（官方市场仓库、租户私有市场、社区市场）；目录网站由 marketplace.json 生成。安装入口是 `qian add <component>[@version]`：复制声明式表面进项目 `.qian/`、把代码部分加为 NuGet / npm 依赖、把配置条目写进当前 profile 的 patch；配套 `qian remove / list / doctor / dump-config / init --template <stack>`。✅ S3 的商业市场（授权、计费、审核）叠在同一格式之上，不另起格式（ADR-014 经 ADR-020 修订）。
 
 ## 3.5 能力（Capability）
 
@@ -201,8 +218,25 @@ template vs managed（分发模式）
   user    ：以 Membership 身份登录的人。
   service ：以 client_credentials 获取令牌的机器身份（服务、集成、调度）。
   agent   ：代表某个 user 或 service 行动的 Agent；令牌含 act 委托链；有效权限 = 委托人权限 ∩ 授予 scope。
+
+插件（Plugin） vs 组件（Component） vs 组合包（ADR-020）
+  插件  ：挂进 `Qian.Runtime` 插件树的运行时单元，最小接口 Inject + Apply；本 PRD 中与「组件」同义，强调运行时身份。
+  组件  ：交付与安装的单元 = 文件夹 + 清单 + 声明式表面 + 可选代码；一个组件装载后就是一个插件；无代码组件是常态。
+  组合包：profile 列出的分发单位——一组配置条目 + 挂载代码的分发格式，有 config/qian.patch.yml、可携带多个组件；
+          原 `kind: bundle` 即组合包，应用 = 组合包 + marketplace 条目（ADR-014 经 ADR-020 修订，R28）；原 18 个系统插件
+          （规范术语「平台插件」，R30）是 `platform` profile 的 base 组合包。组合包不是第三种运行时单元；字段细节以
+          specs/component-model.md 为准。
+
+租户启用（scope patch） vs 授权（Entitlement）（ADR-020）
+  租户启用：「这个插件在这个租户开没开」= 在租户 scope 挂载它的配置条目（patch，存数据库、与文件 patch 同格式同校验器）；
+            取消 = 移除该条目。取代原「租户级生命周期状态机」中的 Enabled ⇄ Disabled。
+  授权    ：「这个租户有没有买 / 被授予这个插件（版本、席位、期限）」；仍是 qian.entitlement 的状态机与商业事实。
+  关系    ：授权是启用的前提；启用 patch 的校验器拒绝未授权的条目；二者仍分开存储、分开审计（与上文「授权 vs 特性开关」一致，
+            特性开关只管灰度）。
 ```
 
 ## 修订历史
 
 - 2026-10-06：草案 v1。
+- 2026-10-06：组件模型 v2 回填（ADR-020，Proposed）——3.4 改写为「组件 = 文件夹 + 清单 + 声明式表面 + 可选代码」，`kind` 七值退为 `runtime.form`；新增 3.4a 六个概念（表面、作用域、能力 seam、profile 与组合包、patch、市场条目）；3.0 总图下加修订说明；3.11 补「插件 vs 组件 vs 组合包」「租户启用 vs 授权」。
+- 2026-10-06：裁决 R28（connector = seam Provider 组件、`provides[]` + `policy.egress`；bundle = 组合包，应用 = 组合包 + marketplace 条目）、R30（规范术语「平台插件」）、R31（可部署单元 ↔ profile 映射指针）落实到 3.0 / 3.4 / 3.4a / 3.11。

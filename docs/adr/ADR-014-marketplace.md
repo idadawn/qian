@@ -4,9 +4,12 @@ status: Accepted
 date: 2026-10-06
 decision_id: D14
 supersedes: none
+amended_by: ADR-020
 ---
 
 # ADR-014 应用市场形态
+
+> **2026-10-06 经 ADR-020 修订。** 应用包格式 = 组件文件夹（`.qian-plugin/plugin.json` 清单 + 声明式表面 + 可选代码）+ `marketplace.json` 条目；OCI 制品只用于代码部分；S3 的商业市场（授权、计费、审核、ISV 入驻）叠在同一 `marketplace.json` 格式之上，不另起格式。D14.1 的「应用 = bundle」改读为上述格式，D14.2 两种分发、D14.3 元数据分层与可定制性、D14.4 升级与冲突处理及权益 API 的结论不变。详见 ADR-020 D20.8 与 §6。
 
 ## 1 背景与问题（Context）
 
@@ -16,7 +19,7 @@ supersedes: none
 
 ## 2 决策（Decision）
 
-- **D14.1 应用 = bundle**：`package`（模型 / 表单 / 列表 / 流程 / 菜单 / 权限模板 / 字典 / 数据接口）+ `ui` + 可选 `function / service` + 种子数据 + 迁移脚本 + 依赖清单 + **id 重映射表**。
+- 【经 ADR-020 修订：应用包格式 = 组件文件夹 + marketplace 条目】**D14.1 应用 = bundle**：`package`（模型 / 表单 / 列表 / 流程 / 菜单 / 权限模板 / 字典 / 数据接口）+ `ui` + 可选 `function / service` + 种子数据 + 迁移脚本 + 依赖清单 + **id 重映射表**。
 - **D14.2 两种分发都支持**：`template`（拷贝即拥有，可改，升级只能同源导入合并 / 覆盖）与 `managed`（托管、锁定、带命名空间、可升级，租户在上层叠加定制）；**默认 `managed`，`template` 作为可选**（Q10）。
 - **D14.3 元数据分层与可定制性**：有效元数据 = 系统基础层 → 按依赖拓扑排序的包层 → 租户定制层 →（S3 可选）用户个性化层，按「租户 + 版本指纹」缓存；容器型组件（表单、列表、菜单、门户）结构化合并，其余上层优先；`marketplace.manageability` 标记组件 / 属性级可定制性（`locked / tenantEditable / protected`）。
 - **D14.4 升级与冲突处理**：`managed` 升级做三方比较（旧包、新包、租户层），冲突项列清单由租户「保留我的 / 采用新版 / 手工合并」；升级前快照与回滚；升级同意规则由 SemVer + 「是否新增权限 / 外发 / 密钥」决定，有新权限必须租户管理员重批；第三方推送升级不得新增权限。

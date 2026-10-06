@@ -1,6 +1,6 @@
 # §12 能力边界
 
-> 状态：草案 v0（2026-10-06）。依据：`docs/decisions/key-decisions-v0.md`（D1–D18 与补充裁决，2026-10-06 全部获认可）。本章只回答「某个阶段结束时，平台承诺做到什么、长期不做什么」；功能细节在各功能规格章，安全规则在 §13，验收方法在 §14。
+> 状态：草案 v0（2026-10-06；组件模型 v2 修订中）。依据：`docs/decisions/key-decisions-v0.md`（D1–D18 与补充裁决，2026-10-06 全部获认可；D20 组件模型 v2 为同日方向修正新增，ADR-020 Proposed，其边界条目见 12.2 的 C 块与 12.9）。本章只回答「某个阶段结束时，平台承诺做到什么、长期不做什么」；功能细节在各功能规格章，安全规则在 §13，验收方法在 §14。
 >
 > 阅读约定：
 > - 阶段口径见 ADR-018：S1 技术底座 → S2 低代码构建 → S3 面向客户 → S4 AI 原生 Agent 平台。
@@ -22,7 +22,7 @@
 
 ## 12.2 S1 技术底座：明确支持
 
-S1 退出标准（ADR-018）：开发人员用代码在 Qian 上写出一个多租户应用，登录/SSO、鉴权、数据存储、文件上传、配置、网关、事件、审计全部由平台提供；一个官方 module 插件能独立出修订、逐租户迁移、回切。
+S1 退出标准（ADR-018；ADR-020 §6 新增末句）：开发人员用代码在 Qian 上写出一个多租户应用，登录/SSO、鉴权、数据存储、文件上传、配置、网关、事件、审计全部由平台提供；一个官方 module 插件能独立出修订、逐租户迁移、回切；在空白项目里 `qian add identity authz files` 后 30 分钟内跑通登录、权限检查与上传。
 
 **租户与隔离（ADR-004、ADR-003）**
 1. 运营人员能在运营后台创建租户、选择隔离策略（默认共享库 + `tenant_id` 行过滤 + PostgreSQL RLS 双保险）、设置有效期与用户配额、指定单个租户管理员；租户号与隔离策略创建后不可修改。
@@ -63,14 +63,23 @@ S1 退出标准（ADR-018）：开发人员用代码在 Qian 上写出一个多�
 28. 每个服务提供 `/healthz`、`/readyz`；traceparent 与 baggage（含 `tenant_id`）贯通 HTTP、gRPC、消息；计量带租户 / 插件 / 主体类型维度。
 
 **插件机制、SDK、授权 v0（ADR-002、ADR-003、ADR-014）**
-29. `qian-plugin.yaml` 清单 v1 Schema + 校验器 + 源生成器：宿主不执行插件代码即可生成路由、权限点、菜单、Apollo namespace 骨架、OpenAPI 聚合与 NetworkPolicy 片段；CI 比对清单与代码，漂移即失败。
-30. 插件注册表与两层生命周期（平台级 Draft → … → Retired；租户级 Available → Entitled → Provisioning → Enabled ⇄ Disabled → Upgrading / Uninstalled → Purged）可用；租户级钩子逐租户、幂等、可重试、结果入库。
-31. 18 个系统插件全部按 `tier: system` 清单交付，预装并按租户开关；其中任一 module 插件能独立出修订、逐租户迁移、回切到旧修订。
+29. （清单在 v2 为唯一一份 `.qian-plugin/plugin.json`，文件名待 ADR-020 §7 拍板，见 C 块）`qian-plugin.yaml` 清单 v1 Schema + 校验器 + 源生成器：宿主不执行插件代码即可生成路由、权限点、菜单、Apollo namespace 骨架、OpenAPI 聚合与 NetworkPolicy 片段；CI 比对清单与代码，漂移即失败。
+30. （租户级 Enabled ⇄ Disabled 经 ADR-020 改为租户 scope patch，见 C3；注册表与生命周期控制器为普通插件 `qian.registry` / `qian.lifecycle`）插件注册表与两层生命周期（平台级 Draft → … → Retired；租户级 Available → Entitled → Provisioning → Enabled ⇄ Disabled → Upgrading / Uninstalled → Purged）可用；租户级钩子逐租户、幂等、可重试、结果入库。
+31. （「18 个」与「预装并按租户开关」经 ADR-020 修订，见 C2 / C3）18 个系统插件全部按 `tier: system` 清单交付，预装并按租户开关；其中任一 module 插件能独立出修订、逐租户迁移、回切到旧修订。
 32. 制品按 digest 引用、全部签名、未签名直接安装失败；插件包作为 OCI artifact 推 Harbor。
 33. SDK：源生成器 + CLI + TCK；TCK 覆盖清单校验、契约兼容性、生命周期钩子幂等性、跨租户越权探测、性能基线。
 34. 授权 v0：`qian.entitlement` 存「是否买了」，Apollo 开关存「是否灰度开」，两者分开；bundle 包格式 v0、安装 / 升级引擎、id 重映射表定稿。
 35. 能力目录（命令 / 查询 / 事件 / 实体四类注册表 + JSON Schema）经鉴权、按权限过滤后可查询；它不是公开 OpenAPI。
 36. 所有写操作走带 JSON Schema 的命令，命令元数据含 `sideEffect`、`idempotencyKey`、`dryRun`；`inputSchema` 中不出现租户字段。
+
+**组件模型 v2（ADR-020，Proposed；对上一块第 29–31、34 条的修订，条目编号 C 以别于 B / T / N）**
+- C1. 组件库只依赖 `Qian.Runtime`（.NET）/ `@qian/runtime`（TS），不依赖 `qian.registry` / `qian.lifecycle` 等插件；CI 断言依赖图（取代 ADR-019 的「不依赖 `Qian.Kernel`」断言）。
+- C2. 可部署单元 = profile：S1 随发行版交付 `platform` / `gateway` / `identity` / `standalone` / `minimal`；原 18 个系统插件成为 `platform` profile 的 base 组合包内容（规范术语「平台插件」，R30），各自按 seam 三角色拆包，数量由组合包定义而不是决策；`qian --profile platform --dump-config` 能打印整棵插件树，打印出的任何条目都能被 patch 替换。原可部署单元 ↔ profile / 组合包的定稿映射见 ROADMAP S1 核心交付与 prd/README 命名约定（R31：`qian-shell` 不是 profile，为 `platform` 的 `shell` 组合包；`qian-model-gateway-adapter` 为 `model-gateway` 组合包，默认挂 `platform`、可选独立 profile）。
+- C3. 租户启用一个插件 = 在租户 scope 挂载其配置条目（patch，存数据库、与文件 patch 同格式同校验器）；`qian.entitlement` 的授权状态机只管「买没买」；二者分开存、分开审计（§11.1.6「授权与开关分开可见」不变）。
+- C4. 声明式表面（skills / agents / commands / hooks / MCP、元数据、patch）S1 支持运行中重载；代码插件 S1 不承诺热装卸，走滚动重启（collectible `AssemblyLoadContext` 为 S2 可选，ADR-020 §7 第 5 条）。
+- C5. 第三方代码不进共享进程保持不变（N1 / N2），映射到 `policy.tier` 与 `policy.sandbox`；`private / community` 组件只允许声明式表面与沙箱形态。
+- C6. 一键安装与目录市场：`qian add / remove / list / doctor / dump-config / init --template` 可用；官方市场仓库与 `.qian/marketplace.json` 就绪；空白项目 `qian add identity authz files` 后 30 分钟内跑通登录、权限检查与上传。
+- C7. skill / agent / command / hook / MCP 五种表面的解析器与校验器 S1 交付；模型可见的一切注册在 `ctx.Tools` 等注册表并受 scope 过滤；配置目录、模块图、事件图、seam 图由代码生成并设 CI 新鲜度门禁。
 
 **前端 yue 与外壳（ADR-013；详见专题 spec《yue 组件库》）**
 37. `@yue/tokens` 三层令牌、明暗两态、WCAG AA 对比度单测；`@yue/core` 约 30 个基础组件；`@yue/shell` 单一侧栏布局外壳（后端菜单 → 路由、`menuTypeRegistry`、租户切换器、兜底页）；DataTable 基础版、SchemaForm 基础版、Upload、组织 / 用户 / 角色选择器、认证页族可用。
@@ -200,8 +209,8 @@ S4 退出标准：Agent 能发现、调用、编排乃至生成平台能力与�
 
 | # | 不做 | 理由 | 依据 |
 |---|---|---|---|
-| N1 | 运行时热插 DLL 进 AOT 或共享进程 | Native AOT 不支持程序集动态加载；不可信代码无法安全载入受信进程；需要动态性的走 `package` / `function` / 进程外 `service` | ADR-002 |
-| N2 | 第三方代码进入任何共享进程 | 信任等级决定形态：`partner / private / community` 只允许 package / function / connector / 受限 ui；`service` 即便允许也必须独立工作负载身份 | ADR-002 |
+| N1 | 为第三方代码与可 AOT 的边缘 profile（`gateway` 等）做运行时热插 DLL | Native AOT 不支持程序集动态加载；不可信代码无法安全载入受信进程；需要动态性的第三方能力走 `package` / `function` / 进程外 `service`。官方代码插件在 `platform` profile（非 AOT）的热装卸保持 S2 可选、默认进程重启（ADR-020 D20.7 / D20.11）。已裁决（R27）：本条由原「任何运行时热插 DLL」收窄为现表述 | ADR-002、ADR-020 |
+| N2 | 第三方代码进入任何共享进程 | 信任等级（`policy.tier`）决定允许的 `runtime.form` 与 `policy.sandbox`：`partner / private / community` 只允许声明式表面、`package`、`function`、受限 `ui`，以及为某个 seam 提供 Provider 的组件（原 connector：`provides[]` 写服务键 + `policy.egress` 声明出网目标；其 `runtime.form` 不得为 `module`，按实现取进程外 `service` 或由平台连接器运行时托管）；`service` 即便允许也必须独立工作负载身份（R28 口径，字段细节以 specs/component-model.md 为准） | ADR-002、ADR-020 |
 | N3 | 参考平台式匿名外链（读草稿、不校验开关 / 密码 / 条件、无有效期） | 匿名上下文只能访问「匿名可用」能力；外链一律经网关匿名路由 + 服务端签发的能力令牌（功能 + 动作 + 版本 + 过滤 + 有效期，S3） | ADR-010、§13 |
 | N4 | 进程共享的服务端 JS 引擎（全局单例 V8 / 任意脚本） | 无锁、无超时、无沙箱、可拼 SQL 到租户库；用 JSON AST 表达式解释器 + Wasm `function` 替代 | ADR-002、ADR-012 |
 | N5 | 自建 Agent 推理引擎、沙箱、记忆、技能引擎 | 复用 iClaw 运行时；Qian 只做能力提供方与业务主数据权威 | ADR-016 |
@@ -230,7 +239,7 @@ S4 退出标准：Agent 能发现、调用、编排乃至生成平台能力与�
 |---|---|---|---|
 | T1 | MySQL / 国产数据库作为业务库 | Kun 的 RLS、schema 供给、PgBouncer 方案全部 PG 专属；MySQL 无 RLS 等价物、无任何引用与测试（Q5） | 出现需 RLS 等价能力的客户合同且愿意承担隔离降级 |
 | T2 | per-tenant namespace 作为默认拓扑 | 三节点集群资源与运维面不可承受；高隔离档按需生成 | 集群规模与运维自动化成熟 |
-| T3 | 第三方 `service`（任意代码容器）上架市场 | 审核与运维投入量级不可控（Q9）；专属部署场景的 `private` service 不在此列 | ISV 生态与审核能力到位 |
+| T3 | 第三方 `runtime.form: service`（任意代码容器）上架市场 | 审核与运维投入量级不可控（Q9）；专属部署场景的 `policy.tier: private` service 不在此列（R28 口径） | ISV 生态与审核能力到位 |
 | T4 | 租户自带业务库连接（低代码业务库） | 与 Schema Migrator、RLS、备份边界冲突 | 高隔离档客户明确需求 |
 | T5 | 每租户独立 issuer / 自定义登录域改 issuer | S1 单 issuer；自定义域只换登录页宿主（Q4） | 政企白标刚需 |
 | T6 | 隔离策略在线迁移 | 复杂度与风险高；创建时一次性决定 | 作为付费迁移服务评估 |
@@ -271,3 +280,10 @@ S4 退出标准：Agent 能发现、调用、编排乃至生成平台能力与�
 5. 已裁决（R16）：配置路径型门户与报表子集保持 S2 可选（P2）；S2 验收演示的「可用首页」由应用默认首页（菜单 + 功能列表）满足，不依赖门户（§12.3 第 15 条）。
 6. 模型服务网关底座接线列为 S1 可选（ADR-018 待拍板项），本章按可选写入 §12.2 第 42 条。
 7. 本章对其他章节的引用（功能规格章编号）待 PRD 索引定稿后回填。
+8. ADR-020 §7 第 1 条：TypeScript 侧（yue 外壳、`qian` CLI）直接采用现成的 MIT 运行时还是自研同语义的 `@qian/runtime`；.NET 侧确定自研。C1 的 `@qian/runtime` 依赖规则以此为准。
+9. ADR-020 §7 第 2 条：清单文件名与格式（`.qian-plugin/plugin.json` 还是沿用 `qian-plugin.yaml`，默认前者）；本章第 29 条与 C 块按默认写。
+10. ADR-020 §7 第 3 条：`qian` CLI 的实现语言（Node + `dotnet qian` 薄包装，还是 .NET global tool 为主，默认前者）；影响 C6 的 `npx` 一键体验。
+11. ADR-020 §7 第 4 条：官方市场仓库的名称与可见性（默认同组织独立仓库，S1 私有、S3 评估公开）；影响 C6 与 §12.4。
+12. 已裁决（R27）：N1 收窄为「不为第三方代码与可 AOT 的边缘 profile 做运行时热插 DLL」；官方代码插件在 `platform` profile 的热装卸保持 S2 可选、默认进程重启（ADR-020 D20.7 / D20.11），C4 按「S1 不承诺」写。ADR-020 §7 第 5 条中「是否进入 S2」据此回答为「S2 可选」，collectible `AssemblyLoadContext` 与 Kun AOT 约束的兼容验证归属仍待拍板。
+13. ADR-020 §7 第 6 条：许可证与公开 feed（沿 ADR-019 §7）；影响 §12.2 第 33 条 SDK 的分发渠道。
+14. 已裁决（R28）：`connector` 不是 `runtime.form`，而是「为某个 seam 提供 Provider 的组件」——清单上体现为 `provides[]` 写出服务键 + `policy.egress` 声明出网目标，`runtime.form` 按其实现取 `module` 或 `service`；`bundle` = 组合包（有 `config/qian.patch.yml`，可携带多个组件），应用 = 组合包 + marketplace 条目。T3 / N2 与 §03 3.4 已按 `runtime.form` / `policy.tier` / `provides` 口径改写；字段细节以 specs/component-model.md 为准。

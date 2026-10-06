@@ -1,16 +1,16 @@
 # Qian 架构决策记录（ADR）索引
 
-> 来源：`docs/decisions/key-decisions-v0.md`（D1–D18、Q1–Q18 默认与补充裁决，2026-10-06 全部获认可）。每份 ADR 的决策条目编号为 `D{n}.k`，PRD 只引用不重复。被借鉴的商业低代码产品一律称「参考平台」。
+> 来源：`docs/decisions/key-decisions-v0.md`（D1–D18、Q1–Q18 默认与补充裁决，2026-10-06 全部获认可；D19「库优先」与 D20「组件模型 v2」为同日两条方向修正新增，待拍板）。每份 ADR 的决策条目编号为 `D{n}.k`，PRD 只引用不重复。被借鉴的商业低代码产品一律称「参考平台」。
 >
-> 结构：YAML front matter（title / status / date / decision_id / supersedes）+ 1 背景与问题 · 2 决策 · 3 理由 · 4 备选方案 · 5 后果与代价 · 6 对各阶段的影响 · 7 待确认事项 · 8 参考。
+> 结构：YAML front matter（title / status / date / decision_id / supersedes，被后续 ADR 取代或修订时加 superseded_by / amended_by）+ 1 背景与问题 · 2 决策 · 3 理由 · 4 备选方案 · 5 后果与代价 · 6 对各阶段的影响 · 7 待确认事项 · 8 参考。
 >
-> 状态口径：Accepted = 已认可并作为 PRD 依据；修订时新建 ADR 并在旧 ADR 的 `supersedes` 反向标注。
+> 状态口径：Accepted = 已认可并作为 PRD 依据；Proposed = 方向已由产品负责人给出、细则待拍板，PRD 引用时须标注；修订时新建 ADR 并在旧 ADR 的 `supersedes` 反向标注；部分被取代的 ADR 在 front matter 加 `superseded_by: ADR-0xx（部分）`、标题下加说明、被取代条目行首标「【已被 ADR-0xx 取代】」，原文不删；只被修订不被取代的加 `amended_by`。
 
 | 编号 | 标题 | 状态 | 一句话决策 | 关联 PRD 章节 |
 |---|---|---|---|---|
 | [ADR-001](ADR-001-kun-relationship.md) | Qian 与 Kun 的关系 | Accepted | Kun 是底座 SDK 而非平台内核；NuGet + CalVer 锁版本消费；不推翻核心设计但改 AOT 承诺、安全默认值与双胞胎 API；S1 必修 Kun 关键缺口，上游 PR 优先、逾期补丁包 | `PRD §02` `§07` `§12` `§15` |
-| [ADR-002](ADR-002-plugin-model.md) | 插件模型 | Accepted | kind × role × distribution 三轴，kind 七值含 `bundle` 复合包；系统能力也是 `tier: system` 插件；清单从代码派生、静态可索引；两层生命周期；第三方代码永不进共享进程，S3 不开放第三方 `service` | `PRD §02` `§03` `§07` `§12` `§13` |
-| [ADR-003](ADR-003-kernel-boundary-s1-services.md) | 内核边界与 S1 服务拆分 | Accepted | 内核只留契约、强制执行点、注册表；S1 共 5 个可部署服务 + 18 个系统插件；预装全部官方 module + 按租户开关 | `PRD §03` `§07` `§12` |
+| [ADR-002](ADR-002-plugin-model.md) | 插件模型 | Accepted（部分被 ADR-020 取代） | kind × role × distribution 三轴，kind 七值含 `bundle` 复合包（D2.1 已被取代：`kind` 退为 `runtime.form`）；系统能力也是 `tier: system` 插件；清单从代码派生、静态可索引；两层生命周期（D2.9 / D2.10 已被取代：租户启用 = scope patch）；第三方代码永不进共享进程，S3 不开放第三方 `service` | `PRD §02` `§03` `§07` `§12` `§13` |
+| [ADR-003](ADR-003-kernel-boundary-s1-services.md) | 内核边界与 S1 服务拆分 | Accepted（部分被 ADR-020 取代） | 内核只留契约、强制执行点、注册表（D3.1–D3.4 已被取代：内核 → 极小的 `Qian.Runtime`，可部署单元 → profile）；S1 共 5 个可部署服务 + 18 个系统插件（经修订：系统插件 = `platform` profile 的 base 组合包，数量不再是决策）；预装全部官方 module + 按租户开关（已被取代） | `PRD §03` `§07` `§12` |
 | [ADR-004](ADR-004-database-tenant-isolation.md) | 数据库与租户隔离 | Accepted | PostgreSQL 16 唯一一等库，本期不支持 MySQL / 国产库；默认共享库 + RLS 双保险，S3 独立库付费档；schema-per-service；租户上下文只来自令牌、fail-closed | `PRD §07` `§09` `§12` `§13` |
 | [ADR-005](ADR-005-identity-sso.md) | 身份与 SSO | Accepted | OpenIddict 自建 `qian.identity` 唯一 issuer；Person + Membership；S1 密码 / 短信 / TOTP + 会话中心 + 通用 OIDC 与企业微信连接器；钉钉 / 飞书 S2；SAML / CAS / LDAP 与租户自助 IdP S3；Authentik 退居运维侧 | `PRD §07` `§09` `§13` |
 | [ADR-006](ADR-006-authorization-model.md) | 鉴权模型 | Accepted | Kun 只加 `Kun.Authorization` 端口，Qian 自建 `qian.authz`；权限点由清单声明 + 租户域 RBAC + 数据权限编译为谓词叠加 RLS + 字段权限；权限不进令牌；UI / API / MCP 唯一判定入口；高级模式 S3 可选 | `PRD §07` `§10` `§13` |
@@ -21,11 +21,13 @@
 | [ADR-011](ADR-011-metadata-dynamic-data.md) | 元数据与动态数据层 | Accepted | 元数据驱动运行时为主轨；动态表「物理主表 + JSON 列」混合存储、不走 EF 模型；统一 Filter AST S1 定义；正式 Schema Migrator；泛型命令 + 信封事件；代码生成退化为可选薄壳；视图 / 脚本边界 / 功能编码 / SQL 文本模式 / 门户报表子集 / 打印 PDF 的阶段裁决 | `PRD §03` `§08` `§09` `§12` `§13` |
 | [ADR-012](ADR-012-workflow-engine.md) | 流程引擎 | Accepted | 自研 .NET 轻量审批内核（Elsa 仅 PoC、Flowable 仅可选 BPMN 适配器）；一套 JSON 定义两种视图，S2 只做纵向节点树设计器；流程整体 S2、S1 只交付前置；子流程与超时催办升为 S2 必做；兜底链、Agent 代办、启用 / 停用命名、自动化与决策阶段裁决 | `PRD §08` `§09` `§10` `§11` |
 | [ADR-013](ADR-013-frontend-yue.md) | 前端与 yue | Accepted | React 19 + Vite + Tailwind v4 + Base UI + shadcn 源码自有化；yue 六层 + 横切，lint 强制依赖方向；一套表单 / 表格 / 弹层引擎；MF2 外壳 + 版本化插槽 S1 必做；Base UI 验证门；S2 只做 PC 响应式；统一一个壳；S1 单一侧栏；私有 npm 分发 | `PRD §07` `§08` `§11` `§12` |
-| [ADR-014](ADR-014-marketplace.md) | 应用市场形态 | Accepted | 应用 = bundle（含依赖清单与 id 重映射表）；template / managed 两种分发、默认 managed；S1 定下包格式、升级与冲突处理、授权与权益 API（Entitled 与 Enabled 分开存）；M0–M4 演进；市场兼任私有 MCP registry（S4） | `PRD §04` `§05` `§09` `§15` |
+| [ADR-014](ADR-014-marketplace.md) | 应用市场形态 | Accepted（经 ADR-020 修订） | 应用 = bundle（含依赖清单与 id 重映射表；经 ADR-020：应用包格式 = 组件文件夹 + marketplace 条目，OCI 仅代码部分，商业市场叠加）；template / managed 两种分发、默认 managed；S1 定下包格式、升级与冲突处理、授权与权益 API（Entitled 与 Enabled 分开存）；M0–M4 演进；市场兼任私有 MCP registry（S4） | `PRD §04` `§05` `§09` `§15` |
 | [ADR-015](ADR-015-model-gateway.md) | 模型服务网关 | Accepted | 并入团队 Higress / MaaS；GPUStack 作 OpenAI 兼容上游 + Provider Adapter + `model-capabilities`；租户 / 配额 / 计量在平台侧；不自写模型代理；不在 S1 把 SSO 交给 Higress；先 LLM + Embedding | `PRD §10` `§07` `§12` |
 | [ADR-016](ADR-016-iclaw-boundary.md) | 与 iClaw 的边界 | Accepted | Qian = 能力提供方 + 业务主数据权威；iClaw = Agent 运行时 + AI 资产控制面；Qian 不写任何 Agent loop；对齐 S2S claim、事件信封、工具元数据、契约格式；MCP 2026-07-28 目标；租户权威归 Qian；只搬四处 iClaw 代码 | `PRD §10` `§12` `§13` `§17` |
 | [ADR-017](ADR-017-deployment.md) | 部署 | Accepted | 沿用 K3s / Argo CD app-of-apps / Kustomize / Harbor / 不可变发布事件约定；Qian 独立 ns + 专属 PG / Redis；default-deny + ResourceQuota + Alertmanager；多租户拓扑三档、不以 per-tenant ns 为默认；插件包 OCI 制品；生产与 iClaw 共用集群但独立节点池 | `PRD §07` `§09` `§12` `§14` |
 | [ADR-018](ADR-018-stages-s1-scope.md) | 阶段切分与 S1 范围 | Accepted | 四段顺序认可；每阶段有可验收退出标准与核心交付；S1 起生效的防返工设计清单；补充裁决的阶段归属集中登记；S1 含模型网关接线为可选 | `PRD §01` `§07`–`§10` `§15` `§16` |
+| [ADR-019](ADR-019-library-first-packages.md) | 库优先与 Qian 包族 | Proposed（经 ADR-020 修订） | 每个系统组件首先是可独立安装使用的 NuGet 包（`Qian.<Component>.Abstractions` + 实现），其次才经清单成为插件：插件 = 库 + 清单；独立 / 平台两种模式同一份代码；组件库唯一必需的 Qian 依赖是 `Qian.Runtime`（经 ADR-020）；`AddQian<X>()` 为 `Apply` 内部细节；SemVer 锁步、S1 发 GitHub Packages；安装入口 = `qian add` + 目录市场（ADR-020）；许可证与公开 feed 待拍板 | `PRD §02` `§03` `§07` `§12` `§14`（待回填） |
+| [ADR-020](ADR-020-component-model-v2.md) | 组件模型 v2 | Proposed | 一切皆插件、没有特权内核（极小的 `Qian.Runtime` / `@qian/runtime`）；插件最小接口 `Inject` + `Apply`，注册皆为可逆副作用；事件五种分发模式；能力按 seam 三角色拆分；作用域两层扁平、租户启用 = scope patch；组件 = 文件夹 + `plugin.json` + 声明式表面 + 可选代码，`kind` 退为 `runtime.form`；profile / 组合包 / patch 分层取代固定可部署单元与 18 个系统插件；`qian add` 一键安装 + `marketplace.json` 目录市场；Agent 原生表面 S1 起；取代 ADR-002 D2.1 / D2.9 / D2.10 与 ADR-003 D3.1–D3.4，修订 ADR-014 / ADR-019 | `PRD §02` `§03` `§07`–`§12` `specs/component-model.md` `ROADMAP` |
 
 ## 补充裁决并入位置
 
@@ -45,3 +47,21 @@
 ## PRD 章节编号约定
 
 01 愿景 · 02 设计原则 · 03 核心概念模型 · 04 形态与市场 · 05 差异化 · 06 用户与场景 · 07 S1 技术底座功能规格 · 08 S2 低代码构建 · 09 S3 面向客户 · 10 S4 Agent 与模型服务网关 · 11 体验原则与词表 · 12 能力边界 · 13 权限与安全 · 14 质量与评估 · 15 演进路线 · 16 成功指标 · 17 借鉴声明。引用写成 `PRD §07`。
+
+## 组件模型 v2 修订状态（ADR-020，2026-10-06）
+
+ADR-020 §6 列出了对既有文档的修订清单，分三路并行落实：
+
+| 文档 | 状态 | 说明 |
+|---|---|---|
+| ADR-002 / ADR-003 | 已回填 | front matter `superseded_by`、标题下说明、被取代条目行首标注，原文保留 |
+| ADR-014 / ADR-019 | 已回填 | front matter `amended_by`、标题下修订要点 |
+| `decisions/key-decisions-v0.md` | 已回填 | 新增 D20 节与总览行；D2 / D3 / D14 / D19 加指针 |
+| PRD §02 原则、§03 概念、§11 词表、§12 边界 | 已回填（本次） | 新增原则 2.7a / 2.7b；概念 3.4 改写 + 3.4a 六个概念 + 3.11 两组易混术语；词表新增 v2 术语并改写「系统插件」「内核」「清单」「形态」；边界新增 C1–C7 与 12.9 待确认；裁决 R27–R31 已落实（N1 收窄、connector / bundle 口径、2.7a / 2.7b 编号、规范术语「平台插件」、可部署单元 ↔ profile 映射） |
+| `ROADMAP.md` | 已回填（本次） | S1 目标 / 核心交付 / 退出标准按 ADR-020 §6 第一行更新；S2 / S3 / S4 各加一行；S1 核心交付后附「原可部署单元 ↔ v2 落位」表（R31） |
+| PRD §07 S1 功能规格、§08 设计器产出物、§09 市场形态、§10 Agent 表面 | 回填中（另一人同时进行） | §07 的 7.0 与 7.2 重写为运行时 + CLI + 市场 + 表面 + profile；各技术组件小节保留技术结论，落位改为 seam 三角色与 base 组合包 |
+| `prd/specs/component-model.md` | 草案 v1 已落盘 | 组件模型 v2 的权威规格；与 ADR-020 不一致处以 ADR-020 为准 |
+| `prd/specs/plugin-manifest.md` | 待改标 | 保留为 v1 字段迁移对照（`kind` → `runtime.form`），不再是权威规格 |
+| `migration/`、`research/` | 不改 | 迁移方案与研究基线不受 ADR-020 影响 |
+
+待拍板事项集中在 ADR-020 §7（六条），PRD 各章「待确认」只引用不复制。

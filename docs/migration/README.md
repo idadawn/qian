@@ -4,6 +4,7 @@
 > 权威来源：决策清单（`docs/decisions/key-decisions-v0.md`，含补充裁决）是唯一权威；基线汇编与七份领域基线是素材。基线与决策冲突处一律按决策写，并在各映射文件的「未决问题」注明。
 > 引用约定：决策写 `ADR-0xx`（001 Kun 关系、002 插件模型、003 内核边界、004 数据库与隔离、005 身份、006 鉴权、007 Apollo、008 事件、009 审计、010 网关、011 元数据与动态数据、012 流程、013 前端 yue、014 市场、015 模型网关、016 iClaw 边界、017 部署、018 阶段）；PRD 章节写 `PRD §07` 等（01 愿景 … 07 S1 功能规格、08 S2、09 S3、10 S4、11 词表、12 边界、13 安全、14 质量、15 路线、16 指标、17 借鉴声明）。
 > 优先级口径（全目录统一）：**P0** = 该阶段退出标准所依赖的必做项；**P1** = 该阶段可选、下一阶段必做或高价值项；**P2** = 视客户需求再排。写法如「S2·P0」。
+> 组件模型 v2 口径（2026-10-06，ADR-020）：本目录各表中的「插件 ID」继续有效，但其落位按 v2 理解——`qian.kernel` 的注册表 / 生命周期 / 能力目录改为普通插件（`qian.registry` / `qian.lifecycle` / `qian.capabilities`），运行时只剩 `Qian.Runtime`；「宿主 / 可部署单元」= profile（S1：platform、gateway、identity、standalone、minimal）；「系统插件」= `platform` profile 的 base 组合包成员，按 seam 三角色拆为 `Qian.<X>.Abstractions` / Provider / Consumer 包并可 `qian add` 独立安装；租户开关 = 租户 scope patch。本目录的逐表回填待 PRD §07–§10 修订完成后进行。
 
 ## 目录
 
