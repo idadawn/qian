@@ -1,0 +1,12 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup Label="Test projects">
+    <!-- 测试与测试支撑库不打包、不发布，也不要求 XML 注释。 -->
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

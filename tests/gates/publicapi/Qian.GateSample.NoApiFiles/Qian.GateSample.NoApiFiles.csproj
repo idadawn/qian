@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>门禁自测样例：缺 PublicAPI 文件，构建应因 QIAN0001 失败</Description>
+  </PropertyGroup>
+
+</Project>

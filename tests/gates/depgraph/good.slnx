@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="Qian.Runtime.GateSample/Qian.Runtime.GateSample.csproj" />
+  <Project Path="Qian.Plugin.Sdk.GateSample/Qian.Plugin.Sdk.GateSample.csproj" />
+  <Project Path="Qian.GateSample.Authz.Abstractions/Qian.GateSample.Authz.Abstractions.csproj" />
+  <Project Path="Qian.GateSample.Authz/Qian.GateSample.Authz.csproj" />
+  <Project Path="Qian.GateSample.Files/Qian.GateSample.Files.csproj" />
+  <Project Path="FakeRegistry/FakeRegistry.csproj" />
+  <Project Path="Qian.Bundle.GateSample/Qian.Bundle.GateSample.csproj" />
+  <Project Path="GateSample.Host/GateSample.Host.csproj" />
+</Solution>
