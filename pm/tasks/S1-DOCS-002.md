@@ -11,6 +11,7 @@ owner: ""
 estimate: 5d
 depends: [S1-DOCS-001, S1-YUE-005, S1-RT-010]
 refs:
+  - docs/prd/specs/docs-site.md#3
   - docs/adr/ADR-020-component-model-v2.md#D20.9
   - docs/prd/specs/component-model.md#2
   - docs/adr/ADR-013-frontend-yue.md#D13.18
@@ -24,7 +25,7 @@ updated: 2026-10-07
 
 ## 验收
 
-- [ ] 收集脚本把各组件 `README.md` 与 `docs/*.mdx` 汇总进 `website/docs/components/<id>/`，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）
+- [ ] 收集脚本把各组件 `README.md` 与 `docs/*.mdx` 按 docs-site.md §3 的九节模板汇总进 `website/docs/components/`，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）
 - [ ] `@rspress/plugin-preview` 与 `@rspress/plugin-playground` 接入：yue 组件在 MDX 代码块内活渲染并可编辑；`@rspress/plugin-api-docgen` 为 `@yue/core` 全部组件生成 props 表
 - [ ] `@rspress/plugin-typedoc` 生成 `@qian/runtime`、`@qian/plugin-sdk`、`@yue/sdk` 的 API 文档；DocFX 从 XML 注释生成 `Qian.*` .NET 包 API 参考并挂在站点 `/api/dotnet/`；平台 OpenAPI 用 Scalar 渲染在 `/api/http/`
 - [ ] `qian docs generate`（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新
@@ -33,3 +34,4 @@ updated: 2026-10-07
 ## 进度日志
 
 - 2026-10-07 claude：创建任务
+- 2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收

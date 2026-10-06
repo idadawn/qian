@@ -66,6 +66,7 @@
 | spec | 组件模型 v2（权威） | [specs/component-model.md](specs/component-model.md) | `.qian-plugin/plugin.json` 清单字段族、五种表面、scope / 遮蔽 / restrict、seam 三角色、profile / 组合包 / patch、`marketplace.json`、`qian` CLI、运行时语义与 TCK；草案 v1（另有人负责），落盘前以 ADR-020 为准 |
 | spec | 插件清单（v1，迁移对照） | [specs/plugin-manifest.md](specs/plugin-manifest.md) | `qian-plugin.yaml` 字段草案、JSON Schema、十类派生物、签名与 digest、反向权限、`capabilities` 条目；经 ADR-020 降为 v1 字段迁移对照（`kind` → `runtime.form`），不再是权威规格 |
 | spec | yue 组件库 | [specs/yue.md](specs/yue.md) | 本版关键决策 D1–D16；六层分层；控件注册表契约；MF2 外壳与插槽；选型与验证门；S1 最小集验收 |
+| spec | 文档站信息架构与规范 | [specs/docs-site.md](specs/docs-site.md) | 七个部分、组件页九节模板、frontmatter 规范、机器可读产物、`website/` 目录骨架（ADR-013 D13.18） |
 
 ## 文档体系：各管一事
 

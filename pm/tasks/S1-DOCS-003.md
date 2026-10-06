@@ -11,6 +11,7 @@ owner: ""
 estimate: 2d
 depends: [S1-DOCS-001]
 refs:
+  - docs/prd/specs/docs-site.md#4
   - docs/adr/ADR-013-frontend-yue.md#D13.18
   - docs/adr/ADR-020-component-model-v2.md#D20.9
   - docs/prd/10-s4-agent.md#10.1
@@ -25,10 +26,11 @@ updated: 2026-10-07
 
 - [ ] `rspress.config.ts` 开启 `llms: true`，构建产物含 `llms.txt`、`llms-full.txt` 与每页 `.md`；CI 校验三者与源文档同步（过期即失败）
 - [ ] 站点自定义 MDX 组件在 `import.meta.env.SSG_MD` 下输出语义文本：CI 抽检生成的 `.md` 无 JSX 残留、无空白段落、演示代码块保留
-- [ ] 页面 frontmatter 规范写入 `docs/prd/specs/component-model.md` 附录或 `website/README.md`：`component`、`version`、`profile`、`surface`、`stage`、`updated`、`audience`（developer / operator / agent），校验器纳入 `scripts/check_docs.py`
+- [ ] 页面 frontmatter 按 `docs/prd/specs/docs-site.md` §4 实现（`part`、`audience`、`component`、`version`、`profile`、`surface`、`stage`、`updated` 等），校验器纳入 `scripts/check_docs.py`
 - [ ] 构建产出 `kb-index.json`（每页：url、md url、标题、frontmatter 元数据、内容 sha256、更新时间）与 `sitemap.xml`，作为知识库导入契约并写进规格
 - [ ] 文档站首页与每页提供「复制为 Markdown」入口，指向该页的 `.md`
 
 ## 进度日志
 
 - 2026-10-07 claude：创建任务
+- 2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收
