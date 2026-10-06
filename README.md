@@ -46,7 +46,7 @@ python3 scripts/pm.py add --stage S1 --area FILE --title "..." --priority P0 --w
 python3 scripts/pm.py validate && python3 scripts/pm.py build   # 改完任务必跑，生成物一起提交
 ```
 
-规则、领域代码、状态定义见 [pm/README.md](pm/README.md)。CI 会在推送与 PR 时检查文档门禁、任务文件合法性和生成物是否过期。
+规则、领域代码、状态定义见 [pm/README.md](pm/README.md)；**怎么把任务下发给人或 Codex / Claude Code（含可复制的提示词模板）见其第 7 节**。CI 会在推送与 PR 时检查文档门禁、任务文件合法性和生成物是否过期。
 
 ## 开发怎么开始
 
