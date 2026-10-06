@@ -1,0 +1,5 @@
+[
+  { "type": "file", "name": "index", "label": "编程模型" },
+  { "type": "file", "name": "capabilities", "label": "能力与函数" },
+  { "type": "file", "name": "events", "label": "事件与中间件" }
+]

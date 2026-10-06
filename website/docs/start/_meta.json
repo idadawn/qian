@@ -1,0 +1,7 @@
+[
+  { "type": "file", "name": "index", "label": "概览" },
+  { "type": "file", "name": "quickstart", "label": "30 分钟上手" },
+  { "type": "file", "name": "hosts", "label": "宿主与框架" },
+  { "type": "dir", "name": "concepts", "label": "核心概念", "collapsible": true, "collapsed": false },
+  { "type": "dir", "name": "guides", "label": "指南", "collapsible": true, "collapsed": false }
+]
