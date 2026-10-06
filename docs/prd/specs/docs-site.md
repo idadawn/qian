@@ -21,13 +21,67 @@
 |---|---|---|---|---|---|
 | 1 | 开始 | `/start/` | 30 分钟跑通 `qian add identity authz files`；核心概念五页：组件、表面、scope、seam、profile / patch | 手写 MDX | 否 |
 | 2 | 组件目录 | `/components/` | 每个组件一页（模板见 §3）：yue UI 组件带活演示与 props 表；平台插件（身份、鉴权、文件、配置、事件…）同一模板 | 从各组件文件夹自动收集（S1-DOCS-002），**生成目录勿手改** | 是，随包版本 |
-| 3 | SDK | `/sdk/` | 后端 SDK（.NET：`Qian.Runtime`、`Qian.Plugin.Sdk`、`Qian.*`；Kun 外链不重写）、前端 SDK（`@qian/runtime`、`@qian/plugin-sdk`、`@yue/sdk`、MF2 远程模块）、Agent SDK（表面编写、工具副作用与策略、能力目录、MCP 门面、iClaw 接入；不教写 Agent loop）、模型服务 SDK（在插件与 Agent 里调模型 / Embedding、能力契约、配额）；每节「编程模型 → 示例 → API 参考」 | 手写 MDX + TypeDoc / DocFX 生成 | 是 |
+| 3 | SDK | `/sdk/` | 后端 SDK（.NET：`Qian.Runtime`、`Qian.Plugin.Sdk`、`Qian.*`；Kun 外链不重写）、前端 SDK（`@qian/runtime`、`@qian/plugin-sdk`、`@yue/sdk`、MF2 远程模块）、AI SDK（对外统一名称，见 2a.2：在插件与前端里调模型 / Embedding 与能力契约、配额；写 skills / agents / commands / hooks / tools 表面、工具副作用与策略、能力目录、MCP 门面、iClaw 接入；不教写 Agent loop）；每节「编程模型 → 示例 → API 参考」 | 手写 MDX + TypeDoc / DocFX 生成 | 是 |
 | 4 | CLI 与规格 | `/cli/` | `qian` 十个命令；`plugin.json`、`marketplace.json`、profile / patch 字段参考 | 从 `docs/prd/specs/component-model.md` 同步，不另写 | 是 |
 | 5 | 运维 | `/ops/` | profile 部署到 K3s、Apollo、升级与回切、模型网关接线（GPUStack → Higress）、监控与审计 | 手写 MDX | 否 |
 | 6 | 市场与 ISV | `/marketplace/` | 组件上架流程、信任等级、签名、租户私有市场；S3 前只放规则 | 手写 MDX | 否 |
 | 7 | 设计与路线 | `/design/` | ADR、PRD、路线图、变更日志 | 直接镜像 `docs/` | 否 |
 
 两条命名约定：导航上用中文名；路径用上表的英文段，页面 slug 用小写短横线。「组件怎么用」只写在第 2 部分，SDK 部分只写编程模型与 API，两边互相链接而不重复。
+
+## 2a 首页与顶部产品导航
+
+首页借鉴一家云平台的对标产品文档首页的组织方式：先给三条能立刻跑的命令，再按「用途」而不是按「技术栈」把产品能力分成几栏，每项一句话加链接。两条取舍原则：**不放公司信息**（定价、企业版、博客、招聘、状态页、客户案例一律不出现）；**没有的能力不放**，规划中的能力保留但打阶段标记（`S2` / `S3` / `S4`），不假装已有。
+
+### 2a.1 首页区块（自上而下）
+
+| 区块 | 内容 | 来源 |
+|---|---|---|
+| 标题与搜索 | 「Qian 文档」一句话定位 + 搜索框 | 手写 |
+| 三条起步命令 | ① 装一个组件：`qian add identity authz files`；② 配置你的编码代理：读 `AGENTS.md`、安装 Qian 技能、接入 MCP；③ 调一个模型：经模型网关的 OpenAI 兼容端点发一条请求 | 手写，命令与第 1 部分「开始」同源 |
+| 配置你的编码代理 | Qian 技能（组件的 `skills/` 表面可直接装进 Claude Code / Codex 等代理）、`AGENTS.md` 约定、Qian MCP（S1 文档检索 MCP 可选，S4 能力门面）、代理用 Qian 的提示词模板 | 第 3 部分 AI SDK 与 pm/README 第 7 节 |
+| 最新动态 | 最近 4 条变更日志条目，链接到完整变更日志 | `CHANGELOG`（第 7 部分） |
+| 产品能力分栏 | 见 2a.2 的五栏 | 各部分 |
+| 指南与教程 | Agent 栈、后端模式、安全、集成、从参考平台迁移 | 第 1 / 5 部分与 `docs/migration/` |
+| 页脚 | 站点地图、仓库、许可证（Apache-2.0）；没有公司链接 | 手写 |
+
+### 2a.2 产品能力五栏与条目映射
+
+对标产品的栏目与 Qian 的对应关系如下；「处理」列说明保留、改名或移除的理由。路径指向 §2 的七个部分。
+
+| 栏 | 对标条目 | Qian 条目 | 阶段 | 落点 | 处理 |
+|---|---|---|---|---|---|
+| 用 AI 构建 | AI Gateway | 模型网关：一个端点调所有模型，配额、回退、计量（ADR-015） | S1·P1 | `/sdk/ai/gateway`、`/ops/model-gateway` | 保留，改名 |
+| 用 AI 构建 | AI SDK | AI SDK：在插件与前端里调模型与 Embedding、写 skills / agents / commands / hooks / tools 表面、声明工具副作用与策略 | S1 | `/sdk/ai/` | 保留；原「Agent SDK + 模型服务 SDK」合并为此名 |
+| 用 AI 构建 | 后端 Agent 框架 | Agent 运行时对接：Qian 不写 Agent loop，运行时为 iClaw（ADR-016），文档只写接入方式 | S1 | `/sdk/ai/agent-runtime` | 保留，改为「对接」而非产品 |
+| 用 AI 构建 | Sandbox | 沙箱：隔离执行不可信或 Agent 生成的代码（CubeSandbox 对接） | S4 | `/sdk/ai/sandbox` | 保留，打 S4 标记 |
+| 用 AI 构建 | Workflows | 流程与自动化：审批内核与触发器（ADR-012） | S2 | `/components/platform/qian.workflow` | 保留，打 S2 标记 |
+| 用 AI 构建 | MCP Servers | MCP：组件的 `.mcp.json` 表面（S1）、每租户 MCP 能力门面（S4） | S1 / S4 | `/sdk/ai/mcp` | 保留 |
+| 构建应用 | Frameworks | 宿主与框架：ASP.NET Core 独立模式、`platform` profile、React + yue、与 Kun 的关系 | S1 | `/start/hosts` | 保留，改名 |
+| 构建应用 | Functions | 能力与函数：能力目录（命令 / 查询 / 事件 / 实体）、`function` 表面（Wasm，S2 可选） | S1 / S2 | `/sdk/dotnet/capabilities` | 保留，函数部分打 S2 标记 |
+| 构建应用 | Routing Middleware | 事件与中间件：五种分发模式，`waterfall` 即环绕中间件 | S1 | `/sdk/dotnet/events` | 保留，改名 |
+| 构建应用 | Incremental Static Regeneration | — | — | — | 移除，无对应 |
+| 构建应用 | Image Optimization | — | — | — | 移除，无对应 |
+| 构建应用 | Environments | profile 与 patch：环境 = profile + 分层 patch，`qian dump-config` | S1 | `/start/concepts/profile` | 保留，改名 |
+| 构建应用 | （新增） | 组件与 `qian add`、yue 组件库、微前端（外壳与远程模块）、存储（文件与数据）、低代码（表单 / 列表，S2） | S1 / S2 | `/components/`、`/sdk/frontend/` | Qian 独有，新增 |
+| 多租户平台 | Platforms（多租户 SaaS） | 租户、身份与 SSO、鉴权、权益与计费（S3）、配置中心、事件与消息、调度与实时、市场（S3） | S1 / S3 | `/components/platform/` | Qian 的核心，单独成栏 |
+| 保护应用 | Web Application Firewall | 网关防护：强制认证、路由级限流、可信代理、出网 SSRF 基线（ADR-010） | S1 | `/components/platform/qian.gateway` | 保留，改名 |
+| 保护应用 | Bot Management / BotID | — | — | — | 移除，无对应 |
+| 保护应用 | Deployment Protection | 发布保护：制品验签、修订回切、灰度开关 | S1 | `/ops/release` | 保留，改名 |
+| 保护应用 | （新增） | 审计与密钥：命令级哈希链审计、`secretRef`、密钥轮换 | S1 | `/components/platform/qian.audit`、`/ops/secrets` | Qian 独有，新增 |
+| 部署与运维 | Deploy from Git | GitOps 部署：Argo CD app-of-apps、Kustomize、digest 回写（ADR-017） | S1 | `/ops/deploy` | 保留，改名 |
+| 部署与运维 | Domains | — | S3 评估 | — | 移除；租户自助品牌与域名 S3 再议 |
+| 部署与运维 | CDN | — | — | — | 移除，无对应 |
+| 部署与运维 | Rolling Releases | 灰度发布：`IFeatureFlags` 灰度 + profile 滚动更新 | S1 | `/ops/release` | 保留，改名 |
+| 部署与运维 | Instant Rollback | 修订回切：`qian.lifecycle` 的 `Rollback(toRevision)` | S1 | `/ops/release` | 保留 |
+| 部署与运维 | Observability | 可观测：OTel、租户 / 用户 / 插件 baggage、计量事件 | S1 | `/components/platform/qian.observability` | 保留 |
+| 指南 | Agent Stack / Backend / Services / Security / Integrations / Migrations | Agent 栈、后端模式、多 profile 组合、安全、连接器与集成、从参考平台迁移 | — | `/start/guides/`、`docs/migration/` | 保留，「Services」改为「多 profile 组合」 |
+
+五栏的最终名称：**用 AI 构建 · 构建应用 · 多租户平台 · 保护应用 · 部署与运维**。每栏条目不超过 8 个，超出的放进该部分的二级导航。
+
+### 2a.3 与七个部分的关系
+
+首页与顶部导航是「按用途找产品」的入口，七个部分是「按读者组织内容」的骨架；一个能力在首页出现一次，正文只在一个部分写一次，其余位置用链接。例如模型网关：首页在「用 AI 构建」，开发者文档在第 3 部分 AI SDK，运维接线在第 5 部分运维，组件页在第 2 部分。
 
 ## 3 组件页模板
 
@@ -82,7 +136,7 @@ website/
       yue/<name>.mdx
       platform/<id>.mdx
     sdk/                       3 SDK
-      dotnet/  frontend/  agent/  models/
+      dotnet/  frontend/  ai/            ai = AI SDK（模型调用 + Agent 表面 + MCP + 沙箱）
       api/                     TypeDoc / DocFX 生成物
     cli/                       4 CLI 与规格（从 specs 同步）
     ops/                       5 运维
@@ -112,3 +166,4 @@ website/
 ## 修订历史
 
 - 2026-10-07：首版。信息架构（七个部分）由产品负责人确认；frontmatter 字段与 S1-DOCS-003 对齐。
+- 2026-10-07：新增 §2a 首页与顶部产品导航（借鉴对标产品文档首页：三条起步命令、编码代理配置、五栏产品能力、无公司信息、无对应能力移除、规划能力打阶段标记）；第 3 部分「Agent SDK + 模型服务 SDK」合并为对外名称「AI SDK」。
