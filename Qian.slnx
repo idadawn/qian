@@ -1,5 +1,10 @@
 <Solution>
+  <Folder Name="/packages/">
+    <Project Path="packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
+    <Project Path="packages/Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
+  </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Qian.Runtime.Errors.Tests/Qian.Runtime.Errors.Tests.csproj" />
     <Project Path="tests/Qian.Testing.Containers.IntegrationTests/Qian.Testing.Containers.IntegrationTests.csproj" />
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
   </Folder>

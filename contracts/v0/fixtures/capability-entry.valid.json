@@ -1,0 +1,178 @@
+[
+  {
+    "name": "写命令：上传文件（组件模型规格 §4.6 示例）",
+    "data": {
+      "id": "qian.files/upload",
+      "plugin": "qian.files",
+      "name": "upload",
+      "kind": "command",
+      "description": "把一个文件上传到当前租户的文件库并返回文件 id；用于附件、头像、导出件。不用于批量迁移历史文件。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "content",
+          "fileName",
+          "purpose",
+          "idempotencyKey"
+        ],
+        "properties": {
+          "content": {
+            "type": "string",
+            "contentEncoding": "base64"
+          },
+          "fileName": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "purpose": {
+            "enum": [
+              "attachment",
+              "avatar",
+              "export"
+            ]
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "fileId"
+        ],
+        "properties": {
+          "fileId": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer"
+          }
+        }
+      },
+      "operationId": "uploadFile",
+      "sideEffect": "write",
+      "policyHint": "confirm",
+      "idempotent": true,
+      "async": "none",
+      "requiredScopes": [
+        "qian.files:write"
+      ],
+      "requiredPermission": "qian.files:file:write",
+      "requiredSecrets": [],
+      "dataClassification": "internal",
+      "costTier": "low",
+      "contractVersion": "files-v1",
+      "schemaSha256": "523ed88312c5cbd2368cf7f243098548c4629c6b729cae82a427f35f0183ada8",
+      "audit": true,
+      "agent": {
+        "expose": true,
+        "requiresConfirmation": true
+      }
+    }
+  },
+  {
+    "name": "只读查询：不需要 idempotencyKey",
+    "data": {
+      "id": "qian.sample.crm/customer.search",
+      "plugin": "qian.sample.crm",
+      "name": "customer.search",
+      "kind": "query",
+      "description": "按名称或手机号在当前租户里查找客户，返回最多 20 条摘要；要看详情再按 id 取。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "q"
+        ],
+        "properties": {
+          "q": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        }
+      },
+      "sideEffect": "read",
+      "policyHint": "allow",
+      "idempotent": true,
+      "async": "none",
+      "requiredScopes": [
+        "qian.sample.crm:read"
+      ],
+      "requiredPermission": "qian.sample.crm:customer:read",
+      "requiredSecrets": [],
+      "dataClassification": "pii",
+      "costTier": "low",
+      "contractVersion": "crm-v1",
+      "schemaSha256": "b25f695084a2dadbc2e7f0fb9bbca8af2131fc380837d0304dd54765d01262ad",
+      "audit": false,
+      "agent": {
+        "expose": true,
+        "requiresConfirmation": false
+      }
+    }
+  },
+  {
+    "name": "破坏性长操作：返回 Operation，Agent 不暴露",
+    "data": {
+      "id": "qian.lifecycle/plugin.activate",
+      "plugin": "qian.lifecycle",
+      "name": "plugin.activate",
+      "kind": "command",
+      "description": "把某插件的一个已安装修订设为平台激活修订；影响所有租户，只在发布窗口内由运营者确认后执行。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "plugin",
+          "revision",
+          "idempotencyKey"
+        ],
+        "properties": {
+          "plugin": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "dryRun": {
+            "type": "boolean"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "sideEffect": "destructive",
+      "policyHint": "confirm",
+      "idempotent": true,
+      "async": "task",
+      "requiredScopes": [
+        "qian.lifecycle:admin"
+      ],
+      "requiredPermission": "qian.lifecycle:revision:activate",
+      "requiredSecrets": [
+        "cosign-trust-root"
+      ],
+      "dataClassification": "internal",
+      "costTier": "medium",
+      "contractVersion": "lifecycle-v1",
+      "schemaSha256": "bdbcec2ab007339e5b9517843d029e6004542a317c57828c7dd5371bf9da0448",
+      "audit": true,
+      "agent": {
+        "expose": false,
+        "requiresConfirmation": true
+      }
+    }
+  }
+]

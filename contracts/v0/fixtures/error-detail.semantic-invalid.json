@@ -1,0 +1,66 @@
+[
+  {
+    "name": "type 末段与 code 不同",
+    "data": {
+      "type": "https://qian.dev/problems/business/CONFLICT",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes"
+    }
+  },
+  {
+    "name": "detail 与 message 不同",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "另一段说明。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes"
+    }
+  },
+  {
+    "name": "顶层 pointer 不等于 errors[0].pointer",
+    "data": {
+      "type": "https://qian.dev/problems/protocol/INPUT_INVALID",
+      "title": "输入不符合契约",
+      "status": 400,
+      "detail": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "instance": "/api/files",
+      "code": "INPUT_INVALID",
+      "message": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/idempotencyKey",
+      "allowed": [
+        "attachment",
+        "avatar",
+        "export"
+      ],
+      "errors": [
+        {
+          "code": "VALUE_NOT_ALLOWED",
+          "message": "取值不在允许的集合内，可选值见 allowed。",
+          "pointer": "#/purpose",
+          "allowed": [
+            "attachment",
+            "avatar",
+            "export"
+          ]
+        },
+        {
+          "code": "REQUIRED",
+          "message": "缺少必填项。",
+          "pointer": "#/idempotencyKey"
+        }
+      ]
+    }
+  }
+]

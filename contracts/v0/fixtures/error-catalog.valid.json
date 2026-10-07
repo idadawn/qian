@@ -1,0 +1,45 @@
+[
+  {
+    "name": "组件登记的业务错误码与字段级错误码",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "QUOTA_EXCEEDED",
+          "kind": "business",
+          "status": 422,
+          "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+          "owner": "qian.files",
+          "retryable": false,
+          "title": {
+            "en": "Quota exceeded",
+            "zh-CN": "超出配额"
+          },
+          "message": {
+            "en": "The file exceeds the tenant quota ({remaining} bytes left).",
+            "zh-CN": "文件大小超出租户配额（剩余 {remaining} 字节）。"
+          }
+        },
+        {
+          "code": "REQUIRED",
+          "kind": "field",
+          "owner": "qian.runtime",
+          "retryable": false,
+          "title": {
+            "zh-CN": "缺少必填项"
+          },
+          "message": {
+            "zh-CN": "缺少必填项。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "空目录",
+    "data": {
+      "version": "v0",
+      "codes": []
+    }
+  }
+]

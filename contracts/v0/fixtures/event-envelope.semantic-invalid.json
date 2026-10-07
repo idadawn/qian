@@ -1,0 +1,25 @@
+[
+  {
+    "name": "type 与 subject 不对应",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.updated.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  }
+]

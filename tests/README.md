@@ -10,6 +10,7 @@ tests/
   Qian.Testing.Containers/                    集成测试共用的 Testcontainers fixture（不打包）
     ApolloMock/apollo_mock.py                 Apollo 协议替身，在容器里运行
   Qian.Testing.Containers.IntegrationTests/   fixture 自身的集成测试与单元测试
+  Qian.Runtime.Errors.Tests/                  contracts/v0 契约测试（Schema、fixture、语义规则、内置错误码目录）与 ErrorDetail 内存宿主测试
   gates/                                      门禁自测：样例项目 + Python 测试，不在 Qian.slnx 里
     depgraph/                                 依赖图门禁样例（good.slnx 合规、bad.slnx 违规）
     publicapi/                                PublicAPI 门禁样例

@@ -24,6 +24,7 @@ REFERENCE_NAMES = re.compile(r"claude-code-templates|deepseek|openai/plugins|ait
 
 DEFAULT_TARGETS = [
     "docs",
+    "contracts",
     "README.md",
     "AGENTS.md",
     "pm/README.md",

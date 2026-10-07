@@ -1,0 +1,274 @@
+[
+  {
+    "name": "带 email（iClaw 有、Qian 不签）",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24",
+      "email": "a@example.com"
+    }
+  },
+  {
+    "name": "带权限集合（权限不进令牌）",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24",
+      "permissions": [
+        "qian.files:file:write"
+      ]
+    }
+  },
+  {
+    "name": "用户主体有租户却缺 membership_id",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "用户主体缺 identity_revision",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "服务主体带 membership_id",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "qian.scheduler",
+      "principal_kind": "service",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "plugin_id": "qian.scheduler",
+      "roles": [],
+      "scope": "qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b25",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b25",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22"
+    }
+  },
+  {
+    "name": "aud 写成字符串",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": "qian-platform",
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "tenant_id 缺失（平台级须显式写 null）",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "tenant_id 大写 UUID",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190F3A2-7C41-7B3E-9D2A-5C8E1F4A6B20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "principal_kind 取值 system",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "system",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "缺 session_id",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "scope 有连续空格",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read  qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": 1791331200,
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  },
+  {
+    "name": "iat 为字符串",
+    "data": {
+      "iss": "https://gateway.qian.example",
+      "aud": [
+        "qian-platform"
+      ],
+      "sub": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+      "principal_kind": "user",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "membership_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b22",
+      "identity_revision": 7,
+      "roles": [
+        "tenant.admin"
+      ],
+      "scope": "qian.files:read qian.files:write",
+      "session_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b23",
+      "iat": "1791331200",
+      "nbf": 1791331200,
+      "exp": 1791331260,
+      "jti": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b24"
+    }
+  }
+]

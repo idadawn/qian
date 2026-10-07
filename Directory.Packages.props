@@ -18,6 +18,9 @@
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.RabbitMq" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="4.15.0" />
+    <!-- 契约测试：JSON Schema 2020-12 校验（contracts/v0），ASP.NET Core 内存宿主。 -->
+    <PackageVersion Include="JsonSchema.Net" Version="9.4.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.12" />
   </ItemGroup>
 
   <!-- 客户端库：目前只被测试使用；主版本与 Kun 一致，避免 Kun.* 包进来后传递钉版冲突。 -->

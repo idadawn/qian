@@ -1,0 +1,407 @@
+{
+  "version": "v0",
+  "codes": [
+    {
+      "code": "AUTHZ_DENIED",
+      "kind": "protocol",
+      "status": 403,
+      "type": "https://qian.dev/problems/protocol/AUTHZ_DENIED",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Permission denied",
+        "zh-CN": "无权执行"
+      },
+      "message": {
+        "en": "The caller is not permitted to perform this operation. Call the authorization explain API to see which permission is missing.",
+        "zh-CN": "当前主体无权执行该操作。可调用权限解释接口查看缺少的权限点。"
+      }
+    },
+    {
+      "code": "BAD_GATEWAY",
+      "kind": "protocol",
+      "status": 502,
+      "type": "https://qian.dev/problems/protocol/BAD_GATEWAY",
+      "owner": "qian.runtime",
+      "retryable": true,
+      "title": {
+        "en": "Bad gateway",
+        "zh-CN": "上游服务错误"
+      },
+      "message": {
+        "en": "An upstream service returned an invalid response; retry later.",
+        "zh-CN": "上游服务返回了无效响应，稍后重试。"
+      }
+    },
+    {
+      "code": "BAD_REQUEST",
+      "kind": "protocol",
+      "status": 400,
+      "type": "https://qian.dev/problems/protocol/BAD_REQUEST",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Malformed request",
+        "zh-CN": "请求无法解析"
+      },
+      "message": {
+        "en": "The request could not be parsed. Check the JSON syntax, Content-Type and parameter types, then retry.",
+        "zh-CN": "请求格式不正确，无法解析。检查 JSON 语法、Content-Type 与参数类型后重试。"
+      }
+    },
+    {
+      "code": "BUSINESS_RULE_VIOLATED",
+      "kind": "business",
+      "status": 422,
+      "type": "https://qian.dev/problems/business/BUSINESS_RULE_VIOLATED",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Business rule violated",
+        "zh-CN": "违反业务规则"
+      },
+      "message": {
+        "en": "The request is valid but was rejected by a business rule.",
+        "zh-CN": "请求合法，但被业务规则拒绝。"
+      }
+    },
+    {
+      "code": "CONFLICT",
+      "kind": "business",
+      "status": 409,
+      "type": "https://qian.dev/problems/business/CONFLICT",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Conflict",
+        "zh-CN": "状态冲突"
+      },
+      "message": {
+        "en": "The resource state has changed or conflicts with existing data. Read the latest state before deciding whether to retry.",
+        "zh-CN": "资源状态已变化或与现有数据冲突。重新读取最新状态后再决定是否重试。"
+      }
+    },
+    {
+      "code": "FORMAT_INVALID",
+      "kind": "field",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Invalid format",
+        "zh-CN": "格式无效"
+      },
+      "message": {
+        "en": "The value is not valid for its declared format (such as uuid, date-time or email).",
+        "zh-CN": "取值不符合声明的格式（如 uuid、date-time、email）。"
+      }
+    },
+    {
+      "code": "GATEWAY_TIMEOUT",
+      "kind": "protocol",
+      "status": 504,
+      "type": "https://qian.dev/problems/protocol/GATEWAY_TIMEOUT",
+      "owner": "qian.runtime",
+      "retryable": true,
+      "title": {
+        "en": "Gateway timeout",
+        "zh-CN": "上游服务超时"
+      },
+      "message": {
+        "en": "An upstream service did not respond in time; retry later with the same idempotency key.",
+        "zh-CN": "上游服务未及时响应，稍后以同一幂等键重试。"
+      }
+    },
+    {
+      "code": "INPUT_INVALID",
+      "kind": "protocol",
+      "status": 400,
+      "type": "https://qian.dev/problems/protocol/INPUT_INVALID",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Input does not match the contract",
+        "zh-CN": "输入不符合契约"
+      },
+      "message": {
+        "en": "The input does not match the capability's input schema; see errors for each violation.",
+        "zh-CN": "输入不符合该能力的输入 Schema，逐项错误见 errors。"
+      }
+    },
+    {
+      "code": "INSUFFICIENT_SCOPE",
+      "kind": "protocol",
+      "status": 403,
+      "type": "https://qian.dev/problems/protocol/INSUFFICIENT_SCOPE",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Insufficient scope",
+        "zh-CN": "令牌 scope 不足"
+      },
+      "message": {
+        "en": "The token lacks a scope this operation requires; obtain a token with the scope named in the WWW-Authenticate header and retry.",
+        "zh-CN": "令牌缺少该操作所需的 scope，按 WWW-Authenticate 头中的 scope 申请新令牌后重试。"
+      }
+    },
+    {
+      "code": "INTERNAL",
+      "kind": "protocol",
+      "status": 500,
+      "type": "https://qian.dev/problems/protocol/INTERNAL",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Internal error",
+        "zh-CN": "服务内部错误"
+      },
+      "message": {
+        "en": "An internal error occurred. Report the trace_id to the operators.",
+        "zh-CN": "服务内部错误。请凭 trace_id 联系运维排查。"
+      }
+    },
+    {
+      "code": "METHOD_NOT_ALLOWED",
+      "kind": "protocol",
+      "status": 405,
+      "type": "https://qian.dev/problems/protocol/METHOD_NOT_ALLOWED",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Method not allowed",
+        "zh-CN": "不支持该方法"
+      },
+      "message": {
+        "en": "The resource does not support this HTTP method; see the Allow header.",
+        "zh-CN": "该资源不支持此 HTTP 方法，允许的方法见 Allow 头。"
+      }
+    },
+    {
+      "code": "NOT_ACCEPTABLE",
+      "kind": "protocol",
+      "status": 406,
+      "type": "https://qian.dev/problems/protocol/NOT_ACCEPTABLE",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Not acceptable",
+        "zh-CN": "无法提供所需格式"
+      },
+      "message": {
+        "en": "The response cannot be produced in a media type the Accept header allows.",
+        "zh-CN": "无法按 Accept 头要求的媒体类型返回结果。"
+      }
+    },
+    {
+      "code": "NOT_FOUND",
+      "kind": "protocol",
+      "status": 404,
+      "type": "https://qian.dev/problems/protocol/NOT_FOUND",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Not found",
+        "zh-CN": "资源不存在"
+      },
+      "message": {
+        "en": "The requested resource does not exist or is not visible to the caller.",
+        "zh-CN": "请求的资源不存在或对当前调用者不可见。"
+      }
+    },
+    {
+      "code": "OUT_OF_RANGE",
+      "kind": "field",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Out of range",
+        "zh-CN": "超出范围"
+      },
+      "message": {
+        "en": "The value or its length is outside the allowed range.",
+        "zh-CN": "取值或长度超出允许范围。"
+      }
+    },
+    {
+      "code": "PATTERN_MISMATCH",
+      "kind": "field",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Pattern mismatch",
+        "zh-CN": "格式不符"
+      },
+      "message": {
+        "en": "The value does not match the required pattern.",
+        "zh-CN": "取值不符合要求的模式。"
+      }
+    },
+    {
+      "code": "PAYLOAD_TOO_LARGE",
+      "kind": "protocol",
+      "status": 413,
+      "type": "https://qian.dev/problems/protocol/PAYLOAD_TOO_LARGE",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Payload too large",
+        "zh-CN": "请求体过大"
+      },
+      "message": {
+        "en": "The request body exceeds the allowed size.",
+        "zh-CN": "请求体超过允许的大小。"
+      }
+    },
+    {
+      "code": "PRECONDITION_FAILED",
+      "kind": "protocol",
+      "status": 412,
+      "type": "https://qian.dev/problems/protocol/PRECONDITION_FAILED",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Precondition failed",
+        "zh-CN": "前置条件不满足"
+      },
+      "message": {
+        "en": "The resource has changed and a precondition such as If-Match does not hold. Read it again before resubmitting.",
+        "zh-CN": "资源已被修改，If-Match 等前置条件不成立。重新读取后再决定是否提交。"
+      }
+    },
+    {
+      "code": "RATE_LIMITED",
+      "kind": "protocol",
+      "status": 429,
+      "type": "https://qian.dev/problems/protocol/RATE_LIMITED",
+      "owner": "qian.runtime",
+      "retryable": true,
+      "title": {
+        "en": "Too many requests",
+        "zh-CN": "请求过于频繁"
+      },
+      "message": {
+        "en": "The rate limit was exceeded; wait as the Retry-After header indicates, then retry.",
+        "zh-CN": "超出限流阈值，按 Retry-After 头等待后重试。"
+      }
+    },
+    {
+      "code": "REQUEST_TIMEOUT",
+      "kind": "protocol",
+      "status": 408,
+      "type": "https://qian.dev/problems/protocol/REQUEST_TIMEOUT",
+      "owner": "qian.runtime",
+      "retryable": true,
+      "title": {
+        "en": "Request timeout",
+        "zh-CN": "请求超时"
+      },
+      "message": {
+        "en": "The request timed out; retry later with the same idempotency key.",
+        "zh-CN": "请求处理超时，稍后以同一幂等键重试。"
+      }
+    },
+    {
+      "code": "REQUIRED",
+      "kind": "field",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Required",
+        "zh-CN": "缺少必填项"
+      },
+      "message": {
+        "en": "This member is required.",
+        "zh-CN": "缺少必填项。"
+      }
+    },
+    {
+      "code": "TYPE_MISMATCH",
+      "kind": "field",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Type mismatch",
+        "zh-CN": "类型不符"
+      },
+      "message": {
+        "en": "The value has the wrong type for the schema.",
+        "zh-CN": "取值类型不符合 Schema。"
+      }
+    },
+    {
+      "code": "UNAUTHENTICATED",
+      "kind": "protocol",
+      "status": 401,
+      "type": "https://qian.dev/problems/protocol/UNAUTHENTICATED",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Unauthenticated",
+        "zh-CN": "未认证"
+      },
+      "message": {
+        "en": "Credentials are missing or no longer valid; authenticate and retry.",
+        "zh-CN": "缺少有效凭据或令牌已失效，请重新认证。"
+      }
+    },
+    {
+      "code": "UNAVAILABLE",
+      "kind": "protocol",
+      "status": 503,
+      "type": "https://qian.dev/problems/protocol/UNAVAILABLE",
+      "owner": "qian.runtime",
+      "retryable": true,
+      "title": {
+        "en": "Service unavailable",
+        "zh-CN": "服务暂不可用"
+      },
+      "message": {
+        "en": "The service is temporarily unavailable; retry later.",
+        "zh-CN": "服务暂不可用，稍后重试。"
+      }
+    },
+    {
+      "code": "UNKNOWN_PROPERTY",
+      "kind": "field",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Unknown property",
+        "zh-CN": "未知字段"
+      },
+      "message": {
+        "en": "The input contains a member the schema does not declare.",
+        "zh-CN": "输入包含 Schema 未声明的成员。"
+      }
+    },
+    {
+      "code": "UNSUPPORTED_MEDIA_TYPE",
+      "kind": "protocol",
+      "status": 415,
+      "type": "https://qian.dev/problems/protocol/UNSUPPORTED_MEDIA_TYPE",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Unsupported media type",
+        "zh-CN": "不支持的内容类型"
+      },
+      "message": {
+        "en": "The request Content-Type is not supported; use application/json.",
+        "zh-CN": "不支持请求的 Content-Type，请使用 application/json。"
+      }
+    },
+    {
+      "code": "VALUE_NOT_ALLOWED",
+      "kind": "field",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Value not allowed",
+        "zh-CN": "取值不允许"
+      },
+      "message": {
+        "en": "The value is not one of the allowed values; see allowed.",
+        "zh-CN": "取值不在允许的集合内，可选值见 allowed。"
+      }
+    }
+  ]
+}
