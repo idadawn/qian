@@ -35,7 +35,7 @@
   - 写了 `<IsPackable>true</IsPackable>` 且包名以 `Qian.` 开头的项目就是 Qian 包，必须带 `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`，新公共 API 未登记即编译失败；
   - `scripts/check_deps.py` 要求 Qian 包只依赖 `Qian.Runtime*`、`Qian.Plugin.Sdk*` 与 `*.Abstractions`，依赖 Provider 或 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 即失败（组合包 `Qian.Bundle.*` 除外）。
 - 集成测试用 `tests/Qian.Testing.Containers` 的 fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身），不要各自再写一套容器启动代码。
-- 已有决策不要重开。D1–D18 已获认可；ADR-019 / 020 / 021 均为 Accepted，ADR-019 / 020 的待拍板项已拍板并记录在各 ADR §7（对应 `S1-DEC-*` 已关闭）；仓库归属（S1-DEC-009）由产品负责人拍板。文档里标「已裁决（R{n}）」的是复核时的默认裁决，有异议时新建决策任务而不是直接改。
+- 已有决策不要重开。D1–D18 已获认可；ADR-019 / 020 / 021 均为 Accepted，ADR-019 / 020 的待拍板项已拍板并记录在各 ADR §7（对应 `S1-DEC-*` 已关闭）；仓库归属已拍板：产品族统一在 `idadawn`，Kun 从 CavaiLAB 迁入（ADR-021 §7，执行见 S1-PM-003）。文档里标「已裁决（R{n}）」的是复核时的默认裁决，有异议时新建决策任务而不是直接改。
 
 ## 仓库布局
 

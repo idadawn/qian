@@ -31,7 +31,7 @@
 | D18 | 阶段切分与 S1 范围 | S1 18 个系统插件 + SDK + 部署物料；每阶段有可验收的退出标准 | 阶段顺序是否认可；S1 是否含模型网关底座接线 |
 | D19 | 库优先与 Qian 包族 | 每个系统组件首先是可独立安装使用的 NuGet 包，其次才经清单成为插件（插件 = 库 + 清单）；`Abstractions` / 实现两层；独立 / 平台两种模式同一份代码；组件库不依赖 `Qian.Kernel` 运行时 | 已拍板（2026-10-07，ADR-019 §7）：许可证 Apache-2.0；S1 GitHub Packages 私有、S2 末或首个外部宿主试用时公开到 nuget.org / npm；安装入口由 ADR-020 定义（`qian add` + 目录市场）；外部应用清单不单独立项；S1 不提供元包 |
 | D20 | 组件模型 v2 | 一切皆插件、没有特权内核（极小的 `Qian.Runtime` / `@qian/runtime`）；组件 = 文件夹 + 清单 + 声明式表面 + 可选代码，`kind` 退为 `runtime.form`；能力按 seam 三角色拆分；作用域两层扁平，租户启用 = scope patch；profile / 组合包 / patch 分层取代固定可部署单元与 18 个系统插件；`qian add` 一键安装 + `marketplace.json` 目录市场；Agent 原生表面 S1 起 | 已拍板（2026-10-07，ADR-020 §7）：TS 侧 `@qian/runtime` 为公共 API、S1 内部 vendor Cordis 实现；清单 `.qian-plugin/plugin.json`；CLI 为 Node / TS 实现、`npx qian@latest`、`dotnet qian` 薄包装 P2；官方市场仓库 `qian-plugins`（S1 私有）；热装卸不进 S2 核心、RT 领域 5 天 spike；Apache-2.0 + GitHub Packages；遥测默认不采集；模板名以 spec §9.1 为准 |
-| D21 | 产品族结构（Kun / Qian / yue） | 三层口径；不建大单仓；一个组织 + 一个文档站 + 一张版本矩阵 + 一个看板关联各仓库；`KunVersion` 单点钉版；Kun 文档按锁定版本镜像进文档站 | 仓库归属统一到哪个组织（推荐 CavaiLAB，S1-DEC-009）；Kun 仓库随文档站公开的时点 |
+| D21 | 产品族结构（Kun / Qian / yue） | 三层口径；不建大单仓；一个组织 + 一个文档站 + 一张版本矩阵 + 一个看板关联各仓库；`KunVersion` 单点钉版；Kun 文档按锁定版本镜像进文档站 | 已拍板：所有者 `idadawn`，Kun 迁入（S1-DEC-009 关闭，S1-PM-003 执行）；仍待确认 Kun 仓库随文档站公开的时点 |
 
 ---
 
@@ -287,14 +287,14 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 
 **推荐**
 1. 三层口径：Kun = 框架层（面向任何 .NET 微服务的底座 SDK，无产品观点的通用基础设施）、Qian = 平台层（基于 Kun 的多租户 PaaS：极小运行时 + 平台插件 + profile + CLI + 市场）、yue = 前端层（组件库与外壳）。对外说「Qian 平台基于 Kun 框架构建，前端使用 yue 组件库」；不说「Kun 是 Qian 的子项目」（Kun 有独立下游与发布节奏），也不说「Qian 是 Kun 的扩展」。
-2. 不建大单仓、不建 submodule 元仓库（ADR-001 §4 已否决）。「大项目」= 产品族，用四样东西关联：一个 GitHub 组织（同一所有者等于一个 GitHub Packages feed、`qian-plugins` 不再占位；推荐 CavaiLAB，由产品负责人拍板执行）、一个文档站（Qian 文档覆盖整个产品族，Kun 为第 3 部分第一节）、一张自动生成的版本矩阵（Qian、Kun CalVer、yue、.NET / Node / K3s）、一个看板（跨仓库工作在 `pm/` 的 KUN 领域跟踪，kun 仓库 PR 回链）。
+2. 不建大单仓、不建 submodule 元仓库（ADR-001 §4 已否决）。「大项目」= 产品族，用四样东西关联：一个 GitHub 所有者（同一所有者等于一段包源配置、`qian-plugins` 不再占位；2026-10-07 拍板为 `idadawn`，Kun 从 CavaiLAB 迁入，因为 iClaw 源码与其余仓库都在 `idadawn`）、一个文档站（Qian 文档覆盖整个产品族，Kun 为第 3 部分第一节）、一张自动生成的版本矩阵（Qian、Kun CalVer、yue、.NET / Node / K3s）、一个看板（跨仓库工作在 `pm/` 的 KUN 领域跟踪，kun 仓库 PR 回链）。
 3. Kun 版本单点：`Directory.Packages.props` 的 `KunVersion` 属性，全部 `Kun.*` 引用它；文档同步与版本矩阵读同一属性。
 4. Kun 文档进站：真相源在 kun 仓库 `docs/`，Qian 站按锁定版本镜像白名单内容到 `/sdk/kun/`、DocFX 生成 API；每页横幅注明来源与「以代码为准」（D1.8）；Qian 只手写一页「与 Qian 的关系」。首版 docs-site.md 的「Kun 外链不重写」作废。
 5. 全站 frontmatter 加 `project`（qian / kun / yue）；各仓库 README 开头同一段产品族地图。
 
 **备选**：新建专用组织（公开形象更干净，但 Kun 的 feed、CI 与其它下游都要改源；S3 公开前再评估）；Kun 自建文档站（单人维护无带宽、读者重叠；否决）；把 Kun 文档复制改写进 Qian（双真相源；否决）。
 
-**需要你拍板的点**：仓库归属（S1-DEC-009，推荐 CavaiLAB）；Kun 仓库随文档站公开的时点（需 Kun 维护人确认）。
+**已拍板**（2026-10-07）：仓库归属 = `idadawn`，Kun 迁入（S1-DEC-009 关闭，执行见 S1-PM-003）。**仍待确认**：Kun 仓库随文档站公开的时点（需 Kun 维护人确认）。
 
 ---
 
