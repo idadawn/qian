@@ -24,7 +24,7 @@ fixture 文件形状统一为 `[{ "name": "<这条样例说明什么>", "data": 
 
 - 全部 Schema 为 JSON Schema 2020-12，`$id` 前缀 `https://qian.dev/contracts/v0/`（标识符，不要求可解引用）。跨文件引用：`error-catalog` → `error-detail`，`event-envelope` → `s2s-claims`，`capability-entry` → 2020-12 元 Schema。
 - 声明了 `properties` 的 object 一律 `additionalProperties: false`。开放容器只有三处，都由别处的 Schema 约束内容：事件 `payload`（事件目录中该 `type` 的 Schema）、能力的 `inputSchema` / `outputSchema`（它们本身是 Schema 文档）、多语言文案（语言标签 → 文本）。
-- 状态 `x-status: draft`：允许破坏性修订，但改 Schema 必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。第 8 节的默认裁决经 [S1-DEC-009](../../pm/tasks/S1-DEC-009.md) 确认后去掉 `draft`，此后只做向后兼容的增量；破坏性变更开 `contracts/v1/`，不改 v0。
+- 状态 `x-status: draft`：允许破坏性修订，但改 Schema 必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。第 8 节的默认裁决经 [S1-DEC-010](../../pm/tasks/S1-DEC-010.md) 确认后去掉 `draft`，此后只做向后兼容的增量；破坏性变更开 `contracts/v1/`，不改 v0。
 - 线上成员名：错误体、S2S claim、事件信封用 snake_case（与 iClaw 同形）；能力条目用 camelCase（与 `plugin.json` 和 tool/v2 一致）。
 - 契约格式（7.18）：HTTP 接口 OpenAPI 3.1 + `operationId`；数据 JSON Schema 2020-12 + `additionalProperties: false`。
 
@@ -185,7 +185,7 @@ return QianResults.Error(new QianError(PlatformErrors.InputInvalid)
 
 新增样例：在对应 `fixtures/*.json` 里追加 `{ "name", "data" }` 即可，测试自动发现。
 
-## 8 默认裁决（待 S1-DEC-009 确认）
+## 8 默认裁决（待 S1-DEC-010 确认）
 
 下列各点是写本契约时取的默认值，`draft` 期内可改；确认后去掉 `x-status: draft`。
 

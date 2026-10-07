@@ -2,7 +2,7 @@
 
 - 总体：`░░░░░░░░░░` 9%（11/117）
 - 状态：todo 105 · doing 0 · review 1 · done 11 · blocked 0
-- 最近更新：2026-10-07
+- 最近更新：2026-10-08
 
 ## 按阶段
 
@@ -91,4 +91,4 @@
 
 | 任务 | 状态 | 负责人 | 更新 |
 |---|---|---|---|
-| [S1-AGT-001](tasks/S1-AGT-001.md) contracts/v0 冻结文件与 ErrorDetail 结构化错误 | review | claude | 2026-10-07 |
+| [S1-AGT-001](tasks/S1-AGT-001.md) contracts/v0 冻结文件与 ErrorDetail 结构化错误 | review | claude | 2026-10-08 |
