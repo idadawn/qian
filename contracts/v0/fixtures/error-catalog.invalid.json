@@ -1,0 +1,172 @@
+[
+  {
+    "name": "字段级错误码带 status",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "REQUIRED",
+          "kind": "field",
+          "owner": "qian.runtime",
+          "retryable": false,
+          "title": {
+            "zh-CN": "缺少必填项"
+          },
+          "message": {
+            "zh-CN": "缺少必填项。"
+          },
+          "status": 400
+        }
+      ]
+    }
+  },
+  {
+    "name": "业务错误码用 400",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "QUOTA_EXCEEDED",
+          "kind": "business",
+          "status": 400,
+          "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+          "owner": "qian.files",
+          "retryable": false,
+          "title": {
+            "en": "Quota exceeded",
+            "zh-CN": "超出配额"
+          },
+          "message": {
+            "en": "The file exceeds the tenant quota ({remaining} bytes left).",
+            "zh-CN": "文件大小超出租户配额（剩余 {remaining} 字节）。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "协议错误码用 409",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "QUOTA_EXCEEDED",
+          "kind": "protocol",
+          "status": 409,
+          "type": "https://qian.dev/problems/protocol/QUOTA_EXCEEDED",
+          "owner": "qian.files",
+          "retryable": false,
+          "title": {
+            "en": "Quota exceeded",
+            "zh-CN": "超出配额"
+          },
+          "message": {
+            "en": "The file exceeds the tenant quota ({remaining} bytes left).",
+            "zh-CN": "文件大小超出租户配额（剩余 {remaining} 字节）。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "协议 / 业务错误码缺 type",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "QUOTA_EXCEEDED",
+          "kind": "business",
+          "status": 422,
+          "owner": "qian.files",
+          "retryable": false,
+          "title": {
+            "en": "Quota exceeded",
+            "zh-CN": "超出配额"
+          },
+          "message": {
+            "en": "The file exceeds the tenant quota ({remaining} bytes left).",
+            "zh-CN": "文件大小超出租户配额（剩余 {remaining} 字节）。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "缺 zh-CN 文案",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "QUOTA_EXCEEDED",
+          "kind": "business",
+          "status": 422,
+          "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+          "owner": "qian.files",
+          "retryable": false,
+          "title": {
+            "en": "Quota exceeded"
+          },
+          "message": {
+            "en": "The file exceeds the tenant quota ({remaining} bytes left).",
+            "zh-CN": "文件大小超出租户配额（剩余 {remaining} 字节）。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "语言标签用下划线",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "QUOTA_EXCEEDED",
+          "kind": "business",
+          "status": 422,
+          "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+          "owner": "qian.files",
+          "retryable": false,
+          "title": {
+            "zh_CN": "超出配额",
+            "zh-CN": "超出配额"
+          },
+          "message": {
+            "en": "The file exceeds the tenant quota ({remaining} bytes left).",
+            "zh-CN": "文件大小超出租户配额（剩余 {remaining} 字节）。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "owner 不是组件 id",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "QUOTA_EXCEEDED",
+          "kind": "business",
+          "status": 422,
+          "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+          "owner": "Files",
+          "retryable": false,
+          "title": {
+            "en": "Quota exceeded",
+            "zh-CN": "超出配额"
+          },
+          "message": {
+            "en": "The file exceeds the tenant quota ({remaining} bytes left).",
+            "zh-CN": "文件大小超出租户配额（剩余 {remaining} 字节）。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "version 为 v1",
+    "data": {
+      "version": "v1",
+      "codes": []
+    }
+  }
+]

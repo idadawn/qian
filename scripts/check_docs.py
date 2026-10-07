@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """文档门禁：禁用关键字、Markdown 表格列数、相对链接、空链接。只依赖标准库。
 
-用法：python3 scripts/check_docs.py [路径...]（默认 docs/ README.md AGENTS.md pm/README.md pm/tasks/ tests/README.md）
+用法：python3 scripts/check_docs.py [路径...]（默认 docs/ contracts/ README.md AGENTS.md pm/README.md pm/tasks/ tests/README.md）
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ REFERENCE_NAMES = re.compile(r"claude-code-templates|deepseek|openai/plugins|ait
 
 
 def md_files(args: list[str]) -> list[Path]:
-    targets = args or ["docs", "README.md", "AGENTS.md", "pm/README.md", "pm/tasks", "tests/README.md"]
+    targets = args or ["docs", "contracts", "README.md", "AGENTS.md", "pm/README.md", "pm/tasks", "tests/README.md"]
     out: list[Path] = []
     for t in targets:
         p = ROOT / t

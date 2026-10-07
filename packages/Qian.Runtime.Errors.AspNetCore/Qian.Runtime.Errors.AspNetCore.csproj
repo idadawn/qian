@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ErrorDetail 的 ASP.NET Core 映射（S1-AGT-001）：业务代码抛 QianErrorException 或返回 QianResults.Error，
+    框架自己产生的错误（未认证、404、请求体无法解析、未处理异常）经 ProblemDetails 管道规范成同一形状。
+    与 Kun.AspNetCore 共用 ASP.NET Core 的 IProblemDetailsService，不另起一套。
+  -->
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <RootNamespace>Qian.Runtime.Errors.AspNetCore</RootNamespace>
+    <Description>Qian 结构化错误的 ASP.NET Core 映射：problem+json 输出、异常与状态码兜底、ProblemDetails 规范化。</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
+  </ItemGroup>
+
+</Project>

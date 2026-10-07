@@ -34,13 +34,17 @@
 - 两道 .NET 门禁会自动拦截（细节见 `tests/README.md`）：
   - 写了 `<IsPackable>true</IsPackable>` 且包名以 `Qian.` 开头的项目就是 Qian 包，必须带 `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`，新公共 API 未登记即编译失败；
   - `scripts/check_deps.py` 要求 Qian 包只依赖 `Qian.Runtime*`、`Qian.Plugin.Sdk*` 与 `*.Abstractions`，依赖 Provider 或 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 即失败（组合包 `Qian.Bundle.*` 除外）。
+- 错误响应一律是 `contracts/v0/error-detail.schema.json` 的 ErrorDetail：用 `Qian.Runtime.Errors` 定义与登记错误码（大写下划线、全局唯一、在本组件 Definition 包里定义），HTTP 宿主装 `AddQianErrors()` + `UseQianErrors()`；不要自己拼 ProblemDetails 或 `{ error: ... }`。
+- 改了 `contracts/v0/` 的 Schema 必须同时改 fixture 与 `Qian.Runtime.Errors`，`dotnet test` 会校验 Schema、fixture 与内置错误码目录 `error-codes.json` 是否一致。
 - 集成测试用 `tests/Qian.Testing.Containers` 的 fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身），不要各自再写一套容器启动代码。
-- 已有决策不要重开。D1–D18 已获认可；ADR-019 / 020 / 021 均为 Accepted，ADR-019 / 020 的待拍板项已拍板并记录在各 ADR §7（对应 `S1-DEC-*` 已关闭）；仓库归属已拍板：产品族统一在 `idadawn`，Kun 从 CavaiLAB 迁入（ADR-021 §7，执行见 S1-PM-003）。文档里标「已裁决（R{n}）」的是复核时的默认裁决，有异议时新建决策任务而不是直接改。
+- 已有决策不要重开。D1–D18 已获认可；ADR-019 / 020 / 021 均为 Accepted，ADR-019 / 020 的待拍板项已拍板并记录在各 ADR §7（对应 `S1-DEC-*` 已关闭）；仓库归属已拍板：产品族统一在 `idadawn`，Kun 从 CavaiLAB 迁入（ADR-021 §7，执行见 S1-PM-003）。`S1-DEC-001`–`S1-DEC-009` 已关闭；`S1-DEC-010`（contracts/v0 的 8 条默认裁决）待产品负责人拍板，拍板前按 `contracts/v0/README.md` 第 8 节的默认值实现。文档里标「已裁决（R{n}）」的是复核时的默认裁决，有异议时新建决策任务而不是直接改。
 
 ## 仓库布局
 
 ```text
 docs/        设计文档：decisions（决策清单）、adr、prd（含 specs）、migration、research、ROADMAP.md
+contracts/   冻结契约 v0：S2S claim、事件信封、ErrorDetail 与错误码目录、能力条目的 JSON Schema + fixture（见 contracts/v0/README.md）
+packages/    .NET 组件库（NuGet 包），如 Qian.Runtime.Errors
 pm/          任务与看板（见 pm/README.md）
 scripts/     pm.py、check_docs.py、check_deps.py（依赖图门禁）
 tests/       Testcontainers fixture、集成测试、门禁自测（见 tests/README.md）
@@ -49,7 +53,7 @@ Qian.slnx、global.json、Directory.Build.props / .targets、Directory.Packages.
              .NET 构建基线：net10.0、警告即错误、中央包版本、PublicAPI 门禁
 ```
 
-代码目录（`packages/`、`plugins/`、`profiles/`、`samples/`）在 S1 第一波任务中建立，布局以 `docs/prd/specs/component-model.md` §2 与 §7 为准。
+代码目录 `packages/` 已建立（一个包一个目录：`packages/<包名>/<包名>.csproj`，测试在 `tests/<包名>.Tests/`）；`plugins/`、`profiles/`、`samples/` 在 S1 第一波任务中建立，布局以 `docs/prd/specs/component-model.md` §2 与 §7 为准。
 
 ## 本地检查清单
 

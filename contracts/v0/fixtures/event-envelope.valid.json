@@ -1,0 +1,112 @@
+[
+  {
+    "name": "租户事件：参考应用创建客户",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "平台级事件：tenant_id 为 null",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "lifecycle.plugin.activated",
+      "type": "lifecycle.plugin.activated.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": null,
+      "producer": "qian.lifecycle",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "plugin": "qian.sample.crm",
+        "revision": 3
+      }
+    }
+  },
+  {
+    "name": "两段 subject 与带连字符的组件名：会话被吊销",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "identity.session_revoked",
+      "type": "identity.session_revoked.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.identity.server",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "service",
+        "id": "qian-identity"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "sid_hash": "9f2c"
+      }
+    }
+  },
+  {
+    "name": "Agent 代表用户行事；带连字符的 subject 段",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "lifecycle.tenant-plugin.upgraded",
+      "type": "lifecycle.tenant-plugin.upgraded.v2",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.lifecycle",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "agent",
+        "id": "agent-client-1",
+        "on_behalf_of": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {}
+    }
+  },
+  {
+    "name": "带时区偏移的时间",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T16:30:00+08:00",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  }
+]

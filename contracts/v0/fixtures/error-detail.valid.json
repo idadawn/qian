@@ -1,0 +1,107 @@
+[
+  {
+    "name": "业务错误 422：单个字段，带 pointer",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes"
+    }
+  },
+  {
+    "name": "业务错误 409：无字段",
+    "data": {
+      "type": "https://qian.dev/problems/business/CONFLICT",
+      "title": "状态冲突",
+      "status": 409,
+      "code": "CONFLICT",
+      "message": "资源状态已变化或与现有数据冲突。重新读取最新状态后再决定是否重试。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+    }
+  },
+  {
+    "name": "协议错误 400：输入校验，errors 逐项，顶层取第一项",
+    "data": {
+      "type": "https://qian.dev/problems/protocol/INPUT_INVALID",
+      "title": "输入不符合契约",
+      "status": 400,
+      "detail": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "instance": "/api/files",
+      "code": "INPUT_INVALID",
+      "message": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/purpose",
+      "allowed": [
+        "attachment",
+        "avatar",
+        "export"
+      ],
+      "errors": [
+        {
+          "code": "VALUE_NOT_ALLOWED",
+          "message": "取值不在允许的集合内，可选值见 allowed。",
+          "pointer": "#/purpose",
+          "allowed": [
+            "attachment",
+            "avatar",
+            "export"
+          ]
+        },
+        {
+          "code": "REQUIRED",
+          "message": "缺少必填项。",
+          "pointer": "#/idempotencyKey"
+        }
+      ]
+    }
+  },
+  {
+    "name": "协议错误 401：英文文案，最小成员集",
+    "data": {
+      "type": "https://qian.dev/problems/protocol/UNAUTHENTICATED",
+      "title": "Unauthenticated",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "message": "Credentials are missing or no longer valid; authenticate and retry.",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+    }
+  },
+  {
+    "name": "文件内位置的 pointer（清单校验）",
+    "data": {
+      "type": "https://qian.dev/problems/protocol/INPUT_INVALID",
+      "title": "输入不符合契约",
+      "status": 400,
+      "code": "INPUT_INVALID",
+      "message": "输入不符合该能力的输入 Schema，逐项错误见 errors。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": ".qian-plugin/plugin.json#/runtime/nuget/0",
+      "errors": [
+        {
+          "code": "PATTERN_MISMATCH",
+          "message": "取值不符合要求的模式。",
+          "pointer": ".qian-plugin/plugin.json#/runtime/nuget/0"
+        }
+      ]
+    }
+  },
+  {
+    "name": "pointer 含转义（~1 为 /，~0 为 ~，百分号编码）",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/metadata/a~1b/c~0d/%E5%90%8D"
+    }
+  }
+]

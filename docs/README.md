@@ -13,6 +13,7 @@
 | `prd/specs/yue.md` | yue 组件库专题 spec：关键决策 D1–D16、六层分层、控件注册表契约、MF2 外壳与插槽、S1 最小集验收 | 草案 v1 |
 | `prd/specs/docs-site.md` | 文档站信息架构与规范：七个部分（第 3 部分含「Kun 框架」镜像小节，§2b）、产品族地图与版本矩阵、组件页模板、frontmatter（含 `project`）、llms 产物、`website/` 骨架 | 已确认（2026-10-07；Kun 进站经 ADR-021 补充） |
 | `ROADMAP.md` | 阶段路线唯一真相源：S1–S4 目标、退出标准、核心交付、里程碑占位、依赖与风险、跨阶段约束 | 草案 v1（S1 交付已按 ADR-020 更新） |
+| [`../contracts/v0/`](../contracts/v0/README.md) | 冻结契约 v0（仓库根目录，不在 docs 下）：ErrorDetail 与错误码目录、S2S claim、事件信封、能力条目四类 JSON Schema 2020-12 + fixture，及[与 iClaw 的差异说明](../contracts/v0/iclaw-alignment.md)；字段以此为准 | draft（默认裁决待 S1-DEC-010 确认） |
 | `migration/` | 从参考平台到 Qian 的迁移方案 | 草案 v1 |
 
 命名约定：产品 = Qian（乾），底座框架 = Kun，前端组件库 = yue，插件 ID 前缀 = `qian.`，运行时 = `Qian.Runtime`（.NET）/ `@qian/runtime`（TS），CLI = `qian`。三层口径：Kun = 框架层、Qian = 平台层、yue = 前端层，对外说「Qian 基于 Kun 构建」（ADR-021）。被借鉴的商业低代码产品一律称「参考平台」。

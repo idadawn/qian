@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/v0/error-catalog.schema.json",
+  "title": "ErrorCatalog",
+  "description": "错误码目录的 JSON 导出格式：每个错误码的类别、状态码、归属组件与多语言文案。平台内置部分冻结在 contracts/v0/error-codes.json；各组件在 Definition 包登记自己的错误码，导出时合并为同一格式。",
+  "x-status": "draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "codes"],
+  "properties": {
+    "version": { "const": "v0" },
+    "codes": {
+      "description": "按 code 升序排列，code 不重复。",
+      "type": "array",
+      "items": { "$ref": "#/$defs/Entry" }
+    }
+  },
+  "$defs": {
+    "Entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "kind", "owner", "retryable", "title", "message"],
+      "properties": {
+        "code": { "$ref": "error-detail.schema.json#/$defs/Code" },
+        "kind": {
+          "description": "protocol：请求未进入业务语义即被拒（解析、契约校验、认证、鉴权、寻址、限流、服务端故障）；business：请求合法且已授权，业务规则拒绝；field：只用于 errors[] 的字段级错误码，不能作为顶层 code。",
+          "enum": ["protocol", "business", "field"]
+        },
+        "status": { "type": "integer", "minimum": 400, "maximum": 599 },
+        "type": {
+          "description": "protocol / business 的问题类型 URI，等于 https://qian.dev/problems/<kind>/<code>。",
+          "type": "string",
+          "pattern": "^https://qian\\.dev/problems/(protocol|business)/[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+        },
+        "owner": {
+          "description": "登记该错误码的组件 id（平台内置为 qian.runtime）。",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+        },
+        "retryable": {
+          "description": "原样重试（同一幂等键）是否可能成功，供 Agent 与客户端决定是否退避重试。",
+          "type": "boolean"
+        },
+        "title": { "$ref": "#/$defs/LocalizedText" },
+        "message": {
+          "description": "文案模板，{name} 为占位符，由出错方提供同名参数。",
+          "$ref": "#/$defs/LocalizedText"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "field" } } },
+          "then": { "not": { "anyOf": [{ "required": ["status"] }, { "required": ["type"] }] } },
+          "else": { "required": ["status", "type"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "business" } } },
+          "then": { "properties": { "status": { "enum": [409, 422] } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "protocol" } } },
+          "then": { "properties": { "status": { "not": { "enum": [409, 422] } } } }
+        }
+      ]
+    },
+    "LocalizedText": {
+      "description": "BCP 47 语言标签 → 文本；zh-CN 必填。",
+      "type": "object",
+      "required": ["zh-CN"],
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2})?$" },
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    }
+  }
+}

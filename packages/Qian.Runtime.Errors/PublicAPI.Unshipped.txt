@@ -1,0 +1,136 @@
+#nullable enable
+Qian.Runtime.Errors.AllowedValues
+const Qian.Runtime.Errors.AllowedValues.MaxCount = 100 -> int
+static Qian.Runtime.Errors.AllowedValues.Of(params System.ReadOnlySpan<long> values) -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!
+static Qian.Runtime.Errors.AllowedValues.Of(params System.ReadOnlySpan<string!> values) -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!
+Qian.Runtime.Errors.ErrorCatalog
+Qian.Runtime.Errors.ErrorCatalog.Codes.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.ErrorCode!>!
+Qian.Runtime.Errors.ErrorCatalog.Contains(Qian.Runtime.Errors.ErrorCode! code) -> bool
+static Qian.Runtime.Errors.ErrorCatalog.CreateDefault() -> Qian.Runtime.Errors.ErrorCatalog!
+Qian.Runtime.Errors.ErrorCatalog.CreateDetail(Qian.Runtime.Errors.QianError! error, string! traceId, System.Globalization.CultureInfo? culture = null, string? instance = null) -> Qian.Runtime.Errors.ErrorDetail!
+Qian.Runtime.Errors.ErrorCatalog.ErrorCatalog() -> void
+Qian.Runtime.Errors.ErrorCatalog.ExportJson() -> string!
+Qian.Runtime.Errors.ErrorCatalog.Register(Qian.Runtime.Errors.ErrorCode! code) -> System.IDisposable!
+Qian.Runtime.Errors.ErrorCatalog.TryGet(string! code, out Qian.Runtime.Errors.ErrorCode? errorCode) -> bool
+Qian.Runtime.Errors.ErrorCode
+static Qian.Runtime.Errors.ErrorCode.Business(string! code, int status, string! owner, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! title, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! message, bool retryable = false) -> Qian.Runtime.Errors.ErrorCode!
+Qian.Runtime.Errors.ErrorCode.Code.get -> string!
+const Qian.Runtime.Errors.ErrorCode.DefaultLocale = "zh-CN" -> string!
+Qian.Runtime.Errors.ErrorCode.EnsureArguments(System.Collections.Generic.IReadOnlyDictionary<string!, string!>? args) -> void
+Qian.Runtime.Errors.ErrorCode.Equals(Qian.Runtime.Errors.ErrorCode? other) -> bool
+override Qian.Runtime.Errors.ErrorCode.Equals(object? obj) -> bool
+static Qian.Runtime.Errors.ErrorCode.Field(string! code, string! owner, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! title, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! message) -> Qian.Runtime.Errors.ErrorCode!
+Qian.Runtime.Errors.ErrorCode.FormatMessage(System.Globalization.CultureInfo? culture = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? args = null) -> string!
+override Qian.Runtime.Errors.ErrorCode.GetHashCode() -> int
+Qian.Runtime.Errors.ErrorCode.GetTitle(System.Globalization.CultureInfo? culture = null) -> string!
+static Qian.Runtime.Errors.ErrorCode.IsBusinessStatus(int status) -> bool
+Qian.Runtime.Errors.ErrorCode.Kind.get -> Qian.Runtime.Errors.ErrorKind
+Qian.Runtime.Errors.ErrorCode.Message.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Runtime.Errors.ErrorCode.Owner.get -> string!
+Qian.Runtime.Errors.ErrorCode.Parameters.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static Qian.Runtime.Errors.ErrorCode.Protocol(string! code, int status, string! owner, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! title, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! message, bool retryable = false) -> Qian.Runtime.Errors.ErrorCode!
+Qian.Runtime.Errors.ErrorCode.ResolveLocale(System.Globalization.CultureInfo? culture = null) -> string!
+Qian.Runtime.Errors.ErrorCode.Retryable.get -> bool
+Qian.Runtime.Errors.ErrorCode.Status.get -> int?
+Qian.Runtime.Errors.ErrorCode.Title.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+override Qian.Runtime.Errors.ErrorCode.ToString() -> string!
+Qian.Runtime.Errors.ErrorCode.Type.get -> string?
+const Qian.Runtime.Errors.ErrorCode.TypeBaseUri = "https://qian.dev/problems/" -> string!
+Qian.Runtime.Errors.ErrorDetail
+Qian.Runtime.Errors.ErrorDetail.Allowed.get -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>?
+Qian.Runtime.Errors.ErrorDetail.Allowed.init -> void
+Qian.Runtime.Errors.ErrorDetail.Code.get -> string!
+Qian.Runtime.Errors.ErrorDetail.Code.init -> void
+Qian.Runtime.Errors.ErrorDetail.Detail.get -> string?
+Qian.Runtime.Errors.ErrorDetail.Detail.init -> void
+Qian.Runtime.Errors.ErrorDetail.ErrorDetail() -> void
+Qian.Runtime.Errors.ErrorDetail.Errors.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.FieldError!>?
+Qian.Runtime.Errors.ErrorDetail.Errors.init -> void
+Qian.Runtime.Errors.ErrorDetail.Instance.get -> string?
+Qian.Runtime.Errors.ErrorDetail.Instance.init -> void
+Qian.Runtime.Errors.ErrorDetail.Message.get -> string!
+Qian.Runtime.Errors.ErrorDetail.Message.init -> void
+Qian.Runtime.Errors.ErrorDetail.Pointer.get -> string?
+Qian.Runtime.Errors.ErrorDetail.Pointer.init -> void
+Qian.Runtime.Errors.ErrorDetail.Status.get -> int
+Qian.Runtime.Errors.ErrorDetail.Status.init -> void
+Qian.Runtime.Errors.ErrorDetail.Title.get -> string!
+Qian.Runtime.Errors.ErrorDetail.Title.init -> void
+Qian.Runtime.Errors.ErrorDetail.TraceId.get -> string!
+Qian.Runtime.Errors.ErrorDetail.TraceId.init -> void
+Qian.Runtime.Errors.ErrorDetail.Type.get -> string!
+Qian.Runtime.Errors.ErrorDetail.Type.init -> void
+Qian.Runtime.Errors.ErrorDetailJson
+static Qian.Runtime.Errors.ErrorDetailJson.Deserialize(string! json) -> Qian.Runtime.Errors.ErrorDetail?
+const Qian.Runtime.Errors.ErrorDetailJson.MediaType = "application/problem+json" -> string!
+static Qian.Runtime.Errors.ErrorDetailJson.Serialize(Qian.Runtime.Errors.ErrorDetail! detail) -> string!
+static Qian.Runtime.Errors.ErrorDetailJson.TypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Runtime.Errors.ErrorDetail!>!
+Qian.Runtime.Errors.ErrorKind
+Qian.Runtime.Errors.ErrorKind.Business = 1 -> Qian.Runtime.Errors.ErrorKind
+Qian.Runtime.Errors.ErrorKind.Field = 2 -> Qian.Runtime.Errors.ErrorKind
+Qian.Runtime.Errors.ErrorKind.Protocol = 0 -> Qian.Runtime.Errors.ErrorKind
+Qian.Runtime.Errors.ErrorPointer
+static Qian.Runtime.Errors.ErrorPointer.InFile(string! relativePath, params System.ReadOnlySpan<object!> segments) -> string!
+static Qian.Runtime.Errors.ErrorPointer.Input(params System.ReadOnlySpan<object!> segments) -> string!
+static Qian.Runtime.Errors.ErrorPointer.IsValid(string? pointer) -> bool
+Qian.Runtime.Errors.FieldError
+Qian.Runtime.Errors.FieldError.Allowed.get -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>?
+Qian.Runtime.Errors.FieldError.Allowed.init -> void
+Qian.Runtime.Errors.FieldError.Code.get -> string!
+Qian.Runtime.Errors.FieldError.Code.init -> void
+Qian.Runtime.Errors.FieldError.FieldError() -> void
+Qian.Runtime.Errors.FieldError.Message.get -> string!
+Qian.Runtime.Errors.FieldError.Message.init -> void
+Qian.Runtime.Errors.FieldError.Pointer.get -> string!
+Qian.Runtime.Errors.FieldError.Pointer.init -> void
+Qian.Runtime.Errors.PlatformErrors
+static Qian.Runtime.Errors.PlatformErrors.All.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.ErrorCode!>!
+static Qian.Runtime.Errors.PlatformErrors.ForStatus(int status) -> Qian.Runtime.Errors.ErrorCode!
+const Qian.Runtime.Errors.PlatformErrors.Owner = "qian.runtime" -> string!
+Qian.Runtime.Errors.QianError
+Qian.Runtime.Errors.QianError.Allowed.get -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>?
+Qian.Runtime.Errors.QianError.Allowed.init -> void
+Qian.Runtime.Errors.QianError.Args.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Runtime.Errors.QianError.Code.get -> Qian.Runtime.Errors.ErrorCode!
+Qian.Runtime.Errors.QianError.Errors.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.QianFieldError!>!
+Qian.Runtime.Errors.QianError.Errors.init -> void
+Qian.Runtime.Errors.QianError.Pointer.get -> string?
+Qian.Runtime.Errors.QianError.Pointer.init -> void
+Qian.Runtime.Errors.QianError.QianError(Qian.Runtime.Errors.ErrorCode! code, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? args = null) -> void
+Qian.Runtime.Errors.QianErrorException
+Qian.Runtime.Errors.QianErrorException.Error.get -> Qian.Runtime.Errors.QianError!
+Qian.Runtime.Errors.QianErrorException.QianErrorException(Qian.Runtime.Errors.QianError! error) -> void
+Qian.Runtime.Errors.QianErrorException.QianErrorException(Qian.Runtime.Errors.QianError! error, System.Exception? innerException) -> void
+Qian.Runtime.Errors.QianFieldError
+Qian.Runtime.Errors.QianFieldError.Allowed.get -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>?
+Qian.Runtime.Errors.QianFieldError.Allowed.init -> void
+Qian.Runtime.Errors.QianFieldError.Args.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Runtime.Errors.QianFieldError.Code.get -> Qian.Runtime.Errors.ErrorCode!
+Qian.Runtime.Errors.QianFieldError.Pointer.get -> string!
+Qian.Runtime.Errors.QianFieldError.QianFieldError(Qian.Runtime.Errors.ErrorCode! code, string! pointer, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? args = null) -> void
+static readonly Qian.Runtime.Errors.PlatformErrors.AuthzDenied -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.BadGateway -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.BadRequest -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.BusinessRuleViolated -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.Conflict -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.FormatInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.GatewayTimeout -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.InputInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.InsufficientScope -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.Internal -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.MethodNotAllowed -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.NotAcceptable -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.NotFound -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.OutOfRange -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.PatternMismatch -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.PayloadTooLarge -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.PreconditionFailed -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.RateLimited -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.RequestTimeout -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.Required -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.TypeMismatch -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.Unauthenticated -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.Unavailable -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.UnknownProperty -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.UnsupportedMediaType -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.ValueNotAllowed -> Qian.Runtime.Errors.ErrorCode!

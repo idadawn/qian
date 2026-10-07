@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Qian 结构化错误契约（S1-AGT-001，PRD 7.18 第 2 项）：ErrorDetail、错误码目录与多语言文案导出。
+    线上形状以 contracts/v0/error-detail.schema.json 与 error-catalog.schema.json 为准。
+    不依赖 ASP.NET Core：Definition 包登记自己的错误码只需要本包；HTTP 映射在 Qian.Runtime.Errors.AspNetCore。
+  -->
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <RootNamespace>Qian.Runtime.Errors</RootNamespace>
+    <!-- CA1720：Pointer 是契约成员名（RFC 9457 / contracts/v0 的 pointer），不是类型名。 -->
+    <NoWarn>$(NoWarn);CA1720</NoWarn>
+    <Description>Qian 结构化错误：RFC 9457 problem+json 的 ErrorDetail 配置文件、错误码目录与多语言文案 JSON 导出。</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Qian.Runtime.Errors.Tests" />
+  </ItemGroup>
+
+</Project>

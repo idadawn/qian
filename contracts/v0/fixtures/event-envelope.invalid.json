@@ -1,0 +1,298 @@
+[
+  {
+    "name": "version 为 v2",
+    "data": {
+      "version": "v2",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "缺 actor",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "缺 tenant_id（平台级须显式写 null）",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "type 没有版本后缀",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "subject 大写",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "CRM.Customer.Created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "subject 只有一段",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "多出 CloudEvents 的 data 成员",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      },
+      "data": {}
+    }
+  },
+  {
+    "name": "occurred_at 没有时区",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "actor.kind 取值 system",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "system",
+        "id": "cron"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "actor 多出成员",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21",
+        "name": "张三"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "trace_parent 格式错误",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  },
+  {
+    "name": "payload 为数组",
+    "data": {
+      "version": "v1",
+      "event_id": "0190f3a3-1a00-7c00-8d00-000000000001",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": [
+        1,
+        2
+      ]
+    }
+  },
+  {
+    "name": "event_id 不是 UUID",
+    "data": {
+      "version": "v1",
+      "event_id": "evt-1",
+      "subject": "crm.customer.created",
+      "type": "crm.customer.created.v1",
+      "occurred_at": "2026-10-07T08:30:00.123Z",
+      "tenant_id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b20",
+      "producer": "qian.sample.crm",
+      "correlation_id": "0190f3a3-1a00-7c00-8d00-000000000002",
+      "causation_id": "0190f3a3-1a00-7c00-8d00-000000000003",
+      "actor": {
+        "kind": "user",
+        "id": "0190f3a2-7c41-7b3e-9d2a-5c8e1f4a6b21"
+      },
+      "trace_parent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "payload": {
+        "customerId": "0190f3a3-1a00-7c00-8d00-0000000000aa",
+        "name": "示例客户"
+      }
+    }
+  }
+]

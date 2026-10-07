@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/v0/event-envelope.schema.json",
+  "title": "EventEnvelope",
+  "description": "跨进程集成事件（qian.events，PRD 7.10）的信封：与 iClaw events-schema.json 的 EventEnvelope 同形并加 Qian 字段。payload 由事件目录中该 type 的 JSON Schema 约束，信封不约束其内容。进程内运行时事件（emit / waterfall / parallel / serial / bail）不用本信封。",
+  "x-status": "draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "event_id", "subject", "type", "occurred_at", "tenant_id", "producer", "actor", "trace_parent", "payload"],
+  "properties": {
+    "version": {
+      "description": "信封版本。破坏性变更升 v2。",
+      "const": "v1"
+    },
+    "event_id": {
+      "description": "事件实例 id（UUID，生产方用 v7）；消费端幂等键。",
+      "$ref": "s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "subject": {
+      "description": "<domain>.<entity>.<verb>，小写，点分；等于 type 去掉末尾 .v<N>。",
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)+$"
+    },
+    "type": {
+      "description": "稳定事件 id 加 payload 版本：<subject>.v<N>，即 [IntegrationEventId] 的值；用来在事件目录查 payload Schema。",
+      "type": "string",
+      "maxLength": 210,
+      "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)+\\.v[1-9][0-9]*$"
+    },
+    "occurred_at": {
+      "description": "业务发生时间，RFC 3339，带时区。",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "tenant_id": {
+      "description": "租户 id；null 表示平台级事件（如 lifecycle.plugin.activated）。消费端据此回灌租户上下文。",
+      "oneOf": [{ "$ref": "s2s-claims.schema.json#/$defs/Uuid" }, { "type": "null" }]
+    },
+    "producer": {
+      "description": "发布方组件 id，如 qian.identity.server、qian.sample.crm。",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    "correlation_id": {
+      "description": "业务关联 id（跨多个事件的同一业务流程）。",
+      "$ref": "s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "causation_id": {
+      "description": "直接引起本事件的命令或事件的 id。",
+      "$ref": "s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "actor": { "$ref": "#/$defs/Actor" },
+    "trace_parent": {
+      "description": "W3C Trace Context traceparent；其中的 trace-id 与 ErrorDetail.trace_id、审计 trace_id 同值。",
+      "type": "string",
+      "pattern": "^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$"
+    },
+    "payload": {
+      "description": "事件数据，Schema 见事件目录（GET /api/capabilities/events）中该 type 的条目。",
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "Actor": {
+      "description": "触发事件的主体，取值与 S2S principal_kind、审计 actor_type 一致；定时作业等无人触发的事件以执行它的 service 主体记。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "enum": ["user", "service", "agent"] },
+        "id": {
+          "description": "user 为 person_id，service / agent 为 client_id。",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "on_behalf_of": {
+          "description": "委托人（kind 为 agent 或 service 代表用户行事时的 person_id）。",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        }
+      }
+    }
+  }
+}
