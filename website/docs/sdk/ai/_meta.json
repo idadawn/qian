@@ -1,0 +1,7 @@
+[
+  { "type": "file", "name": "index", "label": "AI SDK 概览" },
+  { "type": "file", "name": "gateway", "label": "模型网关" },
+  { "type": "file", "name": "agent-runtime", "label": "Agent 运行时对接" },
+  { "type": "file", "name": "mcp", "label": "MCP" },
+  { "type": "file", "name": "sandbox", "label": "沙箱" }
+]

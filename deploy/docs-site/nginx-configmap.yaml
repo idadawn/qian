@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qian-docs-site-nginx
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      server_name _;
+
+      # git-sync 把 docs-site 分支同步到 /git/current（符号链接指向最新提交）：
+      # 根目录是正式站点，pr-preview/pr-<n>/ 是各 PR 的预览
+      root /git/current;
+      index index.html;
+      autoindex off;
+      # 目录补斜杠的重定向用相对地址，免得带出容器端口 8080
+      absolute_redirect off;
+
+      gzip on;
+      gzip_min_length 1024;
+      gzip_types text/css application/javascript application/json image/svg+xml text/plain text/markdown;
+
+      location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+      }
+
+      # 隐藏点文件（git-sync 工作区里的 .git 等）
+      location ~ /\. {
+        return 404;
+      }
+
+      # 带内容哈希的静态资源：长缓存
+      location ~ ^(/pr-preview/pr-[0-9]+)?/static/ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+      }
+
+      # 页面：每次发布都可能变，协商缓存；/a/b、/a/b.html、/a/b/ 三种写法都能打开
+      location / {
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri $uri.html $uri/index.html =404;
+      }
+
+      error_page 404 /404.html;
+    }

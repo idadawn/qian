@@ -1,0 +1,92 @@
+/*
+ * yue 设计令牌（占位）。
+ *
+ * 命名、分层与明暗切换按 docs/prd/specs/yue.md §3.5：primitive --yue-p-<family>-<step>，
+ * semantic --yue-<role>[-foreground]，颜色存 oklch，暗色在 html[data-theme="dark"] 下重定义语义层并设 color-scheme。
+ * 取值是文档站的临时选择，不代表品牌决定。S1-YUE-004 发布 @yue/tokens 后删除本文件，
+ * 在 theme/index.css 里改为导入 @yue/tokens 的 CSS；index.css 只引用语义层，不需要跟着改。
+ */
+:root {
+  /* primitive：主色（蓝）、中性灰与三种状态色，色阶 50–950 只放用到的阶 */
+  --yue-p-blue-50: oklch(0.97 0.014 254.6);
+  --yue-p-blue-100: oklch(0.932 0.032 255.6);
+  --yue-p-blue-300: oklch(0.809 0.105 251.8);
+  --yue-p-blue-400: oklch(0.707 0.165 254.6);
+  --yue-p-blue-500: oklch(0.623 0.214 259.8);
+  --yue-p-blue-600: oklch(0.546 0.245 262.9);
+  --yue-p-blue-700: oklch(0.488 0.243 264.4);
+  --yue-p-blue-950: oklch(0.282 0.091 267.9);
+
+  --yue-p-neutral-0: oklch(1 0 0);
+  --yue-p-neutral-50: oklch(0.985 0 0);
+  --yue-p-neutral-100: oklch(0.967 0.001 286.4);
+  --yue-p-neutral-200: oklch(0.92 0.004 286.3);
+  --yue-p-neutral-300: oklch(0.871 0.006 286.3);
+  --yue-p-neutral-400: oklch(0.705 0.015 286.1);
+  --yue-p-neutral-500: oklch(0.552 0.016 285.9);
+  --yue-p-neutral-600: oklch(0.442 0.017 285.8);
+  --yue-p-neutral-700: oklch(0.37 0.013 285.8);
+  --yue-p-neutral-800: oklch(0.274 0.006 286);
+  --yue-p-neutral-900: oklch(0.21 0.006 285.9);
+  --yue-p-neutral-950: oklch(0.141 0.005 285.8);
+
+  --yue-p-green-100: oklch(0.962 0.044 156.7);
+  --yue-p-green-400: oklch(0.792 0.209 151.7);
+  --yue-p-green-700: oklch(0.527 0.154 150.1);
+  --yue-p-green-950: oklch(0.266 0.065 152.9);
+  --yue-p-amber-100: oklch(0.962 0.059 95.6);
+  --yue-p-amber-400: oklch(0.828 0.189 84.4);
+  --yue-p-amber-700: oklch(0.555 0.163 48.998);
+  --yue-p-amber-950: oklch(0.279 0.077 45.6);
+  --yue-p-red-100: oklch(0.936 0.032 17.7);
+  --yue-p-red-400: oklch(0.704 0.191 22.2);
+  --yue-p-red-700: oklch(0.505 0.213 27.5);
+  --yue-p-red-950: oklch(0.258 0.092 26);
+
+  --yue-p-radius-md: 0.5rem;
+  --yue-p-radius-lg: 0.75rem;
+
+  /* semantic：亮色 */
+  color-scheme: light;
+  --yue-background: var(--yue-p-neutral-0);
+  --yue-foreground: var(--yue-p-neutral-950);
+  --yue-card: var(--yue-p-neutral-0);
+  --yue-card-foreground: var(--yue-p-neutral-950);
+  --yue-muted: var(--yue-p-neutral-100);
+  --yue-muted-foreground: var(--yue-p-neutral-600);
+  --yue-border: var(--yue-p-neutral-200);
+  --yue-primary: var(--yue-p-blue-600);
+  --yue-primary-foreground: var(--yue-p-neutral-0);
+  --yue-ring: var(--yue-p-blue-500);
+  --yue-ok: var(--yue-p-green-700);
+  --yue-ok-bg: var(--yue-p-green-100);
+  --yue-warn: var(--yue-p-amber-700);
+  --yue-warn-bg: var(--yue-p-amber-100);
+  --yue-error: var(--yue-p-red-700);
+  --yue-error-bg: var(--yue-p-red-100);
+  --yue-info: var(--yue-p-blue-700);
+  --yue-info-bg: var(--yue-p-blue-100);
+  --yue-radius: var(--yue-p-radius-lg);
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --yue-background: var(--yue-p-neutral-950);
+  --yue-foreground: var(--yue-p-neutral-50);
+  --yue-card: var(--yue-p-neutral-900);
+  --yue-card-foreground: var(--yue-p-neutral-50);
+  --yue-muted: var(--yue-p-neutral-800);
+  --yue-muted-foreground: var(--yue-p-neutral-400);
+  --yue-border: var(--yue-p-neutral-800);
+  --yue-primary: var(--yue-p-blue-400);
+  --yue-primary-foreground: var(--yue-p-neutral-950);
+  --yue-ring: var(--yue-p-blue-400);
+  --yue-ok: var(--yue-p-green-400);
+  --yue-ok-bg: var(--yue-p-green-950);
+  --yue-warn: var(--yue-p-amber-400);
+  --yue-warn-bg: var(--yue-p-amber-950);
+  --yue-error: var(--yue-p-red-400);
+  --yue-error-bg: var(--yue-p-red-950);
+  --yue-info: var(--yue-p-blue-300);
+  --yue-info-bg: var(--yue-p-blue-950);
+}

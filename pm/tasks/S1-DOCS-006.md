@@ -15,7 +15,7 @@ refs:
   - docs/adr/ADR-021-product-family-structure.md#D21.5
   - docs/prd/specs/docs-site.md#2b.4
   - docs/prd/specs/docs-site.md#4
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 ## 背景
@@ -33,3 +33,4 @@ updated: 2026-10-07
 ## 进度日志
 
 - 2026-10-07 claude：创建任务（ADR-021 D21.2 / D21.5）
+- 2026-10-08 claude：S1-DOCS-001（PR #3）已先做两处：首页一句话定位与页脚（产品族仓库、Qian Apache-2.0 / Kun MIT）；手写页全部补 project: qian。生成页（components / cli / design）的 project 与镜像页的 source 仍归本任务

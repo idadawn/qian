@@ -4,7 +4,7 @@
 
 - 产品 = Qian · 底座框架 = Kun · 前端组件库 = yue · 运行时 = `Qian.Runtime` · 组件 ID 前缀 = `qian.` · 包前缀 = `Qian.*` / `@qian/*` / `@yue/*`
 - 阶段：S1 技术底座 → S2 低代码构建 → S3 面向客户 → S4 AI 原生 Agent 平台
-- 当前状态：设计文档完成（决策 D1–D18 已认可，ADR-019 / 020 / 021 已 Accepted），S1 任务已拆解并开始交付（CI 基础已合入，文档站脚手架与契约冻结在途）
+- 当前状态：设计文档完成（决策 D1–D18 已认可，ADR-019 / 020 / 021 已 Accepted），S1 任务已拆解并开始交付（CI 基础与文档站脚手架已合入，契约冻结在途）；文档站见 `website/`
 
 ## 产品族：Kun、Qian、yue 与周边仓库
 
@@ -30,8 +30,9 @@ Kun 的版本只在 `Directory.Packages.props` 的 `KunVersion` 写一次；升�
 | `scripts/` | `pm.py`（任务校验 / 生成 / 改状态）、`check_docs.py`（文档门禁）、`check_deps.py`（.NET 依赖图门禁） | — |
 | `tests/` | 集成测试共用的 Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）、门禁自测 | [tests/README.md](tests/README.md) |
 | `AGENTS.md` | 给 Codex、Claude Code 等编码代理的入口约定（`CLAUDE.md` 指向它） | [AGENTS.md](AGENTS.md) |
-| `.github/` | CI：文档门禁 + 任务校验 + 看板生成物新鲜度；.NET 构建、PublicAPI 与依赖图门禁、单元与集成测试 | — |
-| `deploy/` | 开发期工具的 K3s 清单：`pm-board/` 把看板放进集群（git-sync + nginx） | [deploy/pm-board/README.md](deploy/pm-board/README.md) |
+| `website/` | 文档站（Rspress 2.0）：七个部分、首页、主题；设计文档在站内「设计与路线」镜像 | [website/README.md](website/README.md) |
+| `.github/` | CI：文档门禁 + 任务校验 + 看板生成物新鲜度；.NET 构建、PublicAPI 与依赖图门禁、单元与集成测试；文档站构建、PR 预览与发布 | — |
+| `deploy/` | 开发期工具的 K3s 清单：`pm-board/` 把看板放进集群、`docs-site/` 托管文档站（都是 git-sync + nginx） | [deploy/pm-board/README.md](deploy/pm-board/README.md) · [deploy/docs-site/README.md](deploy/docs-site/README.md) |
 
 代码目录（`packages/`、`plugins/`、`profiles/`、`samples/`）由 S1 第一波任务建立，布局以 [组件模型规格](docs/prd/specs/component-model.md) 为准。
 

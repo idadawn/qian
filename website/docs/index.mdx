@@ -1,0 +1,184 @@
+---
+pageType: custom
+title: Qian 文档
+description: Qian 的开始、组件目录、SDK、CLI 与规格、运维、市场与设计文档：组件一条命令装进任何项目，组合起来就是多租户平台。
+part: start
+project: qian
+audience: [developer, operator, isv, agent, decision-maker]
+updated: 2026-10-08
+---
+
+import { Badge, Card, CardGrid, HomeFooter, HomeHero, HomeSection, LatestChanges } from '@theme';
+
+{/* 首页结构按 docs-site.md §2a：三条起步命令 → 配置编码代理 → 最新动态 → 五栏产品能力 → 指南 → 页脚。
+    一句话定位用 ADR-021 的对外口径；没有的能力不放；规划中的能力打阶段标记；不放公司信息。 */}
+
+<div className="qian-home rp-doc">
+
+<HomeHero
+  title="Qian 文档"
+  tagline="Qian 平台基于 Kun 框架构建，前端使用 yue 组件库：组件一条命令装进任何项目，组合起来就是为 Agent 时代准备的多租户平台。"
+/>
+
+<HomeSection id="get-started" title="三条起步命令" lead="命令与「开始」部分同源；S1 建设期内随任务陆续可用。">
+<CardGrid>
+<Card title="① 装一个组件">
+
+```bash
+qian add identity authz files
+```
+
+在 ASP.NET Core 项目里装身份、鉴权、文件三个组件，不用部署 Qian 平台。[30 分钟上手 →](/start/quickstart)
+
+</Card>
+<Card title="② 配置你的编码代理">
+
+```bash
+npx qian@latest --skill files
+```
+
+把组件的技能装进 Claude Code、Codex 等编码代理；代理先读仓库里的 `AGENTS.md`。[详见下一节 ↓](#agents)
+
+</Card>
+<Card title={<>③ 调一个模型 <Badge text="S1·P1" type="info" /></>}>
+
+```bash
+curl "$MODEL_GATEWAY/v1/chat/completions" \
+  -H "Authorization: Bearer $MODEL_GATEWAY_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "chat-default", "messages": [{"role": "user", "content": "你好"}]}'
+```
+
+经模型网关的 OpenAI 兼容端点发一条请求，用逻辑模型名。[模型网关 →](/sdk/ai/gateway)
+
+</Card>
+</CardGrid>
+</HomeSection>
+
+<HomeSection id="agents" title="配置你的编码代理" lead="Agent 原生表面从 S1 起就是一等公民：组件带的技能、约定与 MCP 可以直接交给编码代理。">
+<CardGrid min="220px">
+<Card title="Qian 技能">
+
+组件的 `skills/` 表面可以直接装进编码代理：`npx qian@latest --skill <组件>`，或用 `<组件>/<技能>` 只装一个。[表面 →](/start/concepts/surface)
+
+</Card>
+<Card title="AGENTS.md 约定">
+
+每个仓库与每个包都带 `AGENTS.md`，`qian init` 生成骨架；代理动手前先读它。[ADR-020 D20.9 →](/design/adr/adr-020-component-model-v2)
+
+</Card>
+<Card title="Qian MCP">
+
+组件的 `.mcp.json` 表面随组件安装；文档检索 MCP 为 S1 可选；每租户能力门面 <Badge text="S4" type="warning" />。[MCP →](/sdk/ai/mcp)
+
+</Card>
+<Card title="提示词模板">
+
+让代理按任务文件工作：读 `AGENTS.md`、认领任务、按验收逐条完成并开 PR。模板见[仓库 pm/README 第 7 节](https://github.com/idadawn/qian/blob/main/pm/README.md#7-怎么下发任务)。
+
+</Card>
+</CardGrid>
+</HomeSection>
+
+<HomeSection id="latest" title="最新动态">
+
+<LatestChanges count={4} />
+
+[完整变更日志 →](/design/changelog)
+
+</HomeSection>
+
+<HomeSection id="products" title="产品能力" lead="按用途找能力：每项一句话，正文只在一个部分写一次。">
+<CardGrid min="200px">
+<Card title="用 AI 构建">
+
+- [模型网关](/sdk/ai/gateway)：一个端点调所有模型，配额、回退、计量 <Badge text="S1·P1" type="info" />
+- [AI SDK](/sdk/ai/)：调模型与 Embedding，写 Agent 表面，声明工具副作用与策略
+- [Agent 运行时对接](/sdk/ai/agent-runtime)：Qian 不写 Agent loop，运行时为 iClaw
+- [MCP](/sdk/ai/mcp)：组件的 `.mcp.json` 表面；每租户能力门面 <Badge text="S4" type="warning" />
+- [流程与自动化](/components/platform/qian.workflow)：审批内核与触发器 <Badge text="S2" type="warning" />
+- [沙箱](/sdk/ai/sandbox)：隔离执行不可信或 Agent 生成的代码 <Badge text="S4" type="warning" />
+
+</Card>
+<Card title="构建应用">
+
+- [宿主与框架](/start/hosts)：独立模式、platform profile、React + yue、与 Kun 的关系
+- [组件与 qian add](/components/)：一条命令安装，装上即可用
+- [能力与函数](/sdk/dotnet/capabilities)：能力目录；`function` 表面 <Badge text="S2" type="warning" />
+- [事件与中间件](/sdk/dotnet/events)：五种分发模式，`waterfall` 即环绕中间件
+- [profile 与 patch](/start/concepts/profile)：环境 = profile + 分层 patch
+- [yue 与微前端](/sdk/frontend/)：组件库、外壳与远程模块
+- [存储](/components/platform/qian.files)：文件与数据，租户隔离默认开启
+- [低代码](/design/prd/08-s2-lowcode)：表单与列表 <Badge text="S2" type="warning" />
+
+</Card>
+<Card title="多租户平台">
+
+- [租户](/components/platform/qian.tenancy)：租户目录、隔离策略与生命周期
+- [身份与 SSO](/components/platform/qian.identity)：OIDC 端点与双层账号
+- [鉴权](/components/platform/qian.authz)：权限点注册表与租户域 RBAC
+- [权益](/components/platform/qian.entitlement)：授权 v0；计费 <Badge text="S3" type="warning" />
+- [配置中心](/components/platform/qian.config)：Apollo 与热更新
+- [事件与消息](/components/platform/qian.events)：Outbox 可靠发布
+- [调度与实时](/components/platform/qian.scheduler)：持久化作业与实时推送
+- [市场](/marketplace/)：上架、信任等级与签名 <Badge text="S3" type="warning" />
+
+</Card>
+<Card title="保护应用">
+
+- [网关防护](/components/platform/qian.gateway)：强制认证、路由级限流、可信代理、出网 SSRF 基线
+- [发布保护](/ops/release)：制品验签、修订回切、灰度开关
+- [审计](/components/platform/qian.audit)：命令级哈希链与实体级同事务审计
+- [密钥](/ops/secrets)：`secretRef`、按范围授权、轮换
+
+</Card>
+<Card title="部署与运维">
+
+- [GitOps 部署](/ops/deploy)：Argo CD app-of-apps、Kustomize、digest 写回
+- [灰度发布](/ops/release)：灰度开关 + profile 滚动更新
+- [修订回切](/ops/release)：回到任一保留的修订
+- [可观测](/components/platform/qian.observability)：OTel、租户 / 用户 / 插件 baggage、计量事件
+- [模型网关接线](/ops/model-gateway)：GPUStack → Higress <Badge text="S1·P1" type="info" />
+
+</Card>
+</CardGrid>
+</HomeSection>
+
+<HomeSection id="guides" title="指南与教程">
+<CardGrid min="220px">
+<Card title="Agent 栈">
+
+Qian 提供能力与主数据，iClaw 跑 Agent，模型与 MCP 流量走 Higress。[阅读 →](/start/guides/#agent-stack)
+
+</Card>
+<Card title="后端模式">
+
+seam 三角色、只经 Abstractions 引用、五种事件分发模式。[阅读 →](/start/guides/#backend)
+
+</Card>
+<Card title="多 profile 组合">
+
+gateway、identity、platform 等 profile 各自部署、各自升级。[阅读 →](/start/guides/#profiles)
+
+</Card>
+<Card title="安全">
+
+RLS 租户隔离、默认拒绝匿名、`secretRef`、信任等级。[阅读 →](/start/guides/#security)
+
+</Card>
+<Card title="连接器与集成">
+
+为 seam 提供 Provider、声明出网目标的连接器组件。[阅读 →](/start/guides/#integrations)
+
+</Card>
+<Card title="从参考平台迁移">
+
+租户与权限、表单与列表、流程、数据集成、前端五个领域。[阅读 →](/design/migration/)
+
+</Card>
+</CardGrid>
+</HomeSection>
+
+<HomeFooter />
+
+</div>
