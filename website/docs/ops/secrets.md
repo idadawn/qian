@@ -2,6 +2,7 @@
 title: 密钥
 description: 密钥只以 secretRef:// 引用出现，使用时由配置 seam 解析、按声明范围授权并审计；仓库只存模板、键名与引用。
 part: ops
+project: qian
 audience: [operator, developer]
 updated: 2026-10-07
 ---

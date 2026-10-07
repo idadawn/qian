@@ -2,6 +2,7 @@
 title: MCP
 description: 组件附带的 .mcp.json 表面（S1）与每租户 MCP 能力门面（S4）；MCP 以 2026-07-28 版为目标。
 part: sdk
+project: qian
 audience: [developer, agent]
 updated: 2026-10-07
 ---

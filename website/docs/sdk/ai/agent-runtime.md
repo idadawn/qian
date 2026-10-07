@@ -2,6 +2,7 @@
 title: Agent 运行时对接
 description: Qian 是能力提供方与业务主数据权威，Agent 运行时为 iClaw；本页只写接入方式，不写 Agent loop。
 part: sdk
+project: qian
 audience: [developer, decision-maker]
 updated: 2026-10-07
 ---

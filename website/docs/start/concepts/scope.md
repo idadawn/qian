@@ -2,6 +2,7 @@
 title: scope
 description: 任一注册的归属：全局，或一个租户、应用或 Agent 会话；两层扁平、不继承，被过滤的组件与不存在无法区分。
 part: start
+project: qian
 audience: [developer, agent]
 updated: 2026-10-07
 ---

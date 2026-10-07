@@ -2,6 +2,7 @@
 title: profile 与 patch
 description: 环境 = profile + 分层 patch：组合包、profile patch、home patch、命令行 overlay 依次叠加，运行中再叠租户 scope patch。
 part: start
+project: qian
 audience: [developer, operator]
 updated: 2026-10-07
 ---

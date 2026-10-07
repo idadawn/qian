@@ -36,12 +36,13 @@ website/
     index.mdx                  首页（docs-site.md §2a）
     sitemap.mdx                站点地图（页脚入口）
     _nav.json                  顶部导航：七个部分 +「产品」
-    start/                     1 开始
+    start/                     1 开始；后续：family.mdx 产品族地图、versions.mdx 版本矩阵（生成）（S1-DOCS-006）
     components/                2 组件目录（生成：scripts/collect-components.ts）
       platform/<id>.md
       yue/
     sdk/                       3 SDK：dotnet/  frontend/  ai/
-      api/                     后续：TypeDoc / DocFX 生成物（S1-DOCS-002）
+      kun/                     后续：「Kun 框架」小节，按 KunVersion 镜像 kun 仓库（生成，with-qian.mdx 除外）（S1-DOCS-005）
+      api/                     后续：TypeDoc / DocFX 生成物 dotnet/  kun/  frontend/（S1-DOCS-002、S1-DOCS-005）
     cli/                       4 CLI 与规格（生成：scripts/sync-specs.ts，来自 component-model.md）
     ops/                       5 运维
     marketplace/               6 市场与 ISV
@@ -55,6 +56,8 @@ website/
     check-site.ts              构建产物检查
     *.test.ts                  生成脚本单测
     build-kb-index.ts          后续：产出 kb-index.json（S1-DOCS-003）
+    sync-kun-docs.ts           后续：kun 仓库 v<KunVersion> 的 docs/ 白名单 → docs/sdk/kun/（S1-DOCS-005）
+    build-versions.ts          后续：仓库钉版文件 → docs/start/versions.mdx（S1-DOCS-006）
   theme/
     index.tsx  index.css       主题覆盖：令牌映射、建设期横幅、版本说明、首页组件
     yue-tokens.css             yue 令牌占位，@yue/tokens 发布后替换（§5）
@@ -65,9 +68,9 @@ website/
 
 | # | 部分 | 路径 | 来源 | 进 Git | 版本化 |
 |---|---|---|---|---|---|
-| 1 | 开始 | `/start/` | 手写 | 是 | 否 |
+| 1 | 开始 | `/start/` | 手写；版本矩阵 `/start/versions` 后续由脚本生成（S1-DOCS-006） | 是 | 否 |
 | 2 | 组件目录 | `/components/` | `scripts/collect-components.ts` 生成 | 否 | 是 |
-| 3 | SDK | `/sdk/` | 手写；API 参考后续生成 | 是 | 是 |
+| 3 | SDK | `/sdk/` | 手写；「Kun 框架」小节后续按 `KunVersion` 从 kun 仓库镜像（S1-DOCS-005）；API 参考后续生成 | 是 | 是（Kun 小节随 `KunVersion`） |
 | 4 | CLI 与规格 | `/cli/` | 从 `docs/prd/specs/component-model.md` 第 2、3、4、7、8、9、10 节同步 | 否 | 是 |
 | 5 | 运维 | `/ops/` | 手写 | 是 | 否 |
 | 6 | 市场与 ISV | `/marketplace/` | 手写（S3 前只放规则） | 是 | 否 |
@@ -89,6 +92,7 @@ website/
 docs-site.md §5：第 2、3、4 部分随 Qian 包族的 SemVer 锁步版本多版本发布，第 1、5、6、7 部分只有当前版。
 
 - 现在还没有发布任何包，三部分都只有开发版（`main`）；这三部分每页顶部显示版本说明（`theme/components/PartNotice.tsx`），其余部分没有。
+- 第 3 部分的「Kun 框架」小节（S1-DOCS-005）不单独选版本：每个 Qian 文档版本内嵌该版本 `KunVersion` 锁定的 Kun 文档（docs-site.md §5、ADR-021 D21.3）。
 - Rspress 的 `multiVersion` 是整站多版本，不能只给三个部分分版本。首个包族版本发布时再定实现方式（候选：三部分各自按版本目录生成 + 版本切换组件），届时一并改本节与 PartNotice。
 
 ## 5 主题与令牌
@@ -120,7 +124,7 @@ frontmatter 必填与枚举校验、`llms.txt` 与 `kb-index.json` 的新鲜度�
 ## 8 写页面
 
 - 手写页放在对应部分的目录下，用 `.md`；要用组件（`Badge`、卡片等）时才用 `.mdx`。
-- frontmatter 先写 `title`、`description`、`part`、`audience`、`updated`，规划中的能力加 `stage`；S2 及以后的再加 `tag: S2` 等，侧栏会显示阶段标记。完整字段见 docs-site.md §4（校验随 S1-DOCS-003 上线）。
+- frontmatter 先写 `title`、`description`、`part`、`project`、`audience`、`updated`；手写页的 `project` 都是 `qian`（`kun` 属于 Kun 镜像页，`yue` 属于 yue 组件页）。规划中的能力加 `stage`，S2 及以后的再加 `tag: S2` 等，侧栏会显示阶段标记。完整字段见 docs-site.md §4（校验随 S1-DOCS-003 上线）。
 - 站内链接写绝对路由（`/start/hosts`、`/design/adr/adr-016-iclaw-boundary`），不带 `.md` 或 `.html`。
 - 设计文档、规格与变更日志只改仓库 `docs/`，不要改 `website/docs/design/`、`cli/`、`components/`。
 - 没有的能力不写成已有：S1 建设期的命令与组件按目标形态写，并在页面里说明尚未可用。

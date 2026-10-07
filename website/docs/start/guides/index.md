@@ -2,6 +2,7 @@
 title: 指南
 description: Agent 栈、后端模式、多 profile 组合、安全、连接器与集成、从参考平台迁移：每篇的要点与权威来源。
 part: start
+project: qian
 audience: [developer, operator, decision-maker]
 updated: 2026-10-07
 ---

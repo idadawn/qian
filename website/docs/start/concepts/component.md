@@ -2,6 +2,7 @@
 title: 组件
 description: 组件是分发与安装的单位：文件夹 + 清单 + 声明式表面 + 可选代码；运行时形态叫插件。
 part: start
+project: qian
 audience: [developer, agent]
 updated: 2026-10-07
 ---

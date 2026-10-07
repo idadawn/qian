@@ -2,9 +2,13 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
-## 2026-10-07 文档站上线（S1-DOCS-001）
+## 2026-10-08 文档站上线（S1-DOCS-001）
 
 - Rspress 2.0 文档站：七个部分、中文主题、全文搜索、Mermaid，PR 预览与合并后自动发布；设计文档（本目录）在站内「设计与路线」镜像。
+
+## 2026-10-07 产品族结构：Kun / Qian / yue（ADR-021）
+
+- 三层口径「Qian 平台基于 Kun 框架构建，前端使用 yue 组件库」；不建大单仓，产品族仓库统一在 `idadawn`（Kun 已迁入）；Kun 文档将按 `KunVersion` 锁定版本镜像进文档站（[ADR-021](adr/ADR-021-product-family-structure.md)、[docs-site.md](prd/specs/docs-site.md) §2b）。
 
 ## 2026-10-07 任务看板上 K3s（S1-PM-002）
 

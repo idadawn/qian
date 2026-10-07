@@ -2,6 +2,7 @@
 title: GitOps 部署
 description: 沿用 Argo CD app-of-apps 与 Kustomize：镜像与插件制品推 Harbor，按 digest 写回部署仓库，Argo CD 收敛到集群。
 part: ops
+project: qian
 audience: [operator]
 updated: 2026-10-07
 ---

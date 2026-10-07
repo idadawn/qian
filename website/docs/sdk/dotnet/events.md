@@ -2,6 +2,7 @@
 title: 事件与中间件
 description: 事件在 Definition 包里定义并标注五种分发模式之一；waterfall 即环绕中间件，鉴权、租户校验等强制执行点都是它。
 part: sdk
+project: qian
 audience: [developer]
 updated: 2026-10-07
 ---

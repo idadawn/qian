@@ -2,6 +2,7 @@
 title: 前端 SDK
 description: "@qian/runtime 与 @qian/plugin-sdk 的编程模型：外壳是一棵插件树，插件界面以 MF2 远程模块加载并挂到版本化插槽。"
 part: sdk
+project: qian
 audience: [developer]
 updated: 2026-10-07
 ---

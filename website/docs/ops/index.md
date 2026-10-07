@@ -2,6 +2,7 @@
 title: 运维
 description: profile 部署到 K3s、Apollo 配置、升级与回切、模型网关接线、监控与审计。
 part: ops
+project: qian
 audience: [operator]
 updated: 2026-10-07
 ---

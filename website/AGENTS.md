@@ -8,6 +8,7 @@
 |---|---|---|
 | 开始、SDK、运维、市场的页面 | `website/docs/{start,sdk,ops,marketplace}/` | — |
 | ADR、PRD、规格、路线图、变更日志 | 仓库 `docs/`（站内 `/design/` 自动镜像） | `website/docs/design/` |
+| Kun 的文档 | kun 仓库（提 PR）；站内「Kun 框架」小节随 S1-DOCS-005 按 `KunVersion` 镜像 | `website/docs/sdk/kun/`（`with-qian.mdx` 除外） |
 | CLI 命令与清单字段 | `docs/prd/specs/component-model.md`（站内 `/cli/` 自动同步） | `website/docs/cli/` |
 | 组件页 | S1-DOCS-002 前：`website/scripts/collect-components.ts` 的规划清单；之后：组件文件夹的 README 与 `docs/*.mdx` | `website/docs/components/` |
 | 首页 | `website/docs/index.mdx`（结构按 docs-site.md §2a） | — |
@@ -19,7 +20,7 @@
 
 - 中文；不写参考平台与对标项目的名字。
 - 站内链接写绝对路由，如 `/start/hosts`、`/design/adr/adr-020-component-model-v2`，不带扩展名。
-- frontmatter 至少写 `title`、`description`、`part`、`audience`、`updated`；规划中的能力写 `stage`，S2 及以后再加 `tag`。
+- frontmatter 至少写 `title`、`description`、`part`、`project`（手写页为 `qian`）、`audience`、`updated`；规划中的能力写 `stage`，S2 及以后再加 `tag`。
 - 没有的能力不写成已有；S1 建设期的命令按目标形态写，并注明尚未可用。
 
 ## 写脚本与主题

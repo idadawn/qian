@@ -19,7 +19,7 @@ export default defineConfig({
   base,
   lang: 'zh',
   title: 'Qian 文档',
-  description: 'Qian 的组件、SDK、CLI、运维与设计文档：装一个组件就能用，组合起来就是多租户平台。',
+  description: 'Qian 平台基于 Kun 框架构建，前端使用 yue 组件库。这里是它的组件、SDK、CLI、运维与设计文档。',
   icon: '/logo.svg',
   logo: '/logo.svg',
   logoText: 'Qian 文档',

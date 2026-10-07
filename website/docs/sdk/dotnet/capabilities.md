@@ -2,6 +2,7 @@
 title: 能力与函数
 description: 能力目录收录命令、查询、事件、实体四类能力，按调用者权限与 scope 过滤；function 表面（Wasm）为 S2 可选。
 part: sdk
+project: qian
 audience: [developer, agent]
 updated: 2026-10-07
 ---

@@ -2,6 +2,7 @@
 title: AI SDK
 description: 在插件与前端里调模型与 Embedding，写 skills / agents / commands / hooks / tools 表面，声明工具副作用与策略；Qian 不写 Agent loop。
 part: sdk
+project: qian
 audience: [developer, agent]
 updated: 2026-10-07
 ---

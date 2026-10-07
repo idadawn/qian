@@ -2,6 +2,7 @@
 title: 发布、灰度与回切
 description: 发布保护：制品验签、修订回切、灰度开关；灰度发布：IFeatureFlags 灰度 + profile 滚动更新。
 part: ops
+project: qian
 audience: [operator]
 updated: 2026-10-07
 ---

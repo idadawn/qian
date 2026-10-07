@@ -2,6 +2,7 @@
 title: 模型网关接线
 description: 把 GPUStack 注册为 Higress 的 OpenAI 兼容上游，供应商与逻辑模型名映射入 Git，绑定配额、限流与统计插件。
 part: ops
+project: qian
 audience: [operator]
 stage: S1
 updated: 2026-10-07

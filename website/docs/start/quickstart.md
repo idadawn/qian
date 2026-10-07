@@ -2,6 +2,7 @@
 title: 30 分钟上手
 description: 空白 ASP.NET Core 项目不部署 Qian 平台，装身份、鉴权、文件三个组件，30 分钟内跑通文件上传与权限检查。
 part: start
+project: qian
 audience: [developer]
 updated: 2026-10-07
 ---

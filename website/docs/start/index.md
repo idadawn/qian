@@ -2,6 +2,7 @@
 title: 开始
 description: 30 分钟在空白项目里用上 Qian 的组件，再用五页读懂组件、表面、scope、seam 与 profile。
 part: start
+project: qian
 audience: [developer]
 updated: 2026-10-07
 ---

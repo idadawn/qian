@@ -2,6 +2,7 @@
 title: 市场与 ISV
 description: 组件上架流程、信任等级、签名与租户私有市场的规则；市场本身在 S3 开放，S3 前只放规则。
 part: marketplace
+project: qian
 audience: [isv, developer, decision-maker]
 stage: S3
 tag: S3

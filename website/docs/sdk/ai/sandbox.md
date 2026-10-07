@@ -2,6 +2,7 @@
 title: 沙箱
 description: 隔离执行不可信或 Agent 生成的代码：S4 对接 CubeSandbox（E2B 兼容 API），Qian 自己不写沙箱。
 part: sdk
+project: qian
 audience: [developer, decision-maker]
 stage: S4
 tag: S4

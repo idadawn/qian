@@ -2,6 +2,7 @@
 title: 模型网关
 description: 一个 OpenAI 兼容端点调所有模型：逻辑模型名、按租户的配额与限流、计量；并入现有 Higress / MaaS 基础设施，不自写模型代理。
 part: sdk
+project: qian
 audience: [developer]
 stage: S1
 updated: 2026-10-07

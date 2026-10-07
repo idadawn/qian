@@ -166,6 +166,19 @@
   font-size: 0.875rem;
 }
 
+.qian-home-footer-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 8px;
+}
+
+.qian-home-footer-label {
+  color: var(--yue-foreground);
+  font-weight: 500;
+}
+
 .qian-home-footer a {
   color: inherit;
 }
