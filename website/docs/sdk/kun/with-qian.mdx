@@ -42,7 +42,7 @@ updated: 2026-10-08
 | `Kun.Infrastructure` | 不用 | `IRepository` / `IUnitOfWork` 是死接口，直接用 `DbContext` + `Kun.EntityFrameworkCore` 的 `IUnitOfWork`（§07 7.6） |
 | `Kun.Saga` | 不用于开通编排 | 租户开通由 `qian.lifecycle` 的幂等步骤表承担；Saga 其余修补为 P1（7.1 第 3 项） |
 | `Kun.Grpc` | 服务间 gRPC | 流式调用的追踪、认证、Result 拦截器在 S1 补齐（7.1 第 5 项） |
-| `Kun.AspNetCore` | HTTP 宿主 | 错误响应在 ProblemDetails 之上统一为 Qian 的 `ErrorDetail`（§07 7.18、`contracts/v0`） |
+| `Kun.AspNetCore` | HTTP 宿主 | 错误响应在 ProblemDetails 之上统一为 Qian 的 `ErrorDetail`（§07 7.18、`contracts/v0` §3.7）；前提是 Kun 的 `KunExceptionHandler` 改走 `IProblemDetailsService`、不再直接写出 ProblemDetails（S1-KUN-006） |
 | `Kun.Validation`、`Kun.Testing`、`Kun.Testing.EntityFrameworkCore`、`Kun.Sandbox` | Qian 的设计未引用 | 集成测试用仓库自带的 Testcontainers fixture；S4 的沙箱对接 CubeSandbox（[AI SDK · 沙箱](/sdk/ai/sandbox)） |
 
 Kun 侧还要新增两个模块：鉴权端口 `Kun.Authorization`（只放端口，Qian 的 [qian.authz](/components/platform/qian.authz) 实现并再导出，7.1 第 11 项）与 Apollo 配置源 `Kun.Configuration.Apollo`（7.1 第 10 项）。它们进入 Kun 发版之前，上表不列。
@@ -86,7 +86,7 @@ Kun 关键路径上有一组在「K3s 多副本 + 多租户」下必然触发的
 | S1-KUN-003 | 第 4 项 网关加固、第 5 项 gRPC 流式拦截器 | 未开始 | 无 |
 | S1-KUN-004 | 第 6 项 Identity 客户端链路、第 7 项 S2S 签发器收敛 | 未开始 | 无 |
 | S1-KUN-005 | 第 8 项 审计收敛、第 9 项 数据约定 | 未开始 | 无 |
-| S1-KUN-006 | 第 10–13 项 配置、鉴权端口、能力目录、废弃 API | 未开始 | 无 |
+| S1-KUN-006 | 第 10–13 项 配置、鉴权端口、能力目录、废弃 API；另含 `KunExceptionHandler` 走 `IProblemDetailsService` | 未开始 | 无 |
 | S1-KUN-007 | 第 3 项 Saga 其余修补（P1） | 未开始 | 无 |
 
 ## 版本与升级
