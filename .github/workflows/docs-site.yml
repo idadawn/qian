@@ -2,6 +2,8 @@ name: docs-site
 
 # 文档站（S1-DOCS-001）：PR 构建并发布预览到 /pr-preview/pr-<n>/，合并到 main 后发布正式站点。
 # 构建产物推到 docs-site 分支，K3s 上的 git-sync + nginx 提供访问（deploy/docs-site/README.md）。
+# 「Kun 框架」小节与 Kun API 参考（S1-DOCS-005，docs-site.md §2b）：按 Directory.Packages.props 的 KunVersion
+# 检出私有 kun 仓库的 tag（只读 deploy key 存在 Secret KUN_DOCS_DEPLOY_KEY），DocFX 需要 .NET SDK。
 
 on:
   pull_request:
@@ -13,6 +15,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "deploy/docs-site/**"
+      - "Directory.Packages.props"
       - ".github/workflows/docs-site.yml"
   push:
     branches: [main]
@@ -23,6 +26,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "deploy/docs-site/**"
+      - "Directory.Packages.props"
       - ".github/workflows/docs-site.yml"
   workflow_dispatch:
 
@@ -34,6 +38,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   # 访问入口：WireGuard 侧经节点别名的固定 NodePort、公司内网的 MetalLB 地址（deploy/docs-site/service.yaml）
   DOCS_ORIGIN_WG: http://10.78.1.161:30820
   DOCS_ORIGIN_LAN: http://192.168.1.211
@@ -46,8 +53,49 @@ jobs:
     timeout-minutes: 15
     env:
       DOCS_BASE: ${{ github.event_name == 'pull_request' && format('/pr-preview/pr-{0}/', github.event.pull_request.number) || '/' }}
+      KUN_DOCS_PATH: ${{ github.workspace }}/.kun
     steps:
       - uses: actions/checkout@v4
+
+      - name: 读 KunVersion
+        id: kun
+        run: |
+          version="$(sed -n 's:.*<KunVersion>\(.*\)</KunVersion>.*:\1:p' Directory.Packages.props | head -n 1)"
+          if [ -z "$version" ]; then
+            echo "::error file=Directory.Packages.props::缺少 <KunVersion>：Kun 小节按它镜像，不回退 main（docs-site.md §2b.1）"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: 检查 kun 仓库只读凭据
+        env:
+          KEY: ${{ secrets.KUN_DOCS_DEPLOY_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::缺少 Secret KUN_DOCS_DEPLOY_KEY（对 idadawn/kun 只读的 deploy key 私钥），配置方法见 website/README.md §6"
+            exit 1
+          fi
+
+      # 全部历史：镜像页的 updated 取源文件在该 tag 上的最后提交日期
+      - name: 检出 kun 仓库 v${{ steps.kun.outputs.version }}
+        uses: actions/checkout@v4
+        with:
+          repository: idadawn/kun
+          ref: v${{ steps.kun.outputs.version }}
+          path: .kun
+          fetch-depth: 0
+          ssh-key: ${{ secrets.KUN_DOCS_DEPLOY_KEY }}
+          persist-credentials: false
+
+      # DocFX 从 Kun.* 包生成 API 参考（website/.config/dotnet-tools.json 锁定 docfx 版本）
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-docs-${{ runner.os }}-${{ steps.kun.outputs.version }}-${{ hashFiles('website/.config/dotnet-tools.json') }}
+          restore-keys: nuget-docs-${{ runner.os }}-
 
       # 先装 Node 24 再装 pnpm：pnpm 版本取自根目录 package.json 的 packageManager，它本身要求较新的 Node
       - uses: actions/setup-node@v4
@@ -75,8 +123,12 @@ jobs:
       - name: 构建站点（含断链检查）
         run: pnpm --filter website build
 
-      - name: 产物检查（离线、前缀、搜索索引、代码高亮）
+      - name: 产物检查（离线、前缀、搜索索引、代码高亮、Kun 版本）
         run: pnpm --filter website check
+
+      # Kun 镜像页与 API 参考的源不在本仓库，生成后单独过文档门禁（禁用词、表格、断链）
+      - name: Kun 镜像页过文档门禁
+        run: python3 scripts/check_docs.py website/docs/sdk/kun website/docs/sdk/api
 
       - uses: actions/upload-artifact@v4
         with:
