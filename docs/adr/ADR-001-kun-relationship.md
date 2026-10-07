@@ -4,9 +4,12 @@ status: Accepted
 date: 2026-10-06
 decision_id: D1
 supersedes: none
+amended_by: ADR-021
 ---
 
 # ADR-001 Qian 与 Kun 的关系
+
+> 2026-10-07 经 [ADR-021](ADR-021-product-family-structure.md) 修订：补充 Kun / Qian / yue 三层口径、产品族的关联方式（组织、文档站、版本矩阵、看板）、`KunVersion` 单点钉版与 Kun 文档进文档站的规则；D1.1–D1.8 原文不变。
 
 ## 1 背景与问题（Context）
 
@@ -56,6 +59,7 @@ iClaw 以 `ProjectReference` 指向同级 `kun/` 目录并在 Docker 构建时�
 ## 7 待确认事项
 
 - Kun 的后续维护人与响应 SLA（决策清单 D1 需拍板项；Q7 已按「上游 PR 优先、1 迭代回合入期限」写入）。
+- 2026-10-07 补充：仓库归属与包源统一（Qian 是否迁入与 Kun 同一组织）由 ADR-021 §7 / 任务 S1-DEC-009 承载。
 - 「领域事件→集成事件丢消息」为代码路径推断、无测试覆盖，S1 需用最小集成测试实证后再决定走上游修复还是 Qian 侧编码规定（基线 K 附录 B-6）。
 - 已裁决（R13）：S1 的租户开通编排由 `qian.kernel` 生命周期控制器（v2 后 `qian.kernel` 拆为 `Qian.Runtime` + 平台插件，生命周期控制器即 `platform` profile base 组合包里的 `qian.lifecycle`，见 ADR-020）以幂等步骤表承担，不用 Saga；Saga 的租户上下文回灌为 P0，其余修补（锁、Scoped 工厂、回写、重试）为 P1 可选（ADR-008 D8.11、PRD §07 7.1 / 7.3）。
 

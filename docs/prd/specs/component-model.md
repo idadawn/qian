@@ -1090,7 +1090,7 @@ S2 新增 profile `lowcode`（含 `qian.bundle.lowcode` 与 `qian.bundle.file-pr
       "category": "storage",
       "interface": { "displayName": "文件存储", "description": "多租户文件服务", "brandColor": "#0F766E", "defaultPrompt": ["把这份合同扫描件上传到当前租户"] } },
     { "name": "identity",
-      "source": { "type": "git-subdir", "repo": "https://github.com/example-org/qian-plugins.git", "ref": "v1.0.0", "path": "plugins/qian.identity.client", "digest": "sha256:9f2c…" },
+      "source": { "type": "git-subdir", "repo": "https://github.com/idadawn/qian-plugins.git", "ref": "v1.0.0", "path": "plugins/qian.identity.client", "digest": "sha256:9f2c…" },
       "policy": { "installation": "confirm", "authentication": "ON_INSTALL", "profiles": ["platform", "standalone", "gateway"] },
       "category": "identity",
       "interface": { "displayName": "身份客户端", "description": "RP 接入、Cookie 会话、S2S 校验", "brandColor": "#1D4ED8" } },
@@ -1135,7 +1135,7 @@ S2 新增 profile `lowcode`（含 `qian.bundle.lowcode` 与 `qian.bundle.file-pr
 defaultProfile: platform
 marketplaces:
   - { name: acme-private,  source: "git+https://git.example.internal/platform/qian-market.git#main", priority: 10 }
-  - { name: qian-official, source: "git+https://github.com/example-org/qian-plugins.git#stable", priority: 20 }      # 官方市场仓库 qian-plugins，S1 私有（§13 第 4 条）
+  - { name: qian-official, source: "git+https://github.com/idadawn/qian-plugins.git#stable", priority: 20 }      # 官方市场仓库 qian-plugins，S1 私有（§13 第 4 条）
   - { name: community,     source: "github-topic:qian-plugin", priority: 90, trust: unverified }
 trust:
   keys: ["./.qian/keys/acme.pub"]            # 本项目额外信任的市场公钥
@@ -1373,7 +1373,7 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 1. 已拍板（ADR-020 §7 第 1 条）：TypeScript 侧 `@qian/runtime` 为公共 API 包，S1 内部以固定版本 vendor 的 Cordis（MIT）作为实现，薄适配层对齐 §5.3–§5.6 语义，TCK（§10.2）以我们的语义为准；.NET 侧 `Qian.Runtime` 自研不变。
 2. 已拍板（ADR-020 §7 第 2 条）：清单为 `.qian-plugin/plugin.json`（JSON，§3），profile 与 patch 继续用 YAML（§7）；`qian doctor --migrate-manifest` 负责从 v1 YAML 迁移（§3.6）。
 3. 已拍板（ADR-020 §7 第 3 条）：`qian` CLI 为单一 Node / TypeScript 实现、发布到 npm，`npx qian@latest` 为一键入口，Node ≥ 22 为前置；`dotnet qian` 薄包装为 S1 可选 P2（§9.1）。
-4. 已拍板（ADR-020 §7 第 4 条）：官方市场仓库为与 Qian 同组织下的独立仓库 `qian-plugins`，根目录 `.qian/marketplace.json`，S1 私有、S3 随许可证评估公开；社区发现用 GitHub topic `qian-plugin`（§8.3、§8.4；示例中的组织名仍为占位）。
+4. 已拍板（ADR-020 §7 第 4 条）：官方市场仓库为与 Qian 同组织下的独立仓库 `qian-plugins`，根目录 `.qian/marketplace.json`，S1 私有、S3 随许可证评估公开；社区发现用 GitHub topic `qian-plugin`（§8.3、§8.4）。组织名已定：产品族统一在 `idadawn`（ADR-021，2026-10-07 拍板），示例地址据此写定。
 5. 已拍板（ADR-020 §7 第 5 条）：代码插件热装卸不进 S2 核心交付，S2 内由 RT 领域做 5 天时间盒 spike 验证 collectible `AssemblyLoadContext` 与 Kun 约束，结论写回 ADR-020；生产默认滚动重启，S1 校验器继续拒绝 `hmr.code: true`（§5.6、§7.2），声明式表面热重载不变。
 6. 已拍板（ADR-020 §7 第 6 条）：Qian 包族、`qian` CLI、yue 一律 Apache-2.0，官方组件 `license` 写 `Apache-2.0`（§3.4）；S3 商业市场与计费组件的许可证到 S3 再定；公开 feed S1 为 GitHub Packages 私有，S2 末或首个外部宿主试用时公开到 nuget.org 与 npm，`runtime.nuget[]` / `runtime.npm[]` 的解析源随之切换（§11.5 验签要求不变）。
 7. 已拍板（ADR-020 §7 第 7 条）：CLI 遥测默认不采集；S2 提供 opt-in `qian telemetry on`，只采集命令名、CLI 版本、操作系统与匿名安装 id，不含路径、租户与代码；私有化部署可在 profile 中禁用（§9.1）。

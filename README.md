@@ -4,13 +4,28 @@
 
 - 产品 = Qian · 底座框架 = Kun · 前端组件库 = yue · 运行时 = `Qian.Runtime` · 组件 ID 前缀 = `qian.` · 包前缀 = `Qian.*` / `@qian/*` / `@yue/*`
 - 阶段：S1 技术底座 → S2 低代码构建 → S3 面向客户 → S4 AI 原生 Agent 平台
-- 当前状态：设计文档完成（决策 D1–D18 已认可，ADR-019/020 为 Proposed），S1 任务已拆解，进入开发准备
+- 当前状态：设计文档完成（决策 D1–D18 已认可，ADR-019 / 020 / 021 已 Accepted），S1 任务已拆解并开始交付（CI 基础已合入，文档站脚手架与契约冻结在途）
+
+## 产品族：Kun、Qian、yue 与周边仓库
+
+三个名字、三层，不是一个大单仓（[ADR-021](docs/adr/ADR-021-product-family-structure.md)）。对外一句话：**Qian 平台基于 Kun 框架构建，前端使用 yue 组件库**。Kun 不是 Qian 的子项目（它有自己的下游与发布节奏），Qian 也不是 Kun 的扩展（它有自己的运行时与产品语义）。把它们关联起来的是四样东西：一个 GitHub 所有者 `idadawn`（2026-10-07 拍板，Kun 从 CavaiLAB 迁入，见任务 S1-PM-003）、一个文档站、一张自动生成的版本矩阵、一个任务看板。
+
+| 名字 | 层 | 是什么 | 仓库 | 版本 · 许可 | 文档在哪 |
+|---|---|---|---|---|---|
+| Kun | 框架层（底座） | .NET 10 云原生微服务框架，32 个 `Kun.*` 模块：Mediator、Outbox、Saga、多租户与 RLS、网关与 S2S、存储、缓存、可观测 | `idadawn/kun`（2026-10-08 从 CavaiLAB 迁回，旧地址重定向） | CalVer · MIT · 正式包在 nuget.org | 文档站第 3 部分「Kun 框架」，按 `KunVersion` 锁定版本从 kun 仓库 `docs/` 镜像 |
+| Qian | 平台层 | 基于 Kun 的多租户 PaaS：`Qian.Runtime` + 平台插件 + profile + `qian` CLI + 目录市场 | `idadawn/qian`（本仓库） | SemVer 锁步 · Apache-2.0 | 本仓库 `docs/` 与文档站全部七个部分 |
+| yue | 前端层 | React 组件库与外壳，`@yue/*` | 本仓库（pnpm workspace，S1 第 2 波建立） | SemVer（Changesets）· Apache-2.0 | 文档站第 2 部分（活演示 + props 表） |
+| `qian-plugins` | 市场 | 官方目录市场 `.qian/marketplace.json` | `idadawn/qian-plugins`（S1 私有，待建） | — | 文档站第 6 部分 |
+| iClaw | 兄弟系统 | Agent 运行时与 AI 资产控制面；Qian 不写 Agent loop（ADR-016） | `idadawn/iclaw` | — | 文档站 AI SDK「Agent 运行时对接」 |
+| 部署与模型服务 | 运维 | GitOps 部署仓库（ADR-017）；GPUStack + Higress 模型服务（ADR-015） | `idadawn/iclaw-deploy`、`idadawn/MaaS` | — | 文档站第 5 部分 |
+
+Kun 的版本只在 `Directory.Packages.props` 的 `KunVersion` 写一次；升级 Kun = 改这一处、跑 TCK、文档自动跟随。要改 Kun 的代码或文档，去 kun 仓库提 PR，Qian 的任务里只回链。
 
 ## 仓库里有什么
 
 | 目录 | 内容 | 入口 |
 |---|---|---|
-| `docs/` | 决策清单、20 份 ADR、PRD 17 章与两份专题规格、迁移方案、路线图 | [docs/README.md](docs/README.md) |
+| `docs/` | 决策清单、21 份 ADR、PRD 17 章与四份专题规格、迁移方案、路线图 | [docs/README.md](docs/README.md) |
 | `pm/` | 任务文件、离线看板、进度概览（任务即文件，git 是唯一真相源） | [pm/README.md](pm/README.md) · [进度概览](pm/STATUS.md) |
 | `scripts/` | `pm.py`（任务校验 / 生成 / 改状态）、`check_docs.py`（文档门禁）、`check_deps.py`（.NET 依赖图门禁） | — |
 | `tests/` | 集成测试共用的 Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）、门禁自测 | [tests/README.md](tests/README.md) |
