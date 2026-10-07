@@ -29,7 +29,7 @@
 - 组件设计先回答四个问题：文件夹里有哪些表面、装进哪个 profile、属于哪个 seam 的哪个角色、能否 `qian add`。凡是把能力绑死在特权内核、DI 扩展方法或数据库开关上的写法都是倒退。
 - 术语：平台插件（不是「系统插件」）、运行时 `Qian.Runtime`（不是「内核」）、profile（不是「可部署单元」）、`.qian-plugin/plugin.json`（不是 `qian-plugin.yaml`）、租户 scope patch（不是「租户开关」）。
 - 三层口径（ADR-021）：Kun = 框架层（底座 SDK）、Qian = 平台层、yue = 前端层；写「Qian 基于 Kun 构建」，不写「Kun 是 Qian 的子项目」或「Qian 是 Kun 的扩展」。Kun 的代码与文档改动去 kun 仓库提 PR，Qian 任务里只回链；文档站的「Kun 框架」小节（`website/docs/sdk/kun/`）是按 `KunVersion` 锁定版本生成的镜像，不要手改（唯一手写页 `with-qian.mdx` 除外）。
-- Kun 版本单点：首个引用 `Kun.*` 包的任务在 `Directory.Packages.props` 加 `<KunVersion>` 属性并让全部 `Kun.*` 的 PackageVersion 引用 `$(KunVersion)`，同时在 `NuGet.config` 加 Kun 的 GitHub Packages 源与 packageSourceMapping；之后升级 Kun 只改这一处（ADR-021 D21.3）。
+- Kun 版本单点：`Directory.Packages.props` 的 `<KunVersion>` 属性（S1-DOCS-005 加入，文档站的「Kun 框架」小节与 Kun API 参考按它生成）。首个引用 `Kun.*` 包的任务让全部 `Kun.*` 的 PackageVersion 引用 `$(KunVersion)`，同时在 `NuGet.config` 加 Kun 的 GitHub Packages 源与 packageSourceMapping（文档站的 DocFX 构建用仓库根的 `NuGet.config` 从 nuget.org 还原同版本 `Kun.*`，加映射后确认它仍能还原）；之后升级 Kun 只改这一处（ADR-021 D21.3）。
 - 代码部分遵循 ADR-019：每个有代码的组件发 `Qian.<X>.Abstractions` + Provider 包；组件库只依赖 `Qian.Runtime`，不依赖 `qian.registry` / `qian.lifecycle`。
 - 两道 .NET 门禁会自动拦截（细节见 `tests/README.md`）：
   - 写了 `<IsPackable>true</IsPackable>` 且包名以 `Qian.` 开头的项目就是 Qian 包，必须带 `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`，新公共 API 未登记即编译失败；
@@ -48,7 +48,7 @@ packages/    .NET 组件库（NuGet 包），如 Qian.Runtime.Errors
 pm/          任务与看板（见 pm/README.md）
 scripts/     pm.py、check_docs.py、check_deps.py（依赖图门禁）
 tests/       Testcontainers fixture、集成测试、门禁自测（见 tests/README.md）
-website/     文档站（Rspress 2.0，见 website/README.md 与 website/AGENTS.md）；components/、cli/、design/ 为生成目录
+website/     文档站（Rspress 2.0，见 website/README.md 与 website/AGENTS.md）；components/、cli/、design/、sdk/kun/（with-qian.mdx 除外）、sdk/api/ 为生成目录
 deploy/      开发期工具的 K3s 清单：pm-board/（看板）、docs-site/（文档站）
 .github/     CI：文档门禁 + 任务校验 + 看板新鲜度；dotnet 构建、门禁与测试；文档站构建、预览与发布
 Qian.slnx、global.json、Directory.Build.props / .targets、Directory.Packages.props、NuGet.config
@@ -63,10 +63,11 @@ Qian.slnx、global.json、Directory.Build.props / .targets、Directory.Packages.
 python3 scripts/check_docs.py && python3 scripts/pm.py validate && python3 scripts/pm.py build
 ```
 
-改了文档站（`website/`）或想看设计文档在站内的效果时再跑（需要 Node 与 pnpm，见 `website/README.md`）：
+改了文档站（`website/`）或想看设计文档在站内的效果时再跑（需要 Node、pnpm、.NET SDK 与 kun 仓库的读权限：`KUN_DOCS_PATH` 指向本机 kun 克隆，见 `website/README.md` §1）：
 
 ```bash
 pnpm install && pnpm --filter website typecheck && pnpm --filter website test && pnpm --filter website build && pnpm --filter website check
+python3 scripts/check_docs.py website/docs/sdk/kun website/docs/sdk/api
 ```
 
 改了 .NET 代码时再跑（集成测试需要 Docker）：

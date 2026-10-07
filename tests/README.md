@@ -121,7 +121,7 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 | `publicapi/Qian.GateSample.Stale` | RS0017，构建失败 |
 | `publicapi/Qian.GateSample.NoApiFiles` | QIAN0001，构建失败 |
 | `publicapi/GateSample.NotPackable` | 构建通过：不打包的项目不受约束 |
-| `test_check_docs.py`（不用样例项目，临时目录里搭最小仓库） | 文档门禁对文档站内容生效：站内路由、`/design/` 镜像路由与生成页路由的解析，生成目录跳过，禁用词在 `.mdx` 与站点源码里同样拦截（S1-DOCS-001） |
+| `test_check_docs.py`（不用样例项目，临时目录里搭最小仓库） | 文档门禁对文档站内容生效：站内路由、`/design/` 镜像路由与生成页路由的解析，生成目录跳过，禁用词在 `.mdx` 与站点源码里同样拦截（S1-DOCS-001）；Kun 小节的路由在生成前交给构建时的断链检查，显式给出的生成目录照查，生成目录里的文件进 Git 即失败，禁用词整词匹配（S1-DOCS-005） |
 
 ## 5 CI
 
