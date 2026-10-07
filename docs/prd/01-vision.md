@@ -1,6 +1,6 @@
 # 1. 愿景与定位
 
-> 状态：草案 v1 · 更新日期：2026-10-06 · 决策引用：ADR-001、ADR-002、ADR-003、ADR-014、ADR-016、ADR-018、ADR-019、ADR-020 · 上级索引：[README](README.md)
+> 状态：草案 v1 · 更新日期：2026-10-06 · 决策引用：ADR-001、ADR-002、ADR-003、ADR-014、ADR-016、ADR-018、ADR-019、ADR-020、ADR-021 · 上级索引：[README](README.md)
 
 ## 1.1 一句话定位
 
@@ -11,7 +11,7 @@
 | 成分 | 含义 | 真相源 |
 |---|---|---|
 | 多租户低代码 PaaS | 跑在 K3s 上、以 Apollo 为配置中心的 SaaS 底座；多租户、SSO、鉴权、微服务是硬性要求，不是可选特性 | ADR-004、ADR-005、ADR-006、ADR-007、ADR-017 |
-| 基于 Kun | Kun 是「微服务开发框架」，是 `Qian.Runtime` 与平台插件的实现依赖，而非平台运行时本身；以 NuGet + CalVer 锁版本消费 | ADR-001 |
+| 基于 Kun | Kun 是「微服务开发框架」，是 `Qian.Runtime` 与平台插件的实现依赖，而非平台运行时本身；以 NuGet + CalVer 锁版本消费。三层口径：Kun = 框架层（底座 SDK）、Qian = 平台层、yue = 前端层，对外说「Qian 基于 Kun 构建」；Kun 不是 Qian 的子项目，其文档按锁定版本镜像进 Qian 文档站 | ADR-001、ADR-021 |
 | 插件思维 | 极小运行时 `Qian.Runtime` + 一切皆插件，没有特权内核；平台自带的租户、身份、鉴权、存储、文件、配置、网关、模型网关都是 `platform` profile base 组合包里的平台插件，按同一份清单（`.qian-plugin/plugin.json`）以 `policy.tier: system` 交付；组件 = 文件夹 + 清单 + 声明式表面 + 可选代码，`qian add <component>` 一键安装（§03 3.4a） | ADR-002、ADR-003、ADR-020 |
 | 先开发者、后搭建者、再租户 | S1 技术底座 → S2 低代码构建 → S3 面向客户 → S4 AI 原生 Agent 平台；组件化从 S1 起按 Agent 时代的做法交付：文件即组件、一键安装、一切皆插件，skill / agent / command / hook / MCP 等 Agent 原生表面在 S1 就是一等公民（ADR-020） | ADR-018、ADR-020、[ROADMAP](../ROADMAP.md) |
 | Agent 原生 | 能力契约机器可读、人与 Agent 共用权限与审计、元数据可校验可回滚；S4 经 MCP 对接外部 Agent 运行时，Qian 不写 Agent loop | ADR-016、§02、§10 |

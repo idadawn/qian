@@ -1235,6 +1235,53 @@
   "file": "pm/tasks/S1-DEC-008.md"
  },
  {
+  "id": "S1-DEC-009",
+  "title": "拍板：产品族仓库归属与包源统一（Qian 是否迁入 CavaiLAB 与 Kun 同源）",
+  "status": "done",
+  "stage": "S1",
+  "area": "DEC",
+  "areaName": "待拍板决策",
+  "wave": 0,
+  "priority": "P1",
+  "type": "decision",
+  "owner": "产品负责人",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/adr/ADR-021-product-family-structure.md#7",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-021-product-family-structure.md"
+   },
+   {
+    "path": "docs/adr/ADR-019-library-first-packages.md#D19.7",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
+   },
+   {
+    "path": "docs/adr/ADR-020-component-model-v2.md#7",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
+   },
+   {
+    "path": "docs/prd/specs/component-model.md#8",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "deploy/pm-board/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/deploy/pm-board/README.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 3,
+   "total": 3
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>产品族仓库目前分在两个 GitHub 所有者下：Kun 与 iClaw 源码在 CavaiLAB 组织，Qian、部署仓库、MaaS 在个人账号。GitHub Packages 的 NuGet feed 按所有者划分，<code>Qian.*</code> 又传递依赖 <code>Kun.*</code>，两个所有者意味着消费者要配两段源加 <code>packageSourceMapping</code>，与「装一个包就能用」（ADR-019）相悖；<code>qian-plugins</code> 规定为「与 Qian 同组织」但组织名仍是占位。</p>\n<p><strong>推荐：Qian 迁入 CavaiLAB</strong>。理由：Kun 的 CI 与 feed 零改动，产品负责人是该组织管理员，Kun 的其它下游不受影响；迁移成本只在 Qian 侧的四处地址。<strong>备选：新建专用组织</strong>（公开形象更干净，但要同时迁 Kun 的 feed 与 CI；留到 S3 公开前再评估，届时包已在 nuget.org / npm）。<strong>备选：维持现状</strong>（两个 feed，S1 内部可忍，S2 末公开前必须解决）。</p>\n<p>若迁移，GitHub 会自动重定向 git 地址，但要改：① <code>deploy/pm-board/deployment.yaml</code> 的 <code>GITSYNC_REPO</code>；② <code>deploy/pm-board/bootstrap.sh</code> 的 <code>REPO</code>；③ 部署仓库 <code>env-ds/argocd/qian-pm-board-application.yaml</code> 的 <code>repoURL</code> 与 ArgoCD 仓库凭据 <code>argocd/qian-repo-ssh</code> 的 <code>url</code>；④ 在新仓库重新登记只读 deploy key；⑤ CI secrets / variables 随仓库迁移；开放的 PR 与 issue 随仓库保留。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人决定：产品族所有者 = <code>idadawn</code>，<strong>Kun 从 CavaiLAB 迁入</strong>（而非 Qian 迁出），理由是 iClaw 源码与其余仓库都在 <code>idadawn</code>；结论已写入 ADR-021 §2 D21.2 / §7，specs/component-model.md §8 示例中的组织占位已换成 <code>idadawn</code></li>\n<li class='chk done'><span class='box'>✓</span>迁移方向反转后，上述五处 Qian 侧地址全部不动；Kun 侧的 transfer、runner、协作者、包源与回链拆为独立任务 S1-PM-003 执行</li>\n<li class='chk done'><span class='box'>✓</span>包源口径写定：Kun 正式版走 nuget.org（已公开发布 <code>Kun.*</code>），<code>Qian.*</code> S1 私有包与 Kun 预发布包走 <code>nuget.pkg.github.com/idadawn</code>；<code>NuGet.config</code> 的源与 <code>packageSourceMapping</code> 在首个引用 <code>Kun.*</code> 的任务中落地（S1-RT-001）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务；推荐 CavaiLAB，由产品负责人拍板并执行迁移</li>\n<li>2026-10-07 产品负责人：拍板 Kun 迁入 idadawn（iClaw 源码都在 idadawn）</li>\n<li>2026-10-07 claude：结论写入 ADR-021 D21.2 / §7 与决策清单 D21，占位替换为 idadawn，执行拆为 S1-PM-003；任务关闭</li>\n</ul>",
+  "file": "pm/tasks/S1-DEC-009.md"
+ },
+ {
   "id": "S1-DEP-001",
   "title": "K3s 基线治理：命名空间、专属库、默认拒绝、配额",
   "status": "todo",
@@ -1675,6 +1722,100 @@
   },
   "bodyHtml": "<h4>背景</h4>\n<p>S1-DOCS-001 交付时 <code>@yue/tokens</code> 尚未发布：文档站主题已只引用 yue 语义令牌（<code>--yue-*</code>），取值来自 <code>website/theme/yue-tokens.css</code> 的占位实现（按 specs/yue.md §3.5 命名）。<code>@yue/tokens</code>（S1-YUE-004）发布后换成正式包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>删除 <code>website/theme/yue-tokens.css</code>，<code>website/theme/index.css</code> 改为导入 <code>@yue/tokens</code> 的 CSS，<code>website/package.json</code> 加依赖；令牌到 Rspress 变量的映射不改</li>\n<li class='chk'><span class='box'></span>明暗两态切换无首帧闪烁；若 <code>@yue/tokens</code> 最终用 <code>html.dark</code> 切换，删掉 <code>website/rspress.config.ts</code> 里的 <code>data-theme</code> 桥接脚本</li>\n<li class='chk'><span class='box'></span><code>pnpm --filter website build</code> 与 <code>pnpm --filter website check</code> 通过，<code>website/README.md</code> §5 同步更新</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（从 S1-DOCS-001 拆出：@yue/tokens 未发布，正式包替换留到这里）</li>\n</ul>",
   "file": "pm/tasks/S1-DOCS-004.md"
+ },
+ {
+  "id": "S1-DOCS-005",
+  "title": "Kun 框架小节：按锁定版本镜像 kun 仓库文档并生成 API 参考",
+  "status": "todo",
+  "stage": "S1",
+  "area": "DOCS",
+  "areaName": "文档站与组件文档",
+  "wave": 2,
+  "priority": "P0",
+  "type": "feature",
+  "owner": "",
+  "estimate": "3d",
+  "days": 3.0,
+  "depends": [
+   "S1-DOCS-001"
+  ],
+  "blockedBy": [
+   "S1-DOCS-001"
+  ],
+  "order": 1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/adr/ADR-021-product-family-structure.md#D21.4",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-021-product-family-structure.md"
+   },
+   {
+    "path": "docs/prd/specs/docs-site.md#2b",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
+   },
+   {
+    "path": "docs/adr/ADR-001-kun-relationship.md#D1.8",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-001-kun-relationship.md"
+   },
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 0,
+   "total": 8
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人要求 Kun 体现在文档中。首版规格写的「Kun 外链不重写」作废：Kun 没有自己的文档站，读者与 SDK 读者重叠。按 ADR-021 D21.4，真相源仍在 kun 仓库 <code>docs/</code>，Qian 文档站按 <code>Directory.Packages.props</code> 的 <code>KunVersion</code> 锁定版本把白名单内容镜像为第 3 部分第一节「Kun 框架」<code>/sdk/kun/</code>，并用 DocFX 生成 <code>Kun.*</code> API 参考；Qian 只手写一页「与 Qian 的关系」。S1-DOCS-001（PR #3）里 <code>sdk/index.md</code> 与 <code>start/hosts.md</code> 的「Kun 的 API 本站不重写」措辞一并改掉。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>website/scripts/sync-kun-docs.ts</code>：读 <code>KunVersion</code>（缺失即失败，不回退 <code>main</code>；属性尚不存在时由本任务先加入，取当前锁定的 Kun 版本）→ 以只读凭据取 kun 仓库 <code>v&lt;KunVersion&gt;</code> → 按 docs-site.md §2b.2 白名单生成 <code>website/docs/sdk/kun/</code>；白名单外文件不进站；slug 小写短横线</li>\n<li class='chk'><span class='box'></span>每页横幅（来源路径 + 版本 + 「以代码为准（ADR-001 D1.8）」 + 指向 <code>/sdk/kun/with-qian</code>）与 frontmatter（<code>project: kun</code>、<code>part: sdk</code>、<code>version</code>、<code>source</code>、<code>updated</code> 取源文件最后提交日期、<code>title</code> / <code>description</code> 自动提取）；站内相对链接按 §2b.3 改写</li>\n<li class='chk'><span class='box'></span>DocFX 从锁定版本 <code>Kun.*</code> 包生成 API 参考挂 <code>/sdk/api/kun/</code>，与 <code>/sdk/api/dotnet/</code> 并列（与 S1-DOCS-002 共用 DocFX 流水线，谁先做谁搭）</li>\n<li class='chk'><span class='box'></span>手写 <code>/sdk/kun/with-qian</code>：Kun 模块 ↔ 平台插件 / seam 映射表、canonical API 选择（§07 7.1「插件化定位」）、Qian 的强制装配与禁用项、补丁包状态</li>\n<li class='chk'><span class='box'></span>导航「SDK」下第一项为「Kun 框架」；首页「构建应用」栏新增 Kun 条目；<code>sdk/index.md</code>、<code>start/hosts.md</code> 不再写「本站不重写」</li>\n<li class='chk'><span class='box'></span>门禁：<code>sdk/kun/</code>（除 <code>with-qian.mdx</code>）手改即失败；镜像 tag ≠ <code>KunVersion</code> 即失败；镜像页过 <code>scripts/check_docs.py</code></li>\n<li class='chk'><span class='box'></span>CI 凭据：对 kun 仓库的只读 deploy key 或细粒度 token 以 Secret 提供，本地可用 <code>KUN_DOCS_PATH</code> 指向本机克隆；README「托管与预览」写明</li>\n<li class='chk'><span class='box'></span>UT：同步脚本对「<code>KunVersion</code> 缺失」「tag 不存在」「白名单外文件」各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（ADR-021 D21.4，docs-site.md §2b）</li>\n</ul>",
+  "file": "pm/tasks/S1-DOCS-005.md"
+ },
+ {
+  "id": "S1-DOCS-006",
+  "title": "产品族地图页、版本矩阵页与全站 project 字段",
+  "status": "todo",
+  "stage": "S1",
+  "area": "DOCS",
+  "areaName": "文档站与组件文档",
+  "wave": 2,
+  "priority": "P1",
+  "type": "feature",
+  "owner": "",
+  "estimate": "1.5d",
+  "days": 1.5,
+  "depends": [
+   "S1-DOCS-001"
+  ],
+  "blockedBy": [
+   "S1-DOCS-001"
+  ],
+  "order": 1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/adr/ADR-021-product-family-structure.md#D21.2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-021-product-family-structure.md"
+   },
+   {
+    "path": "docs/adr/ADR-021-product-family-structure.md#D21.5",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-021-product-family-structure.md"
+   },
+   {
+    "path": "docs/prd/specs/docs-site.md#2b.4",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
+   },
+   {
+    "path": "docs/prd/specs/docs-site.md#4",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
+   }
+  ],
+  "updated": "2026-10-07",
+  "acceptance": {
+   "done": 0,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>产品族（Kun / Qian / yue 与周边仓库）不建大单仓，靠一个组织、一个文档站、一张版本矩阵、一个看板关联（ADR-021 D21.2）。文档站要让读者一眼看到三层关系和「哪个 Qian 配哪个 Kun」，知识库要能按项目过滤。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>/start/family</code>（手写）：Kun / Qian / yue / <code>qian-plugins</code> / iClaw / 部署与模型服务的层、是什么、仓库、版本与许可、文档位置；与仓库 README「产品族」表同一内容（评审时核对）</li>\n<li class='chk'><span class='box'></span><code>/start/versions</code>（生成）：<code>website/scripts/build-versions.ts</code> 从 <code>Directory.Packages.props</code>（<code>KunVersion</code>、<code>Qian.*</code>）、<code>global.json</code>（.NET SDK）、pnpm catalog（<code>@yue/*</code>、Node）与部署基线（K3s）产出每个文档版本的矩阵；手改即失败</li>\n<li class='chk'><span class='box'></span>frontmatter 新增 <code>project</code>（<code>qian</code> / <code>kun</code> / <code>yue</code>，必填）与 <code>source</code>（镜像页必填）；校验并入 S1-DOCS-003 的 <code>check_docs.py</code> frontmatter 检查（若本任务先完成则先加枚举）；<code>llms.txt</code> 按 <code>project</code> 分节，<code>kb-index.json</code> 每条带 <code>project</code> / <code>version</code> / <code>source</code></li>\n<li class='chk'><span class='box'></span>首页一句话定位点明「基于 Kun 框架构建、前端用 yue」；页脚列出产品族仓库与两种许可证（Qian Apache-2.0、Kun MIT）</li>\n<li class='chk'><span class='box'></span>全站既有页面补 <code>project: qian</code>（第 7 部分镜像页另带 <code>source</code>）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（ADR-021 D21.2 / D21.5）</li>\n</ul>",
+  "file": "pm/tasks/S1-DOCS-006.md"
  },
  {
   "id": "S1-ENT-001",
@@ -3204,6 +3345,45 @@
   "file": "pm/tasks/S1-PM-002.md"
  },
  {
+  "id": "S1-PM-003",
+  "title": "Kun 仓库从 CavaiLAB 迁入 idadawn：transfer、runner、协作者、包源与回链",
+  "status": "review",
+  "stage": "S1",
+  "area": "PM",
+  "areaName": "流程与协作",
+  "wave": 1,
+  "priority": "P1",
+  "type": "infra",
+  "owner": "claude",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/adr/ADR-021-product-family-structure.md#7",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-021-product-family-structure.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-009.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-009.md"
+   },
+   {
+    "path": "docs/adr/ADR-001-kun-relationship.md#D1.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-001-kun-relationship.md"
+   }
+  ],
+  "updated": "2026-10-08",
+  "acceptance": {
+   "done": 4,
+   "total": 6
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人 2026-10-07 拍板（S1-DEC-009）：产品族所有者统一为 <code>idadawn</code>，Kun 从 CavaiLAB 组织迁入。核对过的事实：<code>idadawn/kun</code> 目前只是指向 <code>CavaiLAB/kun</code> 的重定向（Kun 2026-04 建于 idadawn，后转入 CavaiLAB），同名不冲突；Kun 正式包公开发布在 nuget.org，GitHub Packages 只是镜像；Kun 全部 CI 跑在 qd 主机的仓库级自托管 runner <code>qd-kun</code>（<code>~/actions-runner-kun</code>，systemd 服务 <code>actions.runner.CavaiLAB-kun.qd-kun</code>，qd 无免密 sudo）；CavaiLAB 下只有 idadawn 是直接协作者（admin），另两名管理员（FLANKER-GL、LloydS827）与 12 名只读成员的权限都来自组织成员身份；secrets 只有 <code>NUGET_API_KEY</code>；无 deploy key、无 webhook、无开放 PR / issue。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>执行 transfer（<code>gh api -X POST repos/CavaiLAB/kun/transfer -f new_owner=idadawn</code>）；<code>gh repo view idadawn/kun --json nameWithOwner</code> 为 <code>idadawn/kun</code>，<code>CavaiLAB/kun</code> 自动重定向（2026-10-08 01:01 完成，仓库 id 不变，私有）</li>\n<li class='chk done'><span class='box'>✓</span>runner：<code>gh api repos/idadawn/kun/actions/runners</code> 中 <code>qd-kun</code> 在线（仓库级 runner 随仓库 id 一起迁移，无需重新注册）；重跑 2026-09-13 main 的最近一次 CI（run 34767484959）：40 秒内「Build &amp; Test」在 <code>qd-kun</code> 上进入 in_progress，<code>runs-on: [self-hosted, qd]</code> 调度正常</li>\n<li class='chk'><span class='box'></span>协作者：组织派生的权限已全部失效，迁后协作者只剩 idadawn；FLANKER-GL、LloydS827（原管理员）与 12 名原只读成员（KuboKang、martinzhang777、MyKevinSong、Danny731、YKY-0110、tigerzhou-cool、makebuzai、Bingsheng1991、Ziqing-Zhou、Jie-rookie、Paul-git1210、steven198005）需要产品负责人决定邀请谁（个人仓库协作者只有写权限一档）</li>\n<li class='chk done'><span class='box'>✓</span>包源：下次发版 release.yml 自动推到 <code>nuget.pkg.github.com/idadawn</code>（workflow 用 <code>github.repository_owner</code>，无需改）；nuget.org 主渠道不变；CavaiLAB 名下旧镜像包不迁、不删；secret <code>NUGET_API_KEY</code> 与 4 个 release 已随仓库迁移</li>\n<li class='chk'><span class='box'></span>回链：kun 仓库 CHANGELOG 比较链接 <code>CavaiLAB/kun</code> 改为 <code>idadawn/kun</code>（随下次 Kun PR）；iClaw 仓库 README / AGENTS / docs 中 <code>CavaiLAB/kun</code>、<code>CavaiLAB/iclaw</code>、<code>CavaiLAB/iclaw-deploy</code> 旧地址择机改为 idadawn（旧地址仍重定向，不阻塞）</li>\n<li class='chk done'><span class='box'>✓</span>本机克隆 <code>git remote set-url origin git@github.com:idadawn/kun.git</code>（<code>/Users/dawn/project/kun</code>、<code>/Users/dawn/project/tmp/qian-refs/kun</code>）已改并 fetch 验证；Qian 侧文档已按 <code>idadawn/kun</code> 写，看板与 ArgoCD 不涉及</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务；迁移前核对完成（重定向、nuget.org、runner、协作者、secrets）</li>\n<li>2026-10-07 claude：产品负责人确认由我执行；transfer 接口先连续 5 次返回 500（GitHub 侧瞬时故障，同时段 secrets 列表接口也 500），后台每 5 分钟重试</li>\n<li>2026-10-08 claude：01:01 第一次重试即 202，7 秒后仓库已在 idadawn/kun；runner、secrets、releases、重定向核验通过；本机两个克隆已改 remote。剩余：协作者邀请名单待产品负责人决定；CHANGELOG 比较链接与 iClaw 文档旧地址随下次变更，不阻塞 → 状态 review</li>\n</ul>",
+  "file": "pm/tasks/S1-PM-003.md"
+ },
+ {
   "id": "S1-QA-001",
   "title": "CI 基础：Testcontainers、依赖图断言、PublicAPI",
   "status": "done",
@@ -3644,12 +3824,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/ROADMAP.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "acceptance": {
    "done": 0,
-   "total": 5
+   "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.1–D20.5 的 .NET 落地：<code>IQianPlugin { Inject; Apply }</code>、<code>IPluginContext</code>（<code>Get / Provide / On / Emit / Waterfall / Parallel / Serial / Bail / Effect / Scope / Restrict</code>）、按 <code>inject[]</code> / <code>provides[]</code> 拓扑排序的装载器、可逆副作用逆序撤销、scope 两层扁平（<code>tenant:</code> / <code>app:</code> / <code>agent-session:</code>）与遮蔽 / <code>restrict</code> 交集。组件库唯一必需依赖，一切组件任务的前置，第 1 波首项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：<code>Inject</code> 的服务键无人提供 → 启动失败并指出缺失键与请求方；依赖成环 → 结构化错误列出环路</li>\n<li class='chk'><span class='box'></span>TCK：<code>Apply</code> 中注册的全部 effect 在卸载时按逆序撤销，卸载后服务容器中无残留</li>\n<li class='chk'><span class='box'></span>TCK：五种分发模式各一组用例——<code>waterfall</code> 监听器不调用 <code>next()</code> 时下游不执行；<code>bail</code> 停在首个返回值；<code>parallel</code> 任一失败不影响其余</li>\n<li class='chk'><span class='box'></span>TCK：租户 A scope 注册同名服务后，A 内解析到遮蔽项，B 与全局不受影响；两条 restriction 的交集生效；被过滤项在目录与执行两处都「不存在」</li>\n<li class='chk'><span class='box'></span>UT：<code>Qian.Runtime</code> 只依赖 <code>Kun.Core</code>、<code>Kun.Mediator</code> 与 .NET DI，无业务语义</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.1–D20.5 的 .NET 落地：<code>IQianPlugin { Inject; Apply }</code>、<code>IPluginContext</code>（<code>Get / Provide / On / Emit / Waterfall / Parallel / Serial / Bail / Effect / Scope / Restrict</code>）、按 <code>inject[]</code> / <code>provides[]</code> 拓扑排序的装载器、可逆副作用逆序撤销、scope 两层扁平（<code>tenant:</code> / <code>app:</code> / <code>agent-session:</code>）与遮蔽 / <code>restrict</code> 交集。组件库唯一必需依赖，一切组件任务的前置，第 1 波首项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：<code>Inject</code> 的服务键无人提供 → 启动失败并指出缺失键与请求方；依赖成环 → 结构化错误列出环路</li>\n<li class='chk'><span class='box'></span>TCK：<code>Apply</code> 中注册的全部 effect 在卸载时按逆序撤销，卸载后服务容器中无残留</li>\n<li class='chk'><span class='box'></span>TCK：五种分发模式各一组用例——<code>waterfall</code> 监听器不调用 <code>next()</code> 时下游不执行；<code>bail</code> 停在首个返回值；<code>parallel</code> 任一失败不影响其余</li>\n<li class='chk'><span class='box'></span>TCK：租户 A scope 注册同名服务后，A 内解析到遮蔽项，B 与全局不受影响；两条 restriction 的交集生效；被过滤项在目录与执行两处都「不存在」</li>\n<li class='chk'><span class='box'></span>UT：<code>Qian.Runtime</code> 只依赖 <code>Kun.Core</code>、<code>Kun.Mediator</code> 与 .NET DI，无业务语义</li>\n<li class='chk'><span class='box'></span><code>Kun.*</code> 的 PackageVersion 一律引用 <code>$(KunVersion)</code>（属性若尚不存在则在本任务加入），<code>NuGet.config</code> 加 Kun 的 GitHub Packages 源与 packageSourceMapping（ADR-021 D21.3）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：验收补一条 <code>KunVersion</code> 单点钉版（ADR-021 D21.3）</li>\n</ul>",
   "file": "pm/tasks/S1-RT-001.md"
  },
  {
