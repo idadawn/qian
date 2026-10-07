@@ -92,5 +92,5 @@
 
 | 任务 | 状态 | 负责人 | 更新 |
 |---|---|---|---|
-| [S1-DOCS-001](tasks/S1-DOCS-001.md) 文档站脚手架：Rspress 2.0 + MDX + 中文主题 + 搜索 + 托管 | review | claude | 2026-10-07 |
+| [S1-DOCS-001](tasks/S1-DOCS-001.md) 文档站脚手架：Rspress 2.0 + MDX + 中文主题 + 搜索 + 托管 | review | claude | 2026-10-08 |
 | [S1-PM-003](tasks/S1-PM-003.md) Kun 仓库从 CavaiLAB 迁入 idadawn：transfer、runner、协作者、包源与回链 | review | claude | 2026-10-08 |
