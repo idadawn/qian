@@ -1,0 +1,96 @@
+---
+title: 与 Qian 的关系
+description: Kun 模块在 Qian 里由哪个平台插件或 seam 承接、Qian 选定的 canonical API、强制装配与禁用项，以及 Kun 缺口修复与补丁包的状态。
+part: sdk
+project: qian
+audience: [developer, agent]
+updated: 2026-10-08
+---
+
+# 与 Qian 的关系
+
+本页是「Kun 框架」小节里唯一由 Qian 手写的一页，其余页面都按锁定版本从 kun 仓库镜像（[ADR-021 D21.4](/design/adr/adr-021-product-family-structure)）。它回答：写 Qian 组件时，Kun 的哪些模块会用到、用哪一套 API、哪些写法被禁止。
+
+## 定位
+
+- **三层**：Kun 是框架层（底座 SDK），Qian 是平台层，yue 是前端层。Qian 平台基于 Kun 框架构建；Kun 不是 Qian 的子项目，Qian 也不是 Kun 的扩展（[ADR-021 D21.1](/design/adr/adr-021-product-family-structure)）。
+- **Kun 是实现依赖，不是平台内核**：Qian 的运行时 `Qian.Runtime` 与平台插件自成一层，Kun 模块是它们的实现依赖；Kun 的 `AddKunXxx()` 模块在 Qian 里被包装为插件，`Kun.*` 本身不改（[ADR-001 D1.1](/design/adr/adr-001-kun-relationship)、[ADR-020 D20.10](/design/adr/adr-020-component-model-v2)）。
+- **锁版本消费**：Qian 以 NuGet 包 + CalVer 锁版本消费 Kun，不复制 Kun 源码、不用 `ProjectReference`（ADR-001 D1.2）。版本只写在仓库根 `Directory.Packages.props` 的 `KunVersion` 一处，全部 `Kun.*` 包引用它；本小节其余页面与 [Kun API 参考](/sdk/api/kun/) 按同一版本镜像，各页顶部写明版本（[ADR-021 D21.3](/design/adr/adr-021-product-family-structure)）。
+- **以代码为准**：Kun 文档与代码不一致时以代码为准，文档声称但代码不存在的能力不当作已有（ADR-001 D1.8）。
+
+## 模块与平台插件、seam 的对应
+
+左列是 kun 仓库 `src/` 下的模块（每个都以同名 NuGet 包发布），右两列取自 [S1 技术底座规格](/design/prd/07-s1-foundation)（§07）各节的「依赖」与 7.1 的修复项。平台插件的服务键与包见 [组件目录](/components/platform/)。
+
+| Kun 模块 | Qian 里谁用 | 说明 |
+|---|---|---|
+| `Kun.Core`、`Kun.Mediator` | `Qian.Runtime` | 运行时只依赖这两个模块与 .NET DI（§07 7.2.1） |
+| `Kun.MultiTenancy`、`Kun.MultiTenancy.EntityFrameworkCore` | [qian.tenancy](/components/platform/qian.tenancy)、[qian.data](/components/platform/qian.data) | 租户上下文与 RLS 双保险；后台链路的租户回灌与强制装配见 7.1 第 1 项 |
+| `Kun.EntityFrameworkCore` | [qian.data](/components/platform/qian.data)、[qian.tenancy](/components/platform/qian.tenancy)、[qian.events](/components/platform/qian.events)、[qian.audit](/components/platform/qian.audit) | 写侧、三策略 Provisioner、Outbox 表、同事务审计 |
+| `Kun.Dapper` | [qian.data](/components/platform/qian.data) | 读侧，可选 |
+| `Kun.EventBus`、`Kun.EventBus.RabbitMQ` | [qian.events](/components/platform/qian.events)、[qian.tenancy](/components/platform/qian.tenancy) | 集成事件、Outbox 发布与消费端幂等 |
+| `Kun.Identity`、`Kun.Identity.AspNetCore` | [qian.identity](/components/platform/qian.identity) | 保留 Cookie 会话与 `IAuthenticatedUser` 抽象，按 7.1 第 6 项修复；身份服务端（唯一 issuer）用 OpenIddict 自建（§07 7.4.1） |
+| `Kun.Security`、`Kun.Gateway` | [qian.gateway](/components/platform/qian.gateway) | YARP、`S2sTokenIssuer`、JWKS、三种限流策略；`gateway` profile 以库方式引用并加固 |
+| `Kun.Audit`、`Kun.Auditing` | [qian.audit](/components/platform/qian.audit) | 哈希链原语与同事务 Outbox 路径 |
+| `Kun.Audit.EntityFrameworkCore` | 不用其拦截器 | `AuditSaveChangesInterceptor` 事后、不同事务写审计，禁用（7.1 第 8 项） |
+| `Kun.Observability` | [qian.observability](/components/platform/qian.observability) | `AddQianObservability()` 一行装配；网关宿主也接入 |
+| `Kun.Configuration` | [qian.config](/components/platform/qian.config) | 强类型 Options 与 fail-fast；Apollo 配置源待补（7.1 第 10 项） |
+| `Kun.Caching` | [qian.identity](/components/platform/qian.identity)、[qian.authz](/components/platform/qian.authz)、[qian.gateway](/components/platform/qian.gateway)、[qian.events](/components/platform/qian.events) | 缓存后端 |
+| `Kun.RateLimit` | 服务侧限流 | 网关侧用 `Kun.Gateway` 的三策略 + Redis 共享计数 |
+| `Kun.Storage.Abstractions`、`Kun.Storage.Local`、`Kun.Storage.S3`、`Kun.Storage.Oss` | [qian.files](/components/platform/qian.files) | 新线存储；Provider `Qian.Files.Local` / `.S3` / `.Oss` 各包一个后端 |
+| `Kun.Storage` | 不用 | 旧线，废弃（7.1 第 13 项） |
+| `Kun.Infrastructure` | 不用 | `IRepository` / `IUnitOfWork` 是死接口，直接用 `DbContext` + `Kun.EntityFrameworkCore` 的 `IUnitOfWork`（§07 7.6） |
+| `Kun.Saga` | 不用于开通编排 | 租户开通由 `qian.lifecycle` 的幂等步骤表承担；Saga 其余修补为 P1（7.1 第 3 项） |
+| `Kun.Grpc` | 服务间 gRPC | 流式调用的追踪、认证、Result 拦截器在 S1 补齐（7.1 第 5 项） |
+| `Kun.AspNetCore` | HTTP 宿主 | 错误响应在 ProblemDetails 之上统一为 Qian 的 `ErrorDetail`（§07 7.18、`contracts/v0`） |
+| `Kun.Validation`、`Kun.Testing`、`Kun.Testing.EntityFrameworkCore`、`Kun.Sandbox` | Qian 的设计未引用 | 集成测试用仓库自带的 Testcontainers fixture；S4 的沙箱对接 CubeSandbox（[AI SDK · 沙箱](/sdk/ai/sandbox)） |
+
+Kun 侧还要新增两个模块：鉴权端口 `Kun.Authorization`（只放端口，Qian 的 [qian.authz](/components/platform/qian.authz) 实现并再导出，7.1 第 11 项）与 Apollo 配置源 `Kun.Configuration.Apollo`（7.1 第 10 项）。它们进入 Kun 发版之前，上表不列。
+
+## canonical API
+
+Kun 里有几组功能重叠的「双胞胎」API，Qian 各选定一套，插件只能用这一套（ADR-001 D1.5、§07 7.1「插件化定位」）：
+
+| 能力 | Qian 选用 | 不用 |
+|---|---|---|
+| 租户上下文 | `ITenantContext` 的 AsyncLocal 实现（唯一实现；JWT 版退化为它的解析源），claim 名 `tenant_id` | 第二套 `ITenantContext` 实现 |
+| 文件存储 | 新线 `Kun.Storage.Abstractions` 的 `IFileStorage` 与 Local / S3 / Oss 后端 | 旧线 `Kun.Storage` |
+| 审计 | 同事务写 `AuditLog` + Outbox 事件，PostgreSQL 哈希链（[ADR-009](/design/adr/adr-009-audit)） | `AuditSaveChangesInterceptor` |
+| S2S 令牌签发 | 网关的 `S2sTokenIssuer` 一套（[ADR-010](/design/adr/adr-010-gateway-layers)） | `Kun.Identity.KunJwtIssuer`、`Kun.Security.S2SJwt` |
+| 限流 | 服务侧 `Kun.RateLimit`；网关侧三策略 + Redis 共享计数 | — |
+| 仓储 | `DbContext` + `Kun.EntityFrameworkCore` 的 `IUnitOfWork` | `Kun.Infrastructure` 的 `IRepository` / `IUnitOfWork` |
+
+这些选择会写进 `Qian.Plugin.Sdk` 的分析器：插件作者用错即编译失败（§07 7.1）。
+
+## 强制装配与禁用项
+
+Kun 的安全默认值大多是 opt-in；在 Qian 里改为**强制装配 + 构建期检查**（ADR-001 D1.5）。以下是 S1 的目标形态，随对应任务落地：
+
+- **强制装配**：RLS 连接版与事务版拦截器、租户模型缓存键（`KunMultiTenantModelCacheKeyFactory`）一起挂上，忘记替换模型缓存键的 `DbContext` 拒绝启动（§07 7.1 第 1 项、7.6）；生产模式的租户解析禁用 `X-Tenant-Id` 请求头兜底与默认租户回退，失败即拒绝；网关回退认证策略默认「要求已认证」，路由级限流真正绑定到路由（7.1 第 4 项）。
+- **禁用**（Banned API，引用即编译错误）：`Kun.Infrastructure.IRepository`、旧线 `Kun.Storage.IFileStorage`（7.1 第 13 项）；废弃的两套 S2S 签发器（7.1 第 7 项）；`Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor`（7.1 第 8 项）。
+- **AOT**：`platform` profile 不承诺 AOT，业务服务一律 JIT；`gateway` 等边缘 profile 可 AOT（ADR-001 D1.5、ADR-020 D20.10）。
+
+## 缺口修复与补丁包
+
+Kun 关键路径上有一组在「K3s 多副本 + 多租户」下必然触发的缺口，S1 必须先修（§07 7.1 列了 13 项，ADR-001 D1.6）。修复通道（ADR-001 D1.7）：
+
+1. 上游 PR 优先：改动提到 kun 仓库，Kun 发版后改 `KunVersion` 升级，本小节随之更新。
+2. 每项设 1 个迭代的回合入期限；逾期未合入，由 Qian 维护 `Kun.<Module>.Patches` 补丁包（同名命名空间 + `[Obsolete]` 转发），并记录回合入日期。
+
+截至 2026-10-08 的状态：七个修复任务都未开始，Qian 还没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
+
+| 任务 | 修复项（§07 7.1） | 状态 | 补丁包 |
+|---|---|---|---|
+| S1-KUN-001 | 第 1 项 多租户后台链路 | 未开始 | 无 |
+| S1-KUN-002 | 第 2 项 Outbox 与事件语义 | 未开始 | 无 |
+| S1-KUN-003 | 第 4 项 网关加固、第 5 项 gRPC 流式拦截器 | 未开始 | 无 |
+| S1-KUN-004 | 第 6 项 Identity 客户端链路、第 7 项 S2S 签发器收敛 | 未开始 | 无 |
+| S1-KUN-005 | 第 8 项 审计收敛、第 9 项 数据约定 | 未开始 | 无 |
+| S1-KUN-006 | 第 10–13 项 配置、鉴权端口、能力目录、废弃 API | 未开始 | 无 |
+| S1-KUN-007 | 第 3 项 Saga 其余修补（P1） | 未开始 | 无 |
+
+## 版本与升级
+
+- 当前锁定的版本写在本小节每页顶部的横幅里，与 `Directory.Packages.props` 的 `KunVersion` 一致；CI 比对二者，不一致即构建失败。
+- 升级 Kun：改 `KunVersion` 一处 → TCK 两种模式通过 → 本小节与 API 参考在下一次构建时自动镜像新版本（ADR-021 D21.3）。
+- 要改 Kun 的代码或文档，去 kun 仓库提 PR，Qian 的任务里只回链。
