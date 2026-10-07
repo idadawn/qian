@@ -1,13 +1,13 @@
 ---
 id: S1-DOCS-005
 title: Kun 框架小节：按锁定版本镜像 kun 仓库文档并生成 API 参考
-status: todo
+status: doing
 stage: S1
 area: DOCS
 wave: 2
 priority: P0
 type: feature
-owner: ""
+owner: "claude"
 estimate: 3d
 depends: [S1-DOCS-001]
 refs:
@@ -15,7 +15,7 @@ refs:
   - docs/prd/specs/docs-site.md#2b
   - docs/adr/ADR-001-kun-relationship.md#D1.8
   - docs/prd/07-s1-foundation.md#7.1
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 ## 背景
@@ -36,3 +36,4 @@ updated: 2026-10-07
 ## 进度日志
 
 - 2026-10-07 claude：创建任务（ADR-021 D21.4，docs-site.md §2b）
+- 2026-10-08 claude：开始

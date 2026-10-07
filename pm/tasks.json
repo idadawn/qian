@@ -1770,14 +1770,14 @@
  {
   "id": "S1-DOCS-005",
   "title": "Kun 框架小节：按锁定版本镜像 kun 仓库文档并生成 API 参考",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "DOCS",
   "areaName": "文档站与组件文档",
   "wave": 2,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
@@ -1785,7 +1785,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-021-product-family-structure.md#D21.4",
@@ -1804,12 +1804,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-07",
+  "updated": "2026-10-08",
   "acceptance": {
    "done": 0,
    "total": 8
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人要求 Kun 体现在文档中。首版规格写的「Kun 外链不重写」作废：Kun 没有自己的文档站，读者与 SDK 读者重叠。按 ADR-021 D21.4，真相源仍在 kun 仓库 <code>docs/</code>，Qian 文档站按 <code>Directory.Packages.props</code> 的 <code>KunVersion</code> 锁定版本把白名单内容镜像为第 3 部分第一节「Kun 框架」<code>/sdk/kun/</code>，并用 DocFX 生成 <code>Kun.*</code> API 参考；Qian 只手写一页「与 Qian 的关系」。S1-DOCS-001（PR #3）里 <code>sdk/index.md</code> 与 <code>start/hosts.md</code> 的「Kun 的 API 本站不重写」措辞一并改掉。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>website/scripts/sync-kun-docs.ts</code>：读 <code>KunVersion</code>（缺失即失败，不回退 <code>main</code>；属性尚不存在时由本任务先加入，取当前锁定的 Kun 版本）→ 以只读凭据取 kun 仓库 <code>v&lt;KunVersion&gt;</code> → 按 docs-site.md §2b.2 白名单生成 <code>website/docs/sdk/kun/</code>；白名单外文件不进站；slug 小写短横线</li>\n<li class='chk'><span class='box'></span>每页横幅（来源路径 + 版本 + 「以代码为准（ADR-001 D1.8）」 + 指向 <code>/sdk/kun/with-qian</code>）与 frontmatter（<code>project: kun</code>、<code>part: sdk</code>、<code>version</code>、<code>source</code>、<code>updated</code> 取源文件最后提交日期、<code>title</code> / <code>description</code> 自动提取）；站内相对链接按 §2b.3 改写</li>\n<li class='chk'><span class='box'></span>DocFX 从锁定版本 <code>Kun.*</code> 包生成 API 参考挂 <code>/sdk/api/kun/</code>，与 <code>/sdk/api/dotnet/</code> 并列（与 S1-DOCS-002 共用 DocFX 流水线，谁先做谁搭）</li>\n<li class='chk'><span class='box'></span>手写 <code>/sdk/kun/with-qian</code>：Kun 模块 ↔ 平台插件 / seam 映射表、canonical API 选择（§07 7.1「插件化定位」）、Qian 的强制装配与禁用项、补丁包状态</li>\n<li class='chk'><span class='box'></span>导航「SDK」下第一项为「Kun 框架」；首页「构建应用」栏新增 Kun 条目；<code>sdk/index.md</code>、<code>start/hosts.md</code> 不再写「本站不重写」</li>\n<li class='chk'><span class='box'></span>门禁：<code>sdk/kun/</code>（除 <code>with-qian.mdx</code>）手改即失败；镜像 tag ≠ <code>KunVersion</code> 即失败；镜像页过 <code>scripts/check_docs.py</code></li>\n<li class='chk'><span class='box'></span>CI 凭据：对 kun 仓库的只读 deploy key 或细粒度 token 以 Secret 提供，本地可用 <code>KUN_DOCS_PATH</code> 指向本机克隆；README「托管与预览」写明</li>\n<li class='chk'><span class='box'></span>UT：同步脚本对「<code>KunVersion</code> 缺失」「tag 不存在」「白名单外文件」各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（ADR-021 D21.4，docs-site.md §2b）</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人要求 Kun 体现在文档中。首版规格写的「Kun 外链不重写」作废：Kun 没有自己的文档站，读者与 SDK 读者重叠。按 ADR-021 D21.4，真相源仍在 kun 仓库 <code>docs/</code>，Qian 文档站按 <code>Directory.Packages.props</code> 的 <code>KunVersion</code> 锁定版本把白名单内容镜像为第 3 部分第一节「Kun 框架」<code>/sdk/kun/</code>，并用 DocFX 生成 <code>Kun.*</code> API 参考；Qian 只手写一页「与 Qian 的关系」。S1-DOCS-001（PR #3）里 <code>sdk/index.md</code> 与 <code>start/hosts.md</code> 的「Kun 的 API 本站不重写」措辞一并改掉。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>website/scripts/sync-kun-docs.ts</code>：读 <code>KunVersion</code>（缺失即失败，不回退 <code>main</code>；属性尚不存在时由本任务先加入，取当前锁定的 Kun 版本）→ 以只读凭据取 kun 仓库 <code>v&lt;KunVersion&gt;</code> → 按 docs-site.md §2b.2 白名单生成 <code>website/docs/sdk/kun/</code>；白名单外文件不进站；slug 小写短横线</li>\n<li class='chk'><span class='box'></span>每页横幅（来源路径 + 版本 + 「以代码为准（ADR-001 D1.8）」 + 指向 <code>/sdk/kun/with-qian</code>）与 frontmatter（<code>project: kun</code>、<code>part: sdk</code>、<code>version</code>、<code>source</code>、<code>updated</code> 取源文件最后提交日期、<code>title</code> / <code>description</code> 自动提取）；站内相对链接按 §2b.3 改写</li>\n<li class='chk'><span class='box'></span>DocFX 从锁定版本 <code>Kun.*</code> 包生成 API 参考挂 <code>/sdk/api/kun/</code>，与 <code>/sdk/api/dotnet/</code> 并列（与 S1-DOCS-002 共用 DocFX 流水线，谁先做谁搭）</li>\n<li class='chk'><span class='box'></span>手写 <code>/sdk/kun/with-qian</code>：Kun 模块 ↔ 平台插件 / seam 映射表、canonical API 选择（§07 7.1「插件化定位」）、Qian 的强制装配与禁用项、补丁包状态</li>\n<li class='chk'><span class='box'></span>导航「SDK」下第一项为「Kun 框架」；首页「构建应用」栏新增 Kun 条目；<code>sdk/index.md</code>、<code>start/hosts.md</code> 不再写「本站不重写」</li>\n<li class='chk'><span class='box'></span>门禁：<code>sdk/kun/</code>（除 <code>with-qian.mdx</code>）手改即失败；镜像 tag ≠ <code>KunVersion</code> 即失败；镜像页过 <code>scripts/check_docs.py</code></li>\n<li class='chk'><span class='box'></span>CI 凭据：对 kun 仓库的只读 deploy key 或细粒度 token 以 Secret 提供，本地可用 <code>KUN_DOCS_PATH</code> 指向本机克隆；README「托管与预览」写明</li>\n<li class='chk'><span class='box'></span>UT：同步脚本对「<code>KunVersion</code> 缺失」「tag 不存在」「白名单外文件」各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（ADR-021 D21.4，docs-site.md §2b）</li>\n<li>2026-10-08 claude：开始</li>\n</ul>",
   "file": "pm/tasks/S1-DOCS-005.md"
  },
  {
