@@ -3302,20 +3302,20 @@
  {
   "id": "S1-PM-003",
   "title": "Kun 仓库从 CavaiLAB 迁入 idadawn：transfer、runner、协作者、包源与回链",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "PM",
   "areaName": "流程与协作",
   "wave": 1,
   "priority": "P1",
   "type": "infra",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-021-product-family-structure.md#7",
@@ -3330,12 +3330,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-001-kun-relationship.md"
    }
   ],
-  "updated": "2026-10-07",
+  "updated": "2026-10-08",
   "acceptance": {
-   "done": 0,
+   "done": 4,
    "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人 2026-10-07 拍板（S1-DEC-009）：产品族所有者统一为 <code>idadawn</code>，Kun 从 CavaiLAB 组织迁入。核对过的事实：<code>idadawn/kun</code> 目前只是指向 <code>CavaiLAB/kun</code> 的重定向（Kun 2026-04 建于 idadawn，后转入 CavaiLAB），同名不冲突；Kun 正式包公开发布在 nuget.org，GitHub Packages 只是镜像；Kun 全部 CI 跑在 qd 主机的仓库级自托管 runner <code>qd-kun</code>（<code>~/actions-runner-kun</code>，systemd 服务 <code>actions.runner.CavaiLAB-kun.qd-kun</code>，qd 无免密 sudo）；CavaiLAB 下只有 idadawn 是直接协作者（admin），另一名管理员 FLANKER-GL 与 8 名只读成员的权限都来自组织成员身份；secrets 只有 <code>NUGET_API_KEY</code>；无 deploy key、无 webhook、无开放 PR / issue。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>执行 transfer（<code>gh api -X POST repos/CavaiLAB/kun/transfer -f new_owner=idadawn</code>）；<code>gh repo view idadawn/kun --json nameWithOwner</code> 为 <code>idadawn/kun</code>，<code>CavaiLAB/kun</code> 自动重定向</li>\n<li class='chk'><span class='box'></span>runner：<code>gh api repos/idadawn/kun/actions/runners</code> 中 <code>qd-kun</code> 在线；若离线则重新注册（systemd 服务需 sudo；或在 qd 另起一个非 systemd 运行的 runner 目录，标签 <code>self-hosted, qd</code>）；推一个空提交或重跑最近一次 workflow 验证 <code>runs-on: [self-hosted, qd]</code> 可调度</li>\n<li class='chk'><span class='box'></span>协作者：组织派生的权限全部不随迁，FLANKER-GL（管理员）与 8 名只读成员迁后都无访问权；产品负责人决定邀请谁为协作者（个人仓库协作者只有写权限一档）</li>\n<li class='chk'><span class='box'></span>包源：下次发版 release.yml 自动推到 <code>nuget.pkg.github.com/idadawn</code>（workflow 用 <code>github.repository_owner</code>，无需改）；nuget.org 主渠道不变；CavaiLAB 名下旧镜像包不迁、不删</li>\n<li class='chk'><span class='box'></span>回链：kun 仓库 CHANGELOG 比较链接 <code>CavaiLAB/kun</code> 改为 <code>idadawn/kun</code>（随下次 Kun PR）；iClaw 仓库 README / AGENTS / docs 中 <code>CavaiLAB/kun</code>、<code>CavaiLAB/iclaw</code>、<code>CavaiLAB/iclaw-deploy</code> 旧地址择机改为 idadawn（旧地址仍重定向，不阻塞）</li>\n<li class='chk'><span class='box'></span>本机克隆 <code>git remote set-url origin git@github.com:idadawn/kun.git</code>（<code>/Users/dawn/project/kun</code>、<code>/Users/dawn/project/tmp/qian-refs/kun</code>）；Qian 侧文档已按 <code>idadawn/kun</code> 写，看板与 ArgoCD 不涉及</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务；迁移前核对完成（重定向、nuget.org、runner、协作者、secrets）</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人 2026-10-07 拍板（S1-DEC-009）：产品族所有者统一为 <code>idadawn</code>，Kun 从 CavaiLAB 组织迁入。核对过的事实：<code>idadawn/kun</code> 目前只是指向 <code>CavaiLAB/kun</code> 的重定向（Kun 2026-04 建于 idadawn，后转入 CavaiLAB），同名不冲突；Kun 正式包公开发布在 nuget.org，GitHub Packages 只是镜像；Kun 全部 CI 跑在 qd 主机的仓库级自托管 runner <code>qd-kun</code>（<code>~/actions-runner-kun</code>，systemd 服务 <code>actions.runner.CavaiLAB-kun.qd-kun</code>，qd 无免密 sudo）；CavaiLAB 下只有 idadawn 是直接协作者（admin），另两名管理员（FLANKER-GL、LloydS827）与 12 名只读成员的权限都来自组织成员身份；secrets 只有 <code>NUGET_API_KEY</code>；无 deploy key、无 webhook、无开放 PR / issue。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>执行 transfer（<code>gh api -X POST repos/CavaiLAB/kun/transfer -f new_owner=idadawn</code>）；<code>gh repo view idadawn/kun --json nameWithOwner</code> 为 <code>idadawn/kun</code>，<code>CavaiLAB/kun</code> 自动重定向（2026-10-08 01:01 完成，仓库 id 不变，私有）</li>\n<li class='chk done'><span class='box'>✓</span>runner：<code>gh api repos/idadawn/kun/actions/runners</code> 中 <code>qd-kun</code> 在线（仓库级 runner 随仓库 id 一起迁移，无需重新注册）；重跑 2026-09-13 main 的最近一次 CI（run 34767484959）：40 秒内「Build &amp; Test」在 <code>qd-kun</code> 上进入 in_progress，<code>runs-on: [self-hosted, qd]</code> 调度正常</li>\n<li class='chk'><span class='box'></span>协作者：组织派生的权限已全部失效，迁后协作者只剩 idadawn；FLANKER-GL、LloydS827（原管理员）与 12 名原只读成员（KuboKang、martinzhang777、MyKevinSong、Danny731、YKY-0110、tigerzhou-cool、makebuzai、Bingsheng1991、Ziqing-Zhou、Jie-rookie、Paul-git1210、steven198005）需要产品负责人决定邀请谁（个人仓库协作者只有写权限一档）</li>\n<li class='chk done'><span class='box'>✓</span>包源：下次发版 release.yml 自动推到 <code>nuget.pkg.github.com/idadawn</code>（workflow 用 <code>github.repository_owner</code>，无需改）；nuget.org 主渠道不变；CavaiLAB 名下旧镜像包不迁、不删；secret <code>NUGET_API_KEY</code> 与 4 个 release 已随仓库迁移</li>\n<li class='chk'><span class='box'></span>回链：kun 仓库 CHANGELOG 比较链接 <code>CavaiLAB/kun</code> 改为 <code>idadawn/kun</code>（随下次 Kun PR）；iClaw 仓库 README / AGENTS / docs 中 <code>CavaiLAB/kun</code>、<code>CavaiLAB/iclaw</code>、<code>CavaiLAB/iclaw-deploy</code> 旧地址择机改为 idadawn（旧地址仍重定向，不阻塞）</li>\n<li class='chk done'><span class='box'>✓</span>本机克隆 <code>git remote set-url origin git@github.com:idadawn/kun.git</code>（<code>/Users/dawn/project/kun</code>、<code>/Users/dawn/project/tmp/qian-refs/kun</code>）已改并 fetch 验证；Qian 侧文档已按 <code>idadawn/kun</code> 写，看板与 ArgoCD 不涉及</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务；迁移前核对完成（重定向、nuget.org、runner、协作者、secrets）</li>\n<li>2026-10-07 claude：产品负责人确认由我执行；transfer 接口先连续 5 次返回 500（GitHub 侧瞬时故障，同时段 secrets 列表接口也 500），后台每 5 分钟重试</li>\n<li>2026-10-08 claude：01:01 第一次重试即 202，7 秒后仓库已在 idadawn/kun；runner、secrets、releases、重定向核验通过；本机两个克隆已改 remote。剩余：协作者邀请名单待产品负责人决定；CHANGELOG 比较链接与 iClaw 文档旧地址随下次变更，不阻塞 → 状态 review</li>\n</ul>",
   "file": "pm/tasks/S1-PM-003.md"
  },
  {

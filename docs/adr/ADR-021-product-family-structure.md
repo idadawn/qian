@@ -15,7 +15,7 @@ amends: ADR-001, ADR-013
 
 三个名字已经在用：**Kun**（底座框架）、**Qian**（平台）、**yue**（前端组件库），周边还有官方市场仓库 `qian-plugins`、兄弟系统 iClaw、部署仓库与模型服务仓库。它们之间的层次关系、仓库怎么关联、Kun 文档从哪来，此前只在 ADR-001 讲了「Kun 是底座 SDK、以 NuGet + CalVer 锁版本消费」，没有统一口径。现状事实：
 
-- **Kun**：仓库 `CavaiLAB/kun`（2026-04 建于 `idadawn/kun`，后转入 CavaiLAB，旧地址重定向；包元数据与 README 的仓库地址一直是 `idadawn/kun`），私有，MIT；.NET 10 微服务框架，32 个 `Kun.*` 模块；CalVer（`vYYYY.M.D`，最新 `v2026.9.13`）；NuGet 包公开发布在 nuget.org（`Kun.Core` 等，0.1.0 / 2026.6.12 / 2026.9.13），并镜像到仓库所属者的 GitHub Packages。文档是仓库内 `docs/` 的 Markdown（白皮书、模块地图、上手教程、6 篇指南、3 篇安全专题、16 份 Kun 自己的 ADR、发布说明与变更日志），**没有文档站**；Kun 还有其它下游（iClaw 等），README 与部分文档面向那些下游写。
+- **Kun**：仓库 `idadawn/kun`（2026-04 建于此，中间转入 CavaiLAB，2026-10-08 迁回；包元数据与 README 的仓库地址一直是 `idadawn/kun`），私有，MIT；.NET 10 微服务框架，32 个 `Kun.*` 模块；CalVer（`vYYYY.M.D`，最新 `v2026.9.13`）；NuGet 包公开发布在 nuget.org（`Kun.Core` 等，0.1.0 / 2026.6.12 / 2026.9.13），并镜像到仓库所属者的 GitHub Packages。文档是仓库内 `docs/` 的 Markdown（白皮书、模块地图、上手教程、6 篇指南、3 篇安全专题、16 份 Kun 自己的 ADR、发布说明与变更日志），**没有文档站**；Kun 还有其它下游（iClaw 等），README 与部分文档面向那些下游写。
 - **Qian**：仓库 `idadawn/qian`，单仓：`docs/`、`pm/`、`website/`（文档站，S1-DOCS-001 在途），S1 起 `packages/`、`plugins/`、`profiles/`、`samples/`；`Qian.*` SemVer 锁步，Apache-2.0，S1 发 GitHub Packages 私有 feed（ADR-019 D19.7）。
 - **yue**：随 Qian 单仓以 pnpm workspace 交付（PRD §07 7.15.2），`@yue/*` 发私有 npm，Changesets + SemVer。
 - **周边**：`qian-plugins` 规定为「与 Qian 同组织下的独立仓库」，但组织名仍是占位（specs/component-model.md §8）；iClaw 源码在 `idadawn/iclaw`（ADR-016；其文档里的 CavaiLAB 地址是迁移前的旧地址）；部署仓库 `idadawn/iclaw-deploy`（ADR-017）；模型服务 `idadawn/MaaS`（ADR-015）。除 Kun 外全部在 `idadawn`，两个 GitHub 所有者并存意味着两个 GitHub Packages 命名空间。
@@ -68,7 +68,7 @@ amends: ADR-001, ADR-013
 
 - 正面：三层口径统一，README、PRD、文档站、AGENTS.md 同一说法；Kun 读者有站可读；版本矩阵让「哪个 Qian 配哪个 Kun」一眼可见；一个 feed、一处钉版。
 - 负面：CI 需要对私有 kun 仓库的只读访问（deploy key 或细粒度 token）；镜像页继承 Kun 文档的失真，只能靠横幅与 D1.8 兜底；文档站多版本构建时间增加（每个 Qian 版本一份 Kun 镜像）。
-- Kun 迁入 `idadawn` 的影响：git 与网页地址自动重定向；issues、PR、releases、secrets（`NUGET_API_KEY`）随仓库走；CavaiLAB 组织成员派生的权限（另一名管理员 FLANKER-GL 与 8 名只读成员）不随迁，需要的人要重新邀请为协作者、且个人账号仓库只有写权限一档；仓库级自托管 runner `qd-kun` 要核验在线，不在线则重新注册；CavaiLAB 名下的 Kun 镜像包不随迁也不删，下次发版自动发到 `idadawn` 名下，消费者走 nuget.org 不受影响；Kun 的 CHANGELOG 比较链接与 iClaw 文档中的旧地址择机更新（旧地址仍重定向，不阻塞）。Qian 侧的看板与 ArgoCD 地址不变。
+- Kun 迁入 `idadawn` 的影响：git 与网页地址自动重定向；issues、PR、releases、secrets（`NUGET_API_KEY`）随仓库走；CavaiLAB 组织成员派生的权限（另两名管理员与 12 名只读成员）不随迁，需要的人要重新邀请为协作者、且个人账号仓库只有写权限一档；仓库级自托管 runner `qd-kun` 随仓库 id 一起迁移（已核验在线，无需重新注册）；CavaiLAB 名下的 Kun 镜像包不随迁也不删，下次发版自动发到 `idadawn` 名下，消费者走 nuget.org 不受影响；Kun 的 CHANGELOG 比较链接与 iClaw 文档中的旧地址择机更新（旧地址仍重定向，不阻塞）。Qian 侧的看板与 ArgoCD 地址不变。
 - 配套任务：S1-DOCS-005（Kun 小节镜像 + API）、S1-DOCS-006（产品族地图、版本矩阵、`project` 字段）、S1-DEC-009（仓库归属，已拍板关闭）、S1-PM-003（Kun 迁入 `idadawn` 的执行与核验）；S1-RT-001 验收补 `KunVersion`；AGENTS.md 硬规则两条。
 
 ## 6 对各阶段的影响
@@ -80,7 +80,7 @@ amends: ADR-001, ADR-013
 
 ## 7 待确认事项
 
-- **仓库归属**：已拍板（产品负责人，2026-10-07）：产品族所有者 = `idadawn`，Kun 从 CavaiLAB 迁入，理由是 iClaw 源码与其余仓库都在 `idadawn`；specs 中的组织占位已替换为 `idadawn`；执行与核验见 S1-PM-003。
+- **仓库归属**：已拍板（产品负责人，2026-10-07）：产品族所有者 = `idadawn`，Kun 从 CavaiLAB 迁入，理由是 iClaw 源码与其余仓库都在 `idadawn`；specs 中的组织占位已替换为 `idadawn`。**已执行**（2026-10-08）：`idadawn/kun` 就位，旧地址重定向，runner / secrets / releases 完好；协作者邀请名单待产品负责人决定（S1-PM-003）。
 - **Kun 仓库公开时点**：随文档站公开，需 Kun 维护人确认。
 - **yue 是否拆独立仓库**：默认不拆，随 Qian 单仓；S3 公开时再议。
 

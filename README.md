@@ -12,7 +12,7 @@
 
 | 名字 | 层 | 是什么 | 仓库 | 版本 · 许可 | 文档在哪 |
 |---|---|---|---|---|---|
-| Kun | 框架层（底座） | .NET 10 云原生微服务框架，32 个 `Kun.*` 模块：Mediator、Outbox、Saga、多租户与 RLS、网关与 S2S、存储、缓存、可观测 | `idadawn/kun`（从 CavaiLAB 迁回，旧地址重定向） | CalVer · MIT · 正式包在 nuget.org | 文档站第 3 部分「Kun 框架」，按 `KunVersion` 锁定版本从 kun 仓库 `docs/` 镜像 |
+| Kun | 框架层（底座） | .NET 10 云原生微服务框架，32 个 `Kun.*` 模块：Mediator、Outbox、Saga、多租户与 RLS、网关与 S2S、存储、缓存、可观测 | `idadawn/kun`（2026-10-08 从 CavaiLAB 迁回，旧地址重定向） | CalVer · MIT · 正式包在 nuget.org | 文档站第 3 部分「Kun 框架」，按 `KunVersion` 锁定版本从 kun 仓库 `docs/` 镜像 |
 | Qian | 平台层 | 基于 Kun 的多租户 PaaS：`Qian.Runtime` + 平台插件 + profile + `qian` CLI + 目录市场 | `idadawn/qian`（本仓库） | SemVer 锁步 · Apache-2.0 | 本仓库 `docs/` 与文档站全部七个部分 |
 | yue | 前端层 | React 组件库与外壳，`@yue/*` | 本仓库（pnpm workspace，S1 第 2 波建立） | SemVer（Changesets）· Apache-2.0 | 文档站第 2 部分（活演示 + props 表） |
 | `qian-plugins` | 市场 | 官方目录市场 `.qian/marketplace.json` | `idadawn/qian-plugins`（S1 私有，待建） | — | 文档站第 6 部分 |
