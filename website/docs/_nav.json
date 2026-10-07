@@ -1,0 +1,20 @@
+[
+  { "text": "开始", "link": "/start/", "activeMatch": "^/start/" },
+  { "text": "组件目录", "link": "/components/", "activeMatch": "^/components/" },
+  { "text": "SDK", "link": "/sdk/", "activeMatch": "^/sdk/" },
+  { "text": "CLI 与规格", "link": "/cli/", "activeMatch": "^/cli/" },
+  { "text": "运维", "link": "/ops/", "activeMatch": "^/ops/" },
+  { "text": "市场与 ISV", "link": "/marketplace/", "activeMatch": "^/marketplace/" },
+  { "text": "设计与路线", "link": "/design/", "activeMatch": "^/design/" },
+  {
+    "text": "产品",
+    "position": "right",
+    "items": [
+      { "text": "用 AI 构建", "link": "/sdk/ai/" },
+      { "text": "构建应用", "link": "/start/hosts" },
+      { "text": "多租户平台", "link": "/components/platform/" },
+      { "text": "保护应用", "link": "/components/platform/qian.gateway" },
+      { "text": "部署与运维", "link": "/ops/" }
+    ]
+  }
+]

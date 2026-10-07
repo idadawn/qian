@@ -1,0 +1,39 @@
+# 变更日志
+
+> 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
+
+## 2026-10-08 文档站上线（S1-DOCS-001）
+
+- Rspress 2.0 文档站：七个部分、中文主题、全文搜索、Mermaid，PR 预览与合并后自动发布；设计文档（本目录）在站内「设计与路线」镜像。
+
+## 2026-10-07 产品族结构：Kun / Qian / yue（ADR-021）
+
+- 三层口径「Qian 平台基于 Kun 框架构建，前端使用 yue 组件库」；不建大单仓，产品族仓库统一在 `idadawn`（Kun 已迁入）；Kun 文档将按 `KunVersion` 锁定版本镜像进文档站（[ADR-021](adr/ADR-021-product-family-structure.md)、[docs-site.md](prd/specs/docs-site.md) §2b）。
+
+## 2026-10-07 任务看板上 K3s（S1-PM-002）
+
+- 离线看板经 git-sync + nginx 部署到 K3s，由 Argo CD 托管。
+
+## 2026-10-07 CI 基础：PublicAPI、依赖图与集成测试（S1-QA-001）
+
+- .NET 构建基线、PublicAPI 门禁、依赖图门禁与 Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身），见仓库 `tests/README.md`。
+
+## 2026-10-07 文档站选型与信息架构
+
+- 选型 Rspress 2.0（[ADR-013](adr/ADR-013-frontend-yue.md) D13.18）；七个部分、组件页模板、frontmatter 与首页规范写入 [docs-site.md](prd/specs/docs-site.md)。
+
+## 2026-10-07 组件模型 v2 与库优先定稿
+
+- [ADR-020](adr/ADR-020-component-model-v2.md) 与 [ADR-019](adr/ADR-019-library-first-packages.md) 转为 Accepted，§7 待确认事项全部拍板。
+
+## 2026-10-07 任务即文件的项目管理（S1-PM-001）
+
+- 任务文件、离线看板、文档门禁 CI 与编码代理入口（`AGENTS.md`）。
+
+## 2026-10-06 组件模型 v2 回填各章
+
+- 一切皆插件、声明式表面、`qian add` 一键安装、seam 三角色、scope、profile / patch 的口径回填 PRD 各章与[组件模型规格](prd/specs/component-model.md)。
+
+## 2026-10-06 设计文档首版
+
+- ADR-001…018、PRD §01–§17、迁移方案 v1 草案，以及调研基线要点汇编与关键决策清单 v0。

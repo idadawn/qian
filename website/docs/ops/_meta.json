@@ -1,0 +1,7 @@
+[
+  { "type": "file", "name": "index", "label": "概览" },
+  { "type": "file", "name": "deploy", "label": "GitOps 部署" },
+  { "type": "file", "name": "release", "label": "发布、灰度与回切" },
+  { "type": "file", "name": "secrets", "label": "密钥" },
+  { "type": "file", "name": "model-gateway", "label": "模型网关接线" }
+]
