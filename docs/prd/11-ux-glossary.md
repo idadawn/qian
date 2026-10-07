@@ -176,7 +176,7 @@
 | 加签 / 减签 | 临时增减审批人（S2 可选） | Add / remove signer | 规划中 |
 | 兜底链 | 节点指定异常处理人 → 租户管理员 → 无法提交 | Fallback chain | 已定义 |
 | 上级责任人 | 按岗位链推导的审批人 | Responsible superior | 已定义 |
-| 仅限人工 | 对 Agent 禁止的动作标记 | `humanOnly` | 已定义 |
+| 仅限人工 | 对 Agent 禁止的动作标记；在能力条目里即 `agent.expose: false`，服务端以 `ACTION_HUMAN_ONLY` 拒绝 Agent 调用（R52） | `humanOnly` | 已定义 |
 | 工作台 | 终端用户的待办与应用入口（S3 必做） | Workbench | 规划中 |
 | 门户 | 配置路径型（S2 可选）/ 设计型（S3） | Portal | 规划中 |
 | 报表 | 列表 + 分组汇总 + 导出子集起步 | Report | 规划中 |

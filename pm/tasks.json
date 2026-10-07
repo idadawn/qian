@@ -85,12 +85,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-08",
   "acceptance": {
    "done": 0,
-   "total": 3
+   "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.18 第 5、6、11 项：能力条目 Agent 字段（<code>sideEffect: read|write|external|destructive</code>、<code>policyHint</code>、<code>idempotent</code>、<code>async</code>、<code>requiredScopes</code>、<code>requiredSecrets</code>、<code>dataClassification</code>、<code>costTier</code>、<code>contractVersion</code>、<code>schemaSha256</code>、<code>agent.expose / requiresConfirmation</code>）S1 全部落库不派生；清单 <code>permissions.platform/data/egress/secrets/ui</code> 落库（租户管理员批准 S1 API、S2 UI）；<code>inputSchema</code> 禁 tenant 字段的清单校验与契约 lint；OpenAPI 3.1 + <code>operationId</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET /api/capabilities</code> 对同一插件返回的条目含全部 Agent 字段，且 <code>schemaSha256</code> 与 <code>pack</code> 时计算值一致</li>\n<li class='chk'><span class='box'></span>TCK：<code>inputSchema</code> 含 <code>tenantId</code> 的能力安装失败并返回带 JSON Pointer 的错误</li>\n<li class='chk'><span class='box'></span>UT：清单 <code>permissions.*</code> 五类落库并可经 API 读取；安装时需租户管理员批准的 API 存在</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.18 第 5、6、11 项：能力条目 Agent 字段（<code>sideEffect: read|write|external|destructive</code>、<code>policyHint</code>、<code>idempotent</code>、<code>async</code>、<code>requiredScopes</code>、<code>requiredSecrets</code>、<code>dataClassification</code>、<code>costTier</code>、<code>contractVersion</code>、<code>schemaSha256</code>、<code>agent.expose / requiresConfirmation</code>）S1 全部落库不派生；清单 <code>permissions.platform/data/egress/secrets/ui</code> 落库（租户管理员批准 S1 API、S2 UI）；<code>inputSchema</code> 禁 tenant 字段的清单校验与契约 lint；OpenAPI 3.1 + <code>operationId</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET /api/capabilities</code> 对同一插件返回的条目含全部 Agent 字段，且 <code>schemaSha256</code> 与 <code>pack</code> 时计算值一致</li>\n<li class='chk'><span class='box'></span>TCK：<code>inputSchema</code> 含 <code>tenantId</code> 的能力安装失败并返回带 JSON Pointer 的错误</li>\n<li class='chk'><span class='box'></span>UT：清单 <code>permissions.*</code> 五类落库并可经 API 读取；安装时需租户管理员批准的 API 存在</li>\n<li class='chk'><span class='box'></span>contracts/v0 全部 Schema 去掉 <code>x-status: draft</code> 并转 additive-only（条件：S1-RT-004 / S1-IDP-001 / S1-AZ-001 / S1-EVT-001 / S1-GW-001 均已进入 review；R53，contracts/v0/README.md 第 8 节第 9 条）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-08 claude：验收补一条「去掉 contracts/v0 的 draft」（S1-DEC-010 R53）</li>\n</ul>",
   "file": "pm/tasks/S1-AGT-002.md"
  },
  {
@@ -1291,22 +1291,22 @@
  {
   "id": "S1-DEC-010",
   "title": "拍板：contracts/v0 定稿前的默认裁决（错误码写法、业务状态码、R32 原因承载、平台级 tenant_id）",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [
    "S1-AGT-001"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "contracts/v0/README.md#8",
@@ -1323,10 +1323,10 @@
   ],
   "updated": "2026-10-08",
   "acceptance": {
-   "done": 0,
+   "done": 4,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-AGT-001 写 contracts/v0 时取了 8 条默认裁决（见 contracts/v0/README.md 第 8 节），x-status: draft 期内可改。其中第 4 条（R32 的 403 原因在封闭 ErrorDetail 中无结构化承载位）须在 S1-RT-004 实现前定；其余确认后 contracts/v0 去掉 draft、转 additive-only。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>第 8 节 8 条默认裁决逐条确认或改判，结论写回 contracts/v0/README.md 第 8 节（改判的同步改 Schema、fixture、<code>Qian.Runtime.Errors</code> 与受影响的 PRD / spec 文字）</li>\n<li class='chk'><span class='box'></span>第 4 条（R32 的 403 原因）定下承载方式，S1-RT-004 按此实现</li>\n<li class='chk'><span class='box'></span>第 1 条确认后，PRD / spec 中 <code>plugin_not_mounted</code> 等非大写写法统一为契约写法</li>\n<li class='chk'><span class='box'></span>contracts/v0 全部 Schema 去掉 <code>x-status: draft</code>，此后只做向后兼容的增量</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-08 claude：编号由 S1-DEC-009 改为 S1-DEC-010：与 main 上已关闭的 S1-DEC-009（产品族仓库归属拍板）撞号；内容不变，待产品负责人拍板</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-AGT-001 写 contracts/v0 时取了 8 条默认裁决（见 contracts/v0/README.md 第 8 节），x-status: draft 期内可改。其中第 4 条（R32 的 403 原因在封闭 ErrorDetail 中无结构化承载位）须在 S1-RT-004 实现前定；其余确认后 contracts/v0 去掉 draft、转 additive-only。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>第 8 节 8 条默认裁决逐条确认或改判，结论写回 contracts/v0/README.md 第 8 节（R45–R53；改判的第 4、8 条只涉及 Schema 描述与 PRD / spec 文字，Schema 结构、fixture 与 <code>Qian.Runtime.Errors</code> 不变）</li>\n<li class='chk done'><span class='box'>✓</span>第 4 条（R32 的 403 原因）定为「原因即错误码」（R48：四个 403 原因码由 <code>Qian.Registry.Abstractions</code> 登记，<code>message</code> 带层级、<code>pointer</code> 指向 patch 条目），S1-RT-004 按此实现</li>\n<li class='chk done'><span class='box'>✓</span>PRD / spec 中 <code>plugin_not_mounted</code>、<code>insufficient_scope</code> 等写法已统一（§07 7.2.1 / 7.9 / 待确认节、§10、§11 词表、§13、component-model §7.6 / §9.5 / §12 / §13）</li>\n<li class='chk done'><span class='box'>✓</span>改判（R53）：<code>draft</code> 保留到 S1 第 1 波消费方（RT-004 / IDP-001 / AZ-001 / EVT-001 / GW-001）全部进入 review，由 S1-AGT-002 一个 PR 统一去掉；本任务不去 draft</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-08 claude：编号由 S1-DEC-009 改为 S1-DEC-010：与 main 上已关闭的 S1-DEC-009（产品族仓库归属拍板）撞号；内容不变，待产品负责人拍板</li>\n<li>2026-10-08 claude：产品负责人授权后裁决 R45–R53：确认第 1 / 2 / 3 / 5 / 6 / 7 条，改判第 4 条（原因即错误码）与第 8 条（humanOnly = agent.expose:false + ACTION_HUMAN_ONLY），新增第 9 条（draft 去留条件）；S1-RT-004 解除阻塞，S1-AGT-002 接手去 draft；任务关闭</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-010.md"
  },
  {
@@ -3026,12 +3026,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-006-authorization-model.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-08",
   "acceptance": {
    "done": 0,
-   "total": 5
+   "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 10–13 项：<code>Kun.Configuration.Apollo</code> provider 基础与热更新「校验失败保留旧值并告警」、options JSON Schema 导出；<code>Kun.Authorization</code> 只放端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>）与三处集成；<code>ICapabilityRegistry</code> 注册时收 <code>JsonTypeInfo</code> 并可枚举；<code>Kun.Infrastructure</code> 死接口与旧线 <code>Kun.Storage</code> 废弃、<code>AddKunDapper</code> 瑕疵、<code>PerformanceBehavior</code> 阈值可配。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：发布一份非法配置后 <code>IOptionsMonitor&lt;T&gt;.CurrentValue</code> 仍返回上一份有效值，且发出告警指标</li>\n<li class='chk'><span class='box'></span>UT：<code>AddKunOptions&lt;T&gt;</code> 可导出 JSON Schema 2020-12</li>\n<li class='chk'><span class='box'></span>UT：未注册实现时任何受保护端点缺省拒绝（fail-closed）；IT：Mediator 行为对标记了所需权限的命令在 handler 前调用 <code>Check</code></li>\n<li class='chk'><span class='box'></span>UT：注册一个命令后，能力目录中出现其 ID、请求 / 响应 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：Qian 代码树引用 <code>Kun.Infrastructure.IRepository</code> 或旧线 <code>Kun.Storage.IFileStorage</code> 即编译错误（Banned API 分析器）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 10–13 项：<code>Kun.Configuration.Apollo</code> provider 基础与热更新「校验失败保留旧值并告警」、options JSON Schema 导出；<code>Kun.Authorization</code> 只放端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>）与三处集成；<code>ICapabilityRegistry</code> 注册时收 <code>JsonTypeInfo</code> 并可枚举；<code>Kun.Infrastructure</code> 死接口与旧线 <code>Kun.Storage</code> 废弃、<code>AddKunDapper</code> 瑕疵、<code>PerformanceBehavior</code> 阈值可配。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：发布一份非法配置后 <code>IOptionsMonitor&lt;T&gt;.CurrentValue</code> 仍返回上一份有效值，且发出告警指标</li>\n<li class='chk'><span class='box'></span>UT：<code>AddKunOptions&lt;T&gt;</code> 可导出 JSON Schema 2020-12</li>\n<li class='chk'><span class='box'></span>UT：未注册实现时任何受保护端点缺省拒绝（fail-closed）；IT：Mediator 行为对标记了所需权限的命令在 handler 前调用 <code>Check</code></li>\n<li class='chk'><span class='box'></span>UT：注册一个命令后，能力目录中出现其 ID、请求 / 响应 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：Qian 代码树引用 <code>Kun.Infrastructure.IRepository</code> 或旧线 <code>Kun.Storage.IFileStorage</code> 即编译错误（Banned API 分析器）</li>\n<li class='chk'><span class='box'></span><code>KunExceptionHandler</code> 改走 <code>IProblemDetailsService</code>，不再直接 <code>WriteAsJsonAsync</code> ProblemDetails（contracts/v0/README.md §3.7 过渡态；否则 Kun 产生的错误体不会被 Qian 规范为 ErrorDetail）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-08 claude：验收补一条 KunExceptionHandler 走 IProblemDetailsService（S1-AGT-001 评审发现的尾巴，contracts/v0/README.md §3.7）</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-006.md"
  },
  {
@@ -3850,12 +3850,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/ROADMAP.md"
    }
   ],
-  "updated": "2026-10-07",
+  "updated": "2026-10-08",
   "acceptance": {
    "done": 0,
-   "total": 6
+   "total": 7
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.1–D20.5 的 .NET 落地：<code>IQianPlugin { Inject; Apply }</code>、<code>IPluginContext</code>（<code>Get / Provide / On / Emit / Waterfall / Parallel / Serial / Bail / Effect / Scope / Restrict</code>）、按 <code>inject[]</code> / <code>provides[]</code> 拓扑排序的装载器、可逆副作用逆序撤销、scope 两层扁平（<code>tenant:</code> / <code>app:</code> / <code>agent-session:</code>）与遮蔽 / <code>restrict</code> 交集。组件库唯一必需依赖，一切组件任务的前置，第 1 波首项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：<code>Inject</code> 的服务键无人提供 → 启动失败并指出缺失键与请求方；依赖成环 → 结构化错误列出环路</li>\n<li class='chk'><span class='box'></span>TCK：<code>Apply</code> 中注册的全部 effect 在卸载时按逆序撤销，卸载后服务容器中无残留</li>\n<li class='chk'><span class='box'></span>TCK：五种分发模式各一组用例——<code>waterfall</code> 监听器不调用 <code>next()</code> 时下游不执行；<code>bail</code> 停在首个返回值；<code>parallel</code> 任一失败不影响其余</li>\n<li class='chk'><span class='box'></span>TCK：租户 A scope 注册同名服务后，A 内解析到遮蔽项，B 与全局不受影响；两条 restriction 的交集生效；被过滤项在目录与执行两处都「不存在」</li>\n<li class='chk'><span class='box'></span>UT：<code>Qian.Runtime</code> 只依赖 <code>Kun.Core</code>、<code>Kun.Mediator</code> 与 .NET DI，无业务语义</li>\n<li class='chk'><span class='box'></span><code>Kun.*</code> 的 PackageVersion 一律引用 <code>$(KunVersion)</code>（属性若尚不存在则在本任务加入），<code>NuGet.config</code> 加 Kun 的 GitHub Packages 源与 packageSourceMapping（ADR-021 D21.3）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：验收补一条 <code>KunVersion</code> 单点钉版（ADR-021 D21.3）</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.1–D20.5 的 .NET 落地：<code>IQianPlugin { Inject; Apply }</code>、<code>IPluginContext</code>（<code>Get / Provide / On / Emit / Waterfall / Parallel / Serial / Bail / Effect / Scope / Restrict</code>）、按 <code>inject[]</code> / <code>provides[]</code> 拓扑排序的装载器、可逆副作用逆序撤销、scope 两层扁平（<code>tenant:</code> / <code>app:</code> / <code>agent-session:</code>）与遮蔽 / <code>restrict</code> 交集。组件库唯一必需依赖，一切组件任务的前置，第 1 波首项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：<code>Inject</code> 的服务键无人提供 → 启动失败并指出缺失键与请求方；依赖成环 → 结构化错误列出环路</li>\n<li class='chk'><span class='box'></span>TCK：<code>Apply</code> 中注册的全部 effect 在卸载时按逆序撤销，卸载后服务容器中无残留</li>\n<li class='chk'><span class='box'></span>TCK：五种分发模式各一组用例——<code>waterfall</code> 监听器不调用 <code>next()</code> 时下游不执行；<code>bail</code> 停在首个返回值；<code>parallel</code> 任一失败不影响其余</li>\n<li class='chk'><span class='box'></span>TCK：租户 A scope 注册同名服务后，A 内解析到遮蔽项，B 与全局不受影响；两条 restriction 的交集生效；被过滤项在目录与执行两处都「不存在」</li>\n<li class='chk'><span class='box'></span>UT：<code>Qian.Runtime</code> 只依赖 <code>Kun.Core</code>、<code>Kun.Mediator</code> 与 .NET DI，无业务语义</li>\n<li class='chk'><span class='box'></span><code>Kun.*</code> 的 PackageVersion 一律引用 <code>$(KunVersion)</code>（属性若尚不存在则在本任务加入），<code>NuGet.config</code> 加 Kun 的 GitHub Packages 源与 packageSourceMapping（ADR-021 D21.3）</li>\n<li class='chk'><span class='box'></span>Kun <code>Error</code> → <code>QianError</code>、<code>ValidationException.Errors</code> → <code>errors[]</code> 的桥接随 <code>Kun.*</code> 包引入一起落地（contracts/v0/README.md §3.7）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：验收补一条 <code>KunVersion</code> 单点钉版（ADR-021 D21.3）</li>\n<li>2026-10-08 claude：验收补一条 Kun 错误桥接（随首个引用 Kun.* 包的任务，contracts/v0/README.md §3.7）</li>\n</ul>",
   "file": "pm/tasks/S1-RT-001.md"
  },
  {
@@ -3968,8 +3968,7 @@
   "blockedBy": [
    "S1-RT-001",
    "S1-RT-002",
-   "S1-DATA-001",
-   "S1-DEC-010"
+   "S1-DATA-001"
   ],
   "order": 2,
   "readyNow": false,
@@ -3996,7 +3995,7 @@
    "done": 0,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>原 <code>qian.kernel</code> 注册表改为平台插件 <code>Qian.Registry</code>（<code>ctx.Registry</code>）：<code>IPluginManifestLoader</code> / <code>PluginManifestValidator</code>（JSON Schema 2020-12 + 语义校验，错误带 JSON Pointer）；PG schema <code>registry</code> 的 <code>plugin_artifacts</code> / <code>plugin_revisions</code> / <code>tenant_plugin_installs</code> / <code>scope_patches</code> / <code>extension_points</code> / <code>contracts</code> / <code>capabilities</code> / <code>event_types</code> / <code>entity_types</code> / <code>lifecycle_runs</code>；租户 scope patch 持久化与合入；<code>GET /api/registry/scopes/{scopeKey}/entries</code>；未挂载条目 404 / 403 <code>plugin_not_mounted</code> 规则（R32）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：缺任一 S1 必填字段、OCI 引用用 tag 而非 digest、<code>inputSchema</code> 含 <code>tenantId</code>、<code>inject[]</code> 引用无人提供的服务键、<code>scopes[]</code> 含非法种类的 <code>plugin.json</code>，安装失败并返回带 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：<code>policy.required: true</code> 只允许出现在 <code>policy.tier: system</code> 的平台插件上，否则校验失败</li>\n<li class='chk'><span class='box'></span>IT：对租户 A 写一条 scope patch、B 不写，<code>GET /api/registry/scopes/tenant:B/entries/&lt;id&gt;</code> 对持 <code>qian.registry:scope:read</code> 者返回 403 <code>plugin_not_mounted</code>、<code>reason = not_mounted</code>，无该权限者 404</li>\n<li class='chk'><span class='box'></span>IT：scope patch 变更事件触发装载器重新合入，撤销 patch 后 ≤ 5s 生效，不重启进程</li>\n<li class='chk'><span class='box'></span>IT：v1 别名 <code>/api/kernel/*</code> 返回同一结果并带 <code>Deprecation</code> 响应头（R33）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：依赖加 S1-DEC-010：R32 的 403 原因（not_entitled / not_mounted / restricted）在封闭 ErrorDetail 中的承载方式待定（contracts/v0/README.md 第 8 节第 4 条）</li>\n<li>2026-10-08 claude：依赖的默认裁决任务改号为 S1-DEC-010（原 S1-DEC-009 与 main 上已关闭的仓库归属拍板撞号）</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>原 <code>qian.kernel</code> 注册表改为平台插件 <code>Qian.Registry</code>（<code>ctx.Registry</code>）：<code>IPluginManifestLoader</code> / <code>PluginManifestValidator</code>（JSON Schema 2020-12 + 语义校验，错误带 JSON Pointer）；PG schema <code>registry</code> 的 <code>plugin_artifacts</code> / <code>plugin_revisions</code> / <code>tenant_plugin_installs</code> / <code>scope_patches</code> / <code>extension_points</code> / <code>contracts</code> / <code>capabilities</code> / <code>event_types</code> / <code>entity_types</code> / <code>lifecycle_runs</code>；租户 scope patch 持久化与合入；<code>GET /api/registry/scopes/{scopeKey}/entries</code>；未挂载条目 404 / 403 <code>plugin_not_mounted</code> 规则（R32）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：缺任一 S1 必填字段、OCI 引用用 tag 而非 digest、<code>inputSchema</code> 含 <code>tenantId</code>、<code>inject[]</code> 引用无人提供的服务键、<code>scopes[]</code> 含非法种类的 <code>plugin.json</code>，安装失败并返回带 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：<code>policy.required: true</code> 只允许出现在 <code>policy.tier: system</code> 的平台插件上，否则校验失败</li>\n<li class='chk'><span class='box'></span>IT：对租户 A 写一条 scope patch、B 不写，<code>GET /api/registry/scopes/tenant:B/entries/&lt;id&gt;</code> 对持 <code>qian.registry:scope:read</code> 者返回 403 <code>plugin_not_mounted</code>、<code>reason = not_mounted</code>，无该权限者 404</li>\n<li class='chk'><span class='box'></span>IT：scope patch 变更事件触发装载器重新合入，撤销 patch 后 ≤ 5s 生效，不重启进程</li>\n<li class='chk'><span class='box'></span>IT：v1 别名 <code>/api/kernel/*</code> 返回同一结果并带 <code>Deprecation</code> 响应头（R33）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：依赖加 S1-DEC-010：R32 的 403 原因（not_entitled / not_mounted / restricted）在封闭 ErrorDetail 中的承载方式待定（contracts/v0/README.md 第 8 节第 4 条）</li>\n<li>2026-10-08 claude：依赖的默认裁决任务改号为 S1-DEC-010（原 S1-DEC-009 与 main 上已关闭的仓库归属拍板撞号）</li>\n<li>2026-10-08 claude：S1-DEC-010 已裁决 R48：R32 的 403 原因即错误码（PLUGIN_NOT_ENTITLED / PLUGIN_NOT_MOUNTED / PLUGIN_RESTRICTED / PLUGIN_DEPENDENCY_PENDING，由 Qian.Registry.Abstractions 登记），message 带层级或 restriction id、pointer 指向 patch 条目；该前置已满足</li>\n</ul>",
   "file": "pm/tasks/S1-RT-004.md"
  },
  {
