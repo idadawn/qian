@@ -26,6 +26,7 @@ dotnet test --solution Qian.slnx -c Release --no-build
 ```
 
 - `dotnet test` 走 Microsoft Testing Platform（[global.json](../global.json) 的 `test.runner`）；xUnit v3 测试项目是可执行程序，csproj 里写 `<OutputType>Exe</OutputType>`。
+- 单跑一个测试项目用 `dotnet run --project tests/<X>.Tests -c Release`；`dotnet test <项目路径>` 或 `dotnet test --project …` 在部分机器上会报「运行了零个测试、退出码 5」，以 `--solution` 或 `dotnet run` 的结果为准。
 - 集成测试需要 Docker。本机没有 Docker 时集成测试**跳过**；在 CI（`CI=true`）或设置了 `QIAN_REQUIRE_DOCKER=1` 时**直接失败**，不会悄悄跳过（C10：集成测试必须跑）。
 - 首次运行要拉镜像，之后整套测试十秒左右。
 

@@ -296,6 +296,10 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 
 **已拍板**（2026-10-07）：仓库归属 = `idadawn`，Kun 迁入（S1-DEC-009 关闭，执行见 S1-PM-003）。**仍待确认**：Kun 仓库随文档站公开的时点（需 Kun 维护人确认）。
 
+### contracts/v0 默认裁决 R45–R53（S1-DEC-010，2026-10-08）
+
+S1-AGT-001 写契约时的 8 条默认值由 Claude 在产品负责人授权下裁决：R45 错误码大写下划线、OAuth `error` 值仍小写；R46 业务错误只用 409 / 422，404 一律 `NOT_FOUND`，配额类为 422 业务错误；R47 `AUTHZ_DENIED` 平台内置；R48 R32 的 403 原因即错误码（`PLUGIN_NOT_ENTITLED` / `PLUGIN_NOT_MOUNTED` / `PLUGIN_RESTRICTED` / `PLUGIN_DEPENDENCY_PENDING`，`message` 带层级、`pointer` 指向 patch 条目，ErrorDetail 不加 `details`）；R49 `tenant_id` 可为 null，发往 iClaw 的不转发 null；R50 字段级码 + `pointer`，ADR-011 D11.5 在 S2 映射；R51 `schemaSha256` 用 RFC 8785 JCS；R52 `humanOnly` = `agent.expose: false` + 服务端 `ACTION_HUMAN_ONLY`；R53 `draft` 保留到 S1 第 1 波消费方全部 review，由 S1-AGT-002 统一去掉。原文见 contracts/v0/README.md 第 8 节。
+
 ---
 
 ## 需要你拍板的问题汇总

@@ -274,7 +274,7 @@ plugin_id（服务主体为插件时）
 - `function`（Wasm）：燃料、内存、超时限额来自清单 `runtime.limits`；无网络与文件系统能力，除非清单声明并被批准。
 - 事件：发布 / 订阅主题 ACL 来自 `metadata/events.json`（原 `provides.events`，R37）；越权主题在总线层拒绝。
 - 前端：`system / official` 以 MF2 挂载并共享 singleton 依赖；其余按 tier 走 Worker 远程渲染（白名单组件目录 = yue manifest）或 iframe（无 `allow-same-origin`，postMessage 握手）。
-- 「未挂载」（租户 scope 未挂载，或被 `restrict` 过滤）在网关路由、SDK 入口、前端外壳三处同时拦截，一律 404、与不存在无法区分（管理面 403 `plugin_not_mounted`，R32）。
+- 「未挂载」（租户 scope 未挂载，或被 `restrict` 过滤）在网关路由、SDK 入口、前端外壳三处同时拦截，一律 404、与不存在无法区分（管理面 403 原因码 `PLUGIN_NOT_MOUNTED` 等，R32 / R48）。
 
 ---
 

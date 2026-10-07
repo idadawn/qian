@@ -24,7 +24,7 @@ fixture 文件形状统一为 `[{ "name": "<这条样例说明什么>", "data": 
 
 - 全部 Schema 为 JSON Schema 2020-12，`$id` 前缀 `https://qian.dev/contracts/v0/`（标识符，不要求可解引用）。跨文件引用：`error-catalog` → `error-detail`，`event-envelope` → `s2s-claims`，`capability-entry` → 2020-12 元 Schema。
 - 声明了 `properties` 的 object 一律 `additionalProperties: false`。开放容器只有三处，都由别处的 Schema 约束内容：事件 `payload`（事件目录中该 `type` 的 Schema）、能力的 `inputSchema` / `outputSchema`（它们本身是 Schema 文档）、多语言文案（语言标签 → 文本）。
-- 状态 `x-status: draft`：允许破坏性修订，但改 Schema 必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。第 8 节的默认裁决经 [S1-DEC-010](../../pm/tasks/S1-DEC-010.md) 确认后去掉 `draft`，此后只做向后兼容的增量；破坏性变更开 `contracts/v1/`，不改 v0。
+- 状态 `x-status: draft`：允许破坏性修订，但改 Schema 必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。第 8 节的默认裁决已于 2026-10-08 裁决（[S1-DEC-010](../../pm/tasks/S1-DEC-010.md)，R45–R53）；`draft` 保留到 S1 第 1 波消费方（registry、identity、authz、events、gateway）全部进入 review，届时由 S1-AGT-002 一个 PR 统一去掉（R53），此后只做向后兼容的增量；破坏性变更开 `contracts/v1/`，不改 v0。
 - 线上成员名：错误体、S2S claim、事件信封用 snake_case（与 iClaw 同形）；能力条目用 camelCase（与 `plugin.json` 和 tool/v2 一致）。
 - 契约格式（7.18）：HTTP 接口 OpenAPI 3.1 + `operationId`；数据 JSON Schema 2020-12 + `additionalProperties: false`。
 
@@ -185,15 +185,16 @@ return QianResults.Error(new QianError(PlatformErrors.InputInvalid)
 
 新增样例：在对应 `fixtures/*.json` 里追加 `{ "name", "data" }` 即可，测试自动发现。
 
-## 8 默认裁决（待 S1-DEC-010 确认）
+## 8 默认裁决（S1-DEC-010 已裁决，2026-10-08）
 
-下列各点是写本契约时取的默认值，`draft` 期内可改；确认后去掉 `x-status: draft`。
+下列各点在写本契约时是默认值，2026-10-08 经 S1-DEC-010 逐条裁决（编号 R45–R53，与 `docs/decisions` 的裁决序列同一套）。改判项已同步到 Schema 描述与 PRD / spec 文字，Schema 结构与 fixture 不变；`draft` 的去留见第 9 条。
 
-1. 错误码一律大写下划线（与 7.5、7.7、§08 的 `AUTHZ_DENIED`、`QUOTA_EXCEEDED`、`RECORD_CONFLICT` 等一致）。R32 文中的 `plugin_not_mounted` 读作 `PLUGIN_NOT_MOUNTED`；`insufficient_scope` 仍是 `WWW-Authenticate` 头里的 OAuth `error` 值，响应体 `code` 为 `INSUFFICIENT_SCOPE`。
-2. 业务错误只用 409 / 422，其余状态码都是协议错误；404 一律 `NOT_FOUND`。
-3. `AUTHZ_DENIED` 归平台内置（框架默认 403 与 `qian.authz` 的 PEP 共用一个码），`qian.authz` 引用、不重复登记。
-4. ErrorDetail 是封闭对象，不设 iClaw 的自由成员 `details`。由此 R32 的 403「附原因（`not_entitled` / `not_mounted` / `restricted`）」暂无结构化承载位，候选：每个原因一个错误码，或增加按错误码在目录里声明 Schema 的 `details` 成员。须在 S1-RT-004 实现前定。
-5. S2S claim 与事件信封的 `tenant_id` 可为 `null`（平台级），iClaw 要求非空。
-6. 字段级错误码同为大写下划线并配 `pointer`；ADR-011 D11.5 的 `{aggregate}.{field}.{constraint}` 形式在 S2 落地时对齐（`pointer` 已表达字段）。
-7. `schemaSha256` 采用 RFC 8785 JCS 规范化（第 6 节）。
-8. 7.4.1 / 7.5 提到的 `humanOnly` 在能力条目里没有字段，v0 未收录。
+1. **已裁决（R45）确认**：错误码一律大写下划线（与 7.5、7.7、§08 的 `AUTHZ_DENIED`、`QUOTA_EXCEEDED`、`RECORD_CONFLICT` 一致）。R32 的 `plugin_not_mounted` 读作 `PLUGIN_NOT_MOUNTED`（PRD / spec 已改）；`insufficient_scope` 仍是 `WWW-Authenticate` 头里的 OAuth `error` 值，响应体 `code` 为 `INSUFFICIENT_SCOPE`。
+2. **已裁决（R46）确认**：业务错误只用 409 / 422，其余状态码都是协议错误；404 一律 `NOT_FOUND`，领域记录不存在也用它，`pointer` 指向标识所在位置。权益与配额类拒绝（如 `QUOTA_EXCEEDED`）是业务错误，用 422；授权判定拒绝是协议错误 403 `AUTHZ_DENIED`。
+3. **已裁决（R47）确认**：`AUTHZ_DENIED` 归平台内置（框架默认 403 与 `qian.authz` 的 PEP 共用一个码），`qian.authz` 引用、不重复登记。
+4. **已裁决（R48）改判为「原因即错误码」**：ErrorDetail 保持封闭、不加 iClaw 式的自由成员 `details`。R32 管理面 403 的原因用四个错误码表达：`PLUGIN_NOT_ENTITLED`（7.14 权益未授权）、`PLUGIN_NOT_MOUNTED`（租户 scope 未挂载或被某层 patch 禁用）、`PLUGIN_RESTRICTED`（被 restriction 过滤）、`PLUGIN_DEPENDENCY_PENDING`（依赖未就绪）。具体是哪层 patch、哪条 restriction 写进 `message`（文案模板参数），`pointer` 用带文件前缀的形式指向该 patch 或 restriction 条目（如 `profiles/platform/qian.patch.yml#/plugins/3`）。四个码由 `Qian.Registry.Abstractions` 登记（owner `qian.registry`，kind protocol，status 403），不进平台内置目录；S1-RT-004 按此实现。
+5. **已裁决（R49）确认**：S2S claim 与事件信封的 `tenant_id` 可为 `null`（平台级）。与 iClaw 的差异不构成冲突：发往 iClaw 的令牌与事件只有租户级，网关与适配器遇 `null` 一律不转发。
+6. **已裁决（R50）确认**：字段级错误码同为大写下划线并配 `pointer`；ADR-011 D11.5 的 `{aggregate}.{field}.{constraint}` 在 S2 落地时映射为「`pointer` 表达字段 + `code` 表达约束」，不另起一套写法。
+7. **已裁决（R51）确认**：`schemaSha256` 采用 RFC 8785 JCS 规范化（第 6 节）；iClaw 侧的确认进入 ADR-016 的协议对齐计划，确认前 iClaw 运行授权快照不以此值做等值比较。
+8. **已裁决（R52）**：`humanOnly` 不另设字段，它就是能力条目 `agent.expose: false` 的含义：不派生为模型可见工具，且服务端拒绝 `principal_kind = agent` 的调用（错误码 `ACTION_HUMAN_ONLY`，S4 启用、S1 只落库）；`expose: true` 加 `requiresConfirmation: true` 表示「需人工确认」。Schema 的字段描述与 PRD §11 词表已按此改。
+9. **已裁决（R53）**：`x-status: draft` 暂不去掉。去掉的条件是 S1 第 1 波的消费方全部进入 review（S1-RT-004 registry、S1-IDP-001 identity、S1-AZ-001 authz、S1-EVT-001 events、S1-GW-001 gateway），届时由 S1-AGT-002 一个 PR 统一去掉并转 additive-only；在此之前允许破坏性修订，但每次修订必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。

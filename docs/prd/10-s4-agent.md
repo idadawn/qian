@@ -61,7 +61,7 @@ S4 退出标准：**Agent 能发现、调用、编排乃至生成平台能力与
 **调用**
 - ✅ Agent 不直连 Qian 服务裸 URL，一律经 Higress MCP 路由（chokepoint、出网 deny-by-default、consumer 头计量）。
 - ✅ 「知道 ID 不构成权限」：授权来自「发起用户的委托 + 本 run 的授权快照」；Qian RBAC 接受 S2S JWT 的 `sub + tenant_id + scope` 做用户态鉴权（10.3）。
-- ✅ 令牌受众绑定（RFC 8707）、禁止令牌透传、最小 scope + 逐步提权（403 + `insufficient_scope`）；网关按 `Mcp-Method / Mcp-Name` 头鉴权限流（配置方式需 PoC，敏感参数不得映射到头）。
+- ✅ 令牌受众绑定（RFC 8707）、禁止令牌透传、最小 scope + 逐步提权（403，`WWW-Authenticate` 的 `error="insufficient_scope"`，响应体 `code = INSUFFICIENT_SCOPE`，R45）；网关按 `Mcp-Method / Mcp-Name` 头鉴权限流（配置方式需 PoC，敏感参数不得映射到头）。
 - ✅ 写类工具必须幂等（`idempotencyKey`）：2026-07-28 删除了 SSE 断点续传，断流重发会重复执行。
 
 **编排**
@@ -111,7 +111,7 @@ S4 退出标准：**Agent 能发现、调用、编排乃至生成平台能力与
 
 #### 验收标准
 
-- [ ] Agent 以委托 U 的令牌调用 U 无权限的能力返回 403 `insufficient_scope`；调用 `humanOnly` 动作返回 `ACTION_HUMAN_ONLY`；审计条目含 `actor=agent, on_behalf_of=U, channel=MCP`。**测法**：S2S 令牌模拟。
+- [ ] Agent 以委托 U 的令牌调用 U 无权限的能力返回 403 `INSUFFICIENT_SCOPE`（头部 `error="insufficient_scope"`，R45）；调用 `humanOnly` 动作返回 `ACTION_HUMAN_ONLY`；审计条目含 `actor=agent, on_behalf_of=U, channel=MCP`。**测法**：S2S 令牌模拟。
 - [ ] 已授权工具的 schema 变更后，旧 `ToolGrant` 失效，再次调用要求重新授权。**测法**：注册表接口。
 - [ ] 带指令的工具返回内容不会触发后续破坏性动作（策略降权生效）。**测法**：注入用例集（与 iClaw 联测）。
 

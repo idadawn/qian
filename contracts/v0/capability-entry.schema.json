@@ -150,7 +150,7 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "AgentExposure": {
-      "description": "S4 是否派生为模型可见工具、是否需人工确认；S1 只落库。",
+      "description": "S4 是否派生为模型可见工具、是否需人工确认；S1 只落库。expose 为 false 即 humanOnly（R52）：不派生为工具，且服务端拒绝 principal_kind = agent 的调用（ACTION_HUMAN_ONLY）。",
       "type": "object",
       "additionalProperties": false,
       "required": ["expose", "requiresConfirmation"],

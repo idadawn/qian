@@ -731,7 +731,7 @@ TS 侧服务键小驼峰（`files`），.NET 侧大驼峰（`Files`）；两侧 
 - **形状**：`global` 或 `<kind>:<id>`，`kind ∈ { tenant, app, agent-session }`。没有父指针；`app:crm-7` 属于哪个租户是 lineage 数据（由 `Tenancy` 回答），不是 scope 结构。
 - **遮蔽**：`ctx.Scoped(scope)` 返回的子上下文做的注册归属该 scope；在该 scope 解析 `(key, name)` 时先找 scope 内（命中即遮蔽全局项），未命中再找全局；scope 之外看不到 scope 内注册。
 - **`restrict`**：`ctx.Restrict(scope, keep)` 为该 scope 过滤**全局**集合；多个 restriction 取交集；被过滤项在该 scope 内不出现在 `List()`、目录与提示词中，执行时返回与「不存在」完全相同的 `RegistrationNotFound`。restriction 也是副作用，随所属插件卸载而解除。
-- **不可区分原则（R32）**：被 scope 过滤或未挂载的组件，对业务与模型表面（路由、`ctx.Tools`、能力目录、菜单）一律 404，与不存在无法区分；只有管理面 `/api/registry/*` 对持有 `qian.registry:scope:read` 的调用者返回 403 `plugin_not_mounted` 并附原因（被哪层 patch 禁用 / 被哪条 restriction 过滤 / 依赖未就绪）。
+- **不可区分原则（R32）**：被 scope 过滤或未挂载的组件，对业务与模型表面（路由、`ctx.Tools`、能力目录、菜单）一律 404，与不存在无法区分；只有管理面 `/api/registry/*` 对持有 `qian.registry:scope:read` 的调用者返回 403，错误码即原因（`PLUGIN_NOT_MOUNTED` 被某层 patch 禁用 / `PLUGIN_RESTRICTED` 被某条 restriction 过滤 / `PLUGIN_DEPENDENCY_PENDING` 依赖未就绪 / `PLUGIN_NOT_ENTITLED` 未授权），`message` 带层级或 restriction id、`pointer` 指向该条目（R48）。
 - **无继承**：`agent-session:s-9` 不会自动看到 `tenant:t-001` 的注册；需要「会话继承租户」时由 Agent 门面插件在创建会话 scope 时显式复制所需注册或在 `keep` 里查询 lineage——这是数据，不是 scope 机制。
 - **租户开关**（D20.5）：启用 = 在 `tenant:<id>` scope 挂载条目（租户 scope patch，§7.6）；停用 = `disabled: true`；定制 = 替换该条目的 `config`，或在租户 scope 内对同名键做遮蔽注册。
 - **校验**：条目 `scope.kind` 必须在组件 `scopes[]` 中。
@@ -1233,7 +1233,7 @@ npx qian@latest [--skill <name>]… [--agent <name>]… [--command <name>]… [-
 
 | 前缀 | 提供者 | 内容 |
 |---|---|---|
-| `/api/registry/*` | `qian.registry` | 条目与插件树（`GET /api/registry/entries?scope=`，等价 `dump-config`）、scope patch（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`）、lock 与来源；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 `plugin_not_mounted` 并附原因（R32），其他调用者 404 |
+| `/api/registry/*` | `qian.registry` | 条目与插件树（`GET /api/registry/entries?scope=`，等价 `dump-config`）、scope patch（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`）、lock 与来源；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 原因码（`PLUGIN_NOT_MOUNTED` 等四个，R32 / R48），其他调用者 404 |
 | `/api/lifecycle/*` | `qian.lifecycle` | `mount` / `unmount` / `reload`（声明式表面）、滚动重启请求、`/api/lifecycle/diagnostics`（Pending / Failed / 环路） |
 | `/api/capabilities/*` | `qian.capabilities` | 能力目录（工具、事件、实体），鉴权后按 scope 与权限过滤，响应带 `ttlMs` 与 `cacheScope: private`；`/api/capabilities/openapi.json` 聚合 |
 | `/api/kernel/*` | 别名 | v1 路径在 S1 内保留为别名，响应带 `Deprecation` 头与 `Link: rel="successor-version"`，S2 移除 |
@@ -1356,7 +1356,7 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 - [ ] **示例插件**：§5.7 与 §5.8 原样编译通过并在 `minimal` profile 下 `Ready`；把 `files` 条目的 Provider 换成内存实现后，`qian.sample.crm` 的附件上传用例不改代码仍通过（IT）。
 - [ ] **seam 依赖图**：G3 对全部 `Qian.*` / `@qian/*` 包通过；故意让 `Qian.Files` 引用 `Qian.Authz` 时 G3 失败（CI）。
 - [ ] **profile 与 patch**：五个 profile 与组合包入库；`qian --profile platform dump-config` 输出通过 `patch/v2` 校验，任一条目复制为 patch 记录后再次 `dump-config` 结果不变；T15 在真实文件上复现（E2E）。
-- [ ] **租户 scope patch**：对租户 A 写 `files` 的 scope patch 后 A 的上传落到 A 的桶、B 不受影响；对 A 写 `disabled: true` 后 A 调用 `qian.files/upload`、访问其路由与菜单均得到与「不存在」相同的 404，而持有 `qian.registry:scope:read` 的运维调用 `/api/registry/entries` 得到 403 `plugin_not_mounted` 并附「被租户 scope patch 禁用」（R32）；对 `policy.required: true` 的条目写 `disabled: true` 被拒；未授权租户写入返回 `NOT_ENTITLED`（E2E）。
+- [ ] **租户 scope patch**：对租户 A 写 `files` 的 scope patch 后 A 的上传落到 A 的桶、B 不受影响；对 A 写 `disabled: true` 后 A 调用 `qian.files/upload`、访问其路由与菜单均得到与「不存在」相同的 404，而持有 `qian.registry:scope:read` 的运维调用 `/api/registry/entries` 得到 403 `PLUGIN_NOT_MOUNTED`，`message` 为「被租户 scope patch 禁用」、`pointer` 指向该条目（R32 / R48）；对 `policy.required: true` 的条目写 `disabled: true` 被拒；未授权租户写入返回 `NOT_ENTITLED`（E2E）。
 - [ ] **管理面别名**：`GET /api/kernel/capabilities` 与 `GET /api/capabilities` 返回相同内容，前者带 `Deprecation` 头（IT，R33）。
 - [ ] **市场与 CLI**：官方市场仓库含 `marketplace.json` 与签名；空白项目 `qian init --template dotnet-webapi` 后 `qian add identity authz files`，照各包 README 在 30 分钟内跑通登录、权限检查与上传（ADR-020 §6 S1 退出标准）；`npx qian@latest --skill tenant-onboarding --yes` 只复制技能、不改依赖（E2E）。
 - [ ] **幂等与回滚**：重复 `qian add files@1.0.0` 返回 0 且工作区无变化；在加依赖步骤注入失败后工作区与 lock 恢复到安装前（`git status` 干净）；`qian remove files` 后条目 `disabled: true`、文件与依赖移除（IT）。
@@ -1379,7 +1379,7 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 7. 已拍板（ADR-020 §7 第 7 条）：CLI 遥测默认不采集；S2 提供 opt-in `qian telemetry on`，只采集命令名、CLI 版本、操作系统与匿名安装 id，不含路径、租户与代码；私有化部署可在 profile 中禁用（§9.1）。
 8. 已拍板（ADR-020 §7 第 8 条）：`qian init --template` 模板名统一为 §9.1 的集合（R42），后续新增模板在本 spec 登记。
 
-补充裁决 R28（连接器与组合包的定义、`policy.egress[]`）、R31（五个 profile 的组合包落位、「平台插件」术语）、R32（未挂载 / 被过滤一律 404，管理面 403 `plugin_not_mounted`）、R33（CLI 十个动词、管理面端点前缀与 `/api/kernel/*` 别名）、R34（`Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 只进 `platform`、`policy.required`、挂载状态只存 `scope_patches`）、R35（文件夹 = 分发形态、注册表 = 运行态真相源、同一校验器、git 修订 = 分发版本）、R37（反向权限落 `policy.permissions`，权限点 / 默认角色 / 事件 / 消息类型落 `metadata/`）、R38（单例 seam 与注册表 seam 两种风格；连接器一律向注册表子服务按名称注册，`provides` 写「注册表键:名称」）、R39（hooks Schema 固定 Qian 事件矩阵；Agent 宿主事件由 Agent 运行时定义并透传）、R40（`policy.installation: auto \| confirm \| restricted`；未验签条目只装无代码组件、tier 最高 `community`）、R41（hooks `command` 与内联 shell 边界；profile 的 `build.aot` / `hmr` / `health` 字段保留）已在正文落实（§1.3、§2.1、§3.1、§3.4、§3.5、§3.6、§4.4、§5.1、§5.5、§5.7、§6.1–§6.3、§7.2、§7.6、§7.7、§8.2、§8.3、§9.1、§9.5、§10.1、§10.2、§11.4、§11.5）。本 spec 上报的口径空白已全部裁决，当前没有未裁决的草案口径。
+补充裁决 R28（连接器与组合包的定义、`policy.egress[]`）、R31（五个 profile 的组合包落位、「平台插件」术语）、R32（未挂载 / 被过滤一律 404，管理面 403 原因码 `PLUGIN_NOT_MOUNTED` 等，R48）、R33（CLI 十个动词、管理面端点前缀与 `/api/kernel/*` 别名）、R34（`Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 只进 `platform`、`policy.required`、挂载状态只存 `scope_patches`）、R35（文件夹 = 分发形态、注册表 = 运行态真相源、同一校验器、git 修订 = 分发版本）、R37（反向权限落 `policy.permissions`，权限点 / 默认角色 / 事件 / 消息类型落 `metadata/`）、R38（单例 seam 与注册表 seam 两种风格；连接器一律向注册表子服务按名称注册，`provides` 写「注册表键:名称」）、R39（hooks Schema 固定 Qian 事件矩阵；Agent 宿主事件由 Agent 运行时定义并透传）、R40（`policy.installation: auto \| confirm \| restricted`；未验签条目只装无代码组件、tier 最高 `community`）、R41（hooks `command` 与内联 shell 边界；profile 的 `build.aot` / `hmr` / `health` 字段保留）已在正文落实（§1.3、§2.1、§3.1、§3.4、§3.5、§3.6、§4.4、§5.1、§5.5、§5.7、§6.1–§6.3、§7.2、§7.6、§7.7、§8.2、§8.3、§9.1、§9.5、§10.1、§10.2、§11.4、§11.5）。本 spec 上报的口径空白已全部裁决，当前没有未裁决的草案口径。
 
 ---
 
