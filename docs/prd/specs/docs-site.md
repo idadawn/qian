@@ -161,12 +161,37 @@ Kun 是 Qian 的底座框架，没有自己的文档站，读者与本站 SDK �
 | `updated` | 是 | `YYYY-MM-DD` | 新鲜度 |
 | `tags` | 否 | 数组 | 站内分类 |
 
+校验器（`scripts/check_docs.py`，S1-DOCS-003）：`title`、`description`（≤ 120 字）、`part`（须与所在目录一致，根目录的首页与站点地图记作 `start`）、`project`、`audience`、`updated`（有效日期）必填；镜像页（`project: kun` 或 `part: design`）必填 `source`，Kun 镜像页还必填 `version` 且只在 `sdk/` 下；`components/platform/<id>`、`components/yue/<name>` 页必填 `component`；`stage`、`surface`、`version`、`source` 写了就查枚举或格式。`version` 对组件页与 SDK 页的强制等首个包族版本发布、多版本开启时再启用。frontmatter 只用 YAML 子集：`key: 值`、`key: [a, b]`、缩进的 `- 项` 列表、双引号或单引号字符串；生成器与校验器用同一套规则（`website/scripts/repo.ts` 的 `parseFrontmatter`），嵌套映射、多行标量一律不收。手写页默认只检查进 Git 的源，生成页在 CI 里构建后显式检查（§7）。
+
 ## 5 版本、语言与机器可读产物
 
 - **版本**：第 2、3、4 部分随 Qian 包族的 SemVer 锁步版本走多版本；第 1、5、6、7 部分只有当前版。第 3 部分的 Kun 小节不单独选版本：每个 Qian 文档版本内嵌该版本 `KunVersion` 锁定的 Kun CalVer（ADR-021 D21.3）。
 - **语言**：中文为唯一一等语言；英文在 S3 评估，目录结构预留 `/en/` 前缀，不提前翻译。
-- **机器可读**：开启 `llms: true`，构建产出 `llms.txt`、`llms-full.txt`、每页 `.md`（SSG-MD），加 `sitemap.xml` 与 `kb-index.json`（每页 url、md url、标题、frontmatter 含 `project` / `version` / `source`、内容 sha256、更新时间）；`llms.txt` 按 `project` 分节（Qian / Kun / yue）。知识库只读这些产物，不解析 MDX 源。每页提供「复制为 Markdown」入口。
+- **机器可读**：开启 `llms: true`，构建产出 `llms.txt`、`llms-full.txt`、每页 `.md`（SSG-MD），加 `sitemap.xml` 与 `kb-index.json`（每页 url、md url、标题、frontmatter 含 `project` / `version` / `source`、内容 sha256、更新时间），契约见 §5.1；`llms.txt` 按 `project` 分节（Qian / Kun / yue，S1-DOCS-006；S1-DOCS-003 先按七个部分分节）。知识库只读这些产物，不解析 MDX 源。每页标题下与首页有「复制为 Markdown」「复制 Markdown 链接」入口（Rspress `themeConfig.llmsUI`，不放外部 AI 服务入口）。
 - **站内「问 AI」**：S2 由 yue 组件 `<AskDocs>` 提供，检索基于上述产物，模型只经模型网关（S2-DOCS-001）。
+
+### 5.1 知识库导入契约（S1-DOCS-003）
+
+构建产物（`website/doc_build/`，发布后就是站点根）里的机器可读文件：
+
+| 文件 | 内容 | 来源 |
+|---|---|---|
+| `llms.txt` | 全站索引：站点标题与一句话定位，按顶部导航的七个部分分节，每页一行 `- [标题](<md 地址>): 摘要`（首页不列） | Rspress `llms: true`；摘要取 frontmatter `description` |
+| `llms-full.txt` | 全站正文：每页以 `---` / `url: <md 地址>` / `---` 开头，后接该页 Markdown | 同上 |
+| `<路由>.md` | 每页的 Markdown：路由 `/start/hosts` 对应 `/start/hosts.md`，目录首页 `/start/` 对应 `/start/index.md`，首页是 `/index.md`；带部署前缀 | SSG-MD：构建期用 React 把页面渲染成 Markdown，不是 HTML 回转 |
+| `kb-index.json` | 页面清单与元数据（下表） | `website/scripts/build-kb-index.ts`，构建末尾运行 |
+| `sitemap.xml` | 每页的绝对地址（`siteUrl + base + 路由`）、`lastmod`（取 frontmatter `updated`）、优先级（首页 1.0，其余 0.5） | 同上；`siteUrl` 默认是正式站点入口，CI 可用 `DOCS_SITE_URL` 覆盖 |
+
+`kb-index.json`（`version: 1`；字段只增不改，改语义就升 `version`）：
+
+| 字段 | 说明 |
+|---|---|
+| `version`、`generatedAt` | 契约版本；生成时间（ISO 8601） |
+| `base`、`siteUrl` | 部署前缀（正式站点 `/`，预览 `/pr-preview/pr-<n>/`）与站点入口 |
+| `kunVersion` | 本次构建镜像的 Kun 版本（`Directory.Packages.props` 的 `KunVersion`） |
+| `pages[]` | 按路由排序。每页：`route`、`url`（HTML）、`md`（Markdown 地址，两者都带前缀）、`sourceFile`（相对 `website/docs`）、`title`、`description`、`project`、`part`、`audience[]`、`version`（有则给）、`source`（镜像页）、`updated`、`sha256`（`.md` 内容的 SHA-256）、`bytes`、`frontmatter`（完整 frontmatter 解析结果） |
+
+消费方（S2 的知识库与 `<AskDocs>`）的用法：定期拉 `kb-index.json`，按 `project` / `audience` / `part` 过滤，`sha256` 变了才重新抓该页 `.md`；引用来源给 `url`，列表摘要用 `description`。Markdown 里的约定：每页第一行是给代理的提示（指向 `llms.txt` 与 `llms-full.txt`）；Rspress 的容器语法 `:::info … :::` 原样保留；站内链接指向对应页的 `.md`；自定义组件（首页卡片、最新动态、站点地图）在 SSG-MD 下只输出标题、段落、列表与链接；JSX 容器内部的 Markdown 里不能再放行内组件（会原样残留），阶段标记写成文字。
 
 ## 6 `website/` 目录骨架
 
@@ -192,16 +217,16 @@ website/
   scripts/
     collect-components.ts      收集组件文件夹 → docs/components/
     sync-specs.ts              specs → docs/cli/、docs/ → docs/design/
-    build-kb-index.ts          产出 kb-index.json
+    build-kb-index.ts          构建后产出 kb-index.json 与 sitemap.xml（§5.1）
     sync-kun-docs.ts           kun 仓库 v<KunVersion> 的 docs/ 白名单 → docs/sdk/kun/（§2b）
     build-versions.ts          Directory.Packages.props / global.json / pnpm catalog → docs/start/versions.mdx
-  theme/                       主题覆盖：接入 @yue/tokens、「复制为 Markdown」、AskDocs 挂载点
+  theme/                       主题覆盖：接入 @yue/tokens、首页的「复制为 Markdown」（文档页由 llmsUI 注入）、AskDocs 挂载点；自定义组件带 SSG-MD 分支
 ```
 
 ## 7 门禁
 
-- `scripts/check_docs.py` 覆盖 `website/docs`：禁用词、表格、断链、frontmatter 必填与枚举。
-- CI 构建站点；`llms.txt`、每页 `.md`、`kb-index.json` 与源文档不同步即失败。
+- `scripts/check_docs.py` 覆盖 `website/docs`：禁用词、表格、断链、frontmatter 必填与枚举（§4）；生成目录在 CI 里构建后显式检查（`scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api`）。
+- CI 构建站点后 `pnpm --filter website check`：`llms.txt`、`llms-full.txt`、每页 `.md`、`kb-index.json`、`sitemap.xml` 齐全；索引里每页的 `.md` 与 HTML 都在且 `sha256` 一致，`llms.txt`、`llms-full.txt`、`sitemap.xml` 收录每页，产物里没有索引外的 `.md`；每页 `.md` 没有 JSX / ESM 残留与空标题、空列表项，代码块不少于源页（§5.1）。
 - 生成目录（`components/`、`sdk/api/`、`sdk/kun/`（`with-qian.mdx` 除外）、`cli/`、`design/`、`start/versions.mdx`）不接受手改 PR。
 - Kun 小节：镜像的 Kun tag 与 `Directory.Packages.props` 的 `KunVersion` 不一致即失败；§2b.2 白名单外的文件进站即失败；`KunVersion` 缺失时构建失败而不是取 `main`。
 - 产物总大小超过预算即失败（`website/scripts/check-site.ts` 的 `SITE_SIZE_BUDGET_MB`，现为 100 MB，约为当前的两倍），并报出最大的目录。预算挡的是结构性膨胀，比如同一块内容被重复渲染进每一页；确属正常增长时调高预算，并在 PR 里写明原因（已裁决 R55）。
@@ -210,8 +235,8 @@ website/
 
 - [ ] 七个部分的路径、来源与版本策略按 §2 实现，导航中文、路径英文
 - [ ] 任一组件页满足 §3 九节顺序；缺节组件构建失败
-- [ ] 全站页面 frontmatter 通过 §4 校验
-- [ ] §5 的四类机器可读产物齐全并经 CI 新鲜度校验
+- [x] 全站页面 frontmatter 通过 §4 校验（S1-DOCS-003）
+- [x] §5 的四类机器可读产物齐全并经 CI 新鲜度校验（S1-DOCS-003，§5.1）
 - [ ] 第 2 部分 yue 页有活演示与 props 表，平台插件页有配置字段表与最小 patch 示例
 - [ ] 第 3 部分「Kun 框架」小节按 §2b 生成：版本与 `KunVersion` 一致、每页有来源横幅与 `project: kun`、`/sdk/api/kun/` 可用、`/sdk/kun/with-qian` 手写页存在
 - [ ] `/start/family` 与 `/start/versions` 存在，后者由脚本生成并与仓库钉版一致
@@ -220,5 +245,6 @@ website/
 
 - 2026-10-07：首版。信息架构（七个部分）由产品负责人确认；frontmatter 字段与 S1-DOCS-003 对齐。
 - 2026-10-07：新增 §2a 首页与顶部产品导航（借鉴对标产品文档首页：三条起步命令、编码代理配置、五栏产品能力、无公司信息、无对应能力移除、规划能力打阶段标记）；第 3 部分「Agent SDK + 模型服务 SDK」合并为对外名称「AI SDK」。
+- 2026-10-09：S1-DOCS-003：§4 补校验器规则与 frontmatter 的 YAML 子集；§5 新增 5.1 知识库导入契约（五个机器可读文件、`kb-index.json` 字段、`.md` 地址规则、sitemap 的 lastmod）；§6、§7、§8 相应更新。
 - 2026-10-08：S1-DOCS-005（PR #4）未决问题裁决 R54–R62（S1-DEC-011）：API 参考不进侧栏、API 页不渲染侧栏（R54）；产物总大小预算（R55）；API 参考路径统一在 `/sdk/api/`（R56）；Kun 小节排在 SDK 概览页之后（R57）；Kun ADR 白名单收小写文件名（R58）；上游问题与第三方 `cref`（R59）；构建依赖与 fork / Dependabot（R60）；`KunVersion` 与包源映射（R62）。§2、§2b、§6、§7 相应更新。
 - 2026-10-07：Kun 进站与产品族页（ADR-021）：第 3 部分新增第一节「Kun 框架」`/sdk/kun/`，按 `KunVersion` 从 kun 仓库镜像 + DocFX，取代首版「Kun 外链不重写」；第 1 部分新增产品族地图 `/start/family` 与版本矩阵 `/start/versions`；frontmatter 新增 `project` / `source`；§1、§2a、§2b、§5、§6、§7、§8 相应更新。

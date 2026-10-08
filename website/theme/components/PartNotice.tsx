@@ -6,6 +6,8 @@ import { VERSIONED_PARTS } from '../site';
 
 export function PartNotice() {
   const { page } = usePage();
+  // Markdown 产物里不放这条界面提示：版本信息已在 frontmatter 的 version 字段
+  if (import.meta.env.SSG_MD) return null;
   const part = VERSIONED_PARTS.find((p) => page.routePath.startsWith(p.prefix));
   if (!part || page.frontmatter?.project === 'kun') return null;
   return (

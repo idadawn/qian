@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "rspress dev",
-    "build": "rspress build",
+    "build": "rspress build && node scripts/build-kb-index.ts",
+    "kb-index": "node scripts/build-kb-index.ts",
     "preview": "rspress preview",
     "generate": "node scripts/generate.ts",
     "typecheck": "tsc -p tsconfig.json",

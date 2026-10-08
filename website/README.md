@@ -1,6 +1,6 @@
 # Qian 文档站
 
-> 对应任务 S1-DOCS-001（脚手架）与 S1-DOCS-005（「Kun 框架」小节与 Kun API 参考）。规范见 [docs/prd/specs/docs-site.md](../docs/prd/specs/docs-site.md)（七个部分、首页、组件页模板、frontmatter、机器可读产物），本文是它的实施说明：怎么本地运行、目录怎么分、内容从哪来、怎么发布。
+> 对应任务 S1-DOCS-001（脚手架）、S1-DOCS-005（「Kun 框架」小节与 Kun API 参考）与 S1-DOCS-003（机器可读产物与 frontmatter 校验）。规范见 [docs/prd/specs/docs-site.md](../docs/prd/specs/docs-site.md)（七个部分、首页、组件页模板、frontmatter、机器可读产物），本文是它的实施说明：怎么本地运行、目录怎么分、内容从哪来、怎么发布。
 
 Rspress 2.0（`@rspress/core` 2.0.23，React 19，MDX）。内置全文搜索（本地索引）与 Shiki 代码高亮，Mermaid 由 `rspress-plugin-mermaid` 渲染。站点只有中文，目录结构给英文预留 `/en/`（docs-site.md §5）。
 
@@ -18,7 +18,8 @@ Rspress 2.0（`@rspress/core` 2.0.23，React 19，MDX）。内置全文搜索（
 ```bash
 pnpm install                       # 仓库根目录，一次即可
 pnpm --filter website dev          # 本地预览，改 website/docs 实时刷新
-pnpm --filter website build        # 产出 website/doc_build（纯静态）
+pnpm --filter website build        # 产出 website/doc_build（纯静态；末尾产出 kb-index.json 与 sitemap.xml）
+pnpm --filter website kb-index     # 只重新产出 kb-index.json 与 sitemap.xml（需先 build）
 pnpm --filter website preview      # 本地起服务看构建结果
 pnpm --filter website typecheck    # tsc：主题组件与生成脚本
 pnpm --filter website test         # 生成脚本单测（node --test）
@@ -35,8 +36,9 @@ pnpm --filter website check        # 构建产物检查，见 §7
 
 ```text
 website/
-  rspress.config.ts            站点配置：中文、根目录 docs/、部署前缀 DOCS_BASE、Shiki 语言、Mermaid、主题桥接脚本
-                               （llms 输出与多版本见 §4、S1-DOCS-003；preview / playground / api-docgen / typedoc 插件随 S1-DOCS-002）
+  rspress.config.ts            站点配置：中文、根目录 docs/、部署前缀 DOCS_BASE、Shiki 语言、Mermaid、主题桥接脚本、
+                               llms: true（SSG-MD，见 §4a）与 themeConfig.llmsUI（复制为 Markdown）；多版本见 §4；
+                               preview / playground / api-docgen / typedoc 插件随 S1-DOCS-002
   package.json  tsconfig.json
   README.md  AGENTS.md
   .config/dotnet-tools.json    DocFX 版本（本地 dotnet 工具）
@@ -65,6 +67,7 @@ website/
     kun.ts                     读 KunVersion、打开 kun 仓库的 tag v<KunVersion>（KUN_DOCS_PATH 或缓存克隆）
     sync-kun-docs.ts           kun 仓库 v<KunVersion> 的白名单文档 → docs/sdk/kun/（docs-site.md §2b）
     build-kun-api.ts           同版本 Kun.* 包 → DocFX → docs/sdk/api/kun/ 与 docs/sdk/api/index.md
+    build-kb-index.ts          构建后：页面源 + .md 产物 → doc_build/kb-index.json 与 sitemap.xml（§4a）
     sources-plugin.ts          把生成器接进 Rspress（config 钩子，在扫描路由之前执行）
     generate.ts                单独运行全部生成器（pnpm --filter website generate）
     repo.ts                    生成脚本共用：仓库坐标、生成目录写入、链接改写
@@ -111,6 +114,16 @@ docs-site.md §5：第 2、3、4 部分随 Qian 包族的 SemVer 锁步版本多
 - 第 3 部分的「Kun 框架」小节与 Kun API 参考不单独选版本：每个 Qian 文档版本内嵌该版本 `KunVersion` 锁定的 Kun 文档（docs-site.md §5、ADR-021 D21.3）。这些页面（`project: kun`）不显示版本说明，版本写在每页横幅里（`v<KunVersion>`），产物检查核对它与 `KunVersion` 一致。升级 Kun 只改 `KunVersion`，文档随下一次构建切换。
 - Rspress 的 `multiVersion` 是整站多版本，不能只给三个部分分版本。首个包族版本发布时再定实现方式（候选：三部分各自按版本目录生成 + 版本切换组件），届时一并改本节与 PartNotice。
 
+## 4a 机器可读产物（S1-DOCS-003）
+
+docs-site.md §5.1 是契约，这里只说实现：
+
+- `rspress.config.ts` 的 `llms: true` 开启 Rspress 的 SSG-MD：构建时多跑一遍 `node_md` 环境，用 `react-render-to-markdown` 把每个路由渲染成 Markdown（`<路由>.md`，目录首页为 `index.md`），再按顶部导航分组写出 `llms.txt`（每页一行，摘要取 frontmatter `description`）与 `llms-full.txt`（每页正文）。这不是 HTML 回转，也不是 remark 转换：组件在 `import.meta.env.SSG_MD` 为 true 时可以返回另一份输出，我们的主题组件（首页卡片与页脚、最新动态、站点地图、版本说明）都带这个分支，只输出标题、段落、列表与链接；站内链接指向 `.md`。
+- JSX 容器（`Card` 等）内部的 Markdown 里的行内组件不会被渲染，会原样进 `.md`（Rspress `remarkSplitMdx` 只处理顶层段落里的行内 JSX），所以首页卡片正文里的阶段标记写成文字，`Badge` 只放在 JSX 属性里。
+- `themeConfig.llmsUI` 在每个文档页标题下放「复制为 Markdown」与「复制 Markdown 链接」；首页是 `pageType: custom`，`HomeHero` 里手动放同一组按钮。`viewOptions` 只留 `markdownLink`，不放外部 AI 服务入口（站内「问 AI」是 S2-DOCS-001）。
+- `scripts/build-kb-index.ts` 在 `rspress build` 之后运行（`build` 脚本末尾）：遍历 `website/docs` 的页面源（含生成页），解析 frontmatter（`scripts/repo.ts` 的 `parseFrontmatter`，与 `scripts/check_docs.py` 同一套 YAML 子集），读对应 `.md` 算 sha256，写 `kb-index.json`；再按 frontmatter `updated` 写 `sitemap.xml`（绝对地址 = `DOCS_SITE_URL`（默认 `theme/site.ts` 的 `DEFAULT_SITE_URL`）+ `DOCS_BASE` + 路由）。缺 `.md`、frontmatter 不合法、产物里有没来源的 `.md` 都让构建失败。
+- 生成页的 frontmatter 由各生成器补齐：组件占位页与 CLI 页写 `project` / `audience` / `updated`（取源文件最后提交日期，`repoFileDate`），设计文档镜像页合成 `title`（源 frontmatter 或一级标题）、`description`（首段去标记截到 120 字）、`updated`、`source`（`idadawn/qian@main:<路径>`）并保留源文件自带的其它字段（ADR 的 `status`、`date` 等）。
+
 ## 5 主题与令牌
 
 - 颜色只引用 yue 的语义令牌（`--yue-primary`、`--yue-background`、`--yue-border` 等），在 `theme/index.css` 里映射到 Rspress 的主题变量；明暗两态由令牌自己在 `html[data-theme="dark"]` 下切换（specs/yue.md §3.5）。
@@ -138,20 +151,19 @@ docs-site.md §5：第 2、3、4 部分随 Qian 包族的 SemVer 锁步版本多
 
 | 检查 | 内容 | 在哪跑 |
 |---|---|---|
-| `scripts/check_docs.py` | 禁用词（整词匹配）、表格列数、链接；覆盖 `website/docs`（.md 与 .mdx）、本文件与 `AGENTS.md`，站点源码只查禁用词；站内路由、`/design/` 镜像路由与生成页路由都按规则解析，生成目录本身默认不查（它们的源已在查）；生成目录里的文件进了 Git 即失败。`/sdk/kun/`、`/sdk/api/` 下的路由在生成之前交给构建时的断链检查（手写页 `with-qian` 除外） | docs-and-pm 工作流 |
-| `scripts/check_docs.py website/docs/sdk/kun website/docs/sdk/api` | Kun 镜像页与 API 参考的源不在本仓库，构建后显式检查一遍（显式给出的生成目录照查） | docs-site 工作流 |
+| `scripts/check_docs.py` | 禁用词（整词匹配）、表格列数、链接、frontmatter（docs-site.md §4：必填、枚举、长度、日期、镜像页的 `source` 与 `version`、组件页的 `component`）；覆盖 `website/docs`（.md 与 .mdx）、本文件与 `AGENTS.md`，站点源码只查禁用词；站内路由、`/design/` 镜像路由与生成页路由都按规则解析，生成目录本身默认不查（它们的源已在查）；生成目录里的文件进了 Git 即失败。`/sdk/kun/`、`/sdk/api/` 下的路由在生成之前交给构建时的断链检查（手写页 `with-qian` 除外） | docs-and-pm 工作流 |
+| `scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api` | 生成页（含源不在本仓库的 Kun 镜像页与 API 参考）构建后显式检查一遍，frontmatter 也查（显式给出的生成目录照查） | docs-site 工作流 |
 | Rspress 断链检查 | 构建时检查全站（含生成页）的站内链接，断链即构建失败 | docs-site 工作流 |
-| `pnpm --filter website check` | 七个部分与首页、404、站点地图齐全；`lang="zh"`；不引用外部资源；站内引用都带部署前缀；搜索索引存在；C# / TypeScript / JSON / YAML / Bash 都有被高亮的代码块；`/sdk/kun/` 与 `/sdk/api/kun/` 下除手写页外每页都有镜像或生成横幅，横幅里的 tag 等于 `v<KunVersion>`（白名单外的页面混进来即失败）；产物总大小不超过预算（`SITE_SIZE_BUDGET_MB`，100 MB，R55），超出时报出最大的目录 | docs-site 工作流 |
-| `pnpm --filter website test` | 路径映射、链接改写、章节拆分、生成目录写入、组件占位页；Kun：`KunVersion` 缺失或无效、tag 不存在即失败，白名单与排除、slug 与路由、横幅与 frontmatter（`updated` 取文件日期）、链接改写、DocFX 输出转换（含 API 页 `sidebar: false`）；产物体积预算 | docs-site 工作流 |
-| `tests/gates/test_check_docs.py` | check_docs.py 的站内路由解析、生成目录跳过、Kun 路由延后解析、禁用词整词匹配、生成文件进 Git 即失败 | dotnet 工作流（门禁自测） |
-
-frontmatter 必填与枚举校验、`llms.txt` 与 `kb-index.json` 的新鲜度门禁属于 S1-DOCS-003。
+| `pnpm --filter website check` | 七个部分与首页、404、站点地图齐全；`lang="zh"`；不引用外部资源；站内引用都带部署前缀；搜索索引存在；C# / TypeScript / JSON / YAML / Bash 都有被高亮的代码块；`/sdk/kun/` 与 `/sdk/api/kun/` 下除手写页外每页都有镜像或生成横幅，横幅里的 tag 等于 `v<KunVersion>`（白名单外的页面混进来即失败）；产物总大小不超过预算（`SITE_SIZE_BUDGET_MB`，100 MB，R55），超出时报出最大的目录；机器可读产物（§4a）：`llms.txt`、`llms-full.txt`、`kb-index.json`、`sitemap.xml` 齐全，索引里每页的 `.md` 与 HTML 都在且 sha256 一致、三个清单都收录每页、没有索引外的 `.md`，每页 `.md` 无 JSX / ESM 残留、无空标题空列表项、代码块不少于源页 | docs-site 工作流 |
+| `pnpm --filter website test` | 路径映射、链接改写、章节拆分、生成目录写入、组件占位页；Kun：`KunVersion` 缺失或无效、tag 不存在即失败，白名单与排除、slug 与路由、横幅与 frontmatter（`updated` 取文件日期）、链接改写、DocFX 输出转换（含 API 页 `sidebar: false`）；产物体积预算；frontmatter 子集解析、知识库索引与 sitemap、Markdown 产物质量与同步检查 | docs-site 工作流 |
+| `tests/gates/test_check_docs.py` | check_docs.py 的站内路由解析、生成目录跳过、Kun 路由延后解析、禁用词整词匹配、生成文件进 Git 即失败、frontmatter 解析与校验 | dotnet 工作流（门禁自测） |
 
 ## 8 写页面
 
 - 手写页放在对应部分的目录下，用 `.md`；要用组件（`Badge`、卡片等）时才用 `.mdx`。
-- frontmatter 先写 `title`、`description`、`part`、`project`、`audience`、`updated`；手写页的 `project` 都是 `qian`（`kun` 属于 Kun 镜像页，`yue` 属于 yue 组件页）。规划中的能力加 `stage`，S2 及以后的再加 `tag: S2` 等，侧栏会显示阶段标记。完整字段见 docs-site.md §4（校验随 S1-DOCS-003 上线）。
+- frontmatter 先写 `title`、`description`（≤ 120 字）、`part`（与目录一致）、`project`、`audience`、`updated`，`scripts/check_docs.py` 会查（docs-site.md §4）；只用 `key: 值`、`key: [a, b]`、缩进 `- 项` 与引号字符串几种写法。手写页的 `project` 都是 `qian`（`kun` 属于 Kun 镜像页，`yue` 属于 yue 组件页）。规划中的能力加 `stage`，S2 及以后的再加 `tag: S2` 等，侧栏会显示阶段标记。完整字段见 docs-site.md §4（校验随 S1-DOCS-003 上线）。
 - 站内链接写绝对路由（`/start/hosts`、`/design/adr/adr-016-iclaw-boundary`），不带 `.md` 或 `.html`。
+- 卡片等 JSX 容器内部的 Markdown 里不放行内组件（`Badge` 等），阶段标记写成「（S2）」这样的文字；否则 `.md` 产物里会原样残留，产物检查会拦（§4a）。
 - 设计文档、规格与变更日志只改仓库 `docs/`，不要改 `website/docs/design/`、`cli/`、`components/`。
 - Kun 的文档只改 kun 仓库（提 PR），站内随 `KunVersion` 升级更新；`website/docs/sdk/kun/` 只有 `with-qian.mdx` 是手写的，`sdk/api/` 全部生成。
 - 没有的能力不写成已有：S1 建设期的命令与组件按目标形态写，并在页面里说明尚未可用。

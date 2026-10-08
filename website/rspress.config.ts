@@ -23,6 +23,9 @@ export default defineConfig({
   icon: '/logo.svg',
   logo: '/logo.svg',
   logoText: 'Qian 文档',
+  // 机器可读（docs-site.md §2a.1、S1-DOCS-003）：SSG-MD 在构建期把每页渲染成 .md，并产出 llms.txt 与 llms-full.txt；
+  // kb-index.json 与 sitemap.xml 由 scripts/build-kb-index.ts 在构建后产出。
+  llms: true,
   route: {
     // 不用 cleanUrls：产物里的链接带 .html，任何静态服务器（含 python3 -m http.server）都能直接打开。
     cleanUrls: false,
@@ -42,6 +45,8 @@ export default defineConfig({
     // 导航写在 docs/_nav.json：配置里一旦写 nav，Rspress 就不再按目录自动生成各部分的侧栏。
     socialLinks: [{ icon: 'github', mode: 'link', content: REPO_URL }],
     enableScrollToTop: true,
+    // 每页标题下的「复制为 Markdown」与「复制 Markdown 链接」；不放外部 AI 服务的入口（站内「问 AI」是 S2-DOCS-001）。
+    llmsUI: { viewOptions: ['markdownLink'] },
   },
   builderConfig: {
     html: {
