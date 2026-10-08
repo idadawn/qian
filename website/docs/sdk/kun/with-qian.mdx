@@ -77,11 +77,11 @@ Kun 关键路径上有一组在「K3s 多副本 + 多租户」下必然触发的
 1. 上游 PR 优先：改动提到 kun 仓库，Kun 发版后改 `KunVersion` 升级，本小节随之更新。
 2. 每项设 1 个迭代的回合入期限；逾期未合入，由 Qian 维护 `Kun.<Module>.Patches` 补丁包（同名命名空间 + `[Obsolete]` 转发），并记录回合入日期。
 
-截至 2026-10-08 的状态：S1-KUN-001 已回合入上游，其余六个修复任务未开始；Qian 没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
+截至 2026-10-08 的状态：S1-KUN-001 已随 Kun 2026.10.8 发布并由 Qian 升级消费，其余六个修复任务未开始；Qian 没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
 
 | 任务 | 修复项（§07 7.1） | 状态 | 补丁包 |
 |---|---|---|---|
-| S1-KUN-001 | 第 1 项 多租户后台链路 | 已回合入上游（[idadawn/kun#43](https://github.com/idadawn/kun/pull/43)，2026-10-08），Qian 升级到含此修复的 Kun 版本后生效；Qian 侧的最小安全装配 `AddQianData` 已随 S1-KUN-001 交付 | 无 |
+| S1-KUN-001 | 第 1 项 多租户后台链路 | 已完成：上游 [idadawn/kun#43](https://github.com/idadawn/kun/pull/43) 随 Kun 2026.10.8 发布，Qian 已升级（S1-KUN-008）；Qian 侧的最小安全装配 `AddQianData` 随 S1-KUN-001 交付 | 无 |
 | S1-KUN-002 | 第 2 项 Outbox 与事件语义 | 未开始 | 无 |
 | S1-KUN-003 | 第 4 项 网关加固、第 5 项 gRPC 流式拦截器 | 未开始 | 无 |
 | S1-KUN-004 | 第 6 项 Identity 客户端链路、第 7 项 S2S 签发器收敛 | 未开始 | 无 |

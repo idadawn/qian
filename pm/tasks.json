@@ -795,9 +795,9 @@
   "updated": "2026-10-08",
   "acceptance": {
    "done": 0,
-   "total": 4
+   "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.data</code>（<code>Qian.Data.Abstractions</code> / <code>ctx.Data</code> + <code>Qian.Data</code>，随 SDK 进每个 .NET profile）：<code>AddQianData&lt;TContext&gt;()</code> 强制 RLS 连接版 + 事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code>、租户与软删过滤、审计字段填充、<code>xmin</code>、snake_case、Guid v7、Outbox 同 DbContext；<code>QianDbContext : KunDbContext</code> 构造期校验否则 <code>QianDataMisconfiguredException</code>；<code>UseKunSchema(&quot;plugin_&lt;id&gt;&quot;)</code>；系统列约定；迁移生成器为每个 <code>IMultiTenant</code> 表输出 <code>FORCE ROW LEVEL SECURITY</code> 策略；CI 检查「在线 DbContext 必须继承 <code>QianDbContext</code>」。全部组件表的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 <code>AddQianData</code> 拒绝；代码中 <code>IgnoreQueryFilters()</code> 触发分析器错误</li>\n<li class='chk'><span class='box'></span>IT：以数据库超级用户直连绕过 EF，在设置 <code>app.tenant_id = A</code> 后 <code>SELECT</code> 不到租户 B 的行，向 B 插入被 <code>WITH CHECK</code> 拒绝（RLS 兜底）</li>\n<li class='chk'><span class='box'></span>E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 <code>EXPLAIN</code> 显示走租户索引</li>\n<li class='chk'><span class='box'></span>CI：在线 DbContext 不继承 <code>QianDbContext</code> 时门禁失败</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-08 cody：S1-KUN-001 先行交付 Qian.Data.Abstractions / Qian.Data 最小 RLS 安全装配及启动拒绝测试，详见 packages/Qian.Data/README.md；本任务仍负责完整组件、迁移模板、数据约定与分析器，未认领或提前勾选本任务验收。</li>\n<li>2026-10-08 cody：先行安全基础已合并 Qian PR #7（https://github.com/idadawn/qian/pull/7），后续实现复用 QianDbContext 与 AddQianData；完整验收与本任务状态保持待办。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.data</code>（<code>Qian.Data.Abstractions</code> / <code>ctx.Data</code> + <code>Qian.Data</code>，随 SDK 进每个 .NET profile）：<code>AddQianData&lt;TContext&gt;()</code> 强制 RLS 连接版 + 事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code>、租户与软删过滤、审计字段填充、<code>xmin</code>、snake_case、Guid v7、Outbox 同 DbContext；<code>QianDbContext : KunDbContext</code> 构造期校验否则 <code>QianDataMisconfiguredException</code>；<code>UseKunSchema(&quot;plugin_&lt;id&gt;&quot;)</code>；系统列约定；迁移生成器为每个 <code>IMultiTenant</code> 表输出 <code>FORCE ROW LEVEL SECURITY</code> 策略；CI 检查「在线 DbContext 必须继承 <code>QianDbContext</code>」。全部组件表的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 <code>AddQianData</code> 拒绝；代码中 <code>IgnoreQueryFilters()</code> 触发分析器错误</li>\n<li class='chk'><span class='box'></span>IT：以数据库超级用户直连绕过 EF，在设置 <code>app.tenant_id = A</code> 后 <code>SELECT</code> 不到租户 B 的行，向 B 插入被 <code>WITH CHECK</code> 拒绝（RLS 兜底）</li>\n<li class='chk'><span class='box'></span>E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 <code>EXPLAIN</code> 显示走租户索引</li>\n<li class='chk'><span class='box'></span>CI：在线 DbContext 不继承 <code>QianDbContext</code> 时门禁失败</li>\n<li class='chk'><span class='box'></span>RLS 连接版与事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code> 的装配改为复用 Kun 2026.10.8 起提供的 <code>AddKunTenantRls&lt;TContext&gt;()</code>，<code>AddQianData</code> 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 <code>packages/Qian.Data/README.md</code> 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-08 cody：S1-KUN-001 先行交付 Qian.Data.Abstractions / Qian.Data 最小 RLS 安全装配及启动拒绝测试，详见 packages/Qian.Data/README.md；本任务仍负责完整组件、迁移模板、数据约定与分析器，未认领或提前勾选本任务验收。</li>\n<li>2026-10-08 cody：先行安全基础已合并 Qian PR #7（https://github.com/idadawn/qian/pull/7），后续实现复用 QianDbContext 与 AddQianData；完整验收与本任务状态保持待办。</li>\n<li>2026-10-08 claude：验收加一条：AddQianData 的 RLS 拦截器与模型缓存键装配复用 Kun 2026.10.8 的 AddKunTenantRls&lt;TContext&gt;()（S1-KUN-008 未决问题，产品负责人同意并入本任务）</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-001.md"
  },
  {
@@ -2892,7 +2892,7 @@
    "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 1 项：<code>ITenantContext.BeginScope</code>、<code>MessageContext.TenantId</code> 从信封读取并在订阅器回灌、Saga 执行器按租户开作用域、<code>AddKunTenantRls</code> 自动挂双拦截器并强制模型缓存键工厂、<code>DefaultTenantResolver</code> 增加 <code>Production</code> 模式、两套 <code>ITenantContext</code> 收敛为 <code>AsyncLocalTenantContext</code>、claim 统一 <code>tenant_id</code>。第 1 波可信计算基的前提；上游 PR 优先，超 1 个迭代转 <code>Kun.MultiTenancy.Patches</code> 补丁包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：租户 A 发出的集成事件，在消费端 handler 内 <code>ITenantContext.TenantId == A</code>，且 handler 内 EF 查询自动带 <code>tenant_id = A</code> 过滤（Testcontainers PG + RabbitMQ）</li>\n<li class='chk done'><span class='box'>✓</span>IT：生产模式下带 <code>X-Tenant-Id</code> 头但无合法令牌的请求返回 401，不落到 <code>default</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：同时注册 <code>AddKunMultiTenancy</code> 与 <code>AddKunSecurity</code> 只解析出一个 <code>ITenantContext</code> 实现</li>\n<li class='chk done'><span class='box'>✓</span>IT：忘记 <code>ReplaceService&lt;IModelCacheKeyFactory&gt;</code> 的 DbContext 在 <code>AddQianData</code> 装配下被拒绝启动</li>\n<li class='chk done'><span class='box'>✓</span>修复以上游 PR 或 <code>Kun.*.Patches</code> 补丁包落地，回合入日期已记录</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-08 cody：开始</li>\n<li>2026-10-08 cody：Kun 修复见[上游 PR #43](https://github.com/idadawn/kun/pull/43)；生产 JWT、消息 A/B 隔离、双注册、Saga 与 Outbox 回灌均有回归；Qian 交付最小 AddQianData 安全装配及启动拒绝。上游回合入日期待 CI 全绿合并后补记。</li>\n<li>2026-10-08 cody：Qian 安全装配已合并 PR #7（https://github.com/idadawn/qian/pull/7）；本地全量 224 项测试通过，19 项门禁自测通过；上游本地 679 项单元、72 项集成通过，既有 2 项 OSS 实弹与 1 项幂等测试跳过，新增用例无跳过。KunVersion 暂为 2026.9.13，上游修复随下一次 Kun 发版后升级消费。</li>\n<li>2026-10-08 cody：完成：上游修复于 2026-10-08 回合入 Kun PR #43（https://github.com/idadawn/kun/pull/43，合并提交 c939f2e9f645d5e603c91f040e7a91188505fdba），22 项 CI 全绿；Qian 最小安全装配已合并 PR #7（https://github.com/idadawn/qian/pull/7，合并提交 45f65c6a4309f3002a9adaba22a4d2c3f1a67b2e），全部验收完成，无未决设计问题。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 1 项：<code>ITenantContext.BeginScope</code>、<code>MessageContext.TenantId</code> 从信封读取并在订阅器回灌、Saga 执行器按租户开作用域、<code>AddKunTenantRls</code> 自动挂双拦截器并强制模型缓存键工厂、<code>DefaultTenantResolver</code> 增加 <code>Production</code> 模式、两套 <code>ITenantContext</code> 收敛为 <code>AsyncLocalTenantContext</code>、claim 统一 <code>tenant_id</code>。第 1 波可信计算基的前提；上游 PR 优先，超 1 个迭代转 <code>Kun.MultiTenancy.Patches</code> 补丁包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：租户 A 发出的集成事件，在消费端 handler 内 <code>ITenantContext.TenantId == A</code>，且 handler 内 EF 查询自动带 <code>tenant_id = A</code> 过滤（Testcontainers PG + RabbitMQ）</li>\n<li class='chk done'><span class='box'>✓</span>IT：生产模式下带 <code>X-Tenant-Id</code> 头但无合法令牌的请求返回 401，不落到 <code>default</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：同时注册 <code>AddKunMultiTenancy</code> 与 <code>AddKunSecurity</code> 只解析出一个 <code>ITenantContext</code> 实现</li>\n<li class='chk done'><span class='box'>✓</span>IT：忘记 <code>ReplaceService&lt;IModelCacheKeyFactory&gt;</code> 的 DbContext 在 <code>AddQianData</code> 装配下被拒绝启动</li>\n<li class='chk done'><span class='box'>✓</span>修复以上游 PR 或 <code>Kun.*.Patches</code> 补丁包落地，回合入日期已记录</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-08 cody：开始</li>\n<li>2026-10-08 cody：Kun 修复见[上游 PR #43](https://github.com/idadawn/kun/pull/43)；生产 JWT、消息 A/B 隔离、双注册、Saga 与 Outbox 回灌均有回归；Qian 交付最小 AddQianData 安全装配及启动拒绝。上游回合入日期待 CI 全绿合并后补记。</li>\n<li>2026-10-08 cody：Qian 安全装配已合并 PR #7（https://github.com/idadawn/qian/pull/7）；本地全量 224 项测试通过，19 项门禁自测通过；上游本地 679 项单元、72 项集成通过，既有 2 项 OSS 实弹与 1 项幂等测试跳过，新增用例无跳过。KunVersion 暂为 2026.9.13，上游修复随下一次 Kun 发版后升级消费。</li>\n<li>2026-10-08 cody：完成：上游修复于 2026-10-08 回合入 Kun PR #43（https://github.com/idadawn/kun/pull/43，合并提交 c939f2e9f645d5e603c91f040e7a91188505fdba），22 项 CI 全绿；Qian 最小安全装配已合并 PR #7（https://github.com/idadawn/qian/pull/7，合并提交 45f65c6a4309f3002a9adaba22a4d2c3f1a67b2e），全部验收完成，无未决设计问题。</li>\n<li>2026-10-08 claude：上游修复已随 Kun 2026.10.8 发布（tag v2026.10.8），Qian 由 S1-KUN-008 升级消费</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-001.md"
  },
  {
@@ -3142,6 +3142,47 @@
   },
   "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 3 项（P1 可选）：<code>TSaga</code> 从单例改为 Scoped 工厂、去掉启动期临时容器、步骤租约 / 行锁、上下文回写、步骤重试、<code>ISaga.Name</code>。租户回灌已在 S1-KUN-001 中以 P0 完成；开通编排已裁决由 <code>qian.lifecycle</code> 幂等步骤表承担（R13），本项不阻塞退出标准，放第 4 波。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：两个副本同时运行同一 Saga 实例，每步只执行一次</li>\n<li class='chk'><span class='box'></span>UT：Saga 以 Scoped 工厂创建，启动期不再构造临时容器</li>\n<li class='chk'><span class='box'></span>修复以上游 PR 或补丁包落地并记录回合入日期</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-007.md"
+ },
+ {
+  "id": "S1-KUN-008",
+  "title": "升级 KunVersion 到 2026.10.8：消费 S1-KUN-001 的上游修复",
+  "status": "review",
+  "stage": "S1",
+  "area": "KUN",
+  "areaName": "Kun 缺口修复",
+  "wave": 1,
+  "priority": "P0",
+  "type": "infra",
+  "owner": "claude",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-KUN-001"
+  ],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/adr/ADR-021-product-family-structure.md#D21.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-021-product-family-structure.md"
+   },
+   {
+    "path": "docs/adr/ADR-001-kun-relationship.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-001-kun-relationship.md"
+   },
+   {
+    "path": "docs/prd/specs/docs-site.md#2b",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
+   }
+  ],
+  "updated": "2026-10-08",
+  "acceptance": {
+   "done": 3,
+   "total": 3
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-KUN-001 的多租户后台链路修复已回合入上游（idadawn/kun#43）。它随 Kun 2026.10.8 发布，同版本还带 kun 文档链接与表格修正（idadawn/kun#42）。按 ADR-021 D21.3，升级 Kun 只改 <code>Directory.Packages.props</code> 的 <code>KunVersion</code> 一处，构建与测试通过即可；文档站的「Kun 框架」小节与 Kun API 参考随版本自动切换。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span><code>KunVersion</code> 改为 2026.10.8，全部 <code>Kun.*</code> 随之升级；<code>dotnet build</code> 0 警告，全量测试（含 Testcontainers 集成测试）与门禁自测通过</li>\n<li class='chk done'><span class='box'>✓</span>文档站按 <code>v2026.10.8</code> 生成 Kun 小节与 Kun API 参考，产物检查（横幅 tag 等于 <code>KunVersion</code>）与镜像页文档门禁通过；kun#42 修掉的两类上游告警消失</li>\n<li class='chk done'><span class='box'>✓</span>「与 Qian 的关系」的补丁状态写明 S1-KUN-001 已随 2026.10.8 被 Qian 消费；S1-KUN-001 日志补记升级</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-08 claude：创建任务并开始（产品负责人要求 Kun 2026.10.8 发布后升级）</li>\n<li>2026-10-08 claude：升级完成并本地验证：Kun.* 全部解析到 2026.10.8（含传递依赖），dotnet build 0 警告，全量测试 224 通过 0 跳过（QIAN_REQUIRE_DOCKER=1），门禁自测 19 与依赖图门禁通过；文档站按 v2026.10.8 生成 Kun 小节 37 页（上游告警 0）与 API 343 个类型（新增 TenantIdValidation、ITenantIdSource），615 页 47.7 MB，产物检查与镜像页门禁通过</li>\n<li>2026-10-08 claude：未决问题（AddQianData 是否委托 AddKunTenantRls&lt;TContext&gt;()）经产品负责人同意并入 S1-DATA-001，已加验收</li>\n</ul>",
+  "file": "pm/tasks/S1-KUN-008.md"
  },
  {
   "id": "S1-MGW-001",
