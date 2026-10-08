@@ -5157,20 +5157,20 @@
  {
   "id": "S1-YUE-003",
   "title": "yue 工程化基线、CI 门禁矩阵与 Base UI 验证门",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "YUE",
   "areaName": "外壳与 yue",
   "wave": 2,
   "priority": "P0",
   "type": "infra",
-  "owner": "",
+  "owner": "claude",
   "estimate": "3d",
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5189,12 +5189,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/migration/README.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-09",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>pnpm workspace + <code>catalog:</code> + Turborepo；eslint-plugin-boundaries / dependency-cruiser 六层边界进 CI；tsdown 或 Rslib 输出 ESM + d.ts、CSS 单独导出；Storybook 10（a11y、令牌可视化页）；Vitest 5 + Testing Library + <code>@vitest/browser</code>；orval / openapi-typescript 契约类型；axe + Playwright <code>critical = 0</code>；Lighthouse CI 首屏预算；CI 门禁矩阵（lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖）；Changesets + SemVer；私有 npm；<code>data-testid</code> 命名约定。首迭代验证 Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘与可访问性，不通过整体切 Radix、不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：<code>@yue/biz</code> 引用 <code>@yue/designer</code> 之类的向上依赖被 boundaries 规则拒绝</li>\n<li class='chk'><span class='box'></span>CI：lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖八项门禁在 PR 上运行</li>\n<li class='chk'><span class='box'></span>文档：Base UI 验证门结论（通过 / 切 Radix）记录在 yue 仓库 ADR；Lighthouse 首屏 script 体积在预算内</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>pnpm workspace + <code>catalog:</code> + Turborepo；eslint-plugin-boundaries / dependency-cruiser 六层边界进 CI；tsdown 或 Rslib 输出 ESM + d.ts、CSS 单独导出；Storybook 10（a11y、令牌可视化页）；Vitest 5 + Testing Library + <code>@vitest/browser</code>；orval / openapi-typescript 契约类型；axe + Playwright <code>critical = 0</code>；Lighthouse CI 首屏预算；CI 门禁矩阵（lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖）；Changesets + SemVer；私有 npm；<code>data-testid</code> 命名约定。首迭代验证 Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘与可访问性，不通过整体切 Radix、不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：<code>@yue/biz</code> 引用 <code>@yue/designer</code> 之类的向上依赖被 boundaries 规则拒绝</li>\n<li class='chk'><span class='box'></span>CI：lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖八项门禁在 PR 上运行</li>\n<li class='chk'><span class='box'></span>文档：Base UI 验证门结论（通过 / 切 Radix）记录在 yue 仓库 ADR；Lighthouse 首屏 script 体积在预算内</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 claude：开始：pnpm workspace + catalog + Turborepo、八项门禁工作流、Base UI 验证门</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-003.md"
  },
  {
