@@ -47,3 +47,7 @@ dotnet_naming_style.begins_with_i.capitalization = pascal_case
 # 分析器级别
 dotnet_diagnostic.CA1707.severity = none     # 测试方法名允许下划线
 dotnet_diagnostic.IDE0005.severity = warning # 未使用的 using
+
+# 旧 Kun 接口是编译级禁用，不只是提示。
+[*.cs]
+dotnet_diagnostic.RS0030.severity = error
