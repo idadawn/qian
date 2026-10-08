@@ -69,7 +69,7 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 
 ## 7 待确认事项
 
-- Base UI 验证门结果（S1 首迭代）。
+- ~~Base UI 验证门结果（S1 首迭代）~~ 2026-10-09 裁定：通过，锁定 Base UI；证据与发现见 §9「状态历史」。
 - 富文本 / Markdown 编辑器选型（S2 前）。
 - S3 移动端范围（审批 / 工作台 H5、小程序 / App 壳）。
 - iClaw 前端代码：Q40 允许搬运的四处不含前端，yue 只借鉴令牌思路；shadcn 生成物可用 CLI 重新生成，不构成复用问题。
@@ -79,3 +79,35 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 - 相关 ADR：ADR-002、ADR-011、ADR-012、ADR-014。
 - PRD：`PRD §07`、`PRD §08`、`PRD §11`、`PRD §12`。
 - 基线：U §0、§2、§3.0–§3.8、§4、§5、§6、§7.2–§7.4；P §9.1、§9.2、§10.1 第 7 条；F §6 第 7/8/9 条。
+
+## 9 状态历史（Status History）
+
+### 2026-10-09 Base UI 验证门：通过，锁定 Base UI（S1-YUE-003）
+
+**结论**：路线 A 成立。锁定 `@base-ui/react` 1.8.0 作为 `@yue/core` 的无样式原语，不切 Radix，不混用。D13.7 的待确认项关闭。
+
+**验证范围与证据**（`packages/yue/core`、`packages/yue/data`、`apps/yue-playground`，CI 工作流 `yue`）：
+
+| 原语 | 验证项 | 结果 |
+|---|---|---|
+| Menu | Enter 打开并聚焦首项、方向键、Enter 选中后关闭回焦、子菜单 ArrowRight / ArrowLeft、Escape、禁用项 aria-disabled、受控 open | 通过 |
+| Select | ArrowDown / Enter 打开 listbox、方向键高亮、Enter 选中回写、Escape 回焦、受控 value / 非受控 defaultValue | 通过 |
+| Combobox | 输入即过滤、方向键高亮（焦点留在输入框）、Enter 选中回写、空态、Escape | 通过（发现 3） |
+| Tabs | tablist / tab / tabpanel 关联、roving tabindex、方向键循环、Home / End、竖向、RTL、受控 value | 通过（发现 2） |
+| Tooltip | Tab 聚焦即显示、Escape 关闭、悬停打开、role=tooltip 与 aria-describedby | 通过（发现 1） |
+| Tree | 自建：方向键 / Home / End / Enter / Space、展开折叠、roving tabindex、aria-level / setsize / posinset、RTL、受控 | 通过（发现 4） |
+
+- 组件级：Vitest 5 浏览器模式（Playwright Chromium）21 个用例、SSR `renderToString` 2 个用例、门禁自测 10 个用例全部通过；每个原语打开态 axe（axe-core 4.11）critical + serious = 0，比 §4.4 的「critical = 0」更严。
+- 页面级：Playwright + `@axe-core/playwright` 7 个用例全部通过（整页关闭态与六个原语打开态）。
+- 无需 patch 包：下列发现全部在封装层处理。
+- 体积：靶场首屏 script 压缩后约 151 KB（预算 250 KB，PRD §14）。按源码占比：react-dom 38%、Base UI 含 floating-ui 约 36%（Combobox 7%、Select 4.6%、Menu 4.4%、Tabs 2.4%、Tooltip 1.8%）、tailwind-merge 6%。
+
+**发现**（记录为封装约定，不构成切换理由）：
+
+1. **Tooltip 不带 ARIA 关联**。Base UI 有意不输出 `role="tooltip"` 与 `aria-describedby`（把提示视为非必要的补充信息）。WAI-ARIA tooltip 模式与 PRD §07 7.15.2 的 ARIA 验收都要求这两项，封装层在打开期间补上（`TooltipTrigger` 的 `aria-describedby` 指向 `TooltipContent`）。
+2. **Tabs 默认手动激活**。方向键只移焦点、不切换；封装层默认 `activateOnFocus`（自动激活），需要手动激活时传 `activateOnFocus={false}`。禁用 tab 仍可被方向键聚焦（`aria-disabled`）但不激活，这是 Base UI 的可发现性策略，保留。
+3. **Combobox 打开态把页面其余部分标为 aria-hidden**。输入框在弹层外时 Base UI 把弹层的焦点管理设为 modal（`!inputInsidePopup || modal`），其余内容被标 `aria-hidden` 而非 `inert`，axe 的 `aria-hidden-focus` 记为 serious；弹层在焦点移出时即关闭，键盘用户不会停留在被隐藏的内容里。页面级门禁只对 Combobox 打开态豁免该规则；S1-YUE-005 评估向上游反馈或改用输入内置弹层形态。
+4. **没有 Tree 原语**。Base UI 与 Radix 都没有，与路线选择无关；Tree 自建在 `@yue/data`，用扁平 treeitem + `aria-level` 而非嵌套 group（嵌套会让父节点的可见文字包含整棵子树，触发 axe `label-content-name-mismatch`）。
+5. **Base UI 要求 `date-fns` 作为可选 peer**（只有日期类原语用到）；S1 不装，等日期族时再定。
+
+**后续**：S1-YUE-005 用 shadcn CLI 生成全集时沿用这里的封装约定（`data-slot` / `data-testid`、函数式 className 不透传、ARIA 补齐）；上述验证用例并入组件测试，不再单独维护。

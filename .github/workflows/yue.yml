@@ -1,0 +1,117 @@
+name: yue
+
+# yue 前端工作区的 CI 门禁矩阵（S1-YUE-003；PRD §07 7.15.2、docs/prd/specs/yue.md §8「工程化」）：
+# lint、typecheck、unit、a11y、lighthouse、boundaries、publint、circular 八项各是一个检查，在 PR 上独立显示。
+# 本地一把跑：pnpm yue:gates（见 packages/yue/README.md）。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/yue/**"
+      - "apps/**"
+      - "tests/gates/yue/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "eslint.config.mjs"
+      - "eslint.boundaries.config.mjs"
+      - ".dependency-cruiser.cjs"
+      - "vitest.config.ts"
+      - ".github/workflows/yue.yml"
+  pull_request:
+    paths:
+      - "packages/yue/**"
+      - "apps/**"
+      - "tests/gates/yue/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "eslint.config.mjs"
+      - "eslint.boundaries.config.mjs"
+      - ".dependency-cruiser.cjs"
+      - "vitest.config.ts"
+      - ".github/workflows/yue.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yue-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+  CI: true
+
+jobs:
+  gate:
+    name: 门禁 (${{ matrix.gate }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        gate: [lint, typecheck, unit, a11y, lighthouse, boundaries, publint, circular]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+      - name: pnpm 缓存目录
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - run: pnpm install --frozen-lockfile
+
+      - name: Playwright Chromium（unit / a11y）
+        if: matrix.gate == 'unit' || matrix.gate == 'a11y'
+        run: pnpm --filter yue-playground exec playwright install --with-deps chromium
+
+      - name: 构建靶场（a11y / lighthouse）
+        if: matrix.gate == 'a11y' || matrix.gate == 'lighthouse'
+        run: pnpm --filter yue-playground build
+
+      - name: lint
+        if: matrix.gate == 'lint'
+        run: pnpm yue:lint
+      - name: typecheck
+        if: matrix.gate == 'typecheck'
+        run: pnpm yue:typecheck
+      - name: unit（Vitest：门禁自测、SSR、浏览器测试）
+        if: matrix.gate == 'unit'
+        run: pnpm yue:test
+      - name: a11y（Playwright + axe，critical / serious = 0）
+        if: matrix.gate == 'a11y'
+        run: pnpm yue:a11y
+      - name: lighthouse（首屏 script 体积预算）
+        if: matrix.gate == 'lighthouse'
+        run: pnpm yue:lighthouse
+      - name: boundaries（分层边界）
+        if: matrix.gate == 'boundaries'
+        run: pnpm yue:boundaries
+      - name: publint（发布形状，先 build）
+        if: matrix.gate == 'publint'
+        run: pnpm yue:publint
+      - name: circular（循环依赖）
+        if: matrix.gate == 'circular'
+        run: pnpm yue:circular
+
+      - name: 上传报告
+        if: failure() && (matrix.gate == 'a11y' || matrix.gate == 'lighthouse')
+        uses: actions/upload-artifact@v4
+        with:
+          name: yue-${{ matrix.gate }}-report
+          path: |
+            apps/yue-playground/playwright-report
+            apps/yue-playground/test-results
+            apps/yue-playground/.lighthouseci
+          if-no-files-found: ignore

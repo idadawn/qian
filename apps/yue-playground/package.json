@@ -1,0 +1,35 @@
+{
+  "name": "yue-playground",
+  "version": "0.0.0",
+  "private": true,
+  "description": "yue 验证门与门禁靶场：Base UI 六个原语的键盘 / 可访问性页面，Playwright + axe 与 Lighthouse 在这里跑。",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --strictPort --port 4173",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "e2e": "playwright test",
+    "lighthouse": "lhci autorun"
+  },
+  "dependencies": {
+    "@yue/core": "workspace:^",
+    "@yue/data": "workspace:^",
+    "@yue/tokens": "workspace:^",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "catalog:",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

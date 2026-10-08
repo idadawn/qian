@@ -1,0 +1,4 @@
+/* @yue/tokens：三层令牌的 CSS 变量由 S1-YUE-004 生成；这里只占位，保证「CSS 单独导出」的包形状可被 publint 检查。 */
+:root {
+  color-scheme: light dark;
+}
