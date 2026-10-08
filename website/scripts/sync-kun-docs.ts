@@ -39,6 +39,8 @@ export const KUN_WHITELIST: readonly WhitelistRule[] = [
   { pattern: 'docs/architecture/why-*.md', dir: 'architecture' },
   { pattern: 'docs/architecture/when-to-use-*.md', dir: 'architecture' },
   { pattern: 'docs/architecture/ADR-*.md', dir: 'architecture' },
+  // Kun 的 ADR 文件名大小写不统一（adr-p2d-multitenancy.md 是已 Accepted 的 ADR），两种都收（R58）
+  { pattern: 'docs/architecture/adr-*.md', dir: 'architecture' },
   { pattern: 'docs/whitepaper.md', dir: '', name: 'whitepaper' },
   { pattern: 'CHANGELOG.md', dir: 'releases', name: 'index' },
   { pattern: 'docs/releases/*.md', dir: 'releases' },
@@ -349,9 +351,9 @@ export function mirrorPage(kun: KunCheckout, source: string, files: ReadonlySet<
   return { source, page, title, content: content.endsWith('\n') ? content : `${content}\n` };
 }
 
-/** 侧栏名：ADR 写成「ADR-003 Introduce …」，其余用标题。 */
+/** 侧栏名：ADR 写成「ADR-003 Introduce …」（「ADR: P2-D …」写成「ADR P2-D …」），其余用标题。 */
 export function kunLabel(title: string): string {
-  return title.replace(/^(ADR-[A-Z0-9]+):\s*/, '$1 ');
+  return title.replace(/^(ADR(?:-[A-Z0-9]+)?)[:：]\s*/, '$1 ');
 }
 
 /** 概览页由 README 的一句话定位与模块矩阵拼装（docs-site.md §2b.2 第一行），加上版本与本节目录。 */

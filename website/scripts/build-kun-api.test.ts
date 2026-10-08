@@ -122,6 +122,7 @@ describe('Kun API 参考', () => {
     assert.match(frontmatter, /^description: "带返回值的 Result。失败时携带 Result<T>\.Error，见 Error 与 Task。"$/m);
     assert.match(frontmatter, /^project: kun$/m);
     assert.match(frontmatter, /^source: "idadawn\/kun@v2026\.9\.13:src\/Kun\.Core"$/m);
+    assert.match(frontmatter, /^sidebar: false$/m);
     assert.match(body, /^# Struct Result<T\\>\n\n:::info 生成页\n/m);
     assert.match(body, /（`v2026\.9\.13`）/);
     assert.match(body, /\[Result<T\\>\.Error\]\(\/sdk\/api\/kun\/kun-core-results\/result-1#Kun_Core_Results_Result_1_Error\)/);
@@ -139,8 +140,10 @@ describe('Kun API 参考', () => {
     const result = convertDocfx(kun, output, ['Kun.Core', 'Kun.Gateway']);
     const ns = result.files.find((f) => f.path === 'kun-core-results/index.md')?.content ?? '';
     assert.match(ns, /^description: "命名空间 Kun\.Core\.Results：2 个公开类型（Kun\.Core）"$/m);
+    assert.match(ns, /^sidebar: false$/m);
     assert.match(ns, /\[Result<T\\>\]\(\/sdk\/api\/kun\/kun-core-results\/result-1\)/);
     const index = result.files.find((f) => f.path === 'index.md')?.content ?? '';
+    assert.doesNotMatch(index, /^sidebar:/m, '概览页保留侧栏，作为从 SDK 侧栏进来的落点');
     assert.match(index, /\| \[`Kun\.Core`\]\(https:\/\/www\.nuget\.org\/packages\/Kun\.Core\/2026\.9\.13\) \| Core abstractions \\\| Result \| \[Kun\.Core\.Results\]\(\/sdk\/api\/kun\/kun-core-results\/\) \|/);
     assert.match(index, /\| \[`Kun\.Gateway`\]\(https:\/\/www\.nuget\.org\/packages\/Kun\.Gateway\/2026\.9\.13\) \| — \| — \|/);
     assert.equal(result.files.filter((f) => f.path.endsWith('_meta.json')).length, 0);
@@ -148,11 +151,13 @@ describe('Kun API 参考', () => {
     assert.equal(result.namespaces, 1);
   });
 
-  it('sdk/api/ 落地页列出 Kun，Qian.* 与前端标注随 S1-DOCS-002', () => {
+  it('sdk/api/ 落地页列出 Kun，Qian.*、前端与 HTTP API 都在 /sdk/api/ 下（R56）', () => {
     const files = apiReferenceFiles(kun, convertDocfx(kun, output, ['Kun.Core']));
     const landing = files.find((f) => f.path === 'index.md')?.content ?? '';
     assert.match(landing, /^project: qian$/m);
+    assert.doesNotMatch(landing, /^sidebar:/m);
     assert.match(landing, /\[Kun API 参考\]\(\/sdk\/api\/kun\/\)/);
+    for (const route of ['/sdk/api/dotnet/', '/sdk/api/frontend/', '/sdk/api/http/']) assert.ok(landing.includes(`\`${route}\``), route);
     assert.match(landing, /S1-DOCS-002/);
     assert.ok(files.some((f) => f.path === 'kun/kun-core-results/result-1.md'));
   });

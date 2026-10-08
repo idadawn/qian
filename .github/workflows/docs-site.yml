@@ -72,7 +72,7 @@ jobs:
           KEY: ${{ secrets.KUN_DOCS_DEPLOY_KEY }}
         run: |
           if [ -z "$KEY" ]; then
-            echo "::error::缺少 Secret KUN_DOCS_DEPLOY_KEY（对 idadawn/kun 只读的 deploy key 私钥），配置方法见 website/README.md §6"
+            echo "::error::拿不到 Secret KUN_DOCS_DEPLOY_KEY（对 idadawn/kun 只读的 deploy key 私钥）。fork 来的 PR 与 Dependabot 拿不到本仓库的 Actions Secret，文档站只在本仓库的分支上构建（R60）；本仓库缺这个 Secret 时按 website/README.md §6 配置"
             exit 1
           fi
 

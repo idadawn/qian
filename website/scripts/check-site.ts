@@ -4,7 +4,8 @@
 // 4. 站内引用都带部署前缀（DOCS_BASE，PR 预览为 /pr-preview/pr-<n>/）；
 // 5. 全文搜索索引已生成；6. Shiki 高亮覆盖 C# / TypeScript / JSON / YAML / Bash；
 // 7. Kun 小节与 Kun API 参考（docs-site.md §2b）：每页横幅里的 tag 与 Directory.Packages.props 的 KunVersion 一致，
-//    sdk/kun/ 下除手写页外都是镜像页（白名单外的文件进站即失败）。
+//    sdk/kun/ 下除手写页外都是镜像页（白名单外的文件进站即失败）；
+// 8. 产物总大小不超过预算（R55），挡住「同一块内容被重复渲染进每一页」这类结构性膨胀。
 import fs from 'node:fs';
 import path from 'node:path';
 import { readKunVersion } from './kun.ts';
@@ -36,7 +37,38 @@ const REQUIRED_LANGS = ['csharp', 'ts', 'json', 'yaml', 'bash'];
 export interface SiteReport {
   errors: string[];
   pages: number;
+  /** 产物总字节数。 */
+  bytes: number;
   highlighted: Record<string, number>;
+}
+
+/**
+ * 产物总大小预算（R55，docs-site.md §7）。S1-DOCS-005 之后约 48 MB；预算取两倍左右，挡住的是结构性膨胀——
+ * 例如整棵侧栏被渲染进几百个 API 页，曾让产物从 57 MB 涨到 170 MB——而不是正常增长。超出时先看报出的最大目录，
+ * 确属正常增长再调高预算，并在 PR 里写明原因。
+ */
+export const SITE_SIZE_BUDGET_MB = 100;
+
+const mb = (bytes: number) => `${(bytes / 1e6).toFixed(1)} MB`;
+
+/** sizes：[相对路径, 字节数]。超出预算时报出最大的几个目录（取前两级），便于定位膨胀来源。 */
+export function checkSizeBudget(sizes: ReadonlyArray<readonly [string, number]>, budgetMb: number = SITE_SIZE_BUDGET_MB): string[] {
+  const total = sizes.reduce((sum, [, bytes]) => sum + bytes, 0);
+  if (total <= budgetMb * 1e6) return [];
+  const byDir = new Map<string, number>();
+  for (const [rel, bytes] of sizes) {
+    const dir = rel.split('/').slice(0, -1).slice(0, 2).join('/') || '.';
+    byDir.set(dir, (byDir.get(dir) ?? 0) + bytes);
+  }
+  const top = [...byDir.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([dir, bytes]) => `${dir}/ ${mb(bytes)}`)
+    .join('、');
+  return [
+    `产物 ${mb(total)} 超过预算 ${budgetMb} MB（R55）。最大的目录：${top}。` +
+      '先查是否有同一块内容被重复渲染进每一页（如整棵侧栏），确属正常增长再调高 SITE_SIZE_BUDGET_MB 并在 PR 里说明',
+  ];
 }
 
 /** Kun 页面的横幅（scripts/sync-kun-docs.ts、build-kun-api.ts 生成）都写了 tag：它必须正好是 v<KunVersion>。 */
@@ -63,9 +95,11 @@ export function checkKunPages(files: readonly string[], read: (rel: string) => s
 
 export function checkSite(dir: string = outDir, basePath: string = base): SiteReport {
   const errors: string[] = [];
-  if (!fs.existsSync(dir)) return { errors: [`没有构建产物：${dir}（先运行 pnpm --filter website build）`], pages: 0, highlighted: {} };
+  if (!fs.existsSync(dir)) return { errors: [`没有构建产物：${dir}（先运行 pnpm --filter website build）`], pages: 0, bytes: 0, highlighted: {} };
   const files = listFiles(dir);
   const htmlFiles = files.filter((f) => f.endsWith('.html'));
+  const sizes = files.map((rel) => [rel, fs.statSync(path.join(dir, rel)).size] as const);
+  errors.push(...checkSizeBudget(sizes));
 
   for (const page of REQUIRED_PAGES) {
     if (!files.includes(page)) errors.push(`缺少页面 ${page}`);
@@ -103,7 +137,7 @@ export function checkSite(dir: string = outDir, basePath: string = base): SiteRe
 
   errors.push(...checkKunPages(files, (rel) => fs.readFileSync(path.join(dir, rel), 'utf8'), readKunVersion()));
 
-  return { errors, pages: htmlFiles.length, highlighted };
+  return { errors, pages: htmlFiles.length, bytes: sizes.reduce((sum, [, bytes]) => sum + bytes, 0), highlighted };
 }
 
 if (import.meta.filename === process.argv[1]) {
@@ -114,5 +148,5 @@ if (import.meta.filename === process.argv[1]) {
     process.exit(1);
   }
   const langs = Object.entries(report.highlighted).map(([l, n]) => `${l} ${n}`).join('、');
-  console.log(`站点检查通过：${report.pages} 个页面，前缀 ${base}；高亮代码块 ${langs}`);
+  console.log(`站点检查通过：${report.pages} 个页面，产物 ${mb(report.bytes)}（预算 ${SITE_SIZE_BUDGET_MB} MB），前缀 ${base}；高亮代码块 ${langs}`);
 }
