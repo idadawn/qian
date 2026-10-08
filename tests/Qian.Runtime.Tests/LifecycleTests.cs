@@ -6,6 +6,50 @@ namespace Qian.Runtime.Tests;
 public sealed class LifecycleTests
 {
     [Fact]
+    public async Task Async_Apply_does_not_publish_partial_services_and_cancellation_rolls_back_the_batch()
+    {
+        using var host = new ServiceCollection().BuildServiceProvider();
+        await using var loader = new PluginLoader(host);
+        await loader.MountAsync([Define("observer", _ => { })], TestContext.Current.CancellationToken);
+        var observer = loader.GetContext("observer", ScopeKey.Global);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancelled = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var disposed = 0;
+        var plugin = new AsyncPlugin(async (ctx, ct) =>
+        {
+            ctx.Provide(new("X"), "partial");
+            ctx.Effect(() => disposed++);
+            entered.SetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        });
+        var definition = new PluginDefinition(new PluginEntry("async", "async", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), plugin, [new("X")]);
+        var mounting = loader.MountAsync([definition, Define("dependent", _ => { }, inject: [new("X")])], cancelled.Token).AsTask();
+        await entered.Task.WaitAsync(TestContext.Current.CancellationToken);
+        Assert.Null(observer.TryInject<string>(new("X")));
+        Assert.Equal(PluginState.Pending, loader.GetState("dependent", ScopeKey.Global));
+        await cancelled.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => mounting);
+        await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+        Assert.Null(observer.TryInject<string>(new("X")));
+        Assert.Equal(1, disposed);
+        await loader.MountAsync([Define("async", ctx => ctx.Provide(new("X"), "recovered"), provides: [new("X")])], TestContext.Current.CancellationToken);
+        Assert.Equal("recovered", observer.Inject<string>(new("X")));
+    }
+
+    [Fact]
+    public async Task Typed_config_uses_camel_case_and_invalid_config_never_enters_Apply()
+    {
+        using var host = new ServiceCollection().BuildServiceProvider();
+        await using var loader = new PluginLoader(host);
+        var plugin = new ConfigPlugin();
+        var entry = new PluginEntry("config", "config", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { message = "hello" }));
+        await loader.MountAsync([new PluginDefinition(entry, plugin, [new("Message")])], TestContext.Current.CancellationToken);
+        Assert.Equal("hello", loader.GetContext("config", ScopeKey.Global).Inject<string>(new("Message")));
+        await loader.ReloadAsync(new PluginDefinition(entry with { Config = JsonSerializer.SerializeToElement(new { message = 42 }) }, plugin, [new("Message")]), TestContext.Current.CancellationToken);
+        Assert.Equal(PluginState.Failed, loader.GetState("config", ScopeKey.Global));
+        Assert.Equal(1, plugin.Applies);
+    }
+    [Fact]
     public async Task Disposer_is_idempotent_and_lost_key_restarts_the_consumer()
     {
         using var host = new ServiceCollection().BuildServiceProvider();
@@ -71,6 +115,25 @@ public sealed class LifecycleTests
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
         {
             apply(ctx);
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class AsyncPlugin(Func<IPluginContext, CancellationToken, ValueTask> apply) : IQianPlugin
+    {
+        public IReadOnlyList<ServiceKey> Inject => [];
+        public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => apply(ctx, ct);
+    }
+
+    private sealed record SampleConfig(string Message);
+    private sealed class ConfigPlugin : IQianPlugin<SampleConfig>
+    {
+        internal int Applies;
+        public IReadOnlyList<ServiceKey> Inject => [];
+        public ValueTask ApplyAsync(IPluginContext ctx, SampleConfig config, CancellationToken ct)
+        {
+            Applies++;
+            ctx.Provide(new("Message"), config.Message);
             return ValueTask.CompletedTask;
         }
     }

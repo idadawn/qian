@@ -1,7 +1,11 @@
+using Microsoft.Extensions.Logging;
+
 namespace Qian.Runtime;
 
 public sealed partial class PluginLoader
 {
+    private static readonly Action<ILogger, string, Exception?> s_restrictionFailed = LoggerMessage.Define<string>(
+        LogLevel.Error, new EventId(3, "RestrictionFailed"), "条目 {EntryId} 的 restriction 失败，按不可见处理");
     private readonly List<Restriction> _restrictions = [];
 
     internal Restriction Restrict(PluginContext owner, ScopeKey scope, Func<Registration, bool> keep)
@@ -31,8 +35,19 @@ public sealed partial class PluginLoader
     }
 
     private bool Kept(Registration registration, ScopeKey scope, PluginContext? requester = null)
-        => registration.Scope != ScopeKey.Global || _restrictions
-            .Where(r => r.Scope == scope && IsActive(r.Context, requester)).All(r => r.Keep(registration));
+    {
+        if (registration.Scope != ScopeKey.Global) return true;
+        foreach (var restriction in _restrictions.Where(r => r.Scope == scope && IsActive(r.Context, requester)))
+        {
+            try { if (!restriction.Keep(registration)) return false; }
+            catch (Exception error)
+            {
+                s_restrictionFailed(Logger, restriction.Context.Entry.Id, error);
+                return false;
+            }
+        }
+        return true;
+    }
 
     private static bool IsActive(PluginContext context, PluginContext? requester = null)
         => !context.Closed && (context.Active || ReferenceEquals(context.Root, requester?.Root));

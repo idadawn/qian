@@ -18,7 +18,7 @@ await using var runtime = new PluginLoader(services);
 await runtime.MountAsync(definitions, cancellationToken);
 ```
 
-`PluginDefinition` 绑定 `PluginEntry`、`IQianPlugin` 实例与清单的 `Provides`。每次 `MountAsync` 提交一组完整依赖，装载器在调用任何 `ApplyAsync` 前检查缺失键与环路。已装载条目的依赖被撤销后进入 `Pending`，同键恢复时重新 `ApplyAsync`。Apply 失败会逆序回滚自身效果，独立条目继续启动，失败原因可由 `GetFailure` 查询。配置重载用 `ReloadAsync`。
+`PluginDefinition` 绑定 `PluginEntry`、`IQianPlugin` 实例与清单的 `Provides`。每次 `MountAsync` 提交一组完整依赖，装载器在调用任何 `ApplyAsync` 前检查缺失键与环路。已装载条目的依赖被撤销后进入 `Pending`，同键恢复时重新 `ApplyAsync`。等待超过 30 秒会记录依赖警告，管理面可用 `GetPendingDependencies` 查询等待的键。Apply 失败会逆序回滚自身效果，独立条目继续启动，失败原因可由 `GetFailure` 查询。配置重载用 `ReloadAsync`。
 
 ## 服务与效果
 
@@ -47,7 +47,7 @@ emit 使用 `Func<P, ValueTask>`；waterfall 使用 `Func<P, Func<ValueTask<R>>,
 
 `Scoped` 共享条目效果栈，指定的 tenant、app 与 agent-session 彼此独立。同 `(key, name)` 的 scoped 注册遮蔽全局注册；restriction 只过滤目标 scope 的全局注册，多条取交集。目录 `List`、注入和事件执行使用同一可见性规则。被过滤的具名注册与不存在的注册均抛携带 `NOT_FOUND` 的 `QianErrorException`，不暴露过滤原因。监听器目录名为条目 id 加本次 Apply 内的事件序号；同条目不同 scope 的同序号监听器可遮蔽。
 
-restriction 谓词应为无副作用的纯函数。模型可见工具与目录消费方每次调用时都从当前 scope 重新解析；业务鉴权与租户策略由相应插件的事件监听器实施。scope 不推测任何业务 lineage。
+restriction 谓词应为无副作用的纯函数，抛异常时记录日志并按不可见处理。模型可见工具与目录消费方每次调用时都从当前 scope 重新解析；业务鉴权与租户策略由相应插件的事件监听器实施。scope 不推测任何业务 lineage。
 
 ## 错误桥接与包源
 

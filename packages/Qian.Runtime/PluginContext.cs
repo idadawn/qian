@@ -9,6 +9,7 @@ internal sealed partial class PluginContext : IPluginContext, IKeyedServiceProvi
     private readonly EffectStack _effects = new();
     private bool _active;
     private bool _closed;
+    internal readonly Dictionary<string, int> ListenerOrdinals = [];
     internal PluginContext Root { get; }
     internal EffectStack Effects => Root._effects;
     internal bool Active { get => Root._active; set => Root._active = value; }

@@ -18,6 +18,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
     private Task _pending = Task.CompletedTask;
     private bool _disposed;
     private long _sequence;
+    private readonly Timer _pendingMonitor;
 
     /// <summary>使用宿主 DI 与日志器创建装载器；装载器不拥有宿主 DI 的生命周期。</summary>
     public PluginLoader(IServiceProvider services, ILogger? logger = null)
@@ -25,6 +26,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(services);
         HostServices = services;
         Logger = logger ?? NullLogger.Instance;
+        _pendingMonitor = new Timer(_ => ReportPending(), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
     }
 
     internal IServiceProvider HostServices { get; }
@@ -41,6 +43,12 @@ public sealed partial class PluginLoader : IAsyncDisposable
     public Exception? GetFailure(string id, ScopeKey scope)
     {
         lock (Sync) return FindNode(id, scope).Failure;
+    }
+
+    /// <summary>管理面诊断当前条目等待的服务键。</summary>
+    public IReadOnlyList<ServiceKey> GetPendingDependencies(string id, ScopeKey scope)
+    {
+        lock (Sync) return FindNode(id, scope).Inject.Where(k => Find(k, scope) is null).ToArray();
     }
 
     /// <summary>取得当前 Apply 的上下文；重新 Apply 后旧上下文作废。</summary>
@@ -147,6 +155,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 _disposed = true;
                 nodes = _nodes.OrderByDescending(n => n.Sequence).ToArray();
             }
+            await _pendingMonitor.DisposeAsync().ConfigureAwait(false);
             foreach (var node in nodes) await StopAsync(node).ConfigureAwait(false);
             lock (Sync) { _nodes.Clear(); Signal(); }
         }
@@ -290,6 +299,8 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 if (node.Dependencies.All(d => ReferenceEquals(Find(d.Key, node.Entry.Scope), d))) continue;
                 node.Context!.Active = false;
                 node.State = PluginState.Pending;
+                node.PendingSince = DateTimeOffset.UtcNow;
+                node.PendingReported = false;
                 changed = true;
             }
         } while (changed);
@@ -337,5 +348,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         internal Exception? Failure;
         internal bool Removing;
         internal long Sequence;
+        internal DateTimeOffset PendingSince = DateTimeOffset.UtcNow;
+        internal bool PendingReported;
     }
 }

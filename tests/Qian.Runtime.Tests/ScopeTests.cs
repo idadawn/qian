@@ -7,6 +7,20 @@ public sealed class ScopeTests
     private static readonly ScopeKey s_tenant = new("tenant", "A");
 
     [Fact]
+    public async Task Throwing_restriction_denies_access_and_can_still_be_disposed()
+    {
+        using var host = new ServiceCollection().BuildServiceProvider();
+        await using var loader = new PluginLoader(host);
+        await loader.MountAsync([LifecycleTests.Define("global", ctx => ctx.Provide(new("X"), "value"), provides: [new("X")])], TestContext.Current.CancellationToken);
+        var context = loader.GetContext("global", ScopeKey.Global);
+        var restriction = context.Restrict(s_tenant, _ => throw new InvalidOperationException("predicate failed"));
+        Assert.Empty(context.Scoped(s_tenant).List(new("X")));
+        Assert.Null(context.Scoped(s_tenant).TryInject<string>(new("X")));
+        restriction.Dispose();
+        Assert.Equal("value", context.Scoped(s_tenant).Inject<string>(new("X")));
+    }
+
+    [Fact]
     public async Task Shadow_and_restriction_changes_rebind_declared_dependencies()
     {
         using var host = new ServiceCollection().BuildServiceProvider();
@@ -24,9 +38,11 @@ public sealed class ScopeTests
         var restriction = loader.GetContext("global", ScopeKey.Global).Restrict(s_tenant, _ => false);
         await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(PluginState.Pending, loader.GetState("consumer", s_tenant));
+        Assert.Equal([new ServiceKey("X")], loader.GetPendingDependencies("consumer", s_tenant));
         restriction.Dispose();
         await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(PluginState.Ready, loader.GetState("consumer", s_tenant));
+        Assert.Empty(loader.GetPendingDependencies("consumer", s_tenant));
         Assert.Equal(4, resolutions.Count);
     }
 

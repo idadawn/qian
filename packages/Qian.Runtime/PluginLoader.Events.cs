@@ -8,7 +8,8 @@ public sealed partial class PluginLoader
     internal Listener Listen(PluginContext context, object definition, string name, Delegate handler, int priority)
     {
         CheckDefinition(definition, name);
-        var ordinal = _listeners.Count(l => ReferenceEquals(l.Context.Root, context.Root) && l.Name == name);
+        var ordinal = context.Root.ListenerOrdinals.GetValueOrDefault(name);
+        context.Root.ListenerOrdinals[name] = ordinal + 1;
         var listener = new Listener(context, definition, name, handler, priority, ++_listenerSequence, $"{context.Entry.Id}/{ordinal}");
         _listeners.Add(listener);
         return listener;

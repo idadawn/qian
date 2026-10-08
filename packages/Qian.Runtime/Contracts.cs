@@ -42,7 +42,7 @@ public interface IQianPlugin<TConfig> : IQianPlugin
     ValueTask ApplyAsync(IPluginContext ctx, TConfig config, CancellationToken ct);
 
     ValueTask IQianPlugin.ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
-        => ApplyAsync(ctx, config.Deserialize<TConfig>() ?? throw new JsonException("配置不能为空。"), ct);
+        => ApplyAsync(ctx, config.Deserialize<TConfig>(JsonSerializerOptions.Web) ?? throw new JsonException("配置不能为空。"), ct);
 }
 
 /// <summary>插件的服务、效果与作用域入口。</summary>
