@@ -14,7 +14,7 @@ refs:
   - docs/prd/07-s1-foundation.md#7.6
   - docs/adr/ADR-004-database-tenant-isolation.md
   - docs/adr/ADR-011-metadata-dynamic-data.md
-updated: 2026-10-06
+updated: 2026-10-08
 ---
 
 ## 背景
@@ -31,3 +31,6 @@ updated: 2026-10-06
 ## 进度日志
 
 - 2026-10-06 planner：创建任务
+
+- 2026-10-08 cody：S1-KUN-001 先行交付 Qian.Data.Abstractions / Qian.Data 最小 RLS 安全装配及启动拒绝测试，详见 packages/Qian.Data/README.md；本任务仍负责完整组件、迁移模板、数据约定与分析器，未认领或提前勾选本任务验收。
+- 2026-10-08 cody：先行安全基础已合并 Qian PR #7（https://github.com/idadawn/qian/pull/7），后续实现复用 QianDbContext 与 AddQianData；完整验收与本任务状态保持待办。
