@@ -1330,6 +1330,47 @@
   "file": "pm/tasks/S1-DEC-010.md"
  },
  {
+  "id": "S1-DEC-011",
+  "title": "拍板：文档站 Kun 小节（PR",
+  "status": "review",
+  "stage": "S1",
+  "area": "DEC",
+  "areaName": "待拍板决策",
+  "wave": 0,
+  "priority": "P1",
+  "type": "decision",
+  "owner": "claude",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-DOCS-005"
+  ],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/specs/docs-site.md#2b",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
+   },
+   {
+    "path": "docs/adr/ADR-021-product-family-structure.md#D21.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-021-product-family-structure.md"
+   },
+   {
+    "path": "pm/tasks/S1-DOCS-002.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DOCS-002.md"
+   }
+  ],
+  "updated": "2026-10-08",
+  "acceptance": {
+   "done": 6,
+   "total": 6
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-DOCS-005（PR #4）合并时，PR 描述里留了 9 个未决问题：</p>\n<p>1. API 页进不进侧栏</p>\n<p>2. 站点体积</p>\n<p>3. API 路径与 S1-DOCS-002 不一致</p>\n<p>4. 「SDK 下第一项」的理解</p>\n<p>5. ADR 白名单区分大小写</p>\n<p>6. 上游 Kun 文档问题</p>\n<p>7. 构建依赖与 fork / Dependabot</p>\n<p>8. 禁用词整词匹配</p>\n<p>9. 将来的包源映射</p>\n<p>产品负责人 2026-10-08 授权「按经验和教训处理掉」，由 Claude 裁决为 R54–R62 并落实到规范、任务与实现。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>9 个问题逐条裁决（R54–R62）。结论写进 docs-site.md §2、§2b、§6、§7（标「已裁决（R{n}）」）与 decisions/key-decisions-v0.md 的裁决小结。</li>\n<li class='chk done'><span class='box'>✓</span>R54 / R55：API 的命名空间页与类型页不渲染侧栏（<code>sidebar: false</code>），两个概览页保留，产物从约 57 MB 降到约 48 MB；产物检查加 100 MB 总预算，超出时报出最大目录。均有单测。</li>\n<li class='chk done'><span class='box'>✓</span>R56：S1-DOCS-002 验收里的 API 路径改为 <code>/sdk/api/dotnet/</code>、<code>/sdk/api/frontend/</code>、<code>/sdk/api/http/</code>；<code>/sdk/api/</code> 落地页列出全部四类。</li>\n<li class='chk done'><span class='box'>✓</span>R58：Kun ADR 白名单同时收 <code>adr-*.md</code>，<code>adr-p2d-multitenancy</code> 进站（Kun 文档 37 页）。有单测。</li>\n<li class='chk done'><span class='box'>✓</span>R59：两处上游问题提到 kun 仓库（idadawn/kun#42：CHANGELOG 越界链接、when-to-use-currentuser 决策表缺列）；DocFX 的 11 条 <code>InvalidCref</code> 来自 EF Core 的继承文档，不处理。</li>\n<li class='chk done'><span class='box'>✓</span>R60 / R62：fork 与 Dependabot 场景写进 CI 失败提示与 README；AGENTS.md 写明钉预发布版时 docs-site 也要配包源凭据。R57、R61 维持现状，只记录。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-08 claude：创建任务；按产品负责人授权裁决 R54–R62 并落实</li>\n<li>2026-10-08 claude：R54–R62 落实完成并本地验证：产物 47.5 MB（613 页，预算 100 MB），Kun 文档 37 页（含 adr-p2d-multitenancy），单测 50、门禁自测 19 通过；上游修复 idadawn/kun#42 待其 CI 与合并，随下个 Kun 版本进站</li>\n</ul>",
+  "file": "pm/tasks/S1-DEC-011.md"
+ },
+ {
   "id": "S1-DEP-001",
   "title": "K3s 基线治理：命名空间、专属库、默认拒绝、配额",
   "status": "todo",
@@ -1675,7 +1716,7 @@
    "done": 0,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>「介绍组件如何使用」是文档站的主体。按 ADR-020 D20.9，每个组件的文档源在它自己的文件夹里（<code>README.md</code> 含「模型体验」「已知限制」两节，<code>docs/*.mdx</code> 为使用指南），文档站在构建前汇总；yue 组件要能在 MDX 里活演示并自动出 API 表；.NET 包与 TypeScript 包的 API 参考由工具生成，不手写。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>收集脚本把各组件 <code>README.md</code> 与 <code>docs/*.mdx</code> 按 docs-site.md §3 的九节模板汇总进 <code>website/docs/components/</code>，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-preview</code> 与 <code>@rspress/plugin-playground</code> 接入：yue 组件在 MDX 代码块内活渲染并可编辑；<code>@rspress/plugin-api-docgen</code> 为 <code>@yue/core</code> 全部组件生成 props 表</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-typedoc</code> 生成 <code>@qian/runtime</code>、<code>@qian/plugin-sdk</code>、<code>@yue/sdk</code> 的 API 文档；DocFX 从 XML 注释生成 <code>Qian.*</code> .NET 包 API 参考并挂在站点 <code>/api/dotnet/</code>；平台 OpenAPI 用 Scalar 渲染在 <code>/api/http/</code></li>\n<li class='chk'><span class='box'></span><code>qian docs generate</code>（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新</li>\n<li class='chk'><span class='box'></span>UT：收集脚本对缺节、重复 id、断链三类错误各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收</li>\n<li>2026-10-08 claude：S1-DOCS-005 已搭好 DocFX 流水线（website/scripts/build-kun-api.ts：隔离目录构建、docfx metadata 输出 Markdown、xref 改写为站内路由与锚点），Qian.* 的 API 参考可复用；/sdk/api/index.md 落地页已为 dotnet/、frontend/ 留行。路径注意：本任务验收写 /api/dotnet/，docs-site.md §2b.2 与 §6 写 /sdk/api/dotnet/，落地页暂按后者</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>「介绍组件如何使用」是文档站的主体。按 ADR-020 D20.9，每个组件的文档源在它自己的文件夹里（<code>README.md</code> 含「模型体验」「已知限制」两节，<code>docs/*.mdx</code> 为使用指南），文档站在构建前汇总；yue 组件要能在 MDX 里活演示并自动出 API 表；.NET 包与 TypeScript 包的 API 参考由工具生成，不手写。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>收集脚本把各组件 <code>README.md</code> 与 <code>docs/*.mdx</code> 按 docs-site.md §3 的九节模板汇总进 <code>website/docs/components/</code>，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-preview</code> 与 <code>@rspress/plugin-playground</code> 接入：yue 组件在 MDX 代码块内活渲染并可编辑；<code>@rspress/plugin-api-docgen</code> 为 <code>@yue/core</code> 全部组件生成 props 表</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-typedoc</code> 生成 <code>@qian/runtime</code>、<code>@qian/plugin-sdk</code>、<code>@yue/sdk</code> 的 API 文档并挂在站点 <code>/sdk/api/frontend/</code>；DocFX 从 XML 注释生成 <code>Qian.*</code> .NET 包 API 参考并挂在 <code>/sdk/api/dotnet/</code>（复用 <code>website/scripts/build-kun-api.ts</code> 的流水线）；平台 OpenAPI 用 Scalar 渲染在 <code>/sdk/api/http/</code>；API 页不进侧栏、不渲染侧栏（R54、R56），并在 <code>/sdk/api/</code> 落地页更新状态</li>\n<li class='chk'><span class='box'></span><code>qian docs generate</code>（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新</li>\n<li class='chk'><span class='box'></span>UT：收集脚本对缺节、重复 id、断链三类错误各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收</li>\n<li>2026-10-08 claude：S1-DOCS-005 已搭好 DocFX 流水线（website/scripts/build-kun-api.ts：隔离目录构建、docfx metadata 输出 Markdown、xref 改写为站内路由与锚点），Qian.* 的 API 参考可复用；/sdk/api/index.md 落地页已为 dotnet/、frontend/ 留行。路径注意：本任务验收写 /api/dotnet/，docs-site.md §2b.2 与 §6 写 /sdk/api/dotnet/，落地页暂按后者</li>\n<li>2026-10-08 claude：S1-DEC-011 裁决：API 参考统一挂 /sdk/api/{dotnet,frontend,http}/（R56），API 页不进侧栏、不渲染侧栏（R54），验收已按此改；产物总大小预算 100 MB（R55），加 Qian.* 与组件页后若超出，先查重复渲染再调预算</li>\n</ul>",
   "file": "pm/tasks/S1-DOCS-002.md"
  },
  {
