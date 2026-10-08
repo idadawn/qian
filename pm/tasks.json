@@ -3023,20 +3023,20 @@
  {
   "id": "S1-KUN-005",
   "title": "Kun 审计路径收敛与数据约定修复",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
   "wave": 1,
   "priority": "P0",
   "type": "fix",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -3055,12 +3055,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-009-audit.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-09",
   "acceptance": {
-   "done": 0,
+   "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 8、9 项：废弃事后不同事务的 <code>AuditSaveChangesInterceptor</code>，实体级以同事务 <code>AuditLog</code> + Outbox 为准，<code>IAuditChainState</code> PostgreSQL 实现、<code>IAuditReader</code> EF 实现、<code>AuditActorType</code> 增 <code>Agent</code>；审计字段自动填充拦截器、<code>CreatedBy</code> 可空、<code>xmin</code> 并发令牌、snake_case、<code>Guid.CreateVersion7()</code> 默认主键。7.6 / 7.11 装配的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：业务事务回滚时 <code>audit_logs</code> 无残留行；提交时审计行与业务行同事务可见</li>\n<li class='chk'><span class='box'></span>IT：两个副本并发追加同一租户链，链无分叉（<code>prev_hash</code> 严格串联，重放校验通过）</li>\n<li class='chk'><span class='box'></span>UT：<code>AuditEntry.ActorType</code> 可取 <code>Agent</code></li>\n<li class='chk'><span class='box'></span>IT：新增实体 <code>created_at/created_by</code> 非空，更新时 <code>updated_*</code> 刷新、<code>created_*</code> 不变</li>\n<li class='chk'><span class='box'></span>IT：两个并发更新中一个因 <code>xmin</code> 变化抛 <code>DbUpdateConcurrencyException</code> 并映射为 <code>Result</code> 冲突错误</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 8、9 项：废弃事后不同事务的 <code>AuditSaveChangesInterceptor</code>，实体级以同事务 <code>AuditLog</code> + Outbox 为准，<code>IAuditChainState</code> PostgreSQL 实现、<code>IAuditReader</code> EF 实现、<code>AuditActorType</code> 增 <code>Agent</code>；审计字段自动填充拦截器、<code>CreatedBy</code> 可空、<code>xmin</code> 并发令牌、snake_case、<code>Guid.CreateVersion7()</code> 默认主键。7.6 / 7.11 装配的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：业务事务回滚时 <code>audit_logs</code> 无残留行；提交时审计行与业务行同事务可见</li>\n<li class='chk done'><span class='box'>✓</span>IT：两个副本并发追加同一租户链，链无分叉（<code>prev_hash</code> 严格串联，重放校验通过）</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>AuditEntry.ActorType</code> 可取 <code>Agent</code></li>\n<li class='chk done'><span class='box'>✓</span>IT：新增实体 <code>created_at/created_by</code> 非空，更新时 <code>updated_*</code> 刷新、<code>created_*</code> 不变</li>\n<li class='chk done'><span class='box'>✓</span>IT：两个并发更新中一个因 <code>xmin</code> 变化抛 <code>DbUpdateConcurrencyException</code> 并映射为 <code>Result</code> 冲突错误</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：核对审计事务、哈希链与数据约定，按逐项验收实现上游修复。</li>\n<li>2026-10-09 cody：接续中断工作；同事务审计与双副本链专项通过，修复高并发序列化饥饿后全量集成测试 81 通过、1 项既有 Outbox 跳过留 S1-KUN-002。</li>\n<li>2026-10-09 cody：五项验收完成，上游 [Kun PR #45](https://github.com/idadawn/kun/pull/45)；专项 PostgreSQL 测试 10 通过，全量回归通过（3 项既有跳过）；源码尚未发布新包，Qian KunVersion 仍为 2026.10.8。待上游 CI 全绿合并后关闭。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-005.md"
  },
  {
