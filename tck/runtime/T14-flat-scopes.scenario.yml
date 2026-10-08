@@ -1,0 +1,15 @@
+version: 1
+id: T14
+description: Scoped 视图共享效果栈，但会话与应用不继承租户注册。
+entries:
+  - id: A
+    apply:
+      - {op: provide, scope: 'tenant:t-001', key: X, value: tenant-only}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [A, observer]}
+  - {op: inject, entry: observer, view: 'tenant:t-001', key: X, value: tenant-only}
+  - {op: missing, entry: observer, view: 'agent-session:s-9', key: X}
+  - {op: missing, entry: observer, view: 'app:crm-7', key: X}
+  - {op: unmount, entry: A}
+  - {op: missing, entry: observer, view: 'tenant:t-001', key: X}

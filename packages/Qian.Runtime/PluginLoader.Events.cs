@@ -8,7 +8,8 @@ public sealed partial class PluginLoader
     internal Listener Listen(PluginContext context, object definition, string name, Delegate handler, int priority)
     {
         CheckDefinition(definition, name);
-        var listener = new Listener(context, definition, name, handler, priority, ++_listenerSequence);
+        var ordinal = _listeners.Count(l => ReferenceEquals(l.Context.Root, context.Root) && l.Name == name);
+        var listener = new Listener(context, definition, name, handler, priority, ++_listenerSequence, $"{context.Entry.Id}/{ordinal}");
         _listeners.Add(listener);
         return listener;
     }
@@ -26,7 +27,13 @@ public sealed partial class PluginLoader
     }
 
     internal bool ListenerVisible(Listener listener, ScopeKey scope)
-        => _listeners.Contains(listener) && listener.Context.Active && listener.Context.Scope == scope;
+    {
+        if (!_listeners.Contains(listener) || !IsActive(listener.Context)) return false;
+        if (listener.Context.Scope == scope && scope != ScopeKey.Global) return true;
+        return listener.Context.Scope == ScopeKey.Global && Kept(Describe(listener), scope)
+            && !_listeners.Any(l => l.Context.Scope == scope && scope != ScopeKey.Global && IsActive(l.Context)
+                && l.Name == listener.Name && l.RegistrationName == listener.RegistrationName);
+    }
 
     private void CheckDefinition(object definition, string name)
     {
@@ -34,5 +41,5 @@ public sealed partial class PluginLoader
         if (existing is not null && !ReferenceEquals(existing.Definition, definition)) throw Conflict(name, existing.Context.Entry.Id);
     }
 
-    internal sealed record Listener(PluginContext Context, object Definition, string Name, Delegate Handler, int Priority, long Sequence);
+    internal sealed record Listener(PluginContext Context, object Definition, string Name, Delegate Handler, int Priority, long Sequence, string RegistrationName);
 }

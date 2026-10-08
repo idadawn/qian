@@ -60,17 +60,38 @@ public sealed class RuntimeScenarioTests
                     break;
                 case "teardown": await loader.DisposeAsync(); break;
                 case "dispatch":
-                    await events.Dispatch(loader.GetContext(step.GetProperty("entry").GetString()!, Scope(step)), step);
+                    await events.Dispatch(Context(loader, step), step);
                     break;
                 case "traceContains":
                     foreach (var value in step.GetProperty("value").EnumerateArray()) Assert.Contains(value.GetString(), trace);
                     break;
                 case "missing":
-                    Assert.Null(loader.GetContext(step.GetProperty("entry").GetString()!, Scope(step)).TryInject<string>(new ServiceKey(step.GetProperty("key").GetString()!)));
+                    Assert.Null(Context(loader, step).TryInject<string>(new ServiceKey(step.GetProperty("key").GetString()!)));
+                    break;
+                case "list":
+                    Assert.Equal(step.GetProperty("value").EnumerateArray().Select(v => v.GetString()),
+                        Context(loader, step).List(new ServiceKey(step.GetProperty("key").GetString()!)).Select(r => r.Name));
+                    break;
+                case "notFoundEquivalent":
+                    var view = Context(loader, step);
+                    var registry = new ServiceKey(step.GetProperty("key").GetString()!);
+                    var filtered = Assert.Throws<QianErrorException>(() => view.Inject<string>(registry, step.GetProperty("name").GetString()!));
+                    var absent = Assert.Throws<QianErrorException>(() => view.Inject<string>(registry, "does-not-exist"));
+                    var catalog = ErrorCatalog.CreateDefault();
+                    var traceId = new string('a', 32);
+                    Assert.Equal(JsonSerializer.Serialize(catalog.CreateDetail(absent.Error, traceId), ErrorDetailJson.TypeInfo),
+                        JsonSerializer.Serialize(catalog.CreateDetail(filtered.Error, traceId), ErrorDetailJson.TypeInfo));
+                    Assert.Null(view.Services.GetKeyedService<string>(new ServiceKey($"{registry.Name}:{step.GetProperty("name").GetString()}")));
                     break;
                 case "inject":
-                    var context = loader.GetContext(step.GetProperty("entry").GetString()!, Scope(step));
-                    var key = new ServiceKey(step.GetProperty("key").GetString()!);
+                    var context = Context(loader, step);
+                    var keyName = step.GetProperty("key").GetString()!;
+                    if (step.TryGetProperty("name", out var registrationName))
+                    {
+                        Assert.Equal(step.GetProperty("value").GetString(), context.Inject<string>(new(keyName), registrationName.GetString()!));
+                        keyName += $":{registrationName.GetString()}";
+                    }
+                    var key = new ServiceKey(keyName);
                     Assert.Equal(step.GetProperty("value").GetString(), context.Inject<string>(key));
                     Assert.Equal(step.GetProperty("value").GetString(), context.Services.GetRequiredKeyedService<string>(key));
                     break;
@@ -85,10 +106,22 @@ public sealed class RuntimeScenarioTests
     private static ServiceKey[] Keys(JsonElement node, string name) => node.TryGetProperty(name, out var values)
         ? values.EnumerateArray().Select(v => new ServiceKey(v.GetString()!)).ToArray() : [];
 
+    private static IPluginContext Context(PluginLoader loader, JsonElement step)
+    {
+        var context = loader.GetContext(step.GetProperty("entry").GetString()!, Scope(step));
+        return step.TryGetProperty("view", out var view) ? context.Scoped(ParseScope(view.GetString()!)) : context;
+    }
+
     private static ScopeKey Scope(JsonElement node)
     {
         if (!node.TryGetProperty("scope", out var value) || value.GetString() == "global") return ScopeKey.Global;
-        var parts = value.GetString()!.Split(':', 2);
+        return ParseScope(value.GetString()!);
+    }
+
+    private static ScopeKey ParseScope(string value)
+    {
+        if (value == "global") return ScopeKey.Global;
+        var parts = value.Split(':', 2);
         return new ScopeKey(parts[0], parts[1]);
     }
 
@@ -101,9 +134,18 @@ public sealed class RuntimeScenarioTests
             trace.Enqueue($"apply:{ctx.Entry.Id}");
             foreach (var action in entry.GetProperty("apply").EnumerateArray())
             {
+                var target = action.TryGetProperty("scope", out _) ? ctx.Scoped(Scope(action)) : ctx;
                 switch (action.GetProperty("op").GetString())
                 {
-                    case "provide": ctx.Provide(new ServiceKey(action.GetProperty("key").GetString()!), action.GetProperty("value").GetString()!); break;
+                    case "provide":
+                        var key = new ServiceKey(action.GetProperty("key").GetString()!);
+                        if (action.TryGetProperty("name", out var name)) target.Provide(key, name.GetString()!, action.GetProperty("value").GetString()!);
+                        else target.Provide(key, action.GetProperty("value").GetString()!);
+                        break;
+                    case "restrict":
+                        var keep = action.GetProperty("keep").EnumerateArray().Select(v => v.GetString()).ToArray();
+                        ctx.Restrict(Scope(action), r => keep.Contains(r.Name, StringComparer.Ordinal));
+                        break;
                     case "effect":
                         ctx.Effect(async () =>
                         {
@@ -115,7 +157,7 @@ public sealed class RuntimeScenarioTests
                     case "optional":
                         Assert.Null(ctx.TryInject<string>(new ServiceKey(action.GetProperty("key").GetString()!)));
                         break;
-                    case "on": events.On(ctx, action); break;
+                    case "on": events.On(target, action); break;
                     case "fail": throw new InvalidOperationException("场景中的 Apply 失败。");
                     default: throw new InvalidOperationException("未知 TCK Apply 操作。");
                 }

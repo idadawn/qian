@@ -133,3 +133,28 @@ Qian.Runtime.IPluginContext.On<TPayload, TResult>(Qian.Runtime.QianEvent<TPayloa
 Qian.Runtime.IPluginContext.On<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, System.Collections.Generic.IReadOnlyList<TResult>!>! evt, Qian.Runtime.DispatchMode mode, System.Delegate! handler, int priority) -> System.IDisposable!
 Qian.Runtime.IPluginContext.On<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! evt, Qian.Runtime.DispatchMode mode, System.Delegate! handler) -> System.IDisposable!
 Qian.Runtime.IPluginContext.On<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, System.Collections.Generic.IReadOnlyList<TResult>!>! evt, Qian.Runtime.DispatchMode mode, System.Delegate! handler) -> System.IDisposable!
+Qian.Runtime.Registration.Name.get -> string!
+Qian.Runtime.Registration.Value.get -> object!
+Qian.Runtime.Registration.Name.init -> void
+Qian.Runtime.Registration.Value.init -> void
+Qian.Runtime.Registration.Key.get -> Qian.Runtime.ServiceKey
+Qian.Runtime.Registration.Key.init -> void
+Qian.Runtime.Registration.OwnerEntryId.get -> string!
+Qian.Runtime.Registration.OwnerEntryId.init -> void
+Qian.Runtime.Registration.Scope.get -> Qian.Runtime.ScopeKey
+Qian.Runtime.Registration.Scope.init -> void
+Qian.Runtime.Registration
+override Qian.Runtime.Registration.ToString() -> string!
+static Qian.Runtime.Registration.operator !=(Qian.Runtime.Registration? left, Qian.Runtime.Registration? right) -> bool
+static Qian.Runtime.Registration.operator ==(Qian.Runtime.Registration? left, Qian.Runtime.Registration? right) -> bool
+override Qian.Runtime.Registration.GetHashCode() -> int
+override Qian.Runtime.Registration.Equals(object? obj) -> bool
+Qian.Runtime.Registration.Equals(Qian.Runtime.Registration? other) -> bool
+Qian.Runtime.Registration.<Clone>$() -> Qian.Runtime.Registration!
+Qian.Runtime.Registration.Deconstruct(out Qian.Runtime.ServiceKey Key, out string! Name, out Qian.Runtime.ScopeKey Scope, out string! OwnerEntryId, out object! Value) -> void
+Qian.Runtime.Registration.Registration(Qian.Runtime.ServiceKey Key, string! Name, Qian.Runtime.ScopeKey Scope, string! OwnerEntryId, object! Value) -> void
+Qian.Runtime.IPluginContext.Scoped(Qian.Runtime.ScopeKey scope) -> Qian.Runtime.IPluginContext!
+Qian.Runtime.IPluginContext.Restrict(Qian.Runtime.ScopeKey scope, System.Func<Qian.Runtime.Registration!, bool>! keep) -> System.IDisposable!
+Qian.Runtime.IPluginContext.Provide<TService>(Qian.Runtime.ServiceKey key, string! name, TService! instance) -> System.IDisposable!
+Qian.Runtime.IPluginContext.Inject<TService>(Qian.Runtime.ServiceKey key, string! name) -> TService!
+Qian.Runtime.IPluginContext.List(Qian.Runtime.ServiceKey key) -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Registration!>!

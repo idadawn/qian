@@ -6,18 +6,32 @@ namespace Qian.Runtime;
 internal sealed partial class PluginContext : IPluginContext, IKeyedServiceProvider
 {
     internal readonly PluginLoader Loader;
-    internal readonly EffectStack Effects = new();
-    internal bool Active;
-    internal bool Closed;
+    private readonly EffectStack _effects = new();
+    private bool _active;
+    private bool _closed;
+    internal PluginContext Root { get; }
+    internal EffectStack Effects => Root._effects;
+    internal bool Active { get => Root._active; set => Root._active = value; }
+    internal bool Closed { get => Root._closed; set => Root._closed = value; }
 
     internal PluginContext(PluginLoader loader, PluginEntry entry)
     {
         Loader = loader;
         Entry = entry;
+        Scope = entry.Scope;
+        Root = this;
+    }
+
+    private PluginContext(PluginContext parent, ScopeKey scope)
+    {
+        Loader = parent.Loader;
+        Entry = parent.Entry;
+        Root = parent.Root;
+        Scope = scope;
     }
 
     public PluginEntry Entry { get; }
-    public ScopeKey Scope => Entry.Scope;
+    public ScopeKey Scope { get; }
     public IServiceProvider Services => this;
     public ILogger Logger => Loader.Logger;
 

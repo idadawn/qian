@@ -74,7 +74,20 @@ public interface IPluginContext
     ValueTask<IReadOnlyList<TResult>> DispatchAsync<TPayload, TResult>(QianEvent<TPayload, IReadOnlyList<TResult>> evt, TPayload payload, CancellationToken ct);
     /// <summary>发起 waterfall 分发并指定链尾。</summary>
     ValueTask<TResult> DispatchAsync<TPayload, TResult>(QianEvent<TPayload, TResult> evt, TPayload payload, Func<ValueTask<TResult>> terminal, CancellationToken ct);
+    /// <summary>返回指定 scope 的上下文，与当前 Apply 共享效果栈，不继承当前 scope。</summary>
+    IPluginContext Scoped(ScopeKey scope);
+    /// <summary>过滤该 scope 可见的全局注册；多个纯函数谓词取交集。</summary>
+    IDisposable Restrict(ScopeKey scope, Func<Registration, bool> keep);
+    /// <summary>返回已应用遮蔽与 restrict 的注册快照。</summary>
+    IReadOnlyList<Registration> List(ServiceKey key);
+    /// <summary>注册具名 seam 实现，等价于提供 Key:name 服务键。</summary>
+    IDisposable Provide<TService>(ServiceKey key, string name, TService instance) where TService : class;
+    /// <summary>解析具名 seam 实现；不存在与被过滤时返回相同 NOT_FOUND。</summary>
+    TService Inject<TService>(ServiceKey key, string name) where TService : class;
 }
+
+/// <summary>目录与执行共用的注册描述；Name 为空表示键本身，具名 seam 使用独立名称。</summary>
+public sealed record Registration(ServiceKey Key, string Name, ScopeKey Scope, string OwnerEntryId, object Value);
 
 /// <summary>某次 Apply 的状态；失败保留原异常供管理面查询。</summary>
 public enum PluginState { Pending, Applying, Ready, Failed }

@@ -1,0 +1,21 @@
+version: 1
+id: T13
+description: 两条 restriction 取交集，目录与 keyed service 执行不可绕过；卸载即撤销。
+entries:
+  - id: tools
+    apply:
+      - {op: provide, key: Tools, name: a, value: A}
+      - {op: provide, key: Tools, name: b, value: B}
+      - {op: provide, key: Tools, name: c, value: C}
+  - id: policy
+    apply:
+      - {op: restrict, scope: 'tenant:t-001', keep: [a, b]}
+      - {op: restrict, scope: 'tenant:t-001', keep: [b, c]}
+steps:
+  - {op: mount, entries: [tools, policy]}
+  - {op: list, entry: tools, view: 'tenant:t-001', key: Tools, value: [b]}
+  - {op: inject, entry: tools, view: 'tenant:t-001', key: Tools, name: b, value: B}
+  - {op: notFoundEquivalent, entry: tools, view: 'tenant:t-001', key: Tools, name: a}
+  - {op: list, entry: tools, view: 'tenant:t-002', key: Tools, value: [a, b, c]}
+  - {op: unmount, entry: policy}
+  - {op: list, entry: tools, view: 'tenant:t-001', key: Tools, value: [a, b, c]}

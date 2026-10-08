@@ -165,7 +165,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
     }
 
     internal ServiceRegistration? Find(ServiceKey key, ScopeKey scope, PluginContext? requester = null)
-        => _services.FirstOrDefault(r => r.Key == key && r.Context.Scope == scope && (r.Context.Active || ReferenceEquals(r.Context, requester)));
+        => VisibleServices(scope, requester).FirstOrDefault(r => r.Key == key);
 
     private static void ValidateGraph(List<Node> all, List<Node> added)
     {
@@ -175,7 +175,8 @@ public sealed partial class PluginLoader : IAsyncDisposable
             List<Node> dependencies = [];
             foreach (var key in node.Inject)
             {
-                var provider = all.FirstOrDefault(n => n.Entry.Scope == node.Entry.Scope && n.Provides.Contains(key));
+                var provider = all.FirstOrDefault(n => n.Entry.Scope == node.Entry.Scope && n.Provides.Contains(key))
+                    ?? all.FirstOrDefault(n => n.Entry.Scope == ScopeKey.Global && n.Provides.Contains(key));
                 if (provider is null)
                 {
                     if (!added.Contains(node)) continue; // 既有 Pending 条目允许暂时缺少已撤销的 Provider。
@@ -226,8 +227,10 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 await node.Plugin.ApplyAsync(node.Context, node.Entry.Config, ct).ConfigureAwait(false);
                 lock (Sync)
                 {
-                    if (!node.Provides.All(k => _services.Any(r => r.Key == k && ReferenceEquals(r.Context, node.Context))))
+                    if (!node.Provides.All(k => _services.Any(r => r.Key == k && r.Context.Scope == node.Entry.Scope && ReferenceEquals(r.Context.Root, node.Context))))
                         throw new InvalidOperationException($"{node.Entry.Id} 未注册声明的 provides 服务键。");
+                    if (!node.Dependencies.All(d => ReferenceEquals(Find(d.Key, node.Entry.Scope, node.Context), d)))
+                        throw new InvalidOperationException($"{node.Entry.Id} 在 Apply 期间改变了自身依赖的可见性。");
                     node.State = PluginState.Ready;
                     node.Context.Active = true;
                     Notify();

@@ -1,0 +1,20 @@
+version: 1
+id: T24
+description: 注册表 seam 同名独占，Key:name 可以被 inject，租户注册遮蔽全局。
+entries:
+  - id: global
+    provides: ['Identity.Connectors:oidc']
+    apply: [{op: provide, key: Identity.Connectors, name: oidc, value: global}]
+  - id: duplicate
+    apply: [{op: provide, key: Identity.Connectors, name: oidc, value: duplicate}]
+  - id: tenant
+    scope: tenant:t-001
+    apply: [{op: provide, key: Identity.Connectors, name: oidc, value: tenant}]
+  - {id: consumer, inject: ['Identity.Connectors:oidc'], apply: []}
+steps:
+  - {op: mount, entries: [consumer, global, duplicate, tenant]}
+  - {op: state, entry: duplicate, value: Failed}
+  - {op: state, entry: consumer, value: Ready}
+  - {op: inject, entry: consumer, key: Identity.Connectors, name: oidc, value: global}
+  - {op: inject, entry: consumer, view: 'tenant:t-001', key: Identity.Connectors, name: oidc, value: tenant}
+  - {op: inject, entry: consumer, view: 'tenant:t-002', key: Identity.Connectors, name: oidc, value: global}

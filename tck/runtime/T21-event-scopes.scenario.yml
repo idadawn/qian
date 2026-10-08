@@ -1,0 +1,15 @@
+version: 1
+id: T21
+description: 全局监听器可见于所有 scope，其它租户监听器不可见。
+events: [{name: event, mode: serial}]
+entries:
+  - id: A
+    apply:
+      - {op: on, event: event, name: global, value: global}
+      - {op: on, event: event, name: tenant-a, scope: 'tenant:t-001', value: a}
+      - {op: on, event: event, name: tenant-b, scope: 'tenant:t-002', value: b}
+steps:
+  - {op: mount, entries: [A]}
+  - {op: dispatch, entry: A, view: 'tenant:t-001', event: event, value: [global, a]}
+  - {op: dispatch, entry: A, view: 'tenant:t-002', event: event, value: [global, b]}
+  - {op: dispatch, entry: A, event: event, value: [global]}
