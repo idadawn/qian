@@ -17,3 +17,8 @@ website/doc_build/
 website/docs/components/
 website/docs/cli/
 website/docs/design/
+# Kun 小节与 API 参考（docs-site.md §2b）：只有手写页 with-qian.mdx 进 Git；生成缓存（kun 克隆、DocFX）不进
+website/docs/sdk/kun/*
+!website/docs/sdk/kun/with-qian.mdx
+website/docs/sdk/api/
+website/.cache/
