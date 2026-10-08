@@ -1,0 +1,14 @@
+version: 1
+id: T10
+description: 观察监听器异常被隔离，其余按优先级与注册顺序继续执行。
+events: [{name: observed, mode: emit}]
+entries:
+  - id: A
+    apply:
+      - {op: on, event: observed, name: one}
+      - {op: on, event: observed, name: broken, priority: 10, behavior: fail}
+      - {op: on, event: observed, name: three}
+steps:
+  - {op: mount, entries: [A]}
+  - {op: dispatch, entry: A, event: observed}
+  - {op: trace, value: ['apply:A', 'enter:broken', 'enter:one', 'exit:one', 'enter:three', 'exit:three']}

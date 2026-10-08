@@ -1,0 +1,23 @@
+version: 1
+id: T12
+description: 租户同名注册遮蔽全局，只在本 scope 生效；卸载后恢复全局。
+entries:
+  - id: global
+    provides: [Files]
+    apply:
+      - {op: provide, key: Files, value: global-service}
+      - {op: provide, key: Files, name: upload, value: global-upload}
+  - id: tenant
+    scope: tenant:t-001
+    provides: [Files]
+    apply:
+      - {op: provide, key: Files, value: tenant-service}
+      - {op: provide, key: Files, name: upload, value: tenant-upload}
+steps:
+  - {op: mount, entries: [global, tenant]}
+  - {op: inject, entry: global, view: 'tenant:t-001', key: Files, value: tenant-service}
+  - {op: inject, entry: global, view: 'tenant:t-001', key: Files, name: upload, value: tenant-upload}
+  - {op: inject, entry: global, view: 'tenant:t-002', key: Files, value: global-service}
+  - {op: inject, entry: global, key: Files, name: upload, value: global-upload}
+  - {op: unmount, entry: tenant, scope: 'tenant:t-001'}
+  - {op: inject, entry: global, view: 'tenant:t-001', key: Files, value: global-service}

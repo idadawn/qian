@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Kun.Validation" />
     <ProjectReference Include="../Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
   </ItemGroup>
 

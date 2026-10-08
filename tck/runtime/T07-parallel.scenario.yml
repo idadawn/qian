@@ -1,0 +1,14 @@
+version: 1
+id: T07
+description: 一个失败不影响其余完成；Partial 只含按监听器顺序排列的成功结果。
+events: [{name: notify, mode: parallel}]
+entries:
+  - id: A
+    apply:
+      - {op: on, event: notify, name: one, value: a}
+      - {op: on, event: notify, name: broken, behavior: fail}
+      - {op: on, event: notify, name: three, value: c}
+steps:
+  - {op: mount, entries: [A]}
+  - {op: dispatch, entry: A, event: notify, error: parallel, partial: [a, c]}
+  - {op: traceContains, value: ['exit:one', 'enter:broken', 'exit:three']}

@@ -48,6 +48,7 @@ internal sealed class QianExceptionHandler : IExceptionHandler
         var error = exception switch
         {
             QianErrorException q => q.Error,
+            Kun.Validation.ValidationException validation => validation.ToQianError(),
             BadHttpRequestException b when PlatformErrors.ForStatus(b.StatusCode).Status == b.StatusCode
                 => new QianError(PlatformErrors.ForStatus(b.StatusCode)),
             _ => null,

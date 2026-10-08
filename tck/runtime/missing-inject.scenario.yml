@@ -1,0 +1,12 @@
+version: 1
+id: missing-inject
+description: 缺失的服务键与请求方都出现在启动期错误中。
+entries:
+  - {id: B, inject: [Missing], apply: []}
+steps:
+  - op: mount
+    entries: [B]
+    error:
+      code: DEPENDENCY_MISSING
+      args: {key: Missing, entry: B}
+  - {op: trace, value: []}

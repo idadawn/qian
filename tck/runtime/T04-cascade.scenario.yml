@@ -1,0 +1,29 @@
+version: 1
+id: T04
+description: 依赖者先于 Provider 卸载，回到 Pending；Provider 恢复后重新 Apply。
+entries:
+  - id: A
+    provides: [X]
+    apply:
+      - {op: provide, key: X, value: ready}
+      - {op: effect, name: A}
+  - id: B
+    inject: [X]
+    provides: [Y]
+    apply:
+      - {op: provide, key: Y, value: ready}
+      - {op: effect, name: B}
+  - id: C
+    inject: [Y]
+    apply:
+      - {op: effect, name: C}
+steps:
+  - {op: mount, entries: [C, B, A]}
+  - {op: unmount, entry: A}
+  - {op: state, entry: B, value: Pending}
+  - {op: state, entry: C, value: Pending}
+  - {op: trace, value: ['apply:A', 'apply:B', 'apply:C', 'dispose:C', 'dispose:B', 'dispose:A']}
+  - {op: mount, entries: [A]}
+  - {op: state, entry: C, value: Ready}
+  - {op: teardown}
+  - {op: trace, value: ['apply:A', 'apply:B', 'apply:C', 'dispose:C', 'dispose:B', 'dispose:A', 'apply:A', 'apply:B', 'apply:C', 'dispose:C', 'dispose:B', 'dispose:A']}

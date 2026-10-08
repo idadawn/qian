@@ -1,0 +1,14 @@
+version: 1
+id: T05
+description: 中间监听器不调用 next 时，下游与链尾都不执行。
+events: [{name: request, mode: waterfall}]
+entries:
+  - id: A
+    apply:
+      - {op: on, event: request, name: outer, behavior: next}
+      - {op: on, event: request, name: stop, value: stopped}
+      - {op: on, event: request, name: never, behavior: next}
+steps:
+  - {op: mount, entries: [A]}
+  - {op: dispatch, entry: A, event: request, value: 'outer(stopped)'}
+  - {op: trace, value: ['apply:A', 'enter:outer', 'enter:stop', 'exit:stop', 'exit:outer']}

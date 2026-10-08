@@ -1,0 +1,14 @@
+version: 1
+id: T09
+description: 第一个非空值终止分发。
+events: [{name: resolve, mode: bail}]
+entries:
+  - id: A
+    apply:
+      - {op: on, event: resolve, name: empty, value: null}
+      - {op: on, event: resolve, name: found, value: answer}
+      - {op: on, event: resolve, name: never, value: wrong}
+steps:
+  - {op: mount, entries: [A]}
+  - {op: dispatch, entry: A, event: resolve, value: answer}
+  - {op: trace, value: ['apply:A', 'enter:empty', 'exit:empty', 'enter:found', 'exit:found']}

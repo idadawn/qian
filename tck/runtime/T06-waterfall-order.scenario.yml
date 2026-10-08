@@ -1,0 +1,14 @@
+version: 1
+id: T06
+description: 优先级高者在外层，同级按挂载顺序，链尾返回值逐层传回。
+events: [{name: request, mode: waterfall}]
+entries:
+  - id: A
+    apply:
+      - {op: on, event: request, name: first, behavior: next}
+      - {op: on, event: request, name: second, behavior: next}
+      - {op: on, event: request, name: high, behavior: next, priority: 10}
+steps:
+  - {op: mount, entries: [A]}
+  - {op: dispatch, entry: A, event: request, value: 'high(first(second(terminal)))'}
+  - {op: trace, value: ['apply:A', 'enter:high', 'enter:first', 'enter:second', 'exit:second', 'exit:first', 'exit:high']}

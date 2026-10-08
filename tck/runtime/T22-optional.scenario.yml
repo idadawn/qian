@@ -1,0 +1,14 @@
+version: 1
+id: T22
+description: optionalInject 不阻塞 Apply，后续服务出现也不触发重启。
+entries:
+  - id: optional
+    apply: [{op: optional, key: X}]
+  - id: provider
+    provides: [X]
+    apply: [{op: provide, key: X, value: ready}]
+steps:
+  - {op: mount, entries: [optional]}
+  - {op: mount, entries: [provider]}
+  - {op: inject, entry: optional, key: X, value: ready}
+  - {op: trace, value: ['apply:optional', 'apply:provider']}

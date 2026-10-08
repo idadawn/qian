@@ -1,0 +1,17 @@
+version: 1
+id: T03
+description: 全部 effect 按逆序撤销；撤销失败不中断后续清理；Provide 无残留。
+entries:
+  - id: A
+    provides: [X]
+    apply:
+      - {op: effect, name: e1}
+      - {op: provide, key: X, value: ready}
+      - {op: effect, name: e2, fail: true}
+      - {op: effect, name: e3}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [A, observer]}
+  - {op: unmount, entry: A}
+  - {op: trace, value: ['apply:A', 'apply:observer', 'dispose:e3', 'dispose:e2', 'dispose:e1']}
+  - {op: missing, entry: observer, key: X}

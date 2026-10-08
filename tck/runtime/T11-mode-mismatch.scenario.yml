@@ -1,0 +1,14 @@
+version: 1
+id: T11
+description: 调用模式与 Definition 不一致导致条目失败。
+events: [{name: observed, mode: emit}]
+entries:
+  - id: A
+    apply:
+      - {op: on, event: observed, name: invalid, mode: waterfall}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [A, observer]}
+  - {op: state, entry: A, value: Failed}
+  - {op: dispatch, entry: observer, event: observed}
+  - {op: trace, value: ['apply:A', 'apply:observer']}

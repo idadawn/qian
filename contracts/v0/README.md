@@ -66,6 +66,7 @@ fixture 文件形状统一为 `[{ "name": "<这条样例说明什么>", "data": 
 | 协议 | `BAD_REQUEST`(400)、`INPUT_INVALID`(400)、`UNAUTHENTICATED`(401)、`AUTHZ_DENIED`(403)、`INSUFFICIENT_SCOPE`(403)、`NOT_FOUND`(404)、`METHOD_NOT_ALLOWED`(405)、`NOT_ACCEPTABLE`(406)、`REQUEST_TIMEOUT`(408)、`PRECONDITION_FAILED`(412)、`PAYLOAD_TOO_LARGE`(413)、`UNSUPPORTED_MEDIA_TYPE`(415)、`RATE_LIMITED`(429)、`INTERNAL`(500)、`BAD_GATEWAY`(502)、`UNAVAILABLE`(503)、`GATEWAY_TIMEOUT`(504) |
 | 业务（通用兜底） | `CONFLICT`(409)、`BUSINESS_RULE_VIOLATED`(422) |
 | 字段级（只用于 `errors[]`） | `REQUIRED`、`TYPE_MISMATCH`、`VALUE_NOT_ALLOWED`、`OUT_OF_RANGE`、`PATTERN_MISMATCH`、`FORMAT_INVALID`、`UNKNOWN_PROPERTY`（对应 JSON Schema 的 required / type / enum·const / 范围与长度 / pattern / format / additionalProperties） |
+| 运行时装配 | `DEPENDENCY_MISSING`(400)、`DEPENDENCY_CYCLE`(400)、`REGISTRATION_CONFLICT`(409)；缺失键、请求方、环路与已有注册 owner 通过文案参数表达 |
 
 宿主框架自己产生、没有带错误码的错误按状态码兜底（`PlatformErrors.ForStatus`）：上表有专门错误码的状态码取之；其余 4xx 取 `BAD_REQUEST`、5xx 取 `INTERNAL`，响应状态码保持原值。
 
@@ -141,7 +142,7 @@ return QianResults.Error(new QianError(PlatformErrors.InputInvalid)
 | `Failure` | 500 | `INTERNAL` | 协议 |
 | `DomainException` | 400 | 组件登记的 422 业务码，缺省 `BUSINESS_RULE_VIOLATED` | 业务 |
 
-过渡态（2026-10-07）：仓库尚未引用 `Kun.*` 包（Kun 包源接入随首个 Kun 任务）；`KunExceptionHandler` 直接 `WriteAsJsonAsync` 写 ProblemDetails，绕过了 `IProblemDetailsService`，它产生的错误体不会被规范化，且 Kun 错误码（如 `order.notFound`）不是 Qian 错误码。桥接（Kun `Error` → `QianError`、`ValidationException.Errors` → `errors[]`、上游改用 `IProblemDetailsService`）在引入 Kun 包时完成。
+S1-RT-001 引入 Kun 2026.9.13 正式包（从 nuget.org 还原）：`Qian.Runtime.KunErrorBridge` 按上表将 `Error` 映射为 `QianError`；`Qian.Runtime.Errors.AspNetCore.KunValidationErrorBridge` 将 `ValidationException.Errors` 转为至多 100 项字段错误，属性路径如 `Items[0].Name` 转为 `#/Items/0/Name`。已知平台字段码保留，未知码统一为 `VALUE_NOT_ALLOWED`，不输出原始错误文案。`AddQianErrors()` 优先处理 Qian 错误与 Kun 校验异常，其他异常继续进入宿主处理链。上游 `KunExceptionHandler` 改用 `IProblemDetailsService` 属于 S1-KUN-006；本任务不改 Kun 源码。
 
 ## 4 S2S claim
 

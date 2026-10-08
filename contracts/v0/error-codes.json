@@ -82,6 +82,38 @@
       }
     },
     {
+      "code": "DEPENDENCY_CYCLE",
+      "kind": "protocol",
+      "status": 400,
+      "type": "https://qian.dev/problems/protocol/DEPENDENCY_CYCLE",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Dependency cycle",
+        "zh-CN": "服务依赖成环"
+      },
+      "message": {
+        "en": "Service dependencies contain a cycle: {cycle}.",
+        "zh-CN": "服务依赖存在环路：{cycle}。"
+      }
+    },
+    {
+      "code": "DEPENDENCY_MISSING",
+      "kind": "protocol",
+      "status": 400,
+      "type": "https://qian.dev/problems/protocol/DEPENDENCY_MISSING",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Missing dependency",
+        "zh-CN": "缺少服务依赖"
+      },
+      "message": {
+        "en": "Entry {entry} requires service key {key}, which has no provider.",
+        "zh-CN": "条目 {entry} 请求的服务键 {key} 无人提供。"
+      }
+    },
+    {
       "code": "FORMAT_INVALID",
       "kind": "field",
       "owner": "qian.runtime",
@@ -281,6 +313,22 @@
       "message": {
         "en": "The rate limit was exceeded; wait as the Retry-After header indicates, then retry.",
         "zh-CN": "超出限流阈值，按 Retry-After 头等待后重试。"
+      }
+    },
+    {
+      "code": "REGISTRATION_CONFLICT",
+      "kind": "business",
+      "status": 409,
+      "type": "https://qian.dev/problems/business/REGISTRATION_CONFLICT",
+      "owner": "qian.runtime",
+      "retryable": false,
+      "title": {
+        "en": "Registration conflict",
+        "zh-CN": "注册冲突"
+      },
+      "message": {
+        "en": "Registration {key} is already owned by entry {owner}.",
+        "zh-CN": "注册 {key} 已由条目 {owner} 占用。"
       }
     },
     {

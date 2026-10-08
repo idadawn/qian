@@ -9,6 +9,21 @@ public static class PlatformErrors
     /// <summary>内置错误码的归属组件。</summary>
     public const string Owner = "qian.runtime";
 
+    /// <summary>400：启动配置引用了没有 Provider 的服务键。</summary>
+    public static readonly ErrorCode DependencyMissing = Protocol("DEPENDENCY_MISSING", 400,
+        "缺少服务依赖", "条目 {entry} 请求的服务键 {key} 无人提供。",
+        "Missing dependency", "Entry {entry} requires service key {key}, which has no provider.");
+
+    /// <summary>400：启动配置中的依赖成环。</summary>
+    public static readonly ErrorCode DependencyCycle = Protocol("DEPENDENCY_CYCLE", 400,
+        "服务依赖成环", "服务依赖存在环路：{cycle}。",
+        "Dependency cycle", "Service dependencies contain a cycle: {cycle}.");
+
+    /// <summary>409：同 scope 同名注册已存在。</summary>
+    public static readonly ErrorCode RegistrationConflict = Business("REGISTRATION_CONFLICT", 409,
+        "注册冲突", "注册 {key} 已由条目 {owner} 占用。",
+        "Registration conflict", "Registration {key} is already owned by entry {owner}.");
+
     // ---- 协议错误 ----
 
     /// <summary>400：请求无法解析（JSON 语法、内容类型、参数类型）。</summary>
@@ -153,6 +168,7 @@ public static class PlatformErrors
     /// <summary>全部内置错误码。</summary>
     public static IReadOnlyList<ErrorCode> All { get; } =
     [
+        DependencyMissing, DependencyCycle, RegistrationConflict,
         BadRequest, InputInvalid, Unauthenticated, AuthzDenied, InsufficientScope, NotFound, MethodNotAllowed,
         NotAcceptable, RequestTimeout, PreconditionFailed, PayloadTooLarge, UnsupportedMediaType, RateLimited,
         Internal, BadGateway, Unavailable, GatewayTimeout,
