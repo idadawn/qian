@@ -162,3 +162,10 @@ Qian.Runtime.KunErrorBridge
 static Qian.Runtime.KunErrorBridge.ToQianError(this Kun.Core.Results.Error! error) -> Qian.Runtime.Errors.QianError!
 static Qian.Runtime.KunErrorBridge.ToQianError(this Kun.Core.Domain.DomainException! exception) -> Qian.Runtime.Errors.QianError!
 Qian.Runtime.PluginLoader.GetPendingDependencies(string! id, Qian.Runtime.ScopeKey scope) -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+static readonly Qian.Runtime.SurfaceKeys.Commands -> Qian.Runtime.ServiceKey
+static readonly Qian.Runtime.SurfaceKeys.Skills -> Qian.Runtime.ServiceKey
+static readonly Qian.Runtime.SurfaceKeys.Tools -> Qian.Runtime.ServiceKey
+static readonly Qian.Runtime.SurfaceKeys.Agents -> Qian.Runtime.ServiceKey
+static readonly Qian.Runtime.SurfaceKeys.Hooks -> Qian.Runtime.ServiceKey
+Qian.Runtime.SurfaceKeys
+static readonly Qian.Runtime.SurfaceKeys.McpServers -> Qian.Runtime.ServiceKey

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "numbers",
+    "source": "{\"name\":\"n\",\"description\":\"numbers\",\"inputSchema\":{\"a\":333333333.33333329,\"b\":1e-7,\"c\":1e-6,\"d\":1e21,\"e\":1e20,\"f\":-0,\"g\":5e-324}}",
+    "canonical": "{\"description\":\"numbers\",\"inputSchema\":{\"a\":333333333.3333333,\"b\":1e-7,\"c\":0.000001,\"d\":1e+21,\"e\":100000000000000000000,\"f\":0,\"g\":5e-324},\"name\":\"n\"}",
+    "sha256": "fba9264bd40cd2745a901ed3d8e88302c866e52fc957913f2ef1ad2ab2be0832"
+  },
+  {
+    "name": "unicode",
+    "source": "{\"name\":\"u\",\"description\":\"中文\\n正文\",\"inputSchema\":{\"\\ufffd\":1,\"😀\":2,\"a\":3}}",
+    "canonical": "{\"description\":\"中文\\n正文\",\"inputSchema\":{\"a\":3,\"😀\":2,\"�\":1},\"name\":\"u\"}",
+    "sha256": "5acd61e0978ae5bd52f211b522919979f6b2fb95ee07ef7526c92a2aaa536a0b"
+  }
+]

@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`█░░░░░░░░░` 19%（24/124）
-- 状态：todo 100 · doing 0 · review 0 · done 24 · blocked 0
+- 状态：todo 99 · doing 0 · review 1 · done 24 · blocked 0
 - 最近更新：2026-10-09
 
 ## 按阶段
@@ -54,9 +54,9 @@
 |---|---|---|---|
 | claude | `██████████` 100%（18/18） | 0 | 0 |
 | codex | `██████████` 100%（1/1） | 0 | 0 |
-| cody | `██████████` 100%（4/4） | 0 | 0 |
+| cody | `████████░░` 80%（4/5） | 0 | 0 |
 | 产品负责人 | `██████████` 100%（1/1） | 0 | 0 |
-| （未认领） | `░░░░░░░░░░` 0%（0/100） | 0 | 86 |
+| （未认领） | `░░░░░░░░░░` 0%（0/99） | 0 | 86 |
 
 ## 接下来可做（无未完成前置的待办，按优先级 / 波次）
 
@@ -70,18 +70,17 @@
 | 6 | [S1-KUN-003](tasks/S1-KUN-003.md) Kun 网关加固与 gRPC 流式拦截器修复 | P0 | 1 | 3d | KUN |
 | 7 | [S1-KUN-004](tasks/S1-KUN-004.md) Kun Identity 客户端链路修复与 S2S 签发器收敛去产品化 | P0 | 1 | 3d | KUN |
 | 8 | [S1-RT-002](tasks/S1-RT-002.md) profile / 组合包 / patch 装载器与 dump-config | P0 | 1 | 5d | RT |
-| 9 | [S1-RT-008](tasks/S1-RT-008.md) 五种声明式表面解析器与校验器（Qian.Surfaces / TS） | P0 | 1 | 5d | RT |
-| 10 | [S1-RT-003](tasks/S1-RT-003.md) @qian/runtime：TypeScript 同语义运行时（外壳插件树） | P0 | 2 | 5d | RT |
-| 11 | [S1-YUE-003](tasks/S1-YUE-003.md) yue 工程化基线、CI 门禁矩阵与 Base UI 验证门 | P0 | 2 | 3d | YUE |
-| 12 | [S1-DOCS-003](tasks/S1-DOCS-003.md) llms 输出、页面元数据规范与知识库导入契约 | P0 | 3 | 2d | DOCS |
-| 13 | [S1-DOCS-006](tasks/S1-DOCS-006.md) 产品族地图页、版本矩阵页与全站 project 字段 | P1 | 2 | 1.5d | DOCS |
-| 14 | [S1-KUN-007](tasks/S1-KUN-007.md) Kun Saga 执行器其余修补（Scoped 工厂、步骤租约、重试） | P1 | 4 | 2d | KUN |
+| 9 | [S1-RT-003](tasks/S1-RT-003.md) @qian/runtime：TypeScript 同语义运行时（外壳插件树） | P0 | 2 | 5d | RT |
+| 10 | [S1-YUE-003](tasks/S1-YUE-003.md) yue 工程化基线、CI 门禁矩阵与 Base UI 验证门 | P0 | 2 | 3d | YUE |
+| 11 | [S1-DOCS-003](tasks/S1-DOCS-003.md) llms 输出、页面元数据规范与知识库导入契约 | P0 | 3 | 2d | DOCS |
+| 12 | [S1-DOCS-006](tasks/S1-DOCS-006.md) 产品族地图页、版本矩阵页与全站 project 字段 | P1 | 2 | 1.5d | DOCS |
+| 13 | [S1-KUN-007](tasks/S1-KUN-007.md) Kun Saga 执行器其余修补（Scoped 工厂、步骤租约、重试） | P1 | 4 | 2d | KUN |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 14 | 46.5d |
+| 第 1 层 | 13 | 41.5d |
 | 第 2 层 | 13 | 45d |
 | 第 3 层 | 15 | 62.5d |
 | 第 4 层 | 17 | 64d |
@@ -95,4 +94,6 @@
 
 ## 进行中
 
-（无）
+| 任务 | 状态 | 负责人 | 更新 |
+|---|---|---|---|
+| [S1-RT-008](tasks/S1-RT-008.md) 五种声明式表面解析器与校验器（Qian.Surfaces / TS） | review | cody | 2026-10-09 |

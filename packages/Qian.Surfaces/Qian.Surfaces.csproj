@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>声明式表面的 JSON/YAML 解析、Schema 与语义校验。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
+    <PackageReference Include="YamlDotNet" /><PackageReference Include="JsonSchema.Net" />
+    <EmbeddedResource Include="../../schemas/v2/surface-rules.json" LogicalName="schemas/surface-rules.json" />
+    <EmbeddedResource Include="../../schemas/v2/*.schema.json" LogicalName="schemas/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../contracts/v0/capability-entry.schema.json" LogicalName="schemas/capability-entry.schema.json" />
+  </ItemGroup>
+</Project>

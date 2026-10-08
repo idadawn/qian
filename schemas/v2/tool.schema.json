@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/tool/v2",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": {}
+  },
+  "properties": {
+    "name": {
+      "description": "插件内短名：<资源>.<动作>（如 customer.create）或 tool/v2 文件名（如 upload），插件内唯一。",
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)*$"
+    },
+    "description": {
+      "description": "意图式描述（何时用、何时不用），面向 Agent，至少 10 个字符。",
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 2000
+    },
+    "inputSchema": {
+      "description": "输入的 JSON Schema 2020-12：顶层为 object 且 additionalProperties: false；不得含租户字段（租户只来自令牌）。嵌套层的租户字段由语义校验器检查。",
+      "allOf": [
+        {
+          "$ref": "https://json-schema.org/draft/2020-12/schema"
+        },
+        {
+          "required": [
+            "type",
+            "additionalProperties"
+          ],
+          "properties": {
+            "type": {
+              "const": "object"
+            },
+            "additionalProperties": {
+              "const": false
+            },
+            "properties": {
+              "propertyNames": {
+                "not": {
+                  "$ref": "https://qian.dev/contracts/v0/capability-entry.schema.json#/$defs/TenantFieldName"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "outputSchema": {
+      "description": "输出的 JSON Schema 2020-12；async 为 task 时描述 Operation 完成后的 result。",
+      "$ref": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "sideEffect": {
+      "$ref": "https://qian.dev/contracts/v0/capability-entry.schema.json#/$defs/SideEffect"
+    },
+    "policyHint": {
+      "$ref": "https://qian.dev/contracts/v0/capability-entry.schema.json#/$defs/PolicyHint"
+    },
+    "idempotent": {
+      "description": "sideEffect 不为 read 时必须为 true，且 inputSchema 必须有必填的 idempotencyKey。",
+      "type": "boolean"
+    },
+    "async": {
+      "description": "none：同步返回结果；task：返回 Operation 资源（R8）。",
+      "enum": [
+        "none",
+        "task"
+      ]
+    },
+    "requiredScopes": {
+      "description": "调用所需的 OAuth scope（约定 <plugin-id>:<read|write|admin>）。",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "^[\\x21\\x23-\\x5B\\x5D-\\x7E]+$"
+      }
+    },
+    "requiredPermission": {
+      "description": "权限点全名 <plugin-id>:<resource>:<action>（R9），供 PEP 使用。",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+:[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*$"
+    },
+    "requiredSecrets": {
+      "description": "运行所需密钥的名字（secretRef 名），永不写值。",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$",
+        "maxLength": 128
+      }
+    },
+    "dataClassification": {
+      "$ref": "https://qian.dev/contracts/v0/capability-entry.schema.json#/$defs/DataClassification"
+    },
+    "costTier": {
+      "$ref": "https://qian.dev/contracts/v0/capability-entry.schema.json#/$defs/CostTier"
+    },
+    "contractVersion": {
+      "description": "契约族版本标签（如 files-v1），便于按族弃用。",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "schemaSha256": {
+      "$ref": "https://qian.dev/contracts/v0/capability-entry.schema.json#/$defs/SchemaSha256"
+    },
+    "audit": {
+      "description": "为 true 时命令级审计强制记录（sideEffect 不为 read 时默认 true）。",
+      "type": "boolean"
+    },
+    "agent": {
+      "$ref": "https://qian.dev/contracts/v0/capability-entry.schema.json#/$defs/AgentExposure"
+    },
+    "$schema": {
+      "const": "https://qian.dev/schemas/tool/v2"
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "kind": {
+          "enum": [
+            "service",
+            "http",
+            "command"
+          ]
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "service"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "key",
+              "method"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "http"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "url",
+              "method"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "command"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "id"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "inputSchema",
+    "sideEffect",
+    "policyHint",
+    "idempotent",
+    "async",
+    "requiredScopes",
+    "requiredSecrets",
+    "dataClassification",
+    "contractVersion",
+    "schemaSha256",
+    "agent",
+    "binding"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "sideEffect": {
+            "not": {
+              "const": "read"
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "idempotent": {
+            "const": true
+          },
+          "inputSchema": {
+            "required": [
+              "required",
+              "properties"
+            ],
+            "properties": {
+              "required": {
+                "contains": {
+                  "const": "idempotencyKey"
+                }
+              },
+              "properties": {
+                "required": [
+                  "idempotencyKey"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
