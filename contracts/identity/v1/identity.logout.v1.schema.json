@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/identity/v1/identity.logout.v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "occurred_at",
+    "tenant_id",
+    "person_id",
+    "identity_revision",
+    "session_id",
+    "reason"
+  ],
+  "properties": {
+    "event_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "tenant_id": {
+      "oneOf": [
+        {
+          "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "person_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "identity_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "session_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "membership_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

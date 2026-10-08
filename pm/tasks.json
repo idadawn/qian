@@ -2409,14 +2409,14 @@
  {
   "id": "S1-IDP-001",
   "title": "身份契约先行：ctx.Identity、claim 规范、SPI 与事件",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "IDP",
   "areaName": "身份与连接器",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "2d",
   "days": 2.0,
   "depends": [
@@ -2425,7 +2425,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -2440,12 +2440,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-005-identity-sso.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-09",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Kun.*.Abstractions</code> 与 <code>Qian.Runtime</code>，通过 PublicAPI 分析器</li>\n<li class='chk'><span class='box'></span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk'><span class='box'></span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Kun.*.Abstractions</code> 与 <code>Qian.Runtime</code>，通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-001.md"
  },
  {

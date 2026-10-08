@@ -1,0 +1,553 @@
+#nullable enable
+static readonly Qian.Identity.Abstractions.IdentityDefinition.Key -> Qian.Runtime.ServiceKey
+Qian.Identity.Abstractions.IdentityDefinition
+Qian.Identity.Abstractions.IIdentityConnectorRegistry
+Qian.Identity.Abstractions.IAuthenticatedUser
+Qian.Identity.Abstractions.Membership.Id.get -> System.Guid
+Qian.Identity.Abstractions.Membership
+Qian.Identity.Abstractions.Membership.Id.init -> void
+override Qian.Identity.Abstractions.Membership.ToString() -> string!
+Qian.Identity.Abstractions.Person.Id.get -> System.Guid
+static Qian.Identity.Abstractions.Membership.operator !=(Qian.Identity.Abstractions.Membership? left, Qian.Identity.Abstractions.Membership? right) -> bool
+Qian.Identity.Abstractions.Person.Id.init -> void
+Qian.Identity.Abstractions.ICurrentUser
+static Qian.Identity.Abstractions.Membership.operator ==(Qian.Identity.Abstractions.Membership? left, Qian.Identity.Abstractions.Membership? right) -> bool
+override Qian.Identity.Abstractions.Membership.GetHashCode() -> int
+Qian.Identity.Abstractions.Membership.TenantId.get -> System.Guid
+Qian.Identity.Abstractions.Membership.PersonId.get -> System.Guid
+override Qian.Identity.Abstractions.Membership.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.Membership.TenantId.init -> void
+Qian.Identity.Abstractions.Membership.PersonId.init -> void
+Qian.Identity.Abstractions.Membership.Equals(Qian.Identity.Abstractions.Membership? other) -> bool
+Qian.Identity.Abstractions.Membership.<Clone>$() -> Qian.Identity.Abstractions.Membership!
+Qian.Identity.Abstractions.Membership.Deconstruct(out System.Guid Id, out System.Guid PersonId, out System.Guid TenantId, out string! DisplayName, out string! Status, out bool IsTenantAdministrator) -> void
+Qian.Identity.Abstractions.Person
+Qian.Identity.Abstractions.Membership.DisplayName.get -> string!
+Qian.Identity.Abstractions.Membership.DisplayName.init -> void
+override Qian.Identity.Abstractions.Person.ToString() -> string!
+Qian.Identity.Abstractions.Person.DisplayName.get -> string!
+Qian.Identity.Abstractions.Person.UserName.get -> string?
+Qian.Identity.Abstractions.Person.Email.get -> string?
+static Qian.Identity.Abstractions.Person.operator !=(Qian.Identity.Abstractions.Person? left, Qian.Identity.Abstractions.Person? right) -> bool
+Qian.Identity.Abstractions.Person.DisplayName.init -> void
+Qian.Identity.Abstractions.Person.Email.init -> void
+Qian.Identity.Abstractions.Person.UserName.init -> void
+Qian.Identity.Abstractions.Membership.Status.get -> string!
+static Qian.Identity.Abstractions.Person.operator ==(Qian.Identity.Abstractions.Person? left, Qian.Identity.Abstractions.Person? right) -> bool
+Qian.Identity.Abstractions.Membership.IsTenantAdministrator.get -> bool
+Qian.Identity.Abstractions.Person.Phone.get -> string?
+override Qian.Identity.Abstractions.Person.GetHashCode() -> int
+Qian.Identity.Abstractions.Person.Phone.init -> void
+Qian.Identity.Abstractions.Membership.IsTenantAdministrator.init -> void
+override Qian.Identity.Abstractions.Person.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.Person.Equals(Qian.Identity.Abstractions.Person? other) -> bool
+Qian.Identity.Abstractions.Person.<Clone>$() -> Qian.Identity.Abstractions.Person!
+Qian.Identity.Abstractions.Person.Deconstruct(out System.Guid Id, out string! DisplayName, out string? UserName, out string? Email, out string? Phone, out long IdentityRevision) -> void
+Qian.Identity.Abstractions.IIdentityService
+Qian.Identity.Abstractions.Membership.Status.init -> void
+Qian.Identity.Abstractions.Person.IdentityRevision.get -> long
+Qian.Identity.Abstractions.Person.IdentityRevision.init -> void
+Qian.Identity.Abstractions.ConnectorDescriptor.Terminals.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.ConnectorDescriptor.Protocol.get -> string!
+Qian.Identity.Abstractions.ChallengeResult.RedirectUri.get -> System.Uri?
+Qian.Identity.Abstractions.ConnectorDescriptor.DisplayName.get -> string!
+Qian.Identity.Abstractions.ChallengeResult.ChallengeId.get -> string?
+Qian.Identity.Abstractions.ConnectorDescriptor.Terminals.init -> void
+Qian.Identity.Abstractions.ChallengeResult.RedirectUri.init -> void
+Qian.Identity.Abstractions.Session.ClientId.get -> string!
+Qian.Identity.Abstractions.ConnectorDescriptor.Protocol.init -> void
+Qian.Identity.Abstractions.ConnectorDescriptor.Id.get -> string!
+Qian.Identity.Abstractions.ConnectorDescriptor.DisplayName.init -> void
+Qian.Identity.Abstractions.ChallengeResult.ChallengeId.init -> void
+Qian.Identity.Abstractions.Session.DeviceType.get -> string!
+Qian.Identity.Abstractions.Session.ClientId.init -> void
+Qian.Identity.Abstractions.ConnectorDescriptor.Id.init -> void
+Qian.Identity.Abstractions.Session.DeviceType.init -> void
+Qian.Identity.Abstractions.Session.ExpiresAt.get -> System.DateTimeOffset
+Qian.Identity.Abstractions.Session.ExpiresAt.init -> void
+Qian.Identity.Abstractions.Session.IdentityRevision.get -> long
+Qian.Identity.Abstractions.Session.IdentityRevision.init -> void
+Qian.Identity.Abstractions.Session.Id.get -> System.Guid
+Qian.Identity.Abstractions.ChallengeResult
+Qian.Identity.Abstractions.Session.Id.init -> void
+static Qian.Identity.Abstractions.ChallengeResult.operator !=(Qian.Identity.Abstractions.ChallengeResult? left, Qian.Identity.Abstractions.ChallengeResult? right) -> bool
+Qian.Identity.Abstractions.ConnectorDescriptor.ConfigSchema.get -> System.Text.Json.JsonElement
+Qian.Identity.Abstractions.Session.PersonId.get -> System.Guid
+Qian.Identity.Abstractions.Session
+Qian.Identity.Abstractions.Session.MembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.ConnectorDescriptor
+Qian.Identity.Abstractions.ConnectorDescriptor.ConfigSchema.init -> void
+static Qian.Identity.Abstractions.ChallengeResult.operator ==(Qian.Identity.Abstractions.ChallengeResult? left, Qian.Identity.Abstractions.ChallengeResult? right) -> bool
+Qian.Identity.Abstractions.Session.PersonId.init -> void
+Qian.Identity.Abstractions.ConnectorContext.CallbackUri.get -> System.Uri!
+override Qian.Identity.Abstractions.ChallengeResult.GetHashCode() -> int
+Qian.Identity.Abstractions.Session.MembershipId.init -> void
+static Qian.Identity.Abstractions.Session.operator !=(Qian.Identity.Abstractions.Session? left, Qian.Identity.Abstractions.Session? right) -> bool
+Qian.Identity.Abstractions.ConnectorContext.CallbackUri.init -> void
+override Qian.Identity.Abstractions.ConnectorDescriptor.ToString() -> string!
+override Qian.Identity.Abstractions.ChallengeResult.Equals(object? obj) -> bool
+static Qian.Identity.Abstractions.Session.operator ==(Qian.Identity.Abstractions.Session? left, Qian.Identity.Abstractions.Session? right) -> bool
+static Qian.Identity.Abstractions.ConnectorDescriptor.operator !=(Qian.Identity.Abstractions.ConnectorDescriptor? left, Qian.Identity.Abstractions.ConnectorDescriptor? right) -> bool
+Qian.Identity.Abstractions.ChallengeResult.Equals(Qian.Identity.Abstractions.ChallengeResult? other) -> bool
+override Qian.Identity.Abstractions.Session.GetHashCode() -> int
+static Qian.Identity.Abstractions.ConnectorDescriptor.operator ==(Qian.Identity.Abstractions.ConnectorDescriptor? left, Qian.Identity.Abstractions.ConnectorDescriptor? right) -> bool
+Qian.Identity.Abstractions.ChallengeResult.<Clone>$() -> Qian.Identity.Abstractions.ChallengeResult!
+override Qian.Identity.Abstractions.Session.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.ConnectorDescriptor.GetHashCode() -> int
+Qian.Identity.Abstractions.ConnectorContext.State.get -> string!
+Qian.Identity.Abstractions.ChallengeResult.Deconstruct(out System.Uri? RedirectUri, out string? ChallengeId) -> void
+Qian.Identity.Abstractions.Session.Equals(Qian.Identity.Abstractions.Session? other) -> bool
+Qian.Identity.Abstractions.ConnectorContext.Nonce.get -> string!
+override Qian.Identity.Abstractions.ConnectorDescriptor.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.ConnectorContext.Nonce.init -> void
+Qian.Identity.Abstractions.Session.<Clone>$() -> Qian.Identity.Abstractions.Session!
+Qian.Identity.Abstractions.ConnectorContext.State.init -> void
+Qian.Identity.Abstractions.ConnectorDescriptor.Equals(Qian.Identity.Abstractions.ConnectorDescriptor? other) -> bool
+Qian.Identity.Abstractions.ConnectorDescriptor.<Clone>$() -> Qian.Identity.Abstractions.ConnectorDescriptor!
+Qian.Identity.Abstractions.Session.Deconstruct(out System.Guid Id, out System.Guid PersonId, out System.Guid? MembershipId, out string! ClientId, out string! DeviceType, out System.DateTimeOffset ExpiresAt, out long IdentityRevision) -> void
+Qian.Identity.Abstractions.IIdentityConnector
+Qian.Identity.Abstractions.ConnectorDescriptor.Deconstruct(out string! Id, out string! DisplayName, out string! Protocol, out System.Collections.Generic.IReadOnlyList<string!>! Terminals, out System.Text.Json.JsonElement ConfigSchema) -> void
+Qian.Identity.Abstractions.ConnectorContext
+static Qian.Identity.Abstractions.ConnectorContext.operator !=(Qian.Identity.Abstractions.ConnectorContext? left, Qian.Identity.Abstractions.ConnectorContext? right) -> bool
+static Qian.Identity.Abstractions.ConnectorContext.operator ==(Qian.Identity.Abstractions.ConnectorContext? left, Qian.Identity.Abstractions.ConnectorContext? right) -> bool
+override Qian.Identity.Abstractions.ConnectorContext.GetHashCode() -> int
+override Qian.Identity.Abstractions.ConnectorContext.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.ConnectorContext.Equals(Qian.Identity.Abstractions.ConnectorContext? other) -> bool
+Qian.Identity.Abstractions.AuthenticationFactorContext.PersonId.get -> System.Guid
+Qian.Identity.Abstractions.ConnectorCallback.Context.get -> Qian.Identity.Abstractions.ConnectorContext!
+Qian.Identity.Abstractions.AuthenticationFactorContext.PersonId.init -> void
+Qian.Identity.Abstractions.ConnectorContext.<Clone>$() -> Qian.Identity.Abstractions.ConnectorContext!
+Qian.Identity.Abstractions.ConnectorCallback.Context.init -> void
+Qian.Identity.Abstractions.SessionRevocation.PersonId.get -> System.Guid
+Qian.Identity.Abstractions.ConnectorContext.Deconstruct(out string! ClientId, out System.Guid? TenantId, out System.Uri! CallbackUri, out string! State, out string! Nonce) -> void
+Qian.Identity.Abstractions.AuthenticationChallenge.ExpiresAt.get -> System.DateTimeOffset
+Qian.Identity.Abstractions.AuthenticationFactorContext.ClientId.get -> string!
+Qian.Identity.Abstractions.SessionRevocation.PersonId.init -> void
+Qian.Identity.Abstractions.ConnectorCallback
+Qian.Identity.Abstractions.AuthenticationChallenge.ExpiresAt.init -> void
+Qian.Identity.Abstractions.AuthenticationFactorContext.ClientId.init -> void
+Qian.Identity.Abstractions.IDirectorySyncConnector
+static Qian.Identity.Abstractions.ConnectorCallback.operator !=(Qian.Identity.Abstractions.ConnectorCallback? left, Qian.Identity.Abstractions.ConnectorCallback? right) -> bool
+static Qian.Identity.Abstractions.ConnectorCallback.operator ==(Qian.Identity.Abstractions.ConnectorCallback? left, Qian.Identity.Abstractions.ConnectorCallback? right) -> bool
+Qian.Identity.Abstractions.IImplicitIdentityConnector
+override Qian.Identity.Abstractions.ConnectorCallback.GetHashCode() -> int
+override Qian.Identity.Abstractions.ConnectorCallback.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.AuthenticationFactorContext.TenantId.get -> System.Guid?
+Qian.Identity.Abstractions.AuthenticationFactorContext.TenantId.init -> void
+Qian.Identity.Abstractions.ConnectorCallback.Equals(Qian.Identity.Abstractions.ConnectorCallback? other) -> bool
+Qian.Identity.Abstractions.SessionRevocation.SessionId.get -> System.Guid?
+Qian.Identity.Abstractions.SessionRevocation
+Qian.Identity.Abstractions.ConnectorCallback.<Clone>$() -> Qian.Identity.Abstractions.ConnectorCallback!
+Qian.Identity.Abstractions.SessionRevocation.SessionId.init -> void
+Qian.Identity.Abstractions.AuthenticationChallenge.PublicParameters.get -> System.Text.Json.JsonElement
+Qian.Identity.Abstractions.ExternalAssertion.Issuer.get -> string!
+static Qian.Identity.Abstractions.SessionRevocation.operator !=(Qian.Identity.Abstractions.SessionRevocation? left, Qian.Identity.Abstractions.SessionRevocation? right) -> bool
+Qian.Identity.Abstractions.ConnectorCallback.Deconstruct(out Qian.Identity.Abstractions.ConnectorContext! Context, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Parameters) -> void
+Qian.Identity.Abstractions.AuthenticationChallenge.PublicParameters.init -> void
+Qian.Identity.Abstractions.AuthenticationFactorContext
+static Qian.Identity.Abstractions.SessionRevocation.operator ==(Qian.Identity.Abstractions.SessionRevocation? left, Qian.Identity.Abstractions.SessionRevocation? right) -> bool
+Qian.Identity.Abstractions.ExternalAssertion.Issuer.init -> void
+override Qian.Identity.Abstractions.SessionRevocation.GetHashCode() -> int
+override Qian.Identity.Abstractions.AuthenticationFactorContext.ToString() -> string!
+override Qian.Identity.Abstractions.SessionRevocation.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.AuthenticationFactorContext.CorrelationId.get -> string!
+Qian.Identity.Abstractions.SessionRevocation.Equals(Qian.Identity.Abstractions.SessionRevocation? other) -> bool
+static Qian.Identity.Abstractions.AuthenticationFactorContext.operator !=(Qian.Identity.Abstractions.AuthenticationFactorContext? left, Qian.Identity.Abstractions.AuthenticationFactorContext? right) -> bool
+Qian.Identity.Abstractions.AuthenticationFactorContext.CorrelationId.init -> void
+Qian.Identity.Abstractions.SessionRevocation.<Clone>$() -> Qian.Identity.Abstractions.SessionRevocation!
+Qian.Identity.Abstractions.SessionRevocation.Reason.get -> string!
+Qian.Identity.Abstractions.SessionRevocation.Deconstruct(out System.Guid PersonId, out System.Guid? SessionId, out string! Reason, out string! IdempotencyKey) -> void
+Qian.Identity.Abstractions.SessionRevocation.Reason.init -> void
+static Qian.Identity.Abstractions.AuthenticationFactorContext.operator ==(Qian.Identity.Abstractions.AuthenticationFactorContext? left, Qian.Identity.Abstractions.AuthenticationFactorContext? right) -> bool
+Qian.Identity.Abstractions.ExternalAssertion.Subject.get -> string!
+override Qian.Identity.Abstractions.AuthenticationFactorContext.GetHashCode() -> int
+Qian.Identity.Abstractions.ExternalAssertion.Subject.init -> void
+Qian.Identity.Abstractions.SessionRevocation.IdempotencyKey.get -> string!
+override Qian.Identity.Abstractions.AuthenticationFactorContext.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.SessionRevocation.IdempotencyKey.init -> void
+Qian.Identity.Abstractions.AuthenticationFactorContext.Equals(Qian.Identity.Abstractions.AuthenticationFactorContext? other) -> bool
+Qian.Identity.Abstractions.ExternalAssertion
+Qian.Identity.Abstractions.ExternalAssertion.UnionId.get -> string?
+Qian.Identity.Abstractions.AuthenticationFactorContext.<Clone>$() -> Qian.Identity.Abstractions.AuthenticationFactorContext!
+Qian.Identity.Abstractions.ExternalAssertion.UnionId.init -> void
+override Qian.Identity.Abstractions.ExternalAssertion.ToString() -> string!
+Qian.Identity.Abstractions.AuthenticationFactorContext.Deconstruct(out System.Guid PersonId, out string! ClientId, out System.Guid? TenantId, out string! CorrelationId) -> void
+Qian.Identity.Abstractions.ExternalAssertion.Profile.get -> System.Text.Json.JsonElement
+static Qian.Identity.Abstractions.ExternalAssertion.operator !=(Qian.Identity.Abstractions.ExternalAssertion? left, Qian.Identity.Abstractions.ExternalAssertion? right) -> bool
+Qian.Identity.Abstractions.ExternalAssertion.Profile.init -> void
+static Qian.Identity.Abstractions.ExternalAssertion.operator ==(Qian.Identity.Abstractions.ExternalAssertion? left, Qian.Identity.Abstractions.ExternalAssertion? right) -> bool
+override Qian.Identity.Abstractions.ExternalAssertion.GetHashCode() -> int
+override Qian.Identity.Abstractions.ExternalAssertion.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.ExternalAssertion.Amr.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.ExternalAssertion.Equals(Qian.Identity.Abstractions.ExternalAssertion? other) -> bool
+Qian.Identity.Abstractions.ExternalAssertion.Amr.init -> void
+Qian.Identity.Abstractions.ExternalAssertion.<Clone>$() -> Qian.Identity.Abstractions.ExternalAssertion!
+Qian.Identity.Abstractions.ConnectorCallback.Parameters.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Identity.Abstractions.ExternalAssertion.Deconstruct(out string! Issuer, out string! Subject, out string? UnionId, out System.Text.Json.JsonElement Profile, out System.Collections.Generic.IReadOnlyList<string!>! Amr) -> void
+Qian.Identity.Abstractions.ConnectorCallback.Parameters.init -> void
+Qian.Identity.Abstractions.AuthenticationChallenge
+override Qian.Identity.Abstractions.AuthenticationChallenge.ToString() -> string!
+Qian.Identity.Abstractions.ConnectorContext.TenantId.get -> System.Guid?
+static Qian.Identity.Abstractions.AuthenticationChallenge.operator !=(Qian.Identity.Abstractions.AuthenticationChallenge? left, Qian.Identity.Abstractions.AuthenticationChallenge? right) -> bool
+Qian.Identity.Abstractions.ConnectorContext.TenantId.init -> void
+static Qian.Identity.Abstractions.AuthenticationChallenge.operator ==(Qian.Identity.Abstractions.AuthenticationChallenge? left, Qian.Identity.Abstractions.AuthenticationChallenge? right) -> bool
+Qian.Identity.Abstractions.ConnectorContext.ClientId.get -> string!
+override Qian.Identity.Abstractions.AuthenticationChallenge.GetHashCode() -> int
+Qian.Identity.Abstractions.ConnectorContext.ClientId.init -> void
+override Qian.Identity.Abstractions.AuthenticationChallenge.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.AuthenticationChallenge.Equals(Qian.Identity.Abstractions.AuthenticationChallenge? other) -> bool
+Qian.Identity.Abstractions.AuthenticationChallenge.<Clone>$() -> Qian.Identity.Abstractions.AuthenticationChallenge!
+Qian.Identity.Abstractions.FactorDescriptor.RequiresChallenge.get -> bool
+Qian.Identity.Abstractions.AuthenticationChallenge.Deconstruct(out string! Id, out System.DateTimeOffset ExpiresAt, out System.Text.Json.JsonElement PublicParameters) -> void
+Qian.Identity.Abstractions.FactorDescriptor.RequiresChallenge.init -> void
+const Qian.Identity.Abstractions.IdentityEventIds.Login = "identity.login.v1" -> string!
+const Qian.Identity.Abstractions.IdentityEventIds.Logout = "identity.logout.v1" -> string!
+const Qian.Identity.Abstractions.IdentityEventIds.Locked = "identity.locked.v1" -> string!
+const Qian.Identity.Abstractions.IdentityEventIds.PasswordChanged = "identity.password_changed.v1" -> string!
+Qian.Identity.Abstractions.AuthenticationProof
+const Qian.Identity.Abstractions.IdentityEventIds.SessionRevoked = "identity.session_revoked.v1" -> string!
+Qian.Identity.Abstractions.FactorDescriptor.Id.get -> string!
+Qian.Identity.Abstractions.FactorDescriptor
+Qian.Identity.Abstractions.IdentityEventIds
+Qian.Identity.Abstractions.FactorDescriptor.Id.init -> void
+override Qian.Identity.Abstractions.FactorDescriptor.ToString() -> string!
+static Qian.Identity.Abstractions.FactorDescriptor.operator !=(Qian.Identity.Abstractions.FactorDescriptor? left, Qian.Identity.Abstractions.FactorDescriptor? right) -> bool
+static Qian.Identity.Abstractions.FactorDescriptor.operator ==(Qian.Identity.Abstractions.FactorDescriptor? left, Qian.Identity.Abstractions.FactorDescriptor? right) -> bool
+override Qian.Identity.Abstractions.FactorDescriptor.GetHashCode() -> int
+override Qian.Identity.Abstractions.FactorDescriptor.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.FactorDescriptor.Equals(Qian.Identity.Abstractions.FactorDescriptor? other) -> bool
+Qian.Identity.Abstractions.FactorDescriptor.<Clone>$() -> Qian.Identity.Abstractions.FactorDescriptor!
+Qian.Identity.Abstractions.FactorDescriptor.Deconstruct(out string! Id, out string! DisplayName, out string! Amr, out bool RequiresChallenge) -> void
+Qian.Identity.Abstractions.IdentityClaimNames
+const Qian.Identity.Abstractions.IdentityClaimNames.Issuer = "iss" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.Audience = "aud" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.Subject = "sub" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.PrincipalKind = "principal_kind" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.TenantId = "tenant_id" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.MembershipId = "membership_id" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.IdentityRevision = "identity_revision" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.ProjectId = "project_id" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.PluginId = "plugin_id" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.Roles = "roles" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.Scope = "scope" -> string!
+Qian.Identity.Abstractions.FactorDescriptor.DisplayName.get -> string!
+Qian.Identity.Abstractions.FactorDescriptor.DisplayName.init -> void
+const Qian.Identity.Abstractions.IdentityClaimNames.SessionId = "session_id" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.Sid = "sid" -> string!
+Qian.Identity.Abstractions.Client.Id.get -> string!
+Qian.Identity.Abstractions.Client.Id.init -> void
+const Qian.Identity.Abstractions.IdentityClaimNames.AuthenticationMethods = "amr" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.AuthenticationContext = "acr" -> string!
+Qian.Identity.Abstractions.Client.Type.get -> Qian.Identity.Abstractions.ClientType
+Qian.Identity.Abstractions.Client
+Qian.Identity.Abstractions.Client.Type.init -> void
+const Qian.Identity.Abstractions.IdentityClaimNames.Profile = "profile" -> string!
+override Qian.Identity.Abstractions.Client.ToString() -> string!
+static Qian.Identity.Abstractions.Client.operator !=(Qian.Identity.Abstractions.Client? left, Qian.Identity.Abstractions.Client? right) -> bool
+static Qian.Identity.Abstractions.Client.operator ==(Qian.Identity.Abstractions.Client? left, Qian.Identity.Abstractions.Client? right) -> bool
+override Qian.Identity.Abstractions.Client.GetHashCode() -> int
+override Qian.Identity.Abstractions.Client.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.Client.Equals(Qian.Identity.Abstractions.Client? other) -> bool
+Qian.Identity.Abstractions.Client.<Clone>$() -> Qian.Identity.Abstractions.Client!
+Qian.Identity.Abstractions.Client.Deconstruct(out string! Id, out Qian.Identity.Abstractions.ClientType Type, out System.Collections.Generic.IReadOnlyList<System.Uri!>! RedirectUris, out System.Collections.Generic.IReadOnlyList<string!>! Scopes, out System.Collections.Generic.IReadOnlyList<string!>! Resources, out System.Guid? OwnerPersonId) -> void
+Qian.Identity.Abstractions.Client.Scopes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.Client.Scopes.init -> void
+Qian.Identity.Abstractions.Client.RedirectUris.get -> System.Collections.Generic.IReadOnlyList<System.Uri!>!
+Qian.Identity.Abstractions.Client.OwnerPersonId.get -> System.Guid?
+Qian.Identity.Abstractions.Client.RedirectUris.init -> void
+Qian.Identity.Abstractions.Client.Resources.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.Client.OwnerPersonId.init -> void
+const Qian.Identity.Abstractions.IdentityClaimNames.ExpiresAt = "exp" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.NotBefore = "nbf" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.Actor = "act" -> string!
+Qian.Identity.Abstractions.Client.Resources.init -> void
+const Qian.Identity.Abstractions.IdentityClaimNames.TokenId = "jti" -> string!
+const Qian.Identity.Abstractions.IdentityClaimNames.IssuedAt = "iat" -> string!
+Qian.Identity.Abstractions.IdentityEventRegistration
+Qian.Identity.Abstractions.IAuthenticatorFactor
+Qian.Identity.Abstractions.FactorDescriptor.Amr.get -> string!
+Qian.Identity.Abstractions.FactorDescriptor.Amr.init -> void
+Qian.Identity.Abstractions.IdentityIntegrationEvent.TenantId.get -> System.Guid?
+Qian.Identity.Abstractions.IdentityIntegrationEvent.EventId.get -> System.Guid
+Qian.Identity.Abstractions.IdentityIntegrationEvent.PersonId.get -> System.Guid
+Qian.Identity.Abstractions.IdentityIntegrationEvent.TenantId.init -> void
+Qian.Identity.Abstractions.IdentityIntegrationEvent.EventId.init -> void
+Qian.Identity.Abstractions.IdentityIntegrationEvent.PersonId.init -> void
+Qian.Identity.Abstractions.IdentityIntegrationEvent.OccurredAt.get -> System.DateTime
+Qian.Identity.Abstractions.IdentityIntegrationEvent
+Qian.Identity.Abstractions.IdentityIntegrationEvent.OccurredAt.init -> void
+Qian.Identity.Abstractions.IdentityIntegrationEvent.IdentityRevision.get -> long
+Qian.Identity.Abstractions.MembershipChanged.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.IdentityIntegrationEvent.IdentityRevision.init -> void
+Qian.Identity.Abstractions.MembershipChanged.MembershipId.init -> void
+virtual Qian.Identity.Abstractions.IdentityIntegrationEvent.EqualityContract.get -> System.Type!
+Qian.Identity.Abstractions.IdentitySchemas
+Qian.Identity.Abstractions.MembershipChanged.TenantId.get -> System.Guid
+Qian.Identity.Abstractions.MembershipChanged.TenantId.init -> void
+virtual Qian.Identity.Abstractions.IdentityIntegrationEvent.PrintMembers(System.Text.StringBuilder! builder) -> bool
+static Qian.Identity.Abstractions.IdentityIntegrationEvent.operator !=(Qian.Identity.Abstractions.IdentityIntegrationEvent? left, Qian.Identity.Abstractions.IdentityIntegrationEvent? right) -> bool
+static Qian.Identity.Abstractions.IdentityIntegrationEvent.operator ==(Qian.Identity.Abstractions.IdentityIntegrationEvent? left, Qian.Identity.Abstractions.IdentityIntegrationEvent? right) -> bool
+Qian.Identity.Abstractions.MembershipChanged.IdentityRevision.get -> long
+override Qian.Identity.Abstractions.IdentityIntegrationEvent.GetHashCode() -> int
+Qian.Identity.Abstractions.MembershipChanged.IdentityRevision.init -> void
+override Qian.Identity.Abstractions.IdentityIntegrationEvent.Equals(object? obj) -> bool
+virtual Qian.Identity.Abstractions.IdentityIntegrationEvent.Equals(Qian.Identity.Abstractions.IdentityIntegrationEvent? other) -> bool
+abstract Qian.Identity.Abstractions.IdentityIntegrationEvent.<Clone>$() -> Qian.Identity.Abstractions.IdentityIntegrationEvent!
+Qian.Identity.Abstractions.IdentityIntegrationEvent.IdentityIntegrationEvent(Qian.Identity.Abstractions.IdentityIntegrationEvent! original) -> void
+Qian.Identity.Abstractions.LoginInput.FactorId.get -> string?
+Qian.Identity.Abstractions.LoginInput.ClientId.get -> string!
+Qian.Identity.Abstractions.LoginInput.FactorId.init -> void
+Qian.Identity.Abstractions.MembershipChanged
+Qian.Identity.Abstractions.LoginInput.ClientId.init -> void
+Qian.Identity.Abstractions.IdentityIntegrationEvent.Deconstruct(out System.Guid EventId, out System.DateTime OccurredAt, out System.Guid? TenantId, out System.Guid PersonId, out long IdentityRevision) -> void
+Qian.Identity.Abstractions.IdentityJson
+override Qian.Identity.Abstractions.MembershipChanged.ToString() -> string!
+static Qian.Identity.Abstractions.MembershipChanged.operator !=(Qian.Identity.Abstractions.MembershipChanged? left, Qian.Identity.Abstractions.MembershipChanged? right) -> bool
+Qian.Identity.Abstractions.LoginInput.Proof.get -> Qian.Identity.Abstractions.AuthenticationProof?
+static Qian.Identity.Abstractions.MembershipChanged.operator ==(Qian.Identity.Abstractions.MembershipChanged? left, Qian.Identity.Abstractions.MembershipChanged? right) -> bool
+Qian.Identity.Abstractions.LoginInput.Proof.init -> void
+override Qian.Identity.Abstractions.MembershipChanged.GetHashCode() -> int
+override Qian.Identity.Abstractions.MembershipChanged.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.MembershipChanged.Equals(Qian.Identity.Abstractions.MembershipChanged? other) -> bool
+Qian.Identity.Abstractions.MembershipChanged.<Clone>$() -> Qian.Identity.Abstractions.MembershipChanged!
+Qian.Identity.Abstractions.MembershipChanged.Deconstruct(out System.Guid MembershipId, out System.Guid TenantId, out long IdentityRevision) -> void
+Qian.Identity.Abstractions.LoginInput
+Qian.Identity.Abstractions.LoginInput.TenantId.get -> System.Guid?
+Qian.Identity.Abstractions.LoginInput.TenantId.init -> void
+static Qian.Identity.Abstractions.LoginInput.operator !=(Qian.Identity.Abstractions.LoginInput? left, Qian.Identity.Abstractions.LoginInput? right) -> bool
+static Qian.Identity.Abstractions.LoginInput.operator ==(Qian.Identity.Abstractions.LoginInput? left, Qian.Identity.Abstractions.LoginInput? right) -> bool
+Qian.Identity.Abstractions.IdentityLogoutEvent.SessionId.get -> System.Guid
+override Qian.Identity.Abstractions.LoginInput.GetHashCode() -> int
+Qian.Identity.Abstractions.IdentityLockedEvent.Reason.get -> string!
+Qian.Identity.Abstractions.IdentityLogoutEvent.SessionId.init -> void
+Qian.Identity.Abstractions.IdentityLockedEvent.Reason.init -> void
+override Qian.Identity.Abstractions.LoginInput.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.LoginInput.Equals(Qian.Identity.Abstractions.LoginInput? other) -> bool
+Qian.Identity.Abstractions.LoginInput.<Clone>$() -> Qian.Identity.Abstractions.LoginInput!
+Qian.Identity.Abstractions.IdentityLogoutEvent.Reason.get -> string!
+Qian.Identity.Abstractions.IdentityLogoutEvent.Reason.init -> void
+Qian.Identity.Abstractions.LoginInput.Deconstruct(out string! ClientId, out System.Guid? TenantId, out string? ConnectorId, out string? FactorId, out Qian.Identity.Abstractions.AuthenticationProof? Proof) -> void
+Qian.Identity.Abstractions.PrincipalKind.Service = 1 -> Qian.Identity.Abstractions.PrincipalKind
+Qian.Identity.Abstractions.PrincipalKind.Agent = 2 -> Qian.Identity.Abstractions.PrincipalKind
+Qian.Identity.Abstractions.IdentityLockedEvent.LockedUntil.get -> System.DateTimeOffset?
+Qian.Identity.Abstractions.IdentityLockedEvent.LockedUntil.init -> void
+Qian.Identity.Abstractions.IdentityLogoutEvent.MembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.IdentityLogoutEvent.MembershipId.init -> void
+Qian.Identity.Abstractions.LoginInput.ConnectorId.get -> string?
+Qian.Identity.Abstractions.PrincipalKind.User = 0 -> Qian.Identity.Abstractions.PrincipalKind
+Qian.Identity.Abstractions.LoginInput.ConnectorId.init -> void
+Qian.Identity.Abstractions.IdentityLogoutEvent
+Qian.Identity.Abstractions.IdentityLockedEvent
+Qian.Identity.Abstractions.PrincipalKind
+static Qian.Identity.Abstractions.IdentityLogoutEvent.operator !=(Qian.Identity.Abstractions.IdentityLogoutEvent? left, Qian.Identity.Abstractions.IdentityLogoutEvent? right) -> bool
+static Qian.Identity.Abstractions.IdentityLockedEvent.operator !=(Qian.Identity.Abstractions.IdentityLockedEvent? left, Qian.Identity.Abstractions.IdentityLockedEvent? right) -> bool
+static Qian.Identity.Abstractions.IdentityLogoutEvent.operator ==(Qian.Identity.Abstractions.IdentityLogoutEvent? left, Qian.Identity.Abstractions.IdentityLogoutEvent? right) -> bool
+static Qian.Identity.Abstractions.IdentityLockedEvent.operator ==(Qian.Identity.Abstractions.IdentityLockedEvent? left, Qian.Identity.Abstractions.IdentityLockedEvent? right) -> bool
+override Qian.Identity.Abstractions.IdentityLockedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.IdentityLogoutEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.IdentityLogoutEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.IdentityLockedEvent.Equals(object? obj) -> bool
+override sealed Qian.Identity.Abstractions.IdentityLogoutEvent.Equals(Qian.Identity.Abstractions.IdentityIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.IdentityLockedEvent.Equals(Qian.Identity.Abstractions.IdentityIntegrationEvent? other) -> bool
+Qian.Identity.Abstractions.IdentityLogoutEvent.Equals(Qian.Identity.Abstractions.IdentityLogoutEvent? other) -> bool
+Qian.Identity.Abstractions.IdentityLockedEvent.Equals(Qian.Identity.Abstractions.IdentityLockedEvent? other) -> bool
+override Qian.Identity.Abstractions.IdentityLogoutEvent.<Clone>$() -> Qian.Identity.Abstractions.IdentityLogoutEvent!
+override Qian.Identity.Abstractions.IdentityLockedEvent.<Clone>$() -> Qian.Identity.Abstractions.IdentityLockedEvent!
+Qian.Identity.Abstractions.IdentityRuntimeEvents
+static readonly Qian.Identity.Abstractions.IdentityRuntimeEvents.SignedOut -> Qian.Runtime.QianEvent<Qian.Identity.Abstractions.SessionRevocation!, object?>!
+static readonly Qian.Identity.Abstractions.IdentityRuntimeEvents.SignedIn -> Qian.Runtime.QianEvent<Qian.Identity.Abstractions.Principal!, object?>!
+Qian.Identity.Abstractions.IdentityLogoutEvent.Deconstruct(out System.Guid EventId, out System.DateTime OccurredAt, out System.Guid? TenantId, out System.Guid PersonId, out long IdentityRevision, out System.Guid SessionId, out string! Reason, out System.Guid? MembershipId) -> void
+Qian.Identity.Abstractions.IdentityLoginEvent.ClientId.get -> string!
+Qian.Identity.Abstractions.IdentityLockedEvent.Deconstruct(out System.Guid EventId, out System.DateTime OccurredAt, out System.Guid? TenantId, out System.Guid PersonId, out long IdentityRevision, out string! Reason, out System.DateTimeOffset? LockedUntil) -> void
+Qian.Identity.Abstractions.IdentityLoginEvent.ClientId.init -> void
+Qian.Identity.Abstractions.IdentityLoginEvent.Amr.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static readonly Qian.Identity.Abstractions.IdentityRuntimeEvents.MemberDisabled -> Qian.Runtime.QianEvent<Qian.Identity.Abstractions.MembershipChanged!, System.Collections.Generic.IReadOnlyList<object?>!>!
+Qian.Identity.Abstractions.IdentityLoginEvent.Amr.init -> void
+Qian.Identity.Abstractions.ClientType.Machine = 2 -> Qian.Identity.Abstractions.ClientType
+Qian.Identity.Abstractions.ClientType.Public = 1 -> Qian.Identity.Abstractions.ClientType
+Qian.Identity.Abstractions.ClientType.Agent = 3 -> Qian.Identity.Abstractions.ClientType
+Qian.Identity.Abstractions.IdentityLoginEvent
+Qian.Identity.Abstractions.ClientType
+Qian.Identity.Abstractions.IdentityLoginEvent.MembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.IdentityLoginEvent.MembershipId.init -> void
+static Qian.Identity.Abstractions.IdentityLoginEvent.operator !=(Qian.Identity.Abstractions.IdentityLoginEvent? left, Qian.Identity.Abstractions.IdentityLoginEvent? right) -> bool
+static Qian.Identity.Abstractions.IdentityLoginEvent.operator ==(Qian.Identity.Abstractions.IdentityLoginEvent? left, Qian.Identity.Abstractions.IdentityLoginEvent? right) -> bool
+override Qian.Identity.Abstractions.IdentityLoginEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.IdentityLoginEvent.Equals(object? obj) -> bool
+override sealed Qian.Identity.Abstractions.IdentityLoginEvent.Equals(Qian.Identity.Abstractions.IdentityIntegrationEvent? other) -> bool
+Qian.Identity.Abstractions.IdentityLoginEvent.Equals(Qian.Identity.Abstractions.IdentityLoginEvent? other) -> bool
+override Qian.Identity.Abstractions.IdentityLoginEvent.<Clone>$() -> Qian.Identity.Abstractions.IdentityLoginEvent!
+Qian.Identity.Abstractions.IdentityLoginEvent.Deconstruct(out System.Guid EventId, out System.DateTime OccurredAt, out System.Guid? TenantId, out System.Guid PersonId, out long IdentityRevision, out System.Guid SessionId, out string! ClientId, out System.Collections.Generic.IReadOnlyList<string!>! Amr, out System.Guid? MembershipId) -> void
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.SessionId.get -> System.Guid
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.SessionId.init -> void
+Qian.Identity.Abstractions.Principal
+Qian.Identity.Abstractions.IdentityPasswordChangedEvent
+Qian.Identity.Abstractions.Principal.Principal() -> void
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent
+static Qian.Identity.Abstractions.IdentityPasswordChangedEvent.operator !=(Qian.Identity.Abstractions.IdentityPasswordChangedEvent? left, Qian.Identity.Abstractions.IdentityPasswordChangedEvent? right) -> bool
+static Qian.Identity.Abstractions.IdentityPasswordChangedEvent.operator ==(Qian.Identity.Abstractions.IdentityPasswordChangedEvent? left, Qian.Identity.Abstractions.IdentityPasswordChangedEvent? right) -> bool
+static Qian.Identity.Abstractions.IdentitySessionRevokedEvent.operator !=(Qian.Identity.Abstractions.IdentitySessionRevokedEvent? left, Qian.Identity.Abstractions.IdentitySessionRevokedEvent? right) -> bool
+override Qian.Identity.Abstractions.IdentityPasswordChangedEvent.GetHashCode() -> int
+static Qian.Identity.Abstractions.IdentitySessionRevokedEvent.operator ==(Qian.Identity.Abstractions.IdentitySessionRevokedEvent? left, Qian.Identity.Abstractions.IdentitySessionRevokedEvent? right) -> bool
+override Qian.Identity.Abstractions.IdentityPasswordChangedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.IdentitySessionRevokedEvent.GetHashCode() -> int
+override sealed Qian.Identity.Abstractions.IdentityPasswordChangedEvent.Equals(Qian.Identity.Abstractions.IdentityIntegrationEvent? other) -> bool
+override Qian.Identity.Abstractions.IdentitySessionRevokedEvent.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.IdentityPasswordChangedEvent.Equals(Qian.Identity.Abstractions.IdentityPasswordChangedEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.IdentitySessionRevokedEvent.Equals(Qian.Identity.Abstractions.IdentityIntegrationEvent? other) -> bool
+override Qian.Identity.Abstractions.IdentityPasswordChangedEvent.<Clone>$() -> Qian.Identity.Abstractions.IdentityPasswordChangedEvent!
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.Equals(Qian.Identity.Abstractions.IdentitySessionRevokedEvent? other) -> bool
+Qian.Identity.Abstractions.IdentityPasswordChangedEvent.Deconstruct(out System.Guid EventId, out System.DateTime OccurredAt, out System.Guid? TenantId, out System.Guid PersonId, out long IdentityRevision) -> void
+override Qian.Identity.Abstractions.IdentitySessionRevokedEvent.<Clone>$() -> Qian.Identity.Abstractions.IdentitySessionRevokedEvent!
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.Reason.get -> string!
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.Reason.init -> void
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.Deconstruct(out System.Guid EventId, out System.DateTime OccurredAt, out System.Guid? TenantId, out System.Guid PersonId, out long IdentityRevision, out System.Guid SessionId, out string! Reason, out System.Guid? MembershipId) -> void
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.MembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.MembershipId.init -> void
+Qian.Identity.Abstractions.IdentityLoginEvent.SessionId.get -> System.Guid
+Qian.Identity.Abstractions.ClientType.Confidential = 0 -> Qian.Identity.Abstractions.ClientType
+Qian.Identity.Abstractions.DelegationActor
+Qian.Identity.Abstractions.IdentityLoginEvent.SessionId.init -> void
+Qian.Identity.Abstractions.DelegationActor.DelegationActor() -> void
+Qian.Identity.Abstractions.IAuthenticatedUser.UserId.get -> string!
+Qian.Identity.Abstractions.ICurrentUser.Principal.get -> Qian.Identity.Abstractions.Principal?
+Qian.Identity.Abstractions.IIdentityConnectorRegistry.Register(string! name, Qian.Identity.Abstractions.IIdentityConnector! connector) -> System.IDisposable!
+Qian.Identity.Abstractions.IAuthenticatedUser.Principal.get -> Qian.Identity.Abstractions.Principal!
+Qian.Identity.Abstractions.IIdentityConnectorRegistry.Find(string! name) -> Qian.Identity.Abstractions.IIdentityConnector?
+Qian.Identity.Abstractions.IIdentityConnectorRegistry.List() -> System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.ConnectorDescriptor!>!
+Qian.Identity.Abstractions.IIdentityService.CurrentPrincipal.get -> Qian.Identity.Abstractions.Principal?
+Qian.Identity.Abstractions.IIdentityService.Connectors.get -> Qian.Identity.Abstractions.IIdentityConnectorRegistry!
+Qian.Identity.Abstractions.IIdentityService.GetMembershipAsync(System.Guid membershipId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.Membership?>!
+Qian.Identity.Abstractions.IIdentityService.GetPersonAsync(System.Guid personId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.Person?>!
+Qian.Identity.Abstractions.IIdentityService.RevokeSessionsAsync(Qian.Identity.Abstractions.SessionRevocation! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Qian.Identity.Abstractions.IIdentityService.ListSessionsAsync(System.Guid personId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.Session!>!>!
+static Qian.Identity.Abstractions.IdentityDefinition.Identity(this Qian.Runtime.IPluginContext! context) -> Qian.Identity.Abstractions.IIdentityService!
+Qian.Identity.Abstractions.Membership.Membership(System.Guid Id, System.Guid PersonId, System.Guid TenantId, string! DisplayName, string! Status, bool IsTenantAdministrator) -> void
+Qian.Identity.Abstractions.ConnectorContext.ConnectorContext(string! ClientId, System.Guid? TenantId, System.Uri! CallbackUri, string! State, string! Nonce) -> void
+Qian.Identity.Abstractions.Client.Client(string! Id, Qian.Identity.Abstractions.ClientType Type, System.Collections.Generic.IReadOnlyList<System.Uri!>! RedirectUris, System.Collections.Generic.IReadOnlyList<string!>! Scopes, System.Collections.Generic.IReadOnlyList<string!>! Resources, System.Guid? OwnerPersonId) -> void
+Qian.Identity.Abstractions.SessionRevocation.SessionRevocation(System.Guid PersonId, System.Guid? SessionId, string! Reason, string! IdempotencyKey) -> void
+Qian.Identity.Abstractions.Person.Person(System.Guid Id, string! DisplayName, string? UserName, string? Email, string? Phone, long IdentityRevision) -> void
+Qian.Identity.Abstractions.IIdentityConnector.Descriptor.get -> Qian.Identity.Abstractions.ConnectorDescriptor!
+Qian.Identity.Abstractions.ConnectorDescriptor.ConnectorDescriptor(string! Id, string! DisplayName, string! Protocol, System.Collections.Generic.IReadOnlyList<string!>! Terminals, System.Text.Json.JsonElement ConfigSchema) -> void
+Qian.Identity.Abstractions.IIdentityConnector.BeginSignInAsync(Qian.Identity.Abstractions.ConnectorContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.ChallengeResult!>!
+Qian.Identity.Abstractions.IIdentityConnector.CompleteSignInAsync(Qian.Identity.Abstractions.ConnectorCallback! callback, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.ExternalAssertion!>!
+Qian.Identity.Abstractions.ChallengeResult.ChallengeResult(System.Uri? RedirectUri, string? ChallengeId) -> void
+Qian.Identity.Abstractions.ConnectorCallback.ConnectorCallback(Qian.Identity.Abstractions.ConnectorContext! Context, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Parameters) -> void
+Qian.Identity.Abstractions.ExternalAssertion.ExternalAssertion(string! Issuer, string! Subject, string? UnionId, System.Text.Json.JsonElement Profile, System.Collections.Generic.IReadOnlyList<string!>! Amr) -> void
+Qian.Identity.Abstractions.Session.Session(System.Guid Id, System.Guid PersonId, System.Guid? MembershipId, string! ClientId, string! DeviceType, System.DateTimeOffset ExpiresAt, long IdentityRevision) -> void
+Qian.Identity.Abstractions.FactorDescriptor.FactorDescriptor(string! Id, string! DisplayName, string! Amr, bool RequiresChallenge) -> void
+Qian.Identity.Abstractions.AuthenticationFactorContext.AuthenticationFactorContext(System.Guid PersonId, string! ClientId, System.Guid? TenantId, string! CorrelationId) -> void
+override Qian.Identity.Abstractions.ChallengeResult.ToString() -> string!
+override Qian.Identity.Abstractions.ConnectorCallback.ToString() -> string!
+Qian.Identity.Abstractions.AuthenticationChallenge.Id.get -> string!
+Qian.Identity.Abstractions.AuthenticationChallenge.Id.init -> void
+override Qian.Identity.Abstractions.SessionRevocation.ToString() -> string!
+override Qian.Identity.Abstractions.Session.ToString() -> string!
+override Qian.Identity.Abstractions.ConnectorContext.ToString() -> string!
+Qian.Identity.Abstractions.IAuthenticatorFactor.Descriptor.get -> Qian.Identity.Abstractions.FactorDescriptor!
+Qian.Identity.Abstractions.IAuthenticatorFactor.BeginAsync(Qian.Identity.Abstractions.AuthenticationFactorContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.AuthenticationChallenge?>!
+Qian.Identity.Abstractions.IdentityIntegrationEvent.IdentityIntegrationEvent(System.Guid EventId, System.DateTime OccurredAt, System.Guid? TenantId, System.Guid PersonId, long IdentityRevision) -> void
+Qian.Identity.Abstractions.AuthenticationProof.AuthenticationProof(System.ReadOnlySpan<byte> data) -> void
+static Qian.Identity.Abstractions.IdentityEventIds.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.MembershipChanged.MembershipChanged(System.Guid MembershipId, System.Guid TenantId, long IdentityRevision) -> void
+Qian.Identity.Abstractions.IImplicitIdentityConnector.ExchangeImplicitAsync(string! code, Qian.Identity.Abstractions.ConnectorContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.ExternalAssertion?>!
+Qian.Identity.Abstractions.LoginInput.LoginInput(string! ClientId, System.Guid? TenantId, string? ConnectorId, string? FactorId, Qian.Identity.Abstractions.AuthenticationProof? Proof) -> void
+override sealed Qian.Identity.Abstractions.IdentityIntegrationEvent.ToString() -> string!
+Qian.Identity.Abstractions.IdentityLoginEvent.IdentityLoginEvent(System.Guid EventId, System.DateTime OccurredAt, System.Guid? TenantId, System.Guid PersonId, long IdentityRevision, System.Guid SessionId, string! ClientId, System.Collections.Generic.IReadOnlyList<string!>! Amr, System.Guid? MembershipId = null) -> void
+Qian.Identity.Abstractions.IdentityLogoutEvent.IdentityLogoutEvent(System.Guid EventId, System.DateTime OccurredAt, System.Guid? TenantId, System.Guid PersonId, long IdentityRevision, System.Guid SessionId, string! Reason, System.Guid? MembershipId = null) -> void
+Qian.Identity.Abstractions.IdentityPasswordChangedEvent.IdentityPasswordChangedEvent(System.Guid EventId, System.DateTime OccurredAt, System.Guid? TenantId, System.Guid PersonId, long IdentityRevision) -> void
+static Qian.Identity.Abstractions.IdentityClaimNames.S2sRequired.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.IdentitySessionRevokedEvent.IdentitySessionRevokedEvent(System.Guid EventId, System.DateTime OccurredAt, System.Guid? TenantId, System.Guid PersonId, long IdentityRevision, System.Guid SessionId, string! Reason, System.Guid? MembershipId = null) -> void
+static Qian.Identity.Abstractions.IdentityClaimNames.IdentityToken.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.IdentityLockedEvent.IdentityLockedEvent(System.Guid EventId, System.DateTime OccurredAt, System.Guid? TenantId, System.Guid PersonId, long IdentityRevision, string! Reason, System.DateTimeOffset? LockedUntil = null) -> void
+static Qian.Identity.Abstractions.IdentityClaimNames.S2sOptional.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.AuthenticationProof.Data.get -> System.ReadOnlyMemory<byte>
+override Qian.Identity.Abstractions.LoginInput.ToString() -> string!
+override Qian.Identity.Abstractions.AuthenticationProof.ToString() -> string!
+Qian.Identity.Abstractions.Principal.Issuer.init -> void
+static Qian.Identity.Abstractions.IdentityJson.PrincipalTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Identity.Abstractions.Principal!>!
+Qian.Identity.Abstractions.DelegationActor.Subject.get -> string!
+Qian.Identity.Abstractions.IDirectorySyncConnector.SyncDirectoryAsync(string? cursor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.ExternalAssertion!>!>!
+Qian.Identity.Abstractions.AuthenticationChallenge.AuthenticationChallenge(string! Id, System.DateTimeOffset ExpiresAt, System.Text.Json.JsonElement PublicParameters) -> void
+Qian.Identity.Abstractions.Principal.Audience.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.DelegationActor.Kind.get -> Qian.Identity.Abstractions.PrincipalKind
+Qian.Identity.Abstractions.Principal.Audience.init -> void
+Qian.Identity.Abstractions.DelegationActor.Kind.init -> void
+Qian.Identity.Abstractions.Principal.Subject.get -> string!
+Qian.Identity.Abstractions.DelegationActor.Actor.get -> Qian.Identity.Abstractions.DelegationActor?
+static Qian.Identity.Abstractions.IdentityJson.ClientTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Identity.Abstractions.Client!>!
+static Qian.Identity.Abstractions.IdentityJson.ExternalAssertionTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Identity.Abstractions.ExternalAssertion!>!
+Qian.Identity.Abstractions.DelegationActor.Actor.init -> void
+Qian.Identity.Abstractions.Principal.Kind.init -> void
+Qian.Identity.Abstractions.Principal.TenantId.get -> string?
+Qian.Identity.Abstractions.DelegationActor.Subject.init -> void
+Qian.Identity.Abstractions.Principal.MembershipId.get -> string?
+override Qian.Identity.Abstractions.DelegationActor.ToString() -> string!
+Qian.Identity.Abstractions.Principal.TenantId.init -> void
+Qian.Identity.Abstractions.Principal.MembershipId.init -> void
+Qian.Identity.Abstractions.Principal.Kind.get -> Qian.Identity.Abstractions.PrincipalKind
+Qian.Identity.Abstractions.Principal.Subject.init -> void
+Qian.Identity.Abstractions.Principal.IdentityRevision.get -> long?
+Qian.Identity.Abstractions.Principal.IdentityRevision.init -> void
+Qian.Identity.Abstractions.Principal.ProjectId.get -> string?
+Qian.Identity.Abstractions.Principal.ProjectId.init -> void
+Qian.Identity.Abstractions.Principal.PluginId.get -> string?
+Qian.Identity.Abstractions.Principal.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.Principal.PluginId.init -> void
+Qian.Identity.Abstractions.Principal.Scope.get -> string!
+Qian.Identity.Abstractions.Principal.Roles.init -> void
+Qian.Identity.Abstractions.Principal.Scope.init -> void
+Qian.Identity.Abstractions.Principal.SessionId.init -> void
+Qian.Identity.Abstractions.Principal.SessionId.get -> string!
+Qian.Identity.Abstractions.Principal.Actor.get -> Qian.Identity.Abstractions.DelegationActor?
+Qian.Identity.Abstractions.Principal.Actor.init -> void
+Qian.Identity.Abstractions.Principal.IssuedAt.get -> long
+static Qian.Identity.Abstractions.IdentityEventRegistration.RegisterIdentityEvents(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
+Qian.Identity.Abstractions.Principal.IssuedAt.init -> void
+Qian.Identity.Abstractions.Principal.NotBefore.get -> long
+Qian.Identity.Abstractions.Principal.NotBefore.init -> void
+Qian.Identity.Abstractions.Principal.ExpiresAt.init -> void
+Qian.Identity.Abstractions.Principal.ExpiresAt.get -> long
+Qian.Identity.Abstractions.Principal.TokenId.get -> string!
+Qian.Identity.Abstractions.Principal.TokenId.init -> void
+override Qian.Identity.Abstractions.Principal.ToString() -> string!
+static Qian.Identity.Abstractions.IdentityJson.EventTypeInfo(string! id) -> System.Text.Json.Serialization.Metadata.JsonTypeInfo?
+static Qian.Identity.Abstractions.IdentitySchemas.Event(string! eventId) -> string!
+Qian.Identity.Abstractions.Principal.Issuer.get -> string!
+Qian.Identity.Abstractions.AuthenticationProof.Dispose() -> void
+Qian.Identity.Abstractions.AuthenticationResult.Acr.get -> string?
+Qian.Identity.Abstractions.AuthenticationResult.Succeeded.get -> bool
+Qian.Identity.Abstractions.AuthenticationResult.Error.get -> Qian.Runtime.Errors.QianError?
+Qian.Identity.Abstractions.AuthenticationResult.Acr.init -> void
+Qian.Identity.Abstractions.AuthenticationResult.Succeeded.init -> void
+Qian.Identity.Abstractions.AuthenticationResult.Amr.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.AuthenticationResult.Error.init -> void
+Qian.Identity.Abstractions.AuthenticationResult.Amr.init -> void
+static readonly Qian.Identity.Abstractions.IdentityRuntimeEvents.SigningIn -> Qian.Runtime.QianEvent<Qian.Identity.Abstractions.LoginInput!, Qian.Identity.Abstractions.SignInResult!>!
+Qian.Identity.Abstractions.SignInResult.Succeeded.get -> bool
+Qian.Identity.Abstractions.SignInResult.Principal.get -> Qian.Identity.Abstractions.Principal?
+Qian.Identity.Abstractions.SignInResult.Error.get -> Qian.Runtime.Errors.QianError?
+Qian.Identity.Abstractions.SignInResult.Succeeded.init -> void
+Qian.Identity.Abstractions.SignInResult.Principal.init -> void
+Qian.Identity.Abstractions.SignInResult.Error.init -> void
+Qian.Identity.Abstractions.SignInResult
+override Qian.Identity.Abstractions.SignInResult.ToString() -> string!
+static Qian.Identity.Abstractions.SignInResult.operator !=(Qian.Identity.Abstractions.SignInResult? left, Qian.Identity.Abstractions.SignInResult? right) -> bool
+static Qian.Identity.Abstractions.SignInResult.operator ==(Qian.Identity.Abstractions.SignInResult? left, Qian.Identity.Abstractions.SignInResult? right) -> bool
+override Qian.Identity.Abstractions.SignInResult.GetHashCode() -> int
+override Qian.Identity.Abstractions.SignInResult.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.SignInResult.Equals(Qian.Identity.Abstractions.SignInResult? other) -> bool
+Qian.Identity.Abstractions.SignInResult.<Clone>$() -> Qian.Identity.Abstractions.SignInResult!
+Qian.Identity.Abstractions.SignInResult.Deconstruct(out bool Succeeded, out Qian.Identity.Abstractions.Principal? Principal, out Qian.Runtime.Errors.QianError? Error) -> void
+Qian.Identity.Abstractions.AuthenticationResult
+override Qian.Identity.Abstractions.AuthenticationResult.ToString() -> string!
+static Qian.Identity.Abstractions.AuthenticationResult.operator !=(Qian.Identity.Abstractions.AuthenticationResult? left, Qian.Identity.Abstractions.AuthenticationResult? right) -> bool
+static Qian.Identity.Abstractions.AuthenticationResult.operator ==(Qian.Identity.Abstractions.AuthenticationResult? left, Qian.Identity.Abstractions.AuthenticationResult? right) -> bool
+override Qian.Identity.Abstractions.AuthenticationResult.GetHashCode() -> int
+override Qian.Identity.Abstractions.AuthenticationResult.Equals(object? obj) -> bool
+Qian.Identity.Abstractions.AuthenticationResult.Equals(Qian.Identity.Abstractions.AuthenticationResult? other) -> bool
+Qian.Identity.Abstractions.AuthenticationResult.<Clone>$() -> Qian.Identity.Abstractions.AuthenticationResult!
+Qian.Identity.Abstractions.AuthenticationResult.Deconstruct(out bool Succeeded, out Qian.Runtime.Errors.QianError? Error, out System.Collections.Generic.IReadOnlyList<string!>! Amr, out string? Acr) -> void
+Qian.Identity.Abstractions.AuthenticationResult.AuthenticationResult(bool Succeeded, Qian.Runtime.Errors.QianError? Error, System.Collections.Generic.IReadOnlyList<string!>! Amr, string? Acr) -> void
+Qian.Identity.Abstractions.IAuthenticatorFactor.VerifyAsync(Qian.Identity.Abstractions.AuthenticationProof! proof, Qian.Identity.Abstractions.AuthenticationFactorContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.AuthenticationResult!>!
+Qian.Identity.Abstractions.SignInResult.SignInResult(bool Succeeded, Qian.Identity.Abstractions.Principal? Principal, Qian.Runtime.Errors.QianError? Error) -> void

@@ -23,6 +23,7 @@
   <ItemGroup Label="Runtime">
     <PackageVersion Include="Kun.Core" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Mediator" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.EventBus" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Validation" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Infrastructure" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Storage" Version="$(KunVersion)" />
