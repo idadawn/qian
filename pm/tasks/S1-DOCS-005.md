@@ -1,7 +1,7 @@
 ---
 id: S1-DOCS-005
 title: Kun 框架小节：按锁定版本镜像 kun 仓库文档并生成 API 参考
-status: review
+status: done
 stage: S1
 area: DOCS
 wave: 2
@@ -39,3 +39,4 @@ updated: 2026-10-08
 - 2026-10-08 claude：开始
 - 2026-10-08 claude：实现完成并本地验证，提交评审：Directory.Packages.props 加 KunVersion 2026.9.13；Kun 小节按白名单镜像 36 页 + 手写 with-qian，DocFX 从同版本 Kun.* 包生成 API 参考（32 个包、341 个类型，不进侧栏）；门禁与单测齐。第 7 条的工作流与 README §6 已就绪，Secret KUN_DOCS_DEPLOY_KEY 待仓库管理员创建（代理不经手凭据），CI 通过后勾选
 - 2026-10-08 claude：仓库管理员已在 idadawn/kun 加只读 deploy key、在 idadawn/qian 设 Secret KUN_DOCS_DEPLOY_KEY；docs-site 重跑（run 37680214386 第 2 次）凭据检查与 kun v2026.9.13 检出通过，Linux 上 .NET 安装、类型检查、单测通过，第 7 条勾选
+- 2026-10-08 claude：完成：已合并 PR #4
