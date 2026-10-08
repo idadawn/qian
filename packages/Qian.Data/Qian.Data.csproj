@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Qian 数据组件的 RLS 双拦截器、模型缓存键与启动安全检查。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+</Project>

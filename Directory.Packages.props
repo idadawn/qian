@@ -26,6 +26,14 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
   </ItemGroup>
 
+  <ItemGroup Label="Data">
+    <PackageVersion Include="Kun.EntityFrameworkCore" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.MultiTenancy.EntityFrameworkCore" Version="$(KunVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Testing">
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
     <PackageVersion Include="xunit.v3" Version="4.0.1" />

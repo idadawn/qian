@@ -1,0 +1,3 @@
+#nullable enable
+Qian.Data.QianDataExtensions
+static Qian.Data.QianDataExtensions.AddQianData<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<System.IServiceProvider!, Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
