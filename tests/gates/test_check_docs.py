@@ -118,14 +118,27 @@ class SiteContentTests(unittest.TestCase):
         self.assertEqual(self.errors_for(["/sdk/kun/guides/real"]), [])
         self.assertEqual(len(self.errors_for(["/sdk/kun/guides/anything"])), 1)
 
+    def test_generated_single_file_skipped_and_deferred(self) -> None:
+        # 版本矩阵 start/versions.md 是生成文件：默认不查、显式点名就查；没生成时指向它的路由延后到构建时检查
+        write(self.tmp / "website/docs/start/versions.md", f"# {BANNED_WORD}\n")
+        default = {f.relative_to(self.tmp).as_posix() for f in check_docs.md_files(["website/docs"])}
+        self.assertNotIn("website/docs/start/versions.md", default)
+        explicit = {f.relative_to(self.tmp).as_posix() for f in check_docs.md_files(["website/docs/start/versions.md"])}
+        self.assertIn("website/docs/start/versions.md", explicit)
+        self.assertEqual(self.errors_for(["/start/versions"]), [])
+        (self.tmp / "website/docs/start/versions.md").unlink()
+        self.assertEqual(self.errors_for(["/start/versions"]), [])
+        self.assertEqual(len(self.errors_for(["/start/version"])), 1)
+
     def test_tracked_generated_files_fail(self) -> None:
         if shutil.which("git") is None:
             self.skipTest("需要 git")
         write(self.tmp / "website/docs/sdk/kun/with-qian.mdx", "# 与 Qian 的关系\n")
         write(self.tmp / "website/docs/sdk/kun/guides/x.md", "# 手改的镜像页\n")
+        write(self.tmp / "website/docs/start/versions.md", "# 手改的版本矩阵\n")
         subprocess.run(["git", "init", "-q", str(self.tmp)], check=True)
         subprocess.run(["git", "-C", str(self.tmp), "add", "-f", "website"], check=True)
-        self.assertEqual(check_docs.tracked_generated(), ["website/docs/sdk/kun/guides/x.md"])
+        self.assertEqual(check_docs.tracked_generated(), ["website/docs/sdk/kun/guides/x.md", "website/docs/start/versions.md"])
 
 
 FM_OK = (

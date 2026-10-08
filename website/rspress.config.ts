@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@rspress/core';
 import mermaid from 'rspress-plugin-mermaid';
+import { renderLlmsTxt } from './scripts/llms.ts';
 import { qianDocsSources } from './scripts/sources-plugin.ts';
 import { REPO_URL } from './scripts/repo.ts';
 
@@ -24,8 +25,8 @@ export default defineConfig({
   logo: '/logo.svg',
   logoText: 'Qian 文档',
   // 机器可读（docs-site.md §2a.1、S1-DOCS-003）：SSG-MD 在构建期把每页渲染成 .md，并产出 llms.txt 与 llms-full.txt；
-  // kb-index.json 与 sitemap.xml 由 scripts/build-kb-index.ts 在构建后产出。
-  llms: true,
+  // kb-index.json 与 sitemap.xml 由 scripts/build-kb-index.ts 在构建后产出；llms.txt 先按 project 分（Qian → Kun → yue）再按部分分节（ADR-021 D21.5）。
+  llms: { llmsTxt: renderLlmsTxt },
   route: {
     // 不用 cleanUrls：产物里的链接带 .html，任何静态服务器（含 python3 -m http.server）都能直接打开。
     cleanUrls: false,

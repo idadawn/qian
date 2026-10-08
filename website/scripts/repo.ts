@@ -76,6 +76,15 @@ export function writeGenerated(
   return result;
 }
 
+/** 单个生成文件（如 start/versions.md）：内容没变不重写；返回是否写入。 */
+export function writeGeneratedFile(rel: string, content: string, siteDocs: string = SITE_DOCS): 'written' | 'unchanged' {
+  const target = path.join(siteDocs, rel);
+  if (fs.existsSync(target) && fs.readFileSync(target, 'utf8') === content) return 'unchanged';
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, content);
+  return 'written';
+}
+
 export function listFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
   const out: string[] = [];

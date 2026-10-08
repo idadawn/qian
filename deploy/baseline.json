@@ -1,0 +1,4 @@
+{
+  "$comment": "部署基线的钉版（ADR-021 D21.2 第 3 条，版本矩阵 /start/versions 读它）。K3s 版本随集群升级改这里；集群本身在部署仓库 idadawn/iclaw-deploy，基线治理见任务 S1-DEP-001。",
+  "k3s": "v1.35"
+}
