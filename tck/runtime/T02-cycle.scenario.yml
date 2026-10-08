@@ -1,0 +1,13 @@
+version: 1
+id: T02
+description: 启动期检测环路，在任何 Apply 前返回结构化错误。
+entries:
+  - {id: A, inject: [Y], provides: [X], apply: []}
+  - {id: B, inject: [X], provides: [Y], apply: []}
+steps:
+  - op: mount
+    entries: [A, B]
+    error:
+      code: DEPENDENCY_CYCLE
+      args: {cycle: 'A → B → A'}
+  - {op: trace, value: []}

@@ -1,4 +1,7 @@
 #nullable enable
+static readonly Qian.Runtime.Errors.PlatformErrors.DependencyMissing -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.DependencyCycle -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Runtime.Errors.PlatformErrors.RegistrationConflict -> Qian.Runtime.Errors.ErrorCode!
 Qian.Runtime.Errors.AllowedValues
 const Qian.Runtime.Errors.AllowedValues.MaxCount = 100 -> int
 static Qian.Runtime.Errors.AllowedValues.Of(params System.ReadOnlySpan<long> values) -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!

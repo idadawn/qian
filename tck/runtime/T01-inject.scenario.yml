@@ -1,0 +1,16 @@
+version: 1
+id: T01
+description: 按 inject 与 provides 排序，消费者在 Provider 就绪后才能 Apply。
+entries:
+  - id: B
+    inject: [X]
+    apply: []
+  - id: A
+    provides: [X]
+    apply:
+      - {op: provide, key: X, value: ready}
+steps:
+  - {op: mount, entries: [B, A]}
+  - {op: trace, value: ['apply:A', 'apply:B']}
+  - {op: state, entry: B, value: Ready}
+  - {op: inject, entry: B, key: X, value: ready}

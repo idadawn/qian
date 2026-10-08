@@ -1,0 +1,97 @@
+#nullable enable
+override Qian.Runtime.PluginDefinition.Equals(object? obj) -> bool
+override Qian.Runtime.PluginDefinition.GetHashCode() -> int
+override Qian.Runtime.PluginDefinition.ToString() -> string!
+override Qian.Runtime.PluginEntry.Equals(object? obj) -> bool
+override Qian.Runtime.PluginEntry.GetHashCode() -> int
+override Qian.Runtime.PluginEntry.ToString() -> string!
+override Qian.Runtime.ScopeKey.GetHashCode() -> int
+override Qian.Runtime.ServiceKey.GetHashCode() -> int
+Qian.Runtime.IPluginContext
+Qian.Runtime.IPluginContext.Entry.get -> Qian.Runtime.PluginEntry!
+Qian.Runtime.IPluginContext.Inject<TService>(Qian.Runtime.ServiceKey key) -> TService!
+Qian.Runtime.IPluginContext.Logger.get -> Microsoft.Extensions.Logging.ILogger!
+Qian.Runtime.IPluginContext.Provide<TService>(Qian.Runtime.ServiceKey key, TService! instance) -> System.IDisposable!
+Qian.Runtime.IPluginContext.Scope.get -> Qian.Runtime.ScopeKey
+Qian.Runtime.IPluginContext.Services.get -> System.IServiceProvider!
+Qian.Runtime.IPluginContext.TryInject<TService>(Qian.Runtime.ServiceKey key) -> TService?
+Qian.Runtime.IPluginContext.WhenReadyAsync<TService>(Qian.Runtime.ServiceKey key, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<TService!>
+Qian.Runtime.IQianPlugin
+Qian.Runtime.IQianPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Runtime.IQianPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Runtime.IQianPlugin<TConfig>
+Qian.Runtime.IQianPlugin<TConfig>.ApplyAsync(Qian.Runtime.IPluginContext! ctx, TConfig config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Runtime.PluginDefinition
+Qian.Runtime.PluginDefinition.<Clone>$() -> Qian.Runtime.PluginDefinition!
+Qian.Runtime.PluginDefinition.Deconstruct(out Qian.Runtime.PluginEntry! Entry, out Qian.Runtime.IQianPlugin! Plugin, out System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>! Provides) -> void
+Qian.Runtime.PluginDefinition.Entry.get -> Qian.Runtime.PluginEntry!
+Qian.Runtime.PluginDefinition.Entry.init -> void
+Qian.Runtime.PluginDefinition.Equals(Qian.Runtime.PluginDefinition? other) -> bool
+Qian.Runtime.PluginDefinition.Plugin.get -> Qian.Runtime.IQianPlugin!
+Qian.Runtime.PluginDefinition.Plugin.init -> void
+Qian.Runtime.PluginDefinition.PluginDefinition(Qian.Runtime.PluginEntry! Entry, Qian.Runtime.IQianPlugin! Plugin, System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>! Provides) -> void
+Qian.Runtime.PluginDefinition.Provides.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Runtime.PluginDefinition.Provides.init -> void
+Qian.Runtime.PluginEntry
+Qian.Runtime.PluginEntry.<Clone>$() -> Qian.Runtime.PluginEntry!
+Qian.Runtime.PluginEntry.Config.get -> System.Text.Json.JsonElement
+Qian.Runtime.PluginEntry.Config.init -> void
+Qian.Runtime.PluginEntry.Deconstruct(out string! Id, out string! Plugin, out string! Version, out Qian.Runtime.ScopeKey Scope, out int Layer, out System.Text.Json.JsonElement Config) -> void
+Qian.Runtime.PluginEntry.Equals(Qian.Runtime.PluginEntry? other) -> bool
+Qian.Runtime.PluginEntry.Id.get -> string!
+Qian.Runtime.PluginEntry.Id.init -> void
+Qian.Runtime.PluginEntry.Layer.get -> int
+Qian.Runtime.PluginEntry.Layer.init -> void
+Qian.Runtime.PluginEntry.Plugin.get -> string!
+Qian.Runtime.PluginEntry.Plugin.init -> void
+Qian.Runtime.PluginEntry.PluginEntry(string! Id, string! Plugin, string! Version, Qian.Runtime.ScopeKey Scope, int Layer, System.Text.Json.JsonElement Config) -> void
+Qian.Runtime.PluginEntry.Scope.get -> Qian.Runtime.ScopeKey
+Qian.Runtime.PluginEntry.Scope.init -> void
+Qian.Runtime.PluginEntry.Version.get -> string!
+Qian.Runtime.PluginEntry.Version.init -> void
+Qian.Runtime.PluginLoader
+Qian.Runtime.PluginLoader.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Qian.Runtime.PluginLoader.GetContext(string! id, Qian.Runtime.ScopeKey scope) -> Qian.Runtime.IPluginContext!
+Qian.Runtime.PluginLoader.GetFailure(string! id, Qian.Runtime.ScopeKey scope) -> System.Exception?
+Qian.Runtime.PluginLoader.GetState(string! id, Qian.Runtime.ScopeKey scope) -> Qian.Runtime.PluginState
+Qian.Runtime.PluginLoader.MountAsync(System.Collections.Generic.IEnumerable<Qian.Runtime.PluginDefinition!>! definitions, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Runtime.PluginLoader.PluginLoader(System.IServiceProvider! services, Microsoft.Extensions.Logging.ILogger? logger = null) -> void
+Qian.Runtime.PluginLoader.UnmountAsync(string! id, Qian.Runtime.ScopeKey scope, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Runtime.PluginLoader.WhenIdleAsync(System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Runtime.PluginState
+Qian.Runtime.PluginState.Applying = 1 -> Qian.Runtime.PluginState
+Qian.Runtime.PluginState.Failed = 3 -> Qian.Runtime.PluginState
+Qian.Runtime.PluginState.Pending = 0 -> Qian.Runtime.PluginState
+Qian.Runtime.PluginState.Ready = 2 -> Qian.Runtime.PluginState
+Qian.Runtime.ScopeKey
+Qian.Runtime.ScopeKey.Deconstruct(out string! Kind, out string! Id) -> void
+Qian.Runtime.ScopeKey.Equals(Qian.Runtime.ScopeKey other) -> bool
+Qian.Runtime.ScopeKey.Id.get -> string!
+Qian.Runtime.ScopeKey.Id.init -> void
+Qian.Runtime.ScopeKey.Kind.get -> string!
+Qian.Runtime.ScopeKey.Kind.init -> void
+Qian.Runtime.ScopeKey.ScopeKey() -> void
+Qian.Runtime.ScopeKey.ScopeKey(string! Kind, string! Id) -> void
+Qian.Runtime.ServiceKey
+Qian.Runtime.ServiceKey.Deconstruct(out string! Name) -> void
+Qian.Runtime.ServiceKey.Equals(Qian.Runtime.ServiceKey other) -> bool
+Qian.Runtime.ServiceKey.Name.get -> string!
+Qian.Runtime.ServiceKey.Name.init -> void
+Qian.Runtime.ServiceKey.ServiceKey() -> void
+Qian.Runtime.ServiceKey.ServiceKey(string! Name) -> void
+Qian.Runtime.ServiceNotReadyException
+Qian.Runtime.ServiceNotReadyException.Error.get -> Qian.Runtime.Errors.QianError!
+Qian.Runtime.ServiceNotReadyException.ServiceNotReadyException() -> void
+static Qian.Runtime.PluginDefinition.operator !=(Qian.Runtime.PluginDefinition? left, Qian.Runtime.PluginDefinition? right) -> bool
+static Qian.Runtime.PluginDefinition.operator ==(Qian.Runtime.PluginDefinition? left, Qian.Runtime.PluginDefinition? right) -> bool
+static Qian.Runtime.PluginEntry.operator !=(Qian.Runtime.PluginEntry? left, Qian.Runtime.PluginEntry? right) -> bool
+static Qian.Runtime.PluginEntry.operator ==(Qian.Runtime.PluginEntry? left, Qian.Runtime.PluginEntry? right) -> bool
+static Qian.Runtime.ScopeKey.operator !=(Qian.Runtime.ScopeKey left, Qian.Runtime.ScopeKey right) -> bool
+static Qian.Runtime.ScopeKey.operator ==(Qian.Runtime.ScopeKey left, Qian.Runtime.ScopeKey right) -> bool
+static Qian.Runtime.ServiceKey.operator !=(Qian.Runtime.ServiceKey left, Qian.Runtime.ServiceKey right) -> bool
+static Qian.Runtime.ServiceKey.operator ==(Qian.Runtime.ServiceKey left, Qian.Runtime.ServiceKey right) -> bool
+static readonly Qian.Runtime.ScopeKey.Global -> Qian.Runtime.ScopeKey
+~override Qian.Runtime.ScopeKey.Equals(object obj) -> bool
+~override Qian.Runtime.ScopeKey.ToString() -> string
+~override Qian.Runtime.ServiceKey.Equals(object obj) -> bool
+~override Qian.Runtime.ServiceKey.ToString() -> string

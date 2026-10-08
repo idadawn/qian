@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Runtime/Qian.Runtime.csproj" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+  <ItemGroup><None Include="../../tck/runtime/*.scenario.yml" Link="tck/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
+</Project>
