@@ -415,5 +415,30 @@
     "home": false,
     "expect": false,
     "pointer": "ops.yml#/0/config/key"
+  },
+  {
+    "name": "initial-required-disable",
+    "files": {
+      "plugins/consumer/.qian-plugin/plugin.json": "{\"id\": \"test.consumer\", \"version\": \"1.0.0\", \"description\": \"\\u4f9b profile \\u88c5\\u914d TCK \\u4f7f\\u7528\\u7684\\u771f\\u5b9e\\u9759\\u6001\\u6e05\\u5355\", \"author\": {\"name\": \"Qian\"}, \"license\": \"MIT\", \"interface\": {\"displayName\": \"profile \\u6d4b\\u8bd5\", \"category\": \"test\"}, \"inject\": [\"Settings\"], \"provides\": [], \"policy\": {\"tier\": \"private\", \"sandbox\": \"none\", \"authentication\": \"ON_INSTALL\", \"required\": true}, \"scopes\": [\"global\", \"tenant\"]}",
+      "plugins/one/config/qian.patch.yml": "[{\"id\": \"consumer\", \"plugin\": \"test.consumer\", \"config\": {}, \"disabled\": true}]"
+    },
+    "patches": [],
+    "home": false,
+    "expect": false,
+    "pointer": "plugins/one/config/qian.patch.yml#/0"
+  },
+  {
+    "name": "resolve-final-active-tree",
+    "files": {
+      "first.yml": "[{\"id\": \"extra\", \"plugin\": \"test.not-yet-installed\", \"config\": {}}]",
+      "second.yml": "[{\"id\": \"extra\", \"plugin\": \"test.other\", \"config\": {}}]"
+    },
+    "patches": [
+      "first.yml",
+      "second.yml"
+    ],
+    "home": false,
+    "expect": true,
+    "count": 3
   }
 ]

@@ -114,14 +114,19 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
 
         private Component Resolve(string reference, string file, string pointer)
         {
-            var pieces = reference.Split('@', 2); var id = pieces[0];
-            VersionRange range;
-            try { range = new VersionRange(pieces.Length == 2 ? pieces[1] : "*"); }
-            catch (ArgumentException) { Fail(file, pointer, "组件版本范围无效。"); throw; }
-            var candidate = _components.Where(c => c.Id == id && range.IsSatisfied(new SemanticVersion(c.Version)))
-                .OrderByDescending(c => new SemanticVersion(c.Version)).FirstOrDefault();
+            Component? candidate;
+            try { candidate = Find(reference); }
+            catch (Exception error) when (error is ArgumentException or FormatException)
+            { Fail(file, pointer, "组件版本范围无效。"); throw; }
             if (candidate is null) Fail(file, pointer, "本地目录没有满足版本范围的组件；先安装或提供组件目录。");
             return candidate!;
+        }
+        private Component? Find(string reference)
+        {
+            var pieces = reference.Split('@', 2);
+            var range = new VersionRange(pieces.Length == 2 ? pieces[1] : "*");
+            return _components.Where(c => c.Id == pieces[0] && range.IsSatisfied(new SemanticVersion(c.Version)))
+                .OrderByDescending(c => new SemanticVersion(c.Version)).FirstOrDefault();
         }
 
         private void AddLayer(string kind, string file, string? reference, bool required)
@@ -146,7 +151,7 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
                     if (scope != "global" && _entries.TryGetValue("global/" + id, out var global)) Protect(global, plugin, false, file, pointer);
                 }
                 var disabled = value.TryGetProperty("disabled", out var flag) ? flag.GetBoolean() : current.Disabled;
-                if (_entries.ContainsKey(key)) Protect(current, plugin.Length == 0 ? current.Plugin : plugin, disabled, file, pointer);
+                Protect(current, plugin.Length == 0 ? current.Plugin : plugin, disabled, file, pointer);
                 if (plugin.Length > 0) current.Plugin = plugin;
                 if (value.TryGetProperty("config", out var config))
                 {
@@ -161,7 +166,11 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
 
         private void Protect(WorkingEntry current, string replacement, bool disabled, string file, string pointer)
         {
-            var component = Resolve(current.Plugin, current.SourceFile, current.SourcePointer + "/plugin");
+            Component? component;
+            try { component = Find(current.Plugin); }
+            catch (Exception error) when (error is ArgumentException or FormatException) { return; }
+            // 中间层可能被后层替换；仅最终活动条目要求可解析。
+            if (component is null) return;
             if (component.Manifest.GetProperty("policy").TryGetProperty("required", out var required) && required.GetBoolean() &&
                 (disabled || replacement.Split('@')[0] != component.Id)) Fail(file, pointer, "required 组件不能禁用或替换为另一个组件。");
         }

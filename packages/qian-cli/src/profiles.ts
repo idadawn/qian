@@ -80,9 +80,14 @@ class Composition {
   }
   private resolve(reference:string,file:string,pointer:string):Component {
     const [id,range='*']=reference.split('@',2);if(!validRange(range))this.fail(file,pointer,'组件版本范围无效。');
-    const candidate=this.components.filter(c=>c.id===id&&satisfies(c.version,range)).sort((a,b)=>rcompare(a.version,b.version))[0];
+    const candidate=this.find(reference);
     if(!candidate)this.fail(file,pointer,'本地目录没有满足版本范围的组件；先安装或提供组件目录。');
     return candidate;
+  }
+  private find(reference:string):Component|undefined{
+    const[id,range='*']=reference.split('@',2);
+    if(!validRange(range))return undefined;
+    return this.components.filter(c=>c.id===id&&satisfies(c.version,range)).sort((a,b)=>rcompare(a.version,b.version))[0];
   }
   private layer(kind:string,file:string,reference:string|null,required:boolean):void {
     const index=this.layers.length,present=existsSync(file);this.layers.push({index,kind,path:this.display(file),ref:reference,present});if(!present&&!required)return;
@@ -98,7 +103,7 @@ class Composition {
         const global=this.entries.get('global/'+id);if(scope!=='global'&&global)this.protect(global,plugin,false,file,pointer);
       }
       const disabled=typeof entry.disabled==='boolean'?entry.disabled:current.disabled;
-      if(this.entries.has(key))this.protect(current,plugin||current.plugin,disabled,file,pointer);
+      this.protect(current,plugin||current.plugin,disabled,file,pointer);
       if(plugin)current.plugin=plugin;
       if(Object.hasOwn(entry,'config')){current.config=structuredClone(obj(entry.config));current.configFile=file;current.configPointer=pointer+'/config';}
       current.disabled=disabled;current.layer=index;current.sourceFile=file;current.sourcePointer=pointer;
@@ -107,7 +112,7 @@ class Composition {
     });
   }
   private protect(current:Working,replacement:string,disabled:boolean,file:string,pointer:string):void{
-    const component=this.resolve(current.plugin,current.sourceFile,current.sourcePointer+'/plugin');
+    const component=this.find(current.plugin);if(!component)return;
     if(obj(component.manifest.policy).required===true&&(disabled||replacement.split('@')[0]!==component.id))this.fail(file,pointer,'required 组件不能禁用或替换为另一个组件。');
   }
   private resolveEntries():ProfileEntry[]{
