@@ -1,0 +1,10 @@
+[
+  {
+    "id": "settings",
+    "config": {
+      "port": 3,
+      "marker": "profile",
+      "obsolete": "remove"
+    }
+  }
+]

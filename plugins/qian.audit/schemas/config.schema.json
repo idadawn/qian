@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "chain": {
+      "type": "object",
+      "properties": {
+        "store": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

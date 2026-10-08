@@ -1,0 +1,27 @@
+{
+  "$schema": "https://qian.dev/schemas/plugin/v2",
+  "id": "qian.observability",
+  "version": "1.0.0",
+  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.observability",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "MIT",
+  "interface": {
+    "displayName": "observability",
+    "category": "platform"
+  },
+  "inject": [],
+  "provides": [],
+  "policy": {
+    "tier": "system",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false
+  },
+  "scopes": [
+    "global",
+    "tenant"
+  ],
+  "x-skeleton": true
+}

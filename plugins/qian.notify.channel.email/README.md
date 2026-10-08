@@ -1,0 +1,3 @@
+# qian.notify.channel.email
+
+此目录为 S1-RT-002 的配置骨架（`x-skeleton: true`），提供清单与配置结构校验，不含 Provider 代码、服务键注册或就绪承诺。后续组件任务用真实实现替换骨架，并补充自己的完整配置契约。

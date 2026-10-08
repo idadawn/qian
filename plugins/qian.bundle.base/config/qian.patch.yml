@@ -1,0 +1,96 @@
+- id: registry
+  plugin: qian.registry
+  config:
+    store: pg
+- id: lifecycle
+  plugin: qian.lifecycle
+  config: {}
+- id: capabilities
+  plugin: qian.capabilities
+  config: {}
+- id: hooks
+  plugin: qian.hooks
+  config: {}
+- id: tenancy
+  plugin: qian.tenancy
+  config:
+    resolver:
+      mode: production
+      allowHeaderFallback: false
+- id: identity
+  plugin: qian.identity.client
+  config:
+    issuer: https://id.example.internal
+    clientId: qian-platform
+    clientSecret: secretRef://platform/identity/client-secret
+- id: authz
+  plugin: qian.authz
+  config:
+    advancedMode: false
+- id: data
+  plugin: qian.data
+  config:
+    dialect: pg
+    connection: secretRef://platform/pg/qian-platform
+    rls:
+      enforce: true
+- id: files
+  plugin: qian.files
+  config:
+    storage:
+      kind: local
+      root: /var/lib/qian/files
+    quota:
+      perTenantBytes: 10737418240
+- id: config
+  plugin: qian.config.apollo
+  config:
+    meta: http://apollo-config.apollo:8080
+    appId: qian-platform
+    namespaces:
+    - application
+    - qian.common.trust
+- id: events
+  plugin: qian.events
+  config:
+    broker: secretRef://platform/rabbitmq/url
+    outbox:
+      lock: redis
+- id: audit
+  plugin: qian.audit
+  config:
+    chain:
+      store: pg
+- id: observability
+  plugin: qian.observability
+  config:
+    otlp: http://otel-collector.observability:4317
+- id: notify
+  plugin: qian.notify
+  config:
+    channels:
+    - inbox
+    - email
+    - sms
+- id: notify.inbox
+  plugin: qian.notify.channel.inbox
+  config: {}
+- id: notify.email
+  plugin: qian.notify.channel.email
+  config:
+    smtp: secretRef://platform/smtp/url
+- id: notify.sms
+  plugin: qian.notify.channel.sms
+  config:
+    provider: secretRef://platform/sms/credential
+- id: scheduler
+  plugin: qian.scheduler
+  config:
+    store: pg
+- id: realtime
+  plugin: qian.realtime
+  config:
+    transport: sse
+- id: entitlement
+  plugin: qian.entitlement
+  config: {}

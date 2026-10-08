@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "issuer": {
+      "type": "string"
+    },
+    "clientId": {
+      "type": "string"
+    },
+    "clientSecret": {
+      "type": "string",
+      "x-qian-sensitive": true
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

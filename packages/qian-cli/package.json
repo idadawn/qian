@@ -1,0 +1,7 @@
+{
+  "name": "qian", "version": "0.1.0", "private": true, "type": "module",
+  "bin": { "qian": "dist/main.js" }, "files": ["dist", "README.md"], "engines": { "node": ">=22" },
+  "scripts": { "build": "tsc", "test": "node --test test/*.test.mjs" },
+  "dependencies": { "@qian/surfaces": "workspace:*", "ajv": "8.20.0", "semver": "7.7.4", "yaml": "2.9.1" },
+  "devDependencies": { "@types/node": "24.19.1", "@types/semver": "7.7.1", "typescript": "6.0.3" }
+}
