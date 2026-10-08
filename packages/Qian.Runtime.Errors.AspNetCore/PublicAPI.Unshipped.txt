@@ -9,3 +9,5 @@ static Qian.Runtime.Errors.AspNetCore.QianErrorsExtensions.AddQianErrors(this Mi
 static Qian.Runtime.Errors.AspNetCore.QianErrorsExtensions.UseQianErrors(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
 Qian.Runtime.Errors.AspNetCore.QianResults
 static Qian.Runtime.Errors.AspNetCore.QianResults.Error(Qian.Runtime.Errors.QianError! error) -> Qian.Runtime.Errors.AspNetCore.QianErrorResult!
+Qian.Runtime.Errors.AspNetCore.KunValidationErrorBridge
+static Qian.Runtime.Errors.AspNetCore.KunValidationErrorBridge.ToQianError(this Kun.Validation.ValidationException! exception) -> Qian.Runtime.Errors.QianError!

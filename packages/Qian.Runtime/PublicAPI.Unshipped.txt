@@ -158,3 +158,6 @@ Qian.Runtime.IPluginContext.Restrict(Qian.Runtime.ScopeKey scope, System.Func<Qi
 Qian.Runtime.IPluginContext.Provide<TService>(Qian.Runtime.ServiceKey key, string! name, TService! instance) -> System.IDisposable!
 Qian.Runtime.IPluginContext.Inject<TService>(Qian.Runtime.ServiceKey key, string! name) -> TService!
 Qian.Runtime.IPluginContext.List(Qian.Runtime.ServiceKey key) -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Registration!>!
+Qian.Runtime.KunErrorBridge
+static Qian.Runtime.KunErrorBridge.ToQianError(this Kun.Core.Results.Error! error) -> Qian.Runtime.Errors.QianError!
+static Qian.Runtime.KunErrorBridge.ToQianError(this Kun.Core.Domain.DomainException! exception) -> Qian.Runtime.Errors.QianError!

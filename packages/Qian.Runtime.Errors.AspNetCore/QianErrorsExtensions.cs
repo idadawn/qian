@@ -38,6 +38,10 @@ public static class QianErrorsExtensions
         services.AddProblemDetails();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<ProblemDetailsOptions>, NormalizeProblemDetails>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IExceptionHandler, QianExceptionHandler>());
+        // 已知 Qian / Kun 校验异常先进入封闭契约；不认识的异常仍交给后续宿主处理器。
+        var handler = services.Single(d => d.ServiceType == typeof(IExceptionHandler) && d.ImplementationType == typeof(QianExceptionHandler));
+        services.Remove(handler);
+        services.Insert(0, handler);
         return services;
     }
 

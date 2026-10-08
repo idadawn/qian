@@ -19,6 +19,9 @@
   </ItemGroup>
 
   <ItemGroup Label="Runtime">
+    <PackageVersion Include="Kun.Core" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Mediator" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Validation" Version="$(KunVersion)" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
   </ItemGroup>

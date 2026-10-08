@@ -19,6 +19,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
     private bool _disposed;
     private long _sequence;
 
+    /// <summary>使用宿主 DI 与日志器创建装载器；装载器不拥有宿主 DI 的生命周期。</summary>
     public PluginLoader(IServiceProvider services, ILogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -30,16 +31,19 @@ public sealed partial class PluginLoader : IAsyncDisposable
     internal ILogger Logger { get; }
     internal Task Changed => _changed.Task;
 
+    /// <summary>查询条目的当前状态。</summary>
     public PluginState GetState(string id, ScopeKey scope)
     {
         lock (Sync) return FindNode(id, scope).State;
     }
 
+    /// <summary>查询 Apply 或清理失败；仅用于管理诊断，不作为业务响应原文。</summary>
     public Exception? GetFailure(string id, ScopeKey scope)
     {
         lock (Sync) return FindNode(id, scope).Failure;
     }
 
+    /// <summary>取得当前 Apply 的上下文；重新 Apply 后旧上下文作废。</summary>
     public IPluginContext GetContext(string id, ScopeKey scope)
     {
         lock (Sync) return FindNode(id, scope).Context ?? throw new ServiceNotReadyException();
@@ -96,6 +100,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         await MountAsync([definition], ct).ConfigureAwait(false);
     }
 
+    /// <summary>先撤销依赖者，再逆序撤销条目效果；可用其它 Provider 恢复的依赖者随后重新 Apply。</summary>
     public async ValueTask UnmountAsync(string id, ScopeKey scope, CancellationToken ct = default)
     {
         await _lifecycle.WaitAsync(ct).ConfigureAwait(false);
@@ -129,6 +134,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         }
     }
 
+    /// <summary>按 Apply 顺序逆序卸载整棵树；清理失败记录在日志，继续清理其它条目。</summary>
     public async ValueTask DisposeAsync()
     {
         await _lifecycle.WaitAsync().ConfigureAwait(false);

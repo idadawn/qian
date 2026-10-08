@@ -10,12 +10,13 @@ public readonly record struct ServiceKey(string Name);
 /// <summary>两层扁平作用域，不隐含租户、应用与会话之间的继承关系。</summary>
 public readonly record struct ScopeKey(string Kind, string Id)
 {
+    /// <summary>全局注册的作用域。</summary>
     public static readonly ScopeKey Global = new("global", "");
 
     internal void Validate()
     {
         if (this != Global && (Kind is not ("tenant" or "app" or "agent-session") || string.IsNullOrWhiteSpace(Id)))
-            throw new ArgumentException("scope 必须为 global 或非空的 tenant / app / agent-session。 ");
+            throw new ArgumentException("scope 必须为 global 或非空的 tenant / app / agent-session。");
     }
 }
 
@@ -28,13 +29,16 @@ public sealed record PluginDefinition(PluginEntry Entry, IQianPlugin Plugin, IRe
 /// <summary>插件的最小接口。</summary>
 public interface IQianPlugin
 {
+    /// <summary>Apply 前必须就绪的服务键。</summary>
     IReadOnlyList<ServiceKey> Inject { get; }
+    /// <summary>注册服务、监听器与效果；失败时全部逆序撤销。</summary>
     ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct);
 }
 
 /// <summary>类型化配置接口；Schema 校验由清单装配器在调用前完成。</summary>
 public interface IQianPlugin<TConfig> : IQianPlugin
 {
+    /// <summary>以类型化配置执行 Apply。</summary>
     ValueTask ApplyAsync(IPluginContext ctx, TConfig config, CancellationToken ct);
 
     ValueTask IQianPlugin.ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
@@ -44,13 +48,21 @@ public interface IQianPlugin<TConfig> : IQianPlugin
 /// <summary>插件的服务、效果与作用域入口。</summary>
 public interface IPluginContext
 {
+    /// <summary>拥有当前效果栈的条目；Scoped 不改变条目身份。</summary>
     PluginEntry Entry { get; }
+    /// <summary>当前解析与注册所在的作用域。</summary>
     ScopeKey Scope { get; }
+    /// <summary>只读宿主服务入口；以 ServiceKey 解析的 keyed service 经过当前 scope 过滤。</summary>
     IServiceProvider Services { get; }
+    /// <summary>宿主提供的日志器。</summary>
     ILogger Logger { get; }
+    /// <summary>独占注册服务键，返回可重复调用的撤销句柄；不自动 Dispose 服务对象。</summary>
     IDisposable Provide<TService>(ServiceKey key, TService instance) where TService : class;
+    /// <summary>解析当前可见的服务；未就绪时抛出 ServiceNotReadyException。</summary>
     TService Inject<TService>(ServiceKey key) where TService : class;
+    /// <summary>解析可选服务；缺失与不可见均返回 null。</summary>
     TService? TryInject<TService>(ServiceKey key) where TService : class;
+    /// <summary>等待当前 scope 的服务就绪，可由 ct 取消；上下文卸载后结束等待。</summary>
     ValueTask<TService> WhenReadyAsync<TService>(ServiceKey key, CancellationToken ct) where TService : class;
     /// <summary>将第三方资源加入当前 Apply 的效果栈。</summary>
     void Effect(IDisposable disposer);
@@ -90,11 +102,23 @@ public interface IPluginContext
 public sealed record Registration(ServiceKey Key, string Name, ScopeKey Scope, string OwnerEntryId, object Value);
 
 /// <summary>某次 Apply 的状态；失败保留原异常供管理面查询。</summary>
-public enum PluginState { Pending, Applying, Ready, Failed }
+public enum PluginState
+{
+    /// <summary>等待全部必需服务。</summary>
+    Pending,
+    /// <summary>正在执行 Apply，注册尚未对其它插件公开。</summary>
+    Applying,
+    /// <summary>Apply 成功且依赖保持就绪。</summary>
+    Ready,
+    /// <summary>Apply 失败且已尝试撤销全部效果。</summary>
+    Failed,
+}
 
 /// <summary>当前服务尚不可见。不存在与被过滤的服务返回相同错误。</summary>
 public sealed class ServiceNotReadyException : InvalidOperationException
 {
+    /// <summary>构造不暴露不可见原因的异常。</summary>
     public ServiceNotReadyException() : base("服务不存在或尚未就绪。") { }
+    /// <summary>供宿主转换的统一 NOT_FOUND 错误。</summary>
     public QianError Error { get; } = new(PlatformErrors.NotFound);
 }
