@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-08 文档站：Kun ADR 补收、API 页去掉侧栏、产物体积预算（S1-DEC-011）
+
+- Kun 小节补收 ADR「P2-D SaaS 多租户 3-策略架构」。API 命名空间页与类型页不再显示侧栏，产物从约 57 MB 降到约 48 MB，并设 100 MB 预算。API 参考路径统一在 `/sdk/api/`。见 [docs-site.md](prd/specs/docs-site.md) §2b、§7，裁决 R54–R62。
+
 ## 2026-10-08 文档站「Kun 框架」小节与 Kun API 参考（S1-DOCS-005）
 
 - SDK 部分新增「Kun 框架」：按 `Directory.Packages.props` 的 `KunVersion`（当前 2026.9.13）从 kun 仓库镜像上手、模块地图、指南、安全、设计说明与 ADR、白皮书与变更日志，另有手写的「与 Qian 的关系」；Kun API 参考由 DocFX 从同版本 `Kun.*` 包生成（[docs-site.md](prd/specs/docs-site.md) §2b、[ADR-021](adr/ADR-021-product-family-structure.md)）。

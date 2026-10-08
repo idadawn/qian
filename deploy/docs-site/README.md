@@ -65,4 +65,4 @@ PR 预览要用对应的前缀构建：`DOCS_BASE=/pr-preview/pr-<n>/ pnpm --fil
 ## 之后
 
 - 交给 Argo CD：复制 `argocd-application.example.yaml` 到部署仓库 `env-ds/argocd/` 并加入其 kustomization；仓库凭据沿用看板的 `argocd/qian-repo-ssh`。此后清单改动随 `main` 自动同步。
-- 每个预览约 57 MB（gzip 后约 11 MB；S1-DOCS-005 加入 Kun 小节与 Kun API 参考前约 17 MB），`docs-site` 分支随打开的 PR 数增长；PR 关闭即删除。
+- 每个预览约 48 MB（gzip 后约 10 MB，nginx 已开 gzip；S1-DOCS-005 加入 Kun 小节与 Kun API 参考前约 17 MB），`docs-site` 分支随打开的 PR 数增长；PR 关闭即删除。产物检查有 100 MB 的总预算（R55）。
