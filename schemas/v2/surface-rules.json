@@ -1,0 +1,6 @@
+{
+  "defaults": { "skills": "./skills", "agents": "./agents", "commands": "./commands", "hooks": "./hooks/hooks.json", "mcpServers": "./.mcp.json", "tools": "./tools", "patch": "./config/qian.patch.yml" },
+  "agentEvents": ["SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse", "PostToolUse", "SubagentStop", "Stop"],
+  "qianEvents": ["tenant/provisioned", "registry/entry-mounted", "registry/entry-disabled", "tenant/purging", "tenant/purged", "identity/signing-in", "identity/signed-in", "identity/signed-out", "identity/member-disabled", "files/uploading", "files/uploaded", "files/deleting", "files/deleted"],
+  "shells": ["sh", "bash", "zsh", "fish", "cmd", "cmd.exe", "powershell", "pwsh"]
+}

@@ -5,11 +5,14 @@
     <Project Path="packages/Qian.Runtime/Qian.Runtime.csproj" />
     <Project Path="packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
     <Project Path="packages/Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
+    <Project Path="packages/Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
+    <Project Path="packages/Qian.Surfaces/Qian.Surfaces.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Errors.Tests/Qian.Runtime.Errors.Tests.csproj" />
+    <Project Path="tests/Qian.Surfaces.Tests/Qian.Surfaces.Tests.csproj" />
     <Project Path="tests/Qian.Testing.Containers.IntegrationTests/Qian.Testing.Containers.IntegrationTests.csproj" />
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
   </Folder>

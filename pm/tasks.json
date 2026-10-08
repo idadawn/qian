@@ -4228,14 +4228,14 @@
  {
   "id": "S1-RT-008",
   "title": "五种声明式表面解析器与校验器（Qian.Surfaces / TS）",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "5d",
   "days": 5.0,
   "depends": [
@@ -4244,7 +4244,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.2",
@@ -4267,12 +4267,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/error-detail.schema.json"
    }
   ],
-  "updated": "2026-10-07",
+  "updated": "2026-10-09",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.6 / D20.9：<code>skills/&lt;name&gt;/SKILL.md</code>、<code>agents/&lt;name&gt;.md</code>、<code>commands/&lt;name&gt;.md</code>、<code>hooks/hooks.json</code>、<code>.mcp.json</code> 五种表面加 <code>tools/</code>、<code>config/qian.patch.yml</code> 的解析器；每种一份 JSON Schema 2020-12 + 语义校验（<code>allowed-tools</code> 存在、hooks 引用的事件 / 能力存在、MCP 服务器名唯一、内联 shell 仅限人类 CLI 侧）；错误 = <code>ErrorDetail</code> + 文件路径 + 行号 + JSON Pointer；.NET 与 TS 跑同一组 fixture，供 <code>qian doctor</code>、CI、市场准入与 S4 共用。S1-M1 交付项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：校验器对 20 个坏样例（缺 front matter 字段、<code>allowed-tools</code> 引用不存在的工具、hooks 引用不存在的事件或能力、<code>.mcp.json</code> 格式错、<code>commands/</code> 内联 shell 出现在服务端 hook）逐一返回带文件路径与 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：五种表面各自的 JSON Schema 2020-12 与 fixture 在 .NET 与 TS 两侧结果一致</li>\n<li class='chk'><span class='box'></span>UT：<code>plugin.json</code> 的表面指针缺省指向约定目录、可覆盖；无 <code>src/</code> 的 skill-only 组件可被解析</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0：tool/v2 Schema 应 $ref capability-entry.schema.json 的 $defs；校验器错误按 ErrorDetail 的 pointer 形式（&lt;文件&gt;#/&lt;pointer&gt;）</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.6 / D20.9：<code>skills/&lt;name&gt;/SKILL.md</code>、<code>agents/&lt;name&gt;.md</code>、<code>commands/&lt;name&gt;.md</code>、<code>hooks/hooks.json</code>、<code>.mcp.json</code> 五种表面加 <code>tools/</code>、<code>config/qian.patch.yml</code> 的解析器；每种一份 JSON Schema 2020-12 + 语义校验（<code>allowed-tools</code> 存在、hooks 引用的事件 / 能力存在、MCP 服务器名唯一、内联 shell 仅限人类 CLI 侧）；错误 = <code>ErrorDetail</code> + 文件路径 + 行号 + JSON Pointer；.NET 与 TS 跑同一组 fixture，供 <code>qian doctor</code>、CI、市场准入与 S4 共用。S1-M1 交付项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：校验器对 20 个坏样例（缺 front matter 字段、<code>allowed-tools</code> 引用不存在的工具、hooks 引用不存在的事件或能力、<code>.mcp.json</code> 格式错、<code>commands/</code> 内联 shell 出现在服务端 hook）逐一返回带文件路径与 JSON Pointer 的结构化错误</li>\n<li class='chk done'><span class='box'>✓</span>UT：五种表面各自的 JSON Schema 2020-12 与 fixture 在 .NET 与 TS 两侧结果一致</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>plugin.json</code> 的表面指针缺省指向约定目录、可覆盖；无 <code>src/</code> 的 skill-only 组件可被解析</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0：tool/v2 Schema 应 $ref capability-entry.schema.json 的 $defs；校验器错误按 ErrorDetail 的 pointer 形式（&lt;文件&gt;#/&lt;pointer&gt;）</li>\n<li>2026-10-09 cody：开始：按同一Schema和fixture实现.NET/TS表面校验与错误定位，再供profile装载器复用。</li>\n<li>2026-10-09 cody：三项验收完成：37个共同场景（30个反例）在.NET/TS解析文档与诊断完全一致；包含独立JCS和YAML数值向量。无src组件与自定义指针通过，租户A/B可见性及卸载撤销通过；.NET全量228通过，TS测试/API门禁通过，CI已接入双侧比较。</li>\n</ul>",
   "file": "pm/tasks/S1-RT-008.md"
  },
  {
