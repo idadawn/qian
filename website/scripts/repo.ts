@@ -11,8 +11,11 @@ export const WEBSITE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.
 export const REPO_ROOT = path.resolve(WEBSITE_ROOT, '..');
 export const SITE_DOCS = path.join(WEBSITE_ROOT, 'docs');
 
-/** 由脚本生成、整目录不进 Git 的部分（docs-site.md §7：生成目录不接受手改）。 */
-export const GENERATED_PARTS = ['components', 'cli', 'design'] as const;
+/**
+ * 由脚本生成、不进 Git 的目录（docs-site.md §7：生成目录不接受手改）。sdk/kun 里唯一的手写页 with-qian.mdx 进 Git，
+ * 生成时保留（见 writeGenerated 的 keep）。
+ */
+export const GENERATED_PARTS = ['components', 'cli', 'design', 'sdk/kun', 'sdk/api'] as const;
 export type GeneratedPart = (typeof GENERATED_PARTS)[number];
 
 export interface GeneratedFile {
@@ -28,17 +31,25 @@ export interface WriteResult {
 }
 
 /**
- * 把一组文件写进 website/docs/<part>/：内容没变的不重写，目录里多出来的旧文件删掉。
+ * 把一组文件写进 website/docs/<part>/：内容没变的不重写，目录里多出来的旧文件删掉（keep 里的手写文件除外）。
  * 只重写变化的文件，dev 服务器监听到的就只有真实变化，不会因为重新生成而反复重启。
  */
-export function writeGenerated(part: GeneratedPart, files: GeneratedFile[], siteDocs: string = SITE_DOCS): WriteResult {
+export function writeGenerated(
+  part: GeneratedPart,
+  files: GeneratedFile[],
+  siteDocs: string = SITE_DOCS,
+  keep: readonly string[] = [],
+): WriteResult {
   const dir = path.join(siteDocs, part);
   const result: WriteResult = { written: [], removed: [], unchanged: 0 };
-  const wanted = new Set<string>();
+  const wanted = new Set<string>(keep);
   for (const file of files) {
     const rel = toPosix(file.path);
     if (rel.startsWith('/') || rel.split('/').includes('..')) {
       throw new Error(`生成文件路径越界：${file.path}`);
+    }
+    if (keep.includes(rel)) {
+      throw new Error(`生成文件会覆盖手写文件：${part}/${rel}`);
     }
     if (wanted.has(rel)) {
       throw new Error(`生成文件重复：${part}/${rel}`);

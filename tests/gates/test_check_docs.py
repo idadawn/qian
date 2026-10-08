@@ -2,12 +2,14 @@
 
 运行：python3 -m unittest discover -s tests/gates -v
 在临时目录里搭一个最小仓库（docs/、website/docs、生成器源码），断言站内路由、镜像路由、生成页路由的解析，
-以及生成目录被跳过、禁用词在 .mdx 与站点源码里同样生效。只依赖标准库。
+以及生成目录被跳过、禁用词在 .mdx 与站点源码里同样生效；S1-DOCS-005 起另测 Kun 小节（镜像页、延后解析的路由、
+进了 Git 的生成文件）与禁用词的整词匹配。只依赖标准库。
 """
 from __future__ import annotations
 
 import importlib.util
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -84,6 +86,46 @@ class SiteContentTests(unittest.TestCase):
         source = self.tmp / "website/theme/Home.tsx"
         write(source, f"const title = '{BANNED_WORD}';\n")
         self.assertTrue(any("禁用关键字" in e for e in check_docs.check_source(source)))
+
+    def test_banned_word_matches_whole_word_only(self) -> None:
+        # Kun 的英文文档里有 prefixing、Mixing 这类单词，不能误判（S1-DOCS-005）
+        for ok in ["prefi" + BANNED_WORD, "Mi" + BANNED_WORD + " it", "fi" + BANNED_WORD + "es"]:
+            self.assertIsNone(check_docs.BANNED.search(ok), ok)
+        for bad in [BANNED_WORD.capitalize(), BANNED_WORD + "项目", f"({BANNED_WORD})", f"仓库 {BANNED_WORD}/docs"]:
+            self.assertIsNotNone(check_docs.BANNED.search(bad), bad)
+
+    def test_kun_mirror_skipped_by_default_but_checked_explicitly(self) -> None:
+        kun = self.tmp / "website/docs/sdk/kun"
+        write(kun / "guides/x.md", f"# {BANNED_WORD}\n")
+        write(kun / "with-qian.mdx", "# 与 Qian 的关系\n")
+        write(self.tmp / "website/docs/sdk/api/kun/index.md", "# API\n")
+        default = {f.relative_to(self.tmp).as_posix() for f in check_docs.md_files(["website/docs"])}
+        self.assertNotIn("website/docs/sdk/kun/guides/x.md", default)
+        self.assertNotIn("website/docs/sdk/api/kun/index.md", default)
+        self.assertIn("website/docs/sdk/kun/with-qian.mdx", default)
+        explicit = {f.relative_to(self.tmp).as_posix() for f in check_docs.md_files(["website/docs/sdk/kun"])}
+        self.assertIn("website/docs/sdk/kun/guides/x.md", explicit)
+
+    def test_kun_routes_deferred_until_generated(self) -> None:
+        # 还没生成：Kun 小节与 API 参考的路由交给构建时的断链检查，唯一的手写页仍要真实存在
+        self.assertEqual(self.errors_for(["/sdk/kun/guides/anything", "/sdk/api/kun/x/y"]), [])
+        self.assertEqual(len(self.errors_for(["/sdk/kun/with-qian"])), 1)
+        write(self.tmp / "website/docs/sdk/kun/with-qian.mdx", "# 与 Qian 的关系\n")
+        self.assertEqual(self.errors_for(["/sdk/kun/with-qian"]), [])
+        # 生成之后按磁盘上的页面解析
+        write(self.tmp / "website/docs/sdk/kun/_meta.json", "[]\n")
+        write(self.tmp / "website/docs/sdk/kun/guides/real.md", "# 指南\n")
+        self.assertEqual(self.errors_for(["/sdk/kun/guides/real"]), [])
+        self.assertEqual(len(self.errors_for(["/sdk/kun/guides/anything"])), 1)
+
+    def test_tracked_generated_files_fail(self) -> None:
+        if shutil.which("git") is None:
+            self.skipTest("需要 git")
+        write(self.tmp / "website/docs/sdk/kun/with-qian.mdx", "# 与 Qian 的关系\n")
+        write(self.tmp / "website/docs/sdk/kun/guides/x.md", "# 手改的镜像页\n")
+        subprocess.run(["git", "init", "-q", str(self.tmp)], check=True)
+        subprocess.run(["git", "-C", str(self.tmp), "add", "-f", "website"], check=True)
+        self.assertEqual(check_docs.tracked_generated(), ["website/docs/sdk/kun/guides/x.md"])
 
 
 if __name__ == "__main__":

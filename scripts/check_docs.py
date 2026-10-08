@@ -6,19 +6,24 @@
 文档站（website/docs，.md 与 .mdx）同样受检，链接按站内路由解析：
 - 「/start/hosts」这类绝对路由对应 website/docs 下的页面（x.md、x.mdx 或 x/index.md(x)）或 public/ 下的文件；
 - 「/design/…」对应仓库 docs/ 的镜像页（小写短横线，README → index）；
-- 「/cli/…」「/components/…」对应构建前生成的页面，页面清单取自 website/scripts 的生成器。
-生成目录 website/docs/{components,cli,design} 不进 Git，不在这里检查；它们的源（docs/ 等）照常检查，
-生成后的链接由 Rspress 构建时的断链检查把关。
+- 「/cli/…」「/components/…」对应构建前生成的页面，页面清单取自 website/scripts 的生成器；
+- 「/sdk/kun/…」「/sdk/api/…」是 Kun 小节与 API 参考（docs-site.md §2b），已生成时按磁盘上的页面解析，
+  未生成时（本检查不跑生成器）交给 Rspress 构建时的断链检查。
+生成目录 website/docs/{components,cli,design,sdk/kun,sdk/api} 不进 Git（sdk/kun/with-qian.mdx 是手写页，照常检查），
+默认不在这里检查；它们的源（docs/ 等）照常检查。生成目录里出现进了 Git 的文件即失败（生成目录不接受手改）。
+Kun 小节是 kun 仓库文档的镜像，源不在本仓库：CI 生成后显式检查它，如 python3 scripts/check_docs.py website/docs/sdk/kun。
 """
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BANNED = re.compile(r"jnpf|引迈|xing", re.I)
+# 已作废项目的名字按整词匹配：前后不能紧挨英文字母，避免误伤 prefixing、mixing 这类英文单词
+BANNED = re.compile(r"jnpf|引迈|(?<![a-z])xing(?![a-z])", re.I)
 # 对标项目只能写「对标项目」，不写名字（ADR-020 §8）
 REFERENCE_NAMES = re.compile(r"claude-code-templates|deepseek|openai/plugins|aitmpl|davila7|codex-plugin", re.I)
 
@@ -40,16 +45,34 @@ SITE_SOURCE_TARGETS = ["website/theme", "website/scripts", "website/rspress.conf
 SITE_SOURCE_SUFFIXES = {".ts", ".tsx", ".css", ".json"}
 
 SITE_DOCS = ROOT / "website" / "docs"
-SITE_GENERATED = {"components", "cli", "design"}
+# 生成目录（相对 website/docs），与 website/scripts/repo.ts 的 GENERATED_PARTS 一致；手写例外单独列出
+SITE_GENERATED = ("components", "cli", "design", "sdk/kun", "sdk/api")
+SITE_HANDWRITTEN = {"sdk/kun/with-qian.mdx"}
 PAGE_SUFFIXES = (".md", ".mdx")
 
 
-def is_generated(path: Path) -> bool:
+def generated_part(path: Path) -> str | None:
+    """path 所在的生成目录（相对 website/docs）；不在生成目录里或是手写例外时返回 None。"""
     try:
-        rel = path.relative_to(SITE_DOCS)
+        rel = path.relative_to(SITE_DOCS).as_posix()
+    except ValueError:
+        return None
+    if rel in SITE_HANDWRITTEN:
+        return None
+    return next((part for part in SITE_GENERATED if rel.startswith(part + "/")), None)
+
+
+def is_generated(path: Path) -> bool:
+    return generated_part(path) is not None
+
+
+def in_generated_dir(path: Path) -> bool:
+    """path 本身是生成目录或在生成目录里（显式点名生成目录时用）。"""
+    try:
+        rel = path.relative_to(SITE_DOCS).as_posix()
     except ValueError:
         return False
-    return len(rel.parts) > 1 and rel.parts[0] in SITE_GENERATED
+    return any(rel == part or rel.startswith(part + "/") for part in SITE_GENERATED)
 
 
 def is_site_page(path: Path) -> bool:
@@ -57,18 +80,32 @@ def is_site_page(path: Path) -> bool:
 
 
 def md_files(args: list[str]) -> list[Path]:
+    """默认目标跳过生成目录；显式给出的路径连同其中的生成页一起检查（CI 用它检查 Kun 镜像页）。"""
     targets = args or DEFAULT_TARGETS
     out: list[Path] = []
     for t in targets:
         p = ROOT / t
+        explicit_generated = bool(args) and in_generated_dir(p)
         if p.is_dir():
             out += sorted(
                 f for f in p.rglob("*")
-                if f.suffix in PAGE_SUFFIXES and "node_modules" not in f.parts and not is_generated(f)
+                if f.suffix in PAGE_SUFFIXES and "node_modules" not in f.parts
+                and (explicit_generated or not is_generated(f))
             )
         elif p.exists():
             out.append(p)
     return out
+
+
+def tracked_generated() -> list[str]:
+    """生成目录里进了 Git 的文件（手写例外除外）。不在 git 仓库里时返回空。"""
+    dirs = [f"website/docs/{part}" for part in SITE_GENERATED]
+    try:
+        out = subprocess.run(["git", "-C", str(ROOT), "ls-files", "--", *dirs],
+                             capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return []
+    return [f for f in out.splitlines() if f and f.removeprefix("website/docs/") not in SITE_HANDWRITTEN]
 
 
 def source_files() -> list[Path]:
@@ -116,6 +153,12 @@ def site_page_exists(base: Path) -> bool:
     return any(c.is_file() for c in candidates)
 
 
+def mirror_generated(part: str) -> bool:
+    """Kun 小节 / API 参考是否已在本机生成：生成器总会写出侧栏或落地页。"""
+    marker = {"sdk/kun": "_meta.json", "sdk/api": "index.md"}[part]
+    return (SITE_DOCS / part / marker).is_file()
+
+
 def route_exists(route: str) -> bool:
     if route.endswith(".html"):
         route = route[: -len(".html")]
@@ -123,6 +166,12 @@ def route_exists(route: str) -> bool:
         return route in design_routes()
     if route.startswith(("/cli/", "/components/")):
         return route in generated_routes()
+    for part in ("sdk/kun", "sdk/api"):
+        if route.startswith(f"/{part}/") and not mirror_generated(part):
+            rel = route.strip("/")
+            if any(rel == h.rsplit(".", 1)[0] for h in SITE_HANDWRITTEN):
+                return site_page_exists(SITE_DOCS / rel)
+            return True  # 还没生成：交给 Rspress 构建时的断链检查
     rel = route.strip("/")
     if rel == "":
         return site_page_exists(SITE_DOCS / "index")
@@ -194,7 +243,7 @@ def main() -> None:
     args = sys.argv[1:]
     files = md_files(args)
     sources = [] if args else source_files()
-    errs: list[str] = []
+    errs: list[str] = [f"{f}: 生成目录里的文件不能进 Git（生成目录不接受手改，改它的源）" for f in tracked_generated()]
     for f in files:
         errs += check(f)
     for f in sources:

@@ -16,7 +16,7 @@ refs:
   - docs/prd/specs/component-model.md#2
   - docs/adr/ADR-013-frontend-yue.md#D13.18
   - docs/prd/07-s1-foundation.md#7.2.2
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 ## 背景
@@ -35,3 +35,4 @@ updated: 2026-10-07
 
 - 2026-10-07 claude：创建任务
 - 2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收
+- 2026-10-08 claude：S1-DOCS-005 已搭好 DocFX 流水线（website/scripts/build-kun-api.ts：隔离目录构建、docfx metadata 输出 Markdown、xref 改写为站内路由与锚点），Qian.* 的 API 参考可复用；/sdk/api/index.md 落地页已为 dotnet/、frontend/ 留行。路径注意：本任务验收写 /api/dotnet/，docs-site.md §2b.2 与 §6 写 /sdk/api/dotnet/，落地页暂按后者
