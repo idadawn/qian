@@ -1,13 +1,13 @@
 ---
 id: S1-DOCS-003
 title: llms 输出、页面元数据规范与知识库导入契约
-status: todo
+status: doing
 stage: S1
 area: DOCS
 wave: 3
 priority: P0
 type: feature
-owner: ""
+owner: "claude"
 estimate: 2d
 depends: [S1-DOCS-001]
 refs:
@@ -15,7 +15,7 @@ refs:
   - docs/adr/ADR-013-frontend-yue.md#D13.18
   - docs/adr/ADR-020-component-model-v2.md#D20.9
   - docs/prd/10-s4-agent.md#10.1
-updated: 2026-10-07
+updated: 2026-10-09
 ---
 
 ## 背景
@@ -34,3 +34,4 @@ updated: 2026-10-07
 
 - 2026-10-07 claude：创建任务
 - 2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收
+- 2026-10-09 someone：开始；产品负责人 2026-10-09 让 Claude 自选任务，选定 DOCS 领域：S1-DOCS-003 → S1-DOCS-006，之后 S1-YUE-003
