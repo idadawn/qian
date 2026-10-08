@@ -160,7 +160,6 @@
   ],
   "blockedBy": [
    "S1-KUN-005",
-   "S1-RT-001",
    "S1-DATA-001"
   ],
   "order": 2,
@@ -249,7 +248,6 @@
    "S1-EVT-002"
   ],
   "blockedBy": [
-   "S1-RT-001",
    "S1-TEN-001",
    "S1-EVT-002"
   ],
@@ -333,8 +331,7 @@
    "S1-AGT-001"
   ],
   "blockedBy": [
-   "S1-KUN-006",
-   "S1-RT-001"
+   "S1-KUN-006"
   ],
   "order": 1,
   "readyNow": false,
@@ -607,8 +604,7 @@
    "S1-RT-001"
   ],
   "blockedBy": [
-   "S1-KUN-006",
-   "S1-RT-001"
+   "S1-KUN-006"
   ],
   "order": 1,
   "readyNow": false,
@@ -779,8 +775,7 @@
   ],
   "blockedBy": [
    "S1-KUN-001",
-   "S1-KUN-005",
-   "S1-RT-001"
+   "S1-KUN-005"
   ],
   "order": 1,
   "readyNow": false,
@@ -1432,7 +1427,7 @@
    "S1-RT-002",
    "S1-DEP-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -1981,7 +1976,6 @@
   ],
   "blockedBy": [
    "S1-KUN-002",
-   "S1-RT-001",
    "S1-DATA-001"
   ],
   "order": 2,
@@ -2120,7 +2114,6 @@
    "S1-KUN-006"
   ],
   "blockedBy": [
-   "S1-RT-001",
    "S1-TEN-004",
    "S1-AZ-004",
    "S1-AUD-001",
@@ -2399,11 +2392,9 @@
    "S1-RT-001",
    "S1-AGT-001"
   ],
-  "blockedBy": [
-   "S1-RT-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -3129,7 +3120,6 @@
    "S1-TEN-001"
   ],
   "blockedBy": [
-   "S1-RT-001",
    "S1-CFG-002",
    "S1-TEN-001"
   ],
@@ -3462,9 +3452,7 @@
   "depends": [
    "S1-RT-001"
   ],
-  "blockedBy": [
-   "S1-RT-001"
-  ],
+  "blockedBy": [],
   "order": -1,
   "readyNow": false,
   "refs": [
@@ -3508,10 +3496,9 @@
    "S1-QA-001"
   ],
   "blockedBy": [
-   "S1-RT-001",
    "S1-RT-002"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -3855,7 +3842,7 @@
  {
   "id": "S1-RT-001",
   "title": "Qian.Runtime 最小运行时：ctx、五种分发、Effect、scope",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
@@ -3867,7 +3854,7 @@
   "days": 8.0,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -3892,7 +3879,7 @@
    "done": 7,
    "total": 7
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.1–D20.5 的 .NET 落地：按规格 §5.2 实现 <code>IQianPlugin { Inject; ApplyAsync }</code>、<code>IPluginContext</code>（<code>Inject / TryInject / WhenReadyAsync / Provide / On / DispatchAsync / Effect / Scoped / Restrict / List</code>）、按 <code>inject[]</code> / <code>provides[]</code> 拓扑排序的装载器、可逆副作用逆序撤销、scope 两层扁平（<code>tenant:</code> / <code>app:</code> / <code>agent-session:</code>）与遮蔽 / <code>restrict</code> 交集。组件库唯一必需依赖，一切组件任务的前置，第 1 波首项。仅实现 .NET 侧；语言无关场景位于 <code>tck/runtime/</code>，TS harness 与完整套件由 S1-RT-003 / S1-QA-002 接续。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>TCK：<code>Inject</code> 的服务键无人提供 → 启动失败并指出缺失键与请求方；依赖成环 → 结构化错误列出环路</li>\n<li class='chk done'><span class='box'>✓</span>TCK：<code>Apply</code> 中注册的全部 effect 在卸载时按逆序撤销，卸载后服务容器中无残留</li>\n<li class='chk done'><span class='box'>✓</span>TCK：五种分发模式各一组用例——<code>waterfall</code> 监听器不调用 <code>next()</code> 时下游不执行；<code>bail</code> 停在首个返回值；<code>parallel</code> 任一失败不影响其余</li>\n<li class='chk done'><span class='box'>✓</span>TCK：租户 A scope 注册同名服务后，A 内解析到遮蔽项，B 与全局不受影响；两条 restriction 的交集生效；被过滤项在目录与执行两处都「不存在」</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Runtime</code> 只依赖 <code>Kun.Core</code>、<code>Kun.Mediator</code>、.NET DI 与已有的 <code>Qian.Runtime.Errors</code>，无业务语义；不引用 <code>Kun.Validation</code></li>\n<li class='chk done'><span class='box'>✓</span><code>Kun.*</code> 的 PackageVersion 一律引用 <code>$(KunVersion)</code>（属性若尚不存在则在本任务加入），<code>NuGet.config</code> 用 packageSourceMapping 把 <code>Kun.*</code> 映射到 nuget.org；Kun 正式版从 nuget.org 还原，只有需要 Kun 预发布版时才加 GitHub Packages 源（ADR-021 D21.3）</li>\n<li class='chk done'><span class='box'>✓</span>Kun <code>Error</code> → <code>QianError</code> 放在 <code>Qian.Runtime</code>，<code>ValidationException.Errors</code> → <code>errors[]</code> 放在 <code>Qian.Runtime.Errors.AspNetCore</code>（只有它引用 <code>Kun.Validation</code>）；保持 ErrorDetail 封闭，按平台内置码映射（contracts/v0/README.md §3.7 / R48），上游 KunExceptionHandler 修正由 S1-KUN-006 负责</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：验收补一条 <code>KunVersion</code> 单点钉版（ADR-021 D21.3）</li>\n<li>2026-10-08 claude：验收补一条 Kun 错误桥接（随首个引用 Kun.* 包的任务，contracts/v0/README.md §3.7）</li>\n<li>2026-10-08 someone：开始</li>\n<li>2026-10-08 someone：装载器与 Inject 已实现：T01、T02 与缺失键 YAML 场景通过；启动错误使用 qian.runtime 内置码，已按 QIAN_UPDATE_CONTRACTS=1 更新目录。</li>\n<li>2026-10-08 someone：Effect 同步/异步逆序撤销、失败回滚、级联卸载与恢复已覆盖；手动撤销可用 WhenIdleAsync 等待异步清理。</li>\n<li>2026-10-08 someone：五种分发及其异常/顺序语义已实现：T05–T11 YAML 场景、真实并发、空结果与事件重名测试通过。</li>\n<li>2026-10-08 someone：scope 遮蔽、restriction 交集、目录/执行不可区分、无继承、跨 scope 事件与具名 seam 已通过；含依赖重绑定共 29 个运行时测试。</li>\n<li>2026-10-08 someone：Kun.Core / Kun.Mediator 2026.9.13 已在 nuget.org 正式发布，ubuntu-latest 无 GitHub Packages 凭据，因此按任务指示改为正式版映射到 nuget.org，仅预发布版才另加 GitHub 源；复用 main 的 KunVersion。两处错误桥接与依赖边界测试通过，全新缓存还原成功。</li>\n<li>2026-10-08 someone：本地验收：构建零警告零错误，依赖图通过，19 个门禁自测通过，整套 .NET 219 个测试通过且零跳过（Runtime 41、Errors 157、容器 21）。本机 127.0.0.1 被其它 HTTP 路径拦截，容器测试指定 TESTCONTAINERS_HOST_OVERRIDE=localhost 并设置回环 NO_PROXY 后通过；未改夹具。补充异步 Apply 取消回滚、类型化配置、restriction 异常隔离与 Pending 诊断。</li>\n<li>2026-10-08 someone：完成 .NET 最小运行时、19 个语言无关场景、Kun 错误桥接与 nuget.org 包源，七项验收全部通过，提交 PR 评审。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.1–D20.5 的 .NET 落地：按规格 §5.2 实现 <code>IQianPlugin { Inject; ApplyAsync }</code>、<code>IPluginContext</code>（<code>Inject / TryInject / WhenReadyAsync / Provide / On / DispatchAsync / Effect / Scoped / Restrict / List</code>）、按 <code>inject[]</code> / <code>provides[]</code> 拓扑排序的装载器、可逆副作用逆序撤销、scope 两层扁平（<code>tenant:</code> / <code>app:</code> / <code>agent-session:</code>）与遮蔽 / <code>restrict</code> 交集。组件库唯一必需依赖，一切组件任务的前置，第 1 波首项。仅实现 .NET 侧；语言无关场景位于 <code>tck/runtime/</code>，TS harness 与完整套件由 S1-RT-003 / S1-QA-002 接续。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>TCK：<code>Inject</code> 的服务键无人提供 → 启动失败并指出缺失键与请求方；依赖成环 → 结构化错误列出环路</li>\n<li class='chk done'><span class='box'>✓</span>TCK：<code>Apply</code> 中注册的全部 effect 在卸载时按逆序撤销，卸载后服务容器中无残留</li>\n<li class='chk done'><span class='box'>✓</span>TCK：五种分发模式各一组用例——<code>waterfall</code> 监听器不调用 <code>next()</code> 时下游不执行；<code>bail</code> 停在首个返回值；<code>parallel</code> 任一失败不影响其余</li>\n<li class='chk done'><span class='box'>✓</span>TCK：租户 A scope 注册同名服务后，A 内解析到遮蔽项，B 与全局不受影响；两条 restriction 的交集生效；被过滤项在目录与执行两处都「不存在」</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Runtime</code> 只依赖 <code>Kun.Core</code>、<code>Kun.Mediator</code>、.NET DI 与已有的 <code>Qian.Runtime.Errors</code>，无业务语义；不引用 <code>Kun.Validation</code></li>\n<li class='chk done'><span class='box'>✓</span><code>Kun.*</code> 的 PackageVersion 一律引用 <code>$(KunVersion)</code>（属性若尚不存在则在本任务加入），<code>NuGet.config</code> 用 packageSourceMapping 把 <code>Kun.*</code> 映射到 nuget.org；Kun 正式版从 nuget.org 还原，只有需要 Kun 预发布版时才加 GitHub Packages 源（ADR-021 D21.3）</li>\n<li class='chk done'><span class='box'>✓</span>Kun <code>Error</code> → <code>QianError</code> 放在 <code>Qian.Runtime</code>，<code>ValidationException.Errors</code> → <code>errors[]</code> 放在 <code>Qian.Runtime.Errors.AspNetCore</code>（只有它引用 <code>Kun.Validation</code>）；保持 ErrorDetail 封闭，按平台内置码映射（contracts/v0/README.md §3.7 / R48），上游 KunExceptionHandler 修正由 S1-KUN-006 负责</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：验收补一条 <code>KunVersion</code> 单点钉版（ADR-021 D21.3）</li>\n<li>2026-10-08 claude：验收补一条 Kun 错误桥接（随首个引用 Kun.* 包的任务，contracts/v0/README.md §3.7）</li>\n<li>2026-10-08 someone：开始</li>\n<li>2026-10-08 someone：装载器与 Inject 已实现：T01、T02 与缺失键 YAML 场景通过；启动错误使用 qian.runtime 内置码，已按 QIAN_UPDATE_CONTRACTS=1 更新目录。</li>\n<li>2026-10-08 someone：Effect 同步/异步逆序撤销、失败回滚、级联卸载与恢复已覆盖；手动撤销可用 WhenIdleAsync 等待异步清理。</li>\n<li>2026-10-08 someone：五种分发及其异常/顺序语义已实现：T05–T11 YAML 场景、真实并发、空结果与事件重名测试通过。</li>\n<li>2026-10-08 someone：scope 遮蔽、restriction 交集、目录/执行不可区分、无继承、跨 scope 事件与具名 seam 已通过；含依赖重绑定共 29 个运行时测试。</li>\n<li>2026-10-08 someone：Kun.Core / Kun.Mediator 2026.9.13 已在 nuget.org 正式发布，ubuntu-latest 无 GitHub Packages 凭据，因此按任务指示改为正式版映射到 nuget.org，仅预发布版才另加 GitHub 源；复用 main 的 KunVersion。两处错误桥接与依赖边界测试通过，全新缓存还原成功。</li>\n<li>2026-10-08 someone：本地验收：构建零警告零错误，依赖图通过，19 个门禁自测通过，整套 .NET 219 个测试通过且零跳过（Runtime 41、Errors 157、容器 21）。本机 127.0.0.1 被其它 HTTP 路径拦截，容器测试指定 TESTCONTAINERS_HOST_OVERRIDE=localhost 并设置回环 NO_PROXY 后通过；未改夹具。补充异步 Apply 取消回滚、类型化配置、restriction 异常隔离与 Pending 诊断。</li>\n<li>2026-10-08 someone：完成 .NET 最小运行时、19 个语言无关场景、Kun 错误桥接与 nuget.org 包源，七项验收全部通过，提交 PR 评审。</li>\n<li>2026-10-08 claude：PR #5 已由产品负责人合并（5788415，2026-10-08 04:16Z）。复核：main 上构建零警告、Runtime 41 + Errors 157 + 容器 21 = 219 测试通过，check_deps / check_docs / pm validate 与门禁自测通过；Contracts.cs 与规格 §5.2 对齐，T01–T14、T21、T22、T24 场景文件就位，Kun.* 钉 $(KunVersion) 且映射 nuget.org。备注：Qian.Runtime.csproj 引用 Kun.Mediator 但源码尚未使用（进程内事件直接分发，跨进程桥接归 qian.events）；Inject(key) 抛 ServiceNotReadyException、Inject(key, name) 抛 QianErrorException，两者都携带 NOT_FOUND。→ done</li>\n</ul>",
   "file": "pm/tasks/S1-RT-001.md"
  },
  {
@@ -3911,11 +3898,9 @@
   "depends": [
    "S1-RT-001"
   ],
-  "blockedBy": [
-   "S1-RT-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3955,11 +3940,9 @@
    "S1-RT-001",
    "S1-DEC-001"
   ],
-  "blockedBy": [
-   "S1-RT-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -4003,7 +3986,6 @@
    "S1-DEC-010"
   ],
   "blockedBy": [
-   "S1-RT-001",
    "S1-RT-002",
    "S1-DATA-001"
   ],
@@ -4187,11 +4169,9 @@
    "S1-RT-001",
    "S1-DEC-002"
   ],
-  "blockedBy": [
-   "S1-RT-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.2",
@@ -4289,10 +4269,9 @@
    "S1-RT-002"
   ],
   "blockedBy": [
-   "S1-RT-001",
    "S1-RT-002"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -4340,7 +4319,7 @@
    "S1-RT-008",
    "S1-RT-016"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -4384,7 +4363,7 @@
   "blockedBy": [
    "S1-RT-011"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4473,7 +4452,6 @@
    "S1-RT-004"
   ],
   "blockedBy": [
-   "S1-RT-001",
    "S1-RT-004"
   ],
   "order": 3,
@@ -4565,7 +4543,7 @@
   "blockedBy": [
    "S1-RT-008"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -4614,7 +4592,7 @@
    "S1-RT-011",
    "S1-RT-012"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -4662,7 +4640,6 @@
   ],
   "blockedBy": [
    "S1-DATA-001",
-   "S1-RT-001",
    "S1-TEN-001"
   ],
   "order": 3,
@@ -4793,7 +4770,6 @@
   ],
   "blockedBy": [
    "S1-KUN-001",
-   "S1-RT-001",
    "S1-DATA-001"
   ],
   "order": 2,
