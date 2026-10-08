@@ -22,7 +22,7 @@ PR / main 的 CI ──构建──> 推到 docs-site 分支 ──git-sync 每 
 | `service.yaml`、`ingress.yaml` | LoadBalancer（MetalLB 固定 192.168.1.211）+ 固定 NodePort 30820；Traefik Ingress 域名占位 `qian-docs.deepsingularity.cn` |
 | `networkpolicy.yaml` | 只放行入站 8080 与出站 DNS / 22 / 443 |
 | `publish.sh` | 把构建产物发布到 `docs-site` 分支（CI 调用，本机也能用） |
-| `argocd-application.example.yaml` | 交给 Argo CD 托管时用，放进部署仓库 `env-ds/argocd/` |
+| `argocd-application.example.yaml` | Argo CD Application 的样例；实际生效的是部署仓库的 `env-ds/argocd/qian-docs-site-application.yaml` |
 
 ## 访问入口
 
@@ -64,5 +64,5 @@ PR 预览要用对应的前缀构建：`DOCS_BASE=/pr-preview/pr-<n>/ pnpm --fil
 
 ## 之后
 
-- 交给 Argo CD：复制 `argocd-application.example.yaml` 到部署仓库 `env-ds/argocd/` 并加入其 kustomization；仓库凭据沿用看板的 `argocd/qian-repo-ssh`。此后清单改动随 `main` 自动同步。
-- 每个预览约 57 MB（gzip 后约 11 MB；S1-DOCS-005 加入 Kun 小节与 Kun API 参考前约 17 MB），`docs-site` 分支随打开的 PR 数增长；PR 关闭即删除。
+- 已交给 Argo CD（2026-10-08，idadawn/iclaw-deploy PR #87）：部署仓库 `env-ds/argocd/` 下的 Application `qian-docs-site` 由 `platform-apps` 纳管，跟踪本仓库 `main` 的 `deploy/docs-site`（自动同步，`selfHeal: true`，`prune: false`），仓库凭据沿用看板的 `argocd/qian-repo-ssh`。此后清单改动合并到 `main` 即自动同步，不再手动 `kubectl apply`；上面「首次部署」一节只在重建集群时用。
+- 每个预览约 48 MB（gzip 后约 10 MB，nginx 已开 gzip；S1-DOCS-005 加入 Kun 小节与 Kun API 参考前约 17 MB），`docs-site` 分支随打开的 PR 数增长；PR 关闭即删除。产物检查有 100 MB 的总预算（R55）。

@@ -7,6 +7,7 @@ import { splitFrontmatter } from './repo.ts';
 import {
   escapeStrayTags,
   firstParagraph,
+  kunLabel,
   kunPagePath,
   kunRoute,
   kunSlug,
@@ -62,6 +63,7 @@ function fixture(): string {
         'README.md': README,
         'docs/architecture/ADR-003-Kun.Audit-module.md': ADR,
         'docs/architecture/why-outbox.md': '# Why Outbox\n\nBecause dual writes.\n',
+        'docs/architecture/adr-p2d-multitenancy.md': '# ADR: P2-D SaaS 多租户 3-策略架构\n\n**Status**: Accepted\n\n## Context\n\n共享库、独立 Schema、独立库三种隔离策略。\n',
         'docs/roadmap.md': '# Roadmap\n',
         'docs/AGENTS.md': '# 给代理\n',
         'docs/guides/AGENTS.md': '# 给代理\n',
@@ -112,8 +114,16 @@ describe('白名单、slug 与路由', () => {
     assert.equal(kunRoute('guides/tracing-tour.md'), '/sdk/kun/guides/tracing-tour');
   });
 
-  it('白名单外的文件不进站：路线图、差距分析、各级 AGENTS.md、小写 adr-', () => {
-    for (const file of ['docs/roadmap.md', 'docs/neuroagent-phase1-gap.md', 'docs/AGENTS.md', 'docs/guides/AGENTS.md', 'docs/architecture/adr-p2d-multitenancy.md', 'docs/architecture/AOT-audit-2026-04-23.md', 'src/Kun.Core/README.md']) {
+  it('Kun 的 ADR 文件名大小写都收（R58），侧栏名去掉冒号', () => {
+    assert.equal(kunPagePath('docs/architecture/adr-p2d-multitenancy.md'), 'architecture/adr-p2d-multitenancy.md');
+    assert.equal(kunPagePath('docs/architecture/ADR-S02-Kun.Sandbox-module.md'), 'architecture/adr-s02-kun-sandbox-module.md');
+    assert.equal(kunLabel('ADR-003: Introduce Kun.Audit Module'), 'ADR-003 Introduce Kun.Audit Module');
+    assert.equal(kunLabel('ADR: P2-D SaaS 多租户 3-策略架构'), 'ADR P2-D SaaS 多租户 3-策略架构');
+    assert.equal(kunLabel('Why Outbox'), 'Why Outbox');
+  });
+
+  it('白名单外的文件不进站：路线图、差距分析、AOT 审计、各级 AGENTS.md', () => {
+    for (const file of ['docs/roadmap.md', 'docs/neuroagent-phase1-gap.md', 'docs/AGENTS.md', 'docs/guides/AGENTS.md', 'docs/architecture/AGENTS.md', 'docs/architecture/AOT-audit-2026-04-23.md', 'src/Kun.Core/README.md']) {
       assert.equal(kunPagePath(file), null, file);
     }
   });
@@ -181,6 +191,7 @@ describe('同步样例 kun 仓库', () => {
         '_meta.json',
         'architecture/_meta.json',
         'architecture/adr-003-kun-audit-module.md',
+        'architecture/adr-p2d-multitenancy.md',
         'architecture/why-outbox.md',
         'guides/_meta.json',
         'guides/table.md',
@@ -204,6 +215,16 @@ describe('同步样例 kun 仓库', () => {
     assert.match(body, /\[与 Qian 的关系\]\(\/sdk\/kun\/with-qian\)/);
     assert.match(body, /Handlers return Result&lt;T>/);
     assert.match(body, /var r = Result<T>\.Ok\(\);/);
+    assert.match(byPath.get('architecture/adr-p2d-multitenancy.md') ?? '', /^description: "共享库、独立 Schema、独立库三种隔离策略。"$/m);
+    const architecture = JSON.parse(byPath.get('architecture/_meta.json') ?? '[]') as { name: string; label: string }[];
+    assert.deepEqual(
+      architecture.map((i) => [i.name, i.label]),
+      [
+        ['why-outbox', 'Why Outbox'],
+        ['adr-003-kun-audit-module', 'ADR-003 Introduce Kun.Audit Module'],
+        ['adr-p2d-multitenancy', 'ADR P2-D SaaS 多租户 3-策略架构'],
+      ],
+    );
     assert.match(byPath.get('guides/table.md') ?? '', /^updated: 2026-09-13$/m);
     assert.equal(kunFileDate(kun, 'docs/guides/table.md'), '2026-09-13');
     assert.equal(result.warnings.length, 3, result.warnings.join('\n'));

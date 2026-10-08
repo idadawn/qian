@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <!--
-    Kun 版本单点（ADR-021 D21.3）：首个引用 Kun.* 的任务让全部 Kun.* 的 PackageVersion 引用 $(KunVersion)，
+    Kun 版本单点（ADR-021 D21.3）：全部 Kun.* 的 PackageVersion 引用 $(KunVersion)，
     升级 Kun 只改这一处；文档站的「Kun 框架」小节与 Kun API 参考按它镜像 kun 仓库 tag v$(KunVersion)（docs-site.md §2b）。
   -->
   <PropertyGroup Label="Kun">

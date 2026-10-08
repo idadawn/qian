@@ -97,8 +97,8 @@ website/
 - `design/`：`docs/` 下每个 `.md` 一页，文件名转小写、`README.md` 转 `index.md`（`docs/adr/ADR-015-model-gateway.md` → `/design/adr/adr-015-model-gateway`）。正文里指向 `docs/` 内的相对链接改写为站内路由，指向仓库其他位置的改写为 GitHub 地址；每页开头注明源文件。侧栏顺序与名称由脚本生成的 `_meta.json` 决定。
 - `cli/`：按 `component-model.md` 的二级标题拆页，标题整体升一级；章节与页面的对应写在 `CLI_PAGES`，规格改了章节编号要同步这里（找不到章节时构建失败）。
 - `components/`：S1-DOCS-002 之前仓库里还没有组件文件夹，脚本按 PRD §7 与组件模型规格 §7.7 的规划清单生成占位页，让首页与其他部分的链接有落点；S1-DOCS-002 把数据源换成各组件文件夹，页面改为 docs-site.md §3 的九节模板。
-- `sdk/kun/`（docs-site.md §2b、ADR-021）：读根目录 `Directory.Packages.props` 的 `KunVersion`（缺失、为空或不是 CalVer 都直接失败），从 kun 仓库的 tag `v<KunVersion>` 按白名单（`sync-kun-docs.ts` 的 `KUN_WHITELIST`，即 §2b.2 的表）取文件，`AGENTS.md`、`CLAUDE.md` 永不进站。**只镜像、不改写**：每页加镜像横幅（源文件与 tag、「Kun 文档与代码不一致处以代码为准」、改动提到 kun 仓库）与 frontmatter（`project: kun`、`source: idadawn/kun@v<版本>:<路径>`、`updated` 取源文件在该 tag 上的最后提交日期）；slug 一律小写、`.` 与空格转短横线；指向白名单内文件的相对链接改写为站内路由，其余改写为该 tag 的 GitHub 地址。为让 MDX 能编译只做两处机械处理并打警告：正文里不是 HTML 标签的尖括号（`Result<T>`）转义，列数不足的表格行补空单元格。侧栏顺序与名称写在脚本里（概览 → 与 Qian 的关系 → 上手 → 模块地图 → 指南 → 安全 → 设计说明与 ADR → 白皮书 → 变更日志与发布说明 → API 参考）。白名单要改，docs-site.md §2b.2 与脚本两处一起改。
-- `sdk/api/`：DocFX 从 nuget.org 上同版本的 `Kun.*` 包（tag 上 `src/<名>/<名>.csproj` 的全部项目）的 DLL 与 XML 注释生成 Markdown（`docfx metadata`，`outputFormat: markdown`），脚本再转成站内页面：每个命名空间一页、每个类型一页，xref 改写为站内路由与成员锚点，BCL 类型链到 learn.microsoft.com。DocFX 在 `website/.cache/kun-api/build` 的隔离目录里构建，用存根的 `Directory.Build.*` 与关掉中央包管理的 `Directory.Packages.props` 隔开仓库根的 .NET 构建基线（`NuGet.config` 与 `global.json` 仍用仓库根的）。API 页**不进侧栏**：Rspress 把整棵侧栏渲染进每一页，几百个类型进侧栏会让产物膨胀数倍；入口是 SDK 侧栏末尾的「API 参考」、Kun 小节概览与各页之间的链接。
+- `sdk/kun/`（docs-site.md §2b、ADR-021）：读根目录 `Directory.Packages.props` 的 `KunVersion`（缺失、为空或不是 CalVer 都直接失败），从 kun 仓库的 tag `v<KunVersion>` 按白名单（`sync-kun-docs.ts` 的 `KUN_WHITELIST`，即 §2b.2 的表）取文件（Kun 的 ADR 文件名大小写不统一，`ADR-*.md` 与 `adr-*.md` 都收，R58），`AGENTS.md`、`CLAUDE.md` 永不进站。**只镜像、不改写**：每页加镜像横幅（源文件与 tag、「Kun 文档与代码不一致处以代码为准」、改动提到 kun 仓库）与 frontmatter（`project: kun`、`source: idadawn/kun@v<版本>:<路径>`、`updated` 取源文件在该 tag 上的最后提交日期）；slug 一律小写、`.` 与空格转短横线；指向白名单内文件的相对链接改写为站内路由，其余改写为该 tag 的 GitHub 地址。为让 MDX 能编译只做两处机械处理并打警告：正文里不是 HTML 标签的尖括号（`Result<T>`）转义，列数不足的表格行补空单元格。上游问题只告警不失败，源头修复提到 kun 仓库（R59）。侧栏顺序与名称写在脚本里（概览 → 与 Qian 的关系 → 上手 → 模块地图 → 指南 → 安全 → 设计说明与 ADR → 白皮书 → 变更日志与发布说明 → API 参考）。白名单要改，docs-site.md §2b.2 与脚本两处一起改。
+- `sdk/api/`：DocFX 从 nuget.org 上同版本的 `Kun.*` 包（tag 上 `src/<名>/<名>.csproj` 的全部项目）的 DLL 与 XML 注释生成 Markdown（`docfx metadata`，`outputFormat: markdown`），脚本再转成站内页面：每个命名空间一页、每个类型一页，xref 改写为站内路由与成员锚点，BCL 类型链到 learn.microsoft.com。DocFX 在 `website/.cache/kun-api/build` 的隔离目录里构建，用存根的 `Directory.Build.*` 与关掉中央包管理的 `Directory.Packages.props` 隔开仓库根的 .NET 构建基线（`NuGet.config` 与 `global.json` 仍用仓库根的）。API 页**不进侧栏**，命名空间页与类型页也不渲染侧栏（frontmatter `sidebar: false`），只有 `/sdk/api/` 与 `/sdk/api/kun/` 两个概览页保留侧栏（R54）：Rspress 把整棵侧栏渲染进每一页，几百个类型进侧栏会让产物膨胀数倍；入口是 SDK 侧栏末尾的「API 参考」、Kun 小节概览与各页之间的链接。将来的 `Qian.*`、前端包与平台 HTTP API 的参考同样放在 `/sdk/api/` 下（R56）。
 - 只重写内容有变化的文件、删除多余的旧文件，`dev` 不会因重新生成而反复重启。
 
 **变更日志**：仓库 `docs/CHANGELOG.md` 是唯一来源，镜像为 `/design/changelog`；首页「最新动态」直接读它，取最近 4 条。每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明。
@@ -122,7 +122,7 @@ docs-site.md §5：第 2、3、4 部分随 Qian 包族的 SemVer 锁步版本多
 验收给了 Cloudflare Pages 与 K3s 静态托管两个选项，选 **K3s 静态托管**：仓库私有、文档面向内部团队，入口与任务看板一致（WireGuard 与公司内网），不需要外部账号与另一套访问控制。做法与 `deploy/pm-board` 相同，细节见 [deploy/docs-site/README.md](../deploy/docs-site/README.md)。
 
 - CI（`.github/workflows/docs-site.yml`）：PR 与 `main` 上类型检查、单测、构建（含断链检查）、产物检查、Kun 镜像页的文档门禁；同仓库分支的 PR 发布预览并在 PR 里留链接，合并到 `main` 后发布正式站点，PR 关闭后删除预览。只有改到 `website/`、`docs/`、依赖清单、`Directory.Packages.props`（`KunVersion`）、`deploy/docs-site/` 或该工作流时才触发。
-- CI 读 kun 仓库用**只读 deploy key**：私钥存在本仓库的 Actions Secret `KUN_DOCS_DEPLOY_KEY`，公钥加在 `idadawn/kun` 的 Deploy keys（不给写权限）。工作流按 `KunVersion` 检出 tag `v<KunVersion>` 的全部历史到 `.kun/`（镜像页的 `updated` 取每个文件的最后提交日期），检出后不保留凭据。Secret 缺失时构建直接失败；fork 来的 PR 与 Dependabot 拿不到 Actions Secret，它们的文档站构建也会失败（Dependabot 要用时在 Dependabot secrets 里再配一份）。由仓库管理员在本机执行一次：
+- CI 读 kun 仓库用**只读 deploy key**：私钥存在本仓库的 Actions Secret `KUN_DOCS_DEPLOY_KEY`，公钥加在 `idadawn/kun` 的 Deploy keys（不给写权限）。工作流按 `KunVersion` 检出 tag `v<KunVersion>` 的全部历史到 `.kun/`（镜像页的 `updated` 取每个文件的最后提交日期），检出后不保留凭据。Secret 缺失时构建直接失败；fork 来的 PR 与 Dependabot 拿不到 Actions Secret，文档站不在 fork 上构建，Dependabot 接入时在 Dependabot secrets 里再配一份（R60）。由仓库管理员在本机执行一次：
 
   ```bash
   ssh-keygen -t ed25519 -N '' -C 'qian docs-site CI (read-only)' -f kun-docs-key
@@ -141,8 +141,8 @@ docs-site.md §5：第 2、3、4 部分随 Qian 包族的 SemVer 锁步版本多
 | `scripts/check_docs.py` | 禁用词（整词匹配）、表格列数、链接；覆盖 `website/docs`（.md 与 .mdx）、本文件与 `AGENTS.md`，站点源码只查禁用词；站内路由、`/design/` 镜像路由与生成页路由都按规则解析，生成目录本身默认不查（它们的源已在查）；生成目录里的文件进了 Git 即失败。`/sdk/kun/`、`/sdk/api/` 下的路由在生成之前交给构建时的断链检查（手写页 `with-qian` 除外） | docs-and-pm 工作流 |
 | `scripts/check_docs.py website/docs/sdk/kun website/docs/sdk/api` | Kun 镜像页与 API 参考的源不在本仓库，构建后显式检查一遍（显式给出的生成目录照查） | docs-site 工作流 |
 | Rspress 断链检查 | 构建时检查全站（含生成页）的站内链接，断链即构建失败 | docs-site 工作流 |
-| `pnpm --filter website check` | 七个部分与首页、404、站点地图齐全；`lang="zh"`；不引用外部资源；站内引用都带部署前缀；搜索索引存在；C# / TypeScript / JSON / YAML / Bash 都有被高亮的代码块；`/sdk/kun/` 与 `/sdk/api/kun/` 下除手写页外每页都有镜像或生成横幅，横幅里的 tag 等于 `v<KunVersion>`（白名单外的页面混进来即失败） | docs-site 工作流 |
-| `pnpm --filter website test` | 路径映射、链接改写、章节拆分、生成目录写入、组件占位页；Kun：`KunVersion` 缺失或无效、tag 不存在即失败，白名单与排除、slug 与路由、横幅与 frontmatter（`updated` 取文件日期）、链接改写、DocFX 输出转换 | docs-site 工作流 |
+| `pnpm --filter website check` | 七个部分与首页、404、站点地图齐全；`lang="zh"`；不引用外部资源；站内引用都带部署前缀；搜索索引存在；C# / TypeScript / JSON / YAML / Bash 都有被高亮的代码块；`/sdk/kun/` 与 `/sdk/api/kun/` 下除手写页外每页都有镜像或生成横幅，横幅里的 tag 等于 `v<KunVersion>`（白名单外的页面混进来即失败）；产物总大小不超过预算（`SITE_SIZE_BUDGET_MB`，100 MB，R55），超出时报出最大的目录 | docs-site 工作流 |
+| `pnpm --filter website test` | 路径映射、链接改写、章节拆分、生成目录写入、组件占位页；Kun：`KunVersion` 缺失或无效、tag 不存在即失败，白名单与排除、slug 与路由、横幅与 frontmatter（`updated` 取文件日期）、链接改写、DocFX 输出转换（含 API 页 `sidebar: false`）；产物体积预算 | docs-site 工作流 |
 | `tests/gates/test_check_docs.py` | check_docs.py 的站内路由解析、生成目录跳过、Kun 路由延后解析、禁用词整词匹配、生成文件进 Git 即失败 | dotnet 工作流（门禁自测） |
 
 frontmatter 必填与枚举校验、`llms.txt` 与 `kb-index.json` 的新鲜度门禁属于 S1-DOCS-003。

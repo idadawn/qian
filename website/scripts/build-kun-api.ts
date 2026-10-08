@@ -279,7 +279,11 @@ function apiBanner(kun: KunCheckout, assembly: string): string {
   ].join('\n');
 }
 
-function apiFrontmatter(kun: KunCheckout, title: string, description: string, sourcePath: string): string {
+/**
+ * sidebar 为 false 时页面不渲染侧栏（R54）：命名空间页与类型页本来就不在侧栏里，再把整棵 SDK 侧栏渲染进
+ * 这四百多页只增体积、不增导航（每页约 20 KB）；两个概览页保留侧栏，作为从 SDK 侧栏进来的落点。
+ */
+function apiFrontmatter(kun: KunCheckout, title: string, description: string, sourcePath: string, sidebar = true): string {
   return [
     '---',
     `title: ${yamlString(title)}`,
@@ -290,6 +294,7 @@ function apiFrontmatter(kun: KunCheckout, title: string, description: string, so
     `source: ${yamlString(kunSource(kun, sourcePath))}`,
     `updated: ${kun.date}`,
     'audience: [developer]',
+    ...(sidebar ? [] : ['sidebar: false']),
     '---',
     '',
   ].join('\n');
@@ -344,7 +349,7 @@ export function convertPage(page: ApiPage, ctx: ConvertContext): string {
   const assembly = page.kind === 'Namespace' ? dominantAssembly(page.namespace, ctx.pages) : page.assembly;
   const h1End = body.indexOf('\n', body.search(/^# /m));
   const withBanner = h1End === -1 ? `${body}\n\n${apiBanner(ctx.kun, assembly)}\n` : `${body.slice(0, h1End)}\n\n${apiBanner(ctx.kun, assembly)}\n${body.slice(h1End)}`;
-  const content = `${apiFrontmatter(ctx.kun, page.kind === 'Namespace' ? title : `${title}（${page.kind}）`, description, `src/${assembly}`)}\n${withBanner.trim()}\n`;
+  const content = `${apiFrontmatter(ctx.kun, page.kind === 'Namespace' ? title : `${title}（${page.kind}）`, description, `src/${assembly}`, false)}\n${withBanner.trim()}\n`;
   return content;
 }
 
@@ -429,7 +434,10 @@ export function buildKunApi(kun: KunCheckout, cacheDir: string = CACHE_DIR): Kun
   return result;
 }
 
-/** sdk/api/ 整个生成目录：落地页与 Kun 的 API 参考（不进侧栏，入口是 SDK 侧栏的「API 参考」链接；Qian.* 与前端随 S1-DOCS-002 加入）。 */
+/**
+ * sdk/api/ 整个生成目录：落地页与 Kun 的 API 参考（不进侧栏，入口是 SDK 侧栏的「API 参考」链接，R54）。
+ * 全部 API 参考都在 /sdk/api/ 下（R56）：Qian.*、前端包与平台 HTTP API 随 S1-DOCS-002 加入。
+ */
 export function apiReferenceFiles(kun: KunCheckout, kunApi: KunApiResult): GeneratedFile[] {
   return [
     ...kunApi.files.map((f) => ({ path: `kun/${f.path}`, content: f.content })),
@@ -438,7 +446,7 @@ export function apiReferenceFiles(kun: KunCheckout, kunApi: KunApiResult): Gener
       content: [
         '---',
         'title: API 参考',
-        `description: ${yamlString('由工具从包的 XML 注释与类型声明生成的 API 参考：Kun.* 已上线，Qian.* 与前端包随 S1-DOCS-002 加入。')}`,
+        `description: ${yamlString('由工具生成的 API 参考：Kun.* 已上线，Qian.*、前端包与平台 HTTP API 随 S1-DOCS-002 加入。')}`,
         'part: sdk',
         'project: qian',
         'audience: [developer, agent]',
@@ -454,6 +462,7 @@ export function apiReferenceFiles(kun: KunCheckout, kunApi: KunApiResult): Gener
         `| Kun（\`Kun.*\`，按 \`KunVersion\` 锁定） | [Kun API 参考](${KUN_API_ROUTE}) | 已生成：${kunApi.packages.length} 个包、${kunApi.types} 个类型，${kun.tag}（${KUN_OWNER_REPO}） |`,
         '| Qian 后端（`Qian.*`） | `/sdk/api/dotnet/` | 随 S1-DOCS-002 |',
         '| 前端（`@qian/*`、`@yue/*`） | `/sdk/api/frontend/` | 随 S1-DOCS-002 |',
+        '| 平台 HTTP API（OpenAPI） | `/sdk/api/http/` | 随 S1-DOCS-002 |',
         '',
       ].join('\n'),
     },
