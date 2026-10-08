@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`█░░░░░░░░░` 15%（18/123）
-- 状态：todo 104 · doing 0 · review 1 · done 18 · blocked 0
+- 状态：todo 103 · doing 0 · review 2 · done 18 · blocked 0
 - 最近更新：2026-10-08
 
 ## 按阶段
@@ -54,8 +54,9 @@
 |---|---|---|---|
 | claude | `█████████░` 94%（16/17） | 0 | 0 |
 | codex | `██████████` 100%（1/1） | 0 | 0 |
+| cody | `░░░░░░░░░░` 0%（0/1） | 0 | 0 |
 | 产品负责人 | `██████████` 100%（1/1） | 0 | 0 |
-| （未认领） | `░░░░░░░░░░` 0%（0/104） | 0 | 90 |
+| （未认领） | `░░░░░░░░░░` 0%（0/103） | 0 | 90 |
 
 ## 接下来可做（无未完成前置的待办，按优先级 / 波次）
 
@@ -63,24 +64,23 @@
 |---|---|---|---|---|---|
 | 1 | [S1-DEP-001](tasks/S1-DEP-001.md) K3s 基线治理：命名空间、专属库、默认拒绝、配额 | P0 | 1 | 3d | DEP |
 | 2 | [S1-IDP-001](tasks/S1-IDP-001.md) 身份契约先行：ctx.Identity、claim 规范、SPI 与事件 | P0 | 1 | 2d | IDP |
-| 3 | [S1-KUN-001](tasks/S1-KUN-001.md) Kun 多租户后台链路修复：BeginScope、回灌、RLS 强制 | P0 | 1 | 3d | KUN |
-| 4 | [S1-KUN-002](tasks/S1-KUN-002.md) Kun Outbox 与事件语义修复：同 scope、手动 ack、多副本锁 | P0 | 1 | 3d | KUN |
-| 5 | [S1-KUN-003](tasks/S1-KUN-003.md) Kun 网关加固与 gRPC 流式拦截器修复 | P0 | 1 | 3d | KUN |
-| 6 | [S1-KUN-004](tasks/S1-KUN-004.md) Kun Identity 客户端链路修复与 S2S 签发器收敛去产品化 | P0 | 1 | 3d | KUN |
-| 7 | [S1-KUN-005](tasks/S1-KUN-005.md) Kun 审计路径收敛与数据约定修复 | P0 | 1 | 3d | KUN |
-| 8 | [S1-KUN-006](tasks/S1-KUN-006.md) Kun 配置、鉴权端口、能力目录与废弃 API 修复 | P0 | 1 | 3d | KUN |
-| 9 | [S1-RT-002](tasks/S1-RT-002.md) profile / 组合包 / patch 装载器与 dump-config | P0 | 1 | 5d | RT |
-| 10 | [S1-RT-008](tasks/S1-RT-008.md) 五种声明式表面解析器与校验器（Qian.Surfaces / TS） | P0 | 1 | 5d | RT |
-| 11 | [S1-RT-003](tasks/S1-RT-003.md) @qian/runtime：TypeScript 同语义运行时（外壳插件树） | P0 | 2 | 5d | RT |
-| 12 | [S1-YUE-003](tasks/S1-YUE-003.md) yue 工程化基线、CI 门禁矩阵与 Base UI 验证门 | P0 | 2 | 3d | YUE |
-| 13 | [S1-DOCS-003](tasks/S1-DOCS-003.md) llms 输出、页面元数据规范与知识库导入契约 | P0 | 3 | 2d | DOCS |
-| 14 | [S1-DOCS-006](tasks/S1-DOCS-006.md) 产品族地图页、版本矩阵页与全站 project 字段 | P1 | 2 | 1.5d | DOCS |
+| 3 | [S1-KUN-002](tasks/S1-KUN-002.md) Kun Outbox 与事件语义修复：同 scope、手动 ack、多副本锁 | P0 | 1 | 3d | KUN |
+| 4 | [S1-KUN-003](tasks/S1-KUN-003.md) Kun 网关加固与 gRPC 流式拦截器修复 | P0 | 1 | 3d | KUN |
+| 5 | [S1-KUN-004](tasks/S1-KUN-004.md) Kun Identity 客户端链路修复与 S2S 签发器收敛去产品化 | P0 | 1 | 3d | KUN |
+| 6 | [S1-KUN-005](tasks/S1-KUN-005.md) Kun 审计路径收敛与数据约定修复 | P0 | 1 | 3d | KUN |
+| 7 | [S1-KUN-006](tasks/S1-KUN-006.md) Kun 配置、鉴权端口、能力目录与废弃 API 修复 | P0 | 1 | 3d | KUN |
+| 8 | [S1-RT-002](tasks/S1-RT-002.md) profile / 组合包 / patch 装载器与 dump-config | P0 | 1 | 5d | RT |
+| 9 | [S1-RT-008](tasks/S1-RT-008.md) 五种声明式表面解析器与校验器（Qian.Surfaces / TS） | P0 | 1 | 5d | RT |
+| 10 | [S1-RT-003](tasks/S1-RT-003.md) @qian/runtime：TypeScript 同语义运行时（外壳插件树） | P0 | 2 | 5d | RT |
+| 11 | [S1-YUE-003](tasks/S1-YUE-003.md) yue 工程化基线、CI 门禁矩阵与 Base UI 验证门 | P0 | 2 | 3d | YUE |
+| 12 | [S1-DOCS-003](tasks/S1-DOCS-003.md) llms 输出、页面元数据规范与知识库导入契约 | P0 | 3 | 2d | DOCS |
+| 13 | [S1-DOCS-006](tasks/S1-DOCS-006.md) 产品族地图页、版本矩阵页与全站 project 字段 | P1 | 2 | 1.5d | DOCS |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 14 | 44.5d |
+| 第 1 层 | 13 | 41.5d |
 | 第 2 层 | 10 | 34d |
 | 第 3 层 | 10 | 38.5d |
 | 第 4 层 | 16 | 67d |
@@ -98,3 +98,4 @@
 | 任务 | 状态 | 负责人 | 更新 |
 |---|---|---|---|
 | [S1-DEC-011](tasks/S1-DEC-011.md) 拍板：文档站 Kun 小节（PR | review | claude | 2026-10-08 |
+| [S1-KUN-001](tasks/S1-KUN-001.md) Kun 多租户后台链路修复：BeginScope、回灌、RLS 强制 | review | cody | 2026-10-08 |

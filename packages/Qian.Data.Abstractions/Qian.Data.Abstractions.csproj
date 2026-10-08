@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Qian 数据组件的安全上下文基类与装配错误契约。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
+    <PackageReference Include="Kun.EntityFrameworkCore" />
+    <PackageReference Include="Kun.MultiTenancy.EntityFrameworkCore" />
+  </ItemGroup>
+</Project>

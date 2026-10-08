@@ -31,3 +31,5 @@ updated: 2026-10-06
 ## 进度日志
 
 - 2026-10-06 planner：创建任务
+
+- 2026-10-08 cody：S1-KUN-001 先行交付 Qian.Data.Abstractions / Qian.Data 最小 RLS 安全装配及启动拒绝测试，详见 packages/Qian.Data/README.md；本任务仍负责完整组件、迁移模板、数据约定与分析器，未认领或提前勾选本任务验收。

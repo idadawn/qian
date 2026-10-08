@@ -1,0 +1,9 @@
+#nullable enable
+Qian.Data.DataErrors
+static readonly Qian.Data.DataErrors.Misconfigured -> Qian.Runtime.Errors.ErrorCode!
+Qian.Data.QianDataMisconfiguredException
+Qian.Data.QianDataMisconfiguredException.QianDataMisconfiguredException(string! reason) -> void
+Qian.Data.QianDataMisconfiguredException.Error.get -> Qian.Runtime.Errors.QianError!
+Qian.Data.QianDbContext
+Qian.Data.QianDbContext.QianDbContext(Microsoft.EntityFrameworkCore.DbContextOptions! options, Kun.Core.MultiTenancy.ITenantContext! tenantContext) -> void
+override sealed Qian.Data.QianDbContext.OnConfiguring(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! optionsBuilder) -> void
