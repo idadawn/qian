@@ -329,11 +329,9 @@
    "S1-RT-001",
    "S1-AGT-001"
   ],
-  "blockedBy": [
-   "S1-KUN-006"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -602,11 +600,9 @@
    "S1-KUN-006",
    "S1-RT-001"
   ],
-  "blockedBy": [
-   "S1-KUN-006"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -648,7 +644,7 @@
   "blockedBy": [
    "S1-CFG-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -857,7 +853,7 @@
    "S1-DATA-001",
    "S1-CFG-002"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -1505,7 +1501,7 @@
    "S1-RT-013",
    "S1-DEP-003"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -1546,7 +1542,7 @@
    "S1-DEP-004",
    "S1-DATA-002"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -1914,7 +1910,7 @@
    "S1-EVT-001",
    "S1-AUD-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -2153,8 +2149,7 @@
    "S1-TEN-004",
    "S1-AZ-004",
    "S1-AUD-001",
-   "S1-EVT-001",
-   "S1-KUN-006"
+   "S1-EVT-001"
   ],
   "order": 5,
   "readyNow": false,
@@ -3062,20 +3057,20 @@
  {
   "id": "S1-KUN-006",
   "title": "Kun 配置、鉴权端口、能力目录与废弃 API 修复",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
   "wave": 1,
   "priority": "P0",
   "type": "fix",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -3094,12 +3089,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-006-authorization-model.md"
    }
   ],
-  "updated": "2026-10-08",
+  "updated": "2026-10-09",
   "acceptance": {
-   "done": 0,
+   "done": 6,
    "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 10–13 项：<code>Kun.Configuration.Apollo</code> provider 基础与热更新「校验失败保留旧值并告警」、options JSON Schema 导出；<code>Kun.Authorization</code> 只放端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>）与三处集成；<code>ICapabilityRegistry</code> 注册时收 <code>JsonTypeInfo</code> 并可枚举；<code>Kun.Infrastructure</code> 死接口与旧线 <code>Kun.Storage</code> 废弃、<code>AddKunDapper</code> 瑕疵、<code>PerformanceBehavior</code> 阈值可配。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：发布一份非法配置后 <code>IOptionsMonitor&lt;T&gt;.CurrentValue</code> 仍返回上一份有效值，且发出告警指标</li>\n<li class='chk'><span class='box'></span>UT：<code>AddKunOptions&lt;T&gt;</code> 可导出 JSON Schema 2020-12</li>\n<li class='chk'><span class='box'></span>UT：未注册实现时任何受保护端点缺省拒绝（fail-closed）；IT：Mediator 行为对标记了所需权限的命令在 handler 前调用 <code>Check</code></li>\n<li class='chk'><span class='box'></span>UT：注册一个命令后，能力目录中出现其 ID、请求 / 响应 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：Qian 代码树引用 <code>Kun.Infrastructure.IRepository</code> 或旧线 <code>Kun.Storage.IFileStorage</code> 即编译错误（Banned API 分析器）</li>\n<li class='chk'><span class='box'></span><code>KunExceptionHandler</code> 改走 <code>IProblemDetailsService</code>，不再直接 <code>WriteAsJsonAsync</code> ProblemDetails（contracts/v0/README.md §3.7 过渡态；否则 Kun 产生的错误体不会被 Qian 规范为 ErrorDetail）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-08 claude：验收补一条 KunExceptionHandler 走 IProblemDetailsService（S1-AGT-001 评审发现的尾巴，contracts/v0/README.md §3.7）</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 10–13 项：<code>Kun.Configuration.Apollo</code> provider 基础与热更新「校验失败保留旧值并告警」、options JSON Schema 导出；<code>Kun.Authorization</code> 只放端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>）与三处集成；<code>ICapabilityRegistry</code> 注册时收 <code>JsonTypeInfo</code> 并可枚举；<code>Kun.Infrastructure</code> 死接口与旧线 <code>Kun.Storage</code> 废弃、<code>AddKunDapper</code> 瑕疵、<code>PerformanceBehavior</code> 阈值可配。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：发布一份非法配置后 <code>IOptionsMonitor&lt;T&gt;.CurrentValue</code> 仍返回上一份有效值，且发出告警指标</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>AddKunOptions&lt;T&gt;</code> 可导出 JSON Schema 2020-12</li>\n<li class='chk done'><span class='box'>✓</span>UT：未注册实现时任何受保护端点缺省拒绝（fail-closed）；IT：Mediator 行为对标记了所需权限的命令在 handler 前调用 <code>Check</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：注册一个命令后，能力目录中出现其 ID、请求 / 响应 JSON Schema</li>\n<li class='chk done'><span class='box'>✓</span>UT：Qian 代码树引用 <code>Kun.Infrastructure.IRepository</code> 或旧线 <code>Kun.Storage.IFileStorage</code> 即编译错误（Banned API 分析器）</li>\n<li class='chk done'><span class='box'>✓</span><code>KunExceptionHandler</code> 改走 <code>IProblemDetailsService</code>，不再直接 <code>WriteAsJsonAsync</code> ProblemDetails（contracts/v0/README.md §3.7 过渡态；否则 Kun 产生的错误体不会被 Qian 规范为 ErrorDetail）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-08 claude：验收补一条 KunExceptionHandler 走 IProblemDetailsService（S1-AGT-001 评审发现的尾巴，contracts/v0/README.md §3.7）</li>\n<li>2026-10-09 cody：开始：保留有效配置与告警、Schema 与能力目录、鉴权端口及三入口、废弃 API 门禁和错误响应扩展点。</li>\n<li>2026-10-09 cody：六项验收完成：Kun全量802通过（2项既有OSS凭据跳过），其中99项集成全通过；配置24、HTTP/Apollo8、gRPC15专项通过。Qian旧API使用及声明门禁正反例通过，20项门禁与224项测试全绿。上游 [Kun PR #47](https://github.com/idadawn/kun/pull/47) 等待 CI 全绿合并；新包尚未发布。</li>\n<li>2026-10-09 cody：完成：Kun PR #47 修复 AOT 泛型构造器保留标注后，当前提交24项CI全绿并已合并（可选Benchmark未触发）；本机原生AOT发布与24项配置测试通过。Qian声明/使用门禁已验收；尚未发布Kun新包。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-006.md"
  },
  {
@@ -3202,7 +3197,7 @@
    "S1-CFG-002",
    "S1-TEN-001"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -3249,7 +3244,7 @@
    "S1-AUD-004",
    "S1-DEP-005"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -4117,7 +4112,7 @@
    "S1-RT-004",
    "S1-CFG-002"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -4161,7 +4156,6 @@
   ],
   "blockedBy": [
    "S1-RT-004",
-   "S1-KUN-006",
    "S1-AZ-003"
   ],
   "order": 4,
@@ -4489,7 +4483,7 @@
    "S1-RT-005",
    "S1-RT-014"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4575,8 +4569,7 @@
    "S1-KUN-006"
   ],
   "blockedBy": [
-   "S1-RT-014",
-   "S1-KUN-006"
+   "S1-RT-014"
   ],
   "order": 3,
   "readyNow": false,
@@ -4940,7 +4933,7 @@
    "S1-TEN-001",
    "S1-RT-005"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -5468,7 +5461,7 @@
    "S1-MGW-001",
    "S1-YUE-005"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {

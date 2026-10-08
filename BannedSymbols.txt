@@ -1,0 +1,5 @@
+# 以发布包中的真实命名空间为准：新 Kun.Storage.Abstractions 包里的接口反而叫 Kun.Storage.IFileStorage。
+T:Kun.Infrastructure.Abstractions.IRepository`1;旧通用仓储入口已禁用，请使用业务端口与当前数据 Provider。
+T:Kun.Infrastructure.Abstractions.IUnitOfWork;请使用 Kun.EntityFrameworkCore.IUnitOfWork。
+T:Kun.Infrastructure.Abstractions.IProcessedMessageStore;请使用 Kun.EventBus.Idempotency.IProcessedMessageStore。
+T:Kun.Storage.Abstractions.IFileStorage;旧 Kun.Storage 包已禁用，请引用 Kun.Storage.Abstractions 包的 Kun.Storage.IFileStorage。

@@ -16,12 +16,17 @@
 
   <ItemGroup Label="Gates">
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
   </ItemGroup>
 
   <ItemGroup Label="Runtime">
     <PackageVersion Include="Kun.Core" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Mediator" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Validation" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Infrastructure" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Storage" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Storage.Abstractions" Version="$(KunVersion)" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
   </ItemGroup>

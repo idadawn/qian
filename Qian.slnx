@@ -13,4 +13,7 @@
     <Project Path="tests/Qian.Testing.Containers.IntegrationTests/Qian.Testing.Containers.IntegrationTests.csproj" />
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj" />
+  </Folder>
 </Solution>
