@@ -30,7 +30,7 @@ updated: 2026-10-08
 - [x] 手写 `/sdk/kun/with-qian`：Kun 模块 ↔ 平台插件 / seam 映射表、canonical API 选择（§07 7.1「插件化定位」）、Qian 的强制装配与禁用项、补丁包状态
 - [x] 导航「SDK」下第一项为「Kun 框架」；首页「构建应用」栏新增 Kun 条目；`sdk/index.md`、`start/hosts.md` 不再写「本站不重写」
 - [x] 门禁：`sdk/kun/`（除 `with-qian.mdx`）手改即失败；镜像 tag ≠ `KunVersion` 即失败；镜像页过 `scripts/check_docs.py`
-- [ ] CI 凭据：对 kun 仓库的只读 deploy key 或细粒度 token 以 Secret 提供，本地可用 `KUN_DOCS_PATH` 指向本机克隆；README「托管与预览」写明
+- [x] CI 凭据：对 kun 仓库的只读 deploy key 或细粒度 token 以 Secret 提供，本地可用 `KUN_DOCS_PATH` 指向本机克隆；README「托管与预览」写明
 - [x] UT：同步脚本对「`KunVersion` 缺失」「tag 不存在」「白名单外文件」各有一个失败用例
 
 ## 进度日志
@@ -38,3 +38,4 @@ updated: 2026-10-08
 - 2026-10-07 claude：创建任务（ADR-021 D21.4，docs-site.md §2b）
 - 2026-10-08 claude：开始
 - 2026-10-08 claude：实现完成并本地验证，提交评审：Directory.Packages.props 加 KunVersion 2026.9.13；Kun 小节按白名单镜像 36 页 + 手写 with-qian，DocFX 从同版本 Kun.* 包生成 API 参考（32 个包、341 个类型，不进侧栏）；门禁与单测齐。第 7 条的工作流与 README §6 已就绪，Secret KUN_DOCS_DEPLOY_KEY 待仓库管理员创建（代理不经手凭据），CI 通过后勾选
+- 2026-10-08 claude：仓库管理员已在 idadawn/kun 加只读 deploy key、在 idadawn/qian 设 Secret KUN_DOCS_DEPLOY_KEY；docs-site 重跑（run 37680214386 第 2 次）凭据检查与 kun v2026.9.13 检出通过，Linux 上 .NET 安装、类型检查、单测通过，第 7 条勾选
