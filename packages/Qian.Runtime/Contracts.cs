@@ -58,6 +58,22 @@ public interface IPluginContext
     void Effect(Action dispose);
     /// <summary>加入异步撤销动作；逐项 await 后才继续撤销。</summary>
     void Effect(Func<ValueTask> disposeAsync);
+    /// <summary>注册 emit、waterfall 或 bail 监听器，模式必须与 Definition 一致。</summary>
+#pragma warning disable CA1716 // 规格 §5.2 的公共 API 名称固定为 On。
+    IDisposable On<TPayload, TResult>(QianEvent<TPayload, TResult> evt, DispatchMode mode, Delegate handler, int priority);
+    /// <summary>以默认优先级 0 注册监听器。</summary>
+    IDisposable On<TPayload, TResult>(QianEvent<TPayload, TResult> evt, DispatchMode mode, Delegate handler) => On(evt, mode, handler, 0);
+    /// <summary>注册 parallel 或 serial 监听器；单个监听器返回 TResult。</summary>
+    IDisposable On<TPayload, TResult>(QianEvent<TPayload, IReadOnlyList<TResult>> evt, DispatchMode mode, Delegate handler, int priority);
+    /// <summary>以默认优先级 0 注册集合分发监听器。</summary>
+    IDisposable On<TPayload, TResult>(QianEvent<TPayload, IReadOnlyList<TResult>> evt, DispatchMode mode, Delegate handler) => On(evt, mode, handler, 0);
+#pragma warning restore CA1716
+    /// <summary>发起一次 emit、waterfall 或 bail 分发。</summary>
+    ValueTask<TResult> DispatchAsync<TPayload, TResult>(QianEvent<TPayload, TResult> evt, TPayload payload, CancellationToken ct);
+    /// <summary>发起 parallel 或 serial 分发，返回监听器顺序的结果集合。</summary>
+    ValueTask<IReadOnlyList<TResult>> DispatchAsync<TPayload, TResult>(QianEvent<TPayload, IReadOnlyList<TResult>> evt, TPayload payload, CancellationToken ct);
+    /// <summary>发起 waterfall 分发并指定链尾。</summary>
+    ValueTask<TResult> DispatchAsync<TPayload, TResult>(QianEvent<TPayload, TResult> evt, TPayload payload, Func<ValueTask<TResult>> terminal, CancellationToken ct);
 }
 
 /// <summary>某次 Apply 的状态；失败保留原异常供管理面查询。</summary>

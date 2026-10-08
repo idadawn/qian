@@ -99,3 +99,37 @@ Qian.Runtime.IPluginContext.Effect(System.IDisposable! disposer) -> void
 Qian.Runtime.IPluginContext.Effect(System.Action! dispose) -> void
 Qian.Runtime.IPluginContext.Effect(System.Func<System.Threading.Tasks.ValueTask>! disposeAsync) -> void
 Qian.Runtime.PluginLoader.ReloadAsync(Qian.Runtime.PluginDefinition! definition, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Runtime.DispatchMode.Parallel = 2 -> Qian.Runtime.DispatchMode
+Qian.Runtime.DispatchMode
+Qian.Runtime.DispatchMode.Serial = 3 -> Qian.Runtime.DispatchMode
+Qian.Runtime.DispatchMode.Waterfall = 1 -> Qian.Runtime.DispatchMode
+Qian.Runtime.QianEvent
+Qian.Runtime.DispatchMode.Bail = 4 -> Qian.Runtime.DispatchMode
+Qian.Runtime.DispatchMode.Emit = 0 -> Qian.Runtime.DispatchMode
+Qian.Runtime.QianEvent<TPayload, TResult>
+override Qian.Runtime.QianEvent<TPayload, TResult>.ToString() -> string!
+Qian.Runtime.QianEvent<TPayload, TResult>.Mode.get -> Qian.Runtime.DispatchMode
+Qian.Runtime.QianEvent<TPayload, TResult>.Name.get -> string!
+Qian.Runtime.QianEvent<TPayload, TResult>.Mode.init -> void
+static Qian.Runtime.QianEvent<TPayload, TResult>.operator !=(Qian.Runtime.QianEvent<TPayload, TResult>? left, Qian.Runtime.QianEvent<TPayload, TResult>? right) -> bool
+static Qian.Runtime.QianEvent<TPayload, TResult>.operator ==(Qian.Runtime.QianEvent<TPayload, TResult>? left, Qian.Runtime.QianEvent<TPayload, TResult>? right) -> bool
+override Qian.Runtime.QianEvent<TPayload, TResult>.GetHashCode() -> int
+override Qian.Runtime.QianEvent<TPayload, TResult>.Equals(object? obj) -> bool
+Qian.Runtime.QianEvent<TPayload, TResult>.Equals(Qian.Runtime.QianEvent<TPayload, TResult>? other) -> bool
+Qian.Runtime.QianEvent<TPayload, TResult>.<Clone>$() -> Qian.Runtime.QianEvent<TPayload, TResult>!
+Qian.Runtime.QianEvent<TPayload, TResult>.Deconstruct(out string! Name, out Qian.Runtime.DispatchMode Mode) -> void
+Qian.Runtime.ParallelDispatchException<TResult>
+Qian.Runtime.QianEvent<TPayload, TResult>.Name.init -> void
+Qian.Runtime.IPluginContext.DispatchAsync<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! evt, TPayload payload, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<TResult>
+Qian.Runtime.IPluginContext.DispatchAsync<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, System.Collections.Generic.IReadOnlyList<TResult>!>! evt, TPayload payload, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<TResult>!>
+Qian.Runtime.IPluginContext.DispatchAsync<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! evt, TPayload payload, System.Func<System.Threading.Tasks.ValueTask<TResult>>! terminal, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<TResult>
+Qian.Runtime.QianEvent<TPayload, TResult>.QianEvent(string! Name, Qian.Runtime.DispatchMode Mode) -> void
+static Qian.Runtime.QianEvent.Define<TPayload, TResult>(string! name, Qian.Runtime.DispatchMode mode) -> Qian.Runtime.QianEvent<TPayload, TResult>!
+Qian.Runtime.QianEvent<TPayload, TResult>.Terminal.init -> void
+Qian.Runtime.QianEvent<TPayload, TResult>.Terminal.get -> System.Func<TPayload, System.Threading.Tasks.ValueTask<TResult>>?
+Qian.Runtime.ParallelDispatchException<TResult>.Partial.get -> System.Collections.Generic.IReadOnlyList<TResult>!
+Qian.Runtime.ParallelDispatchException<TResult>.ParallelDispatchException(System.Collections.Generic.IEnumerable<System.Exception!>! errors, System.Collections.Generic.IReadOnlyList<TResult>! partial) -> void
+Qian.Runtime.IPluginContext.On<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! evt, Qian.Runtime.DispatchMode mode, System.Delegate! handler, int priority) -> System.IDisposable!
+Qian.Runtime.IPluginContext.On<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, System.Collections.Generic.IReadOnlyList<TResult>!>! evt, Qian.Runtime.DispatchMode mode, System.Delegate! handler, int priority) -> System.IDisposable!
+Qian.Runtime.IPluginContext.On<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! evt, Qian.Runtime.DispatchMode mode, System.Delegate! handler) -> System.IDisposable!
+Qian.Runtime.IPluginContext.On<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, System.Collections.Generic.IReadOnlyList<TResult>!>! evt, Qian.Runtime.DispatchMode mode, System.Delegate! handler) -> System.IDisposable!

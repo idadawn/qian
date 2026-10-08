@@ -1,0 +1,14 @@
+version: 1
+id: T08
+description: 串行监听器在第一个失败处停止。
+events: [{name: cleanup, mode: serial}]
+entries:
+  - id: A
+    apply:
+      - {op: on, event: cleanup, name: one, value: a}
+      - {op: on, event: cleanup, name: broken, behavior: fail}
+      - {op: on, event: cleanup, name: never, value: c}
+steps:
+  - {op: mount, entries: [A]}
+  - {op: dispatch, entry: A, event: cleanup, error: listener}
+  - {op: trace, value: ['apply:A', 'enter:one', 'exit:one', 'enter:broken']}
