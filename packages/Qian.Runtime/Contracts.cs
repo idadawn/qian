@@ -52,6 +52,12 @@ public interface IPluginContext
     TService Inject<TService>(ServiceKey key) where TService : class;
     TService? TryInject<TService>(ServiceKey key) where TService : class;
     ValueTask<TService> WhenReadyAsync<TService>(ServiceKey key, CancellationToken ct) where TService : class;
+    /// <summary>将第三方资源加入当前 Apply 的效果栈。</summary>
+    void Effect(IDisposable disposer);
+    /// <summary>加入同步撤销动作；卸载时逆序执行。</summary>
+    void Effect(Action dispose);
+    /// <summary>加入异步撤销动作；逐项 await 后才继续撤销。</summary>
+    void Effect(Func<ValueTask> disposeAsync);
 }
 
 /// <summary>某次 Apply 的状态；失败保留原异常供管理面查询。</summary>

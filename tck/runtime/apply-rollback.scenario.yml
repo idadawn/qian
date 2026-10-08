@@ -1,0 +1,19 @@
+version: 1
+id: apply-rollback
+description: Apply 失败立即清理，依赖者保持 Pending，独立条目仍能启动。
+entries:
+  - id: broken
+    provides: [X]
+    apply:
+      - {op: provide, key: X, value: dirty}
+      - {op: effect, name: partial}
+      - {op: fail}
+  - {id: dependent, inject: [X], apply: []}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [broken, dependent, observer]}
+  - {op: state, entry: broken, value: Failed}
+  - {op: state, entry: dependent, value: Pending}
+  - {op: state, entry: observer, value: Ready}
+  - {op: missing, entry: observer, key: X}
+  - {op: trace, value: ['apply:broken', 'dispose:partial', 'apply:observer']}

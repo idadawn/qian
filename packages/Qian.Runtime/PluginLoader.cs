@@ -50,12 +50,13 @@ public sealed partial class PluginLoader : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(definitions);
         await _lifecycle.WaitAsync(ct).ConfigureAwait(false);
+        List<Node> added = [];
         try
         {
             lock (Sync)
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
-                var added = definitions.Select(d => new Node(d)).ToList();
+                added = definitions.Select(d => new Node(d)).ToList();
                 foreach (var node in added)
                 {
                     node.Entry.Scope.Validate();
@@ -68,7 +69,31 @@ public sealed partial class PluginLoader : IAsyncDisposable
             }
             await ReconcileCoreAsync(ct).ConfigureAwait(false);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            lock (Sync)
+            {
+                foreach (var node in added)
+                {
+                    node.Removing = true;
+                    if (node.Context is not null) node.Context.Active = false;
+                }
+                InvalidateDependents();
+            }
+            await CleanPendingAsync().ConfigureAwait(false);
+            foreach (var node in added.OrderByDescending(n => n.Sequence)) await StopAsync(node).ConfigureAwait(false);
+            lock (Sync) { foreach (var node in added) _nodes.Remove(node); Signal(); }
+            throw;
+        }
         finally { _lifecycle.Release(); }
+    }
+
+    /// <summary>配置重载：先卸载旧条目，再以新配置 Apply；不支持替换已加载的代码程序集。</summary>
+    public async ValueTask ReloadAsync(PluginDefinition definition, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        await UnmountAsync(definition.Entry.Id, definition.Entry.Scope, ct).ConfigureAwait(false);
+        await MountAsync([definition], ct).ConfigureAwait(false);
     }
 
     public async ValueTask UnmountAsync(string id, ScopeKey scope, CancellationToken ct = default)

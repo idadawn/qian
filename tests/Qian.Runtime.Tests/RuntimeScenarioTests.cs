@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,7 @@ public sealed class RuntimeScenarioTests
         Assert.Equal("1", scenario.GetProperty("version").ToString());
         using var services = new ServiceCollection().BuildServiceProvider();
         await using var loader = new PluginLoader(services);
-        List<string> trace = [];
+        ConcurrentQueue<string> trace = [];
         var entries = scenario.GetProperty("entries").EnumerateArray().ToDictionary(e => e.GetProperty("id").GetString()!, e => e);
         PluginDefinition Definition(string id)
         {
@@ -52,6 +53,13 @@ public sealed class RuntimeScenarioTests
                 case "state":
                     Assert.Equal(step.GetProperty("value").GetString(), loader.GetState(step.GetProperty("entry").GetString()!, Scope(step)).ToString());
                     break;
+                case "unmount":
+                    await loader.UnmountAsync(step.GetProperty("entry").GetString()!, Scope(step), TestContext.Current.CancellationToken);
+                    break;
+                case "teardown": await loader.DisposeAsync(); break;
+                case "missing":
+                    Assert.Null(loader.GetContext(step.GetProperty("entry").GetString()!, Scope(step)).TryInject<string>(new ServiceKey(step.GetProperty("key").GetString()!)));
+                    break;
                 case "inject":
                     var context = loader.GetContext(step.GetProperty("entry").GetString()!, Scope(step));
                     var key = new ServiceKey(step.GetProperty("key").GetString()!);
@@ -76,18 +84,29 @@ public sealed class RuntimeScenarioTests
         return new ScopeKey(parts[0], parts[1]);
     }
 
-    private sealed class ScenarioPlugin(JsonElement entry, List<string> trace) : IQianPlugin
+    private sealed class ScenarioPlugin(JsonElement entry, ConcurrentQueue<string> trace) : IQianPlugin
     {
         public IReadOnlyList<ServiceKey> Inject => Keys(entry, "inject");
 
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
         {
-            trace.Add($"apply:{ctx.Entry.Id}");
+            trace.Enqueue($"apply:{ctx.Entry.Id}");
             foreach (var action in entry.GetProperty("apply").EnumerateArray())
             {
                 switch (action.GetProperty("op").GetString())
                 {
                     case "provide": ctx.Provide(new ServiceKey(action.GetProperty("key").GetString()!), action.GetProperty("value").GetString()!); break;
+                    case "effect":
+                        ctx.Effect(async () =>
+                        {
+                            await Task.Yield();
+                            trace.Enqueue($"dispose:{action.GetProperty("name").GetString()}");
+                            if (action.TryGetProperty("fail", out var fail) && fail.GetBoolean()) throw new InvalidOperationException("撤销失败。");
+                        });
+                        break;
+                    case "optional":
+                        Assert.Null(ctx.TryInject<string>(new ServiceKey(action.GetProperty("key").GetString()!)));
+                        break;
                     case "fail": throw new InvalidOperationException("场景中的 Apply 失败。");
                     default: throw new InvalidOperationException("未知 TCK Apply 操作。");
                 }

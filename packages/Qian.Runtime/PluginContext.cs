@@ -21,6 +21,28 @@ internal sealed partial class PluginContext : IPluginContext, IKeyedServiceProvi
     public IServiceProvider Services => this;
     public ILogger Logger => Loader.Logger;
 
+    public void Effect(IDisposable disposer)
+    {
+        ArgumentNullException.ThrowIfNull(disposer);
+        Effect(disposer.Dispose);
+    }
+
+    public void Effect(Action dispose)
+    {
+        ArgumentNullException.ThrowIfNull(dispose);
+        Effect(() => { dispose(); return ValueTask.CompletedTask; });
+    }
+
+    public void Effect(Func<ValueTask> disposeAsync)
+    {
+        ArgumentNullException.ThrowIfNull(disposeAsync);
+        lock (Loader.Sync)
+        {
+            EnsureOpen();
+            Effects.Add(disposeAsync);
+        }
+    }
+
     public IDisposable Provide<TService>(ServiceKey key, TService instance) where TService : class
     {
         ArgumentNullException.ThrowIfNull(instance);

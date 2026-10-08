@@ -95,3 +95,7 @@ static readonly Qian.Runtime.ScopeKey.Global -> Qian.Runtime.ScopeKey
 ~override Qian.Runtime.ScopeKey.ToString() -> string
 ~override Qian.Runtime.ServiceKey.Equals(object obj) -> bool
 ~override Qian.Runtime.ServiceKey.ToString() -> string
+Qian.Runtime.IPluginContext.Effect(System.IDisposable! disposer) -> void
+Qian.Runtime.IPluginContext.Effect(System.Action! dispose) -> void
+Qian.Runtime.IPluginContext.Effect(System.Func<System.Threading.Tasks.ValueTask>! disposeAsync) -> void
+Qian.Runtime.PluginLoader.ReloadAsync(Qian.Runtime.PluginDefinition! definition, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
