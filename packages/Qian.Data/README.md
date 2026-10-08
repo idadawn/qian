@@ -22,4 +22,4 @@ RLS 策略需由迁移显式创建，使用 Kun 的 `app.current_tenant_id`、`F
 
 ## 已知限制与延期项
 
-本任务不宣称数据组件完整可安装；审计字段、`xmin`、snake_case、Guid v7、迁移与分析器属于 S1-DATA-001／S1-KUN-005。此安全基础仅使用现有公开 Kun 2026.9.13 的 API；S1-KUN-001 上游后台链路修复需在 Kun 后续发版后通过 `KunVersion` 升级消费，本任务不触发 Kun 发版。
+本任务不宣称数据组件完整可安装；审计字段、`xmin`、snake_case、Guid v7、迁移与分析器属于 S1-DATA-001／S1-KUN-005。此安全基础仅使用现有公开 Kun 2026.9.13 的 API；S1-KUN-001 上游后台链路修复已于 2026-10-08 合并 [Kun PR #43](https://github.com/idadawn/kun/pull/43)，仍需在 Kun 后续发版后通过 `KunVersion` 升级消费，本任务不触发 Kun 发版。
