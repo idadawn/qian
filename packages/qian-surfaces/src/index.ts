@@ -113,7 +113,7 @@ const resources = new URL('./schemas/', import.meta.url);
 const rules = JSON.parse(readFileSync(new URL('surface-rules.json', resources), 'utf8')) as { defaults: Record<string, string>; agentEvents: string[]; qianEvents: string[]; shells: string[] };
 const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
 const schemas = new Map<string, ValidateFunction>();
-for (const name of ['capability-entry', 'permissions', 'plugin', 'skill', 'agent', 'command', 'hooks', 'mcp', 'tool', 'patch']) {
+for (const name of ['capability-entry', 'permissions', 'plugin', 'skill', 'agent', 'command', 'hooks', 'mcp', 'tool', 'patch', 'profile']) {
   const schema = JSON.parse(readFileSync(new URL(name + '.schema.json', resources), 'utf8'));
   ajv.addSchema(schema); schemas.set(name, ajv.getSchema(schema.$id)!);
 }

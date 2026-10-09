@@ -1,0 +1,15 @@
+name: gateway
+description: gateway 的静态装配基线，业务 Provider 尚待各组件任务实现。
+bundles:
+- qian.bundle.gateway@^1
+patch: ./qian.patch.yml
+hmr:
+  surfaces: true
+  code: false
+build:
+  aot: true
+hooks:
+  allowCommand: false
+health:
+  readyRequiresTiers:
+  - system

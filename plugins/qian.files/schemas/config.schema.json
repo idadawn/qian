@@ -1,0 +1,56 @@
+{
+  "type": "object",
+  "properties": {
+    "storage": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "local",
+            "oss",
+            "s3"
+          ]
+        },
+        "root": {
+          "type": "string"
+        },
+        "bucket": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "accessKey": {
+          "type": "string",
+          "x-qian-sensitive": true
+        },
+        "secretKey": {
+          "type": "string",
+          "x-qian-sensitive": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "quota": {
+      "type": "object",
+      "properties": {
+        "perTenantBytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "default": {
+        "perTenantBytes": 10737418240
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "required": [
+    "storage"
+  ]
+}

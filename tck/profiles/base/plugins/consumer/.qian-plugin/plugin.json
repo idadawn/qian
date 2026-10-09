@@ -1,0 +1,27 @@
+{
+  "id": "test.consumer",
+  "version": "1.0.0",
+  "description": "供 profile 装配 TCK 使用的真实静态清单",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "MIT",
+  "interface": {
+    "displayName": "profile 测试",
+    "category": "test"
+  },
+  "inject": [
+    "Settings"
+  ],
+  "provides": [],
+  "policy": {
+    "tier": "private",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false
+  },
+  "scopes": [
+    "global",
+    "tenant"
+  ]
+}

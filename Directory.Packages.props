@@ -42,6 +42,7 @@
 
   <ItemGroup Label="Testing">
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+    <PackageVersion Include="SemanticVersioning" Version="3.0.0" />
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.1" />
     <PackageVersion Include="xunit.v3.assert" Version="4.0.1" />
