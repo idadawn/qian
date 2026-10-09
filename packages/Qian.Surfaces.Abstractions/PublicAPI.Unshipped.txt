@@ -1,0 +1,137 @@
+#nullable enable
+Qian.Surfaces.Abstractions.SurfaceDocument.Name.get -> string!
+Qian.Surfaces.Abstractions.SurfaceDocument.File.get -> string!
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.Severity.get -> string!
+Qian.Surfaces.Abstractions.SurfaceDocument.File.init -> void
+Qian.Surfaces.Abstractions.SurfaceDocument.Name.init -> void
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.Severity.init -> void
+Qian.Surfaces.Abstractions.SurfaceDocument.Data.get -> System.Text.Json.JsonElement
+Qian.Surfaces.Abstractions.ParsedComponent.Documents.get -> System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDocument!>!
+Qian.Surfaces.Abstractions.ISurfaceValidator
+Qian.Surfaces.Abstractions.SurfaceDocument
+Qian.Surfaces.Abstractions.SurfaceDocument.Data.init -> void
+Qian.Surfaces.Abstractions.ParsedComponent.Documents.init -> void
+Qian.Surfaces.Abstractions.SurfaceDocument.Body.get -> string!
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.Error.get -> Qian.Runtime.Errors.ErrorDetail!
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.Line.get -> int
+Qian.Surfaces.Abstractions.SurfaceDocument.Kind.get -> string!
+Qian.Surfaces.Abstractions.SurfaceDocument.Body.init -> void
+override Qian.Surfaces.Abstractions.SurfaceDocument.ToString() -> string!
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.File.get -> string!
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.Line.init -> void
+Qian.Surfaces.Abstractions.SurfaceDocument.Kind.init -> void
+Qian.Surfaces.Abstractions.ISurfaceReader
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.File.init -> void
+static Qian.Surfaces.Abstractions.SurfaceDocument.operator !=(Qian.Surfaces.Abstractions.SurfaceDocument? left, Qian.Surfaces.Abstractions.SurfaceDocument? right) -> bool
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.Error.init -> void
+static Qian.Surfaces.Abstractions.SurfaceDocument.operator ==(Qian.Surfaces.Abstractions.SurfaceDocument? left, Qian.Surfaces.Abstractions.SurfaceDocument? right) -> bool
+override Qian.Surfaces.Abstractions.SurfaceDocument.GetHashCode() -> int
+override Qian.Surfaces.Abstractions.SurfaceDocument.Equals(object? obj) -> bool
+Qian.Surfaces.Abstractions.ParsedComponent
+Qian.Surfaces.Abstractions.SurfaceDocument.Equals(Qian.Surfaces.Abstractions.SurfaceDocument? other) -> bool
+Qian.Surfaces.Abstractions.SurfaceDocument.<Clone>$() -> Qian.Surfaces.Abstractions.SurfaceDocument!
+Qian.Surfaces.Abstractions.SurfaceDocument.Deconstruct(out string! Kind, out string! Name, out string! File, out System.Text.Json.JsonElement Data, out string! Body) -> void
+override Qian.Surfaces.Abstractions.ParsedComponent.ToString() -> string!
+Qian.Surfaces.Abstractions.ParsedComponent.Id.get -> string!
+Qian.Surfaces.Abstractions.ParsedComponent.Manifest.get -> System.Text.Json.JsonElement
+Qian.Surfaces.Abstractions.ParsedComponent.Id.init -> void
+static Qian.Surfaces.Abstractions.ParsedComponent.operator !=(Qian.Surfaces.Abstractions.ParsedComponent? left, Qian.Surfaces.Abstractions.ParsedComponent? right) -> bool
+Qian.Surfaces.Abstractions.ParsedComponent.Manifest.init -> void
+static Qian.Surfaces.Abstractions.ParsedComponent.operator ==(Qian.Surfaces.Abstractions.ParsedComponent? left, Qian.Surfaces.Abstractions.ParsedComponent? right) -> bool
+override Qian.Surfaces.Abstractions.ParsedComponent.GetHashCode() -> int
+Qian.Surfaces.Abstractions.SurfaceDiagnostic
+override Qian.Surfaces.Abstractions.ParsedComponent.Equals(object? obj) -> bool
+Qian.Surfaces.Abstractions.ParsedComponent.Equals(Qian.Surfaces.Abstractions.ParsedComponent? other) -> bool
+override Qian.Surfaces.Abstractions.SurfaceDiagnostic.ToString() -> string!
+Qian.Surfaces.Abstractions.ParsedComponent.<Clone>$() -> Qian.Surfaces.Abstractions.ParsedComponent!
+static Qian.Surfaces.Abstractions.SurfaceDiagnostic.operator !=(Qian.Surfaces.Abstractions.SurfaceDiagnostic? left, Qian.Surfaces.Abstractions.SurfaceDiagnostic? right) -> bool
+static Qian.Surfaces.Abstractions.SurfaceDiagnostic.operator ==(Qian.Surfaces.Abstractions.SurfaceDiagnostic? left, Qian.Surfaces.Abstractions.SurfaceDiagnostic? right) -> bool
+Qian.Surfaces.Abstractions.SurfaceValidationResult.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>!
+override Qian.Surfaces.Abstractions.SurfaceDiagnostic.GetHashCode() -> int
+Qian.Surfaces.Abstractions.ParsedComponent.Deconstruct(out string! Id, out System.Text.Json.JsonElement Manifest, out System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDocument!>! Documents) -> void
+Qian.Surfaces.Abstractions.SurfaceParseResult.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>!
+Qian.Surfaces.Abstractions.SurfaceValidationResult.Diagnostics.init -> void
+override Qian.Surfaces.Abstractions.SurfaceDiagnostic.Equals(object? obj) -> bool
+Qian.Surfaces.Abstractions.SurfaceParseResult.Diagnostics.init -> void
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.Equals(Qian.Surfaces.Abstractions.SurfaceDiagnostic? other) -> bool
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.<Clone>$() -> Qian.Surfaces.Abstractions.SurfaceDiagnostic!
+Qian.Surfaces.Abstractions.SurfaceValidationResult
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.Deconstruct(out string! File, out int Line, out string! Severity, out Qian.Runtime.Errors.ErrorDetail! Error) -> void
+override Qian.Surfaces.Abstractions.SurfaceValidationResult.ToString() -> string!
+Qian.Surfaces.Abstractions.SurfaceValidationResult.Component.get -> Qian.Surfaces.Abstractions.ParsedComponent?
+Qian.Surfaces.Abstractions.SurfaceValidationResult.Component.init -> void
+static Qian.Surfaces.Abstractions.SurfaceValidationResult.operator !=(Qian.Surfaces.Abstractions.SurfaceValidationResult? left, Qian.Surfaces.Abstractions.SurfaceValidationResult? right) -> bool
+static Qian.Surfaces.Abstractions.SurfaceValidationResult.operator ==(Qian.Surfaces.Abstractions.SurfaceValidationResult? left, Qian.Surfaces.Abstractions.SurfaceValidationResult? right) -> bool
+override Qian.Surfaces.Abstractions.SurfaceValidationResult.GetHashCode() -> int
+override Qian.Surfaces.Abstractions.SurfaceValidationResult.Equals(object? obj) -> bool
+Qian.Surfaces.Abstractions.SurfaceValidationResult.Equals(Qian.Surfaces.Abstractions.SurfaceValidationResult? other) -> bool
+Qian.Surfaces.Abstractions.SurfaceValidationResult.<Clone>$() -> Qian.Surfaces.Abstractions.SurfaceValidationResult!
+Qian.Surfaces.Abstractions.SurfaceValidationResult.Deconstruct(out Qian.Surfaces.Abstractions.ParsedComponent? Component, out System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Surfaces.Abstractions.SurfaceParseResult.Syntax.get -> Qian.Surfaces.Abstractions.SurfaceSyntax?
+Qian.Surfaces.Abstractions.SurfaceValidationOptions
+Qian.Surfaces.Abstractions.SurfaceParseResult.Syntax.init -> void
+Qian.Surfaces.Abstractions.SurfaceParseResult
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.SurfaceValidationOptions() -> void
+override Qian.Surfaces.Abstractions.SurfaceParseResult.ToString() -> string!
+static Qian.Surfaces.Abstractions.SurfaceParseResult.operator !=(Qian.Surfaces.Abstractions.SurfaceParseResult? left, Qian.Surfaces.Abstractions.SurfaceParseResult? right) -> bool
+static Qian.Surfaces.Abstractions.SurfaceParseResult.operator ==(Qian.Surfaces.Abstractions.SurfaceParseResult? left, Qian.Surfaces.Abstractions.SurfaceParseResult? right) -> bool
+override Qian.Surfaces.Abstractions.SurfaceParseResult.GetHashCode() -> int
+override Qian.Surfaces.Abstractions.SurfaceParseResult.Equals(object? obj) -> bool
+Qian.Surfaces.Abstractions.SurfaceSyntax.Data.get -> System.Text.Json.JsonElement
+Qian.Surfaces.Abstractions.SurfaceParseResult.Equals(Qian.Surfaces.Abstractions.SurfaceParseResult? other) -> bool
+Qian.Surfaces.Abstractions.SurfaceSyntax.Data.init -> void
+Qian.Surfaces.Abstractions.SurfaceParseResult.<Clone>$() -> Qian.Surfaces.Abstractions.SurfaceParseResult!
+Qian.Surfaces.Abstractions.SurfaceParseResult.Deconstruct(out Qian.Surfaces.Abstractions.SurfaceSyntax? Syntax, out System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Surfaces.Abstractions.SurfaceSyntax
+Qian.Surfaces.Abstractions.SurfaceSyntax.Lines.get -> System.Collections.Generic.IReadOnlyDictionary<string!, int>!
+override Qian.Surfaces.Abstractions.SurfaceSyntax.ToString() -> string!
+Qian.Surfaces.Abstractions.SurfaceSyntax.Body.get -> string!
+Qian.Surfaces.Abstractions.SurfaceSyntax.Lines.init -> void
+static Qian.Surfaces.Abstractions.SurfaceSyntax.operator !=(Qian.Surfaces.Abstractions.SurfaceSyntax? left, Qian.Surfaces.Abstractions.SurfaceSyntax? right) -> bool
+Qian.Surfaces.Abstractions.SurfaceSyntax.Body.init -> void
+static Qian.Surfaces.Abstractions.SurfaceSyntax.operator ==(Qian.Surfaces.Abstractions.SurfaceSyntax? left, Qian.Surfaces.Abstractions.SurfaceSyntax? right) -> bool
+override Qian.Surfaces.Abstractions.SurfaceSyntax.GetHashCode() -> int
+override Qian.Surfaces.Abstractions.SurfaceSyntax.Equals(object? obj) -> bool
+Qian.Surfaces.Abstractions.SurfaceSyntax.Equals(Qian.Surfaces.Abstractions.SurfaceSyntax? other) -> bool
+Qian.Surfaces.Abstractions.SurfaceSyntax.<Clone>$() -> Qian.Surfaces.Abstractions.SurfaceSyntax!
+Qian.Surfaces.Abstractions.SurfaceSyntax.Deconstruct(out System.Text.Json.JsonElement Data, out string! Body, out System.Collections.Generic.IReadOnlyDictionary<string!, int>! Lines) -> void
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Syntax -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Path -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Name -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Secret -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Policy -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Hash -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Reference -> Qian.Runtime.Errors.ErrorCode!
+Qian.Surfaces.Abstractions.ISurfaceReader.Parse(string! file, string! content, bool markdown = false, string? traceId = null) -> Qian.Surfaces.Abstractions.SurfaceParseResult!
+Qian.Surfaces.Abstractions.ISurfaceReader.ValidateSchema(string! schema, string! file, System.Text.Json.JsonElement data, string? traceId = null) -> System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>!
+Qian.Surfaces.Abstractions.ISurfaceValidator.ValidateComponent(string! directory, Qian.Surfaces.Abstractions.SurfaceValidationOptions? options = null) -> Qian.Surfaces.Abstractions.SurfaceValidationResult!
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Profile.get -> string!
+static Qian.Surfaces.Abstractions.SurfaceErrors.All.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.ErrorCode!>!
+Qian.Surfaces.Abstractions.SurfaceErrors
+Qian.Surfaces.Abstractions.SurfaceDocument.SurfaceDocument(string! Kind, string! Name, string! File, System.Text.Json.JsonElement Data, string! Body) -> void
+Qian.Surfaces.Abstractions.SurfaceParseResult.SurfaceParseResult(Qian.Surfaces.Abstractions.SurfaceSyntax? Syntax, System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Surfaces.Abstractions.SurfaceDiagnostic.SurfaceDiagnostic(string! File, int Line, string! Severity, Qian.Runtime.Errors.ErrorDetail! Error) -> void
+Qian.Surfaces.Abstractions.ParsedComponent.ParsedComponent(string! Id, System.Text.Json.JsonElement Manifest, System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDocument!>! Documents) -> void
+Qian.Surfaces.Abstractions.SurfaceSyntax.SurfaceSyntax(System.Text.Json.JsonElement Data, string! Body, System.Collections.Generic.IReadOnlyDictionary<string!, int>! Lines) -> void
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.AllowCommandHooks.get -> bool
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.ExecutionPlane.init -> void
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.ExecutionPlane.get -> string!
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Profile.init -> void
+Qian.Surfaces.Abstractions.SurfaceValidationResult.SurfaceValidationResult(Qian.Surfaces.Abstractions.ParsedComponent? Component, System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.AllowCommandHooks.init -> void
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Tools.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Skills.init -> void
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Skills.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Events.init -> void
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Capabilities.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Events.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Tools.init -> void
+Qian.Surfaces.Abstractions.SurfaceValidationResult.IsValid.get -> bool
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.TraceId.init -> void
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.TraceId.get -> string?
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.CatalogComplete.get -> bool
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.Capabilities.init -> void
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.CatalogComplete.init -> void
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Schema -> Qian.Runtime.Errors.ErrorCode!
+Qian.Surfaces.Abstractions.ParsedComponent.Profile.init -> void
+Qian.Surfaces.Abstractions.ParsedComponent.Profile.get -> string!

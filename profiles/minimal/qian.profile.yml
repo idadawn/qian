@@ -1,0 +1,14 @@
+name: minimal
+description: 测试与 SDK 基准宿主，仅 Runtime 与声明式表面装载器，无默认业务组件。
+bundles:
+- qian.bundle.minimal@^1
+patch: ./qian.patch.yml
+hmr:
+  surfaces: true
+  code: false
+build:
+  aot: false
+hooks:
+  allowCommand: false
+health:
+  readyRequiresTiers: [system]

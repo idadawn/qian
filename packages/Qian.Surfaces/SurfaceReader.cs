@@ -1,0 +1,156 @@
+using System.Globalization;
+using System.Numerics;
+using System.Text.RegularExpressions;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Qian.Surfaces.Abstractions;
+using YamlDotNet.Core;
+using YamlDotNet.Core.Events;
+using YamlDotNet.RepresentationModel;
+
+namespace Qian.Surfaces;
+
+internal static class SurfaceReader
+{
+    internal static SurfaceParseResult Parse(string file, string content, bool markdown, string traceId)
+    {
+        var lines = new Dictionary<string, int>(StringComparer.Ordinal);
+        var diagnostics = new List<SurfaceDiagnostic>();
+        var source = content.Replace("\r\n", "\n", StringComparison.Ordinal);
+        var offset = 0;
+        var body = "";
+        try
+        {
+            if (Encoding.UTF8.GetByteCount(source) > 1_048_576) throw new InvalidDataException("单文件不能超过 1 MiB。");
+            if (markdown)
+            {
+                if (!source.StartsWith("---\n", StringComparison.Ordinal)) throw new InvalidDataException("Markdown 必须以 YAML front matter 开始。");
+                var end = source.IndexOf("\n---", 4, StringComparison.Ordinal);
+                if (end < 0 || (source.Length > end + 4 && source[end + 4] != '\n')) throw new InvalidDataException("front matter 缺少结束分隔符。");
+                body = source[Math.Min(end + 5, source.Length)..];
+                source = source[4..end];
+                offset = 1;
+            }
+            JsonElement data;
+            if (!markdown && file.EndsWith(".json", StringComparison.Ordinal))
+            {
+                var bytes = Encoding.UTF8.GetBytes(source);
+                var reader = new Utf8JsonReader(bytes, new JsonReaderOptions { MaxDepth = 64 });
+                if (!reader.Read()) throw new JsonException();
+                ReadJson(ref reader, "", source, bytes, lines, diagnostics, file, traceId);
+                using var document = JsonDocument.Parse(source);
+                data = document.RootElement.Clone();
+            }
+            else
+            {
+                var parser = new Parser(new StringReader(source));
+                while (parser.MoveNext())
+                    if (parser.Current is AnchorAlias) throw new InvalidDataException("配置不允许 YAML alias。");
+                var yaml = new YamlStream();
+                yaml.Load(new StringReader(source));
+                if (yaml.Documents.Count > 1) throw new InvalidDataException("必须恰有一个 YAML 文档。");
+                lines[""] = 1 + offset;
+                var node = yaml.Documents.Count == 0 ? null : ReadYaml(yaml.Documents[0].RootNode, "", offset, lines, 0);
+                data = JsonSerializer.SerializeToElement(node);
+            }
+            return new SurfaceParseResult(new SurfaceSyntax(data, body, lines), diagnostics);
+        }
+        catch (JsonException error)
+        {
+            diagnostics.Add(Diagnostics.Create(file, "", (int)(error.LineNumber ?? 0) + 1 + offset, SurfaceErrors.Syntax, "JSON 语法无效。", traceId));
+        }
+        catch (YamlException error)
+        {
+            diagnostics.Add(Diagnostics.Create(file, "", (int)error.Start.Line + offset, SurfaceErrors.Syntax, "YAML 语法无效或存在重复键。", traceId));
+        }
+        catch (Exception error) when (error is InvalidDataException or ArgumentException or FormatException or OverflowException)
+        {
+            diagnostics.Add(Diagnostics.Create(file, "", 1 + offset, SurfaceErrors.Syntax, "文件语法、大小、嵌套深度或值无效。", traceId));
+        }
+        return new SurfaceParseResult(null, diagnostics);
+    }
+
+    private static void ReadJson(ref Utf8JsonReader reader, string pointer, string source, byte[] bytes, Dictionary<string, int> lines,
+        List<SurfaceDiagnostic> errors, string file, string traceId)
+    {
+        int Line(long position) => Encoding.UTF8.GetString(bytes.AsSpan(0, (int)position)).Count(c => c == '\n') + 1;
+        lines.TryAdd(pointer, Line(reader.TokenStartIndex));
+        if (reader.TokenType == JsonTokenType.StartObject)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+            {
+                if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException();
+                var name = reader.GetString()!;
+                var child = pointer + "/" + Diagnostics.Token(name);
+                lines[child] = Line(reader.TokenStartIndex);
+                if (!names.Add(name)) errors.Add(Diagnostics.Create(file, child, lines[child], SurfaceErrors.Syntax, "JSON 对象存在重复键。", traceId));
+                if (!reader.Read()) throw new JsonException();
+                ReadJson(ref reader, child, source, bytes, lines, errors, file, traceId);
+            }
+        }
+        else if (reader.TokenType == JsonTokenType.StartArray)
+        {
+            var index = 0;
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                ReadJson(ref reader, pointer + "/" + index++, source, bytes, lines, errors, file, traceId);
+        }
+        else if (reader.TokenType == JsonTokenType.Number && !double.IsFinite(reader.GetDouble())) throw new JsonException();
+    }
+
+    private static JsonNode? ReadYaml(YamlNode node, string pointer, int offset, Dictionary<string, int> lines, int depth)
+    {
+        if (depth > 64) throw new InvalidDataException("嵌套过深。");
+        lines.TryAdd(pointer, (int)node.Start.Line + offset);
+        var tag = node.Tag.IsEmpty ? "" : node.Tag.Value;
+        if (tag.Length > 0 && tag != "!" && !tag.StartsWith("tag:yaml.org,2002:", StringComparison.Ordinal)) throw new InvalidDataException("不支持自定义 YAML tag。");
+        if (node is YamlMappingNode map)
+        {
+            var result = new JsonObject();
+            foreach (var pair in map.Children)
+            {
+                if (pair.Key is not YamlScalarNode key || key.Value is null) throw new InvalidDataException("YAML 键必须为字符串。");
+                var child = pointer + "/" + Diagnostics.Token(key.Value);
+                if (result.ContainsKey(key.Value)) throw new InvalidDataException("YAML 存在重复键。");
+                lines[child] = (int)key.Start.Line + offset;
+                result.Add(key.Value, ReadYaml(pair.Value, child, offset, lines, depth + 1));
+            }
+            return result;
+        }
+        if (node is YamlSequenceNode sequence)
+        {
+            var result = new JsonArray();
+            for (var i = 0; i < sequence.Children.Count; i++) result.Add(ReadYaml(sequence.Children[i], pointer + "/" + i, offset, lines, depth + 1));
+            return result;
+        }
+        var scalar = (YamlScalarNode)node;
+        var value = scalar.Value ?? "";
+        if (tag is "!" or "tag:yaml.org,2002:str" || tag.Length == 0 && scalar.Style is ScalarStyle.SingleQuoted or ScalarStyle.DoubleQuoted or ScalarStyle.Literal or ScalarStyle.Folded)
+            return JsonValue.Create(value);
+        if (Regex.IsMatch(value, "^(?:[-+]?\\.(?:inf|Inf|INF)|\\.nan|\\.NaN|\\.NAN)$", RegexOptions.CultureInvariant)) throw new InvalidDataException("JSON 不支持非有限数值。");
+        if (Regex.IsMatch(value, "^0x[0-9a-fA-F]+$", RegexOptions.CultureInvariant) || Regex.IsMatch(value, "^0o[0-7]+$", RegexOptions.CultureInvariant))
+        {
+            var sign = value.StartsWith('-') ? -1 : 1;
+            var unsigned = value.TrimStart('+', '-');
+            var radix = unsigned[1] is 'x' or 'X' ? 16 : 8;
+            BigInteger integer = 0;
+            foreach (var digit in unsigned[2..].ToLowerInvariant()) integer = integer * radix + (digit <= '9' ? digit - '0' : digit - 'a' + 10);
+            var converted = sign * (double)integer;
+            if (!double.IsFinite(converted)) throw new InvalidDataException("数值溢出。");
+            return JsonValue.Create(converted);
+        }
+        if (value is "null" or "Null" or "NULL" or "~" or "") return null;
+        if (value is "true" or "True" or "TRUE") return JsonValue.Create(true);
+        if (value is "false" or "False" or "FALSE") return JsonValue.Create(false);
+        var numeric = Regex.IsMatch(value, "^[-+]?(?:[0-9]+|\\.[0-9]+|[0-9]+\\.[0-9]*)(?:[eE][-+]?[0-9]+)?$", RegexOptions.CultureInvariant);
+        if (numeric && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
+        {
+            if (!double.IsFinite(number)) throw new InvalidDataException("数值溢出。");
+            return JsonValue.Create(number);
+        }
+        if (tag is "tag:yaml.org,2002:int" or "tag:yaml.org,2002:float" or "tag:yaml.org,2002:bool" or "tag:yaml.org,2002:null")
+            throw new InvalidDataException("标量不符合显式 YAML 类型。");
+        return JsonValue.Create(value);
+    }
+}

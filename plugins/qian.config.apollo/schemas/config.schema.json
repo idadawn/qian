@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": "string"
+    },
+    "appId": {
+      "type": "string"
+    },
+    "namespaces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

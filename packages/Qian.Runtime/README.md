@@ -20,6 +20,8 @@ await runtime.MountAsync(definitions, cancellationToken);
 
 `PluginDefinition` 绑定 `PluginEntry`、`IQianPlugin` 实例与清单的 `Provides`。每次 `MountAsync` 提交一组完整依赖，装载器在调用任何 `ApplyAsync` 前检查缺失键与环路。已装载条目的依赖被撤销后进入 `Pending`，同键恢复时重新 `ApplyAsync`。等待超过 30 秒会记录依赖警告，管理面可用 `GetPendingDependencies` 查询等待的键。Apply 失败会逆序回滚自身效果，独立条目继续启动，失败原因可由 `GetFailure` 查询。配置重载用 `ReloadAsync`。
 
+声明式目录键见 `SurfaceKeys`（Skills / Agents / Commands / Hooks / McpServers / Tools）；目录中的文档由 [Qian.Surfaces](../Qian.Surfaces/README.md) 校验和登记，沿用同一 scope 与 Effect 语义。
+
 ## 服务与效果
 
 `Provide` 创建可撤销的 .NET keyed service 描述；`ctx.Services.GetRequiredKeyedService<T>(key)` 与 `ctx.Inject<T>(key)` 使用相同的可见性规则，宿主的其它 DI 服务仍以只读方式访问。注册与宿主已构建的容器分离，因此撤销不会重建或销毁宿主 DI。

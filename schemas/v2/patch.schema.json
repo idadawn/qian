@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/patch/v2",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "patternProperties": {
+      "^x-": {}
+    },
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9.-]*$"
+      },
+      "scope": {
+        "type": "string",
+        "pattern": "^(global|(tenant|app|agent-session):[^\\s:]+)$"
+      },
+      "plugin": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+(@[^\\s]+)?$"
+      },
+      "config": {
+        "type": "object"
+      },
+      "disabled": {
+        "type": "boolean"
+      },
+      "note": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id"
+    ]
+  }
+}
