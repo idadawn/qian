@@ -6,7 +6,7 @@
   "author": {
     "name": "Qian"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "interface": {
     "displayName": "authz",
     "category": "platform"

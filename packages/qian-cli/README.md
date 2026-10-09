@@ -24,4 +24,4 @@ overlay 示例（不会修改 base 组合包）：
 
 `--resolve`、`--redact` 表示本切片始终采用的行为：始终解析并验证依赖，始终保留 secretRef，不读取密钥。合法配置退出 0；非法参数或配置退出 1、标准输出为空、标准错误输出带 ErrorDetail 的 diagnostics。业务骨架 warning 会出现在成功输出中，不能用作 Provider 就绪证明。
 
-此工作区包尚未发布。install/add、锁文件、启动进程、远程平台 scope patch 与其余 CLI 命令属于后续任务，不在本切片伪实现。minimal 默认清单仍待产品决策，四个其它 profile 可静态解析。
+此工作区包尚未发布。install/add、锁文件、启动进程、远程平台 scope patch 与其余 CLI 命令属于后续任务，不在本切片伪实现。五个默认 profile 均可静态解析；minimal 仅 Runtime 与表面装载器，默认输出空条目和空诊断。

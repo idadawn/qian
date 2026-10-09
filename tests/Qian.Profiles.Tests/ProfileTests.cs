@@ -54,7 +54,8 @@ public sealed class ProfileTests
     [InlineData("gateway", 5)]
     [InlineData("identity", 8)]
     [InlineData("standalone", 2)]
-    public void Shipped_profiles_resolve_with_explicit_skeleton_warnings(string profile, int count)
+    [InlineData("minimal", 0)]
+    public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count)
     {
         var result = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = profile, IncludeHomePatch = false });
         Assert.True(result.IsValid, JsonSerializer.Serialize(result, Json));
@@ -64,29 +65,38 @@ public sealed class ProfileTests
     }
 
     [Fact]
-    public async Task Custom_empty_profile_and_declarative_component_start_on_the_real_runtime()
+    public async Task Shipped_minimal_profile_starts_the_real_runtime_and_mounts_a_declarative_overlay()
     {
-        using var item = JsonDocument.Parse("""{"files":{"profiles/test/qian.profile.yml":"{\"name\":\"test\",\"bundles\":[]}"},"patches":[],"home":false}""");
+        using var item = JsonDocument.Parse("""{"files":{},"patches":[],"home":false}""");
         using var fixture = new Fixture(item.RootElement);
         var reader = new SurfaceValidator();
         var composer = new ProfileLoader(reader);
-        var empty = composer.Load(fixture.Options);
-        Assert.True(empty.IsValid);
+        // 直接消费仓库交付文件，不能用临时空树替代默认 minimal 验收。
+        var empty = composer.Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "minimal", IncludeHomePatch = false });
+        Assert.True(empty.IsValid, JsonSerializer.Serialize(empty.Diagnostics, Json));
+        Assert.Empty(empty.Diagnostics);
         Assert.Empty(empty.Snapshot!.Entries);
+        Assert.Empty(empty.Snapshot.MountOrder);
+        Assert.Equal("qian.bundle.minimal@1.0.0", Assert.Single(empty.Snapshot.Layers, layer => layer.Kind == "bundle").Reference);
         using var services = new ServiceCollection().BuildServiceProvider();
         await using var runtime = new PluginLoader(services);
         await runtime.MountAsync([], TestContext.Current.CancellationToken);
         await runtime.WhenIdleAsync(TestContext.Current.CancellationToken);
-        // 只在自建测试 profile 中加入真实静态命令，不能替代待裁决的默认 minimal。
+        // 同一 minimal 基准宿主可通过 overlay 装载无代码表面，不需要业务 Provider。
         var componentDirectory = Path.Combine(fixture.Directory, "plugins/other");
         Directory.CreateDirectory(Path.Combine(componentDirectory, "commands"));
         File.WriteAllText(Path.Combine(componentDirectory, "commands/hello.md"), "---\ndescription: 这是用于验证真实表面装载与释放的测试命令。\n---\n你好。\n");
-        File.WriteAllText(Path.Combine(fixture.Directory, "profiles/test/qian.profile.yml"), "name: test\nbundles: []\npatch: ./qian.patch.yml\n");
-        File.WriteAllText(Path.Combine(fixture.Directory, "profiles/test/qian.patch.yml"), "- id: hello\n  plugin: test.other\n  config: {}\n");
-        var result = composer.Load(fixture.Options);
-        Assert.True(result.IsValid);
+        var patch = Path.Combine(fixture.Directory, "minimal.patch.yml");
+        File.WriteAllText(patch, "- id: hello\n  plugin: test.other\n  config: {}\n");
+        var result = composer.Load(new ProfileLoadOptions
+        {
+            WorkingDirectory = Root, Profile = "minimal", IncludeHomePatch = false,
+            Patches = [patch], ComponentDirectories = [componentDirectory]
+        });
+        Assert.True(result.IsValid, JsonSerializer.Serialize(result.Diagnostics, Json));
+        Assert.Empty(result.Diagnostics);
         var entry = Assert.Single(result.Snapshot!.Entries);
-        var parsed = reader.ValidateComponent(entry.ComponentDirectory, new SurfaceValidationOptions { Profile = "test" });
+        var parsed = reader.ValidateComponent(entry.ComponentDirectory, new SurfaceValidationOptions { Profile = "minimal" });
         Assert.True(parsed.IsValid, JsonSerializer.Serialize(parsed.Diagnostics, Json));
         var plugin = new DeclarativeSurfacePlugin(parsed);
         var identity = entry.Plugin.Split('@');

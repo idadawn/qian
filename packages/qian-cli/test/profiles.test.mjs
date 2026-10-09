@@ -36,8 +36,8 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
  }
  if(process.env.QIAN_PROFILE_REPORT){mkdirSync(path.dirname(process.env.QIAN_PROFILE_REPORT),{recursive:true});writeFileSync(process.env.QIAN_PROFILE_REPORT,JSON.stringify(report,null,2));}
 });
-test('交付的四个 profile 具有明确骨架警告及独立边界',()=>{
- for(const[profile,count]of Object.entries({platform:21,gateway:5,identity:8,standalone:2})){
+test('交付的五个 profile 具有正确业务边界及骨架警告',()=>{
+ for(const[profile,count]of Object.entries({platform:21,gateway:5,identity:8,standalone:2,minimal:0})){
   const result=loadProfile({workingDirectory:root,profile,includeHomePatch:false});
   assert.ok(result.isValid,JSON.stringify(result));assert.equal(result.snapshot.entries.length,count);assert.equal(result.diagnostics.filter(d=>d.severity==='warning').length,count);
   if(profile!=='platform')assert.ok(!result.snapshot.entries.some(e=>/^qian\.(registry|lifecycle|capabilities)@/.test(e.plugin)));
@@ -47,6 +47,8 @@ test('真实 CLI dump-config、overlay 来源及非法配置退出',()=>{
  const directory=mkdtempSync(path.join(os.tmpdir(),'qian-cli-'));
  const run=(...args)=>spawnSync(process.execPath,[path.join(root,'packages/qian-cli/dist/main.js'),'--cwd',root,'--no-home','--profile','platform','--dump-config','--json',...args],{encoding:'utf8'});
  try{
+  const minimal=run('--profile','minimal');assert.equal(minimal.status,0,minimal.stderr);
+  const baseline=JSON.parse(minimal.stdout);assert.equal(baseline.profile,'minimal');assert.deepEqual(baseline.entries,[]);assert.deepEqual(baseline.mountOrder,[]);assert.deepEqual(baseline.diagnostics,[]);assert.equal(baseline.layers.find(layer=>layer.kind==='bundle').ref,'qian.bundle.minimal@1.0.0');
   const initial=run();assert.equal(initial.status,0,initial.stderr);const snapshot=JSON.parse(initial.stdout);assert.equal(snapshot.entries.length,21);
   const patch=path.join(directory,'override.yml');writeFileSync(patch,'- id: files\n  config:\n    storage: {kind: local, root: /tmp/profile-proof}\n');
   const updated=run('--patch',patch);assert.equal(updated.status,0,updated.stderr);const final=JSON.parse(updated.stdout),files=final.entries.find(e=>e.id==='files');assert.equal(files.config.storage.root,'/tmp/profile-proof');assert.equal(final.layers[files.layer].kind,'overlay');

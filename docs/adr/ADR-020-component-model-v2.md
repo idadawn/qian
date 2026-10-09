@@ -111,6 +111,12 @@ supersedes: ADR-002 §D2.1/D2.9/D2.10（形态轴与两层生命周期）、ADR-
 7. **CLI 遥测：默认不采集；S2 提供 opt-in `qian telemetry on`，只采集命令名、CLI 版本、操作系统与匿名安装 id，不含路径、租户与代码；私有化部署可在 profile 中禁用。** 外部宿主安装数在 S1 只用 feed 下载统计。
 8. `qian init --template` 模板名已统一为 specs/component-model.md §9.1 的集合（R42）；后续新增模板在 spec 登记。
 
+### 7.1 minimal 默认清单澄清（2026-10-09）
+
+产品负责人在 S1-DEC-012 中确认：`minimal` 默认只包含 `Qian.Runtime` 与声明式表面装载器，`qian.bundle.minimal` 的初始 patch 为空，不挂载业务组件，也不包含 `qian.registry` / `qian.lifecycle` / `qian.capabilities`。`config`、`observability`、`hooks`、`docs` 可由消费者按需添加，不属于 minimal 默认树。
+
+本次澄清统一 PRD §7.0.4、组件规格 §7.7 与 S1-RT-002 的既有最小宿主验收，不改变其它 profile。理由是让运行时与表面 TCK 在没有业务 Provider 的环境下独立验证；默认 minimal 必须从随仓库交付的文件实际装配并启动，不能仅用临时空树替代验收。若以后需要调整默认内容，另建决策任务，不隐式加入组件。
+
 ## 8 参考
 
 - 对标项目的公开仓库与文档（组件目录与 CLI 一键安装；插件清单 `plugin.json` 与 `marketplace.json`；「一切皆插件」运行时、能力 seam、作用域、profile 与 patch 分层、文档生成与 CI 门禁）。

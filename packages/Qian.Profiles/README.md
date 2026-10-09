@@ -35,6 +35,6 @@ gateway/identity 不允许 command hook，S1 拒绝代码热更新；AOT profile
 
 `ProfileLoadResult` 返回快照与 `SurfaceDiagnostic`；错误时 Snapshot 为空。诊断外层有文件、行号和级别，内层遵循冻结 ErrorDetail，字段码 `PROFILE_INVALID` 由 Definition 包声明。错误指针定位原 patch 的 `/条目序号/config/字段`；来源层指向最后改写条目的文件。
 
-默认 [profiles](../../profiles/README.md) 的业务叶节点目前均为 `x-skeleton`，会输出 warning；后续组件任务补真实 Provider、完整配置契约与依赖，不能据此宣称平台/网关/身份服务 Ready。minimal 默认清单待 [S1-DEC-012](../../pm/tasks/S1-DEC-012.md) 裁决；共用 TCK 的自建空树已在真实 Runtime 启动，并验证了静态命令装载。
+默认 [profiles](../../profiles/README.md) 的业务叶节点目前均为 `x-skeleton`，会输出 warning；后续组件任务补真实 Provider、完整配置契约与依赖，不能据此宣称平台/网关/身份服务 Ready。按 [S1-DEC-012](../../pm/tasks/S1-DEC-012.md) 的确认结论，minimal 仅包含 Runtime 与表面装载器、初始 patch 为空；测试已从实际交付的 minimal 文件启动真实 Runtime，并通过 overlay 验证静态命令装载。
 
 CLI 使用方式见 [qian](../qian-cli/README.md)，双侧场景与全量检查见 [profile TCK](../../tck/profiles/README.md)。
