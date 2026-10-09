@@ -1,0 +1,144 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.Extensions.DependencyInjection;
+using Qian.Profiles.Abstractions;
+using Qian.Runtime;
+using Qian.Surfaces;
+using Qian.Surfaces.Abstractions;
+
+namespace Qian.Profiles.Tests;
+
+public sealed class ProfileTests
+{
+    private static readonly string Root = FindRoot();
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+    [Fact]
+    public void Shared_composition_tck_checks_results_and_emits_parity_report()
+    {
+        var report = new JsonObject();
+        using var cases = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "tck/profiles/cases.json")));
+        foreach (var item in cases.RootElement.EnumerateArray())
+        {
+            using var fixture = new Fixture(item);
+            var result = new ProfileLoader(new SurfaceValidator()).Load(fixture.Options);
+            var name = item.GetProperty("name").GetString()!;
+            Assert.True(result.IsValid == item.GetProperty("expect").GetBoolean(), name + ": " + JsonSerializer.Serialize(result, Json));
+            if (item.TryGetProperty("pointer", out var expectedPointer)) Assert.True(result.Diagnostics.Any(d => d.Error.Pointer == expectedPointer.GetString()), name + ": " + JsonSerializer.Serialize(result.Diagnostics, Json));
+            if (result.IsValid)
+            {
+                var entries = result.Snapshot!.Entries;
+                if (item.TryGetProperty("count", out var count)) Assert.Equal(count.GetInt32(), entries.Count);
+                var settings = entries.FirstOrDefault(e => e.Id == "settings" && e.Scope == "global");
+                if (item.TryGetProperty("port", out var port)) Assert.Equal(port.GetInt32(), settings!.Config.GetProperty("port").GetInt32());
+                if (item.TryGetProperty("marker", out var marker)) Assert.Equal(marker.GetString(), settings!.Config.GetProperty("marker").GetString());
+                if (item.TryGetProperty("noObsolete", out _)) Assert.False(settings!.Config.TryGetProperty("obsolete", out _));
+                if (item.TryGetProperty("version", out var version)) Assert.Equal("test.settings@" + version.GetString(), settings!.Plugin);
+                if (entries.Any(e => e.Id == "consumer")) Assert.True(result.Snapshot.MountOrder.ToList().IndexOf("global/settings") < result.Snapshot.MountOrder.ToList().IndexOf("global/consumer"));
+            }
+            if (item.TryGetProperty("warnings", out var warnings)) Assert.Equal(warnings.GetInt32(), result.Diagnostics.Count(d => d.Severity == "warning"));
+            Assert.DoesNotContain("DO-NOT-LEAK", JsonSerializer.Serialize(result, Json), StringComparison.Ordinal);
+            var normalized = JsonSerializer.SerializeToNode(result, Json)!;
+            foreach (var diagnostic in normalized["diagnostics"]!.AsArray())
+            {
+                var error = diagnostic!["error"]!.AsObject(); error["trace_id"] = "TRACE";
+                foreach (var key in new[] { "instance", "allowed" }) if (error[key] is null) error.Remove(key);
+                foreach (var field in error["errors"]!.AsArray()) if (field!["allowed"] is null) field.AsObject().Remove("allowed");
+            }
+            report[name] = normalized;
+        }
+        WriteReport(report);
+    }
+
+    [Theory]
+    [InlineData("platform", 21)]
+    [InlineData("gateway", 5)]
+    [InlineData("identity", 8)]
+    [InlineData("standalone", 2)]
+    [InlineData("minimal", 0)]
+    public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count)
+    {
+        var result = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = profile, IncludeHomePatch = false });
+        Assert.True(result.IsValid, JsonSerializer.Serialize(result, Json));
+        Assert.Equal(count, result.Snapshot!.Entries.Count);
+        Assert.Equal(count, result.Diagnostics.Count(d => d.Severity == "warning"));
+        if (profile != "platform") Assert.DoesNotContain(result.Snapshot.Entries, e => e.Plugin.StartsWith("qian.registry@", StringComparison.Ordinal) || e.Plugin.StartsWith("qian.lifecycle@", StringComparison.Ordinal) || e.Plugin.StartsWith("qian.capabilities@", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Shipped_minimal_profile_starts_the_real_runtime_and_mounts_a_declarative_overlay()
+    {
+        using var item = JsonDocument.Parse("""{"files":{},"patches":[],"home":false}""");
+        using var fixture = new Fixture(item.RootElement);
+        var reader = new SurfaceValidator();
+        var composer = new ProfileLoader(reader);
+        // 直接消费仓库交付文件，不能用临时空树替代默认 minimal 验收。
+        var empty = composer.Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "minimal", IncludeHomePatch = false });
+        Assert.True(empty.IsValid, JsonSerializer.Serialize(empty.Diagnostics, Json));
+        Assert.Empty(empty.Diagnostics);
+        Assert.Empty(empty.Snapshot!.Entries);
+        Assert.Empty(empty.Snapshot.MountOrder);
+        Assert.Equal("qian.bundle.minimal@1.0.0", Assert.Single(empty.Snapshot.Layers, layer => layer.Kind == "bundle").Reference);
+        using var services = new ServiceCollection().BuildServiceProvider();
+        await using var runtime = new PluginLoader(services);
+        await runtime.MountAsync([], TestContext.Current.CancellationToken);
+        await runtime.WhenIdleAsync(TestContext.Current.CancellationToken);
+        // 同一 minimal 基准宿主可通过 overlay 装载无代码表面，不需要业务 Provider。
+        var componentDirectory = Path.Combine(fixture.Directory, "plugins/other");
+        Directory.CreateDirectory(Path.Combine(componentDirectory, "commands"));
+        File.WriteAllText(Path.Combine(componentDirectory, "commands/hello.md"), "---\ndescription: 这是用于验证真实表面装载与释放的测试命令。\n---\n你好。\n");
+        var patch = Path.Combine(fixture.Directory, "minimal.patch.yml");
+        File.WriteAllText(patch, "- id: hello\n  plugin: test.other\n  config: {}\n");
+        var result = composer.Load(new ProfileLoadOptions
+        {
+            WorkingDirectory = Root, Profile = "minimal", IncludeHomePatch = false,
+            Patches = [patch], ComponentDirectories = [componentDirectory]
+        });
+        Assert.True(result.IsValid, JsonSerializer.Serialize(result.Diagnostics, Json));
+        Assert.Empty(result.Diagnostics);
+        var entry = Assert.Single(result.Snapshot!.Entries);
+        var parsed = reader.ValidateComponent(entry.ComponentDirectory, new SurfaceValidationOptions { Profile = "minimal" });
+        Assert.True(parsed.IsValid, JsonSerializer.Serialize(parsed.Diagnostics, Json));
+        var plugin = new DeclarativeSurfacePlugin(parsed);
+        var identity = entry.Plugin.Split('@');
+        var definition = new PluginDefinition(new PluginEntry(entry.Id, identity[0], identity[1], ScopeKey.Global, entry.Layer, entry.Config), plugin, plugin.Provides);
+        await runtime.MountAsync([definition], TestContext.Current.CancellationToken);
+        Assert.Equal(PluginState.Ready, runtime.GetState("hello", ScopeKey.Global));
+        var context = runtime.GetContext("hello", ScopeKey.Global);
+        Assert.Single(context.List(SurfaceKeys.Commands));
+    }
+
+    private static void WriteReport(JsonObject report)
+    {
+        var file = Environment.GetEnvironmentVariable("QIAN_PROFILE_REPORT");
+        if (string.IsNullOrEmpty(file)) return;
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(file))!);
+        File.WriteAllText(file, report.ToJsonString(Json));
+    }
+    private static string FindRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null && !File.Exists(Path.Combine(current.FullName, "Qian.slnx"))) current = current.Parent;
+        return current?.FullName ?? throw new InvalidOperationException("找不到仓库。");
+    }
+    private sealed class Fixture : IDisposable
+    {
+        internal string Directory { get; } = Path.Combine(Path.GetTempPath(), "qian-profile-" + Guid.NewGuid().ToString("N"));
+        internal ProfileLoadOptions Options { get; }
+        internal Fixture(JsonElement item)
+        {
+            var template = Path.Combine(Root, "tck/profiles/base");
+            foreach (var source in System.IO.Directory.EnumerateFiles(template, "*", SearchOption.AllDirectories))
+            {
+                var target = Path.Combine(Directory, Path.GetRelativePath(template, source));
+                System.IO.Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(source, target);
+            }
+            foreach (var file in item.GetProperty("files").EnumerateObject())
+            {
+                var target = Path.Combine(Directory, file.Name); System.IO.Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.WriteAllText(target, file.Value.GetString());
+            }
+            if (item.TryGetProperty("missingHome", out var absent) && absent.GetBoolean()) File.Delete(Path.Combine(Directory, "home/qian.patch.yml"));
+            Options = new ProfileLoadOptions { WorkingDirectory = Directory, Profile = "test", HomeDirectory = "home", IncludeHomePatch = item.GetProperty("home").GetBoolean(), Patches = item.GetProperty("patches").EnumerateArray().Select(v => v.GetString()!).ToArray() };
+        }
+        public void Dispose() => System.IO.Directory.Delete(Directory, true);
+    }
+}

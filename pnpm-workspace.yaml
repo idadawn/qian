@@ -1,6 +1,7 @@
-# pnpm 工作区（S1-YUE-003）：文档站 website/、yue 前端包 packages/yue/*（@idadawn/yue-<目录名>）、前端应用 apps/*。
+# pnpm 工作区：文档站 website/、Qian 的 Node 包 packages/qian-*、yue 前端包 packages/yue/*（@idadawn/yue-<目录名>，S1-YUE-003）、前端应用 apps/*。
 packages:
   - website
+  - packages/qian-*
   - packages/yue/*
   - apps/*
 

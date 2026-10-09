@@ -1,0 +1,50 @@
+- id: identity
+  plugin: qian.identity.server
+  config: {}
+- id: identity.connector.oidc
+  plugin: qian.identity.connector.oidc
+  config: {}
+- id: identity.connector.wecom
+  plugin: qian.identity.connector.wecom
+  config: {}
+- id: tenancy
+  plugin: qian.tenancy
+  config:
+    resolver:
+      mode: production
+      allowHeaderFallback: false
+- id: data
+  plugin: qian.data
+  config:
+    dialect: pg
+    connection: secretRef://platform/pg/qian-platform
+    rls:
+      enforce: true
+- id: config
+  plugin: qian.config.apollo
+  config:
+    meta: http://apollo-config.apollo:8080
+    appId: qian-identity
+    namespaces:
+    - application
+    - qian.common.trust
+- id: events
+  plugin: qian.events
+  config:
+    broker: secretRef://platform/rabbitmq/url
+    outbox:
+      lock: redis
+- id: audit
+  plugin: qian.audit
+  config:
+    chain:
+      store: pg
+- id: files
+  plugin: qian.files
+  config:
+    storage:
+      kind: local
+      root: /var/lib/qian/files
+    quota:
+      perTenantBytes: 10737418240
+  disabled: true

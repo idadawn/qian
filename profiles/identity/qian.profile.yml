@@ -1,0 +1,15 @@
+name: identity
+description: identity 的静态装配基线，业务 Provider 尚待各组件任务实现。
+bundles:
+- qian.bundle.identity-server@^1
+patch: ./qian.patch.yml
+hmr:
+  surfaces: true
+  code: false
+build:
+  aot: false
+hooks:
+  allowCommand: false
+health:
+  readyRequiresTiers:
+  - system

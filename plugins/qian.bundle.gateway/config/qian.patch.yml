@@ -1,0 +1,26 @@
+- id: gateway
+  plugin: qian.gateway
+  config: {}
+- id: identity
+  plugin: qian.identity.client
+  config:
+    issuer: https://id.example.internal
+    clientId: qian-gateway
+    clientSecret: secretRef://platform/identity/client-secret
+- id: config
+  plugin: qian.config.apollo
+  config:
+    meta: http://apollo-config.apollo:8080
+    appId: qian-gateway
+    namespaces:
+    - application
+    - qian.common.trust
+- id: observability
+  plugin: qian.observability
+  config:
+    otlp: http://otel-collector.observability:4317
+- id: audit
+  plugin: qian.audit
+  config:
+    chain:
+      store: pg

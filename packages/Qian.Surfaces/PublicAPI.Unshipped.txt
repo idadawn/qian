@@ -1,0 +1,13 @@
+#nullable enable
+Qian.Surfaces.ToolContractHash
+Qian.Surfaces.SurfaceValidator
+Qian.Surfaces.SurfaceValidator.SurfaceValidator() -> void
+Qian.Surfaces.SurfaceValidator.Parse(string! file, string! content, bool markdown = false, string? traceId = null) -> Qian.Surfaces.Abstractions.SurfaceParseResult!
+Qian.Surfaces.SurfaceValidator.ValidateComponent(string! directory, Qian.Surfaces.Abstractions.SurfaceValidationOptions? options = null) -> Qian.Surfaces.Abstractions.SurfaceValidationResult!
+Qian.Surfaces.SurfaceValidator.ValidateSchema(string! schema, string! file, System.Text.Json.JsonElement data, string? traceId = null) -> System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>!
+Qian.Surfaces.DeclarativeSurfacePlugin.DeclarativeSurfacePlugin(Qian.Surfaces.Abstractions.SurfaceValidationResult! result) -> void
+Qian.Surfaces.DeclarativeSurfacePlugin
+Qian.Surfaces.DeclarativeSurfacePlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Surfaces.DeclarativeSurfacePlugin.Provides.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+static Qian.Surfaces.ToolContractHash.Compute(System.Text.Json.JsonElement tool) -> string!
+Qian.Surfaces.DeclarativeSurfacePlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

@@ -1,0 +1,4 @@
+[
+  { "name": "yaml-core-scalars", "source": "hex: 0x10\noctal: 0o10\nbinary: 0b10\nstring: !!str 12\nnumber: !!int \"12\"\n", "data": { "hex": 16, "octal": 8, "binary": "0b10", "string": "12", "number": 12 } },
+  { "name": "empty-yaml", "source": "", "data": null }
+]

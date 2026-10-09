@@ -1,0 +1,5 @@
+- id: model-gateway
+  plugin: qian.model-gateway
+  config:
+    higress: http://higress-gateway.higress:8080
+  disabled: true

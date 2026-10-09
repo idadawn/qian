@@ -1,0 +1,376 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/plugin/v2",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": {}
+  },
+  "required": [
+    "id",
+    "version",
+    "description",
+    "author",
+    "license",
+    "interface",
+    "inject",
+    "provides",
+    "policy",
+    "scopes"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://qian.dev/schemas/plugin/v2"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$",
+      "maxLength": 128
+    },
+    "version": {
+      "$ref": "#/$defs/semver"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500
+    },
+    "author": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "license": {
+      "type": "string"
+    },
+    "engines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "qian": {
+          "type": "string"
+        },
+        "kun": {
+          "type": "string"
+        },
+        "yue": {
+          "type": "string"
+        }
+      }
+    },
+    "interface": {
+      "type": "object",
+      "required": [
+        "displayName",
+        "category"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "category": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "defaultPrompt": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "string"
+          }
+        },
+        "icon": {
+          "$ref": "#/$defs/relPath"
+        },
+        "brandColor": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "screenshots": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/relPath"
+          }
+        },
+        "locales": {
+          "type": "object"
+        }
+      }
+    },
+    "surfaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "skills": {
+          "$ref": "#/$defs/relPath"
+        },
+        "agents": {
+          "$ref": "#/$defs/relPath"
+        },
+        "commands": {
+          "$ref": "#/$defs/relPath"
+        },
+        "hooks": {
+          "$ref": "#/$defs/relPath"
+        },
+        "mcpServers": {
+          "$ref": "#/$defs/relPath"
+        },
+        "tools": {
+          "$ref": "#/$defs/relPath"
+        },
+        "ui": {
+          "$ref": "#/$defs/relPath"
+        },
+        "metadata": {
+          "$ref": "#/$defs/relPath"
+        },
+        "schemas": {
+          "$ref": "#/$defs/relPath"
+        },
+        "patch": {
+          "$ref": "#/$defs/relPath"
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "form": {
+          "enum": [
+            "module",
+            "service",
+            "function",
+            "ui",
+            "package"
+          ]
+        },
+        "nuget": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pkgRef"
+          }
+        },
+        "npm": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pkgRef"
+          }
+        },
+        "entry": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string",
+          "pattern": "^oci://.+@sha256:[0-9a-f]{64}$"
+        },
+        "service": {
+          "type": "object"
+        },
+        "wasm": {
+          "type": "string",
+          "pattern": "@sha256:[0-9a-f]{64}$"
+        },
+        "limits": {
+          "type": "object"
+        },
+        "configSchema": {
+          "$ref": "#/$defs/relPath"
+        },
+        "dbSchema": {
+          "type": "string",
+          "pattern": "^plugin_[a-z0-9_]+$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "form": {
+                "const": "module"
+              }
+            },
+            "required": [
+              "form"
+            ]
+          },
+          "then": {
+            "required": [
+              "entry"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "form": {
+                "const": "service"
+              }
+            },
+            "required": [
+              "form"
+            ]
+          },
+          "then": {
+            "required": [
+              "image"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "form": {
+                "const": "function"
+              }
+            },
+            "required": [
+              "form"
+            ]
+          },
+          "then": {
+            "required": [
+              "wasm"
+            ]
+          }
+        }
+      ]
+    },
+    "inject": {
+      "$ref": "#/$defs/serviceKeys"
+    },
+    "optionalInject": {
+      "$ref": "#/$defs/serviceKeys"
+    },
+    "provides": {
+      "$ref": "#/$defs/serviceKeys"
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "tier",
+        "sandbox",
+        "authentication"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tier": {
+          "enum": [
+            "system",
+            "official",
+            "partner",
+            "private",
+            "community"
+          ]
+        },
+        "sandbox": {
+          "enum": [
+            "none",
+            "worker",
+            "iframe",
+            "wasm",
+            "workload"
+          ]
+        },
+        "authentication": {
+          "enum": [
+            "ON_INSTALL",
+            "ON_USE"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "egress": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(\\*\\.)?[a-z0-9.-]+(:[0-9]{1,5})?$"
+          }
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "$ref": "https://qian.dev/schemas/plugin/v2/permissions"
+        }
+      }
+    },
+    "scopes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "global",
+          "tenant",
+          "app",
+          "agent-session"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "relPath": {
+      "type": "string",
+      "pattern": "^\\./"
+    },
+    "serviceKeys": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*:[a-z][a-z0-9-]*)?$"
+      }
+    },
+    "pkgRef": {
+      "type": "object",
+      "required": [
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

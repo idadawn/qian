@@ -1,0 +1,29 @@
+{
+  "$schema": "https://qian.dev/schemas/plugin/v2",
+  "id": "qian.bundle.identity-server",
+  "version": "1.0.0",
+  "description": "组合包装配骨架：qian.bundle.identity-server",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "Apache-2.0",
+  "interface": {
+    "displayName": "bundle.identity-server",
+    "category": "bundle"
+  },
+  "inject": [],
+  "provides": [],
+  "policy": {
+    "tier": "system",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false
+  },
+  "scopes": [
+    "global"
+  ],
+  "x-skeleton": true,
+  "surfaces": {
+    "patch": "./config/qian.patch.yml"
+  }
+}
