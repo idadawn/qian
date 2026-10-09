@@ -2,6 +2,9 @@
 export const REPO_URL = 'https://github.com/idadawn/qian';
 export const DEFAULT_BRANCH = 'main';
 
+/** 正式站点的默认入口（deploy/docs-site/README「访问入口」），sitemap.xml 与知识库索引用它拼绝对地址；CI 可用 DOCS_SITE_URL 覆盖。 */
+export const DEFAULT_SITE_URL = 'http://10.78.1.161:30820';
+
 /** 产品族仓库（ADR-021 D21.2，所有者统一为 idadawn），首页页脚按此顺序列出；没有 url 的显示为「待建」。 */
 export const FAMILY_REPOS: readonly { name: string; url?: string; note?: string }[] = [
   { name: 'Qian', url: REPO_URL },

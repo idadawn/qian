@@ -13,6 +13,14 @@
 
 - `KunVersion` 升到 2026.10.8，带入多租户后台链路修复（S1-KUN-001，上游 idadawn/kun#43）。文档站的「Kun 框架」小节与 Kun API 参考随之切到 `v2026.10.8`。
 
+## 2026-10-09 文档站产品族地图与版本矩阵（S1-DOCS-006）
+
+- 「开始」部分新增产品族页 `/start/family`（Kun / Qian / yue 与周边仓库，与仓库 README 同一张表）与由钉版文件生成的版本矩阵 `/start/versions`（哪个 Qian 配哪个 Kun、.NET SDK、Node、K3s 基线）；`llms.txt` 先按项目（Qian → Kun → yue）再按部分分节。见 [docs-site.md](prd/specs/docs-site.md) §2b.4。
+
+## 2026-10-09 文档站机器可读：每页 Markdown、llms.txt、知识库索引与 frontmatter 校验（S1-DOCS-003）
+
+- 每页多一份构建期渲染的 `.md`（标题下「复制为 Markdown」），全站 `llms.txt` / `llms-full.txt`，加 `kb-index.json`（页面清单、元数据与内容 sha256）与 `sitemap.xml` 作为知识库导入契约；页面 frontmatter 按规范校验，生成页也补齐 `project` / `audience` / `updated` / `source`。见 [docs-site.md](prd/specs/docs-site.md) §4、§5.1。
+
 ## 2026-10-08 文档站：Kun ADR 补收、API 页去掉侧栏、产物体积预算（S1-DEC-011）
 
 - Kun 小节补收 ADR「P2-D SaaS 多租户 3-策略架构」。API 命名空间页与类型页不再显示侧栏，产物从约 57 MB 降到约 48 MB，并设 100 MB 预算。API 参考路径统一在 `/sdk/api/`。见 [docs-site.md](prd/specs/docs-site.md) §2b、§7，裁决 R54–R62。

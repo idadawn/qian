@@ -15,6 +15,7 @@ TestResults/
 # 文档站：构建产物与构建前由脚本生成的目录（见 website/README.md「生成目录」）
 website/doc_build/
 website/docs/components/
+website/docs/start/versions.md
 website/docs/cli/
 website/docs/design/
 # Kun 小节与 API 参考（docs-site.md §2b）：只有手写页 with-qian.mdx 进 Git；生成缓存（kun 克隆、DocFX）不进

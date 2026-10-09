@@ -127,8 +127,8 @@ jobs:
         run: pnpm --filter website check
 
       # Kun 镜像页与 API 参考的源不在本仓库，生成后单独过文档门禁（禁用词、表格、断链）
-      - name: Kun 镜像页过文档门禁
-        run: python3 scripts/check_docs.py website/docs/sdk/kun website/docs/sdk/api
+      - name: 生成页过文档门禁（frontmatter、禁用词、链接；源不在本仓库的 Kun 页也在内）
+        run: python3 scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api website/docs/start/versions.md
 
       - uses: actions/upload-artifact@v4
         with:

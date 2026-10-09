@@ -1746,22 +1746,22 @@
  {
   "id": "S1-DOCS-003",
   "title": "llms 输出、页面元数据规范与知识库导入契约",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DOCS",
   "areaName": "文档站与组件文档",
   "wave": 3,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "2d",
   "days": 2.0,
   "depends": [
    "S1-DOCS-001"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md#4",
@@ -1780,12 +1780,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/10-s4-agent.md"
    }
   ],
-  "updated": "2026-10-07",
+  "updated": "2026-10-09",
   "acceptance": {
-   "done": 0,
+   "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人规划了一个知识库，后期要读取文档站的内容，并要求文档站具备 AI 能力。S1 先把「机器可读」做扎实：开启 Rspress 的 <code>llms</code> 输出（<code>llms.txt</code>、<code>llms-full.txt</code>、每页一份 Markdown，SSG-MD 在构建期直接渲染，不是 HTML 回转），定义页面 frontmatter 元数据规范，并产出一份知识库导入契约，供 S2 的知识库与站内「问 AI」（S2-DOCS-001）消费。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>rspress.config.ts</code> 开启 <code>llms: true</code>，构建产物含 <code>llms.txt</code>、<code>llms-full.txt</code> 与每页 <code>.md</code>；CI 校验三者与源文档同步（过期即失败）</li>\n<li class='chk'><span class='box'></span>站点自定义 MDX 组件在 <code>import.meta.env.SSG_MD</code> 下输出语义文本：CI 抽检生成的 <code>.md</code> 无 JSX 残留、无空白段落、演示代码块保留</li>\n<li class='chk'><span class='box'></span>页面 frontmatter 按 <code>docs/prd/specs/docs-site.md</code> §4 实现（<code>part</code>、<code>audience</code>、<code>component</code>、<code>version</code>、<code>profile</code>、<code>surface</code>、<code>stage</code>、<code>updated</code> 等），校验器纳入 <code>scripts/check_docs.py</code></li>\n<li class='chk'><span class='box'></span>构建产出 <code>kb-index.json</code>（每页：url、md url、标题、frontmatter 元数据、内容 sha256、更新时间）与 <code>sitemap.xml</code>，作为知识库导入契约并写进规格</li>\n<li class='chk'><span class='box'></span>文档站首页与每页提供「复制为 Markdown」入口，指向该页的 <code>.md</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人规划了一个知识库，后期要读取文档站的内容，并要求文档站具备 AI 能力。S1 先把「机器可读」做扎实：开启 Rspress 的 <code>llms</code> 输出（<code>llms.txt</code>、<code>llms-full.txt</code>、每页一份 Markdown，SSG-MD 在构建期直接渲染，不是 HTML 回转），定义页面 frontmatter 元数据规范，并产出一份知识库导入契约，供 S2 的知识库与站内「问 AI」（S2-DOCS-001）消费。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span><code>rspress.config.ts</code> 开启 <code>llms: true</code>，构建产物含 <code>llms.txt</code>、<code>llms-full.txt</code> 与每页 <code>.md</code>；CI 校验三者与源文档同步（过期即失败）——<code>pnpm --filter website check</code>：索引里每页的 <code>.md</code> 与 HTML 都在、sha256 一致，<code>llms.txt</code> / <code>llms-full.txt</code> / <code>sitemap.xml</code> 收录每页，没有索引外的 <code>.md</code></li>\n<li class='chk done'><span class='box'>✓</span>站点自定义 MDX 组件在 <code>import.meta.env.SSG_MD</code> 下输出语义文本：CI 抽检生成的 <code>.md</code> 无 JSX 残留、无空白段落、演示代码块保留——全部 614 页都查，不只抽检；「空白段落」按空标题 / 空列表项判，代码块按围栏不少于源页判（DocFX 的 HTML 代码块会多出围栏）</li>\n<li class='chk done'><span class='box'>✓</span>页面 frontmatter 按 <code>docs/prd/specs/docs-site.md</code> §4 实现（<code>part</code>、<code>audience</code>、<code>component</code>、<code>version</code>、<code>profile</code>、<code>surface</code>、<code>stage</code>、<code>updated</code> 等），校验器纳入 <code>scripts/check_docs.py</code>——生成页（组件、CLI、设计镜像）补齐 <code>project</code> / <code>audience</code> / <code>updated</code> / <code>source</code>；<code>version</code> 对组件页与 SDK 页的强制等多版本开启时启用（§4）</li>\n<li class='chk done'><span class='box'>✓</span>构建产出 <code>kb-index.json</code>（每页：url、md url、标题、frontmatter 元数据、内容 sha256、更新时间）与 <code>sitemap.xml</code>，作为知识库导入契约并写进规格——<code>website/scripts/build-kb-index.ts</code>，契约在 docs-site.md §5.1</li>\n<li class='chk done'><span class='box'>✓</span>文档站首页与每页提供「复制为 Markdown」入口，指向该页的 <code>.md</code>——文档页由 <code>themeConfig.llmsUI</code> 注入标题下，首页在 <code>HomeHero</code> 里手动放；只留「复制 Markdown 链接」，不放外部 AI 服务入口</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收</li>\n<li>2026-10-09 someone：开始；产品负责人 2026-10-09 让 Claude 自选任务，选定 DOCS 领域：S1-DOCS-003 → S1-DOCS-006，之后 S1-YUE-003</li>\n<li>2026-10-09 claude：Rspress 2.0.23 的 <code>llms: true</code> 自带 SSG-MD（每页 .md + llms.txt / llms-full.txt），不用 plugin-llms；主题组件补 SSG_MD 分支，首页卡片正文里的行内 Badge 改成文字（JSX 容器内的行内组件会原样残留）；新增 build-kb-index.ts（kb-index.json + sitemap.xml，lastmod 取 updated）与 check-site 的同步 / 质量检查；check_docs.py 加 frontmatter 校验，生成页补齐字段；规格 §4、§5.1、§6、§7 与 README / AGENTS 同步。本地：614 页（qian 116、kun 497、yue 1）全部有 .md，产物 57.9 MB；网站单测 58、门禁自测 32、check_docs 217 + 生成页 587 通过</li>\n<li>2026-10-09 claude：完成：SSG-MD 每页 Markdown、llms.txt / llms-full.txt、kb-index.json 与 sitemap.xml 契约、frontmatter 校验器与「复制为 Markdown」入口，五项验收全部满足，提交 PR 评审</li>\n<li>2026-10-09 claude：已合并 PR #12</li>\n</ul>",
   "file": "pm/tasks/S1-DOCS-003.md"
  },
  {
@@ -1880,22 +1880,22 @@
  {
   "id": "S1-DOCS-006",
   "title": "产品族地图页、版本矩阵页与全站 project 字段",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DOCS",
   "areaName": "文档站与组件文档",
   "wave": 2,
   "priority": "P1",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "1.5d",
   "days": 1.5,
   "depends": [
    "S1-DOCS-001"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-021-product-family-structure.md#D21.2",
@@ -1914,12 +1914,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
    }
   ],
-  "updated": "2026-10-08",
+  "updated": "2026-10-09",
   "acceptance": {
-   "done": 0,
+   "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>产品族（Kun / Qian / yue 与周边仓库）不建大单仓，靠一个组织、一个文档站、一张版本矩阵、一个看板关联（ADR-021 D21.2）。文档站要让读者一眼看到三层关系和「哪个 Qian 配哪个 Kun」，知识库要能按项目过滤。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>/start/family</code>（手写）：Kun / Qian / yue / <code>qian-plugins</code> / iClaw / 部署与模型服务的层、是什么、仓库、版本与许可、文档位置；与仓库 README「产品族」表同一内容（评审时核对）</li>\n<li class='chk'><span class='box'></span><code>/start/versions</code>（生成）：<code>website/scripts/build-versions.ts</code> 从 <code>Directory.Packages.props</code>（<code>KunVersion</code>、<code>Qian.*</code>）、<code>global.json</code>（.NET SDK）、pnpm catalog（<code>@yue/*</code>、Node）与部署基线（K3s）产出每个文档版本的矩阵；手改即失败</li>\n<li class='chk'><span class='box'></span>frontmatter 新增 <code>project</code>（<code>qian</code> / <code>kun</code> / <code>yue</code>，必填）与 <code>source</code>（镜像页必填）；校验并入 S1-DOCS-003 的 <code>check_docs.py</code> frontmatter 检查（若本任务先完成则先加枚举）；<code>llms.txt</code> 按 <code>project</code> 分节，<code>kb-index.json</code> 每条带 <code>project</code> / <code>version</code> / <code>source</code></li>\n<li class='chk'><span class='box'></span>首页一句话定位点明「基于 Kun 框架构建、前端用 yue」；页脚列出产品族仓库与两种许可证（Qian Apache-2.0、Kun MIT）</li>\n<li class='chk'><span class='box'></span>全站既有页面补 <code>project: qian</code>（第 7 部分镜像页另带 <code>source</code>）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（ADR-021 D21.2 / D21.5）</li>\n<li>2026-10-08 claude：S1-DOCS-001（PR #3）已先做两处：首页一句话定位与页脚（产品族仓库、Qian Apache-2.0 / Kun MIT）；手写页全部补 project: qian。生成页（components / cli / design）的 project 与镜像页的 source 仍归本任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>产品族（Kun / Qian / yue 与周边仓库）不建大单仓，靠一个组织、一个文档站、一张版本矩阵、一个看板关联（ADR-021 D21.2）。文档站要让读者一眼看到三层关系和「哪个 Qian 配哪个 Kun」，知识库要能按项目过滤。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span><code>/start/family</code>（手写）：Kun / Qian / yue / <code>qian-plugins</code> / iClaw / 部署与模型服务的层、是什么、仓库、版本与许可、文档位置；与仓库 README「产品族」表同一内容（评审时核对）——<code>website/scripts/family.test.ts</code> 自动核对前五列逐行一致</li>\n<li class='chk done'><span class='box'>✓</span><code>/start/versions</code>（生成）：<code>website/scripts/build-versions.ts</code> 从 <code>Directory.Packages.props</code>（<code>KunVersion</code>、<code>Qian.*</code>）、<code>global.json</code>（.NET SDK）、pnpm catalog（<code>@yue/*</code>、Node）与部署基线（K3s）产出每个文档版本的矩阵；手改即失败——pnpm 还没有 catalog，<code>@yue/*</code> 按工作区通配找包（现为「未建立」）；K3s 新增钉版文件 <code>deploy/baseline.json</code>（v1.35，S1-DEP-001 维护）；<code>versions.md</code> 进 <code>.gitignore</code>，进了 Git 文档门禁即失败</li>\n<li class='chk done'><span class='box'>✓</span>frontmatter 新增 <code>project</code>（<code>qian</code> / <code>kun</code> / <code>yue</code>，必填）与 <code>source</code>（镜像页必填）；校验并入 S1-DOCS-003 的 <code>check_docs.py</code> frontmatter 检查（若本任务先完成则先加枚举）；<code>llms.txt</code> 按 <code>project</code> 分节，<code>kb-index.json</code> 每条带 <code>project</code> / <code>version</code> / <code>source</code>——校验器与 kb-index 由 S1-DOCS-003（PR #12）完成，<code>llms.txt</code> 分节由本任务的 <code>website/scripts/llms.ts</code> 完成（Qian → Kun → yue，项目下再按部分）</li>\n<li class='chk done'><span class='box'>✓</span>首页一句话定位点明「基于 Kun 框架构建、前端用 yue」；页脚列出产品族仓库与两种许可证（Qian Apache-2.0、Kun MIT）</li>\n<li class='chk done'><span class='box'>✓</span>全站既有页面补 <code>project: qian</code>（第 7 部分镜像页另带 <code>source</code>）——手写页随 S1-DOCS-001，生成页（组件、CLI、设计镜像含 <code>source</code>）随 S1-DOCS-003</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（ADR-021 D21.2 / D21.5）</li>\n<li>2026-10-08 claude：S1-DOCS-001（PR #3）已先做两处：首页一句话定位与页脚（产品族仓库、Qian Apache-2.0 / Kun MIT）；手写页全部补 project: qian。生成页（components / cli / design）的 project 与镜像页的 source 仍归本任务</li>\n<li>2026-10-09 someone：开始（分支叠在 S1-DOCS-003 的 PR #12 之上，复用其 frontmatter 解析与 kb-index）</li>\n<li>2026-10-09 claude：产品族页 <code>start/family.md</code>（与 README 表同内容，单测核对）；<code>build-versions.ts</code> 生成 <code>start/versions.md</code>（Kun 2026.10.8、Qian.* 5 个包未发布、@yue 未建立、.NET SDK 10.0.100、Node / pnpm、K3s v1.35）；<code>llms.ts</code> 让 llms.txt 先按 project 分节；check_docs 把 <code>start/versions.md</code> 当生成文件（默认跳过、进 Git 即失败、路由延后）。本地：616 页、产物 58.0 MB，网站单测 65、门禁自测 34、check_docs 218 + 生成页 588 通过。分支叠在 PR #12 之上</li>\n<li>2026-10-09 claude：完成：产品族页、生成的版本矩阵（含 deploy/baseline.json 钉 K3s）、llms.txt 按 project 分节；五项验收满足，PR 叠在 S1-DOCS-003 的 PR #12 之上</li>\n<li>2026-10-09 claude：已合并 PR #13（含版本矩阵识别 @idadawn/yue-* 的补充提交）</li>\n</ul>",
   "file": "pm/tasks/S1-DOCS-006.md"
  },
  {
@@ -5480,7 +5480,6 @@
    "S1-YUE-005"
   ],
   "blockedBy": [
-   "S1-DOCS-003",
    "S1-MGW-001",
    "S1-YUE-005"
   ],
