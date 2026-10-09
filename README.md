@@ -31,6 +31,7 @@ Kun 的版本只在 `Directory.Packages.props` 的 `KunVersion` 写一次；升�
 | `tests/` | 集成测试共用的 Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）、门禁自测 | [tests/README.md](tests/README.md) |
 | `AGENTS.md` | 给 Codex、Claude Code 等编码代理的入口约定（`CLAUDE.md` 指向它） | [AGENTS.md](AGENTS.md) |
 | `website/` | 文档站（Rspress 2.0）：七个部分、首页、主题；设计文档在站内「设计与路线」镜像 | [website/README.md](website/README.md) |
+| `packages/yue/` · `apps/` | yue 前端工作区：`@yue/*` 八个 S1 包的骨架（pnpm workspace + `catalog:` + Turborepo）、六层分层边界、八项 CI 门禁、Base UI 验证门靶场 | [packages/yue/README.md](packages/yue/README.md) |
 | `.github/` | CI：文档门禁 + 任务校验 + 看板生成物新鲜度；.NET 构建、PublicAPI 与依赖图门禁、单元与集成测试；文档站构建、PR 预览与发布 | — |
 | `deploy/` | 开发期工具的 K3s 清单：`pm-board/` 把看板放进集群、`docs-site/` 托管文档站（都是 git-sync + nginx） | [deploy/pm-board/README.md](deploy/pm-board/README.md) · [deploy/docs-site/README.md](deploy/docs-site/README.md) |
 

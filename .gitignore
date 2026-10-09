@@ -23,3 +23,11 @@ website/docs/sdk/kun/*
 !website/docs/sdk/kun/with-qian.mdx
 website/docs/sdk/api/
 website/.cache/
+
+# yue 前端工作区（S1-YUE-003）：构建产物、Turborepo 缓存、测试与 Lighthouse 报告
+packages/yue/*/dist/
+apps/*/dist/
+.turbo/
+test-results/
+playwright-report/
+.lighthouseci/

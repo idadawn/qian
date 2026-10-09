@@ -44,13 +44,14 @@
 ```text
 docs/        设计文档：decisions（决策清单）、adr、prd（含 specs）、migration、research、ROADMAP.md
 contracts/   冻结契约 v0：S2S claim、事件信封、ErrorDetail 与错误码目录、能力条目的 JSON Schema + fixture（见 contracts/v0/README.md）
-packages/    .NET 组件库（NuGet 包），如 Qian.Runtime.Errors
+packages/    .NET 组件库（NuGet 包），如 Qian.Runtime.Errors；packages/yue/ 是 yue 前端工作区（@yue/* 八个包、分层矩阵，见 packages/yue/README.md 与 packages/yue/AGENTS.md）
+apps/        前端应用：yue-playground（Base UI 验证门与门禁靶场）
 pm/          任务与看板（见 pm/README.md）
 scripts/     pm.py、check_docs.py、check_deps.py（依赖图门禁）
-tests/       Testcontainers fixture、集成测试、门禁自测（见 tests/README.md）
+tests/       Testcontainers fixture、集成测试、门禁自测（见 tests/README.md）；tests/gates/yue/ 是 yue 门禁自测
 website/     文档站（Rspress 2.0，见 website/README.md 与 website/AGENTS.md）；components/、cli/、design/、sdk/kun/（with-qian.mdx 除外）、sdk/api/ 为生成目录
 deploy/      开发期工具的 K3s 清单：pm-board/（看板）、docs-site/（文档站）
-.github/     CI：文档门禁 + 任务校验 + 看板新鲜度；dotnet 构建、门禁与测试；文档站构建、预览与发布
+.github/     CI：文档门禁 + 任务校验 + 看板新鲜度；dotnet 构建、门禁与测试；文档站构建、预览与发布；yue 八项门禁矩阵
 Qian.slnx、global.json、Directory.Build.props / .targets、Directory.Packages.props、NuGet.config
              .NET 构建基线：net10.0、警告即错误、中央包版本、PublicAPI 门禁
 ```
@@ -67,6 +68,12 @@ python3 scripts/check_docs.py && python3 scripts/pm.py validate && python3 scrip
 
 ```bash
 pnpm install && pnpm --filter website typecheck && pnpm --filter website test && pnpm --filter website build && pnpm --filter website check
+```
+
+改了 yue 前端工作区（`packages/yue/`、`apps/`）再跑八项门禁（Playwright Chromium 与本机 Chrome 见 `packages/yue/README.md` §3）：
+
+```bash
+pnpm yue:gates
 python3 scripts/check_docs.py website/docs/sdk/kun website/docs/sdk/api
 ```
 
@@ -75,3 +82,14 @@ python3 scripts/check_docs.py website/docs/sdk/kun website/docs/sdk/api
 ```bash
 dotnet build Qian.slnx -c Release && python3 scripts/check_deps.py --no-restore && python3 -m unittest discover -s tests/gates && dotnet test --solution Qian.slnx -c Release --no-build
 ```
+
+<!-- BEGIN:turborepo-agent-rules -->
+
+# This is NOT the Turborepo you know
+
+Turborepo configuration, task behavior, and CLI commands can vary between installed versions and may differ from your training data. Resolve the `turbo` package from this file's directory or relevant workspace; in monorepos, it may not be visible from the repository root. For example, run `node -p "require.resolve('turbo/package.json')"` from a workspace that depends on `turbo`.
+
+Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
+
+This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
+<!-- END:turborepo-agent-rules -->

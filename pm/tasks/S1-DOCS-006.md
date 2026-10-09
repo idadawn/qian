@@ -1,7 +1,7 @@
 ---
 id: S1-DOCS-006
 title: 产品族地图页、版本矩阵页与全站 project 字段
-status: review
+status: done
 stage: S1
 area: DOCS
 wave: 2
@@ -37,3 +37,4 @@ updated: 2026-10-09
 - 2026-10-09 someone：开始（分支叠在 S1-DOCS-003 的 PR #12 之上，复用其 frontmatter 解析与 kb-index）
 - 2026-10-09 claude：产品族页 `start/family.md`（与 README 表同内容，单测核对）；`build-versions.ts` 生成 `start/versions.md`（Kun 2026.10.8、Qian.* 5 个包未发布、@yue 未建立、.NET SDK 10.0.100、Node / pnpm、K3s v1.35）；`llms.ts` 让 llms.txt 先按 project 分节；check_docs 把 `start/versions.md` 当生成文件（默认跳过、进 Git 即失败、路由延后）。本地：616 页、产物 58.0 MB，网站单测 65、门禁自测 34、check_docs 218 + 生成页 588 通过。分支叠在 PR #12 之上
 - 2026-10-09 claude：完成：产品族页、生成的版本矩阵（含 deploy/baseline.json 钉 K3s）、llms.txt 按 project 分节；五项验收满足，PR 叠在 S1-DOCS-003 的 PR #12 之上
+- 2026-10-09 claude：已合并 PR #13（含版本矩阵识别 @idadawn/yue-* 的补充提交）

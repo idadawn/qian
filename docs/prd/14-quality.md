@@ -32,6 +32,8 @@
 | 安全扫描 | 依赖漏洞、容器镜像、SAST、密钥形态扫描、许可证 | Trivy / CodeQL / gitleaks；许可证白名单（排除 AGPL 与不允许多租户 PaaS 的条款） | PR 阻断 | S1 |
 | 混沌与恢复 | Pod 驱逐、RabbitMQ 断连、PG 主从切换、Apollo 不可达时的降级矩阵；备份恢复演练 | staging 每阶段一次；记录 RTO / RPO | 阶段阻断 | S1 |
 
+首屏 script 体积预算（PR 阻断，error 级）：外壳首屏 script 压缩后传输体积 ≤ 250 KB，由 Lighthouse CI 的 `resource-summary:script:size` 断言；S1-YUE-003 的基线是验证门靶场 `apps/yue-playground`（React 19 + Base UI 五原语 + Tree）约 151 KB，`@yue/shell` 建立后改为对外壳首屏测。改预算先改这里，再改 `apps/yue-playground/lighthouserc.cjs`。
+
 ---
 
 ### 14.2.1 门禁运行节奏与环境

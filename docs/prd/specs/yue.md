@@ -23,7 +23,7 @@
 | D11 | **S2 只做 PC 响应式**（Q13） | `@yue/mobile` H5 渲染器 S2 可选 / S3；小程序原生渲染不纳入 S1–S3 |
 | D12 | **审批设计器为纵向节点树（DOM 自绘）；不用 bpmn-js** | React Flow 自由画布 S3 可选；BPMN 只作导出器 |
 | D13 | **联动三层** | 声明式动作 → 可序列化表达式 DSL（JSONLogic 类）→ QuickJS 沙箱脚本（S2 可选兜底，白名单 API、超时、内存上限、不暴露令牌）；自由 JS 按钮不做 |
-| D14 | **分发：私有 npm 为主**（Q41） | shadcn 私有 registry + MCP Server S3 可选、S4 必做 |
+| D14 | **分发：私有 npm 为主**（Q41） | GitHub Packages，scope `@idadawn`，包名 `@idadawn/yue-<包>`（2026-10-09 拍板，§3.1）；shadcn 私有 registry + MCP Server S3 可选、S4 必做 |
 | D15 | **文档站 Storybook 10；产品文档不混入 React 18 的 Docusaurus** | Storybook 用例复用为测试 |
 | D16 | **控件包与后端 Field Type Provider 同名同版本发布** | 控件 `type` 即字段类型编码；前后端同一 SemVer，CI 校验配对 |
 
@@ -148,6 +148,8 @@ yue 同时承担三种角色，三者缺一不可：
 5. 任何回答里出现「需要新建一套弹层 / 表单 / 表格引擎」→ 否决，改为复用现有引擎并只做叶子（D3）。
 
 分层违规在 CI 直接失败，不接受「临时引用、下个迭代修」；需要跨层的能力一律通过 `@yue/sdk` 的注册表或依赖注入（`PlatformClient`）解耦。
+
+**npm 包名**（2026-10-09 产品负责人拍板）：文中 `@yue/<包>` 是简称；实际发布的包名是 `@idadawn/yue-<包>`（如 `@idadawn/yue-core`），发到 GitHub Packages——它要求 scope 与仓库所有者同名（ADR-021 D21.2 的「一个 GitHub Packages 命名空间」）。目录仍是 `packages/yue/<包>`，分层矩阵按目录名登记。
 
 ### 3.2 控件注册表契约 `registerWidget`
 
@@ -353,6 +355,8 @@ yue 主版本可并存一个过渡窗口（MF2 共享依赖按主版本分组）
 
 验证项：Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘导航、焦点管理、ARIA、RTL、受控 / 非受控、SSR 兼容；通过标准：axe critical = 0、键盘路径用例全过、无需 patch 包。不通过 → 整体切 Radix 并重新生成 shadcn 源码；不混用。结论记入 ADR-013 的 Status History。
 
+**结论（2026-10-09，S1-YUE-003）**：通过，锁定 `@base-ui/react` 1.8；组件级 21 个浏览器用例 + 页面级 7 个 axe 用例全过，critical + serious = 0，无需 patch 包。五项发现（Tooltip 的 ARIA 关联、Tabs 默认手动激活、Combobox 打开态 aria-hidden、无 Tree 原语、date-fns 可选 peer）与封装层处理见 [ADR-013 §9](../../adr/ADR-013-frontend-yue.md#9-状态历史status-history)。
+
 ---
 
 ### 4.5 组件状态与弃用流程
@@ -422,8 +426,8 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 
 | 类别 | 推荐 | 备选 | 不建议（理由） | 状态 |
 |---|---|---|---|---|
-| 组件底座 | Base UI + Tailwind v4 + shadcn 源码自有化 | Radix（验证门不过时整体切换） | antd / MUI 混用（双轨反例） | 锁定，S1 验证门 |
-| 无样式原语 | `@base-ui/react` 1.x | Radix | — | 验证门 |
+| 组件底座 | Base UI + Tailwind v4 + shadcn 源码自有化 | Radix（验证门不过时整体切换） | antd / MUI 混用（双轨反例） | 锁定（验证门 2026-10-09 通过） |
+| 无样式原语 | `@base-ui/react` 1.x | Radix | — | 锁定（验证门 2026-10-09 通过，ADR-013 §9） |
 | 表格 | TanStack Table v9 + TanStack Virtual | VisActor VTable / AntV S2（透视、大数据，S3）；AG Grid Community | 依赖 AG Grid Enterprise 却不采购；Vue 生态表格 | 锁定 |
 | 表单 | 自有 Schema（数据部分 JSON Schema 2020-12 + 自有 UI Schema）+ react-hook-form + Ajv | RJSF / JSON Forms 作参考实现 | Formily（停滞）、amis（自带体系）；zod 只用于 TS 侧导出契约 | 锁定 |
 | 拖拽 | dnd-kit（yue 包一层抽象） | pragmatic-drag-and-drop；`@dnd-kit/react` 1.0 后迁移 | react-beautiful-dnd（废弃）、react-dnd（停更）、SortableJS | 锁定，抽象层隔离供应链风险 |
@@ -499,9 +503,9 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 - [ ] API client 从 Kun OpenAPI 生成；契约快照测试进 CI
 
 **工程化**
-- [ ] 分层边界 lint（eslint-plugin-boundaries / dependency-cruiser）进 CI 且无违规
-- [ ] CI 门禁矩阵全部启用：lint、typecheck、unit、a11y、Lighthouse（script 体积 error 级）、边界检查、publint、循环依赖、i18n 硬编码
-- [ ] Changesets 发包到私有 npm 成功一次；`0.x` 版本策略写入 CONTRIBUTING
+- [x] 分层边界 lint（eslint-plugin-boundaries / dependency-cruiser）进 CI 且无违规（S1-YUE-003：`packages/yue/boundaries.config.mjs`，自测 `tests/gates/yue/`）
+- [ ] CI 门禁矩阵全部启用：lint、typecheck、unit、a11y、Lighthouse（script 体积 error 级）、边界检查、publint、循环依赖、i18n 硬编码（S1-YUE-003 已启用前八项，工作流 `yue`；i18n 硬编码 lint 待 `@yue/sdk` 的 i18n 落地后加入）
+- [ ] Changesets 发包到私有 npm 成功一次；`0.x` 版本策略写入 CONTRIBUTING（S1-YUE-003 已配置 Changesets 与 `0.x` 策略，见 `packages/yue/README.md`「版本策略」；发包渠道待定，见该节「发布」）
 - [ ] Storybook 10 文档站可访问，含令牌可视化页
 - [ ] 视觉回归基线建立（S1 可选；未建立需在验收记录标 blocked 并给出 S2 期限）
 

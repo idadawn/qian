@@ -1,0 +1,14 @@
+{
+  "extends": "../../../packages/yue/tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": false,
+    "noEmit": true,
+    "types": [
+      "node"
+    ],
+    "allowJs": true
+  },
+  "include": [
+    "*.test.ts"
+  ]
+}

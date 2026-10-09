@@ -15,6 +15,7 @@ tests/
   gates/                                      门禁自测：样例项目 + Python 测试，不在 Qian.slnx 里
     depgraph/                                 依赖图门禁样例（good.slnx 合规、bad.slnx 违规）
     publicapi/                                PublicAPI 门禁样例
+    yue/                                      yue 前端门禁自测（分层边界、循环依赖样例、包形状），由 pnpm yue:test 跑
 ```
 
 ## 2 本地运行
