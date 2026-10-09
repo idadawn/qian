@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "dialect": {
+      "type": "string"
+    },
+    "connection": {
+      "type": "string",
+      "x-qian-sensitive": true
+    },
+    "rls": {
+      "type": "object",
+      "properties": {
+        "enforce": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

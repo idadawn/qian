@@ -1,0 +1,4 @@
+#nullable enable
+Qian.Profiles.ProfileLoader
+Qian.Profiles.ProfileLoader.ProfileLoader(Qian.Surfaces.Abstractions.ISurfaceReader! reader) -> void
+Qian.Profiles.ProfileLoader.Load(Qian.Profiles.Abstractions.ProfileLoadOptions! options) -> Qian.Profiles.Abstractions.ProfileLoadResult!

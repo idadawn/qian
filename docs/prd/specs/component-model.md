@@ -1062,7 +1062,9 @@ CREATE TABLE plugin_qian_registry.scope_patches (
 | `gateway` | `qian.bundle.gateway` | `gateway → qian.gateway`、`identity → qian.identity.client`（Cookie 换 S2S、JWKS）、`config → qian.config.apollo`、`observability`、`audit` | 可 AOT：`build.aot: true` |
 | `identity` | `qian.bundle.identity-server` | `identity → qian.identity.server`（可嵌入 OpenIddict，唯一 issuer）、`identity.connector.oidc`、`identity.connector.wecom`（连接器组件，向 `ctx.Identity.Connectors` 注册 `oidc` / `wecom`，R28 / R38）、`tenancy`、`data`、`config → qian.config.apollo`、`events`、`audit`、`files`（头像，可选） | 独立安全边界 |
 | `standalone` | `qian.bundle.standalone` | 供消费者宿主安装的最小组合包：`Qian.Runtime` + `config → qian.config`（标准 `IConfiguration`）、`tenancy`（默认 `SingleTenant`）+ 所选 seam 的 Definition / Provider（由 `qian add identity authz files …` 带入） | ADR-019 D19.8 的 30 分钟验收宿主；`qian init --template dotnet-webapi` 默认 |
-| `minimal` | `qian.bundle.minimal` | 测试与 SDK 用最小树：`config → qian.config`、`observability`、`hooks`、`docs → qian.docs`（文档生成器，开发态） | TCK 宿主、CLI 自身运行时 |
+| `minimal` | `qian.bundle.minimal` | 测试与 SDK 基准宿主，仅 `Qian.Runtime` 与声明式表面装载器；组合包初始 patch 为空，无默认业务组件（S1-DEC-012，2026-10-09 确认） | TCK 宿主、CLI 自身运行时 |
+
+`minimal` 的 `config`、`observability`、`hooks`、`docs` 均为按需添加的组件，不进入默认组合包；表面装载器不因解析 hook 声明而依赖业务 hook Provider。该口径与 PRD §7.0.4 及 S1-RT-002 验收一致，裁决记录见 [ADR-020 §7.1](../../adr/ADR-020-component-model-v2.md#71-minimal-默认清单澄清2026-10-09)。
 
 平台插件三件套 `qian.registry` / `qian.lifecycle` / `qian.capabilities` 的包名与服务键为 `Qian.Registry`（`ctx.Registry`）、`Qian.Lifecycle`（`ctx.Lifecycle`）、`Qian.Capabilities`（`ctx.Capabilities`），只进 `platform` profile（base 组合包），不供消费者独立安装（R34）；其它 profile 由 `Qian.Runtime` 的装载器直接从文件 patch 装树，没有数据库注册表与租户 scope patch。
 

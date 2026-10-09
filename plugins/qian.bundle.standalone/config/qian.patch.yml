@@ -1,0 +1,9 @@
+- id: config
+  plugin: qian.config
+  config: {}
+- id: tenancy
+  plugin: qian.tenancy
+  config:
+    resolver:
+      mode: single-tenant
+      allowHeaderFallback: false

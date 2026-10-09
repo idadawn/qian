@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/profile/v2",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": {}
+  },
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "bundles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "patch": {
+      "type": "string",
+      "pattern": "^\\./"
+    },
+    "hmr": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "surfaces": {
+          "type": "boolean"
+        },
+        "code": {
+          "const": false
+        }
+      },
+      "required": []
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "aot": {
+          "type": "boolean"
+        }
+      },
+      "required": []
+    },
+    "hooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "allowCommand": {
+          "type": "boolean"
+        }
+      },
+      "required": []
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "readyRequiresTiers": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "system",
+              "official",
+              "partner",
+              "private",
+              "community"
+            ]
+          }
+        }
+      },
+      "required": []
+    }
+  },
+  "required": [
+    "name",
+    "bundles"
+  ]
+}

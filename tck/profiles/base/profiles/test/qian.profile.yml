@@ -1,0 +1,18 @@
+{
+  "name": "test",
+  "bundles": [
+    "test.bundle.one",
+    "test.bundle.two"
+  ],
+  "patch": "./qian.patch.yml",
+  "hmr": {
+    "surfaces": true,
+    "code": false
+  },
+  "build": {
+    "aot": false
+  },
+  "hooks": {
+    "allowCommand": false
+  }
+}

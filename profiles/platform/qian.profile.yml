@@ -1,0 +1,17 @@
+name: platform
+description: platform 的静态装配基线，业务 Provider 尚待各组件任务实现。
+bundles:
+- qian.bundle.base@^1
+- qian.bundle.shell@^1
+- qian.bundle.model-gateway@^1
+patch: ./qian.patch.yml
+hmr:
+  surfaces: true
+  code: false
+build:
+  aot: false
+hooks:
+  allowCommand: false
+health:
+  readyRequiresTiers:
+  - system

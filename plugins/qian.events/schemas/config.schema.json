@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "broker": {
+      "type": "string",
+      "x-qian-sensitive": true
+    },
+    "outbox": {
+      "type": "object",
+      "properties": {
+        "lock": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

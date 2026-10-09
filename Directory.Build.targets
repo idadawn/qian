@@ -35,4 +35,17 @@
            Text="$(QianPackageId) 是 Qian 包（IsPackable=true），项目目录下必须有 PublicAPI.Shipped.txt 与 PublicAPI.Unshipped.txt，首行写 #nullable enable。做法见 tests/README.md「门禁」一节。" />
   </Target>
 
+  <!-- 旧 Kun 入口在全部代码树（含宿主与测试）禁用，避免换包名或关闭打包绕过。 -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Qian.Build.Analyzers'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <PropertyGroup>
+    <WarningsAsErrors>$(WarningsAsErrors);RS0030;QIAN0002</WarningsAsErrors>
+  </PropertyGroup>
+
 </Project>

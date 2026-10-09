@@ -1,3 +1,4 @@
 # pnpm 工作区：目前只有文档站 website/；@qian/* 与 yue 的前端包在各自任务里加入。
 packages:
   - website
+  - packages/qian-*
