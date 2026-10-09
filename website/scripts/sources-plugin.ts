@@ -1,14 +1,17 @@
 // 把生成器接进 Rspress：config 钩子在扫描路由之前执行（dev 与 build 都是），生成的页面因此能被路由与侧栏收录。
 import type { RspressPlugin } from '@rspress/core';
 import { apiReferenceFiles, buildKunApi } from './build-kun-api.ts';
+import { VERSIONS_PAGE, buildVersions } from './build-versions.ts';
 import { collectComponents } from './collect-components.ts';
 import { openKun, readKunVersion } from './kun.ts';
-import { SITE_DOCS, writeGenerated, type GeneratedPart, type WriteResult } from './repo.ts';
+import { SITE_DOCS, writeGenerated, writeGeneratedFile, type GeneratedPart, type WriteResult } from './repo.ts';
 import { KUN_HANDWRITTEN, syncKunDocs } from './sync-kun-docs.ts';
 import { syncCli, syncDesign } from './sync-specs.ts';
 
 export interface GenerateReport {
   results: Record<GeneratedPart, WriteResult>;
+  /** 版本矩阵页 start/versions.md（docs-site.md §2b.4）。 */
+  versions: 'written' | 'unchanged';
   /** kun 文档的上游问题（链接越界、表格少列等），已按规则处理，供维护者到 kun 仓库修。 */
   warnings: string[];
   kun: string;
@@ -27,6 +30,7 @@ export function generateAll(siteDocs: string = SITE_DOCS): GenerateReport {
       'sdk/kun': writeGenerated('sdk/kun', docs.files, siteDocs, KUN_HANDWRITTEN),
       'sdk/api': writeGenerated('sdk/api', apiReferenceFiles(kun, api), siteDocs),
     },
+    versions: writeGeneratedFile(VERSIONS_PAGE, buildVersions().content, siteDocs),
     warnings: docs.warnings,
     kun: `Kun ${kun.tag}：文档 ${docs.pages.length + 1} 页，API ${api.packages.length} 个包 ${api.namespaces} 个命名空间 ${api.types} 个类型`,
   };
@@ -37,7 +41,7 @@ export function summarize(report: GenerateReport): string {
     .map(([part, r]) => `${part}/ 写入 ${r.written.length}、删除 ${r.removed.length}、未变 ${r.unchanged}`)
     .join('；');
   const warnings = report.warnings.map((w) => `\n  [kun] ${w}`).join('');
-  return `${parts}\n${report.kun}${warnings}`;
+  return `${parts}；${VERSIONS_PAGE} ${report.versions === 'written' ? '写入' : '未变'}\n${report.kun}${warnings}`;
 }
 
 export function qianDocsSources(): RspressPlugin {

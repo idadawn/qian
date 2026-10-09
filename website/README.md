@@ -47,7 +47,7 @@ website/
     index.mdx                  首页（docs-site.md §2a）
     sitemap.mdx                站点地图（页脚入口）
     _nav.json                  顶部导航：七个部分 +「产品」
-    start/                     1 开始；后续：family.mdx 产品族地图、versions.mdx 版本矩阵（生成）（S1-DOCS-006）
+    start/                     1 开始：family.md 产品族地图（手写，与仓库 README 的表同内容）、versions.md 版本矩阵（生成：scripts/build-versions.ts，不进 Git）
     components/                2 组件目录（生成：scripts/collect-components.ts）
       platform/<id>.md
       yue/
@@ -74,7 +74,8 @@ website/
     check-site.ts              构建产物检查
     *.test.ts  fixtures.ts     生成脚本单测；fixtures.ts 在临时目录里搭样例 kun 仓库
     build-kb-index.ts          后续：产出 kb-index.json（S1-DOCS-003）
-    build-versions.ts          后续：仓库钉版文件 → docs/start/versions.mdx（S1-DOCS-006）
+    build-versions.ts          仓库钉版文件（Directory.Packages.props、csproj、global.json、package.json、pnpm 工作区、deploy/baseline.json）→ docs/start/versions.md
+    llms.ts                    llms.txt 的排版：先按 project（Qian → Kun → yue）再按部分分节
   theme/
     index.tsx  index.css       主题覆盖：令牌映射、建设期横幅、版本说明、首页组件
     yue-tokens.css             yue 令牌占位，@yue/tokens 发布后替换（§5）
@@ -85,7 +86,7 @@ website/
 
 | # | 部分 | 路径 | 来源 | 进 Git | 版本化 |
 |---|---|---|---|---|---|
-| 1 | 开始 | `/start/` | 手写；版本矩阵 `/start/versions` 后续由脚本生成（S1-DOCS-006） | 是 | 否 |
+| 1 | 开始 | `/start/` | 手写；版本矩阵 `/start/versions` 由 `scripts/build-versions.ts` 从钉版文件生成（不进 Git） | 是（`versions.md` 除外） | 否 |
 | 2 | 组件目录 | `/components/` | `scripts/collect-components.ts` 生成 | 否 | 是 |
 | 3 | SDK | `/sdk/` | 手写；「Kun 框架」小节 `/sdk/kun/` 按 `KunVersion` 从 kun 仓库镜像（`with-qian` 手写）；API 参考 `/sdk/api/` 生成（Kun 已有，`Qian.*` 与前端随 S1-DOCS-002） | 手写页是；`sdk/kun/`（`with-qian.mdx` 除外）与 `sdk/api/` 否 | 是（Kun 小节随 `KunVersion`） |
 | 4 | CLI 与规格 | `/cli/` | 从 `docs/prd/specs/component-model.md` 第 2、3、4、7、8、9、10 节同步 | 否 | 是 |
@@ -152,10 +153,10 @@ docs-site.md §5.1 是契约，这里只说实现：
 | 检查 | 内容 | 在哪跑 |
 |---|---|---|
 | `scripts/check_docs.py` | 禁用词（整词匹配）、表格列数、链接、frontmatter（docs-site.md §4：必填、枚举、长度、日期、镜像页的 `source` 与 `version`、组件页的 `component`）；覆盖 `website/docs`（.md 与 .mdx）、本文件与 `AGENTS.md`，站点源码只查禁用词；站内路由、`/design/` 镜像路由与生成页路由都按规则解析，生成目录本身默认不查（它们的源已在查）；生成目录里的文件进了 Git 即失败。`/sdk/kun/`、`/sdk/api/` 下的路由在生成之前交给构建时的断链检查（手写页 `with-qian` 除外） | docs-and-pm 工作流 |
-| `scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api` | 生成页（含源不在本仓库的 Kun 镜像页与 API 参考）构建后显式检查一遍，frontmatter 也查（显式给出的生成目录照查） | docs-site 工作流 |
+| `scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api website/docs/start/versions.md` | 生成页（含源不在本仓库的 Kun 镜像页与 API 参考、版本矩阵）构建后显式检查一遍，frontmatter 也查（显式给出的生成目录与文件照查） | docs-site 工作流 |
 | Rspress 断链检查 | 构建时检查全站（含生成页）的站内链接，断链即构建失败 | docs-site 工作流 |
 | `pnpm --filter website check` | 七个部分与首页、404、站点地图齐全；`lang="zh"`；不引用外部资源；站内引用都带部署前缀；搜索索引存在；C# / TypeScript / JSON / YAML / Bash 都有被高亮的代码块；`/sdk/kun/` 与 `/sdk/api/kun/` 下除手写页外每页都有镜像或生成横幅，横幅里的 tag 等于 `v<KunVersion>`（白名单外的页面混进来即失败）；产物总大小不超过预算（`SITE_SIZE_BUDGET_MB`，100 MB，R55），超出时报出最大的目录；机器可读产物（§4a）：`llms.txt`、`llms-full.txt`、`kb-index.json`、`sitemap.xml` 齐全，索引里每页的 `.md` 与 HTML 都在且 sha256 一致、三个清单都收录每页、没有索引外的 `.md`，每页 `.md` 无 JSX / ESM 残留、无空标题空列表项、代码块不少于源页 | docs-site 工作流 |
-| `pnpm --filter website test` | 路径映射、链接改写、章节拆分、生成目录写入、组件占位页；Kun：`KunVersion` 缺失或无效、tag 不存在即失败，白名单与排除、slug 与路由、横幅与 frontmatter（`updated` 取文件日期）、链接改写、DocFX 输出转换（含 API 页 `sidebar: false`）；产物体积预算；frontmatter 子集解析、知识库索引与 sitemap、Markdown 产物质量与同步检查 | docs-site 工作流 |
+| `pnpm --filter website test` | 路径映射、链接改写、章节拆分、生成目录写入、组件占位页；Kun：`KunVersion` 缺失或无效、tag 不存在即失败，白名单与排除、slug 与路由、横幅与 frontmatter（`updated` 取文件日期）、链接改写、DocFX 输出转换（含 API 页 `sidebar: false`）；产物体积预算；frontmatter 子集解析、知识库索引与 sitemap、Markdown 产物质量与同步检查；版本矩阵的读取与渲染、llms.txt 分节、产品族页与 README 一致 | docs-site 工作流 |
 | `tests/gates/test_check_docs.py` | check_docs.py 的站内路由解析、生成目录跳过、Kun 路由延后解析、禁用词整词匹配、生成文件进 Git 即失败、frontmatter 解析与校验 | dotnet 工作流（门禁自测） |
 
 ## 8 写页面

@@ -22,6 +22,8 @@ const REQUIRED_PAGES = [
   '404.html',
   'sitemap.html',
   'start/index.html',
+  'start/family.html',
+  'start/versions.html',
   'components/index.html',
   'sdk/index.html',
   'cli/index.html',

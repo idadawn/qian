@@ -9,7 +9,7 @@
 - 「/cli/…」「/components/…」对应构建前生成的页面，页面清单取自 website/scripts 的生成器；
 - 「/sdk/kun/…」「/sdk/api/…」是 Kun 小节与 API 参考（docs-site.md §2b），已生成时按磁盘上的页面解析，
   未生成时（本检查不跑生成器）交给 Rspress 构建时的断链检查。
-生成目录 website/docs/{components,cli,design,sdk/kun,sdk/api} 不进 Git（sdk/kun/with-qian.mdx 是手写页，照常检查），
+生成目录 website/docs/{components,cli,design,sdk/kun,sdk/api} 与生成文件 start/versions.md 不进 Git（sdk/kun/with-qian.mdx 是手写页，照常检查），
 默认不在这里检查；它们的源（docs/ 等）照常检查。生成目录里出现进了 Git 的文件即失败（生成目录不接受手改）。
 Kun 小节是 kun 仓库文档的镜像，源不在本仓库：CI 生成后显式检查它，如 python3 scripts/check_docs.py website/docs/sdk/kun。
 """
@@ -48,6 +48,8 @@ SITE_DOCS = ROOT / "website" / "docs"
 # 生成目录（相对 website/docs），与 website/scripts/repo.ts 的 GENERATED_PARTS 一致；手写例外单独列出
 SITE_GENERATED = ("components", "cli", "design", "sdk/kun", "sdk/api")
 SITE_HANDWRITTEN = {"sdk/kun/with-qian.mdx"}
+# 单个生成文件（相对 website/docs）：版本矩阵由 website/scripts/build-versions.ts 从钉版文件产出（docs-site.md §2b.4）
+SITE_GENERATED_FILES = {"start/versions.md"}
 PAGE_SUFFIXES = (".md", ".mdx")
 
 
@@ -59,6 +61,8 @@ def generated_part(path: Path) -> str | None:
         return None
     if rel in SITE_HANDWRITTEN:
         return None
+    if rel in SITE_GENERATED_FILES:
+        return rel
     return next((part for part in SITE_GENERATED if rel.startswith(part + "/")), None)
 
 
@@ -72,7 +76,7 @@ def in_generated_dir(path: Path) -> bool:
         rel = path.relative_to(SITE_DOCS).as_posix()
     except ValueError:
         return False
-    return any(rel == part or rel.startswith(part + "/") for part in SITE_GENERATED)
+    return rel in SITE_GENERATED_FILES or any(rel == part or rel.startswith(part + "/") for part in SITE_GENERATED)
 
 
 def is_site_page(path: Path) -> bool:
@@ -99,7 +103,7 @@ def md_files(args: list[str]) -> list[Path]:
 
 def tracked_generated() -> list[str]:
     """生成目录里进了 Git 的文件（手写例外除外）。不在 git 仓库里时返回空。"""
-    dirs = [f"website/docs/{part}" for part in SITE_GENERATED]
+    dirs = [f"website/docs/{part}" for part in SITE_GENERATED] + [f"website/docs/{f}" for f in SITE_GENERATED_FILES]
     try:
         out = subprocess.run(["git", "-C", str(ROOT), "ls-files", "--", *dirs],
                              capture_output=True, text=True, check=True).stdout
@@ -175,6 +179,8 @@ def route_exists(route: str) -> bool:
     rel = route.strip("/")
     if rel == "":
         return site_page_exists(SITE_DOCS / "index")
+    if f"{rel}.md" in SITE_GENERATED_FILES and not (SITE_DOCS / f"{rel}.md").is_file():
+        return True  # 还没生成：交给 Rspress 构建时的断链检查
     return site_page_exists(SITE_DOCS / rel) or (SITE_DOCS / "public" / rel).is_file()
 
 

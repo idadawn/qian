@@ -14,9 +14,11 @@
 | CLI 命令与清单字段 | `docs/prd/specs/component-model.md`（站内 `/cli/` 自动同步） | `website/docs/cli/` |
 | 组件页 | S1-DOCS-002 前：`website/scripts/collect-components.ts` 的规划清单；之后：组件文件夹的 README 与 `docs/*.mdx` | `website/docs/components/` |
 | 首页 | `website/docs/index.mdx`（结构按 docs-site.md §2a） | — |
+| 产品族地图 | `website/docs/start/family.md` 与仓库 `README.md` 的「产品族」表一起改（单测核对前五列一致） | — |
+| 版本矩阵 | 对应的钉版文件（`Directory.Packages.props`、`global.json`、`package.json`、`deploy/baseline.json` 等） | `website/docs/start/versions.md`（生成，不进 Git） |
 | 颜色与样式 | `website/theme/index.css`，只引用 `--yue-*` 语义令牌 | 在组件里写死颜色 |
 
-`components/`、`cli/`、`design/`、`sdk/kun/`（`with-qian.mdx` 除外）、`sdk/api/` 由构建前的脚本生成，不进 Git（进了文档门禁即失败）；手改会在下一次构建时被覆盖。
+`components/`、`cli/`、`design/`、`sdk/kun/`（`with-qian.mdx` 除外）、`sdk/api/` 与 `start/versions.md` 由构建前的脚本生成，不进 Git（进了文档门禁即失败）；手改会在下一次构建时被覆盖。
 
 ## 写页面
 
@@ -40,5 +42,5 @@
 python3 scripts/check_docs.py
 pnpm --filter website typecheck && pnpm --filter website test
 pnpm --filter website build && pnpm --filter website check
-python3 scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api
+python3 scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api website/docs/start/versions.md
 ```

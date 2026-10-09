@@ -1880,14 +1880,14 @@
  {
   "id": "S1-DOCS-006",
   "title": "产品族地图页、版本矩阵页与全站 project 字段",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "DOCS",
   "areaName": "文档站与组件文档",
   "wave": 2,
   "priority": "P1",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "1.5d",
   "days": 1.5,
   "depends": [
@@ -1895,7 +1895,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-021-product-family-structure.md#D21.2",
@@ -1914,12 +1914,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
    }
   ],
-  "updated": "2026-10-08",
+  "updated": "2026-10-09",
   "acceptance": {
-   "done": 0,
+   "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>产品族（Kun / Qian / yue 与周边仓库）不建大单仓，靠一个组织、一个文档站、一张版本矩阵、一个看板关联（ADR-021 D21.2）。文档站要让读者一眼看到三层关系和「哪个 Qian 配哪个 Kun」，知识库要能按项目过滤。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>/start/family</code>（手写）：Kun / Qian / yue / <code>qian-plugins</code> / iClaw / 部署与模型服务的层、是什么、仓库、版本与许可、文档位置；与仓库 README「产品族」表同一内容（评审时核对）</li>\n<li class='chk'><span class='box'></span><code>/start/versions</code>（生成）：<code>website/scripts/build-versions.ts</code> 从 <code>Directory.Packages.props</code>（<code>KunVersion</code>、<code>Qian.*</code>）、<code>global.json</code>（.NET SDK）、pnpm catalog（<code>@yue/*</code>、Node）与部署基线（K3s）产出每个文档版本的矩阵；手改即失败</li>\n<li class='chk'><span class='box'></span>frontmatter 新增 <code>project</code>（<code>qian</code> / <code>kun</code> / <code>yue</code>，必填）与 <code>source</code>（镜像页必填）；校验并入 S1-DOCS-003 的 <code>check_docs.py</code> frontmatter 检查（若本任务先完成则先加枚举）；<code>llms.txt</code> 按 <code>project</code> 分节，<code>kb-index.json</code> 每条带 <code>project</code> / <code>version</code> / <code>source</code></li>\n<li class='chk'><span class='box'></span>首页一句话定位点明「基于 Kun 框架构建、前端用 yue」；页脚列出产品族仓库与两种许可证（Qian Apache-2.0、Kun MIT）</li>\n<li class='chk'><span class='box'></span>全站既有页面补 <code>project: qian</code>（第 7 部分镜像页另带 <code>source</code>）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（ADR-021 D21.2 / D21.5）</li>\n<li>2026-10-08 claude：S1-DOCS-001（PR #3）已先做两处：首页一句话定位与页脚（产品族仓库、Qian Apache-2.0 / Kun MIT）；手写页全部补 project: qian。生成页（components / cli / design）的 project 与镜像页的 source 仍归本任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>产品族（Kun / Qian / yue 与周边仓库）不建大单仓，靠一个组织、一个文档站、一张版本矩阵、一个看板关联（ADR-021 D21.2）。文档站要让读者一眼看到三层关系和「哪个 Qian 配哪个 Kun」，知识库要能按项目过滤。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span><code>/start/family</code>（手写）：Kun / Qian / yue / <code>qian-plugins</code> / iClaw / 部署与模型服务的层、是什么、仓库、版本与许可、文档位置；与仓库 README「产品族」表同一内容（评审时核对）——<code>website/scripts/family.test.ts</code> 自动核对前五列逐行一致</li>\n<li class='chk done'><span class='box'>✓</span><code>/start/versions</code>（生成）：<code>website/scripts/build-versions.ts</code> 从 <code>Directory.Packages.props</code>（<code>KunVersion</code>、<code>Qian.*</code>）、<code>global.json</code>（.NET SDK）、pnpm catalog（<code>@yue/*</code>、Node）与部署基线（K3s）产出每个文档版本的矩阵；手改即失败——pnpm 还没有 catalog，<code>@yue/*</code> 按工作区通配找包（现为「未建立」）；K3s 新增钉版文件 <code>deploy/baseline.json</code>（v1.35，S1-DEP-001 维护）；<code>versions.md</code> 进 <code>.gitignore</code>，进了 Git 文档门禁即失败</li>\n<li class='chk done'><span class='box'>✓</span>frontmatter 新增 <code>project</code>（<code>qian</code> / <code>kun</code> / <code>yue</code>，必填）与 <code>source</code>（镜像页必填）；校验并入 S1-DOCS-003 的 <code>check_docs.py</code> frontmatter 检查（若本任务先完成则先加枚举）；<code>llms.txt</code> 按 <code>project</code> 分节，<code>kb-index.json</code> 每条带 <code>project</code> / <code>version</code> / <code>source</code>——校验器与 kb-index 由 S1-DOCS-003（PR #12）完成，<code>llms.txt</code> 分节由本任务的 <code>website/scripts/llms.ts</code> 完成（Qian → Kun → yue，项目下再按部分）</li>\n<li class='chk done'><span class='box'>✓</span>首页一句话定位点明「基于 Kun 框架构建、前端用 yue」；页脚列出产品族仓库与两种许可证（Qian Apache-2.0、Kun MIT）</li>\n<li class='chk done'><span class='box'>✓</span>全站既有页面补 <code>project: qian</code>（第 7 部分镜像页另带 <code>source</code>）——手写页随 S1-DOCS-001，生成页（组件、CLI、设计镜像含 <code>source</code>）随 S1-DOCS-003</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务（ADR-021 D21.2 / D21.5）</li>\n<li>2026-10-08 claude：S1-DOCS-001（PR #3）已先做两处：首页一句话定位与页脚（产品族仓库、Qian Apache-2.0 / Kun MIT）；手写页全部补 project: qian。生成页（components / cli / design）的 project 与镜像页的 source 仍归本任务</li>\n<li>2026-10-09 someone：开始（分支叠在 S1-DOCS-003 的 PR #12 之上，复用其 frontmatter 解析与 kb-index）</li>\n<li>2026-10-09 claude：产品族页 <code>start/family.md</code>（与 README 表同内容，单测核对）；<code>build-versions.ts</code> 生成 <code>start/versions.md</code>（Kun 2026.10.8、Qian.* 5 个包未发布、@yue 未建立、.NET SDK 10.0.100、Node / pnpm、K3s v1.35）；<code>llms.ts</code> 让 llms.txt 先按 project 分节；check_docs 把 <code>start/versions.md</code> 当生成文件（默认跳过、进 Git 即失败、路由延后）。本地：616 页、产物 58.0 MB，网站单测 65、门禁自测 34、check_docs 218 + 生成页 588 通过。分支叠在 PR #12 之上</li>\n<li>2026-10-09 claude：完成：产品族页、生成的版本矩阵（含 deploy/baseline.json 钉 K3s）、llms.txt 按 project 分节；五项验收满足，PR 叠在 S1-DOCS-003 的 PR #12 之上</li>\n</ul>",
   "file": "pm/tasks/S1-DOCS-006.md"
  },
  {

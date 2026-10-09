@@ -125,7 +125,7 @@ Kun 是 Qian 的底座框架，没有自己的文档站，读者与本站 SDK �
 ### 2b.4 产品族页
 
 - `/start/family`（手写）：Kun / Qian / yue 与周边仓库（官方市场、Agent 运行时、部署与模型服务）的层、是什么、仓库、版本与许可、文档位置；与仓库 README 的「产品族」表同一内容。
-- `/start/versions`（生成）：每个文档版本对应的 Kun CalVer（`KunVersion`）、`Qian.*` 版本、`@yue/*` 版本、.NET SDK（`global.json`）、Node、K3s 基线；由 `build-versions.ts` 从仓库钉版文件产出，不手改。
+- `/start/versions`（生成）：每个文档版本对应的 Kun CalVer（`KunVersion`）、`Qian.*` 版本、`@yue/*` 版本、.NET SDK（`global.json`）、Node、K3s 基线；由 `build-versions.ts` 从仓库钉版文件产出，不手改。钉版文件：`Directory.Packages.props`（Kun）、`packages/*/*.csproj` 与 `Directory.Build.props`（`Qian.*`，写了 `IsPackable` 的项目；版本随首个包族发布钉入）、`pnpm-workspace.yaml` 里的 `@yue/*` 包、`global.json`、根 `package.json`（`engines.node`、`packageManager`）、`deploy/baseline.json`（K3s，S1-DEP-001 维护）。多版本开启前只有 `main`（开发版）一行。产品族页的表与仓库 README 的「产品族」表前五列由单测核对一致（`website/scripts/family.test.ts`）。
 
 ## 3 组件页模板
 
@@ -202,7 +202,7 @@ website/
   README.md                    本规范的实施说明、本地运行与发布方式
   docs/
     index.mdx                  首页
-    start/                     1 开始（family.mdx 产品族地图；versions.mdx 由 build-versions.ts 生成）
+    start/                     1 开始（family.md 产品族地图；versions.md 由 build-versions.ts 生成，不进 Git）
     components/                2 组件目录（生成，勿手改；收集脚本输出）
       yue/<name>.mdx
       platform/<id>.mdx
@@ -219,7 +219,7 @@ website/
     sync-specs.ts              specs → docs/cli/、docs/ → docs/design/
     build-kb-index.ts          构建后产出 kb-index.json 与 sitemap.xml（§5.1）
     sync-kun-docs.ts           kun 仓库 v<KunVersion> 的 docs/ 白名单 → docs/sdk/kun/（§2b）
-    build-versions.ts          Directory.Packages.props / global.json / pnpm catalog → docs/start/versions.mdx
+    build-versions.ts          Directory.Packages.props / csproj / global.json / package.json / pnpm 工作区 / deploy/baseline.json → docs/start/versions.md
   theme/                       主题覆盖：接入 @yue/tokens、首页的「复制为 Markdown」（文档页由 llmsUI 注入）、AskDocs 挂载点；自定义组件带 SSG-MD 分支
 ```
 
@@ -227,7 +227,7 @@ website/
 
 - `scripts/check_docs.py` 覆盖 `website/docs`：禁用词、表格、断链、frontmatter 必填与枚举（§4）；生成目录在 CI 里构建后显式检查（`scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api`）。
 - CI 构建站点后 `pnpm --filter website check`：`llms.txt`、`llms-full.txt`、每页 `.md`、`kb-index.json`、`sitemap.xml` 齐全；索引里每页的 `.md` 与 HTML 都在且 `sha256` 一致，`llms.txt`、`llms-full.txt`、`sitemap.xml` 收录每页，产物里没有索引外的 `.md`；每页 `.md` 没有 JSX / ESM 残留与空标题、空列表项，代码块不少于源页（§5.1）。
-- 生成目录（`components/`、`sdk/api/`、`sdk/kun/`（`with-qian.mdx` 除外）、`cli/`、`design/`、`start/versions.mdx`）不接受手改 PR。
+- 生成目录（`components/`、`sdk/api/`、`sdk/kun/`（`with-qian.mdx` 除外）、`cli/`、`design/`）与生成文件 `start/versions.md` 不接受手改 PR（进了 Git 即失败）。
 - Kun 小节：镜像的 Kun tag 与 `Directory.Packages.props` 的 `KunVersion` 不一致即失败；§2b.2 白名单外的文件进站即失败；`KunVersion` 缺失时构建失败而不是取 `main`。
 - 产物总大小超过预算即失败（`website/scripts/check-site.ts` 的 `SITE_SIZE_BUDGET_MB`，现为 100 MB，约为当前的两倍），并报出最大的目录。预算挡的是结构性膨胀，比如同一块内容被重复渲染进每一页；确属正常增长时调高预算，并在 PR 里写明原因（已裁决 R55）。
 
@@ -239,12 +239,13 @@ website/
 - [x] §5 的四类机器可读产物齐全并经 CI 新鲜度校验（S1-DOCS-003，§5.1）
 - [ ] 第 2 部分 yue 页有活演示与 props 表，平台插件页有配置字段表与最小 patch 示例
 - [ ] 第 3 部分「Kun 框架」小节按 §2b 生成：版本与 `KunVersion` 一致、每页有来源横幅与 `project: kun`、`/sdk/api/kun/` 可用、`/sdk/kun/with-qian` 手写页存在
-- [ ] `/start/family` 与 `/start/versions` 存在，后者由脚本生成并与仓库钉版一致
+- [x] `/start/family` 与 `/start/versions` 存在，后者由脚本生成并与仓库钉版一致（S1-DOCS-006）
 
 ## 修订历史
 
 - 2026-10-07：首版。信息架构（七个部分）由产品负责人确认；frontmatter 字段与 S1-DOCS-003 对齐。
 - 2026-10-07：新增 §2a 首页与顶部产品导航（借鉴对标产品文档首页：三条起步命令、编码代理配置、五栏产品能力、无公司信息、无对应能力移除、规划能力打阶段标记）；第 3 部分「Agent SDK + 模型服务 SDK」合并为对外名称「AI SDK」。
+- 2026-10-09：S1-DOCS-006：§2b.4 写明版本矩阵的钉版文件（含 `deploy/baseline.json`）与产品族页同 README 的单测核对；`llms.txt` 先按 project 再按部分分节；§6、§7、§8 相应更新。
 - 2026-10-09：S1-DOCS-003：§4 补校验器规则与 frontmatter 的 YAML 子集；§5 新增 5.1 知识库导入契约（五个机器可读文件、`kb-index.json` 字段、`.md` 地址规则、sitemap 的 lastmod）；§6、§7、§8 相应更新。
 - 2026-10-08：S1-DOCS-005（PR #4）未决问题裁决 R54–R62（S1-DEC-011）：API 参考不进侧栏、API 页不渲染侧栏（R54）；产物总大小预算（R55）；API 参考路径统一在 `/sdk/api/`（R56）；Kun 小节排在 SDK 概览页之后（R57）；Kun ADR 白名单收小写文件名（R58）；上游问题与第三方 `cref`（R59）；构建依赖与 fork / Dependabot（R60）；`KunVersion` 与包源映射（R62）。§2、§2b、§6、§7 相应更新。
 - 2026-10-07：Kun 进站与产品族页（ADR-021）：第 3 部分新增第一节「Kun 框架」`/sdk/kun/`，按 `KunVersion` 从 kun 仓库镜像 + DocFX，取代首版「Kun 外链不重写」；第 1 部分新增产品族地图 `/start/family` 与版本矩阵 `/start/versions`；frontmatter 新增 `project` / `source`；§1、§2a、§2b、§5、§6、§7、§8 相应更新。
