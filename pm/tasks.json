@@ -1711,7 +1711,7 @@
    "S1-YUE-005",
    "S1-RT-010"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -1808,7 +1808,7 @@
   "blockedBy": [
    "S1-YUE-004"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -5173,7 +5173,7 @@
  {
   "id": "S1-YUE-003",
   "title": "yue 工程化基线、CI 门禁矩阵与 Base UI 验证门",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "YUE",
   "areaName": "外壳与 yue",
@@ -5185,7 +5185,7 @@
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -5210,7 +5210,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>pnpm workspace + <code>catalog:</code> + Turborepo；eslint-plugin-boundaries / dependency-cruiser 六层边界进 CI；tsdown 或 Rslib 输出 ESM + d.ts、CSS 单独导出；Storybook 10（a11y、令牌可视化页）；Vitest 5 + Testing Library + <code>@vitest/browser</code>；orval / openapi-typescript 契约类型；axe + Playwright <code>critical = 0</code>；Lighthouse CI 首屏预算；CI 门禁矩阵（lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖）；Changesets + SemVer；私有 npm；<code>data-testid</code> 命名约定。首迭代验证 Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘与可访问性，不通过整体切 Radix、不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：<code>@yue/biz</code> 引用 <code>@yue/designer</code> 之类的向上依赖被 boundaries 规则拒绝（<code>packages/yue/boundaries.config.mjs</code> 的 <code>boundaries/dependencies</code> 策略；自测 <code>tests/gates/yue/boundaries.test.ts</code> 用虚拟文件路径 lint，<code>biz → designer</code>、<code>core → data</code>、<code>data → form</code>、<code>sdk → core</code>、<code>tokens → contracts</code>、未登记包名均被拒；工作流 <code>yue</code> 的 boundaries 门禁跑同一配置）</li>\n<li class='chk done'><span class='box'>✓</span>CI：lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖八项门禁在 PR 上运行（<code>.github/workflows/yue.yml</code> 矩阵，八个检查独立显示；本地 <code>pnpm yue:gates</code>；工具：ESLint 10 + typescript-eslint、tsc + Turborepo、Vitest 5 浏览器模式 + Playwright、<code>@axe-core/playwright</code>、Lighthouse CI、eslint-plugin-boundaries、publint、dependency-cruiser）</li>\n<li class='chk done'><span class='box'>✓</span>文档：Base UI 验证门结论（通过 / 切 Radix）记录在 yue 仓库 ADR；Lighthouse 首屏 script 体积在预算内（ADR-013 §9 状态历史：通过，锁定 Base UI 1.8，五项发现与封装层处理；规格 §4.4 / §6 同步；靶场首屏 script 压缩后约 151 KB，预算 250 KB 写入 PRD §14）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 claude：开始：pnpm workspace + catalog + Turborepo、八项门禁工作流、Base UI 验证门</li>\n<li>2026-10-09 claude：工作区（pnpm workspace + catalog + Turborepo、@yue/* 八包骨架、Rslib、Changesets）、分层矩阵与八项门禁工作流、Base UI 验证门（通过，ADR-013 §9）就位；本地八项门禁全过；待提 PR</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>pnpm workspace + <code>catalog:</code> + Turborepo；eslint-plugin-boundaries / dependency-cruiser 六层边界进 CI；tsdown 或 Rslib 输出 ESM + d.ts、CSS 单独导出；Storybook 10（a11y、令牌可视化页）；Vitest 5 + Testing Library + <code>@vitest/browser</code>；orval / openapi-typescript 契约类型；axe + Playwright <code>critical = 0</code>；Lighthouse CI 首屏预算；CI 门禁矩阵（lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖）；Changesets + SemVer；私有 npm；<code>data-testid</code> 命名约定。首迭代验证 Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘与可访问性，不通过整体切 Radix、不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：<code>@yue/biz</code> 引用 <code>@yue/designer</code> 之类的向上依赖被 boundaries 规则拒绝（<code>packages/yue/boundaries.config.mjs</code> 的 <code>boundaries/dependencies</code> 策略；自测 <code>tests/gates/yue/boundaries.test.ts</code> 用虚拟文件路径 lint，<code>biz → designer</code>、<code>core → data</code>、<code>data → form</code>、<code>sdk → core</code>、<code>tokens → contracts</code>、未登记包名均被拒；工作流 <code>yue</code> 的 boundaries 门禁跑同一配置）</li>\n<li class='chk done'><span class='box'>✓</span>CI：lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖八项门禁在 PR 上运行（<code>.github/workflows/yue.yml</code> 矩阵，八个检查独立显示；本地 <code>pnpm yue:gates</code>；工具：ESLint 10 + typescript-eslint、tsc + Turborepo、Vitest 5 浏览器模式 + Playwright、<code>@axe-core/playwright</code>、Lighthouse CI、eslint-plugin-boundaries、publint、dependency-cruiser）</li>\n<li class='chk done'><span class='box'>✓</span>文档：Base UI 验证门结论（通过 / 切 Radix）记录在 yue 仓库 ADR；Lighthouse 首屏 script 体积在预算内（ADR-013 §9 状态历史：通过，锁定 Base UI 1.8，五项发现与封装层处理；规格 §4.4 / §6 同步；靶场首屏 script 压缩后约 151 KB，预算 250 KB 写入 PRD §14）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 claude：开始：pnpm workspace + catalog + Turborepo、八项门禁工作流、Base UI 验证门</li>\n<li>2026-10-09 claude：工作区（pnpm workspace + catalog + Turborepo、@yue/* 八包骨架、Rslib、Changesets）、分层矩阵与八项门禁工作流、Base UI 验证门（通过，ADR-013 §9）就位；本地八项门禁全过；待提 PR</li>\n<li>2026-10-09 claude：已合并 PR #15（含 scope 改为 @idadawn/yue-*）</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-003.md"
  },
  {
@@ -5229,11 +5229,9 @@
   "depends": [
    "S1-YUE-003"
   ],
-  "blockedBy": [
-   "S1-YUE-003"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5271,7 +5269,7 @@
   "blockedBy": [
    "S1-YUE-004"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -5310,7 +5308,7 @@
   "blockedBy": [
    "S1-YUE-005"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -5349,7 +5347,7 @@
   "blockedBy": [
    "S1-YUE-005"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
