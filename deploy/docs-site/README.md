@@ -65,4 +65,4 @@ PR 预览要用对应的前缀构建：`DOCS_BASE=/pr-preview/pr-<n>/ pnpm --fil
 ## 之后
 
 - 已交给 Argo CD（2026-10-08，idadawn/iclaw-deploy PR #87）：部署仓库 `env-ds/argocd/` 下的 Application `qian-docs-site` 由 `platform-apps` 纳管，跟踪本仓库 `main` 的 `deploy/docs-site`（自动同步，`selfHeal: true`，`prune: false`），仓库凭据沿用看板的 `argocd/qian-repo-ssh`。此后清单改动合并到 `main` 即自动同步，不再手动 `kubectl apply`；上面「首次部署」一节只在重建集群时用。
-- 每个预览约 48 MB（gzip 后约 10 MB，nginx 已开 gzip；S1-DOCS-005 加入 Kun 小节与 Kun API 参考前约 17 MB），`docs-site` 分支随打开的 PR 数增长；PR 关闭即删除。产物检查有 100 MB 的总预算（R55）。
+- 每个预览约 58 MB（gzip 后约 12 MB，nginx 已开 gzip；S1-DOCS-005 加入 Kun 小节与 Kun API 参考前约 17 MB，S1-DOCS-003 加入每页 .md、llms.txt 与知识库索引前约 48 MB），`docs-site` 分支随打开的 PR 数增长；PR 关闭即删除。产物检查有 100 MB 的总预算（R55）。

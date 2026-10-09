@@ -1,5 +1,6 @@
 // 生成脚本共用：仓库坐标、生成目录的写入、Markdown 链接改写。
 // 只用 Node 内置模块与可擦除的 TS 语法：Node ≥ 22.18 可直接运行，Rspress 加载配置时（含 Node 20 的 jiti）也能导入。
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -179,6 +180,120 @@ export function splitFrontmatter(markdown: string): { frontmatter: string; body:
   const m = /^---\n([\s\S]*?)\n---\n?/.exec(markdown);
   if (!m) return { frontmatter: '', body: markdown };
   return { frontmatter: m[1] ?? '', body: markdown.slice(m[0].length) };
+}
+
+export type FrontmatterValue = string | string[];
+
+/**
+ * 解析 frontmatter 的 YAML 子集（与 scripts/check_docs.py 的 parse_frontmatter 同一套规则）：
+ * `key: 标量`、`key: [a, b]`、`key:` 加缩进的 `- 项` 列表、双引号（JSON）与单引号字符串、# 注释。
+ * 嵌套映射、多行标量、锚点等其它写法一律抛错，提示改成上述形式。
+ */
+export function parseFrontmatter(frontmatter: string): Record<string, FrontmatterValue> {
+  const data: Record<string, FrontmatterValue> = {};
+  const lines = frontmatter.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    if (line.trim() === '' || line.trimStart().startsWith('#')) continue;
+    if (/^[ \t]/.test(line)) throw new Error(`frontmatter 意外的缩进行：${line.trim()}`);
+    const m = /^([A-Za-z_][\w-]*):(?:\s+(.*))?$/.exec(line);
+    if (!m) throw new Error(`frontmatter 不是 key: value 形式：${line}`);
+    const key = m[1] ?? '';
+    let raw = (m[2] ?? '').trim();
+    if (key in data) throw new Error(`frontmatter 字段重复：${key}`);
+    if (raw.startsWith('#')) raw = '';
+    if (raw === '') {
+      const items: string[] = [];
+      while (i + 1 < lines.length && /^[ \t]+-\s/.test(lines[i + 1] ?? '')) {
+        i++;
+        items.push(frontmatterScalar((lines[i] ?? '').trim().slice(2)));
+      }
+      data[key] = items.length > 0 ? items : '';
+    } else if (raw.startsWith('[')) {
+      if (!raw.endsWith(']')) throw new Error(`frontmatter 列表要写在一行内：${key}`);
+      data[key] = frontmatterInlineList(raw.slice(1, -1));
+    } else {
+      data[key] = frontmatterScalar(raw);
+    }
+  }
+  return data;
+}
+
+function frontmatterScalar(raw: string): string {
+  const value = raw.trim();
+  if (value.startsWith('"')) {
+    const parsed: unknown = JSON.parse(value);
+    if (typeof parsed !== 'string') throw new Error(`frontmatter 双引号里只能是字符串：${value}`);
+    return parsed;
+  }
+  if (value.startsWith("'")) {
+    if (value.length < 2 || !value.endsWith("'")) throw new Error(`frontmatter 单引号字符串不合法：${value}`);
+    return value.slice(1, -1).replace(/''/g, "'");
+  }
+  if (/^[{&*|>]/.test(value)) throw new Error(`frontmatter 不支持的写法：${value}`);
+  return value;
+}
+
+function frontmatterInlineList(inner: string): string[] {
+  const items: string[] = [];
+  let buffer = '';
+  let quote: string | null = null;
+  for (const ch of inner) {
+    if (quote) {
+      buffer += ch;
+      if (ch === quote) quote = null;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+      buffer += ch;
+    } else if (ch === ',') {
+      items.push(frontmatterScalar(buffer));
+      buffer = '';
+    } else {
+      buffer += ch;
+    }
+  }
+  if (buffer.trim() !== '' || items.length > 0) items.push(frontmatterScalar(buffer));
+  return items.filter((item) => item !== '');
+}
+
+/** 今天（UTC）的 YYYY-MM-DD。 */
+export function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+const fileDateCache = new Map<string, string>();
+
+/**
+ * 仓库文件最后一次提交的日期（YYYY-MM-DD），用作生成页 frontmatter 的 updated。
+ * 没提交过、不在 git 仓库里或没有 git 时用今天，生成结果仍然可用。
+ */
+export function repoFileDate(repoRelPath: string, repoRoot: string = REPO_ROOT): string {
+  const key = `${repoRoot}\u0000${repoRelPath}`;
+  const cached = fileDateCache.get(key);
+  if (cached) return cached;
+  let date = '';
+  try {
+    date = execFileSync('git', ['-C', repoRoot, 'log', '-1', '--format=%cs', '--', repoRelPath], { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    date = '';
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) date = today();
+  fileDateCache.set(key, date);
+  return date;
+}
+
+/** 去掉行内 Markdown 标记（链接、代码、粗斜体）并把换行并成空格，用作 description。 */
+export function plainText(markdown: string): string {
+  return markdown
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/\s*\n\s*/g, ' ')
+    .trim();
 }
 
 /** YAML 双引号字符串：生成的 frontmatter 只写字符串标量，统一走这里转义。 */

@@ -1,4 +1,5 @@
 // 首页「最新动态」：直接读仓库 docs/CHANGELOG.md，取最近几条（docs-site.md §2a.1），不另维护一份。
+import { withBase } from '@rspress/core/runtime';
 import { Link } from '@rspress/core/theme';
 import changelog from '../../../docs/CHANGELOG.md?raw';
 
@@ -31,6 +32,18 @@ export function parseChangelog(markdown: string): ChangeEntry[] {
 
 export function LatestChanges({ count = 4 }: { count?: number }) {
   const entries = parseChangelog(changelog).slice(0, count);
+  if (import.meta.env.SSG_MD) {
+    return (
+      <ul>
+        {entries.map((entry) => (
+          <li key={`${entry.date}-${entry.title}`}>
+            {entry.date} <a href={withBase('/design/changelog.md')}>{entry.title}</a>
+            {entry.summary ? `：${entry.summary}` : ''}
+          </li>
+        ))}
+      </ul>
+    );
+  }
   return (
     <ul className="qian-latest rp-not-doc">
       {entries.map((entry) => (

@@ -4,7 +4,7 @@
 // 页面改为 §3 的九节模板；生成目录不进 Git，也不接受手改。
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT, yamlString, type GeneratedFile } from './repo.ts';
+import { REPO_ROOT, repoFileDate, yamlString, type GeneratedFile } from './repo.ts';
 import { designRoute } from './sync-specs.ts';
 
 type Stage = 'S1' | 'S2' | 'S3' | 'S4';
@@ -20,6 +20,8 @@ export interface PlannedComponent {
 }
 
 const S1_PRD = 'docs/prd/07-s1-foundation.md';
+/** 占位页的内容来自本脚本的规划清单，updated 取本脚本的提交日期（S1-DOCS-002 换成组件文件夹后改取各组件文档的日期）。 */
+const SELF = 'website/scripts/collect-components.ts';
 const SPEC = 'docs/prd/specs/component-model.md';
 
 export const PLATFORM_COMPONENTS: PlannedComponent[] = [
@@ -75,6 +77,9 @@ function componentPage(c: PlannedComponent, repoRoot: string): string {
     `title: ${yamlString(`${c.id} ${c.name}`)}`,
     `description: ${yamlString(c.summary)}`,
     'part: components',
+    'project: qian',
+    'audience: [developer, operator]',
+    `updated: ${repoFileDate(SELF, repoRoot)}`,
     `component: ${c.id}`,
     `stage: ${c.stage}`,
     // S1 是当前阶段不另标；更后阶段在侧栏里显示阶段标记（docs-site.md §2a：规划中的能力打阶段标记）
@@ -112,6 +117,9 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
       `title: ${yamlString('平台插件')}`,
       `description: ${yamlString('身份、鉴权、租户、文件、配置、事件、审计等平台插件的目录。')}`,
       'part: components',
+      'project: qian',
+      'audience: [developer, operator]',
+      `updated: ${repoFileDate(SELF, repoRoot)}`,
       '---',
       '',
       '# 平台插件',
@@ -135,6 +143,9 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
       `title: ${yamlString('yue 组件库')}`,
       `description: ${yamlString('yue 组件库各包的目录；组件页带活演示与 props 表。')}`,
       'part: components',
+      'project: yue',
+      'audience: [developer]',
+      `updated: ${repoFileDate(SELF, repoRoot)}`,
       '---',
       '',
       '# yue 组件库',
@@ -155,6 +166,9 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
       `title: ${yamlString('组件目录')}`,
       `description: ${yamlString('每个组件一页：怎么装、怎么配、暴露了什么；平台插件与 yue 组件用同一模板。')}`,
       'part: components',
+      'project: qian',
+      'audience: [developer, operator, isv]',
+      `updated: ${repoFileDate(SELF, repoRoot)}`,
       '---',
       '',
       '# 组件目录',

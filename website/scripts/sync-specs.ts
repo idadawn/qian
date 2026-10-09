@@ -4,16 +4,8 @@
 // 两个目录都不进 Git，构建前由 sources-plugin.ts 调用重新生成。
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  REPO_ROOT,
-  githubUrl,
-  rewriteLinks,
-  splitFrontmatter,
-  toPosix,
-  yamlString,
-  type GeneratedFile,
-  type LinkResolver,
-} from './repo.ts';
+import { DEFAULT_BRANCH, REPO_ROOT, REPO_URL, githubUrl, parseFrontmatter, plainText, repoFileDate, rewriteLinks, splitFrontmatter, toPosix, type GeneratedFile, type LinkResolver, yamlString } from './repo.ts';
+import { firstParagraph, truncate } from './sync-kun-docs.ts';
 
 export const COMPONENT_MODEL_SPEC = 'docs/prd/specs/component-model.md';
 
@@ -127,7 +119,40 @@ export function mirrorDoc(repoRelPath: string, source: string, repoRoot: string 
   const { frontmatter, body } = splitFrontmatter(source);
   const rewritten = rewriteLinks(body, makeDocsResolver(repoRelPath, repoRoot));
   const withNote = insertAfterTitle(rewritten, sourceNote(repoRelPath));
-  return frontmatter ? `---\n${frontmatter}\n---\n${withNote}` : withNote;
+  return `---\n${designFrontmatter(repoRelPath, frontmatter, body, repoRoot)}\n---\n${withNote}`;
+}
+
+/** 仓库坐标 owner/repo，用于镜像页的 source 字段。 */
+const QIAN_OWNER_REPO = new URL(REPO_URL).pathname.replace(/^\/+|\/+$/g, '');
+const DESIGN_FRONTMATTER_KEYS = new Set(['title', 'description', 'part', 'project', 'audience', 'updated', 'source']);
+
+/**
+ * 镜像页的 frontmatter（docs-site.md §4）：站点必填字段由本脚本填写——title 取源文件 frontmatter 的 title 或一级标题，
+ * description 取首段（去标记、截到 120 字），updated 取源文件最后提交日期，source 指回仓库；源文件自带的其它字段
+ * （ADR 的 status、date、decision_id 等）原样保留。
+ */
+export function designFrontmatter(repoRelPath: string, sourceFrontmatter: string, body: string, repoRoot: string = REPO_ROOT): string {
+  const own = sourceFrontmatter ? parseFrontmatter(sourceFrontmatter) : {};
+  const ownTitle = typeof own.title === 'string' ? own.title.trim() : '';
+  const h1 = /^#\s+(.+)$/m.exec(body)?.[1]?.trim() ?? '';
+  const title = ownTitle || h1 || path.basename(repoRelPath, '.md');
+  const ownDescription = typeof own.description === 'string' ? own.description.trim() : '';
+  // 首段跳过引用块（ADR 开头常是「> 2026-10-07 经 ADR-021 修订…」这类说明）
+  const description = ownDescription || truncate(plainText(firstParagraph(body.replace(/^>.*$/gm, ''))) || title);
+  const lines = [
+    `title: ${yamlString(title)}`,
+    `description: ${yamlString(description)}`,
+    'part: design',
+    'project: qian',
+    'audience: [decision-maker, developer]',
+    `updated: ${repoFileDate(repoRelPath, repoRoot)}`,
+    `source: ${yamlString(`${QIAN_OWNER_REPO}@${DEFAULT_BRANCH}:${repoRelPath}`)}`,
+  ];
+  for (const line of sourceFrontmatter.split('\n')) {
+    const key = /^([A-Za-z_][\w-]*):/.exec(line)?.[1];
+    if (key && !DESIGN_FRONTMATTER_KEYS.has(key)) lines.push(line);
+  }
+  return lines.join('\n');
 }
 
 /** 侧栏文字：ADR 用「编号 + 冒号前的短标题」，其余用一级标题。 */
@@ -283,6 +308,9 @@ export function syncCli(repoRoot: string = REPO_ROOT): GeneratedFile[] {
         `title: ${yamlString(page.title)}`,
         `description: ${yamlString(page.description)}`,
         'part: cli',
+        'project: qian',
+        'audience: [developer]',
+        `updated: ${repoFileDate(COMPONENT_MODEL_SPEC, repoRoot)}`,
         '---',
         '',
         `# ${page.title}`,
@@ -302,6 +330,9 @@ export function syncCli(repoRoot: string = REPO_ROOT): GeneratedFile[] {
       `title: ${yamlString('CLI 与规格')}`,
       `description: ${yamlString('qian 命令与 plugin.json、marketplace.json、profile / patch 的字段参考，从组件模型规格同步。')}`,
       'part: cli',
+      'project: qian',
+      'audience: [developer]',
+      `updated: ${repoFileDate(COMPONENT_MODEL_SPEC, repoRoot)}`,
       '---',
       '',
       '# CLI 与规格',
