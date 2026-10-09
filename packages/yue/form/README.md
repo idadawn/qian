@@ -1,4 +1,4 @@
-# @yue/form
+# @idadawn/yue-form
 
 Field、SchemaForm、FormApi、联动、校验与脱敏规则目录、弹层 API 与消息出口。
 

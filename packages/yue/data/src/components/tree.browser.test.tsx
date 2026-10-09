@@ -1,4 +1,4 @@
-import { DirectionProvider } from '@yue/core';
+import { DirectionProvider } from '@idadawn/yue-core';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';

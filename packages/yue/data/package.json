@@ -1,5 +1,5 @@
 {
-  "name": "@yue/data",
+  "name": "@idadawn/yue-data",
   "version": "0.1.0",
   "description": "DataTable 基础版、Tree 族、日期族、Upload 与 ImportWizard。",
   "license": "Apache-2.0",
@@ -21,6 +21,7 @@
   },
   "publishConfig": {
     "access": "restricted",
+    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -35,8 +36,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@yue/core": "workspace:^",
-    "@yue/sdk": "workspace:^"
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",

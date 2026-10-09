@@ -74,7 +74,7 @@ website/
     build-versions.ts          后续：仓库钉版文件 → docs/start/versions.mdx（S1-DOCS-006）
   theme/
     index.tsx  index.css       主题覆盖：令牌映射、建设期横幅、版本说明、首页组件
-    yue-tokens.css             yue 令牌占位，@yue/tokens 发布后替换（§5）
+    yue-tokens.css             yue 令牌占位，@idadawn/yue-tokens 发布后替换（§5）
     components/                首页区块、最新动态、版本说明、站点地图
 ```
 
@@ -115,7 +115,7 @@ docs-site.md §5：第 2、3、4 部分随 Qian 包族的 SemVer 锁步版本多
 
 - 颜色只引用 yue 的语义令牌（`--yue-primary`、`--yue-background`、`--yue-border` 等），在 `theme/index.css` 里映射到 Rspress 的主题变量；明暗两态由令牌自己在 `html[data-theme="dark"]` 下切换（specs/yue.md §3.5）。
 - Rspress 用 `html.dark` 类切换明暗，`rspress.config.ts` 里的一段内联脚本在首帧前把它同步到 `data-theme`，切换时跟随，不闪烁。
-- `@yue/tokens`（S1-YUE-004）还没发布，`theme/yue-tokens.css` 是按 §3.5 命名写的占位，取值不代表品牌决定。发布后：删除该文件，`theme/index.css` 第一行改为导入 `@yue/tokens` 的 CSS，`package.json` 加依赖；映射与组件都不用改。若 `@yue/tokens` 最终用 `html.dark` 切换，桥接脚本可以删掉。
+- `@idadawn/yue-tokens`（文档简称 `@yue/tokens`，S1-YUE-004）还没发布，`theme/yue-tokens.css` 是按 §3.5 命名写的占位，取值不代表品牌决定。发布后：删除该文件，`theme/index.css` 第一行改为导入 `@yue/tokens` 的 CSS，`package.json` 加依赖；映射与组件都不用改。若 `@yue/tokens` 最终用 `html.dark` 切换，桥接脚本可以删掉。
 
 ## 6 托管与预览：K3s 静态托管
 

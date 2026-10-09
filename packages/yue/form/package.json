@@ -1,5 +1,5 @@
 {
-  "name": "@yue/form",
+  "name": "@idadawn/yue-form",
   "version": "0.1.0",
   "description": "Field、SchemaForm、FormApi、联动、校验与脱敏规则目录、弹层 API 与消息出口。",
   "license": "Apache-2.0",
@@ -21,6 +21,7 @@
   },
   "publishConfig": {
     "access": "restricted",
+    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -34,9 +35,9 @@
     "publint": "publint --strict --pack pnpm"
   },
   "dependencies": {
-    "@yue/contracts": "workspace:^",
-    "@yue/core": "workspace:^",
-    "@yue/sdk": "workspace:^"
+    "@idadawn/yue-contracts": "workspace:^",
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",

@@ -48,13 +48,13 @@ export const PLATFORM_COMPONENTS: PlannedComponent[] = [
 ];
 
 export const YUE_PACKAGES: Array<{ name: string; stage: Stage; summary: string }> = [
-  { name: '@yue/tokens', stage: 'S1', summary: '三层设计令牌（primitive → semantic → component）、明暗两态与首帧防闪烁。' },
-  { name: '@yue/core', stage: 'S1', summary: '约 30 个基础组件：按钮、输入、选择、弹层、反馈、导航等。' },
-  { name: '@yue/shell', stage: 'S1', summary: 'AppShell 单一侧栏布局、页面骨架、租户切换器与兜底页。' },
-  { name: '@yue/data', stage: 'S1', summary: 'DataTable 基础版、树与级联、日期时间、分片上传。' },
-  { name: '@yue/form', stage: 'S1', summary: 'SchemaForm 基础版、校验与基础联动、弹层 API。' },
-  { name: '@yue/biz', stage: 'S1', summary: '业务选择器（字典、组织、用户、角色）、菜单与按钮授权树。' },
-  { name: '@yue/sdk', stage: 'S1', summary: '注册表 API、PlatformClient、请求拦截器链与 i18n。' },
+  { name: '@idadawn/yue-tokens', stage: 'S1', summary: '三层设计令牌（primitive → semantic → component）、明暗两态与首帧防闪烁。' },
+  { name: '@idadawn/yue-core', stage: 'S1', summary: '约 30 个基础组件：按钮、输入、选择、弹层、反馈、导航等。' },
+  { name: '@idadawn/yue-shell', stage: 'S1', summary: 'AppShell 单一侧栏布局、页面骨架、租户切换器与兜底页。' },
+  { name: '@idadawn/yue-data', stage: 'S1', summary: 'DataTable 基础版、树与级联、日期时间、分片上传。' },
+  { name: '@idadawn/yue-form', stage: 'S1', summary: 'SchemaForm 基础版、校验与基础联动、弹层 API。' },
+  { name: '@idadawn/yue-biz', stage: 'S1', summary: '业务选择器（字典、组织、用户、角色）、菜单与按钮授权树。' },
+  { name: '@idadawn/yue-sdk', stage: 'S1', summary: '注册表 API、PlatformClient、请求拦截器链与 i18n。' },
 ];
 
 const PLACEHOLDER_NOTE =
@@ -139,7 +139,7 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
       '',
       '# yue 组件库',
       '',
-      `yue 是 Qian 的前端组件库（[ADR-013](${designRoute('docs/adr/ADR-013-frontend-yue.md')})、[yue 专题规格](${designRoute('docs/prd/specs/yue.md')})）。S1-DOCS-002 起每个组件一页，带活演示与 props 表；下表是 S1 交付的包。`,
+      `yue 是 Qian 的前端组件库（[ADR-013](${designRoute('docs/adr/ADR-013-frontend-yue.md')})、[yue 专题规格](${designRoute('docs/prd/specs/yue.md')})）。包发 GitHub Packages，包名 \`@idadawn/yue-<包>\`，设计文档里的 \`@yue/<包>\` 是同一个包的简称。S1-DOCS-002 起每个组件一页，带活演示与 props 表；下表是 S1 交付的包。`,
       '',
       '| 包 | 阶段 | 内容 |',
       '|---|---|---|',

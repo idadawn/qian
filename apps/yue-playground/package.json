@@ -13,9 +13,9 @@
     "lighthouse": "lhci autorun"
   },
   "dependencies": {
-    "@yue/core": "workspace:^",
-    "@yue/data": "workspace:^",
-    "@yue/tokens": "workspace:^",
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-data": "workspace:^",
+    "@idadawn/yue-tokens": "workspace:^",
     "react": "catalog:",
     "react-dom": "catalog:"
   },

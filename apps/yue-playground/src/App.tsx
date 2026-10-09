@@ -26,12 +26,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
   type TextDirection,
-} from '@yue/core';
-import { Tree, type TreeNode } from '@yue/data';
+} from '@idadawn/yue-core';
+import { Tree, type TreeNode } from '@idadawn/yue-data';
 import { useState } from 'react';
 
 // Base UI 验证门靶场（docs/prd/specs/yue.md §4.4）：六个原语各一节，Playwright + axe 与 Lighthouse 对本页跑。
-// 文案是演示数据，不走 i18n（i18n 约定随 @yue/sdk 落地）。
+// 文案是演示数据，不走 i18n（i18n 约定随 @idadawn/yue-sdk 落地）。
 
 const FRUITS = ['苹果', '香蕉', '樱桃', '葡萄', '橙子'];
 

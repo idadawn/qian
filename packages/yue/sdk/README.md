@@ -1,4 +1,4 @@
-# @yue/sdk
+# @idadawn/yue-sdk
 
 注册表 API、PlatformClient、请求拦截器链、i18n、mock 与运行时配置注入。
 

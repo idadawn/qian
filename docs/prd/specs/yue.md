@@ -23,7 +23,7 @@
 | D11 | **S2 只做 PC 响应式**（Q13） | `@yue/mobile` H5 渲染器 S2 可选 / S3；小程序原生渲染不纳入 S1–S3 |
 | D12 | **审批设计器为纵向节点树（DOM 自绘）；不用 bpmn-js** | React Flow 自由画布 S3 可选；BPMN 只作导出器 |
 | D13 | **联动三层** | 声明式动作 → 可序列化表达式 DSL（JSONLogic 类）→ QuickJS 沙箱脚本（S2 可选兜底，白名单 API、超时、内存上限、不暴露令牌）；自由 JS 按钮不做 |
-| D14 | **分发：私有 npm 为主**（Q41） | shadcn 私有 registry + MCP Server S3 可选、S4 必做 |
+| D14 | **分发：私有 npm 为主**（Q41） | GitHub Packages，scope `@idadawn`，包名 `@idadawn/yue-<包>`（2026-10-09 拍板，§3.1）；shadcn 私有 registry + MCP Server S3 可选、S4 必做 |
 | D15 | **文档站 Storybook 10；产品文档不混入 React 18 的 Docusaurus** | Storybook 用例复用为测试 |
 | D16 | **控件包与后端 Field Type Provider 同名同版本发布** | 控件 `type` 即字段类型编码；前后端同一 SemVer，CI 校验配对 |
 
@@ -148,6 +148,8 @@ yue 同时承担三种角色，三者缺一不可：
 5. 任何回答里出现「需要新建一套弹层 / 表单 / 表格引擎」→ 否决，改为复用现有引擎并只做叶子（D3）。
 
 分层违规在 CI 直接失败，不接受「临时引用、下个迭代修」；需要跨层的能力一律通过 `@yue/sdk` 的注册表或依赖注入（`PlatformClient`）解耦。
+
+**npm 包名**（2026-10-09 产品负责人拍板）：文中 `@yue/<包>` 是简称；实际发布的包名是 `@idadawn/yue-<包>`（如 `@idadawn/yue-core`），发到 GitHub Packages——它要求 scope 与仓库所有者同名（ADR-021 D21.2 的「一个 GitHub Packages 命名空间」）。目录仍是 `packages/yue/<包>`，分层矩阵按目录名登记。
 
 ### 3.2 控件注册表契约 `registerWidget`
 

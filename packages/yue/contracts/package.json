@@ -1,5 +1,5 @@
 {
-  "name": "@yue/contracts",
+  "name": "@idadawn/yue-contracts",
   "version": "0.1.0",
   "description": "FormSchema / ListSchema / 控件 manifest / SSE 事件的 JSON Schema 与生成的 TS 类型（无 UI）。",
   "license": "Apache-2.0",
@@ -21,6 +21,7 @@
   },
   "publishConfig": {
     "access": "restricted",
+    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",

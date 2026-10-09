@@ -1,5 +1,5 @@
 {
-  "name": "@yue/shell",
+  "name": "@idadawn/yue-shell",
   "version": "0.1.0",
   "description": "AppShell 单一侧栏布局、菜单 → 路由、MF2 宿主与插槽、租户切换器、认证页族与兜底页。",
   "license": "Apache-2.0",
@@ -21,6 +21,7 @@
   },
   "publishConfig": {
     "access": "restricted",
+    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -34,9 +35,9 @@
     "publint": "publint --strict --pack pnpm"
   },
   "dependencies": {
-    "@yue/core": "workspace:^",
-    "@yue/form": "workspace:^",
-    "@yue/sdk": "workspace:^"
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-form": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",

@@ -1,4 +1,4 @@
-# @yue/core
+# @idadawn/yue-core
 
 Base UI + shadcn 源码自有化的基础组件（约 30 个）。
 

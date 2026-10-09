@@ -7,6 +7,7 @@
 - 建立 yue 前端工作区：pnpm workspace + `catalog:` + Turborepo，`@yue/*` 八个 S1 包的骨架（tokens / contracts / core / sdk / shell / data / form / biz）、Rslib 构建、Changesets 与 `0.x` 版本策略；六层分层矩阵由 eslint-plugin-boundaries 强制，dependency-cruiser 查循环依赖。
 - CI 工作流 `yue` 八项门禁在 PR 上独立显示：lint、typecheck、unit（Vitest 浏览器模式）、a11y（Playwright + axe）、lighthouse（首屏 script ≤ 250 KB）、boundaries、publint、circular。
 - Base UI 验证门通过：Menu / Select / Combobox / Tabs / Tooltip 封装在 `@yue/core`，Tree 自建在 `@yue/data`，结论与五项发现记入 ADR-013 §9；靶场 `apps/yue-playground`。
+- 发包渠道拍板：GitHub Packages，包名 `@idadawn/yue-<包>`（文档中 `@yue/<包>` 是简称，规格 §3.1）。
 
 ## 2026-10-08 Kun 升级到 2026.10.8（S1-KUN-008）
 

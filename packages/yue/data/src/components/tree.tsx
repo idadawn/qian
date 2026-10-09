@@ -1,4 +1,4 @@
-import { cn, useDirection, type TestIdProps } from '@yue/core';
+import { cn, useDirection, type TestIdProps } from '@idadawn/yue-core';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 // 树（自建；Base UI 与 Radix 都没有 Tree 原语）。验证门项：WAI-ARIA tree 模式的键盘导航（方向键 / Home / End / Enter / Space）、

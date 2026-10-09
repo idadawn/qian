@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 /** 最底层横切包：任何包都可以依赖（它们自己不依赖任何 @yue 包）。 */
 export const BOTTOM_LAYERS = ['tokens', 'contracts'];
 
-/** 每个包允许直接依赖的 @yue 包（不含 BOTTOM_LAYERS，会自动补上）。键即 packages/yue/<目录> 与 @yue/<目录>。 */
+/** 每个包允许直接依赖的 @yue 包（不含 BOTTOM_LAYERS，会自动补上）。键即 packages/yue/<目录> 与 @idadawn/yue-<目录>。 */
 const DIRECT = {
   tokens: [],
   contracts: [],
@@ -51,15 +51,15 @@ const policies = [
       allow: {
         to: [
           ...(allowed.length ? [{ element: { type: 'yue', captured: { pkg: allowed } } }] : []),
-          { module: { source: allowed.map((d) => `@yue/${d}`) } },
+          { module: { source: allowed.map((d) => `@idadawn/yue-${d}`) } },
         ],
       },
     };
   }),
-  // 第三方库与 Node 内置模块对所有 yue 包放行（@yue/* 不在此列，只走矩阵）。
-  { from: { element: { type: 'yue' } }, allow: { to: { module: { source: ['!@yue/**'] } } } },
+  // 第三方库与 Node 内置模块对所有 yue 包放行（@idadawn/yue-* 不在此列，只走矩阵）。
+  { from: { element: { type: 'yue' } }, allow: { to: { module: { source: ['!@idadawn/yue-**'] } } } },
   // 应用面（apps/*）可以引任何 yue 包、自己与第三方库。
-  { from: { element: { type: 'app' } }, allow: { to: [{ element: { type: 'yue' } }, { element: { type: 'app' } }, { module: { source: ['!@yue/**'] } }] } },
+  { from: { element: { type: 'app' } }, allow: { to: [{ element: { type: 'yue' } }, { element: { type: 'app' } }, { module: { source: ['!@idadawn/yue-**'] } }] } },
 ];
 
 /** 只含边界规则的 ESLint 配置片段（根 eslint.config.mjs 与 eslint.boundaries.config.mjs 共用）。 */
@@ -86,7 +86,7 @@ export const yueBoundariesConfig = [
           default: 'disallow',
           checkAllOrigins: true,
           checkUnknownLocals: true,
-          message: 'yue 分层违规：{{ file.captured.pkg }}{{ file.captured.app }} 不得依赖 {{ dependency.source }}（docs/prd/specs/yue.md §3.1）',
+          message: 'yue 分层违规：不得依赖 {{ dependency.source }}（矩阵在 packages/yue/boundaries.config.mjs，规格 docs/prd/specs/yue.md §3.1）',
           policies,
         },
       ],

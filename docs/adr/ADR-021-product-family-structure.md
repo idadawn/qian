@@ -17,7 +17,7 @@ amends: ADR-001, ADR-013
 
 - **Kun**：仓库 `idadawn/kun`（2026-04 建于此，中间转入 CavaiLAB，2026-10-08 迁回；包元数据与 README 的仓库地址一直是 `idadawn/kun`），私有，MIT；.NET 10 微服务框架，32 个 `Kun.*` 模块；CalVer（`vYYYY.M.D`，最新 `v2026.9.13`）；NuGet 包公开发布在 nuget.org（`Kun.Core` 等，0.1.0 / 2026.6.12 / 2026.9.13），并镜像到仓库所属者的 GitHub Packages。文档是仓库内 `docs/` 的 Markdown（白皮书、模块地图、上手教程、6 篇指南、3 篇安全专题、16 份 Kun 自己的 ADR、发布说明与变更日志），**没有文档站**；Kun 还有其它下游（iClaw 等），README 与部分文档面向那些下游写。
 - **Qian**：仓库 `idadawn/qian`，单仓：`docs/`、`pm/`、`website/`（文档站，S1-DOCS-001 在途），S1 起 `packages/`、`plugins/`、`profiles/`、`samples/`；`Qian.*` SemVer 锁步，Apache-2.0，S1 发 GitHub Packages 私有 feed（ADR-019 D19.7）。
-- **yue**：随 Qian 单仓以 pnpm workspace 交付（PRD §07 7.15.2），`@yue/*` 发私有 npm，Changesets + SemVer。
+- **yue**：随 Qian 单仓以 pnpm workspace 交付（PRD §07 7.15.2），`@yue/*`（npm 包名 `@idadawn/yue-*`，2026-10-09 拍板）发 GitHub Packages，Changesets + SemVer。
 - **周边**：`qian-plugins` 规定为「与 Qian 同组织下的独立仓库」，但组织名仍是占位（specs/component-model.md §8）；iClaw 源码在 `idadawn/iclaw`（ADR-016；其文档里的 CavaiLAB 地址是迁移前的旧地址）；部署仓库 `idadawn/iclaw-deploy`（ADR-017）；模型服务 `idadawn/MaaS`（ADR-015）。除 Kun 外全部在 `idadawn`，两个 GitHub 所有者并存意味着两个 GitHub Packages 命名空间。
 - **文档**：docs-site.md 首版把 Kun 写成「外链不重写」，但 Kun 没有可外链的站点，且产品负责人在确认信息架构时就把「Kun SDK」列为 SDK 部分的第一节。
 

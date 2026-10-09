@@ -30,7 +30,7 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 - **D13.9 后台壳**（Q37）：统一一个壳，按「平台控制台 / 应用」上下文切换，与插件外壳模型一致；不采用三面新窗口。
 - **D13.10 布局与偏好**（Q38）：S1 单一侧栏布局；多布局模式与偏好抽屉 S3 可选。
 - **D13.11 富文本 / Markdown 编辑器**（Q39）：五份调研均未覆盖，S2 前补一次选型调研后再排期。
-- **D13.12 分发渠道**（Q41）：私有 npm 为主；shadcn 私有 registry + MCP Server 面向 ISV 与 Agent，S3 可选、S4 必做。
+- **D13.12 分发渠道**（Q41）：私有 npm 为主——GitHub Packages，scope `@idadawn`，包名 `@idadawn/yue-<包>`，文档中的 `@yue/<包>` 是简称（2026-10-09 产品负责人拍板，见 §9）；shadcn 私有 registry + MCP Server 面向 ISV 与 Agent，S3 可选、S4 必做。
 - **D13.13 令牌**：三层结构 S1 必做；DTCG 格式导出 S1 可选；命名禁同名异义，状态色成对，WCAG AA 对比度单测进 CI；`data-theme / data-brand` 由服务端按租户下发，插件只引用语义令牌。
 - **D13.14 联动与脚本三层**：声明式动作 → 可序列化表达式 DSL → QuickJS 沙箱脚本（白名单 API、超时、内存上限、不暴露令牌）；禁 `eval` / `new Function`。
 - **D13.15 其他选型**：dnd-kit（包一层抽象）；`@xyflow/react` 12（S3 自由画布）；react-grid-layout；Univer 开源核心（排除 Pro 与商业包，xlsx 导出放后端）；pdfme；quickjs-emscripten；不用 Formily / amis / lowcode-engine / bpmn-js。
@@ -111,3 +111,8 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 5. **Base UI 要求 `date-fns` 作为可选 peer**（只有日期类原语用到）；S1 不装，等日期族时再定。
 
 **后续**：S1-YUE-005 用 shadcn CLI 生成全集时沿用这里的封装约定（`data-slot` / `data-testid`、函数式 className 不透传、ARIA 补齐）；上述验证用例并入组件测试，不再单独维护。
+
+### 2026-10-09 发包渠道：GitHub Packages，scope 改为 `@idadawn`（S1-YUE-003）
+
+GitHub Packages 的 npm 仓库要求包 scope 与仓库所有者同名，`@yue/*` 发不上去。产品负责人拍板改 scope：包名 `@idadawn/yue-<包>`（`@idadawn/yue-tokens`、`@idadawn/yue-core` 等），`publishConfig.registry` 指 `https://npm.pkg.github.com`，Changesets 的固定版本组相应改为 `@idadawn/yue-*`。目录名与分层矩阵的键仍是 `packages/yue/<包>`；设计文档继续用 `@yue/<包>` 作简称（规格 §3.1 有对照说明）。消费方配置与发布步骤见 `packages/yue/README.md` §5。
+

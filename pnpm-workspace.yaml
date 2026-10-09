@@ -1,4 +1,4 @@
-# pnpm 工作区（S1-YUE-003）：文档站 website/、yue 前端包 packages/yue/*（@yue/<目录名>）、前端应用 apps/*。
+# pnpm 工作区（S1-YUE-003）：文档站 website/、yue 前端包 packages/yue/*（@idadawn/yue-<目录名>）、前端应用 apps/*。
 packages:
   - website
   - packages/yue/*
@@ -8,7 +8,7 @@ packages:
 allowBuilds:
   unrs-resolver: true
 
-# 版本目录：前端依赖只在这里钉一次，各包的 package.json 写 "catalog:"。版本矩阵页从这里读 @yue/* 的工作区包。
+# 版本目录：前端依赖只在这里钉一次，各包的 package.json 写 "catalog:"。版本矩阵页从这里读 @idadawn/yue-* 的工作区包。
 # typescript 钉 6.0.x：typescript-eslint 8 只支持 < 6.1。
 catalog:
   react: 19.3.0

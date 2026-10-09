@@ -1,5 +1,5 @@
 {
-  "name": "@yue/biz",
+  "name": "@idadawn/yue-biz",
   "version": "0.1.0",
   "description": "业务选择器：组织 / 用户 / 角色 / 岗位 / 字典 / 远程选项、授权树、IconPicker。",
   "license": "Apache-2.0",
@@ -21,6 +21,7 @@
   },
   "publishConfig": {
     "access": "restricted",
+    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -34,10 +35,10 @@
     "publint": "publint --strict --pack pnpm"
   },
   "dependencies": {
-    "@yue/core": "workspace:^",
-    "@yue/data": "workspace:^",
-    "@yue/form": "workspace:^",
-    "@yue/sdk": "workspace:^"
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-data": "workspace:^",
+    "@idadawn/yue-form": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",

@@ -314,13 +314,13 @@ importers:
 
   apps/yue-playground:
     dependencies:
-      '@yue/core':
+      '@idadawn/yue-core':
         specifier: workspace:^
         version: link:../../packages/yue/core
-      '@yue/data':
+      '@idadawn/yue-data':
         specifier: workspace:^
         version: link:../../packages/yue/data
-      '@yue/tokens':
+      '@idadawn/yue-tokens':
         specifier: workspace:^
         version: link:../../packages/yue/tokens
       react:
@@ -366,16 +366,16 @@ importers:
 
   packages/yue/biz:
     dependencies:
-      '@yue/core':
+      '@idadawn/yue-core':
         specifier: workspace:^
         version: link:../core
-      '@yue/data':
+      '@idadawn/yue-data':
         specifier: workspace:^
         version: link:../data
-      '@yue/form':
+      '@idadawn/yue-form':
         specifier: workspace:^
         version: link:../form
-      '@yue/sdk':
+      '@idadawn/yue-sdk':
         specifier: workspace:^
         version: link:../sdk
     devDependencies:
@@ -430,7 +430,7 @@ importers:
       '@base-ui/react':
         specifier: 'catalog:'
         version: 1.8.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@yue/tokens':
+      '@idadawn/yue-tokens':
         specifier: workspace:^
         version: link:../tokens
       clsx:
@@ -488,10 +488,10 @@ importers:
 
   packages/yue/data:
     dependencies:
-      '@yue/core':
+      '@idadawn/yue-core':
         specifier: workspace:^
         version: link:../core
-      '@yue/sdk':
+      '@idadawn/yue-sdk':
         specifier: workspace:^
         version: link:../sdk
     devDependencies:
@@ -543,13 +543,13 @@ importers:
 
   packages/yue/form:
     dependencies:
-      '@yue/contracts':
+      '@idadawn/yue-contracts':
         specifier: workspace:^
         version: link:../contracts
-      '@yue/core':
+      '@idadawn/yue-core':
         specifier: workspace:^
         version: link:../core
-      '@yue/sdk':
+      '@idadawn/yue-sdk':
         specifier: workspace:^
         version: link:../sdk
     devDependencies:
@@ -577,10 +577,10 @@ importers:
 
   packages/yue/sdk:
     dependencies:
-      '@yue/contracts':
+      '@idadawn/yue-contracts':
         specifier: workspace:^
         version: link:../contracts
-      '@yue/tokens':
+      '@idadawn/yue-tokens':
         specifier: workspace:^
         version: link:../tokens
     devDependencies:
@@ -608,13 +608,13 @@ importers:
 
   packages/yue/shell:
     dependencies:
-      '@yue/core':
+      '@idadawn/yue-core':
         specifier: workspace:^
         version: link:../core
-      '@yue/form':
+      '@idadawn/yue-form':
         specifier: workspace:^
         version: link:../form
-      '@yue/sdk':
+      '@idadawn/yue-sdk':
         specifier: workspace:^
         version: link:../sdk
     devDependencies:

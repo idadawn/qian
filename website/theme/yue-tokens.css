@@ -3,8 +3,8 @@
  *
  * 命名、分层与明暗切换按 docs/prd/specs/yue.md §3.5：primitive --yue-p-<family>-<step>，
  * semantic --yue-<role>[-foreground]，颜色存 oklch，暗色在 html[data-theme="dark"] 下重定义语义层并设 color-scheme。
- * 取值是文档站的临时选择，不代表品牌决定。S1-YUE-004 发布 @yue/tokens 后删除本文件，
- * 在 theme/index.css 里改为导入 @yue/tokens 的 CSS；index.css 只引用语义层，不需要跟着改。
+ * 取值是文档站的临时选择，不代表品牌决定。S1-YUE-004 发布 @idadawn/yue-tokens 后删除本文件，
+ * 在 theme/index.css 里改为导入 @idadawn/yue-tokens 的 CSS；index.css 只引用语义层，不需要跟着改。
  */
 :root {
   /* primitive：主色（蓝）、中性灰与三种状态色，色阶 50–950 只放用到的阶 */

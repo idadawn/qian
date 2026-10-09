@@ -1,6 +1,6 @@
 # yue 前端工作区
 
-yue 是 Qian 的 React 组件库与外壳（产品族的前端层，[ADR-021](../../docs/adr/ADR-021-product-family-structure.md)），随 Qian 单仓以 pnpm workspace 交付，`@yue/*` 发私有 npm。本目录是 S1-YUE-003 建立的工程化基线：包骨架、分层边界、八项 CI 门禁与 Base UI 验证门。依据：[PRD §07 7.15.2](../../docs/prd/07-s1-foundation.md)、[yue 专题规格](../../docs/prd/specs/yue.md)（§3.1 分层、§4.1 流程、§4.4 验证门、§8 验收）、[ADR-013](../../docs/adr/ADR-013-frontend-yue.md)。
+yue 是 Qian 的 React 组件库与外壳（产品族的前端层，[ADR-021](../../docs/adr/ADR-021-product-family-structure.md)），随 Qian 单仓以 pnpm workspace 交付，发 GitHub Packages。**包名**：`@idadawn/yue-<包>`（目录 `packages/yue/<包>`）；设计文档里写的 `@yue/<包>` 是同一个包的简称（规格 §3.1）。本目录是 S1-YUE-003 建立的工程化基线：包骨架、分层边界、八项 CI 门禁与 Base UI 验证门。依据：[PRD §07 7.15.2](../../docs/prd/07-s1-foundation.md)、[yue 专题规格](../../docs/prd/specs/yue.md)（§3.1 分层、§4.1 流程、§4.4 验证门、§8 验收）、[ADR-013](../../docs/adr/ADR-013-frontend-yue.md)。
 
 ## 1 布局
 
@@ -10,12 +10,12 @@ turbo.json                 Turborepo：build / typecheck / publint 跨包编排�
 eslint.config.mjs          代码规则 + 分层边界；eslint.boundaries.config.mjs 只跑边界
 .dependency-cruiser.cjs    循环依赖与不可解析 import
 vitest.config.ts           测试入口：门禁自测、SSR、各包浏览器测试
-.changeset/                Changesets 配置（@yue/* 固定同一版本号）
+.changeset/                Changesets 配置（@idadawn/yue-* 固定同一版本号）
 packages/yue/
   boundaries.config.mjs    六层分层矩阵——唯一真相源，新包先来这里登记
   tsconfig.base.json       各包共用的编译选项
   tokens/ contracts/ core/ sdk/ shell/ data/ form/ biz/
-                           @yue/<目录名>；每个包：package.json、tsconfig.json、rslib.config.ts、src/index.ts、README.md
+                           @idadawn/yue-<目录名>；每个包：package.json、tsconfig.json、rslib.config.ts、src/index.ts、README.md
 apps/yue-playground/       验证门与门禁靶场：六个原语各一节；Playwright + axe（e2e/）与 Lighthouse（lighthouserc.cjs）对它跑
 tests/gates/yue/           门禁自测：分层边界、循环依赖样例、包形状
 .github/workflows/yue.yml  八项门禁矩阵
@@ -45,26 +45,31 @@ tests/gates/yue/           门禁自测：分层边界、循环依赖样例、�
 ## 4 约定
 
 - **依赖**：第三方版本只写在 `pnpm-workspace.yaml` 的 `catalog:`，包里写 `"catalog:"`；`@yue` 之间用 `workspace:^`。`typescript` 钉 6.0.x（typescript-eslint 8 只支持 < 6.1）。
-- **包形状**：开发期 `exports["."]` 直指 `./src/index.ts`（tsc、Vite、Vitest 都不用先 build）；`publishConfig.exports` 指 `dist/`，`pnpm pack` 时替换；Rslib 输出 ESM + d.ts，CSS 以 `./index.css` 这类子路径单独导出（见 `@yue/tokens`）。测试文件只参与类型检查，不进 dist（`tsconfig.build.json`）。
+- **包形状**：开发期 `exports["."]` 直指 `./src/index.ts`（tsc、Vite、Vitest 都不用先 build）；`publishConfig.exports` 指 `dist/`，`pnpm pack` 时替换；Rslib 输出 ESM + d.ts，CSS 以 `./index.css` 这类子路径单独导出（见 `@idadawn/yue-tokens`）。测试文件只参与类型检查，不进 dist（`tsconfig.build.json`）。
 - **可寻址属性**：`data-slot="<组件>-<部件>"` 固定；`data-testid` 默认 `yue-<组件>-<部件>`，消费方用 `testId` 覆盖成业务无关的稳定标识，不含用户数据（规格 §7 第 8 条）。
 - **封装层**：只接受字符串 `className`（交给 `cn` 合并，不透传 Base UI 的函数式 className）；Base UI 缺的 ARIA 在封装层补（Tooltip 的 `role` / `aria-describedby`）；默认值向 WAI-ARIA 靠（Tabs 自动激活）。
 - **测试**：`*.browser.test.tsx` 在真浏览器跑（键盘用 `vitest/browser` 的 `userEvent`，查询用 Testing Library，axe 用 `axe-core`，critical + serious = 0）；`*.ssr.test.tsx` 在 Node 跑 `renderToString`。
-- **样式**：Tailwind v4 由消费方扫描 `packages/yue` 源码生成（靶场 `src/index.css` 的 `@source`），包本身不打包工具类；令牌由 `@yue/tokens` 提供（S1-YUE-004）。
-- **文案**：组件内不写死面向用户的文案，S1-YUE-005 起走 `@yue/sdk` 的 i18n；靶场里的演示文案不受此限。
+- **样式**：Tailwind v4 由消费方扫描 `packages/yue` 源码生成（靶场 `src/index.css` 的 `@source`），包本身不打包工具类；令牌由 `@idadawn/yue-tokens` 提供（S1-YUE-004）。
+- **文案**：组件内不写死面向用户的文案，S1-YUE-005 起走 `@idadawn/yue-sdk` 的 i18n；靶场里的演示文案不受此限。
 
 ## 5 版本策略
 
-- `@yue/*` 全部包固定同一版本号（`.changeset/config.json` 的 `fixed`），对应插件清单的 `engines.yue`（ADR-013 D13.4）。
+- `@idadawn/yue-*` 全部包固定同一版本号（`.changeset/config.json` 的 `fixed`），对应插件清单的 `engines.yue`（ADR-013 D13.4）。
 - `0.x` 期间：破坏性变更记 `minor`，修复与兼容新增记 `patch`，每个 minor 都可能破坏；`1.0` 之后只在大版本破坏，废弃的 API 至少保留一个 minor 并给出迁移说明；主版本升级有双版本并存期（规格 §4.3）。
 - 流程：改了包的公开行为就在 PR 里 `pnpm changeset` 选包与级别；合并到 main 后由发布流程 `changeset version` + `changeset publish`。
-- **发布**：目标是私有 npm（规格 D14）。GitHub Packages 的 npm 仓库要求包 scope 与所有者同名（`@idadawn/*`），与 `@yue/*` 冲突，所以发包渠道（自建 registry、改 scope 或付费私有 npm）尚未拍板，`publishConfig` 暂只写 `access: restricted`；「Changesets 发包到私有 npm 成功一次」留给发布任务。
+- **发布**：GitHub Packages（规格 D14，2026-10-09 拍板）。GitHub Packages 要求 scope 与所有者同名，所以包名是 `@idadawn/yue-<包>`；每个包的 `publishConfig.registry` 已指 `https://npm.pkg.github.com`。发布步骤：合并到 main 后 `pnpm changeset version` → `pnpm -r --filter './packages/yue/*' publish`（环境变量 `NODE_AUTH_TOKEN` 用带 `write:packages` 的令牌或 Actions 的 `GITHUB_TOKEN`）；首次发布与发布工作流留给发布任务（规格 §8「Changesets 发包到私有 npm 成功一次」）。消费方在项目 `.npmrc` 写：
+
+  ```ini
+  @idadawn:registry=https://npm.pkg.github.com
+  //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+  ```
 
 ## 6 Base UI 验证门
 
-2026-10-09 通过，锁定 `@base-ui/react` 1.8，不切 Radix、不混用；五项发现与封装层处理见 [ADR-013 §9](../../docs/adr/ADR-013-frontend-yue.md#9-状态历史status-history)。`@yue/core` 现在只放验证门涉及的 Menu / Select / Combobox / Tabs / Tooltip，`@yue/data` 只放自建的 Tree；全集由 S1-YUE-005 / S1-YUE-008 交付。
+2026-10-09 通过，锁定 `@base-ui/react` 1.8，不切 Radix、不混用；五项发现与封装层处理见 [ADR-013 §9](../../docs/adr/ADR-013-frontend-yue.md#9-状态历史status-history)。`@idadawn/yue-core` 现在只放验证门涉及的 Menu / Select / Combobox / Tabs / Tooltip，`@idadawn/yue-data` 只放自建的 Tree；全集由 S1-YUE-005 / S1-YUE-008 交付。
 
 ## 7 已知限制与延期项
 
-- Storybook 10（含 a11y 插件与令牌可视化页）随 S1-YUE-004 / 005 建立；i18n 硬编码 lint 随 `@yue/sdk` 建立；视觉回归 S1 可选。
+- Storybook 10（含 a11y 插件与令牌可视化页）随 S1-YUE-004 / 005 建立；i18n 硬编码 lint 随 `@idadawn/yue-sdk` 建立；视觉回归 S1 可选。
 - 八个包里除 core / data 外都是骨架（`PACKAGE_NAME` 占位），版本 0.1.0 未发布。
-- Lighthouse 现在对靶场测；`@yue/shell` 建立后改为对外壳首屏测，预算值在 PRD §14 维护。
+- Lighthouse 现在对靶场测；`@idadawn/yue-shell` 建立后改为对外壳首屏测，预算值在 PRD §14 维护。

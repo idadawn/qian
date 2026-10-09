@@ -31,7 +31,7 @@ describe('packages/yue/* 的 package.json', () => {
   it('至少建立了 S1 的包，目录名与包名一致且都登记在分层矩阵里', () => {
     expect(dirs).toEqual(expect.arrayContaining(['tokens', 'contracts', 'core', 'sdk', 'shell', 'data', 'form', 'biz']));
     for (const { dir, pkg } of packages) {
-      expect(pkg.name).toBe(`@yue/${dir}`);
+      expect(pkg.name).toBe(`@idadawn/yue-${dir}`);
       expect(YUE_PACKAGES).toContain(dir);
     }
   });
@@ -40,8 +40,8 @@ describe('packages/yue/* 的 package.json', () => {
     for (const { dir, pkg } of packages) {
       const allowed = allowedDependencies(dir);
       for (const [name, range] of Object.entries(pkg.dependencies ?? {})) {
-        if (!name.startsWith('@yue/')) continue;
-        expect(allowed, `${pkg.name} 不得依赖 ${name}`).toContain(name.slice('@yue/'.length));
+        if (!name.startsWith('@idadawn/yue-')) continue;
+        expect(allowed, `${pkg.name} 不得依赖 ${name}`).toContain(name.slice('@idadawn/yue-'.length));
         expect(range).toMatch(/^workspace:/);
       }
     }
@@ -61,7 +61,7 @@ describe('packages/yue/* 的 package.json', () => {
       expect(pkg.scripts?.publint).toMatch(/^publint/);
       expect(pkg.peerDependencies?.react).toBeDefined();
       for (const [name, range] of Object.entries({ ...pkg.dependencies, ...pkg.devDependencies })) {
-        if (name.startsWith('@yue/')) continue;
+        if (name.startsWith('@idadawn/yue-')) continue;
         expect(range, `${pkg.name} 的 ${name} 要写 catalog:`).toBe('catalog:');
       }
     }

@@ -1,4 +1,4 @@
-# @yue/tokens
+# @idadawn/yue-tokens
 
 三层设计令牌（primitive → semantic → component）、明暗两态、Tone 类型与运行时主题注入点。
 

@@ -1,4 +1,4 @@
-// @yue/core：Base UI + shadcn 源码自有化的基础组件层（docs/prd/specs/yue.md §3.1）。
+// @idadawn/yue-core：Base UI + shadcn 源码自有化的基础组件层（docs/prd/specs/yue.md §3.1）。
 // S1-YUE-003 只放 Base UI 验证门的六个原语中属于本层的五个（Menu / Select / Combobox / Tabs / Tooltip）与工具；
 // 约 30 个组件的全集由 S1-YUE-005 交付。
 export { DirectionProvider, useDirection, type TextDirection } from '@base-ui/react/direction-provider';

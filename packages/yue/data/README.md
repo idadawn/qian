@@ -1,4 +1,4 @@
-# @yue/data
+# @idadawn/yue-data
 
 DataTable 基础版、Tree 族、日期族、Upload 与 ImportWizard。
 

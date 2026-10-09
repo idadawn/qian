@@ -1,5 +1,5 @@
 {
-  "name": "@yue/sdk",
+  "name": "@idadawn/yue-sdk",
   "version": "0.1.0",
   "description": "注册表 API、PlatformClient、请求拦截器链、i18n、mock 与运行时配置注入。",
   "license": "Apache-2.0",
@@ -21,6 +21,7 @@
   },
   "publishConfig": {
     "access": "restricted",
+    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -34,8 +35,8 @@
     "publint": "publint --strict --pack pnpm"
   },
   "dependencies": {
-    "@yue/contracts": "workspace:^",
-    "@yue/tokens": "workspace:^"
+    "@idadawn/yue-contracts": "workspace:^",
+    "@idadawn/yue-tokens": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",

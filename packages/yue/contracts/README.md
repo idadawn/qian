@@ -1,4 +1,4 @@
-# @yue/contracts
+# @idadawn/yue-contracts
 
 FormSchema / ListSchema / 控件 manifest / SSE 事件的 JSON Schema 与生成的 TS 类型（无 UI）。
 

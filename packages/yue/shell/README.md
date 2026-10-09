@@ -1,4 +1,4 @@
-# @yue/shell
+# @idadawn/yue-shell
 
 AppShell 单一侧栏布局、菜单 → 路由、MF2 宿主与插槽、租户切换器、认证页族与兜底页。
 
