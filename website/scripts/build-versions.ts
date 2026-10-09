@@ -1,6 +1,6 @@
 // 版本矩阵（docs-site.md §2b.4，ADR-021 D21.2 第 3 条）：从仓库里的钉版文件产出 docs/start/versions.md，不手改。
 // 来源：Directory.Packages.props（KunVersion）、packages/*/*.csproj（Qian.* 包清单与版本）、global.json（.NET SDK）、
-// package.json（Node、pnpm）、pnpm-workspace.yaml 与工作区里的 @yue/* 包、deploy/baseline.json（K3s）。
+// package.json（Node、pnpm）、pnpm-workspace.yaml 与工作区里的 yue 包（@idadawn/yue-*，文档简称 @yue/*）、deploy/baseline.json（K3s）。
 import fs from 'node:fs';
 import path from 'node:path';
 import { readKunVersion } from './kun.ts';
@@ -50,7 +50,9 @@ export function readQianPackages(repoRoot: string = REPO_ROOT): PackageVersion[]
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** 工作区里的 @yue/* 包：按 pnpm-workspace.yaml 的 packages 通配找 package.json，名字以 @yue/ 开头的。 */
+/** 工作区里的 yue 包：按 pnpm-workspace.yaml 的 packages 通配找 package.json，名字以 @idadawn/yue- 开头的（S1-YUE-003 拍板的 GitHub Packages scope；兼容文档简称 @yue/）。 */
+export const YUE_NAME_PREFIXES = ['@idadawn/yue-', '@yue/'] as const;
+export const isYuePackageName = (name: string | undefined): name is string => !!name && YUE_NAME_PREFIXES.some((p) => name.startsWith(p));
 export function readYuePackages(repoRoot: string = REPO_ROOT): PackageVersion[] {
   const workspace = path.join(repoRoot, 'pnpm-workspace.yaml');
   if (!fs.existsSync(workspace)) return [];
@@ -68,7 +70,7 @@ export function readYuePackages(repoRoot: string = REPO_ROOT): PackageVersion[] 
       const pkg = path.join(dir, 'package.json');
       if (!fs.existsSync(pkg)) continue;
       const json = JSON.parse(fs.readFileSync(pkg, 'utf8')) as { name?: string; version?: string };
-      if (json.name?.startsWith('@yue/')) out.push({ name: json.name, version: json.version ?? null });
+      if (isYuePackageName(json.name)) out.push({ name: json.name, version: json.version ?? null });
     }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name));
@@ -144,7 +146,7 @@ export function renderVersionsPage(m: VersionMatrix, updated: string): string {
     '|---|---|---|',
     `| Kun | \`${m.sources.kun}\` | \`<KunVersion>\`，CalVer；升级 Kun 只改这一处（ADR-021 D21.3） |`,
     `| Qian.* | \`${m.sources.qian}\` | 写了 \`<IsPackable>true</IsPackable>\` 的项目；版本随首个包族发布钉在 \`Directory.Build.props\` |`,
-    `| @yue/* | \`${m.sources.yue}\` | 工作区里名字以 \`@yue/\` 开头的包（S1-YUE-003 建立） |`,
+    `| @yue/* | \`${m.sources.yue}\` | 工作区里名字以 \`@idadawn/yue-\` 开头的包（npm 包名；文档里 \`@yue/<包>\` 是简称，S1-YUE-003 建立） |`,
     `| .NET SDK | \`${m.sources.dotnet}\` | \`sdk.version\` 与 \`rollForward\` |`,
     `| Node / pnpm | \`${m.sources.node}\` | \`engines.node\` 与 \`packageManager\` |`,
     `| K3s | \`${m.sources.k3s}\` | 部署基线（S1-DEP-001）；集群本身在部署仓库 \`idadawn/iclaw-deploy\` |`,

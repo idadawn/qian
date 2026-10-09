@@ -46,7 +46,7 @@ describe('版本矩阵（docs-site.md §2b.4）', () => {
     assert.equal(m.sources.kun, 'Directory.Packages.props');
   });
 
-  it('Qian 版本取 csproj 或 Directory.Build.props；@yue 包按工作区通配找', () => {
+  it('Qian 版本取 csproj 或 Directory.Build.props；yue 包按工作区通配找（@idadawn/yue-* 与简称 @yue/* 都认）', () => {
     const root = fixtureRepo();
     write(root, 'Directory.Build.props', '<Project><PropertyGroup><VersionPrefix>0.1.0</VersionPrefix></PropertyGroup></Project>\n');
     write(root, 'packages/Qian.Data/Qian.Data.csproj', '<Project><PropertyGroup><IsPackable>true</IsPackable><Version>0.2.0</Version></PropertyGroup></Project>\n');
@@ -54,11 +54,11 @@ describe('版本矩阵（docs-site.md §2b.4）', () => {
       { name: 'Qian.Data', version: '0.2.0' },
       { name: 'Qian.Runtime', version: '0.1.0' },
     ]);
-    write(root, 'packages/yue/core/package.json', '{ "name": "@yue/core", "version": "0.1.0" }\n');
+    write(root, 'packages/yue/core/package.json', '{ "name": "@idadawn/yue-core", "version": "0.1.0" }\n');
     write(root, 'packages/yue/tokens/package.json', '{ "name": "@yue/tokens" }\n');
     write(root, 'packages/yue/tools/package.json', '{ "name": "yue-tools", "version": "1.0.0" }\n');
     assert.deepEqual(readYuePackages(root), [
-      { name: '@yue/core', version: '0.1.0' },
+      { name: '@idadawn/yue-core', version: '0.1.0' },
       { name: '@yue/tokens', version: null },
     ]);
   });
