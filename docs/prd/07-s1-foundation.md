@@ -494,7 +494,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **设计理念**。RabbitMQ 上 K3s，Outbox 修复后装配，至少一次语义 + Redis 幂等（ADR-008）；事件信封对齐 iClaw 契约（`version / event_id / subject / occurred_at / tenant_id / payload`），事件目录（稳定 ID + JSON Schema）升格为能力目录的一部分。参考平台 RabbitMQ 单队列、非持久化、先 ack 后处理、订阅端吞异常，是反例。
 
-**范围与边界**。✅ 做：Outbox 同事务写入与可靠发布（`FOR UPDATE SKIP LOCKED` / Redis 锁默认开、publisher confirm）；消费端至少一次（处理成功后 ack）、指数退避、DLX 死信；Redis 幂等表（`processed:{consumer}:{event_id}`，TTL 7 天）+ PG `processed_messages` 兜底；租户回灌（信封 `tenant_id` → `BeginScope`）；CloudEvents 风格信封；事件目录 `GET /api/capabilities/events` 与 JSON Schema 导出；竞争消费（每服务一队列）与广播（每实例一队列）两种订阅；主题 ACL 由清单 `provides.events.publish/subscribe` 生成（RabbitMQ 权限，P1）；`IOutboxWriter` 面向 `NpgsqlTransaction` 的实现（S2 动态表同事务，契约 S1 定）。❌ 不做：Kafka（不选）；跨产品事件总线（与 iClaw 各用各的 vhost，信封同形）；事件回放/事件溯源存储（不做）；Saga 编排（P2，见 7.1）。
+**范围与边界**。✅ 做：Outbox 同事务写入与可靠发布（`FOR UPDATE SKIP LOCKED` / Redis 锁默认开、publisher confirm）；消费端至少一次（处理成功后 ack）、指数退避、DLX 死信；消费端幂等以 Redis 幂等键为默认（Kun `IProcessedMessageStore` 的 Redis 实现，键 `idemp:{consumer}:{event_id}`，TTL 7 天；ADR-008 D8.4），PG `processed_messages` 兜底表不作默认、留作 S1-EVT-001 可选项（S1-DEC-013，2026-10-10）；租户回灌（信封 `tenant_id` → `BeginScope`）；CloudEvents 风格信封；事件目录 `GET /api/capabilities/events` 与 JSON Schema 导出；竞争消费（每服务一队列）与广播（每实例一队列）两种订阅；主题 ACL 由清单 `provides.events.publish/subscribe` 生成（RabbitMQ 权限，P1）；`IOutboxWriter` 面向 `NpgsqlTransaction` 的实现（S2 动态表同事务，契约 S1 定）。❌ 不做：Kafka（不选）；跨产品事件总线（与 iClaw 各用各的 vhost，信封同形）；事件回放/事件溯源存储（不做）；Saga 编排（P2，见 7.1）。
 
 **技术落点**。组件 `qian.events`：Definition `Qian.Events.Abstractions`（服务键 `ctx.Events`）+ Provider `Qian.Events`（RabbitMQ），随 `Qian.Plugin.Sdk` 进入每个 .NET profile，可独立安装（`qian add events`，独立模式 Outbox 用宿主自己的 DbContext）。分界：`ctx.Events` 是跨进程的集成事件总线；进程内的插件扩展事件（`emit` / `waterfall` / `parallel` / `serial` / `bail`）由 `Qian.Runtime` 自带（7.2.1），拦截与策略用运行时事件，跨服务通知用集成事件，两者不混用。依赖 `Kun.EventBus`、`Kun.EventBus.RabbitMQ`、`Kun.EntityFrameworkCore` Outbox 表、`Kun.Caching`、工具 `Kun.IntegrationEvents.SchemaGen`。
 
@@ -512,7 +512,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **验收标准**
 - [ ] IT：参考应用创建客户后 `outbox_messages` +1，RabbitMQ 收到 1 条，消费端 handler 内租户上下文为该租户。
-- [ ] IT：消费端前两次抛异常、第三次成功，`processed_messages` 恰一行；第 6 次仍失败进 DLX 并发告警。
+- [ ] IT：消费端前两次抛异常、第三次成功，幂等键恰一条且处理器恰执行一次（Redis 幂等键；若 S1-EVT-001 启用 PG 兜底表则该表恰一行）；第 6 次仍失败进 DLX 并发告警。
 - [ ] IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）。
 - [ ] IT：同一事件重投两次，幂等装饰器拦截第二次，handler 只执行一次。
 - [ ] UT：信封通过 iClaw `events-schema.json` 校验；每个 `[IntegrationEventId]` 都能导出 JSON Schema。

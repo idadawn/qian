@@ -9,12 +9,12 @@ priority: P0
 type: feature
 owner: ""
 estimate: 5d
-depends: [S1-RT-001, S1-TEN-004, S1-AZ-004, S1-AUD-001, S1-EVT-001, S1-KUN-006]
+depends: [S1-RT-001, S1-TEN-004, S1-AZ-004, S1-AUD-001, S1-EVT-001, S1-KUN-006, S1-KUN-009]
 refs:
   - docs/prd/07-s1-foundation.md#7.7
   - docs/prd/specs/component-model.md#6.2
   - docs/adr/ADR-019-library-first-packages.md#2
-updated: 2026-10-06
+updated: 2026-10-10
 ---
 
 ## 背景

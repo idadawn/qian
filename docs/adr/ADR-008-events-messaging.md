@@ -19,7 +19,7 @@ Kun 的 `Kun.EventBus` + `.RabbitMQ` 提供 Outbox 表 / 发布器 / 锁（默�
 - **D8.1 RabbitMQ 作为 L1 共享组件部署到 K3s**（持久化队列、DLX、HA 拓扑随三节点现实配置）。
 - **D8.2 修复 Outbox 丢消息**：领域事件派发改为提交前同 scope（或在 `EfUnitOfWork` 内直接 drain 子 scope 的 buffer）；在修复合入前，Qian 编码规范强制「集成事件只能在命令 handler 的同一 scope 发出」；为该路径补 Testcontainers 集成测试（建聚合后断言 `outbox_messages` 行数）。
 - **D8.3 消费端改至少一次**：处理成功后标记（或标记 + 失败回滚）；失败重投不再被当作重复 Ack。
-- **D8.4 幂等**：消费端 Redis 幂等表（按 `event_id`）默认装配；写类处理器必须幂等。
+- **D8.4 幂等**：消费端 Redis 幂等表（按 `event_id`）默认装配；写类处理器必须幂等。（2026-10-10 S1-DEC-013：上游 Kun 的 `IProcessedMessageStore` 只有 Redis 实现，PRD §07 7.10 原写的 PG `processed_messages` 兜底表不作默认，留作 S1-EVT-001 的可选项；PRD 已同步。）
 - **D8.5 多副本安全**：Outbox 轮询用 `FOR UPDATE SKIP LOCKED` 或 Redis 锁且默认开启；publisher confirm；`RetryBaseDelay` 指数退避落实；`IOutboxMessageStore` 的 EF 默认实现。
 - **D8.6 租户回灌**：`MessageContext.TenantId`；订阅器建 scope 后调用 `ITenantContext.BeginScope`；Saga 执行器按 `SagaInstance.TenantId` 开作用域；Outbox 发布器带 `tenant_id`。
 - **D8.7 事件信封对齐 iClaw**：必填 `version`（常量 v1）、`event_id`、`subject`（`<domain>.<entity>.<verb>`）、`occurred_at`、`tenant_id`、`payload`；可选 `correlation_id`、`causation_id`、`producer`；事件 ID 带版本后缀（如 `tenant.created.v1`）。

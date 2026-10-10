@@ -69,7 +69,7 @@
    "S1-RT-014",
    "S1-RT-004"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -116,7 +116,7 @@
    "S1-AUD-001",
    "S1-RT-006"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -156,12 +156,14 @@
   "depends": [
    "S1-KUN-005",
    "S1-RT-001",
-   "S1-DATA-001"
+   "S1-DATA-001",
+   "S1-KUN-009"
   ],
   "blockedBy": [
-   "S1-DATA-001"
+   "S1-DATA-001",
+   "S1-KUN-009"
   ],
-  "order": 1,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -177,7 +179,7 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 0,
    "total": 5
@@ -208,7 +210,7 @@
    "S1-EVT-001",
    "S1-SCH-001"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -250,7 +252,7 @@
    "S1-TEN-001",
    "S1-EVT-002"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -291,7 +293,7 @@
    "S1-AUD-003",
    "S1-EVT-001"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -327,11 +329,14 @@
   "depends": [
    "S1-KUN-006",
    "S1-RT-001",
-   "S1-AGT-001"
+   "S1-AGT-001",
+   "S1-KUN-009"
   ],
-  "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "blockedBy": [
+   "S1-KUN-009"
+  ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -350,7 +355,7 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 0,
    "total": 3
@@ -379,7 +384,7 @@
    "S1-AZ-001",
    "S1-RT-004"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -423,7 +428,7 @@
    "S1-TEN-001",
    "S1-DATA-001"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -466,7 +471,7 @@
    "S1-AUD-001",
    "S1-EVT-001"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -513,7 +518,7 @@
    "S1-IDP-009",
    "S1-YUE-009"
   ],
-  "order": 7,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -558,7 +563,7 @@
    "S1-AZ-001",
    "S1-DATA-004"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -597,11 +602,14 @@
   "days": 5.0,
   "depends": [
    "S1-KUN-006",
-   "S1-RT-001"
+   "S1-RT-001",
+   "S1-KUN-009"
   ],
-  "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "blockedBy": [
+   "S1-KUN-009"
+  ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -616,7 +624,7 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 0,
    "total": 4
@@ -643,7 +651,7 @@
   "blockedBy": [
    "S1-CFG-001"
   ],
-  "order": 1,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -684,7 +692,7 @@
    "S1-CFG-001",
    "S1-AUD-001"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -725,7 +733,7 @@
    "S1-CFG-001",
    "S1-TEN-001"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -765,11 +773,14 @@
   "depends": [
    "S1-KUN-001",
    "S1-KUN-005",
-   "S1-RT-001"
+   "S1-RT-001",
+   "S1-KUN-009"
   ],
-  "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "blockedBy": [
+   "S1-KUN-009"
+  ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -784,7 +795,7 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-011-metadata-dynamic-data.md"
    }
   ],
-  "updated": "2026-10-08",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 0,
    "total": 5
@@ -811,7 +822,7 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
-  "order": 1,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -852,7 +863,7 @@
    "S1-DATA-001",
    "S1-CFG-002"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -891,7 +902,7 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
-  "order": 1,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -1396,6 +1407,49 @@
   "file": "pm/tasks/S1-DEC-012.md"
  },
  {
+  "id": "S1-DEC-013",
+  "title": "验收复核裁决：消费端幂等口径、Definition 包的 Kun 依赖口径与 Kun 发版任务",
+  "status": "review",
+  "stage": "S1",
+  "area": "DEC",
+  "areaName": "待拍板决策",
+  "wave": 0,
+  "priority": "P0",
+  "type": "decision",
+  "owner": "claude",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/adr/ADR-008-events-messaging.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-008-events-messaging.md"
+   },
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.10",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "docs/prd/specs/component-model.md#6.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/adr/ADR-019-library-first-packages.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
+   }
+  ],
+  "updated": "2026-10-10",
+  "acceptance": {
+   "done": 3,
+   "total": 3
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-10 对 Cody 完成的 S1-KUN-005 / S1-KUN-002 / S1-KUN-006、S1-RT-008 / S1-RT-002、S1-IDP-001 做验收复核：本机实跑 Qian 全量 243 项 .NET 测试、Kun 侧 133 项单元与 42 项集成测试（Docker 真容器）全部通过，六项维持 done；发现两处文档与实现的口径不一致和一个跨任务缺口，产品负责人授权按推荐口径处理（裁决编号 R63、R64）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>R63 消费端幂等：Kun 的 <code>IProcessedMessageStore</code> 只有 Redis 实现，S1-KUN-002 第 3 条验收实际以 Redis <code>idemp:</code> 键断言。PRD §07 7.10 改为「Redis 幂等键默认，PG <code>processed_messages</code> 兜底表为 S1-EVT-001 可选项」，ADR-008 D8.4 记录，S1-KUN-002 与 S1-EVT-001 补记</li>\n<li class='chk done'><span class='box'>✓</span>R64 Definition 包的 Kun 依赖：<code>Qian.Identity.Abstractions</code> 直接引用 <code>Kun.EventBus</code>（Kun 未拆 <code>.Abstractions</code>），与规格 §6.1 / ADR-019 D19.2 不符且依赖图门禁不检查 <code>Kun.*</code>。S1-IDP-001 第 1 条验收按实际改写，包 README 登记延期项，新建 S1-KUN-010 跟踪上游拆包与 check_deps 白名单</li>\n<li class='chk done'><span class='box'>✓</span>缺口：三项 Kun 修复未发版、<code>KunVersion</code> 仍 2026.10.8。新建 S1-KUN-009（Kun 2026.10.9 发版 + KunVersion 升级），并加进 S1-AUD-001、S1-AZ-001、S1-CFG-001、S1-DATA-001、S1-EVT-001、S1-FILE-001、S1-RT-006、S1-RT-015 八个任务的 depends</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务并落实三项裁决（验收复核结论见本任务背景与各任务日志）</li>\n<li>2026-10-10 claude：三项裁决已落到 PRD 7.10 / ADR-008 / 两个任务与包 README，新建 S1-KUN-009、S1-KUN-010 并接好 8 个依赖；待 PR</li>\n</ul>",
+  "file": "pm/tasks/S1-DEC-013.md"
+ },
+ {
   "id": "S1-DEP-001",
   "title": "K3s 基线治理：命名空间、专属库、默认拒绝、配额",
   "status": "todo",
@@ -1538,7 +1592,7 @@
    "S1-RT-013",
    "S1-DEP-003"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -1579,7 +1633,7 @@
    "S1-DEP-004",
    "S1-DATA-002"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -1620,7 +1674,7 @@
    "S1-AUD-003",
    "S1-DEP-001"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -1947,7 +2001,7 @@
    "S1-EVT-001",
    "S1-AUD-001"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -1998,7 +2052,7 @@
    "S1-YUE-002",
    "S1-CFG-004"
   ],
-  "order": 9,
+  "order": 10,
   "readyNow": false,
   "refs": [
    {
@@ -2042,12 +2096,14 @@
   "depends": [
    "S1-KUN-002",
    "S1-RT-001",
-   "S1-DATA-001"
+   "S1-DATA-001",
+   "S1-KUN-009"
   ],
   "blockedBy": [
-   "S1-DATA-001"
+   "S1-DATA-001",
+   "S1-KUN-009"
   ],
-  "order": 1,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -2071,12 +2127,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
    }
   ],
-  "updated": "2026-10-07",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.events</code>（<code>Qian.Events.Abstractions</code> / <code>ctx.Events</code> + <code>Qian.Events</code>，随 SDK 进每个 .NET profile）：<code>QianEventEnvelope { version, event_id (uuid v7), subject, type, occurred_at, tenant_id, producer, correlation_id?, causation_id?, actor { kind, id, on_behalf_of? }, trace_parent, payload }</code> 对齐 iClaw 契约；<code>[IntegrationEventId]</code> 稳定 ID 与 payload Schema 导出；<code>Publish</code> 只允许命令 handler 同 scope；Outbox 发布器批 100、<code>FOR UPDATE SKIP LOCKED</code>、publisher confirm、指数退避；exchange <code>qian.events</code>（topic）、quorum 队列 <code>q.&lt;service&gt;.&lt;subscription&gt;</code>、广播队列；独立模式 Outbox 用宿主 DbContext。与 <code>Qian.Runtime</code> 进程内事件不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：参考应用创建客户后 <code>outbox_messages</code> +1，RabbitMQ 收到 1 条</li>\n<li class='chk'><span class='box'></span>IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）</li>\n<li class='chk'><span class='box'></span>UT：信封通过 iClaw <code>events-schema.json</code> 校验；每个 <code>[IntegrationEventId]</code> 都能导出 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：在非命令 handler 处 <code>Publish</code> 触发分析器错误；<code>actor.kind</code> 支持 <code>agent</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/event-envelope.schema.json；iClaw 信封兼容性的验收口径见 contracts/v0/iclaw-alignment.md 第 3 节</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.events</code>（<code>Qian.Events.Abstractions</code> / <code>ctx.Events</code> + <code>Qian.Events</code>，随 SDK 进每个 .NET profile）：<code>QianEventEnvelope { version, event_id (uuid v7), subject, type, occurred_at, tenant_id, producer, correlation_id?, causation_id?, actor { kind, id, on_behalf_of? }, trace_parent, payload }</code> 对齐 iClaw 契约；<code>[IntegrationEventId]</code> 稳定 ID 与 payload Schema 导出；<code>Publish</code> 只允许命令 handler 同 scope；Outbox 发布器批 100、<code>FOR UPDATE SKIP LOCKED</code>、publisher confirm、指数退避；exchange <code>qian.events</code>（topic）、quorum 队列 <code>q.&lt;service&gt;.&lt;subscription&gt;</code>、广播队列；独立模式 Outbox 用宿主 DbContext。与 <code>Qian.Runtime</code> 进程内事件不混用。</p>\n<p>S1-DEC-013（2026-10-10）裁决：消费端幂等默认用 Kun 的 Redis <code>IProcessedMessageStore</code>，PG <code>processed_messages</code> 兜底表是本任务的可选项，不做也可；「集成事件只能在命令 handler 同 scope 发出」的分析器规则上游没做（S1-KUN-002 只有运行时 <code>IScopedPublisher</code> 兜底），由本任务第 4 条验收落地。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：参考应用创建客户后 <code>outbox_messages</code> +1，RabbitMQ 收到 1 条</li>\n<li class='chk'><span class='box'></span>IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）</li>\n<li class='chk'><span class='box'></span>UT：信封通过 iClaw <code>events-schema.json</code> 校验；每个 <code>[IntegrationEventId]</code> 都能导出 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：在非命令 handler 处 <code>Publish</code> 触发分析器错误；<code>actor.kind</code> 支持 <code>agent</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/event-envelope.schema.json；iClaw 信封兼容性的验收口径见 contracts/v0/iclaw-alignment.md 第 3 节</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-001.md"
  },
  {
@@ -2100,7 +2156,7 @@
    "S1-EVT-001",
    "S1-TEN-001"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -2141,7 +2197,7 @@
    "S1-EVT-001",
    "S1-RT-006"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2180,15 +2236,17 @@
    "S1-AZ-004",
    "S1-AUD-001",
    "S1-EVT-001",
-   "S1-KUN-006"
+   "S1-KUN-006",
+   "S1-KUN-009"
   ],
   "blockedBy": [
    "S1-TEN-004",
    "S1-AZ-004",
    "S1-AUD-001",
-   "S1-EVT-001"
+   "S1-EVT-001",
+   "S1-KUN-009"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2204,7 +2262,7 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 0,
    "total": 5
@@ -2234,7 +2292,7 @@
    "S1-FILE-001",
    "S1-CFG-002"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -2275,7 +2333,7 @@
    "S1-FILE-001",
    "S1-SCH-001"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -2319,7 +2377,7 @@
    "S1-KUN-004",
    "S1-IDP-005"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2370,7 +2428,7 @@
   "blockedBy": [
    "S1-GW-001"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2417,7 +2475,7 @@
    "S1-RT-013",
    "S1-AUD-003"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2475,12 +2533,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-005-identity-sso.md"
    }
   ],
-  "updated": "2026-10-09",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Kun.*.Abstractions</code> 与 <code>Qian.Runtime</code>，通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n<li>2026-10-09 someone：身份契约 PR #18 已合并（be696c17）；8 项专项及全量 236 项测试通过，CI 全绿。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Qian.Runtime</code> 与 Kun 的事件端口 <code>Kun.EventBus</code>（Kun 尚未拆出 <code>Kun.EventBus.Abstractions</code>，传递带入 StackExchange.Redis；延期项登记在包 README，回切由 S1-KUN-010 跟踪，S1-DEC-013），通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n<li>2026-10-09 someone：身份契约 PR #18 已合并（be696c17）；8 项专项及全量 236 项测试通过，CI 全绿。</li>\n<li>2026-10-10 claude：复核：claim 集、<code>agent</code> 枚举、五类事件与 Schema 均有测试且通过；第 1 条验收原文「只依赖 Kun.*.Abstractions」与实际（直接引用 <code>Kun.EventBus</code>）不符，且依赖图门禁不检查 <code>Kun.*</code>，已按实际改写验收并登记延期项（S1-DEC-013、S1-KUN-010）。</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-001.md"
  },
  {
@@ -2509,7 +2567,7 @@
    "S1-TEN-001",
    "S1-AZ-001"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -2552,7 +2610,7 @@
   "blockedBy": [
    "S1-IDP-002"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -2591,7 +2649,7 @@
   "blockedBy": [
    "S1-IDP-003"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2632,7 +2690,7 @@
    "S1-IDP-002",
    "S1-KUN-004"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -2681,7 +2739,7 @@
    "S1-TEN-004",
    "S1-AUD-001"
   ],
-  "order": 7,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -2726,7 +2784,7 @@
    "S1-IDP-003",
    "S1-CFG-002"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2771,7 +2829,7 @@
    "S1-IDP-007",
    "S1-RT-004"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2812,7 +2870,7 @@
    "S1-IDP-003",
    "S1-DATA-001"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2857,7 +2915,7 @@
    "S1-IDP-009",
    "S1-EVT-001"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2951,12 +3009,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-008-events-messaging.md"
    }
   ],
-  "updated": "2026-10-09",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 2 项：领域事件派发改为提交前同 scope、分析器规则「集成事件只能在命令 handler 同 scope 发出」、消费端处理成功后才 ack 并指数退避进 DLX、<code>IOutboxMessageStore</code> EF 默认实现、Outbox 锁默认开、publisher confirm。S1 第一周先用最小集成测试实证「领域事件→集成事件路径丢消息」再定上游修复或 Qian 侧规定。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT（第一周实证）：Catalog 建商品后断言 <code>outbox_messages</code> 行数，确认当前路径是否丢消息并记录结论</li>\n<li class='chk done'><span class='box'>✓</span>IT：命令 handler 内经通知 handler 发出的集成事件，提交后 <code>outbox_messages</code> 行数 +1</li>\n<li class='chk done'><span class='box'>✓</span>IT：消费端 handler 第一次抛异常、第二次成功，事件最终恰被处理一次且 <code>processed_messages</code> 只有一行；RabbitMQ 容器重启后未 ack 消息重投不丢</li>\n<li class='chk done'><span class='box'>✓</span>IT：两个发布器副本同时轮询同一 Outbox 表，每条消息只发布一次（publisher confirm 计数）</li>\n<li class='chk done'><span class='box'>✓</span>UT：被 Skip 的 at-least-once 集成测试恢复为必跑并通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：实证 Catalog 领域事件转 Outbox 路径，修复同 scope 派发、消费确认与多副本发布。</li>\n<li>2026-10-09 cody：验收完成：旧 Catalog 商品已提交但 Outbox=0 已实证并修复为1；全量783通过（2项既有OSS凭据测试跳过），91项集成全通过；涵盖双副本、容器重启未ack重投、退避与死信。按 ADR-008 D8.4 默认 Redis，processed_messages 成功记录语义由单一 idemp 键验证。上游 [Kun PR #46](https://github.com/idadawn/kun/pull/46)，等待 CI 全绿合并；尚未发布新包。</li>\n<li>2026-10-09 cody：完成：Kun PR #46 已在22项CI全绿后合并，上游main同步；五项验收完成。尚未发布Kun新包，Qian仍锁定2026.10.8。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 2 项：领域事件派发改为提交前同 scope、分析器规则「集成事件只能在命令 handler 同 scope 发出」、消费端处理成功后才 ack 并指数退避进 DLX、<code>IOutboxMessageStore</code> EF 默认实现、Outbox 锁默认开、publisher confirm。S1 第一周先用最小集成测试实证「领域事件→集成事件路径丢消息」再定上游修复或 Qian 侧规定。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT（第一周实证）：Catalog 建商品后断言 <code>outbox_messages</code> 行数，确认当前路径是否丢消息并记录结论</li>\n<li class='chk done'><span class='box'>✓</span>IT：命令 handler 内经通知 handler 发出的集成事件，提交后 <code>outbox_messages</code> 行数 +1</li>\n<li class='chk done'><span class='box'>✓</span>IT：消费端 handler 第一次抛异常、第二次成功，事件最终恰被处理一次且 <code>processed_messages</code> 只有一行；RabbitMQ 容器重启后未 ack 消息重投不丢</li>\n<li class='chk done'><span class='box'>✓</span>IT：两个发布器副本同时轮询同一 Outbox 表，每条消息只发布一次（publisher confirm 计数）</li>\n<li class='chk done'><span class='box'>✓</span>UT：被 Skip 的 at-least-once 集成测试恢复为必跑并通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：实证 Catalog 领域事件转 Outbox 路径，修复同 scope 派发、消费确认与多副本发布。</li>\n<li>2026-10-09 cody：验收完成：旧 Catalog 商品已提交但 Outbox=0 已实证并修复为1；全量783通过（2项既有OSS凭据测试跳过），91项集成全通过；涵盖双副本、容器重启未ack重投、退避与死信。按 ADR-008 D8.4 默认 Redis，processed_messages 成功记录语义由单一 idemp 键验证。上游 [Kun PR #46](https://github.com/idadawn/kun/pull/46)，等待 CI 全绿合并；尚未发布新包。</li>\n<li>2026-10-09 cody：完成：Kun PR #46 已在22项CI全绿后合并，上游main同步；五项验收完成。尚未发布Kun新包，Qian仍锁定2026.10.8。</li>\n<li>2026-10-10 claude：复核：本机 Docker 真跑 Outbox / 幂等集成测试通过。第 3 条验收的 <code>processed_messages</code> 表在 Kun 里不存在，实际以 Redis <code>idemp:</code> 键断言，口径经 S1-DEC-013 定为默认（PRD 7.10 已改）；分析器规则由 S1-EVT-001 落地；消费新 API 待 S1-KUN-009 发版升级。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-002.md"
  },
  {
@@ -3210,6 +3268,92 @@
   "file": "pm/tasks/S1-KUN-008.md"
  },
  {
+  "id": "S1-KUN-009",
+  "title": "Kun 2026.10.9 发版与 KunVersion 升级：消费 S1-KUN-002 / 005 / 006 的上游修复",
+  "status": "todo",
+  "stage": "S1",
+  "area": "KUN",
+  "areaName": "Kun 缺口修复",
+  "wave": 1,
+  "priority": "P0",
+  "type": "infra",
+  "owner": "",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-KUN-002",
+   "S1-KUN-005",
+   "S1-KUN-006"
+  ],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
+  "refs": [
+   {
+    "path": "docs/adr/ADR-021-product-family-structure.md#D21.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-021-product-family-structure.md"
+   },
+   {
+    "path": "docs/adr/ADR-001-kun-relationship.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-001-kun-relationship.md"
+   },
+   {
+    "path": "docs/prd/specs/docs-site.md#2b",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
+   }
+  ],
+  "updated": "2026-10-10",
+  "acceptance": {
+   "done": 0,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-KUN-002 / S1-KUN-005 / S1-KUN-006 的上游修复已合入 kun main（idadawn/kun#45、#46、#47，CI 全绿），但 Kun 最新正式版仍是 2026.10.8，nuget.org 没有新包（release-drafter 已自动生成 2026.10.9 草稿，<code>release.yml</code> 只在推 tag 时触发）；Qian 的 <code>KunVersion</code> 仍为 2026.10.8，依赖这三项的 S1-AUD-001、S1-AZ-001、S1-CFG-001、S1-DATA-001、S1-EVT-001、S1-FILE-001、S1-RT-006、S1-RT-015 在代码里拿不到 <code>AddKunAuditing&lt;TContext&gt;</code>、<code>Kun.Authorization</code> 端口、<code>EfOutboxMessageStore</code>、<code>IScopedPublisher</code>、<code>AddKunOptions(JsonTypeInfo)</code>、<code>ICapabilityRegistry</code> 等新 API。按 ADR-021 D21.3，升级 Kun 只改 <code>Directory.Packages.props</code> 的 <code>KunVersion</code> 一处；与 S1-KUN-008 同型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>Kun 打 tag <code>v2026.10.9</code> 并由 <code>release.yml</code> 发到 nuget.org（与 GitHub Packages），CHANGELOG <code>[Unreleased]</code> 的 S1-KUN-002 / 005 / 006 三节归入该版本</li>\n<li class='chk'><span class='box'></span><code>KunVersion</code> 改为 2026.10.9，全部 <code>Kun.*</code> 随之升级；<code>dotnet build</code> 0 警告，全量测试（含 Testcontainers 集成测试）与门禁自测通过；<code>tests/gates/bannedapi</code> 四个样例随新包重跑（新包的 KUNLEGACY001 Obsolete 与 RS0030 / QIAN0002 叠加后判定仍正确）</li>\n<li class='chk'><span class='box'></span>文档站按 <code>v2026.10.9</code> 生成 Kun 小节与 Kun API 参考，产物检查（横幅 tag 等于 <code>KunVersion</code>）通过；「与 Qian 的关系」的补丁状态写明三项修复已被 Qian 消费</li>\n<li class='chk'><span class='box'></span>下游要跟的行为变更记入对应任务：Outbox 新列 <code>NextAttemptAt</code> 迁移与非事务 Outbox 存储默认拒绝无锁（S1-EVT-001）、<code>PermissionBehavior</code> 须逐命令或全局注册（S1-AZ-001）、snake_case / Guid v7 / <code>xmin</code> 约定为 opt-in（S1-DATA-001）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的缺口）</li>\n</ul>",
+  "file": "pm/tasks/S1-KUN-009.md"
+ },
+ {
+  "id": "S1-KUN-010",
+  "title": "Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁",
+  "status": "todo",
+  "stage": "S1",
+  "area": "KUN",
+  "areaName": "Kun 缺口修复",
+  "wave": 2,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-KUN-009"
+  ],
+  "blockedBy": [
+   "S1-KUN-009"
+  ],
+  "order": 1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/specs/component-model.md#6.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/adr/ADR-019-library-first-packages.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
+   },
+   {
+    "path": "docs/adr/ADR-001-kun-relationship.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-001-kun-relationship.md"
+   }
+  ],
+  "updated": "2026-10-10",
+  "acceptance": {
+   "done": 0,
+   "total": 3
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>组件规格 §6.1 与 ADR-019 D19.2 要求 Definition 包仅依赖 <code>Kun.*.Abstractions</code>，但 Kun 的稳定事件标记 <code>IntegrationEventIdAttribute</code> 与事件注册端口在 <code>Kun.EventBus</code> 包里，没有 <code>.Abstractions</code> 拆分，<code>Qian.Identity.Abstractions</code> 只能直接引用它，传递带入 StackExchange.Redis 等实现依赖（S1-IDP-001，S1-DEC-013 R64）。<code>scripts/check_deps.py</code> 的 <code>role_of()</code> 把非 <code>qian.</code> 包一律归 external 放行，所以这条规则目前没有门禁；同类现状还有 <code>Qian.Data.Abstractions</code> 直接依赖 <code>Kun.EntityFrameworkCore</code> / <code>Kun.MultiTenancy.EntityFrameworkCore</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>上游：Kun 拆出 <code>Kun.EventBus.Abstractions</code>（<code>IntegrationEventIdAttribute</code>、<code>IIntegrationEvent</code>、带 <code>JsonTypeInfo</code> 的事件注册端口），<code>Kun.EventBus</code> 依赖它；随下一次 Kun 发版</li>\n<li class='chk'><span class='box'></span>Qian：<code>Qian.Identity.Abstractions</code> 改引 <code>Kun.EventBus.Abstractions</code>，<code>DefinitionReferencesOnlyRuntimeAndFrameworkEventPort</code> 的期望值同步，包 README 的延期项移除</li>\n<li class='chk'><span class='box'></span>门禁：<code>check_deps.py</code> 对 <code>definition</code> 角色的 Kun 直接依赖只放行 <code>Kun.*.Abstractions</code> 与显式白名单（<code>Qian.Data.Abstractions</code> 的两项要么迁移要么登记理由），<code>tests/gates</code> 加正反例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的偏差）</li>\n</ul>",
+  "file": "pm/tasks/S1-KUN-010.md"
+ },
+ {
   "id": "S1-MGW-001",
   "title": "模型网关 adapter：GPUStack 发现、能力契约与模型目录",
   "status": "todo",
@@ -3231,7 +3375,7 @@
    "S1-CFG-002",
    "S1-TEN-001"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -3278,7 +3422,7 @@
    "S1-AUD-004",
    "S1-DEP-005"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -3325,7 +3469,7 @@
    "S1-CFG-002",
    "S1-AUD-001"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -3368,7 +3512,7 @@
    "S1-EVT-001",
    "S1-SCH-001"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -3410,7 +3554,7 @@
    "S1-NTF-001",
    "S1-CFG-002"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -3654,7 +3798,7 @@
    "S1-FILE-001",
    "S1-QA-002"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -3702,7 +3846,7 @@
    "S1-RT-005",
    "S1-AGT-002"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -3757,7 +3901,7 @@
    "S1-FILE-001",
    "S1-QA-003"
   ],
-  "order": 7,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -3806,7 +3950,7 @@
    "S1-RT-010",
    "S1-RT-014"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -3865,7 +4009,7 @@
    "S1-AUD-002",
    "S1-QA-004"
   ],
-  "order": 7,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -3916,7 +4060,7 @@
    "S1-IDP-002",
    "S1-ENT-002"
   ],
-  "order": 10,
+  "order": 11,
   "readyNow": false,
   "refs": [
    {
@@ -4094,7 +4238,7 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
-  "order": 1,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -4143,7 +4287,7 @@
    "S1-RT-004",
    "S1-CFG-002"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4183,13 +4327,15 @@
   "depends": [
    "S1-RT-004",
    "S1-KUN-006",
-   "S1-AZ-003"
+   "S1-AZ-003",
+   "S1-KUN-009"
   ],
   "blockedBy": [
    "S1-RT-004",
-   "S1-AZ-003"
+   "S1-AZ-003",
+   "S1-KUN-009"
   ],
-  "order": 4,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -4205,7 +4351,7 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 0,
    "total": 5
@@ -4232,7 +4378,7 @@
   "blockedBy": [
    "S1-RT-006"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -4329,7 +4475,7 @@
    "S1-RT-004",
    "S1-AUD-001"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4508,7 +4654,7 @@
    "S1-RT-005",
    "S1-RT-014"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -4552,7 +4698,7 @@
   "blockedBy": [
    "S1-RT-004"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4591,12 +4737,14 @@
   "days": 3.0,
   "depends": [
    "S1-RT-014",
-   "S1-KUN-006"
+   "S1-KUN-006",
+   "S1-KUN-009"
   ],
   "blockedBy": [
-   "S1-RT-014"
+   "S1-RT-014",
+   "S1-KUN-009"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -4612,7 +4760,7 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-10",
   "acceptance": {
    "done": 0,
    "total": 4
@@ -4737,7 +4885,7 @@
    "S1-DATA-001",
    "S1-TEN-001"
   ],
-  "order": 2,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4782,7 +4930,7 @@
    "S1-CFG-002",
    "S1-EVT-001"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -4825,7 +4973,7 @@
    "S1-GW-001",
    "S1-EVT-001"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -4866,7 +5014,7 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
-  "order": 1,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -4915,7 +5063,7 @@
    "S1-SCH-001",
    "S1-IDP-004"
   ],
-  "order": 5,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -4956,7 +5104,7 @@
    "S1-TEN-001",
    "S1-RT-005"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -5005,7 +5153,7 @@
    "S1-CFG-003",
    "S1-AUD-001"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -5054,7 +5202,7 @@
    "S1-YUE-008",
    "S1-YUE-009"
   ],
-  "order": 7,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -5097,7 +5245,7 @@
    "S1-YUE-006",
    "S1-YUE-009"
   ],
-  "order": 7,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -5146,7 +5294,7 @@
    "S1-GW-001",
    "S1-RT-004"
   ],
-  "order": 8,
+  "order": 9,
   "readyNow": false,
   "refs": [
    {
@@ -5392,7 +5540,7 @@
    "S1-YUE-005",
    "S1-FILE-001"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -5435,7 +5583,7 @@
    "S1-YUE-007",
    "S1-IDP-010"
   ],
-  "order": 6,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -5481,7 +5629,7 @@
    "S1-MGW-001",
    "S1-YUE-005"
   ],
-  "order": 3,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
