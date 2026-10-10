@@ -1,0 +1,68 @@
+#nullable enable
+Qian.Docs.Abstractions.EventSite.File.get -> string!
+Qian.Docs.Abstractions.EventSite.Symbol.get -> string!
+Qian.Docs.Abstractions.EventSite.File.init -> void
+Qian.Docs.Abstractions.EventSite.Line.get -> int
+Qian.Docs.Abstractions.EventMap.Mode.get -> string!
+Qian.Docs.Abstractions.EventSite.Symbol.init -> void
+static readonly Qian.Docs.Abstractions.DocumentErrors.Declaration -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Docs.Abstractions.DocumentErrors.ModeMismatch -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Docs.Abstractions.DocumentErrors.Source -> Qian.Runtime.Errors.ErrorCode!
+Qian.Docs.Abstractions.EventMap.Name.get -> string!
+Qian.Docs.Abstractions.EventMap
+Qian.Docs.Abstractions.EventSite.Line.init -> void
+Qian.Docs.Abstractions.EventMap.Mode.init -> void
+Qian.Docs.Abstractions.DocumentErrors
+Qian.Docs.Abstractions.EventSite
+Qian.Docs.Abstractions.IDocumentGenerator
+Qian.Docs.Abstractions.DocumentOptions
+Qian.Docs.Abstractions.EventMap.Name.init -> void
+override Qian.Docs.Abstractions.EventMap.ToString() -> string!
+Qian.Docs.Abstractions.DocumentOptions.DocumentOptions() -> void
+override Qian.Docs.Abstractions.EventSite.ToString() -> string!
+static Qian.Docs.Abstractions.EventMap.operator !=(Qian.Docs.Abstractions.EventMap? left, Qian.Docs.Abstractions.EventMap? right) -> bool
+static Qian.Docs.Abstractions.EventSite.operator !=(Qian.Docs.Abstractions.EventSite? left, Qian.Docs.Abstractions.EventSite? right) -> bool
+static Qian.Docs.Abstractions.EventMap.operator ==(Qian.Docs.Abstractions.EventMap? left, Qian.Docs.Abstractions.EventMap? right) -> bool
+static Qian.Docs.Abstractions.EventSite.operator ==(Qian.Docs.Abstractions.EventSite? left, Qian.Docs.Abstractions.EventSite? right) -> bool
+override Qian.Docs.Abstractions.EventMap.GetHashCode() -> int
+override Qian.Docs.Abstractions.EventSite.GetHashCode() -> int
+override Qian.Docs.Abstractions.EventMap.Equals(object? obj) -> bool
+override Qian.Docs.Abstractions.EventSite.Equals(object? obj) -> bool
+Qian.Docs.Abstractions.EventMap.Equals(Qian.Docs.Abstractions.EventMap? other) -> bool
+Qian.Docs.Abstractions.EventSite.Equals(Qian.Docs.Abstractions.EventSite? other) -> bool
+Qian.Docs.Abstractions.EventMap.<Clone>$() -> Qian.Docs.Abstractions.EventMap!
+Qian.Docs.Abstractions.EventSite.<Clone>$() -> Qian.Docs.Abstractions.EventSite!
+Qian.Docs.Abstractions.EventSite.Deconstruct(out string! File, out int Line, out string! Symbol) -> void
+Qian.Docs.Abstractions.EventMap.Deconstruct(out string! Name, out string! Mode, out Qian.Docs.Abstractions.EventSite! Declaration, out System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventSite!>! Producers, out System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventSite!>! Consumers) -> void
+static readonly Qian.Docs.Abstractions.DocumentErrors.Dynamic -> Qian.Runtime.Errors.ErrorCode!
+Qian.Docs.Abstractions.EventMap.Declaration.get -> Qian.Docs.Abstractions.EventSite!
+Qian.Docs.Abstractions.EventMap.Declaration.init -> void
+Qian.Docs.Abstractions.EventMap.Producers.get -> System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventSite!>!
+Qian.Docs.Abstractions.EventMap.Consumers.get -> System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventSite!>!
+Qian.Docs.Abstractions.EventMap.Producers.init -> void
+Qian.Docs.Abstractions.EventMap.Consumers.init -> void
+Qian.Docs.Abstractions.DocumentResult.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>!
+Qian.Docs.Abstractions.DocumentResult.Diagnostics.init -> void
+Qian.Docs.Abstractions.DocumentResult
+override Qian.Docs.Abstractions.DocumentResult.ToString() -> string!
+static Qian.Docs.Abstractions.DocumentResult.operator !=(Qian.Docs.Abstractions.DocumentResult? left, Qian.Docs.Abstractions.DocumentResult? right) -> bool
+static Qian.Docs.Abstractions.DocumentResult.operator ==(Qian.Docs.Abstractions.DocumentResult? left, Qian.Docs.Abstractions.DocumentResult? right) -> bool
+Qian.Docs.Abstractions.IDocumentGenerator.Generate(Qian.Docs.Abstractions.DocumentOptions! options) -> Qian.Docs.Abstractions.DocumentResult!
+override Qian.Docs.Abstractions.DocumentResult.GetHashCode() -> int
+override Qian.Docs.Abstractions.DocumentResult.Equals(object? obj) -> bool
+Qian.Docs.Abstractions.DocumentResult.Equals(Qian.Docs.Abstractions.DocumentResult? other) -> bool
+static Qian.Docs.Abstractions.DocumentErrors.All.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.ErrorCode!>!
+Qian.Docs.Abstractions.DocumentResult.<Clone>$() -> Qian.Docs.Abstractions.DocumentResult!
+Qian.Docs.Abstractions.DocumentResult.Deconstruct(out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Documents, out System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventMap!>! Events, out System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Docs.Abstractions.EventMap.EventMap(string! Name, string! Mode, Qian.Docs.Abstractions.EventSite! Declaration, System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventSite!>! Producers, System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventSite!>! Consumers) -> void
+Qian.Docs.Abstractions.EventSite.EventSite(string! File, int Line, string! Symbol) -> void
+Qian.Docs.Abstractions.DocumentOptions.Profile.init -> void
+Qian.Docs.Abstractions.DocumentOptions.Profile.get -> Qian.Profiles.Abstractions.ProfileLoadOptions!
+Qian.Docs.Abstractions.DocumentOptions.SourceDirectories.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Docs.Abstractions.DocumentOptions.SourceDirectories.init -> void
+Qian.Docs.Abstractions.DocumentResult.DocumentResult(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Documents, System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventMap!>! Events, System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Docs.Abstractions.DocumentResult.Documents.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Docs.Abstractions.DocumentResult.Events.get -> System.Collections.Generic.IReadOnlyList<Qian.Docs.Abstractions.EventMap!>!
+Qian.Docs.Abstractions.DocumentResult.Documents.init -> void
+Qian.Docs.Abstractions.DocumentResult.IsValid.get -> bool
+Qian.Docs.Abstractions.DocumentResult.Events.init -> void

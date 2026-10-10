@@ -12,6 +12,7 @@
 | `prd/specs/plugin-manifest.md` | 插件清单 `qian-plugin.yaml` 专题 spec：字段、JSON Schema、派生物、签名与 digest、反向权限、`capabilities` 条目 | v1，迁移对照（`kind` → `runtime.form`；权威规格见 component-model.md） |
 | `prd/specs/yue.md` | yue 组件库专题 spec：关键决策 D1–D16、六层分层、控件注册表契约、MF2 外壳与插槽、S1 最小集验收 | 草案 v1 |
 | `prd/specs/docs-site.md` | 文档站信息架构与规范：七个部分（第 3 部分含「Kun 框架」镜像小节，§2b）、产品族地图与版本矩阵、组件页模板、frontmatter（含 `project`）、llms 产物、`website/` 骨架 | 已确认（2026-10-07；Kun 进站经 ADR-021 补充） |
+| `generated/` | `qian docs generate` 从实际 profile、配置 Schema 与 C# 事件代码派生的配置目录、模块图、事件图、seam 图；实现说明见 `../packages/Qian.Docs/README.md` | 生成物 |
 | `CHANGELOG.md` | 变更日志：对读者可见的变化（新文档与规格、新组件与命令、破坏性变更），按日期倒序；文档站首页「最新动态」取最近 4 条 | 持续更新 |
 | `ROADMAP.md` | 阶段路线唯一真相源：S1–S4 目标、退出标准、核心交付、里程碑占位、依赖与风险、跨阶段约束 | 草案 v1（S1 交付已按 ADR-020 更新） |
 | [`../contracts/v0/`](../contracts/v0/README.md) | 冻结契约 v0（仓库根目录，不在 docs 下）：ErrorDetail 与错误码目录、S2S claim、事件信封、能力条目四类 JSON Schema 2020-12 + fixture，及[与 iClaw 的差异说明](../contracts/v0/iclaw-alignment.md)；字段以此为准 | draft（默认裁决待 S1-DEC-010 确认） |

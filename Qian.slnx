@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/packages/">
+    <Project Path="packages/Qian.Docs.Abstractions/Qian.Docs.Abstractions.csproj" />
+    <Project Path="packages/Qian.Docs/Qian.Docs.csproj" />
     <Project Path="packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
     <Project Path="packages/Qian.Runtime/Qian.Runtime.csproj" />
@@ -12,6 +14,7 @@
     <Project Path="packages/Qian.Surfaces/Qian.Surfaces.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Qian.Docs.Tests/Qian.Docs.Tests.csproj" />
     <Project Path="tests/Qian.Profiles.Tests/Qian.Profiles.Tests.csproj" />
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
@@ -22,6 +25,7 @@
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Qian.Docs.Tool/Qian.Docs.Tool.csproj" />
     <Project Path="tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj" />
   </Folder>
 </Solution>
