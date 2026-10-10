@@ -1,0 +1,16 @@
+version: 1
+id: many-mode-mismatch
+description: parallel 与 serial 的调用模式同样不可偏离 Definition，失败注册全部回滚。
+events: [{name: concurrent, mode: parallel}, {name: ordered, mode: serial}]
+entries:
+  - id: parallel-invalid
+    apply: [{op: on, event: concurrent, name: invalid, mode: serial}]
+  - id: serial-invalid
+    apply: [{op: on, event: ordered, name: invalid, mode: parallel}]
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [parallel-invalid, serial-invalid, observer]}
+  - {op: state, entry: parallel-invalid, value: Failed}
+  - {op: state, entry: serial-invalid, value: Failed}
+  - {op: dispatch, entry: observer, event: concurrent, value: []}
+  - {op: dispatch, entry: observer, event: ordered, value: []}

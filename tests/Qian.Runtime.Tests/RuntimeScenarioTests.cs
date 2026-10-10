@@ -2,7 +2,11 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Qian.Profiles;
+using Qian.Profiles.Abstractions;
 using Qian.Runtime.Errors;
+using Qian.Surfaces;
 using YamlDotNet.Serialization;
 
 namespace Qian.Runtime.Tests;
@@ -22,8 +26,18 @@ public sealed class RuntimeScenarioTests
         using var document = JsonDocument.Parse(json);
         var scenario = document.RootElement;
         Assert.Equal("1", scenario.GetProperty("version").ToString());
+        // 每个场景先加载交付的 minimal 文件和真实表面校验器，不用虚构的空 profile。
+        var baseline = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions
+        {
+            WorkingDirectory = FindRoot(), Profile = "minimal", IncludeHomePatch = false
+        });
+        Assert.True(baseline.IsValid);
+        Assert.Empty(baseline.Snapshot!.Entries);
+        Assert.Equal("qian.bundle.minimal@1.0.0", Assert.Single(baseline.Snapshot.Layers, layer => layer.Kind == "bundle").Reference);
         using var services = new ServiceCollection().BuildServiceProvider();
-        await using var loader = new PluginLoader(services);
+        var logger = new ScenarioLogger();
+        await using var loader = new PluginLoader(services, logger);
+        await loader.MountAsync([], TestContext.Current.CancellationToken);
         ConcurrentQueue<string> trace = [];
         var events = new ScenarioEvents(scenario, trace);
         var entries = scenario.GetProperty("entries").EnumerateArray().ToDictionary(e => e.GetProperty("id").GetString()!, e => e);
@@ -59,6 +73,17 @@ public sealed class RuntimeScenarioTests
                     await loader.UnmountAsync(step.GetProperty("entry").GetString()!, Scope(step), TestContext.Current.CancellationToken);
                     break;
                 case "teardown": await loader.DisposeAsync(); break;
+                case "dump":
+                    Assert.Equal(step.GetProperty("entries").EnumerateArray().Select(e => e.GetString()), loader.DumpConfig().Select(e => e.Id));
+                    break;
+                case "cleanupErrors":
+                    Assert.Equal(step.GetProperty("value").GetInt32(), logger.CleanupErrors);
+                    break;
+                case "failure":
+                    var failure = Assert.IsType<QianErrorException>(loader.GetFailure(step.GetProperty("entry").GetString()!, Scope(step)));
+                    Assert.Equal(step.GetProperty("code").GetString(), failure.Error.Code.Code);
+                    foreach (var arg in step.GetProperty("args").EnumerateObject()) Assert.Equal(arg.Value.GetString(), failure.Error.Args[arg.Name]);
+                    break;
                 case "dispatch":
                     await events.Dispatch(Context(loader, step), step);
                     break;
@@ -67,6 +92,7 @@ public sealed class RuntimeScenarioTests
                     break;
                 case "missing":
                     Assert.Null(Context(loader, step).TryInject<string>(new ServiceKey(step.GetProperty("key").GetString()!)));
+                    Assert.Null(Context(loader, step).Services.GetKeyedService<string>(new ServiceKey(step.GetProperty("key").GetString()!)));
                     break;
                 case "list":
                     Assert.Equal(step.GetProperty("value").EnumerateArray().Select(v => v.GetString()),
@@ -100,6 +126,25 @@ public sealed class RuntimeScenarioTests
                     break;
                 default: throw new InvalidOperationException($"未知 TCK 操作：{op}");
             }
+        }
+    }
+
+    private static string FindRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null && !File.Exists(Path.Combine(current.FullName, "Qian.slnx"))) current = current.Parent;
+        return current?.FullName ?? throw new InvalidOperationException("找不到仓库。");
+    }
+
+    private sealed class ScenarioLogger : ILogger
+    {
+        private int _cleanupErrors;
+        internal int CleanupErrors => Volatile.Read(ref _cleanupErrors);
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (eventId.Name == "CleanupFailed") Interlocked.Increment(ref _cleanupErrors);
         }
     }
 
@@ -202,7 +247,8 @@ public sealed class RuntimeScenarioTests
             }
             if (_many.TryGetValue(name, out var many))
             {
-                context.On(many, many.Mode, (Func<string, ValueTask<string?>>)Result, priority);
+                var declaredMode = action.TryGetProperty("mode", out var supplied) ? Enum.Parse<DispatchMode>(supplied.GetString()!, true) : many.Mode;
+                context.On(many, declaredMode, (Func<string, ValueTask<string?>>)Result, priority);
                 return;
             }
             var evt = _single[name];

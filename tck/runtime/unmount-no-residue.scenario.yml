@@ -1,0 +1,22 @@
+version: 1
+id: unmount-no-residue
+description: 卸载后实际挂载树、普通和具名服务容器、监听器均无残留，观察者保持可用。
+events: [{name: observed, mode: serial}]
+entries:
+  - id: provider
+    provides: [X]
+    apply:
+      - {op: provide, key: X, value: available}
+      - {op: provide, key: Tools, name: visible, value: tool}
+      - {op: on, event: observed, name: handler, value: seen}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [provider, observer]}
+  - {op: dispatch, entry: observer, event: observed, value: [seen]}
+  - {op: unmount, entry: provider}
+  - {op: dump, entries: [observer]}
+  - {op: missing, entry: observer, key: X}
+  - {op: missing, entry: observer, key: 'Tools:visible'}
+  - {op: list, entry: observer, key: Tools, value: []}
+  - {op: dispatch, entry: observer, event: observed, value: []}
+  - {op: cleanupErrors, value: 0}

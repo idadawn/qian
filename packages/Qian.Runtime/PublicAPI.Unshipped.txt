@@ -1,4 +1,5 @@
 #nullable enable
+Qian.Runtime.PluginLoader.DumpConfig() -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.PluginEntry!>!
 override Qian.Runtime.PluginDefinition.Equals(object? obj) -> bool
 override Qian.Runtime.PluginDefinition.GetHashCode() -> int
 override Qian.Runtime.PluginDefinition.ToString() -> string!

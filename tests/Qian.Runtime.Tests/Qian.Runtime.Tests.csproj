@@ -3,6 +3,8 @@
   <ItemGroup><Using Include="Xunit" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Runtime/Qian.Runtime.csproj" />
+    <ProjectReference Include="../../packages/Qian.Profiles/Qian.Profiles.csproj" />
+    <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>

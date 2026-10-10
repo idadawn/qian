@@ -1,0 +1,59 @@
+[
+  {
+    "id": "T15",
+    "description": "真实分层文件先合成，再给运行时 Apply；CLI 整体替换 config，无旧字段残留。",
+    "files": {
+      "ops.yml": "- id: settings\n  config: {port: 7, marker: cli}\n"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "valid": true,
+    "plugin": "test.settings@1.0.0",
+    "config": {
+      "port": 7,
+      "marker": "cli",
+      "nested": {
+        "name": "fresh"
+      }
+    },
+    "consumer": "cli",
+    "layer": "overlay"
+  },
+  {
+    "id": "T16",
+    "description": "profile 禁用后 overlay 再启用并更换 Provider；同一个 Consumer 不改代码。",
+    "files": {
+      "profiles/test/qian.patch.yml": "- id: settings\n  disabled: true\n",
+      "ops.yml": "- id: settings\n  disabled: false\n  plugin: test.alternate\n  config: {port: 8, marker: replacement}\n",
+      "plugins/alternate/.qian-plugin/plugin.json": "{\"id\": \"test.alternate\", \"version\": \"1.0.0\", \"description\": \"供 profile 装配 TCK 使用的真实静态清单\", \"author\": {\"name\": \"Qian\"}, \"license\": \"MIT\", \"interface\": {\"displayName\": \"profile 测试\", \"category\": \"test\"}, \"inject\": [], \"provides\": [\"Settings\"], \"policy\": {\"tier\": \"private\", \"sandbox\": \"none\", \"authentication\": \"ON_INSTALL\", \"required\": false}, \"scopes\": [\"global\", \"tenant\"]}",
+      "plugins/alternate/schemas/config.schema.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"required\": [\n    \"port\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"port\": {\n      \"type\": \"integer\",\n      \"minimum\": 1,\n      \"maximum\": 65535\n    },\n    \"marker\": {\n      \"type\": \"string\",\n      \"default\": \"default\"\n    },\n    \"obsolete\": {\n      \"type\": \"string\"\n    },\n    \"nested\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"name\": {\n          \"type\": \"string\",\n          \"default\": \"fresh\"\n        }\n      },\n      \"additionalProperties\": false,\n      \"default\": {}\n    },\n    \"secret\": {\n      \"type\": \"string\",\n      \"x-qian-sensitive\": true\n    }\n  }\n}\n"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "valid": true,
+    "plugin": "test.alternate@1.0.0",
+    "config": {
+      "port": 8,
+      "marker": "replacement",
+      "nested": {
+        "name": "fresh"
+      }
+    },
+    "consumer": "replacement",
+    "layer": "overlay"
+  },
+  {
+    "id": "T17",
+    "description": "配置 Schema 在提交挂载树之前拒绝输入，Apply 零次，错误带来源指针。",
+    "files": {
+      "ops.yml": "- id: settings\n  config: {port: invalid}\n"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "valid": false,
+    "pointer": "ops.yml#/0/config/port"
+  }
+]
