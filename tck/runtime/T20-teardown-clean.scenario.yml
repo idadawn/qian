@@ -1,0 +1,24 @@
+version: 1
+id: T20
+description: 整树逆序释放不产生隐藏清理异常；dump-config 清空，同次 Apply 的效果全部执行。
+entries:
+  - id: provider
+    provides: [X]
+    apply:
+      - {op: provide, key: X, value: available}
+      - {op: effect, name: provider-first}
+      - {op: effect, name: provider-last}
+  - id: consumer
+    inject: [X]
+    provides: [Y]
+    apply:
+      - {op: provide, key: Y, value: consumed}
+      - {op: effect, name: consumer-first}
+      - {op: effect, name: consumer-last}
+steps:
+  - {op: mount, entries: [consumer, provider]}
+  - {op: dump, entries: [consumer, provider]}
+  - {op: teardown}
+  - {op: trace, value: ['apply:provider', 'apply:consumer', 'dispose:consumer-last', 'dispose:consumer-first', 'dispose:provider-last', 'dispose:provider-first']}
+  - {op: dump, entries: []}
+  - {op: cleanupErrors, value: 0}

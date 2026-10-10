@@ -33,6 +33,12 @@ public sealed partial class PluginLoader : IAsyncDisposable
     internal ILogger Logger { get; }
     internal Task Changed => _changed.Task;
 
+    /// <summary>取得当前挂载树的配置快照；已卸载或正在移除的条目不进入管理面 dump-config。</summary>
+    public IReadOnlyList<PluginEntry> DumpConfig()
+    {
+        lock (Sync) return _nodes.Where(n => !n.Removing).Select(n => n.Entry).ToArray();
+    }
+
     /// <summary>查询条目的当前状态。</summary>
     public PluginState GetState(string id, ScopeKey scope)
     {
@@ -154,6 +160,8 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 if (_disposed) return;
                 _disposed = true;
                 nodes = _nodes.OrderByDescending(n => n.Sequence).ToArray();
+                // 整树都将卸载，撤销 Provider 时不能再使已清空 Context 的 Ready 节点失效。
+                foreach (var node in nodes) node.Removing = true;
             }
             await _pendingMonitor.DisposeAsync().ConfigureAwait(false);
             foreach (var node in nodes) await StopAsync(node).ConfigureAwait(false);

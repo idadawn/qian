@@ -22,6 +22,8 @@ await runtime.MountAsync(definitions, cancellationToken);
 
 声明式目录键见 `SurfaceKeys`（Skills / Agents / Commands / Hooks / McpServers / Tools）；目录中的文档由 [Qian.Surfaces](../Qian.Surfaces/README.md) 校验和登记，沿用同一 scope 与 Effect 语义。
 
+管理面用 `DumpConfig()` 读取当前真实挂载树的配置快照，正在移除与已卸载条目不进入结果；这是运行时快照，静态 profile 的完整来源层仍由 `Qian.Profiles` 提供。整树释放会先标记全部条目正在移除，再逐个逆序撤销，避免已释放依赖者被二次失效。共享 TCK 同时检查释放轨迹和清理异常为零。
+
 ## 服务与效果
 
 `Provide` 创建可撤销的 .NET keyed service 描述；`ctx.Services.GetRequiredKeyedService<T>(key)` 与 `ctx.Inject<T>(key)` 使用相同的可见性规则，宿主的其它 DI 服务仍以只读方式访问。注册与宿主已构建的容器分离，因此撤销不会重建或销毁宿主 DI。

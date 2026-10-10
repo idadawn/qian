@@ -1,0 +1,21 @@
+version: 1
+id: T18
+description: 同 scope 重复服务键产生结构化错误，保留原 Provider，失败条目不泄漏注册。
+entries:
+  - id: first
+    provides: [X]
+    apply: [{op: provide, key: X, value: first}]
+  - id: second
+    provides: [X]
+    apply:
+      - {op: provide, key: transient, value: removed}
+      - {op: provide, key: X, value: second}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [first, second, observer]}
+  - {op: state, entry: second, value: Failed}
+  - {op: failure, entry: second, code: REGISTRATION_CONFLICT, args: {key: X, owner: first}}
+  - {op: inject, entry: observer, key: X, value: first}
+  - {op: missing, entry: observer, key: transient}
+  - {op: unmount, entry: second}
+  - {op: dump, entries: [first, observer]}

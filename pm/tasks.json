@@ -3755,14 +3755,14 @@
  {
   "id": "S1-QA-002",
   "title": "TCK 运行时语义套件（.NET 与 TS 同一组 fixture）",
-  "status": "todo",
+  "status": "blocked",
   "stage": "S1",
   "area": "QA",
   "areaName": "测试 / TCK / 门禁",
   "wave": 1,
   "priority": "P0",
   "type": "test",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
@@ -3772,7 +3772,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -3787,12 +3787,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>三套 TCK 之一：<code>Inject</code> / <code>Apply</code>、五种分发、可逆副作用、scope 遮蔽与 <code>restrict</code> 交集、patch 替换；fixture 与语言无关（以 ADR-020 与 specs/component-model.md 为准，不以某个实现为准），.NET 侧在 <code>minimal</code> profile 基准宿主运行，TS 侧随 S1-RT-003 接入同一组 fixture。S1-M1 首版。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：<code>Inject</code> 的服务键无人提供 → 启动失败并指出缺失键与请求方；依赖成环 → 结构化错误列出环路；卸载后 <code>dump-config</code> 与服务容器中无残留</li>\n<li class='chk'><span class='box'></span>TCK：五种分发模式各一组用例；事件声明的模式与调用点不一致时 CI 失败</li>\n<li class='chk'><span class='box'></span>TCK：scope 遮蔽与 <code>restrict</code> 交集；被过滤项在目录、提示词与执行三处都「不存在」</li>\n<li class='chk'><span class='box'></span>检查：fixture 以语言无关格式存放并被 .NET 与 TS 两侧共同引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>三套 TCK 之一：<code>Inject</code> / <code>Apply</code>、五种分发、可逆副作用、scope 遮蔽与 <code>restrict</code> 交集、patch 替换；fixture 与语言无关（以 ADR-020 与 specs/component-model.md 为准，不以某个实现为准），.NET 侧在 <code>minimal</code> profile 基准宿主运行，TS 侧随 S1-RT-003 接入同一组 fixture。S1-M1 首版。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>TCK：<code>Inject</code> 的服务键无人提供 → 启动失败并指出缺失键与请求方；依赖成环 → 结构化错误列出环路；卸载后 <code>dump-config</code> 与服务容器中无残留</li>\n<li class='chk done'><span class='box'>✓</span>TCK：五种分发模式各一组用例；事件声明的模式与调用点不一致时 CI 失败</li>\n<li class='chk'><span class='box'></span>TCK：scope 遮蔽与 <code>restrict</code> 交集；被过滤项在目录、提示词与执行三处都「不存在」</li>\n<li class='chk'><span class='box'></span>检查：fixture 以语言无关格式存放并被 .NET 与 TS 两侧共同引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：开始：补齐语言无关 TCK 的卸载、权限一致性与补丁替换验证，.NET 在实际 Runtime/Surfaces 中执行；TS 发布仍等待 S1-DEC-014。</li>\n<li>2026-10-11 cody：核心语义、卸载无残留和 T15–T17 已有 26 个共用场景；.NET 46 项运行时/258 项全量测试、35 项门禁及 TS 待合并实现的 26 场景均通过。修复整树 teardown 隐藏异常。剩余等待 RT-003 合并（DEC-014）、真实提示词/工具执行链路、RT-009 自动热重载及完整 platform 宿主；不以测试替身宣称全部验收完成。</li>\n</ul>",
   "file": "pm/tasks/S1-QA-002.md"
  },
  {

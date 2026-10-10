@@ -1,6 +1,6 @@
 # 运行时场景格式 v1
 
-权威语义见 [规格 §10.2](../../docs/prd/specs/component-model.md#102-运行时语义-tck)。这里保存 S1-RT-001 验收所需的语言无关数据，不包含 .NET 类型名或代码。`.NET harness` 位于 [RuntimeScenarioTests.cs](../../tests/Qian.Runtime.Tests/RuntimeScenarioTests.cs)，TS harness 由 S1-RT-003 复用，完整套件由 S1-QA-002 补齐。
+权威语义见 [规格 §10.2](../../docs/prd/specs/component-model.md#102-运行时语义-tck)。场景数据不包含 .NET 类型名或代码。`.NET harness` 位于 [RuntimeScenarioTests.cs](../../tests/Qian.Runtime.Tests/RuntimeScenarioTests.cs)，TS 适配器为 `harness-ts.mjs`（由 S1-RT-003 的测试入口传入真实运行时和解析器）。两侧从相同的 YAML 读取断言，不复制另一份预期数据；每个核心场景先解析交付的 minimal profile 与其空组合包。
 
 每个 `*.scenario.yml` 是独立场景；YAML 标量保留 string / number / boolean / null 类型，UTF-8。未知版本或操作必须报错。
 
@@ -30,6 +30,9 @@ scope 写作 `global` 或 `tenant:id`、`app:id`、`agent-session:id`。服务�
 | `mount` | `entries[]` 给出进入树的顺序；可选 `error: {code, args}` 断言 Resolve 失败 |
 | `unmount` | `entry`、可选 `scope` 标识要卸载的条目 |
 | `teardown` | 卸载整棵树 |
+| `dump` | `entries[]`；比较运行时真实挂载树中仍存在的条目 id，卸载后不能残留 |
+| `cleanupErrors` | `value`；比较已报告的清理异常数量，避免仅断言释放顺序而漏掉被日志吞掉的错误 |
+| `failure` | `entry`、`code`、`args`；比较挂载失败的结构化错误与服务冲突原拥有者 |
 | `state` | `entry`、可选 `scope`、`value`（Pending / Ready / Failed） |
 | `inject` | `entry`、`key`、`value`，可选 `scope`、`view`、`name`；断言解析结果 |
 | `missing` | `entry`、`key`，可选 `scope`、`view`；断言可选注入为空 |
@@ -41,4 +44,12 @@ scope 写作 `global` 或 `tenant:id`、`app:id`、`agent-session:id`。服务�
 
 `scope` 用于定位条目；`view` 只改变本次调用上下文，两者不可混淆。所有异步卸载必须等待完成后再执行下一 step。卸载后的注册、监听器与 restriction 不可残留。
 
-本任务覆盖 T01–T14、T21、T22、T24，T18 另有重复注册单元测试，T20 由 T04 的整树 teardown 验证；附加缺失键与 Apply 回滚场景。T15–T17、T19、T23 涉及尚未实现的 profile、校验器与声明式装配，在相应任务和完整套件中补充。
+核心 YAML 覆盖 T01–T14、T18、T20–T22、T24，附加缺失键、Apply 回滚、集合模式不一致和卸载无残留场景。`missing` 同时检查 .NET keyed service；`notFoundEquivalent` 比较被过滤项与不存在项的完整错误体。T20 同时断言清理异常为零，发现并修复了整树 teardown 时已释放依赖者被再次失效的缺陷。
+
+## 分层装配到真实运行时
+
+`assembly.json` 保存 T15–T17，复用 `tck/profiles/base` 的真实文件，经 `.NET ProfileLoader` / TS `loadProfile` 装配后交给真实运行时；适配器分别为 `RuntimeCompositionTests.cs` 与 `assembly-ts.mjs`。断言整个 config、来源层、最终 Provider 与未改变的 Consumer 结果。T17 在装配期拒绝非法树，检查来源指针与 Apply 零次；不会伪造一个已进入 Runtime 的 Failed 节点。
+
+## 尚未完成的产品验收
+
+S1-QA-002 仍须等待 S1-RT-003 合并后双侧 CI 持续执行，以及真实提示词构建/工具执行链路对过滤结果的联调。当前目录与注入断言不能替代产品提示词断言。T19 的自动表面热重载依赖 S1-RT-009，T23 的完整 platform 宿主等价依赖真实业务 Provider；当前 platform 清单带有骨架组件，不能当作可运行的平台完成证明。
