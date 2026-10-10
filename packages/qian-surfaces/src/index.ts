@@ -113,7 +113,7 @@ const resources = new URL('./schemas/', import.meta.url);
 const rules = JSON.parse(readFileSync(new URL('surface-rules.json', resources), 'utf8')) as { defaults: Record<string, string>; agentEvents: string[]; qianEvents: string[]; shells: string[] };
 const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
 const schemas = new Map<string, ValidateFunction>();
-for (const name of ['capability-entry', 'permissions', 'plugin', 'skill', 'agent', 'command', 'hooks', 'mcp', 'tool', 'patch', 'profile']) {
+for (const name of ['capability-entry', 'permissions', 'plugin', 'skill', 'agent', 'command', 'hooks', 'mcp', 'tool', 'patch', 'profile', 'marketplace']) {
   const schema = JSON.parse(readFileSync(new URL(name + '.schema.json', resources), 'utf8'));
   ajv.addSchema(schema); schemas.set(name, ajv.getSchema(schema.$id)!);
 }
@@ -386,4 +386,35 @@ class ValidationContext {
       if (sensitive && !/^(Bearer )?secretRef:\/\/(platform|tenant|dev)\/[^\s]+$/.test(value)) this.error(file, pointer, codes.secret, '敏感字段只允许 secretRef，不允许明文。');
     }
   }
+}
+
+/** 市场文件的静态验证；不代表外部来源已获取或验签。 */
+export interface MarketplaceValidationResult {marketplace: JsonValue | null;diagnostics: readonly SurfaceDiagnostic[];isValid: boolean}
+/** 验证市场结构及跨字段规则；具体来源仍由调用方获取、验签并复用组件校验器。 */
+export function validateMarketplace(file: string, content: string, traceId = trace()): MarketplaceValidationResult {
+  const parsed = parseSurface(file, content, false, traceId), diagnostics = [...parsed.diagnostics];
+  const result = (marketplace: JsonValue | null): MarketplaceValidationResult => ({marketplace: diagnostics.some(item => item.severity === 'error') ? null : marketplace, diagnostics: diagnostics.sort((a,b) => a.error.pointer < b.error.pointer ? -1 : a.error.pointer > b.error.pointer ? 1 : 0), isValid: marketplace !== null && !diagnostics.some(item => item.severity === 'error')});
+  if (!parsed.syntax || diagnostics.some(item => item.severity === 'error')) return result(null);
+  const data = parsed.syntax.data;
+  diagnostics.push(...validateSurfaceSchema('marketplace',file,data,traceId,parsed.syntax.lines));
+  if (diagnostics.some(item => item.severity === 'error')) return result(data);
+  const market=obj(data), names=new Set<string>(), categories=Array.isArray(market.categories)?new Set(strings(market.categories)):null;
+  const safe = (value:string): boolean => !!value&&!value.startsWith('/')&&!value.includes('\\')&&!value.includes(':')&&!/[\x00-\x1f\x7f-\x9f]/.test(value)&&!value.split('/').includes('..');
+  const error = (pointer:string,code:string,message:string):void => {diagnostics.push(diagnostic(file,pointer,closest(parsed.syntax!.lines,pointer),code,message,traceId));};
+  (market.plugins as JsonValue[]).forEach((value,index) => {
+    const entry=obj(value), pointer='/plugins/'+index, name=str(entry.name), source=obj(entry.source);
+    if(names.has(name)) error(pointer+'/name',codes.name,'市场内安装名必须唯一。');names.add(name);
+    if(categories&&!categories.has(str(entry.category)))error(pointer+'/category',codes.reference,'分类未在市场 categories 中声明。');
+    if(source.path!==undefined&&!safe(str(source.path)))error(pointer+'/source/path',codes.path,'来源路径必须留在仓库内。');
+    for(const field of ['url','repo'])if(source[field]!==undefined){
+      try{const url=new URL(str(source[field]));if(url.protocol!=='https:'||url.username||url.password||url.hash||[...url.searchParams.keys()].some(key=>/token|secret|password|credential|signature|api[-_]?key|authorization/i.test(key)))throw new Error();}
+      catch{error(pointer+'/source/'+field,codes.policy,'远程来源必须使用无凭据片段的 HTTPS 地址。');}
+    }
+  });
+  strings(obj(market.owner).publicKeys).forEach((value,index)=>{
+    const pointer='/owner/publicKeys/'+index;
+    if(value.includes('PRIVATE KEY'))error(pointer,codes.secret,'市场只能声明公钥，不能携带私钥。');
+    else if(!value.startsWith('-----BEGIN PUBLIC KEY-----')&&!safe(value))error(pointer,codes.path,'公钥路径必须留在市场仓库内。');
+  });
+  return result(data);
 }

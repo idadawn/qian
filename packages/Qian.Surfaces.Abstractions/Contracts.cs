@@ -19,6 +19,12 @@ public sealed record SurfaceValidationResult(ParsedComponent? Component, IReadOn
     /// <summary>全部文件均已通过结构与语义检查。</summary>
     public bool IsValid => Component is not null && Diagnostics.All(d => d.Severity != "error");
 }
+/// <summary>市场文件的结构与跨字段语义结果；条目内容仍须由组件校验器及调用方信任边界验证。</summary>
+public sealed record MarketplaceValidationResult(JsonElement? Marketplace, IReadOnlyList<SurfaceDiagnostic> Diagnostics)
+{
+    /// <summary>市场文档已通过检查；不代表外部来源已获取或验签。</summary>
+    public bool IsValid => Marketplace is not null && Diagnostics.All(d => d.Severity != "error");
+}
 /// <summary>保留 JSON Pointer 到原文件行号的语法树投影。</summary>
 public sealed record SurfaceSyntax(JsonElement Data, string Body, IReadOnlyDictionary<string, int> Lines);
 /// <summary>纯解析结果。</summary>
@@ -58,4 +64,6 @@ public interface ISurfaceValidator : ISurfaceReader
 {
     /// <summary>读取组件目录并校验全部受支持的静态表面。</summary>
     SurfaceValidationResult ValidateComponent(string directory, SurfaceValidationOptions? options = null);
+    /// <summary>校验市场文件的结构、名称唯一性、分类与路径约束，不执行或下载来源。</summary>
+    MarketplaceValidationResult ValidateMarketplace(string file, string content, string? traceId = null);
 }

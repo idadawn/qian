@@ -12,7 +12,7 @@ internal sealed class SchemaLibrary
     private readonly BuildOptions _options = new() { SchemaRegistry = new SchemaRegistry { Fetch = (_, _) => null } };
     internal SchemaLibrary()
     {
-        foreach (var name in new[] { "capability-entry", "permissions", "plugin", "skill", "agent", "command", "hooks", "mcp", "tool", "patch", "profile" })
+        foreach (var name in new[] { "capability-entry", "permissions", "plugin", "skill", "agent", "command", "hooks", "mcp", "tool", "patch", "profile", "marketplace" })
         {
             using var stream = typeof(SchemaLibrary).Assembly.GetManifestResourceStream("schemas/" + name + ".schema.json")
                 ?? throw new InvalidOperationException("缺少内置 Schema：" + name);
@@ -33,6 +33,10 @@ internal sealed class SchemaLibrary
         foreach (var item in Flatten(results))
         {
             if (item.IsValid || item.Errors is null) continue;
+            // if/not 的子约束用于逻辑测试，失败本身不是输入错误；只报告 then/else 或 not 自身的错误。
+            var pathParts = Uri.UnescapeDataString(item.SchemaLocation.Fragment).Split('/');
+            if (pathParts.Select((part, index) => (part, index)).Any(pair => pair.index > 0 && pair.index < pathParts.Length - 1 &&
+                pair.part is "if" or "not" && pathParts[pair.index - 1] is not ("properties" or "patternProperties" or "$defs" or "definitions"))) continue;
             var pointer = item.InstanceLocation.ToString();
             foreach (var keyword in item.Errors.Keys)
             {
@@ -74,7 +78,7 @@ internal sealed class SchemaLibrary
         var pointer = Uri.UnescapeDataString(location.Fragment.TrimStart('#'));
         var value = At(root, pointer);
         // JsonSchema.Net 9 的条件子约束会在 then/else 后增加内部 /0；它不是源 Schema 的数组。
-        return value ?? At(root, pointer.Replace("/then/0/", "/then/", StringComparison.Ordinal).Replace("/else/0/", "/else/", StringComparison.Ordinal));
+        return value ?? At(root, Regex.Replace(pointer, @"/(then|else|not)/[0-9]+(?=/|$)", "/$1", RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)));
     }
     internal static JsonElement? At(JsonElement data, string pointer)
     {

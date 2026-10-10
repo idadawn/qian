@@ -38,6 +38,16 @@ export type JsonValue = null | boolean | number | string | JsonValue[] | {
     [key: string]: JsonValue;
 };
 
+// @public
+export interface MarketplaceValidationResult {
+    // (undocumented)
+    diagnostics: readonly SurfaceDiagnostic[];
+    // (undocumented)
+    isValid: boolean;
+    // (undocumented)
+    marketplace: JsonValue | null;
+}
+
 // @public (undocumented)
 export interface ParsedComponent {
     // (undocumented)
@@ -141,6 +151,9 @@ export class SurfaceValidator {
 
 // @public
 export function validateComponent(directory: string, options?: SurfaceValidationOptions): SurfaceValidationResult;
+
+// @public
+export function validateMarketplace(file: string, content: string, traceId?: string): MarketplaceValidationResult;
 
 // @public
 export function validateSurfaceSchema(schema: string, file: string, data: JsonValue, traceId?: string, lines?: Readonly<Record<string, number>>): SurfaceDiagnostic[];
