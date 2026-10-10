@@ -2,9 +2,9 @@ name: runtime-ts
 on:
   push:
     branches: [main]
-    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml']
+    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tck/profiles/**', 'packages/qian-cli/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml']
   pull_request:
-    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml']
+    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tck/profiles/**', 'packages/qian-cli/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml']
 permissions:
   contents: read
 concurrency:
@@ -27,6 +27,8 @@ jobs:
         with:
           version: 12.9.1
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @qian/surfaces build
+      - run: pnpm --filter qian build
       - run: pnpm --filter ./packages/qian-runtime build
       - run: pnpm --filter ./packages/qian-runtime check:api
       - run: pnpm --filter ./packages/qian-runtime test:types
