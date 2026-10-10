@@ -1409,7 +1409,7 @@
  {
   "id": "S1-DEC-013",
   "title": "验收复核裁决：消费端幂等口径、Definition 包的 Kun 依赖口径与 Kun 发版任务",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
@@ -1421,7 +1421,7 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -1446,7 +1446,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-10 对 Cody 完成的 S1-KUN-005 / S1-KUN-002 / S1-KUN-006、S1-RT-008 / S1-RT-002、S1-IDP-001 做验收复核：本机实跑 Qian 全量 243 项 .NET 测试、Kun 侧 133 项单元与 42 项集成测试（Docker 真容器）全部通过，六项维持 done；发现两处文档与实现的口径不一致和一个跨任务缺口，产品负责人授权按推荐口径处理（裁决编号 R63、R64）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>R63 消费端幂等：Kun 的 <code>IProcessedMessageStore</code> 只有 Redis 实现，S1-KUN-002 第 3 条验收实际以 Redis <code>idemp:</code> 键断言。PRD §07 7.10 改为「Redis 幂等键默认，PG <code>processed_messages</code> 兜底表为 S1-EVT-001 可选项」，ADR-008 D8.4 记录，S1-KUN-002 与 S1-EVT-001 补记</li>\n<li class='chk done'><span class='box'>✓</span>R64 Definition 包的 Kun 依赖：<code>Qian.Identity.Abstractions</code> 直接引用 <code>Kun.EventBus</code>（Kun 未拆 <code>.Abstractions</code>），与规格 §6.1 / ADR-019 D19.2 不符且依赖图门禁不检查 <code>Kun.*</code>。S1-IDP-001 第 1 条验收按实际改写，包 README 登记延期项，新建 S1-KUN-010 跟踪上游拆包与 check_deps 白名单</li>\n<li class='chk done'><span class='box'>✓</span>缺口：三项 Kun 修复未发版、<code>KunVersion</code> 仍 2026.10.8。新建 S1-KUN-009（Kun 2026.10.9 发版 + KunVersion 升级），并加进 S1-AUD-001、S1-AZ-001、S1-CFG-001、S1-DATA-001、S1-EVT-001、S1-FILE-001、S1-RT-006、S1-RT-015 八个任务的 depends</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务并落实三项裁决（验收复核结论见本任务背景与各任务日志）</li>\n<li>2026-10-10 claude：三项裁决已落到 PRD 7.10 / ADR-008 / 两个任务与包 README，新建 S1-KUN-009、S1-KUN-010 并接好 8 个依赖；待 PR</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-10 对 Cody 完成的 S1-KUN-005 / S1-KUN-002 / S1-KUN-006、S1-RT-008 / S1-RT-002、S1-IDP-001 做验收复核：本机实跑 Qian 全量 243 项 .NET 测试、Kun 侧 133 项单元与 42 项集成测试（Docker 真容器）全部通过，六项维持 done；发现两处文档与实现的口径不一致和一个跨任务缺口，产品负责人授权按推荐口径处理（裁决编号 R63、R64）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>R63 消费端幂等：Kun 的 <code>IProcessedMessageStore</code> 只有 Redis 实现，S1-KUN-002 第 3 条验收实际以 Redis <code>idemp:</code> 键断言。PRD §07 7.10 改为「Redis 幂等键默认，PG <code>processed_messages</code> 兜底表为 S1-EVT-001 可选项」，ADR-008 D8.4 记录，S1-KUN-002 与 S1-EVT-001 补记</li>\n<li class='chk done'><span class='box'>✓</span>R64 Definition 包的 Kun 依赖：<code>Qian.Identity.Abstractions</code> 直接引用 <code>Kun.EventBus</code>（Kun 未拆 <code>.Abstractions</code>），与规格 §6.1 / ADR-019 D19.2 不符且依赖图门禁不检查 <code>Kun.*</code>。S1-IDP-001 第 1 条验收按实际改写，包 README 登记延期项，新建 S1-KUN-010 跟踪上游拆包与 check_deps 白名单</li>\n<li class='chk done'><span class='box'>✓</span>缺口：三项 Kun 修复未发版、<code>KunVersion</code> 仍 2026.10.8。新建 S1-KUN-009（Kun 2026.10.9 发版 + KunVersion 升级），并加进 S1-AUD-001、S1-AZ-001、S1-CFG-001、S1-DATA-001、S1-EVT-001、S1-FILE-001、S1-RT-006、S1-RT-015 八个任务的 depends</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务并落实三项裁决（验收复核结论见本任务背景与各任务日志）</li>\n<li>2026-10-10 claude：三项裁决已落到 PRD 7.10 / ADR-008 / 两个任务与包 README，新建 S1-KUN-009、S1-KUN-010 并接好 8 个依赖；待 PR</li>\n<li>2026-10-10 claude：已合并 PR #22</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-013.md"
  },
  {
