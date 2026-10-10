@@ -10,7 +10,8 @@
   },
   "type": "module",
   "sideEffects": [
-    "*.css"
+    "*.css",
+    "**/theme-init.js"
   ],
   "files": [
     "dist",
@@ -18,7 +19,8 @@
   ],
   "exports": {
     ".": "./src/index.ts",
-    "./index.css": "./src/index.css"
+    "./index.css": "./src/index.css",
+    "./theme-init.js": "./src/theme-init.js"
   },
   "publishConfig": {
     "access": "restricted",
@@ -28,13 +30,16 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       },
-      "./index.css": "./dist/index.css"
+      "./index.css": "./dist/index.css",
+      "./theme-init.js": "./dist/theme-init.js"
     }
   },
   "scripts": {
     "build": "rslib build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "publint": "publint --strict --pack pnpm"
+    "publint": "publint --strict --pack pnpm",
+    "tokens:generate": "rslib build && node scripts/generate-css.mjs",
+    "tokens:check": "rslib build && node scripts/check-tokens.mjs"
   },
   "peerDependencies": {
     "react": "^19.0.0",

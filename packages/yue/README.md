@@ -70,6 +70,6 @@ tests/gates/yue/           门禁自测：分层边界、循环依赖样例、�
 
 ## 7 已知限制与延期项
 
-- Storybook 10（含 a11y 插件与令牌可视化页）随 S1-YUE-004 / 005 建立；i18n 硬编码 lint 随 `@idadawn/yue-sdk` 建立；视觉回归 S1 可选。
-- 八个包里除 core / data 外都是骨架（`PACKAGE_NAME` 占位），版本 0.1.0 未发布。
+- tokens 的品牌、明暗与语义色验证页已在靶场 `/tokens.html` 建立；Storybook 10（含 a11y 插件与组件用例）随 S1-YUE-005 建立；i18n 硬编码 lint 随 `@idadawn/yue-sdk` 建立；视觉回归 S1 可选。
+- tokens 已实现三层令牌和首帧主题控制；八个包里除 tokens / core / data 外仍是骨架（`PACKAGE_NAME` 占位），版本 0.1.0 未发布。
 - Lighthouse 现在对靶场测；`@idadawn/yue-shell` 建立后改为对外壳首屏测，预算值在 PRD §14 维护。

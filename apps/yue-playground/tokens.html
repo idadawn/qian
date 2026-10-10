@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN" data-brand="default">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yue 外观与令牌</title>
+  </head>
+  <body>
+    <main class="token-lab" data-testid="yue-token-lab">
+      <header><p>yue · 外观验证</p><h1>清晰、一致的明暗两态</h1><p>同一组语义角色随主题和品牌切换。</p></header>
+      <section aria-labelledby="appearance-heading"><h2 id="appearance-heading">外观</h2>
+        <label for="theme">主题</label><select id="theme" data-testid="yue-theme-select"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select>
+        <label for="brand">品牌</label><select id="brand" data-testid="yue-brand-select"><option value="default">蓝色</option><option value="teal">青绿色</option></select>
+      </section>
+      <section aria-labelledby="actions-heading"><h2 id="actions-heading">操作与状态</h2><div class="token-actions"><button type="button" class="primary" data-testid="yue-token-primary">主要操作</button><button type="button" class="secondary">次要操作</button><button type="button" class="destructive">移除操作</button></div><div id="tones" class="token-tones"></div></section>
+      <section aria-labelledby="palette-heading"><h2 id="palette-heading">语义色</h2><div id="palette" class="token-palette"></div></section>
+    </main>
+    <script type="module" src="/src/tokens-main.ts"></script>
+  </body>
+</html>

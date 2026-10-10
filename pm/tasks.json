@@ -5384,14 +5384,14 @@
  {
   "id": "S1-YUE-004",
   "title": "@yue/tokens：三层令牌、明暗两态、首帧防闪烁与对比度单测",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "YUE",
   "areaName": "外壳与 yue",
   "wave": 2,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
@@ -5399,7 +5399,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5410,12 +5410,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/yue.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>primitive → semantic → component 三层、HSL / oklch 可加 alpha、状态色成对 + <code>Tone</code>、shadcn 语义变量映射、<code>html.dark</code> + <code>color-scheme</code>、首帧防闪烁、命名唯一真相源、WCAG AA 对比度单测、<code>data-theme / data-brand</code> 运行时注入点；DTCG 导出 P2。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：令牌明暗两套全部语义色对比度 ≥ 4.5:1 单测通过</li>\n<li class='chk'><span class='box'></span>CI：同名异义令牌（如 <code>--accent</code> 双义）被 lint 拒绝</li>\n<li class='chk'><span class='box'></span>UT：<code>data-theme / data-brand</code> 运行时切换不产生首帧闪烁（快照测试）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>primitive → semantic → component 三层、HSL / oklch 可加 alpha、状态色成对 + <code>Tone</code>、shadcn 语义变量映射、<code>html.dark</code> + <code>color-scheme</code>、首帧防闪烁、命名唯一真相源、WCAG AA 对比度单测、<code>data-theme / data-brand</code> 运行时注入点；DTCG 导出 P2。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：令牌明暗两套全部语义色对比度 ≥ 4.5:1 单测通过</li>\n<li class='chk'><span class='box'></span>CI：同名异义令牌（如 <code>--accent</code> 双义）被 lint 拒绝</li>\n<li class='chk'><span class='box'></span>UT：<code>data-theme / data-brand</code> 运行时切换不产生首帧闪烁（快照测试）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：开始：市场任务已进入 review；按唯一令牌源实现三层颜色、明暗与品牌注入，验证对比度和首帧行为。</li>\n<li>2026-10-11 cody：三层令牌与首帧主题已实现；42 个语义色的 168 个明暗/品牌配对最低 4.674:1，37 项单测、11 项浏览器测试及全部 yue 门禁通过，待 PR CI 与合并。</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-004.md"
  },
  {

@@ -1,0 +1,20 @@
+@import '@idadawn/yue-tokens/index.css';
+html { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; }
+body { margin: 0; }
+.token-lab { max-width: 64rem; margin: auto; padding: 2.5rem 1.5rem; }
+.token-lab header { margin-bottom: 2rem; }
+.token-lab h1 { font-size: 2rem; line-height: 1.2; }
+.token-lab header p { color: var(--muted-foreground); }
+.token-lab section { margin: 1.5rem 0; padding: 1.5rem; background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: var(--radius); }
+.token-lab h2 { margin-top: 0; font-size: 1.15rem; }
+.token-lab label { margin-right: .5rem; }
+.token-lab select { margin-right: 1.5rem; padding: .5rem; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: var(--radius); }
+.token-actions, .token-tones { display: flex; gap: .75rem; flex-wrap: wrap; margin: 1rem 0; }
+.token-lab button { padding: .7rem 1rem; border: 1px solid currentColor; border-radius: var(--yue-button-radius); font: inherit; }
+.token-lab button:focus-visible, .token-lab select:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+.token-lab .primary { background: var(--primary); color: var(--primary-foreground); }
+.token-lab .secondary { background: var(--secondary); color: var(--secondary-foreground); }
+.token-lab .destructive { background: var(--destructive); color: var(--destructive-foreground); }
+.token-tones span { padding: .5rem .75rem; border-radius: var(--radius); }
+.token-palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .75rem; }
+.token-swatch { min-height: 4rem; padding: .75rem; display: flex; align-items: end; border: 1px solid var(--border); border-radius: var(--radius); }
