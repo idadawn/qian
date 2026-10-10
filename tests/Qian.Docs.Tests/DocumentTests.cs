@@ -129,6 +129,18 @@ public sealed class DocumentTests
         Assert.Contains(result.Diagnostics, d => d.Error.Errors![0].Code == "DOC_EVENT_DECLARATION_INVALID");
     }
 
+    [Fact]
+    public void Alias_attributes_must_match_the_original_event_mode()
+    {
+        using var fixture = new Fixture(); fixture.Write("src/Events.cs", Definitions);
+        fixture.Write("src/Alias.cs", "using Qian.Runtime; namespace Demo; public static class Alias { [QianEvent(Mode=DispatchMode.Waterfall)] public static QianEvent<string,string?> Changed => Events.Changed; }");
+        fixture.Write("src/Calls.cs", Calls.Replace("using E = Demo.Events;", "using E = Demo.Alias;", StringComparison.Ordinal));
+        var result = fixture.Generate();
+        Assert.False(result.IsValid);
+        Assert.Single(result.Events[0].Consumers);
+        Assert.Contains(result.Diagnostics, d => d.File == "src/Alias.cs" && d.Error.Errors![0].Code == "DOC_EVENT_MODE_MISMATCH");
+    }
+
     private static string FindRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

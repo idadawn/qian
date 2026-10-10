@@ -10,6 +10,7 @@ namespace Qian.Docs;
 internal sealed class EventAnalyzer(string root, Diagnostics diagnostics)
 {
     private readonly Dictionary<ISymbol, Definition> _definitions = new(SymbolEqualityComparer.Default);
+    private readonly List<(ISymbol Symbol, EventSite Site)> _annotated = [];
     private CSharpCompilation _compilation = null!;
     private sealed record Definition(string Name, DispatchMode Mode, EventSite Site)
     {
@@ -45,6 +46,19 @@ internal sealed class EventAnalyzer(string root, Diagnostics diagnostics)
             {
                 var value = property.Initializer?.Value ?? property.ExpressionBody?.Expression;
                 if (value is not null) Register(model.GetDeclaredSymbol(property), value, property);
+            }
+        }
+        foreach (var (symbol, site) in _annotated)
+        {
+            var definition = _definitions.GetValueOrDefault(symbol);
+            if (definition is null && Initializer(symbol) is { } expression) definition = Resolve(expression, 0);
+            foreach (var attribute in symbol.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() == "Qian.Runtime.QianEventAttribute"))
+            {
+                var value = attribute.NamedArguments.FirstOrDefault(p => p.Key == "Mode").Value.Value;
+                var annotated = value is int mode ? (DispatchMode)mode : DispatchMode.Emit;
+                if (definition is null) diagnostics.Add(site.File, site.Line, DocumentErrors.Declaration, "带 QianEvent 特性的事件值不能静态解析。");
+                else if (annotated != definition.Mode) diagnostics.Add(site.File, site.Line, DocumentErrors.ModeMismatch,
+                    $"事件 {definition.Name} 的 QianEvent 特性声明为 {annotated}，初始化值为 {definition.Mode}。");
             }
         }
         foreach (var group in _definitions.Values.GroupBy(d => d.Name, StringComparer.Ordinal).Where(g => g.Count() > 1))
@@ -88,6 +102,7 @@ internal sealed class EventAnalyzer(string root, Diagnostics diagnostics)
     {
         var type = symbol switch { IFieldSymbol field => field.Type, IPropertySymbol property => property.Type, _ => null };
         if (symbol is null || !IsEvent(type)) return;
+        if (symbol.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == "Qian.Runtime.QianEventAttribute")) _annotated.Add((symbol, Site(declaration, symbol)));
         if (Mutated(symbol))
         {
             var mutableSite = Site(declaration, symbol);
@@ -130,13 +145,6 @@ internal sealed class EventAnalyzer(string root, Diagnostics diagnostics)
             diagnostics.Add(site.File, site.Line, DocumentErrors.Declaration, "事件定义须有静态名称与分发模式，不能根据执行结果推测。"); return;
         }
         _definitions[symbol] = new Definition(eventName, mode.Value, site);
-        foreach (var attribute in symbol.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() == "Qian.Runtime.QianEventAttribute"))
-        {
-            var declared = attribute.NamedArguments.FirstOrDefault(p => p.Key == "Mode").Value;
-            var annotated = declared.Value is int value ? (DispatchMode)value : DispatchMode.Emit;
-            if (annotated != mode) diagnostics.Add(site.File, site.Line, DocumentErrors.ModeMismatch,
-                $"事件 {eventName} 的 QianEvent 特性声明为 {annotated}，初始化值为 {mode}。");
-        }
     }
     private Definition? Resolve(ExpressionSyntax expression, int depth)
     {
