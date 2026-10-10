@@ -3,3 +3,17 @@ T:Kun.Infrastructure.Abstractions.IRepository`1;旧通用仓储入口已禁用�
 T:Kun.Infrastructure.Abstractions.IUnitOfWork;请使用 Kun.EntityFrameworkCore.IUnitOfWork。
 T:Kun.Infrastructure.Abstractions.IProcessedMessageStore;请使用 Kun.EventBus.Idempotency.IProcessedMessageStore。
 T:Kun.Storage.Abstractions.IFileStorage;旧 Kun.Storage 包已禁用，请引用 Kun.Storage.Abstractions 包的 Kun.Storage.IFileStorage。
+# S1-KUN-004：S2S 只使用网关签发器；发布包尚未带 Obsolete 时也不允许绕回旧入口。
+T:Kun.Identity.Abstractions.IJwtIssuer;请使用 Kun.Gateway.S2sTokenIssuer 与规范 S2S claim。
+T:Kun.Identity.Implementations.KunJwtIssuer;请使用 Kun.Gateway.S2sTokenIssuer。
+T:Kun.Identity.Configuration.KunJwtIssuerOptions;旧 Identity 签发配置已禁用。
+M:Kun.Identity.Configuration.KunIdentityBuilder.AddS2SIssuer(System.Action{Kun.Identity.Configuration.KunJwtIssuerOptions});请注册网关签发器。
+T:Kun.Security.S2SJwt.IS2SJwtIssuer;请使用 Kun.Gateway.S2sTokenIssuer。
+T:Kun.Security.S2SJwt.S2SJwtIssuer;请使用 Kun.Gateway.S2sTokenIssuer。
+T:Kun.Security.S2SJwt.S2SJwtIssueRequest;请通过网关的规范主体投影签发 S2S。
+T:Kun.Security.S2SJwt.S2SJwtOptions;旧 S2S 配置已禁用。
+T:Kun.Security.S2SJwt.IS2SJwtVerifier;请使用 Kun.Security 服务认证入口。
+T:Kun.Security.S2SJwt.S2SJwtVerifier;请使用 Kun.Security 服务认证入口。
+T:Kun.Security.S2SJwt.KunSecurityS2SJwtServiceCollectionExtensions;请使用 Kun.Security 服务认证与网关签发入口。
+T:Kun.Security.S2SJwt.JwksEndpointMiddleware;请使用网关共享密钥环的 JWKS 端点。
+T:Kun.Security.S2SJwt.JwksEndpointExtensions;请使用网关共享密钥环的 JWKS 端点。

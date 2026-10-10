@@ -25,6 +25,9 @@
     <PackageVersion Include="Kun.Mediator" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.EventBus" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Validation" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Identity" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Security" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Gateway" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Infrastructure" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Storage" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Storage.Abstractions" Version="$(KunVersion)" />
