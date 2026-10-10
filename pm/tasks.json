@@ -1478,22 +1478,65 @@
   "file": "pm/tasks/S1-DEC-015.md"
  },
  {
+  "id": "S1-DEC-016",
+  "title": "DEP-001 基线验收与真实平台四依赖联调分阶段",
+  "status": "todo",
+  "stage": "S1",
+  "area": "DEC",
+  "areaName": "待拍板决策",
+  "wave": 0,
+  "priority": "P0",
+  "type": "decision",
+  "owner": "",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
+  "refs": [
+   {
+    "path": "pm/tasks/S1-DEP-001.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEP-001.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEP-002.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEP-002.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEP-003.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEP-003.md"
+   },
+   {
+    "path": "docs/adr/ADR-017-deployment.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-017-deployment.md"
+   }
+  ],
+  "updated": "2026-10-11",
+  "acceptance": {
+   "done": 0,
+   "total": 2
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>DEP-001 第一项要求真实 qian-platform 可访问 PG / Redis / RabbitMQ / Apollo；DEP-002 的专属 L1 服务和 DEP-003 的平台镜像却都依赖 DEP-001。当前 qian-platform 仍是组合骨架，不能以贴同名标签的探针或已有共享服务冒充验收。</p>\n<p>2026-10-11 只读实查另发现 qd 的 API 返回 ServiceUnavailable，K3s activating/start、NRestarts=550；未修改现网。这是独立的环境阻塞，不因下面的验收裁决而消失。</p>\n<h4>待裁决</h4>\n<ul>\n<li>推荐：分阶段验收。DEP-001 在真实集群完成独立命名空间、专属 PG/Redis、默认拒绝、配额、节点池与入口/加密检查后完成基线阶段；把真实 qian-platform 的四依赖协议联调明确保留为后续部署的必过验收，回链 DEP-002/003，不能在上线时跳过。</li>\n<li>维持原口径：DEP-001 保持 blocked，直到专属 L1 与真实应用镜像均可运行并完成全项验证；后续任务的启动安排由产品负责人决定。</li>\n</ul>\n<p>已准备两环境隔离清单、数据服务、只建缺失项的 Secret 引导工具、静态门禁及上线/回退步骤，尚未接入 Argo 或执行集群变更。具体部署仍须现网恢复、容量/节点池确认和变更批准。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>产品负责人明确选择验收顺序</li>\n<li class='chk'><span class='box'></span>按裁决更新 DEP-001 与后续部署任务，保持真实四依赖联调的必过门</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-11 cody：创建任务</li>\n</ul>",
+  "file": "pm/tasks/S1-DEC-016.md"
+ },
+ {
   "id": "S1-DEP-001",
   "title": "K3s 基线治理：命名空间、专属库、默认拒绝、配额",
-  "status": "todo",
+  "status": "blocked",
   "stage": "S1",
   "area": "DEP",
   "areaName": "部署物料",
   "wave": 1,
   "priority": "P0",
   "type": "infra",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1506,14 +1549,18 @@
    {
     "path": "docs/ROADMAP.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/ROADMAP.md"
+   },
+   {
+    "path": "deploy/baseline/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/deploy/baseline/README.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-M1 K3s 基线：<code>qian-staging</code> / <code>qian-prod</code> 命名空间；每环境专属 PostgreSQL 16（<code>qian</code> 库、schema-per-service、RLS 开启）与 Redis 7（不复用跨 ns 共享实例）；default-deny NetworkPolicy + 按 <code>permissions.egress</code> 白名单放行（平台自有出网点 SSRF 基线，R10）；ResourceQuota / LimitRange / PDB 模板；K3s <code>--secrets-encryption</code>；Traefik <code>forwardedHeaders.trustedIPs</code>；生产独立节点池（Q16）；Harbor 新增「插件包 OCI artifact」制品类型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：在 <code>qian-staging</code> 内启动一个未声明 egress 的 Pod，访问外网与其他 ns 被 NetworkPolicy 拒绝；<code>qian-platform</code> 能访问 PG / Redis / RabbitMQ / Apollo</li>\n<li class='chk'><span class='box'></span>检查：<code>qian-staging</code> 命名空间存在 ResourceQuota 与 LimitRange；无 <code>:latest</code> 镜像</li>\n<li class='chk'><span class='box'></span>检查：Traefik <code>trustedIPs</code> 已配置，OIDC issuer 为 https；K3s secrets-encryption 开启</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-M1 K3s 基线：<code>qian-staging</code> / <code>qian-prod</code> 命名空间；每环境专属 PostgreSQL 16（<code>qian</code> 库、schema-per-service、RLS 开启）与 Redis 7（不复用跨 ns 共享实例）；default-deny NetworkPolicy + 按 <code>permissions.egress</code> 白名单放行（平台自有出网点 SSRF 基线，R10）；ResourceQuota / LimitRange / PDB 模板；K3s <code>--secrets-encryption</code>；Traefik <code>forwardedHeaders.trustedIPs</code>；生产独立节点池（Q16）；Harbor 新增「插件包 OCI artifact」制品类型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：在 <code>qian-staging</code> 内启动一个未声明 egress 的 Pod，访问外网与其他 ns 被 NetworkPolicy 拒绝；<code>qian-platform</code> 能访问 PG / Redis / RabbitMQ / Apollo</li>\n<li class='chk'><span class='box'></span>检查：<code>qian-staging</code> 命名空间存在 ResourceQuota 与 LimitRange；无 <code>:latest</code> 镜像</li>\n<li class='chk'><span class='box'></span>检查：Traefik <code>trustedIPs</code> 已配置，OIDC issuer 为 https；K3s secrets-encryption 开启</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：开始：只读核对真实 K3s 与部署仓库，准备独立命名空间、网络隔离、专属数据服务和验收物料；集群级与生产变更需具体审核后执行。</li>\n<li>2026-10-11 cody：部署仓 PR #88 提供两环境独立数据服务、default-deny、配额/PDB/节点池约束、引导与验收脚本；离线门禁和真实本机固定镜像验证通过。现场 qd API 未就绪、K3s activating/start（550→551 次重启），未作集群变更。等待现网恢复、具体变更准入与 DEC-016 验收顺序裁决，实际三项验收保持未完成。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-001.md"
  },
  {
