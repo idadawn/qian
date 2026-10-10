@@ -2,6 +2,11 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-10 Kun 升级到 2026.10.9（S1-KUN-009）
+
+- `KunVersion` 升到 2026.10.9，带入 Outbox 与消费可靠性（S1-KUN-002，上游 idadawn/kun#46）、审计原子性与数据约定（S1-KUN-005，idadawn/kun#45）、平台基础端口与废弃 API 标记（S1-KUN-006，idadawn/kun#47）三组修复；`Kun.Authorization` 与 `Kun.Configuration.Apollo` 首次随 Kun 发包。文档站的「Kun 框架」小节与 Kun API 参考随之切到 `v2026.10.9`，[与 Qian 的关系](../website/docs/sdk/kun/with-qian.mdx) 的修复状态表与模块表同步更新。
+- 下游要跟的行为变更已记入 S1-EVT-001（Outbox `NextAttemptAt` 迁移、非事务存储默认拒绝无锁）、S1-AZ-001（`PermissionBehavior` 逐命令注册、缺引擎即拒绝）、S1-DATA-001（snake_case / Guid v7 / `xmin` 为显式 opt-in）。
+
 ## 2026-10-09 yue 工程化基线、八项门禁与 Base UI 验证门（S1-YUE-003）
 
 - 建立 yue 前端工作区：pnpm workspace + `catalog:` + Turborepo，`@yue/*` 八个 S1 包的骨架（tokens / contracts / core / sdk / shell / data / form / biz）、Rslib 构建、Changesets 与 `0.x` 版本策略；六层分层矩阵由 eslint-plugin-boundaries 强制，dependency-cruiser 查循环依赖。

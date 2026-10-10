@@ -4,7 +4,7 @@ description: Kun 模块在 Qian 里由哪个平台插件或 seam 承接、Qian �
 part: sdk
 project: qian
 audience: [developer, agent]
-updated: 2026-10-08
+updated: 2026-10-10
 ---
 
 # 与 Qian 的关系
@@ -34,7 +34,8 @@ updated: 2026-10-08
 | `Kun.Audit`、`Kun.Auditing` | [qian.audit](/components/platform/qian.audit) | 哈希链原语与同事务 Outbox 路径 |
 | `Kun.Audit.EntityFrameworkCore` | 不用其拦截器 | `AuditSaveChangesInterceptor` 事后、不同事务写审计，禁用（7.1 第 8 项） |
 | `Kun.Observability` | [qian.observability](/components/platform/qian.observability) | `AddQianObservability()` 一行装配；网关宿主也接入 |
-| `Kun.Configuration` | [qian.config](/components/platform/qian.config) | 强类型 Options 与 fail-fast；Apollo 配置源待补（7.1 第 10 项） |
+| `Kun.Configuration`、`Kun.Configuration.Apollo` | [qian.config](/components/platform/qian.config) | 强类型 Options 与 fail-fast；Kun 2026.10.9 起重载失败保留最后有效值并告警、`AddKunOptions(JsonTypeInfo)` 导出 JSON Schema，Apollo HTTP 配置源随同版本发布（7.1 第 10 项，S1-KUN-006） |
+| `Kun.Authorization` | [qian.authz](/components/platform/qian.authz) | Kun 2026.10.9 起只放端口（`IPermissionChecker` / `IDataPermissionFilter` / `IFieldPolicy`）与 HTTP、Mediator、gRPC 调用形态，不内置 RBAC/ABAC；Qian 实现并再导出（7.1 第 11 项，S1-KUN-006） |
 | `Kun.Caching` | [qian.identity](/components/platform/qian.identity)、[qian.authz](/components/platform/qian.authz)、[qian.gateway](/components/platform/qian.gateway)、[qian.events](/components/platform/qian.events) | 缓存后端 |
 | `Kun.RateLimit` | 服务侧限流 | 网关侧用 `Kun.Gateway` 的三策略 + Redis 共享计数 |
 | `Kun.Storage.Abstractions`、`Kun.Storage.Local`、`Kun.Storage.S3`、`Kun.Storage.Oss` | [qian.files](/components/platform/qian.files) | 新线存储；Provider `Qian.Files.Local` / `.S3` / `.Oss` 各包一个后端 |
@@ -42,10 +43,10 @@ updated: 2026-10-08
 | `Kun.Infrastructure` | 不用 | `IRepository` / `IUnitOfWork` 是死接口，直接用 `DbContext` + `Kun.EntityFrameworkCore` 的 `IUnitOfWork`（§07 7.6） |
 | `Kun.Saga` | 不用于开通编排 | 租户开通由 `qian.lifecycle` 的幂等步骤表承担；Saga 其余修补为 P1（7.1 第 3 项） |
 | `Kun.Grpc` | 服务间 gRPC | 流式调用的追踪、认证、Result 拦截器在 S1 补齐（7.1 第 5 项） |
-| `Kun.AspNetCore` | HTTP 宿主 | 错误响应在 ProblemDetails 之上统一为 Qian 的 `ErrorDetail`（§07 7.18、`contracts/v0` §3.7）；前提是 Kun 的 `KunExceptionHandler` 改走 `IProblemDetailsService`、不再直接写出 ProblemDetails（S1-KUN-006） |
+| `Kun.AspNetCore` | HTTP 宿主 | 错误响应在 ProblemDetails 之上统一为 Qian 的 `ErrorDetail`（§07 7.18、`contracts/v0` §3.7）；Kun 2026.10.9 起 `KunExceptionHandler` 已改走 `IProblemDetailsService`、不再直接写出 ProblemDetails（S1-KUN-006），Qian 的规范化在其上生效 |
 | `Kun.Validation`、`Kun.Testing`、`Kun.Testing.EntityFrameworkCore`、`Kun.Sandbox` | Qian 的设计未引用 | 集成测试用仓库自带的 Testcontainers fixture；S4 的沙箱对接 CubeSandbox（[AI SDK · 沙箱](/sdk/ai/sandbox)） |
 
-Kun 侧还要新增两个模块：鉴权端口 `Kun.Authorization`（只放端口，Qian 的 [qian.authz](/components/platform/qian.authz) 实现并再导出，7.1 第 11 项）与 Apollo 配置源 `Kun.Configuration.Apollo`（7.1 第 10 项）。它们进入 Kun 发版之前，上表不列。
+鉴权端口 `Kun.Authorization` 与 Apollo 配置源 `Kun.Configuration.Apollo` 原计划在 Kun 侧新增，已随 Kun 2026.10.9 发布并进入上表；Qian 的 [qian.authz](/components/platform/qian.authz) 与 [qian.config](/components/platform/qian.config) 在其上实现。
 
 ## canonical API
 
@@ -77,16 +78,16 @@ Kun 关键路径上有一组在「K3s 多副本 + 多租户」下必然触发的
 1. 上游 PR 优先：改动提到 kun 仓库，Kun 发版后改 `KunVersion` 升级，本小节随之更新。
 2. 每项设 1 个迭代的回合入期限；逾期未合入，由 Qian 维护 `Kun.<Module>.Patches` 补丁包（同名命名空间 + `[Obsolete]` 转发），并记录回合入日期。
 
-截至 2026-10-08 的状态：S1-KUN-001 已随 Kun 2026.10.8 发布并由 Qian 升级消费，其余六个修复任务未开始；Qian 没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
+截至 2026-10-10 的状态：S1-KUN-001 已随 Kun 2026.10.8 发布并由 Qian 升级消费（S1-KUN-008）；S1-KUN-002 / 005 / 006 已随 Kun 2026.10.9 发布并由 Qian 升级消费（S1-KUN-009）；其余三个修复任务未开始；Qian 没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
 
 | 任务 | 修复项（§07 7.1） | 状态 | 补丁包 |
 |---|---|---|---|
 | S1-KUN-001 | 第 1 项 多租户后台链路 | 已完成：上游 [idadawn/kun#43](https://github.com/idadawn/kun/pull/43) 随 Kun 2026.10.8 发布，Qian 已升级（S1-KUN-008）；Qian 侧的最小安全装配 `AddQianData` 随 S1-KUN-001 交付 | 无 |
-| S1-KUN-002 | 第 2 项 Outbox 与事件语义 | 未开始 | 无 |
+| S1-KUN-002 | 第 2 项 Outbox 与事件语义 | 已完成：上游 [idadawn/kun#46](https://github.com/idadawn/kun/pull/46) 随 Kun 2026.10.9 发布，Qian 已升级（S1-KUN-009）；消费端幂等默认 Redis 幂等键（S1-DEC-013 R63），「集成事件只能在命令 handler 同 scope 发出」分析器由 S1-EVT-001 落地 | 无 |
 | S1-KUN-003 | 第 4 项 网关加固、第 5 项 gRPC 流式拦截器 | 未开始 | 无 |
 | S1-KUN-004 | 第 6 项 Identity 客户端链路、第 7 项 S2S 签发器收敛 | 未开始 | 无 |
-| S1-KUN-005 | 第 8 项 审计收敛、第 9 项 数据约定 | 未开始 | 无 |
-| S1-KUN-006 | 第 10–13 项 配置、鉴权端口、能力目录、废弃 API；另含 `KunExceptionHandler` 走 `IProblemDetailsService` | 未开始 | 无 |
+| S1-KUN-005 | 第 8 项 审计收敛、第 9 项 数据约定 | 已完成：上游 [idadawn/kun#45](https://github.com/idadawn/kun/pull/45) 随 Kun 2026.10.9 发布，Qian 已升级（S1-KUN-009）；snake_case / Guid v7 / `xmin` 约定为显式 opt-in，由 S1-DATA-001 装配 | 无 |
+| S1-KUN-006 | 第 10–13 项 配置、鉴权端口、能力目录、废弃 API；另含 `KunExceptionHandler` 走 `IProblemDetailsService` | 已完成：上游 [idadawn/kun#47](https://github.com/idadawn/kun/pull/47) 随 Kun 2026.10.9 发布，Qian 已升级（S1-KUN-009）；Qian 侧 Banned API 分析器与门禁样例随 PR #14 交付；`PermissionBehavior` 须逐命令或全局注册，由 S1-AZ-001 装配 | 无 |
 | S1-KUN-007 | 第 3 项 Saga 其余修补（P1） | 未开始 | 无 |
 
 ## 版本与升级
