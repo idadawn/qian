@@ -1,0 +1,4 @@
+#nullable enable
+Qian.Docs.DocumentGenerator.DocumentGenerator(Qian.Profiles.Abstractions.IProfileLoader! profiles) -> void
+Qian.Docs.DocumentGenerator
+Qian.Docs.DocumentGenerator.Generate(Qian.Docs.Abstractions.DocumentOptions! options) -> Qian.Docs.Abstractions.DocumentResult!

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Docs/Qian.Docs.csproj" />
+    <ProjectReference Include="../../packages/Qian.Profiles/Qian.Profiles.csproj" />
+    <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+  </ItemGroup>
+</Project>

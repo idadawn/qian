@@ -169,3 +169,7 @@ static readonly Qian.Runtime.SurfaceKeys.Agents -> Qian.Runtime.ServiceKey
 static readonly Qian.Runtime.SurfaceKeys.Hooks -> Qian.Runtime.ServiceKey
 Qian.Runtime.SurfaceKeys
 static readonly Qian.Runtime.SurfaceKeys.McpServers -> Qian.Runtime.ServiceKey
+Qian.Runtime.QianEventAttribute
+Qian.Runtime.QianEventAttribute.QianEventAttribute() -> void
+Qian.Runtime.QianEventAttribute.Mode.set -> void
+Qian.Runtime.QianEventAttribute.Mode.get -> Qian.Runtime.DispatchMode

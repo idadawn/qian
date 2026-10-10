@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>读取 profile、配置 Schema 与 C# 事件代码的静态文档生成器。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Docs.Abstractions/Qian.Docs.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
+    <ProjectReference Include="../Qian.Profiles.Abstractions/Qian.Profiles.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+</Project>

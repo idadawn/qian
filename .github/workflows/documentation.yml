@@ -1,0 +1,45 @@
+name: documentation
+on:
+  push:
+    branches: [main]
+    paths: ['packages/**', 'plugins/**', 'profiles/**', 'src/**', 'tools/Qian.Docs.Tool/**', 'tests/Qian.Docs.Tests/**', 'schemas/**', '*.props', '*.targets', 'Qian.slnx', 'global.json', 'package.json', 'pnpm*', '.github/workflows/documentation.yml']
+  pull_request:
+    paths: ['packages/**', 'plugins/**', 'profiles/**', 'src/**', 'tools/Qian.Docs.Tool/**', 'tests/Qian.Docs.Tests/**', 'schemas/**', '*.props', '*.targets', 'Qian.slnx', 'global.json', 'package.json', 'pnpm*', '.github/workflows/documentation.yml']
+permissions:
+  contents: read
+concurrency:
+  group: documentation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  event-contracts:
+    name: 派生文档与事件模式校验
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter qian... build
+      - name: 语义绑定及错误反例
+        run: dotnet run --project tests/Qian.Docs.Tests -c Release
+      - name: CLI 与文档模板验收
+        run: pnpm --filter qian test
+      - name: 当前源码声明与调用模式必须一致
+        run: |
+          mkdir -p TestResults
+          pnpm exec qian docs generate --profile platform --json > TestResults/docs-report.json 2> TestResults/docs-diagnostics.json || { cat TestResults/docs-diagnostics.json; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: derived-docs-and-events
+          path: |
+            docs/generated/
+            TestResults/docs-*.json
