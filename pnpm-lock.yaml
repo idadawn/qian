@@ -398,6 +398,34 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/qian-runtime:
+    dependencies:
+      cosmokit:
+        specifier: 1.6.2
+        version: 1.6.2
+    devDependencies:
+      '@microsoft/api-extractor':
+        specifier: 7.59.4
+        version: 7.59.4(@types/node@24.19.1)
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.64.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.1
+      ajv:
+        specifier: 8.20.0
+        version: 8.20.0
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.4(@types/node@24.19.1)(jiti@2.7.0)(yaml@2.9.1)
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
+
   packages/qian-surfaces:
     dependencies:
       ajv:
@@ -2390,6 +2418,9 @@ packages:
 
   cose-base@1.0.3:
     resolution: {integrity: sha512-s9whTXInMSgAp/NVXVNuVxVKzGH2qck3aQlVHxDCdAEPgtMKwc4Wq6/QKhgdEdgbLSi9rBTAcPoRa6JpiG4ksg==}
+
+  cosmokit@1.6.2:
+    resolution: {integrity: sha512-KnicClOb834OGjzAxjuH5WFoIxzcQwiDbvwRykgCRxHq103lrW4vpogPs3LBuZDsb2asEax4C70OYFd+JfAmgQ==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -6865,6 +6896,8 @@ snapshots:
   cose-base@1.0.3:
     dependencies:
       layout-base: 1.0.2
+
+  cosmokit@1.6.2: {}
 
   cross-spawn@7.0.6:
     dependencies:

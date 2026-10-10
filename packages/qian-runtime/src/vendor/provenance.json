@@ -1,0 +1,13 @@
+{
+  "package": "@cordisjs/core",
+  "version": "3.18.1",
+  "commit": "4658414e9414464ff1d08d076882fb66c1a3bb1c",
+  "license": "MIT",
+  "source": "https://github.com/cordiverse/cordis",
+  "integrity": "sha512-yRuATOamFxeD1ztE2L3o1SaHuT2zw5DTXijQYxt9azVNeILbvtomfGG6sLZegrynJO9XZbNvXbOlQ7LBJDOlAg==",
+  "files": {
+    "cordis.js": "e3d3c48a06d8df47295c50fdc2db1334327fdc59e9fc7605eeb1f6a57d135cc4",
+    "cordis.d.ts": "cd9a3966ea30aa2b4cda814d04c17b5cf121adac45f350949236438b868a5a12",
+    "LICENSE.cordis.txt": "034fb52b1d57360ecbae6cb1632a88f86fd7c3d3f5631a5f082710203dda0be7"
+  }
+}
