@@ -7,6 +7,7 @@
 - `hooks`、`mcp`：事件桥接与 MCP 声明。
 - `tool`：引用冻结 capability-entry 的词汇，增加 binding；不携带数据库 id/plugin/kind。
 - `profile`：具名 profile 的组合包与启动策略。
+- `marketplace`：市场名称、条目、来源、策略与分类；两端共用文档语义向量见 [市场 TCK](../../tck/marketplaces/README.md)。
 - `patch`：按 scope 与 id 定位的条目数组。
 - `surface-rules.json`：默认路径、固定事件与受限 shell 名称，供两端语义层共用。
 

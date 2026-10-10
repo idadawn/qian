@@ -1,0 +1,37 @@
+{
+  "$schema": "https://qian.dev/schemas/marketplace/v2",
+  "name": "tenant-private",
+  "version": "2026.10.11",
+  "interface": {
+    "displayName": "租户私有目录"
+  },
+  "owner": {
+    "name": "测试发布方",
+    "publicKeys": [
+      "./keys/owner.pub"
+    ]
+  },
+  "categories": [
+    "operations"
+  ],
+  "plugins": [
+    {
+      "name": "guide",
+      "source": {
+        "type": "local",
+        "path": "./plugins/example.guide"
+      },
+      "policy": {
+        "installation": "confirm",
+        "authentication": "ON_INSTALL",
+        "profiles": [
+          "minimal"
+        ]
+      },
+      "category": "operations",
+      "interface": {
+        "displayName": "只读指引"
+      }
+    }
+  ]
+}

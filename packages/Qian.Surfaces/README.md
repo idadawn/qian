@@ -51,3 +51,8 @@ if (result.IsValid)
 ## 已知限制与延期项
 
 本任务不实现 Agent loop、MCP 进程、hook 执行器、文件监视服务或完整 CLI 安装器。二进制 runtime.entry 的真实定位、版本解算、签名和完整依赖闭包由 SDK/CLI/Registry 任务处理。UI 与低代码表面只检查显式路径，内容 Schema 属于对应模块。宿主须在登记前提供可信目录，并在真正调用时继续执行权限、scope 与执行策略检查。
+
+
+## 市场文档
+
+`ISurfaceValidator.ValidateMarketplace(file, content)` 与 TS `validateMarketplace` 共用 marketplace/v2，检查字段、安装名唯一性、分类、路径、公钥与远程 URL 约束，并输出同样的文件指针和行号。失败不返回含敏感输入的市场对象。它是静态文档校验，不读取网络或信任根；来源取得、验签、digest 及每个实际组件的 ValidateComponent 由 [CLI 市场链路](../qian-cli/README.md) 继续完成。跨语言向量在 tck/marketplaces。

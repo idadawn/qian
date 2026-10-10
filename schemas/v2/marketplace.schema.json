@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/marketplace/v2",
+  "title": "目录市场 v2",
+  "type": "object",
+  "required": [
+    "name",
+    "interface",
+    "owner",
+    "plugins"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "https://qian.dev/schemas/marketplace/v2"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "version": {
+      "type": "string"
+    },
+    "interface": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/interface"
+        },
+        {
+          "required": [
+            "displayName"
+          ]
+        }
+      ]
+    },
+    "owner": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "url": {
+          "type": "string"
+        },
+        "publicKeys": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384
+          }
+        }
+      }
+    },
+    "categories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "local",
+            "url",
+            "git-subdir"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "repo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "local"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "path"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "url"
+                  ]
+                },
+                {
+                  "required": [
+                    "repo"
+                  ]
+                },
+                {
+                  "required": [
+                    "ref"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "url"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "url",
+              "digest"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "path"
+                  ]
+                },
+                {
+                  "required": [
+                    "repo"
+                  ]
+                },
+                {
+                  "required": [
+                    "ref"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "git-subdir"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "repo",
+              "ref",
+              "path"
+            ],
+            "not": {
+              "required": [
+                "url"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "name",
+        "source",
+        "policy",
+        "category"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "category": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "interface": {
+          "$ref": "#/$defs/interface"
+        },
+        "policy": {
+          "type": "object",
+          "required": [
+            "installation",
+            "authentication"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "installation": {
+              "enum": [
+                "auto",
+                "confirm",
+                "restricted"
+              ]
+            },
+            "authentication": {
+              "enum": [
+                "ON_INSTALL",
+                "ON_USE"
+              ]
+            },
+            "profiles": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "interface": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "homepage": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "brandColor": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "defaultPrompt": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "string"
+          }
+        },
+        "screenshots": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "string"
+          }
+        },
+        "locales": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

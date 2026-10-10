@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`██░░░░░░░░` 28%（36/129）
-- 状态：todo 92 · doing 0 · review 0 · done 36 · blocked 1
+- 状态：todo 91 · doing 0 · review 1 · done 36 · blocked 1
 - 最近更新：2026-10-11
 
 ## 按阶段
@@ -54,9 +54,9 @@
 |---|---|---|---|
 | claude | `██████████` 100%（23/23） | 0 | 0 |
 | codex | `██████████` 100%（1/1） | 0 | 0 |
-| cody | `█████████░` 92%（11/12） | 0 | 1 |
+| cody | `████████░░` 85%（11/13） | 0 | 1 |
 | 产品负责人 | `██████████` 100%（1/1） | 0 | 0 |
-| （未认领） | `░░░░░░░░░░` 0%（0/92） | 0 | 82 |
+| （未认领） | `░░░░░░░░░░` 0%（0/91） | 0 | 82 |
 
 ## 接下来可做（无未完成前置的待办，按优先级 / 波次）
 
@@ -69,15 +69,14 @@
 | 5 | [S1-DEP-001](tasks/S1-DEP-001.md) K3s 基线治理：命名空间、专属库、默认拒绝、配额 | P0 | 1 | 3d | DEP |
 | 6 | [S1-QA-002](tasks/S1-QA-002.md) TCK 运行时语义套件（.NET 与 TS 同一组 fixture） | P0 | 1 | 3d | QA |
 | 7 | [S1-RT-003](tasks/S1-RT-003.md) @qian/runtime：TypeScript 同语义运行时（外壳插件树） | P0 | 2 | 5d | RT |
-| 8 | [S1-RT-016](tasks/S1-RT-016.md) marketplace.json Schema、条目校验器与多市场登记 | P0 | 2 | 3d | RT |
-| 9 | [S1-YUE-004](tasks/S1-YUE-004.md) @yue/tokens：三层令牌、明暗两态、首帧防闪烁与对比度单测 | P0 | 2 | 3d | YUE |
-| 10 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | P1 | 2 | 1d | KUN |
+| 8 | [S1-YUE-004](tasks/S1-YUE-004.md) @yue/tokens：三层令牌、明暗两态、首帧防闪烁与对比度单测 | P0 | 2 | 3d | YUE |
+| 9 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | P1 | 2 | 1d | KUN |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 10 | 30.5d |
+| 第 1 层 | 9 | 27.5d |
 | 第 2 层 | 13 | 49.5d |
 | 第 3 层 | 16 | 67d |
 | 第 4 层 | 14 | 51d |
@@ -91,4 +90,6 @@
 
 ## 进行中
 
-（无）
+| 任务 | 状态 | 负责人 | 更新 |
+|---|---|---|---|
+| [S1-RT-016](tasks/S1-RT-016.md) marketplace.json Schema、条目校验器与多市场登记 | review | cody | 2026-10-11 |

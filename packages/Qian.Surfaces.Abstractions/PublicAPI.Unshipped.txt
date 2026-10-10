@@ -135,3 +135,19 @@ Qian.Surfaces.Abstractions.SurfaceValidationOptions.CatalogComplete.init -> void
 static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Schema -> Qian.Runtime.Errors.ErrorCode!
 Qian.Surfaces.Abstractions.ParsedComponent.Profile.init -> void
 Qian.Surfaces.Abstractions.ParsedComponent.Profile.get -> string!
+Qian.Surfaces.Abstractions.MarketplaceValidationResult
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.Marketplace.get -> System.Text.Json.JsonElement?
+override Qian.Surfaces.Abstractions.MarketplaceValidationResult.ToString() -> string!
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.Marketplace.init -> void
+static Qian.Surfaces.Abstractions.MarketplaceValidationResult.operator !=(Qian.Surfaces.Abstractions.MarketplaceValidationResult? left, Qian.Surfaces.Abstractions.MarketplaceValidationResult? right) -> bool
+static Qian.Surfaces.Abstractions.MarketplaceValidationResult.operator ==(Qian.Surfaces.Abstractions.MarketplaceValidationResult? left, Qian.Surfaces.Abstractions.MarketplaceValidationResult? right) -> bool
+override Qian.Surfaces.Abstractions.MarketplaceValidationResult.GetHashCode() -> int
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>!
+override Qian.Surfaces.Abstractions.MarketplaceValidationResult.Equals(object? obj) -> bool
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.Diagnostics.init -> void
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.Equals(Qian.Surfaces.Abstractions.MarketplaceValidationResult? other) -> bool
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.<Clone>$() -> Qian.Surfaces.Abstractions.MarketplaceValidationResult!
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.Deconstruct(out System.Text.Json.JsonElement? Marketplace, out System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Surfaces.Abstractions.ISurfaceValidator.ValidateMarketplace(string! file, string! content, string? traceId = null) -> Qian.Surfaces.Abstractions.MarketplaceValidationResult!
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.MarketplaceValidationResult(System.Text.Json.JsonElement? Marketplace, System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Surfaces.Abstractions.MarketplaceValidationResult.IsValid.get -> bool
