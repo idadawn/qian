@@ -1,0 +1,1 @@
+internal static class Consumer { internal static void Register(Microsoft.Extensions.DependencyInjection.IServiceCollection services) => new Kun.Identity.Configuration.KunIdentityBuilder(services).AddS2SIssuer(options => options.Issuer = "invalid-legacy"); }
