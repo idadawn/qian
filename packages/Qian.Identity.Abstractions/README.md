@@ -34,3 +34,5 @@
 ## 已知限制与延期项
 
 本任务仅契约先行，不代表 OpenIddict 服务、SSO、连接器、三因子认证或会话失效链路已实现／上线。对应后续 IDP 任务负责真正的认证、权限与生命周期实现。
+
+- **延期项（S1-DEC-013，2026-10-10）**：本包直接引用 `Kun.EventBus` 取稳定事件标记与注册端口，因为 Kun 尚未拆出 `Kun.EventBus.Abstractions`；这会把 StackExchange.Redis 等实现依赖传递进 Definition 包，与组件规格 §6.1「Definition 仅依赖 Kun.*.Abstractions」不符。上游拆包后回切、以及依赖图门禁对 `Kun.*` 的白名单检查，由 S1-KUN-010 跟踪。
