@@ -4502,14 +4502,14 @@
  {
   "id": "S1-RT-010",
   "title": "文档生成器 qian docs generate 与事件分发模式一致性校验",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
   "wave": 2,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
@@ -4518,7 +4518,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.2",
@@ -4533,12 +4533,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-10",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.3 / D20.9：由代码生成 <code>docs/generated/{config-catalog,module-graph,event-graph,seam-graph}.md</code>；<code>[QianEvent(Mode = ...)]</code> 声明与调用点一致性校验并生成「事件生产方与消费方」映射；<code>AGENTS.md</code> 与包 README 模板随 <code>qian init</code> 生成。新鲜度门禁本身由 S1-QA-006 接入 CI。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：<code>qian docs generate</code> 输出配置目录、模块图、事件图、seam 图四份文件，内容由当前 profile 树与代码派生</li>\n<li class='chk'><span class='box'></span>CI：事件声明的模式与调用点不一致时失败并生成生产方 / 消费方映射</li>\n<li class='chk'><span class='box'></span>UT：生成的 <code>AGENTS.md</code> 与 README 模板含「模型体验」与「已知限制与延期项」必需节</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.3 / D20.9：由代码生成 <code>docs/generated/{config-catalog,module-graph,event-graph,seam-graph}.md</code>；<code>[QianEvent(Mode = ...)]</code> 声明与调用点一致性校验并生成「事件生产方与消费方」映射；<code>AGENTS.md</code> 与包 README 模板随 <code>qian init</code> 生成。新鲜度门禁本身由 S1-QA-006 接入 CI。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian docs generate</code> 输出配置目录、模块图、事件图、seam 图四份文件，内容由当前 profile 树与代码派生</li>\n<li class='chk done'><span class='box'>✓</span>CI：事件声明的模式与调用点不一致时失败并生成生产方 / 消费方映射</li>\n<li class='chk done'><span class='box'>✓</span>UT：生成的 <code>AGENTS.md</code> 与 README 模板含「模型体验」与「已知限制与延期项」必需节</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-10 cody：开始：由真实 profile 树、配置 Schema 与事件代码生成四份文档，补事件模式一致性门禁及组件文档模板。</li>\n<li>2026-10-10 cody：三项验收完成：实际 profile 派生四份文档，C# 语义绑定与模式反例保留生产/消费映射，skill-only init 消费文档模板；251 项 .NET、35 项门禁及 5 项 CLI 测试通过，事件校验 CI 已接入。</li>\n</ul>",
   "file": "pm/tasks/S1-RT-010.md"
  },
  {

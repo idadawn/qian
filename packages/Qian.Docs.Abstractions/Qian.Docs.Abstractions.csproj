@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>配置、模块、事件与 seam 派生文档契约。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
+    <ProjectReference Include="../Qian.Profiles.Abstractions/Qian.Profiles.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
+  </ItemGroup>
+</Project>
