@@ -12,7 +12,7 @@
     "yue:test": "vitest run",
     "yue:a11y": "pnpm --filter yue-playground e2e",
     "yue:lighthouse": "pnpm --filter yue-playground lighthouse",
-    "yue:boundaries": "eslint --config eslint.boundaries.config.mjs packages/yue apps",
+    "yue:boundaries": "pnpm --filter @idadawn/yue-tokens build && eslint --config eslint.boundaries.config.mjs packages/yue apps",
     "yue:publint": "turbo run publint --filter=./packages/yue/*",
     "yue:circular": "depcruise --config .dependency-cruiser.cjs packages/yue apps",
     "yue:build": "turbo run build --filter=./packages/yue/* --filter=./apps/*",
