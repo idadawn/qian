@@ -1,0 +1,7 @@
+{
+  "theme": "dark",
+  "preference": "system",
+  "brand": "teal",
+  "dark": true,
+  "scheme": "dark"
+}

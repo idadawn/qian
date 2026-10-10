@@ -7,12 +7,12 @@
     "node": "^22.12.0 || >=24.0.0"
   },
   "scripts": {
-    "yue:lint": "eslint packages/yue apps",
+    "yue:lint": "pnpm --filter @idadawn/yue-tokens tokens:check && eslint packages/yue apps",
     "yue:typecheck": "turbo run typecheck --filter=./packages/yue/* --filter=./apps/* && tsc -p tests/gates/yue/tsconfig.json",
     "yue:test": "vitest run",
     "yue:a11y": "pnpm --filter yue-playground e2e",
     "yue:lighthouse": "pnpm --filter yue-playground lighthouse",
-    "yue:boundaries": "eslint --config eslint.boundaries.config.mjs packages/yue apps",
+    "yue:boundaries": "pnpm --filter @idadawn/yue-tokens build && eslint --config eslint.boundaries.config.mjs packages/yue apps",
     "yue:publint": "turbo run publint --filter=./packages/yue/*",
     "yue:circular": "depcruise --config .dependency-cruiser.cjs packages/yue apps",
     "yue:build": "turbo run build --filter=./packages/yue/* --filter=./apps/*",
