@@ -3010,20 +3010,20 @@
  {
   "id": "S1-KUN-003",
   "title": "Kun 网关加固与 gRPC 流式拦截器修复",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
   "wave": 1,
   "priority": "P0",
   "type": "fix",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -3038,12 +3038,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-010-gateway-layers.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
-   "done": 0,
+   "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 4、5 项：回退认证策略默认「要求已认证」、路由级限流真正绑定、可信代理网段、JWKS 双钥热轮换、网关宿主 <code>AddKunObservability</code>、<code>/healthz</code> <code>/readyz</code>、<code>client_credentials</code> 签发端点；Tracing / Auth / Result 三个 gRPC 拦截器补齐 server / client / duplex streaming。7.9 网关装配的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：未带令牌请求任一业务路由返回 401（除显式匿名白名单）</li>\n<li class='chk'><span class='box'></span>IT：对限流路由超阈值返回 429 且响应头含 <code>Retry-After</code></li>\n<li class='chk'><span class='box'></span>IT：轮换签名私钥后，旧 <code>kid</code> 令牌在重叠窗口内仍可验证，窗口外被拒绝；过程不重启进程</li>\n<li class='chk'><span class='box'></span>E2E：伪造 <code>X-Forwarded-For</code> 的请求（非可信网段发出）不改变限流分区</li>\n<li class='chk'><span class='box'></span>IT：无 <code>tenant_id</code> 的流式调用在首帧前被拒绝（<code>Unauthenticated</code>）；流式调用出现在 trace 中</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 4、5 项：回退认证策略默认「要求已认证」、路由级限流真正绑定、可信代理网段、JWKS 双钥热轮换、网关宿主 <code>AddKunObservability</code>、<code>/healthz</code> <code>/readyz</code>、<code>client_credentials</code> 签发端点；Tracing / Auth / Result 三个 gRPC 拦截器补齐 server / client / duplex streaming。7.9 网关装配的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>E2E：未带令牌请求任一业务路由返回 401（除显式匿名白名单）</li>\n<li class='chk done'><span class='box'>✓</span>IT：对限流路由超阈值返回 429 且响应头含 <code>Retry-After</code></li>\n<li class='chk done'><span class='box'>✓</span>IT：轮换签名私钥后，旧 <code>kid</code> 令牌在重叠窗口内仍可验证，窗口外被拒绝；过程不重启进程</li>\n<li class='chk done'><span class='box'>✓</span>E2E：伪造 <code>X-Forwarded-For</code> 的请求（非可信网段发出）不改变限流分区</li>\n<li class='chk done'><span class='box'>✓</span>IT：无 <code>tenant_id</code> 的流式调用在首帧前被拒绝（<code>Unauthenticated</code>）；流式调用出现在 trace 中</li>\n</ul>\n<h4>验收证据与边界</h4>\n<ul>\n<li>Kun 上游实现与真实集成测试：网关 9 项、gRPC 四形态 8 项；实际 Kestrel/HTTP2 与 RSA JWT，缺租户时 handler 和应用帧读取计数均为零。</li>\n<li>签名私钥在同进程原子替换后使用新 kid；重叠 JWKS 同时验旧、新签名，到期刷新 JWKS 后拒绝旧签名。消费者缓存不会被主动撤销，仍须验证寿命与时钟偏移并刷新公钥；多副本和重启需协调轮换。</li>\n<li>信任名单为空、非匹配代理、显式可信 IP、可信 CIDR 四种情形均经实际请求验证；仅后两者可根据转发地址切换分区。</li>\n<li>本地全仓 Release 测试 811 项通过、2 项既有外部对象存储测试跳过；本机不跑依赖已部署示例环境的测试及 Linux 专用原生示例测试，后者由上游 CI 单独执行。</li>\n<li>原生网关开启观测后的健康检查/就绪/JWKS 200、匿名业务路由 401 已验证；EF 观测通过运行时特性守卫从原生路径裁掉，保留原生编译门禁。</li>\n<li>机器 <code>client_credentials</code> 端点按 ADR-010 D10.5 与 PRD 7.9 属于 <code>qian.identity</code>（S1-IDP-002）；此项完成 Kun 的认证换签边界，不将身份产品端点标为已实现。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：开始：Kun 2026.10.9 发版任务已收尾；独立 worktree 核对网关安全默认值、限流、代理头、签名钥轮换与三类 gRPC 流式拦截器。</li>\n<li>2026-10-11 cody：验收实现与本地检查通过，Kun PR https://github.com/idadawn/kun/pull/49；等待上游 CI 全绿合并后记录完成。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-003.md"
  },
  {

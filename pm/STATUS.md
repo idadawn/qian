@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`██░░░░░░░░` 27%（34/128）
-- 状态：todo 94 · doing 0 · review 0 · done 34 · blocked 0
+- 状态：todo 93 · doing 0 · review 1 · done 34 · blocked 0
 - 最近更新：2026-10-11
 
 ## 按阶段
@@ -54,9 +54,9 @@
 |---|---|---|---|
 | claude | `██████████` 100%（23/23） | 0 | 0 |
 | codex | `██████████` 100%（1/1） | 0 | 0 |
-| cody | `██████████` 100%（9/9） | 0 | 0 |
+| cody | `█████████░` 90%（9/10） | 0 | 0 |
 | 产品负责人 | `██████████` 100%（1/1） | 0 | 0 |
-| （未认领） | `░░░░░░░░░░` 0%（0/94） | 0 | 82 |
+| （未认领） | `░░░░░░░░░░` 0%（0/93） | 0 | 82 |
 
 ## 接下来可做（无未完成前置的待办，按优先级 / 波次）
 
@@ -66,20 +66,19 @@
 | 2 | [S1-CFG-001](tasks/S1-CFG-001.md) Apollo 配置 provider（自研）与配置源顺序 | P0 | 1 | 5d | CFG |
 | 3 | [S1-DATA-001](tasks/S1-DATA-001.md) AddQianData 默认安全装配与 RLS 迁移模板 | P0 | 1 | 5d | DATA |
 | 4 | [S1-DEP-001](tasks/S1-DEP-001.md) K3s 基线治理：命名空间、专属库、默认拒绝、配额 | P0 | 1 | 3d | DEP |
-| 5 | [S1-KUN-003](tasks/S1-KUN-003.md) Kun 网关加固与 gRPC 流式拦截器修复 | P0 | 1 | 3d | KUN |
-| 6 | [S1-KUN-004](tasks/S1-KUN-004.md) Kun Identity 客户端链路修复与 S2S 签发器收敛去产品化 | P0 | 1 | 3d | KUN |
-| 7 | [S1-QA-002](tasks/S1-QA-002.md) TCK 运行时语义套件（.NET 与 TS 同一组 fixture） | P0 | 1 | 3d | QA |
-| 8 | [S1-RT-003](tasks/S1-RT-003.md) @qian/runtime：TypeScript 同语义运行时（外壳插件树） | P0 | 2 | 5d | RT |
-| 9 | [S1-RT-016](tasks/S1-RT-016.md) marketplace.json Schema、条目校验器与多市场登记 | P0 | 2 | 3d | RT |
-| 10 | [S1-YUE-004](tasks/S1-YUE-004.md) @yue/tokens：三层令牌、明暗两态、首帧防闪烁与对比度单测 | P0 | 2 | 3d | YUE |
-| 11 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | P1 | 2 | 1d | KUN |
-| 12 | [S1-KUN-007](tasks/S1-KUN-007.md) Kun Saga 执行器其余修补（Scoped 工厂、步骤租约、重试） | P1 | 4 | 2d | KUN |
+| 5 | [S1-KUN-004](tasks/S1-KUN-004.md) Kun Identity 客户端链路修复与 S2S 签发器收敛去产品化 | P0 | 1 | 3d | KUN |
+| 6 | [S1-QA-002](tasks/S1-QA-002.md) TCK 运行时语义套件（.NET 与 TS 同一组 fixture） | P0 | 1 | 3d | QA |
+| 7 | [S1-RT-003](tasks/S1-RT-003.md) @qian/runtime：TypeScript 同语义运行时（外壳插件树） | P0 | 2 | 5d | RT |
+| 8 | [S1-RT-016](tasks/S1-RT-016.md) marketplace.json Schema、条目校验器与多市场登记 | P0 | 2 | 3d | RT |
+| 9 | [S1-YUE-004](tasks/S1-YUE-004.md) @yue/tokens：三层令牌、明暗两态、首帧防闪烁与对比度单测 | P0 | 2 | 3d | YUE |
+| 10 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | P1 | 2 | 1d | KUN |
+| 11 | [S1-KUN-007](tasks/S1-KUN-007.md) Kun Saga 执行器其余修补（Scoped 工厂、步骤租约、重试） | P1 | 4 | 2d | KUN |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 12 | 38d |
+| 第 1 层 | 11 | 35d |
 | 第 2 层 | 12 | 46.5d |
 | 第 3 层 | 16 | 67d |
 | 第 4 层 | 14 | 51d |
@@ -93,4 +92,6 @@
 
 ## 进行中
 
-（无）
+| 任务 | 状态 | 负责人 | 更新 |
+|---|---|---|---|
+| [S1-KUN-003](tasks/S1-KUN-003.md) Kun 网关加固与 gRPC 流式拦截器修复 | review | cody | 2026-10-11 |
