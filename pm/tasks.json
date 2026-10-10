@@ -3181,22 +3181,22 @@
  {
   "id": "S1-KUN-007",
   "title": "Kun Saga 执行器其余修补（Scoped 工厂、步骤租约、重试）",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
   "wave": 4,
   "priority": "P1",
   "type": "fix",
-  "owner": "",
+  "owner": "cody",
   "estimate": "2d",
   "days": 2.0,
   "depends": [
    "S1-KUN-001"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.1",
@@ -3207,12 +3207,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/migration/README.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 3 项（P1 可选）：<code>TSaga</code> 从单例改为 Scoped 工厂、去掉启动期临时容器、步骤租约 / 行锁、上下文回写、步骤重试、<code>ISaga.Name</code>。租户回灌已在 S1-KUN-001 中以 P0 完成；开通编排已裁决由 <code>qian.lifecycle</code> 幂等步骤表承担（R13），本项不阻塞退出标准，放第 4 波。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：两个副本同时运行同一 Saga 实例，每步只执行一次</li>\n<li class='chk'><span class='box'></span>UT：Saga 以 Scoped 工厂创建，启动期不再构造临时容器</li>\n<li class='chk'><span class='box'></span>修复以上游 PR 或补丁包落地并记录回合入日期</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 3 项（P1 可选）：<code>TSaga</code> 从单例改为 Scoped 工厂、去掉启动期临时容器、步骤租约 / 行锁、上下文回写、步骤重试、<code>ISaga.Name</code>。租户回灌已在 S1-KUN-001 中以 P0 完成；开通编排已裁决由 <code>qian.lifecycle</code> 幂等步骤表承担（R13），本项不阻塞退出标准，放第 4 波。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：两个副本同时运行同一 Saga 实例，每步只执行一次</li>\n<li class='chk done'><span class='box'>✓</span>UT：Saga 以 Scoped 工厂创建，启动期不再构造临时容器</li>\n<li class='chk done'><span class='box'>✓</span>修复以上游 PR 或补丁包落地并记录回合入日期</li>\n</ul>\n<h4>验收证据与边界</h4>\n<ul>\n<li>真实 PostgreSQL 上运行两个独立宿主、各自执行器与超时检测器，共用实例行锁后逐步各执行一次；每步在新的 DI scope 中创建。注册期零构造、作用域验证、释放及稳定 <code>ISaga.Name</code> 通过单元测试。</li>\n<li>新增六项执行边界集成测试，覆盖部分失败上下文、耗尽重试后逆向补偿、退避跨重启、失败本地写入回滚、关闭恢复及超时竞争。全仓本地 Release 测试 801 通过、2 项既有外部对象存储测试跳过；Linux 原生示例测试由 CI 执行。</li>\n<li><code>MaxAttempts</code> 默认 1 保持兼容；增加重试次数要求步骤幂等。消费方部署前须增加 <code>saga_step_queue.NextAttemptAt</code> 可空列，上游附 Order 示例迁移并已验证模型一致。</li>\n<li>数据库锁防止存活副本并发执行同一步；进程崩溃后的远程副作用可能重放，仍要求幂等键。步骤必须响应取消，宿主关闭不触发业务补偿。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：开始：S1-KUN-003 已提交 review；继续 Kun 领域的 Saga Scoped 工厂、步骤互斥、上下文回写与重试。</li>\n<li>2026-10-11 cody：实现与本地验收完成，Kun PR https://github.com/idadawn/kun/pull/50；待上游 CI 全绿合并后记录回合入日期并完成。</li>\n<li>2026-10-11 cody：完成：Kun PR #50 于 2026-10-11 合并，24 项必跑 CI 全绿（含完整测试与 Linux AOT 门禁）；回合入日期已记录。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-007.md"
  },
  {
