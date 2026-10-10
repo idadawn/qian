@@ -69,7 +69,7 @@
    "S1-RT-014",
    "S1-RT-004"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -116,7 +116,7 @@
    "S1-AUD-001",
    "S1-RT-006"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -160,10 +160,9 @@
    "S1-KUN-009"
   ],
   "blockedBy": [
-   "S1-DATA-001",
-   "S1-KUN-009"
+   "S1-DATA-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -210,7 +209,7 @@
    "S1-EVT-001",
    "S1-SCH-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -252,7 +251,7 @@
    "S1-TEN-001",
    "S1-EVT-002"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -293,7 +292,7 @@
    "S1-AUD-003",
    "S1-EVT-001"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -332,11 +331,9 @@
    "S1-AGT-001",
    "S1-KUN-009"
   ],
-  "blockedBy": [
-   "S1-KUN-009"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -384,7 +381,7 @@
    "S1-AZ-001",
    "S1-RT-004"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -428,7 +425,7 @@
    "S1-TEN-001",
    "S1-DATA-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -471,7 +468,7 @@
    "S1-AUD-001",
    "S1-EVT-001"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -518,7 +515,7 @@
    "S1-IDP-009",
    "S1-YUE-009"
   ],
-  "order": 8,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -563,7 +560,7 @@
    "S1-AZ-001",
    "S1-DATA-004"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -605,11 +602,9 @@
    "S1-RT-001",
    "S1-KUN-009"
   ],
-  "blockedBy": [
-   "S1-KUN-009"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -651,7 +646,7 @@
   "blockedBy": [
    "S1-CFG-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -692,7 +687,7 @@
    "S1-CFG-001",
    "S1-AUD-001"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -733,7 +728,7 @@
    "S1-CFG-001",
    "S1-TEN-001"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -776,11 +771,9 @@
    "S1-RT-001",
    "S1-KUN-009"
   ],
-  "blockedBy": [
-   "S1-KUN-009"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -822,7 +815,7 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -863,7 +856,7 @@
    "S1-DATA-001",
    "S1-CFG-002"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -902,7 +895,7 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -1592,7 +1585,7 @@
    "S1-RT-013",
    "S1-DEP-003"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -1633,7 +1626,7 @@
    "S1-DEP-004",
    "S1-DATA-002"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -1674,7 +1667,7 @@
    "S1-AUD-003",
    "S1-DEP-001"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -2000,7 +1993,7 @@
    "S1-EVT-001",
    "S1-AUD-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -2051,7 +2044,7 @@
    "S1-YUE-002",
    "S1-CFG-004"
   ],
-  "order": 10,
+  "order": 9,
   "readyNow": false,
   "refs": [
    {
@@ -2099,10 +2092,9 @@
    "S1-KUN-009"
   ],
   "blockedBy": [
-   "S1-DATA-001",
-   "S1-KUN-009"
+   "S1-DATA-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -2155,7 +2147,7 @@
    "S1-EVT-001",
    "S1-TEN-001"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -2196,7 +2188,7 @@
    "S1-EVT-001",
    "S1-RT-006"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2242,10 +2234,9 @@
    "S1-TEN-004",
    "S1-AZ-004",
    "S1-AUD-001",
-   "S1-EVT-001",
-   "S1-KUN-009"
+   "S1-EVT-001"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2291,7 +2282,7 @@
    "S1-FILE-001",
    "S1-CFG-002"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2332,7 +2323,7 @@
    "S1-FILE-001",
    "S1-SCH-001"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2376,7 +2367,7 @@
    "S1-KUN-004",
    "S1-IDP-005"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -2427,7 +2418,7 @@
   "blockedBy": [
    "S1-GW-001"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2474,7 +2465,7 @@
    "S1-RT-013",
    "S1-AUD-003"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2566,7 +2557,7 @@
    "S1-TEN-001",
    "S1-AZ-001"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -2609,7 +2600,7 @@
   "blockedBy": [
    "S1-IDP-002"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -2648,7 +2639,7 @@
   "blockedBy": [
    "S1-IDP-003"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -2689,7 +2680,7 @@
    "S1-IDP-002",
    "S1-KUN-004"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -2738,7 +2729,7 @@
    "S1-TEN-004",
    "S1-AUD-001"
   ],
-  "order": 8,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -2783,7 +2774,7 @@
    "S1-IDP-003",
    "S1-CFG-002"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -2828,7 +2819,7 @@
    "S1-IDP-007",
    "S1-RT-004"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -2869,7 +2860,7 @@
    "S1-IDP-003",
    "S1-DATA-001"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -2914,7 +2905,7 @@
    "S1-IDP-009",
    "S1-EVT-001"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -3269,7 +3260,7 @@
  {
   "id": "S1-KUN-009",
   "title": "Kun 2026.10.9 发版与 KunVersion 升级：消费 S1-KUN-002 / 005 / 006 的上游修复",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
@@ -3285,7 +3276,7 @@
    "S1-KUN-006"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -3306,7 +3297,7 @@
    "done": 4,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-KUN-002 / S1-KUN-005 / S1-KUN-006 的上游修复已合入 kun main（idadawn/kun#45、#46、#47，CI 全绿），但 Kun 最新正式版仍是 2026.10.8，nuget.org 没有新包（release-drafter 已自动生成 2026.10.9 草稿，<code>release.yml</code> 只在推 tag 时触发）；Qian 的 <code>KunVersion</code> 仍为 2026.10.8，依赖这三项的 S1-AUD-001、S1-AZ-001、S1-CFG-001、S1-DATA-001、S1-EVT-001、S1-FILE-001、S1-RT-006、S1-RT-015 在代码里拿不到 <code>AddKunAuditing&lt;TContext&gt;</code>、<code>Kun.Authorization</code> 端口、<code>EfOutboxMessageStore</code>、<code>IScopedPublisher</code>、<code>AddKunOptions(JsonTypeInfo)</code>、<code>ICapabilityRegistry</code> 等新 API。按 ADR-021 D21.3，升级 Kun 只改 <code>Directory.Packages.props</code> 的 <code>KunVersion</code> 一处；与 S1-KUN-008 同型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>Kun 打 tag <code>v2026.10.9</code> 并由 <code>release.yml</code> 发到 nuget.org（与 GitHub Packages），CHANGELOG <code>[Unreleased]</code> 的 S1-KUN-002 / 005 / 006 三节归入该版本（kun#48 合并提交 f61520e 上打附注 tag；发布运行 [38064201281](https://github.com/idadawn/kun/actions/runs/38064201281) 成功，[Release v2026.10.9](https://github.com/idadawn/kun/releases/tag/v2026.10.9) 68 个包资产）</li>\n<li class='chk done'><span class='box'>✓</span><code>KunVersion</code> 改为 2026.10.9，全部 <code>Kun.*</code> 随之升级；<code>dotnet build</code> 0 警告，全量测试（含 Testcontainers 集成测试）与门禁自测通过；<code>tests/gates/bannedapi</code> 四个样例随新包重跑（新包的 KUNLEGACY001 Obsolete 与 RS0030 / QIAN0002 叠加后判定仍正确）（2026-10-11 本机对 nuget.org 正式包：还原通过，Release 构建 0 警告 0 错误，<code>dotnet test</code> 243 通过 0 跳过，<code>tests/gates</code> 35 项通过——三负例同时报 KUNLEGACY001 与 RS0030 / QIAN0002、正例通过，<code>check_deps.py</code> 10 个包通过）</li>\n<li class='chk done'><span class='box'>✓</span>文档站按 <code>v2026.10.9</code> 生成 Kun 小节与 Kun API 参考，产物检查（横幅 tag 等于 <code>KunVersion</code>）通过；「与 Qian 的关系」的补丁状态写明三项修复已被 Qian 消费（<code>KUN_DOCS_PATH</code> 指向本机 kun 克隆构建：654 页、产物 61 MB，站点检查与 <code>check_docs.py</code> 625 文件通过；镜像页 frontmatter <code>version: 2026.10.9</code>，版本矩阵 Kun 列 2026.10.9；新页 ADR-015 / ADR-016 / Outbox 指南随 tag 镜像，API 参考含 <code>Kun.Authorization</code>、<code>Kun.Configuration.Apollo</code>；<code>with-qian.mdx</code> 状态表与模块表已更新）</li>\n<li class='chk done'><span class='box'>✓</span>下游要跟的行为变更记入对应任务：Outbox 新列 <code>NextAttemptAt</code> 迁移与非事务 Outbox 存储默认拒绝无锁（S1-EVT-001）、<code>PermissionBehavior</code> 须逐命令或全局注册（S1-AZ-001）、snake_case / Guid v7 / <code>xmin</code> 约定为 opt-in（S1-DATA-001）（三个任务的背景各加一段「Kun 2026.10.9 行为变更」并记日志；核对上游源码后 <code>PermissionBehavior</code> 只有逐命令泛型注册、没有全局开放泛型注册，S1-AZ-001 须自行决定）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的缺口）</li>\n<li>2026-10-10 claude：开始：kun#48 发版 PR 已开，CI 后打 tag v2026.10.9；随后 Qian 升级 KunVersion</li>\n<li>2026-10-10 claude：kun#48 24 项 CI 全绿后合并，v2026.10.9 已打在 merge commit 并由 release.yml 发布到 nuget.org 与 GitHub Packages；发布前用本地打包的 2026.10.9 预验证 Qian：Release 构建 0 警告（补了分析器两处 XML 注释）、243 项测试通过、Banned API 四样例判定不变（负例多报 KUNLEGACY001）、依赖图门禁通过</li>\n<li>2026-10-11 someone：四项验收全部勾选，PR 待 CI 合并</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-KUN-002 / S1-KUN-005 / S1-KUN-006 的上游修复已合入 kun main（idadawn/kun#45、#46、#47，CI 全绿），但 Kun 最新正式版仍是 2026.10.8，nuget.org 没有新包（release-drafter 已自动生成 2026.10.9 草稿，<code>release.yml</code> 只在推 tag 时触发）；Qian 的 <code>KunVersion</code> 仍为 2026.10.8，依赖这三项的 S1-AUD-001、S1-AZ-001、S1-CFG-001、S1-DATA-001、S1-EVT-001、S1-FILE-001、S1-RT-006、S1-RT-015 在代码里拿不到 <code>AddKunAuditing&lt;TContext&gt;</code>、<code>Kun.Authorization</code> 端口、<code>EfOutboxMessageStore</code>、<code>IScopedPublisher</code>、<code>AddKunOptions(JsonTypeInfo)</code>、<code>ICapabilityRegistry</code> 等新 API。按 ADR-021 D21.3，升级 Kun 只改 <code>Directory.Packages.props</code> 的 <code>KunVersion</code> 一处；与 S1-KUN-008 同型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>Kun 打 tag <code>v2026.10.9</code> 并由 <code>release.yml</code> 发到 nuget.org（与 GitHub Packages），CHANGELOG <code>[Unreleased]</code> 的 S1-KUN-002 / 005 / 006 三节归入该版本（kun#48 合并提交 f61520e 上打附注 tag；发布运行 [38064201281](https://github.com/idadawn/kun/actions/runs/38064201281) 成功，[Release v2026.10.9](https://github.com/idadawn/kun/releases/tag/v2026.10.9) 68 个包资产）</li>\n<li class='chk done'><span class='box'>✓</span><code>KunVersion</code> 改为 2026.10.9，全部 <code>Kun.*</code> 随之升级；<code>dotnet build</code> 0 警告，全量测试（含 Testcontainers 集成测试）与门禁自测通过；<code>tests/gates/bannedapi</code> 四个样例随新包重跑（新包的 KUNLEGACY001 Obsolete 与 RS0030 / QIAN0002 叠加后判定仍正确）（2026-10-11 本机对 nuget.org 正式包：还原通过，Release 构建 0 警告 0 错误，<code>dotnet test</code> 243 通过 0 跳过，<code>tests/gates</code> 35 项通过——三负例同时报 KUNLEGACY001 与 RS0030 / QIAN0002、正例通过，<code>check_deps.py</code> 10 个包通过）</li>\n<li class='chk done'><span class='box'>✓</span>文档站按 <code>v2026.10.9</code> 生成 Kun 小节与 Kun API 参考，产物检查（横幅 tag 等于 <code>KunVersion</code>）通过；「与 Qian 的关系」的补丁状态写明三项修复已被 Qian 消费（<code>KUN_DOCS_PATH</code> 指向本机 kun 克隆构建：654 页、产物 61 MB，站点检查与 <code>check_docs.py</code> 625 文件通过；镜像页 frontmatter <code>version: 2026.10.9</code>，版本矩阵 Kun 列 2026.10.9；新页 ADR-015 / ADR-016 / Outbox 指南随 tag 镜像，API 参考含 <code>Kun.Authorization</code>、<code>Kun.Configuration.Apollo</code>；<code>with-qian.mdx</code> 状态表与模块表已更新）</li>\n<li class='chk done'><span class='box'>✓</span>下游要跟的行为变更记入对应任务：Outbox 新列 <code>NextAttemptAt</code> 迁移与非事务 Outbox 存储默认拒绝无锁（S1-EVT-001）、<code>PermissionBehavior</code> 须逐命令或全局注册（S1-AZ-001）、snake_case / Guid v7 / <code>xmin</code> 约定为 opt-in（S1-DATA-001）（三个任务的背景各加一段「Kun 2026.10.9 行为变更」并记日志；核对上游源码后 <code>PermissionBehavior</code> 只有逐命令泛型注册、没有全局开放泛型注册，S1-AZ-001 须自行决定）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的缺口）</li>\n<li>2026-10-10 claude：开始：kun#48 发版 PR 已开，CI 后打 tag v2026.10.9；随后 Qian 升级 KunVersion</li>\n<li>2026-10-10 claude：kun#48 24 项 CI 全绿后合并，v2026.10.9 已打在 merge commit 并由 release.yml 发布到 nuget.org 与 GitHub Packages；发布前用本地打包的 2026.10.9 预验证 Qian：Release 构建 0 警告（补了分析器两处 XML 注释）、243 项测试通过、Banned API 四样例判定不变（负例多报 KUNLEGACY001）、依赖图门禁通过</li>\n<li>2026-10-11 someone：四项验收全部勾选，PR 待 CI 合并</li>\n<li>2026-10-11 someone：已合并 PR #25；并入 main 后重跑：Release 构建 0 警告、252 项测试通过、门禁 35 项与依赖图 12 个包通过、文档站 658 页检查通过</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-009.md"
  },
  {
@@ -3325,11 +3316,9 @@
   "depends": [
    "S1-KUN-009"
   ],
-  "blockedBy": [
-   "S1-KUN-009"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/specs/component-model.md#6.1",
@@ -3374,7 +3363,7 @@
    "S1-CFG-002",
    "S1-TEN-001"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -3421,7 +3410,7 @@
    "S1-AUD-004",
    "S1-DEP-005"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -3468,7 +3457,7 @@
    "S1-CFG-002",
    "S1-AUD-001"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -3511,7 +3500,7 @@
    "S1-EVT-001",
    "S1-SCH-001"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -3553,7 +3542,7 @@
    "S1-NTF-001",
    "S1-CFG-002"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -3797,7 +3786,7 @@
    "S1-FILE-001",
    "S1-QA-002"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -3845,7 +3834,7 @@
    "S1-RT-005",
    "S1-AGT-002"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -3900,7 +3889,7 @@
    "S1-FILE-001",
    "S1-QA-003"
   ],
-  "order": 8,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -3948,7 +3937,7 @@
   "blockedBy": [
    "S1-RT-014"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4007,7 +3996,7 @@
    "S1-AUD-002",
    "S1-QA-004"
   ],
-  "order": 8,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -4058,7 +4047,7 @@
    "S1-IDP-002",
    "S1-ENT-002"
   ],
-  "order": 11,
+  "order": 10,
   "readyNow": false,
   "refs": [
    {
@@ -4236,7 +4225,7 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -4285,7 +4274,7 @@
    "S1-RT-004",
    "S1-CFG-002"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -4330,10 +4319,9 @@
   ],
   "blockedBy": [
    "S1-RT-004",
-   "S1-AZ-003",
-   "S1-KUN-009"
+   "S1-AZ-003"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -4376,7 +4364,7 @@
   "blockedBy": [
    "S1-RT-006"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -4473,7 +4461,7 @@
    "S1-RT-004",
    "S1-AUD-001"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -4652,7 +4640,7 @@
    "S1-RT-005",
    "S1-RT-014"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4696,7 +4684,7 @@
   "blockedBy": [
    "S1-RT-004"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -4739,10 +4727,9 @@
    "S1-KUN-009"
   ],
   "blockedBy": [
-   "S1-RT-014",
-   "S1-KUN-009"
+   "S1-RT-014"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4883,7 +4870,7 @@
    "S1-DATA-001",
    "S1-TEN-001"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -4928,7 +4915,7 @@
    "S1-CFG-002",
    "S1-EVT-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4971,7 +4958,7 @@
    "S1-GW-001",
    "S1-EVT-001"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -5012,7 +4999,7 @@
   "blockedBy": [
    "S1-DATA-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -5061,7 +5048,7 @@
    "S1-SCH-001",
    "S1-IDP-004"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -5102,7 +5089,7 @@
    "S1-TEN-001",
    "S1-RT-005"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -5151,7 +5138,7 @@
    "S1-CFG-003",
    "S1-AUD-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -5200,7 +5187,7 @@
    "S1-YUE-008",
    "S1-YUE-009"
   ],
-  "order": 8,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -5243,7 +5230,7 @@
    "S1-YUE-006",
    "S1-YUE-009"
   ],
-  "order": 8,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -5292,7 +5279,7 @@
    "S1-GW-001",
    "S1-RT-004"
   ],
-  "order": 9,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -5538,7 +5525,7 @@
    "S1-YUE-005",
    "S1-FILE-001"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -5581,7 +5568,7 @@
    "S1-YUE-007",
    "S1-IDP-010"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -5627,7 +5614,7 @@
    "S1-MGW-001",
    "S1-YUE-005"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
