@@ -44,6 +44,8 @@ Definition 定义服务键与事件。`list`、代理属性与显式执行使用
 ## 验证
 
 ```bash
+pnpm --filter @qian/surfaces build
+pnpm --filter qian build
 pnpm --filter @qian/runtime build
 pnpm --filter @qian/runtime test
 pnpm --filter @qian/runtime check:api
@@ -51,7 +53,7 @@ pnpm --filter @qian/runtime test:types
 pnpm --filter @qian/runtime test:browser
 ```
 
-TS harness 直接读取 `tck/runtime/*.scenario.yml`，不复制或改写语言独立输入；额外验证异步 Apply、动态撤销、bail false、取消与整树释放。完整 T15–T20/T23 等场景补齐及双侧报告由 S1-QA-002 接入。
+TS harness 复用 `tck/runtime/harness-ts.mjs` 与 `assembly-ts.mjs`，直接读取 23 个 YAML 场景与 T15–T17 的 3 个装配场景，不复制语言独立输入；从真实 minimal profile 起步，并调用真实 profile 装配器后挂载运行时。另有 8 项边界/错误验证，共 34 项测试。T19 自动热重载、T23 完整 platform 以及产品提示词链路的剩余验收见 S1-QA-002；不在测试里伪造这些产品功能。
 
 ## 已知限制与延期项
 
