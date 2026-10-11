@@ -140,3 +140,9 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 执行 `python3 -m unittest discover -s tests/gates`，同时验证依赖图、PublicAPI 与旧 API 的正反例。后续发布 Kun 新包时仍只通过 `Directory.Packages.props` 的 KunVersion 升级；此任务不伪装成已经消费上游新实现。
 
 S1-KUN-004 补充旧 Identity / Security S2S 签发器、旧注册方法及旧校验/JWKS 子模块的禁用清单。新增正反例使用当前 KunVersion 锁定的真实发布包：两套旧签发器和旧工厂方法产生 RS0030，网关 S2sTokenIssuer 正常编译。负例主动关闭 TreatWarningsAsErrors 仍无法绕过；上游后续版本附带的 KUNS2S001 也被单列为错误。这里验证的是编译边界，不代表已发布或消费尚未发布的上游改动。
+
+### 受保护命令注册门禁（S1-AZ-001）
+
+QIAN0005 在全部代码树检查真正的 Kun `AddRequestHandler`：受保护请求或未确定请求类型的泛型封装必须改用 `Qian.Authz.Abstractions.AddAuthorizedHandler`，同一入口将处理器与权限行为登记到同一个 builder。两个重载、方法组引用、生成代码均受检查；关闭警告即错误不会降低规则。
+
+`python3 -m unittest discover -s tests/gates -p test_authorized_handler.py` 编译八组真实样例：直接注册、能力注册、委托引用、泛型包装、应用伪造桥接类必须失败；安全入口、普通请求及无关同名方法必须通过。运行时拒绝/放行顺序由 Qian.Authz.Abstractions.Tests 验证。
