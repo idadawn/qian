@@ -5,10 +5,11 @@ using Kun.EventBus;
 using Kun.EventBus.Outbox;
 using Kun.Mediator;
 using Microsoft.Extensions.DependencyInjection;
+using Qian.Runtime;
 
 namespace Qian.Data;
 
-internal sealed class QianDataService(IServiceScopeFactory scopes) : IDataService, IAsyncDisposable
+internal sealed class QianDataService(IServiceScopeFactory scopes, IReadOnlySet<Type> contexts, ScopeKey ownerScope) : IDataService, IAsyncDisposable
 {
     private readonly Lock _gate = new();
     private readonly HashSet<IAsyncDisposable> _sessions = [];
@@ -23,6 +24,10 @@ internal sealed class QianDataService(IServiceScopeFactory scopes) : IDataServic
             lock (_gate)
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
+                if (!contexts.Contains(typeof(TContext)))
+                    throw new QianDataMisconfiguredException("所请求上下文不属于 Data 当前连接引用的登记集合。");
+                if (ownerScope.Kind == "tenant" && scope.ServiceProvider.GetRequiredService<ITenantContext>().TenantId != ownerScope.Id)
+                    throw new QianDataMisconfiguredException("Data 挂载 scope 与当前已验证租户不一致。");
                 var session = new Session<TContext>(scope, Remove);
                 _sessions.Add(session);
                 return session;

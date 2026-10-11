@@ -49,6 +49,8 @@ jobs:
         run: python3 -m unittest discover -s tests/gates -v
 
       - name: 单元与集成测试（Testcontainers：PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）
+        env:
+          QIAN_TEST_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/evidence
         run: dotnet test --solution Qian.slnx -c Release --no-build --results-directory TestResults --report-xunit-trx
 
       - name: 上传测试结果

@@ -22,6 +22,7 @@
 
   <ItemGroup Label="Runtime">
     <PackageVersion Include="Kun.Authorization" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.AspNetCore" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Core" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Mediator" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.EventBus" Version="$(KunVersion)" />

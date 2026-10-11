@@ -1,7 +1,7 @@
 ---
 id: S1-DATA-001
 title: AddQianData 默认安全装配与 RLS 迁移模板
-status: doing
+status: blocked
 stage: S1
 area: DATA
 wave: 1
@@ -27,7 +27,7 @@ Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 �
 
 - [x] UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 `AddQianData` 拒绝；代码中 `IgnoreQueryFilters()` 触发分析器错误
 - [x] IT：以非超级用户、无 BYPASSRLS 的应用角色直连绕过 EF，在设置 `app.current_tenant_id = A` 后 `SELECT` 不到租户 B 的行，向 B 插入被 `WITH CHECK` 拒绝（RLS 兜底）；管理员仅建表造数，保留超级用户可绕过的对照，在线应用拒用高权限角色（S1-DEC-017）
-- [ ] E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 `EXPLAIN` 显示走租户索引
+- [x] E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 `EXPLAIN` 显示走租户索引
 - [x] CI：在线 DbContext 不继承 `QianDbContext` 时门禁失败
 - [x] RLS 连接版与事务版拦截器、`KunMultiTenantModelCacheKeyFactory` 的装配改为复用 Kun 2026.10.8 起提供的 `AddKunTenantRls<TContext>()`，`AddQianData` 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 `packages/Qian.Data/README.md` 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）
 
@@ -50,3 +50,4 @@ Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 �
 - 2026-10-12 cody：AZ-001已通过最终CI并随PR #45合并；恢复DATA完整实现。同步主线正式Kun2026.10.11与QIAN0005，合并保留数据QIAN0003/0004和全部角色/RLS策略保护。
 - 2026-10-12 cody：与AZ-001主线合并后验证通过：正式Kun2026.10.11，13个包依赖检查、37项门禁、293项测试均成功且无跳过；保留QIAN0003/0004/0005全部规则。接着补齐Data seam、同上下文Outbox、deleted_by及真实参考应用索引验收。
 - 2026-10-12 cody：新增真实DataPlugin、DataDefinition/IDataService/IDataSession：每次会话独立scope，复用Kun EfUnitOfWork并绑定同一上下文/事件缓冲；验证通知同scope、保存失败整体回滚、多上下文互不串写、租户切换拒绝及卸载释放。补齐deleted_by：直接Remove转软删除，删除主体/时间自动填充且原审计不能改写。全仓299测试零跳过；数据22项含严格ValidateOnBuild/ValidateScopes通过；13包依赖、37门禁覆盖通过（一次本地还原进程异常的委托编译样例独立重跑通过）。旧组件配置骨架与正式入口尚待对齐，千行参考应用/索引验收未完成，保持草稿。
+- 2026-10-12 cody：五项本体验收完成：实际Kestrel+RS256身份+PostgreSQL的客户列表验证A/B各1000行；捕获真实列表SQL执行EXPLAIN ANALYZE命中租户复合索引。连接引用选择、独立库模式和租户挂载边界通过；全仓308测试零跳过、37门禁及13包依赖通过。SDK字段生成RT-014依赖RT-004，RT-004又依赖DATA-001，完整代码安装另属RT-011；按DEC-018请求本体与集成分期，未获批前保留草稿及骨架标记。

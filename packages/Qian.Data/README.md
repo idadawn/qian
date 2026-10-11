@@ -1,6 +1,6 @@
 # Qian.Data
 
-Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。S1-DATA-001 正在补齐组件安装表面与参考应用验收，当前进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
+Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。参考应用数据验收已补齐，SDK / CLI 的完整代码安装仍有后续门禁，当前进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
 
 ## 安全装配
 
@@ -9,7 +9,7 @@ services.AddQianData<AppDbContext>((sp, options) => options
     .UseNpgsql(connectionString).UseKunSchema("plugin_example"));
 ```
 
-业务上下文继承 QianDbContext。装配复用当前 KunVersion 的 AddKunTenantRls、AddKunDataConventions 与租户字段拦截器，强制模型缓存键、Qian 模型定制器、应用角色检查和迁移生成器。派生上下文漏调 base 仍保留租户/软删过滤，并与业务过滤条件取交集；采用 snake_case、Guid v7、可空审计主体和 xmin。每个上下文使用同一个 plugin_ 前缀 schema，租户列非空且默认具有索引。
+业务上下文继承 QianDbContext。独立宿主可直接注入 IDataService，无需挂载平台插件。装配复用当前 KunVersion 的 AddKunTenantRls、AddKunDataConventions 与租户字段拦截器，强制模型缓存键、Qian 模型定制器、应用角色检查和迁移生成器。派生上下文漏调 base 仍保留租户/软删过滤，并与业务过滤条件取交集；采用 snake_case、Guid v7、可空审计主体和 xmin。每个上下文使用同一个 plugin_ 前缀 schema，租户列非空且默认具有索引。
 
 启动会构建模型并打开真实连接，只读取角色属性，不建表或迁移。登录角色及当前角色必须均为 NOSUPERUSER / NOBYPASSRLS，预打开连接也检查；同步/异步新开连接遇高权限角色立即拒绝并关闭。
 
@@ -36,7 +36,9 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 
 ## 组件位置
 
-本目录已有 DataPlugin 的实际入口和生命周期，契约放在 Qian.Data.Abstractions，业务组件只依赖 Definition。当前代码入口仅接受空配置，连接显式配置到各业务上下文；拒绝忽略连接参数或可关闭隔离的配置。`plugins/qian.data` 仍保留旧配置骨架，正式清单、各 profile 的配置接线和 `qian add data` 完整安装验收仍由本任务继续完成，当前不因此宣称可完整安装。
+本目录已有 DataPlugin 的实际入口和生命周期，契约放在 Qian.Data.Abstractions，业务组件只依赖 Definition。组件接受 dialect=pg、rls.enforce=true 和可选 connection 引用。带连接引用的 AddQianData 重载将上下文绑定到 platform/dev secretRef，凭据由宿主工厂在每次创建上下文时读取；组件的 connection 选择对应的上下文集合，未登记的引用或上下文会被拒绝。省略 connection 时沿用各上下文自身的配置，方便按组件使用独立 schema 和受限角色。租户挂载的 Data 只接受相同租户上下文，租户自带业务库仍在 S3 范围。
+
+`plugins/qian.data` 仍保留配置骨架标记。SDK 的代码字段源生成与 CLI 的代码包安装分别由 S1-RT-014 / S1-RT-011 交付，不能用当前骨架替代完整安装验收。
 
 ## 模型体验
 
@@ -44,4 +46,4 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 
 ## 已知限制与延期项
 
-真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。每租户 1000 行的参考应用与真实索引计划、组件安装表面尚未完成。S1-DEC-017 已批准并实施，完整 DATA-001 仍保持进行中。
+真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。samples/Qian.Sample.Crm 已通过真实签名身份、HTTP 与 PostgreSQL 的千行双租户及原 SQL 索引验收。SDK 源生成与代码安装尚待后续任务验收；S1-DEC-017 已批准并实施。
