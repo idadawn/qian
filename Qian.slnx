@@ -5,6 +5,7 @@
     <Project Path="packages/Qian.Docs/Qian.Docs.csproj" />
     <Project Path="packages/Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
     <Project Path="packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <Project Path="packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
     <Project Path="packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
     <Project Path="packages/Qian.Runtime/Qian.Runtime.csproj" />
@@ -20,6 +21,7 @@
     <Project Path="tests/Qian.Authz.Abstractions.Tests/Qian.Authz.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Docs.Tests/Qian.Docs.Tests.csproj" />
     <Project Path="tests/Qian.Profiles.Tests/Qian.Profiles.Tests.csproj" />
+    <Project Path="tests/Qian.Config.Secrets.Tests/Qian.Config.Secrets.Tests.csproj" />
     <Project Path="tests/Qian.Config.Tests/Qian.Config.Tests.csproj" />
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
@@ -30,6 +32,7 @@
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Qian.Secrets.Tool/Qian.Secrets.Tool.csproj" />
     <Project Path="tools/Qian.Docs.Tool/Qian.Docs.Tool.csproj" />
     <Project Path="tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj" />
   </Folder>

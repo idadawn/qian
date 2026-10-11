@@ -640,14 +640,14 @@
  {
   "id": "S1-CFG-002",
   "title": "ISecretResolver（secretRef）与疑似密钥扫描",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "CFG",
   "areaName": "配置",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "2d",
   "days": 2.0,
   "depends": [
@@ -655,7 +655,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -664,14 +664,26 @@
    {
     "path": "docs/migration/README.md#8",
     "url": "https://github.com/idadawn/qian/blob/main/docs/migration/README.md"
+   },
+   {
+    "path": "packages/Qian.Config.Secrets/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Config.Secrets/README.md"
+   },
+   {
+    "path": "tools/Qian.Secrets.Tool/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/tools/Qian.Secrets.Tool/README.md"
+   },
+   {
+    "path": "docs/ops/configuration-runbook.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/ops/configuration-runbook.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-12",
   "acceptance": {
-   "done": 0,
+   "done": 4,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>secretRef://k8s/&lt;ns&gt;/&lt;name&gt;#&lt;key&gt;</code> 解析（Infisical 后端 P2 抽象位）；疑似密钥键名 / 值扫描拦截；分工表写进开发手册（部署级引导项 → Kustomize；平台 / 服务级非敏感 → Apollo；密钥 → K8s Secret；租户级在线设置 → <code>ITenantSettings</code>；前端 → <code>window.__APP_CONF__</code>）。全部需要凭据的组件（连接器、渠道、文件 Provider、信任根）依赖它。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：<code>secretRef://k8s/...</code> 解析到 K8s Secret 文件；无法解析时返回结构化错误而非空值</li>\n<li class='chk'><span class='box'></span>UT：<code>config.schema</code> 中标 <code>sensitive</code> 的键若在 Apollo 填了非 <code>secretRef://</code> 值，CI 门禁失败</li>\n<li class='chk'><span class='box'></span>UT：疑似密钥键名 / 值（如 <code>password</code>、<code>secret</code>、长随机串）进入 Apollo 非 secretRef 值时被扫描拦截</li>\n<li class='chk'><span class='box'></span>文档：分工表入开发手册</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>secretRef://k8s/&lt;ns&gt;/&lt;name&gt;#&lt;key&gt;</code> 解析（Infisical 后端 P2 抽象位）；疑似密钥键名 / 值扫描拦截；分工表写进开发手册（部署级引导项 → Kustomize；平台 / 服务级非敏感 → Apollo；密钥 → K8s Secret；租户级在线设置 → <code>ITenantSettings</code>；前端 → <code>window.__APP_CONF__</code>）。全部需要凭据的组件（连接器、渠道、文件 Provider、信任根）依赖它。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>secretRef://k8s/...</code> 解析到 K8s Secret 文件；无法解析时返回结构化错误而非空值</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>config.schema</code> 中标 <code>sensitive</code> 的键若在 Apollo 填了非 <code>secretRef://</code> 值，CI 门禁失败</li>\n<li class='chk done'><span class='box'>✓</span>UT：疑似密钥键名 / 值（如 <code>password</code>、<code>secret</code>、长随机串）进入 Apollo 非 secretRef 值时被扫描拦截</li>\n<li class='chk done'><span class='box'>✓</span>文档：分工表入开发手册</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：密钥解析与扫描的 38 项定向测试通过，37 项门禁通过，密钥权限对象修正后的 .NET/TS 40 个共享场景一致。审查发现 Kun Apollo 只校验合并值却缓存原始 namespace，会漏掉被覆盖的明文；已单独准备上游修复并补 8 项回归，完成正式发布后再做 Qian 完整真实 Apollo 验收。</li>\n<li>2026-10-12 cody：QA-002完整platform中的身份、数据、事件与存储配置均使用secretRef，CFG-001已完成。DATA等DEC-018期间串行推进凭据解析必要前置：按组件模型v2的公开引用和权限边界解析到K8s挂载文件，保留旧k8s定位形式的底层适配并补扫描门禁，不把原始值暴露给模型或日志。</li>\n<li>2026-10-12 cody：Kun PR #53 已在 24 项 CI 全绿后合并，修复原始 namespace 在合并与离线缓存前的校验，并覆盖拒绝后恢复；正式版 v2026.10.12 已触发发布，待正式包可还原后运行 Qian 全部真实验收。</li>\n<li>2026-10-12 cody：已从 nuget.org 真还原 Kun 2026.10.12（上游 PR #53，发布运行 38174649796），全仓构建零警告；332 项测试零失败零跳过、37 项门禁和 16 包依赖检查通过。真实 Apollo 2.5.2 约 903ms 热更新，明文候选被拒且未入缓存，随后有效引用恢复；secretRef 文件轮换、声明与审批交集、租户/生命周期边界、必须审计及 CI 扫描均有回归。SDK/CLI 代码安装与完整平台集成仍按各自任务执行。</li>\n</ul>",
   "file": "pm/tasks/S1-CFG-002.md"
  },
  {

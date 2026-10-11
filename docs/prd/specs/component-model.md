@@ -1337,6 +1337,7 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 
 - 形状 `secretRef://<scope>/<path>`，`scope ∈ { platform, tenant, tenant/<id>, dev }`。清单、表面、patch、事件、日志、`dump-config` 输出中只允许这个引用形式，永不出现明文。
 - 由 `Config` seam 的 `ISecretResolver` 在**使用时**解析（Apollo 引用 K8s Secret，ADR-007）；`policy.permissions.secrets[]` 声明允许解析的范围，越界被拒并审计；`secretRef://tenant/<id>/…` 只能被同租户上下文解析（RLS + resolver 双重检查）。
+- `secrets[]` 条目使用 `{ "name": "oss/*", "scope": "platform" }`，与既定权限对象口径一致。name 为精确路径或末尾 `/*` 前缀，scope 为 platform、tenant、dev；声明与宿主审批记录取交集。tenant 路径匹配后仍检查真实租户身份，dev 仅在开发宿主显式开启。
 - 只有 `configSchema` 中 `x-qian-sensitive: true` 的属性、`hooks.json` 与 `.mcp.json` 的 `headers / env` 允许 `secretRef://`；其它位置出现是 warning；疑似密钥键名的明文值与高熵值是 error（§10.1）。
 
 ### 11.4 hooks `command` 类型与内联 shell 的限制（已裁决 R41）

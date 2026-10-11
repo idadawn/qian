@@ -1,6 +1,18 @@
-# 配置运行与故障处置（S1-CFG-001）
+# 配置开发、运行与故障处置（S1-CFG-001 / 002）
 
 配置源顺序与引导项见 [Qian.Config.Apollo](../../packages/Qian.Config.Apollo/README.md)。本手册描述已实现客户端的行为；L0–L4 为配置运维状态，与权限模型分层无关。
+
+## 开发配置分工
+
+| 配置类别 | 存放与读取位置 | 边界 |
+|---|---|---|
+| 部署级引导 | Kustomize / 宿主环境 | Apollo 端点、AppId、环境等；Apollo 不能改写自身引导 |
+| 平台 / 服务级非敏感参数 | Apollo | 发布前扫描；运行期每份原始快照与合并结果都校验，失败保留旧值 |
+| 密钥 | K8s Secret 投射文件 | 配置只保存公开 secretRef，使用时经声明与审批取交集后解析 |
+| 租户级在线设置 | ITenantSettings | 不进入 Apollo；能力随 TEN 任务交付 |
+| 前端公开运行配置 | window.__APP_CONF__ | 只允许浏览器可公开的数据，不能放原始密钥或后端解析能力 |
+
+密钥解析、审计端口与内存边界见 [密钥 Provider 开发说明](../../packages/Qian.Config.Secrets/README.md)，提交发布前使用 [配置扫描门禁](../../tools/Qian.Secrets.Tool/README.md)。`ApolloConfigurationSchema` 由宿主传入合成配置 Schema，敏感属性使用 `x-qian-sensitive`；Schema 自动收集仍属后续 CFG 任务。
 
 ## 降级矩阵
 

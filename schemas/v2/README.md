@@ -3,6 +3,7 @@
 依据 [组件模型规格](../../docs/prd/specs/component-model.md)。此目录是 .NET 与 TS 的共同结构契约，不修改 `contracts/v0` 的冻结定义。
 
 - `plugin` 与 `permissions`：组件清单和反向权限。
+  `permissions.secrets[]` 为 name/scope 对象，和组件模型的密钥权限声明保持一致；不接受旧的字符串数组。
 - `skill`、`agent`、`command`：Markdown front matter。
 - `hooks`、`mcp`：事件桥接与 MCP 声明。
 - `tool`：引用冻结 capability-entry 的词汇，增加 binding；不携带数据库 id/plugin/kind。
