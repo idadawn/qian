@@ -9,3 +9,9 @@ Qian.Data.QianDataMisconfiguredException.Error.get -> Qian.Runtime.Errors.QianEr
 Qian.Data.QianDbContext
 Qian.Data.QianDbContext.QianDbContext(Microsoft.EntityFrameworkCore.DbContextOptions! options, Kun.Core.MultiTenancy.ITenantContext! tenantContext) -> void
 override sealed Qian.Data.QianDbContext.OnConfiguring(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! optionsBuilder) -> void
+Qian.Data.QianApplicationRoleInterceptor
+Qian.Data.QianApplicationRoleInterceptor.QianApplicationRoleInterceptor() -> void
+override Qian.Data.QianApplicationRoleInterceptor.ConnectionOpened(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.ConnectionEndEventData! eventData) -> void
+override Qian.Data.QianApplicationRoleInterceptor.ConnectionOpenedAsync(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.ConnectionEndEventData! eventData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Qian.Data.QianApplicationRoleInterceptor.Validate(System.Data.Common.DbConnection! connection) -> void
+static Qian.Data.QianApplicationRoleInterceptor.ValidateAsync(System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

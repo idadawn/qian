@@ -379,7 +379,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **技术落点**。组件 `qian.data`：Definition `Qian.Data.Abstractions`（服务键 `ctx.Data`）+ Provider `Qian.Data`，随 `Qian.Plugin.Sdk` 进入每个 .NET profile（`platform` / `identity` / `gateway` / `standalone`），可独立安装（`qian add data`）；方言为独立组件 `qian.data.dialect.postgres`（Provider `Qian.Data.Dialect.Pg`，方言数据包）；依赖 `Kun.EntityFrameworkCore`、`Kun.Dapper`（读侧可选）、Npgsql。
 
-- `QianDbContext : KunDbContext`：构造期校验拦截器与缓存键工厂已注册，否则抛 `QianDataMisconfiguredException` 拒绝启动；`UseKunSchema("plugin_<id>")` 强制；系统列约定 `id (uuid v7) / tenant_id / created_at / created_by / updated_at / updated_by / deleted_at / deleted_by`，并发令牌 `xmin`；RLS 策略模板 `FORCE ROW LEVEL SECURITY` + `WITH CHECK (tenant_id = current_setting('app.tenant_id')::uuid)`，由迁移生成器为每个 `IMultiTenant` 表自动输出。
+- `QianDbContext : KunDbContext`：构造期校验拦截器与缓存键工厂已注册，否则抛 `QianDataMisconfiguredException` 拒绝启动；`UseKunSchema("plugin_<id>")` 强制；系统列约定 `id (uuid v7) / tenant_id / created_at / created_by / updated_at / updated_by / deleted_at / deleted_by`，并发令牌 `xmin`；RLS 策略模板 `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY`，`USING` / `WITH CHECK` 均比较 `tenant_id = current_setting('app.current_tenant_id', true)`（字符串租户标识，缺失时不匹配），由迁移生成器为每个 `IMultiTenant` 表自动输出。
 - 迁移协调：`MigrateAsync` 前取 `pg_advisory_lock(hash(schema))`，K8s 迁移 Job 先行（7.17），多副本启动时只校验不迁移。
 - 分布式 ID：默认 Guid v7；需要数值 id 处用雪花，WorkerId 经 Redis 租约 `qian:snowflake:worker:{n}`（TTL 续租）分配，避免参考平台未配 WorkId 的问题。
 - 序号服务 `ISequenceService.NextAsync(ruleCode, scopeKey)`：规则 DSL `prefix + yyyyMMdd + seq(6)`，PG `UPDATE ... RETURNING` 原子取号，规则修改后重新开始；单据序号归属表单（S2）只是它的客户。
@@ -396,7 +396,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **验收标准**
 - [ ] UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 `AddQianData` 拒绝；代码中 `IgnoreQueryFilters()` 触发分析器错误。
-- [ ] IT：以数据库超级用户直连绕过 EF，在设置 `app.tenant_id = A` 后 `SELECT` 不到租户 B 的行，向 B 插入被 `WITH CHECK` 拒绝（RLS 兜底）。
+- [ ] IT：以非超级用户、无 BYPASSRLS 的应用角色直连绕过 EF，在设置 `app.current_tenant_id = A` 后 `SELECT` 不到租户 B 的行，向 B 插入被 `WITH CHECK` 拒绝（RLS 兜底）。管理员只建表造数，并保留超级用户可绕过 RLS 的对照；在线应用拒用超级用户或 BYPASSRLS 角色（S1-DEC-017）。
 - [ ] IT：两个副本同时启动并执行迁移，只有一个执行 DDL、另一个等待后校验通过。
 - [ ] IT：100 并发取号同一序号规则无重复无跳号；规则修改后从 1 重新开始。
 - [ ] IT：雪花 WorkerId 在 3 个副本间互不相同，副本重启后租约回收复用。

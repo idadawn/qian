@@ -94,14 +94,14 @@ steps:
   - as: u-b
     do: GET /files/preview?ticket=<伪造或过期票据，指向 t-a 的文件>
   - as: db-role(demo-service)
-    do: SELECT count(*) FROM demo.orders   # 不设置 app.tenant_id
+    do: SELECT count(*) FROM demo.orders   # 不设置 app.current_tenant_id
 expected_behavior:
   - u-b 读取 O1 返回 404（不泄露存在性），审计 outcome=denied
   - Filter AST 含租户字段 → 400，error_code=CONTRACT_TENANT_FIELD_FORBIDDEN
   - 写他租户 id → 被 RLS WITH CHECK 拒绝，返回 403，审计 outcome=denied
   - 副本 2 在 t-a 作用域处理事件，投影行 tenant_id=t-a；若作用域缺失则 fail-closed 进死信并告警，不得落到默认租户
   - 伪造 / 过期票据 → 401，审计记录含 channel=api
-  - 未设置 app.tenant_id 的查询返回 0 行
+  - 未设置 app.current_tenant_id 的查询返回 0 行
 acceptance_criteria:
   max_duration_seconds: 120
   artifact_required: [audit-entries.json, rls-policies.sql, dead-letter.json]

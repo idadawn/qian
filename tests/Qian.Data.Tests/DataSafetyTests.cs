@@ -53,6 +53,62 @@ public sealed class DataSafetyTests : IClassFixture<PostgresFixture>
         Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, denied.SqlState);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task 在线应用_超级用户连接含预打开连接_启动拒绝(bool preopened, bool assumeRestrictedRole)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var connection = new NpgsqlConnection(_postgres.ConnectionString);
+        if (preopened) await connection.OpenAsync(ct);
+        if (assumeRestrictedRole)
+        {
+            await using var role = new NpgsqlCommand("SET ROLE qian_app", connection);
+            await role.ExecuteNonQueryAsync(ct);
+        }
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
+        builder.Services.AddQianData<ProbeContext>((_, options) => options.UseNpgsql(connection).UseKunSchema("plugin_data_safety"));
+        using var host = builder.Build();
+        var error = await Assert.ThrowsAsync<QianDataMisconfiguredException>(() => host.StartAsync(ct));
+        Assert.Equal("DATA_MISCONFIGURED", error.Error.Code.Code);
+        Assert.Contains("BYPASSRLS", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task 在线应用_普通登录角色带BYPASSRLS_启动拒绝()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var password = Guid.NewGuid().ToString("N");
+        await using var admin = new NpgsqlConnection(_postgres.ConnectionString);
+        await admin.OpenAsync(ct);
+        await using (var createRole = new NpgsqlCommand($"CREATE ROLE data_bypass LOGIN NOSUPERUSER BYPASSRLS PASSWORD '{password}'", admin))
+            await createRole.ExecuteNonQueryAsync(ct);
+        var connection = new NpgsqlConnectionStringBuilder(_postgres.ConnectionString) { Username = "data_bypass", Password = password };
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
+        builder.Services.AddQianData<ProbeContext>((_, options) => options.UseNpgsql(connection.ConnectionString).UseKunSchema("plugin_data_safety"));
+        using var host = builder.Build();
+        await Assert.ThrowsAsync<QianDataMisconfiguredException>(() => host.StartAsync(ct));
+    }
+
+    [Fact]
+    public async Task 在线应用_同步重开连接也执行角色检查()
+    {
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
+        builder.Services.AddQianData<ProbeContext>((_, options) => options.UseNpgsql(_postgres.ConnectionString).UseKunSchema("plugin_data_safety"));
+        using var host = builder.Build();
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ProbeContext>();
+        // 即使没有启动宿主，实际打开应用连接时也不能使用管理员凭据。
+        Assert.Throws<QianDataMisconfiguredException>(() => db.Database.OpenConnection());
+        Assert.Equal(System.Data.ConnectionState.Closed, db.Database.GetDbConnection().State);
+        await Assert.ThrowsAsync<QianDataMisconfiguredException>(() => db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(System.Data.ConnectionState.Closed, db.Database.GetDbConnection().State);
+    }
+
     [Fact]
     public async Task AddQianData_自动装配_真实数据库按租户过滤()
     {

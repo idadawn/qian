@@ -80,6 +80,8 @@ public abstract class QianDbContext : KunDbContext, IKunMultiTenantDbContext
             throw new QianDataMisconfiguredException("必须装配 Kun 的审计字段拦截器。");
         if (!core.Interceptors.OfType<KunTenantSaveChangesInterceptor>().Any())
             throw new QianDataMisconfiguredException("必须装配 Kun 的租户字段拦截器。");
+        if (!core.Interceptors.OfType<QianApplicationRoleInterceptor>().Any())
+            throw new QianDataMisconfiguredException("必须装配在线应用角色校验拦截器。");
         if (core.ReplacedServices?.TryGetValue((typeof(IModelCacheKeyFactory), null), out var factory) != true ||
             factory != typeof(KunMultiTenantModelCacheKeyFactory))
             throw new QianDataMisconfiguredException("必须使用 KunMultiTenantModelCacheKeyFactory。");

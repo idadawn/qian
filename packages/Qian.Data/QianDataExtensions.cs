@@ -25,8 +25,10 @@ public static class QianDataExtensions
         services.AddKunTenantRls<TContext>();
         services.AddKunDataConventions<TContext>();
         services.AddKunMultiTenancyEntityFrameworkCore();
+        services.TryAddSingleton<QianApplicationRoleInterceptor>();
         services.ConfigureDbContext<TContext>((sp, options) => options.UseQianDataModel()
-            .AddInterceptors(sp.GetRequiredService<KunTenantSaveChangesInterceptor>()));
+            .AddInterceptors(sp.GetRequiredService<KunTenantSaveChangesInterceptor>(),
+                sp.GetRequiredService<QianApplicationRoleInterceptor>()));
         services.AddDbContext<TContext>(configure);
         services.AddHostedService<DataStartupCheck<TContext>>();
         return services;
@@ -37,7 +39,7 @@ public static class QianDataExtensions
     {
         private IDisposable? _registration;
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             _registration ??= catalog.Register(DataErrors.Misconfigured);
@@ -50,7 +52,13 @@ public static class QianDataExtensions
                 .OfType<RelationalOptionsExtension>().Single().MigrationsHistoryTableSchema;
             if (model.GetDefaultSchema() != schema)
                 throw new QianDataMisconfiguredException("生效模型的 schema 与上下文迁移 schema 不一致。");
-            return Task.CompletedTask;
+            await context.Database.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                // 预打开连接不会再次触发 ConnectionOpened，启动时必须显式核验它。
+                await QianApplicationRoleInterceptor.ValidateAsync(context.Database.GetDbConnection(), cancellationToken).ConfigureAwait(false);
+            }
+            finally { await context.Database.CloseConnectionAsync().ConfigureAwait(false); }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

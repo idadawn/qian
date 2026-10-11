@@ -1,7 +1,7 @@
 ---
 id: S1-DATA-001
 title: AddQianData 默认安全装配与 RLS 迁移模板
-status: blocked
+status: doing
 stage: S1
 area: DATA
 wave: 1
@@ -25,11 +25,11 @@ Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 �
 
 ## 验收
 
-- [ ] UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 `AddQianData` 拒绝；代码中 `IgnoreQueryFilters()` 触发分析器错误
-- [ ] IT：以数据库超级用户直连绕过 EF，在设置 `app.tenant_id = A` 后 `SELECT` 不到租户 B 的行，向 B 插入被 `WITH CHECK` 拒绝（RLS 兜底）
+- [x] UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 `AddQianData` 拒绝；代码中 `IgnoreQueryFilters()` 触发分析器错误
+- [x] IT：以非超级用户、无 BYPASSRLS 的应用角色直连绕过 EF，在设置 `app.current_tenant_id = A` 后 `SELECT` 不到租户 B 的行，向 B 插入被 `WITH CHECK` 拒绝（RLS 兜底）；管理员仅建表造数，保留超级用户可绕过的对照，在线应用拒用高权限角色（S1-DEC-017）
 - [ ] E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 `EXPLAIN` 显示走租户索引
-- [ ] CI：在线 DbContext 不继承 `QianDbContext` 时门禁失败
-- [ ] RLS 连接版与事务版拦截器、`KunMultiTenantModelCacheKeyFactory` 的装配改为复用 Kun 2026.10.8 起提供的 `AddKunTenantRls<TContext>()`，`AddQianData` 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 `packages/Qian.Data/README.md` 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）
+- [x] CI：在线 DbContext 不继承 `QianDbContext` 时门禁失败
+- [x] RLS 连接版与事务版拦截器、`KunMultiTenantModelCacheKeyFactory` 的装配改为复用 Kun 2026.10.8 起提供的 `AddKunTenantRls<TContext>()`，`AddQianData` 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 `packages/Qian.Data/README.md` 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）
 
 ## 进度日志
 
@@ -42,3 +42,6 @@ Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 �
 - 2026-10-11 someone：用户已批准补齐QA-002必要前置。开始DATA-001：复用Kun 2026.10.9安全装配和数据约定，补迁移RLS、编译期门禁与真实双租户验收。
 - 2026-10-11 someone：验收中超级用户受RLS约束的要求与PostgreSQL16事实及仓库受限应用角色测试规范冲突；记录决策等待确认，继续独立的Kun装配、模型约定及分析器实现。
 - 2026-10-11 someone：独立准备已实现：复用Kun双拦截器/审计/租户写入，强制插件schema与模型约定，保留业务过滤；编译正反例通过。PostgreSQL16容器8项数据测试无跳过通过，包括超级用户对照、Guid v7/审计/xmin/软删。自动迁移、完整组件与参考应用仍未完成，DEC-017待确认。
+- 2026-10-11 someone：DEC-017已获批，验收口径阻塞解除。草稿PR #44保留，待当前AZ-001契约收尾后按既定串行约束恢复完整实现；尚未完成的功能与验收不变。
+- 2026-10-11 cody：Kun权限修复等待发布期间串行恢复：落实已批准DEC-017，先同步真实角色边界及app.current_tenant_id，并补在线高权限角色拒绝。
+- 2026-10-11 cody：DEC-017已实施：会话契约与受限角色验收已同步；应用启动和同步/异步开连接拒绝superuser/BYPASSRLS，预打开连接及管理员SET ROLE降权对照同样拒绝。13项真库数据测试通过；全仓266项测试零跳过，36门禁及12包依赖检查通过。自动迁移、完整seam/Outbox与1000行索引仍未完成。
