@@ -640,22 +640,22 @@
  {
   "id": "S1-CFG-002",
   "title": "ISecretResolver（secretRef）与疑似密钥扫描",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "CFG",
   "areaName": "配置",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "2d",
   "days": 2.0,
   "depends": [
    "S1-CFG-001"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -664,14 +664,26 @@
    {
     "path": "docs/migration/README.md#8",
     "url": "https://github.com/idadawn/qian/blob/main/docs/migration/README.md"
+   },
+   {
+    "path": "packages/Qian.Config.Secrets/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Config.Secrets/README.md"
+   },
+   {
+    "path": "tools/Qian.Secrets.Tool/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/tools/Qian.Secrets.Tool/README.md"
+   },
+   {
+    "path": "docs/ops/configuration-runbook.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/ops/configuration-runbook.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-12",
   "acceptance": {
-   "done": 0,
+   "done": 4,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>secretRef://k8s/&lt;ns&gt;/&lt;name&gt;#&lt;key&gt;</code> 解析（Infisical 后端 P2 抽象位）；疑似密钥键名 / 值扫描拦截；分工表写进开发手册（部署级引导项 → Kustomize；平台 / 服务级非敏感 → Apollo；密钥 → K8s Secret；租户级在线设置 → <code>ITenantSettings</code>；前端 → <code>window.__APP_CONF__</code>）。全部需要凭据的组件（连接器、渠道、文件 Provider、信任根）依赖它。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：<code>secretRef://k8s/...</code> 解析到 K8s Secret 文件；无法解析时返回结构化错误而非空值</li>\n<li class='chk'><span class='box'></span>UT：<code>config.schema</code> 中标 <code>sensitive</code> 的键若在 Apollo 填了非 <code>secretRef://</code> 值，CI 门禁失败</li>\n<li class='chk'><span class='box'></span>UT：疑似密钥键名 / 值（如 <code>password</code>、<code>secret</code>、长随机串）进入 Apollo 非 secretRef 值时被扫描拦截</li>\n<li class='chk'><span class='box'></span>文档：分工表入开发手册</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>secretRef://k8s/&lt;ns&gt;/&lt;name&gt;#&lt;key&gt;</code> 解析（Infisical 后端 P2 抽象位）；疑似密钥键名 / 值扫描拦截；分工表写进开发手册（部署级引导项 → Kustomize；平台 / 服务级非敏感 → Apollo；密钥 → K8s Secret；租户级在线设置 → <code>ITenantSettings</code>；前端 → <code>window.__APP_CONF__</code>）。全部需要凭据的组件（连接器、渠道、文件 Provider、信任根）依赖它。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>secretRef://k8s/...</code> 解析到 K8s Secret 文件；无法解析时返回结构化错误而非空值</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>config.schema</code> 中标 <code>sensitive</code> 的键若在 Apollo 填了非 <code>secretRef://</code> 值，CI 门禁失败</li>\n<li class='chk done'><span class='box'>✓</span>UT：疑似密钥键名 / 值（如 <code>password</code>、<code>secret</code>、长随机串）进入 Apollo 非 secretRef 值时被扫描拦截</li>\n<li class='chk done'><span class='box'>✓</span>文档：分工表入开发手册</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：密钥解析与扫描的 38 项定向测试通过，37 项门禁通过，密钥权限对象修正后的 .NET/TS 40 个共享场景一致。审查发现 Kun Apollo 只校验合并值却缓存原始 namespace，会漏掉被覆盖的明文；已单独准备上游修复并补 8 项回归，完成正式发布后再做 Qian 完整真实 Apollo 验收。</li>\n<li>2026-10-12 cody：QA-002完整platform中的身份、数据、事件与存储配置均使用secretRef，CFG-001已完成。DATA等DEC-018期间串行推进凭据解析必要前置：按组件模型v2的公开引用和权限边界解析到K8s挂载文件，保留旧k8s定位形式的底层适配并补扫描门禁，不把原始值暴露给模型或日志。</li>\n<li>2026-10-12 cody：Kun PR #53 已在 24 项 CI 全绿后合并，修复原始 namespace 在合并与离线缓存前的校验，并覆盖拒绝后恢复；正式版 v2026.10.12 已触发发布，待正式包可还原后运行 Qian 全部真实验收。</li>\n<li>2026-10-12 cody：已从 nuget.org 真还原 Kun 2026.10.12（上游 PR #53，发布运行 38174649796），全仓构建零警告；332 项测试零失败零跳过、37 项门禁和 16 包依赖检查通过。真实 Apollo 2.5.2 约 903ms 热更新，明文候选被拒且未入缓存，随后有效引用恢复；secretRef 文件轮换、声明与审批交集、租户/生命周期边界、必须审计及 CI 扫描均有回归。SDK/CLI 代码安装与完整平台集成仍按各自任务执行。</li>\n<li>2026-10-12 cody：PR #47 实现头全部 CI 通过；运行 38175836476 的 Linux 制品验证 332/332、零跳过，真实 Apollo 热更新约 580ms，敏感候选拒绝、缓存无被拒值、恢复更新均为 true/false 预期值。四项本体验收完成；回写状态后复核最终头再合并。正式包发布证据见 Kun 38174649796，完整 SDK/CLI 与 platform 联调保留各自任务。</li>\n</ul>",
   "file": "pm/tasks/S1-CFG-002.md"
  },
  {
@@ -799,7 +811,7 @@
    "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.data</code>（<code>Qian.Data.Abstractions</code> / <code>ctx.Data</code> + <code>Qian.Data</code>，随 SDK 进每个 .NET profile）：<code>AddQianData&lt;TContext&gt;()</code> 强制 RLS 连接版 + 事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code>、租户与软删过滤、审计字段填充、<code>xmin</code>、snake_case、Guid v7、Outbox 同 DbContext；<code>QianDbContext : KunDbContext</code> 构造期校验否则 <code>QianDataMisconfiguredException</code>；<code>UseKunSchema(&quot;plugin_&lt;id&gt;&quot;)</code>；系统列约定；迁移生成器为每个 <code>IMultiTenant</code> 表输出 <code>FORCE ROW LEVEL SECURITY</code> 策略；CI 检查「在线 DbContext 必须继承 <code>QianDbContext</code>」。全部组件表的前提。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 默认主键、可空审计主体与 PostgreSQL <code>xmin</code> 并发令牌在 Kun 里是显式 opt-in（<code>AddKunDataConventions&lt;TContext&gt;()</code> / <code>ModelBuilder.ApplyKunDataConventions()</code>），不随 <code>AddKunEntityFrameworkCore()</code> 自动生效，由 <code>AddQianData&lt;TContext&gt;()</code> 统一装配并在构造期校验；<code>SaveChangesResultAsync()</code> 把并发冲突映射为 <code>Result</code> 的 Conflict；已有非空主键不变，旧非空数值主体需显式迁移。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 <code>AddQianData</code> 拒绝；代码中 <code>IgnoreQueryFilters()</code> 触发分析器错误</li>\n<li class='chk done'><span class='box'>✓</span>IT：以非超级用户、无 BYPASSRLS 的应用角色直连绕过 EF，在设置 <code>app.current_tenant_id = A</code> 后 <code>SELECT</code> 不到租户 B 的行，向 B 插入被 <code>WITH CHECK</code> 拒绝（RLS 兜底）；管理员仅建表造数，保留超级用户可绕过的对照，在线应用拒用高权限角色（S1-DEC-017）</li>\n<li class='chk done'><span class='box'>✓</span>E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 <code>EXPLAIN</code> 显示走租户索引</li>\n<li class='chk done'><span class='box'>✓</span>CI：在线 DbContext 不继承 <code>QianDbContext</code> 时门禁失败</li>\n<li class='chk done'><span class='box'>✓</span>RLS 连接版与事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code> 的装配改为复用 Kun 2026.10.8 起提供的 <code>AddKunTenantRls&lt;TContext&gt;()</code>，<code>AddQianData</code> 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 <code>packages/Qian.Data/README.md</code> 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-08 cody：S1-KUN-001 先行交付 Qian.Data.Abstractions / Qian.Data 最小 RLS 安全装配及启动拒绝测试，详见 packages/Qian.Data/README.md；本任务仍负责完整组件、迁移模板、数据约定与分析器，未认领或提前勾选本任务验收。</li>\n<li>2026-10-08 cody：先行安全基础已合并 Qian PR #7（https://github.com/idadawn/qian/pull/7），后续实现复用 QianDbContext 与 AddQianData；完整验收与本任务状态保持待办。</li>\n<li>2026-10-08 claude：验收加一条：AddQianData 的 RLS 拦截器与模型缓存键装配复用 Kun 2026.10.8 的 AddKunTenantRls&lt;TContext&gt;()（S1-KUN-008 未决问题，产品负责人同意并入本任务）</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的数据约定变更（snake_case / Guid v7 / <code>xmin</code> 为显式 opt-in，<code>AddKunDataConventions&lt;TContext&gt;()</code> 由 <code>AddQianData</code> 装配），随 S1-KUN-009 升级可用</li>\n<li>2026-10-11 someone：用户已批准补齐QA-002必要前置。开始DATA-001：复用Kun 2026.10.9安全装配和数据约定，补迁移RLS、编译期门禁与真实双租户验收。</li>\n<li>2026-10-11 someone：验收中超级用户受RLS约束的要求与PostgreSQL16事实及仓库受限应用角色测试规范冲突；记录决策等待确认，继续独立的Kun装配、模型约定及分析器实现。</li>\n<li>2026-10-11 someone：独立准备已实现：复用Kun双拦截器/审计/租户写入，强制插件schema与模型约定，保留业务过滤；编译正反例通过。PostgreSQL16容器8项数据测试无跳过通过，包括超级用户对照、Guid v7/审计/xmin/软删。自动迁移、完整组件与参考应用仍未完成，DEC-017待确认。</li>\n<li>2026-10-11 someone：DEC-017已获批，验收口径阻塞解除。草稿PR #44保留，待当前AZ-001契约收尾后按既定串行约束恢复完整实现；尚未完成的功能与验收不变。</li>\n<li>2026-10-11 cody：Kun权限修复等待发布期间串行恢复：落实已批准DEC-017，先同步真实角色边界及app.current_tenant_id，并补在线高权限角色拒绝。</li>\n<li>2026-10-11 cody：DEC-017已实施：会话契约与受限角色验收已同步；应用启动和同步/异步开连接拒绝superuser/BYPASSRLS，预打开连接及管理员SET ROLE降权对照同样拒绝。13项真库数据测试通过；全仓266项测试零跳过，36门禁及12包依赖检查通过。自动迁移、完整seam/Outbox与1000行索引仍未完成。</li>\n<li>2026-10-12 cody：新增PostgreSQL迁移SQL生成器：从目标模型的租户标记自动为新建表输出ENABLE/FORCE RLS，限制策略抵御附加宽松策略，空租户拒绝访问。真实执行迁移差异器生成的SQL验证跨租户写和空租户写均42501；数据16项通过。历史表改造仍须显式迁移，参考应用/seam/Outbox尚未完成。</li>\n<li>2026-10-12 cody：当前增量全仓269项测试无跳过、36门禁与12包依赖检查通过；保留草稿#44，串行转回已取得正式Kun修复包的AZ-001收尾。DATA待恢复项为完整Data seam/Outbox、deleted_by和每租户1000行参考应用索引验收，既有代码与验收证据保留。</li>\n<li>2026-10-12 cody：AZ-001已通过最终CI并随PR #45合并；恢复DATA完整实现。同步主线正式Kun2026.10.11与QIAN0005，合并保留数据QIAN0003/0004和全部角色/RLS策略保护。</li>\n<li>2026-10-12 cody：与AZ-001主线合并后验证通过：正式Kun2026.10.11，13个包依赖检查、37项门禁、293项测试均成功且无跳过；保留QIAN0003/0004/0005全部规则。接着补齐Data seam、同上下文Outbox、deleted_by及真实参考应用索引验收。</li>\n<li>2026-10-12 cody：新增真实DataPlugin、DataDefinition/IDataService/IDataSession：每次会话独立scope，复用Kun EfUnitOfWork并绑定同一上下文/事件缓冲；验证通知同scope、保存失败整体回滚、多上下文互不串写、租户切换拒绝及卸载释放。补齐deleted_by：直接Remove转软删除，删除主体/时间自动填充且原审计不能改写。全仓299测试零跳过；数据22项含严格ValidateOnBuild/ValidateScopes通过；13包依赖、37门禁覆盖通过（一次本地还原进程异常的委托编译样例独立重跑通过）。旧组件配置骨架与正式入口尚待对齐，千行参考应用/索引验收未完成，保持草稿。</li>\n<li>2026-10-12 cody：五项本体验收完成：实际Kestrel+RS256身份+PostgreSQL的客户列表验证A/B各1000行；捕获真实列表SQL执行EXPLAIN ANALYZE命中租户复合索引。连接引用选择、独立库模式和租户挂载边界通过；全仓308测试零跳过、37门禁及13包依赖通过。SDK字段生成RT-014依赖RT-004，RT-004又依赖DATA-001，完整代码安装另属RT-011；按DEC-018请求本体与集成分期，未获批前保留草稿及骨架标记。</li>\n<li>2026-10-12 cody：独立前置CFG-001已随PR #46合并；同步最新主线并保留本草稿。组合验证316项测试零跳过、37门禁、15包依赖检查通过，包含真实CRM/PG索引与真实Apollo。DEC-018仍待产品负责人答复，本次同步不代表DATA合并或安装门通过。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.data</code>（<code>Qian.Data.Abstractions</code> / <code>ctx.Data</code> + <code>Qian.Data</code>，随 SDK 进每个 .NET profile）：<code>AddQianData&lt;TContext&gt;()</code> 强制 RLS 连接版 + 事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code>、租户与软删过滤、审计字段填充、<code>xmin</code>、snake_case、Guid v7、Outbox 同 DbContext；<code>QianDbContext : KunDbContext</code> 构造期校验否则 <code>QianDataMisconfiguredException</code>；<code>UseKunSchema(&quot;plugin_&lt;id&gt;&quot;)</code>；系统列约定；迁移生成器为每个 <code>IMultiTenant</code> 表输出 <code>FORCE ROW LEVEL SECURITY</code> 策略；CI 检查「在线 DbContext 必须继承 <code>QianDbContext</code>」。全部组件表的前提。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 默认主键、可空审计主体与 PostgreSQL <code>xmin</code> 并发令牌在 Kun 里是显式 opt-in（<code>AddKunDataConventions&lt;TContext&gt;()</code> / <code>ModelBuilder.ApplyKunDataConventions()</code>），不随 <code>AddKunEntityFrameworkCore()</code> 自动生效，由 <code>AddQianData&lt;TContext&gt;()</code> 统一装配并在构造期校验；<code>SaveChangesResultAsync()</code> 把并发冲突映射为 <code>Result</code> 的 Conflict；已有非空主键不变，旧非空数值主体需显式迁移。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 <code>AddQianData</code> 拒绝；代码中 <code>IgnoreQueryFilters()</code> 触发分析器错误</li>\n<li class='chk done'><span class='box'>✓</span>IT：以非超级用户、无 BYPASSRLS 的应用角色直连绕过 EF，在设置 <code>app.current_tenant_id = A</code> 后 <code>SELECT</code> 不到租户 B 的行，向 B 插入被 <code>WITH CHECK</code> 拒绝（RLS 兜底）；管理员仅建表造数，保留超级用户可绕过的对照，在线应用拒用高权限角色（S1-DEC-017）</li>\n<li class='chk done'><span class='box'>✓</span>E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 <code>EXPLAIN</code> 显示走租户索引</li>\n<li class='chk done'><span class='box'>✓</span>CI：在线 DbContext 不继承 <code>QianDbContext</code> 时门禁失败</li>\n<li class='chk done'><span class='box'>✓</span>RLS 连接版与事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code> 的装配改为复用 Kun 2026.10.8 起提供的 <code>AddKunTenantRls&lt;TContext&gt;()</code>，<code>AddQianData</code> 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 <code>packages/Qian.Data/README.md</code> 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-08 cody：S1-KUN-001 先行交付 Qian.Data.Abstractions / Qian.Data 最小 RLS 安全装配及启动拒绝测试，详见 packages/Qian.Data/README.md；本任务仍负责完整组件、迁移模板、数据约定与分析器，未认领或提前勾选本任务验收。</li>\n<li>2026-10-08 cody：先行安全基础已合并 Qian PR #7（https://github.com/idadawn/qian/pull/7），后续实现复用 QianDbContext 与 AddQianData；完整验收与本任务状态保持待办。</li>\n<li>2026-10-08 claude：验收加一条：AddQianData 的 RLS 拦截器与模型缓存键装配复用 Kun 2026.10.8 的 AddKunTenantRls&lt;TContext&gt;()（S1-KUN-008 未决问题，产品负责人同意并入本任务）</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的数据约定变更（snake_case / Guid v7 / <code>xmin</code> 为显式 opt-in，<code>AddKunDataConventions&lt;TContext&gt;()</code> 由 <code>AddQianData</code> 装配），随 S1-KUN-009 升级可用</li>\n<li>2026-10-11 someone：用户已批准补齐QA-002必要前置。开始DATA-001：复用Kun 2026.10.9安全装配和数据约定，补迁移RLS、编译期门禁与真实双租户验收。</li>\n<li>2026-10-11 someone：验收中超级用户受RLS约束的要求与PostgreSQL16事实及仓库受限应用角色测试规范冲突；记录决策等待确认，继续独立的Kun装配、模型约定及分析器实现。</li>\n<li>2026-10-11 someone：独立准备已实现：复用Kun双拦截器/审计/租户写入，强制插件schema与模型约定，保留业务过滤；编译正反例通过。PostgreSQL16容器8项数据测试无跳过通过，包括超级用户对照、Guid v7/审计/xmin/软删。自动迁移、完整组件与参考应用仍未完成，DEC-017待确认。</li>\n<li>2026-10-11 someone：DEC-017已获批，验收口径阻塞解除。草稿PR #44保留，待当前AZ-001契约收尾后按既定串行约束恢复完整实现；尚未完成的功能与验收不变。</li>\n<li>2026-10-11 cody：Kun权限修复等待发布期间串行恢复：落实已批准DEC-017，先同步真实角色边界及app.current_tenant_id，并补在线高权限角色拒绝。</li>\n<li>2026-10-11 cody：DEC-017已实施：会话契约与受限角色验收已同步；应用启动和同步/异步开连接拒绝superuser/BYPASSRLS，预打开连接及管理员SET ROLE降权对照同样拒绝。13项真库数据测试通过；全仓266项测试零跳过，36门禁及12包依赖检查通过。自动迁移、完整seam/Outbox与1000行索引仍未完成。</li>\n<li>2026-10-12 cody：新增PostgreSQL迁移SQL生成器：从目标模型的租户标记自动为新建表输出ENABLE/FORCE RLS，限制策略抵御附加宽松策略，空租户拒绝访问。真实执行迁移差异器生成的SQL验证跨租户写和空租户写均42501；数据16项通过。历史表改造仍须显式迁移，参考应用/seam/Outbox尚未完成。</li>\n<li>2026-10-12 cody：当前增量全仓269项测试无跳过、36门禁与12包依赖检查通过；保留草稿#44，串行转回已取得正式Kun修复包的AZ-001收尾。DATA待恢复项为完整Data seam/Outbox、deleted_by和每租户1000行参考应用索引验收，既有代码与验收证据保留。</li>\n<li>2026-10-12 cody：AZ-001已通过最终CI并随PR #45合并；恢复DATA完整实现。同步主线正式Kun2026.10.11与QIAN0005，合并保留数据QIAN0003/0004和全部角色/RLS策略保护。</li>\n<li>2026-10-12 cody：与AZ-001主线合并后验证通过：正式Kun2026.10.11，13个包依赖检查、37项门禁、293项测试均成功且无跳过；保留QIAN0003/0004/0005全部规则。接着补齐Data seam、同上下文Outbox、deleted_by及真实参考应用索引验收。</li>\n<li>2026-10-12 cody：新增真实DataPlugin、DataDefinition/IDataService/IDataSession：每次会话独立scope，复用Kun EfUnitOfWork并绑定同一上下文/事件缓冲；验证通知同scope、保存失败整体回滚、多上下文互不串写、租户切换拒绝及卸载释放。补齐deleted_by：直接Remove转软删除，删除主体/时间自动填充且原审计不能改写。全仓299测试零跳过；数据22项含严格ValidateOnBuild/ValidateScopes通过；13包依赖、37门禁覆盖通过（一次本地还原进程异常的委托编译样例独立重跑通过）。旧组件配置骨架与正式入口尚待对齐，千行参考应用/索引验收未完成，保持草稿。</li>\n<li>2026-10-12 cody：五项本体验收完成：实际Kestrel+RS256身份+PostgreSQL的客户列表验证A/B各1000行；捕获真实列表SQL执行EXPLAIN ANALYZE命中租户复合索引。连接引用选择、独立库模式和租户挂载边界通过；全仓308测试零跳过、37门禁及13包依赖通过。SDK字段生成RT-014依赖RT-004，RT-004又依赖DATA-001，完整代码安装另属RT-011；按DEC-018请求本体与集成分期，未获批前保留草稿及骨架标记。</li>\n<li>2026-10-12 cody：独立前置CFG-001已随PR #46合并；同步最新主线并保留本草稿。组合验证316项测试零跳过、37门禁、15包依赖检查通过，包含真实CRM/PG索引与真实Apollo。DEC-018仍待产品负责人答复，本次同步不代表DATA合并或安装门通过。</li>\n<li>2026-10-12 cody：同步已合并的 CFG-002 与 Kun 2026.10.12；组合全仓构建零警告、358 项测试零失败零跳过、38 项门禁及 16 包依赖检查通过。真实 CRM HTTP/RLS 与实际列表 SQL 索引计划、真实 Apollo 拒绝/恢复同时通过。PR #44 继续保持草稿和 blocked，DEC-018 未答复，不改验收分期或 SDK/CLI 安装边界。</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-001.md"
  },
  {
@@ -859,8 +871,7 @@
    "S1-CFG-002"
   ],
   "blockedBy": [
-   "S1-DATA-001",
-   "S1-CFG-002"
+   "S1-DATA-001"
   ],
   "order": 1,
   "readyNow": false,
@@ -2495,8 +2506,7 @@
    "S1-RT-002"
   ],
   "blockedBy": [
-   "S1-FILE-001",
-   "S1-CFG-002"
+   "S1-FILE-001"
   ],
   "order": 6,
   "readyNow": false,
@@ -2990,8 +3000,7 @@
    "S1-CFG-002"
   ],
   "blockedBy": [
-   "S1-IDP-003",
-   "S1-CFG-002"
+   "S1-IDP-003"
   ],
   "order": 4,
   "readyNow": false,
@@ -3581,7 +3590,6 @@
    "S1-TEN-001"
   ],
   "blockedBy": [
-   "S1-CFG-002",
    "S1-TEN-001"
   ],
   "order": 2,
@@ -3675,7 +3683,6 @@
    "S1-RT-004",
    "S1-TEN-001",
    "S1-IDP-009",
-   "S1-CFG-002",
    "S1-AUD-001"
   ],
   "order": 5,
@@ -3760,8 +3767,7 @@
    "S1-RT-002"
   ],
   "blockedBy": [
-   "S1-NTF-001",
-   "S1-CFG-002"
+   "S1-NTF-001"
   ],
   "order": 6,
   "readyNow": false,
@@ -4493,8 +4499,7 @@
    "S1-CFG-002"
   ],
   "blockedBy": [
-   "S1-RT-004",
-   "S1-CFG-002"
+   "S1-RT-004"
   ],
   "order": 2,
   "readyNow": false,
@@ -5131,7 +5136,6 @@
   "blockedBy": [
    "S1-SCH-001",
    "S1-IDP-002",
-   "S1-CFG-002",
    "S1-EVT-001"
   ],
   "order": 3,

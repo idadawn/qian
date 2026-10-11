@@ -14,6 +14,37 @@ public sealed class ConfigurationSourceTests(ApolloFixture apollo) : IClassFixtu
     private static readonly string[] s_application = ["application"];
 
     [Fact]
+    public async Task 默认敏感扫描不能由自定义回调关闭_被覆盖的明文也不能入缓存()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "qian-secret-scan-" + Guid.NewGuid().ToString("N"))).FullName;
+        var appId = "qian-secret-" + Guid.NewGuid().ToString("N");
+        using var schema = JsonDocument.Parse("""{"properties":{"Service":{"properties":{"credential":{"x-qian-sensitive":true}}}}}""");
+        const string reference = "secretRef://platform/service/credential";
+        try
+        {
+            await apollo.PublishAsync(appId, "qian.common.test", new Dictionary<string, string> { ["Service:credential"] = "synthetic-literal" }, cancellationToken: ct);
+            await apollo.PublishAsync(appId, "application", new Dictionary<string, string> { ["Service:credential"] = reference }, cancellationToken: ct);
+            var error = Assert.Throws<InvalidOperationException>(() => Build());
+            Assert.DoesNotContain("synthetic-literal", error.ToString(), StringComparison.Ordinal);
+            Assert.Empty(Directory.GetFiles(directory, "*.json", SearchOption.AllDirectories));
+
+            await apollo.PublishAsync(appId, "qian.common.test", new Dictionary<string, string> { ["Service:credential"] = reference }, cancellationToken: ct);
+            var root = Build();
+            using (var owner = (IDisposable)root) Assert.Equal(reference, root["Service:credential"]);
+            var cache = Assert.Single(Directory.GetFiles(directory, "*.json", SearchOption.AllDirectories));
+            Assert.DoesNotContain("synthetic-literal", await File.ReadAllTextAsync(cache, ct), StringComparison.Ordinal);
+        }
+        finally { Directory.Delete(directory, true); }
+        IConfigurationRoot Build() => new ConfigurationBuilder().AddQianConfigurationSources(new QianConfigurationOptions
+        {
+            BasePath = directory, ApolloConfigurationSchema = schema.RootElement, ValidateApolloSnapshot = _ => true,
+            Arguments = ["--Apollo:AppId=" + appId, "--Apollo:Env=UAT", "--Apollo:ConfigServer:0=" + apollo.ConfigServiceUri.AbsoluteUri,
+                "--Apollo:CacheDir=cache", "--Apollo:Namespaces:0=qian.common.test", "--Apollo:Namespaces:1=application"]
+        }).Build();
+    }
+
+    [Fact]
     public async Task 仅环境引导可启动_AccessKey每次解析_鉴权失败不回退有效缓存()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -136,6 +167,9 @@ public sealed class ConfigurationSourceTests(ApolloFixture apollo) : IClassFixtu
     [InlineData("Apollo:Env", "DEV")]
     [InlineData("Apollo:ConfigServer:0", "http://user:password@localhost/")]
     [InlineData("Apollo:AccessKey", "plaintext-is-not-a-reference")]
+    [InlineData("Apollo:AccessKey", "secretRef://platform/a/../key")]
+    [InlineData("Apollo:AccessKey", "secretRef://platform/a%2fkey")]
+    [InlineData("Apollo:AccessKey", "secretRef://tenant/a/key")]
     [InlineData("Apollo:Namespaces:0", "tenant.settings")]
     public void 不安全或无效引导在联网前拒绝(string key, string value)
     {
@@ -145,7 +179,7 @@ public sealed class ConfigurationSourceTests(ApolloFixture apollo) : IClassFixtu
             var args = new Dictionary<string, string> { ["Apollo:AppId"] = "test", ["Apollo:Env"] = "UAT", ["Apollo:ConfigServer:0"] = "http://localhost:1/" };
             args[key] = value;
             var error = Assert.Throws<QianErrorException>(() => new ConfigurationBuilder().AddQianConfigurationSources(
-                new QianConfigurationOptions { BasePath = directory, Arguments = args.Select(pair => "--" + pair.Key + "=" + pair.Value).ToArray() }));
+                new QianConfigurationOptions { BasePath = directory, ResolveAccessKey = _ => "synthetic-unused", Arguments = args.Select(pair => "--" + pair.Key + "=" + pair.Value).ToArray() }));
             Assert.Equal("CONFIG_BOOTSTRAP_INVALID", error.Error.Code.Code);
         }
         finally { Directory.Delete(directory, true); }

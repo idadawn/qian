@@ -11,7 +11,7 @@
     升级 Kun 只改这一处；文档站的「Kun 框架」小节与 Kun API 参考按它镜像 kun 仓库 tag v$(KunVersion)（docs-site.md §2b）。
   -->
   <PropertyGroup Label="Kun">
-    <KunVersion>2026.10.11</KunVersion>
+    <KunVersion>2026.10.12</KunVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Gates">

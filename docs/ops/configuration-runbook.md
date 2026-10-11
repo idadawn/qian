@@ -1,6 +1,18 @@
-# 配置运行与故障处置（S1-CFG-001）
+# 配置开发、运行与故障处置（S1-CFG-001 / 002）
 
 配置源顺序与引导项见 [Qian.Config.Apollo](../../packages/Qian.Config.Apollo/README.md)。本手册描述已实现客户端的行为；L0–L4 为配置运维状态，与权限模型分层无关。
+
+## 开发配置分工
+
+| 配置类别 | 存放与读取位置 | 边界 |
+|---|---|---|
+| 部署级引导 | Kustomize / 宿主环境 | Apollo 端点、AppId、环境等；Apollo 不能改写自身引导 |
+| 平台 / 服务级非敏感参数 | Apollo | 发布前扫描；运行期每份原始快照与合并结果都校验，失败保留旧值 |
+| 密钥 | K8s Secret 投射文件 | 配置只保存公开 secretRef，使用时经声明与审批取交集后解析 |
+| 租户级在线设置 | ITenantSettings | 不进入 Apollo；能力随 TEN 任务交付 |
+| 前端公开运行配置 | window.__APP_CONF__ | 只允许浏览器可公开的数据，不能放原始密钥或后端解析能力 |
+
+密钥解析、审计端口与内存边界见 [密钥 Provider 开发说明](../../packages/Qian.Config.Secrets/README.md)，提交发布前使用 [配置扫描门禁](../../tools/Qian.Secrets.Tool/README.md)。`ApolloConfigurationSchema` 由宿主传入合成配置 Schema，敏感属性使用 `x-qian-sensitive`；Schema 自动收集仍属后续 CFG 任务。
 
 ## 降级矩阵
 
@@ -25,5 +37,7 @@
 配置根由创建者释放，释放会停止文件监视和 Apollo 长轮询。配置插件借用宿主根，卸载时撤销自己的 Config 服务与错误码登记，不释放其它独立消费者共用的根。
 
 快速协议回归使用共享 ApolloFixture；真实验收使用共享 RealApolloFixture 的 Apollo 2.5.2 ConfigService/AdminService 与 MySQL 8.0.43。通过真实 AdminService 修改并发布，检查同一 IOptionsMonitor 在 60 秒内从 10 更新到 25，然后停止服务验证缓存启动和无缓存失败。CI 测试制品中的 evidence/apollo-real-reload.json 保存更新耗时。
+
+真实发布回归还覆盖敏感字段明文：拒绝候选后，内存仍保留原引用、缓存不包含被拒值；再发布有效引用，长轮询能恢复更新。证据文件同时保存 `sensitiveCandidateRejected`、`cacheContainsRejectedValue` 和 `recoveredAfterRejection`，不能仅凭服务健康状态推断这些行为成立。
 
 强类型配置的最后有效值使用 Kun.Configuration；失败事件、治理审计和配置 Schema 管理由后续 CFG 任务完成。生产高可用、Portal OIDC 与托管 MySQL 按部署任务验收。

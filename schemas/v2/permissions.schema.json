@@ -27,8 +27,13 @@
       "type": "array",
       "uniqueItems": true,
       "items": {
-        "type": "string",
-        "minLength": 1
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "scope": { "enum": ["platform", "tenant", "dev"] }
+        },
+        "required": ["name", "scope"]
       }
     },
     "ui": {

@@ -17,6 +17,6 @@
 | `ROADMAP.md` | 阶段路线唯一真相源：S1–S4 目标、退出标准、核心交付、里程碑占位、依赖与风险、跨阶段约束 | 草案 v1（S1 交付已按 ADR-020 更新） |
 | [`../contracts/v0/`](../contracts/v0/README.md) | 冻结契约 v0（仓库根目录，不在 docs 下）：ErrorDetail 与错误码目录、S2S claim、事件信封、能力条目四类 JSON Schema 2020-12 + fixture，及[与 iClaw 的差异说明](../contracts/v0/iclaw-alignment.md)；字段以此为准 | draft（默认裁决待 S1-DEC-010 确认） |
 | `migration/` | 从参考平台到 Qian 的迁移方案 | 草案 v1 |
-| [`ops/configuration-runbook.md`](ops/configuration-runbook.md) | 配置源顺序、L0–L4 降级矩阵、故障处置及真实 Apollo 验收证据 | 随 S1-CFG-001 实现维护 |
+| [`ops/configuration-runbook.md`](ops/configuration-runbook.md) | 配置分工、secretRef、扫描门禁、L0–L4 降级矩阵及真实 Apollo 验收证据 | 随 S1-CFG-001 / 002 实现维护 |
 
 命名约定：产品 = Qian（乾），底座框架 = Kun，前端组件库 = yue，插件 ID 前缀 = `qian.`，运行时 = `Qian.Runtime`（.NET）/ `@qian/runtime`（TS），CLI = `qian`。三层口径：Kun = 框架层、Qian = 平台层、yue = 前端层，对外说「Qian 基于 Kun 构建」（ADR-021）。被借鉴的商业低代码产品一律称「参考平台」。

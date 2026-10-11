@@ -5,8 +5,9 @@ using Qian.Runtime.Errors;
 
 namespace Qian.Config.Apollo;
 
-internal sealed class ConfigurationService(IConfiguration configuration) : IConfigService
+internal sealed class ConfigurationService(IConfiguration configuration, ISecretResolverFactory? secrets = null) : IConfigService
 {
+    public ISecretResolverFactory? Secrets => secrets;
     public string? GetValue(string key)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);

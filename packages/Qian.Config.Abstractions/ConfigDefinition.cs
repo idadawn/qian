@@ -11,10 +11,16 @@ public static class ConfigDefinition
     public static readonly ServiceKey Key = new("Config");
     /// <summary>解析当前已挂载的配置 Provider。</summary>
     public static IConfigService Config(this IPluginContext context) => context.Inject<IConfigService>(Key);
+    /// <summary>按当前插件的声明、审批与租户上下文解析，已解析值不能进入模型消息。</summary>
+    public static ValueTask<SecretValue> ResolveSecretAsync(this IPluginContext context, string reference, CancellationToken cancellationToken = default) =>
+        (context.Config().Secrets ?? throw new QianErrorException(new QianError(SecretErrors.Unavailable)))
+            .ForPlugin(context).ResolveAsync(reference, cancellationToken);
 }
 /// <summary>供受信任代码读取配置；不提供写入入口，也不自动公开为模型工具。</summary>
 public interface IConfigService
 {
+    /// <summary>可选秘密解析能力；未装配时显式不可用，不退回读取明文配置。</summary>
+    ISecretResolverFactory? Secrets { get; }
     /// <summary>按标准 IConfiguration 层次键读取值。</summary>
     string? GetValue(string key);
     /// <summary>读取必需值，缺失时报告统一配置错误，不打印值。</summary>
