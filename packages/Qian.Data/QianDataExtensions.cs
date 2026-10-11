@@ -3,6 +3,7 @@ using Kun.MultiTenancy.EntityFrameworkCore;
 using Kun.MultiTenancy.EntityFrameworkCore.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +28,7 @@ public static class QianDataExtensions
         services.AddKunMultiTenancyEntityFrameworkCore();
         services.TryAddSingleton<QianApplicationRoleInterceptor>();
         services.ConfigureDbContext<TContext>((sp, options) => options.UseQianDataModel()
+            .ReplaceService<IMigrationsSqlGenerator, QianPostgresMigrationsSqlGenerator>()
             .AddInterceptors(sp.GetRequiredService<KunTenantSaveChangesInterceptor>(),
                 sp.GetRequiredService<QianApplicationRoleInterceptor>()));
         services.AddDbContext<TContext>(configure);
@@ -47,6 +49,8 @@ public static class QianDataExtensions
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
             if (context.GetService<IModelCacheKeyFactory>() is not KunMultiTenantModelCacheKeyFactory)
                 throw new QianDataMisconfiguredException("生效的 EF 模型缓存键被替换。");
+            if (context.GetService<IMigrationsSqlGenerator>() is not QianPostgresMigrationsSqlGenerator)
+                throw new QianDataMisconfiguredException("必须使用自动生成租户 RLS 策略的 Qian 迁移生成器。");
             var model = context.Model;
             var schema = context.GetService<IDbContextOptions>().Extensions
                 .OfType<RelationalOptionsExtension>().Single().MigrationsHistoryTableSchema;

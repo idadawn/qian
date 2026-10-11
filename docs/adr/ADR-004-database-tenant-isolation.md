@@ -70,4 +70,4 @@ MySQL 只是纸面支持：Pomelo 只钉版本、无引用无测试，RLS 无等
 
 RLS 验收用 NOSUPERUSER / NOBYPASSRLS 应用角色直接执行原生 SQL；管理员连接仅用于 DDL 与造数。FORCE RLS 约束表所有者，不能约束超级用户及 BYPASSRLS 角色，必须保留其可绕过的对照。在线应用启动及新打开数据库连接时校验登录角色和当前角色，拒绝高权限凭据；迁移使用独立管理员连接。
 
-会话变量统一复用 Kun 已发布契约 `app.current_tenant_id`，值为字符串租户标识；策略 `USING` 与 `WITH CHECK` 使用 `current_setting('app.current_tenant_id', true)`，不增加第二变量，也不强转 UUID。缺失租户不匹配任何业务行。应用角色自身还须由部署侧限制角色切换、DDL 与其他额外授权，RLS 不用于隔离恶意的数据库管理员。
+会话变量统一复用 Kun 已发布契约 `app.current_tenant_id`，值为字符串租户标识；策略 `USING` 与 `WITH CHECK` 使用 `NULLIF(current_setting('app.current_tenant_id', true), '')`，不增加第二变量，也不强转 UUID。缺失或空租户不匹配任何业务行。应用角色自身还须由部署侧限制角色切换、DDL 与其他额外授权，RLS 不用于隔离恶意的数据库管理员。

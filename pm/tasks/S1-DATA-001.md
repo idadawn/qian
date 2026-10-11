@@ -1,7 +1,7 @@
 ---
 id: S1-DATA-001
 title: AddQianData 默认安全装配与 RLS 迁移模板
-status: doing
+status: todo
 stage: S1
 area: DATA
 wave: 1
@@ -14,7 +14,7 @@ refs:
   - docs/prd/07-s1-foundation.md#7.6
   - docs/adr/ADR-004-database-tenant-isolation.md
   - docs/adr/ADR-011-metadata-dynamic-data.md
-updated: 2026-10-11
+updated: 2026-10-12
 ---
 
 ## 背景
@@ -45,3 +45,5 @@ Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 �
 - 2026-10-11 someone：DEC-017已获批，验收口径阻塞解除。草稿PR #44保留，待当前AZ-001契约收尾后按既定串行约束恢复完整实现；尚未完成的功能与验收不变。
 - 2026-10-11 cody：Kun权限修复等待发布期间串行恢复：落实已批准DEC-017，先同步真实角色边界及app.current_tenant_id，并补在线高权限角色拒绝。
 - 2026-10-11 cody：DEC-017已实施：会话契约与受限角色验收已同步；应用启动和同步/异步开连接拒绝superuser/BYPASSRLS，预打开连接及管理员SET ROLE降权对照同样拒绝。13项真库数据测试通过；全仓266项测试零跳过，36门禁及12包依赖检查通过。自动迁移、完整seam/Outbox与1000行索引仍未完成。
+- 2026-10-12 cody：新增PostgreSQL迁移SQL生成器：从目标模型的租户标记自动为新建表输出ENABLE/FORCE RLS，限制策略抵御附加宽松策略，空租户拒绝访问。真实执行迁移差异器生成的SQL验证跨租户写和空租户写均42501；数据16项通过。历史表改造仍须显式迁移，参考应用/seam/Outbox尚未完成。
+- 2026-10-12 cody：当前增量全仓269项测试无跳过、36门禁与12包依赖检查通过；保留草稿#44，串行转回已取得正式Kun修复包的AZ-001收尾。DATA待恢复项为完整Data seam/Outbox、deleted_by和每租户1000行参考应用索引验收，既有代码与验收证据保留。

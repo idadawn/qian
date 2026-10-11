@@ -481,8 +481,8 @@ CREATE TABLE authz.grant (
 ALTER TABLE authz.grant ENABLE ROW LEVEL SECURITY;
 ALTER TABLE authz.grant FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON authz.grant
-  USING (tenant_id = current_setting('app.current_tenant_id', true))
-  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true));
+  USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), ''))
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), ''));
 
 -- 数据权限方案（租户表，RLS）
 CREATE TABLE authz.data_scope_rule (
