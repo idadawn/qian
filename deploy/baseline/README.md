@@ -2,7 +2,7 @@
 
 部署资产唯一源为部署仓 [PR #88](https://github.com/idadawn/iclaw-deploy/pull/88)：`2-qian/baseline`、`env-ds/qian-staging`、`env-ds/qian-prod`。Qian 仓库只记录任务与回链，不再复制一份生效清单。
 
-## 已交付与已验证
+## 已交付物料与本机验证
 
 - 两环境独立 namespace、PostgreSQL 16 / Redis 7 与独立 PVC；镜像按官方 registry 查询的多架构 digest 固定。
 - default-deny ingress/egress；仅明确的应用/迁移 Pod 可连同环境 PG/Redis 与集群 DNS。RabbitMQ/Apollo 尚未放行，须专属实例与实际标签就绪后加入。
@@ -14,7 +14,7 @@
 
 2026-10-11 04:34–04:42（Asia/Shanghai），通过 qd 做只读检查，Kubernetes API 返回 `ServiceUnavailable` / `apiserver not ready`；K3s 服务处于 `activating/start`，两次观察的累计重启数为 550 / 551。另外两个控制面在本次有限等待内未返回状态，不能据此推断节点宕机。加密状态检查未获得有效结果。
 
-没有执行集群/节点变更，没有创建命名空间或现场测试 Pod；两份基线 overlay 尚未加入 Argo Application。Traefik 实际 trustedIPs、HTTPS issuer、secrets-encryption、生产独立节点池、Harbor 插件 artifact 和集群网络隔离仍未验收，旧文档不能代替现场状态。
+初次只读核验时尚未执行集群/节点变更、创建命名空间或现场测试 Pod，两份基线 overlay 尚未加入 Argo Application。后续授权实施和现场验收见本页最新记录；旧文档不能代替现场状态。
 
 ## 后续门槛
 
@@ -42,4 +42,40 @@ S1-DEP-001 的现场验收项仍未完成。本机验证与静态清单合并不
 
 现有 PG 请求为 500m CPU / 512 MiB、PVC 20 GiB；Redis 为 100m / 256 MiB、PVC 8 GiB。合计至少需要可调度的 600m / 768 MiB 与 28 GiB 卷空间，并保留系统和运行余量。当前没有节点能承载 PG；不能凭瞬时空闲 CPU 或静态配额判定可部署。
 
-已向用户请求生产专用节点安排；staging 同样需要新增或明确释放资源后，才能提交具有实际可用落点的 Argo 接入与现场验收。未降低资源请求以绕过约束，未迁移其他应用，未创建 Qian 工作负载。
+上述表格是新生产节点加入前的共享池快照。用户随后明确选择现有 K3s 内的 Qian 专用节点；生产节点和基础设施已经按下节完成。staging 数据服务仍需额外可调度资源，没有降低数据库请求以绕过约束。
+
+## 生产专用节点与真实数据平面（2026-10-11）
+
+用户已确认“仍用现有集群，为 Qian 划出专用节点”。部署仓 [PR #89](https://github.com/idadawn/iclaw-deploy/pull/89) 已全绿合并：pve01 上新增 VM106 / qian-prod01（2 vCPU、4 GiB 内存、60 GiB 系统盘、独立 100 GiB 数据盘），仅作为 agent 加入现有集群，原控制面成员不变。
+
+- 实际地址为 DHCP 分配的 192.168.1.185；VPN 10.78.1.185 管理访问已验证。密码、交互式认证和 root SSH 登录关闭，cloud-init schema 通过。
+- 与现网同版 v1.35.5+k3s1；生产专用标签、NoSchedule taint 与外部 LB 排除标签均生效。`/data` 通过 UUID 挂载，agent 强制依赖挂载；已验证一次重启后自动恢复，四个节点全部 Ready。
+- `qian-prod-baseline` 固定部署仓 revision `1d66d8a841bba9327f2466ab203b9762d08f3402`，手动同步成功且 Synced/Healthy，未开启自动同步、prune 或 selfHeal。
+- PG/Redis 均 Ready，20 GiB / 8 GiB PVC 位于专属数据盘；生产请求为 600m / 768 MiB / 28 GiB，配额、LimitRange 和默认拒绝策略实际存在。
+- 部署仓 [PR #90](https://github.com/idadawn/iclaw-deploy/pull/90) 的脚本已在生产完整执行：应用角色真实 TCP 认证、无租户零行及双租户 RLS、Redis 认证读写/匿名拒绝通过；授权对照可达 PG、其他 namespace DNS 与核实的公网端点，无权限 Pod 对三条路径均被拒绝。测试资源已清理。
+
+这证明生产基础设施，不代表完整平台应用已部署或四依赖应用联调已通过。PVE 仍是与两个既有 worker 共用的物理宿主，不增加物理故障域；staging 数据服务容量仍需安排。
+
+## staging 治理与网络验证（2026-10-11）
+
+部署仓 PR #90 已合并。`qian-staging-baseline` 同样固定基线 revision，未开启自动同步；仅选择同步 Namespace、ResourceQuota、LimitRange 和五条 NetworkPolicy，没有启动 StatefulSet 或创建数据卷。
+
+`qian-staging` 的配额/默认限制已存在，默认拒绝策略已应用。运行 `d0d69259579e` 在 k3s-worker01 上完成真实网络对照：授权探针能访问跨 namespace DNS 与已核实公网端点，无权限探针对两项均被拒绝。报告明确为 `data_checked: false`；临时 Pod 和网络规则均已清除。首次准备镜像时镜像源返回 502；核对本地缓存的同一 OCI digest 后重新执行，未更改安全断言或网络规则。
+
+staging Application 整体仍未完成同步，数据服务与 PVC 尚不存在；网络治理通过不代表 PG/Redis 或真实平台联调完成。
+
+## staging 容量调整提案（待维护批准）
+
+可评审的最小调整为 pve01 的 VM101 / k3s-worker01：内存 8192 → 9216 MiB，系统盘 60 → 100 GiB；vCPU 保持 4 个，现有应用的请求不下调。增加的 1 GiB 内存可补足 PG/Redis 768 MiB 请求的缺口，磁盘扩展为两个数据卷及既有数据保留空间。执行前须按当时宿主余量重新核验，不能把本次快照当作永久容量保证。
+
+该 VM 未启用 memory hotplug，NUMA 为 0，需要维护重启；实际系统盘为 `/dev/sda3` 上的 LVM/ext4，`/data/k3s-storage` 也位于该文件系统。worker01 上有单副本 CoreDNS、Traefik，以及 ASR/PDM 和本地卷相关业务。维护必须控制影响，不能直接重启了事。
+
+执行门：
+
+1. 批准维护窗口后，复核另外两个控制面/etcd、API、备份空间、PVE 内存预算与所有受影响工作负载；任一前置不满足即停止。
+2. 保存 qd 本地 etcd 快照和 PVE 本地 VM101 的可恢复快照/备份，核验可用性；记录节点、卷、服务与入口基线。材料只保留在受保护的现有管理主机，不写入 Git、不输出凭据、不外发。此处用于维护回退，不冒充异机灾备。
+3. 先确保 CoreDNS/Traefik 在其他可用节点有 Ready 实例；检查 PDB 与本地卷约束，对无法迁移的单副本业务使用已批准维护窗口。此步骤涉及既有服务，不包含在新生产 worker 的无迁移实施中。
+4. 仅调整 VM101 的内存与 scsi0 容量；在停机/重启边界完成内存生效，并逐层验证磁盘、分区、PV、LV 和 ext4 的扩大，不操作其他磁盘、不缩盘。
+5. 节点 Ready 后核验 etcd、DNS、入口、原有业务与 PVC；恢复调度，再复核 staging 数据服务实际可调度余量，最后通过固定 GitOps 版本部署并运行完整验收。
+
+失败时停止后续部署，保留快照与诊断；按维护前快照制定恢复，不能通过直接缩盘、删除现有 PVC 或跳过业务恢复检查来回退。该提案尚未对 VM101 或既有应用执行任何变更。
