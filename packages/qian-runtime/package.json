@@ -1,0 +1,52 @@
+{
+  "name": "@idadawn/qian-runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "description": "Qian TypeScript runtime: scoped services, events and reversible effects",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "AGENTS.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/idadawn/qian.git",
+    "directory": "packages/qian-runtime"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/prepare.mjs && tsc && node scripts/copy-vendor.mjs",
+    "test": "node --test test/*.test.mjs",
+    "api:update": "api-extractor run --local",
+    "check:api": "api-extractor run",
+    "test:browser": "node test/browser-smoke.mjs",
+    "test:types": "tsc -p test/tsconfig.json"
+  },
+  "dependencies": {
+    "cosmokit": "1.6.2"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "yaml": "2.9.1",
+    "ajv": "8.20.0",
+    "@microsoft/api-extractor": "7.59.4",
+    "vite": "catalog:",
+    "@playwright/test": "catalog:"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
+}

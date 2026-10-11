@@ -1,0 +1,49 @@
+name: runtime-ts
+on:
+  push:
+    branches: [main]
+    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tck/profiles/**', 'packages/qian-cli/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml', '.github/workflows/runtime-ts-release.yml']
+  pull_request:
+    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tck/profiles/**', 'packages/qian-cli/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml', '.github/workflows/runtime-ts-release.yml']
+permissions:
+  contents: read
+concurrency:
+  group: runtime-ts-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  runtime:
+    name: TS 运行时与共用 TCK
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @qian/surfaces build
+      - run: pnpm --filter qian build
+      - run: pnpm --filter ./packages/qian-runtime build
+      - run: pnpm --filter ./packages/qian-runtime check:api
+      - run: pnpm --filter ./packages/qian-runtime test:types
+      - run: pnpm --filter ./packages/qian-runtime test
+      - name: 同一组 YAML 的 .NET 侧
+        run: dotnet run --project tests/Qian.Runtime.Tests -c Release
+      - run: pnpm --filter ./packages/qian-runtime exec playwright install --with-deps chromium
+      - run: pnpm --filter ./packages/qian-runtime test:browser
+      - name: 验证可分发包含类型和许可证
+        run: |
+          mkdir -p TestResults
+          pnpm --filter ./packages/qian-runtime pack --pack-destination "$GITHUB_WORKSPACE/TestResults"
+          node --check packages/qian-runtime/scripts/publish.mjs
+          node packages/qian-runtime/scripts/verify-consumer.mjs "file:$GITHUB_WORKSPACE/TestResults/idadawn-qian-runtime-$(node -p 'require("./packages/qian-runtime/package.json").version').tgz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qian-runtime-package
+          path: TestResults/*.tgz

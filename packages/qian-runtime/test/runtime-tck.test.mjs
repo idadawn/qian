@@ -1,0 +1,10 @@
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {parse} from 'yaml';
+import * as runtime from '../dist/index.js';
+import {loadProfile} from '../../qian-cli/dist/profiles.js';
+import {runtimeScenarios} from '../../../tck/runtime/harness-ts.mjs';
+import {assemblyScenarios} from '../../../tck/runtime/assembly-ts.mjs';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..');
+runtimeScenarios(runtime,parse,loadProfile,root);
+assemblyScenarios(runtime.PluginLoader,loadProfile,root);

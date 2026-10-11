@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`███░░░░░░░` 32%（42/131）
-- 状态：todo 87 · doing 0 · review 0 · done 42 · blocked 2
+- 状态：todo 86 · doing 0 · review 2 · done 42 · blocked 1
 - 最近更新：2026-10-11
 
 ## 按阶段
@@ -54,31 +54,30 @@
 |---|---|---|---|
 | claude | `██████████` 100%（23/23） | 0 | 0 |
 | codex | `██████████` 100%（1/1） | 0 | 0 |
-| cody | `████████░░` 89%（17/19） | 0 | 2 |
+| cody | `████████░░` 85%（17/20） | 0 | 2 |
 | 产品负责人 | `██████████` 100%（1/1） | 0 | 0 |
-| （未认领） | `░░░░░░░░░░` 0%（0/87） | 0 | 77 |
+| （未认领） | `░░░░░░░░░░` 0%（0/86） | 0 | 77 |
 
 ## 接下来可做（无未完成前置的待办，按优先级 / 波次）
 
 | # | 任务 | 优先级 | 波次 | 估算 | 领域 |
 |---|---|---|---|---|---|
-| 1 | [S1-DEC-014](tasks/S1-DEC-014.md) TS 运行时私有 npm 发布名与逻辑导入名 | P0 | 决策 | 0.5d | DEC |
-| 2 | [S1-AZ-001](tasks/S1-AZ-001.md) Qian.Authz.Abstractions 契约先行：端口、命名与错误码 | P0 | 1 | 2d | AZ |
-| 3 | [S1-CFG-001](tasks/S1-CFG-001.md) Apollo 配置 provider（自研）与配置源顺序 | P0 | 1 | 5d | CFG |
-| 4 | [S1-DATA-001](tasks/S1-DATA-001.md) AddQianData 默认安全装配与 RLS 迁移模板 | P0 | 1 | 5d | DATA |
-| 5 | [S1-DEP-002](tasks/S1-DEP-002.md) L1 组件上 K3s：RabbitMQ、Apollo + MySQL、OIDC | P0 | 1 | 5d | DEP |
-| 6 | [S1-DEP-003](tasks/S1-DEP-003.md) profile 镜像构建、SBOM、漏洞扫描与 Cosign 签名 | P0 | 2 | 3d | DEP |
-| 7 | [S1-RT-011](tasks/S1-RT-011.md) qian CLI 骨架与 add / remove / list | P0 | 2 | 5d | RT |
-| 8 | [S1-YUE-005](tasks/S1-YUE-005.md) @yue/core 约 30 个基础组件（Base UI + shadcn） | P0 | 2 | 8d | YUE |
-| 9 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | P1 | 2 | 1d | KUN |
-| 10 | [S1-DOCS-004](tasks/S1-DOCS-004.md) 文档站换用 @yue/tokens：替换占位令牌 | P1 | 3 | 0.5d | DOCS |
+| 1 | [S1-AZ-001](tasks/S1-AZ-001.md) Qian.Authz.Abstractions 契约先行：端口、命名与错误码 | P0 | 1 | 2d | AZ |
+| 2 | [S1-CFG-001](tasks/S1-CFG-001.md) Apollo 配置 provider（自研）与配置源顺序 | P0 | 1 | 5d | CFG |
+| 3 | [S1-DATA-001](tasks/S1-DATA-001.md) AddQianData 默认安全装配与 RLS 迁移模板 | P0 | 1 | 5d | DATA |
+| 4 | [S1-DEP-002](tasks/S1-DEP-002.md) L1 组件上 K3s：RabbitMQ、Apollo + MySQL、OIDC | P0 | 1 | 5d | DEP |
+| 5 | [S1-DEP-003](tasks/S1-DEP-003.md) profile 镜像构建、SBOM、漏洞扫描与 Cosign 签名 | P0 | 2 | 3d | DEP |
+| 6 | [S1-RT-011](tasks/S1-RT-011.md) qian CLI 骨架与 add / remove / list | P0 | 2 | 5d | RT |
+| 7 | [S1-YUE-005](tasks/S1-YUE-005.md) @yue/core 约 30 个基础组件（Base UI + shadcn） | P0 | 2 | 8d | YUE |
+| 8 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | P1 | 2 | 1d | KUN |
+| 9 | [S1-DOCS-004](tasks/S1-DOCS-004.md) 文档站换用 @yue/tokens：替换占位令牌 | P1 | 3 | 0.5d | DOCS |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 11 | 38d |
-| 第 2 层 | 12 | 48d |
+| 第 1 层 | 10 | 37.5d |
+| 第 2 层 | 11 | 43d |
 | 第 3 层 | 13 | 54d |
 | 第 4 层 | 13 | 46d |
 | 第 5 层 | 9 | 33d |
@@ -91,4 +90,7 @@
 
 ## 进行中
 
-（无）
+| 任务 | 状态 | 负责人 | 更新 |
+|---|---|---|---|
+| [S1-DEC-014](tasks/S1-DEC-014.md) TS 运行时私有 npm 发布名与逻辑导入名 | review | cody | 2026-10-11 |
+| [S1-RT-003](tasks/S1-RT-003.md) @qian/runtime：TypeScript 同语义运行时（外壳插件树） | review | cody | 2026-10-11 |

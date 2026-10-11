@@ -48,6 +48,7 @@ amends: ADR-001, ADR-013
   - 门禁：`sdk/kun/` 为生成目录不接受手改；镜像 tag 与 `KunVersion` 不一致、白名单外文件进站、`KunVersion` 缺失，均构建失败。
   - 公开时点耦合：文档站公开（ADR-019 §7：S2 末或首个外部宿主试用时）会连带公开 Kun 文档；届时 Kun 仓库须同步公开或 Kun 维护人书面同意，否则公开站的 Kun 小节降级为「版本矩阵 + 与 Qian 的关系」两页。
 - **D21.5 产品族可见性**。各仓库 README 开头放同一段「产品族地图」（Qian 立即落实；kun、`qian-plugins` 等在下次变更时补一行回链，不作 S1 退出条件）；文档站第 1 部分有 `/start/family` 产品族地图页；全站 frontmatter 增加 `project`（`qian` / `kun` / `yue`），`llms.txt` 按它分节、知识库按它过滤。
+- **D21.6 TS 运行时的物理发布名与逻辑名**（S1-DEC-014，产品负责人 2026-10-11 确认）。GitHub Packages 的物理包名为 `@idadawn/qian-runtime`，关联 `idadawn/qian`，S1 保持私有。公共逻辑导入名仍为 `@qian/runtime`，消费者通过 `"@qian/runtime": "npm:@idadawn/qian-runtime@<固定版本>"` 映射，不另发同功能的第二份包。发版必须完成私有源真实安装、别名导入与类型声明验收；不把本地打包代替已发布证明。
 
 ## 3 理由（Rationale）
 

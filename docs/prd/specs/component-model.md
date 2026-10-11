@@ -679,6 +679,8 @@ public sealed record Registration(ServiceKey Key, string Name, ScopeKey Scope, s
 
 ### 5.3 `@qian/runtime`（TypeScript）最小 API 草图
 
+S1-DEC-014 已于 2026-10-11 批准：本节的 `@qian/runtime` 是逻辑导入名；GitHub Packages 私有源中的物理包名为 `@idadawn/qian-runtime`，消费者用 npm alias `"@qian/runtime": "npm:@idadawn/qian-runtime@<固定版本>"` 安装。包所有者、源码关联与真实消费验收见 ADR-021 D21.6，运行时语义不变。
+
 ```ts
 export type ServiceKey<T = unknown> = string & { readonly __type?: T };                 // "files"
 export type ScopeKey = "global" | `${"tenant" | "app" | "agent-session"}:${string}`;
