@@ -4683,14 +4683,14 @@
  {
   "id": "S1-RT-011",
   "title": "qian CLI 骨架与 add / remove / list",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
   "wave": 2,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "5d",
   "days": 5.0,
   "depends": [
@@ -4701,7 +4701,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.3",
@@ -4716,12 +4716,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-12",
   "acceptance": {
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.8：<code>qian add &lt;component&gt;[@version]</code> 从已登记市场解析条目 → 取组件文件夹 → 过校验器与验签 → 表面复制到 <code>.qian/&lt;id&gt;/</code> → <code>dotnet add package</code> / npm 安装 → 向当前 profile 的 <code>config/qian.patch.yml</code>（standalone 为 <code>.qian/patch.yml</code>）追加条目 → <code>qian doctor</code>；<code>--yes</code> / <code>--profile</code> / <code>--scope tenant:&lt;id&gt;</code>；<code>.qian/lock.json</code> 记来源与 digest / commit；<code>qian remove</code>、<code>qian list [--remote]</code>；子命令带 <code>--json</code>；Node 实现 + <code>dotnet qian</code> 薄包装。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：空白 ASP.NET Core 项目执行 <code>qian add identity authz files</code>，表面进入 <code>.qian/</code>、NuGet 依赖按市场条目钉版、patch 条目写入、<code>lock.json</code> 记录 digest</li>\n<li class='chk'><span class='box'></span>IT：<code>qian remove</code> 逆序撤销 <code>add</code> 的全部改动；<code>qian list</code> 列出本地已装组件及来源市场</li>\n<li class='chk'><span class='box'></span>IT：未通过校验器或验签的组件 <code>add</code> 失败并输出结构化错误（<code>--json</code>）</li>\n<li class='chk'><span class='box'></span>IT：<code>qian add --scope tenant:&lt;id&gt;</code> 写租户 scope patch，需平台连接与运营权限，S1 仅运营 CLI</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.8：<code>qian add &lt;component&gt;[@version]</code> 从已登记市场解析条目 → 取组件文件夹 → 过校验器与验签 → 表面复制到 <code>.qian/&lt;id&gt;/</code> → <code>dotnet add package</code> / npm 安装 → 向当前 profile 的 <code>config/qian.patch.yml</code>（standalone 为 <code>.qian/patch.yml</code>）追加条目 → <code>qian doctor</code>；<code>--yes</code> / <code>--profile</code> / <code>--scope tenant:&lt;id&gt;</code>；<code>.qian/lock.json</code> 记来源与 digest / commit；<code>qian remove</code>、<code>qian list [--remote]</code>；子命令带 <code>--json</code>；Node 实现 + <code>dotnet qian</code> 薄包装。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：空白 ASP.NET Core 项目执行 <code>qian add identity authz files</code>，表面进入 <code>.qian/</code>、NuGet 依赖按市场条目钉版、patch 条目写入、<code>lock.json</code> 记录 digest</li>\n<li class='chk'><span class='box'></span>IT：<code>qian remove</code> 逆序撤销 <code>add</code> 的全部改动；<code>qian list</code> 列出本地已装组件及来源市场</li>\n<li class='chk'><span class='box'></span>IT：未通过校验器或验签的组件 <code>add</code> 失败并输出结构化错误（<code>--json</code>）</li>\n<li class='chk'><span class='box'></span>IT：<code>qian add --scope tenant:&lt;id&gt;</code> 写租户 scope patch，需平台连接与运营权限，S1 仅运营 CLI</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：为 QA-002 完整组件链与 DATA 完整安装验收补齐必要 CLI 前置；RT-002/008/016 和 DEC-003 均已完成。复用现有无代码安装与签名验证，补真实代码包安装、事务回滚、移除和来源查询；租户 scope 真实接口及 identity/authz/files 真实包仍按其依赖验收，不以替身宣称完成。</li>\n<li>2026-10-12 cody：完成安装器底层：严格包名/版本、共享依赖归属、MSBuild 中央版本读取、真实 NuGet/npm 安装与移除、声明后实际还原验证、工作区文件/目录备份及自动失败回滚。27 项 CLI 测试通过，含正式 Kun.Core 编译消费、真实 npm 导入和共享依赖末使用者删除。底层尚未接入完整 add/remove，四项任务验收不提前勾选；下一步接批量命令、升级/切片、恢复与真实平台 scope。</li>\n</ul>",
   "file": "pm/tasks/S1-RT-011.md"
  },
  {
