@@ -315,7 +315,7 @@
  {
   "id": "S1-AZ-001",
   "title": "Qian.Authz.Abstractions 契约先行：端口、命名与错误码",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "AZ",
   "areaName": "鉴权",
@@ -332,7 +332,7 @@
    "S1-KUN-009"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -361,7 +361,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>与 7.4 互为前置、契约先行：Definition 暴露 <code>ctx.Authz</code> 并再导出 <code>Kun.Authorization</code> 端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>；端口归属见 ADR-019 §7 待确认）；<code>PermissionDefinition</code>（资源类型、动作、风险级别、step-up、终端）；权限点命名规范 <code>&lt;plugin-id&gt;:&lt;resource&gt;:&lt;action&gt;</code>（R9）；<code>Check / BatchCheck / ListAllowedActions / ListPermissions / Explain</code> 接口形状；结构化错误码目录（<code>AUTHZ_DENIED</code>、<code>CONSTRAINT_MUTEX</code>、<code>CARDINALITY_USER_LIMIT</code>、<code>PARTIAL_SUCCESS</code> …）与多语言文案 JSON 导出。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：<code>Kun.Authorization</code> 已作为独立包发布，只放端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>、<code>AuthorizationSubject</code>、可解释判定），不内置 RBAC/ABAC，三个入口缺少引擎时一律拒绝且在 handler 前判定——HTTP 用 <code>services.AddKunAuthorization()</code> + 端点 <code>.RequireKunPermission(&quot;&lt;权限点&gt;&quot;)</code>，gRPC 用 <code>[RequiresPermission]</code>（<code>AddKunGrpc()</code> 自动装配拦截器），Mediator 的 <code>PermissionBehavior</code> 只有逐命令的泛型注册 <code>AddPermissionBehavior&lt;TRequest, TResponse&gt;(denied)</code>（命令须实现 <code>IPermissionProtectedRequest</code> 静态声明 <code>RequiredPermissions</code>），Kun 没有开放泛型的全局注册；本任务要决定由 <code>qian.authz</code> 逐命令注册还是自建全局行为，并用门禁保证受保护命令不漏注册。权限集合不从令牌直接推导。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Authz.Abstractions</code> 只依赖 <code>Kun.Authorization</code> 端口、<code>Kun.*.Abstractions</code> 与 <code>Qian.Runtime</code>，通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：权限点全名拼接规则与 <code>qian.sample.crm:customer:read</code> 等样例通过单测；清单 <code>resource</code> 不带插件前缀</li>\n<li class='chk done'><span class='box'>✓</span>UT：错误码目录与多语言文案导出为 JSON 并符合 <code>ErrorDetail</code> 约定</li>\n</ul>\n<h4>实现与验证证据</h4>\n<ul>\n<li><code>Qian.Authz.Abstractions</code> 复用 Kun 的五方法判定端口与数据/字段端口，提供 Authz 服务键、规范权限元数据、错误目录及多语言 ErrorDetail 导出。</li>\n<li>Mediator 采用 <code>AddAuthorizedHandler</code> 逐命令登记同一 builder 的权限行为与处理器；QIAN0005 编译门禁覆盖两个底层重载、方法组引用、泛型包装及伪造桥接类，普通未受保护命令保持可注册。</li>\n<li>真实启动校验发现的框架重复登记问题已在 [Kun PR #52](https://github.com/idadawn/kun/pull/52) 修复，全 24 项 CI 通过；[2026.10.11 发布](https://github.com/idadawn/kun/actions/runs/38153820866) 成功，Qian 从 nuget.org 实际还原并将 KunVersion 升至该正式版。</li>\n<li>本地全仓 Release 构建零警告，13 包依赖图通过，36 项门禁覆盖通过（一次本地还原进程退出后，对应 10 项依赖门禁独立重跑通过）；强制要求 Docker 的全量 282 项测试通过、零跳过。新增 Authz 契约 24 项，包含真实 Kun 管道的缺引擎、拒绝、放行及匿名场景。</li>\n<li>本任务只完成 Definition 与注册边界；权限注册表/角色模板、RBAC 引擎与完整入口 PEP/审计分别由 AZ-002、003、004 交付。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的鉴权端口落地（<code>Kun.Authorization</code> 发包、<code>PermissionBehavior</code> 只能逐命令注册、缺引擎即拒绝），随 S1-KUN-009 升级可用</li>\n<li>2026-10-11 someone：用户已批准QA-002必要前置。DATA-001草稿等待DEC-017，串行转入不依赖该裁决的权限Definition：复用Kun.Authorization端口，补命名/判定契约与错误码验收。</li>\n<li>2026-10-11 cody：真实Kun管道验收发现2026.10.9在ValidateOnBuild下因权限行为重复DI注册启动失败；保持检查不降级，串行修复Kun并发布正式包后完成本任务。</li>\n<li>2026-10-11 cody：实现及编译门禁已准备；等待Kun PR #52全绿合并与正式NuGet发布，保留ValidateOnBuild回归。上游CI串行排队期间切回已批准的DEC-017/DATA-001，不将当前本地实现标为完成。</li>\n<li>2026-10-12 cody：Kun PR #52已全绿合并并发布2026.10.11；正式NuGet包已从nuget.org实际还原。恢复权限契约的ValidateOnBuild真管道验收及完整门禁。</li>\n<li>2026-10-12 cody：契约及三项验收通过：正式Kun2026.10.11、24项新增Authz测试、282项全仓测试无跳过、13包依赖与编译门禁通过。准备远程CI验收，完整RBAC/PEP仍由后续任务交付。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>与 7.4 互为前置、契约先行：Definition 暴露 <code>ctx.Authz</code> 并再导出 <code>Kun.Authorization</code> 端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>；端口归属见 ADR-019 §7 待确认）；<code>PermissionDefinition</code>（资源类型、动作、风险级别、step-up、终端）；权限点命名规范 <code>&lt;plugin-id&gt;:&lt;resource&gt;:&lt;action&gt;</code>（R9）；<code>Check / BatchCheck / ListAllowedActions / ListPermissions / Explain</code> 接口形状；结构化错误码目录（<code>AUTHZ_DENIED</code>、<code>CONSTRAINT_MUTEX</code>、<code>CARDINALITY_USER_LIMIT</code>、<code>PARTIAL_SUCCESS</code> …）与多语言文案 JSON 导出。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：<code>Kun.Authorization</code> 已作为独立包发布，只放端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>、<code>AuthorizationSubject</code>、可解释判定），不内置 RBAC/ABAC，三个入口缺少引擎时一律拒绝且在 handler 前判定——HTTP 用 <code>services.AddKunAuthorization()</code> + 端点 <code>.RequireKunPermission(&quot;&lt;权限点&gt;&quot;)</code>，gRPC 用 <code>[RequiresPermission]</code>（<code>AddKunGrpc()</code> 自动装配拦截器），Mediator 的 <code>PermissionBehavior</code> 只有逐命令的泛型注册 <code>AddPermissionBehavior&lt;TRequest, TResponse&gt;(denied)</code>（命令须实现 <code>IPermissionProtectedRequest</code> 静态声明 <code>RequiredPermissions</code>），Kun 没有开放泛型的全局注册；本任务要决定由 <code>qian.authz</code> 逐命令注册还是自建全局行为，并用门禁保证受保护命令不漏注册。权限集合不从令牌直接推导。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Authz.Abstractions</code> 只依赖 <code>Kun.Authorization</code> 端口、<code>Kun.*.Abstractions</code> 与 <code>Qian.Runtime</code>，通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：权限点全名拼接规则与 <code>qian.sample.crm:customer:read</code> 等样例通过单测；清单 <code>resource</code> 不带插件前缀</li>\n<li class='chk done'><span class='box'>✓</span>UT：错误码目录与多语言文案导出为 JSON 并符合 <code>ErrorDetail</code> 约定</li>\n</ul>\n<h4>实现与验证证据</h4>\n<ul>\n<li><code>Qian.Authz.Abstractions</code> 复用 Kun 的五方法判定端口与数据/字段端口，提供 Authz 服务键、规范权限元数据、错误目录及多语言 ErrorDetail 导出。</li>\n<li>Mediator 采用 <code>AddAuthorizedHandler</code> 逐命令登记同一 builder 的权限行为与处理器；QIAN0005 编译门禁覆盖两个底层重载、方法组引用、泛型包装及伪造桥接类，普通未受保护命令保持可注册。</li>\n<li>真实启动校验发现的框架重复登记问题已在 [Kun PR #52](https://github.com/idadawn/kun/pull/52) 修复，全 24 项 CI 通过；[2026.10.11 发布](https://github.com/idadawn/kun/actions/runs/38153820866) 成功，Qian 从 nuget.org 实际还原并将 KunVersion 升至该正式版。</li>\n<li>本地全仓 Release 构建零警告，13 包依赖图通过，36 项门禁覆盖通过（一次本地还原进程退出后，对应 10 项依赖门禁独立重跑通过）；强制要求 Docker 的全量 282 项测试通过、零跳过。新增 Authz 契约 24 项，包含真实 Kun 管道的缺引擎、拒绝、放行及匿名场景。</li>\n<li>本任务只完成 Definition 与注册边界；权限注册表/角色模板、RBAC 引擎与完整入口 PEP/审计分别由 AZ-002、003、004 交付。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的鉴权端口落地（<code>Kun.Authorization</code> 发包、<code>PermissionBehavior</code> 只能逐命令注册、缺引擎即拒绝），随 S1-KUN-009 升级可用</li>\n<li>2026-10-11 someone：用户已批准QA-002必要前置。DATA-001草稿等待DEC-017，串行转入不依赖该裁决的权限Definition：复用Kun.Authorization端口，补命名/判定契约与错误码验收。</li>\n<li>2026-10-11 cody：真实Kun管道验收发现2026.10.9在ValidateOnBuild下因权限行为重复DI注册启动失败；保持检查不降级，串行修复Kun并发布正式包后完成本任务。</li>\n<li>2026-10-11 cody：实现及编译门禁已准备；等待Kun PR #52全绿合并与正式NuGet发布，保留ValidateOnBuild回归。上游CI串行排队期间切回已批准的DEC-017/DATA-001，不将当前本地实现标为完成。</li>\n<li>2026-10-12 cody：Kun PR #52已全绿合并并发布2026.10.11；正式NuGet包已从nuget.org实际还原。恢复权限契约的ValidateOnBuild真管道验收及完整门禁。</li>\n<li>2026-10-12 cody：契约及三项验收通过：正式Kun2026.10.11、24项新增Authz测试、282项全仓测试无跳过、13包依赖与编译门禁通过。准备远程CI验收，完整RBAC/PEP仍由后续任务交付。</li>\n<li>2026-10-12 cody：PR #45实现头1e479009的全部远程检查通过，含真实容器测试、TS共用TCK、声明式表面与文档预览；.NET证据 https://github.com/idadawn/qian/actions/runs/38155241583 。三项验收完成，回写看板后由最终头CI复核并合并。</li>\n</ul>",
   "file": "pm/tasks/S1-AZ-001.md"
  },
  {
@@ -382,7 +382,6 @@
    "S1-RT-004"
   ],
   "blockedBy": [
-   "S1-AZ-001",
    "S1-RT-004"
   ],
   "order": 2,
@@ -561,7 +560,6 @@
    "S1-DATA-004"
   ],
   "blockedBy": [
-   "S1-AZ-001",
    "S1-DATA-004"
   ],
   "order": 2,
@@ -2691,8 +2689,7 @@
   ],
   "blockedBy": [
    "S1-DATA-001",
-   "S1-TEN-001",
-   "S1-AZ-001"
+   "S1-TEN-001"
   ],
   "order": 2,
   "readyNow": false,
