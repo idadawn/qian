@@ -1,9 +1,9 @@
-import {spawn} from 'node:child_process';
 import {existsSync,readFileSync,readdirSync,realpathSync,writeFileSync} from 'node:fs';
 import path from 'node:path';
 import {MarketplaceFailure,marketDiagnostic} from './marketplaces.js';
 import {assertNoLinks,within} from './marketplace-files.js';
 import {parsePackageReference,packageIdentity,type PackageReference,type PackageKind} from './package-references.js';
+import {runPackageCommand as command} from './package-process.js';
 
 interface Dependency {name:string;version:string;definition?:string;section?:string}
 export interface NugetWorkspace {project:string;centralFile?:string;intermediateDirectory:string;lockFile:string;dependencies:Dependency[]}
@@ -21,30 +21,6 @@ function unavailable(tool:string):never {
  diagnostic.error={...diagnostic.error,type:'https://qian.dev/problems/protocol/UNAVAILABLE',code:'UNAVAILABLE',
   title:'服务暂不可用',status:503,message,detail:message,errors:[{code:'UNAVAILABLE',message:tool+' 未完成操作。',pointer:'package-manager#'}]};
  throw new MarketplaceFailure([diagnostic]);
-}
-
-/** 不使用 shell，不转发原始输出；错误中的包源 URL、凭据或脚本输出不会进入 CLI 诊断。 */
-async function command(executable:string,args:readonly string[],root:string,label:string,timeout=120_000):Promise<string> {
- return await new Promise<string>((resolve,reject)=>{
-  const child=spawn(executable,[...args],{cwd:root,shell:false,detached:process.platform!=='win32',
-   stdio:['ignore','pipe','pipe'],env:{...process.env,CI:'true',DOTNET_NOLOGO:'1',DOTNET_CLI_TELEMETRY_OPTOUT:'1',
-    MSBUILDDISABLENODEREUSE:'1',DOTNET_CLI_USE_MSBUILD_SERVER:'0',UseSharedCompilation:'false',NPM_CONFIG_UPDATE_NOTIFIER:'false'}});
-  let stdout='',size=0,failed=false,settled=false,escalation:ReturnType<typeof setTimeout>|undefined;
-  const signal=(value:NodeJS.Signals):void=>{
-   try{if(child.pid&&process.platform!=='win32')process.kill(-child.pid,value);else child.kill(value);}catch{ /* 子进程可能已退出。 */ }
-  };
-  const stop=():void=>{if(failed)return;failed=true;signal('SIGTERM');escalation=setTimeout(()=>signal('SIGKILL'),1000);escalation.unref();};
-  const timer=setTimeout(stop,timeout);timer.unref();
-  const finish=(code:number|null):void=>{
-   if(settled)return;settled=true;clearTimeout(timer);if(escalation)clearTimeout(escalation);
-   if(failed||code!==0){try{unavailable(label);}catch(error){reject(error);}}else resolve(stdout);
-  };
-  child.stdout.setEncoding('utf8');
-  child.stdout.on('data',(text:string)=>{size+=Buffer.byteLength(text);if(size>16*1024*1024)stop();else stdout+=text;});
-  child.stderr.on('data',(bytes:Buffer)=>{size+=bytes.length;if(size>16*1024*1024)stop();});
-  child.once('error',()=>{failed=true;finish(null);});
-  child.once('close',finish);
- });
 }
 
 function npmExecutable():string {
@@ -169,4 +145,25 @@ export async function applyPackageChanges(workspace:PackageWorkspace,changes:Pac
 export function workspaceDependency(workspace:PackageWorkspace,reference:PackageReference):Dependency|undefined {
  return (reference.kind==='nuget'?workspace.nuget?.dependencies:workspace.npm?.dependencies)
   ?.find(item=>packageIdentity({kind:reference.kind,name:item.name})===packageIdentity(reference));
+}
+
+/** 幂等检查只读取真实还原产物，不重跑包管理器或改写宿主文件。 */
+export function verifyInstalledPackages(workspace:PackageWorkspace,references:readonly PackageReference[]):void {
+ for(const reference of references){
+  if(workspaceDependency(workspace,reference)?.version!==reference.version)invalid('package-manager','已安装依赖与组件锁定版本不一致。');
+  if(reference.kind==='nuget'){
+   const file=path.join(workspace.nuget!.intermediateDirectory,'project.assets.json');assertNoLinks(file);
+   const data=json(file),libraries=data.libraries as Record<string,{type?:string;path?:string;files?:string[]}>|undefined;
+   const entry=Object.entries(libraries??{}).find(([name])=>name.toLowerCase()===(reference.name+'/'+reference.version).toLowerCase())?.[1];
+   const folders=data.packageFolders;
+   if(entry?.type!=='package'||!entry.path||!Array.isArray(entry.files)||!entry.files.length||!folders||typeof folders!=='object'||Array.isArray(folders))unavailable('dotnet');
+   const available=Object.keys(folders).some(folder=>{
+    try{const directory=within(realpathSync(folder),entry.path!);return entry.files!.every(name=>existsSync(within(directory,name)));}catch{return false;}
+   });
+   if(!available)unavailable('dotnet');
+  }else{
+   const file=within(workspace.root,'node_modules/'+reference.name+'/package.json'),installed=json(file);
+   if(installed.name!==reference.name||installed.version!==reference.version)unavailable('npm');
+  }
+ }
 }

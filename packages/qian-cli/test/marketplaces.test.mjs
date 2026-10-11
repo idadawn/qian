@@ -118,3 +118,89 @@ test('ZIP 的链接标记被拒绝，安装锁阻止并发写入',async()=>{
   write(f.project,'.qian/.install.lock','other-operation');const locked=run(f.project,'--no-home','add','guide','--no-code','--yes');assert.equal(locked.status,1);assert.equal(readFileSync(path.join(f.project,'.qian/.install.lock'),'utf8'),'other-operation');assert.ok(!existsSync(path.join(f.project,'.qian/plugins/test.guide')));
  }finally{f.dispose();}
 });
+
+test('真实 Config Provider 制成临时 NuGet 包后经签名市场安装，重复安装不改写宿主，末检失败整批恢复',()=>{
+ const f=fixture();
+ try{
+  const version='0.1.0-cli-'+generateKeyPairSync('ed25519').publicKey.export({type:'spki',format:'der'}).subarray(-6).toString('hex');
+  const feed=path.join(f.root,'feed');mkdirSync(feed);
+  for(const name of ['Qian.Runtime.Errors','Qian.Runtime','Qian.Config.Abstractions','Qian.Config.Apollo']){
+   const packed=spawnSync('dotnet',['pack',path.join(repo,'packages',name,name+'.csproj'),'-c','Release','-p:Version='+version,'-o',feed,'--artifacts-path',path.join(f.root,'build'),'--disable-build-servers','-m:1'],{cwd:repo,encoding:'utf8',timeout:120000});
+   assert.equal(packed.status,0,packed.stdout+packed.stderr);
+  }
+  const xml=value=>value.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
+  write(f.project,'NuGet.Config','<configuration><packageSources><clear/><add key="fixture" value="'+xml(feed)+'"/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources><config><add key="globalPackagesFolder" value="'+xml(path.join(f.root,'consumer-cache'))+'"/></config><fallbackPackageFolders><add key="shared" value="'+xml(process.env.NUGET_PACKAGES??path.join(os.homedir(),'.nuget/packages'))+'"/></fallbackPackageFolders></configuration>');
+  write(f.project,'Host.csproj','<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup></Project>');
+  const extra={version,engines:{kun:'>=2026.10.12'},provides:['Config'],runtime:{form:'module',entry:'Qian.Config.Apollo.ConfigurationPlugin, Qian.Config.Apollo',nuget:[{id:'Qian.Config.Apollo',version}]}};
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','qian.config',{tier:'official',extra});
+  configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  const installed=run(f.project,'--no-home','add','guide','--yes');assert.equal(installed.status,0,installed.stderr);
+  const result=JSON.parse(installed.stdout);assert.equal(result.status,'installed');assert.deepEqual(result.packages.nuget,['Qian.Config.Apollo@'+version]);
+  const lockFile=path.join(f.project,'.qian/lock.json'),projectFile=path.join(f.project,'Host.csproj');
+  const locked=readFileSync(lockFile,'utf8'),project=readFileSync(projectFile,'utf8'),packageLock=readFileSync(path.join(f.project,'packages.lock.json'),'utf8');
+  assert.equal(JSON.parse(locked).packageState[0].managed,true);
+  const repeated=run(f.project,'--no-home','add','guide','--yes');assert.equal(repeated.status,0,repeated.stderr);assert.equal(JSON.parse(repeated.stdout).status,'unchanged');
+  assert.equal(readFileSync(lockFile,'utf8'),locked);assert.equal(readFileSync(projectFile,'utf8'),project);assert.equal(readFileSync(path.join(f.project,'packages.lock.json'),'utf8'),packageLock);
+  write(f.project,'Program.cs',`using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Qian.Config;
+using Qian.Config.Apollo;
+using Qian.Runtime;
+using var configuration = (ConfigurationRoot)new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> { ["Marker"]="installed" }).Build();
+using var services = new ServiceCollection().AddQianConfiguration(configuration).BuildServiceProvider();
+await using var runtime = new PluginLoader(services);
+await runtime.MountAsync([new PluginDefinition(new PluginEntry("config","qian.config","${version}",ScopeKey.Global,0,JsonSerializer.SerializeToElement(new {})),new ConfigurationPlugin(),[ConfigDefinition.Key])]);
+if(runtime.GetContext("config",ScopeKey.Global).Config().GetRequiredValue("Marker")!="installed")throw new Exception();
+Console.WriteLine("real-provider-ready");
+`);
+  const started=spawnSync('dotnet',['run','--project','Host.csproj','--no-restore','-p:UseSharedCompilation=false'],{cwd:f.project,encoding:'utf8',timeout:120000});
+  assert.equal(started.status,0,started.stdout+started.stderr);assert.ok(started.stdout.includes('real-provider-ready'));
+  component(path.join(location,'plugins/qian.failed'),'qian.failed','official',{...extra,provides:[],inject:['Missing']});
+  created.data.plugins.push({...created.data.plugins[0],name:'failed',source:{type:'local',path:'./plugins/qian.failed'}});created.persist();
+  const failed=run(f.project,'--no-home','add','failed','--yes');assert.equal(failed.status,1);
+  assert.equal(readFileSync(lockFile,'utf8'),locked);assert.equal(readFileSync(projectFile,'utf8'),project);
+  assert.equal(existsSync(path.join(f.project,'.qian/plugins/qian.failed')),false);
+  assert.equal(existsSync(path.join(f.project,'.qian/.install.lock')),false);
+  const listed=run(f.project,'--no-home','list');assert.equal(listed.status,0,listed.stderr);assert.equal(JSON.parse(listed.stdout).plugins[0].id,'qian.config');
+  component(path.join(location,'plugins/test.consumer'),'test.consumer','private',{inject:['Config']});
+  created.data.plugins.push({...created.data.plugins[0],name:'consumer',source:{type:'local',path:'./plugins/test.consumer'}});created.persist();
+  const consumer=run(f.project,'--no-home','add','consumer','--yes');assert.equal(consumer.status,0,consumer.stderr);
+  const beforeRejectedRemoval=readFileSync(lockFile,'utf8');
+  const rejectedRemoval=run(f.project,'--no-home','remove','guide');assert.equal(rejectedRemoval.status,1);
+  assert.equal(readFileSync(lockFile,'utf8'),beforeRejectedRemoval);assert.equal(readFileSync(projectFile,'utf8'),project);
+  assert.ok(existsSync(path.join(f.project,'.qian/plugins/qian.config')));
+  const consumerRemoval=run(f.project,'--no-home','remove','consumer','--purge');assert.equal(consumerRemoval.status,0,consumerRemoval.stderr);
+  const removed=run(f.project,'--no-home','remove','guide');assert.equal(removed.status,0,removed.stderr);
+  assert.equal(existsSync(path.join(f.project,'.qian/plugins/qian.config')),false);
+  assert.ok(!readFileSync(projectFile,'utf8').includes('Qian.Config.Apollo'));
+  assert.deepEqual(JSON.parse(run(f.project,'--no-home','list').stdout).plugins,[]);
+  const reinstalled=run(f.project,'--no-home','add','guide','--yes');assert.equal(reinstalled.status,0,reinstalled.stderr);
+  const purged=run(f.project,'--no-home','remove','catalog/guide','--purge');assert.equal(purged.status,0,purged.stderr);
+  assert.equal(readFileSync(path.join(f.project,'profiles/minimal/qian.patch.yml'),'utf8'),'[]\n');
+ }finally{f.dispose();}
+});
+
+test('required 平台组件不能被 remove 或 purge 删除',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','qian.required',{tier:'system',extra:{policy:{tier:'system',sandbox:'none',authentication:'ON_INSTALL',required:true}}});
+  configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  const installed=run(f.project,'--no-home','add','guide','--yes');assert.equal(installed.status,0,installed.stderr);
+  const file=path.join(f.project,'.qian/lock.json'),before=readFileSync(file,'utf8');
+  const removed=run(f.project,'--no-home','remove','guide','--purge');assert.equal(removed.status,1);assert.equal(readFileSync(file,'utf8'),before);
+  assert.ok(existsSync(path.join(f.project,'.qian/plugins/qian.required')));assert.equal(existsSync(path.join(f.project,'.qian/.install.lock')),false);
+ }finally{f.dispose();}
+});
+
+test('本地列表不回显 lock 扩展配置或 URL 凭据',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide');configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  assert.equal(run(f.project,'--no-home','add','guide','--yes').status,0);
+  const file=path.join(f.project,'.qian/lock.json'),lock=JSON.parse(readFileSync(file,'utf8'));
+  lock.plugins[0].extra={credential:'DO-NOT-LEAK'};lock.plugins[0].entries[0].config={secret:'DO-NOT-LEAK'};
+  lock.plugins[0].source={type:'url',url:'https://user:DO-NOT-LEAK@example.test/archive?token=DO-NOT-LEAK'};
+  writeFileSync(file,JSON.stringify(lock));const output=run(f.project,'--no-home','list');
+  assert.equal(output.status,0,output.stderr);assert.ok(!output.stdout.includes('DO-NOT-LEAK'));
+  assert.equal(JSON.parse(output.stdout).plugins[0].source.url,'https://example.test/archive');
+ }finally{f.dispose();}
+});

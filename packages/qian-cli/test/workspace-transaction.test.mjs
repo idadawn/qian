@@ -9,14 +9,14 @@ import {parsePackageReference} from '../dist/package-references.js';
 
 function root(){return mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-transaction-'));}
 
-test('失败恢复原始文件、目录和缺失状态，备份期间既有依赖仍可读取',()=>{
+test('失败恢复原始文件、目录和缺失状态，备份期间既有依赖仍可读取',async()=>{
  const directory=root(),file=path.join(directory,'package.json'),modules=path.join(directory,'node_modules'),created=path.join(directory,'package-lock.json');
  try{
   writeFileSync(file,'original\n');mkdirSync(modules);writeFileSync(path.join(modules,'keep'),'existing dependency');
   const transaction=WorkspaceTransaction.begin(directory,[{path:file,kind:'file'},{path:modules,kind:'directory'},{path:created,kind:'file'}],'add');
   assert.equal(readFileSync(path.join(modules,'keep'),'utf8'),'existing dependency');
   writeFileSync(file,'changed');rmSync(modules,{recursive:true});mkdirSync(modules);writeFileSync(path.join(modules,'new'),'new dependency');writeFileSync(created,'new lock');
-  transaction.rollback();
+  await transaction.rollback();
   assert.equal(readFileSync(file,'utf8'),'original\n');assert.equal(readFileSync(path.join(modules,'keep'),'utf8'),'existing dependency');
   assert.equal(existsSync(path.join(modules,'new')),false);assert.equal(existsSync(created),false);
   assert.equal(existsSync(path.join(directory,'.qian/.install.lock')),false);
@@ -43,16 +43,16 @@ test('实际 NuGet 安装后的验证失败能够还原宿主与还原产物',as
  }finally{rmSync(directory,{recursive:true,force:true});}
 });
 
-test('目标路径被换成链接时不会写根外文件，失败保留备份和安装锁',()=>{
+test('目标路径被换成链接时不会写根外文件，失败保留备份和安装锁',async()=>{
  const directory=root(),outside=root(),file=path.join(directory,'package.json'),victim=path.join(outside,'keep');
  try{
   writeFileSync(file,'original');writeFileSync(victim,'outside');
   const transaction=WorkspaceTransaction.begin(directory,[{path:file,kind:'file'}],'add');
   unlinkSync(file);symlinkSync(victim,file);
-  assert.throws(()=>transaction.rollback());
+  await assert.rejects(transaction.rollback());
   assert.equal(readFileSync(victim,'utf8'),'outside');assert.ok(existsSync(path.join(directory,'.qian/.install.lock')));
   assert.equal(JSON.parse(readFileSync(transaction.journalFile,'utf8')).state,'rollback-failed');
-  unlinkSync(file);transaction.rollback();assert.equal(readFileSync(file,'utf8'),'original');
+  unlinkSync(file);await transaction.rollback();assert.equal(readFileSync(file,'utf8'),'original');
  }finally{rmSync(directory,{recursive:true,force:true});rmSync(outside,{recursive:true,force:true});}
 });
 

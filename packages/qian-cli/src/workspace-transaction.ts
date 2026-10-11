@@ -4,10 +4,11 @@ import {randomBytes} from 'node:crypto';
 import {assertNoLinks,within,sha256} from './marketplace-files.js';
 import {MarketplaceFailure,marketDiagnostic} from './marketplaces.js';
 import type {PackageMutationTarget} from './package-manager.js';
+import {PackageCommandFailure,packageProcessGroupExited} from './package-process.js';
 
 type State='preparing'|'prepared'|'committed'|'rolled-back'|'rollback-failed';
 interface Backup {path:string;kind:'file'|'directory';existed:boolean;mode?:number;backup:string;ready:boolean;sha256?:string}
-interface Journal {type:'qian-workspace-transaction';version:1;id:string;operation:string;state:State;entries:Backup[]}
+interface Journal {type:'qian-workspace-transaction';version:1;id:string;operation:string;state:State;entries:Backup[];pendingProcess?:{pid:number|undefined;tool:string}}
 function failure(message:string):never {throw new MarketplaceFailure([marketDiagnostic('.qian/journal','',message)]);}
 function atomic(file:string,bytes:Buffer):void {
  assertNoLinks(file);const temporary=file+'.'+randomBytes(6).toString('hex')+'.tmp';
@@ -20,9 +21,10 @@ function remove(file:string):void {
 
 /** 持有工作区安装锁，保存文件及生成目录的原貌，失败时逆序还原。 */
 export class WorkspaceTransaction {
- private constructor(readonly root:string,readonly journalFile:string,private readonly record:Journal,private readonly lease:string){}
+ private constructor(readonly root:string,readonly journalFile:string,private readonly record:Journal,private readonly lease:string,private readonly leaseOwner:string){}
+ get hasPendingProcess():boolean {return this.record.pendingProcess!==undefined;}
 
- static begin(directory:string,targets:readonly PackageMutationTarget[],operation:string):WorkspaceTransaction {
+ static begin(directory:string,targets:readonly PackageMutationTarget[],operation:string,existingLeaseOwner?:string):WorkspaceTransaction {
   const root=realpathSync(directory),id=Date.now()+'-'+randomBytes(8).toString('hex'),entries:Backup[]=[],paths:string[]=[];
   let bytes=0;
   for(const target of targets){
@@ -37,9 +39,14 @@ export class WorkspaceTransaction {
   }
   const lease=path.join(root,'.qian/.install.lock'),journalFile=path.join(root,'.qian/journal',id+'.json');
   assertNoLinks(lease);assertNoLinks(journalFile);mkdirSync(path.dirname(lease),{recursive:true});
-  try{const handle=openSync(lease,'wx',0o600);try{writeFileSync(handle,JSON.stringify({pid:process.pid,id,journal:path.relative(root,journalFile)}));}finally{closeSync(handle);}}
+  const leaseOwner=existingLeaseOwner??id;
+  try{
+   if(existingLeaseOwner){const owner=JSON.parse(readFileSync(lease,'utf8'));if(owner.pid!==process.pid||owner.id!==existingLeaseOwner)failure('不能接管不属于当前操作的安装锁。');
+    atomic(lease,Buffer.from(JSON.stringify({...owner,journal:path.relative(root,journalFile)})));}
+   else{const handle=openSync(lease,'wx',0o600);try{writeFileSync(handle,JSON.stringify({pid:process.pid,id,journal:path.relative(root,journalFile)}));}finally{closeSync(handle);}}
+  }
   catch{failure('已有安装事务或残留安装锁；检查日志后再继续。');}
-  const transaction=new WorkspaceTransaction(root,journalFile,{type:'qian-workspace-transaction',version:1,id,operation,state:'preparing',entries},lease);
+  const transaction=new WorkspaceTransaction(root,journalFile,{type:'qian-workspace-transaction',version:1,id,operation,state:'preparing',entries},lease,leaseOwner);
   try{
    mkdirSync(path.dirname(journalFile),{recursive:true,mode:0o700});
    const ignore=path.join(path.dirname(journalFile),'.gitignore');assertNoLinks(ignore);
@@ -65,7 +72,7 @@ export class WorkspaceTransaction {
   assertNoLinks(this.lease);
   if(existsSync(this.lease)){
    let data:{id?:string};try{data=JSON.parse(readFileSync(this.lease,'utf8'));}catch{return;}
-   if(data.id===this.record.id)unlinkSync(this.lease);
+   if(data.id===this.leaseOwner)unlinkSync(this.lease);
   }
  }
  private discardPreparation():void {
@@ -86,11 +93,21 @@ export class WorkspaceTransaction {
  async run<T>(operation:()=>Promise<T>):Promise<T> {
   if(this.record.state!=='prepared')failure('事务未准备或已结束。');
   try{const value=await operation();this.commit();return value;}
-  catch(error){if(this.record.state==='prepared'||this.record.state==='rollback-failed')this.rollback();throw error;}
+  catch(error){
+   if(error instanceof PackageCommandFailure&&!error.terminationConfirmed){
+    this.record.pendingProcess={pid:error.pid,tool:error.tool};this.save('rollback-failed');throw error;
+   }
+   if(this.record.state==='prepared'||this.record.state==='rollback-failed')await this.rollback();throw error;
+  }
  }
- rollback():void {
+ async rollback():Promise<void> {
   if(this.record.state==='rolled-back')return;
   if(this.record.state!=='prepared'&&this.record.state!=='rollback-failed')failure('该事务不处于可回滚状态。');
+  if(this.record.pendingProcess){
+   const pid=this.record.pendingProcess.pid;
+   if(pid===undefined||!await packageProcessGroupExited(pid))failure('尚未确认包管理器进程组退出，保留锁和备份，不执行回滚。');
+   delete this.record.pendingProcess;
+  }
   let failed=false;
   for(const entry of [...this.record.entries].reverse()){
    try{
