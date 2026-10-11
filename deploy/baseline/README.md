@@ -2,6 +2,8 @@
 
 部署资产唯一源为部署仓 [PR #88](https://github.com/idadawn/iclaw-deploy/pull/88)：`2-qian/baseline`、`env-ds/qian-staging`、`env-ds/qian-prod`。Qian 仓库只记录任务与回链，不再复制一份生效清单。
 
+2026-10-11 21:21（Asia/Shanghai），两环境基础设施真实验收均已通过，S1-DEP-001 按已批准 DEC-016 完成。真实平台四依赖应用联调继续作为 S1-DEP-005 的发布必过项。下文保留准备、阻塞与维护记录，最终结果见末节。
+
 ## 已交付物料与本机验证
 
 - 两环境独立 namespace、PostgreSQL 16 / Redis 7 与独立 PVC；镜像按官方 registry 查询的多架构 digest 固定。
@@ -10,7 +12,7 @@
 - Secret 引导脚本只建缺失、不覆盖、不打印；清单里没有秘密值。PG 应用角色不能绕过 RLS，租户表仍须由各服务迁移启用并强制 RLS。
 - 两个 overlay 可渲染，静态门及隔离/节点池/浮动镜像反例通过；本机固定镜像实际启动、PG 应用角色与双租户 RLS、Redis 哈希 ACL/匿名拒绝/认证探针通过。测试容器和临时凭据已清理。
 
-## 现场阻塞
+## 初次现场阻塞（历史记录，已恢复）
 
 2026-10-11 04:34–04:42（Asia/Shanghai），通过 qd 做只读检查，Kubernetes API 返回 `ServiceUnavailable` / `apiserver not ready`；K3s 服务处于 `activating/start`，两次观察的累计重启数为 550 / 551。另外两个控制面在本次有限等待内未返回状态，不能据此推断节点宕机。加密状态检查未获得有效结果。
 
@@ -22,7 +24,7 @@
 2. 按实际已核实的可达 IP 执行默认拒绝与允许路径测试，再验证专属 PG/Redis 协议及 RLS。探针只证明网络策略，不能冒充真实 qian-platform。
 3. 用户已批准 [S1-DEC-016](../../pm/tasks/S1-DEC-016.md)：DEP-001 先完成真实基础设施验收，真实平台四依赖协议联调由 DEP-005 的发布必过项承接，显式依赖 DEP-002，并经 DEP-004 依赖 DEP-003。该裁决不免除入口/加密、生产节点池或上线检查。
 
-S1-DEP-001 的现场验收项仍未完成。本机验证与静态清单合并不等于 staging 或 prod 部署完成；当前阻塞以最新容量与节点池复核为准。
+这份早期记录尚未完成现场验收。本机验证与静态清单合并不等于部署完成；后续实施以本页最新验收记录为准。
 
 ## 批准分阶段验收后的复核
 
@@ -56,7 +58,7 @@ S1-DEP-001 的现场验收项仍未完成。本机验证与静态清单合并不
 
 这证明生产基础设施，不代表完整平台应用已部署或四依赖应用联调已通过。PVE 仍是与两个既有 worker 共用的物理宿主，不增加物理故障域；staging 数据服务容量仍需安排。
 
-## staging 治理与网络验证（2026-10-11）
+## staging 治理与网络验证（数据部署前快照）
 
 部署仓 PR #90 已合并。`qian-staging-baseline` 同样固定基线 revision，未开启自动同步；仅选择同步 Namespace、ResourceQuota、LimitRange 和五条 NetworkPolicy，没有启动 StatefulSet 或创建数据卷。
 
@@ -64,7 +66,7 @@ S1-DEP-001 的现场验收项仍未完成。本机验证与静态清单合并不
 
 staging Application 整体仍未完成同步，数据服务与 PVC 尚不存在；网络治理通过不代表 PG/Redis 或真实平台联调完成。
 
-## staging 容量调整提案（待维护批准）
+## staging 容量调整方案（已批准并执行）
 
 可评审的最小调整为 pve01 的 VM101 / k3s-worker01：内存 8192 → 9216 MiB，系统盘 60 → 100 GiB；vCPU 保持 4 个，现有应用的请求不下调。增加的 1 GiB 内存可补足 PG/Redis 768 MiB 请求的缺口，磁盘扩展为两个数据卷及既有数据保留空间。执行前须按当时宿主余量重新核验，不能把本次快照当作永久容量保证。
 
@@ -78,4 +80,24 @@ staging Application 整体仍未完成同步，数据服务与 PVC 尚不存在�
 4. 仅调整 VM101 的内存与 scsi0 容量；在停机/重启边界完成内存生效，并逐层验证磁盘、分区、PV、LV 和 ext4 的扩大，不操作其他磁盘、不缩盘。
 5. 节点 Ready 后核验 etcd、DNS、入口、原有业务与 PVC；恢复调度，再复核 staging 数据服务实际可调度余量，最后通过固定 GitOps 版本部署并运行完整验收。
 
-失败时停止后续部署，保留快照与诊断；按维护前快照制定恢复，不能通过直接缩盘、删除现有 PVC 或跳过业务恢复检查来回退。该提案尚未对 VM101 或既有应用执行任何变更。
+失败时停止后续部署，保留快照与诊断；按维护前快照制定恢复，不能通过直接缩盘、删除现有 PVC 或跳过业务恢复检查来回退。方案准备时未对 VM101 或既有应用执行变更；获批后的执行记录见下节。
+
+## 已批准维护的执行结果
+
+用户明确批准现在按 PR #39 方案执行。部署仓 [PR #91](https://github.com/idadawn/iclaw-deploy/pull/91) 记录 VM101 已完成内存 8→9 GiB、scsi0 60→100 GiB、分区/LVM/ext4 扩容和受控停机启动。数据目录可用约 58 GiB；现有请求之后余约 995m CPU / 1367 MiB，足以容纳本次 PG/Redis。
+
+已保存 qd 本地 etcd 快照和 PVE 可回滚 VM 快照。首次完整备份带来高磁盘负载并伴随控制面短暂异常，已停止该备份，改用获批方案中的文件系统冻结/解冻快照；中断备份不作恢复依据。公网入口观察到两次短时超时，随后恢复；没有将本次维护描述为零停机。
+
+21:12（Asia/Shanghai）原有 27 个活动 Pod 的容器均实际重新启动并 Ready，ASR/PDM 健康接口返回 200，原有两项本地 PVC 绑定不变。DNS/入口的临时副本均恢复为原数量，worker01 恢复调度，四节点 Ready。staging 的数据服务将固定落在完成扩容的 worker01，仍须真实部署和协议验收后才能关闭任务。
+
+## 两环境基线最终验收
+
+部署仓 PR #91 全绿合并后，staging 固定 revision `3fc24a6275b89a6b1fb80e32c2c8262815497c15` 手动同步成功；PG/Redis 在 worker01 Ready，20 GiB / 8 GiB PVC 位于其扩容后的数据目录。生产保持原固定 revision 和 qian-prod01 专用节点、独立数据盘。两个子 Application 均为 Synced/Healthy，没有开启自动同步、prune 或 selfHeal。
+
+- staging 完整验收 `cefbdf7eac94`、生产维护后复测 `492f888bfdac` 均通过，报告均为 `data_checked: true`。
+- PG 真实 TCP 认证、非特权角色及无租户/双租户 RLS，Redis 认证读写及匿名拒绝均通过。
+- 授权对照可达 PG、其他 namespace DNS 和重新核实的公网端点；无权限 Pod 对三条路径均被拒绝。测试 schema、Pod 和临时网络规则已清理。
+- 两 namespace 各自有 PG/Redis、Secret、PVC、ResourceQuota 和 LimitRange，实际镜像均固定 digest；生产节点池检查再次通过。
+- Traefik trustedIPs、运维 OIDC 的 HTTPS issuer、K3s secrets-encryption Enabled 已重新核对。运维 OIDC 不能代替 Qian IdP 的真实 PKCE 验收。
+
+镜像源曾返回 502，已通过相同摘要的生产镜像缓存完成 staging 启动，传输和 OCI 摘要均已核对，临时归档已删除。此次关闭的是基础设施基线；真实平台 PG/Redis/RabbitMQ/Apollo 联调保留在 DEP-005，身份联调保留在 IDP-002。
