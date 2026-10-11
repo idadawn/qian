@@ -1,0 +1,34 @@
+#nullable enable
+Qian.Authz.Abstractions.AuthzDefinition
+Qian.Authz.Abstractions.AuthzErrors
+Qian.Authz.Abstractions.IAuthzService
+Qian.Authz.Abstractions.IAuthzService.DataPermissions.get -> Kun.Authorization.IDataPermissionFilter!
+Qian.Authz.Abstractions.IAuthzService.Fields.get -> Kun.Authorization.IFieldPolicy!
+Qian.Authz.Abstractions.PermissionCode
+Qian.Authz.Abstractions.PermissionDefinition
+Qian.Authz.Abstractions.PermissionDefinition.Action.get -> string!
+Qian.Authz.Abstractions.PermissionDefinition.Code.get -> string!
+Qian.Authz.Abstractions.PermissionDefinition.PermissionDefinition(string! pluginId, string! resource, string! action, Qian.Authz.Abstractions.PermissionRisk risk, bool requiresStepUp, System.Collections.Generic.IReadOnlyList<string!>! terminals) -> void
+Qian.Authz.Abstractions.PermissionDefinition.PluginId.get -> string!
+Qian.Authz.Abstractions.PermissionDefinition.RequiresStepUp.get -> bool
+Qian.Authz.Abstractions.PermissionDefinition.Resource.get -> string!
+Qian.Authz.Abstractions.PermissionDefinition.Risk.get -> Qian.Authz.Abstractions.PermissionRisk
+Qian.Authz.Abstractions.PermissionDefinition.Terminals.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Authz.Abstractions.PermissionRisk
+Qian.Authz.Abstractions.PermissionRisk.Critical = 3 -> Qian.Authz.Abstractions.PermissionRisk
+Qian.Authz.Abstractions.PermissionRisk.High = 2 -> Qian.Authz.Abstractions.PermissionRisk
+Qian.Authz.Abstractions.PermissionRisk.Low = 0 -> Qian.Authz.Abstractions.PermissionRisk
+Qian.Authz.Abstractions.PermissionRisk.Medium = 1 -> Qian.Authz.Abstractions.PermissionRisk
+static Qian.Authz.Abstractions.AuthzDefinition.Authz(this Qian.Runtime.IPluginContext! context) -> Qian.Authz.Abstractions.IAuthzService!
+static Qian.Authz.Abstractions.AuthzErrors.All.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.ErrorCode!>!
+static Qian.Authz.Abstractions.AuthzErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!
+static Qian.Authz.Abstractions.PermissionCode.Format(string! pluginId, string! resource, string! action) -> string!
+static Qian.Authz.Abstractions.PermissionCode.IsValid(string? value) -> bool
+static readonly Qian.Authz.Abstractions.AuthzDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Authz.Abstractions.AuthzErrors.CardinalityUserLimit -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Authz.Abstractions.AuthzErrors.ConstraintMutex -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Authz.Abstractions.AuthzErrors.Denied -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Authz.Abstractions.AuthzErrors.PartialSuccess -> Qian.Runtime.Errors.ErrorCode!
+Qian.Authz.Abstractions.AuthorizedHandlerRegistration
+static Qian.Authz.Abstractions.AuthorizedHandlerRegistration.AddAuthorizedHandler<TRequest, TResponse, THandler>(this Kun.Mediator.KunMediatorBuilder! builder, System.Func<Kun.Core.Results.Error!, TResponse>! denied) -> Kun.Mediator.KunMediatorBuilder!
+static Qian.Authz.Abstractions.AuthorizedHandlerRegistration.AddAuthorizedHandler<TRequest, TResponse, THandler>(this Kun.Mediator.KunMediatorBuilder! builder, System.Func<Kun.Core.Results.Error!, TResponse>! denied, string! capabilityId, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TRequest>! request, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TResponse>! response) -> Kun.Mediator.KunMediatorBuilder!

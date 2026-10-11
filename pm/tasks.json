@@ -315,14 +315,14 @@
  {
   "id": "S1-AZ-001",
   "title": "Qian.Authz.Abstractions 契约先行：端口、命名与错误码",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "AZ",
   "areaName": "鉴权",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "2d",
   "days": 2.0,
   "depends": [
@@ -332,8 +332,8 @@
    "S1-KUN-009"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -350,14 +350,18 @@
    {
     "path": "docs/adr/ADR-019-library-first-packages.md#7",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
+   },
+   {
+    "path": "packages/Qian.Authz.Abstractions/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Authz.Abstractions/README.md"
    }
   ],
-  "updated": "2026-10-10",
+  "updated": "2026-10-12",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>与 7.4 互为前置、契约先行：Definition 暴露 <code>ctx.Authz</code> 并再导出 <code>Kun.Authorization</code> 端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>；端口归属见 ADR-019 §7 待确认）；<code>PermissionDefinition</code>（资源类型、动作、风险级别、step-up、终端）；权限点命名规范 <code>&lt;plugin-id&gt;:&lt;resource&gt;:&lt;action&gt;</code>（R9）；<code>Check / BatchCheck / ListAllowedActions / ListPermissions / Explain</code> 接口形状；结构化错误码目录（<code>AUTHZ_DENIED</code>、<code>CONSTRAINT_MUTEX</code>、<code>CARDINALITY_USER_LIMIT</code>、<code>PARTIAL_SUCCESS</code> …）与多语言文案 JSON 导出。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：<code>Kun.Authorization</code> 已作为独立包发布，只放端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>、<code>AuthorizationSubject</code>、可解释判定），不内置 RBAC/ABAC，三个入口缺少引擎时一律拒绝且在 handler 前判定——HTTP 用 <code>services.AddKunAuthorization()</code> + 端点 <code>.RequireKunPermission(&quot;&lt;权限点&gt;&quot;)</code>，gRPC 用 <code>[RequiresPermission]</code>（<code>AddKunGrpc()</code> 自动装配拦截器），Mediator 的 <code>PermissionBehavior</code> 只有逐命令的泛型注册 <code>AddPermissionBehavior&lt;TRequest, TResponse&gt;(denied)</code>（命令须实现 <code>IPermissionProtectedRequest</code> 静态声明 <code>RequiredPermissions</code>），Kun 没有开放泛型的全局注册；本任务要决定由 <code>qian.authz</code> 逐命令注册还是自建全局行为，并用门禁保证受保护命令不漏注册。权限集合不从令牌直接推导。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：<code>Qian.Authz.Abstractions</code> 只依赖 <code>Kun.Authorization</code> 端口、<code>Kun.*.Abstractions</code> 与 <code>Qian.Runtime</code>，通过 PublicAPI 分析器</li>\n<li class='chk'><span class='box'></span>UT：权限点全名拼接规则与 <code>qian.sample.crm:customer:read</code> 等样例通过单测；清单 <code>resource</code> 不带插件前缀</li>\n<li class='chk'><span class='box'></span>UT：错误码目录与多语言文案导出为 JSON 并符合 <code>ErrorDetail</code> 约定</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的鉴权端口落地（<code>Kun.Authorization</code> 发包、<code>PermissionBehavior</code> 只能逐命令注册、缺引擎即拒绝），随 S1-KUN-009 升级可用</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>与 7.4 互为前置、契约先行：Definition 暴露 <code>ctx.Authz</code> 并再导出 <code>Kun.Authorization</code> 端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>；端口归属见 ADR-019 §7 待确认）；<code>PermissionDefinition</code>（资源类型、动作、风险级别、step-up、终端）；权限点命名规范 <code>&lt;plugin-id&gt;:&lt;resource&gt;:&lt;action&gt;</code>（R9）；<code>Check / BatchCheck / ListAllowedActions / ListPermissions / Explain</code> 接口形状；结构化错误码目录（<code>AUTHZ_DENIED</code>、<code>CONSTRAINT_MUTEX</code>、<code>CARDINALITY_USER_LIMIT</code>、<code>PARTIAL_SUCCESS</code> …）与多语言文案 JSON 导出。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：<code>Kun.Authorization</code> 已作为独立包发布，只放端口（<code>IPermissionChecker</code> / <code>IDataPermissionFilter</code> / <code>IFieldPolicy</code>、<code>AuthorizationSubject</code>、可解释判定），不内置 RBAC/ABAC，三个入口缺少引擎时一律拒绝且在 handler 前判定——HTTP 用 <code>services.AddKunAuthorization()</code> + 端点 <code>.RequireKunPermission(&quot;&lt;权限点&gt;&quot;)</code>，gRPC 用 <code>[RequiresPermission]</code>（<code>AddKunGrpc()</code> 自动装配拦截器），Mediator 的 <code>PermissionBehavior</code> 只有逐命令的泛型注册 <code>AddPermissionBehavior&lt;TRequest, TResponse&gt;(denied)</code>（命令须实现 <code>IPermissionProtectedRequest</code> 静态声明 <code>RequiredPermissions</code>），Kun 没有开放泛型的全局注册；本任务要决定由 <code>qian.authz</code> 逐命令注册还是自建全局行为，并用门禁保证受保护命令不漏注册。权限集合不从令牌直接推导。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Authz.Abstractions</code> 只依赖 <code>Kun.Authorization</code> 端口、<code>Kun.*.Abstractions</code> 与 <code>Qian.Runtime</code>，通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：权限点全名拼接规则与 <code>qian.sample.crm:customer:read</code> 等样例通过单测；清单 <code>resource</code> 不带插件前缀</li>\n<li class='chk done'><span class='box'>✓</span>UT：错误码目录与多语言文案导出为 JSON 并符合 <code>ErrorDetail</code> 约定</li>\n</ul>\n<h4>实现与验证证据</h4>\n<ul>\n<li><code>Qian.Authz.Abstractions</code> 复用 Kun 的五方法判定端口与数据/字段端口，提供 Authz 服务键、规范权限元数据、错误目录及多语言 ErrorDetail 导出。</li>\n<li>Mediator 采用 <code>AddAuthorizedHandler</code> 逐命令登记同一 builder 的权限行为与处理器；QIAN0005 编译门禁覆盖两个底层重载、方法组引用、泛型包装及伪造桥接类，普通未受保护命令保持可注册。</li>\n<li>真实启动校验发现的框架重复登记问题已在 [Kun PR #52](https://github.com/idadawn/kun/pull/52) 修复，全 24 项 CI 通过；[2026.10.11 发布](https://github.com/idadawn/kun/actions/runs/38153820866) 成功，Qian 从 nuget.org 实际还原并将 KunVersion 升至该正式版。</li>\n<li>本地全仓 Release 构建零警告，13 包依赖图通过，36 项门禁覆盖通过（一次本地还原进程退出后，对应 10 项依赖门禁独立重跑通过）；强制要求 Docker 的全量 282 项测试通过、零跳过。新增 Authz 契约 24 项，包含真实 Kun 管道的缺引擎、拒绝、放行及匿名场景。</li>\n<li>本任务只完成 Definition 与注册边界；权限注册表/角色模板、RBAC 引擎与完整入口 PEP/审计分别由 AZ-002、003、004 交付。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的鉴权端口落地（<code>Kun.Authorization</code> 发包、<code>PermissionBehavior</code> 只能逐命令注册、缺引擎即拒绝），随 S1-KUN-009 升级可用</li>\n<li>2026-10-11 someone：用户已批准QA-002必要前置。DATA-001草稿等待DEC-017，串行转入不依赖该裁决的权限Definition：复用Kun.Authorization端口，补命名/判定契约与错误码验收。</li>\n<li>2026-10-11 cody：真实Kun管道验收发现2026.10.9在ValidateOnBuild下因权限行为重复DI注册启动失败；保持检查不降级，串行修复Kun并发布正式包后完成本任务。</li>\n<li>2026-10-11 cody：实现及编译门禁已准备；等待Kun PR #52全绿合并与正式NuGet发布，保留ValidateOnBuild回归。上游CI串行排队期间切回已批准的DEC-017/DATA-001，不将当前本地实现标为完成。</li>\n<li>2026-10-12 cody：Kun PR #52已全绿合并并发布2026.10.11；正式NuGet包已从nuget.org实际还原。恢复权限契约的ValidateOnBuild真管道验收及完整门禁。</li>\n<li>2026-10-12 cody：契约及三项验收通过：正式Kun2026.10.11、24项新增Authz测试、282项全仓测试无跳过、13包依赖与编译门禁通过。准备远程CI验收，完整RBAC/PEP仍由后续任务交付。</li>\n<li>2026-10-12 cody：PR #45实现头1e479009的全部远程检查通过，含真实容器测试、TS共用TCK、声明式表面与文档预览；.NET证据 https://github.com/idadawn/qian/actions/runs/38155241583 。三项验收完成，回写看板后由最终头CI复核并合并。</li>\n</ul>",
   "file": "pm/tasks/S1-AZ-001.md"
  },
  {
@@ -378,7 +382,6 @@
    "S1-RT-004"
   ],
   "blockedBy": [
-   "S1-AZ-001",
    "S1-RT-004"
   ],
   "order": 2,
@@ -557,7 +560,6 @@
    "S1-DATA-004"
   ],
   "blockedBy": [
-   "S1-AZ-001",
    "S1-DATA-004"
   ],
   "order": 2,
@@ -755,7 +757,7 @@
  {
   "id": "S1-DATA-001",
   "title": "AddQianData 默认安全装配与 RLS 迁移模板",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "DATA",
   "areaName": "数据",
@@ -773,7 +775,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -793,7 +795,7 @@
    "done": 4,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.data</code>（<code>Qian.Data.Abstractions</code> / <code>ctx.Data</code> + <code>Qian.Data</code>，随 SDK 进每个 .NET profile）：<code>AddQianData&lt;TContext&gt;()</code> 强制 RLS 连接版 + 事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code>、租户与软删过滤、审计字段填充、<code>xmin</code>、snake_case、Guid v7、Outbox 同 DbContext；<code>QianDbContext : KunDbContext</code> 构造期校验否则 <code>QianDataMisconfiguredException</code>；<code>UseKunSchema(&quot;plugin_&lt;id&gt;&quot;)</code>；系统列约定；迁移生成器为每个 <code>IMultiTenant</code> 表输出 <code>FORCE ROW LEVEL SECURITY</code> 策略；CI 检查「在线 DbContext 必须继承 <code>QianDbContext</code>」。全部组件表的前提。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 默认主键、可空审计主体与 PostgreSQL <code>xmin</code> 并发令牌在 Kun 里是显式 opt-in（<code>AddKunDataConventions&lt;TContext&gt;()</code> / <code>ModelBuilder.ApplyKunDataConventions()</code>），不随 <code>AddKunEntityFrameworkCore()</code> 自动生效，由 <code>AddQianData&lt;TContext&gt;()</code> 统一装配并在构造期校验；<code>SaveChangesResultAsync()</code> 把并发冲突映射为 <code>Result</code> 的 Conflict；已有非空主键不变，旧非空数值主体需显式迁移。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 <code>AddQianData</code> 拒绝；代码中 <code>IgnoreQueryFilters()</code> 触发分析器错误</li>\n<li class='chk done'><span class='box'>✓</span>IT：以非超级用户、无 BYPASSRLS 的应用角色直连绕过 EF，在设置 <code>app.current_tenant_id = A</code> 后 <code>SELECT</code> 不到租户 B 的行，向 B 插入被 <code>WITH CHECK</code> 拒绝（RLS 兜底）；管理员仅建表造数，保留超级用户可绕过的对照，在线应用拒用高权限角色（S1-DEC-017）</li>\n<li class='chk'><span class='box'></span>E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 <code>EXPLAIN</code> 显示走租户索引</li>\n<li class='chk done'><span class='box'>✓</span>CI：在线 DbContext 不继承 <code>QianDbContext</code> 时门禁失败</li>\n<li class='chk done'><span class='box'>✓</span>RLS 连接版与事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code> 的装配改为复用 Kun 2026.10.8 起提供的 <code>AddKunTenantRls&lt;TContext&gt;()</code>，<code>AddQianData</code> 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 <code>packages/Qian.Data/README.md</code> 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-08 cody：S1-KUN-001 先行交付 Qian.Data.Abstractions / Qian.Data 最小 RLS 安全装配及启动拒绝测试，详见 packages/Qian.Data/README.md；本任务仍负责完整组件、迁移模板、数据约定与分析器，未认领或提前勾选本任务验收。</li>\n<li>2026-10-08 cody：先行安全基础已合并 Qian PR #7（https://github.com/idadawn/qian/pull/7），后续实现复用 QianDbContext 与 AddQianData；完整验收与本任务状态保持待办。</li>\n<li>2026-10-08 claude：验收加一条：AddQianData 的 RLS 拦截器与模型缓存键装配复用 Kun 2026.10.8 的 AddKunTenantRls&lt;TContext&gt;()（S1-KUN-008 未决问题，产品负责人同意并入本任务）</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的数据约定变更（snake_case / Guid v7 / <code>xmin</code> 为显式 opt-in，<code>AddKunDataConventions&lt;TContext&gt;()</code> 由 <code>AddQianData</code> 装配），随 S1-KUN-009 升级可用</li>\n<li>2026-10-11 someone：用户已批准补齐QA-002必要前置。开始DATA-001：复用Kun 2026.10.9安全装配和数据约定，补迁移RLS、编译期门禁与真实双租户验收。</li>\n<li>2026-10-11 someone：验收中超级用户受RLS约束的要求与PostgreSQL16事实及仓库受限应用角色测试规范冲突；记录决策等待确认，继续独立的Kun装配、模型约定及分析器实现。</li>\n<li>2026-10-11 someone：独立准备已实现：复用Kun双拦截器/审计/租户写入，强制插件schema与模型约定，保留业务过滤；编译正反例通过。PostgreSQL16容器8项数据测试无跳过通过，包括超级用户对照、Guid v7/审计/xmin/软删。自动迁移、完整组件与参考应用仍未完成，DEC-017待确认。</li>\n<li>2026-10-11 someone：DEC-017已获批，验收口径阻塞解除。草稿PR #44保留，待当前AZ-001契约收尾后按既定串行约束恢复完整实现；尚未完成的功能与验收不变。</li>\n<li>2026-10-11 cody：Kun权限修复等待发布期间串行恢复：落实已批准DEC-017，先同步真实角色边界及app.current_tenant_id，并补在线高权限角色拒绝。</li>\n<li>2026-10-11 cody：DEC-017已实施：会话契约与受限角色验收已同步；应用启动和同步/异步开连接拒绝superuser/BYPASSRLS，预打开连接及管理员SET ROLE降权对照同样拒绝。13项真库数据测试通过；全仓266项测试零跳过，36门禁及12包依赖检查通过。自动迁移、完整seam/Outbox与1000行索引仍未完成。</li>\n<li>2026-10-12 cody：新增PostgreSQL迁移SQL生成器：从目标模型的租户标记自动为新建表输出ENABLE/FORCE RLS，限制策略抵御附加宽松策略，空租户拒绝访问。真实执行迁移差异器生成的SQL验证跨租户写和空租户写均42501；数据16项通过。历史表改造仍须显式迁移，参考应用/seam/Outbox尚未完成。</li>\n<li>2026-10-12 cody：当前增量全仓269项测试无跳过、36门禁与12包依赖检查通过；保留草稿#44，串行转回已取得正式Kun修复包的AZ-001收尾。DATA待恢复项为完整Data seam/Outbox、deleted_by和每租户1000行参考应用索引验收，既有代码与验收证据保留。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.data</code>（<code>Qian.Data.Abstractions</code> / <code>ctx.Data</code> + <code>Qian.Data</code>，随 SDK 进每个 .NET profile）：<code>AddQianData&lt;TContext&gt;()</code> 强制 RLS 连接版 + 事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code>、租户与软删过滤、审计字段填充、<code>xmin</code>、snake_case、Guid v7、Outbox 同 DbContext；<code>QianDbContext : KunDbContext</code> 构造期校验否则 <code>QianDataMisconfiguredException</code>；<code>UseKunSchema(&quot;plugin_&lt;id&gt;&quot;)</code>；系统列约定；迁移生成器为每个 <code>IMultiTenant</code> 表输出 <code>FORCE ROW LEVEL SECURITY</code> 策略；CI 检查「在线 DbContext 必须继承 <code>QianDbContext</code>」。全部组件表的前提。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 默认主键、可空审计主体与 PostgreSQL <code>xmin</code> 并发令牌在 Kun 里是显式 opt-in（<code>AddKunDataConventions&lt;TContext&gt;()</code> / <code>ModelBuilder.ApplyKunDataConventions()</code>），不随 <code>AddKunEntityFrameworkCore()</code> 自动生效，由 <code>AddQianData&lt;TContext&gt;()</code> 统一装配并在构造期校验；<code>SaveChangesResultAsync()</code> 把并发冲突映射为 <code>Result</code> 的 Conflict；已有非空主键不变，旧非空数值主体需显式迁移。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：缺少 RLS 拦截器或模型缓存键的 DbContext 在启动时被 <code>AddQianData</code> 拒绝；代码中 <code>IgnoreQueryFilters()</code> 触发分析器错误</li>\n<li class='chk done'><span class='box'>✓</span>IT：以非超级用户、无 BYPASSRLS 的应用角色直连绕过 EF，在设置 <code>app.current_tenant_id = A</code> 后 <code>SELECT</code> 不到租户 B 的行，向 B 插入被 <code>WITH CHECK</code> 拒绝（RLS 兜底）；管理员仅建表造数，保留超级用户可绕过的对照，在线应用拒用高权限角色（S1-DEC-017）</li>\n<li class='chk'><span class='box'></span>E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 <code>EXPLAIN</code> 显示走租户索引</li>\n<li class='chk done'><span class='box'>✓</span>CI：在线 DbContext 不继承 <code>QianDbContext</code> 时门禁失败</li>\n<li class='chk done'><span class='box'>✓</span>RLS 连接版与事务版拦截器、<code>KunMultiTenantModelCacheKeyFactory</code> 的装配改为复用 Kun 2026.10.8 起提供的 <code>AddKunTenantRls&lt;TContext&gt;()</code>，<code>AddQianData</code> 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 <code>packages/Qian.Data/README.md</code> 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-08 cody：S1-KUN-001 先行交付 Qian.Data.Abstractions / Qian.Data 最小 RLS 安全装配及启动拒绝测试，详见 packages/Qian.Data/README.md；本任务仍负责完整组件、迁移模板、数据约定与分析器，未认领或提前勾选本任务验收。</li>\n<li>2026-10-08 cody：先行安全基础已合并 Qian PR #7（https://github.com/idadawn/qian/pull/7），后续实现复用 QianDbContext 与 AddQianData；完整验收与本任务状态保持待办。</li>\n<li>2026-10-08 claude：验收加一条：AddQianData 的 RLS 拦截器与模型缓存键装配复用 Kun 2026.10.8 的 AddKunTenantRls&lt;TContext&gt;()（S1-KUN-008 未决问题，产品负责人同意并入本任务）</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的数据约定变更（snake_case / Guid v7 / <code>xmin</code> 为显式 opt-in，<code>AddKunDataConventions&lt;TContext&gt;()</code> 由 <code>AddQianData</code> 装配），随 S1-KUN-009 升级可用</li>\n<li>2026-10-11 someone：用户已批准补齐QA-002必要前置。开始DATA-001：复用Kun 2026.10.9安全装配和数据约定，补迁移RLS、编译期门禁与真实双租户验收。</li>\n<li>2026-10-11 someone：验收中超级用户受RLS约束的要求与PostgreSQL16事实及仓库受限应用角色测试规范冲突；记录决策等待确认，继续独立的Kun装配、模型约定及分析器实现。</li>\n<li>2026-10-11 someone：独立准备已实现：复用Kun双拦截器/审计/租户写入，强制插件schema与模型约定，保留业务过滤；编译正反例通过。PostgreSQL16容器8项数据测试无跳过通过，包括超级用户对照、Guid v7/审计/xmin/软删。自动迁移、完整组件与参考应用仍未完成，DEC-017待确认。</li>\n<li>2026-10-11 someone：DEC-017已获批，验收口径阻塞解除。草稿PR #44保留，待当前AZ-001契约收尾后按既定串行约束恢复完整实现；尚未完成的功能与验收不变。</li>\n<li>2026-10-11 cody：Kun权限修复等待发布期间串行恢复：落实已批准DEC-017，先同步真实角色边界及app.current_tenant_id，并补在线高权限角色拒绝。</li>\n<li>2026-10-11 cody：DEC-017已实施：会话契约与受限角色验收已同步；应用启动和同步/异步开连接拒绝superuser/BYPASSRLS，预打开连接及管理员SET ROLE降权对照同样拒绝。13项真库数据测试通过；全仓266项测试零跳过，36门禁及12包依赖检查通过。自动迁移、完整seam/Outbox与1000行索引仍未完成。</li>\n<li>2026-10-12 cody：新增PostgreSQL迁移SQL生成器：从目标模型的租户标记自动为新建表输出ENABLE/FORCE RLS，限制策略抵御附加宽松策略，空租户拒绝访问。真实执行迁移差异器生成的SQL验证跨租户写和空租户写均42501；数据16项通过。历史表改造仍须显式迁移，参考应用/seam/Outbox尚未完成。</li>\n<li>2026-10-12 cody：当前增量全仓269项测试无跳过、36门禁与12包依赖检查通过；保留草稿#44，串行转回已取得正式Kun修复包的AZ-001收尾。DATA待恢复项为完整Data seam/Outbox、deleted_by和每租户1000行参考应用索引验收，既有代码与验收证据保留。</li>\n<li>2026-10-12 cody：AZ-001已通过最终CI并随PR #45合并；恢复DATA完整实现。同步主线正式Kun2026.10.11与QIAN0005，合并保留数据QIAN0003/0004和全部角色/RLS策略保护。</li>\n<li>2026-10-12 cody：与AZ-001主线合并后验证通过：正式Kun2026.10.11，13个包依赖检查、37项门禁、293项测试均成功且无跳过；保留QIAN0003/0004/0005全部规则。接着补齐Data seam、同上下文Outbox、deleted_by及真实参考应用索引验收。</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-001.md"
  },
  {
@@ -2718,8 +2720,7 @@
   ],
   "blockedBy": [
    "S1-DATA-001",
-   "S1-TEN-001",
-   "S1-AZ-001"
+   "S1-TEN-001"
   ],
   "order": 2,
   "readyNow": false,

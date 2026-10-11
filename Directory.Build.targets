@@ -46,7 +46,7 @@
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <PropertyGroup>
-    <WarningsAsErrors>$(WarningsAsErrors);RS0030;QIAN0002;QIAN0003;QIAN0004;KUNS2S001</WarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);RS0030;QIAN0002;QIAN0003;QIAN0004;QIAN0005;KUNS2S001</WarningsAsErrors>
   </PropertyGroup>
 
 </Project>
