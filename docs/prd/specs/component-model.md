@@ -852,6 +852,8 @@ export const filesHttp: QianPlugin<{ baseUrl: string }> = {
 | S1 Provider | `Qian.Authz` → `qian.authz` | 租户域 RBAC、数据权限编译为谓词叠加 RLS、字段权限、管理 API；**PEP** 作为 `Kun.Mediator` 管道行为与 `command/dispatching` 的 `waterfall` 监听器在 `Apply` 中注册（强制执行点）；读取全树 `metadata/permissions.json` 登记权限点，监听 `tenant/provisioned` 实例化 `metadata/roles.json` 的默认角色 |
 | S1 Consumer | 每个声明 `requiredPermission` 的工具、`qian.gateway`（scope 校验）、`qian.shell`（权限码目录做 UI 裁剪）、`qian.files`（上传策略里的权限检查）、`qian.audit`（记录 `authz/decided`） | 高级权限模式（S3 可选）= 另一个 Provider 或 `authz/checking` 的 waterfall 监听器，Consumer 不变 |
 
+.NET 契约落地（S1-AZ-001）：权限点类型使用 `PermissionDefinition`，`IAuthzService` 继承已发布 Kun 的 `IPermissionChecker` 五个方法，并通过 DataPermissions / Fields 暴露原数据与字段端口；判定使用原 `PermissionDecision`，不复制同名接口。受保护 Mediator 命令采用 `AddAuthorizedHandler` 逐命令将 Kun 权限行为与 handler 登记在同一 builder，QIAN0005 拦截直接注册和未知请求类型的泛型包装器。清单注册表、角色模板及其 Schema 属 S1-AZ-002，完整 PEP、扩展事件与审计集成属 S1-AZ-004；契约包存在不代表这些 Provider 已实现。
+
 ---
 
 ## 7. profile、组合包与 patch
