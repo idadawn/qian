@@ -24,7 +24,7 @@ public sealed class ConfigurationPlugin : IQianPlugin
     {
         var root = ctx.Services.GetRequiredService<IConfiguration>();
         ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
-        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root));
+        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
     }
 }
 

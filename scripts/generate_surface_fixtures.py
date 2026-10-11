@@ -33,6 +33,9 @@ def manifest(files,**changes):
  value=copy.deepcopy(MANIFEST);value.update(changes);files['.qian-plugin/plugin.json']=js(value);return files
 sf='skills/guide/SKILL.md'; af='agents/helper.md'; cf='commands/check.md'; hf='hooks/hooks.json'; mf='.mcp.json';tf='tools/read.json'; pf='config/qian.patch.yml'
 case('skill-only-no-src',base({sf:skill()}))
+case('secret-permission-objects',manifest(base(),policy={**MANIFEST['policy'],'permissions':{'secrets':[{'name':'oss/*','scope':'platform'},{'name':'db/token','scope':'tenant'}]}}))
+bad('secret-permission-string',manifest(base(),policy={**MANIFEST['policy'],'permissions':{'secrets':['oss/*']}}),'.qian-plugin/plugin.json','/policy/permissions/secrets/0','SCHEMA_INVALID')
+bad('secret-permission-invalid-scope',manifest(base(),policy={**MANIFEST['policy'],'permissions':{'secrets':[{'name':'oss/*','scope':'k8s'}]}}),'.qian-plugin/plugin.json','/policy/permissions/secrets/0/scope','SCHEMA_INVALID')
 case('yaml-front-matter',base({sf:'---\nname: guide\ndescription: '+DESC+'\nmetadata:\n  visibility: internal\n  version: 1.0.0\n---\n\n核对说明。\n'}))
 case('overridden-pointer',manifest(base({'knowledge/guide/SKILL.md':skill()}),surfaces={'skills':'./knowledge'}))
 case('all-surfaces',base({sf:skill(**{'allowed-tools':['qian.fixture/read']}),af:md({'name':'helper','description':DESC,'tools':['qian.fixture/read'],'skills':['qian.fixture/guide']}),cf:md({'description':'只读核对配置','allowed-tools':['shell(qian dump-config)']},'!`qian dump-config --format json`'),hf:js(hook()),mf:js({'mcpServers':{'sample':{'type':'http','url':'https://api.example.test/mcp/{tenant}','headers':{'Authorization':'Bearer secretRef://tenant/mcp/token'}}}}),tf:js(tool()),pf:'- id: files\n  config:\n    quota: 100\n    apiKey: secretRef://platform/files/key\n'}),options={'capabilities':['qian.fixture/observe']})

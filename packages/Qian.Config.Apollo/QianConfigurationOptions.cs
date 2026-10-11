@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Qian.Config.Apollo;
 
@@ -21,6 +22,8 @@ public sealed class QianConfigurationOptions
     public Func<string, string?>? ResolveAccessKey { get; init; }
     /// <summary>可选候选 Apollo 快照校验；拒绝时保留上一份快照和缓存。</summary>
     public Func<IReadOnlyDictionary<string, string?>, bool>? ValidateApolloSnapshot { get; init; }
+    /// <summary>合成配置 Schema；敏感字段扫描始终启用，自定义校验只能追加约束。</summary>
+    public JsonElement? ApolloConfigurationSchema { get; init; }
     /// <summary>可选宿主管理的客户端，超时必须大于 60 秒且不能向不可信目标重定向。</summary>
     public HttpClient? HttpClient { get; init; }
     /// <summary>可选日志器；底层失败日志不输出配置或凭据。</summary>

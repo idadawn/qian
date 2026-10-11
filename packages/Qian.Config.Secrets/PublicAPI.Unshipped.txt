@@ -1,0 +1,59 @@
+#nullable enable
+Qian.Config.Secrets.MountedSecretStore
+Qian.Config.Secrets.SecretServiceExtensions
+Qian.Config.Secrets.SecretResolverFactory
+Qian.Config.Secrets.SecretAccessPolicy
+Qian.Config.Secrets.SecretBinding
+Qian.Config.Secrets.SecretBinding.Reference.get -> string!
+Qian.Config.Secrets.SecretBinding.Location.get -> Qian.Config.Secrets.KubernetesSecretLocation!
+Qian.Config.Secrets.SecretBinding.Reference.init -> void
+Qian.Config.Secrets.SecretBinding.Location.init -> void
+override Qian.Config.Secrets.SecretAccessPolicy.ToString() -> string!
+Qian.Config.Secrets.SecretAccessPolicy.Id.get -> string!
+override Qian.Config.Secrets.SecretBinding.ToString() -> string!
+Qian.Config.Secrets.SecretBinding.TenantId.get -> string?
+static Qian.Config.Secrets.SecretAccessPolicy.operator !=(Qian.Config.Secrets.SecretAccessPolicy? left, Qian.Config.Secrets.SecretAccessPolicy? right) -> bool
+Qian.Config.Secrets.SecretBinding.TenantId.init -> void
+static Qian.Config.Secrets.SecretAccessPolicy.operator ==(Qian.Config.Secrets.SecretAccessPolicy? left, Qian.Config.Secrets.SecretAccessPolicy? right) -> bool
+static Qian.Config.Secrets.SecretBinding.operator !=(Qian.Config.Secrets.SecretBinding? left, Qian.Config.Secrets.SecretBinding? right) -> bool
+override Qian.Config.Secrets.SecretAccessPolicy.GetHashCode() -> int
+static Qian.Config.Secrets.SecretBinding.operator ==(Qian.Config.Secrets.SecretBinding? left, Qian.Config.Secrets.SecretBinding? right) -> bool
+Qian.Config.Secrets.SecretAccessPolicy.Id.init -> void
+override Qian.Config.Secrets.SecretAccessPolicy.Equals(object? obj) -> bool
+Qian.Config.Secrets.SecretAccessPolicy.Approved.get -> System.Collections.Generic.IReadOnlyList<Qian.Config.SecretGrant!>!
+override Qian.Config.Secrets.SecretBinding.GetHashCode() -> int
+Qian.Config.Secrets.SecretAccessPolicy.Equals(Qian.Config.Secrets.SecretAccessPolicy? other) -> bool
+Qian.Config.Secrets.SecretAccessPolicy.Approved.init -> void
+override Qian.Config.Secrets.SecretBinding.Equals(object? obj) -> bool
+Qian.Config.Secrets.SecretAccessPolicy.<Clone>$() -> Qian.Config.Secrets.SecretAccessPolicy!
+Qian.Config.Secrets.SecretBinding.Equals(Qian.Config.Secrets.SecretBinding? other) -> bool
+Qian.Config.Secrets.SecretAccessPolicy.Deconstruct(out string! Id, out System.Collections.Generic.IReadOnlyList<Qian.Config.SecretGrant!>! Declared, out System.Collections.Generic.IReadOnlyList<Qian.Config.SecretGrant!>! Approved) -> void
+Qian.Config.Secrets.SecretBinding.<Clone>$() -> Qian.Config.Secrets.SecretBinding!
+Qian.Config.Secrets.SecretBinding.Deconstruct(out string! Reference, out Qian.Config.Secrets.KubernetesSecretLocation! Location, out string? TenantId) -> void
+Qian.Config.Secrets.SecretAccessPolicy.Declared.get -> System.Collections.Generic.IReadOnlyList<Qian.Config.SecretGrant!>!
+Qian.Config.Secrets.SecretAccessPolicy.Declared.init -> void
+Qian.Config.Secrets.SecretResolverOptions
+Qian.Config.Secrets.SecretResolverOptions.SecretResolverOptions() -> void
+Qian.Config.Secrets.KubernetesSecretLocation
+Qian.Config.Secrets.SecretResolverOptions.Bindings.get -> System.Collections.Generic.IReadOnlyList<Qian.Config.Secrets.SecretBinding!>!
+Qian.Config.Secrets.SecretResolverOptions.MountRoot.get -> string!
+Qian.Config.Secrets.SecretResolverOptions.Bindings.init -> void
+Qian.Config.Secrets.SecretResolverOptions.MountRoot.init -> void
+Qian.Config.Secrets.SecretResolverOptions.Policies.get -> System.Collections.Generic.IReadOnlyList<Qian.Config.Secrets.SecretAccessPolicy!>!
+Qian.Config.Secrets.SecretResolverOptions.Policies.init -> void
+Qian.Config.Secrets.SecretResolverOptions.AllowDevelopmentReferences.get -> bool
+Qian.Config.Secrets.SecretResolverOptions.AllowDevelopmentReferences.init -> void
+Qian.Config.Secrets.SecretAccessPolicy.SecretAccessPolicy(string! Id, System.Collections.Generic.IReadOnlyList<Qian.Config.SecretGrant!>! Declared, System.Collections.Generic.IReadOnlyList<Qian.Config.SecretGrant!>! Approved) -> void
+Qian.Config.Secrets.SecretBinding.SecretBinding(string! Reference, Qian.Config.Secrets.KubernetesSecretLocation! Location, string? TenantId = null) -> void
+Qian.Config.Secrets.KubernetesSecretLocation.KubernetesSecretLocation(string! namespace, string! name, string! key) -> void
+Qian.Config.Secrets.SecretResolverFactory.SecretResolverFactory(Qian.Config.Secrets.SecretResolverOptions! options, Qian.Config.ISecretAccessObserver! observer) -> void
+Qian.Config.Secrets.KubernetesSecretLocation.Key.get -> string!
+Qian.Config.Secrets.KubernetesSecretLocation.Name.get -> string!
+Qian.Config.Secrets.KubernetesSecretLocation.Namespace.get -> string!
+Qian.Config.Secrets.MountedSecretStore.MountedSecretStore(string! rootDirectory) -> void
+static Qian.Config.Secrets.KubernetesSecretLocation.Parse(string! locator) -> Qian.Config.Secrets.KubernetesSecretLocation!
+static Qian.Config.Secrets.SecretServiceExtensions.AddQianSecrets(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Qian.Config.Secrets.SecretResolverOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Qian.Config.Secrets.SecretResolverFactory.ForPlugin(Qian.Runtime.IPluginContext! context) -> Qian.Config.ISecretResolver!
+Qian.Config.Secrets.SecretResolverFactory.ForHost(string! policyId, Kun.Core.MultiTenancy.ITenantContext? tenantContext = null) -> Qian.Config.ISecretResolver!
+override Qian.Config.Secrets.KubernetesSecretLocation.ToString() -> string!
+Qian.Config.Secrets.MountedSecretStore.ReadAsync(Qian.Config.Secrets.KubernetesSecretLocation! location, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Config.SecretValue!>

@@ -44,7 +44,7 @@ public static class QianConfigurationExtensions
         if (catalog is null) { catalog = ErrorCatalog.CreateDefault(); services.AddSingleton(catalog); }
         ConfigErrors.Register(catalog);
         services.AddSingleton(configuration);
-        services.AddSingleton<IConfigService>(new ConfigurationService(configuration));
+        services.AddSingleton<IConfigService>(sp => new ConfigurationService(configuration, sp.GetService<ISecretResolverFactory>()));
         return services;
     }
 
@@ -81,20 +81,20 @@ public static class QianConfigurationExtensions
         if (namespaces.Distinct(StringComparer.Ordinal).Count() != namespaces.Length) throw Invalid("Apollo:Namespaces");
         namespaces = namespaces.Append("application").Distinct(StringComparer.Ordinal).OrderBy(NamespaceOrder).ToArray();
         var accessKeyReference = bootstrap["Apollo:AccessKey"];
-        if (accessKeyReference is not null && (!accessKeyReference.StartsWith("secretRef://", StringComparison.Ordinal) ||
-            accessKeyReference.Any(char.IsWhiteSpace) || !Uri.TryCreate(accessKeyReference, UriKind.Absolute, out var secretUri) ||
-            secretUri.Host is not ("platform" or "dev") || secretUri.AbsolutePath.Length <= 1 ||
-            secretUri.UserInfo.Length != 0 || secretUri.Query.Length != 0 || secretUri.Fragment.Length != 0 ||
-            !secretUri.IsDefaultPort ||
+        if (accessKeyReference is not null && (!SecretReference.IsValid(accessKeyReference) ||
+            SecretReference.Parse(accessKeyReference).Scope is not ("platform" or "dev") ||
             options.ResolveAccessKey is null)) throw Invalid("Apollo:AccessKey");
         var cache = bootstrap["Apollo:CacheDir"];
+        var schema = options.ApolloConfigurationSchema?.Clone();
         var apollo = new ApolloOptions
         {
             AppId = appId, ConfigServers = servers,
             Cluster = bootstrap["Apollo:Cluster"] ?? "default",
             Label = bootstrap["Apollo:Label"], Namespaces = namespaces,
             CacheDirectory = cache is null ? null : Path.Combine(Path.GetFullPath(cache, basePath), environment),
-            Validate = options.ValidateApolloSnapshot,
+            Validate = snapshot => SecretSafety.ScanConfiguration(snapshot, schema).Count == 0 &&
+                (options.ValidateApolloSnapshot?.Invoke(snapshot) ?? true),
+            ValidateNamespace = (_, snapshot) => SecretSafety.ScanConfiguration(snapshot, schema).Count == 0,
             ResolveAccessKey = accessKeyReference is null ? null : () =>
             {
                 var value = options.ResolveAccessKey!(accessKeyReference);

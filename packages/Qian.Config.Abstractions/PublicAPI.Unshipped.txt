@@ -1,4 +1,6 @@
 #nullable enable
+static readonly Qian.Config.SecretErrors.Exposed -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Config.SecretErrors.SchemaInvalid -> Qian.Runtime.Errors.ErrorCode!
 Qian.Config.IConfigService.ReadSection(string! path) -> System.Collections.Generic.IReadOnlyDictionary<string!, string?>!
 Qian.Config.IConfigService
 Qian.Config.ConfigDefinition
@@ -11,3 +13,87 @@ static Qian.Config.ConfigDefinition.Config(this Qian.Runtime.IPluginContext! con
 Qian.Config.IConfigService.GetReloadToken() -> Microsoft.Extensions.Primitives.IChangeToken!
 Qian.Config.ConfigErrors
 static Qian.Config.ConfigErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!
+Qian.Config.ISecretResolver
+Qian.Config.SecretValueJsonConverter
+Qian.Config.SecretValue
+Qian.Config.ISecretResolverFactory
+Qian.Config.ISecretAccessObserver
+Qian.Config.SecretErrors
+static readonly Qian.Config.SecretErrors.InvalidReference -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Config.SecretErrors.AccessDenied -> Qian.Runtime.Errors.ErrorCode!
+Qian.Config.SecretValueJsonConverter.SecretValueJsonConverter() -> void
+static readonly Qian.Config.SecretErrors.NotFound -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Config.SecretErrors.Unavailable -> Qian.Runtime.Errors.ErrorCode!
+Qian.Config.SecretAccessEvent
+override Qian.Config.SecretAccessEvent.ToString() -> string!
+static Qian.Config.SecretAccessEvent.operator !=(Qian.Config.SecretAccessEvent? left, Qian.Config.SecretAccessEvent? right) -> bool
+static Qian.Config.SecretAccessEvent.operator ==(Qian.Config.SecretAccessEvent? left, Qian.Config.SecretAccessEvent? right) -> bool
+override Qian.Config.SecretAccessEvent.GetHashCode() -> int
+override Qian.Config.SecretAccessEvent.Equals(object? obj) -> bool
+Qian.Config.SecretAccessEvent.Equals(Qian.Config.SecretAccessEvent? other) -> bool
+Qian.Config.SecretAccessEvent.<Clone>$() -> Qian.Config.SecretAccessEvent!
+Qian.Config.SecretAccessEvent.Deconstruct(out string! Caller, out string! Reference, out string? TenantId, out bool Allowed, out string! Outcome) -> void
+Qian.Config.SecretGrant
+override Qian.Config.SecretGrant.ToString() -> string!
+static Qian.Config.SecretGrant.operator !=(Qian.Config.SecretGrant? left, Qian.Config.SecretGrant? right) -> bool
+static Qian.Config.SecretGrant.operator ==(Qian.Config.SecretGrant? left, Qian.Config.SecretGrant? right) -> bool
+override Qian.Config.SecretGrant.GetHashCode() -> int
+override Qian.Config.SecretGrant.Equals(object? obj) -> bool
+Qian.Config.SecretAccessEvent.Caller.get -> string!
+Qian.Config.SecretGrant.Name.get -> string!
+Qian.Config.SecretAccessEvent.Reference.get -> string!
+Qian.Config.SecretGrant.Equals(Qian.Config.SecretGrant? other) -> bool
+Qian.Config.SecretGrant.Scope.get -> string!
+Qian.Config.SecretGrant.<Clone>$() -> Qian.Config.SecretGrant!
+Qian.Config.SecretGrant.Deconstruct(out string! Name, out string! Scope) -> void
+Qian.Config.SecretAccessEvent.Reference.init -> void
+Qian.Config.SecretGrant.Scope.init -> void
+Qian.Config.SecretGrant.Name.init -> void
+Qian.Config.SecretAccessEvent.Caller.init -> void
+Qian.Config.SecretAccessEvent.TenantId.get -> string?
+Qian.Config.SecretAccessEvent.TenantId.init -> void
+Qian.Config.SecretAccessEvent.Allowed.get -> bool
+Qian.Config.SecretAccessEvent.Allowed.init -> void
+Qian.Config.SecretAccessEvent.Outcome.get -> string!
+Qian.Config.SecretAccessEvent.Outcome.init -> void
+Qian.Config.SecretReference
+Qian.Config.IConfigService.Secrets.get -> Qian.Config.ISecretResolverFactory?
+Qian.Config.ISecretAccessObserver.RecordAsync(Qian.Config.SecretAccessEvent! access, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Config.ISecretResolver.ResolveAsync(string! reference, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Config.SecretValue!>
+Qian.Config.SecretAccessEvent.SecretAccessEvent(string! Caller, string! Reference, string? TenantId, bool Allowed, string! Outcome) -> void
+Qian.Config.ISecretResolverFactory.ForPlugin(Qian.Runtime.IPluginContext! context) -> Qian.Config.ISecretResolver!
+Qian.Config.SecretGrant.SecretGrant(string! Name, string! Scope) -> void
+static Qian.Config.SecretErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!
+Qian.Config.ISecretResolverFactory.ForHost(string! policyId, Kun.Core.MultiTenancy.ITenantContext? tenantContext = null) -> Qian.Config.ISecretResolver!
+override Qian.Config.SecretValueJsonConverter.Read(ref System.Text.Json.Utf8JsonReader reader, System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> Qian.Config.SecretValue!
+Qian.Config.SecretReference.Scope.get -> string!
+Qian.Config.SecretValue.SecretValue(System.ReadOnlySpan<byte> value) -> void
+Qian.Config.SecretReference.Path.get -> string!
+Qian.Config.SecretValue.RevealUtf8() -> string!
+override Qian.Config.SecretValueJsonConverter.Write(System.Text.Json.Utf8JsonWriter! writer, Qian.Config.SecretValue! value, System.Text.Json.JsonSerializerOptions! options) -> void
+static Qian.Config.ConfigDefinition.ResolveSecretAsync(this Qian.Runtime.IPluginContext! context, string! reference, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Config.SecretValue!>
+Qian.Config.SecretValue.Bytes.get -> System.ReadOnlyMemory<byte>
+override Qian.Config.SecretValue.ToString() -> string!
+Qian.Config.SecretValue.Dispose() -> void
+static Qian.Config.SecretReference.Parse(string! value) -> Qian.Config.SecretReference!
+override Qian.Config.SecretReference.ToString() -> string!
+static Qian.Config.SecretReference.IsValid(string? value) -> bool
+Qian.Config.SecretDiagnostic
+override Qian.Config.SecretDiagnostic.ToString() -> string!
+static Qian.Config.SecretDiagnostic.operator !=(Qian.Config.SecretDiagnostic? left, Qian.Config.SecretDiagnostic? right) -> bool
+static Qian.Config.SecretDiagnostic.operator ==(Qian.Config.SecretDiagnostic? left, Qian.Config.SecretDiagnostic? right) -> bool
+override Qian.Config.SecretDiagnostic.GetHashCode() -> int
+override Qian.Config.SecretDiagnostic.Equals(object? obj) -> bool
+Qian.Config.SecretDiagnostic.Equals(Qian.Config.SecretDiagnostic? other) -> bool
+Qian.Config.SecretDiagnostic.<Clone>$() -> Qian.Config.SecretDiagnostic!
+Qian.Config.SecretDiagnostic.Deconstruct(out string! Code, out string! Location, out string! Reason) -> void
+Qian.Config.SecretDiagnostic.Code.get -> string!
+Qian.Config.SecretDiagnostic.Code.init -> void
+Qian.Config.SecretDiagnostic.Reason.get -> string!
+Qian.Config.SecretDiagnostic.Reason.init -> void
+Qian.Config.SecretSafety
+Qian.Config.SecretDiagnostic.Location.get -> string!
+Qian.Config.SecretDiagnostic.Location.init -> void
+static Qian.Config.SecretSafety.Scan(System.Text.Json.JsonElement value, System.Text.Json.JsonElement? schema = null) -> System.Collections.Generic.IReadOnlyList<Qian.Config.SecretDiagnostic!>!
+Qian.Config.SecretDiagnostic.SecretDiagnostic(string! Code, string! Location, string! Reason) -> void
+static Qian.Config.SecretSafety.ScanConfiguration(System.Collections.Generic.IReadOnlyDictionary<string!, string?>! values, System.Text.Json.JsonElement? schema = null) -> System.Collections.Generic.IReadOnlyList<Qian.Config.SecretDiagnostic!>!
