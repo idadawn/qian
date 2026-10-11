@@ -1,0 +1,13 @@
+#nullable enable
+Qian.Config.IConfigService.ReadSection(string! path) -> System.Collections.Generic.IReadOnlyDictionary<string!, string?>!
+Qian.Config.IConfigService
+Qian.Config.ConfigDefinition
+static readonly Qian.Config.ConfigDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Config.ConfigErrors.BootstrapInvalid -> Qian.Runtime.Errors.ErrorCode!
+Qian.Config.IConfigService.GetValue(string! key) -> string?
+static readonly Qian.Config.ConfigErrors.RequiredMissing -> Qian.Runtime.Errors.ErrorCode!
+Qian.Config.IConfigService.GetRequiredValue(string! key) -> string!
+static Qian.Config.ConfigDefinition.Config(this Qian.Runtime.IPluginContext! context) -> Qian.Config.IConfigService!
+Qian.Config.IConfigService.GetReloadToken() -> Microsoft.Extensions.Primitives.IChangeToken!
+Qian.Config.ConfigErrors
+static Qian.Config.ConfigErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!

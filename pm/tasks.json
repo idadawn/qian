@@ -589,14 +589,14 @@
  {
   "id": "S1-CFG-001",
   "title": "Apollo 配置 provider（自研）与配置源顺序",
-  "status": "todo",
+  "status": "review",
   "stage": "S1",
   "area": "CFG",
   "areaName": "配置",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "5d",
   "days": 5.0,
   "depends": [
@@ -606,7 +606,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -619,14 +619,22 @@
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "packages/Qian.Config.Apollo/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Config.Apollo/README.md"
+   },
+   {
+    "path": "docs/ops/configuration-runbook.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/ops/configuration-runbook.md"
    }
   ],
-  "updated": "2026-10-10",
+  "updated": "2026-10-12",
   "acceptance": {
-   "done": 0,
+   "done": 4,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.config</code>（<code>Qian.Config.Abstractions</code> / <code>ctx.Config</code> + <code>Qian.Config.Apollo</code>）：公开 HTTP 协议 <code>/configs</code>、<code>/notifications/v2</code> 长轮询（hold 60s）、AccessKey HMAC-SHA1、本地缓存文件、集群内直连 ConfigService；配置源顺序 appsettings → Apollo（<code>qian.common.*</code> → <code>qian.plugin.&lt;id&gt;</code> → <code>application</code>）→ K8s Secret 文件 → 环境变量 → 命令行；启动时无网络且无缓存 → 关键配置缺失则启动失败；失败降级矩阵 L0–L4 入运维手册；独立模式可只用标准 <code>IConfiguration</code>。官方 .NET 客户端只作 PoC 对照。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：在 Apollo 修改 <code>qian.plugin.sample.pageSize</code> 后，宿主 ≤ 60s 内 <code>IOptionsMonitor</code> 值更新且不重启</li>\n<li class='chk'><span class='box'></span>IT：Apollo 不可达且本地缓存存在时宿主用缓存启动；缓存也不存在时关键配置缺失导致启动失败并打印明确原因</li>\n<li class='chk'><span class='box'></span>UT：配置源叠加顺序以单测固定；<code>Apollo__AppId/Env/Cluster/ConfigServer__0/Label/CacheDir/AccessKey</code> 引导项即可启动</li>\n<li class='chk'><span class='box'></span>文档：失败降级矩阵 L0–L4 写入运维手册</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.config</code>（<code>Qian.Config.Abstractions</code> / <code>ctx.Config</code> + <code>Qian.Config.Apollo</code>）：公开 HTTP 协议 <code>/configs</code>、<code>/notifications/v2</code> 长轮询（hold 60s）、AccessKey HMAC-SHA1、本地缓存文件、集群内直连 ConfigService；配置源顺序 appsettings → Apollo（<code>qian.common.*</code> → <code>qian.plugin.&lt;id&gt;</code> → <code>application</code>）→ K8s Secret 文件 → 环境变量 → 命令行；启动时无网络且无缓存 → 关键配置缺失则启动失败；失败降级矩阵 L0–L4 入运维手册；独立模式可只用标准 <code>IConfiguration</code>。官方 .NET 客户端只作 PoC 对照。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：在 Apollo 修改 <code>qian.plugin.sample.pageSize</code> 后，宿主 ≤ 60s 内 <code>IOptionsMonitor</code> 值更新且不重启</li>\n<li class='chk done'><span class='box'>✓</span>IT：Apollo 不可达且本地缓存存在时宿主用缓存启动；缓存也不存在时关键配置缺失导致启动失败并打印明确原因</li>\n<li class='chk done'><span class='box'>✓</span>UT：配置源叠加顺序以单测固定；<code>Apollo__AppId/Env/Cluster/ConfigServer__0/Label/CacheDir/AccessKey</code> 引导项即可启动</li>\n<li class='chk done'><span class='box'>✓</span>文档：失败降级矩阵 L0–L4 写入运维手册</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：QA-002完整platform必需的qian.config.apollo已确认仍为骨架，且KUN-006/RT-001/KUN-009均完成。DATA草稿#44等待DEC-018时串行推进此独立Provider；复用已发布Kun Apollo协议实现，补配置源顺序和真实Apollo验收，不代替为协议替身。</li>\n<li>2026-10-12 cody：已复用正式Kun.Configuration.Apollo完成Config Definition、标准/Apollo适配器、固定五层覆盖顺序、UAT/PRO引导与缓存隔离、AccessKey引用和鉴权拒绝。真实Apollo2.5.2+MySQL8.0.43通过AdminService发版，同一IOptionsMonitor从10变25约465ms；停服缓存可启动，无缓存失败。全仓290测试零跳过、36门禁、15包依赖通过；L0-L4运维手册已落地。生产部署、Portal OIDC、完整秘密治理及SDK/CLI集成保留对应后续任务。</li>\n</ul>",
   "file": "pm/tasks/S1-CFG-001.md"
  },
  {

@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="ApolloMock/apollo_mock.py" LogicalName="Qian.Testing.Containers.ApolloMock.apollo_mock.py" />
+    <EmbeddedResource Include="ApolloReal/apolloconfigdb.sql" LogicalName="Qian.Testing.Containers.ApolloReal.apolloconfigdb.sql" />
   </ItemGroup>
 
   <ItemGroup>
