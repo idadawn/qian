@@ -1,12 +1,15 @@
 # Qian.Data
 
-数据 Provider 的最小安全装配，完成 S1-KUN-001 的交叉验收；完整范围仍见 [S1-DATA-001](../../pm/tasks/S1-DATA-001.md)。
+数据 Provider 的安全装配；S1-DATA-001 正在补齐完整范围，当前进度与剩余验收见 [任务](../../pm/tasks/S1-DATA-001.md)。
 
 ```csharp
-services.AddQianData<AppDbContext>((sp, options) => options.UseNpgsql(connectionString));
+services.AddQianData<AppDbContext>((sp, options) => options
+    .UseNpgsql(connectionString).UseKunSchema("plugin_example"));
 ```
 
-`AppDbContext` 继承 Definition 包里的 `QianDbContext`，租户上下文由宿主注册。`AddQianData` 自动附加 RLS 连接版与事务版拦截器、租户模型缓存键。宿主 `StartAsync` 主动解析上下文并检查生效的缓存键，安全条件不满足时抛 `QianDataMisconfiguredException`，不会等到第一条业务查询才失败。
+`AppDbContext` 继承 Definition 包里的 `QianDbContext`，租户上下文由宿主注册。装配复用当前 KunVersion 的 `AddKunTenantRls<TContext>()`、`AddKunDataConventions<TContext>()` 和租户字段拦截器，不再维护第二套 RLS 接线。宿主 `StartAsync` 主动解析上下文、检查模型缓存键并构建模型，安全条件不满足时抛 `QianDataMisconfiguredException`。
+
+Qian 模型定制器在业务映射后强制应用租户/软删过滤、Outbox 模型和 Kun 的 snake_case、Guid v7、可空审计主体、`xmin` 约定，并保留业务过滤条件的交集。每个上下文必须用 `UseKunSchema` 指定同一个 `plugin_` 前缀 schema；租户列非空且默认具有索引。派生上下文漏调 `base.OnModelCreating` 不能移除这些安全约定。
 
 无需手写 `ReplaceService`；手工配置缺少该调用会在构造时被拒绝，后续回调把缓存键改回默认实现则在启动时被拒绝。启动检查只初始化 EF 模型，不执行迁移、不建立业务表、不发业务 SQL。
 
@@ -22,4 +25,6 @@ RLS 策略需由迁移显式创建，使用 Kun 的 `app.current_tenant_id`、`F
 
 ## 已知限制与延期项
 
-本任务不宣称数据组件完整可安装；审计字段、`xmin`、snake_case、Guid v7、迁移与分析器属于 S1-DATA-001／S1-KUN-005。此安全基础仅使用现有公开 Kun 2026.9.13 的 API；S1-KUN-001 上游后台链路修复已于 2026-10-08 合并 [Kun PR #43](https://github.com/idadawn/kun/pull/43)，仍需在 Kun 后续发版后通过 `KunVersion` 升级消费，本任务不触发 Kun 发版。
+当前已消费 Kun 2026.10.9。编译门禁拒绝在线上下文不继承安全基类，以及直接或委托调用 `IgnoreQueryFilters`。真库测试已验证原生 SQL 的租户隔离、自动主键/审计字段、`xmin` 冲突、软删和业务过滤条件保留。
+
+自动 RLS 迁移、1000 行/租户的参考应用与索引验收、Data seam/安装表面、Outbox 同上下文工作单元封装仍在本任务范围内，尚未交付。RLS 验收角色与旧文档会话名的冲突见 [S1-DEC-017](../../pm/tasks/S1-DEC-017.md)，待确认前不更改验收承诺或关闭任务。

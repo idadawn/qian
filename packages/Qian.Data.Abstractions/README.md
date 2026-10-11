@@ -2,7 +2,9 @@
 
 数据 seam 的基础契约包，先交付 `QianDbContext` 与 `QianDataMisconfiguredException`，供 S1-KUN-001 的安全装配验收使用。业务组件可以依赖此 Definition 包，不依赖 `Qian.Data` Provider。
 
-`QianDbContext` 继承 `KunDbContext`，保留租户／软删过滤与 Outbox 模型；构造时检查 RLS 双拦截器、`KunMultiTenantModelCacheKeyFactory`，拒绝外部 EF 服务容器和预编译模型绕过。配置统一通过 Provider 的 options 回调传入，派生上下文不覆盖 `OnConfiguring`。
+`QianDbContext` 继承 `KunDbContext`，保留租户／软删过滤与 Outbox 模型；构造时检查 RLS 双拦截器、审计/租户字段拦截器、`KunMultiTenantModelCacheKeyFactory`、Qian 模型定制器及插件 schema，拒绝外部 EF 服务容器和预编译模型绕过。配置统一通过 Provider 的 options 回调传入，派生上下文不覆盖 `OnConfiguring`。
+
+`UseQianDataModel` 由 Provider 自动装配，在业务映射后完成强制模型约定。即使派生类漏调 base，仍安装 Kun 的默认租户/软删过滤，并与业务自己的过滤条件取交集。命名、Guid v7 与 `xmin` 复用 Kun，租户列和索引由 Qian 补充。
 
 `DataErrors.Misconfigured` 定义稳定错误码 `DATA_MISCONFIGURED`，异常的 `Error` 为 `QianError`。它用于宿主启动失败；`AddQianData` 在启动时登记、停止时撤销该错误码。HTTP 宿主通过统一 ErrorDetail 机制处理错误。
 
@@ -16,4 +18,4 @@ Agent 可通过命名稳定的异常及错误码识别隔离配置缺失，不�
 
 ## 已知限制与延期项
 
-此处只是 S1-KUN-001 所需安全基础。审计列、并发令牌、命名约定、主键策略、迁移模板、数据服务键与安装表面仍由 S1-DATA-001 及后续 DATA 任务负责。
+S1-DATA-001 仍在进行；迁移模板、数据服务键、安装表面与完整真实验收尚未完成，不因已有模型约定而提前关闭任务。

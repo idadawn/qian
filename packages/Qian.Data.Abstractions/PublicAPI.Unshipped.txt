@@ -1,4 +1,6 @@
 #nullable enable
+Qian.Data.QianDataModelExtensions
+static Qian.Data.QianDataModelExtensions.UseQianDataModel(this Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! options) -> Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!
 Qian.Data.DataErrors
 static readonly Qian.Data.DataErrors.Misconfigured -> Qian.Runtime.Errors.ErrorCode!
 Qian.Data.QianDataMisconfiguredException

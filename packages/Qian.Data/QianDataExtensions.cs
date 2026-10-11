@@ -1,5 +1,6 @@
-using Kun.EntityFrameworkCore.Interceptors;
+using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.MultiTenancy.EntityFrameworkCore;
+using Kun.MultiTenancy.EntityFrameworkCore.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,15 +22,12 @@ public static class QianDataExtensions
         ArgumentNullException.ThrowIfNull(configure);
         services.AddLogging();
         services.TryAddSingleton(ErrorCatalog.CreateDefault());
-        services.TryAddScoped<TenantRlsConnectionInterceptor>();
-        services.TryAddScoped<TenantRlsTransactionInterceptor>();
-        services.AddDbContext<TContext>((sp, options) =>
-        {
-            options.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>(),
-                sp.GetRequiredService<TenantRlsTransactionInterceptor>());
-            options.ReplaceService<IModelCacheKeyFactory, KunMultiTenantModelCacheKeyFactory>();
-            configure(sp, options);
-        });
+        services.AddKunTenantRls<TContext>();
+        services.AddKunDataConventions<TContext>();
+        services.AddKunMultiTenancyEntityFrameworkCore();
+        services.ConfigureDbContext<TContext>((sp, options) => options.UseQianDataModel()
+            .AddInterceptors(sp.GetRequiredService<KunTenantSaveChangesInterceptor>()));
+        services.AddDbContext<TContext>(configure);
         services.AddHostedService<DataStartupCheck<TContext>>();
         return services;
     }
@@ -47,6 +45,11 @@ public static class QianDataExtensions
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
             if (context.GetService<IModelCacheKeyFactory>() is not KunMultiTenantModelCacheKeyFactory)
                 throw new QianDataMisconfiguredException("生效的 EF 模型缓存键被替换。");
+            var model = context.Model;
+            var schema = context.GetService<IDbContextOptions>().Extensions
+                .OfType<RelationalOptionsExtension>().Single().MigrationsHistoryTableSchema;
+            if (model.GetDefaultSchema() != schema)
+                throw new QianDataMisconfiguredException("生效模型的 schema 与上下文迁移 schema 不一致。");
             return Task.CompletedTask;
         }
 

@@ -140,3 +140,9 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 执行 `python3 -m unittest discover -s tests/gates`，同时验证依赖图、PublicAPI 与旧 API 的正反例。后续发布 Kun 新包时仍只通过 `Directory.Packages.props` 的 KunVersion 升级；此任务不伪装成已经消费上游新实现。
 
 S1-KUN-004 补充旧 Identity / Security S2S 签发器、旧注册方法及旧校验/JWKS 子模块的禁用清单。新增正反例使用当前 KunVersion 锁定的真实发布包：两套旧签发器和旧工厂方法产生 RS0030，网关 S2sTokenIssuer 正常编译。负例主动关闭 TreatWarningsAsErrors 仍无法绕过；上游后续版本附带的 KUNS2S001 也被单列为错误。这里验证的是编译边界，不代表已发布或消费尚未发布的上游改动。
+
+## 数据安全编译门禁（S1-DATA-001）
+
+`DataBoundaryAnalyzer` 对非测试项目中直接或间接继承 EF `DbContext`、却不继承 `QianDbContext` 的上下文报 QIAN0003。测试项目可定义验证用的上下文；编译样例显式设置 `IsTestProject=false` 模拟在线代码，不因位于 tests 目录而豁免。
+
+全仓库对 EF `IgnoreQueryFilters` 的调用和方法委托引用报 QIAN0004，按语义符号识别，其他类的同名方法不误报。`test_data_boundary.py` 验证五组真实 EF 正反例，负例即使关闭 TreatWarningsAsErrors 也必须失败。真库隔离测试使用受限应用角色的原生 SQL，不调用过滤器旁路。
