@@ -1445,20 +1445,20 @@
  {
   "id": "S1-DEC-014",
   "title": "TS 运行时私有 npm 发布名与逻辑导入名",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "cody",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/adr/ADR-021-product-family-structure.md",
@@ -1469,31 +1469,31 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
    }
   ],
-  "updated": "2026-10-10",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-RT-003 要求 @qian/runtime 发布私有 feed；既定 S1 feed 为 GitHub Packages，仓库所有者为 idadawn。GitHub npm scope 须与所有者一致，yue 已采用 @idadawn/yue-*。需要确认运行时物理包名与逻辑导入名的映射。推荐 @idadawn/qian-runtime 发布到既定 feed，消费方用 npm alias 保留 @qian/runtime。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>产品负责人确认逻辑导入名与物理发布名的映射</li>\n<li class='chk'><span class='box'></span>同步 ADR-021、组件规格与 S1-RT-003 的包名口径</li>\n<li class='chk'><span class='box'></span>私有 feed 安装与逻辑别名导入的真实消费验收通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 cody：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-RT-003 要求 @qian/runtime 发布私有 feed；既定 S1 feed 为 GitHub Packages，仓库所有者为 idadawn。GitHub npm scope 须与所有者一致，yue 已采用 @idadawn/yue-*。需要确认运行时物理包名与逻辑导入名的映射。推荐 @idadawn/qian-runtime 发布到既定 feed，消费方用 npm alias 保留 @qian/runtime。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>产品负责人确认逻辑导入名与物理发布名的映射</li>\n<li class='chk'><span class='box'></span>同步 ADR-021、组件规格与 S1-RT-003 的包名口径</li>\n<li class='chk'><span class='box'></span>私有 feed 安装与逻辑别名导入的真实消费验收通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 cody：创建任务</li>\n<li>2026-10-11 someone：产品负责人已确认推荐的发布名与逻辑名映射；继续同步ADR/规格并执行真实私有源安装验收。</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-014.md"
  },
  {
   "id": "S1-DEC-015",
   "title": "Identity 客户端与真实身份服务的循环验收如何分阶段",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "cody",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "pm/tasks/S1-KUN-004.md",
@@ -1502,33 +1502,84 @@
    {
     "path": "pm/tasks/S1-IDP-002.md",
     "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-IDP-002.md"
+   },
+   {
+    "path": "docs/adr/ADR-005-identity-sso.md#9-身份客户端与产品联调分阶段验收2026-10-11",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-005-identity-sso.md"
    }
   ],
   "updated": "2026-10-11",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 2
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-KUN-004 要求用真实 qian-identity 完成 PKCE 联调，但提供真实身份服务的 S1-IDP-002 反过来依赖 S1-KUN-004，且还有 DATA/TEN/AZ 前置。Kun 客户端、会话、S2S 与编译门禁已可独立验证；不能用协议夹具冒充产品身份服务，也不能未经裁决改写现有验收。</p>\n<h4>待裁决</h4>\n<ul>\n<li>推荐分阶段验收：S1-KUN-004 按真实 HTTP/RSA/Redis 的 Kun 客户端、会话、S2S Schema 和 Qian 编译门禁完成；把“真实 qian-identity 的 PKCE 联调”明确列为 S1-IDP-002 必过验收，并在 S1-KUN-004 回链。不能据此宣称身份服务或产品链路已上线。</li>\n<li>保持原验收：S1-KUN-004 维持 blocked，等待真实身份服务及其前置完成；已验证的 Kun 修复仍可先合入上游，但本任务不能标 done。</li>\n</ul>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>产品负责人选择验收归属与依赖处理方式</li>\n<li class='chk'><span class='box'></span>按裁决同步 S1-KUN-004 / S1-IDP-002 的验收和相关 PRD 引用，保留产品联调门禁</li>\n</ul>\n<h4>已准备的证据</h4>\n<p>Kun 客户端已通过签名协议夹具、真实 HTTP 和 Redis 验证；本地整仓 852 项通过、2 项既有外部对象存储测试跳过，补充策略测试后 Identity 模块 61 项通过；原生程序实测匿名/吊销 401、有效会话 200。Qian 全仓 252 项与 35 项门禁通过。源码及本地测试包均已可评审，不把协议夹具当作真实身份服务。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-11 cody：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：编号 014 已被 TS 发布名决策的独立分支占用，本条新决策使用 015，未改动原决策。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-KUN-004 要求用真实 qian-identity 完成 PKCE 联调，但提供真实身份服务的 S1-IDP-002 反过来依赖 S1-KUN-004，且还有 DATA/TEN/AZ 前置。Kun 客户端、会话、S2S 与编译门禁已可独立验证；不能用协议夹具冒充产品身份服务，也不能未经裁决改写现有验收。</p>\n<h4>已裁决</h4>\n<p>2026-10-11 产品负责人明确选择“分阶段验收（推荐）”。权威结论已写入 ADR-005 §9；SDK 阶段与真实身份服务联调分别由 S1-KUN-004、S1-IDP-002 承担，后者仍是身份服务完成与发布必过项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人选择验收归属与依赖处理方式</li>\n<li class='chk done'><span class='box'>✓</span>按裁决同步 S1-KUN-004 / S1-IDP-002 的验收和相关 PRD 引用，保留产品联调门禁</li>\n</ul>\n<h4>已准备的证据</h4>\n<p>Kun 客户端已通过签名协议夹具、真实 HTTP 和 Redis 验证；本地整仓 852 项通过、2 项既有外部对象存储测试跳过，补充策略测试后 Identity 模块 61 项通过；原生程序实测匿名/吊销 401、有效会话 200。Qian 全仓 252 项与 35 项门禁通过。源码及本地测试包均已可评审，不把协议夹具当作真实身份服务。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-11 cody：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：编号 014 已被 TS 发布名决策的独立分支占用，本条新决策使用 015，未改动原决策。</li>\n<li>2026-10-11 cody：用户已明确选择分阶段验收；同步 ADR、PRD 与真实身份服务必过联调门。</li>\n<li>2026-10-11 cody：完成：用户已批准分阶段验收，结论写入 ADR-005 §9，PRD 与 IDP-002 保留真实 PKCE/nonce 联调必过门。</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-015.md"
+ },
+ {
+  "id": "S1-DEC-016",
+  "title": "DEP-001 基线验收与真实平台四依赖联调分阶段",
+  "status": "done",
+  "stage": "S1",
+  "area": "DEC",
+  "areaName": "待拍板决策",
+  "wave": 0,
+  "priority": "P0",
+  "type": "decision",
+  "owner": "cody",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "pm/tasks/S1-DEP-001.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEP-001.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEP-002.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEP-002.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEP-003.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEP-003.md"
+   },
+   {
+    "path": "docs/adr/ADR-017-deployment.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-017-deployment.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEP-005.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEP-005.md"
+   }
+  ],
+  "updated": "2026-10-11",
+  "acceptance": {
+   "done": 2,
+   "total": 2
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>DEP-001 第一项要求真实 qian-platform 可访问 PG / Redis / RabbitMQ / Apollo；DEP-002 的专属 L1 服务和 DEP-003 的平台镜像却都依赖 DEP-001。当前 qian-platform 仍是组合骨架，不能以贴同名标签的探针或已有共享服务冒充验收。</p>\n<p>2026-10-11 早前只读实查曾发现 qd 的 API 返回 ServiceUnavailable，K3s activating/start、NRestarts=550；未修改现网。后续复核 API 已恢复，当前资源容量和生产节点池仍待安排，现场证据见 [基线记录](../../deploy/baseline/README.md)。这些环境前置不因验收裁决而豁免。</p>\n<h4>已裁决</h4>\n<p>2026-10-11 产品负责人明确选择“分阶段验收，保留真实联调门（推荐）”。权威结论写入 ADR-017 §9：DEP-001 完成真实基础设施验收，真实 qian-platform 四依赖协议联调保留在 DEP-005 的发布必过项，并显式串联 DEP-002/003 的交付。</p>\n<p>已准备两环境隔离清单、数据服务、只建缺失项的 Secret 引导工具、静态门禁及上线/回退步骤，尚未接入 Argo 或执行集群变更。具体部署仍须实时容量/节点池确认和变更批准。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人明确选择验收顺序</li>\n<li class='chk done'><span class='box'>✓</span>按裁决更新 DEP-001 与后续部署任务，保持真实四依赖联调的必过门</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-11 cody：创建任务</li>\n<li>2026-10-11 cody：用户已批准分阶段验收，保留真实平台四依赖联调为后续发布必过项；同步 ADR/PRD 与相关任务。</li>\n<li>2026-10-11 cody：完成：用户已批准分阶段验收，ADR-017 §9 与 PRD/DEP-001/002/003/005 同步；真实四依赖联调保留发布必过并串联前置。</li>\n</ul>",
+  "file": "pm/tasks/S1-DEC-016.md"
  },
  {
   "id": "S1-DEP-001",
   "title": "K3s 基线治理：命名空间、专属库、默认拒绝、配额",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEP",
   "areaName": "部署物料",
   "wave": 1,
   "priority": "P0",
   "type": "infra",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1541,14 +1592,22 @@
    {
     "path": "docs/ROADMAP.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/ROADMAP.md"
+   },
+   {
+    "path": "deploy/baseline/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/deploy/baseline/README.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-016.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
-   "done": 0,
-   "total": 3
+   "done": 4,
+   "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-M1 K3s 基线：<code>qian-staging</code> / <code>qian-prod</code> 命名空间；每环境专属 PostgreSQL 16（<code>qian</code> 库、schema-per-service、RLS 开启）与 Redis 7（不复用跨 ns 共享实例）；default-deny NetworkPolicy + 按 <code>permissions.egress</code> 白名单放行（平台自有出网点 SSRF 基线，R10）；ResourceQuota / LimitRange / PDB 模板；K3s <code>--secrets-encryption</code>；Traefik <code>forwardedHeaders.trustedIPs</code>；生产独立节点池（Q16）；Harbor 新增「插件包 OCI artifact」制品类型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：在 <code>qian-staging</code> 内启动一个未声明 egress 的 Pod，访问外网与其他 ns 被 NetworkPolicy 拒绝；<code>qian-platform</code> 能访问 PG / Redis / RabbitMQ / Apollo</li>\n<li class='chk'><span class='box'></span>检查：<code>qian-staging</code> 命名空间存在 ResourceQuota 与 LimitRange；无 <code>:latest</code> 镜像</li>\n<li class='chk'><span class='box'></span>检查：Traefik <code>trustedIPs</code> 已配置，OIDC issuer 为 https；K3s secrets-encryption 开启</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-M1 K3s 基线：<code>qian-staging</code> / <code>qian-prod</code> 命名空间；每环境专属 PostgreSQL 16（<code>qian</code> 库、schema-per-service、RLS 开启）与 Redis 7（不复用跨 ns 共享实例）；default-deny NetworkPolicy + 按 <code>permissions.egress</code> 白名单放行（平台自有出网点 SSRF 基线，R10）；ResourceQuota / LimitRange / PDB 模板；K3s <code>--secrets-encryption</code>；Traefik <code>forwardedHeaders.trustedIPs</code>；生产独立节点池（Q16）；Harbor 新增「插件包 OCI artifact」制品类型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>E2E：在 <code>qian-staging</code> 内启动一个未声明 egress 的 Pod，访问外网与其他 ns 被 NetworkPolicy 拒绝；明确标识的已授权诊断工作负载能经真实协议/认证访问本环境 PG / Redis（基线阶段，不冒充平台应用）</li>\n<li class='chk done'><span class='box'>✓</span>检查：<code>qian-staging</code> / <code>qian-prod</code> 使用独立命名空间、专属 PG / Redis 与独立数据卷；生产独立节点池实际就绪</li>\n<li class='chk done'><span class='box'>✓</span>检查：<code>qian-staging</code> 命名空间存在 ResourceQuota 与 LimitRange；无 <code>:latest</code> 镜像</li>\n<li class='chk done'><span class='box'>✓</span>检查：Traefik <code>trustedIPs</code> 已配置，OIDC issuer 为 https；K3s secrets-encryption 开启</li>\n</ul>\n<p>真实 <code>qian-platform</code> 访问 PG / Redis / RabbitMQ / Apollo 的协议联调按已批准的 DEC-016 留在 S1-DEP-005 发布必过项；本任务完成不代表应用已经完成该联调。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：开始：只读核对真实 K3s 与部署仓库，准备独立命名空间、网络隔离、专属数据服务和验收物料；集群级与生产变更需具体审核后执行。</li>\n<li>2026-10-11 cody：部署仓 PR #88 提供两环境独立数据服务、default-deny、配额/PDB/节点池约束、引导与验收脚本；离线门禁和真实本机固定镜像验证通过。现场 qd API 未就绪、K3s activating/start（550→551 次重启），未作集群变更。等待现网恢复、具体变更准入与 DEC-016 验收顺序裁决，实际三项验收保持未完成。</li>\n<li>2026-10-11 cody：已批准 DEC-016，解除验收顺序阻塞，继续真实基线核验。最新只读检查 API readyz 成功、三节点 Ready；仅有 qian-tools，没有 qian-staging/prod，尚无生产专用节点池标签；K3s 加密已开启，待具体准入与部署验收。</li>\n<li>2026-10-11 cody：DEC-016 已批准且 API 已恢复；实际容量仍阻塞：qd 仅余 55m CPU，worker01 仅余约 372Mi 内存，worker02 仅余445m/498Mi且数据盘不足20Gi，没有节点可放置现有500m/512Mi/20Gi的PG。等待staging资源安排及生产独立节点池；未降低请求、迁移其他服务或执行集群变更。</li>\n<li>2026-10-11 cody：用户已明确要求现有集群内划 Qian 专用节点。已新增 pve01 VM106/qian-prod01（2vCPU/4Gi、独立100Gi数据盘），加入原K3s，仅agent；专用标签/taint/LB排除、UUID挂载与重启自动恢复已实测。继续验收生产基线，staging容量仍未解除。</li>\n<li>2026-10-11 cody：生产专用节点与qian-prod真实基线已完成：部署仓#89/#90合并，PG/Redis认证/RLS、PVC落点、外网与跨namespace默认拒绝均通过；staging的namespace/配额/网络策略和真实网络对照也通过，但PG/Redis未部署。当前剩余为staging容量：已准备VM101内存8→9Gi、磁盘60→100Gi的维护提案，涉及既有业务节点重启，待批准与前置检查；未修改VM101。</li>\n<li>2026-10-11 someone：用户已明确批准按PR #39维护方案扩容并重启VM101；开始复核、备份、DNS与入口保障及staging真实验收。</li>\n<li>2026-10-11 someone：已批准维护完成：VM101扩容与受控重启，原27个工作负载和原卷恢复。部署仓PR #91合并；staging完整验收cefbdf7eac94与prod复测492f888bfdac通过，协议认证/RLS/网络拒绝、配额/镜像/入口/加密/生产专用池均有现场证据，测试资源已清理。真实四依赖平台联调继续保留DEP-005。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-001.md"
  },
  {
@@ -1567,11 +1626,9 @@
   "depends": [
    "S1-DEP-001"
   ],
-  "blockedBy": [
-   "S1-DEP-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1584,14 +1641,18 @@
    {
     "path": "docs/adr/ADR-008-events-messaging.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-008-events-messaging.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-016.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>RabbitMQ 上 K3s（quorum queue，prod 3 副本、staging 1 副本，PVC，vhost <code>qian</code>）；Apollo ≥ 2.5.2（configservice + adminservice 每环境 2 副本 + podAntiAffinity + PDB，portal 2 副本 OIDC + JDBC session，环境只建 UAT + PRO）+ MySQL（Q8：staging 集群内 operator，prod 托管，不与 iClaw 共用）；Apollo Portal / Headlamp / Argo 走 Authentik blueprint，per-env 独立 OIDC client；Argo L1 新增 <code>apollo</code>、<code>rabbitmq</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：RabbitMQ 一个节点宕机，quorum queue 继续收发；Apollo configservice 一个副本宕机，宿主仍能拉配置</li>\n<li class='chk'><span class='box'></span>检查：Apollo Portal 不可从公网访问且经 Authentik 登录</li>\n<li class='chk'><span class='box'></span>检查：Argo L1 <code>apollo</code>、<code>rabbitmq</code> Application 同步健康；MySQL 按 Q8 落位</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>RabbitMQ 上 K3s（quorum queue，prod 3 副本、staging 1 副本，PVC，vhost <code>qian</code>）；Apollo ≥ 2.5.2（configservice + adminservice 每环境 2 副本 + podAntiAffinity + PDB，portal 2 副本 OIDC + JDBC session，环境只建 UAT + PRO）+ MySQL（Q8：staging 集群内 operator，prod 托管，不与 iClaw 共用）；Apollo Portal / Headlamp / Argo 走 Authentik blueprint，per-env 独立 OIDC client；Argo L1 新增 <code>apollo</code>、<code>rabbitmq</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：RabbitMQ 一个节点宕机，quorum queue 继续收发；Apollo configservice 一个副本宕机，宿主仍能拉配置</li>\n<li class='chk'><span class='box'></span>检查：Apollo Portal 不可从公网访问且经 Authentik 登录</li>\n<li class='chk'><span class='box'></span>检查：Argo L1 <code>apollo</code>、<code>rabbitmq</code> Application 同步健康；MySQL 按 Q8 落位</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-002.md"
  },
  {
@@ -1611,11 +1672,9 @@
    "S1-RT-002",
    "S1-DEP-001"
   ],
-  "blockedBy": [
-   "S1-DEP-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.17",
@@ -1624,14 +1683,18 @@
    {
     "path": "docs/prd/07-s1-foundation.md#7.0.4",
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-016.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-003.md"
  },
  {
@@ -1690,11 +1753,13 @@
   "days": 3.0,
   "depends": [
    "S1-DEP-004",
-   "S1-DATA-002"
+   "S1-DATA-002",
+   "S1-DEP-002"
   ],
   "blockedBy": [
    "S1-DEP-004",
-   "S1-DATA-002"
+   "S1-DATA-002",
+   "S1-DEP-002"
   ],
   "order": 5,
   "readyNow": false,
@@ -1706,14 +1771,18 @@
    {
     "path": "docs/adr/ADR-017-deployment.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-017-deployment.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-016.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
-   "total": 3
+   "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>不可变发布事件（40 位 SHA、CalVer、<code>dry_run</code>）→ 验签 → 固定检出 → 构建推送 → 迁移 Job 先行（<code>--migrate-only</code>，advisory lock）→ <code>kustomize edit set image</code> 按 digest 写回 → Argo 收敛 → smoke（<code>/readyz</code> + 参考应用登录）；Argo Application <code>qian-platform</code>（L2）、<code>qian-integrations</code>（租户接线）；<code>prune: false</code> 起步；<code>Qian.Runtime</code> 与 profile 随 CalVer 发布。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：从一次发布事件到 staging 三个 profile 镜像全部 <code>Ready</code>、外壳经 <code>gateway</code> 可访问、参考应用可登录，中间无人工步骤</li>\n<li class='chk'><span class='box'></span>E2E：kill <code>qian-platform</code> 一个副本，<code>/readyz</code> 摘流、无 5xx 泄漏到网关；滚动升级时迁移 Job 先完成再切镜像</li>\n<li class='chk'><span class='box'></span>检查：Argo <code>qian-platform</code>、<code>qian-integrations</code> Application 存在且按 digest 引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>不可变发布事件（40 位 SHA、CalVer、<code>dry_run</code>）→ 验签 → 固定检出 → 构建推送 → 迁移 Job 先行（<code>--migrate-only</code>，advisory lock）→ <code>kustomize edit set image</code> 按 digest 写回 → Argo 收敛 → smoke（<code>/readyz</code> + 参考应用登录）；Argo Application <code>qian-platform</code>（L2）、<code>qian-integrations</code>（租户接线）；<code>prune: false</code> 起步；<code>Qian.Runtime</code> 与 profile 随 CalVer 发布。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：从一次发布事件到 staging 三个 profile 镜像全部 <code>Ready</code>、外壳经 <code>gateway</code> 可访问、参考应用可登录，中间无人工步骤</li>\n<li class='chk'><span class='box'></span>E2E：真实 <code>qian-platform</code> 在 staging 经实际协议与认证访问本环境 PG / Redis / RabbitMQ / Apollo，精确网络放行与应用就绪状态一致；记录工作负载镜像 digest、环境端点和脱敏结果。这是发布必过门，不能以诊断 Pod、同名标签、共享服务或仅 TCP 连通代替（DEC-016）</li>\n<li class='chk'><span class='box'></span>E2E：kill <code>qian-platform</code> 一个副本，<code>/readyz</code> 摘流、无 5xx 泄漏到网关；滚动升级时迁移 Job 先完成再切镜像</li>\n<li class='chk'><span class='box'></span>检查：Argo <code>qian-platform</code>、<code>qian-integrations</code> Application 存在且按 digest 引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：按用户批准的 DEC-016 承接真实平台四依赖联调必过项，显式增加 DEP-002 前置；DEP-003 经 DEP-004 传递依赖，基线阶段完成不能跳过应用联调。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-005.md"
  },
  {
@@ -1734,8 +1803,7 @@
    "S1-DEP-001"
   ],
   "blockedBy": [
-   "S1-AUD-003",
-   "S1-DEP-001"
+   "S1-AUD-003"
   ],
   "order": 4,
   "readyNow": false,
@@ -2431,7 +2499,6 @@
    "S1-RT-002"
   ],
   "blockedBy": [
-   "S1-KUN-004",
    "S1-IDP-005"
   ],
   "order": 4,
@@ -2619,7 +2686,6 @@
    "S1-AZ-001"
   ],
   "blockedBy": [
-   "S1-KUN-004",
    "S1-DATA-001",
    "S1-TEN-001",
    "S1-AZ-001"
@@ -2638,14 +2704,22 @@
    {
     "path": "docs/adr/ADR-019-library-first-packages.md#2",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
+   },
+   {
+    "path": "docs/adr/ADR-005-identity-sso.md#9-身份客户端与产品联调分阶段验收2026-10-11",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-005-identity-sso.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-015.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-015.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
-   "total": 4
+   "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>可嵌入任意 ASP.NET Core 宿主的 OpenIddict 7.x IdP，默认进 <code>identity</code> profile（独立 PG schema <code>identity</code>、独立 Redis db）：discovery / authorize / token / userinfo / revocation / introspection / end_session / back-channel logout；授权码 + PKCE、refresh 轮换 + 复用检测、<code>client_credentials</code>、RFC 8707 <code>resource</code>；非对称签名 + JWKS 轮换；每环境一个规范 issuer；access token 15 分钟；内置客户端注册表（平台、官方插件、外壳、CLI）；CSRF 与安全头。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：OpenIddict 一致性测试（授权码 + PKCE、refresh 轮换、client_credentials、revocation、back-channel logout）全部通过；refresh 令牌复用被检测并吊销整族</li>\n<li class='chk'><span class='box'></span>代码审查 + IT：令牌中不含任何权限码；日志中无明文 sid、无密码</li>\n<li class='chk'><span class='box'></span>IT：以 <code>principal_kind = service</code> 的 <code>client_credentials</code> 令牌调用能力成功，<code>sub = client_id</code></li>\n<li class='chk'><span class='box'></span>IT：嵌入 <code>Qian.Identity.Server</code> 的独立宿主能通过 OpenIddict 一致性测试（ADR-019 D19.8）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>可嵌入任意 ASP.NET Core 宿主的 OpenIddict 7.x IdP，默认进 <code>identity</code> profile（独立 PG schema <code>identity</code>、独立 Redis db）：discovery / authorize / token / userinfo / revocation / introspection / end_session / back-channel logout；授权码 + PKCE、refresh 轮换 + 复用检测、<code>client_credentials</code>、RFC 8707 <code>resource</code>；非对称签名 + JWKS 轮换；每环境一个规范 issuer；access token 15 分钟；内置客户端注册表（平台、官方插件、外壳、CLI）；CSRF 与安全头。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：OpenIddict 一致性测试（授权码 + PKCE、refresh 轮换、client_credentials、revocation、back-channel logout）全部通过；refresh 令牌复用被检测并吊销整族</li>\n<li class='chk'><span class='box'></span>IT：已修复的 Kun Identity 客户端对真实 <code>qian-identity</code> 完成强制 PKCE 的授权码换取，篡改 nonce 的 id_token 被拒绝；记录实际 Kun 包版本、issuer 与客户端配置，不能以协议夹具或外部 IdP 代替（DEC-015，身份服务完成与发布必过）</li>\n<li class='chk'><span class='box'></span>代码审查 + IT：令牌中不含任何权限码；日志中无明文 sid、无密码</li>\n<li class='chk'><span class='box'></span>IT：以 <code>principal_kind = service</code> 的 <code>client_credentials</code> 令牌调用能力成功，<code>sub = client_id</code></li>\n<li class='chk'><span class='box'></span>IT：嵌入 <code>Qian.Identity.Server</code> 的独立宿主能通过 OpenIddict 一致性测试（ADR-019 D19.8）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：按用户批准的 DEC-015 承接真实 PKCE/nonce 联调必过项；KUN-004 的 SDK 阶段完成不代表本任务完成，原有前置依赖保持。</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-002.md"
  },
  {
@@ -2744,8 +2818,7 @@
    "S1-KUN-004"
   ],
   "blockedBy": [
-   "S1-IDP-002",
-   "S1-KUN-004"
+   "S1-IDP-002"
   ],
   "order": 3,
   "readyNow": false,
@@ -3116,7 +3189,7 @@
  {
   "id": "S1-KUN-004",
   "title": "Kun Identity 客户端链路修复与 S2S 签发器收敛去产品化",
-  "status": "blocked",
+  "status": "done",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
@@ -3129,10 +3202,8 @@
   "depends": [
    "S1-DEC-015"
   ],
-  "blockedBy": [
-   "S1-DEC-015"
-  ],
-  "order": 1,
+  "blockedBy": [],
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -3158,10 +3229,10 @@
   ],
   "updated": "2026-10-11",
   "acceptance": {
-   "done": 5,
+   "done": 6,
    "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 6、7 项：<code>ExchangeCodeAsync</code> 发送 <code>code_verifier</code>、校验 <code>nonce</code>、补 refresh / client_credentials / discovery 刷新、会话索引与后通道登出、日志只记 sid 哈希、CSRF、<code>SignInHelper</code> DI；三套签发器收敛为网关 <code>S2sTokenIssuer</code> 一套并对齐 iClaw S2S claim 契约，<code>exp − iat ≤ 300s</code>，约 30 处下游产品字样改为可配置。7.4 / 7.9 的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：对强制 PKCE 的 IdP（用 7.4 的 <code>qian-identity</code> 本身）完成授权码换取；篡改 <code>nonce</code> 的 id_token 被拒绝</li>\n<li class='chk done'><span class='box'>✓</span>IT：吊销某用户全部会话后，其任一 sid 的请求返回 401</li>\n<li class='chk done'><span class='box'>✓</span>代码审查：日志中不出现明文 sid（grep 门禁）</li>\n<li class='chk done'><span class='box'>✓</span>UT：Qian 代码树中引用废弃签发器即编译告警升错误</li>\n<li class='chk done'><span class='box'>✓</span>IT：网关签出的 S2S 令牌通过 iClaw <code>contracts/v0/s2s-jwt-claims</code> JSON Schema 校验</li>\n<li class='chk done'><span class='box'>✓</span>代码审查：<code>Kun.*</code> 发布包中 grep 不到下游产品名的默认值</li>\n</ul>\n<h4>验收证据与阻塞</h4>\n<ul>\n<li>显式区分：真实 HTTP/RSA 协议夹具已证明 PKCE verifier 发送、nonce 篡改拒绝、state/到期/重放保护；它不是 Qian 身份服务，第一项验收保留未勾选。S1-IDP-002 依赖本任务，故提交 S1-DEC-015 裁决阶段划分。</li>\n<li>真实 Redis 的原子续期/吊销/索引/重放测试通过；实际 HTTP 验证多会话吊销后均为 401，其他用户仍可访问；写请求缺防跨站令牌在 handler 前拒绝。异常含原始 sid 时，日志仍只有 SHA256 与异常类型。</li>\n<li>网关按冻结 contracts/v0/s2s-claims.schema.json 验证五种主体/租户/角色组合，固定 aud/roles 数组、UUID、每跳 audience 和 1–300 秒寿命。旧签发 API 标记 KUNS2S001。</li>\n<li>Qian 编译负例引用当前 KunVersion 的真实发布包，两个旧签发器及旧注册方法被 RS0030 拦截，即使关闭一般警告升错仍失败；网关签发器正例通过。全仓 252 项测试和 35 项门禁通过。</li>\n<li>本地五个测试包打包和默认值扫描通过；它们未发布到 feed。升级需规范身份投影、Redis 新键空间与重新登录、共享 Data Protection 密钥，详见上游 Identity 客户端指南。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/s2s-claims.schema.json：iClaw 无 S2S JSON Schema，验收以该文件为准（iclaw-alignment.md 第 2 节）</li>\n<li>2026-10-11 cody：开始：KUN-003/007 已进入 review；修复 OIDC、会话与 S2S。真实 qian-identity 联调与 S1-IDP-002 存在反向依赖，保留该验收项，不以替身冒充。</li>\n<li>2026-10-11 cody：SDK 实现和独立验收完成；真实 qian-identity 联调与 S1-IDP-002 存在循环，等待 S1-DEC-015 裁决，不冒充真实产品验收。</li>\n<li>2026-10-11 cody：上游修复已提交 https://github.com/idadawn/kun/pull/51；源码、迁移说明和验证证据可评审，等待 CI；产品联调口径仍待 S1-DEC-015。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 6、7 项：<code>ExchangeCodeAsync</code> 发送 <code>code_verifier</code>、校验 <code>nonce</code>、补 refresh / client_credentials / discovery 刷新、会话索引与后通道登出、日志只记 sid 哈希、CSRF、<code>SignInHelper</code> DI；三套签发器收敛为网关 <code>S2sTokenIssuer</code> 一套并对齐 iClaw S2S claim 契约，<code>exp − iat ≤ 300s</code>，约 30 处下游产品字样改为可配置。7.4 / 7.9 的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：真实 HTTP/RSA 协议夹具验证授权码换取发送 PKCE verifier，篡改 <code>nonce</code> 的 id_token 被拒绝；真实 <code>qian-identity</code> 联调按已批准的 DEC-015 留在 S1-IDP-002 必过项</li>\n<li class='chk done'><span class='box'>✓</span>IT：吊销某用户全部会话后，其任一 sid 的请求返回 401</li>\n<li class='chk done'><span class='box'>✓</span>代码审查：日志中不出现明文 sid（grep 门禁）</li>\n<li class='chk done'><span class='box'>✓</span>UT：Qian 代码树中引用废弃签发器即编译告警升错误</li>\n<li class='chk done'><span class='box'>✓</span>IT：网关签出的 S2S 令牌通过 iClaw <code>contracts/v0/s2s-jwt-claims</code> JSON Schema 校验</li>\n<li class='chk done'><span class='box'>✓</span>代码审查：<code>Kun.*</code> 发布包中 grep 不到下游产品名的默认值</li>\n</ul>\n<h4>验收证据与阶段边界</h4>\n<ul>\n<li>真实 HTTP/RSA 协议夹具已证明 PKCE verifier 发送、nonce 篡改拒绝、state/到期/重放保护。产品负责人于 2026-10-11 批准 DEC-015；本任务按 SDK 阶段验收，真实 Qian 身份服务联调由 S1-IDP-002 的独立必过项承接，不将夹具结果表述为产品联调完成。</li>\n<li>已核验上游 [Kun PR #51](https://github.com/idadawn/kun/pull/51) 合并于 <code>ee2f36662e65e7c79b9cbca16f8bdb9ea6123dba</code>；Qian 编译门禁 [PR #29](https://github.com/idadawn/qian/pull/29) 合并于 <code>a63a950c4889f73679afc22ea81e2daaa7c216d8</code>。</li>\n<li>真实 Redis 的原子续期/吊销/索引/重放测试通过；实际 HTTP 验证多会话吊销后均为 401，其他用户仍可访问；写请求缺防跨站令牌在 handler 前拒绝。异常含原始 sid 时，日志仍只有 SHA256 与异常类型。</li>\n<li>网关按冻结 contracts/v0/s2s-claims.schema.json 验证五种主体/租户/角色组合，固定 aud/roles 数组、UUID、每跳 audience 和 1–300 秒寿命。旧签发 API 标记 KUNS2S001。</li>\n<li>Qian 编译负例引用当前 KunVersion 的真实发布包，两个旧签发器及旧注册方法被 RS0030 拦截，即使关闭一般警告升错仍失败；网关签发器正例通过。全仓 252 项测试和 35 项门禁通过。</li>\n<li>本地五个测试包打包和默认值扫描通过；它们未发布到 feed。升级需规范身份投影、Redis 新键空间与重新登录、共享 Data Protection 密钥，详见上游 Identity 客户端指南。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/s2s-claims.schema.json：iClaw 无 S2S JSON Schema，验收以该文件为准（iclaw-alignment.md 第 2 节）</li>\n<li>2026-10-11 cody：开始：KUN-003/007 已进入 review；修复 OIDC、会话与 S2S。真实 qian-identity 联调与 S1-IDP-002 存在反向依赖，保留该验收项，不以替身冒充。</li>\n<li>2026-10-11 cody：SDK 实现和独立验收完成；真实 qian-identity 联调与 S1-IDP-002 存在循环，等待 S1-DEC-015 裁决，不冒充真实产品验收。</li>\n<li>2026-10-11 cody：上游修复已提交 https://github.com/idadawn/kun/pull/51；源码、迁移说明和验证证据可评审，等待 CI；产品联调口径仍待 S1-DEC-015。</li>\n<li>2026-10-11 cody：根据已批准的 DEC-015 解除验收口径阻塞，核验已合并 SDK 修复并办理完成记录。</li>\n<li>2026-10-11 cody：完成：依用户批准的 DEC-015 按 SDK 阶段验收；已核验 Kun #51 与 Qian #29 合并，六项 SDK 验收通过。真实身份服务 PKCE/nonce 联调已明确留在 IDP-002，本次不声明发包或产品上线。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-004.md"
  },
  {
@@ -4234,7 +4305,7 @@
  {
   "id": "S1-RT-003",
   "title": "@qian/runtime：TypeScript 同语义运行时（外壳插件树）",
-  "status": "blocked",
+  "status": "doing",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
@@ -4273,7 +4344,7 @@
    "done": 2,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.2：yue 外壳也是一棵插件树，TS 侧提供与 .NET 相同的 <code>Inject</code> / <code>Apply</code> / 五种分发 / <code>ctx.Effect()</code> / scope 遮蔽与 <code>restrict</code> 语义，由同一组 TCK fixture 固化；是否采用现成库由 S1-DEC-001 决定。第 2 波，7.15.1 外壳与 <code>@qian/plugin-sdk</code> 的基础。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>TCK：运行时语义套件的同一组 fixture 在 TS 侧全部通过（依赖缺失、成环、逆序撤销、五种分发、scope 遮蔽与 restrict）</li>\n<li class='chk done'><span class='box'>✓</span>UT：scope 化注册——租户 scope 的贡献遮蔽同名全局贡献，供 7.15.1 插槽注册表使用</li>\n<li class='chk'><span class='box'></span>包 <code>@qian/runtime</code> 以 npm 发布到私有 feed，带 <code>.d.ts</code> 与 README「模型体验」「已知限制与延期项」节</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-10 cody：开始：按 ADR-020 固定 vendor 运行时依赖，实现 TS 适配层并复用 .NET 场景，验证私有 feed 发布条件。</li>\n<li>2026-10-10 cody：仅私有发布名称等待 S1-DEC-014 裁决；运行时实现、vendor 固定版本与 TCK 可独立推进。</li>\n<li>2026-10-11 cody：运行时实现与两项代码验收完成：固定上游 core 3.18.1，19 个共用场景加 8 个边界/契约用例共 27 项通过，类型门禁与真实 Chromium 通过，带 d.ts/许可证的包可打包；真实私有发布仍待 S1-DEC-014。</li>\n<li>2026-10-11 cody：已同步主线 PR #33 的 26 个共享 TCK（含实际 profile 装配 T15–T17），测试入口和 CI 复用中央适配器；本地 34 项测试、类型与 API 检查通过。物理包名和真实发布仍等待 DEC-014，PR 保持草稿。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.2：yue 外壳也是一棵插件树，TS 侧提供与 .NET 相同的 <code>Inject</code> / <code>Apply</code> / 五种分发 / <code>ctx.Effect()</code> / scope 遮蔽与 <code>restrict</code> 语义，由同一组 TCK fixture 固化；是否采用现成库由 S1-DEC-001 决定。第 2 波，7.15.1 外壳与 <code>@qian/plugin-sdk</code> 的基础。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>TCK：运行时语义套件的同一组 fixture 在 TS 侧全部通过（依赖缺失、成环、逆序撤销、五种分发、scope 遮蔽与 restrict）</li>\n<li class='chk done'><span class='box'>✓</span>UT：scope 化注册——租户 scope 的贡献遮蔽同名全局贡献，供 7.15.1 插槽注册表使用</li>\n<li class='chk'><span class='box'></span>包 <code>@qian/runtime</code> 以 npm 发布到私有 feed，带 <code>.d.ts</code> 与 README「模型体验」「已知限制与延期项」节</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-10 cody：开始：按 ADR-020 固定 vendor 运行时依赖，实现 TS 适配层并复用 .NET 场景，验证私有 feed 发布条件。</li>\n<li>2026-10-10 cody：仅私有发布名称等待 S1-DEC-014 裁决；运行时实现、vendor 固定版本与 TCK 可独立推进。</li>\n<li>2026-10-11 cody：运行时实现与两项代码验收完成：固定上游 core 3.18.1，19 个共用场景加 8 个边界/契约用例共 27 项通过，类型门禁与真实 Chromium 通过，带 d.ts/许可证的包可打包；真实私有发布仍待 S1-DEC-014。</li>\n<li>2026-10-11 cody：已同步主线 PR #33 的 26 个共享 TCK（含实际 profile 装配 T15–T17），测试入口和 CI 复用中央适配器；本地 34 项测试、类型与 API 检查通过。物理包名和真实发布仍等待 DEC-014，PR 保持草稿。</li>\n<li>2026-10-11 cody：草稿 PR #26 最新提交 7cd4e913 的 15 项适用 CI 全绿，34 项 TS 测试及 .NET 共用场景通过。仅将认领/阻塞状态与 DEC-014 同步主线看板，代码保持草稿待发布名称裁决；未发布、未提前完成任务。</li>\n<li>2026-10-11 someone：用户已批准DEC-014推荐方案：物理包名@idadawn/qian-runtime，npm alias保留@qian/runtime；继续实现私有发布与真实消费验收。</li>\n</ul>",
   "file": "pm/tasks/S1-RT-003.md"
  },
  {

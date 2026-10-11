@@ -96,7 +96,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 | 3 | Saga | `TSaga` 从单例改为 Scoped 工厂、去掉启动期临时容器；步骤租约/行锁；上下文回写；步骤重试；名字用 `ISaga.Name` | - [ ] IT：两个副本同时运行同一 Saga 实例，每步只执行一次<br>- [ ] 开通编排已裁决由 `qian.lifecycle` 插件（原 `qian.kernel` 生命周期控制器）以幂等步骤表承担（7.3，R13），本项不升 P0 | P1 |
 | 4 | 网关加固 | 回退认证策略默认「要求已认证」；路由级 `RateLimiterPolicy` 与全局限流器真正绑定到路由；可信代理网段（只信任 Traefik 的 `X-Forwarded-For`）；私钥热轮换（JWKS 双钥重叠，`kid` 切换不重启）；网关宿主 `AddKunObservability`；`/healthz` `/readyz`；`client_credentials` / 机器身份签发端点（白皮书声称有、代码没有） | - [ ] E2E：未带令牌请求任一业务路由返回 401（除显式匿名白名单）<br>- [ ] IT：对限流路由超阈值返回 429 且响应头含 `Retry-After`<br>- [ ] IT：轮换签名私钥后，旧 `kid` 令牌在重叠窗口内仍可验证，窗口外被拒绝；过程不重启进程<br>- [ ] E2E：伪造 `X-Forwarded-For` 的请求（非可信网段发出）不改变限流分区 | P0 |
 | 5 | gRPC 流式 | Tracing / Auth / Result 三个拦截器补齐 server streaming、client streaming、duplex | - [ ] IT：无 `tenant_id` 的流式调用在首帧前被拒绝（`Unauthenticated`）；流式调用出现在 trace 中 | P0 |
-| 6 | Identity 客户端链路（G3/G4/G5） | `ExchangeCodeAsync` 发送 `code_verifier`；校验 `nonce`；补 refresh、client_credentials、discovery 定期刷新；会话 user → sessions 索引、后通道登出、日志只记 sid 哈希；CSRF 防护；`SignInHelper` 的 DI 注册 | - [ ] IT：对强制 PKCE 的 IdP（用 7.4 的 `qian-identity` 本身）完成授权码换取<br>- [ ] IT：篡改 `nonce` 的 id_token 被拒绝<br>- [ ] IT：吊销某用户全部会话后，其任一 sid 的请求返回 401<br>- [ ] 代码审查：日志中不出现明文 sid（grep 门禁） | P0 |
+| 6 | Identity 客户端链路（G3/G4/G5） | `ExchangeCodeAsync` 发送 `code_verifier`；校验 `nonce`；补 refresh、client_credentials、discovery 定期刷新；会话 user → sessions 索引、后通道登出、日志只记 sid 哈希；CSRF 防护；`SignInHelper` 的 DI 注册 | - [ ] IT：SDK 阶段以真实 HTTP/RSA 协议夹具验证 PKCE verifier 与授权码换取；真实 `qian-identity` 联调由 7.4.1 / S1-IDP-002 必过项承接（DEC-015）<br>- [ ] IT：篡改 `nonce` 的 id_token 被拒绝<br>- [ ] IT：吊销某用户全部会话后，其任一 sid 的请求返回 401<br>- [ ] 代码审查：日志中不出现明文 sid（grep 门禁） | P0 |
 | 7 | S2S 签发器收敛 + 去产品化 | 三套签发器保留网关 `S2sTokenIssuer`（短 TTL、JWKS）一套，吸收 `scope / session_id / membership_id / project_id` claim；`Kun.Identity.KunJwtIssuer`、`Kun.Security.S2SJwt` 标 `[Obsolete]`；claim 形状对齐 iClaw 契约 `iss / aud[] / sub / tenant_id / project_id? / roles[] / scope / session_id / iat / nbf / exp / jti`，`exp − iat ≤ 300s`；issuer 默认值、Sandbox 扩展等约 30 处下游产品字样改为可配置或移出 | - [ ] UT：Qian 代码树中引用废弃签发器即编译告警升错误<br>- [ ] IT：网关签出的 S2S 令牌通过 iClaw `contracts/v0/s2s-jwt-claims` JSON Schema 校验<br>- [ ] 代码审查：`Kun.*` 发布包中 grep 不到下游产品名的默认值 | P0 |
 | 8 | 审计收敛 | 废弃 `Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor`（事后、不同事务）；实体级以同事务写 `AuditLog` + Outbox 事件为准；`IAuditChainState` 提供 PostgreSQL 实现（可串行化读 tip，`content_hash` UNIQUE）；`IAuditReader` EF 实现；`AuditActorType` 增 `Agent`；`TenantId / UserId` 从上下文填充 | - [ ] IT：业务事务回滚时 `audit_logs` 无残留行；提交时审计行与业务行同事务可见<br>- [ ] IT：两个副本并发追加同一租户链，链无分叉（`prev_hash` 严格串联，重放校验通过）<br>- [ ] UT：`AuditEntry.ActorType` 可取 `Agent` | P0 |
 | 9 | 数据约定 | 审计字段自动填充拦截器（`ICurrentUser.UserId` 与 `TUserKey` 类型转换约定）；`CreatedBy` 可空；并发令牌（`xmin`）；snake_case 命名约定；`Guid.CreateVersion7()` 默认主键 | - [ ] IT：新增实体 `created_at/created_by` 非空，更新时 `updated_*` 刷新、`created_*` 不变<br>- [ ] IT：两个并发更新中一个因 `xmin` 变化抛 `DbUpdateConcurrencyException` 并映射为 `Result` 冲突错误 | P0 |
@@ -297,6 +297,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **验收标准**
 - [ ] IT：OpenIddict 一致性测试（授权码 + PKCE、refresh 轮换、client_credentials、revocation、back-channel logout）全部通过；refresh 令牌复用被检测并吊销整族。
+- [ ] IT：已修复的 Kun Identity 客户端对真实 `qian-identity` 完成强制 PKCE 授权码换取，篡改 nonce 的 id_token 被拒绝；记录真实包版本与联调配置。这是身份服务完成与发布必过项，不能以 SDK 协议夹具代替（DEC-015，ADR-005 §9）。
 - [ ] E2E：同一手机号在租户 A、B 各有 Membership，密码登录后出现租户选择，选 A 后令牌 `tenant_id = A`；在外壳切换到 B 时令牌重签且 `membership_id` 变化。
 - [ ] IT：改密后该 Person 全部会话 ≤ 5s 内失效；管理员强制下线某会话后其 refresh 被拒。
 - [ ] IT：并发上限 5 时第 6 次登录踢掉最早会话并发出 `session_revoked` 事件；单端模式下 PC 后登录踢 PC 先登录、不影响移动端。
@@ -743,7 +744,8 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 **验收标准**
 - [ ] E2E：从一次发布事件到 staging 三个 profile 镜像（`platform` / `gateway` / `identity`；`shell` 与 `model-gateway` 组合包随 `platform`）全部 `Ready`、外壳经 `gateway` 可访问、参考应用可登录，中间无人工步骤；镜像按 digest 引用、带 Cosign 签名与 SBOM。
 - [ ] 检查：每个 profile 镜像内 `qian --dump-config` 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）。
-- [ ] E2E：在 `qian-staging` 内启动一个未声明 egress 的 Pod，访问外网与其他 ns 被 NetworkPolicy 拒绝；`qian-platform` 能访问 PG/Redis/RabbitMQ/Apollo。
+- [ ] E2E：基线阶段在 `qian-staging` 验证未声明 egress 的 Pod 无法访问外网与其他 ns，明确标识的已授权诊断工作负载能经协议/认证访问专属 PG/Redis（S1-DEP-001，DEC-016）。
+- [ ] E2E：应用发布阶段从真实 `qian-platform` 验证本环境 PG/Redis/RabbitMQ/Apollo 的协议与认证，精确放行与就绪状态一致；不能以探针、同名标签、共享服务或仅 TCP 连通代替（S1-DEP-005 发布必过，DEC-016 / ADR-017 §9）。
 - [ ] E2E：kill `qian-platform` 一个副本，`/readyz` 摘流、无 5xx 泄漏到网关；滚动升级时迁移 Job 先完成再切镜像。
 - [ ] E2E：RabbitMQ 一个节点宕机，quorum queue 继续收发；Apollo configservice 一个副本宕机，宿主仍能拉配置。
 - [ ] 检查：`qian-staging` 命名空间存在 ResourceQuota 与 LimitRange；无 `:latest` 镜像；Apollo Portal 不可从公网访问且经 Authentik 登录。
