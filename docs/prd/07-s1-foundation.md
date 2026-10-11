@@ -436,7 +436,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **设计理念**。Apollo 是硬性要求，按 ADR-007：Apollo 作 L1 共享组件（需新增 MySQL），自研 AOT 友好的 .NET provider，只存平台/服务级非敏感配置与密钥引用（secretRef）；租户级配置不进 Apollo（无租户概念、namespace 有上限、灰度只按实例），由 7.3 租户配置服务承载；Nacos 收窄为 AI 资产注册。插件配置 Schema 化，设置页按 Schema 渲染，敏感值只能填 secretRef——参考平台 100+ 键扁平堆放、密钥与参数同表，是反例。
 
-**范围与边界**。✅ 做：`Qian.Configuration.Apollo` provider（公开 HTTP 协议：`/configs`、`/notifications/v2` 长轮询、AccessKey HMAC-SHA1 签名、本地缓存文件、集群内直连 ConfigService）；配置源顺序 appsettings → Apollo（`qian.common.*` → `qian.plugin.<id>` → `application`）→ K8s Secret 文件（KeyPerFile）→ 环境变量 → 命令行；热更新「先校验、失败保留旧值并告警」；`ISecretResolver`（`secretRef://k8s/<ns>/<name>#<key>`；Infisical 后端 P2）；插件 `config.schema` → Apollo namespace 骨架与校验器、options JSON Schema 导出；特性开关 `IFeatureFlags`（OpenFeature 式，`targetingKey = tenantId`，与授权分离）；Apollo 发布事件进审计；疑似密钥键名/值扫描拦截。❌ 不做：官方 Apollo .NET 客户端（维护停滞、反射式序列化不适配 AOT/裁剪、无缓存时以空配置继续；只作 PoC 对照）；租户级配置进 Apollo；控制台渲染插件配置页（S2）；配置灰度/审核/回滚编排（S3 可选）；Nacos 作配置中心（不做）。
+**范围与边界**。✅ 做：`Qian.Config.Apollo` provider（公开 HTTP 协议：`/configs`、`/notifications/v2` 长轮询、AccessKey HMAC-SHA1 签名、本地缓存文件、集群内直连 ConfigService）；配置源顺序 appsettings → Apollo（`qian.common.*` → `qian.plugin.<id>` → `application`）→ K8s Secret 文件（KeyPerFile）→ 环境变量 → 命令行；热更新「先校验、失败保留旧值并告警」；`ISecretResolver`（`secretRef://k8s/<ns>/<name>#<key>`；Infisical 后端 P2）；插件 `config.schema` → Apollo namespace 骨架与校验器、options JSON Schema 导出；特性开关 `IFeatureFlags`（OpenFeature 式，`targetingKey = tenantId`，与授权分离）；Apollo 发布事件进审计；疑似密钥键名/值扫描拦截。❌ 不做：官方 Apollo .NET 客户端（维护停滞、反射式序列化不适配 AOT/裁剪、无缓存时以空配置继续；只作 PoC 对照）；租户级配置进 Apollo；控制台渲染插件配置页（S2）；配置灰度/审核/回滚编排（S3 可选）；Nacos 作配置中心（不做）。
 
 **技术落点**。组件 `qian.config`：Definition `Qian.Config.Abstractions`（服务键 `ctx.Config`）+ Provider `Qian.Config.Apollo`（独立模式可只用标准 `IConfiguration`，Apollo 可选），随 `Qian.Plugin.Sdk` 进入每个 .NET profile，可独立安装（`qian add config`）；`dump-config` 打印的每条目 `config` 即按本组件登记的 `config.schema` 校验（7.2.1）；依赖 `Kun.Configuration`（`AddKunOptions<T>` 校验器，7.1 第 10 项增强）。
 
@@ -447,7 +447,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - 特性开关：namespace `qian.common.flags`，键 `flag.<name>` 值为规则 JSON（默认、租户白名单/百分比）；`IFeatureFlags.IsEnabled(name, tenantId)`；授权（7.14）与开关分开存（ADR-014）。`IFeatureFlags` 只管灰度（按租户百分比 / 白名单渐进放量）；「租户是否启用某组件」不再用开关表达，而是租户 scope 是否挂载该组件的配置条目（ADR-020 D20.5、7.2.1）。
 - 分工表（写进开发手册）：部署级引导项 → Kustomize；平台/服务级非敏感 → Apollo；密钥 → K8s Secret（Infisical 待运行时注入接通）；租户级在线设置 → 7.3 `ITenantSettings`；前端运行时配置 → `window.__APP_CONF__` ConfigMap。
 
-过渡态（2026-10）：Kun `Kun.Configuration` 无任何配置源；现网无 Apollo、无 MySQL；Nacos 3.0.1 standalone 只作 AI Registry PoC 且边界 ADR 曾把动态配置权威划给 Nacos——需先修订边界 ADR（ADR-007 已裁决）。Apollo 版本 ≥ 2.5.2（3.0.0 刚发布，生产等首个补丁）；部署见 7.17。
+初始过渡态（2026-10-06）：当时 Kun 无 Apollo 配置源，现网无 Apollo / MySQL；配置边界已由 ADR-007 裁决。S1-CFG-001 现复用已发布 Kun.Configuration.Apollo，补齐 Qian 源顺序、引导、只读 seam 与真实服务验收；[运维手册](../ops/configuration-runbook.md) 定义 L0–L4 降级与排查流程。首发 Apollo 仍遵循 2.5.x（≥2.5.2），生产部署另见 7.17。
 
 **插件化定位**。Inject `ctx.Registry`（清单 `config.schema`；独立模式缺席时只用 `IConfiguration`）、`ctx.Audit`；向外提供 `IConfigurationProvider`、`ISecretResolver`、`IFeatureFlags`、事件 `config.reload.failed.v1`；7.3 租户配置服务与之形成「平台默认 / 租户覆盖」两层。
 

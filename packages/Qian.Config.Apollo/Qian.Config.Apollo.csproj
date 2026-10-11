@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>Qian 的 Apollo/标准配置 Provider 与固定配置源顺序。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
+    <PackageReference Include="Kun.Configuration.Apollo" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.KeyPerFile" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
+  </ItemGroup>
+</Project>

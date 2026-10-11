@@ -31,11 +31,14 @@ public abstract class ContainerFixture<TContainer> : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         try
         {
+            await OnStartingAsync(cancellationToken).ConfigureAwait(false);
             _container = CreateContainer();
             await _container.StartAsync(cancellationToken).ConfigureAwait(false);
+            await OnStartedAsync(_container, cancellationToken).ConfigureAwait(false);
         }
         catch (DockerUnavailableException ex)
         {
+            await DisposeAsync().ConfigureAwait(false);
             if (DockerRequirement.IsRequired(EnvironmentReader))
             {
                 throw new InvalidOperationException(
@@ -45,19 +48,26 @@ public abstract class ContainerFixture<TContainer> : IAsyncLifetime
             SkipAction($"{GetType().Name}：本机没有可用的 Docker，跳过集成测试；CI 上会直接失败。（{ex.Message}）");
             return;
         }
-
-        await OnStartedAsync(_container, cancellationToken).ConfigureAwait(false);
+        catch
+        {
+            await DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     /// <inheritdoc />
     /// <remarks>可重复调用：组合 fixture 启动失败时会先自行释放一次。</remarks>
     public async ValueTask DisposeAsync()
     {
-        await OnDisposingAsync().ConfigureAwait(false);
-        var container = Interlocked.Exchange(ref _container, null);
-        if (container is not null)
+        try { await OnDisposingAsync().ConfigureAwait(false); }
+        finally
         {
-            await container.DisposeAsync().ConfigureAwait(false);
+            var container = Interlocked.Exchange(ref _container, null);
+            try
+            {
+                if (container is not null) await container.DisposeAsync().ConfigureAwait(false);
+            }
+            finally { await OnDisposedAsync().ConfigureAwait(false); }
         }
 
         GC.SuppressFinalize(this);
@@ -66,11 +76,17 @@ public abstract class ContainerFixture<TContainer> : IAsyncLifetime
     /// <summary>构造容器（尚未启动）。</summary>
     protected abstract TContainer CreateContainer();
 
+    /// <summary>组合 fixture 可先准备受其拥有的依赖与网络；失败时统一清理。</summary>
+    protected virtual ValueTask OnStartingAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
     /// <summary>容器就绪后的初始化，例如读出连接串、建应用角色。</summary>
     protected virtual ValueTask OnStartedAsync(TContainer container, CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
     /// <summary>释放容器之前释放 fixture 自己持有的资源。</summary>
     protected virtual ValueTask OnDisposingAsync() => ValueTask.CompletedTask;
+
+    /// <summary>主容器释放后，再释放它依赖的数据库与网络。</summary>
+    protected virtual ValueTask OnDisposedAsync() => ValueTask.CompletedTask;
 
     /// <summary>每次运行随机生成的口令：测试容器不使用写死在仓库里的凭据。</summary>
     protected static string NewSecret() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16));

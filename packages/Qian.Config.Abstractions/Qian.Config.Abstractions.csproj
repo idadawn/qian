@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>Qian 配置 seam 的只读端口与错误词汇。</Description></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /><PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" /></ItemGroup>
+</Project>
