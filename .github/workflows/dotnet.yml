@@ -48,7 +48,7 @@ jobs:
       - name: 门禁自测（tests/gates 样例项目）
         run: python3 -m unittest discover -s tests/gates -v
 
-      - name: 单元与集成测试（Testcontainers：PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）
+      - name: 单元与集成测试（共享容器与真实 Apollo）
         env:
           QIAN_TEST_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/evidence
         run: dotnet test --solution Qian.slnx -c Release --no-build --results-directory TestResults --report-xunit-trx
