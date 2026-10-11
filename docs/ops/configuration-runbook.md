@@ -38,4 +38,6 @@
 
 快速协议回归使用共享 ApolloFixture；真实验收使用共享 RealApolloFixture 的 Apollo 2.5.2 ConfigService/AdminService 与 MySQL 8.0.43。通过真实 AdminService 修改并发布，检查同一 IOptionsMonitor 在 60 秒内从 10 更新到 25，然后停止服务验证缓存启动和无缓存失败。CI 测试制品中的 evidence/apollo-real-reload.json 保存更新耗时。
 
+真实发布回归还覆盖敏感字段明文：拒绝候选后，内存仍保留原引用、缓存不包含被拒值；再发布有效引用，长轮询能恢复更新。证据文件同时保存 `sensitiveCandidateRejected`、`cacheContainsRejectedValue` 和 `recoveredAfterRejection`，不能仅凭服务健康状态推断这些行为成立。
+
 强类型配置的最后有效值使用 Kun.Configuration；失败事件、治理审计和配置 Schema 管理由后续 CFG 任务完成。生产高可用、Portal OIDC 与托管 MySQL 按部署任务验收。
