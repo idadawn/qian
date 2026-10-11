@@ -744,7 +744,8 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 **验收标准**
 - [ ] E2E：从一次发布事件到 staging 三个 profile 镜像（`platform` / `gateway` / `identity`；`shell` 与 `model-gateway` 组合包随 `platform`）全部 `Ready`、外壳经 `gateway` 可访问、参考应用可登录，中间无人工步骤；镜像按 digest 引用、带 Cosign 签名与 SBOM。
 - [ ] 检查：每个 profile 镜像内 `qian --dump-config` 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）。
-- [ ] E2E：在 `qian-staging` 内启动一个未声明 egress 的 Pod，访问外网与其他 ns 被 NetworkPolicy 拒绝；`qian-platform` 能访问 PG/Redis/RabbitMQ/Apollo。
+- [ ] E2E：基线阶段在 `qian-staging` 验证未声明 egress 的 Pod 无法访问外网与其他 ns，明确标识的已授权诊断工作负载能经协议/认证访问专属 PG/Redis（S1-DEP-001，DEC-016）。
+- [ ] E2E：应用发布阶段从真实 `qian-platform` 验证本环境 PG/Redis/RabbitMQ/Apollo 的协议与认证，精确放行与就绪状态一致；不能以探针、同名标签、共享服务或仅 TCP 连通代替（S1-DEP-005 发布必过，DEC-016 / ADR-017 §9）。
 - [ ] E2E：kill `qian-platform` 一个副本，`/readyz` 摘流、无 5xx 泄漏到网关；滚动升级时迁移 Job 先完成再切镜像。
 - [ ] E2E：RabbitMQ 一个节点宕机，quorum queue 继续收发；Apollo configservice 一个副本宕机，宿主仍能拉配置。
 - [ ] 检查：`qian-staging` 命名空间存在 ResourceQuota 与 LimitRange；无 `:latest` 镜像；Apollo Portal 不可从公网访问且经 Authentik 登录。
