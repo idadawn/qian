@@ -1,30 +1,47 @@
 # Qian.Data
 
-数据 Provider 的安全装配；S1-DATA-001 正在补齐完整范围，当前进度与剩余验收见 [任务](../../pm/tasks/S1-DATA-001.md)。
+Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。S1-DATA-001 正在补齐组件安装表面与参考应用验收，当前进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
+
+## 安全装配
 
 ```csharp
 services.AddQianData<AppDbContext>((sp, options) => options
     .UseNpgsql(connectionString).UseKunSchema("plugin_example"));
 ```
 
-`AppDbContext` 继承 Definition 包里的 `QianDbContext`，租户上下文由宿主注册。装配复用当前 KunVersion 的 `AddKunTenantRls<TContext>()`、`AddKunDataConventions<TContext>()` 和租户字段拦截器，不再维护第二套 RLS 接线。宿主 `StartAsync` 主动解析上下文、检查模型缓存键并构建模型，安全条件不满足时抛 `QianDataMisconfiguredException`。
+业务上下文继承 QianDbContext。装配复用当前 KunVersion 的 AddKunTenantRls、AddKunDataConventions 与租户字段拦截器，强制模型缓存键、Qian 模型定制器、应用角色检查和迁移生成器。派生上下文漏调 base 仍保留租户/软删过滤，并与业务过滤条件取交集；采用 snake_case、Guid v7、可空审计主体和 xmin。每个上下文使用同一个 plugin_ 前缀 schema，租户列非空且默认具有索引。
 
-Qian 模型定制器在业务映射后强制应用租户/软删过滤、Outbox 模型和 Kun 的 snake_case、Guid v7、可空审计主体、`xmin` 约定，并保留业务过滤条件的交集。每个上下文必须用 `UseKunSchema` 指定同一个 `plugin_` 前缀 schema；租户列非空且默认具有索引。派生上下文漏调 `base.OnModelCreating` 不能移除这些安全约定。
+启动会构建模型并打开真实连接，只读取角色属性，不建表或迁移。登录角色及当前角色必须均为 NOSUPERUSER / NOBYPASSRLS，预打开连接也检查；同步/异步新开连接遇高权限角色立即拒绝并关闭。
 
-无需手写 `ReplaceService`；手工配置缺少该调用会在构造时被拒绝，后续回调把缓存键改回默认实现则在启动时被拒绝。启动检查初始化 EF 模型并打开真实数据库连接，从 pg_roles 校验 session_user 与 current_user；预打开连接也检查。每次通过 EF 新开连接时同样检查，超级用户及 BYPASSRLS 角色被拒绝并关闭连接。启动不执行迁移、不建立业务表、不发业务 SQL。
+迁移生成器为目标模型中的每个新建 IMultiTenant 表紧接着输出 ENABLE / FORCE RLS 与 USING / WITH CHECK。租户限制采用 AS RESTRICTIVE，附加宽松策略不能通过 OR 放宽边界；`NULLIF(current_setting('app.current_tenant_id', true), '')` 使缺失和空租户不匹配。丢失目标模型或标准租户列标记时拒绝生成裸表。历史表转换仍须显式安全迁移。PgBouncer 事务池仍要求显式事务。
 
-Provider 装配 PostgreSQL 迁移 SQL 生成器，为目标模型中每个新建 `IMultiTenant` 表紧接着输出 ENABLE / FORCE RLS 与 USING / WITH CHECK。限制策略采用 AS RESTRICTIVE，避免额外宽松策略通过 OR 放宽租户边界；使用 `NULLIF(current_setting('app.current_tenant_id', true), '')` 让缺失及空租户均不匹配。缺少目标表模型或丢失标准租户列标记时拒绝生成裸表；覆盖迁移生成器会被启动检查拒绝。历史表转换为租户表仍须显式安全迁移，不能靠本生成器自动重写历史数据。数据库应用角色必须是 `NOSUPERUSER NOBYPASSRLS`。PgBouncer 事务池仍要求显式事务，自动接线不改变此条件。验收复用 `Qian.Testing.Containers.PostgresFixture` 的应用角色，分别用 EF 查询、原生 SQL、事务 GUC 验证隔离。
+## 数据服务与工作单元
+
+DataPlugin 在 Apply 中提供 Data 键；消费者通过 `ctx.Data()` 解析。每次 `OpenAsync<TContext>()` 建立独立 DI scope，选择已注册的业务上下文，把该上下文、Kun IntegrationEventBuffer 和 EfUnitOfWork 绑定在一起。不会把全局 KunDbContext 指向最后登记的业务上下文。
+
+```csharp
+await using var session = await ctx.Data().OpenAsync<AppDbContext>(ct);
+session.Context.Add(entity);
+session.Outbox.Enqueue(integrationEvent);
+await session.SaveChangesAsync(ct);
+```
+
+事件类型必须由宿主显式通过 AddKunEventBus 登记，推荐使用源生成 JsonTypeInfo；Data 不暗中登记空目录。IOutboxWriter 与 IIntegrationEventBus 必须指向同一 scoped accumulator。领域通知走 Kun Mediator 的当前 scope，通知处理器与工作单元拿到同一业务上下文和缓冲；存在通知但未装配 Mediator、通知没有实现 INotification 时拒绝保存。
+
+保存失败后会话不可复用，调用方必须释放后新开；业务数据与 Outbox 在同一次 EF 保存中提交或回滚。会话创建后不可切换租户，混入其他租户的事件会被拒绝。卸载 Provider 会撤销入口并释放存活会话，已缓存的数据服务不能再开新会话。本组件负责 Outbox 入库，后台投递由事件组件负责。
+
+## 删除审计
+
+QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.Delete 和 DbContext.Remove 都落为软删除，填充 deleted_at / deleted_by；后者保留已有业务字段并让 Kun 同时更新 updated_at / updated_by。DeletedBy 与 CreatedBy 使用一致的可空用户键类型，没有 CLR 属性时用 shadow property，字段名由 QianDataConventions.DeletedByPropertyName 提供。匿名操作的删除主体为 null，已有删除审计不因普通更新而改写。
 
 ## 组件位置
 
-当前目录含 Provider 代码、PublicAPI 清单与说明；Data seam 的契约放在 `Qian.Data.Abstractions`。完整组件目录、`ctx.Data`、profile 配置和 `qian add data` 由 S1-DATA-001 交付，计划随 SDK 进入全部 .NET profile。这里的 DI 方法只是宿主／插件装配细节。
+本目录已有 DataPlugin 的实际入口和生命周期，契约放在 Qian.Data.Abstractions，业务组件只依赖 Definition。当前代码入口仅接受空配置，连接显式配置到各业务上下文；拒绝忽略连接参数或可关闭隔离的配置。`plugins/qian.data` 仍保留旧配置骨架，正式清单、各 profile 的配置接线和 `qian add data` 完整安装验收仍由本任务继续完成，当前不因此宣称可完整安装。
 
 ## 模型体验
 
-无独立 Agent 工具。启动失败使用 `DATA_MISCONFIGURED` 和具体缺失项诊断，不包含连接串与凭据。
+无独立 Agent 工具。隔离装配失败使用 DATA_MISCONFIGURED，不输出连接串或凭据。Provider 的装配方法是宿主细节，业务代码通过 Data seam 使用数据能力。
 
 ## 已知限制与延期项
 
-当前已消费 Kun 2026.10.9。编译门禁拒绝在线上下文不继承安全基类，以及直接或委托调用 `IgnoreQueryFilters`。真库测试已验证原生 SQL 的租户隔离、自动主键/审计字段、`xmin` 冲突、软删和业务过滤条件保留。
-
-1000 行/租户的参考应用与索引验收、Data seam/安装表面、Outbox 同上下文工作单元封装仍在本任务范围内，尚未交付。RLS 验收角色与旧文档会话名的冲突见 [S1-DEC-017](../../pm/tasks/S1-DEC-017.md)，已由产品负责人批准并落实到文档及在线角色检查；完整 DATA-001 仍须完成其余验收。
+真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。每租户 1000 行的参考应用与真实索引计划、组件安装表面尚未完成。S1-DEC-017 已批准并实施，完整 DATA-001 仍保持进行中。

@@ -1,5 +1,6 @@
 using Kun.Core.Domain;
 using Kun.Core.MultiTenancy;
+using Kun.Core.Security;
 using Kun.EntityFrameworkCore.Conventions;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus.Outbox;
@@ -10,11 +11,84 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Qian.Testing.Containers;
+using System.Text.Json;
 
 namespace Qian.Data.Tests;
 
 public sealed class DataConventionTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
+    [Fact]
+    public async Task 删除主体与时间自动填充_直接Remove软删除_既有审计不能伪改()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var actor = new CurrentActor { UserId = Guid.NewGuid().ToString() };
+        var creator = actor.UserId;
+        var clock = new TestClock();
+        var created = clock.GetUtcNow();
+        var tenant = new AsyncLocalTenantContext();
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddSingleton<ICurrentUser>(actor);
+        builder.Services.AddSingleton<TimeProvider>(clock);
+        builder.Services.AddSingleton<ITenantContext>(tenant);
+        builder.Services.AddQianData<DeletionContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema("plugin_deletion"));
+        using var host = builder.Build();
+        await host.StartAsync(ct);
+        using var tenantScope = tenant.BeginScope("a");
+        await using var scope = host.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<DeletionContext>();
+        await using (var admin = new NpgsqlConnection(postgres.ConnectionString))
+        {
+            await admin.OpenAsync(ct);
+            await using (var ddl = new NpgsqlCommand(db.Database.GenerateCreateScript(), admin)) await ddl.ExecuteNonQueryAsync(ct);
+            await using var grant = new NpgsqlCommand("GRANT USAGE ON SCHEMA plugin_deletion TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_deletion TO qian_app;", admin);
+            await grant.ExecuteNonQueryAsync(ct);
+        }
+        var soft = new Customer { DisplayName = "soft" };
+        var remove = new Customer { DisplayName = "remove" };
+        db.AddRange(soft, remove);
+        db.Entry(soft).Property(QianDataConventions.DeletedByPropertyName).CurrentValue = Guid.NewGuid();
+        await db.SaveChangesAsync(ct);
+        Assert.Null(db.Entry(soft).Property(QianDataConventions.DeletedByPropertyName).CurrentValue);
+        actor.UserId = Guid.NewGuid().ToString();
+        var deleter = actor.UserId;
+        clock.Now = created.AddHours(1);
+        soft.Delete();
+        await db.SaveChangesAsync(ct);
+        Assert.False(await db.Set<Customer>().AnyAsync(c => c.Id == soft.Id, ct));
+        var deleted = await ReadAudit(soft.Id);
+        Assert.True(deleted.GetProperty("is_deleted").GetBoolean());
+        Assert.Equal(deleter, deleted.GetProperty("deleted_by").GetString());
+        Assert.Equal(clock.Now, deleted.GetProperty("deleted_at").GetDateTimeOffset());
+        Assert.Equal(creator, deleted.GetProperty("created_by").GetString());
+        Assert.Equal(created, deleted.GetProperty("created_at").GetDateTimeOffset());
+        db.Entry(soft).Property(QianDataConventions.DeletedByPropertyName).CurrentValue = Guid.NewGuid();
+        clock.Now = created.AddHours(2);
+        soft.DisplayName = "audit-preserved";
+        await db.SaveChangesAsync(ct);
+        var preserved = await ReadAudit(soft.Id);
+        Assert.Equal(deleter, preserved.GetProperty("deleted_by").GetString());
+        Assert.Equal(created.AddHours(1), preserved.GetProperty("deleted_at").GetDateTimeOffset());
+        actor.UserId = null;
+        db.Remove(remove);
+        await db.SaveChangesAsync(ct);
+        var removed = await ReadAudit(remove.Id);
+        Assert.True(removed.GetProperty("is_deleted").GetBoolean());
+        Assert.Equal("remove", removed.GetProperty("display_name").GetString());
+        Assert.Equal(JsonValueKind.Null, removed.GetProperty("deleted_by").ValueKind);
+        Assert.Equal(JsonValueKind.Null, removed.GetProperty("updated_by").ValueKind);
+        Assert.Equal(clock.Now, removed.GetProperty("deleted_at").GetDateTimeOffset());
+        Assert.Equal(clock.Now, removed.GetProperty("updated_at").GetDateTimeOffset());
+        Assert.Equal(creator, removed.GetProperty("created_by").GetString());
+        Assert.Empty(await db.Set<Customer>().ToListAsync(ct));
+
+        async Task<JsonElement> ReadAudit(Guid id)
+        {
+            var json = await db.Database.SqlQueryRaw<string>("SELECT to_jsonb(c)::text AS \"Value\" FROM plugin_deletion.customer_records c WHERE id = {0}", id).SingleAsync(ct);
+            using var parsed = JsonDocument.Parse(json);
+            return parsed.RootElement.Clone();
+        }
+    }
+
     [Fact]
     public async Task 缺少插件schema或替换模型约定_启动拒绝()
     {
@@ -115,5 +189,23 @@ public sealed class DataConventionTests(PostgresFixture postgres) : IClassFixtur
             modelBuilder.Entity<Customer>().ToTable("CustomerRecords");
             modelBuilder.Entity<Customer>().HasQueryFilter(customer => customer.DisplayName != "隐藏");
         }
+    }
+
+    public sealed class DeletionContext(DbContextOptions<DeletionContext> options, ITenantContext tenant) : QianDbContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.Entity<Customer>().ToTable("customer_records");
+    }
+
+    private sealed class CurrentActor : ICurrentUser
+    {
+        public string? UserId { get; set; }
+        public bool IsAuthenticated => UserId is not null;
+        public IReadOnlyList<string> Roles => [];
+    }
+
+    private sealed class TestClock : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; } = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        public override DateTimeOffset GetUtcNow() => Now;
     }
 }

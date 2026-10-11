@@ -15,3 +15,17 @@ override Qian.Data.QianApplicationRoleInterceptor.ConnectionOpened(System.Data.C
 override Qian.Data.QianApplicationRoleInterceptor.ConnectionOpenedAsync(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.ConnectionEndEventData! eventData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Qian.Data.QianApplicationRoleInterceptor.Validate(System.Data.Common.DbConnection! connection) -> void
 static Qian.Data.QianApplicationRoleInterceptor.ValidateAsync(System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static readonly Qian.Data.DataDefinition.Key -> Qian.Runtime.ServiceKey
+Qian.Data.IDataService
+Qian.Data.DataDefinition
+Qian.Data.IDataSession<TContext>
+Qian.Data.IDataSession<TContext>.Outbox.get -> Kun.EventBus.Outbox.IOutboxWriter!
+static Qian.Data.DataDefinition.Data(this Qian.Runtime.IPluginContext! context) -> Qian.Data.IDataService!
+Qian.Data.IDataSession<TContext>.Context.get -> TContext!
+Qian.Data.IDataService.OpenAsync<TContext>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Data.IDataSession<TContext!>!>
+const Qian.Data.QianDataConventions.DeletedByPropertyName = "DeletedBy" -> string!
+Qian.Data.QianSoftDeleteInterceptor
+Qian.Data.QianDataConventions
+Qian.Data.QianSoftDeleteInterceptor.QianSoftDeleteInterceptor(Kun.Core.Security.ICurrentUser! user, System.TimeProvider! clock) -> void
+override Qian.Data.QianSoftDeleteInterceptor.SavingChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>>
+override Qian.Data.QianSoftDeleteInterceptor.SavingChanges(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result) -> Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>

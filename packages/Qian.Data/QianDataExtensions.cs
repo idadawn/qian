@@ -1,4 +1,7 @@
 using Kun.EntityFrameworkCore.DependencyInjection;
+using Kun.EntityFrameworkCore;
+using Kun.EventBus;
+using Kun.EventBus.Outbox;
 using Kun.MultiTenancy.EntityFrameworkCore;
 using Kun.MultiTenancy.EntityFrameworkCore.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +26,16 @@ public static class QianDataExtensions
         ArgumentNullException.ThrowIfNull(configure);
         services.AddLogging();
         services.TryAddSingleton(ErrorCatalog.CreateDefault());
+        services.TryAddScoped<IntegrationEventBuffer>();
+        // 不登记非泛型 KunDbContext/IUnitOfWork；每个 Data 会话明确选择自己的业务上下文。
+        services.TryAddScoped(sp => new IntegrationEventOutboxAccumulator(
+            sp.GetRequiredService<IntegrationEventBuffer>(), sp.GetRequiredService<IEventTypeRegistry>(),
+            sp.GetRequiredService<Kun.Core.MultiTenancy.ITenantContext>()));
+        services.TryAddScoped<IIntegrationEventBus>(sp => sp.GetRequiredService<IntegrationEventOutboxAccumulator>());
+        services.TryAddScoped<IOutboxWriter>(sp => sp.GetRequiredService<IntegrationEventOutboxAccumulator>());
         services.AddKunTenantRls<TContext>();
+        services.TryAddScoped<QianSoftDeleteInterceptor>();
+        services.ConfigureDbContext<TContext>((sp, options) => options.AddInterceptors(sp.GetRequiredService<QianSoftDeleteInterceptor>()));
         services.AddKunDataConventions<TContext>();
         services.AddKunMultiTenancyEntityFrameworkCore();
         services.TryAddSingleton<QianApplicationRoleInterceptor>();

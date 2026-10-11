@@ -55,6 +55,16 @@ public abstract class QianDbContext : KunDbContext, IKunMultiTenantDbContext
         {
             if (entity.GetSchema() != schema)
                 throw new QianDataMisconfiguredException("数据上下文的表必须属于同一个插件 schema。");
+            if (typeof(Kun.Core.Domain.ISoftDelete).IsAssignableFrom(entity.ClrType))
+            {
+                var actorType = entity.FindProperty("CreatedBy")?.ClrType ?? typeof(string);
+                var existing = entity.FindProperty(QianDataConventions.DeletedByPropertyName);
+                if ((existing is not null && existing.ClrType != actorType) ||
+                    (actorType.IsValueType && Nullable.GetUnderlyingType(actorType) is null))
+                    throw new QianDataMisconfiguredException("DeletedBy 必须使用与 CreatedBy 一致的可空用户键类型。");
+                modelBuilder.Entity(entity.ClrType).Property(actorType, QianDataConventions.DeletedByPropertyName)
+                    .HasColumnName("deleted_by").IsRequired(false);
+            }
             if (!typeof(Kun.Core.Domain.IMultiTenant).IsAssignableFrom(entity.ClrType)) continue;
             entity.SetAnnotation("Qian:MultiTenant", true);
             var tenant = entity.FindProperty(nameof(Kun.Core.Domain.IMultiTenant.TenantId))
@@ -78,6 +88,10 @@ public abstract class QianDbContext : KunDbContext, IKunMultiTenantDbContext
             throw new QianDataMisconfiguredException("必须同时装配 RLS 连接版与事务版拦截器。");
         if (!core.Interceptors.OfType<AuditFieldsSaveChangesInterceptor>().Any())
             throw new QianDataMisconfiguredException("必须装配 Kun 的审计字段拦截器。");
+        var interceptors = core.Interceptors.ToList();
+        var softDelete = interceptors.FindIndex(interceptor => interceptor is QianSoftDeleteInterceptor);
+        if (softDelete < 0 || softDelete > interceptors.FindIndex(interceptor => interceptor is AuditFieldsSaveChangesInterceptor))
+            throw new QianDataMisconfiguredException("必须在 Kun 审计字段拦截器之前装配 Qian 软删除拦截器。");
         if (!core.Interceptors.OfType<KunTenantSaveChangesInterceptor>().Any())
             throw new QianDataMisconfiguredException("必须装配 Kun 的租户字段拦截器。");
         if (!core.Interceptors.OfType<QianApplicationRoleInterceptor>().Any())
