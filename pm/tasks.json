@@ -1480,20 +1480,20 @@
  {
   "id": "S1-DEC-015",
   "title": "Identity 客户端与真实身份服务的循环验收如何分阶段",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "cody",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "pm/tasks/S1-KUN-004.md",
@@ -1502,14 +1502,18 @@
    {
     "path": "pm/tasks/S1-IDP-002.md",
     "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-IDP-002.md"
+   },
+   {
+    "path": "docs/adr/ADR-005-identity-sso.md#9-身份客户端与产品联调分阶段验收2026-10-11",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-005-identity-sso.md"
    }
   ],
   "updated": "2026-10-11",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 2
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-KUN-004 要求用真实 qian-identity 完成 PKCE 联调，但提供真实身份服务的 S1-IDP-002 反过来依赖 S1-KUN-004，且还有 DATA/TEN/AZ 前置。Kun 客户端、会话、S2S 与编译门禁已可独立验证；不能用协议夹具冒充产品身份服务，也不能未经裁决改写现有验收。</p>\n<h4>待裁决</h4>\n<ul>\n<li>推荐分阶段验收：S1-KUN-004 按真实 HTTP/RSA/Redis 的 Kun 客户端、会话、S2S Schema 和 Qian 编译门禁完成；把“真实 qian-identity 的 PKCE 联调”明确列为 S1-IDP-002 必过验收，并在 S1-KUN-004 回链。不能据此宣称身份服务或产品链路已上线。</li>\n<li>保持原验收：S1-KUN-004 维持 blocked，等待真实身份服务及其前置完成；已验证的 Kun 修复仍可先合入上游，但本任务不能标 done。</li>\n</ul>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>产品负责人选择验收归属与依赖处理方式</li>\n<li class='chk'><span class='box'></span>按裁决同步 S1-KUN-004 / S1-IDP-002 的验收和相关 PRD 引用，保留产品联调门禁</li>\n</ul>\n<h4>已准备的证据</h4>\n<p>Kun 客户端已通过签名协议夹具、真实 HTTP 和 Redis 验证；本地整仓 852 项通过、2 项既有外部对象存储测试跳过，补充策略测试后 Identity 模块 61 项通过；原生程序实测匿名/吊销 401、有效会话 200。Qian 全仓 252 项与 35 项门禁通过。源码及本地测试包均已可评审，不把协议夹具当作真实身份服务。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-11 cody：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：编号 014 已被 TS 发布名决策的独立分支占用，本条新决策使用 015，未改动原决策。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-KUN-004 要求用真实 qian-identity 完成 PKCE 联调，但提供真实身份服务的 S1-IDP-002 反过来依赖 S1-KUN-004，且还有 DATA/TEN/AZ 前置。Kun 客户端、会话、S2S 与编译门禁已可独立验证；不能用协议夹具冒充产品身份服务，也不能未经裁决改写现有验收。</p>\n<h4>已裁决</h4>\n<p>2026-10-11 产品负责人明确选择“分阶段验收（推荐）”。权威结论已写入 ADR-005 §9；SDK 阶段与真实身份服务联调分别由 S1-KUN-004、S1-IDP-002 承担，后者仍是身份服务完成与发布必过项。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人选择验收归属与依赖处理方式</li>\n<li class='chk done'><span class='box'>✓</span>按裁决同步 S1-KUN-004 / S1-IDP-002 的验收和相关 PRD 引用，保留产品联调门禁</li>\n</ul>\n<h4>已准备的证据</h4>\n<p>Kun 客户端已通过签名协议夹具、真实 HTTP 和 Redis 验证；本地整仓 852 项通过、2 项既有外部对象存储测试跳过，补充策略测试后 Identity 模块 61 项通过；原生程序实测匿名/吊销 401、有效会话 200。Qian 全仓 252 项与 35 项门禁通过。源码及本地测试包均已可评审，不把协议夹具当作真实身份服务。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-11 cody：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：编号 014 已被 TS 发布名决策的独立分支占用，本条新决策使用 015，未改动原决策。</li>\n<li>2026-10-11 cody：用户已明确选择分阶段验收；同步 ADR、PRD 与真实身份服务必过联调门。</li>\n<li>2026-10-11 cody：完成：用户已批准分阶段验收，结论写入 ADR-005 §9，PRD 与 IDP-002 保留真实 PKCE/nonce 联调必过门。</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-015.md"
  },
  {
@@ -2478,7 +2482,6 @@
    "S1-RT-002"
   ],
   "blockedBy": [
-   "S1-KUN-004",
    "S1-IDP-005"
   ],
   "order": 4,
@@ -2666,7 +2669,6 @@
    "S1-AZ-001"
   ],
   "blockedBy": [
-   "S1-KUN-004",
    "S1-DATA-001",
    "S1-TEN-001",
    "S1-AZ-001"
@@ -2685,14 +2687,22 @@
    {
     "path": "docs/adr/ADR-019-library-first-packages.md#2",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
+   },
+   {
+    "path": "docs/adr/ADR-005-identity-sso.md#9-身份客户端与产品联调分阶段验收2026-10-11",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-005-identity-sso.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-015.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-015.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
-   "total": 4
+   "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>可嵌入任意 ASP.NET Core 宿主的 OpenIddict 7.x IdP，默认进 <code>identity</code> profile（独立 PG schema <code>identity</code>、独立 Redis db）：discovery / authorize / token / userinfo / revocation / introspection / end_session / back-channel logout；授权码 + PKCE、refresh 轮换 + 复用检测、<code>client_credentials</code>、RFC 8707 <code>resource</code>；非对称签名 + JWKS 轮换；每环境一个规范 issuer；access token 15 分钟；内置客户端注册表（平台、官方插件、外壳、CLI）；CSRF 与安全头。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：OpenIddict 一致性测试（授权码 + PKCE、refresh 轮换、client_credentials、revocation、back-channel logout）全部通过；refresh 令牌复用被检测并吊销整族</li>\n<li class='chk'><span class='box'></span>代码审查 + IT：令牌中不含任何权限码；日志中无明文 sid、无密码</li>\n<li class='chk'><span class='box'></span>IT：以 <code>principal_kind = service</code> 的 <code>client_credentials</code> 令牌调用能力成功，<code>sub = client_id</code></li>\n<li class='chk'><span class='box'></span>IT：嵌入 <code>Qian.Identity.Server</code> 的独立宿主能通过 OpenIddict 一致性测试（ADR-019 D19.8）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>可嵌入任意 ASP.NET Core 宿主的 OpenIddict 7.x IdP，默认进 <code>identity</code> profile（独立 PG schema <code>identity</code>、独立 Redis db）：discovery / authorize / token / userinfo / revocation / introspection / end_session / back-channel logout；授权码 + PKCE、refresh 轮换 + 复用检测、<code>client_credentials</code>、RFC 8707 <code>resource</code>；非对称签名 + JWKS 轮换；每环境一个规范 issuer；access token 15 分钟；内置客户端注册表（平台、官方插件、外壳、CLI）；CSRF 与安全头。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：OpenIddict 一致性测试（授权码 + PKCE、refresh 轮换、client_credentials、revocation、back-channel logout）全部通过；refresh 令牌复用被检测并吊销整族</li>\n<li class='chk'><span class='box'></span>IT：已修复的 Kun Identity 客户端对真实 <code>qian-identity</code> 完成强制 PKCE 的授权码换取，篡改 nonce 的 id_token 被拒绝；记录实际 Kun 包版本、issuer 与客户端配置，不能以协议夹具或外部 IdP 代替（DEC-015，身份服务完成与发布必过）</li>\n<li class='chk'><span class='box'></span>代码审查 + IT：令牌中不含任何权限码；日志中无明文 sid、无密码</li>\n<li class='chk'><span class='box'></span>IT：以 <code>principal_kind = service</code> 的 <code>client_credentials</code> 令牌调用能力成功，<code>sub = client_id</code></li>\n<li class='chk'><span class='box'></span>IT：嵌入 <code>Qian.Identity.Server</code> 的独立宿主能通过 OpenIddict 一致性测试（ADR-019 D19.8）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：按用户批准的 DEC-015 承接真实 PKCE/nonce 联调必过项；KUN-004 的 SDK 阶段完成不代表本任务完成，原有前置依赖保持。</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-002.md"
  },
  {
@@ -2791,8 +2801,7 @@
    "S1-KUN-004"
   ],
   "blockedBy": [
-   "S1-IDP-002",
-   "S1-KUN-004"
+   "S1-IDP-002"
   ],
   "order": 3,
   "readyNow": false,
@@ -3163,7 +3172,7 @@
  {
   "id": "S1-KUN-004",
   "title": "Kun Identity 客户端链路修复与 S2S 签发器收敛去产品化",
-  "status": "blocked",
+  "status": "done",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
@@ -3176,10 +3185,8 @@
   "depends": [
    "S1-DEC-015"
   ],
-  "blockedBy": [
-   "S1-DEC-015"
-  ],
-  "order": 1,
+  "blockedBy": [],
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -3205,10 +3212,10 @@
   ],
   "updated": "2026-10-11",
   "acceptance": {
-   "done": 5,
+   "done": 6,
    "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 6、7 项：<code>ExchangeCodeAsync</code> 发送 <code>code_verifier</code>、校验 <code>nonce</code>、补 refresh / client_credentials / discovery 刷新、会话索引与后通道登出、日志只记 sid 哈希、CSRF、<code>SignInHelper</code> DI；三套签发器收敛为网关 <code>S2sTokenIssuer</code> 一套并对齐 iClaw S2S claim 契约，<code>exp − iat ≤ 300s</code>，约 30 处下游产品字样改为可配置。7.4 / 7.9 的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：对强制 PKCE 的 IdP（用 7.4 的 <code>qian-identity</code> 本身）完成授权码换取；篡改 <code>nonce</code> 的 id_token 被拒绝</li>\n<li class='chk done'><span class='box'>✓</span>IT：吊销某用户全部会话后，其任一 sid 的请求返回 401</li>\n<li class='chk done'><span class='box'>✓</span>代码审查：日志中不出现明文 sid（grep 门禁）</li>\n<li class='chk done'><span class='box'>✓</span>UT：Qian 代码树中引用废弃签发器即编译告警升错误</li>\n<li class='chk done'><span class='box'>✓</span>IT：网关签出的 S2S 令牌通过 iClaw <code>contracts/v0/s2s-jwt-claims</code> JSON Schema 校验</li>\n<li class='chk done'><span class='box'>✓</span>代码审查：<code>Kun.*</code> 发布包中 grep 不到下游产品名的默认值</li>\n</ul>\n<h4>验收证据与阻塞</h4>\n<ul>\n<li>显式区分：真实 HTTP/RSA 协议夹具已证明 PKCE verifier 发送、nonce 篡改拒绝、state/到期/重放保护；它不是 Qian 身份服务，第一项验收保留未勾选。S1-IDP-002 依赖本任务，故提交 S1-DEC-015 裁决阶段划分。</li>\n<li>真实 Redis 的原子续期/吊销/索引/重放测试通过；实际 HTTP 验证多会话吊销后均为 401，其他用户仍可访问；写请求缺防跨站令牌在 handler 前拒绝。异常含原始 sid 时，日志仍只有 SHA256 与异常类型。</li>\n<li>网关按冻结 contracts/v0/s2s-claims.schema.json 验证五种主体/租户/角色组合，固定 aud/roles 数组、UUID、每跳 audience 和 1–300 秒寿命。旧签发 API 标记 KUNS2S001。</li>\n<li>Qian 编译负例引用当前 KunVersion 的真实发布包，两个旧签发器及旧注册方法被 RS0030 拦截，即使关闭一般警告升错仍失败；网关签发器正例通过。全仓 252 项测试和 35 项门禁通过。</li>\n<li>本地五个测试包打包和默认值扫描通过；它们未发布到 feed。升级需规范身份投影、Redis 新键空间与重新登录、共享 Data Protection 密钥，详见上游 Identity 客户端指南。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/s2s-claims.schema.json：iClaw 无 S2S JSON Schema，验收以该文件为准（iclaw-alignment.md 第 2 节）</li>\n<li>2026-10-11 cody：开始：KUN-003/007 已进入 review；修复 OIDC、会话与 S2S。真实 qian-identity 联调与 S1-IDP-002 存在反向依赖，保留该验收项，不以替身冒充。</li>\n<li>2026-10-11 cody：SDK 实现和独立验收完成；真实 qian-identity 联调与 S1-IDP-002 存在循环，等待 S1-DEC-015 裁决，不冒充真实产品验收。</li>\n<li>2026-10-11 cody：上游修复已提交 https://github.com/idadawn/kun/pull/51；源码、迁移说明和验证证据可评审，等待 CI；产品联调口径仍待 S1-DEC-015。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>7.1 第 6、7 项：<code>ExchangeCodeAsync</code> 发送 <code>code_verifier</code>、校验 <code>nonce</code>、补 refresh / client_credentials / discovery 刷新、会话索引与后通道登出、日志只记 sid 哈希、CSRF、<code>SignInHelper</code> DI；三套签发器收敛为网关 <code>S2sTokenIssuer</code> 一套并对齐 iClaw S2S claim 契约，<code>exp − iat ≤ 300s</code>，约 30 处下游产品字样改为可配置。7.4 / 7.9 的前提。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：真实 HTTP/RSA 协议夹具验证授权码换取发送 PKCE verifier，篡改 <code>nonce</code> 的 id_token 被拒绝；真实 <code>qian-identity</code> 联调按已批准的 DEC-015 留在 S1-IDP-002 必过项</li>\n<li class='chk done'><span class='box'>✓</span>IT：吊销某用户全部会话后，其任一 sid 的请求返回 401</li>\n<li class='chk done'><span class='box'>✓</span>代码审查：日志中不出现明文 sid（grep 门禁）</li>\n<li class='chk done'><span class='box'>✓</span>UT：Qian 代码树中引用废弃签发器即编译告警升错误</li>\n<li class='chk done'><span class='box'>✓</span>IT：网关签出的 S2S 令牌通过 iClaw <code>contracts/v0/s2s-jwt-claims</code> JSON Schema 校验</li>\n<li class='chk done'><span class='box'>✓</span>代码审查：<code>Kun.*</code> 发布包中 grep 不到下游产品名的默认值</li>\n</ul>\n<h4>验收证据与阶段边界</h4>\n<ul>\n<li>真实 HTTP/RSA 协议夹具已证明 PKCE verifier 发送、nonce 篡改拒绝、state/到期/重放保护。产品负责人于 2026-10-11 批准 DEC-015；本任务按 SDK 阶段验收，真实 Qian 身份服务联调由 S1-IDP-002 的独立必过项承接，不将夹具结果表述为产品联调完成。</li>\n<li>已核验上游 [Kun PR #51](https://github.com/idadawn/kun/pull/51) 合并于 <code>ee2f36662e65e7c79b9cbca16f8bdb9ea6123dba</code>；Qian 编译门禁 [PR #29](https://github.com/idadawn/qian/pull/29) 合并于 <code>a63a950c4889f73679afc22ea81e2daaa7c216d8</code>。</li>\n<li>真实 Redis 的原子续期/吊销/索引/重放测试通过；实际 HTTP 验证多会话吊销后均为 401，其他用户仍可访问；写请求缺防跨站令牌在 handler 前拒绝。异常含原始 sid 时，日志仍只有 SHA256 与异常类型。</li>\n<li>网关按冻结 contracts/v0/s2s-claims.schema.json 验证五种主体/租户/角色组合，固定 aud/roles 数组、UUID、每跳 audience 和 1–300 秒寿命。旧签发 API 标记 KUNS2S001。</li>\n<li>Qian 编译负例引用当前 KunVersion 的真实发布包，两个旧签发器及旧注册方法被 RS0030 拦截，即使关闭一般警告升错仍失败；网关签发器正例通过。全仓 252 项测试和 35 项门禁通过。</li>\n<li>本地五个测试包打包和默认值扫描通过；它们未发布到 feed。升级需规范身份投影、Redis 新键空间与重新登录、共享 Data Protection 密钥，详见上游 Identity 客户端指南。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/s2s-claims.schema.json：iClaw 无 S2S JSON Schema，验收以该文件为准（iclaw-alignment.md 第 2 节）</li>\n<li>2026-10-11 cody：开始：KUN-003/007 已进入 review；修复 OIDC、会话与 S2S。真实 qian-identity 联调与 S1-IDP-002 存在反向依赖，保留该验收项，不以替身冒充。</li>\n<li>2026-10-11 cody：SDK 实现和独立验收完成；真实 qian-identity 联调与 S1-IDP-002 存在循环，等待 S1-DEC-015 裁决，不冒充真实产品验收。</li>\n<li>2026-10-11 cody：上游修复已提交 https://github.com/idadawn/kun/pull/51；源码、迁移说明和验证证据可评审，等待 CI；产品联调口径仍待 S1-DEC-015。</li>\n<li>2026-10-11 cody：根据已批准的 DEC-015 解除验收口径阻塞，核验已合并 SDK 修复并办理完成记录。</li>\n<li>2026-10-11 cody：完成：依用户批准的 DEC-015 按 SDK 阶段验收；已核验 Kun #51 与 Qian #29 合并，六项 SDK 验收通过。真实身份服务 PKCE/nonce 联调已明确留在 IDP-002，本次不声明发包或产品上线。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-004.md"
  },
  {
