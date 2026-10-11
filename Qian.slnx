@@ -3,6 +3,8 @@
     <Project Path="packages/Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
     <Project Path="packages/Qian.Docs.Abstractions/Qian.Docs.Abstractions.csproj" />
     <Project Path="packages/Qian.Docs/Qian.Docs.csproj" />
+    <Project Path="packages/Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
+    <Project Path="packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
     <Project Path="packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
     <Project Path="packages/Qian.Runtime/Qian.Runtime.csproj" />
@@ -18,6 +20,7 @@
     <Project Path="tests/Qian.Authz.Abstractions.Tests/Qian.Authz.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Docs.Tests/Qian.Docs.Tests.csproj" />
     <Project Path="tests/Qian.Profiles.Tests/Qian.Profiles.Tests.csproj" />
+    <Project Path="tests/Qian.Config.Tests/Qian.Config.Tests.csproj" />
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Abstractions.Tests/Qian.Identity.Abstractions.Tests.csproj" />
