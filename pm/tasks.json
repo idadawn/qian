@@ -1519,20 +1519,20 @@
  {
   "id": "S1-DEC-016",
   "title": "DEP-001 基线验收与真实平台四依赖联调分阶段",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
   "wave": 0,
   "priority": "P0",
   "type": "decision",
-  "owner": "",
+  "owner": "cody",
   "estimate": "1d",
   "days": 1.0,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "pm/tasks/S1-DEP-001.md",
@@ -1549,20 +1549,24 @@
    {
     "path": "docs/adr/ADR-017-deployment.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-017-deployment.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEP-005.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEP-005.md"
    }
   ],
   "updated": "2026-10-11",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 2
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>DEP-001 第一项要求真实 qian-platform 可访问 PG / Redis / RabbitMQ / Apollo；DEP-002 的专属 L1 服务和 DEP-003 的平台镜像却都依赖 DEP-001。当前 qian-platform 仍是组合骨架，不能以贴同名标签的探针或已有共享服务冒充验收。</p>\n<p>2026-10-11 只读实查另发现 qd 的 API 返回 ServiceUnavailable，K3s activating/start、NRestarts=550；未修改现网。这是独立的环境阻塞，不因下面的验收裁决而消失。</p>\n<h4>待裁决</h4>\n<ul>\n<li>推荐：分阶段验收。DEP-001 在真实集群完成独立命名空间、专属 PG/Redis、默认拒绝、配额、节点池与入口/加密检查后完成基线阶段；把真实 qian-platform 的四依赖协议联调明确保留为后续部署的必过验收，回链 DEP-002/003，不能在上线时跳过。</li>\n<li>维持原口径：DEP-001 保持 blocked，直到专属 L1 与真实应用镜像均可运行并完成全项验证；后续任务的启动安排由产品负责人决定。</li>\n</ul>\n<p>已准备两环境隔离清单、数据服务、只建缺失项的 Secret 引导工具、静态门禁及上线/回退步骤，尚未接入 Argo 或执行集群变更。具体部署仍须现网恢复、容量/节点池确认和变更批准。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>产品负责人明确选择验收顺序</li>\n<li class='chk'><span class='box'></span>按裁决更新 DEP-001 与后续部署任务，保持真实四依赖联调的必过门</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-11 cody：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>DEP-001 第一项要求真实 qian-platform 可访问 PG / Redis / RabbitMQ / Apollo；DEP-002 的专属 L1 服务和 DEP-003 的平台镜像却都依赖 DEP-001。当前 qian-platform 仍是组合骨架，不能以贴同名标签的探针或已有共享服务冒充验收。</p>\n<p>2026-10-11 只读实查另发现 qd 的 API 返回 ServiceUnavailable，K3s activating/start、NRestarts=550；未修改现网。这是独立的环境阻塞，不因下面的验收裁决而消失。</p>\n<h4>已裁决</h4>\n<p>2026-10-11 产品负责人明确选择“分阶段验收，保留真实联调门（推荐）”。权威结论写入 ADR-017 §9：DEP-001 完成真实基础设施验收，真实 qian-platform 四依赖协议联调保留在 DEP-005 的发布必过项，并显式串联 DEP-002/003 的交付。</p>\n<p>已准备两环境隔离清单、数据服务、只建缺失项的 Secret 引导工具、静态门禁及上线/回退步骤，尚未接入 Argo 或执行集群变更。具体部署仍须现网恢复、容量/节点池确认和变更批准。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人明确选择验收顺序</li>\n<li class='chk done'><span class='box'>✓</span>按裁决更新 DEP-001 与后续部署任务，保持真实四依赖联调的必过门</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-11 cody：创建任务</li>\n<li>2026-10-11 cody：用户已批准分阶段验收，保留真实平台四依赖联调为后续发布必过项；同步 ADR/PRD 与相关任务。</li>\n<li>2026-10-11 cody：完成：用户已批准分阶段验收，ADR-017 §9 与 PRD/DEP-001/002/003/005 同步；真实四依赖联调保留发布必过并串联前置。</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-016.md"
  },
  {
   "id": "S1-DEP-001",
   "title": "K3s 基线治理：命名空间、专属库、默认拒绝、配额",
-  "status": "blocked",
+  "status": "doing",
   "stage": "S1",
   "area": "DEP",
   "areaName": "部署物料",
@@ -1592,14 +1596,18 @@
    {
     "path": "deploy/baseline/README.md",
     "url": "https://github.com/idadawn/qian/blob/main/deploy/baseline/README.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-016.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
    }
   ],
   "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
-   "total": 3
+   "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-M1 K3s 基线：<code>qian-staging</code> / <code>qian-prod</code> 命名空间；每环境专属 PostgreSQL 16（<code>qian</code> 库、schema-per-service、RLS 开启）与 Redis 7（不复用跨 ns 共享实例）；default-deny NetworkPolicy + 按 <code>permissions.egress</code> 白名单放行（平台自有出网点 SSRF 基线，R10）；ResourceQuota / LimitRange / PDB 模板；K3s <code>--secrets-encryption</code>；Traefik <code>forwardedHeaders.trustedIPs</code>；生产独立节点池（Q16）；Harbor 新增「插件包 OCI artifact」制品类型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：在 <code>qian-staging</code> 内启动一个未声明 egress 的 Pod，访问外网与其他 ns 被 NetworkPolicy 拒绝；<code>qian-platform</code> 能访问 PG / Redis / RabbitMQ / Apollo</li>\n<li class='chk'><span class='box'></span>检查：<code>qian-staging</code> 命名空间存在 ResourceQuota 与 LimitRange；无 <code>:latest</code> 镜像</li>\n<li class='chk'><span class='box'></span>检查：Traefik <code>trustedIPs</code> 已配置，OIDC issuer 为 https；K3s secrets-encryption 开启</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：开始：只读核对真实 K3s 与部署仓库，准备独立命名空间、网络隔离、专属数据服务和验收物料；集群级与生产变更需具体审核后执行。</li>\n<li>2026-10-11 cody：部署仓 PR #88 提供两环境独立数据服务、default-deny、配额/PDB/节点池约束、引导与验收脚本；离线门禁和真实本机固定镜像验证通过。现场 qd API 未就绪、K3s activating/start（550→551 次重启），未作集群变更。等待现网恢复、具体变更准入与 DEC-016 验收顺序裁决，实际三项验收保持未完成。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-M1 K3s 基线：<code>qian-staging</code> / <code>qian-prod</code> 命名空间；每环境专属 PostgreSQL 16（<code>qian</code> 库、schema-per-service、RLS 开启）与 Redis 7（不复用跨 ns 共享实例）；default-deny NetworkPolicy + 按 <code>permissions.egress</code> 白名单放行（平台自有出网点 SSRF 基线，R10）；ResourceQuota / LimitRange / PDB 模板；K3s <code>--secrets-encryption</code>；Traefik <code>forwardedHeaders.trustedIPs</code>；生产独立节点池（Q16）；Harbor 新增「插件包 OCI artifact」制品类型。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：在 <code>qian-staging</code> 内启动一个未声明 egress 的 Pod，访问外网与其他 ns 被 NetworkPolicy 拒绝；明确标识的已授权诊断工作负载能经真实协议/认证访问本环境 PG / Redis（基线阶段，不冒充平台应用）</li>\n<li class='chk'><span class='box'></span>检查：<code>qian-staging</code> / <code>qian-prod</code> 使用独立命名空间、专属 PG / Redis 与独立数据卷；生产独立节点池实际就绪</li>\n<li class='chk'><span class='box'></span>检查：<code>qian-staging</code> 命名空间存在 ResourceQuota 与 LimitRange；无 <code>:latest</code> 镜像</li>\n<li class='chk'><span class='box'></span>检查：Traefik <code>trustedIPs</code> 已配置，OIDC issuer 为 https；K3s secrets-encryption 开启</li>\n</ul>\n<p>真实 <code>qian-platform</code> 访问 PG / Redis / RabbitMQ / Apollo 的协议联调按已批准的 DEC-016 留在 S1-DEP-005 发布必过项；本任务完成不代表应用已经完成该联调。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：开始：只读核对真实 K3s 与部署仓库，准备独立命名空间、网络隔离、专属数据服务和验收物料；集群级与生产变更需具体审核后执行。</li>\n<li>2026-10-11 cody：部署仓 PR #88 提供两环境独立数据服务、default-deny、配额/PDB/节点池约束、引导与验收脚本；离线门禁和真实本机固定镜像验证通过。现场 qd API 未就绪、K3s activating/start（550→551 次重启），未作集群变更。等待现网恢复、具体变更准入与 DEC-016 验收顺序裁决，实际三项验收保持未完成。</li>\n<li>2026-10-11 cody：已批准 DEC-016，解除验收顺序阻塞，继续真实基线核验。最新只读检查 API readyz 成功、三节点 Ready；仅有 qian-tools，没有 qian-staging/prod，尚无生产专用节点池标签；K3s 加密已开启，待具体准入与部署验收。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-001.md"
  },
  {
@@ -1635,14 +1643,18 @@
    {
     "path": "docs/adr/ADR-008-events-messaging.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-008-events-messaging.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-016.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>RabbitMQ 上 K3s（quorum queue，prod 3 副本、staging 1 副本，PVC，vhost <code>qian</code>）；Apollo ≥ 2.5.2（configservice + adminservice 每环境 2 副本 + podAntiAffinity + PDB，portal 2 副本 OIDC + JDBC session，环境只建 UAT + PRO）+ MySQL（Q8：staging 集群内 operator，prod 托管，不与 iClaw 共用）；Apollo Portal / Headlamp / Argo 走 Authentik blueprint，per-env 独立 OIDC client；Argo L1 新增 <code>apollo</code>、<code>rabbitmq</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：RabbitMQ 一个节点宕机，quorum queue 继续收发；Apollo configservice 一个副本宕机，宿主仍能拉配置</li>\n<li class='chk'><span class='box'></span>检查：Apollo Portal 不可从公网访问且经 Authentik 登录</li>\n<li class='chk'><span class='box'></span>检查：Argo L1 <code>apollo</code>、<code>rabbitmq</code> Application 同步健康；MySQL 按 Q8 落位</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>RabbitMQ 上 K3s（quorum queue，prod 3 副本、staging 1 副本，PVC，vhost <code>qian</code>）；Apollo ≥ 2.5.2（configservice + adminservice 每环境 2 副本 + podAntiAffinity + PDB，portal 2 副本 OIDC + JDBC session，环境只建 UAT + PRO）+ MySQL（Q8：staging 集群内 operator，prod 托管，不与 iClaw 共用）；Apollo Portal / Headlamp / Argo 走 Authentik blueprint，per-env 独立 OIDC client；Argo L1 新增 <code>apollo</code>、<code>rabbitmq</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：RabbitMQ 一个节点宕机，quorum queue 继续收发；Apollo configservice 一个副本宕机，宿主仍能拉配置</li>\n<li class='chk'><span class='box'></span>检查：Apollo Portal 不可从公网访问且经 Authentik 登录</li>\n<li class='chk'><span class='box'></span>检查：Argo L1 <code>apollo</code>、<code>rabbitmq</code> Application 同步健康；MySQL 按 Q8 落位</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-002.md"
  },
  {
@@ -1675,14 +1687,18 @@
    {
     "path": "docs/prd/07-s1-foundation.md#7.0.4",
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-016.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-003.md"
  },
  {
@@ -1741,11 +1757,13 @@
   "days": 3.0,
   "depends": [
    "S1-DEP-004",
-   "S1-DATA-002"
+   "S1-DATA-002",
+   "S1-DEP-002"
   ],
   "blockedBy": [
    "S1-DEP-004",
-   "S1-DATA-002"
+   "S1-DATA-002",
+   "S1-DEP-002"
   ],
   "order": 5,
   "readyNow": false,
@@ -1757,14 +1775,18 @@
    {
     "path": "docs/adr/ADR-017-deployment.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-017-deployment.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-016.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-11",
   "acceptance": {
    "done": 0,
-   "total": 3
+   "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>不可变发布事件（40 位 SHA、CalVer、<code>dry_run</code>）→ 验签 → 固定检出 → 构建推送 → 迁移 Job 先行（<code>--migrate-only</code>，advisory lock）→ <code>kustomize edit set image</code> 按 digest 写回 → Argo 收敛 → smoke（<code>/readyz</code> + 参考应用登录）；Argo Application <code>qian-platform</code>（L2）、<code>qian-integrations</code>（租户接线）；<code>prune: false</code> 起步；<code>Qian.Runtime</code> 与 profile 随 CalVer 发布。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：从一次发布事件到 staging 三个 profile 镜像全部 <code>Ready</code>、外壳经 <code>gateway</code> 可访问、参考应用可登录，中间无人工步骤</li>\n<li class='chk'><span class='box'></span>E2E：kill <code>qian-platform</code> 一个副本，<code>/readyz</code> 摘流、无 5xx 泄漏到网关；滚动升级时迁移 Job 先完成再切镜像</li>\n<li class='chk'><span class='box'></span>检查：Argo <code>qian-platform</code>、<code>qian-integrations</code> Application 存在且按 digest 引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>不可变发布事件（40 位 SHA、CalVer、<code>dry_run</code>）→ 验签 → 固定检出 → 构建推送 → 迁移 Job 先行（<code>--migrate-only</code>，advisory lock）→ <code>kustomize edit set image</code> 按 digest 写回 → Argo 收敛 → smoke（<code>/readyz</code> + 参考应用登录）；Argo Application <code>qian-platform</code>（L2）、<code>qian-integrations</code>（租户接线）；<code>prune: false</code> 起步；<code>Qian.Runtime</code> 与 profile 随 CalVer 发布。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：从一次发布事件到 staging 三个 profile 镜像全部 <code>Ready</code>、外壳经 <code>gateway</code> 可访问、参考应用可登录，中间无人工步骤</li>\n<li class='chk'><span class='box'></span>E2E：真实 <code>qian-platform</code> 在 staging 经实际协议与认证访问本环境 PG / Redis / RabbitMQ / Apollo，精确网络放行与应用就绪状态一致；记录工作负载镜像 digest、环境端点和脱敏结果。这是发布必过门，不能以诊断 Pod、同名标签、共享服务或仅 TCP 连通代替（DEC-016）</li>\n<li class='chk'><span class='box'></span>E2E：kill <code>qian-platform</code> 一个副本，<code>/readyz</code> 摘流、无 5xx 泄漏到网关；滚动升级时迁移 Job 先完成再切镜像</li>\n<li class='chk'><span class='box'></span>检查：Argo <code>qian-platform</code>、<code>qian-integrations</code> Application 存在且按 digest 引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-11 cody：按用户批准的 DEC-016 承接真实平台四依赖联调必过项，显式增加 DEP-002 前置；DEP-003 经 DEP-004 传递依赖，基线阶段完成不能跳过应用联调。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-005.md"
  },
  {
