@@ -2,9 +2,9 @@ name: runtime-ts
 on:
   push:
     branches: [main]
-    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tck/profiles/**', 'packages/qian-cli/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml']
+    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tck/profiles/**', 'packages/qian-cli/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml', '.github/workflows/runtime-ts-release.yml']
   pull_request:
-    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tck/profiles/**', 'packages/qian-cli/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml']
+    paths: ['packages/qian-runtime/**', 'packages/Qian.Runtime/**', 'tck/runtime/**', 'tck/profiles/**', 'packages/qian-cli/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'tests/Qian.Runtime.Tests/**', 'contracts/v0/**', 'pnpm*', '*.props', '*.targets', 'global.json', 'package.json', '.github/workflows/runtime-ts.yml', '.github/workflows/runtime-ts-release.yml']
 permissions:
   contents: read
 concurrency:
@@ -41,6 +41,8 @@ jobs:
         run: |
           mkdir -p TestResults
           pnpm --filter ./packages/qian-runtime pack --pack-destination "$GITHUB_WORKSPACE/TestResults"
+          node --check packages/qian-runtime/scripts/publish.mjs
+          node packages/qian-runtime/scripts/verify-consumer.mjs "file:$GITHUB_WORKSPACE/TestResults/idadawn-qian-runtime-$(node -p 'require("./packages/qian-runtime/package.json").version').tgz"
       - uses: actions/upload-artifact@v4
         with:
           name: qian-runtime-package

@@ -1,6 +1,23 @@
 # Qian TypeScript 运行时
 
-依据 [组件模型 §5](../../docs/prd/specs/component-model.md#5-运行时模型) 与 [S1-RT-003](../../pm/tasks/S1-RT-003.md)。公共逻辑导入名为 `@qian/runtime`；私有发布名称待 S1-DEC-014 确认，当前不宣称已经发布。
+依据 [组件模型 §5](../../docs/prd/specs/component-model.md#5-运行时模型) 与 [S1-RT-003](../../pm/tasks/S1-RT-003.md)。S1-DEC-014 已批准：物理包名 `@idadawn/qian-runtime`，发布到 GitHub Packages 私有源；消费者通过 npm alias 保留公共逻辑导入名 `@qian/runtime`。
+
+## 私有源安装
+
+消费项目的 `.npmrc` 只引用环境变量，不写入令牌值：
+
+```ini
+@idadawn:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+在环境中提供具有该包读取权限的令牌后安装固定版本：
+
+```bash
+npm install '@qian/runtime@npm:@idadawn/qian-runtime@0.1.0'
+```
+
+`package.json` 的依赖值为 `"@qian/runtime": "npm:@idadawn/qian-runtime@0.1.0"`，下文逻辑导入名保持一致。源码工作区内部构建按目录筛选包；发版只运行 main 的 `runtime-ts-release` 工作流，输入版本必须等于清单版本。工作流校验私有可见性与制品摘要，再在仓库外的干净项目完成真实安装、运行、类型和许可证验收；首次发布证据记录在任务中。
 
 ## 装配与使用
 
@@ -46,18 +63,18 @@ Definition 定义服务键与事件。`list`、代理属性与显式执行使用
 ```bash
 pnpm --filter @qian/surfaces build
 pnpm --filter qian build
-pnpm --filter @qian/runtime build
-pnpm --filter @qian/runtime test
-pnpm --filter @qian/runtime check:api
-pnpm --filter @qian/runtime test:types
-pnpm --filter @qian/runtime test:browser
+pnpm --filter ./packages/qian-runtime build
+pnpm --filter ./packages/qian-runtime test
+pnpm --filter ./packages/qian-runtime check:api
+pnpm --filter ./packages/qian-runtime test:types
+pnpm --filter ./packages/qian-runtime test:browser
 ```
 
 TS harness 复用 `tck/runtime/harness-ts.mjs` 与 `assembly-ts.mjs`，直接读取 23 个 YAML 场景与 T15–T17 的 3 个装配场景，不复制语言独立输入；从真实 minimal profile 起步，并调用真实 profile 装配器后挂载运行时。另有 8 项边界/错误验证，共 34 项测试。T19 自动热重载、T23 完整 platform 以及产品提示词链路的剩余验收见 S1-QA-002；不在测试里伪造这些产品功能。
 
 ## 已知限制与延期项
 
-- npm 私有发布名称待 S1-DEC-014；未完成真实发布前 S1-RT-003 不关闭。
+- 私有包消费需要读取权限；使用逻辑导入名的消费者必须声明上述 npm alias。
 - 只负责宿主内运行时，不实现市场下载、配置 Schema 校验、持久化或远程 Provider 健康探测；由装配器在 mount 前完成。
 - 生命周期内不要等待同一装载器的 mount/unmount/whenIdle，避免自等待。
 - 调用方须配合取消信号；无法强制终止忽略取消的插件代码。
