@@ -52,3 +52,6 @@ static Qian.Audit.AuditChainEntry.operator !=(Qian.Audit.AuditChainEntry? left, 
 static Qian.Audit.AuditChainEntry.operator ==(Qian.Audit.AuditChainEntry? left, Qian.Audit.AuditChainEntry? right) -> bool
 static Qian.Audit.AuditChainVerification.operator !=(Qian.Audit.AuditChainVerification? left, Qian.Audit.AuditChainVerification? right) -> bool
 static Qian.Audit.AuditChainVerification.operator ==(Qian.Audit.AuditChainVerification? left, Qian.Audit.AuditChainVerification? right) -> bool
+Qian.Audit.AuditErrors
+static Qian.Audit.AuditErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!
+static readonly Qian.Audit.AuditErrors.SchemaInvalid -> Qian.Runtime.Errors.ErrorCode!

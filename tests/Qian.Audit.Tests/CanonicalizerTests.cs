@@ -7,9 +7,9 @@ public sealed class CanonicalizerTests
 {
     internal static JsonElement Json(string value) => JsonSerializer.Deserialize<JsonElement>(value);
     internal static readonly string Tenant = "01900000-0000-7000-8000-000000000001";
-    internal static AuditRecord Record(string? tenant = null, Guid? id = null, string payload = "{}", string actorType = "user", string? onBehalfOf = null) =>
+    internal static AuditRecord Record(string? tenant = null, Guid? id = null, string payload = "{}", string actorType = "user", string? onBehalfOf = null, string? inputHash = null) =>
         new(id ?? Guid.CreateVersion7(), tenant ?? Tenant, actorType, "actor", onBehalfOf, "crm.customer.create", "1.0.0",
-            new string('1', 64), "api", "crm.customer:1", "success", new string('2', 32),
+            inputHash ?? new string('1', 64), "api", "crm.customer:1", "success", new string('2', 32),
             new DateTimeOffset(2026, 10, 12, 0, 0, 0, TimeSpan.Zero).AddTicks(1234567), Json(payload));
 
     [Fact]

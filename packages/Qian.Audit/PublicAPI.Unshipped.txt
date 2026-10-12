@@ -5,3 +5,9 @@ Qian.Audit.AuditDbContext.AuditDbContext(Microsoft.EntityFrameworkCore.DbContext
 const Qian.Audit.AuditDbContext.Schema = "plugin_qian_audit" -> string!
 static Qian.Audit.AuditCanonicalizer.Canonicalize(System.Text.Json.JsonElement value) -> string!
 static Qian.Audit.AuditCanonicalizer.Hash(Qian.Audit.AuditRecord! record, long sequence, string? previousHash) -> string!
+Qian.Audit.AuditInputPolicy
+Qian.Audit.AuditInputPolicy.AuditInputPolicy(System.Text.Json.JsonElement schema, bool isCommand, bool? audit = null) -> void
+Qian.Audit.AuditInputPolicy.InputHash(System.Text.Json.JsonElement input) -> string?
+Qian.Audit.AuditInputPolicy.Redact(System.Text.Json.JsonElement input) -> System.Text.Json.JsonElement
+Qian.Audit.AuditInputPolicy.ShouldRecord.get -> bool
+const Qian.Audit.AuditInputPolicy.Redacted = "[REDACTED]" -> string!

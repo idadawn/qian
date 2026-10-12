@@ -121,6 +121,22 @@ public sealed class AuditStoreTests(PostgresFixture postgres) : IClassFixture<Po
         Assert.Equal("tip_mismatch", (await store.VerifyAsync(Ct)).Reason);
     }
 
+    [Fact]
+    public async Task 脱敏策略产生的输入哈希真实落库_原输入没有进入审计记录()
+    {
+        var tenant = new AsyncLocalTenantContext(); using var host = Host(tenant); await host.StartAsync(Ct); await Prepare(host);
+        using var scope = tenant.BeginScope(A);
+        var policy = new AuditInputPolicy(CanonicalizerTests.Json("""{"type":"object","properties":{"name":{"type":"string"},"password":{"type":"string","sensitive":true}}}"""), true);
+        var input = CanonicalizerTests.Json("""{"name":"customer","password":"audit-only-private-sentinel"}""");
+        var hash = policy.InputHash(input)!;
+        var entry = await Store(host, tenant).AppendAsync(CanonicalizerTests.Record(inputHash: hash, payload: "{\"source\":\"capability-metadata\"}"), Ct);
+        Assert.Equal(hash, entry.Record.InputHash); Assert.Equal(new AuditChainVerification(true, 1, null, null), await Store(host, tenant).VerifyAsync(Ct));
+        await using var session = await host.Services.GetRequiredService<IDataService>().OpenAsync<AuditDbContext>(Ct);
+        var persisted = await session.Context.Database.SqlQueryRaw<string>("SELECT to_jsonb(e)::text AS \"Value\" FROM plugin_qian_audit.audit_entries e").SingleAsync(Ct);
+        Assert.DoesNotContain("audit-only-private-sentinel", persisted); Assert.DoesNotContain("password", persisted);
+        Assert.Contains(hash, persisted);
+    }
+
     private async Task Admin(string sql)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
