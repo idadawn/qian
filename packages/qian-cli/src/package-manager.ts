@@ -6,7 +6,7 @@ import {parsePackageReference,packageIdentity,type PackageReference,type Package
 import {runPackageCommand as command} from './package-process.js';
 
 interface Dependency {name:string;version:string;definition?:string;section?:string}
-export interface NugetWorkspace {project:string;centralFile?:string;intermediateDirectory:string;lockFile:string;dependencies:Dependency[]}
+export interface NugetWorkspace {project:string;centralFile?:string;intermediateDirectory:string;lockFile:string;dependencies:Dependency[];targetFrameworks:string[]}
 export interface NpmWorkspace {manifest:string;dependencies:Dependency[]}
 export interface PackageWorkspace {root:string;nuget?:NugetWorkspace;npm?:NpmWorkspace}
 export interface PackageChanges {add:readonly PackageReference[];remove:readonly PackageReference[];ensure?:readonly PackageReference[]}
@@ -23,7 +23,7 @@ function unavailable(tool:string):never {
  throw new MarketplaceFailure([diagnostic]);
 }
 
-function npmExecutable():string {
+export function npmExecutable():string {
  const supplied=process.env.npm_execpath;
  if(supplied&&path.basename(supplied)==='npm-cli.js'&&existsSync(supplied))return realpathSync(supplied);
  for(const directory of (process.env.PATH??'').split(path.delimiter)){
@@ -54,7 +54,7 @@ export async function inspectPackageWorkspace(directory:string,kinds:readonly Pa
   if(projects.length!==1)invalid('argv','NuGet 安装需要在恰有一个 csproj 的宿主目录执行。');
   const project=path.join(root,projects[0]);assertNoLinks(project);
   const text=await command('dotnet',['msbuild',project,'-nologo',
-   '-getProperty:ManagePackageVersionsCentrally,DirectoryPackagesPropsPath,MSBuildProjectExtensionsPath,NuGetLockFilePath',
+   '-getProperty:ManagePackageVersionsCentrally,DirectoryPackagesPropsPath,MSBuildProjectExtensionsPath,NuGetLockFilePath,TargetFramework,TargetFrameworks',
    '-getItem:PackageReference,PackageVersion'],root,'dotnet');
   let evaluated:{Properties:Record<string,string>;Items:Record<string,Record<string,string>[]>};
   try{evaluated=JSON.parse(text);}catch{return unavailable('dotnet');}
@@ -62,7 +62,9 @@ export async function inspectPackageWorkspace(directory:string,kinds:readonly Pa
   const central=new Map((evaluated.Items.PackageVersion??[]).map(item=>[item.Identity.toLowerCase(),item.Version]));
   const dependencies=(evaluated.Items.PackageReference??[]).map(item=>({name:item.Identity,
    version:pinned(item.VersionOverride||item.Version||central.get(item.Identity.toLowerCase())||''),definition:item.DefiningProjectFullPath}));
-  result.nuget={project,dependencies,
+  const targetFrameworks=(evaluated.Properties.TargetFrameworks||evaluated.Properties.TargetFramework||'').split(';').filter(Boolean);
+  if(!targetFrameworks.length||targetFrameworks.some(value=>!/^net[A-Za-z0-9.]+(?:-[A-Za-z0-9.]+)?$/.test(value)))invalid(project,'宿主目标框架无法安全解析。');
+  result.nuget={project,dependencies,targetFrameworks,
    ...(evaluated.Properties.ManagePackageVersionsCentrally==='true'?{centralFile:evaluated.Properties.DirectoryPackagesPropsPath}:{}),
    intermediateDirectory:path.resolve(root,evaluated.Properties.MSBuildProjectExtensionsPath||'obj'),
    lockFile:path.resolve(root,evaluated.Properties.NuGetLockFilePath||'packages.lock.json')};

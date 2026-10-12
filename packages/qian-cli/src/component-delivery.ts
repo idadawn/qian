@@ -18,7 +18,8 @@ export function prepareComponentDelivery(resolved:ResolvedMarketplacePlugin,prof
  const temporary=mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-delivery-'));
  try{
   materialize(resolved.content,temporary);
-  const components:DeliveredComponent[]=[{directory:'',component:resolved.component,manifest:installObject(resolved.component.manifest)}],diagnostics:SurfaceDiagnostic[]=[];
+  const checked=validateComponent(temporary,{profile});if(!checked.isValid||!checked.component)throw new MarketplaceFailure([...checked.diagnostics]);
+  const components:DeliveredComponent[]=[{directory:'',component:checked.component,manifest:installObject(checked.component.manifest)}],diagnostics:SurfaceDiagnostic[]=[...checked.diagnostics];
   const folders=[...resolved.content.files.keys()].filter(name=>name.startsWith('components/')&&name.endsWith('/.qian-plugin/plugin.json'))
    .map(name=>name.slice(0,-'/.qian-plugin/plugin.json'.length)).sort();
   for(const directory of folders){
@@ -47,8 +48,8 @@ export function prepareComponentDelivery(resolved:ResolvedMarketplacePlugin,prof
     nuget:Array.isArray(runtime.nuget)?runtime.nuget.map(value=>{const item=installObject(value);return String(item.id??'')+'@'+String(item.version??'');}):[],
     npm:Array.isArray(runtime.npm)?runtime.npm.map(value=>{const item=installObject(value);return String(item.name??'')+'@'+String(item.version??'');}):[]}};
   }));
-  const patch=resolved.component.documents.find(document=>document.kind==='patch');
-  const composition=!!patch,regularEntry=!composition||installObject(installObject(resolved.component.manifest).runtime).form!==undefined;
+  const patch=components[0].component.documents.find(document=>document.kind==='patch');
+  const composition=!!patch,regularEntry=!composition||installObject(components[0].manifest.runtime).form!==undefined;
   return{components,files:resolved.files.filter(file=>names.has(file.path)),packages:{nuget:referenced.filter(item=>item.kind==='nuget').map(item=>item.specification),
    npm:referenced.filter(item=>item.kind==='npm').map(item=>item.specification)},composition,regularEntry,patch:patch?patch.data as JsonValue[]:[],requirements,diagnostics};
  }finally{rmSync(temporary,{recursive:true,force:true});}

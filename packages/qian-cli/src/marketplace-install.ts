@@ -13,12 +13,13 @@ import {planPackageChanges,type PackagePlan,type PackageOwnership} from './packa
 import {PackageCommandFailure} from './package-process.js';
 import {readInstalledState,readInstallFile,writeInstallFile,installObject,installFailure,installedPackageSets,removedInstallationEntries,verifyInstalledComponent,acquireInstallationLease,type InstallObject} from './installed-components.js';
 import {prepareComponentDelivery,type ComponentDelivery} from './component-delivery.js';
+import {resolvePackageDelivery,type PackageArtifactEvidence} from './package-delivery.js';
 
 export interface DeclarativeInstallOptions extends MarketplaceOptions {yes?:boolean;dryRun?:boolean;noCode?:boolean;force?:boolean;resetConfig?:boolean;forceProfile?:boolean}
 export interface DeclarativeInstallResult {status:'planned'|'installed'|'unchanged'|'on-use';id:string;version:string;market:string;trust:'verified'|'unverified';files:FileRecord[];packages:{nuget:string[];npm:string[]};diagnostics:SurfaceDiagnostic[];lock?:InstallObject;note?:string;permissions?:JsonValue;secretReferences?:string[]}
 export interface BatchInstallResult {status:'planned'|'installed'|'unchanged'|'on-use';plugins:DeclarativeInstallResult[]}
 interface PatchPlan {profile:string;definitionFile:string;definition:InstallObject;definitionChanged?:boolean;file:string;entries:JsonValue[];touched:Set<string>}
-interface Candidate {resolved:ResolvedMarketplacePlugin;manifest:InstallObject;delivery:ComponentDelivery;result:DeclarativeInstallResult;previous?:InstallObject;record?:InstallObject;replaceFiles:boolean;needsApproval:boolean}
+interface Candidate {resolved:ResolvedMarketplacePlugin;manifest:InstallObject;delivery:ComponentDelivery;artifacts:PackageArtifactEvidence[];result:DeclarativeInstallResult;previous?:InstallObject;record?:InstallObject;replaceFiles:boolean;needsApproval:boolean}
 
 function entryKey(entry:InstallObject):string {return String(entry.scope??'global')+'/'+String(entry.id);}
 function profileName(value:unknown):string {
@@ -64,7 +65,8 @@ function makeRecord(candidate:Candidate,entries:JsonValue[]):InstallObject {
  const record:InstallObject={id:resolved.component.id,name:resolved.name,version:resolved.version,market:resolved.market,
   source:resolved.source as unknown as JsonValue,digest:resolved.digest,installedAt:new Date().toISOString(),
   surfaces:[...new Set(resolved.component.documents.map(document=>({skill:'skills',agent:'agents',command:'commands',tool:'tools',mcp:'mcpServers'} as Record<string,string>)[document.kind]??document.kind))],
-  files:candidate.result.files as unknown as JsonValue,packages:resolved.packages,entries,requirements:candidate.delivery.requirements,trust:resolved.trust,marketSource:resolved.marketSource};
+  files:candidate.result.files as unknown as JsonValue,packages:resolved.packages,entries,requirements:candidate.delivery.requirements,
+  deliveryDigest:resolved.content.digest,packageArtifacts:candidate.artifacts as unknown as JsonValue,trust:resolved.trust,marketSource:resolved.marketSource};
  if(resolved.commit)record.commit=resolved.commit;if(resolved.marketCommit)record.marketCommit=resolved.marketCommit;if(resolved.marketKey)record.marketKey=resolved.marketKey;
  return record;
 }
@@ -103,13 +105,20 @@ export async function installMarketplacePlugins(references:readonly string[],opt
    if(allowed?.length&&!allowed.includes(profile)&&!options.forceProfile)installFailure('argv','所选 profile 不在市场允许列表；核对计划后可显式 --force-profile。');
   }
   collectPackageReferences([{id,packages:resolved.packages}]);
-  candidates.push({resolved,manifest,delivery,result,replaceFiles:false,needsApproval:resolved.policy.installation==='confirm'});
+  candidates.push({resolved,manifest,delivery,artifacts:[],result,replaceFiles:false,needsApproval:resolved.policy.installation==='confirm'});
  }
  const active=candidates.filter(candidate=>candidate.result.status!=='on-use');
  if(!active.length)return{status:'on-use',plugins:candidates.map(candidate=>candidate.result)};
  const lease=options.dryRun?undefined:acquireInstallationLease(root);
  let transaction:WorkspaceTransaction|undefined,preview:string|undefined;
  try{
+  for(const candidate of active)if(candidate.resolved.packages.nuget.length||candidate.resolved.packages.npm.length){
+   const prepared=await resolvePackageDelivery(root,candidate.resolved,profile,options.forceProfile);
+   candidate.resolved=prepared.resolved;candidate.delivery=prepared.delivery;candidate.artifacts=prepared.artifacts;
+   candidate.result.files=prepared.delivery.files;candidate.result.packages=prepared.delivery.packages;
+   candidate.result.permissions=prepared.delivery.components.length>1?prepared.delivery.requirements:installObject(candidate.manifest.policy).permissions??{};
+   candidate.result.diagnostics.push(...prepared.delivery.diagnostics);
+  }
   const state=readInstalledState(root),patches=new Map<string,PatchPlan>();
   const openPatch=(name:string):PatchPlan=>{
    profileName(name);const cached=patches.get(name);if(cached)return cached;
@@ -129,7 +138,8 @@ export async function installMarketplacePlugins(references:readonly string[],opt
     try{oldManifest=verifyInstalledComponent(root,previous);}catch(error){if(!options.force)throw error;filesChanged=true;
      oldManifest=originalManifest(root,previous);candidate.needsApproval=candidate.needsApproval||!oldManifest;}
    }else if(existsSync(destination))installFailure(destination,'组件目录存在但没有安装锁，不能覆盖不明来源的文件。');
-   const same=!!previous&&previous.version===result.version&&previous.digest===resolved.digest&&previous.market===resolved.market&&previous.marketSource===resolved.marketSource;
+   const same=!!previous&&previous.version===result.version&&previous.digest===resolved.digest&&(previous.deliveryDigest??previous.digest)===resolved.content.digest&&
+    stable(previous.packageArtifacts??[])===stable(candidate.artifacts as unknown as JsonValue)&&previous.market===resolved.market&&previous.marketSource===resolved.marketSource;
    if(previous&&previous.version===result.version&&!same&&!options.force)installFailure(destination,'同版本来源或内容发生变化，核对后才能用 --force 替换。');
    if(previous&&oldManifest){
     const before=requirementGrants(previous.requirements?installObject(previous.requirements):{[id]:installObject(oldManifest.policy)}),after=requirementGrants(candidate.delivery.requirements);

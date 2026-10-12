@@ -124,14 +124,17 @@ test('真实 Config Provider 制成临时 NuGet 包后经签名市场安装，�
  try{
   const version='0.1.0-cli-'+generateKeyPairSync('ed25519').publicKey.export({type:'spki',format:'der'}).subarray(-6).toString('hex');
   const feed=path.join(f.root,'feed');mkdirSync(feed);
+  const xml=value=>value.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
+  const extra={version,engines:{kun:'>=2026.10.12'},provides:['Config'],runtime:{form:'module',entry:'Qian.Config.Apollo.ConfigurationPlugin, Qian.Config.Apollo',nuget:[{id:'Qian.Config.Apollo',version}]}};
+  const packageComponent=path.join(f.root,'package-component');component(packageComponent,'qian.config','official',extra);
+  const packTargets=path.join(f.root,'pack-components.targets');
+  writeFileSync(packTargets,`<Project><ItemGroup Condition="'$(MSBuildProjectName)' == 'Qian.Config.Apollo'"><None Include="${xml(packageComponent)}/**/*" Pack="true" PackagePath="qian/%(RecursiveDir)%(Filename)%(Extension)" /></ItemGroup></Project>`);
   for(const name of ['Qian.Runtime.Errors','Qian.Runtime','Qian.Config.Abstractions','Qian.Config.Apollo']){
-   const packed=spawnSync('dotnet',['pack',path.join(repo,'packages',name,name+'.csproj'),'-c','Release','-p:Version='+version,'-o',feed,'--artifacts-path',path.join(f.root,'build'),'--disable-build-servers','-m:1'],{cwd:repo,encoding:'utf8',timeout:120000});
+   const packed=spawnSync('dotnet',['pack',path.join(repo,'packages',name,name+'.csproj'),'-c','Release','-p:Version='+version,'-p:CustomAfterMicrosoftCommonTargets='+packTargets,'-o',feed,'--artifacts-path',path.join(f.root,'build'),'--disable-build-servers','-m:1'],{cwd:repo,encoding:'utf8',timeout:120000});
    assert.equal(packed.status,0,packed.stdout+packed.stderr);
   }
-  const xml=value=>value.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
   write(f.project,'NuGet.Config','<configuration><packageSources><clear/><add key="fixture" value="'+xml(feed)+'"/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources><config><add key="globalPackagesFolder" value="'+xml(path.join(f.root,'consumer-cache'))+'"/></config><fallbackPackageFolders><add key="shared" value="'+xml(process.env.NUGET_PACKAGES??path.join(os.homedir(),'.nuget/packages'))+'"/></fallbackPackageFolders></configuration>');
   write(f.project,'Host.csproj','<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup></Project>');
-  const extra={version,engines:{kun:'>=2026.10.12'},provides:['Config'],runtime:{form:'module',entry:'Qian.Config.Apollo.ConfigurationPlugin, Qian.Config.Apollo',nuget:[{id:'Qian.Config.Apollo',version}]}};
   const location=path.join(f.root,'catalog'),created=market(location,'catalog','qian.config',{tier:'official',extra});
   component(path.join(location,'plugins/test.consumer'),'test.consumer','private',{inject:['Config']});
   created.data.plugins.push({...created.data.plugins[0],name:'consumer',source:{type:'local',path:'./plugins/test.consumer'}});created.persist();
@@ -203,6 +206,23 @@ Console.WriteLine("real-provider-ready");
   assert.equal(JSON.parse(run(f.project,'--no-home','dump-config').stdout).entries.find(entry=>entry.id==='consumer').config.value,7);
   assert.equal(run(f.project,'--no-home','remove','bundle').status,0);
   const bundlePurge=run(f.project,'--no-home','remove','bundle','--purge');assert.equal(bundlePurge.status,0,bundlePurge.stderr);assert.equal(readFileSync(patchFile,'utf8'),'[]\n');
+  const packageBundle=path.join(location,'plugins/qian.bundle.package');component(packageBundle,'qian.bundle.package','official',bundleExtra);
+  write(packageBundle,'config/qian.patch.yml',stringify([{id:'config',plugin:'qian.config@'+version,config:{}}]));
+  created.data.plugins.push({...created.data.plugins[0],name:'from-package',source:{type:'local',path:'./plugins/qian.bundle.package'}});created.persist();
+  const beforePlan=readFileSync(projectFile,'utf8'),beforePlanLock=readFileSync(lockFile,'utf8');
+  const planned=run(f.project,'--no-home','add','from-package','--dry-run','--yes');assert.equal(planned.status,0,planned.stderr);
+  assert.equal(readFileSync(projectFile,'utf8'),beforePlan);assert.equal(readFileSync(lockFile,'utf8'),beforePlanLock);
+  assert.equal(existsSync(path.join(f.project,'.qian/plugins/qian.bundle.package')),false);
+  const packageInstalled=run(f.project,'--no-home','add','from-package','--yes');assert.equal(packageInstalled.status,0,packageInstalled.stderr);
+  assert.ok(existsSync(path.join(f.project,'.qian/plugins/qian.bundle.package/components/qian.config/.qian-plugin/plugin.json')));
+  const packageRecord=JSON.parse(readFileSync(lockFile,'utf8')).plugins.find(item=>item.id==='qian.bundle.package');
+  assert.ok(packageRecord.packageArtifacts.some(item=>item.name==='Qian.Config.Apollo'&&item.componentId==='qian.config'&&/^sha256:/.test(item.digest)));
+  assert.notEqual(packageRecord.deliveryDigest,packageRecord.digest);
+  const packageTree=run(f.project,'--no-home','dump-config');assert.equal(packageTree.status,0,packageTree.stderr);assert.equal(JSON.parse(packageTree.stdout).entries[0].plugin,'qian.config@'+version);
+  const lockedPackage=readFileSync(lockFile,'utf8'),installedProject=readFileSync(projectFile,'utf8');
+  component(path.join(packageBundle,'components/qian.config'),'qian.config','official',{...extra,description:'这个同名声明故意与真实 NuGet 包内容不同，用于验证不可覆盖。'});
+  const conflict=run(f.project,'--no-home','add','from-package','--force','--yes');assert.equal(conflict.status,1);
+  assert.equal(readFileSync(lockFile,'utf8'),lockedPackage);assert.equal(readFileSync(projectFile,'utf8'),installedProject);
  }finally{f.dispose();}
 });
 
@@ -236,14 +256,14 @@ test('本地列表不回显 lock 扩展配置或 URL 凭据',()=>{
 test('批量实际包安装失败时全部组件与宿主恢复，不留下半批记录',()=>{
  const f=fixture();try{
   const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide');
-  const missing='qian-rt011-missing-'+randomBytes(8).toString('hex');
-  component(path.join(location,'plugins/test.missing'),'test.missing','official',{runtime:{form:'module',entry:'NeverActivated',npm:[{name:missing,version:'1.0.0'}]}});
+  component(path.join(location,'plugins/test.missing'),'test.missing','official',{runtime:{form:'module',entry:'NeverActivated',npm:[{name:'semver',version:'7.7.4'}]}});
   created.data.plugins.push({...created.data.plugins[0],name:'missing',source:{type:'local',path:'./plugins/test.missing'}});created.persist();
   configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
-  write(f.project,'package.json','{"private":true}\n');write(f.project,'.npmrc','fetch-retries=0\nfetch-timeout=5000\n');
+  const initialPackage='{"private":true,"overrides":{"semver":"7.7.3"}}\n';
+  write(f.project,'package.json',initialPackage);write(f.project,'.npmrc','fetch-retries=0\nfetch-timeout=5000\n');
   const before=readFileSync(path.join(f.project,'profiles/minimal/qian.patch.yml'),'utf8');
   const failed=run(f.project,'--no-home','add','guide','missing','--yes');assert.equal(failed.status,1);
-  assert.equal(readFileSync(path.join(f.project,'package.json'),'utf8'),'{"private":true}\n');
+  assert.equal(readFileSync(path.join(f.project,'package.json'),'utf8'),initialPackage);
   assert.equal(readFileSync(path.join(f.project,'profiles/minimal/qian.patch.yml'),'utf8'),before);
   assert.equal(existsSync(path.join(f.project,'.qian/plugins/test.guide')),false);assert.equal(existsSync(path.join(f.project,'.qian/plugins/test.missing')),false);
   assert.equal(existsSync(path.join(f.project,'.qian/lock.json')),false);assert.equal(existsSync(path.join(f.project,'node_modules')),false);
