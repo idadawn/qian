@@ -147,6 +147,31 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
     }
 
     [Fact]
+    public async Task 数据库序列化失败经EF包装后仍重试整笔真实HTTP命令()
+    {
+        await using var host = await Start();
+        // 故障注入只验证实际 PG -> EF 包装 -> HTTP 重试路径；真正并发另有保存屏障用例。
+        await Admin($"""
+            CREATE SEQUENCE plugin_qian_sample_crm.retry_probe;
+            GRANT USAGE ON SEQUENCE plugin_qian_sample_crm.retry_probe TO "{host.BusinessRole}";
+            CREATE FUNCTION plugin_qian_sample_crm.fail_first_save() RETURNS trigger LANGUAGE plpgsql AS $f$
+            BEGIN
+              IF nextval('plugin_qian_sample_crm.retry_probe') = 1 THEN
+                RAISE EXCEPTION 'test serialization failure' USING ERRCODE = '40001';
+              END IF;
+              RETURN NEW;
+            END $f$;
+            CREATE TRIGGER retry_probe BEFORE INSERT ON plugin_qian_sample_crm.customers FOR EACH ROW EXECUTE FUNCTION plugin_qian_sample_crm.fail_first_save();
+            """);
+        using var response = await host.Post(A, new CreateCustomerCommand(Guid.CreateVersion7(), "retry wrapped failure"));
+        Assert.True(response.StatusCode == HttpStatusCode.Created, host.FailureEvidence);
+        using var scope = host.App.Services.GetRequiredService<ITenantContext>().BeginScope(A);
+        await using var session = await host.App.Services.GetRequiredService<IDataService>().OpenAsync<CrmDbContext>(Ct);
+        Assert.Single(await session.Context.Customers.ToListAsync(Ct)); Assert.Single(await session.Context.CustomerReceipts.ToListAsync(Ct)); Assert.Single(await session.Context.OutboxMessages.ToListAsync(Ct));
+        Assert.Equal(new AuditChainVerification(true, 1, null, null), await host.App.Services.GetRequiredService<CrmCommandRuntime>().Source().Audit().VerifyAsync(Ct));
+    }
+
+    [Fact]
     public async Task 同租户同一幂等键并发争用后仍返回同一客户_整笔失败重试()
     {
         await using var host = await Start(concurrentWrites: true);
@@ -278,7 +303,7 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
                 Assert.True(decision.Allow, decision.Reason);
             }
             var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
-            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence);
+            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role);
         }
         catch { await app.DisposeAsync(); signing.Dispose(); throw; }
     }
@@ -314,9 +339,10 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
         }
     }
 
-    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence) : IAsyncDisposable
+    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role) : IAsyncDisposable
     {
         internal WebApplication App => app;
+        internal string BusinessRole => role;
         internal string FailureEvidence => string.Join("\n", evidence.Failures);
         internal Task<HttpResponseMessage> Post(string tenant, CreateCustomerCommand command)
         {
