@@ -102,14 +102,26 @@ public sealed class TenantGrpcTests
             case MethodType.ClientStreaming:
                 using (var call = client.AsyncClientStreamingCall(Bindings.Client, null, options))
                 {
-                    await call.RequestStream.WriteAsync("one", Ct); await call.RequestStream.CompleteAsync(); return [await call.ResponseAsync];
+                    var earlyClose = await Write(call.RequestStream);
+                    var response = await call.ResponseAsync; // 先核对最终状态/尾随元数据，不能把提前关闭写流当成服务端状态。
+                    if (earlyClose is not null) throw earlyClose;
+                    return [response];
                 }
             case MethodType.DuplexStreaming:
                 using (var call = client.AsyncDuplexStreamingCall(Bindings.Duplex, null, options))
                 {
-                    await call.RequestStream.WriteAsync("one", Ct); await call.RequestStream.CompleteAsync(); return await Read(call.ResponseStream);
+                    var earlyClose = await Write(call.RequestStream);
+                    var response = await Read(call.ResponseStream);
+                    if (earlyClose is not null) throw earlyClose;
+                    return response;
                 }
             default: throw new ArgumentOutOfRangeException(nameof(shape));
+        }
+        static async Task<RpcException?> Write(IClientStreamWriter<string> stream)
+        {
+            try { await stream.WriteAsync("one", Ct); await stream.CompleteAsync(); return null; }
+            catch (RpcException error) when (error.StatusCode == StatusCode.Cancelled && !Ct.IsCancellationRequested)
+            { return error; } // 仍须从响应读取权威结果；若响应成功，调用方继续抛出此写入错误。
         }
         static async Task<List<string>> Read(IAsyncStreamReader<string> stream)
         {
