@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <!--
-    Kun 版本单点（ADR-021 D21.3）：全部 Kun.* 的 PackageVersion 引用 $(KunVersion)，
+    Kun 版本单点（ADR-021 D21.3）：全部 Kun.* 的 PackageVersion 使用 [$(KunVersion)] 精确范围，缺包即失败，
     升级 Kun 只改这一处；文档站的「Kun 框架」小节与 Kun API 参考按它镜像 kun 仓库 tag v$(KunVersion)（docs-site.md §2b）。
   -->
   <PropertyGroup Label="Kun">
-    <KunVersion>2026.10.12</KunVersion>
+    <KunVersion>2026.10.12-hotfix.2</KunVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Gates">
@@ -21,32 +21,32 @@
   </ItemGroup>
 
   <ItemGroup Label="Runtime">
-    <PackageVersion Include="Kun.Configuration" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Configuration.Apollo" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Configuration" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Configuration.Apollo" Version="[$(KunVersion)]" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.KeyPerFile" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="10.0.12" />
-    <PackageVersion Include="Kun.Authorization" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.AspNetCore" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Core" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Mediator" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.EventBus" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Validation" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Identity" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Security" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Gateway" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Infrastructure" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Storage" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.Storage.Abstractions" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.Authorization" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.AspNetCore" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Core" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Mediator" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.EventBus" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Validation" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Identity" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Security" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Gateway" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Infrastructure" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Storage" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Storage.Abstractions" Version="[$(KunVersion)]" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup Label="Data">
-    <PackageVersion Include="Kun.EntityFrameworkCore" Version="$(KunVersion)" />
-    <PackageVersion Include="Kun.MultiTenancy.EntityFrameworkCore" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.EntityFrameworkCore" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.MultiTenancy.EntityFrameworkCore" Version="[$(KunVersion)]" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />

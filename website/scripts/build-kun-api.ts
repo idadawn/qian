@@ -53,6 +53,19 @@ export interface DocfxOutput {
   warnings: number;
 }
 
+/** 生成标签对应的 API 前，确认实际包解析结果，拒绝版本回退或本地项目替代。 */
+export function verifyKunPackageVersions(version: string, packages: readonly string[], libraries: unknown): void {
+  if (!libraries || typeof libraries !== 'object' || Array.isArray(libraries)) throw new Error('Kun API 还原结果缺少包目录');
+  const entries = Object.entries(libraries);
+  for (const name of packages) {
+    const matches = entries.filter(([key]) => key.slice(0, key.lastIndexOf('/')).toLowerCase() === name.toLowerCase());
+    if (matches.length !== 1 || matches[0]![0].slice(matches[0]![0].lastIndexOf('/') + 1) !== version ||
+      !matches[0]![1] || typeof matches[0]![1] !== 'object' || (matches[0]![1] as { type?: string }).type !== 'package') {
+      throw new Error(`Kun API 的 ${name} 未按锁定版本 ${version} 还原，拒绝生成错误版本的参考文档`);
+    }
+  }
+}
+
 /**
  * 在 workDir 里还原全部 Kun.* 包并跑 docfx metadata。workDir 放了空的 Directory.Build.* 与关掉中央包管理的
  * Directory.Packages.props，隔开仓库根的 .NET 构建基线；NuGet.config 与 global.json 仍用仓库根的。
@@ -67,7 +80,7 @@ export function runDocfx(version: string, packages: readonly string[], workDir: 
     'Directory.Packages.props',
     '<Project>\n  <PropertyGroup>\n    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>\n  </PropertyGroup>\n</Project>\n',
   );
-  const refs = packages.map((p) => `    <PackageReference Include="${p}" Version="${version}" />`).join('\n');
+  const refs = packages.map((p) => `    <PackageReference Include="${p}" Version="[${version}]" />`).join('\n');
   write(
     'KunApi.csproj',
     `<Project Sdk="Microsoft.NET.Sdk">
@@ -84,6 +97,8 @@ ${refs}
 `,
   );
   run('dotnet', ['build', 'KunApi.csproj', '-c', 'Release', '-o', 'out', '--nologo', '-v', 'q'], workDir);
+  const restored = JSON.parse(fs.readFileSync(path.join(workDir, 'obj', 'project.assets.json'), 'utf8')) as { libraries?: unknown };
+  verifyKunPackageVersions(version, packages, restored.libraries);
   run('dotnet', ['tool', 'restore'], WEBSITE_ROOT);
   write(
     'docfx.json',

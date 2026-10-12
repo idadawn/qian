@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { apiReferenceFiles, convertDocfx, docfxAnchor, htmlToMarkdown, kunPackages, parseDocfxPages, type DocfxOutput } from './build-kun-api.ts';
+import { apiReferenceFiles, convertDocfx, docfxAnchor, htmlToMarkdown, kunPackages, parseDocfxPages, verifyKunPackageVersions, type DocfxOutput } from './build-kun-api.ts';
 import { checkKunPages } from './check-site.ts';
 import type { KunCheckout } from './kun.ts';
 import { splitFrontmatter } from './repo.ts';
@@ -80,6 +80,13 @@ const output: DocfxOutput = {
 };
 
 describe('Kun API 参考', () => {
+  it('实际还原必须是锁定版本的包，不能用更高排序的旧日版或项目引用生成新标签文档', () => {
+    const version = '2026.10.12-hotfix.2';
+    assert.doesNotThrow(() => verifyKunPackageVersions(version, ['Kun.Core'], { [`kun.core/${version}`]: { type: 'package' } }));
+    for (const libraries of [{ 'Kun.Core/2026.10.12': { type: 'package' } }, { [`Kun.Core/${version}`]: { type: 'project' } }, {}, undefined]) {
+      assert.throws(() => verifyKunPackageVersions(version, ['Kun.Core'], libraries));
+    }
+  });
   it('包清单取 tag 上 src/<名>/<名>.csproj', () => {
     assert.deepEqual(
       kunPackages(['src/Kun.Core/Kun.Core.csproj', 'src/Kun.Core/README.md', 'src/Kun.Mediator/Kun.Mediator.csproj', 'tests/Kun.Core.Tests/Kun.Core.Tests.csproj', 'src/x/y.csproj']),
