@@ -32,6 +32,35 @@ internal sealed class RegistryScopeReconciler(
         finally { _gate.Release(); }
     }
 
+    internal async ValueTask<IReadOnlyList<RegistryScopeEntry>> ReadAsync(string tenantId, ScopeKey scope, ServiceKey key, CancellationToken ct)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (scope.Kind != "tenant" || scope.Id != tenantId) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+            if (!_scopes.TryGetValue(scope, out var state)) _scopes.Add(scope, state = new ScopeState(tenantId, scope));
+            if (state.TenantId != tenantId) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+            // 与装载保持同一锁，不能在坏配置撤销局部条目的中途读到旧绑定。
+            try { await Refresh(state, linked.Token).ConfigureAwait(false); }
+            catch (Exception error) when (state.Blocked && !linked.IsCancellationRequested && error is QianErrorException or InvalidOperationException) { return []; }
+            linked.Token.ThrowIfCancellationRequested();
+            if (state.Blocked) return [];
+            var live = runtime.DumpConfig().ToDictionary(entry => (entry.Scope, entry.Id));
+            var result = new List<RegistryScopeEntry>();
+            foreach (var registration in owner.Scoped(scope).List(key))
+            {
+                if (!live.TryGetValue((registration.Scope, registration.OwnerEntryId), out var entry)) continue;
+                try { if (runtime.GetState(entry.Id, entry.Scope) != PluginState.Ready) continue; }
+                catch (InvalidOperationException) { continue; } // 宿主可能在两个快照之间撤销全局节点。
+                result.Add(new RegistryScopeEntry(entry.Id, entry.Plugin, entry.Version, entry.Scope, registration.Key, registration.Name));
+            }
+            return result.AsReadOnly();
+        }
+        finally { _gate.Release(); }
+    }
+
     internal async ValueTask RefreshAllAsync(CancellationToken ct)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);

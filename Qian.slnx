@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/packages/">
+    <Project Path="packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" />
     <Project Path="packages/Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
     <Project Path="packages/Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" />
     <Project Path="packages/Qian.Audit/Qian.Audit.csproj" />

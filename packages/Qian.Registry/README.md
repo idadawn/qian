@@ -70,3 +70,9 @@ await runtime.DisposeAsync();
 ## 未完成门禁
 
 S1-RT-004 仍为 doing：制品验签/发布与修订目录、完整安装准入、真实权限/权益检查、App/会话归属、管理 scope 视图与 404/403 隐藏语义、`/api/kernel/*` 兼容别名均需继续实现与验收。`plugins/qian.registry` 的骨架标记保留。完整任务验收不因这层持久化可用而提前勾选。
+
+## 面向业务入口的 scope 视图
+
+GetScopeEntriesAsync 接受已验证租户的 scope 和服务键，在与重合入相同的串行锁中读取数据库层、完成真实装载，再从 Runtime 的遮蔽/restrict 后注册快照返回已安装且 Ready 的绑定。返回仅含条目、组件、版本、scope、服务键及贡献名，不包含配置或服务对象；坏配置阻断的 scope 返回空视图，管理诊断保留在管理路径。查询另一租户或未经归属验证的 app/session 被拒绝。
+
+GetInstalledComponents 仍是可信安装声明集合：预装未挂载、或已被租户停用的组件可以保留其中，不能据此放行业务入口。SDK HTTP 门禁已用真实 Kestrel、S2S 验签、受限 PG 和运行时验证禁用/未知同为 404、租户 B 不受影响、restrict 交集及中间件漏装/错序不能执行 handler。此证据不关闭完整 platform、权限管理或提示词/能力三处过滤验收。

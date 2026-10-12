@@ -1,6 +1,6 @@
 # Qian.Plugin.Sdk
 
-本模块是 S1-RT-014 的 SDK 与源生成器入口。开发者规格为组件模型 §3、§5 及 PRD §7.2.3；组件库只依赖 Runtime、SDK 与 Definition，SDK 自身不引用 Provider。当前交付代码声明、源生成能力契约、唯一清单校验，以及已在真实 CRM 命令中使用的 Mediator/事务/waterfall 管道；完整默认装配和发布安装仍在实现。
+本模块是 S1-RT-014 的 SDK 与源生成器入口。开发者规格为组件模型 §3、§5 及 PRD §7.2.3；组件库只依赖 Runtime、SDK 与 Definition，SDK 自身不引用 Provider。当前交付代码声明、源生成能力契约、唯一清单校验，以及已在真实 CRM 命令中使用的 Mediator/事务/waterfall 管道；完整默认装配、平台/App/会话入口和发布安装仍在实现。
 
 ## 代码契约
 
@@ -39,8 +39,16 @@ check 只读，并以文件路径及 JSON Pointer 报告漂移，发现差异返
 
 工具的校验使用已有 SurfaceValidator 和 ToolContractHash，不另写 Schema 或哈希规范。能力绑定的已知目录来自这次实际编译出的能力列表；验证文件有效不代表它已安装、已授权或已真实执行。
 
+## HTTP 插件可见性
+
+Qian.Plugin.Sdk.AspNetCore 提供 PluginEnabledMiddleware。宿主用 AddQianPluginEndpoints 登记真实 Registry 所在上下文，在路由、认证、可信租户边界之后安装 UseQianPluginEndpoints；Minimal API 用 RequireQianPlugin 绑定具体 entryId、componentId、服务键和贡献名，可选核对精确版本。绑定来自服务器装配，不从 URL、请求头或正文推导。
+
+中间件要求主身份的唯一 tenant_id 与 ITenantContext 相同，读取 GetScopeEntriesAsync 合入后的实际绑定视图。未挂载、被停用、遮蔽/restrict 隐藏和不存在统一为 NOT_FOUND；响应不携带管理原因、配置或服务对象。RequireQianPlugin 还登记 endpoint filter，漏装中间件或顺序错误时不会让 handler 绕过检查。租户中间件不接受伪造 X-Tenant-Id；此可见性检查不代替后续 Authz 权限检查。
+
+端点执行中解析实际服务时仍使用同一租户 scope。视图是只读快照，不是永久授权租约；调用方不能把它缓存成永久可调用资格。当前为有可信租户的 Minimal API；MVC 适配、平台 null 租户及 app/session lineage 仍需对应入口实现。
+
 ## 验证与剩余边界
 
 专项覆盖实际编译生成与 JsonTypeInfo、审计默认值、元数据副本、错误声明诊断、代码删除与重复能力、服务注册不可静态证明时拒绝、唯一清单同步/漂移以及手写文件和路径保护。真实 Data 程序集的 sync/check 已接入 CI；其 x-skeleton 继续保留，因为默认安全装配、私有 NuGet 锁步发布和实际 qian add 代码安装尚未通过。
 
-真实 CRM 已验证创建、同事务 Outbox/审计、错误回滚、幂等、并发租户与锁等待时卸载取消；列表与详情也通过同一真实管道，分别覆盖默认不审计和显式审计。查询会拒绝已跟踪的业务变更，且不开放 Outbox 写入端口。仍须完成：其余 SDK 注解与默认装配、完整 Registry scope 中间件、平台/应用/会话执行边界、包族正式私有发布和安装。这些局部真实验收不代替 QA-002 的完整平台验收。
+真实 CRM 已验证创建、同事务 Outbox/审计、错误回滚、幂等、并发租户与锁等待时卸载取消；列表与详情也通过同一真实管道，分别覆盖默认不审计和显式审计。查询会拒绝已跟踪的业务变更，且不开放 Outbox 写入端口。仍须完成：其余 SDK 注解与默认装配、平台/应用/会话执行边界、包族正式私有发布和安装。这些局部真实验收不代替 QA-002 的完整平台验收。

@@ -81,6 +81,16 @@ internal sealed class RegistryService : IRegistryService
         await _scopes.ActivateAsync(_tenant.TenantId, scope, cancellationToken).ConfigureAwait(false);
     }
 
+    public async ValueTask<IReadOnlyList<RegistryScopeEntry>> GetScopeEntriesAsync(ScopeKey scope, ServiceKey key, CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _lifetime.IsCancellationRequested || _listener is null) throw new ServiceNotReadyException();
+        if (!_tenant.IsMultiTenant || string.IsNullOrWhiteSpace(_tenant.TenantId)) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
+        if (scope.Kind != "tenant" || scope.Id != _tenant.TenantId) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+        ArgumentException.ThrowIfNullOrWhiteSpace(key.Name);
+        var entries = await _scopes.ReadAsync(_tenant.TenantId, scope, key, cancellationToken).ConfigureAwait(false);
+        return Array.AsReadOnly(entries.Where(entry => _installed.Any(component => component.PluginId == entry.PluginId && component.Version == entry.Version)).ToArray());
+    }
+
     internal void Cancel()
     {
         _lifetime.Cancel(); _listener?.Cancel(); _scopes.Cancel();

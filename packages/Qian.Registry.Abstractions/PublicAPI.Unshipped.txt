@@ -46,3 +46,26 @@ Qian.Registry.InstalledComponentMetadata.Metadata.get -> System.Collections.Gene
 Qian.Registry.InstalledComponentMetadata.PluginId.get -> string!
 Qian.Registry.InstalledComponentMetadata.Version.get -> string!
 override Qian.Registry.InstalledComponentMetadata.ToString() -> string!
+Qian.Registry.IRegistryService.GetScopeEntriesAsync(Qian.Runtime.ScopeKey scope, Qian.Runtime.ServiceKey key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryScopeEntry!>!>
+Qian.Registry.RegistryScopeEntry
+Qian.Registry.RegistryScopeEntry.<Clone>$() -> Qian.Registry.RegistryScopeEntry!
+Qian.Registry.RegistryScopeEntry.Deconstruct(out string! EntryId, out string! PluginId, out string! Version, out Qian.Runtime.ScopeKey Scope, out Qian.Runtime.ServiceKey Key, out string! Name) -> void
+Qian.Registry.RegistryScopeEntry.EntryId.get -> string!
+Qian.Registry.RegistryScopeEntry.EntryId.init -> void
+Qian.Registry.RegistryScopeEntry.Equals(Qian.Registry.RegistryScopeEntry? other) -> bool
+Qian.Registry.RegistryScopeEntry.Key.get -> Qian.Runtime.ServiceKey
+Qian.Registry.RegistryScopeEntry.Key.init -> void
+Qian.Registry.RegistryScopeEntry.Name.get -> string!
+Qian.Registry.RegistryScopeEntry.Name.init -> void
+Qian.Registry.RegistryScopeEntry.PluginId.get -> string!
+Qian.Registry.RegistryScopeEntry.PluginId.init -> void
+Qian.Registry.RegistryScopeEntry.RegistryScopeEntry(string! EntryId, string! PluginId, string! Version, Qian.Runtime.ScopeKey Scope, Qian.Runtime.ServiceKey Key, string! Name) -> void
+Qian.Registry.RegistryScopeEntry.Scope.get -> Qian.Runtime.ScopeKey
+Qian.Registry.RegistryScopeEntry.Scope.init -> void
+Qian.Registry.RegistryScopeEntry.Version.get -> string!
+Qian.Registry.RegistryScopeEntry.Version.init -> void
+override Qian.Registry.RegistryScopeEntry.Equals(object? obj) -> bool
+override Qian.Registry.RegistryScopeEntry.GetHashCode() -> int
+override Qian.Registry.RegistryScopeEntry.ToString() -> string!
+static Qian.Registry.RegistryScopeEntry.operator !=(Qian.Registry.RegistryScopeEntry? left, Qian.Registry.RegistryScopeEntry? right) -> bool
+static Qian.Registry.RegistryScopeEntry.operator ==(Qian.Registry.RegistryScopeEntry? left, Qian.Registry.RegistryScopeEntry? right) -> bool

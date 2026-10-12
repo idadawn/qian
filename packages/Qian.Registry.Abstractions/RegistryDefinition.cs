@@ -20,6 +20,8 @@ public interface IRegistryService : IAsyncDisposable
     ValueTask StartAsync(CancellationToken cancellationToken = default);
     /// <summary>合入当前已验证租户的 scope；当前只接受同租户 scope，应用/会话须另有归属证明。</summary>
     ValueTask SynchronizeAsync(ScopeKey scope, CancellationToken cancellationToken = default);
+    /// <summary>同步当前已验证租户的数据库 scope 后，读取已挂载且未被遮蔽/restrict 过滤的服务绑定；不可把预装清单作为此视图。</summary>
+    ValueTask<IReadOnlyList<RegistryScopeEntry>> GetScopeEntriesAsync(ScopeKey scope, ServiceKey key, CancellationToken cancellationToken = default);
     /// <summary>停止监听并撤销拥有的局部条目；宿主须在 Runtime.Dispose 之前、在 Apply/effect 之外调用。</summary>
     new ValueTask DisposeAsync();
 }
