@@ -9,8 +9,15 @@ using Qian.Runtime.Errors;
 namespace Qian.Audit;
 
 // 存储基础，不直接映射为公共写入 API；独立追加的原子性不等于 CRM 业务同事务。
-internal sealed class PostgresAuditStore(IDataService data, ITenantContext tenant)
+internal sealed class PostgresAuditStore(IDataService data, ITenantContext tenant) : PostgresAuditStore<AuditDbContext>(data, tenant);
+
+internal class PostgresAuditStore<TContext>(IDataService data, ITenantContext tenant, string? platformRole = null) where TContext : AuditDbContext
 {
+    internal async Task ValidateAsync(CancellationToken ct)
+    {
+        _ = Owner(); await using var session = await data.OpenAsync<TContext>(ct).ConfigureAwait(false);
+        await OpenAsync(session.Context, ct).ConfigureAwait(false);
+    }
     internal async Task<AuditChainEntry> AppendAsync(AuditRecord record, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(record); var owner = Owner();
@@ -28,12 +35,12 @@ internal sealed class PostgresAuditStore(IDataService data, ITenantContext tenan
             { throw Error(PlatformErrors.Conflict); }
         }
     }
-    private async Task<AuditChainEntry> AppendAttempt(AuditRecord record, string owner, CancellationToken ct)
+    private async Task<AuditChainEntry> AppendAttempt(AuditRecord record, string? owner, CancellationToken ct)
     {
         if (Owner() != owner) throw Error(PlatformErrors.AuthzDenied);
-        await using var session = await data.OpenAsync<AuditDbContext>(ct).ConfigureAwait(false);
-        var db = session.Context; var key = "tenant:" + owner;
-        await db.Database.OpenConnectionAsync(ct).ConfigureAwait(false);
+        await using var session = await data.OpenAsync<TContext>(ct).ConfigureAwait(false);
+        var db = session.Context; var key = ChainKey(owner);
+        await OpenAsync(db, ct).ConfigureAwait(false);
         // 先取得 session 锁，再开始 SERIALIZABLE 快照；避免等待行锁的旧快照在持续追加时饥饿。
         try
         {
@@ -84,17 +91,19 @@ internal sealed class PostgresAuditStore(IDataService data, ITenantContext tenan
     }
     internal async Task<IReadOnlyList<AuditChainEntry>> ReadAsync(long afterSequence, int take, string? onBehalfOf, CancellationToken ct)
     {
-        _ = Owner(); if (afterSequence < 0 || take is < 1 or > 1000) throw Error(PlatformErrors.InputInvalid);
-        await using var session = await data.OpenAsync<AuditDbContext>(ct).ConfigureAwait(false);
-        var query = session.Context.Entries.AsNoTracking().Where(row => row.Sequence > afterSequence);
+        var owner = Owner(); if (afterSequence < 0 || take is < 1 or > 1000) throw Error(PlatformErrors.InputInvalid);
+        await using var session = await data.OpenAsync<TContext>(ct).ConfigureAwait(false);
+        await OpenAsync(session.Context, ct).ConfigureAwait(false);
+        var query = session.Context.Entries.AsNoTracking().Where(row => row.ChainKey == ChainKey(owner) && row.Sequence > afterSequence);
         if (onBehalfOf is not null) query = query.Where(row => row.OnBehalfOf == onBehalfOf);
         return Array.AsReadOnly((await query.OrderBy(row => row.Sequence).Take(take).ToArrayAsync(ct).ConfigureAwait(false)).Select(ToEntry).ToArray());
     }
     internal async Task<AuditChainVerification> VerifyAsync(CancellationToken ct)
     {
-        var owner = Owner(); await using var session = await data.OpenAsync<AuditDbContext>(ct).ConfigureAwait(false); var db = session.Context;
+        var owner = Owner(); await using var session = await data.OpenAsync<TContext>(ct).ConfigureAwait(false); var db = session.Context;
+        await OpenAsync(db, ct).ConfigureAwait(false);
         await using var snapshot = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, ct).ConfigureAwait(false);
-        var tip = await db.Chains.AsNoTracking().SingleOrDefaultAsync(row => row.ChainKey == "tenant:" + owner, ct).ConfigureAwait(false);
+        var tip = await db.Chains.AsNoTracking().SingleOrDefaultAsync(row => row.ChainKey == ChainKey(owner), ct).ConfigureAwait(false);
         long sequence = 0; string? hash = null;
         while (true)
         {
@@ -103,7 +112,7 @@ internal sealed class PostgresAuditStore(IDataService data, ITenantContext tenan
             foreach (var row in rows)
             {
                 if (row.Sequence != sequence + 1) return new(false, sequence, sequence + 1, "sequence_gap");
-                if (row.PreviousHash != hash || row.ChainKey != "tenant:" + owner) return new(false, sequence, row.Sequence, "previous_mismatch");
+                if (row.PreviousHash != hash || row.ChainKey != ChainKey(owner)) return new(false, sequence, row.Sequence, "previous_mismatch");
                 try
                 {
                     if (AuditCanonicalizer.Hash(ToEntry(row).Record, row.Sequence, row.PreviousHash) != row.ContentHash)
@@ -117,9 +126,21 @@ internal sealed class PostgresAuditStore(IDataService data, ITenantContext tenan
         return (tip?.TipSequence ?? 0) == sequence && tip?.TipHash == hash
             ? new(true, sequence, null, null) : new(false, sequence, sequence + 1, "tip_mismatch");
     }
-    private string Owner()
+    private async Task OpenAsync(AuditDbContext db, CancellationToken ct)
+    {
+        await db.Database.OpenConnectionAsync(ct).ConfigureAwait(false);
+        if (platformRole is not null) await AuditPlatformAccess.ValidateConnectionAsync(db.Database.GetDbConnection(), platformRole, ct).ConfigureAwait(false);
+    }
+    private static string ChainKey(string? owner) => owner is null ? "platform" : "tenant:" + owner;
+    private string? Owner()
     {
         var owner = tenant.TenantId;
+        if (platformRole is not null)
+        {
+            if (typeof(TContext) != typeof(PlatformAuditDbContext) || owner is not null) throw Error(PlatformErrors.AuthzDenied);
+            return null;
+        }
+        if (typeof(TContext) == typeof(PlatformAuditDbContext)) throw Error(PlatformErrors.AuthzDenied);
         return Guid.TryParseExact(owner, "D", out var id) && id != Guid.Empty && owner == id.ToString("D") ? owner! : throw Error(PlatformErrors.Unauthenticated);
     }
     private static bool Retryable(PostgresException error) => error.SqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected;

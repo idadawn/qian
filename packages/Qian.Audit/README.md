@@ -1,10 +1,10 @@
 # Qian.Audit
 
-审计 Provider 的存储基础，当前对应 S1-AUD-001。权威设计为 ADR-009 与 PRD §7.11.1，Definition 位于 Qian.Audit.Abstractions。
+审计 Provider 与存储基础，当前对应 S1-AUD-001。权威设计为 ADR-009 与 PRD §7.11.1，Definition 位于 Qian.Audit.Abstractions。
 
 ## 组件与交付边界
 
-本目录包含确定性内容哈希、AuditDbContext 与内部 PostgreSQL 链存储。目标是在每个 .NET profile 中经 qian.audit 提供 Audit seam，并随 SDK 默认装配到实际能力执行链。当前尚未提供公共 IAuditWriter、运行时 waterfall 监听器或安装入口；plugins/qian.audit 保留骨架，不能以本次存储测试宣称 qian add audit、完整 platform 或 CRM 业务审计已经完成。
+本目录包含 AuditPlugin、确定性内容哈希、输入脱敏与 PostgreSQL 链存储。AuditPlugin 消费 Data 并提供 Audit 服务键，ctx.Audit() 返回 IAuditService（IAuditWriter + IAuditReader）。可挂在 global 或 tenant scope，默认兼容 chain.store: pg。目标是在每个 .NET profile 中随 SDK 装配到实际能力执行链；真实 waterfall 与安装入口仍待完成，因此 plugins/qian.audit 保留骨架，不能据此宣称 qian add audit、完整 platform 或 CRM 业务审计已经完成。
 
 ## 记录与内容哈希
 
@@ -24,14 +24,24 @@ sensitive 和 x-qian-sensitive 的 true 标记统一遮盖为固定字符串 [RE
 
 ## 存储与并发
 
-AuditDbContext 继承 QianDbContext，拥有 plugin_qian_audit schema。audit_entries 具有事件 ID、内容哈希、链与序号、链与前序的唯一约束。audit_chain_state 保存 tip_seq 和 tip_hash。租户列按 Data 强制过滤与 RLS 保护，受限应用角色执行在线 DML；平台 null 行虽可表示，当前普通入口一律拒绝无租户，不借 null 自动获得平台权限。
+AuditDbContext 继承 QianDbContext，拥有 plugin_qian_audit schema。audit_entries 具有事件 ID、内容哈希、链与序号、链与前序的唯一约束。audit_chain_state 保存 tip_seq 和 tip_hash。租户列按 Data 强制过滤与 RLS 保护，受限应用角色执行在线 DML。普通入口一律要求当前租户，记录的租户必须与上下文一致。平台 null 记录只通过下述独立入口访问，不以缺少租户自动切换模式。
 
 追加在取得租户 session advisory lock 后开启 SERIALIZABLE 事务，再写记录与推进链头。锁在快照创建前取得，避免排队事务持有旧快照而持续冲突；序列化或死锁错误有界重试。取消和失败都会释放锁；清理失败时清理对应连接池，避免复用可能仍持锁的连接。事件 ID 重试仅在完整内容一致时幂等，不同内容返回 CONFLICT；损坏链头不继续追加。
 
 分页读取和链验证是内部存储端口，尚未作为无授权查询 API 对外开放。验证用 REPEATABLE READ 快照和分批读取，避免并发追加产生误报；报告最早缺号、前序、内容或链头不一致的位置。补充 payload 与委托主体都参与哈希，修改历史值会被检测。
 
+## 受控平台链与生命周期
+
+平台链默认关闭。启用时，宿主先独立创建受限的 NOINHERIT LOGIN 角色，禁止 SUPERUSER、BYPASSRLS、CREATEDB、CREATEROLE、REPLICATION 和任何角色成员关系。凭据由宿主或 Secret 服务持有，不进入组件配置。迁移在普通 Audit 模型建表后，同一迁移事务中应用 AuditPlatformAccess.CreateMigrationSql(role)，只修改 Audit 自有两张表的策略和该角色授权。
+
+宿主用 AddQianData 分别绑定 AuditDbContext 的租户凭据与 PlatformAuditDbContext 的平台凭据，再在 global AuditPlugin 配置 chain.platformRole。启动验证两条连接不共用登录身份；每次平台调用检查当前角色、登录角色、角色属性及必要权限。平台角色只能读取/追加平台记录与推进链头，无权更新、删除或清空历史记录。RLS 同时检查 current_user、session_user 和空租户 GUC，因此普通角色借 SET ROLE 不能冒充平台登录，平台角色设置租户 GUC 也不能读写租户数据。
+
+AppendPlatformAsync、ReadPlatformAsync、VerifyPlatformAsync 是显式入口，另外要求传入仍有效的 global 生产方 IPluginContext，且该上下文解析到当前同一个 Audit 服务。tenant 生产方即使重新 Scoped 到 global 也被拒绝；存在租户上下文时拒绝平台操作。此生产方许可只用于记录/读取审计，不能替代 Authz 对实际业务操作的授权。端口供可信组件使用，不提供客户端直接写审计的 HTTP 能力；面向用户的读取须另行鉴权并审计。
+
+服务卸载先拒绝新调用、取消并排空进行中的数据库调用，再撤销错误码。等待数据库锁的追加也会取消并释放连接；旧缓存句柄在卸载后失效，重装取得新服务。tenant scope 的服务额外检查调用上下文与其挂载租户一致。
+
 ## 验证与剩余任务
 
 真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。测试通过并不意味着参考应用同事务要求已经完成：当前内部 AppendAsync 的独立事务只包含审计记录与链头，后续必须与真正的 CRM 业务事务、Outbox 及能力生命周期连接，不能把独立追加成功当成业务回滚验证。
 
-尚未完成：受保护平台链、真实能力/属性对脱敏策略的消费、真实 Mediator 与 waterfall 装配、卸载撤销、CRM 同事务、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。
+尚未完成：真实能力/属性对脱敏策略的消费、真实 Mediator 与 waterfall 装配、卸载撤销、CRM 同事务、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。

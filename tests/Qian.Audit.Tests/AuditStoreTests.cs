@@ -14,7 +14,7 @@ using Qian.Testing.Containers;
 
 namespace Qian.Audit.Tests;
 
-public sealed class AuditStoreTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
+public sealed partial class AuditStoreTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
     private const string A = "01900000-0000-7000-8000-000000000001";

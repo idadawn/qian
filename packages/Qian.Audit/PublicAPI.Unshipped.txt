@@ -11,3 +11,13 @@ Qian.Audit.AuditInputPolicy.InputHash(System.Text.Json.JsonElement input) -> str
 Qian.Audit.AuditInputPolicy.Redact(System.Text.Json.JsonElement input) -> System.Text.Json.JsonElement
 Qian.Audit.AuditInputPolicy.ShouldRecord.get -> bool
 const Qian.Audit.AuditInputPolicy.Redacted = "[REDACTED]" -> string!
+Qian.Audit.AuditDbContext.AuditDbContext(Microsoft.EntityFrameworkCore.DbContextOptions! options, Kun.Core.MultiTenancy.ITenantContext! tenant, bool platform) -> void
+Qian.Audit.AuditPlatformAccess
+Qian.Audit.AuditPlugin
+Qian.Audit.AuditPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Audit.AuditPlugin.AuditPlugin() -> void
+Qian.Audit.AuditPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Audit.PlatformAuditDbContext
+Qian.Audit.PlatformAuditDbContext.PlatformAuditDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Audit.PlatformAuditDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+override Qian.Audit.AuditDbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> void
+static Qian.Audit.AuditPlatformAccess.CreateMigrationSql(string! platformRole) -> string!
