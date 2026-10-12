@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Qian.Data;
 using Qian.Profiles;
@@ -255,6 +257,90 @@ public sealed class PatchPersistenceTests(PostgresFixture postgres) : IClassFixt
             }
             catch (QianErrorException error) { return error.Error.Code.Code; }
         }
+    }
+
+    [Fact]
+    public async Task 独立宿主监听真实通知_断线重新读库_不继承请求租户且释放后停止()
+    {
+        var writerTenant = new AsyncLocalTenantContext(); var readerTenant = new AsyncLocalTenantContext();
+        using var writerHost = Host(writerTenant); using var readerHost = Host(readerTenant);
+        await writerHost.StartAsync(Ct); await readerHost.StartAsync(Ct); await Prepare(writerHost);
+        var repository = Repository(writerHost, writerTenant); var reader = Repository(readerHost, readerTenant);
+        var updates = System.Threading.Channels.Channel.CreateUnbounded<int>();
+        var inheritedTenant = false; var calls = 0;
+        using var startupRequest = readerTenant.BeginScope("b");
+        await using var listener = await PostgresPatchListener.StartAsync(readerHost.Services.GetRequiredService<IDataService>(), readerTenant, async ct =>
+        {
+            if (readerTenant.TenantId is not null) inheritedTenant = true;
+            using var scope = readerTenant.BeginScope("a");
+            var rows = await reader.ListAsync(TenantA, ct); Interlocked.Increment(ref calls);
+            await updates.Writer.WriteAsync(rows.SingleOrDefault()?.Revision ?? 0, ct);
+        }, NullLogger.Instance, Ct);
+        Assert.Equal("b", readerTenant.TenantId); Assert.False(inheritedTenant);
+        using var current = writerTenant.BeginScope("a");
+        await repository.PutAsync(TenantA, "files", Patch("""{"id":"files","config":{}}"""), 0, "actor", Ct);
+        await Observed(1);
+        var disconnected = listener.BackendProcessId; Assert.True(disconnected > 0);
+        await using (var admin = new NpgsqlConnection(postgres.ConnectionString))
+        {
+            await admin.OpenAsync(Ct);
+            await using var terminate = new NpgsqlCommand("SELECT pg_terminate_backend(@id)", admin);
+            terminate.Parameters.AddWithValue("id", disconnected); Assert.Equal(true, await terminate.ExecuteScalarAsync(Ct));
+        }
+        await repository.PutAsync(TenantA, "files", Patch("""{"id":"files","config":{"value":2}}"""), 1, "actor", Ct);
+        await Observed(2); Assert.True(listener.BackendProcessId > 0); Assert.NotEqual(disconnected, listener.BackendProcessId); Assert.False(inheritedTenant);
+        await repository.RemoveAsync(TenantA, "files", 2, "actor", Ct); await Observed(0);
+        await listener.DisposeAsync(); Assert.Equal(0, listener.BackendProcessId);
+        var stoppedCalls = Volatile.Read(ref calls);
+        await repository.PutAsync(TenantA, "files", Patch("""{"id":"files","config":{}}"""), 0, "actor", Ct);
+        await Task.Delay(150, Ct); Assert.Equal(stoppedCalls, Volatile.Read(ref calls));
+
+        async Task Observed(int revision)
+        {
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(Ct); deadline.CancelAfter(TimeSpan.FromSeconds(5));
+            while (await updates.Reader.ReadAsync(deadline.Token) != revision) { }
+        }
+    }
+
+    [Fact]
+    public async Task 监听器前置上下文不支持作用域时立即失败_不无限等待就绪()
+    {
+        var tenant = new UnsupportedTenantContext();
+        using var host = Host(tenant); await host.StartAsync(Ct);
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(Ct); deadline.CancelAfter(TimeSpan.FromSeconds(3));
+        await Assert.ThrowsAsync<NotSupportedException>(() => PostgresPatchListener.StartAsync(
+            host.Services.GetRequiredService<IDataService>(), tenant, _ => ValueTask.CompletedTask, NullLogger.Instance, deadline.Token));
+    }
+
+    [Fact]
+    public async Task 重新读取失败会重试_日志不包含底层异常中的配置原文()
+    {
+        var tenant = new AsyncLocalTenantContext();
+        using var host = Host(tenant); await host.StartAsync(Ct);
+        var logs = new RecordingLogger(); var recovered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); var calls = 0;
+        await using var listener = await PostgresPatchListener.StartAsync(host.Services.GetRequiredService<IDataService>(), tenant, _ =>
+        {
+            if (Interlocked.Increment(ref calls) == 1) throw new InvalidOperationException("DO-NOT-LEAK-CONNECTION-OR-CONFIG");
+            recovered.TrySetResult(); return ValueTask.CompletedTask;
+        }, logs, Ct);
+        await recovered.Task.WaitAsync(TimeSpan.FromSeconds(5), Ct);
+        Assert.Contains(logs.Messages, message => message.Contains("InvalidOperationException", StringComparison.Ordinal));
+        Assert.All(logs.Messages, message => Assert.DoesNotContain("DO-NOT-LEAK", message, StringComparison.Ordinal));
+    }
+
+    private sealed class RecordingLogger : ILogger
+    {
+        internal System.Collections.Concurrent.ConcurrentQueue<string> Messages { get; } = new();
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => Messages.Enqueue(formatter(state, exception));
+    }
+
+    private sealed class UnsupportedTenantContext : ITenantContext
+    {
+        public bool IsMultiTenant => true;
+        public string? TenantId => null;
     }
 
     private sealed class ScopeLockContention : DbCommandInterceptor
