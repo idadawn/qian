@@ -10,3 +10,6 @@ Qian.Capabilities.OpenApiContractPlugin
 Qian.Capabilities.OpenApiContractPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Qian.Capabilities.OpenApiContractPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
 Qian.Capabilities.OpenApiContractPlugin.OpenApiContractPlugin(Qian.Runtime.IQianPlugin! inner, Qian.Capabilities.IOpenApiCompatibilityProbe! probe, string! contractId, System.Text.Json.JsonElement baseline, System.Text.Json.JsonElement candidate) -> void
+Qian.Capabilities.CapabilityContractCompiler
+static Qian.Capabilities.CapabilityContractCompiler.CreateOpenApi(System.Collections.Generic.IReadOnlyList<Qian.Plugin.Sdk.CapabilityContract!>! contracts, Qian.Surfaces.Abstractions.ISurfaceReader! schemas, Qian.Surfaces.Abstractions.IToolContractHasher! hasher) -> System.Text.Json.JsonElement
+static Qian.Capabilities.OpenApiContractPlugin.FromRepository(Qian.Runtime.IQianPlugin! inner, Qian.Capabilities.IContractRepository! repository, string! pluginId, string! baselineVersion, string! candidateVersion, string! contractId) -> Qian.Capabilities.OpenApiContractPlugin!

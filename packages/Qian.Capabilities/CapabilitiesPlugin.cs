@@ -23,6 +23,9 @@ public sealed class CapabilitiesPlugin : IQianPlugin
             throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
         var service = new CapabilityService(ctx.Registry(), ctx.Services.GetRequiredService<IPermissionChecker>(),
             ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetRequiredService<IToolContractHasher>());
+        var contracts = new InstalledContractRepository(ctx.Registry().GetInstalledComponents(), ctx.Services.GetService<IOpenApiCompatibilityProbe>(), ctx.Services.GetRequiredService<ISurfaceReader>());
+        ctx.Effect(contracts.Dispose);
+        ctx.Provide<IContractRepository>(CapabilitiesDefinition.ContractsKey, contracts);
         ctx.Effect(service.Dispose);
         ctx.Provide<ICapabilityService>(CapabilitiesDefinition.Key, service);
         return ValueTask.CompletedTask;

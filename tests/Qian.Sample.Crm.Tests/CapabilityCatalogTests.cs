@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text;
+using System.Globalization;
+using System.Security.Cryptography;
 using Json.Schema;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Extensions;
@@ -180,19 +183,15 @@ public sealed partial class CustomerCommandTests
     public async Task 真实契约检查先于业务Apply_不兼容组件挂载失败且兼容修订能实际执行()
     {
         await using var host = await Start(capabilities: true);
-        using var document = await CatalogRequest(host, A, "/api/capabilities/openapi.json");
-        var baseline = await document.Content.ReadFromJsonAsync<JsonElement>(Ct);
-        Assert.Equal(3, baseline.GetProperty("paths").EnumerateObject().Count());
-        // 本用例拥有全部三项权限并已核对完整目录；生产装配须使用未经过用户过滤的已发布基线。
-        var candidate = System.Text.Json.Nodes.JsonNode.Parse(baseline.GetRawText())!;
-        candidate["paths"] = new System.Text.Json.Nodes.JsonObject();
-        var probe = new OasDiffOpenApiProbe(Environment.GetEnvironmentVariable("QIAN_OASDIFF_PATH")
-            ?? throw new InvalidOperationException("契约检查器必须预装。"));
         var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        var repository = runtime.GetContext("capabilities", ScopeKey.Global).Contracts();
+        Assert.Single(repository.GetContracts("qian.sample.crm", "0.9.0"));
+        Assert.Single(repository.GetContracts("qian.sample.crm", "1.0.0"));
+        Assert.Single(repository.GetContracts("qian.sample.crm", "1.1.0"));
         var entry = runtime.DumpConfig().Single(item => item.Id == "crm");
         await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
-        await runtime.MountAsync([new PluginDefinition(entry,
-            new OpenApiContractPlugin(new CrmPlugin(), probe, "qian.sample.crm.api/v1", baseline, JsonSerializer.SerializeToElement(candidate)),
+        await runtime.MountAsync([new PluginDefinition(entry with { Version = "1.1.0" },
+            OpenApiContractPlugin.FromRepository(new CrmPlugin(), repository, "qian.sample.crm", "0.9.0", "1.1.0", "qian.sample.crm.api/v1"),
             [CrmDefinition.Key])], Ct);
         Assert.Equal(PluginState.Failed, runtime.GetState("crm", ScopeKey.Global));
         var failure = Assert.IsType<Qian.Runtime.Errors.QianErrorException>(runtime.GetFailure("crm", ScopeKey.Global));
@@ -200,7 +199,7 @@ public sealed partial class CustomerCommandTests
         await AssertAbsent(host, A);
         await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
         await runtime.MountAsync([new PluginDefinition(entry,
-            new OpenApiContractPlugin(new CrmPlugin(), probe, "qian.sample.crm.api/v1", baseline, baseline),
+            OpenApiContractPlugin.FromRepository(new CrmPlugin(), repository, "qian.sample.crm", "0.9.0", "1.0.0", "qian.sample.crm.api/v1"),
             [CrmDefinition.Key])], Ct);
         Assert.True(runtime.GetState("crm", ScopeKey.Global) == PluginState.Ready, runtime.GetFailure("crm", ScopeKey.Global)?.ToString());
         using var created = await Invoke(host, A);
@@ -234,6 +233,8 @@ public sealed partial class CustomerCommandTests
         builder.Services.AddQianData<RegistryDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(RegistryDbContext.Schema));
         builder.Services.AddSingleton<ISurfaceReader, SurfaceValidator>();
         builder.Services.AddSingleton<IToolContractHasher, ToolContractHasher>();
+        builder.Services.AddSingleton<IOpenApiCompatibilityProbe>(_ => new OasDiffOpenApiProbe(Environment.GetEnvironmentVariable("QIAN_OASDIFF_PATH")
+            ?? throw new InvalidOperationException("契约检查器必须预装。")));
     }
     private static IPluginContext CapabilitySource(HttpContext http)
     {
@@ -282,21 +283,52 @@ public sealed partial class CustomerCommandTests
                 entry.Scope == "global" ? ScopeKey.Global : new ScopeKey(entry.Scope.Split(':', 2)[0], entry.Scope.Split(':', 2)[1]), entry.Layer, entry.Config) }
         });
         Add("registry", "qian.registry", registry, [RegistryDefinition.Key]);
-        Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key]);
+        Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey]);
         Write("profiles/platform/qian.profile.yml", """{"name":"platform","bundles":[],"patch":"./qian.patch.yml","hmr":{"surfaces":true,"code":false},"build":{"aot":false},"hooks":{"allowCommand":false}}""");
         Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin, config = new { } })));
+        var fullContract = CapabilityContractCompiler.CreateOpenApi(
+            [CreateCustomerCommand.QianCapability, ListCustomersQuery.QianCapability, GetCustomerQuery.QianCapability], validator, new ToolContractHasher());
+        Write("plugins/crm/metadata/contracts.json", JsonSerializer.Serialize(new[]
+            { new { id = "qian.sample.crm.api/v1", kind = "openapi", path = "./contracts/http-v1.openapi.json" } }));
+        Write("plugins/crm/contracts/http-v1.openapi.json", fullContract.GetRawText());
         foreach (var definition in definitions.Values)
         {
             var validation = validator.ValidateComponent(Path.Combine(directory, "plugins", definition.Entry.Id),
                 new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
             Assert.True(validation.IsValid, definition.Entry.Id + ": " + JsonSerializer.Serialize(validation.Diagnostics));
-            installed.Add(new RegistryComponentBinding(definition, validation));
+            var binding = BindArtifact(definition, Path.Combine(directory, "plugins", definition.Entry.Id));
+            installed.Add(binding);
+            if (definition.Entry.Id == "crm")
+            {
+                installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "0.9.0" } }, Path.Combine(directory, "plugins", "crm")));
+                installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "1.1.0" } }, Path.Combine(directory, "plugins", "crm"), incompatible: true));
+            }
         }
         await loader.MountAsync([definitions["registry"], definitions["capabilities"]], Ct);
         Assert.Equal(PluginState.Ready, loader.GetState("registry", ScopeKey.Global));
         Assert.Equal(PluginState.Ready, loader.GetState("capabilities", ScopeKey.Global));
         await loader.GetContext("registry", ScopeKey.Global).Registry().StartAsync(Ct);
         return;
+
+        RegistryComponentBinding BindArtifact(PluginDefinition definition, string source, bool incompatible = false)
+        {
+            var files = Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories).ToDictionary(
+                file => Path.GetRelativePath(source, file).Replace(Path.DirectorySeparatorChar, '/'),
+                file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
+            var manifest = System.Text.Json.Nodes.JsonNode.Parse(files[".qian-plugin/plugin.json"].Span)!;
+            manifest["version"] = definition.Entry.Version;
+            files[".qian-plugin/plugin.json"] = Encoding.UTF8.GetBytes(manifest.ToJsonString());
+            if (incompatible)
+            {
+                var document = System.Text.Json.Nodes.JsonNode.Parse(files["contracts/http-v1.openapi.json"].Span)!;
+                document["paths"] = new System.Text.Json.Nodes.JsonObject();
+                files["contracts/http-v1.openapi.json"] = Encoding.UTF8.GetBytes(document.ToJsonString());
+            }
+            var inventory = string.Concat(files.OrderBy(file => file.Key, StringComparer.Ordinal).Select(file => file.Key + "\t" + file.Value.Length.ToString(CultureInfo.InvariantCulture) + "\t" + Convert.ToHexStringLower(SHA256.HashData(file.Value.Span)) + "\n"));
+            var digest = "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(inventory)));
+            return RegistryComponentBinding.FromArtifact(definition, files, digest, validator,
+                new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
+        }
 
         void Add(string id, string component, IQianPlugin plugin, ServiceKey[] provides)
         {

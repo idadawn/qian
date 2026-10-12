@@ -28,3 +28,19 @@ override Qian.Capabilities.ContractCompatibility.GetHashCode() -> int
 override Qian.Capabilities.ContractCompatibility.ToString() -> string!
 static Qian.Capabilities.ContractCompatibility.operator !=(Qian.Capabilities.ContractCompatibility? left, Qian.Capabilities.ContractCompatibility? right) -> bool
 static Qian.Capabilities.ContractCompatibility.operator ==(Qian.Capabilities.ContractCompatibility? left, Qian.Capabilities.ContractCompatibility? right) -> bool
+Qian.Capabilities.ContractDocument
+Qian.Capabilities.ContractDocument.ArtifactDigest.get -> string!
+Qian.Capabilities.ContractDocument.ContractDocument(string! pluginId, string! pluginVersion, string! id, string! kind, string! path, string! artifactDigest, System.ReadOnlyMemory<byte> content) -> void
+Qian.Capabilities.ContractDocument.Id.get -> string!
+Qian.Capabilities.ContractDocument.Kind.get -> string!
+Qian.Capabilities.ContractDocument.Path.get -> string!
+Qian.Capabilities.ContractDocument.PluginId.get -> string!
+Qian.Capabilities.ContractDocument.PluginVersion.get -> string!
+Qian.Capabilities.ContractDocument.ReadContent() -> byte[]!
+Qian.Capabilities.ContractDocument.Sha256.get -> string!
+Qian.Capabilities.IContractRepository
+Qian.Capabilities.IContractRepository.CheckOpenApiAsync(string! pluginId, string! baselineVersion, string! candidateVersion, string! contractId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.IContractRepository.Find(string! pluginId, string! version, string! contractId) -> Qian.Capabilities.ContractDocument?
+Qian.Capabilities.IContractRepository.GetContracts(string! pluginId, string! version) -> System.Collections.Generic.IReadOnlyList<Qian.Capabilities.ContractDocument!>!
+static Qian.Capabilities.CapabilitiesDefinition.Contracts(this Qian.Runtime.IPluginContext! context) -> Qian.Capabilities.IContractRepository!
+static readonly Qian.Capabilities.CapabilitiesDefinition.ContractsKey -> Qian.Runtime.ServiceKey

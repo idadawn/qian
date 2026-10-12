@@ -27,7 +27,7 @@
 
 `tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证契约、别名、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结，并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。
 
-当前 OpenAPI 聚合覆盖 SDK 真实能力的调用入口，其他组件声明的 HTTP/gRPC 契约仍需接入版本化契约仓库。RT-006 的完整契约仓库、扩展点、菜单贡献及偏好仍未完成。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
+当前 OpenAPI 聚合覆盖 SDK 真实能力的调用入口，其他组件声明的 HTTP/gRPC 契约仍需接入版本化契约仓库。RT-006 的协议探测与完整发布准入、菜单贡献及偏好仍未完成。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
 
 ## 契约兼容检查
 
@@ -35,8 +35,26 @@
 
 探测对基线和候选文档先做 OpenAPI 3.1 解析，再运行固定参数的兼容检查。外部 `$ref` 明确禁用；不调用 shell，不继承环境配置，使用独立空配置、受限输出和 30 秒超时。取消会终止子进程，临时契约文件在退出后删除。检测失败、版本不符和报告异常都抛错，不能视为兼容。
 
-`OpenApiContractPlugin` 是平台装配器使用的普通包装，保持原业务插件依赖，在其 Apply 之前探测带 `/vN` 的同组件命名空间契约；破坏性变更导致挂载 Failed，业务注册不会公开。它不修改 Runtime，也不是调用者可绕过的请求参数。生产装配必须从已验证的版本化制品取得完整基线与候选，不能使用当前用户权限过滤后的 OpenAPI 返回值。注册表/发布准入的完整制品接线仍未完成，当前宿主需显式采用此包装。
+`OpenApiContractPlugin` 是平台装配器使用的普通包装，保持原业务插件依赖，在其 Apply 之前探测带 `/vN` 的同组件命名空间契约；破坏性变更导致挂载 Failed，业务注册不会公开。它不修改 Runtime，也不是调用者可绕过的请求参数。生产装配必须从已验证的版本化制品取得完整基线与候选，不能使用当前用户权限过滤后的 OpenAPI 返回值。宿主可用 FromRepository 选择已捕获的精确版本契约，候选版本必须与实际装载条目一致。完整在线注册表/发布准入仍未完成，当前宿主需显式采用此包装。
 
 测试通过 `QIAN_OASDIFF_PATH` 指向实际锁定工具；CI 会先校验下载，缺失工具不会跳过测试。相关测试覆盖说明与兼容响应扩展、输入类型破坏、路径删除、外部引用拒绝，以及真实客户组件挂载被拒/兼容恢复后实际执行。
 
 OpenAPI 文档格式按 [OpenAPI 3.1.1 规范](https://spec.openapis.org/oas/v3.1.1.html) 生成，使用 Microsoft.OpenApi 3.10.2 解析验证。平台发行镜像携带工具及完整契约制品的验收尚未完成。
+
+## 版本化契约仓库
+
+Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContractRepository`）。仓库只读取实际 Registry 预装集合中由 `FromArtifact` 核验并捕获的文件。组件的 metadata 表面以 `contracts.json` 声明契约索引；索引引用原有文件，不形成第二份插件清单：
+
+```json
+[
+  { "id": "qian.sample.crm.api/v1", "kind": "openapi", "path": "./contracts/http-v1.openapi.json" },
+  { "id": "qian.sample.crm.wire/v1", "kind": "proto", "path": "./contracts/customer-v1.proto" },
+  { "id": "qian.sample.crm.item/v1", "kind": "json-schema", "path": "./schemas/customer-v1.schema.json" }
+]
+```
+
+契约 ID 必须属于本组件命名空间并带 `/vN`；文件必须在同一制品内，不能越界、缺失或重复声明同一 ID。OpenAPI 支持共用读取器的 JSON/YAML 语法并验证 3.1 文档；JSON Schema 使用 2020-12 元 Schema 校验；proto 当前保存原始 UTF-8 源码，保存本身不代表协议编译、descriptor 比较或远程反射探测通过。
+
+按组件 ID、精确制品版本和契约 ID 查询，返回原始内容的副本、文件 SHA-256 与制品目录摘要。仓库不按业务用户裁剪契约，也没有匿名 HTTP 读取入口；卸载后旧服务引用失效，在途兼容检查会取消。`CheckOpenApiAsync` 只比较两个完整版本制品中的同族 OpenAPI，缺基线、候选或检查器均拒绝。
+
+`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布。CLI 自动产出契约制品、在线签名/发布准入、proto 探测和其它服务接口聚合仍需完成。

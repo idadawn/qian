@@ -8,5 +8,7 @@
     <ProjectReference Include="../Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Tenancy.Abstractions/Qian.Tenancy.Abstractions.csproj" />
     <PackageReference Include="Microsoft.OpenApi" />
+    <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Capabilities.Tests" /></ItemGroup>
 </Project>

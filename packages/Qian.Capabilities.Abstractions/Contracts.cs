@@ -9,6 +9,10 @@ public static class CapabilitiesDefinition
 {
     /// <summary>当前 scope 的能力服务。</summary>
     public static readonly ServiceKey Key = new("Capabilities");
+    /// <summary>版本化契约仓库的服务键。</summary>
+    public static readonly ServiceKey ContractsKey = new("Contracts");
+    /// <summary>读取平台预装制品的契约仓库。</summary>
+    public static IContractRepository Contracts(this IPluginContext context) => context.Inject<IContractRepository>(ContractsKey);
     /// <summary>解析实际已挂载的能力目录。</summary>
     public static ICapabilityService Capabilities(this IPluginContext context) => context.Inject<ICapabilityService>(Key);
 }

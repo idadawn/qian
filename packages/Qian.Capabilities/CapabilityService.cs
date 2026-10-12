@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Kun.Authorization;
 using Qian.Identity.Abstractions;
 using Qian.Plugin.Sdk;
@@ -80,7 +79,7 @@ internal sealed class CapabilityService(IRegistryService registry, IPermissionCh
             ct.ThrowIfCancellationRequested();
             if (registration.Value is not IExecutableCapability binding || binding.Contract.Id != registration.Name ||
                 !view.Any(entry => entry.EntryId == registration.OwnerEntryId && entry.Scope == registration.Scope && entry.Name == registration.Name && entry.PluginId == binding.Contract.ComponentId)) continue;
-            var entry = Describe(binding.Contract); var metadata = binding.Contract.Metadata;
+            var entry = CapabilityContractCompiler.Describe(binding.Contract, schemas, hasher); var metadata = binding.Contract.Metadata;
             if ((model || principal.Kind == PrincipalKind.Agent) && !metadata.GetProperty("agent").GetProperty("expose").GetBoolean()) continue;
             if (metadata.GetProperty("requiredScopes").EnumerateArray().Any(scope => !scopes.Contains(scope.GetString()!))) continue;
             if (!metadata.TryGetProperty("requiredPermission", out var permission) || string.IsNullOrWhiteSpace(permission.GetString())) continue;
@@ -94,35 +93,6 @@ internal sealed class CapabilityService(IRegistryService registry, IPermissionCh
         return result.AsReadOnly();
     }
 
-    private JsonElement Describe(CapabilityContract contract)
-    {
-        var tool = JsonNode.Parse(contract.Metadata.GetRawText())!.AsObject();
-        tool["inputSchema"] = contract.InputSchema; tool["outputSchema"] = contract.OutputSchema;
-        using (var json = JsonDocument.Parse(tool.ToJsonString())) tool["schemaSha256"] = hasher.Compute(json.RootElement);
-        using (var json = JsonDocument.Parse(tool.ToJsonString()))
-            if (schemas.ValidateSchema("tool", contract.Id, json.RootElement).Any(diagnostic => diagnostic.Severity == "error")) throw Error(PlatformErrors.InputInvalid);
-        tool.Remove("binding"); tool.Remove("$schema");
-        tool["id"] = contract.Id; tool["plugin"] = contract.ComponentId;
-        tool["kind"] = tool["sideEffect"]!.GetValue<string>() == "read" ? "query" : "command";
-        using var result = JsonDocument.Parse(tool.ToJsonString());
-        if (schemas.ValidateSchema("capability-entry", contract.Id, result.RootElement).Any(diagnostic => diagnostic.Severity == "error") ||
-            HasTenantField(result.RootElement.GetProperty("inputSchema"))) throw Error(PlatformErrors.InputInvalid);
-        return result.RootElement.Clone();
-    }
-    private static bool HasTenantField(JsonElement schema)
-    {
-        if (schema.ValueKind == JsonValueKind.Array) return schema.EnumerateArray().Any(HasTenantField);
-        if (schema.ValueKind != JsonValueKind.Object) return false;
-        foreach (var property in schema.EnumerateObject())
-        {
-            if (property.Name == "properties" && property.Value.ValueKind == JsonValueKind.Object &&
-                property.Value.EnumerateObject().Any(field => field.Name.Equals("tenant", StringComparison.OrdinalIgnoreCase) ||
-                    field.Name.Equals("tenantId", StringComparison.OrdinalIgnoreCase) || field.Name.Equals("tenant_id", StringComparison.OrdinalIgnoreCase) ||
-                    field.Name.Equals("tenant-id", StringComparison.OrdinalIgnoreCase))) return true;
-            if (HasTenantField(property.Value)) return true;
-        }
-        return false;
-    }
     private static bool Current(IPluginContext caller, VisibleCapability item)
     {
         try { return ReferenceEquals(caller.Inject<IExecutableCapability>(CapabilityBindingRegistration.Key, item.Id), item.Binding); }

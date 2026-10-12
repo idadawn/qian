@@ -15,13 +15,16 @@ internal sealed record RegistryArtifactFile(string Path, long Bytes, string Sha2
 internal sealed class RegistryArtifactContent
 {
     private static readonly SearchValues<char> Hex = SearchValues.Create("0123456789abcdef");
+    private readonly IReadOnlyDictionary<string, byte[]> _contents;
+    internal IReadOnlyDictionary<string, ReadOnlyMemory<byte>> CopyFiles() => _contents.ToDictionary(item => item.Key, item => new ReadOnlyMemory<byte>(item.Value.ToArray()), StringComparer.Ordinal);
     internal string Digest { get; }
     internal ParsedComponent Component { get; }
     internal IReadOnlyList<RegistryArtifactFile> Files { get; }
     internal IReadOnlyDictionary<string, JsonElement> Metadata { get; }
     private RegistryArtifactContent(string digest, ParsedComponent component, IReadOnlyList<RegistryArtifactFile> files,
-        IReadOnlyDictionary<string, JsonElement> metadata)
+        IReadOnlyDictionary<string, JsonElement> metadata, IReadOnlyDictionary<string, byte[]> contents)
     {
+        _contents = contents;
         Digest = digest; Component = component with { Documents = Array.AsReadOnly(component.Documents.ToArray()) }; Files = files;
         Metadata = new ReadOnlyDictionary<string, JsonElement>(metadata.ToDictionary(item => item.Key, item => item.Value.Clone(), StringComparer.Ordinal));
     }
@@ -65,7 +68,7 @@ internal sealed class RegistryArtifactContent
             if (!result.IsValid) throw Diagnostics(result.Diagnostics);
             var metadata = result.Component!.Documents.Where(document => document.Kind == "metadata")
                 .ToDictionary(document => document.File, document => document.Data.Clone(), StringComparer.Ordinal);
-            return new RegistryArtifactContent(digest, result.Component, Array.AsReadOnly(records), metadata);
+            return new RegistryArtifactContent(digest, result.Component, Array.AsReadOnly(records), metadata, files);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DecoderFallbackException)
         { throw Invalid("artifact.json#/files", "制品快照无法安全读取。"); }
