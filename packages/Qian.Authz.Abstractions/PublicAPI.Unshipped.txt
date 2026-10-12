@@ -54,3 +54,18 @@ Qian.Authz.Abstractions.RoleTemplate.Patterns.get -> System.Collections.Generic.
 Qian.Authz.Abstractions.RoleTemplate.Role.get -> string!
 Qian.Authz.Abstractions.RoleTemplate.RoleTemplate(string! role, System.Collections.Generic.IReadOnlyList<string!>! patterns, System.Collections.Generic.IReadOnlyList<string!>! grants) -> void
 static readonly Qian.Authz.Abstractions.AuthzErrors.MetadataInvalid -> Qian.Runtime.Errors.ErrorCode!
+Qian.Authz.Abstractions.IPermissionRegistry
+Qian.Authz.Abstractions.IPermissionRegistry.Find(string! code, string! version) -> Qian.Authz.Abstractions.PermissionDefinition?
+Qian.Authz.Abstractions.IPermissionRegistry.List(string! pluginId, string! version) -> System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionDefinition!>!
+Qian.Authz.Abstractions.IPermissionRegistry.Register(string! version, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionDefinition!>! permissions) -> System.IDisposable!
+Qian.Authz.Abstractions.ResourceTypeDefinition
+Qian.Authz.Abstractions.ResourceTypeDefinition.Code.get -> string!
+Qian.Authz.Abstractions.ResourceTypeDefinition.Description.get -> string?
+Qian.Authz.Abstractions.ResourceTypeDefinition.PluginId.get -> string!
+Qian.Authz.Abstractions.ResourceTypeDefinition.Resource.get -> string!
+Qian.Authz.Abstractions.ResourceTypeDefinition.ResourceTypeDefinition(string! pluginId, string! resource, string? description = null) -> void
+Qian.Authz.Abstractions.IResourceTypeRegistry
+Qian.Authz.Abstractions.IResourceTypeRegistry.ListResources(string! pluginId, string! version) -> System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.ResourceTypeDefinition!>!
+Qian.Authz.Abstractions.IResourceTypeRegistry.RegisterResources(string! version, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.ResourceTypeDefinition!>! resources) -> System.IDisposable!
+static readonly Qian.Authz.Abstractions.AuthzDefinition.PermissionsKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Authz.Abstractions.AuthzDefinition.ResourceTypesKey -> Qian.Runtime.ServiceKey

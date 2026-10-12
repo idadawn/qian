@@ -41,3 +41,6 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 ## 权限声明输入（S1-AZ-002）
 
 `PermissionAttribute` 是独立宿主的声明输入，不是执行鉴权特性；与平台 metadata 一样由 Provider 编译为已有 `PermissionDefinition`。`PermissionCatalog` 与 `RoleTemplate` 是只读词汇，角色的 Patterns 为作者声明，Grants 为当前版本已展开的确切权限点。构造这些 DTO 不会登记权限、实例化租户角色或放行请求。字段错误 AUTHZ_METADATA_INVALID 由 Provider 放进 INPUT_INVALID.errors，沿用冻结 ErrorDetail。
+
+
+`IPermissionRegistry` 是活动权限声明的可逆端口，`IResourceTypeRegistry` 对应资源类型扩展点；版本参数是确切组件版本。返回句柄由组件交给 Effect，登记与撤销均不直接修改主体角色。Provider 实现及租约、冲突和派生资源规则统一见 Qian.Authz 主文档。

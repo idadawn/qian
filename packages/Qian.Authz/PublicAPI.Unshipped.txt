@@ -7,3 +7,10 @@ Qian.Authz.PermissionCatalogCompiler.PermissionCatalogCompiler(Qian.Surfaces.Abs
 Qian.Authz.AuthzDbContext
 Qian.Authz.AuthzDbContext.AuthzDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Authz.AuthzDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
 const Qian.Authz.AuthzDbContext.Schema = "plugin_qian_authz" -> string!
+Qian.Authz.PermissionRegistry
+Qian.Authz.PermissionRegistry.Find(string! code, string! version) -> Qian.Authz.Abstractions.PermissionDefinition?
+Qian.Authz.PermissionRegistry.List(string! pluginId, string! version) -> System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionDefinition!>!
+Qian.Authz.PermissionRegistry.ListResources(string! pluginId, string! version) -> System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.ResourceTypeDefinition!>!
+Qian.Authz.PermissionRegistry.PermissionRegistry() -> void
+Qian.Authz.PermissionRegistry.Register(string! version, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionDefinition!>! permissions) -> System.IDisposable!
+Qian.Authz.PermissionRegistry.RegisterResources(string! version, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.ResourceTypeDefinition!>! resources) -> System.IDisposable!
