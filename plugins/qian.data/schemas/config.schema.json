@@ -1,23 +1,20 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "dialect": {
-      "type": "string"
-    },
+    "dialect": { "type": "string", "const": "pg", "default": "pg" },
     "connection": {
       "type": "string",
+      "description": "选择由宿主显式绑定此引用的业务上下文；省略时使用各上下文自身的连接。凭据按上下文创建读取，不写入清单。",
+      "pattern": "^secretRef://(platform|dev)/[^\\s?#]+$",
       "x-qian-sensitive": true
     },
     "rls": {
       "type": "object",
-      "properties": {
-        "enforce": {
-          "type": "boolean"
-        }
-      },
+      "properties": { "enforce": { "type": "boolean", "const": true } },
+      "required": ["enforce"],
       "additionalProperties": false
     }
   },
-  "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "additionalProperties": false
 }

@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><IsTestProject>false</IsTestProject><TreatWarningsAsErrors>false</TreatWarningsAsErrors></PropertyGroup><ItemGroup><ProjectReference Include="../../../../packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" /></ItemGroup></Project>

@@ -41,11 +41,12 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
   </ItemGroup>
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'Qian.Build.Analyzers'">
+    <CompilerVisibleProperty Include="IsTestProject" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <PropertyGroup>
-    <WarningsAsErrors>$(WarningsAsErrors);RS0030;QIAN0002;QIAN0005;KUNS2S001</WarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);RS0030;QIAN0002;QIAN0003;QIAN0004;QIAN0005;KUNS2S001</WarningsAsErrors>
   </PropertyGroup>
 
 </Project>

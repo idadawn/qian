@@ -17,6 +17,9 @@
     <Project Path="packages/Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
     <Project Path="packages/Qian.Surfaces/Qian.Surfaces.csproj" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Qian.Sample.Crm/Qian.Sample.Crm.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Qian.Authz.Abstractions.Tests/Qian.Authz.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Docs.Tests/Qian.Docs.Tests.csproj" />
@@ -27,6 +30,7 @@
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Abstractions.Tests/Qian.Identity.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Errors.Tests/Qian.Runtime.Errors.Tests.csproj" />
+    <Project Path="tests/Qian.Sample.Crm.Tests/Qian.Sample.Crm.Tests.csproj" />
     <Project Path="tests/Qian.Surfaces.Tests/Qian.Surfaces.Tests.csproj" />
     <Project Path="tests/Qian.Testing.Containers.IntegrationTests/Qian.Testing.Containers.IntegrationTests.csproj" />
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />

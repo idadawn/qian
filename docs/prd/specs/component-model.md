@@ -1051,7 +1051,7 @@ CREATE TABLE plugin_qian_registry.scope_patches (
   updated_at      timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (tenant_id, scope, entry_id)
 );
--- RLS：tenant_id = current_setting('qian.tenant_id')（Kun RLS 拦截器装配，ADR-004）
+-- RLS：tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')（Kun RLS 拦截器装配，ADR-004）
 ```
 
 `qian.registry` 在租户上下文建立时把该租户的行叠为运行中的最后一层，并发出 `registry/entry-mounted` / `registry/entry-disabled`。**租户挂载状态只存这张表**，不再有 v1 的 Enabled / Disabled 状态机（R34）；「买没买、能不能」留在 `qian.entitlement`：写入前调用 `ctx.Entitlement().CheckAsync(tenant, plugin)`，未授权返回 `NOT_ENTITLED`；`policy.required: true` 的组件拒绝写入 `disabled: true`。写入路径：管理面 `PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`（幂等，带 `revision`，§9.5）与 CLI `qian add --scope tenant:<id>`。注册表是运行态的真相源，组件文件夹是分发形态，二者共用校验器（R35）。

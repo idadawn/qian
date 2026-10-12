@@ -29,6 +29,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="10.0.12" />
     <PackageVersion Include="Kun.Authorization" Version="$(KunVersion)" />
+    <PackageVersion Include="Kun.AspNetCore" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Core" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.Mediator" Version="$(KunVersion)" />
     <PackageVersion Include="Kun.EventBus" Version="$(KunVersion)" />

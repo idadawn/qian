@@ -182,7 +182,8 @@ plugin_id（服务主体为插件时）
 ├──────────────────────────────────────────────────────────────────────────┤
 │ 4. PostgreSQL RLS（最后一道）                                              │
 │    FORCE ROW LEVEL SECURITY + USING / WITH CHECK (tenant_id =               │
-│    current_setting('app.tenant_id'))；每服务独立 schema 与数据库角色；        │
+│    current_setting('app.current_tenant_id', true))；                       │
+│    每服务独立 schema 与数据库角色；                                       │
 │    显式写入他租户 id 被 WITH CHECK 拒绝；事务外读返回空视为缺陷而非兜底         │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -464,7 +465,7 @@ CREATE TABLE authz.permission_definition (
 -- 授权关系（租户表，RLS）
 CREATE TABLE authz.grant (
   id                 uuid PRIMARY KEY,
-  tenant_id          uuid NOT NULL,
+  tenant_id          text NOT NULL,
   subject_type       text NOT NULL CHECK (subject_type IN ('membership','org','position','group','role','client','agent')),
   subject_id         uuid NOT NULL,
   permission_code    text REFERENCES authz.permission_definition(code),
@@ -480,13 +481,13 @@ CREATE TABLE authz.grant (
 ALTER TABLE authz.grant ENABLE ROW LEVEL SECURITY;
 ALTER TABLE authz.grant FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON authz.grant
-  USING (tenant_id = current_setting('app.tenant_id')::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id')::uuid);
+  USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), ''))
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), ''));
 
 -- 数据权限方案（租户表，RLS）
 CREATE TABLE authz.data_scope_rule (
   id                 uuid PRIMARY KEY,
-  tenant_id          uuid NOT NULL,
+  tenant_id          text NOT NULL,
   resource_ref       text NOT NULL,                        -- 列表 / 模型 / 菜单的 URN
   role_id            uuid NOT NULL,                        -- 同角色内 AND、跨角色 OR
   name               text NOT NULL,

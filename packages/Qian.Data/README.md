@@ -1,25 +1,49 @@
 # Qian.Data
 
-数据 Provider 的最小安全装配，完成 S1-KUN-001 的交叉验收；完整范围仍见 [S1-DATA-001](../../pm/tasks/S1-DATA-001.md)。
+Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。参考应用数据验收已补齐，SDK / CLI 的完整代码安装仍有后续门禁，当前进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
+
+## 安全装配
 
 ```csharp
-services.AddQianData<AppDbContext>((sp, options) => options.UseNpgsql(connectionString));
+services.AddQianData<AppDbContext>((sp, options) => options
+    .UseNpgsql(connectionString).UseKunSchema("plugin_example"));
 ```
 
-`AppDbContext` 继承 Definition 包里的 `QianDbContext`，租户上下文由宿主注册。`AddQianData` 自动附加 RLS 连接版与事务版拦截器、租户模型缓存键。宿主 `StartAsync` 主动解析上下文并检查生效的缓存键，安全条件不满足时抛 `QianDataMisconfiguredException`，不会等到第一条业务查询才失败。
+业务上下文继承 QianDbContext。独立宿主可直接注入 IDataService，无需挂载平台插件。装配复用当前 KunVersion 的 AddKunTenantRls、AddKunDataConventions 与租户字段拦截器，强制模型缓存键、Qian 模型定制器、应用角色检查和迁移生成器。派生上下文漏调 base 仍保留租户/软删过滤，并与业务过滤条件取交集；采用 snake_case、Guid v7、可空审计主体和 xmin。每个上下文使用同一个 plugin_ 前缀 schema，租户列非空且默认具有索引。
 
-无需手写 `ReplaceService`；手工配置缺少该调用会在构造时被拒绝，后续回调把缓存键改回默认实现则在启动时被拒绝。启动检查只初始化 EF 模型，不执行迁移、不建立业务表、不发业务 SQL。
+启动会构建模型并打开真实连接，只读取角色属性，不建表或迁移。登录角色及当前角色必须均为 NOSUPERUSER / NOBYPASSRLS，预打开连接也检查；同步/异步新开连接遇高权限角色立即拒绝并关闭。
 
-RLS 策略需由迁移显式创建，使用 Kun 的 `app.current_tenant_id`、`FORCE ROW LEVEL SECURITY` 与 `WITH CHECK`。数据库应用角色必须是 `NOSUPERUSER NOBYPASSRLS`。PgBouncer 事务池仍要求显式事务，自动接线不改变此条件。验收复用 `Qian.Testing.Containers.PostgresFixture` 的应用角色，分别用 EF 查询、原生 SQL、事务 GUC 验证隔离。
+迁移生成器为目标模型中的每个新建 IMultiTenant 表紧接着输出 ENABLE / FORCE RLS 与 USING / WITH CHECK。租户限制采用 AS RESTRICTIVE，附加宽松策略不能通过 OR 放宽边界；`NULLIF(current_setting('app.current_tenant_id', true), '')` 使缺失和空租户不匹配。丢失目标模型或标准租户列标记时拒绝生成裸表。历史表转换仍须显式安全迁移。PgBouncer 事务池仍要求显式事务。
+
+## 数据服务与工作单元
+
+DataPlugin 在 Apply 中提供 Data 键；消费者通过 `ctx.Data()` 解析。每次 `OpenAsync<TContext>()` 建立独立 DI scope，选择已注册的业务上下文，把该上下文、Kun IntegrationEventBuffer 和 EfUnitOfWork 绑定在一起。不会把全局 KunDbContext 指向最后登记的业务上下文。
+
+```csharp
+await using var session = await ctx.Data().OpenAsync<AppDbContext>(ct);
+session.Context.Add(entity);
+session.Outbox.Enqueue(integrationEvent);
+await session.SaveChangesAsync(ct);
+```
+
+事件类型必须由宿主显式通过 AddKunEventBus 登记，推荐使用源生成 JsonTypeInfo；Data 不暗中登记空目录。IOutboxWriter 与 IIntegrationEventBus 必须指向同一 scoped accumulator。领域通知走 Kun Mediator 的当前 scope，通知处理器与工作单元拿到同一业务上下文和缓冲；存在通知但未装配 Mediator、通知没有实现 INotification 时拒绝保存。
+
+保存失败后会话不可复用，调用方必须释放后新开；业务数据与 Outbox 在同一次 EF 保存中提交或回滚。会话创建后不可切换租户，混入其他租户的事件会被拒绝。卸载 Provider 会撤销入口并释放存活会话，已缓存的数据服务不能再开新会话。本组件负责 Outbox 入库，后台投递由事件组件负责。
+
+## 删除审计
+
+QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.Delete 和 DbContext.Remove 都落为软删除，填充 deleted_at / deleted_by；后者保留已有业务字段并让 Kun 同时更新 updated_at / updated_by。DeletedBy 与 CreatedBy 使用一致的可空用户键类型，没有 CLR 属性时用 shadow property，字段名由 QianDataConventions.DeletedByPropertyName 提供。匿名操作的删除主体为 null，已有删除审计不因普通更新而改写。
 
 ## 组件位置
 
-当前目录含 Provider 代码、PublicAPI 清单与说明；Data seam 的契约放在 `Qian.Data.Abstractions`。完整组件目录、`ctx.Data`、profile 配置和 `qian add data` 由 S1-DATA-001 交付，计划随 SDK 进入全部 .NET profile。这里的 DI 方法只是宿主／插件装配细节。
+本目录已有 DataPlugin 的实际入口和生命周期，契约放在 Qian.Data.Abstractions，业务组件只依赖 Definition。组件接受 dialect=pg、rls.enforce=true 和可选 connection 引用。带连接引用的 AddQianData 重载将上下文绑定到 platform/dev secretRef，凭据由宿主工厂在每次创建上下文时读取；组件的 connection 选择对应的上下文集合，未登记的引用或上下文会被拒绝。省略 connection 时沿用各上下文自身的配置，方便按组件使用独立 schema 和受限角色。租户挂载的 Data 只接受相同租户上下文，租户自带业务库仍在 S3 范围。
+
+按已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，数据本体先交付以解除注册表的实现前置。`plugins/qian.data` 仍保留配置骨架标记；SDK 代码字段源生成、默认装配与私有 NuGet 锁步发布由 S1-RT-014 回验，真实 `qian add data` 代码安装与 Provider 运行由 S1-RT-011 回验。这些门禁通过前，不宣称完整组件安装或正式私有发布已经完成。
 
 ## 模型体验
 
-无独立 Agent 工具。启动失败使用 `DATA_MISCONFIGURED` 和具体缺失项诊断，不包含连接串与凭据。
+无独立 Agent 工具。隔离装配失败使用 DATA_MISCONFIGURED，不输出连接串或凭据。Provider 的装配方法是宿主细节，业务代码通过 Data seam 使用数据能力。
 
 ## 已知限制与延期项
 
-本任务不宣称数据组件完整可安装；审计字段、`xmin`、snake_case、Guid v7、迁移与分析器属于 S1-DATA-001／S1-KUN-005。此安全基础仅使用现有公开 Kun 2026.9.13 的 API；S1-KUN-001 上游后台链路修复已于 2026-10-08 合并 [Kun PR #43](https://github.com/idadawn/kun/pull/43)，仍需在 Kun 后续发版后通过 `KunVersion` 升级消费，本任务不触发 Kun 发版。
+真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。samples/Qian.Sample.Crm 已通过真实签名身份、HTTP 与 PostgreSQL 的千行双租户及原 SQL 索引验收。SDK 源生成、私有发布与代码安装尚待后续任务验收；S1-DEC-017 / S1-DEC-018 均已批准并落实到对应验收边界。

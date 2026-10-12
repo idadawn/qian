@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><NoWarn>$(NoWarn);CS1591</NoWarn></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
+    <PackageReference Include="Kun.Security" />
+    <PackageReference Include="Kun.AspNetCore" />
+  </ItemGroup>
+</Project>

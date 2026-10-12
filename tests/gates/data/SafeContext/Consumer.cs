@@ -1,0 +1,1 @@
+using Microsoft.EntityFrameworkCore; using Kun.Core.MultiTenancy; using Qian.Data; public abstract class SafeContext(DbContextOptions options, ITenantContext tenant) : QianDbContext(options, tenant) { }
