@@ -1,0 +1,4 @@
+#nullable enable
+Qian.Registry.RegistryDbContext
+Qian.Registry.RegistryDbContext.RegistryDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Registry.RegistryDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+const Qian.Registry.RegistryDbContext.Schema = "plugin_qian_registry" -> string!

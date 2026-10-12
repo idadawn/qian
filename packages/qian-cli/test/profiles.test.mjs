@@ -16,7 +16,7 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
    cpSync(path.join(root,'tck/profiles/base'),directory,{recursive:true});
    for(const[file,content]of Object.entries(item.files)){mkdirSync(path.dirname(path.join(directory,file)),{recursive:true});writeFileSync(path.join(directory,file),content);}
    if(item.missingHome)rmSync(path.join(directory,'home/qian.patch.yml'));
-   const result=loadProfile({workingDirectory:directory,profile:'test',patches:item.patches,homeDirectory:'home',includeHomePatch:item.home});
+   const result=loadProfile({workingDirectory:directory,profile:'test',patches:item.patches,homeDirectory:'home',includeHomePatch:item.home,scopePatches:item.scopePatches});
    assert.equal(result.isValid,item.expect,item.name+': '+JSON.stringify(result));
    if(item.pointer)assert.ok(result.diagnostics.some(d=>d.error.pointer===item.pointer),item.name+': '+JSON.stringify(result));
    if(result.isValid){
@@ -31,7 +31,8 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
    if(item.warnings!==undefined)assert.equal(result.diagnostics.filter(d=>d.severity==='warning').length,item.warnings);
    assert.ok(!JSON.stringify(result).includes('DO-NOT-LEAK'));
    for(const diagnostic of result.diagnostics)diagnostic.error.trace_id='TRACE';
-   report[item.name]=result;
+   if(item.disabledCount!==undefined)assert.equal(result.snapshot.disabledEntries.length,item.disabledCount,item.name);
+   report[item.name]=item.scopePatches?{...result,disabledEntries:result.snapshot?.disabledEntries??null}:result;
   }finally{rmSync(directory,{recursive:true,force:true});}
  }
  if(process.env.QIAN_PROFILE_REPORT){mkdirSync(path.dirname(process.env.QIAN_PROFILE_REPORT),{recursive:true});writeFileSync(process.env.QIAN_PROFILE_REPORT,JSON.stringify(report,null,2));}

@@ -12,6 +12,8 @@
     <Project Path="packages/Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
     <Project Path="packages/Qian.Profiles.Abstractions/Qian.Profiles.Abstractions.csproj" />
     <Project Path="packages/Qian.Profiles/Qian.Profiles.csproj" />
+    <Project Path="packages/Qian.Registry.Abstractions/Qian.Registry.Abstractions.csproj" />
+    <Project Path="packages/Qian.Registry/Qian.Registry.csproj" />
     <Project Path="packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
     <Project Path="packages/Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
     <Project Path="packages/Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
@@ -29,6 +31,7 @@
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Abstractions.Tests/Qian.Identity.Abstractions.Tests.csproj" />
+    <Project Path="tests/Qian.Registry.Tests/Qian.Registry.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Errors.Tests/Qian.Runtime.Errors.Tests.csproj" />
     <Project Path="tests/Qian.Sample.Crm.Tests/Qian.Sample.Crm.Tests.csproj" />
     <Project Path="tests/Qian.Surfaces.Tests/Qian.Surfaces.Tests.csproj" />
