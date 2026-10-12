@@ -30,6 +30,16 @@ AuditDbContext 继承 QianDbContext，拥有 plugin_qian_audit schema。audit_en
 
 分页读取和链验证是内部存储端口，尚未作为无授权查询 API 对外开放。验证用 REPEATABLE READ 快照和分批读取，避免并发追加产生误报；报告最早缺号、前序、内容或链头不一致的位置。补充 payload 与委托主体都参与哈希，修改历史值会被检测。
 
+## 加入业务事务
+
+AppendEnlistedAsync 接收调用方已有的 PostgreSQL SERIALIZABLE 事务，核验受限登录角色、当前租户与连接的 app.current_tenant_id 一致后，把记录和链头写入这笔事务；它不提交、不释放、不局部重试业务事务。返回节点在外层提交前尚未持久化。调用方遇到任何异常须回滚；序列化冲突需释放整个 Data 会话，从新会话重试包含业务写入的完整操作。平台链不支持此入口。
+
+迁移时先创建独立受限 NOLOGIN、NOINHERIT 函数所有者，再在同一迁移事务调用 AuditTransactionAccess.CreateMigrationSql(writerRole, producerRole)。Audit 自有的 SECURITY DEFINER 函数使用固定 search_path、完整限定表名及原有强制租户 RLS；业务登录只获函数执行权，不获审计表直接访问权限。函数所有者无角色成员关系、无平台旁路，仅能追加记录与推进链头，不能更新、删除或清空历史记录。业务 schema 的授权仍由业务组件负责。
+
+事务追加与独立追加使用同一租户 advisory lock 键；前者持有事务锁直到提交或回滚。函数检查当前事务隔离级别、租户、节点序号、前序及传入正文的摘要；C# 写入器生成规范化正文并重放已有链头与幂等记录的哈希。这是给可信组件的数据库端口，不能把函数直接作为客户端 API：持有执行凭据的生产方负责记录来源和规范化正文，数据库不独立重做全部 .NET JSON 规范化规则。
+
+真实 CRM 模型验证客户与审计同时可见、显式回滚无残留、审计写入失败使业务事务回滚；双宿主强制制造旧快照冲突后重试完整业务，客户与审计仍一一对应。此验证尚未通过参考应用的创建命令、能力属性和执行 waterfall，完整 CRM 命令验收仍保持未完成。
+
 ## 受控平台链与生命周期
 
 平台链默认关闭。启用时，宿主先独立创建受限的 NOINHERIT LOGIN 角色，禁止 SUPERUSER、BYPASSRLS、CREATEDB、CREATEROLE、REPLICATION 和任何角色成员关系。凭据由宿主或 Secret 服务持有，不进入组件配置。迁移在普通 Audit 模型建表后，同一迁移事务中应用 AuditPlatformAccess.CreateMigrationSql(role)，只修改 Audit 自有两张表的策略和该角色授权。
@@ -42,6 +52,6 @@ AppendPlatformAsync、ReadPlatformAsync、VerifyPlatformAsync 是显式入口，
 
 ## 验证与剩余任务
 
-真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。测试通过并不意味着参考应用同事务要求已经完成：当前内部 AppendAsync 的独立事务只包含审计记录与链头，后续必须与真正的 CRM 业务事务、Outbox 及能力生命周期连接，不能把独立追加成功当成业务回滚验证。
+真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。测试通过并不意味着参考应用同事务要求已经完成：AppendAsync 的独立事务只包含审计记录与链头；AppendEnlistedAsync 已覆盖真实 CRM 数据上下文回滚，后续仍须与真正的命令执行、Outbox 及能力生命周期连接，不能把独立追加成功当成业务回滚验证。
 
-尚未完成：真实能力/属性对脱敏策略的消费、真实 Mediator 与 waterfall 装配、卸载撤销、CRM 同事务、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。
+尚未完成：真实能力/属性对脱敏策略的消费、真实 Mediator 与 waterfall 装配、卸载撤销、CRM 命令与 Outbox 同事务、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。

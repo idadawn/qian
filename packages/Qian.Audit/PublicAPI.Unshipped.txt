@@ -21,3 +21,5 @@ Qian.Audit.PlatformAuditDbContext
 Qian.Audit.PlatformAuditDbContext.PlatformAuditDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Audit.PlatformAuditDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
 override Qian.Audit.AuditDbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> void
 static Qian.Audit.AuditPlatformAccess.CreateMigrationSql(string! platformRole) -> string!
+Qian.Audit.AuditTransactionAccess
+static Qian.Audit.AuditTransactionAccess.CreateMigrationSql(string! writerRole, string! producerRole) -> string!

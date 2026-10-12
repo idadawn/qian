@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup><ItemGroup><Using Include="Xunit" /></ItemGroup>
 <ItemGroup><ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" /><ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" /><ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" /><PackageReference Include="Microsoft.Extensions.Hosting" /><PackageReference Include="xunit.v3" /></ItemGroup>
+<ItemGroup><ProjectReference Include="../../samples/Qian.Sample.Crm/Qian.Sample.Crm.csproj" /></ItemGroup>
 </Project>

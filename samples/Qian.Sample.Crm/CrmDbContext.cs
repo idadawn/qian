@@ -7,6 +7,8 @@ namespace Qian.Sample.Crm;
 
 public sealed class Customer : AggregateRoot<Guid, string>, IMultiTenant
 {
+    public Customer() { }
+    public Customer(Guid id, string name) { Id = id; Name = name; }
     public string? TenantId { get; set; }
     public string Name { get; set; } = string.Empty;
 }

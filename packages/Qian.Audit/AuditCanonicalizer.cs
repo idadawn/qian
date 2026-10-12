@@ -16,11 +16,15 @@ public static class AuditCanonicalizer
     {
         ArgumentNullException.ThrowIfNull(record);
         if (sequence <= 0 || (previousHash is not null && (previousHash.Length != 64 || previousHash.Any(c => !(c is >= 'a' and <= 'f' or >= '0' and <= '9'))))) throw Invalid();
-        var node = JsonSerializer.SerializeToNode(record, Options)!.AsObject(); node["seq"] = sequence; node["format_version"] = "v1";
-        var canonical = Canonicalize(JsonSerializer.SerializeToElement(node));
+        var canonical = Content(record, sequence);
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         hash.AppendData(Encoding.UTF8.GetBytes(previousHash ?? "")); hash.AppendData(Encoding.UTF8.GetBytes(canonical));
         return Convert.ToHexStringLower(hash.GetHashAndReset());
+    }
+    internal static string Content(AuditRecord record, long sequence)
+    {
+        var node = JsonSerializer.SerializeToNode(record, Options)!.AsObject(); node["seq"] = sequence; node["format_version"] = "v1";
+        return Canonicalize(JsonSerializer.SerializeToElement(node));
     }
     /// <summary>确定性 JSON 编码；不是将有损浮点数转换作为规范化手段。</summary>
     public static string Canonicalize(JsonElement value)

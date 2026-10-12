@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Qian.Runtime;
 
 namespace Qian.Audit;
@@ -15,6 +16,8 @@ public interface IAuditWriter
 {
     /// <summary>追加当前租户的记录；缺失租户拒绝。</summary>
     Task<AuditChainEntry> AppendAsync(AuditRecord record, CancellationToken cancellationToken = default);
+    /// <summary>将租户审计加入现有 PostgreSQL 可串行化业务事务；返回节点只有在外层提交后才持久化，冲突须由调用方重试整个业务事务。</summary>
+    Task<AuditChainEntry> AppendEnlistedAsync(AuditRecord record, DbTransaction transaction, CancellationToken cancellationToken = default);
     /// <summary>显式追加平台记录；需提供仍有效的 global 生产方上下文，并显式配置专用平台角色；租户调用拒绝。</summary>
     Task<AuditChainEntry> AppendPlatformAsync(IPluginContext producer, AuditRecord record, CancellationToken cancellationToken = default);
 }

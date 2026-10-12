@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Data.Common;
 using Kun.Core.MultiTenancy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -63,6 +64,8 @@ internal sealed class AuditService(IDataService data, ITenantContext tenant, Sco
             throw new QianDataMisconfiguredException("平台与租户审计不能复用同一登录凭据。");
     }
     public Task<AuditChainEntry> AppendAsync(AuditRecord record, CancellationToken cancellationToken = default) => Run(ct => _tenants.AppendAsync(record, ct), cancellationToken);
+    public Task<AuditChainEntry> AppendEnlistedAsync(AuditRecord record, DbTransaction transaction, CancellationToken cancellationToken = default) =>
+        Run(ct => AuditTransactionWriter.AppendAsync(record, transaction, tenant, ct), cancellationToken);
     public Task<AuditChainEntry> AppendPlatformAsync(IPluginContext producer, AuditRecord record, CancellationToken cancellationToken = default) => Run(ct => Platform(producer).AppendAsync(record, ct), cancellationToken);
     public Task<IReadOnlyList<AuditChainEntry>> ReadAsync(long afterSequence, int take, string? onBehalfOf = null, CancellationToken cancellationToken = default) => Run(ct => _tenants.ReadAsync(afterSequence, take, onBehalfOf, ct), cancellationToken);
     public Task<IReadOnlyList<AuditChainEntry>> ReadPlatformAsync(IPluginContext producer, long afterSequence, int take, string? onBehalfOf = null, CancellationToken cancellationToken = default) => Run(ct => Platform(producer).ReadAsync(afterSequence, take, onBehalfOf, ct), cancellationToken);
