@@ -49,7 +49,11 @@ internal sealed class CrmCommands(ISender sender) : ICrmCommands
     public Task<CustomerItem> GetAsync(GetCustomerQuery query, CancellationToken cancellationToken = default) => sender.Send(query, cancellationToken).AsTask();
     private static bool Retryable(Exception error)
     {
-        var postgres = error as PostgresException ?? (error as DbUpdateException)?.InnerException as PostgresException;
+        // Npgsql 的默认执行策略会把瞬态数据库异常再包一层 InvalidOperationException。
+        // 只拆已知框架包装，仍按明确 SQLSTATE 决定是否重试整笔命令。
+        var current = error;
+        while (current is DbUpdateException or InvalidOperationException && current.InnerException is { } inner) current = inner;
+        var postgres = current as PostgresException;
         return postgres is { SqlState: PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected } ||
             postgres is { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "pk_customer_receipts" };
     }
