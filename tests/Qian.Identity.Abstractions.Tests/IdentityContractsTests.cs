@@ -19,6 +19,29 @@ public sealed class IdentityContractsTests
     private static readonly DateTime At = new(2026, 10, 9, 0, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public void 当前身份经正式Kun接口读取时保留主体类型_缺少快照不默认成用户()
+    {
+        using var fixtures = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "contracts/v0/fixtures/s2s-claims.valid.json")));
+        foreach (var fixture in fixtures.RootElement.EnumerateArray())
+        {
+            var data = fixture.GetProperty("data");
+            var principal = data.Deserialize(IdentityJson.PrincipalTypeInfo)!;
+            Kun.Core.Security.ICurrentUser current = new CurrentUserSnapshot(principal);
+            Assert.Equal(data.GetProperty("principal_kind").GetString(), current.PrincipalKind);
+        }
+        Kun.Core.Security.ICurrentUser anonymous = new CurrentUserSnapshot(null);
+        Assert.Equal(string.Empty, anonymous.PrincipalKind);
+    }
+
+    private sealed class CurrentUserSnapshot(Principal? principal) : ICurrentUser
+    {
+        public Principal? Principal { get; } = principal;
+        public string? UserId => Principal?.Subject;
+        public IReadOnlyList<string> Roles => Principal?.Roles ?? [];
+        public bool IsAuthenticated => Principal is not null;
+    }
+
+    [Fact]
     public void S2sClaimNames_ExactlyMatchFrozenSchema_AndOidcAliasesStaySeparate()
     {
         using var schema = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "contracts/v0/s2s-claims.schema.json")));
