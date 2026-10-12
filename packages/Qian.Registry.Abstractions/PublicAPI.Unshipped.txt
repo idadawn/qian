@@ -31,3 +31,10 @@ static readonly Qian.Registry.RegistryErrors.NotEntitled -> Qian.Runtime.Errors.
 static readonly Qian.Registry.RegistryErrors.NotMounted -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Registry.RegistryErrors.Restricted -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Registry.RegistryErrors.RevisionConflict -> Qian.Runtime.Errors.ErrorCode!
+Qian.Registry.IRegistryService
+Qian.Registry.IRegistryService.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Qian.Registry.IRegistryService.StartAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Registry.IRegistryService.SynchronizeAsync(Qian.Runtime.ScopeKey scope, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Registry.RegistryDefinition
+static Qian.Registry.RegistryDefinition.Registry(this Qian.Runtime.IPluginContext! context) -> Qian.Registry.IRegistryService!
+static readonly Qian.Registry.RegistryDefinition.Key -> Qian.Runtime.ServiceKey

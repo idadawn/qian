@@ -92,6 +92,11 @@ internal sealed class PostgresPatchListener : IAsyncDisposable
         }
     }
 
+    internal void Cancel()
+    {
+        lock (_disposeLock) if (_dispose is null) _stop.Cancel();
+    }
+
     public ValueTask DisposeAsync()
     {
         lock (_disposeLock) return new ValueTask(_dispose ??= StopAsync());

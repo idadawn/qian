@@ -1,6 +1,6 @@
 # Qian.Registry
 
-注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，当前仍是配置骨架，消费者的 standalone profile 不独立安装这项平台插件（R34）。本任务尚未交付完整 `RegistryPlugin`、清单制品注册与管理面接口，不能以内部数据库代码宣称组件已经可安装。
+注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，当前仍是配置骨架，消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面、完整发布准入与安装链仍未完成，不能以本地装载宣称组件已可从正式源安装。
 
 ## 已实现的持久化基础
 
@@ -12,7 +12,7 @@
 
 `disabled` 的显式 false 与字段缺省分开保存，保证文件 patch 的继承语义；`x-` 扩展保持原样。业务层收到的 `ScopePatchSnapshot.Patch` 仍是原有 patch 对象，revision、主体和时间在快照外层。快照的默认 `ToString` 不展开配置与 note。
 
-每次成功变更在同一 PostgreSQL 事务中提交 `pg_notify`，通知只含租户、scope、条目、修订和撤销标记；配置和 note 不广播。通知语句失败则数据写入也回滚。内部监听器已接入通知消费、断线恢复与周期重新读取；运行时重合入仍未接入，不能以通知或回调成功宣称 ≤5 秒装载验收通过。
+每次成功变更在同一 PostgreSQL 事务中提交 `pg_notify`，通知只含租户、scope、条目、修订和撤销标记；配置和 note 不广播。通知语句失败则数据写入也回滚。内部监听器已接入通知消费、断线恢复与周期重新读取；租户 scope 的真实运行时重合入已接入并通过五秒内生效检查；应用/会话 lineage 与完整管理接口验收仍未完成。
 
 ## 数据库层合入与写前校验
 
@@ -36,6 +36,29 @@
 
 读取回调失败会重试，日志只记异常类型；释放时取消后台任务并等待连接与会话关闭。监听器就绪仅表示数据库订阅成功，不能代替业务服务的就绪判断。真实双宿主测试覆盖通知后重新读取、在测试数据库中终止监听连接后恢复、启动请求上下文隔离、释放后无回调，以及回调失败的恢复与日志脱敏。
 
+## Registry 插件与真实运行时重合入
+
+`RegistryPlugin` 只允许 global scope 的 platform 宿主，必需服务键为 `Data`，提供 `RegistryDefinition.Key` / `IRegistryService`。`RegistryRuntimeOptions` 注入当前真实 `PluginLoader`、共用 profile/表面端口、静态 platform 配置与预装 Provider 解析器；组件 Provider 由宿主解析，本包不装载代码程序集。解析结果的条目身份、scope、版本、config、inject 和 provides 必须与已校验清单相符。
+
+宿主在全局插件树 Ready 后调用 `StartAsync`，在已验证的租户上下文中调用 `SynchronizeAsync`。后者读取该租户的完整数据库层并装入真实运行时，此后 PostgreSQL 通知及周期核对自动重合入。当前公开宿主入口只接受与当前租户一致的 tenant scope；app / agent-session 尚缺真实归属证明，保持拒绝。此接口不是 HTTP 管理写入端点，不能直接接受客户端主体或自行信任请求头建立上下文。
+
+```csharp
+await runtime.MountAsync(globalDefinitions, ct);
+var registry = runtime.GetContext("registry", ScopeKey.Global).Registry();
+await registry.StartAsync(ct);
+// 当前 ITenantContext 必须已由认证/租户流程建立。
+await registry.SynchronizeAsync(verifiedTenantScope, ct);
+// 停止接收请求后，在装载器之外先停注册表服务，再释放运行时。
+await registry.DisposeAsync();
+await runtime.DisposeAsync();
+```
+
+局部条目遮蔽同 id 全局条目的全部贡献；禁用项使用 restriction 阻止回退到全局版本。切换时先收紧全局可见性，再撤销旧局部条目并挂载新配置；失败会撤销该 scope 已拥有的条目并阻断该 scope 的全局可见项，其他 scope 继续使用。恢复后重新挂载，配置没有变化时保持同一 Apply 上下文，不做每秒无意义重载。平台局部节点的运行时适配器依赖 Registry 服务键，组件库在 minimal / standalone 下的依赖不变。
+
+停止顺序是宿主生命周期的一部分：先停止监听并撤销本服务拥有的局部节点，再停止 Runtime。插件 effect 取消并等待后台监听退出，不在 Apply/effect 中调用同一装载器的 Mount/Unmount；整树释放也会排空后台任务，事后重复释放服务保持幂等。错误码登记、服务登记与 restriction 均随所属上下文撤销。
+
+测试从文件构建平台测试 profile，实际挂载 `DataPlugin`、`RegistryPlugin` 与 `DeclarativeSurfacePlugin`。独立写入宿主修改真实受限 PG 后，另一宿主的真实 `PluginLoader` 在五秒内完成新增、重载、禁用与撤销，旧上下文失效，B 和全局条目保持不变；另验证坏配置隔离与恢复、解析器跨 scope 改写拒绝、重复核对不重载及停止后的清理。默认 platform 的全部 Provider、真实身份/权限接口和 App/会话 scope 验收仍在后续清单中。
+
 ## 未完成门禁
 
-S1-RT-004 仍为 doing：制品验签/发布与修订目录、完整安装准入、真实权限/权益检查、scope 视图与 404/403 隐藏语义、通知到真实运行时的重合入、`/api/kernel/*` 兼容别名均需继续实现与验收。`plugins/qian.registry` 的骨架标记保留。完整任务验收不因这层持久化可用而提前勾选。
+S1-RT-004 仍为 doing：制品验签/发布与修订目录、完整安装准入、真实权限/权益检查、App/会话归属、管理 scope 视图与 404/403 隐藏语义、`/api/kernel/*` 兼容别名均需继续实现与验收。`plugins/qian.registry` 的骨架标记保留。完整任务验收不因这层持久化可用而提前勾选。

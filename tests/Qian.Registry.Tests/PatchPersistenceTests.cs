@@ -389,6 +389,7 @@ public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IC
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
         builder.Services.AddSingleton(tenant); builder.Services.AddKunEventBus();
+        builder.Services.AddSingleton(ErrorCatalog.CreateDefault());
         builder.Services.AddQianData<RegistryDbContext>((_, options) =>
         {
             options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(RegistryDbContext.Schema);
