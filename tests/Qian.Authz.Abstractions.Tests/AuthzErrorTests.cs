@@ -17,9 +17,9 @@ public sealed class AuthzErrorTests
         var catalog = ErrorCatalog.CreateDefault();
         var originalCount = catalog.Codes.Count;
         using var registration = AuthzErrors.Register(catalog);
-        Assert.Equal(originalCount + 3, catalog.Codes.Count);
+        Assert.Equal(originalCount + 4, catalog.Codes.Count);
         Assert.Same(PlatformErrors.AuthzDenied, AuthzErrors.Denied);
-        Assert.Equal(4, AuthzErrors.All.Select(e => e.Code).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(5, AuthzErrors.All.Select(e => e.Code).Distinct(StringComparer.Ordinal).Count());
         using var exported = JsonDocument.Parse(catalog.ExportJson());
         Assert.True(catalogSchema.Evaluate(exported.RootElement).IsValid);
         foreach (var code in AuthzErrors.All)
@@ -28,7 +28,10 @@ public sealed class AuthzErrorTests
             foreach (var locale in new[] { "zh-CN", "en-US" })
             {
                 var culture = CultureInfo.GetCultureInfo(locale);
-                var detail = catalog.CreateDetail(new QianError(code, args), new string('a', 32), culture);
+                var error = code.Kind == ErrorKind.Field
+                    ? new QianError(PlatformErrors.InputInvalid) { Errors = [new QianFieldError(code, "metadata/permissions.json#/0", args)] }
+                    : new QianError(code, args);
+                var detail = catalog.CreateDetail(error, new string('a', 32), culture);
                 using var rendered = JsonDocument.Parse(ErrorDetailJson.Serialize(detail));
                 Assert.True(detailSchema.Evaluate(rendered.RootElement).IsValid);
                 Assert.Equal(locale == "en-US" ? "en" : "zh-CN", code.ResolveLocale(culture));

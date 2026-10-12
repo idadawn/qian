@@ -365,14 +365,14 @@
  {
   "id": "S1-AZ-002",
   "title": "权限点注册表、资源类型与默认角色模板",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "AZ",
   "areaName": "鉴权",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
@@ -394,12 +394,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-12",
   "acceptance": {
-   "done": 0,
+   "done": 1,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>permission_definitions</code> / <code>resource_types</code> / <code>policy_packs</code>：平台模式由 <code>ctx.Registry</code> 读清单 <code>provides.permissions</code> 登记并拼接全名；独立模式由 <code>[Permission]</code> 特性登记（ADR-019 D19.4）；插件默认角色模板（策略包）安装即可用；资源类型由插件注册；<code>qian.authz.resource-type/v1</code> 扩展点。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：参考应用清单声明资源 <code>customer</code> 的动作 <code>[read, write, export]</code>（登记为 <code>qian.sample.crm:customer:&lt;action&gt;</code>）与默认角色模板，安装后租户 Owner 自动拥有全部、使用者只有 read</li>\n<li class='chk'><span class='box'></span>UT：独立模式下 <code>[Permission]</code> 特性登记的权限点与平台模式清单登记结果形状一致</li>\n<li class='chk'><span class='box'></span>UT：权限点带风险级别与 step-up 字段并可被 <code>GET /api/authz/me/permissions</code> 读取</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>permission_definitions</code> / <code>resource_types</code> / <code>policy_packs</code>：平台模式由 <code>ctx.Registry</code> 读清单 <code>provides.permissions</code> 登记并拼接全名；独立模式由 <code>[Permission]</code> 特性登记（ADR-019 D19.4）；插件默认角色模板（策略包）安装即可用；资源类型由插件注册；<code>qian.authz.resource-type/v1</code> 扩展点。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：参考应用清单声明资源 <code>customer</code> 的动作 <code>[read, write, export]</code>（登记为 <code>qian.sample.crm:customer:&lt;action&gt;</code>）与默认角色模板，安装后租户 Owner 自动拥有全部、使用者只有 read</li>\n<li class='chk done'><span class='box'>✓</span>UT：独立模式下 <code>[Permission]</code> 特性登记的权限点与平台模式清单登记结果形状一致</li>\n<li class='chk'><span class='box'></span>UT：权限点带风险级别与 step-up 字段并可被 <code>GET /api/authz/me/permissions</code> 读取</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：开始：基于注册表草稿 PR #50 已验证的预装元数据接口，串行推进 QA-002 必需的权限前置。实现 metadata/permissions.json 与 roles.json 的 R37/R9 迁移形状、属性声明和权限目录，再补真实持久化及默认角色验收；依赖接口可用不等于 RT-004 或本任务已完成。</li>\n<li>2026-10-12 cody：已实现既有 R37/R9 字段形状的权限/角色 Schema、属性与平台注册表元数据编译、命名和越界引用校验，以及真实 PG 的权限点/资源类型/策略包原子目录。相同版本幂等且冲突不覆盖，两宿主竞争与数据库中途拒绝回滚已通过；继续全仓回归。模板展开/落库尚不等于租户成员实际授予，Owner/使用者真实权限与 API 门仍待补齐，不提前完成任务。</li>\n<li>2026-10-12 cody：声明与目录切片完成全仓验证：403/403 测试零跳过、Authz 16 项、38 门禁、19 包依赖检查通过。真实属性与平台 metadata 生成同形目录，并在受限 PG 中以同版本幂等登记，回写该 UT。默认策略包目前只落模板，尚未授予真实租户成员；Owner/使用者实际权限、me/permissions API 与完整 Provider/安装验收继续保持未完成。建立依赖 PR #50 的草稿 PR，继续实现后续部分。</li>\n</ul>",
   "file": "pm/tasks/S1-AZ-002.md"
  },
  {

@@ -1,0 +1,9 @@
+#nullable enable
+Qian.Authz.PermissionCatalogCompiler
+Qian.Authz.PermissionCatalogCompiler.FromAttributes(string! pluginId, string! version, System.Collections.Generic.IEnumerable<Qian.Authz.Abstractions.PermissionAttribute!>! attributes, System.Text.Json.JsonElement roles, string! roleFile = "metadata/roles.json") -> Qian.Authz.Abstractions.PermissionCatalog!
+Qian.Authz.PermissionCatalogCompiler.FromInstalled(Qian.Registry.InstalledComponentMetadata! component) -> Qian.Authz.Abstractions.PermissionCatalog!
+Qian.Authz.PermissionCatalogCompiler.FromMetadata(string! pluginId, string! version, System.Text.Json.JsonElement permissions, System.Text.Json.JsonElement roles, string! permissionFile = "metadata/permissions.json", string! roleFile = "metadata/roles.json") -> Qian.Authz.Abstractions.PermissionCatalog!
+Qian.Authz.PermissionCatalogCompiler.PermissionCatalogCompiler(Qian.Surfaces.Abstractions.ISurfaceReader! reader) -> void
+Qian.Authz.AuthzDbContext
+Qian.Authz.AuthzDbContext.AuthzDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Authz.AuthzDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+const Qian.Authz.AuthzDbContext.Schema = "plugin_qian_authz" -> string!

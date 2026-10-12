@@ -37,3 +37,7 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 ## 验证
 
 本包测试覆盖命名、JSON 元数据往返、真实运行时注入与卸载、错误目录回滚及 Schema、多语言文案；真实 Kun Mediator 分别验证两个注册重载、缺引擎、拒绝、放行和匿名主体。测试中的判定端口只用于证明框架装配，不代表 RBAC 引擎已实现。`tests/gates/authz` 用真实 Kun 包编译正反样例，避免只检查源码字样。
+
+## 权限声明输入（S1-AZ-002）
+
+`PermissionAttribute` 是独立宿主的声明输入，不是执行鉴权特性；与平台 metadata 一样由 Provider 编译为已有 `PermissionDefinition`。`PermissionCatalog` 与 `RoleTemplate` 是只读词汇，角色的 Patterns 为作者声明，Grants 为当前版本已展开的确切权限点。构造这些 DTO 不会登记权限、实例化租户角色或放行请求。字段错误 AUTHZ_METADATA_INVALID 由 Provider 放进 INPUT_INVALID.errors，沿用冻结 ErrorDetail。
