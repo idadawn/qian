@@ -19,6 +19,14 @@ public interface ICurrentUser : Kun.Core.Security.ICurrentUser
 {
     /// <summary>已经过身份校验的主体；不从请求头推导。</summary>
     Principal? Principal { get; }
+    /// <summary>给 Kun 鉴权端口提供实际主体种类，不让服务身份继承旧适配器的 user 默认值。</summary>
+    string Kun.Core.Security.ICurrentUser.PrincipalKind => Principal?.Kind switch
+    {
+        global::Qian.Identity.Abstractions.PrincipalKind.User => "user",
+        global::Qian.Identity.Abstractions.PrincipalKind.Service => "service",
+        global::Qian.Identity.Abstractions.PrincipalKind.Agent => "agent",
+        _ => string.Empty
+    };
 }
 /// <summary>明确要求经过认证的用户视图；Provider 保证 IsAuthenticated 为 true。</summary>
 public interface IAuthenticatedUser : ICurrentUser
