@@ -14,6 +14,8 @@ public static class RegistryDefinition
 /// <summary>宿主的注册表运行时入口，不是可直接映射 HTTP 的管理写入 API。</summary>
 public interface IRegistryService : IAsyncDisposable
 {
+    /// <summary>供可信平台插件登记权限等声明；在 Registry Ready 后、业务插件启动前可读，不是业务可见目录。</summary>
+    IReadOnlyList<InstalledComponentMetadata> GetInstalledComponents();
     /// <summary>整棵初始插件树 Ready 后启动数据库监听；不得在该装载器的 Apply 内等待。</summary>
     ValueTask StartAsync(CancellationToken cancellationToken = default);
     /// <summary>合入当前已验证租户的 scope；当前只接受同租户 scope，应用/会话须另有归属证明。</summary>

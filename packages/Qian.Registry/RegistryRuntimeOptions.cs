@@ -7,6 +7,8 @@ namespace Qian.Registry;
 /// <summary>平台宿主提供静态装配与已安装 Provider 的解析，不从数据库内容加载程序集。</summary>
 public sealed class RegistryRuntimeOptions
 {
+    /// <summary>宿主在初始 Mount 前准备的预装绑定；组件可预装但尚未挂载，候选库不会自动加入。</summary>
+    public required IReadOnlyList<RegistryComponentBinding> InstalledComponents { get; init; }
     /// <summary>当前宿主的真实装载器。</summary>
     public required PluginLoader Runtime { get; init; }
     /// <summary>共用 profile 装配器。</summary>

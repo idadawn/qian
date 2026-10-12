@@ -36,6 +36,14 @@
 
 读取回调失败会重试，日志只记异常类型；释放时取消后台任务并等待连接与会话关闭。监听器就绪仅表示数据库订阅成功，不能代替业务服务的就绪判断。真实双宿主测试覆盖通知后重新读取、在测试数据库中终止监听连接后恢复、启动请求上下文隔离、释放后无回调，以及回调失败的恢复与日志脱敏。
 
+## 预装组件元数据入口
+
+宿主在初始 Mount 前用 `RegistryComponentBinding` 把实际预装的 `PluginDefinition` 与同一次 platform 静态校验结果绑定。入口检查组件身份、版本、inject/provides，并拒绝 `x-skeleton`；宿主把绑定集合交给 `RegistryRuntimeOptions.InstalledComponents`。预装组件可以尚未挂载，元数据仍可供权限模块提前登记，避免权限模块与业务插件互等。
+
+`IRegistryService.GetInstalledComponents()` 在 Registry 服务就绪后即可调用，不必等待数据库监听启动，也不要求所有业务插件先进入 Ready。结果只包含宿主绑定集合，清单和 metadata 均为只读快照；不查询 `Submitted` 候选目录，不重新读取可变源文件，也不授予租户角色或运行资格。各 seam 必须继续校验业务 Schema。宿主同步时只解析预装集合中的相同组件版本和清单；仅往工作目录添加文件不会自动获得租户挂载资格。
+
+这个入口供可信平台插件消费，不能直接作为面向业务用户的能力目录公开。安装元数据目前随宿主捕获；在线发布、修订激活和声明变更仍需后续受控更新流程。它不替代包源、验签或正式安装验收。
+
 ## Registry 插件与真实运行时重合入
 
 `RegistryPlugin` 只允许 global scope 的 platform 宿主，必需服务键为 `Data`，提供 `RegistryDefinition.Key` / `IRegistryService`。`RegistryRuntimeOptions` 注入当前真实 `PluginLoader`、共用 profile/表面端口、静态 platform 配置与预装 Provider 解析器；组件 Provider 由宿主解析，本包不装载代码程序集。解析结果的条目身份、scope、版本、config、inject 和 provides 必须与已校验清单相符。

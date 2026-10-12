@@ -18,3 +18,9 @@ Qian.Registry.RegistryRuntimeOptions.Runtime.get -> Qian.Runtime.PluginLoader!
 Qian.Registry.RegistryRuntimeOptions.Runtime.init -> void
 Qian.Registry.RegistryRuntimeOptions.Surfaces.get -> Qian.Surfaces.Abstractions.ISurfaceValidator!
 Qian.Registry.RegistryRuntimeOptions.Surfaces.init -> void
+Qian.Registry.RegistryComponentBinding
+Qian.Registry.RegistryComponentBinding.Definition.get -> Qian.Runtime.PluginDefinition!
+Qian.Registry.RegistryComponentBinding.Metadata.get -> Qian.Registry.InstalledComponentMetadata!
+Qian.Registry.RegistryComponentBinding.RegistryComponentBinding(Qian.Runtime.PluginDefinition! definition, Qian.Surfaces.Abstractions.SurfaceValidationResult! validation) -> void
+Qian.Registry.RegistryRuntimeOptions.InstalledComponents.get -> System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryComponentBinding!>!
+Qian.Registry.RegistryRuntimeOptions.InstalledComponents.init -> void

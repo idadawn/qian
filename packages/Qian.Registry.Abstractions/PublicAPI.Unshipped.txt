@@ -38,3 +38,11 @@ Qian.Registry.IRegistryService.SynchronizeAsync(Qian.Runtime.ScopeKey scope, Sys
 Qian.Registry.RegistryDefinition
 static Qian.Registry.RegistryDefinition.Registry(this Qian.Runtime.IPluginContext! context) -> Qian.Registry.IRegistryService!
 static readonly Qian.Registry.RegistryDefinition.Key -> Qian.Runtime.ServiceKey
+Qian.Registry.IRegistryService.GetInstalledComponents() -> System.Collections.Generic.IReadOnlyList<Qian.Registry.InstalledComponentMetadata!>!
+Qian.Registry.InstalledComponentMetadata
+Qian.Registry.InstalledComponentMetadata.InstalledComponentMetadata(string! pluginId, string! version, System.Text.Json.JsonElement manifest, System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>! metadata) -> void
+Qian.Registry.InstalledComponentMetadata.Manifest.get -> System.Text.Json.JsonElement
+Qian.Registry.InstalledComponentMetadata.Metadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>!
+Qian.Registry.InstalledComponentMetadata.PluginId.get -> string!
+Qian.Registry.InstalledComponentMetadata.Version.get -> string!
+override Qian.Registry.InstalledComponentMetadata.ToString() -> string!

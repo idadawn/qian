@@ -138,7 +138,7 @@ public sealed partial class PatchPersistenceTests
         await Assert.ThrowsAsync<ServiceNotReadyException>(() => running.Registry.SynchronizeAsync(TenantA, Ct).AsTask());
     }
 
-    private async Task<RunningRegistry> CreateRunningRegistry(AsyncLocalTenantContext tenant, Func<PluginDefinition, PluginDefinition>? modify = null)
+    private async Task<RunningRegistry> CreateRunningRegistry(AsyncLocalTenantContext tenant, Func<PluginDefinition, PluginDefinition>? modify = null, bool start = true)
     {
         var host = Host(tenant); await host.StartAsync(Ct); await Prepare(host);
         var profile = new RuntimeProfile(); var validator = new SurfaceValidator(); var profiles = new ProfileLoader(validator);
@@ -159,12 +159,21 @@ public sealed partial class PatchPersistenceTests
             var definition = new PluginDefinition(new PluginEntry(entry.Id, identity[0], identity[1], scope, entry.Layer, entry.Config), plugin, provides);
             return scope != ScopeKey.Global && modify is not null ? modify(definition) : definition;
         }
-        registry = new RegistryPlugin(new RegistryRuntimeOptions { Runtime = runtime, Profiles = profiles, Profile = profile.Options, Surfaces = validator, Resolve = Resolve });
+        var installed = new List<RegistryComponentBinding>();
+        registry = new RegistryPlugin(new RegistryRuntimeOptions { InstalledComponents = installed, Runtime = runtime, Profiles = profiles, Profile = profile.Options, Surfaces = validator, Resolve = Resolve });
         var snapshot = profiles.Load(profile.Options); Assert.True(snapshot.IsValid, JsonSerializer.Serialize(snapshot.Diagnostics));
-        await runtime.MountAsync(snapshot.Snapshot!.Entries.Select(Resolve), Ct);
+        var definitions = snapshot.Snapshot!.Entries.Select(entry =>
+        {
+            var definition = Resolve(entry);
+            installed.Add(new RegistryComponentBinding(definition, validator.ValidateComponent(entry.ComponentDirectory, ArtifactOptions)));
+            return definition;
+        }).ToArray();
+        var privateEntry = profile.PrivateEntry(validator);
+        installed.Add(new RegistryComponentBinding(Resolve(privateEntry), validator.ValidateComponent(privateEntry.ComponentDirectory, ArtifactOptions)));
+        await runtime.MountAsync(definitions, Ct);
         Assert.All(snapshot.Snapshot.Entries, entry => Assert.Equal(PluginState.Ready, runtime.GetState(entry.Id, ScopeKey.Global)));
         var root = runtime.GetContext("registry", ScopeKey.Global); var service = root.Registry();
-        await service.StartAsync(Ct);
+        if (start) await service.StartAsync(Ct);
         return new RunningRegistry(host, profile, runtime, root, service, logger);
     }
 
@@ -213,6 +222,15 @@ public sealed partial class PatchPersistenceTests
             Component("test.shared", "shared", [], [], false);
             Component("test.private", "private", [], [], false);
         }
+        internal ResolvedProfileEntry PrivateEntry(SurfaceValidator validator)
+        {
+            var directory = Path.Combine(_directory, "plugins/private");
+            var component = validator.ValidateComponent(directory, ArtifactOptions).Component!;
+            return new ResolvedProfileEntry("private", "global", "test.private@1.0.0", Patch("{}"), 0, [], [], null)
+                { ComponentDirectory = directory, Manifest = component.Manifest };
+        }
+        internal void ChangePrivateMetadata() => Write("plugins/private/metadata/permissions.json", "[]");
+        internal void AddUnbound() => Component("test.unbound", "unbound", [], [], false);
         private void Component(string id, string directory, string[] inject, string[] provides, bool required)
         {
             Write($"plugins/{directory}/.qian-plugin/plugin.json", JsonSerializer.Serialize(new
@@ -225,6 +243,7 @@ public sealed partial class PatchPersistenceTests
             {
                 Write($"plugins/{directory}/commands/hello.md", "---\ndescription: 通过真实声明式表面验证租户配置的装载与撤销。\n---\n" + directory + " command\n");
                 Write($"plugins/{directory}/schemas/config.schema.json", """{"type":"object","properties":{"label":{"type":"string"}},"additionalProperties":false}""");
+                Write($"plugins/{directory}/metadata/permissions.json", """[{"resource":"record","actions":["read"]}]""");
             }
             else Write($"plugins/{directory}/schemas/config.schema.json", """{"type":"object","properties":{"store":{"type":"string","enum":["pg"]}},"additionalProperties":false}""");
         }
