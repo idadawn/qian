@@ -1,0 +1,9 @@
+[
+  {
+    "resource": "customer",
+    "actions": ["read", "write", "export"],
+    "risk": {"export": "high"},
+    "stepUp": ["export"],
+    "terminals": {"export": ["web"]}
+  }
+]

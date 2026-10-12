@@ -1,0 +1,4 @@
+[
+  {"role": "tenant.owner", "grant": ["qian.sample.crm:customer:*"]},
+  {"role": "tenant.user", "grant": ["qian.sample.crm:customer:read"]}
+]

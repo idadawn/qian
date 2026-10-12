@@ -18,14 +18,20 @@ using Qian.Testing.Containers;
 
 namespace Qian.Authz.Tests;
 
-public sealed class PermissionCatalogPersistenceTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
+public sealed partial class PermissionCatalogPersistenceTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
     private static JsonElement Json(string text) => JsonSerializer.Deserialize<JsonElement>(text);
-    private static PermissionCatalog Catalog(string version = "1.0.0", string risk = "high") => new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata(
-        "qian.sample.crm", version,
-        Json($$$"""[{"resource":"customer","actions":["read","write","export"],"risk":{"export":"{{{risk}}}"},"stepUp":["export"],"terminals":{"export":["web"]}}]"""),
-        Json("""[{"role":"tenant.owner","grant":["qian.sample.crm:customer:*"]},{"role":"tenant.user","grant":["qian.sample.crm:customer:read"]}]"""));
+    private static PermissionCatalog Catalog(string version = "1.0.0", string risk = "high")
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
+        var directory = Path.Combine(root!.FullName, "samples/Qian.Sample.Crm/metadata");
+        var permissions = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(directory, "permissions.json")))!;
+        permissions[0]!["risk"]!["export"] = risk;
+        return new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata("qian.sample.crm", version,
+            Json(permissions.ToJsonString()), Json(File.ReadAllText(Path.Combine(directory, "roles.json"))));
+    }
 
     [Fact]
     public async Task 受限角色真实保存权限资源与策略包_版本不可变且重复登记幂等()
@@ -90,10 +96,10 @@ public sealed class PermissionCatalogPersistenceTests(PostgresFixture postgres) 
     [Permission("customer", "export", Risk = PermissionRisk.High, RequiresStepUp = true, Terminals = new[] { "web" })]
     private sealed class CrmPermissions;
 
-    private IHost Host()
+    private IHost Host(Kun.Core.MultiTenancy.ITenantContext? tenant = null)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
-        builder.Services.AddSingleton<Kun.Core.MultiTenancy.ITenantContext>(new AsyncLocalTenantContext()); builder.Services.AddKunEventBus();
+        builder.Services.AddSingleton<Kun.Core.MultiTenancy.ITenantContext>(tenant ?? new AsyncLocalTenantContext()); builder.Services.AddKunEventBus();
         builder.Services.AddQianData<AuthzDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuthzDbContext.Schema));
         return builder.Build();
     }
