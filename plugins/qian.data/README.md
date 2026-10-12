@@ -1,3 +1,7 @@
 # qian.data
 
-此目录为 S1-RT-002 的配置骨架（`x-skeleton: true`），提供清单与配置结构校验，不含 Provider 代码、服务键注册或就绪承诺。后续组件任务用真实实现替换骨架，并补充自己的完整配置契约。
+Data Provider 的实现位于 packages/Qian.Data，已提供数据会话、同上下文 Outbox、角色检查、RLS 迁移与软删审计。本文件夹仍标记 x-skeleton：SDK 代码字段源生成和 CLI 代码包安装尚未完成，当前不能把配置骨架当作可执行组件安装。
+
+配置契约已与实际 DataPlugin 对齐：dialect 固定 pg，rls.enforce 固定 true；可选 connection 为宿主显式绑定的 platform/dev secretRef，用于选择上下文集合。凭据不写入组件文件夹，按上下文创建时读取。
+
+计划进入全部 .NET profile，角色为 Data seam 的 Provider。标准原生入口是 Qian.Data.DataPlugin；完成 S1-RT-014 的派生字段与 S1-RT-011 的安装事务后，由 qian add data 交付。库模式目前可通过 AddQianData 与 IDataService 独立使用。

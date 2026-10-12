@@ -1,3 +1,8 @@
 #nullable enable
 Qian.Data.QianDataExtensions
 static Qian.Data.QianDataExtensions.AddQianData<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<System.IServiceProvider!, Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Qian.Data.DataPlugin
+Qian.Data.DataPlugin.DataPlugin() -> void
+Qian.Data.DataPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Data.DataPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+static Qian.Data.QianDataExtensions.AddQianData<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! connectionReference, System.Func<System.IServiceProvider!, string!>! resolveConnection, System.Action<System.IServiceProvider!, Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
