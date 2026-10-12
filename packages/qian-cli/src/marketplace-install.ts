@@ -15,12 +15,14 @@ import {readInstalledState,readInstallFile,writeInstallFile,installObject,instal
 import {prepareComponentDelivery,type ComponentDelivery} from './component-delivery.js';
 import {resolvePackageDelivery,type PackageArtifactEvidence} from './package-delivery.js';
 import {installedPackageArtifacts,verifyInstalledPackageArtifacts} from './package-integrity.js';
+import {selectComponentSurfaces,surfaceName,type SurfaceName,type SurfaceSelection} from './surface-selection.js';
 
-export interface DeclarativeInstallOptions extends MarketplaceOptions {yes?:boolean;dryRun?:boolean;noCode?:boolean;force?:boolean;resetConfig?:boolean;forceProfile?:boolean}
+export interface DeclarativeInstallOptions extends MarketplaceOptions {yes?:boolean;dryRun?:boolean;noCode?:boolean;surfaces?:readonly SurfaceName[];force?:boolean;resetConfig?:boolean;forceProfile?:boolean}
+export interface ComponentInstallRequest {reference:string;selection?:SurfaceSelection}
 export interface DeclarativeInstallResult {status:'planned'|'installed'|'unchanged'|'on-use';id:string;version:string;market:string;trust:'verified'|'unverified';files:FileRecord[];packages:{nuget:string[];npm:string[]};diagnostics:SurfaceDiagnostic[];lock?:InstallObject;note?:string;permissions?:JsonValue;secretReferences?:string[]}
 export interface BatchInstallResult {status:'planned'|'installed'|'unchanged'|'on-use';plugins:DeclarativeInstallResult[]}
 interface PatchPlan {profile:string;definitionFile:string;definition:InstallObject;definitionChanged?:boolean;file:string;entries:JsonValue[];touched:Set<string>}
-interface Candidate {resolved:ResolvedMarketplacePlugin;manifest:InstallObject;delivery:ComponentDelivery;artifacts:PackageArtifactEvidence[];result:DeclarativeInstallResult;previous?:InstallObject;record?:InstallObject;replaceFiles:boolean;needsApproval:boolean}
+interface Candidate {resolved:ResolvedMarketplacePlugin;manifest:InstallObject;delivery:ComponentDelivery;artifacts:PackageArtifactEvidence[];selection:SurfaceSelection;sourceArtifacts:PackageArtifactEvidence[];result:DeclarativeInstallResult;previous?:InstallObject;record?:InstallObject;replaceFiles:boolean;needsApproval:boolean}
 
 function entryKey(entry:InstallObject):string {return String(entry.scope??'global')+'/'+String(entry.id);}
 function profileName(value:unknown):string {
@@ -65,9 +67,10 @@ function makeRecord(candidate:Candidate,entries:JsonValue[]):InstallObject {
  const resolved=candidate.resolved;
  const record:InstallObject={id:resolved.component.id,name:resolved.name,version:resolved.version,market:resolved.market,
   source:resolved.source as unknown as JsonValue,digest:resolved.digest,installedAt:new Date().toISOString(),
-  surfaces:[...new Set(resolved.component.documents.map(document=>({skill:'skills',agent:'agents',command:'commands',tool:'tools',mcp:'mcpServers'} as Record<string,string>)[document.kind]??document.kind))],
+  surfaces:[...new Set(candidate.delivery.components.flatMap(entry=>[...entry.component.documents.map(surfaceName),...Object.keys(installObject(entry.manifest.surfaces))]))],
   files:candidate.result.files as unknown as JsonValue,packages:resolved.packages,entries,requirements:candidate.delivery.requirements,
-  deliveryDigest:resolved.content.digest,packageArtifacts:candidate.artifacts as unknown as JsonValue,trust:resolved.trust,marketSource:resolved.marketSource};
+  deliveryDigest:resolved.content.digest,packageArtifacts:candidate.artifacts as unknown as JsonValue,sourcePackageArtifacts:candidate.sourceArtifacts as unknown as JsonValue,
+  selection:candidate.selection as unknown as JsonValue,trust:resolved.trust,marketSource:resolved.marketSource};
  if(resolved.commit)record.commit=resolved.commit;if(resolved.marketCommit)record.marketCommit=resolved.marketCommit;if(resolved.marketKey)record.marketKey=resolved.marketKey;
  return record;
 }
@@ -85,11 +88,12 @@ export async function installDeclarativeMarketplacePlugin(reference:string,optio
 }
 
 /** 整组先解析与验证，再一次性修改宿主；不会逐个提交而留下半批安装。 */
-export async function installMarketplacePlugins(references:readonly string[],options:DeclarativeInstallOptions):Promise<BatchInstallResult>{
+export async function installMarketplacePlugins(references:readonly (string|ComponentInstallRequest)[],options:DeclarativeInstallOptions):Promise<BatchInstallResult>{
  const root=realpathSync(path.resolve(options.workingDirectory)),profile=profileName(options.profile??'minimal');
  if(!references.length||references.length>100)installFailure('argv','add 需要 1 至 100 个组件引用。');
  const candidates:Candidate[]=[],ids=new Set<string>();
- for(const reference of references){
+ for(const request of references){
+  const reference=typeof request==='string'?request:request.reference,selection:SurfaceSelection={...options.noCode?{noCode:true}:{},...options.surfaces?{surfaces:options.surfaces}:{},...typeof request==='string'?{}:request.selection};
   const source=await resolveMarketplacePlugin(reference,{...options,profile}),delivery=prepareComponentDelivery(source,profile,options.forceProfile);
   const resolved={...source,packages:delivery.packages},manifest=installObject(resolved.component.manifest),id=resolved.component.id;
   if(ids.has(id))installFailure('argv','同一批次不能重复指定组件或混用同组件的多个版本。');ids.add(id);
@@ -99,26 +103,31 @@ export async function installMarketplacePlugins(references:readonly string[],opt
   if(resolved.policy.installation==='restricted')installFailure('.qian/marketplace.json','restricted 条目仅允许平台审核台安装。');
   if(resolved.policy.authentication==='ON_USE'){result.status='on-use';result.note='仅提示使用时认证，不写安装锁或激活组件。';}
   else{
-   if(manifest.runtime!==undefined&&options.noCode)installFailure('.qian-plugin/plugin.json','代码组件的 --no-code 表面切片尚未接入，不能忽略参数安装代码。');
    if(manifest.runtime!==undefined&&installObject(manifest.runtime).form===undefined&&!delivery.composition)installFailure('.qian-plugin/plugin.json','无运行时形态的代码依赖必须由组合包 patch 组装。');
    if(!Array.isArray(manifest.scopes)||!manifest.scopes.includes('global'))installFailure('.qian-plugin/plugin.json','组件不允许本地 global 挂载。');
    const allowed=resolved.policy.profiles;
    if(allowed?.length&&!allowed.includes(profile)&&!options.forceProfile)installFailure('argv','所选 profile 不在市场允许列表；核对计划后可显式 --force-profile。');
   }
   collectPackageReferences([{id,packages:resolved.packages}]);
-  candidates.push({resolved,manifest,delivery,artifacts:[],result,replaceFiles:false,needsApproval:resolved.policy.installation==='confirm'});
+  candidates.push({resolved,manifest,delivery,artifacts:[],selection,sourceArtifacts:[],result,replaceFiles:false,needsApproval:resolved.policy.installation==='confirm'});
  }
  const active=candidates.filter(candidate=>candidate.result.status!=='on-use');
  if(!active.length)return{status:'on-use',plugins:candidates.map(candidate=>candidate.result)};
  const lease=options.dryRun?undefined:acquireInstallationLease(root);
  let transaction:WorkspaceTransaction|undefined,preview:string|undefined;
  try{
-  for(const candidate of active)if(candidate.resolved.packages.nuget.length||candidate.resolved.packages.npm.length){
-   const prepared=await resolvePackageDelivery(root,candidate.resolved,profile,options.forceProfile);
-   candidate.resolved=prepared.resolved;candidate.delivery=prepared.delivery;candidate.artifacts=prepared.artifacts;
-   candidate.result.files=prepared.delivery.files;candidate.result.packages=prepared.delivery.packages;
-   candidate.result.permissions=prepared.delivery.components.length>1?prepared.delivery.requirements:installObject(candidate.manifest.policy).permissions??{};
-   candidate.result.diagnostics.push(...prepared.delivery.diagnostics);
+  for(const candidate of active){
+   if((candidate.resolved.packages.nuget.length||candidate.resolved.packages.npm.length)&&(!candidate.selection.noCode||candidate.delivery.composition)){
+    const prepared=await resolvePackageDelivery(root,candidate.resolved,profile,options.forceProfile,!!candidate.selection.noCode);
+    candidate.resolved=prepared.resolved;candidate.delivery=prepared.delivery;
+    if(candidate.selection.noCode)candidate.sourceArtifacts=prepared.artifacts;else candidate.artifacts=prepared.artifacts;
+   }
+   const projected=selectComponentSurfaces(candidate.resolved,candidate.delivery,candidate.selection,profile,options.forceProfile);
+   candidate.resolved=projected.resolved;candidate.delivery=projected.delivery;candidate.manifest=installObject(projected.resolved.component.manifest);
+   candidate.result.files=projected.delivery.files;candidate.result.packages=projected.delivery.packages;
+   candidate.result.permissions=projected.delivery.components.length>1?projected.delivery.requirements:installObject(candidate.manifest.policy).permissions??{};
+   candidate.result.secretReferences=[...new Set([...projected.resolved.content.files.values()].flatMap(bytes=>bytes.toString('utf8').match(/secretRef:\/\/[^\s"'<>},]+/g)??[]))];
+   candidate.result.diagnostics.push(...projected.delivery.diagnostics);
   }
   const state=readInstalledState(root),patches=new Map<string,PatchPlan>();
   const openPatch=(name:string):PatchPlan=>{
@@ -139,6 +148,14 @@ export async function installMarketplacePlugins(references:readonly string[],opt
     try{oldManifest=verifyInstalledComponent(root,previous);}catch(error){if(!options.force)throw error;filesChanged=true;
      oldManifest=originalManifest(root,previous);candidate.needsApproval=candidate.needsApproval||!oldManifest;}
    }else if(existsSync(destination))installFailure(destination,'组件目录存在但没有安装锁，不能覆盖不明来源的文件。');
+   if(previous&&candidate.selection.noCode&&installObject(previous.selection).noCode!==true){
+    if(filesChanged)installFailure(destination,'原组件文件被修改，无法确认 required 代码保护；先恢复原组件再选择表面。');
+    for(const item of (previous.files as JsonValue[]).map(installObject))if(typeof item.path==='string'&&(item.path==='.qian-plugin/plugin.json'||item.path.endsWith('/.qian-plugin/plugin.json'))){
+     const original=installObject(readInstallFile(within(destination,item.path)));
+     if(installObject(original.policy).required===true&&installObject(original.runtime).form!==undefined)
+      installFailure(destination,'不能用 --no-code 替换已安装的 required 代码组件或其子组件。');
+    }
+   }
    const same=!!previous&&previous.version===result.version&&previous.digest===resolved.digest&&(previous.deliveryDigest??previous.digest)===resolved.content.digest&&
     stable(previous.packageArtifacts??[])===stable(candidate.artifacts as unknown as JsonValue)&&previous.market===resolved.market&&previous.marketSource===resolved.marketSource;
    if(previous&&previous.version===result.version&&!same&&!options.force)installFailure(destination,'同版本来源或内容发生变化，核对后才能用 --force 替换。');
@@ -179,7 +196,7 @@ export async function installMarketplacePlugins(references:readonly string[],opt
     }
    }
    if(candidate.delivery.regularEntry&&!selected){
-    const entryId=id.split('.').at(-1)!,existing=selectedPatch.entries.find(value=>entryKey(installObject(value))==='global/'+entryId);
+    const entryId=candidate.delivery.composition?id+'-surfaces':id.split('.').at(-1)!,existing=selectedPatch.entries.find(value=>entryKey(installObject(value))==='global/'+entryId);
     if(existing&&(installObject(existing).disabled!==true||String(installObject(existing).plugin).split('@')[0]!==id))installFailure(selectedPatch.file,'目标 scope/id 已存在，拒绝覆盖。');
     selected={profile,scope:'global',id:entryId};retained.push(selected);entryChanged=true;
    }

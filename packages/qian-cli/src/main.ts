@@ -10,6 +10,7 @@ import {listRemoteMarketplaces,marketplaceRegistrations,MarketplaceFailure} from
 import {installMarketplacePlugins} from './marketplace-install.js';
 import {removeMarketplacePlugins} from './marketplace-remove.js';
 import {listInstalledComponents} from './installed-components.js';
+import {parseSurfaceNames,type SurfaceName} from './surface-selection.js';
 import {randomBytes} from 'node:crypto';
 import type {SurfaceDiagnostic} from '@qian/surfaces';
 function argumentError(message: string): SurfaceDiagnostic {
@@ -23,6 +24,7 @@ const patches:string[]=[];
 const sources:string[]=[];let outputDirectory:string|undefined,homeExplicit=false;
 let remote=false,markets=false,allowUnverified=false,yes=false,dryRun=false,noCode=false,purge=false,force=false,resetConfig=false,forceProfile=false;let from:string|undefined;const references:string[]=[];
 let command='';let template:string|undefined,componentId:string|undefined,componentName:string|undefined;
+let surfaces:SurfaceName[]|undefined;
 try{
   for(let i=0;i<argv.length;i++){
     const arg=argv[i];
@@ -43,6 +45,7 @@ try{
     else if(arg==='--yes')yes=true;
     else if(arg==='--dry-run')dryRun=true;
     else if(arg==='--no-code')noCode=true;
+    else if(arg==='--surfaces'){if(command!=='list')surfaces=parseSurfaceNames(value());}
     else if(arg==='--purge')purge=true;
     else if(arg==='--force')force=true;
     else if(arg==='--reset-config')resetConfig=true;
@@ -57,7 +60,7 @@ try{
     else if(arg==='--json')format='json';
     else if(arg==='--dump-config'||arg==='dump-config')command='dump-config';
     else if(arg==='--resolve'||arg==='--redact'){} // 解析始终校验，且从不解析密钥引用。
-    else if(arg==='--help'||arg==='-h'){process.stdout.write('qian [--profile 名称] dump-config [--patch 文件] [--format yaml|json] [--entry ID] [--cwd 目录]\nqian docs generate [--profile 名称] [--patch 文件] [--source 源码目录] [--out docs/generated] [--json]\nqian init --template skill-only --id <组件id> --name <名称>\nqian list [--remote|--markets] [--allow-unverified] [--json]\nqian add <market/name@version> [--yes|--dry-run] [--from 市场]\nqian remove <组件id或安装名>... [--profile 名称] [--purge|--dry-run] [--json]\n');process.exit(0);}
+    else if(arg==='--help'||arg==='-h'){process.stdout.write('qian [--profile 名称] dump-config [--patch 文件] [--format yaml|json] [--entry ID] [--cwd 目录]\nqian docs generate [--profile 名称] [--patch 文件] [--source 源码目录] [--out docs/generated] [--json]\nqian init --template skill-only --id <组件id> --name <名称>\nqian list [--remote|--markets] [--allow-unverified] [--json]\nqian add <market/name@version> [--surfaces skills,commands] [--no-code] [--yes|--dry-run] [--from 市场]\nqian remove <组件id或安装名>... [--profile 名称] [--purge|--dry-run] [--json]\n');process.exit(0);}
     else throw new Error('不支持的命令或参数。');
   }
   if(!command)throw new Error('使用 --help 查看 dump-config 与 docs generate 参数。');
@@ -72,7 +75,7 @@ try{
       else result=listInstalledComponents(cwd);
     }else if(command==='remove')result=await removeMarketplacePlugins(references,{workingDirectory:cwd,profile:profile??'minimal',purge,dryRun});
     else{
-      const installed=await installMarketplacePlugins(references,{...options,yes,dryRun,noCode,force,resetConfig,forceProfile});
+      const installed=await installMarketplacePlugins(references,{...options,yes,dryRun,noCode,surfaces,force,resetConfig,forceProfile});
       result=references.length===1?installed.plugins[0]:installed;
     }
     process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':stringify(result,{lineWidth:0}));

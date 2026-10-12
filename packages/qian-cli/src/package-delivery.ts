@@ -37,7 +37,7 @@ function addComponent(files:Map<string,Buffer>,content:ContentSnapshot,rootId:st
 }
 
 /** 从声明引用的真实包补齐组件内容，再走同一个组件树验证器。 */
-export async function resolvePackageDelivery(root:string,source:ResolvedMarketplacePlugin,profile:string,forceProfile=false):Promise<PackageDelivery> {
+export async function resolvePackageDelivery(root:string,source:ResolvedMarketplacePlugin,profile:string,forceProfile=false,metadataOnly=false):Promise<PackageDelivery> {
  let resolved=source,delivery=prepareComponentDelivery(source,profile,forceProfile);const seen=new Set<string>(),artifacts:PackageArtifactEvidence[]=[];
  for(let round=0;round<32;round++){
   verifyDeclaredPackageDigests(delivery.references,artifacts);
@@ -45,7 +45,7 @@ export async function resolvePackageDelivery(root:string,source:ResolvedMarketpl
   if(!requested.length){verifyDeclaredPackageDigests(delivery.references,artifacts,true);return{resolved:{...resolved,packages:delivery.packages},delivery,artifacts};}
   if(seen.size+requested.length>256)installFailure('package-manager','组件包引用超过 256 个，拒绝继续递归获取。');
   for(const reference of requested)seen.add(packageIdentity(reference)+'@'+reference.version);
-  const fetched=await fetchPackageComponents(root,{nuget:requested.filter(item=>item.kind==='nuget').map(item=>item.specification),npm:requested.filter(item=>item.kind==='npm').map(item=>item.specification)});
+  const fetched=await fetchPackageComponents(root,{nuget:requested.filter(item=>item.kind==='nuget').map(item=>item.specification),npm:requested.filter(item=>item.kind==='npm').map(item=>item.specification)},metadataOnly);
   try{
    artifacts.push(...fetched.artifacts);verifyDeclaredPackageDigests(delivery.references,artifacts);
    const files=new Map(resolved.content.files);

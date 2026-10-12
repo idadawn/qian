@@ -92,7 +92,8 @@ export async function removeMarketplacePlugins(references:readonly string[],opti
   const beforePackages=installedPackageSets(state.plugins),afterPackages=installedPackageSets(remaining);
   const afterArtifacts=installedPackageArtifacts(remaining);
   const all=collectPackageReferences(beforePackages);let workspace:PackageWorkspace|undefined,plan:PackagePlan|undefined;
-  if(all.length&&activeRemoval){
+  const removingCode=activePlugins.some(plugin=>{const packages=installedPackageSets([plugin])[0].packages;return packages.nuget.length||packages.npm.length;});
+  if(all.length&&activeRemoval&&removingCode){
    workspace=await inspectPackageWorkspace(root,[...new Set(all.map(item=>item.kind))]);
    if(state.lock.packageState!==undefined&&!Array.isArray(state.lock.packageState))installFailure(state.file,'代码包归属记录无效。');
    plan=planPackageChanges(workspace,beforePackages,afterPackages,(state.lock.packageState??[]) as unknown as PackageOwnership[]);

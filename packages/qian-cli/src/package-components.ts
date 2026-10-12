@@ -1,4 +1,4 @@
-import {existsSync,mkdirSync,mkdtempSync,readFileSync,realpathSync,rmSync,writeFileSync} from 'node:fs';
+import {existsSync,mkdirSync,mkdtempSync,readFileSync,realpathSync,readdirSync,rmSync,writeFileSync} from 'node:fs';
 import path from 'node:path';
 import {runPackageCommand,PackageCommandFailure} from './package-process.js';
 import {inspectPackageWorkspace,npmExecutable} from './package-manager.js';
@@ -12,7 +12,7 @@ export interface PackageComponentFetch {components:PackageComponent[];artifacts:
 const xml=(value:string):string=>value.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
 
 /** 只在隔离目录还原或取归档；不改宿主依赖、不复制凭据配置、不执行组件入口。 */
-export async function fetchPackageComponents(rootDirectory:string,packages:{nuget:readonly string[];npm:readonly string[]}):Promise<PackageComponentFetch> {
+export async function fetchPackageComponents(rootDirectory:string,packages:{nuget:readonly string[];npm:readonly string[]},metadataOnly=false):Promise<PackageComponentFetch> {
  const root=realpathSync(rootDirectory),references=collectPackageReferences([{id:'qian.package-plan',packages}]),components:PackageComponent[]=[],artifacts:PackageArtifactEvidence[]=[];
  if(!references.length)return{components,artifacts,dispose(){}};
  const parent=path.join(root,'.qian/.staging');assertNoLinks(parent);mkdirSync(parent,{recursive:true,mode:0o700});
@@ -22,11 +22,12 @@ export async function fetchPackageComponents(rootDirectory:string,packages:{nuge
  try{
   const nuget=references.filter(reference=>reference.kind==='nuget');
   if(nuget.length){
-   const workspace=await inspectPackageWorkspace(root,['nuget']),folder=path.join(directory,'nuget');mkdirSync(folder);
+   const frameworks=metadataOnly&&readdirSync(root).filter(name=>name.endsWith('.csproj')).length!==1?['net10.0']:(await inspectPackageWorkspace(root,['nuget'])).nuget!.targetFrameworks;
+   const folder=path.join(directory,'nuget');mkdirSync(folder);
    // NuGet 配置按宿主目录继承；MSBuild 工程导入在这里封闭，防止借用宿主构建脚本。
    for(const name of ['Directory.Build.props','Directory.Build.targets','Directory.Packages.props'])writeFileSync(path.join(folder,name),'<Project />');
    const project=path.join(folder,'Inspect.csproj');
-   writeFileSync(project,'<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFrameworks>'+xml(workspace.nuget!.targetFrameworks.join(';'))+'</TargetFrameworks><ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally></PropertyGroup><ItemGroup>'+nuget.map(reference=>'<PackageReference Include="'+xml(reference.name)+'" Version="['+xml(reference.version)+']" />').join('')+'</ItemGroup></Project>');
+   writeFileSync(project,'<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFrameworks>'+xml(frameworks.join(';'))+'</TargetFrameworks><ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally></PropertyGroup><ItemGroup>'+nuget.map(reference=>'<PackageReference Include="'+xml(reference.name)+'" Version="['+xml(reference.version)+']" />').join('')+'</ItemGroup></Project>');
    await runPackageCommand('dotnet',['restore',project,'--packages',path.join(folder,'packages'),'--disable-parallel',
     '-p:ImportDirectoryBuildProps=false','-p:ImportDirectoryBuildTargets=false','-p:ImportDirectoryPackagesProps=false','-p:ManagePackageVersionsCentrally=false'],folder,'dotnet');
    const assetsFile=path.join(folder,'obj/project.assets.json');assertNoLinks(assetsFile);
