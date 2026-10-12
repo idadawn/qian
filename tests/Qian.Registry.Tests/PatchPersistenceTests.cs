@@ -24,7 +24,7 @@ using Qian.Testing.Containers;
 
 namespace Qian.Registry.Tests;
 
-public sealed class PatchPersistenceTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
+public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
     private static JsonElement Patch(string json) => JsonSerializer.Deserialize<JsonElement>(json);

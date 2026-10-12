@@ -85,6 +85,7 @@ public sealed partial class SurfaceValidator : ISurfaceValidator
                     if (source is not null) _documents.Add(new SurfaceDocument(kind, kind, Relative(full), source.Data, source.Body));
                 }
             }
+            ReadMetadata();
             SemanticRules();
             return Result(new ParsedComponent(_id, _manifest, _documents.ToArray()) { Profile = options.Profile });
         }
@@ -93,7 +94,24 @@ public sealed partial class SurfaceValidator : ISurfaceValidator
             _diagnostics.DistinctBy(d => (d.File, d.Error.Pointer, d.Error.Errors![0].Code, d.Severity))
                 .OrderBy(d => d.Severity == "error" ? 0 : 1).ThenBy(d => d.File, StringComparer.Ordinal).ThenBy(d => d.Error.Pointer, StringComparer.Ordinal).Take(100).ToArray());
 
-        private SurfaceSyntax? Read(string file, string schema, bool markdown, string diagnosticFile, string pointer)
+        private void ReadMetadata()
+        {
+            var declared = _manifest.TryGetProperty("surfaces", out var surfaces) && surfaces.TryGetProperty("metadata", out _);
+            var full = Safe(declared ? Text(surfaces, "metadata") : "./metadata", ManifestFile, "/surfaces/metadata", required: declared);
+            if (full is null) return;
+            if (!Directory.Exists(full)) { Error(ManifestFile, "/surfaces/metadata", SurfaceErrors.Path, "metadata 表面必须指向目录。"); return; }
+            var files = Directory.EnumerateFileSystemEntries(full).Order(StringComparer.Ordinal).ToArray();
+            if (files.Length > 1024) { Error(ManifestFile, "/surfaces/metadata", SurfaceErrors.Path, "表面目录条目过多。"); return; }
+            foreach (var item in files.Where(file => file.EndsWith(".json", StringComparison.Ordinal)))
+            {
+                var relative = Relative(item);
+                // 通用层只负责 JSON 与路径；权限、角色等业务 Schema 属于对应 seam。
+                var source = Read(relative, null, false, ManifestFile, "/surfaces/metadata");
+                if (source is not null) _documents.Add(new SurfaceDocument("metadata", Path.GetFileNameWithoutExtension(item), relative, source.Data, source.Body));
+            }
+        }
+
+        private SurfaceSyntax? Read(string file, string? schema, bool markdown, string diagnosticFile, string pointer)
         {
             var full = Safe(file, diagnosticFile, pointer, required: true);
             if (full is null) return null;
@@ -104,7 +122,7 @@ public sealed partial class SurfaceValidator : ISurfaceValidator
                 _diagnostics.AddRange(parsed.Diagnostics);
                 if (parsed.Syntax is not { } syntax || parsed.Diagnostics.Count > 0) return null;
                 _sources[file] = syntax;
-                var errors = validator._schemas.Validate(schema, file, syntax.Data, syntax.Lines, trace);
+                var errors = schema is null ? Array.Empty<SurfaceDiagnostic>() : validator._schemas.Validate(schema, file, syntax.Data, syntax.Lines, trace);
                 _diagnostics.AddRange(errors);
                 return errors.Count == 0 ? syntax : null;
             }

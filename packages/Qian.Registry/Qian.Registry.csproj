@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><IsPackable>true</IsPackable><Description>平台注册表与租户 scope patch 的 PostgreSQL 持久化。</Description></PropertyGroup>
+  <PropertyGroup><IsPackable>true</IsPackable><Description>平台注册表制品目录、租户 scope patch 与 PostgreSQL 持久化。</Description></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Qian.Registry.Abstractions/Qian.Registry.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Profiles.Abstractions/Qian.Profiles.Abstractions.csproj" />

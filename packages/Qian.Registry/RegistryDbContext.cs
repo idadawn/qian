@@ -11,10 +11,30 @@ public sealed class RegistryDbContext(DbContextOptions<RegistryDbContext> option
     /// <summary>组件规格 §7.6 的唯一数据库 schema。</summary>
     public const string Schema = "plugin_qian_registry";
     internal DbSet<ScopePatchRow> ScopePatches => Set<ScopePatchRow>();
+    internal DbSet<PluginArtifactRow> PluginArtifacts => Set<PluginArtifactRow>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // 制品是平台级目录；没有租户启用状态，不能用目录可见性替代 scope/权益检查。
+        modelBuilder.Entity<PluginArtifactRow>(entity =>
+        {
+            entity.ToTable("plugin_artifacts");
+            entity.HasKey(row => row.Digest).HasName("pk_plugin_artifacts");
+            entity.Property(row => row.Digest).HasMaxLength(71);
+            entity.Property(row => row.PluginId).HasMaxLength(128).IsRequired();
+            entity.Property(row => row.Version).HasMaxLength(200).IsRequired();
+            entity.HasIndex(row => new { row.PluginId, row.Version });
+            entity.Property(row => row.Manifest).HasColumnType("jsonb").IsRequired();
+            entity.Property(row => row.Documents).HasColumnType("jsonb").IsRequired();
+            entity.Property(row => row.Files).HasColumnType("jsonb").IsRequired();
+            entity.Property(row => row.Metadata).HasColumnType("jsonb").IsRequired();
+            entity.Property(row => row.State).HasMaxLength(32).IsRequired();
+            entity.Property(row => row.SignatureVerification).HasColumnType("jsonb");
+            entity.Property(row => row.Profile).HasMaxLength(128).IsRequired();
+            entity.Property(row => row.SubmittedBy).HasMaxLength(200).IsRequired();
+            entity.Property(row => row.SubmittedAt).HasColumnType("timestamp with time zone");
+        });
         modelBuilder.Entity<ScopePatchRow>(entity =>
         {
             entity.ToTable("scope_patches");
@@ -51,4 +71,21 @@ internal sealed class ScopePatchRow : IMultiTenant
     public string UpdatedBy { get; set; } = "";
     public DateTimeOffset UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
+}
+
+// 注册表的全局候选目录；公开管理写入必须另经平台权限，Submitted 不可作为挂载依据。
+internal sealed class PluginArtifactRow
+{
+    public string Digest { get; set; } = "";
+    public string PluginId { get; set; } = "";
+    public string Version { get; set; } = "";
+    public string Manifest { get; set; } = "";
+    public string Documents { get; set; } = "";
+    public string Files { get; set; } = "";
+    public string Metadata { get; set; } = "";
+    public string State { get; set; } = "Submitted";
+    public string? SignatureVerification { get; set; }
+    public string Profile { get; set; } = "";
+    public string SubmittedBy { get; set; } = "";
+    public DateTimeOffset SubmittedAt { get; set; }
 }
