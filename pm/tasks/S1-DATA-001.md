@@ -1,7 +1,7 @@
 ---
 id: S1-DATA-001
 title: AddQianData 默认安全装配与 RLS 迁移模板
-status: blocked
+status: done
 stage: S1
 area: DATA
 wave: 1
@@ -31,6 +31,10 @@ Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 �
 - [x] CI：在线 DbContext 不继承 `QianDbContext` 时门禁失败
 - [x] RLS 连接版与事务版拦截器、`KunMultiTenantModelCacheKeyFactory` 的装配改为复用 Kun 2026.10.8 起提供的 `AddKunTenantRls<TContext>()`，`AddQianData` 只补 Qian 自己的约束与启动校验，S1-KUN-001 先行交付的最小装配随之收敛；若评估后不复用，在 `packages/Qian.Data/README.md` 写明原因（S1-KUN-008 的未决问题，产品负责人 2026-10-08 同意并入本任务）
 
+## 分阶段验收边界
+
+按已批准的 [S1-DEC-018](S1-DEC-018.md)，以上五项为数据本体验收，本任务在本体通过 CI 并合并后完成，解除 Registry 的实现前置。完整组件交付仍须由 [S1-RT-014](S1-RT-014.md) 完成 SDK 字段源生成、默认装配与私有 NuGet 锁步发布，并由 [S1-RT-011](S1-RT-011.md) 回验真实 `qian add data` 安装。相关安装门通过前，`plugins/qian.data` 保留骨架标记；QA-002 总目标继续未完成。
+
 ## 进度日志
 
 - 2026-10-06 planner：创建任务
@@ -53,3 +57,4 @@ Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：snake_case、Guid v7 �
 - 2026-10-12 cody：五项本体验收完成：实际Kestrel+RS256身份+PostgreSQL的客户列表验证A/B各1000行；捕获真实列表SQL执行EXPLAIN ANALYZE命中租户复合索引。连接引用选择、独立库模式和租户挂载边界通过；全仓308测试零跳过、37门禁及13包依赖通过。SDK字段生成RT-014依赖RT-004，RT-004又依赖DATA-001，完整代码安装另属RT-011；按DEC-018请求本体与集成分期，未获批前保留草稿及骨架标记。
 - 2026-10-12 cody：独立前置CFG-001已随PR #46合并；同步最新主线并保留本草稿。组合验证316项测试零跳过、37门禁、15包依赖检查通过，包含真实CRM/PG索引与真实Apollo。DEC-018仍待产品负责人答复，本次同步不代表DATA合并或安装门通过。
 - 2026-10-12 cody：同步已合并的 CFG-002 与 Kun 2026.10.12；组合全仓构建零警告、358 项测试零失败零跳过、38 项门禁及 16 包依赖检查通过。真实 CRM HTTP/RLS 与实际列表 SQL 索引计划、真实 Apollo 拒绝/恢复同时通过。PR #44 继续保持草稿和 blocked，DEC-018 未答复，不改验收分期或 SDK/CLI 安装边界。
+- 2026-10-12 cody：产品负责人已批准 DEC-018 分阶段验收；五项数据本体验收完成，并随 PR #44 在最终 CI 全绿后合并交付。复核 Linux 证据为 358/358 测试零跳过，真实列表查询命中租户复合索引。SDK 源生成、默认装配、私有 NuGet 锁步发布和 qian add data 已回写 RT-014/011 为未完成必过项；保留骨架标记，QA-002 未完成。

@@ -38,7 +38,7 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 
 本目录已有 DataPlugin 的实际入口和生命周期，契约放在 Qian.Data.Abstractions，业务组件只依赖 Definition。组件接受 dialect=pg、rls.enforce=true 和可选 connection 引用。带连接引用的 AddQianData 重载将上下文绑定到 platform/dev secretRef，凭据由宿主工厂在每次创建上下文时读取；组件的 connection 选择对应的上下文集合，未登记的引用或上下文会被拒绝。省略 connection 时沿用各上下文自身的配置，方便按组件使用独立 schema 和受限角色。租户挂载的 Data 只接受相同租户上下文，租户自带业务库仍在 S3 范围。
 
-`plugins/qian.data` 仍保留配置骨架标记。SDK 的代码字段源生成与 CLI 的代码包安装分别由 S1-RT-014 / S1-RT-011 交付，不能用当前骨架替代完整安装验收。
+按已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，数据本体先交付以解除注册表的实现前置。`plugins/qian.data` 仍保留配置骨架标记；SDK 代码字段源生成、默认装配与私有 NuGet 锁步发布由 S1-RT-014 回验，真实 `qian add data` 代码安装与 Provider 运行由 S1-RT-011 回验。这些门禁通过前，不宣称完整组件安装或正式私有发布已经完成。
 
 ## 模型体验
 
@@ -46,4 +46,4 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 
 ## 已知限制与延期项
 
-真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。samples/Qian.Sample.Crm 已通过真实签名身份、HTTP 与 PostgreSQL 的千行双租户及原 SQL 索引验收。SDK 源生成与代码安装尚待后续任务验收；S1-DEC-017 已批准并实施。
+真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。samples/Qian.Sample.Crm 已通过真实签名身份、HTTP 与 PostgreSQL 的千行双租户及原 SQL 索引验收。SDK 源生成、私有发布与代码安装尚待后续任务验收；S1-DEC-017 / S1-DEC-018 均已批准并落实到对应验收边界。

@@ -403,6 +403,8 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - [ ] UT：Filter AST 示例通过 JSON Schema 校验；`between` 用于布尔字段被矩阵拒绝。
 - [ ] E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 `EXPLAIN` 显示走租户索引。
 
+**DATA-001 交付分期**。按产品负责人已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，默认安全装配、RLS 迁移与参考应用的数据本体通过真实验收后先合并，解除注册表实现前置。SDK 代码字段源生成、默认装配及私有 NuGet 锁步发布由 RT-014 回验，真实 `qian add data` 安装由 RT-011 回验；这些门通过前保留组件骨架标记，不宣称完整组件安装。此分期不豁免本节其它数据任务的独立验收。
+
 ### 7.7 qian.files 文件存储（P0 · S1）
 
 **设计理念**。文件上传是 S1 退出标准点名的能力。基于 Kun 新线 `Kun.Storage.Abstractions` 的 `IFileStorage`，由 Qian 补齐存储键不感知租户、无配额、无元数据表三个缺口；活跃 Web MIME 强制 `attachment` 的策略**不可关闭**。参考平台匿名上传下载、URL 带登录 token 预览，是反例。
