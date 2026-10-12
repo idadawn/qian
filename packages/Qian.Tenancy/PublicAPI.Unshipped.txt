@@ -1,0 +1,17 @@
+#nullable enable
+Qian.Tenancy.TenancyDbContext
+Qian.Tenancy.TenancyDbContext.TenancyDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Tenancy.TenancyDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Tenancy.TenancyPlugin
+Qian.Tenancy.TenancyPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.TenancyPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Tenancy.TenancyPlugin.TenancyPlugin() -> void
+Qian.Tenancy.TenantContextPropagator
+Qian.Tenancy.TenantContextPropagator.BeginScope(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string!>>! headers, System.Guid authorizedTenantId) -> System.IDisposable!
+Qian.Tenancy.TenantContextPropagator.BeginScope(System.Text.Json.JsonElement carrier, System.Guid authorizedTenantId) -> System.IDisposable!
+Qian.Tenancy.TenantContextPropagator.TenantContextPropagator(Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Tenancy.TenantContextPropagator.Write(System.Text.Json.JsonElement carrier) -> System.Text.Json.JsonElement
+Qian.Tenancy.TenantContextPropagator.WriteHeaders() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Tenancy.TenantRequestBoundary
+Qian.Tenancy.TenantRequestBoundary.InvokeAsync(Microsoft.AspNetCore.Http.HttpContext! context, Microsoft.AspNetCore.Http.RequestDelegate! next) -> System.Threading.Tasks.Task!
+Qian.Tenancy.TenantRequestBoundary.TenantRequestBoundary(Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+const Qian.Tenancy.TenancyDbContext.Schema = "plugin_qian_tenancy" -> string!

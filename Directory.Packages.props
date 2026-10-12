@@ -45,6 +45,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Data">
+    <PackageVersion Include="Kun.MultiTenancy" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.EntityFrameworkCore" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.MultiTenancy.EntityFrameworkCore" Version="[$(KunVersion)]" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />

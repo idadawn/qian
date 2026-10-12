@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>租户主档目录与严格租户上下文传播契约。</Description></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /><PackageReference Include="Kun.Core" /></ItemGroup>
+</Project>
