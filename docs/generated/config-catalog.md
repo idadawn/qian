@@ -248,27 +248,35 @@
 
 ```json
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "dialect": {
-      "type": "string"
+      "type": "string",
+      "const": "pg",
+      "default": "pg"
     },
     "connection": {
       "type": "string",
+      "description": "选择由宿主显式绑定此引用的业务上下文；省略时使用各上下文自身的连接。凭据按上下文创建读取，不写入清单。",
+      "pattern": "^secretRef://(platform|dev)/[^\\s?#]\u002B$",
       "x-qian-sensitive": true
     },
     "rls": {
       "type": "object",
       "properties": {
         "enforce": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         }
       },
+      "required": [
+        "enforce"
+      ],
       "additionalProperties": false
     }
   },
-  "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "additionalProperties": false
 }
 ```
 
@@ -472,7 +480,19 @@
       "type": "object",
       "properties": {
         "store": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "pg"
+          ]
+        },
+        "platformRole": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
+          "maxLength": 63,
+          "description": "可选的独立平台审计登录角色，仅允许 global Provider；凭据由宿主单独绑定，不写入配置。",
+          "not": {
+            "pattern": "[^a-z0-9_]"
+          }
         }
       },
       "additionalProperties": false
