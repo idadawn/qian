@@ -69,3 +69,4 @@ static Qian.Tenancy.TenantDescriptor.operator ==(Qian.Tenancy.TenantDescriptor? 
 static Qian.Tenancy.UpdateTenant.operator !=(Qian.Tenancy.UpdateTenant? left, Qian.Tenancy.UpdateTenant? right) -> bool
 static Qian.Tenancy.UpdateTenant.operator ==(Qian.Tenancy.UpdateTenant? left, Qian.Tenancy.UpdateTenant? right) -> bool
 static readonly Qian.Tenancy.TenancyDefinition.Key -> Qian.Runtime.ServiceKey
+Qian.Tenancy.ITenantDirectory.GetByIdAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantDescriptor?>

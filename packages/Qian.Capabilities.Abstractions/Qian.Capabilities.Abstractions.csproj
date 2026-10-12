@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>Qian 能力目录、提示词和执行的稳定端口。</Description></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /><ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" /></ItemGroup>
+</Project>

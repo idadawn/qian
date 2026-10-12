@@ -1,0 +1,5 @@
+#nullable enable
+Qian.Capabilities.CapabilitiesPlugin
+Qian.Capabilities.CapabilitiesPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Capabilities.CapabilitiesPlugin.CapabilitiesPlugin() -> void
+Qian.Capabilities.CapabilitiesPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!

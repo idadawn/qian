@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/packages/">
+    <Project Path="packages/Qian.Capabilities.Abstractions/Qian.Capabilities.Abstractions.csproj" />
+    <Project Path="packages/Qian.Capabilities/Qian.Capabilities.csproj" />
+    <Project Path="packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
     <Project Path="packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" />
     <Project Path="packages/Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
     <Project Path="packages/Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" />

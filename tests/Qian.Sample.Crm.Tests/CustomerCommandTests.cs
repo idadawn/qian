@@ -249,7 +249,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         using var suspended = await host.Get(A, "/api/customers"); Assert.Equal(HttpStatusCode.Forbidden, suspended.StatusCode);
     }
 
-    private async Task<RunningApp> Start(bool concurrentWrites = false)
+    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false)
     {
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
         var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
@@ -263,6 +263,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         var app = CrmCommandApplication.Build([], builder =>
         {
             builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
+            if (capabilities) ConfigureCapabilities(builder, postgres.AppConnectionString);
             builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
             if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
@@ -278,12 +279,15 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             using (var scope = app.Services.CreateScope())
             {
                 var schemas = new[] { CrmDbContext.Schema, AuthzDbContext.Schema, TenancyDbContext.Schema, AuditDbContext.Schema };
+                if (capabilities) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema];
                 var sql = string.Join('\n', schemas.Select(schema => "DROP SCHEMA IF EXISTS " + schema + " CASCADE;"));
                 sql += scope.ServiceProvider.GetRequiredService<CrmDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuthzDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<TenancyDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.GenerateCreateScript();
+                if (capabilities) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript();
                 await Admin(sql);
+                if (capabilities) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                 await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
                 await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
             }
@@ -296,7 +300,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 await roles.EnsureBuiltinsAsync("test-bootstrap", Ct); await roles.InstallDefaultsAsync("qian.sample.crm", "1.0.0", null, "test-bootstrap", Ct);
                 await roles.AssignAsync(id == A ? "tenant.owner" : "tenant.user", "service", Writer, "test-bootstrap", Ct);
             }
+            if (capabilities) MapCapabilities(app);
             await app.StartAsync(Ct);
+            if (capabilities) await AttachCapabilities(app);
             using (tenant.BeginScope(A))
             {
                 var decision = await app.Services.GetRequiredService<Kun.Authorization.IPermissionChecker>().CheckAsync(new Kun.Authorization.PermissionRequest(new Kun.Authorization.AuthorizationSubject(Writer, A, "service"), "qian.sample.crm:customer:write"), Ct);
@@ -343,6 +349,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
     {
         internal WebApplication App => app;
         internal string BusinessRole => role;
+        internal HttpClient Client => client;
         internal string FailureEvidence => string.Join("\n", evidence.Failures);
         internal Task<HttpResponseMessage> Post(string tenant, CreateCustomerCommand command)
         {
@@ -356,14 +363,14 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token(tenant, "crm.read"));
             return Send(message);
         }
-        private string Token(string tenant, string scope)
+        internal string Token(string tenant, string scope)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var id = Guid.CreateVersion7().ToString();
             var payload = JsonSerializer.Serialize(new { iss = Issuer, aud = new[] { Audience }, sub = Writer, principal_kind = "service", tenant_id = tenant,
                 roles = DeclaredTokenRoles, scope, session_id = id, jti = id, iat = now, nbf = now, exp = now + 60 });
             return new JsonWebTokenHandler().CreateToken(payload, new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
         }
-        private async Task<HttpResponseMessage> Send(HttpRequestMessage message)
+        internal async Task<HttpResponseMessage> Send(HttpRequestMessage message)
         { using (message) return await client.SendAsync(message, Ct); }
         public async ValueTask DisposeAsync() { client.Dispose(); await app.StopAsync(Ct); await app.DisposeAsync(); signing.Dispose(); }
     }

@@ -1,0 +1,3 @@
+#nullable enable
+Qian.Capabilities.AspNetCore.CapabilityEndpoints
+static Qian.Capabilities.AspNetCore.CapabilityEndpoints.MapQianCapabilities(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>Qian 平台能力目录与统一可见性判定。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Capabilities.Abstractions/Qian.Capabilities.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <ProjectReference Include="../Qian.Registry.Abstractions/Qian.Registry.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Tenancy.Abstractions/Qian.Tenancy.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

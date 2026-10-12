@@ -1,0 +1,13 @@
+#nullable enable
+Qian.Capabilities.CapabilitiesDefinition
+Qian.Capabilities.CapabilityCatalog
+Qian.Capabilities.CapabilityCatalog.CacheScope.get -> string!
+Qian.Capabilities.CapabilityCatalog.CapabilityCatalog(System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>! items, int ttlMs) -> void
+Qian.Capabilities.CapabilityCatalog.Items.get -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!
+Qian.Capabilities.CapabilityCatalog.TtlMs.get -> int
+Qian.Capabilities.ICapabilityService
+Qian.Capabilities.ICapabilityService.ComposePromptAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<string!>
+Qian.Capabilities.ICapabilityService.InvokeAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, string! id, System.Text.Json.JsonElement input, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement>
+Qian.Capabilities.ICapabilityService.ListAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, string? kind = null, string? query = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.CapabilityCatalog!>
+static Qian.Capabilities.CapabilitiesDefinition.Capabilities(this Qian.Runtime.IPluginContext! context) -> Qian.Capabilities.ICapabilityService!
+static readonly Qian.Capabilities.CapabilitiesDefinition.Key -> Qian.Runtime.ServiceKey
