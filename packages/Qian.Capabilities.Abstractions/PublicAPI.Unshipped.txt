@@ -44,3 +44,46 @@ Qian.Capabilities.IContractRepository.Find(string! pluginId, string! version, st
 Qian.Capabilities.IContractRepository.GetContracts(string! pluginId, string! version) -> System.Collections.Generic.IReadOnlyList<Qian.Capabilities.ContractDocument!>!
 static Qian.Capabilities.CapabilitiesDefinition.Contracts(this Qian.Runtime.IPluginContext! context) -> Qian.Capabilities.IContractRepository!
 static readonly Qian.Capabilities.CapabilitiesDefinition.ContractsKey -> Qian.Runtime.ServiceKey
+Qian.Capabilities.INavigationService
+Qian.Capabilities.INavigationService.GetAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, string! resourceRef, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.NavigationItem!>
+Qian.Capabilities.INavigationService.ListAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Capabilities.NavigationItem!>!>
+Qian.Capabilities.INavigationService.SetPreferenceAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, string! resourceRef, Qian.Capabilities.NavigationPreference! preference, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Capabilities.NavigationItem
+Qian.Capabilities.NavigationItem.<Clone>$() -> Qian.Capabilities.NavigationItem!
+Qian.Capabilities.NavigationItem.Deconstruct(out string! ResourceRef, out string! PluginId, out string! Route, out string! Title, out string? Icon, out int Order) -> void
+Qian.Capabilities.NavigationItem.Equals(Qian.Capabilities.NavigationItem? other) -> bool
+Qian.Capabilities.NavigationItem.Icon.get -> string?
+Qian.Capabilities.NavigationItem.Icon.init -> void
+Qian.Capabilities.NavigationItem.NavigationItem(string! ResourceRef, string! PluginId, string! Route, string! Title, string? Icon, int Order) -> void
+Qian.Capabilities.NavigationItem.Order.get -> int
+Qian.Capabilities.NavigationItem.Order.init -> void
+Qian.Capabilities.NavigationItem.PluginId.get -> string!
+Qian.Capabilities.NavigationItem.PluginId.init -> void
+Qian.Capabilities.NavigationItem.ResourceRef.get -> string!
+Qian.Capabilities.NavigationItem.ResourceRef.init -> void
+Qian.Capabilities.NavigationItem.Route.get -> string!
+Qian.Capabilities.NavigationItem.Route.init -> void
+Qian.Capabilities.NavigationItem.Title.get -> string!
+Qian.Capabilities.NavigationItem.Title.init -> void
+Qian.Capabilities.NavigationPreference
+Qian.Capabilities.NavigationPreference.<Clone>$() -> Qian.Capabilities.NavigationPreference!
+Qian.Capabilities.NavigationPreference.Deconstruct(out bool Hidden, out int? Order) -> void
+Qian.Capabilities.NavigationPreference.Equals(Qian.Capabilities.NavigationPreference? other) -> bool
+Qian.Capabilities.NavigationPreference.Hidden.get -> bool
+Qian.Capabilities.NavigationPreference.Hidden.init -> void
+Qian.Capabilities.NavigationPreference.NavigationPreference(bool Hidden, int? Order = null) -> void
+Qian.Capabilities.NavigationPreference.Order.get -> int?
+Qian.Capabilities.NavigationPreference.Order.init -> void
+override Qian.Capabilities.NavigationItem.Equals(object? obj) -> bool
+override Qian.Capabilities.NavigationItem.GetHashCode() -> int
+override Qian.Capabilities.NavigationItem.ToString() -> string!
+override Qian.Capabilities.NavigationPreference.Equals(object? obj) -> bool
+override Qian.Capabilities.NavigationPreference.GetHashCode() -> int
+override Qian.Capabilities.NavigationPreference.ToString() -> string!
+static Qian.Capabilities.CapabilitiesDefinition.Navigation(this Qian.Runtime.IPluginContext! context) -> Qian.Capabilities.INavigationService!
+static Qian.Capabilities.NavigationItem.operator !=(Qian.Capabilities.NavigationItem? left, Qian.Capabilities.NavigationItem? right) -> bool
+static Qian.Capabilities.NavigationItem.operator ==(Qian.Capabilities.NavigationItem? left, Qian.Capabilities.NavigationItem? right) -> bool
+static Qian.Capabilities.NavigationPreference.operator !=(Qian.Capabilities.NavigationPreference? left, Qian.Capabilities.NavigationPreference? right) -> bool
+static Qian.Capabilities.NavigationPreference.operator ==(Qian.Capabilities.NavigationPreference? left, Qian.Capabilities.NavigationPreference? right) -> bool
+static readonly Qian.Capabilities.CapabilitiesDefinition.NavigationItemsKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Capabilities.CapabilitiesDefinition.NavigationKey -> Qian.Runtime.ServiceKey

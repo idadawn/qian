@@ -3,6 +3,8 @@ using Kun.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Qian.Plugin.Sdk;
 using Qian.Registry;
+using Qian.Audit;
+using Qian.Data;
 using Qian.Tenancy;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
@@ -14,7 +16,7 @@ namespace Qian.Capabilities;
 public sealed class CapabilitiesPlugin : IQianPlugin
 {
     /// <inheritdoc />
-    public IReadOnlyList<ServiceKey> Inject => [RegistryDefinition.Key, TenancyDefinition.Key, CommandPolicies.TenancyKey, CommandPolicies.AuthorizationKey, CommandPolicies.AuditKey];
+    public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key, AuditDefinition.Key, RegistryDefinition.Key, TenancyDefinition.Key, CommandPolicies.TenancyKey, CommandPolicies.AuthorizationKey, CommandPolicies.AuditKey];
     /// <inheritdoc />
     public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {
@@ -26,6 +28,9 @@ public sealed class CapabilitiesPlugin : IQianPlugin
         var contracts = new InstalledContractRepository(ctx.Registry().GetInstalledComponents(), ctx.Services.GetService<IOpenApiCompatibilityProbe>(), ctx.Services.GetRequiredService<ISurfaceReader>());
         ctx.Effect(contracts.Dispose);
         ctx.Provide<IContractRepository>(CapabilitiesDefinition.ContractsKey, contracts);
+        var navigation = new NavigationService(ctx.Registry(), ctx.Services.GetRequiredService<IPermissionChecker>(), ctx.Data());
+        ctx.Effect(navigation.Dispose);
+        ctx.Provide<INavigationService>(CapabilitiesDefinition.NavigationKey, navigation);
         ctx.Effect(service.Dispose);
         ctx.Provide<ICapabilityService>(CapabilitiesDefinition.Key, service);
         return ValueTask.CompletedTask;

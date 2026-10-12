@@ -13,3 +13,10 @@ Qian.Capabilities.OpenApiContractPlugin.OpenApiContractPlugin(Qian.Runtime.IQian
 Qian.Capabilities.CapabilityContractCompiler
 static Qian.Capabilities.CapabilityContractCompiler.CreateOpenApi(System.Collections.Generic.IReadOnlyList<Qian.Plugin.Sdk.CapabilityContract!>! contracts, Qian.Surfaces.Abstractions.ISurfaceReader! schemas, Qian.Surfaces.Abstractions.IToolContractHasher! hasher) -> System.Text.Json.JsonElement
 static Qian.Capabilities.OpenApiContractPlugin.FromRepository(Qian.Runtime.IQianPlugin! inner, Qian.Capabilities.IContractRepository! repository, string! pluginId, string! baselineVersion, string! candidateVersion, string! contractId) -> Qian.Capabilities.OpenApiContractPlugin!
+Qian.Capabilities.CapabilitiesDbContext
+Qian.Capabilities.CapabilitiesDbContext.CapabilitiesDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Capabilities.CapabilitiesDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Capabilities.NavigationManifestPlugin
+Qian.Capabilities.NavigationManifestPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Capabilities.NavigationManifestPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Capabilities.NavigationManifestPlugin.NavigationManifestPlugin(Qian.Runtime.IQianPlugin! inner, Qian.Registry.InstalledComponentMetadata! component, Qian.Surfaces.Abstractions.ISurfaceReader! reader) -> void
+const Qian.Capabilities.CapabilitiesDbContext.Schema = "plugin_qian_capabilities" -> string!

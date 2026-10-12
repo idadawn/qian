@@ -263,7 +263,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         var app = CrmCommandApplication.Build([], builder =>
         {
             builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
-            if (capabilities) ConfigureCapabilities(builder, postgres.AppConnectionString);
+            if (capabilities) ConfigureCapabilities(builder, postgres.AppConnectionString, connection);
             builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
             if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
@@ -279,16 +279,17 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             using (var scope = app.Services.CreateScope())
             {
                 var schemas = new[] { CrmDbContext.Schema, AuthzDbContext.Schema, TenancyDbContext.Schema, AuditDbContext.Schema };
-                if (capabilities) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema];
+                if (capabilities) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema, Qian.Capabilities.CapabilitiesDbContext.Schema];
                 var sql = string.Join('\n', schemas.Select(schema => "DROP SCHEMA IF EXISTS " + schema + " CASCADE;"));
                 sql += scope.ServiceProvider.GetRequiredService<CrmDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuthzDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<TenancyDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.GenerateCreateScript();
-                if (capabilities) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript();
+                if (capabilities) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript() + scope.ServiceProvider.GetRequiredService<Qian.Capabilities.CapabilitiesDbContext>().Database.GenerateCreateScript();
                 await Admin(sql);
                 if (capabilities) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                 await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
+                if (capabilities) await Admin($"GRANT USAGE ON SCHEMA plugin_qian_capabilities TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_capabilities TO \"{role}\";");
                 await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
             }
             var data = app.Services.GetRequiredService<IDataService>(); var tenant = app.Services.GetRequiredService<ITenantContext>();
@@ -363,10 +364,10 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token(tenant, "crm.read"));
             return Send(message);
         }
-        internal string Token(string tenant, string scope)
+        internal string Token(string tenant, string scope, string? subject = null)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var id = Guid.CreateVersion7().ToString();
-            var payload = JsonSerializer.Serialize(new { iss = Issuer, aud = new[] { Audience }, sub = Writer, principal_kind = "service", tenant_id = tenant,
+            var payload = JsonSerializer.Serialize(new { iss = Issuer, aud = new[] { Audience }, sub = subject ?? Writer, principal_kind = "service", tenant_id = tenant,
                 roles = DeclaredTokenRoles, scope, session_id = id, jti = id, iat = now, nbf = now, exp = now + 60 });
             return new JsonWebTokenHandler().CreateToken(payload, new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
         }

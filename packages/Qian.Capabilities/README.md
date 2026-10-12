@@ -27,7 +27,7 @@
 
 `tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证契约、别名、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结，并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。
 
-当前 OpenAPI 聚合覆盖 SDK 真实能力的调用入口，其他组件声明的 HTTP/gRPC 契约仍需接入版本化契约仓库。RT-006 的协议探测与完整发布准入、菜单贡献及偏好仍未完成。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
+当前 OpenAPI 聚合覆盖 SDK 真实能力的调用入口，其他组件声明的 HTTP/gRPC 契约仍需接入版本化契约仓库。RT-006 的协议探测与完整发布准入仍未完成；菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
 
 ## 契约兼容检查
 
@@ -58,3 +58,21 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 按组件 ID、精确制品版本和契约 ID 查询，返回原始内容的副本、文件 SHA-256 与制品目录摘要。仓库不按业务用户裁剪契约，也没有匿名 HTTP 读取入口；卸载后旧服务引用失效，在途兼容检查会取消。`CheckOpenApiAsync` 只比较两个完整版本制品中的同族 OpenAPI，缺基线、候选或检查器均拒绝。
 
 `CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布。CLI 自动产出契约制品、在线签名/发布准入、proto 探测和其它服务接口聚合仍需完成。
+
+## 菜单贡献、资源引用与个人偏好
+
+`NavigationManifestPlugin` 从 `RegistryComponentBinding.FromArtifact` 捕获的 UI 文件读取 `pages[].route / expose / permission / nav`，与实际业务插件共同 Apply，并把菜单登记到 `NavigationItems` 具名集合。它是平台装配器使用的普通包装，不修改 Runtime，也不把清单里的声明自动当成已挂载状态。此包装验证自己消费的菜单字段，不代替完整 MF2 制品、UI 脚本或前端渲染验收。
+
+`Navigation` 服务先读取真实 Registry Ready 视图，再应用 scope 遮蔽、restriction 交集、租户状态和真实 RBAC。业务插件卸载或被租户禁用后，菜单不会从预装清单、个人偏好或被遮蔽的全局项恢复。菜单资源引用采用 `qian:{tenant}:{app}:page:{id}`；本期 tenant 菜单的 app 为组件 ID，id 是规范化编码后的路由，完整引用最多 512 字符。当前提供页面菜单；外壳的页面渲染、外链类型与 App scope 归属仍由相应外壳/应用能力接入。
+
+认证 HTTP 入口：
+
+- `GET /api/capabilities/navigation` 返回当前实际可见的菜单，缓存声明为 private；隐藏偏好在权限过滤之后应用。
+- `GET /api/capabilities/navigation/item?resourceRef=...` 解析当前有权限的资源，未知、无权限与未挂载统一 404。个人隐藏是展示偏好，不影响此访问判定。
+- `PUT /api/capabilities/navigation/preference?resourceRef=...` 只接受 `{ hidden, order? }`，修改当前主体的偏好。租户、主体类型和主体 ID 来自已验证的端口，不能从请求体指定。
+
+偏好保存在 `CapabilitiesDbContext` 的 `plugin_qian_capabilities.navigation_preferences`，由宿主按 Data 约定注册连接和迁移。表强制租户 RLS，服务查询另按 `principal_kind + sub` 过滤；这也让同名用户与服务拥有独立空间。偏好行不会授予权限，另一租户的资源引用不能写入。
+
+偏好更新与 `qian.capabilities/navigation.preference` 审计在同一个 PostgreSQL Serializable 事务中提交。审计只写已知非敏感输入的规范化哈希，字段为 hidden、order 和 ASCII 资源引用，payload 不复制输入。审计失败时偏好回滚；序列化、死锁及目标键冲突会重新验证资格并重试整笔更新，耗尽后返回 CONFLICT。宿主需给本上下文的受限应用角色配置既有审计事务函数权限，不授予审计历史 DML。
+
+真实 Kestrel/PostgreSQL 用例覆盖两个租户、两个服务主体的展示隔离，版本化租户菜单替换、禁用不回退、restriction、卸载、偏好恢复、审计失败回滚和并发更新单行。参考宿主用 UI 声明验证后端目录；没有把它当成前端远程模块已部署或真实用户交互登录的证据。

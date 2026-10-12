@@ -227,9 +227,10 @@ public sealed partial class CustomerCommandTests
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenant, "crm.read crm.write"));
         return host.Send(request);
     }
-    private static void ConfigureCapabilities(WebApplicationBuilder builder, string connection)
+    private static void ConfigureCapabilities(WebApplicationBuilder builder, string connection, string navigationConnection)
     {
         builder.Services.AddKunSecurity();
+        builder.Services.AddQianData<CapabilitiesDbContext>((_, options) => options.UseNpgsql(navigationConnection).UseKunSchema(CapabilitiesDbContext.Schema));
         builder.Services.AddQianData<RegistryDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(RegistryDbContext.Schema));
         builder.Services.AddSingleton<ISurfaceReader, SurfaceValidator>();
         builder.Services.AddSingleton<IToolContractHasher, ToolContractHasher>();
@@ -271,6 +272,7 @@ public sealed partial class CustomerCommandTests
         var validator = new SurfaceValidator(); var installed = new List<RegistryComponentBinding>();
         var options = new ProfileLoadOptions { WorkingDirectory = directory, Profile = "platform", IncludeHomePatch = false };
         var definitions = new Dictionary<string, PluginDefinition>(StringComparer.Ordinal);
+        PluginDefinition? scopedCrm = null;
         Add("data", "qian.data", new DataPlugin(), [DataDefinition.Key]);
         Add("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey]);
         Add("authz", "qian.authz", new RbacCommandPolicyPlugin(), [CommandPolicies.AuthorizationKey]);
@@ -279,19 +281,20 @@ public sealed partial class CustomerCommandTests
         var registry = new RegistryPlugin(new RegistryRuntimeOptions
         {
             InstalledComponents = installed, Runtime = loader, Profiles = new ProfileLoader(validator), Profile = options, Surfaces = validator,
-            Resolve = entry => definitions[entry.Id] with { Entry = new PluginEntry(entry.Id, entry.Plugin.Split('@')[0], "1.0.0",
+            Resolve = entry => (entry.Plugin == "qian.sample.crm@1.0.1" ? scopedCrm! : definitions[entry.Id]) with { Entry = new PluginEntry(entry.Id, entry.Plugin.Split('@')[0], entry.Plugin.Split('@')[1],
                 entry.Scope == "global" ? ScopeKey.Global : new ScopeKey(entry.Scope.Split(':', 2)[0], entry.Scope.Split(':', 2)[1]), entry.Layer, entry.Config) }
         });
         Add("registry", "qian.registry", registry, [RegistryDefinition.Key]);
-        Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey]);
+        Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey, CapabilitiesDefinition.NavigationKey]);
         Write("profiles/platform/qian.profile.yml", """{"name":"platform","bundles":[],"patch":"./qian.patch.yml","hmr":{"surfaces":true,"code":false},"build":{"aot":false},"hooks":{"allowCommand":false}}""");
-        Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin, config = new { } })));
+        Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin + "@" + item.Entry.Version, config = new { } })));
         var fullContract = CapabilityContractCompiler.CreateOpenApi(
             [CreateCustomerCommand.QianCapability, ListCustomersQuery.QianCapability, GetCustomerQuery.QianCapability], validator, new ToolContractHasher());
         Write("plugins/crm/metadata/contracts.json", JsonSerializer.Serialize(new[]
             { new { id = "qian.sample.crm.api/v1", kind = "openapi", path = "./contracts/http-v1.openapi.json" } }));
         Write("plugins/crm/contracts/http-v1.openapi.json", fullContract.GetRawText());
-        foreach (var definition in definitions.Values)
+        Write("plugins/crm/ui/manifest.json", """{"pages":[{"route":"/customers","expose":"CustomersPage","permission":"qian.sample.crm:customer:read","nav":{"title":"客户","icon":"users","order":10}},{"route":"/customers/new","expose":"CreateCustomerPage","permission":"qian.sample.crm:customer:write","nav":{"title":"新建客户","order":20}}]}""");
+        foreach (var definition in definitions.Values.ToArray())
         {
             var validation = validator.ValidateComponent(Path.Combine(directory, "plugins", definition.Entry.Id),
                 new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
@@ -300,11 +303,26 @@ public sealed partial class CustomerCommandTests
             installed.Add(binding);
             if (definition.Entry.Id == "crm")
             {
+                definitions["crm"] = definition with { Plugin = new NavigationManifestPlugin(definition.Plugin, binding.Metadata, validator) };
                 installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "0.9.0" } }, Path.Combine(directory, "plugins", "crm")));
                 installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "1.1.0" } }, Path.Combine(directory, "plugins", "crm"), incompatible: true));
             }
         }
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(directory, "plugins/crm"), "*", SearchOption.AllDirectories))
+        {
+            var target = Path.Combine(directory, "plugins/crm-scope", Path.GetRelativePath(Path.Combine(directory, "plugins/crm"), file));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(file, target);
+        }
+        var scopedManifest = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(directory, "plugins/crm-scope/.qian-plugin/plugin.json")))!;
+        scopedManifest["version"] = "1.0.1"; Write("plugins/crm-scope/.qian-plugin/plugin.json", scopedManifest.ToJsonString());
+        var scopedUi = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(directory, "plugins/crm-scope/ui/manifest.json")))!;
+        scopedUi["pages"]![0]!["nav"]!["title"] = "租户专属客户"; Write("plugins/crm-scope/ui/manifest.json", scopedUi.ToJsonString());
+        var scopedDefinition = definitions["crm"] with { Entry = definitions["crm"].Entry with { Version = "1.0.1" }, Plugin = new CrmPlugin() };
+        var scopedBinding = BindArtifact(scopedDefinition, Path.Combine(directory, "plugins/crm-scope")); installed.Add(scopedBinding);
+        scopedCrm = scopedDefinition with { Plugin = new NavigationManifestPlugin(scopedDefinition.Plugin, scopedBinding.Metadata, validator) };
         await loader.MountAsync([definitions["registry"], definitions["capabilities"]], Ct);
+        await loader.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await loader.MountAsync([definitions["crm"]], Ct);
         Assert.Equal(PluginState.Ready, loader.GetState("registry", ScopeKey.Global));
         Assert.Equal(PluginState.Ready, loader.GetState("capabilities", ScopeKey.Global));
         await loader.GetContext("registry", ScopeKey.Global).Registry().StartAsync(Ct);
