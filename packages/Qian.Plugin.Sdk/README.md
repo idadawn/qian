@@ -52,3 +52,9 @@ Qian.Plugin.Sdk.AspNetCore 提供 PluginEnabledMiddleware。宿主用 AddQianPlu
 专项覆盖实际编译生成与 JsonTypeInfo、审计默认值、元数据副本、错误声明诊断、代码删除与重复能力、服务注册不可静态证明时拒绝、唯一清单同步/漂移以及手写文件和路径保护。真实 Data 程序集的 sync/check 已接入 CI；其 x-skeleton 继续保留，因为默认安全装配、私有 NuGet 锁步发布和实际 qian add 代码安装尚未通过。
 
 真实 CRM 已验证创建、同事务 Outbox/审计、错误回滚、幂等、并发租户与锁等待时卸载取消；列表与详情也通过同一真实管道，分别覆盖默认不审计和显式审计。查询会拒绝已跟踪的业务变更，且不开放 Outbox 写入端口。仍须完成：其余 SDK 注解与默认装配、平台/应用/会话执行边界、包族正式私有发布和安装。这些局部真实验收不代替 QA-002 的完整平台验收。
+
+## 可执行能力绑定
+
+CapabilityBindingRegistration 在所属组件的 Apply 中，以生成契约的 component/name 登记 IExecutableCapability；实际调用反序列化为源生成请求类型，再进入真实 ISender 和已装配的命令管道。注册与取消随 Effect 撤销。调用者必须提供与当前租户一致的实际 scope 视图；每次调用重新解析同一具名绑定，缓存引用不能绕过 restrict、替换或卸载。Global 视图不能用于已有租户的调用。
+
+这只是目录与执行共享的基础绑定，尚未实现完整 Capabilities 权限过滤、模型提示词、OpenAPI 聚合或完整 platform。构建期组件生成器只识别真实 SDK 的 ProvideCapability 方法，不给应用伪造的同名方法豁免。

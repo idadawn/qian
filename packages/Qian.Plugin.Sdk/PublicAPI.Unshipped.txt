@@ -90,3 +90,9 @@ Qian.Plugin.Sdk.CommandInvocation.StartedAt.get -> System.DateTimeOffset
 Qian.Plugin.Sdk.CommandInvocation.TraceId.get -> string!
 Qian.Plugin.Sdk.SensitiveAttribute
 Qian.Plugin.Sdk.SensitiveAttribute.SensitiveAttribute() -> void
+Qian.Plugin.Sdk.CapabilityBindingRegistration
+Qian.Plugin.Sdk.IExecutableCapability
+Qian.Plugin.Sdk.IExecutableCapability.Contract.get -> Qian.Plugin.Sdk.CapabilityContract!
+Qian.Plugin.Sdk.IExecutableCapability.InvokeAsync(Qian.Runtime.IPluginContext! caller, System.Text.Json.JsonElement input, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement>
+static Qian.Plugin.Sdk.CapabilityBindingRegistration.ProvideCapability<TRequest, TResponse>(this Qian.Runtime.IPluginContext! context) -> System.IDisposable!
+static readonly Qian.Plugin.Sdk.CapabilityBindingRegistration.Key -> Qian.Runtime.ServiceKey

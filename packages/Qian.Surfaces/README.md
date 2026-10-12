@@ -58,3 +58,5 @@ if (result.IsValid)
 ## 市场文档
 
 `ISurfaceValidator.ValidateMarketplace(file, content)` 与 TS `validateMarketplace` 共用 marketplace/v2，检查字段、安装名唯一性、分类、路径、公钥与远程 URL 约束，并输出同样的文件指针和行号。失败不返回含敏感输入的市场对象。它是静态文档校验，不读取网络或信任根；来源取得、验签、digest 及每个实际组件的 ValidateComponent 由 [CLI 市场链路](../qian-cli/README.md) 继续完成。跨语言向量在 tck/marketplaces。
+
+能力目录可经 Definition 的 IToolContractHasher 端口使用 ToolContractHasher，复用同一 ToolContractHash/JCS 实现；不复制规范化算法，也不在组件库中反向引用本 Provider。

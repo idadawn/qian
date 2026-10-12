@@ -51,12 +51,16 @@ public sealed class ComponentMetadataGenerator : IIncrementalGenerator
         var apply = methods[0].DeclaringSyntaxReferences[0].GetSyntax(); model = compilation.GetSemanticModel(apply.SyntaxTree);
         foreach (var identifier in apply.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
+            // 同轮生成的请求接口尚未加入当前语义模型，约束未满足时从已绑定候选方法核验 SDK 所有权。
+            if (IsCapabilityCall(model, identifier)) continue;
             if (model.GetOperation(identifier) is not IParameterReferenceOperation contextReference || contextReference.Parameter.Ordinal != 0) continue;
             IOperation use = contextReference;
             while (use.Parent is IConversionOperation conversion) use = conversion;
             if (use.Parent is IPropertyReferenceOperation property && ReferenceEquals(property.Instance, use)) continue;
             if (use.Parent is IInvocationOperation member && ReferenceEquals(member.Instance, use)) continue;
             if (use.Parent is IArgumentOperation argument && argument.Parent is IInvocationOperation guard && guard.TargetMethod.ContainingType.ToDisplayString() == "System.ArgumentNullException" && guard.TargetMethod.Name == "ThrowIfNull") continue;
+            if (use.Parent is IArgumentOperation capabilityArgument && capabilityArgument.Parent is IInvocationOperation capability &&
+                capability.TargetMethod.ContainingAssembly.Name == "Qian.Plugin.Sdk" && capability.TargetMethod.ContainingType.ToDisplayString() == "Qian.Plugin.Sdk.CapabilityBindingRegistration" && capability.TargetMethod.Name == "ProvideCapability") continue;
             Report(output, type, "Apply 上下文不能逃逸到辅助方法或局部别名；否则无法证明提供的服务与代码一致。"); return;
         }
         foreach (var syntax in apply.DescendantNodes().OfType<InvocationExpressionSyntax>())
@@ -85,6 +89,14 @@ public sealed class ComponentMetadataGenerator : IIncrementalGenerator
             "        [" + string.Join(", ", requests.OrderBy(r => r.ToDisplayString(), StringComparer.Ordinal).Select(r => r.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ".QianCapability")) + "]);\n}\n";
         output.AddSource(factory + ".g.cs", SourceText.From(source, Encoding.UTF8));
     }
+    private static bool IsCapabilityCall(SemanticModel model, IdentifierNameSyntax identifier)
+    {
+        if (identifier.Parent is not MemberAccessExpressionSyntax member || member.Expression != identifier || member.Parent is not InvocationExpressionSyntax call) return false;
+        var info = model.GetSymbolInfo(call);
+        var method = info.Symbol as IMethodSymbol ?? (info.CandidateSymbols.Length == 1 ? info.CandidateSymbols[0] as IMethodSymbol : null);
+        return method?.ContainingAssembly.Name == "Qian.Plugin.Sdk" && method.ContainingType.ToDisplayString() == "Qian.Plugin.Sdk.CapabilityBindingRegistration" && method.Name == "ProvideCapability";
+    }
+
     private static string? Key(IOperation? operation)
     {
         while (operation is IConversionOperation conversion) operation = conversion.Operand;
