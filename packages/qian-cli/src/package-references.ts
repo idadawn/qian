@@ -4,6 +4,7 @@ import {MarketplaceFailure,marketDiagnostic} from './marketplaces.js';
 export type PackageKind='nuget'|'npm';
 export interface PackageReference {kind:PackageKind;name:string;version:string;specification:string}
 export interface OwnedPackageReference extends PackageReference {owners:string[]}
+export interface DeclaredPackageReference extends OwnedPackageReference {digest?:string}
 export interface ComponentPackages {id:string;packages:{nuget:readonly string[];npm:readonly string[]}}
 
 function invalid(pointer:string,message:string):never {
@@ -50,4 +51,30 @@ export function collectPackageReferences(components:readonly ComponentPackages[]
  }
  return [...references.values()].map(reference=>({...reference,owners:reference.owners.sort()}))
   .sort((a,b)=>packageIdentity(a)<packageIdentity(b)?-1:packageIdentity(a)>packageIdentity(b)?1:0);
+}
+
+/** 清单中的摘要不能在转换成包管理器参数时丢失；同一包的所有声明必须相容。 */
+export function collectRuntimePackageReferences(components:readonly {id:string;runtime:Record<string,unknown>}[]):DeclaredPackageReference[] {
+ const digests=new Map<string,string>();
+ const packages=components.map(component=>{
+  const result:{nuget:string[];npm:string[]}={nuget:[],npm:[]};
+  for(const kind of ['nuget','npm'] as const){
+  const values=component.runtime[kind]??[];
+  if(!Array.isArray(values))invalid('/runtime/'+kind,'组件的包引用必须为数组。');
+  result[kind]=values.map((value,index)=>{
+   if(!value||typeof value!=='object'||Array.isArray(value))invalid('/runtime/'+kind+'/'+index,'代码包声明必须为对象。');
+   const item=value as Record<string,unknown>,name=item[kind==='nuget'?'id':'name'];
+   if(typeof name!=='string'||typeof item.version!=='string')invalid('/runtime/'+kind+'/'+index,'代码包声明缺少名称或版本。');
+   const reference=parsePackageReference(kind,name+'@'+item.version),key=packageIdentity(reference);
+   if(item.digest!==undefined){
+    if(typeof item.digest!=='string'||!/^sha256:[0-9a-f]{64}$/.test(item.digest))invalid('/runtime/'+kind+'/'+index+'/digest','代码包摘要必须为 SHA-256。');
+    if(digests.has(key)&&digests.get(key)!==item.digest)invalid('/runtime/'+kind+'/'+index+'/digest','同一代码包的摘要声明冲突。');
+    digests.set(key,item.digest);
+   }
+   return reference.specification;
+  });
+  }
+  return{id:component.id,packages:result};
+ });
+ return collectPackageReferences(packages).map(reference=>({...reference,...digests.has(packageIdentity(reference))?{digest:digests.get(packageIdentity(reference))}: {}}));
 }

@@ -10,7 +10,9 @@
 
 组合包按真实 profile 组合层安装：允许无 `runtime.form` 的依赖聚合，逐个校验 `components/` 子组件，合并包引用和权限需求，再登记到 `profile.bundles`。卸载保留失去来源的配置，重装可继续使用，多个组合层可一起移除；活动的 required 子组件不能通过卸载父组件绕过保护。
 
-预检还会在隔离目录获取声明引用的包，读取 NuGet 的 `qian/` 组件内容和 npm 的 `qian.component` 指针。它继承宿主包源配置但不复制凭据，不修改宿主项目或 node_modules；发现的组件重新经过同一验证器。市场与包内同名内容冲突时拒绝覆盖，lock 分别保留原来源摘要、完整交付摘要和实际包归档摘要。包身份和内容发现不等于供应链验签，§11.5 的原生签名/provenance 与声明 digest 校验仍待完成。
+预检还会在隔离目录获取声明引用的包，从实际 NuGet 归档读取 `qian/` 组件内容，并读取 npm 的 `qian.component` 指针。它继承宿主包源配置但不复制凭据，不修改宿主项目或 node_modules；发现的组件重新经过同一验证器。市场与包内同名内容冲突时拒绝覆盖，lock 分别保留原来源摘要、完整交付摘要和实际包归档摘要。
+
+所有显式代码包都记录归档 SHA-256，包括没有 Qian 表面的包；`runtime.nuget[] / npm[].digest` 会与实际归档比对，共享或递归发现的包声明也不能冲突。安装后和幂等重跑时，再核对宿主实际 NuGet 归档，以及 npm 顶层/隐藏安装锁与预检归档的 SHA-512 关联；预检和安装之间发生换包会整批回滚。真实 NuGet、npm 客户端测试覆盖错误摘要、安装记录漂移和同版本换包回滚。摘要一致性不等于发布者真实性，§11.5 的原生签名/provenance 仍待完成。
 
 包管理器不经 shell，不输出原始工具日志，npm 生命周期脚本关闭。POSIX 下按本次创建的进程组确认后代已停止后才回滚；查询失败或无法确认停止时保留事务与锁。Windows 尝试终止进程树，但未能确认的失败保留给后续恢复流程，不声称已安全恢复。目录备份不跟随内部符号链接；工作区必须是当前操作者管理的受信任宿主，这不是原生代码沙箱。
 
@@ -77,7 +79,7 @@ list --remote 合并条目、标注市场、优先级、信任与首选项；它
 
 市场签名为 `.qian/marketplace.json.sig`，支持 64 字节原始签名或 Base64，签名载荷是 marketplace.json 原始字节的 SHA-256。owner.publicKeys 声明的 Ed25519 公钥还须命中客户端信任根；内联私钥、凭据 URL、越界和符号链接被拒绝。每次操作重新读取市场，不沿用被撤销公钥的旧快照。未验证市场只有显式 --allow-unverified 才参与解析，且不能使用代码或高于 community 的组件。
 
-url 的 source.digest 校验原始归档字节；local/git 的目录 digest 按相对 POSIX 路径排序，对 `路径 TAB 字节数 TAB SHA-256 LF` 的 UTF-8 清单求 SHA-256，不包含 `.git`。路径禁止控制符，因此清单无歧义。分支引用必须带 digest；标签/完整提交可以省略，结果仍锁定实际 commit/digest。显式 @version 选择 `refs/tags/v<version>`，并要求所选清单版本一致；NuGet/npm 版本来自该标签内的精确 runtime 声明。已有目录 digest 仍必须匹配请求的版本内容。代码包的可选 digest 与签名/provenance 验证还需按规格 §11.5 补齐，当前草稿不能当作正式代码供应链验收。
+url 的 source.digest 校验原始归档字节；local/git 的目录 digest 按相对 POSIX 路径排序，对 `路径 TAB 字节数 TAB SHA-256 LF` 的 UTF-8 清单求 SHA-256，不包含 `.git`。路径禁止控制符，因此清单无歧义。分支引用必须带 digest；标签/完整提交可以省略，结果仍锁定实际 commit/digest。显式 @version 选择 `refs/tags/v<version>`，并要求所选清单版本一致；NuGet/npm 版本来自该标签内的精确 runtime 声明。已有目录 digest 仍必须匹配请求的版本内容。代码包声明 digest 已接入预检与实际安装复核；原生签名/provenance 验证仍需按规格 §11.5 补齐，当前草稿不能当作正式代码供应链验收。
 
 add 会显示文件、反向权限与 secretRef 需求；confirm 需 --yes，restricted 被拒绝，ON_USE 仅提示登记，不写安装锁或激活。整组静态预检后复制表面、还原依赖、写 global profile 条目并再次复核，记录 `.qian/lock.json` 的来源、文件、条目和包归属。相同版本/来源/文件与实际依赖重跑保持不变；升级保留配置，不兼容则拒绝并保持原状。已移除组件的 disabled 配置可在重装时复用。包安装成功不等于 Provider 已在业务宿主运行。
 

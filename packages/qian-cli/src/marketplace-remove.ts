@@ -12,6 +12,7 @@ import {PackageCommandFailure} from './package-process.js';
 import {loadProfile} from './profiles.js';
 import {MarketplaceFailure} from './marketplaces.js';
 import {planCompositionRemoval} from './composition-removal.js';
+import {installedPackageArtifacts,verifyInstalledPackageArtifacts} from './package-integrity.js';
 
 export interface RemoveOptions {workingDirectory:string;profile?:string;purge?:boolean;dryRun?:boolean}
 export async function removeMarketplacePlugins(references:readonly string[],options:RemoveOptions):Promise<{status:'planned'|'removed'|'unchanged';ids:string[]}> {
@@ -89,6 +90,7 @@ export async function removeMarketplacePlugins(references:readonly string[],opti
   }
   if(!removed.length)return{status:'unchanged',ids:[]};
   const beforePackages=installedPackageSets(state.plugins),afterPackages=installedPackageSets(remaining);
+  const afterArtifacts=installedPackageArtifacts(remaining);
   const all=collectPackageReferences(beforePackages);let workspace:PackageWorkspace|undefined,plan:PackagePlan|undefined;
   if(all.length&&activeRemoval){
    workspace=await inspectPackageWorkspace(root,[...new Set(all.map(item=>item.kind))]);
@@ -102,7 +104,7 @@ export async function removeMarketplacePlugins(references:readonly string[],opti
   return await transaction.run(async()=>{
    for(const plugin of activePlugins)verifyInstalledComponent(root,plugin);
    for(const directory of directories){assertNoLinks(directory);rmSync(directory,{recursive:true});}
-   if(workspace&&plan)await applyPackageChanges(workspace,plan.changes);
+   if(workspace&&plan){await applyPackageChanges(workspace,plan.changes);verifyInstalledPackageArtifacts(workspace,afterArtifacts);}
    writeInstallFile(patchFile,Buffer.from(stringify(patch)));
    if(definitionChanged)writeInstallFile(profileFile,Buffer.from(stringify(definition)));
    writeInstallFile(state.file,Buffer.from(JSON.stringify({...state.lock,plugins:remaining,removedEntries:tombstones,...plan?{packageState:plan.state}:{}},null,2)+'\n'));

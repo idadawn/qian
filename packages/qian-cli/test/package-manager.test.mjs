@@ -6,6 +6,8 @@ import os from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {inspectPackageWorkspace,packageMutationTargets,applyPackageChanges,workspaceDependency} from '../dist/package-manager.js';
 import {parsePackageReference} from '../dist/package-references.js';
+import {fetchPackageComponents} from '../dist/package-components.js';
+import {verifyInstalledPackageArtifacts} from '../dist/package-integrity.js';
 
 function root(){return mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-package-host-'));}
 const reference=(kind,value)=>parsePackageReference(kind,value);
@@ -15,6 +17,8 @@ test('实际 NuGet 精确安装可供 C# 编译使用，移除后恢复无依赖
  try{
   writeFileSync(path.join(directory,'Host.csproj'),'<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>');
   const pkg=reference('nuget','Kun.Core@2026.10.12');
+  const fetched=await fetchPackageComponents(directory,{nuget:[pkg.specification],npm:[]});
+  const artifacts=fetched.artifacts;fetched.dispose();assert.equal(fetched.components.length,0);assert.equal(artifacts.length,1);
   const state=await inspectPackageWorkspace(directory,['nuget']);
   const targets=packageMutationTargets(state,{add:[pkg],remove:[]});
   assert.ok(targets.some(item=>item.path===path.join(directory,'Host.csproj')));
@@ -23,6 +27,8 @@ test('实际 NuGet 精确安装可供 C# 编译使用，移除后恢复无依赖
   assert.ok(readFileSync(path.join(directory,'Host.csproj'),'utf8').includes('[2026.10.12]'));
   const installed=await inspectPackageWorkspace(directory,['nuget']);
   assert.equal(workspaceDependency(installed,pkg).version,'2026.10.12');
+  verifyInstalledPackageArtifacts(installed,artifacts);
+  assert.throws(()=>verifyInstalledPackageArtifacts(installed,[{...artifacts[0],digest:'sha256:'+'0'.repeat(64)}]),error=>JSON.stringify(error.diagnostics).includes('摘要不一致'));
   writeFileSync(path.join(directory,'Check.cs'),'public static class Check { public static bool Run() => Kun.Core.Results.Result.Ok().IsSuccess; }');
   const build=spawnSync('dotnet',['build','Host.csproj','-c','Release','--no-restore','--disable-build-servers','-m:1'],{cwd:directory,encoding:'utf8',timeout:120000});
   assert.equal(build.status,0,build.stdout+build.stderr);

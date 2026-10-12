@@ -14,6 +14,7 @@ import {PackageCommandFailure} from './package-process.js';
 import {readInstalledState,readInstallFile,writeInstallFile,installObject,installFailure,installedPackageSets,removedInstallationEntries,verifyInstalledComponent,acquireInstallationLease,type InstallObject} from './installed-components.js';
 import {prepareComponentDelivery,type ComponentDelivery} from './component-delivery.js';
 import {resolvePackageDelivery,type PackageArtifactEvidence} from './package-delivery.js';
+import {installedPackageArtifacts,verifyInstalledPackageArtifacts} from './package-integrity.js';
 
 export interface DeclarativeInstallOptions extends MarketplaceOptions {yes?:boolean;dryRun?:boolean;noCode?:boolean;force?:boolean;resetConfig?:boolean;forceProfile?:boolean}
 export interface DeclarativeInstallResult {status:'planned'|'installed'|'unchanged'|'on-use';id:string;version:string;market:string;trust:'verified'|'unverified';files:FileRecord[];packages:{nuget:string[];npm:string[]};diagnostics:SurfaceDiagnostic[];lock?:InstallObject;note?:string;permissions?:JsonValue;secretReferences?:string[]}
@@ -208,6 +209,7 @@ export async function installMarketplacePlugins(references:readonly string[],opt
   for(const candidate of changed)if(!candidate.previous)afterPlugins.push(candidate.record!);
   const beforePackages=installedPackageSets(state.plugins),afterPackages=installedPackageSets(afterPlugins);
   const beforeReferences=collectPackageReferences(beforePackages),afterReferences=collectPackageReferences(afterPackages);
+  const afterArtifacts=installedPackageArtifacts(afterPlugins);
   const touchesCode=active.some(candidate=>candidate.resolved.packages.nuget.length||candidate.resolved.packages.npm.length)||changed.some(candidate=>{
    const packages=installObject(candidate.previous?.packages);return Array.isArray(packages.nuget)&&packages.nuget.length||Array.isArray(packages.npm)&&packages.npm.length;
   });
@@ -216,7 +218,7 @@ export async function installMarketplacePlugins(references:readonly string[],opt
    workspace=await inspectPackageWorkspace(root,[...new Set([...beforeReferences,...afterReferences].map(reference=>reference.kind))]);
    if(state.lock.packageState!==undefined&&!Array.isArray(state.lock.packageState))installFailure(state.file,'代码包归属记录必须为数组。');
    packagePlan=planPackageChanges(workspace,beforePackages,afterPackages,(state.lock.packageState??[]) as unknown as PackageOwnership[]);
-   if(!changed.length)verifyInstalledPackages(workspace,afterReferences);
+   if(!changed.length){verifyInstalledPackages(workspace,afterReferences);verifyInstalledPackageArtifacts(workspace,afterArtifacts);}
   }
   if(!changed.length)return{status:'unchanged',plugins:candidates.map(candidate=>candidate.result)};
 
@@ -273,7 +275,7 @@ export async function installMarketplacePlugins(references:readonly string[],opt
    }
    if(workspace&&packagePlan){
     await applyPackageChanges(workspace,packagePlan.changes);
-    const restored=await inspectPackageWorkspace(root,[...new Set(afterReferences.map(reference=>reference.kind))]);verifyInstalledPackages(restored,afterReferences);
+    const restored=await inspectPackageWorkspace(root,[...new Set(afterReferences.map(reference=>reference.kind))]);verifyInstalledPackages(restored,afterReferences);verifyInstalledPackageArtifacts(restored,afterArtifacts);
    }
    for(const[file,bytes]of targets)writeInstallFile(file,bytes);
    for(const plan of patches.values())if(plan.touched.size){

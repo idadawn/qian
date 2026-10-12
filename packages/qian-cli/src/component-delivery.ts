@@ -5,11 +5,11 @@ import {validateComponent,type ParsedComponent,type JsonValue,type SurfaceDiagno
 import {materialize,type FileRecord} from './marketplace-files.js';
 import {MarketplaceFailure,type ResolvedMarketplacePlugin} from './marketplaces.js';
 import {installObject,installFailure,type InstallObject} from './installed-components.js';
-import {collectPackageReferences} from './package-references.js';
+import {collectRuntimePackageReferences,type DeclaredPackageReference} from './package-references.js';
 
 export interface DeliveredComponent {directory:string;component:ParsedComponent;manifest:InstallObject}
 export interface ComponentDelivery {
- components:DeliveredComponent[];files:FileRecord[];packages:{nuget:string[];npm:string[]};
+ components:DeliveredComponent[];files:FileRecord[];packages:{nuget:string[];npm:string[]};references:DeclaredPackageReference[];
  composition:boolean;regularEntry:boolean;patch:JsonValue[];requirements:InstallObject;diagnostics:SurfaceDiagnostic[];
 }
 
@@ -42,15 +42,10 @@ export function prepareComponentDelivery(resolved:ResolvedMarketplacePlugin,prof
    for(const document of entry.component.documents)names.add(prefix+document.file);
    for(const name of resolved.content.files.keys())if(name.startsWith(prefix)&&/^(?:README(?:\.md)?|AGENTS\.md|(?:assets|metadata|schemas)\/)/.test(name.slice(prefix.length)))names.add(name);
   }
-  const referenced=collectPackageReferences(components.map(entry=>{
-   const runtime=installObject(entry.manifest.runtime);
-   return{id:entry.component.id,packages:{
-    nuget:Array.isArray(runtime.nuget)?runtime.nuget.map(value=>{const item=installObject(value);return String(item.id??'')+'@'+String(item.version??'');}):[],
-    npm:Array.isArray(runtime.npm)?runtime.npm.map(value=>{const item=installObject(value);return String(item.name??'')+'@'+String(item.version??'');}):[]}};
-  }));
+  const referenced=collectRuntimePackageReferences(components.map(entry=>({id:entry.component.id,runtime:installObject(entry.manifest.runtime)})));
   const patch=components[0].component.documents.find(document=>document.kind==='patch');
   const composition=!!patch,regularEntry=!composition||installObject(components[0].manifest.runtime).form!==undefined;
-  return{components,files:resolved.files.filter(file=>names.has(file.path)),packages:{nuget:referenced.filter(item=>item.kind==='nuget').map(item=>item.specification),
+  return{components,files:resolved.files.filter(file=>names.has(file.path)),references:referenced,packages:{nuget:referenced.filter(item=>item.kind==='nuget').map(item=>item.specification),
    npm:referenced.filter(item=>item.kind==='npm').map(item=>item.specification)},composition,regularEntry,patch:patch?patch.data as JsonValue[]:[],requirements,diagnostics};
  }finally{rmSync(temporary,{recursive:true,force:true});}
 }

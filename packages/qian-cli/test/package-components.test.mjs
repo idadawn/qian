@@ -33,6 +33,7 @@ test('真实 npm pack 协议获取组件内容且不修改宿主依赖',async()=
   assert.equal(fetched.components.length,1);const value=fetched.components[0];
   assert.equal(value.reference.name,name);assert.equal(JSON.parse(value.component.files.get('.qian-plugin/plugin.json')).id,'test.package-skill');
   assert.ok(value.component.files.has('skills/check/SKILL.md'));assert.equal(value.artifactDigest,'sha256:'+createHash('sha256').update(archive).digest('hex'));
+  assert.equal(fetched.artifacts.length,1);assert.equal(fetched.artifacts[0].digest,value.artifactDigest);assert.equal(fetched.artifacts[0].integrity,integrity);
   assert.equal(readFileSync(path.join(host,'package.json'),'utf8'),initial);assert.equal(existsSync(path.join(host,'node_modules')),false);assert.equal(existsSync(path.join(host,'package-lock.json')),false);
  }finally{fetched?.dispose();if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}rmSync(root,{recursive:true,force:true});}
 });

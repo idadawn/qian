@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {parsePackageReference,collectPackageReferences} from '../dist/package-references.js';
+import {parsePackageReference,collectPackageReferences,collectRuntimePackageReferences} from '../dist/package-references.js';
 
 test('精确引用支持 CalVer、预发布与 npm scope，保留发布者声明',()=>{
  assert.deepEqual(parsePackageReference('nuget','Kun.Core@2026.10.12'),{kind:'nuget',name:'Kun.Core',version:'2026.10.12',specification:'Kun.Core@2026.10.12'});
@@ -35,4 +35,14 @@ test('共享包按真实名称语义去重并记录全部所有者，冲突不�
 
 test('损坏的 lock 包集合也被结构化拒绝',()=>{
  assert.throws(()=>collectPackageReferences([{id:'qian.bad',packages:{nuget:null,npm:[]}}]),error=>error.diagnostics[0].error.code==='INPUT_INVALID');
+});
+
+test('清单摘要随精确引用保留，共享声明不能借大小写或省略字段绕过冲突',()=>{
+ const first={id:'qian.first',runtime:{nuget:[{id:'Kun.Core',version:'2026.10.12',digest:'sha256:'+'a'.repeat(64)}]}};
+ const second={id:'qian.second',runtime:{nuget:[{id:'kun.core',version:'2026.10.12'}]}};
+ const references=collectRuntimePackageReferences([first,second]);
+ assert.equal(references[0].digest,first.runtime.nuget[0].digest);assert.deepEqual(references[0].owners,['qian.first','qian.second']);
+ const conflicting=structuredClone(second);conflicting.runtime.nuget[0].digest='sha256:'+'b'.repeat(64);
+ assert.throws(()=>collectRuntimePackageReferences([first,conflicting]),error=>JSON.stringify(error.diagnostics).includes('摘要声明冲突'));
+ assert.throws(()=>collectRuntimePackageReferences([{id:'test.invalid',runtime:{npm:[{name:'semver',version:'7.7.4',digest:'not-a-digest'}]}}]));
 });
