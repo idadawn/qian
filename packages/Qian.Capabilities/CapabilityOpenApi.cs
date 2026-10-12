@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.OpenApi;
+using Qian.Plugin.Sdk;
 
 namespace Qian.Capabilities;
 
@@ -16,8 +17,8 @@ internal static class CapabilityOpenApi
         {
             var id = entry.GetProperty("id").GetString()!;
             var key = "C" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(id)));
-            schemas[key + "Input"] = Relocate(entry.GetProperty("inputSchema"), key + "Input");
-            var result = entry.TryGetProperty("outputSchema", out var output) ? Relocate(output, key + "Output") : JsonValue.Create(true)!;
+            schemas[key + "Input"] = JsonSchemaReferences.RebaseToComponent(entry.GetProperty("inputSchema"), key + "Input");
+            var result = entry.TryGetProperty("outputSchema", out var output) ? JsonSchemaReferences.RebaseToComponent(output, key + "Output") : JsonValue.Create(true)!;
             schemas[key + "Output"] = result;
             paths["/api/capabilities/" + id + "/invoke"] = new JsonObject
             {
@@ -53,27 +54,4 @@ internal static class CapabilityOpenApi
     {
         ["application/json"] = new JsonObject { ["schema"] = new JsonObject { ["$ref"] = "#/components/schemas/" + schema } }
     };
-    private static JsonNode Relocate(JsonElement schema, string key)
-    {
-        var node = JsonNode.Parse(schema.GetRawText())!;
-        // JsonTypeInfo 的递归引用以原 Schema 根为基准；嵌入 components 后必须重定位。
-        Rewrite(node, "#/components/schemas/" + key);
-        return node;
-    }
-    private static void Rewrite(JsonNode node, string root)
-    {
-        if (node is not JsonObject value) return;
-        if (value["$ref"] is JsonValue reference && reference.TryGetValue<string>(out var text) && (text == "#" || text.StartsWith("#/", StringComparison.Ordinal)))
-            value["$ref"] = root + text[1..];
-        foreach (var property in value.ToArray())
-        {
-            // 只访问 Schema 位置，不能改写 default/examples 或业务数据中的同名成员。
-            if (property.Key is "properties" or "patternProperties" or "$defs" or "definitions" or "dependentSchemas" && property.Value is JsonObject map)
-            { foreach (var child in map) if (child.Value is not null) Rewrite(child.Value, root); }
-            else if (property.Key is "allOf" or "anyOf" or "oneOf" or "prefixItems" && property.Value is JsonArray list)
-            { foreach (var child in list) if (child is not null) Rewrite(child, root); }
-            else if (property.Key is "items" or "additionalProperties" or "unevaluatedProperties" or "unevaluatedItems" or "contains" or "propertyNames" or "not" or "if" or "then" or "else" && property.Value is not null)
-                Rewrite(property.Value, root);
-        }
-    }
 }

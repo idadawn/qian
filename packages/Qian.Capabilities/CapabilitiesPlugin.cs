@@ -24,7 +24,7 @@ public sealed class CapabilitiesPlugin : IQianPlugin
         if (ctx.Scope != ScopeKey.Global || config.ValueKind != JsonValueKind.Object || config.EnumerateObject().Any())
             throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
         var service = new CapabilityService(ctx.Registry(), ctx.Services.GetRequiredService<IPermissionChecker>(),
-            ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetRequiredService<IToolContractHasher>());
+            ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetRequiredService<IToolContractHasher>(), ctx.Services.GetService<IHttpContractSource>());
         ctx.Effect(service.Dispose);
         var contracts = new InstalledContractRepository(ctx.Registry().GetInstalledComponents(), ctx.Services.GetService<IOpenApiCompatibilityProbe>(), ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetService<IProtoCompatibilityProbe>());
         ctx.Effect(contracts.Dispose);

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Kun.Authorization;
 using Qian.Identity.Abstractions;
 using Qian.Plugin.Sdk;
@@ -11,7 +12,7 @@ using Qian.Surfaces.Abstractions;
 
 namespace Qian.Capabilities;
 
-internal sealed class CapabilityService(IRegistryService registry, IPermissionChecker permissions, ISurfaceReader schemas, IToolContractHasher hasher) : ICapabilityService, IDisposable
+internal sealed class CapabilityService(IRegistryService registry, IPermissionChecker permissions, ISurfaceReader schemas, IToolContractHasher hasher, IHttpContractSource? httpContracts = null) : ICapabilityService, IDisposable
 {
     private readonly (CancellationTokenSource Source, CancellationToken Token) _lifetime = CreateLifetime();
     private int _disposed;
@@ -44,7 +45,28 @@ internal sealed class CapabilityService(IRegistryService registry, IPermissionCh
     {
         using var linked = Link(cancellationToken);
         var visible = await Visible(caller, user, false, linked.Token).ConfigureAwait(false);
-        return CapabilityOpenApi.Build(visible.Select(item => item.Entry));
+        var result = CapabilityOpenApi.Build(visible.Select(item => item.Entry));
+        if (httpContracts is null) return result;
+        var tenant = await caller.Tenancy().GetByIdAsync(Guid.Parse(caller.Scope.Id), linked.Token).ConfigureAwait(false);
+        if (tenant?.Status is not (TenantStatus.Active or TenantStatus.Trial)) return result;
+        var native = await httpContracts.GetDocumentAsync(caller, user, linked.Token).ConfigureAwait(false);
+        var merged = JsonNode.Parse(result.GetRawText())!.AsObject();
+        Merge(merged["paths"]!.AsObject(), native.GetProperty("paths"));
+        foreach (var category in native.GetProperty("components").EnumerateObject())
+        {
+            var components = merged["components"]!.AsObject();
+            if (components[category.Name] is not JsonObject target) { target = new JsonObject(); components[category.Name] = target; }
+            Merge(target, category.Value);
+        }
+        using var document = JsonDocument.Parse(merged.ToJsonString());
+        var parsed = Microsoft.OpenApi.OpenApiDocument.Parse(document.RootElement.GetRawText(), "json");
+        if (parsed.Document is null || parsed.Diagnostic?.Errors.Count > 0)
+        {
+            var error = new InvalidOperationException("聚合 HTTP 文档无效。");
+            error.Data["contractDiagnostics"] = string.Join("; ", parsed.Diagnostic?.Errors.Select(item => item.ToString()) ?? []);
+            throw error;
+        }
+        return document.RootElement.Clone();
     }
 
     public async ValueTask<JsonElement> InvokeAsync(IPluginContext caller, ICurrentUser user, string id, JsonElement input, CancellationToken cancellationToken = default)
@@ -93,6 +115,15 @@ internal sealed class CapabilityService(IRegistryService registry, IPermissionCh
         return result.AsReadOnly();
     }
 
+    private static void Merge(JsonObject target, JsonElement source)
+    {
+        foreach (var item in source.EnumerateObject())
+        {
+            var node = JsonNode.Parse(item.Value.GetRawText());
+            if (target[item.Name] is { } old && !JsonNode.DeepEquals(old, node)) throw new InvalidOperationException("组件 HTTP 契约发生命名冲突。");
+            target[item.Name] = node;
+        }
+    }
     private static bool Current(IPluginContext caller, VisibleCapability item)
     {
         try { return ReferenceEquals(caller.Inject<IExecutableCapability>(CapabilityBindingRegistration.Key, item.Id), item.Binding); }

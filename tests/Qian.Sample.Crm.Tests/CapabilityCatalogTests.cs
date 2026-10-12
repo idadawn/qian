@@ -19,6 +19,7 @@ using Qian.Capabilities;
 using Qian.Capabilities.AspNetCore;
 using Qian.Data;
 using Qian.Plugin.Sdk;
+using Qian.Plugin.Sdk.AspNetCore;
 using Qian.Profiles;
 using Qian.Profiles.Abstractions;
 using Qian.Registry;
@@ -152,7 +153,13 @@ public sealed partial class CustomerCommandTests
         Assert.True(JsonElement.DeepEquals(api, await alias.Content.ReadFromJsonAsync<JsonElement>(Ct)));
         var parsed = Microsoft.OpenApi.OpenApiDocument.Parse(api.GetRawText(), "json");
         Assert.NotNull(parsed.Document); Assert.Empty(parsed.Diagnostic!.Errors);
-        var paths = api.GetProperty("paths"); Assert.Equal(3, paths.EnumerateObject().Count());
+        var paths = api.GetProperty("paths"); Assert.Equal(12, paths.EnumerateObject().Count());
+        Assert.True(paths.GetProperty("/api/capabilities/navigation").TryGetProperty("get", out _));
+        Assert.True(paths.GetProperty("/api/customers").TryGetProperty("post", out _));
+        Assert.True(paths.GetProperty("/api/customers").TryGetProperty("get", out _));
+        Assert.True(paths.GetProperty("/api/customers/{id}").TryGetProperty("get", out _));
+        var businessSchemas = ReferencedBusinessSchemas(api);
+        Assert.NotEmpty(businessSchemas);
         var operation = paths.GetProperty("/api/capabilities/" + CreateId + "/invoke").GetProperty("post");
         Assert.Equal(CreateId, operation.GetProperty("x-qian-capability").GetString());
         var reference = operation.GetProperty("requestBody").GetProperty("content").GetProperty("application/json").GetProperty("schema").GetProperty("$ref").GetString()!;
@@ -165,18 +172,22 @@ public sealed partial class CustomerCommandTests
         var output = api.GetProperty("components").GetProperty("schemas").GetProperty(outputReference.Split('/')[^1]);
         Assert.True(JsonSchema.FromText(output.GetRawText()).Evaluate(await accepted.Content.ReadFromJsonAsync<JsonElement>(Ct)).IsValid);
         using var denied = await CatalogRequest(host, B, "/api/capabilities/openapi.json");
-        Assert.False((await denied.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").TryGetProperty("/api/capabilities/" + CreateId + "/invoke", out _));
+        var deniedDocument = await denied.Content.ReadFromJsonAsync<JsonElement>(Ct);
+        Assert.False(deniedDocument.GetProperty("paths").TryGetProperty("/api/capabilities/" + CreateId + "/invoke", out _));
+        Assert.False(deniedDocument.GetProperty("paths").GetProperty("/api/customers").TryGetProperty("post", out _));
+        Assert.True(deniedDocument.GetProperty("paths").GetProperty("/api/customers").TryGetProperty("get", out _));
         var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         using (runtime.GetContext("data", ScopeKey.Global).Restrict(new ScopeKey("tenant", A), registration => registration.Key != CapabilityBindingRegistration.Key))
         {
             using var hidden = await CatalogRequest(host, A, "/api/capabilities/openapi.json");
             var empty = await hidden.Content.ReadFromJsonAsync<JsonElement>(Ct);
-            Assert.Empty(empty.GetProperty("paths").EnumerateObject());
-            Assert.Empty(empty.GetProperty("components").GetProperty("schemas").EnumerateObject());
+            Assert.DoesNotContain(empty.GetProperty("paths").EnumerateObject(), item => item.Name.StartsWith("/api/customers", StringComparison.Ordinal) || item.Name.Contains("/qian.sample.crm/", StringComparison.Ordinal));
+            foreach (var schemaName in businessSchemas) Assert.False(empty.GetProperty("components").GetProperty("schemas").TryGetProperty(schemaName, out _));
+            using var directRest = await host.Get(A, "/api/customers"); Assert.Equal(HttpStatusCode.NotFound, directRest.StatusCode);
         }
         await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
         using var unmounted = await CatalogRequest(host, A, "/api/capabilities/openapi.json");
-        Assert.Empty((await unmounted.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").EnumerateObject());
+        Assert.DoesNotContain((await unmounted.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").EnumerateObject(), item => item.Name.StartsWith("/api/customers", StringComparison.Ordinal) || item.Name.Contains("/qian.sample.crm/", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -185,9 +196,9 @@ public sealed partial class CustomerCommandTests
         await using var host = await Start(capabilities: true);
         var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var repository = runtime.GetContext("capabilities", ScopeKey.Global).Contracts();
-        Assert.Single(repository.GetContracts("qian.sample.crm", "0.9.0"));
-        Assert.Single(repository.GetContracts("qian.sample.crm", "1.0.0"));
-        Assert.Single(repository.GetContracts("qian.sample.crm", "1.1.0"));
+        Assert.Equal(2, repository.GetContracts("qian.sample.crm", "0.9.0").Count);
+        Assert.Equal(2, repository.GetContracts("qian.sample.crm", "1.0.0").Count);
+        Assert.Equal(2, repository.GetContracts("qian.sample.crm", "1.1.0").Count);
         var entry = runtime.DumpConfig().Single(item => item.Id == "crm");
         await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
         await runtime.MountAsync([new PluginDefinition(entry with { Version = "1.1.0" },
@@ -204,6 +215,48 @@ public sealed partial class CustomerCommandTests
         Assert.True(runtime.GetState("crm", ScopeKey.Global) == PluginState.Ready, runtime.GetFailure("crm", ScopeKey.Global)?.ToString());
         using var created = await Invoke(host, A);
         Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+    }
+
+    [Fact]
+    public async Task 完整HTTP制品独立于调用者权限_原生路由删除在挂载前被拒绝()
+    {
+        await using var host = await Start(capabilities: true);
+        using var limited = await CatalogRequest(host, B, "/api/capabilities/openapi.json");
+        Assert.False((await limited.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").GetProperty("/api/customers").TryGetProperty("post", out _));
+        var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        var repository = runtime.GetContext("capabilities", ScopeKey.Global).Contracts();
+        var baseline = repository.Find("qian.sample.crm", "0.9.0", "qian.sample.crm.http/v1"); Assert.NotNull(baseline);
+        using var full = JsonDocument.Parse(baseline.ReadContent());
+        Assert.True(full.RootElement.GetProperty("paths").GetProperty("/api/customers").TryGetProperty("post", out _));
+        Assert.True((await repository.CheckOpenApiAsync("qian.sample.crm", "0.9.0", "1.0.0", "qian.sample.crm.http/v1", Ct)).IsCompatible);
+        Assert.False((await repository.CheckOpenApiAsync("qian.sample.crm", "0.9.0", "1.1.0", "qian.sample.crm.http/v1", Ct)).IsCompatible);
+        var entry = runtime.DumpConfig().Single(item => item.Id == "crm");
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await runtime.MountAsync([new PluginDefinition(entry with { Version = "1.1.0" },
+            OpenApiContractPlugin.FromRepository(new CrmPlugin(), repository, "qian.sample.crm", "0.9.0", "1.1.0", "qian.sample.crm.http/v1"), [CrmDefinition.Key])], Ct);
+        Assert.Equal(PluginState.Failed, runtime.GetState("crm", ScopeKey.Global));
+        using var rejected = await host.Post(A, new CreateCustomerCommand(Guid.CreateVersion7(), "must not exist"));
+        Assert.Equal(HttpStatusCode.NotFound, rejected.StatusCode);
+    }
+
+    private static HashSet<string> ReferencedBusinessSchemas(JsonElement document)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal); var pending = new Queue<string>();
+        foreach (var path in document.GetProperty("paths").EnumerateObject())
+            if (path.Name.StartsWith("/api/customers", StringComparison.Ordinal) || path.Name.Contains("/qian.sample.crm/", StringComparison.Ordinal)) Visit(path.Value);
+        while (pending.TryDequeue(out var key)) Visit(document.GetProperty("components").GetProperty("schemas").GetProperty(key));
+        return names;
+        void Visit(JsonElement value)
+        {
+            if (value.ValueKind == JsonValueKind.Object)
+                foreach (var member in value.EnumerateObject())
+                {
+                    if (member.Name == "$ref" && member.Value.ValueKind == JsonValueKind.String && member.Value.GetString() is { } reference && reference.StartsWith("#/components/schemas/", StringComparison.Ordinal))
+                    { var key = reference.Split('/')[3]; if (names.Add(key)) pending.Enqueue(key); }
+                    else Visit(member.Value);
+                }
+            else if (value.ValueKind == JsonValueKind.Array) foreach (var item in value.EnumerateArray()) Visit(item);
+        }
     }
 
     private static async Task AssertAbsent(RunningApp host, string tenant)
@@ -230,6 +283,8 @@ public sealed partial class CustomerCommandTests
     private static void ConfigureCapabilities(WebApplicationBuilder builder, string connection, string navigationConnection)
     {
         builder.Services.AddKunSecurity();
+        builder.Services.AddQianHttpContracts();
+        builder.Services.AddQianPluginEndpoints(sp => sp.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("registry", ScopeKey.Global));
         builder.Services.AddQianData<CapabilitiesDbContext>((_, options) => options.UseNpgsql(navigationConnection).UseKunSchema(CapabilitiesDbContext.Schema));
         builder.Services.AddQianData<RegistryDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(RegistryDbContext.Schema));
         builder.Services.AddSingleton<ISurfaceReader, SurfaceValidator>();
@@ -250,10 +305,11 @@ public sealed partial class CustomerCommandTests
             try { await next(http); }
             catch (Exception error)
             {
-                app.Services.GetRequiredService<FailureEvidence>().Failures.Enqueue(error.GetType().Name + "\n" + error.StackTrace);
+                app.Services.GetRequiredService<FailureEvidence>().Failures.Enqueue(error.GetType().Name + "\n" + error.Data["contractDiagnostics"] + "\n" + error.StackTrace);
                 throw;
             }
         });
+        app.UseQianPluginEndpoints();
         app.MapQianCapabilities(CapabilitySource);
         // 仅测试宿主的入口胶水；目录、提示与执行全部调用同一个生产 Provider。
         app.MapGet("/api/acceptance/prompt", async (HttpContext http) =>
@@ -291,8 +347,11 @@ public sealed partial class CustomerCommandTests
         var fullContract = CapabilityContractCompiler.CreateOpenApi(
             [CreateCustomerCommand.QianCapability, ListCustomersQuery.QianCapability, GetCustomerQuery.QianCapability], validator, new ToolContractHasher());
         Write("plugins/crm/metadata/contracts.json", JsonSerializer.Serialize(new[]
-            { new { id = "qian.sample.crm.api/v1", kind = "openapi", path = "./contracts/http-v1.openapi.json" } }));
+            { new { id = "qian.sample.crm.api/v1", kind = "openapi", path = "./contracts/http-v1.openapi.json" },
+              new { id = "qian.sample.crm.http/v1", kind = "openapi", path = "./contracts/rest-v1.openapi.json" } }));
         Write("plugins/crm/contracts/http-v1.openapi.json", fullContract.GetRawText());
+        var nativeContract = await app.Services.GetRequiredService<IHttpContractSource>().CompileDocumentAsync("qian.sample.crm", Ct);
+        Write("plugins/crm/contracts/rest-v1.openapi.json", nativeContract.GetRawText());
         Write("plugins/crm/ui/manifest.json", """{"pages":[{"route":"/customers","expose":"CustomersPage","permission":"qian.sample.crm:customer:read","nav":{"title":"客户","icon":"users","order":10}},{"route":"/customers/new","expose":"CreateCustomerPage","permission":"qian.sample.crm:customer:write","nav":{"title":"新建客户","order":20}}]}""");
         foreach (var definition in definitions.Values.ToArray())
         {
@@ -338,9 +397,11 @@ public sealed partial class CustomerCommandTests
             files[".qian-plugin/plugin.json"] = Encoding.UTF8.GetBytes(manifest.ToJsonString());
             if (incompatible)
             {
-                var document = System.Text.Json.Nodes.JsonNode.Parse(files["contracts/http-v1.openapi.json"].Span)!;
-                document["paths"] = new System.Text.Json.Nodes.JsonObject();
-                files["contracts/http-v1.openapi.json"] = Encoding.UTF8.GetBytes(document.ToJsonString());
+                foreach (var name in new[] { "contracts/http-v1.openapi.json", "contracts/rest-v1.openapi.json" })
+                {
+                    var document = System.Text.Json.Nodes.JsonNode.Parse(files[name].Span)!;
+                    document["paths"] = new System.Text.Json.Nodes.JsonObject(); files[name] = Encoding.UTF8.GetBytes(document.ToJsonString());
+                }
             }
             var inventory = string.Concat(files.OrderBy(file => file.Key, StringComparer.Ordinal).Select(file => file.Key + "\t" + file.Value.Length.ToString(CultureInfo.InvariantCulture) + "\t" + Convert.ToHexStringLower(SHA256.HashData(file.Value.Span)) + "\n"));
             var digest = "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(inventory)));

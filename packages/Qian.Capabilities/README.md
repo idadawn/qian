@@ -27,7 +27,7 @@
 
 `tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证契约、别名、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结，并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。
 
-当前 OpenAPI 聚合覆盖 SDK 真实能力的调用入口，其他组件声明的 HTTP/gRPC 契约仍需接入版本化契约仓库。RT-006 已提供静态协议与真实 gRPC 反射探测，完整安装发布流程接线和非 SDK 接口聚合仍未完成；菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
+OpenAPI 聚合已覆盖 SDK 真实调用入口及宿主标注绑定的原生 HTTP 路由，实际 gRPC 契约经独立反射探测。RT-006 已提供静态协议与真实 gRPC 反射探测，完整安装发布流程接线仍未完成；菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
 
 ## 契约兼容检查
 
@@ -57,7 +57,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 
 按组件 ID、精确制品版本和契约 ID 查询，返回原始内容的副本、文件 SHA-256 与制品目录摘要。仓库不按业务用户裁剪契约，也没有匿名 HTTP 读取入口；卸载后旧服务引用失效，在途兼容检查会取消。`CheckOpenApiAsync` 只比较两个完整版本制品中的同族 OpenAPI，缺基线、候选或检查器均拒绝。
 
-`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布。CLI 自动产出契约制品、在线签名/发布准入及其它服务接口聚合仍需完成。
+`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布。CLI 自动产出契约制品、在线签名/发布准入及默认平台的全部组件装配仍需完成。
 
 ## 菜单贡献、资源引用与个人偏好
 
@@ -86,3 +86,13 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 `GrpcReflectionContractProbe` 使用宿主提供的 CallInvoker 和认证元数据连接真实 HTTP/2 reflection 服务，复制凭据且不写入诊断。它查询声明中的每个服务，收集文件和依赖，核验冲突、大小及 RPC 最终状态，再按 PACKAGE 规则检查 RPC、消息与字段；允许服务构建的 ProtoRoot 文件前缀不同，不因仅有文件布局差异误拒。两类规则依据 [Buf 兼容规则说明](https://buf.build/docs/breaking/rules/)。宿主负责端点、TLS、出网范围和探测授权；探测入口不接受客户端 URL 或可信标记。
 
 `GrpcContractPlugin` 在业务 Apply 前先检查精确版本制品，再探测实际服务；任一失败都不能公开业务注册。测试使用实际 protobuf Echo 调用、官方 reflection 实现和 RS256 认证，验证正确协议、类型漂移、匿名拒绝、挂载失败与认证恢复后的真实声明式表面登记。此证明不代替完整注册表/生命周期安装编排或生产服务部署验收。
+
+## 实际 HTTP 端点聚合
+
+平台宿主注册 `AddQianHttpContracts()` 后，`IHttpContractSource` 从原生 ApiExplorer 读取实际 Minimal API/MVC 路由、参数、请求体和声明的响应类型。端点通过 SDK 的 `PluginEndpointBinding` 标注实际安装条目及服务/能力绑定，未标注的宿主路由不被猜测为组件接口。运行时先核对 Registry Ready 视图，再执行端点本身的 ASP.NET 授权策略；命中后的模型才导出到文档，避免无权限 Schema 残留。
+
+源生成能力的具体调用路径与原生 HTTP 文档共同组成 OpenAPI 3.1。宿主需提供准确的 `Produces` 等响应元数据；无法正确描述的输入来源会失败，不输出伪造 Schema。本期已覆盖 JSON 请求体、路径、查询与请求头参数，使用 S1 后端 S2S Bearer 认证口径。路由约束会转换为 OpenAPI 路径参数，JSON Schema 的递归引用共用 SDK 的重定位实现，命名冲突拒绝覆盖。
+
+`CompileDocumentAsync(pluginId)` 是可信构建流程的完整组件导出端口，不依赖当前 HTTP 用户或运行时权限裁剪，也没有公开 HTTP 路由。客户宿主的版本制品现已同时包含生成能力契约及实际 REST 路由契约；有限权限用户看不到创建接口，但发布基线仍保留完整操作，删掉原生路径会在挂载前被拒绝。
+
+`MapQianCapabilities` 的端点绑定默认为 capabilities 条目，可用重载指定真实条目。宿主必须先注册并安装 SDK 插件端点中间件；目录端点过滤器会拒绝缺失的中间件证据。业务宿主需使用同一绑定与中间件保护实际入口，不能只在文档里隐藏路径。参考客户 REST 路由已绑定到实际可执行能力，因此 restrict 后文档和直接访问都拒绝。

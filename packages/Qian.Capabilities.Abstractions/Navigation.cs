@@ -7,6 +7,13 @@ namespace Qian.Capabilities;
 /// <summary>当前租户内可访问的菜单项；资源引用使用 qian:{tenant}:{app}:page:{id}。</summary>
 public sealed record NavigationItem(string ResourceRef, string PluginId, string Route, string Title, string? Icon, int Order);
 
+/// <summary>仅限当前主体缓存的菜单结果。</summary>
+public sealed record NavigationCatalog(IReadOnlyList<NavigationItem> Items)
+{
+    /// <summary>固定为 private。</summary>
+    public string CacheScope { get; } = "private";
+}
+
 /// <summary>当前调用者的展示偏好，不包含主体或租户字段，也不授予权限。</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record NavigationPreference(bool Hidden, int? Order = null);

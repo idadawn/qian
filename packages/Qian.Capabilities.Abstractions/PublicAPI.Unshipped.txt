@@ -100,3 +100,19 @@ Qian.Capabilities.IProtoCompatibilityProbe.CompareDescriptorsAsync(System.ReadOn
 Qian.Capabilities.IContractRepository.CheckProtoAsync(string! pluginId, string! baselineVersion, string! candidateVersion, string! contractId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
 Qian.Capabilities.IContractRepository.GetProtoSource(string! pluginId, string! version, string! contractId) -> Qian.Capabilities.ProtoContractSet!
 Qian.Capabilities.IProtoCompatibilityProbe.CompareRuntimeDescriptorsAsync(System.ReadOnlyMemory<byte> baseline, System.ReadOnlyMemory<byte> candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.IHttpContractSource
+Qian.Capabilities.IHttpContractSource.GetDocumentAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement>
+Qian.Capabilities.NavigationCatalog
+Qian.Capabilities.NavigationCatalog.<Clone>$() -> Qian.Capabilities.NavigationCatalog!
+Qian.Capabilities.NavigationCatalog.CacheScope.get -> string!
+Qian.Capabilities.NavigationCatalog.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Capabilities.NavigationItem!>! Items) -> void
+Qian.Capabilities.NavigationCatalog.Equals(Qian.Capabilities.NavigationCatalog? other) -> bool
+Qian.Capabilities.NavigationCatalog.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Capabilities.NavigationItem!>!
+Qian.Capabilities.NavigationCatalog.Items.init -> void
+Qian.Capabilities.NavigationCatalog.NavigationCatalog(System.Collections.Generic.IReadOnlyList<Qian.Capabilities.NavigationItem!>! Items) -> void
+override Qian.Capabilities.NavigationCatalog.Equals(object? obj) -> bool
+override Qian.Capabilities.NavigationCatalog.GetHashCode() -> int
+override Qian.Capabilities.NavigationCatalog.ToString() -> string!
+static Qian.Capabilities.NavigationCatalog.operator !=(Qian.Capabilities.NavigationCatalog? left, Qian.Capabilities.NavigationCatalog? right) -> bool
+static Qian.Capabilities.NavigationCatalog.operator ==(Qian.Capabilities.NavigationCatalog? left, Qian.Capabilities.NavigationCatalog? right) -> bool
+Qian.Capabilities.IHttpContractSource.CompileDocumentAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement>
