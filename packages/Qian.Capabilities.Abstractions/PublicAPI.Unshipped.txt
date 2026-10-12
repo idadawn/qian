@@ -87,3 +87,16 @@ static Qian.Capabilities.NavigationPreference.operator !=(Qian.Capabilities.Navi
 static Qian.Capabilities.NavigationPreference.operator ==(Qian.Capabilities.NavigationPreference? left, Qian.Capabilities.NavigationPreference? right) -> bool
 static readonly Qian.Capabilities.CapabilitiesDefinition.NavigationItemsKey -> Qian.Runtime.ServiceKey
 static readonly Qian.Capabilities.CapabilitiesDefinition.NavigationKey -> Qian.Runtime.ServiceKey
+Qian.Capabilities.IProtoCompatibilityProbe
+Qian.Capabilities.IProtoCompatibilityProbe.CompareAsync(Qian.Capabilities.ProtoContractSet! baseline, Qian.Capabilities.ProtoContractSet! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.IProtoCompatibilityProbe.CompileAsync(Qian.Capabilities.ProtoContractSet! source, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.ReadOnlyMemory<byte>>
+Qian.Capabilities.ProtoContractSet
+Qian.Capabilities.ProtoContractSet.Paths.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Capabilities.ProtoContractSet.ProtoContractSet(System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files) -> void
+Qian.Capabilities.ProtoContractSet.ReadFile(string! path) -> byte[]!
+Qian.Capabilities.IGrpcContractProbe
+Qian.Capabilities.IGrpcContractProbe.CheckAsync(Qian.Capabilities.ProtoContractSet! expected, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.IProtoCompatibilityProbe.CompareDescriptorsAsync(System.ReadOnlyMemory<byte> baseline, System.ReadOnlyMemory<byte> candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.IContractRepository.CheckProtoAsync(string! pluginId, string! baselineVersion, string! candidateVersion, string! contractId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.IContractRepository.GetProtoSource(string! pluginId, string! version, string! contractId) -> Qian.Capabilities.ProtoContractSet!
+Qian.Capabilities.IProtoCompatibilityProbe.CompareRuntimeDescriptorsAsync(System.ReadOnlyMemory<byte> baseline, System.ReadOnlyMemory<byte> candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>

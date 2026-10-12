@@ -27,7 +27,7 @@
 
 `tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证契约、别名、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结，并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。
 
-当前 OpenAPI 聚合覆盖 SDK 真实能力的调用入口，其他组件声明的 HTTP/gRPC 契约仍需接入版本化契约仓库。RT-006 的协议探测与完整发布准入仍未完成；菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
+当前 OpenAPI 聚合覆盖 SDK 真实能力的调用入口，其他组件声明的 HTTP/gRPC 契约仍需接入版本化契约仓库。RT-006 已提供静态协议与真实 gRPC 反射探测，完整安装发布流程接线和非 SDK 接口聚合仍未完成；菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
 
 ## 契约兼容检查
 
@@ -53,11 +53,11 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 ]
 ```
 
-契约 ID 必须属于本组件命名空间并带 `/vN`；文件必须在同一制品内，不能越界、缺失或重复声明同一 ID。OpenAPI 支持共用读取器的 JSON/YAML 语法并验证 3.1 文档；JSON Schema 使用 2020-12 元 Schema 校验；proto 当前保存原始 UTF-8 源码，保存本身不代表协议编译、descriptor 比较或远程反射探测通过。
+契约 ID 必须属于本组件命名空间并带 `/vN`；文件必须在同一制品内，不能越界、缺失或重复声明同一 ID。OpenAPI 支持共用读取器的 JSON/YAML 语法并验证 3.1 文档；JSON Schema 使用 2020-12 元 Schema 校验；proto 原始文件按制品形成封闭依赖集合；Provider 在公开契约仓库前执行真实编译，缺少检查器、语法错误或导入缺失均失败。实际服务还须经过带认证的反射一致性探测。
 
 按组件 ID、精确制品版本和契约 ID 查询，返回原始内容的副本、文件 SHA-256 与制品目录摘要。仓库不按业务用户裁剪契约，也没有匿名 HTTP 读取入口；卸载后旧服务引用失效，在途兼容检查会取消。`CheckOpenApiAsync` 只比较两个完整版本制品中的同族 OpenAPI，缺基线、候选或检查器均拒绝。
 
-`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布。CLI 自动产出契约制品、在线签名/发布准入、proto 探测和其它服务接口聚合仍需完成。
+`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布。CLI 自动产出契约制品、在线签名/发布准入及其它服务接口聚合仍需完成。
 
 ## 菜单贡献、资源引用与个人偏好
 
@@ -76,3 +76,13 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 偏好更新与 `qian.capabilities/navigation.preference` 审计在同一个 PostgreSQL Serializable 事务中提交。审计只写已知非敏感输入的规范化哈希，字段为 hidden、order 和 ASCII 资源引用，payload 不复制输入。审计失败时偏好回滚；序列化、死锁及目标键冲突会重新验证资格并重试整笔更新，耗尽后返回 CONFLICT。宿主需给本上下文的受限应用角色配置既有审计事务函数权限，不授予审计历史 DML。
 
 真实 Kestrel/PostgreSQL 用例覆盖两个租户、两个服务主体的展示隔离，版本化租户菜单替换、禁用不回退、restriction、卸载、偏好恢复、审计失败回滚和并发更新单行。参考宿主用 UI 声明验证后端目录；没有把它当成前端远程模块已部署或真实用户交互登录的证据。
+
+## proto 与实际 gRPC 服务探测
+
+`IProtoCompatibilityProbe` 由 `BufProtoCompatibilityProbe` 实现，使用锁定版本 [Buf 1.73.0](https://github.com/bufbuild/buf/releases/tag/v1.73.0)。同一安装脚本按 `proto-tools.lock.json` 校验原始二进制 SHA-256。运行环境用 `QIAN_BUF_PATH` 指向工具；CI 实际安装并执行，工具缺失不会跳过测试。
+
+`ProtoContractSet` 只保存同一制品中的 proto 文件，复制字节并沿用制品路径、文件数和总大小限制。编译使用独立目录、固定配置、禁止符号链接、清空继承环境及受控缓存，不读取制品中的 Buf 配置、网络依赖或生成器。输出包含依赖的标准 FileDescriptorSet。版本升级按 FILE 规则检测源码、JSON 和 wire 破坏性变化；语法错误、缺少导入、检查异常和超时均关闭准入。
+
+`GrpcReflectionContractProbe` 使用宿主提供的 CallInvoker 和认证元数据连接真实 HTTP/2 reflection 服务，复制凭据且不写入诊断。它查询声明中的每个服务，收集文件和依赖，核验冲突、大小及 RPC 最终状态，再按 PACKAGE 规则检查 RPC、消息与字段；允许服务构建的 ProtoRoot 文件前缀不同，不因仅有文件布局差异误拒。两类规则依据 [Buf 兼容规则说明](https://buf.build/docs/breaking/rules/)。宿主负责端点、TLS、出网范围和探测授权；探测入口不接受客户端 URL 或可信标记。
+
+`GrpcContractPlugin` 在业务 Apply 前先检查精确版本制品，再探测实际服务；任一失败都不能公开业务注册。测试使用实际 protobuf Echo 调用、官方 reflection 实现和 RS256 认证，验证正确协议、类型漂移、匿名拒绝、挂载失败与认证恢复后的真实声明式表面登记。此证明不代替完整注册表/生命周期安装编排或生产服务部署验收。

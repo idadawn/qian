@@ -18,21 +18,22 @@ public sealed class CapabilitiesPlugin : IQianPlugin
     /// <inheritdoc />
     public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key, AuditDefinition.Key, RegistryDefinition.Key, TenancyDefinition.Key, CommandPolicies.TenancyKey, CommandPolicies.AuthorizationKey, CommandPolicies.AuditKey];
     /// <inheritdoc />
-    public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
+    public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(ctx); ct.ThrowIfCancellationRequested();
         if (ctx.Scope != ScopeKey.Global || config.ValueKind != JsonValueKind.Object || config.EnumerateObject().Any())
             throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
         var service = new CapabilityService(ctx.Registry(), ctx.Services.GetRequiredService<IPermissionChecker>(),
             ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetRequiredService<IToolContractHasher>());
-        var contracts = new InstalledContractRepository(ctx.Registry().GetInstalledComponents(), ctx.Services.GetService<IOpenApiCompatibilityProbe>(), ctx.Services.GetRequiredService<ISurfaceReader>());
+        ctx.Effect(service.Dispose);
+        var contracts = new InstalledContractRepository(ctx.Registry().GetInstalledComponents(), ctx.Services.GetService<IOpenApiCompatibilityProbe>(), ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetService<IProtoCompatibilityProbe>());
         ctx.Effect(contracts.Dispose);
+        await contracts.ValidateProtoAsync(ct).ConfigureAwait(false);
         ctx.Provide<IContractRepository>(CapabilitiesDefinition.ContractsKey, contracts);
         var navigation = new NavigationService(ctx.Registry(), ctx.Services.GetRequiredService<IPermissionChecker>(), ctx.Data());
         ctx.Effect(navigation.Dispose);
         ctx.Provide<INavigationService>(CapabilitiesDefinition.NavigationKey, navigation);
-        ctx.Effect(service.Dispose);
         ctx.Provide<ICapabilityService>(CapabilitiesDefinition.Key, service);
-        return ValueTask.CompletedTask;
+
     }
 }

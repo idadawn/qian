@@ -47,6 +47,8 @@
   <ItemGroup Label="Data">
     <PackageVersion Include="Grpc.AspNetCore.Server" Version="2.67.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.67.0" />
+    <PackageVersion Include="Grpc.Reflection" Version="2.67.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
     <PackageVersion Include="Kun.MultiTenancy" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.EntityFrameworkCore" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.MultiTenancy.EntityFrameworkCore" Version="[$(KunVersion)]" />

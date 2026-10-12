@@ -15,11 +15,13 @@ internal sealed partial class InstalledContractRepository : IContractRepository,
     private readonly Dictionary<(string Plugin, string Version), IReadOnlyList<ContractDocument>> _documents;
     private readonly IOpenApiCompatibilityProbe? _probe;
     private readonly ISurfaceReader _reader;
+    private readonly IProtoCompatibilityProbe? _protoProbe;
+    private readonly Dictionary<(string Plugin, string Version), ProtoContractSet> _protoSources = [];
     private readonly (CancellationTokenSource Source, CancellationToken Token) _lifetime = CreateLifetime();
     private int _disposed;
-    internal InstalledContractRepository(IEnumerable<InstalledComponentMetadata> installed, IOpenApiCompatibilityProbe? probe, ISurfaceReader reader)
+    internal InstalledContractRepository(IEnumerable<InstalledComponentMetadata> installed, IOpenApiCompatibilityProbe? probe, ISurfaceReader reader, IProtoCompatibilityProbe? protoProbe = null)
     {
-        _probe = probe; _reader = reader;
+        _probe = probe; _reader = reader; _protoProbe = protoProbe;
         var versions = new Dictionary<(string, string), IReadOnlyList<ContractDocument>>();
         foreach (var component in installed)
         {
@@ -44,6 +46,9 @@ internal sealed partial class InstalledContractRepository : IContractRepository,
                     documents.Add(new ContractDocument(component.PluginId, component.Version, id, kind, path[2..], component.ArtifactDigest, bytes));
                 }
             }
+            if (documents.Any(document => document.Kind == "proto"))
+                _protoSources.Add((component.PluginId, component.Version), new ProtoContractSet(component.FilePaths.Where(path => path.EndsWith(".proto", StringComparison.Ordinal))
+                    .ToDictionary(path => path, path => new ReadOnlyMemory<byte>(component.ReadFile(path)!), StringComparer.Ordinal)));
             if (!versions.TryAdd((component.PluginId, component.Version), documents.AsReadOnly())) throw Invalid();
         }
         _documents = versions;
@@ -53,6 +58,29 @@ internal sealed partial class InstalledContractRepository : IContractRepository,
         EnsureActive(); return _documents.TryGetValue((pluginId, version), out var documents) ? documents : [];
     }
     public ContractDocument? Find(string pluginId, string version, string contractId) => GetContracts(pluginId, version).SingleOrDefault(document => document.Id == contractId);
+    public ProtoContractSet GetProtoSource(string pluginId, string version, string contractId)
+    {
+        EnsureActive();
+        if (Find(pluginId, version, contractId) is not { Kind: "proto" } || !_protoSources.TryGetValue((pluginId, version), out var source))
+            throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+        return source;
+    }
+    internal async ValueTask ValidateProtoAsync(CancellationToken ct)
+    {
+        EnsureActive();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _lifetime.Token);
+        foreach (var source in _protoSources.Values)
+            await RequireProto().CompileAsync(source, linked.Token).ConfigureAwait(false);
+        EnsureActive(); linked.Token.ThrowIfCancellationRequested();
+    }
+    public async ValueTask<ContractCompatibility> CheckProtoAsync(string pluginId, string baselineVersion, string candidateVersion, string contractId, CancellationToken cancellationToken = default)
+    {
+        EnsureActive();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
+        var result = await RequireProto().CompareAsync(GetProtoSource(pluginId, baselineVersion, contractId), GetProtoSource(pluginId, candidateVersion, contractId), linked.Token).ConfigureAwait(false);
+        EnsureActive(); linked.Token.ThrowIfCancellationRequested(); return result;
+    }
+    private IProtoCompatibilityProbe RequireProto() => _protoProbe ?? throw new InvalidOperationException("宿主尚未装配真实 proto 检查器。");
     public async ValueTask<ContractCompatibility> CheckOpenApiAsync(string pluginId, string baselineVersion, string candidateVersion, string contractId, CancellationToken cancellationToken = default)
     {
         EnsureActive();
@@ -72,7 +100,7 @@ internal sealed partial class InstalledContractRepository : IContractRepository,
         var content = new UTF8Encoding(false, true).GetString(bytes);
         if (kind == "proto")
         {
-            // 保留源文件供后续真实 descriptor/反射探测；入库不代表已通过协议编译或兼容验收。
+            // 先读取原始源码；Provider 在公开仓库服务前还会执行真正的编译验证。
             if (!path.EndsWith(".proto", StringComparison.Ordinal) || string.IsNullOrWhiteSpace(content)) throw Invalid();
             return;
         }

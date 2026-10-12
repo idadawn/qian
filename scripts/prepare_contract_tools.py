@@ -39,6 +39,26 @@ def main():
     temporary.chmod(0o755)
     os.replace(temporary, args.destination / name)
     print(args.destination.resolve() / name)
+    install_buf(args.destination, system, arch)
+
+
+def install_buf(destination, system, arch):
+    lock = json.loads(Path(__file__).with_name("proto-tools.lock.json").read_text())
+    target = f"{system}_{arch}"
+    if target not in lock["assets"]:
+        raise SystemExit(f"Unsupported proto checker platform: {target}")
+    asset = lock["assets"][target]
+    url = f"https://github.com/bufbuild/buf/releases/download/v{lock['version']}/{asset['name']}"
+    with urllib.request.urlopen(url, timeout=60) as response:
+        binary = response.read(100 * 1024 * 1024 + 1)
+    if len(binary) > 100 * 1024 * 1024 or hashlib.sha256(binary).hexdigest() != asset["sha256"]:
+        raise SystemExit("Proto checker size or digest does not match the lock file.")
+    name = "buf.exe" if system == "windows" else "buf"
+    temporary = destination / (name + ".tmp")
+    temporary.write_bytes(binary)
+    temporary.chmod(0o755)
+    os.replace(temporary, destination / name)
+    print(destination.resolve() / name)
 
 
 if __name__ == "__main__":

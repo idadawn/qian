@@ -40,6 +40,10 @@ public interface IContractRepository
     IReadOnlyList<ContractDocument> GetContracts(string pluginId, string version);
     /// <summary>读取指定版本的契约族；不存在返回 null。</summary>
     ContractDocument? Find(string pluginId, string version, string contractId);
+    /// <summary>读取 proto 契约所在制品的封闭源文件集合，包含其本地导入。</summary>
+    ProtoContractSet GetProtoSource(string pluginId, string version, string contractId);
+    /// <summary>比较两个完整制品的 proto 协议；语法错误或依赖缺失会失败。</summary>
+    ValueTask<ContractCompatibility> CheckProtoAsync(string pluginId, string baselineVersion, string candidateVersion, string contractId, CancellationToken cancellationToken = default);
     /// <summary>用两个完整制品中的同一 OpenAPI 契约族执行真实兼容检查。</summary>
     ValueTask<ContractCompatibility> CheckOpenApiAsync(string pluginId, string baselineVersion, string candidateVersion, string contractId, CancellationToken cancellationToken = default);
 }

@@ -156,3 +156,5 @@ QIAN0005 在全部代码树检查真正的 Kun `AddRequestHandler`：受保护�
 ### 能力契约的真实兼容检查
 
 运行 `Qian.Capabilities.Tests` 和客户目录契约挂载用例前，先执行 `python3 scripts/prepare_contract_tools.py --destination /tmp/qian-contract-tools`，再设置 `QIAN_OASDIFF_PATH=/tmp/qian-contract-tools/oasdiff`（Windows 使用对应 exe）。下载版本与 SHA-256 固定在 `scripts/contract-tools.lock.json`，不会运行远程安装脚本。全部 .NET 测试也需要此环境变量；工具缺失按失败处理。CI 已包含安装步骤。
+
+proto 与反射用例还需设置 `QIAN_BUF_PATH=/tmp/qian-contract-tools/buf`（Windows 使用 buf.exe）；同一安装脚本会下载并核验该二进制。运行全部 .NET 测试时同时提供 QIAN_OASDIFF_PATH 与 QIAN_BUF_PATH。

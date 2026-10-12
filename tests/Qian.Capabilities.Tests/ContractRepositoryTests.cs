@@ -21,9 +21,12 @@ public sealed class ContractRepositoryTests
     [Fact]
     public async Task 从真实制品快照按组件版本读契约_比较完整基线_返回内容不可变()
     {
-        var first = Artifact("1.0.0"); var second = Artifact("1.1.0", description: "兼容说明"); var breaking = Artifact("1.2.0", removePath: true);
+        var first = Artifact("1.0.0"); var second = Artifact("1.1.0", description: "兼容说明"); var breaking = Artifact("1.2.0", removePath: true); var protoBreaking = Artifact("1.3.0", protoType: "int32");
         var probe = new OasDiffOpenApiProbe(Environment.GetEnvironmentVariable("QIAN_OASDIFF_PATH") ?? throw new InvalidOperationException("缺少真实检查器。"));
-        using var repository = new InstalledContractRepository([first, second, breaking], probe, new SurfaceValidator());
+        using var repository = new InstalledContractRepository([first, second, breaking, protoBreaking], probe, new SurfaceValidator(), new BufProtoCompatibilityProbe(Environment.GetEnvironmentVariable("QIAN_BUF_PATH") ?? throw new InvalidOperationException("缺少 proto 检查器。")));
+        await repository.ValidateProtoAsync(Ct);
+        Assert.True((await repository.CheckProtoAsync(Plugin, "1.0.0", "1.1.0", Plugin + ".wire/v1", Ct)).IsCompatible);
+        Assert.False((await repository.CheckProtoAsync(Plugin, "1.0.0", "1.3.0", Plugin + ".wire/v1", Ct)).IsCompatible);
         Assert.Equal(3, repository.GetContracts(Plugin, "1.0.0").Count);
         var document = repository.Find(Plugin, "1.0.0", Plugin + ".customer/v1"); Assert.NotNull(document);
         Assert.Equal(first.ArtifactDigest, document.ArtifactDigest);
@@ -51,7 +54,7 @@ public sealed class ContractRepositoryTests
     }
 
     private static InstalledComponentMetadata Artifact(string version, string description = "客户列表", bool removePath = false,
-        string contractPath = "./contracts/customer-v1.openapi.json", bool captureFiles = true, bool invalidSchema = false)
+        string contractPath = "./contracts/customer-v1.openapi.json", bool captureFiles = true, bool invalidSchema = false, string protoType = "string")
     {
         var manifest = JsonSerializer.SerializeToElement(new
         {
@@ -73,7 +76,7 @@ public sealed class ContractRepositoryTests
             [".qian-plugin/plugin.json"] = Encoding.UTF8.GetBytes(manifest.GetRawText()),
             ["metadata/contracts.json"] = Encoding.UTF8.GetBytes(declarations),
             ["contracts/customer-v1.openapi.json"] = Encoding.UTF8.GetBytes(openapi.ToJsonString()),
-            ["contracts/customer-v1.proto"] = Encoding.UTF8.GetBytes("syntax = \"proto3\"; package test.contracts.v1; message Customer { string id = 1; }"),
+            ["contracts/customer-v1.proto"] = Encoding.UTF8.GetBytes("syntax = \"proto3\"; package test.contracts.v1; message Customer { " + protoType + " id = 1; }"),
             ["schemas/customer-v1.schema.json"] = Encoding.UTF8.GetBytes(invalidSchema ? "{\"type\":42}" : "{\"type\":\"object\"}")
         };
         var directory = Directory.CreateTempSubdirectory("qian-contract-artifact-");
