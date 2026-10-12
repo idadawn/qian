@@ -2,6 +2,10 @@
 
 Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。参考应用数据验收已补齐，SDK / CLI 的完整代码安装仍有后续门禁，当前进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
 
+## 跨宿主租户模型
+
+租户查询过滤器必须从当前执行查询的 DbContext 读取租户。相同上下文类型和租户在不同宿主中复用 EF 模型时，不能保留第一次建模时的访问器实例；旧访问器退出或切换租户不应改变新请求的条件。`CrossHostTenantModelTests` 以真实受限 PostgreSQL 角色验证模型复用，并让第二宿主编译不同形状的查询，覆盖旧查询缓存可能掩盖的问题。Qian 通过唯一 `KunVersion` 消费此框架修复，仍保留 RLS 双拦截器与模型缓存门禁。
+
 ## 安全装配
 
 ```csharp

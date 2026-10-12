@@ -45,8 +45,14 @@ public sealed class KunErrorBridgeTests
         var versions = XDocument.Load(Path.Combine(root.FullName, "Directory.Packages.props"));
         Assert.Single(versions.Descendants("KunVersion"));
         Assert.All(versions.Descendants("PackageVersion").Where(e => e.Attribute("Include")!.Value.StartsWith("Kun.", StringComparison.Ordinal)),
-            package => Assert.Equal("$(KunVersion)", package.Attribute("Version")!.Value));
+            package => Assert.Equal("[$(KunVersion)]", package.Attribute("Version")!.Value));
         using var assets = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(root.FullName, "packages/Qian.Runtime/obj/project.assets.json")));
+        var kunVersion = versions.Descendants("KunVersion").Single().Value;
+        Assert.All(assets.RootElement.GetProperty("libraries").EnumerateObject().Where(p => p.Name.StartsWith("Kun.", StringComparison.Ordinal)), package =>
+        {
+            Assert.Equal(kunVersion, package.Name.Split('/')[1]);
+            Assert.Equal("package", package.Value.GetProperty("type").GetString());
+        });
         Assert.DoesNotContain(assets.RootElement.GetProperty("libraries").EnumerateObject(), p => p.Name.StartsWith("Kun.Validation/", StringComparison.Ordinal));
         var nuget = XDocument.Load(Path.Combine(root.FullName, "NuGet.config"));
         Assert.Equal("https://api.nuget.org/v3/index.json", Assert.Single(nuget.Descendants("packageSources").Elements("add")).Attribute("value")!.Value);

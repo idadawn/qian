@@ -87,6 +87,7 @@ describe('KunVersion 与 kun 仓库', () => {
     assert.throws(() => readKunVersion(makeRepoRoot('<PropertyGroup><KunVersion></KunVersion></PropertyGroup>')), /没有 <KunVersion>/);
     assert.throws(() => readKunVersion(makeRepoRoot('<PropertyGroup><KunVersion>main</KunVersion></PropertyGroup>')), /CalVer/);
     assert.equal(readKunVersion(makeRepoRoot('<PropertyGroup><KunVersion>2026.9.13</KunVersion></PropertyGroup>')), '2026.9.13');
+    assert.equal(readKunVersion(makeRepoRoot('<PropertyGroup><KunVersion>2026.10.12-hotfix.2</KunVersion></PropertyGroup>')), '2026.10.12-hotfix.2');
   });
 
   it('tag 不存在即失败', () => {
