@@ -42,6 +42,9 @@ jobs:
       - name: 构建（PublicAPI 门禁：Qian 包未登记的公共 API 即编译失败）
         run: dotnet build Qian.slnx -c Release --no-restore
 
+      - name: 真实 Data 代码与唯一清单不得漂移
+        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Data/bin/Release/net10.0/Qian.Data.dll plugins/qian.data
+
       - name: 依赖图门禁
         run: python3 scripts/check_deps.py --solution Qian.slnx --no-restore
 

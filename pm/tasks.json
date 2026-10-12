@@ -4977,14 +4977,14 @@
  {
   "id": "S1-RT-014",
   "title": "Qian.Plugin.Sdk 与源生成器（plugin.json 合并）",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
   "wave": 2,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "5d",
   "days": 5.0,
   "depends": [
@@ -5010,12 +5010,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
    }
   ],
-  "updated": "2026-10-12",
+  "updated": "2026-10-13",
   "acceptance": {
    "done": 0,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>NuGet <code>Qian.Plugin.Sdk</code>（<code>IQianPlugin</code> 基类、租户 / 身份 / 权限 / 配置 / 事件 / 存储 / 通知 / 调度客户端门面、生命周期钩子基类、默认安全装配、<code>PluginEnabledMiddleware</code>）与 <code>Qian.Plugin.Sdk.Generators</code>（<code>[QianPlugin]</code> / <code>[Capability]</code> / <code>[ExtensionPoint]</code> / <code>[Contributes]</code> / <code>[Permission]</code> / <code>[QianJob]</code> / <code>[QianEvent]</code> → DI 注册 + 派生字段带 <code>&quot;$generated&quot;: true</code> 合并进唯一 <code>plugin.json</code> + JSON Schema）；只依赖 <code>Qian.Runtime</code> 与各 <code>Qian.&lt;X&gt;.Abstractions</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>按 [S1-DEC-018](S1-DEC-018.md) 回验 DATA-001：真实 qian.data 的代码字段由源生成器派生、SDK 默认装配可用，Qian 包族在既定私有 NuGet 源锁步发布并能真实还原；未通过前保留组件骨架标记</li>\n<li class='chk'><span class='box'></span>UT：删除代码中的一个 <code>[Capability]</code> 但保留 <code>plugin.json</code> 中的派生条目，CI 比对失败并指出漂移项</li>\n<li class='chk'><span class='box'></span>UT：源生成器把 <code>[Capability]</code> 的 <code>Description</code>、<code>SideEffect</code>、<code>PolicyHint</code>、<code>RequiredScopes</code> 写入 <code>plugin.json</code> 的 <code>tools</code> 表面</li>\n<li class='chk'><span class='box'></span>CI：<code>Qian.Plugin.Sdk</code> 的传递依赖中不出现任何 Provider 包与 <code>Qian.Registry</code> / <code>Qian.Lifecycle</code> / <code>Qian.Capabilities</code></li>\n<li class='chk'><span class='box'></span>UT：<code>PluginEnabledMiddleware</code> 读 <code>ctx.Registry</code> scope 视图，对未挂载组件的请求返回 404，与不存在无法区分（R32）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：产品负责人已批准 DATA 本体分期交付；SDK 源生成、默认装配与包族私有 NuGet 锁步发布仍为完整 DATA 组件的必过项，不以本体验收完成替代本任务验证。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>NuGet <code>Qian.Plugin.Sdk</code>（<code>IQianPlugin</code> 基类、租户 / 身份 / 权限 / 配置 / 事件 / 存储 / 通知 / 调度客户端门面、生命周期钩子基类、默认安全装配、<code>PluginEnabledMiddleware</code>）与 <code>Qian.Plugin.Sdk.Generators</code>（<code>[QianPlugin]</code> / <code>[Capability]</code> / <code>[ExtensionPoint]</code> / <code>[Contributes]</code> / <code>[Permission]</code> / <code>[QianJob]</code> / <code>[QianEvent]</code> → DI 注册 + 派生字段带 <code>&quot;$generated&quot;: true</code> 合并进唯一 <code>plugin.json</code> + JSON Schema）；只依赖 <code>Qian.Runtime</code> 与各 <code>Qian.&lt;X&gt;.Abstractions</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>按 [S1-DEC-018](S1-DEC-018.md) 回验 DATA-001：真实 qian.data 的代码字段由源生成器派生、SDK 默认装配可用，Qian 包族在既定私有 NuGet 源锁步发布并能真实还原；未通过前保留组件骨架标记</li>\n<li class='chk'><span class='box'></span>UT：删除代码中的一个 <code>[Capability]</code> 但保留 <code>plugin.json</code> 中的派生条目，CI 比对失败并指出漂移项</li>\n<li class='chk'><span class='box'></span>UT：源生成器把 <code>[Capability]</code> 的 <code>Description</code>、<code>SideEffect</code>、<code>PolicyHint</code>、<code>RequiredScopes</code> 写入 <code>plugin.json</code> 的 <code>tools</code> 表面</li>\n<li class='chk'><span class='box'></span>CI：<code>Qian.Plugin.Sdk</code> 的传递依赖中不出现任何 Provider 包与 <code>Qian.Registry</code> / <code>Qian.Lifecycle</code> / <code>Qian.Capabilities</code></li>\n<li class='chk'><span class='box'></span>UT：<code>PluginEnabledMiddleware</code> 读 <code>ctx.Registry</code> scope 视图，对未挂载组件的请求返回 404，与不存在无法区分（R32）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：产品负责人已批准 DATA 本体分期交付；SDK 源生成、默认装配与包族私有 NuGet 锁步发布仍为完整 DATA 组件的必过项，不以本体验收完成替代本任务验证。</li>\n<li>2026-10-13 cody：开始：作为 QA-002 与 AUD-001 的必要前置，先实现真实 Capability 属性、可生成元数据及 command/dispatching 协议，供真实审计监听和创建命令复用；源生成漂移、默认安全装配和私有 NuGet/安装门继续完整保留。</li>\n<li>2026-10-13 cody：已实现 QianPlugin/Capability 声明、两类增量生成器、真实 JsonTypeInfo 契约和唯一清单 sync/check；真实 DataPlugin 的入口与提供键由代码派生，CI 校验漂移。生成工具拒绝手写覆盖、路径逃逸和遗留派生条目，先校验完整组件快照。全量 473/473 .NET、17 SDK 专项、38 门禁、25 包依赖及 15 CLI 用例通过；源生成器本地 NuGet 产物已打包，尚未私有发布。实际 command/dispatching、默认安全装配与安装门仍未完成。</li>\n</ul>",
   "file": "pm/tasks/S1-RT-014.md"
  },
  {

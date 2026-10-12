@@ -1,0 +1,7 @@
+#nullable enable
+Qian.Plugin.Sdk.Generators.CapabilityGenerator
+Qian.Plugin.Sdk.Generators.CapabilityGenerator.CapabilityGenerator() -> void
+Qian.Plugin.Sdk.Generators.CapabilityGenerator.Initialize(Microsoft.CodeAnalysis.IncrementalGeneratorInitializationContext context) -> void
+Qian.Plugin.Sdk.Generators.ComponentMetadataGenerator
+Qian.Plugin.Sdk.Generators.ComponentMetadataGenerator.ComponentMetadataGenerator() -> void
+Qian.Plugin.Sdk.Generators.ComponentMetadataGenerator.Initialize(Microsoft.CodeAnalysis.IncrementalGeneratorInitializationContext context) -> void
