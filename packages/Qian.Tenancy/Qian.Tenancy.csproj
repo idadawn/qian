@@ -3,7 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="../Qian.Tenancy.Abstractions/Qian.Tenancy.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
-    <PackageReference Include="Kun.MultiTenancy" /><PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Kun.MultiTenancy" /><PackageReference Include="Grpc.AspNetCore.Server" /><PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <InternalsVisibleTo Include="Qian.Tenancy.Tests" />
   </ItemGroup>
