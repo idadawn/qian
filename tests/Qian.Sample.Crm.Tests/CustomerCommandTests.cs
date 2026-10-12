@@ -6,6 +6,10 @@ using System.Text;
 using System.Text.Json;
 using Kun.Core.MultiTenancy;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -108,14 +112,20 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
     [Fact]
     public async Task 两租户并发使用同一幂等键_业务和审计隔离_事件租户匹配()
     {
-        await using var host = await Start(); var tenant = host.App.Services.GetRequiredService<ITenantContext>();
+        await using var host = await Start(concurrentWrites: true); var tenant = host.App.Services.GetRequiredService<ITenantContext>();
         var data = host.App.Services.GetRequiredService<IDataService>();
         using (tenant.BeginScope(B)) await new PostgresTenantRoleStore(data, tenant).AssignAsync("tenant.owner", "service", Writer, "test-bootstrap", Ct);
         var input = new CreateCustomerCommand(Guid.CreateVersion7(), "two tenants");
         var responses = await Task.WhenAll(host.Post(A, input), host.Post(B, input));
         try
         {
-            Assert.All(responses, response => Assert.Equal(HttpStatusCode.Created, response.StatusCode));
+            foreach (var response in responses)
+            {
+                var body = await response.Content.ReadAsStringAsync(Ct);
+                using var json = JsonDocument.Parse(body);
+                var errorCode = json.RootElement.TryGetProperty("code", out var code) ? code.GetString() : "";
+                Assert.True(response.StatusCode == HttpStatusCode.Created, errorCode + "\n" + host.FailureEvidence);
+            }
             var first = (await responses[0].Content.ReadFromJsonAsync<CustomerItem>(Ct))!;
             var second = (await responses[1].Content.ReadFromJsonAsync<CustomerItem>(Ct))!;
             Assert.Equal(A, first.TenantId); Assert.Equal(B, second.TenantId); Assert.NotEqual(first.Id, second.Id);
@@ -132,6 +142,25 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
                 Assert.Contains(row.Id.ToString(), message.Payload, StringComparison.Ordinal);
                 Assert.Equal(new AuditChainVerification(true, 1, null, null), await host.App.Services.GetRequiredService<CrmCommandRuntime>().Source().Audit().VerifyAsync(Ct));
             }
+        }
+        finally { foreach (var response in responses) response.Dispose(); }
+    }
+
+    [Fact]
+    public async Task 同租户同一幂等键并发争用后仍返回同一客户_整笔失败重试()
+    {
+        await using var host = await Start(concurrentWrites: true);
+        var input = new CreateCustomerCommand(Guid.CreateVersion7(), "same tenant race");
+        var responses = await Task.WhenAll(host.Post(A, input), host.Post(A, input));
+        try
+        {
+            Assert.All(responses, response => Assert.True(response.StatusCode == HttpStatusCode.Created, host.FailureEvidence));
+            var first = (await responses[0].Content.ReadFromJsonAsync<CustomerItem>(Ct))!;
+            var second = (await responses[1].Content.ReadFromJsonAsync<CustomerItem>(Ct))!; Assert.Equal(first.Id, second.Id);
+            using var scope = host.App.Services.GetRequiredService<ITenantContext>().BeginScope(A);
+            await using var data = await host.App.Services.GetRequiredService<IDataService>().OpenAsync<CrmDbContext>(Ct);
+            Assert.Single(await data.Context.Customers.ToListAsync(Ct)); Assert.Single(await data.Context.CustomerReceipts.ToListAsync(Ct)); Assert.Single(await data.Context.OutboxMessages.ToListAsync(Ct));
+            Assert.Equal(new AuditChainVerification(true, 2, null, null), await host.App.Services.GetRequiredService<CrmCommandRuntime>().Source().Audit().VerifyAsync(Ct));
         }
         finally { foreach (var response in responses) response.Dispose(); }
     }
@@ -195,7 +224,7 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
         using var suspended = await host.Get(A, "/api/customers"); Assert.Equal(HttpStatusCode.Forbidden, suspended.StatusCode);
     }
 
-    private async Task<RunningApp> Start()
+    private async Task<RunningApp> Start(bool concurrentWrites = false)
     {
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
         var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
@@ -205,9 +234,12 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
         var key = new RsaSecurityKey(signing) { KeyId = "crm-command-key" };
         var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(new RsaSecurityKey(publicKey) { KeyId = key.KeyId });
         var publicJwks = JsonSerializer.Serialize(new { keys = new[] { new { kty = jwk.Kty, kid = jwk.Kid, n = jwk.N, e = jwk.E } } });
+        var evidence = new FailureEvidence(); var barrier = new ConcurrentSaveBarrier();
         var app = CrmCommandApplication.Build([], builder =>
         {
             builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
+            builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
+            if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Crm"] = connection, ["ConnectionStrings:Authz"] = postgres.AppConnectionString,
@@ -246,7 +278,7 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
                 Assert.True(decision.Allow, decision.Reason);
             }
             var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
-            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) });
+            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence);
         }
         catch { await app.DisposeAsync(); signing.Dispose(); throw; }
     }
@@ -255,9 +287,37 @@ public sealed class CustomerCommandTests(PostgresFixture postgres) : IClassFixtu
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
         await using var command = new NpgsqlCommand(sql, connection); await command.ExecuteNonQueryAsync(Ct);
     }
-    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client) : IAsyncDisposable
+    private sealed class ConcurrentSaveBarrier : SaveChangesInterceptor
+    {
+        private int _arrivals;
+        private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context?.ChangeTracker.HasChanges() == true && Interlocked.Increment(ref _arrivals) <= 2)
+            {
+                if (Volatile.Read(ref _arrivals) == 2) _ready.TrySetResult();
+                await _ready.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            }
+            return result;
+        }
+    }
+    private sealed class FailureEvidence { internal ConcurrentQueue<string> Failures { get; } = new(); }
+    private sealed class FailureRecorder(FailureEvidence evidence) : IExceptionHandler
+    {
+        public ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)
+        {
+            var chain = new List<string>();
+            for (var current = exception; current is not null; current = current.InnerException)
+                chain.Add(current is PostgresException postgres ? current.GetType().Name + ":" + postgres.SqlState + ":" + postgres.ConstraintName : current.GetType().Name);
+            evidence.Failures.Enqueue(string.Join(" -> ", chain) + "\n" + exception.StackTrace);
+            return ValueTask.FromResult(false);
+        }
+    }
+
+    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence) : IAsyncDisposable
     {
         internal WebApplication App => app;
+        internal string FailureEvidence => string.Join("\n", evidence.Failures);
         internal Task<HttpResponseMessage> Post(string tenant, CreateCustomerCommand command)
         {
             var message = new HttpRequestMessage(HttpMethod.Post, "/api/customers") { Content = JsonContent.Create(command) };
