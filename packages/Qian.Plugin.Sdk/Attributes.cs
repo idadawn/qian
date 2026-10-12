@@ -49,3 +49,7 @@ public sealed class CapabilityAttribute(string name, Type responseType, Type ser
     /// <summary>Agent 调用是否要求确认。</summary>
     public bool RequiresConfirmation { get; set; }
 }
+
+/// <summary>将输入属性标为敏感；生成契约在实际 JSON 字段上添加 sensitive，而非把原值写入审计。</summary>
+[AttributeUsage(AttributeTargets.Property, Inherited = true)]
+public sealed class SensitiveAttribute : Attribute;

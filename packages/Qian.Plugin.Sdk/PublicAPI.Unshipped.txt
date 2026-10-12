@@ -33,7 +33,7 @@ Qian.Plugin.Sdk.CapabilityAttribute.SerializerContext.get -> System.Type!
 Qian.Plugin.Sdk.CapabilityAttribute.SideEffect.get -> string!
 Qian.Plugin.Sdk.CapabilityAttribute.SideEffect.set -> void
 Qian.Plugin.Sdk.CapabilityContract
-Qian.Plugin.Sdk.CapabilityContract.CapabilityContract(string! componentId, string! metadataJson, System.Text.Json.Serialization.Metadata.JsonTypeInfo! request, System.Text.Json.Serialization.Metadata.JsonTypeInfo! response) -> void
+Qian.Plugin.Sdk.CapabilityContract.CapabilityContract(string! componentId, string! metadataJson, System.Text.Json.Serialization.Metadata.JsonTypeInfo! request, System.Text.Json.Serialization.Metadata.JsonTypeInfo! response, System.Collections.Generic.IReadOnlyList<string!>? sensitiveProperties = null) -> void
 Qian.Plugin.Sdk.CapabilityContract.ComponentId.get -> string!
 Qian.Plugin.Sdk.CapabilityContract.Id.get -> string!
 Qian.Plugin.Sdk.CapabilityContract.InputSchema.get -> System.Text.Json.Nodes.JsonNode!
@@ -57,3 +57,36 @@ Qian.Plugin.Sdk.IComponentCodeMetadataFactory.Create() -> Qian.Plugin.Sdk.Compon
 Qian.Plugin.Sdk.QianCodeMetadataAttribute
 Qian.Plugin.Sdk.QianCodeMetadataAttribute.FactoryType.get -> System.Type!
 Qian.Plugin.Sdk.QianCodeMetadataAttribute.QianCodeMetadataAttribute(System.Type! factoryType) -> void
+Qian.Plugin.Sdk.CommandDataSession<TContext>
+Qian.Plugin.Sdk.CommandDataSession<TContext>.CommandDataSession() -> void
+Qian.Plugin.Sdk.CommandDataSession<TContext>.Context.get -> TContext!
+Qian.Plugin.Sdk.CommandDataSession<TContext>.Outbox.get -> Kun.EventBus.Outbox.IOutboxWriter!
+Qian.Plugin.Sdk.CommandEvents
+Qian.Plugin.Sdk.CommandInvocation
+Qian.Plugin.Sdk.CommandInvocation.CancellationToken.get -> System.Threading.CancellationToken
+Qian.Plugin.Sdk.CommandInvocation.Channel.get -> string!
+Qian.Plugin.Sdk.CommandInvocation.Contract.get -> Qian.Plugin.Sdk.CapabilityContract!
+Qian.Plugin.Sdk.CommandInvocation.Input.get -> System.Text.Json.JsonElement
+Qian.Plugin.Sdk.CommandInvocation.Principal.get -> Qian.Identity.Abstractions.Principal!
+Qian.Plugin.Sdk.CommandInvocation.Source.get -> Qian.Runtime.IPluginContext!
+Qian.Plugin.Sdk.CommandInvocation.Transaction.get -> System.Data.Common.DbTransaction!
+Qian.Plugin.Sdk.CommandPolicies
+Qian.Plugin.Sdk.CommandPolicyKind
+Qian.Plugin.Sdk.CommandPolicyKind.Audit = 2 -> Qian.Plugin.Sdk.CommandPolicyKind
+Qian.Plugin.Sdk.CommandPolicyKind.Authorization = 1 -> Qian.Plugin.Sdk.CommandPolicyKind
+Qian.Plugin.Sdk.CommandPolicyKind.Tenancy = 0 -> Qian.Plugin.Sdk.CommandPolicyKind
+Qian.Plugin.Sdk.ICapabilityRequest<TResponse>
+Qian.Plugin.Sdk.ICapabilityRequest<TResponse>.QianCapability.get -> Qian.Plugin.Sdk.CapabilityContract!
+Qian.Plugin.Sdk.QianCommandRegistration
+override Qian.Plugin.Sdk.CommandInvocation.ToString() -> string!
+static Qian.Plugin.Sdk.CommandPolicies.Register(Qian.Runtime.IPluginContext! context, Qian.Plugin.Sdk.CommandPolicyKind kind, System.Func<Qian.Plugin.Sdk.CommandInvocation!, System.Func<System.Threading.Tasks.ValueTask<object?>>!, System.Threading.Tasks.ValueTask<object?>>! handler) -> void
+static Qian.Plugin.Sdk.QianCommandRegistration.AddQianCapability<TRequest, TResponse, THandler, TContext>(this Kun.Mediator.KunMediatorBuilder! builder, System.Func<System.IServiceProvider!, Qian.Runtime.IPluginContext!>! source, string! channel = "api") -> Kun.Mediator.KunMediatorBuilder!
+static readonly Qian.Plugin.Sdk.CommandEvents.Dispatching -> Qian.Runtime.QianEvent<Qian.Plugin.Sdk.CommandInvocation!, object?>!
+static readonly Qian.Plugin.Sdk.CommandPolicies.AuditKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Plugin.Sdk.CommandPolicies.AuthorizationKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Plugin.Sdk.CommandPolicies.TenancyKey -> Qian.Runtime.ServiceKey
+Qian.Plugin.Sdk.CommandInvocation.Id.get -> System.Guid
+Qian.Plugin.Sdk.CommandInvocation.StartedAt.get -> System.DateTimeOffset
+Qian.Plugin.Sdk.CommandInvocation.TraceId.get -> string!
+Qian.Plugin.Sdk.SensitiveAttribute
+Qian.Plugin.Sdk.SensitiveAttribute.SensitiveAttribute() -> void

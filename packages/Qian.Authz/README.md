@@ -44,3 +44,7 @@ roles、role_assignments、grants 保留可空 tenant_id 的平台角色存储�
 主体须由已认证宿主提供，不从请求角色或权限数组推导授权。step-up 与终端限制需要可信身份/终端适配器提供 `IAuthzExecutionConstraints` 证据；未接入时保持拒绝。资源实例 ACL、L4/L5 仍在各自阶段，当前只消费未限定 ResourceRef 的角色授权。
 
 组织/岗位/组继承、Redis 缓存与 revision 失效、身份有效性接线、平台超管显式旁路和审计、完整 AuthzPlugin 及 HTTP 端点尚未完成。真实 PG 测试当前证明直接角色路径、解释、批量一致、活动声明释放与附加约束缺证据拒绝，不作为完整 AZ-003 或 QA-002 验收。
+
+## 命令 PEP 接线
+
+RbacCommandPolicyPlugin 消费 Data 和活动 IPermissionRegistry，调用真正的 RbacPermissionChecker，按生成能力的 requiredPermission 和 requiredScopes 判定后才委托实际 handler；令牌 roles 不授予权限。SDK 同时保留 Kun 的逐命令权限行为。生产 HTTP 已验证合法签名且声称 Owner 的服务，在数据库只有 Reader 授权时仍不能创建客户。S1 的 Agent/act 委托入口拒绝。此子插件只提供命令 PEP；完整 IAuthzService 的数据/字段策略、管理面、缓存和平台旁路仍待完成，qian.authz 骨架不撤销。

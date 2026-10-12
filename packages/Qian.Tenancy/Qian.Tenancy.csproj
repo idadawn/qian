@@ -7,4 +7,5 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <InternalsVisibleTo Include="Qian.Tenancy.Tests" />
   </ItemGroup>
+  <ItemGroup><ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" /></ItemGroup>
 </Project>

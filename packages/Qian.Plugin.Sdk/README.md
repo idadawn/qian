@@ -1,6 +1,6 @@
 # Qian.Plugin.Sdk
 
-本模块是 S1-RT-014 的 SDK 与源生成器入口。开发者规格为组件模型 §3、§5 及 PRD §7.2.3；组件库只依赖 Runtime、SDK 与 Definition，SDK 自身不引用 Provider。当前交付代码声明、源生成能力契约和唯一清单校验；实际命令执行协议、默认安全装配和发布安装仍在实现。
+本模块是 S1-RT-014 的 SDK 与源生成器入口。开发者规格为组件模型 §3、§5 及 PRD §7.2.3；组件库只依赖 Runtime、SDK 与 Definition，SDK 自身不引用 Provider。当前交付代码声明、源生成能力契约、唯一清单校验，以及已在真实 CRM 命令中使用的 Mediator/事务/waterfall 管道；完整默认装配和发布安装仍在实现。
 
 ## 代码契约
 
@@ -9,6 +9,18 @@ QianPluginAttribute 标注程序集内唯一、顶层非泛型的 IQianPlugin �
 CapabilityAttribute 标注顶层非泛型 partial 请求，并指定响应类型和 System.Text.Json 源生成上下文。上下文必须显式登记请求与响应。生成器校验短名、描述、冻结词汇、scope、权限点和幂等声明，生成该请求的 QianCapability 属性。它使用正式 Kun CapabilityDescriptor 从 JsonTypeInfo 导出输入/输出 Schema；不会用反射序列化请求，也不执行业务 handler。序列化设置属于真实契约：例如 UnmappedMemberHandling.Disallow 和必填构造参数必须与公开输入 Schema 一致。
 
 描述、SideEffect、PolicyHint、RequiredScopes、RequiredPermission、RequiredSecrets、数据/成本分级、版本、Agent 设置与审计声明保存在不可变契约中。写操作默认审计，查询默认关闭，可显式覆盖；destructive 的策略提示默认 confirm。生成契约只提供事实，不会凭这些字段授予权限、建立可信主体或绕过安装状态。
+
+## 实际命令执行
+
+生成请求实现 ICapabilityRequest，同时生成不可变 RequiredPermissions。AddQianCapability 经已有 AddAuthorizedHandler 原子登记权限行为；宿主提供实际插件上下文解析器和固定通道，请求体不能选择这些值。当前入口处理带真实租户和非空权限点的数据能力，平台 null 租户、匿名能力和完整 app/session lineage 尚未开放。
+
+Kun 每次 Send 建立新的 DI scope。SDK 在这个 scope 中通过 IDataService 打开业务数据会话，把它绑定到 CommandDataSession，handler 只消费这份上下文与 Outbox。外层开启 SERIALIZABLE，实际 command/dispatching 事件包裹 handler 和保存步骤，审计追加完成后才提交。代理延迟构造真正的 handler，且转交基础组件卸载与请求共同控制的取消令牌。
+
+CommandPolicies 只允许对应的 qian.tenancy、qian.authz、qian.audit 生产方登记监听器；服务键、监听器和取消资源归属同一 Effect 生命周期。执行前要求三种存活登记，进入链尾前要求三种监听器实际参与；重复调用 next 不能再次执行业务。卸载撤销后新请求拒绝，进行中的数据库操作可取消并回滚。租户策略读取真实主档，RBAC 策略读取真实授权并核对 OAuth scope，AuditPlugin 根据真实生成 Schema 写同事务审计。当前 RbacCommandPolicyPlugin 仅提供命令 PEP，完整 Authz 数据/字段策略与管理服务仍待完成。
+
+宿主须先装身份适配器，再装数据默认服务，防止匿名兜底先占用 Kun 当前用户端口。SDK 同时核验 Kun 与 Qian 身份一致，并复制主体快照；不通过替换成宽松策略修复装配错误。参考宿主的 S2S 验签与主体映射已经过真实 HTTP 回归，但不替代真实 Qian Identity 交互登录。
+
+SensitiveAttribute 把实际 JSON 属性标记为 sensitive。顶层字段及整个顶层容器可遮盖；发现尚未支持的嵌套敏感属性会编译失败，必须把其顶层容器整体标敏感，不能静默忽略。字段名沿实际 JsonPropertyName 或序列化命名策略派生，Audit 仍只存脱敏输入哈希。
 
 ## 单一清单与构建期工具
 
@@ -31,4 +43,4 @@ check 只读，并以文件路径及 JSON Pointer 报告漂移，发现差异返
 
 专项覆盖实际编译生成与 JsonTypeInfo、审计默认值、元数据副本、错误声明诊断、代码删除与重复能力、服务注册不可静态证明时拒绝、唯一清单同步/漂移以及手写文件和路径保护。真实 Data 程序集的 sync/check 已接入 CI；其 x-skeleton 继续保留，因为默认安全装配、私有 NuGet 锁步发布和实际 qian add 代码安装尚未通过。
 
-仍须完成：command/dispatching 的生产执行端、Mediator 与租户/鉴权/审计监听、敏感字段 Schema 派生、其余 SDK 注解与默认装配、组件未挂载 404、中间件及包族正式私有发布。当前数据与元数据验收不替代真实 CRM 创建命令、Outbox 和 QA-002 的完整平台验收。
+真实 CRM 已验证创建、同事务 Outbox/审计、错误回滚、幂等、并发租户与锁等待时卸载取消；列表与详情也通过同一真实管道，分别覆盖默认不审计和显式审计。查询会拒绝已跟踪的业务变更，且不开放 Outbox 写入端口。仍须完成：其余 SDK 注解与默认装配、完整 Registry scope 中间件、平台/应用/会话执行边界、包族正式私有发布和安装。这些局部真实验收不代替 QA-002 的完整平台验收。

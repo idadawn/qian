@@ -6,4 +6,15 @@
     <PackageReference Include="Kun.Security" />
     <PackageReference Include="Kun.AspNetCore" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../packages/Qian.Authz/Qian.Authz.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
+    <ProjectReference Include="../../packages/Qian.Tenancy/Qian.Tenancy.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+    <EmbeddedResource Include="metadata/*.json" LogicalName="crm.metadata.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Sample.Crm.Tests" /></ItemGroup>
 </Project>

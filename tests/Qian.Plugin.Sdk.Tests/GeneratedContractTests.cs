@@ -18,6 +18,7 @@ public sealed class GeneratedContractTests
         Assert.Equal(typeof(CreateRequest), contract.RequestTypeInfo.Type); Assert.Equal(typeof(CustomerResponse), contract.ResponseTypeInfo.Type);
         Assert.Equal("object", contract.InputSchema["type"]!.GetValue<string>());
         Assert.False(contract.InputSchema["additionalProperties"]!.GetValue<bool>());
+        Assert.True(contract.InputSchema["properties"]!["name"]!["sensitive"]!.GetValue<bool>());
         Assert.NotNull(contract.InputSchema["properties"]!["idempotencyKey"]); Assert.NotNull(contract.OutputSchema["properties"]!["id"]);
         var input = JsonSerializer.SerializeToElement(new CreateRequest(Guid.NewGuid(), "测试客户"), ContractJson.Default.CreateRequest);
         Assert.Equal(2, input.EnumerateObject().Count()); Assert.False(input.TryGetProperty("qianCapability", out _));
@@ -56,7 +57,7 @@ internal sealed class ContractPlugin : IQianPlugin
 [Capability("customer.create", typeof(CustomerResponse), typeof(ContractJson),
     Description = "为当前租户创建客户，已有客户请使用查询。", SideEffect = "write", Idempotent = true,
     RequiredPermission = "qian.sdk-tests:customer:create", RequiredScopes = ["qian.sdk-tests:write"], ContractVersion = "customers-v1")]
-internal sealed partial record CreateRequest(Guid IdempotencyKey, string Name);
+internal sealed partial record CreateRequest(Guid IdempotencyKey, [property: Sensitive] string Name);
 [Capability("customer.read", typeof(CustomerResponse), typeof(ContractJson), Description = "查询当前租户已有客户信息，不会修改客户数据。")]
 internal sealed partial record ReadRequest(Guid Id);
 [Capability("customer.inspect", typeof(CustomerResponse), typeof(ContractJson), Description = "核查当前租户客户信息，并记录这次审计查询。", Audit = true)]

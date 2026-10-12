@@ -10,9 +10,10 @@ public sealed class CapabilityContract
 {
     private readonly string _metadata;
     private readonly CapabilityDescriptor _descriptor;
+    private readonly string _inputSchema;
 
     /// <summary>从已编译的代码声明和源生成序列化契约建立只读快照。</summary>
-    public CapabilityContract(string componentId, string metadataJson, JsonTypeInfo request, JsonTypeInfo response)
+    public CapabilityContract(string componentId, string metadataJson, JsonTypeInfo request, JsonTypeInfo response, IReadOnlyList<string>? sensitiveProperties = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(componentId);
         ArgumentNullException.ThrowIfNull(request); ArgumentNullException.ThrowIfNull(response);
@@ -23,6 +24,13 @@ public sealed class CapabilityContract
         ComponentId = componentId; Name = name.GetString()!; Id = componentId + "/" + Name;
         request.MakeReadOnly(); response.MakeReadOnly();
         _metadata = metadata.GetRawText(); _descriptor = new CapabilityDescriptor(Id, request, response);
+        var schema = _descriptor.RequestSchema;
+        foreach (var fieldName in sensitiveProperties ?? [])
+        {
+            if (schema["properties"]?[fieldName] is not JsonObject property) throw new ArgumentException("敏感字段必须存在于实际输入 Schema。", nameof(sensitiveProperties));
+            property["sensitive"] = true;
+        }
+        _inputSchema = schema.ToJsonString();
         RequestTypeInfo = request; ResponseTypeInfo = response;
     }
     /// <summary>全局能力标识，component/name。</summary>
@@ -38,7 +46,7 @@ public sealed class CapabilityContract
     /// <summary>不可变声明的独立 JSON 副本。</summary>
     public JsonElement Metadata { get { using var document = JsonDocument.Parse(_metadata); return document.RootElement.Clone(); } }
     /// <summary>由实际序列化器导出的输入 Schema 独立副本。</summary>
-    public JsonNode InputSchema => _descriptor.RequestSchema;
+    public JsonNode InputSchema => JsonNode.Parse(_inputSchema)!;
     /// <summary>由实际序列化器导出的输出 Schema 独立副本。</summary>
     public JsonNode OutputSchema => _descriptor.ResponseSchema;
 }

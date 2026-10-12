@@ -18,9 +18,17 @@ public sealed class CrmDbContext(DbContextOptions<CrmDbContext> options, ITenant
     public const string Schema = "plugin_qian_sample_crm";
     public const string ListIndex = "ix_customers_tenant_id_id";
     public DbSet<Customer> Customers => Set<Customer>();
+    internal DbSet<CustomerReceipt> CustomerReceipts => Set<CustomerReceipt>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CustomerReceipt>(entity =>
+        {
+            entity.ToTable("customer_receipts"); entity.HasKey(row => new { row.TenantId, row.IdempotencyKey });
+            entity.Property(row => row.TenantId).HasMaxLength(36);
+            entity.Property(row => row.RequestHash).HasMaxLength(64).IsRequired();
+            entity.Property(row => row.Name).HasMaxLength(200).IsRequired();
+        });
         modelBuilder.Entity<Customer>(entity =>
         {
             entity.ToTable("customers");
@@ -32,3 +40,12 @@ public sealed class CrmDbContext(DbContextOptions<CrmDbContext> options, ITenant
 
 public sealed record CustomerItem(Guid Id, string TenantId, string Name);
 public sealed record CustomerPage(int Total, IReadOnlyList<CustomerItem> Items);
+
+internal sealed class CustomerReceipt : IMultiTenant
+{
+    public string? TenantId { get; set; }
+    public Guid IdempotencyKey { get; set; }
+    public string RequestHash { get; set; } = "";
+    public Guid CustomerId { get; set; }
+    public string Name { get; set; } = "";
+}

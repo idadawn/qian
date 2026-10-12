@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Qian.Data;
 using Qian.Runtime;
+using Qian.Plugin.Sdk;
 using Qian.Runtime.Errors;
 
 namespace Qian.Tenancy;
@@ -19,6 +20,13 @@ public sealed class TenancyPlugin : IQianPlugin
         var directory = new PostgresTenantDirectory(ctx.Data());
         ctx.Effect(directory.Dispose);
         ctx.Provide<ITenantDirectory>(TenancyDefinition.Key, directory);
+        CommandPolicies.Register(ctx, CommandPolicyKind.Tenancy, async (invocation, next) =>
+        {
+            var tenant = await directory.GetByIdAsync(Guid.Parse(invocation.Principal.TenantId!), invocation.CancellationToken).ConfigureAwait(false);
+            if (tenant is null || tenant.Status is not (TenantStatus.Active or TenantStatus.Trial))
+                throw new QianErrorException(new QianError(PlatformErrors.AuthzDenied));
+            return await next().ConfigureAwait(false);
+        });
         return ValueTask.CompletedTask;
     }
 }

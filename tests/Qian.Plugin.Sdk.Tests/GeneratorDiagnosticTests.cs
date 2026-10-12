@@ -58,6 +58,23 @@ public sealed class GeneratorDiagnosticTests
         Assert.Equal(2, Generate(duplicate).Diagnostics.Count(d => d.Id == "QIANSDK001"));
     }
 
+    [Theory]
+    [InlineData("Example")]
+    [InlineData("SystemDisguised")]
+    public void 不会忽略嵌套敏感字段_也不能靠命名空间绕过(string ns)
+    {
+        var source = Source.Replace("namespace Example;", "namespace " + ns + ";", StringComparison.Ordinal)
+            .Replace("public sealed partial record Request(Guid IdempotencyKey, string Name);", "public sealed partial record Request(Guid IdempotencyKey, SecretChild Child); public sealed record SecretChild([property: Sensitive] string Secret);", StringComparison.Ordinal);
+        var result = Generate(source); Assert.Equal("QIANSDK001", Assert.Single(result.Diagnostics).Id); Assert.Empty(result.GeneratedTrees);
+    }
+
+    [Fact]
+    public void 顶层容器明确敏感时允许整个嵌套结构统一遮盖()
+    {
+        var source = Source.Replace("public sealed partial record Request(Guid IdempotencyKey, string Name);", "public sealed partial record Request(Guid IdempotencyKey, [property: Sensitive] SecretChild Child); public sealed record SecretChild([property: Sensitive] string Secret);", StringComparison.Ordinal);
+        var result = Generate(source); Assert.Empty(result.Diagnostics); Assert.Single(result.GeneratedTrees);
+    }
+
     private static GeneratorDriverRunResult Generate(string source)
     {
         var parse = new CSharpParseOptions(LanguageVersion.Preview);

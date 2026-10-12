@@ -6,6 +6,7 @@
 
 | 事件 | 模式 | 声明位置 | 生产方 | 消费方 |
 |---|---|---|---|---|
+| ` command/dispatching ` | ` waterfall ` | ` Qian.Plugin.Sdk.CommandEvents.Dispatching `（` packages/Qian.Plugin.Sdk/Commands.cs `:21） | ` Qian.Plugin.Sdk.CapabilityDispatchBehavior<TRequest, TResponse>.Handle(TRequest, Kun.Mediator.RequestHandlerDelegate<TResponse>, System.Threading.CancellationToken) `（` packages/Qian.Plugin.Sdk/CommandPipeline.cs `:119） | ` Qian.Plugin.Sdk.CommandPolicies.Register(Qian.Runtime.IPluginContext, Qian.Plugin.Sdk.CommandPolicyKind, System.Func<Qian.Plugin.Sdk.CommandInvocation, System.Func<System.Threading.Tasks.ValueTask<object?>>, System.Threading.Tasks.ValueTask<object?>>) `（` packages/Qian.Plugin.Sdk/CommandPolicies.cs `:34） |
 | ` identity/member-disabled ` | ` parallel ` | ` Qian.Identity.Abstractions.IdentityRuntimeEvents.MemberDisabled `（` packages/Qian.Identity.Abstractions/IdentityEvents.cs `:81） |  |  |
 | ` identity/signed-in ` | ` emit ` | ` Qian.Identity.Abstractions.IdentityRuntimeEvents.SignedIn `（` packages/Qian.Identity.Abstractions/IdentityEvents.cs `:75） |  |  |
 | ` identity/signed-out ` | ` emit ` | ` Qian.Identity.Abstractions.IdentityRuntimeEvents.SignedOut `（` packages/Qian.Identity.Abstractions/IdentityEvents.cs `:78） |  |  |
@@ -13,10 +14,13 @@
 
 ```mermaid
 flowchart LR
-  e0["identity/member-disabled / parallel"]
-  e1["identity/signed-in / emit"]
-  e2["identity/signed-out / emit"]
-  e3["identity/signing-in / waterfall"]
+  e0["command/dispatching / waterfall"]
+  p0_0["Qian.Plugin.Sdk.CapabilityDispatchBehavior&lt;TRequest, TResponse>.Handle(TRequest, Kun.Mediator.RequestHandlerDelegate&lt;TResponse>, System.Threading.CancellationToken)"] --> e0
+  e0 --> c0_0["Qian.Plugin.Sdk.CommandPolicies.Register(Qian.Runtime.IPluginContext, Qian.Plugin.Sdk.CommandPolicyKind, System.Func&lt;Qian.Plugin.Sdk.CommandInvocation, System.Func&lt;System.Threading.Tasks.ValueTask&lt;object?>>, System.Threading.Tasks.ValueTask&lt;object?>>)"]
+  e1["identity/member-disabled / parallel"]
+  e2["identity/signed-in / emit"]
+  e3["identity/signed-out / emit"]
+  e4["identity/signing-in / waterfall"]
 ```
 
 ## 校验诊断

@@ -18,6 +18,13 @@ internal sealed class PostgresTenantDirectory(IDataService data) : ITenantDirect
         var row = await session.Context.Tenants.AsNoTracking().SingleOrDefaultAsync(x => x.Code == code, cancellationToken).ConfigureAwait(false);
         EnsureActive(); return row is null ? null : Describe(row);
     }
+    internal async ValueTask<TenantDescriptor?> GetByIdAsync(Guid id, CancellationToken ct)
+    {
+        EnsureActive();
+        await using var session = await data.OpenAsync<TenancyDbContext>(ct).ConfigureAwait(false);
+        var row = await session.Context.Tenants.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, ct).ConfigureAwait(false);
+        EnsureActive(); return row is null ? null : Describe(row);
+    }
     // 仅供已授权控制面/生命周期接线；不发布未经权限检查的 HTTP 写入入口。
     internal async Task<TenantDescriptor> CreateAsync(CreateTenant request, CancellationToken ct)
     {
