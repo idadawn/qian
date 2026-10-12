@@ -7,7 +7,7 @@ import {loadProfile} from './profiles.js';
 import {generateDocumentation} from './docs.js';
 import {initializeSkillOnly} from './init-docs.js';
 import {listRemoteMarketplaces,marketplaceRegistrations,MarketplaceFailure} from './marketplaces.js';
-import {installDeclarativeMarketplacePlugin} from './marketplace-install.js';
+import {installMarketplacePlugins} from './marketplace-install.js';
 import {removeMarketplacePlugins} from './marketplace-remove.js';
 import {listInstalledComponents} from './installed-components.js';
 import {randomBytes} from 'node:crypto';
@@ -21,7 +21,7 @@ const argv=process.argv.slice(2);
 let cwd=process.cwd(),profile:string|undefined,format='yaml',entry:string|undefined,home:string|undefined,includeHome=true;
 const patches:string[]=[];
 const sources:string[]=[];let outputDirectory:string|undefined,homeExplicit=false;
-let remote=false,markets=false,allowUnverified=false,yes=false,dryRun=false,noCode=false,purge=false;let from:string|undefined;const references:string[]=[];
+let remote=false,markets=false,allowUnverified=false,yes=false,dryRun=false,noCode=false,purge=false,force=false,resetConfig=false,forceProfile=false;let from:string|undefined;const references:string[]=[];
 let command='';let template:string|undefined,componentId:string|undefined,componentName:string|undefined;
 try{
   for(let i=0;i<argv.length;i++){
@@ -44,6 +44,9 @@ try{
     else if(arg==='--dry-run')dryRun=true;
     else if(arg==='--no-code')noCode=true;
     else if(arg==='--purge')purge=true;
+    else if(arg==='--force')force=true;
+    else if(arg==='--reset-config')resetConfig=true;
+    else if(arg==='--force-profile')forceProfile=true;
     else if(arg==='--from')from=value();
     else if((command==='add'||command==='remove')&&!arg.startsWith('-'))references.push(arg);
     else if(arg==='--template')template=value();
@@ -69,8 +72,8 @@ try{
       else result=listInstalledComponents(cwd);
     }else if(command==='remove')result=await removeMarketplacePlugins(references,{workingDirectory:cwd,profile:profile??'minimal',purge,dryRun});
     else{
-      if(references.length!==1)throw new Error('当前 add 一次接收一个组件；批量事务尚未接入。');
-      result=await installDeclarativeMarketplacePlugin(references[0],{...options,yes,dryRun,noCode});
+      const installed=await installMarketplacePlugins(references,{...options,yes,dryRun,noCode,force,resetConfig,forceProfile});
+      result=references.length===1?installed.plugins[0]:installed;
     }
     process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':stringify(result,{lineWidth:0}));
   }else if(command==='init'){

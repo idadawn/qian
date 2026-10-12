@@ -1,12 +1,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync,realpathSync,existsSync,symlinkSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync,realpathSync,existsSync,symlinkSync,readdirSync} from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {generateKeyPairSync,createHash,sign} from 'node:crypto';
-import {stringify} from 'yaml';
+import {generateKeyPairSync,createHash,sign,randomBytes} from 'node:crypto';
+import {stringify,parse as parseYaml} from 'yaml';
 import {registerMarketplace,resolveMarketplacePlugin,parseMarketplaceReference} from '../dist/marketplaces.js';
 import {readDirectory,unpack} from '../dist/marketplace-files.js';
 import {zipSync,strToU8} from 'fflate';
@@ -133,9 +133,11 @@ test('真实 Config Provider 制成临时 NuGet 包后经签名市场安装，�
   write(f.project,'Host.csproj','<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup></Project>');
   const extra={version,engines:{kun:'>=2026.10.12'},provides:['Config'],runtime:{form:'module',entry:'Qian.Config.Apollo.ConfigurationPlugin, Qian.Config.Apollo',nuget:[{id:'Qian.Config.Apollo',version}]}};
   const location=path.join(f.root,'catalog'),created=market(location,'catalog','qian.config',{tier:'official',extra});
+  component(path.join(location,'plugins/test.consumer'),'test.consumer','private',{inject:['Config']});
+  created.data.plugins.push({...created.data.plugins[0],name:'consumer',source:{type:'local',path:'./plugins/test.consumer'}});created.persist();
   configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
-  const installed=run(f.project,'--no-home','add','guide','--yes');assert.equal(installed.status,0,installed.stderr);
-  const result=JSON.parse(installed.stdout);assert.equal(result.status,'installed');assert.deepEqual(result.packages.nuget,['Qian.Config.Apollo@'+version]);
+  const installed=run(f.project,'--no-home','add','consumer','guide','--yes');assert.equal(installed.status,0,installed.stderr);
+  const result=JSON.parse(installed.stdout).plugins.find(item=>item.id==='qian.config');assert.equal(result.status,'installed');assert.deepEqual(result.packages.nuget,['Qian.Config.Apollo@'+version]);
   const lockFile=path.join(f.project,'.qian/lock.json'),projectFile=path.join(f.project,'Host.csproj');
   const locked=readFileSync(lockFile,'utf8'),project=readFileSync(projectFile,'utf8'),packageLock=readFileSync(path.join(f.project,'packages.lock.json'),'utf8');
   assert.equal(JSON.parse(locked).packageState[0].managed,true);
@@ -162,10 +164,7 @@ Console.WriteLine("real-provider-ready");
   assert.equal(readFileSync(lockFile,'utf8'),locked);assert.equal(readFileSync(projectFile,'utf8'),project);
   assert.equal(existsSync(path.join(f.project,'.qian/plugins/qian.failed')),false);
   assert.equal(existsSync(path.join(f.project,'.qian/.install.lock')),false);
-  const listed=run(f.project,'--no-home','list');assert.equal(listed.status,0,listed.stderr);assert.equal(JSON.parse(listed.stdout).plugins[0].id,'qian.config');
-  component(path.join(location,'plugins/test.consumer'),'test.consumer','private',{inject:['Config']});
-  created.data.plugins.push({...created.data.plugins[0],name:'consumer',source:{type:'local',path:'./plugins/test.consumer'}});created.persist();
-  const consumer=run(f.project,'--no-home','add','consumer','--yes');assert.equal(consumer.status,0,consumer.stderr);
+  const listed=run(f.project,'--no-home','list');assert.equal(listed.status,0,listed.stderr);assert.ok(JSON.parse(listed.stdout).plugins.some(item=>item.id==='qian.config'));
   const beforeRejectedRemoval=readFileSync(lockFile,'utf8');
   const rejectedRemoval=run(f.project,'--no-home','remove','guide');assert.equal(rejectedRemoval.status,1);
   assert.equal(readFileSync(lockFile,'utf8'),beforeRejectedRemoval);assert.equal(readFileSync(projectFile,'utf8'),project);
@@ -189,6 +188,9 @@ test('required 平台组件不能被 remove 或 purge 删除',()=>{
   const file=path.join(f.project,'.qian/lock.json'),before=readFileSync(file,'utf8');
   const removed=run(f.project,'--no-home','remove','guide','--purge');assert.equal(removed.status,1);assert.equal(readFileSync(file,'utf8'),before);
   assert.ok(existsSync(path.join(f.project,'.qian/plugins/qian.required')));assert.equal(existsSync(path.join(f.project,'.qian/.install.lock')),false);
+  write(f.project,'profiles/secondary/qian.profile.yml','name: secondary\nbundles: []\npatch: ./qian.patch.yml\n');write(f.project,'profiles/secondary/qian.patch.yml','[]\n');
+  const unrelated=run(f.project,'--no-home','--profile','secondary','remove','guide','--purge');assert.equal(unrelated.status,0,unrelated.stderr);assert.equal(JSON.parse(unrelated.stdout).status,'unchanged');
+  assert.equal(readFileSync(file,'utf8'),before);
  }finally{f.dispose();}
 });
 
@@ -202,5 +204,91 @@ test('本地列表不回显 lock 扩展配置或 URL 凭据',()=>{
   writeFileSync(file,JSON.stringify(lock));const output=run(f.project,'--no-home','list');
   assert.equal(output.status,0,output.stderr);assert.ok(!output.stdout.includes('DO-NOT-LEAK'));
   assert.equal(JSON.parse(output.stdout).plugins[0].source.url,'https://example.test/archive');
+ }finally{f.dispose();}
+});
+
+test('批量实际包安装失败时全部组件与宿主恢复，不留下半批记录',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide');
+  const missing='qian-rt011-missing-'+randomBytes(8).toString('hex');
+  component(path.join(location,'plugins/test.missing'),'test.missing','official',{runtime:{form:'module',entry:'NeverActivated',npm:[{name:missing,version:'1.0.0'}]}});
+  created.data.plugins.push({...created.data.plugins[0],name:'missing',source:{type:'local',path:'./plugins/test.missing'}});created.persist();
+  configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  write(f.project,'package.json','{"private":true}\n');write(f.project,'.npmrc','fetch-retries=0\nfetch-timeout=5000\n');
+  const before=readFileSync(path.join(f.project,'profiles/minimal/qian.patch.yml'),'utf8');
+  const failed=run(f.project,'--no-home','add','guide','missing','--yes');assert.equal(failed.status,1);
+  assert.equal(readFileSync(path.join(f.project,'package.json'),'utf8'),'{"private":true}\n');
+  assert.equal(readFileSync(path.join(f.project,'profiles/minimal/qian.patch.yml'),'utf8'),before);
+  assert.equal(existsSync(path.join(f.project,'.qian/plugins/test.guide')),false);assert.equal(existsSync(path.join(f.project,'.qian/plugins/test.missing')),false);
+  assert.equal(existsSync(path.join(f.project,'.qian/lock.json')),false);assert.equal(existsSync(path.join(f.project,'node_modules')),false);
+  const journal=path.join(f.project,'.qian/journal'),records=readdirSync(journal).filter(name=>name.endsWith('.json')).map(name=>JSON.parse(readFileSync(path.join(journal,name),'utf8')));
+  assert.equal(records.length,1);assert.equal(records[0].state,'rolled-back');assert.equal(existsSync(path.join(f.project,'.qian/.install.lock')),false);
+ }finally{f.dispose();}
+});
+
+test('升级保留配置，不兼容时无改动，reset-config 使用新默认值，新增权限重新确认',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide'),directory=path.join(location,'plugins/test.guide');
+  const schema=(type,defaultValue)=>({type:'object',additionalProperties:false,properties:{value:{type,default:defaultValue}}});
+  write(directory,'schemas/config.schema.json',JSON.stringify(schema('integer',10)));configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  assert.equal(run(f.project,'--no-home','add','guide','--yes').status,0);
+  const patchFile=path.join(f.project,'profiles/minimal/qian.patch.yml'),lockFile=path.join(f.project,'.qian/lock.json');
+  let patch=parseYaml(readFileSync(patchFile,'utf8'));assert.equal(patch[0].config.value,10);patch[0].config.value=17;writeFileSync(patchFile,stringify(patch));
+  component(directory,'test.guide','private',{version:'2.0.0'});write(directory,'schemas/config.schema.json',JSON.stringify(schema('integer',25)));
+  let upgraded=run(f.project,'--no-home','add','guide');assert.equal(upgraded.status,0,upgraded.stderr);assert.equal(parseYaml(readFileSync(patchFile,'utf8'))[0].config.value,17);
+  component(directory,'test.guide','private',{version:'3.0.0'});write(directory,'schemas/config.schema.json',JSON.stringify(schema('string','new-default')));
+  const before=readFileSync(lockFile,'utf8'),beforePatch=readFileSync(patchFile,'utf8');
+  upgraded=run(f.project,'--no-home','add','guide');assert.equal(upgraded.status,1);assert.equal(readFileSync(lockFile,'utf8'),before);assert.equal(readFileSync(patchFile,'utf8'),beforePatch);
+  upgraded=run(f.project,'--no-home','add','guide','--reset-config');assert.equal(upgraded.status,0,upgraded.stderr);assert.equal(parseYaml(readFileSync(patchFile,'utf8'))[0].config.value,'new-default');
+  component(directory,'test.guide','private',{version:'4.0.0',policy:{tier:'private',sandbox:'none',authentication:'ON_INSTALL',permissions:{platform:['files:read']}}});
+  const locked=readFileSync(lockFile,'utf8');
+  const unapproved=run(f.project,'--no-home','add','guide');assert.equal(unapproved.status,1);assert.equal(readFileSync(lockFile,'utf8'),locked);
+  const approved=run(f.project,'--no-home','add','guide','--yes');assert.equal(approved.status,0,approved.stderr);
+ }finally{f.dispose();}
+});
+
+test('同组件可挂到多个 profile，升级更新全部归属但分别保留配置',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide'),directory=path.join(location,'plugins/test.guide');
+  write(directory,'schemas/config.schema.json',JSON.stringify({type:'object',properties:{value:{type:'integer',default:1}},additionalProperties:false}));
+  configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  write(f.project,'profiles/secondary/qian.profile.yml','name: secondary\nbundles: []\npatch: ./qian.patch.yml\n');write(f.project,'profiles/secondary/qian.patch.yml','[]\n');
+  assert.equal(run(f.project,'--no-home','add','guide','--yes').status,0);
+  const second=run(f.project,'--no-home','--profile','secondary','add','guide','--yes','--force-profile');assert.equal(second.status,0,second.stderr);
+  for(const[name,value]of [['minimal',11],['secondary',22]]){const file=path.join(f.project,'profiles',name,'qian.patch.yml'),rows=parseYaml(readFileSync(file,'utf8'));rows[0].config.value=value;writeFileSync(file,stringify(rows));}
+  component(directory,'test.guide','private',{version:'2.0.0'});
+  const upgraded=run(f.project,'--no-home','add','guide','--force-profile');assert.equal(upgraded.status,0,upgraded.stderr);
+  for(const[name,value]of [['minimal',11],['secondary',22]]){const rows=parseYaml(readFileSync(path.join(f.project,'profiles',name,'qian.patch.yml'),'utf8'));assert.equal(rows[0].plugin,'test.guide@2.0.0');assert.equal(rows[0].config.value,value);}
+  const firstRemoval=run(f.project,'--no-home','remove','guide','--purge');assert.equal(firstRemoval.status,0,firstRemoval.stderr);assert.ok(existsSync(path.join(f.project,'.qian/plugins/test.guide')));
+  const finalRemoval=run(f.project,'--no-home','--profile','secondary','remove','guide','--purge');assert.equal(finalRemoval.status,0,finalRemoval.stderr);assert.equal(existsSync(path.join(f.project,'.qian/plugins/test.guide')),false);
+ }finally{f.dispose();}
+});
+
+test('force 恢复本地文件，不自动批准被改写清单的权限',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide');configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  assert.equal(run(f.project,'--no-home','add','guide').status,0);
+  const directory=path.join(f.project,'.qian/plugins/test.guide'),readme=path.join(directory,'README.md'),manifest=path.join(directory,'.qian-plugin/plugin.json');
+  writeFileSync(readme,'local edit');assert.equal(run(f.project,'--no-home','add','guide').status,1);
+  const repaired=run(f.project,'--no-home','add','guide','--force');assert.equal(repaired.status,0,repaired.stderr);assert.equal(readFileSync(readme,'utf8'),'只读组件说明。\n');
+  const changed=JSON.parse(readFileSync(manifest,'utf8'));changed.policy.permissions={platform:['unapproved:all']};writeFileSync(manifest,JSON.stringify(changed));
+  assert.equal(run(f.project,'--no-home','add','guide','--force').status,1);
+  const confirmed=run(f.project,'--no-home','add','guide','--force','--yes');assert.equal(confirmed.status,0,confirmed.stderr);
+  assert.equal(JSON.parse(readFileSync(manifest,'utf8')).policy.permissions,undefined);
+ }finally{f.dispose();}
+});
+
+test('默认卸载后可按原市场安装名 purge，不能清除已被复用的配置',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.different');configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  assert.equal(run(f.project,'--no-home','add','guide').status,0);assert.equal(run(f.project,'--no-home','remove','guide').status,0);
+  const patchFile=path.join(f.project,'profiles/minimal/qian.patch.yml'),lockFile=path.join(f.project,'.qian/lock.json');
+  assert.equal(parseYaml(readFileSync(patchFile,'utf8'))[0].disabled,true);
+  assert.deepEqual(JSON.parse(run(f.project,'--no-home','list').stdout).plugins,[]);
+  const purged=run(f.project,'--no-home','remove','catalog/guide','--purge');assert.equal(purged.status,0,purged.stderr);assert.equal(readFileSync(patchFile,'utf8'),'[]\n');
+  assert.deepEqual(JSON.parse(readFileSync(lockFile,'utf8')).removedEntries,[]);
+  assert.equal(run(f.project,'--no-home','add','guide').status,0);assert.equal(run(f.project,'--no-home','remove','guide').status,0);
+  const patch=parseYaml(readFileSync(patchFile,'utf8'));patch[0].disabled=false;patch[0].plugin='test.other@1.0.0';writeFileSync(patchFile,stringify(patch));
+  const before=readFileSync(patchFile,'utf8');assert.equal(run(f.project,'--no-home','remove','guide','--purge').status,1);assert.equal(readFileSync(patchFile,'utf8'),before);
  }finally{f.dispose();}
 });

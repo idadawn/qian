@@ -41,6 +41,18 @@ export function installedPackageSets(plugins:readonly InstallObject[]):Component
   return{id:plugin.id,packages:{nuget:packages.nuget as string[],npm:packages.npm as string[]}};
  });
 }
+/** 卸载后仅保留定位信息，配置仍只在原 profile patch 中。 */
+export function removedInstallationEntries(lock:InstallObject):InstallObject[] {
+ if(lock.removedEntries===undefined)return[];
+ if(!Array.isArray(lock.removedEntries))installFailure('.qian/lock.json','已移除条目记录无效。');
+ return lock.removedEntries.map(value=>{
+  const entry=installObject(value);
+  if(typeof entry.id!=='string'||!/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/.test(entry.id)||
+   typeof entry.version!=='string'||valid(entry.version)===null||typeof entry.profile!=='string'||!/^[a-z][a-z0-9-]*$/.test(entry.profile)||
+   entry.scope!=='global'||typeof entry.entryId!=='string'||!/^[a-z][a-z0-9_.-]*$/.test(entry.entryId))installFailure('.qian/lock.json','已移除条目标识无效。');
+  return{...entry};
+ });
+}
 export function verifyInstalledComponent(root:string,plugin:InstallObject):InstallObject {
  const directory=within(root,'.qian/plugins/'+plugin.id),snapshot=readDirectory(directory);
  if(!Array.isArray(plugin.files))installFailure('.qian/lock.json','组件文件记录无效。');
