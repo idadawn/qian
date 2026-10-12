@@ -3559,6 +3559,72 @@
   "file": "pm/tasks/S1-KUN-010.md"
  },
  {
+  "id": "S1-KUN-011",
+  "title": "EF 租户过滤器改用当前 DbContext 上下文，避免跨宿主复用旧访问器",
+  "status": "done",
+  "stage": "S1",
+  "area": "KUN",
+  "areaName": "Kun 缺口修复",
+  "wave": 1,
+  "priority": "P0",
+  "type": "fix",
+  "owner": "cody",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-KUN-001",
+   "S1-KUN-009",
+   "S1-KUN-012"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "pm/tasks/S1-RT-004.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-RT-004.md"
+   }
+  ],
+  "updated": "2026-10-12",
+  "acceptance": {
+   "done": 4,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>RT-004 的真实 PostgreSQL 多宿主测试复现：正式 Kun 2026.10.12 的全局查询过滤器捕获首个 ITenantContext 实例；相同上下文类型和租户复用 EF 模型后，新宿主会引用旧宿主已退出的租户作用域，SQL 变成 WHERE FALSE，已写入 patch 无法查询或更新。需在 Kun 修复并真实发版，再由 Qian 升级唯一 KunVersion 回验，不能靠共享测试上下文或绕过查询过滤器掩盖。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>Kun：共享模型在不同租户访问器/宿主之间复用时读取当前 DbContext；真实 PostgreSQL 覆盖旧访问器退出及改为其它租户，默认与按租户模型缓存均通过</li>\n<li class='chk done'><span class='box'>✓</span>Kun：旧访问器入口无法安全绑定当前 DbContext 时明确拒绝，提供 DbContext 重载、迁移说明与回归；全部上游 CI 通过后合并</li>\n<li class='chk done'><span class='box'>✓</span>发布：按修正后的同日修复规则发布到 nuget.org，Qian 真实还原并核验来源；不以本地项目引用或临时包代替</li>\n<li class='chk done'><span class='box'>✓</span>Qian：只通过中央 KunVersion 钉定修复版，真实 Data 跨宿主回归从旧版失败转为通过，全仓构建/门禁/测试通过，解除 RT-004 的框架前置</li>\n</ul>\n<h4>已准备的上游修复</h4>\n<p>[Kun PR #54](https://github.com/idadawn/kun/pull/54) 在正式版源码上复现 4/4 失败后修复；最终 8 项真库模型复用回归、13 项相关单元测试及 27 项相关基础设施测试通过。旧 <code>ApplyKunMultiTenantFilters(ITenantContext)</code> 标记 KUNTENANT001 并明确拒绝，非 KunDbContext 消费者迁移到接收 DbContext 的重载。Qian 继承 KunDbContext 的路径自动获得修复。</p>\n<p>原 <code>2026.10.12-2</code> 发布被 nuget.org 以包清单版本无效拒绝，失败标签保留。S1-KUN-012 将同日补丁格式改为 <code>2026.10.12-hotfix.2</code>，并在推送前检查实际包及内部依赖；[正式发布](https://github.com/idadawn/kun/actions/runs/38206412089) 已成功。Qian 使用 <code>[KunVersion]</code> 精确范围，实际还原出的 13 个 Kun 依赖均为该版本且来自 nuget.org，防止按最低版本范围选回同日基础版。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-12 cody：创建任务</li>\n<li>2026-10-12 cody：已在注册表真库测试及已发布 v2026.10.12 源码确认旧 ITenantContext 被模型捕获；转 Kun 独立分支修复、真库回归和正式修复版发布。</li>\n<li>2026-10-12 cody：Kun PR #54 已在 24 项 CI 全绿后合并（f262ca7），首次唯一失败为 RabbitMQ 容器端口争用，单独重跑通过。v2026.10.12-2 标签已推送，正式发布流水线 38202858511 进行中。Qian 新增两项独立宿主/Data/RLS 回归，在旧 NuGet 2026.10.12 上均实际失败；待正式包可还原后钉版并完成绿测。</li>\n<li>2026-10-12 cody：上游源码修复已合并；发布因既有同日数字后缀不兼容 NuGet 而失败。由 S1-KUN-012 修发布链，正式包发布后恢复精确钉版及下游回验。</li>\n<li>2026-10-12 cody：正式 hotfix.2 包已从 nuget.org 真实还原；全部 13 个已用 Kun 依赖版本/来源核对通过。两项跨宿主真库回归从旧包 2/2 失败转为 2/2 通过。中央引用与 DocFX 均改为精确版本，文档生成复核实际资产版本；继续全仓验证后交付。</li>\n<li>2026-10-12 cody：Kun #54/#55 已合并并正式发布 hotfix.2；Qian 实际还原 13 个 Kun 依赖的版本与 nuget.org 来源均已核验。两项真实受限角色跨宿主回归由旧包失败转为通过，全仓 360 测试零失败零跳过、38 门禁与 16 包依赖检查通过；文档站 66 测试与 667 页完整构建检查通过。中央引用和 DocFX 均使用严格精确版本，并复核实际资产。解除 RT-004 的框架前置，完整 QA-002 仍未完成。</li>\n</ul>",
+  "file": "pm/tasks/S1-KUN-011.md"
+ },
+ {
+  "id": "S1-KUN-012",
+  "title": "修复 Kun 同日补丁的 NuGet 版本格式与发布校验",
+  "status": "done",
+  "stage": "S1",
+  "area": "KUN",
+  "areaName": "Kun 缺口修复",
+  "wave": 1,
+  "priority": "P0",
+  "type": "fix",
+  "owner": "cody",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "pm/tasks/S1-KUN-011.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-KUN-011.md"
+   }
+  ],
+  "updated": "2026-10-12",
+  "acceptance": {
+   "done": 4,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>Kun PR #54 修复已通过全部 CI 并合并，但 v2026.10.12-2 的正式发布被 nuget.org 以包清单版本无效拒绝。现有纯数字后缀规则未经过真实同日发布验证，需要改为 NuGet 可接受的同日修复标签，统一脚本与工作流检查，并在推送前校验包及内部依赖版本；不重写已经推送的标签。完成后 S1-KUN-011 才能消费正式修复包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>Kun：同日补丁使用 NuGet 兼容的 hotfix.N，CLI 与工作流共用版本/日期校验；旧纯数字后缀在发布前拒绝</li>\n<li class='chk done'><span class='box'>✓</span>打包产物预检覆盖 nupkg/snupkg 版本、Kun 内部依赖版本及发行物完整性；真实 34 包构建/打包和反例验证通过</li>\n<li class='chk done'><span class='box'>✓</span>上游 CI 全绿后合并并从新标签真实发布，确认 nuget.org 包可还原，旧失败标签保持不变</li>\n<li class='chk done'><span class='box'>✓</span>发布证据回链 S1-KUN-011 并解除其发布阻塞；下游精确钉版与真库验收仍由 S1-KUN-011 完成</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-12 cody：创建任务</li>\n<li>2026-10-12 cody：正式发布失败日志已确认：nuget.org 拒绝 2026.10.12-2 的 .nuspec 版本。准备采用字母与点分段的 hotfix.N，同步标签/脚本/工作流，增加包清单及内部依赖版本预检。</li>\n<li>2026-10-12 cody：发布链修复提交 Kun PR #55（593c00e），采用 hotfix.N 并保留原失败标签；共用版本校验、包/符号包一致性与内部依赖完整性预检已接入。4 项脚本回归、真实 34 包/68 产物及篡改实际包版本的反例通过；待上游 CI、合并与新版本真实发布。</li>\n<li>2026-10-12 cody：Kun PR #55 已在 24 项 CI 全绿后合并（12f4c13）；新标签 v2026.10.12-hotfix.2 指向同一已验证源码，旧失败标签未改写。修复分支与 worktree 已清理。等待本次真实发布与 NuGet 可还原证据后关闭发布任务。</li>\n<li>2026-10-12 cody：Kun PR #55 合并后从 v2026.10.12-hotfix.2 完成正式发布（38206412089，68 个产物）；NuGet Created 及实际可见/还原均已验证。Qian 实际 13 个 Kun 依赖精确版本与 nuget.org 来源一致，原失败标签未改写。发布阻塞解除，后续数据全仓回验归 KUN-011。</li>\n</ul>",
+  "file": "pm/tasks/S1-KUN-012.md"
+ },
+ {
   "id": "S1-MGW-001",
   "title": "模型网关 adapter：GPUStack 发现、能力契约与模型目录",
   "status": "todo",
@@ -4420,14 +4486,14 @@
  {
   "id": "S1-RT-004",
   "title": "qian.registry 插件：清单校验、注册表与 scope 视图",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "5d",
   "days": 5.0,
   "depends": [
@@ -4435,11 +4501,12 @@
    "S1-RT-002",
    "S1-DATA-001",
    "S1-DEC-002",
-   "S1-DEC-010"
+   "S1-DEC-010",
+   "S1-KUN-011"
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -4458,12 +4525,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-002-plugin-model.md"
    }
   ],
-  "updated": "2026-10-08",
+  "updated": "2026-10-12",
   "acceptance": {
    "done": 0,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>原 <code>qian.kernel</code> 注册表改为平台插件 <code>Qian.Registry</code>（<code>ctx.Registry</code>）：<code>IPluginManifestLoader</code> / <code>PluginManifestValidator</code>（JSON Schema 2020-12 + 语义校验，错误带 JSON Pointer）；PG schema <code>registry</code> 的 <code>plugin_artifacts</code> / <code>plugin_revisions</code> / <code>tenant_plugin_installs</code> / <code>scope_patches</code> / <code>extension_points</code> / <code>contracts</code> / <code>capabilities</code> / <code>event_types</code> / <code>entity_types</code> / <code>lifecycle_runs</code>；租户 scope patch 持久化与合入；<code>GET /api/registry/scopes/{scopeKey}/entries</code>；未挂载条目 404 / 403 <code>plugin_not_mounted</code> 规则（R32）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：缺任一 S1 必填字段、OCI 引用用 tag 而非 digest、<code>inputSchema</code> 含 <code>tenantId</code>、<code>inject[]</code> 引用无人提供的服务键、<code>scopes[]</code> 含非法种类的 <code>plugin.json</code>，安装失败并返回带 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：<code>policy.required: true</code> 只允许出现在 <code>policy.tier: system</code> 的平台插件上，否则校验失败</li>\n<li class='chk'><span class='box'></span>IT：对租户 A 写一条 scope patch、B 不写，<code>GET /api/registry/scopes/tenant:B/entries/&lt;id&gt;</code> 对持 <code>qian.registry:scope:read</code> 者返回 403 <code>plugin_not_mounted</code>、<code>reason = not_mounted</code>，无该权限者 404</li>\n<li class='chk'><span class='box'></span>IT：scope patch 变更事件触发装载器重新合入，撤销 patch 后 ≤ 5s 生效，不重启进程</li>\n<li class='chk'><span class='box'></span>IT：v1 别名 <code>/api/kernel/*</code> 返回同一结果并带 <code>Deprecation</code> 响应头（R33）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：依赖加 S1-DEC-010：R32 的 403 原因（not_entitled / not_mounted / restricted）在封闭 ErrorDetail 中的承载方式待定（contracts/v0/README.md 第 8 节第 4 条）</li>\n<li>2026-10-08 claude：依赖的默认裁决任务改号为 S1-DEC-010（原 S1-DEC-009 与 main 上已关闭的仓库归属拍板撞号）</li>\n<li>2026-10-08 claude：S1-DEC-010 已裁决 R48：R32 的 403 原因即错误码（PLUGIN_NOT_ENTITLED / PLUGIN_NOT_MOUNTED / PLUGIN_RESTRICTED / PLUGIN_DEPENDENCY_PENDING，由 Qian.Registry.Abstractions 登记），message 带层级或 restriction id、pointer 指向 patch 条目；该前置已满足</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>原 <code>qian.kernel</code> 注册表改为平台插件 <code>Qian.Registry</code>（<code>ctx.Registry</code>）：<code>IPluginManifestLoader</code> / <code>PluginManifestValidator</code>（JSON Schema 2020-12 + 语义校验，错误带 JSON Pointer）；PG schema <code>registry</code> 的 <code>plugin_artifacts</code> / <code>plugin_revisions</code> / <code>tenant_plugin_installs</code> / <code>scope_patches</code> / <code>extension_points</code> / <code>contracts</code> / <code>capabilities</code> / <code>event_types</code> / <code>entity_types</code> / <code>lifecycle_runs</code>；租户 scope patch 持久化与合入；<code>GET /api/registry/scopes/{scopeKey}/entries</code>；未挂载条目 404 / 403 <code>plugin_not_mounted</code> 规则（R32）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：缺任一 S1 必填字段、OCI 引用用 tag 而非 digest、<code>inputSchema</code> 含 <code>tenantId</code>、<code>inject[]</code> 引用无人提供的服务键、<code>scopes[]</code> 含非法种类的 <code>plugin.json</code>，安装失败并返回带 JSON Pointer 的结构化错误</li>\n<li class='chk'><span class='box'></span>UT：<code>policy.required: true</code> 只允许出现在 <code>policy.tier: system</code> 的平台插件上，否则校验失败</li>\n<li class='chk'><span class='box'></span>IT：对租户 A 写一条 scope patch、B 不写，<code>GET /api/registry/scopes/tenant:B/entries/&lt;id&gt;</code> 对持 <code>qian.registry:scope:read</code> 者返回 403 <code>plugin_not_mounted</code>、<code>reason = not_mounted</code>，无该权限者 404</li>\n<li class='chk'><span class='box'></span>IT：scope patch 变更事件触发装载器重新合入，撤销 patch 后 ≤ 5s 生效，不重启进程</li>\n<li class='chk'><span class='box'></span>IT：v1 别名 <code>/api/kernel/*</code> 返回同一结果并带 <code>Deprecation</code> 响应头（R33）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：依赖加 S1-DEC-010：R32 的 403 原因（not_entitled / not_mounted / restricted）在封闭 ErrorDetail 中的承载方式待定（contracts/v0/README.md 第 8 节第 4 条）</li>\n<li>2026-10-08 claude：依赖的默认裁决任务改号为 S1-DEC-010（原 S1-DEC-009 与 main 上已关闭的仓库归属拍板撞号）</li>\n<li>2026-10-08 claude：S1-DEC-010 已裁决 R48：R32 的 403 原因即错误码（PLUGIN_NOT_ENTITLED / PLUGIN_NOT_MOUNTED / PLUGIN_RESTRICTED / PLUGIN_DEPENDENCY_PENDING，由 Qian.Registry.Abstractions 登记），message 带层级或 restriction id、pointer 指向 patch 条目；该前置已满足</li>\n<li>2026-10-12 cody：为 QA-002 必要平台链路已在独立工作区开始，内部 patch 仓储真库测试曾暴露旧 Kun 访问器捕获问题；S1-KUN-011/012 已修复并完成正式包消费，框架前置解除。接着恢复已有注册表实现并继续完整服务、准入、视图、权限与变更传播验收，不提前关闭任务。</li>\n</ul>",
   "file": "pm/tasks/S1-RT-004.md"
  },
  {
@@ -4742,7 +4809,7 @@
  {
   "id": "S1-RT-011",
   "title": "qian CLI 骨架与 add / remove / list",
-  "status": "doing",
+  "status": "blocked",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
@@ -4780,7 +4847,7 @@
    "done": 0,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.8：<code>qian add &lt;component&gt;[@version]</code> 从已登记市场解析条目 → 取组件文件夹 → 过校验器与验签 → 表面复制到 <code>.qian/&lt;id&gt;/</code> → <code>dotnet add package</code> / npm 安装 → 向当前 profile 的 <code>config/qian.patch.yml</code>（standalone 为 <code>.qian/patch.yml</code>）追加条目 → <code>qian doctor</code>；<code>--yes</code> / <code>--profile</code> / <code>--scope tenant:&lt;id&gt;</code>；<code>.qian/lock.json</code> 记来源与 digest / commit；<code>qian remove</code>、<code>qian list [--remote]</code>；子命令带 <code>--json</code>；Node 实现 + <code>dotnet qian</code> 薄包装。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>按 [S1-DEC-018](S1-DEC-018.md) 回验 DATA-001：从正式私有 NuGet 源完成真实 <code>qian add data</code> 代码安装、精确包还原及 Provider 运行；与 RT-014 的字段源生成/发布证据一起通过后，才移除 qian.data 骨架标记</li>\n<li class='chk'><span class='box'></span>E2E：空白 ASP.NET Core 项目执行 <code>qian add identity authz files</code>，表面进入 <code>.qian/</code>、NuGet 依赖按市场条目钉版、patch 条目写入、<code>lock.json</code> 记录 digest</li>\n<li class='chk'><span class='box'></span>IT：<code>qian remove</code> 逆序撤销 <code>add</code> 的全部改动；<code>qian list</code> 列出本地已装组件及来源市场</li>\n<li class='chk'><span class='box'></span>IT：未通过校验器或验签的组件 <code>add</code> 失败并输出结构化错误（<code>--json</code>）</li>\n<li class='chk'><span class='box'></span>IT：<code>qian add --scope tenant:&lt;id&gt;</code> 写租户 scope patch，需平台连接与运营权限，S1 仅运营 CLI</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：为 QA-002 完整组件链与 DATA 完整安装验收补齐必要 CLI 前置；RT-002/008/016 和 DEC-003 均已完成。复用现有无代码安装与签名验证，补真实代码包安装、事务回滚、移除和来源查询；租户 scope 真实接口及 identity/authz/files 真实包仍按其依赖验收，不以替身宣称完成。</li>\n<li>2026-10-12 cody：完成安装器底层：严格包名/版本、共享依赖归属、MSBuild 中央版本读取、真实 NuGet/npm 安装与移除、声明后实际还原验证、工作区文件/目录备份及自动失败回滚。27 项 CLI 测试通过，含正式 Kun.Core 编译消费、真实 npm 导入和共享依赖末使用者删除。底层尚未接入完整 add/remove，四项任务验收不提前勾选；下一步接批量命令、升级/切片、恢复与真实平台 scope。</li>\n<li>2026-10-12 cody：已把真实包管理与事务接入单组件 add、本地 list 和按 profile 的 remove；支持保留 disabled 配置后重装与 purge。修复进程退出/后代竞态，未确认停止时保留锁和备份。33 项测试通过，包含真实 Config Provider 临时包的签名市场安装与消费者运行、代码卸载/重装、末检失败回滚、required 保护和依赖破坏回滚。包级 digest/签名、批量升级/切片/恢复及真实租户接口仍未完成，保持草稿。</li>\n<li>2026-10-12 cody：完成整组预检与单次提交的批量 add；实际依赖安装失败时整批恢复。支持跨 profile 升级分别保留配置、reset-config、新增权限确认、force 文件恢复和卸载后按原安装名 purge。38 项 CLI 测试零失败零跳过。组合包/切片、引擎、包级 digest/原生验签、恢复和真实租户/命名 Provider 验收仍待完成；不以通用 Config 或临时包测试代替完整交付。</li>\n<li>2026-10-12 cody：内联组合包已通过真实 profile.bundles 组装，允许无 runtime.form 的依赖聚合；每个子组件独立校验并汇总依赖/权限。真实 Config Provider 组合安装、升级、卸载、保留配置重装、purge 通过；未验证来源隐藏代码、required 子组件绕过和多组合层覆盖均有回归。41 项 CLI 测试零失败零跳过。包内 qian 内容发现、表面切片、引擎/供应链验签、恢复及真实平台/命名 E2E 仍待完成。</li>\n<li>2026-10-12 cody：预检已能从真实 NuGet qian/ 和 npm qian.component 补齐组件；隔离还原继承宿主源配置但不复制凭据、不改宿主项目。组件树递归再验证并记录归档/交付摘要，同名内容冲突不能 force 覆盖。42 项测试零失败零跳过；NuGet 使用真实 Config Provider 临时包走 CLI，npm 使用真实客户端和本地协议夹具验证归档读取。此证据不代替私有发布或原生验签；切片、引擎、签名/digest、恢复、真实平台与命名 E2E 仍未完成。</li>\n<li>2026-10-12 cody：声明包 digest 已贯穿组件树递归解析、实际归档与安装锁；所有显式 NuGet/npm 包均记录摘要，包括无 Qian 表面的代码包。共享摘要冲突、幂等安装记录漂移和预检后同版本换包被拒绝，后者在真实 npm 客户端测试中整批回滚。46 项 CLI 测试零失败零跳过；原生签名/provenance、切片、引擎、恢复和真实平台/命名 E2E 仍待完成。</li>\n<li>2026-10-12 cody：已接入 --surfaces/--no-code 安装投影：整体来源先验证，原摘要独立保留，排除代码后不声明原服务，所选引用再校验。技能附件、自定义 metadata、组合包表面独立挂载和 required 子组件防绕过均有回归；包内 NuGet 技能可在无 csproj 宿主发现且不添加依赖。51 项 CLI 测试零失败零跳过，包含实际 .NET 表面运行时装载/卸载。简写参数、组合边界、引擎、原生验签、恢复与真实租户/命名 E2E 仍待完成。</li>\n<li>2026-10-12 cody：产品负责人已批准 DATA 本体分期交付；本任务保留真实 qian.data 安装、精确还原及 Provider 运行的后续必过门，临时包或通用 Config 测试不能替代。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.8：<code>qian add &lt;component&gt;[@version]</code> 从已登记市场解析条目 → 取组件文件夹 → 过校验器与验签 → 表面复制到 <code>.qian/&lt;id&gt;/</code> → <code>dotnet add package</code> / npm 安装 → 向当前 profile 的 <code>config/qian.patch.yml</code>（standalone 为 <code>.qian/patch.yml</code>）追加条目 → <code>qian doctor</code>；<code>--yes</code> / <code>--profile</code> / <code>--scope tenant:&lt;id&gt;</code>；<code>.qian/lock.json</code> 记来源与 digest / commit；<code>qian remove</code>、<code>qian list [--remote]</code>；子命令带 <code>--json</code>；Node 实现 + <code>dotnet qian</code> 薄包装。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>按 [S1-DEC-018](S1-DEC-018.md) 回验 DATA-001：从正式私有 NuGet 源完成真实 <code>qian add data</code> 代码安装、精确包还原及 Provider 运行；与 RT-014 的字段源生成/发布证据一起通过后，才移除 qian.data 骨架标记</li>\n<li class='chk'><span class='box'></span>E2E：空白 ASP.NET Core 项目执行 <code>qian add identity authz files</code>，表面进入 <code>.qian/</code>、NuGet 依赖按市场条目钉版、patch 条目写入、<code>lock.json</code> 记录 digest</li>\n<li class='chk'><span class='box'></span>IT：<code>qian remove</code> 逆序撤销 <code>add</code> 的全部改动；<code>qian list</code> 列出本地已装组件及来源市场</li>\n<li class='chk'><span class='box'></span>IT：未通过校验器或验签的组件 <code>add</code> 失败并输出结构化错误（<code>--json</code>）</li>\n<li class='chk'><span class='box'></span>IT：<code>qian add --scope tenant:&lt;id&gt;</code> 写租户 scope patch，需平台连接与运营权限，S1 仅运营 CLI</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：为 QA-002 完整组件链与 DATA 完整安装验收补齐必要 CLI 前置；RT-002/008/016 和 DEC-003 均已完成。复用现有无代码安装与签名验证，补真实代码包安装、事务回滚、移除和来源查询；租户 scope 真实接口及 identity/authz/files 真实包仍按其依赖验收，不以替身宣称完成。</li>\n<li>2026-10-12 cody：完成安装器底层：严格包名/版本、共享依赖归属、MSBuild 中央版本读取、真实 NuGet/npm 安装与移除、声明后实际还原验证、工作区文件/目录备份及自动失败回滚。27 项 CLI 测试通过，含正式 Kun.Core 编译消费、真实 npm 导入和共享依赖末使用者删除。底层尚未接入完整 add/remove，四项任务验收不提前勾选；下一步接批量命令、升级/切片、恢复与真实平台 scope。</li>\n<li>2026-10-12 cody：已把真实包管理与事务接入单组件 add、本地 list 和按 profile 的 remove；支持保留 disabled 配置后重装与 purge。修复进程退出/后代竞态，未确认停止时保留锁和备份。33 项测试通过，包含真实 Config Provider 临时包的签名市场安装与消费者运行、代码卸载/重装、末检失败回滚、required 保护和依赖破坏回滚。包级 digest/签名、批量升级/切片/恢复及真实租户接口仍未完成，保持草稿。</li>\n<li>2026-10-12 cody：完成整组预检与单次提交的批量 add；实际依赖安装失败时整批恢复。支持跨 profile 升级分别保留配置、reset-config、新增权限确认、force 文件恢复和卸载后按原安装名 purge。38 项 CLI 测试零失败零跳过。组合包/切片、引擎、包级 digest/原生验签、恢复和真实租户/命名 Provider 验收仍待完成；不以通用 Config 或临时包测试代替完整交付。</li>\n<li>2026-10-12 cody：内联组合包已通过真实 profile.bundles 组装，允许无 runtime.form 的依赖聚合；每个子组件独立校验并汇总依赖/权限。真实 Config Provider 组合安装、升级、卸载、保留配置重装、purge 通过；未验证来源隐藏代码、required 子组件绕过和多组合层覆盖均有回归。41 项 CLI 测试零失败零跳过。包内 qian 内容发现、表面切片、引擎/供应链验签、恢复及真实平台/命名 E2E 仍待完成。</li>\n<li>2026-10-12 cody：预检已能从真实 NuGet qian/ 和 npm qian.component 补齐组件；隔离还原继承宿主源配置但不复制凭据、不改宿主项目。组件树递归再验证并记录归档/交付摘要，同名内容冲突不能 force 覆盖。42 项测试零失败零跳过；NuGet 使用真实 Config Provider 临时包走 CLI，npm 使用真实客户端和本地协议夹具验证归档读取。此证据不代替私有发布或原生验签；切片、引擎、签名/digest、恢复、真实平台与命名 E2E 仍未完成。</li>\n<li>2026-10-12 cody：声明包 digest 已贯穿组件树递归解析、实际归档与安装锁；所有显式 NuGet/npm 包均记录摘要，包括无 Qian 表面的代码包。共享摘要冲突、幂等安装记录漂移和预检后同版本换包被拒绝，后者在真实 npm 客户端测试中整批回滚。46 项 CLI 测试零失败零跳过；原生签名/provenance、切片、引擎、恢复和真实平台/命名 E2E 仍待完成。</li>\n<li>2026-10-12 cody：已接入 --surfaces/--no-code 安装投影：整体来源先验证，原摘要独立保留，排除代码后不声明原服务，所选引用再校验。技能附件、自定义 metadata、组合包表面独立挂载和 required 子组件防绕过均有回归；包内 NuGet 技能可在无 csproj 宿主发现且不添加依赖。51 项 CLI 测试零失败零跳过，包含实际 .NET 表面运行时装载/卸载。简写参数、组合边界、引擎、原生验签、恢复与真实租户/命名 E2E 仍待完成。</li>\n<li>2026-10-12 cody：产品负责人已批准 DATA 本体分期交付；本任务保留真实 qian.data 安装、精确还原及 Provider 运行的后续必过门，临时包或通用 Config 测试不能替代。</li>\n<li>2026-10-12 cody：同步 main 已验证的 Kun hotfix.2 与严格版本锁定。完整安装和租户命令仍等待真实 Registry 管理权限接口及 RT-014/组件私有发布；本草稿保留，当前转向已授权的权限前置，不并行占用 RT 与 AZ 领域。快捷解析/签名证明等 CLI 未完项也继续保留，不以单项测试关闭任务。</li>\n</ul>",
   "file": "pm/tasks/S1-RT-011.md"
  },
  {
