@@ -17,6 +17,8 @@ public static class CapabilityEndpoints
         ArgumentNullException.ThrowIfNull(endpoints); ArgumentNullException.ThrowIfNull(source);
         endpoints.MapGet("/api/capabilities", (HttpContext http, string? kind, string? q) => Catalog(http, kind, q, false)).RequireAuthorization();
         endpoints.MapGet("/api/kernel/capabilities", (HttpContext http, string? kind, string? q) => Catalog(http, kind, q, true)).RequireAuthorization();
+        endpoints.MapGet("/api/capabilities/openapi.json", (Func<HttpContext, Task<IResult>>)(http => OpenApi(http, false))).RequireAuthorization();
+        endpoints.MapGet("/api/kernel/capabilities/openapi.json", (Func<HttpContext, Task<IResult>>)(http => OpenApi(http, true))).RequireAuthorization();
         endpoints.MapPost("/api/capabilities/{plugin}/{name}/invoke", async (HttpContext http, string plugin, string name, JsonElement input) =>
         {
             http.Response.Headers.CacheControl = "no-store";
@@ -26,6 +28,15 @@ public static class CapabilityEndpoints
             return Results.Json(result);
         }).RequireAuthorization();
         return endpoints;
+
+        async Task<IResult> OpenApi(HttpContext http, bool alias)
+        {
+            http.Response.Headers.CacheControl = "private, no-store";
+            if (alias) http.Response.Headers["Deprecation"] = "@1791331200";
+            var caller = source(http);
+            return Results.Json(await caller.Capabilities().GetOpenApiAsync(caller,
+                http.RequestServices.GetRequiredService<ICurrentUser>(), http.RequestAborted).ConfigureAwait(false));
+        }
 
         async Task<IResult> Catalog(HttpContext http, string? kind, string? q, bool alias)
         {

@@ -152,3 +152,7 @@ S1-KUN-004 补充旧 Identity / Security S2S 签发器、旧注册方法及旧�
 QIAN0005 在全部代码树检查真正的 Kun `AddRequestHandler`：受保护请求或未确定请求类型的泛型封装必须改用 `Qian.Authz.Abstractions.AddAuthorizedHandler`，同一入口将处理器与权限行为登记到同一个 builder。两个重载、方法组引用、生成代码均受检查；关闭警告即错误不会降低规则。
 
 `python3 -m unittest discover -s tests/gates -p test_authorized_handler.py` 编译八组真实样例：直接注册、能力注册、委托引用、泛型包装、应用伪造桥接类必须失败；安全入口、普通请求及无关同名方法必须通过。运行时拒绝/放行顺序由 Qian.Authz.Abstractions.Tests 验证。
+
+### 能力契约的真实兼容检查
+
+运行 `Qian.Capabilities.Tests` 和客户目录契约挂载用例前，先执行 `python3 scripts/prepare_contract_tools.py --destination /tmp/qian-contract-tools`，再设置 `QIAN_OASDIFF_PATH=/tmp/qian-contract-tools/oasdiff`（Windows 使用对应 exe）。下载版本与 SHA-256 固定在 `scripts/contract-tools.lock.json`，不会运行远程安装脚本。全部 .NET 测试也需要此环境变量；工具缺失按失败处理。CI 已包含安装步骤。

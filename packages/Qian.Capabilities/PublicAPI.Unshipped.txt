@@ -3,3 +3,10 @@ Qian.Capabilities.CapabilitiesPlugin
 Qian.Capabilities.CapabilitiesPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Qian.Capabilities.CapabilitiesPlugin.CapabilitiesPlugin() -> void
 Qian.Capabilities.CapabilitiesPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Capabilities.OasDiffOpenApiProbe
+Qian.Capabilities.OasDiffOpenApiProbe.CompareAsync(System.Text.Json.JsonElement baseline, System.Text.Json.JsonElement candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.OasDiffOpenApiProbe.OasDiffOpenApiProbe(string! executablePath) -> void
+Qian.Capabilities.OpenApiContractPlugin
+Qian.Capabilities.OpenApiContractPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Capabilities.OpenApiContractPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Capabilities.OpenApiContractPlugin.OpenApiContractPlugin(Qian.Runtime.IQianPlugin! inner, Qian.Capabilities.IOpenApiCompatibilityProbe! probe, string! contractId, System.Text.Json.JsonElement baseline, System.Text.Json.JsonElement candidate) -> void

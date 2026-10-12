@@ -51,8 +51,12 @@ jobs:
       - name: 门禁自测（tests/gates 样例项目）
         run: python3 -m unittest discover -s tests/gates -v
 
+      - name: 安装固定摘要的真实 OpenAPI 兼容检查器
+        run: python3 scripts/prepare_contract_tools.py --destination "$RUNNER_TEMP/qian-contract-tools"
+
       - name: 单元与集成测试（共享容器与真实 Apollo）
         env:
+          QIAN_OASDIFF_PATH: ${{ runner.temp }}/qian-contract-tools/oasdiff
           QIAN_TEST_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/evidence
         run: dotnet test --solution Qian.slnx -c Release --no-build --results-directory TestResults --report-xunit-trx
 

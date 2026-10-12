@@ -37,6 +37,8 @@ public interface ICapabilityService
     ValueTask<CapabilityCatalog> ListAsync(IPluginContext caller, ICurrentUser user, string? kind = null, string? query = null, CancellationToken cancellationToken = default);
     /// <summary>只把当前可见且允许模型使用的能力编入提示文本。</summary>
     ValueTask<string> ComposePromptAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default);
+    /// <summary>聚合当前实际可调用绑定的 OpenAPI 3.1；与目录使用同一身份、权限和 scope 判定。</summary>
+    ValueTask<JsonElement> GetOpenApiAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default);
     /// <summary>按与目录相同的规则重新判定后调用真实绑定；隐藏与不存在统一 NOT_FOUND。</summary>
     ValueTask<JsonElement> InvokeAsync(IPluginContext caller, ICurrentUser user, string id, JsonElement input, CancellationToken cancellationToken = default);
 }

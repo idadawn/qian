@@ -11,3 +11,20 @@ Qian.Capabilities.ICapabilityService.InvokeAsync(Qian.Runtime.IPluginContext! ca
 Qian.Capabilities.ICapabilityService.ListAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, string? kind = null, string? query = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.CapabilityCatalog!>
 static Qian.Capabilities.CapabilitiesDefinition.Capabilities(this Qian.Runtime.IPluginContext! context) -> Qian.Capabilities.ICapabilityService!
 static readonly Qian.Capabilities.CapabilitiesDefinition.Key -> Qian.Runtime.ServiceKey
+Qian.Capabilities.ICapabilityService.GetOpenApiAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement>
+Qian.Capabilities.ContractCompatibility
+Qian.Capabilities.ContractCompatibility.<Clone>$() -> Qian.Capabilities.ContractCompatibility!
+Qian.Capabilities.ContractCompatibility.BreakingRules.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Capabilities.ContractCompatibility.BreakingRules.init -> void
+Qian.Capabilities.ContractCompatibility.ContractCompatibility(bool IsCompatible, System.Collections.Generic.IReadOnlyList<string!>! BreakingRules) -> void
+Qian.Capabilities.ContractCompatibility.Deconstruct(out bool IsCompatible, out System.Collections.Generic.IReadOnlyList<string!>! BreakingRules) -> void
+Qian.Capabilities.ContractCompatibility.Equals(Qian.Capabilities.ContractCompatibility? other) -> bool
+Qian.Capabilities.ContractCompatibility.IsCompatible.get -> bool
+Qian.Capabilities.ContractCompatibility.IsCompatible.init -> void
+Qian.Capabilities.IOpenApiCompatibilityProbe
+Qian.Capabilities.IOpenApiCompatibilityProbe.CompareAsync(System.Text.Json.JsonElement baseline, System.Text.Json.JsonElement candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+override Qian.Capabilities.ContractCompatibility.Equals(object? obj) -> bool
+override Qian.Capabilities.ContractCompatibility.GetHashCode() -> int
+override Qian.Capabilities.ContractCompatibility.ToString() -> string!
+static Qian.Capabilities.ContractCompatibility.operator !=(Qian.Capabilities.ContractCompatibility? left, Qian.Capabilities.ContractCompatibility? right) -> bool
+static Qian.Capabilities.ContractCompatibility.operator ==(Qian.Capabilities.ContractCompatibility? left, Qian.Capabilities.ContractCompatibility? right) -> bool

@@ -134,6 +134,79 @@ public sealed partial class CustomerCommandTests
         }
     }
 
+    [Fact]
+    public async Task 认证OpenAPI只包含可调用绑定_请求响应Schema对应真实执行_隐藏后移除()
+    {
+        await using var host = await Start(capabilities: true);
+        using var anonymous = await host.Client.GetAsync("/api/capabilities/openapi.json", Ct);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        using var response = await CatalogRequest(host, A, "/api/capabilities/openapi.json");
+        Assert.True(response.StatusCode == HttpStatusCode.OK, host.FailureEvidence);
+        var api = await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
+        Assert.Equal("3.1.1", api.GetProperty("openapi").GetString());
+        using var alias = await CatalogRequest(host, A, "/api/kernel/capabilities/openapi.json");
+        Assert.True(alias.Headers.Contains("Deprecation"));
+        Assert.True(JsonElement.DeepEquals(api, await alias.Content.ReadFromJsonAsync<JsonElement>(Ct)));
+        var parsed = Microsoft.OpenApi.OpenApiDocument.Parse(api.GetRawText(), "json");
+        Assert.NotNull(parsed.Document); Assert.Empty(parsed.Diagnostic!.Errors);
+        var paths = api.GetProperty("paths"); Assert.Equal(3, paths.EnumerateObject().Count());
+        var operation = paths.GetProperty("/api/capabilities/" + CreateId + "/invoke").GetProperty("post");
+        Assert.Equal(CreateId, operation.GetProperty("x-qian-capability").GetString());
+        var reference = operation.GetProperty("requestBody").GetProperty("content").GetProperty("application/json").GetProperty("schema").GetProperty("$ref").GetString()!;
+        var input = api.GetProperty("components").GetProperty("schemas").GetProperty(reference.Split('/')[^1]);
+        using var accepted = await Invoke(host, A);
+        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+        var actualRequest = JsonSerializer.SerializeToElement(new CreateCustomerCommand(Guid.CreateVersion7(), "schema proof"), CrmCommandJson.Default.CreateCustomerCommand);
+        Assert.True(JsonSchema.FromText(input.GetRawText()).Evaluate(actualRequest).IsValid);
+        var outputReference = operation.GetProperty("responses").GetProperty("200").GetProperty("content").GetProperty("application/json").GetProperty("schema").GetProperty("$ref").GetString()!;
+        var output = api.GetProperty("components").GetProperty("schemas").GetProperty(outputReference.Split('/')[^1]);
+        Assert.True(JsonSchema.FromText(output.GetRawText()).Evaluate(await accepted.Content.ReadFromJsonAsync<JsonElement>(Ct)).IsValid);
+        using var denied = await CatalogRequest(host, B, "/api/capabilities/openapi.json");
+        Assert.False((await denied.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").TryGetProperty("/api/capabilities/" + CreateId + "/invoke", out _));
+        var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        using (runtime.GetContext("data", ScopeKey.Global).Restrict(new ScopeKey("tenant", A), registration => registration.Key != CapabilityBindingRegistration.Key))
+        {
+            using var hidden = await CatalogRequest(host, A, "/api/capabilities/openapi.json");
+            var empty = await hidden.Content.ReadFromJsonAsync<JsonElement>(Ct);
+            Assert.Empty(empty.GetProperty("paths").EnumerateObject());
+            Assert.Empty(empty.GetProperty("components").GetProperty("schemas").EnumerateObject());
+        }
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        using var unmounted = await CatalogRequest(host, A, "/api/capabilities/openapi.json");
+        Assert.Empty((await unmounted.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").EnumerateObject());
+    }
+
+    [Fact]
+    public async Task 真实契约检查先于业务Apply_不兼容组件挂载失败且兼容修订能实际执行()
+    {
+        await using var host = await Start(capabilities: true);
+        using var document = await CatalogRequest(host, A, "/api/capabilities/openapi.json");
+        var baseline = await document.Content.ReadFromJsonAsync<JsonElement>(Ct);
+        Assert.Equal(3, baseline.GetProperty("paths").EnumerateObject().Count());
+        // 本用例拥有全部三项权限并已核对完整目录；生产装配须使用未经过用户过滤的已发布基线。
+        var candidate = System.Text.Json.Nodes.JsonNode.Parse(baseline.GetRawText())!;
+        candidate["paths"] = new System.Text.Json.Nodes.JsonObject();
+        var probe = new OasDiffOpenApiProbe(Environment.GetEnvironmentVariable("QIAN_OASDIFF_PATH")
+            ?? throw new InvalidOperationException("契约检查器必须预装。"));
+        var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        var entry = runtime.DumpConfig().Single(item => item.Id == "crm");
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await runtime.MountAsync([new PluginDefinition(entry,
+            new OpenApiContractPlugin(new CrmPlugin(), probe, "qian.sample.crm.api/v1", baseline, JsonSerializer.SerializeToElement(candidate)),
+            [CrmDefinition.Key])], Ct);
+        Assert.Equal(PluginState.Failed, runtime.GetState("crm", ScopeKey.Global));
+        var failure = Assert.IsType<Qian.Runtime.Errors.QianErrorException>(runtime.GetFailure("crm", ScopeKey.Global));
+        Assert.Equal("PRECONDITION_FAILED", failure.Error.Code.Code);
+        await AssertAbsent(host, A);
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await runtime.MountAsync([new PluginDefinition(entry,
+            new OpenApiContractPlugin(new CrmPlugin(), probe, "qian.sample.crm.api/v1", baseline, baseline),
+            [CrmDefinition.Key])], Ct);
+        Assert.True(runtime.GetState("crm", ScopeKey.Global) == PluginState.Ready, runtime.GetFailure("crm", ScopeKey.Global)?.ToString());
+        using var created = await Invoke(host, A);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+    }
+
     private static async Task AssertAbsent(RunningApp host, string tenant)
     {
         using var list = await CatalogRequest(host, tenant, "/api/capabilities"); Assert.Equal(HttpStatusCode.OK, list.StatusCode);
@@ -201,7 +274,7 @@ public sealed partial class CustomerCommandTests
         Add("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey]);
         Add("authz", "qian.authz", new RbacCommandPolicyPlugin(), [CommandPolicies.AuthorizationKey]);
         Add("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]);
-        Add("crm", "qian.sample.crm", new CrmPlugin(), [CrmDefinition.Key, CapabilityBindingRegistration.Key]);
+        Add("crm", "qian.sample.crm", new CrmPlugin(), [CrmDefinition.Key]);
         var registry = new RegistryPlugin(new RegistryRuntimeOptions
         {
             InstalledComponents = installed, Runtime = loader, Profiles = new ProfileLoader(validator), Profile = options, Surfaces = validator,

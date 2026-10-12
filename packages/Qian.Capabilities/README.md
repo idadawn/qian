@@ -18,6 +18,7 @@
 
 - `GET /api/capabilities?kind=&q=`：返回 `{ items, ttlMs, cacheScope: "private" }`，同时设置私有且不存储的 HTTP 缓存指令。
 - `GET /api/kernel/capabilities`：同一实现的 S1 别名，带 `Deprecation` 头。
+- `GET /api/capabilities/openapi.json`：按同一权限过滤生成 OpenAPI 3.1，仅包含当前实际可调用绑定的执行路径和输入/输出 Schema；递归 Schema 引用重定位到各自组件。
 - `POST /api/capabilities/{plugin}/{name}/invoke`：重新授权后反序列化真实请求并执行；请求体必须遵循生成的输入 Schema。
 
 提示词是服务端 `ComposePromptAsync` 端口，未新增生产 HTTP 提示词接口。测试宿主的 `/api/acceptance/prompt` 仅作为该生产端口的真实认证入口胶水。
@@ -26,4 +27,16 @@
 
 `tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证契约、别名、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结，并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。
 
-RT-006 的 OpenAPI 聚合与破坏性变更拒绝、版本化契约仓库、扩展点、菜单贡献及偏好仍未完成。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
+当前 OpenAPI 聚合覆盖 SDK 真实能力的调用入口，其他组件声明的 HTTP/gRPC 契约仍需接入版本化契约仓库。RT-006 的完整契约仓库、扩展点、菜单贡献及偏好仍未完成。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
+
+## 契约兼容检查
+
+`IOpenApiCompatibilityProbe` 由 `OasDiffOpenApiProbe` 实现，使用固定的 [oasdiff 1.33.0](https://github.com/oasdiff/oasdiff/releases/tag/v1.33.0)，不以手写字段比较替代真实 OpenAPI 差异检测。下载脚本 `scripts/prepare_contract_tools.py --destination <工具目录>` 按仓库锁文件校验发行归档 SHA-256，只提取检查器普通文件。运行宿主需预装对应架构的二进制并把绝对路径交给 Probe；运行中不自动安装或更新。工具采用 Apache-2.0 许可证。
+
+探测对基线和候选文档先做 OpenAPI 3.1 解析，再运行固定参数的兼容检查。外部 `$ref` 明确禁用；不调用 shell，不继承环境配置，使用独立空配置、受限输出和 30 秒超时。取消会终止子进程，临时契约文件在退出后删除。检测失败、版本不符和报告异常都抛错，不能视为兼容。
+
+`OpenApiContractPlugin` 是平台装配器使用的普通包装，保持原业务插件依赖，在其 Apply 之前探测带 `/vN` 的同组件命名空间契约；破坏性变更导致挂载 Failed，业务注册不会公开。它不修改 Runtime，也不是调用者可绕过的请求参数。生产装配必须从已验证的版本化制品取得完整基线与候选，不能使用当前用户权限过滤后的 OpenAPI 返回值。注册表/发布准入的完整制品接线仍未完成，当前宿主需显式采用此包装。
+
+测试通过 `QIAN_OASDIFF_PATH` 指向实际锁定工具；CI 会先校验下载，缺失工具不会跳过测试。相关测试覆盖说明与兼容响应扩展、输入类型破坏、路径删除、外部引用拒绝，以及真实客户组件挂载被拒/兼容恢复后实际执行。
+
+OpenAPI 文档格式按 [OpenAPI 3.1.1 规范](https://spec.openapis.org/oas/v3.1.1.html) 生成，使用 Microsoft.OpenApi 3.10.2 解析验证。平台发行镜像携带工具及完整契约制品的验收尚未完成。

@@ -41,6 +41,13 @@ internal sealed class CapabilityService(IRegistryService registry, IPermissionCh
         return output.ToString();
     }
 
+    public async ValueTask<JsonElement> GetOpenApiAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default)
+    {
+        using var linked = Link(cancellationToken);
+        var visible = await Visible(caller, user, false, linked.Token).ConfigureAwait(false);
+        return CapabilityOpenApi.Build(visible.Select(item => item.Entry));
+    }
+
     public async ValueTask<JsonElement> InvokeAsync(IPluginContext caller, ICurrentUser user, string id, JsonElement input, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
