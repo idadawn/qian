@@ -69,3 +69,11 @@ Qian.Authz.Abstractions.IResourceTypeRegistry.ListResources(string! pluginId, st
 Qian.Authz.Abstractions.IResourceTypeRegistry.RegisterResources(string! version, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.ResourceTypeDefinition!>! resources) -> System.IDisposable!
 static readonly Qian.Authz.Abstractions.AuthzDefinition.PermissionsKey -> Qian.Runtime.ServiceKey
 static readonly Qian.Authz.Abstractions.AuthzDefinition.ResourceTypesKey -> Qian.Runtime.ServiceKey
+Qian.Authz.Abstractions.AuthorizationExplanation
+Qian.Authz.Abstractions.AuthorizationExplanation.AuthorizationExplanation(Kun.Authorization.PermissionDecision! decision, System.Collections.Generic.IReadOnlyList<string!>! matchedRoles, System.Collections.Generic.IReadOnlyList<string!>! matchedGrants, System.Collections.Generic.IReadOnlyList<string!>! missing) -> void
+Qian.Authz.Abstractions.AuthorizationExplanation.Decision.get -> Kun.Authorization.PermissionDecision!
+Qian.Authz.Abstractions.AuthorizationExplanation.MatchedGrants.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Authz.Abstractions.AuthorizationExplanation.MatchedRoles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Authz.Abstractions.AuthorizationExplanation.Missing.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Authz.Abstractions.IAuthzExecutionConstraints
+Qian.Authz.Abstractions.IAuthzExecutionConstraints.CheckAsync(Kun.Authorization.AuthorizationSubject! subject, Qian.Authz.Abstractions.PermissionDefinition! permission, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kun.Authorization.PermissionDecision!>
