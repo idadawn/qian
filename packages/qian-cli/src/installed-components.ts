@@ -98,7 +98,7 @@ export function listInstalledComponents(root:string):{plugins:InstallObject[]} {
    const entry=installObject(value);
    if(typeof entry.id!=='string'||!/^[a-z][a-z0-9_.-]*$/.test(entry.id)||typeof entry.profile!=='string'||!/^[a-z][a-z0-9-]*$/.test(entry.profile)||
     typeof entry.scope!=='string'||! /^(?:global|(?:tenant|app|agent-session):[A-Za-z0-9_.-]+)$/.test(entry.scope))installFailure('.qian/lock.json','安装条目标识无效。');
-   return{id:entry.id,profile:entry.profile,scope:entry.scope};
+   return{id:entry.id,profile:entry.profile,scope:entry.scope,...entry.kind==='bundle'?{kind:'bundle'}:{}};
   });
   if(plugin.surfaces.some(value=>typeof value!=='string'||!/^[A-Za-z][A-Za-z0-9-]{0,63}$/.test(value)))installFailure('.qian/lock.json','表面列表无效。');
   const packages=installedPackageSets([plugin])[0].packages;
