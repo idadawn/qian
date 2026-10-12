@@ -1,0 +1,7 @@
+#nullable enable
+Qian.Audit.AuditCanonicalizer
+Qian.Audit.AuditDbContext
+Qian.Audit.AuditDbContext.AuditDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Audit.AuditDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+const Qian.Audit.AuditDbContext.Schema = "plugin_qian_audit" -> string!
+static Qian.Audit.AuditCanonicalizer.Canonicalize(System.Text.Json.JsonElement value) -> string!
+static Qian.Audit.AuditCanonicalizer.Hash(Qian.Audit.AuditRecord! record, long sequence, string? previousHash) -> string!

@@ -143,14 +143,14 @@
  {
   "id": "S1-AUD-001",
   "title": "qian.audit 命令级哈希链与 AuditBehavior 监听器",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "AUD",
   "areaName": "审计与可观测",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "cody",
   "estimate": "5d",
   "days": 5.0,
   "depends": [
@@ -161,7 +161,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.11.1",
@@ -176,12 +176,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-10",
+  "updated": "2026-10-12",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.audit</code>（<code>Qian.Audit.Abstractions</code> / <code>ctx.Audit</code> + <code>Qian.Audit</code>，随 SDK 进每个 .NET profile）：<code>audit_entries</code>（tenant_id、seq、prev_hash、content_hash UNIQUE、actor_type ∈ user | service | agent、on_behalf_of、capability_id、contract_version、input_hash、channel ∈ ui | api | mcp | a2a | job | event、resource、result、trace_id、payload）与 <code>audit_chain_state</code>（按租户一条链 + 平台链，<code>SERIALIZABLE</code> 读 tip 更新、冲突重试）；<code>content_hash = SHA256(prev_hash || canonical_json(entry))</code>；Mediator <code>AuditBehavior</code> 读 <code>[Capability(Audit = true)]</code>，命令默认记录、查询 opt-in，记输入哈希并按 Schema <code>sensitive</code> 脱敏；作为 base 组合包的 <code>waterfall</code> 监听器，卸载即逆序撤销；<code>IAuditWriter</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：参考应用一次「创建客户」命令产生 1 条 <code>audit_entries</code>（<code>capability_id = crm.customer.create</code>）；事务回滚时不存在</li>\n<li class='chk'><span class='box'></span>IT：两个副本并发写同一租户链 1000 条，<code>seq</code> 连续、<code>prev_hash</code> 严格串联</li>\n<li class='chk'><span class='box'></span>IT：以 <code>actor_type = agent, on_behalf_of = &lt;user&gt;</code> 记录一条审计并可按 <code>on_behalf_of</code> 查询</li>\n<li class='chk'><span class='box'></span>UT：敏感字段按 Schema <code>sensitive</code> 脱敏后参与 <code>input_hash</code>；查询默认不记录、<code>Audit = true</code> 后记录</li>\n<li class='chk'><span class='box'></span>UT：卸载组件时 <code>waterfall</code> 监听器被逆序撤销</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.audit</code>（<code>Qian.Audit.Abstractions</code> / <code>ctx.Audit</code> + <code>Qian.Audit</code>，随 SDK 进每个 .NET profile）：<code>audit_entries</code>（tenant_id、seq、prev_hash、content_hash UNIQUE、actor_type ∈ user | service | agent、on_behalf_of、capability_id、contract_version、input_hash、channel ∈ ui | api | mcp | a2a | job | event、resource、result、trace_id、payload）与 <code>audit_chain_state</code>（按租户一条链 + 平台链，<code>SERIALIZABLE</code> 读 tip 更新、冲突重试）；<code>content_hash = SHA256(prev_hash || canonical_json(entry))</code>；Mediator <code>AuditBehavior</code> 读 <code>[Capability(Audit = true)]</code>，命令默认记录、查询 opt-in，记输入哈希并按 Schema <code>sensitive</code> 脱敏；作为 base 组合包的 <code>waterfall</code> 监听器，卸载即逆序撤销；<code>IAuditWriter</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：参考应用一次「创建客户」命令产生 1 条 <code>audit_entries</code>（<code>capability_id = crm.customer.create</code>）；事务回滚时不存在</li>\n<li class='chk done'><span class='box'>✓</span>IT：两个副本并发写同一租户链 1000 条，<code>seq</code> 连续、<code>prev_hash</code> 严格串联</li>\n<li class='chk done'><span class='box'>✓</span>IT：以 <code>actor_type = agent, on_behalf_of = &lt;user&gt;</code> 记录一条审计并可按 <code>on_behalf_of</code> 查询</li>\n<li class='chk'><span class='box'></span>UT：敏感字段按 Schema <code>sensitive</code> 脱敏后参与 <code>input_hash</code>；查询默认不记录、<code>Audit = true</code> 后记录</li>\n<li class='chk'><span class='box'></span>UT：卸载组件时 <code>waterfall</code> 监听器被逆序撤销</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：开始：真实 PG 审计链、规范化内容哈希、并发与篡改验证；不以独立追加事务替代 CRM 业务同事务验收，平台链与权限旁路须显式受控。</li>\n<li>2026-10-12 cody：完成不可变全字段记录、精确规范化哈希、受限 PG/RLS 链存储与分页验证。8 项专项通过：两独立宿主并发 1000 条无断号/分叉，Agent 委托可查询，同事件幂等、写入失败原子回滚、取消不漏锁、篡改定位及独立 Python 黄金向量。仅勾选对应存储 IT；平台链、脱敏、真实能力监听及 CRM 同事务仍未完成。</li>\n</ul>",
   "file": "pm/tasks/S1-AUD-001.md"
  },
  {

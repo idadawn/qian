@@ -1,0 +1,27 @@
+# Qian.Audit
+
+审计 Provider 的存储基础，当前对应 S1-AUD-001。权威设计为 ADR-009 与 PRD §7.11.1，Definition 位于 Qian.Audit.Abstractions。
+
+## 组件与交付边界
+
+本目录包含确定性内容哈希、AuditDbContext 与内部 PostgreSQL 链存储。目标是在每个 .NET profile 中经 qian.audit 提供 Audit seam，并随 SDK 默认装配到实际能力执行链。当前尚未提供公共 IAuditWriter、运行时 waterfall 监听器或安装入口；plugins/qian.audit 保留骨架，不能以本次存储测试宣称 qian add audit、完整 platform 或 CRM 业务审计已经完成。
+
+## 记录与内容哈希
+
+AuditRecord 保留租户、actor_type、actor_id、on_behalf_of、capability_id、contract_version、input_hash、channel、resource、result、trace_id、occurred_at 和补充 payload。记录不可变且字符串化不展开主体或 payload。input_hash 必须由后续可信能力管道在脱敏后计算，不能把原始输入直接塞入 payload；本次不冒充已完成 sensitive Schema 脱敏。
+
+v1 内容哈希为 SHA256(prev_hash 的 UTF-8 文本拼接 canonical_json(entry))。哈希输入是记录的 snake_case 字段加 seq、format_version，包含全部补充数据；prev_hash 在 JSON 之前作为前缀，首条为空字符串。键按 ordinal 排序，数组顺序保留，重复键拒绝。数值按精确十进制规整，不经 double 丢失大整数；指数限定在正负 1000 内、有效数字最多 1024 位、小数位最多 16383 位。字符串使用 System.Text.Json 默认转义。发生时间先统一 UTC 并规整到 PostgreSQL 微秒精度，避免保存后无法重放原哈希。固定向量另由 Python 独立计算验证。
+
+## 存储与并发
+
+AuditDbContext 继承 QianDbContext，拥有 plugin_qian_audit schema。audit_entries 具有事件 ID、内容哈希、链与序号、链与前序的唯一约束。audit_chain_state 保存 tip_seq 和 tip_hash。租户列按 Data 强制过滤与 RLS 保护，受限应用角色执行在线 DML；平台 null 行虽可表示，当前普通入口一律拒绝无租户，不借 null 自动获得平台权限。
+
+追加在取得租户 session advisory lock 后开启 SERIALIZABLE 事务，再写记录与推进链头。锁在快照创建前取得，避免排队事务持有旧快照而持续冲突；序列化或死锁错误有界重试。取消和失败都会释放锁；清理失败时清理对应连接池，避免复用可能仍持锁的连接。事件 ID 重试仅在完整内容一致时幂等，不同内容返回 CONFLICT；损坏链头不继续追加。
+
+分页读取和链验证是内部存储端口，尚未作为无授权查询 API 对外开放。验证用 REPEATABLE READ 快照和分批读取，避免并发追加产生误报；报告最早缺号、前序、内容或链头不一致的位置。补充 payload 与委托主体都参与哈希，修改历史值会被检测。
+
+## 验证与剩余任务
+
+真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。测试通过并不意味着参考应用同事务要求已经完成：当前内部 AppendAsync 的独立事务只包含审计记录与链头，后续必须与真正的 CRM 业务事务、Outbox 及能力生命周期连接，不能把独立追加成功当成业务回滚验证。
+
+尚未完成：受保护平台链、Schema 脱敏与输入哈希策略、命令默认/查询 opt-in、真实 Mediator 与 waterfall 装配、卸载撤销、CRM 同事务、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。

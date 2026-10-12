@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><IsPackable>true</IsPackable><Description>审计记录、链校验与错误契约。</Description></PropertyGroup>
+<ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /></ItemGroup>
+</Project>

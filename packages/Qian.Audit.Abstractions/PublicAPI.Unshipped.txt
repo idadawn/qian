@@ -1,0 +1,54 @@
+#nullable enable
+Qian.Audit.AuditChainEntry
+Qian.Audit.AuditChainEntry.<Clone>$() -> Qian.Audit.AuditChainEntry!
+Qian.Audit.AuditChainEntry.AuditChainEntry(long Sequence, string? PreviousHash, string! ContentHash, Qian.Audit.AuditRecord! Record) -> void
+Qian.Audit.AuditChainEntry.ContentHash.get -> string!
+Qian.Audit.AuditChainEntry.ContentHash.init -> void
+Qian.Audit.AuditChainEntry.Deconstruct(out long Sequence, out string? PreviousHash, out string! ContentHash, out Qian.Audit.AuditRecord! Record) -> void
+Qian.Audit.AuditChainEntry.Equals(Qian.Audit.AuditChainEntry? other) -> bool
+Qian.Audit.AuditChainEntry.PreviousHash.get -> string?
+Qian.Audit.AuditChainEntry.PreviousHash.init -> void
+Qian.Audit.AuditChainEntry.Record.get -> Qian.Audit.AuditRecord!
+Qian.Audit.AuditChainEntry.Record.init -> void
+Qian.Audit.AuditChainEntry.Sequence.get -> long
+Qian.Audit.AuditChainEntry.Sequence.init -> void
+Qian.Audit.AuditChainVerification
+Qian.Audit.AuditChainVerification.<Clone>$() -> Qian.Audit.AuditChainVerification!
+Qian.Audit.AuditChainVerification.AuditChainVerification(bool Valid, long CheckedEntries, long? BrokenAt, string? Reason) -> void
+Qian.Audit.AuditChainVerification.BrokenAt.get -> long?
+Qian.Audit.AuditChainVerification.BrokenAt.init -> void
+Qian.Audit.AuditChainVerification.CheckedEntries.get -> long
+Qian.Audit.AuditChainVerification.CheckedEntries.init -> void
+Qian.Audit.AuditChainVerification.Deconstruct(out bool Valid, out long CheckedEntries, out long? BrokenAt, out string? Reason) -> void
+Qian.Audit.AuditChainVerification.Equals(Qian.Audit.AuditChainVerification? other) -> bool
+Qian.Audit.AuditChainVerification.Reason.get -> string?
+Qian.Audit.AuditChainVerification.Reason.init -> void
+Qian.Audit.AuditChainVerification.Valid.get -> bool
+Qian.Audit.AuditChainVerification.Valid.init -> void
+Qian.Audit.AuditRecord
+Qian.Audit.AuditRecord.ActorId.get -> string!
+Qian.Audit.AuditRecord.ActorType.get -> string!
+Qian.Audit.AuditRecord.AuditRecord(System.Guid id, string? tenantId, string! actorType, string! actorId, string? onBehalfOf, string! capabilityId, string! contractVersion, string! inputHash, string! channel, string? resource, string! result, string! traceId, System.DateTimeOffset occurredAt, System.Text.Json.JsonElement payload) -> void
+Qian.Audit.AuditRecord.CapabilityId.get -> string!
+Qian.Audit.AuditRecord.Channel.get -> string!
+Qian.Audit.AuditRecord.ContractVersion.get -> string!
+Qian.Audit.AuditRecord.Id.get -> System.Guid
+Qian.Audit.AuditRecord.InputHash.get -> string!
+Qian.Audit.AuditRecord.OccurredAt.get -> System.DateTimeOffset
+Qian.Audit.AuditRecord.OnBehalfOf.get -> string?
+Qian.Audit.AuditRecord.Payload.get -> System.Text.Json.JsonElement
+Qian.Audit.AuditRecord.Resource.get -> string?
+Qian.Audit.AuditRecord.Result.get -> string!
+Qian.Audit.AuditRecord.TenantId.get -> string?
+Qian.Audit.AuditRecord.TraceId.get -> string!
+override Qian.Audit.AuditChainEntry.Equals(object? obj) -> bool
+override Qian.Audit.AuditChainEntry.GetHashCode() -> int
+override Qian.Audit.AuditChainEntry.ToString() -> string!
+override Qian.Audit.AuditChainVerification.Equals(object? obj) -> bool
+override Qian.Audit.AuditChainVerification.GetHashCode() -> int
+override Qian.Audit.AuditChainVerification.ToString() -> string!
+override Qian.Audit.AuditRecord.ToString() -> string!
+static Qian.Audit.AuditChainEntry.operator !=(Qian.Audit.AuditChainEntry? left, Qian.Audit.AuditChainEntry? right) -> bool
+static Qian.Audit.AuditChainEntry.operator ==(Qian.Audit.AuditChainEntry? left, Qian.Audit.AuditChainEntry? right) -> bool
+static Qian.Audit.AuditChainVerification.operator !=(Qian.Audit.AuditChainVerification? left, Qian.Audit.AuditChainVerification? right) -> bool
+static Qian.Audit.AuditChainVerification.operator ==(Qian.Audit.AuditChainVerification? left, Qian.Audit.AuditChainVerification? right) -> bool
