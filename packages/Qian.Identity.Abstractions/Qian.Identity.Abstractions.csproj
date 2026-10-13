@@ -2,8 +2,7 @@
   <PropertyGroup><IsPackable>true</IsPackable><Description>身份 seam、claim、连接器和认证因子端口及稳定事件。</Description></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
-    <!-- 当前 Kun 以 Kun.EventBus 提供稳定事件标记与注册端口，尚无同名 .Abstractions 包。 -->
-    <PackageReference Include="Kun.EventBus" />
+    <PackageReference Include="Kun.EventBus.Abstractions" />
     <EmbeddedResource Include="../../contracts/identity/v1/*.schema.json" LogicalName="identity/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
