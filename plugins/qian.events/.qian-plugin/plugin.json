@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.events",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.events",
+  "description": "集成事件组件：入队即生成 v1 信封，Outbox 按租约领取并经 publisher confirm 发往 RabbitMQ topic exchange qian.events",
   "author": {
     "name": "Qian"
   },
@@ -12,7 +12,9 @@
     "category": "platform"
   },
   "inject": [],
-  "provides": [],
+  "provides": [
+    "Events"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -23,5 +25,19 @@
     "global",
     "tenant"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Events.EventsPlugin, Qian.Events"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry"
+    ],
+    "tools": []
+  }
 }
