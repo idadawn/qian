@@ -148,6 +148,7 @@ Kun 是 Qian 的底座框架，没有自己的文档站，读者与本站 SDK �
 - **页面编排**：参考产品负责人提供的 [组件页](https://ui.shadcn.com/docs/components/aria/alert-dialog)：标题与用途、首屏可交互预览及源码展开/复制、安装、基本用法、组合结构、分场景示例、API 与键盘/无障碍说明；保留模型体验、已知限制和变更。各示例均可运行并查看对应源码，右侧目录可定位章节，左侧按组件导航。采用本仓库真实 API 与令牌，功能说明以已实现能力为准。安装、预览、代码和 API 均留在现有 Rspress 页面中，用户无需访问独立演示站。
 - **内容源**：README、`docs/*.mdx`、普通 React 示例保留在组件目录，由收集脚本生成 `/components/yue/` 页面；示例与 Vitest/Playwright 共用，不复制两套组件实现。core 的 51 个入口及配套部件由清单校验覆盖。
 - **展示与样式**：`@rspress/plugin-preview` 编译本地 TSX，弹层/Portal 和主题易影响宿主时使用 iframe 预览；独立构建显式加载 Tailwind v4、令牌与字体，并同步明暗主题。每页有使用说明、源码、适用状态示例、完整 props 表；令牌页同站可访问。
+- **交互必过验收**：每个可交互组件提供可直接操作的真实示例，并登记「操作 → 可观察结果」：输入/校验反馈，选择器选中与值回写，Dialog/AlertDialog 打开、确认/取消和关闭回焦，Tabs 切换，Toast/Notification 触发与关闭，以及各组件适用的键盘路径。对静态构建的 Rspress 页面执行 Playwright 操作与结果断言，覆盖明暗两态和预览 iframe；不得以仅渲染、截图、代码片段或外站链接替代。展示型组件验证实际渲染和适用状态，不虚构交互；全量入口与示例清单相互校验，缺交互场景或断言即 CI 失败。合并后在正式站点再次实测代表性输入、选择、弹层、切换和通知交互。
 - **Props**：以真实 TypeScript 为源；api-docgen 的默认过滤不足以直接验收，允许按底层 react-docgen-typescript 结果生成完整表并补源码 JSDoc。继承属性、组合部件、函数/回调、必填、联合类型与默认值不得静默丢失。Button 的 variant/size/loading/disabled、Dialog 的 open/defaultOpen/onOpenChange 为回归探针；51 入口及部件的完整性由门禁检查。manifest 的 JSON Schema 不代替完整 API。
 - **在线编辑**：playground 显式预打包允许的组件依赖；示例另行 typecheck。Babel、Monaco 及 worker 全部同源打包并按需加载，禁止运行时 CDN 请求；阻断外网后编辑能更新预览才算通过。编辑器只服务文档演示，不复用产品身份或租户脚本入口。
 - **测试迁移**：原 126 条 Storybook 用例逐条映射到独立 Vitest 浏览器测试或 Playwright，保留默认/悬停/禁用/错误/暗色、SSR、键盘、焦点和 ARIA 覆盖；Rspress 真正构建页面及 iframe 执行 axe，critical / serious = 0；既有 64 项页面 E2E 和 Lighthouse 门禁继续有效，测试失败阻断 PR。
