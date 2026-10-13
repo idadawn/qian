@@ -807,14 +807,14 @@
  {
   "id": "S1-DATA-002",
   "title": "多副本迁移协调、分布式 ID（Guid v7 / 雪花租约）与序号服务",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "DATA",
   "areaName": "数据",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
@@ -822,7 +822,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -833,12 +833,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>MigrateAsync</code> 前取 <code>pg_advisory_lock(hash(schema))</code>，K8s 迁移 Job 先行（<code>--migrate-only</code>），多副本启动时只校验不迁移；默认 Guid v7，数值 id 用雪花、WorkerId 经 Redis 租约 <code>qian:snowflake:worker:{n}</code> 分配；<code>ISequenceService.NextAsync(ruleCode, scopeKey)</code> 规则 DSL <code>prefix + yyyyMMdd + seq(6)</code>，PG <code>UPDATE ... RETURNING</code> 原子取号。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：两个副本同时启动并执行迁移，只有一个执行 DDL、另一个等待后校验通过</li>\n<li class='chk'><span class='box'></span>IT：100 并发取号同一序号规则无重复无跳号；规则修改后从 1 重新开始</li>\n<li class='chk'><span class='box'></span>IT：雪花 WorkerId 在 3 个副本间互不相同，副本重启后租约回收复用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>MigrateAsync</code> 前取 <code>pg_advisory_lock(hash(schema))</code>，K8s 迁移 Job 先行（<code>--migrate-only</code>），多副本启动时只校验不迁移；默认 Guid v7，数值 id 用雪花、WorkerId 经 Redis 租约 <code>qian:snowflake:worker:{n}</code> 分配；<code>ISequenceService.NextAsync(ruleCode, scopeKey)</code> 规则 DSL <code>prefix + yyyyMMdd + seq(6)</code>，PG <code>UPDATE ... RETURNING</code> 原子取号。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：两个副本同时启动并执行迁移，只有一个执行 DDL、另一个等待后校验通过</li>\n<li class='chk done'><span class='box'>✓</span>IT：100 并发取号同一序号规则无重复无跳号；规则修改后从 1 重新开始</li>\n<li class='chk done'><span class='box'>✓</span>IT：雪花 WorkerId 在 3 个副本间互不相同，副本重启后租约回收复用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：开始</li>\n<li>2026-10-14 claude：实现 IDataMigrator（schema 级 pg_advisory_lock + EF 迁移，--migrate-only 入口，在线副本启动只校验）、qian.data 系统上下文首个迁移（plugin_qian_data 的序号表，强制 RLS）、ISequenceService（单条 upsert 原子取号，规则修订与日期周期重置）、ISnowflakeIdGenerator（Redis 租约 qian:snowflake:worker:{n} + 高水位）。验收证据：MigrationCoordinationTests 两副本同时迁移只有一个执行 DDL、另一个等锁后校验通过且迁移前启动被拒；SequenceServiceTests 100 并发取号 1..100 无重复无跳号、改规则从 1 开始、租户 RLS 隔离；SnowflakeIdTests 三副本 WorkerId 互异、正常停止与崩溃后编号回收复用且新 ID 大于旧 ID</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-002.md"
  },
  {

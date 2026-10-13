@@ -33,6 +33,61 @@ Qian.Data.IOutboxBufferBinding
 Qian.Data.IOutboxBufferBinding.Buffer.get -> Kun.EventBus.Outbox.IntegrationEventBuffer!
 Qian.Data.IDataContextCatalog
 Qian.Data.IDataContextCatalog.ContextTypes.get -> System.Collections.Generic.IReadOnlyList<System.Type!>!
+Qian.Data.DataMigrationReport
+Qian.Data.DataMigrationReport.<Clone>$() -> Qian.Data.DataMigrationReport!
+Qian.Data.DataMigrationReport.Applied.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Data.DataMigrationReport.Applied.init -> void
+Qian.Data.DataMigrationReport.ContextType.get -> System.Type!
+Qian.Data.DataMigrationReport.ContextType.init -> void
+Qian.Data.DataMigrationReport.DataMigrationReport(System.Type! ContextType, string! Schema, System.Collections.Generic.IReadOnlyList<string!>! Applied, System.TimeSpan LockWait) -> void
+Qian.Data.DataMigrationReport.Deconstruct(out System.Type! ContextType, out string! Schema, out System.Collections.Generic.IReadOnlyList<string!>! Applied, out System.TimeSpan LockWait) -> void
+Qian.Data.DataMigrationReport.Equals(Qian.Data.DataMigrationReport? other) -> bool
+Qian.Data.DataMigrationReport.LockWait.get -> System.TimeSpan
+Qian.Data.DataMigrationReport.LockWait.init -> void
+Qian.Data.DataMigrationReport.Schema.get -> string!
+Qian.Data.DataMigrationReport.Schema.init -> void
+Qian.Data.IDataMigrator
+Qian.Data.IDataMigrator.MigrateAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Qian.Data.DataMigrationReport!>!>!
+Qian.Data.ISequenceService
+Qian.Data.ISequenceService.DefineAsync(string! ruleCode, string! pattern, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Data.SequenceRule!>!
+Qian.Data.ISequenceService.NextAsync(string! ruleCode, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
+Qian.Data.ISnowflakeIdGenerator
+Qian.Data.ISnowflakeIdGenerator.NextId() -> long
+Qian.Data.ISnowflakeIdGenerator.WorkerId.get -> int
+Qian.Data.SequencePattern
+Qian.Data.SequencePattern.Digits.get -> int
+Qian.Data.SequencePattern.Format(System.DateTime local, long value) -> string!
+Qian.Data.SequencePattern.MaxValue.get -> long
+Qian.Data.SequencePattern.Period(System.DateTime local) -> string!
+Qian.Data.SequencePattern.Text.get -> string!
+Qian.Data.SequenceRule
+Qian.Data.SequenceRule.<Clone>$() -> Qian.Data.SequenceRule!
+Qian.Data.SequenceRule.Code.get -> string!
+Qian.Data.SequenceRule.Code.init -> void
+Qian.Data.SequenceRule.Deconstruct(out string! Code, out string! Pattern, out int Revision) -> void
+Qian.Data.SequenceRule.Equals(Qian.Data.SequenceRule? other) -> bool
+Qian.Data.SequenceRule.Pattern.get -> string!
+Qian.Data.SequenceRule.Pattern.init -> void
+Qian.Data.SequenceRule.Revision.get -> int
+Qian.Data.SequenceRule.Revision.init -> void
+Qian.Data.SequenceRule.SequenceRule(string! Code, string! Pattern, int Revision) -> void
+override Qian.Data.DataMigrationReport.Equals(object? obj) -> bool
+override Qian.Data.DataMigrationReport.GetHashCode() -> int
+override Qian.Data.DataMigrationReport.ToString() -> string!
+override Qian.Data.SequencePattern.ToString() -> string!
+override Qian.Data.SequenceRule.Equals(object? obj) -> bool
+override Qian.Data.SequenceRule.GetHashCode() -> int
+override Qian.Data.SequenceRule.ToString() -> string!
+static Qian.Data.DataMigrationReport.operator !=(Qian.Data.DataMigrationReport? left, Qian.Data.DataMigrationReport? right) -> bool
+static Qian.Data.DataMigrationReport.operator ==(Qian.Data.DataMigrationReport? left, Qian.Data.DataMigrationReport? right) -> bool
+static Qian.Data.SequencePattern.Parse(string! pattern) -> Qian.Data.SequencePattern!
+static Qian.Data.SequencePattern.TryParse(string? pattern, out Qian.Data.SequencePattern? result, out string! error) -> bool
+static Qian.Data.SequenceRule.operator !=(Qian.Data.SequenceRule? left, Qian.Data.SequenceRule? right) -> bool
+static Qian.Data.SequenceRule.operator ==(Qian.Data.SequenceRule? left, Qian.Data.SequenceRule? right) -> bool
+static readonly Qian.Data.DataErrors.IdWorkerUnavailable -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Data.DataErrors.SequenceExhausted -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Data.DataErrors.SequenceRuleInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Data.DataErrors.SequenceRuleNotFound -> Qian.Runtime.Errors.ErrorCode!
 Qian.Data.DataContractJson
 Qian.Data.DataContractSchemas
 Qian.Data.DataRulePolicy

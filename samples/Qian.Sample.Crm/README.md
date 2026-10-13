@@ -13,12 +13,13 @@
 - S2S__ReaderClientId：允许读取客户的内部服务主体。
 - S2S__PublicJwks：仅含 RSA/EC 公钥的 JWKS JSON，不放私钥。
 - ConnectionStrings__Events：可选，RabbitMQ 的 AMQP 地址。设置后宿主启动 Outbox 投递；未设置时只写 Outbox，适合没有 MQ 的本地开发。
+- ConnectionStrings__Migrations：可选，迁移属主角色的连接（同样不能是超级用户或 BYPASSRLS），只在 `--migrate-only` 时使用。
 
 ```bash
 dotnet run --project samples/Qian.Sample.Crm
 ```
 
-默认入口启用真实命令宿主；原 DATA-001 只读宿主可用 --data-only 启动。库表由部署前迁移创建；应用启动只校验。CrmDbContext 使用 plugin_qian_sample_crm schema，客户继承 Qian 的安全上下文约定；分页索引是 tenant_id + id。
+默认入口启用真实命令宿主；原 DATA-001 只读宿主可用 --data-only 启动。库表由部署前迁移创建；应用启动只校验。`--migrate-only` 是 K8s 迁移 Job 的入口：按宿主登记的上下文在 advisory lock 下执行未应用的迁移后退出，不启动 HTTP 宿主。本应用的上下文目前没有包内迁移，这一入口在这里不执行 DDL。CrmDbContext 使用 plugin_qian_sample_crm schema，客户继承 Qian 的安全上下文约定；分页索引是 tenant_id + id。
 
 ## 调用与授权
 
