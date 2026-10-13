@@ -50,7 +50,7 @@ tests/gates/yue/           门禁自测：分层边界、循环依赖样例、�
 - **封装层**：只接受字符串 `className`（交给 `cn` 合并，不透传 Base UI 的函数式 className）；Base UI 缺的 ARIA 在封装层补（Tooltip 的 `role` / `aria-describedby`）；默认值向 WAI-ARIA 靠（Tabs 自动激活）。
 - **测试**：`*.browser.test.tsx` 在真浏览器跑（键盘用 `vitest/browser` 的 `userEvent`，查询用 Testing Library，axe 用 `axe-core`，critical + serious = 0）；`*.ssr.test.tsx` 在 Node 跑 `renderToString`。
 - **样式**：Tailwind v4 由消费方扫描 `packages/yue` 源码生成（靶场 `src/index.css` 的 `@source`），包本身不打包工具类；令牌由 `@idadawn/yue-tokens` 提供（S1-YUE-004）。
-- **文案**：组件内不写死面向用户的文案，S1-YUE-005 起走 `@idadawn/yue-sdk` 的 i18n；靶场里的演示文案不受此限。
+- **文案**：组件内不写死面向用户的文案，由宿主使用 `@idadawn/yue-sdk` 的 i18n 后传入 label 等属性，core 保持不依赖 sdk；靶场里的演示文案不受此限。
 
 ## 5 版本策略
 
@@ -66,10 +66,10 @@ tests/gates/yue/           门禁自测：分层边界、循环依赖样例、�
 
 ## 6 Base UI 验证门
 
-2026-10-09 通过，锁定 `@base-ui/react` 1.8，不切 Radix、不混用；五项发现与封装层处理见 [ADR-013 §9](../../docs/adr/ADR-013-frontend-yue.md#9-状态历史status-history)。`@idadawn/yue-core` 现在只放验证门涉及的 Menu / Select / Combobox / Tabs / Tooltip，`@idadawn/yue-data` 只放自建的 Tree；全集由 S1-YUE-005 / S1-YUE-008 交付。
+2026-10-09 通过，锁定 `@base-ui/react` 1.8，不切 Radix、不混用；五项发现与封装层处理见 [ADR-013 §9](../../docs/adr/ADR-013-frontend-yue.md#9-状态历史status-history)。`@idadawn/yue-core` 已由 S1-YUE-005 扩展为 51 个组件入口、配套 manifest 与 Storybook；`@idadawn/yue-data` 当前仍只放自建 Tree，其它数据组件由 S1-YUE-008 交付。
 
 ## 7 已知限制与延期项
 
-- tokens 的品牌、明暗与语义色验证页已在靶场 `/tokens.html` 建立；Storybook 10（含 a11y 插件与组件用例）随 S1-YUE-005 建立；i18n 硬编码 lint 随 `@idadawn/yue-sdk` 建立；视觉回归 S1 可选。
-- tokens 已实现三层令牌和首帧主题控制；八个包里除 tokens / core / data 外仍是骨架（`PACKAGE_NAME` 占位），版本 0.1.0 未发布。
+- tokens 的品牌、明暗与语义色验证页已在靶场 `/tokens.html` 建立；Storybook 10 已由 S1-YUE-005 建立，执行 `pnpm yue:storybook` 验证全部用例与静态构建；i18n 硬编码 lint 随 `@idadawn/yue-sdk` 建立；视觉回归 S1 可选。
+- tokens 已实现三层令牌和首帧主题控制；八个包里除 tokens / core / contracts / data 外仍是骨架（`PACKAGE_NAME` 占位），版本 0.1.0 未发布。
 - Lighthouse 现在对靶场测；`@idadawn/yue-shell` 建立后改为对外壳首屏测，预算值在 PRD §14 维护。

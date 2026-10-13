@@ -1,6 +1,5 @@
 // @idadawn/yue-core：Base UI + shadcn 源码自有化的基础组件层（docs/prd/specs/yue.md §3.1）。
-// S1-YUE-003 只放 Base UI 验证门的六个原语中属于本层的五个（Menu / Select / Combobox / Tabs / Tooltip）与工具；
-// 约 30 个组件的全集由 S1-YUE-005 交付。
+// S1-YUE-005：统一令牌、可寻址部件、组件 manifest 与 Storybook 验收。
 export { DirectionProvider, useDirection, type TextDirection } from '@base-ui/react/direction-provider';
 export { cn } from './lib/cn';
 export type { TestIdProps, YueProps } from './lib/test-id';
@@ -9,3 +8,23 @@ export * from './components/menu';
 export * from './components/select';
 export * from './components/tabs';
 export * from './components/tooltip';
+export * from './components/icon';
+export * from './components/button';
+export * from './components/input';
+export * from './components/choice';
+export * from './components/field';
+export * from './components/accordion';
+export * from './components/avatar';
+export * from './components/dialog';
+export * from './components/alert-dialog';
+export * from './components/sheet';
+export * from './components/drawer';
+export * from './components/popover';
+export * from './components/hover-card';
+export * from './components/context-menu';
+export * from './components/layout';
+export * from './components/feedback';
+export * from './components/notification';
+export * from './components/navigation';
+export { Menu as DropdownMenu, MenuTrigger as DropdownMenuTrigger, MenuContent as DropdownMenuContent, MenuItem as DropdownMenuItem, MenuSeparator as DropdownMenuSeparator, MenuGroup as DropdownMenuGroup, MenuGroupLabel as DropdownMenuGroupLabel, MenuSub as DropdownMenuSub, MenuSubTrigger as DropdownMenuSubTrigger } from './components/menu';
+export * from './manifests';

@@ -124,7 +124,7 @@ yue 同时承担三种角色，三者缺一不可：
 |---|---|---|---|
 | `@yue/tokens` | CSS 变量、TS `Tone` 类型、主题注入、DTCG 导出 | 无 | S1 |
 | `@yue/contracts` | FormSchema / ListSchema / PortalLayout / FlowNodes 的 JSON Schema 与生成的 TS 类型；控件 manifest Schema；SSE 事件 Schema；权限码目录格式；Filter AST 类型 | 无 | S1 草案 / S2 定稿 |
-| `@yue/core` | Base UI + shadcn 自有化的基础组件 | tokens | S1 |
+| `@yue/core` | Base UI + shadcn 自有化的基础组件 | tokens、contracts（底层 Schema） | S1 |
 | `@yue/sdk` | 注册表（导航 / 设置 / 命令 / 快捷键 / 预览器 / 客户端动作 / 控件 / 菜单类型）、`PlatformClient`、request 拦截器链、i18n、mock、`window.__APP_CONF__` 注入 | tokens, contracts | S1 |
 | `@yue/shell` | AppShell、菜单 → 路由、MF2 宿主与插槽、租户切换器、认证页族、兜底页 | core, sdk, form（登录表单） | S1 |
 | `@yue/data` | DataTable、Tree 族、日期族、Upload、ImportWizard、ConditionBuilder | core, sdk | S1 / S2 |
@@ -322,7 +322,7 @@ export function listWidgets(filter?: { device?: Device; category?: string }): Wi
 }
 ```
 
-注册表导出 `yue-manifest.json`，是远程渲染白名单与 S4 Agent 生成 UI 的唯一词表。
+注册表导出 `yue-manifest.json`，是远程渲染白名单与 S4 Agent 生成 UI 的唯一词表。S1-YUE-005 已按本节在 `@idadawn/yue-contracts` 提供 Schema 与生成类型，并由 core 的单一目录导出 51 个组件入口；props Schema 描述可序列化属性，函数、ref 与 ReactNode 组合通过宿主和 slots/events 提供。使用与验证见 [core 主文档](../../../packages/yue/core/README.md)。
 
 ### 3.7 SSE 事件契约（S1 定义，S4 消费）
 

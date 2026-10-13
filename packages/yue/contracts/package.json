@@ -32,7 +32,9 @@
   "scripts": {
     "build": "rslib build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "publint": "publint --strict --pack pnpm"
+    "publint": "publint --strict --pack pnpm",
+    "contracts:generate": "node scripts/generate.mjs",
+    "contracts:check": "node scripts/generate.mjs --check"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -45,6 +47,7 @@
     "publint": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "json-schema-to-typescript": "catalog:"
   }
 }
