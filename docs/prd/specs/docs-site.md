@@ -94,7 +94,7 @@ Kun 是 Qian 的底座框架，没有自己的文档站，读者与本站 SDK �
 - 镜像哪个版本由仓库根 `Directory.Packages.props` 的 `<KunVersion>` 属性决定（如 `2026.9.13` 对应 kun 仓库 tag `v2026.9.13`）；属性缺失时构建失败，不回退到 `main`。全部 `Kun.*` PackageVersion 引用同一属性，所以「代码用的 Kun」与「文档里的 Kun」永远是同一个版本（ADR-021 D21.3）。
 - CI 以只读凭据（deploy key 或细粒度 token）读取私有 kun 仓库；本地构建可用环境变量 `KUN_DOCS_PATH` 指向本机克隆。
 - 构建因此需要 .NET SDK（DocFX）与 kun 仓库的读权限。fork 来的 PR 与 Dependabot 拿不到本仓库的 Actions Secret，文档站不在 fork 上构建（仓库私有，协作者在本仓库的分支上工作）；接入 Dependabot 时在 Dependabot secrets 里配同名 Secret（已裁决 R60）。
-- DocFX 复用仓库根的 `NuGet.config`（`packageSourceMapping` 把 `Kun.*` 映射到 nuget.org），无凭据还原同版本的 `Kun.*`。`KunVersion` 默认钉 nuget.org 上的正式版；若改钉只在 GitHub Packages 上的预发布版，docs-site 工作流也要配该源的读凭据，否则构建失败（已裁决 R62）。
+- DocFX 复用仓库根的 `NuGet.config`（`packageSourceMapping` 把 `Kun.*` 映射到 nuget.org），无凭据还原同版本的 `Kun.*`。`KunVersion` 默认钉 nuget.org 上的正式版；若改钉只在 GitHub Packages 上的预发布版，docs-site 工作流也要配该源的读凭据，否则构建失败（已裁决 R62）。Kun 的同日修复版 `-hotfix.N` 也推送 nuget.org（NuGet 按预发布排序），无需额外凭据；`Kun.*` 以 `[$(KunVersion)]` 精确钉定（S1-DEC-019 R65）。
 - 文档站多版本时，每个 Qian 文档版本内嵌各自 `KunVersion` 的镜像，Kun 小节不单独选版本。
 
 ### 2b.2 镜像范围（白名单）

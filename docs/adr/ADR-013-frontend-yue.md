@@ -31,7 +31,7 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 - **D13.10 布局与偏好**（Q38）：S1 单一侧栏布局；多布局模式与偏好抽屉 S3 可选。
 - **D13.11 富文本 / Markdown 编辑器**（Q39）：五份调研均未覆盖，S2 前补一次选型调研后再排期。
 - **D13.12 分发渠道**（Q41）：私有 npm 为主——GitHub Packages，scope `@idadawn`，包名 `@idadawn/yue-<包>`，文档中的 `@yue/<包>` 是简称（2026-10-09 产品负责人拍板，见 §9）；shadcn 私有 registry + MCP Server 面向 ISV 与 Agent，S3 可选、S4 必做。
-- **D13.13 令牌**：三层结构 S1 必做；DTCG 格式导出 S1 可选；命名禁同名异义，状态色成对，WCAG AA 对比度单测进 CI；`data-theme / data-brand` 由服务端按租户下发，插件只引用语义令牌。
+- **D13.13 令牌**：三层结构 S1 必做；DTCG 格式导出 S1 可选；命名禁同名异义，状态色成对，WCAG AA 对比度单测进 CI；`data-theme / data-brand` 由服务端按租户下发，插件只引用语义令牌。实现落点（S1-YUE-004，PR #32）：`@idadawn/yue-tokens` 的 `registry.json` 定义三层令牌，生成 `src/index.css`（语义层在 `html.dark, html[data-theme="dark"]` 下重定义）与首帧脚本 `theme-init.js`；对比度与同名异义由 `tokens.test.ts` 与 `check-tokens.mjs` 守住；文档站经 S1-DOCS-004 改用同一包（S1-DEC-019 R72）。
 - **D13.14 联动与脚本三层**：声明式动作 → 可序列化表达式 DSL → QuickJS 沙箱脚本（白名单 API、超时、内存上限、不暴露令牌）；禁 `eval` / `new Function`。
 - **D13.15 其他选型**：dnd-kit（包一层抽象）；`@xyflow/react` 12（S3 自由画布）；react-grid-layout；Univer 开源核心（排除 Pro 与商业包，xlsx 导出放后端）；pdfme；quickjs-emscripten；不用 Formily / amis / lowcode-engine / bpmn-js。
 - **D13.16 安全硬线**：不用 `eval` 执行租户脚本；令牌不进 URL / iframe（一次性票据或 postMessage 握手）；前端权限裁剪只是体验层，鉴权在服务端；不在前端持有加密密钥；不持久化 token / 锁屏密码。

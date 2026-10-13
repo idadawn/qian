@@ -34,7 +34,7 @@ updated: 2026-10-09
 
 - 2026-10-07 claude：创建任务
 - 2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收
-- 2026-10-09 someone：开始；产品负责人 2026-10-09 让 Claude 自选任务，选定 DOCS 领域：S1-DOCS-003 → S1-DOCS-006，之后 S1-YUE-003
+- 2026-10-09 claude：开始；产品负责人 2026-10-09 让 Claude 自选任务，选定 DOCS 领域：S1-DOCS-003 → S1-DOCS-006，之后 S1-YUE-003
 - 2026-10-09 claude：Rspress 2.0.23 的 `llms: true` 自带 SSG-MD（每页 .md + llms.txt / llms-full.txt），不用 plugin-llms；主题组件补 SSG_MD 分支，首页卡片正文里的行内 Badge 改成文字（JSX 容器内的行内组件会原样残留）；新增 build-kb-index.ts（kb-index.json + sitemap.xml，lastmod 取 updated）与 check-site 的同步 / 质量检查；check_docs.py 加 frontmatter 校验，生成页补齐字段；规格 §4、§5.1、§6、§7 与 README / AGENTS 同步。本地：614 页（qian 116、kun 497、yue 1）全部有 .md，产物 57.9 MB；网站单测 58、门禁自测 32、check_docs 217 + 生成页 587 通过
 - 2026-10-09 claude：完成：SSG-MD 每页 Markdown、llms.txt / llms-full.txt、kb-index.json 与 sitemap.xml 契约、frontmatter 校验器与「复制为 Markdown」入口，五项验收全部满足，提交 PR 评审
 - 2026-10-09 claude：已合并 PR #12

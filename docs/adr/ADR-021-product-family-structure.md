@@ -39,7 +39,7 @@ amends: ADR-001, ADR-013
   2. **一个文档站**：「Qian 文档」覆盖整个产品族。Kun 为第 3 部分 SDK 的第一节 `/sdk/kun/`（导航名「Kun 框架」），内容按 Qian 锁定的 Kun 版本从 kun 仓库镜像并经 DocFX 生成 API（D21.4）。站名不改，首页一句话定位点明基于 Kun、前端 yue。
   3. **一张版本矩阵**：`/start/versions` 自动生成：每个 Qian 版本对应的 Kun CalVer、`Qian.*`、`@yue/*`、.NET SDK、Node、K3s 基线；来源是仓库内的钉版文件（`Directory.Packages.props`、`global.json`、pnpm catalog）。
   4. **一个看板**：跨仓库工作在 Qian 的 `pm/` 跟踪（KUN 领域），kun 仓库的 PR 写进任务 `refs` 与进度日志回链；不另建 GitHub Project。
-- **D21.3 Kun 版本单点钉死**。`Directory.Packages.props` 定义 `<KunVersion>`，全部 `Kun.*` 的 PackageVersion 引用 `$(KunVersion)`；`NuGet.config` 的 Kun 源与 `packageSourceMapping` 在首个引用 `Kun.*` 的任务加入（既有约定）；文档同步脚本与版本矩阵读同一属性。升级 Kun = 改这一处 → TCK 两种模式通过 → Kun 文档镜像自动跟随（CI 比对 tag）。
+- **D21.3 Kun 版本单点钉死**。`Directory.Packages.props` 定义 `<KunVersion>`，全部 `Kun.*` 的 PackageVersion 引用 `$(KunVersion)`；`NuGet.config` 的 Kun 源与 `packageSourceMapping` 在首个引用 `Kun.*` 的任务加入（既有约定）；文档同步脚本与版本矩阵读同一属性。升级 Kun = 改这一处 → TCK 两种模式通过 → Kun 文档镜像自动跟随（CI 比对 tag）。补注（S1-DEC-019 R65，2026-10-13）：Kun 的同日修复版 `-hotfix.N` 是推送 nuget.org 的正式修复，NuGet 按预发布排序；`Kun.*` 一律以 `[$(KunVersion)]` 精确钉定，不依赖最新稳定版排序，钉在修复版上时于 Kun 下一个无后缀正式版发布后升级回来。
 - **D21.4 Kun 文档进站规则**（细则见 [specs/docs-site.md §2b](../prd/specs/docs-site.md)）：
   - 真相源在 kun 仓库 `docs/`，Qian 站**只镜像不改写**，与第 7 部分镜像 `docs/` 同一原则；改 Kun 文档去 kun 仓库提 PR。Qian 自写的只有一页「与 Qian 的关系」（Kun 模块 ↔ 平台插件 / seam 映射、canonical API 选择、Qian 的强制装配与禁用项、补丁包状态）以及首页与导航文案。
   - 镜像范围是白名单：README 的定位与模块矩阵、上手教程、模块地图、设计说明与 Kun 的 ADR、指南、可观测、安全、白皮书、变更日志与发布说明。不镜像面向其它下游的差距分析、路线图与 backlog、AOT 审计与基准报告、贡献者文档、各级 `AGENTS.md`。

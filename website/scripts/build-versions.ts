@@ -134,6 +134,8 @@ export function renderVersionsPage(m: VersionMatrix, updated: string): string {
     '',
     '「哪个 Qian 配哪个 Kun」只看这一张表：Kun 的版本在 `Directory.Packages.props` 的 `KunVersion` 写一次，代码引用的 `Kun.*` 包、[Kun 框架](/sdk/kun/)小节与 [Kun API 参考](/sdk/api/kun/)都按它锁定。',
     '',
+    'Kun 的同日修复版 `-hotfix.N` 是推送 nuget.org 的正式修复，但 NuGet 按预发布排序；`Kun.*` 一律以 `[$(KunVersion)]` 精确钉定，不依赖最新稳定版排序（ADR-021 D21.3 补注）。',
+    '',
     '| 文档版本 | Kun | Qian.* | @yue/* | .NET SDK | Node / pnpm | K3s |',
     '|---|---|---|---|---|---|---|',
     `| ${m.docVersion}（开发版） | ${cell(m.kun)} | ${cell(qianSummary)} | ${cell(yueSummary)} | ${cell(m.dotnetSdk)}${m.dotnetRollForward ? `（rollForward ${cell(m.dotnetRollForward)}）` : ''} | ${cell(m.node || '未钉版')} / ${cell(m.pnpm || '未钉版')} | ${m.k3s ? cell(m.k3s) : '未钉版'} |`,

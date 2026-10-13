@@ -7,9 +7,10 @@
   python3 scripts/pm.py check-fresh              # CI：生成物是否与任务文件一致
   python3 scripts/pm.py list [--status s] [--area a] [--owner o] [--stage S1]
   python3 scripts/pm.py stats
-  python3 scripts/pm.py add --stage S1 --area RT --title "..." [--priority P0 --wave 1 --type feature
+  python3 scripts/pm.py add --by <代理名> --stage S1 --area RT --title "..." [--priority P0 --wave 1 --type feature
                             --estimate 1d --depends ID,ID --ref path#节 --ref ...]
-  python3 scripts/pm.py set <id> [--status doing] [--owner codex] [--note "一句话进展"]
+  python3 scripts/pm.py set <id> --by <代理名> [--status doing] [--owner codex] [--note "一句话进展"]
+  （--by 缺省时取环境变量 PM_ACTOR，两者都没有则报错；日志不再默认署名 someone）
 
 只依赖 Python 3 标准库；若装有 PyYAML 则用它解析 front matter，否则用内置的简易解析器。
 """
@@ -164,6 +165,8 @@ def validate(tasks: list[dict]) -> list[str]:
         for sec in ("## 背景", "## 验收", "## 进度日志"):
             if sec not in t["_body"]:
                 errors.append(f"{f}: 正文缺少「{sec}」")
+        if "someone" in re.findall(r"^- \d{4}-\d{2}-\d{2} ([^：\s]+)：", t["_body"], flags=re.M):
+            errors.append(f"{f}: 进度日志署名不能是 someone，写实际代理名（pm.py 用 --by 或 PM_ACTOR）")
     # depends 存在性与环
     for t in tasks:
         for d in t.get("depends", []):
@@ -377,7 +380,16 @@ def next_id(stage: str, area: str, tasks: list[dict]) -> str:
     return f"{stage}-{area}-{(max(nums) + 1 if nums else 1):03d}"
 
 
+def require_actor(a: argparse.Namespace) -> str:
+    """进度日志必须署实际代理名；缺省不再写成 someone（S1-DEC-019 R71）。"""
+    actor = (a.by or "").strip()
+    if not actor or actor == "someone" or "：" in actor or any(ch.isspace() for ch in actor):
+        sys.exit("请用 --by <代理名> 或环境变量 PM_ACTOR 指明日志署名（如 cody、claude、planner），不能缺省或写 someone。")
+    return actor
+
+
 def cmd_add(a: argparse.Namespace) -> None:
+    a.by = require_actor(a)
     tasks = load_tasks()
     tid = next_id(a.stage, a.area, tasks)
     today = dt.date.today().isoformat()
@@ -398,6 +410,7 @@ def cmd_add(a: argparse.Namespace) -> None:
 
 
 def cmd_set(a: argparse.Namespace) -> None:
+    a.by = require_actor(a)
     path = TASKS_DIR / f"{a.id}.md"
     if not path.exists():
         sys.exit(f"任务不存在：{a.id}")
@@ -458,10 +471,10 @@ def main() -> None:
     p.add_argument("--title", required=True); p.add_argument("--priority", default="P1", choices=PRIORITIES)
     p.add_argument("--wave", type=int, default=1); p.add_argument("--type", default="feature", choices=TYPES)
     p.add_argument("--estimate", default="1d"); p.add_argument("--depends"); p.add_argument("--ref", action="append")
-    p.add_argument("--background"); p.add_argument("--by", default=os.environ.get("PM_ACTOR", "someone"))
+    p.add_argument("--background"); p.add_argument("--by", default=os.environ.get("PM_ACTOR"))
     p = sub.add_parser("set")
     p.add_argument("id"); p.add_argument("--status", choices=STATUSES); p.add_argument("--owner"); p.add_argument("--note")
-    p.add_argument("--by", default=os.environ.get("PM_ACTOR", "someone"))
+    p.add_argument("--by", default=os.environ.get("PM_ACTOR"))
     a = ap.parse_args()
     TASKS_DIR.mkdir(parents=True, exist_ok=True)
     if a.cmd == "validate":
