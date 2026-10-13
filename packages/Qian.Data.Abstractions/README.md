@@ -27,3 +27,7 @@ Agent 可识别稳定的错误码和系统字段，不获取数据库口令。Da
 ## 已知限制与延期项
 
 参考应用的千行索引验收已通过；完整代码组件安装仍由 SDK / CLI 后续任务交付。Filter AST、运算符矩阵、系统变量、数据规则、IRecordHook 与记录事件信封由 S1-DATA-004 随本包交付，权威语义和示例见 [数据契约规格](../../docs/prd/specs/data-contracts.md)。S2 的 SQL 生成、Hook 调度及动态记录引擎仍由后续任务实现。
+
+## Kun 依赖例外（S1-KUN-010）
+
+本包暂时保留 `Kun.EntityFrameworkCore` 与 `Kun.MultiTenancy.EntityFrameworkCore` 两项具名门禁例外：前者是已发布 QianDbContext 基类与 IDataSession 工作单元契约，后者用于启动时校验真实 RLS 双拦截器和模型缓存键。不能通过关闭隔离校验消除依赖。后续重构须先设计公开 API 兼容迁移，再撤销这两条例外；其它 Definition 不继承本包的例外。
