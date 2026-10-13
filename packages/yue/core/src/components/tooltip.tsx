@@ -43,12 +43,11 @@ export function Tooltip({ open: openProp, defaultOpen, onOpenChange, ...props }:
 export function TooltipTrigger({ className, testId, ...props }: YueProps<TooltipTriggerProps>) {
   const link = useContext(TooltipLinkContext);
   return (
-    <BaseTooltip.Trigger
+    <BaseTooltip.Trigger {...props}
       data-slot="tooltip-trigger"
       data-testid={testId ?? 'yue-tooltip-trigger'}
       aria-describedby={link?.open ? link.id : undefined}
-      className={cn('inline-flex h-9 items-center rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-neutral-900', className)}
-      {...props}
+      className={cn('inline-flex h-9 items-center rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]', className)}
     />
   );
 }
@@ -68,7 +67,7 @@ export function TooltipContent({ className, side, align, sideOffset = 6, testId,
           role="tooltip"
           data-slot="tooltip-content"
           data-testid={testId ?? 'yue-tooltip-content'}
-          className={cn('rounded-md bg-neutral-900 px-2 py-1 text-xs text-white shadow-md', className)}
+          className={cn('rounded-md bg-[var(--primary)] px-2 py-1 text-xs text-[var(--primary-foreground)] shadow-md', className)}
           {...props}
         />
       </BaseTooltip.Positioner>

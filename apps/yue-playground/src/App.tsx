@@ -5,6 +5,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
+  ComboboxTrigger,
+  ComboboxValue,
   DirectionProvider,
   Menu,
   MenuContent,
@@ -67,6 +69,7 @@ export function App() {
   return (
     <DirectionProvider direction={dir}>
       <main dir={dir} className="mx-auto flex max-w-3xl flex-col gap-6 p-6 text-neutral-900">
+        <a href="/core.html" className="text-sm underline">查看完整基础组件目录</a>
         <header className="flex items-center justify-between">
           <h1 className="text-xl font-semibold">yue · Base UI 验证门</h1>
           <label className="flex items-center gap-2 text-sm">
@@ -115,8 +118,9 @@ export function App() {
 
         <Section id="combobox" title="Combobox">
           <Combobox items={FRUITS}>
-            <ComboboxInput placeholder="输入筛选" aria-label="水果筛选" />
-            <ComboboxContent>
+            <ComboboxTrigger aria-label="选择水果"><ComboboxValue placeholder="选择水果" /></ComboboxTrigger>
+            <ComboboxContent aria-label="水果选项">
+              <ComboboxInput placeholder="输入筛选" aria-label="水果筛选" />
               <ComboboxEmpty>没有匹配项</ComboboxEmpty>
               <ComboboxList>{(item: string) => <ComboboxItem key={item} value={item}>{item}</ComboboxItem>}</ComboboxList>
             </ComboboxContent>

@@ -1,0 +1,5393 @@
+{
+  "Button": {
+    "name": "Button",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Button 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Button 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Button 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Button 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Button 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Button 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Button 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Button 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Button 的 children 属性。"
+        },
+        "variant": {
+          "enum": [
+            "primary",
+            "secondary",
+            "outline",
+            "ghost",
+            "destructive"
+          ],
+          "default": "primary",
+          "title": "variant",
+          "description": "Button 的 variant 属性。"
+        },
+        "size": {
+          "enum": [
+            "sm",
+            "md",
+            "lg",
+            "icon"
+          ],
+          "default": "md",
+          "title": "size",
+          "description": "Button 的 size 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Button 的 disabled 属性。"
+        },
+        "loading": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Button 的 loading 属性。"
+        },
+        "type": {
+          "enum": [
+            "button",
+            "submit",
+            "reset"
+          ],
+          "title": "type",
+          "description": "Button 的 type 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "button",
+      "icon"
+    ],
+    "events": [
+      "onClick"
+    ],
+    "a11y": {
+      "role": "button",
+      "keyboard": [
+        "Enter",
+        "Space"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-destructive-foreground",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring",
+      "--yue-secondary",
+      "--yue-secondary-foreground"
+    ],
+    "examples": [
+      {
+        "title": "Button 基础示例",
+        "props": {
+          "variant": "primary",
+          "children": "保存"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "IconButton": {
+    "name": "IconButton",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "IconButton 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "IconButton 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "IconButton 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "IconButton 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "IconButton 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "IconButton 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "IconButton 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "IconButton 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "IconButton 的 children 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "IconButton 的 label 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "IconButton 的 disabled 属性。"
+        },
+        "loading": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "IconButton 的 loading 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label"
+      ]
+    },
+    "slots": [
+      "icon-button",
+      "icon"
+    ],
+    "events": [
+      "onClick"
+    ],
+    "a11y": {
+      "role": "button",
+      "keyboard": [
+        "Enter",
+        "Space"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-destructive-foreground",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring",
+      "--yue-secondary",
+      "--yue-secondary-foreground"
+    ],
+    "examples": [
+      {
+        "title": "IconButton 基础示例",
+        "props": {
+          "label": "关闭"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "ButtonGroup": {
+    "name": "ButtonGroup",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "ButtonGroup 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "ButtonGroup 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "ButtonGroup 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "ButtonGroup 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "ButtonGroup 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "ButtonGroup 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "ButtonGroup 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "ButtonGroup 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "ButtonGroup 的 children 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "button-group"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "group",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-destructive-foreground",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring",
+      "--yue-secondary",
+      "--yue-secondary-foreground"
+    ],
+    "examples": [
+      {
+        "title": "ButtonGroup 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Input": {
+    "name": "Input",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Input 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Input 的 children 属性。"
+        },
+        "value": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 defaultValue 属性。"
+        },
+        "placeholder": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 placeholder 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Input 的 disabled 属性。"
+        },
+        "readOnly": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Input 的 readOnly 属性。"
+        },
+        "required": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Input 的 required 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "Input 的 name 属性。"
+        },
+        "type": {
+          "enum": [
+            "text",
+            "email",
+            "search",
+            "url",
+            "tel"
+          ],
+          "title": "type",
+          "description": "Input 的 type 属性。"
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "maxLength",
+          "description": "Input 的 maxLength 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "input"
+    ],
+    "events": [
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "textbox",
+      "keyboard": [
+        "Tab"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Input 基础示例",
+        "props": {
+          "aria-label": "名称",
+          "placeholder": "请输入"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Textarea": {
+    "name": "Textarea",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Textarea 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Textarea 的 children 属性。"
+        },
+        "value": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 defaultValue 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Textarea 的 disabled 属性。"
+        },
+        "readOnly": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Textarea 的 readOnly 属性。"
+        },
+        "required": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Textarea 的 required 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 name 属性。"
+        },
+        "placeholder": {
+          "type": "string",
+          "title": "id",
+          "description": "Textarea 的 placeholder 属性。"
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3,
+          "title": "rows",
+          "description": "Textarea 的 rows 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "textarea"
+    ],
+    "events": [
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "textbox",
+      "keyboard": [
+        "Tab"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Textarea 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "InputNumber": {
+    "name": "InputNumber",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "InputNumber 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "InputNumber 的 children 属性。"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "title": "value",
+          "description": "InputNumber 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": "number",
+          "title": "defaultValue",
+          "description": "InputNumber 的 defaultValue 属性。"
+        },
+        "min": {
+          "type": "number",
+          "title": "defaultValue",
+          "description": "InputNumber 的 min 属性。"
+        },
+        "max": {
+          "type": "number",
+          "title": "defaultValue",
+          "description": "InputNumber 的 max 属性。"
+        },
+        "step": {
+          "type": "number",
+          "title": "defaultValue",
+          "description": "InputNumber 的 step 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "InputNumber 的 disabled 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 label 属性。"
+        },
+        "decreaseLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 decreaseLabel 属性。"
+        },
+        "increaseLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "InputNumber 的 increaseLabel 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "decreaseLabel",
+        "increaseLabel"
+      ]
+    },
+    "slots": [
+      "input-number",
+      "input-number-input"
+    ],
+    "events": [
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "spinbutton",
+      "keyboard": [
+        "ArrowUp",
+        "ArrowDown"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "InputNumber 基础示例",
+        "props": {
+          "label": "数量",
+          "decreaseLabel": "减少",
+          "increaseLabel": "增加",
+          "defaultValue": 1
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "InputPassword": {
+    "name": "InputPassword",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "InputPassword 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "InputPassword 的 children 属性。"
+        },
+        "value": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 defaultValue 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "InputPassword 的 disabled 属性。"
+        },
+        "readOnly": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "InputPassword 的 readOnly 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 name 属性。"
+        },
+        "showLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 showLabel 属性。"
+        },
+        "hideLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "InputPassword 的 hideLabel 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "showLabel",
+        "hideLabel"
+      ]
+    },
+    "slots": [
+      "input-password",
+      "input",
+      "icon-button"
+    ],
+    "events": [
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "textbox",
+      "keyboard": [
+        "Tab"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "InputPassword 基础示例",
+        "props": {
+          "aria-label": "密码",
+          "showLabel": "显示密码",
+          "hideLabel": "隐藏密码"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "PinInput": {
+    "name": "PinInput",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "PinInput 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "PinInput 的 children 属性。"
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "title": "length",
+          "description": "PinInput 的 length 属性。"
+        },
+        "value": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 defaultValue 属性。"
+        },
+        "mask": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "PinInput 的 mask 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "PinInput 的 disabled 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "PinInput 的 name 属性。"
+        },
+        "validationType": {
+          "enum": [
+            "numeric",
+            "alphanumeric",
+            "none"
+          ],
+          "title": "validationType",
+          "description": "PinInput 的 validationType 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "label",
+          "description": "验证码整体的本地化名称，用于首位输入及组标签。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "length",
+        "label"
+      ]
+    },
+    "slots": [
+      "pin-input",
+      "pin-input-slot"
+    ],
+    "events": [
+      "onValueChange",
+      "onValueComplete",
+      "onValueInvalid"
+    ],
+    "a11y": {
+      "role": "group",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "PinInput 基础示例",
+        "props": {
+          "length": 6,
+          "label": "验证码"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Checkbox": {
+    "name": "Checkbox",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Checkbox 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Checkbox 的 children 属性。"
+        },
+        "checked": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Checkbox 的 checked 属性。"
+        },
+        "defaultChecked": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Checkbox 的 defaultChecked 属性。"
+        },
+        "indeterminate": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Checkbox 的 indeterminate 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Checkbox 的 disabled 属性。"
+        },
+        "readOnly": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Checkbox 的 readOnly 属性。"
+        },
+        "required": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Checkbox 的 required 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 name 属性。"
+        },
+        "value": {
+          "type": "string",
+          "title": "id",
+          "description": "Checkbox 的 value 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "checkbox"
+    ],
+    "events": [
+      "onCheckedChange"
+    ],
+    "a11y": {
+      "role": "checkbox",
+      "keyboard": [
+        "Space"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Checkbox 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Radio": {
+    "name": "Radio",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Radio 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Radio 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Radio 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Radio 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Radio 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Radio 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Radio 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Radio 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Radio 的 children 属性。"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "value",
+          "description": "Radio 的 value 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Radio 的 disabled 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "radio"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "radio",
+      "keyboard": [
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        "Space"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Radio 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "RadioGroup": {
+    "name": "RadioGroup",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "RadioGroup 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "RadioGroup 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "RadioGroup 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "RadioGroup 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "RadioGroup 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "RadioGroup 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "RadioGroup 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "RadioGroup 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "RadioGroup 的 children 属性。"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "value",
+          "description": "RadioGroup 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "defaultValue",
+          "description": "RadioGroup 的 defaultValue 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "RadioGroup 的 disabled 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "RadioGroup 的 name 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "radio-group",
+      "radio"
+    ],
+    "events": [
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "radiogroup",
+      "keyboard": [
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "RadioGroup 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Switch": {
+    "name": "Switch",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Switch 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Switch 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Switch 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Switch 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Switch 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Switch 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Switch 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Switch 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Switch 的 children 属性。"
+        },
+        "checked": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Switch 的 checked 属性。"
+        },
+        "defaultChecked": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Switch 的 defaultChecked 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Switch 的 disabled 属性。"
+        },
+        "readOnly": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Switch 的 readOnly 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "Switch 的 name 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "switch"
+    ],
+    "events": [
+      "onCheckedChange"
+    ],
+    "a11y": {
+      "role": "switch",
+      "keyboard": [
+        "Space"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Switch 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Toggle": {
+    "name": "Toggle",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Toggle 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Toggle 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Toggle 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Toggle 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Toggle 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Toggle 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Toggle 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Toggle 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Toggle 的 children 属性。"
+        },
+        "pressed": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Toggle 的 pressed 属性。"
+        },
+        "defaultPressed": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Toggle 的 defaultPressed 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Toggle 的 disabled 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "toggle"
+    ],
+    "events": [
+      "onPressedChange"
+    ],
+    "a11y": {
+      "role": "button",
+      "keyboard": [
+        "Enter",
+        "Space"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Toggle 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Segmented": {
+    "name": "Segmented",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Segmented 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Segmented 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Segmented 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Segmented 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Segmented 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Segmented 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Segmented 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Segmented 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Segmented 的 children 属性。"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "value",
+          "description": "Segmented 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "defaultValue",
+          "description": "Segmented 的 defaultValue 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Segmented 的 disabled 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "Segmented 的 name 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "segmented",
+      "segmented-item"
+    ],
+    "events": [
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "radiogroup",
+      "keyboard": [
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Segmented 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Select": {
+    "name": "Select",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Select 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Select 的 defaultOpen 属性。"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "array",
+            "null"
+          ],
+          "title": "value",
+          "description": "Select 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "number",
+            "array",
+            "null"
+          ],
+          "title": "defaultValue",
+          "description": "Select 的 defaultValue 属性。"
+        },
+        "items": {
+          "type": "array",
+          "title": "items",
+          "description": "Select 的 items 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Select 的 disabled 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "Select 的 name 属性。"
+        },
+        "modal": {
+          "type": "boolean",
+          "default": true,
+          "description": "打开时是否进入模态状态；沿用 Base UI 默认值。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "select-trigger",
+      "select-content",
+      "select-item"
+    ],
+    "events": [
+      "onOpenChange",
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "combobox",
+      "keyboard": [
+        "ArrowDown",
+        "ArrowUp",
+        "Enter",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Select 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Combobox": {
+    "name": "Combobox",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Combobox 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Combobox 的 defaultOpen 属性。"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "array",
+            "null"
+          ],
+          "title": "value",
+          "description": "Combobox 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "number",
+            "array",
+            "null"
+          ],
+          "title": "defaultValue",
+          "description": "Combobox 的 defaultValue 属性。"
+        },
+        "items": {
+          "type": "array",
+          "title": "items",
+          "description": "Combobox 的 items 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Combobox 的 disabled 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "Combobox 的 name 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "combobox-trigger",
+      "combobox-value",
+      "combobox-content",
+      "combobox-input",
+      "combobox-item"
+    ],
+    "events": [
+      "onOpenChange",
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "combobox",
+      "keyboard": [
+        "ArrowDown",
+        "ArrowUp",
+        "Enter",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Combobox 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Label": {
+    "name": "Label",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Label 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Label 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Label 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Label 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Label 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Label 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Label 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Label 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Label 的 children 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "label"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "generic",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Label 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Field": {
+    "name": "Field",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Field 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Field 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Field 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Field 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Field 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Field 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Field 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Field 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Field 的 children 属性。"
+        },
+        "name": {
+          "type": "string",
+          "title": "id",
+          "description": "Field 的 name 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Field 的 disabled 属性。"
+        },
+        "invalid": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Field 的 invalid 属性。"
+        },
+        "validationMode": {
+          "enum": [
+            "onSubmit",
+            "onBlur",
+            "onChange"
+          ],
+          "title": "validationMode",
+          "description": "Field 的 validationMode 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "field",
+      "field-label",
+      "field-control",
+      "field-description",
+      "field-error"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "group",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Field 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Dialog": {
+    "name": "Dialog",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Dialog 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Dialog 的 defaultOpen 属性。"
+        },
+        "modal": {
+          "type": [
+            "boolean",
+            "string"
+          ],
+          "title": "modal",
+          "description": "Dialog 的 modal 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "dialog-trigger",
+      "dialog-content"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "dialog",
+      "keyboard": [
+        "Tab",
+        "Shift+Tab",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-p-black",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Dialog 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "AlertDialog": {
+    "name": "AlertDialog",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "AlertDialog 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "AlertDialog 的 defaultOpen 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "alert-dialog-trigger",
+      "alert-dialog-content"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "alertdialog",
+      "keyboard": [
+        "Tab",
+        "Shift+Tab",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-p-black",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "AlertDialog 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Sheet": {
+    "name": "Sheet",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Sheet 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Sheet 的 defaultOpen 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "sheet-trigger",
+      "sheet-content"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "dialog",
+      "keyboard": [
+        "Tab",
+        "Shift+Tab",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-p-black",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Sheet 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Drawer": {
+    "name": "Drawer",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Drawer 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Drawer 的 defaultOpen 属性。"
+        },
+        "swipeDirection": {
+          "enum": [
+            "up",
+            "down",
+            "left",
+            "right"
+          ],
+          "title": "swipeDirection",
+          "description": "Drawer 的 swipeDirection 属性。"
+        },
+        "snapPoints": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "title": "defaultValue",
+            "description": "InputNumber 的 defaultValue 属性。"
+          },
+          "title": "snapPoints",
+          "description": "Drawer 的 snapPoints 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "drawer-trigger",
+      "drawer-content"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "dialog",
+      "keyboard": [
+        "Tab",
+        "Shift+Tab",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-p-black",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Drawer 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Popover": {
+    "name": "Popover",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Popover 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Popover 的 defaultOpen 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "popover-trigger",
+      "popover-content"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "dialog",
+      "keyboard": [
+        "Tab",
+        "Shift+Tab",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Popover 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Tooltip": {
+    "name": "Tooltip",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Tooltip 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Tooltip 的 defaultOpen 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "tooltip-trigger",
+      "tooltip-content"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "tooltip",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Tooltip 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "HoverCard": {
+    "name": "HoverCard",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "HoverCard 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "HoverCard 的 defaultOpen 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "hover-card-trigger",
+      "hover-card-content"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "dialog",
+      "keyboard": [
+        "Tab",
+        "Shift+Tab",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "HoverCard 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Menu": {
+    "name": "Menu",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Menu 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Menu 的 defaultOpen 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "menu-trigger",
+      "menu-content",
+      "menu-item"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "menu",
+      "keyboard": [
+        "ArrowDown",
+        "ArrowUp",
+        "Home",
+        "End",
+        "Enter",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Menu 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "DropdownMenu": {
+    "name": "DropdownMenu",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "DropdownMenu 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "DropdownMenu 的 defaultOpen 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "menu-trigger",
+      "menu-content",
+      "menu-item"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "menu",
+      "keyboard": [
+        "ArrowDown",
+        "ArrowUp",
+        "Home",
+        "End",
+        "Enter",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "DropdownMenu 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "ContextMenu": {
+    "name": "ContextMenu",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "ContextMenu 的 open 属性。"
+        },
+        "defaultOpen": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "ContextMenu 的 defaultOpen 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "context-menu-trigger",
+      "context-menu-content",
+      "context-menu-item"
+    ],
+    "events": [
+      "onOpenChange"
+    ],
+    "a11y": {
+      "role": "menu",
+      "keyboard": [
+        "ArrowDown",
+        "ArrowUp",
+        "Home",
+        "End",
+        "Enter",
+        "Escape"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "ContextMenu 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Tabs": {
+    "name": "Tabs",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Tabs 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Tabs 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Tabs 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Tabs 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Tabs 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Tabs 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Tabs 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Tabs 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Tabs 的 children 属性。"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "value",
+          "description": "Tabs 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "defaultValue",
+          "description": "Tabs 的 defaultValue 属性。"
+        },
+        "orientation": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "title": "orientation",
+          "description": "Tabs 的 orientation 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "tabs",
+      "tabs-list",
+      "tabs-tab",
+      "tabs-panel"
+    ],
+    "events": [
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "tablist",
+      "keyboard": [
+        "ArrowLeft",
+        "ArrowRight",
+        "Home",
+        "End"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Tabs 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Accordion": {
+    "name": "Accordion",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Accordion 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Accordion 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Accordion 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Accordion 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Accordion 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Accordion 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Accordion 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Accordion 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Accordion 的 children 属性。"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "id",
+            "description": "Button 的 id 属性。"
+          },
+          "title": "value",
+          "description": "Accordion 的 value 属性。"
+        },
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "id",
+            "description": "Button 的 id 属性。"
+          },
+          "title": "defaultValue",
+          "description": "Accordion 的 defaultValue 属性。"
+        },
+        "multiple": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Accordion 的 multiple 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Accordion 的 disabled 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "accordion",
+      "accordion-item",
+      "accordion-header",
+      "accordion-trigger",
+      "accordion-content"
+    ],
+    "events": [
+      "onValueChange"
+    ],
+    "a11y": {
+      "role": "region",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Accordion 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Card": {
+    "name": "Card",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Card 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Card 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Card 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Card 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Card 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Card 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Card 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Card 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Card 的 children 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "card",
+      "card-header",
+      "card-title",
+      "card-description",
+      "card-content",
+      "card-footer"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "generic",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-card",
+      "--yue-card-foreground",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Card 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Separator": {
+    "name": "Separator",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Separator 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Separator 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Separator 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Separator 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Separator 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Separator 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Separator 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Separator 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Separator 的 children 属性。"
+        },
+        "orientation": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "title": "orientation",
+          "description": "Separator 的 orientation 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "separator"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "separator",
+      "keyboard": [
+        "ArrowLeft",
+        "ArrowRight",
+        "Home",
+        "End"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-card",
+      "--yue-card-foreground",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Separator 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "ScrollArea": {
+    "name": "ScrollArea",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "ScrollArea 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "ScrollArea 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "ScrollArea 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "ScrollArea 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "ScrollArea 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "ScrollArea 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "ScrollArea 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "ScrollArea 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "ScrollArea 的 children 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "ScrollArea 的 label 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label"
+      ]
+    },
+    "slots": [
+      "scroll-area"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "region",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-card",
+      "--yue-card-foreground",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "ScrollArea 基础示例",
+        "props": {
+          "label": "滚动内容"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Resizable": {
+    "name": "Resizable",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Resizable 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Resizable 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Resizable 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Resizable 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Resizable 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Resizable 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Resizable 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Resizable 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Resizable 的 children 属性。"
+        },
+        "orientation": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "title": "orientation",
+          "description": "Resizable 的 orientation 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Resizable 的 disabled 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "resizable",
+      "resizable-panel",
+      "resizable-handle"
+    ],
+    "events": [
+      "onLayoutChanged"
+    ],
+    "a11y": {
+      "role": "separator",
+      "keyboard": [
+        "ArrowLeft",
+        "ArrowRight",
+        "Home",
+        "End"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-card",
+      "--yue-card-foreground",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Resizable 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Badge": {
+    "name": "Badge",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Badge 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Badge 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Badge 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Badge 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Badge 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Badge 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Badge 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Badge 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Badge 的 children 属性。"
+        },
+        "tone": {
+          "enum": [
+            "ok",
+            "warn",
+            "error",
+            "info",
+            "neutral"
+          ],
+          "title": "tone",
+          "description": "Badge 的 tone 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "badge"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "generic",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-error",
+      "--yue-error-bg",
+      "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring",
+      "--yue-warn",
+      "--yue-warn-bg"
+    ],
+    "examples": [
+      {
+        "title": "Badge 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Tag": {
+    "name": "Tag",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Tag 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Tag 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Tag 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Tag 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Tag 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Tag 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Tag 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Tag 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Tag 的 children 属性。"
+        },
+        "tone": {
+          "enum": [
+            "ok",
+            "warn",
+            "error",
+            "info",
+            "neutral"
+          ],
+          "title": "tone",
+          "description": "Tag 的 tone 属性。"
+        },
+        "removeLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "Tag 的 removeLabel 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "tag"
+    ],
+    "events": [
+      "onRemove"
+    ],
+    "a11y": {
+      "role": "generic",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-error",
+      "--yue-error-bg",
+      "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring",
+      "--yue-warn",
+      "--yue-warn-bg"
+    ],
+    "examples": [
+      {
+        "title": "Tag 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Avatar": {
+    "name": "Avatar",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Avatar 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Avatar 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Avatar 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Avatar 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Avatar 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Avatar 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Avatar 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Avatar 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Avatar 的 children 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "avatar",
+      "avatar-image",
+      "avatar-fallback"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "generic",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Avatar 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Skeleton": {
+    "name": "Skeleton",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Skeleton 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Skeleton 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Skeleton 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Skeleton 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Skeleton 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Skeleton 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Skeleton 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Skeleton 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Skeleton 的 children 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "skeleton"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "generic",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-error",
+      "--yue-error-bg",
+      "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring",
+      "--yue-warn",
+      "--yue-warn-bg"
+    ],
+    "examples": [
+      {
+        "title": "Skeleton 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Spinner": {
+    "name": "Spinner",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Spinner 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Spinner 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Spinner 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Spinner 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Spinner 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Spinner 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Spinner 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Spinner 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Spinner 的 children 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "Spinner 的 label 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label"
+      ]
+    },
+    "slots": [
+      "spinner"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "status",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-error",
+      "--yue-error-bg",
+      "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring",
+      "--yue-warn",
+      "--yue-warn-bg"
+    ],
+    "examples": [
+      {
+        "title": "Spinner 基础示例",
+        "props": {
+          "label": "加载中"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Progress": {
+    "name": "Progress",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Progress 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Progress 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Progress 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Progress 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Progress 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Progress 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Progress 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Progress 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Progress 的 children 属性。"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "title": "value",
+          "description": "Progress 的 value 属性。"
+        },
+        "max": {
+          "type": "number",
+          "title": "defaultValue",
+          "description": "Progress 的 max 属性。"
+        },
+        "min": {
+          "type": "number",
+          "title": "defaultValue",
+          "description": "Progress 的 min 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "Progress 的 label 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "value"
+      ]
+    },
+    "slots": [
+      "progress"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "progressbar",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-error",
+      "--yue-error-bg",
+      "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring",
+      "--yue-warn",
+      "--yue-warn-bg"
+    ],
+    "examples": [
+      {
+        "title": "Progress 基础示例",
+        "props": {
+          "label": "完成进度",
+          "value": 40
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Alert": {
+    "name": "Alert",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Alert 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Alert 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Alert 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Alert 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Alert 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Alert 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Alert 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Alert 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Alert 的 children 属性。"
+        },
+        "tone": {
+          "enum": [
+            "ok",
+            "warn",
+            "error",
+            "info",
+            "neutral"
+          ],
+          "title": "tone",
+          "description": "Alert 的 tone 属性。"
+        },
+        "role": {
+          "enum": [
+            "alert",
+            "status"
+          ],
+          "title": "role",
+          "description": "Alert 的 role 属性。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "slots": [
+      "alert"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "status",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-error",
+      "--yue-error-bg",
+      "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring",
+      "--yue-warn",
+      "--yue-warn-bg"
+    ],
+    "examples": [
+      {
+        "title": "Alert 基础示例",
+        "props": {}
+      }
+    ],
+    "status": "stable"
+  },
+  "Toast": {
+    "name": "Toast",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Toast 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Toast 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Toast 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Toast 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Toast 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Toast 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Toast 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Toast 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Toast 的 children 属性。"
+        },
+        "toast": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "title": "id",
+              "description": "Button 的 id 属性。"
+            },
+            "title": {
+              "type": "string",
+              "title": "id",
+              "description": "Button 的 id 属性。"
+            },
+            "description": {
+              "type": "string",
+              "title": "id",
+              "description": "Button 的 id 属性。"
+            },
+            "type": {
+              "type": "string",
+              "title": "id",
+              "description": "Button 的 id 属性。"
+            },
+            "timeout": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false,
+          "title": "toast",
+          "description": "Toast 的 toast 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "toast"
+      ]
+    },
+    "slots": [
+      "toast",
+      "toast-title",
+      "toast-description",
+      "toast-action",
+      "toast-close"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "status",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring",
+      "--yue-secondary",
+      "--yue-secondary-foreground"
+    ],
+    "examples": [
+      {
+        "title": "Toast 基础示例",
+        "props": {
+          "toast": {
+            "id": "example",
+            "title": "已保存"
+          }
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Notification": {
+    "name": "Notification",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Notification 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Notification 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Notification 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Notification 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Notification 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Notification 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Notification 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Notification 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Notification 的 children 属性。"
+        },
+        "toast": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "title": "id",
+              "description": "Button 的 id 属性。"
+            },
+            "title": {
+              "type": "string",
+              "title": "id",
+              "description": "Button 的 id 属性。"
+            },
+            "description": {
+              "type": "string",
+              "title": "id",
+              "description": "Button 的 id 属性。"
+            },
+            "type": {
+              "const": "notification"
+            },
+            "timeout": {
+              "const": 0
+            }
+          },
+          "additionalProperties": false,
+          "title": "toast",
+          "description": "Notification 的 toast 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "toast"
+      ]
+    },
+    "slots": [
+      "notification",
+      "toast-title",
+      "toast-description",
+      "toast-action",
+      "toast-close"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "status",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring",
+      "--yue-secondary",
+      "--yue-secondary-foreground"
+    ],
+    "examples": [
+      {
+        "title": "Notification 基础示例",
+        "props": {
+          "toast": {
+            "id": "example",
+            "title": "任务完成",
+            "type": "notification",
+            "timeout": 0
+          }
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Empty": {
+    "name": "Empty",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Empty 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Empty 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Empty 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Empty 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Empty 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Empty 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Empty 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Empty 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Empty 的 children 属性。"
+        },
+        "description": {
+          "type": "string",
+          "title": "id",
+          "description": "Empty 的 description 属性。"
+        },
+        "icon": {
+          "enum": [
+            "info",
+            "alert",
+            "check"
+          ],
+          "title": "icon",
+          "description": "Empty 的 icon 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ]
+    },
+    "slots": [
+      "empty"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "status",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-error",
+      "--yue-error-bg",
+      "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring",
+      "--yue-warn",
+      "--yue-warn-bg"
+    ],
+    "examples": [
+      {
+        "title": "Empty 基础示例",
+        "props": {
+          "title": "暂无数据"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Result": {
+    "name": "Result",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Result 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Result 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Result 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Result 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Result 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Result 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Result 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Result 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Result 的 children 属性。"
+        },
+        "description": {
+          "type": "string",
+          "title": "id",
+          "description": "Result 的 description 属性。"
+        },
+        "tone": {
+          "enum": [
+            "ok",
+            "warn",
+            "error",
+            "info",
+            "neutral"
+          ],
+          "title": "tone",
+          "description": "Result 的 tone 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ]
+    },
+    "slots": [
+      "result"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "region",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-error",
+      "--yue-error-bg",
+      "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
+      "--yue-muted",
+      "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-primary",
+      "--yue-ring",
+      "--yue-warn",
+      "--yue-warn-bg"
+    ],
+    "examples": [
+      {
+        "title": "Result 基础示例",
+        "props": {
+          "title": "操作成功"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Breadcrumb": {
+    "name": "Breadcrumb",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Breadcrumb 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Breadcrumb 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Breadcrumb 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Breadcrumb 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Breadcrumb 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Breadcrumb 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Breadcrumb 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Breadcrumb 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Breadcrumb 的 children 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "Breadcrumb 的 label 属性。"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "key",
+              "label"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "title": "id",
+                "description": "Button 的 id 属性。"
+              },
+              "label": {
+                "type": "string",
+                "title": "id",
+                "description": "Button 的 id 属性。"
+              },
+              "href": {
+                "type": "string",
+                "title": "id",
+                "description": "Button 的 id 属性。"
+              }
+            },
+            "additionalProperties": false
+          },
+          "title": "items",
+          "description": "Breadcrumb 的 items 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "items"
+      ]
+    },
+    "slots": [
+      "breadcrumb"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "navigation",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Breadcrumb 基础示例",
+        "props": {
+          "label": "当前位置",
+          "items": [
+            {
+              "key": "home",
+              "label": "首页",
+              "href": "/"
+            },
+            {
+              "key": "current",
+              "label": "设置"
+            }
+          ]
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Pagination": {
+    "name": "Pagination",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Pagination 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Pagination 的 children 属性。"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "title": "page",
+          "description": "Pagination 的 page 属性。"
+        },
+        "defaultPage": {
+          "type": "integer",
+          "minimum": 1,
+          "title": "defaultPage",
+          "description": "Pagination 的 defaultPage 属性。"
+        },
+        "totalPages": {
+          "type": "integer",
+          "minimum": 1,
+          "title": "totalPages",
+          "description": "Pagination 的 totalPages 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 label 属性。"
+        },
+        "previousLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 previousLabel 属性。"
+        },
+        "nextLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "Pagination 的 nextLabel 属性。"
+        },
+        "disabled": {
+          "type": "boolean",
+          "title": "disabled",
+          "description": "Pagination 的 disabled 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "previousLabel",
+        "nextLabel",
+        "totalPages"
+      ]
+    },
+    "slots": [
+      "pagination"
+    ],
+    "events": [
+      "onPageChange"
+    ],
+    "a11y": {
+      "role": "navigation",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Pagination 基础示例",
+        "props": {
+          "label": "分页",
+          "previousLabel": "上一页",
+          "nextLabel": "下一页",
+          "totalPages": 10
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "BackTop": {
+    "name": "BackTop",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "BackTop 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "BackTop 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "BackTop 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "BackTop 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "BackTop 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "BackTop 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "BackTop 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "BackTop 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "BackTop 的 children 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "BackTop 的 label 属性。"
+        },
+        "visibilityHeight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 400,
+          "title": "visibilityHeight",
+          "description": "BackTop 的 visibilityHeight 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "label"
+      ]
+    },
+    "slots": [
+      "back-top"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "button",
+      "keyboard": [
+        "Enter",
+        "Space"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "BackTop 基础示例",
+        "props": {
+          "label": "返回顶部"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "FullScreen": {
+    "name": "FullScreen",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "FullScreen 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "FullScreen 的 children 属性。"
+        },
+        "enterLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 enterLabel 属性。"
+        },
+        "exitLabel": {
+          "type": "string",
+          "title": "id",
+          "description": "FullScreen 的 exitLabel 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "enterLabel",
+        "exitLabel"
+      ]
+    },
+    "slots": [
+      "full-screen"
+    ],
+    "events": [
+      "onError"
+    ],
+    "a11y": {
+      "role": "button",
+      "keyboard": [
+        "Enter",
+        "Space"
+      ]
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "FullScreen 基础示例",
+        "props": {
+          "enterLabel": "进入全屏",
+          "exitLabel": "退出全屏"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Icon": {
+    "name": "Icon",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Icon 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Icon 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Icon 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Icon 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Icon 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Icon 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Icon 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Icon 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Icon 的 children 属性。"
+        },
+        "name": {
+          "enum": [
+            "arrowUp",
+            "check",
+            "chevronDown",
+            "chevronLeft",
+            "chevronRight",
+            "alert",
+            "eye",
+            "eyeOff",
+            "info",
+            "spinner",
+            "maximize",
+            "minimize",
+            "minus",
+            "close"
+          ],
+          "title": "name",
+          "description": "Icon 的 name 属性。"
+        },
+        "label": {
+          "type": "string",
+          "title": "id",
+          "description": "Icon 的 label 属性。"
+        },
+        "size": {
+          "type": "number",
+          "minimum": 1,
+          "title": "size",
+          "description": "Icon 的 size 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ]
+    },
+    "slots": [
+      "icon"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "img",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Icon 基础示例",
+        "props": {
+          "name": "check"
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Descriptions": {
+    "name": "Descriptions",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id",
+          "description": "Descriptions 的 id 属性。"
+        },
+        "testId": {
+          "type": "string",
+          "title": "id",
+          "description": "Descriptions 的 testId 属性。"
+        },
+        "className": {
+          "type": "string",
+          "title": "id",
+          "description": "Descriptions 的 className 属性。"
+        },
+        "title": {
+          "type": "string",
+          "title": "id",
+          "description": "Descriptions 的 title 属性。"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "id",
+          "description": "Descriptions 的 aria-label 属性。"
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "id",
+          "description": "Descriptions 的 aria-labelledby 属性。"
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "id",
+          "description": "Descriptions 的 aria-describedby 属性。"
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Descriptions 的 aria-invalid 属性。"
+        },
+        "children": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "title": "children",
+          "description": "Descriptions 的 children 属性。"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "key",
+              "label",
+              "children"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "title": "id",
+                "description": "Button 的 id 属性。"
+              },
+              "label": {
+                "type": "string",
+                "title": "id",
+                "description": "Button 的 id 属性。"
+              },
+              "children": {
+                "type": "string",
+                "title": "id",
+                "description": "Button 的 id 属性。"
+              }
+            },
+            "additionalProperties": false
+          },
+          "title": "items",
+          "description": "Descriptions 的 items 属性。"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ]
+    },
+    "slots": [
+      "descriptions"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "list",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-accent",
+      "--yue-accent-foreground",
+      "--yue-background",
+      "--yue-border",
+      "--yue-button-radius",
+      "--yue-card",
+      "--yue-card-foreground",
+      "--yue-destructive",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-popover",
+      "--yue-popover-foreground",
+      "--yue-ring"
+    ],
+    "examples": [
+      {
+        "title": "Descriptions 基础示例",
+        "props": {
+          "items": [
+            {
+              "key": "name",
+              "label": "名称",
+              "children": "示例"
+            }
+          ]
+        }
+      }
+    ],
+    "status": "stable"
+  }
+}
