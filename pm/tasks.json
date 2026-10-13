@@ -556,11 +556,9 @@
    "S1-AZ-001",
    "S1-DATA-004"
   ],
-  "blockedBy": [
-   "S1-DATA-004"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -885,7 +883,7 @@
  {
   "id": "S1-DATA-004",
   "title": "Filter AST、运算符矩阵与 IRecordHook 契约",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "DATA",
   "areaName": "数据",
@@ -899,7 +897,7 @@
    "S1-DATA-001"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -924,7 +922,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-004.md"
  },
  {
@@ -1785,7 +1783,7 @@
  {
   "id": "S1-DEP-003",
   "title": "profile 镜像构建、SBOM、漏洞扫描与 Cosign 签名",
-  "status": "doing",
+  "status": "blocked",
   "stage": "S1",
   "area": "DEP",
   "areaName": "部署物料",
@@ -1797,10 +1795,19 @@
   "days": 3.0,
   "depends": [
    "S1-RT-002",
-   "S1-DEP-001"
+   "S1-DEP-001",
+   "S1-IDP-002",
+   "S1-IDP-005",
+   "S1-GW-001",
+   "S1-YUE-001"
   ],
-  "blockedBy": [],
-  "order": 0,
+  "blockedBy": [
+   "S1-IDP-002",
+   "S1-IDP-005",
+   "S1-GW-001",
+   "S1-YUE-001"
+  ],
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -1814,6 +1821,10 @@
    {
     "path": "pm/tasks/S1-DEC-016.md",
     "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
+   },
+   {
+    "path": "deploy/images/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/deploy/images/README.md"
    }
   ],
   "updated": "2026-10-14",
@@ -1821,7 +1832,7 @@
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n<li>2026-10-14 cody：开始：按用户指派认领；核实真实 profile 宿主后完成镜像、SBOM、扫描、签名与配置漂移验收。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n<li>2026-10-14 cody：开始：按用户指派认领；核实真实 profile 宿主后完成镜像、SBOM、扫描、签名与配置漂移验收。</li>\n</ul>\n<h4>阻塞与恢复条件</h4>\n<p>2026-10-14 复核：identity、gateway 与 platform 的业务宿主和 shell 静态制品尚未交付，现有 profile 仍为静态装配骨架。原依赖只覆盖配置装载器与集群基线，不能支撑三个真实镜像的验收；补列 IDP-002、IDP-005、GW-001、YUE-001，详细输入与验收准备见 deploy/images/README.md。产品负责人已选择保持本轮四任务范围、记录真实前置阻塞；原验收不变，待前置完成后恢复构建与供应链验证。</p>\n<ul>\n<li>2026-10-14 cody：按用户确认保持四任务范围；已核实真实身份/网关/RP/外壳输入缺失并补列前置，交付镜像输入与验收准备文档；三项真实镜像验收保持未完成。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-003.md"
  },
  {
@@ -1845,7 +1856,7 @@
    "S1-RT-013",
    "S1-DEP-003"
   ],
-  "order": 4,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -1888,7 +1899,7 @@
    "S1-DATA-002",
    "S1-DEP-002"
   ],
-  "order": 5,
+  "order": 9,
   "readyNow": false,
   "refs": [
    {
@@ -3857,7 +3868,7 @@
    "S1-AUD-004",
    "S1-DEP-005"
   ],
-  "order": 6,
+  "order": 10,
   "readyNow": false,
   "refs": [
    {
@@ -4495,7 +4506,7 @@
    "S1-IDP-002",
    "S1-ENT-002"
   ],
-  "order": 9,
+  "order": 10,
   "readyNow": false,
   "refs": [
    {
