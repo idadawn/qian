@@ -24,7 +24,7 @@
 | D12 | **审批设计器为纵向节点树（DOM 自绘）；不用 bpmn-js** | React Flow 自由画布 S3 可选；BPMN 只作导出器 |
 | D13 | **联动三层** | 声明式动作 → 可序列化表达式 DSL（JSONLogic 类）→ QuickJS 沙箱脚本（S2 可选兜底，白名单 API、超时、内存上限、不暴露令牌）；自由 JS 按钮不做 |
 | D14 | **分发：私有 npm 为主**（Q41） | GitHub Packages，scope `@idadawn`，包名 `@idadawn/yue-<包>`（2026-10-09 拍板，§3.1）；shadcn 私有 registry + MCP Server S3 可选、S4 必做 |
-| D15 | **文档站 Storybook 10；产品文档不混入 React 18 的 Docusaurus** | Storybook 用例复用为测试 |
+| D15 | **统一使用现有 Rspress 2 文档站，不再使用 Storybook** | 组件文档与演示同源，Vitest + Playwright + axe 独立验收；见 ADR-022 |
 | D16 | **控件包与后端 Field Type Provider 同名同版本发布** | 控件 `type` 即字段类型编码；前后端同一 SemVer，CI 校验配对 |
 
 ---
@@ -335,8 +335,8 @@ export function listWidgets(filter?: { device?: Device; category?: string }): Wi
 ### 4.1 设计令牌 → 组件 → 文档站 → 视觉回归 → 发包
 
 1. **令牌**：在 `@yue/tokens` 修改 → 对比度单测与冲突单测 → 生成 CSS 变量与 TS 类型 →（可选）DTCG 导出。
-2. **组件**：shadcn CLI 生成源码进 `@yue/core` 后品牌化；每个组件必须带 Storybook 用例（默认 / 悬停 / 禁用 / 错误 / 暗色）、manifest、`data-slot / data-testid`、i18n key。
-3. **文档站**：Storybook 10（CSF Factories、Vitest 集成、a11y addon、自动 props 表、令牌可视化页）；用例复用为交互测试。
+2. **组件**：shadcn CLI 生成源码进 `@yue/core` 后品牌化；每个组件必须带可供 Rspress 与测试共用的 React 示例（默认 / 悬停 / 禁用 / 错误 / 暗色）、manifest、`data-slot / data-testid`、i18n key。
+3. **文档站**：统一接入现有 Rspress 2 的 `/components/yue/`，提供源码示例、活演示、完整 props 表与令牌页；示例源在组件目录，测试由独立 Vitest / Playwright + axe 执行。移除 Storybook 应用、CSF、依赖、脚本和 CI 作业；Props 完整性、离线编辑器与迁移验收见 [文档站规范 §3.1](docs-site.md#31-yue-组件文档与演示)。
 4. **视觉回归**：Playwright 截图比对，CI 固定字体与容器镜像，基线入库；S1 可选、S2 阻断。
 5. **发包**：Changesets；SemVer（0.x 每个 minor 可破坏；1.0 后只在大版本破坏，废弃至少保留一个 minor 并附 codemod）；tsdown / Rslib 输出 ESM + d.ts，CSS 单独导出；重型物料（Monaco、富文本、ECharts、地图）独立包懒加载；publint；私有 npm。
 
@@ -363,7 +363,7 @@ yue 主版本可并存一个过渡窗口（MF2 共享依赖按主版本分组）
 
 | 状态 | 进入条件 | 承诺 |
 |---|---|---|
-| `experimental` | 有 Storybook 用例与 manifest；未过 a11y 门 | 任意版本可破坏；不进 `yue-manifest.json` 稳定词表 |
+| `experimental` | 有 Rspress 共用示例与 manifest；未过 a11y 门 | 任意版本可破坏；不进 `yue-manifest.json` 稳定词表 |
 | `beta` | a11y critical = 0；视觉基线建立；至少一个真实消费方 | minor 可破坏但附迁移说明 |
 | `stable` | 两个 minor 无破坏性变更；文档完整；契约测试覆盖 | 只在大版本破坏；进入远程渲染白名单与 Agent 词表 |
 | `deprecated` | 有替代组件；codemod 可用 | 至少保留一个 minor；控制台与 lint 给出警告与替代名 |
@@ -372,7 +372,7 @@ yue 主版本可并存一个过渡窗口（MF2 共享依赖按主版本分组）
 
 ### 4.6 插件作者贡献控件的流程
 
-1. 用 `qian` CLI 从模板生成控件骨架（`meta` + 三态 `Runtime` + 可选 `Designer` + 测试 + Storybook）。
+1. 用 `qian` CLI 从模板生成控件骨架（`meta` + 三态 `Runtime` + 可选 `Designer` + 测试 + Rspress 文档与共用示例）。
 2. 在本地以「开发者租户」加载：外壳按 `engines.yue` 校验版本后以 MF2 挂载。
 3. 后端同名 Field Type Provider 先合入并发布 Catalog；CI 校验 `type@version` 配对、运算符矩阵一致、端矩阵一致。
 4. 通过 TCK 的前端子集（manifest 校验、a11y、三态一致性、不读取令牌、不访问白名单外的 API）。
@@ -444,7 +444,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 | 路由 / i18n | react-router 7 + i18next | — | — | 锁定 |
 | API client | 从 Kun OpenAPI 生成（orval / openapi-typescript）+ 契约快照 | — | 手写 fetch 封装 | 锁定 |
 | 富文本 / Markdown | **待调研**（Q39）：S2 前补一次 React 富文本编辑器选型 | — | TinyMCE 5 / Vditor（参考平台用法，非 React 生态） | 待决策 |
-| 文档站 | Storybook 10；产品文档 Rspress 2 / Fumadocs | Ladle | Docusaurus（React 18） | 锁定 |
+| 文档站 | 现有 Rspress 2 统一组件与产品文档；Vitest / Playwright + axe 独立测试 | — | Storybook（重复文档体系，ADR-022） | 锁定 |
 | 多标签 KeepAlive | 待评估方案（React 无原生 KeepAlive） | Activity / offscreen 方案 | iframe 多实例 | 待决策（S1 可选 / S2 必做） |
 
 ---
@@ -474,7 +474,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 - [x] `data-theme / data-brand` 运行时注入生效：切换后无需刷新且无首帧闪烁（Playwright 用例）——`apps/yue-playground/e2e/theme.spec.ts` 的首帧状态快照，CI `yue` 的 a11y 门禁
 
 **基础组件**
-- [ ] `@yue/core` S1 清单约 30 个组件全部有 Storybook 用例（默认 / 悬停 / 禁用 / 错误 / 暗色）与 manifest
+- [ ] `@yue/core` S1 清单约 30 个组件全部有 Rspress 共用示例（默认 / 悬停 / 禁用 / 错误 / 暗色）与 manifest
 - [ ] 全部组件 axe critical = 0；Menu / Select / Combobox / Tabs / Tooltip / Tree 键盘路径用例通过（验证门）
 - [ ] 每个组件暴露 `data-slot` 与稳定 `data-testid`
 - [ ] 组件文案 100% 走 i18n key；硬编码文案 lint 为零
@@ -506,7 +506,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 - [x] 分层边界 lint（eslint-plugin-boundaries / dependency-cruiser）进 CI 且无违规（S1-YUE-003：`packages/yue/boundaries.config.mjs`，自测 `tests/gates/yue/`）
 - [ ] CI 门禁矩阵全部启用：lint、typecheck、unit、a11y、Lighthouse（script 体积 error 级）、边界检查、publint、循环依赖、i18n 硬编码（S1-YUE-003 已启用前八项，工作流 `yue`；i18n 硬编码 lint 待 `@yue/sdk` 的 i18n 落地后加入）
 - [ ] Changesets 发包到私有 npm 成功一次；`0.x` 版本策略写入 CONTRIBUTING（S1-YUE-003 已配置 Changesets 与 `0.x` 策略，见 `packages/yue/README.md`「版本策略」；发包渠道待定，见该节「发布」）
-- [ ] Storybook 10 文档站可访问，含令牌可视化页
+- [ ] 现有 Rspress 站点覆盖全部 core 组件、完整 props 表与令牌页，离线演示可用；Storybook 应用、依赖与 CI 入口清零
 - [ ] 视觉回归基线建立（S1 可选；未建立需在验收记录标 blocked 并给出 S2 期限）
 
 ---
