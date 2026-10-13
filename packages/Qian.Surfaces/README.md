@@ -69,4 +69,14 @@ if (result.IsValid)
 
 .NET 与 TypeScript 使用同一份 [T19 场景](../../tck/runtime/hotreload.json)，实际修改文件，验证五秒内更新、租户隔离、代码对象引用及效果保持、非法内容保留、源码重启提示和卸载清理。CI 对照两侧实际测试产生的结果；不靠调用手工刷新方法代替文件监视。
 
-当前增量尚未完成实际 hook 执行、生产注册表变更触发以及 `qian doctor` 读取运行态重启提示，RT-009 保持 doing。本次还修正运行时手动撤销注册后的效果栈清理；TypeScript 运行时需要在后续发布流程发布新的兼容补丁版本，不能覆盖已发布的 0.1.0。
+当前已接入下节的 hook 执行增量，完整事件矩阵、生产注册表变更触发以及 `qian doctor` 读取运行态重启提示，RT-009 保持 doing。本次还修正运行时手动撤销注册后的效果栈清理；TypeScript 运行时需要在后续发布流程发布新的兼容补丁版本，不能覆盖已发布的 0.1.0。
+
+## 真实 hook 桥接增量
+
+运行时执行位于 `Qian.Surfaces.Hosting`，其 Definition 复用 `Qian.Surfaces.Abstractions`；通用表面校验器仍只解析与校验。`HookBridgePlugin` 包装实际代码插件，在 Apply 中核对声明是否能解析到真实 `IHookHandler`，并通过普通 `ctx.On` 连接运行时事件。当前支持 R39 的四个 serial 事件：tenant/provisioned、tenant/purged、registry/entry-mounted、registry/entry-disabled。事件生产方与 scope 来自真实上下文，不能从 JSON 伪造。
+
+代码组件用 SDK 的 `ExposeCapabilityHook` 把已经实际登记的能力暴露为 handler，输入投影由可信代码完成。调用继续进入实际 Mediator，执行租户检查、RBAC、业务/Outbox 保存及同事务审计。SDK 的私有异步上下文只在本次目标能力调用期间标记 hook 通道，结束后恢复；请求体不能选择通道。hook 查询也会进入审计。Audit DTO、SDK 通道词汇与 PostgreSQL 事务函数现均接受任务规定的 hook 值。
+
+桥接执行时重新读取当前 scope 的 hook 文档与处理器；隐藏、卸载及目标撤销均不能沿旧声明继续调用。`ISurfaceRuntimeValidator` 在热替换之前复核实际依赖。修改 matcher 或目标后，实际文件监视会更新下一次事件的执行行为，不重放代码 Apply。
+
+真库验收使用经过 RS256 认证的 HTTP 入口、实际 Tenancy 生产方上下文、真实事件分发、客户能力、RBAC、Outbox 和 Audit。它证明桥接、通道隔离、权限拒绝、不可见声明不执行、缺失 handler 装载失败以及文件热更新；测试入口不执行租户完整开户或开通编排，不能据此关闭“租户创建触发”的整项验收。HTTP/受限 argv 执行器、其它分发模式与真实生产方流程接线仍未完成，目前这些未支持声明会拒绝装载。

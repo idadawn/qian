@@ -44,11 +44,11 @@ public sealed class HotReloadSurfacePlugin : IQianPlugin
         if (_code is not null) await _code.ApplyAsync(ctx, config, ct).ConfigureAwait(false);
         var session = new SurfaceRegistrationSession(ctx, current);
         ctx.Effect(session.Dispose);
-        var lifetime = new WatchLifetime(_directory, () => Refresh(session, current, before));
+        var lifetime = new WatchLifetime(_directory, () => Refresh(ctx, session, current, before));
         ctx.Effect(lifetime.DisposeAsync);
         lifetime.Start();
     }
-    private void Refresh(SurfaceRegistrationSession session, SurfaceValidationResult initial, Dictionary<string, string> previous)
+    private void Refresh(IPluginContext context, SurfaceRegistrationSession session, SurfaceValidationResult initial, Dictionary<string, string> previous)
     {
         var before = Snapshot(_directory);
         if (Same(previous, before)) return;
@@ -74,7 +74,9 @@ public sealed class HotReloadSurfacePlugin : IQianPlugin
                 lock (_gate) _status = _status with { RestartRequired = true, ChangedCodeFiles = Array.AsReadOnly(_status.ChangedCodeFiles.Append("tools (generated)").Distinct(StringComparer.Ordinal).ToArray()) };
             safe = safe with { Documents = safe.Documents.Where(item => item.Kind != "tool" || !files.Contains(item.File)).Concat(originals).ToArray() };
         }
-        var count = session.Replace(result with { Component = safe });
+        var candidate = result with { Component = safe };
+        if (_code is ISurfaceRuntimeValidator runtimeValidator) runtimeValidator.ValidateSurfaces(context, candidate);
+        var count = session.Replace(candidate);
         previous.Clear(); foreach (var entry in after) previous.Add(entry.Key, entry.Value);
         if (count != 0) lock (_gate) _status = _status with { Revision = _status.Revision + 1 };
     }

@@ -38,6 +38,7 @@ export class HotReloadSurfacePlugin<TContext extends SurfaceContext = SurfaceCon
     constructor(directory: string, options?: SurfaceValidationOptions, code?: {
         readonly inject?: readonly string[];
         apply(context: TContext, config: unknown): void | Promise<void>;
+        validateSurfaces?(context: TContext, candidate: SurfaceValidationResult): void | Promise<void>;
     });
     // (undocumented)
     apply(context: TContext, config: unknown): Promise<void>;

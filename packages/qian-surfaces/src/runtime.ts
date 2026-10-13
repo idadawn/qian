@@ -50,9 +50,9 @@ export class SurfaceRegistrationSession {
 export class HotReloadSurfacePlugin<TContext extends SurfaceContext=SurfaceContext> {
  readonly name='qian.declarative-surfaces';readonly inject:readonly string[];readonly surfaceProvides:readonly string[];
  readonly #directory:string;readonly #options:SurfaceValidationOptions;readonly #initial:SurfaceValidationResult;
- readonly #code?:{readonly inject?:readonly string[];apply(context:TContext,config:unknown):void|Promise<void>};
+ readonly #code?:{readonly inject?:readonly string[];apply(context:TContext,config:unknown):void|Promise<void>;validateSurfaces?(context:TContext,candidate:SurfaceValidationResult):void|Promise<void>};
  #status:SurfaceReloadStatus=freeze({revision:0,restartRequired:false,changedCodeFiles:[],diagnostics:[]});
- constructor(directory:string,options:SurfaceValidationOptions={},code?:{readonly inject?:readonly string[];apply(context:TContext,config:unknown):void|Promise<void>}){
+ constructor(directory:string,options:SurfaceValidationOptions={},code?:{readonly inject?:readonly string[];apply(context:TContext,config:unknown):void|Promise<void>;validateSurfaces?(context:TContext,candidate:SurfaceValidationResult):void|Promise<void>}){
   this.#directory=path.resolve(directory);this.#options=options;this.#code=code;this.#initial=validateComponent(this.#directory,options);if(!this.#initial.isValid)throw new Error('INPUT_INVALID');
   this.inject=Object.freeze([...(code?.inject??obj(this.#initial.component!.manifest).inject as string[])]);this.surfaceProvides=Object.freeze([...plan(this.#initial).keys()]);
  }
@@ -78,6 +78,7 @@ export class HotReloadSurfacePlugin<TContext extends SurfaceContext=SurfaceConte
      this.#status=freeze({...this.#status,restartRequired:true,changedCodeFiles:[...new Set([...this.#status.changedCodeFiles,'tools (generated)'])]});
     safe={...result,component:{...component,documents:[...component.documents.filter(document=>document.kind!=='tool'||!generated.includes(document.file)),...originals]}};
    }
+   await this.#code?.validateSurfaces?.(context,safe);
    const count=await session.replace(safe);previous.clear();for(const [key,value]of after)previous.set(key,value);
    if(count)this.#status=freeze({...this.#status,revision:this.#status.revision+1});
   };

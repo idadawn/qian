@@ -11,7 +11,7 @@ internal sealed class AuditCommandPolicy(IAuditService audit)
     {
         var metadata = invocation.Contract.Metadata;
         using var schema = JsonDocument.Parse(invocation.Contract.InputSchema.ToJsonString());
-        var policy = new AuditInputPolicy(schema.RootElement, metadata.GetProperty("sideEffect").GetString() != "read", metadata.GetProperty("audit").GetBoolean());
+        var policy = new AuditInputPolicy(schema.RootElement, metadata.GetProperty("sideEffect").GetString() != "read", metadata.GetProperty("audit").GetBoolean() || invocation.Channel == "hook");
         var inputHash = policy.InputHash(invocation.Input);
         var result = await next().ConfigureAwait(false);
         if (inputHash is null) return result;

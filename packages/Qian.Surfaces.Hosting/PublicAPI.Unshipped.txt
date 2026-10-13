@@ -1,0 +1,6 @@
+#nullable enable
+Qian.Surfaces.Hosting.HookBridgePlugin
+Qian.Surfaces.Hosting.HookBridgePlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Surfaces.Hosting.HookBridgePlugin.HookBridgePlugin(Qian.Runtime.IQianPlugin! inner, Qian.Surfaces.Abstractions.SurfaceValidationResult! snapshot) -> void
+Qian.Surfaces.Hosting.HookBridgePlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Surfaces.Hosting.HookBridgePlugin.ValidateSurfaces(Qian.Runtime.IPluginContext! context, Qian.Surfaces.Abstractions.SurfaceValidationResult! candidate) -> void

@@ -249,7 +249,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         using var suspended = await host.Get(A, "/api/customers"); Assert.Equal(HttpStatusCode.Forbidden, suspended.StatusCode);
     }
 
-    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false)
+    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false)
     {
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
         var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
@@ -302,8 +302,10 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 await roles.AssignAsync(id == A ? "tenant.owner" : "tenant.user", "service", Writer, "test-bootstrap", Ct);
             }
             if (capabilities) MapCapabilities(app);
+            if (hooks) MapHookEntry(app);
             await app.StartAsync(Ct);
             if (capabilities) await AttachCapabilities(app);
+            if (hooks) await AttachHooks(app);
             using (tenant.BeginScope(A))
             {
                 var decision = await app.Services.GetRequiredService<Kun.Authorization.IPermissionChecker>().CheckAsync(new Kun.Authorization.PermissionRequest(new Kun.Authorization.AuthorizationSubject(Writer, A, "service"), "qian.sample.crm:customer:write"), Ct);
