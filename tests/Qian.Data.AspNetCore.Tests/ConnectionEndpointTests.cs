@@ -138,6 +138,24 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
     }
 
     [Fact]
+    public async Task 连通测试对域名解析失败与非PostgreSQL服务返回不可达_对不支持的认证方式返回authentication()
+    {
+        // .invalid 是保留域名，解析不会成功；驱动在这里可能抛出未包装的套接字异常，也必须是结构化错误而不是 500。
+        var unresolved = await CreateAsync(AdminA, Draft("unresolved-host", host: "qian-probe.invalid"));
+        await AssertTestFailsAsync(unresolved, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionUnreachable.Code, null);
+        using (var http = FakeServer.Http())
+        {
+            var wrongService = await CreateAsync(AdminA, Draft("http-service", host: "127.0.0.1", port: http.Port));
+            await AssertTestFailsAsync(wrongService, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionUnreachable.Code, null);
+        }
+        using (var kerberos = FakeServer.KerberosOnly())
+        {
+            var unsupported = await CreateAsync(AdminA, Draft("kerberos-only", host: "127.0.0.1", port: kerberos.Port));
+            await AssertTestFailsAsync(unsupported, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionRejected.Code, "authentication");
+        }
+    }
+
+    [Fact]
     public async Task 档案按租户隔离_同名冲突_修改与删除后名称可复用()
     {
         var shared = await CreateAsync(AdminA, Draft("shared"));

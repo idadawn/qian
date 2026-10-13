@@ -45,7 +45,8 @@ decimal 的精度上限取 28 位，是 .NET decimal 能无损往返的位数；
 - 3D000 → reason=database；
 - 42501 → reason=permission；
 - 22023 → reason=parameter；
-- 08、53、57 类以及没有服务端错误码的驱动异常（DNS、拒绝连接、TLS、协议）和超时 → DATA_CONNECTION_UNREACHABLE；
+- 服务端要求驱动不支持的认证方式（如 Kerberos V5）→ reason=authentication；
+- 08、53、57 类以及没有服务端错误码的驱动异常（DNS、拒绝连接、TLS、协议）和超时 → DATA_CONNECTION_UNREACHABLE；对端不是 PostgreSQL（例如端口上跑的是 HTTP 服务）也归入此类；
 - 其余服务端错误 → reason=server。
 
 错误不携带口令或驱动原文，原始异常只作为内部异常留给服务端日志。

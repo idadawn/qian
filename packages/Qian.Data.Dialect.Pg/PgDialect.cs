@@ -1,3 +1,5 @@
+using System.Net.Sockets;
+using System.Security.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
@@ -86,9 +88,15 @@ public sealed class PgDialect : IDataDialect
                 _ => Rejected("server", error)
             };
         }
-        catch (NpgsqlException error)
+        catch (NotSupportedException error)
         {
-            // 没有服务端错误码：DNS、拒绝连接、超时、TLS 或协议层失败。
+            // 服务端要求驱动不支持的认证方式（如 Kerberos V5）。
+            throw Rejected("authentication", error);
+        }
+        catch (Exception error) when (error is NpgsqlException or SocketException or IOException or TimeoutException or AuthenticationException)
+        {
+            // 没有服务端错误码：DNS、拒绝连接、超时、TLS 或协议层失败。域名解析失败、对端不讲 PostgreSQL 协议时，
+            // Npgsql 可能直接抛出底层的套接字或流异常而不包装。
             throw Unreachable(error);
         }
     }

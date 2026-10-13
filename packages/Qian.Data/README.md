@@ -160,4 +160,4 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 
 迁移协调、序号服务与雪花 ID 由 S1-DATA-002 交付，真实 PostgreSQL / Redis 测试覆盖两副本同时迁移、100 并发取号、规则修改与周期重置、三副本 WorkerId 互斥及正常停止和崩溃后的编号回收。它们目前以宿主装配（AddQianSequences、AddQianSnowflakeIds）提供，DataPlugin 还没有对应的服务键；业务组件经插件上下文取用要等组件安装验收一并补齐。其余组件的表还没有包内迁移，迁移任务对它们不执行 DDL。
 
-基准类型目录、PG 方言与数据连接档案由 S1-DATA-003 交付，测试覆盖字段定义越界拒绝、系统类型删除保护、方言注册校验，以及真实 PostgreSQL 上的可达 / 端口关闭 / 错误口令 / 缺失库与 schema / 越权密钥、租户隔离和详情不回传口令。它们同样以宿主装配（AddQianDataTypes、AddQianDataConnections、AddQianPgDialect）提供：方言的组件形态（向 `ctx.Data().Dialects` 注册、清单派生 `provides: Data.Dialects:pg`）要等装载器支持注册表键后补齐。不在本期：自定义基准类型、方言的 DDL 与分页、编辑未保存档案时的连通测试，以及用档案执行查询（S2 数据接口）。
+基准类型目录、PG 方言与数据连接档案由 S1-DATA-003 交付，测试覆盖字段定义越界拒绝、系统类型删除保护、方言注册校验，以及真实 PostgreSQL 上的可达 / 端口关闭 / 错误口令 / 缺失库与 schema / 越权密钥，域名解析失败、对端不是 PostgreSQL、对端要求不支持的认证方式，租户隔离和详情不回传口令。它们同样以宿主装配（AddQianDataTypes、AddQianDataConnections、AddQianPgDialect）提供：方言的组件形态（向 `ctx.Data().Dialects` 注册、清单派生 `provides: Data.Dialects:pg`）要等装载器支持注册表键后补齐。不在本期：自定义基准类型、方言的 DDL 与分页、编辑未保存档案时的连通测试，以及用档案执行查询（S2 数据接口）。
