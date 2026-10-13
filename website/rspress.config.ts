@@ -11,9 +11,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 // 正式站点挂在根路径；PR 预览挂在 /pr-preview/pr-<n>/，由 CI 经 DOCS_BASE 传入（见 README「托管与预览」）。
 const base = process.env.DOCS_BASE ?? '/';
 
-// Rspress 用 html.dark 类切换明暗；yue 令牌按 html[data-theme="dark"] 重定义语义层（specs/yue.md §3.5）。
-// 这段脚本在首帧前把前者同步到后者，并在用户切换时跟随，避免令牌与站点主题不一致或闪烁。
-const themeBridge = `(function(){var r=document.documentElement;function s(){var t=r.classList.contains('dark')?'dark':'light';if(r.getAttribute('data-theme')!==t)r.setAttribute('data-theme',t)}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['class']})})();`;
+// 明暗两态：Rspress 在首帧前给 html 加 dark 类，@idadawn/yue-tokens 的语义层同时认 html.dark 与 html[data-theme="dark"]
+// （specs/yue.md §3.5），所以不再需要把 dark 类同步到 data-theme 的桥接脚本（S1-DOCS-004）。
 
 export default defineConfig({
   root: path.join(here, 'docs'),
@@ -48,10 +47,5 @@ export default defineConfig({
     enableScrollToTop: true,
     // 每页标题下的「复制为 Markdown」与「复制 Markdown 链接」；不放外部 AI 服务的入口（站内「问 AI」是 S2-DOCS-001）。
     llmsUI: { viewOptions: ['markdownLink'] },
-  },
-  builderConfig: {
-    html: {
-      tags: [{ tag: 'script', children: themeBridge, head: true, append: true }],
-    },
   },
 });

@@ -1,4 +1,4 @@
-// 主题覆盖：yue 令牌、建设期横幅、版本化部分的版本说明，以及首页与站点地图组件。
+// 主题覆盖：yue 令牌映射（index.css 导入 @idadawn/yue-tokens）、建设期横幅、版本化部分的版本说明，以及首页与站点地图组件。
 // 其余一律沿用 Rspress 默认主题；后续「复制为 Markdown」（S1-DOCS-003）与 AskDocs（S2-DOCS-001）也挂在这里。
 import './index.css';
 import { MDXProvider } from '@mdx-js/react';
