@@ -15,6 +15,7 @@ using Qian.Runtime.Errors;
 using Kun.Core.Results;
 using Qian.Identity.Abstractions;
 using Qian.Runtime;
+using Qian.Events;
 
 namespace Qian.Plugin.Sdk;
 
@@ -78,6 +79,8 @@ internal sealed class CommandTransactionBehavior<TRequest, TResponse, TContext>(
         state.Policies = policies;
         try
         {
+            // 集成事件只能在命令 handler 同 scope 发出：handler、领域通知与保存都在这个来源作用域内，信封的 producer、actor 与因果链取自本次调用。
+            using var events = EventEnvelopeScope.Begin(EventOriginOf(contract, principal, state.Invocation));
             var result = await next().ConfigureAwait(false);
             state.Invocation.RequireExecuted(); policies.Check(); linked.Token.ThrowIfCancellationRequested();
             if (tenant.TenantId != principal.TenantId) throw CommandPolicies.Denied();
@@ -100,6 +103,26 @@ internal sealed class CommandTransactionBehavior<TRequest, TResponse, TContext>(
             ProjectId = principal.ProjectId, PluginId = principal.PluginId, Roles = Array.AsReadOnly(principal.Roles.ToArray()), Scope = principal.Scope,
             SessionId = principal.SessionId, TokenId = principal.TokenId, IssuedAt = principal.IssuedAt, NotBefore = principal.NotBefore,
             ExpiresAt = principal.ExpiresAt, Actor = CopyActor(principal.Actor, 0)
+        };
+    }
+    // RFC 8693：有 act 时 act.sub 才是实际行事方，sub 是被代表的委托人。关联 id 沿用外层（如消费端触发的命令），因果是本次调用。
+    private static EventOrigin EventOriginOf(CapabilityContract contract, Principal principal, CommandInvocation invocation)
+    {
+        var actor = principal.Actor is { } delegated
+            ? new EventActor { Kind = KindOf(delegated.Kind), Id = delegated.Subject, OnBehalfOf = principal.Subject }
+            : new EventActor { Kind = KindOf(principal.Kind), Id = principal.Subject };
+        var activity = System.Diagnostics.Activity.Current;
+        var traceParent = activity is { IdFormat: System.Diagnostics.ActivityIdFormat.W3C } && activity.TraceId.ToHexString() == invocation.TraceId
+            ? activity.Id
+            : "00-" + invocation.TraceId + "-" + System.Diagnostics.ActivitySpanId.CreateRandom().ToHexString() + "-00";
+        return new EventOrigin(contract.ComponentId, actor)
+        {
+            CorrelationId = EventEnvelopeScope.Current?.CorrelationId, CausationId = invocation.Id, TraceParent = traceParent
+        };
+        static EventActorKind KindOf(PrincipalKind kind) => kind switch
+        {
+            PrincipalKind.User => EventActorKind.User, PrincipalKind.Service => EventActorKind.Service, PrincipalKind.Agent => EventActorKind.Agent,
+            _ => throw CommandPolicies.Denied()
         };
     }
     private static DelegationActor? CopyActor(DelegationActor? actor, int depth)

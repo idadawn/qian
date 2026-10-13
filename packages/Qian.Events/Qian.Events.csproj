@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Qian 事件组件：入队时生成 v1 信封、按租约领取 Outbox 并经 publisher confirm 发往 RabbitMQ。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Events.Abstractions/Qian.Events.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Qian.Events.Tests" />
+  </ItemGroup>
+</Project>

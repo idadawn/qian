@@ -4,6 +4,11 @@ namespace Qian.Data;
 
 internal sealed record DataConnectionBinding(Type ContextType, string? Reference);
 
+internal sealed class DataContextCatalog(IReadOnlyList<Type> contexts) : IDataContextCatalog
+{
+    public IReadOnlyList<Type> ContextTypes { get; } = contexts;
+}
+
 internal static class DataConfiguration
 {
     internal static string? ReadConnection(JsonElement config)
