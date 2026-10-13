@@ -24,14 +24,13 @@ export function Menu(props: MenuProps) {
 export type MenuTriggerType = YueProps<MenuTriggerProps>;
 export function MenuTrigger({ className, testId, ...props }: MenuTriggerType) {
   return (
-    <BaseMenu.Trigger
+    <BaseMenu.Trigger {...props}
       data-slot="menu-trigger"
       data-testid={testId ?? 'yue-menu-trigger'}
       className={cn(
-        'inline-flex h-9 items-center gap-2 rounded-md border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-900 data-[popup-open]:bg-neutral-100',
+        'inline-flex h-9 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none hover:bg-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] data-[popup-open]:bg-[var(--accent)]',
         className,
       )}
-      {...props}
     />
   );
 }
@@ -47,14 +46,13 @@ export function MenuContent({ className, side, align, sideOffset = 4, alignOffse
   return (
     <BaseMenu.Portal>
       <BaseMenu.Positioner side={side} align={align} sideOffset={sideOffset} alignOffset={alignOffset} className="z-50 outline-none">
-        <BaseMenu.Popup
+        <BaseMenu.Popup {...props}
           data-slot="menu-content"
           data-testid={testId ?? 'yue-menu-content'}
           className={cn(
-            'min-w-40 rounded-md border border-neutral-200 bg-white p-1 text-sm text-neutral-900 shadow-md outline-none',
+            'min-w-40 rounded-md border border-[var(--border)] bg-[var(--background)] p-1 text-sm text-[var(--foreground)] shadow-md outline-none',
             className,
           )}
-          {...props}
         />
       </BaseMenu.Positioner>
     </BaseMenu.Portal>
@@ -64,14 +62,13 @@ export function MenuContent({ className, side, align, sideOffset = 4, alignOffse
 export type MenuItemType = YueProps<MenuItemProps>;
 export function MenuItem({ className, testId, ...props }: MenuItemType) {
   return (
-    <BaseMenu.Item
+    <BaseMenu.Item {...props}
       data-slot="menu-item"
       data-testid={testId ?? 'yue-menu-item'}
       className={cn(
-        'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-neutral-100 data-[disabled]:opacity-50',
+        'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-[var(--accent)] data-[disabled]:opacity-50',
         className,
       )}
-      {...props}
     />
   );
 }
@@ -79,26 +76,24 @@ export function MenuItem({ className, testId, ...props }: MenuItemType) {
 export type MenuSeparatorProps = YueProps<ComponentProps<typeof BaseMenu.Separator>>;
 export function MenuSeparator({ className, testId, ...props }: MenuSeparatorProps) {
   return (
-    <BaseMenu.Separator
+    <BaseMenu.Separator {...props}
       data-slot="menu-separator"
       data-testid={testId ?? 'yue-menu-separator'}
-      className={cn('my-1 h-px bg-neutral-200', className)}
-      {...props}
+      className={cn('my-1 h-px bg-[var(--border)]', className)}
     />
   );
 }
 
 export function MenuGroup({ className, testId, ...props }: YueProps<MenuGroupProps>) {
-  return <BaseMenu.Group data-slot="menu-group" data-testid={testId ?? 'yue-menu-group'} className={className} {...props} />;
+  return <BaseMenu.Group {...props} data-slot="menu-group" data-testid={testId ?? 'yue-menu-group'} className={className} />;
 }
 
 export function MenuGroupLabel({ className, testId, ...props }: YueProps<MenuGroupLabelProps>) {
   return (
-    <BaseMenu.GroupLabel
+    <BaseMenu.GroupLabel {...props}
       data-slot="menu-group-label"
       data-testid={testId ?? 'yue-menu-group-label'}
-      className={cn('px-2 py-1.5 text-xs text-neutral-500', className)}
-      {...props}
+      className={cn('px-2 py-1.5 text-xs text-[var(--muted-foreground)]', className)}
     />
   );
 }
@@ -110,14 +105,13 @@ export function MenuSub(props: MenuSubProps) {
 
 export function MenuSubTrigger({ className, testId, ...props }: YueProps<MenuSubmenuTriggerProps>) {
   return (
-    <BaseMenu.SubmenuTrigger
+    <BaseMenu.SubmenuTrigger {...props}
       data-slot="menu-sub-trigger"
       data-testid={testId ?? 'yue-menu-sub-trigger'}
       className={cn(
-        'flex cursor-default select-none items-center justify-between rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-neutral-100 data-[popup-open]:bg-neutral-100',
+        'flex cursor-default select-none items-center justify-between rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-[var(--accent)] data-[popup-open]:bg-[var(--accent)]',
         className,
       )}
-      {...props}
     />
   );
 }

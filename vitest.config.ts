@@ -10,6 +10,7 @@ export default defineConfig({
     projects: [
       { test: { name: 'yue-gates', environment: 'node', include: ['tests/gates/yue/**/*.test.ts'], testTimeout: 120_000, hookTimeout: 120_000 } },
       { plugins: [react()], test: { name: 'yue-ssr', environment: 'node', include: ['packages/yue/*/src/**/*.ssr.test.tsx'] } },
+      { test: { name: 'core-contracts', environment: 'node', include: ['packages/yue/core/src/**/*.manifest.test.ts'] } },
       'packages/yue/*/vitest.config.ts',
     ],
   },
