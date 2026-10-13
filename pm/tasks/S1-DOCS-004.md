@@ -1,7 +1,7 @@
 ---
 id: S1-DOCS-004
 title: 文档站换用 @yue/tokens：替换占位令牌
-status: review
+status: done
 stage: S1
 area: DOCS
 wave: 3
@@ -33,3 +33,4 @@ S1-DOCS-001 交付时 `@yue/tokens` 尚未发布：文档站主题已只引用 y
 - 2026-10-13 claude：开始：S1-YUE-004 的 @idadawn/yue-tokens 已就绪，文档站改为导入包 CSS（S1-DEC-019 复核跟进）
 - 2026-10-13 claude：三项验收完成：改为导入 @idadawn/yue-tokens、删除占位与桥接脚本、颜色映射改写成 oklch(var(--yue-<role>))；本机构建、站点检查与浅色 / 深色目测通过。
 - 2026-10-13 claude：随 S1-DEC-019 跟进 PR 提交，待 CI 通过后合并
+- 2026-10-13 claude：随 idadawn/qian#63 合并完成（合并前提是 PR 全部检查通过）
