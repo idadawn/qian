@@ -1983,14 +1983,18 @@
    {
     "path": "deploy/baseline/README.md",
     "url": "https://github.com/idadawn/qian/blob/main/deploy/baseline/README.md"
+   },
+   {
+    "path": "docs/ops/k3s-control-plane-recovery.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/ops/k3s-control-plane-recovery.md"
    }
   ],
   "updated": "2026-10-13",
   "acceptance": {
    "done": 0,
-   "total": 3
+   "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-13 claude 在 S1-DEC-019 R73 复核时经 <code>ssh qd</code> 只读核验发现：qd 上的 <code>k3s.service</code> 自 2026-10-11 17:05 UTC（北京时间 10-12 01:05）一次停止再启动之后持续崩溃重启，systemd 计数 1089 次，当天 01 到 06 时 UTC 重启 34 次、12:41 到 12:53 UTC 再重启 5 次。每次退出前 kube-controller-manager 报 <code>leaderelection lost</code>，进程以状态 1 退出；etcd 在 qd 本地读取 <code>/registry/leases</code> 键耗时 1.1 到 4.7 秒（预期 100ms），日志成片出现 <code>no leader</code> / <code>leader changed</code> / <code>apply request took too long</code>，raft 任期已到 4134。qd 本机 I/O 等待与内存压力正常、etcd 库 75 MB、<code>/etc/rancher/k3s/config.yaml</code> 自 2026-07-14 未改，可排除本机磁盘与配置改动。</p>\n<p>S1-DEP-001 日志记载 worker01 仅余约 372Mi 内存、worker02 仅余 445m CPU / 498Mi，etcd 三个成员中两个在这类 VM 上，是最可能的根因；qd 同时运行两个 GitHub Actions runner 与一个常驻满占一核的进程，加剧控制面争抢。对外表现即 apiserver 间歇返回 ServiceUnavailable（S1-DEP-001 与 S1-DEC-019 R73 记录的现象）。集群级变更需要 root 与审核，不在 claude 的只读权限内。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>有 root 的人在 server 节点用 etcdctl 核对三个成员的健康、延迟与 leader 所在，并核对 worker01 / worker02 的 k3s 日志是否同样出现 no leader / leaderelection lost；结论记入本文件</li>\n<li class='chk'><span class='box'></span>根因处置经产品负责人审核后落地：给 worker01 / worker02 增配内存与 CPU，或将其降为 agent、由 qd 单成员 etcd 承载控制面；两个 GitHub Actions runner 与常驻高 CPU 进程迁出控制面节点</li>\n<li class='chk'><span class='box'></span>处置后连续 24 小时 <code>systemctl show k3s -p NRestarts</code> 不再增长，etcd 不再成片出现 <code>apply request took too long</code>，<code>kubectl get --raw /readyz</code> 持续成功；结果回写 S1-DEP-001 与 S1-DEC-019</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-13 claude：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-13 claude 在 S1-DEC-019 R73 复核时经 <code>ssh qd</code> 只读核验发现：qd 上的 <code>k3s.service</code> 自 2026-10-11 17:05 UTC（北京时间 10-12 01:05）一次停止再启动之后持续崩溃重启，systemd 计数 1089 次，当天 01 到 06 时 UTC 重启 34 次、12:41 到 12:53 UTC 再重启 5 次。每次退出前 kube-controller-manager 报 <code>leaderelection lost</code>，进程以状态 1 退出；etcd 在 qd 本地读取 <code>/registry/leases</code> 键耗时 1.1 到 4.7 秒（预期 100ms），日志成片出现 <code>no leader</code> / <code>leader changed</code> / <code>apply request took too long</code>，raft 任期已到 4134。qd 本机 I/O 等待与内存压力正常、etcd 库 75 MB、<code>/etc/rancher/k3s/config.yaml</code> 自 2026-07-14 未改，可排除本机磁盘与配置改动。</p>\n<p>S1-DEP-001 日志记载 worker01 仅余约 372Mi 内存、worker02 仅余 445m CPU / 498Mi，etcd 三个成员中两个在这类 VM 上，是最可能的根因；qd 同时运行两个 GitHub Actions runner 与一个常驻满占一核的进程，加剧控制面争抢。对外表现即 apiserver 间歇返回 ServiceUnavailable（S1-DEP-001 与 S1-DEC-019 R73 记录的现象）。集群级变更需要 root 与审核，不在 claude 的只读权限内。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>产品负责人批准 <code>docs/ops/k3s-control-plane-recovery.md</code> 的方案 B（qd 单控制面 + 三个 agent），批准记入本文件进度日志</li>\n<li class='chk'><span class='box'></span>阶段 0 止血完成：pve01 的内存 / 交换 / 备份计划测量值、qd 两个 runner 的 cgroup 上限、<code>cubemaster</code> 的处置、阶段 1 前的 etcd 快照名与 SHA-256 记入本文件</li>\n<li class='chk'><span class='box'></span>阶段 1 完成：qd <code>--cluster-reset</code> 为单成员，worker01 / worker02 以原节点名改装为 agent，staging 数据卷重新绑定、工作负载恢复；各步时间记入本文件</li>\n<li class='chk'><span class='box'></span>阶段 2 加固完成：qd kubelet 系统预留、runner 上限转正、pve01 内存分配上限、快照落点、健康检查定时器；部署仓库 <code>0-cluster/README.md</code> 与本仓 <code>deploy/baseline/README.md</code> 的拓扑说明更新并回链</li>\n<li class='chk'><span class='box'></span>阶段 3 验收：连续 24 小时 <code>systemctl show k3s -p NRestarts</code> 不再增长、<code>kubectl get --raw /readyz</code> 持续成功、etcd 不再成片出现 <code>apply request took too long</code>；结果回写 S1-DEP-001 与 S1-DEC-019</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-13 claude：创建任务</li>\n<li>2026-10-13 claude：补充只读证据（worker01 对端 etcd 延迟约 210 ms、connection refused、pve01 内存余量约 2.5 GiB）并写出处置方案 docs/ops/k3s-control-plane-recovery.md：推荐 qd 单控制面 + 三个 agent，分止血 / 改拓扑 / 加固 / 24 小时验收四阶段；待产品负责人批准方案 B 后由有 root 的人执行</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-007.md"
  },
  {
