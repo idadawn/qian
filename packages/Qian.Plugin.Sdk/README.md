@@ -45,6 +45,8 @@ Qian.Plugin.Sdk.AspNetCore 提供 PluginEnabledMiddleware。宿主用 AddQianPlu
 
 中间件要求主身份的唯一 tenant_id 与 ITenantContext 相同，读取 GetScopeEntriesAsync 合入后的实际绑定视图。未挂载、被停用、遮蔽/restrict 隐藏和不存在统一为 NOT_FOUND；响应不携带管理原因、配置或服务对象。RequireQianPlugin 还登记 endpoint filter，漏装中间件或顺序错误时不会让 handler 绕过检查。租户中间件不接受伪造 X-Tenant-Id；此可见性检查不代替后续 Authz 权限检查。
 
+Registry 条目整体卸载时，宿主上下文工厂的失效也映射为 NOT_FOUND；只在解析该上下文的边界处理缺失/失效异常，不吞掉后续 Registry 读取的其它故障。T23 以业务 Provider 仍 Ready 的状态验证写入口被拒且数据库/审计不变。
+
 端点执行中解析实际服务时仍使用同一租户 scope。视图是只读快照，不是永久授权租约；调用方不能把它缓存成永久可调用资格。当前为有可信租户的 Minimal API；MVC 适配、平台 null 租户及 app/session lineage 仍需对应入口实现。
 
 ## 验证与剩余边界

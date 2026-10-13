@@ -22,14 +22,19 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
         var registry = services.GetRequiredService<IPermissionRegistry>();
         var catalog = CrmPermissions.Compile();
         _permissions = registry.Register("1.0.0", catalog.Permissions);
-        await _loader.MountAsync([
+        IReadOnlyList<PluginDefinition> providers = [
             Define("data", "qian.data", new DataPlugin(), [DataDefinition.Key]),
             Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey]),
             Define("authz", "qian.authz", new RbacCommandPolicyPlugin(), [CommandPolicies.AuthorizationKey]),
             Define("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]),
-            Define("crm", "qian.sample.crm", new CrmPlugin(), [CrmDefinition.Key])], cancellationToken).ConfigureAwait(false);
-        foreach (var id in new[] { "data", "tenancy", "authz", "audit", "crm" })
-            if (_loader.GetState(id, ScopeKey.Global) != PluginState.Ready) throw new InvalidOperationException("参考宿主必要组件未就绪：" + id, _loader.GetFailure(id, ScopeKey.Global));
+            Define("crm", "qian.sample.crm", new CrmPlugin(), [CrmDefinition.Key])];
+        var assembly = services.GetService<ICrmRuntimeAssembly>();
+        if (assembly is not null) providers = await assembly.ComposeAsync(_loader, providers, cancellationToken).ConfigureAwait(false);
+        await _loader.MountAsync(providers, cancellationToken).ConfigureAwait(false);
+        foreach (var definition in providers)
+            if (_loader.GetState(definition.Entry.Id, definition.Entry.Scope) != PluginState.Ready)
+                throw new InvalidOperationException("参考宿主必要组件未就绪：" + definition.Entry.Id, _loader.GetFailure(definition.Entry.Id, definition.Entry.Scope));
+        if (assembly is not null) await assembly.ReadyAsync(_loader, cancellationToken).ConfigureAwait(false);
     }
     public IPluginContext Source()
     {

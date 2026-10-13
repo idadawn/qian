@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "id": "product-capability-filter",
+  "component": "qian.sample.crm",
+  "target": "qian.sample.crm/customer.create",
+  "unknown": "qian.sample.crm/does-not-exist",
+  "capabilities": ["qian.sample.crm/customer.create", "qian.sample.crm/customer.get", "qian.sample.crm/customer.list"],
+  "steps": [
+    {"op":"probe","id":"allowed","tenant":"a","visible":["customer.create","customer.get","customer.list"],"status":200,"customers":1,"outboxTotal":1,"audit":2,"bindingScope":"global"},
+    {"op":"probe","id":"permission-denied","tenant":"b","visible":["customer.get","customer.list"],"status":404,"customers":0,"outboxTotal":1,"audit":0,"bindingScope":"global"},
+    {"op":"probe","id":"scope-denied","tenant":"a","oauthScopes":"crm.read","visible":["customer.get","customer.list"],"status":404,"customers":1,"outboxTotal":1,"audit":2,"bindingScope":"global"},
+    {"op":"restrict","id":"first","tenant":"a","keep":["customer.create","customer.list"]},
+    {"op":"restrict","id":"second","tenant":"a","keep":["customer.list","customer.get"]},
+    {"op":"probe","id":"intersection","tenant":"a","visible":["customer.list"],"status":404,"customers":1,"outboxTotal":1,"audit":2,"bindingScope":"none"},
+    {"op":"probe","id":"other-tenant-unaffected","tenant":"b","visible":["customer.get","customer.list"],"status":404,"customers":0,"outboxTotal":1,"audit":0,"bindingScope":"global"},
+    {"op":"release","id":"first"},
+    {"op":"probe","id":"remaining-restriction","tenant":"a","visible":["customer.get","customer.list"],"status":404,"customers":1,"outboxTotal":1,"audit":2,"bindingScope":"none"},
+    {"op":"release","id":"second"},
+    {"op":"probe","id":"restriction-restored","tenant":"a","visible":["customer.create","customer.get","customer.list"],"status":200,"customers":2,"outboxTotal":2,"audit":4,"bindingScope":"global"},
+    {"op":"patch","tenant":"a","revision":0,"patch":{"id":"crm","plugin":"qian.sample.crm@1.0.1","config":{}}},
+    {"op":"probe","id":"tenant-shadow","tenant":"a","visible":["customer.create","customer.get","customer.list"],"status":200,"customers":3,"outboxTotal":3,"audit":6,"bindingScope":"tenant","bindingVersion":"1.0.1"},
+    {"op":"probe","id":"global-remains-for-b","tenant":"b","visible":["customer.get","customer.list"],"status":404,"customers":0,"outboxTotal":3,"audit":0,"bindingScope":"global","bindingVersion":"1.0.0"},
+    {"op":"patch","tenant":"a","revision":1,"patch":{"id":"crm","disabled":true}},
+    {"op":"probe","id":"disabled-no-fallback","tenant":"a","visible":[],"status":404,"customers":3,"outboxTotal":3,"audit":6,"bindingScope":"none"},
+    {"op":"removePatch","tenant":"a","revision":2},
+    {"op":"probe","id":"global-fallback-restored","tenant":"a","visible":["customer.create","customer.get","customer.list"],"status":200,"customers":4,"outboxTotal":4,"audit":8,"bindingScope":"global"},
+    {"op":"unmount"},
+    {"op":"probe","id":"unmounted","tenant":"a","visible":[],"status":404,"customers":4,"outboxTotal":4,"audit":8,"bindingScope":"none"}
+  ]
+}

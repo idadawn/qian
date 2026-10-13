@@ -249,8 +249,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         using var suspended = await host.Get(A, "/api/customers"); Assert.Equal(HttpStatusCode.Forbidden, suspended.StatusCode);
     }
 
-    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false)
+    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null)
     {
+        var platform = capabilities || runtimeProfile == "platform";
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
         var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
         await Admin($"CREATE ROLE \"{role}\" LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}'; CREATE ROLE \"{owner}\" NOLOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;");
@@ -263,7 +264,8 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         var app = CrmCommandApplication.Build([], builder =>
         {
             builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
-            if (capabilities) ConfigureCapabilities(builder, postgres.AppConnectionString, connection);
+            if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection);
+            if (runtimeProfile is not null) builder.Services.AddSingleton<ICrmRuntimeAssembly>(_ => new ProfileModeAssembly(runtimeProfile, RepositoryRoot()));
             builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
             if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
@@ -279,17 +281,17 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             using (var scope = app.Services.CreateScope())
             {
                 var schemas = new[] { CrmDbContext.Schema, AuthzDbContext.Schema, TenancyDbContext.Schema, AuditDbContext.Schema };
-                if (capabilities) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema, Qian.Capabilities.CapabilitiesDbContext.Schema];
+                if (platform) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema, Qian.Capabilities.CapabilitiesDbContext.Schema];
                 var sql = string.Join('\n', schemas.Select(schema => "DROP SCHEMA IF EXISTS " + schema + " CASCADE;"));
                 sql += scope.ServiceProvider.GetRequiredService<CrmDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuthzDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<TenancyDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.GenerateCreateScript();
-                if (capabilities) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript() + scope.ServiceProvider.GetRequiredService<Qian.Capabilities.CapabilitiesDbContext>().Database.GenerateCreateScript();
+                if (platform) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript() + scope.ServiceProvider.GetRequiredService<Qian.Capabilities.CapabilitiesDbContext>().Database.GenerateCreateScript();
                 await Admin(sql);
-                if (capabilities) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
+                if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                 await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
-                if (capabilities) await Admin($"GRANT USAGE ON SCHEMA plugin_qian_capabilities TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_capabilities TO \"{role}\";");
+                if (platform) await Admin($"GRANT USAGE ON SCHEMA plugin_qian_capabilities TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_capabilities TO \"{role}\";");
                 await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
             }
             var data = app.Services.GetRequiredService<IDataService>(); var tenant = app.Services.GetRequiredService<ITenantContext>();
@@ -301,7 +303,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 await roles.EnsureBuiltinsAsync("test-bootstrap", Ct); await roles.InstallDefaultsAsync("qian.sample.crm", "1.0.0", null, "test-bootstrap", Ct);
                 await roles.AssignAsync(id == A ? "tenant.owner" : "tenant.user", "service", Writer, "test-bootstrap", Ct);
             }
-            if (capabilities) MapCapabilities(app);
+            if (platform) MapCapabilities(app);
             if (hooks) MapHookEntry(app);
             await app.StartAsync(Ct);
             if (capabilities) await AttachCapabilities(app);

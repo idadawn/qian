@@ -23,10 +23,13 @@ public sealed class PluginEnabledMiddleware(RequestDelegate next, PluginEndpoint
         var claims = identity.FindAll("tenant_id").ToArray();
         if (claims.Length != 1 || claims[0].Value != tenant.TenantId) throw NotFound();
         var scope = new ScopeKey("tenant", tenant.TenantId);
+        IPluginContext registryContext;
+        try { registryContext = options.RegistryContext(context.RequestServices); }
+        catch (Exception error) when (error is InvalidOperationException or KeyNotFoundException) { throw NotFound(); }
         IReadOnlyList<RegistryScopeEntry> entries;
         try
         {
-            var registry = options.RegistryContext(context.RequestServices).Registry();
+            var registry = registryContext.Registry();
             entries = await registry.GetScopeEntriesAsync(scope, binding.Key, context.RequestAborted).ConfigureAwait(false);
         }
         catch (Exception error) when (error is ServiceNotReadyException or ObjectDisposedException) { throw NotFound(); }

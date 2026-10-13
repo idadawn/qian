@@ -68,6 +68,8 @@ jobs:
           QIAN_BUF_PATH: ${{ runner.temp }}/qian-contract-tools/buf
           QIAN_OASDIFF_PATH: ${{ runner.temp }}/qian-contract-tools/oasdiff
           QIAN_TEST_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/evidence
+          QIAN_PRODUCT_FILTER_REPORT: ${{ github.workspace }}/TestResults/evidence/product-capability-filter.json
+          QIAN_PROFILE_EQUIVALENCE_REPORT: ${{ github.workspace }}/TestResults/evidence/profile-equivalence.json
         run: dotnet test --solution Qian.slnx -c Release --no-build --results-directory TestResults --report-xunit-trx
 
       - name: 上传测试结果
