@@ -14,6 +14,18 @@ internal sealed class EffectStack
         }
     }
 
+    internal Disposer Track(Action cleanup)
+    {
+        Func<ValueTask>? effect = null;
+        var disposer = new Disposer(() =>
+        {
+            lock (_effects) _effects.Remove(effect!);
+            cleanup();
+        });
+        effect = () => { disposer.Dispose(); return ValueTask.CompletedTask; };
+        Add(effect); return disposer;
+    }
+
     public async ValueTask DisposeAsync()
     {
         Func<ValueTask>[] effects;

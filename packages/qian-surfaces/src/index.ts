@@ -431,3 +431,5 @@ export function validateMarketplace(file: string, content: string, traceId = tra
   });
   return result(data);
 }
+export {SurfaceRegistrationSession, HotReloadSurfacePlugin} from './runtime.js';
+export type {SurfaceContext, SurfaceReloadStatus} from './runtime.js';

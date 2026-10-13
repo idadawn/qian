@@ -21,3 +21,7 @@ const result = validateComponent(componentDirectory, {
 ## 已知限制与延期项
 
 与 [.NET Provider](../Qian.Surfaces/README.md) 一致：不包含 Agent、shell、MCP 或 hook 执行器，也不实现文件监视或完整安装事务。YAML 采用无 alias 的安全子集，单文件 1 MiB、深度 64。API Extractor 当前捆绑 TypeScript 5.9，源码另以工作区 TypeScript 6 编译；公开接口只使用两者共同支持的语法。
+
+## 表面运行态
+
+本包提供结构化 SurfaceContext 端口、SurfaceRegistrationSession 与 HotReloadSurfacePlugin，可直接消费实际 Qian TypeScript 运行时上下文。具体语义与边界统一维护在 [.NET Provider 主文档](../Qian.Surfaces/README.md#声明式表面独立刷新)，两侧共用 T19 文件监视场景。运行热重载用例前需构建 packages/qian-runtime；CI 已按此顺序执行。

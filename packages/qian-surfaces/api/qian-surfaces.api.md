@@ -34,6 +34,24 @@ export interface ErrorDetail {
 }
 
 // @public
+export class HotReloadSurfacePlugin<TContext extends SurfaceContext = SurfaceContext> {
+    constructor(directory: string, options?: SurfaceValidationOptions, code?: {
+        readonly inject?: readonly string[];
+        apply(context: TContext, config: unknown): void | Promise<void>;
+    });
+    // (undocumented)
+    apply(context: TContext, config: unknown): Promise<void>;
+    // (undocumented)
+    readonly inject: readonly string[];
+    // (undocumented)
+    readonly name = "qian.declarative-surfaces";
+    // (undocumented)
+    get status(): SurfaceReloadStatus;
+    // (undocumented)
+    readonly surfaceProvides: readonly string[];
+}
+
+// @public
 export type JsonValue = null | boolean | number | string | JsonValue[] | {
     [key: string]: JsonValue;
 };
@@ -62,6 +80,23 @@ export interface ParsedComponent {
 
 // @public
 export function parseSurface(file: string, content: string, markdown?: boolean, traceId?: string): SurfaceParseResult;
+
+// @public
+export interface SurfaceContext {
+    // (undocumented)
+    effect(dispose: () => void | Promise<void>): void;
+    // (undocumented)
+    readonly entry: {
+        readonly plugin: string;
+        readonly version: string;
+    };
+    // (undocumented)
+    provide<T>(key: string, value: T): () => void | Promise<void>;
+    // (undocumented)
+    provide<T>(key: string, name: string, value: T): () => void | Promise<void>;
+    // (undocumented)
+    readonly scope: string;
+}
 
 // @public (undocumented)
 export interface SurfaceDiagnostic {
@@ -95,6 +130,28 @@ export interface SurfaceParseResult {
     diagnostics: readonly SurfaceDiagnostic[];
     // (undocumented)
     syntax: SurfaceSyntax | null;
+}
+
+// @public
+export class SurfaceRegistrationSession {
+    // (undocumented)
+    static create(context: SurfaceContext, initial: SurfaceValidationResult): Promise<SurfaceRegistrationSession>;
+    // (undocumented)
+    dispose(): Promise<void>;
+    // (undocumented)
+    replace(result: SurfaceValidationResult): Promise<number>;
+}
+
+// @public
+export interface SurfaceReloadStatus {
+    // (undocumented)
+    readonly changedCodeFiles: readonly string[];
+    // (undocumented)
+    readonly diagnostics: readonly SurfaceDiagnostic[];
+    // (undocumented)
+    readonly restartRequired: boolean;
+    // (undocumented)
+    readonly revision: number;
 }
 
 // @public (undocumented)

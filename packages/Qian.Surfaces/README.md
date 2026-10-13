@@ -60,3 +60,13 @@ if (result.IsValid)
 `ISurfaceValidator.ValidateMarketplace(file, content)` 与 TS `validateMarketplace` 共用 marketplace/v2，检查字段、安装名唯一性、分类、路径、公钥与远程 URL 约束，并输出同样的文件指针和行号。失败不返回含敏感输入的市场对象。它是静态文档校验，不读取网络或信任根；来源取得、验签、digest 及每个实际组件的 ValidateComponent 由 [CLI 市场链路](../qian-cli/README.md) 继续完成。跨语言向量在 tck/marketplaces。
 
 能力目录可经 Definition 的 IToolContractHasher 端口使用 ToolContractHasher，复用同一 ToolContractHash/JCS 实现；不复制规范化算法，也不在组件库中反向引用本 Provider。
+
+## 声明式表面独立刷新
+
+`SurfaceRegistrationSession` 将共享校验后的文档注册为当前条目的可逆效果，按服务键与贡献名比较新旧内容。只撤销删除或改变的表面，不重放代码 Apply；不变项保持对象引用。替换失败会撤销本次新增项并恢复旧注册。技能同时出现在专用 Skills 目录与模型 Tools 集合，两个入口使用同一份文档；同一集合内的名称冲突不能静默覆盖。
+
+`HotReloadSurfacePlugin` 可包装一个真实代码插件，也可作为无代码组件。它使用文件监视与定期核对，稳定读取并校验后调用上述刷新端口。非法新内容保留上一份有效注册；源码、清单身份或代码派生工具变化只标记 `RestartRequired`。状态不包含文件内容、配置或凭据。卸载先停止并等待监视工作，再撤销表面与代码效果，不在 effect 内递归等待装载器生命周期。
+
+.NET 与 TypeScript 使用同一份 [T19 场景](../../tck/runtime/hotreload.json)，实际修改文件，验证五秒内更新、租户隔离、代码对象引用及效果保持、非法内容保留、源码重启提示和卸载清理。CI 对照两侧实际测试产生的结果；不靠调用手工刷新方法代替文件监视。
+
+当前增量尚未完成实际 hook 执行、生产注册表变更触发以及 `qian doctor` 读取运行态重启提示，RT-009 保持 doing。本次还修正运行时手动撤销注册后的效果栈清理；TypeScript 运行时需要在后续发布流程发布新的兼容补丁版本，不能覆盖已发布的 0.1.0。

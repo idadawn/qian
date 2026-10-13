@@ -27,4 +27,4 @@ flowchart LR
 
 - warning：` packages/Qian.Runtime/Contracts.cs `:77，事件来自动态参数或外部二进制，未能静态解析；此调用不计入已验证映射。
 - warning：` packages/Qian.Runtime/Contracts.cs `:81，事件来自动态参数或外部二进制，未能静态解析；此调用不计入已验证映射。
-- warning：` packages/Qian.Runtime/PluginContext.Events.cs `:53，事件来自动态参数或外部二进制，未能静态解析；此调用不计入已验证映射。
+- warning：` packages/Qian.Runtime/PluginContext.Events.cs `:51，事件来自动态参数或外部二进制，未能静态解析；此调用不计入已验证映射。

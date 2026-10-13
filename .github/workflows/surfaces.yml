@@ -2,9 +2,9 @@ name: surfaces
 on:
   push:
     branches: [main]
-    paths: ['packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/qian-cli/**', 'profiles/**', 'plugins/**', 'tck/profiles/**', 'tck/registry-artifacts/**', 'tests/Qian.Profiles.Tests/**', 'package.json', 'schemas/v2/**', 'tck/surfaces/**', 'tck/marketplaces/**', 'contracts/v0/**', 'tests/Qian.Surfaces.Tests/**', 'scripts/generate_surface_fixtures.py', 'pnpm*', '*.props', '*.targets', 'Qian.slnx', '.github/workflows/surfaces.yml']
+    paths: ['packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/qian-cli/**', 'profiles/**', 'plugins/**', 'tck/profiles/**', 'tck/registry-artifacts/**', 'tests/Qian.Profiles.Tests/**', 'package.json', 'schemas/v2/**', 'tck/surfaces/**', 'tck/runtime/hotreload.json', 'packages/qian-runtime/**', 'tck/marketplaces/**', 'contracts/v0/**', 'tests/Qian.Surfaces.Tests/**', 'scripts/generate_surface_fixtures.py', 'pnpm*', '*.props', '*.targets', 'Qian.slnx', '.github/workflows/surfaces.yml']
   pull_request:
-    paths: ['packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/qian-cli/**', 'profiles/**', 'plugins/**', 'tck/profiles/**', 'tck/registry-artifacts/**', 'tests/Qian.Profiles.Tests/**', 'package.json', 'schemas/v2/**', 'tck/surfaces/**', 'tck/marketplaces/**', 'contracts/v0/**', 'tests/Qian.Surfaces.Tests/**', 'scripts/generate_surface_fixtures.py', 'pnpm*', '*.props', '*.targets', 'Qian.slnx', '.github/workflows/surfaces.yml']
+    paths: ['packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/qian-cli/**', 'profiles/**', 'plugins/**', 'tck/profiles/**', 'tck/registry-artifacts/**', 'tests/Qian.Profiles.Tests/**', 'package.json', 'schemas/v2/**', 'tck/surfaces/**', 'tck/runtime/hotreload.json', 'packages/qian-runtime/**', 'tck/marketplaces/**', 'contracts/v0/**', 'tests/Qian.Surfaces.Tests/**', 'scripts/generate_surface_fixtures.py', 'pnpm*', '*.props', '*.targets', 'Qian.slnx', '.github/workflows/surfaces.yml']
 permissions:
   contents: read
 concurrency:
@@ -31,12 +31,15 @@ jobs:
         run: |
           python3 scripts/generate_surface_fixtures.py
           git diff --exit-code -- tck/surfaces
+      - run: pnpm --filter ./packages/qian-runtime build
       - run: pnpm --filter @qian/surfaces build
       - run: pnpm --filter @qian/surfaces check:api
       - name: TypeScript 样例与 JCS
-        run: QIAN_SURFACE_REPORT="$GITHUB_WORKSPACE/TestResults/surfaces-ts.json" QIAN_MARKET_REPORT="$GITHUB_WORKSPACE/TestResults/markets-ts.json" pnpm --filter @qian/surfaces test
+        run: QIAN_HOT_RELOAD_REPORT="$GITHUB_WORKSPACE/TestResults/hotreload-ts.json" QIAN_SURFACE_REPORT="$GITHUB_WORKSPACE/TestResults/surfaces-ts.json" QIAN_MARKET_REPORT="$GITHUB_WORKSPACE/TestResults/markets-ts.json" pnpm --filter @qian/surfaces test
       - name: .NET 样例、JCS 与 scope/effect
-        run: QIAN_SURFACE_REPORT="$GITHUB_WORKSPACE/TestResults/surfaces-dotnet.json" QIAN_MARKET_REPORT="$GITHUB_WORKSPACE/TestResults/markets-dotnet.json" dotnet run --project tests/Qian.Surfaces.Tests -c Release
+        run: QIAN_HOT_RELOAD_REPORT="$GITHUB_WORKSPACE/TestResults/hotreload-dotnet.json" QIAN_SURFACE_REPORT="$GITHUB_WORKSPACE/TestResults/surfaces-dotnet.json" QIAN_MARKET_REPORT="$GITHUB_WORKSPACE/TestResults/markets-dotnet.json" dotnet run --project tests/Qian.Surfaces.Tests -c Release
+      - name: 精确比较自动热重载场景
+        run: node packages/qian-surfaces/scripts/compare-fixtures.mjs TestResults/hotreload-dotnet.json TestResults/hotreload-ts.json
       - name: 精确比较诊断
         run: node packages/qian-surfaces/scripts/compare-fixtures.mjs TestResults/surfaces-dotnet.json TestResults/surfaces-ts.json
       - name: 精确比较市场文件规则

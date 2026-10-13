@@ -86,7 +86,7 @@ public sealed class FixtureTests
         Assert.True(result.IsValid);
         Assert.Single(result.Component!.Documents);
         var plugin = new DeclarativeSurfacePlugin(result);
-        Assert.Single(plugin.Provides);
+        Assert.Equal(2, plugin.Provides.Count);
         using var services = new ServiceCollection().BuildServiceProvider();
         await using var runtime = new PluginLoader(services);
         using var empty = JsonDocument.Parse("{}");

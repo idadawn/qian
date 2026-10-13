@@ -54,4 +54,8 @@ scope 写作 `global` 或 `tenant:id`、`app:id`、`agent-session:id`。服务�
 
 S1-RT-003 已合并并完成 `@idadawn/qian-runtime@0.1.0` 私有发布与逻辑别名消费。[主线双侧 CI](https://github.com/idadawn/qian/actions/runs/38146040203) 已持续执行同一组数据：现有 23 个 YAML 场景加 T15–T17 的 3 个装配场景，TS 共 34 项测试、.NET 运行时共 46 项测试通过。
 
-S1-QA-002 仍须完成真实提示词构建/工具执行链路对过滤结果的联调。当前目录与注入断言不能替代产品提示词断言。T19 的自动表面热重载依赖 S1-RT-009，T23 的完整 platform 宿主等价依赖真实业务 Provider；当前 platform 清单带有骨架组件，不能当作可运行的平台完成证明。
+S1-QA-002 仍须完成真实提示词构建/工具执行链路对过滤结果的联调。当前目录与注入断言不能替代产品提示词断言。T19 已增加下节的双侧实际文件监视证据；RT-009 的完整 hooks/生产触发仍需收尾，T23 的完整 platform 宿主等价依赖真实业务 Provider；当前 platform 清单带有骨架组件，不能当作可运行的平台完成证明。
+
+### T19 的实际文件监视场景
+
+[hotreload.json](hotreload.json) 由 Qian.Surfaces 的 .NET 与 TypeScript 测试直接读取。测试启动真实监视器并写入技能文件，在五秒界限内观察 Tools 与 Skills 的内容变化，同时验证代码对象未替换、代码效果未释放；非法更新保留旧内容，src 变化只标记需要重启，卸载后效果恰好释放一次。设置 QIAN_HOT_RELOAD_REPORT 可保存实际断言后的结果，surfaces CI 会精确比较两侧报告。该场景完成本项文件监视证据；RT-009 的 hook 执行与生产注册表触发、QA-002 的其余验收仍分别跟踪。
