@@ -22,7 +22,9 @@
 
 ## 2 根因
 
-直接原因：etcd 三成员里两个（worker01、worker02）跑在同一台已接近内存上限的 Proxmox 宿主 pve01 上。10-11 的两项变更之后，pve01 的可用内存按文档估算只剩约 2.5 GiB，VM 一旦被宿主压力拖慢，其 etcd 成员就跟不上心跳，触发选举；选举期间 apiserver 失去存储，controller-manager 丢失领导权，k3s 整进程退出。qd 自身是健康的，它的重启是被动的。
+已确认的事实：三台 server 一起崩溃循环；qd 看到两台 worker 的 etcd 端口反复拒绝连接；qd 自身的磁盘、内存、网络正常。
+
+最可能的触发原因（待阶段 0 第 1 步验证）：etcd 三成员里两个（worker01、worker02）跑在同一台已接近内存上限的 Proxmox 宿主 pve01 上。10-11 的两项变更之后，pve01 的可用内存按文档估算只剩约 2.5 GiB，VM 一旦被宿主压力拖慢，其 etcd 成员就跟不上心跳，触发选举；选举期间 apiserver 失去存储，controller-manager 丢失领导权，k3s 整进程退出。qd 自身是健康的，它的重启是被动的。「宿主压力是触发原因」目前是从 pve01 的内存余量与变更时间推断的，拒绝连接只能证明那一刻对端没有监听；必须把 worker 的 k3s 日志与 pve01 的 PSI、OOM、交换、I/O 记录按时间对齐后才算确认。方案 B 不依赖这个确认：无论触发原因是什么，把控制面从 pve01 的 VM 上拿走都是必要的。
 
 加剧因素：qd 既是控制面，又承载两个无上限的 CI runner 和一个满占一核的常驻进程；Kun 的 CI 在 qd 上串行跑 24 个 job，10-12 16 时的 etcd 风暴与当天 Kun CI 时间重合。
 
@@ -52,25 +54,61 @@
 
    同时检查 pve01 是否有每小时整点的备份或快照计划（10-13 的 etcd 风暴在 01、02、03、05 时的 01 到 04 分成片出现）：`cat /etc/pve/jobs.cfg`、`systemctl list-timers`。有则先停。
 
-2. 在 qd 上给两个 runner 加 cgroup 上限，并把 Kun 的 runner 停到阶段 1 结束：
+   根因验证：把三处时间线对齐后写进 S1-DEP-007，确认或推翻「宿主压力触发」。
 
    ```bash
-   for u in actions.runner.CavaiLAB-kun.qd-kun.service actions.runner.idadawn-iclaw.qd.service; do mkdir -p /etc/systemd/system/$u.d; printf '[Service]\nCPUQuota=400%%\nMemoryMax=48G\nNice=10\nIOWeight=50\n' > /etc/systemd/system/$u.d/10-limits.conf; done; systemctl daemon-reload; systemctl restart actions.runner.idadawn-iclaw.qd.service; systemctl stop actions.runner.CavaiLAB-kun.qd-kun.service
+   # worker01 / worker02 各执行：重启次数与每次 leaderelection lost 的时间
+   systemctl show k3s -p NRestarts; journalctl -u k3s -q --since "2026-10-11" --no-pager | grep -E "leaderelection lost|Started k3s.service" | cut -c1-15 | uniq -c | tail -40
+   # pve01：压力、OOM、交换与 I/O 的历史记录
+   cat /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io; dmesg -T | grep -iE "oom|out of memory" | tail; swapon --show; journalctl -k --since "2026-10-11" | grep -iE "i/o error|blocked for more than" | tail; pvesh get /nodes/$(hostname)/rrddata --timeframe week | head -50
+   ```
+
+2. 在 qd 上给两个 runner 加 cgroup 上限，并把 Kun 的 runner 停到阶段 1 结束：
+
+   两个 runner 放进同一个 slice，合计不超过 4 核、48 GiB；不要各设一份上限，那样合计仍可占满 8 核。
+
+   ```bash
+   printf '[Slice]\nCPUQuota=400%%\nMemoryMax=48G\nIOWeight=50\n' > /etc/systemd/system/actions-runners.slice
+   for u in actions.runner.CavaiLAB-kun.qd-kun.service actions.runner.idadawn-iclaw.qd.service; do mkdir -p /etc/systemd/system/$u.d; printf '[Service]\nSlice=actions-runners.slice\nNice=10\n' > /etc/systemd/system/$u.d/10-slice.conf; done
+   systemctl daemon-reload; systemctl restart actions.runner.idadawn-iclaw.qd.service; systemctl stop actions.runner.CavaiLAB-kun.qd-kun.service; systemctl show actions-runners.slice -p CPUQuotaPerSecUSec -p MemoryMax
    ```
 
 3. 在 qd 上弄清 `/usr/local/services/cubetoolbox/CubeMaster/bin/cubemaster` 是什么、谁在用；不需要就停掉，需要就限制到一核以内。不要盲目 kill。
 
-4. 在 qd 上保存 etcd 快照并记录文件名与 SHA-256（后面每一步都以它为回退点）：
+4. 在 qd 上保存 etcd 快照，连同 server token 与配置一起打包，记录 SHA-256，并复制到 qd 之外（执行人的工作机或备份盘，权限 0600，绝不进 Git）。按 k3s 官方说明，把快照恢复到新节点时必须使用原集群的 token，快照里的引导数据用它加密；缺 token 的快照恢复不了。后面每一步都以这份备份为回退点：
 
    ```bash
-   k3s etcd-snapshot save --name dep007-pre-reset && ls -l /var/lib/rancher/k3s/server/db/snapshots/ | tail -3
+   k3s etcd-snapshot save --name dep007-pre-reset
+   S=$(ls -t /var/lib/rancher/k3s/server/db/snapshots/dep007-pre-reset* | head -1)
+   tar -czf /root/dep007-backup.tgz "$S" /var/lib/rancher/k3s/server/token /var/lib/rancher/k3s/server/node-token /etc/rancher/k3s/config.yaml /etc/rancher/k3s/registries.yaml
+   chmod 0600 /root/dep007-backup.tgz; sha256sum "$S" /root/dep007-backup.tgz
+   # 然后从执行人的工作机取走：scp root@qd:/root/dep007-backup.tgz <qd 之外的位置>/
    ```
 
 阶段 0 完成后观察 1 小时：`systemctl show k3s -p NRestarts` 若明显放缓，说明宿主压力是主因；无论是否放缓，都继续阶段 1，因为拓扑问题不会自己消失。
 
 ### 阶段 1：改为 qd 单控制面（维护窗口约 1 小时）
 
-0. 前置核对（两台 worker 各执行一次）：`findmnt /data`、`ls /data/k3s-storage | head`，确认 local-path 卷在 `/data/k3s-storage`（现网 PV 的宿主路径都在这里），不在 `/var/lib/rancher/k3s` 之下；备份 `/etc/rancher/k3s/*.yaml`。两台 worker 上有按主机名钉定的 qian-staging、iclaw-staging 数据卷，节点名必须保持 `k3s-worker01` / `k3s-worker02` 不变。
+0. 前置核对与影响范围评估。
+
+   逐台核实（两台 worker 各执行一次），卸载脚本会停止该节点全部 Pod、清空镜像缓存并删除 k3s 自己的数据目录，数据安全不能只凭「PV 路径在 /data」这一条推断：
+
+   ```bash
+   grep -E "data-dir|default-local-storage-path" /etc/rancher/k3s/config.yaml; systemctl cat k3s | grep -E "ExecStart|data-dir"; grep -nE "rm -rf" /usr/local/bin/k3s-uninstall.sh; findmnt /data; ls /data/k3s-storage; du -sh /data/k3s-storage
+   ```
+
+   只有在 `data-dir` 与 `default-local-storage-path` 都不在卸载脚本删除的路径之下、`/data/k3s-storage` 存在且与 PV 路径一致时，才允许走第 4 步的卸载重装；否则改为就地改装（停 k3s，只移走 `/var/lib/rancher/k3s/server`，把 unit 改成 agent），并在 S1-DEP-007 记录原因。qd 上已核实脚本只删除 `/etc/rancher/k3s`、`/run/k3s`、`/var/lib/kubelet` 与 k3s 数据目录，worker 上仍要各自核实。
+
+   业务数据备份（动任何节点之前）：对 qian-staging 的 PostgreSQL 做一次 `pg_dump`，对 Redis 执行 `SAVE` 后复制 RDB；把两台 worker 的 `/data/k3s-storage` 各 rsync 一份到 qd 之外；备份 `/etc/rancher/k3s/*.yaml`。两台 worker 上有按主机名钉定的数据卷，节点名必须保持 `k3s-worker01` / `k3s-worker02` 不变。
+
+   影响范围（2026-10-13 15:40 UTC 实查），维护窗口要按下表的全部工作负载评估并通知各负责人，不能只按 qian-staging：
+
+   | 节点 | 运行中的工作负载 | 钉在该节点的数据卷 |
+   |---|---|---|
+   | k3s-worker01 | qian-staging 2、pdm 3、safe-ai 1、iclaw 1、higress-gateway 1 副本、kube-system 1 | qian-staging 2、pdm 1、higress-system 1 |
+   | k3s-worker02 | iclaw-staging 3、iclaw 3、higress-system 3（含 higress-gateway 1 副本、maas-gateway-redis 1 副本）、apollo-prod 2（admin / config 各 1 副本）、harbor-nginx 1、pdm 1、kube-system 2 | iclaw-staging 3、higress-system 1 |
+
+   顺序与缓解：一次只改一台，先 worker01 后 worker02，每台约 10 到 15 分钟的 Pod 中断；Higress 网关与 Apollo 生产服务各保留另一副本在线，Traefik 入口在 qd 上不受影响；改 worker02 之前先 `kubectl cordon k3s-worker02` 并删除其上的 harbor-nginx Pod，让 Harbor 入口（VIP .201）搬到 qd，Harbor 的有状态部分本来就在 qd。重装后的镜像从 daocloud 镜像源重新拉取，不经过 Harbor，不会形成死锁。
 
 1. 停两台 worker 的 k3s（它们退出 etcd）：
 
@@ -92,7 +130,7 @@
    kubectl delete node k3s-worker01 k3s-worker02; cat /var/lib/rancher/k3s/server/node-token
    ```
 
-4. 两台 worker 各自改装为 agent。先卸载 server 安装（只删 k3s 自身目录，不碰 `/data`），再按部署仓库的 agent 模式安装，配置文件照抄 [qian-prod-agent.yaml](https://github.com/idadawn/iclaw-deploy/blob/main/0-cluster/qian-prod-agent.yaml) 的形式，把 `node-name` 改为原节点名，去掉 prod 的标签与污点，保留原有标签：
+4. 两台 worker 按第 0 步定的顺序逐台改装为 agent（先 worker01，确认其 Pod 与数据卷恢复后再做 worker02）。先卸载 server 安装（第 0 步已核实它只删 k3s 自身目录，不碰 `/data`），再按部署仓库的 agent 模式安装，配置文件照抄 [qian-prod-agent.yaml](https://github.com/idadawn/iclaw-deploy/blob/main/0-cluster/qian-prod-agent.yaml) 的形式，把 `node-name` 改为原节点名，去掉 prod 的标签与污点，保留原有标签：
 
    ```bash
    /usr/local/bin/k3s-uninstall.sh; mkdir -p /etc/rancher/k3s; install -m 0600 /dev/stdin /etc/rancher/k3s/agent-token <<< '<node-token>'; printf 'server: https://192.168.1.161:6443\ntoken-file: /etc/rancher/k3s/agent-token\nnode-name: k3s-worker01\n' > /etc/rancher/k3s/config.yaml; curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.35.5+k3s1 sh -s - agent
@@ -111,7 +149,7 @@
 ### 阶段 2：加固（1 天内）
 
 - qd 的 kubelet 加系统预留，给控制面留出余量：在 `/etc/rancher/k3s/config.yaml` 增加 `kubelet-arg: ["system-reserved=cpu=2,memory=8Gi", "kube-reserved=cpu=1,memory=4Gi"]`，重启 k3s（会有一次约 1 分钟的 apiserver 中断，选低峰）。
-- 阶段 0 的 runner 上限转正：两个 runner 合计不超过 4 核；长期看把 runner 迁出控制面主机。
+- 阶段 0 的 `actions-runners.slice` 保留为长期配置：两个 runner 合计不超过 4 核、48 GiB；长期看把 runner 迁出控制面主机。
 - pve01 的内存分配总和保持不超过宿主内存减 4 GiB，关闭所有 VM 的 balloon；本次测得的数值写进部署仓库 `docs/ops/qian-prod-nodepool.md`。
 - etcd 快照确认落到 qd 之外（现有 `k3s-db-backup.timer` 每天 02:00 UTC，核对目标位置与保留策略）。
 - 在 qd 上加一个每 5 分钟的只读健康检查定时器，把 `NRestarts`、`/readyz` 与 etcd `slow_apply` 写进 journal，连续两次异常就通知值班人；具体通道按运维现状选。
@@ -122,6 +160,8 @@
 ```bash
 for i in $(seq 1 288); do date -u +%FT%TZ; systemctl show k3s -p NRestarts; kubectl get --raw /readyz; echo; sleep 300; done | tee /var/tmp/dep007-24h.log
 ```
+
+稳定后清理崩溃循环的残留：harbor 命名空间在 qd 上有 3 个处于 Failed 的旧副本 Pod（core、jobservice、registry 各 1），确认新副本 Running 后删除。
 
 通过标准见 S1-DEP-007 的验收：24 小时内 `NRestarts` 不再增长，`/readyz` 全部成功，etcd 日志不再成片出现 `apply request took too long`；结果回写 S1-DEP-001 与 S1-DEC-019。
 
