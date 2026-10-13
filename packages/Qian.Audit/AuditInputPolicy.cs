@@ -216,7 +216,7 @@ public sealed class AuditInputPolicy
          (schema.TryGetProperty("x-qian-sensitive", out value) && value.ValueKind == JsonValueKind.True));
     private static bool IsUnspecified(JsonElement schema) => schema.ValueKind == JsonValueKind.True || schema.ValueKind == JsonValueKind.Object && !schema.EnumerateObject().Any();
     // NonBacktracking 线性匹配，过大的自动机在构造时即拒绝；超时只兜底超长输入，触发即按 Schema 无效失败关闭。
-    // 惰性 DFA 只在物化新转移时对照墙钟，复用实例后热匹配不再读时钟；首次 JIT 与建图可能被调度或 GC 拖长，1 秒上限为此留出余量。
+    // 墙钟只在物化新 DFA 转移和长输入分段时检查：复用实例后，常规长度的热匹配不受调度或 GC 停顿影响；首次 JIT 与建图仍可能被拖长，1 秒上限为此留出余量。
     internal static Regex Pattern(string pattern)
     {
         if (Patterns.TryGetValue(pattern, out var cached)) return cached;
