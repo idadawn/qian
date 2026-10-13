@@ -38,6 +38,8 @@ public sealed class HotReloadTests
             var context = runtime.GetContext(entry, scope); var original = context.Inject<object>(new ServiceKey("Code"));
             Assert.Single(context.List(SurfaceKeys.Skills)); Assert.Single(context.List(SurfaceKeys.Tools));
             Assert.Empty(context.Scoped(new ScopeKey("tenant", "b")).List(SurfaceKeys.Tools));
+            var monitor = context.Inject<ISurfaceReloadDiagnosticSource>(SurfaceRuntimeDiagnostics.Key, pluginId);
+            Assert.Empty(SurfaceRuntimeDiagnostics.Read(context.Scoped(new ScopeKey("tenant", "b"))).GetProperty("entries").EnumerateArray());
             var started = Stopwatch.StartNew(); Skill(spec.GetProperty("newDescription").GetString()!);
             await Wait(() => Description(context) == spec.GetProperty("newDescription").GetString(), spec.GetProperty("deadlineMs").GetInt32());
             Assert.True(started.ElapsedMilliseconds <= spec.GetProperty("deadlineMs").GetInt32());
@@ -46,6 +48,12 @@ public sealed class HotReloadTests
             Assert.Equal(spec.GetProperty("expectedCodeDisposalsBeforeUnmount").GetInt32(), code.Disposals);
             Write(spec.GetProperty("codeFile").GetString()!, "code changed");
             await Wait(() => plugin.Status.RestartRequired, 5000);
+            var reportState = SurfaceRuntimeDiagnostics.Read(context);
+            Assert.Equal(spec.GetProperty("expectedDiagnosticsProtocol").GetString(), reportState.GetProperty("protocol").GetString());
+            Assert.Empty(new SurfaceValidator().ValidateSchema("surface-diagnostics", "runtime", reportState));
+            var diagnostic = Assert.Single(reportState.GetProperty("entries").EnumerateArray());
+            Assert.True(diagnostic.GetProperty("restartRequired").GetBoolean());
+            Assert.Contains(spec.GetProperty("codeFile").GetString(), diagnostic.GetProperty("changedCodeFiles").EnumerateArray().Select(item => item.GetString()));
             Assert.Same(original, context.Inject<object>(new ServiceKey("Code"))); Assert.Equal(1, code.Applies);
             Skill("bad"); await Wait(() => plugin.Status.Diagnostics.Any(item => item.Severity == "error"), 5000);
             Assert.Equal(spec.GetProperty("newDescription").GetString(), Description(context));
@@ -53,10 +61,11 @@ public sealed class HotReloadTests
             await runtime.UnmountAsync(entry, scope, Ct);
             Assert.Equal(spec.GetProperty("expectedCodeDisposalsAfterUnmount").GetInt32(), code.Disposals);
             Assert.Empty(runtime.DumpConfig());
+            Assert.Throws<Qian.Runtime.Errors.QianErrorException>(() => monitor.Read());
             if (Environment.GetEnvironmentVariable("QIAN_HOT_RELOAD_REPORT") is { Length: > 0 } report)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(report))!);
-                File.WriteAllText(report, JsonSerializer.Serialize(new { id = spec.GetProperty("id").GetString(), codeApplies = code.Applies, codeDisposals = code.Disposals, skillUpdated = true, codeStable = true, scoped = true, invalidRetained = true, restartRequired = plugin.Status.RestartRequired, clean = runtime.DumpConfig().Count == 0 }));
+                File.WriteAllText(report, JsonSerializer.Serialize(new { id = spec.GetProperty("id").GetString(), codeApplies = code.Applies, codeDisposals = code.Disposals, skillUpdated = true, codeStable = true, scoped = true, invalidRetained = true, restartRequired = plugin.Status.RestartRequired, diagnosticScopeFiltered = true, diagnosticRestart = true, diagnosticRemoved = true, clean = runtime.DumpConfig().Count == 0 }));
             }
             void Skill(string description) => Write("skills/" + skill + "/SKILL.md", "---\nname: " + skill + "\ndescription: " + description + "\n---\n检查当前 scope 的内容。\n");
             void Write(string path, string contents) { var file = Path.Combine(directory.FullName, path); Directory.CreateDirectory(Path.GetDirectoryName(file)!); File.WriteAllText(file, contents); }

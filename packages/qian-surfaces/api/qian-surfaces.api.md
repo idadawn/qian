@@ -83,11 +83,15 @@ export interface ParsedComponent {
 export function parseSurface(file: string, content: string, markdown?: boolean, traceId?: string): SurfaceParseResult;
 
 // @public
+export function readSurfaceRuntimeDiagnostics(context: SurfaceDiagnosticContext): SurfaceRuntimeReport;
+
+// @public
 export interface SurfaceContext {
     // (undocumented)
     effect(dispose: () => void | Promise<void>): void;
     // (undocumented)
     readonly entry: {
+        readonly id: string;
         readonly plugin: string;
         readonly version: string;
     };
@@ -109,6 +113,17 @@ export interface SurfaceDiagnostic {
     line: number;
     // (undocumented)
     severity: 'error' | 'warning';
+}
+
+// @public
+export interface SurfaceDiagnosticContext {
+    // (undocumented)
+    list(key: string): readonly {
+        readonly name: string;
+        readonly value: unknown;
+    }[];
+    // (undocumented)
+    readonly scope: string;
 }
 
 // @public (undocumented)
@@ -153,6 +168,34 @@ export interface SurfaceReloadStatus {
     readonly restartRequired: boolean;
     // (undocumented)
     readonly revision: number;
+}
+
+// @public
+export interface SurfaceRuntimeEntry {
+    // (undocumented)
+    readonly changedCodeFiles: readonly string[];
+    // (undocumented)
+    readonly entryId: string;
+    // (undocumented)
+    readonly invalidSurface: boolean;
+    // (undocumented)
+    readonly plugin: string;
+    // (undocumented)
+    readonly restartRequired: boolean;
+    // (undocumented)
+    readonly revision: number;
+    // (undocumented)
+    readonly scope: string;
+}
+
+// @public
+export interface SurfaceRuntimeReport {
+    // (undocumented)
+    readonly entries: readonly SurfaceRuntimeEntry[];
+    // (undocumented)
+    readonly protocol: 'qian.surface-diagnostics/v1';
+    // (undocumented)
+    readonly scope: string;
 }
 
 // @public (undocumented)

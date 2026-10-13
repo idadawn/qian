@@ -36,6 +36,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+      - name: 构建真实 doctor 客户端供宿主验收
+        run: pnpm install --frozen-lockfile && pnpm --filter qian... build
+
       - name: 还原
         run: dotnet restore Qian.slnx
 

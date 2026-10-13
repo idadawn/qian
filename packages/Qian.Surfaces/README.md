@@ -52,7 +52,7 @@ if (result.IsValid)
 
 ## 已知限制与延期项
 
-本任务不实现 Agent loop、MCP 进程、hook 执行器、文件监视服务或完整 CLI 安装器。二进制 runtime.entry 的真实定位、版本解算、签名和完整依赖闭包由 SDK/CLI/Registry 任务处理。UI 与低代码表面只检查显式路径，内容 Schema 属于对应模块。宿主须在登记前提供可信目录，并在真正调用时继续执行权限、scope 与执行策略检查。
+静态校验器不执行 Agent loop、MCP 进程或 hook；文件监视与 hook 执行增量见下文。二进制 runtime.entry 的真实定位、版本解算、签名和完整依赖闭包由 SDK/CLI/Registry 任务处理。UI 与低代码表面只检查显式路径，内容 Schema 属于对应模块。宿主须在登记前提供可信目录，并在真正调用时继续执行权限、scope 与执行策略检查。
 
 
 ## 市场文档
@@ -69,7 +69,15 @@ if (result.IsValid)
 
 .NET 与 TypeScript 使用同一份 [T19 场景](../../tck/runtime/hotreload.json)，实际修改文件，验证五秒内更新、租户隔离、代码对象引用及效果保持、非法内容保留、源码重启提示和卸载清理。CI 对照两侧实际测试产生的结果；不靠调用手工刷新方法代替文件监视。
 
-当前已接入下节的 hook 执行增量，完整事件矩阵、生产注册表变更触发以及 `qian doctor` 读取运行态重启提示，RT-009 保持 doing。本次还修正运行时手动撤销注册后的效果栈清理；TypeScript 运行时需要在后续发布流程发布新的兼容补丁版本，不能覆盖已发布的 0.1.0。
+当前已接入下节的 hook 执行增量与运行态诊断；完整事件矩阵、真实开户事件生产方及生产注册表变更触发仍未完成，RT-009 保持 doing。本次还修正运行时手动撤销注册后的效果栈清理；TypeScript 运行时需要在后续发布流程发布新的兼容补丁版本，不能覆盖已发布的 0.1.0。
+
+### 运行态诊断
+
+监视器把 `SurfaceReloadDiagnostics:<component>` 作为可逆的具名注册挂到同一 scope，属于表面监视的诊断集合，不是业务能力或安装状态来源。.NET 的 `SurfaceRuntimeDiagnostics.Read(ctx)` 与 TS 的 `readSurfaceRuntimeDiagnostics(ctx)` 都通过实际 `ctx.List` 读取，继承相同的遮蔽、restrict 和卸载语义；卸载后旧诊断对象也拒绝读取。输出只含条目、scope、修订号、变化的相对文件名以及重启/更新拒绝标志，不含配置和文件正文。
+
+`Qian.Surfaces.Hosting` 的 `MapQianSurfaceDiagnostics(source, authorizationPolicy)` 映射 `GET /api/lifecycle/diagnostics/surfaces`。宿主必须显式提供已登记的授权策略，source 从可信身份获得 scope，不能从请求参数接受租户。它适用于需要 HTTP 诊断的 minimal 参考宿主及后续 platform 组装；不实现完整 lifecycle 管理面。TS 宿主可在同一路径先完成自己的认证授权，再返回上述读取函数的结果。无代码表面组件仍通过现有 `qian add --no-code` 安装；监视器及 HTTP 代码的安装归完整代码包安装流程。
+
+`qian doctor --profile minimal --url https://host --json` 使用环境中的 `QIAN_ACCESS_TOKEN` 读取实时状态；本机回环允许 HTTP，远端只允许 HTTPS，拒绝重定向和超限/错误协议响应。`ROLLING_RESTART_REQUIRED` 提示滚动重启并返回非零，`SURFACE_UPDATE_REJECTED` 提示修正表面且保留上次有效注册。没有 `--url` 时仅验证静态 profile，`runtimeVerified` 为 false；不能将其作为运行态健康证明。诊断协议由 `schemas/v2/surface-diagnostics.schema.json` 共同校验。真实 CLI 进程已分别对 .NET Kestrel/签名 S2S 和 TS 文件监视宿主验收，T19 同时检查诊断 scope、重启状态与卸载失效。
 
 ## 真实 hook 桥接增量
 

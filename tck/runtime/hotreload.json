@@ -8,6 +8,7 @@
   "oldDescription": "当用户需要检查当前租户资料时读取内容并给出完整核对结果。",
   "newDescription": "当用户需要检查当前租户资料时按更新后的规则读取内容并给出完整核对结果。",
   "codeFile": "src/worker.txt",
+  "expectedDiagnosticsProtocol": "qian.surface-diagnostics/v1",
   "deadlineMs": 5000,
   "expectedCodeApplies": 1,
   "expectedCodeDisposalsBeforeUnmount": 0,

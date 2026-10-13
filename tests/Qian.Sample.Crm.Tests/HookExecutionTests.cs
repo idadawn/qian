@@ -1,4 +1,5 @@
 using System.Net;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -20,6 +21,64 @@ public sealed partial class CustomerCommandTests
 {
     private static readonly string[] HookProvides = ["Crm"];
     private static readonly string[] HookTargets = ["qian.sample.crm/seedCustomer", "qian.sample.crm/listCustomers"];
+    [Fact]
+    public async Task doctor读取实际签名认证宿主_代码变更提示滚动重启_过滤与卸载后无残留()
+    {
+        await using var host = await Start(hooks: true);
+        var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        var directory = (string)((IApplicationBuilder)host.App).Properties["qian.tests.hooks"]!;
+        var source = runtime.GetContext("crm", ScopeKey.Global);
+        var original = source.Inject<ICrmCommands>(CrmDefinition.Key);
+        var initial = await RunDoctor(host.Token(A, "crm.write"));
+        Assert.Equal(0, initial.ExitCode); Assert.Empty(initial.Json.GetProperty("actions").EnumerateArray());
+        Directory.CreateDirectory(Path.Combine(directory, "src"));
+        File.WriteAllText(Path.Combine(directory, "src/worker.cs"), "private source must not appear in diagnostics");
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(Ct); deadline.CancelAfter(TimeSpan.FromSeconds(5));
+        while (!source.Inject<ISurfaceReloadDiagnosticSource>(SurfaceRuntimeDiagnostics.Key, "qian.sample.crm").Read().GetProperty("restartRequired").GetBoolean()) await Task.Delay(20, deadline.Token);
+        var changed = await RunDoctor(host.Token(A, "crm.write")); Assert.Equal(1, changed.ExitCode);
+        Assert.True(changed.Json.GetProperty("runtimeVerified").GetBoolean());
+        var action = Assert.Single(changed.Json.GetProperty("actions").EnumerateArray());
+        Assert.Equal("ROLLING_RESTART_REQUIRED", action.GetProperty("code").GetString());
+        Assert.Equal("src/worker.cs", Assert.Single(action.GetProperty("files").EnumerateArray()).GetString());
+        Assert.DoesNotContain("private source", changed.Json.GetRawText(), StringComparison.Ordinal);
+        Assert.Same(original, source.Inject<ICrmCommands>(CrmDefinition.Key));
+        using var denied = await host.Get(A, "/api/lifecycle/diagnostics/surfaces"); Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        var anonymous = await RunDoctor(null); Assert.Equal(1, anonymous.ExitCode); Assert.Equal("INPUT_INVALID", anonymous.Json.GetProperty("diagnostics")[0].GetProperty("error").GetProperty("code").GetString());
+        using (runtime.GetContext("data", ScopeKey.Global).Restrict(new ScopeKey("tenant", A), registration => registration.Key != SurfaceRuntimeDiagnostics.Key))
+        {
+            var filtered = await RunDoctor(host.Token(A, "crm.write")); Assert.Equal(0, filtered.ExitCode); Assert.Empty(filtered.Json.GetProperty("runtime").GetProperty("entries").EnumerateArray());
+        }
+        var validHooks = File.ReadAllText(Path.Combine(directory, "hooks/hooks.json"));
+        File.WriteAllText(Path.Combine(directory, "hooks/hooks.json"), """{"hooks":{"tenant/provisioned":[{"hooks":[{"type":"plugin","plugin":"qian.sample.crm","handler":"missing"}]}]}}""");
+        using var rejected = CancellationTokenSource.CreateLinkedTokenSource(Ct); rejected.CancelAfter(TimeSpan.FromSeconds(5));
+        while (!source.Inject<ISurfaceReloadDiagnosticSource>(SurfaceRuntimeDiagnostics.Key, "qian.sample.crm").Read().GetProperty("invalidSurface").GetBoolean()) await Task.Delay(20, rejected.Token);
+        var invalid = await RunDoctor(host.Token(A, "crm.write")); Assert.Equal(1, invalid.ExitCode);
+        Assert.Contains(invalid.Json.GetProperty("actions").EnumerateArray(), item => item.GetProperty("code").GetString() == "SURFACE_UPDATE_REJECTED");
+        Assert.Equal("seedCustomer", source.Inject<SurfaceDocument>(SurfaceKeys.Hooks, "qian.sample.crm/hooks").Data.GetProperty("hooks").GetProperty("tenant/provisioned")[0].GetProperty("hooks")[0].GetProperty("handler").GetString());
+        File.WriteAllText(Path.Combine(directory, "hooks/hooks.json"), validHooks);
+        using var restored = CancellationTokenSource.CreateLinkedTokenSource(Ct); restored.CancelAfter(TimeSpan.FromSeconds(5));
+        while (source.Inject<ISurfaceReloadDiagnosticSource>(SurfaceRuntimeDiagnostics.Key, "qian.sample.crm").Read().GetProperty("invalidSurface").GetBoolean()) await Task.Delay(20, restored.Token);
+        var recovered = await RunDoctor(host.Token(A, "crm.write"));
+        Assert.DoesNotContain(recovered.Json.GetProperty("actions").EnumerateArray(), item => item.GetProperty("code").GetString() == "SURFACE_UPDATE_REJECTED");
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        var removed = await RunDoctor(host.Token(A, "crm.write")); Assert.Equal(0, removed.ExitCode); Assert.Empty(removed.Json.GetProperty("runtime").GetProperty("entries").EnumerateArray());
+
+        async Task<(int ExitCode, JsonElement Json)> RunDoctor(string? token)
+        {
+            var start = new ProcessStartInfo("node") { WorkingDirectory = RepositoryRoot(), UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+            foreach (var value in new[] { "packages/qian-cli/dist/main.js", "doctor", "--profile", "minimal", "--no-home", "--url", host.Client.BaseAddress!.ToString(), "--json" }) start.ArgumentList.Add(value);
+            start.Environment.Remove("QIAN_ACCESS_TOKEN"); if (token is not null) start.Environment["QIAN_ACCESS_TOKEN"] = token;
+            using var child = Process.Start(start)!;
+            var output = child.StandardOutput.ReadToEndAsync(Ct); var errors = child.StandardError.ReadToEndAsync(Ct);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Ct); timeout.CancelAfter(TimeSpan.FromSeconds(15));
+            try { await child.WaitForExitAsync(timeout.Token); }
+            finally { if (!child.HasExited) child.Kill(entireProcessTree: true); }
+            var stdout = await output; var stderr = await errors;
+            if (token is not null) Assert.DoesNotContain(token, stdout + stderr, StringComparison.Ordinal);
+            using var result = JsonDocument.Parse(string.IsNullOrEmpty(stdout) ? stderr : stdout);
+            return (child.ExitCode, result.RootElement.Clone());
+        }
+    }
     [Fact]
     public async Task 真实运行时事件经声明hook调用实际客户命令_审计通道hook_拒绝仍由真实权限负责()
     {
@@ -95,6 +154,9 @@ public sealed partial class CustomerCommandTests
 
     private static void MapHookEntry(WebApplication app)
     {
+        app.MapQianSurfaceDiagnostics(http =>
+            http.RequestServices.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("data", ScopeKey.Global)
+                .Scoped(new ScopeKey("tenant", http.RequestServices.GetRequiredService<ITenantContext>().TenantId!)), "crm-data-writer");
         // 仅验证已有真实生产方上下文的事件桥接；这不是租户开户/开通 API 的替代实现。
         app.MapPost("/api/acceptance/tenant-provisioned", async (CreateCustomerCommand input, HttpContext http, CrmCommandRuntime runtime, ITenantContext tenant) =>
         {

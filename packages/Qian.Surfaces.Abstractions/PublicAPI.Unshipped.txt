@@ -171,3 +171,9 @@ static readonly Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantProvisioned -
 static readonly Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantPurged -> Qian.Runtime.QianEvent<Qian.Surfaces.Abstractions.HookNotification!, System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!>!
 Qian.Surfaces.Abstractions.ISurfaceRuntimeValidator
 Qian.Surfaces.Abstractions.ISurfaceRuntimeValidator.ValidateSurfaces(Qian.Runtime.IPluginContext! context, Qian.Surfaces.Abstractions.SurfaceValidationResult! candidate) -> void
+Qian.Surfaces.Abstractions.ISurfaceReloadDiagnosticSource
+Qian.Surfaces.Abstractions.ISurfaceReloadDiagnosticSource.Read() -> System.Text.Json.JsonElement
+Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics
+static readonly Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.Key -> Qian.Runtime.ServiceKey
+static Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.Read(Qian.Runtime.IPluginContext! context) -> System.Text.Json.JsonElement
+static Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.ScopeName(Qian.Runtime.ScopeKey scope) -> string!

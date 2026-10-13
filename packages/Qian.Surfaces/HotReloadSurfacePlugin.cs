@@ -27,7 +27,7 @@ public sealed class HotReloadSurfacePlugin : IQianPlugin
         _initial = validator.ValidateComponent(_directory, options);
         if (!_initial.IsValid) throw Invalid();
         Inject = code?.Inject ?? _initial.Component!.Manifest.GetProperty("inject").EnumerateArray().Select(item => new ServiceKey(item.GetString()!)).ToArray();
-        SurfaceProvides = SurfaceRegistrationSession.Plan(_initial).Keys.Select(item => new ServiceKey(item.Key.Name + ":" + item.Name)).ToArray();
+        SurfaceProvides = [.. SurfaceRegistrationSession.Plan(_initial).Keys.Select(item => new ServiceKey(item.Key.Name + ":" + item.Name)), new ServiceKey(SurfaceRuntimeDiagnostics.Key.Name + ":" + _initial.Component!.Id)];
     }
     /// <inheritdoc />
     public IReadOnlyList<ServiceKey> Inject { get; }
@@ -44,14 +44,21 @@ public sealed class HotReloadSurfacePlugin : IQianPlugin
         if (_code is not null) await _code.ApplyAsync(ctx, config, ct).ConfigureAwait(false);
         var session = new SurfaceRegistrationSession(ctx, current);
         ctx.Effect(session.Dispose);
-        var lifetime = new WatchLifetime(_directory, () => Refresh(ctx, session, current, before));
+        var diagnostic = new RuntimeDiagnostic(this, ctx.Entry);
+        ctx.Provide<ISurfaceReloadDiagnosticSource>(SurfaceRuntimeDiagnostics.Key, ctx.Entry.Plugin, diagnostic);
+        ctx.Effect(() => diagnostic.Active = false);
+        var lifetime = new WatchLifetime(_directory, () => Refresh(ctx, session, current, before), () =>
+        {
+            lock (_gate) _status = _status with { Diagnostics = [Diagnostics.Create("runtime", "", 1, SurfaceErrors.Reference,
+                "表面更新未通过运行时检查，继续保留上次有效注册。", Guid.NewGuid().ToString("N"))] };
+        });
         ctx.Effect(lifetime.DisposeAsync);
         lifetime.Start();
     }
     private void Refresh(IPluginContext context, SurfaceRegistrationSession session, SurfaceValidationResult initial, Dictionary<string, string> previous)
     {
         var before = Snapshot(_directory);
-        if (Same(previous, before)) return;
+        if (Same(previous, before) && !Status.Diagnostics.Any(item => item.Severity == "error")) return;
         var result = _validator.ValidateComponent(_directory, _options);
         var after = Snapshot(_directory);
         if (!Same(before, after)) return; // 原子保存或批量写入尚未稳定，下一次检查再读取。
@@ -61,7 +68,7 @@ public sealed class HotReloadSurfacePlugin : IQianPlugin
         lock (_gate)
         {
             var restart = _status.ChangedCodeFiles.Concat(code).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
-            _status = new SurfaceReloadStatus(_status.Revision, restart.Length != 0, Array.AsReadOnly(restart), result.Diagnostics);
+            _status = new SurfaceReloadStatus(_status.Revision, restart.Length != 0, Array.AsReadOnly(restart), result.IsValid ? _status.Diagnostics : result.Diagnostics);
             if (!result.IsValid || code.Contains(".qian-plugin/plugin.json", StringComparer.Ordinal)) return;
         }
         var safe = result.Component!;
@@ -78,7 +85,7 @@ public sealed class HotReloadSurfacePlugin : IQianPlugin
         if (_code is ISurfaceRuntimeValidator runtimeValidator) runtimeValidator.ValidateSurfaces(context, candidate);
         var count = session.Replace(candidate);
         previous.Clear(); foreach (var entry in after) previous.Add(entry.Key, entry.Value);
-        if (count != 0) lock (_gate) _status = _status with { Revision = _status.Revision + 1 };
+        lock (_gate) _status = _status with { Revision = _status.Revision + (count != 0 ? 1 : 0), Diagnostics = result.Diagnostics };
     }
     private static bool Same(Dictionary<string, string> first, Dictionary<string, string> second) => first.Count == second.Count && first.All(pair => second.GetValueOrDefault(pair.Key) == pair.Value);
     private static Dictionary<string, string> Snapshot(string root)
@@ -103,7 +110,22 @@ public sealed class HotReloadSurfacePlugin : IQianPlugin
         }
     }
     private static QianErrorException Invalid() => new(new QianError(PlatformErrors.InputInvalid));
-    private sealed class WatchLifetime(string directory, Action refresh) : IAsyncDisposable
+    private sealed class RuntimeDiagnostic(HotReloadSurfacePlugin plugin, PluginEntry entry) : ISurfaceReloadDiagnosticSource
+    {
+        internal volatile bool Active = true;
+        public JsonElement Read()
+        {
+            if (!Active) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+            var status = plugin.Status;
+            return JsonSerializer.SerializeToElement(new
+            {
+                entryId = entry.Id, plugin = entry.Plugin, scope = SurfaceRuntimeDiagnostics.ScopeName(entry.Scope),
+                revision = status.Revision, restartRequired = status.RestartRequired, changedCodeFiles = status.ChangedCodeFiles,
+                invalidSurface = status.Diagnostics.Any(item => item.Severity == "error")
+            });
+        }
+    }
+    private sealed class WatchLifetime(string directory, Action refresh, Action rejected) : IAsyncDisposable
     {
         private readonly CancellationTokenSource _stop = new();
         private readonly FileSystemWatcher _watcher = new(directory) { IncludeSubdirectories = true, NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName };
@@ -127,7 +149,7 @@ public sealed class HotReloadSurfacePlugin : IQianPlugin
                     ticks = 0;
                     try { refresh(); }
                     catch (Exception error) when (error is IOException or UnauthorizedAccessException or QianErrorException or InvalidOperationException)
-                    { Interlocked.Exchange(ref _dirty, 1); } // 正在写入或无效输入不替换旧注册，也不回显文件内容。
+                    { rejected(); Interlocked.Exchange(ref _dirty, 1); } // 正在写入或无效输入不替换旧注册，也不回显文件内容。
                 }
             }
             catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
