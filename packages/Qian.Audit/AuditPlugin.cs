@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Qian.Data;
 using Qian.Runtime;
+using Qian.Plugin.Sdk;
 using Qian.Runtime.Errors;
 
 namespace Qian.Audit;
@@ -39,6 +40,7 @@ public sealed class AuditPlugin : IQianPlugin
         ctx.Effect(service.DisposeAsync);
         await service.ValidateAsync(ct).ConfigureAwait(false);
         ctx.Provide<IAuditService>(AuditDefinition.Key, service);
+        CommandPolicies.Register(ctx, CommandPolicyKind.Audit, new AuditCommandPolicy(service).Handle);
     }
     private static QianErrorException Invalid() => new(new QianError(PlatformErrors.InputInvalid));
 }

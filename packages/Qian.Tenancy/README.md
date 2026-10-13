@@ -31,3 +31,7 @@ TenantGrpcClientInterceptor 从当前上下文为四类 RPC 写入 tenant_id，�
 使用共用 PostgreSQL 16 fixture 和受限应用角色验证真实目录写入、两宿主同号竞争、编辑冲突、租户过滤与原生 SQL RLS；通过真实 Data/Runtime/Tenancy 插件装载验证目录生命周期。HTTP 边界单元测试使用已认证 ClaimsPrincipal 测试宿主管道，不代表真实签名或管理员登录。JSON/元数据序列化往返验证通用传播逻辑；另外已用真实 Kestrel HTTP/2 与 gRPC 客户端验证四种 RPC、双租户并发、24 组非法入口和错误详情。测试令牌由临时 RSA 密钥签发并经 JwtBearer 完整验签，这是传输适配器集成测试，不代表已完成真实 Qian Identity 的签发/管理员登录验收。事件消费者和作业执行器尚未接通。
 
 完整 TEN-001 验收仍需真实运营授权 API、Identity 管理员登录、事件/作业传播适配器和端到端 A/B 隔离。状态迁移、开户编排、租户设置分别归 TEN-002/003/004；不以目录基础实现关闭这些任务。
+
+## 命令执行入口
+
+TenancyPlugin 已在 SDK 的真实 command/dispatching 上登记租户策略，按已验证主体的租户 UUID 查询主档，只有 active/trial 可进入业务；pending/grace/suspended 和未知租户拒绝。此处不实施租户激活或到期调度，不代替尚未完成的生命周期和身份会话吊销。真实 CRM 命令已覆盖冻结拒绝及双租户并发。

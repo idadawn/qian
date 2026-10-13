@@ -22,3 +22,7 @@ Qian.Authz.RbacPermissionChecker.ExplainDetailedAsync(Kun.Authorization.Permissi
 Qian.Authz.RbacPermissionChecker.ListAllowedActionsAsync(Kun.Authorization.AuthorizationSubject! subject, string! resourceType, string? resourceId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
 Qian.Authz.RbacPermissionChecker.ListPermissionsAsync(Kun.Authorization.AuthorizationSubject! subject, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
 Qian.Authz.RbacPermissionChecker.RbacPermissionChecker(Qian.Data.IDataService! data, Kun.Core.MultiTenancy.ITenantContext! tenant, Qian.Authz.Abstractions.IPermissionRegistry! registry, Qian.Authz.Abstractions.IAuthzExecutionConstraints? constraints = null) -> void
+Qian.Authz.RbacCommandPolicyPlugin
+Qian.Authz.RbacCommandPolicyPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Authz.RbacCommandPolicyPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Authz.RbacCommandPolicyPlugin.RbacCommandPolicyPlugin() -> void

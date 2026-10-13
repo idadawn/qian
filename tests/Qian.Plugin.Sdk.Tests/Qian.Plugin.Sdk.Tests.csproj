@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <ProjectReference Include="../../packages/Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="../../tools/Qian.Plugin.Tool/Qian.Plugin.Tool.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" /><PackageReference Include="xunit.v3" />
+  </ItemGroup>
+</Project>

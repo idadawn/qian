@@ -4,11 +4,11 @@
 
 ## 组件与交付边界
 
-本目录包含 AuditPlugin、确定性内容哈希、输入脱敏与 PostgreSQL 链存储。AuditPlugin 消费 Data 并提供 Audit 服务键，ctx.Audit() 返回 IAuditService（IAuditWriter + IAuditReader）。可挂在 global 或 tenant scope，默认兼容 chain.store: pg。目标是在每个 .NET profile 中随 SDK 装配到实际能力执行链；真实 waterfall 与安装入口仍待完成，因此 plugins/qian.audit 保留骨架，不能据此宣称 qian add audit、完整 platform 或 CRM 业务审计已经完成。
+本目录包含 AuditPlugin、确定性内容哈希、输入脱敏与 PostgreSQL 链存储。AuditPlugin 消费 Data 并提供 Audit 服务键，ctx.Audit() 返回 IAuditService（IAuditWriter + IAuditReader）。可挂在 global 或 tenant scope，默认兼容 chain.store: pg。目标是在每个 .NET profile 中随 SDK 装配到实际能力执行链；完整组合包与安装入口仍待完成，因此 plugins/qian.audit 保留骨架，不能据此宣称 qian add audit 或完整 platform 已经完成。
 
 ## 记录与内容哈希
 
-AuditRecord 保留租户、actor_type、actor_id、on_behalf_of、capability_id、contract_version、input_hash、channel、resource、result、trace_id、occurred_at 和补充 payload。记录不可变且字符串化不展开主体或 payload。input_hash 由 AuditInputPolicy 在 Schema 脱敏后计算；实际能力管道仍须消费这个策略，不能把原始输入直接塞入 payload。
+AuditRecord 保留租户、actor_type、actor_id、on_behalf_of、capability_id、contract_version、input_hash、channel、resource、result、trace_id、occurred_at 和补充 payload。记录不可变且字符串化不展开主体或 payload。input_hash 由 AuditInputPolicy 在 Schema 脱敏后计算；实际 SDK 命令监听器消费这个策略，不能把原始输入直接塞入 payload。
 
 v1 内容哈希为 SHA256(prev_hash 的 UTF-8 文本拼接 canonical_json(entry))。哈希输入是记录的 snake_case 字段加 seq、format_version，包含全部补充数据；prev_hash 在 JSON 之前作为前缀，首条为空字符串。键按 ordinal 排序，数组顺序保留，重复键拒绝。数值按精确十进制规整，不经 double 丢失大整数；指数限定在正负 1000 内、有效数字最多 1024 位、小数位最多 16383 位。字符串使用 System.Text.Json 默认转义。发生时间先统一 UTC 并规整到 PostgreSQL 微秒精度，避免保存后无法重放原哈希。固定向量另由 Python 独立计算验证。
 
@@ -38,7 +38,13 @@ AppendEnlistedAsync 接收调用方已有的 PostgreSQL SERIALIZABLE 事务，�
 
 事务追加与独立追加使用同一租户 advisory lock 键；前者持有事务锁直到提交或回滚。函数检查当前事务隔离级别、租户、节点序号、前序及传入正文的摘要；C# 写入器生成规范化正文并重放已有链头与幂等记录的哈希。这是给可信组件的数据库端口，不能把函数直接作为客户端 API：持有执行凭据的生产方负责记录来源和规范化正文，数据库不独立重做全部 .NET JSON 规范化规则。
 
-真实 CRM 模型验证客户与审计同时可见、显式回滚无残留、审计写入失败使业务事务回滚；双宿主强制制造旧快照冲突后重试完整业务，客户与审计仍一一对应。此验证尚未通过参考应用的创建命令、能力属性和执行 waterfall，完整 CRM 命令验收仍保持未完成。
+真实 CRM 模型验证客户与审计同时可见、显式回滚无残留、审计写入失败使业务事务回滚；双宿主强制制造旧快照冲突后重试完整业务，客户与审计仍一一对应。参考应用现已通过真实 HTTP、生成的 Capability 契约、生产执行 waterfall 和实际 RBAC；客户、回执、Outbox 与审计同时提交，审计失败时全部回滚。当前审计能力 ID 使用冻结 R23 的 component/name 稳定形式：qian.sample.crm/customer.create。
+
+## 命令监听器
+
+AuditPlugin 在 SDK 的 command/dispatching Definition 上登记生产 waterfall 监听器。它读取生成契约的 sideEffect/audit、从真实输入 Schema 计算脱敏哈希，调用实际 handler 与 Data 保存后，使用同一 DbTransaction 追加审计。审计失败向外传播，事务由 SDK 回滚；查询默认不记录，显式 audit 开启时适用同一流程。已验证创建命令，以及真实列表默认不审计、详情显式 audit 后入链；逆序释放专项仍保留。
+
+记录包含真实主体种类、主体 ID、生成能力 ID、契约版本、通道和链路 trace_id。S1 不签发的 act 委托入口明确拒绝，不将未知委托静默记为普通操作；直接存储端口的 Agent/on_behalf_of 预留验证继续保留。等待真实链锁时卸载 Audit，会取消在途命令并回滚已保存的客户、回执和 Outbox；依赖入口随后不可用。
 
 ## 受控平台链与生命周期
 
@@ -52,6 +58,6 @@ AppendPlatformAsync、ReadPlatformAsync、VerifyPlatformAsync 是显式入口，
 
 ## 验证与剩余任务
 
-真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。测试通过并不意味着参考应用同事务要求已经完成：AppendAsync 的独立事务只包含审计记录与链头；AppendEnlistedAsync 已覆盖真实 CRM 数据上下文回滚，后续仍须与真正的命令执行、Outbox 及能力生命周期连接，不能把独立追加成功当成业务回滚验证。
+真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。存储测试与参考应用执行测试分别验证其边界：AppendAsync 的独立事务只包含审计记录与链头；AppendEnlistedAsync 已覆盖真实 CRM 数据上下文回滚，已与实际命令执行和业务 Outbox 连接，跨进程审计事件发布及实体审计接线仍待完成，不能把独立追加成功当成业务回滚验证。
 
-尚未完成：真实能力/属性对脱敏策略的消费、真实 Mediator 与 waterfall 装配、卸载撤销、CRM 命令与 Outbox 同事务、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。
+尚未完成：监听器逆序撤销专项、实体审计与跨进程审计事件、完整默认组合包、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。

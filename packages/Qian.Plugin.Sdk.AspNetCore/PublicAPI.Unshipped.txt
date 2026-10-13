@@ -1,0 +1,18 @@
+#nullable enable
+Qian.Plugin.Sdk.AspNetCore.PluginEnabledMiddleware
+Qian.Plugin.Sdk.AspNetCore.PluginEnabledMiddleware.InvokeAsync(Microsoft.AspNetCore.Http.HttpContext! context, Kun.Core.MultiTenancy.ITenantContext! tenant) -> System.Threading.Tasks.Task!
+Qian.Plugin.Sdk.AspNetCore.PluginEnabledMiddleware.PluginEnabledMiddleware(Microsoft.AspNetCore.Http.RequestDelegate! next, Qian.Plugin.Sdk.AspNetCore.PluginEndpointOptions! options) -> void
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding.EntryId.get -> string!
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding.Key.get -> Qian.Runtime.ServiceKey
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding.Name.get -> string!
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding.PluginEndpointBinding(string! entryId, string! pluginId, Qian.Runtime.ServiceKey key, string! name = "", string? version = null) -> void
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding.PluginId.get -> string!
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding.Version.get -> string?
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointExtensions
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointOptions
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointOptions.PluginEndpointOptions(System.Func<System.IServiceProvider!, Qian.Runtime.IPluginContext!>! registryContext) -> void
+Qian.Plugin.Sdk.AspNetCore.PluginEndpointOptions.RegistryContext.get -> System.Func<System.IServiceProvider!, Qian.Runtime.IPluginContext!>!
+static Qian.Plugin.Sdk.AspNetCore.PluginEndpointExtensions.AddQianPluginEndpoints(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<System.IServiceProvider!, Qian.Runtime.IPluginContext!>! registryContext) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Plugin.Sdk.AspNetCore.PluginEndpointExtensions.RequireQianPlugin(this Microsoft.AspNetCore.Builder.RouteHandlerBuilder! builder, Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding! binding) -> Microsoft.AspNetCore.Builder.RouteHandlerBuilder!
+static Qian.Plugin.Sdk.AspNetCore.PluginEndpointExtensions.UseQianPluginEndpoints(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!

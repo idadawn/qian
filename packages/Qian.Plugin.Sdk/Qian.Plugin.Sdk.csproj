@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>Qian 组件的代码声明、生成契约与安全执行协议。</Description></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /><ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" /><ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" /><ProjectReference Include="../Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" /></ItemGroup>
+</Project>
