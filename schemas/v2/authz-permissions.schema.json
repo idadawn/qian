@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/authz/permissions/v1",
+  "type": "array",
+  "maxItems": 1024,
+  "items": {
+    "type": "object",
+    "required": ["resource", "actions"],
+    "additionalProperties": false,
+    "properties": {
+      "resource": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+      "actions": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"}},
+      "risk": {"type": "object", "additionalProperties": {"enum": ["low", "medium", "high", "critical"]}},
+      "stepUp": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+      "terminals": {"type": "object", "additionalProperties": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"}}}
+    }
+  }
+}

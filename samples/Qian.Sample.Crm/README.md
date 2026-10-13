@@ -32,3 +32,10 @@ Qian.Sample.Crm.Tests 启动真实 Kestrel 与共享 PostgresFixture，使用受
 ## 范围
 
 当前是只读数据入口。完整 CRM 的表单、附件、修订升级、审计展示和用户体验由 S1-QA-007 继续扩展；真实 Qian 身份服务的交互式登录由身份任务验收。本应用不会开放管理员造数接口或生成签名私钥。
+
+
+## 权限声明与默认角色
+
+`metadata/permissions.json` 是客户资源 read/write/export 的声明，`metadata/roles.json` 定义 Owner 的本组件权限全集和使用者的 read。Authz 真实数据库测试直接读取这两份文件，先建立租户角色与主体绑定，再安装策略包，验证新增授权自动作用于已有角色；这不是另一份仅存在于测试中的权限清单。
+
+当前数据宿主仍沿用上面的只读服务策略。真实用户角色、完整授权引擎和 me/permissions 管理面接入由 AZ-002/003 继续完成；权限声明不意味着 write/export 业务端点、组件打包或 QA-007 已完成。
