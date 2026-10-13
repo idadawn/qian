@@ -1,5 +1,27 @@
 # qian CLI（装配切片）
 
+## S1-RT-011 开发进度
+
+正在补齐安装器，已支持批量 `add`、升级、本地 `list` 和 `remove`。整组组件先在独立目录预检，再一次提交；代码依赖失败会恢复整组宿主、组件目录与还原产物。升级验证所有归属 profile，分别保留已有配置；`--reset-config` 显式恢复新默认值，`--force` 处理本地文件改动，新增反向权限仍须 `--yes`。安装会精确还原 NuGet/npm 包并检查实际文件，中央 NuGet 版本通过 MSBuild 读取。
+
+移除只处理所选 profile 的条目，默认保留 disabled 配置，`--purge` 删除条目；其它 profile 或组件仍引用的包不会删除，宿主原有依赖只借用。卸载记录只保留定位信息，允许随后按原安装名清理保留配置；被复用或改写的条目不会被删除。完成日志保留最近 20 次。
+
+测试使用正式 `Kun.Core` 包编译消费者、实际 npm 包验证导入/移除；另把仓库真实 Config Provider 制成临时 NuGet 包，经签名市场批量安装、消费者运行、重装和移除，并验证实际依赖安装失败时没有半批残留。临时包测试不等于私有包族发布，也不替代 identity/authz/files 命名 E2E 或真实平台运营权限验收。组合层复杂边界、一键简写参数、引擎校验和受控中断恢复仍待完成，任务保持 doing。
+
+`add --surfaces skills,commands --no-code` 从已经整体通过来源与语义校验的组件中选择表面，保留技能目录附件和被引用文件，再重新校验投影。原来源摘要与安装文件摘要分别记录；代码组件的运行时字段与代码服务声明不会留在投影清单里，未选中的工具仍被技能引用时拒绝安装。相同版本改选表面属于内容替换，需要 `--force`；已有 required 代码及子组件不能借此被移除。选择普通组件的现有技能不会获取或安装其代码依赖；包内组合组件需要在隔离目录读取包元数据，NuGet 元数据发现仍需 .NET SDK，但不改变宿主依赖。组合包自身的声明表面也有独立挂载条目，使用完整组件 id 加 `-surfaces` 避免覆盖其子组件配置。
+
+只选技能或命令时不安装代码配置；显式选择 `schemas` 时保留配置 Schema，普通组件的已有配置仍受升级校验约束。`ui` 不能与 `--no-code` 同选。组合包保留所需的装配 patch，代码被排除后只挂载具有所选表面的子组件；它们原本声明的非代码依赖不会被伪造补齐。实际 .NET 表面运行时验证了生成清单可注册技能、看不到原代码服务并可卸载；真实 Config 包验证了无 csproj 宿主也能获取包内技能而不添加依赖。
+
+组合包按真实 profile 组合层安装：允许无 `runtime.form` 的依赖聚合，逐个校验 `components/` 子组件，合并包引用和权限需求，再登记到 `profile.bundles`。卸载保留失去来源的配置，重装可继续使用，多个组合层可一起移除；活动的 required 子组件不能通过卸载父组件绕过保护。
+
+预检还会在隔离目录获取声明引用的包，从实际 NuGet 归档读取 `qian/` 组件内容，并读取 npm 的 `qian.component` 指针。它继承宿主包源配置但不复制凭据，不修改宿主项目或 node_modules；发现的组件重新经过同一验证器。市场与包内同名内容冲突时拒绝覆盖，lock 分别保留原来源摘要、完整交付摘要和实际包归档摘要。
+
+所有显式代码包都记录归档 SHA-256，包括没有 Qian 表面的包；`runtime.nuget[] / npm[].digest` 会与实际归档比对，共享或递归发现的包声明也不能冲突。安装后和幂等重跑时，再核对宿主实际 NuGet 归档，以及 npm 顶层/隐藏安装锁与预检归档的 SHA-512 关联；预检和安装之间发生换包会整批回滚。真实 NuGet、npm 客户端测试覆盖错误摘要、安装记录漂移和同版本换包回滚。摘要一致性不等于发布者真实性，§11.5 的原生签名/provenance 仍待完成。
+
+包管理器不经 shell，不输出原始工具日志，npm 生命周期脚本关闭。POSIX 下按本次创建的进程组确认后代已停止后才回滚；查询失败或无法确认停止时保留事务与锁。Windows 尝试终止进程树，但未能确认的失败保留给后续恢复流程，不声称已安全恢复。目录备份不跟随内部符号链接；工作区必须是当前操作者管理的受信任宿主，这不是原生代码沙箱。
+
+## 已交付命令
+
 当前实现 [S1-RT-002](../../pm/tasks/S1-RT-002.md) 的 `dump-config`，以及 [S1-RT-010](../../pm/tasks/S1-RT-010.md) 的文档生成与 skill-only 文档模板初始化。共享表面解析与 Schema 包为 `@qian/surfaces`，profile 合成规则以 [Qian.Profiles](../Qian.Profiles/README.md) 为唯一说明。
 
 在仓库根目录执行：
@@ -24,7 +46,7 @@ overlay 示例（不会修改 base 组合包）：
 
 `--resolve`、`--redact` 表示本切片始终采用的行为：始终解析并验证依赖，始终保留 secretRef，不读取密钥。合法配置退出 0；非法参数或配置退出 1、标准输出为空、标准错误输出带 ErrorDetail 的 diagnostics。业务骨架 warning 会出现在成功输出中，不能用作 Provider 就绪证明。
 
-此工作区包尚未发布。代码包安装、升级/移除、启动进程与远程平台 scope patch 属于 S1-RT-011；市场切片只执行下文明确列出的无代码安装。五个默认 profile 均可静态解析；minimal 仅 Runtime 与表面装载器，默认输出空条目和空诊断。
+此工作区包尚未发布。完整安装与远程平台 scope patch 继续由 S1-RT-011 完成；当前支持范围和剩余项见本页开头。五个默认 profile 均可静态解析；minimal 仅 Runtime 与表面装载器，默认输出空条目和空诊断。
 
 ## 运行态表面诊断
 
@@ -69,6 +91,8 @@ list --remote 合并条目、标注市场、优先级、信任与首选项；它
 
 市场签名为 `.qian/marketplace.json.sig`，支持 64 字节原始签名或 Base64，签名载荷是 marketplace.json 原始字节的 SHA-256。owner.publicKeys 声明的 Ed25519 公钥还须命中客户端信任根；内联私钥、凭据 URL、越界和符号链接被拒绝。每次操作重新读取市场，不沿用被撤销公钥的旧快照。未验证市场只有显式 --allow-unverified 才参与解析，且不能使用代码或高于 community 的组件。
 
-url 的 source.digest 校验原始归档字节；local/git 的目录 digest 按相对 POSIX 路径排序，对 `路径 TAB 字节数 TAB SHA-256 LF` 的 UTF-8 清单求 SHA-256，不包含 `.git`。路径禁止控制符，因此清单无歧义。分支引用必须带 digest；标签/完整提交可以省略，结果仍锁定实际 commit/digest。显式 @version 选择 `refs/tags/v<version>`，并要求所选清单版本一致；NuGet/npm 版本来自该标签内的精确 runtime 声明，不改写或安装它们。已有目录 digest 仍必须匹配请求的版本内容。
+url 的 source.digest 校验原始归档字节；local/git 的目录 digest 按相对 POSIX 路径排序，对 `路径 TAB 字节数 TAB SHA-256 LF` 的 UTF-8 清单求 SHA-256，不包含 `.git`。路径禁止控制符，因此清单无歧义。分支引用必须带 digest；标签/完整提交可以省略，结果仍锁定实际 commit/digest。显式 @version 选择 `refs/tags/v<version>`，并要求所选清单版本一致；NuGet/npm 版本来自该标签内的精确 runtime 声明。已有目录 digest 仍必须匹配请求的版本内容。代码包声明 digest 已接入预检与实际安装复核；原生签名/provenance 验证仍需按规格 §11.5 补齐，当前草稿不能当作正式代码供应链验收。
 
-无代码 add 会显示文件、反向权限与 secretRef 需求；confirm 需 --yes，restricted 被拒绝，ON_USE 仅提示登记，不写安装锁或激活。该切片复制已校验表面、追加 global profile 条目，再次验证 profile 后记录 `.qian/lock.json` 的 plugins 数组，包含来源市场、source、digest、可用 commit、公钥指纹、文件和 profile 条目。已有修改或不同版本拒绝覆盖；同一版本/来源/内容重跑无变化。项目安装锁防并发写入，journal 保存变更与回滚数据，异常逆序恢复。进程中断后的 journal 恢复、代码依赖与租户操作仍由完整 CLI 任务提供，不能据本切片宣称它们已实现。
+add 会显示文件、反向权限与 secretRef 需求；confirm 需 --yes，restricted 被拒绝，ON_USE 仅提示登记，不写安装锁或激活。整组静态预检后复制表面、还原依赖、写 global profile 条目并再次复核，记录 `.qian/lock.json` 的来源、文件、条目和包归属。相同版本/来源/文件与实际依赖重跑保持不变；升级保留配置，不兼容则拒绝并保持原状。已移除组件的 disabled 配置可在重装时复用。包安装成功不等于 Provider 已在业务宿主运行。
+
+`qian list --json` 输出本地已安装来源，不读取配置值；`qian remove <ref> --json` 执行本地移除，`--purge` 删除所选 profile 条目。手工改写的文件或条目、required 组件以及包版本冲突会被拒绝。进程中断后的恢复入口与租户操作仍待完整验收。
