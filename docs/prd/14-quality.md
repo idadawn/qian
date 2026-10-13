@@ -26,7 +26,7 @@
 | TCK（三套，ADR-020） | ① 运行时语义套件：`Inject` / `Apply` 装载顺序与缺失键报错、可逆副作用按逆序撤销、scope 遮蔽与 `restrict` 交集、五种分发模式、profile / 组合包 / patch 层叠与 `dump-config` 一致性（.NET 与 TS 同一组 fixture，以 `minimal` profile 为基准宿主）；② 独立模式套件：组件在 `standalone` 宿主（消费者自己的 ASP.NET Core 项目，不装 `qian.registry` / `qian.lifecycle` / `qian.capabilities`）里 `qian add` 后可用，未显式选 `SingleTenant` 且无宿主 `ITenantContext` 即拒绝启动；③ 组件一致性套件：清单校验、契约一致性、生命周期钩子幂等性（重复调用 `tenantProvision / tenantUpgrade`）、跨租户越权探测、性能基线、「未挂载」三处拦截 | `qian` CLI 一键运行；上架闸门 = 三套 TCK 全绿 + can-i-deploy；官方与第三方同一套 | 发布阻断 | S1 |
 | OIDC 一致性 | `qian.identity` 的授权码 + PKCE、refresh、后通道登出、discovery、`resource` 参数 | OpenID 官方一致性套件（Basic / Back-Channel Logout profile） | 阶段阻断 | S1 |
 | E2E | 开发者写一个多租户应用的完整路径（S1）；建应用 → 表单 / 列表 → 审批 → 授权（S2）；市场选购 → 开通 → 自助配 IdP（S3） | Playwright，chromium + webkit；在 staging 跑；`data-testid` 寻址 | 阶段阻断（夜间） | S1 |
-| 无障碍 | yue 全部组件与关键页面 | axe + Playwright，critical = 0；Storybook a11y addon；令牌对比度单测 WCAG AA ≥ 4.5:1 | PR 阻断（组件）/ 夜间（页面） | S1 |
+| 无障碍 | yue 全部组件与关键页面 | 独立 Vitest 浏览器测试与 Rspress 静态页面 Playwright + axe，critical / serious = 0；令牌对比度单测 WCAG AA ≥ 4.5:1 | PR 阻断（组件）/ 夜间（页面） | S1 |
 | 性能预算 | 首屏 script 体积（error 级）、Lighthouse perf / a11y / bp；API p95 基线；Schema Migrator 单租户迁移时长 | Lighthouse CI；k6 基线脚本 | PR 阻断（体积）/ 阶段阻断（p95） | S1 |
 | 视觉回归 | 每个 yue 组件默认 / 悬停 / 禁用 / 错误 / 暗色 | Playwright 截图，固定字体与容器镜像，基线入库 | S1 可选 / S2 PR 阻断 | S1 / S2 |
 | 安全扫描 | 依赖漏洞、容器镜像、SAST、密钥形态扫描、许可证 | Trivy / CodeQL / gitleaks；许可证白名单（排除 AGPL 与不允许多租户 PaaS 的条款） | PR 阻断 | S1 |
@@ -241,7 +241,7 @@ judge:
 | S1 | 组件机制 | 任一平台插件「出修订 → 逐租户迁移 → 回切」演示通过；`platform` profile base 组合包内全部平台插件三套 TCK 全绿；未签名安装失败；`qian --profile platform --dump-config` 打印整棵插件树且任一条目可被 patch 替换；文档新鲜度（C18）、依赖图断言（C19）、`dump-config` 漂移（C20）门禁启用 | TCK 报告、演示录屏、`dump-config` 基线快照 |
 | S1 | 可观测 | trace 覆盖 ≥ 95%（含消息与作业；建议值，待研发负责人校准）；每服务 `/healthz /readyz`；Alertmanager 告警可达 | 采样报告 |
 | S1 | 稳定性 | staging 7 天 crash（容器重启）≤ 3%（建议值，待研发负责人校准）；p95 基线记录 | 监控快照 |
-| S1 | 前端 | yue S1 最小集 Storybook 覆盖 100%；axe critical = 0；对比度单测通过；Lighthouse 预算通过 | CI 报告 |
+| S1 | 前端 | yue S1 最小集 Rspress 页面与共用状态示例覆盖 100%；axe critical / serious = 0；对比度单测通过；Lighthouse 预算通过 | CI 报告 |
 | S1 | 部署 | default-deny + ResourceQuota + Secret 加密已启用；备份恢复演练 1 次成功 | 集群配置快照、演练记录 |
 | S1 | 过渡态清零 | §13.14 的 G1–G14 全部关闭或有合入期限的补丁包 | 缺口跟踪表 |
 | **S2** | 跑通建应用 → 表单 / 列表 → 审批 → 授权 | E2E 100%；非开发人员按手册 ≤ 1 人日完成示范应用 | E2E 报告、可用性测试记录 |

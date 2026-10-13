@@ -4,7 +4,7 @@ status: Accepted
 date: 2026-10-06
 decision_id: D13
 supersedes: none
-amended_by: ADR-021
+amended_by: ADR-021、ADR-022
 ---
 
 # ADR-013 前端与 yue
@@ -19,7 +19,7 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 
 ## 2 决策（Decision）
 
-- **D13.1 技术栈**（路线 A，沿用 iClaw 已验证组合）：React 19 + TypeScript + Vite + Tailwind v4 + Base UI + shadcn 源码自有化；Zustand + TanStack Query；react-router 7；i18next；Vitest + Playwright + axe；Lighthouse 预算；Changesets 发包；Storybook 10；API client 从 Kun OpenAPI 生成（orval / openapi-typescript）+ 契约快照测试。
+- **D13.1 技术栈**【文档工具部分已由 ADR-022 修订为统一 Rspress；下文保留原决策】（路线 A，沿用 iClaw 已验证组合）：React 19 + TypeScript + Vite + Tailwind v4 + Base UI + shadcn 源码自有化；Zustand + TanStack Query；react-router 7；i18next；Vitest + Playwright + axe；Lighthouse 预算；Changesets 发包；Storybook 10；API client 从 Kun OpenAPI 生成（orval / openapi-typescript）+ 契约快照测试。
 - **D13.2 yue 六层 + 横切**：`@yue/tokens`（primitive → semantic → component 三层令牌、明暗两态）→ `@yue/core`（约 30 个基础组件，Base UI + shadcn 自有化）→ 后台通用层（`@yue/shell` AppShell、`@yue/data` DataTable 基于 TanStack Table v9 + Virtual、`@yue/form` Field + SchemaForm 基于 react-hook-form + Ajv、`@yue/charts` ECharts 6、`@yue/code-editor` Monaco + CodeMirror 6；Upload 分片 + MD5；Tree / Cascader / 日期）→ `@yue/biz` 业务选择器（组织 / 用户 / 角色 / 岗位 / 字典 / 接口选择）→ `@yue/runtime` + `@yue/widgets` 低代码运行时与物料 → `@yue/designer-*`；横切 `@yue/sdk`（注册表 API、PlatformClient、拦截器链、i18n、mock）、`@yue/agent`（S4）、`@yue/mobile`（S2 可选 / S3）。依赖方向严格自下而上，用 eslint-plugin-boundaries / dependency-cruiser 写死进 CI。
 - **D13.3 只保留一套表单 / 表格 / 弹层引擎**贯穿 S1 后台 CRUD 与 S2 低代码运行时；业务组件只做叶子，不得新建引擎。
 - **D13.4 外壳**：`@yue/shell` + Module Federation 2 运行时加载（S1 必做）+ 带版本号的插槽注册表（`qian.shell.nav/v1` 等，破坏性变更开 v2 并给弃用窗口）；共享依赖 `react / react-dom / @qian/yue / @qian/plugin-sdk` 设 singleton；清单声明 `engines.yue`；yue 严格 SemVer 且主版本升级有双版本并存期；只加载「本租户已启用 × 当前页面用得到」的贡献；宿主与插件之间走带作用域校验的桥接 API，插件 UI 消息视为不可信输入。
@@ -36,7 +36,7 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 - **D13.15 其他选型**：dnd-kit（包一层抽象）；`@xyflow/react` 12（S3 自由画布）；react-grid-layout；Univer 开源核心（排除 Pro 与商业包，xlsx 导出放后端）；pdfme；quickjs-emscripten；不用 Formily / amis / lowcode-engine / bpmn-js。
 - **D13.16 安全硬线**：不用 `eval` 执行租户脚本；令牌不进 URL / iframe（一次性票据或 postMessage 握手）；前端权限裁剪只是体验层，鉴权在服务端；不在前端持有加密密钥；不持久化 token / 锁屏密码。
 - **D13.17 为 S4 预留**：机器可读 manifest；带版本的 Schema 与校验器（Agent 生成物走同一校验再落库）；客户端动作 / 导航 / 命令注册表（名称、参数 JSON Schema、权限、人话描述）；SSE 事件 JSON Schema 为唯一真相源生成 TS。
-- **D13.18 文档站（2026-10-07 产品负责人确认）**：Rspress 2.0（MDX、React、与 Rslib 同属 Rsbuild 家族）作为 Qian 平台、yue 组件与底座框架 Kun（镜像小节，ADR-021）的使用文档站；开启 `llms` 输出 `llms.txt` / `llms-full.txt` 与每页 Markdown（SSG-MD），供知识库与 Agent 读取；`@rspress/plugin-preview` / `plugin-playground` / `plugin-api-docgen` / `plugin-typedoc` 承担组件活演示与 API 表；.NET 包 API 参考用 DocFX，平台 OpenAPI 用 Scalar；文档源放在各组件文件夹（README 契约见 ADR-020 D20.9），构建前汇总进站点；站内「问 AI」S2 用自有模型网关（ADR-015）与 iClaw（ADR-016）实现，不购买 SaaS。信息架构（七个部分）、组件页模板与 frontmatter 规范见 `docs/prd/specs/docs-site.md`。备选 Docusaurus 3.x；不选 dumi / VitePress / MkDocs（分别因绑定 umi、无 MDX）。
+- **D13.18 文档站（2026-10-07 产品负责人确认）**【经 ADR-022 收敛为唯一文档与演示体系，插件默认行为需按其验收补齐】：Rspress 2.0（MDX、React、与 Rslib 同属 Rsbuild 家族）作为 Qian 平台、yue 组件与底座框架 Kun（镜像小节，ADR-021）的使用文档站；开启 `llms` 输出 `llms.txt` / `llms-full.txt` 与每页 Markdown（SSG-MD），供知识库与 Agent 读取；`@rspress/plugin-preview` / `plugin-playground` / `plugin-api-docgen` / `plugin-typedoc` 承担组件活演示与 API 表；.NET 包 API 参考用 DocFX，平台 OpenAPI 用 Scalar；文档源放在各组件文件夹（README 契约见 ADR-020 D20.9），构建前汇总进站点；站内「问 AI」S2 用自有模型网关（ADR-015）与 iClaw（ADR-016）实现，不购买 SaaS。信息架构（七个部分）、组件页模板与 frontmatter 规范见 `docs/prd/specs/docs-site.md`。备选 Docusaurus 3.x；不选 dumi / VitePress / MkDocs（分别因绑定 umi、无 MDX）。
 
 ## 3 理由（Rationale）
 
@@ -122,3 +122,7 @@ GitHub Packages 的 npm 仓库要求包 scope 与仓库所有者同名，`@yue/*
 Combobox 新增 Trigger/Value，推荐把搜索输入放在 Content 内；靶场、目录和 Storybook 使用此形态，取消了原先页面级 aria-hidden-focus 整条规则豁免。旧外置输入 API 保留兼容，其页面组合限制在 core 主文档中说明。
 
 Select 的 Base UI 内部 Tab 哨兵在页面级 axe 中产生 aria-hidden-focus 报告；只按三个内部属性识别并排除这些瞬时哨兵，保留整条规则。真实 Tab/Shift+Tab 用例验证焦点不滞留在隐藏节点，负例确认普通隐藏按钮仍被拒绝。PinInput 为首位使用原生 label；ContextMenu 在封装层把 Shift+F10/菜单键转交给 Base UI 的 contextmenu 入口。框架源码保持原版。
+
+### 2026-10-14 统一 Rspress（ADR-022）
+
+产品负责人要求统一使用 Rspress、不再保留 Storybook。能力评估、已发现的 Props 过滤与离线编辑器限制、测试替代和任务边界见 [ADR-022](ADR-022-rspress-unified-component-docs.md)。S1-YUE-005 重新打开，原完成记录保留为迁移前证据；本次修订不代表替换代码已完成。
