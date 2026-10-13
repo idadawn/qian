@@ -1,0 +1,31 @@
+{
+  "version":1,
+  "id":"T23",
+  "profiles":["minimal","platform"],
+  "clients":["dotnet","node"],
+  "businessProviders":["audit","authz","crm","data","tenancy"],
+  "platformProviders":["capabilities","registry"],
+  "steps":[
+    {"op":"request","id":"create","tenant":"a","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000001","name":"Alpha"},"status":201,"capture":"one","name":"Alpha"},
+    {"op":"request","id":"replay","tenant":"a","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000001","name":"Alpha"},"status":201,"same":"one","name":"Alpha"},
+    {"op":"request","id":"conflict","tenant":"a","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000001","name":"Changed"},"status":409},
+    {"op":"request","id":"list-a","tenant":"a","method":"GET","path":"/api/customers","status":200,"names":["Alpha"]},
+    {"op":"request","id":"cross-tenant","tenant":"b","method":"GET","path":"/api/customers/{one}","status":404},
+    {"op":"request","id":"list-b","tenant":"b","method":"GET","path":"/api/customers","status":200,"names":[]},
+    {"op":"request","id":"permission-denied","tenant":"b","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000003","name":"Gamma"},"status":403},
+    {"op":"request","id":"scope-denied","tenant":"a","oauthScopes":"crm.read","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000003","name":"Gamma"},"status":403},
+    {"op":"request","id":"tenant-input-rejected","tenant":"a","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000003","name":"Gamma","tenantId":"forged"},"status":400},
+    {"op":"request","id":"anonymous","tenant":"a","anonymous":true,"method":"GET","path":"/api/customers","status":401},
+    {"op":"tenantStatus","value":"suspended"},
+    {"op":"request","id":"suspended","tenant":"a","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000002","name":"Beta"},"status":403},
+    {"op":"tenantStatus","value":"active"},
+    {"op":"request","id":"resumed","tenant":"a","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000002","name":"Beta"},"status":201,"capture":"two","name":"Beta"},
+    {"op":"unmountAuthz"},
+    {"op":"request","id":"dependency-removed","tenant":"a","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000003","name":"Gamma"},"status":404},
+    {"op":"restoreAuthz"},
+    {"op":"request","id":"dependency-restored","tenant":"a","method":"POST","path":"/api/customers","body":{"idempotencyKey":"00000000-0000-4000-8000-000000000003","name":"Gamma"},"status":201,"capture":"three","name":"Gamma"},
+    {"op":"request","id":"read-original","tenant":"a","method":"GET","path":"/api/customers/{one}","status":200,"same":"one","name":"Alpha"},
+    {"op":"request","id":"final-list","tenant":"a","method":"GET","path":"/api/customers","status":200,"names":["Alpha","Beta","Gamma"]}
+  ],
+  "final":{"customers":3,"outbox":3,"auditA":5,"auditB":0}
+}
