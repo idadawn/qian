@@ -2072,11 +2072,9 @@
    "S1-YUE-005",
    "S1-RT-010"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md#3",
@@ -3613,7 +3611,7 @@
  {
   "id": "S1-KUN-010",
   "title": "Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁",
-  "status": "doing",
+  "status": "blocked",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
@@ -3648,7 +3646,7 @@
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件规格 §6.1 与 ADR-019 D19.2 要求 Definition 包仅依赖 <code>Kun.*.Abstractions</code>，但 Kun 的稳定事件标记 <code>IntegrationEventIdAttribute</code> 与事件注册端口在 <code>Kun.EventBus</code> 包里，没有 <code>.Abstractions</code> 拆分，<code>Qian.Identity.Abstractions</code> 只能直接引用它，传递带入 StackExchange.Redis 等实现依赖（S1-IDP-001，S1-DEC-013 R64）。<code>scripts/check_deps.py</code> 的 <code>role_of()</code> 把非 <code>qian.</code> 包一律归 external 放行，所以这条规则目前没有门禁；同类现状还有 <code>Qian.Data.Abstractions</code> 直接依赖 <code>Kun.EntityFrameworkCore</code> / <code>Kun.MultiTenancy.EntityFrameworkCore</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>上游：Kun 拆出 <code>Kun.EventBus.Abstractions</code>（<code>IntegrationEventIdAttribute</code>、<code>IIntegrationEvent</code>、带 <code>JsonTypeInfo</code> 的事件注册端口），<code>Kun.EventBus</code> 依赖它；随下一次 Kun 发版</li>\n<li class='chk'><span class='box'></span>Qian：<code>Qian.Identity.Abstractions</code> 改引 <code>Kun.EventBus.Abstractions</code>，<code>DefinitionReferencesOnlyRuntimeAndFrameworkEventPort</code> 的期望值同步，包 README 的延期项移除</li>\n<li class='chk'><span class='box'></span>门禁：<code>check_deps.py</code> 对 <code>definition</code> 角色的 Kun 直接依赖只放行 <code>Kun.*.Abstractions</code> 与显式白名单（<code>Qian.Data.Abstractions</code> 的两项要么迁移要么登记理由），<code>tests/gates</code> 加正反例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的偏差）</li>\n<li>2026-10-14 cody：开始：按用户指派认领；先完成 Kun 事件抽象拆包、正式发布与 Qian 依赖门禁。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件规格 §6.1 与 ADR-019 D19.2 要求 Definition 包仅依赖 <code>Kun.*.Abstractions</code>，但 Kun 的稳定事件标记 <code>IntegrationEventIdAttribute</code> 与事件注册端口在 <code>Kun.EventBus</code> 包里，没有 <code>.Abstractions</code> 拆分，<code>Qian.Identity.Abstractions</code> 只能直接引用它，传递带入 StackExchange.Redis 等实现依赖（S1-IDP-001，S1-DEC-013 R64）。<code>scripts/check_deps.py</code> 的 <code>role_of()</code> 把非 <code>qian.</code> 包一律归 external 放行，所以这条规则目前没有门禁；同类现状还有 <code>Qian.Data.Abstractions</code> 直接依赖 <code>Kun.EntityFrameworkCore</code> / <code>Kun.MultiTenancy.EntityFrameworkCore</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>上游：Kun 拆出 <code>Kun.EventBus.Abstractions</code>（<code>IntegrationEventIdAttribute</code>、<code>IIntegrationEvent</code>、带 <code>JsonTypeInfo</code> 的事件注册端口），<code>Kun.EventBus</code> 依赖它；随下一次 Kun 发版</li>\n<li class='chk'><span class='box'></span>Qian：<code>Qian.Identity.Abstractions</code> 改引 <code>Kun.EventBus.Abstractions</code>，<code>DefinitionReferencesOnlyRuntimeAndFrameworkEventPort</code> 的期望值同步，包 README 的延期项移除</li>\n<li class='chk'><span class='box'></span>门禁：<code>check_deps.py</code> 对 <code>definition</code> 角色的 Kun 直接依赖只放行 <code>Kun.*.Abstractions</code> 与显式白名单（<code>Qian.Data.Abstractions</code> 的两项要么迁移要么登记理由），<code>tests/gates</code> 加正反例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的偏差）</li>\n<li>2026-10-14 cody：开始：按用户指派认领；先完成 Kun 事件抽象拆包、正式发布与 Qian 依赖门禁。</li>\n<li>2026-10-14 cody：上游Kun PR #59与正式Release v2026.10.14已完成；Qian草稿PR #77保留。nuget.org上传返回Created，但公开索引超过一小时仍只有2026.10.13、新EventBus.Abstractions返回404，CI正式源还原报NU1101/NU1102。使用该次正式Release的35包闭包预验收：最新主线组合590测试零失败零跳过、47门禁与32包依赖通过；待正式源可还原后恢复最终CI与合并。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-010.md"
  },
  {
@@ -5834,7 +5832,7 @@
  {
   "id": "S1-YUE-005",
   "title": "@yue/core 约 30 个基础组件（Base UI + shadcn）",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "YUE",
   "areaName": "外壳与 yue",
@@ -5848,7 +5846,7 @@
    "S1-YUE-004"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -5865,7 +5863,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：<code>@yue/core</code> 组件在 Storybook a11y 插件与 axe E2E 下 critical = 0；每个组件有 <code>data-slot</code> 与 <code>data-testid</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验</li>\n<li class='chk done'><span class='box'>✓</span>文档：Storybook 覆盖全部组件与令牌可视化页</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：<code>@yue/core</code> 组件在 Storybook a11y 插件与 axe E2E 下 critical = 0；每个组件有 <code>data-slot</code> 与 <code>data-testid</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验</li>\n<li class='chk done'><span class='box'>✓</span>文档：Storybook 覆盖全部组件与令牌可视化页</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #76 全部15项适用CI通过后合并（a62f8004）。51组件入口、157项Vitest、126条Storybook用例、64项页面E2E与真实Docs烟测通过；三个页面Lighthouse a11y=100、脚本≤250KiB。实现分支与worktree已清理，独立本地预览保留。</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-005.md"
  },
  {
@@ -5884,11 +5882,9 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5923,11 +5919,9 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5968,7 +5962,6 @@
    "S1-FILE-001"
   ],
   "blockedBy": [
-   "S1-YUE-005",
    "S1-FILE-001"
   ],
   "order": 5,
@@ -6010,7 +6003,6 @@
    "S1-IDP-010"
   ],
   "blockedBy": [
-   "S1-YUE-005",
    "S1-YUE-007",
    "S1-IDP-010"
   ],
@@ -6057,8 +6049,7 @@
    "S1-YUE-005"
   ],
   "blockedBy": [
-   "S1-MGW-001",
-   "S1-YUE-005"
+   "S1-MGW-001"
   ],
   "order": 2,
   "readyNow": false,
