@@ -326,11 +326,11 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 | 任务 | 结论 | 权威落点 | 批准留痕 |
 |---|---|---|---|
 | S1-DEC-012 | minimal profile 默认装配清单按推荐口径 | ADR-020 §7.1 | 任务文件记载 2026-10-09 在聊天中确认 |
-| S1-DEC-014 | 运行时物理包 `@idadawn/qian-runtime` 发布到 GitHub Packages，消费方用 npm alias 保留 `@qian/runtime` | ADR-021 D21.6 | 仅 cody 自述，待产品负责人补确认（R70） |
-| S1-DEC-015 | Identity 分阶段：SDK 阶段用真实协议夹具，真实 `qian-identity` 的 PKCE 联调留在 S1-IDP-002 | ADR-005 §9 | 仅 cody 自述，待补（R70） |
-| S1-DEC-016 | DEP-001 只验基础设施，真实平台四依赖联调留在 S1-DEP-005 | ADR-017 §9 | 仅 cody 自述，待补（R70） |
-| S1-DEC-017 | RLS 正向验收用无 BYPASSRLS 的应用角色，会话变量统一为 `app.current_tenant_id` | ADR-004 | 仅 cody 自述，待补（R70） |
-| S1-DEC-018 | DATA-001 本体先交付，代码字段源生成与真实安装门留在 S1-RT-014 / S1-RT-011 | S1-DATA-001、S1-RT-011、S1-RT-014 | 仅 cody 自述，待补（R70） |
+| S1-DEC-014 | 运行时物理包 `@idadawn/qian-runtime` 发布到 GitHub Packages，消费方用 npm alias 保留 `@qian/runtime` | ADR-021 D21.6 | cody 自述；产品负责人 2026-10-13 在聊天中确认（R70 留痕补齐） |
+| S1-DEC-015 | Identity 分阶段：SDK 阶段用真实协议夹具，真实 `qian-identity` 的 PKCE 联调留在 S1-IDP-002 | ADR-005 §9 | cody 自述；产品负责人 2026-10-13 在聊天中确认（R70 留痕补齐） |
+| S1-DEC-016 | DEP-001 只验基础设施，真实平台四依赖联调留在 S1-DEP-005 | ADR-017 §9 | cody 自述；产品负责人 2026-10-13 在聊天中确认（R70 留痕补齐） |
+| S1-DEC-017 | RLS 正向验收用无 BYPASSRLS 的应用角色，会话变量统一为 `app.current_tenant_id` | ADR-004 | cody 自述；产品负责人 2026-10-13 在聊天中确认（R70 留痕补齐） |
+| S1-DEC-018 | DATA-001 本体先交付，代码字段源生成与真实安装门留在 S1-RT-014 / S1-RT-011 | S1-DATA-001、S1-RT-011、S1-RT-014 | cody 自述；产品负责人 2026-10-13 在聊天中确认（R70 留痕补齐） |
 
 ### 验收复核裁决 R65–R74（S1-DEC-019，2026-10-13）
 
@@ -341,7 +341,7 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 - R67：CFG-002 的 CI 门禁对仓库全部 profile 生效配置执行明文密钥扫描；公开引用以组件规格 §11.3 为准，`secretRef://k8s/...` 只作底层定位。
 - R68：QA-002 的 T23 用 TCK 平台组合包与 CRM 样例 Provider 组；D19.8 点名三包的平台模式对照归 S1-QA-003 / S1-QA-005。
 - R69：DEC-018 所说「QA-002 总目标」不是 S1-QA-002 的验收；S1-RT-011 依赖 S1-RT-014。
-- R70：DEC-014–018 的批准只有 cody 自述，补确认前按默认裁决继续生效。
+- R70：DEC-014–018 的批准只有 cody 自述，补确认前按默认裁决继续生效；产品负责人 2026-10-13 已在聊天中确认，留痕见各任务文件「复核备注」。
 - R71：任务日志必须署实际代理名，先建档再交付。
 - R72：文档站换用 `@idadawn/yue-tokens`（S1-DOCS-004），yue 规格令牌三项勾选、暗色选择器与实现一致。
 - R73：DEP-001 的集群事实经只读核验部分确认，未覆盖项写明；Harbor OCI 制品与 egress 动态放行移交 S1-RT-013 / S1-DEP-004。
