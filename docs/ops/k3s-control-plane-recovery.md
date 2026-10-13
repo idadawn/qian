@@ -127,7 +127,7 @@
 
 3. 保存 Node / PV 基线并安全准备 agent 加入材料。不同时删除两台 Node；token 只通过受保护的文件或流传递，不回显到终端或写入任务日志。就地改装保留原 node password 和 Node UID；若选择经核实的卸载重装，仅在轮到对应节点时删除其 Node，以清除旧 node password Secret。
 
-4. 两台 worker 按第 0 步定的顺序逐台改装为 agent（先 worker01，确认其 Pod 与数据卷恢复后再做 worker02）。 就地改装使用既有 agent unit / EnvironmentFile，保留原节点名、node-ip、node password 和业务卷；备份并移开旧 server 专用配置，禁用旧 server unit，启用 agent unit。无需卸载或删除 server 数据目录。切换后只移除旧 control-plane / etcd 角色标签，保留其他标签、污点与调度状态。下面的安装示例仅适用于完整核实后的卸载重装路径。先卸载 server 安装（第 0 步已核实它只删 k3s 自身目录，不碰 `/data`），再按部署仓库的 agent 模式安装，配置文件照抄 [qian-prod-agent.yaml](https://github.com/idadawn/iclaw-deploy/blob/main/0-cluster/qian-prod-agent.yaml) 的形式，把 `node-name` 改为原节点名，去掉 prod 的标签与污点，保留原有标签：
+4. 两台 worker 按第 0 步定的顺序逐台改装为 agent（先 worker01，确认其 Pod 与数据卷恢复后再做 worker02）。 就地改装使用既有 agent unit / EnvironmentFile，保留原节点名、node-ip、node password 和业务卷；备份并移开旧 server 专用配置，禁用旧 server unit，启用 agent unit。无需卸载或删除 server 数据目录；已有 unit 带 node-ip 时不要重复写进 YAML，StringSlice 可能合并成两个 IPv4。切换后只移除旧 control-plane / etcd 角色标签，保留其他标签、污点与调度状态。下面的安装示例仅适用于完整核实后的卸载重装路径。先卸载 server 安装（第 0 步已核实它只删 k3s 自身目录，不碰 `/data`），再按部署仓库的 agent 模式安装，配置文件照抄 [qian-prod-agent.yaml](https://github.com/idadawn/iclaw-deploy/blob/main/0-cluster/qian-prod-agent.yaml) 的形式，把 `node-name` 改为原节点名，去掉 prod 的标签与污点，保留原有标签：
 
    ```bash
    /usr/local/bin/k3s-uninstall.sh; mkdir -p /etc/rancher/k3s; install -m 0600 /dev/stdin /etc/rancher/k3s/agent-token <<< '<node-token>'; printf 'server: https://192.168.1.161:6443\ntoken-file: /etc/rancher/k3s/agent-token\nnode-name: k3s-worker01\n' > /etc/rancher/k3s/config.yaml; curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.35.5+k3s1 sh -s - agent
@@ -178,3 +178,11 @@ for i in $(seq 1 288); do date -u +%FT%TZ; systemctl show k3s -p NRestarts; kube
 ## 7 留痕
 
 执行人把阶段 0 的测量值、阶段 1 的快照名与各步时间、阶段 3 的日志摘要写进 S1-DEP-007 的进度日志；部署仓库的变更走 PR 并在 S1-DEP-007 回链。
+
+## 8 执行结果（2026-10-14）
+
+方案 B 已执行。qd 于2026-10-13T17:19:39Z完成单成员重置，17:19:49Z readyz成功；两台worker以原UID和节点名成为agent，server unit永久masked，所有业务卷保留。阶段0至2证据、发生的配置重复修复、旧Pod回收及实际停机时点均在 [S1-DEP-007](../../pm/tasks/S1-DEP-007.md)。原约1小时是估计，实际受I/O、重启修复、驱逐回收和重新调度影响超过该估计。
+
+宿主内存不足未被确认：MemAvailable约6023MiB、memory PSI近零。进一步测量发现机械RAID上VM105持续读取；临时读限额1200→200帮助恢复后，已回到原值，未永久改变该服务预算。运行中采样不冒充完整硬件性能测试。
+
+日常备份已从过时SQLite逻辑改为etcd直连、原token/配置加密异机传输，端到端解密与离线恢复结构验证通过；详细脚本与权限边界唯一源为部署仓的 `0-cluster/ops/README.md`。五分钟采样与每小时验收复核已启用，完整24小时截止2026-10-14T18:23:34Z（北京时间10-15 02:23:34），最终验收仍未完成。
