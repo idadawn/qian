@@ -311,7 +311,7 @@
  {
   "id": "S1-AUD-005",
   "title": "审计脱敏动态键正则负载下偶发超时：复用编译实例、有界超时放宽到 1 秒",
-  "status": "doing",
+  "status": "done",
   "stage": "S1",
   "area": "AUD",
   "areaName": "审计与可观测",
@@ -323,7 +323,7 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -341,10 +341,10 @@
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>全量 <code>dotnet test</code>（多个测试项目并行、Testcontainers 同时运行）时，<code>Qian.Audit.Tests</code> 的 <code>数组位置_动态键_额外字段_属性名与递归对象中的敏感标记均生效</code> 偶发 <code>AUDIT_SCHEMA_INVALID</code>，单独运行 26/26 通过。<code>AuditInputPolicy</code>（S1-AUD-001 引入）每匹配一个动态键都新建 NonBacktracking <code>Regex</code>。惰性 DFA 每物化一条新转移，都要对照匹配开始时定下的 100 ms 墙钟截止。进程内首次匹配约需 5 ms CPU（JIT 与建图），CPU 超额订阅时被调度拉长到 100 ms 以上，就被误判为超时。生产路径每条命令都新建策略，负载尖峰时同样会把合法命令错拒为 400。本任务只改正则的执行方式，不改脱敏语义。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>同一模式在进程内复用一个编译实例：缓存有界，超过上限清空重建；引擎仍为 NonBacktracking（线性时间），单次匹配超时仍有界（1 秒）</li>\n<li class='chk'><span class='box'></span>非法或不受支持的模式（语法错误、环视、反向引用、原子组、自动机超限）仍返回 <code>AUDIT_SCHEMA_INVALID</code>，不进缓存，再次构造仍拒绝；匹配超时仍按失败关闭处理</li>\n<li class='chk'><span class='box'></span>UT：多线程反复新建策略并脱敏动态键，结果全部正确且无异常</li>\n<li class='chk'><span class='box'></span>负载复现与对比数据写进 PR：旧实现在超额订阅下出现超时，新实现为零</li>\n<li class='chk'><span class='box'></span><code>dotnet build Qian.slnx -c Release</code> 与 <code>Qian.Audit.Tests</code> 全部通过；README 补充引擎、缓存与超时说明</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：复现负载下的墙钟超时，改为复用编译实例并放宽有界超时，补并发稳定性与非法模式回归</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>全量 <code>dotnet test</code>（多个测试项目并行、Testcontainers 同时运行）时，<code>Qian.Audit.Tests</code> 的 <code>数组位置_动态键_额外字段_属性名与递归对象中的敏感标记均生效</code> 偶发 <code>AUDIT_SCHEMA_INVALID</code>，单独运行 26/26 通过。<code>AuditInputPolicy</code>（S1-AUD-001 引入）每匹配一个动态键都新建 NonBacktracking <code>Regex</code>。惰性 DFA 每物化一条新转移，都要对照匹配开始时定下的 100 ms 墙钟截止。进程内首次匹配约需 5 ms CPU（JIT 与建图），CPU 超额订阅时被调度拉长到 100 ms 以上，就被误判为超时。生产路径每条命令都新建策略，负载尖峰时同样会把合法命令错拒为 400。本任务只改正则的执行方式，不改脱敏语义。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>同一模式在进程内复用一个编译实例：缓存有界，超过上限清空重建；引擎仍为 NonBacktracking（线性时间），单次匹配超时仍有界（1 秒）</li>\n<li class='chk done'><span class='box'>✓</span>非法或不受支持的模式（语法错误、环视、反向引用、原子组、自动机超限）仍返回 <code>AUDIT_SCHEMA_INVALID</code>，不进缓存，再次构造仍拒绝；匹配超时仍按失败关闭处理</li>\n<li class='chk done'><span class='box'>✓</span>UT：多线程反复新建策略并脱敏动态键，结果全部正确且无异常</li>\n<li class='chk done'><span class='box'>✓</span>负载复现与对比数据写进 PR：旧实现在超额订阅下出现超时，新实现为零</li>\n<li class='chk done'><span class='box'>✓</span><code>dotnet build Qian.slnx -c Release</code> 与 <code>Qian.Audit.Tests</code> 全部通过；README 补充引擎、缓存与超时说明</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：复现负载下的墙钟超时，改为复用编译实例并放宽有界超时，补并发稳定性与非法模式回归</li>\n<li>2026-10-14 claude：完成：动态键正则按模式原文复用编译实例（最多 128 个），单次匹配超时 100 ms 改为有界 1 秒，仍为 NonBacktracking 并按 AUDIT_SCHEMA_INVALID 失败关闭。约 10 倍超额订阅下交替运行该用例：旧构建 150 次失败 42 次，新构建 0 次；Qian.Audit.Tests 28/28。随 idadawn/qian#81 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
   "file": "pm/tasks/S1-AUD-005.md"
  },
  {
