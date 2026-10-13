@@ -26,7 +26,7 @@ updated: 2026-10-14
 
 ## 验收
 
-- [ ] 收集脚本把各组件 `README.md` 与 `docs/*.mdx` 按 docs-site.md §3 的九节模板汇总进 `website/docs/components/`，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）
+- [ ] 收集脚本把各组件 `README.md` 与 `docs/*.mdx` 按 docs-site.md §3 的平台插件九节模板与 §3.1 的 yue 交互组件模板汇总进 `website/docs/components/`，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）
 - [ ] 复用 S1-YUE-005 的 Rspress core 文档、preview、离线 playground 与完整 props 生成接线，接入通用收集管线；不再引入 Storybook，不重复建设 core 展示；检查组件来源、版本与生成目录一致，并保留 Props 完整性、离线及 HTML/SSG-MD 双产物门禁（docs-site.md §3.1）
 - [ ] `@rspress/plugin-typedoc` 生成 `@qian/runtime`、`@qian/plugin-sdk`、`@yue/sdk` 的 API 文档并挂在站点 `/sdk/api/frontend/`；DocFX 从 XML 注释生成 `Qian.*` .NET 包 API 参考并挂在 `/sdk/api/dotnet/`（复用 `website/scripts/build-kun-api.ts` 的流水线）；平台 OpenAPI 用 Scalar 渲染在 `/sdk/api/http/`；API 页不进侧栏、不渲染侧栏（R54、R56），并在 `/sdk/api/` 落地页更新状态
 - [ ] `qian docs generate`（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新

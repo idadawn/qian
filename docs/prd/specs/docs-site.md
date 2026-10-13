@@ -129,7 +129,7 @@ Kun 是 Qian 的底座框架，没有自己的文档站，读者与本站 SDK �
 
 ## 3 组件页模板
 
-第 2 部分每页由收集脚本从组件文件夹拼装，章节顺序固定，缺「模型体验」或「已知限制」即构建失败（与 S1-QA-006 的 README 契约同一规则）：
+第 2 部分每页由收集脚本从组件文件夹拼装；平台插件按以下九节排列，yue 交互组件按 §3.1 编排并保留适用元数据、模型体验、已知限制与变更。缺「模型体验」或「已知限制」即构建失败（与 S1-QA-006 的 README 契约同一规则）：
 
 1. **用途**：一句话 + 适用 / 不适用场景（来自组件 `README.md` 首段）
 2. **安装**：`qian add <id>`、所属 profile、`runtime.nuget[]` / `npm[]` 包名与版本
@@ -145,6 +145,7 @@ Kun 是 Qian 的底座框架，没有自己的文档站，读者与本站 SDK �
 
 [ADR-022](../../adr/ADR-022-rspress-unified-component-docs.md) 将现有 Rspress 站点确定为唯一文档与演示体系，Storybook 全部退出；选型证据与默认插件限制见该 ADR。S1-YUE-005 先交付 core 接入，S1-DOCS-002 复用接线继续收集其它组件与 API，避免循环依赖。
 
+- **页面编排**：参考产品负责人提供的 [组件页](https://ui.shadcn.com/docs/components/aria/alert-dialog)：标题与用途、首屏可交互预览及源码展开/复制、安装、基本用法、组合结构、分场景示例、API 与键盘/无障碍说明；保留模型体验、已知限制和变更。各示例均可运行并查看对应源码，右侧目录可定位章节，左侧按组件导航。采用本仓库真实 API 与令牌，功能说明以已实现能力为准。安装、预览、代码和 API 均留在现有 Rspress 页面中，用户无需访问独立演示站。
 - **内容源**：README、`docs/*.mdx`、普通 React 示例保留在组件目录，由收集脚本生成 `/components/yue/` 页面；示例与 Vitest/Playwright 共用，不复制两套组件实现。core 的 51 个入口及配套部件由清单校验覆盖。
 - **展示与样式**：`@rspress/plugin-preview` 编译本地 TSX，弹层/Portal 和主题易影响宿主时使用 iframe 预览；独立构建显式加载 Tailwind v4、令牌与字体，并同步明暗主题。每页有使用说明、源码、适用状态示例、完整 props 表；令牌页同站可访问。
 - **Props**：以真实 TypeScript 为源；api-docgen 的默认过滤不足以直接验收，允许按底层 react-docgen-typescript 结果生成完整表并补源码 JSDoc。继承属性、组合部件、函数/回调、必填、联合类型与默认值不得静默丢失。Button 的 variant/size/loading/disabled、Dialog 的 open/defaultOpen/onOpenChange 为回归探针；51 入口及部件的完整性由门禁检查。manifest 的 JSON Schema 不代替完整 API。

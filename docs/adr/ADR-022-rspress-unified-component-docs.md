@@ -14,7 +14,7 @@ S1-YUE-005 按原验收交付了 51 个组件入口、manifest 和 Storybook；�
 
 ## 2 决策（Decision）
 
-- **D22.1 唯一文档与演示体系**：Qian、Kun、yue 使用现有 `website/` Rspress 站点。yue 页面归 `/components/yue/`；移除 Storybook 应用、CSF、依赖、命令与 CI 入口，不保留内部 Storybook。组件文档源仍在组件目录，不手写生成目录。
+- **D22.1 唯一文档与演示体系**：Qian、Kun、yue 使用现有 `website/` Rspress 站点。yue 页面归 `/components/yue/`；按产品负责人补充的组件页参考组织预览、源码、安装、用法、组合结构、场景示例与 API，全部在现有 Rspress 一个入口中完成；移除 Storybook 应用、CSF、依赖、命令与 CI 入口，不保留内部 Storybook。组件文档源仍在组件目录，不手写生成目录。
 - **D22.2 测试独立**：Rspress 承担文档和演示；Vitest 浏览器模式、SSR 测试、Playwright、axe 与 Lighthouse 承担原有质量门禁。共用普通 React 示例，迁移 Storybook 状态与交互覆盖，不把删除测试视为完成替换。
 - **D22.3 完整 API**：React Props 从真实 TypeScript 类型生成，清单的 JSON Schema 继续负责机器可序列化契约。使用插件或底层解析器时都必须有属性完整性检查，缺失函数、继承属性或组合部件即失败。配置、示例与迁移验收以 [文档站规范 §3.1](../prd/specs/docs-site.md#31-yue-组件文档与演示) 为准。
 - **D22.4 任务边界**：重新打开 S1-YUE-005，负责 core 文档接入、测试迁移与 Storybook 清理。S1-DOCS-002 继续依赖它，复用接线并完成通用收集器及平台、TS、.NET、HTTP API 文档；不得反向新增依赖造成循环。本次交付为评估与任务/规格修订，替换代码尚待实施。
@@ -56,6 +56,8 @@ S1-YUE-005 按原验收交付了 51 个组件入口、manifest 和 Storybook；�
 工具统一方向已由产品负责人明确授权。Props 适配、离线编辑器和全量页面属于实施验收，不另设选型审批；若实测发现必须改变产品或安全边界的问题，再按任务流程记录具体决策。
 
 ## 8 参考
+
+- [产品负责人指定的组件页参考](https://ui.shadcn.com/docs/components/aria/alert-dialog)：借鉴页面编排、可操作预览、对应源码与场景示例，示例实现使用本仓库 API。
 
 - [Rspress 官方 preview](https://rspress.rs/zh/plugin/official-plugins/preview)：本地文件预览、iframe 独立构建与样式。
 - [Rspress 官方 playground](https://rspress.rs/zh/plugin/official-plugins/playground)：编辑器、模块限制及 Babel/Monaco 配置。
