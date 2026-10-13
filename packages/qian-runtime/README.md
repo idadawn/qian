@@ -14,10 +14,10 @@
 在环境中提供具有该包读取权限的令牌后安装固定版本：
 
 ```bash
-npm install '@qian/runtime@npm:@idadawn/qian-runtime@0.1.0'
+npm install '@qian/runtime@npm:@idadawn/qian-runtime@0.1.1'
 ```
 
-`package.json` 的依赖值为 `"@qian/runtime": "npm:@idadawn/qian-runtime@0.1.0"`，下文逻辑导入名保持一致。源码工作区内部构建按目录筛选包；发版只运行 main 的 `runtime-ts-release` 工作流，输入版本必须等于清单版本。工作流校验私有可见性与制品摘要，再在仓库外的干净项目完成真实安装、运行、类型和许可证验收；首次发布证据记录在任务中。
+`package.json` 的依赖值为 `"@qian/runtime": "npm:@idadawn/qian-runtime@0.1.1"`，下文逻辑导入名保持一致。源码工作区内部构建按目录筛选包；发版只运行 main 的 `runtime-ts-release` 工作流，输入版本必须等于清单版本。工作流校验私有可见性与制品摘要，再在仓库外的干净项目完成真实安装、运行、类型和许可证验收；首次发布证据记录在任务中。
 
 ## 装配与使用
 
