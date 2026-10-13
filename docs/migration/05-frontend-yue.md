@@ -54,12 +54,12 @@
 |---|---|---|---|
 | monorepo 与分层边界 | 参考平台只靠两条 ESLint 规则守住两道边界、业务层无规则、反向依赖 effects / stores / router；iClaw console 与 web 零共享 | pnpm workspace + `catalog:` + Turborepo；分层边界用 eslint-plugin-boundaries / dependency-cruiser 写死进 CI | S1·P0 |
 | 构建产物 | 参考平台不发包 | tsdown 或 Rslib 输出 ESM + d.ts，CSS 单独导出；重型物料（Monaco、富文本、地图、ECharts）独立包懒加载 | S1·P0 |
-| 文档站 | 参考平台无文档站；iClaw 用 React 18 的 Docusaurus 帮助中心 | Storybook 10（Vitest 集成、a11y 插件、自动 props 表、令牌可视化页）；产品文档站不混入 React 18 | S1·P0 |
+| 文档站 | 参考平台无文档站；iClaw 用 React 18 的 Docusaurus 帮助中心 | 现有 Rspress 2 统一组件与产品文档，活演示、完整 props 表与令牌页；移除 Storybook（ADR-022） | S1·P0 |
 | 机器可读组件清单 | 无 | 每个组件 / 控件导出 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）；注册表可导出 JSON | S1·P0（格式）/ S2·P0（全量） |
-| 测试 | 参考平台业务层 0 测试、hooks 全注释；iClaw E2E / axe / 视觉用例未接 CI | Vitest 5 + Testing Library + `@vitest/browser`；Storybook 用例复用为测试；Playwright E2E 进 CI | S1·P0 |
+| 测试 | 参考平台业务层 0 测试、hooks 全注释；iClaw E2E / axe / 视觉用例未接 CI | Vitest 5 + Testing Library + `@vitest/browser`；Rspress 与独立测试共用 React 示例；Playwright E2E 进 CI | S1·P0 |
 | 契约测试 | iClaw 手写形状快照、不读 OpenAPI | 从 Kun OpenAPI 生成类型（orval / openapi-typescript）；SSE 事件 JSON Schema 生成 TS | S1·P0 |
 | 视觉回归 | iClaw 无基线 | Playwright 截图比对，固定字体与容器镜像，覆盖默认 / 悬停 / 禁用 / 错误 / 暗色 | S1·P1 / S2·P0 |
-| 无障碍 | 未真正接入 | jsx-a11y、Storybook a11y addon、axe + Playwright（critical = 0）、令牌对比度单测 | S1·P0 |
+| 无障碍 | 未真正接入 | jsx-a11y、独立浏览器测试、Rspress 静态页面 axe + Playwright（critical / serious = 0）、令牌对比度单测 | S1·P0 |
 | 性能门禁 | iClaw 有 Lighthouse 预算 | Lighthouse CI 首屏预算（script 体积 error 级）；路由级 lazy；防「共享 yue = 首屏膨胀」 | S1·P0 |
 | CI 门禁矩阵 | 参考平台无 CI | lint、typecheck、unit、a11y、visual、Lighthouse、边界检查、publint、循环依赖 | S1·P0 |
 | 发包与版本 | — | Changesets；SemVer（0.x 每 minor 可破坏，1.0 后只在大版本破坏并附 codemod）；私有 npm 为运行时渠道 | S1·P0 |
