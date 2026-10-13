@@ -30,7 +30,9 @@ if (result.IsValid)
 
 ## 校验与诊断
 
-支持 skill、agent、command 的 front matter 与原样正文，以及 hooks、MCP、tool、patch；清单接受缺省或覆盖的表面指针。JSON 重复键、YAML 重复键或 alias 被拒绝；单文件最多 1 MiB，解析深度最多 64。路径须存在于组件内，不能逃逸或经过符号链接，检查大小写以保持跨平台一致。
+支持 skill、agent、command 的 front matter 与原样正文，以及 hooks、MCP、tool、patch、metadata；清单接受缺省或覆盖的表面指针。JSON 重复键、YAML 重复键或 alias 被拒绝；单文件最多 1 MiB，解析深度最多 64。路径须存在于组件内，不能逃逸或经过符号链接，检查大小写以保持跨平台一致。
+
+`metadata/*.json` 使用同一个 JSON 解析器和路径边界，支持显式目录（包含组件根目录），只读取该目录第一层 JSON 文件；返回 `kind: metadata` 的原始文档快照，并应用通用敏感值检查。目录指向文件、重复键、非法 JSON 或链接均被拒绝。权限点、默认角色、事件等业务 Schema 由各 seam 在登记/发布时验证；解析通过不代表角色授权或安装准入通过。
 
 工具／技能引用从本组件与调用方目录解析；离线时未知的跨组件引用为 warning，`CatalogComplete=true` 时为 error。Qian 事件来自共同事件矩阵或宿主目录；未知大驼峰 Agent 事件告警并透传。hook handler、命令能力和服务方法需由宿主提供已解析目录，不会靠试运行代码推测。
 
@@ -46,7 +48,7 @@ if (result.IsValid)
 
 ## 验证
 
-[共同 fixture](../../tck/surfaces/README.md) 覆盖所有支持表面、30 个反例、无 src 组件、自定义指针、两侧精确诊断对比以及独立 JCS 浮点／Unicode 向量。.NET 还验证租户 A/B 隔离与卸载撤销。
+[共同 fixture](../../tck/surfaces/README.md) 覆盖所有支持表面、37 个反例、无 src 组件、自定义指针、两侧精确诊断对比以及独立 JCS 浮点／Unicode 向量。.NET 还验证租户 A/B 隔离与卸载撤销。
 
 ## 已知限制与延期项
 

@@ -100,3 +100,35 @@ Qian.Profiles.Abstractions.ProfileLoadOptions.ComponentDirectories.init -> void
 Qian.Profiles.Abstractions.ProfileLoadResult.IsValid.get -> bool
 Qian.Profiles.Abstractions.ResolvedProfileEntry.Manifest.get -> System.Text.Json.JsonElement
 Qian.Profiles.Abstractions.ResolvedProfileEntry.Manifest.init -> void
+Qian.Profiles.Abstractions.DisabledProfileEntry
+Qian.Profiles.Abstractions.DisabledProfileEntry.Scope.get -> string!
+Qian.Profiles.Abstractions.DisabledProfileEntry.Plugin.get -> string!
+Qian.Profiles.Abstractions.DisabledProfileEntry.Id.get -> string!
+Qian.Profiles.Abstractions.DisabledProfileEntry.Layer.get -> int
+override Qian.Profiles.Abstractions.DisabledProfileEntry.ToString() -> string!
+Qian.Profiles.Abstractions.DisabledProfileEntry.Plugin.init -> void
+Qian.Profiles.Abstractions.DisabledProfileEntry.Id.init -> void
+static Qian.Profiles.Abstractions.DisabledProfileEntry.operator !=(Qian.Profiles.Abstractions.DisabledProfileEntry? left, Qian.Profiles.Abstractions.DisabledProfileEntry? right) -> bool
+Qian.Profiles.Abstractions.DisabledProfileEntry.Scope.init -> void
+static Qian.Profiles.Abstractions.DisabledProfileEntry.operator ==(Qian.Profiles.Abstractions.DisabledProfileEntry? left, Qian.Profiles.Abstractions.DisabledProfileEntry? right) -> bool
+Qian.Profiles.Abstractions.DisabledProfileEntry.Layer.init -> void
+override Qian.Profiles.Abstractions.DisabledProfileEntry.GetHashCode() -> int
+override Qian.Profiles.Abstractions.DisabledProfileEntry.Equals(object? obj) -> bool
+Qian.Profiles.Abstractions.DisabledProfileEntry.Equals(Qian.Profiles.Abstractions.DisabledProfileEntry? other) -> bool
+Qian.Profiles.Abstractions.DisabledProfileEntry.<Clone>$() -> Qian.Profiles.Abstractions.DisabledProfileEntry!
+Qian.Profiles.Abstractions.DisabledProfileEntry.Deconstruct(out string! Id, out string! Scope, out string! Plugin, out int Layer, out string! SourceLocation) -> void
+Qian.Profiles.Abstractions.ScopePatchLayer
+Qian.Profiles.Abstractions.DisabledProfileEntry.SourceLocation.get -> string!
+Qian.Profiles.Abstractions.ScopePatchLayer.ScopePatchLayer() -> void
+Qian.Profiles.Abstractions.DisabledProfileEntry.SourceLocation.init -> void
+Qian.Profiles.Abstractions.ScopePatchLayer.Scope.get -> Qian.Runtime.ScopeKey
+Qian.Profiles.Abstractions.ScopePatchLayer.Scope.init -> void
+Qian.Profiles.Abstractions.ScopePatchLayer.Source.get -> string!
+Qian.Profiles.Abstractions.ScopePatchLayer.Source.init -> void
+Qian.Profiles.Abstractions.ScopePatchLayer.Patches.get -> System.Text.Json.JsonElement
+Qian.Profiles.Abstractions.ScopePatchLayer.Patches.init -> void
+Qian.Profiles.Abstractions.ProfileLoadOptions.ScopePatches.get -> System.Collections.Generic.IReadOnlyList<Qian.Profiles.Abstractions.ScopePatchLayer!>!
+Qian.Profiles.Abstractions.DisabledProfileEntry.DisabledProfileEntry(string! Id, string! Scope, string! Plugin, int Layer, string! SourceLocation) -> void
+Qian.Profiles.Abstractions.ProfileLoadOptions.ScopePatches.init -> void
+Qian.Profiles.Abstractions.ProfileSnapshot.DisabledEntries.get -> System.Collections.Generic.IReadOnlyList<Qian.Profiles.Abstractions.DisabledProfileEntry!>!
+Qian.Profiles.Abstractions.ProfileSnapshot.DisabledEntries.init -> void

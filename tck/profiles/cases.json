@@ -440,5 +440,248 @@
     "home": false,
     "expect": true,
     "count": 3
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-config-replaces-after-home",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "settings",
+            "config": {
+              "port": 23
+            }
+          }
+        ]
+      }
+    ],
+    "expect": true,
+    "count": 3,
+    "port": 4,
+    "disabledCount": 0
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-missing-config-inherits-global",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "settings",
+            "note": "tenant-note"
+          }
+        ]
+      }
+    ],
+    "expect": true,
+    "count": 3,
+    "port": 4,
+    "disabledCount": 0
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-disabled-keeps-global-and-suppression",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "settings",
+            "disabled": true
+          }
+        ]
+      }
+    ],
+    "expect": true,
+    "count": 2,
+    "disabledCount": 1
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-new-entry-requires-config",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "extra",
+            "plugin": "test.other"
+          }
+        ]
+      }
+    ],
+    "expect": false,
+    "pointer": "registry/tenant-a.json#/0/config"
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-cannot-change-owner",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "settings",
+            "scope": "tenant:b",
+            "disabled": true
+          }
+        ]
+      }
+    ],
+    "expect": false,
+    "pointer": "registry/tenant-a.json#/0/scope"
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-cannot-write-global",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "settings",
+            "scope": "global",
+            "disabled": true
+          }
+        ]
+      }
+    ],
+    "expect": false,
+    "pointer": "registry/tenant-a.json#/0/scope"
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-layer-cannot-be-global",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "global",
+          "id": ""
+        },
+        "source": "registry/tenant-a.json",
+        "patches": []
+      }
+    ],
+    "expect": false,
+    "pointer": "registry/scope-patches.json#/scope"
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-config-secret-is-rejected",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "settings",
+            "config": {
+              "port": 23,
+              "secret": "DO-NOT-LEAK"
+            }
+          }
+        ]
+      }
+    ],
+    "expect": false,
+    "pointer": "registry/tenant-a.json#/0/config/secret"
+  },
+  {
+    "files": {},
+    "patches": [],
+    "home": true,
+    "name": "scope-duplicate-identity-rejected",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "settings",
+            "disabled": true
+          },
+          {
+            "id": "settings",
+            "disabled": false
+          }
+        ]
+      }
+    ],
+    "expect": false,
+    "pointer": "registry/tenant-a.json#/1/id"
+  },
+  {
+    "files": {
+      "plugins/settings/.qian-plugin/plugin.json": "{\"id\": \"test.settings\", \"version\": \"1.0.0\", \"description\": \"\\u4f9b profile \\u88c5\\u914d TCK \\u4f7f\\u7528\\u7684\\u771f\\u5b9e\\u9759\\u6001\\u6e05\\u5355\", \"author\": {\"name\": \"Qian\"}, \"license\": \"MIT\", \"interface\": {\"displayName\": \"profile \\u6d4b\\u8bd5\", \"category\": \"test\"}, \"inject\": [], \"provides\": [\"Settings\"], \"policy\": {\"tier\": \"system\", \"sandbox\": \"none\", \"authentication\": \"ON_INSTALL\", \"required\": true}, \"scopes\": [\"global\", \"tenant\"]}"
+    },
+    "patches": [],
+    "home": true,
+    "name": "scope-required-cannot-be-disabled",
+    "scopePatches": [
+      {
+        "scope": {
+          "kind": "tenant",
+          "id": "a"
+        },
+        "source": "registry/tenant-a.json",
+        "patches": [
+          {
+            "id": "settings",
+            "disabled": true
+          }
+        ]
+      }
+    ],
+    "expect": false,
+    "pointer": "registry/tenant-a.json#/0"
   }
 ]

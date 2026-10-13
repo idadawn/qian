@@ -1,0 +1,37 @@
+{
+  "files": {
+    ".qian-plugin/plugin.json": "{\n  \"id\": \"test.catalog\",\n  \"version\": \"1.0.0\",\n  \"description\": \"用于验证注册表不可变制品登记与跨语言摘要的完整组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"MIT\",\n  \"interface\": {\n    \"displayName\": \"目录样例\",\n    \"category\": \"test\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"private\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"required\": false\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\"\n  ]\n}\n",
+    "commands/hello.md": "---\ndescription: 这是用于验证不可变目录读取的声明式命令。\n---\n你好。\n",
+    "metadata/permissions.json": "[{\"resource\":\"customer\",\"actions\":[\"read\",\"write\"]}]\n",
+    "metadata/roles.json": "[{\"name\":\"reader\",\"permissions\":[\"customer:read\"]}]\n",
+    "说明.md": "不可变快照\r\n保留原始字节。\r\n"
+  },
+  "digest": "sha256:a90661ccd79ef4d09f47c1aa677d661735c459a3a9d9b2cda9f3dcc0716a7bcc",
+  "records": [
+    {
+      "path": ".qian-plugin/plugin.json",
+      "bytes": 489,
+      "sha256": "196b197dab911590f999cad23b0d64b9ed4c17f9f45ae0462dcc8b39a19420e7"
+    },
+    {
+      "path": "commands/hello.md",
+      "bytes": 92,
+      "sha256": "63652f6d3aebe496cce90c6418af61ed96aa52974450bf2de37ef708f9badf3a"
+    },
+    {
+      "path": "metadata/permissions.json",
+      "bytes": 53,
+      "sha256": "f65653ab7429150d988f1fa6550b1714620d99a657c8d547074c3908e55f7afc"
+    },
+    {
+      "path": "metadata/roles.json",
+      "bytes": 52,
+      "sha256": "1190dc4632839dffa7c3006887fb3191c97ad628f829a1e940c1b4923ad31a2e"
+    },
+    {
+      "path": "说明.md",
+      "bytes": 40,
+      "sha256": "08a4076b5484553195989fbe23727342a7f0cbc6bb0e826316b1cb23a3194dc6"
+    }
+  ]
+}

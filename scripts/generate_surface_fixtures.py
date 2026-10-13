@@ -74,6 +74,14 @@ bad('patch-duplicate-identity',base({pf:'- id: files\n  config: {}\n- id: files\
 bad('manifest-symlink',manifest(base(),surfaces={'tools':'./linked'}),'.qian-plugin/plugin.json','/surfaces/tools','PATH_INVALID',symlinks={'linked':'outside'})
 bad('inject-provides-overlap',manifest(base(),inject=['Files'],provides=['Files']),'.qian-plugin/plugin.json','/provides','POLICY_DENIED')
 bad('yaml-alias',base({sf:'---\nname: guide\ndescription: &d '+DESC+'\nallowed-tools: [*d]\n---\n正文\n'}),sf,'','SYNTAX_INVALID')
+case('metadata-json',base({'metadata/permissions.json':js([{'resource':'customer','actions':['read']}]),'metadata/roles.json':js([{'name':'reader','permissions':['customer:read']}])}))
+case('metadata-custom-directory',manifest(base({'custom/roles.json':'[]\n'}),surfaces={'metadata':'./custom'}))
+case('metadata-root-directory',manifest(base({'roles.json':'[]\n'}),surfaces={'metadata':'./'}))
+bad('metadata-pointer-file',manifest(base({'metadata/roles.json':'[]\n'}),surfaces={'metadata':'./metadata/roles.json'}),'.qian-plugin/plugin.json','/surfaces/metadata','PATH_INVALID')
+bad('metadata-invalid-json',base({'metadata/roles.json':'{"roles":'}),'metadata/roles.json','','SYNTAX_INVALID')
+bad('metadata-duplicate-key',base({'metadata/roles.json':'{"name":"reader","name":"owner"}'}),'metadata/roles.json','/name','SYNTAX_INVALID')
+bad('metadata-plaintext-secret',base({'metadata/roles.json':'{"apiKey":"DO-NOT-LEAK"}'}),'metadata/roles.json','/apiKey','SECRET_LITERAL')
+bad('metadata-symlink',manifest(base(),surfaces={'metadata':'./linked'}),'.qian-plugin/plugin.json','/surfaces/metadata','PATH_INVALID',symlinks={'linked':'outside'})
 (ROOT/'tck/surfaces/cases.json').write_text(js(CASES))
 # 文字规范值独立于生产实现，用于跨语言验证浮点、负零、Unicode 与 UTF-16 排序。
 vectors=[]

@@ -118,3 +118,10 @@ test('ZIP 的链接标记被拒绝，安装锁阻止并发写入',async()=>{
   write(f.project,'.qian/.install.lock','other-operation');const locked=run(f.project,'--no-home','add','guide','--no-code','--yes');assert.equal(locked.status,1);assert.equal(readFileSync(path.join(f.project,'.qian/.install.lock'),'utf8'),'other-operation');assert.ok(!existsSync(path.join(f.project,'.qian/plugins/test.guide')));
  }finally{f.dispose();}
 });
+
+test('注册表与 CLI 使用同一份路径、长度与原始字节摘要清单',async()=>{
+ const {snapshot}=await import('../dist/marketplace-files.js');
+ const fixture=JSON.parse(readFileSync(new URL('../../../tck/registry-artifacts/content.json',import.meta.url),'utf8'));
+ const content=snapshot(new Map(Object.entries(fixture.files).reverse().map(([name,value])=>[name,Buffer.from(value)])));
+ assert.equal(content.digest,fixture.digest);assert.deepEqual(content.records,fixture.records);
+});
