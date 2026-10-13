@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/v2/surface-diagnostics.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["protocol", "scope", "entries"],
+  "properties": {
+    "protocol": {"const": "qian.surface-diagnostics/v1"},
+    "scope": {"$ref": "#/$defs/scope"},
+    "entries": {"type": "array", "maxItems": 10000, "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["entryId", "plugin", "scope", "revision", "restartRequired", "changedCodeFiles", "invalidSurface"],
+      "properties": {
+        "entryId": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[^\\u0000-\\u001f\\u007f]+$"},
+        "plugin": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[a-z][a-z0-9._-]*$"},
+        "scope": {"$ref": "#/$defs/scope"},
+        "revision": {"type": "integer", "minimum": 0},
+        "restartRequired": {"type": "boolean"},
+        "invalidSurface": {"type": "boolean"},
+        "changedCodeFiles": {"type": "array", "maxItems": 10000, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^[^\\u0000-\\u001f\\u007f]+$"}}
+      }
+    }}
+  },
+  "$defs": {"scope": {"type": "string", "pattern": "^(global|(tenant|app|agent-session):[^\\s:]+)$", "maxLength": 512}}
+}

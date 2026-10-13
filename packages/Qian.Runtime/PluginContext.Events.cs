@@ -38,9 +38,7 @@ internal sealed partial class PluginContext
         {
             EnsureOpen();
             var listener = Loader.Listen(this, definition, name, handler, priority);
-            var disposer = new Disposer(() => Loader.Unlisten(listener));
-            Effect(disposer);
-            return disposer;
+            return Effects.Track(() => Loader.Unlisten(listener));
         }
     }
 

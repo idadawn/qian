@@ -26,6 +26,14 @@ overlay 示例（不会修改 base 组合包）：
 
 此工作区包尚未发布。代码包安装、升级/移除、启动进程与远程平台 scope patch 属于 S1-RT-011；市场切片只执行下文明确列出的无代码安装。五个默认 profile 均可静态解析；minimal 仅 Runtime 与表面装载器，默认输出空条目和空诊断。
 
+## 运行态表面诊断
+
+```bash
+pnpm exec qian doctor --profile minimal --url https://host --no-home --json
+```
+
+授权令牌从 `QIAN_ACCESS_TOKEN` 环境变量读取，不写入命令参数或输出。诊断读取实际宿主的表面监视状态，重启或更新拒绝会给出操作提示并退出 1；连接、授权或协议失败同样退出 1，不降级成静态检查成功。没有 `--url` 时只检查本地 profile 装配，输出 `runtimeVerified: false` 与已执行的 `checks`。当前不覆盖过期版本、密钥可解析性等完整 doctor 项，不能用 `healthy` 判断未执行的检查。接口、scope 和卸载语义见 [表面主文档](../Qian.Surfaces/README.md#运行态诊断)。
+
 ## 派生文档与文档模板
 
 `qian docs generate --profile platform` 输出配置目录、模块图、事件图与 seam 图；事件模式错误返回非零并保留旧文档。参数与边界见 [文档生成器](../Qian.Docs/README.md)。生成器默认不叠加 home，显式 `--home` 可开启。

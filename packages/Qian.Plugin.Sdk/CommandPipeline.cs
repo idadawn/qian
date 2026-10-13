@@ -29,7 +29,7 @@ public static class QianCommandRegistration
         where TContext : QianDbContext
     {
         ArgumentNullException.ThrowIfNull(builder); ArgumentNullException.ThrowIfNull(source);
-        if (channel is not ("ui" or "api" or "mcp" or "a2a" or "job" or "event")) throw new ArgumentException("调用通道无效。", nameof(channel));
+        if (channel is not ("ui" or "api" or "mcp" or "a2a" or "job" or "event" or "hook")) throw new ArgumentException("调用通道无效。", nameof(channel));
         var contract = TRequest.QianCapability;
         if (contract.RequestTypeInfo is not JsonTypeInfo<TRequest> request || contract.ResponseTypeInfo is not JsonTypeInfo<TResponse> response)
             throw new ArgumentException("生成契约与 Mediator 请求响应类型不一致。");
@@ -74,7 +74,7 @@ internal sealed class CommandTransactionBehavior<TRequest, TResponse, TContext>(
         await using var transaction = await session.Context.Database.BeginTransactionAsync(IsolationLevel.Serializable, linked.Token).ConfigureAwait(false);
         work.Bind(session, contract.Metadata.GetProperty("sideEffect").GetString() == "read");
         state.Invocation = new CommandInvocation(contract, input, principal,
-            registration.Channel, source, transaction.GetDbTransaction(), linked.Token);
+            HookCommandOrigin.Channel(registration.Channel, contract.Id, source.Scope), source, transaction.GetDbTransaction(), linked.Token);
         state.Policies = policies;
         try
         {

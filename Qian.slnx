@@ -29,6 +29,7 @@
     <Project Path="packages/Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
     <Project Path="packages/Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
     <Project Path="packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+    <Project Path="packages/Qian.Surfaces.Hosting/Qian.Surfaces.Hosting.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Qian.Sample.Crm/Qian.Sample.Crm.csproj" />

@@ -54,4 +54,12 @@ scope 写作 `global` 或 `tenant:id`、`app:id`、`agent-session:id`。服务�
 
 S1-RT-003 已合并并完成 `@idadawn/qian-runtime@0.1.0` 私有发布与逻辑别名消费。[主线双侧 CI](https://github.com/idadawn/qian/actions/runs/38146040203) 已持续执行同一组数据：现有 23 个 YAML 场景加 T15–T17 的 3 个装配场景，TS 共 34 项测试、.NET 运行时共 46 项测试通过。
 
-S1-QA-002 仍须完成真实提示词构建/工具执行链路对过滤结果的联调。当前目录与注入断言不能替代产品提示词断言。T19 的自动表面热重载依赖 S1-RT-009，T23 的完整 platform 宿主等价依赖真实业务 Provider；当前 platform 清单带有骨架组件，不能当作可运行的平台完成证明。
+S1-QA-002 仍须完成真实提示词构建/工具执行链路对过滤结果的联调。当前目录与注入断言不能替代产品提示词断言。T19 已增加下节的双侧实际文件监视证据；RT-009 的完整 hooks/生产触发仍需收尾，T23 的完整 platform 宿主等价依赖真实业务 Provider；当前 platform 清单带有骨架组件，不能当作可运行的平台完成证明。
+
+### T19 的实际文件监视场景
+
+[hotreload.json](hotreload.json) 由 Qian.Surfaces 的 .NET 与 TypeScript 测试直接读取。测试启动真实监视器并写入技能文件，在五秒界限内观察 Tools 与 Skills 的内容变化，同时验证代码对象未替换、代码效果未释放；非法更新保留旧内容，src 变化只标记需要重启，卸载后效果恰好释放一次。两侧还校验实际诊断注册的 scope 隔离、共享响应 Schema、重启状态与卸载后的旧引用失效。设置 QIAN_HOT_RELOAD_REPORT 可保存实际断言后的结果，surfaces CI 会精确比较两侧报告。真实 CLI 读取运行态另由 CRM 的签名认证 Kestrel 集成测试及 TS 宿主测试覆盖，包含错误更新恢复。RT-009 的完整 hook 生产方与生产注册表触发、QA-002 的其余验收仍分别跟踪。
+
+### 无代码技能的 minimal 装载
+
+[skill-only.json](skill-only.json) 包含同一份清单、技能正文及租户 A 的 overlay。两端先复制仓库交付的 minimal profile 与组合包，再把仅有两个文件、没有 runtime 声明和 src 的组件交给实际装配器、HotReloadSurfacePlugin 与 Runtime；TS 侧的装配输入由真实 CLI dump-config 产生。断言 Skills/Tools 可见、租户 B 不可见、运行时 dump 中存在条目以及卸载无残留。`QIAN_SKILL_ONLY_REPORT` 输出实际结果，surfaces CI 精确对照 .NET 与 TS。该场景对应 RT-009 第一项验收，不替代平台 Provider 的 T23 对照。

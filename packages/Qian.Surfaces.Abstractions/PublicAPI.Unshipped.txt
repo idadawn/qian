@@ -153,3 +153,27 @@ Qian.Surfaces.Abstractions.MarketplaceValidationResult.MarketplaceValidationResu
 Qian.Surfaces.Abstractions.MarketplaceValidationResult.IsValid.get -> bool
 Qian.Surfaces.Abstractions.IToolContractHasher
 Qian.Surfaces.Abstractions.IToolContractHasher.Compute(System.Text.Json.JsonElement tool) -> string!
+Qian.Surfaces.Abstractions.HookDefinition
+Qian.Surfaces.Abstractions.HookNotification
+Qian.Surfaces.Abstractions.HookNotification.CancellationToken.get -> System.Threading.CancellationToken
+Qian.Surfaces.Abstractions.HookNotification.HookNotification(Qian.Runtime.IPluginContext! source, string! subject, System.Text.Json.JsonElement payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+Qian.Surfaces.Abstractions.HookNotification.Payload.get -> System.Text.Json.JsonElement
+Qian.Surfaces.Abstractions.HookNotification.Source.get -> Qian.Runtime.IPluginContext!
+Qian.Surfaces.Abstractions.HookNotification.Subject.get -> string!
+Qian.Surfaces.Abstractions.IHookHandler
+Qian.Surfaces.Abstractions.IHookHandler.InvokeAsync(Qian.Surfaces.Abstractions.HookNotification! notification, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement>
+Qian.Surfaces.Abstractions.SurfaceHookEvents
+override Qian.Surfaces.Abstractions.HookNotification.ToString() -> string!
+static readonly Qian.Surfaces.Abstractions.HookDefinition.Handlers -> Qian.Runtime.ServiceKey
+static readonly Qian.Surfaces.Abstractions.SurfaceHookEvents.EntryDisabled -> Qian.Runtime.QianEvent<Qian.Surfaces.Abstractions.HookNotification!, System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!>!
+static readonly Qian.Surfaces.Abstractions.SurfaceHookEvents.EntryMounted -> Qian.Runtime.QianEvent<Qian.Surfaces.Abstractions.HookNotification!, System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!>!
+static readonly Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantProvisioned -> Qian.Runtime.QianEvent<Qian.Surfaces.Abstractions.HookNotification!, System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!>!
+static readonly Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantPurged -> Qian.Runtime.QianEvent<Qian.Surfaces.Abstractions.HookNotification!, System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!>!
+Qian.Surfaces.Abstractions.ISurfaceRuntimeValidator
+Qian.Surfaces.Abstractions.ISurfaceRuntimeValidator.ValidateSurfaces(Qian.Runtime.IPluginContext! context, Qian.Surfaces.Abstractions.SurfaceValidationResult! candidate) -> void
+Qian.Surfaces.Abstractions.ISurfaceReloadDiagnosticSource
+Qian.Surfaces.Abstractions.ISurfaceReloadDiagnosticSource.Read() -> System.Text.Json.JsonElement
+Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics
+static readonly Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.Key -> Qian.Runtime.ServiceKey
+static Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.Read(Qian.Runtime.IPluginContext! context) -> System.Text.Json.JsonElement
+static Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.ScopeName(Qian.Runtime.ScopeKey scope) -> string!

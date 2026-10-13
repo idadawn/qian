@@ -98,3 +98,5 @@ static Qian.Plugin.Sdk.CapabilityBindingRegistration.ProvideCapability<TRequest,
 static readonly Qian.Plugin.Sdk.CapabilityBindingRegistration.Key -> Qian.Runtime.ServiceKey
 Qian.Plugin.Sdk.JsonSchemaReferences
 static Qian.Plugin.Sdk.JsonSchemaReferences.RebaseToComponent(System.Text.Json.JsonElement schema, string! key) -> System.Text.Json.Nodes.JsonNode!
+Qian.Plugin.Sdk.HookCapabilityRegistration
+static Qian.Plugin.Sdk.HookCapabilityRegistration.ExposeCapabilityHook<TRequest, TResponse>(this Qian.Runtime.IPluginContext! context, string! name, System.Func<Qian.Surfaces.Abstractions.HookNotification!, TRequest>! request) -> System.IDisposable!

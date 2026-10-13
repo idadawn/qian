@@ -30,6 +30,9 @@ public sealed class CrmPlugin : IQianPlugin
         ctx.ProvideCapability<CreateCustomerCommand, CustomerItem>();
         ctx.ProvideCapability<ListCustomersQuery, CustomerPage>();
         ctx.ProvideCapability<GetCustomerQuery, CustomerItem>();
+        ctx.ExposeCapabilityHook<CreateCustomerCommand, CustomerItem>("seedCustomer", notification =>
+            new CreateCustomerCommand(notification.Payload.GetProperty("idempotencyKey").GetGuid(), notification.Payload.GetProperty("name").GetString()!));
+        ctx.ExposeCapabilityHook<ListCustomersQuery, CustomerPage>("listCustomers", _ => new ListCustomersQuery());
         return ValueTask.CompletedTask;
     }
 }

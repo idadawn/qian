@@ -17,24 +17,7 @@ public sealed class DeclarativeSurfacePlugin : IQianPlugin
         if (!result.IsValid) throw new ArgumentException("组件尚未通过表面校验。", nameof(result));
         _component = result.Component!;
         Inject = _component.Manifest.GetProperty("inject").EnumerateArray().Select(e => new ServiceKey(e.GetString()!)).ToArray();
-        var entries = new List<(ServiceKey, string, SurfaceDocument)>();
-        foreach (var document in _component.Documents)
-        {
-            var key = document.Kind switch
-            {
-                "skill" => SurfaceKeys.Skills, "agent" => SurfaceKeys.Agents, "command" => SurfaceKeys.Commands,
-                "hooks" => SurfaceKeys.Hooks, "mcp" => SurfaceKeys.McpServers, "tool" => SurfaceKeys.Tools, _ => (ServiceKey?)null
-            };
-            if (key is null) continue;
-            if (document.Kind == "mcp")
-            {
-                foreach (var server in document.Data.GetProperty("mcpServers").EnumerateObject())
-                    if (!server.Value.TryGetProperty("profiles", out var profiles) || profiles.EnumerateArray().Any(p => p.GetString() == _component.Profile))
-                        entries.Add((key.Value, _component.Id + "/" + server.Name, document with { Name = server.Name, Data = server.Value.Clone() }));
-            }
-            else entries.Add((key.Value, _component.Id + "/" + document.Name, document));
-        }
-        _registrations = entries;
+        _registrations = SurfaceRegistrationSession.Plan(result).Select(item => (item.Key.Key, item.Key.Name, item.Value)).ToArray();
     }
     /// <inheritdoc />
     public IReadOnlyList<ServiceKey> Inject { get; }

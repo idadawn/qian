@@ -58,7 +58,7 @@ public static class AuditTransactionAccess
                 AND (SELECT count(*) FROM pg_catalog.jsonb_object_keys(b)) = 16
                 AND pg_catalog.jsonb_typeof(b->'payload') = 'object'
                 AND b->>'actor_type' IN ('user','service','agent')
-                AND b->>'channel' IN ('ui','api','mcp','a2a','job','event')
+                AND b->>'channel' IN ('ui','api','mcp','a2a','job','event','hook')
                 AND b->>'input_hash' ~ '^[a-f0-9]{64}$' AND b->>'trace_id' ~ '^[a-f0-9]{32}$'
                 AND b->>'seq' ~ '^[1-9][0-9]*$' AND p_hash ~ '^[a-f0-9]{64}$') IS DISTINCT FROM TRUE
               THEN RAISE EXCEPTION 'invalid audit record' USING ERRCODE = '22023'; END IF;

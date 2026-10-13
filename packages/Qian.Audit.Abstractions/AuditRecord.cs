@@ -12,7 +12,7 @@ public sealed class AuditRecord
         string result, string traceId, DateTimeOffset occurredAt, JsonElement payload)
     {
         if (id == Guid.Empty || (tenantId is not null && (!Guid.TryParseExact(tenantId, "D", out var parsed) || parsed == Guid.Empty)) ||
-            actorType is not ("user" or "service" or "agent") || channel is not ("ui" or "api" or "mcp" or "a2a" or "job" or "event") ||
+            actorType is not ("user" or "service" or "agent") || channel is not ("ui" or "api" or "mcp" or "a2a" or "job" or "event" or "hook") ||
             !Hex(inputHash, 64) || !Hex(traceId, 32) || payload.ValueKind != JsonValueKind.Object || payload.GetRawText().Length > 65536)
             throw Invalid();
         Id = id; TenantId = tenantId; ActorType = actorType; ActorId = Text(actorId, 200);
