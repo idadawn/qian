@@ -41,7 +41,7 @@ public sealed class PostgresFixtureTests(InfrastructureFixture infrastructure)
                 CREATE TABLE {table} (id int PRIMARY KEY, tenant_id text NOT NULL);
                 ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;
                 ALTER TABLE {table} FORCE ROW LEVEL SECURITY;
-                CREATE POLICY tenant_isolation ON {table} USING (tenant_id = current_setting('app.tenant_id', true));
+                CREATE POLICY tenant_isolation ON {table} USING (tenant_id = current_setting('app.current_tenant_id', true));
                 INSERT INTO {table} VALUES (1, 't-a'), (2, 't-a'), (3, 't-b');
                 """);
         }
@@ -52,10 +52,10 @@ public sealed class PostgresFixtureTests(InfrastructureFixture infrastructure)
             // 未设置租户：fail-closed，一行也看不到（PRD §14.3 示例 1 的直连 DB 通道）。
             Assert.Equal(0L, await ScalarAsync<long>(app, $"SELECT count(*) FROM {table}"));
 
-            await ExecuteAsync(app, "SET app.tenant_id = 't-a'");
+            await ExecuteAsync(app, "SET app.current_tenant_id = 't-a'");
             Assert.Equal(2L, await ScalarAsync<long>(app, $"SELECT count(*) FROM {table}"));
 
-            await ExecuteAsync(app, "SET app.tenant_id = 't-b'");
+            await ExecuteAsync(app, "SET app.current_tenant_id = 't-b'");
             Assert.Equal(3, await ScalarAsync<int>(app, $"SELECT id FROM {table}"));
 
             // 应用角色不能建表：DDL 只走迁移角色。

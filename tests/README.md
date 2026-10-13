@@ -27,6 +27,9 @@ python3 -m unittest discover -s tests/gates -v
 dotnet test --solution Qian.slnx -c Release --no-build
 ```
 
+- 本机跑全量 `dotnet test` 前先补齐 CI 的两个前置，否则 `Qian.Capabilities.Tests` 与 `Qian.Sample.Crm.Tests` 会出现 19 个环境性失败（S1-DEC-019）：
+  - `pnpm install --frozen-lockfile && pnpm --filter "qian..." build`：doctor 用例要调用 `packages/qian-cli/dist/main.js`；
+  - `python3 scripts/prepare_contract_tools.py --destination <目录>`，再导出 `QIAN_BUF_PATH=<目录>/buf` 与 `QIAN_OASDIFF_PATH=<目录>/oasdiff`：能力契约的真实兼容检查器，缺失时相关用例按设计拒绝跳过。
 - `dotnet test` 走 Microsoft Testing Platform（[global.json](../global.json) 的 `test.runner`）；xUnit v3 测试项目是可执行程序，csproj 里写 `<OutputType>Exe</OutputType>`。
 - 单跑一个测试项目用 `dotnet run --project tests/<X>.Tests -c Release`；`dotnet test <项目路径>` 或 `dotnet test --project …` 在部分机器上会报「运行了零个测试、退出码 5」，以 `--solution` 或 `dotnet run` 的结果为准。
 - 集成测试需要 Docker。本机没有 Docker 时集成测试**跳过**；在 CI（`CI=true`）或设置了 `QIAN_REQUIRE_DOCKER=1` 时**直接失败**，不会悄悄跳过（C10：集成测试必须跑）。
