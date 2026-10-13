@@ -29,3 +29,229 @@ Qian.Data.QianDataConventions
 Qian.Data.QianSoftDeleteInterceptor.QianSoftDeleteInterceptor(Kun.Core.Security.ICurrentUser! user, System.TimeProvider! clock) -> void
 override Qian.Data.QianSoftDeleteInterceptor.SavingChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>>
 override Qian.Data.QianSoftDeleteInterceptor.SavingChanges(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result) -> Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>
+Qian.Data.DataContractJson
+Qian.Data.DataContractSchemas
+Qian.Data.DataRulePolicy
+Qian.Data.DataRulePolicy.<Clone>$() -> Qian.Data.DataRulePolicy!
+Qian.Data.DataRulePolicy.BusinessKey.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Data.DataRulePolicy.BusinessKey.init -> void
+Qian.Data.DataRulePolicy.DataRulePolicy(string! PrimaryKeyStrategy, bool OptimisticConcurrency, bool SoftDelete, bool RecordHistory, System.Collections.Generic.IReadOnlyList<string!>! BusinessKey) -> void
+Qian.Data.DataRulePolicy.Deconstruct(out string! PrimaryKeyStrategy, out bool OptimisticConcurrency, out bool SoftDelete, out bool RecordHistory, out System.Collections.Generic.IReadOnlyList<string!>! BusinessKey) -> void
+Qian.Data.DataRulePolicy.Equals(Qian.Data.DataRulePolicy? other) -> bool
+Qian.Data.DataRulePolicy.OptimisticConcurrency.get -> bool
+Qian.Data.DataRulePolicy.OptimisticConcurrency.init -> void
+Qian.Data.DataRulePolicy.PrimaryKeyStrategy.get -> string!
+Qian.Data.DataRulePolicy.PrimaryKeyStrategy.init -> void
+Qian.Data.DataRulePolicy.RecordHistory.get -> bool
+Qian.Data.DataRulePolicy.RecordHistory.init -> void
+Qian.Data.DataRulePolicy.SoftDelete.get -> bool
+Qian.Data.DataRulePolicy.SoftDelete.init -> void
+Qian.Data.FilterCondition
+Qian.Data.FilterCondition.<Clone>$() -> Qian.Data.FilterCondition!
+Qian.Data.FilterCondition.Deconstruct(out string! Field, out string! Op, out System.Text.Json.JsonElement? Value, out string? SysVar) -> void
+Qian.Data.FilterCondition.Equals(Qian.Data.FilterCondition? other) -> bool
+Qian.Data.FilterCondition.Field.get -> string!
+Qian.Data.FilterCondition.Field.init -> void
+Qian.Data.FilterCondition.FilterCondition(string! Field, string! Op, System.Text.Json.JsonElement? Value = null, string? SysVar = null) -> void
+Qian.Data.FilterCondition.Op.get -> string!
+Qian.Data.FilterCondition.Op.init -> void
+Qian.Data.FilterCondition.SysVar.get -> string?
+Qian.Data.FilterCondition.SysVar.init -> void
+Qian.Data.FilterCondition.Value.get -> System.Text.Json.JsonElement?
+Qian.Data.FilterCondition.Value.init -> void
+Qian.Data.FilterContracts
+Qian.Data.FilterExpression
+Qian.Data.FilterExpression.<Clone>$() -> Qian.Data.FilterExpression!
+Qian.Data.FilterExpression.Deconstruct(out string! Logic, out System.Collections.Generic.IReadOnlyList<Qian.Data.FilterGroup!>! Groups) -> void
+Qian.Data.FilterExpression.Equals(Qian.Data.FilterExpression? other) -> bool
+Qian.Data.FilterExpression.FilterExpression(string! Logic, System.Collections.Generic.IReadOnlyList<Qian.Data.FilterGroup!>! Groups) -> void
+Qian.Data.FilterExpression.Groups.get -> System.Collections.Generic.IReadOnlyList<Qian.Data.FilterGroup!>!
+Qian.Data.FilterExpression.Groups.init -> void
+Qian.Data.FilterExpression.Logic.get -> string!
+Qian.Data.FilterExpression.Logic.init -> void
+Qian.Data.FilterGroup
+Qian.Data.FilterGroup.<Clone>$() -> Qian.Data.FilterGroup!
+Qian.Data.FilterGroup.Conditions.get -> System.Collections.Generic.IReadOnlyList<Qian.Data.FilterCondition!>!
+Qian.Data.FilterGroup.Conditions.init -> void
+Qian.Data.FilterGroup.Deconstruct(out string! Logic, out System.Collections.Generic.IReadOnlyList<Qian.Data.FilterCondition!>! Conditions) -> void
+Qian.Data.FilterGroup.Equals(Qian.Data.FilterGroup? other) -> bool
+Qian.Data.FilterGroup.FilterGroup(string! Logic, System.Collections.Generic.IReadOnlyList<Qian.Data.FilterCondition!>! Conditions) -> void
+Qian.Data.FilterGroup.Logic.get -> string!
+Qian.Data.FilterGroup.Logic.init -> void
+Qian.Data.FilterSystemVariable
+Qian.Data.FilterSystemVariable.<Clone>$() -> Qian.Data.FilterSystemVariable!
+Qian.Data.FilterSystemVariable.Collection.get -> bool
+Qian.Data.FilterSystemVariable.Collection.init -> void
+Qian.Data.FilterSystemVariable.Deconstruct(out string! Description, out bool Collection, out System.Collections.Generic.IReadOnlyList<string!>! FieldTypes) -> void
+Qian.Data.FilterSystemVariable.Description.get -> string!
+Qian.Data.FilterSystemVariable.Description.init -> void
+Qian.Data.FilterSystemVariable.Equals(Qian.Data.FilterSystemVariable? other) -> bool
+Qian.Data.FilterSystemVariable.FieldTypes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Data.FilterSystemVariable.FieldTypes.init -> void
+Qian.Data.FilterSystemVariable.FilterSystemVariable(string! Description, bool Collection, System.Collections.Generic.IReadOnlyList<string!>! FieldTypes) -> void
+Qian.Data.FilterValidationIssue
+Qian.Data.FilterValidationIssue.<Clone>$() -> Qian.Data.FilterValidationIssue!
+Qian.Data.FilterValidationIssue.Deconstruct(out string! Path, out string! Message) -> void
+Qian.Data.FilterValidationIssue.Equals(Qian.Data.FilterValidationIssue? other) -> bool
+Qian.Data.FilterValidationIssue.FilterValidationIssue(string! Path, string! Message) -> void
+Qian.Data.FilterValidationIssue.Message.get -> string!
+Qian.Data.FilterValidationIssue.Message.init -> void
+Qian.Data.FilterValidationIssue.Path.get -> string!
+Qian.Data.FilterValidationIssue.Path.init -> void
+Qian.Data.IRecordHook
+Qian.Data.IRecordHook.AfterAsync(Qian.Data.RecordChangedEvent! change, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Data.IRecordHook.BeforeAsync(Qian.Data.RecordHookContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Data.RecordHookResult!>
+Qian.Data.RecordActor
+Qian.Data.RecordActor.<Clone>$() -> Qian.Data.RecordActor!
+Qian.Data.RecordActor.Deconstruct(out string! Kind, out string! Id, out string? OnBehalfOf) -> void
+Qian.Data.RecordActor.Equals(Qian.Data.RecordActor? other) -> bool
+Qian.Data.RecordActor.Id.get -> string!
+Qian.Data.RecordActor.Id.init -> void
+Qian.Data.RecordActor.Kind.get -> string!
+Qian.Data.RecordActor.Kind.init -> void
+Qian.Data.RecordActor.OnBehalfOf.get -> string?
+Qian.Data.RecordActor.OnBehalfOf.init -> void
+Qian.Data.RecordActor.RecordActor(string! Kind, string! Id, string? OnBehalfOf = null) -> void
+Qian.Data.RecordChangedEvent
+Qian.Data.RecordChangedEvent.<Clone>$() -> Qian.Data.RecordChangedEvent!
+Qian.Data.RecordChangedEvent.Actor.get -> Qian.Data.RecordActor!
+Qian.Data.RecordChangedEvent.Actor.init -> void
+Qian.Data.RecordChangedEvent.CausationId.get -> System.Guid?
+Qian.Data.RecordChangedEvent.CausationId.init -> void
+Qian.Data.RecordChangedEvent.CorrelationId.get -> System.Guid?
+Qian.Data.RecordChangedEvent.CorrelationId.init -> void
+Qian.Data.RecordChangedEvent.Deconstruct(out System.Guid EventId, out System.DateTime OccurredAt, out System.Guid TenantId, out string! Producer, out Qian.Data.RecordActor! Actor, out string! TraceParent, out Qian.Data.RecordChangedPayload! Payload, out System.Guid? CorrelationId, out System.Guid? CausationId) -> void
+Qian.Data.RecordChangedEvent.Equals(Qian.Data.RecordChangedEvent? other) -> bool
+Qian.Data.RecordChangedEvent.EventId.get -> System.Guid
+Qian.Data.RecordChangedEvent.EventId.init -> void
+Qian.Data.RecordChangedEvent.OccurredAt.get -> System.DateTime
+Qian.Data.RecordChangedEvent.OccurredAt.init -> void
+Qian.Data.RecordChangedEvent.Payload.get -> Qian.Data.RecordChangedPayload!
+Qian.Data.RecordChangedEvent.Payload.init -> void
+Qian.Data.RecordChangedEvent.Producer.get -> string!
+Qian.Data.RecordChangedEvent.Producer.init -> void
+Qian.Data.RecordChangedEvent.RecordChangedEvent(System.Guid EventId, System.DateTime OccurredAt, System.Guid TenantId, string! Producer, Qian.Data.RecordActor! Actor, string! TraceParent, Qian.Data.RecordChangedPayload! Payload, System.Guid? CorrelationId = null, System.Guid? CausationId = null) -> void
+Qian.Data.RecordChangedEvent.Subject.get -> string!
+Qian.Data.RecordChangedEvent.TenantId.get -> System.Guid
+Qian.Data.RecordChangedEvent.TenantId.init -> void
+Qian.Data.RecordChangedEvent.TraceParent.get -> string!
+Qian.Data.RecordChangedEvent.TraceParent.init -> void
+Qian.Data.RecordChangedEvent.Type.get -> string!
+Qian.Data.RecordChangedEvent.Version.get -> string!
+Qian.Data.RecordChangedPayload
+Qian.Data.RecordChangedPayload.<Clone>$() -> Qian.Data.RecordChangedPayload!
+Qian.Data.RecordChangedPayload.Actor.get -> Qian.Data.RecordActor!
+Qian.Data.RecordChangedPayload.Actor.init -> void
+Qian.Data.RecordChangedPayload.After.get -> System.Text.Json.JsonElement?
+Qian.Data.RecordChangedPayload.After.init -> void
+Qian.Data.RecordChangedPayload.Before.get -> System.Text.Json.JsonElement?
+Qian.Data.RecordChangedPayload.Before.init -> void
+Qian.Data.RecordChangedPayload.ChangedFields.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Data.RecordChangedPayload.ChangedFields.init -> void
+Qian.Data.RecordChangedPayload.Deconstruct(out string! EntityCode, out string! RecordId, out string! Op, out System.Guid TenantId, out Qian.Data.RecordActor! Actor, out System.Collections.Generic.IReadOnlyList<string!>! ChangedFields, out System.Text.Json.JsonElement? Before, out System.Text.Json.JsonElement? After) -> void
+Qian.Data.RecordChangedPayload.EntityCode.get -> string!
+Qian.Data.RecordChangedPayload.EntityCode.init -> void
+Qian.Data.RecordChangedPayload.Equals(Qian.Data.RecordChangedPayload? other) -> bool
+Qian.Data.RecordChangedPayload.Op.get -> string!
+Qian.Data.RecordChangedPayload.Op.init -> void
+Qian.Data.RecordChangedPayload.RecordChangedPayload(string! EntityCode, string! RecordId, string! Op, System.Guid TenantId, Qian.Data.RecordActor! Actor, System.Collections.Generic.IReadOnlyList<string!>! ChangedFields, System.Text.Json.JsonElement? Before = null, System.Text.Json.JsonElement? After = null) -> void
+Qian.Data.RecordChangedPayload.RecordId.get -> string!
+Qian.Data.RecordChangedPayload.RecordId.init -> void
+Qian.Data.RecordChangedPayload.TenantId.get -> System.Guid
+Qian.Data.RecordChangedPayload.TenantId.init -> void
+Qian.Data.RecordEventRegistration
+Qian.Data.RecordHookContext
+Qian.Data.RecordHookContext.<Clone>$() -> Qian.Data.RecordHookContext!
+Qian.Data.RecordHookContext.Actor.get -> Qian.Data.RecordActor!
+Qian.Data.RecordHookContext.Actor.init -> void
+Qian.Data.RecordHookContext.Before.get -> System.Text.Json.JsonElement?
+Qian.Data.RecordHookContext.Before.init -> void
+Qian.Data.RecordHookContext.Deconstruct(out System.Guid TenantId, out Qian.Data.RecordActor! Actor, out string! EntityCode, out string! RecordId, out string! Operation, out System.Text.Json.JsonElement? Before, out System.Text.Json.JsonElement? Proposed) -> void
+Qian.Data.RecordHookContext.EntityCode.get -> string!
+Qian.Data.RecordHookContext.EntityCode.init -> void
+Qian.Data.RecordHookContext.Equals(Qian.Data.RecordHookContext? other) -> bool
+Qian.Data.RecordHookContext.Operation.get -> string!
+Qian.Data.RecordHookContext.Operation.init -> void
+Qian.Data.RecordHookContext.Proposed.get -> System.Text.Json.JsonElement?
+Qian.Data.RecordHookContext.Proposed.init -> void
+Qian.Data.RecordHookContext.RecordHookContext(System.Guid TenantId, Qian.Data.RecordActor! Actor, string! EntityCode, string! RecordId, string! Operation, System.Text.Json.JsonElement? Before, System.Text.Json.JsonElement? Proposed) -> void
+Qian.Data.RecordHookContext.RecordId.get -> string!
+Qian.Data.RecordHookContext.RecordId.init -> void
+Qian.Data.RecordHookContext.TenantId.get -> System.Guid
+Qian.Data.RecordHookContext.TenantId.init -> void
+Qian.Data.RecordHookResult
+Qian.Data.RecordHookResult.Allowed.get -> bool
+Qian.Data.RecordHookResult.Error.get -> Qian.Runtime.Errors.QianError?
+Qian.Data.RecordHookResult.Payload.get -> System.Text.Json.JsonElement?
+const Qian.Data.RecordChangedEvent.EventType = "qian.record.changed.v1" -> string!
+override Qian.Data.DataRulePolicy.Equals(object? obj) -> bool
+override Qian.Data.DataRulePolicy.GetHashCode() -> int
+override Qian.Data.DataRulePolicy.ToString() -> string!
+override Qian.Data.FilterCondition.Equals(object? obj) -> bool
+override Qian.Data.FilterCondition.GetHashCode() -> int
+override Qian.Data.FilterCondition.ToString() -> string!
+override Qian.Data.FilterExpression.Equals(object? obj) -> bool
+override Qian.Data.FilterExpression.GetHashCode() -> int
+override Qian.Data.FilterExpression.ToString() -> string!
+override Qian.Data.FilterGroup.Equals(object? obj) -> bool
+override Qian.Data.FilterGroup.GetHashCode() -> int
+override Qian.Data.FilterGroup.ToString() -> string!
+override Qian.Data.FilterSystemVariable.Equals(object? obj) -> bool
+override Qian.Data.FilterSystemVariable.GetHashCode() -> int
+override Qian.Data.FilterSystemVariable.ToString() -> string!
+override Qian.Data.FilterValidationIssue.Equals(object? obj) -> bool
+override Qian.Data.FilterValidationIssue.GetHashCode() -> int
+override Qian.Data.FilterValidationIssue.ToString() -> string!
+override Qian.Data.RecordActor.Equals(object? obj) -> bool
+override Qian.Data.RecordActor.GetHashCode() -> int
+override Qian.Data.RecordActor.ToString() -> string!
+override Qian.Data.RecordChangedEvent.Equals(object? obj) -> bool
+override Qian.Data.RecordChangedEvent.GetHashCode() -> int
+override Qian.Data.RecordChangedEvent.ToString() -> string!
+override Qian.Data.RecordChangedPayload.Equals(object? obj) -> bool
+override Qian.Data.RecordChangedPayload.GetHashCode() -> int
+override Qian.Data.RecordChangedPayload.ToString() -> string!
+override Qian.Data.RecordHookContext.Equals(object? obj) -> bool
+override Qian.Data.RecordHookContext.GetHashCode() -> int
+override Qian.Data.RecordHookContext.ToString() -> string!
+override Qian.Data.RecordHookResult.ToString() -> string!
+static Qian.Data.DataContractJson.FilterTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Data.FilterExpression!>!
+static Qian.Data.DataContractJson.RecordChangedEventTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Data.RecordChangedEvent!>!
+static Qian.Data.DataContractJson.RecordChangedPayloadTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Data.RecordChangedPayload!>!
+static Qian.Data.DataContractJson.RulePolicyTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Data.DataRulePolicy!>!
+static Qian.Data.DataContractSchemas.Filter.get -> string!
+static Qian.Data.DataContractSchemas.OperatorMatrix.get -> string!
+static Qian.Data.DataContractSchemas.OperatorMatrixSchema.get -> string!
+static Qian.Data.DataContractSchemas.RecordChangedEnvelope.get -> string!
+static Qian.Data.DataContractSchemas.RecordChangedPayload.get -> string!
+static Qian.Data.DataContractSchemas.RulePolicy.get -> string!
+static Qian.Data.DataContractSchemas.SystemVariables.get -> string!
+static Qian.Data.DataRulePolicy.operator !=(Qian.Data.DataRulePolicy? left, Qian.Data.DataRulePolicy? right) -> bool
+static Qian.Data.DataRulePolicy.operator ==(Qian.Data.DataRulePolicy? left, Qian.Data.DataRulePolicy? right) -> bool
+static Qian.Data.FilterCondition.operator !=(Qian.Data.FilterCondition? left, Qian.Data.FilterCondition? right) -> bool
+static Qian.Data.FilterCondition.operator ==(Qian.Data.FilterCondition? left, Qian.Data.FilterCondition? right) -> bool
+static Qian.Data.FilterContracts.Operators.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<string!>!>!
+static Qian.Data.FilterContracts.SystemVariables.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Qian.Data.FilterSystemVariable!>!
+static Qian.Data.FilterContracts.Validate(Qian.Data.FilterExpression! expression, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! fields) -> System.Collections.Generic.IReadOnlyList<Qian.Data.FilterValidationIssue!>!
+static Qian.Data.FilterExpression.operator !=(Qian.Data.FilterExpression? left, Qian.Data.FilterExpression? right) -> bool
+static Qian.Data.FilterExpression.operator ==(Qian.Data.FilterExpression? left, Qian.Data.FilterExpression? right) -> bool
+static Qian.Data.FilterGroup.operator !=(Qian.Data.FilterGroup? left, Qian.Data.FilterGroup? right) -> bool
+static Qian.Data.FilterGroup.operator ==(Qian.Data.FilterGroup? left, Qian.Data.FilterGroup? right) -> bool
+static Qian.Data.FilterSystemVariable.operator !=(Qian.Data.FilterSystemVariable? left, Qian.Data.FilterSystemVariable? right) -> bool
+static Qian.Data.FilterSystemVariable.operator ==(Qian.Data.FilterSystemVariable? left, Qian.Data.FilterSystemVariable? right) -> bool
+static Qian.Data.FilterValidationIssue.operator !=(Qian.Data.FilterValidationIssue? left, Qian.Data.FilterValidationIssue? right) -> bool
+static Qian.Data.FilterValidationIssue.operator ==(Qian.Data.FilterValidationIssue? left, Qian.Data.FilterValidationIssue? right) -> bool
+static Qian.Data.RecordActor.operator !=(Qian.Data.RecordActor? left, Qian.Data.RecordActor? right) -> bool
+static Qian.Data.RecordActor.operator ==(Qian.Data.RecordActor? left, Qian.Data.RecordActor? right) -> bool
+static Qian.Data.RecordChangedEvent.operator !=(Qian.Data.RecordChangedEvent? left, Qian.Data.RecordChangedEvent? right) -> bool
+static Qian.Data.RecordChangedEvent.operator ==(Qian.Data.RecordChangedEvent? left, Qian.Data.RecordChangedEvent? right) -> bool
+static Qian.Data.RecordChangedPayload.operator !=(Qian.Data.RecordChangedPayload? left, Qian.Data.RecordChangedPayload? right) -> bool
+static Qian.Data.RecordChangedPayload.operator ==(Qian.Data.RecordChangedPayload? left, Qian.Data.RecordChangedPayload? right) -> bool
+static Qian.Data.RecordEventRegistration.RegisterRecordEvents(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
+static Qian.Data.RecordHookContext.operator !=(Qian.Data.RecordHookContext? left, Qian.Data.RecordHookContext? right) -> bool
+static Qian.Data.RecordHookContext.operator ==(Qian.Data.RecordHookContext? left, Qian.Data.RecordHookContext? right) -> bool
+static Qian.Data.RecordHookResult.Accept(System.Text.Json.JsonElement? payload = null) -> Qian.Data.RecordHookResult!
+static Qian.Data.RecordHookResult.Reject(Qian.Runtime.Errors.QianError! error) -> Qian.Data.RecordHookResult!
+static Qian.Data.DataContractSchemas.FrozenEventEnvelope.get -> string!
+static Qian.Data.DataContractSchemas.FrozenS2sClaims.get -> string!
+Qian.Data.RecordChangedEvent.EnsureConsistentContext() -> void

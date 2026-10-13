@@ -1,0 +1,107 @@
+{
+  "int": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull",
+    "in",
+    "notIn",
+    "ge",
+    "gt",
+    "le",
+    "lt",
+    "between"
+  ],
+  "bigint": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull",
+    "in",
+    "notIn",
+    "ge",
+    "gt",
+    "le",
+    "lt",
+    "between"
+  ],
+  "decimal": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull",
+    "in",
+    "notIn",
+    "ge",
+    "gt",
+    "le",
+    "lt",
+    "between"
+  ],
+  "float": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull",
+    "in",
+    "notIn",
+    "ge",
+    "gt",
+    "le",
+    "lt",
+    "between"
+  ],
+  "datetime": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull",
+    "in",
+    "notIn",
+    "ge",
+    "gt",
+    "le",
+    "lt",
+    "between"
+  ],
+  "varchar": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull",
+    "in",
+    "notIn",
+    "like",
+    "notLike"
+  ],
+  "text": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull",
+    "in",
+    "notIn",
+    "like",
+    "notLike"
+  ],
+  "bool": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull"
+  ],
+  "json": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull"
+  ],
+  "uuid": [
+    "eq",
+    "ne",
+    "isNull",
+    "notNull",
+    "in",
+    "notIn"
+  ]
+}

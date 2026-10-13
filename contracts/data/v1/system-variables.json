@@ -1,0 +1,136 @@
+{
+  "currentUser": {
+    "description": "当前用户",
+    "collection": false,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentUserAndSubordinates": {
+    "description": "当前用户及直属下属",
+    "collection": true,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentUserAndAllSubordinates": {
+    "description": "当前用户及全部下属",
+    "collection": true,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentOrg": {
+    "description": "当前组织",
+    "collection": false,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentOrgAndChildren": {
+    "description": "当前组织及直接子组织",
+    "collection": true,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentOrgAndDescendants": {
+    "description": "当前组织及全部后代组织",
+    "collection": true,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentPosition": {
+    "description": "当前岗位",
+    "collection": false,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentPositionAndChildren": {
+    "description": "当前岗位及直接子岗位",
+    "collection": true,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentPositionAndDescendants": {
+    "description": "当前岗位及全部后代岗位",
+    "collection": true,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "currentManagedOrgs": {
+    "description": "当前用户管理的组织",
+    "collection": true,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "formId": {
+    "description": "当前表单标识",
+    "collection": false,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "keyword": {
+    "description": "当前查询关键词",
+    "collection": false,
+    "fieldTypes": [
+      "varchar",
+      "text"
+    ]
+  },
+  "flowId": {
+    "description": "当前流程标识",
+    "collection": false,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "taskId": {
+    "description": "当前任务标识",
+    "collection": false,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  },
+  "launchUserId": {
+    "description": "流程发起用户标识",
+    "collection": false,
+    "fieldTypes": [
+      "uuid",
+      "varchar",
+      "text"
+    ]
+  }
+}

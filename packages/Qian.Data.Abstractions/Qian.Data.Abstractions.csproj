@@ -7,5 +7,9 @@
     <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
     <PackageReference Include="Kun.EntityFrameworkCore" />
     <PackageReference Include="Kun.MultiTenancy.EntityFrameworkCore" />
+    <EmbeddedResource Include="../../contracts/v0/event-envelope.schema.json;../../contracts/v0/s2s-claims.schema.json" LogicalName="data/v0/%(Filename)%(Extension)" />
+    <None Include="../../contracts/v0/event-envelope.schema.json;../../contracts/v0/s2s-claims.schema.json" Pack="true" PackagePath="contracts/v0/" />
+    <EmbeddedResource Include="../../contracts/data/v1/*.json" LogicalName="data/%(Filename)%(Extension)" />
+    <None Include="../../contracts/data/v1/*.json" Pack="true" PackagePath="contracts/data/v1/" />
   </ItemGroup>
 </Project>

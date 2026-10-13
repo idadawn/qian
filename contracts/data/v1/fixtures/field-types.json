@@ -1,0 +1,6 @@
+{
+  "age": "int",
+  "owner_id": "uuid",
+  "active": "bool",
+  "name": "varchar"
+}

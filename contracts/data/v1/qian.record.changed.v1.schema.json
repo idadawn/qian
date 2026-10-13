@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/data/v1/qian.record.changed.v1.schema.json",
+  "title": "RecordChangedPayload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entityCode",
+    "recordId",
+    "op",
+    "tenantId",
+    "actor",
+    "changedFields"
+  ],
+  "properties": {
+    "entityCode": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "op": {
+      "enum": [
+        "created",
+        "updated",
+        "deleted",
+        "imported"
+      ]
+    },
+    "tenantId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "actor": {
+      "$ref": "https://qian.dev/contracts/v0/event-envelope.schema.json#/$defs/Actor"
+    },
+    "before": {
+      "type": "object"
+    },
+    "after": {
+      "type": "object"
+    },
+    "changedFields": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+        "not": {
+          "pattern": "(^|\\.)([tT][eE][nN][aA][nN][tT]_[iI][dD]|[tT][eE][nN][aA][nN][tT][iI][dD])($|\\.)"
+        }
+      }
+    }
+  }
+}
