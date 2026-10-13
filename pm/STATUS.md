@@ -1,21 +1,21 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`████░░░░░░` 41%（57/139）
-- 状态：todo 73 · doing 0 · review 1 · done 57 · blocked 8
+- 状态：todo 72 · doing 1 · review 1 · done 57 · blocked 8
 - 最近更新：2026-10-13
 
 ## 按阶段
 
 | 分组 | 进度 | 进行中 | 阻塞 |
 |---|---|---|---|
-| S1 | `████░░░░░░` 41%（57/138） | 0 | 72 |
+| S1 | `████░░░░░░` 41%（57/138） | 1 | 72 |
 | S2 | `░░░░░░░░░░` 0%（0/1） | 0 | 1 |
 
 ## 按波次
 
 | 分组 | 进度 | 进行中 | 阻塞 |
 |---|---|---|---|
-| 决策 | `█████████░` 95%（19/20） | 0 | 0 |
+| 决策 | `█████████░` 95%（19/20） | 1 | 0 |
 | 第 1 波 | `█████░░░░░` 55%（27/49） | 0 | 19 |
 | 第 2 波 | `█░░░░░░░░░` 15%（8/55） | 0 | 43 |
 | 第 3 波 | `██░░░░░░░░` 22%（2/9） | 0 | 6 |
@@ -31,7 +31,7 @@
 | CFG 配置 | `█████░░░░░` 50%（2/4） | 0 | 2 |
 | DATA 数据 | `██░░░░░░░░` 25%（1/4） | 0 | 0 |
 | DEC 待拍板决策 | `██████████` 100%（19/19） | 0 | 0 |
-| DEP 部署物料 | `█░░░░░░░░░` 14%（1/7） | 0 | 3 |
+| DEP 部署物料 | `█░░░░░░░░░` 14%（1/7） | 1 | 3 |
 | DOCS 文档站与组件文档 | `███████░░░` 71%（5/7） | 0 | 2 |
 | ENT 权益 | `░░░░░░░░░░` 0%（0/2） | 0 | 2 |
 | EVT 事件 | `░░░░░░░░░░` 0%（0/3） | 0 | 2 |
@@ -54,29 +54,28 @@
 |---|---|---|---|
 | claude | `██████████` 100%（26/26） | 0 | 0 |
 | codex | `██████████` 100%（1/1） | 0 | 0 |
-| cody | `███████░░░` 76%（29/38） | 0 | 9 |
+| cody | `███████░░░` 74%（29/39） | 1 | 9 |
 | 产品负责人 | `██████████` 100%（1/1） | 0 | 0 |
-| （未认领） | `░░░░░░░░░░` 0%（0/73） | 0 | 64 |
+| （未认领） | `░░░░░░░░░░` 0%（0/72） | 0 | 64 |
 
 ## 接下来可做（无未完成前置的待办，按优先级 / 波次）
 
 | # | 任务 | 优先级 | 波次 | 估算 | 领域 |
 |---|---|---|---|---|---|
-| 1 | [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | P0 | 决策 | 1d | DEP |
-| 2 | [S1-DATA-002](tasks/S1-DATA-002.md) 多副本迁移协调、分布式 ID（Guid v7 / 雪花租约）与序号服务 | P0 | 1 | 3d | DATA |
-| 3 | [S1-DEP-002](tasks/S1-DEP-002.md) L1 组件上 K3s：RabbitMQ、Apollo + MySQL、OIDC | P0 | 1 | 5d | DEP |
-| 4 | [S1-EVT-001](tasks/S1-EVT-001.md) Qian.Events：信封、稳定事件 ID、Outbox 发布与 MQ 拓扑 | P0 | 1 | 5d | EVT |
-| 5 | [S1-DATA-003](tasks/S1-DATA-003.md) 基准类型与 PG 方言组件、数据连接档案 | P0 | 2 | 3d | DATA |
-| 6 | [S1-DEP-003](tasks/S1-DEP-003.md) profile 镜像构建、SBOM、漏洞扫描与 Cosign 签名 | P0 | 2 | 3d | DEP |
-| 7 | [S1-YUE-005](tasks/S1-YUE-005.md) @yue/core 约 30 个基础组件（Base UI + shadcn） | P0 | 2 | 8d | YUE |
-| 8 | [S1-DATA-004](tasks/S1-DATA-004.md) Filter AST、运算符矩阵与 IRecordHook 契约 | P0 | 3 | 2d | DATA |
-| 9 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | P1 | 2 | 1d | KUN |
+| 1 | [S1-DATA-002](tasks/S1-DATA-002.md) 多副本迁移协调、分布式 ID（Guid v7 / 雪花租约）与序号服务 | P0 | 1 | 3d | DATA |
+| 2 | [S1-DEP-002](tasks/S1-DEP-002.md) L1 组件上 K3s：RabbitMQ、Apollo + MySQL、OIDC | P0 | 1 | 5d | DEP |
+| 3 | [S1-EVT-001](tasks/S1-EVT-001.md) Qian.Events：信封、稳定事件 ID、Outbox 发布与 MQ 拓扑 | P0 | 1 | 5d | EVT |
+| 4 | [S1-DATA-003](tasks/S1-DATA-003.md) 基准类型与 PG 方言组件、数据连接档案 | P0 | 2 | 3d | DATA |
+| 5 | [S1-DEP-003](tasks/S1-DEP-003.md) profile 镜像构建、SBOM、漏洞扫描与 Cosign 签名 | P0 | 2 | 3d | DEP |
+| 6 | [S1-YUE-005](tasks/S1-YUE-005.md) @yue/core 约 30 个基础组件（Base UI + shadcn） | P0 | 2 | 8d | YUE |
+| 7 | [S1-DATA-004](tasks/S1-DATA-004.md) Filter AST、运算符矩阵与 IRecordHook 契约 | P0 | 3 | 2d | DATA |
+| 8 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | P1 | 2 | 1d | KUN |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 12 | 44d |
+| 第 1 层 | 11 | 43d |
 | 第 2 层 | 14 | 59d |
 | 第 3 层 | 13 | 46d |
 | 第 4 层 | 9 | 35d |
@@ -91,4 +90,5 @@
 
 | 任务 | 状态 | 负责人 | 更新 |
 |---|---|---|---|
+| [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-13 |
 | [S1-RT-006](tasks/S1-RT-006.md) qian.capabilities 插件：能力目录、契约仓库与聚合 | review | cody | 2026-10-13 |
