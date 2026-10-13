@@ -16,7 +16,9 @@ DataDefinition.Key 拥有 Data 服务键，`ctx.Data()` 解析当前 scope 可�
 
 替换 Kun 默认累加器的 Outbox 写入端（如事件组件的信封写入端）实现 IOutboxBufferBinding，声明自己写入的缓冲器；数据会话只接受写入当前 scope 缓冲器的实现。IDataContextCatalog 列出宿主经 AddQianData 登记的全部业务上下文，供 Outbox 投递等宿主级组件逐个处理。
 
-DataErrors.Misconfigured 定义统一 DATA_MISCONFIGURED，QianDataMisconfiguredException 携带 QianError。宿主统一映射为 ErrorDetail，不自造错误体。
+IDataMigrator 是多副本迁移协调端口：逐个业务上下文在 schema 级 advisory lock 内执行未应用的迁移，返回每个上下文的 DataMigrationReport（实际执行的迁移与等锁时长）。ISequenceService 按租户规则原子取号，规则模式由 SequencePattern 解析与格式化（如 `'SO' + yyyyMMdd + seq(6)`）；ISnowflakeIdGenerator 给需要数值主键的场景发 64 位雪花 ID。实现与装配见 [Qian.Data](../Qian.Data/README.md)。
+
+DataErrors.Misconfigured 定义统一 DATA_MISCONFIGURED，QianDataMisconfiguredException 携带 QianError。序号与雪花 ID 另有 DATA_SEQUENCE_RULE_INVALID、DATA_SEQUENCE_RULE_NOT_FOUND、DATA_SEQUENCE_EXHAUSTED 与 DATA_ID_WORKER_UNAVAILABLE，经 QianErrorException 抛出。宿主统一映射为 ErrorDetail，不自造错误体。
 
 ## 组件位置
 

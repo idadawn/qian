@@ -52,6 +52,9 @@ public static class CrmApplication
         builder.Services.AddKunAuthorization();
         builder.Services.AddKunEventBus();
         builder.Services.AddQianData<CrmDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(CrmDbContext.Schema));
+        // 迁移任务（--migrate-only）用属主角色的连接执行 DDL；未配置时沿用各上下文自身的连接。
+        if (builder.Configuration.GetConnectionString("Migrations") is { Length: > 0 } migrations)
+            builder.Services.AddQianDataMigrations(options => options.ResolveConnection = (_, _) => migrations);
         var app = builder.Build();
         app.UseQianErrors();
         app.UseAuthentication();

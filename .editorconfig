@@ -51,3 +51,7 @@ dotnet_diagnostic.IDE0005.severity = warning # 未使用的 using
 # 旧 Kun 接口是编译级禁用，不只是提示。
 [*.cs]
 dotnet_diagnostic.RS0030.severity = error
+
+# dotnet ef 生成的迁移按生成代码对待；迁移内容以 EF 模型差异为准，不手工改写风格。
+[**/Migrations/*.cs]
+generated_code = true
