@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/packages/">
+    <Project Path="packages/Qian.Tenancy.Abstractions/Qian.Tenancy.Abstractions.csproj" />
+    <Project Path="packages/Qian.Tenancy/Qian.Tenancy.csproj" />
     <Project Path="packages/Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
     <Project Path="packages/Qian.Authz/Qian.Authz.csproj" />
     <Project Path="packages/Qian.Docs.Abstractions/Qian.Docs.Abstractions.csproj" />
@@ -24,6 +26,7 @@
     <Project Path="samples/Qian.Sample.Crm/Qian.Sample.Crm.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Qian.Tenancy.Tests/Qian.Tenancy.Tests.csproj" />
     <Project Path="tests/Qian.Authz.Abstractions.Tests/Qian.Authz.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Authz.Tests/Qian.Authz.Tests.csproj" />
     <Project Path="tests/Qian.Docs.Tests/Qian.Docs.Tests.csproj" />
