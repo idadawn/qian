@@ -110,10 +110,23 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 
 [scripts/check_deps.py](../scripts/check_deps.py) 检查解决方案里的每个 Qian 包：
 
-- 允许的 Qian 依赖只有 `Qian.Runtime`（及 `Qian.Runtime.*`）、`Qian.Plugin.Sdk`（及 `Qian.Plugin.Sdk.*`）和任何 `*.Abstractions`。平台插件包 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 与所有 Provider 包，出现在传递依赖里即违规。`Kun.*` 与第三方包不在本规则范围内。
+- 允许的 Qian 依赖只有 `Qian.Runtime`（及 `Qian.Runtime.*`）、`Qian.Plugin.Sdk`（及 `Qian.Plugin.Sdk.*`）和任何 `*.Abstractions`。平台插件包 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 与所有 Provider 包，出现在传递依赖里即违规。Definition 的 Kun 直接依赖另受下述规则约束；第三方包与 Kun 传递依赖不在该附加规则范围内。
 - 组合包 `Qian.Bundle.*` 不检查：它的职责就是把一组 Provider 一起装（组件模型规格 §7.3）。
 - 数据来自各项目的 `obj/project.assets.json`。`dotnet list package --include-transitive` 只列 NuGet 包，看不到 ProjectReference 带进来的项目，而仓库内组件之间多是项目引用，所以直接读 NuGet 还原产物，包与项目两类依赖一并检查。
 - 失败时打印从被检查方到违规依赖的完整路径，例如 `Qian.GateSample.Reports → Qian.GateSample.Files.Abstractions → Qian.GateSample.Authz`；加 `--json` 输出机器可读结果。修法：改为依赖对方的 `.Abstractions` 包。
+
+### Definition 的 Kun 直接依赖（S1-KUN-010）
+
+Definition 只允许直接引用 `Kun.*.Abstractions`，`PackageReference` 与 `ProjectReference` 均检查。Provider 使用 Kun 实现包不受此附加规则影响。现有公开契约的以下例外按完整「消费包 → 依赖包」登记在 `DEFINITION_KUN_EXCEPTIONS`，每条有理由，不能扩大为包名前缀豁免：
+
+| 消费包 | 允许的 Kun 直接依赖 | 保留理由 |
+|---|---|---|
+| `Qian.Tenancy.Abstractions` | `Kun.Core` | 复用零外部依赖的租户契约 |
+| `Qian.Authz.Abstractions` | `Kun.Authorization` | 复用框架权限、数据与字段判定端口，避免复制接口 |
+| `Qian.Data.Abstractions` | `Kun.EntityFrameworkCore` | 已发布的 QianDbContext 基类与同上下文工作单元契约 |
+| `Qian.Data.Abstractions` | `Kun.MultiTenancy.EntityFrameworkCore` | 启动期校验 RLS 双拦截器与模型缓存键，维持隔离安全 |
+
+Data 的两项依赖保留现有实现与公开 API；本任务不通过删除启动校验或复制基类来消除依赖。后续若移动数据基类，应先提供兼容迁移再删除对应白名单。身份事件入口已改为 `Kun.EventBus.Abstractions`，不在例外内。
 
 ### 4.3 门禁自测
 
@@ -121,6 +134,7 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 
 | 样例 | 期望 |
 |---|---|
+| `depgraph/kun.slnx` | 真实 Kun 包：Storage 抽象可引用，EventBus 实现被 Definition 规则拒绝 |
 | `depgraph/good.slnx` | 通过；其中组合包与不打包的宿主引用 Provider 不算违规 |
 | `depgraph/bad.slnx` | 4 处违规：Definition 依赖 Provider、Provider 依赖平台插件、Provider 依赖另一个 Provider、经 Definition 传递依赖 Provider |
 | `publicapi/Qian.GateSample.Declared` | 构建通过 |

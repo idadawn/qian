@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Qian.GateSample.KunGood.Abstractions/Qian.GateSample.KunGood.Abstractions.csproj" />
+  <Project Path="Qian.GateSample.KunBad.Abstractions/Qian.GateSample.KunBad.Abstractions.csproj" />
+</Solution>
