@@ -54,7 +54,15 @@ scope 写作 `global` 或 `tenant:id`、`app:id`、`agent-session:id`。服务�
 
 S1-RT-003 已合并并完成 `@idadawn/qian-runtime@0.1.0` 私有发布与逻辑别名消费。[主线双侧 CI](https://github.com/idadawn/qian/actions/runs/38146040203) 已持续执行同一组数据：现有 23 个 YAML 场景加 T15–T17 的 3 个装配场景，TS 共 34 项测试、.NET 运行时共 46 项测试通过。
 
-S1-QA-002 仍须完成真实提示词构建/工具执行链路对过滤结果的联调。当前目录与注入断言不能替代产品提示词断言。T19 已增加下节的双侧实际文件监视证据；RT-009 的完整 hooks/生产触发仍需收尾，T23 的完整 platform 宿主等价依赖真实业务 Provider；当前 platform 清单带有骨架组件，不能当作可运行的平台完成证明。
+真实目录、提示词与执行已增加下节的产品联调场景；核心运行时的双侧语义与产品 HTTP 联调分别给出证据，不能互相替代。T19 已有双侧实际文件监视证据；RT-009 的完整 hooks/生产触发仍需收尾。T23 按组件规格 §10.2 检查同组真实 Provider 在 minimal 与 platform 的运行时等价；ADR-019 的 Files/Authz/Identity.Client 独立安装和文件上传验收由 QA-003/QA-005 跟踪。现有单一 CRM 组合及带骨架的默认 platform 清单尚不构成双宿主等价证明。
+
+### 产品目录、提示词与实际执行
+
+[capability-filter.json](capability-filter.json) 是产品联调的语言无关操作与预期。`CapabilityFilterTckTests` 使用真实 Kestrel、签名 S2S、Registry、租户主档、RBAC、SDK Mediator、PostgreSQL 业务/Outbox 与审计；测试控制动作只调用真实运行时的 Restrict/卸载和真实数据库 scope patch，没有替换权限判断或业务 handler。12 个探测点覆盖权限和 OAuth scope 拒绝、两条 restrict 的交集及释放、租户覆盖版本、其它租户不受影响、禁用不回退、恢复和卸载。
+
+.NET HTTP 客户端与 [Node HTTP 消费者](capability-filter-client.mjs) 直接读取同一文件，分别请求实际目录、生产 ComposePrompt 与实际 Invoke。隐藏能力与未知能力的 ErrorDetail 除请求 trace/instance 外必须一致。两个客户端复用同一个幂等键：业务和 Outbox 只写一份，成功调用各进入一次真实审计；每步读取真库核对拒绝时没有副作用。平台包目前以 .NET 实现，Node 消费者证明 HTTP 观测一致，不代表 TS 平台 Provider、TS 运行时 scope 或 T23。TS/.NET 运行时遮蔽与交集由既有 T12/T13 共用场景独立覆盖。
+
+设置 `QIAN_PRODUCT_FILTER_REPORT` 可导出两客户端对照后的实际结果与数据库计数；dotnet CI 保存为测试证据。该场景不实现真正 Qian Identity 的登录/PKCE，也不以测试签发器替代该独立验收。
 
 ### T19 的实际文件监视场景
 
