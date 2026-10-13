@@ -1,0 +1,33 @@
+{
+  "version": "v1",
+  "event_id": "01900000-0000-7000-8000-000000000002",
+  "subject": "qian.record.changed",
+  "type": "qian.record.changed.v1",
+  "occurred_at": "2026-10-14T00:00:00Z",
+  "tenant_id": "01900000-0000-7000-8000-000000000001",
+  "producer": "qian.dynamic-data",
+  "actor": {
+    "kind": "user",
+    "id": "test-user"
+  },
+  "trace_parent": "00-11111111111111111111111111111111-2222222222222222-01",
+  "payload": {
+    "entityCode": "crm.customer",
+    "recordId": "customer-1",
+    "op": "updated",
+    "tenantId": "01900000-0000-7000-8000-000000000001",
+    "actor": {
+      "kind": "user",
+      "id": "test-user"
+    },
+    "before": {
+      "name": "张三"
+    },
+    "after": {
+      "name": "张四"
+    },
+    "changedFields": [
+      "name"
+    ]
+  }
+}

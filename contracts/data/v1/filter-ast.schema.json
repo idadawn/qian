@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/data/v1/filter-ast.schema.json",
+  "title": "FilterExpression",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "logic",
+    "groups"
+  ],
+  "properties": {
+    "logic": {
+      "enum": [
+        "and",
+        "or"
+      ]
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/group"
+      }
+    }
+  },
+  "$defs": {
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "logic",
+        "conditions"
+      ],
+      "properties": {
+        "logic": {
+          "enum": [
+            "and",
+            "or"
+          ]
+        },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "op"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "not": {
+            "pattern": "(^|\\.)([tT][eE][nN][aA][nN][tT]_[iI][dD]|[tT][eE][nN][aA][nN][tT][iI][dD])($|\\.)"
+          }
+        },
+        "op": {
+          "enum": [
+            "eq",
+            "ne",
+            "like",
+            "notLike",
+            "isNull",
+            "notNull",
+            "in",
+            "notIn",
+            "ge",
+            "gt",
+            "le",
+            "lt",
+            "between"
+          ]
+        },
+        "value": {},
+        "sysVar": {
+          "enum": [
+            "currentUser",
+            "currentUserAndSubordinates",
+            "currentUserAndAllSubordinates",
+            "currentOrg",
+            "currentOrgAndChildren",
+            "currentOrgAndDescendants",
+            "currentPosition",
+            "currentPositionAndChildren",
+            "currentPositionAndDescendants",
+            "currentManagedOrgs",
+            "formId",
+            "keyword",
+            "flowId",
+            "taskId",
+            "launchUserId"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "isNull",
+                  "notNull"
+                ]
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "value"
+                  ]
+                },
+                {
+                  "required": [
+                    "sysVar"
+                  ]
+                }
+              ]
+            }
+          },
+          "else": {
+            "oneOf": [
+              {
+                "required": [
+                  "value"
+                ],
+                "not": {
+                  "required": [
+                    "sysVar"
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "sysVar"
+                ],
+                "not": {
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "op": {
+                "enum": [
+                  "in",
+                  "notIn",
+                  "between"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "between"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "value": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

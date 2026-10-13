@@ -1,0 +1,9 @@
+{
+  "primaryKeyStrategy": "uuidV7",
+  "optimisticConcurrency": true,
+  "softDelete": true,
+  "recordHistory": true,
+  "businessKey": [
+    "code"
+  ]
+}
