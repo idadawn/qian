@@ -204,7 +204,6 @@
   ],
   "blockedBy": [
    "S1-AUD-001",
-   "S1-EVT-001",
    "S1-SCH-001"
   ],
   "order": 2,
@@ -287,8 +286,7 @@
    "S1-EVT-001"
   ],
   "blockedBy": [
-   "S1-AUD-003",
-   "S1-EVT-001"
+   "S1-AUD-003"
   ],
   "order": 3,
   "readyNow": false,
@@ -465,8 +463,7 @@
   ],
   "blockedBy": [
    "S1-AZ-003",
-   "S1-AUD-001",
-   "S1-EVT-001"
+   "S1-AUD-001"
   ],
   "order": 3,
   "readyNow": false,
@@ -556,11 +553,9 @@
    "S1-AZ-001",
    "S1-DATA-004"
   ],
-  "blockedBy": [
-   "S1-DATA-004"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.5",
@@ -810,22 +805,22 @@
  {
   "id": "S1-DATA-002",
   "title": "多副本迁移协调、分布式 ID（Guid v7 / 雪花租约）与序号服务",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DATA",
   "areaName": "数据",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
    "S1-DATA-001"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -836,25 +831,25 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>MigrateAsync</code> 前取 <code>pg_advisory_lock(hash(schema))</code>，K8s 迁移 Job 先行（<code>--migrate-only</code>），多副本启动时只校验不迁移；默认 Guid v7，数值 id 用雪花、WorkerId 经 Redis 租约 <code>qian:snowflake:worker:{n}</code> 分配；<code>ISequenceService.NextAsync(ruleCode, scopeKey)</code> 规则 DSL <code>prefix + yyyyMMdd + seq(6)</code>，PG <code>UPDATE ... RETURNING</code> 原子取号。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：两个副本同时启动并执行迁移，只有一个执行 DDL、另一个等待后校验通过</li>\n<li class='chk'><span class='box'></span>IT：100 并发取号同一序号规则无重复无跳号；规则修改后从 1 重新开始</li>\n<li class='chk'><span class='box'></span>IT：雪花 WorkerId 在 3 个副本间互不相同，副本重启后租约回收复用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>MigrateAsync</code> 前取 <code>pg_advisory_lock(hash(schema))</code>，K8s 迁移 Job 先行（<code>--migrate-only</code>），多副本启动时只校验不迁移；默认 Guid v7，数值 id 用雪花、WorkerId 经 Redis 租约 <code>qian:snowflake:worker:{n}</code> 分配；<code>ISequenceService.NextAsync(ruleCode, scopeKey)</code> 规则 DSL <code>prefix + yyyyMMdd + seq(6)</code>，PG <code>UPDATE ... RETURNING</code> 原子取号。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：两个副本同时启动并执行迁移，只有一个执行 DDL、另一个等待后校验通过</li>\n<li class='chk done'><span class='box'>✓</span>IT：100 并发取号同一序号规则无重复无跳号；规则修改后从 1 重新开始</li>\n<li class='chk done'><span class='box'>✓</span>IT：雪花 WorkerId 在 3 个副本间互不相同，副本重启后租约回收复用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：开始</li>\n<li>2026-10-14 claude：实现 IDataMigrator（schema 级 pg_advisory_lock + EF 迁移，--migrate-only 入口，在线副本启动只校验）、qian.data 系统上下文首个迁移（plugin_qian_data 的序号表，强制 RLS）、ISequenceService（单条 upsert 原子取号，规则修订与日期周期重置）、ISnowflakeIdGenerator（Redis 租约 qian:snowflake:worker:{n} + 高水位）。验收证据：MigrationCoordinationTests 两副本同时迁移只有一个执行 DDL、另一个等锁后校验通过且迁移前启动被拒；SequenceServiceTests 100 并发取号 1..100 无重复无跳号、改规则从 1 开始、租户 RLS 隔离；SnowflakeIdTests 三副本 WorkerId 互异、正常停止与崩溃后编号回收复用且新 ID 大于旧 ID</li>\n<li>2026-10-14 claude：完成：随 idadawn/qian#75 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-002.md"
  },
  {
   "id": "S1-DATA-003",
   "title": "基准类型与 PG 方言组件、数据连接档案",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DATA",
   "areaName": "数据",
   "wave": 2,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
@@ -862,8 +857,8 @@
    "S1-CFG-002"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -874,18 +869,18 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>BaseDataType</code>（int / bigint / decimal / float / datetime / varchar / text / bool / json / uuid，系统类不可删）、<code>DbDialect</code>（postgres）、<code>DialectTypeMapping</code>（长度 / 精度 / 区间校验）作为种子数据与 <code>GET /api/data/meta/types</code>；方言为独立组件 <code>Qian.Data.Dialect.Pg</code>（数据包，<code>qian.data.dialect/v1</code> SPI）；<code>DataConnection</code>（凭证只存 secretRef、<code>POST /connections/{id}:test</code>、详情不回传密钥）；<code>StandardField</code> 由基类固化。MySQL 方言本期不做。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：<code>GET /api/data/meta/types</code> 返回基准类型、方言与映射，系统类不可删除</li>\n<li class='chk'><span class='box'></span>IT：<code>POST /connections/{id}:test</code> 对可达 / 不可达库分别返回成功 / 结构化错误；详情接口不回传密钥</li>\n<li class='chk'><span class='box'></span>UT：<code>DialectTypeMapping</code> 对超出长度 / 精度 / 区间的字段定义拒绝</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>BaseDataType</code>（int / bigint / decimal / float / datetime / varchar / text / bool / json / uuid，系统类不可删）、<code>DbDialect</code>（postgres）、<code>DialectTypeMapping</code>（长度 / 精度 / 区间校验）作为种子数据与 <code>GET /api/data/meta/types</code>；方言为独立组件 <code>Qian.Data.Dialect.Pg</code>（数据包，<code>qian.data.dialect/v1</code> SPI）；<code>DataConnection</code>（凭证只存 secretRef、<code>POST /connections/{id}:test</code>、详情不回传密钥）；<code>StandardField</code> 由基类固化。MySQL 方言本期不做。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>GET /api/data/meta/types</code> 返回基准类型、方言与映射，系统类不可删除</li>\n<li class='chk done'><span class='box'>✓</span>IT：<code>POST /connections/{id}:test</code> 对可达 / 不可达库分别返回成功 / 结构化错误；详情接口不回传密钥</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>DialectTypeMapping</code> 对超出长度 / 精度 / 区间的字段定义拒绝</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：开始</li>\n<li>2026-10-14 claude：实现 10 个系统基准类型种子与目录（IDataTypeCatalog）、方言 SPI qian.data.dialect/v1 与 Data.Dialects 注册表、PostgreSQL 方言包 Qian.Data.Dialect.Pg（映射数据 + Npgsql 探测）、按租户隔离的 IDataConnectionRegistry（data_connections 迁移、口令只存租户 secretRef、使用点解析）与 Qian.Data.AspNetCore 端点。验收证据：MetaTypesEndpointTests 返回 10 个类型与 pg 方言映射并通过目录 Schema、删除 int/varchar/uuid 均 409 DATA_TYPE_PROTECTED；ConnectionEndpointTests 在真实 PostgreSQL 上可达库 200、端口关闭 422 UNREACHABLE、错误口令/缺失库/缺失 schema 422 REJECTED、越权密钥 403，详情与列表不含口令且无 password 成员；DataTypeContractTests 与 PG 映射用例拒绝超出长度/精度/小数位/取值区间的字段定义</li>\n<li>2026-10-14 claude：完成：随 idadawn/qian#79 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-003.md"
  },
  {
   "id": "S1-DATA-004",
   "title": "Filter AST、运算符矩阵与 IRecordHook 契约",
-  "status": "doing",
+  "status": "done",
   "stage": "S1",
   "area": "DATA",
   "areaName": "数据",
@@ -899,7 +894,7 @@
    "S1-DATA-001"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -913,14 +908,18 @@
    {
     "path": "docs/adr/ADR-011-metadata-dynamic-data.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-011-metadata-dynamic-data.md"
+   },
+   {
+    "path": "docs/prd/specs/data-contracts.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/data-contracts.md"
    }
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk'><span class='box'></span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk'><span class='box'></span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-004.md"
  },
  {
@@ -1781,7 +1780,7 @@
  {
   "id": "S1-DEP-003",
   "title": "profile 镜像构建、SBOM、漏洞扫描与 Cosign 签名",
-  "status": "doing",
+  "status": "blocked",
   "stage": "S1",
   "area": "DEP",
   "areaName": "部署物料",
@@ -1793,10 +1792,19 @@
   "days": 3.0,
   "depends": [
    "S1-RT-002",
-   "S1-DEP-001"
+   "S1-DEP-001",
+   "S1-IDP-002",
+   "S1-IDP-005",
+   "S1-GW-001",
+   "S1-YUE-001"
   ],
-  "blockedBy": [],
-  "order": 0,
+  "blockedBy": [
+   "S1-IDP-002",
+   "S1-IDP-005",
+   "S1-GW-001",
+   "S1-YUE-001"
+  ],
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -1810,6 +1818,10 @@
    {
     "path": "pm/tasks/S1-DEC-016.md",
     "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-016.md"
+   },
+   {
+    "path": "deploy/images/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/deploy/images/README.md"
    }
   ],
   "updated": "2026-10-14",
@@ -1817,7 +1829,7 @@
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n<li>2026-10-14 cody：开始：按用户指派认领；核实真实 profile 宿主后完成镜像、SBOM、扫描、签名与配置漂移验收。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n<li>2026-10-14 cody：开始：按用户指派认领；核实真实 profile 宿主后完成镜像、SBOM、扫描、签名与配置漂移验收。</li>\n</ul>\n<h4>阻塞与恢复条件</h4>\n<p>2026-10-14 复核：identity、gateway 与 platform 的业务宿主和 shell 静态制品尚未交付，现有 profile 仍为静态装配骨架。原依赖只覆盖配置装载器与集群基线，不能支撑三个真实镜像的验收；补列 IDP-002、IDP-005、GW-001、YUE-001，详细输入与验收准备见 deploy/images/README.md。产品负责人已选择保持本轮四任务范围、记录真实前置阻塞；原验收不变，待前置完成后恢复构建与供应链验证。</p>\n<ul>\n<li>2026-10-14 cody：按用户确认保持四任务范围；已核实真实身份/网关/RP/外壳输入缺失并补列前置，交付镜像输入与验收准备文档；三项真实镜像验收保持未完成。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-003.md"
  },
  {
@@ -1841,7 +1853,7 @@
    "S1-RT-013",
    "S1-DEP-003"
   ],
-  "order": 4,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -1881,10 +1893,9 @@
   ],
   "blockedBy": [
    "S1-DEP-004",
-   "S1-DATA-002",
    "S1-DEP-002"
   ],
-  "order": 5,
+  "order": 9,
   "readyNow": false,
   "refs": [
    {
@@ -2060,11 +2071,9 @@
    "S1-YUE-005",
    "S1-RT-010"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md#3",
@@ -2294,7 +2303,6 @@
   "blockedBy": [
    "S1-TEN-001",
    "S1-RT-005",
-   "S1-EVT-001",
    "S1-AUD-001"
   ],
   "order": 2,
@@ -2379,14 +2387,14 @@
  {
   "id": "S1-EVT-001",
   "title": "Qian.Events：信封、稳定事件 ID、Outbox 发布与 MQ 拓扑",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "EVT",
   "areaName": "事件",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "5d",
   "days": 5.0,
   "depends": [
@@ -2396,8 +2404,8 @@
    "S1-KUN-009"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.10",
@@ -2420,12 +2428,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
    }
   ],
-  "updated": "2026-10-10",
+  "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 4,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.events</code>（<code>Qian.Events.Abstractions</code> / <code>ctx.Events</code> + <code>Qian.Events</code>，随 SDK 进每个 .NET profile）：<code>QianEventEnvelope { version, event_id (uuid v7), subject, type, occurred_at, tenant_id, producer, correlation_id?, causation_id?, actor { kind, id, on_behalf_of? }, trace_parent, payload }</code> 对齐 iClaw 契约；<code>[IntegrationEventId]</code> 稳定 ID 与 payload Schema 导出；<code>Publish</code> 只允许命令 handler 同 scope；Outbox 发布器批 100、<code>FOR UPDATE SKIP LOCKED</code>、publisher confirm、指数退避；exchange <code>qian.events</code>（topic）、quorum 队列 <code>q.&lt;service&gt;.&lt;subscription&gt;</code>、广播队列；独立模式 Outbox 用宿主 DbContext。与 <code>Qian.Runtime</code> 进程内事件不混用。</p>\n<p>S1-DEC-013（2026-10-10）裁决：消费端幂等默认用 Kun 的 Redis <code>IProcessedMessageStore</code>，PG <code>processed_messages</code> 兜底表是本任务的可选项，不做也可；「集成事件只能在命令 handler 同 scope 发出」的分析器规则上游没做（S1-KUN-002 只有运行时 <code>IScopedPublisher</code> 兜底），由本任务第 4 条验收落地。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：Outbox 表新增可空列 <code>NextAttemptAt</code>（持久化指数退避，<code>RetryBaseDelay × 2^(AttemptCount-1)</code> 封顶一分钟），参考应用与独立模式宿主 DbContext 都要先生成并应用迁移（kun 仓库 <code>samples/*/Infrastructure/Migrations/*_OutboxRetrySchedule.cs</code> 为样板）；默认 <code>EfOutboxMessageStore</code> 以 <code>FOR UPDATE SKIP LOCKED</code> 领取批次，自定义非事务存储不再默认无锁，须显式 <code>UseRedisOutboxLock()</code> 或仅在单实例测试提供 <code>NullOutboxLockProvider</code>；消费者成功后才记幂等并 ack，失败经 quorum 队列退避后进 DLX。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：参考应用创建客户后 <code>outbox_messages</code> +1，RabbitMQ 收到 1 条</li>\n<li class='chk'><span class='box'></span>IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）</li>\n<li class='chk'><span class='box'></span>UT：信封通过 iClaw <code>events-schema.json</code> 校验；每个 <code>[IntegrationEventId]</code> 都能导出 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：在非命令 handler 处 <code>Publish</code> 触发分析器错误；<code>actor.kind</code> 支持 <code>agent</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/event-envelope.schema.json；iClaw 信封兼容性的验收口径见 contracts/v0/iclaw-alignment.md 第 3 节</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的 Outbox 行为变更（<code>NextAttemptAt</code> 迁移、非事务存储默认拒绝无锁、先记幂等再 ack），随 S1-KUN-009 升级可用</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.events</code>（<code>Qian.Events.Abstractions</code> / <code>ctx.Events</code> + <code>Qian.Events</code>，随 SDK 进每个 .NET profile）：<code>QianEventEnvelope { version, event_id (uuid v7), subject, type, occurred_at, tenant_id, producer, correlation_id?, causation_id?, actor { kind, id, on_behalf_of? }, trace_parent, payload }</code> 对齐 iClaw 契约；<code>[IntegrationEventId]</code> 稳定 ID 与 payload Schema 导出；<code>Publish</code> 只允许命令 handler 同 scope；Outbox 发布器批 100、<code>FOR UPDATE SKIP LOCKED</code>、publisher confirm、指数退避；exchange <code>qian.events</code>（topic）、quorum 队列 <code>q.&lt;service&gt;.&lt;subscription&gt;</code>、广播队列；独立模式 Outbox 用宿主 DbContext。与 <code>Qian.Runtime</code> 进程内事件不混用。</p>\n<p>S1-DEC-013（2026-10-10）裁决：消费端幂等默认用 Kun 的 Redis <code>IProcessedMessageStore</code>，PG <code>processed_messages</code> 兜底表是本任务的可选项，不做也可；「集成事件只能在命令 handler 同 scope 发出」的分析器规则上游没做（S1-KUN-002 只有运行时 <code>IScopedPublisher</code> 兜底），由本任务第 4 条验收落地。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：Outbox 表新增可空列 <code>NextAttemptAt</code>（持久化指数退避，<code>RetryBaseDelay × 2^(AttemptCount-1)</code> 封顶一分钟），参考应用与独立模式宿主 DbContext 都要先生成并应用迁移（kun 仓库 <code>samples/*/Infrastructure/Migrations/*_OutboxRetrySchedule.cs</code> 为样板）；默认 <code>EfOutboxMessageStore</code> 以 <code>FOR UPDATE SKIP LOCKED</code> 领取批次，自定义非事务存储不再默认无锁，须显式 <code>UseRedisOutboxLock()</code> 或仅在单实例测试提供 <code>NullOutboxLockProvider</code>；消费者成功后才记幂等并 ack，失败经 quorum 队列退避后进 DLX。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：参考应用创建客户后 <code>outbox_messages</code> +1，RabbitMQ 收到 1 条</li>\n<li class='chk done'><span class='box'>✓</span>IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）</li>\n<li class='chk done'><span class='box'>✓</span>UT：信封通过 iClaw <code>events-schema.json</code> 校验；每个 <code>[IntegrationEventId]</code> 都能导出 JSON Schema</li>\n<li class='chk done'><span class='box'>✓</span>UT：在非命令 handler 处 <code>Publish</code> 触发分析器错误；<code>actor.kind</code> 支持 <code>agent</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/event-envelope.schema.json；iClaw 信封兼容性的验收口径见 contracts/v0/iclaw-alignment.md 第 3 节</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的 Outbox 行为变更（<code>NextAttemptAt</code> 迁移、非事务存储默认拒绝无锁、先记幂等再 ack），随 S1-KUN-009 升级可用</li>\n<li>2026-10-14 claude：开始</li>\n<li>2026-10-14 claude：实现 Qian.Events.Abstractions / Qian.Events 与分析器 QIAN0006。验收证据：CRM 端到端 IT（Outbox +1、RabbitMQ 恰收一条且与行逐字节相同）；副本停机接管、崩溃租约到期接管、broker 变慢时交还未发行三项 IT，confirm 计数 = Outbox 行数且无重复；信封往返与 iClaw EventEnvelope 校验（按 iclaw-alignment.md 第 3 节去掉 subject 白名单，平台级 null 租户是已登记的不兼容项），全仓 [IntegrationEventId] 均导出 payload Schema；tests/gates/events 八组正反例。S1-DEC-013 的 PG processed_messages 兜底表（可选）未做；消费端归 S1-EVT-002</li>\n<li>2026-10-14 claude：完成：随 idadawn/qian#73 合并完成（合并前提是 PR 全部检查通过）。仓库内各上下文尚无已提交的 EF 迁移，建表取当前模型（含 next_attempt_at），迁移协调归 S1-DATA-002</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-001.md"
  },
  {
@@ -2446,7 +2454,6 @@
    "S1-TEN-001"
   ],
   "blockedBy": [
-   "S1-EVT-001",
    "S1-TEN-001"
   ],
   "order": 1,
@@ -2487,7 +2494,6 @@
    "S1-RT-006"
   ],
   "blockedBy": [
-   "S1-EVT-001",
    "S1-RT-006"
   ],
   "order": 4,
@@ -2535,8 +2541,7 @@
   "blockedBy": [
    "S1-TEN-004",
    "S1-AZ-004",
-   "S1-AUD-001",
-   "S1-EVT-001"
+   "S1-AUD-001"
   ],
   "order": 4,
   "readyNow": false,
@@ -2827,7 +2832,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Qian.Runtime</code> 与 Kun 的事件端口 <code>Kun.EventBus</code>（Kun 尚未拆出 <code>Kun.EventBus.Abstractions</code>，传递带入 StackExchange.Redis；延期项登记在包 README，回切由 S1-KUN-010 跟踪，S1-DEC-013），通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n<li>2026-10-09 cody：身份契约 PR #18 已合并（be696c17）；8 项专项及全量 236 项测试通过，CI 全绿。</li>\n<li>2026-10-10 claude：复核：claim 集、<code>agent</code> 枚举、五类事件与 Schema 均有测试且通过；第 1 条验收原文「只依赖 Kun.*.Abstractions」与实际（直接引用 <code>Kun.EventBus</code>）不符，且依赖图门禁不检查 <code>Kun.*</code>，已按实际改写验收并登记延期项（S1-DEC-013、S1-KUN-010）。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Qian.Runtime</code> 与 Kun 的事件端口 <code>Kun.EventBus.Abstractions</code>（S1-KUN-010 已解除事件实现依赖），通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n<li>2026-10-09 cody：身份契约 PR #18 已合并（be696c17）；8 项专项及全量 236 项测试通过，CI 全绿。</li>\n<li>2026-10-10 claude：复核：claim 集、<code>agent</code> 枚举、五类事件与 Schema 均有测试且通过；第 1 条验收原文「只依赖 Kun.*.Abstractions」与实际（直接引用 <code>Kun.EventBus</code>）不符，且依赖图门禁不检查 <code>Kun.*</code>，已按实际改写验收并登记延期项（S1-DEC-013、S1-KUN-010）。</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-001.md"
  },
  {
@@ -3203,8 +3208,7 @@
    "S1-EVT-001"
   ],
   "blockedBy": [
-   "S1-IDP-009",
-   "S1-EVT-001"
+   "S1-IDP-009"
   ],
   "order": 4,
   "readyNow": false,
@@ -3606,7 +3610,7 @@
  {
   "id": "S1-KUN-010",
   "title": "Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁",
-  "status": "doing",
+  "status": "done",
   "stage": "S1",
   "area": "KUN",
   "areaName": "Kun 缺口修复",
@@ -3620,7 +3624,7 @@
    "S1-KUN-009"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -3638,10 +3642,10 @@
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件规格 §6.1 与 ADR-019 D19.2 要求 Definition 包仅依赖 <code>Kun.*.Abstractions</code>，但 Kun 的稳定事件标记 <code>IntegrationEventIdAttribute</code> 与事件注册端口在 <code>Kun.EventBus</code> 包里，没有 <code>.Abstractions</code> 拆分，<code>Qian.Identity.Abstractions</code> 只能直接引用它，传递带入 StackExchange.Redis 等实现依赖（S1-IDP-001，S1-DEC-013 R64）。<code>scripts/check_deps.py</code> 的 <code>role_of()</code> 把非 <code>qian.</code> 包一律归 external 放行，所以这条规则目前没有门禁；同类现状还有 <code>Qian.Data.Abstractions</code> 直接依赖 <code>Kun.EntityFrameworkCore</code> / <code>Kun.MultiTenancy.EntityFrameworkCore</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>上游：Kun 拆出 <code>Kun.EventBus.Abstractions</code>（<code>IntegrationEventIdAttribute</code>、<code>IIntegrationEvent</code>、带 <code>JsonTypeInfo</code> 的事件注册端口），<code>Kun.EventBus</code> 依赖它；随下一次 Kun 发版</li>\n<li class='chk'><span class='box'></span>Qian：<code>Qian.Identity.Abstractions</code> 改引 <code>Kun.EventBus.Abstractions</code>，<code>DefinitionReferencesOnlyRuntimeAndFrameworkEventPort</code> 的期望值同步，包 README 的延期项移除</li>\n<li class='chk'><span class='box'></span>门禁：<code>check_deps.py</code> 对 <code>definition</code> 角色的 Kun 直接依赖只放行 <code>Kun.*.Abstractions</code> 与显式白名单（<code>Qian.Data.Abstractions</code> 的两项要么迁移要么登记理由），<code>tests/gates</code> 加正反例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的偏差）</li>\n<li>2026-10-14 cody：开始：按用户指派认领；先完成 Kun 事件抽象拆包、正式发布与 Qian 依赖门禁。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件规格 §6.1 与 ADR-019 D19.2 要求 Definition 包仅依赖 <code>Kun.*.Abstractions</code>，但 Kun 的稳定事件标记 <code>IntegrationEventIdAttribute</code> 与事件注册端口在 <code>Kun.EventBus</code> 包里，没有 <code>.Abstractions</code> 拆分，<code>Qian.Identity.Abstractions</code> 只能直接引用它，传递带入 StackExchange.Redis 等实现依赖（S1-IDP-001，S1-DEC-013 R64）。<code>scripts/check_deps.py</code> 的 <code>role_of()</code> 把非 <code>qian.</code> 包一律归 external 放行，所以这条规则目前没有门禁；同类现状还有 <code>Qian.Data.Abstractions</code> 直接依赖 <code>Kun.EntityFrameworkCore</code> / <code>Kun.MultiTenancy.EntityFrameworkCore</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>上游：Kun 拆出 <code>Kun.EventBus.Abstractions</code>（<code>IntegrationEventIdAttribute</code>、<code>IIntegrationEvent</code>、带 <code>JsonTypeInfo</code> 的事件注册端口），<code>Kun.EventBus</code> 依赖它；随下一次 Kun 发版</li>\n<li class='chk done'><span class='box'>✓</span>Qian：<code>Qian.Identity.Abstractions</code> 改引 <code>Kun.EventBus.Abstractions</code>，<code>DefinitionReferencesOnlyRuntimeAndFrameworkEventPort</code> 的期望值同步，包 README 的延期项移除</li>\n<li class='chk done'><span class='box'>✓</span>门禁：<code>check_deps.py</code> 对 <code>definition</code> 角色的 Kun 直接依赖只放行 <code>Kun.*.Abstractions</code> 与显式白名单（<code>Qian.Data.Abstractions</code> 的两项要么迁移要么登记理由），<code>tests/gates</code> 加正反例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的偏差）</li>\n<li>2026-10-14 cody：开始：按用户指派认领；先完成 Kun 事件抽象拆包、正式发布与 Qian 依赖门禁。</li>\n<li>2026-10-14 cody：上游Kun PR #59的25项CI全绿后合并并发布2026.10.14；Qian使用该次正式Release的35包闭包预验收，574项测试零失败零跳过、46项门禁通过。nuget.org公开索引仍未出现新版本，等待索引及最终主线组合验收后关闭。</li>\n<li>2026-10-14 cody：实际nuget.org上传返回Created且正式Release成功，但公开包索引超过一小时仍无2026.10.14，新EventBus.Abstractions为404；当前仅正式Release闭包预验收通过。Qian组合主线590测试零失败零跳过、47门禁和32包依赖通过，等待正式源可还原和最终CI，保留草稿。</li>\n<li>2026-10-14 cody：正式索引已可用，解除阻塞：18个声明包均可见；隔离Kun缓存从nuget.org重新还原实际14包，来源元数据均为官方v3索引。正式源Release构建零警告、590测试零失败零跳过、47门禁与32包依赖通过；文档站670页/63.5MB按2026.10.14构建检查通过。等待PR #77最终CI与合并。</li>\n<li>2026-10-14 cody：合入最新 DATA-002 主线后，以隔离缓存从 nuget.org 正式源还原、Release 构建通过；598 项 .NET 测试全部通过，零失败零跳过。</li>\n<li>2026-10-14 cody：完成：Kun PR #59 与正式 Release v2026.10.14 已发布；Qian PR #77 全部 7 项适用 CI 通过后合并（badd03b7）。隔离缓存从 nuget.org 正式源还原，最新组合 598 项 .NET 测试零失败零跳过、47 项门禁与 32 包依赖检查通过，文档站按新 Kun 版本生成验收通过。</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-010.md"
  },
  {
@@ -3853,7 +3857,7 @@
    "S1-AUD-004",
    "S1-DEP-005"
   ],
-  "order": 6,
+  "order": 10,
   "readyNow": false,
   "refs": [
    {
@@ -3939,7 +3943,6 @@
   ],
   "blockedBy": [
    "S1-NTF-001",
-   "S1-EVT-001",
    "S1-SCH-001"
   ],
   "order": 5,
@@ -4436,7 +4439,6 @@
    "S1-FILE-001",
    "S1-YUE-007",
    "S1-YUE-008",
-   "S1-EVT-001",
    "S1-AUD-002",
    "S1-QA-004"
   ],
@@ -4491,7 +4493,7 @@
    "S1-IDP-002",
    "S1-ENT-002"
   ],
-  "order": 9,
+  "order": 10,
   "readyNow": false,
   "refs": [
    {
@@ -5361,8 +5363,7 @@
   ],
   "blockedBy": [
    "S1-SCH-001",
-   "S1-IDP-002",
-   "S1-EVT-001"
+   "S1-IDP-002"
   ],
   "order": 2,
   "readyNow": false,
@@ -5404,8 +5405,7 @@
   ],
   "blockedBy": [
    "S1-IDP-004",
-   "S1-GW-001",
-   "S1-EVT-001"
+   "S1-GW-001"
   ],
   "order": 4,
   "readyNow": false,
@@ -5491,7 +5491,6 @@
   ],
   "blockedBy": [
    "S1-TEN-001",
-   "S1-EVT-001",
    "S1-SCH-001",
    "S1-IDP-004"
   ],
@@ -5832,7 +5831,7 @@
  {
   "id": "S1-YUE-005",
   "title": "@yue/core 约 30 个基础组件（Base UI + shadcn）",
-  "status": "doing",
+  "status": "done",
   "stage": "S1",
   "area": "YUE",
   "areaName": "外壳与 yue",
@@ -5846,7 +5845,7 @@
    "S1-YUE-004"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -5860,10 +5859,10 @@
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：<code>@yue/core</code> 组件在 Storybook a11y 插件与 axe E2E 下 critical = 0；每个组件有 <code>data-slot</code> 与 <code>data-testid</code></li>\n<li class='chk'><span class='box'></span>UT：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验</li>\n<li class='chk'><span class='box'></span>文档：Storybook 覆盖全部组件与令牌可视化页</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：<code>@yue/core</code> 组件在 Storybook a11y 插件与 axe E2E 下 critical = 0；每个组件有 <code>data-slot</code> 与 <code>data-testid</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验</li>\n<li class='chk done'><span class='box'>✓</span>文档：Storybook 覆盖全部组件与令牌可视化页</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #76 全部15项适用CI通过后合并（a62f8004）。51组件入口、157项Vitest、126条Storybook用例、64项页面E2E与真实Docs烟测通过；三个页面Lighthouse a11y=100、脚本≤250KiB。实现分支与worktree已清理，独立本地预览保留。</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-005.md"
  },
  {
@@ -5882,11 +5881,9 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5921,11 +5918,9 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5966,7 +5961,6 @@
    "S1-FILE-001"
   ],
   "blockedBy": [
-   "S1-YUE-005",
    "S1-FILE-001"
   ],
   "order": 5,
@@ -6008,7 +6002,6 @@
    "S1-IDP-010"
   ],
   "blockedBy": [
-   "S1-YUE-005",
    "S1-YUE-007",
    "S1-IDP-010"
   ],
@@ -6055,8 +6048,7 @@
    "S1-YUE-005"
   ],
   "blockedBy": [
-   "S1-MGW-001",
-   "S1-YUE-005"
+   "S1-MGW-001"
   ],
   "order": 2,
   "readyNow": false,

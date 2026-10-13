@@ -1,0 +1,7 @@
+#nullable enable
+Qian.Data.Dialect.Pg.PgDialect
+Qian.Data.Dialect.Pg.PgDialect.Descriptor.get -> Qian.Data.DbDialect!
+Qian.Data.Dialect.Pg.PgDialect.PgDialect() -> void
+Qian.Data.Dialect.Pg.PgDialect.ProbeAsync(Qian.Data.DataConnectionTarget! target, Qian.Config.SecretValue! password, System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Data.DataConnectionProbe!>
+Qian.Data.Dialect.Pg.QianPgDialectExtensions
+static Qian.Data.Dialect.Pg.QianPgDialectExtensions.AddQianPgDialect(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

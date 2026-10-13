@@ -15,7 +15,7 @@ services.AddQianData<AppDbContext>((sp, options) => options
 
 业务上下文继承 QianDbContext。独立宿主可直接注入 IDataService，无需挂载平台插件。装配复用当前 KunVersion 的 AddKunTenantRls、AddKunDataConventions 与租户字段拦截器，强制模型缓存键、Qian 模型定制器、应用角色检查和迁移生成器。派生上下文漏调 base 仍保留租户/软删过滤，并与业务过滤条件取交集；采用 snake_case、Guid v7、可空审计主体和 xmin。每个上下文使用同一个 plugin_ 前缀 schema，租户列非空且默认具有索引。
 
-启动会构建模型并打开真实连接，只读取角色属性，不建表或迁移。登录角色及当前角色必须均为 NOSUPERUSER / NOBYPASSRLS，预打开连接也检查；同步/异步新开连接遇高权限角色立即拒绝并关闭。
+启动会构建模型并打开真实连接，只读取角色属性，不建表或迁移；上下文带有迁移时还核对数据库没有未应用的迁移（见下文多副本迁移协调）。登录角色及当前角色必须均为 NOSUPERUSER / NOBYPASSRLS，预打开连接也检查；同步/异步新开连接遇高权限角色立即拒绝并关闭。
 
 迁移生成器为目标模型中的每个新建 IMultiTenant 表紧接着输出 ENABLE / FORCE RLS 与 USING / WITH CHECK。租户限制采用 AS RESTRICTIVE，附加宽松策略不能通过 OR 放宽边界；`NULLIF(current_setting('app.current_tenant_id', true), '')` 使缺失和空租户不匹配。丢失目标模型或标准租户列标记时拒绝生成裸表。历史表转换仍须显式安全迁移。PgBouncer 事务池仍要求显式事务。
 
@@ -30,9 +30,115 @@ session.Outbox.Enqueue(integrationEvent);
 await session.SaveChangesAsync(ct);
 ```
 
-事件类型必须由宿主显式通过 AddKunEventBus 登记，推荐使用源生成 JsonTypeInfo；Data 不暗中登记空目录。IOutboxWriter 与 IIntegrationEventBus 必须指向同一 scoped accumulator。领域通知走 Kun Mediator 的当前 scope，通知处理器与工作单元拿到同一业务上下文和缓冲；存在通知但未装配 Mediator、通知没有实现 INotification 时拒绝保存。
+事件类型必须由宿主显式通过 AddKunEventBus 登记，推荐使用源生成 JsonTypeInfo；Data 不暗中登记空目录。IOutboxWriter 与 IIntegrationEventBus 必须指向同一个 scoped 实例：默认是 Kun 累加器；装了事件组件时换成它的信封写入端，该写入端经 IOutboxBufferBinding 声明自己写入当前 scope 的缓冲器，否则拒绝开会话。领域通知走 Kun Mediator 的当前 scope，通知处理器与工作单元拿到同一业务上下文和缓冲；存在通知但未装配 Mediator、通知没有实现 INotification 时拒绝保存。
 
-保存失败后会话不可复用，调用方必须释放后新开；业务数据与 Outbox 在同一次 EF 保存中提交或回滚。会话创建后不可切换租户，混入其他租户的事件会被拒绝。卸载 Provider 会撤销入口并释放存活会话，已缓存的数据服务不能再开新会话。本组件负责 Outbox 入库，后台投递由事件组件负责。
+保存失败后会话不可复用，调用方必须释放后新开；业务数据与 Outbox 在同一次 EF 保存中提交或回滚。会话创建后不可切换租户，混入其他租户的事件会被拒绝。卸载 Provider 会撤销入口并释放存活会话，已缓存的数据服务不能再开新会话。本组件负责 Outbox 入库，后台投递由 [Qian.Events](../Qian.Events/README.md) 负责；AddQianData 同时登记 IDataContextCatalog，投递服务据此逐个处理各业务上下文的 Outbox 表。
+
+## 多副本迁移协调
+
+`IDataMigrator.MigrateAsync` 随 AddQianData 登记，逐个业务上下文处理：
+
+1. 在迁移属主连接上取 `pg_advisory_lock`，键由 schema 派生（与连接串、宿主无关），同一插件的迁移在所有副本间互斥，不同插件互不阻塞；
+2. 锁内读待应用的 EF 迁移并执行，再确认已无遗漏；
+3. 释放会话级锁后归还连接。
+
+同时启动的副本只有一个执行 DDL；其余在锁上等待，拿到锁后发现没有待应用的迁移，只做校验。等锁上限默认 10 分钟。
+
+迁移连接由 `AddQianDataMigrations(options => options.ResolveConnection = (sp, contextType) => ...)` 提供，返回 null 时用上下文自身的连接。属主角色同样必须是 NOSUPERUSER / NOBYPASSRLS（连接时由同一个角色拦截器检查）；它建的 schema 与表经默认权限授予在线应用角色：
+
+```sql
+ALTER DEFAULT PRIVILEGES FOR ROLE qian_owner GRANT USAGE ON SCHEMAS TO qian_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE qian_owner GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO qian_app;
+```
+
+K8s 迁移 Job 以 `--migrate-only` 启动宿主（`QianDataMigrationExtensions.IsMigrateOnly`），迁移完即退出。在线副本启动时只校验：上下文带有迁移而数据库还有未应用项时拒绝启动，提示先跑迁移任务。
+
+迁移用 `dotnet ef migrations add` 生成，放在所属 Provider 包的 Migrations 目录；仓库 `.editorconfig` 把该目录按生成代码处理。迁移执行时仍经 Qian 迁移生成器，租户表自动带上强制 RLS。
+
+## 分布式 ID
+
+默认主键仍是 Guid v7。需要数值 ID 时调用 `AddQianSnowflakeIds`（宿主须登记 `IConnectionMultiplexer`），注入 `ISnowflakeIdGenerator`。ID 由 41 位毫秒时间戳、10 位 WorkerId、12 位序列组成。
+
+WorkerId 经 Redis 租约分配：
+
+- 启动时以 `SET qian:snowflake:worker:{n} 持有者 NX PX` 取最小空闲编号，后台按间隔比对持有者后续期，正常停止时释放；
+- 本地只在「最后一次成功续租的发出时刻 + 租约时长」之前发号，Redis 上租约过期、编号可能被他人取得时，本副本已经停发；发现编号被他人持有时立即停发，改取空闲编号；
+- 每个编号另记高水位 `qian:snowflake:worker:{n}:hwm`（已用或可能用到的最大毫秒），新持有者从高水位之后开始。
+
+因此正常重启、崩溃后回收或机器间时钟不一致，都不会让复用的编号产生重复 ID。时钟回拨时沿用上次的毫秒继续递增序列。脚本同时操作租约与高水位两个键，要求单实例 Redis。
+
+## 序号服务
+
+`AddQianSequences((sp, options) => options.UseNpgsql(...))` 登记 `ISequenceService` 与 qian.data 自己的系统上下文（schema `plugin_qian_data`）。表 `sequence_rules` 与 `sequence_counters` 都是租户表、强制 RLS，结构随包内迁移交付。
+
+规则模式形如 `'SO' + yyyyMMdd + seq(6)`，由 `+` 连接的段组成：
+
+- 单引号字面量，1 到 32 个字符；
+- 日期段：yyyy、yyyyMM、yyyyMMdd、yy、yyMM、yyMMdd、MM、dd、MMdd；全部日期段组成「周期」，周期变化时流水从 1 重新开始；
+- 恰好一个 `seq(n)`，n 为 1 到 18。
+
+`DefineAsync(ruleCode, pattern)` 定义或修改当前租户的规则；模式变化时修订号加一，各作用域的流水从 1 重新开始。`NextAsync(ruleCode, scopeKey)` 用一条 `INSERT … ON CONFLICT DO UPDATE … RETURNING` 原子取号，在自己的连接上自动提交：同一规则、修订、作用域与周期内严格递增、不重复、不跳号。号一经取出即占用，调用方的业务事务回滚不归还。日期按 `QianSequenceOptions.TimeZone` 计算，默认 UTC。
+
+| 错误码 | HTTP | 含义 |
+|---|---|---|
+| DATA_SEQUENCE_RULE_INVALID | 422 | 规则编码、作用域键或模式不合法 |
+| DATA_SEQUENCE_RULE_NOT_FOUND | 404 | 当前租户没有定义该规则 |
+| DATA_SEQUENCE_EXHAUSTED | 409 | 当前周期的流水已用尽 |
+| DATA_ID_WORKER_UNAVAILABLE | 503 | 本副本暂时没有有效的 WorkerId 租约，可重试 |
+
+## 基准类型与方言
+
+`AddQianDataTypes()` 登记 `IDataTypeCatalog` 与方言注册表 `IDataDialectRegistry`，不需要数据库。方言组件另行登记，PostgreSQL 是 [Qian.Data.Dialect.Pg](../Qian.Data.Dialect.Pg/README.md) 的 `AddQianPgDialect()`。
+
+- 10 个系统基准类型（int、bigint、decimal、float、datetime、varchar、text、bool、json、uuid）来自 Definition 包嵌入的种子 base-data-types.json，与 Filter 运算符矩阵的字段类型一一对应。每个类型声明自己接受的约束（facet）：length、precision、scale、range。
+- 方言以 `IDataDialect` 实现 qian.data.dialect/v1：描述数据（驱动、只作展示的连接串模板、每个基准类型一条映射）加连通探测。注册表按名称独占（R38，键为 `Data.Dialects:<name>`），释放句柄即撤销。
+- 注册时核对映射：覆盖全部系统类型，约束与类型声明一致，区间不为负、下限不大于上限、缺省值落在区间内。不合规的方言拒绝注册。
+- `MapField(dialect, field)` 按映射校验字段定义并补齐缺省值。以下情况抛 DATA_FIELD_DEFINITION_INVALID，errors[] 逐项指向 `#/length`、`#/precision`、`#/scale`、`#/minimum`、`#/maximum`：
+  - 长度、精度、小数位超出区间；
+  - 上下限超出原生类型可表示的范围（decimal 由精度 p 与小数位 s 推出 ±(10^(p−s) − 10^−s)，上下限的小数位不超过 s）；
+  - 最小值大于最大值；
+  - 给出类型不接受的约束。
+- 只给精度时，缺省小数位随之收窄。
+- S1 只有系统类型，`DeleteTypeAsync` 对它们一律返回 DATA_TYPE_PROTECTED；自定义类型随 S2 建模交付。
+
+HTTP 端点见 [Qian.Data.AspNetCore](../Qian.Data.AspNetCore/README.md)。
+
+## 数据连接档案
+
+```csharp
+services.AddQianPgDialect();
+services.AddQianDataConnections((sp, options) => options.UseNpgsql(appConnection));
+services.AddSingleton<ISecretAccessObserver>(auditSink);
+services.AddQianSecrets(new SecretResolverOptions
+{
+    MountRoot = "/var/run/secrets/qian",
+    Bindings = [new("secretRef://tenant/<租户>/data/warehouse", new("qian", "warehouse", "password"), "<租户>")],
+    Policies = [new("qian.data", [new("data/*", "tenant")], [new("data/*", "tenant")])]
+});
+```
+
+- 表 `data_connections` 与序号表同在 plugin_qian_data，是同一个系统上下文：`AddQianSequences` 与本方法共用，两处的连接配置必须解析出同一个连接串，否则创建上下文时拒绝。
+- 它是租户表，强制 RLS；名称在租户内唯一，软删后可以复用；系统列沿用 AggregateRoot 约定（审计主体、xmin）。
+- 档案记录方言、主机、端口、库、用户名、可选 schema 与编码。口令只以租户作用域的 secretRef 保存：`secretRef://tenant/<路径>` 按当前租户解析。platform / dev 引用一律拒绝，避免租户借平台凭据连接任意主机。
+- `TestAsync` 在使用点经宿主密钥策略（`ForHost(SecretPolicyId, 当前租户)`，默认策略 ID 为 qian.data）解析口令，交给方言探测，用后即释放。成功返回服务端版本与耗时；失败为结构化错误：
+  - 网络不可达或超时：DATA_CONNECTION_UNREACHABLE，可重试；
+  - 服务端拒绝：DATA_CONNECTION_REJECTED，reason 为 authentication、database、schema、permission、parameter 或 server；
+  - 密钥无权解析或缺失：SECRET_* 错误。
+- 超时由 `QianDataConnectionOptions.TestTimeout` 控制，1 秒到 1 分钟，默认 5 秒。
+- 详情与列表只返回 secretRef；任何响应、错误与审计记录都不含口令。
+
+连通测试会从平台向档案中的主机出网（Agent 契约标 external）。生产环境要用 NetworkPolicy 或出口代理限定可达网段；测试权限点单列为 qian.data:connection:test。
+
+| 错误码 | HTTP | 含义 |
+|---|---|---|
+| DATA_TYPE_NOT_FOUND | 404 | 基准类型不存在 |
+| DATA_TYPE_PROTECTED | 409 | 系统基准类型不可删除 |
+| DATA_DIALECT_NOT_FOUND | 404 | 方言没有注册 |
+| DATA_FIELD_DEFINITION_INVALID | 422 | 字段定义不满足方言约束，errors[] 为 DATA_FIELD_OUT_OF_RANGE、DATA_FIELD_FACET_UNSUPPORTED、DATA_FIELD_RANGE_INVERTED 或 VALUE_NOT_ALLOWED |
+| DATA_CONNECTION_NOT_FOUND | 404 | 当前租户没有该连接 |
+| DATA_CONNECTION_NAME_CONFLICT | 409 | 当前租户已有同名连接 |
+| DATA_CONNECTION_UNREACHABLE | 422 | 网络不可达或超时，可重试 |
+| DATA_CONNECTION_REJECTED | 422 | 数据库拒绝连接 |
 
 ## 删除审计
 
@@ -51,3 +157,7 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 ## 已知限制与延期项
 
 真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。samples/Qian.Sample.Crm 已通过真实签名身份、HTTP 与 PostgreSQL 的千行双租户及原 SQL 索引验收。SDK 源生成、私有发布与代码安装尚待后续任务验收；S1-DEC-017 / S1-DEC-018 均已批准并落实到对应验收边界。
+
+迁移协调、序号服务与雪花 ID 由 S1-DATA-002 交付，真实 PostgreSQL / Redis 测试覆盖两副本同时迁移、100 并发取号、规则修改与周期重置、三副本 WorkerId 互斥及正常停止和崩溃后的编号回收。它们目前以宿主装配（AddQianSequences、AddQianSnowflakeIds）提供，DataPlugin 还没有对应的服务键；业务组件经插件上下文取用要等组件安装验收一并补齐。其余组件的表还没有包内迁移，迁移任务对它们不执行 DDL。
+
+基准类型目录、PG 方言与数据连接档案由 S1-DATA-003 交付，测试覆盖字段定义越界拒绝、系统类型删除保护、方言注册校验，以及真实 PostgreSQL 上的可达 / 端口关闭 / 错误口令 / 缺失库与 schema / 越权密钥，域名解析失败、对端不是 PostgreSQL、对端要求不支持的认证方式，租户隔离和详情不回传口令。它们同样以宿主装配（AddQianDataTypes、AddQianDataConnections、AddQianPgDialect）提供：方言的组件形态（向 `ctx.Data().Dialects` 注册、清单派生 `provides: Data.Dialects:pg`）要等装载器支持注册表键后补齐。不在本期：自定义基准类型、方言的 DDL 与分页、编辑未保存档案时的连通测试，以及用档案执行查询（S2 数据接口）。

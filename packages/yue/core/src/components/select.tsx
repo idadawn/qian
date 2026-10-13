@@ -17,19 +17,18 @@ export interface SelectTriggerType extends YueProps<SelectTriggerProps> {
 }
 export function SelectTrigger({ className, children, placeholder, testId, ...props }: SelectTriggerType) {
   return (
-    <BaseSelect.Trigger
+    <BaseSelect.Trigger {...props}
       data-slot="select-trigger"
       data-testid={testId ?? 'yue-select-trigger'}
       className={cn(
-        'inline-flex h-9 min-w-40 items-center justify-between gap-2 rounded-md border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 data-[placeholder]:text-neutral-500',
+        'inline-flex h-9 min-w-40 items-center justify-between gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] data-[placeholder]:text-[var(--muted-foreground)]',
         className,
       )}
-      {...props}
     >
-      <BaseSelect.Value data-slot="select-value" placeholder={placeholder}>
+      <BaseSelect.Value data-slot="select-value" data-testid="yue-select-value" placeholder={placeholder}>
         {children}
       </BaseSelect.Value>
-      <BaseSelect.Icon data-slot="select-icon" className="text-neutral-500" aria-hidden>
+      <BaseSelect.Icon data-slot="select-icon" data-testid="yue-select-icon" className="text-[var(--muted-foreground)]" aria-hidden>
         ▾
       </BaseSelect.Icon>
     </BaseSelect.Trigger>
@@ -45,13 +44,12 @@ export function SelectContent({ className, children, side, align, sideOffset = 4
   return (
     <BaseSelect.Portal>
       <BaseSelect.Positioner side={side} align={align} sideOffset={sideOffset} className="z-50 outline-none">
-        <BaseSelect.Popup
+        <BaseSelect.Popup {...props}
           data-slot="select-content"
           data-testid={testId ?? 'yue-select-content'}
-          className={cn('min-w-40 rounded-md border border-neutral-200 bg-white p-1 text-sm text-neutral-900 shadow-md outline-none', className)}
-          {...props}
+          className={cn('min-w-40 rounded-md border border-[var(--border)] bg-[var(--background)] p-1 text-sm text-[var(--foreground)] shadow-md outline-none', className)}
         >
-          <BaseSelect.List data-slot="select-list">{children}</BaseSelect.List>
+          <BaseSelect.List data-slot="select-list" data-testid="yue-select-list">{children}</BaseSelect.List>
         </BaseSelect.Popup>
       </BaseSelect.Positioner>
     </BaseSelect.Portal>
@@ -61,17 +59,16 @@ export function SelectContent({ className, children, side, align, sideOffset = 4
 export type SelectItemType = YueProps<SelectItemProps>;
 export function SelectItem({ className, children, testId, ...props }: SelectItemType) {
   return (
-    <BaseSelect.Item
+    <BaseSelect.Item {...props}
       data-slot="select-item"
       data-testid={testId ?? 'yue-select-item'}
       className={cn(
-        'flex cursor-default select-none items-center justify-between rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-neutral-100 data-[disabled]:opacity-50',
+        'flex cursor-default select-none items-center justify-between rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-[var(--accent)] data-[disabled]:opacity-50',
         className,
       )}
-      {...props}
     >
-      <BaseSelect.ItemText data-slot="select-item-text">{children}</BaseSelect.ItemText>
-      <BaseSelect.ItemIndicator data-slot="select-item-indicator" aria-hidden>
+      <BaseSelect.ItemText data-slot="select-item-text" data-testid="yue-select-item-text">{children}</BaseSelect.ItemText>
+      <BaseSelect.ItemIndicator data-slot="select-item-indicator" data-testid="yue-select-item-indicator" aria-hidden>
         ✓
       </BaseSelect.ItemIndicator>
     </BaseSelect.Item>

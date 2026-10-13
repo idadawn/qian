@@ -10,7 +10,7 @@
 
 ## 框架依赖
 
-直接依赖 `Qian.Runtime` 与现有 `Kun.EventBus` 事件抽象入口；当前 Kun 2026.10.8 尚无 `Kun.EventBus.Abstractions` 包，稳定 `[IntegrationEventId]` 与 `IEventTypeRegistrar` 位于这个现有包，因此复用原类型而不复制另一份同名标记。只调用注册端口，不装配 broker、Redis 或后台发布器；不依赖 Identity Server/Client、OpenIddict、EF 或 ASP.NET Core。包版本仍统一取根目录 KunVersion。
+直接依赖 `Qian.Runtime` 与 `Kun.EventBus.Abstractions`，复用原命名空间下的稳定 `[IntegrationEventId]`、事件注册端口与源生成 `JsonTypeInfo` 重载。该框架包只依赖零外部依赖的 Kun.Core，身份契约不再经事件入口传递引入 Redis、broker 或后台发布器。全部 Kun 包版本仍统一取根目录 KunVersion。
 
 ## claim 边界
 
@@ -35,7 +35,6 @@
 
 本任务仅契约先行，不代表 OpenIddict 服务、SSO、连接器、三因子认证或会话失效链路已实现／上线。对应后续 IDP 任务负责真正的认证、权限与生命周期实现。
 
-- **延期项（S1-DEC-013，2026-10-10）**：本包直接引用 `Kun.EventBus` 取稳定事件标记与注册端口，因为 Kun 尚未拆出 `Kun.EventBus.Abstractions`；这会把 StackExchange.Redis 等实现依赖传递进 Definition 包，与组件规格 §6.1「Definition 仅依赖 Kun.*.Abstractions」不符。上游拆包后回切、以及依赖图门禁对 `Kun.*` 的白名单检查，由 S1-KUN-010 跟踪。
 
 ## 授权主体类型透传
 

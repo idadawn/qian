@@ -10,6 +10,9 @@
   "exclude": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
-    "src/test/**"
+    "src/test/**",
+    "src/**/*.stories.tsx",
+    "src/storybook/**",
+    "src/**/*.manifest.test.ts"
   ]
 }

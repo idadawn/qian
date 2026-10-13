@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/data/v1/filter-operators.schema.json",
+  "title": "FilterOperatorMatrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "int",
+    "bigint",
+    "decimal",
+    "float",
+    "datetime",
+    "varchar",
+    "text",
+    "bool",
+    "json",
+    "uuid"
+  ],
+  "properties": {
+    "int": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull",
+        "in",
+        "notIn",
+        "ge",
+        "gt",
+        "le",
+        "lt",
+        "between"
+      ]
+    },
+    "bigint": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull",
+        "in",
+        "notIn",
+        "ge",
+        "gt",
+        "le",
+        "lt",
+        "between"
+      ]
+    },
+    "decimal": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull",
+        "in",
+        "notIn",
+        "ge",
+        "gt",
+        "le",
+        "lt",
+        "between"
+      ]
+    },
+    "float": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull",
+        "in",
+        "notIn",
+        "ge",
+        "gt",
+        "le",
+        "lt",
+        "between"
+      ]
+    },
+    "datetime": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull",
+        "in",
+        "notIn",
+        "ge",
+        "gt",
+        "le",
+        "lt",
+        "between"
+      ]
+    },
+    "varchar": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull",
+        "in",
+        "notIn",
+        "like",
+        "notLike"
+      ]
+    },
+    "text": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull",
+        "in",
+        "notIn",
+        "like",
+        "notLike"
+      ]
+    },
+    "bool": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull"
+      ]
+    },
+    "json": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull"
+      ]
+    },
+    "uuid": {
+      "const": [
+        "eq",
+        "ne",
+        "isNull",
+        "notNull",
+        "in",
+        "notIn"
+      ]
+    }
+  }
+}

@@ -122,8 +122,20 @@ public sealed class IdentityContractsTests
     {
         var project = XDocument.Load(Path.Combine(Root, "packages/Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj"));
         Assert.Equal(["../Qian.Runtime/Qian.Runtime.csproj"], project.Descendants("ProjectReference").Select(e => (string)e.Attribute("Include")!).ToArray());
-        Assert.Equal(["Kun.EventBus"], project.Descendants("PackageReference").Select(e => (string)e.Attribute("Include")!).ToArray());
-        Assert.DoesNotContain(typeof(IIdentityService).Assembly.GetReferencedAssemblies(), assembly => assembly.Name!.Contains("OpenIddict", StringComparison.Ordinal) || assembly.Name.Contains("EntityFrameworkCore", StringComparison.Ordinal) || assembly.Name.Contains("Identity.Server", StringComparison.Ordinal));
+        Assert.Equal(["Kun.EventBus.Abstractions"], project.Descendants("PackageReference").Select(e => (string)e.Attribute("Include")!).ToArray());
+        Assert.DoesNotContain(typeof(IIdentityService).Assembly.GetReferencedAssemblies(), assembly => assembly.Name == "Kun.EventBus" || assembly.Name!.Contains("Redis", StringComparison.Ordinal) || assembly.Name.Contains("OpenIddict", StringComparison.Ordinal) || assembly.Name.Contains("EntityFrameworkCore", StringComparison.Ordinal) || assembly.Name.Contains("Identity.Server", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void EventContracts_DoNotPullEventBusProviderOrRedisIntoDefinitionPackage()
+    {
+        using var assets = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root,
+            "packages/Qian.Identity.Abstractions/obj/project.assets.json")));
+        var libraries = assets.RootElement.GetProperty("libraries").EnumerateObject()
+            .Select(property => property.Name.Split('/')[0]).ToArray();
+        Assert.Contains("Kun.EventBus.Abstractions", libraries);
+        Assert.DoesNotContain("Kun.EventBus", libraries);
+        Assert.DoesNotContain("StackExchange.Redis", libraries);
     }
 
     [Fact]

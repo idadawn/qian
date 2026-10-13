@@ -1,0 +1,5 @@
+#nullable enable
+Qian.Data.AspNetCore.DataEndpoints
+static Qian.Data.AspNetCore.DataEndpoints.MapQianData(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding? binding = null) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Data.AspNetCore.DataEndpoints.MapQianDataConnections(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding? binding = null) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Data.AspNetCore.DataEndpoints.MapQianDataTypes(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding? binding = null) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!

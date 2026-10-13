@@ -138,7 +138,7 @@ S2 结束时，以下两条必须在预发环境被第三方按脚本复现：
 #### 范围与边界
 
 - ✅ **Records API**（每个已发布功能自动获得）：`list`（Filter AST + 排序 + 分页 + 关键词）、`get`、`create`、`update`（乐观锁）、`delete`（按策略逻辑/物理）、`batchDelete`、`batchSave`、`import`、`export`、`startFlow`（委托 8.8）、`relatedQuery`（关联查询，P2）。注册为少量泛型命令 `CreateRecord / UpdateRecord / DeleteRecord / QueryRecords`，内部按元数据分派，Pipeline 行为（校验/UoW/审计/追踪）照常复用。
-- ✅ **统一 Filter AST**：`{logic, groups[{logic, conditions[{field, op, value | sysVar}]}]}`，13 个运算符（eq ne like notLike isNull notNull in notIn ge gt le lt between）× 字段类型矩阵机器可读；系统变量目录（currentUser 及下属/子孙、currentOrg 及子/子孙、currentPosition 及子/子孙、currentManagedOrgs、formId、keyword、flowId、taskId、launchUserId）。数据过滤、高级查询、数据权限、启用规则、流程条件五处共用（S1 定义，见 §07）。
+- ✅ **统一 Filter AST**（引用 S1 [数据契约](specs/data-contracts.md) 的 Schema、矩阵、系统变量与校验器）：`{logic, groups[{logic, conditions[{field, op, value | sysVar}]}]}`，13 个运算符（eq ne like notLike isNull notNull in notIn ge gt le lt between）× 字段类型矩阵机器可读；系统变量目录（currentUser 及下属/子孙、currentOrg 及子/子孙、currentPosition 及子/子孙、currentManagedOrgs、formId、keyword、flowId、taskId、launchUserId）。数据过滤、高级查询、数据权限、启用规则、流程条件五处共用（S1 定义，见 §07）。
 - ✅ **唯一入口三段式鉴权**：资源（功能/菜单）→ 动作（标准操作或自定义动作）→ 行级（8.9 编译出的谓词）；字段权限在读投影与写白名单处执行；鉴权不依赖客户端传入的 `menuId / flowIds`，也不依赖设计者是否勾选「权限开关」。内部调用（流程回调、调度）走服务身份 + `on_behalf_of`。
 - ✅ **混合存储模型**：每个实体一张物理主表（副表一对一、子表一对多各自成表，外键 `f_foreign_id`）；多值字段（多选、人员多选、文件列表）用原生 `jsonb` 列并建 GIN 索引，或在 Field Type Provider 声明 `multiValueStrategy: relationTable` 时走关联表。
 - ✅ **系统列约定**：`id`、`tenant_id`（联合主键）、`created_at/by`、`updated_at/by`、`is_deleted/deleted_at/deleted_by`（按开关）、`row_version`（乐观锁，整型自增）、`flow_task_id/flow_id/flow_state`（主表、流程表单）、`org_snapshot_id/position_snapshot_id`（新建时快照）。列名沿用 Kun 约定，RLS 策略随建表写入。
@@ -350,7 +350,7 @@ S2 结束时，以下两条必须在预发环境被第三方按脚本复现：
 - ✅ **固定按钮 + 启用规则**：新增/编辑/删除/详情/导出/导入/批量删除/批量打印/审批，可改名、可配启用规则（Filter AST）；CRUD 由 8.2 统一实现。
 - ✅ **动作编排契约**（自定义按钮，列内/头部）：`Action{id, label, type: openForm|callService|startFlow|setField|toggleVisible|setRequired|script, input[{param, source: field|const|sysVar|null, value}], confirm?, refresh, position: row|toolbar, enableWhen?, failures[]}`；弹窗（打开另一表单并赋值）、接口（调用数据接口）、发起审批 为 P0，脚本为 P2。
 - ✅ **权限四开关**：按钮/列表/表单/数据开关只决定「设计器产出哪些可授权项清单」，不决定是否鉴权；鉴权恒在 8.2 唯一入口（F 基线 §3.10「双重门」升级）。
-- ✅ **运行期高级查询**（P2，同一 Filter AST）；查询方案保存（S3，按「菜单 + 用户」私有）；个人视图（S3）。
+- ✅ **运行期高级查询**（P2，同一 [Filter AST 契约](specs/data-contracts.md)）；查询方案保存（S3，按「菜单 + 用户」私有）；个人视图（S3）。
 - ✅ **流程状态 → 操作矩阵**由 8.8 下发，列表按矩阵置灰并给原因（「流程已受理，无法删除」），列表引擎与 Agent 共用。
 - ✅ **视图形态**：数据源为数据集（8.11 数据接口），参数来源「自定义 / 系统变量 / 为空 / 作为查询字段」，数据集自带分页则真分页；视图同样是资源，走统一鉴权（无免鉴权资源类型）。P2。
 - ✅ **数据管理页**（设计器侧对已发布列表表单的数据后台，P2）。
@@ -431,7 +431,7 @@ S2 结束时，以下两条必须在预发环境被第三方按脚本复现：
 - ✅ 或签（任一人**首个终结动作**结束本节点，其余作废）、会签（人数或百分比，实时计算；两阈值都不可达时发 `node.stalled` 并按租户策略转人工队列或自动判定，不得静默停滞）、依次（仅全为具体用户时可排序）。
 - ✅ 动作最小集（`IWorkItemAction{id, label, inputSchema, preconditions, sideEffects, humanOnly, recordType}`）：同意、拒绝（`terminate` 策略；`continue` 枚举预留 S3）、退回（「重新审批」模式，目标发起/上一节点/指定节点；「从当前节点审批」模式 P2 需路径快照）、转审（单人、不可转本人、接收人不可再转；记录**只追加不改写**）、暂存、撤回（发起节点；下一节点发生任何动作即不可撤回）、管理员终止、管理员指派；审批意见（不启用/非必填/必填）；按钮由动作注册表 + 前置条件计算，可改显示名。
 - ✅ 节点字段权限矩阵（查看/编辑/必填，一键全选）后端强制：审批保存时只写有编辑权限的字段。
-- ✅ 实例标题模板（`{发起人}的{流程名}` + 字段）；全局变量 + 节点参数赋值；条件组（组间/组内 且/或；左值字段/公式；右值自定义/字段/系统变量/全局变量）复用 Filter AST 与 `qian.expression`。
+- ✅ 实例标题模板（`{发起人}的{流程名}` + 字段）；全局变量 + 节点参数赋值；条件组（组间/组内 且/或；左值字段/公式；右值自定义/字段/系统变量/全局变量）复用 [Filter AST 契约](specs/data-contracts.md) 与 `qian.expression`。
 - ❌ P2：会签延后计算、不同意规则、系统审批、自动审批去重、节点独立表单与数据传递、汇合归并、加签/减签（决策：保持可选）、自选抄送人、审批附件、拓展字段、评论；S3：协办、签收、撤销申请、暂停/恢复/复活、批量审批、签名、归档、节点打印、拒绝后继续、自由流程、决策。
 
 **子流程（P0，按决策升为必做）**

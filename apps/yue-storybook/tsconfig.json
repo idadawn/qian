@@ -1,0 +1,18 @@
+{
+  "extends": "../../packages/yue/tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": false,
+    "noEmit": true,
+    "types": [
+      "vite/client",
+      "node"
+    ]
+  },
+  "include": [
+    "src",
+    ".storybook",
+    "vitest.config.ts",
+    "e2e",
+    "playwright.config.ts"
+  ]
+}

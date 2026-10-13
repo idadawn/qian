@@ -64,7 +64,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 | 7.3 | `qian.tenancy` | `Qian.Tenancy.Abstractions`（`ctx.Tenancy`）+ `Qian.Tenancy` | module | `platform` | P0 |
 | 7.4 | `qian.identity`、`qian.identity.connector.oidc`、`qian.identity.connector.wecom` | `Qian.Identity.Abstractions`（`ctx.Identity`）+ `Qian.Identity.Server`、`Qian.Identity.Client`、`Qian.Identity.Connector.Oidc` / `.WeCom` | module（Server / Client）；连接器 = 为 `ctx.Identity` seam 提供 Provider 的组件（`provides[]` + `policy.egress`，`connector` 非 `runtime.form`，R31） | `identity`（Server、连接器）；`platform` / `gateway` / `standalone`（Client） | P0 |
 | 7.5 | `qian.authz` | `Qian.Authz.Abstractions`（`ctx.Authz`）+ `Qian.Authz` | module | `platform` | P0 |
-| 7.6 | `qian.data`、`qian.data.dialect.postgres` | `Qian.Data.Abstractions`（`ctx.Data`）+ `Qian.Data`、`Qian.Data.Dialect.Pg` | module | 全部 .NET profile（随 SDK） | P0 |
+| 7.6 | `qian.data`、`qian.data.dialect.pg` | `Qian.Data.Abstractions`（`ctx.Data`）+ `Qian.Data`、`Qian.Data.Dialect.Pg` | module | 全部 .NET profile（随 SDK） | P0 |
 | 7.7 | `qian.files`、`qian.files.provider.{oss,s3,local}` | `Qian.Files.Abstractions`（`ctx.Files`）+ `Qian.Files.Oss` / `.S3` / `.Local` | module | `platform` | P0 |
 | 7.8 | `qian.config` | `Qian.Config.Abstractions`（`ctx.Config`）+ `Qian.Config.Apollo` | module | 全部 .NET profile（随 SDK） | P0 |
 | 7.9 | `qian.gateway` | `Qian.Gateway.Abstractions` + `Qian.Gateway` | module（独立 profile） | `gateway` | P0 |
@@ -354,7 +354,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - 求值：有效角色 = 直接授予 ∪ 经组织/岗位/组获得；权限点 = 角色授权并集；`Check(principal, action, resource)` 缺省拒绝；结果缓存键 `(tenant, membership, identity_revision)`，Redis，TTL 10 分钟，revision 变即失效；授权变更 → 发 `authz.grant.changed.v1` → 7.4 递增受影响主体的 `identity_revision` → 7.13 推送刷新。
 - PEP：ASP.NET Core `[RequirePermission("qian.sample.crm:customer:read")]`；Mediator `AuthorizationBehavior` 读 `[Capability(RequiredPermission=...)]`；gRPC 拦截器同一入口；S2 的动态数据引擎在唯一入口做「资源 + 动作 + 行级」三段式。
 - `Explain(principal, action, resource)` 返回 `{ decision, matchedRoles[], matchedGrants[], missing[], reason }`；错误码目录（`AUTHZ_DENIED`、`CONSTRAINT_MUTEX`、`CARDINALITY_USER_LIMIT`、`PARTIAL_SUCCESS` 等）与多语言文案导出为 JSON。
-- 数据权限契约（S1 定、S2 实现）：`DataScopeRule { resource, filter: FilterAST, allData: bool }`；系统变量枚举 `currentUser / currentUserAndSubordinates / currentUserAndAllSubordinates / currentOrg / currentOrgAndChildren / currentOrgAndDescendants / currentPosition / currentPositionAndChildren / currentPositionAndDescendants / currentManagedOrgs / formId / keyword / flowId / taskId / launchUserId`，每个带自然语言描述；合并语义固定「同角色 AND / 跨角色 OR / 任一全部数据则放开」（补充裁决 Q19）。
+- 数据权限契约（S1 定、S2 实现；Filter AST 与系统变量唯一规格见 [数据契约](specs/data-contracts.md)）：`DataScopeRule { resource, filter: FilterAST, allData: bool }`；系统变量枚举 `currentUser / currentUserAndSubordinates / currentUserAndAllSubordinates / currentOrg / currentOrgAndChildren / currentOrgAndDescendants / currentPosition / currentPositionAndChildren / currentPositionAndDescendants / currentManagedOrgs / formId / keyword / flowId / taskId / launchUserId`，每个带自然语言描述；合并语义固定「同角色 AND / 跨角色 OR / 任一全部数据则放开」（补充裁决 Q19）。
 - API：`POST /api/authz/check`、`/batch-check`、`GET /api/authz/me/permissions`、`/me/allowed-actions?resource=`、`POST /api/authz/explain`、角色与授权 CRUD。
 
 过渡态（2026-10）：Kun 全无鉴权抽象（无 `IAuthorizationHandler`、策略或 `IPermissionChecker`，Mediator 无授权行为，module-map 画的 Auth 行为不存在）；仅 `roles` claim 透传与 `ForwardedClaimTypes` 白名单可用。本插件是 S1 最大单项工作量之一，与 7.4 互为前置，需并行开工并以契约先行。
@@ -377,7 +377,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **范围与边界**。✅ 做：`AddQianData<TContext>()` 默认安全装配（RLS 连接版 + 事务版拦截器、`KunMultiTenantModelCacheKeyFactory`、租户与软删过滤、审计字段自动填充、`xmin` 并发令牌、snake_case、Guid v7 主键、Outbox 同 DbContext）；禁用 `IgnoreQueryFilters` 的分析器；多副本迁移协调（PG advisory lock）；分布式 ID；序号服务（前缀 + 日期 + 流水，租户/应用作用域）；基准数据类型与 PG 方言类型映射（数据而非代码）；数据连接档案（凭证只存 secretRef、连通测试、按租户）；Filter AST JSON Schema 与运算符 × 字段类型矩阵（契约）；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；CI 检查「在线 DbContext 必须继承 `QianDbContext`」。❌ 不做：MySQL / 国产库作业务库（本期不做，Q5）；动态表与 SQL 生成（S2 `qian.dynamic-data`）；Schema Migrator（S2）；数据建模 UI（S2）；数据接口（SQL/API）设计器（S2，S1 只定契约在能力目录）；MySQL 方言（P2 以下，不做）；跨库数据同步（不做）；租户自带业务库连接（待 S3 评估）。
 
-**技术落点**。组件 `qian.data`：Definition `Qian.Data.Abstractions`（服务键 `ctx.Data`）+ Provider `Qian.Data`，随 `Qian.Plugin.Sdk` 进入每个 .NET profile（`platform` / `identity` / `gateway` / `standalone`），可独立安装（`qian add data`）；方言为独立组件 `qian.data.dialect.postgres`（Provider `Qian.Data.Dialect.Pg`，方言数据包）；依赖 `Kun.EntityFrameworkCore`、`Kun.Dapper`（读侧可选）、Npgsql。
+**技术落点**。组件 `qian.data`：Definition `Qian.Data.Abstractions`（服务键 `ctx.Data`）+ Provider `Qian.Data`，随 `Qian.Plugin.Sdk` 进入每个 .NET profile（`platform` / `identity` / `gateway` / `standalone`），可独立安装（`qian add data`）；方言为独立组件 `qian.data.dialect.pg`（Provider `Qian.Data.Dialect.Pg`，方言数据包；组件 id 按 [组件模型](specs/component-model.md) §6.1 由包名映射）；依赖 `Kun.EntityFrameworkCore`、`Kun.Dapper`（读侧可选）、Npgsql。
 
 - `QianDbContext : KunDbContext`：构造期校验拦截器与缓存键工厂已注册，否则抛 `QianDataMisconfiguredException` 拒绝启动；`UseKunSchema("plugin_<id>")` 强制；系统列约定 `id (uuid v7) / tenant_id / created_at / created_by / updated_at / updated_by / deleted_at / deleted_by`，并发令牌 `xmin`；RLS 策略模板 `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY`，`USING` / `WITH CHECK` 均比较 `tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')`（字符串租户标识，缺失时不匹配），由迁移生成器为每个 `IMultiTenant` 表自动输出。
 - 迁移协调：`MigrateAsync` 前取 `pg_advisory_lock(hash(schema))`，K8s 迁移 Job 先行（7.17），多副本启动时只校验不迁移。
@@ -385,8 +385,8 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - 序号服务 `ISequenceService.NextAsync(ruleCode, scopeKey)`：规则 DSL `prefix + yyyyMMdd + seq(6)`，PG `UPDATE ... RETURNING` 原子取号，规则修改后重新开始；单据序号归属表单（S2）只是它的客户。
 - 基准类型 `BaseDataType`（int / bigint / decimal / float / datetime / varchar / text / bool / json / uuid，系统类不可删）、`DbDialect`（postgres）、`DialectTypeMapping`（长度/精度/区间校验）作为种子数据与 `GET /api/data/meta/types` 端点；`StandardField` 缺省字段由基类代码固化（S2 建模器 UI 消费）。
 - `DataConnection`（方言、主机、端口、库、schema、账号、`secretRef`、编码）+ `POST /connections/{id}:test`；详情接口不回传密钥。
-- Filter AST：`{ logic: and|or, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }`，运算符 `eq ne like notLike isNull notNull in notIn ge gt le lt between`，矩阵 `{ fieldType: [op] }` 发布为 JSON Schema；数据过滤、高级查询、数据权限、启用规则、流程条件五处共用，S2 的 SQL 生成只接受参数化 + 标识符白名单。
-- 数据事件：实体变更经 Outbox 发 `qian.record.changed.v1` 信封（S2 动态表）与各聚合自定义事件（S1）；服务端 before/after Hook 契约 `IRecordHook`（S1 定、S2 用）。
+- Filter AST（Schema、完整矩阵和校验顺序见 [数据契约](specs/data-contracts.md)）：`{ logic: and|or, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }`，运算符 `eq ne like notLike isNull notNull in notIn ge gt le lt between`，矩阵 `{ fieldType: [op] }` 发布为 JSON Schema；数据过滤、高级查询、数据权限、启用规则、流程条件五处共用，S2 的 SQL 生成只接受参数化 + 标识符白名单。
+- 数据事件（端口与信封见 [数据契约 §6](specs/data-contracts.md#6-record-hook-与变更事件)）：实体变更经 Outbox 发 `qian.record.changed.v1` 信封（S2 动态表）与各聚合自定义事件（S1）；服务端 before/after Hook 契约 `IRecordHook`（S1 定、S2 用）。
 
 过渡态（2026-10）：Kun 只有 Shared + RLS 有真库集成测试；事务版 RLS 在事务外读返回空、连接版只对 Npgsql 生效；`CreatedBy` 为非空 `Guid.Empty`、无并发令牌、无命名约定、`IOutboxMessageStore` 无实现、多副本 `MigrateAsync` 无协调——按 7.1 第 1、2、9 项修复后装配。`Kun.Infrastructure` 的 `IRepository/IUnitOfWork` 死接口不引用，直接用 `DbContext` + `Kun.EntityFrameworkCore.IUnitOfWork`。
 

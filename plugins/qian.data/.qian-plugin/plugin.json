@@ -19,7 +19,15 @@
     "tier": "system",
     "sandbox": "none",
     "authentication": "ON_INSTALL",
-    "required": false
+    "required": false,
+    "permissions": {
+      "secrets": [
+        {
+          "name": "data/*",
+          "scope": "tenant"
+        }
+      ]
+    }
   },
   "scopes": [
     "global",

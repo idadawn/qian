@@ -58,6 +58,9 @@ public static class QianDataExtensions
         if (existing is null) services.AddSingleton(new DataConnectionBinding(typeof(TContext), connectionReference));
         services.TryAddSingleton<IDataService>(sp => new QianDataService(sp.GetRequiredService<IServiceScopeFactory>(),
             sp.GetServices<DataConnectionBinding>().Select(binding => binding.ContextType).ToHashSet(), Qian.Runtime.ScopeKey.Global));
+        services.TryAddSingleton<IDataContextCatalog>(sp => new DataContextCatalog(
+            sp.GetServices<DataConnectionBinding>().Select(binding => binding.ContextType).Distinct().ToArray()));
+        QianDataMigrator.Register(services);
         services.TryAddSingleton(ErrorCatalog.CreateDefault());
         services.TryAddScoped<IntegrationEventBuffer>();
         // 不登记非泛型 KunDbContext/IUnitOfWork；每个 Data 会话明确选择自己的业务上下文。
@@ -106,6 +109,13 @@ public static class QianDataExtensions
             {
                 // 预打开连接不会再次触发 ConnectionOpened，启动时必须显式核验它。
                 await QianApplicationRoleInterceptor.ValidateAsync(context.Database.GetDbConnection(), cancellationToken).ConfigureAwait(false);
+                // 在线副本只校验不迁移：迁移由 --migrate-only 的迁移任务先行完成（IDataMigrator）。
+                if (context.Database.GetMigrations().Any())
+                {
+                    var pending = (await context.Database.GetPendingMigrationsAsync(cancellationToken).ConfigureAwait(false)).ToArray();
+                    if (pending.Length > 0)
+                        throw new QianDataMisconfiguredException("数据库还有未应用的迁移（" + string.Join(", ", pending) + "），先以 --migrate-only 运行迁移任务。");
+                }
             }
             finally { await context.Database.CloseConnectionAsync().ConfigureAwait(false); }
         }

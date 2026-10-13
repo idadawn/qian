@@ -9,7 +9,8 @@
   Qian.Plugin.Sdk、Qian.Plugin.Sdk.*    SDK：自身只依赖运行时与 Definition（PRD 7.2.3）
   *.Abstractions                        Service Definition：组件之间只经 Abstractions 引用（ADR-019 D19.5）
 违规的典型是平台插件包 Qian.Registry / Qian.Lifecycle / Qian.Capabilities（只进 platform profile，PRD 7.2.1）
-与任何 Provider 包。Kun.* 与第三方包不在本规则范围内。
+与任何 Provider 包。另对 Definition 的 Kun 直接依赖只允许 Kun.*.Abstractions 与逐条注明理由的白名单；
+该附加规则不检查 Kun 传递依赖，Provider 使用 Kun 实现包不受影响。
 
 为什么读 obj/project.assets.json：`dotnet list package --include-transitive` 只列 NuGet 包，
 看不到 ProjectReference 带进来的项目；仓库内组件之间大多是项目引用，所以直接读 NuGet 还原产物
@@ -39,7 +40,15 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM_PLUGINS = {"qian.registry", "qian.lifecycle", "qian.capabilities"}
 ALLOWED_ROLES = {"external", "runtime", "sdk", "definition"}
+# 仅放行已有公开契约所需的具体边；不得以 Kun.* 或所有 Definition 为范围豁免。
+DEFINITION_KUN_EXCEPTIONS = {
+    ("qian.tenancy.abstractions", "kun.core"): "ITenantContext 与 IMultiTenant 是 Core 的 BCL 契约，无实现依赖。",
+    ("qian.authz.abstractions", "kun.authorization"): "复用已发布 IPermissionChecker / IDataPermissionFilter / IFieldPolicy 框架端口，避免复制类型。",
+    ("qian.data.abstractions", "kun.entityframeworkcore"): "已发布 QianDbContext 继承 KunDbContext，IDataSession 暴露同上下文工作单元；拆分需保持公开 API 兼容。",
+    ("qian.data.abstractions", "kun.multitenancy.entityframeworkcore"): "QianDbContext 启动时校验 Kun RLS 双拦截器与模型缓存键；安全装配依赖目前必须保留。",
+}
 REASONS = {
+    "kun-implementation": "Definition 的 Kun 直接依赖只允许 Kun.*.Abstractions 或具名例外（specs/component-model.md §6.1、S1-KUN-010）",
     "platform-plugin": "平台插件包只进 platform profile，组件库不得依赖（PRD 7.2.1、ADR-019 D19.8）",
     "provider": "Provider 包；组件之间只经 Abstractions 引用（ADR-019 D19.5、specs/component-model.md §6.1）",
     "bundle": "组合包只由 profile 宿主引用，组件库不得依赖（specs/component-model.md §7.3）",
@@ -124,9 +133,18 @@ def find_violations(package: Package, assets: dict) -> List[Violation]:
             name = key.split("/", 1)[0]
             graph[name.lower()] = (name, [d.lower() for d in (entry.get("dependencies") or {})])
 
+        direct = _direct_dependencies(assets, framework, project_dir)
+        if role_of(package.package_id) == "definition":
+            for low in sorted(direct):
+                if (low.startswith("kun.") and not low.endswith(".abstractions")
+                        and (package.package_id.lower(), low) not in DEFINITION_KUN_EXCEPTIONS):
+                    name = graph.get(low, (low, []))[0]
+                    out.append(Violation(package.package_id, _rel(package.project), framework, name,
+                                         "kun-implementation", [package.package_id, name]))
+
         parents: Dict[str, Optional[str]] = {}
         queue = deque()
-        for name in sorted(_direct_dependencies(assets, framework, project_dir)):
+        for name in sorted(direct):
             if name in graph and name not in parents:
                 parents[name] = None
                 queue.append(name)

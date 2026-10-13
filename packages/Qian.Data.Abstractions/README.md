@@ -14,7 +14,22 @@ QianApplicationRoleInterceptor 校验同步/异步新连接的登录角色和当
 
 DataDefinition.Key 拥有 Data 服务键，`ctx.Data()` 解析当前 scope 可见的 IDataService。`OpenAsync<TContext>()` 返回 IDataSession，暴露该工作单元的 Context 和 IOutboxWriter，继承 Kun 当前 IUnitOfWork 的 SaveChangesAsync；会话通过 IAsyncDisposable 释放。Provider 负责把业务上下文、通知处理器和事件缓冲绑定在同一 scope，防止多上下文串写。
 
-DataErrors.Misconfigured 定义统一 DATA_MISCONFIGURED，QianDataMisconfiguredException 携带 QianError。宿主统一映射为 ErrorDetail，不自造错误体。
+替换 Kun 默认累加器的 Outbox 写入端（如事件组件的信封写入端）实现 IOutboxBufferBinding，声明自己写入的缓冲器；数据会话只接受写入当前 scope 缓冲器的实现。IDataContextCatalog 列出宿主经 AddQianData 登记的全部业务上下文，供 Outbox 投递等宿主级组件逐个处理。
+
+IDataMigrator 是多副本迁移协调端口：逐个业务上下文在 schema 级 advisory lock 内执行未应用的迁移，返回每个上下文的 DataMigrationReport（实际执行的迁移与等锁时长）。ISequenceService 按租户规则原子取号，规则模式由 SequencePattern 解析与格式化（如 `'SO' + yyyyMMdd + seq(6)`）；ISnowflakeIdGenerator 给需要数值主键的场景发 64 位雪花 ID。实现与装配见 [Qian.Data](../Qian.Data/README.md)。
+
+基准类型目录与数据连接档案的契约：
+
+- `BaseDataType` 与 `DataTypeContracts.SystemTypes`：10 个系统类型来自嵌入的 base-data-types.json；
+- `DbDialect`、`DialectTypeMapping`、`DataTypeLimit`、`DataValueRange` 是方言 SPI qian.data.dialect/v1 的数据。`DbDialect.Validate` 核对映射，`DataTypeContracts.ReadDialect` 读取并核对方言包的 JSON；
+- `DialectTypeMapping.Map` 按长度、精度、小数位与取值区间校验 `DataFieldDefinition`，返回补齐缺省值的 `DataFieldMapping`；
+- `IDataDialect` 是方言组件实现的 SPI（描述数据 + 连通探测），`IDataDialectRegistry` 是 `Data.Dialects` 注册表，`IDataTypeCatalog` 是 GET /api/data/meta/types 背后的目录；
+- `IDataConnectionRegistry` 管理按租户隔离的连接档案。`DataConnectionDraft` 只接受 secretRef，反序列化时拒绝 password 等未声明成员；`DataConnectionProfile` 不含口令；
+- `DataPermissions` 列出端点权限点。
+
+JSON Schema 为 data-types.schema.json 与 data-connection.schema.json，源生成元数据在 `DataContractJson`。上下限在 JSON 中以十进制字符串表示，避免 64 位整数失真。
+
+DataErrors.Misconfigured 定义统一 DATA_MISCONFIGURED，QianDataMisconfiguredException 携带 QianError。序号与雪花 ID 另有 DATA_SEQUENCE_RULE_INVALID、DATA_SEQUENCE_RULE_NOT_FOUND、DATA_SEQUENCE_EXHAUSTED 与 DATA_ID_WORKER_UNAVAILABLE，经 QianErrorException 抛出。基准类型与数据连接另有 DATA_TYPE_*、DATA_DIALECT_NOT_FOUND、DATA_FIELD_*、DATA_CONNECTION_* 共 11 个错误码，宿主经 `DataErrors.TypesAndConnections` 一次登记，含义见 [Qian.Data](../Qian.Data/README.md)。宿主统一映射为 ErrorDetail，不自造错误体。
 
 ## 组件位置
 
@@ -26,4 +41,8 @@ Agent 可识别稳定的错误码和系统字段，不获取数据库口令。Da
 
 ## 已知限制与延期项
 
-参考应用的千行索引验收已通过；完整代码组件安装仍由 SDK / CLI 后续任务交付。Filter AST、IRecordHook 等后续契约属于 S1-DATA-004，不在本次基础安全装配中冒充已实现。
+参考应用的千行索引验收已通过；完整代码组件安装仍由 SDK / CLI 后续任务交付。Filter AST、运算符矩阵、系统变量、数据规则、IRecordHook 与记录事件信封由 S1-DATA-004 随本包交付，权威语义和示例见 [数据契约规格](../../docs/prd/specs/data-contracts.md)。S2 的 SQL 生成、Hook 调度及动态记录引擎仍由后续任务实现。
+
+## Kun 依赖例外（S1-KUN-010）
+
+本包暂时保留 `Kun.EntityFrameworkCore` 与 `Kun.MultiTenancy.EntityFrameworkCore` 两项具名门禁例外：前者是已发布 QianDbContext 基类与 IDataSession 工作单元契约，后者用于启动时校验真实 RLS 双拦截器和模型缓存键。不能通过关闭隔离校验消除依赖。后续重构须先设计公开 API 兼容迁移，再撤销这两条例外；其它 Definition 不继承本包的例外。

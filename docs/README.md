@@ -10,6 +10,7 @@
 | `prd/` | 产品需求文档：索引 `prd/README.md` + 17 章（01–17）+ 专题 spec | 草案 v1（组件模型 v2 已定稿（2026-10-07）：§02 / §03 / §07–§12、specs 已回填，待确认项全部拍板） |
 | `prd/specs/component-model.md` | 组件模型 v2 专题 spec（权威）：`.qian-plugin/plugin.json` 清单字段族、五种表面、scope / 遮蔽 / restrict、seam 三角色、profile / 组合包 / patch、`marketplace.json`、`qian` CLI、运行时语义与 TCK | 草案 v1（另有人负责；落盘前以 ADR-020 为准） |
 | `prd/specs/plugin-manifest.md` | 插件清单 `qian-plugin.yaml` 专题 spec：字段、JSON Schema、派生物、签名与 digest、反向权限、`capabilities` 条目 | v1，迁移对照（`kind` → `runtime.form`；权威规格见 component-model.md） |
+| `prd/specs/data-contracts.md` | Filter AST、字段运算符矩阵、系统变量、数据规则与 Record Hook / 事件信封契约；JSON 与 C# 类型同源分发 | S1-DATA-004 |
 | `prd/specs/yue.md` | yue 组件库专题 spec：关键决策 D1–D16、六层分层、控件注册表契约、MF2 外壳与插槽、S1 最小集验收 | 草案 v1 |
 | `prd/specs/docs-site.md` | 文档站信息架构与规范：七个部分（第 3 部分含「Kun 框架」镜像小节，§2b）、产品族地图与版本矩阵、组件页模板、frontmatter（含 `project`）、llms 产物、`website/` 骨架 | 已确认（2026-10-07；Kun 进站经 ADR-021 补充） |
 | `generated/` | `qian docs generate` 从实际 profile、配置 Schema 与 C# 事件代码派生的配置目录、模块图、事件图、seam 图；实现说明见 `../packages/Qian.Docs/README.md` | 生成物 |

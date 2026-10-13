@@ -10,6 +10,7 @@ tests/
   Qian.Testing.Containers/                    集成测试共用的 Testcontainers fixture（不打包）
     ApolloMock/apollo_mock.py                 Apollo 协议替身，在容器里运行
   Qian.Testing.Containers.IntegrationTests/   fixture 自身的集成测试与单元测试
+  Qian.Data.AspNetCore.Tests/                 数据端点：基准类型目录（无数据库）与数据连接档案（真实 PostgreSQL、挂载式密钥、连通测试）
   Qian.Runtime.Errors.Tests/                  contracts/v0 契约测试（Schema、fixture、语义规则、内置错误码目录）与 ErrorDetail 内存宿主测试
   Qian.Runtime.Tests/                         最小运行时单元测试与 tck/runtime/*.scenario.yml 的 .NET harness
   gates/                                      门禁自测：样例项目 + Python 测试，不在 Qian.slnx 里
@@ -109,10 +110,23 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 
 [scripts/check_deps.py](../scripts/check_deps.py) 检查解决方案里的每个 Qian 包：
 
-- 允许的 Qian 依赖只有 `Qian.Runtime`（及 `Qian.Runtime.*`）、`Qian.Plugin.Sdk`（及 `Qian.Plugin.Sdk.*`）和任何 `*.Abstractions`。平台插件包 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 与所有 Provider 包，出现在传递依赖里即违规。`Kun.*` 与第三方包不在本规则范围内。
+- 允许的 Qian 依赖只有 `Qian.Runtime`（及 `Qian.Runtime.*`）、`Qian.Plugin.Sdk`（及 `Qian.Plugin.Sdk.*`）和任何 `*.Abstractions`。平台插件包 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 与所有 Provider 包，出现在传递依赖里即违规。Definition 的 Kun 直接依赖另受下述规则约束；第三方包与 Kun 传递依赖不在该附加规则范围内。
 - 组合包 `Qian.Bundle.*` 不检查：它的职责就是把一组 Provider 一起装（组件模型规格 §7.3）。
 - 数据来自各项目的 `obj/project.assets.json`。`dotnet list package --include-transitive` 只列 NuGet 包，看不到 ProjectReference 带进来的项目，而仓库内组件之间多是项目引用，所以直接读 NuGet 还原产物，包与项目两类依赖一并检查。
 - 失败时打印从被检查方到违规依赖的完整路径，例如 `Qian.GateSample.Reports → Qian.GateSample.Files.Abstractions → Qian.GateSample.Authz`；加 `--json` 输出机器可读结果。修法：改为依赖对方的 `.Abstractions` 包。
+
+### Definition 的 Kun 直接依赖（S1-KUN-010）
+
+Definition 只允许直接引用 `Kun.*.Abstractions`，`PackageReference` 与 `ProjectReference` 均检查。Provider 使用 Kun 实现包不受此附加规则影响。现有公开契约的以下例外按完整「消费包 → 依赖包」登记在 `DEFINITION_KUN_EXCEPTIONS`，每条有理由，不能扩大为包名前缀豁免：
+
+| 消费包 | 允许的 Kun 直接依赖 | 保留理由 |
+|---|---|---|
+| `Qian.Tenancy.Abstractions` | `Kun.Core` | 复用零外部依赖的租户契约 |
+| `Qian.Authz.Abstractions` | `Kun.Authorization` | 复用框架权限、数据与字段判定端口，避免复制接口 |
+| `Qian.Data.Abstractions` | `Kun.EntityFrameworkCore` | 已发布的 QianDbContext 基类与同上下文工作单元契约 |
+| `Qian.Data.Abstractions` | `Kun.MultiTenancy.EntityFrameworkCore` | 启动期校验 RLS 双拦截器与模型缓存键，维持隔离安全 |
+
+Data 的两项依赖保留现有实现与公开 API；本任务不通过删除启动校验或复制基类来消除依赖。后续若移动数据基类，应先提供兼容迁移再删除对应白名单。身份事件入口已改为 `Kun.EventBus.Abstractions`，不在例外内。
 
 ### 4.3 门禁自测
 
@@ -120,6 +134,7 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 
 | 样例 | 期望 |
 |---|---|
+| `depgraph/kun.slnx` | 真实 Kun 包：Storage 抽象可引用，EventBus 实现被 Definition 规则拒绝 |
 | `depgraph/good.slnx` | 通过；其中组合包与不打包的宿主引用 Provider 不算违规 |
 | `depgraph/bad.slnx` | 4 处违规：Definition 依赖 Provider、Provider 依赖平台插件、Provider 依赖另一个 Provider、经 Definition 传递依赖 Provider |
 | `publicapi/Qian.GateSample.Declared` | 构建通过 |
@@ -155,6 +170,12 @@ S1-KUN-004 补充旧 Identity / Security S2S 签发器、旧注册方法及旧�
 QIAN0005 在全部代码树检查真正的 Kun `AddRequestHandler`：受保护请求或未确定请求类型的泛型封装必须改用 `Qian.Authz.Abstractions.AddAuthorizedHandler`，同一入口将处理器与权限行为登记到同一个 builder。两个重载、方法组引用、生成代码均受检查；关闭警告即错误不会降低规则。
 
 `python3 -m unittest discover -s tests/gates -p test_authorized_handler.py` 编译八组真实样例：直接注册、能力注册、委托引用、泛型包装、应用伪造桥接类必须失败；安全入口、普通请求及无关同名方法必须通过。运行时拒绝/放行顺序由 Qian.Authz.Abstractions.Tests 验证。
+
+### 集成事件发布位置门禁（S1-EVT-001）
+
+QIAN0006 落实「集成事件只能在命令 handler 同 scope 发出」：对 Kun `IIntegrationEventBus.Publish` 与 `IOutboxWriter.Enqueue` 的调用和方法组引用，只允许出现在写命令 handler（处理 Kun `ICommand`，或处理 `[Capability]` 且 SideEffect 不为 read 的请求）与领域事件通知 handler 内；直接向 Kun 缓冲器追加消息（`IntegrationEventBuffer.Add`、`IIntegrationEventOutbox.Add`）会绕过 v1 信封，只允许出现在 Outbox 写入端（实现 `IOutboxWriter` 或 `IIntegrationEventBus` 的类型）里。测试项目（引用了 xUnit 的编译）不受检查。运行时由 SDK 命令管道开启的事件来源作用域兜底，作用域外发布被拒绝。
+
+`python3 -m unittest discover -s tests/gates -p test_event_publish_scope.py` 编译 `tests/gates/events` 下八组真实样例：命令 handler、领域事件 handler、写能力和无关同名方法必须通过；查询 handler、只读能力、后台服务和直接写缓冲器必须以 QIAN0006 失败。
 
 ### 能力契约的真实兼容检查
 

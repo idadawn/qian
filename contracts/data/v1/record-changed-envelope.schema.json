@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/data/v1/record-changed-envelope.schema.json",
+  "title": "RecordChangedEnvelope",
+  "allOf": [
+    {
+      "$ref": "https://qian.dev/contracts/v0/event-envelope.schema.json"
+    },
+    {
+      "properties": {
+        "version": {
+          "const": "v1"
+        },
+        "type": {
+          "const": "qian.record.changed.v1"
+        },
+        "subject": {
+          "const": "qian.record.changed"
+        },
+        "tenant_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "payload": {
+          "$ref": "qian.record.changed.v1.schema.json"
+        }
+      }
+    }
+  ]
+}

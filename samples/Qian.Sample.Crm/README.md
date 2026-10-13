@@ -12,12 +12,14 @@
 - S2S__Issuer / S2S__Audience：受信任签发方和当前服务受众。
 - S2S__ReaderClientId：允许读取客户的内部服务主体。
 - S2S__PublicJwks：仅含 RSA/EC 公钥的 JWKS JSON，不放私钥。
+- ConnectionStrings__Events：可选，RabbitMQ 的 AMQP 地址。设置后宿主启动 Outbox 投递；未设置时只写 Outbox，适合没有 MQ 的本地开发。
+- ConnectionStrings__Migrations：可选，迁移属主角色的连接（同样不能是超级用户或 BYPASSRLS），只在 `--migrate-only` 时使用。
 
 ```bash
 dotnet run --project samples/Qian.Sample.Crm
 ```
 
-默认入口启用真实命令宿主；原 DATA-001 只读宿主可用 --data-only 启动。库表由部署前迁移创建；应用启动只校验。CrmDbContext 使用 plugin_qian_sample_crm schema，客户继承 Qian 的安全上下文约定；分页索引是 tenant_id + id。
+默认入口启用真实命令宿主；原 DATA-001 只读宿主可用 --data-only 启动。库表由部署前迁移创建；应用启动只校验。`--migrate-only` 是 K8s 迁移 Job 的入口：按宿主登记的上下文在 advisory lock 下执行未应用的迁移后退出，不启动 HTTP 宿主。本应用的上下文目前没有包内迁移，这一入口在这里不执行 DDL。CrmDbContext 使用 plugin_qian_sample_crm schema，客户继承 Qian 的安全上下文约定；分页索引是 tenant_id + id。
 
 ## 调用与授权
 
@@ -48,11 +50,22 @@ POST /api/customers 接收 idempotencyKey（UUID）和 name；租户来自验证
 
 部署需为业务登录仅授予 CRM schema 权限，并用 AuditTransactionAccess 为独立 NOLOGIN 函数所有者与该业务登录配置受控审计入口；业务角色不获得审计表直接权限。SDK 的外层 SERIALIZABLE 事务覆盖客户、幂等回执、业务 Outbox 与审计链。争用时从新的 Mediator/Data scope 重试整笔命令，不在旧事务内单独重试审计。
 
-客户名称在生成输入 Schema 中标为 sensitive，审计保存脱敏哈希。生产监听器读取真实租户状态、真实 RBAC 和真实 Audit 服务；业务 handler 延迟到强制校验后构造。验收用 Kestrel、RS256 和受限 PostgreSQL 角色验证成功、重复提交、冲突、审计失败整笔回滚、双租户并发及锁等待时卸载取消。Outbox 沿用 Kun 的服务级传输表，测试核验每条消息的 tenant_id 与实际客户归属；后台发布与完整 Qian 事件信封仍由事件组件完成。
+客户名称在生成输入 Schema 中标为 sensitive，审计保存脱敏哈希。生产监听器读取真实租户状态、真实 RBAC 和真实 Audit 服务；业务 handler 延迟到强制校验后构造。验收用 Kestrel、RS256 和受限 PostgreSQL 角色验证成功、重复提交、冲突、审计失败整笔回滚、双租户并发及锁等待时卸载取消。Outbox 沿用 Kun 的服务级传输表，每行的 payload 是完整的 v1 事件信封，测试核验每条消息的 tenant_id 与实际客户归属；投递见下节。
 
 这些是本机真实协议与数据库验收，未证明正式包安装、K3s 应用发布、真实 Qian Identity 管理员登录或完整 platform 已完成。
 
 能力目录联调中，三个参考请求显式声明 agent.expose 元数据，用于验证提示词和目录过滤；这不开放 S1 Agent 身份签发或执行。平台目录/Registry 依赖仅加入验收宿主，独立客户应用不因此引用这些平台 Provider。
+
+## 集成事件
+
+创建客户在同一事务里写入一条 `crm.customer.created.v1`（载荷 `customerId`）。事件类型由 `CrmEvents.RegisterCrmEvents` 连同源生成 JsonTypeInfo 一起登记，宿主与契约测试共用这一处。信封由 Qian.Events 补齐：producer 是 qian.sample.crm，actor 是发起命令的服务主体，causation_id 是本次命令调用，tenant_id 是令牌里的租户。运行时另挂 qian.events 组件，提供 Events 服务键。
+
+真实验收在 CustomerCommandTests 中，使用 Kestrel、PostgreSQL 与 RabbitMQ 容器：
+
+- 创建客户后 outbox_messages 恰好多一行，其 payload 通过 contracts/v0 的信封 Schema；
+- 后台投递确认后，订阅 `crm.customer.created` 的 quorum 队列恰好收到一条，消息体与 Outbox 行逐字节相同。
+
+IntegrationEventCatalogTests 扫描测试输出里全部 Qian 程序集的 `[IntegrationEventId]`，要求每一个都经组件登记入口带上 JsonTypeInfo，并能导出 payload Schema。
 
 ## profile 宿主装配与 T23
 

@@ -2,6 +2,33 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-14 基准类型、PG 方言组件与数据连接档案（S1-DATA-003）
+
+- 10 个系统基准类型作为种子数据随 `Qian.Data.Abstractions` 发布；新增方言 SPI qian.data.dialect/v1 与 PostgreSQL 方言包 `Qian.Data.Dialect.Pg`，`DialectTypeMapping` 拒绝超出长度、精度、小数位或取值区间的字段定义。
+- `IDataConnectionRegistry`：按租户隔离的连接档案，口令只存租户 secretRef，连通测试在使用点解析，详情不回传密钥。新增 `Qian.Data.AspNetCore` 提供 `GET /api/data/meta/types` 与 `/api/data/connections`（含 `POST /connections/{id}:test`）。见 [Qian.Data](../packages/Qian.Data/README.md)。
+
+## 2026-10-14 事件抽象拆包与 Definition 依赖门禁（S1-KUN-010）
+
+KunVersion 升为 2026.10.14，身份契约改用 `Kun.EventBus.Abstractions`。Definition 的 Kun 直接依赖新增门禁，既有数据基类/RLS 依赖按具体边记录例外，见 [测试规范](../tests/README.md#definition-的-kun-直接依赖s1-kun-010)；框架关系与 API 参考随同版本更新。
+
+## 2026-10-14 多副本迁移协调、雪花 ID 与序号服务（S1-DATA-002）
+
+- `IDataMigrator`：按 schema 取 PostgreSQL advisory lock 后执行 EF 迁移，同时启动的副本只有一个执行 DDL；K8s 迁移 Job 用 `--migrate-only`，在线副本启动时发现未应用的迁移即拒绝启动。
+- `ISnowflakeIdGenerator`（WorkerId 经 Redis 租约 `qian:snowflake:worker:{n}` 分配，带高水位，编号回收复用不重 ID）与 `ISequenceService`（规则 `'SO' + yyyyMMdd + seq(6)`，单条 upsert 原子取号，规则修改后从 1 开始）。见 [Qian.Data](../packages/Qian.Data/README.md)。
+
+## 2026-10-14 yue 基础组件与 Storybook（S1-YUE-005）
+
+[core 组件库](../packages/yue/core/README.md) 补齐 51 个组件入口、统一令牌、可寻址部件和机器清单；Storybook 10 覆盖明暗与交互状态，附令牌页、Schema 生成类型和真实构建页面的键盘/无障碍门禁。
+
+## 2026-10-14 集成事件组件 Qian.Events（S1-EVT-001）
+
+- 新增 `Qian.Events.Abstractions` / `Qian.Events`：入队即生成 v1 事件信封（与 iClaw 对齐），Outbox 按租约领取、publisher confirm 后逐条标记，停机或 broker 变慢时交还未发的行，多副本不重复发布；RabbitMQ topic exchange `qian.events` 与 quorum / 广播队列命名。见 [Qian.Events](../packages/Qian.Events/README.md)。
+- 新编译门禁 QIAN0006：集成事件只能在写命令 handler 或领域事件 handler 内发布。参考应用的客户创建事件改为 `crm.customer.created.v1`，配置 `ConnectionStrings__Events` 后投递到 RabbitMQ。
+
+## 2026-10-14 数据过滤与记录扩展契约（S1-DATA-004）
+
+新增 [数据契约规格](prd/specs/data-contracts.md)：统一 Filter AST、13 运算符与 10 类字段矩阵、15 个系统变量、数据规则，以及 Record Hook / qian.record.changed.v1 信封；JSON 与源生成 C# 契约随 Qian.Data.Abstractions 分发，供 S2 五处条件消费方复用。
+
 ## 2026-10-13 验收复核跟进与 Kun 2026.10.13（S1-DEC-019、S1-KUN-014、S1-DOCS-004）
 
 - 复核 10-10 之后完成的 21 项任务：12 项真完成、8 项有口径偏差、1 项证据不足。修正与补强记为裁决 R65–R74：Kun 同日修复版的 NuGet 语义与精确钉定、受保护请求的运行期兜底、仓库 profile 生效配置的明文密钥扫描进 CI、T23 与 DEC-018 的口径、DEC-014–018 的批准留痕、任务日志署名校验。
