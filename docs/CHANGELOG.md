@@ -6,6 +6,11 @@
 
 KunVersion 升为 2026.10.14，身份契约改用 `Kun.EventBus.Abstractions`。Definition 的 Kun 直接依赖新增门禁，既有数据基类/RLS 依赖按具体边记录例外，见 [测试规范](../tests/README.md#definition-的-kun-直接依赖s1-kun-010)；框架关系与 API 参考随同版本更新。
 
+## 2026-10-14 多副本迁移协调、雪花 ID 与序号服务（S1-DATA-002）
+
+- `IDataMigrator`：按 schema 取 PostgreSQL advisory lock 后执行 EF 迁移，同时启动的副本只有一个执行 DDL；K8s 迁移 Job 用 `--migrate-only`，在线副本启动时发现未应用的迁移即拒绝启动。
+- `ISnowflakeIdGenerator`（WorkerId 经 Redis 租约 `qian:snowflake:worker:{n}` 分配，带高水位，编号回收复用不重 ID）与 `ISequenceService`（规则 `'SO' + yyyyMMdd + seq(6)`，单条 upsert 原子取号，规则修改后从 1 开始）。见 [Qian.Data](../packages/Qian.Data/README.md)。
+
 ## 2026-10-14 yue 基础组件与 Storybook（S1-YUE-005）
 
 [core 组件库](../packages/yue/core/README.md) 补齐 51 个组件入口、统一令牌、可寻址部件和机器清单；Storybook 10 覆盖明暗与交互状态，附令牌页、Schema 生成类型和真实构建页面的键盘/无障碍门禁。
