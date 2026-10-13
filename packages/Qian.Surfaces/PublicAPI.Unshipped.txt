@@ -12,3 +12,34 @@ Qian.Surfaces.DeclarativeSurfacePlugin.Provides.get -> System.Collections.Generi
 static Qian.Surfaces.ToolContractHash.Compute(System.Text.Json.JsonElement tool) -> string!
 Qian.Surfaces.DeclarativeSurfacePlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Qian.Surfaces.SurfaceValidator.ValidateMarketplace(string! file, string! content, string? traceId = null) -> Qian.Surfaces.Abstractions.MarketplaceValidationResult!
+Qian.Surfaces.ToolContractHasher
+Qian.Surfaces.ToolContractHasher.Compute(System.Text.Json.JsonElement tool) -> string!
+Qian.Surfaces.ToolContractHasher.ToolContractHasher() -> void
+Qian.Surfaces.HotReloadSurfacePlugin
+Qian.Surfaces.HotReloadSurfacePlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Surfaces.HotReloadSurfacePlugin.HotReloadSurfacePlugin(string! directory, Qian.Surfaces.Abstractions.ISurfaceValidator! validator, Qian.Surfaces.Abstractions.SurfaceValidationOptions! options, Qian.Runtime.IQianPlugin? code = null) -> void
+Qian.Surfaces.HotReloadSurfacePlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Surfaces.HotReloadSurfacePlugin.Status.get -> Qian.Surfaces.SurfaceReloadStatus!
+Qian.Surfaces.HotReloadSurfacePlugin.SurfaceProvides.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Surfaces.SurfaceRegistrationSession
+Qian.Surfaces.SurfaceRegistrationSession.Dispose() -> void
+Qian.Surfaces.SurfaceRegistrationSession.Replace(Qian.Surfaces.Abstractions.SurfaceValidationResult! next) -> int
+Qian.Surfaces.SurfaceRegistrationSession.SurfaceRegistrationSession(Qian.Runtime.IPluginContext! context, Qian.Surfaces.Abstractions.SurfaceValidationResult! initial) -> void
+Qian.Surfaces.SurfaceReloadStatus
+Qian.Surfaces.SurfaceReloadStatus.<Clone>$() -> Qian.Surfaces.SurfaceReloadStatus!
+Qian.Surfaces.SurfaceReloadStatus.ChangedCodeFiles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Surfaces.SurfaceReloadStatus.ChangedCodeFiles.init -> void
+Qian.Surfaces.SurfaceReloadStatus.Deconstruct(out long Revision, out bool RestartRequired, out System.Collections.Generic.IReadOnlyList<string!>! ChangedCodeFiles, out System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+Qian.Surfaces.SurfaceReloadStatus.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>!
+Qian.Surfaces.SurfaceReloadStatus.Diagnostics.init -> void
+Qian.Surfaces.SurfaceReloadStatus.Equals(Qian.Surfaces.SurfaceReloadStatus? other) -> bool
+Qian.Surfaces.SurfaceReloadStatus.RestartRequired.get -> bool
+Qian.Surfaces.SurfaceReloadStatus.RestartRequired.init -> void
+Qian.Surfaces.SurfaceReloadStatus.Revision.get -> long
+Qian.Surfaces.SurfaceReloadStatus.Revision.init -> void
+Qian.Surfaces.SurfaceReloadStatus.SurfaceReloadStatus(long Revision, bool RestartRequired, System.Collections.Generic.IReadOnlyList<string!>! ChangedCodeFiles, System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
+override Qian.Surfaces.SurfaceReloadStatus.Equals(object? obj) -> bool
+override Qian.Surfaces.SurfaceReloadStatus.GetHashCode() -> int
+override Qian.Surfaces.SurfaceReloadStatus.ToString() -> string!
+static Qian.Surfaces.SurfaceReloadStatus.operator !=(Qian.Surfaces.SurfaceReloadStatus? left, Qian.Surfaces.SurfaceReloadStatus? right) -> bool
+static Qian.Surfaces.SurfaceReloadStatus.operator ==(Qian.Surfaces.SurfaceReloadStatus? left, Qian.Surfaces.SurfaceReloadStatus? right) -> bool

@@ -113,7 +113,7 @@ const resources = new URL('./schemas/', import.meta.url);
 const rules = JSON.parse(readFileSync(new URL('surface-rules.json', resources), 'utf8')) as { defaults: Record<string, string>; agentEvents: string[]; qianEvents: string[]; shells: string[] };
 const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
 const schemas = new Map<string, ValidateFunction>();
-for (const name of ['capability-entry', 'permissions', 'plugin', 'skill', 'agent', 'command', 'hooks', 'mcp', 'tool', 'patch', 'profile', 'marketplace']) {
+for (const name of ['surface-diagnostics', 'capability-entry', 'permissions', 'plugin', 'skill', 'agent', 'command', 'hooks', 'mcp', 'tool', 'patch', 'profile', 'marketplace']) {
   const schema = JSON.parse(readFileSync(new URL(name + '.schema.json', resources), 'utf8'));
   ajv.addSchema(schema); schemas.set(name, ajv.getSchema(schema.$id)!);
 }
@@ -196,7 +196,7 @@ class ValidationContext {
       return full;
     } catch { this.error(file, pointer, codes.path, '路径必须是组件内存在的相对路径，不能经过符号链接。'); return null; }
   }
-  private read(file: string, schema: string, markdown: boolean, diagnosticFile = '.qian-plugin/plugin.json', pointer = ''): SurfaceSyntax | null {
+  private read(file: string, schema: string | null, markdown: boolean, diagnosticFile = '.qian-plugin/plugin.json', pointer = ''): SurfaceSyntax | null {
     const full = this.safe(file, diagnosticFile, pointer, true);
     if (!full) return null;
     try {
@@ -206,7 +206,7 @@ class ValidationContext {
       this.diagnostics.push(...parsed.diagnostics);
       if (!parsed.syntax || parsed.diagnostics.length) return null;
       this.sources.set(file, parsed.syntax);
-      const errors = validateSurfaceSchema(schema, file, parsed.syntax.data, this.traceId, parsed.syntax.lines);
+      const errors = schema === null ? [] : validateSurfaceSchema(schema, file, parsed.syntax.data, this.traceId, parsed.syntax.lines);
       this.diagnostics.push(...errors);
       return errors.length ? null : parsed.syntax;
     } catch { this.error(file, '', codes.path, '文件无法读取或超过大小限制。'); return null; }
@@ -240,8 +240,21 @@ class ValidationContext {
         if (source) this.documents.push({ kind, name: kind, file, data: source.data, body: source.body });
       }
     }
+    this.readMetadata();
     this.semanticRules();
     return this.result({ id: this.id, profile: this.profile, manifest: this.manifest, documents: this.documents });
+  }
+  private readMetadata():void {
+    const pointers=obj(this.manifest.surfaces),declared=Object.hasOwn(pointers,'metadata');
+    const full=this.safe(declared?str(pointers.metadata):'./metadata','.qian-plugin/plugin.json','/surfaces/metadata',declared);
+    if(!full)return;
+    if(!statSync(full).isDirectory()){this.error('.qian-plugin/plugin.json','/surfaces/metadata',codes.path,'metadata 表面必须指向目录。');return;}
+    const files=readdirSync(full).sort();
+    if(files.length>1024){this.error('.qian-plugin/plugin.json','/surfaces/metadata',codes.path,'表面目录条目过多。');return;}
+    for(const item of files.filter(file=>file.endsWith('.json'))){
+      const file=this.relative(path.join(full,item)),source=this.read(file,null,false,'.qian-plugin/plugin.json','/surfaces/metadata');
+      if(source)this.documents.push({kind:'metadata',name:path.basename(item,'.json'),file,data:source.data,body:source.body});
+    }
   }
   private result(component: ParsedComponent | null): SurfaceValidationResult {
     const unique = new Map<string, SurfaceDiagnostic>();
@@ -418,3 +431,5 @@ export function validateMarketplace(file: string, content: string, traceId = tra
   });
   return result(data);
 }
+export {SurfaceRegistrationSession, HotReloadSurfacePlugin, readSurfaceRuntimeDiagnostics} from './runtime.js';
+export type {SurfaceContext, SurfaceReloadStatus, SurfaceRuntimeEntry, SurfaceRuntimeReport, SurfaceDiagnosticContext} from './runtime.js';

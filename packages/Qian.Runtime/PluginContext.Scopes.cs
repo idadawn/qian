@@ -19,9 +19,7 @@ internal sealed partial class PluginContext
         {
             EnsureOpen();
             var restriction = Loader.Restrict(this, scope, keep);
-            var disposer = new Disposer(() => Loader.Unrestrict(restriction));
-            Effect(disposer);
-            return disposer;
+            return Effects.Track(() => Loader.Unrestrict(restriction));
         }
     }
 

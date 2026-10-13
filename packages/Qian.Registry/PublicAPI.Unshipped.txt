@@ -1,0 +1,27 @@
+#nullable enable
+Qian.Registry.RegistryDbContext
+Qian.Registry.RegistryDbContext.RegistryDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Registry.RegistryDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+const Qian.Registry.RegistryDbContext.Schema = "plugin_qian_registry" -> string!
+Qian.Registry.RegistryPlugin
+Qian.Registry.RegistryPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Registry.RegistryPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Registry.RegistryPlugin.RegistryPlugin(Qian.Registry.RegistryRuntimeOptions! options) -> void
+Qian.Registry.RegistryRuntimeOptions
+Qian.Registry.RegistryRuntimeOptions.Profile.get -> Qian.Profiles.Abstractions.ProfileLoadOptions!
+Qian.Registry.RegistryRuntimeOptions.Profile.init -> void
+Qian.Registry.RegistryRuntimeOptions.Profiles.get -> Qian.Profiles.Abstractions.IProfileLoader!
+Qian.Registry.RegistryRuntimeOptions.Profiles.init -> void
+Qian.Registry.RegistryRuntimeOptions.RegistryRuntimeOptions() -> void
+Qian.Registry.RegistryRuntimeOptions.Resolve.get -> System.Func<Qian.Profiles.Abstractions.ResolvedProfileEntry!, Qian.Runtime.PluginDefinition!>!
+Qian.Registry.RegistryRuntimeOptions.Resolve.init -> void
+Qian.Registry.RegistryRuntimeOptions.Runtime.get -> Qian.Runtime.PluginLoader!
+Qian.Registry.RegistryRuntimeOptions.Runtime.init -> void
+Qian.Registry.RegistryRuntimeOptions.Surfaces.get -> Qian.Surfaces.Abstractions.ISurfaceValidator!
+Qian.Registry.RegistryRuntimeOptions.Surfaces.init -> void
+Qian.Registry.RegistryComponentBinding
+Qian.Registry.RegistryComponentBinding.Definition.get -> Qian.Runtime.PluginDefinition!
+Qian.Registry.RegistryComponentBinding.Metadata.get -> Qian.Registry.InstalledComponentMetadata!
+Qian.Registry.RegistryComponentBinding.RegistryComponentBinding(Qian.Runtime.PluginDefinition! definition, Qian.Surfaces.Abstractions.SurfaceValidationResult! validation) -> void
+Qian.Registry.RegistryRuntimeOptions.InstalledComponents.get -> System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryComponentBinding!>!
+Qian.Registry.RegistryRuntimeOptions.InstalledComponents.init -> void
+static Qian.Registry.RegistryComponentBinding.FromArtifact(Qian.Runtime.PluginDefinition! definition, System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files, string! expectedDigest, Qian.Surfaces.Abstractions.ISurfaceValidator! validator, Qian.Surfaces.Abstractions.SurfaceValidationOptions! options) -> Qian.Registry.RegistryComponentBinding!

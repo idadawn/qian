@@ -400,3 +400,10 @@ test('批量卸载多个组合层时共同处理其配置覆盖，全部保留�
   assert.equal(JSON.parse(run(f.project,'--no-home','dump-config').stdout).entries.length,0);
  }finally{f.dispose();}
 });
+
+test('注册表与 CLI 使用同一份路径、长度与原始字节摘要清单',async()=>{
+ const {snapshot}=await import('../dist/marketplace-files.js');
+ const fixture=JSON.parse(readFileSync(new URL('../../../tck/registry-artifacts/content.json',import.meta.url),'utf8'));
+ const content=snapshot(new Map(Object.entries(fixture.files).reverse().map(([name,value])=>[name,Buffer.from(value)])));
+ assert.equal(content.digest,fixture.digest);assert.deepEqual(content.records,fixture.records);
+});

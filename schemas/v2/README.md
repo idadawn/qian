@@ -10,6 +10,7 @@
 - `profile`：具名 profile 的组合包与启动策略。
 - `marketplace`：市场名称、条目、来源、策略与分类；两端共用文档语义向量见 [市场 TCK](../../tck/marketplaces/README.md)。
 - `patch`：按 scope 与 id 定位的条目数组。
+- `authz-permissions`、`authz-roles`：Authz 拥有的权限声明与默认角色模板 Schema；通用表面层先解析 JSON，Authz 编译器再校验业务结构与引用。
 - `surface-rules.json`：默认路径、固定事件与受限 shell 名称，供两端语义层共用。
 
 所有 Schema 使用 2020-12。结构与静态语义测试见 [TCK](../../tck/surfaces/README.md)。路径检查、目录解析和权限策略不由 Schema 替代。

@@ -1,0 +1,28 @@
+#nullable enable
+Qian.Authz.PermissionCatalogCompiler
+Qian.Authz.PermissionCatalogCompiler.FromAttributes(string! pluginId, string! version, System.Collections.Generic.IEnumerable<Qian.Authz.Abstractions.PermissionAttribute!>! attributes, System.Text.Json.JsonElement roles, string! roleFile = "metadata/roles.json") -> Qian.Authz.Abstractions.PermissionCatalog!
+Qian.Authz.PermissionCatalogCompiler.FromInstalled(Qian.Registry.InstalledComponentMetadata! component) -> Qian.Authz.Abstractions.PermissionCatalog!
+Qian.Authz.PermissionCatalogCompiler.FromMetadata(string! pluginId, string! version, System.Text.Json.JsonElement permissions, System.Text.Json.JsonElement roles, string! permissionFile = "metadata/permissions.json", string! roleFile = "metadata/roles.json") -> Qian.Authz.Abstractions.PermissionCatalog!
+Qian.Authz.PermissionCatalogCompiler.PermissionCatalogCompiler(Qian.Surfaces.Abstractions.ISurfaceReader! reader) -> void
+Qian.Authz.AuthzDbContext
+Qian.Authz.AuthzDbContext.AuthzDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Authz.AuthzDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+const Qian.Authz.AuthzDbContext.Schema = "plugin_qian_authz" -> string!
+Qian.Authz.PermissionRegistry
+Qian.Authz.PermissionRegistry.Find(string! code, string! version) -> Qian.Authz.Abstractions.PermissionDefinition?
+Qian.Authz.PermissionRegistry.List(string! pluginId, string! version) -> System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionDefinition!>!
+Qian.Authz.PermissionRegistry.ListResources(string! pluginId, string! version) -> System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.ResourceTypeDefinition!>!
+Qian.Authz.PermissionRegistry.PermissionRegistry() -> void
+Qian.Authz.PermissionRegistry.Register(string! version, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionDefinition!>! permissions) -> System.IDisposable!
+Qian.Authz.PermissionRegistry.RegisterResources(string! version, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.ResourceTypeDefinition!>! resources) -> System.IDisposable!
+Qian.Authz.RbacPermissionChecker
+Qian.Authz.RbacPermissionChecker.BatchCheckAsync(System.Collections.Generic.IReadOnlyList<Kun.Authorization.PermissionRequest!>! requests, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Kun.Authorization.PermissionDecision!>!>
+Qian.Authz.RbacPermissionChecker.CheckAsync(Kun.Authorization.PermissionRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kun.Authorization.PermissionDecision!>
+Qian.Authz.RbacPermissionChecker.ExplainAsync(Kun.Authorization.PermissionRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kun.Authorization.PermissionDecision!>
+Qian.Authz.RbacPermissionChecker.ExplainDetailedAsync(Kun.Authorization.PermissionRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Authz.Abstractions.AuthorizationExplanation!>
+Qian.Authz.RbacPermissionChecker.ListAllowedActionsAsync(Kun.Authorization.AuthorizationSubject! subject, string! resourceType, string? resourceId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Qian.Authz.RbacPermissionChecker.ListPermissionsAsync(Kun.Authorization.AuthorizationSubject! subject, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Qian.Authz.RbacPermissionChecker.RbacPermissionChecker(Qian.Data.IDataService! data, Kun.Core.MultiTenancy.ITenantContext! tenant, Qian.Authz.Abstractions.IPermissionRegistry! registry, Qian.Authz.Abstractions.IAuthzExecutionConstraints? constraints = null) -> void
+Qian.Authz.RbacCommandPolicyPlugin
+Qian.Authz.RbacCommandPolicyPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Authz.RbacCommandPolicyPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Authz.RbacCommandPolicyPlugin.RbacCommandPolicyPlugin() -> void

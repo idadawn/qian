@@ -4,7 +4,12 @@
   <ItemGroup>
     <ProjectReference Include="../../samples/Qian.Sample.Crm/Qian.Sample.Crm.csproj" />
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities/Qian.Capabilities.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Registry/Qian.Registry.csproj" />
+    <ProjectReference Include="../../packages/Qian.Profiles/Qian.Profiles.csproj" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
+  <ItemGroup><ProjectReference Include="../../packages/Qian.Surfaces.Hosting/Qian.Surfaces.Hosting.csproj" /></ItemGroup>
 </Project>

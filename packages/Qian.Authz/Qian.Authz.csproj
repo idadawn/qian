@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>权限目录、默认角色模板与租户授权 Provider。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Registry.Abstractions/Qian.Registry.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
+    <PackageReference Include="JsonSchema.Net" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../../schemas/v2/authz-*.schema.json" LogicalName="schemas/%(Filename)%(Extension)" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Authz.Tests" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Sample.Crm.Tests" /></ItemGroup>
+</Project>

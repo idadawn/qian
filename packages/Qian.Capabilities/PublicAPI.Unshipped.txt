@@ -1,0 +1,35 @@
+#nullable enable
+Qian.Capabilities.CapabilitiesPlugin
+Qian.Capabilities.CapabilitiesPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Capabilities.CapabilitiesPlugin.CapabilitiesPlugin() -> void
+Qian.Capabilities.CapabilitiesPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Capabilities.OasDiffOpenApiProbe
+Qian.Capabilities.OasDiffOpenApiProbe.CompareAsync(System.Text.Json.JsonElement baseline, System.Text.Json.JsonElement candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.OasDiffOpenApiProbe.OasDiffOpenApiProbe(string! executablePath) -> void
+Qian.Capabilities.OpenApiContractPlugin
+Qian.Capabilities.OpenApiContractPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Capabilities.OpenApiContractPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Capabilities.OpenApiContractPlugin.OpenApiContractPlugin(Qian.Runtime.IQianPlugin! inner, Qian.Capabilities.IOpenApiCompatibilityProbe! probe, string! contractId, System.Text.Json.JsonElement baseline, System.Text.Json.JsonElement candidate) -> void
+Qian.Capabilities.CapabilityContractCompiler
+static Qian.Capabilities.CapabilityContractCompiler.CreateOpenApi(System.Collections.Generic.IReadOnlyList<Qian.Plugin.Sdk.CapabilityContract!>! contracts, Qian.Surfaces.Abstractions.ISurfaceReader! schemas, Qian.Surfaces.Abstractions.IToolContractHasher! hasher) -> System.Text.Json.JsonElement
+static Qian.Capabilities.OpenApiContractPlugin.FromRepository(Qian.Runtime.IQianPlugin! inner, Qian.Capabilities.IContractRepository! repository, string! pluginId, string! baselineVersion, string! candidateVersion, string! contractId) -> Qian.Capabilities.OpenApiContractPlugin!
+Qian.Capabilities.CapabilitiesDbContext
+Qian.Capabilities.CapabilitiesDbContext.CapabilitiesDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Capabilities.CapabilitiesDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Capabilities.NavigationManifestPlugin
+Qian.Capabilities.NavigationManifestPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Capabilities.NavigationManifestPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Capabilities.NavigationManifestPlugin.NavigationManifestPlugin(Qian.Runtime.IQianPlugin! inner, Qian.Registry.InstalledComponentMetadata! component, Qian.Surfaces.Abstractions.ISurfaceReader! reader) -> void
+const Qian.Capabilities.CapabilitiesDbContext.Schema = "plugin_qian_capabilities" -> string!
+Qian.Capabilities.BufProtoCompatibilityProbe
+Qian.Capabilities.BufProtoCompatibilityProbe.BufProtoCompatibilityProbe(string! executablePath) -> void
+Qian.Capabilities.BufProtoCompatibilityProbe.CompareAsync(Qian.Capabilities.ProtoContractSet! baseline, Qian.Capabilities.ProtoContractSet! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.BufProtoCompatibilityProbe.CompileAsync(Qian.Capabilities.ProtoContractSet! source, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.ReadOnlyMemory<byte>>
+Qian.Capabilities.BufProtoCompatibilityProbe.CompareDescriptorsAsync(System.ReadOnlyMemory<byte> baseline, System.ReadOnlyMemory<byte> candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.GrpcReflectionContractProbe
+Qian.Capabilities.GrpcReflectionContractProbe.CheckAsync(Qian.Capabilities.ProtoContractSet! expected, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
+Qian.Capabilities.GrpcReflectionContractProbe.GrpcReflectionContractProbe(Qian.Capabilities.IProtoCompatibilityProbe! compiler, Grpc.Core.CallInvoker! invoker, Grpc.Core.Metadata? headers = null) -> void
+Qian.Capabilities.GrpcContractPlugin
+Qian.Capabilities.GrpcContractPlugin.GrpcContractPlugin(Qian.Runtime.IQianPlugin! inner, Qian.Capabilities.IContractRepository! repository, Qian.Capabilities.IGrpcContractProbe! peer, string! pluginId, string! baselineVersion, string! candidateVersion, string! contractId) -> void
+Qian.Capabilities.GrpcContractPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Capabilities.GrpcContractPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Capabilities.BufProtoCompatibilityProbe.CompareRuntimeDescriptorsAsync(System.ReadOnlyMemory<byte> baseline, System.ReadOnlyMemory<byte> candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>

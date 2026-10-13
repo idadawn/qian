@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Kun.AspNetCore.Authorization;
 using Kun.Authorization;
 using Kun.EntityFrameworkCore.Extensions;
@@ -21,7 +22,7 @@ public static class CrmApplication
 {
     public const string ListQueryTag = "qian.sample.crm.customer-list";
 
-    public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null)
+    public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null, bool mapReadEndpoints = true)
     {
         var builder = WebApplication.CreateBuilder(args);
         configure?.Invoke(builder);
@@ -47,8 +48,8 @@ public static class CrmApplication
             .RequireAuthenticatedUser().RequireClaim("principal_kind", "service").RequireClaim("sub", clientId)
             .RequireAssertion(context => (context.User.FindFirstValue("scope") ?? "").Split(' ').Contains("crm.read", StringComparer.Ordinal))
             .RequireAssertion(context => Guid.TryParse(context.User.FindFirstValue("tenant_id"), out _)));
+        builder.Services.TryAddSingleton<IPermissionChecker>(new CrmReadPolicy(clientId));
         builder.Services.AddKunAuthorization();
-        builder.Services.AddSingleton<IPermissionChecker>(new CrmReadPolicy(clientId));
         builder.Services.AddKunEventBus();
         builder.Services.AddQianData<CrmDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(CrmDbContext.Schema));
         var app = builder.Build();
@@ -56,26 +57,29 @@ public static class CrmApplication
         app.UseAuthentication();
         app.UseWhen(context => context.Request.Path.StartsWithSegments("/api"), branch => branch.UseKunMultiTenancy());
         app.UseAuthorization();
-        app.MapGet("/api/customers", async (int? skip, int? take, IDataService data, CancellationToken ct) =>
+        if (mapReadEndpoints)
         {
-            var offset = skip ?? 0;
-            var limit = take ?? 100;
-            if (offset < 0 || limit is < 1 or > 100)
-                return QianResults.Error(new QianError(PlatformErrors.BadRequest));
-            await using var session = await data.OpenAsync<CrmDbContext>(ct);
-            var query = session.Context.Customers.AsNoTracking();
-            var total = await query.CountAsync(ct);
-            var items = await query.TagWith(ListQueryTag).OrderBy(customer => customer.Id).Skip(offset).Take(limit)
-                .Select(customer => new CustomerItem(customer.Id, customer.TenantId!, customer.Name)).ToArrayAsync(ct);
-            return Results.Ok(new CustomerPage(total, items));
-        }).RequireAuthorization("crm-data-reader").RequireKunPermission(CrmReadPolicy.Permission);
-        app.MapGet("/api/customers/{id:guid}", async (Guid id, IDataService data, CancellationToken ct) =>
-        {
-            await using var session = await data.OpenAsync<CrmDbContext>(ct);
-            var item = await session.Context.Customers.AsNoTracking().Where(customer => customer.Id == id)
-                .Select(customer => new CustomerItem(customer.Id, customer.TenantId!, customer.Name)).SingleOrDefaultAsync(ct);
-            return item is null ? QianResults.Error(new QianError(PlatformErrors.NotFound)) : Results.Ok(item);
-        }).RequireAuthorization("crm-data-reader").RequireKunPermission(CrmReadPolicy.Permission);
+            app.MapGet("/api/customers", async (int? skip, int? take, IDataService data, CancellationToken ct) =>
+            {
+                var offset = skip ?? 0;
+                var limit = take ?? 100;
+                if (offset < 0 || limit is < 1 or > 100)
+                    return QianResults.Error(new QianError(PlatformErrors.BadRequest));
+                await using var session = await data.OpenAsync<CrmDbContext>(ct);
+                var query = session.Context.Customers.AsNoTracking();
+                var total = await query.CountAsync(ct);
+                var items = await query.TagWith(ListQueryTag).OrderBy(customer => customer.Id).Skip(offset).Take(limit)
+                    .Select(customer => new CustomerItem(customer.Id, customer.TenantId!, customer.Name)).ToArrayAsync(ct);
+                return Results.Ok(new CustomerPage(total, items));
+            }).RequireAuthorization("crm-data-reader").RequireKunPermission(CrmReadPolicy.Permission);
+            app.MapGet("/api/customers/{id:guid}", async (Guid id, IDataService data, CancellationToken ct) =>
+            {
+                await using var session = await data.OpenAsync<CrmDbContext>(ct);
+                var item = await session.Context.Customers.AsNoTracking().Where(customer => customer.Id == id)
+                    .Select(customer => new CustomerItem(customer.Id, customer.TenantId!, customer.Name)).SingleOrDefaultAsync(ct);
+                return item is null ? QianResults.Error(new QianError(PlatformErrors.NotFound)) : Results.Ok(item);
+            }).RequireAuthorization("crm-data-reader").RequireKunPermission(CrmReadPolicy.Permission);
+        }
         return app;
 
         string Required(string key) => builder.Configuration[key] is { Length: > 0 } value

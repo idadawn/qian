@@ -36,11 +36,23 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+      - name: 构建真实 doctor 客户端供宿主验收
+        run: pnpm install --frozen-lockfile && pnpm --filter qian... build
+
       - name: 还原
         run: dotnet restore Qian.slnx
 
       - name: 构建（PublicAPI 门禁：Qian 包未登记的公共 API 即编译失败）
         run: dotnet build Qian.slnx -c Release --no-restore
+
+      - name: 真实 Data 代码与唯一清单不得漂移
+        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Data/bin/Release/net10.0/Qian.Data.dll plugins/qian.data
 
       - name: 依赖图门禁
         run: python3 scripts/check_deps.py --solution Qian.slnx --no-restore
@@ -48,9 +60,16 @@ jobs:
       - name: 门禁自测（tests/gates 样例项目）
         run: python3 -m unittest discover -s tests/gates -v
 
+      - name: 安装固定摘要的真实 OpenAPI 兼容检查器
+        run: python3 scripts/prepare_contract_tools.py --destination "$RUNNER_TEMP/qian-contract-tools"
+
       - name: 单元与集成测试（共享容器与真实 Apollo）
         env:
+          QIAN_BUF_PATH: ${{ runner.temp }}/qian-contract-tools/buf
+          QIAN_OASDIFF_PATH: ${{ runner.temp }}/qian-contract-tools/oasdiff
           QIAN_TEST_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/evidence
+          QIAN_PRODUCT_FILTER_REPORT: ${{ github.workspace }}/TestResults/evidence/product-capability-filter.json
+          QIAN_PROFILE_EQUIVALENCE_REPORT: ${{ github.workspace }}/TestResults/evidence/profile-equivalence.json
         run: dotnet test --solution Qian.slnx -c Release --no-build --results-directory TestResults --report-xunit-trx
 
       - name: 上传测试结果

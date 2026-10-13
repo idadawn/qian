@@ -61,9 +61,14 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
                     AddLayer("home-patch", Path.Combine(Path.GetFullPath(home, _root), "qian.patch.yml"), null, required: false);
                 }
                 foreach (var patch in options.Patches) AddLayer("overlay", Path.GetFullPath(patch, _root), null, required: true);
+                foreach (var patch in options.ScopePatches) AddScopeLayer(patch);
                 var entries = ResolveEntries();
                 var order = Order(entries);
-                return new ProfileLoadResult(new ProfileSnapshot(options.Profile, _layers.ToArray(), entries, order), _diagnostics.ToArray());
+                return new ProfileLoadResult(new ProfileSnapshot(options.Profile, _layers.ToArray(), entries, order)
+                {
+                    DisabledEntries = _entries.Values.Where(e => e.Disabled).Select(e => new DisabledProfileEntry(
+                        e.Id, e.Scope, e.Plugin, e.Layer, Display(e.SourceFile) + "#" + e.SourcePointer)).ToArray()
+                }, _diagnostics.ToArray());
             }
             catch (CompositionFailed) { return new ProfileLoadResult(null, _diagnostics.ToArray()); }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or JsonException or InvalidOperationException or FormatException or JsonSchemaException or RefResolutionException or RegexMatchTimeoutException)
@@ -135,23 +140,62 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
             var present = File.Exists(file);
             _layers.Add(new ProfileLayer(index, kind, Display(file), reference, present));
             if (!present && !required) return;
-            var patch = Read(file, "patch"); var position = 0; var seen = new HashSet<string>(StringComparer.Ordinal);
+            AddEntries(Read(file, "patch"), file, index, null);
+        }
+
+        private void AddScopeLayer(ScopePatchLayer layer)
+        {
+            var scope = layer.Scope;
+            if (scope.Kind is not ("tenant" or "app" or "agent-session") || string.IsNullOrWhiteSpace(scope.Id) ||
+                scope.Id.Any(c => char.IsWhiteSpace(c) || char.IsControl(c) || c == ':'))
+                Fail("registry/scope-patches.json", "/scope", "数据库层必须声明合法的非全局 scope。");
+            var file = layer.Source;
+            if (string.IsNullOrWhiteSpace(file) || Path.IsPathRooted(file) || file.Split('/', '\\').Any(p => p == "..") || file.Any(char.IsControl))
+                Fail("registry/scope-patches.json", "", "数据库层来源必须为安全的相对名称。");
+            if (layer.Patches.ValueKind != JsonValueKind.Array) Fail(file, "", "scope patch 必须为数组。");
+            var raw = JsonSerializer.Serialize(layer.Patches);
+            if (System.Text.Encoding.UTF8.GetByteCount(raw) > 1_048_576) Fail(file, "", "scope patch 超过大小限制。");
+            var parsed = reader.Parse(Display(file), raw, traceId: _trace);
+            _diagnostics.AddRange(parsed.Diagnostics);
+            if (parsed.Syntax is null || parsed.Diagnostics.Any(d => d.Severity == "error")) throw new CompositionFailed();
+            _sources[Display(file)] = parsed.Syntax;
+            var errors = reader.ValidateSchema("patch", Display(file), parsed.Syntax.Data, _trace);
+            _diagnostics.AddRange(errors);
+            if (errors.Any(d => d.Severity == "error")) throw new CompositionFailed();
+            var index = _layers.Count;
+            _layers.Add(new ProfileLayer(index, "scope-patch", Display(file), null, true));
+            AddEntries(parsed.Syntax.Data, file, index, scope.Kind + ":" + scope.Id);
+        }
+
+        private void AddEntries(JsonElement patch, string file, int index, string? owningScope)
+        {
+            var position = 0; var seen = new HashSet<string>(StringComparer.Ordinal);
             foreach (var value in patch.EnumerateArray())
             {
                 var pointer = "/" + position++;
-                var id = Text(value, "id"); var scope = Text(value, "scope"); if (scope.Length == 0) scope = "global";
+                var id = Text(value, "id"); var scope = Text(value, "scope"); if (scope.Length == 0) scope = owningScope ?? "global";
+                if (owningScope is not null && scope != owningScope) Fail(file, pointer + "/scope", "patch 不能改写本层所属 scope。");
                 var key = scope + "/" + id;
                 if (!seen.Add(key)) Fail(file, pointer + "/id", "同一层不能重复声明同一 scope/id。");
                 var plugin = Text(value, "plugin");
                 if (!_entries.TryGetValue(key, out var current))
                 {
-                    if (plugin.Length == 0) Fail(file, pointer + "/plugin", "新条目必须声明 plugin。");
-                    if (!value.TryGetProperty("config", out _)) Fail(file, pointer + "/config", "新条目必须声明 config，可为空对象。");
-                    current = new WorkingEntry(id, scope, plugin, new JsonObject(), index, file, pointer + "/config");
-                    if (scope != "global" && _entries.TryGetValue("global/" + id, out var global)) Protect(global, plugin, false, file, pointer);
+                    if (owningScope is not null && _entries.TryGetValue("global/" + id, out var inherited))
+                    {
+                        current = new WorkingEntry(id, scope, inherited.Plugin, inherited.Config.DeepClone().AsObject(), index, inherited.ConfigFile, inherited.ConfigPointer)
+                        { Disabled = inherited.Disabled, Note = inherited.Note };
+                    }
+                    else
+                    {
+                        if (plugin.Length == 0) Fail(file, pointer + "/plugin", "新条目必须声明 plugin。");
+                        if (!value.TryGetProperty("config", out _)) Fail(file, pointer + "/config", "新条目必须声明 config，可为空对象。");
+                        current = new WorkingEntry(id, scope, plugin, new JsonObject(), index, file, pointer + "/config");
+                    }
                 }
                 var disabled = value.TryGetProperty("disabled", out var flag) ? flag.GetBoolean() : current.Disabled;
                 Protect(current, plugin.Length == 0 ? current.Plugin : plugin, disabled, file, pointer);
+                if (scope != "global" && _entries.TryGetValue("global/" + id, out var global))
+                    Protect(global, plugin.Length == 0 ? current.Plugin : plugin, disabled, file, pointer);
                 if (plugin.Length > 0) current.Plugin = plugin;
                 if (value.TryGetProperty("config", out var config))
                 {

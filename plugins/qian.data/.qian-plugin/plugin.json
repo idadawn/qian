@@ -12,7 +12,9 @@
     "category": "platform"
   },
   "inject": [],
-  "provides": [],
+  "provides": [
+    "Data"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -23,5 +25,19 @@
     "global",
     "tenant"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Data.DataPlugin, Qian.Data"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry"
+    ],
+    "tools": []
+  }
 }

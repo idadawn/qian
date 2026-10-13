@@ -6,6 +6,7 @@
 
 | 服务键 | Provider 条目 | Consumer 条目 |
 |---|---|---|
+| ` Data ` | ` global/data ` |  |
 
 ```mermaid
 flowchart LR
@@ -30,5 +31,7 @@ flowchart LR
   n18["global/realtime"]
   n19["global/entitlement"]
   n20["global/shell"]
+  s0(("Data"))
+  n7 --> s0
 ```
 

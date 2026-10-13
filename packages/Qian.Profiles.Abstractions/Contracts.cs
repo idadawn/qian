@@ -1,11 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Surfaces.Abstractions;
 
 namespace Qian.Profiles.Abstractions;
 
-/// <summary>启动期装配输入，不处理在线租户数据库 patch。</summary>
+/// <summary>文件装配输入；宿主可附加已读取的 scope patch，装配器不访问数据库。</summary>
 public sealed class ProfileLoadOptions
 {
     /// <summary>项目根目录。</summary>
@@ -20,7 +21,21 @@ public sealed class ProfileLoadOptions
     public bool IncludeHomePatch { get; init; } = true;
     /// <summary>额外本地组件根目录，支持包里的 qian 内容目录。</summary>
     public IReadOnlyList<string> ComponentDirectories { get; init; } = [];
+    /// <summary>在文件层之后合入的数据库 scope 层；调用方负责租户归属、权限与权益。</summary>
+    public IReadOnlyList<ScopePatchLayer> ScopePatches { get; init; } = [];
 }
+/// <summary>一份同 scope 的 patch/v2 数组；不保存权限结果，也不从租户输入推断归属。</summary>
+public sealed class ScopePatchLayer
+{
+    /// <summary>仅接受 tenant / app / agent-session，不能覆盖 global。</summary>
+    public required ScopeKey Scope { get; init; }
+    /// <summary>用于诊断的相对来源名，不读取对应文件。</summary>
+    public required string Source { get; init; }
+    /// <summary>与文件 patch 相同的数组；缺省 scope 使用本层声明的 scope。</summary>
+    public required JsonElement Patches { get; init; }
+}
+/// <summary>已禁用条目的定位信息，供宿主隐藏同名全局注册；配置内容不进入该描述。</summary>
+public sealed record DisabledProfileEntry(string Id, string Scope, string Plugin, int Layer, string SourceLocation);
 /// <summary>来源层，后层覆盖前层。</summary>
 public sealed record ProfileLayer(int Index, string Kind, string Path, [property: JsonPropertyName("ref")] string? Reference, bool Present);
 /// <summary>整棵插件树的一条可复制 patch 记录；诊断辅助成员不输出。</summary>
@@ -35,7 +50,11 @@ public sealed record ResolvedProfileEntry(string Id, string Scope, string Plugin
 /// <summary>解析与验证后的静态装配，不意味着业务 Provider 已启动。</summary>
 public sealed record ProfileSnapshot(
     [property: JsonPropertyName("profile")] string Name, IReadOnlyList<ProfileLayer> Layers,
-    IReadOnlyList<ResolvedProfileEntry> Entries, IReadOnlyList<string> MountOrder);
+    IReadOnlyList<ResolvedProfileEntry> Entries, IReadOnlyList<string> MountOrder)
+{
+    /// <summary>装载器须为 scope 禁用项安装 restriction，避免回退到同名全局注册。</summary>
+    [JsonIgnore] public IReadOnlyList<DisabledProfileEntry> DisabledEntries { get; init; } = [];
+}
 /// <summary>完整校验结果；错误时不返回可启动快照。</summary>
 public sealed record ProfileLoadResult(ProfileSnapshot? Snapshot, IReadOnlyList<SurfaceDiagnostic> Diagnostics)
 {

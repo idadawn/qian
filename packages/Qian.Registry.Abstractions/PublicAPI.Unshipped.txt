@@ -1,0 +1,75 @@
+#nullable enable
+Qian.Registry.RegistryErrors
+Qian.Registry.ScopePatchSnapshot
+Qian.Registry.ScopePatchSnapshot.<Clone>$() -> Qian.Registry.ScopePatchSnapshot!
+Qian.Registry.ScopePatchSnapshot.Deconstruct(out string! TenantId, out Qian.Runtime.ScopeKey Scope, out string! EntryId, out System.Text.Json.JsonElement Patch, out int Revision, out string! UpdatedBy, out System.DateTimeOffset UpdatedAt) -> void
+Qian.Registry.ScopePatchSnapshot.EntryId.get -> string!
+Qian.Registry.ScopePatchSnapshot.EntryId.init -> void
+Qian.Registry.ScopePatchSnapshot.Equals(Qian.Registry.ScopePatchSnapshot? other) -> bool
+Qian.Registry.ScopePatchSnapshot.Patch.get -> System.Text.Json.JsonElement
+Qian.Registry.ScopePatchSnapshot.Patch.init -> void
+Qian.Registry.ScopePatchSnapshot.Revision.get -> int
+Qian.Registry.ScopePatchSnapshot.Revision.init -> void
+Qian.Registry.ScopePatchSnapshot.Scope.get -> Qian.Runtime.ScopeKey
+Qian.Registry.ScopePatchSnapshot.Scope.init -> void
+Qian.Registry.ScopePatchSnapshot.ScopePatchSnapshot(string! TenantId, Qian.Runtime.ScopeKey Scope, string! EntryId, System.Text.Json.JsonElement Patch, int Revision, string! UpdatedBy, System.DateTimeOffset UpdatedAt) -> void
+Qian.Registry.ScopePatchSnapshot.TenantId.get -> string!
+Qian.Registry.ScopePatchSnapshot.TenantId.init -> void
+Qian.Registry.ScopePatchSnapshot.UpdatedAt.get -> System.DateTimeOffset
+Qian.Registry.ScopePatchSnapshot.UpdatedAt.init -> void
+Qian.Registry.ScopePatchSnapshot.UpdatedBy.get -> string!
+Qian.Registry.ScopePatchSnapshot.UpdatedBy.init -> void
+override Qian.Registry.ScopePatchSnapshot.Equals(object? obj) -> bool
+override Qian.Registry.ScopePatchSnapshot.GetHashCode() -> int
+override Qian.Registry.ScopePatchSnapshot.ToString() -> string!
+static Qian.Registry.RegistryErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!
+static Qian.Registry.ScopePatchSnapshot.operator !=(Qian.Registry.ScopePatchSnapshot? left, Qian.Registry.ScopePatchSnapshot? right) -> bool
+static Qian.Registry.ScopePatchSnapshot.operator ==(Qian.Registry.ScopePatchSnapshot? left, Qian.Registry.ScopePatchSnapshot? right) -> bool
+static readonly Qian.Registry.RegistryErrors.DependencyPending -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Registry.RegistryErrors.Invalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Registry.RegistryErrors.NotEntitled -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Registry.RegistryErrors.NotMounted -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Registry.RegistryErrors.Restricted -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Registry.RegistryErrors.RevisionConflict -> Qian.Runtime.Errors.ErrorCode!
+Qian.Registry.IRegistryService
+Qian.Registry.IRegistryService.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Qian.Registry.IRegistryService.StartAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Registry.IRegistryService.SynchronizeAsync(Qian.Runtime.ScopeKey scope, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Registry.RegistryDefinition
+static Qian.Registry.RegistryDefinition.Registry(this Qian.Runtime.IPluginContext! context) -> Qian.Registry.IRegistryService!
+static readonly Qian.Registry.RegistryDefinition.Key -> Qian.Runtime.ServiceKey
+Qian.Registry.IRegistryService.GetInstalledComponents() -> System.Collections.Generic.IReadOnlyList<Qian.Registry.InstalledComponentMetadata!>!
+Qian.Registry.InstalledComponentMetadata
+Qian.Registry.InstalledComponentMetadata.InstalledComponentMetadata(string! pluginId, string! version, System.Text.Json.JsonElement manifest, System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>! metadata) -> void
+Qian.Registry.InstalledComponentMetadata.Manifest.get -> System.Text.Json.JsonElement
+Qian.Registry.InstalledComponentMetadata.Metadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>!
+Qian.Registry.InstalledComponentMetadata.PluginId.get -> string!
+Qian.Registry.InstalledComponentMetadata.Version.get -> string!
+override Qian.Registry.InstalledComponentMetadata.ToString() -> string!
+Qian.Registry.IRegistryService.GetScopeEntriesAsync(Qian.Runtime.ScopeKey scope, Qian.Runtime.ServiceKey key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryScopeEntry!>!>
+Qian.Registry.RegistryScopeEntry
+Qian.Registry.RegistryScopeEntry.<Clone>$() -> Qian.Registry.RegistryScopeEntry!
+Qian.Registry.RegistryScopeEntry.Deconstruct(out string! EntryId, out string! PluginId, out string! Version, out Qian.Runtime.ScopeKey Scope, out Qian.Runtime.ServiceKey Key, out string! Name) -> void
+Qian.Registry.RegistryScopeEntry.EntryId.get -> string!
+Qian.Registry.RegistryScopeEntry.EntryId.init -> void
+Qian.Registry.RegistryScopeEntry.Equals(Qian.Registry.RegistryScopeEntry? other) -> bool
+Qian.Registry.RegistryScopeEntry.Key.get -> Qian.Runtime.ServiceKey
+Qian.Registry.RegistryScopeEntry.Key.init -> void
+Qian.Registry.RegistryScopeEntry.Name.get -> string!
+Qian.Registry.RegistryScopeEntry.Name.init -> void
+Qian.Registry.RegistryScopeEntry.PluginId.get -> string!
+Qian.Registry.RegistryScopeEntry.PluginId.init -> void
+Qian.Registry.RegistryScopeEntry.RegistryScopeEntry(string! EntryId, string! PluginId, string! Version, Qian.Runtime.ScopeKey Scope, Qian.Runtime.ServiceKey Key, string! Name) -> void
+Qian.Registry.RegistryScopeEntry.Scope.get -> Qian.Runtime.ScopeKey
+Qian.Registry.RegistryScopeEntry.Scope.init -> void
+Qian.Registry.RegistryScopeEntry.Version.get -> string!
+Qian.Registry.RegistryScopeEntry.Version.init -> void
+override Qian.Registry.RegistryScopeEntry.Equals(object? obj) -> bool
+override Qian.Registry.RegistryScopeEntry.GetHashCode() -> int
+override Qian.Registry.RegistryScopeEntry.ToString() -> string!
+static Qian.Registry.RegistryScopeEntry.operator !=(Qian.Registry.RegistryScopeEntry? left, Qian.Registry.RegistryScopeEntry? right) -> bool
+static Qian.Registry.RegistryScopeEntry.operator ==(Qian.Registry.RegistryScopeEntry? left, Qian.Registry.RegistryScopeEntry? right) -> bool
+Qian.Registry.InstalledComponentMetadata.ArtifactDigest.get -> string?
+Qian.Registry.InstalledComponentMetadata.FilePaths.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Registry.InstalledComponentMetadata.InstalledComponentMetadata(string! pluginId, string! version, System.Text.Json.JsonElement manifest, System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>! metadata, string? artifactDigest, System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files) -> void
+Qian.Registry.InstalledComponentMetadata.ReadFile(string! path) -> byte[]?

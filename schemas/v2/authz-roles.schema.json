@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/authz/roles/v1",
+  "type": "array",
+  "maxItems": 256,
+  "items": {
+    "type": "object",
+    "required": ["role", "grant"],
+    "additionalProperties": false,
+    "properties": {
+      "role": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)*$"},
+      "grant": {"type": "array", "maxItems": 2048, "uniqueItems": true, "items": {"type": "string"}}
+    }
+  }
+}

@@ -19,8 +19,12 @@ public static class AuthzErrors
     public static readonly ErrorCode PartialSuccess = Business("PARTIAL_SUCCESS", 409,
         "部分操作完成", "部分操作已完成；请检查逐项结果后再处理剩余项。",
         "Partially completed", "Some operations completed; inspect the item results before processing the remaining items.");
+    /// <summary>权限声明字段无效，放在 INPUT_INVALID 的 errors 中。</summary>
+    public static readonly ErrorCode MetadataInvalid = ErrorCode.Field("AUTHZ_METADATA_INVALID", "qian.authz",
+        new Dictionary<string, string> { ["zh-CN"] = "权限元数据无效", ["en"] = "Invalid authorization metadata" },
+        new Dictionary<string, string> { ["zh-CN"] = "{reason}", ["en"] = "{reason}" });
     /// <summary>可登记和导出的完整错误词汇。</summary>
-    public static IReadOnlyList<ErrorCode> All { get; } = Array.AsReadOnly(new[] { Denied, ConstraintMutex, CardinalityUserLimit, PartialSuccess });
+    public static IReadOnlyList<ErrorCode> All { get; } = Array.AsReadOnly(new[] { Denied, ConstraintMutex, CardinalityUserLimit, PartialSuccess, MetadataInvalid });
 
     /// <summary>成组登记本组件错误码；失败撤销已登记项，返回可交给 ctx.Effect 的幂等释放句柄。</summary>
     public static IDisposable Register(ErrorCatalog catalog)

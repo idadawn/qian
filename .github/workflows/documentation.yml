@@ -28,6 +28,7 @@ jobs:
           version: 12.9.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter qian... build
+      - run: pnpm --filter ./packages/qian-runtime build
       - name: 语义绑定及错误反例
         run: dotnet run --project tests/Qian.Docs.Tests -c Release
       - name: CLI 与文档模板验收

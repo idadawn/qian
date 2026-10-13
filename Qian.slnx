@@ -1,6 +1,17 @@
 <Solution>
   <Folder Name="/packages/">
+    <Project Path="packages/Qian.Capabilities.Abstractions/Qian.Capabilities.Abstractions.csproj" />
+    <Project Path="packages/Qian.Capabilities/Qian.Capabilities.csproj" />
+    <Project Path="packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
+    <Project Path="packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" />
+    <Project Path="packages/Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <Project Path="packages/Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" />
+    <Project Path="packages/Qian.Audit/Qian.Audit.csproj" />
+    <Project Path="packages/Qian.Audit.Abstractions/Qian.Audit.Abstractions.csproj" />
+    <Project Path="packages/Qian.Tenancy.Abstractions/Qian.Tenancy.Abstractions.csproj" />
+    <Project Path="packages/Qian.Tenancy/Qian.Tenancy.csproj" />
     <Project Path="packages/Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
+    <Project Path="packages/Qian.Authz/Qian.Authz.csproj" />
     <Project Path="packages/Qian.Docs.Abstractions/Qian.Docs.Abstractions.csproj" />
     <Project Path="packages/Qian.Docs/Qian.Docs.csproj" />
     <Project Path="packages/Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
@@ -12,23 +23,32 @@
     <Project Path="packages/Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
     <Project Path="packages/Qian.Profiles.Abstractions/Qian.Profiles.Abstractions.csproj" />
     <Project Path="packages/Qian.Profiles/Qian.Profiles.csproj" />
+    <Project Path="packages/Qian.Registry.Abstractions/Qian.Registry.Abstractions.csproj" />
+    <Project Path="packages/Qian.Registry/Qian.Registry.csproj" />
     <Project Path="packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
     <Project Path="packages/Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
     <Project Path="packages/Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
     <Project Path="packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+    <Project Path="packages/Qian.Surfaces.Hosting/Qian.Surfaces.Hosting.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Qian.Sample.Crm/Qian.Sample.Crm.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Qian.Plugin.Sdk.Tests/Qian.Plugin.Sdk.Tests.csproj" />
+    <Project Path="tests/Qian.Audit.Tests/Qian.Audit.Tests.csproj" />
+    <Project Path="tests/Qian.Tenancy.Tests/Qian.Tenancy.Tests.csproj" />
     <Project Path="tests/Qian.Authz.Abstractions.Tests/Qian.Authz.Abstractions.Tests.csproj" />
+    <Project Path="tests/Qian.Authz.Tests/Qian.Authz.Tests.csproj" />
     <Project Path="tests/Qian.Docs.Tests/Qian.Docs.Tests.csproj" />
     <Project Path="tests/Qian.Profiles.Tests/Qian.Profiles.Tests.csproj" />
     <Project Path="tests/Qian.Config.Secrets.Tests/Qian.Config.Secrets.Tests.csproj" />
+    <Project Path="tests/Qian.Capabilities.Tests/Qian.Capabilities.Tests.csproj" />
     <Project Path="tests/Qian.Config.Tests/Qian.Config.Tests.csproj" />
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Abstractions.Tests/Qian.Identity.Abstractions.Tests.csproj" />
+    <Project Path="tests/Qian.Registry.Tests/Qian.Registry.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Errors.Tests/Qian.Runtime.Errors.Tests.csproj" />
     <Project Path="tests/Qian.Sample.Crm.Tests/Qian.Sample.Crm.Tests.csproj" />
     <Project Path="tests/Qian.Surfaces.Tests/Qian.Surfaces.Tests.csproj" />
@@ -36,6 +56,7 @@
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Qian.Plugin.Tool/Qian.Plugin.Tool.csproj" />
     <Project Path="tools/Qian.Secrets.Tool/Qian.Secrets.Tool.csproj" />
     <Project Path="tools/Qian.Docs.Tool/Qian.Docs.Tool.csproj" />
     <Project Path="tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj" />

@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { validateComponent, computeToolHash } from '../dist/index.js';
+import { validateComponent, computeToolHash, HotReloadSurfacePlugin } from '../dist/index.js';
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
 const cases = JSON.parse(readFileSync(path.join(repo, 'tck/surfaces/cases.json'), 'utf8'));
 const normalize = result => ({ valid: result.isValid, documents: result.component?.documents.map(d => ({kind:d.kind,name:d.name,file:d.file,data:d.data,body:d.body})) ?? [], diagnostics: result.diagnostics.map(d => ({ file: d.file, line: d.line, severity: d.severity, pointer: d.error.pointer, code: d.error.errors[0].code })) });
@@ -20,6 +20,8 @@ test('共享正反例与结构化错误', () => {
       for (const [link] of Object.entries(entry.symlinks ?? {})) { const outside = path.join(temporary, 'outside'); mkdirSync(outside); symlinkSync(outside, path.join(root, link), 'dir'); }
       const result = validateComponent(root, { ...entry.options, traceId: '0'.repeat(32) });
       assert.equal(result.isValid, entry.valid, entry.name + ': ' + JSON.stringify(normalize(result)));
+      if(['hooks-shell-command','command-server-shell','command-unapproved-shell'].includes(entry.name))assert.throws(()=>new HotReloadSurfacePlugin(root,entry.options),/INPUT_INVALID/);
+      if(entry.name==='all-surfaces')assert.doesNotThrow(()=>new HotReloadSurfacePlugin(root,entry.options));
       for (const expected of entry.expected) assert.ok(result.diagnostics.some(d => d.file === expected.file && d.error.pointer === expected.pointer && d.error.errors[0].code === expected.code), entry.name + ': ' + JSON.stringify(normalize(result)));
       for (const d of result.diagnostics) { assert.ok(d.line >= 1); assert.match(d.error.pointer, /^[^#\s]*#(?:\/.*)?$/); assert.equal(d.error.code, 'INPUT_INVALID'); }
       report[entry.name] = normalize(result);

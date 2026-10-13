@@ -11,10 +11,12 @@ const obj = (value: JsonValue | undefined): Obj => typeof value === 'object' && 
 const str = (value: JsonValue | undefined): string => typeof value === 'string' ? value : '';
 const strings = (value: JsonValue | undefined): string[] => Array.isArray(value) ? value.map(v => String(v)) : [];
 const escape = (value: string): string => value.replaceAll('~','~0').replaceAll('/','~1');
-export interface ProfileOptions { workingDirectory: string; profile?: string; patches?: readonly string[]; homeDirectory?: string; includeHomePatch?: boolean; componentDirectories?: readonly string[] }
+export interface ProfileOptions { workingDirectory: string; profile?: string; patches?: readonly string[]; homeDirectory?: string; includeHomePatch?: boolean; componentDirectories?: readonly string[]; scopePatches?: readonly ScopePatchLayer[] }
 export interface ProfileLayer {index: number; kind: string; path: string; ref: string | null; present: boolean}
 export interface ProfileEntry {id: string; scope: string; plugin: string; config: JsonValue; layer: number; inject: string[]; provides: string[]; note?: string}
-export interface ProfileSnapshot {profile: string; layers: ProfileLayer[]; entries: ProfileEntry[]; mountOrder: string[]}
+export interface ScopePatchLayer {scope: {kind: string; id: string}; source: string; patches: JsonValue}
+export interface DisabledProfileEntry {id: string; scope: string; plugin: string; layer: number; sourceLocation: string}
+export interface ProfileSnapshot {disabledEntries: DisabledProfileEntry[];profile: string; layers: ProfileLayer[]; entries: ProfileEntry[]; mountOrder: string[]}
 export interface ProfileResult {snapshot: ProfileSnapshot | null; diagnostics: SurfaceDiagnostic[]; isValid: boolean}
 interface Component {id:string;version:string;directory:string;manifest:Obj}
 interface Working {id:string;scope:string;plugin:string;config:Obj;layer:number;disabled:boolean;note?:string;configFile:string;configPointer:string;sourceFile:string;sourcePointer:string}
@@ -50,8 +52,11 @@ class Composition {
       if(this.definition.patch)this.layer('profile-patch',this.within(path.dirname(this.profileFile),str(this.definition.patch)),null,true);
       if(this.options.includeHomePatch!==false){const home=this.options.homeDirectory??process.env.QIAN_HOME??path.join(os.homedir(),'.qian');this.layer('home-patch',path.join(path.resolve(this.root,home),'qian.patch.yml'),null,false);}
       for(const patch of this.options.patches??[])this.layer('overlay',path.resolve(this.root,patch),null,true);
+      for(const patch of this.options.scopePatches??[])this.scopeLayer(patch);
       const entries=this.resolveEntries();
-      return{snapshot:{profile:this.profile,layers:this.layers,entries,mountOrder:this.order(entries)},diagnostics:this.diagnostics,isValid:true};
+      const snapshot={profile:this.profile,layers:this.layers,entries,mountOrder:this.order(entries)} as ProfileSnapshot;
+      Object.defineProperty(snapshot,'disabledEntries',{value:[...this.entries.values()].filter(e=>e.disabled).map(e=>({id:e.id,scope:e.scope,plugin:e.plugin,layer:e.layer,sourceLocation:this.display(e.sourceFile)+'#'+e.sourcePointer})),enumerable:false});
+      return{snapshot,diagnostics:this.diagnostics,isValid:true};
     }catch(error){if(!(error instanceof CompositionFailed))this.error(this.profileFile||'qian.profile.yml','','profile 或组件内容无法解析。');return{snapshot:null,diagnostics:this.diagnostics,isValid:false};}
   }
   private read(file:string,schema:string):JsonValue {
@@ -91,19 +96,43 @@ class Composition {
   }
   private layer(kind:string,file:string,reference:string|null,required:boolean):void {
     const index=this.layers.length,present=existsSync(file);this.layers.push({index,kind,path:this.display(file),ref:reference,present});if(!present&&!required)return;
-    const patch=this.read(file,'patch') as JsonValue[],seen=new Set<string>();
+    this.addEntries(this.read(file,'patch') as JsonValue[],file,index);
+  }
+  private scopeLayer(layer:ScopePatchLayer):void{
+    const {scope}=layer;
+    if(!['tenant','app','agent-session'].includes(scope.kind)||!scope.id||/[\s\p{Cc}:]/u.test(scope.id))this.fail('registry/scope-patches.json','/scope','数据库层必须声明合法的非全局 scope。');
+    const file=layer.source;
+    if(!file?.trim()||path.isAbsolute(file)||file.split(/[/\\]/).includes('..')||/\p{Cc}/u.test(file))this.fail('registry/scope-patches.json','','数据库层来源必须为安全的相对名称。');
+    if(!Array.isArray(layer.patches))this.fail(file,'','scope patch 必须为数组。');
+    const raw=JSON.stringify(layer.patches);
+    if(Buffer.byteLength(raw)>1_048_576)this.fail(file,'','scope patch 超过大小限制。');
+    const parsed=parseSurface(this.display(file),raw,false,this.trace);this.diagnostics.push(...parsed.diagnostics);
+    if(!parsed.syntax||parsed.diagnostics.some(d=>d.severity==='error'))throw new CompositionFailed();
+    this.sources.set(this.display(file),parsed.syntax);
+    const errors=validateSurfaceSchema('patch',this.display(file),parsed.syntax.data,this.trace,parsed.syntax.lines);
+    this.diagnostics.push(...errors);if(errors.some(d=>d.severity==='error'))throw new CompositionFailed();
+    const index=this.layers.length;this.layers.push({index,kind:'scope-patch',path:this.display(file),ref:null,present:true});
+    this.addEntries(parsed.syntax.data as JsonValue[],file,index,scope.kind+':'+scope.id);
+  }
+  private addEntries(patch:JsonValue[],file:string,index:number,owningScope?:string):void{
+    const seen=new Set<string>();
     patch.forEach((value,position)=>{
-      const entry=obj(value),pointer='/'+position,id=str(entry.id),scope=str(entry.scope)||'global',key=scope+'/'+id,plugin=str(entry.plugin);
+      const entry=obj(value),pointer='/'+position,id=str(entry.id),scope=str(entry.scope)||owningScope||'global',key=scope+'/'+id,plugin=str(entry.plugin);
+      if(owningScope&&scope!==owningScope)this.fail(file,pointer+'/scope','patch 不能改写本层所属 scope。');
       if(seen.has(key))this.fail(file,pointer+'/id','同一层不能重复声明同一 scope/id。');seen.add(key);
       let current=this.entries.get(key);
       if(!current){
-        if(!plugin)this.fail(file,pointer+'/plugin','新条目必须声明 plugin。');
-        if(!Object.hasOwn(entry,'config'))this.fail(file,pointer+'/config','新条目必须声明 config，可为空对象。');
-        current={id,scope,plugin,config:{},layer:index,disabled:false,configFile:file,configPointer:pointer+'/config',sourceFile:file,sourcePointer:pointer};
-        const global=this.entries.get('global/'+id);if(scope!=='global'&&global)this.protect(global,plugin,false,file,pointer);
+        const inherited=owningScope?this.entries.get('global/'+id):undefined;
+        if(inherited)current={...inherited,id,scope,config:structuredClone(inherited.config),layer:index};
+        else{
+          if(!plugin)this.fail(file,pointer+'/plugin','新条目必须声明 plugin。');
+          if(!Object.hasOwn(entry,'config'))this.fail(file,pointer+'/config','新条目必须声明 config，可为空对象。');
+          current={id,scope,plugin,config:{},layer:index,disabled:false,configFile:file,configPointer:pointer+'/config',sourceFile:file,sourcePointer:pointer};
+        }
       }
       const disabled=typeof entry.disabled==='boolean'?entry.disabled:current.disabled;
       this.protect(current,plugin||current.plugin,disabled,file,pointer);
+      const global=this.entries.get('global/'+id);if(scope!=='global'&&global)this.protect(global,plugin||current.plugin,disabled,file,pointer);
       if(plugin)current.plugin=plugin;
       if(Object.hasOwn(entry,'config')){current.config=structuredClone(obj(entry.config));current.configFile=file;current.configPointer=pointer+'/config';}
       current.disabled=disabled;current.layer=index;current.sourceFile=file;current.sourcePointer=pointer;

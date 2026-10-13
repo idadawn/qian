@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>平台注册表制品目录、租户 scope patch 与 PostgreSQL 持久化。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Registry.Abstractions/Qian.Registry.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Profiles.Abstractions/Qian.Profiles.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Registry.Tests" /><InternalsVisibleTo Include="Qian.Sample.Crm.Tests" /></ItemGroup>
+</Project>

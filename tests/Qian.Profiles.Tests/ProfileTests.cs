@@ -37,7 +37,9 @@ public sealed class ProfileTests
             }
             if (item.TryGetProperty("warnings", out var warnings)) Assert.Equal(warnings.GetInt32(), result.Diagnostics.Count(d => d.Severity == "warning"));
             Assert.DoesNotContain("DO-NOT-LEAK", JsonSerializer.Serialize(result, Json), StringComparison.Ordinal);
+            if (item.TryGetProperty("disabledCount", out var disabledCount)) Assert.Equal(disabledCount.GetInt32(), result.Snapshot!.DisabledEntries.Count);
             var normalized = JsonSerializer.SerializeToNode(result, Json)!;
+            if (item.TryGetProperty("scopePatches", out _)) normalized["disabledEntries"] = JsonSerializer.SerializeToNode(result.Snapshot?.DisabledEntries, Json);
             foreach (var diagnostic in normalized["diagnostics"]!.AsArray())
             {
                 var error = diagnostic!["error"]!.AsObject(); error["trace_id"] = "TRACE";
@@ -137,7 +139,8 @@ public sealed class ProfileTests
                 var target = Path.Combine(Directory, file.Name); System.IO.Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.WriteAllText(target, file.Value.GetString());
             }
             if (item.TryGetProperty("missingHome", out var absent) && absent.GetBoolean()) File.Delete(Path.Combine(Directory, "home/qian.patch.yml"));
-            Options = new ProfileLoadOptions { WorkingDirectory = Directory, Profile = "test", HomeDirectory = "home", IncludeHomePatch = item.GetProperty("home").GetBoolean(), Patches = item.GetProperty("patches").EnumerateArray().Select(v => v.GetString()!).ToArray() };
+            Options = new ProfileLoadOptions { WorkingDirectory = Directory, Profile = "test", HomeDirectory = "home", IncludeHomePatch = item.GetProperty("home").GetBoolean(), Patches = item.GetProperty("patches").EnumerateArray().Select(v => v.GetString()!).ToArray(),
+                ScopePatches = item.TryGetProperty("scopePatches", out var scoped) ? scoped.Deserialize<ScopePatchLayer[]>(Json)! : [] };
         }
         public void Dispose() => System.IO.Directory.Delete(Directory, true);
     }

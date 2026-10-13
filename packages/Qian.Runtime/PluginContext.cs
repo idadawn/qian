@@ -65,9 +65,7 @@ internal sealed partial class PluginContext : IPluginContext, IKeyedServiceProvi
         {
             EnsureOpen();
             var registration = Loader.Provide(this, key, typeof(TService), instance);
-            var disposer = new Disposer(() => Loader.Remove(registration));
-            Effects.Add(() => { disposer.Dispose(); return ValueTask.CompletedTask; });
-            return disposer;
+            return Effects.Track(() => Loader.Remove(registration));
         }
     }
 
