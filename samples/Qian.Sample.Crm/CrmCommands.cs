@@ -9,7 +9,7 @@ using Qian.Runtime.Errors;
 namespace Qian.Sample.Crm;
 
 [Capability("customer.create", typeof(CustomerItem), typeof(CrmCommandJson), Description = "为当前租户创建客户；重复提交同一幂等键会返回原创建结果。",
-    SideEffect = "write", Idempotent = true, RequiredPermission = "qian.sample.crm:customer:write", RequiredScopes = ["crm.write"], ContractVersion = "crm-v1")]
+    SideEffect = "write", Idempotent = true, RequiredPermission = "qian.sample.crm:customer:write", RequiredScopes = ["crm.write"], ContractVersion = "crm-v1", AgentExpose = true)]
 public sealed partial record CreateCustomerCommand(Guid IdempotencyKey, [property: Sensitive] string Name);
 
 internal sealed class CreateCustomerHandler(CommandDataSession<CrmDbContext> work) : IRequestHandler<CreateCustomerCommand, CustomerItem>
@@ -35,11 +35,11 @@ internal sealed class CreateCustomerHandler(CommandDataSession<CrmDbContext> wor
 }
 
 [Capability("customer.list", typeof(CustomerPage), typeof(CrmCommandJson), Description = "分页查看当前租户的客户列表，默认不产生查询审计。",
-    RequiredPermission = "qian.sample.crm:customer:read", RequiredScopes = ["crm.read"], ContractVersion = "crm-v1")]
+    RequiredPermission = "qian.sample.crm:customer:read", RequiredScopes = ["crm.read"], ContractVersion = "crm-v1", AgentExpose = true)]
 public sealed partial record ListCustomersQuery(int Skip = 0, int Take = 100);
 
 [Capability("customer.get", typeof(CustomerItem), typeof(CrmCommandJson), Description = "查看当前租户一个客户的详情，并记录这次详情访问。", Audit = true,
-    RequiredPermission = "qian.sample.crm:customer:read", RequiredScopes = ["crm.read"], ContractVersion = "crm-v1")]
+    RequiredPermission = "qian.sample.crm:customer:read", RequiredScopes = ["crm.read"], ContractVersion = "crm-v1", AgentExpose = true)]
 public sealed partial record GetCustomerQuery(Guid Id);
 
 internal sealed class ListCustomersHandler(CommandDataSession<CrmDbContext> work) : IRequestHandler<ListCustomersQuery, CustomerPage>

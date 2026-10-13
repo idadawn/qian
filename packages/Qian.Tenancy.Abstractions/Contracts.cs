@@ -18,6 +18,8 @@ public interface ITenantDirectory
 {
     /// <summary>按不可变的小写字母数字租户号读取；未知返回 null。</summary>
     ValueTask<TenantDescriptor?> GetAsync(string code, CancellationToken cancellationToken = default);
+    /// <summary>按已验证主体的租户 ID 读取主档；此内部服务端口不构成匿名 HTTP 查询。</summary>
+    ValueTask<TenantDescriptor?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
 /// <summary>租户主档的非敏感投影。</summary>

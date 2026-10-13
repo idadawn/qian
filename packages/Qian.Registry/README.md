@@ -76,3 +76,9 @@ S1-RT-004 仍为 doing：制品验签/发布与修订目录、完整安装准入
 GetScopeEntriesAsync 接受已验证租户的 scope 和服务键，在与重合入相同的串行锁中读取数据库层、完成真实装载，再从 Runtime 的遮蔽/restrict 后注册快照返回已安装且 Ready 的绑定。返回仅含条目、组件、版本、scope、服务键及贡献名，不包含配置或服务对象；坏配置阻断的 scope 返回空视图，管理诊断保留在管理路径。查询另一租户或未经归属验证的 app/session 被拒绝。
 
 GetInstalledComponents 仍是可信安装声明集合：预装未挂载、或已被租户停用的组件可以保留其中，不能据此放行业务入口。SDK HTTP 门禁已用真实 Kestrel、S2S 验签、受限 PG 和运行时验证禁用/未知同为 404、租户 B 不受影响、restrict 交集及中间件漏装/错序不能执行 handler。此证据不关闭完整 platform、权限管理或提示词/能力三处过滤验收。
+
+## 原始制品文件的预装快照
+
+`RegistryComponentBinding.FromArtifact` 接收原始文件字节与 D4 目录摘要，先复制内容、核验摘要及 platform/server 静态表面，再核对实际 Provider 的身份与服务声明。它把不可变文件快照交给 `InstalledComponentMetadata`；`FilePaths` 只列组件内路径，`ReadFile` 每次返回独立副本，不重新读取宿主目录或网络。已有只传静态校验结果的构造方式保留，但不持有文件快照或制品摘要，不能用于声明契约文件的组件。
+
+该快照让 Capabilities 从完整版本制品读取契约基线，避免拿当前用户过滤后的接口文档、可变工作目录或 Submitted 候选记录替代基线。摘要与静态校验仍不代表签名验证、发布、权益或安装授权已经完成。

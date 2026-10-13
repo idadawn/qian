@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/packages/">
+    <Project Path="packages/Qian.Capabilities.Abstractions/Qian.Capabilities.Abstractions.csproj" />
+    <Project Path="packages/Qian.Capabilities/Qian.Capabilities.csproj" />
+    <Project Path="packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
     <Project Path="packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" />
     <Project Path="packages/Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
     <Project Path="packages/Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" />
@@ -39,6 +42,7 @@
     <Project Path="tests/Qian.Docs.Tests/Qian.Docs.Tests.csproj" />
     <Project Path="tests/Qian.Profiles.Tests/Qian.Profiles.Tests.csproj" />
     <Project Path="tests/Qian.Config.Secrets.Tests/Qian.Config.Secrets.Tests.csproj" />
+    <Project Path="tests/Qian.Capabilities.Tests/Qian.Capabilities.Tests.csproj" />
     <Project Path="tests/Qian.Config.Tests/Qian.Config.Tests.csproj" />
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />

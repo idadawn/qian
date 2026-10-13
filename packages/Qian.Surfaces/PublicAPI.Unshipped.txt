@@ -12,3 +12,6 @@ Qian.Surfaces.DeclarativeSurfacePlugin.Provides.get -> System.Collections.Generi
 static Qian.Surfaces.ToolContractHash.Compute(System.Text.Json.JsonElement tool) -> string!
 Qian.Surfaces.DeclarativeSurfacePlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Qian.Surfaces.SurfaceValidator.ValidateMarketplace(string! file, string! content, string? traceId = null) -> Qian.Surfaces.Abstractions.MarketplaceValidationResult!
+Qian.Surfaces.ToolContractHasher
+Qian.Surfaces.ToolContractHasher.Compute(System.Text.Json.JsonElement tool) -> string!
+Qian.Surfaces.ToolContractHasher.ToolContractHasher() -> void

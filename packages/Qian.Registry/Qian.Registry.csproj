@@ -7,5 +7,5 @@
     <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
-  <ItemGroup><InternalsVisibleTo Include="Qian.Registry.Tests" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Registry.Tests" /><InternalsVisibleTo Include="Qian.Sample.Crm.Tests" /></ItemGroup>
 </Project>

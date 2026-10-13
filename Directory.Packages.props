@@ -47,6 +47,8 @@
   <ItemGroup Label="Data">
     <PackageVersion Include="Grpc.AspNetCore.Server" Version="2.67.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.67.0" />
+    <PackageVersion Include="Grpc.Reflection" Version="2.67.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
     <PackageVersion Include="Kun.MultiTenancy" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.EntityFrameworkCore" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.MultiTenancy.EntityFrameworkCore" Version="[$(KunVersion)]" />
@@ -66,6 +68,7 @@
     <PackageVersion Include="Testcontainers.RabbitMq" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="4.15.0" />
     <!-- 契约测试：JSON Schema 2020-12 校验（contracts/v0），ASP.NET Core 内存宿主。 -->
+    <PackageVersion Include="Microsoft.OpenApi" Version="3.10.2" />
     <PackageVersion Include="JsonSchema.Net" Version="9.4.0" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.12" />
   </ItemGroup>

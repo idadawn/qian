@@ -27,6 +27,19 @@ public sealed class RegistryComponentBinding
         Metadata = new InstalledComponentMetadata(component.Id, definition.Entry.Version, manifest,
             component.Documents.Where(document => document.Kind == "metadata").ToDictionary(document => document.File, document => document.Data, StringComparer.Ordinal));
     }
+    private RegistryComponentBinding(PluginDefinition definition, RegistryArtifactContent artifact)
+        : this(definition, new SurfaceValidationResult(artifact.Component, []))
+    {
+        Metadata = new InstalledComponentMetadata(Metadata.PluginId, Metadata.Version, Metadata.Manifest, Metadata.Metadata, artifact.Digest, artifact.CopyFiles());
+    }
+    /// <summary>从已获取的原始制品字节核验目录摘要、静态表面与实际 Provider，再捕获独立文件快照；不代替发布签名或安装授权。</summary>
+    public static RegistryComponentBinding FromArtifact(PluginDefinition definition, IReadOnlyDictionary<string, ReadOnlyMemory<byte>> files,
+        string expectedDigest, ISurfaceValidator validator, SurfaceValidationOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.Profile != "platform" || options.ExecutionPlane != "server") throw new ArgumentException("平台绑定必须使用 server 静态校验。", nameof(options));
+        return new RegistryComponentBinding(definition, RegistryArtifactContent.Read(files, expectedDigest, validator, options));
+    }
     /// <summary>交给同一宿主装载器的预装定义；尚未挂载时不会因此成为 Ready。</summary>
     public PluginDefinition Definition { get; }
     /// <summary>只读声明快照；不含候选制品的发布状态。</summary>

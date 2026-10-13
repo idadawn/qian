@@ -69,3 +69,7 @@ override Qian.Registry.RegistryScopeEntry.GetHashCode() -> int
 override Qian.Registry.RegistryScopeEntry.ToString() -> string!
 static Qian.Registry.RegistryScopeEntry.operator !=(Qian.Registry.RegistryScopeEntry? left, Qian.Registry.RegistryScopeEntry? right) -> bool
 static Qian.Registry.RegistryScopeEntry.operator ==(Qian.Registry.RegistryScopeEntry? left, Qian.Registry.RegistryScopeEntry? right) -> bool
+Qian.Registry.InstalledComponentMetadata.ArtifactDigest.get -> string?
+Qian.Registry.InstalledComponentMetadata.FilePaths.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Registry.InstalledComponentMetadata.InstalledComponentMetadata(string! pluginId, string! version, System.Text.Json.JsonElement manifest, System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>! metadata, string? artifactDigest, System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files) -> void
+Qian.Registry.InstalledComponentMetadata.ReadFile(string! path) -> byte[]?

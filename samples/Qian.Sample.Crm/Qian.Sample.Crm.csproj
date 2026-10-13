@@ -17,4 +17,5 @@
     <EmbeddedResource Include="metadata/*.json" LogicalName="crm.metadata.%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup><InternalsVisibleTo Include="Qian.Sample.Crm.Tests" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../../packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" /></ItemGroup>
 </Project>

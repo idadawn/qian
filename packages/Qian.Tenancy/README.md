@@ -35,3 +35,5 @@ TenantGrpcClientInterceptor 从当前上下文为四类 RPC 写入 tenant_id，�
 ## 命令执行入口
 
 TenancyPlugin 已在 SDK 的真实 command/dispatching 上登记租户策略，按已验证主体的租户 UUID 查询主档，只有 active/trial 可进入业务；pending/grace/suspended 和未知租户拒绝。此处不实施租户激活或到期调度，不代替尚未完成的生命周期和身份会话吊销。真实 CRM 命令已覆盖冻结拒绝及双租户并发。
+
+能力目录可经 ITenantDirectory.GetByIdAsync 读取已验证主体的租户主档，复用命令策略的 active/trial 状态边界；该内部端口未增加匿名查询或管理写接口。

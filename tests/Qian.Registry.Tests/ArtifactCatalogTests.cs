@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Qian.Data;
 using Qian.Runtime.Errors;
+using Qian.Runtime;
 using Qian.Surfaces;
 using Qian.Surfaces.Abstractions;
 
@@ -14,6 +15,27 @@ namespace Qian.Registry.Tests;
 
 public sealed partial class PatchPersistenceTests
 {
+    [Fact]
+    public void 制品绑定保留摘要核验后的文件副本_源字节与读取结果均不能反向修改()
+    {
+        var (files, digest, _) = ArtifactFixture();
+        var validator = new SurfaceValidator();
+        var content = RegistryArtifactContent.Read(files, digest, validator, ArtifactOptions);
+        var surfaces = new DeclarativeSurfacePlugin(new SurfaceValidationResult(content.Component, []));
+        var definition = new PluginDefinition(new PluginEntry("catalog", content.Component.Id,
+            content.Component.Manifest.GetProperty("version").GetString()!, ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), surfaces, surfaces.Provides);
+        var binding = RegistryComponentBinding.FromArtifact(definition, files, digest, validator, ArtifactOptions);
+        Assert.Equal(digest, binding.Metadata.ArtifactDigest);
+        Assert.Contains("metadata/permissions.json", binding.Metadata.FilePaths);
+        var expected = files["metadata/permissions.json"].ToArray();
+        files["metadata/permissions.json"] = Encoding.UTF8.GetBytes("[]");
+        var copy = binding.Metadata.ReadFile("metadata/permissions.json"); Assert.Equal(expected, copy);
+        Array.Fill(copy!, (byte)0);
+        Assert.Equal(expected, binding.Metadata.ReadFile("metadata/permissions.json"));
+        Assert.Null(binding.Metadata.ReadFile("../outside"));
+        Assert.Throws<QianErrorException>(() => RegistryComponentBinding.FromArtifact(definition, files, digest, validator, ArtifactOptions));
+    }
+
     [Fact]
     public async Task 制品目录保存共用校验后的不可变快照_相同摘要幂等_不自动成为已验签或已发布()
     {

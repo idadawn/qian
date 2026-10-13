@@ -51,3 +51,5 @@ POST /api/customers 接收 idempotencyKey（UUID）和 name；租户来自验证
 客户名称在生成输入 Schema 中标为 sensitive，审计保存脱敏哈希。生产监听器读取真实租户状态、真实 RBAC 和真实 Audit 服务；业务 handler 延迟到强制校验后构造。验收用 Kestrel、RS256 和受限 PostgreSQL 角色验证成功、重复提交、冲突、审计失败整笔回滚、双租户并发及锁等待时卸载取消。Outbox 沿用 Kun 的服务级传输表，测试核验每条消息的 tenant_id 与实际客户归属；后台发布与完整 Qian 事件信封仍由事件组件完成。
 
 这些是本机真实协议与数据库验收，未证明正式包安装、K3s 应用发布、真实 Qian Identity 管理员登录或完整 platform 已完成。
+
+能力目录联调中，三个参考请求显式声明 agent.expose 元数据，用于验证提示词和目录过滤；这不开放 S1 Agent 身份签发或执行。平台目录/Registry 依赖仅加入验收宿主，独立客户应用不因此引用这些平台 Provider。

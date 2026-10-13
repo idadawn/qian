@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Kun.AspNetCore.Authorization;
+using Qian.Plugin.Sdk.AspNetCore;
 using Kun.Authorization;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Extensions;
@@ -82,13 +84,16 @@ public static class CrmCommandApplication
             var source = runtime.Source(); var commands = source.Inject<ICrmCommands>(CrmDefinition.Key);
             var result = await commands.CreateAsync(command, ct).ConfigureAwait(false);
             return Results.Created("/api/customers/" + result.Id, result);
-        }).RequireAuthorization("crm-data-writer");
+        }).RequireAuthorization("crm-data-writer").RequireKunPermission("qian.sample.crm:customer:write")
+            .WithMetadata(new PluginEndpointBinding("crm", "qian.sample.crm", CapabilityBindingRegistration.Key, "qian.sample.crm/customer.create")).Produces<CustomerItem>(StatusCodes.Status201Created);
         app.MapGet("/api/customers", async (int? skip, int? take, CrmCommandRuntime runtime, CancellationToken ct) =>
             Results.Ok(await runtime.Source().Inject<ICrmCommands>(CrmDefinition.Key).ListAsync(new ListCustomersQuery(skip ?? 0, take ?? 100), ct).ConfigureAwait(false)))
-            .RequireAuthorization("crm-command-reader");
+            .RequireAuthorization("crm-command-reader").RequireKunPermission("qian.sample.crm:customer:read")
+            .WithMetadata(new PluginEndpointBinding("crm", "qian.sample.crm", CapabilityBindingRegistration.Key, "qian.sample.crm/customer.list")).Produces<CustomerPage>();
         app.MapGet("/api/customers/{id:guid}", async (Guid id, CrmCommandRuntime runtime, CancellationToken ct) =>
             Results.Ok(await runtime.Source().Inject<ICrmCommands>(CrmDefinition.Key).GetAsync(new GetCustomerQuery(id), ct).ConfigureAwait(false)))
-            .RequireAuthorization("crm-command-reader");
+            .RequireAuthorization("crm-command-reader").RequireKunPermission("qian.sample.crm:customer:read")
+            .WithMetadata(new PluginEndpointBinding("crm", "qian.sample.crm", CapabilityBindingRegistration.Key, "qian.sample.crm/customer.get")).Produces<CustomerItem>();
         return app;
     }
 }

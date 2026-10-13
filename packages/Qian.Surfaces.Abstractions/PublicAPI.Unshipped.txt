@@ -151,3 +151,5 @@ Qian.Surfaces.Abstractions.MarketplaceValidationResult.Deconstruct(out System.Te
 Qian.Surfaces.Abstractions.ISurfaceValidator.ValidateMarketplace(string! file, string! content, string? traceId = null) -> Qian.Surfaces.Abstractions.MarketplaceValidationResult!
 Qian.Surfaces.Abstractions.MarketplaceValidationResult.MarketplaceValidationResult(System.Text.Json.JsonElement? Marketplace, System.Collections.Generic.IReadOnlyList<Qian.Surfaces.Abstractions.SurfaceDiagnostic!>! Diagnostics) -> void
 Qian.Surfaces.Abstractions.MarketplaceValidationResult.IsValid.get -> bool
+Qian.Surfaces.Abstractions.IToolContractHasher
+Qian.Surfaces.Abstractions.IToolContractHasher.Compute(System.Text.Json.JsonElement tool) -> string!

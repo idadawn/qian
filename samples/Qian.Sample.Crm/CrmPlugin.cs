@@ -27,6 +27,9 @@ public sealed class CrmPlugin : IQianPlugin
     public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {
         ctx.Provide<ICrmCommands>(CrmDefinition.Key, new CrmCommands(ctx.Services.GetRequiredService<ISender>()));
+        ctx.ProvideCapability<CreateCustomerCommand, CustomerItem>();
+        ctx.ProvideCapability<ListCustomersQuery, CustomerPage>();
+        ctx.ProvideCapability<GetCustomerQuery, CustomerItem>();
         return ValueTask.CompletedTask;
     }
 }

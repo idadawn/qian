@@ -1,0 +1,6 @@
+#nullable enable
+Qian.Capabilities.AspNetCore.CapabilityEndpoints
+static Qian.Capabilities.AspNetCore.CapabilityEndpoints.MapQianCapabilities(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+Qian.Capabilities.AspNetCore.HttpContractSourceExtensions
+static Qian.Capabilities.AspNetCore.HttpContractSourceExtensions.AddQianHttpContracts(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Capabilities.AspNetCore.CapabilityEndpoints.MapQianCapabilities(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source, Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding! binding) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
