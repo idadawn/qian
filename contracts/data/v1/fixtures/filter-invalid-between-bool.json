@@ -1,0 +1,18 @@
+{
+  "logic": "and",
+  "groups": [
+    {
+      "logic": "and",
+      "conditions": [
+        {
+          "field": "active",
+          "op": "between",
+          "value": [
+            false,
+            true
+          ]
+        }
+      ]
+    }
+  ]
+}

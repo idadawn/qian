@@ -7,6 +7,10 @@
 - 新增 `Qian.Events.Abstractions` / `Qian.Events`：入队即生成 v1 事件信封（与 iClaw 对齐），Outbox 按租约领取、publisher confirm 后逐条标记，停机或 broker 变慢时交还未发的行，多副本不重复发布；RabbitMQ topic exchange `qian.events` 与 quorum / 广播队列命名。见 [Qian.Events](../packages/Qian.Events/README.md)。
 - 新编译门禁 QIAN0006：集成事件只能在写命令 handler 或领域事件 handler 内发布。参考应用的客户创建事件改为 `crm.customer.created.v1`，配置 `ConnectionStrings__Events` 后投递到 RabbitMQ。
 
+## 2026-10-14 数据过滤与记录扩展契约（S1-DATA-004）
+
+新增 [数据契约规格](prd/specs/data-contracts.md)：统一 Filter AST、13 运算符与 10 类字段矩阵、15 个系统变量、数据规则，以及 Record Hook / qian.record.changed.v1 信封；JSON 与源生成 C# 契约随 Qian.Data.Abstractions 分发，供 S2 五处条件消费方复用。
+
 ## 2026-10-13 验收复核跟进与 Kun 2026.10.13（S1-DEC-019、S1-KUN-014、S1-DOCS-004）
 
 - 复核 10-10 之后完成的 21 项任务：12 项真完成、8 项有口径偏差、1 项证据不足。修正与补强记为裁决 R65–R74：Kun 同日修复版的 NuGet 语义与精确钉定、受保护请求的运行期兜底、仓库 profile 生效配置的明文密钥扫描进 CI、T23 与 DEC-018 的口径、DEC-014–018 的批准留痕、任务日志署名校验。

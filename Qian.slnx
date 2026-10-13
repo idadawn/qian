@@ -47,6 +47,7 @@
     <Project Path="tests/Qian.Config.Secrets.Tests/Qian.Config.Secrets.Tests.csproj" />
     <Project Path="tests/Qian.Capabilities.Tests/Qian.Capabilities.Tests.csproj" />
     <Project Path="tests/Qian.Config.Tests/Qian.Config.Tests.csproj" />
+    <Project Path="tests/Qian.Data.Abstractions.Tests/Qian.Data.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Events.Tests/Qian.Events.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />

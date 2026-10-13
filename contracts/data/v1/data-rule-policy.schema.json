@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/data/v1/data-rule-policy.schema.json",
+  "title": "DataRulePolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "primaryKeyStrategy",
+    "optimisticConcurrency",
+    "softDelete",
+    "recordHistory",
+    "businessKey"
+  ],
+  "properties": {
+    "primaryKeyStrategy": {
+      "enum": [
+        "uuidV7",
+        "snowflake"
+      ]
+    },
+    "optimisticConcurrency": {
+      "type": "boolean"
+    },
+    "softDelete": {
+      "type": "boolean"
+    },
+    "recordHistory": {
+      "type": "boolean"
+    },
+    "businessKey": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+        "not": {
+          "pattern": "(^|\\.)([tT][eE][nN][aA][nN][tT]_[iI][dD]|[tT][eE][nN][aA][nN][tT][iI][dD])($|\\.)"
+        }
+      }
+    }
+  }
+}

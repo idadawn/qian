@@ -28,4 +28,4 @@ Agent 可识别稳定的错误码和系统字段，不获取数据库口令。Da
 
 ## 已知限制与延期项
 
-参考应用的千行索引验收已通过；完整代码组件安装仍由 SDK / CLI 后续任务交付。Filter AST、IRecordHook 等后续契约属于 S1-DATA-004，不在本次基础安全装配中冒充已实现。
+参考应用的千行索引验收已通过；完整代码组件安装仍由 SDK / CLI 后续任务交付。Filter AST、运算符矩阵、系统变量、数据规则、IRecordHook 与记录事件信封由 S1-DATA-004 随本包交付，权威语义和示例见 [数据契约规格](../../docs/prd/specs/data-contracts.md)。S2 的 SQL 生成、Hook 调度及动态记录引擎仍由后续任务实现。
