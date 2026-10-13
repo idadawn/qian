@@ -88,7 +88,7 @@
 |---|---|---|---|
 | [S1-DATA-004](tasks/S1-DATA-004.md) Filter AST、运算符矩阵与 IRecordHook 契约 | doing | cody | 2026-10-14 |
 | [S1-DEP-003](tasks/S1-DEP-003.md) profile 镜像构建、SBOM、漏洞扫描与 Cosign 签名 | doing | cody | 2026-10-14 |
-| [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-13 |
+| [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-14 |
 | [S1-KUN-010](tasks/S1-KUN-010.md) Kun.EventBus.Abstractions 拆包与 Definition 包的 Kun 依赖门禁 | doing | cody | 2026-10-14 |
 | [S1-RT-006](tasks/S1-RT-006.md) qian.capabilities 插件：能力目录、契约仓库与聚合 | review | cody | 2026-10-13 |
 | [S1-YUE-005](tasks/S1-YUE-005.md) @yue/core 约 30 个基础组件（Base UI + shadcn） | doing | cody | 2026-10-14 |

@@ -85,7 +85,7 @@
    # 然后从执行人的工作机取走：scp root@qd:/root/dep007-backup.tgz <qd 之外的位置>/
    ```
 
-阶段 0 完成后观察 1 小时：`systemctl show k3s -p NRestarts` 若明显放缓，说明宿主压力是主因；无论是否放缓，都继续阶段 1，因为拓扑问题不会自己消失。
+阶段 0 止血后观察约 1 小时，记录 NRestarts 的增量与压力时间线。runner 限额只改变 qd 主机负载，不能单凭重启放缓证明 pve01 的触发原因；方案 B 的结构性理由独立于这项因果验证。
 
 ### 阶段 1：改为 qd 单控制面（维护窗口约 1 小时）
 
@@ -145,7 +145,7 @@
 
 ### 阶段 2：加固（1 天内）
 
-- qd 的 kubelet 加系统预留，给控制面留出余量：在 `/etc/rancher/k3s/config.yaml` 增加 `kubelet-arg: ["system-reserved=cpu=2,memory=8Gi", "kube-reserved=cpu=1,memory=4Gi"]`，重启 k3s（会有一次约 1 分钟的 apiserver 中断，选低峰）。
+- qd 的 kubelet 加系统预留，给控制面留出余量：先核对当前 Pod 请求与可分配资源，再合并 kubelet-arg。2026-10-14 核验 qd CPU 请求为 7945m/8000m，直接预留 3 核会影响既有 Pod 准入，因此此次采用 `system-reserved=memory=8Gi` 与 `kube-reserved=memory=4Gi`；CPU 预留须在释放请求或增加容量后另行评估，不下调既有业务请求。重启 k3s（会有一次约 1 分钟的 apiserver 中断，选低峰）。
 - 阶段 0 的 `actions-runners.slice` 保留为长期配置：两个 runner 合计不超过 4 核、48 GiB；长期看把 runner 迁出控制面主机。
 - pve01 的内存分配总和保持不超过宿主内存减 4 GiB，关闭所有 VM 的 balloon；本次测得的数值写进部署仓库 `docs/ops/qian-prod-nodepool.md`。
 - etcd 快照确认落到 qd 之外（现有 `k3s-db-backup.timer` 每天 02:00 UTC，核对目标位置与保留策略）。
