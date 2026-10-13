@@ -82,3 +82,37 @@ int / bigint 分别限制在有符号 32 / 64 位范围，decimal 在 .NET decim
 独立 `Qian.Data.Abstractions.Tests` 覆盖示例往返、字段矩阵拒绝 bool/between、操作数基数/类型、系统变量、未知/租户字段、Schema 注入、矩阵一致性、v0 信封与框架登记、Hook 改写生命周期和统一错误类型。PublicAPI 分析器登记全部公开类型；原 Data 真库安全装配测试继续保留。
 
 S2 的五处消费方引用同一份 Schema 和矩阵，不重建自己的运算符列表。鉴权 `DataScopeRule.filter`、高级查询、启用规则与流程条件的接入点见 [§07](../07-s1-foundation.md#75-qianauthz-鉴权引擎p0--s1) 和 [§08](../08-s2-lowcode.md#82-动态数据引擎p0--s2)。
+
+## 8. 基准类型、方言与数据连接
+
+本节由 S1-DATA-003 补充，源文件同在 `contracts/data/v1/`，实现与装配见 [Qian.Data](../../../packages/Qian.Data/README.md)。
+
+**基准类型**。[base-data-types.json](../../../contracts/data/v1/base-data-types.json) 是 10 个系统类型的种子，代码与 §3 运算符矩阵的字段类型一一对应。每个类型列出可携带的约束（facet）：
+
+| 类型 | facet |
+|---|---|
+| int / bigint / float | range |
+| decimal | precision、scale、range |
+| datetime | precision（秒的小数位数） |
+| varchar | length |
+| text / bool / json / uuid | 无 |
+
+系统类型不可删除、不可改名；S1 没有自定义类型。
+
+**方言（qian.data.dialect/v1）**。方言组件提供 [data-types.schema.json](../../../contracts/data/v1/data-types.schema.json) `$defs/dbDialect` 形状的描述数据：代码、名称、驱动、缺省端口、只作展示的连接串模板，以及每个基准类型恰好一条映射（原生类型 + 与 facet 对应的约束）。注册时拒绝以下数据：
+
+- 漏掉系统类型或重复映射；
+- 约束与类型的 facet 不一致；
+- 区间为负、下限大于上限，或缺省值不在区间内。
+
+**字段定义校验**。`$defs/dataFieldDefinition` 由类型与可选的 length、precision、scale、minimum、maximum 组成，上下限以十进制字符串表示。按方言映射校验：
+
+- 省略的长度、精度、小数位取缺省值；只给精度时，缺省小数位不超过精度；
+- 长度、精度、小数位须在映射区间内，小数位不超过精度；
+- 上下限须在原生类型可表示的范围内。decimal 由精度 p 与小数位 s 推出 ±(10^(p−s) − 10^−s)，上下限的小数位不超过 s；整数类型不接受小数；
+- 最小值不大于最大值；
+- 类型不接受的约束一律拒绝。
+
+违反时返回 DATA_FIELD_DEFINITION_INVALID（422），errors[] 逐项指向 `#/length` 等成员。
+
+**数据连接**。[data-connection.schema.json](../../../contracts/data/v1/data-connection.schema.json) 定义请求与响应。口令只以租户作用域的 secretRef 给出，请求中出现 password 等未声明成员即拒绝，任何响应都不含口令。连通测试在使用点解析凭据：成功返回服务端版本与耗时；失败返回 DATA_CONNECTION_UNREACHABLE（可重试）或 DATA_CONNECTION_REJECTED（reason 为 authentication、database、schema、permission、parameter 或 server）。该操作会从平台出网，Agent 契约标 external。

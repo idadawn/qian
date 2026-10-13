@@ -34,3 +34,13 @@ static Qian.Data.QianDataMigrationExtensions.AddQianDataMigrations(this Microsof
 static Qian.Data.QianDataMigrationExtensions.IsMigrateOnly(System.Collections.Generic.IEnumerable<string!>! args) -> bool
 static Qian.Data.QianSequenceExtensions.AddQianSequences(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<System.IServiceProvider!, Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!>! configure, System.Action<Qian.Data.QianSequenceOptions!>? options = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Qian.Data.QianSnowflakeExtensions.AddQianSnowflakeIds(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Qian.Data.QianSnowflakeOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Qian.Data.QianDataConnectionExtensions
+Qian.Data.QianDataConnectionOptions
+Qian.Data.QianDataConnectionOptions.QianDataConnectionOptions() -> void
+Qian.Data.QianDataConnectionOptions.SecretPolicyId.get -> string!
+Qian.Data.QianDataConnectionOptions.SecretPolicyId.set -> void
+Qian.Data.QianDataConnectionOptions.TestTimeout.get -> System.TimeSpan
+Qian.Data.QianDataConnectionOptions.TestTimeout.set -> void
+Qian.Data.QianDataTypeExtensions
+static Qian.Data.QianDataConnectionExtensions.AddQianDataConnections(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<System.IServiceProvider!, Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!>! configure, System.Action<Qian.Data.QianDataConnectionOptions!>? options = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Data.QianDataTypeExtensions.AddQianDataTypes(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

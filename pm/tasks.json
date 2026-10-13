@@ -844,14 +844,14 @@
  {
   "id": "S1-DATA-003",
   "title": "基准类型与 PG 方言组件、数据连接档案",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "DATA",
   "areaName": "数据",
   "wave": 2,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "3d",
   "days": 3.0,
   "depends": [
@@ -860,7 +860,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.6",
@@ -871,12 +871,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>BaseDataType</code>（int / bigint / decimal / float / datetime / varchar / text / bool / json / uuid，系统类不可删）、<code>DbDialect</code>（postgres）、<code>DialectTypeMapping</code>（长度 / 精度 / 区间校验）作为种子数据与 <code>GET /api/data/meta/types</code>；方言为独立组件 <code>Qian.Data.Dialect.Pg</code>（数据包，<code>qian.data.dialect/v1</code> SPI）；<code>DataConnection</code>（凭证只存 secretRef、<code>POST /connections/{id}:test</code>、详情不回传密钥）；<code>StandardField</code> 由基类固化。MySQL 方言本期不做。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：<code>GET /api/data/meta/types</code> 返回基准类型、方言与映射，系统类不可删除</li>\n<li class='chk'><span class='box'></span>IT：<code>POST /connections/{id}:test</code> 对可达 / 不可达库分别返回成功 / 结构化错误；详情接口不回传密钥</li>\n<li class='chk'><span class='box'></span>UT：<code>DialectTypeMapping</code> 对超出长度 / 精度 / 区间的字段定义拒绝</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>BaseDataType</code>（int / bigint / decimal / float / datetime / varchar / text / bool / json / uuid，系统类不可删）、<code>DbDialect</code>（postgres）、<code>DialectTypeMapping</code>（长度 / 精度 / 区间校验）作为种子数据与 <code>GET /api/data/meta/types</code>；方言为独立组件 <code>Qian.Data.Dialect.Pg</code>（数据包，<code>qian.data.dialect/v1</code> SPI）；<code>DataConnection</code>（凭证只存 secretRef、<code>POST /connections/{id}:test</code>、详情不回传密钥）；<code>StandardField</code> 由基类固化。MySQL 方言本期不做。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>GET /api/data/meta/types</code> 返回基准类型、方言与映射，系统类不可删除</li>\n<li class='chk done'><span class='box'>✓</span>IT：<code>POST /connections/{id}:test</code> 对可达 / 不可达库分别返回成功 / 结构化错误；详情接口不回传密钥</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>DialectTypeMapping</code> 对超出长度 / 精度 / 区间的字段定义拒绝</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：开始</li>\n<li>2026-10-14 claude：实现 10 个系统基准类型种子与目录（IDataTypeCatalog）、方言 SPI qian.data.dialect/v1 与 Data.Dialects 注册表、PostgreSQL 方言包 Qian.Data.Dialect.Pg（映射数据 + Npgsql 探测）、按租户隔离的 IDataConnectionRegistry（data_connections 迁移、口令只存租户 secretRef、使用点解析）与 Qian.Data.AspNetCore 端点。验收证据：MetaTypesEndpointTests 返回 10 个类型与 pg 方言映射并通过目录 Schema、删除 int/varchar/uuid 均 409 DATA_TYPE_PROTECTED；ConnectionEndpointTests 在真实 PostgreSQL 上可达库 200、端口关闭 422 UNREACHABLE、错误口令/缺失库/缺失 schema 422 REJECTED、越权密钥 403，详情与列表不含口令且无 password 成员；DataTypeContractTests 与 PG 映射用例拒绝超出长度/精度/小数位/取值区间的字段定义</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-003.md"
  },
  {

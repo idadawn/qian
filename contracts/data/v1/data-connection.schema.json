@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/data/v1/data-connection.schema.json",
+  "title": "Qian 数据连接档案",
+  "description": "/api/data/connections 的请求与响应。口令只以租户 secretRef 引用给出，任何响应都不包含口令；未声明的成员（如 password）一律拒绝。",
+  "$defs": {
+    "secretRef": {
+      "description": "租户作用域的密钥引用：secretRef://tenant/<路径> 按当前租户解析，完整形式 secretRef://tenant/<租户>/<路径> 须与当前租户一致。",
+      "type": "string",
+      "pattern": "^secretRef://tenant/[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$",
+      "maxLength": 256
+    },
+    "name": { "description": "租户内唯一的显示名，首尾不含空白、不含控制字符。", "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[^\\s\\p{Cc}]([^\\p{Cc}]*[^\\s\\p{Cc}])?$" },
+    "host": { "type": "string", "pattern": "^[A-Za-z0-9]([A-Za-z0-9.:_-]{0,252})$" },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 63, "pattern": "^[^\\s;'\"\\\\]+$" },
+    "draft": {
+      "type": "object",
+      "required": ["name", "dialect", "host", "port", "database", "userName", "secretRef"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "dialect": { "type": "string", "pattern": "^[a-z][a-z0-9]{0,31}$" },
+        "host": { "$ref": "#/$defs/host" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "database": { "$ref": "#/$defs/identifier" },
+        "userName": { "$ref": "#/$defs/identifier" },
+        "secretRef": { "$ref": "#/$defs/secretRef" },
+        "schema": { "$ref": "#/$defs/identifier" },
+        "encoding": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,32}$" }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "required": ["id", "name", "dialect", "host", "port", "database", "userName", "secretRef", "createdAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "name": { "$ref": "#/$defs/name" },
+        "dialect": { "type": "string" },
+        "host": { "type": "string" },
+        "port": { "type": "integer" },
+        "database": { "type": "string" },
+        "userName": { "type": "string" },
+        "secretRef": { "$ref": "#/$defs/secretRef" },
+        "schema": { "type": "string" },
+        "encoding": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "list": {
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": { "items": { "type": "array", "items": { "$ref": "#/$defs/profile" } } }
+    },
+    "testResult": {
+      "type": "object",
+      "required": ["dialect", "serverVersion", "latencyMs"],
+      "additionalProperties": false,
+      "properties": {
+        "dialect": { "type": "string" },
+        "serverVersion": { "type": "string" },
+        "latencyMs": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

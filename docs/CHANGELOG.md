@@ -2,6 +2,11 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-14 基准类型、PG 方言组件与数据连接档案（S1-DATA-003）
+
+- 10 个系统基准类型作为种子数据随 `Qian.Data.Abstractions` 发布；新增方言 SPI qian.data.dialect/v1 与 PostgreSQL 方言包 `Qian.Data.Dialect.Pg`，`DialectTypeMapping` 拒绝超出长度、精度、小数位或取值区间的字段定义。
+- `IDataConnectionRegistry`：按租户隔离的连接档案，口令只存租户 secretRef，连通测试在使用点解析，详情不回传密钥。新增 `Qian.Data.AspNetCore` 提供 `GET /api/data/meta/types` 与 `/api/data/connections`（含 `POST /connections/{id}:test`）。见 [Qian.Data](../packages/Qian.Data/README.md)。
+
 ## 2026-10-14 多副本迁移协调、雪花 ID 与序号服务（S1-DATA-002）
 
 - `IDataMigrator`：按 schema 取 PostgreSQL advisory lock 后执行 EF 迁移，同时启动的副本只有一个执行 DDL；K8s 迁移 Job 用 `--migrate-only`，在线副本启动时发现未应用的迁移即拒绝启动。
