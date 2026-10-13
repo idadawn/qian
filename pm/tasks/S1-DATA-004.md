@@ -1,20 +1,20 @@
 ---
 id: S1-DATA-004
 title: Filter AST、运算符矩阵与 IRecordHook 契约
-status: todo
+status: doing
 stage: S1
 area: DATA
 wave: 3
 priority: P0
 type: feature
-owner: ""
+owner: "cody"
 estimate: 2d
 depends: [S1-DATA-001]
 refs:
   - docs/prd/07-s1-foundation.md#7.6
   - docs/migration/README.md#4.2
   - docs/adr/ADR-011-metadata-dynamic-data.md
-updated: 2026-10-06
+updated: 2026-10-14
 ---
 
 ## 背景
@@ -30,3 +30,4 @@ updated: 2026-10-06
 ## 进度日志
 
 - 2026-10-06 planner：创建任务
+- 2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。
