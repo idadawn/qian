@@ -36,3 +36,11 @@ roles、role_assignments、grants 保留可空 tenant_id 的平台角色存储�
 `Register` 与 `RegisterResources` 返回可交给 `ctx.Effect` 的释放句柄。整批先检查冲突再登记；相同声明可以有多个独立持有者，最后一个释放时才消失。旧句柄重复释放不会误删后来重新登记的条目。显式资源描述撤销后，可回退为仍由权限点派生的资源身份；仅有资源描述不会凭空产生权限。
 
 运行时测试使用真实 `PluginLoader` 与本注册表，通过声明贡献组件的 Effect 注册和卸载验证撤销语义。测试贡献组件不替代尚未完成的完整 Authz 判定 Provider，Check、缓存和对外接口仍需接通。
+
+## RBAC 判定基础（S1-AZ-003）
+
+`RbacPermissionChecker` 实现 Kun 的 Check、BatchCheck、ListPermissions、ListAllowedActions 和 Explain 端口。当前查询真实租户角色与授权、有效期，并结合该租户策略版本和活动权限登记。缺少租户上下文、主体租户不一致、非法主体、未安装策略版本、未登记权限或无匹配授权均拒绝。`ExplainDetailedAsync` 返回命中角色、实际授权记录定位和缺少权限，不返回另一租户的命中信息。
+
+主体须由已认证宿主提供，不从请求角色或权限数组推导授权。step-up 与终端限制需要可信身份/终端适配器提供 `IAuthzExecutionConstraints` 证据；未接入时保持拒绝。资源实例 ACL、L4/L5 仍在各自阶段，当前只消费未限定 ResourceRef 的角色授权。
+
+组织/岗位/组继承、Redis 缓存与 revision 失效、身份有效性接线、平台超管显式旁路和审计、完整 AuthzPlugin 及 HTTP 端点尚未完成。真实 PG 测试当前证明直接角色路径、解释、批量一致、活动声明释放与附加约束缺证据拒绝，不作为完整 AZ-003 或 QA-002 验收。
