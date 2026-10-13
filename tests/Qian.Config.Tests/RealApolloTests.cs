@@ -69,7 +69,9 @@ public sealed class RealApolloTests(RealApolloFixture apollo) : IClassFixture<Re
             await apollo.Container.StopAsync(ct);
             var cached = Build("cache");
             using (var owner = (IDisposable)cached) Assert.Equal("25", cached["Sample:PageSize"]);
-            Assert.Throws<InvalidOperationException>(() => Build("no-cache"));
+            // 无缓存时必须给出明确原因并拒绝启动，不能以空配置继续（S1-CFG-001 第 2 条）。
+            var refused = Assert.Throws<InvalidOperationException>(() => Build("no-cache"));
+            Assert.Contains("Apollo 不可达且无有效本地缓存", refused.Message, StringComparison.Ordinal);
         }
         finally { Directory.Delete(directory, true); }
 

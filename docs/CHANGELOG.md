@@ -2,6 +2,12 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-13 验收复核跟进与 Kun 2026.10.13（S1-DEC-019、S1-KUN-014、S1-DOCS-004）
+
+- 复核 10-10 之后完成的 21 项任务：12 项真完成、8 项有口径偏差、1 项证据不足。修正与补强记为裁决 R65–R74：Kun 同日修复版的 NuGet 语义与精确钉定、受保护请求的运行期兜底、仓库 profile 生效配置的明文密钥扫描进 CI、T23 与 DEC-018 的口径、DEC-014–018 的批准留痕、任务日志署名校验。
+- `KunVersion` 升到 2026.10.13：首个包含 hotfix.2 / hotfix.3 修复的无后缀正式版，带入 Mediator 对受保护请求的构建期兜底（上游 idadawn/kun#57）。
+- 文档站改用 `@idadawn/yue-tokens` 的令牌，删除占位令牌与 data-theme 桥接脚本。
+
 ## 2026-10-10 Kun 升级到 2026.10.9（S1-KUN-009）
 
 - `KunVersion` 升到 2026.10.9，带入 Outbox 与消费可靠性（S1-KUN-002，上游 idadawn/kun#46）、审计原子性与数据约定（S1-KUN-005，idadawn/kun#45）、平台基础端口与废弃 API 标记（S1-KUN-006，idadawn/kun#47）三组修复；`Kun.Authorization` 与 `Kun.Configuration.Apollo` 首次随 Kun 发包。文档站的「Kun 框架」小节与 Kun API 参考随之切到 `v2026.10.9`，[与 Qian 的关系](../website/docs/sdk/kun/with-qian.mdx) 的修复状态表与模块表同步更新。

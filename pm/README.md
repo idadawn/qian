@@ -82,15 +82,15 @@ id 规则：`S<阶段>-<领域>-<三位序号>`。领域代码与 PRD §07 小�
 |---|---|
 | 看进度 | 打开 `pm/index.html`，或在 GitHub 上看 `pm/STATUS.md` |
 | 找能开始的任务 | 看板「待办」列已按可做先后排序（绿色「可开始」在前，之后是「第 n 批」）；`pm/STATUS.md` 的「接下来可做」表；或 `python3 scripts/pm.py list --status todo` |
-| 认领并开始 | `python3 scripts/pm.py set S1-RT-001 --status doing --owner 你的名字 --note "开始"` |
-| 记录进展 | `python3 scripts/pm.py set S1-RT-001 --note "runtime 骨架可编译"` |
+| 认领并开始 | `python3 scripts/pm.py set S1-RT-001 --status doing --owner 你的名字 --by 你的名字 --note "开始"` |
+| 记录进展 | `python3 scripts/pm.py set S1-RT-001 --by 你的名字 --note "runtime 骨架可编译"` |
 | 提交评审 / 完成 | `--status review` / `--status done`，并把「验收」里完成的项打勾 `[x]` |
 | 卡住了 | `--status blocked --note "等 S1-DEC-002 拍板"` |
-| 新建任务 | `python3 scripts/pm.py add --stage S1 --area FILE --title "..." --priority P0 --wave 2 --estimate 2d --depends S1-RT-001 --ref docs/prd/07-s1-foundation.md#7.7` |
+| 新建任务 | `python3 scripts/pm.py add --by 你的名字 --stage S1 --area FILE --title "..." --priority P0 --wave 2 --estimate 2d --depends S1-RT-001 --ref docs/prd/07-s1-foundation.md#7.7` |
 | 校验 | `python3 scripts/pm.py validate` |
 | 重新生成看板与进度表 | `python3 scripts/pm.py build` |
 
-**每次改了任务文件，都要 `build` 一次并把生成物一起提交。** CI 会用 `check-fresh` 检查生成物是否过期，过期会失败。设置环境变量 `PM_ACTOR=你的名字` 可以让日志自动署名。
+**每次改了任务文件，都要 `build` 一次并把生成物一起提交。** CI 会用 `check-fresh` 检查生成物是否过期，过期会失败。日志必须署名：`set` / `add` 带 `--by 你的名字`，或设置环境变量 `PM_ACTOR=你的名字`；两者都没有时命令报错，`validate` 也拒绝署名为 someone 的日志行（S1-DEC-019 R71）。任务先建档、认领再交付，不要在创建任务的提交里直接写 done。
 
 提交信息里带任务 id，例如 `feat(runtime): ctx.Effect 逆序释放 [S1-RT-001]`，这样从任务能追到提交，从提交能追到任务。
 
@@ -118,10 +118,10 @@ id 规则：`S<阶段>-<领域>-<三位序号>`。领域代码与 PRD §07 小�
 
 ```text
 读 AGENTS.md 与 pm/README.md。认领任务 <ID>：
-python3 scripts/pm.py set <ID> --status doing --owner <你的代理名> --note "开始"
+python3 scripts/pm.py set <ID> --status doing --owner <你的代理名> --by <你的代理名> --note "开始"
 按任务 refs 指向的文档实现，验收条目逐条满足并在任务文件里打勾 [x]。
 在分支 feat/<ID>-<简短英文> 上工作，每次提交信息末尾带 [<ID>]。
-完成后：python3 scripts/pm.py set <ID> --status review --note "一句话总结"，
+完成后：python3 scripts/pm.py set <ID> --status review --by <你的代理名> --note "一句话总结"，
 再 python3 scripts/pm.py build 并把生成物一起提交，然后开 PR，描述里列出验收完成情况与未决问题。
 遇到需要人拍板的问题：新建 DEC 任务（pm.py add --area DEC --type decision --wave 0），把本任务标 blocked，不要自行改设计。
 ```

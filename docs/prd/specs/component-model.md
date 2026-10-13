@@ -1295,7 +1295,7 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 | T20 | 整树 teardown | 按挂载顺序逆序 Unmount；每个条目满足 T03 |
 | T21 | 跨 scope 分发可见性 | 全局监听器收到 `tenant:t-001` 的分发；`tenant:t-002` 的监听器收不到 |
 | T22 | optionalInject | 键缺失时 `Apply` 执行且 `TryInject` 为空；键稍后出现不触发重新 `Apply` |
-| T23 | 独立模式等价 | 同一组 Provider 在 `minimal` 与 `platform` 下对同一场景产出相同结果（ADR-019 D19.8 第二条的运行时侧） |
+| T23 | 独立模式等价 | 同一组 Provider 在 `minimal` 与 `platform` 下对同一场景产出相同结果（ADR-019 D19.8 第二条的运行时侧）；S1 由 QA-002 用 TCK 组合包 `qian.bundle.tck-platform` 与 CRM 样例 Provider 组验证，D19.8 点名的 Files / Authz / Identity.Client 对照见 S1-QA-003 / S1-QA-005（S1-DEC-019 R68） |
 | T24 | 注册表 seam 同名独占与遮蔽 | 两个全局条目向 `Identity.Connectors` 注册同名 `oidc`，第二个挂载失败并报出第一个条目 id；`tenant:t-001` 内注册同名 `oidc` 后，t-001 的 `Connectors.Get("oidc")` 得 scope 内项、t-002 得全局项（R38） |
 
 ### 10.3 CI 门禁

@@ -305,7 +305,7 @@ export function listWidgets(filter?: { device?: Device; category?: string }): Wi
 | semantic | `--yue-<role>[-foreground]` | `--yue-primary` / `--yue-primary-foreground`、`--yue-destructive`、`--yue-sidebar`、`--yue-ring` | 全部映射到 shadcn 语义变量（`--primary` 等）供 Base UI 组件消费；状态色成对 `--yue-ok` / `--yue-ok-bg`，TS `Tone = 'ok' \| 'warn' \| 'error' \| 'info' \| 'neutral'` |
 | component | `--yue-<component>-<prop>` | `--yue-button-radius`、`--yue-table-row-height` | 按组件按需，只能引用 semantic 或 primitive |
 
-规则：禁止同名异义（`--accent` 冲突为反例）；颜色以可加 alpha 的形式存放（oklch）；由一个主色派生完整色阶；明暗两态在 `html[data-theme="dark"]` 下重定义 semantic 层并设置 `color-scheme`；`data-brand` 由服务端按租户下发；禁止媒体查询换品牌色。
+规则：禁止同名异义（`--accent` 冲突为反例）；颜色以可加 alpha 的形式存放（oklch 分量，如 `.43 .144 260`），消费方写 `oklch(var(--yue-<role>))` 或 `oklch(var(--yue-<role>) / <alpha>)`，不要把语义令牌直接当颜色值使用；由一个主色派生完整色阶；明暗两态在 `html.dark, html[data-theme="dark"]` 下重定义 semantic 层并设置 `color-scheme`（两种切换方式都认，文档站用前者，S1-DEC-019 R72）；`data-brand` 由服务端按租户下发；禁止媒体查询换品牌色。
 
 ### 3.6 组件 manifest 格式
 
@@ -469,9 +469,9 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 对应 §14 的层级与门禁；证据按「PR、命令、环境、结果」四件事留存。
 
 **令牌与主题**
-- [ ] `@yue/tokens` 三层令牌生成 CSS 变量与 TS 类型；明暗两态对比度单测 WCAG AA ≥ 4.5:1 全部通过（CI）
-- [ ] 令牌命名冲突单测通过；不存在同名异义
-- [ ] `data-theme / data-brand` 运行时注入生效：切换后无需刷新且无首帧闪烁（Playwright 用例）
+- [x] `@yue/tokens` 三层令牌生成 CSS 变量与 TS 类型；明暗两态对比度单测 WCAG AA ≥ 4.5:1 全部通过（CI）——PR #32，`packages/yue/tokens/src/tokens.test.ts`，CI `yue` 的 unit 门禁
+- [x] 令牌命名冲突单测通过；不存在同名异义——同上，另由 `packages/yue/tokens/scripts/check-tokens.mjs` 在 lint 门禁扫描工作区全部 CSS
+- [x] `data-theme / data-brand` 运行时注入生效：切换后无需刷新且无首帧闪烁（Playwright 用例）——`apps/yue-playground/e2e/theme.spec.ts` 的首帧状态快照，CI `yue` 的 a11y 门禁
 
 **基础组件**
 - [ ] `@yue/core` S1 清单约 30 个组件全部有 Storybook 用例（默认 / 悬停 / 禁用 / 错误 / 暗色）与 manifest

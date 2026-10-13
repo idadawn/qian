@@ -23,7 +23,7 @@ iClaw 以 `ProjectReference` 指向同级 `kun/` 目录并在 Docker 构建时�
 
 - **D1.1 定位**：Kun 是「微服务开发框架 / 底座 SDK」，不是平台内核。Qian 内核（插件注册表、生命周期、能力目录、租户目录、身份、权限、配置、审计装配）自成一层，Kun 模块是该层的实现依赖（v2 后此层 = `Qian.Runtime` + 平台插件 / `platform` profile base 组合包，Kun 的 `AddKunXxx()` 模块在 Qian 里被包装为插件，见 ADR-020 D20.1 / D20.10）。
 - **D1.2 消费方式**：Qian 以 NuGet 包 + CalVer 锁版本消费 Kun；禁止把 Kun 源码复制进 Qian 仓库或以 `ProjectReference` 引用。
-- **D1.3 对 Kun 的配套要求**：预发布 feed（`-beta.N`）、公共 API 兼容承诺、弃用窗口不少于 2 个小版本、完整变更日志。
+- **D1.3 对 Kun 的配套要求**：预发布 feed（`-beta.N`）、公共 API 兼容承诺、弃用窗口不少于 2 个小版本、完整变更日志。同日修复版 `-hotfix.N` 不属预发布 feed，推送 nuget.org，消费方式见 ADR-021 D21.3 补注（S1-DEC-019 R65）。
 - **D1.4 不推翻的核心设计**：四层依赖、`Result` 错误模型、显式注册的 Mediator、Outbox 表结构与稳定事件 ID、schema-per-service、RLS 双保险、PublicAPI 门禁，全部继承。
 - **D1.5 改变三件事**：(a) 不把「AOT 兼容」写成平台承诺——业务服务全部 JIT，AOT 只留网关与 gRPC 边缘；(b) Kun 的安全默认值（RLS 拦截器、租户模型缓存键、强制认证、限流挂载）在 Qian 应用模板里改为**强制装配 + 构建期检查**，而非 opt-in；(c) 对每组双胞胎 API 选定唯一一套 canonical 实现并写进规范（签发器见 ADR-010，审计见 ADR-009，存储用新线 `Kun.Storage.Abstractions`，`ITenantContext` 用 AsyncLocal 版）。
 - **D1.6 S1 必修的 Kun 缺口**（不修则多租户在后台链路泄漏）：① 多租户后台链路（消费端、Saga、Outbox 发布器回灌租户；两套 `ITenantContext` 收敛；claim 名统一为 `tenant_id`；生产禁用请求头兜底与 `default` 回退，fail-closed）；② 事件语义（丢消息修复、至少一次、多副本锁）；③ 网关加固（强制认证、路由级限流、私钥热轮换）与 gRPC 流式拦截器；④ 身份客户端（PKCE verifier、nonce、refresh、会话吊销）；⑤ 三套 S2S 签发器、两族存储接口、多条审计路径收敛，并对框架内写死的下游产品默认值「去产品化」。

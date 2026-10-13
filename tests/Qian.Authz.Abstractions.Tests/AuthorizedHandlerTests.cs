@@ -72,6 +72,27 @@ public sealed class AuthorizedHandlerTests
     }
 
     [Fact]
+    public void Reflection_registration_that_bypasses_QIAN0005_is_refused_before_any_handler_runs()
+    {
+        // QIAN0005 只在编译期拦截；反射注册由 Kun 2026.10.13 起的 Mediator 构建期兜底拒绝（S1-KUN-014，S1-DEC-019 R66）。
+        var calls = new List<string>();
+        var services = new ServiceCollection();
+        services.AddSingleton(calls);
+        services.AddSingleton<ICurrentUser>(new User(true));
+        services.AddSingleton<ITenantContext>(new Tenant());
+        services.AddKunMediator(builder => typeof(KunMediatorBuilder).GetMethods()
+            .Single(method => method.Name == nameof(KunMediatorBuilder.AddRequestHandler) && method.GetParameters().Length == 0)
+            .MakeGenericMethod(typeof(ProtectedCommand), typeof(int), typeof(Handler))
+            .Invoke(builder, null));
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+
+        var error = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<ISender>());
+
+        Assert.Contains(typeof(ProtectedCommand).FullName!, error.Message, StringComparison.Ordinal);
+        Assert.Empty(calls);
+    }
+
+    [Fact]
     public void Invalid_or_empty_permissions_fail_during_registration()
     {
         var builder = new KunMediatorBuilder(new ServiceCollection());

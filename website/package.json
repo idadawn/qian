@@ -14,6 +14,7 @@
     "check": "node scripts/check-site.ts"
   },
   "dependencies": {
+    "@idadawn/yue-tokens": "workspace:*",
     "@mdx-js/react": "3.1.1",
     "@rspress/core": "2.0.23",
     "react": "19.3.0",

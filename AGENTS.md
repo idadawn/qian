@@ -13,12 +13,14 @@
 ## 任务流程（必须遵守）
 
 - 任务在 `pm/tasks/<id>.md`，一个任务一个文件。开始前认领：
-  `python3 scripts/pm.py set <id> --status doing --owner <你的代理名> --note "开始"`
+  `python3 scripts/pm.py set <id> --status doing --owner <你的代理名> --by <你的代理名> --note "开始"`
+- 日志必须署名：`pm.py set` / `pm.py add` 带 `--by <你的代理名>`（或设环境变量 `PM_ACTOR`），缺省时命令报错；`pm.py validate` 拒绝署名为 someone 的日志行（S1-DEC-019 R71）。
+- 先建档再交付：任务以 `todo` / `doing` 建档并认领后再提交实现，不要在创建任务的提交里直接写 `done` 并勾满验收。
 - 结束时把「验收」里完成的项改为 `[x]`，改状态（`review` 或 `done`），并运行
   `python3 scripts/pm.py build`，把 `pm/index.html`、`pm/tasks.json`、`pm/STATUS.md` 一起提交。
 - 提交信息末尾带任务 id，如 `feat(runtime): ctx.Effect 逆序释放 [S1-RT-001]`。
 - 遇到需要人拍板的问题：不要自作主张改设计。用
-  `python3 scripts/pm.py add --stage S1 --area DEC --type decision --wave 0 --title "..."`
+  `python3 scripts/pm.py add --stage S1 --area DEC --type decision --wave 0 --by <你的代理名> --title "..."`
   新建决策任务并把当前任务标 `blocked`。
 - 不要修改 `pm/index.html`、`pm/tasks.json`、`pm/STATUS.md`（它们是生成物）。
 

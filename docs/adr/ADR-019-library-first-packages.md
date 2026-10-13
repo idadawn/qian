@@ -36,7 +36,7 @@ ADR-002 / ADR-003 把 Qian 的一切能力组织为插件，S1 的 18 个系统�
 - **D19.7 版本与分发**：Qian 包族采用 SemVer，同一版本号锁步发布（类似 `Microsoft.Extensions.*`）；S1 发布到 GitHub Packages（私有 feed）；许可证 Apache-2.0，公开到 nuget.org / npm 的时点见 §7（S2 末或首个外部宿主试用时）。公共 API 变更由 `Microsoft.CodeAnalysis.PublicApiAnalyzers` 守门（覆盖全部 `Qian.*` 包，扩展 PRD §14 C1）；TCK 增加「独立模式」套件。
 - **D19.8 S1 验收**：
   - [ ] 一个空白 ASP.NET Core 项目安装 `Qian.Files` + `Qian.Authz` + `Qian.Identity.Client` 三个包、不部署 Qian 平台，照 README 在 30 分钟内跑通文件上传与权限检查；样例 `samples/standalone-minimal` 入 Qian 源码仓。
-  - [ ] 同一组包在 `qian-platform` 宿主中以平台模式运行，行为一致（TCK 两种模式都过）。
+  - [ ] 同一组包在 `qian-platform` 宿主中以平台模式运行，行为一致（TCK 两种模式都过）。运行时侧的 T23 已由 S1-QA-002 用 CRM 样例组合与 TCK 平台组合包验证；本条点名三包的平台模式对照由 S1-QA-003 / S1-QA-005 承担（S1-DEC-019 R68）。
   - [ ] 任何 `Qian.<Component>` 包的依赖图中不出现 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities`（CI 用 `dotnet list package --include-transitive` 断言）。
   - [ ] 嵌入 `Qian.Identity.Server` 的独立宿主能通过 OpenIddict 一致性测试。
 - **D19.9 明确不做**：不提供「拆单个库出来替代 Qian 平台」的支持承诺（独立模式是能力，不是另一个产品）；不为独立模式做低代码运行时（S2 的 metadata / dynamic-data / forms 库可以装，但设计器与运行时需要内核）；非 .NET 消费者沿用 OIDC + HTTP API。
