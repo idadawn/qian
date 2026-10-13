@@ -2,9 +2,9 @@ name: surfaces
 on:
   push:
     branches: [main]
-    paths: ['packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/qian-cli/**', 'profiles/**', 'plugins/**', 'tck/profiles/**', 'tck/registry-artifacts/**', 'tests/Qian.Profiles.Tests/**', 'package.json', 'schemas/v2/**', 'tck/surfaces/**', 'tck/runtime/hotreload.json', 'packages/qian-runtime/**', 'tck/marketplaces/**', 'contracts/v0/**', 'tests/Qian.Surfaces.Tests/**', 'scripts/generate_surface_fixtures.py', 'pnpm*', '*.props', '*.targets', 'Qian.slnx', '.github/workflows/surfaces.yml']
+    paths: ['packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/qian-cli/**', 'profiles/**', 'plugins/**', 'tck/profiles/**', 'tck/registry-artifacts/**', 'tests/Qian.Profiles.Tests/**', 'package.json', 'schemas/v2/**', 'tck/surfaces/**', 'tck/runtime/hotreload.json', 'tck/runtime/skill-only.json', 'packages/qian-runtime/**', 'tck/marketplaces/**', 'contracts/v0/**', 'tests/Qian.Surfaces.Tests/**', 'scripts/generate_surface_fixtures.py', 'pnpm*', '*.props', '*.targets', 'Qian.slnx', '.github/workflows/surfaces.yml']
   pull_request:
-    paths: ['packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/qian-cli/**', 'profiles/**', 'plugins/**', 'tck/profiles/**', 'tck/registry-artifacts/**', 'tests/Qian.Profiles.Tests/**', 'package.json', 'schemas/v2/**', 'tck/surfaces/**', 'tck/runtime/hotreload.json', 'packages/qian-runtime/**', 'tck/marketplaces/**', 'contracts/v0/**', 'tests/Qian.Surfaces.Tests/**', 'scripts/generate_surface_fixtures.py', 'pnpm*', '*.props', '*.targets', 'Qian.slnx', '.github/workflows/surfaces.yml']
+    paths: ['packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/qian-surfaces/**', 'packages/Qian.Profiles*/**', 'packages/qian-cli/**', 'profiles/**', 'plugins/**', 'tck/profiles/**', 'tck/registry-artifacts/**', 'tests/Qian.Profiles.Tests/**', 'package.json', 'schemas/v2/**', 'tck/surfaces/**', 'tck/runtime/hotreload.json', 'tck/runtime/skill-only.json', 'packages/qian-runtime/**', 'tck/marketplaces/**', 'contracts/v0/**', 'tests/Qian.Surfaces.Tests/**', 'scripts/generate_surface_fixtures.py', 'pnpm*', '*.props', '*.targets', 'Qian.slnx', '.github/workflows/surfaces.yml']
 permissions:
   contents: read
 concurrency:
@@ -47,8 +47,10 @@ jobs:
       - name: profile CLI 构建与验收
         run: |
           pnpm --filter qian... build
-          QIAN_PROFILE_REPORT="$GITHUB_WORKSPACE/TestResults/profiles-ts.json" pnpm --filter qian test
+          QIAN_SKILL_ONLY_REPORT="$GITHUB_WORKSPACE/TestResults/skill-only-ts.json" QIAN_PROFILE_REPORT="$GITHUB_WORKSPACE/TestResults/profiles-ts.json" pnpm --filter qian test
       - name: profile .NET 装配与真实 Runtime 装载
-        run: QIAN_PROFILE_REPORT="$GITHUB_WORKSPACE/TestResults/profiles-dotnet.json" dotnet run --project tests/Qian.Profiles.Tests -c Release
+        run: QIAN_SKILL_ONLY_REPORT="$GITHUB_WORKSPACE/TestResults/skill-only-dotnet.json" QIAN_PROFILE_REPORT="$GITHUB_WORKSPACE/TestResults/profiles-dotnet.json" dotnet run --project tests/Qian.Profiles.Tests -c Release
+      - name: 精确比较 minimal 无代码技能与隔离
+        run: node packages/qian-surfaces/scripts/compare-fixtures.mjs TestResults/skill-only-dotnet.json TestResults/skill-only-ts.json
       - name: 精确比较 profile 来源、配置和诊断
         run: node packages/qian-surfaces/scripts/compare-fixtures.mjs TestResults/profiles-dotnet.json TestResults/profiles-ts.json

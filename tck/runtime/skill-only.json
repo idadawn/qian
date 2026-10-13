@@ -1,0 +1,17 @@
+{
+  "id": "RT009-skill-only",
+  "profile": "minimal",
+  "bundle": "qian.bundle.minimal@1.0.0",
+  "plugin": "test.skill-only",
+  "version": "1.0.0",
+  "entry": "tenant-guide",
+  "scope": "tenant:a",
+  "otherScope": "tenant:b",
+  "skill": "guide",
+  "directory": "plugins/test.skill-only",
+  "patch": "- id: tenant-guide\n  plugin: test.skill-only@1.0.0\n  scope: tenant:a\n  config: {}\n",
+  "files": {
+    ".qian-plugin/plugin.json": "{\"id\":\"test.skill-only\",\"version\":\"1.0.0\",\"description\":\"仅含声明式技能的实际 minimal 装载验收组件。\",\"author\":{\"name\":\"Qian\"},\"license\":\"Apache-2.0\",\"interface\":{\"displayName\":\"租户指引\",\"category\":\"testing\"},\"inject\":[],\"provides\":[],\"policy\":{\"tier\":\"private\",\"sandbox\":\"none\",\"authentication\":\"ON_INSTALL\"},\"scopes\":[\"global\",\"tenant\"]}",
+    "skills/guide/SKILL.md": "---\nname: guide\ndescription: 当用户需要核对当前租户上线状态时读取已授权内容并给出核对步骤。\n---\n按当前租户的可见资料逐项核对，不能读取其它租户内容。\n"
+  }
+}
