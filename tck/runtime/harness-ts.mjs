@@ -8,12 +8,12 @@ const fixtureRoot=path.join(root,'tck/runtime');
 for(const file of readdirSync(fixtureRoot).filter(f=>f.endsWith('.scenario.yml')).sort())test(file,async()=>{
  const scenario=parse(readFileSync(path.join(fixtureRoot,file),'utf8'));assert.equal(String(scenario.version),'1');
  const baseline=loadProfile({workingDirectory:root,profile:'minimal',includeHomePatch:false});assert.ok(baseline.isValid);assert.deepEqual(baseline.snapshot.entries,[]);assert.equal(baseline.snapshot.layers.find(l=>l.kind==='bundle').ref,'qian.bundle.minimal@1.0.0');
- const errors=[];const loader=new PluginLoader({onError:error=>errors.push(error)}),trace=[],events=new Map((scenario.events??[]).map(e=>[e.name,defineEvent(e.name,e.mode)])),entries=new Map(scenario.entries.map(e=>[e.id,e]));
+ const errors=[];const loader=new PluginLoader({onError:error=>errors.push(error)}),trace=[],handles=new Map(),events=new Map((scenario.events??[]).map(e=>[e.name,defineEvent(e.name,e.mode)])),entries=new Map(scenario.entries.map(e=>[e.id,e]));
  const context=step=>{const ctx=loader.getContext(step.entry,step.scope??'global');return step.view?ctx.scoped(step.view):ctx;};
  const definition=id=>{const entry=entries.get(id);return{entry:{id,plugin:id,version:'1.0.0',scope:entry.scope??'global',layer:0,config:{}},provides:entry.provides??[],plugin:{name:id,inject:entry.inject??[],apply(ctx){
   trace.push('apply:'+id);for(const action of entry.apply){const target=action.scope?ctx.scoped(action.scope):ctx;
    switch(action.op){
-    case'provide':if(action.name!==undefined)target.provide(action.key,action.name,action.value);else target.provide(action.key,action.value);break;
+    case'provide':{const handle=action.name!==undefined?target.provide(action.key,action.name,action.value):target.provide(action.key,action.value);if(action.handle!==undefined)handles.set(action.handle,handle);break;}
     case'effect':ctx.effect(async()=>{await Promise.resolve();trace.push('dispose:'+action.name);if(action.fail)throw new Error('撤销失败');});break;
     case'optional':assert.equal(ctx.tryInject(action.key),undefined);break;
     case'restrict':ctx.restrict(action.scope,r=>action.keep.includes(r.name));break;
@@ -37,6 +37,7 @@ for(const file of readdirSync(fixtureRoot).filter(f=>f.endsWith('.scenario.yml')
   case'missing':assert.equal(context(step).tryInject(step.key),undefined);break;
   case'list':assert.deepEqual(context(step).list(step.key).map(r=>r.name),step.value);break;
   case'notFoundEquivalent':{const ctx=context(step),get=name=>{try{ctx.inject(step.key,name);assert.fail('应不可见');}catch(error){assert.ok(error instanceof RuntimeError);return error.toDetail('a'.repeat(32));}};assert.deepEqual(get(step.name),get('does-not-exist'));break;}
+  case'replace':{const handle=handles.get(step.handle);if(step.error)assert.throws(()=>handle.replace(step.value));else handle.replace(step.value);await loader.whenIdle();break;}
   case'dispatch':{const event=events.get(step.event);const call=()=>context(step).dispatch(event,'payload',event.mode==='waterfall'?()=> 'terminal':undefined);if(step.error==='parallel')await assert.rejects(call(),error=>{assert.ok(error instanceof ParallelDispatchError);assert.deepEqual(error.partial,step.partial);return true;});else if(step.error)await assert.rejects(call());else assert.deepEqual((await call())??null,step.value??null);break;}
   default:throw new Error('未知 TCK 操作 '+step.op);
  }}finally{await loader.dispose();}

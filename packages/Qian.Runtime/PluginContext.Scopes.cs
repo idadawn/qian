@@ -28,7 +28,7 @@ internal sealed partial class PluginContext
         lock (Loader.Sync) { EnsureOpen(); return Loader.List(key, Scope, this); }
     }
 
-    public IDisposable Provide<TService>(ServiceKey key, string name, TService instance) where TService : class
+    public IRegistrationHandle<TService> Provide<TService>(ServiceKey key, string name, TService instance) where TService : class
         => Provide(Named(key, name), instance);
 
     public TService Inject<TService>(ServiceKey key, string name) where TService : class

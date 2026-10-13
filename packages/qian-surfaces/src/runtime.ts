@@ -3,11 +3,13 @@ import path from 'node:path';
 import {createHash,randomBytes} from 'node:crypto';
 import {validateComponent, type JsonValue, type SurfaceDocument, type SurfaceValidationOptions, type SurfaceValidationResult, type SurfaceDiagnostic} from './index.js';
 
+/** 运行时注册句柄的结构端口：调用即撤销；replace 在原注册位原子替换值，读取方只看到旧值或新值。 */
+export type SurfaceRegistrationHandle<T>=(()=>void|Promise<void>)&{replace(value:T):void};
 /** 实际运行时上下文的结构端口；不在表面库创建另一套运行时。 */
 export interface SurfaceContext {
  readonly entry:{readonly id:string;readonly plugin:string;readonly version:string}; readonly scope:string;
- provide<T>(key:string,value:T):()=>void|Promise<void>;
- provide<T>(key:string,name:string,value:T):()=>void|Promise<void>;
+ provide<T>(key:string,value:T):SurfaceRegistrationHandle<T>;
+ provide<T>(key:string,name:string,value:T):SurfaceRegistrationHandle<T>;
  effect(dispose:()=>void|Promise<void>):void;
 }
 /** 热重载状态，不包含文件内容。 */
@@ -24,6 +26,7 @@ export function readSurfaceRuntimeDiagnostics(context:SurfaceDiagnosticContext):
  return freeze({protocol:'qian.surface-diagnostics/v1',scope:context.scope,entries});
 }
 type Registration={key:string;name:string;document:SurfaceDocument};
+type Active=Registration&{handle:SurfaceRegistrationHandle<SurfaceDocument>};
 const obj=(value:JsonValue|undefined):Record<string,JsonValue>=>value!==null&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const stable=(value:unknown):string=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a<b?-1:a>b?1:0)):item);
 const freeze=<T>(value:T):T=>{if(value&&typeof value==='object'){for(const child of Object.values(value))freeze(child);Object.freeze(value);}return value;};
@@ -42,20 +45,30 @@ function plan(result:SurfaceValidationResult,ctx?:SurfaceContext):Map<string,Reg
 }
 /** 同次 Apply 的表面集合；替换不重放代码服务或不变的表面。 */
 export class SurfaceRegistrationSession {
- readonly #context:SurfaceContext;#active=new Map<string,Registration&{dispose:()=>void|Promise<void>}>();#closed=false;
+ readonly #context:SurfaceContext;#active=new Map<string,Active>();#closed=false;
  private constructor(context:SurfaceContext){this.#context=context;}
  static async create(context:SurfaceContext,initial:SurfaceValidationResult):Promise<SurfaceRegistrationSession>{const session=new SurfaceRegistrationSession(context);await session.replace(initial);return session;}
+ /** 只新增、原位替换或撤销变化的项，返回三类注册的总数；新旧都有的项原子替换，失败时撤销本次新增并恢复已替换的旧文档。 */
  async replace(result:SurfaceValidationResult):Promise<number>{
   if(this.#closed)throw new Error('上下文已卸载。');const next=plan(result,this.#context);
-  const changed=[...next].filter(([key,value])=>!this.#active.has(key)||stable(this.#active.get(key)!.document)!==stable(value.document));
-  const removed=[...this.#active].filter(([key])=>!next.has(key)||changed.some(([name])=>name===key));
-  for(const [key,value]of [...removed].reverse()){await value.dispose();this.#active.delete(key);}
-  const installed:string[]=[];
-  try{for(const [key,value]of changed){this.#active.set(key,{...value,dispose:this.#context.provide(value.key,value.name,value.document)});installed.push(key);}}
-  catch(error){for(const key of installed.reverse()){await this.#active.get(key)!.dispose();this.#active.delete(key);}for(const [key,value]of removed)this.#active.set(key,{...value,dispose:this.#context.provide(value.key,value.name,value.document)});throw error;}
-  return removed.length+changed.length;
+  const added=[...next].filter(([key])=>!this.#active.has(key));
+  const changed=[...next].filter(([key,value])=>this.#active.has(key)&&stable(this.#active.get(key)!.document)!==stable(value.document));
+  const removed=[...this.#active].filter(([key])=>!next.has(key));
+  // 注册按 key/name 独占（R38），不能先登记后撤销；先撤销后登记会让读取方在两步之间看到缺失。
+  // 因此不让出事件循环地先新增、再原位替换，最后撤销已删除的项，回滚也不必重新登记。
+  const installed:string[]=[],replaced:[string,Active][]=[];
+  try{
+   for(const [key,value]of added){this.#active.set(key,{...value,handle:this.#context.provide(value.key,value.name,value.document)});installed.push(key);}
+   for(const [key,value]of changed){const old=this.#active.get(key)!;old.handle.replace(value.document);this.#active.set(key,{...value,handle:old.handle});replaced.push([key,old]);}
+  }catch(error){
+   for(const [key,old]of replaced.reverse()){this.#active.set(key,old);try{old.handle.replace(old.document);}catch{/* 上下文已卸载：注册随效果栈撤销，无须恢复。 */}}
+   for(const key of installed.reverse()){await this.#active.get(key)!.handle();this.#active.delete(key);}
+   throw error;
+  }
+  for(const [key,value]of removed.reverse()){await value.handle();this.#active.delete(key);}
+  return added.length+changed.length+removed.length;
  }
- async dispose():Promise<void>{if(this.#closed)return;this.#closed=true;for(const value of [...this.#active.values()].reverse())await value.dispose();this.#active.clear();}
+ async dispose():Promise<void>{if(this.#closed)return;this.#closed=true;for(const value of [...this.#active.values()].reverse())await value.handle();this.#active.clear();}
 }
 /** 开发态文件监视：声明式内容可更新，代码变化只给出滚动重启状态。 */
 export class HotReloadSurfacePlugin<TContext extends SurfaceContext=SurfaceContext> {

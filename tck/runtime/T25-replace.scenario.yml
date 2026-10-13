@@ -1,0 +1,37 @@
+version: 1
+id: T25
+description: 注册句柄原位替换实例；解析方看到新值，scope 与注册顺序不变，依赖者与撤销后再登记一样重新 Apply，卸载后句柄拒绝替换且无残留。
+entries:
+  - id: provider
+    provides: [X]
+    apply:
+      - {op: provide, key: X, value: old, handle: x}
+      - {op: provide, key: Tools, name: first, value: one, handle: first}
+      - {op: provide, key: Tools, name: second, value: two}
+      - {op: provide, key: Files, name: upload, value: tenant-old, scope: 'tenant:t-001', handle: tenant}
+  - id: consumer
+    inject: [X]
+    apply:
+      - {op: effect, name: consumer}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [provider, consumer, observer]}
+  - {op: inject, entry: observer, key: X, value: old}
+  - {op: replace, handle: x, value: new}
+  - {op: inject, entry: observer, key: X, value: new}
+  - {op: state, entry: consumer, value: Ready}
+  - {op: trace, value: ['apply:provider', 'apply:consumer', 'apply:observer', 'dispose:consumer', 'apply:consumer']}
+  - {op: replace, handle: first, value: uno}
+  - {op: inject, entry: observer, key: Tools, name: first, value: uno}
+  - {op: list, entry: observer, key: Tools, value: [first, second]}
+  - {op: replace, handle: tenant, value: tenant-new}
+  - {op: inject, entry: observer, view: 'tenant:t-001', key: Files, name: upload, value: tenant-new}
+  - {op: missing, entry: observer, view: 'tenant:t-002', key: 'Files:upload'}
+  - {op: unmount, entry: provider}
+  - {op: state, entry: consumer, value: Pending}
+  - {op: replace, handle: x, value: late, error: disposed}
+  - {op: missing, entry: observer, key: X}
+  - {op: missing, entry: observer, key: 'Tools:first'}
+  - {op: list, entry: observer, key: Tools, value: []}
+  - {op: dump, entries: [consumer, observer]}
+  - {op: cleanupErrors, value: 0}

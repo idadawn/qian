@@ -24,4 +24,4 @@ const result = validateComponent(componentDirectory, {
 
 ## 表面运行态
 
-本包提供结构化 SurfaceContext 端口、SurfaceRegistrationSession 与 HotReloadSurfacePlugin，可直接消费实际 Qian TypeScript 运行时上下文。具体语义与边界统一维护在 [.NET Provider 主文档](../Qian.Surfaces/README.md#声明式表面独立刷新)，两侧共用 T19 文件监视场景。运行热重载用例前需构建 packages/qian-runtime；CI 已按此顺序执行。
+本包提供结构化 SurfaceContext 端口、SurfaceRegistrationSession 与 HotReloadSurfacePlugin，可直接消费实际 Qian TypeScript 运行时上下文。端口要求 provide 返回带 replace 的注册句柄（与运行时的 RegistrationHandle 同构），会话据此原位替换内容改变的表面。具体语义与边界统一维护在 [.NET Provider 主文档](../Qian.Surfaces/README.md#声明式表面独立刷新)，两侧共用 T19 文件监视场景。运行热重载用例前需构建 packages/qian-runtime；CI 已按此顺序执行。
