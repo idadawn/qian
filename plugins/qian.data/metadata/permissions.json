@@ -1,0 +1,4 @@
+[
+  { "resource": "type", "actions": ["read", "delete"], "risk": { "delete": "high" } },
+  { "resource": "connection", "actions": ["read", "write", "test"], "risk": { "write": "high", "test": "medium" } }
+]

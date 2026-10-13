@@ -1,0 +1,15 @@
+{
+  "types": [
+    { "code": "int", "name": "整型", "description": "有符号 32 位整数", "isSystem": true, "facets": ["range"] },
+    { "code": "bigint", "name": "长整型", "description": "有符号 64 位整数", "isSystem": true, "facets": ["range"] },
+    { "code": "decimal", "name": "定点小数", "description": "精确小数，精度为总位数、小数位为其中的小数部分", "isSystem": true, "facets": ["precision", "scale", "range"] },
+    { "code": "float", "name": "浮点数", "description": "双精度浮点数，只接受有限值", "isSystem": true, "facets": ["range"] },
+    { "code": "datetime", "name": "日期时间", "description": "带时区的时间点，精度为秒的小数位数", "isSystem": true, "facets": ["precision"] },
+    { "code": "varchar", "name": "字符串", "description": "有最大长度的文本", "isSystem": true, "facets": ["length"] },
+    { "code": "text", "name": "长文本", "description": "不限长度的文本", "isSystem": true, "facets": [] },
+    { "code": "bool", "name": "布尔", "description": "真或假", "isSystem": true, "facets": [] },
+    { "code": "json", "name": "JSON", "description": "结构化 JSON 文档", "isSystem": true, "facets": [] },
+    { "code": "uuid", "name": "UUID", "description": "128 位全局唯一标识，规范带连字符形式", "isSystem": true, "facets": [] }
+  ],
+  "dialects": []
+}

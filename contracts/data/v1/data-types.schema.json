@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/data/v1/data-types.schema.json",
+  "title": "Qian 基准类型目录",
+  "description": "GET /api/data/meta/types 的响应：系统基准类型与已注册方言的类型映射。base-data-types.json 是不含方言的同形种子；方言组件的 qian.data.dialect/v1 数据按 $defs/dbDialect 校验。",
+  "type": "object",
+  "required": ["types", "dialects"],
+  "additionalProperties": false,
+  "properties": {
+    "types": { "type": "array", "items": { "$ref": "#/$defs/baseDataType" } },
+    "dialects": { "type": "array", "items": { "$ref": "#/$defs/dbDialect" } }
+  },
+  "$defs": {
+    "code": { "type": "string", "pattern": "^[a-z][a-z0-9]{0,31}$" },
+    "facet": { "enum": ["length", "precision", "scale", "range"] },
+    "decimal": { "type": "string", "pattern": "^-?(0|[1-9][0-9]{0,28})(\\.[0-9]{1,28})?$" },
+    "baseDataType": {
+      "type": "object",
+      "required": ["code", "name", "description", "isSystem", "facets"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "description": { "type": "string", "maxLength": 200 },
+        "isSystem": { "type": "boolean" },
+        "facets": { "type": "array", "items": { "$ref": "#/$defs/facet" }, "uniqueItems": true }
+      }
+    },
+    "limit": {
+      "description": "长度、精度或小数位的允许区间与缺省值，缺省值须落在区间内。",
+      "type": "object",
+      "required": ["min", "max", "default"],
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": "integer", "minimum": 0 },
+        "max": { "type": "integer", "minimum": 0 },
+        "default": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "valueRange": {
+      "description": "字段取值上下限可落的区间；数值以十进制字符串表示，避免 64 位整数在 JSON 数字中失真。fractionDigits 为上下限允许的小数位数，省略不限。",
+      "type": "object",
+      "required": ["min", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "min": { "$ref": "#/$defs/decimal" },
+        "max": { "$ref": "#/$defs/decimal" },
+        "fractionDigits": { "type": "integer", "minimum": 0, "maximum": 28 }
+      }
+    },
+    "dialectTypeMapping": {
+      "type": "object",
+      "required": ["type", "nativeType"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "$ref": "#/$defs/code" },
+        "nativeType": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "length": { "$ref": "#/$defs/limit" },
+        "precision": { "$ref": "#/$defs/limit" },
+        "scale": { "$ref": "#/$defs/limit" },
+        "range": { "$ref": "#/$defs/valueRange" }
+      }
+    },
+    "dbDialect": {
+      "type": "object",
+      "required": ["code", "name", "driver", "defaultPort", "connectionTemplate", "mappings"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "driver": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "defaultPort": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "connectionTemplate": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "mappings": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/dialectTypeMapping" } }
+      }
+    },
+    "dataFieldDefinition": {
+      "description": "建模时的一列定义；省略的长度、精度、小数位取方言缺省值，上下限省略即不限。",
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "$ref": "#/$defs/code" },
+        "length": { "type": "integer", "minimum": 0 },
+        "precision": { "type": "integer", "minimum": 0 },
+        "scale": { "type": "integer", "minimum": 0 },
+        "minimum": { "$ref": "#/$defs/decimal" },
+        "maximum": { "$ref": "#/$defs/decimal" }
+      }
+    }
+  }
+}

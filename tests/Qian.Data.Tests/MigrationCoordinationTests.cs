@@ -40,11 +40,11 @@ public sealed class MigrationCoordinationTests(PostgresFixture postgres) : IClas
         var winner = Assert.Single(reports, report => report.Applied.Count > 0);
         var waiter = Assert.Single(reports, report => report.Applied.Count == 0);
         Assert.Equal("plugin_qian_data", winner.Schema);
-        Assert.Equal(["20261013172723_Sequences"], winner.Applied);
+        Assert.Equal(["20261013172723_Sequences", "20261013180539_DataConnections"], winner.Applied);
         // 执行 DDL 的只有一个副本；另一个在锁上等到对方迁移完成（每条建表语句被拖慢 200 毫秒）。
         Assert.Equal(1, new[] { counterA.Ddl, counterB.Ddl }.Count(count => count > 0));
         Assert.True(waiter.LockWait >= TimeSpan.FromMilliseconds(300), "等锁 " + waiter.LockWait);
-        Assert.Equal(1L, await ScalarAsync("SELECT count(*) FROM plugin_qian_data.\"__EFMigrationsHistory\""));
+        Assert.Equal(2L, await ScalarAsync("SELECT count(*) FROM plugin_qian_data.\"__EFMigrationsHistory\""));
 
         // 两个副本随后正常启动：启动检查确认已无待应用迁移。
         await a.StartAsync(Ct);
@@ -54,6 +54,7 @@ public sealed class MigrationCoordinationTests(PostgresFixture postgres) : IClas
 
         // 迁移经 Qian 生成器建表：租户表强制 RLS，应用角色只拿到 DML 权限。
         Assert.Equal(true, await ScalarAsync("SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE oid = 'plugin_qian_data.sequence_counters'::regclass"));
+        Assert.Equal(true, await ScalarAsync("SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE oid = 'plugin_qian_data.data_connections'::regclass"));
         Assert.Equal(DataOwner.RoleName, await ScalarAsync("SELECT tableowner FROM pg_tables WHERE schemaname = 'plugin_qian_data' AND tablename = 'sequence_rules'"));
         Assert.Equal(false, await ScalarAsync($"SELECT has_table_privilege('{PostgresFixture.AppRoleName}', 'plugin_qian_data.sequence_rules', 'TRUNCATE')"));
 

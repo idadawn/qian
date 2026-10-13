@@ -1,0 +1,6 @@
+[
+  { "role": "tenant.owner", "grant": ["qian.data:type:read", "qian.data:connection:*"] },
+  { "role": "tenant.admin", "grant": ["qian.data:type:read", "qian.data:connection:*"] },
+  { "role": "tenant.developer", "grant": ["qian.data:type:read", "qian.data:connection:read", "qian.data:connection:test"] },
+  { "role": "tenant.user", "grant": ["qian.data:type:read"] }
+]

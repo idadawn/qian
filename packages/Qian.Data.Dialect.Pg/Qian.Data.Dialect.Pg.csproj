@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Qian 数据组件的 PostgreSQL 方言（qian.data.dialect/v1）：基准类型映射数据与 Npgsql 连通探测。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
+    <PackageReference Include="Npgsql" />
+    <EmbeddedResource Include="pg-dialect.json" LogicalName="qian.data.dialect.pg.json" />
+  </ItemGroup>
+</Project>

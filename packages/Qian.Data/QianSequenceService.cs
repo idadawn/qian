@@ -1,7 +1,6 @@
 using System.Data.Common;
 using System.Text.RegularExpressions;
 using Kun.Core.MultiTenancy;
-using Kun.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -30,11 +29,7 @@ public static class QianSequenceExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configure);
-        services.AddQianData<DataSystemDbContext>((sp, builder) =>
-        {
-            configure(sp, builder);
-            builder.UseKunSchema(DataSystemDbContext.Schema);
-        });
+        DataSystemContext.Add(services, configure);
         var settings = services.AddOptions<QianSequenceOptions>();
         if (options is not null) settings.Configure(options);
         services.TryAddSingleton(TimeProvider.System);

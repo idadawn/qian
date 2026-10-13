@@ -64,7 +64,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 | 7.3 | `qian.tenancy` | `Qian.Tenancy.Abstractions`（`ctx.Tenancy`）+ `Qian.Tenancy` | module | `platform` | P0 |
 | 7.4 | `qian.identity`、`qian.identity.connector.oidc`、`qian.identity.connector.wecom` | `Qian.Identity.Abstractions`（`ctx.Identity`）+ `Qian.Identity.Server`、`Qian.Identity.Client`、`Qian.Identity.Connector.Oidc` / `.WeCom` | module（Server / Client）；连接器 = 为 `ctx.Identity` seam 提供 Provider 的组件（`provides[]` + `policy.egress`，`connector` 非 `runtime.form`，R31） | `identity`（Server、连接器）；`platform` / `gateway` / `standalone`（Client） | P0 |
 | 7.5 | `qian.authz` | `Qian.Authz.Abstractions`（`ctx.Authz`）+ `Qian.Authz` | module | `platform` | P0 |
-| 7.6 | `qian.data`、`qian.data.dialect.postgres` | `Qian.Data.Abstractions`（`ctx.Data`）+ `Qian.Data`、`Qian.Data.Dialect.Pg` | module | 全部 .NET profile（随 SDK） | P0 |
+| 7.6 | `qian.data`、`qian.data.dialect.pg` | `Qian.Data.Abstractions`（`ctx.Data`）+ `Qian.Data`、`Qian.Data.Dialect.Pg` | module | 全部 .NET profile（随 SDK） | P0 |
 | 7.7 | `qian.files`、`qian.files.provider.{oss,s3,local}` | `Qian.Files.Abstractions`（`ctx.Files`）+ `Qian.Files.Oss` / `.S3` / `.Local` | module | `platform` | P0 |
 | 7.8 | `qian.config` | `Qian.Config.Abstractions`（`ctx.Config`）+ `Qian.Config.Apollo` | module | 全部 .NET profile（随 SDK） | P0 |
 | 7.9 | `qian.gateway` | `Qian.Gateway.Abstractions` + `Qian.Gateway` | module（独立 profile） | `gateway` | P0 |
@@ -377,7 +377,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **范围与边界**。✅ 做：`AddQianData<TContext>()` 默认安全装配（RLS 连接版 + 事务版拦截器、`KunMultiTenantModelCacheKeyFactory`、租户与软删过滤、审计字段自动填充、`xmin` 并发令牌、snake_case、Guid v7 主键、Outbox 同 DbContext）；禁用 `IgnoreQueryFilters` 的分析器；多副本迁移协调（PG advisory lock）；分布式 ID；序号服务（前缀 + 日期 + 流水，租户/应用作用域）；基准数据类型与 PG 方言类型映射（数据而非代码）；数据连接档案（凭证只存 secretRef、连通测试、按租户）；Filter AST JSON Schema 与运算符 × 字段类型矩阵（契约）；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；CI 检查「在线 DbContext 必须继承 `QianDbContext`」。❌ 不做：MySQL / 国产库作业务库（本期不做，Q5）；动态表与 SQL 生成（S2 `qian.dynamic-data`）；Schema Migrator（S2）；数据建模 UI（S2）；数据接口（SQL/API）设计器（S2，S1 只定契约在能力目录）；MySQL 方言（P2 以下，不做）；跨库数据同步（不做）；租户自带业务库连接（待 S3 评估）。
 
-**技术落点**。组件 `qian.data`：Definition `Qian.Data.Abstractions`（服务键 `ctx.Data`）+ Provider `Qian.Data`，随 `Qian.Plugin.Sdk` 进入每个 .NET profile（`platform` / `identity` / `gateway` / `standalone`），可独立安装（`qian add data`）；方言为独立组件 `qian.data.dialect.postgres`（Provider `Qian.Data.Dialect.Pg`，方言数据包）；依赖 `Kun.EntityFrameworkCore`、`Kun.Dapper`（读侧可选）、Npgsql。
+**技术落点**。组件 `qian.data`：Definition `Qian.Data.Abstractions`（服务键 `ctx.Data`）+ Provider `Qian.Data`，随 `Qian.Plugin.Sdk` 进入每个 .NET profile（`platform` / `identity` / `gateway` / `standalone`），可独立安装（`qian add data`）；方言为独立组件 `qian.data.dialect.pg`（Provider `Qian.Data.Dialect.Pg`，方言数据包；组件 id 按 [组件模型](specs/component-model.md) §6.1 由包名映射）；依赖 `Kun.EntityFrameworkCore`、`Kun.Dapper`（读侧可选）、Npgsql。
 
 - `QianDbContext : KunDbContext`：构造期校验拦截器与缓存键工厂已注册，否则抛 `QianDataMisconfiguredException` 拒绝启动；`UseKunSchema("plugin_<id>")` 强制；系统列约定 `id (uuid v7) / tenant_id / created_at / created_by / updated_at / updated_by / deleted_at / deleted_by`，并发令牌 `xmin`；RLS 策略模板 `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY`，`USING` / `WITH CHECK` 均比较 `tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')`（字符串租户标识，缺失时不匹配），由迁移生成器为每个 `IMultiTenant` 表自动输出。
 - 迁移协调：`MigrateAsync` 前取 `pg_advisory_lock(hash(schema))`，K8s 迁移 Job 先行（7.17），多副本启动时只校验不迁移。
