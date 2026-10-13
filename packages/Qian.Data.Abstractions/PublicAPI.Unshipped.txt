@@ -29,3 +29,7 @@ Qian.Data.QianDataConventions
 Qian.Data.QianSoftDeleteInterceptor.QianSoftDeleteInterceptor(Kun.Core.Security.ICurrentUser! user, System.TimeProvider! clock) -> void
 override Qian.Data.QianSoftDeleteInterceptor.SavingChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>>
 override Qian.Data.QianSoftDeleteInterceptor.SavingChanges(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result) -> Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>
+Qian.Data.IOutboxBufferBinding
+Qian.Data.IOutboxBufferBinding.Buffer.get -> Kun.EventBus.Outbox.IntegrationEventBuffer!
+Qian.Data.IDataContextCatalog
+Qian.Data.IDataContextCatalog.ContextTypes.get -> System.Collections.Generic.IReadOnlyList<System.Type!>!

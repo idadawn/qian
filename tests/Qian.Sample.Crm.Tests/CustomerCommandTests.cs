@@ -249,7 +249,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         using var suspended = await host.Get(A, "/api/customers"); Assert.Equal(HttpStatusCode.Forbidden, suspended.StatusCode);
     }
 
-    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null)
+    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null)
     {
         var platform = capabilities || runtimeProfile == "platform";
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
@@ -273,7 +273,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 ["ConnectionStrings:Crm"] = connection, ["ConnectionStrings:Authz"] = postgres.AppConnectionString,
                 ["ConnectionStrings:Tenancy"] = postgres.AppConnectionString, ["ConnectionStrings:Audit"] = postgres.AppConnectionString,
                 ["S2S:Issuer"] = Issuer, ["S2S:Audience"] = Audience, ["S2S:PublicJwks"] = publicJwks,
-                ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer
+                ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events
             });
         });
         try

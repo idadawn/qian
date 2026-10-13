@@ -14,6 +14,8 @@ QianApplicationRoleInterceptor 校验同步/异步新连接的登录角色和当
 
 DataDefinition.Key 拥有 Data 服务键，`ctx.Data()` 解析当前 scope 可见的 IDataService。`OpenAsync<TContext>()` 返回 IDataSession，暴露该工作单元的 Context 和 IOutboxWriter，继承 Kun 当前 IUnitOfWork 的 SaveChangesAsync；会话通过 IAsyncDisposable 释放。Provider 负责把业务上下文、通知处理器和事件缓冲绑定在同一 scope，防止多上下文串写。
 
+替换 Kun 默认累加器的 Outbox 写入端（如事件组件的信封写入端）实现 IOutboxBufferBinding，声明自己写入的缓冲器；数据会话只接受写入当前 scope 缓冲器的实现。IDataContextCatalog 列出宿主经 AddQianData 登记的全部业务上下文，供 Outbox 投递等宿主级组件逐个处理。
+
 DataErrors.Misconfigured 定义统一 DATA_MISCONFIGURED，QianDataMisconfiguredException 携带 QianError。宿主统一映射为 ErrorDetail，不自造错误体。
 
 ## 组件位置

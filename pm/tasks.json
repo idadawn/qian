@@ -2379,14 +2379,14 @@
  {
   "id": "S1-EVT-001",
   "title": "Qian.Events：信封、稳定事件 ID、Outbox 发布与 MQ 拓扑",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "EVT",
   "areaName": "事件",
   "wave": 1,
   "priority": "P0",
   "type": "feature",
-  "owner": "",
+  "owner": "claude",
   "estimate": "5d",
   "days": 5.0,
   "depends": [
@@ -2397,7 +2397,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.10",
@@ -2420,12 +2420,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
    }
   ],
-  "updated": "2026-10-10",
+  "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 4,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.events</code>（<code>Qian.Events.Abstractions</code> / <code>ctx.Events</code> + <code>Qian.Events</code>，随 SDK 进每个 .NET profile）：<code>QianEventEnvelope { version, event_id (uuid v7), subject, type, occurred_at, tenant_id, producer, correlation_id?, causation_id?, actor { kind, id, on_behalf_of? }, trace_parent, payload }</code> 对齐 iClaw 契约；<code>[IntegrationEventId]</code> 稳定 ID 与 payload Schema 导出；<code>Publish</code> 只允许命令 handler 同 scope；Outbox 发布器批 100、<code>FOR UPDATE SKIP LOCKED</code>、publisher confirm、指数退避；exchange <code>qian.events</code>（topic）、quorum 队列 <code>q.&lt;service&gt;.&lt;subscription&gt;</code>、广播队列；独立模式 Outbox 用宿主 DbContext。与 <code>Qian.Runtime</code> 进程内事件不混用。</p>\n<p>S1-DEC-013（2026-10-10）裁决：消费端幂等默认用 Kun 的 Redis <code>IProcessedMessageStore</code>，PG <code>processed_messages</code> 兜底表是本任务的可选项，不做也可；「集成事件只能在命令 handler 同 scope 发出」的分析器规则上游没做（S1-KUN-002 只有运行时 <code>IScopedPublisher</code> 兜底），由本任务第 4 条验收落地。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：Outbox 表新增可空列 <code>NextAttemptAt</code>（持久化指数退避，<code>RetryBaseDelay × 2^(AttemptCount-1)</code> 封顶一分钟），参考应用与独立模式宿主 DbContext 都要先生成并应用迁移（kun 仓库 <code>samples/*/Infrastructure/Migrations/*_OutboxRetrySchedule.cs</code> 为样板）；默认 <code>EfOutboxMessageStore</code> 以 <code>FOR UPDATE SKIP LOCKED</code> 领取批次，自定义非事务存储不再默认无锁，须显式 <code>UseRedisOutboxLock()</code> 或仅在单实例测试提供 <code>NullOutboxLockProvider</code>；消费者成功后才记幂等并 ack，失败经 quorum 队列退避后进 DLX。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：参考应用创建客户后 <code>outbox_messages</code> +1，RabbitMQ 收到 1 条</li>\n<li class='chk'><span class='box'></span>IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）</li>\n<li class='chk'><span class='box'></span>UT：信封通过 iClaw <code>events-schema.json</code> 校验；每个 <code>[IntegrationEventId]</code> 都能导出 JSON Schema</li>\n<li class='chk'><span class='box'></span>UT：在非命令 handler 处 <code>Publish</code> 触发分析器错误；<code>actor.kind</code> 支持 <code>agent</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/event-envelope.schema.json；iClaw 信封兼容性的验收口径见 contracts/v0/iclaw-alignment.md 第 3 节</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的 Outbox 行为变更（<code>NextAttemptAt</code> 迁移、非事务存储默认拒绝无锁、先记幂等再 ack），随 S1-KUN-009 升级可用</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.events</code>（<code>Qian.Events.Abstractions</code> / <code>ctx.Events</code> + <code>Qian.Events</code>，随 SDK 进每个 .NET profile）：<code>QianEventEnvelope { version, event_id (uuid v7), subject, type, occurred_at, tenant_id, producer, correlation_id?, causation_id?, actor { kind, id, on_behalf_of? }, trace_parent, payload }</code> 对齐 iClaw 契约；<code>[IntegrationEventId]</code> 稳定 ID 与 payload Schema 导出；<code>Publish</code> 只允许命令 handler 同 scope；Outbox 发布器批 100、<code>FOR UPDATE SKIP LOCKED</code>、publisher confirm、指数退避；exchange <code>qian.events</code>（topic）、quorum 队列 <code>q.&lt;service&gt;.&lt;subscription&gt;</code>、广播队列；独立模式 Outbox 用宿主 DbContext。与 <code>Qian.Runtime</code> 进程内事件不混用。</p>\n<p>S1-DEC-013（2026-10-10）裁决：消费端幂等默认用 Kun 的 Redis <code>IProcessedMessageStore</code>，PG <code>processed_messages</code> 兜底表是本任务的可选项，不做也可；「集成事件只能在命令 handler 同 scope 发出」的分析器规则上游没做（S1-KUN-002 只有运行时 <code>IScopedPublisher</code> 兜底），由本任务第 4 条验收落地。</p>\n<p>Kun 2026.10.9 行为变更（S1-KUN-009，2026-10-10）：Outbox 表新增可空列 <code>NextAttemptAt</code>（持久化指数退避，<code>RetryBaseDelay × 2^(AttemptCount-1)</code> 封顶一分钟），参考应用与独立模式宿主 DbContext 都要先生成并应用迁移（kun 仓库 <code>samples/*/Infrastructure/Migrations/*_OutboxRetrySchedule.cs</code> 为样板）；默认 <code>EfOutboxMessageStore</code> 以 <code>FOR UPDATE SKIP LOCKED</code> 领取批次，自定义非事务存储不再默认无锁，须显式 <code>UseRedisOutboxLock()</code> 或仅在单实例测试提供 <code>NullOutboxLockProvider</code>；消费者成功后才记幂等并 ack，失败经 quorum 队列退避后进 DLX。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：参考应用创建客户后 <code>outbox_messages</code> +1，RabbitMQ 收到 1 条</li>\n<li class='chk done'><span class='box'>✓</span>IT：杀掉发布器副本后另一副本接管，无重复发布（confirm 计数 = Outbox 行数）</li>\n<li class='chk done'><span class='box'>✓</span>UT：信封通过 iClaw <code>events-schema.json</code> 校验；每个 <code>[IntegrationEventId]</code> 都能导出 JSON Schema</li>\n<li class='chk done'><span class='box'>✓</span>UT：在非命令 handler 处 <code>Publish</code> 触发分析器错误；<code>actor.kind</code> 支持 <code>agent</code></li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/event-envelope.schema.json；iClaw 信封兼容性的验收口径见 contracts/v0/iclaw-alignment.md 第 3 节</li>\n<li>2026-10-10 claude：背景记入 Kun 2026.10.9 的 Outbox 行为变更（<code>NextAttemptAt</code> 迁移、非事务存储默认拒绝无锁、先记幂等再 ack），随 S1-KUN-009 升级可用</li>\n<li>2026-10-14 claude：开始</li>\n<li>2026-10-14 claude：实现 Qian.Events.Abstractions / Qian.Events 与分析器 QIAN0006。验收证据：CRM 端到端 IT（Outbox +1、RabbitMQ 恰收一条且与行逐字节相同）；副本停机接管、崩溃租约到期接管、broker 变慢时交还未发行三项 IT，confirm 计数 = Outbox 行数且无重复；信封往返与 iClaw EventEnvelope 校验（按 iclaw-alignment.md 第 3 节去掉 subject 白名单，平台级 null 租户是已登记的不兼容项），全仓 [IntegrationEventId] 均导出 payload Schema；tests/gates/events 八组正反例。S1-DEC-013 的 PG processed_messages 兜底表（可选）未做；消费端归 S1-EVT-002</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-001.md"
  },
  {

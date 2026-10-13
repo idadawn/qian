@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "iClaw 7099a1b docs/contracts/v0/events-schema.json#/$defs/EventEnvelope 原样摘录；对齐口径见 contracts/v0/iclaw-alignment.md 第 3 节。",
+  "type": "object",
+  "required": [
+    "version",
+    "event_id",
+    "subject",
+    "occurred_at",
+    "tenant_id",
+    "payload"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Event schema version. Breaking changes bump to v2 (separate subject queue)."
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "subject": {
+      "type": "string",
+      "pattern": "^(platform|storage|runtime|identity)\\.[a-z_]+\\.[a-z_]+$",
+      "description": "e.g., platform.agent.created"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "OTel trace root span id or business correlation"
+    },
+    "causation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID of the command/event that caused this event (for saga reconstruction)"
+    },
+    "producer": {
+      "type": "string",
+      "description": "service name, e.g., neuroagent-edge | neuroagent-platform | neuroagent-app"
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}
