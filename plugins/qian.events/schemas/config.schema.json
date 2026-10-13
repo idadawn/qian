@@ -1,20 +1,25 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "broker": {
       "type": "string",
+      "description": "RabbitMQ 的 AMQP 地址引用（secretRef），必须与宿主 AddQianEventsBroker 登记的引用一致；凭据只在连接时读取，不写进清单。省略时不核对 broker，是否投递由宿主装配决定。",
+      "pattern": "^secretRef://(platform|dev)/[^\\s?#]+$",
       "x-qian-sensitive": true
     },
     "outbox": {
       "type": "object",
       "properties": {
         "lock": {
-          "type": "string"
+          "type": "string",
+          "description": "Outbox 领取的互斥方式：skip-locked 为各副本以 FOR UPDATE SKIP LOCKED 加租约分摊；redis 在此之外按表取 Redis 租约，同一时刻一个副本投递。须与宿主装配一致。",
+          "enum": ["skip-locked", "redis"],
+          "default": "skip-locked"
         }
       },
       "additionalProperties": false
     }
   },
-  "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "additionalProperties": false
 }

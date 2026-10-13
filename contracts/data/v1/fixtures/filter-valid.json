@@ -1,0 +1,38 @@
+{
+  "logic": "and",
+  "groups": [
+    {
+      "logic": "or",
+      "conditions": [
+        {
+          "field": "age",
+          "op": "between",
+          "value": [
+            18,
+            65
+          ]
+        },
+        {
+          "field": "owner_id",
+          "op": "in",
+          "sysVar": "currentUserAndAllSubordinates"
+        }
+      ]
+    },
+    {
+      "logic": "and",
+      "conditions": [
+        {
+          "field": "active",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "field": "name",
+          "op": "like",
+          "value": "张"
+        }
+      ]
+    }
+  ]
+}

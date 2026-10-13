@@ -58,6 +58,8 @@ public static class QianDataExtensions
         if (existing is null) services.AddSingleton(new DataConnectionBinding(typeof(TContext), connectionReference));
         services.TryAddSingleton<IDataService>(sp => new QianDataService(sp.GetRequiredService<IServiceScopeFactory>(),
             sp.GetServices<DataConnectionBinding>().Select(binding => binding.ContextType).ToHashSet(), Qian.Runtime.ScopeKey.Global));
+        services.TryAddSingleton<IDataContextCatalog>(sp => new DataContextCatalog(
+            sp.GetServices<DataConnectionBinding>().Select(binding => binding.ContextType).Distinct().ToArray()));
         services.TryAddSingleton(ErrorCatalog.CreateDefault());
         services.TryAddScoped<IntegrationEventBuffer>();
         // 不登记非泛型 KunDbContext/IUnitOfWork；每个 Data 会话明确选择自己的业务上下文。

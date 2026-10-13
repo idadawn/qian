@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
 using Kun.Core.Cqrs;
+using Kun.EventBus;
 using Microsoft.EntityFrameworkCore;
 using Qian.Plugin.Sdk;
 using Qian.Runtime.Errors;
@@ -61,6 +62,20 @@ internal sealed class GetCustomerHandler(CommandDataSession<CrmDbContext> work) 
         ?? throw new QianErrorException(new QianError(PlatformErrors.NotFound));
 }
 
+/// <summary>参考应用的稳定事件 ID；破坏性载荷改动必须升版本，不能原地改名。</summary>
+public static class CrmEvents
+{
+    /// <summary>客户已创建。</summary>
+    public const string CustomerCreated = "crm.customer.created.v1";
+
+    /// <summary>登记参考应用的全部集成事件及其源生成 JsonTypeInfo；宿主与契约测试共用这一处。</summary>
+    public static IEventTypeRegistrar RegisterCrmEvents(this IEventTypeRegistrar registrar)
+    {
+        ArgumentNullException.ThrowIfNull(registrar);
+        return registrar.Register(CustomerCreated, CrmCommandJson.Default.CrmCustomerCreated);
+    }
+}
+[IntegrationEventId(CrmEvents.CustomerCreated)]
 internal sealed record CrmCustomerCreated(Guid CustomerId);
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     RespectRequiredConstructorParameters = true, RespectNullableAnnotations = true)]
