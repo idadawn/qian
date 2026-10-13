@@ -2110,13 +2110,19 @@
    "S1-YUE-005",
    "S1-RT-010"
   ],
-  "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "blockedBy": [
+   "S1-YUE-005"
+  ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md#3",
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
+   },
+   {
+    "path": "docs/adr/ADR-022-rspress-unified-component-docs.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-022-rspress-unified-component-docs.md"
    },
    {
     "path": "docs/adr/ADR-020-component-model-v2.md#D20.9",
@@ -2135,12 +2141,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-08",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 0,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>「介绍组件如何使用」是文档站的主体。按 ADR-020 D20.9，每个组件的文档源在它自己的文件夹里（<code>README.md</code> 含「模型体验」「已知限制」两节，<code>docs/*.mdx</code> 为使用指南），文档站在构建前汇总；yue 组件要能在 MDX 里活演示并自动出 API 表；.NET 包与 TypeScript 包的 API 参考由工具生成，不手写。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>收集脚本把各组件 <code>README.md</code> 与 <code>docs/*.mdx</code> 按 docs-site.md §3 的九节模板汇总进 <code>website/docs/components/</code>，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-preview</code> 与 <code>@rspress/plugin-playground</code> 接入：yue 组件在 MDX 代码块内活渲染并可编辑；<code>@rspress/plugin-api-docgen</code> 为 <code>@yue/core</code> 全部组件生成 props 表</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-typedoc</code> 生成 <code>@qian/runtime</code>、<code>@qian/plugin-sdk</code>、<code>@yue/sdk</code> 的 API 文档并挂在站点 <code>/sdk/api/frontend/</code>；DocFX 从 XML 注释生成 <code>Qian.*</code> .NET 包 API 参考并挂在 <code>/sdk/api/dotnet/</code>（复用 <code>website/scripts/build-kun-api.ts</code> 的流水线）；平台 OpenAPI 用 Scalar 渲染在 <code>/sdk/api/http/</code>；API 页不进侧栏、不渲染侧栏（R54、R56），并在 <code>/sdk/api/</code> 落地页更新状态</li>\n<li class='chk'><span class='box'></span><code>qian docs generate</code>（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新</li>\n<li class='chk'><span class='box'></span>UT：收集脚本对缺节、重复 id、断链三类错误各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收</li>\n<li>2026-10-08 claude：S1-DOCS-005 已搭好 DocFX 流水线（website/scripts/build-kun-api.ts：隔离目录构建、docfx metadata 输出 Markdown、xref 改写为站内路由与锚点），Qian.* 的 API 参考可复用；/sdk/api/index.md 落地页已为 dotnet/、frontend/ 留行。路径注意：本任务验收写 /api/dotnet/，docs-site.md §2b.2 与 §6 写 /sdk/api/dotnet/，落地页暂按后者</li>\n<li>2026-10-08 claude：S1-DEC-011 裁决：API 参考统一挂 /sdk/api/{dotnet,frontend,http}/（R56），API 页不进侧栏、不渲染侧栏（R54），验收已按此改；产物总大小预算 100 MB（R55），加 Qian.* 与组件页后若超出，先查重复渲染再调预算</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>「介绍组件如何使用」是文档站的主体。按 ADR-020 D20.9，每个组件的文档源在它自己的文件夹里（<code>README.md</code> 含「模型体验」「已知限制」两节，<code>docs/*.mdx</code> 为使用指南），文档站在构建前汇总；yue 组件要能在 MDX 里活演示并自动出 API 表；.NET 包与 TypeScript 包的 API 参考由工具生成，不手写。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>收集脚本把各组件 <code>README.md</code> 与 <code>docs/*.mdx</code> 按 docs-site.md §3 的平台插件九节模板与 §3.1 的 yue 交互组件模板汇总进 <code>website/docs/components/</code>，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）</li>\n<li class='chk'><span class='box'></span>复用 S1-YUE-005 的 Rspress core 文档、preview、离线 playground 与完整 props 生成接线，接入通用收集管线；不再引入 Storybook，不重复建设 core 展示；检查组件来源、版本与生成目录一致，并保留 Props 完整性、离线及 HTML/SSG-MD 双产物门禁（docs-site.md §3.1）</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-typedoc</code> 生成 <code>@qian/runtime</code>、<code>@qian/plugin-sdk</code>、<code>@yue/sdk</code> 的 API 文档并挂在站点 <code>/sdk/api/frontend/</code>；DocFX 从 XML 注释生成 <code>Qian.*</code> .NET 包 API 参考并挂在 <code>/sdk/api/dotnet/</code>（复用 <code>website/scripts/build-kun-api.ts</code> 的流水线）；平台 OpenAPI 用 Scalar 渲染在 <code>/sdk/api/http/</code>；API 页不进侧栏、不渲染侧栏（R54、R56），并在 <code>/sdk/api/</code> 落地页更新状态</li>\n<li class='chk'><span class='box'></span><code>qian docs generate</code>（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新</li>\n<li class='chk'><span class='box'></span>UT：收集脚本对缺节、重复 id、断链三类错误各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收</li>\n<li>2026-10-08 claude：S1-DOCS-005 已搭好 DocFX 流水线（website/scripts/build-kun-api.ts：隔离目录构建、docfx metadata 输出 Markdown、xref 改写为站内路由与锚点），Qian.* 的 API 参考可复用；/sdk/api/index.md 落地页已为 dotnet/、frontend/ 留行。路径注意：本任务验收写 /api/dotnet/，docs-site.md §2b.2 与 §6 写 /sdk/api/dotnet/，落地页暂按后者</li>\n<li>2026-10-08 claude：S1-DEC-011 裁决：API 参考统一挂 /sdk/api/{dotnet,frontend,http}/（R56），API 页不进侧栏、不渲染侧栏（R54），验收已按此改；产物总大小预算 100 MB（R55），加 Qian.* 与组件页后若超出，先查重复渲染再调预算</li>\n<li>2026-10-14 cody：按用户要求与 ADR-022 对齐：复用 YUE-005 的 Rspress core 接入，不再引入 Storybook；保留通用收集和多语言 API 文档范围，补入 Props 完整性、离线及双产物验收。</li>\n</ul>",
   "file": "pm/tasks/S1-DOCS-002.md"
  },
  {
@@ -5822,12 +5828,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/migration/README.md"
    }
   ],
-  "updated": "2026-10-09",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>pnpm workspace + <code>catalog:</code> + Turborepo；eslint-plugin-boundaries / dependency-cruiser 六层边界进 CI；tsdown 或 Rslib 输出 ESM + d.ts、CSS 单独导出；Storybook 10（a11y、令牌可视化页）；Vitest 5 + Testing Library + <code>@vitest/browser</code>；orval / openapi-typescript 契约类型；axe + Playwright <code>critical = 0</code>；Lighthouse CI 首屏预算；CI 门禁矩阵（lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖）；Changesets + SemVer；私有 npm；<code>data-testid</code> 命名约定。首迭代验证 Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘与可访问性，不通过整体切 Radix、不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：<code>@yue/biz</code> 引用 <code>@yue/designer</code> 之类的向上依赖被 boundaries 规则拒绝（<code>packages/yue/boundaries.config.mjs</code> 的 <code>boundaries/dependencies</code> 策略；自测 <code>tests/gates/yue/boundaries.test.ts</code> 用虚拟文件路径 lint，<code>biz → designer</code>、<code>core → data</code>、<code>data → form</code>、<code>sdk → core</code>、<code>tokens → contracts</code>、未登记包名均被拒；工作流 <code>yue</code> 的 boundaries 门禁跑同一配置）</li>\n<li class='chk done'><span class='box'>✓</span>CI：lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖八项门禁在 PR 上运行（<code>.github/workflows/yue.yml</code> 矩阵，八个检查独立显示；本地 <code>pnpm yue:gates</code>；工具：ESLint 10 + typescript-eslint、tsc + Turborepo、Vitest 5 浏览器模式 + Playwright、<code>@axe-core/playwright</code>、Lighthouse CI、eslint-plugin-boundaries、publint、dependency-cruiser）</li>\n<li class='chk done'><span class='box'>✓</span>文档：Base UI 验证门结论（通过 / 切 Radix）记录在 yue 仓库 ADR；Lighthouse 首屏 script 体积在预算内（ADR-013 §9 状态历史：通过，锁定 Base UI 1.8，五项发现与封装层处理；规格 §4.4 / §6 同步；靶场首屏 script 压缩后约 151 KB，预算 250 KB 写入 PRD §14）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 claude：开始：pnpm workspace + catalog + Turborepo、八项门禁工作流、Base UI 验证门</li>\n<li>2026-10-09 claude：工作区（pnpm workspace + catalog + Turborepo、@yue/* 八包骨架、Rslib、Changesets）、分层矩阵与八项门禁工作流、Base UI 验证门（通过，ADR-013 §9）就位；本地八项门禁全过；待提 PR</li>\n<li>2026-10-09 claude：已合并 PR #15（含 scope 改为 @idadawn/yue-*）</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>pnpm workspace + <code>catalog:</code> + Turborepo；eslint-plugin-boundaries / dependency-cruiser 六层边界进 CI；tsdown 或 Rslib 输出 ESM + d.ts、CSS 单独导出；Rspress 2 组件文档与令牌页（ADR-022 修订；替换实现由 S1-YUE-005 承担）；Vitest 5 + Testing Library + <code>@vitest/browser</code>；orval / openapi-typescript 契约类型；axe + Playwright <code>critical = 0</code>；Lighthouse CI 首屏预算；CI 门禁矩阵（lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖）；Changesets + SemVer；私有 npm；<code>data-testid</code> 命名约定。首迭代验证 Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘与可访问性，不通过整体切 Radix、不混用。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：<code>@yue/biz</code> 引用 <code>@yue/designer</code> 之类的向上依赖被 boundaries 规则拒绝（<code>packages/yue/boundaries.config.mjs</code> 的 <code>boundaries/dependencies</code> 策略；自测 <code>tests/gates/yue/boundaries.test.ts</code> 用虚拟文件路径 lint，<code>biz → designer</code>、<code>core → data</code>、<code>data → form</code>、<code>sdk → core</code>、<code>tokens → contracts</code>、未登记包名均被拒；工作流 <code>yue</code> 的 boundaries 门禁跑同一配置）</li>\n<li class='chk done'><span class='box'>✓</span>CI：lint、typecheck、unit、a11y、Lighthouse、边界、publint、循环依赖八项门禁在 PR 上运行（<code>.github/workflows/yue.yml</code> 矩阵，八个检查独立显示；本地 <code>pnpm yue:gates</code>；工具：ESLint 10 + typescript-eslint、tsc + Turborepo、Vitest 5 浏览器模式 + Playwright、<code>@axe-core/playwright</code>、Lighthouse CI、eslint-plugin-boundaries、publint、dependency-cruiser）</li>\n<li class='chk done'><span class='box'>✓</span>文档：Base UI 验证门结论（通过 / 切 Radix）记录在 yue 仓库 ADR；Lighthouse 首屏 script 体积在预算内（ADR-013 §9 状态历史：通过，锁定 Base UI 1.8，五项发现与封装层处理；规格 §4.4 / §6 同步；靶场首屏 script 压缩后约 151 KB，预算 250 KB 写入 PRD §14）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 claude：开始：pnpm workspace + catalog + Turborepo、八项门禁工作流、Base UI 验证门</li>\n<li>2026-10-09 claude：工作区（pnpm workspace + catalog + Turborepo、@yue/* 八包骨架、Rslib、Changesets）、分层矩阵与八项门禁工作流、Base UI 验证门（通过，ADR-013 §9）就位；本地八项门禁全过；待提 PR</li>\n<li>2026-10-09 claude：已合并 PR #15（含 scope 改为 @idadawn/yue-*）</li>\n<li>2026-10-14 cody：背景选型按 ADR-022 改为 Rspress；本任务已交付工程基线的历史验收保持，Storybook 替换由重新打开的 YUE-005 承担。</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-003.md"
  },
  {
@@ -5869,8 +5875,8 @@
  },
  {
   "id": "S1-YUE-005",
-  "title": "@yue/core 约 30 个基础组件（Base UI + shadcn）",
-  "status": "done",
+  "title": "@yue/core 基础组件与统一 Rspress 文档、验收",
+  "status": "todo",
   "stage": "S1",
   "area": "YUE",
   "areaName": "外壳与 yue",
@@ -5881,11 +5887,12 @@
   "estimate": "8d",
   "days": 8.0,
   "depends": [
-   "S1-YUE-004"
+   "S1-YUE-004",
+   "S1-DOCS-001"
   ],
   "blockedBy": [],
-  "order": -1,
-  "readyNow": false,
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5894,14 +5901,22 @@
    {
     "path": "docs/prd/specs/yue.md",
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/yue.md"
+   },
+   {
+    "path": "docs/adr/ADR-022-rspress-unified-component-docs.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-022-rspress-unified-component-docs.md"
+   },
+   {
+    "path": "docs/prd/specs/docs-site.md#31-yue-组件文档与演示",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
    }
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 3,
-   "total": 3
+   "done": 2,
+   "total": 8
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>CI：<code>@yue/core</code> 组件在 Storybook a11y 插件与 axe E2E 下 critical = 0；每个组件有 <code>data-slot</code> 与 <code>data-testid</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验</li>\n<li class='chk done'><span class='box'>✓</span>文档：Storybook 覆盖全部组件与令牌可视化页</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #76 全部15项适用CI通过后合并（a62f8004）。51组件入口、157项Vitest、126条Storybook用例、64项页面E2E与真实Docs烟测通过；三个页面Lighthouse a11y=100、脚本≤250KiB。实现分支与worktree已清理，独立本地预览保留。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>修订范围（2026-10-14）</h4>\n<p>按产品负责人要求统一使用 Rspress，不再保留 Storybook。51 个组件入口与 manifest 已合并；本次仅完成能力评估与任务/规格修订，替换实现尚未验收。保留历史完成日志，新增验收完成前任务回到 todo。</p>\n<p>本任务负责 core 的 Rspress 接入、共用示例和测试迁移、Storybook 清理；文档源仍在组件目录，允许修改 website 的收集器/插件/测试接线，不手改生成目录。S1-DOCS-002 复用该接入继续完成通用组件收集及 .NET/TS/HTTP API，不重复建设 core 展示，也不成为本任务的循环前置。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>组件基线：51 个组件入口与配套部件已合并；保留 <code>data-slot</code> / <code>data-testid</code>、现有公开 API 与统一令牌行为。</li>\n<li class='chk done'><span class='box'>✓</span>机器契约：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验。</li>\n<li class='chk'><span class='box'></span>Rspress：现有 <code>/components/yue/</code> 中每个 core 组件可发现、有独立页面，按 docs-site.md §3.1 提供首屏交互预览、源码展开/复制、安装、用法、组合结构、分场景示例、完整 props 表与键盘/无障碍说明；左右导航可定位组件及章节，令牌页和明暗状态同站可访问，预览/代码/API 均在现有 Rspress 一个入口内。</li>\n<li class='chk'><span class='box'></span>真实交互：每个可交互组件有可操作示例和「操作 → 可观察结果」断言，至少涵盖输入/校验、选择/值回写、弹层确认/取消与关闭回焦、Tab 切换、Toast/Notification 触发/关闭及适用键盘路径；静态构建后的 Rspress 页面及预览 iframe 在明暗两态跑 Playwright。展示型组件检查真实渲染与状态；全量入口与场景清单相互校验，不能以截图、仅渲染或外站链接替代。正式站点代表性交互实测通过后才能完成。</li>\n<li class='chk'><span class='box'></span>Props：从真实 TypeScript 类型生成，覆盖组合部件、继承属性、函数/回调、必填、联合类型和默认值；Button 的 variant/size/loading/disabled、Dialog 的 open/defaultOpen/onOpenChange 必须出现在 HTML 与 Markdown 中。建立 51 入口及部件清单的完整性门禁，禁止用仅可序列化的 manifest 替代完整 API。</li>\n<li class='chk'><span class='box'></span>共用示例与测试：保留默认/悬停/禁用/错误/暗色等适用状态及交互语义；原 126 条 Storybook 用例逐条登记迁移到独立 Vitest 浏览器测试或 Playwright，保留现有单元、SSR、键盘、焦点、ARIA、64 项页面 E2E 的覆盖，无遗漏；Rspress 真正构建页面（含预览 iframe）axe critical / serious = 0，页面异常使 CI 失败。</li>\n<li class='chk'><span class='box'></span>离线与构建：preview 使用本地组件源码；playground 的 Babel/Monaco/worker 与依赖全部同源打包，按需加载且无外部运行时请求，阻断外网后编辑仍能更新预览；HTML、SSG-MD、llms、搜索、站点前缀、深链刷新与明暗首帧通过验证。全站产物继续遵守 100 MB 预算，组件靶场保留已有 Lighthouse 预算。</li>\n<li class='chk'><span class='box'></span>清理与发布：删除 apps/yue-storybook、CSF/Storybook 专用配置、直接/传递 Storybook 依赖、脚本、缓存配置和 CI 入口；共用 React 示例保留，独立 Vitest/Playwright/axe 保留；更新 README/AGENTS 与命令，验证 frozen-lockfile 安装。CI 全绿合并后，核验正式 Rspress URL 的组件交互与 props 表，才恢复 done。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #76 全部15项适用CI通过后合并（a62f8004）。51组件入口、157项Vitest、126条Storybook用例、64项页面E2E与真实Docs烟测通过；三个页面Lighthouse a11y=100、脚本≤250KiB。实现分支与worktree已清理，独立本地预览保留。</li>\n<li>2026-10-14 cody：按用户要求评估统一 Rspress 并修订任务与规格；原 Storybook 验收仅作历史证据，新增替换验收完成前重新打开。</li>\n<li>2026-10-14 cody：评估与规格修订完成：ADR-022 确认统一 Rspress，实测 preview 可运行现有 Button/Dialog，默认 API 表存在属性过滤缺口，底层解析器可提取；离线编辑器、完整 Props、测试迁移和 Storybook 全量清理列为新增未完成验收。按本次修订范围回到待办，保留已交付组件与 manifest 记录。</li>\n<li>2026-10-14 cody：按用户补充的 Alert Dialog 页面参考，补入首屏交互预览、源码展开/复制、安装、用法、组合结构、场景示例、API 与章节导航验收；所有内容归现有 Rspress 单一入口，示例使用本仓库真实组件 API。</li>\n<li>2026-10-14 cody：按用户补充要求，将真实组件交互设为必过验收：可操作示例、逐组件动作与结果断言、明暗/iframe Playwright、正式站点代表性交互复验；静态截图或仅渲染不算完成。</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-005.md"
  },
  {
@@ -5920,9 +5935,11 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "blockedBy": [
+   "S1-YUE-005"
+  ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -5957,9 +5974,11 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "blockedBy": [
+   "S1-YUE-005"
+  ],
+  "order": 1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -6000,6 +6019,7 @@
    "S1-FILE-001"
   ],
   "blockedBy": [
+   "S1-YUE-005",
    "S1-FILE-001"
   ],
   "order": 5,
@@ -6041,6 +6061,7 @@
    "S1-IDP-010"
   ],
   "blockedBy": [
+   "S1-YUE-005",
    "S1-YUE-007",
    "S1-IDP-010"
   ],
@@ -6087,7 +6108,8 @@
    "S1-YUE-005"
   ],
   "blockedBy": [
-   "S1-MGW-001"
+   "S1-MGW-001",
+   "S1-YUE-005"
   ],
   "order": 2,
   "readyNow": false,
