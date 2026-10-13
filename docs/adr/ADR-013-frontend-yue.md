@@ -116,3 +116,9 @@ iClaw 前端有好的工程规范与令牌思路（React 19 + TypeScript + Vite 
 
 GitHub Packages 的 npm 仓库要求包 scope 与仓库所有者同名，`@yue/*` 发不上去。产品负责人拍板改 scope：包名 `@idadawn/yue-<包>`（`@idadawn/yue-tokens`、`@idadawn/yue-core` 等），`publishConfig.registry` 指 `https://npm.pkg.github.com`，Changesets 的固定版本组相应改为 `@idadawn/yue-*`。目录名与分层矩阵的键仍是 `packages/yue/<包>`；设计文档继续用 `@yue/<包>` 作简称（规格 §3.1 有对照说明）。消费方配置与发布步骤见 `packages/yue/README.md` §5。
 
+
+### S1-YUE-005 的验证门收敛（2026-10-14）
+
+Combobox 新增 Trigger/Value，推荐把搜索输入放在 Content 内；靶场、目录和 Storybook 使用此形态，取消了原先页面级 aria-hidden-focus 整条规则豁免。旧外置输入 API 保留兼容，其页面组合限制在 core 主文档中说明。
+
+Select 的 Base UI 内部 Tab 哨兵在页面级 axe 中产生 aria-hidden-focus 报告；只按三个内部属性识别并排除这些瞬时哨兵，保留整条规则。真实 Tab/Shift+Tab 用例验证焦点不滞留在隐藏节点，负例确认普通隐藏按钮仍被拒绝。PinInput 为首位使用原生 label；ContextMenu 在封装层把 Shift+F10/菜单键转交给 Base UI 的 contextmenu 入口。框架源码保持原版。

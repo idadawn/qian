@@ -1,7 +1,7 @@
 ---
 id: S1-DATA-004
 title: Filter AST、运算符矩阵与 IRecordHook 契约
-status: review
+status: done
 stage: S1
 area: DATA
 wave: 3
@@ -33,3 +33,4 @@ updated: 2026-10-14
 - 2026-10-06 planner：创建任务
 - 2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。
 - 2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。
+- 2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。

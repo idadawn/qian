@@ -7,6 +7,10 @@
 - `IDataMigrator`：按 schema 取 PostgreSQL advisory lock 后执行 EF 迁移，同时启动的副本只有一个执行 DDL；K8s 迁移 Job 用 `--migrate-only`，在线副本启动时发现未应用的迁移即拒绝启动。
 - `ISnowflakeIdGenerator`（WorkerId 经 Redis 租约 `qian:snowflake:worker:{n}` 分配，带高水位，编号回收复用不重 ID）与 `ISequenceService`（规则 `'SO' + yyyyMMdd + seq(6)`，单条 upsert 原子取号，规则修改后从 1 开始）。见 [Qian.Data](../packages/Qian.Data/README.md)。
 
+## 2026-10-14 yue 基础组件与 Storybook（S1-YUE-005）
+
+[core 组件库](../packages/yue/core/README.md) 补齐 51 个组件入口、统一令牌、可寻址部件和机器清单；Storybook 10 覆盖明暗与交互状态，附令牌页、Schema 生成类型和真实构建页面的键盘/无障碍门禁。
+
 ## 2026-10-14 集成事件组件 Qian.Events（S1-EVT-001）
 
 - 新增 `Qian.Events.Abstractions` / `Qian.Events`：入队即生成 v1 事件信封（与 iClaw 对齐），Outbox 按租约领取、publisher confirm 后逐条标记，停机或 broker 变慢时交还未发的行，多副本不重复发布；RabbitMQ topic exchange `qian.events` 与 quorum / 广播队列命名。见 [Qian.Events](../packages/Qian.Events/README.md)。

@@ -88,7 +88,12 @@ jobs:
         run: pnpm yue:typecheck
       - name: unit（Vitest：门禁自测、SSR、浏览器测试）
         if: matrix.gate == 'unit'
-        run: pnpm yue:test
+        run: |
+          pnpm --filter @idadawn/yue-contracts contracts:check
+          pnpm yue:test
+          pnpm --filter yue-storybook test
+          pnpm --filter yue-storybook build
+          pnpm --filter yue-storybook smoke
       - name: a11y（Playwright + axe，critical / serious = 0）
         if: matrix.gate == 'a11y'
         run: pnpm yue:a11y

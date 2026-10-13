@@ -1,10 +1,14 @@
 # @idadawn/yue-contracts
 
-FormSchema / ListSchema / 控件 manifest / SSE 事件的 JSON Schema 与生成的 TS 类型（无 UI）。
+不依赖 UI 的 Schema 与 TypeScript 契约层。S1-YUE-005 已交付 `component-manifest.schema.json`，统一组件名称、版本、可序列化 props、slots、events、a11y、令牌与示例形状。
 
-- 分层与允许依赖：[yue 专题规格 §3.1](../../../docs/prd/specs/yue.md#31-包结构与依赖方向)；依赖方向由 `packages/yue/boundaries.config.mjs` 与 CI 门禁强制。
-- 实现任务：S1-YUE-007 / S1-YUE-009（S1-YUE-003 只建立骨架）。
+`componentManifestSchema` 为运行时导出，`ComponentManifest` 类型由 Schema 生成：
 
-## 已知限制与延期项
+```bash
+pnpm --filter @idadawn/yue-contracts contracts:generate
+pnpm --filter @idadawn/yue-contracts contracts:check
+```
 
-- 尚未实现；版本 0.1.0 只是工作区占位，未发布。
+不要手改 component-manifest.generated.ts。组件 props 本身必须是合法 JSON Schema，示例还需按对应 props Schema 校验；core 的目录单测同时执行这两层检查。
+
+FormSchema/ListSchema、控件注册表、SSE、Filter AST 的前端生成类型与 Field Type 配对继续由 S1-YUE-007/009 及后续任务交付，组件 manifest 不替代低代码控件契约。
