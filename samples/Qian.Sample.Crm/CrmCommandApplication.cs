@@ -13,6 +13,7 @@ using Qian.Audit;
 using Qian.Authz;
 using Qian.Authz.Abstractions;
 using Qian.Data;
+using Qian.Events;
 using Qian.Plugin.Sdk;
 using Qian.Tenancy;
 
@@ -56,7 +57,11 @@ public static class CrmCommandApplication
             builder.Services.AddAuthorizationBuilder().AddPolicy("crm-command-reader", policy => policy.RequireAuthenticatedUser().RequireClaim("principal_kind", "service")
                 .RequireAssertion(context => context.User.FindFirstValue("sub") is { } subject && (subject == reader || subject == writer))
                 .RequireAssertion(context => (context.User.FindFirstValue("scope") ?? "").Split(' ').Contains("crm.read", StringComparer.Ordinal)));
-            builder.Services.AddKunEventBus(events => events.Register("qian.sample.crm.customer.created.v1", CrmCommandJson.Default.CrmCustomerCreated));
+            builder.Services.AddKunEventBus(events => events.RegisterCrmEvents());
+            // Outbox 行即 v1 信封；配置了 broker 才投递到 RabbitMQ，未配置时只写 Outbox（本地无 MQ 的开发与测试）。
+            builder.Services.AddQianEvents();
+            if (builder.Configuration.GetConnectionString("Events") is { Length: > 0 })
+                builder.Services.AddQianEventsBroker(_ => Connection("Events"));
             builder.Services.AddSingleton<IPermissionRegistry, PermissionRegistry>();
             builder.Services.AddQianData<AuthzDbContext>((_, options) => options.UseNpgsql(Connection("Authz")).UseKunSchema(AuthzDbContext.Schema));
             builder.Services.AddQianData<TenancyDbContext>((_, options) => options.UseNpgsql(Connection("Tenancy")).UseKunSchema(TenancyDbContext.Schema));

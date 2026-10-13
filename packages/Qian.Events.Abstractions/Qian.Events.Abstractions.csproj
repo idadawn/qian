@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Qian 事件组件的服务键、集成事件信封 v1、事件来源上下文与 RabbitMQ 拓扑命名。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
+  </ItemGroup>
+</Project>

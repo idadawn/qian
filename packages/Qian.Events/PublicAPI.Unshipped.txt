@@ -1,0 +1,32 @@
+#nullable enable
+Qian.Events.EventsPlugin
+Qian.Events.EventsPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Events.EventsPlugin.EventsPlugin() -> void
+Qian.Events.EventsPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Events.IntegrationEventSchemas
+Qian.Events.OutboxLockMode
+Qian.Events.OutboxLockMode.Redis = 1 -> Qian.Events.OutboxLockMode
+Qian.Events.OutboxLockMode.SkipLocked = 0 -> Qian.Events.OutboxLockMode
+Qian.Events.QianEventsExtensions
+Qian.Events.QianEventsOptions
+Qian.Events.QianEventsOptions.BatchSize.get -> int
+Qian.Events.QianEventsOptions.BatchSize.set -> void
+Qian.Events.QianEventsOptions.LeaseDuration.get -> System.TimeSpan
+Qian.Events.QianEventsOptions.LeaseDuration.set -> void
+Qian.Events.QianEventsOptions.MaxAttempts.get -> int
+Qian.Events.QianEventsOptions.MaxAttempts.set -> void
+Qian.Events.QianEventsOptions.OutboxLock.get -> Qian.Events.OutboxLockMode
+Qian.Events.QianEventsOptions.OutboxLock.set -> void
+Qian.Events.QianEventsOptions.PollInterval.get -> System.TimeSpan
+Qian.Events.QianEventsOptions.PollInterval.set -> void
+Qian.Events.QianEventsOptions.PublishTimeout.get -> System.TimeSpan
+Qian.Events.QianEventsOptions.PublishTimeout.set -> void
+Qian.Events.QianEventsOptions.QianEventsOptions() -> void
+Qian.Events.QianEventsOptions.RelayInstance.get -> string!
+Qian.Events.QianEventsOptions.RelayInstance.set -> void
+Qian.Events.QianEventsOptions.RetryBaseDelay.get -> System.TimeSpan
+Qian.Events.QianEventsOptions.RetryBaseDelay.set -> void
+static Qian.Events.IntegrationEventSchemas.Describe(Kun.EventBus.IEventTypeRegistry! registry) -> System.Collections.Generic.IReadOnlyList<Qian.Events.IntegrationEventDescriptor!>!
+static Qian.Events.IntegrationEventSchemas.Export(System.Text.Json.Serialization.Metadata.JsonTypeInfo! typeInfo) -> System.Text.Json.JsonElement
+static Qian.Events.QianEventsExtensions.AddQianEvents(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Qian.Events.QianEventsOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Events.QianEventsExtensions.AddQianEventsBroker(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<System.IServiceProvider!, string!>! resolveAmqpUri, string? brokerReference = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

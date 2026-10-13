@@ -4,6 +4,7 @@ using Qian.Audit;
 using Qian.Authz;
 using Qian.Authz.Abstractions;
 using Qian.Data;
+using Qian.Events;
 using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
@@ -24,6 +25,7 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
         _permissions = registry.Register("1.0.0", catalog.Permissions);
         IReadOnlyList<PluginDefinition> providers = [
             Define("data", "qian.data", new DataPlugin(), [DataDefinition.Key]),
+            Define("events", "qian.events", new EventsPlugin(), [EventsDefinition.Key]),
             Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey]),
             Define("authz", "qian.authz", new RbacCommandPolicyPlugin(), [CommandPolicies.AuthorizationKey]),
             Define("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]),
