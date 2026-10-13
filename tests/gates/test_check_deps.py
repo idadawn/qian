@@ -140,6 +140,40 @@ class RuleTests(unittest.TestCase):
         self.assertEqual([], violations("Qian.Bundle.Base", assets))
 
 
+class DefinitionKunRuleTests(unittest.TestCase):
+    def test_definition_rejects_kun_implementation_package(self):
+        assets = make_assets(["Kun.EventBus"], {"Kun.EventBus": ["StackExchange.Redis"], "StackExchange.Redis": []})
+        [violation] = violations("Qian.Identity.Abstractions", assets)
+        self.assertEqual("kun-implementation", violation.role)
+        self.assertEqual(["Qian.Identity.Abstractions", "Kun.EventBus"], violation.path)
+
+    def test_definition_allows_abstraction_and_its_transitive_core(self):
+        assets = make_assets(["Kun.EventBus.Abstractions"], {"Kun.EventBus.Abstractions": ["Kun.Core"], "Kun.Core": []})
+        self.assertEqual([], violations("Qian.Identity.Abstractions", assets))
+
+    def test_kun_project_reference_cannot_bypass_gate(self):
+        assets = make_assets(["Kun.EventBus"], {"Kun.EventBus": []}, projects={"Kun.EventBus"})
+        self.assertEqual("kun-implementation", violations("Qian.Identity.Abstractions", assets)[0].role)
+
+    def test_exceptions_are_exact_edges_with_reasons_and_case_insensitive(self):
+        for (subject, dependency), reason in check_deps.DEFINITION_KUN_EXCEPTIONS.items():
+            with self.subTest(subject=subject, dependency=dependency):
+                self.assertTrue(reason.strip())
+                assets = make_assets([dependency.upper()], {dependency.upper(): []})
+                self.assertEqual([], violations(subject.upper(), assets))
+                self.assertEqual(1, len(violations("Qian.Other.Abstractions", assets)))
+        assets = make_assets(["Kun.EventBus"], {"Kun.EventBus": []})
+        self.assertEqual(1, len(violations("Qian.Data.Abstractions", assets)))
+
+    def test_provider_may_use_kun_implementation(self):
+        assets = make_assets(["Kun.EventBus"], {"Kun.EventBus": []})
+        self.assertEqual([], violations("Qian.Events", assets))
+
+    def test_rid_copy_does_not_duplicate_kun_violation(self):
+        assets = make_assets(["Kun.EventBus"], {"Kun.EventBus": []}, rid_copy=True)
+        self.assertEqual(1, len(violations("Qian.Identity.Abstractions", assets)))
+
+
 @NEEDS_DOTNET
 class SampleProjectTests(unittest.TestCase):
     """端到端：真实还原 tests/gates/depgraph 下的样例项目再检查。"""
@@ -158,6 +192,12 @@ class SampleProjectTests(unittest.TestCase):
         self.assertIn("Qian.Registry", packages)       # 平台插件自身也是被检查方
         self.assertIn("Qian.Bundle.GateSample", packages)
         self.assertNotIn("GateSample.Host", packages)  # 宿主不打包，不在检查范围
+
+    def test_real_kun_packages_respect_definition_boundary(self):
+        code, report = self.run_gate("kun.slnx")
+        self.assertEqual(1, code)
+        self.assertEqual([("Qian.GateSample.KunBad.Abstractions", "Kun.EventBus", "kun-implementation")],
+                         [(v["package"], v["dependency"], v["role"]) for v in report["violations"]])
 
     def test_violating_samples_fail_with_paths(self):
         code, report = self.run_gate("bad.slnx")

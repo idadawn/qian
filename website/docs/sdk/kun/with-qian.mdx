@@ -4,7 +4,7 @@ description: Kun 模块在 Qian 里由哪个平台插件或 seam 承接、Qian �
 part: sdk
 project: qian
 audience: [developer, agent]
-updated: 2026-10-13
+updated: 2026-10-14
 ---
 
 # 与 Qian 的关系
@@ -28,6 +28,7 @@ updated: 2026-10-13
 | `Kun.MultiTenancy`、`Kun.MultiTenancy.EntityFrameworkCore` | [qian.tenancy](/components/platform/qian.tenancy)、[qian.data](/components/platform/qian.data) | 租户上下文与 RLS 双保险；后台链路的租户回灌与强制装配见 7.1 第 1 项 |
 | `Kun.EntityFrameworkCore` | [qian.data](/components/platform/qian.data)、[qian.tenancy](/components/platform/qian.tenancy)、[qian.events](/components/platform/qian.events)、[qian.audit](/components/platform/qian.audit) | 写侧、三策略 Provisioner、Outbox 表、同事务审计 |
 | `Kun.Dapper` | [qian.data](/components/platform/qian.data) | 读侧，可选 |
+| `Kun.EventBus.Abstractions` | `Qian.Identity.Abstractions` | Kun 2026.10.14 起提供稳定事件标记、含 JsonTypeInfo 的注册端口与查询端口；仅依赖 Core，身份契约不再经事件入口带入 Redis/宿主实现（S1-KUN-010） |
 | `Kun.EventBus`、`Kun.EventBus.RabbitMQ` | [qian.events](/components/platform/qian.events)、[qian.tenancy](/components/platform/qian.tenancy) | 集成事件、Outbox 发布与消费端幂等 |
 | `Kun.Identity`、`Kun.Identity.AspNetCore` | [qian.identity](/components/platform/qian.identity) | 保留 Cookie 会话与 `IAuthenticatedUser` 抽象，按 7.1 第 6 项修复；身份服务端（唯一 issuer）用 OpenIddict 自建（§07 7.4.1） |
 | `Kun.Security`、`Kun.Gateway` | [qian.gateway](/components/platform/qian.gateway) | YARP、`S2sTokenIssuer`、JWKS、三种限流策略；`gateway` profile 以库方式引用并加固 |
