@@ -16,8 +16,9 @@
     "yue:publint": "turbo run publint --filter=./packages/yue/*",
     "yue:circular": "depcruise --config .dependency-cruiser.cjs packages/yue apps",
     "yue:build": "turbo run build --filter=./packages/yue/* --filter=./apps/*",
-    "yue:gates": "pnpm yue:lint && pnpm yue:typecheck && pnpm yue:test && pnpm yue:boundaries && pnpm yue:circular && pnpm yue:build && pnpm yue:publint && pnpm yue:a11y && pnpm yue:lighthouse",
-    "changeset": "changeset"
+    "yue:gates": "pnpm yue:lint && pnpm yue:typecheck && pnpm yue:test && pnpm yue:boundaries && pnpm yue:circular && pnpm yue:build && pnpm yue:publint && pnpm yue:a11y && pnpm yue:lighthouse && pnpm yue:storybook",
+    "changeset": "changeset",
+    "yue:storybook": "pnpm --filter yue-storybook test && pnpm --filter yue-storybook build && pnpm --filter yue-storybook smoke"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

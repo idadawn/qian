@@ -4,11 +4,10 @@ import { expect, test, type Page } from '@playwright/test';
 // Base UI 验证门的页面级证据（docs/prd/specs/yue.md §4.4）：每个原语打开后的整页 axe 扫描 + 键盘主路径。
 // 组件级的细粒度键盘用例在 packages/yue/*/src/**/*.browser.test.tsx。
 
-// 验证门发现（ADR-013 状态历史）：Combobox 的输入框在弹层外时，Base UI 1.8 把弹层的焦点管理设为 modal，
-// 打开期间页面其余部分被标 aria-hidden（不是 inert），axe 的 aria-hidden-focus 把这记为 serious；弹层在焦点移出时即关闭，
-// 键盘用户不会停留在被隐藏的内容里。该规则只在 Combobox 打开态豁免，其它状态与规则一律 critical / serious = 0。
-async function expectNoBlocking(page: Page, step: string, disableRules: string[] = []) {
-  const results = await new AxeBuilder({ page }).disableRules(disableRules).analyze();
+// Base UI 的 Tab 哨兵立即转移焦点；只排除这四类内部哨兵，保留 aria-hidden-focus 规则。
+const focusGuards = '[data-base-ui-focus-guard][aria-hidden="true"][data-type]';
+async function expectNoBlocking(page: Page, step: string) {
+  const results = await new AxeBuilder({ page }).exclude(focusGuards).analyze();
   const blocking = results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious');
   expect(blocking.map((v) => `${v.impact} ${v.id}: ${v.help} → ${v.nodes.map((n) => n.target.join(' ')).join('; ')}`), step).toEqual([]);
 }
@@ -55,13 +54,16 @@ test('Select：键盘打开、选中、回写', async ({ page }) => {
 });
 
 test('Combobox：输入过滤、选中、空态', async ({ page }) => {
+  const trigger = page.getByTestId('yue-combobox-trigger');
+  await trigger.click();
   const input = page.getByRole('combobox', { name: '水果筛选' });
   await input.fill('樱');
   await expect(page.getByRole('option')).toHaveText(['樱桃']);
-  await expectNoBlocking(page, 'Combobox 打开', ['aria-hidden-focus']);
+  await expectNoBlocking(page, 'Combobox 打开');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await expect(input).toHaveValue('樱桃');
+  await expect(trigger).toContainText('樱桃');
+  await trigger.click();
   await input.fill('zzz');
   await expect(page.getByText('没有匹配项')).toBeVisible();
   await page.keyboard.press('Escape');
@@ -104,4 +106,31 @@ test('Tree：方向键展开进入、Enter 选中', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('gate-tree-selected')).toHaveText('选中：fe');
   await expectNoBlocking(page, 'Tree 展开');
+});
+
+
+test('Select 的 Tab 哨兵不接收持久焦点，焦点不会留在 aria-hidden 内容中', async ({ page }) => {
+  const trigger = page.getByTestId('yue-select-trigger');
+  for (const key of ['Tab', 'Shift+Tab']) {
+    await trigger.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await page.keyboard.press(key);
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[aria-hidden="true"]') === null)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!document.activeElement && document.activeElement !== document.body)).toBe(true);
+    await page.keyboard.press('Escape');
+  }
+});
+
+test('哨兵排除不掩盖真实 aria-hidden 可聚焦内容', async ({ page }) => {
+  await page.evaluate(() => {
+    const hidden = document.createElement('div');
+    hidden.setAttribute('aria-hidden', 'true');
+    const button = document.createElement('button');
+    button.textContent = '故意违规的隐藏按钮';
+    hidden.append(button);
+    document.body.append(hidden);
+  });
+  const result = await new AxeBuilder({ page }).exclude(focusGuards).analyze();
+  expect(result.violations.some(item => item.id === 'aria-hidden-focus')).toBe(true);
 });

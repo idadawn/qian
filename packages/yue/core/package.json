@@ -17,7 +17,8 @@
     "README.md"
   ],
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./manifest.json": "./dist/yue-manifest.json"
   },
   "publishConfig": {
     "access": "restricted",
@@ -26,20 +27,25 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
-      }
+      },
+      "./manifest.json": "./dist/yue-manifest.json"
     }
   },
   "scripts": {
     "build": "rslib build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "publint": "publint --strict --pack pnpm",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postbuild": "node scripts/export-manifests.mjs"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
     "@idadawn/yue-tokens": "workspace:^",
     "clsx": "catalog:",
-    "tailwind-merge": "catalog:"
+    "tailwind-merge": "catalog:",
+    "lucide-react": "catalog:",
+    "react-resizable-panels": "catalog:",
+    "@idadawn/yue-contracts": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -60,6 +66,14 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-vitest": "catalog:",
+    "storybook": "catalog:",
+    "ajv": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "tailwindcss": "catalog:",
+    "@storybook/addon-docs": "catalog:"
   }
 }
