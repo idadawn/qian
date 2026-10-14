@@ -71,15 +71,15 @@ int / bigint 分别限制在有符号 32 / 64 位范围，decimal 在 .NET decim
 
 `IRecordHook.BeforeAsync` 接受可信 `RecordHookContext`：租户、主体、实体、记录标识、create/update/delete 操作、可选 before 和 proposed 快照。它在当前业务事务内运行：返回 `RecordHookResult.Accept()` 沿用载荷，传入对象可改写载荷，`Reject(QianError)` 或异常使当前事务回滚。改写后必须重新执行字段权限、必填、业务主键和模型校验；不得改写租户、记录身份或已冻结的主键策略。before 不执行不可回滚的外部副作用。导入按实际新增或编辑路径执行 before。
 
-`IRecordHook.AfterAsync` 仅在提交成功后由 Outbox 异步驱动，接收 `RecordChangedEvent`；至少一次投递，消费者以 EventId 幂等，失败重试不能撤销已经提交的业务数据。S1 定义两个端口与结果类型，调度次序、持久化重试与 `NpgsqlTransaction` Outbox Provider 在 S2 落地。`RecordHookResult` 克隆替换快照，原 JsonDocument 释放后结果仍可读取；记录快照不进入默认 ToString 日志。
+`IRecordHook.AfterAsync` 仅在提交成功后由 Outbox 异步驱动，接收 `RecordChangedEvent`：消费端把收到的信封交给 `RecordChangedEvent.FromEnvelope`，得到解析后的 `QianEventEnvelope` 与类型化的 `RecordChangedPayload`（信封类型来自 Events seam 的 Definition `Qian.Events.Abstractions`）。至少一次投递，消费者以 EventId（即信封 event_id）幂等，失败重试不能撤销已经提交的业务数据。S1 定义两个端口与结果类型，调度次序、持久化重试与 `NpgsqlTransaction` Outbox Provider 在 S2 落地。`RecordHookResult` 克隆替换快照，原 JsonDocument 释放后结果仍可读取；记录快照不进入默认 ToString 日志。
 
-事件固定为 `qian.record.changed.v1`，使用原 Kun 稳定事件标记与 `RecordEventRegistration.RegisterRecordEvents` 源生成注册。完整 [信封 Schema](../../../contracts/data/v1/record-changed-envelope.schema.json) 引用冻结的 [v0 信封](../../../contracts/v0/event-envelope.schema.json)，不另建基础信封格式；[payload Schema](../../../contracts/data/v1/qian.record.changed.v1.schema.json) 包含 entityCode、recordId、created/updated/deleted/imported、tenantId、actor、changedFields 与可选 before/after 对象。快照可因权限或敏感字段策略省略；软删除可以同时包含 before 与 after。
+事件固定为 `qian.record.changed.v1`，按 [Qian.Events](../../../packages/Qian.Events/README.md) 的模型发布：集成事件类型就是载荷。原 Kun 稳定事件标记 `[IntegrationEventId]` 标在 `RecordChangedPayload` 上，`RecordEventRegistration.RegisterRecordEvents` 以 `DataContractJson.RecordChangedPayloadTypeInfo` 源生成注册，事件目录的 payload Schema 由它导出。信封只有一层，由写入端在入队时生成 event_id、occurred_at、producer、actor、trace_parent 与因果链；`RecordChangedEvent` 是消费端视图，不登记、不单独序列化。完整 [信封 Schema](../../../contracts/data/v1/record-changed-envelope.schema.json) 引用冻结的 [v0 信封](../../../contracts/v0/event-envelope.schema.json)，不另建基础信封格式；[payload Schema](../../../contracts/data/v1/qian.record.changed.v1.schema.json) 包含 entityCode、recordId、created/updated/deleted/imported、tenantId、actor、changedFields 与可选 before/after 对象，成员与必填项和目录导出的 Schema 一致。快照可因权限或敏感字段策略省略；软删除可以同时包含 before 与 after。
 
-生产者须保证信封与 payload 的 tenant/actor 一致且来自可信上下文，入队前调用 `EnsureConsistentContext()` 核对非空事件/租户标识、UTC 时间及重复上下文；事件与业务写入同事务。before/after 和 changedFields 必须先按数据授权与敏感字段策略裁剪。元数据使用 camelCase，冻结信封保留 snake_case，actor 的 on_behalf_of 与 v0 一致。NuGet 同时嵌入并打包引用所需的两份 v0 Schema，消费者可离线建立 Schema 注册表。
+生产者在命令 handler 的事件作用域内把载荷交给数据会话的 Outbox 写入端（`IOutboxWriter.Enqueue`），不自己拼信封，事件与业务写入同事务。载荷的 tenantId 与 actor 重复了信封字段，必须取自写入端所用的同一可信来源：当前租户上下文与 `EventEnvelopeScope.Current.Actor`（用 `RecordActor.From` 换算）。入队前调用 `payload.EnsureConsistentContext(tenant)` 核对；消费端 `FromEnvelope` 再核对一次，type 不符、平台级信封（tenant_id 为 null）、载荷不符合契约，或租户、主体与信封不一致时一律拒绝。before/after 和 changedFields 必须先按数据授权与敏感字段策略裁剪。载荷使用 camelCase，冻结信封保留 snake_case，actor 的 on_behalf_of 与 v0 一致。NuGet 同时嵌入并打包引用所需的两份 v0 Schema，消费者可离线建立 Schema 注册表。
 
 ## 7. 验证与后续接入
 
-独立 `Qian.Data.Abstractions.Tests` 覆盖示例往返、字段矩阵拒绝 bool/between、操作数基数/类型、系统变量、未知/租户字段、Schema 注入、矩阵一致性、v0 信封与框架登记、Hook 改写生命周期和统一错误类型。PublicAPI 分析器登记全部公开类型；原 Data 真库安全装配测试继续保留。
+独立 `Qian.Data.Abstractions.Tests` 覆盖示例往返、字段矩阵拒绝 bool/between、操作数基数/类型、系统变量、未知/租户字段、Schema 注入、矩阵一致性、v0 信封与载荷登记、视图派生与上下文核对、Hook 改写生命周期和统一错误类型。`Qian.Events.Tests` 用真实写入端验证记录载荷只生成一层信封并通过记录信封 Schema；`Qian.Sample.Crm.Tests` 的事件目录用例比对导出的 payload Schema 与手写 Schema。PublicAPI 分析器登记全部公开类型；原 Data 真库安全装配测试继续保留。
 
 S2 的五处消费方引用同一份 Schema 和矩阵，不重建自己的运算符列表。鉴权 `DataScopeRule.filter`、高级查询、启用规则与流程条件的接入点见 [§07](../07-s1-foundation.md#75-qianauthz-鉴权引擎p0--s1) 和 [§08](../08-s2-lowcode.md#82-动态数据引擎p0--s2)。
 

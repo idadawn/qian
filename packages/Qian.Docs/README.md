@@ -14,6 +14,8 @@ pnpm exec qian docs generate --profile platform --json
 
 命令输出 `docs/generated/config-catalog.md`、`module-graph.md`、`event-graph.md`、`seam-graph.md`。配置、来源层、模块顺序与服务键连接都来自实际 profile/patch 解析；可重复 `--patch`。文档生成默认关闭 home 层，显式 `--home` 才启用，避免个人环境悄悄改变仓库文档。`--out` 只能指向工作区内的目录。
 
+`docs/generated/` 受 G2 文档新鲜度门禁约束：documentation 工作流按当前源码重新生成后，与提交内容有任何差异（含新文件）即失败。改动 profile/patch、配置 Schema 或事件代码时，重新运行上面的命令并一并提交；也可从失败运行上传的 `derived-docs-and-events` 产物取回生成结果。生成结果不含时间、随机值或绝对路径，同一输入在 macOS 与 Linux 上逐字节一致。
+
 配置目录包含生效配置与原始 Schema，敏感 Schema 的 default/examples/const/enum 不导出，secretRef 从不解析。模块和 seam 图是静态装配计划；业务骨架保留明确说明，不作为已运行 Provider 的证据。
 
 ## 事件代码分析
@@ -37,5 +39,5 @@ CLI 的 `renderDocumentationTemplates` 生成 README 与 AGENTS，两份均含�
 - 事件扫描目前消费 C# 源码；TS 运行时尚待 S1-RT-003，不虚构其事件 API 或调用关系。
 - 静态分析不执行目标项目，也不替代完整编译；依赖外部二进制、动态参数的调用标为未解析。
 - 当前 CLI 从仓库构建随附 .NET 工具，需要 .NET 10 SDK。npm 分发时的工具打包由 CLI 发布任务处理。
-- 本任务接入事件模式失败门禁；生成文档新鲜度的全仓 CI 门禁由 S1-QA-006 接入。
+- 本任务接入事件模式失败门禁；生成文档新鲜度比对由 S1-QA-009 接入 documentation 工作流，README / AGENTS.md 必需节、第二份清单与 plugin.json 派生字段等其余全仓门禁由 S1-QA-006 接入。
 - 未实现其它 init 模板、包安装与发布，也不把四份派生文档替代手写的模块主文档。

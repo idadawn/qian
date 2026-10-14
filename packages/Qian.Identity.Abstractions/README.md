@@ -25,7 +25,7 @@
 
 `IAuthenticatorFactor` 提供挑战与验证端口。AuthenticationProof 复制临时材料、禁止默认打印／JSON 序列化并在 Dispose 时清零；失败携带 QianError，由宿主映射为 ErrorDetail，不自建错误体。
 
-进程内事件为 signing-in（waterfall）、signed-in / signed-out（emit）、member-disabled（parallel）。跨进程五类事件有稳定 `[IntegrationEventId]`、源生成 JSON 与各自 payload Schema；通过 `RegisterIdentityEvents()` 显式登记，外层事件信封仍遵守 contracts/v0。事件和 Session 的 ToString 不打印 sid，载荷不含密码、认证答案或 access/refresh token。
+进程内事件为 signing-in（waterfall）、signed-in / signed-out（emit）、member-disabled（parallel）。跨进程五类事件有稳定 `[IntegrationEventId]`、源生成 JSON 与各自 payload Schema；通过 `RegisterIdentityEvents()` 显式登记，外层事件信封仍遵守 contracts/v0。载荷只有身份投影：event_id、occurred_at 由 Qian.Events 写入端入队时生成，tenant_id 取发布时的租户上下文，三者只在信封上，载荷类型也不实现 Kun 的 `IIntegrationEvent`（[S1-DEC-020](../../pm/tasks/S1-DEC-020.md)）。事件和 Session 的 ToString 不打印 sid，载荷不含密码、认证答案或 access/refresh token。
 
 ## 模型体验
 
