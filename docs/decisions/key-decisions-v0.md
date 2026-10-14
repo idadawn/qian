@@ -443,3 +443,9 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 
 - R78：方言组件 id 定为 `qian.data.dialect.pg`，与组件模型 §6.1 的包名映射（`Qian.Data.Dialect.Pg` → `qian.data.dialect.pg`）一致；PRD 7.6 原写的 `qian.data.dialect.postgres` 已在 idadawn/qian#79 改正。组件形态（`plugins/qian.data.dialect.pg`，清单 `provides` 派生为 `Data.Dialects:pg`）登记为 S1-DATA-006，依赖 S1-RT-014 的具名注册派生。
 - R79：数据连接连通测试的进程内出网检查提前到 S1（S1-DATA-005）。缺省拒绝回环、链路本地（含云元数据）、100.100.100.200、未指定、组播与广播地址，运维可追加拒绝网段或限定放行网段。PRD 7.18 / 7.19「低代码连接器与第三方出网点的出口代理与 SSRF 基线归 S2」不变，生产环境仍以 7.17 的 NetworkPolicy 出网白名单或出口代理限定可达网段。
+
+### 验收复核裁决 R80（S1-QA-010 复核，2026-10-15）
+
+由 Claude 在产品负责人要求「验收 S1-QA-010」后作默认裁决，未经逐条确认；整改退回 `pm/tasks/S1-QA-010.md`，有异议时新建决策任务。
+
+- R80：契约目录的冻结状态统一显式写 `x-status: frozen`，不以「删除 `draft`」表示：contracts/v0 在 S1-AGT-002 去 draft 时改写为 `frozen`（v0 README §2、§7 与 R53 补注、`ContractSchemaTests` 届时改断言 `frozen`）；contracts/data/v1 已按此标记，README 写明批准依据为本条，并更正 `$id` 陈述（data-types / data-connection 两份的旧标识符前缀与目录不符，趁零消费方统一为 `contracts/data/v1/` 并在 PR 说明；S1-QA-010 已按此对齐）；data/v1 在零代码消费方时冻结是复核人在 S1-QA-010 验收里提出的要求（C# 契约 `Qian.Data.Abstractions` 已发布为消费边界），作为 R53「消费方全部进入 review 后才冻结」前提的例外记录；data/v1 冻结信封 `$ref` v0 草稿信封列为已知例外，v0 event-envelope 冻结时复核 data/v1 信封。
