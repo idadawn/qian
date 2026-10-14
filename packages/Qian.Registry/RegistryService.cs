@@ -1,7 +1,11 @@
+using Kun.Authorization;
 using Kun.Core.MultiTenancy;
+using Microsoft.Extensions.DependencyInjection;
 using Qian.Data;
+using Qian.Identity.Abstractions;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
+using Qian.Surfaces.Abstractions;
 
 namespace Qian.Registry;
 
@@ -13,6 +17,9 @@ internal sealed class RegistryService : IRegistryService
     private readonly IPluginContext _context;
     private readonly RegistryScopeReconciler _scopes;
     private readonly IReadOnlyList<InstalledComponentMetadata> _installed;
+    private readonly IReadOnlySet<string> _installedEntries;
+    private readonly IReadOnlyList<string> _serviceKeys;
+    private readonly PostgresArtifactCatalog _artifacts;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly SemaphoreSlim _control = new(1, 1);
     private PostgresPatchListener? _listener;
@@ -32,6 +39,11 @@ internal sealed class RegistryService : IRegistryService
             installed[(metadata.PluginId, metadata.Version)] = metadata;
         }
         _installed = Array.AsReadOnly(installed.Values.OrderBy(item => item.PluginId, StringComparer.Ordinal).ThenBy(item => item.Version, StringComparer.Ordinal).ToArray());
+        _installedEntries = options.InstalledComponents.Select(binding => binding.Definition.Entry.Id).ToHashSet(StringComparer.Ordinal);
+        // 候选制品的 inject 只能由本宿主预装组件提供（PRD 7.2.1）；provides 与 profile 装配器同样按服务键原文匹配。
+        _serviceKeys = Array.AsReadOnly(_installed.SelectMany(component => component.Manifest.GetProperty("provides").EnumerateArray().Select(key => key.GetString()!))
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray());
+        _artifacts = new PostgresArtifactCatalog(data);
         var repository = new PostgresPatchRepository(data, tenant, options.Surfaces);
         var composer = new RegistryProfileComposer(repository, options.Profiles, options.Profile);
         _scopes = new RegistryScopeReconciler(tenant, composer, options.Runtime, context, ResolveInstalled);
@@ -90,6 +102,55 @@ internal sealed class RegistryService : IRegistryService
         var entries = await _scopes.ReadAsync(_tenant.TenantId, scope, key, cancellationToken).ConfigureAwait(false);
         return Array.AsReadOnly(entries.Where(entry => _installed.Any(component => component.PluginId == entry.PluginId && component.Version == entry.Version)).ToArray());
     }
+
+    public async ValueTask<IReadOnlyList<RegistryEntryView>> GetScopeViewAsync(ScopeKey scope, ICurrentUser user, CancellationToken cancellationToken = default)
+    {
+        var tenantId = await AuthorizeAsync(scope, user, cancellationToken).ConfigureAwait(false);
+        return await _scopes.ViewAsync(tenantId, scope, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask<RegistryEntryView> GetScopeEntryAsync(ScopeKey scope, string entryId, ICurrentUser user, CancellationToken cancellationToken = default)
+    {
+        var tenantId = await AuthorizeAsync(scope, user, cancellationToken).ConfigureAwait(false);
+        // 判定之后再看条目标识，无权限者得到的永远是同一个 404。
+        if (string.IsNullOrWhiteSpace(entryId) || entryId.Length > 128 || entryId.Any(char.IsControl)) throw NotFound();
+        return await _scopes.InspectAsync(tenantId, scope, entryId, _installedEntries, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask<RegistryArtifactEntry> SubmitArtifactAsync(IReadOnlyDictionary<string, ReadOnlyMemory<byte>> files, string digest, string actor, CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _lifetime.IsCancellationRequested) throw new ServiceNotReadyException();
+        ArgumentNullException.ThrowIfNull(files);
+        // 候选制品尚不属于本宿主的完整目录，跨组件引用按离线目录给 warning；inject 的 Provider 必须已在预装集合中。
+        var content = RegistryArtifactContent.Read(files, digest, _options.Surfaces,
+            new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", ServiceKeys = _serviceKeys });
+        var saved = await _artifacts.SubmitAsync(content, actor, cancellationToken).ConfigureAwait(false);
+        return new RegistryArtifactEntry(saved.Digest, saved.Component.Id, saved.Component.Manifest.GetProperty("version").GetString()!,
+            saved.State, saved.SubmittedBy, saved.SubmittedAt);
+    }
+
+    // 管理面只认宿主已验证的主体与租户上下文；委托、Agent、跨租户、缺判定端口或无权限一律与不存在同为 NOT_FOUND（R32）。
+    private async ValueTask<string> AuthorizeAsync(ScopeKey scope, ICurrentUser user, CancellationToken ct)
+    {
+        if (_disposed || _lifetime.IsCancellationRequested || _listener is null) throw new ServiceNotReadyException();
+        ArgumentNullException.ThrowIfNull(user);
+        var principal = user.Principal;
+        if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject || !_tenant.IsMultiTenant || string.IsNullOrWhiteSpace(_tenant.TenantId))
+            throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
+        var tenantId = _tenant.TenantId;
+        if (principal.Actor is not null || principal.Kind is not (PrincipalKind.User or PrincipalKind.Service) || principal.TenantId != tenantId ||
+            scope.Kind != "tenant" || scope.Id != tenantId) throw NotFound();
+        // 判定端口由宿主的 Authz Provider 装配；缺失时 fail-closed，不回退到令牌角色。
+        if (_context.Services.GetService<IPermissionChecker>() is not { } checker) throw NotFound();
+        var subject = new AuthorizationSubject(principal.Subject, tenantId, principal.Kind == PrincipalKind.User ? "user" : "service");
+        var decision = await checker.CheckAsync(new PermissionRequest(subject, RegistryDefinition.ScopeReadPermission), ct).ConfigureAwait(false);
+        // 判定之后再确认请求主体与租户上下文没有变化。
+        if (!decision.Allow || !user.IsAuthenticated || user.UserId != principal.Subject || user.Principal?.TenantId != tenantId ||
+            user.Principal?.Kind != principal.Kind || user.Principal?.Actor is not null || _tenant.TenantId != tenantId) throw NotFound();
+        return tenantId;
+    }
+
+    private static QianErrorException NotFound() => new(new QianError(PlatformErrors.NotFound));
 
     internal void Cancel()
     {

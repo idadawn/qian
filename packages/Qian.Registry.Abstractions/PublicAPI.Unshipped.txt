@@ -73,3 +73,51 @@ Qian.Registry.InstalledComponentMetadata.ArtifactDigest.get -> string?
 Qian.Registry.InstalledComponentMetadata.FilePaths.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Qian.Registry.InstalledComponentMetadata.InstalledComponentMetadata(string! pluginId, string! version, System.Text.Json.JsonElement manifest, System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>! metadata, string? artifactDigest, System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files) -> void
 Qian.Registry.InstalledComponentMetadata.ReadFile(string! path) -> byte[]?
+Qian.Registry.RegistryEntryView
+override Qian.Registry.RegistryEntryView.ToString() -> string!
+static Qian.Registry.RegistryEntryView.operator !=(Qian.Registry.RegistryEntryView? left, Qian.Registry.RegistryEntryView? right) -> bool
+static Qian.Registry.RegistryEntryView.operator ==(Qian.Registry.RegistryEntryView? left, Qian.Registry.RegistryEntryView? right) -> bool
+override Qian.Registry.RegistryEntryView.GetHashCode() -> int
+override Qian.Registry.RegistryEntryView.Equals(object? obj) -> bool
+Qian.Registry.RegistryEntryView.Equals(Qian.Registry.RegistryEntryView? other) -> bool
+Qian.Registry.RegistryEntryView.<Clone>$() -> Qian.Registry.RegistryEntryView!
+const Qian.Registry.RegistryDefinition.ScopeReadPermission = "qian.registry:scope:read" -> string!
+Qian.Registry.RegistryEntryView.EntryId.get -> string!
+Qian.Registry.RegistryEntryView.EntryId.init -> void
+Qian.Registry.RegistryEntryView.Deconstruct(out string! EntryId, out string! PluginId, out string! Version, out string! Scope, out int Layer, out int? Revision) -> void
+Qian.Registry.RegistryArtifactEntry
+Qian.Registry.RegistryArtifactEntry.Digest.get -> string!
+Qian.Registry.RegistryArtifactEntry.Digest.init -> void
+override Qian.Registry.RegistryArtifactEntry.ToString() -> string!
+static Qian.Registry.RegistryArtifactEntry.operator !=(Qian.Registry.RegistryArtifactEntry? left, Qian.Registry.RegistryArtifactEntry? right) -> bool
+static Qian.Registry.RegistryArtifactEntry.operator ==(Qian.Registry.RegistryArtifactEntry? left, Qian.Registry.RegistryArtifactEntry? right) -> bool
+override Qian.Registry.RegistryArtifactEntry.GetHashCode() -> int
+override Qian.Registry.RegistryArtifactEntry.Equals(object? obj) -> bool
+Qian.Registry.RegistryArtifactEntry.Equals(Qian.Registry.RegistryArtifactEntry? other) -> bool
+Qian.Registry.RegistryArtifactEntry.<Clone>$() -> Qian.Registry.RegistryArtifactEntry!
+Qian.Registry.RegistryArtifactEntry.Deconstruct(out string! Digest, out string! PluginId, out string! Version, out string! State, out string! SubmittedBy, out System.DateTimeOffset SubmittedAt) -> void
+Qian.Registry.RegistryArtifactEntry.PluginId.get -> string!
+Qian.Registry.RegistryEntryView.Version.get -> string!
+Qian.Registry.RegistryArtifactEntry.PluginId.init -> void
+Qian.Registry.RegistryEntryView.Version.init -> void
+Qian.Registry.RegistryEntryView.Scope.get -> string!
+Qian.Registry.RegistryArtifactEntry.Version.get -> string!
+Qian.Registry.RegistryEntryView.Scope.init -> void
+Qian.Registry.RegistryArtifactEntry.Version.init -> void
+Qian.Registry.RegistryArtifactEntry.State.get -> string!
+Qian.Registry.RegistryEntryView.PluginId.get -> string!
+Qian.Registry.RegistryEntryView.Layer.get -> int
+Qian.Registry.RegistryEntryView.PluginId.init -> void
+Qian.Registry.RegistryArtifactEntry.State.init -> void
+Qian.Registry.RegistryEntryView.Layer.init -> void
+Qian.Registry.RegistryArtifactEntry.SubmittedBy.get -> string!
+Qian.Registry.RegistryArtifactEntry.SubmittedBy.init -> void
+Qian.Registry.RegistryArtifactEntry.SubmittedAt.get -> System.DateTimeOffset
+Qian.Registry.RegistryArtifactEntry.SubmittedAt.init -> void
+Qian.Registry.RegistryEntryView.Revision.get -> int?
+Qian.Registry.RegistryEntryView.Revision.init -> void
+Qian.Registry.RegistryEntryView.RegistryEntryView(string! EntryId, string! PluginId, string! Version, string! Scope, int Layer, int? Revision) -> void
+Qian.Registry.IRegistryService.GetScopeEntryAsync(Qian.Runtime.ScopeKey scope, string! entryId, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Registry.RegistryEntryView!>
+Qian.Registry.IRegistryService.GetScopeViewAsync(Qian.Runtime.ScopeKey scope, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryEntryView!>!>
+Qian.Registry.RegistryArtifactEntry.RegistryArtifactEntry(string! Digest, string! PluginId, string! Version, string! State, string! SubmittedBy, System.DateTimeOffset SubmittedAt) -> void
+Qian.Registry.IRegistryService.SubmitArtifactAsync(System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files, string! digest, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Registry.RegistryArtifactEntry!>
