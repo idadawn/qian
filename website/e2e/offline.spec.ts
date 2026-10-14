@@ -13,7 +13,8 @@ test('断外网后加载本地编辑器、修改代码并真实运行', async ({
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: '编辑代码' }).click();
   const editor = frame.locator('.monaco-editor textarea');
-  await expect(editor).toBeVisible();
+  // 正式站经网络首次加载本地编辑器资源，等待资源就绪后验证真实执行结果。
+  await expect(editor).toBeVisible({ timeout: 30_000 });
   await editor.press('ControlOrMeta+A');
   await editor.pressSequentially("import {useState} from 'react'; export default function Example(){const[n,s]=useState(0); return <button onClick={()=>s(n+1)}>离线 {n}</button>}");
   await frame.getByRole('button', { name: '运行', exact: true }).click();
