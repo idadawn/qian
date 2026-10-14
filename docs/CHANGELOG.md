@@ -5,6 +5,13 @@
 ## 2026-10-14 yue 组件文档迁入 Rspress（S1-YUE-005）
 
 51 个组件入口、141 个公开组件/部件的 Props、令牌页与可编辑的真实演示统一进入现有 Rspress。共用示例及 126 个状态场景迁移到独立 Playwright，离线编辑器资源随站点发布；移除旧文档应用与依赖，保留原有八项门禁。使用说明见 [core 主文档](../packages/yue/core/README.md)。
+## 2026-10-14 身份事件载荷不再重复信封字段（S1-DEC-020、S1-IDP-011）
+
+破坏性变更：五类身份事件的载荷去掉 `event_id`、`occurred_at`、`tenant_id`，构造参数随之减少，`IdentityIntegrationEvent` 不再实现 Kun 的 `IIntegrationEvent`；三项只由 Qian.Events 写入端生成在信封上。v1 尚无生产方、消费方与已发布包，按 S1-DEC-020 就地修正，此后的破坏性变化才升 v2。见 [身份事件契约](../contracts/identity/v1/README.md) 与 [ADR-008](adr/ADR-008-events-messaging.md) D8.7。
+
+## 2026-10-14 记录变更事件改为登记载荷（S1-DATA-004）
+
+`qian.record.changed.v1` 按 Qian.Events 的模型发布：`[IntegrationEventId]` 移到 `RecordChangedPayload`，`RegisterRecordEvents` 登记载荷，信封只由写入端生成一层；`RecordChangedEvent` 改为 after Hook 视图，由 `RecordChangedEvent.FromEnvelope` 从收到的信封派生。破坏性变更：删除 `DataContractJson.RecordChangedEventTypeInfo`，`EnsureConsistentContext` 移到载荷，改为核对当前租户与事件来源。线上信封、payload Schema 与 fixture 不变，见 [数据契约规格 §6](prd/specs/data-contracts.md#6-record-hook-与变更事件)。
 
 ## 2026-10-14 统一 Rspress 组件文档与验收口径（S1-YUE-005、S1-DOCS-002）
 

@@ -4,32 +4,11 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "event_id",
-    "occurred_at",
-    "tenant_id",
     "person_id",
     "identity_revision",
     "reason"
   ],
   "properties": {
-    "event_id": {
-      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
-    },
-    "occurred_at": {
-      "type": "string",
-      "format": "date-time",
-      "pattern": "Z$"
-    },
-    "tenant_id": {
-      "oneOf": [
-        {
-          "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "person_id": {
       "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
     },

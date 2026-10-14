@@ -1,5 +1,6 @@
-using Kun.Core.Domain;
+using Kun.Core.MultiTenancy;
 using Kun.EventBus;
+using Qian.Events;
 using Qian.Runtime.Errors;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -10,40 +11,74 @@ namespace Qian.Data;
 public sealed record DataRulePolicy(string PrimaryKeyStrategy, bool OptimisticConcurrency, bool SoftDelete,
     bool RecordHistory, IReadOnlyList<string> BusinessKey);
 /// <summary>可信运行上下文提供的事件主体，与冻结信封 Actor 同形。</summary>
-public sealed record RecordActor(string Kind, string Id, [property: JsonPropertyName("on_behalf_of")] string? OnBehalfOf = null);
-/// <summary>记录变更载荷；快照必须按字段权限和敏感字段策略裁剪。</summary>
+public sealed record RecordActor(string Kind, string Id, [property: JsonPropertyName("on_behalf_of")] string? OnBehalfOf = null)
+{
+    /// <summary>按信封或事件来源的主体换算，载荷的 actor 由此与信封逐字段一致。</summary>
+    public static RecordActor From(EventActor actor)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+        var kind = actor.Kind switch
+        {
+            EventActorKind.User => "user", EventActorKind.Service => "service", EventActorKind.Agent => "agent",
+            _ => throw new ArgumentOutOfRangeException(nameof(actor), "未知主体类型。")
+        };
+        return new(kind, actor.Id, actor.OnBehalfOf);
+    }
+}
+/// <summary>
+/// qian.record.changed.v1 的载荷，也是登记到事件目录的集成事件类型：经数据会话的 Outbox 写入端入队，信封由 Qian.Events 生成。
+/// 快照必须按字段权限和敏感字段策略裁剪。
+/// </summary>
+[IntegrationEventId(EventType)]
 public sealed record RecordChangedPayload(string EntityCode, string RecordId, string Op, Guid TenantId, RecordActor Actor,
     IReadOnlyList<string> ChangedFields, JsonElement? Before = null, JsonElement? After = null)
 {
+    /// <summary>稳定事件标识；载荷破坏性变更必须发布新的版本。</summary>
+    public const string EventType = "qian.record.changed.v1";
+    /// <summary>入队前核对：tenantId 与 actor 必须等于写入端随后写进信封的值，即当前租户上下文与 EventEnvelopeScope 的主体；结构仍须通过发布的 JSON Schema。</summary>
+    public void EnsureConsistentContext(ITenantContext tenant)
+    {
+        ArgumentNullException.ThrowIfNull(tenant);
+        var origin = EventEnvelopeScope.Current;
+        if (TenantId == Guid.Empty || tenant.TenantId != TenantId.ToString("D") || origin is null || Actor != RecordActor.From(origin.Actor))
+            throw new InvalidOperationException("记录事件的租户或主体与当前事件来源不一致。");
+    }
     /// <inheritdoc />
     public override string ToString() => "RecordChangedPayload(redacted)";
 }
-/// <summary>qian.record.changed.v1 的完整 v0 信封；经同事务 Outbox 投递，after Hook 以 EventId 幂等。</summary>
-[IntegrationEventId(EventType)]
-public sealed record RecordChangedEvent(
-    [property: JsonPropertyName("event_id")] Guid EventId,
-    [property: JsonPropertyName("occurred_at")] DateTime OccurredAt,
-    [property: JsonPropertyName("tenant_id")] Guid TenantId,
-    string Producer, RecordActor Actor,
-    [property: JsonPropertyName("trace_parent")] string TraceParent,
-    RecordChangedPayload Payload,
-    [property: JsonPropertyName("correlation_id")] Guid? CorrelationId = null,
-    [property: JsonPropertyName("causation_id")] Guid? CausationId = null) : IIntegrationEvent
+/// <summary>
+/// after Hook 的输入：由解析后的 v1 信封与按 RecordChangedPayload 反序列化的载荷派生，只能经 FromEnvelope 构造。
+/// 它不是集成事件类型，也不单独序列化；线上只有 Qian.Events 生成的一层信封。
+/// </summary>
+public sealed class RecordChangedEvent
 {
-    /// <summary>稳定事件标识；载荷破坏性变更必须发布新的版本。</summary>
-    public const string EventType = "qian.record.changed.v1";
-    /// <summary>冻结信封版本。</summary>
-    public string Version { get; } = "v1";
-    /// <summary>事件主题。</summary>
-    public string Subject { get; } = "qian.record.changed";
-    /// <summary>事件目录查找键。</summary>
-    public string Type { get; } = EventType;
-    /// <summary>Outbox 入队前核对信封与载荷上下文；结构仍须通过发布的 JSON Schema。</summary>
-    public void EnsureConsistentContext()
+    private RecordChangedEvent(QianEventEnvelope envelope, RecordChangedPayload payload)
     {
-        if (EventId == Guid.Empty || TenantId == Guid.Empty || Actor is null || Payload is null
-            || OccurredAt.Kind != DateTimeKind.Utc || TenantId != Payload.TenantId || Actor != Payload.Actor)
-            throw new InvalidOperationException("记录事件的租户、主体或 UTC 时间不一致。");
+        Envelope = envelope;
+        Payload = payload;
+    }
+    /// <summary>收到的信封；producer、actor、trace_parent 与因果链取自这里。</summary>
+    public QianEventEnvelope Envelope { get; }
+    /// <summary>类型化载荷，租户与主体已和信封核对一致。</summary>
+    public RecordChangedPayload Payload { get; }
+    /// <summary>信封 event_id，after Hook 的幂等键。</summary>
+    public Guid EventId => Envelope.EventId;
+    /// <summary>记录所属租户，等于信封 tenant_id 与载荷 tenantId。</summary>
+    public Guid TenantId => Payload.TenantId;
+    /// <summary>从信封派生；type 不符、平台级信封、载荷不符合契约，或载荷的租户与主体和信封不一致时拒绝。</summary>
+    public static RecordChangedEvent FromEnvelope(QianEventEnvelope envelope)
+    {
+        ArgumentNullException.ThrowIfNull(envelope);
+        envelope.Validate();
+        if (envelope.Type != RecordChangedPayload.EventType) throw new InvalidOperationException("信封不是 " + RecordChangedPayload.EventType + " 事件。");
+        RecordChangedPayload? payload;
+        try { payload = envelope.Payload.Deserialize(DataContractJson.RecordChangedPayloadTypeInfo); }
+        catch (JsonException error) { throw new InvalidOperationException("记录事件载荷不符合 RecordChangedPayload 契约。", error); }
+        if (payload is not { EntityCode: not null, RecordId: not null, Op: not null, ChangedFields: not null })
+            throw new InvalidOperationException("记录事件载荷不符合 RecordChangedPayload 契约。");
+        if (envelope.TenantId is not { } tenantId || payload.TenantId != tenantId || payload.Actor != RecordActor.From(envelope.Actor))
+            throw new InvalidOperationException("记录事件载荷的租户或主体与信封不一致。");
+        return new(envelope, payload);
     }
     /// <inheritdoc />
     public override string ToString() => "RecordChangedEvent(redacted)";
@@ -90,16 +125,16 @@ public interface IRecordHook
 {
     /// <summary>提交前在同一事务中调用；拒绝或异常回滚，允许改写必须重新校验，禁止不可回滚的外部副作用。</summary>
     ValueTask<RecordHookResult> BeforeAsync(RecordHookContext context, CancellationToken cancellationToken = default);
-    /// <summary>提交成功后经 Outbox 异步调用；至少一次，必须按 EventId 幂等，失败不撤销已提交业务数据。</summary>
+    /// <summary>提交成功后经 Outbox 异步调用，输入由 RecordChangedEvent.FromEnvelope 从收到的信封派生；至少一次，必须按 EventId 幂等，失败不撤销已提交业务数据。</summary>
     ValueTask AfterAsync(RecordChangedEvent change, CancellationToken cancellationToken = default);
 }
 /// <summary>记录事件的显式源生成元数据登记入口。</summary>
 public static class RecordEventRegistration
 {
-    /// <summary>登记记录事件，不启动发布器或数据库。</summary>
+    /// <summary>以载荷类型及其源生成元数据登记 qian.record.changed.v1，不启动发布器或数据库；信封由 Qian.Events 写入端生成。</summary>
     public static IEventTypeRegistrar RegisterRecordEvents(this IEventTypeRegistrar registrar)
     {
         ArgumentNullException.ThrowIfNull(registrar);
-        return registrar.Register(RecordChangedEvent.EventType, DataContractJson.RecordChangedEventTypeInfo);
+        return registrar.Register(RecordChangedPayload.EventType, DataContractJson.RecordChangedPayloadTypeInfo);
     }
 }
