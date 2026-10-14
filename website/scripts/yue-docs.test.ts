@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from './repo.ts';
 import { describe, it } from 'node:test';
-import { readYueDocs, collectYuePages } from './yue-docs.ts';
+import { readYueDocs, collectYuePages, publicType, typeCell } from './yue-docs.ts';
 import { compactTables } from './compact-yue-markdown.ts';
 
 describe('真实组件文档契约', () => {
@@ -36,4 +36,12 @@ describe('真实组件文档契约', () => {
 it('压缩表格填充不改变类型、转义竖线与代码块', () => {
   const source = '| 属性     | 类型                |\n| a       | `"a" \\| "b"`       |\n```txt\n| keep   | padding   |\n```';
   assert.equal(compactTables(source), '| 属性 | 类型 |\n| a | `"a" \\| "b"` |\n```txt\n| keep   | padding   |\n```');
+});
+
+it('公开类型路径跨安装目录稳定，代码单元格不生成邮件链接', () => {
+  assert.equal(publicType('import("/home/runner/node_modules/.pnpm/pkg@1/node_modules/@base-ui/react").ButtonState'), 'import("@base-ui/react").ButtonState');
+  assert.equal(publicType('import(".pnpm/@types+react/node_modules/@types/react/index").ReactNode'), 'import("react").ReactNode');
+  assert.equal(typeCell('"a" | "b"'), '` "a" \\| "b" `');
+  assert.equal(typeCell('`${number}px`'), '`` `${number}px` ``');
+  for (const api of readYueDocs().apis) for (const prop of api.props) assert.doesNotMatch(prop.type, /\.pnpm|node_modules/);
 });
