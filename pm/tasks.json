@@ -761,7 +761,7 @@
  {
   "id": "S1-CFG-005",
   "title": "配置密钥扫描动态键正则负载下偶发超时：复用编译实例、有界超时放宽到 1 秒",
-  "status": "doing",
+  "status": "done",
   "stage": "S1",
   "area": "CFG",
   "areaName": "配置",
@@ -773,7 +773,7 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -781,16 +781,16 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    },
    {
-    "path": "packages/Qian.Config.Abstractions/README.md",
-    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Config.Abstractions/README.md"
+    "path": "packages/Qian.Config.Secrets/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Config.Secrets/README.md"
    }
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>SecretSafety</code> 判断配置字段是否敏感时，用静态 <code>Regex.IsMatch</code> 匹配 <code>patternProperties</code> 的动态键：NonBacktracking 引擎，100 ms 超时。超时与非法模式一样报 <code>CONFIG_SECRET_SCHEMA_INVALID</code>。</p>\n<ul>\n<li>静态方法只靠框架共享的 15 项缓存复用实例，首次匹配与被挤出后的匹配都是冷自动机；</li>\n<li>惰性 DFA 每物化一条新转移都对照墙钟截止，CPU 超额订阅时首次 JIT 与建图会被拉长到 100 ms 以上（机理与实测见 S1-AUD-005）；</li>\n<li><code>Qian.Config.Apollo</code> 对每份快照调用 <code>ScanConfiguration</code>，有诊断即判失败：负载尖峰时合法的配置更新会被拒绝，<code>Qian.Secrets.Tool</code> 的发布门禁也会误报。</li>\n</ul>\n<p>本任务只改正则的执行方式，不改扫描语义。动态键的正则方言与验证器不一致的问题另行处理。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>同一模式在进程内复用一个编译实例：缓存有界，超过上限清空重建；引擎仍为 NonBacktracking，单次匹配超时有界（1 秒）</li>\n<li class='chk'><span class='box'></span>非法或不受支持的模式与匹配超时仍报 <code>CONFIG_SECRET_SCHEMA_INVALID</code>；失败不进缓存，每次扫描都报告</li>\n<li class='chk'><span class='box'></span>UT：多线程反复扫描含动态键的配置，诊断全部正确，不出现 <code>CONFIG_SECRET_SCHEMA_INVALID</code></li>\n<li class='chk'><span class='box'></span>负载复现与对比数据写进 PR：旧实现在超额订阅下误报，新实现为零</li>\n<li class='chk'><span class='box'></span><code>dotnet build Qian.slnx -c Release</code> 与配置相关测试全部通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：配置密钥扫描的动态键正则改为复用编译实例并放宽有界超时，补并发稳定性与非法模式回归</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>SecretSafety</code> 判断配置字段是否敏感时，用静态 <code>Regex.IsMatch</code> 匹配 <code>patternProperties</code> 的动态键：NonBacktracking 引擎，100 ms 超时。超时与非法模式一样报 <code>CONFIG_SECRET_SCHEMA_INVALID</code>。</p>\n<ul>\n<li>静态方法只靠框架共享的 15 项缓存复用实例，首次匹配与被挤出后的匹配都是冷自动机；</li>\n<li>惰性 DFA 每物化一条新转移都对照墙钟截止，CPU 超额订阅时首次 JIT 与建图会被拉长到 100 ms 以上（机理与实测见 S1-AUD-005）；</li>\n<li><code>Qian.Config.Apollo</code> 对每份快照调用 <code>ScanConfiguration</code>，有诊断即判失败：负载尖峰时合法的配置更新会被拒绝，<code>Qian.Secrets.Tool</code> 的发布门禁也会误报。</li>\n</ul>\n<p>本任务只改正则的执行方式，不改扫描语义。动态键按 .NET 方言解释、与 JSON Schema 规定的 ECMA-262 不一致的问题另行处理。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>同一模式在进程内复用一个编译实例：缓存有界，超过上限清空重建；引擎仍为 NonBacktracking，单次匹配超时有界（1 秒）</li>\n<li class='chk done'><span class='box'>✓</span>非法或不受支持的模式与匹配超时仍报 <code>CONFIG_SECRET_SCHEMA_INVALID</code>；失败不进缓存，每次扫描都报告</li>\n<li class='chk done'><span class='box'>✓</span>UT：多线程反复扫描含动态键的配置，诊断全部正确，不出现 <code>CONFIG_SECRET_SCHEMA_INVALID</code></li>\n<li class='chk done'><span class='box'>✓</span>负载复现与对比数据写进 PR：旧实现在超额订阅下误报，新实现为零（见 idadawn/qian#87「实测」）</li>\n<li class='chk done'><span class='box'>✓</span><code>dotnet build Qian.slnx -c Release</code> 与配置相关测试全部通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：配置密钥扫描的动态键正则改为复用编译实例并放宽有界超时，补并发稳定性与非法模式回归</li>\n<li>2026-10-14 claude：完成：动态键正则按模式原文复用编译实例（最多 128 个），单次匹配超时 100 ms 改为有界 1 秒，仍为 NonBacktracking 并按 CONFIG_SECRET_SCHEMA_INVALID 失败关闭。约 10 倍超额订阅下：长驻进程挤出框架缓存的场景旧构建 127,974 次扫描误报 7 次，新构建 899,710 次 0 次；新进程单次扫描旧 1/300、新 0/300；Qian.Config.Secrets.Tests 40/40。随 idadawn/qian#87 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
   "file": "pm/tasks/S1-CFG-005.md"
  },
  {
