@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qian.dev/contracts/data/v1/filter-operators.schema.json",
+  "x-status": "frozen",
   "title": "FilterOperatorMatrix",
   "type": "object",
   "additionalProperties": false,

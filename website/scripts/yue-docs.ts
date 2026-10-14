@@ -143,7 +143,7 @@ ${doc.parts.map(part => `- \`${part}\``).join('\n')}
 
 ## 状态与交互
 
-预览工具栏可切换${doc.scenarios.map(s => ({ Default: '默认', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停' })[s.state]).join('、')}场景；切换场景会重置示例。点击、编辑或使用键盘直接操作组件，编辑代码后点击「运行」更新预览。
+预览工具栏可切换${doc.scenarios.map(s => ({ Default: '默认', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停' })[s.state]).join('、')}场景；切换场景会重置示例。悬停状态需将指针实际移入目标；弹层通过示例里的触发器打开与关闭。点击、编辑或使用键盘直接操作组件，编辑代码后点击「运行」更新预览。
 
 ## API
 

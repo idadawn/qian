@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qian.dev/contracts/data/v1/data-rule-policy.schema.json",
+  "x-status": "frozen",
   "title": "DataRulePolicy",
   "type": "object",
   "additionalProperties": false,

@@ -38,7 +38,7 @@ pnpm --filter website check        # 构建产物检查，见 §7
 website/
   rspress.config.ts            站点配置：中文、根目录 docs/、部署前缀 DOCS_BASE、Shiki 语言、Mermaid、主题桥接脚本、
                                llms: true（SSG-MD，见 §4a）与 themeConfig.llmsUI（复制为 Markdown）；多版本见 §4；
-                               preview / playground / api-docgen / typedoc 插件随 S1-DOCS-002
+                               core 使用自研 iframe 预览与 TypeScript checker；其它 API 随 S1-DOCS-002
   package.json  tsconfig.json
   README.md  AGENTS.md
   .config/dotnet-tools.json    DocFX 版本（本地 dotnet 工具）
@@ -154,7 +154,7 @@ docs-site.md §5.1 是契约，这里只说实现：
 | `scripts/check_docs.py` | 禁用词（整词匹配）、表格列数、链接、frontmatter（docs-site.md §4：必填、枚举、长度、日期、镜像页的 `source` 与 `version`、组件页的 `component`）；覆盖 `website/docs`（.md 与 .mdx）、本文件与 `AGENTS.md`，站点源码只查禁用词；站内路由、`/design/` 镜像路由与生成页路由都按规则解析，生成目录本身默认不查（它们的源已在查）；生成目录里的文件进了 Git 即失败。`/sdk/kun/`、`/sdk/api/` 下的路由在生成之前交给构建时的断链检查（手写页 `with-qian` 除外） | docs-and-pm 工作流 |
 | `scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api website/docs/start/versions.md` | 生成页（含源不在本仓库的 Kun 镜像页与 API 参考、版本矩阵）构建后显式检查一遍，frontmatter 也查（显式给出的生成目录与文件照查） | docs-site 工作流 |
 | Rspress 断链检查 | 构建时检查全站（含生成页）的站内链接，断链即构建失败 | docs-site 工作流 |
-| `pnpm --filter website check` | 七个部分与首页、404、站点地图齐全；`lang="zh"`；不引用外部资源；站内引用都带部署前缀；搜索索引存在；C# / TypeScript / JSON / YAML / Bash 都有被高亮的代码块；`/sdk/kun/` 与 `/sdk/api/kun/` 下除手写页外每页都有镜像或生成横幅，横幅里的 tag 等于 `v<KunVersion>`（白名单外的页面混进来即失败）；产物总大小不超过预算（`SITE_SIZE_BUDGET_MB`，100 MB，R55），超出时报出最大的目录；机器可读产物（§4a）：`llms.txt`、`llms-full.txt`、`kb-index.json`、`sitemap.xml` 齐全，索引里每页的 `.md` 与 HTML 都在且 sha256 一致、三个清单都收录每页、没有索引外的 `.md`，每页 `.md` 无 JSX / ESM 残留、无空标题空列表项、代码块不少于源页 | docs-site 工作流 |
+| `pnpm --filter website check` | 七个部分与首页、404、站点地图齐全；`lang="zh"`；不引用外部资源；站内引用都带部署前缀；搜索索引存在；C# / TypeScript / JSON / YAML / Bash 都有被高亮的代码块；`/sdk/kun/` 与 `/sdk/api/kun/` 下除手写页外每页都有镜像或生成横幅，横幅里的 tag 等于 `v<KunVersion>`（白名单外的页面混进来即失败）；产物总大小不超过预算（`SITE_SIZE_BUDGET_MB`，120 MB，R55），超出时报出最大的目录；机器可读产物（§4a）：`llms.txt`、`llms-full.txt`、`kb-index.json`、`sitemap.xml` 齐全，索引里每页的 `.md` 与 HTML 都在且 sha256 一致、三个清单都收录每页、没有索引外的 `.md`，每页 `.md` 无 JSX / ESM 残留、无空标题空列表项、代码块不少于源页 | docs-site 工作流 |
 | `pnpm --filter website test` | 路径映射、链接改写、章节拆分、生成目录写入、组件占位页；Kun：`KunVersion` 缺失或无效、tag 不存在即失败，白名单与排除、slug 与路由、横幅与 frontmatter（`updated` 取文件日期）、链接改写、DocFX 输出转换（含 API 页 `sidebar: false`）；产物体积预算；frontmatter 子集解析、知识库索引与 sitemap、Markdown 产物质量与同步检查；版本矩阵的读取与渲染、llms.txt 分节、产品族页与 README 一致 | docs-site 工作流 |
 | `tests/gates/test_check_docs.py` | check_docs.py 的站内路由解析、生成目录跳过、Kun 路由延后解析、禁用词整词匹配、生成文件进 Git 即失败、frontmatter 解析与校验 | dotnet 工作流（门禁自测） |
 
@@ -174,6 +174,6 @@ docs-site.md §5.1 是契约，这里只说实现：
 
 `pnpm --filter website build` 先执行 `demos:build`：Rsbuild 将同一份真实组件编译为页面内 iframe，输出到 `docs/public/yue-demo/`；Babel、Monaco、字体与 worker 复制到 `docs/public/yue-vendor/`，仅打开编辑器时加载，随相同站点前缀部署。两目录均为忽略的生成物；不引入第二个服务、文档入口或产品身份。浏览器编辑仅允许已预打包的 React/core/tokens 模块，异常在演示区域显示，重置恢复原始例子。
 
-SSR/SSG-MD 保留用途、源码和完整 API，纯交互 UI 在 Markdown 中只输出说明。SSG-MD 表格的对齐空格在生成后收敛，单元格与 fenced code 内容不变，再生成知识库哈希；全站保持 100 MB 预算。
+SSR/SSG-MD 保留用途、源码和完整 API，纯交互 UI 在 Markdown 中只输出说明。SSG-MD 表格的对齐空格在生成后收敛，单元格与 fenced code 内容不变，再生成知识库哈希；全站保持 120 MB 预算（S1-QA-010 按 R55 调整，构成与原因见 docs-site.md §7）。
 
 `pnpm --filter website e2e` 在真实静态产物上逐条执行 126 个场景，包含交互结果、明暗、iframe、打开态 axe、无页面异常，并检查断外网编辑与 HTML/Markdown Props 一致。默认启动本地静态服务；`DOCS_BASE=/pr-preview/pr-N/` 验证前缀，`DOCS_URL=http://目标站点/` 验证已发布站点（`--grep '正式页面交互 smoke'` 可聚焦代表性交互）。CI 在发布前跑完整套件，新增 core 源码也会触发 docs-site 工作流。
