@@ -51,7 +51,7 @@
 2. 执行：不占数据库连接与锁，执行耗时不影响回执表。
 3. 收尾：成功时按回执策略写入原样响应或不保存的原因，并把过期时间延到 24 小时；失败撤销本次登记，不留回执。收尾用不可取消的令牌，请求在执行后取消也会完成；收尾本身失败时记录告警，照常返回执行结果或异常，标记在租约到期后失效，期间同键请求得到 409。
 
-**回执策略**（S1-RT-020）：只有条目 `dataClassification` 为 `public` 或 `internal`、且响应体不超过 `receiptMaxBytes`（UTF-8 字节）时保存响应体。`pii`、`finance`、`secret` 与未知分级一律不保存，超限的响应也不保存；这时回执只记「已执行」与原因（`withheld` 列：`data_classification` 或 `response_too_large`），回放窗口内同键请求返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`（业务类错误码，由 `CapabilitiesErrors` 登记），ErrorDetail 的说明带原因，不再执行。调用方据此通过查询确认结果，不要换新键重试——换键会再执行一次。这样敏感数据不以明文留在回执表里，大响应也不会撑大回执表。表上另有两条检查约束兜住写入前检查之外的写入：响应体不超过 1 MiB（与配置上限一致）；`withheld` 只取上述两值，且与响应体互斥。
+**回执策略**（S1-RT-020）：只有条目 `dataClassification` 为 `public` 或 `internal`、且响应体不超过 `receiptMaxBytes`（UTF-8 字节）时保存响应体。`pii`、`finance`、`secret` 与未知分级一律不保存，超限的响应也不保存；这时回执只记「已执行」与原因（`withheld` 列：`data_classification` 或 `response_too_large`），回放窗口内同键请求返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`（业务类错误码，由 `CapabilitiesErrors` 登记），ErrorDetail 的说明带原因，不再执行。调用方据此通过查询确认结果，不要换新键重试——换键会再执行一次。这样敏感数据不以明文留在回执表里，大响应也不会撑大回执表。表上另有两条检查约束兜住写入前检查之外的写入：响应体不超过 1 MiB（与配置上限一致）；`withheld` 只取上述两值，且与响应体互斥。前者在迁移里以 `NOT VALID` 添加，只约束新写入：此前没有上限，存量回执可能超限，而强制 RLS 下迁移属主删不到它们，这些行在 24 小时回放窗口后由登记时的清理删除。
 
 登记后、写完成前进程崩溃时，租约到期后的重试会再执行一次，写类能力仍须按 `inputSchema` 中的 `idempotencyKey` 做业务幂等（tool/v2 的强制要求）。回放前照样重做第 1 步的判定（可见性、OAuth scope、RBAC），撤权后不能靠旧回执取回结果。
 
