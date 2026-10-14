@@ -953,7 +953,7 @@
  {
   "id": "S1-CFG-008",
   "title": "profile 配置诊断两端对齐：验证器正则方言、Schema 模式预检、键序与逐项错误位置",
-  "status": "doing",
+  "status": "done",
   "stage": "S1",
   "area": "CFG",
   "areaName": "配置",
@@ -967,7 +967,7 @@
    "S1-CFG-007"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -981,11 +981,48 @@
   ],
   "updated": "2026-10-15",
   "acceptance": {
-   "done": 0,
+   "done": 6,
    "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-007（idadawn/qian#97）之后，CLI 与 .NET 的 profile 装配在敏感检查上逐例一致；但配置 Schema 仍由两个验证器分别执行（CLI 为 Ajv，.NET 为 JsonSchema.Net），诊断还有三类分歧：</p>\n<p>1. 正则写法与语义。Ajv 按 JS 的 u 标志编译 <code>pattern</code> 与 <code>patternProperties</code> 的键，JsonSchema.Net 按 .NET 的 ECMAScript 选项编译，接受的写法不同：<code>(?i)a</code> 在 CLI 报「profile 或组件内容无法解析。」，在 .NET 由敏感检查报配置键处的「不支持的正则写法」；<code>\\u{41}</code> 只有 Ajv 接受，<code>[\\w-.]</code>、<code>a{,2}</code>、<code>]</code> 只有 .NET 接受。都能编译时，<code>.</code> 对 <code>\\r</code> 与 U+2028/2029、<code>$</code> 对末尾换行、<code>\\s</code> 对非 ASCII 空白、<code>\\w</code> 对 U+0130、代理对计数的判断也不同，值层 <code>pattern</code> 与 <code>additionalProperties</code> 的结果随之不同。</p>\n<p>2. 键序。JS 对象把整数形式的键排在前面，.NET 保留文档顺序；敏感检查遇到首个违规即失败，所以 <code>limits: {&quot;b&quot;: …, &quot;1&quot;: …}</code> 在 .NET 报 <code>limits/b</code>，在 CLI 报 <code>limits/1</code>。</p>\n<p>3. 逐项错误位置。Ajv 对每个缺失的 required 各报一次，给 anyOf、oneOf、if、contains 额外输出汇总错误，propertyNames 与 unevaluatedProperties 报在对象上；.NET 只取最深的失败节点，节点有失败的子节点时它自身的断言（required、uniqueItems 等）被丢弃。缺少 required 属性同时另一属性类型错误时 .NET 少报一条，诊断顺序也不同。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>两端验证器都改用共享翻译器执行 <code>pattern</code> 与 <code>patternProperties</code>（含 additionalProperties、unevaluatedProperties、propertyNames 的判定），语义按 ECMA-262 无标志、逐码元：<code>.</code> 不匹配四个行终止符，<code>\\s</code> 为 ECMA-262 空白，<code>$</code> 只在末尾成立；翻译器、TS 自动机与跨语言向量同步，稳定键名的判定不变</li>\n<li class='chk'><span class='box'></span>交给验证器之前，两端按同一顺序检查 Schema 各子 Schema 位置上的 <code>pattern</code> 与 <code>patternProperties</code> 键，超出可移植子集的写法在 Schema 文件的对应指针处失败、文案一致；验证器在其他位置编译到不受支持的写法时两端都按无法解析处理</li>\n<li class='chk'><span class='box'></span>敏感检查按序数顺序遍历配置键、<code>properties</code> 与 <code>patternProperties</code>，两端报告同一个首个违规</li>\n<li class='chk'><span class='box'></span>验证诊断按同一规则归一为出错实例位置并去重、按序数排序：断言报自身位置，组合与条件的汇总在分支已有错误时略去，contains 报数组位置，additionalProperties、unevaluatedProperties、propertyNames 报到键名</li>\n<li class='chk'><span class='box'></span>共享 TCK 补充上述用例（含 <code>reason</code>），两端测试与报告比较通过；验证器其余语义分歧（如 minLength 计数、prefixItems 之后 items 的位置）写入文档并另建任务</li>\n<li class='chk'><span class='box'></span>README 与规格同步；<code>pnpm --filter qian test</code>、<code>Qian.Profiles.Tests</code>、<code>Qian.Common.Tests</code>、审计与配置相关测试、全量测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：两端验证器改用共享翻译器执行正则，Schema 模式预检，敏感检查按序数键序，验证诊断归一为出错实例位置</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-007（idadawn/qian#97）之后，CLI 与 .NET 的 profile 装配在敏感检查上逐例一致；但配置 Schema 仍由两个验证器分别执行（CLI 为 Ajv，.NET 为 JsonSchema.Net），诊断还有三类分歧：</p>\n<p>1. 正则写法与语义。Ajv 按 JS 的 u 标志编译 <code>pattern</code> 与 <code>patternProperties</code> 的键，JsonSchema.Net 按 .NET 的 ECMAScript 选项编译，接受的写法不同：<code>(?i)a</code> 在 CLI 报「profile 或组件内容无法解析。」，在 .NET 由敏感检查报配置键处的「不支持的正则写法」；<code>\\u{41}</code> 只有 Ajv 接受，<code>[\\w-.]</code>、<code>a{,2}</code>、<code>]</code> 只有 .NET 接受。都能编译时，<code>.</code> 对 <code>\\r</code> 与 U+2028/2029、<code>$</code> 对末尾换行、<code>\\s</code> 对非 ASCII 空白、<code>\\w</code> 对 U+0130、代理对计数的判断也不同，值层 <code>pattern</code> 与 <code>additionalProperties</code> 的结果随之不同。</p>\n<p>2. 键序。JS 对象把整数形式的键排在前面，.NET 保留文档顺序；敏感检查遇到首个违规即失败，所以 <code>limits: {&quot;b&quot;: …, &quot;1&quot;: …}</code> 在 .NET 报 <code>limits/b</code>，在 CLI 报 <code>limits/1</code>。</p>\n<p>3. 逐项错误位置。Ajv 对每个缺失的 required 各报一次，给 anyOf、oneOf、if、contains 额外输出汇总错误，propertyNames 与 unevaluatedProperties 报在对象上；.NET 只取最深的失败节点，节点有失败的子节点时它自身的断言（required、uniqueItems 等）被丢弃。缺少 required 属性同时另一属性类型错误时 .NET 少报一条，诊断顺序也不同。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>两端验证器都改用共享翻译器执行 <code>pattern</code> 与 <code>patternProperties</code>（含 additionalProperties、unevaluatedProperties、propertyNames 的判定），语义按 ECMA-262 无标志、逐码元：<code>.</code> 不匹配四个行终止符，<code>\\s</code> 为 ECMA-262 空白，<code>$</code> 只在末尾成立；翻译器、TS 自动机与跨语言向量同步，稳定键名的判定不变</li>\n<li class='chk done'><span class='box'>✓</span>交给验证器之前，两端按同一顺序检查 Schema 各子 Schema 位置上的 <code>pattern</code> 与 <code>patternProperties</code> 键，超出可移植子集的写法在 Schema 文件的对应指针处失败、文案一致；验证器在其他位置编译到不受支持的写法时两端都按无法解析处理</li>\n<li class='chk done'><span class='box'>✓</span>敏感检查按序数顺序遍历配置键、<code>properties</code> 与 <code>patternProperties</code>，两端报告同一个首个违规</li>\n<li class='chk done'><span class='box'>✓</span>验证诊断按同一规则归一为出错实例位置并去重、按序数排序：容器关键字只经由失败的子位置报告，其余失败的关键字（含 anyOf、oneOf、not 与 then/else 的汇总）报自身位置，if 的条件与通过的组合下失败的分支不计，contains 报数组位置，additionalProperties、unevaluatedProperties、propertyNames 报到键名</li>\n<li class='chk done'><span class='box'>✓</span>共享 TCK 补充上述用例（含 <code>reason</code>），两端测试与报告比较通过；验证器其余语义分歧（如 minLength 计数、prefixItems 之后 items 的位置）写入文档并另建任务 S1-CFG-009</li>\n<li class='chk done'><span class='box'>✓</span>README 与规格同步；<code>pnpm --filter qian test</code>、<code>Qian.Profiles.Tests</code>、<code>Qian.Common.Tests</code>、审计与配置相关测试、全量测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：两端验证器改用共享翻译器执行正则，Schema 模式预检，敏感检查按序数键序，验证诊断归一为出错实例位置</li>\n<li>2026-10-15 claude：完成：共享翻译器按 ECMA-262 不带标志的语义逐码元解释（. 不匹配行终止符、\\s 为 ECMA-262 空白、$ 只在末尾成立），两端验证器都用它执行 pattern 与 patternProperties；交给验证器之前按同一顺序预检 Schema 各位置的正则；敏感检查按序数键序；验证诊断归一为出错实例位置。共享 TCK 增至 84 个场景，两端报告一致；全量 692 例、CLI 61 例、门禁 49 例通过。其余语义分歧另建 S1-CFG-009。随 idadawn/qian#102 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
   "file": "pm/tasks/S1-CFG-008.md"
+ },
+ {
+  "id": "S1-CFG-009",
+  "title": "profile 配置 Schema 验证器其余语义分歧：items 位置、文本长度、小数与大整数、$schema 方言",
+  "status": "todo",
+  "stage": "S1",
+  "area": "CFG",
+  "areaName": "配置",
+  "wave": 1,
+  "priority": "P2",
+  "type": "fix",
+  "owner": "",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-CFG-008"
+  ],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
+  "refs": [
+   {
+    "path": "packages/Qian.Profiles/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Profiles/README.md"
+   },
+   {
+    "path": "tck/profiles/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/tck/profiles/README.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 0,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-008（idadawn/qian#102）之后，profile 装配的两端 Schema 验证器（CLI 为 Ajv 8.20，.NET 为 JsonSchema.Net 9.4.0）共用正则翻译规则，诊断也归一为出错实例位置。用 77 组 Schema 与配置做差分时，以下情形两端仍不一致，S1-CFG-008 只把它们写进了 <code>packages/Qian.Profiles/README.md</code> 的已知分歧：</p>\n<p>1. prefixItems 之后的 items。JsonSchema.Net 9.4.0 的 <code>ItemsKeyword.Evaluate</code> 跳过前缀后从 0 起算实例位置（上游缺陷，<code>[&quot;a&quot;, 1, 2]</code> 报 <code>/0</code>、<code>/1</code>，应为 <code>/1</code>、<code>/2</code>）；Ajv 对 <code>items: false</code> 只在数组上报一条。</p>\n<p>2. unevaluatedItems。Ajv 对 <code>false</code> 只报数组位置；JsonSchema.Net 逐项报告，且按规范把 contains 匹配的项算作已求值，Ajv 不算。</p>\n<p>3. minLength 与 maxLength。JsonSchema.Net 用 <code>StringInfo.LengthInTextElements</code> 按文本元素计数（<code>e</code> 加组合重音算 1），Ajv 按码点计数（算 2）。</p>\n<p>4. multipleOf 的小数。Ajv 用浮点取余，<code>0.3</code> 不算 <code>0.1</code> 的倍数；.NET 按十进制判断为倍数。</p>\n<p>5. 超过 2^53 的整数。Ajv 按双精度比较，const、enum、minimum 等的结论与 .NET 不同。</p>\n<p>6. <code>$schema</code> 声明 draft-07。Ajv2020 无法编译，CLI 报无法解析；JsonSchema.Net 按 draft-07 验证。</p>\n<p>7. contains 或 propertyNames 的子 Schema 经 <code>$ref</code> 引用、且 Ajv 没有内联引用时，Ajv 的错误不再带外层关联，CLI 多报逐项位置或对象位置。</p>\n<p>两端的归一规则在 <code>ProfileLoader.Locations</code> 与 <code>profiles.ts</code> 的 <code>locations</code>。差分做法：把同一组 Schema 与配置写进 <code>tck/profiles/base</code> 的临时副本，同时交给 <code>loadProfile</code> 与 <code>ProfileLoader</code>，逐项比较诊断。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>逐项决定处理方式：统一语义、两端都拒绝该写法，或明确声明不支持；两端实现并加入共享 TCK（含 <code>reason</code>），报告比较通过</li>\n<li class='chk'><span class='box'></span>已对齐的分歧从 <code>packages/Qian.Profiles/README.md</code> 删去；不对齐的写明原因与对组件作者的要求</li>\n<li class='chk'><span class='box'></span>JsonSchema.Net 的 items 位置缺陷若需上游修复，记录上游问题或绕过方式</li>\n<li class='chk'><span class='box'></span><code>pnpm --filter qian test</code>、<code>Qian.Profiles.Tests</code>、全量测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n</ul>",
+  "file": "pm/tasks/S1-CFG-009.md"
  },
  {
   "id": "S1-DATA-001",
