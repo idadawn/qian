@@ -264,6 +264,8 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 await node.Plugin.ApplyAsync(node.Context, node.Entry.Config, ct).ConfigureAwait(false);
                 lock (Sync)
                 {
+                    // Apply 期间依赖被其它条目撤销或替换时，InvalidateDependents 已把它放回 Pending：本次结果作废，下一轮先撤销再重来。
+                    if (node.State == PluginState.Pending) continue;
                     if (!node.Provides.All(k => _services.Any(r => r.Key == k && r.Context.Scope == node.Entry.Scope && ReferenceEquals(r.Context.Root, node.Context))))
                         throw new InvalidOperationException($"{node.Entry.Id} 未注册声明的 provides 服务键。");
                     if (!node.Dependencies.All(d => ReferenceEquals(Find(d.Key, node.Entry.Scope, node.Context), d)))
@@ -275,9 +277,16 @@ public sealed partial class PluginLoader : IAsyncDisposable
             }
             catch (Exception error)
             {
-                lock (Sync) { node.Failure = error; node.State = PluginState.Failed; }
+                var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
+                lock (Sync)
+                {
+                    // 依赖已被撤销或替换时，这次 Apply 的失败同样作废，回到 Pending 重来而不记为 Failed。
+                    if (!cancelled && node.State == PluginState.Pending) continue;
+                    node.Failure = error;
+                    node.State = PluginState.Failed;
+                }
                 await StopAsync(node).ConfigureAwait(false);
-                if (error is OperationCanceledException && ct.IsCancellationRequested) throw;
+                if (cancelled) throw;
             }
         }
     }
@@ -309,13 +318,15 @@ public sealed partial class PluginLoader : IAsyncDisposable
         finally { lock (Sync) node.Context = null; }
     }
 
+    // Applying 条目按与 Ready 条目相同的判据失效：依赖在其它条目看来已被撤销、替换或隐藏，本次 Apply 作废；
+    // 它自己的注册与 restriction 尚未对外生效，不会让自己失效，自身造成的可见性变化仍由 Apply 后的自检判为 Failed。
     private void InvalidateDependents()
     {
         bool changed;
         do
         {
             changed = false;
-            foreach (var node in _nodes.Where(n => n.State == PluginState.Ready && !n.Removing))
+            foreach (var node in _nodes.Where(n => (n.State is PluginState.Ready or PluginState.Applying) && !n.Removing))
             {
                 if (node.Dependencies.All(d => ReferenceEquals(Find(d.Key, node.Entry.Scope), d))) continue;
                 node.Context!.Active = false;
