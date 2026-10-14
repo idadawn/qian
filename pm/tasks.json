@@ -4406,12 +4406,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.9 的 CI 门禁：<code>qian docs generate</code> 输出与提交内容比对、漂移即失败；每个仓库与每个包存在 <code>AGENTS.md</code>、README 含「模型体验」「已知限制与延期项」必需节；<code>plugin.json</code> 派生字段与代码比对、仓库中不允许第二份清单文件。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：删除某组件 README 的「已知限制与延期项」节或仓库根 <code>AGENTS.md</code>，门禁失败；修改一个事件声明而不重新生成事件图，新鲜度门禁失败</li>\n<li class='chk'><span class='box'></span>CI：仓库中出现第二份清单文件（手写 YAML 或 <code>*.generated.*</code>）时门禁失败</li>\n<li class='chk'><span class='box'></span>CI：<code>plugin.json</code> 派生字段与代码漂移时失败并指出漂移项</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.9 的 CI 门禁：<code>qian docs generate</code> 输出与提交内容比对、漂移即失败；每个仓库与每个包存在 <code>AGENTS.md</code>、README 含「模型体验」「已知限制与延期项」必需节；<code>plugin.json</code> 派生字段与代码比对、仓库中不允许第二份清单文件。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：删除某组件 README 的「已知限制与延期项」节或仓库根 <code>AGENTS.md</code>，门禁失败；修改一个事件声明而不重新生成事件图，新鲜度门禁失败</li>\n<li class='chk'><span class='box'></span>CI：仓库中出现第二份清单文件（手写 YAML 或 <code>*.generated.*</code>）时门禁失败</li>\n<li class='chk'><span class='box'></span>CI：<code>plugin.json</code> 派生字段与代码漂移时失败并指出漂移项</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：docs/generated 的 G2 新鲜度比对已拆出，由 S1-QA-009（idadawn/qian#83）接入 documentation 工作流；验收第 1 条中「修改事件声明而不重新生成事件图即失败」由该门禁覆盖。本任务余下：README / AGENTS.md 必需节、第二份清单与 plugin.json 派生字段漂移三项门禁</li>\n</ul>",
   "file": "pm/tasks/S1-QA-006.md"
  },
  {
@@ -4526,6 +4526,47 @@
   },
   "bodyHtml": "<h4>背景</h4>\n<p>ROADMAP S1-M4：跨租户渗透测试（0 漏洞）、多副本消费集成测试（0 丢失）、修订回切演练、OIDC 一致性测试与渗透测试（7.4 安全预算）、E1-1 … E1-14 可测项核对、退出评审。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：跨租户渗透测试 0 漏洞；集成测试覆盖多副本消费 0 丢失</li>\n<li class='chk'><span class='box'></span>E2E：修订回切演练在 staging 完成并有记录</li>\n<li class='chk'><span class='box'></span>IT：<code>identity</code> profile 通过 OIDC 一致性测试；渗透测试报告归档</li>\n<li class='chk'><span class='box'></span>检查：PRD §16.1 E1-1 … E1-14 逐项有证据；退出评审结论记录</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
   "file": "pm/tasks/S1-QA-008.md"
+ },
+ {
+  "id": "S1-QA-009",
+  "title": "docs/generated 重新生成并在 CI 接入 G2 文档新鲜度比对",
+  "status": "done",
+  "stage": "S1",
+  "area": "QA",
+  "areaName": "测试 / TCK / 门禁",
+  "wave": 2,
+  "priority": "P1",
+  "type": "infra",
+  "owner": "claude",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-RT-010"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/specs/component-model.md#10.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/prd/14-quality.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/14-quality.md"
+   },
+   {
+    "path": "docs/adr/ADR-020-component-model-v2.md#2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 4,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p><code>docs/generated/</code> 在 main（e98422299）上已与源码派生结果不一致：S1-EVT-001（[idadawn/qian#73](https://github.com/idadawn/qian/pull/73)，提交 8e983747a）改了 qian.events 的配置 Schema、在 platform profile 里加了 Events seam，并让 <code>CommandPipeline.cs</code> 的生产方行号移位，但没有重新生成。重新运行 <code>pnpm exec qian docs generate --profile platform</code> 会改写 config-catalog、event-graph、seam-graph 三份文件。documentation 工作流每次都会生成这些文件，但只上传、不比对，所以漂移没有被拦下。</p>\n<p>G2 文档新鲜度（ADR-020 D20.9、组件模型规格 §10.3、PRD §14 C18「漂移即失败、PR 阻断」）是已拍板的门禁，不是新设计；它原本排在 S1-QA-006，与 README / AGENTS.md 必需节、第二份清单、plugin.json 派生字段三项门禁一起。本任务只拆出 docs/generated 的新鲜度比对，其余三项仍归 S1-QA-006。</p>\n<p>接入前已核实生成结果是确定的：同一组输入下，本机 macOS 的输出与 CI 运行 38454069285（Linux，4a0aaed2f）上传的产物逐字节一致，连续两次生成结果相同。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>文档：<code>docs/generated/</code> 按当前源码重新生成并提交，四份文件与 CI 在同一输入下生成的结果一致</li>\n<li class='chk done'><span class='box'>✓</span>CI：documentation 工作流在生成后比对 <code>docs/generated/</code>，有修改或新文件即失败，并提示重新生成的命令；<code>docs/generated/**</code> 变更也触发该工作流</li>\n<li class='chk done'><span class='box'>✓</span>验证：本机对过期提交运行同一检查会失败、对重新生成后的提交会通过；本 PR 的 documentation 工作流在 Linux 上通过（以 [idadawn/qian#83](https://github.com/idadawn/qian/pull/83) 全部检查通过为合并前提）</li>\n<li class='chk done'><span class='box'>✓</span>文档：Qian.Docs README 改为说明已接入的新鲜度门禁与重新生成方法；<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：重新生成 docs/generated，并在 documentation 工作流接入 G2 比对</li>\n<li>2026-10-14 claude：随 idadawn/qian#83 合并完成（合并前提是 PR 全部检查通过）。本机 macOS 生成结果与 CI 运行 38454069285（Linux）的产物逐字节一致，连续两次生成结果相同；新鲜度检查对过期提交失败、对重新生成后的提交通过；Qian.Docs.Tests 9 项、CLI 55 项、check_docs、pm validate、门禁自测通过</li>\n</ul>",
+  "file": "pm/tasks/S1-QA-009.md"
  },
  {
   "id": "S1-RT-001",
