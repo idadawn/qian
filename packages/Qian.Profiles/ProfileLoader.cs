@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Json.Schema;
+using Qian.Common;
 using Qian.Profiles.Abstractions;
 using Qian.Runtime.Errors;
 using Qian.Surfaces.Abstractions;
@@ -300,8 +301,7 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
             root ??= schema;
             if (schema is not JsonObject rule) return;
             if (LocalReference(rule, root!) is { } referenced) Sensitive(value, referenced, file, pointer, root, depth + 1);
-            if (rule["x-qian-sensitive"]?.GetValue<bool>() == true &&
-                (value is not JsonValue scalar || !scalar.TryGetValue<string>(out var text) || !text.StartsWith("secretRef://", StringComparison.Ordinal)))
+            if (rule["x-qian-sensitive"]?.GetValue<bool>() == true && !IsSecretReference(value))
                 Fail(file, pointer, "敏感配置必须为 secretRef，不能打印或保存明文。");
             foreach (var name in new[] { "allOf", "anyOf", "oneOf" })
                 if (rule[name] is JsonArray branches) foreach (var branch in branches) Sensitive(value, branch, file, pointer, root, depth + 1);
@@ -309,12 +309,40 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
                 for (var i = 0; i < array.Count; i++) Sensitive(array[i], items, file, pointer + "/" + i, root, depth + 1);
             if (value is JsonObject map) foreach (var item in map)
             {
-                var found = false;
-                if (rule["properties"] is JsonObject properties && properties.TryGetPropertyValue(item.Key, out var property)) { Sensitive(item.Value, property, file, pointer + "/" + Escape(item.Key), root, depth + 1); found = true; }
-                if (rule["patternProperties"] is JsonObject patterns) foreach (var pattern in patterns)
-                    if (Regex.IsMatch(item.Key, pattern.Key, RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))) { Sensitive(item.Value, pattern.Value, file, pointer + "/" + Escape(item.Key), root, depth + 1); found = true; }
-                if (!found) Sensitive(item.Value, rule["additionalProperties"], file, pointer + "/" + Escape(item.Key), root, depth + 1);
+                // 键名按两种读法判定，敏感标记取并集：IQianPlugin<TConfig> 按 Web 默认不区分大小写绑定（Password 会绑到 password），
+                // 验证器与直接读 JsonElement 的插件区分大小写。所以属性名与动态键都按不区分大小写匹配，additionalProperties 只在按原样没有匹配时适用。
+                var child = pointer + "/" + Escape(item.Key);
+                var exact = false;
+                if (rule["properties"] is JsonObject properties)
+                    foreach (var property in properties)
+                        if (string.Equals(property.Key, item.Key, StringComparison.OrdinalIgnoreCase))
+                        { Sensitive(item.Value, property.Value, file, child, root, depth + 1); exact |= property.Key == item.Key; }
+                if (rule["patternProperties"] is JsonObject patterns && patterns.Count > 0)
+                {
+                    // 动态键按 ECMA-262 判定（见 SchemaPattern）。方言判断不同的键名不做匹配，值必须是 secretRef；模式仍逐个编译，不受支持的写法照常失败。
+                    var stable = SchemaPattern.IsStable(item.Key);
+                    foreach (var pattern in patterns)
+                    {
+                        var folded = Pattern(pattern.Key, true, file, child);
+                        if (!stable || !folded.IsMatch(item.Key)) continue;
+                        Sensitive(item.Value, pattern.Value, file, child, root, depth + 1);
+                        exact |= Pattern(pattern.Key, false, file, child).IsMatch(item.Key);
+                    }
+                    if (!stable && !IsSecretReference(item.Value)) Fail(file, child, "键名含各正则方言判断不同的字符，按敏感配置处理，必须为 secretRef。");
+                }
+                if (!exact) Sensitive(item.Value, rule["additionalProperties"], file, child, root, depth + 1);
             }
+        }
+
+        private static bool IsSecretReference(JsonNode? value) =>
+            value is JsonValue scalar && scalar.TryGetValue<string>(out var text) && text.StartsWith("secretRef://", StringComparison.Ordinal);
+
+        // 超出 ECMA-262 可移植子集或被 .NET 拒绝的写法让装配失败，不跳过敏感标记。
+        private Regex Pattern(string pattern, bool foldCase, string file, string pointer)
+        {
+            try { return SchemaPattern.Compile(pattern, foldCase); }
+            catch (Exception error) when (error is ArgumentException or NotSupportedException)
+            { Fail(file, pointer, "组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。"); throw; }
         }
 
         private List<string> Order(ResolvedProfileEntry[] entries)

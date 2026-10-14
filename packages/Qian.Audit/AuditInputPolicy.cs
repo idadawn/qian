@@ -1,10 +1,10 @@
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Json.Schema;
+using Qian.Common;
 using Qian.Runtime.Errors;
 
 namespace Qian.Audit;
@@ -15,9 +15,6 @@ public sealed class AuditInputPolicy
     /// <summary>所有敏感值使用同一标记，不保存原值的哈希、长度或类型。</summary>
     public const string Redacted = "[REDACTED]";
     private const string Draft = "https://json-schema.org/draft/2020-12/schema";
-    // 动态键模式只来自可信契约，进程内条目有限；超过上限整表清空重建，内存有界，已取出的实例不受影响。
-    internal const int PatternCacheSize = 128;
-    private static readonly ConcurrentDictionary<string, Regex> Patterns = new(StringComparer.Ordinal);
     // 键名会让各正则方言判断不同时，用这个敏感标记代替模式判定，整体遮盖该键的值。
     private static readonly JsonElement Ambiguous = JsonElement.Parse("""{"sensitive":true}""");
     private readonly JsonElement _source;
@@ -100,7 +97,7 @@ public sealed class AuditInputPolicy
             if (schema.TryGetProperty("properties", out var properties) && properties.TryGetProperty(name, out var property)) { result.Add(property); matched = true; }
             if (schema.TryGetProperty("patternProperties", out var patterns))
             {
-                if (!AuditPattern.IsStable(name) && patterns.EnumerateObject().Any()) { result.Add(Ambiguous); matched = true; }
+                if (!SchemaPattern.IsStable(name) && patterns.EnumerateObject().Any()) { result.Add(Ambiguous); matched = true; }
                 else
                     foreach (var pattern in patterns.EnumerateObject())
                     {
@@ -221,18 +218,13 @@ public sealed class AuditInputPolicy
         ((schema.TryGetProperty("sensitive", out var value) && value.ValueKind == JsonValueKind.True) ||
          (schema.TryGetProperty("x-qian-sensitive", out value) && value.ValueKind == JsonValueKind.True));
     private static bool IsUnspecified(JsonElement schema) => schema.ValueKind == JsonValueKind.True || schema.ValueKind == JsonValueKind.Object && !schema.EnumerateObject().Any();
-    // 先按 ECMA-262 公共子集翻译（见 AuditPattern），再交给 NonBacktracking 线性匹配，过大的自动机在构造时即拒绝；超时只兜底超长输入，触发即按 Schema 无效失败关闭。
-    // 墙钟只在物化新 DFA 转移和长输入分段时检查：复用实例后，常规长度的热匹配不受调度或 GC 停顿影响；首次 JIT 与建图仍可能被拖长，1 秒上限为此留出余量。
+    // 动态键模式的方言、引擎、超时与编译缓存统一见 SchemaPattern（packages/Common）。审计面对的是区分大小写的 JSON，不折叠大小写。
+    // 不支持的写法与过大的自动机在构造策略时即按 Schema 无效拒绝，失败不进缓存；匹配超时同样按 Schema 无效失败关闭。
     internal static Regex Pattern(string pattern)
     {
-        if (Patterns.TryGetValue(pattern, out var cached)) return cached;
-        Regex regex;
-        try { regex = new Regex(AuditPattern.Translate(pattern), RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1)); }
+        try { return SchemaPattern.Compile(pattern); }
         catch (Exception error) when (error is ArgumentException or NotSupportedException) { throw InvalidSchema(); }
-        if (Patterns.Count >= PatternCacheSize) Patterns.Clear();
-        return Patterns.GetOrAdd(pattern, regex);
     }
-    internal static int CachedPatterns => Patterns.Count;
     private static QianErrorException InvalidSchema() => new(new QianError(AuditErrors.SchemaInvalid));
     private static QianErrorException InvalidInput() => new(new QianError(PlatformErrors.InputInvalid));
     private sealed class Budget

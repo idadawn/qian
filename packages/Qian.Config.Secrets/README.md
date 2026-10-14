@@ -24,7 +24,9 @@
 
 `SecretSafety` 同时用于 Apollo 候选快照与 [CI 工具](../../tools/Qian.Secrets.Tool/README.md)。Schema 的 `x-qian-sensitive: true`（兼容旧 `sensitive: true`）只接受合法公开引用。支持本地 `$ref`、属性、模式属性、数组和组合/条件分支；各分支敏感标记保守取并集。外部或无法解释的 Schema 引用报错，不静默跳过。它不是完整 JSON Schema 验证器。
 
-模式属性的键用 .NET NonBacktracking 引擎做线性时间匹配。语法错误、环视与反向引用等不支持的语法、过大的自动机和匹配超时都报 `CONFIG_SECRET_SCHEMA_INVALID`，不会跳过敏感标记。同一模式在进程内复用编译实例，最多缓存 128 个，超出时清空重建，失败的模式不进缓存。单次匹配超时 1 秒。
+模式属性的键按 ECMA-262 方言解释，即 JSON Schema 2020-12 的规定：`\d`、`\w`、`\s` 只认 ASCII。判定与配置键一样不区分大小写：与键名相等（OrdinalIgnoreCase）的任一写法能匹配就算匹配，所以 `Endpoints:Legacy_billing` 同样落在 `^legacy_` 下。只接受各方言含义相同的写法，规则见 [共享内部源文件](../Common/README.md)。词边界、内联选项、Unicode 属性、环视、反向引用等不支持的写法，以及语法错误、过大的自动机和匹配超时，都报 `CONFIG_SECRET_SCHEMA_INVALID`，不会跳过敏感标记。
+
+键名含各方言判断不同的字符（换行、只有 ECMA-262 算作空白的字符、U+0130、代理项），且所在对象声明了模式属性时，不按模式取舍，整体按敏感处理，只接受合法引用。匹配用 .NET NonBacktracking 引擎，线性时间；同一模式在进程内复用编译实例，最多缓存 128 个，超出时清空重建，失败的模式不进缓存。单次匹配超时 1 秒。
 
 即使没有 Schema，敏感键名、JWT/私钥形状、含凭据的 URL/连接字符串、疑似高熵值也会拒绝；诊断仅含规则与位置。启发式扫描不能证明任意字符串都不含秘密，插件仍须正确标注敏感属性。普通参数、无凭据 URL、规范引用和带 `sha256:` 前缀的摘要可以通过。Apollo 的默认检查不能由额外宿主校验回调关闭；K8s Secret 文件作为高优先级秘密来源，不纳入 Apollo 非敏感快照。
 

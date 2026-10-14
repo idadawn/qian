@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Qian.Common;
 using Qian.Runtime.Errors;
 
 namespace Qian.Audit.Tests;
@@ -97,8 +98,8 @@ public sealed class AuditInputPolicyTests
                 var schema = JsonSerializer.SerializeToElement(new { patternProperties = new Dictionary<string, object> { [pattern] = new { sensitive = true } } });
                 Assert.Equal("AUDIT_SCHEMA_INVALID", Assert.Throws<QianErrorException>(() => new AuditInputPolicy(schema, true)).Error.Code.Code);
             }
-        for (var index = 0; index <= AuditInputPolicy.PatternCacheSize; index++) _ = AuditInputPolicy.Pattern($"^bounded_{index}$");
-        Assert.InRange(AuditInputPolicy.CachedPatterns, 1, AuditInputPolicy.PatternCacheSize);
+        for (var index = 0; index <= SchemaPattern.CacheSize; index++) _ = AuditInputPolicy.Pattern($"^bounded_{index}$");
+        Assert.InRange(SchemaPattern.Cached, 1, SchemaPattern.CacheSize);
     }
 
     [Fact]
