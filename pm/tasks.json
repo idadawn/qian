@@ -309,6 +309,86 @@
   "file": "pm/tasks/S1-AUD-004.md"
  },
  {
+  "id": "S1-AUD-005",
+  "title": "审计脱敏动态键正则负载下偶发超时：复用编译实例、有界超时放宽到 1 秒",
+  "status": "done",
+  "stage": "S1",
+  "area": "AUD",
+  "areaName": "审计与可观测",
+  "wave": 1,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.11.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "docs/adr/ADR-009-audit.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-009-audit.md"
+   },
+   {
+    "path": "packages/Qian.Audit/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Audit/README.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 5,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>全量 <code>dotnet test</code>（多个测试项目并行、Testcontainers 同时运行）时，<code>Qian.Audit.Tests</code> 的 <code>数组位置_动态键_额外字段_属性名与递归对象中的敏感标记均生效</code> 偶发 <code>AUDIT_SCHEMA_INVALID</code>，单独运行 26/26 通过。<code>AuditInputPolicy</code>（S1-AUD-001 引入）每匹配一个动态键都新建 NonBacktracking <code>Regex</code>。惰性 DFA 每物化一条新转移，都要对照匹配开始时定下的 100 ms 墙钟截止。进程内首次匹配约需 5 ms CPU（JIT 与建图），CPU 超额订阅时被调度拉长到 100 ms 以上，就被误判为超时。生产路径每条命令都新建策略，负载尖峰时同样会把合法命令错拒为 400。本任务只改正则的执行方式，不改脱敏语义。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>同一模式在进程内复用一个编译实例：缓存有界，超过上限清空重建；引擎仍为 NonBacktracking（线性时间），单次匹配超时仍有界（1 秒）</li>\n<li class='chk done'><span class='box'>✓</span>非法或不受支持的模式（语法错误、环视、反向引用、原子组、自动机超限）仍返回 <code>AUDIT_SCHEMA_INVALID</code>，不进缓存，再次构造仍拒绝；匹配超时仍按失败关闭处理</li>\n<li class='chk done'><span class='box'>✓</span>UT：多线程反复新建策略并脱敏动态键，结果全部正确且无异常</li>\n<li class='chk done'><span class='box'>✓</span>负载复现与对比数据写进 PR：旧实现在超额订阅下出现超时，新实现为零</li>\n<li class='chk done'><span class='box'>✓</span><code>dotnet build Qian.slnx -c Release</code> 与 <code>Qian.Audit.Tests</code> 全部通过；README 补充引擎、缓存与超时说明</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：复现负载下的墙钟超时，改为复用编译实例并放宽有界超时，补并发稳定性与非法模式回归</li>\n<li>2026-10-14 claude：完成：动态键正则按模式原文复用编译实例（最多 128 个），单次匹配超时 100 ms 改为有界 1 秒，仍为 NonBacktracking 并按 AUDIT_SCHEMA_INVALID 失败关闭。约 10 倍超额订阅下交替运行该用例：旧构建 150 次失败 42 次，新构建 0 次；Qian.Audit.Tests 28/28。随 idadawn/qian#81 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
+  "file": "pm/tasks/S1-AUD-005.md"
+ },
+ {
+  "id": "S1-AUD-006",
+  "title": "审计脱敏动态键正则方言与 Schema 验证器不一致：按 ECMA-262 公共子集解释，方言有分歧的键整体遮盖",
+  "status": "done",
+  "stage": "S1",
+  "area": "AUD",
+  "areaName": "审计与可观测",
+  "wave": 1,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-AUD-005"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.11.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "docs/adr/ADR-009-audit.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-009-audit.md"
+   },
+   {
+    "path": "packages/Qian.Audit/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Audit/README.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 5,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p><code>AuditInputPolicy</code> 用 .NET 默认语义（Unicode）匹配 <code>patternProperties</code>。紧随其后的 Schema 验证器 JsonSchema.Net 9.4.0 按 <code>RegexOptions.ECMAScript</code> 评估同一键名，<code>\\d</code>、<code>\\w</code>、<code>\\s</code> 只认 ASCII。JSON Schema 2020-12 核心规范 §6.4 规定的方言则是带 u 标志的 ECMA-262。三者在否定类、<code>.</code>、<code>$</code>、非 ASCII 空白与代理项上判断不同。</p>\n<p>已复现两个方向的泄漏：</p>\n<ul>\n<li>敏感模式 <code>^\\W+$</code> 配非敏感的 <code>additionalProperties</code>：键 <code>é</code> 的值原样进入脱敏投影并参与 <code>input_hash</code>，验证器照常放行；</li>\n<li>非敏感模式 <code>^\\d+$</code> 配敏感的 <code>additionalProperties</code>：键 <code>١٢٣</code> 同样泄漏。</li>\n</ul>\n<p>仓库内现有契约都没有用 <code>patternProperties</code>。缺陷由 S1-AUD-001 引入，本任务建立在 S1-AUD-005 的编译实例缓存之上。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>动态键模式只接受各方言语义相同的子集：规范 §6.4 建议的记号，加 <code>.</code>、<code>(?:…)</code>、<code>\\d \\D \\w \\W \\s \\S</code> 与简单转义。翻译成 ECMA-262 语义的 .NET 表达式后仍用 NonBacktracking 与有界超时；其余构造返回 <code>AUDIT_SCHEMA_INVALID</code></li>\n<li class='chk done'><span class='box'>✓</span>键名含方言判断不同的字符（行终止符、非 ASCII 空白、U+0130、代理项），且对象声明了 <code>patternProperties</code> 时，该键的值整体遮盖</li>\n<li class='chk done'><span class='box'>✓</span>UT：上述两个方向的泄漏用例改为遮盖；在方言一致的键名上，翻译结果与验证器方言（.NET ECMAScript 模式）逐例一致，并与独立 ECMA-262 实现（V8）测得的字符集一致</li>\n<li class='chk done'><span class='box'>✓</span>UT：不支持的构造（词边界、内联选项、Unicode 属性、命名组、类减法、空类、孤立括号、代理项等）在构造策略时拒绝</li>\n<li class='chk done'><span class='box'>✓</span><code>dotnet build Qian.slnx -c Release</code> 与 <code>Qian.Audit.Tests</code> 全部通过；README 写明方言、接受的语法与歧义键的处理</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：动态键模式改按 ECMA-262 公共子集翻译，方言有分歧的键整体遮盖，补双向泄漏与方言一致性回归</li>\n<li>2026-10-14 claude：完成：新增 AuditPattern，只接受各方言含义相同的写法并翻译成 ECMA-262 语义的 .NET 表达式（仍走 NonBacktracking 与 1 秒有界超时），其余返回 AUDIT_SCHEMA_INVALID；键名含方言判断不同的码元且对象声明了 patternProperties 时整体遮盖。五个泄漏用例在 S1-AUD-005 构建上明文漏出，本分支全部遮盖；全部 BMP 码元与 37×55 的 V8 固定向量一致，Qian.Audit.Tests 32/32。随 idadawn/qian#84 合并完成（合并前提是 idadawn/qian#81 已合入且 PR 全部检查通过）</li>\n</ul>",
+  "file": "pm/tasks/S1-AUD-006.md"
+ },
+ {
   "id": "S1-AZ-001",
   "title": "Qian.Authz.Abstractions 契约先行：端口、命名与错误码",
   "status": "done",

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Qian.Runtime.Errors;
 
 namespace Qian.Audit.Tests;
@@ -62,6 +63,69 @@ public sealed class AuditInputPolicyTests
         var recursive = new AuditInputPolicy(Json("""{"type":"object","properties":{"secret":{"type":"string","sensitive":true},"child":{"$ref":"#"}}}"""), true);
         var tree = recursive.Redact(Json("""{"secret":"first","child":{"secret":"second"}}"""));
         Assert.Equal(AuditInputPolicy.Redacted, tree.GetProperty("child").GetProperty("secret").GetString());
+    }
+
+    [Fact]
+    public async Task 动态键脱敏在并发与反复新建策略时结果稳定()
+    {
+        // 生产路径每条命令都新建策略；同一模式在多线程下共享编译实例，并发建图与热匹配都不能误判超时或串结果。
+        const string source = """{"type":"object","patternProperties":{"^secret_":{"type":"string","sensitive":true},"^x-[a-z0-9]+$":{"type":"string"}},"additionalProperties":{"type":"integer"}}""";
+        await Task.WhenAll(Enumerable.Range(0, 32).Select(worker => Task.Run(() =>
+        {
+            for (var round = 0; round < 40; round++)
+            {
+                var safe = new AuditInputPolicy(Json(source), true).Redact(Json($$"""{"secret_{{worker}}_{{round}}":"hidden","x-{{worker}}k{{round}}":"visible","n{{round}}":{{round}}}"""));
+                Assert.Equal(AuditInputPolicy.Redacted, safe.GetProperty($"secret_{worker}_{round}").GetString());
+                Assert.Equal("visible", safe.GetProperty($"x-{worker}k{round}").GetString());
+                Assert.Equal(round, safe.GetProperty($"n{round}").GetInt32());
+            }
+        }, TestContext.Current.CancellationToken)));
+        Assert.Same(AuditInputPolicy.Pattern("^secret_"), AuditInputPolicy.Pattern("^secret_"));
+    }
+
+    [Fact]
+    public void 动态键模式复用线性引擎且超时有界_非法模式每次构造都拒绝_缓存有上限()
+    {
+        var compiled = AuditInputPolicy.Pattern("^secret_");
+        Assert.Same(compiled, AuditInputPolicy.Pattern("^secret_"));
+        Assert.Equal(RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, compiled.Options);
+        Assert.Equal(TimeSpan.FromSeconds(1), compiled.MatchTimeout);
+        // 语法错误、环视、反向引用、原子组、条件、\G 与超限自动机；第二次构造仍拒绝，失败不会留下可用实例。
+        foreach (var pattern in new[] { "(", "a{2,1}", "(?=x)", "(?<=x)y", "(a)\\1", "(?>a)", "(?(a)b|c)", "\\Gx", "a{20000}" })
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                var schema = JsonSerializer.SerializeToElement(new { patternProperties = new Dictionary<string, object> { [pattern] = new { sensitive = true } } });
+                Assert.Equal("AUDIT_SCHEMA_INVALID", Assert.Throws<QianErrorException>(() => new AuditInputPolicy(schema, true)).Error.Code.Code);
+            }
+        for (var index = 0; index <= AuditInputPolicy.PatternCacheSize; index++) _ = AuditInputPolicy.Pattern($"^bounded_{index}$");
+        Assert.InRange(AuditInputPolicy.CachedPatterns, 1, AuditInputPolicy.PatternCacheSize);
+    }
+
+    [Fact]
+    public void 动态键按ECMA262方言判定_两个方向的方言差异都不漏遮盖_有分歧的键整体遮盖()
+    {
+        // 验证器按 ECMAScript 方言判定：é 命中 ^\W+$（敏感），١٢٣ 不命中 ^\d+$、落到敏感的 additionalProperties。
+        var word = new AuditInputPolicy(Json("""{"type":"object","patternProperties":{"^\\W+$":{"type":"string","sensitive":true}},"additionalProperties":{"type":"string"}}"""), true);
+        var first = word.Redact(Json("""{"é":"secret-a","ok":"visible"}"""));
+        Assert.Equal(AuditInputPolicy.Redacted, first.GetProperty("é").GetString()); Assert.Equal("visible", first.GetProperty("ok").GetString());
+        var digit = new AuditInputPolicy(Json("""{"type":"object","patternProperties":{"^\\d+$":{"type":"string"}},"additionalProperties":{"type":"string","sensitive":true}}"""), true);
+        var second = digit.Redact(Json("""{"١٢٣":"secret-b","123":"visible"}"""));
+        Assert.Equal(AuditInputPolicy.Redacted, second.GetProperty("١٢٣").GetString()); Assert.Equal("visible", second.GetProperty("123").GetString());
+        // 末尾换行让 $ 在验证器与 ECMA-262 下判断不同，代理项让 . 在带 u 标志时按码点计数：这类键只要对象声明了模式就整体遮盖，方言一致的中文键照常判定。
+        var mixed = new AuditInputPolicy(Json("""{"type":"object","patternProperties":{"^item\\d+$":{"type":"string"},"^.{2}$":{"type":"string"}},"additionalProperties":{"type":"string","sensitive":true}}"""), true);
+        var third = mixed.Redact(Json("""{"item1\n":"secret-c","😀":"secret-d","item2":"visible","客户":"visible"}"""));
+        foreach (var key in new[] { "item1\n", "😀" }) Assert.Equal(AuditInputPolicy.Redacted, third.GetProperty(key).GetString());
+        foreach (var key in new[] { "item2", "客户" }) Assert.Equal("visible", third.GetProperty(key).GetString());
+        // 依赖升级若改变验证器方言（例如 \w 不再只认 ASCII），这里先失败，提醒同步脱敏方言。
+        var strict = new AuditInputPolicy(Json("""{"type":"object","patternProperties":{"^\\w$":{"type":"string"}},"additionalProperties":false}"""), true);
+        Assert.Equal("x", strict.Redact(Json("""{"a":"x"}""")).GetProperty("a").GetString());
+        Assert.Equal("INPUT_INVALID", Assert.Throws<QianErrorException>(() => strict.Redact(Json("""{"é":"x"}"""))).Error.Code.Code);
+        // 各方言含义不同或无法线性执行的写法在构造策略时拒绝。
+        foreach (var pattern in new[] { "\\bkey", "(?i)secret", "[]a]", "\\p{L}", "(?<name>a)", "[a-z-[aeiou]]", "a{", "\\A", "😀" })
+        {
+            var schema = JsonSerializer.SerializeToElement(new { patternProperties = new Dictionary<string, object> { [pattern] = new { sensitive = true } } });
+            Assert.Equal("AUDIT_SCHEMA_INVALID", Assert.Throws<QianErrorException>(() => new AuditInputPolicy(schema, true)).Error.Code.Code);
+        }
     }
 
     [Fact]

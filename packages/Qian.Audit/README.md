@@ -22,6 +22,12 @@ sensitive 和 x-qian-sensitive 的 true 标记统一遮盖为固定字符串 [RE
 
 只接受离线本地 Pointer 引用；外部引用、同层引用循环、未支持的动态引用/anchor、嵌套 id、无效标记与不能安全执行的动态键模式均返回 AUDIT_SCHEMA_INVALID。有限深度的递归对象引用可用。不会联网补齐未知 Schema，也不会在无法解析时改为计算原输入哈希。错误信息不带 Schema/输入原值；字段脱敏策略不代替业务验证或身份授权。
 
+动态键模式（patternProperties 的键）按 ECMA-262 方言解释，即 JSON Schema 2020-12 核心规范 §6.4 的规定，与 Schema 验证器一致：`\d`、`\w`、`\s` 只认 ASCII。只接受各方言含义相同的写法：字面字符，字符类、范围与否定类，`\d \D \w \W \s \S`，`.`、`^`、`$`，分组 `(…)` 与 `(?:…)`，`|`，量词 `* + ? {n} {n,} {n,m}` 及其惰性形式，以及 `\t \n \r \f \v`、`\xHH`、`\uHHHH` 和语法字符的转义。词边界、内联选项、Unicode 属性、命名组、环视、反向引用、类减法、空类、未转义的 `{ } ]`、代理项，以及否定类里的否定简写，都在构造策略时返回 AUDIT_SCHEMA_INVALID。
+
+各方言对少数字符判断不同：换行（影响 `$`），回车与 U+2028/2029（影响 `.`），非 ASCII 空白（影响 `\s`），U+0130（验证器的 `\w` 包含它），代理项（带 u 标志时按码点计数）。键名含这些字符、且对象声明了 patternProperties 时，该键的值整体遮盖，不按模式取舍。
+
+模式翻译后交给 .NET NonBacktracking 引擎做线性时间匹配，过大的自动机在构造时即拒绝；同一模式在进程内复用编译实例，最多缓存 128 个，超出时清空重建。单次匹配超时 1 秒，超时同样返回 AUDIT_SCHEMA_INVALID，不会跳过敏感标记。
+
 ## 存储与并发
 
 AuditDbContext 继承 QianDbContext，拥有 plugin_qian_audit schema。audit_entries 具有事件 ID、内容哈希、链与序号、链与前序的唯一约束。audit_chain_state 保存 tip_seq 和 tip_hash。租户列按 Data 强制过滤与 RLS 保护，受限应用角色执行在线 DML。普通入口一律要求当前租户，记录的租户必须与上下文一致。平台 null 记录只通过下述独立入口访问，不以缺少租户自动切换模式。
