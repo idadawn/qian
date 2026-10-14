@@ -13,6 +13,9 @@ namespace Qian.Surfaces;
 
 internal static class SurfaceReader
 {
+    private static readonly UTF8Encoding StrictUtf8 = new(false, true);
+
+    // 与 CLI 的 parseSurface 同序同义。致命错误（语法、大小、嵌套、值、未成对的代理项）只报它自己，先前记下的重复键不再报告。
     internal static SurfaceParseResult Parse(string file, string content, bool markdown, string traceId)
     {
         var lines = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -20,9 +23,16 @@ internal static class SurfaceReader
         var source = content.Replace("\r\n", "\n", StringComparison.Ordinal);
         var offset = 0;
         var body = "";
+        SurfaceParseResult Fail(int line, string reason)
+        {
+            diagnostics.Clear();
+            diagnostics.Add(Diagnostics.Create(file, "", line, SurfaceErrors.Syntax, reason, traceId));
+            return new SurfaceParseResult(null, diagnostics);
+        }
         try
         {
-            if (Encoding.UTF8.GetByteCount(source) > 1_048_576) throw new InvalidDataException("单文件不能超过 1 MiB。");
+            // 严格编码：字面量的未成对代理项（只可能来自直接传入的字符串，文件按 UTF-8 严格解码）抛 EncoderFallbackException，按值无效处理。
+            if (StrictUtf8.GetByteCount(source) > 1_048_576) throw new InvalidDataException("单文件不能超过 1 MiB。");
             if (markdown)
             {
                 if (!source.StartsWith("---\n", StringComparison.Ordinal)) throw new InvalidDataException("Markdown 必须以 YAML front matter 开始。");
@@ -38,15 +48,33 @@ internal static class SurfaceReader
                 var bytes = Encoding.UTF8.GetBytes(source);
                 var reader = new Utf8JsonReader(bytes, new JsonReaderOptions { MaxDepth = 64 });
                 if (!reader.Read()) throw new JsonException();
-                ReadJson(ref reader, "", source, bytes, lines, diagnostics, file, traceId);
+                var unpaired = 0;
+                ReadJson(ref reader, "", source, bytes, lines, diagnostics, file, traceId, ref unpaired);
+                if (unpaired > 0) return Fail(unpaired, "JSON 字符串或键名含未成对的代理项。");
                 using var document = JsonDocument.Parse(source);
                 data = document.RootElement.Clone();
             }
             else
             {
-                var parser = new Parser(new StringReader(source));
-                while (parser.MoveNext())
-                    if (parser.Current is AnchorAlias) throw new InvalidDataException("配置不允许 YAML alias。");
+                // YamlDotNet 边扫描边检查：语法错误、alias 与含未成对代理项的双引号标量（SyntaxErrorException 指向标量起点）按出现顺序先到先报，
+                // 重复键在 Load 时才检查。扫描器还会抛两类非语法异常：高代理项转义之后紧跟不是低代理项的转义时，组对抛 ArgumentOutOfRangeException（上游缺陷），
+                // 按所在双引号标量的起点报，同其他未成对的代理项；未闭合的流式集合等抛 InvalidOperationException，按扫描停下的位置报。
+                var scanner = new Scanner(new StringReader(source));
+                var parser = new Parser(scanner);
+                try
+                {
+                    while (parser.MoveNext())
+                        if (parser.Current is AnchorAlias) throw new InvalidDataException("配置不允许 YAML alias。");
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    var quote = OpeningQuote(source, (int)scanner.CurrentPosition.Index);
+                    return Fail((quote < 0 ? (int)scanner.CurrentPosition.Line : source.AsSpan(0, quote).Count('\n') + 1) + offset, "YAML 语法无效或存在重复键。");
+                }
+                catch (Exception error) when (error is InvalidOperationException or ArgumentException)
+                {
+                    return Fail((int)scanner.CurrentPosition.Line + offset, "YAML 语法无效或存在重复键。");
+                }
                 var yaml = new YamlStream();
                 yaml.Load(new StringReader(source));
                 if (yaml.Documents.Count > 1) throw new InvalidDataException("必须恰有一个 YAML 文档。");
@@ -58,45 +86,72 @@ internal static class SurfaceReader
         }
         catch (JsonException error)
         {
-            diagnostics.Add(Diagnostics.Create(file, "", (int)(error.LineNumber ?? 0) + 1 + offset, SurfaceErrors.Syntax, "JSON 语法无效。", traceId));
+            return Fail((int)(error.LineNumber ?? 0) + 1 + offset, "JSON 语法无效。");
         }
         catch (YamlException error)
         {
-            diagnostics.Add(Diagnostics.Create(file, "", (int)error.Start.Line + offset, SurfaceErrors.Syntax, "YAML 语法无效或存在重复键。", traceId));
+            return Fail((int)error.Start.Line + offset, "YAML 语法无效或存在重复键。");
         }
         catch (Exception error) when (error is InvalidDataException or ArgumentException or FormatException or OverflowException)
         {
-            diagnostics.Add(Diagnostics.Create(file, "", 1 + offset, SurfaceErrors.Syntax, "文件语法、大小、嵌套深度或值无效。", traceId));
+            return Fail(1 + offset, "文件语法、大小、嵌套深度或值无效。");
         }
-        return new SurfaceParseResult(null, diagnostics);
     }
 
     private static void ReadJson(ref Utf8JsonReader reader, string pointer, string source, byte[] bytes, Dictionary<string, int> lines,
-        List<SurfaceDiagnostic> errors, string file, string traceId)
+        List<SurfaceDiagnostic> errors, string file, string traceId, ref int unpaired)
     {
         int Line(long position) => Encoding.UTF8.GetString(bytes.AsSpan(0, (int)position)).Count(c => c == '\n') + 1;
-        lines.TryAdd(pointer, Line(reader.TokenStartIndex));
+        var line = Line(reader.TokenStartIndex);
+        lines.TryAdd(pointer, line);
         if (reader.TokenType == JsonTokenType.StartObject)
         {
             var names = new HashSet<string>(StringComparer.Ordinal);
             while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
             {
                 if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException();
-                var name = reader.GetString()!;
+                var at = Line(reader.TokenStartIndex);
+                var name = Text(ref reader, at, ref unpaired);
                 var child = pointer + "/" + Diagnostics.Token(name);
-                lines[child] = Line(reader.TokenStartIndex);
+                lines[child] = at;
                 if (!names.Add(name)) errors.Add(Diagnostics.Create(file, child, lines[child], SurfaceErrors.Syntax, "JSON 对象存在重复键。", traceId));
                 if (!reader.Read()) throw new JsonException();
-                ReadJson(ref reader, child, source, bytes, lines, errors, file, traceId);
+                ReadJson(ref reader, child, source, bytes, lines, errors, file, traceId, ref unpaired);
             }
         }
         else if (reader.TokenType == JsonTokenType.StartArray)
         {
             var index = 0;
             while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-                ReadJson(ref reader, pointer + "/" + index++, source, bytes, lines, errors, file, traceId);
+                ReadJson(ref reader, pointer + "/" + index++, source, bytes, lines, errors, file, traceId, ref unpaired);
         }
+        else if (reader.TokenType == JsonTokenType.String) _ = Text(ref reader, line, ref unpaired);
         else if (reader.TokenType == JsonTokenType.Number && !double.IsFinite(reader.GetDouble())) throw new JsonException();
+    }
+
+    // 键名与字符串值按 UTF-16 解码。含未成对的代理项转义时 GetString 抛 InvalidOperationException（CLI 的 JSON.parse 照常接受）：
+    // 记下首个所在行，读完整篇后再报，语法错误、过深与非有限数值优先；键名改用原文，只为继续读取。
+    private static string Text(ref Utf8JsonReader reader, int line, ref int unpaired)
+    {
+        try { return reader.GetString()!; }
+        catch (InvalidOperationException)
+        {
+            if (unpaired == 0) unpaired = line;
+            return Encoding.UTF8.GetString(reader.ValueSpan);
+        }
+    }
+
+    // 从双引号标量内的位置往回找开引号：标量内的引号都已转义（前面是奇数个反斜杠），第一个前面是偶数个反斜杠的引号即起点。找不到时返回 -1。
+    private static int OpeningQuote(string source, int position)
+    {
+        for (var index = Math.Min(position, source.Length) - 1; index >= 0; index--)
+        {
+            if (source[index] != '"') continue;
+            var slashes = 0;
+            while (index - slashes - 1 >= 0 && source[index - slashes - 1] == '\\') slashes++;
+            if (slashes % 2 == 0) return index;
+        }
+        return -1;
     }
 
     private static JsonNode? ReadYaml(YamlNode node, string pointer, int offset, Dictionary<string, int> lines, int depth)

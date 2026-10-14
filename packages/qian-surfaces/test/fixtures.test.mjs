@@ -35,6 +35,16 @@ test('独立 JCS 数值与 Unicode 向量', () => {
     assert.equal(computeToolHash(JSON.parse(vector.source)), vector.sha256, vector.name);
   }
 });
+test('字面量的未成对代理项按值无效处理', async () => {
+  // 只可能来自直接传入的字符串（文件按 UTF-8 严格解码）；与 .NET 的 LiteralUnpairedSurrogates_AreInvalidValues 同断言（S1-RT-022）。
+  const {parseSurface} = await import('../dist/index.js');
+  const lone = String.fromCharCode(0xd800);
+  for (const [file, content, markdown] of [['values.json', '{"a": "x' + lone + '"}', false], ['values.yml', 'a: x' + lone + '\n', false], ['guide.md', '---\nname: guide\n---\n' + lone + '\n', true]]) {
+    const parsed = parseSurface(file, content, markdown, '0'.repeat(32));
+    assert.equal(parsed.syntax, null, file);
+    assert.deepEqual(parsed.diagnostics.map(d => [d.line, d.error.pointer, d.error.errors[0].code]), [[1, file + '#', 'SURFACE_SYNTAX_INVALID']], file);
+  }
+});
 test('YAML 核心标量解释一致', async () => {
   const {parseSurface} = await import('../dist/index.js');
   for (const vector of JSON.parse(readFileSync(path.join(repo, 'tck/surfaces/parse-vectors.json'), 'utf8'))) {

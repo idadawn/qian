@@ -80,6 +80,20 @@ public sealed class FixtureTests
         }
     }
 
+    // 字面量的未成对代理项只可能来自直接传入的字符串（文件按 UTF-8 严格解码）；与 CLI 的「字面量的未成对代理项按值无效处理」同断言（S1-RT-022）。
+    [Fact]
+    public void LiteralUnpairedSurrogates_AreInvalidValues()
+    {
+        var lone = ((char)0xD800).ToString();
+        foreach (var (file, content, markdown) in new[] { ("values.json", "{\"a\": \"x" + lone + "\"}", false), ("values.yml", "a: x" + lone + "\n", false), ("guide.md", "---\nname: guide\n---\n" + lone + "\n", true) })
+        {
+            var parsed = new SurfaceValidator().Parse(file, content, markdown);
+            Assert.Null(parsed.Syntax);
+            var diagnostic = Assert.Single(parsed.Diagnostics);
+            Assert.Equal((1, file + "#", "SURFACE_SYNTAX_INVALID"), (diagnostic.Line, diagnostic.Error.Pointer, diagnostic.Error.Errors![0].Code));
+        }
+    }
+
     [Fact]
     public async Task SkillOnlyComponent_RegistersAtTenantScope_AndEffectsAreRemoved()
     {

@@ -20,7 +20,7 @@ const result = validateComponent(componentDirectory, {
 
 ## 已知限制与延期项
 
-与 [.NET Provider](../Qian.Surfaces/README.md) 一致：不包含 Agent、shell、MCP 或 hook 执行器，也不实现文件监视或完整安装事务。YAML 采用无 alias 的安全子集，单文件 1 MiB、深度 64。API Extractor 当前捆绑 TypeScript 5.9，源码另以工作区 TypeScript 6 编译；公开接口只使用两者共同支持的语法。
+与 [.NET Provider](../Qian.Surfaces/README.md) 一致：不包含 Agent、shell、MCP 或 hook 执行器，也不实现文件监视或完整安装事务。YAML 采用无 alias 的安全子集，单文件 1 MiB、深度 64；字符串与键名不能含未成对的代理项，诊断的先后与行号同 .NET Provider。API Extractor 当前捆绑 TypeScript 5.9，源码另以工作区 TypeScript 6 编译；公开接口只使用两者共同支持的语法。
 
 ## 表面运行态
 
