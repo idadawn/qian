@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Kun.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Qian.Plugin.Sdk;
 using Qian.Registry;
 using Qian.Audit;
@@ -21,10 +22,11 @@ public sealed class CapabilitiesPlugin : IQianPlugin
     public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(ctx); ct.ThrowIfCancellationRequested();
-        if (ctx.Scope != ScopeKey.Global || config.ValueKind != JsonValueKind.Object || config.EnumerateObject().Any())
-            throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
+        if (ctx.Scope != ScopeKey.Global) throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
+        var options = CapabilitiesOptions.Parse(config);
         var service = new CapabilityService(ctx.Registry(), ctx.Services.GetRequiredService<IPermissionChecker>(),
-            ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetRequiredService<IToolContractHasher>(), ctx.Services.GetService<IHttpContractSource>());
+            ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetRequiredService<IToolContractHasher>(), ctx.Data(), options, ctx.Services.GetService<IHttpContractSource>(),
+            ctx.Services.GetService<ILoggerFactory>()?.CreateLogger<CapabilityService>());
         ctx.Effect(service.Dispose);
         var contracts = new InstalledContractRepository(ctx.Registry().GetInstalledComponents(), ctx.Services.GetService<IOpenApiCompatibilityProbe>(), ctx.Services.GetRequiredService<ISurfaceReader>(), ctx.Services.GetService<IProtoCompatibilityProbe>());
         ctx.Effect(contracts.Dispose);

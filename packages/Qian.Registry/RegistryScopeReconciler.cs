@@ -85,7 +85,8 @@ internal sealed class RegistryScopeReconciler(
         try
         {
             using var current = tenant.BeginScope(state.TenantId);
-            var result = await composer.LoadAsync(state.Scope, ct).ConfigureAwait(false);
+            var (result, rows) = await composer.LoadWithPatchesAsync(state.Scope, ct).ConfigureAwait(false);
+            var revisions = rows.ToDictionary(row => row.EntryId, row => row.Revision, StringComparer.Ordinal);
             if (!result.IsValid) throw new QianErrorException(new QianError(PlatformErrors.InputInvalid)
             {
                 Errors = result.Diagnostics.Where(d => d.Severity == "error").Select(d => new QianFieldError(RegistryErrors.Invalid,
@@ -117,14 +118,14 @@ internal sealed class RegistryScopeReconciler(
             if (definitions.Count != 0)
             {
                 await runtime.MountAsync(order.Where(definitions.ContainsKey).Select(id => definitions[id]), ct).ConfigureAwait(false);
-                if (definitions.Keys.Any(id => runtime.GetState(id, state.Scope) == PluginState.Failed))
-                    throw new InvalidOperationException("scope 插件 Apply 失败。");
+                if (order.FirstOrDefault(id => definitions.ContainsKey(id) && runtime.GetState(id, state.Scope) == PluginState.Failed) is { } failed)
+                    throw ApplyFailed(state.Scope, entries[failed], revisions);
             }
             SetRestriction(state, hidden, false);
             state.Blocked = false;
             await runtime.WhenIdleAsync(ct).ConfigureAwait(false);
-            if (state.Mounted.Keys.Any(id => runtime.GetState(id, state.Scope) == PluginState.Failed))
-                throw new InvalidOperationException("scope 插件 Apply 失败。");
+            if (state.Order.Concat(state.Mounted.Keys).FirstOrDefault(id => state.Mounted.ContainsKey(id) && runtime.GetState(id, state.Scope) == PluginState.Failed) is { } broken)
+                throw ApplyFailed(state.Scope, state.Mounted[broken], revisions);
         }
         catch
         {
@@ -138,6 +139,14 @@ internal sealed class RegistryScopeReconciler(
             }
             throw;
         }
+    }
+
+    // 管理面诊断（S1-RT-005 的 /api/lifecycle/diagnostics）需要定位到条目、组件修订与原因；异常只带标识与错误码，不带配置原文。
+    private RegistryScopeApplyException ApplyFailed(ScopeKey scope, ResolvedProfileEntry entry, Dictionary<string, int> revisions)
+    {
+        var failure = runtime.GetFailure(entry.Id, scope);
+        var reason = failure is QianErrorException qian ? qian.Error.Code.Code : PlatformErrors.Internal.Code;
+        return new RegistryScopeApplyException(scope, entry.Id, entry.Plugin, revisions.TryGetValue(entry.Id, out var revision) ? revision : null, reason, failure);
     }
 
     private PluginDefinition Resolve(ResolvedProfileEntry entry, ScopeKey scope)

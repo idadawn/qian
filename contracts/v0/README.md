@@ -14,6 +14,7 @@
 | [s2s-claims.schema.json](s2s-claims.schema.json) | 服务间 JWT 的 payload | `qian.gateway` 签发（7.9）、各服务校验、`qian.identity`（7.4） |
 | [event-envelope.schema.json](event-envelope.schema.json) | 跨进程集成事件的信封 | `qian.events`（7.10）、审计（7.11）、S4 触发器 |
 | [capability-entry.schema.json](capability-entry.schema.json) | 能力目录中一条命令 / 查询的条目，含全部 Agent 字段 | `qian.capabilities`（7.2.1）、`tools/<name>.json`（tool/v2）、iClaw ToolPolicy |
+| [capability-catalog.schema.json](capability-catalog.schema.json) | 能力目录 `GET /api/capabilities` 的响应信封：`items`、`ttlMs`、`cacheScope` | `qian.capabilities`（7.2.1）、`qian` CLI、yue、Agent 网关 |
 | `fixtures/<schema>.valid.json` | 正例：过 Schema 且满足语义规则 | 契约测试、各语言实现 |
 | `fixtures/<schema>.invalid.json` | 反例：Schema 必须拒绝 | 同上 |
 | `fixtures/<schema>.semantic-invalid.json` | 过 Schema、但违反第 3–6 节的语义规则 | 同上（实现语义校验时用） |
@@ -22,7 +23,7 @@ fixture 文件形状统一为 `[{ "name": "<这条样例说明什么>", "data": 
 
 ## 2 通用约定与演进
 
-- 全部 Schema 为 JSON Schema 2020-12，`$id` 前缀 `https://qian.dev/contracts/v0/`（标识符，不要求可解引用）。跨文件引用：`error-catalog` → `error-detail`，`event-envelope` → `s2s-claims`，`capability-entry` → 2020-12 元 Schema。
+- 全部 Schema 为 JSON Schema 2020-12，`$id` 前缀 `https://qian.dev/contracts/v0/`（标识符，不要求可解引用）。跨文件引用：`error-catalog` → `error-detail`，`event-envelope` → `s2s-claims`，`capability-entry` → 2020-12 元 Schema，`capability-catalog` → `capability-entry`。
 - 声明了 `properties` 的 object 一律 `additionalProperties: false`。开放容器只有三处，都由别处的 Schema 约束内容：事件 `payload`（事件目录中该 `type` 的 Schema）、能力的 `inputSchema` / `outputSchema`（它们本身是 Schema 文档）、多语言文案（语言标签 → 文本）。
 - 状态 `x-status: draft`：允许破坏性修订，但改 Schema 必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。第 8 节的默认裁决已于 2026-10-08 裁决（[S1-DEC-010](../../pm/tasks/S1-DEC-010.md)，R45–R53）；`draft` 保留到 S1 第 1 波消费方（registry、identity、authz、events、gateway）全部进入 review，届时由 S1-AGT-002 一个 PR 统一去掉（R53），此后只做向后兼容的增量；破坏性变更开 `contracts/v1/`，不改 v0。
 - 线上成员名：错误体、S2S claim、事件信封用 snake_case（与 iClaw 同形）；能力条目用 camelCase（与 `plugin.json` 和 tool/v2 一致）。
@@ -174,6 +175,8 @@ S1-RT-001 引入 Kun 2026.9.13 正式包（从 nuget.org 还原）：`Qian.Runti
 3. `inputSchema` 嵌套层也不得有租户字段（由 7.2.2 的语义校验器检查）。
 
 与 tool/v2（`tools/<name>.json`，组件模型规格 §4.6）的关系：tool/v2 = 本条目去掉 `id` / `plugin` / `kind` / `operationId`，加 `$schema` 与 `binding`；tool/v2 的 Schema（S1-RT-008）应 `$ref` 本文件的 `$defs`（`SideEffect`、`PolicyHint`、`DataClassification`、`CostTier`、`SchemaSha256`、`AgentExposure`、`TenantFieldName`），不另抄一份枚举。
+
+目录响应信封见 [capability-catalog.schema.json](capability-catalog.schema.json)：`GET /api/capabilities`（及 S1 别名 `GET /api/kernel/capabilities`）返回 `{ "items": [...], "ttlMs": <整数>, "cacheScope": "private" }`。`items` 每项是本节的能力条目；`ttlMs` 取自 `qian.capabilities` 的组件配置 `catalogTtlMs`（默认 1000，取值 0–3000，上限与 PRD 7.5「授权变更 ≤ 3 秒生效」一致）；`cacheScope` 固定 `private`。信封与条目一样是关闭的 object，后续加分页游标等成员需按第 2 节的演进规则修订本 Schema。Schema 表达不了的规则：`items` 内 `id` 唯一，每一项满足上面三条。
 
 ## 7 校验与测试
 
