@@ -12,6 +12,16 @@ export interface YueDoc { name: string; label: string; description: string; sour
 export interface YueData { docs: YueDoc[]; apis: ComponentApi[]; scenarios: Scenario[]; version: string }
 
 const readJson = <T>(file: string): T => JSON.parse(fs.readFileSync(file, 'utf8')) as T;
+// 类型中的 import() 使用包名，避免公开安装器路径，也让不同机器的属性引用保持一致。
+export function publicType(type: string): string {
+  return type.replace(/import\((["'])(.*?)\1\)/g, (_match, _quote: string, input: string) => {
+    let specifier = input.replace(/\\/g, '/');
+    const marker = specifier.lastIndexOf('node_modules/');
+    if (marker >= 0) specifier = specifier.slice(marker + 'node_modules/'.length);
+    specifier = specifier.replace(/^@types\/react(?=\/|$)/, 'react').replace(/\/index(?:\.d\.ts)?$/, '');
+    return `import(${JSON.stringify(specifier)})`;
+  });
+}
 const cache = new Map<string, YueData>();
 export function readYueDocs(repoRoot = REPO_ROOT): YueData {
   if (cache.has(repoRoot)) return cache.get(repoRoot)!;
@@ -54,7 +64,7 @@ export function readYueDocs(repoRoot = REPO_ROOT): YueData {
           if (element?.initializer) defaultValue = element.initializer.getText();
         }
       }
-      return { name: prop.name, type: checker.typeToString(checker.getTypeOfSymbolAtLocation(prop, node), node, ts.TypeFormatFlags.NoTruncation), description: ts.displayPartsToString(prop.getDocumentationComment(checker)), required: !(prop.flags & ts.SymbolFlags.Optional), defaultValue, native: !['disabled', 'children', 'ref'].includes(prop.name) && (prop.declarations ?? []).length > 0 && (prop.declarations ?? []).every(d => d.getSourceFile().fileName.includes('@types/react')), inherited: (prop.declarations ?? []).every(d => d.getSourceFile().fileName.includes('node_modules')) };
+      return { name: prop.name, type: publicType(checker.typeToString(checker.getTypeOfSymbolAtLocation(prop, node), node, ts.TypeFormatFlags.NoTruncation)), description: ts.displayPartsToString(prop.getDocumentationComment(checker)), required: !(prop.flags & ts.SymbolFlags.Optional), defaultValue, native: !['disabled', 'children', 'ref'].includes(prop.name) && (prop.declarations ?? []).length > 0 && (prop.declarations ?? []).every(d => d.getSourceFile().fileName.includes('@types/react')), inherited: (prop.declarations ?? []).every(d => d.getSourceFile().fileName.includes('node_modules')) };
     });
     apis.push({ name, props });
   }
@@ -85,8 +95,12 @@ export function readYueDocs(repoRoot = REPO_ROOT): YueData {
 }
 
 const cell = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;').replace(/\|/g, '&#124;').replace(/`/g, '&#96;').replace(/\n/g, ' ');
+export function typeCell(type: string): string {
+  const ticks = '`'.repeat(Math.max(0, ...(type.match(/`+/g) ?? []).map(run => run.length)) + 1);
+  return `${ticks} ${type.replace(/\|/g, '\\|').replace(/\n/g, ' ')} ${ticks}`;
+}
 function rows(props: PropDoc[]): string {
-  return ['| 属性 | 类型 | 必填 | 默认值 | 说明 |', '|---|---|---|---|---|', ...props.map(p => `| ${cell(p.name)} | <code>${cell(p.type)}</code> | ${p.required ? '是' : '否'} | ${cell(p.defaultValue || '未指定')} | ${cell(p.description || '以 TypeScript 类型约束为准。')} |`)].join('\n');
+  return ['| 属性 | 类型 | 必填 | 默认值 | 说明 |', '|---|---|---|---|---|', ...props.map(p => `| ${cell(p.name)} | ${typeCell(p.type)} | ${p.required ? '是' : '否'} | ${cell(p.defaultValue || '未指定')} | ${cell(p.description || '以 TypeScript 类型约束为准。')} |`)].join('\n');
 }
 function nativeId(api: ComponentApi): string {
   return createHash('sha256').update(JSON.stringify(api.props.filter(p => p.native))).digest('hex').slice(0, 12);

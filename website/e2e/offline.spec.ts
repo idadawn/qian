@@ -32,6 +32,8 @@ test('属性表、继承回调、源码和 Markdown 同步', async ({ page, requ
     for (const prop of props) expect(markdown).toContain(prop);
     expect(markdown).toContain("@idadawn/yue-core");
     expect(markdown).not.toContain('<ComponentDemo');
+    expect(markdown).not.toContain('.pnpm');
+    await expect(page.locator('table a[href^="mailto:"]')).toHaveCount(0);
   }
 });
 
@@ -67,6 +69,7 @@ test('桌面快捷键文字在明暗主题均有足够对比度', async ({ page 
     await page.emulateMedia({ colorScheme: theme });
     await page.goto('components/yue/core/button.html');
     await expect(page.locator('.rp-search-button__hotkey')).toBeVisible();
+    await expect(page.locator('.rp-search-button__hotkey')).toContainText('Ctrl');
     const violations = (await new AxeBuilder({ page }).include('.rp-search-button').analyze()).violations;
     expect(violations).toEqual([]);
   }
