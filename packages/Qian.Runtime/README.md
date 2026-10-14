@@ -30,7 +30,9 @@ await runtime.MountAsync(definitions, cancellationToken);
 
 `Provide`、`On`、`Restrict` 自动进入当前 Apply 的效果栈。第三方资源用 `Effect(IDisposable)`、`Effect(Action)` 或 `Effect(Func<ValueTask>)` 登记。卸载按逆序逐项等待，某一撤销失败仍继续其它项并记录失败。服务实例的资源所有权由插件用 `Effect` 显式管理。
 
-返回的注册撤销句柄幂等。手动 `Dispose()` 后，受影响依赖者立即退出 Ready，异步清理和恢复可用 `runtime.WhenIdleAsync(ct)` 等待；`UnmountAsync` 自身会等待清理完成。已经卸载的上下文不能再注册或等待服务。
+`Provide` 返回注册句柄 `IRegistrationHandle<T>`，`Dispose()` 撤销且幂等。手动 `Dispose()` 后，受影响依赖者立即退出 Ready，异步清理和恢复可用 `runtime.WhenIdleAsync(ct)` 等待；`UnmountAsync` 自身会等待清理完成。已经卸载的上下文不能再注册或等待服务。
+
+`Replace(instance)` 在原注册位原子替换实例：撤销与再登记在装载器同一把锁内完成，`Inject`、`TryInject`、keyed service 与 `List` 只会看到旧实例或新实例，不会看到缺失；scope、注册顺序、独占性与效果栈位置不变。注册身份随之改变，以 `inject` 依赖该键的条目与撤销后再登记一样回到 Pending 并重新 Apply，拿到新实例。句柄已撤销或上下文已卸载时抛 `ObjectDisposedException`。声明式表面热重载用它替换内容改变的目录项。
 
 具名 seam 使用 `Provide(key, name, value)` / `Inject<T>(key, name)` / `List(key)`；就绪键为 `Key:name`，因此可出现在清单 `provides[]` 与 `Inject` 中。普通键的 `Registration.Name` 为空。
 

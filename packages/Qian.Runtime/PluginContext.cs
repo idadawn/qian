@@ -58,14 +58,13 @@ internal sealed partial class PluginContext : IPluginContext, IKeyedServiceProvi
         }
     }
 
-    public IDisposable Provide<TService>(ServiceKey key, TService instance) where TService : class
+    public IRegistrationHandle<TService> Provide<TService>(ServiceKey key, TService instance) where TService : class
     {
         ArgumentNullException.ThrowIfNull(instance);
         lock (Loader.Sync)
         {
             EnsureOpen();
-            var registration = Loader.Provide(this, key, typeof(TService), instance);
-            return Effects.Track(() => Loader.Remove(registration));
+            return new RegistrationHandle<TService>(this, Loader.Provide(this, key, typeof(TService), instance));
         }
     }
 

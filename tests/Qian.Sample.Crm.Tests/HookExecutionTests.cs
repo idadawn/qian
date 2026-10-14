@@ -134,24 +134,34 @@ public sealed partial class CustomerCommandTests
         var directory = (string)((IApplicationBuilder)host.App).Properties["qian.tests.hooks"]!;
         var file = Path.Combine(directory, "hooks/hooks.json");
         File.WriteAllText(file, """{"hooks":{"tenant/provisioned":[{"matcher":"^never-match$","hooks":[{"type":"plugin","plugin":"qian.sample.crm","handler":"seedCustomer"}]}]}}""");
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(Ct); deadline.CancelAfter(TimeSpan.FromSeconds(5));
-        while (source.Inject<SurfaceDocument>(SurfaceKeys.Hooks, "qian.sample.crm/hooks").Data.GetProperty("hooks").GetProperty("tenant/provisioned")[0].TryGetProperty("matcher", out var matcher) == false || matcher.GetString() != "^never-match$")
-            await Task.Delay(20, deadline.Token);
+        await WaitForHooks(source, group => group.TryGetProperty("matcher", out var matcher) && matcher.GetString() == "^never-match$");
         Assert.Same(original, source.Inject<ICrmCommands>(CrmDefinition.Key));
         using var ignored = await HookPost(host, A, new CreateCustomerCommand(Guid.CreateVersion7(), "not called")); Assert.Equal(HttpStatusCode.OK, ignored.StatusCode);
         using var scope = host.App.Services.GetRequiredService<ITenantContext>().BeginScope(A);
         await using var session = await host.App.Services.GetRequiredService<IDataService>().OpenAsync<CrmDbContext>(Ct);
         Assert.Empty(await session.Context.Customers.ToListAsync(Ct));
         File.WriteAllText(file, """{"hooks":{"tenant/provisioned":[{"hooks":[{"type":"plugin","plugin":"qian.sample.crm","handler":"listCustomers"}]}]}}""");
-        using var updated = CancellationTokenSource.CreateLinkedTokenSource(Ct); updated.CancelAfter(TimeSpan.FromSeconds(5));
-        while (source.Inject<SurfaceDocument>(SurfaceKeys.Hooks, "qian.sample.crm/hooks").Data.GetProperty("hooks").GetProperty("tenant/provisioned")[0].GetProperty("hooks")[0].GetProperty("handler").GetString() != "listCustomers")
-            await Task.Delay(20, updated.Token);
+        await WaitForHooks(source, group => group.GetProperty("hooks")[0].GetProperty("handler").GetString() == "listCustomers");
         using var queried = await HookPost(host, A, new CreateCustomerCommand(Guid.CreateVersion7(), "query event")); Assert.Equal(HttpStatusCode.OK, queried.StatusCode);
         Assert.Same(original, source.Inject<ICrmCommands>(CrmDefinition.Key));
         var record = Assert.Single(await host.App.Services.GetRequiredService<CrmCommandRuntime>().Source().Audit().ReadAsync(0, 10, cancellationToken: Ct));
         Assert.Equal("hook", record.Record.Channel); Assert.Equal("qian.sample.crm/customer.list", record.Record.CapabilityId);
     }
 
+    // hooks 文档在新旧快照中都存在：每次轮询都严格 Inject，热替换期间出现 NOT_FOUND 即是缺陷，直接失败而不重试。
+    // 五秒内未生效时报出最后读取的声明与监视状态，不用取消异常掩盖原因。
+    private static async Task WaitForHooks(IPluginContext source, Func<JsonElement, bool> applied)
+    {
+        var elapsed = Stopwatch.StartNew();
+        while (true)
+        {
+            var group = source.Inject<SurfaceDocument>(SurfaceKeys.Hooks, "qian.sample.crm/hooks").Data.GetProperty("hooks").GetProperty("tenant/provisioned")[0];
+            if (applied(group)) return;
+            if (elapsed.Elapsed > TimeSpan.FromSeconds(5))
+                Assert.Fail($"hooks 更新五秒内未生效；最后读取：{group.GetRawText()}；监视状态：{source.Inject<ISurfaceReloadDiagnosticSource>(SurfaceRuntimeDiagnostics.Key, "qian.sample.crm").Read().GetRawText()}");
+            await Task.Delay(20, Ct);
+        }
+    }
     private static void MapHookEntry(WebApplication app)
     {
         app.MapQianSurfaceDiagnostics(http =>
