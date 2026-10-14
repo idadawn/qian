@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Json.Schema;
+using Json.Schema.Keywords;
 using Qian.Common;
 using Qian.Profiles.Abstractions;
 using Qian.Runtime.Errors;
@@ -252,18 +253,107 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
             }
             if (new FileInfo(schemaPath).Length > 1_048_576) Fail(schemaPath, "", "Schema 超过大小限制。");
             var schemaNode = JsonNode.Parse(File.ReadAllText(schemaPath))!;
+            Patterns(schemaNode, schemaPath, "");
             var config = Defaults(schemaNode, entry.Config.DeepClone())!;
             var schema = JsonSchema.FromText(schemaNode.ToJsonString(), new BuildOptions { Dialect = Dialect.Draft202012, SchemaRegistry = new SchemaRegistry { Fetch = (_, _) => null } });
+            UsePortablePatterns(schema.Root, new HashSet<JsonSchemaNode>(ReferenceEqualityComparer.Instance));
             var data = JsonSerializer.SerializeToElement(config);
-            var evaluation = schema.Evaluate(data, new EvaluationOptions { OutputFormat = OutputFormat.Hierarchical });
+            var evaluation = schema.Evaluate(data, new EvaluationOptions { OutputFormat = OutputFormat.Hierarchical, IncludeApplicatorErrors = true });
             if (!evaluation.IsValid)
             {
-                var errors = Leaves(evaluation).Where(e => e.Errors is { Count: > 0 }).ToArray();
-                foreach (var error in errors) Error(entry.ConfigFile, entry.ConfigPointer + error.InstanceLocation, "条目配置不符合组件 config.schema。", "error");
+                var locations = new SortedSet<string>(StringComparer.Ordinal);
+                Locations(evaluation, locations);
+                foreach (var location in locations) Error(entry.ConfigFile, entry.ConfigPointer + location, "条目配置不符合组件 config.schema。", "error");
                 throw new CompositionFailed();
             }
             Sensitive(config, schemaNode, entry.ConfigFile, entry.ConfigPointer);
             return data;
+        }
+
+        // 含子 Schema 的关键字，按序数排列；值为映射或数组的分别列出。
+        private static readonly string[] SchemaKeywords = ["$defs", "additionalProperties", "allOf", "anyOf", "contains", "contentSchema", "definitions", "dependentSchemas",
+            "else", "if", "items", "not", "oneOf", "patternProperties", "prefixItems", "properties", "propertyNames", "then", "unevaluatedItems", "unevaluatedProperties"];
+        private static readonly HashSet<string> SchemaMaps = new(StringComparer.Ordinal) { "$defs", "definitions", "dependentSchemas", "patternProperties", "properties" };
+        private static readonly HashSet<string> SchemaLists = new(StringComparer.Ordinal) { "allOf", "anyOf", "oneOf", "prefixItems" };
+
+        // 与 profiles.ts 的 patterns 同序同义：交给验证器之前，按上表顺序检查各子 Schema 位置上的 pattern 与 patternProperties 的键，映射按键名序数、数组按下标，
+        // 超出可移植子集的写法在 Schema 文件的对应指针处失败。不跟随 $ref；引用到其他位置的写法由 UsePortablePatterns 拒绝，按无法解析处理。
+        private void Patterns(JsonNode? schema, string file, string pointer, int depth = 0)
+        {
+            if (depth > 64) throw new JsonException("配置 Schema 嵌套深度超过限制。");
+            if (schema is not JsonObject rule) return;
+            if (rule["pattern"] is JsonValue pattern && pattern.TryGetValue<string>(out var source)) Portable(source, file, pointer + "/pattern", "pattern");
+            foreach (var keyword in SchemaKeywords)
+            {
+                var value = rule[keyword];
+                if (SchemaMaps.Contains(keyword))
+                {
+                    if (value is not JsonObject map) continue;
+                    foreach (var item in map.OrderBy(item => item.Key, StringComparer.Ordinal))
+                    {
+                        var at = pointer + "/" + keyword + "/" + Escape(item.Key);
+                        if (keyword == "patternProperties") Portable(item.Key, file, at, keyword);
+                        Patterns(item.Value, file, at, depth + 1);
+                    }
+                }
+                else if (SchemaLists.Contains(keyword))
+                {
+                    if (value is not JsonArray list) continue;
+                    for (var i = 0; i < list.Count; i++) Patterns(list[i], file, pointer + "/" + keyword + "/" + i, depth + 1);
+                }
+                else Patterns(value, file, pointer + "/" + keyword, depth + 1);
+            }
+        }
+
+        private void Portable(string pattern, string file, string pointer, string keyword)
+        {
+            try { _ = SchemaPattern.Compile(pattern); }
+            catch (Exception error) when (error is ArgumentException or NotSupportedException)
+            { Fail(file, pointer, "组件 config.schema 的 " + keyword + " 含不支持的正则写法，只接受 ECMA-262 可移植子集。"); }
+        }
+
+        // 验证器默认按 .NET 的 ECMAScript 选项编译正则，判断与 CLI 不同；构造后把 pattern 与 patternProperties 的编译结果换成共享翻译器的实例，
+        // 两端按同一语义匹配字符串值与键名。additionalProperties、unevaluatedProperties 读 patternProperties 的注解，随之一致。
+        // 引用解析出的子 Schema 也在 Subschemas 里；预检没有覆盖的位置遇到不支持的写法时按无法解析处理，与 CLI 的 Ajv 编译失败相同。
+        private static void UsePortablePatterns(JsonSchemaNode node, HashSet<JsonSchemaNode> seen)
+        {
+            if (!seen.Add(node)) return;
+            foreach (var keyword in node.Keywords)
+            {
+                if (keyword.Handler is PatternKeyword) keyword.Value = Engine(keyword.RawValue.GetString()!);
+                else if (keyword.Handler is PatternPropertiesKeyword) keyword.Value = keyword.RawValue.EnumerateObject().ToDictionary(item => item.Name, item => Engine(item.Name), StringComparer.Ordinal);
+                foreach (var child in keyword.Subschemas) UsePortablePatterns(child, seen);
+            }
+        }
+
+        private static Regex Engine(string pattern)
+        {
+            try { return SchemaPattern.Compile(pattern); }
+            catch (NotSupportedException) { throw new JsonException("配置 Schema 含不支持的正则写法。"); }
+        }
+
+        // 容器关键字只经由失败的子节点报告；Ajv 也不为它们输出自身的错误（additionalProperties、unevaluatedProperties、propertyNames 的错误落在键名上，同子节点位置）。
+        private static readonly HashSet<string> Containers = new(StringComparer.Ordinal)
+        {
+            "$dynamicRef", "$ref", "additionalProperties", "allOf", "dependentSchemas", "items", "patternProperties", "prefixItems", "properties",
+            "propertyNames", "unevaluatedItems", "unevaluatedProperties",
+        };
+
+        // 与 profiles.ts 的 locations 同义，把验证结果归一为出错实例位置：容器之外的失败关键字报自身位置，含 anyOf、oneOf、not、contains 与 then/else；
+        // 只进入随关键字一起失败的子节点，if 的条件分支、通过的 anyOf 下失败的分支都不计。contains 不进入逐项子节点：Ajv 计数达到上限即停止逐项检查。
+        private static void Locations(EvaluationResults node, SortedSet<string> found)
+        {
+            var keys = node.Errors?.Keys.ToArray() ?? [];
+            var descended = false;
+            foreach (var child in node.Details ?? [])
+            {
+                if (child.IsValid || child.EvaluationPath.SegmentCount <= node.EvaluationPath.SegmentCount) continue;
+                var keyword = child.EvaluationPath[node.EvaluationPath.SegmentCount].ToString();
+                if (keyword == "contains" || (keyword is not ("$ref" or "$dynamicRef") && !keys.Contains(keyword))) continue;
+                descended = true;
+                Locations(child, found);
+            }
+            if (keys.Any(key => !Containers.Contains(key)) || (keys.Length == 0 && !descended)) found.Add(node.InstanceLocation.ToString());
         }
 
         private static JsonNode? Defaults(JsonNode schema, JsonNode? value, JsonNode? root = null, int depth = 0)
@@ -307,21 +397,22 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
                 if (rule[name] is JsonArray branches) foreach (var branch in branches) Sensitive(value, branch, file, pointer, root, depth + 1);
             if (value is JsonArray array && rule["items"] is { } items)
                 for (var i = 0; i < array.Count; i++) Sensitive(array[i], items, file, pointer + "/" + i, root, depth + 1);
-            if (value is JsonObject map) foreach (var item in map)
+            if (value is JsonObject map) foreach (var item in map.OrderBy(item => item.Key, StringComparer.Ordinal))
             {
                 // 键名按两种读法判定，敏感标记取并集：IQianPlugin<TConfig> 按 Web 默认不区分大小写绑定（Password 会绑到 password），
                 // 验证器与直接读 JsonElement 的插件区分大小写。所以属性名与动态键都按不区分大小写匹配，additionalProperties 只在按原样没有匹配时适用。
+                // 配置键、属性名与模式都按序数顺序遍历：JS 对象把整数形式的键排在前面，按文档顺序时两端报告的首个违规会不同。
                 var child = pointer + "/" + Escape(item.Key);
                 var exact = false;
                 if (rule["properties"] is JsonObject properties)
-                    foreach (var property in properties)
+                    foreach (var property in properties.OrderBy(property => property.Key, StringComparer.Ordinal))
                         if (string.Equals(property.Key, item.Key, StringComparison.OrdinalIgnoreCase))
                         { Sensitive(item.Value, property.Value, file, child, root, depth + 1); exact |= property.Key == item.Key; }
                 if (rule["patternProperties"] is JsonObject patterns && patterns.Count > 0)
                 {
                     // 动态键按 ECMA-262 判定（见 SchemaPattern）。方言判断不同的键名不做匹配，值必须是 secretRef；模式仍逐个编译，不受支持的写法照常失败。
                     var stable = SchemaPattern.IsStable(item.Key);
-                    foreach (var pattern in patterns)
+                    foreach (var pattern in patterns.OrderBy(pattern => pattern.Key, StringComparer.Ordinal))
                     {
                         var folded = Pattern(pattern.Key, true, file, child);
                         if (!stable || !folded.IsMatch(item.Key)) continue;
@@ -367,13 +458,6 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
                 }
                 state[id] = 2; order.Add(id);
             }
-        }
-        private static IEnumerable<EvaluationResults> Leaves(EvaluationResults value)
-        {
-            if (value.IsValid) yield break;
-            var children = (value.Details ?? []).Where(d => !d.IsValid).ToArray();
-            if (children.Length == 0) yield return value;
-            foreach (var child in children) foreach (var leaf in Leaves(child)) yield return leaf;
         }
         private void Error(string file, string pointer, string message, string severity)
         {

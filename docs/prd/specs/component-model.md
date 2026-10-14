@@ -1348,7 +1348,7 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 - 由 `Config` seam 的 `ISecretResolver` 在**使用时**解析（Apollo 引用 K8s Secret，ADR-007）；`policy.permissions.secrets[]` 声明允许解析的范围，越界被拒并审计；`secretRef://tenant/<id>/…` 只能被同租户上下文解析（RLS + resolver 双重检查）。
 - `secrets[]` 条目使用 `{ "name": "oss/*", "scope": "platform" }`，与既定权限对象口径一致。name 为精确路径或末尾 `/*` 前缀，scope 为 platform、tenant、dev；声明与宿主审批记录取交集。tenant 路径匹配后仍检查真实租户身份，dev 仅在开发宿主显式开启。
 - 只有 `configSchema` 中 `x-qian-sensitive: true` 的属性、`hooks.json` 与 `.mcp.json` 的 `headers / env` 允许 `secretRef://`；其它位置出现是 warning；疑似密钥键名的明文值与高熵值是 error（§10.1）。
-- 判定配置字段是否敏感时，属性名与 `patternProperties` 的键都不区分大小写（配置键与 Web 默认反序列化都如此）；模式按 ECMA-262 可移植子集解释，超出子集或规模上限即判 Schema 无效；键名含各正则方言判断不同的字符时按敏感处理，只接受 `secretRef://`。本地 CLI 与 .NET 的装配、配置扫描按同一规则判定，由共享 TCK 约束。
+- 判定配置字段是否敏感时，属性名与 `patternProperties` 的键都不区分大小写（配置键与 Web 默认反序列化都如此）；模式按 ECMA-262 可移植子集解释，超出子集或规模上限即判 Schema 无效；键名含各正则方言判断不同的字符时按敏感处理，只接受 `secretRef://`。本地 CLI 与 .NET 的装配、配置扫描按同一规则判定，由共享 TCK 约束。装配时两端的 Schema 验证器也按这一子集执行 `pattern` 与 `patternProperties`（ECMA-262 不带标志、逐码元），超出子集的写法在 Schema 的对应位置报错；验证诊断归一为出错实例位置并按序数排序，两端逐字一致。
 
 ### 11.4 hooks `command` 类型与内联 shell 的限制（已裁决 R41）
 

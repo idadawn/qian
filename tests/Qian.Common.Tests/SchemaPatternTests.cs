@@ -62,6 +62,15 @@ public sealed class SchemaPatternTests
         "0111111111111110111110101110011111111111111111111111110",
     ];
 
+    // 值层语料：Schema 验证器也用翻译结果判断字符串值，值里可能有方言判断不同的码元、代理对与残缺代理项。
+    // 只对不折叠的翻译结果计算；CLI 测试另用 V8 不带标志的 RegExp 逐例对照，确认翻译结果按 ECMA-262 逐码元判断。
+    private static readonly string[] Values = [
+        "a\n", "\n", "a\r\nb", "\r", "a" + (char)0x2028 + "b", new string((char)0x2029, 1), "abc\n", "secret_\n", "x-abc1\n", "my_token\n",
+        new string((char)0x00A0, 1), new string((char)0x3000, 1), new string((char)0xFEFF, 1), new string((char)0x180E, 1), new string((char)0x0085, 1), " \t",
+        new string((char)0x0130, 1), "a" + (char)0x0130, new string((char)0x0131, 1), char.ConvertFromUtf32(0x1F600), "a" + char.ConvertFromUtf32(0x1F600) + "c",
+        new string((char)0xD83D, 1), (char)0xDE00 + "x", "12" + (char)0x0661, "客户" + char.ConvertFromUtf32(0x20000),
+    ];
+
     private static Regex Compile(string pattern) => new(SchemaPattern.Translate(pattern), RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
     private static Regex Validator(string pattern) => new(pattern, RegexOptions.ECMAScript);
     private static bool Ecma(string token, char c) => token switch
@@ -73,7 +82,7 @@ public sealed class SchemaPatternTests
     };
 
     [Fact]
-    public void 方言判断不同的码元都不稳定_其余码元上翻译后的字符类与验证器方言和ECMA262逐个一致()
+    public void 翻译后的字符类在全部码元上按ECMA262判断_验证器方言只在稳定码元上与之一致()
     {
         foreach (var code in new[] { 0x0A, 0x0D, 0x00A0, 0x0130, 0x1680, 0x180E, 0x2000, 0x200A, 0x2028, 0x2029, 0x202F, 0x205F, 0x3000, 0xFEFF, 0xD83D, 0xDE00 })
             Assert.False(SchemaPattern.IsStable("key" + (char)code));
@@ -83,11 +92,15 @@ public sealed class SchemaPatternTests
             for (var code = 0; code <= char.MaxValue; code++)
             {
                 var text = ((char)code).ToString();
-                if (!SchemaPattern.IsStable(text)) continue;
                 var expected = Ecma(token, (char)code);
-                if (ours.IsMatch(text) != expected || validator.IsMatch(text) != expected) Assert.Fail($"{token} 在 U+{code:X4} 上方言不一致");
+                if (ours.IsMatch(text) != expected) Assert.Fail($"{token} 在 U+{code:X4} 上与 ECMA-262 不一致");
+                if (SchemaPattern.IsStable(text) && validator.IsMatch(text) != expected) Assert.Fail($"{token} 在稳定码元 U+{code:X4} 上方言不一致");
             }
         }
+        // $ 只在末尾成立；.NET 自己的 $ 还匹配末尾换行之前，换行因此不稳定。
+        Assert.Matches(Compile("a$"), "xa");
+        Assert.DoesNotMatch(Compile("a$"), "a\n");
+        Assert.Matches(Validator("a$"), "a\n");
     }
 
     [Fact]
@@ -252,7 +265,7 @@ public sealed class SchemaPatternTests
         }
     }
 
-    // 翻译结果与在 Keys 上的匹配（不折叠与折叠）、全部 BMP 码元的稳定性、键名相等，都按本实现与 .NET 比较器给出。
+    // 翻译结果与在 Keys 上的匹配（不折叠与折叠）、在 Values 上的匹配（不折叠）、全部 BMP 码元的稳定性、键名相等，都按本实现与 .NET 比较器给出。
     private static string Vectors()
     {
         var unstable = new List<string>();
@@ -275,7 +288,8 @@ public sealed class SchemaPatternTests
                 return $"{{\"pattern\": {Quote(pattern)}, \"rejected\": true}}";
             }
             var folded = SchemaPattern.Translate(pattern, foldCase: true);
-            return $"{{\"pattern\": {Quote(pattern)}, \"plain\": {Quote(plain)}, \"matches\": \"{Bits(plain)}\", \"folded\": {Quote(folded)}, \"foldedMatches\": \"{Bits(folded)}\"}}";
+            return $"{{\"pattern\": {Quote(pattern)}, \"plain\": {Quote(plain)}, \"matches\": \"{Bits(plain, Keys)}\", \"valueMatches\": \"{Bits(plain, Values)}\", " +
+                $"\"folded\": {Quote(folded)}, \"foldedMatches\": \"{Bits(folded, Keys)}\"}}";
         });
         var equality = EqualityPairs().Select(pair =>
             $"{{\"left\": {Quote(pair.Left)}, \"right\": {Quote(pair.Right)}, \"equal\": {(string.Equals(pair.Left, pair.Right, StringComparison.OrdinalIgnoreCase) ? "true" : "false")}}}");
@@ -283,14 +297,15 @@ public sealed class SchemaPatternTests
             $"  \"maxSize\": {SchemaPattern.MaxSize},\n" +
             $"  \"unstable\": [{string.Join(", ", unstable)}],\n" +
             $"  \"keys\": [{string.Join(", ", Keys.Select(Quote))}],\n" +
+            $"  \"values\": [{string.Join(", ", Values.Select(Quote))}],\n" +
             $"  \"patterns\": [\n    {string.Join(",\n    ", patterns)}\n  ],\n" +
             $"  \"equality\": [\n    {string.Join(",\n    ", equality)}\n  ]\n}}\n";
     }
 
-    private static string Bits(string translated)
+    private static string Bits(string translated, string[] texts)
     {
         var regex = new Regex(translated, RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
-        return string.Concat(Keys.Select(key => regex.IsMatch(key) ? '1' : '0'));
+        return string.Concat(texts.Select(text => regex.IsMatch(text) ? '1' : '0'));
     }
 
     // 只原样输出可打印 ASCII，其余码元一律写成 JSON 转义，残缺的代理项也能原样往返。

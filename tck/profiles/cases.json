@@ -805,7 +805,7 @@
     ],
     "home": false,
     "expect": false,
-    "pointer": "ops.yml#/0/config/endpoints/İstanbul",
+    "pointer": "plugins/settings/schemas/config.schema.json#/properties/endpoints/patternProperties/^(?=x)x",
     "reason": "组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
   },
   {
@@ -819,7 +819,7 @@
     ],
     "home": false,
     "expect": false,
-    "pointer": "ops.yml#/0/config/endpoints/x",
+    "pointer": "plugins/settings/schemas/config.schema.json#/properties/endpoints/patternProperties/^(?=x)x",
     "reason": "组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
   },
   {
@@ -833,7 +833,7 @@
     ],
     "home": false,
     "expect": false,
-    "pointer": "ops.yml#/0/config/endpoints/x",
+    "pointer": "plugins/settings/schemas/config.schema.json#/properties/endpoints/patternProperties/^x{1001}",
     "reason": "组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
   },
   {
@@ -861,5 +861,325 @@
     ],
     "home": false,
     "expect": true
+  },
+  {
+    "name": "config-diagnostics-required-with-child",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": 1\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"required\": [\"b\"], \"properties\": {\"a\": {\"type\": \"string\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-required-each-once",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {}\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"required\": [\"a\", \"b\"]}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-ordinal-order",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"b\": 1,\n      \"1\": 1,\n      \"a\": 1,\n      \"10\": 1,\n      \"2\": 1\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"additionalProperties\": {\"type\": \"string\"}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/10",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-own-assertion-with-children",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"arr\": [\n        1,\n        1,\n        \"x\"\n      ]\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"arr\": {\"type\": \"array\", \"items\": {\"type\": \"number\"}, \"uniqueItems\": true}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/arr",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-property-names-at-key",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"obj\": {\n        \"A\": 1,\n        \"b\": 2\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"obj\": {\"type\": \"object\", \"propertyNames\": {\"pattern\": \"^[a-z]+$\"}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/obj/A",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-unevaluated-at-key",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": 1,\n      \"x\": 1\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"a\": {}}, \"unevaluatedProperties\": false}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/x",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-contains-at-array",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"arr\": [\n        1,\n        2\n      ]\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"arr\": {\"type\": \"array\", \"contains\": {\"type\": \"string\"}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/arr",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-combinator-summary",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": 1\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"anyOf\": [{\"properties\": {\"a\": {\"type\": \"string\"}}}, {\"properties\": {\"a\": {\"type\": \"boolean\"}}}]}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-if-condition-ignored",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": 2\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"if\": {\"properties\": {\"a\": {\"const\": 1}}}, \"then\": {}, \"else\": {\"required\": [\"z\"]}, \"required\": [\"b\"]}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-diagnostics-passing-branch-ignored",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": 1\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"required\": [\"b\"], \"anyOf\": [{\"properties\": {\"a\": {\"type\": \"string\"}}}, {}]}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-pattern-end-anchor",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": \"a\\n\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"string\", \"pattern\": \"^a$\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/a",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-pattern-dot-line-terminator",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": \"a\\u2028b\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"string\", \"pattern\": \"^a.b$\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/a",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-pattern-space-unicode",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": \"\\u3000\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"string\", \"pattern\": \"^\\\\s+$\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": true
+  },
+  {
+    "name": "config-pattern-code-units",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": \"😀\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"string\", \"pattern\": \"^.$\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/a",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-pattern-key-additional",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\\n\": \"x\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"patternProperties\": {\"^a$\": {\"type\": \"string\"}}, \"additionalProperties\": false}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/a\n",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "config-pattern-linear-time",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"string\", \"pattern\": \"^(a|a)*$\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/a",
+    "reason": "条目配置不符合组件 config.schema。"
+  },
+  {
+    "name": "schema-pattern-unsupported",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": \"x\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"string\", \"pattern\": \"(?i)abc\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "plugins/settings/schemas/config.schema.json#/properties/a/pattern",
+    "reason": "组件 config.schema 的 pattern 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
+  },
+  {
+    "name": "schema-pattern-properties-unsupported",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"endpoints\": {\n        \"x\": 1\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"(?i)a\": {}}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "plugins/settings/schemas/config.schema.json#/properties/endpoints/patternProperties/(?i)a",
+    "reason": "组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
+  },
+  {
+    "name": "schema-pattern-dialect-only",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {}\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"a\": {\"pattern\": \"^\\\\u{41}$\"}, \"b\": {\"pattern\": \"[\\\\w-.]\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "plugins/settings/schemas/config.schema.json#/properties/a/pattern",
+    "reason": "组件 config.schema 的 pattern 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
+  },
+  {
+    "name": "schema-pattern-ordinal-order",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {}\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"b\": {\"pattern\": \"(?i)b\"}, \"1\": {\"pattern\": \"(?=x)\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "plugins/settings/schemas/config.schema.json#/properties/1/pattern",
+    "reason": "组件 config.schema 的 pattern 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
+  },
+  {
+    "name": "schema-pattern-referenced-elsewhere",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {}\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"$ref\": \"#/x-shared\", \"x-shared\": {\"pattern\": \"(?=a)\"}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "profiles/test/qian.profile.yml#",
+    "reason": "profile 或组件内容无法解析。"
+  },
+  {
+    "name": "sensitive-config-key-ordinal",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"limits\": {\n        \"b\": \"DO-NOT-LEAK\",\n        \"1\": \"DO-NOT-LEAK\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"limits\": {\"type\": \"object\", \"additionalProperties\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/limits/1",
+    "reason": "敏感配置必须为 secretRef，不能打印或保存明文。"
+  },
+  {
+    "name": "sensitive-pattern-ordinal",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"m\": {\n        \"b1\": {\n          \"p\": \"DO-NOT-LEAK\",\n          \"q\": \"DO-NOT-LEAK\"\n        }\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"m\": {\"type\": \"object\", \"patternProperties\": {\"b\": {\"type\": \"object\", \"properties\": {\"p\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}, \"1\": {\"type\": \"object\", \"properties\": {\"q\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/m/b1/q",
+    "reason": "敏感配置必须为 secretRef，不能打印或保存明文。"
   }
 ]

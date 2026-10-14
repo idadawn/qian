@@ -1,8 +1,8 @@
 import {ordinalIgnoreCaseClasses} from './ordinal-case.js';
 
-// packages/Common/SchemaPattern.cs 的逐条移植：JSON Schema 动态键模式（patternProperties）按 ECMA-262 可移植子集解释，
-// 接受与拒绝、键名稳定性、OrdinalIgnoreCase 折叠与翻译结果都与 .NET 逐字一致。tck/profiles/key-vectors.json 由 .NET 生成，两端测试逐条比对；
-// 规则改动须两端同步，见 packages/Common/README.md。
+// packages/Common/SchemaPattern.cs 的逐条移植：JSON Schema 正则（pattern 与 patternProperties 的键）按 ECMA-262 可移植子集、
+// 不带标志的语义逐码元解释，接受与拒绝、键名稳定性、OrdinalIgnoreCase 折叠与翻译结果都与 .NET 逐字一致。
+// tck/profiles/key-vectors.json 由 .NET 生成，两端测试逐条比对；规则改动须两端同步，见 packages/Common/README.md。
 
 /** 模式超出可移植子集或规模上限，对应 .NET 的 NotSupportedException。 */
 export class UnsupportedPattern extends Error {}
@@ -13,11 +13,11 @@ const cacheSize=128,universe=0x10000;
 const cache=new Map<string,KeyPattern>();
 // 方言判断不同的码元，同 SchemaPattern 的 Unstable。
 const unstable=new Set([0x0A,0x0D,0xA0,0x130,0x1680,0x180E,...Array.from({length:11},(_,offset)=>0x2000+offset),0x2028,0x2029,0x202F,0x205F,0x3000,0xFEFF]);
-const unsupported=():UnsupportedPattern=>new UnsupportedPattern('patternProperties 的写法超出 ECMA-262 可移植子集或规模上限。');
+const unsupported=():UnsupportedPattern=>new UnsupportedPattern('正则写法超出 ECMA-262 可移植子集或规模上限。');
 const surrogate=(code:number):boolean=>code>=0xD800&&code<=0xDFFF;
 const digit=(c:string|undefined):boolean=>c!==undefined&&c>='0'&&c<='9';
 
-/** 键名不含上述码元与代理项时，接受的每种写法在验证器方言与 ECMA-262 下判断相同；折叠后同样成立。 */
+/** 键名不含上述码元与代理项时，接受的每种写法在各验证器方言与翻译结果下判断相同；折叠后同样成立。 */
 export function isStable(name:string):boolean{
  for(let i=0;i<name.length;i++){const code=name.charCodeAt(i);if(unstable.has(code)||surrogate(code))return false;}
  return true;
@@ -34,10 +34,10 @@ export function compilePattern(pattern:string,foldCase=false):KeyPattern{
 export const cachedPatterns=():number=>cache.size;
 
 /**
- * 执行翻译结果的键名匹配器。翻译结果只含码元转义、字符类、非捕获组、| ^ $ 与量词，这里按 Thompson 构造成自动机逐码元模拟：
- * 与 .NET NonBacktracking 一样线性时间、不回溯。不交给 JS 正则：折叠会让原本互斥的分支重叠，
- * 例如 ^(?:[a-z]|[A-Z])+$ 折叠后两个分支相同，回溯引擎遇到以 ! 结尾的长键名会指数级变慢。
- * ^ 只在开头、$ 只在末尾成立；.NET 的 $ 还匹配末尾换行之前，而含换行的键名不稳定，调用方不拿它匹配。
+ * 执行翻译结果的匹配器，用于键名与 Schema 验证器的字符串值。翻译结果只含码元转义、字符类、非捕获组、| ^ \z 与量词，
+ * 这里按 Thompson 构造成自动机逐码元模拟：与 .NET NonBacktracking 一样线性时间、不回溯。不交给 JS 正则：折叠会让原本互斥的分支重叠，
+ * 例如 ^(?:[a-z]|[A-Z])+$ 折叠后两个分支相同，回溯引擎遇到以 ! 结尾的长键名会指数级变慢；未折叠的模式同样可能写出这种分支。
+ * ^ 只在开头、\z 只在末尾成立。toString 返回翻译结果：Ajv 按它在同一 Schema 内复用实例，翻译结果相同的模式匹配也相同。
  */
 export class KeyPattern{
  // 每个状态：consume 为要消耗的码元集合（ε 状态为 undefined），condition 为 ε 状态的条件（0 无、1 开头、2 末尾），targets 为后继。
@@ -47,6 +47,7 @@ export class KeyPattern{
  private readonly accept=this.add(undefined,0,[]);
  private readonly entry:number;
  constructor(readonly source:string){this.entry=this.build(new TranslatedReader(source).alternation(),this.accept);}
+ toString():string{return this.source;}
  /** 键名中任一位置起有子串匹配即为真，同 Regex.IsMatch。 */
  test(text:string):boolean{
   const seen=new Int32Array(this.consume.length).fill(-1);
@@ -92,7 +93,7 @@ export class KeyPattern{
 type Node={set:Bitset}|{anchor:1|2}|{items:Node[]}|{branches:Node[]}|{node:Node;min:number;max:number};
 
 // 读回翻译结果。输入只来自 translatePattern：码元一律是四位十六进制转义，字符类只有码元与范围（空集写成 [^…]），分组都是 (?:，
-// 量词后可带惰性 ?（只影响匹配位置，不影响能否匹配）。
+// 锚点只有 ^ 与 \z，量词后可带惰性 ?（只影响匹配位置，不影响能否匹配）。
 class TranslatedReader{
  private i=0;
  constructor(private readonly source:string){}
@@ -105,7 +106,8 @@ class TranslatedReader{
   const items:Node[]=[];
   for(let c=this.source[this.i];c!==undefined&&c!=='|'&&c!==')';c=this.source[this.i]){
    let node:Node;
-   if(c==='^'||c==='$'){this.i++;node={anchor:c==='^'?1:2};}
+   if(c==='^'){this.i++;node={anchor:1};}
+   else if(c==='\\'&&this.source[this.i+1]==='z'){this.i+=2;node={anchor:2};}
    else if(c==='('){this.i+=3;node=this.alternation();this.i++;}
    else if(c==='['){
     this.i++;const negated=this.source[this.i]==='^';if(negated)this.i++;
@@ -158,8 +160,10 @@ export function translatePattern(pattern:string,foldCase=false):string{
     output+=')';last=size;size=grow(enclosing,size);quantifiable=true;break;
    }
    case '|':output+=c;quantifiable=false;break;
-   case '^':case '$':output+=c;size=grow(size,1);quantifiable=false;break;
-   case '.':atom(single(0x0A).not());break;
+   case '^':output+=c;size=grow(size,1);quantifiable=false;break;
+   // .NET 的 $ 还匹配末尾换行之前，ECMA-262 不带 m 标志时只在末尾成立。
+   case '$':output+='\\z';size=grow(size,1);quantifiable=false;break;
+   case '.':atom(dot());break;
    case '*':case '+':case '?':case '{':
     // 量词只能跟在字符、类、. 或分组之后；惰性 ? 之外不能叠加，未组成量词的 { 不当字面量。
     if(!quantifiable)throw unsupported();
@@ -272,13 +276,22 @@ function single(code:number):Bitset{
  const set=new Bitset();set.add(code);return set;
 }
 
-// \d \w \s 按 ECMA-262 只认 ASCII，大写为补集；ECMA-262 \s 额外的空白都在不稳定码元里。
+// \d \w 按 ECMA-262 只认 ASCII，\s 为 ECMA-262 的空白与行终止符，大写为补集。
 function shorthandSet(letter:string):Bitset{
  const set=new Bitset(),lower=letter.toLowerCase();
  if(lower==='d')set.addRange(0x30,0x39);
  else if(lower==='w'){set.addRange(0x30,0x39);set.addRange(0x41,0x5A);set.addRange(0x61,0x7A);set.add(0x5F);}
- else{set.addRange(0x09,0x0D);set.add(0x20);}
+ else for(const code of spaces)set.add(code);
  return letter===lower?set:set.not();
+}
+
+const spaces=[0x09,0x0A,0x0B,0x0C,0x0D,0x20,0xA0,0x1680,...Array.from({length:11},(_,offset)=>0x2000+offset),0x2028,0x2029,0x202F,0x205F,0x3000,0xFEFF];
+
+// . 不匹配 ECMA-262 的四个行终止符；.NET 的 . 只排除 \n。
+function dot():Bitset{
+ const set=new Bitset();
+ for(const code of [0x0A,0x0D,0x2028,0x2029])set.add(code);
+ return set.not();
 }
 
 // 码元一律写成四位十六进制转义，翻译结果里不残留依赖方言的元字符；空集写成全集的补集。
