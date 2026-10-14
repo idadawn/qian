@@ -283,7 +283,7 @@
 .rp-switch-appearance { border: 0; background: transparent; }
 .rp-switch-appearance:focus-visible { outline: 2px solid oklch(var(--yue-ring)); outline-offset: 2px; }
 .rp-switch-appearance { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; color: oklch(var(--yue-muted-foreground)); cursor: pointer; }
-.rp-switch-appearance svg { display: block; width: 20px; height: 20px; }
+.rp-switch-appearance svg { width: 20px; height: 20px; }
 .rp-switch-appearance__icon--sun { display: block; }
 .rp-switch-appearance__icon--moon, html.dark .rp-switch-appearance__icon--sun { display: none; }
 html.dark .rp-switch-appearance__icon--moon { display: block; }
