@@ -216,7 +216,7 @@ public sealed class DataContractTests
     }
 
     [Fact]
-    public void RecordEvent_RegistersPayloadAsEventType_AndDerivesHookViewFromFrozenEnvelope()
+    public void RecordEvent_RegistersPayloadAsEventType_AndDerivesHookViewFromV0Envelope()
     {
         var raw = Fixture("record-changed-envelope.json");
         AssertValid(DataContractSchemas.RecordChangedEnvelope, raw);
@@ -287,7 +287,7 @@ public sealed class DataContractTests
     [InlineData("subject", "qian.record.other")]
     [InlineData("tenant_id", "not-a-uuid")]
     [InlineData("trace_parent", "untrusted")]
-    public void RecordEnvelope_InvalidFrozenFieldsFail(string property, string value)
+    public void RecordEnvelope_InvalidV0EnvelopeFieldsFail(string property, string value)
     {
         var node = JsonNode.Parse(Fixture("record-changed-envelope.json"))!;
         node[property] = value;
@@ -366,8 +366,8 @@ public sealed class DataContractTests
     private static JsonSchema Schema(string text)
     {
         var options = new BuildOptions { SchemaRegistry = new SchemaRegistry() };
-        JsonSchema.FromText(DataContractSchemas.FrozenS2sClaims, options);
-        JsonSchema.FromText(DataContractSchemas.FrozenEventEnvelope, options);
+        JsonSchema.FromText(DataContractSchemas.S2sClaimsV0, options);
+        JsonSchema.FromText(DataContractSchemas.EventEnvelopeV0, options);
         var payload = JsonSchema.FromText(DataContractSchemas.RecordChangedPayload, options);
         return text == DataContractSchemas.RecordChangedPayload ? payload : JsonSchema.FromText(text, options);
     }

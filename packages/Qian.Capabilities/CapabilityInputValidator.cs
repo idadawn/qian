@@ -1,14 +1,14 @@
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using Json.Schema;
+using Microsoft.Extensions.Logging;
 using Qian.Runtime.Errors;
 
 namespace Qian.Capabilities;
 
 // 执行前按条目 inputSchema（JSON Schema 2020-12）校验输入；每个违反项映射为 contracts/v0 的字段级错误码与输入 JSON Pointer。
-internal sealed class CapabilityInputValidator
+internal sealed partial class CapabilityInputValidator
 {
     private const int CacheLimit = 1024;
     private static readonly Uri BaseUri = new("https://qian.dev/capabilities/input.schema.json");
@@ -23,12 +23,32 @@ internal sealed class CapabilityInputValidator
     private static readonly string[] AnchorKeywords = ["$anchor", "$dynamicAnchor"];
     // 登记期拒绝的规则名，与 CapabilityContractException.Rule 一致。
     internal const string UnsupportedKey = "unsupported-key", UnresolvedReference = "unresolved-reference", SchemaInvalid = "schema-invalid";
-    private readonly ConcurrentDictionary<string, JsonSchema> _schemas = new(StringComparer.Ordinal);
+    // 编译结果按 schemaSha256 缓存，最多 capacity 个。满了只淘汰最久没用的一个，不整表清空：常用能力在登记期预编译的校验器一直留在缓存里，
+    // 被淘汰的在下次执行时按同一份 Schema 重新编译，登记期已经检查过，结论不变。
+    private readonly Dictionary<string, LinkedListNode<(string Key, JsonSchema Schema)>> _schemas = new(StringComparer.Ordinal);
+    private readonly LinkedList<(string Key, JsonSchema Schema)> _recent = new();
+    private readonly Lock _gate = new();
+    private readonly int _capacity;
+    private readonly ILogger? _logger;
+
+    internal CapabilityInputValidator(ILogger? logger = null, int capacity = CacheLimit)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 1);
+        _logger = logger; _capacity = capacity;
+    }
 
     // 登记期预编译：不受支持的键、找不到目标的 $ref / $dynamicRef 与无法编译的 Schema 带出错位置拒绝；通过后编译结果进入缓存，执行时不再编译。
     internal void Prepare(string key, JsonElement source) => _ = Compile(key, source);
 
-    internal bool IsPrepared(string key) => _schemas.ContainsKey(key);
+    internal bool IsPrepared(string key)
+    {
+        lock (_gate) return _schemas.ContainsKey(key);
+    }
+
+    internal int Count
+    {
+        get { lock (_gate) return _schemas.Count; }
+    }
 
     internal void Validate(JsonElement entry, JsonElement input)
     {
@@ -37,8 +57,12 @@ internal sealed class CapabilityInputValidator
         var schema = Compile(entry.GetProperty("schemaSha256").GetString()!, source);
         EvaluationResults results;
         try { results = schema.Evaluate(input, new EvaluationOptions { OutputFormat = OutputFormat.Hierarchical, RequireFormatValidation = true }); }
-        catch (Exception error) when (error is KeyNotFoundException or ArgumentException or InvalidOperationException or JsonException or JsonSchemaException)
-        { throw new InvalidOperationException("能力输入 Schema 无法求值。", error); }
+        // 三类已知问题在登记期就被拒绝；其余求值失败是意外，记下组件与能力再交给 ErrorDetail 中间件，按 500 INTERNAL 返回。
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            if (_logger is not null) Log.EvaluationFailed(_logger, error, Text(entry, "plugin"), Text(entry, "name"));
+            throw new InvalidOperationException("能力输入 Schema 无法求值。", error);
+        }
         if (results.IsValid) return;
         var found = new Findings();
         new Walker(source, input).Visit(results, source, BaseUri, null, [], [], found);
@@ -221,17 +245,41 @@ internal sealed class CapabilityInputValidator
 
     private JsonSchema Compile(string key, JsonElement source)
     {
-        if (_schemas.TryGetValue(key, out var cached)) return cached;
-        if (_schemas.Count >= CacheLimit) _schemas.Clear();
+        lock (_gate)
+        {
+            if (_schemas.TryGetValue(key, out var cached)) return Touch(cached);
+        }
         if (Problem(source, source, [], BaseUri) is { } problem) throw new CapabilityInputSchemaException(problem.Path, problem.Rule);
+        JsonSchema built;
         try
         {
             var options = new BuildOptions { Dialect = Dialect.Draft202012, SchemaRegistry = new SchemaRegistry { Fetch = (_, _) => null } };
-            return _schemas.GetOrAdd(key, JsonSchema.Build(Sanitize(source), options, BaseUri));
+            built = JsonSchema.Build(Sanitize(source), options, BaseUri);
         }
         catch (Exception error) when (error is JsonSchemaException or JsonException or ArgumentException or InvalidOperationException)
         { throw new CapabilityInputSchemaException([], SchemaInvalid, error); }
+        lock (_gate)
+        {
+            // 同一份 Schema 并发编译时保留先进入缓存的一份。
+            if (_schemas.TryGetValue(key, out var raced)) return Touch(raced);
+            if (_schemas.Count >= _capacity)
+            {
+                _schemas.Remove(_recent.Last!.Value.Key); _recent.RemoveLast();
+            }
+            _schemas.Add(key, _recent.AddFirst((key, built)));
+            return built;
+        }
     }
+
+    // 调用方持有 _gate：命中的条目移到最近使用的一端。
+    private JsonSchema Touch(LinkedListNode<(string Key, JsonSchema Schema)> node)
+    {
+        if (node != _recent.First) { _recent.Remove(node); _recent.AddFirst(node); }
+        return node.Value.Schema;
+    }
+
+    private static string Text(JsonElement entry, string name) =>
+        entry.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()! : "?";
 
     // 编译前检查库无法可靠处理的写法，返回第一处问题在输入 Schema 内的位置与规则：
     // - JsonSchema.Net 9.4 按 JSON Pointer 转义后的键回查 patternProperties 与 dependentSchemas，键含 / 或 ~ 时前者每次求值都抛异常、后者被静默跳过；
@@ -402,6 +450,13 @@ internal sealed class CapabilityInputValidator
             else return null;
         }
         return current;
+    }
+
+    private static partial class Log
+    {
+        // 与 CapabilityContractCheck 共用日志类别，EventId 1 是登记期拒绝。
+        [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "组件 {Plugin} 的能力 {Name} 输入 Schema 求值失败；交给 ErrorDetail 中间件按 500 INTERNAL 返回。")]
+        public static partial void EvaluationFailed(ILogger logger, Exception error, string plugin, string name);
     }
 }
 
