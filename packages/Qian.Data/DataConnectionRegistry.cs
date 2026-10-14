@@ -25,7 +25,7 @@ public sealed class QianDataConnectionOptions
 }
 
 /// <summary>
-/// 连通测试的出网约束，网段写作 CIDR（如 10.0.0.0/8、fd00::/8）。这是进程内的一道检查：完整的出口代理与 SSRF 基线按 PRD 7.17 归 S2，
+/// 连通测试的出网约束，网段写作 CIDR（如 10.0.0.0/8、fd00::/8）。这是进程内的一道检查：完整的出口代理与 SSRF 基线按 PRD 7.19 归 S2，
 /// 生产环境仍应以 NetworkPolicy 或出口代理限定可达网段。
 /// </summary>
 public sealed class DataConnectionEgressOptions

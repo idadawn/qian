@@ -134,7 +134,7 @@ services.AddQianSecrets(new SecretResolverOptions
   - 网段写作 CIDR，写法无效时宿主启动即失败。`Egress.Permits(address)` 可供宿主复用同一判定。
 - 详情与列表只返回 secretRef；任何响应、错误与审计记录都不含口令。
 
-连通测试会从平台向档案中的主机出网（Agent 契约标 external）。上面的出网检查只是进程内的一道防线，完整的出口代理与 SSRF 基线按 PRD 7.17 归 S2；生产环境仍要用 NetworkPolicy 或出口代理限定可达网段；测试权限点单列为 qian.data:connection:test。
+连通测试会从平台向档案中的主机出网（Agent 契约标 external）。上面的出网检查只是进程内的一道防线，完整的出口代理与 SSRF 基线按 PRD 7.19 归 S2；生产环境仍要用 NetworkPolicy 或出口代理限定可达网段；测试权限点单列为 qian.data:connection:test。
 
 | 错误码 | HTTP | 含义 |
 |---|---|---|

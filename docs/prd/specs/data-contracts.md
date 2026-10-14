@@ -121,4 +121,4 @@ S2 的五处消费方引用同一份 Schema 和矩阵，不重建自己的运算
 - DATA_CONNECTION_REJECTED：reason 为 authentication、database、schema、permission、parameter 或 server；
 - DATA_CONNECTION_CREDENTIAL_INVALID：密钥内容不能用作口令。
 
-该操作会从平台出网，Agent 契约标 external。完整的出口代理与 SSRF 基线按 PRD 7.17 归 S2。
+该操作会从平台出网，Agent 契约标 external。完整的出口代理与 SSRF 基线按 PRD 7.19 归 S2。
