@@ -2,7 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import * as C from './index';
-import { DEMOS } from './test/catalog-demos';
+import { DEMOS } from '../docs/examples/catalog';
 import { blockingViolations, describeViolations, runAxe } from './test/axe';
 
 const opening: Record<string, string> = { Dialog: '打开对话框', AlertDialog: '打开确认框', Sheet: '打开侧栏', Drawer: '打开抽屉', Popover: '打开浮层', Menu: '打开菜单', DropdownMenu: '打开菜单', Toast: '显示消息', Notification: '显示消息', Accordion: '如何使用' };

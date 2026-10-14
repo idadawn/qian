@@ -1,0 +1,206 @@
+{
+  "Button": {
+    "label": "按钮",
+    "description": "触发保存等操作，支持尺寸、强调程度、加载和禁用状态。"
+  },
+  "IconButton": {
+    "label": "图标按钮",
+    "description": "用于紧凑操作，必须提供可访问名称。"
+  },
+  "ButtonGroup": {
+    "label": "按钮组",
+    "description": "把相关操作放在一起，保持各按钮的独立语义。"
+  },
+  "Input": {
+    "label": "文本输入",
+    "description": "录入单行文本，支持原生表单属性与错误状态。"
+  },
+  "Textarea": {
+    "label": "多行输入",
+    "description": "录入说明等多行文本，保留原生编辑与表单语义。"
+  },
+  "InputNumber": {
+    "label": "数字输入",
+    "description": "通过键盘或增减按钮输入数字，并遵守范围限制。"
+  },
+  "InputPassword": {
+    "label": "密码输入",
+    "description": "在保留输入值的同时切换密码显示状态。"
+  },
+  "PinInput": {
+    "label": "验证码输入",
+    "description": "分格录入验证码，完成一格后自动移动焦点。"
+  },
+  "Checkbox": {
+    "label": "复选框",
+    "description": "独立勾选选项，支持键盘和受控状态。"
+  },
+  "Radio": {
+    "label": "单选项",
+    "description": "与 RadioGroup 组合，在一组选项中选择一项。"
+  },
+  "RadioGroup": {
+    "label": "单选组",
+    "description": "管理一组互斥选择，方向键可切换选项。"
+  },
+  "Switch": {
+    "label": "开关",
+    "description": "控制一个立即生效的二态设置。"
+  },
+  "Toggle": {
+    "label": "切换按钮",
+    "description": "用按下状态表达格式或工具的选择。"
+  },
+  "Segmented": {
+    "label": "分段选择",
+    "description": "在少量互斥模式之间切换。"
+  },
+  "Select": {
+    "label": "下拉选择",
+    "description": "从预设选项中选取值，显示对应标签。"
+  },
+  "Combobox": {
+    "label": "可搜索选择",
+    "description": "在弹层内部搜索并选择选项。"
+  },
+  "Label": {
+    "label": "标签",
+    "description": "用原生关联把说明与输入控件连接起来。"
+  },
+  "Field": {
+    "label": "表单字段",
+    "description": "组合标签、描述、输入和校验反馈。"
+  },
+  "Dialog": {
+    "label": "对话框",
+    "description": "在模态弹层中完成编辑，关闭后恢复焦点。"
+  },
+  "AlertDialog": {
+    "label": "确认对话框",
+    "description": "对重要操作提供明确的确认和取消选择。"
+  },
+  "Sheet": {
+    "label": "侧栏弹层",
+    "description": "从侧边展示筛选或补充信息。"
+  },
+  "Drawer": {
+    "label": "抽屉",
+    "description": "在抽屉中承载更多选项与补充操作。"
+  },
+  "Popover": {
+    "label": "浮层",
+    "description": "在触发器旁展示短小的设置或操作内容。"
+  },
+  "Tooltip": {
+    "label": "提示",
+    "description": "通过悬停或键盘焦点显示补充说明。"
+  },
+  "HoverCard": {
+    "label": "悬浮卡片",
+    "description": "悬停查看对象的补充资料。"
+  },
+  "Menu": {
+    "label": "菜单",
+    "description": "通过键盘或指针选择操作，禁用项保持可辨识。"
+  },
+  "DropdownMenu": {
+    "label": "下拉菜单",
+    "description": "以 Menu 的兼容名称组合下拉操作。"
+  },
+  "ContextMenu": {
+    "label": "右键菜单",
+    "description": "通过右键或菜单快捷键打开上下文操作。"
+  },
+  "Tabs": {
+    "label": "标签页",
+    "description": "在多个内容面板之间切换，并维护焦点语义。"
+  },
+  "Accordion": {
+    "label": "折叠面板",
+    "description": "按需展开问题说明或分组内容。"
+  },
+  "Card": {
+    "label": "卡片",
+    "description": "组合标题、说明、内容和操作区域。"
+  },
+  "Separator": {
+    "label": "分隔线",
+    "description": "表达相邻内容的视觉或语义分隔。"
+  },
+  "ScrollArea": {
+    "label": "滚动区域",
+    "description": "在受限区域中展示长内容，并提供可访问名称。"
+  },
+  "Resizable": {
+    "label": "可调整面板",
+    "description": "通过拖动或键盘调整相邻面板的宽度。"
+  },
+  "Badge": {
+    "label": "徽标",
+    "description": "用简短文本表达状态或分类。"
+  },
+  "Tag": {
+    "label": "标签",
+    "description": "展示分类并通过有名称的移除按钮删除标签。"
+  },
+  "Avatar": {
+    "label": "头像",
+    "description": "显示头像或后备文字，提供对象名称。"
+  },
+  "Skeleton": {
+    "label": "骨架屏",
+    "description": "在内容载入时展示布局占位。"
+  },
+  "Spinner": {
+    "label": "加载指示",
+    "description": "表达正在处理的状态，并提供读屏名称。"
+  },
+  "Progress": {
+    "label": "进度",
+    "description": "显示已知比例的任务进度。"
+  },
+  "Alert": {
+    "label": "提示信息",
+    "description": "用语义色和文本展示需要用户注意的信息。"
+  },
+  "Toast": {
+    "label": "短消息",
+    "description": "通过共享消息队列显示短时反馈并允许关闭。"
+  },
+  "Notification": {
+    "label": "通知",
+    "description": "通过共享消息队列展示较完整的通知内容。"
+  },
+  "Empty": {
+    "label": "空状态",
+    "description": "解释暂无内容的原因并提供后续操作。"
+  },
+  "Result": {
+    "label": "结果页",
+    "description": "展示操作结果及下一步入口。"
+  },
+  "Breadcrumb": {
+    "label": "面包屑",
+    "description": "展示当前位置与上级路径。"
+  },
+  "Pagination": {
+    "label": "分页",
+    "description": "在结果页之间切换，并约束首尾边界。"
+  },
+  "BackTop": {
+    "label": "返回顶部",
+    "description": "在长内容中快速回到顶部。"
+  },
+  "FullScreen": {
+    "label": "全屏",
+    "description": "调用浏览器全屏 API，并向宿主报告失败。"
+  },
+  "Icon": {
+    "label": "图标",
+    "description": "通过统一入口使用图标并区分装饰与语义用途。"
+  },
+  "Descriptions": {
+    "label": "描述列表",
+    "description": "展示多项字段名称与对应内容。"
+  }
+}
