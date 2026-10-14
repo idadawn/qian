@@ -10,6 +10,10 @@
 
 `qian.record.changed.v1` 按 Qian.Events 的模型发布：`[IntegrationEventId]` 移到 `RecordChangedPayload`，`RegisterRecordEvents` 登记载荷，信封只由写入端生成一层；`RecordChangedEvent` 改为 after Hook 视图，由 `RecordChangedEvent.FromEnvelope` 从收到的信封派生。破坏性变更：删除 `DataContractJson.RecordChangedEventTypeInfo`，`EnsureConsistentContext` 移到载荷，改为核对当前租户与事件来源。线上信封、payload Schema 与 fixture 不变，见 [数据契约规格 §6](prd/specs/data-contracts.md#6-record-hook-与变更事件)。
 
+## 2026-10-14 统一 Rspress 组件文档与验收口径（S1-YUE-005、S1-DOCS-002）
+
+产品负责人决定不再使用 Storybook；[ADR-022](adr/ADR-022-rspress-unified-component-docs.md) 记录真实组件试构建结果、Props 默认过滤问题及离线编辑器要求。YUE-005 重新打开承接替换，DOCS-002 复用接线；本次为评估与规格修订，迁移实现尚未完成。
+
 ## 2026-10-14 基准类型、PG 方言组件与数据连接档案（S1-DATA-003）
 
 - 10 个系统基准类型作为种子数据随 `Qian.Data.Abstractions` 发布；新增方言 SPI qian.data.dialect/v1 与 PostgreSQL 方言包 `Qian.Data.Dialect.Pg`，`DialectTypeMapping` 拒绝超出长度、精度、小数位或取值区间的字段定义。

@@ -42,7 +42,7 @@
 
 ## 4 执行步骤
 
-执行前提：产品负责人批准方案 B；执行人同时有 qd、pve01、worker01、worker02 的 root；选择 qian-staging 可以中断 1 小时的窗口；执行期间暂停 Kun 的 CI runner。
+执行前提：产品负责人批准方案 B；执行人同时有 qd、pve01、worker01、worker02 的 root；选择覆盖两台 worker 全部工作负载的维护窗口（计划约 1 小时，实际以恢复验收为准）；执行期间暂停 Kun 的 CI runner。
 
 ### 阶段 0：止血（当天，约 30 分钟，不改集群拓扑）
 
@@ -85,7 +85,7 @@
    # 然后从执行人的工作机取走：scp root@qd:/root/dep007-backup.tgz <qd 之外的位置>/
    ```
 
-阶段 0 完成后观察 1 小时：`systemctl show k3s -p NRestarts` 若明显放缓，说明宿主压力是主因；无论是否放缓，都继续阶段 1，因为拓扑问题不会自己消失。
+阶段 0 止血后观察约 1 小时，记录 NRestarts 的增量与压力时间线。runner 限额只改变 qd 主机负载，不能单凭重启放缓证明 pve01 的触发原因；方案 B 的结构性理由独立于这项因果验证。
 
 ### 阶段 1：改为 qd 单控制面（维护窗口约 1 小时）
 
@@ -97,7 +97,7 @@
    grep -E "data-dir|default-local-storage-path" /etc/rancher/k3s/config.yaml; systemctl cat k3s | grep -E "ExecStart|data-dir"; grep -nE "rm -rf" /usr/local/bin/k3s-uninstall.sh; findmnt /data; ls /data/k3s-storage; du -sh /data/k3s-storage
    ```
 
-   只有在 `data-dir` 与 `default-local-storage-path` 都不在卸载脚本删除的路径之下、`/data/k3s-storage` 存在且与 PV 路径一致时，才允许走第 4 步的卸载重装；否则改为就地改装（停 k3s，只移走 `/var/lib/rancher/k3s/server`，把 unit 改成 agent），并在 S1-DEP-007 记录原因。qd 上已核实脚本只删除 `/etc/rancher/k3s`、`/run/k3s`、`/var/lib/kubelet` 与 k3s 数据目录，worker 上仍要各自核实。
+   逐台解析实际 `data-dir`、卸载脚本的删除函数，以及 PV 的真实路径和挂载来源。K3s 自身数据目录被卸载清理是正常行为，判断重点是业务卷是否落在清理范围内（包括符号链接与 bind mount）。PV 路径、挂载来源与基线不符，数据盘缺失或备份不完整时立即停止，不能自动改走其他路径。两台 worker 的 `/data/k3s-storage` 当前在根分区 LVM/ext4 上，并非独立挂载，须与 `deploy/baseline/README.md` 的已验收基线核对。数据前提通过后优先就地切换到既有 agent unit，保留 node password、业务卷与镜像缓存。
 
    业务数据备份（动任何节点之前）：对 qian-staging 的 PostgreSQL 做一次 `pg_dump`，对 Redis 执行 `SAVE` 后复制 RDB；把两台 worker 的 `/data/k3s-storage` 各 rsync 一份到 qd 之外；备份 `/etc/rancher/k3s/*.yaml`。两台 worker 上有按主机名钉定的数据卷，节点名必须保持 `k3s-worker01` / `k3s-worker02` 不变。
 
@@ -110,10 +110,11 @@
 
    顺序与缓解：一次只改一台，先 worker01 后 worker02，每台约 10 到 15 分钟的 Pod 中断；Higress 网关与 Apollo 生产服务各保留另一副本在线，Traefik 入口在 qd 上不受影响；改 worker02 之前先 `kubectl cordon k3s-worker02` 并删除其上的 harbor-nginx Pod，让 Harbor 入口（VIP .201）搬到 qd，Harbor 的有状态部分本来就在 qd。重装后的镜像从 daocloud 镜像源重新拉取，不经过 Harbor，不会形成死锁。
 
-1. 停两台 worker 的 k3s（它们退出 etcd）：
+1. 共同暂停两台 worker 的旧 server 服务，以便重置 qd 成员列表。`stop` 不等于移除 etcd 成员；这是共同的控制面暂停，后续业务节点改装仍逐台执行。先核实 unit 的 `KillMode` 和实际容器状态，此时不运行 killall / 卸载脚本，不删除 Node 对象。
 
    ```bash
    systemctl stop k3s
+   systemctl mask --runtime k3s
    ```
 
 2. 在 qd 上把 etcd 重置为单成员，再正常启动：
@@ -122,15 +123,11 @@
    systemctl stop k3s && k3s server --cluster-reset && systemctl start k3s && sleep 30 && kubectl get --raw /readyz && kubectl get nodes
    ```
 
-   `--cluster-reset` 只忘记其他成员，不删数据；命令提示重置完成后必须不带该参数重新启动，上面的命令已经这样做。
+   执行 reset 时保留原 server unit / EnvironmentFile 的必要参数，不能假定参数全部在 config.yaml；qd 的原 unit 含 secrets-encryption、node-ip、advertise-address 和 tls-san。明确提示重置完成后，再由原 unit 不带 reset 参数启动。使用带超时的 readyz 和 etcd 成员检查确认 qd 独立健康，失败则执行 §5，并停止后续 worker 改装。
 
-3. 在 qd 上删除两台 worker 的旧 Node 对象（server 身份），并取出加入令牌：
+3. 保存 Node / PV 基线并安全准备 agent 加入材料。不同时删除两台 Node；token 只通过受保护的文件或流传递，不回显到终端或写入任务日志。就地改装保留原 node password 和 Node UID；若选择经核实的卸载重装，仅在轮到对应节点时删除其 Node，以清除旧 node password Secret。
 
-   ```bash
-   kubectl delete node k3s-worker01 k3s-worker02; cat /var/lib/rancher/k3s/server/node-token
-   ```
-
-4. 两台 worker 按第 0 步定的顺序逐台改装为 agent（先 worker01，确认其 Pod 与数据卷恢复后再做 worker02）。先卸载 server 安装（第 0 步已核实它只删 k3s 自身目录，不碰 `/data`），再按部署仓库的 agent 模式安装，配置文件照抄 [qian-prod-agent.yaml](https://github.com/idadawn/iclaw-deploy/blob/main/0-cluster/qian-prod-agent.yaml) 的形式，把 `node-name` 改为原节点名，去掉 prod 的标签与污点，保留原有标签：
+4. 两台 worker 按第 0 步定的顺序逐台改装为 agent（先 worker01，确认其 Pod 与数据卷恢复后再做 worker02）。 就地改装使用既有 agent unit / EnvironmentFile，保留原节点名、node-ip、node password 和业务卷；备份并移开旧 server 专用配置，禁用旧 server unit，启用 agent unit。无需卸载或删除 server 数据目录；已有 unit 带 node-ip 时不要重复写进 YAML，StringSlice 可能合并成两个 IPv4。切换后只移除旧 control-plane / etcd 角色标签，保留其他标签、污点与调度状态。下面的安装示例仅适用于完整核实后的卸载重装路径。先卸载 server 安装（第 0 步已核实它只删 k3s 自身目录，不碰 `/data`），再按部署仓库的 agent 模式安装，配置文件照抄 [qian-prod-agent.yaml](https://github.com/idadawn/iclaw-deploy/blob/main/0-cluster/qian-prod-agent.yaml) 的形式，把 `node-name` 改为原节点名，去掉 prod 的标签与污点，保留原有标签：
 
    ```bash
    /usr/local/bin/k3s-uninstall.sh; mkdir -p /etc/rancher/k3s; install -m 0600 /dev/stdin /etc/rancher/k3s/agent-token <<< '<node-token>'; printf 'server: https://192.168.1.161:6443\ntoken-file: /etc/rancher/k3s/agent-token\nnode-name: k3s-worker01\n' > /etc/rancher/k3s/config.yaml; curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.35.5+k3s1 sh -s - agent
@@ -148,7 +145,7 @@
 
 ### 阶段 2：加固（1 天内）
 
-- qd 的 kubelet 加系统预留，给控制面留出余量：在 `/etc/rancher/k3s/config.yaml` 增加 `kubelet-arg: ["system-reserved=cpu=2,memory=8Gi", "kube-reserved=cpu=1,memory=4Gi"]`，重启 k3s（会有一次约 1 分钟的 apiserver 中断，选低峰）。
+- qd 的 kubelet 加系统预留，给控制面留出余量：先核对当前 Pod 请求与可分配资源，再合并 kubelet-arg。2026-10-14 核验 qd CPU 请求为 7945m/8000m，直接预留 3 核会影响既有 Pod 准入，因此此次采用 `system-reserved=memory=8Gi` 与 `kube-reserved=memory=4Gi`；CPU 预留须在释放请求或增加容量后另行评估，不下调既有业务请求。重启 k3s（会有一次约 1 分钟的 apiserver 中断，选低峰）。
 - 阶段 0 的 `actions-runners.slice` 保留为长期配置：两个 runner 合计不超过 4 核、48 GiB；长期看把 runner 迁出控制面主机。
 - pve01 的内存分配总和保持不超过宿主内存减 4 GiB，关闭所有 VM 的 balloon；本次测得的数值写进部署仓库 `docs/ops/qian-prod-nodepool.md`。
 - etcd 快照确认落到 qd 之外（现有 `k3s-db-backup.timer` 每天 02:00 UTC，核对目标位置与保留策略）。
@@ -167,7 +164,7 @@ for i in $(seq 1 288); do date -u +%FT%TZ; systemctl show k3s -p NRestarts; kube
 
 ## 5 回退
 
-- 阶段 1 第 2 步失败（qd 起不来）：`k3s server --cluster-reset --cluster-reset-restore-path=<阶段 0 的快照路径>`，再正常启动。
+- 阶段 1 第 2 步失败：先停止 qd 的 k3s 并确认没有 server 进程运行，核对备份 SHA-256、原 token、配置与原 unit 参数，再恢复；`k3s server --cluster-reset --cluster-reset-restore-path=<阶段 0 的快照路径>`，再正常启动。
 - 阶段 1 第 4 步失败（worker 加不进来）：控制面已在 qd 上独立运行，不影响 prod；worker 可反复重装 agent，数据卷在 `/data/k3s-storage` 不受影响。
 - 任何时候不要把 worker 重新装回 server：那等于回到故障前的拓扑。
 
@@ -181,3 +178,11 @@ for i in $(seq 1 288); do date -u +%FT%TZ; systemctl show k3s -p NRestarts; kube
 ## 7 留痕
 
 执行人把阶段 0 的测量值、阶段 1 的快照名与各步时间、阶段 3 的日志摘要写进 S1-DEP-007 的进度日志；部署仓库的变更走 PR 并在 S1-DEP-007 回链。
+
+## 8 执行结果（2026-10-14）
+
+方案 B 已执行。qd 于2026-10-13T17:19:39Z完成单成员重置，17:19:49Z readyz成功；两台worker以原UID和节点名成为agent，server unit永久masked，所有业务卷保留。阶段0至2证据、发生的配置重复修复、旧Pod回收及实际停机时点均在 [S1-DEP-007](../../pm/tasks/S1-DEP-007.md)。原约1小时是估计，实际受I/O、重启修复、驱逐回收和重新调度影响超过该估计。
+
+宿主内存不足未被确认：MemAvailable约6023MiB、memory PSI近零。进一步测量发现机械RAID上VM105持续读取；临时读限额1200→200帮助恢复后，已回到原值，未永久改变该服务预算。运行中采样不冒充完整硬件性能测试。
+
+日常备份已从过时SQLite逻辑改为etcd直连、原token/配置加密异机传输，端到端解密与离线恢复结构验证通过；详细脚本与权限边界唯一源为部署仓的 `0-cluster/ops/README.md`。五分钟采样与每小时验收复核已启用，完整24小时截止2026-10-14T18:23:34Z（北京时间10-15 02:23:34），最终验收仍未完成。

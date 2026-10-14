@@ -35,3 +35,19 @@ test('观察器与日志回调失败均不阻断其余观察器',async()=>{
 test('条目身份使用 scope/id 二元组，分隔符不能造成伪冲突',async()=>{
  const runtime=new PluginLoader();await runtime.mount([entry('c',()=>{},[],[],'tenant:a/b'),entry('b/c',()=>{},[],[],'tenant:a')]);assert.equal(runtime.dumpConfig().length,2);await runtime.dispose();
 });
+test('provide 句柄原位替换：值、顺序与 scope 不变，撤销或卸载后拒绝替换且无残留',async()=>{
+ const runtime=new PluginLoader();let plain,first,tenant;
+ await runtime.mount([entry('provider',ctx=>{plain=ctx.provide('x','a');first=ctx.provide('Tools','first','one');ctx.provide('Tools','second','two');tenant=ctx.scoped('tenant:a').provide('y','old');},['x']),entry('observer',()=>{})]);
+ const observer=runtime.getContext('observer');let misses=0,done=false;
+ // 读取方在每次读取之间让出事件循环，与反复替换交错；替换同步完成，任何一次读取都不能缺失或乱序。
+ const reader=async()=>{while(!done){if(observer.tryInject('x')===undefined||observer.tryInject('Tools','first')===undefined)misses++;if(observer.list('Tools').map(r=>r.name).join()!=='first,second')misses++;await null;}};
+ const readers=[reader(),reader()];
+ for(let i=1;i<=200;i++){plain.replace(i%2?'b':'a');first.replace(i%2?'uno':'one');await null;}
+ done=true;await Promise.all(readers);assert.equal(misses,0);
+ plain.replace('b');first.replace('uno');tenant.replace('new');
+ assert.equal(observer.x,'b');assert.equal(observer.inject('Tools','first'),'uno');assert.deepEqual(observer.list('Tools').map(r=>[r.name,r.value]),[['first','uno'],['second','two']]);
+ assert.equal(observer.scoped('tenant:a').inject('y'),'new');assert.equal(observer.tryInject('y'),undefined);assert.equal(observer.scoped('tenant:b').tryInject('y'),undefined);
+ assert.throws(()=>plain.replace(null),TypeError);
+ first();first();assert.throws(()=>first.replace('late'),/注册已撤销/);assert.equal(observer.tryInject('Tools','first'),undefined);
+ await runtime.unmount('provider');assert.throws(()=>plain.replace('late'),/上下文已卸载/);assert.equal(observer.tryInject('x'),undefined);assert.deepEqual(observer.list('Tools'),[]);await runtime.dispose();
+});

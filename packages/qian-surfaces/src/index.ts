@@ -432,4 +432,4 @@ export function validateMarketplace(file: string, content: string, traceId = tra
   return result(data);
 }
 export {SurfaceRegistrationSession, HotReloadSurfacePlugin, readSurfaceRuntimeDiagnostics} from './runtime.js';
-export type {SurfaceContext, SurfaceReloadStatus, SurfaceRuntimeEntry, SurfaceRuntimeReport, SurfaceDiagnosticContext} from './runtime.js';
+export type {SurfaceContext, SurfaceRegistrationHandle, SurfaceReloadStatus, SurfaceRuntimeEntry, SurfaceRuntimeReport, SurfaceDiagnosticContext} from './runtime.js';

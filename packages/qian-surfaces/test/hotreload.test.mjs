@@ -25,7 +25,8 @@ test('T19 共用真实文件监视：表面更新，代码对象和效果不变'
   assert.equal(ctx.list('Skills').length,1);assert.equal(ctx.list('Tools').length,1);assert.equal(ctx.scoped(spec.otherScope).list('Tools').length,0);
   const monitor=ctx.inject('SurfaceReloadDiagnostics',spec.plugin);
   assert.deepEqual(readSurfaceRuntimeDiagnostics(ctx.scoped(spec.otherScope)).entries,[]);
-  const description=()=>ctx.list('Tools')[0]?.value.data.description;
+  // 表面替换原子完成：轮询期间 Tools 缺失或重复都是缺陷，直接失败而不是继续等待。
+  const description=()=>{const tools=ctx.list('Tools');assert.equal(tools.length,1,'热替换期间 Tools 不能缺失或重复');return tools[0].value.data.description;};
   const wait=async predicate=>{const deadline=Date.now()+spec.deadlineMs;while(!predicate()){assert.ok(Date.now()<deadline,'热重载超时');await new Promise(resolve=>setTimeout(resolve,20));}};
   skill(spec.newDescription);await wait(()=>description()===spec.newDescription);
   assert.equal(ctx.inject('Code'),original);assert.equal(applies,spec.expectedCodeApplies);assert.equal(disposals,spec.expectedCodeDisposalsBeforeUnmount);
