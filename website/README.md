@@ -167,3 +167,13 @@ docs-site.md §5.1 是契约，这里只说实现：
 - 设计文档、规格与变更日志只改仓库 `docs/`，不要改 `website/docs/design/`、`cli/`、`components/`。
 - Kun 的文档只改 kun 仓库（提 PR），站内随 `KunVersion` 升级更新；`website/docs/sdk/kun/` 只有 `with-qian.mdx` 是手写的，`sdk/api/` 全部生成。
 - 没有的能力不写成已有：S1 建设期的命令与组件按目标形态写，并在页面里说明尚未可用。
+
+## yue 组件文档与交互（S1-YUE-005）
+
+唯一使用入口是本站 `/components/yue/`，不是另一个应用。`packages/yue/core/docs/` 保存用途说明、普通 React 示例与 126 条状态清单；`scripts/yue-docs.ts` 收集页面并从 TypeScript checker 提取全部 141 个公开组件/组合部件。DOM 属性按完整声明去重到站内通用属性页，不能因缺注释或继承来源而遗漏。默认值只取源码与 JSDoc。
+
+`pnpm --filter website build` 先执行 `demos:build`：Rsbuild 将同一份真实组件编译为页面内 iframe，输出到 `docs/public/yue-demo/`；Babel、Monaco、字体与 worker 复制到 `docs/public/yue-vendor/`，仅打开编辑器时加载，随相同站点前缀部署。两目录均为忽略的生成物；不引入第二个服务、文档入口或产品身份。浏览器编辑仅允许已预打包的 React/core/tokens 模块，异常在演示区域显示，重置恢复原始例子。
+
+SSR/SSG-MD 保留用途、源码和完整 API，纯交互 UI 在 Markdown 中只输出说明。SSG-MD 表格的对齐空格在生成后收敛，单元格与 fenced code 内容不变，再生成知识库哈希；全站保持 100 MB 预算。
+
+`pnpm --filter website e2e` 在真实静态产物上逐条执行 126 个场景，包含交互结果、明暗、iframe、打开态 axe、无页面异常，并检查断外网编辑与 HTML/Markdown Props 一致。默认启动本地静态服务；`DOCS_BASE=/pr-preview/pr-N/` 验证前缀，`DOCS_URL=http://目标站点/` 验证已发布站点（`--grep '正式页面交互 smoke'` 可聚焦代表性交互）。CI 在发布前跑完整套件，新增 core 源码也会触发 docs-site 工作流。

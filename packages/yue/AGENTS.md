@@ -23,4 +23,4 @@ pnpm yue:build && pnpm yue:publint && pnpm yue:a11y && pnpm yue:lighthouse
 
 - 不要 patch `@base-ui/react`；缺的 ARIA 在封装层补（Tooltip 的做法）。验证门已通过并锁定 Base UI，不要引入 Radix 或 antd。
 - 不要把测试文件编进 dist（各包 `tsconfig.build.json` 已排除）。
-- 不要改 `website/` 来放组件文档；组件页由文档站任务从组件文件夹的 README 生成（ADR-020 D20.9、ADR-013 D13.18）。
+- 文档源与普通 React 示例放在组件的 `docs/`，允许维护 `website/` 的收集、渲染与测试接线；不要手改 `website/docs/components/` 生成目录。统一 Rspress，测试与演示共用示例；新增场景同时登记 `docs/scenarios.json` 并加入站点 E2E（ADR-022）。

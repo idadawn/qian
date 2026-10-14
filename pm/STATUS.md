@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`████░░░░░░` 47%（67/144）
-- 状态：todo 66 · doing 1 · review 1 · done 67 · blocked 9
+- 状态：todo 65 · doing 1 · review 2 · done 67 · blocked 9
 - 最近更新：2026-10-14
 
 ## 按阶段
@@ -63,14 +63,13 @@
 | # | 任务 | 优先级 | 波次 | 估算 | 领域 |
 |---|---|---|---|---|---|
 | 1 | [S1-DEP-002](tasks/S1-DEP-002.md) L1 组件上 K3s：RabbitMQ、Apollo + MySQL、OIDC | P0 | 1 | 5d | DEP |
-| 2 | [S1-YUE-005](tasks/S1-YUE-005.md) @yue/core 基础组件与统一 Rspress 文档、验收 | P0 | 2 | 8d | YUE |
-| 3 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
+| 2 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 6 | 28d |
+| 第 1 层 | 5 | 20d |
 | 第 2 层 | 13 | 57d |
 | 第 3 层 | 13 | 46d |
 | 第 4 层 | 9 | 35d |
@@ -88,3 +87,4 @@
 |---|---|---|---|
 | [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-14 |
 | [S1-RT-006](tasks/S1-RT-006.md) qian.capabilities 插件：能力目录、契约仓库与聚合 | review | cody | 2026-10-13 |
+| [S1-YUE-005](tasks/S1-YUE-005.md) @yue/core 基础组件与统一 Rspress 文档、验收 | review | cody | 2026-10-14 |

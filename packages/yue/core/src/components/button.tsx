@@ -6,8 +6,11 @@ import type { YueProps } from '../lib/test-id';
 import { Icon } from './icon';
 
 export type ButtonProps = YueProps<ComponentProps<typeof BaseButton>> & {
+  /** 按钮强调程度。 @default 'primary' */
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+  /** 按钮尺寸。 @default 'md' */
   size?: 'sm' | 'md' | 'lg' | 'icon';
+  /** 加载中时禁用操作并显示忙碌状态。 @default false */
   loading?: boolean;
 };
 const variants = {

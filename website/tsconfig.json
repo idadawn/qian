@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
-    "lib": ["DOM", "ES2023"],
+    "lib": [
+      "DOM",
+      "ES2023"
+    ],
     "jsx": "react-jsx",
     "target": "ES2023",
     "noEmit": true,
     "skipLibCheck": true,
     "useDefineForClassFields": true,
-
     "module": "ESNext",
     "moduleDetection": "force",
     "moduleResolution": "bundler",
@@ -15,14 +17,22 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
-
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["theme", "scripts", "rspress.config.ts"],
+  "include": [
+    "theme",
+    "scripts",
+    "rspress.config.ts",
+    "demo",
+    "e2e",
+    "playwright.config.ts"
+  ],
   "mdx": {
     "checkMdx": true
   }
