@@ -49,7 +49,9 @@ test('站点主题支持键盘切换，iframe 保留交互状态', async ({ page
   await page.goto('components/yue/core/button.html');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: '保存更改', exact: true }).click();
+  await expect(page.getByRole('button', { name: '切换主题', exact: true }).locator('svg:visible')).toHaveCount(1);
   await page.getByRole('button', { name: '切换主题', exact: true }).press('Enter');
+  await expect(page.getByRole('button', { name: '切换主题', exact: true }).locator('svg:visible')).toHaveCount(1);
   await expect(page.locator('html')).toHaveClass(/dark/);
   await expect(frame.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(frame.getByRole('status')).toHaveText('已保存 1 次');
