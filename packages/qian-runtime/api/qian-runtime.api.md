@@ -21,9 +21,9 @@ export interface Context {
     // (undocumented)
     on<P, R, M extends DispatchMode>(event: QianEvent<P, R, M>, mode: NoInfer<M>, handler: HandlerFor<P, R>, priority?: number): Disposer;
     // (undocumented)
-    provide<T>(key: ServiceKey<T>, value: T): Disposer;
+    provide<T>(key: ServiceKey<T>, value: T): RegistrationHandle<T>;
     // (undocumented)
-    provide<T>(key: ServiceKey<T>, name: string, value: T): Disposer;
+    provide<T>(key: ServiceKey<T>, name: string, value: T): RegistrationHandle<T>;
     // (undocumented)
     restrict(scope: ScopeKey, keep: (registration: Registration) => boolean): Disposer;
     // (undocumented)
@@ -163,6 +163,11 @@ export interface Registration<T = unknown> {
     // (undocumented)
     readonly value: T;
 }
+
+// @public
+export type RegistrationHandle<T = unknown> = Disposer & {
+    readonly replace: (value: T) => void;
+};
 
 // @public
 export class RuntimeError extends Error {

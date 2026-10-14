@@ -624,6 +624,7 @@ Agent 宿主事件（大驼峰）由 Agent 运行时定义并透传：校验器�
 
 - **上下文 `ctx`** 是插件与世界交互的唯一入口：服务注册表、事件总线、效果栈、当前 scope。`ctx.<Key>` 在 .NET 是 Definition 包提供的扩展方法（`ctx.Files()`），在 TS 是代理属性（`ctx.files`），都等价于 `ctx.Inject<T>(key)`。
 - **注册即副作用，副作用皆可逆**：`Provide`、`On` 与任何对服务键做的注册都返回释放函数并自动压入当前插件的效果栈；`ctx.Effect(disposer)` 把第三方资源也纳入同一栈。卸载时按注册**逆序**释放。
+- **注册可原位替换**：`Provide` 返回的注册句柄还能替换实例（.NET `Replace`、TS `replace`），撤销旧实例与登记新实例在同一临界区完成：解析方只看到旧实例或新实例，不会看到缺失；scope、注册顺序、独占性与效果栈位置不变。注册身份随之改变，以 `inject` 依赖该键的条目与撤销后再登记一样回到 `Pending` 并重新 `Apply`。句柄已撤销或上下文已卸载时替换失败。
 - **依赖由 `inject` 表达**：装载器按 `inject → provides` 有向图决定顺序；插件在其 `inject` 全部就绪前 `Pending`；键被撤销时它被卸载并回到 `Pending`，键再就绪时重新 `Apply`。
 - **注册表 seam 的注册也是副作用**（R38）：Definition 的注册表子服务 `Register(name, impl)` 返回释放函数并压入效果栈；源生成器把它派生为 `provides: ["<Key>.<Registry>:<name>"]`，装载器把该键当作就绪键（可被其它条目 `inject`）；同名第二次注册即挂载失败。
 - **运行时无业务语义**：只认服务键字符串、事件定义与 scope key。租户、鉴权、审计等强制执行点是 base 组合包里的 `waterfall` 监听器（ADR-020 §6 对 ADR-003 的修订）。
@@ -656,7 +657,8 @@ public interface IPluginContext
     IServiceProvider Services { get; }                                                  // 宿主 DI（keyed services），只读
     ILogger Logger { get; }
 
-    IDisposable Provide<TService>(ServiceKey key, TService instance) where TService : class;
+    IRegistrationHandle<TService> Provide<TService>(ServiceKey key, TService instance) where TService : class;
+                                                                                        // Dispose 撤销；Replace 原位替换实例（§5.1）
     TService Inject<TService>(ServiceKey key) where TService : class;                   // 未就绪抛 ServiceNotReadyException（Apply 内不会发生）
     TService? TryInject<TService>(ServiceKey key) where TService : class;               // optionalInject 用
     ValueTask<TService> WhenReadyAsync<TService>(ServiceKey key, CancellationToken ct) where TService : class;
@@ -673,6 +675,8 @@ public interface IPluginContext
 }
 public sealed record PluginEntry(string Id, string Plugin, string Version, ScopeKey Scope, int Layer, JsonElement Config);
 public sealed record Registration(ServiceKey Key, string Name, ScopeKey Scope, string OwnerEntryId, object Value);
+public interface IRegistrationHandle<TService> : IDisposable where TService : class
+{ void Replace(TService instance); }                                                    // 已撤销或上下文已卸载时抛 ObjectDisposedException
 ```
 
 与 Kun 的衔接：`Provide` 底层是 .NET DI keyed services 的可撤销封装；进程内事件直接分发，需跨进程的集成事件由 `qian.events` 插件桥接到 `Kun.Mediator` + Outbox（运行时本身不依赖 RabbitMQ）。实现类用 `[QianPlugin("<component-id>")]` 标注，源生成器据此派生 `runtime.entry`、`inject[]`、`provides[]`（静态分析 `Provide` 调用）。
@@ -688,6 +692,7 @@ export type DispatchMode = "emit" | "waterfall" | "parallel" | "serial" | "bail"
 export interface QianEvent<P, R = void> { readonly name: string; readonly mode: DispatchMode; readonly __p?: P; readonly __r?: R }
 export function defineEvent<P, R = void>(name: string, mode: DispatchMode): QianEvent<P, R>;
 export type Disposer = () => void | Promise<void>;
+export type RegistrationHandle<T = unknown> = Disposer & { readonly replace: (value: T) => void };  // 调用即撤销；replace 原位替换值（§5.1）
 
 export interface QianPlugin<C = unknown> {
   readonly name: string;                                   // 组件 id
@@ -698,7 +703,7 @@ export interface QianPlugin<C = unknown> {
 export interface Context {
   readonly entry: { id: string; plugin: string; version: string; scope: ScopeKey; layer: number };
   readonly scope: ScopeKey;
-  provide<T>(key: ServiceKey<T>, value: T): Disposer;
+  provide<T>(key: ServiceKey<T>, value: T): RegistrationHandle<T>;
   inject<T>(key: ServiceKey<T>): T;                        // 未就绪抛 ServiceNotReadyError
   tryInject<T>(key: ServiceKey<T>): T | undefined;
   whenReady<T>(key: ServiceKey<T>, signal?: AbortSignal): Promise<T>;
@@ -748,8 +753,8 @@ TS 侧服务键小驼峰（`files`），.NET 侧大驼峰（`Files`）；两侧 
   → Apply     ApplyAsync(ctx, config)；期间的 Provide / On / Effect 压入该条目的效果栈
   → Ready     provides[] 标记就绪 → 解锁依赖它们的 Pending 条目
   ← Unmount   逆序弹出效果栈（Provide 撤销 → 依赖者先被 Unmount 回到 Pending）→ 条目移出
-  ↻ Reload    声明式表面：重新解析 → 与现有注册 diff → 只撤销 / 新增变化的注册；代码条目：config 变更 = Unmount + Apply，
-              代码变更 = 进程重启（S1；热装卸 S2 可选 → §13 第 5 条）
+  ↻ Reload    声明式表面：重新解析 → 与现有注册 diff → 先新增、再经注册句柄原位替换、最后撤销变化的注册（新旧都有的表面
+              对读取方不出现缺失）；代码条目：config 变更 = Unmount + Apply，代码变更 = 进程重启（S1；热装卸 S2 可选 → §13 第 5 条）
 ```
 
 - `Apply` 只描述「我提供什么、监听什么」，不做一次性业务动作；逐租户初始化放在 `tenant/provisioned` 监听器。
@@ -1293,12 +1298,13 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 | T16 | patch 禁用与再启用、替换 Provider | profile `disabled: true` + overlay `disabled: false` ⇒ 条目存在；后层不同 `plugin` ⇒ 新 Provider 提供同一键，Consumer 不变 |
 | T17 | config 校验先于 Apply | 不合法 config 的条目 `Failed`，`Apply` 未被调用 |
 | T18 | 同 scope 重复 Provide | 第二个条目挂载失败并报出第一个条目 id |
-| T19 | 声明式表面热重载 | 修改 `SKILL.md` 的 `description`；`ctx.Tools` 更新，代码条目效果栈未变 |
+| T19 | 声明式表面热重载 | 修改 `SKILL.md` 的 `description`；`ctx.Tools` 更新，替换期间读取方只看到旧内容或新内容，代码条目效果栈未变 |
 | T20 | 整树 teardown | 按挂载顺序逆序 Unmount；每个条目满足 T03 |
 | T21 | 跨 scope 分发可见性 | 全局监听器收到 `tenant:t-001` 的分发；`tenant:t-002` 的监听器收不到 |
 | T22 | optionalInject | 键缺失时 `Apply` 执行且 `TryInject` 为空；键稍后出现不触发重新 `Apply` |
 | T23 | 独立模式等价 | 同一组 Provider 在 `minimal` 与 `platform` 下对同一场景产出相同结果（ADR-019 D19.8 第二条的运行时侧）；S1 由 QA-002 用 TCK 组合包 `qian.bundle.tck-platform` 与 CRM 样例 Provider 组验证，D19.8 点名的 Files / Authz / Identity.Client 对照见 S1-QA-003 / S1-QA-005（S1-DEC-019 R68） |
 | T24 | 注册表 seam 同名独占与遮蔽 | 两个全局条目向 `Identity.Connectors` 注册同名 `oidc`，第二个挂载失败并报出第一个条目 id；`tenant:t-001` 内注册同名 `oidc` 后，t-001 的 `Connectors.Get("oidc")` 得 scope 内项、t-002 得全局项（R38） |
+| T25 | 注册原位替换 | 经 `Provide` 句柄替换实例后解析得新值，具名注册的 `List` 顺序与 scope 内注册的可见范围不变；以 `inject` 依赖该键的条目释放后重新 `Apply`；条目卸载后句柄拒绝替换，注册无残留 |
 
 ### 10.3 CI 门禁
 
@@ -1404,3 +1410,4 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 |---|---|---|
 | 2026-10-06 | 草案 v2 | 首版：按 ADR-020 重写组件模型；取代 `plugin-manifest.md` v1 为权威规格 |
 | 2026-10-07 | 草案 v2（拍板传播） | ADR-020 §7 八条全部拍板：§13 改为已拍板清单；§3 清单 JSON 定稿；§3.4 `license` 改 Apache-2.0；§5.3 TS 运行时 S1 vendor Cordis、公共 API `@qian/runtime`；§8.3 / §8.4 官方市场仓库 `qian-plugins`（S1 私有）；§9.1 Node ≥ 22 前置、`dotnet qian` 薄包装 P2、遥测默认不采集 |
+| 2026-10-14 | 草案 v2（S1-RT-018） | §5.1 / §5.2 / §5.3 `Provide` 返回可原位替换实例的注册句柄（.NET `IRegistrationHandle<T>.Replace`、TS `RegistrationHandle<T>.replace`）；§5.6 声明式表面重载改为先新增、再原位替换、最后撤销；§10.2 T19 补替换期间不缺失，新增 T25。产品负责人在任务中要求修复热重载读取方瞬时看到注册缺失的竞态 |

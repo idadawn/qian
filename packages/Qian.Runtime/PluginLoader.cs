@@ -187,6 +187,17 @@ public sealed partial class PluginLoader : IAsyncDisposable
         lock (Sync) if (_services.Remove(registration)) Notify();
     }
 
+    // 调用方持有 Sync：在原位换成新注册，读取方不会看到缺失；新身份让依赖者按撤销后再登记的语义失效。
+    internal ServiceRegistration Replace(ServiceRegistration current, Type type, object value)
+    {
+        var index = _services.FindIndex(r => ReferenceEquals(r, current));
+        ObjectDisposedException.ThrowIf(index < 0, current);
+        var replacement = current with { Descriptor = ServiceDescriptor.KeyedSingleton(type, current.Key, value) };
+        _services[index] = replacement;
+        Notify();
+        return replacement;
+    }
+
     internal ServiceRegistration? Find(ServiceKey key, ScopeKey scope, PluginContext? requester = null)
         => VisibleServices(scope, requester).FirstOrDefault(r => r.Key == key);
 

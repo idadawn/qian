@@ -3,6 +3,8 @@ export type ServiceKey<T=unknown> = string & {readonly __type?: T};
 export type ScopeKey = 'global' | `${'tenant'|'app'|'agent-session'}:${string}`;
 export type DispatchMode = 'emit'|'waterfall'|'parallel'|'serial'|'bail';
 export type Disposer = () => void | Promise<void>;
+/** provide 返回的注册句柄：调用即撤销且幂等；replace 在原注册位原子替换值，解析方只看到旧值或新值，scope、顺序与独占性不变；以 inject 依赖该键的条目与撤销后再登记一样重新 apply；已撤销或上下文已卸载时抛错。 */
+export type RegistrationHandle<T=unknown> = Disposer & {readonly replace:(value:T)=>void};
 export type PluginState = 'Pending'|'Applying'|'Ready'|'Failed';
 export interface QianEvent<P,R=void,M extends DispatchMode=DispatchMode> {readonly name:string;readonly mode:M;readonly terminal?: (payload:P)=>R|Promise<R>;readonly __p?:P;readonly __r?:R}
 export type HandlerFor<P,R> = (payload:P,next:()=>Promise<R>)=>unknown|Promise<unknown>;
@@ -12,8 +14,8 @@ export interface PluginDefinition<C=unknown> {readonly entry:PluginEntry<C>;read
 export interface Registration<T=unknown> {readonly key:ServiceKey<T>;readonly name:string;readonly scope:ScopeKey;readonly ownerEntryId:string;readonly value:T}
 export interface Context {
  readonly entry:PluginEntry;readonly scope:ScopeKey;
- provide<T>(key:ServiceKey<T>,value:T):Disposer;
- provide<T>(key:ServiceKey<T>,name:string,value:T):Disposer;
+ provide<T>(key:ServiceKey<T>,value:T):RegistrationHandle<T>;
+ provide<T>(key:ServiceKey<T>,name:string,value:T):RegistrationHandle<T>;
  inject<T>(key:ServiceKey<T>,name?:string):T;
  tryInject<T>(key:ServiceKey<T>,name?:string):T|undefined;
  whenReady<T>(key:ServiceKey<T>,signal?:AbortSignal):Promise<T>;

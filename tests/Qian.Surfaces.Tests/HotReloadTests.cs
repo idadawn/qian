@@ -72,13 +72,9 @@ public sealed class HotReloadTests
         }
         finally { directory.Delete(true); }
     }
+    // 表面替换经注册句柄原子完成，轮询期间条目缺失或重复都是缺陷，直接失败而不是继续等待。
     private static string? Description(IPluginContext context)
-    {
-        // 表面替换先撤销后登记；轮询允许过渡期暂无条目，仍须在原五秒期限内得到目标内容。
-        // SingleOrDefault 继续拒绝重复注册；有条目时仍严格检查类型与描述。
-        var registration = context.List(SurfaceKeys.Tools).SingleOrDefault();
-        return registration is null ? null : Assert.IsType<SurfaceDocument>(registration.Value).Data.GetProperty("description").GetString();
-    }
+        => Assert.IsType<SurfaceDocument>(Assert.Single(context.List(SurfaceKeys.Tools)).Value).Data.GetProperty("description").GetString();
     private static async Task Wait(Func<bool> predicate, int milliseconds)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(Ct); deadline.CancelAfter(milliseconds);

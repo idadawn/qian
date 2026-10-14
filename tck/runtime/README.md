@@ -16,7 +16,7 @@ scope 写作 `global` 或 `tenant:id`、`app:id`、`agent-session:id`。服务�
 
 | Apply 动作 `op` | 字段与语义 |
 |---|---|
-| `provide` | `key`、`value`（字符串），可选 `name`、`scope`；无 name 时提供键本身 |
+| `provide` | `key`、`value`（字符串），可选 `name`、`scope`、`handle`；无 name 时提供键本身；`handle` 给返回的注册句柄命名，供 `replace` 步骤使用（条目重新 Apply 时指向最新句柄） |
 | `effect` | `name`，可选 `fail: true`；撤销时记录 `dispose:name`，再按需抛异常 |
 | `fail` | 抛出 Apply 异常 |
 | `optional` | `key`；断言 TryInject 为空，不声明必需依赖 |
@@ -38,13 +38,14 @@ scope 写作 `global` 或 `tenant:id`、`app:id`、`agent-session:id`。服务�
 | `missing` | `entry`、`key`，可选 `scope`、`view`；断言可选注入为空 |
 | `list` | `entry`、`key`、`value[]`，可选 `scope`、`view`；比较可见 Name 的有序列表 |
 | `notFoundEquivalent` | `entry`、`key`、被过滤的 `name`，可选 `scope`、`view`；比较过滤项与不存在项的完整错误体（固定同一 trace-id） |
+| `replace` | `handle`、`value`；经该注册句柄原位替换实例并等待级联完成；可选 `error: disposed` 断言替换被拒绝（句柄已撤销或所属上下文已卸载） |
 | `dispatch` | `entry`、`event`，可选 `scope`、`view`；结果 `value`，或 `error: listener`，或 `error: parallel` 与 `partial[]` |
 | `trace` | `value[]`；比较整个操作轨迹 |
 | `traceContains` | `value[]`；断言并发完成轨迹，不约束线程调度顺序 |
 
 `scope` 用于定位条目；`view` 只改变本次调用上下文，两者不可混淆。所有异步卸载必须等待完成后再执行下一 step。卸载后的注册、监听器与 restriction 不可残留。
 
-核心 YAML 覆盖 T01–T14、T18、T20–T22、T24，附加缺失键、Apply 回滚、集合模式不一致和卸载无残留场景。`missing` 同时检查 .NET keyed service；`notFoundEquivalent` 比较被过滤项与不存在项的完整错误体。T20 同时断言清理异常为零，发现并修复了整树 teardown 时已释放依赖者被再次失效的缺陷。
+核心 YAML 覆盖 T01–T14、T18、T20–T22、T24、T25，附加缺失键、Apply 回滚、集合模式不一致和卸载无残留场景。T25 验证注册句柄原位替换：新值可见、具名注册顺序与 scope 不变、依赖者重新 Apply、卸载后拒绝替换且无残留。`missing` 同时检查 .NET keyed service；`notFoundEquivalent` 比较被过滤项与不存在项的完整错误体。T20 同时断言清理异常为零，发现并修复了整树 teardown 时已释放依赖者被再次失效的缺陷。
 
 ## 分层装配到真实运行时
 
