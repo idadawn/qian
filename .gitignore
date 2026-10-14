@@ -31,3 +31,7 @@ apps/*/dist/
 test-results/
 playwright-report/
 .lighthouseci/
+
+# Rspress 组件演示与离线编辑器资源，由 website 构建生成
+website/docs/public/yue-demo/
+website/docs/public/yue-vendor/

@@ -34,3 +34,4 @@ updated: 2026-10-14
 - 2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。
 - 2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。
 - 2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。
+- 2026-10-14 claude：修正：qian.record.changed.v1 改按 Qian.Events 模型——[IntegrationEventId] 与 RegisterRecordEvents 改为登记载荷 RecordChangedPayload，信封只由写入端生成一层；RecordChangedEvent 改为 after Hook 视图，经 FromEnvelope 从解析后的信封与类型化载荷派生并核对租户、主体，EnsureConsistentContext 移到载荷。线上信封、payload Schema 与 fixture 不变（规格未冻结 C# 登记类型，不另开 DEC）；Qian.Data.Abstractions 新增引用 Qian.Events.Abstractions。专项 75 项、Events 16 项、CRM 28 项、Data 40 项零失败

@@ -2,9 +2,11 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Json.Schema;
+using Kun.Core.MultiTenancy;
 using Kun.EventBus;
 using Kun.EventBus.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+using Qian.Events;
 using Qian.Runtime.Errors;
 
 namespace Qian.Data.Abstractions.Tests;
@@ -127,33 +129,70 @@ public sealed class DataContractTests
     }
 
     [Fact]
-    public void RecordEnvelope_MatchesFrozenV0AndPayloadSchemas_AndFrameworkRegistration()
+    public void RecordEvent_RegistersPayloadAsEventType_AndDerivesHookViewFromFrozenEnvelope()
     {
         var raw = Fixture("record-changed-envelope.json");
         AssertValid(DataContractSchemas.RecordChangedEnvelope, raw);
-        var envelope = JsonSerializer.Deserialize(raw, DataContractJson.RecordChangedEventTypeInfo)!;
-        var serialized = JsonSerializer.Serialize(envelope, DataContractJson.RecordChangedEventTypeInfo);
-        AssertValid(DataContractSchemas.RecordChangedEnvelope, serialized);
-        envelope.EnsureConsistentContext();
-        Assert.Equal(envelope.TenantId, envelope.Payload.TenantId);
-        Assert.Equal(envelope.Actor, envelope.Payload.Actor);
-        Assert.DoesNotContain("张三", envelope.ToString(), StringComparison.Ordinal);
-        Assert.Equal(RecordChangedEvent.EventType, typeof(RecordChangedEvent).GetCustomAttribute<IntegrationEventIdAttribute>()!.EventType);
+        var change = RecordChangedEvent.FromEnvelope(QianEventEnvelope.Parse(raw));
+        Assert.Equal(Guid.Parse("01900000-0000-7000-8000-000000000002"), change.EventId);
+        Assert.Equal(change.Envelope.TenantId, change.TenantId);
+        Assert.Equal(RecordActor.From(change.Envelope.Actor), change.Payload.Actor);
+        Assert.Equal("name", Assert.Single(change.Payload.ChangedFields));
+        AssertValid(DataContractSchemas.RecordChangedPayload, JsonSerializer.Serialize(change.Payload, DataContractJson.RecordChangedPayloadTypeInfo));
+        Assert.DoesNotContain("张三", change.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("张三", change.Payload.ToString(), StringComparison.Ordinal);
+        // 集成事件类型是载荷：写入端把它放进信封的 payload，视图不登记、不单独上线。
+        Assert.Equal(RecordChangedPayload.EventType, typeof(RecordChangedPayload).GetCustomAttribute<IntegrationEventIdAttribute>()!.EventType);
+        Assert.Null(typeof(RecordChangedEvent).GetCustomAttribute<IntegrationEventIdAttribute>());
         var services = new ServiceCollection();
         services.AddKunEventBus(builder => builder.RegisterRecordEvents());
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IEventTypeRegistry>();
-        Assert.Same(typeof(RecordChangedEvent), registry.Resolve(RecordChangedEvent.EventType));
-        Assert.Same(DataContractJson.RecordChangedEventTypeInfo, registry.GetJsonTypeInfo(typeof(RecordChangedEvent)));
+        Assert.Same(typeof(RecordChangedPayload), registry.Resolve(RecordChangedPayload.EventType));
+        Assert.Same(DataContractJson.RecordChangedPayloadTypeInfo, registry.GetJsonTypeInfo(typeof(RecordChangedPayload)));
+    }
+
+    [Theory]
+    [InlineData("tenant", "租户或主体")]
+    [InlineData("actor", "租户或主体")]
+    [InlineData("delegation", "租户或主体")]
+    [InlineData("platform", "租户或主体")]
+    [InlineData("type", "信封不是")]
+    [InlineData("nested-envelope", "不符合")]
+    [InlineData("missing-member", "不符合")]
+    public void RecordEvent_FromEnvelope_RejectsMismatchedContextOrMalformedPayload(string mutation, string reason)
+    {
+        var node = JsonNode.Parse(Fixture("record-changed-envelope.json"))!;
+        var payload = node["payload"]!.AsObject();
+        switch (mutation)
+        {
+            case "tenant": payload["tenantId"] = "01900000-0000-7000-8000-000000000009"; break;
+            case "actor": payload["actor"] = new JsonObject { ["kind"] = "service", ["id"] = "test-user" }; break;
+            case "delegation": payload["actor"]!["on_behalf_of"] = "someone-else"; break;
+            case "platform": node["tenant_id"] = null; break;
+            case "type": (node["type"], node["subject"]) = ("qian.record.other.v1", "qian.record.other"); break;
+            case "nested-envelope": node["payload"] = node.DeepClone(); break;
+            case "missing-member": payload.Remove("changedFields"); break;
+        }
+        var envelope = QianEventEnvelope.Parse(node.ToJsonString());
+        Assert.Contains(reason, Assert.Throws<InvalidOperationException>(() => RecordChangedEvent.FromEnvelope(envelope)).Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void RecordEnvelope_RejectsConflictingTenantActorAndNonUtcTime()
+    public void RecordPayload_EnsureConsistentContext_RequiresCurrentTenantAndEventScopeActor()
     {
-        var valid = JsonSerializer.Deserialize(Fixture("record-changed-envelope.json"), DataContractJson.RecordChangedEventTypeInfo)!;
-        Assert.Throws<InvalidOperationException>(() => (valid with { TenantId = Guid.NewGuid() }).EnsureConsistentContext());
-        Assert.Throws<InvalidOperationException>(() => (valid with { Actor = new("service", "other") }).EnsureConsistentContext());
-        Assert.Throws<InvalidOperationException>(() => (valid with { OccurredAt = DateTime.SpecifyKind(valid.OccurredAt, DateTimeKind.Unspecified) }).EnsureConsistentContext());
+        var payload = RecordChangedEvent.FromEnvelope(QianEventEnvelope.Parse(Fixture("record-changed-envelope.json"))).Payload;
+        var tenant = new FixedTenant(payload.TenantId.ToString("D"));
+        Assert.Throws<InvalidOperationException>(() => payload.EnsureConsistentContext(tenant));
+        using (EventEnvelopeScope.Begin(new EventOrigin("qian.dynamic-data", EventActor.User("test-user"))))
+        {
+            payload.EnsureConsistentContext(tenant);
+            Assert.Throws<InvalidOperationException>(() => payload.EnsureConsistentContext(new FixedTenant(null)));
+            Assert.Throws<InvalidOperationException>(() => payload.EnsureConsistentContext(new FixedTenant("01900000-0000-7000-8000-000000000009")));
+            Assert.Throws<InvalidOperationException>(() => (payload with { Actor = new("user", "test-user", "someone-else") }).EnsureConsistentContext(tenant));
+        }
+        using (EventEnvelopeScope.Begin(new EventOrigin("qian.dynamic-data", EventActor.Agent("test-user"))))
+            Assert.Throws<InvalidOperationException>(() => payload.EnsureConsistentContext(tenant));
     }
 
     [Theory]
@@ -190,9 +229,9 @@ public sealed class DataContractTests
     [Fact]
     public async Task HookContract_CanRewriteSnapshotAndRejectWithUnifiedError()
     {
-        var change = JsonSerializer.Deserialize(Fixture("record-changed-envelope.json"), DataContractJson.RecordChangedEventTypeInfo)!;
+        var change = RecordChangedEvent.FromEnvelope(QianEventEnvelope.Parse(Fixture("record-changed-envelope.json")));
         IRecordHook hook = new NormalizeNameHook();
-        var context = new RecordHookContext(change.TenantId, change.Actor, change.Payload.EntityCode,
+        var context = new RecordHookContext(change.TenantId, change.Payload.Actor, change.Payload.EntityCode,
             change.Payload.RecordId, "update", change.Payload.Before, change.Payload.After);
         var result = await hook.BeforeAsync(context, TestContext.Current.CancellationToken);
         Assert.True(result.Allowed);
@@ -227,6 +266,12 @@ public sealed class DataContractTests
             return ValueTask.FromResult(RecordHookResult.Accept(document.RootElement));
         }
         public ValueTask AfterAsync(RecordChangedEvent change, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    }
+
+    private sealed class FixedTenant(string? tenantId) : ITenantContext
+    {
+        public string? TenantId => tenantId;
+        public bool IsMultiTenant => true;
     }
 
     private static FilterExpression One(FilterCondition condition) => new("and", [new("and", [condition])]);

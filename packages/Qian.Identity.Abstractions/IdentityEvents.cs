@@ -1,12 +1,10 @@
-using Kun.Core.Domain;
 using Kun.EventBus;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
-using System.Text.Json.Serialization;
 
 namespace Qian.Identity.Abstractions;
 
-/// <summary>稳定跨进程事件 ID；破坏性载荷改动必须升版本，不能原地改名。</summary>
+/// <summary>稳定跨进程事件 ID；首个发布版本之后，破坏性载荷改动必须升版本，不能原地改名。</summary>
 public static class IdentityEventIds
 {
     /// <summary>登录成功。</summary>
@@ -22,37 +20,39 @@ public static class IdentityEventIds
     /// <summary>全部 S1 身份事件。</summary>
     public static IReadOnlyList<string> All { get; } = Array.AsReadOnly(new[] { Login, Logout, PasswordChanged, Locked, SessionRevoked });
 }
-/// <summary>身份集成事件共用字段；日志只输出事件类型，不输出会话或凭据。</summary>
-public abstract record IdentityIntegrationEvent(Guid EventId, DateTime OccurredAt,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] Guid? TenantId, Guid PersonId, long IdentityRevision) : IIntegrationEvent
+/// <summary>
+/// 身份集成事件共用字段；日志只输出事件类型，不输出会话或凭据。
+/// event_id、occurred_at 与 tenant_id 只在 Qian.Events 写入端生成的信封上，载荷不重复（S1-DEC-020）。
+/// </summary>
+public abstract record IdentityIntegrationEvent(Guid PersonId, long IdentityRevision)
 {
     /// <inheritdoc />
     public sealed override string ToString() => "IdentityIntegrationEvent(redacted)";
 }
 /// <summary>登录成功载荷，不含 access/refresh token 或认证答案。</summary>
 [IntegrationEventId(IdentityEventIds.Login)]
-public sealed record IdentityLoginEvent(Guid EventId, DateTime OccurredAt, Guid? TenantId, Guid PersonId, long IdentityRevision,
+public sealed record IdentityLoginEvent(Guid PersonId, long IdentityRevision,
     Guid SessionId, string ClientId, IReadOnlyList<string> Amr, Guid? MembershipId = null)
-    : IdentityIntegrationEvent(EventId, OccurredAt, TenantId, PersonId, IdentityRevision);
+    : IdentityIntegrationEvent(PersonId, IdentityRevision);
 /// <summary>退出登录载荷。</summary>
 [IntegrationEventId(IdentityEventIds.Logout)]
-public sealed record IdentityLogoutEvent(Guid EventId, DateTime OccurredAt, Guid? TenantId, Guid PersonId, long IdentityRevision,
+public sealed record IdentityLogoutEvent(Guid PersonId, long IdentityRevision,
     Guid SessionId, string Reason, Guid? MembershipId = null)
-    : IdentityIntegrationEvent(EventId, OccurredAt, TenantId, PersonId, IdentityRevision);
+    : IdentityIntegrationEvent(PersonId, IdentityRevision);
 /// <summary>密码变更只通知身份修订，不发送密码或哈希。</summary>
 [IntegrationEventId(IdentityEventIds.PasswordChanged)]
-public sealed record IdentityPasswordChangedEvent(Guid EventId, DateTime OccurredAt, Guid? TenantId, Guid PersonId, long IdentityRevision)
-    : IdentityIntegrationEvent(EventId, OccurredAt, TenantId, PersonId, IdentityRevision);
+public sealed record IdentityPasswordChangedEvent(Guid PersonId, long IdentityRevision)
+    : IdentityIntegrationEvent(PersonId, IdentityRevision);
 /// <summary>账号锁定，不发送失败的认证材料。</summary>
 [IntegrationEventId(IdentityEventIds.Locked)]
-public sealed record IdentityLockedEvent(Guid EventId, DateTime OccurredAt, Guid? TenantId, Guid PersonId, long IdentityRevision,
+public sealed record IdentityLockedEvent(Guid PersonId, long IdentityRevision,
     string Reason, DateTimeOffset? LockedUntil = null)
-    : IdentityIntegrationEvent(EventId, OccurredAt, TenantId, PersonId, IdentityRevision);
+    : IdentityIntegrationEvent(PersonId, IdentityRevision);
 /// <summary>会话吊销供网关、缓存与实时通道消费。</summary>
 [IntegrationEventId(IdentityEventIds.SessionRevoked)]
-public sealed record IdentitySessionRevokedEvent(Guid EventId, DateTime OccurredAt, Guid? TenantId, Guid PersonId, long IdentityRevision,
+public sealed record IdentitySessionRevokedEvent(Guid PersonId, long IdentityRevision,
     Guid SessionId, string Reason, Guid? MembershipId = null)
-    : IdentityIntegrationEvent(EventId, OccurredAt, TenantId, PersonId, IdentityRevision);
+    : IdentityIntegrationEvent(PersonId, IdentityRevision);
 
 /// <summary>统一登录流水线输入；临时证明不进入日志或事件。</summary>
 public sealed record LoginInput(string ClientId, Guid? TenantId, string? ConnectorId, string? FactorId, AuthenticationProof? Proof)

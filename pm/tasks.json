@@ -919,7 +919,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。</li>\n<li>2026-10-14 claude：修正：qian.record.changed.v1 改按 Qian.Events 模型——[IntegrationEventId] 与 RegisterRecordEvents 改为登记载荷 RecordChangedPayload，信封只由写入端生成一层；RecordChangedEvent 改为 after Hook 视图，经 FromEnvelope 从解析后的信封与类型化载荷派生并核对租户、主体，EnsureConsistentContext 移到载荷。线上信封、payload Schema 与 fixture 不变（规格未冻结 C# 登记类型，不另开 DEC）；Qian.Data.Abstractions 新增引用 Qian.Events.Abstractions。专项 75 项、Events 16 项、CRM 28 项、Data 40 项零失败</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-004.md"
  },
  {
@@ -1686,6 +1686,57 @@
   "file": "pm/tasks/S1-DEC-019.md"
  },
  {
+  "id": "S1-DEC-020",
+  "title": "身份事件载荷重复信封的 event_id、occurred_at、tenant_id：v1 就地修正还是另发 v2",
+  "status": "done",
+  "stage": "S1",
+  "area": "DEC",
+  "areaName": "待拍板决策",
+  "wave": 0,
+  "priority": "P0",
+  "type": "decision",
+  "owner": "",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "contracts/identity/v1/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/identity/v1/README.md"
+   },
+   {
+    "path": "packages/Qian.Identity.Abstractions/IdentityEvents.cs",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Identity.Abstractions/IdentityEvents.cs"
+   },
+   {
+    "path": "packages/Qian.Events/QianEnvelopeOutboxWriter.cs",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Events/QianEnvelopeOutboxWriter.cs"
+   },
+   {
+    "path": "docs/adr/ADR-008-events-messaging.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-008-events-messaging.md"
+   },
+   {
+    "path": "contracts/v0/README.md#5-事件信封",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/README.md"
+   },
+   {
+    "path": "docs/prd/specs/data-contracts.md#6-record-hook-与变更事件",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/data-contracts.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 2,
+   "total": 2
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-IDP-001（2026-10-09 合并，早于 S1-EVT-001 的信封写入端）让五类身份事件的载荷基类 <code>IdentityIntegrationEvent</code> 实现 Kun 的 <code>IIntegrationEvent</code>：载荷自带 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，contracts/identity/v1 的五份 Schema 把三者列为必填。ADR-008 D8.7 与 contracts/v0 第 5 节把这三项定在信封上。Qian.Events 写入端入队时自己生成信封的 event_id（UUID v7）、occurred_at（写入端时钟）与 tenant_id（当前租户上下文），不读载荷里的值；Kun 默认的 Outbox 累加器同样不读（<code>Guid.NewGuid()</code>、<code>DateTimeOffset.UtcNow</code>）。</p>\n<p>2026-10-14 实测（Qian.Events.Tests 的宿主装配下 Enqueue 一条 <code>identity.login.v1</code>，读取 Outbox 缓冲里的信封）：信封与载荷的 event_id、occurred_at 各不相同；载荷 tenant_id 与当前租户不同时，写入端照常入队。后果有两条：消费端按信封 event_id 幂等（D8.4），载荷里多出一个误导性的事件标识；handler 若按载荷 tenant_id 处理，会落到错误租户，而回灌依据是信封 tenant_id（contracts/v0 第 5 节第 3 条）。</p>\n<p>身份契约有自己的版本规则：contracts/identity/v1/README.md 写明「破坏性变化新增 v2 类型与 Schema，不覆盖 v1」，包 AGENTS.md 与 <code>IdentityEventIds</code> 的注释同此。删除必填成员属于破坏性变化，所以不在实现任务里直接改，提交拍板。现状：身份 Provider（S1-IDP-002 到 006）都未开始，没有生产方和消费方；全仓 PublicAPI.Shipped 为空，也没有发布 NuGet 包。可作对照的是 qian.record.changed.v1：已按「事件类型就是载荷、信封只由写入端生成」修正（S1-DATA-004，数据契约 §6）。</p>\n<h4>待拍板</h4>\n<ul>\n<li><strong>A（推荐）发布前就地修正 v1</strong>：五类载荷去掉 event_id、occurred_at、tenant_id，<code>IdentityIntegrationEvent</code> 不再实现 <code>IIntegrationEvent</code>；消费端从信封取这三项，做法同 <code>RecordChangedEvent.FromEnvelope</code>；「破坏性变化升 v2」改为自首个发布版本起生效。v1 还没有生产方、消费方和已发布的包，就地修正没有迁移成本，信封成为唯一真相源。</li>\n<li><strong>B 保留 v1，另发 v2</strong>：身份 Provider 落地时直接发 <code>identity.*.v2</code>（不含信封字段），v1 从未生产即作废。守住字面规则，但事件 ID、登记入口、Schema 与测试要两代并存。</li>\n<li><strong>C 保留字段，强制一致</strong>：载荷实现 <code>IIntegrationEvent</code> 时，写入端沿用其 EventId 与 OccurredAt，并要求 TenantId 等于当前租户。这与 Kun 对 <code>IIntegrationEvent.EventId</code> 的注释（「消息唯一标识，用于消费端幂等去重」）一致，身份契约不变；代价是改变 S1-EVT-001 写入端自行生成 event_id 的语义，载荷与信封仍是两份要保持相等的数据，Kun 默认累加器也要上游同步修改。</li>\n<li><strong>D 维持现状</strong>：只在文档里声明这三项不是幂等键或租户依据。成本最低，重复与错读风险都留着。</li>\n</ul>\n<p>裁决前的默认：消费端（S1-EVT-002）的幂等键、发生时间与租户回灌一律取信封字段，不读载荷里的这三项；身份事件的生产方从 S1-IDP-003 起，等本裁决后再实现发布。</p>\n<h4>已裁决</h4>\n<p>2026-10-14 产品负责人在聊天中选定方案 A（回复「选 A，按方案 A 实现」），由 claude 代录。结论写入 ADR-008 D8.7 与 contracts/identity/v1/README.md：信封字段只在信封上，载荷不再声明独立的事件标识或发生时间；身份事件 v1 发布前就地删去这三项，「破坏性变化升 v2」自首个发布版本起生效。实现拆为 S1-IDP-011，S1-IDP-003 的前置随之改为 S1-IDP-011。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人选定 A–D 之一，结论写进 ADR-008 与 contracts/identity/v1/README.md</li>\n<li class='chk done'><span class='box'>✓</span>按结论拆出实现任务：A、B 改 Qian.Identity.Abstractions、契约 Schema、PublicAPI 与测试；C 改 Qian.Events 写入端，并向 kun 仓库提上游修改；同步更新受影响任务的依赖与日志</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：完成：产品负责人选定方案 A（聊天回复「选 A，按方案 A 实现」，claude 代录）；结论写入 ADR-008 D8.7 与 contracts/identity/v1/README.md，实现拆为 S1-IDP-011，S1-IDP-003 前置改为 S1-IDP-011</li>\n</ul>",
+  "file": "pm/tasks/S1-DEC-020.md"
+ },
+ {
   "id": "S1-DEP-001",
   "title": "K3s 基线治理：命名空间、专属库、默认拒绝、配额",
   "status": "done",
@@ -2071,11 +2122,9 @@
    "S1-YUE-005",
    "S1-RT-010"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/specs/docs-site.md#3",
@@ -2474,12 +2523,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>Subscribe&lt;TEvent, THandler&gt;()</code>；处理成功后 ack；重试 5 次后进 <code>qian.dlx</code> 并告警；幂等装饰器先查 Redis <code>processed:{consumer}:{event_id}</code>（TTL 7 天）再执行、成功后写入，PG <code>processed_messages</code> 兜底；信封 <code>tenant_id</code> → <code>BeginScope</code> 与 baggage 注入在订阅器统一完成；竞争消费与广播两种订阅。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：消费端前两次抛异常、第三次成功，<code>processed_messages</code> 恰一行；第 6 次仍失败进 DLX 并发告警</li>\n<li class='chk'><span class='box'></span>IT：同一事件重投两次，幂等装饰器拦截第二次，handler 只执行一次</li>\n<li class='chk'><span class='box'></span>IT：消费端 handler 内租户上下文为该事件的租户，EF 查询自动带 <code>tenant_id</code> 过滤</li>\n<li class='chk'><span class='box'></span>IT：广播订阅下每个实例各收到一次，竞争订阅下只有一个实例收到</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>Subscribe&lt;TEvent, THandler&gt;()</code>；处理成功后 ack；重试 5 次后进 <code>qian.dlx</code> 并告警；幂等装饰器先查 Redis <code>processed:{consumer}:{event_id}</code>（TTL 7 天）再执行、成功后写入，PG <code>processed_messages</code> 兜底；信封 <code>tenant_id</code> → <code>BeginScope</code> 与 baggage 注入在订阅器统一完成；竞争消费与广播两种订阅。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：消费端前两次抛异常、第三次成功，<code>processed_messages</code> 恰一行；第 6 次仍失败进 DLX 并发告警</li>\n<li class='chk'><span class='box'></span>IT：同一事件重投两次，幂等装饰器拦截第二次，handler 只执行一次</li>\n<li class='chk'><span class='box'></span>IT：消费端 handler 内租户上下文为该事件的租户，EF 查询自动带 <code>tenant_id</code> 过滤</li>\n<li class='chk'><span class='box'></span>IT：广播订阅下每个实例各收到一次，竞争订阅下只有一个实例收到</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：提示（S1-DATA-004 修正）：qian.record.changed.v1 登记的是载荷 RecordChangedPayload；after Hook 视图由 RecordChangedEvent.FromEnvelope(QianEventEnvelope) 派生，订阅端交给 handler 的输入须保留解析后的信封（event_id 幂等键、tenant_id 回灌）。派生失败抛 InvalidOperationException，属确定性失败，重试不会成功</li>\n<li>2026-10-14 claude：提示（S1-DEC-020 待拍板）：身份事件载荷自带的 event_id、occurred_at、tenant_id 与信封不同源；幂等键、发生时间与租户回灌一律取信封字段，handler 输入也要带上解析后的信封</li>\n<li>2026-10-14 claude：S1-DEC-020 已裁决（方案 A，S1-IDP-011 实施）：身份事件载荷不再带 event_id、occurred_at、tenant_id，消费端只从信封取；上一条的「待拍板」提示就此作废</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-002.md"
  },
  {
@@ -2519,7 +2568,7 @@
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>GET /api/capabilities/events</code> 返回每事件 ID、版本、Schema、发布插件、订阅者（按权限过滤）；AsyncAPI 描述随 <code>qian pack</code> 导出；清单 <code>provides.events.publish/subscribe</code> 生成 RabbitMQ 主题 ACL（P1）；<code>IOutboxWriter</code> 面向 <code>NpgsqlTransaction</code> 的契约（S2 动态表同事务）。事件契约化为 S4 Agent 触发器预留。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET /api/capabilities/events</code> 按权限过滤返回事件 ID、版本、Schema、发布插件与订阅者</li>\n<li class='chk'><span class='box'></span>UT：<code>qian pack</code> 导出的 AsyncAPI 与事件目录一致</li>\n<li class='chk'><span class='box'></span>TCK：清单未声明 <code>publish</code> 的事件被运行时拒绝发布（P1，主题 ACL）</li>\n<li class='chk'><span class='box'></span>UT：<code>IOutboxWriter</code> 契约随 <code>Qian.Events.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：复核 S1-RT-006（R77）：能力目录当前只产出 command / query，<code>?kind=event</code> 恒空；事件类目录与 <code>GET /api/capabilities/events</code> 随本任务交付</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>GET /api/capabilities/events</code> 返回每事件 ID、版本、Schema、发布插件、订阅者（按权限过滤）；AsyncAPI 描述随 <code>qian pack</code> 导出；清单 <code>provides.events.publish/subscribe</code> 生成 RabbitMQ 主题 ACL（P1）；<code>IOutboxWriter</code> 面向 <code>NpgsqlTransaction</code> 的契约（S2 动态表同事务）。事件契约化为 S4 Agent 触发器预留。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET /api/capabilities/events</code> 按权限过滤返回事件 ID、版本、Schema、发布插件与订阅者</li>\n<li class='chk'><span class='box'></span>UT：<code>qian pack</code> 导出的 AsyncAPI 与事件目录一致</li>\n<li class='chk'><span class='box'></span>TCK：清单未声明 <code>publish</code> 的事件被运行时拒绝发布（P1，主题 ACL）</li>\n<li class='chk'><span class='box'></span>UT：<code>IOutboxWriter</code> 契约随 <code>Qian.Events.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：复核 S1-RT-006（R77）：能力目录当前只产出 command / query，<code>?kind=event</code> 恒空；事件类目录与 <code>GET /api/capabilities/events</code> 随本任务交付</li>\n<li>2026-10-14 claude：提示（S1-DATA-004 修正）：qian.record.changed.v1 现登记载荷 RecordChangedPayload，事件目录与 AsyncAPI 的 payload Schema 取其 JsonTypeInfo 导出，成员与必填项和 contracts/data/v1/qian.record.changed.v1.schema.json 一致（Qian.Sample.Crm.Tests 比对）；面向 NpgsqlTransaction 的 IOutboxWriter 同样只收载荷，信封由写入端生成</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-003.md"
  },
  {
@@ -2833,12 +2882,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-005-identity-sso.md"
    }
   ],
-  "updated": "2026-10-10",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Qian.Runtime</code> 与 Kun 的事件端口 <code>Kun.EventBus.Abstractions</code>（S1-KUN-010 已解除事件实现依赖），通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n<li>2026-10-09 cody：身份契约 PR #18 已合并（be696c17）；8 项专项及全量 236 项测试通过，CI 全绿。</li>\n<li>2026-10-10 claude：复核：claim 集、<code>agent</code> 枚举、五类事件与 Schema 均有测试且通过；第 1 条验收原文「只依赖 Kun.*.Abstractions」与实际（直接引用 <code>Kun.EventBus</code>）不符，且依赖图门禁不检查 <code>Kun.*</code>，已按实际改写验收并登记延期项（S1-DEC-013、S1-KUN-010）。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Qian.Runtime</code> 与 Kun 的事件端口 <code>Kun.EventBus.Abstractions</code>（S1-KUN-010 已解除事件实现依赖），通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n<li>2026-10-09 cody：身份契约 PR #18 已合并（be696c17）；8 项专项及全量 236 项测试通过，CI 全绿。</li>\n<li>2026-10-10 claude：复核：claim 集、<code>agent</code> 枚举、五类事件与 Schema 均有测试且通过；第 1 条验收原文「只依赖 Kun.*.Abstractions」与实际（直接引用 <code>Kun.EventBus</code>）不符，且依赖图门禁不检查 <code>Kun.*</code>，已按实际改写验收并登记延期项（S1-DEC-013、S1-KUN-010）。</li>\n<li>2026-10-14 claude：复核：五类事件载荷自带的 event_id、occurred_at、tenant_id 与 Qian.Events 写入端生成的信封同名字段不同源（实测 event_id、occurred_at 不同，载荷 tenant_id 与当前租户不同也照常入队）；v1 规则禁止就地做破坏性修改，已开 S1-DEC-020 待拍板，本任务验收不受影响</li>\n<li>2026-10-14 claude：S1-DEC-020 选方案 A：五类事件载荷去掉 event_id、occurred_at、tenant_id，由 S1-IDP-011 实施；本任务验收不受影响</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-001.md"
  },
  {
@@ -2910,7 +2959,8 @@
   "estimate": "5d",
   "days": 5.0,
   "depends": [
-   "S1-IDP-002"
+   "S1-IDP-002",
+   "S1-IDP-011"
   ],
   "blockedBy": [
    "S1-IDP-002"
@@ -2927,12 +2977,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>Person</code>（标识集合、Argon2id 凭据与历史哈希、MFA 因子、状态）+ <code>Membership</code>（person × tenant、显示名、是否租户管理员、<code>profile</code> 预留）+ <code>ExternalIdentity</code> + <code>Client</code> + <code>Session</code> + <code>LoginAudit</code>；<code>ISignInPipeline</code> 所有方式同一 <code>LoginInput</code> 同一签发路径；错误阈值 → 锁定或延时；初始密码强制修改不可取消；多 Membership → <code>selection_token</code>（5 分钟）→ 正式令牌；切换租户 = 以选择令牌重签；图形验证码按策略开关。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：同一手机号在租户 A、B 各有 Membership，密码登录后出现租户选择，选 A 后令牌 <code>tenant_id = A</code>；在外壳切换到 B 时令牌重签且 <code>membership_id</code> 变化</li>\n<li class='chk'><span class='box'></span>IT：密码错误达到阈值触发锁定；初始密码账号登录后被强制跳转改密且不可跳过</li>\n<li class='chk'><span class='box'></span>UT：密码以 Argon2id 存储且历史哈希不可复用；<code>LoginAudit</code> 每次登录一条</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>Person</code>（标识集合、Argon2id 凭据与历史哈希、MFA 因子、状态）+ <code>Membership</code>（person × tenant、显示名、是否租户管理员、<code>profile</code> 预留）+ <code>ExternalIdentity</code> + <code>Client</code> + <code>Session</code> + <code>LoginAudit</code>；<code>ISignInPipeline</code> 所有方式同一 <code>LoginInput</code> 同一签发路径；错误阈值 → 锁定或延时；初始密码强制修改不可取消；多 Membership → <code>selection_token</code>（5 分钟）→ 正式令牌；切换租户 = 以选择令牌重签；图形验证码按策略开关。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：同一手机号在租户 A、B 各有 Membership，密码登录后出现租户选择，选 A 后令牌 <code>tenant_id = A</code>；在外壳切换到 B 时令牌重签且 <code>membership_id</code> 变化</li>\n<li class='chk'><span class='box'></span>IT：密码错误达到阈值触发锁定；初始密码账号登录后被强制跳转改密且不可跳过</li>\n<li class='chk'><span class='box'></span>UT：密码以 Argon2id 存储且历史哈希不可复用；<code>LoginAudit</code> 每次登录一条</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：depends 加 S1-DEC-020：本任务是第一个发布身份事件的生产方，载荷是否保留 event_id、occurred_at、tenant_id 待该裁决；其余实现不受影响</li>\n<li>2026-10-14 claude：S1-DEC-020 已裁决（方案 A），depends 中的 S1-DEC-020 换成实现任务 S1-IDP-011：发布身份事件时载荷不带 event_id、occurred_at、tenant_id，在事件所属租户的作用域内入队</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-003.md"
  },
  {
@@ -3235,6 +3285,52 @@
   },
   "bodyHtml": "<h4>背景</h4>\n<p>派生查询契约：<code>/members/{id}/manager</code>、<code>/members/{id}/superiors</code>（按岗位链返回上级责任人序列）、部门负责人、<code>/me/subordinates?depth=</code>（<code>@下属 / @子孙</code>）；责任人解析契约 S1 定义、S2 流程消费；目录变更事件 <code>directory.org.*</code>、<code>directory.position.*</code>、<code>directory.member.*.v1</code>（CloudEvents）；SCIM 2.0 核心 schema 作为对外契约；向 yue <code>OrganizeSelect / UserSelect / RoleSelect</code> 提供数据源。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>/members/{id}/superiors</code> 按岗位链返回上级责任人序列；主归属变化后结果随之变化</li>\n<li class='chk'><span class='box'></span>E2E：参考应用用 <code>OrganizeSelect</code> 选部门、<code>UserSelect</code> 选人，数据来自本租户目录</li>\n<li class='chk'><span class='box'></span>UT：<code>directory.*.v1</code> 事件带稳定 ID 与 JSON Schema；SCIM 核心 schema 契约文件入 <code>contracts/</code></li>\n<li class='chk'><span class='box'></span>UT：每个目录查询带 description 与示例（Agent 契约）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-010.md"
+ },
+ {
+  "id": "S1-IDP-011",
+  "title": "身份事件载荷去掉信封字段 event_id、occurred_at、tenant_id（S1-DEC-020 方案 A）",
+  "status": "done",
+  "stage": "S1",
+  "area": "IDP",
+  "areaName": "身份与连接器",
+  "wave": 1,
+  "priority": "P0",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-DEC-020",
+   "S1-IDP-001"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "contracts/identity/v1/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/contracts/identity/v1/README.md"
+   },
+   {
+    "path": "packages/Qian.Identity.Abstractions/IdentityEvents.cs",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Identity.Abstractions/IdentityEvents.cs"
+   },
+   {
+    "path": "docs/adr/ADR-008-events-messaging.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-008-events-messaging.md"
+   },
+   {
+    "path": "pm/tasks/S1-DEC-020.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-020.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 3,
+   "total": 3
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-DEC-020 选定方案 A：身份事件 v1 尚无生产方、消费方与已发布包，就地删除五类载荷里重复信封的 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，<code>IdentityIntegrationEvent</code> 不再实现 Kun 的 <code>IIntegrationEvent</code>；三项只由 Qian.Events 写入端生成在信封上，消费端从信封取。「破坏性变化升 v2」自首个发布版本起生效。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：五类身份事件载荷与 Schema 都不含 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，Schema 成员与源生成 JSON 属性一致，<code>IdentityIntegrationEvent</code> 不实现 <code>IIntegrationEvent</code>，通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：经 Qian.Events 写入端发布的身份事件，三项只出现在信封上：event_id、occurred_at 由写入端生成，tenant_id 取当前租户，平台级事件为 null</li>\n<li class='chk done'><span class='box'>✓</span>文档：ADR-008、contracts/identity/v1/README.md 与包 README / AGENTS.md 记载 S1-DEC-020 结论</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：按 S1-DEC-020 方案 A 就地修正身份事件 v1 载荷</li>\n<li>2026-10-14 claude：实现完成待评审：五份身份 Schema 与载荷类型去掉 event_id、occurred_at、tenant_id，IdentityIntegrationEvent 不再实现 IIntegrationEvent，PublicAPI 已登记；身份契约测试补 Schema 与源生成属性逐一比对，Qian.Events.Tests 新增写入端端到端用例，CRM 事件目录断言收紧为任何载荷不得声明事件标识与发生时间。整解 Release 构建零警告，依赖与文档门禁通过；Identity 10、Events 17、Data.Abstractions 75、CRM 28 项零失败</li>\n<li>2026-10-14 claude：随 idadawn/qian#85 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
+  "file": "pm/tasks/S1-IDP-011.md"
  },
  {
   "id": "S1-KUN-001",
@@ -5971,7 +6067,7 @@
  {
   "id": "S1-YUE-005",
   "title": "@yue/core 基础组件与统一 Rspress 文档、验收",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "YUE",
   "areaName": "外壳与 yue",
@@ -5986,8 +6082,8 @@
    "S1-DOCS-001"
   ],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -6008,10 +6104,10 @@
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 2,
+   "done": 8,
    "total": 8
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>修订范围（2026-10-14）</h4>\n<p>按产品负责人要求统一使用 Rspress，不再保留 Storybook。51 个组件入口与 manifest 已合并；本次仅完成能力评估与任务/规格修订，替换实现尚未验收。保留历史完成日志，新增验收完成前任务回到 todo。</p>\n<p>本任务负责 core 的 Rspress 接入、共用示例和测试迁移、Storybook 清理；文档源仍在组件目录，允许修改 website 的收集器/插件/测试接线，不手改生成目录。S1-DOCS-002 复用该接入继续完成通用组件收集及 .NET/TS/HTTP API，不重复建设 core 展示，也不成为本任务的循环前置。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>组件基线：51 个组件入口与配套部件已合并；保留 <code>data-slot</code> / <code>data-testid</code>、现有公开 API 与统一令牌行为。</li>\n<li class='chk done'><span class='box'>✓</span>机器契约：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验。</li>\n<li class='chk'><span class='box'></span>Rspress：现有 <code>/components/yue/</code> 中每个 core 组件可发现、有独立页面，按 docs-site.md §3.1 提供首屏交互预览、源码展开/复制、安装、用法、组合结构、分场景示例、完整 props 表与键盘/无障碍说明；左右导航可定位组件及章节，令牌页和明暗状态同站可访问，预览/代码/API 均在现有 Rspress 一个入口内。</li>\n<li class='chk'><span class='box'></span>真实交互：每个可交互组件有可操作示例和「操作 → 可观察结果」断言，至少涵盖输入/校验、选择/值回写、弹层确认/取消与关闭回焦、Tab 切换、Toast/Notification 触发/关闭及适用键盘路径；静态构建后的 Rspress 页面及预览 iframe 在明暗两态跑 Playwright。展示型组件检查真实渲染与状态；全量入口与场景清单相互校验，不能以截图、仅渲染或外站链接替代。正式站点代表性交互实测通过后才能完成。</li>\n<li class='chk'><span class='box'></span>Props：从真实 TypeScript 类型生成，覆盖组合部件、继承属性、函数/回调、必填、联合类型和默认值；Button 的 variant/size/loading/disabled、Dialog 的 open/defaultOpen/onOpenChange 必须出现在 HTML 与 Markdown 中。建立 51 入口及部件清单的完整性门禁，禁止用仅可序列化的 manifest 替代完整 API。</li>\n<li class='chk'><span class='box'></span>共用示例与测试：保留默认/悬停/禁用/错误/暗色等适用状态及交互语义；原 126 条 Storybook 用例逐条登记迁移到独立 Vitest 浏览器测试或 Playwright，保留现有单元、SSR、键盘、焦点、ARIA、64 项页面 E2E 的覆盖，无遗漏；Rspress 真正构建页面（含预览 iframe）axe critical / serious = 0，页面异常使 CI 失败。</li>\n<li class='chk'><span class='box'></span>离线与构建：preview 使用本地组件源码；playground 的 Babel/Monaco/worker 与依赖全部同源打包，按需加载且无外部运行时请求，阻断外网后编辑仍能更新预览；HTML、SSG-MD、llms、搜索、站点前缀、深链刷新与明暗首帧通过验证。全站产物继续遵守 100 MB 预算，组件靶场保留已有 Lighthouse 预算。</li>\n<li class='chk'><span class='box'></span>清理与发布：删除 apps/yue-storybook、CSF/Storybook 专用配置、直接/传递 Storybook 依赖、脚本、缓存配置和 CI 入口；共用 React 示例保留，独立 Vitest/Playwright/axe 保留；更新 README/AGENTS 与命令，验证 frozen-lockfile 安装。CI 全绿合并后，核验正式 Rspress URL 的组件交互与 props 表，才恢复 done。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #76 全部15项适用CI通过后合并（a62f8004）。51组件入口、157项Vitest、126条Storybook用例、64项页面E2E与真实Docs烟测通过；三个页面Lighthouse a11y=100、脚本≤250KiB。实现分支与worktree已清理，独立本地预览保留。</li>\n<li>2026-10-14 cody：按用户要求评估统一 Rspress 并修订任务与规格；原 Storybook 验收仅作历史证据，新增替换验收完成前重新打开。</li>\n<li>2026-10-14 cody：评估与规格修订完成：ADR-022 确认统一 Rspress，实测 preview 可运行现有 Button/Dialog，默认 API 表存在属性过滤缺口，底层解析器可提取；离线编辑器、完整 Props、测试迁移和 Storybook 全量清理列为新增未完成验收。按本次修订范围回到待办，保留已交付组件与 manifest 记录。</li>\n<li>2026-10-14 cody：按用户补充的 Alert Dialog 页面参考，补入首屏交互预览、源码展开/复制、安装、用法、组合结构、场景示例、API 与章节导航验收；所有内容归现有 Rspress 单一入口，示例使用本仓库真实组件 API。</li>\n<li>2026-10-14 cody：按用户补充要求，将真实组件交互设为必过验收：可操作示例、逐组件动作与结果断言、明暗/iframe Playwright、正式站点代表性交互复验；静态截图或仅渲染不算完成。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>修订范围（2026-10-14）</h4>\n<p>按产品负责人要求统一使用 Rspress，不再保留 Storybook。51 个组件入口与 manifest 已合并；现已实施文档、演示与测试迁移，保留历史完成日志；正式站点验证完成后恢复 done。</p>\n<p>本任务负责 core 的 Rspress 接入、共用示例和测试迁移、Storybook 清理；文档源仍在组件目录，允许修改 website 的收集器/插件/测试接线，不手改生成目录。S1-DOCS-002 复用该接入继续完成通用组件收集及 .NET/TS/HTTP API，不重复建设 core 展示，也不成为本任务的循环前置。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>组件基线：51 个组件入口与配套部件已合并；保留 <code>data-slot</code> / <code>data-testid</code>、现有公开 API 与统一令牌行为。</li>\n<li class='chk done'><span class='box'>✓</span>机器契约：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验。</li>\n<li class='chk done'><span class='box'>✓</span>Rspress：现有 <code>/components/yue/</code> 中每个 core 组件可发现、有独立页面，按 docs-site.md §3.1 提供首屏交互预览、源码展开/复制、安装、用法、组合结构、分场景示例、完整 props 表与键盘/无障碍说明；左右导航可定位组件及章节，令牌页和明暗状态同站可访问，预览/代码/API 均在现有 Rspress 一个入口内。</li>\n<li class='chk done'><span class='box'>✓</span>真实交互：每个可交互组件有可操作示例和「操作 → 可观察结果」断言，至少涵盖输入/校验、选择/值回写、弹层确认/取消与关闭回焦、Tab 切换、Toast/Notification 触发/关闭及适用键盘路径；静态构建后的 Rspress 页面及预览 iframe 在明暗两态跑 Playwright。展示型组件检查真实渲染与状态；全量入口与场景清单相互校验，不能以截图、仅渲染或外站链接替代。正式站点代表性交互实测通过后才能完成。</li>\n<li class='chk done'><span class='box'>✓</span>Props：从真实 TypeScript 类型生成，覆盖组合部件、继承属性、函数/回调、必填、联合类型和默认值；Button 的 variant/size/loading/disabled、Dialog 的 open/defaultOpen/onOpenChange 必须出现在 HTML 与 Markdown 中。建立 51 入口及部件清单的完整性门禁，禁止用仅可序列化的 manifest 替代完整 API。</li>\n<li class='chk done'><span class='box'>✓</span>共用示例与测试：保留默认/悬停/禁用/错误/暗色等适用状态及交互语义；原 126 条 Storybook 用例逐条登记迁移到独立 Vitest 浏览器测试或 Playwright，保留现有单元、SSR、键盘、焦点、ARIA、64 项页面 E2E 的覆盖，无遗漏；Rspress 真正构建页面（含预览 iframe）axe critical / serious = 0，页面异常使 CI 失败。</li>\n<li class='chk done'><span class='box'>✓</span>离线与构建：preview 使用本地组件源码；playground 的 Babel/Monaco/worker 与依赖全部同源打包，按需加载且无外部运行时请求，阻断外网后编辑仍能更新预览；HTML、SSG-MD、llms、搜索、站点前缀、深链刷新与明暗首帧通过验证。全站产物继续遵守 100 MB 预算，组件靶场保留已有 Lighthouse 预算。</li>\n<li class='chk done'><span class='box'>✓</span>清理与发布：删除 apps/yue-storybook、CSF/Storybook 专用配置、直接/传递 Storybook 依赖、脚本、缓存配置和 CI 入口；共用 React 示例保留，独立 Vitest/Playwright/axe 保留；更新 README/AGENTS 与命令，验证 frozen-lockfile 安装。CI 全绿合并后，核验正式 Rspress URL 的组件交互与 props 表，才恢复 done。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #76 全部15项适用CI通过后合并（a62f8004）。51组件入口、157项Vitest、126条Storybook用例、64项页面E2E与真实Docs烟测通过；三个页面Lighthouse a11y=100、脚本≤250KiB。实现分支与worktree已清理，独立本地预览保留。</li>\n<li>2026-10-14 cody：按用户要求评估统一 Rspress 并修订任务与规格；原 Storybook 验收仅作历史证据，新增替换验收完成前重新打开。</li>\n<li>2026-10-14 cody：评估与规格修订完成：ADR-022 确认统一 Rspress，实测 preview 可运行现有 Button/Dialog，默认 API 表存在属性过滤缺口，底层解析器可提取；离线编辑器、完整 Props、测试迁移和 Storybook 全量清理列为新增未完成验收。按本次修订范围回到待办，保留已交付组件与 manifest 记录。</li>\n<li>2026-10-14 cody：按用户补充的 Alert Dialog 页面参考，补入首屏交互预览、源码展开/复制、安装、用法、组合结构、场景示例、API 与章节导航验收；所有内容归现有 Rspress 单一入口，示例使用本仓库真实组件 API。</li>\n<li>2026-10-14 cody：按用户补充要求，将真实组件交互设为必过验收：可操作示例、逐组件动作与结果断言、明暗/iframe Playwright、正式站点代表性交互复验；静态截图或仅渲染不算完成。</li>\n<li>2026-10-14 cody：按用户指令开始实施 ADR-022：统一 Rspress 组件文档与真实交互演示，迁移测试并移除 Storybook，完整验收与正式站点验证后关闭。</li>\n<li>2026-10-14 cody：实现完成并提交验收：51 入口与 141 公开组件/部件 API 统一到 Rspress，同源 iframe 与离线 Babel/Monaco；126 条状态场景全部通过，原 157 单测、64 页面 E2E、八项门禁通过；前缀、离线编辑、Props 双产物及 iframe 负例验证通过。等待 PR CI、合并与正式站点交互复验后关闭。</li>\n<li>2026-10-14 cody：最新组合验收：131 条 Rspress 页面测试全部通过（含整页明暗、打开态 axe、离线编辑、iframe 负例、键盘主题切换与刷新保留偏好），71 项站点单测通过；带 PR 前缀静态产物 97.8 MB，低于 100 MB；生成页文档门禁通过。正式部署复验仍待合并后执行。</li>\n<li>2026-10-14 cody：PR #88 已合并并发布。正式站点交互、Props、离线编辑与主题验证通过；复核发现快捷键淡入过渡低对比度，以及 API 类型中的安装器路径/自动链接，正在补齐后再关闭。</li>\n<li>2026-10-14 cody：完成：实现 PR #88（3cea21ad）与正式站复核修正 PR #90（db95a4fb）均在 CI 全绿后合并；main 文档发布 38545163630 成功。正式 http://10.78.1.161:30820/ 五项复验全部通过：按钮/输入/选择/弹层/Tab/通知、HTML/Markdown Props、断外网编辑并运行、主题切换与刷新、快捷键明暗对比度。Storybook 应用与依赖已移除，实现分支/worktree 已清理；保留 157 单测、64 原页面 E2E 和 132 Rspress 页面用例。</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-005.md"
  },
  {
@@ -6030,11 +6126,9 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -6069,11 +6163,9 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -6114,7 +6206,6 @@
    "S1-FILE-001"
   ],
   "blockedBy": [
-   "S1-YUE-005",
    "S1-FILE-001"
   ],
   "order": 5,
@@ -6156,7 +6247,6 @@
    "S1-IDP-010"
   ],
   "blockedBy": [
-   "S1-YUE-005",
    "S1-YUE-007",
    "S1-IDP-010"
   ],
@@ -6203,8 +6293,7 @@
    "S1-YUE-005"
   ],
   "blockedBy": [
-   "S1-MGW-001",
-   "S1-YUE-005"
+   "S1-MGW-001"
   ],
   "order": 2,
   "readyNow": false,

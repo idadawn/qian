@@ -6,6 +6,7 @@
   <ItemGroup>
     <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
     <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Events.Abstractions/Qian.Events.Abstractions.csproj" />
     <PackageReference Include="Kun.EntityFrameworkCore" />
     <PackageReference Include="Kun.MultiTenancy.EntityFrameworkCore" />
     <EmbeddedResource Include="../../contracts/v0/event-envelope.schema.json;../../contracts/v0/s2s-claims.schema.json" LogicalName="data/v0/%(Filename)%(Extension)" />
