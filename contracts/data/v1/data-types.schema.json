@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qian.dev/schemas/data/v1/data-types.schema.json",
+  "x-status": "frozen",
   "title": "Qian 基准类型目录",
   "description": "GET /api/data/meta/types 的响应：系统基准类型与已注册方言的类型映射。base-data-types.json 是不含方言的同形种子；方言组件的 qian.data.dialect/v1 数据按 $defs/dbDialect 校验。",
   "type": "object",

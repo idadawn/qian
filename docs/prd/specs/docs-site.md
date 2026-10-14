@@ -145,14 +145,14 @@ Kun 是 Qian 的底座框架，没有自己的文档站，读者与本站 SDK �
 
 [ADR-022](../../adr/ADR-022-rspress-unified-component-docs.md) 将现有 Rspress 站点确定为唯一文档与演示体系，Storybook 全部退出；选型证据与默认插件限制见该 ADR。S1-YUE-005 先交付 core 接入，S1-DOCS-002 复用接线继续收集其它组件与 API，避免循环依赖。
 
-- **页面编排**：参考产品负责人提供的 [组件页](https://ui.shadcn.com/docs/components/aria/alert-dialog)：标题与用途、首屏可交互预览及源码展开/复制、安装、基本用法、组合结构、分场景示例、API 与键盘/无障碍说明；保留模型体验、已知限制和变更。各示例均可运行并查看对应源码，右侧目录可定位章节，左侧按组件导航。采用本仓库真实 API 与令牌，功能说明以已实现能力为准。安装、预览、代码和 API 均留在现有 Rspress 页面中，用户无需访问独立演示站。
+- **页面编排**：参考产品负责人提供的 [组件页](https://ui.shadcn.com/docs/components/aria/alert-dialog)：标题与用途、首屏可交互预览及源码展开/复制、安装、基本用法、组合结构、可切换状态的共用示例、API 与键盘/无障碍说明；保留模型体验、已知限制和变更。每个组件的普通 React 示例均可运行并查看对应源码；预览工具栏按 `docs/scenarios.json` 切换适用状态，弹层开关等交互在示例内操作，悬停需实际移入指针，右侧目录可定位章节，左侧按组件导航。采用本仓库真实 API 与令牌，功能说明以已实现能力为准。安装、预览、代码和 API 均留在现有 Rspress 页面中，用户无需访问独立演示站。
 - **内容源**：README、`docs/*.mdx`、普通 React 示例保留在组件目录，由收集脚本生成 `/components/yue/` 页面；示例与 Vitest/Playwright 共用，不复制两套组件实现。core 的 51 个入口及配套部件由清单校验覆盖。
 - **展示与样式**：站点内 Rsbuild 预构建编译本地 TSX，以同源 iframe 隔离弹层/Portal 和主题；独立构建显式加载 Tailwind v4、令牌与字体，并同步明暗主题。每页有使用说明、源码、适用状态示例、完整 props 表；令牌页同站可访问。
 - **交互必过验收**：每个可交互组件提供可直接操作的真实示例，并登记「操作 → 可观察结果」：输入/校验反馈，选择器选中与值回写，Dialog/AlertDialog 打开、确认/取消和关闭回焦，Tabs 切换，Toast/Notification 触发与关闭，以及各组件适用的键盘路径。对静态构建的 Rspress 页面执行 Playwright 操作与结果断言，覆盖明暗两态和预览 iframe；不得以仅渲染、截图、代码片段或外站链接替代。展示型组件验证实际渲染和适用状态，不虚构交互；全量入口与示例清单相互校验，缺交互场景或断言即 CI 失败。合并后在正式站点再次实测代表性输入、选择、弹层、切换和通知交互。
 - **Props**：以真实 TypeScript 为源；api-docgen 的默认过滤不足以直接验收，当前直接用 TypeScript checker 提取完整表并补源码 JSDoc；相同 DOM 属性按完整声明去重并在站内链接。继承属性、组合部件、函数/回调、必填、联合类型与默认值不得静默丢失。Button 的 variant/size/loading/disabled、Dialog 的 open/defaultOpen/onOpenChange 为回归探针；51 入口及部件的完整性由门禁检查。manifest 的 JSON Schema 不代替完整 API。
 - **在线编辑**：playground 显式预打包允许的组件依赖；示例另行 typecheck。Babel、Monaco 及 worker 全部同源打包并按需加载，禁止运行时 CDN 请求；阻断外网后编辑能更新预览才算通过。编辑器只服务文档演示，不复用产品身份或租户脚本入口。
 - **测试迁移**：原 126 条 Storybook 用例逐条映射到独立 Vitest 浏览器测试或 Playwright，保留默认/悬停/禁用/错误/暗色、SSR、键盘、焦点和 ARIA 覆盖；Rspress 真正构建页面及 iframe 执行 axe，critical / serious = 0；既有 64 项页面 E2E 和 Lighthouse 门禁继续有效，测试失败阻断 PR。
-- **双产物与部署**：HTML 与 SSG-MD 的 API、示例说明同源；校验 llms、搜索、前缀、深链刷新、明暗首帧与离线资源。全站产物保持 100 MB 预算。合并后验证正式站点的真实组件交互与 props 表，不以构建成功代替发布验证。
+- **双产物与部署**：HTML 与 SSG-MD 的 API、示例说明同源；校验 llms、搜索、前缀、深链刷新、明暗首帧与离线资源。全站产物遵守 §7 的 R55 预算（现为 120 MB）。合并后验证正式站点的真实组件交互与 props 表，不以构建成功代替发布验证。
 - **退出旧工具**：替代门禁接通后，同一迁移交付中删除 Storybook 应用、CSF 专用文件、直接/传递依赖、脚本与 CI 入口；普通 React 示例、Vitest/Playwright/axe 保留。同步 README/AGENTS 与 frozen-lockfile 安装验证。
 
 ## 4 页面 frontmatter 规范
@@ -211,14 +211,14 @@ Kun 是 Qian 的底座框架，没有自己的文档站，读者与本站 SDK �
 
 ```text
 website/
-  rspress.config.ts            llms: true；多版本；插件 preview / playground / api-docgen / typedoc
+  rspress.config.ts            llms: true；多版本；自研同源 iframe 预览，TypeScript checker 提取 core Props
   package.json
   README.md                    本规范的实施说明、本地运行与发布方式
   docs/
     index.mdx                  首页
     start/                     1 开始（family.md 产品族地图；versions.md 由 build-versions.ts 生成，不进 Git）
     components/                2 组件目录（生成，勿手改；收集脚本输出）
-      yue/<name>.mdx
+      yue/core/<name>.mdx       51 个 core 入口；yue/api/ 共享继承属性表
       platform/<id>.mdx
     sdk/                       3 SDK
       kun/                     Kun 框架小节：sync-kun-docs.ts 按 KunVersion 镜像 kun 仓库 docs/（生成，勿手改）；with-qian.mdx 为唯一手写页
@@ -230,20 +230,25 @@ website/
     design/                    7 设计与路线（镜像 docs/）
   scripts/
     collect-components.ts      收集组件文件夹 → docs/components/
+    yue-docs.ts                TypeScript checker 提取属性、组合结构与共用示例
+    build-yue-demos.ts         Rsbuild 编译 iframe 与本地编辑器资源 → docs/public/
     sync-specs.ts              specs → docs/cli/、docs/ → docs/design/
     build-kb-index.ts          构建后产出 kb-index.json 与 sitemap.xml（§5.1）
     sync-kun-docs.ts           kun 仓库 v<KunVersion> 的 docs/ 白名单 → docs/sdk/kun/（§2b）
     build-versions.ts          Directory.Packages.props / csproj / global.json / package.json / pnpm 工作区 / deploy/baseline.json → docs/start/versions.md
+  demo/                        普通 React iframe 预览、状态工具栏与离线编辑运行
   theme/                       主题覆盖：接入 @yue/tokens、首页的「复制为 Markdown」（文档页由 llmsUI 注入）、AskDocs 挂载点；自定义组件带 SSG-MD 分支
 ```
 
 ## 7 门禁
 
+S1-QA-010 于 2026-10-15 按 R55 将预算从 100 MB 调整为 120 MB：完整站点实测 96.2 MB / 756 个页面（知识库收录 754 页），其中离线 Monaco / Babel 15.6 MB、API 参考目录 20.1 MB、yue 页面与完整属性表 7.7 MB；保留约 24 MB 的后续收集空间。编辑器继续点击后按需加载、全量同源，完整 TypeScript worker 约 5.75 MB，删除其余语言并不足以降到 90 MB，故本次选用预算调整路线，保留现有编辑能力。共享继承属性表已经去重，预算仍校验全部未压缩文件且超限必败；S1-DOCS-002 开工前须完成此整改，后续正常增长仍需逐次说明，不能自动放宽。
+
 - `scripts/check_docs.py` 覆盖 `website/docs`：禁用词、表格、断链、frontmatter 必填与枚举（§4）；生成目录在 CI 里构建后显式检查（`scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api`）。
 - CI 构建站点后 `pnpm --filter website check`：`llms.txt`、`llms-full.txt`、每页 `.md`、`kb-index.json`、`sitemap.xml` 齐全；索引里每页的 `.md` 与 HTML 都在且 `sha256` 一致，`llms.txt`、`llms-full.txt`、`sitemap.xml` 收录每页，产物里没有索引外的 `.md`；每页 `.md` 没有 JSX / ESM 残留与空标题、空列表项，代码块不少于源页（§5.1）。
 - 生成目录（`components/`、`sdk/api/`、`sdk/kun/`（`with-qian.mdx` 除外）、`cli/`、`design/`）与生成文件 `start/versions.md` 不接受手改 PR（进了 Git 即失败）。
 - Kun 小节：镜像的 Kun tag 与 `Directory.Packages.props` 的 `KunVersion` 不一致即失败；§2b.2 白名单外的文件进站即失败；`KunVersion` 缺失时构建失败而不是取 `main`。
-- 产物总大小超过预算即失败（`website/scripts/check-site.ts` 的 `SITE_SIZE_BUDGET_MB`，现为 100 MB，约为当前的两倍），并报出最大的目录。预算挡的是结构性膨胀，比如同一块内容被重复渲染进每一页；确属正常增长时调高预算，并在 PR 里写明原因（已裁决 R55）。
+- 产物总大小超过预算即失败（`website/scripts/check-site.ts` 的 `SITE_SIZE_BUDGET_MB`，现为 120 MB），并报出最大的目录。预算挡的是结构性膨胀，比如同一块内容被重复渲染进每一页；确属正常增长时调高预算，并在 PR 里写明原因（已裁决 R55）。
 
 ## 8 验收
 

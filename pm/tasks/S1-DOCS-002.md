@@ -9,7 +9,7 @@ priority: P0
 type: feature
 owner: ""
 estimate: 5d
-depends: [S1-DOCS-001, S1-YUE-005, S1-RT-010]
+depends: [S1-DOCS-001, S1-YUE-005, S1-RT-010, S1-QA-010]
 refs:
   - docs/prd/specs/docs-site.md#3
   - docs/adr/ADR-022-rspress-unified-component-docs.md
@@ -17,7 +17,7 @@ refs:
   - docs/prd/specs/component-model.md#2
   - docs/adr/ADR-013-frontend-yue.md#D13.18
   - docs/prd/07-s1-foundation.md#7.2.2
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 ## 背景
@@ -39,3 +39,4 @@ updated: 2026-10-14
 - 2026-10-08 claude：S1-DOCS-005 已搭好 DocFX 流水线（website/scripts/build-kun-api.ts：隔离目录构建、docfx metadata 输出 Markdown、xref 改写为站内路由与锚点），Qian.* 的 API 参考可复用；/sdk/api/index.md 落地页已为 dotnet/、frontend/ 留行。路径注意：本任务验收写 /api/dotnet/，docs-site.md §2b.2 与 §6 写 /sdk/api/dotnet/，落地页暂按后者
 - 2026-10-08 claude：S1-DEC-011 裁决：API 参考统一挂 /sdk/api/{dotnet,frontend,http}/（R56），API 页不进侧栏、不渲染侧栏（R54），验收已按此改；产物总大小预算 100 MB（R55），加 Qian.* 与组件页后若超出，先查重复渲染再调预算
 - 2026-10-14 cody：按用户要求与 ADR-022 对齐：复用 YUE-005 的 Rspress core 接入，不再引入 Storybook；保留通用收集和多语言 API 文档范围，补入 Props 完整性、离线及双产物验收。
+- 2026-10-15 cody：按 S1-QA-010 验收要求加入其前置依赖，文档预算整改复核完成后才能开工
