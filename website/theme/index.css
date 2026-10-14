@@ -287,3 +287,4 @@
 .rp-switch-appearance__icon--sun { display: block; }
 .rp-switch-appearance__icon--moon, html.dark .rp-switch-appearance__icon--sun { display: none; }
 html.dark .rp-switch-appearance__icon--moon { display: block; }
+.rp-search-button .rp-search-button__hotkey { color: oklch(var(--yue-muted-foreground)); background: oklch(var(--yue-muted)); }

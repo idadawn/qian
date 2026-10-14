@@ -59,3 +59,15 @@ test('站点主题支持键盘切换，iframe 保留交互状态', async ({ page
   await expect(page.locator('html')).toHaveClass(/dark/);
   await expect(page.locator('iframe')).toHaveAttribute('src', /theme=dark/);
 });
+
+test('桌面快捷键文字在明暗主题均有足够对比度', async ({ page }) => {
+  await page.addInitScript(() => { Object.defineProperty(navigator, 'platform', { get: () => 'Linux x86_64' }); });
+  const { default: AxeBuilder } = await import('@axe-core/playwright');
+  for (const theme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: theme });
+    await page.goto('components/yue/core/button.html');
+    await expect(page.locator('.rp-search-button__hotkey')).toBeVisible();
+    const violations = (await new AxeBuilder({ page }).include('.rp-search-button').analyze()).violations;
+    expect(violations).toEqual([]);
+  }
+});
