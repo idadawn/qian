@@ -21,7 +21,7 @@ Qian.Capabilities.NavigationManifestPlugin.Inject.get -> System.Collections.Gene
 Qian.Capabilities.NavigationManifestPlugin.NavigationManifestPlugin(Qian.Runtime.IQianPlugin! inner, Qian.Registry.InstalledComponentMetadata! component, Qian.Surfaces.Abstractions.ISurfaceReader! reader) -> void
 const Qian.Capabilities.CapabilitiesDbContext.Schema = "plugin_qian_capabilities" -> string!
 Qian.Capabilities.BufProtoCompatibilityProbe
-Qian.Capabilities.BufProtoCompatibilityProbe.BufProtoCompatibilityProbe(string! executablePath) -> void
+Qian.Capabilities.BufProtoCompatibilityProbe.BufProtoCompatibilityProbe(string! executablePath, Microsoft.Extensions.Logging.ILogger? logger = null) -> void
 Qian.Capabilities.BufProtoCompatibilityProbe.CompareAsync(Qian.Capabilities.ProtoContractSet! baseline, Qian.Capabilities.ProtoContractSet! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
 Qian.Capabilities.BufProtoCompatibilityProbe.CompileAsync(Qian.Capabilities.ProtoContractSet! source, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.ReadOnlyMemory<byte>>
 Qian.Capabilities.BufProtoCompatibilityProbe.CompareDescriptorsAsync(System.ReadOnlyMemory<byte> baseline, System.ReadOnlyMemory<byte> candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>

@@ -7,7 +7,7 @@ Qian.Capabilities.CapabilityCatalog.Items.get -> System.Collections.Generic.IRea
 Qian.Capabilities.CapabilityCatalog.TtlMs.get -> int
 Qian.Capabilities.ICapabilityService
 Qian.Capabilities.ICapabilityService.ComposePromptAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<string!>
-Qian.Capabilities.ICapabilityService.InvokeAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, string! id, System.Text.Json.JsonElement input, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement>
+Qian.Capabilities.ICapabilityService.InvokeAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, string! id, System.Text.Json.JsonElement input, System.Guid? idempotencyKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.CapabilityInvocation!>
 Qian.Capabilities.ICapabilityService.ListAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, string? kind = null, string? query = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.CapabilityCatalog!>
 static Qian.Capabilities.CapabilitiesDefinition.Capabilities(this Qian.Runtime.IPluginContext! context) -> Qian.Capabilities.ICapabilityService!
 static readonly Qian.Capabilities.CapabilitiesDefinition.Key -> Qian.Runtime.ServiceKey
@@ -116,3 +116,7 @@ override Qian.Capabilities.NavigationCatalog.ToString() -> string!
 static Qian.Capabilities.NavigationCatalog.operator !=(Qian.Capabilities.NavigationCatalog? left, Qian.Capabilities.NavigationCatalog? right) -> bool
 static Qian.Capabilities.NavigationCatalog.operator ==(Qian.Capabilities.NavigationCatalog? left, Qian.Capabilities.NavigationCatalog? right) -> bool
 Qian.Capabilities.IHttpContractSource.CompileDocumentAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement>
+Qian.Capabilities.CapabilityInvocation
+Qian.Capabilities.CapabilityInvocation.CapabilityInvocation(System.Text.Json.JsonElement output, bool replayed) -> void
+Qian.Capabilities.CapabilityInvocation.Output.get -> System.Text.Json.JsonElement
+Qian.Capabilities.CapabilityInvocation.Replayed.get -> bool

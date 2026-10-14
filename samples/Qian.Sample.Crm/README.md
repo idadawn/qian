@@ -54,7 +54,7 @@ POST /api/customers 接收 idempotencyKey（UUID）和 name；租户来自验证
 
 这些是本机真实协议与数据库验收，未证明正式包安装、K3s 应用发布、真实 Qian Identity 管理员登录或完整 platform 已完成。
 
-能力目录联调中，三个参考请求显式声明 agent.expose 元数据，用于验证提示词和目录过滤；这不开放 S1 Agent 身份签发或执行。平台目录/Registry 依赖仅加入验收宿主，独立客户应用不因此引用这些平台 Provider。
+能力目录联调中，三个参考请求显式声明 agent.expose 元数据，用于验证提示词和目录过滤。命令宿主的身份适配器接受服务与 Agent 两类机器主体：Agent 只用来验证目录、提示词与通用执行入口的过滤，REST 端点仍只收服务主体，S1 的 RBAC 与命令策略也不授予 Agent 权限；带 `act` 的委托令牌一律在认证阶段拒绝。这不开放 S1 Agent 身份签发或执行。平台目录/Registry 依赖仅加入验收宿主，独立客户应用不因此引用这些平台 Provider。
 
 ## 集成事件
 
