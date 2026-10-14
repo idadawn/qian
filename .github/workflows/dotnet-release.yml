@@ -1,0 +1,87 @@
+name: dotnet-release
+
+# Qian .NET 包族锁步发布到 GitHub Packages 私有源（S1-RT-014，ADR-019 D19.7、ADR-021 D21.1）。
+# 只从 main 手动触发，一次发布整个包族的同一版本：
+#   本提交的 dotnet 工作流已在 main 通过 → 版本号是 SemVer 且私有源里任何包都还没有这个版本 → 带版本号构建并打包 →
+#   核对制品（包族齐全、版本一致、包族内依赖钉在同一版本）→ 先用本地目录在干净消费者里还原验证 → 推送 →
+#   再从私有源在干净消费者里真实还原、构建并运行（独立包缓存，Qian.* 只允许来自私有源）。
+# 推送中途失败时私有源里会留下部分包；同一版本不能再发，换一个新版本号重新触发。说明见 packages/Qian.Plugin.Sdk/README.md「包族私有发布」。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Qian 包族锁步版本（SemVer 2.0，不带 v 前缀，例如 0.1.0）
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dotnet-release
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  QIAN_FEED: https://nuget.pkg.github.com/idadawn/index.json
+
+jobs:
+  release:
+    name: 锁步打包、私有发布与真实还原
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      QIAN_FEED_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 本提交在 main 上的 dotnet 工作流须已通过
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow dotnet.yml --commit "$GITHUB_SHA" --event push --json conclusion --jq '[.[] | select(.conclusion == "success")] | length')
+          if [ "$passed" -lt 1 ]; then
+            echo "提交 $GITHUB_SHA 在 main 上还没有通过的 dotnet 工作流运行，等 CI 通过后再发布。"
+            exit 1
+          fi
+
+      - name: 还原
+        run: dotnet restore Qian.slnx
+
+      - name: 版本号可用（SemVer 2.0，私有源里尚无该版本）
+        run: python3 scripts/dotnet_release.py check-version --version "$RELEASE_VERSION" --feed "$QIAN_FEED" --token-env QIAN_FEED_TOKEN
+
+      - name: 带版本号构建并打包全部 Qian 包
+        run: dotnet pack Qian.slnx -c Release --no-restore -p:Version="$RELEASE_VERSION" -o "$RUNNER_TEMP/nupkgs"
+
+      - name: 核对制品
+        run: python3 scripts/dotnet_release.py verify-packages --version "$RELEASE_VERSION" --dir "$RUNNER_TEMP/nupkgs"
+
+      - name: 发布前用本地目录在干净消费者里验证
+        run: python3 scripts/dotnet_release.py verify-consumer --version "$RELEASE_VERSION" --source "$RUNNER_TEMP/nupkgs"
+
+      - name: 推送到 GitHub Packages
+        run: |
+          for package in "$RUNNER_TEMP"/nupkgs/*.nupkg; do
+            dotnet nuget push "$package" --source "$QIAN_FEED" --api-key "$QIAN_FEED_TOKEN"
+          done
+
+      - name: 从私有源在干净消费者里真实还原、构建并运行
+        run: python3 scripts/dotnet_release.py verify-consumer --version "$RELEASE_VERSION" --source "$QIAN_FEED" --token-env QIAN_FEED_TOKEN --attempts 8

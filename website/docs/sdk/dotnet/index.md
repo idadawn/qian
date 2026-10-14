@@ -4,12 +4,35 @@ description: Qian.Runtime 的编程模型：插件、共享上下文 ctx、服�
 part: sdk
 project: qian
 audience: [developer]
-updated: 2026-10-07
+updated: 2026-10-15
 ---
 
 # 后端 SDK（.NET）
 
 `Qian.Runtime` 极小、无业务语义：共享上下文 `ctx`、服务注册、类型化事件、可逆副作用、装载器，是组件库唯一必需的 Qian 依赖。平台能力都是向 `ctx` 贡献服务键的插件。
+
+## 安装
+
+`Qian.*` 包族以同一 SemVer 版本发布在 GitHub Packages 私有源（S1 私有，ADR-019 D19.7）；Kun 正式包在 nuget.org。项目的 `nuget.config` 用 `packageSourceMapping` 把 `Qian.*` 指向私有源，读取需要带 `read:packages` 权限的 GitHub 令牌：
+
+```xml
+<packageSources>
+  <clear />
+  <add key="qian" value="https://nuget.pkg.github.com/idadawn/index.json" />
+  <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+</packageSources>
+<packageSourceMapping>
+  <packageSource key="qian"><package pattern="Qian.*" /></packageSource>
+  <packageSource key="nuget.org"><package pattern="*" /></packageSource>
+</packageSourceMapping>
+```
+
+组件项目引用同一版本的 `Qian.Plugin.Sdk` 与 `Qian.Plugin.Sdk.Generators`；源生成器是开发依赖，写 `PrivateAssets="all"`：
+
+```xml
+<PackageReference Include="Qian.Plugin.Sdk" Version="0.1.0" />
+<PackageReference Include="Qian.Plugin.Sdk.Generators" Version="0.1.0" PrivateAssets="all" />
+```
 
 ## 编程模型
 
