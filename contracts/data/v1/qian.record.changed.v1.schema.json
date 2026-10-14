@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qian.dev/contracts/data/v1/qian.record.changed.v1.schema.json",
   "title": "RecordChangedPayload",
+  "description": "qian.record.changed.v1 的 payload，对应登记到事件目录的 RecordChangedPayload；事件目录由其源生成 JsonTypeInfo 导出的 Schema 与本文件的成员和必填项一致。tenantId 与 actor 必须等于外层信封的 tenant_id 与 actor。",
   "type": "object",
   "additionalProperties": false,
   "required": [

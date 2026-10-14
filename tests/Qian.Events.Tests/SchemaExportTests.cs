@@ -27,7 +27,7 @@ public sealed class SchemaExportTests
             Assert.True(IntegrationEventTypes.TryParse(item.Type, out var subject, out var version));
             Assert.Equal((subject, version), (item.Subject, item.Version));
         }
-        var login = new IdentityLoginEvent(Guid.CreateVersion7(), DateTime.UtcNow, Guid.CreateVersion7(), Guid.CreateVersion7(), 3, Guid.CreateVersion7(), "web", ["pwd"]);
+        var login = new IdentityLoginEvent(Guid.CreateVersion7(), 3, Guid.CreateVersion7(), "web", ["pwd"]);
         var schema = JsonSchema.FromText(catalog.Single(item => item.Type == IdentityEventIds.Login).PayloadSchema.GetRawText());
         var instance = JsonSerializer.SerializeToElement(login, IdentityJson.EventTypeInfo(IdentityEventIds.Login)!);
         Assert.True(schema.Evaluate(instance).IsValid);

@@ -22,7 +22,7 @@ Kun 的 `Kun.EventBus` + `.RabbitMQ` 提供 Outbox 表 / 发布器 / 锁（默�
 - **D8.4 幂等**：消费端 Redis 幂等表（按 `event_id`）默认装配；写类处理器必须幂等。（2026-10-10 S1-DEC-013：上游 Kun 的 `IProcessedMessageStore` 只有 Redis 实现，PRD §07 7.10 原写的 PG `processed_messages` 兜底表不作默认，留作 S1-EVT-001 的可选项；PRD 已同步。）
 - **D8.5 多副本安全**：Outbox 轮询用 `FOR UPDATE SKIP LOCKED` 或 Redis 锁且默认开启；publisher confirm；`RetryBaseDelay` 指数退避落实；`IOutboxMessageStore` 的 EF 默认实现。
 - **D8.6 租户回灌**：`MessageContext.TenantId`；订阅器建 scope 后调用 `ITenantContext.BeginScope`；Saga 执行器按 `SagaInstance.TenantId` 开作用域；Outbox 发布器带 `tenant_id`。
-- **D8.7 事件信封对齐 iClaw**：必填 `version`（常量 v1）、`event_id`、`subject`（`<domain>.<entity>.<verb>`）、`occurred_at`、`tenant_id`、`payload`；可选 `correlation_id`、`causation_id`、`producer`；事件 ID 带版本后缀（如 `tenant.created.v1`）。
+- **D8.7 事件信封对齐 iClaw**：必填 `version`（常量 v1）、`event_id`、`subject`（`<domain>.<entity>.<verb>`）、`occurred_at`、`tenant_id`、`payload`；可选 `correlation_id`、`causation_id`、`producer`；事件 ID 带版本后缀（如 `tenant.created.v1`）。（2026-10-14 S1-DEC-020：信封字段只在信封上。`event_id`、`occurred_at`、`tenant_id` 由 Qian.Events 写入端入队时生成，`[IntegrationEventId]` 标在载荷类型上，载荷不再声明独立的事件标识或发生时间；载荷因业务需要重复租户或主体时（如 `qian.record.changed.v1` 的 tenantId、actor），消费端须与信封核对一致。身份事件 v1 尚无生产方与已发布包，按此就地删去载荷里的这三项。）
 - **D8.8 事件目录升格为能力目录的一部分**：稳定 ID + JSON Schema 导出 + AsyncAPI 描述；主题 ACL 由插件清单 `provides.events.publish/subscribe` 生成；事件契约化为 S4 Agent 触发器预留。
 - **D8.9 两种订阅模式**：广播（每消费者组一份）与竞争消费；死信队列与重放工具。
 - **D8.10 S2 动态数据事件**用一个静态注册的通用信封事件 `qian.record.changed.v1`（EntityCode / RecordId / Op / TenantId / Payload），必须在命令 handler 同 scope 发出；需要面向 `NpgsqlTransaction` 的 `IOutboxWriter` 实现使动态记录与 `outbox_messages` 同事务。
