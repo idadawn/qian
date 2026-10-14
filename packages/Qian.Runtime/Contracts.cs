@@ -56,8 +56,8 @@ public interface IPluginContext
     IServiceProvider Services { get; }
     /// <summary>宿主提供的日志器。</summary>
     ILogger Logger { get; }
-    /// <summary>独占注册服务键，返回可重复调用的撤销句柄；不自动 Dispose 服务对象。</summary>
-    IDisposable Provide<TService>(ServiceKey key, TService instance) where TService : class;
+    /// <summary>独占注册服务键，返回可重复撤销、可原子替换实例的注册句柄；不自动 Dispose 服务对象。</summary>
+    IRegistrationHandle<TService> Provide<TService>(ServiceKey key, TService instance) where TService : class;
     /// <summary>解析当前可见的服务；未就绪时抛出 ServiceNotReadyException。</summary>
     TService Inject<TService>(ServiceKey key) where TService : class;
     /// <summary>解析可选服务；缺失与不可见均返回 null。</summary>
@@ -93,9 +93,20 @@ public interface IPluginContext
     /// <summary>返回已应用遮蔽与 restrict 的注册快照。</summary>
     IReadOnlyList<Registration> List(ServiceKey key);
     /// <summary>注册具名 seam 实现，等价于提供 Key:name 服务键。</summary>
-    IDisposable Provide<TService>(ServiceKey key, string name, TService instance) where TService : class;
+    IRegistrationHandle<TService> Provide<TService>(ServiceKey key, string name, TService instance) where TService : class;
     /// <summary>解析具名 seam 实现；不存在与被过滤时返回相同 NOT_FOUND。</summary>
     TService Inject<TService>(ServiceKey key, string name) where TService : class;
+}
+
+/// <summary>Provide 返回的注册句柄：Dispose 撤销注册，可重复调用；Replace 原子替换同一注册的实例。</summary>
+public interface IRegistrationHandle<TService> : IDisposable where TService : class
+{
+    /// <summary>
+    /// 在原注册位原子替换实例：解析方只会看到旧实例或新实例，不会看到注册缺失；scope、注册顺序与独占性不变。
+    /// 替换等价于在同一临界区内撤销后再登记，以 inject 依赖该键的条目同样回到 Pending 并重新 Apply。
+    /// 句柄已撤销或上下文已卸载时抛出 ObjectDisposedException。
+    /// </summary>
+    void Replace(TService instance);
 }
 
 /// <summary>目录与执行共用的注册描述；Name 为空表示键本身，具名 seam 使用独立名称。</summary>

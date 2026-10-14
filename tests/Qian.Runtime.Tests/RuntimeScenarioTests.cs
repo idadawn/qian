@@ -39,13 +39,14 @@ public sealed class RuntimeScenarioTests
         await using var loader = new PluginLoader(services, logger);
         await loader.MountAsync([], TestContext.Current.CancellationToken);
         ConcurrentQueue<string> trace = [];
+        ConcurrentDictionary<string, IRegistrationHandle<string>> handles = [];
         var events = new ScenarioEvents(scenario, trace);
         var entries = scenario.GetProperty("entries").EnumerateArray().ToDictionary(e => e.GetProperty("id").GetString()!, e => e);
         PluginDefinition Definition(string id)
         {
             var entry = entries[id];
             return new PluginDefinition(new PluginEntry(id, id, "1.0.0", Scope(entry), 0, JsonSerializer.SerializeToElement(new { })),
-                new ScenarioPlugin(entry, trace, events), Keys(entry, "provides"));
+                new ScenarioPlugin(entry, trace, events, handles), Keys(entry, "provides"));
         }
         foreach (var step in scenario.GetProperty("steps").EnumerateArray())
         {
@@ -86,6 +87,13 @@ public sealed class RuntimeScenarioTests
                     break;
                 case "dispatch":
                     await events.Dispatch(Context(loader, step), step);
+                    break;
+                case "replace":
+                    var handle = handles[step.GetProperty("handle").GetString()!];
+                    var replacement = step.GetProperty("value").GetString()!;
+                    if (step.TryGetProperty("error", out _)) Assert.Throws<ObjectDisposedException>(() => handle.Replace(replacement));
+                    else handle.Replace(replacement);
+                    await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
                     break;
                 case "traceContains":
                     foreach (var value in step.GetProperty("value").EnumerateArray()) Assert.Contains(value.GetString(), trace);
@@ -170,7 +178,7 @@ public sealed class RuntimeScenarioTests
         return new ScopeKey(parts[0], parts[1]);
     }
 
-    private sealed class ScenarioPlugin(JsonElement entry, ConcurrentQueue<string> trace, ScenarioEvents events) : IQianPlugin
+    private sealed class ScenarioPlugin(JsonElement entry, ConcurrentQueue<string> trace, ScenarioEvents events, ConcurrentDictionary<string, IRegistrationHandle<string>> handles) : IQianPlugin
     {
         public IReadOnlyList<ServiceKey> Inject => Keys(entry, "inject");
 
@@ -184,8 +192,10 @@ public sealed class RuntimeScenarioTests
                 {
                     case "provide":
                         var key = new ServiceKey(action.GetProperty("key").GetString()!);
-                        if (action.TryGetProperty("name", out var name)) target.Provide(key, name.GetString()!, action.GetProperty("value").GetString()!);
-                        else target.Provide(key, action.GetProperty("value").GetString()!);
+                        var handle = action.TryGetProperty("name", out var name)
+                            ? target.Provide(key, name.GetString()!, action.GetProperty("value").GetString()!)
+                            : target.Provide(key, action.GetProperty("value").GetString()!);
+                        if (action.TryGetProperty("handle", out var label)) handles[label.GetString()!] = handle;
                         break;
                     case "restrict":
                         var keep = action.GetProperty("keep").EnumerateArray().Select(v => v.GetString()).ToArray();
