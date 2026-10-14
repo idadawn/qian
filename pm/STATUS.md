@@ -1,14 +1,14 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
-- 总体：`████░░░░░░` 48%（73/152）
-- 状态：todo 69 · doing 1 · review 3 · done 73 · blocked 6
+- 总体：`████░░░░░░` 49%（74/152）
+- 状态：todo 68 · doing 1 · review 3 · done 74 · blocked 6
 - 最近更新：2026-10-15
 
 ## 按阶段
 
 | 分组 | 进度 | 进行中 | 阻塞 |
 |---|---|---|---|
-| S1 | `████░░░░░░` 48%（73/151） | 1 | 65 |
+| S1 | `████░░░░░░` 49%（74/151） | 1 | 64 |
 | S2 | `░░░░░░░░░░` 0%（0/1） | 0 | 1 |
 
 ## 按波次
@@ -16,7 +16,7 @@
 | 分组 | 进度 | 进行中 | 阻塞 |
 |---|---|---|---|
 | 决策 | `█████████░` 95%（21/22） | 1 | 0 |
-| 第 1 波 | `█████░░░░░` 58%（30/52） | 0 | 17 |
+| 第 1 波 | `██████░░░░` 60%（31/52） | 0 | 16 |
 | 第 2 波 | `██░░░░░░░░` 29%（18/63） | 0 | 40 |
 | 第 3 波 | `███░░░░░░░` 33%（3/9） | 0 | 4 |
 | 第 4 波 | `█░░░░░░░░░` 17%（1/6） | 0 | 5 |
@@ -43,7 +43,7 @@
 | NTF 消息通知 | `░░░░░░░░░░` 0%（0/3） | 0 | 3 |
 | PM 流程与协作 | `██████████` 100%（3/3） | 0 | 0 |
 | QA 测试 / TCK / 门禁 | `████░░░░░░` 40%（4/10） | 0 | 6 |
-| RT 运行时 / CLI / 市场 | `████░░░░░░` 43%（10/23） | 0 | 9 |
+| RT 运行时 / CLI / 市场 | `████░░░░░░` 48%（11/23） | 0 | 8 |
 | SCH 调度与实时 | `░░░░░░░░░░` 0%（0/3） | 0 | 3 |
 | TEN 租户 | `░░░░░░░░░░` 0%（0/5） | 0 | 4 |
 | YUE 外壳与 yue | `███░░░░░░░` 33%（3/9） | 0 | 4 |
@@ -52,7 +52,7 @@
 
 | 分组 | 进度 | 进行中 | 阻塞 |
 |---|---|---|---|
-| claude | `█████████░` 95%（36/38） | 0 | 1 |
+| claude | `█████████░` 97%（37/38） | 0 | 0 |
 | codex | `██████████` 100%（1/1） | 0 | 0 |
 | cody | `███████░░░` 76%（34/45） | 1 | 7 |
 | 产品负责人 | `██████████` 100%（1/1） | 0 | 0 |
@@ -64,20 +64,19 @@
 |---|---|---|---|---|---|
 | 1 | [S1-AUD-001](tasks/S1-AUD-001.md) qian.audit 命令级哈希链与 AuditBehavior 监听器 | P0 | 1 | 5d | AUD |
 | 2 | [S1-DEP-002](tasks/S1-DEP-002.md) L1 组件上 K3s：RabbitMQ、Apollo + MySQL、OIDC | P0 | 1 | 5d | DEP |
-| 3 | [S1-RT-004](tasks/S1-RT-004.md) qian.registry 插件：清单校验、注册表与 scope 视图 | P0 | 1 | 5d | RT |
-| 4 | [S1-DOCS-002](tasks/S1-DOCS-002.md) 组件文档收集、活演示与 API 参考生成 | P0 | 2 | 5d | DOCS |
-| 5 | [S1-EVT-003](tasks/S1-EVT-003.md) 事件目录、AsyncAPI 导出、主题 ACL 与 IOutboxWriter | P0 | 2 | 3d | EVT |
-| 6 | [S1-YUE-006](tasks/S1-YUE-006.md) @yue/shell：AppShell、Page 族、菜单注册表与认证页族 | P0 | 2 | 3d | YUE |
-| 7 | [S1-YUE-007](tasks/S1-YUE-007.md) @yue/form：SchemaForm、弹层 API 与 Schema 草案 | P0 | 2 | 5d | YUE |
-| 8 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
-| 9 | [S1-RT-021](tasks/S1-RT-021.md) 验收整改：执行入口 OpenAPI 补不可重放码、回执清理与 NOT VALID 说法更正、登记期检查装配、数据分级标注与测试补强（S1-RT-020 复核） | P1 | 2 | 2d | RT |
-| 10 | [S1-RT-007](tasks/S1-RT-007.md) 能力契约预留：可发布元数据、导入导出、Operation、App | P1 | 3 | 3d | RT |
+| 3 | [S1-DOCS-002](tasks/S1-DOCS-002.md) 组件文档收集、活演示与 API 参考生成 | P0 | 2 | 5d | DOCS |
+| 4 | [S1-EVT-003](tasks/S1-EVT-003.md) 事件目录、AsyncAPI 导出、主题 ACL 与 IOutboxWriter | P0 | 2 | 3d | EVT |
+| 5 | [S1-YUE-006](tasks/S1-YUE-006.md) @yue/shell：AppShell、Page 族、菜单注册表与认证页族 | P0 | 2 | 3d | YUE |
+| 6 | [S1-YUE-007](tasks/S1-YUE-007.md) @yue/form：SchemaForm、弹层 API 与 Schema 草案 | P0 | 2 | 5d | YUE |
+| 7 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
+| 8 | [S1-RT-021](tasks/S1-RT-021.md) 验收整改：执行入口 OpenAPI 补不可重放码、回执清理与 NOT VALID 说法更正、登记期检查装配、数据分级标注与测试补强（S1-RT-020 复核） | P1 | 2 | 2d | RT |
+| 9 | [S1-RT-007](tasks/S1-RT-007.md) 能力契约预留：可发布元数据、导入导出、Operation、App | P1 | 3 | 3d | RT |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 10 | 38d |
+| 第 1 层 | 9 | 33d |
 | 第 2 层 | 10 | 44d |
 | 第 3 层 | 16 | 52d |
 | 第 4 层 | 10 | 40d |
@@ -94,6 +93,6 @@
 | 任务 | 状态 | 负责人 | 更新 |
 |---|---|---|---|
 | [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-15 |
-| [S1-RT-023](tasks/S1-RT-023.md) 装载器并发失效竞态：级联清理中途回到 Pending 的依赖者须先撤销旧上下文再重新 Apply | review | claude | 2026-10-15 |
+| [S1-RT-004](tasks/S1-RT-004.md) qian.registry 插件：清单校验、注册表与 scope 视图 | review | cody | 2026-10-15 |
 | [S1-RT-026](tasks/S1-RT-026.md) Apply 进行中所注入的键被并发替换或撤销时条目永久 Failed：应作废本次 Apply、撤销后回到 Pending 重来 | review | claude | 2026-10-15 |
 | [S1-TEN-001](tasks/S1-TEN-001.md) 租户主档、fail-closed 租户上下文与传播器、tenancy API | review | cody | 2026-10-15 |

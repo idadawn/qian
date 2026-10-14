@@ -12,6 +12,7 @@ internal sealed partial class RegistryScopeReconciler(
     ITenantContext tenant, RegistryProfileComposer composer, PluginLoader runtime, IPluginContext owner,
     Func<ResolvedProfileEntry, PluginDefinition> resolve) : IAsyncDisposable
 {
+    private const string PatchFile = "registry/scope-patches.json";
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Dictionary<ScopeKey, ScopeState> _scopes = [];
     private readonly CancellationTokenSource _stop = new();
@@ -62,6 +63,93 @@ internal sealed partial class RegistryScopeReconciler(
         finally { _gate.Release(); }
     }
 
+    // 管理面视图（R32）：与装载同一把锁，先合入数据库 scope，再按实际运行时状态列出本 scope 已挂载且 Ready 的条目。
+    internal async ValueTask<IReadOnlyList<RegistryEntryView>> ViewAsync(string tenantId, ScopeKey scope, CancellationToken ct)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            var state = await Inspected(tenantId, scope, linked.Token).ConfigureAwait(false);
+            if (state.Blocked) return [];
+            var result = new List<RegistryEntryView>();
+            foreach (var entry in runtime.DumpConfig())
+            {
+                var local = entry.Scope == scope && state.Mounted.ContainsKey(entry.Id);
+                if (!local && (entry.Scope != ScopeKey.Global || state.Hidden.Contains(entry.Id))) continue;
+                try { if (runtime.GetState(entry.Id, entry.Scope) != PluginState.Ready) continue; }
+                catch (InvalidOperationException) { continue; }
+                result.Add(View(state, entry, local));
+            }
+            return result.OrderBy(view => view.EntryId, StringComparer.Ordinal).ToArray().AsReadOnly();
+        }
+        finally { _gate.Release(); }
+    }
+
+    // 管理面单个条目（R32 / R48）：Ready 返回视图；其余以原因码说明哪一层导致，pointer 指向 patch 条目。
+    // 已知 = 宿主预装绑定、全局已装配条目与本 scope 自己的 patch 行；其它租户的局部条目不会因此暴露。
+    internal async ValueTask<RegistryEntryView> InspectAsync(string tenantId, ScopeKey scope, string entryId, IReadOnlySet<string> installed, CancellationToken ct)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            var state = await Inspected(tenantId, scope, linked.Token).ConfigureAwait(false);
+            var live = runtime.DumpConfig();
+            var global = live.SingleOrDefault(entry => entry.Scope == ScopeKey.Global && entry.Id == entryId);
+            if (!installed.Contains(entryId) && global is null && !state.Mounted.ContainsKey(entryId) && !state.Sources.ContainsKey(entryId) && !state.Disabled.ContainsKey(entryId))
+                throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+            if (state.Blocked) throw Reason(RegistryErrors.NotMounted, "租户 scope patch 无法装配，本 scope 的条目已全部撤下", PatchFile + "#");
+            if (state.Mounted.ContainsKey(entryId) && live.SingleOrDefault(entry => entry.Scope == scope && entry.Id == entryId) is { } local)
+                return Judge(state, local, true, state.Sources.GetValueOrDefault(entryId));
+            if (state.Disabled.TryGetValue(entryId, out var disabled))
+                throw Reason(RegistryErrors.NotMounted, Disabling(state, disabled), disabled.SourceLocation);
+            if (global is not null && !state.Hidden.Contains(entryId)) return Judge(state, global, false, null);
+            throw Reason(RegistryErrors.NotMounted, "未挂载：平台 profile 与租户 scope patch 均未声明此条目", PatchFile + "#");
+        }
+        finally { _gate.Release(); }
+    }
+
+    // 只接受已验证租户自己的 scope；合入失败已把本 scope 收紧为 Blocked，诊断照常给出原因而不是抛出装配异常。
+    private async ValueTask<ScopeState> Inspected(string tenantId, ScopeKey scope, CancellationToken ct)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (scope.Kind != "tenant" || scope.Id != tenantId) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+        if (!_scopes.TryGetValue(scope, out var state)) _scopes.Add(scope, state = new ScopeState(tenantId, scope));
+        if (state.TenantId != tenantId) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+        try { await Refresh(state, ct).ConfigureAwait(false); }
+        catch (Exception error) when (state.Blocked && !ct.IsCancellationRequested && error is QianErrorException or InvalidOperationException) { }
+        ct.ThrowIfCancellationRequested();
+        return state;
+    }
+
+    private RegistryEntryView Judge(ScopeState state, PluginEntry entry, bool local, string? pointer)
+    {
+        PluginState current;
+        try { current = runtime.GetState(entry.Id, entry.Scope); }
+        catch (InvalidOperationException) { throw Reason(RegistryErrors.NotMounted, "条目正在撤下", pointer); } // 两个快照之间被撤销。
+        return current switch
+        {
+            PluginState.Ready => View(state, entry, local),
+            PluginState.Pending or PluginState.Applying => throw Reason(RegistryErrors.DependencyPending, "条目已挂载，等待依赖的服务就绪", pointer),
+            _ => throw Reason(RegistryErrors.NotMounted, "条目装配失败，已撤下", pointer)
+        };
+    }
+
+    private static RegistryEntryView View(ScopeState state, PluginEntry entry, bool local) => new(entry.Id, entry.Plugin, entry.Version,
+        entry.Scope == ScopeKey.Global ? "global" : entry.Scope.Kind + ":" + entry.Scope.Id, entry.Layer,
+        local && state.Revisions.TryGetValue(entry.Id, out var revision) ? revision : null);
+
+    private static string Disabling(ScopeState state, DisabledProfileEntry disabled)
+    {
+        if (disabled.Scope != "global") return "被租户 scope patch 禁用";
+        var layer = state.Layers.FirstOrDefault(item => item.Index == disabled.Layer);
+        return layer is null ? "被平台 profile 禁用" : $"被平台 profile 的 {layer.Kind} 层禁用（{layer.Path}）";
+    }
+
+    private static QianErrorException Reason(Qian.Runtime.Errors.ErrorCode code, string reason, string? pointer) =>
+        new(new QianError(code, new Dictionary<string, string> { ["reason"] = reason }) { Pointer = pointer });
+
     internal async ValueTask RefreshAllAsync(CancellationToken ct)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
@@ -94,6 +182,7 @@ internal sealed partial class RegistryScopeReconciler(
                     d.Error.Pointer ?? "registry/scope-patches.json#", new Dictionary<string, string> { ["reason"] = "scope 配置无法装配。" })).ToArray()
             });
             var name = state.Scope.Kind + ":" + state.Scope.Id;
+            Record(state, result.Snapshot!, rows, name);
             var entries = result.Snapshot!.Entries.Where(e => e.Scope == name).ToDictionary(e => e.Id, StringComparer.Ordinal);
             var order = result.Snapshot.MountOrder.Where(id => id.StartsWith(name + "/", StringComparison.Ordinal))
                 .Select(id => id[(name.Length + 1)..]).ToArray();
@@ -170,6 +259,18 @@ internal sealed partial class RegistryScopeReconciler(
         return definition with { Plugin = new ScopedPlugin(definition.Plugin) };
     }
 
+    // 管理面诊断用的最近一次装配结论：禁用来源（本 scope 优先于全局）、patch 行定位与修订；不保存配置原文。
+    // 行按 entry id 序数排序后合入（RegistryProfileComposer），所以第 n 行的指针即 /n。
+    private static void Record(ScopeState state, ProfileSnapshot snapshot, IReadOnlyList<ScopePatchSnapshot> rows, string name)
+    {
+        state.Layers = snapshot.Layers;
+        state.Disabled = snapshot.DisabledEntries.Where(entry => entry.Scope == "global").Concat(snapshot.DisabledEntries.Where(entry => entry.Scope == name))
+            .GroupBy(entry => entry.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.Last(), StringComparer.Ordinal);
+        var ordered = rows.OrderBy(row => row.EntryId, StringComparer.Ordinal).ToArray();
+        state.Sources = ordered.Select((row, index) => (row.EntryId, index)).ToDictionary(item => item.EntryId, item => PatchFile + "#/" + item.index, StringComparer.Ordinal);
+        state.Revisions = ordered.ToDictionary(row => row.EntryId, row => row.Revision, StringComparer.Ordinal);
+    }
+
     private void SetRestriction(ScopeState state, HashSet<string> hidden, bool blockAll)
     {
         if (state.Filter is not null && state.Blocked == blockAll && state.Hidden.SetEquals(hidden)) return;
@@ -221,6 +322,10 @@ internal sealed partial class RegistryScopeReconciler(
         internal HashSet<string> Hidden = new(StringComparer.Ordinal);
         internal IDisposable? Filter;
         internal bool Blocked;
+        internal IReadOnlyList<ProfileLayer> Layers = [];
+        internal Dictionary<string, DisabledProfileEntry> Disabled = new(StringComparer.Ordinal);
+        internal Dictionary<string, string> Sources = new(StringComparer.Ordinal);
+        internal Dictionary<string, int> Revisions = new(StringComparer.Ordinal);
     }
 
     private sealed class ScopedPlugin(IQianPlugin inner) : IQianPlugin

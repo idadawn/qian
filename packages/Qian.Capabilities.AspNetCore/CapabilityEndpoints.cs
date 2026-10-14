@@ -1,6 +1,3 @@
-using System.Buffers;
-using System.Globalization;
-using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -17,9 +14,6 @@ namespace Qian.Capabilities.AspNetCore;
 /// <summary>宿主提供已验证租户的 Runtime 视图；HTTP 输入不能指定主体或租户。</summary>
 public static class CapabilityEndpoints
 {
-    // v1 别名的弃用时间（RFC 9745 结构化日期，2026-10-07T00:00:00Z）；S2 移除别名（R33）。
-    private const string AliasDeprecation = "@1791331200";
-
     /// <summary>登记认证目录、菜单、偏好、旧别名和实际调用。宿主须先配置身份、租户和 ErrorDetail 中间件。</summary>
     public static IEndpointRouteBuilder MapQianCapabilities(this IEndpointRouteBuilder endpoints, Func<HttpContext, IPluginContext> source)
         => MapQianCapabilities(endpoints, source, new PluginEndpointBinding("capabilities", "qian.capabilities", CapabilitiesDefinition.Key));
@@ -86,34 +80,10 @@ public static class CapabilityEndpoints
         }
     }
 
-    // 别名响应带 Deprecation 与指向后继路径的 Link（规格 §9.5）；后继带宿主的 PathBase 并保留原查询串，客户端可原样改用新路径。
+    // 别名响应带 Deprecation 与指向后继路径的 Link（规格 §9.5），与其它 v1 别名共用 SDK 的同一实现。
     private static void Deprecate(HttpContext http, string? successor)
     {
-        if (successor is null) return;
-        http.Response.Headers["Deprecation"] = AliasDeprecation;
-        http.Response.Headers.Link = SuccessorLink(http.Request, successor);
-    }
-
-    // 查询串原样来自请求行，可能含 URI 不允许的字符（如 <、>、引号、空格、非 ASCII）；按 RFC 3986 的 query 字符集保留合法字符与
-    // 合法的百分号编码，其余按 UTF-8 百分号编码，保证 Link 的 URI-Reference 合法、不会提前闭合尖括号。
-    internal static string SuccessorLink(HttpRequest request, string successor)
-    {
-        var target = new StringBuilder(request.PathBase.Add(new PathString(successor)).ToUriComponent());
-        ReadOnlySpan<char> query = request.QueryString.Value;
-        Span<byte> bytes = stackalloc byte[4];
-        while (!query.IsEmpty)
-        {
-            // 孤立的代理项按替换字符编码。
-            if (Rune.DecodeFromUtf16(query, out var rune, out var consumed) != OperationStatus.Done) rune = Rune.ReplacementChar;
-            var c = query[0];
-            if (rune.IsAscii && (char.IsAsciiLetterOrDigit(c) || "-._~!$&'()*+,;=:@/?".Contains(c) ||
-                (c == '%' && query.Length > 2 && char.IsAsciiHexDigit(query[1]) && char.IsAsciiHexDigit(query[2]))))
-                target.Append(c);
-            else
-                foreach (var b in bytes[..rune.EncodeToUtf8(bytes)]) target.Append('%').Append(b.ToString("X2", CultureInfo.InvariantCulture));
-            query = query[Math.Max(consumed, 1)..];
-        }
-        return "<" + target + ">; rel=\"successor-version\"";
+        if (successor is not null) DeprecatedAlias.Apply(http, successor);
     }
 
     // Idempotency-Key 取 UUID（RFC 9562 文本形式，可按结构化字段带引号）；多值、空值、非 UUID 或全零均视为无法解析的请求。
