@@ -136,7 +136,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 
 `ProtoContractSet` 只保存同一制品中的 proto 文件，复制字节并沿用制品路径、文件数和总大小限制。编译使用独立目录、固定配置、禁止符号链接、清空继承环境及受控缓存，不读取制品中的 Buf 配置、网络依赖或生成器。输出包含依赖的标准 FileDescriptorSet。版本升级按 FILE 规则检测源码、JSON 和 wire 破坏性变化；语法错误、缺少导入、检查异常和超时均关闭准入。
 
-检查器输出只把形如 `{"type":"<规则 ID>",…}` 的合法 JSON 行当作破坏性规则；警告、进度、无效 JSON 等其余行按 stderr 诊断处理：最多 50 行、每行截断到 500 字符，经宿主传入的 `ILogger` 记为警告，失败时附在异常的 `Data["contractDiagnostics"]`，不会因为混入一行非 JSON 而抛异常。判定只看退出码：0 兼容；100 且至少有一条规则为不兼容；100 却没有任何规则、或其他退出码，都拒绝准入。
+破坏性规则只从检查器的标准输出取，且只认形如 `{"type":"<规则 ID>",…}` 的合法 JSON 行；标准输出里的警告、进度、无效 JSON 等其余行，与标准错误分开处理：两路各最多 50 行、每行截断到 500 字符，经宿主传入的 `ILogger` 分别记为警告，失败时分别附在异常的 `Data["contractDiagnostics"]`（标准输出）与 `Data["contractErrors"]`（标准错误）。标准错误不参与规则解析，形似规则的行也不算；不会因为混入一行非 JSON 而抛异常。判定只看退出码：0 兼容；100 且至少有一条规则为不兼容；100 却没有任何规则、或其他退出码，都拒绝准入。
 
 `GrpcReflectionContractProbe` 使用宿主提供的 CallInvoker 和认证元数据连接真实 HTTP/2 reflection 服务，复制凭据且不写入诊断。它查询声明中的每个服务，收集文件和依赖，核验冲突、大小及 RPC 最终状态，再按 PACKAGE 规则检查 RPC、消息与字段；允许服务构建的 ProtoRoot 文件前缀不同，不因仅有文件布局差异误拒。两类规则依据 [Buf 兼容规则说明](https://buf.build/docs/breaking/rules/)。宿主负责端点、TLS、出网范围和探测授权；探测入口不接受客户端 URL 或可信标记。
 

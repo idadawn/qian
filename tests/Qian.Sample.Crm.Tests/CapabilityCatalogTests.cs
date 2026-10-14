@@ -362,7 +362,7 @@ public sealed partial class CustomerCommandTests
             try { await next(http); }
             catch (Exception error)
             {
-                app.Services.GetRequiredService<FailureEvidence>().Failures.Enqueue(error.GetType().Name + "\n" + error.Data["contractDiagnostics"] + "\n" + error.StackTrace);
+                app.Services.GetRequiredService<FailureEvidence>().Failures.Enqueue(error.GetType().Name + "\n" + error.Data["contractDiagnostics"] + "\n" + error.Data["contractErrors"] + "\n" + error.StackTrace);
                 throw;
             }
         });

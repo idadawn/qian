@@ -239,7 +239,7 @@ public sealed class CapabilityInputTests
     }
 
     [Fact]
-    public void buf输出只取合法规则行_其余行作为截断诊断保留_不抛异常()
+    public void buf规则只从标准输出取_标准输出的其余行与标准错误分开截断保留_不抛异常()
     {
         var output = string.Join("\n",
             """{"path":"model.proto","start_line":3,"type":"FIELD_SAME_TYPE","message":"字段类型改变"}""",
@@ -250,46 +250,55 @@ public sealed class CapabilityInputTests
             "[1,2]",
             """{"type":"bad type!"}""",
             """{"message":"no type"}""");
-        var (rules, diagnostics) = BufProtoCompatibilityProbe.ParseBreaking(output, "progress 100%\n" + new string('x', 600));
-        Assert.Equal(["FIELD_NO_DELETE", "FIELD_SAME_TYPE"], rules);
-        Assert.Equal(["WARN: flag --error-format is deprecated", "{not json", "[1,2]", """{"type":"bad type!"}""", """{"message":"no type"}""", "progress 100%", new string('x', 500)], diagnostics);
-        var (none, lines) = BufProtoCompatibilityProbe.ParseBreaking(string.Join("\n", Enumerable.Range(0, 80).Select(index => "line " + index)), "");
-        Assert.Empty(none); Assert.Equal(50, lines.Count);
+        // 标准错误里形似规则的行也不算规则。
+        var report = BufProtoCompatibilityProbe.ParseBreaking(output, "progress 100%\n" + """{"type":"PACKAGE_NO_DELETE"}""" + "\n" + new string('x', 600));
+        Assert.Equal(["FIELD_NO_DELETE", "FIELD_SAME_TYPE"], report.Rules);
+        Assert.Equal(["WARN: flag --error-format is deprecated", "{not json", "[1,2]", """{"type":"bad type!"}""", """{"message":"no type"}"""], report.Noise);
+        Assert.Equal(["progress 100%", """{"type":"PACKAGE_NO_DELETE"}""", new string('x', 500)], report.Errors);
+        var lines = string.Join("\n", Enumerable.Range(0, 80).Select(index => "line " + index));
+        var many = BufProtoCompatibilityProbe.ParseBreaking(lines, lines);
+        Assert.Empty(many.Rules); Assert.Equal(50, many.Noise.Count); Assert.Equal(50, many.Errors.Count);
     }
 
     [Fact]
-    public async Task buf退出码与输出组合_噪声行写日志_缺规则或执行失败带诊断拒绝()
+    public async Task buf退出码与输出组合_标准输出噪声与标准错误分别写日志_缺规则或执行失败带两路诊断拒绝()
     {
         Assert.SkipWhen(OperatingSystem.IsWindows(), "替身检查器是 POSIX shell 脚本。");
         var directory = Directory.CreateTempSubdirectory("qian-buf-stub-");
         try
         {
             var logger = new RecordingLogger();
-            var noisy = await Stub(directory, "noisy", 100, """{"type":"FIELD_SAME_TYPE","message":"字段类型改变"}""", "WARN: progress");
+            var noisy = await Stub(directory, "noisy", 100, ["""{"type":"FIELD_SAME_TYPE","message":"字段类型改变"}""", "WARN: progress"], ["""{"type":"PACKAGE_NO_DELETE"}""", "note: cache"]);
             var result = await new BufProtoCompatibilityProbe(noisy, logger).CompareDescriptorsAsync(new byte[] { 1 }, new byte[] { 2 }, Ct);
             Assert.False(result.IsCompatible); Assert.Equal(["FIELD_SAME_TYPE"], result.BreakingRules);
-            Assert.Contains("WARN: progress", Assert.Single(logger.Messages), StringComparison.Ordinal);
+            Assert.Equal(2, logger.Messages.Count);
+            var stdout = Assert.Single(logger.Messages, message => message.Contains("标准输出", StringComparison.Ordinal));
+            Assert.Contains("WARN: progress", stdout, StringComparison.Ordinal); Assert.DoesNotContain("note: cache", stdout, StringComparison.Ordinal);
+            var stderr = Assert.Single(logger.Messages, message => message.Contains("标准错误", StringComparison.Ordinal));
+            Assert.Contains("note: cache", stderr, StringComparison.Ordinal); Assert.Contains("PACKAGE_NO_DELETE", stderr, StringComparison.Ordinal);
 
-            var clean = await Stub(directory, "clean", 0, "note: nothing to compare");
+            var clean = await Stub(directory, "clean", 0, ["note: nothing to compare"]);
             Assert.True((await new BufProtoCompatibilityProbe(clean).CompareDescriptorsAsync(new byte[] { 1 }, new byte[] { 2 }, Ct)).IsCompatible);
 
-            var unexplained = await Stub(directory, "unexplained", 100, "only noise");
+            // 规则行只在标准错误里：不算规则，按缺少规则拒绝。
+            var unexplained = await Stub(directory, "unexplained", 100, ["only noise"], ["""{"type":"FIELD_SAME_TYPE"}"""]);
             var missing = await Assert.ThrowsAsync<InvalidOperationException>(() => new BufProtoCompatibilityProbe(unexplained).CompareDescriptorsAsync(new byte[] { 1 }, new byte[] { 2 }, Ct).AsTask());
-            Assert.Equal("only noise", missing.Data["contractDiagnostics"]);
+            Assert.Equal(("only noise", """{"type":"FIELD_SAME_TYPE"}"""), (missing.Data["contractDiagnostics"], missing.Data["contractErrors"]));
 
-            var crashed = await Stub(directory, "crashed", 3, "panic: boom");
+            var crashed = await Stub(directory, "crashed", 3, [], ["panic: boom"]);
             var failed = await Assert.ThrowsAsync<InvalidOperationException>(() => new BufProtoCompatibilityProbe(crashed).CompareDescriptorsAsync(new byte[] { 1 }, new byte[] { 2 }, Ct).AsTask());
-            Assert.Equal("panic: boom", failed.Data["contractDiagnostics"]);
+            Assert.Equal(("", "panic: boom"), (failed.Data["contractDiagnostics"], failed.Data["contractErrors"]));
         }
         finally { directory.Delete(true); }
     }
 
     // 只用 shell 内建命令：检查器在清空的环境变量下运行，没有 PATH。
-    private static async Task<string> Stub(DirectoryInfo directory, string name, int exit, params string[] lines)
+    private static async Task<string> Stub(DirectoryInfo directory, string name, int exit, string[] output, string[]? error = null)
     {
         var path = Path.Combine(directory.FullName, name);
         var script = new StringBuilder("#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 1.73.0; exit 0; fi\n");
-        foreach (var line in lines) script.Append("echo '").Append(line.Replace("'", "'\\''", StringComparison.Ordinal)).Append("'\n");
+        foreach (var line in output) script.Append("echo '").Append(line.Replace("'", "'\\''", StringComparison.Ordinal)).Append("'\n");
+        foreach (var line in error ?? []) script.Append("echo '").Append(line.Replace("'", "'\\''", StringComparison.Ordinal)).Append("' >&2\n");
         script.Append("exit ").Append(exit).Append('\n');
         await File.WriteAllTextAsync(path, script.ToString(), Ct);
         if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
