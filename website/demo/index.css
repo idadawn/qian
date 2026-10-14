@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+@import '@idadawn/yue-tokens/index.css';
+@source '../../packages/yue/core';
+@source '../../packages/yue/tokens';
+@source './main.tsx';
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; }
+.demo-toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--border); font-size: .875rem; }
+.demo-toolbar button, .demo-toolbar select { padding: .35rem .65rem; border: 1px solid var(--border); border-radius: .4rem; background: var(--background); color: var(--foreground); }
+.demo-toolbar button:focus-visible, .demo-toolbar select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.demo-stage { padding: 2rem; min-height: 220px; }
+.demo-editor { height: 250px; border-bottom: 1px solid var(--border); }
+.demo-error { padding: 1rem; color: var(--destructive); white-space: pre-wrap; }

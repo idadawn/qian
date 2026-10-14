@@ -250,3 +250,41 @@
     gap: 4px;
   }
 }
+
+/* 实际文档页的代码与辅助文字也遵守 yue 对比度，保留 Shiki 的语法分组。 */
+:root:root {
+  --rp-c-text-3: oklch(var(--yue-muted-foreground));
+  --shiki-background: oklch(var(--yue-muted));
+  --shiki-foreground: oklch(var(--yue-foreground));
+  --shiki-token-constant: oklch(var(--yue-foreground));
+  --shiki-token-string: oklch(var(--yue-foreground));
+  --shiki-token-comment: oklch(var(--yue-muted-foreground));
+  --shiki-token-keyword: oklch(var(--yue-primary));
+  --shiki-token-parameter: oklch(var(--yue-foreground));
+  --shiki-token-function: oklch(var(--yue-primary));
+  --shiki-token-string-expression: oklch(var(--yue-foreground));
+  --shiki-token-punctuation: oklch(var(--yue-foreground));
+  --shiki-token-link: oklch(var(--yue-primary));
+}
+.rp-header-anchor:focus-visible { opacity: 1; outline: 2px solid oklch(var(--yue-ring)); outline-offset: 2px; }
+:root:root {
+  --rp-container-info-text: oklch(var(--yue-info));
+  --rp-container-info-bg: oklch(var(--yue-info-bg));
+  --rp-container-tip-text: oklch(var(--yue-ok));
+  --rp-container-tip-bg: oklch(var(--yue-ok-bg));
+  --rp-container-warning-text: oklch(var(--yue-warn));
+  --rp-container-warning-bg: oklch(var(--yue-warn-bg));
+  --rp-container-danger-text: oklch(var(--yue-error));
+  --rp-container-danger-bg: oklch(var(--yue-error-bg));
+}
+.rp-social-links .rp-social-links__icon { display: flex; width: 20px; height: 20px; }
+.rp-social-links .rp-social-links__icon svg { display: block; width: 100%; height: 100%; }
+
+.rp-switch-appearance { border: 0; background: transparent; }
+.rp-switch-appearance:focus-visible { outline: 2px solid oklch(var(--yue-ring)); outline-offset: 2px; }
+.rp-switch-appearance { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; color: oklch(var(--yue-muted-foreground)); cursor: pointer; }
+.rp-switch-appearance svg { width: 20px; height: 20px; }
+.rp-switch-appearance__icon--sun { display: block; }
+.rp-switch-appearance__icon--moon, html.dark .rp-switch-appearance__icon--sun { display: none; }
+html.dark .rp-switch-appearance__icon--moon { display: block; }
+.rp-search-button .rp-search-button__hotkey { color: oklch(var(--yue-muted-foreground)); background: oklch(var(--yue-muted)); }
