@@ -990,14 +990,14 @@
  {
   "id": "S1-CFG-009",
   "title": "profile 配置 Schema 验证器其余语义分歧：items 位置、文本长度、小数与大整数、$schema 方言",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "CFG",
   "areaName": "配置",
   "wave": 1,
   "priority": "P2",
   "type": "fix",
-  "owner": "",
+  "owner": "claude",
   "estimate": "1d",
   "days": 1.0,
   "depends": [
@@ -1005,7 +1005,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "packages/Qian.Profiles/README.md",
@@ -1021,7 +1021,7 @@
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-008（idadawn/qian#102）之后，profile 装配的两端 Schema 验证器（CLI 为 Ajv 8.20，.NET 为 JsonSchema.Net 9.4.0）共用正则翻译规则，诊断也归一为出错实例位置。用 77 组 Schema 与配置做差分时，以下情形两端仍不一致，S1-CFG-008 只把它们写进了 <code>packages/Qian.Profiles/README.md</code> 的已知分歧：</p>\n<p>1. prefixItems 之后的 items。JsonSchema.Net 9.4.0 的 <code>ItemsKeyword.Evaluate</code> 跳过前缀后从 0 起算实例位置（上游缺陷，<code>[&quot;a&quot;, 1, 2]</code> 报 <code>/0</code>、<code>/1</code>，应为 <code>/1</code>、<code>/2</code>）；Ajv 对 <code>items: false</code> 只在数组上报一条。</p>\n<p>2. unevaluatedItems。Ajv 对 <code>false</code> 只报数组位置；JsonSchema.Net 逐项报告，且按规范把 contains 匹配的项算作已求值，Ajv 不算。</p>\n<p>3. minLength 与 maxLength。JsonSchema.Net 用 <code>StringInfo.LengthInTextElements</code> 按文本元素计数（<code>e</code> 加组合重音算 1），Ajv 按码点计数（算 2）。</p>\n<p>4. multipleOf 的小数。Ajv 用浮点取余，<code>0.3</code> 不算 <code>0.1</code> 的倍数；.NET 按十进制判断为倍数。</p>\n<p>5. 超过 2^53 的整数。Ajv 按双精度比较，const、enum、minimum 等的结论与 .NET 不同。</p>\n<p>6. <code>$schema</code> 声明 draft-07。Ajv2020 无法编译，CLI 报无法解析；JsonSchema.Net 按 draft-07 验证。</p>\n<p>7. contains 或 propertyNames 的子 Schema 经 <code>$ref</code> 引用、且 Ajv 没有内联引用时，Ajv 的错误不再带外层关联，CLI 多报逐项位置或对象位置。</p>\n<p>两端的归一规则在 <code>ProfileLoader.Locations</code> 与 <code>profiles.ts</code> 的 <code>locations</code>。差分做法：把同一组 Schema 与配置写进 <code>tck/profiles/base</code> 的临时副本，同时交给 <code>loadProfile</code> 与 <code>ProfileLoader</code>，逐项比较诊断。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>逐项决定处理方式：统一语义、两端都拒绝该写法，或明确声明不支持；两端实现并加入共享 TCK（含 <code>reason</code>），报告比较通过</li>\n<li class='chk'><span class='box'></span>已对齐的分歧从 <code>packages/Qian.Profiles/README.md</code> 删去；不对齐的写明原因与对组件作者的要求</li>\n<li class='chk'><span class='box'></span>JsonSchema.Net 的 items 位置缺陷若需上游修复，记录上游问题或绕过方式</li>\n<li class='chk'><span class='box'></span><code>pnpm --filter qian test</code>、<code>Qian.Profiles.Tests</code>、全量测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-008（idadawn/qian#102）之后，profile 装配的两端 Schema 验证器（CLI 为 Ajv 8.20，.NET 为 JsonSchema.Net 9.4.0）共用正则翻译规则，诊断也归一为出错实例位置。用 77 组 Schema 与配置做差分时，以下情形两端仍不一致，S1-CFG-008 只把它们写进了 <code>packages/Qian.Profiles/README.md</code> 的已知分歧：</p>\n<p>1. prefixItems 之后的 items。JsonSchema.Net 9.4.0 的 <code>ItemsKeyword.Evaluate</code> 跳过前缀后从 0 起算实例位置（上游缺陷，<code>[&quot;a&quot;, 1, 2]</code> 报 <code>/0</code>、<code>/1</code>，应为 <code>/1</code>、<code>/2</code>）；Ajv 对 <code>items: false</code> 只在数组上报一条。</p>\n<p>2. unevaluatedItems。Ajv 对 <code>false</code> 只报数组位置；JsonSchema.Net 逐项报告，且按规范把 contains 匹配的项算作已求值，Ajv 不算。</p>\n<p>3. minLength 与 maxLength。JsonSchema.Net 用 <code>StringInfo.LengthInTextElements</code> 按文本元素计数（<code>e</code> 加组合重音算 1），Ajv 按码点计数（算 2）。</p>\n<p>4. multipleOf 的小数。Ajv 用浮点取余，<code>0.3</code> 不算 <code>0.1</code> 的倍数；.NET 按十进制判断为倍数。</p>\n<p>5. 超过 2^53 的整数。Ajv 按双精度比较，const、enum、minimum 等的结论与 .NET 不同。</p>\n<p>6. <code>$schema</code> 声明 draft-07。Ajv2020 无法编译，CLI 报无法解析；JsonSchema.Net 按 draft-07 验证。</p>\n<p>7. contains 或 propertyNames 的子 Schema 经 <code>$ref</code> 引用、且 Ajv 没有内联引用时，Ajv 的错误不再带外层关联，CLI 多报逐项位置或对象位置。</p>\n<p>两端的归一规则在 <code>ProfileLoader.Locations</code> 与 <code>profiles.ts</code> 的 <code>locations</code>。差分做法：把同一组 Schema 与配置写进 <code>tck/profiles/base</code> 的临时副本，同时交给 <code>loadProfile</code> 与 <code>ProfileLoader</code>，逐项比较诊断。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>逐项决定处理方式：统一语义、两端都拒绝该写法，或明确声明不支持；两端实现并加入共享 TCK（含 <code>reason</code>），报告比较通过</li>\n<li class='chk'><span class='box'></span>已对齐的分歧从 <code>packages/Qian.Profiles/README.md</code> 删去；不对齐的写明原因与对组件作者的要求</li>\n<li class='chk'><span class='box'></span>JsonSchema.Net 的 items 位置缺陷若需上游修复，记录上游问题或绕过方式</li>\n<li class='chk'><span class='box'></span><code>pnpm --filter qian test</code>、<code>Qian.Profiles.Tests</code>、全量测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：逐项处理两端 Schema 验证器的其余语义分歧（prefixItems 之后的 items 位置、unevaluatedItems、文本长度计数、multipleOf 小数、大整数、$schema 方言、经 $ref 的 contains 与 propertyNames）</li>\n</ul>",
   "file": "pm/tasks/S1-CFG-009.md"
  },
  {
