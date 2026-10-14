@@ -177,11 +177,11 @@ public sealed class CapabilityInputTests
         var lone = "\\" + "ud800";
         foreach (var text in new[] { "{\"" + lone + "\":1}", "{\"name\":\"" + lone + "\"}", "{\"name\":\"a\",\"x\":[\"" + lone + "x\"]}" })
             Assert.Equal("BAD_REQUEST", Assert.Throws<QianErrorException>(() => validator.Validate(entry, Json(text))).Error.Code.Code);
-        // 库无法可靠求值的 Schema（patternProperties / dependentSchemas 的键含 / 或 ~）按配置错误拒绝执行，不放过约束。
+        // 库无法可靠求值的 Schema（patternProperties / dependentSchemas 的键含 / 或 ~）编译前即拒绝，不放过约束；登记期检查见 CapabilityContractCheckTests。
         foreach (var schema in new[] {
             """{"type":"object","patternProperties":{"^a/b$":{"type":"string"}}}""", """{"type":"object","properties":{"p":{"patternProperties":{"^a~b$":{}}}}}""",
             """{"type":"object","dependentSchemas":{"a/b":{"required":["c"]}}}""" })
-            Assert.Throws<InvalidOperationException>(() => validator.Validate(Entry(schema), Json("""{"zz":1}""")));
+            Assert.Equal("unsupported-key", Assert.Throws<CapabilityInputSchemaException>(() => validator.Validate(Entry(schema), Json("""{"zz":1}"""))).Rule);
         validator.Validate(Entry("""{"type":"object","dependentRequired":{"a/b":["c"]},"properties":{"x/y":{"type":"integer"}}}"""), Json("""{"x/y":1}"""));
     }
 

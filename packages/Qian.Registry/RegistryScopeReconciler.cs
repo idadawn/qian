@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Kun.Core.MultiTenancy;
 using Qian.Profiles.Abstractions;
 using Qian.Runtime;
@@ -7,7 +8,7 @@ using Qian.Runtime.Errors;
 namespace Qian.Registry;
 
 // 只操作平台宿主交给自己的 scope 条目；没有数据库写入口，也不加载代码程序集。
-internal sealed class RegistryScopeReconciler(
+internal sealed partial class RegistryScopeReconciler(
     ITenantContext tenant, RegistryProfileComposer composer, PluginLoader runtime, IPluginContext owner,
     Func<ResolvedProfileEntry, PluginDefinition> resolve) : IAsyncDisposable
 {
@@ -145,7 +146,13 @@ internal sealed class RegistryScopeReconciler(
     private RegistryScopeApplyException ApplyFailed(ScopeKey scope, ResolvedProfileEntry entry, Dictionary<string, int> revisions)
     {
         var failure = runtime.GetFailure(entry.Id, scope);
-        var reason = failure is QianErrorException qian ? qian.Error.Code.Code : PlatformErrors.Internal.Code;
+        // 自带原因码的失败（如能力契约在登记阶段被拒绝，Data["reasonCode"] 为 INPUT_INVALID）沿用其错误码，其余按 INTERNAL。
+        var reason = failure switch
+        {
+            QianErrorException qian => qian.Error.Code.Code,
+            { } other when other.Data["reasonCode"] is string code && ReasonCodePattern().IsMatch(code) => code,
+            _ => PlatformErrors.Internal.Code
+        };
         return new RegistryScopeApplyException(scope, entry.Id, entry.Plugin, revisions.TryGetValue(entry.Id, out var revision) ? revision : null, reason, failure);
     }
 
@@ -221,4 +228,7 @@ internal sealed class RegistryScopeReconciler(
         public IReadOnlyList<ServiceKey> Inject { get; } = inner.Inject.Append(RegistryDefinition.Key).Distinct().ToArray();
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => inner.ApplyAsync(ctx, config, ct);
     }
+
+    [GeneratedRegex("^[A-Z][A-Z0-9_]{0,63}$", RegexOptions.CultureInvariant)]
+    private static partial Regex ReasonCodePattern();
 }

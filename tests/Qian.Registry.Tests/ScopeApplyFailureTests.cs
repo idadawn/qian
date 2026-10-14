@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Kun.MultiTenancy;
+using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 
@@ -33,7 +34,17 @@ public sealed partial class PatchPersistenceTests
         Assert.DoesNotContain(crashed.Data.Values.Cast<object?>(), value => value?.ToString()?.Contains(FailingApply.Secret, StringComparison.Ordinal) == true);
         Assert.Empty(running.Commands(TenantA));
 
-        await repository.PutAsync(TenantA, "private", Patch("""{"id":"private","plugin":"test.private","config":{"label":"fixed"}}"""), 2, "operator-a", Ct);
+        // 自带合法原因码的失败（能力契约在登记阶段被拒绝）沿用其原因码；伪造的原因码不合格式时仍按 INTERNAL。
+        await repository.PutAsync(TenantA, "private", Patch("""{"id":"private","plugin":"test.private","config":{"label":"contract"}}"""), 2, "operator-a", Ct);
+        var contract = await Assert.ThrowsAsync<RegistryScopeApplyException>(() => running.Registry.SynchronizeAsync(TenantA, Ct).AsTask());
+        Assert.Equal(((int?)3, "INPUT_INVALID"), (contract.Revision, contract.ReasonCode));
+        Assert.Equal("test.private/probe#/inputSchema/properties/tenantId", Assert.IsType<CapabilityContractException>(contract.InnerException).Location);
+        await repository.PutAsync(TenantA, "private", Patch("""{"id":"private","plugin":"test.private","config":{"label":"forged"}}"""), 3, "operator-a", Ct);
+        var forged = await Assert.ThrowsAsync<RegistryScopeApplyException>(() => running.Registry.SynchronizeAsync(TenantA, Ct).AsTask());
+        Assert.Equal(((int?)4, "INTERNAL"), (forged.Revision, forged.ReasonCode));
+        Assert.Empty(running.Commands(TenantA));
+
+        await repository.PutAsync(TenantA, "private", Patch("""{"id":"private","plugin":"test.private","config":{"label":"fixed"}}"""), 4, "operator-a", Ct);
         await running.Registry.SynchronizeAsync(TenantA, Ct);
         Assert.Contains("test.private/hello", running.Commands(TenantA));
     }
@@ -48,6 +59,8 @@ public sealed partial class PatchPersistenceTests
             {
                 "precondition" => throw new QianErrorException(new QianError(PlatformErrors.PreconditionFailed)),
                 "crash" => throw new InvalidOperationException(Secret),
+                "contract" => throw new CapabilityContractException("test.private", "probe", "test.private/probe#/inputSchema/properties/tenantId", "tenant-field"),
+                "forged" => throw new InvalidOperationException(Secret) { Data = { ["reasonCode"] = "drop table; --" } },
                 _ => inner.ApplyAsync(ctx, config, ct)
             };
     }

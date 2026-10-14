@@ -15,11 +15,10 @@ using Qian.Registry;
 using Qian.Tenancy;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
-using Qian.Surfaces.Abstractions;
 
 namespace Qian.Capabilities;
 
-internal sealed partial class CapabilityService(IRegistryService registry, IPermissionChecker permissions, ISurfaceReader schemas, IToolContractHasher hasher,
+internal sealed partial class CapabilityService(IRegistryService registry, IPermissionChecker permissions, CapabilityContractCheck contracts,
     IDataService data, CapabilitiesOptions options, IHttpContractSource? httpContracts = null, ILogger? logger = null) : ICapabilityService, IDisposable
 {
     // 回放窗口：同一主体、同一能力、同一幂等键的首次成功响应保留 24 小时，之后同键请求重新执行。
@@ -31,7 +30,6 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
         CapabilitiesDbContext.Schema + "." + CapabilitiesDbContext.ReceiptsTable + " WHERE tenant_id = {0} AND expires_at <= {1} LIMIT 100 FOR UPDATE SKIP LOCKED)";
     private static readonly string[] Kinds = ["command", "query", "event", "entity"];
     private readonly (CancellationTokenSource Source, CancellationToken Token) _lifetime = CreateLifetime();
-    private readonly CapabilityInputValidator _inputs = new();
     private int _disposed;
 
     public async ValueTask<CapabilityCatalog> ListAsync(IPluginContext caller, ICurrentUser user, string? kind = null, string? query = null, CancellationToken cancellationToken = default)
@@ -101,7 +99,7 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
         // 不缓存目录结果为授权；执行前还会由绑定和实际 Mediator 策略核验可见性与权限。
         if (!Current(caller, item)) throw Error(PlatformErrors.NotFound);
         // 先过可见性再校验输入：不可见的能力不暴露其 Schema 约束。
-        _inputs.Validate(item.Entry, input);
+        contracts.Inputs.Validate(item.Entry, input);
         // 只读能力重复执行没有副作用：忽略幂等键，不存回执。
         if (idempotencyKey is not { } key || item.Entry.GetProperty("sideEffect").GetString() == "read")
             return new CapabilityInvocation(await item.Binding.InvokeAsync(caller, input, linked.Token).ConfigureAwait(false), false);
@@ -217,7 +215,9 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
             ct.ThrowIfCancellationRequested();
             if (registration.Value is not IExecutableCapability binding || binding.Contract.Id != registration.Name ||
                 !view.Any(entry => entry.EntryId == registration.OwnerEntryId && entry.Scope == registration.Scope && entry.Name == registration.Name && entry.PluginId == binding.Contract.ComponentId)) continue;
-            var entry = CapabilityContractCompiler.Describe(binding.Contract, schemas, hasher); var metadata = binding.Contract.Metadata;
+            // 不合格的契约在登记期已被拒绝；宿主未登记检查时在这里排除，不影响其余能力。
+            if (contracts.Entry(binding.Contract) is not { } entry) continue;
+            var metadata = binding.Contract.Metadata;
             if ((model || principal.Kind == PrincipalKind.Agent) && !metadata.GetProperty("agent").GetProperty("expose").GetBoolean()) continue;
             if (metadata.GetProperty("requiredScopes").EnumerateArray().Any(scope => !scopes.Contains(scope.GetString()!))) continue;
             if (!metadata.TryGetProperty("requiredPermission", out var permission) || string.IsNullOrWhiteSpace(permission.GetString())) continue;
