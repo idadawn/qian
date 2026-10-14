@@ -1966,14 +1966,14 @@
  {
   "id": "S1-DEP-007",
   "title": "K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "DEP",
   "areaName": "部署物料",
   "wave": 0,
   "priority": "P0",
   "type": "infra",
-  "owner": "",
+  "owner": "cody",
   "estimate": "1d",
   "days": 1.0,
   "depends": [
@@ -1981,7 +1981,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "pm/tasks/S1-DEP-001.md",
@@ -2000,12 +2000,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/ops/k3s-control-plane-recovery.md"
    }
   ],
-  "updated": "2026-10-13",
+  "updated": "2026-10-14",
   "acceptance": {
-   "done": 1,
+   "done": 4,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-13 claude 在 S1-DEC-019 R73 复核时经 <code>ssh qd</code> 只读核验发现：qd 上的 <code>k3s.service</code> 自 2026-10-11 17:05 UTC（北京时间 10-12 01:05）一次停止再启动之后持续崩溃重启，systemd 计数 1089 次，当天 01 到 06 时 UTC 重启 34 次、12:41 到 12:53 UTC 再重启 5 次。每次退出前 kube-controller-manager 报 <code>leaderelection lost</code>，进程以状态 1 退出；etcd 在 qd 本地读取 <code>/registry/leases</code> 键耗时 1.1 到 4.7 秒（预期 100ms），日志成片出现 <code>no leader</code> / <code>leader changed</code> / <code>apply request took too long</code>，raft 任期已到 4134。qd 本机 I/O 等待与内存压力正常、etcd 库 75 MB、<code>/etc/rancher/k3s/config.yaml</code> 自 2026-07-14 未改，可排除本机磁盘与配置改动。</p>\n<p>S1-DEP-001 日志记载 worker01 仅余约 372Mi 内存、worker02 仅余 445m CPU / 498Mi，etcd 三个成员中两个在这类 VM 上，是最可能的根因；qd 同时运行两个 GitHub Actions runner 与一个常驻满占一核的进程，加剧控制面争抢。对外表现即 apiserver 间歇返回 ServiceUnavailable（S1-DEP-001 与 S1-DEC-019 R73 记录的现象）。集群级变更需要 root 与审核，不在 claude 的只读权限内。</p>\n<h4>执行交接（2026-10-13）</h4>\n<ul>\n<li><strong>窗口与执行人</strong>：产品负责人 2026-10-13 决定立即执行，执行人由产品负责人另行安排。接手时先认领：<code>python3 scripts/pm.py set S1-DEP-007 --status doing --owner &lt;你的名字&gt; --by &lt;你的名字&gt; --note &quot;开始&quot;</code>。</li>\n<li><strong>方案</strong>：<code>docs/ops/k3s-control-plane-recovery.md</code>，方案 B（qd 单控制面 + 三个 agent）已获批，五条复核意见已并入。按阶段 0 止血、阶段 1 改拓扑、阶段 2 加固、阶段 3 验收的顺序执行；阶段 1 一次只改一台，先 worker01 后 worker02。</li>\n<li><strong>开工前必须具备</strong>：qd、pve01、worker01、worker02 的 root；qd 之外的备份存放位置；已通知 iclaw、iclaw-staging、pdm、safe-ai、Higress、Apollo 的负责人，每台 worker 约 10 到 15 分钟 Pod 中断；Kun 的 CI runner 在阶段 1 期间停掉。</li>\n<li><strong>停下来的条件</strong>：阶段 1 第 0 步任一核实不满足（data-dir 或 local-path 路径在卸载脚本删除范围内、<code>/data</code> 未独立挂载、PV 路径对不上），改为就地改装并在本文件记录原因；qd 的 <code>--cluster-reset</code> 失败，按方案 §5 用阶段 0 的备份恢复，不要继续改 worker。</li>\n<li><strong>每步回写本文件</strong>：阶段 0 的 pve01 测量值、runner slice 生效值、<code>cubemaster</code> 处置、备份文件名与 SHA-256 及存放位置（不写 token 内容）；阶段 1 各步的 UTC 时间、快照名、两台 worker 重新加入的时间；阶段 2 的配置落点与部署仓库 PR 链接；阶段 3 的 24 小时日志摘要。遇到与方案不符的情况先记录再决定。</li>\n<li><strong>Claude 的角色</strong>：只读核验与文档，可随时帮执行人复核 <code>kubectl</code>、journal 与 etcd 指标；没有 root，不能执行任何变更。</li>\n</ul>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人批准 <code>docs/ops/k3s-control-plane-recovery.md</code> 的方案 B（qd 单控制面 + 三个 agent），批准记入本文件进度日志（2026-10-13 在聊天中回复「可以选择 B」，并提出五条复核意见，已并入方案）</li>\n<li class='chk'><span class='box'></span>阶段 0 止血完成：pve01 的内存 / 交换 / 备份计划测量值、qd 两个 runner 的 cgroup 上限、<code>cubemaster</code> 的处置、阶段 1 前的 etcd 快照名与 SHA-256 记入本文件</li>\n<li class='chk'><span class='box'></span>阶段 1 完成：qd <code>--cluster-reset</code> 为单成员，worker01 / worker02 以原节点名改装为 agent，staging 数据卷重新绑定、工作负载恢复；各步时间记入本文件</li>\n<li class='chk'><span class='box'></span>阶段 2 加固完成：qd kubelet 系统预留、runner 上限转正、pve01 内存分配上限、快照落点、健康检查定时器；部署仓库 <code>0-cluster/README.md</code> 与本仓 <code>deploy/baseline/README.md</code> 的拓扑说明更新并回链</li>\n<li class='chk'><span class='box'></span>阶段 3 验收：连续 24 小时 <code>systemctl show k3s -p NRestarts</code> 不再增长、<code>kubectl get --raw /readyz</code> 持续成功、etcd 不再成片出现 <code>apply request took too long</code>；结果回写 S1-DEP-001 与 S1-DEC-019</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-13 claude：创建任务</li>\n<li>2026-10-13 claude：补充只读证据（worker01 对端 etcd 延迟约 210 ms、connection refused、pve01 内存余量约 2.5 GiB）并写出处置方案 docs/ops/k3s-control-plane-recovery.md：推荐 qd 单控制面 + 三个 agent，分止血 / 改拓扑 / 加固 / 24 小时验收四阶段；待产品负责人批准方案 B 后由有 root 的人执行</li>\n<li>2026-10-13 claude：产品负责人在聊天中批准方案 B（qd 单控制面 + 三个 agent），同时提出五条复核意见：根因需对齐 worker 日志与 pve01 压力记录后确认、重置前备份快照与 token 并存到 qd 之外、卸载前逐台核实 data-dir / 卸载脚本 / 挂载并补业务数据备份、runner 用共同 slice 限制合计 4 核、维护窗口按两台 worker 的全部工作负载评估；五条已并入方案文档。执行人与维护窗口待定</li>\n<li>2026-10-13 claude：产品负责人 2026-10-13 决定维护窗口为立即执行（「就是现在」），执行人由产品负责人另行安排；本文件新增「执行交接」一节，列出认领命令、开工前提、停下来的条件与每步回写项</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-13 claude 在 S1-DEC-019 R73 复核时经 <code>ssh qd</code> 只读核验发现：qd 上的 <code>k3s.service</code> 自 2026-10-11 17:05 UTC（北京时间 10-12 01:05）一次停止再启动之后持续崩溃重启，systemd 计数 1089 次，当天 01 到 06 时 UTC 重启 34 次、12:41 到 12:53 UTC 再重启 5 次。每次退出前 kube-controller-manager 报 <code>leaderelection lost</code>，进程以状态 1 退出；etcd 在 qd 本地读取 <code>/registry/leases</code> 键耗时 1.1 到 4.7 秒（预期 100ms），日志成片出现 <code>no leader</code> / <code>leader changed</code> / <code>apply request took too long</code>，raft 任期已到 4134。qd 本机 I/O 等待与内存压力正常、etcd 库 75 MB、<code>/etc/rancher/k3s/config.yaml</code> 自 2026-07-14 未改，可排除本机磁盘与配置改动。</p>\n<p>S1-DEP-001 日志记载 worker01 仅余约 372Mi 内存、worker02 仅余 445m CPU / 498Mi，etcd 三个成员中两个在这类 VM 上，是最可能的根因；qd 同时运行两个 GitHub Actions runner 与一个常驻满占一核的进程，加剧控制面争抢。对外表现即 apiserver 间歇返回 ServiceUnavailable（S1-DEP-001 与 S1-DEC-019 R73 记录的现象）。集群级变更需要 root 与审核，不在 claude 的只读权限内。</p>\n<h4>执行交接（2026-10-13）</h4>\n<ul>\n<li><strong>窗口与执行人</strong>：产品负责人 2026-10-13 决定立即执行，执行人由产品负责人另行安排。接手时先认领：<code>python3 scripts/pm.py set S1-DEP-007 --status doing --owner &lt;你的名字&gt; --by &lt;你的名字&gt; --note &quot;开始&quot;</code>。</li>\n<li><strong>方案</strong>：<code>docs/ops/k3s-control-plane-recovery.md</code>，方案 B（qd 单控制面 + 三个 agent）已获批，五条复核意见已并入。按阶段 0 止血、阶段 1 改拓扑、阶段 2 加固、阶段 3 验收的顺序执行；阶段 1 先共同暂停旧 server 服务并重置 qd，不同时删除两台 Node；业务节点先 worker01，恢复验收通过后再 worker02。</li>\n<li><strong>开工前必须具备</strong>：qd、pve01、worker01、worker02 的 root；qd 之外的备份存放位置；已通知 iclaw、iclaw-staging、pdm、safe-ai、Higress、Apollo 的负责人，每台 worker 约 10 到 15 分钟 Pod 中断；Kun 的 CI runner 在阶段 1 期间停掉。</li>\n<li><strong>停下来的条件</strong>：PV 路径、挂载来源或备份与基线不符时立即停止，不自动改装；数据前提全部核实后优先采用保留 node password / Node UID 的就地改装；qd 的 <code>--cluster-reset</code> 失败，按方案 §5 用阶段 0 的备份恢复，不要继续改 worker。</li>\n<li><strong>每步回写本文件</strong>：阶段 0 的 pve01 测量值、runner slice 生效值、<code>cubemaster</code> 处置、备份文件名与 SHA-256 及存放位置（不写 token 内容）；阶段 1 各步的 UTC 时间、快照名、两台 worker 重新加入的时间；阶段 2 的配置落点与部署仓库 PR 链接；阶段 3 的 24 小时日志摘要。遇到与方案不符的情况先记录再决定。</li>\n<li><strong>Claude 的角色</strong>：只读核验与文档，可随时帮执行人复核 <code>kubectl</code>、journal 与 etcd 指标；没有 root，不能执行任何变更。</li>\n</ul>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人批准 <code>docs/ops/k3s-control-plane-recovery.md</code> 的方案 B（qd 单控制面 + 三个 agent），批准记入本文件进度日志（2026-10-13 在聊天中回复「可以选择 B」，并提出五条复核意见，已并入方案）</li>\n<li class='chk done'><span class='box'>✓</span>阶段 0 止血完成：pve01 的内存 / 交换 / 备份计划测量值、qd 两个 runner 的 cgroup 上限、<code>cubemaster</code> 的处置、阶段 1 前的 etcd 快照名与 SHA-256 记入本文件</li>\n<li class='chk done'><span class='box'>✓</span>阶段 1 完成：qd <code>--cluster-reset</code> 为单成员，worker01 / worker02 以原节点名改装为 agent，staging 数据卷重新绑定、工作负载恢复；各步时间记入本文件</li>\n<li class='chk done'><span class='box'>✓</span>阶段 2 加固完成：qd kubelet 系统预留、runner 上限转正、pve01 内存分配上限、快照落点、健康检查定时器；部署仓库 <code>0-cluster/README.md</code> 与本仓 <code>deploy/baseline/README.md</code> 的拓扑说明更新并回链</li>\n<li class='chk'><span class='box'></span>阶段 3 验收：连续 24 小时 <code>systemctl show k3s -p NRestarts</code> 不再增长、<code>kubectl get --raw /readyz</code> 持续成功、etcd 不再成片出现 <code>apply request took too long</code>；结果回写 S1-DEP-001 与 S1-DEC-019</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-13 claude：创建任务</li>\n<li>2026-10-13 claude：补充只读证据（worker01 对端 etcd 延迟约 210 ms、connection refused、pve01 内存余量约 2.5 GiB）并写出处置方案 docs/ops/k3s-control-plane-recovery.md：推荐 qd 单控制面 + 三个 agent，分止血 / 改拓扑 / 加固 / 24 小时验收四阶段；待产品负责人批准方案 B 后由有 root 的人执行</li>\n<li>2026-10-13 claude：产品负责人在聊天中批准方案 B（qd 单控制面 + 三个 agent），同时提出五条复核意见：根因需对齐 worker 日志与 pve01 压力记录后确认、重置前备份快照与 token 并存到 qd 之外、卸载前逐台核实 data-dir / 卸载脚本 / 挂载并补业务数据备份、runner 用共同 slice 限制合计 4 核、维护窗口按两台 worker 的全部工作负载评估；五条已并入方案文档。执行人与维护窗口待定</li>\n<li>2026-10-13 claude：产品负责人 2026-10-13 决定维护窗口为立即执行（「就是现在」），执行人由产品负责人另行安排；本文件新增「执行交接」一节，列出认领命令、开工前提、停下来的条件与每步回写项</li>\n<li>2026-10-13 cody：开始：接手交接修订、权限与备份核验；按已获批方案 B 执行并保留 24 小时验收证据</li>\n</ul>\n<ul>\n<li>2026-10-14 cody：用户授权由 Cody 完成执行，并明确无需发送维护通知。四台主机 root 核验通过，qd runner 共用 slice 合计 4 核/48GiB，Kun runner 已暂停。2026-10-13T16:02:08Z 实测 pve01 MemAvailable 约 6023MiB、swap 28KiB、memory PSI 为 0，而 io PSI some 42.44/full 18.06（avg300）；内存不足仍为待验证假设。两台 worker 的 PV 路径与根分区 LVM/ext4 基线一致，既有 agent unit / 连接材料仍存在。修正共同暂停控制面与逐台业务改装的边界、数据前提失败必须停止及恢复前停服务要求。K3s 快照接口超时，正在核对独立备份；拓扑变更与 24 小时验收未完成。</li>\n</ul>\n<ul>\n<li>2026-10-14 cody：阶段 0 已完成：2026-10-13T16:05:41Z runner 共同 slice 的 CPUQuotaPerSecUSec=4s、MemoryMax=51539607552、IOWeight=50，Kun runner inactive；16:22:24Z cubemaster 保持运行并限制到 1 核、CPUWeight=20、IOWeight=50。PVE 无计划中的整点备份，活动 VM 合计 27648MiB、均 balloon=0；宿主压力主要体现为 I/O，尚未证明内存压力是触发原因。VM101 / VM102 的 cody-dep007-20261014 文件系统冻结磁盘快照已完成并核实解冻。两台 worker 的配置、完整 PG 逻辑导出、四份 Redis SAVE/RDB 与 PV 副本已离机加密并验证；备份目录 /Users/dawn/work/qd/k3s/.private/k3s-dep007-backups/runs/20261013T1605Z，明细与各文件 SHA-256 见同目录 VERIFY.md。控制面最新快照 cody-dep007-direct-20261013T1630Z.db，34127904 字节、revision 33060294、10859 键，SHA-256 d38f9b934290a8a967cdea3c5a31209d32274298594e747c94cec93ffa53dbc2；连同原 token / 配置 / unit 离机校验一致，并通过 etcdutl 离线恢复结构核验。首份 worker01 PG 导出不完整，已排除；改为直接进入运行容器命名空间导出并确认结束标记。Node UID 基线已保存；改装采用保留密码 / UID / 镜像缓存的既有 agent unit 路径。</li>\n<li>2026-10-14 cody：阶段 0 验证完成，开始共同暂停控制面与逐台 agent 切换；现场执行时间均用 UTC 留痕</li>\n</ul>\n<ul>\n<li>2026-10-14 cody：阶段 1 已执行并恢复：2026-10-13T17:19:27Z 开始 qd reset，17:19:39Z 单成员重置完成，17:19:49Z readyz 成功；成员为 qd-6a101d85，端点健康约 3.6ms。两台 worker 使用既有 agent unit 就地切换，server unit 永久 masked，Node UID / password / 镜像缓存 / 业务卷保留，8 个本地 PV 均 Bound。worker01 首启由 Cody 重复设置 node-ip 导致失败，已去掉 YAML 重复项并在 worker02 脚本修正；NotReady 驱逐后已停止的旧 Pod 卡在终止，按 runtime UID/进程核实后清理，未动 PVC。恢复瓶颈另查明 pve01 为 PERC H730P 机械阵列，18:00:58Z 三秒内 VM105 读约112MB、其他VM几乎无读取；读 IOPS临时1200→200后 sandbox 与镜像恢复推进，18:31:55Z 恢复原1200，写600/其他参数未变。worker01 NodeReady、SELECT 1/PONG通过；worker02 18:14:28Z agent active，随后UID、4 PV、PG协议与endpoint通过。Higress管理UI回到worker02释放512MiB请求后ASR恢复；118个活动Pod全部Ready。窗口超过原约1小时估计，日志记录实际时点，不以pod旧Running状态冒充恢复。</li>\n</ul>\n<ul>\n<li>2026-10-14 cody：阶段 2 主机加固已落地，待部署仓 PR 合并回链后勾选：qd系统/平台内存预留8Gi/4Gi，CPU因7945m/8000m请求不扣3核；runner共同slice4核/48GiB，cubemaster1核，Kun runner于18:43:19Z恢复active。原SQLite备份脚本替换为本机etcd直连快照/校验、原token与配置加密异机传输；PVE受限SSH key只有固定目录接收权限。18:19:22Z异机归档传到/srv/gitlab-backups/k3s，SHA-256 8dd87d420389d5b525ef1830d275807c79b1810659928d745935f7adcb6875b6；取回解密/原快照checksum/离线恢复通过，revision33076754。每日02:00UTC timer启用，五分钟qian-k3s-health.timer启用；采样从18:23:34Z开始，截止2026-10-14T18:23:34Z（北京时间10-15 02:23:34）。heartbeat s1-dep-007-24 每小时复核，未满24小时不勾最终项。数据Pod出站DNS失败符合既定默认拒绝；有权限迁移探针正向解析通过，两个临时DNS Pod均删除，NetworkPolicy未改。secrets-encrypt Enabled/start/All hashes match，密钥未轮换；旧Harbor四个Failed Pod在新副本Ready后清理。</li>\n</ul>\n<ul>\n<li>2026-10-14 cody：部署仓加固/拓扑唯一源 PR #93 全绿合并，提交 cdf0d8545c4f63c7e76020dca1389914a6b9294a（https://github.com/idadawn/iclaw-deploy/pull/93）；分支和本次独立worktree已清理，部署仓main已同步。原负载恢复后采样保持readyz成功/NRestarts=0/四节点Ready/slow_apply=0；当前118活动Pod全部Ready。五分钟timer持续采样，每小时heartbeat已创建（s1-dep-007-24），最终验收仍等完整24小时窗口。</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-007.md"
  },
  {
@@ -4406,12 +4406,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.9 的 CI 门禁：<code>qian docs generate</code> 输出与提交内容比对、漂移即失败；每个仓库与每个包存在 <code>AGENTS.md</code>、README 含「模型体验」「已知限制与延期项」必需节；<code>plugin.json</code> 派生字段与代码比对、仓库中不允许第二份清单文件。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：删除某组件 README 的「已知限制与延期项」节或仓库根 <code>AGENTS.md</code>，门禁失败；修改一个事件声明而不重新生成事件图，新鲜度门禁失败</li>\n<li class='chk'><span class='box'></span>CI：仓库中出现第二份清单文件（手写 YAML 或 <code>*.generated.*</code>）时门禁失败</li>\n<li class='chk'><span class='box'></span>CI：<code>plugin.json</code> 派生字段与代码漂移时失败并指出漂移项</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>ADR-020 D20.9 的 CI 门禁：<code>qian docs generate</code> 输出与提交内容比对、漂移即失败；每个仓库与每个包存在 <code>AGENTS.md</code>、README 含「模型体验」「已知限制与延期项」必需节；<code>plugin.json</code> 派生字段与代码比对、仓库中不允许第二份清单文件。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：删除某组件 README 的「已知限制与延期项」节或仓库根 <code>AGENTS.md</code>，门禁失败；修改一个事件声明而不重新生成事件图，新鲜度门禁失败</li>\n<li class='chk'><span class='box'></span>CI：仓库中出现第二份清单文件（手写 YAML 或 <code>*.generated.*</code>）时门禁失败</li>\n<li class='chk'><span class='box'></span>CI：<code>plugin.json</code> 派生字段与代码漂移时失败并指出漂移项</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：docs/generated 的 G2 新鲜度比对已拆出，由 S1-QA-009（idadawn/qian#83）接入 documentation 工作流；验收第 1 条中「修改事件声明而不重新生成事件图即失败」由该门禁覆盖。本任务余下：README / AGENTS.md 必需节、第二份清单与 plugin.json 派生字段漂移三项门禁</li>\n</ul>",
   "file": "pm/tasks/S1-QA-006.md"
  },
  {
@@ -4526,6 +4526,47 @@
   },
   "bodyHtml": "<h4>背景</h4>\n<p>ROADMAP S1-M4：跨租户渗透测试（0 漏洞）、多副本消费集成测试（0 丢失）、修订回切演练、OIDC 一致性测试与渗透测试（7.4 安全预算）、E1-1 … E1-14 可测项核对、退出评审。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：跨租户渗透测试 0 漏洞；集成测试覆盖多副本消费 0 丢失</li>\n<li class='chk'><span class='box'></span>E2E：修订回切演练在 staging 完成并有记录</li>\n<li class='chk'><span class='box'></span>IT：<code>identity</code> profile 通过 OIDC 一致性测试；渗透测试报告归档</li>\n<li class='chk'><span class='box'></span>检查：PRD §16.1 E1-1 … E1-14 逐项有证据；退出评审结论记录</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
   "file": "pm/tasks/S1-QA-008.md"
+ },
+ {
+  "id": "S1-QA-009",
+  "title": "docs/generated 重新生成并在 CI 接入 G2 文档新鲜度比对",
+  "status": "done",
+  "stage": "S1",
+  "area": "QA",
+  "areaName": "测试 / TCK / 门禁",
+  "wave": 2,
+  "priority": "P1",
+  "type": "infra",
+  "owner": "claude",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-RT-010"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/specs/component-model.md#10.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/prd/14-quality.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/14-quality.md"
+   },
+   {
+    "path": "docs/adr/ADR-020-component-model-v2.md#2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 4,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p><code>docs/generated/</code> 在 main（e98422299）上已与源码派生结果不一致：S1-EVT-001（[idadawn/qian#73](https://github.com/idadawn/qian/pull/73)，提交 8e983747a）改了 qian.events 的配置 Schema、在 platform profile 里加了 Events seam，并让 <code>CommandPipeline.cs</code> 的生产方行号移位，但没有重新生成。重新运行 <code>pnpm exec qian docs generate --profile platform</code> 会改写 config-catalog、event-graph、seam-graph 三份文件。documentation 工作流每次都会生成这些文件，但只上传、不比对，所以漂移没有被拦下。</p>\n<p>G2 文档新鲜度（ADR-020 D20.9、组件模型规格 §10.3、PRD §14 C18「漂移即失败、PR 阻断」）是已拍板的门禁，不是新设计；它原本排在 S1-QA-006，与 README / AGENTS.md 必需节、第二份清单、plugin.json 派生字段三项门禁一起。本任务只拆出 docs/generated 的新鲜度比对，其余三项仍归 S1-QA-006。</p>\n<p>接入前已核实生成结果是确定的：同一组输入下，本机 macOS 的输出与 CI 运行 38454069285（Linux，4a0aaed2f）上传的产物逐字节一致，连续两次生成结果相同。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>文档：<code>docs/generated/</code> 按当前源码重新生成并提交，四份文件与 CI 在同一输入下生成的结果一致</li>\n<li class='chk done'><span class='box'>✓</span>CI：documentation 工作流在生成后比对 <code>docs/generated/</code>，有修改或新文件即失败，并提示重新生成的命令；<code>docs/generated/**</code> 变更也触发该工作流</li>\n<li class='chk done'><span class='box'>✓</span>验证：本机对过期提交运行同一检查会失败、对重新生成后的提交会通过；本 PR 的 documentation 工作流在 Linux 上通过（以 [idadawn/qian#83](https://github.com/idadawn/qian/pull/83) 全部检查通过为合并前提）</li>\n<li class='chk done'><span class='box'>✓</span>文档：Qian.Docs README 改为说明已接入的新鲜度门禁与重新生成方法；<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：重新生成 docs/generated，并在 documentation 工作流接入 G2 比对</li>\n<li>2026-10-14 claude：随 idadawn/qian#83 合并完成（合并前提是 PR 全部检查通过）。本机 macOS 生成结果与 CI 运行 38454069285（Linux）的产物逐字节一致，连续两次生成结果相同；新鲜度检查对过期提交失败、对重新生成后的提交通过；Qian.Docs.Tests 9 项、CLI 55 项、check_docs、pm validate、门禁自测通过</li>\n</ul>",
+  "file": "pm/tasks/S1-QA-009.md"
  },
  {
   "id": "S1-RT-001",
@@ -5306,6 +5347,48 @@
   },
   "bodyHtml": "<h4>背景</h4>\n<p>按 S1-DEC-004 建立同组织独立私有仓库，布局 <code>plugins/&lt;domain&gt;/&lt;id&gt;/</code>，S1 收录全部平台插件、参考应用与至少一个 skill-only 示例组件；CI：每个条目过校验器 + <code>qian add</code> 到 <code>minimal</code> profile 的 smoke；目录网站静态生成（分类、安装命令、README 渲染、校验状态徽章）；GitHub topic <code>qian-plugin</code> 社区发现只发现不信任，安装需 <code>--trust</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>CI：官方市场仓库每个条目指向的组件通过五种表面校验器与清单校验零错误；<code>qian add</code> 每个条目到 <code>minimal</code> profile 的 smoke 全部通过</li>\n<li class='chk'><span class='box'></span>E2E：目录网站由 marketplace.json 一条命令生成，条目数、分类与仓库一致，每个条目显示校验状态徽章</li>\n<li class='chk'><span class='box'></span>IT：经 GitHub topic 发现的社区组件标记「未验证」，<code>qian add</code> 该组件在无 <code>--trust</code> 时拒绝并说明原因</li>\n<li class='chk'><span class='box'></span>检查：仓库收录全部 <code>platform</code> base 组合包平台插件、参考应用与一个 skill-only 示例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
   "file": "pm/tasks/S1-RT-017.md"
+ },
+ {
+  "id": "S1-RT-018",
+  "title": "表面热重载原子替换：读取方不再瞬时看到注册缺失",
+  "status": "done",
+  "stage": "S1",
+  "area": "RT",
+  "areaName": "运行时 / CLI / 市场",
+  "wave": 2,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-RT-001",
+   "S1-RT-003"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/specs/component-model.md#5.6",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/prd/specs/component-model.md#10.2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.2.2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 5,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>[idadawn/qian#79](https://github.com/idadawn/qian/pull/79) 的 CI 运行 38448590040（「构建、门禁与测试」，2026-10-13T18:45Z）唯一失败的用例是 CRM 样例 <code>hooks文件更新后实际桥接行为五秒内改变_代码与业务服务不重启</code>：轮询 <code>Inject&lt;SurfaceDocument&gt;(SurfaceKeys.Hooks, &quot;qian.sample.crm/hooks&quot;)</code> 时一次抛出 NOT_FOUND；前一个提交与本机均通过，与负载和时序有关。</p>\n<p>根因：<code>SurfaceRegistrationSession.Replace</code> 先撤销旧注册、再登记新文档，会话锁不覆盖运行时的读取方，新旧快照都有的文档在两步之间对读取方短暂消失；hook 桥接若在这个窗口收到事件，会把 hook 当作不存在而跳过。注册按 key/name 独占（R38），不能先登记再撤销。TS 侧会话同样先 await 撤销再登记，窗口相同。</p>\n<p>做法：两侧运行时 <code>Provide</code> 返回的注册句柄支持原子替换实例（读取方只看到旧值或新值）；表面会话改为先新增、再原位替换、最后撤销，保留失败回滚；补并发回归测试与共用 TCK 场景。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：.NET 与 TS 运行时 <code>Provide</code> 返回的注册句柄可原子替换实例；多个读取方在反复替换期间只看到旧值或新值、从不缺失，<code>List</code> 顺序不变；句柄撤销或上下文卸载后拒绝替换</li>\n<li class='chk done'><span class='box'>✓</span>TCK：共用场景 T25 覆盖原位替换（新值可见、注册顺序不变、以 inject 依赖该键的条目重新 Apply、卸载无残留），.NET 与 TS harness 读同一 YAML 通过</li>\n<li class='chk done'><span class='box'>✓</span>UT：双侧 <code>SurfaceRegistrationSession</code> 改为先新增、再原位替换、最后撤销；读取方在反复替换期间对新旧快照都有的文档从不 NOT_FOUND；新增冲突时回滚，旧注册与旧内容不变</li>\n<li class='chk done'><span class='box'>✓</span>E2E：CRM hooks 热更新验收与双侧 T19 恢复严格断言，不再容忍过渡期缺失；超时报出最后观察到的内容与监视状态</li>\n<li class='chk done'><span class='box'>✓</span>门禁：.NET 全量构建与测试、<code>check_deps</code>、门禁自测、<code>check_docs</code>、<code>pm.py validate</code> 通过；规格 §5 / §10.2 与相关 README 同步（本机并入最新 main 后复跑通过；CI 以 [idadawn/qian#82](https://github.com/idadawn/qian/pull/82) 全部检查通过为合并前提）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：两侧运行时注册句柄原子替换，表面会话改为新增→原位替换→撤销</li>\n<li>2026-10-14 claude：提交评审：两侧运行时注册句柄原子替换，会话改为新增→原位替换→撤销，T25 两侧 harness 通过。修复前会话并发单测 3/3 复现（每次两万至三万余次缺失），把会话改回旧顺序的变异在 .NET 与 TS 都被并发与逐步检查抓到。本机 dotnet 全量 630/630 零跳过，check_deps、门禁自测 47 项、check_docs、pm validate 通过；TS 运行时 36 项、表面 9 项、CLI 55 项、浏览器冒烟与制品消费通过，surfaces 双侧报告对照一致；CRM hooks 热更新用例连续 5 次通过。@idadawn/qian-runtime 的新版本发布另走 runtime-ts-release</li>\n<li>2026-10-14 claude：随 idadawn/qian#82 合并完成（合并前提是 PR 全部检查通过）；并入最新 main 后本机全部门禁复跑通过（dotnet 全量 630/630 零跳过）</li>\n</ul>",
+  "file": "pm/tasks/S1-RT-018.md"
  },
  {
   "id": "S1-SCH-001",

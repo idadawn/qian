@@ -101,3 +101,9 @@ staging Application 整体仍未完成同步，数据服务与 PVC 尚不存在�
 - Traefik trustedIPs、运维 OIDC 的 HTTPS issuer、K3s secrets-encryption Enabled 已重新核对。运维 OIDC 不能代替 Qian IdP 的真实 PKCE 验收。
 
 镜像源曾返回 502，已通过相同摘要的生产镜像缓存完成 staging 启动，传输和 OCI 摘要均已核对，临时归档已删除。此次关闭的是基础设施基线；真实平台 PG/Redis/RabbitMQ/Apollo 联调保留在 DEP-005，身份联调保留在 IDP-002。
+
+## 2026-10-14 控制面恢复
+
+S1-DEP-007 已按方案 B 执行：qd 单控制面、单成员 etcd；两台 worker 与 qian-prod01 为 agent，四节点 Ready。两台 worker 就地切换，Node UID、原本地 PVC 与数据路径保留；版本仍为 v1.35.5+k3s1。当前118个活动Pod均Ready，数据协议与授权DNS探针通过，生产专用节点未重装。
+
+止血、I/O竞争测量、配置落点、备份、回退与实际执行时点统一见 [控制面执行方案](../../docs/ops/k3s-control-plane-recovery.md) 与 [S1-DEP-007](../../pm/tasks/S1-DEP-007.md)。连续24小时验收从2026-10-13T18:23:34Z计算，完整结果未完成前不关闭任务；短时Ready与Argo状态不代替证据。
