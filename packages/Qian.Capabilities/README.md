@@ -43,6 +43,7 @@
    - `if` / `not` / `contains` 子 Schema 内部的失败只是逻辑测试，不算输入错误；`contains` 没有任何元素满足时报 `VALUE_NOT_ALLOWED`。
    - `$ref` 可指向本文档、带 `$id` 的内嵌资源与 `$anchor`，外部引用禁用。pointer 超过 contracts/v0 的 1024 字符上限（如超长属性名）时退到最近的合法上级位置。
    - `patternProperties` / `dependentSchemas` 的键不能含 `/` 或 `~`：JsonSchema.Net 9.4 对前者每次求值都抛异常、对后者静默跳过，含此类键的能力在登记阶段就被拒绝（规则 `unsupported-key`），不放过约束，执行入口也不会因此返回 500。
+   - 编译好的校验器按 `schemaSha256` 缓存，最多 1024 个；满了只淘汰最久没用的一个，被淘汰的在下次执行时按同一份 Schema 重新编译。登记期能查出的三类问题之外，求值时库抛出的意外异常（如 `uniqueItems` 比较超出 double 范围的数 `1e400` 时 JsonSchema.Net 9.4 抛 `FormatException`）记一条带组件 ID 与能力名的错误日志，再交给 ErrorDetail 中间件按 500 `INTERNAL` 返回。
 3. 经 SDK 绑定走真实 Mediator 管道执行，租户、授权、审计策略照常生效。
 
 `Idempotency-Key` 请求头可选，取 UUID 文本（可按结构化字段带引号）；多值、空值、全零或非 UUID 返回 400 `BAD_REQUEST`。只读能力（`sideEffect: read`）重复执行没有副作用，忽略该键、不存回执。写类能力带键时，同一租户、同一主体、同一能力、同一键在 24 小时内的重复请求不再执行：回执保存了响应体时返回首次成功响应（同样的响应体，加 `Idempotent-Replayed: true`），按回执策略没有保存时返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；键相同而输入不同、或同键请求仍在执行，返回 409 `CONFLICT`。语义与 Kun 的幂等消费一致（R63），分三段：

@@ -41,12 +41,17 @@ public sealed partial class PatchPersistenceTests
         var contract = await Assert.ThrowsAsync<RegistryScopeApplyException>(() => running.Registry.SynchronizeAsync(TenantA, Ct).AsTask());
         Assert.Equal(((int?)3, "INPUT_INVALID"), (contract.Revision, contract.ReasonCode));
         Assert.Equal("test.private/probe#/inputSchema/properties/tenantId", Assert.IsType<CapabilityContractException>(contract.InnerException).Location);
-        await repository.PutAsync(TenantA, "private", Patch("""{"id":"private","plugin":"test.private","config":{"label":"forged"}}"""), 3, "operator-a", Ct);
-        var forged = await Assert.ThrowsAsync<RegistryScopeApplyException>(() => running.Registry.SynchronizeAsync(TenantA, Ct).AsTask());
-        Assert.Equal(((int?)4, "INTERNAL"), (forged.Revision, forged.ReasonCode));
+        // 不合 contracts/v0 码格式（大写字母开头、下划线只作分隔、最长 64）的原因码同样按 INTERNAL：双下划线、结尾下划线、超长。
+        var revision = 3;
+        foreach (var label in new[] { "forged", "doubled", "trailing", "long" })
+        {
+            await repository.PutAsync(TenantA, "private", Patch("{\"id\":\"private\",\"plugin\":\"test.private\",\"config\":{\"label\":\"" + label + "\"}}"), revision, "operator-a", Ct);
+            var forged = await Assert.ThrowsAsync<RegistryScopeApplyException>(() => running.Registry.SynchronizeAsync(TenantA, Ct).AsTask());
+            Assert.Equal(((int?)++revision, "INTERNAL"), (forged.Revision, forged.ReasonCode));
+        }
         Assert.Empty(running.Commands(TenantA));
 
-        await repository.PutAsync(TenantA, "private", Patch("""{"id":"private","plugin":"test.private","config":{"label":"fixed"}}"""), 4, "operator-a", Ct);
+        await repository.PutAsync(TenantA, "private", Patch("""{"id":"private","plugin":"test.private","config":{"label":"fixed"}}"""), revision, "operator-a", Ct);
         await running.Registry.SynchronizeAsync(TenantA, Ct);
         Assert.Contains("test.private/hello", running.Commands(TenantA));
     }
@@ -98,6 +103,9 @@ public sealed partial class PatchPersistenceTests
                 "crash" => throw new InvalidOperationException(Secret),
                 "contract" => throw new CapabilityContractException("test.private", "probe", "test.private/probe#/inputSchema/properties/tenantId", "tenant-field"),
                 "forged" => throw new InvalidOperationException(Secret) { Data = { ["reasonCode"] = "drop table; --" } },
+                "doubled" => throw new InvalidOperationException(Secret) { Data = { ["reasonCode"] = "INPUT__INVALID" } },
+                "trailing" => throw new InvalidOperationException(Secret) { Data = { ["reasonCode"] = "INPUT_INVALID_" } },
+                "long" => throw new InvalidOperationException(Secret) { Data = { ["reasonCode"] = "E" + new string('X', 64) } },
                 _ => inner.ApplyAsync(ctx, config, ct)
             };
     }
