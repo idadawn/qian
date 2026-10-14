@@ -68,7 +68,7 @@
 | 4 | [S1-YUE-007](tasks/S1-YUE-007.md) @yue/form：SchemaForm、弹层 API 与 Schema 草案 | P0 | 2 | 5d | YUE |
 | 5 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
 | 6 | [S1-RT-007](tasks/S1-RT-007.md) 能力契约预留：可发布元数据、导入导出、Operation、App | P1 | 3 | 3d | RT |
-| 7 | [S1-RT-023](tasks/S1-RT-023.md) 表面解析器其余诊断分歧两端对齐：YAML 语法错误行号、多文档、JSON 嵌套深度与非有限数值 | P2 | 1 | 0.5d | RT |
+| 7 | [S1-RT-025](tasks/S1-RT-025.md) 表面解析器其余诊断分歧两端对齐：YAML 语法错误行号、多文档、JSON 嵌套深度与非有限数值 | P2 | 1 | 0.5d | RT |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
