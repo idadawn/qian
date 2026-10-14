@@ -8,7 +8,14 @@ namespace Qian.Registry;
 internal sealed class RegistryProfileComposer(PostgresPatchRepository patches, IProfileLoader loader, ProfileLoadOptions options)
 {
     internal async Task<ProfileLoadResult> LoadAsync(ScopeKey scope, CancellationToken ct)
-        => Compose(scope, await patches.ListAsync(scope, ct).ConfigureAwait(false));
+        => (await LoadWithPatchesAsync(scope, ct).ConfigureAwait(false)).Result;
+
+    // 同时返回本次装配所用的 scope patch 行，装配失败时据此报告条目的 patch 修订。
+    internal async Task<(ProfileLoadResult Result, IReadOnlyList<ScopePatchSnapshot> Patches)> LoadWithPatchesAsync(ScopeKey scope, CancellationToken ct)
+    {
+        var rows = await patches.ListAsync(scope, ct).ConfigureAwait(false);
+        return (Compose(scope, rows), rows);
+    }
 
     internal ProfileLoadResult Compose(ScopeKey scope, IReadOnlyList<ScopePatchSnapshot> rows)
     {

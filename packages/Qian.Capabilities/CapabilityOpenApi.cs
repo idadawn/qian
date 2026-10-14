@@ -20,21 +20,40 @@ internal static class CapabilityOpenApi
             schemas[key + "Input"] = JsonSchemaReferences.RebaseToComponent(entry.GetProperty("inputSchema"), key + "Input");
             var result = entry.TryGetProperty("outputSchema", out var output) ? JsonSchemaReferences.RebaseToComponent(output, key + "Output") : JsonValue.Create(true)!;
             schemas[key + "Output"] = result;
-            paths["/api/capabilities/" + id + "/invoke"] = new JsonObject
-            {
-                ["post"] = new JsonObject
+            // 只读能力忽略幂等键，不声明该参数与回放响应头。
+            var keyed = entry.GetProperty("sideEffect").GetString() != "read";
+            var success = new JsonObject { ["description"] = keyed ? "执行成功，或同一幂等键的首次成功响应回放" : "执行成功", ["content"] = Content(key + "Output") };
+            if (keyed)
+                success["headers"] = new JsonObject
                 {
-                    ["operationId"] = key, ["description"] = entry.GetProperty("description").GetString(),
-                    ["x-qian-capability"] = id, ["x-qian-required-scopes"] = JsonNode.Parse(entry.GetProperty("requiredScopes").GetRawText()),
-                    ["requestBody"] = new JsonObject { ["required"] = true, ["content"] = Content(key + "Input") },
-                    ["responses"] = new JsonObject
+                    ["Idempotent-Replayed"] = new JsonObject
+                    { ["description"] = "回放首次成功响应时为 true；本次执行时不出现。", ["schema"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray("true") } }
+                };
+            var operation = new JsonObject
+            {
+                ["operationId"] = key, ["description"] = entry.GetProperty("description").GetString(),
+                ["x-qian-capability"] = id, ["x-qian-required-scopes"] = JsonNode.Parse(entry.GetProperty("requiredScopes").GetRawText()),
+                ["requestBody"] = new JsonObject { ["required"] = true, ["content"] = Content(key + "Input") },
+                ["responses"] = new JsonObject
+                {
+                    ["200"] = success,
+                    ["default"] = new JsonObject
                     {
-                        ["200"] = new JsonObject { ["description"] = "执行成功", ["content"] = Content(key + "Output") },
-                        ["default"] = new JsonObject { ["description"] = "ErrorDetail 结构化错误" }
-                    },
-                    ["security"] = new JsonArray(new JsonObject { ["bearerAuth"] = new JsonArray() })
-                }
+                        ["description"] = "ErrorDetail 结构化错误：输入不符 400 INPUT_INVALID（errors 带 JSON Pointer），不可见或不存在 404 NOT_FOUND" +
+                            (keyed ? "，幂等键冲突 409 CONFLICT" : "")
+                    }
+                },
+                ["security"] = new JsonArray(new JsonObject { ["bearerAuth"] = new JsonArray() })
             };
+            if (keyed)
+                operation["parameters"] = new JsonArray(new JsonObject
+                {
+                    ["name"] = "Idempotency-Key", ["in"] = "header", ["required"] = false,
+                    ["description"] = "可选幂等键（UUID）：同一主体、同一能力、同一键在回放窗口内重复请求时返回首次成功响应且不再执行；" +
+                        "同键请求仍在执行或键相同而输入不同时返回 409 CONFLICT。",
+                    ["schema"] = new JsonObject { ["type"] = "string", ["format"] = "uuid" }
+                });
+            paths["/api/capabilities/" + id + "/invoke"] = new JsonObject { ["post"] = operation };
         }
         var document = new JsonObject
         {
