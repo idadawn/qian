@@ -111,6 +111,52 @@ public sealed class CapabilityContractCheckTests
         Assert.Equal("qian.test/probe.long#/inputSchema/patternProperties", trimmed.Location);
     }
 
+    [Fact]
+    public void 工具声明合格而生成的条目不符合能力条目契约时按entry_invalid拒绝_位置指向条目内的字段()
+    {
+        var logger = new RecordingLogger();
+        var check = new CapabilityContractCheck(new SurfaceValidator(), new ToolContractHasher(), logger);
+        // tool/v2 允许 x- 扩展键、不要求 costTier；contracts/v0 的能力条目不允许未声明成员、要求 costTier。
+        var extension = Assert.Throws<CapabilityContractException>(() => check.Check(Custom("probe.extension", metadata => metadata["x-owner"] = "crm-team")));
+        Assert.Equal(("qian.test/probe.extension#/x-owner", "entry-invalid", "INPUT_INVALID"), (extension.Location, extension.Rule, extension.ReasonCode));
+        var missing = Assert.Throws<CapabilityContractException>(() => check.Check(Custom("probe.untiered", metadata => metadata.Remove("costTier"))));
+        // 缺少的成员也指到该成员。
+        Assert.Equal(("qian.test/probe.untiered#/costTier", "entry-invalid"), (missing.Location, missing.Rule));
+        Assert.All(new[] { extension, missing }, item => Assert.True(ErrorPointer.IsValid(item.Location), item.Location));
+        Assert.Equal(2, logger.Messages.Count);
+    }
+
+    [Fact]
+    public void 生成条目时的其余失败按contract_invalid拒绝_位置为能力本身_原异常留在InnerException_同一契约只告警一次()
+    {
+        var logger = new RecordingLogger(); var hasher = new FailingHasher();
+        var check = new CapabilityContractCheck(new SurfaceValidator(), hasher, logger);
+        var contract = Contract("probe.unhashed", ProbeJson.Default.PlainProbe);
+        var error = Assert.Throws<CapabilityContractException>(() => check.Check(contract));
+        Assert.Equal(("qian.test", "probe.unhashed", "qian.test/probe.unhashed#", "contract-invalid", "INPUT_INVALID"),
+            (error.ComponentId, error.Name, error.Location, error.Rule, error.ReasonCode));
+        Assert.Same(hasher.Failure, error.InnerException);
+        Assert.Null(check.Entry(contract));
+        Assert.IsType<CapabilityContractException>(Record.Exception(() => check.Check(contract)));
+        Assert.Equal(1, hasher.Calls);
+        Assert.Contains("contract-invalid", Assert.Single(logger.Messages), StringComparison.Ordinal);
+    }
+
+    // 以合格的测试声明为底改动一处，模拟手写或其他生成器产出的声明。
+    private static CapabilityContract Custom(string name, Action<System.Text.Json.Nodes.JsonObject> change)
+    {
+        var metadata = System.Text.Json.Nodes.JsonNode.Parse(Contract(name, ProbeJson.Default.PlainProbe).Metadata.GetRawText())!.AsObject();
+        change(metadata);
+        return new CapabilityContract("qian.test", metadata.ToJsonString(), ProbeJson.Default.PlainProbe, ProbeJson.Default.ProbeResult);
+    }
+
+    private sealed class FailingHasher : Qian.Surfaces.Abstractions.IToolContractHasher
+    {
+        internal InvalidOperationException Failure { get; } = new("摘要实现不可用。");
+        internal int Calls { get; private set; }
+        public string Compute(JsonElement tool) { Calls++; throw Failure; }
+    }
+
     private static CapabilityContract Contract(string name, JsonTypeInfo request, string costTier = "low") => new("qian.test",
         "{\"name\":\"" + name + "\",\"description\":\"登记期契约检查的测试能力，只读取测试数据，不修改任何状态。\",\"sideEffect\":\"read\"," +
         "\"policyHint\":\"allow\",\"idempotent\":false,\"async\":\"none\",\"requiredScopes\":[],\"requiredSecrets\":[],\"dataClassification\":\"internal\",\"costTier\":\"" + costTier + "\"," +

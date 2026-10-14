@@ -138,9 +138,10 @@ public sealed partial class PatchPersistenceTests
         await Assert.ThrowsAsync<ServiceNotReadyException>(() => running.Registry.SynchronizeAsync(TenantA, Ct).AsTask());
     }
 
-    private async Task<RunningRegistry> CreateRunningRegistry(AsyncLocalTenantContext tenant, Func<PluginDefinition, PluginDefinition>? modify = null, bool start = true)
+    private async Task<RunningRegistry> CreateRunningRegistry(AsyncLocalTenantContext tenant, Func<PluginDefinition, PluginDefinition>? modify = null, bool start = true,
+        bool capabilityChecks = false)
     {
-        var host = Host(tenant); await host.StartAsync(Ct); await Prepare(host);
+        var host = Host(tenant, capabilityChecks: capabilityChecks); await host.StartAsync(Ct); await Prepare(host);
         var profile = new RuntimeProfile(); var validator = new SurfaceValidator(); var profiles = new ProfileLoader(validator);
         var logger = new RecordingLogger(); var runtime = new PluginLoader(host.Services, logger);
         RegistryPlugin? registry = null;
