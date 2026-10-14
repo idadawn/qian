@@ -5861,7 +5861,7 @@
  {
   "id": "S1-RT-022",
   "title": "表面解析器对残缺代理项的处理两端对齐（YAML 与 JSON 中未成对的代理项转义）",
-  "status": "doing",
+  "status": "done",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
@@ -5875,7 +5875,7 @@
    "S1-RT-008"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -5893,10 +5893,10 @@
   ],
   "updated": "2026-10-15",
   "acceptance": {
-   "done": 0,
+   "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-009 差分时发现：配置补丁里的字符串或键名含残缺代理项的转义（反斜杠 u 后接未成对的 D800 至 DFFF 码元）时，.NET 的 SurfaceReader 与 CLI 的 parseSurface 处理不同。YAML：YamlDotNet 报「YAML 语法无效或存在重复键。」，TS 的 yaml 包照常解析。JSON：.NET 读键名时 Utf8JsonReader.GetString 抛 InvalidOperationException，SurfaceReader.Parse 不捕获，profile 装配按无法解析处理；字符串值要到之后取用时才失败；TS 一律接受。S1-CFG-009 只让 profile 装配在配置验证前两端都按无法解析处理，报告的位置与时机仍不同（见 packages/Qian.Profiles/README.md 的已知分歧）。应在表面解析层统一：两端解析时都拒绝含残缺代理项的字符串与键名，给出同一诊断，补表面 TCK 场景。</p>\n<p>实施时又确认：</p>\n<ul>\n<li>YamlDotNet 只拒绝未成对的代理项转义，转义的代理对（含高代理用 <code>\\u</code>、低代理用 <code>\\U</code> 的写法）照常解码。拒绝时 SyntaxErrorException 指向双引号标量开始的位置，与其他语法错误一样，按扫描顺序先到先报。</li>\n<li>连续两个高代理项转义时，YamlDotNet 18.1.0 的扫描器调用 Char.ConvertToUtf32 抛 ArgumentOutOfRangeException（上游缺陷）。未闭合的流式集合（如 <code>a: [</code> 后换行）抛 InvalidOperationException，SurfaceReader.Parse 原本不捕获，装配与校验直接崩溃。</li>\n<li>先记下重复键、再遇到致命错误时，.NET 两条都报，CLI 只报致命错误。YAML 里 alias 与重复键同时出现时，两端先报的不同。</li>\n<li>直接传入的字符串（不经文件解码）可含字面量的未成对代理项：.NET 的 JSON 路径把它们静默换成 U+FFFD，YamlDotNet 与 CLI 原样接受。</li>\n<li>与代理项无关的其余诊断分歧（YAML 语法错误行号、多文档、JSON 嵌套深度与非有限数值）另建 S1-RT-023。</li>\n</ul>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>两端表面解析器对含残缺代理项的字符串与键名给出同一诊断（JSON、YAML 与 Markdown front matter）：JSON 在所在行报专门文案，语法错误、过深与非有限数值优先；YAML 按语法错误报在标量开始的行，与语法错误、alias 按扫描顺序先到先报，重复键在其后；转义的代理对照常接受；字面量的未成对代理项按值无效处理</li>\n<li class='chk'><span class='box'></span><code>SurfaceReader.Parse</code> 不再把 InvalidOperationException 或 ArgumentException 抛给调用方（JSON 键名、未闭合的流式集合、连续两个高代理项转义）；致命错误两端都只报它自己</li>\n<li class='chk'><span class='box'></span>表面 TCK 与 profile TCK 补充用例，两端报告比较通过</li>\n<li class='chk'><span class='box'></span>删去 <code>packages/Qian.Profiles/README.md</code> 中对应的已知分歧</li>\n<li class='chk'><span class='box'></span>相关测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：两端表面解析器对未成对代理项（JSON 与 YAML 转义、字面量）给出同一诊断，SurfaceReader.Parse 不再泄漏 InvalidOperationException</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-009 差分时发现：配置补丁里的字符串或键名含残缺代理项的转义（反斜杠 u 后接未成对的 D800 至 DFFF 码元）时，.NET 的 SurfaceReader 与 CLI 的 parseSurface 处理不同。YAML：YamlDotNet 报「YAML 语法无效或存在重复键。」，TS 的 yaml 包照常解析。JSON：.NET 读键名时 Utf8JsonReader.GetString 抛 InvalidOperationException，SurfaceReader.Parse 不捕获，profile 装配按无法解析处理；字符串值要到之后取用时才失败；TS 一律接受。S1-CFG-009 只让 profile 装配在配置验证前两端都按无法解析处理，报告的位置与时机仍不同（见 packages/Qian.Profiles/README.md 的已知分歧）。应在表面解析层统一：两端解析时都拒绝含残缺代理项的字符串与键名，给出同一诊断，补表面 TCK 场景。</p>\n<p>实施时又确认：</p>\n<ul>\n<li>YamlDotNet 只拒绝未成对的代理项转义，转义的代理对（含高代理用 <code>\\u</code>、低代理用 <code>\\U</code> 的写法）照常解码。拒绝时 SyntaxErrorException 指向双引号标量开始的位置，与其他语法错误一样，按扫描顺序先到先报。</li>\n<li>连续两个高代理项转义时，YamlDotNet 18.1.0 的扫描器调用 Char.ConvertToUtf32 抛 ArgumentOutOfRangeException（上游缺陷）。未闭合的流式集合（如 <code>a: [</code> 后换行）抛 InvalidOperationException，SurfaceReader.Parse 原本不捕获，装配与校验直接崩溃。</li>\n<li>先记下重复键、再遇到致命错误时，.NET 两条都报，CLI 只报致命错误。YAML 里 alias 与重复键同时出现时，两端先报的不同。</li>\n<li>直接传入的字符串（不经文件解码）可含字面量的未成对代理项：.NET 的 JSON 路径把它们静默换成 U+FFFD，YamlDotNet 与 CLI 原样接受。</li>\n<li>与代理项无关的其余诊断分歧（YAML 语法错误行号、多文档、JSON 嵌套深度与非有限数值）另建 S1-RT-023。</li>\n</ul>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>两端表面解析器对含残缺代理项的字符串与键名给出同一诊断（JSON、YAML 与 Markdown front matter）：JSON 在所在行报专门文案，语法错误、过深与非有限数值优先；YAML 按语法错误报在标量开始的行，与语法错误、alias 按扫描顺序先到先报，重复键在其后；转义的代理对照常接受；字面量的未成对代理项按值无效处理</li>\n<li class='chk done'><span class='box'>✓</span><code>SurfaceReader.Parse</code> 不再把 InvalidOperationException 或 ArgumentException 抛给调用方（JSON 键名、未闭合的流式集合、连续两个高代理项转义）；致命错误两端都只报它自己</li>\n<li class='chk done'><span class='box'>✓</span>表面 TCK 与 profile TCK 补充用例，两端报告比较通过</li>\n<li class='chk done'><span class='box'>✓</span>删去 <code>packages/Qian.Profiles/README.md</code> 中对应的已知分歧</li>\n<li class='chk done'><span class='box'>✓</span>相关测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：两端表面解析器对未成对代理项（JSON 与 YAML 转义、字面量）给出同一诊断，SurfaceReader.Parse 不再泄漏 InvalidOperationException</li>\n<li>2026-10-15 claude：完成：两端表面解析器对未成对代理项给出同一诊断。JSON 在所在行报专门文案，语法错误、过深与非有限数值优先；YAML 与 front matter 按语法错误报在标量开始的行，与语法错误、alias 按扫描顺序先到先报，重复键在其后；转义的代理对照常解码；字面量的未成对代理项按值无效处理；致命错误两端都只报它自己。SurfaceReader.Parse 不再泄漏 InvalidOperationException（JSON 键名、未闭合的流式集合）与 ArgumentOutOfRangeException（YamlDotNet 组对缺陷）。表面 TCK 增至 58 个场景、profile TCK 增至 123 个，两端报告一致；随机 8,000 份差分中含代理项的情形全部一致，其余既有分歧另建 S1-RT-023；全量 693 例、CLI 61 例、门禁 49 例通过。随 idadawn/qian#113 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
   "file": "pm/tasks/S1-RT-022.md"
  },
  {
@@ -5915,11 +5915,9 @@
   "depends": [
    "S1-RT-022"
   ],
-  "blockedBy": [
-   "S1-RT-022"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "packages/Qian.Surfaces/SurfaceReader.cs",
