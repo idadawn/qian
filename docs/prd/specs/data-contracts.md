@@ -115,4 +115,10 @@ S2 的五处消费方引用同一份 Schema 和矩阵，不重建自己的运算
 
 违反时返回 DATA_FIELD_DEFINITION_INVALID（422），errors[] 逐项指向 `#/length` 等成员。
 
-**数据连接**。[data-connection.schema.json](../../../contracts/data/v1/data-connection.schema.json) 定义请求与响应。口令只以租户作用域的 secretRef 给出，请求中出现 password 等未声明成员即拒绝，任何响应都不含口令。连通测试在使用点解析凭据：成功返回服务端版本与耗时；失败返回 DATA_CONNECTION_UNREACHABLE（可重试）或 DATA_CONNECTION_REJECTED（reason 为 authentication、database、schema、permission、parameter 或 server）。该操作会从平台出网，Agent 契约标 external。
+**数据连接**。[data-connection.schema.json](../../../contracts/data/v1/data-connection.schema.json) 定义请求与响应。口令只以租户作用域的 secretRef 给出，请求中出现 password 等未声明成员即拒绝，任何响应都不含口令。连通测试先做出网检查，再在使用点解析凭据：目标主机解析出的每个地址都须通过宿主配置的拒绝 / 放行网段，连接只用检查过的地址。成功返回服务端版本与耗时；失败返回以下错误之一：
+- DATA_CONNECTION_TARGET_DENIED：目标不在允许的出网范围内，此时不连接也不读取密钥；
+- DATA_CONNECTION_UNREACHABLE：可重试；
+- DATA_CONNECTION_REJECTED：reason 为 authentication、database、schema、permission、parameter 或 server；
+- DATA_CONNECTION_CREDENTIAL_INVALID：密钥内容不能用作口令。
+
+该操作会从平台出网，Agent 契约标 external。完整的出口代理与 SSRF 基线按 PRD 7.19 归 S2。

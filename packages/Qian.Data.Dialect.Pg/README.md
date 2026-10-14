@@ -35,12 +35,14 @@ decimal 的精度上限取 28 位，是 .NET decimal 能无损往返的位数；
 
 `ProbeAsync` 用 `NpgsqlConnectionStringBuilder` 设置主机、端口、库、用户名、口令、search_path 与 client_encoding，不拼接字符串：
 
+- 主机由平台给出，已是通过出网检查的 IP 地址，方言不再解析档案里的主机名（见 [Qian.Data](../Qian.Data/README.md) 的出网检查）；
 - 探测连接不进连接池，用完即关，应用名为 `qian.data connection test`；
-- 连接与命令超时取调用方给的超时；
+- 连接与命令超时取调用方给的超时，Npgsql 上限为 1024 秒；
 - 给了 schema 时，再查 `has_schema_privilege(…, 'USAGE')`：schema 不存在为 reason=schema，没有 USAGE 权限为 reason=permission。
 
 错误映射：
 
+- 密钥内容不是 UTF-8 文本 → DATA_CONNECTION_CREDENTIAL_INVALID，不发起连接；
 - SQLSTATE 28P01 / 28000 → DATA_CONNECTION_REJECTED，reason=authentication；
 - 3D000 → reason=database；
 - 42501 → reason=permission；
