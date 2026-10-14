@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { CORE_COMPONENT_MANIFESTS } from '@idadawn/yue-core';
-import { DEMOS } from '../../../packages/yue/core/src/test/catalog-demos';
+import { DEMOS } from '../../../packages/yue/core/docs/examples/catalog';
 import './index.css';
 
 const query = new URLSearchParams(window.location.search);

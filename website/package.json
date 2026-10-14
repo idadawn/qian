@@ -4,14 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "rspress dev",
-    "build": "rspress build && node scripts/build-kb-index.ts",
+    "dev": "pnpm demos:build && rspress dev",
+    "build": "pnpm demos:build && rspress build && node scripts/compact-yue-markdown.ts && node scripts/build-kb-index.ts",
     "kb-index": "node scripts/build-kb-index.ts",
     "preview": "rspress preview",
     "generate": "node scripts/generate.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test \"scripts/**/*.test.ts\"",
-    "check": "node scripts/check-site.ts"
+    "check": "node scripts/check-site.ts",
+    "demos:build": "node scripts/build-yue-demos.ts",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@idadawn/yue-tokens": "workspace:*",
@@ -19,13 +21,23 @@
     "@rspress/core": "2.0.23",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "rspress-plugin-mermaid": "1.0.3"
+    "rspress-plugin-mermaid": "1.0.3",
+    "@idadawn/yue-core": "workspace:*",
+    "@rspress/shared": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "@rsbuild/core": "catalog:",
+    "@rsbuild/plugin-react": "catalog:",
+    "@rsbuild/plugin-tailwindcss": "catalog:",
+    "@babel/standalone": "catalog:",
+    "monaco-editor": "catalog:",
+    "@playwright/test": "catalog:",
+    "@axe-core/playwright": "catalog:",
+    "tailwindcss": "catalog:"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

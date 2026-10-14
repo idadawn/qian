@@ -1,6 +1,6 @@
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { DEMOS } from './test/catalog-demos';
+import { DEMOS } from '../docs/examples/catalog';
 import { CORE_COMPONENT_MANIFESTS } from './manifests';
 
 describe('全部组件 SSR', () => {

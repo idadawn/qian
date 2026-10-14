@@ -12,7 +12,7 @@
 | Qian 对 Kun 的选用与约束 | `website/docs/sdk/kun/with-qian.mdx`（只转述 ADR-001 / ADR-021 与 PRD §07，不另立规则） | — |
 | Kun 镜像的白名单、侧栏与横幅 | `docs/prd/specs/docs-site.md` §2b 与 `website/scripts/sync-kun-docs.ts` 一起改 | 生成出来的页面 |
 | CLI 命令与清单字段 | `docs/prd/specs/component-model.md`（站内 `/cli/` 自动同步） | `website/docs/cli/` |
-| 组件页 | S1-DOCS-002 前：`website/scripts/collect-components.ts` 的规划清单；之后：组件文件夹的 README 与 `docs/*.mdx` | `website/docs/components/` |
+| 组件页 | yue core：`packages/yue/core/docs/` 与 `website/scripts/yue-docs.ts`；其它组件：`collect-components.ts` 的规划清单，S1-DOCS-002 后改为组件目录 | `website/docs/components/` |
 | 首页 | `website/docs/index.mdx`（结构按 docs-site.md §2a） | — |
 | 产品族地图 | `website/docs/start/family.md` 与仓库 `README.md` 的「产品族」表一起改（单测核对前五列一致） | — |
 | 版本矩阵 | 对应的钉版文件（`Directory.Packages.props`、`global.json`、`package.json`、`deploy/baseline.json` 等） | `website/docs/start/versions.md`（生成，不进 Git） |
@@ -41,6 +41,6 @@
 ```bash
 python3 scripts/check_docs.py
 pnpm --filter website typecheck && pnpm --filter website test
-pnpm --filter website build && pnpm --filter website check
+pnpm --filter website build && pnpm --filter website check && pnpm --filter website e2e
 python3 scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api website/docs/start/versions.md
 ```
