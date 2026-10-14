@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`████░░░░░░` 49%（73/150）
-- 状态：todo 70 · doing 1 · review 0 · done 73 · blocked 6
+- 状态：todo 69 · doing 1 · review 1 · done 73 · blocked 6
 - 最近更新：2026-10-15
 
 ## 按阶段
@@ -65,20 +65,19 @@
 | 1 | [S1-AUD-001](tasks/S1-AUD-001.md) qian.audit 命令级哈希链与 AuditBehavior 监听器 | P0 | 1 | 5d | AUD |
 | 2 | [S1-DEP-002](tasks/S1-DEP-002.md) L1 组件上 K3s：RabbitMQ、Apollo + MySQL、OIDC | P0 | 1 | 5d | DEP |
 | 3 | [S1-RT-004](tasks/S1-RT-004.md) qian.registry 插件：清单校验、注册表与 scope 视图 | P0 | 1 | 5d | RT |
-| 4 | [S1-TEN-001](tasks/S1-TEN-001.md) 租户主档、fail-closed 租户上下文与传播器、tenancy API | P0 | 1 | 3d | TEN |
-| 5 | [S1-DOCS-002](tasks/S1-DOCS-002.md) 组件文档收集、活演示与 API 参考生成 | P0 | 2 | 5d | DOCS |
-| 6 | [S1-EVT-003](tasks/S1-EVT-003.md) 事件目录、AsyncAPI 导出、主题 ACL 与 IOutboxWriter | P0 | 2 | 3d | EVT |
-| 7 | [S1-YUE-006](tasks/S1-YUE-006.md) @yue/shell：AppShell、Page 族、菜单注册表与认证页族 | P0 | 2 | 3d | YUE |
-| 8 | [S1-YUE-007](tasks/S1-YUE-007.md) @yue/form：SchemaForm、弹层 API 与 Schema 草案 | P0 | 2 | 5d | YUE |
-| 9 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
-| 10 | [S1-RT-021](tasks/S1-RT-021.md) 验收整改：执行入口 OpenAPI 补不可重放码、回执清理与 NOT VALID 说法更正、登记期检查装配、数据分级标注与测试补强（S1-RT-020 复核） | P1 | 2 | 2d | RT |
-| 11 | [S1-RT-007](tasks/S1-RT-007.md) 能力契约预留：可发布元数据、导入导出、Operation、App | P1 | 3 | 3d | RT |
+| 4 | [S1-DOCS-002](tasks/S1-DOCS-002.md) 组件文档收集、活演示与 API 参考生成 | P0 | 2 | 5d | DOCS |
+| 5 | [S1-EVT-003](tasks/S1-EVT-003.md) 事件目录、AsyncAPI 导出、主题 ACL 与 IOutboxWriter | P0 | 2 | 3d | EVT |
+| 6 | [S1-YUE-006](tasks/S1-YUE-006.md) @yue/shell：AppShell、Page 族、菜单注册表与认证页族 | P0 | 2 | 3d | YUE |
+| 7 | [S1-YUE-007](tasks/S1-YUE-007.md) @yue/form：SchemaForm、弹层 API 与 Schema 草案 | P0 | 2 | 5d | YUE |
+| 8 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
+| 9 | [S1-RT-021](tasks/S1-RT-021.md) 验收整改：执行入口 OpenAPI 补不可重放码、回执清理与 NOT VALID 说法更正、登记期检查装配、数据分级标注与测试补强（S1-RT-020 复核） | P1 | 2 | 2d | RT |
+| 10 | [S1-RT-007](tasks/S1-RT-007.md) 能力契约预留：可发布元数据、导入导出、Operation、App | P1 | 3 | 3d | RT |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 11 | 41d |
+| 第 1 层 | 10 | 38d |
 | 第 2 层 | 10 | 44d |
 | 第 3 层 | 16 | 52d |
 | 第 4 层 | 10 | 40d |
@@ -95,3 +94,4 @@
 | 任务 | 状态 | 负责人 | 更新 |
 |---|---|---|---|
 | [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-15 |
+| [S1-TEN-001](tasks/S1-TEN-001.md) 租户主档、fail-closed 租户上下文与传播器、tenancy API | review | cody | 2026-10-15 |
