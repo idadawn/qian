@@ -24,6 +24,8 @@
 
 `SecretSafety` 同时用于 Apollo 候选快照与 [CI 工具](../../tools/Qian.Secrets.Tool/README.md)。Schema 的 `x-qian-sensitive: true`（兼容旧 `sensitive: true`）只接受合法公开引用。支持本地 `$ref`、属性、模式属性、数组和组合/条件分支；各分支敏感标记保守取并集。外部或无法解释的 Schema 引用报错，不静默跳过。它不是完整 JSON Schema 验证器。
 
+模式属性的键用 .NET NonBacktracking 引擎做线性时间匹配。语法错误、环视与反向引用等不支持的语法、过大的自动机和匹配超时都报 `CONFIG_SECRET_SCHEMA_INVALID`，不会跳过敏感标记。同一模式在进程内复用编译实例，最多缓存 128 个，超出时清空重建，失败的模式不进缓存。单次匹配超时 1 秒。
+
 即使没有 Schema，敏感键名、JWT/私钥形状、含凭据的 URL/连接字符串、疑似高熵值也会拒绝；诊断仅含规则与位置。启发式扫描不能证明任意字符串都不含秘密，插件仍须正确标注敏感属性。普通参数、无凭据 URL、规范引用和带 `sha256:` 前缀的摘要可以通过。Apollo 的默认检查不能由额外宿主校验回调关闭；K8s Secret 文件作为高优先级秘密来源，不纳入 Apollo 非敏感快照。
 
 配置分工见 [配置开发与运行手册](../../docs/ops/configuration-runbook.md)。本任务不替代后续审计链、审批持久化、Schema 自动收集或完整 platform 的联调验收。

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Qian.Config.Secrets.Tests;
 
@@ -57,6 +58,50 @@ public sealed class SecretSafetyTests
         using var config = JsonDocument.Parse("""{"value":"plain"}""");
         Assert.Contains(SecretSafety.Scan(config.RootElement, schema.RootElement), item => item.Code == "CONFIG_SECRET_SCHEMA_INVALID");
     }
+
+    [Fact]
+    public async Task 动态键扫描在并发与反复调用时结果稳定_复用同一编译实例()
+    {
+        // Apollo 每份快照都要扫描；同一模式在多线程下共享编译实例，并发建图与热匹配都不能误报 Schema 无效或漏掉敏感键。
+        using var schema = JsonDocument.Parse("""
+            {"properties":{"Endpoints":{"patternProperties":{"^[a-z][a-z0-9-]*$":{"properties":{"Url":{"type":"string"}}},"^legacy_":{"x-qian-sensitive":true}}}}}
+            """);
+        var root = schema.RootElement;
+        await Task.WhenAll(Enumerable.Range(0, 32).Select(worker => Task.Run(() =>
+        {
+            for (var round = 0; round < 40; round++)
+            {
+                var result = SecretSafety.ScanConfiguration(new Dictionary<string, string?>
+                {
+                    [$"Endpoints:svc-{worker}-{round}:Url"] = "https://orders.example.test/api",
+                    [$"Endpoints:legacy_{worker}_{round}"] = "plain",
+                }, root);
+                var diagnostic = Assert.Single(result);
+                Assert.Equal(("CONFIG_SECRET_EXPOSED", $"#/Endpoints:legacy_{worker}_{round}"), (diagnostic.Code, diagnostic.Location));
+            }
+        }, TestContext.Current.CancellationToken)));
+        Assert.Same(SecretSafety.Pattern("^legacy_"), SecretSafety.Pattern("^legacy_"));
+    }
+
+    [Fact]
+    public void 动态键模式保留线性引擎且超时有界_非法模式每次扫描都报告_缓存有上限()
+    {
+        var compiled = SecretSafety.Pattern("^legacy_");
+        Assert.Same(compiled, SecretSafety.Pattern("^legacy_"));
+        Assert.Equal(RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, compiled.Options);
+        Assert.Equal(TimeSpan.FromSeconds(1), compiled.MatchTimeout);
+        // 语法错误、环视、反向引用、原子组、条件、\G 与超限自动机；第二次扫描仍报告，失败不会留下可用实例。
+        foreach (var pattern in new[] { "(", "a{2,1}", "(?=x)", "(?<=x)y", "(a)\\1", "(?>a)", "(?(a)b|c)", "\\Gx", "a{20000}" })
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                var schema = JsonSerializer.SerializeToElement(new { patternProperties = new Dictionary<string, object> { [pattern] = new { type = "string" } } });
+                using var config = JsonDocument.Parse("""{"key":"value"}""");
+                Assert.Contains(SecretSafety.Scan(config.RootElement, schema), item => item.Code == "CONFIG_SECRET_SCHEMA_INVALID" && item.Reason == "unsupported-pattern");
+            }
+        for (var index = 0; index <= SecretSafety.PatternCacheSize; index++) _ = SecretSafety.Pattern($"^bounded_{index}$");
+        Assert.InRange(SecretSafety.CachedPatterns, 1, SecretSafety.PatternCacheSize);
+    }
+
     [Theory]
     [InlineData("{\"password\":123}")]
     [InlineData("{\"password\":null}")]
