@@ -10,12 +10,35 @@ import { CORE_COMPONENT_MANIFESTS } from './manifests';
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 const validate = ajv.compile(componentManifestSchema);
+function assertMetadata(node: unknown, name?: string) {
+  if (!node || typeof node !== 'object') return;
+  const schema = node as Record<string, unknown>;
+  if (name) expect(schema).toHaveProperty('title', name);
+  else {
+    expect(schema).not.toHaveProperty('title');
+    expect(schema).not.toHaveProperty('description');
+  }
+  if (typeof schema.description === 'string') expect(schema.description).not.toMatch(/^.+ 的 .+ 属性。$/);
+  for (const [key, child] of Object.entries((schema.properties ?? {}) as Record<string, unknown>)) assertMetadata(child, key);
+  if (Array.isArray(schema.items)) schema.items.forEach(child => assertMetadata(child));
+  else assertMetadata(schema.items);
+  for (const keyword of ['prefixItems', 'anyOf', 'oneOf', 'allOf']) {
+    if (Array.isArray(schema[keyword])) schema[keyword].forEach(child => assertMetadata(child));
+  }
+}
 describe('组件机器目录', () => {
+  it('生成器覆盖联合、交叉、元组与各层不存在属性的反例', () => {
+    execFileSync(process.execPath, ['--test', fileURLToPath(new URL('../scripts/manifest-metadata.test.mjs', import.meta.url))]);
+  }, 30_000);
   it('元数据由当前 TypeScript 注释生成且没有漂移', () => {
     execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/export-manifests.mjs', import.meta.url)), '--check']);
     const button = CORE_COMPONENT_MANIFESTS.find(item => item.name === 'Button')!;
     expect(button.props).toHaveProperty('properties.loading.description', '加载中时禁用操作并显示忙碌状态。');
     expect(button.props).not.toHaveProperty('properties.id.description');
+    const toast = CORE_COMPONENT_MANIFESTS.find(item => item.name === 'Toast')!;
+    expect(toast.props).toHaveProperty('properties.toast.properties.id.description', 'The unique identifier for the toast.');
+    const breadcrumb = CORE_COMPONENT_MANIFESTS.find(item => item.name === 'Breadcrumb')!;
+    expect(breadcrumb.props).toHaveProperty('properties.items.items.properties.href.title', 'href');
   }, 30_000);
   it('全部清单符合统一 Schema，名称唯一，示例通过自己的 props Schema，令牌均登记', () => {
     const names = CORE_COMPONENT_MANIFESTS.map(item => item.name);
@@ -25,10 +48,7 @@ describe('组件机器目录', () => {
     for (const manifest of CORE_COMPONENT_MANIFESTS) {
       expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
       expect(ajv.validateSchema(manifest.props)).toBe(true);
-      for (const [name, prop] of Object.entries(manifest.props.properties ?? {})) {
-        expect(prop).toHaveProperty('title', name);
-        expect(prop).not.toHaveProperty('description', `${manifest.name} 的 ${name} 属性。`);
-      }
+      assertMetadata(manifest.props);
       const props = ajv.compile(manifest.props);
       for (const example of manifest.examples) expect(props(example.props), `${manifest.name}: ${JSON.stringify(props.errors)}`).toBe(true);
       for (const token of manifest.tokens) expect(tokens.has(token), token).toBe(true);

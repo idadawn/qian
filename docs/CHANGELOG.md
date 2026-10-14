@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-15 数据契约冻结、组件元数据与文档预算整改（S1-QA-010）
+
+[data/v1 契约](../contracts/data/v1/README.md) 按 R80 明确 frozen 状态、修订规则和已知例外，统一 `$id` 前缀并补结构测试；[yue manifest](../packages/yue/core/README.md) 的属性元数据（含嵌套）递归取自 TS 注释，不存在的属性拒绝导出；[文档站预算](prd/specs/docs-site.md#7-门禁) 按 R55 调为 120 MB，main 实测 96.2 MB。
+
 ## 2026-10-15 数据连接连通测试的出网约束与凭据错误（S1-DATA-005）
 
 - 连通测试先解析目标主机并逐个检查地址：缺省拒绝回环、链路本地（含云元数据）、100.100.100.200、未指定、组播与广播地址。运维可经 `QianDataConnectionOptions.Egress` 追加拒绝网段或限定放行网段；被拒返回 DATA_CONNECTION_TARGET_DENIED，不连接也不读取密钥，放行时只连检查过的地址。

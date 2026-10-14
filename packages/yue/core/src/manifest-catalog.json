@@ -894,13 +894,6 @@
           "title": "aria-invalid",
           "description": "Indicates the entered value does not conform to the format expected by the application."
         },
-        "children": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "title": "children"
-        },
         "length": {
           "type": "integer",
           "minimum": 1,
@@ -2265,9 +2258,7 @@
         "snapPoints": {
           "type": "array",
           "items": {
-            "type": "number",
-            "title": "defaultValue",
-            "description": "InputNumber 的 defaultValue 属性。"
+            "type": "number"
           },
           "title": "snapPoints",
           "description": "Snap points used to position the drawer.\nUse numbers between 0 and 1 to represent fractions of the viewport height,\nnumbers greater than 1 as pixel values, or strings in `px`/`rem` units\n(for example, `'148px'` or `'30rem'`)."
@@ -2819,9 +2810,7 @@
         "value": {
           "type": "array",
           "items": {
-            "type": "string",
-            "title": "id",
-            "description": "Button 的 id 属性。"
+            "type": "string"
           },
           "title": "value",
           "description": "The controlled value of the item(s) that should be expanded.\n\nTo render an uncontrolled accordion, use the `defaultValue` prop instead."
@@ -2829,9 +2818,7 @@
         "defaultValue": {
           "type": "array",
           "items": {
-            "type": "string",
-            "title": "id",
-            "description": "Button 的 id 属性。"
+            "type": "string"
           },
           "title": "defaultValue",
           "description": "The uncontrolled value of the item(s) that should be initially expanded.\n\nTo render a controlled accordion, use the `value` prop instead."
@@ -4059,26 +4046,28 @@
             "id": {
               "type": "string",
               "title": "id",
-              "description": "Button 的 id 属性。"
+              "description": "The unique identifier for the toast."
             },
             "title": {
               "type": "string",
-              "title": "id",
-              "description": "Button 的 id 属性。"
+              "title": "title",
+              "description": "The title of the toast."
             },
             "description": {
               "type": "string",
-              "title": "id",
-              "description": "Button 的 id 属性。"
+              "title": "description",
+              "description": "The description of the toast."
             },
             "type": {
               "type": "string",
-              "title": "id",
-              "description": "Button 的 id 属性。"
+              "title": "type",
+              "description": "The type of the toast. Used to conditionally style the toast,\nincluding conditionally rendering elements based on the type."
             },
             "timeout": {
               "type": "number",
-              "minimum": 0
+              "minimum": 0,
+              "title": "timeout",
+              "description": "The amount of time (in ms) before the toast is auto dismissed.\nA value of `0` will prevent the toast from being dismissed automatically."
             }
           },
           "additionalProperties": false,
@@ -4190,23 +4179,27 @@
             "id": {
               "type": "string",
               "title": "id",
-              "description": "Button 的 id 属性。"
+              "description": "The unique identifier for the toast."
             },
             "title": {
               "type": "string",
-              "title": "id",
-              "description": "Button 的 id 属性。"
+              "title": "title",
+              "description": "The title of the toast."
             },
             "description": {
               "type": "string",
-              "title": "id",
-              "description": "Button 的 id 属性。"
+              "title": "description",
+              "description": "The description of the toast."
             },
             "type": {
-              "const": "notification"
+              "const": "notification",
+              "title": "type",
+              "description": "The type of the toast. Used to conditionally style the toast,\nincluding conditionally rendering elements based on the type."
             },
             "timeout": {
-              "const": 0
+              "const": 0,
+              "title": "timeout",
+              "description": "The amount of time (in ms) before the toast is auto dismissed.\nA value of `0` will prevent the toast from being dismissed automatically."
             }
           },
           "additionalProperties": false,
@@ -4267,10 +4260,6 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "title": "id"
-        },
         "testId": {
           "type": "string",
           "title": "testId"
@@ -4282,29 +4271,6 @@
         "title": {
           "type": "string",
           "title": "title"
-        },
-        "aria-label": {
-          "type": "string",
-          "title": "aria-label"
-        },
-        "aria-labelledby": {
-          "type": "string",
-          "title": "aria-labelledby"
-        },
-        "aria-describedby": {
-          "type": "string",
-          "title": "aria-describedby"
-        },
-        "aria-invalid": {
-          "type": "boolean",
-          "title": "aria-invalid"
-        },
-        "children": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "title": "children"
         },
         "description": {
           "type": "string",
@@ -4373,10 +4339,6 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "title": "id"
-        },
         "testId": {
           "type": "string",
           "title": "testId"
@@ -4388,29 +4350,6 @@
         "title": {
           "type": "string",
           "title": "title"
-        },
-        "aria-label": {
-          "type": "string",
-          "title": "aria-label"
-        },
-        "aria-labelledby": {
-          "type": "string",
-          "title": "aria-labelledby"
-        },
-        "aria-describedby": {
-          "type": "string",
-          "title": "aria-describedby"
-        },
-        "aria-invalid": {
-          "type": "boolean",
-          "title": "aria-invalid"
-        },
-        "children": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "title": "children"
         },
         "description": {
           "type": "string",
@@ -4518,13 +4457,6 @@
           "title": "aria-invalid",
           "description": "Indicates the entered value does not conform to the format expected by the application."
         },
-        "children": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "title": "children"
-        },
         "label": {
           "type": "string",
           "title": "label"
@@ -4540,18 +4472,15 @@
             "properties": {
               "key": {
                 "type": "string",
-                "title": "id",
-                "description": "Button 的 id 属性。"
+                "title": "key"
               },
               "label": {
                 "type": "string",
-                "title": "id",
-                "description": "Button 的 id 属性。"
+                "title": "label"
               },
               "href": {
                 "type": "string",
-                "title": "id",
-                "description": "Button 的 id 属性。"
+                "title": "href"
               }
             },
             "additionalProperties": false
@@ -4613,10 +4542,6 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "title": "id"
-        },
         "testId": {
           "type": "string",
           "title": "testId"
@@ -4624,33 +4549,6 @@
         "className": {
           "type": "string",
           "title": "className"
-        },
-        "title": {
-          "type": "string",
-          "title": "title"
-        },
-        "aria-label": {
-          "type": "string",
-          "title": "aria-label"
-        },
-        "aria-labelledby": {
-          "type": "string",
-          "title": "aria-labelledby"
-        },
-        "aria-describedby": {
-          "type": "string",
-          "title": "aria-describedby"
-        },
-        "aria-invalid": {
-          "type": "boolean",
-          "title": "aria-invalid"
-        },
-        "children": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "title": "children"
         },
         "page": {
           "type": "integer",
@@ -4734,10 +4632,6 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "title": "id"
-        },
         "testId": {
           "type": "string",
           "title": "testId"
@@ -4745,33 +4639,6 @@
         "className": {
           "type": "string",
           "title": "className"
-        },
-        "title": {
-          "type": "string",
-          "title": "title"
-        },
-        "aria-label": {
-          "type": "string",
-          "title": "aria-label"
-        },
-        "aria-labelledby": {
-          "type": "string",
-          "title": "aria-labelledby"
-        },
-        "aria-describedby": {
-          "type": "string",
-          "title": "aria-describedby"
-        },
-        "aria-invalid": {
-          "type": "boolean",
-          "title": "aria-invalid"
-        },
-        "children": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "title": "children"
         },
         "label": {
           "type": "string",
@@ -4829,10 +4696,6 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "title": "id"
-        },
         "testId": {
           "type": "string",
           "title": "testId"
@@ -4840,33 +4703,6 @@
         "className": {
           "type": "string",
           "title": "className"
-        },
-        "title": {
-          "type": "string",
-          "title": "title"
-        },
-        "aria-label": {
-          "type": "string",
-          "title": "aria-label"
-        },
-        "aria-labelledby": {
-          "type": "string",
-          "title": "aria-labelledby"
-        },
-        "aria-describedby": {
-          "type": "string",
-          "title": "aria-describedby"
-        },
-        "aria-invalid": {
-          "type": "boolean",
-          "title": "aria-invalid"
-        },
-        "children": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "title": "children"
         },
         "enterLabel": {
           "type": "string",
@@ -4941,7 +4777,8 @@
         },
         "title": {
           "type": "string",
-          "title": "title"
+          "title": "title",
+          "description": "透传 SVG 的 title 属性；可访问名称由 label 提供。"
         },
         "aria-label": {
           "type": "string",
@@ -5096,18 +4933,15 @@
             "properties": {
               "key": {
                 "type": "string",
-                "title": "id",
-                "description": "Button 的 id 属性。"
+                "title": "key"
               },
               "label": {
                 "type": "string",
-                "title": "id",
-                "description": "Button 的 id 属性。"
+                "title": "label"
               },
               "children": {
                 "type": "string",
-                "title": "id",
-                "description": "Button 的 id 属性。"
+                "title": "children"
               }
             },
             "additionalProperties": false

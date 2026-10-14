@@ -8,6 +8,10 @@
 - 所有 .NET profile 可引用 Definition；组件安装入口沿用 `qian add data`，契约不单独启动 Provider。现有数据组件的装配与安装验收见 [Data 主文档](../../../packages/Qian.Data/README.md)。
 - S1 交付可编译、可校验、可分发的契约。S2 的 `qian.dynamic-data` 负责 SQL/条件求值、Hook 调度、事务、Outbox 消费及元数据 HTTP 端点。
 
+### 冻结与修订
+
+data/v1 的冻结标记于 2026-10-15 随 PR #95 落盘，按 [R80](../../decisions/key-decisions-v0.md#验收复核裁决-r80s1-qa-010-复核2026-10-15) 显式使用 `x-status: frozen`；`$id` 统一为 `https://qian.dev/contracts/data/v1/<文件名>`。冻结后只允许兼容增量，破坏性变更新开 v2，并同步 Schema、fixture、C# 契约与已知消费方。零代码消费方即冻结以及引用 v0 草稿信封的两条例外、结构门禁和复核时点，以 [data/v1 冻结与修订](../../../contracts/data/v1/README.md#冻结与修订) 为准；本轮不提前冻结 v0。
+
 ## 2. Filter AST 与检查顺序
 
 ```json

@@ -75,7 +75,7 @@ pnpm yue:gates
 
 Props 从真实 TypeScript checker 提取；相同的 DOM/ARIA/事件声明按完整类型去重到站内通用属性页，保留完整的字段、必填、默认值和回调。单元测试检查 Button、Dialog、FullScreen 的关键契约和所有公开部件，生成目录不手改。构建靶场 `/core.html` 继续承担原有独立 E2E 与 Lighthouse 预算。
 
-机器清单的属性形状维护在 `src/manifest-catalog.json`；属性 title 固定为属性名，description 由 `pnpm --filter @idadawn/yue-core manifest:generate` 从真实 TypeScript 注释生成，无注释则省略。修改注释后重新生成并提交目录；导出和单测会检查漂移。`docs/catalog.json` 只维护组件用途，没有第二份 props 元数据。
+机器清单的属性形状维护在 `src/manifest-catalog.json`；属性 title 固定为属性名，description 由 `pnpm --filter @idadawn/yue-core manifest:generate` 从真实 TypeScript 注释生成，无注释则省略。生成器递归处理 properties、items（含元组）、prefixItems、anyOf / oneOf / allOf，嵌套属性沿真实 TS 类型取注释；数组元素与组合分支没有独立属性符号，清除其自身的 title / description，仅保留内部属性的元数据。联合分支以鉴别字段定位，TS 中不存在的属性或有歧义的注释会携带完整路径报错。修改注释后重新生成并提交目录；导出和单测会检查漂移及嵌套反例。`docs/catalog.json` 只维护组件用途，没有第二份 props 元数据。
 
 组件级测试覆盖 SSR、键盘与 ARIA、模态焦点约束、移除与翻页、消息关闭、验证码移焦、密码显隐和缩放把手。页面级 Select 检查只排除 Base UI 的内部 Tab 焦点哨兵（data-base-ui-focus-guard + aria-hidden + data-type），保留 aria-hidden-focus 规则；另有真实 Tab/Shift+Tab 焦点测试及故意隐藏按钮的负例，确保排除不掩盖真实可访问性错误。未修改 Base UI 源码。
 
