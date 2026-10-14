@@ -6,7 +6,10 @@ for (const scenario of scenarios) {
   test(`${scenario.id} 真实 Rspress 交互与无障碍`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', e => errors.push(e.message));
+    await page.emulateMedia({ colorScheme: scenario.theme === 'dark' ? 'dark' : 'light' });
     await page.goto(`components/yue/${scenario.component === 'Tokens' ? 'tokens' : `core/${scenario.component.toLowerCase()}`}.html`);
+    if (scenario.theme === 'dark') await expect(page.locator('html')).toHaveClass(/dark/);
+    else await expect(page.locator('html')).not.toHaveClass(/dark/);
     const frame = page.frameLocator(`iframe[title="${scenario.component} 交互预览"]`);
     await frame.getByLabel('示例状态').selectOption(scenario.state);
     await frame.getByLabel('示例主题').selectOption(scenario.theme);

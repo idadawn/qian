@@ -213,6 +213,9 @@ catalogs:
     '@rslib/core':
       specifier: ^1.0.3
       version: 1.0.3
+    '@rspress/shared':
+      specifier: 2.0.23
+      version: 2.0.23
     '@tailwindcss/vite':
       specifier: ^4.3.3
       version: 4.3.3
@@ -810,6 +813,9 @@ importers:
       '@rspress/core':
         specifier: 2.0.23
         version: 2.0.23(@rspack/core@2.2.8(@swc/helpers@0.5.23))(micromark-util-types@2.0.3)(micromark@4.0.3(supports-color@8.1.1))(supports-color@8.1.1)
+      '@rspress/shared':
+        specifier: 'catalog:'
+        version: 2.0.23(supports-color@8.1.1)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -6435,7 +6441,7 @@ snapshots:
 
   '@rspress/shared@2.0.23(supports-color@8.1.1)':
     dependencies:
-      '@rsbuild/core': 2.2.11
+      '@rsbuild/core': 2.2.10
       '@shikijs/rehype': 4.5.0
       '@types/react': 19.3.0
       mdast-util-mdx-jsx: 3.2.0(supports-color@8.1.1)

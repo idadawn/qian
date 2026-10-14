@@ -43,3 +43,17 @@ test('iframe 无障碍门禁能拒绝真实隐藏焦点缺陷', async ({ page })
   const violations = (await new AxeBuilder({ page }).analyze()).violations;
   expect(violations.some(v => v.id === 'aria-hidden-focus')).toBe(true);
 });
+
+test('站点主题支持键盘切换，iframe 保留交互状态', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('components/yue/core/button.html');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: '保存更改', exact: true }).click();
+  await page.getByRole('button', { name: '切换主题', exact: true }).press('Enter');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(frame.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(frame.getByRole('status')).toHaveText('已保存 1 次');
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.locator('iframe')).toHaveAttribute('src', /theme=dark/);
+});

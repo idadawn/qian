@@ -39,4 +39,6 @@ export { SiteMap } from './components/SiteMap';
 
 export { ComponentDemo } from './components/ComponentDemo';
 
-export { LlmsViewOptions, SocialLinks } from './components/AccessibleLinks';
+export { LlmsViewOptions, SocialLinks, SwitchAppearance } from './components/AccessibleLinks';
+
+export { useThemeState } from './useThemeState';

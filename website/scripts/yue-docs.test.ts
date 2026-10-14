@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { REPO_ROOT } from './repo.ts';
 import { describe, it } from 'node:test';
 import { readYueDocs, collectYuePages } from './yue-docs.ts';
 import { compactTables } from './compact-yue-markdown.ts';
@@ -8,6 +11,8 @@ describe('真实组件文档契约', () => {
   const pages = collectYuePages();
   it('51 个入口、全部公开组合部件与 126 条历史场景都可寻址', () => {
     assert.equal(data.docs.length, 51); assert.equal(data.scenarios.length, 126);
+    assert.equal(fs.existsSync(path.join(REPO_ROOT, 'apps/yue-storybook')), false);
+    assert.doesNotMatch(fs.readFileSync(path.join(REPO_ROOT, 'pnpm-lock.yaml'), 'utf8'), /@storybook\/|^\s+storybook@/m);
     for (const doc of data.docs) assert.ok(pages.some(p => p.path === `yue/core/${doc.name.toLowerCase()}.mdx`));
     for (const api of data.apis) assert.ok(pages.some(p => p.content.includes(`### ${api.name}\n`)), api.name);
   });

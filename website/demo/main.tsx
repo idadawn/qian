@@ -52,6 +52,13 @@ function App() {
   const Demo = edited ?? original;
   const scenario = states.find(s => s.state === state) ?? states[0];
   React.useEffect(() => {
+    const receive = (event: MessageEvent) => {
+      if (event.origin === location.origin && event.source === parent && event.data?.type === 'yue-doc-theme' && ['light', 'dark'].includes(event.data.theme)) setTheme(event.data.theme);
+    };
+    addEventListener('message', receive);
+    return () => removeEventListener('message', receive);
+  }, []);
+  React.useEffect(() => {
     document.documentElement.dataset.theme = theme;
     if (window.monaco) window.monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs');
   }, [theme]);
