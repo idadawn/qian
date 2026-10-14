@@ -52,7 +52,7 @@ export const PLATFORM_COMPONENTS: PlannedComponent[] = [
 
 export const YUE_PACKAGES: Array<{ name: string; stage: Stage; summary: string }> = [
   { name: '@idadawn/yue-tokens', stage: 'S1', summary: '三层设计令牌（primitive → semantic → component）、明暗两态与首帧防闪烁。' },
-  { name: '@idadawn/yue-core', stage: 'S1', summary: '约 30 个基础组件：按钮、输入、选择、弹层、反馈、导航等。' },
+  { name: '@idadawn/yue-core', stage: 'S1', summary: '51 个基础组件：按钮、输入、选择、弹层、反馈、导航等。' },
   { name: '@idadawn/yue-shell', stage: 'S1', summary: 'AppShell 单一侧栏布局、页面骨架、租户切换器与兜底页。' },
   { name: '@idadawn/yue-data', stage: 'S1', summary: 'DataTable 基础版、树与级联、日期时间、分片上传。' },
   { name: '@idadawn/yue-form', stage: 'S1', summary: 'SchemaForm 基础版、校验与基础联动、弹层 API。' },

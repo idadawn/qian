@@ -55,4 +55,4 @@ pnpm yue:build && pnpm yue:a11y && pnpm yue:lighthouse
 
 `src/index.css` 与 `src/theme-init.js` 是提交在仓库中的生成资产；`tokens:check` 校验新鲜度、引用层级、角色重名与对比度，并拒绝工作区消费 CSS 重新声明已登记的语义/组件/别名。该检查已接入 `yue:lint`。浏览器测试覆盖第一次动画帧、存储拒绝、服务端品牌、运行时切换及系统主题变化。
 
-靶场启动后可访问 `/tokens.html` 查看品牌、明暗、状态与语义色；它是验证页。Storybook 组件文档随后续组件工作建立；DTCG 导出仍为 P2。当前版本尚未发布到私有 feed，发布验收由发布任务完成。
+靶场启动后可访问 `/tokens.html` 查看品牌、明暗、状态与语义色；它是验证页。Rspress 已统一提供组件交互文档与令牌页；DTCG 导出仍为 P2。当前版本尚未发布到私有 feed，发布验收由发布任务完成。

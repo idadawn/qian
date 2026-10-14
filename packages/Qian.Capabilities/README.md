@@ -1,14 +1,20 @@
 # 平台能力目录
 
-本目录是 Capabilities seam 的 Provider；Definition 在 `Qian.Capabilities.Abstractions`，HTTP 适配器在 `Qian.Capabilities.AspNetCore`。平台声明式表面位于 `plugins/qian.capabilities`，只装入 `platform`。按 R34，它不是消费者 standalone 中独立安装的组件；完整平台安装与私有包发布尚未验收，现有插件目录仍保留骨架标记。
+本目录是 Capabilities seam 的 Provider；Definition 在 `Qian.Capabilities.Abstractions`，HTTP 适配器在 `Qian.Capabilities.AspNetCore`。平台声明式表面位于 `plugins/qian.capabilities`，只装入 `platform`。按 R34，它不是消费者 standalone 中独立安装的组件；插件目录的清单由 S1-RT-014 合并生成，完整平台安装与私有包发布归 S1-RT-005 / S1-RT-013。
+
+组件配置（`plugins/qian.capabilities/schemas/config.schema.json`）只有一项 `catalogTtlMs`：目录响应的 `ttlMs`，整数 0–3000，默认 1000。上限与 PRD 7.5「授权变更 ≤ 3 秒生效」一致；它只是客户端缓存提示，执行入口每次重新判定。宿主未经 profile 装载时，Provider 按同一规则校验并取默认值。
 
 ## 当前实现
 
-`CapabilitiesPlugin` 在 global scope 提供 `ctx.Capabilities()`。它依赖实际 Registry、租户主档和租户/授权/审计策略服务键；装载器撤销必要依赖后，该服务随生命周期撤销。目录读取 `GetScopeEntriesAsync` 同步后的实际 Ready 注册，再与当前 Runtime 的 `ExecutableCapabilities` 绑定取交集，不把预装声明当成可调用代码。
+`CapabilitiesPlugin` 在 global scope 提供 `ctx.Capabilities()`。它依赖实际 Registry、租户主档和租户/授权/审计策略服务键；装载器撤销必要依赖后，该服务随生命周期撤销。
 
-目录、提示词和调用每次共享同一个判定：已认证主体与当前租户一致、主档为 active/trial、scope 中的组件可见、OAuth scope 满足、真实 RBAC 允许该权限。令牌中的 roles 不授予权限。提示词额外要求 `agent.expose`；S1 尚不开放真实 Agent 委托执行。被隐藏、禁用、撤权或不存在的能力在调用表面统一为 `NOT_FOUND`，不会返回 Registry 的管理原因。
+**目录怎么枚举**：不是收集 Kun Mediator 的 `AddRequestHandler` 注册（Kun 的 `ICapabilityRegistry` 只描述进程内处理器，不知道组件、scope 与挂载状态）。来源是两个集合的交集：一是 SDK 具名绑定——组件在 Apply 中调用 `ctx.ProvideCapability<TRequest, TResponse>()`，以可逆注册把 `IExecutableCapability` 登记到 `ExecutableCapabilities` 具名集合，绑定携带源生成的 `CapabilityContract`；二是 Registry 的 scope 视图——`GetScopeEntriesAsync` 返回当前租户 scope 中处于 Ready、且属于已安装制品的条目。只有两边都有的能力才出现，预装声明不当成可调用代码，卸载、禁用或 restrict 后的绑定也不会因为 Mediator 里还有处理器而出现。
 
-条目来自 SDK 生成的不可变 `CapabilityContract`，包括实际 JsonTypeInfo 派生 Schema、敏感字段、Agent 字段和共用 JCS/SHA-256 摘要。输出通过冻结 `capability-entry` 校验并检查嵌套输入租户字段，不包含内部 binding、配置或服务对象。当前返回 command/query；event/entity 聚合尚未交付。
+目录、提示词和调用每次共享同一个判定：已认证主体与当前租户一致、主档为 active/trial、scope 中的组件可见、OAuth scope 满足、真实 RBAC 允许该权限。令牌中的 roles 不授予权限。被隐藏、禁用、撤权或不存在的能力在调用表面统一为 `NOT_FOUND`，不会返回 Registry 的管理原因。
+
+**主体类型**：目录、OpenAPI 与执行入口接受 User、Service、Agent 三类主体，带 `act` 的委托主体一律按不可见处理；Agent 主体只看到 `agent.expose: true` 的能力（R52），提示词同样只含这些能力。菜单与偏好（`Navigation`）只接受 User、Service：菜单是给人看的界面，偏好按真人或服务账号保存，Agent 不展示菜单也没有个人偏好；而能力目录在 S4 直接成为 Agent 的发现入口，S1 先让 Agent 主体按同一判定走通（PRD 7.2.1「Agent 契约」）。S1 的 RBAC 不授予 Agent 权限，`qian.authz` 的命令策略也拒绝 Agent 执行，所以 S1 里 Agent 实际看到的是空目录；`agent.expose` 过滤在授权开放前就已生效，不依赖 RBAC 兜底。
+
+条目来自 SDK 生成的不可变 `CapabilityContract`，包括实际 JsonTypeInfo 派生 Schema、敏感字段、Agent 字段和共用 JCS/SHA-256 摘要。输出通过冻结 `capability-entry` 校验并检查嵌套输入租户字段，不包含内部 binding、配置或服务对象。目录信封 `{ items, ttlMs, cacheScope }` 按 `contracts/v0/capability-catalog.schema.json` 以具名类型 `CapabilityCatalog` 输出。当前条目只有 command / query 两类：事件类目录归 S1-EVT-003，实体类目录待产品负责人分配（R77），交付前 `?kind=event` 与 `?kind=entity` 返回空集合。
 
 `InvokeAsync` 调用同一绑定的真实 Mediator 请求，继续经过租户、权限与审计策略以及业务事务；目录返回值不是可缓存的执行授权。Provider 撤销会取消正在执行的请求，绑定本身也在卸载或 restrict 后拒绝缓存引用。宿主仍需按业务幂等规则处理可重试事务失败；通用绑定尚未复用 CRM 专用入口的整笔重试策略。
 
@@ -16,18 +22,43 @@
 
 宿主先安装经过验证的身份、租户与 ErrorDetail 中间件，再调用 `MapQianCapabilities`，提供从当前可信租户解析实际 Runtime 视图的函数。身份从请求服务的 `ICurrentUser` 获取，HTTP 输入不能指定主体或租户。注册身份适配器必须早于数据服务，防止匿名兜底占住框架身份端口。
 
-- `GET /api/capabilities?kind=&q=`：返回 `{ items, ttlMs, cacheScope: "private" }`，同时设置私有且不存储的 HTTP 缓存指令。
-- `GET /api/kernel/capabilities`：同一实现的 S1 别名，带 `Deprecation` 头。
+- `GET /api/capabilities?kind=&q=`：返回 `{ items, ttlMs, cacheScope: "private" }`，同时设置私有且不存储的 HTTP 缓存指令。`kind` 只接受 `command` / `query` / `event` / `entity`，`q` 最长 200 字符；不符时返回 400 `INPUT_INVALID`，`errors[]` 分别为 `VALUE_NOT_ALLOWED #/kind`（带 `allowed`）与 `OUT_OF_RANGE #/q`。
 - `GET /api/capabilities/openapi.json`：按同一权限过滤生成 OpenAPI 3.1，仅包含当前实际可调用绑定的执行路径和输入/输出 Schema；递归 Schema 引用重定位到各自组件。
-- `POST /api/capabilities/{plugin}/{name}/invoke`：重新授权后反序列化真实请求并执行；请求体必须遵循生成的输入 Schema。
+- `GET /api/kernel/capabilities`、`GET /api/kernel/capabilities/openapi.json`：同一实现的 S1 别名（R33），响应带 `Deprecation: @1791331200`（RFC 9745，2026-10-07）与 `Link: </api/capabilities…>; rel="successor-version"`，后继路径带宿主的 PathBase 并保留原查询串（URI 不允许的字符按 RFC 3986 百分号编码）；S2 移除。
+- `POST /api/capabilities/{plugin}/{name}/invoke`：通用执行入口（R75），规则见下节。
 
-提示词是服务端 `ComposePromptAsync` 端口，未新增生产 HTTP 提示词接口。测试宿主的 `/api/acceptance/prompt` 仅作为该生产端口的真实认证入口胶水。
+未认证请求在以上端点都返回 401 ErrorDetail（`UNAUTHENTICATED`）。提示词是服务端 `ComposePromptAsync` 端口，未新增生产 HTTP 提示词接口。测试宿主的 `/api/acceptance/prompt` 仅作为该生产端口的真实认证入口胶水。
+
+## 通用执行入口
+
+`POST /api/capabilities/{plugin}/{name}/invoke`（规格 §9.5、PRD 7.2.1，R75）只在 `platform` 存在，按下面的顺序处理：
+
+1. 重做与目录相同的判定；不可见与不存在一样返回 404 `NOT_FOUND`，不可见的能力也不暴露其输入约束。
+2. 请求体按条目 `inputSchema`（JSON Schema 2020-12）校验。不符返回 400 `INPUT_INVALID`，`errors[]` 每项是字段级错误码与输入 JSON Pointer：缺必填 `REQUIRED`、未声明成员 `UNKNOWN_PROPERTY`、类型不符 `TYPE_MISMATCH`、枚举 / 常量 / 组合不满足 `VALUE_NOT_ALLOWED`（带 `allowed`）、长度、范围与 `minContains` / `maxContains` 计数 `OUT_OF_RANGE`、正则 `PATTERN_MISMATCH`、格式 `FORMAT_INVALID`；同一位置只报一项，最多 100 项。JSON 无法解析、含重复成员或含孤立的 UTF-16 代理项（如 `\ud800` 转义）返回 400 `BAD_REQUEST`。细则：
+   - `format` 只强制 `uuid` 与 `date`，与 System.Text.Json 的解析口径一致；`date-time`、`time`、`uri` 等只作注解，交给绑定反序列化（System.Text.Json 接受不带时区偏移的时间与相对 URI，按 RFC 3339 / 3986 校验会拒绝绑定本来能处理的输入）。
+   - `anyOf` / `oneOf` 全部分支失败时只报最接近的分支：先排除本位置类型就不符的分支（如可空类型的 `null` 分支），再取直接成员的判别字段（`const` / `enum`，如多态类型的 `$type`）不符最少者，其次违反项最少。并列分支在同一判别字段上都不符时只报该字段并合并各分支的允许值；并列分支结论不同、或 `oneOf` 同时匹配多个分支时，只在该位置报 `VALUE_NOT_ALLOWED`，不把各分支的要求混在一起。
+   - `if` / `not` / `contains` 子 Schema 内部的失败只是逻辑测试，不算输入错误；`contains` 没有任何元素满足时报 `VALUE_NOT_ALLOWED`。
+   - `$ref` 可指向本文档、带 `$id` 的内嵌资源与 `$anchor`，外部引用禁用。pointer 超过 contracts/v0 的 1024 字符上限（如超长属性名）时退到最近的合法上级位置。
+   - `patternProperties` / `dependentSchemas` 的键不能含 `/` 或 `~`：JsonSchema.Net 9.4 对前者每次求值都抛异常、对后者静默跳过，含此类键的能力执行时按配置错误拒绝，不放过约束。
+3. 经 SDK 绑定走真实 Mediator 管道执行，租户、授权、审计策略照常生效。
+
+`Idempotency-Key` 请求头可选，取 UUID 文本（可按结构化字段带引号）；多值、空值、全零或非 UUID 返回 400 `BAD_REQUEST`。只读能力（`sideEffect: read`）重复执行没有副作用，忽略该键、不存回执。写类能力带键时，同一租户、同一主体、同一能力、同一键在 24 小时内的重复请求返回首次成功响应（同样的响应体，加 `Idempotent-Replayed: true`）且不再执行；键相同而输入不同、或同键请求仍在执行，返回 409 `CONFLICT`。语义与 Kun 的幂等消费一致（R63），分三段：
+
+1. 短事务登记：同键请求经事务级 advisory lock 串行，读到未过期的完成回执即回放；否则登记「执行中」（响应为空，5 分钟租约）后立即提交。
+2. 执行：不占数据库连接与锁，执行耗时不影响回执表。
+3. 收尾：成功写入原样响应并把过期时间延到 24 小时；失败撤销本次登记，不留回执。收尾用不可取消的令牌，请求在执行后取消也会完成；收尾本身失败时记录告警，照常返回执行结果或异常，标记在租约到期后失效，期间同键请求得到 409。
+
+登记后、写完成前进程崩溃时，租约到期后的重试会再执行一次，写类能力仍须按 `inputSchema` 中的 `idempotencyKey` 做业务幂等（tool/v2 的强制要求）。回放前照样重做第 1 步的判定（可见性、OAuth scope、RBAC），撤权后不能靠旧回执取回结果。
+
+回执存 `plugin_qian_capabilities.invoke_receipts`（租户 RLS，保存首次响应原文与请求指纹）；每次登记顺带清理本租户至多 100 行过期回执，用 `FOR UPDATE SKIP LOCKED` 跳过其他请求正在清理的行。没有用 R63 的 Redis 幂等键：Kun 的 `IProcessedMessageStore` 只记录「已处理」标记，HTTP 重放要原样返回首次响应，且回执要和租户行级隔离同库。未修改 Kun，不需要 KUN 任务。
+
+ApiExplorer 不列这条通用模板：它只能描述静态、与调用者无关的路由，而这里的请求与响应形状随能力而变，可见集合随调用者而变。`/api/capabilities/openapi.json` 按同一判定为每个可见能力列出具体路径（`/api/capabilities/<plugin>/<name>/invoke`）、真实输入 / 输出 Schema；写类能力另列 `Idempotency-Key` 参数与 `Idempotent-Replayed` 响应头，只读能力不列。
 
 ## 验收与保留项
 
-`tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证契约、别名、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结，并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。
+`tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 与 `CapabilityInvokeTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证目录信封与条目契约（独立重算 `schemaSha256`）、别名的 `Deprecation` / `Link` 头、参数校验与匿名 401 的 ErrorDetail、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结、执行入口的输入校验 / 幂等重放（含执行中 409、失败不留回执、只读能力忽略幂等键）/ Agent 主体，并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。Agent 用例另在测试宿主打开「授权预览」，把 Agent 主体按同 ID 服务主体求值，以单独观察 `agent.expose` 过滤；预览默认关闭，不是生产判定。
 
-OpenAPI 聚合已覆盖 SDK 真实调用入口及宿主标注绑定的原生 HTTP 路由，实际 gRPC 契约经独立反射探测。RT-006 已提供静态协议与真实 gRPC 反射探测，完整安装发布流程接线仍未完成；菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。QA-002 的完整 platform/minimal 等价与自动热重载最终验收仍保持未完成。RT-006 保持 doing，PR 保持草稿。
+OpenAPI 聚合已覆盖 SDK 真实调用入口及宿主标注绑定的原生 HTTP 路由，实际 gRPC 契约经独立反射探测；平台挂载路径强制套用契约准入归 S1-RT-005（R76）。菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。platform / minimal 双宿主等价与表面热重载的运行时语义由 S1-QA-002 的 TCK（T19、T23）覆盖。本组件的交付与复核记录见 S1-RT-006 与 S1-RT-019。
 
 ## 契约兼容检查
 
@@ -35,11 +66,11 @@ OpenAPI 聚合已覆盖 SDK 真实调用入口及宿主标注绑定的原生 HTT
 
 探测对基线和候选文档先做 OpenAPI 3.1 解析，再运行固定参数的兼容检查。外部 `$ref` 明确禁用；不调用 shell，不继承环境配置，使用独立空配置、受限输出和 30 秒超时。取消会终止子进程，临时契约文件在退出后删除。检测失败、版本不符和报告异常都抛错，不能视为兼容。
 
-`OpenApiContractPlugin` 是平台装配器使用的普通包装，保持原业务插件依赖，在其 Apply 之前探测带 `/vN` 的同组件命名空间契约；破坏性变更导致挂载 Failed，业务注册不会公开。它不修改 Runtime，也不是调用者可绕过的请求参数。生产装配必须从已验证的版本化制品取得完整基线与候选，不能使用当前用户权限过滤后的 OpenAPI 返回值。宿主可用 FromRepository 选择已捕获的精确版本契约，候选版本必须与实际装载条目一致。完整在线注册表/发布准入仍未完成，当前宿主需显式采用此包装。
+`OpenApiContractPlugin` 是平台装配器使用的普通包装，保持原业务插件依赖，在其 Apply 之前探测带 `/vN` 的同组件命名空间契约；破坏性变更导致挂载 Failed，业务注册不会公开。它不修改 Runtime，也不是调用者可绕过的请求参数。生产装配必须从已验证的版本化制品取得完整基线与候选，不能使用当前用户权限过滤后的 OpenAPI 返回值。宿主可用 FromRepository 选择已捕获的精确版本契约，候选版本必须与实际装载条目一致。在 S1-RT-005 让 `Mount` 与 Registry scope Reconciler 强制套用此包装之前（R76），宿主需显式采用它。
 
 测试通过 `QIAN_OASDIFF_PATH` 指向实际锁定工具；CI 会先校验下载，缺失工具不会跳过测试。相关测试覆盖说明与兼容响应扩展、输入类型破坏、路径删除、外部引用拒绝，以及真实客户组件挂载被拒/兼容恢复后实际执行。
 
-OpenAPI 文档格式按 [OpenAPI 3.1.1 规范](https://spec.openapis.org/oas/v3.1.1.html) 生成，使用 Microsoft.OpenApi 3.10.2 解析验证。平台发行镜像携带工具及完整契约制品的验收尚未完成。
+OpenAPI 文档格式按 [OpenAPI 3.1.1 规范](https://spec.openapis.org/oas/v3.1.1.html) 生成，使用 Microsoft.OpenApi 3.10.2 解析验证。平台发行镜像携带检查器与完整契约制品归 S1-DEP-003。
 
 ## 版本化契约仓库
 
@@ -57,7 +88,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 
 按组件 ID、精确制品版本和契约 ID 查询，返回原始内容的副本、文件 SHA-256 与制品目录摘要。仓库不按业务用户裁剪契约，也没有匿名 HTTP 读取入口；卸载后旧服务引用失效，在途兼容检查会取消。`CheckOpenApiAsync` 只比较两个完整版本制品中的同族 OpenAPI，缺基线、候选或检查器均拒绝。
 
-`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布。CLI 自动产出契约制品、在线签名/发布准入及默认平台的全部组件装配仍需完成。
+`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布：CLI 产出契约制品与签名发布归 S1-RT-013，挂载准入归 S1-RT-005，默认平台的组件装配归 S1-RT-014。
 
 ## 菜单贡献、资源引用与个人偏好
 
@@ -71,7 +102,9 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 - `GET /api/capabilities/navigation/item?resourceRef=...` 解析当前有权限的资源，未知、无权限与未挂载统一 404。个人隐藏是展示偏好，不影响此访问判定。
 - `PUT /api/capabilities/navigation/preference?resourceRef=...` 只接受 `{ hidden, order? }`，修改当前主体的偏好。租户、主体类型和主体 ID 来自已验证的端口，不能从请求体指定。
 
-偏好保存在 `CapabilitiesDbContext` 的 `plugin_qian_capabilities.navigation_preferences`，由宿主按 Data 约定注册连接和迁移。表强制租户 RLS，服务查询另按 `principal_kind + sub` 过滤；这也让同名用户与服务拥有独立空间。偏好行不会授予权限，另一租户的资源引用不能写入。
+偏好保存在 `CapabilitiesDbContext` 的 `plugin_qian_capabilities.navigation_preferences`。表强制租户 RLS，服务查询另按 `principal_kind + sub` 过滤；这也让同名用户与服务拥有独立空间。偏好行不会授予权限，另一租户的资源引用不能写入。
+
+`CapabilitiesDbContext` 的表（`navigation_preferences`、`invoke_receipts` 与 Kun 基类的 `outbox_messages`）随包以 EF 迁移交付（`Migrations/`），迁移由 `Qian.Data` 的迁移生成器自动生成两张业务表的 ENABLE / FORCE RLS 与 `qian_tenant_access` / `qian_tenant_guard` 策略。宿主用 `AddQianData<CapabilitiesDbContext>` 注册在线连接（受限应用角色），用 `AddQianDataMigrations` 为迁移指定属主角色连接；部署时由 `--migrate-only` 迁移任务（S1-DEP-004）调用 `IDataMigrator` 在 advisory lock 内执行，在线副本启动时只校验、发现未应用的迁移即拒绝启动。没有迁移的上下文会被迁移器跳过，所以宿主不能再用 `GenerateCreateScript` 代替。
 
 偏好更新与 `qian.capabilities/navigation.preference` 审计在同一个 PostgreSQL Serializable 事务中提交。审计只写已知非敏感输入的规范化哈希，字段为 hidden、order 和 ASCII 资源引用，payload 不复制输入。审计失败时偏好回滚；序列化、死锁及目标键冲突会重新验证资格并重试整笔更新，耗尽后返回 CONFLICT。宿主需给本上下文的受限应用角色配置既有审计事务函数权限，不授予审计历史 DML。
 
@@ -82,6 +115,8 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 `IProtoCompatibilityProbe` 由 `BufProtoCompatibilityProbe` 实现，使用锁定版本 [Buf 1.73.0](https://github.com/bufbuild/buf/releases/tag/v1.73.0)。同一安装脚本按 `proto-tools.lock.json` 校验原始二进制 SHA-256。运行环境用 `QIAN_BUF_PATH` 指向工具；CI 实际安装并执行，工具缺失不会跳过测试。
 
 `ProtoContractSet` 只保存同一制品中的 proto 文件，复制字节并沿用制品路径、文件数和总大小限制。编译使用独立目录、固定配置、禁止符号链接、清空继承环境及受控缓存，不读取制品中的 Buf 配置、网络依赖或生成器。输出包含依赖的标准 FileDescriptorSet。版本升级按 FILE 规则检测源码、JSON 和 wire 破坏性变化；语法错误、缺少导入、检查异常和超时均关闭准入。
+
+检查器输出只把形如 `{"type":"<规则 ID>",…}` 的合法 JSON 行当作破坏性规则；警告、进度、无效 JSON 等其余行按 stderr 诊断处理：最多 50 行、每行截断到 500 字符，经宿主传入的 `ILogger` 记为警告，失败时附在异常的 `Data["contractDiagnostics"]`，不会因为混入一行非 JSON 而抛异常。判定只看退出码：0 兼容；100 且至少有一条规则为不兼容；100 却没有任何规则、或其他退出码，都拒绝准入。
 
 `GrpcReflectionContractProbe` 使用宿主提供的 CallInvoker 和认证元数据连接真实 HTTP/2 reflection 服务，复制凭据且不写入诊断。它查询声明中的每个服务，收集文件和依赖，核验冲突、大小及 RPC 最终状态，再按 PACKAGE 规则检查 RPC、消息与字段；允许服务构建的 ProtoRoot 文件前缀不同，不因仅有文件布局差异误拒。两类规则依据 [Buf 兼容规则说明](https://buf.build/docs/breaking/rules/)。宿主负责端点、TLS、出网范围和探测授权；探测入口不接受客户端 URL 或可信标记。
 

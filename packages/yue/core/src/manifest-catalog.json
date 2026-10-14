@@ -7,51 +7,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Button 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Button 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Button 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Button 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Button 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Button 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Button 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Button 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Button 的 children 属性。"
+          "title": "children"
         },
         "variant": {
           "enum": [
@@ -63,7 +59,7 @@
           ],
           "default": "primary",
           "title": "variant",
-          "description": "Button 的 variant 属性。"
+          "description": "按钮强调程度。"
         },
         "size": {
           "enum": [
@@ -74,17 +70,16 @@
           ],
           "default": "md",
           "title": "size",
-          "description": "Button 的 size 属性。"
+          "description": "按钮尺寸。"
         },
         "disabled": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Button 的 disabled 属性。"
+          "title": "disabled"
         },
         "loading": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Button 的 loading 属性。"
+          "title": "loading",
+          "description": "加载中时禁用操作并显示忙碌状态。"
         },
         "type": {
           "enum": [
@@ -92,8 +87,7 @@
             "submit",
             "reset"
           ],
-          "title": "type",
-          "description": "Button 的 type 属性。"
+          "title": "type"
         }
       },
       "additionalProperties": false
@@ -148,66 +142,60 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "IconButton 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "IconButton 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "IconButton 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "IconButton 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "IconButton 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "IconButton 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "IconButton 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "IconButton 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "IconButton 的 children 属性。"
+          "title": "children"
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "IconButton 的 label 属性。"
+          "title": "label"
         },
         "disabled": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "IconButton 的 disabled 属性。"
+          "title": "disabled"
         },
         "loading": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "IconButton 的 loading 属性。"
+          "title": "loading",
+          "description": "加载中时禁用操作并显示忙碌状态。"
         }
       },
       "additionalProperties": false,
@@ -264,51 +252,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "ButtonGroup 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "ButtonGroup 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "ButtonGroup 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "ButtonGroup 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "ButtonGroup 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "ButtonGroup 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "ButtonGroup 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "ButtonGroup 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "ButtonGroup 的 children 属性。"
+          "title": "children"
         }
       },
       "additionalProperties": false
@@ -354,86 +338,77 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Input 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Input 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 value 属性。"
+          "title": "value",
+          "description": "The value of the input. Use when controlled."
         },
         "defaultValue": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 defaultValue 属性。"
+          "title": "defaultValue",
+          "description": "The default value of the input. Use when uncontrolled."
         },
         "placeholder": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 placeholder 属性。"
+          "title": "placeholder"
         },
         "disabled": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Input 的 disabled 属性。"
+          "title": "disabled"
         },
         "readOnly": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Input 的 readOnly 属性。"
+          "title": "readOnly"
         },
         "required": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Input 的 required 属性。"
+          "title": "required"
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "Input 的 name 属性。"
+          "title": "name"
         },
         "type": {
           "enum": [
@@ -443,14 +418,12 @@
             "url",
             "tel"
           ],
-          "title": "type",
-          "description": "Input 的 type 属性。"
+          "title": "type"
         },
         "maxLength": {
           "type": "integer",
           "minimum": 0,
-          "title": "maxLength",
-          "description": "Input 的 maxLength 属性。"
+          "title": "maxLength"
         }
       },
       "additionalProperties": false
@@ -498,93 +471,81 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Textarea 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Textarea 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 value 属性。"
+          "title": "value"
         },
         "defaultValue": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 defaultValue 属性。"
+          "title": "defaultValue"
         },
         "disabled": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Textarea 的 disabled 属性。"
+          "title": "disabled"
         },
         "readOnly": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Textarea 的 readOnly 属性。"
+          "title": "readOnly"
         },
         "required": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Textarea 的 required 属性。"
+          "title": "required"
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 name 属性。"
+          "title": "name"
         },
         "placeholder": {
           "type": "string",
-          "title": "id",
-          "description": "Textarea 的 placeholder 属性。"
+          "title": "placeholder"
         },
         "rows": {
           "type": "integer",
           "minimum": 1,
           "default": 3,
-          "title": "rows",
-          "description": "Textarea 的 rows 属性。"
+          "title": "rows"
         }
       },
       "additionalProperties": false
@@ -630,50 +591,47 @@
         "id": {
           "type": "string",
           "title": "id",
-          "description": "InputNumber 的 id 属性。"
+          "description": "The id of the input element."
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "InputNumber 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "InputNumber 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": [
@@ -681,47 +639,44 @@
             "null"
           ],
           "title": "value",
-          "description": "InputNumber 的 value 属性。"
+          "description": "The raw numeric value of the field."
         },
         "defaultValue": {
           "type": "number",
           "title": "defaultValue",
-          "description": "InputNumber 的 defaultValue 属性。"
+          "description": "The uncontrolled value of the field when it's initially rendered.\n\nTo render a controlled number field, use the `value` prop instead."
         },
         "min": {
           "type": "number",
-          "title": "defaultValue",
-          "description": "InputNumber 的 min 属性。"
+          "title": "min",
+          "description": "The minimum value of the input element."
         },
         "max": {
           "type": "number",
-          "title": "defaultValue",
-          "description": "InputNumber 的 max 属性。"
+          "title": "max",
+          "description": "The maximum value of the input element."
         },
         "step": {
           "type": "number",
-          "title": "defaultValue",
-          "description": "InputNumber 的 step 属性。"
+          "title": "step",
+          "description": "Amount to increment and decrement with the buttons and arrow keys, or to scrub with pointer movement in the scrub area.\nTo always enable step validation on form submission, specify the `min` prop explicitly in conjunction with this prop.\nSpecify `step=\"any\"` to always disable step validation; interactive stepping then uses a base amount of `1`, while the alt and shift keys still step by `smallStep` and `largeStep`."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "InputNumber 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 label 属性。"
+          "title": "label"
         },
         "decreaseLabel": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 decreaseLabel 属性。"
+          "title": "decreaseLabel"
         },
         "increaseLabel": {
           "type": "string",
-          "title": "id",
-          "description": "InputNumber 的 increaseLabel 属性。"
+          "title": "increaseLabel"
         }
       },
       "additionalProperties": false,
@@ -778,86 +733,77 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "InputPassword 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "InputPassword 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 value 属性。"
+          "title": "value",
+          "description": "The value of the input. Use when controlled."
         },
         "defaultValue": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 defaultValue 属性。"
+          "title": "defaultValue",
+          "description": "The default value of the input. Use when uncontrolled."
         },
         "disabled": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "InputPassword 的 disabled 属性。"
+          "title": "disabled"
         },
         "readOnly": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "InputPassword 的 readOnly 属性。"
+          "title": "readOnly"
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 name 属性。"
+          "title": "name"
         },
         "showLabel": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 showLabel 属性。"
+          "title": "showLabel"
         },
         "hideLabel": {
           "type": "string",
-          "title": "id",
-          "description": "InputPassword 的 hideLabel 属性。"
+          "title": "hideLabel"
         }
       },
       "additionalProperties": false,
@@ -913,82 +859,79 @@
         "id": {
           "type": "string",
           "title": "id",
-          "description": "PinInput 的 id 属性。"
+          "description": "The id of the first input element.\nSubsequent inputs derive their ids from it (`{id}-2`, `{id}-3`, and so on)."
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "PinInput 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "PinInput 的 children 属性。"
+          "title": "children"
         },
         "length": {
           "type": "integer",
           "minimum": 1,
           "maximum": 32,
           "title": "length",
-          "description": "PinInput 的 length 属性。"
+          "description": "The number of OTP input slots.\nRequired so the root can clamp values, detect completion, and generate\nconsistent validation markup before all slots hydrate."
         },
         "value": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 value 属性。"
+          "title": "value",
+          "description": "The OTP value."
         },
         "defaultValue": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 defaultValue 属性。"
+          "title": "defaultValue",
+          "description": "The uncontrolled OTP value when the component is initially rendered."
         },
         "mask": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "PinInput 的 mask 属性。"
+          "title": "mask",
+          "description": "Whether the slot inputs should mask entered characters.\nPass `type` directly to individual `<OTPField.Input>` parts to use a custom\ninput type."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "PinInput 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "PinInput 的 name 属性。"
+          "title": "name",
+          "description": "Identifies the field when a form is submitted."
         },
         "validationType": {
           "enum": [
@@ -997,12 +940,11 @@
             "none"
           ],
           "title": "validationType",
-          "description": "PinInput 的 validationType 属性。"
+          "description": "The type of input validation to apply to the OTP value."
         },
         "label": {
           "type": "string",
-          "title": "label",
-          "description": "验证码整体的本地化名称，用于首位输入及组标签。"
+          "title": "label"
         }
       },
       "additionalProperties": false,
@@ -1056,90 +998,87 @@
         "id": {
           "type": "string",
           "title": "id",
-          "description": "Checkbox 的 id 属性。"
+          "description": "The id of the input element."
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Checkbox 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Checkbox 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Checkbox 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Checkbox 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Checkbox 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Checkbox 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Checkbox 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Checkbox 的 children 属性。"
+          "title": "children"
         },
         "checked": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Checkbox 的 checked 属性。"
+          "title": "checked",
+          "description": "Whether the checkbox is currently ticked.\n\nTo render an uncontrolled checkbox, use the `defaultChecked` prop instead."
         },
         "defaultChecked": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Checkbox 的 defaultChecked 属性。"
+          "title": "defaultChecked",
+          "description": "Whether the checkbox is initially ticked.\n\nTo render a controlled checkbox, use the `checked` prop instead."
         },
         "indeterminate": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Checkbox 的 indeterminate 属性。"
+          "title": "indeterminate",
+          "description": "Whether the checkbox is in a mixed state: neither ticked, nor unticked."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Checkbox 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         },
         "readOnly": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Checkbox 的 readOnly 属性。"
+          "title": "readOnly",
+          "description": "Whether the user should be unable to tick or untick the checkbox."
         },
         "required": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Checkbox 的 required 属性。"
+          "title": "required",
+          "description": "Whether the user must tick the checkbox before submitting a form."
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "Checkbox 的 name 属性。"
+          "title": "name",
+          "description": "Identifies the field when a form is submitted."
         },
         "value": {
           "type": "string",
-          "title": "id",
-          "description": "Checkbox 的 value 属性。"
+          "title": "value",
+          "description": "The checkbox's value. Identifies it within a [Checkbox Group](https://base-ui.com/react/components/checkbox-group), falling back to `name` when omitted.\nWhen submitting a form, a checked box submits `value`; with no `value`, it submits the native \"on\"."
         }
       },
       "additionalProperties": false
@@ -1187,51 +1126,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Radio 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Radio 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Radio 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Radio 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Radio 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Radio 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Radio 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Radio 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Radio 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": [
@@ -1239,12 +1174,12 @@
             "number"
           ],
           "title": "value",
-          "description": "Radio 的 value 属性。"
+          "description": "The unique identifying value of the radio in a group."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Radio 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         }
       },
       "additionalProperties": false
@@ -1294,51 +1229,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "RadioGroup 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "RadioGroup 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "RadioGroup 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "RadioGroup 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "RadioGroup 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "RadioGroup 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "RadioGroup 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "RadioGroup 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "RadioGroup 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": [
@@ -1346,7 +1277,7 @@
             "number"
           ],
           "title": "value",
-          "description": "RadioGroup 的 value 属性。"
+          "description": "The controlled value of the radio item that should be currently selected.\n\nTo render an uncontrolled radio group, use the `defaultValue` prop instead."
         },
         "defaultValue": {
           "type": [
@@ -1354,17 +1285,17 @@
             "number"
           ],
           "title": "defaultValue",
-          "description": "RadioGroup 的 defaultValue 属性。"
+          "description": "The uncontrolled value of the radio button that should be initially selected.\n\nTo render a controlled radio group, use the `value` prop instead."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "RadioGroup 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "RadioGroup 的 name 属性。"
+          "title": "name",
+          "description": "Identifies the field when a form is submitted."
         }
       },
       "additionalProperties": false
@@ -1417,75 +1348,72 @@
         "id": {
           "type": "string",
           "title": "id",
-          "description": "Switch 的 id 属性。"
+          "description": "The id of the hidden input element.\n\nWhen `nativeButton` is `true`, the id is applied to the root element."
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Switch 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Switch 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Switch 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Switch 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Switch 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Switch 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Switch 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Switch 的 children 属性。"
+          "title": "children"
         },
         "checked": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Switch 的 checked 属性。"
+          "title": "checked",
+          "description": "Whether the switch is currently active.\n\nTo render an uncontrolled switch, use the `defaultChecked` prop instead."
         },
         "defaultChecked": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Switch 的 defaultChecked 属性。"
+          "title": "defaultChecked",
+          "description": "Whether the switch is initially active.\n\nTo render a controlled switch, use the `checked` prop instead."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Switch 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         },
         "readOnly": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Switch 的 readOnly 属性。"
+          "title": "readOnly",
+          "description": "Whether the user should be unable to activate or deactivate the switch."
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "Switch 的 name 属性。"
+          "title": "name",
+          "description": "Identifies the field when a form is submitted."
         }
       },
       "additionalProperties": false
@@ -1533,66 +1461,62 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Toggle 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Toggle 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Toggle 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Toggle 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Toggle 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Toggle 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Toggle 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Toggle 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Toggle 的 children 属性。"
+          "title": "children"
         },
         "pressed": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Toggle 的 pressed 属性。"
+          "title": "pressed",
+          "description": "Whether the toggle button is currently pressed.\nThis is the controlled counterpart of `defaultPressed`."
         },
         "defaultPressed": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Toggle 的 defaultPressed 属性。"
+          "title": "defaultPressed",
+          "description": "Whether the toggle button is currently pressed.\nThis is the uncontrolled counterpart of `pressed`."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Toggle 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         }
       },
       "additionalProperties": false
@@ -1641,51 +1565,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Segmented 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Segmented 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Segmented 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Segmented 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Segmented 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Segmented 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Segmented 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Segmented 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Segmented 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": [
@@ -1693,7 +1613,7 @@
             "number"
           ],
           "title": "value",
-          "description": "Segmented 的 value 属性。"
+          "description": "The controlled value of the radio item that should be currently selected.\n\nTo render an uncontrolled radio group, use the `defaultValue` prop instead."
         },
         "defaultValue": {
           "type": [
@@ -1701,17 +1621,17 @@
             "number"
           ],
           "title": "defaultValue",
-          "description": "Segmented 的 defaultValue 属性。"
+          "description": "The uncontrolled value of the radio button that should be initially selected.\n\nTo render a controlled radio group, use the `value` prop instead."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Segmented 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "Segmented 的 name 属性。"
+          "title": "name",
+          "description": "Identifies the field when a form is submitted."
         }
       },
       "additionalProperties": false
@@ -1763,13 +1683,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Select 的 open 属性。"
+          "title": "open",
+          "description": "Whether the select popup is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Select 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the select popup is initially open.\n\nTo render a controlled select popup, use the `open` prop instead."
         },
         "value": {
           "type": [
@@ -1779,7 +1699,7 @@
             "null"
           ],
           "title": "value",
-          "description": "Select 的 value 属性。"
+          "description": "The value of the select. Use when controlled."
         },
         "defaultValue": {
           "type": [
@@ -1789,27 +1709,28 @@
             "null"
           ],
           "title": "defaultValue",
-          "description": "Select 的 defaultValue 属性。"
+          "description": "The uncontrolled value of the select when it's initially rendered.\n\nTo render a controlled select, use the `value` prop instead."
         },
         "items": {
           "type": "array",
           "title": "items",
-          "description": "Select 的 items 属性。"
+          "description": "Data structure of the items rendered in the select popup.\nWhen specified, `<Select.Value>` renders the label of the selected item instead of the raw value."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Select 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "Select 的 name 属性。"
+          "title": "name",
+          "description": "Identifies the field when a form is submitted."
         },
         "modal": {
           "type": "boolean",
           "default": true,
-          "description": "打开时是否进入模态状态；沿用 Base UI 默认值。"
+          "description": "Determines if the select enters a modal state when open.\n- `true`: user interaction is limited to the select: document page scroll is locked and pointer interactions on outside elements are disabled.\n- `false`: user interaction with the rest of the document is allowed.\n\nOn touch devices, a `true` modal blocks outside taps but leaves the page scrollable unless the popup spans nearly the full viewport width, matching native iOS behavior.",
+          "title": "modal"
         }
       },
       "additionalProperties": false
@@ -1861,13 +1782,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Combobox 的 open 属性。"
+          "title": "open",
+          "description": "Whether the popup is currently open. Use when controlled."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Combobox 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the popup is initially open.\n\nTo render a controlled popup, use the `open` prop instead."
         },
         "value": {
           "type": [
@@ -1877,7 +1798,7 @@
             "null"
           ],
           "title": "value",
-          "description": "Combobox 的 value 属性。"
+          "description": "The selected value of the combobox. Use when controlled."
         },
         "defaultValue": {
           "type": [
@@ -1887,22 +1808,22 @@
             "null"
           ],
           "title": "defaultValue",
-          "description": "Combobox 的 defaultValue 属性。"
+          "description": "The uncontrolled selected value of the combobox when it's initially rendered.\n\nTo render a controlled combobox, use the `value` prop instead."
         },
         "items": {
           "type": "array",
           "title": "items",
-          "description": "Combobox 的 items 属性。"
+          "description": "The items to be displayed in the list.\nCan be a flat array of items, an array of groups with items, or a collection created by\nthe `createItems()` function, which derives each item's selection value and label.\nNullish entries are not supported: remove them from the data before passing it."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Combobox 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "Combobox 的 name 属性。"
+          "title": "name",
+          "description": "Identifies the field when a form is submitted."
         }
       },
       "additionalProperties": false
@@ -1956,51 +1877,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Label 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Label 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Label 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Label 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Label 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Label 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Label 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Label 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Label 的 children 属性。"
+          "title": "children"
         }
       },
       "additionalProperties": false
@@ -2041,66 +1958,62 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Field 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Field 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Field 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Field 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Field 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Field 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Field 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Field 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Field 的 children 属性。"
+          "title": "children"
         },
         "name": {
           "type": "string",
-          "title": "id",
-          "description": "Field 的 name 属性。"
+          "title": "name",
+          "description": "Identifies the field when a form is submitted.\nTakes precedence over the `name` prop on the `<Field.Control>` component."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Field 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction.\nTakes precedence over the `disabled` prop on the `<Field.Control>` component."
         },
         "invalid": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Field 的 invalid 属性。"
+          "title": "invalid",
+          "description": "Whether the field is invalid.\nUseful when the field state is controlled by an external library."
         },
         "validationMode": {
           "enum": [
@@ -2109,7 +2022,7 @@
             "onChange"
           ],
           "title": "validationMode",
-          "description": "Field 的 validationMode 属性。"
+          "description": "Determines when the field should be validated.\nThis takes precedence over the `validationMode` prop on `<Form>`.\n\n- `onSubmit`: triggers validation when the form is submitted, and re-validates on change after submission.\n- `onBlur`: triggers validation when the control loses focus.\n- `onChange`: triggers validation on every change to the control value."
         }
       },
       "additionalProperties": false
@@ -2155,13 +2068,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Dialog 的 open 属性。"
+          "title": "open",
+          "description": "Whether the dialog is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Dialog 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the dialog is initially open.\n\nTo render a controlled dialog, use the `open` prop instead."
         },
         "modal": {
           "type": [
@@ -2169,7 +2082,7 @@
             "string"
           ],
           "title": "modal",
-          "description": "Dialog 的 modal 属性。"
+          "description": "Determines if the dialog enters a modal state when open.\n- `true`: user interaction is limited to just the dialog: focus is trapped, document page scroll is locked, and pointer interactions on outside elements are disabled.\n- `false`: user interaction with the rest of the document is allowed.\n- `'trap-focus'`: focus is trapped inside the dialog, but document page scroll is not locked and pointer interactions outside of it remain enabled.\n\nWhen `modal` is `true` or `'trap-focus'`, render `<Dialog.Close>` inside `<Dialog.Popup>` so\ntouch screen readers can escape the popup."
         }
       },
       "additionalProperties": false
@@ -2219,13 +2132,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "AlertDialog 的 open 属性。"
+          "title": "open",
+          "description": "Whether the dialog is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "AlertDialog 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the dialog is initially open.\n\nTo render a controlled dialog, use the `open` prop instead."
         }
       },
       "additionalProperties": false
@@ -2275,13 +2188,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Sheet 的 open 属性。"
+          "title": "open",
+          "description": "Whether the dialog is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Sheet 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the dialog is initially open.\n\nTo render a controlled dialog, use the `open` prop instead."
         }
       },
       "additionalProperties": false
@@ -2331,13 +2244,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Drawer 的 open 属性。"
+          "title": "open",
+          "description": "Whether the drawer is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Drawer 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the drawer is initially open.\n\nTo render a controlled drawer, use the `open` prop instead."
         },
         "swipeDirection": {
           "enum": [
@@ -2347,7 +2260,7 @@
             "right"
           ],
           "title": "swipeDirection",
-          "description": "Drawer 的 swipeDirection 属性。"
+          "description": "The swipe direction used to dismiss the drawer."
         },
         "snapPoints": {
           "type": "array",
@@ -2357,7 +2270,7 @@
             "description": "InputNumber 的 defaultValue 属性。"
           },
           "title": "snapPoints",
-          "description": "Drawer 的 snapPoints 属性。"
+          "description": "Snap points used to position the drawer.\nUse numbers between 0 and 1 to represent fractions of the viewport height,\nnumbers greater than 1 as pixel values, or strings in `px`/`rem` units\n(for example, `'148px'` or `'30rem'`)."
         }
       },
       "additionalProperties": false
@@ -2407,13 +2320,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Popover 的 open 属性。"
+          "title": "open",
+          "description": "Whether the popover is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Popover 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the popover is initially open.\n\nTo render a controlled popover, use the `open` prop instead."
         }
       },
       "additionalProperties": false
@@ -2462,13 +2375,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Tooltip 的 open 属性。"
+          "title": "open",
+          "description": "Whether the tooltip is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Tooltip 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the tooltip is initially open.\n\nTo render a controlled tooltip, use the `open` prop instead."
         }
       },
       "additionalProperties": false
@@ -2514,13 +2427,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "HoverCard 的 open 属性。"
+          "title": "open",
+          "description": "Whether the preview card is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "HoverCard 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the preview card is initially open.\n\nTo render a controlled preview card, use the `open` prop instead."
         }
       },
       "additionalProperties": false
@@ -2568,13 +2481,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Menu 的 open 属性。"
+          "title": "open",
+          "description": "Whether the menu is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Menu 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the menu is initially open.\n\nTo render a controlled menu, use the `open` prop instead."
         }
       },
       "additionalProperties": false
@@ -2627,13 +2540,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "DropdownMenu 的 open 属性。"
+          "title": "open",
+          "description": "Whether the menu is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "DropdownMenu 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the menu is initially open.\n\nTo render a controlled menu, use the `open` prop instead."
         }
       },
       "additionalProperties": false
@@ -2686,13 +2599,13 @@
       "properties": {
         "open": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "ContextMenu 的 open 属性。"
+          "title": "open",
+          "description": "Whether the menu is currently open."
         },
         "defaultOpen": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "ContextMenu 的 defaultOpen 属性。"
+          "title": "defaultOpen",
+          "description": "Whether the menu is initially open.\n\nTo render a controlled menu, use the `open` prop instead."
         }
       },
       "additionalProperties": false
@@ -2744,51 +2657,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Tabs 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Tabs 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Tabs 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Tabs 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Tabs 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Tabs 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Tabs 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Tabs 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Tabs 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": [
@@ -2796,7 +2705,7 @@
             "number"
           ],
           "title": "value",
-          "description": "Tabs 的 value 属性。"
+          "description": "The value of the currently active `Tab`. Use when the component is controlled.\nWhen the value is `null`, no Tab will be active."
         },
         "defaultValue": {
           "type": [
@@ -2804,7 +2713,7 @@
             "number"
           ],
           "title": "defaultValue",
-          "description": "Tabs 的 defaultValue 属性。"
+          "description": "The default value. Use when the component is not controlled.\nWhen the value is `null`, no Tab will be active."
         },
         "orientation": {
           "enum": [
@@ -2812,7 +2721,7 @@
             "vertical"
           ],
           "title": "orientation",
-          "description": "Tabs 的 orientation 属性。"
+          "description": "The component orientation (layout flow direction)."
         }
       },
       "additionalProperties": false
@@ -2865,51 +2774,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Accordion 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Accordion 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Accordion 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Accordion 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Accordion 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Accordion 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Accordion 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Accordion 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Accordion 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": "array",
@@ -2919,7 +2824,7 @@
             "description": "Button 的 id 属性。"
           },
           "title": "value",
-          "description": "Accordion 的 value 属性。"
+          "description": "The controlled value of the item(s) that should be expanded.\n\nTo render an uncontrolled accordion, use the `defaultValue` prop instead."
         },
         "defaultValue": {
           "type": "array",
@@ -2929,17 +2834,17 @@
             "description": "Button 的 id 属性。"
           },
           "title": "defaultValue",
-          "description": "Accordion 的 defaultValue 属性。"
+          "description": "The uncontrolled value of the item(s) that should be initially expanded.\n\nTo render a controlled accordion, use the `value` prop instead."
         },
         "multiple": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Accordion 的 multiple 属性。"
+          "title": "multiple",
+          "description": "Whether multiple items can be open at the same time."
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Accordion 的 disabled 属性。"
+          "description": "Whether the component should ignore user interaction."
         }
       },
       "additionalProperties": false
@@ -2986,51 +2891,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Card 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Card 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Card 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Card 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Card 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Card 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Card 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Card 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Card 的 children 属性。"
+          "title": "children"
         }
       },
       "additionalProperties": false
@@ -3079,51 +2980,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Separator 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Separator 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Separator 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Separator 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Separator 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Separator 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Separator 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Separator 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Separator 的 children 属性。"
+          "title": "children"
         },
         "orientation": {
           "enum": [
@@ -3131,7 +3028,7 @@
             "vertical"
           ],
           "title": "orientation",
-          "description": "Separator 的 orientation 属性。"
+          "description": "The orientation of the separator."
         }
       },
       "additionalProperties": false
@@ -3180,56 +3077,51 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "ScrollArea 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "ScrollArea 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "ScrollArea 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "ScrollArea 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "ScrollArea 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "ScrollArea 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "ScrollArea 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "ScrollArea 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "ScrollArea 的 children 属性。"
+          "title": "children"
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "ScrollArea 的 label 属性。"
+          "title": "label"
         }
       },
       "additionalProperties": false,
@@ -3279,42 +3171,40 @@
         "id": {
           "type": "string",
           "title": "id",
-          "description": "Resizable 的 id 属性。"
+          "description": "Uniquely identifies this group within an application.\r\nFalls back to `useId` when not provided.\r\n\r\nℹ️ This value will also be assigned to the `id` and `data-testid` attributes; (an explicit `data-testid` prop will take precedence)."
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Resizable 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Resizable 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Resizable 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Resizable 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Resizable 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Resizable 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Resizable 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
@@ -3322,7 +3212,7 @@
             "number"
           ],
           "title": "children",
-          "description": "Resizable 的 children 属性。"
+          "description": "Panel and Separator components that comprise this group."
         },
         "orientation": {
           "enum": [
@@ -3330,12 +3220,12 @@
             "vertical"
           ],
           "title": "orientation",
-          "description": "Resizable 的 orientation 属性。"
+          "description": "Specifies the resizable orientation (\"horizontal\" or \"vertical\"); defaults to \"horizontal\""
         },
         "disabled": {
           "type": "boolean",
           "title": "disabled",
-          "description": "Resizable 的 disabled 属性。"
+          "description": "Disable resize functionality."
         }
       },
       "additionalProperties": false
@@ -3388,51 +3278,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Badge 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Badge 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Badge 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Badge 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Badge 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Badge 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Badge 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Badge 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Badge 的 children 属性。"
+          "title": "children"
         },
         "tone": {
           "enum": [
@@ -3442,8 +3328,7 @@
             "info",
             "neutral"
           ],
-          "title": "tone",
-          "description": "Badge 的 tone 属性。"
+          "title": "tone"
         }
       },
       "additionalProperties": false
@@ -3497,51 +3382,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Tag 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Tag 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Tag 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Tag 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Tag 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Tag 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Tag 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Tag 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Tag 的 children 属性。"
+          "title": "children"
         },
         "tone": {
           "enum": [
@@ -3551,13 +3432,11 @@
             "info",
             "neutral"
           ],
-          "title": "tone",
-          "description": "Tag 的 tone 属性。"
+          "title": "tone"
         },
         "removeLabel": {
           "type": "string",
-          "title": "id",
-          "description": "Tag 的 removeLabel 属性。"
+          "title": "removeLabel"
         }
       },
       "additionalProperties": false
@@ -3613,51 +3492,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Avatar 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Avatar 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Avatar 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Avatar 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Avatar 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Avatar 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Avatar 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Avatar 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Avatar 的 children 属性。"
+          "title": "children"
         }
       },
       "additionalProperties": false
@@ -3702,51 +3577,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Skeleton 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Skeleton 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Skeleton 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Skeleton 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Skeleton 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Skeleton 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Skeleton 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Skeleton 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Skeleton 的 children 属性。"
+          "title": "children"
         }
       },
       "additionalProperties": false
@@ -3800,56 +3671,51 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Spinner 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Spinner 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Spinner 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Spinner 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Spinner 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Spinner 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Spinner 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Spinner 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Spinner 的 children 属性。"
+          "title": "children"
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "Spinner 的 label 属性。"
+          "title": "label"
         }
       },
       "additionalProperties": false,
@@ -3908,51 +3774,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Progress 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Progress 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Progress 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Progress 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Progress 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Progress 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Progress 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Progress 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Progress 的 children 属性。"
+          "title": "children"
         },
         "value": {
           "type": [
@@ -3960,22 +3822,21 @@
             "null"
           ],
           "title": "value",
-          "description": "Progress 的 value 属性。"
+          "description": "The current value. The component is indeterminate when value is `null`."
         },
         "max": {
           "type": "number",
-          "title": "defaultValue",
-          "description": "Progress 的 max 属性。"
+          "title": "max",
+          "description": "The maximum value."
         },
         "min": {
           "type": "number",
-          "title": "defaultValue",
-          "description": "Progress 的 min 属性。"
+          "title": "min",
+          "description": "The minimum value."
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "Progress 的 label 属性。"
+          "title": "label"
         }
       },
       "additionalProperties": false,
@@ -4036,51 +3897,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Alert 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Alert 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Alert 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Alert 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Alert 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Alert 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Alert 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Alert 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Alert 的 children 属性。"
+          "title": "children"
         },
         "tone": {
           "enum": [
@@ -4090,16 +3947,14 @@
             "info",
             "neutral"
           ],
-          "title": "tone",
-          "description": "Alert 的 tone 属性。"
+          "title": "tone"
         },
         "role": {
           "enum": [
             "alert",
             "status"
           ],
-          "title": "role",
-          "description": "Alert 的 role 属性。"
+          "title": "role"
         }
       },
       "additionalProperties": false
@@ -4153,51 +4008,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Toast 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Toast 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Toast 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Toast 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Toast 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Toast 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Toast 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Toast 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Toast 的 children 属性。"
+          "title": "children"
         },
         "toast": {
           "type": "object",
@@ -4232,7 +4083,7 @@
           },
           "additionalProperties": false,
           "title": "toast",
-          "description": "Toast 的 toast 属性。"
+          "description": "The toast to render."
         }
       },
       "additionalProperties": false,
@@ -4288,51 +4139,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Notification 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Notification 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Notification 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Notification 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Notification 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Notification 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Notification 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Notification 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Notification 的 children 属性。"
+          "title": "children"
         },
         "toast": {
           "type": "object",
@@ -4364,7 +4211,7 @@
           },
           "additionalProperties": false,
           "title": "toast",
-          "description": "Notification 的 toast 属性。"
+          "description": "The toast to render."
         }
       },
       "additionalProperties": false,
@@ -4422,56 +4269,46 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Empty 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Empty 的 testId 属性。"
+          "title": "testId"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Empty 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Empty 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Empty 的 aria-label 属性。"
+          "title": "aria-label"
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Empty 的 aria-labelledby 属性。"
+          "title": "aria-labelledby"
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Empty 的 aria-describedby 属性。"
+          "title": "aria-describedby"
         },
         "aria-invalid": {
           "type": "boolean",
-          "title": "aria-invalid",
-          "description": "Empty 的 aria-invalid 属性。"
+          "title": "aria-invalid"
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Empty 的 children 属性。"
+          "title": "children"
         },
         "description": {
           "type": "string",
-          "title": "id",
-          "description": "Empty 的 description 属性。"
+          "title": "description"
         },
         "icon": {
           "enum": [
@@ -4479,8 +4316,7 @@
             "alert",
             "check"
           ],
-          "title": "icon",
-          "description": "Empty 的 icon 属性。"
+          "title": "icon"
         }
       },
       "additionalProperties": false,
@@ -4539,56 +4375,46 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Result 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Result 的 testId 属性。"
+          "title": "testId"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Result 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Result 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Result 的 aria-label 属性。"
+          "title": "aria-label"
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Result 的 aria-labelledby 属性。"
+          "title": "aria-labelledby"
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Result 的 aria-describedby 属性。"
+          "title": "aria-describedby"
         },
         "aria-invalid": {
           "type": "boolean",
-          "title": "aria-invalid",
-          "description": "Result 的 aria-invalid 属性。"
+          "title": "aria-invalid"
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Result 的 children 属性。"
+          "title": "children"
         },
         "description": {
           "type": "string",
-          "title": "id",
-          "description": "Result 的 description 属性。"
+          "title": "description"
         },
         "tone": {
           "enum": [
@@ -4598,8 +4424,7 @@
             "info",
             "neutral"
           ],
-          "title": "tone",
-          "description": "Result 的 tone 属性。"
+          "title": "tone"
         }
       },
       "additionalProperties": false,
@@ -4658,56 +4483,51 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Breadcrumb 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Breadcrumb 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Breadcrumb 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Breadcrumb 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Breadcrumb 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Breadcrumb 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Breadcrumb 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Breadcrumb 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Breadcrumb 的 children 属性。"
+          "title": "children"
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "Breadcrumb 的 label 属性。"
+          "title": "label"
         },
         "items": {
           "type": "array",
@@ -4736,8 +4556,7 @@
             },
             "additionalProperties": false
           },
-          "title": "items",
-          "description": "Breadcrumb 的 items 属性。"
+          "title": "items"
         }
       },
       "additionalProperties": false,
@@ -4796,89 +4615,73 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 testId 属性。"
+          "title": "testId"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 aria-label 属性。"
+          "title": "aria-label"
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 aria-labelledby 属性。"
+          "title": "aria-labelledby"
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 aria-describedby 属性。"
+          "title": "aria-describedby"
         },
         "aria-invalid": {
           "type": "boolean",
-          "title": "aria-invalid",
-          "description": "Pagination 的 aria-invalid 属性。"
+          "title": "aria-invalid"
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Pagination 的 children 属性。"
+          "title": "children"
         },
         "page": {
           "type": "integer",
           "minimum": 1,
-          "title": "page",
-          "description": "Pagination 的 page 属性。"
+          "title": "page"
         },
         "defaultPage": {
           "type": "integer",
           "minimum": 1,
-          "title": "defaultPage",
-          "description": "Pagination 的 defaultPage 属性。"
+          "title": "defaultPage"
         },
         "totalPages": {
           "type": "integer",
           "minimum": 1,
-          "title": "totalPages",
-          "description": "Pagination 的 totalPages 属性。"
+          "title": "totalPages"
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 label 属性。"
+          "title": "label"
         },
         "previousLabel": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 previousLabel 属性。"
+          "title": "previousLabel"
         },
         "nextLabel": {
           "type": "string",
-          "title": "id",
-          "description": "Pagination 的 nextLabel 属性。"
+          "title": "nextLabel"
         },
         "disabled": {
           "type": "boolean",
-          "title": "disabled",
-          "description": "Pagination 的 disabled 属性。"
+          "title": "disabled"
         }
       },
       "additionalProperties": false,
@@ -4933,63 +4736,52 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "BackTop 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "BackTop 的 testId 属性。"
+          "title": "testId"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "BackTop 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "BackTop 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "BackTop 的 aria-label 属性。"
+          "title": "aria-label"
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "BackTop 的 aria-labelledby 属性。"
+          "title": "aria-labelledby"
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "BackTop 的 aria-describedby 属性。"
+          "title": "aria-describedby"
         },
         "aria-invalid": {
           "type": "boolean",
-          "title": "aria-invalid",
-          "description": "BackTop 的 aria-invalid 属性。"
+          "title": "aria-invalid"
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "BackTop 的 children 属性。"
+          "title": "children"
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "BackTop 的 label 属性。"
+          "title": "label"
         },
         "visibilityHeight": {
           "type": "number",
           "minimum": 0,
           "default": 400,
-          "title": "visibilityHeight",
-          "description": "BackTop 的 visibilityHeight 属性。"
+          "title": "visibilityHeight"
         }
       },
       "additionalProperties": false,
@@ -5039,61 +4831,50 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 testId 属性。"
+          "title": "testId"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 aria-label 属性。"
+          "title": "aria-label"
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 aria-labelledby 属性。"
+          "title": "aria-labelledby"
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 aria-describedby 属性。"
+          "title": "aria-describedby"
         },
         "aria-invalid": {
           "type": "boolean",
-          "title": "aria-invalid",
-          "description": "FullScreen 的 aria-invalid 属性。"
+          "title": "aria-invalid"
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "FullScreen 的 children 属性。"
+          "title": "children"
         },
         "enterLabel": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 enterLabel 属性。"
+          "title": "enterLabel"
         },
         "exitLabel": {
           "type": "string",
-          "title": "id",
-          "description": "FullScreen 的 exitLabel 属性。"
+          "title": "exitLabel"
         }
       },
       "additionalProperties": false,
@@ -5147,51 +4928,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Icon 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Icon 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Icon 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Icon 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Icon 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Icon 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Icon 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Icon 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Icon 的 children 属性。"
+          "title": "children"
         },
         "name": {
           "enum": [
@@ -5210,19 +4987,16 @@
             "minus",
             "close"
           ],
-          "title": "name",
-          "description": "Icon 的 name 属性。"
+          "title": "name"
         },
         "label": {
           "type": "string",
-          "title": "id",
-          "description": "Icon 的 label 属性。"
+          "title": "label"
         },
         "size": {
           "type": "number",
           "minimum": 1,
-          "title": "size",
-          "description": "Icon 的 size 属性。"
+          "title": "size"
         }
       },
       "additionalProperties": false,
@@ -5268,51 +5042,47 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "id",
-          "description": "Descriptions 的 id 属性。"
+          "title": "id"
         },
         "testId": {
           "type": "string",
-          "title": "id",
-          "description": "Descriptions 的 testId 属性。"
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
         },
         "className": {
           "type": "string",
-          "title": "id",
-          "description": "Descriptions 的 className 属性。"
+          "title": "className"
         },
         "title": {
           "type": "string",
-          "title": "id",
-          "description": "Descriptions 的 title 属性。"
+          "title": "title"
         },
         "aria-label": {
           "type": "string",
-          "title": "id",
-          "description": "Descriptions 的 aria-label 属性。"
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
         },
         "aria-labelledby": {
           "type": "string",
-          "title": "id",
-          "description": "Descriptions 的 aria-labelledby 属性。"
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
         },
         "aria-describedby": {
           "type": "string",
-          "title": "id",
-          "description": "Descriptions 的 aria-describedby 属性。"
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
         },
         "aria-invalid": {
           "type": "boolean",
           "title": "aria-invalid",
-          "description": "Descriptions 的 aria-invalid 属性。"
+          "description": "Indicates the entered value does not conform to the format expected by the application."
         },
         "children": {
           "type": [
             "string",
             "number"
           ],
-          "title": "children",
-          "description": "Descriptions 的 children 属性。"
+          "title": "children"
         },
         "items": {
           "type": "array",
@@ -5342,8 +5112,7 @@
             },
             "additionalProperties": false
           },
-          "title": "items",
-          "description": "Descriptions 的 items 属性。"
+          "title": "items"
         }
       },
       "additionalProperties": false,

@@ -249,13 +249,18 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         using var suspended = await host.Get(A, "/api/customers"); Assert.Equal(HttpStatusCode.Forbidden, suspended.StatusCode);
     }
 
-    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null)
+    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
+        HumanOnlyProbe? humanOnlyProbe = null)
     {
         var platform = capabilities || runtimeProfile == "platform";
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
+        var migrator = "qian_cap_owner_" + suffix;
         var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
         await Admin($"CREATE ROLE \"{role}\" LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}'; CREATE ROLE \"{owner}\" NOLOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;");
+        // 能力上下文的迁移属主：与生产迁移任务一样是受限角色（NOSUPERUSER / NOBYPASSRLS），只多一项建 schema 的权限。
+        if (platform) await Admin($"CREATE ROLE \"{migrator}\" LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}'; GRANT CONNECT, CREATE ON DATABASE {PostgresFixture.DatabaseName} TO \"{migrator}\";");
         var connection = new NpgsqlConnectionStringBuilder(postgres.AppConnectionString) { Username = role, Password = password }.ConnectionString;
+        var migrations = new NpgsqlConnectionStringBuilder(postgres.AppConnectionString) { Username = migrator, Password = password }.ConnectionString;
         var signing = RSA.Create(2048); using var publicKey = RSA.Create(); publicKey.ImportParameters(signing.ExportParameters(false));
         var key = new RsaSecurityKey(signing) { KeyId = "crm-command-key" };
         var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(new RsaSecurityKey(publicKey) { KeyId = key.KeyId });
@@ -264,7 +269,8 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         var app = CrmCommandApplication.Build([], builder =>
         {
             builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
-            if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection);
+            if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
+            if (humanOnlyProbe is not null) PreviewAgentAuthorization(builder);
             if (runtimeProfile is not null) builder.Services.AddSingleton<ICrmRuntimeAssembly>(_ => new ProfileModeAssembly(runtimeProfile, RepositoryRoot()));
             builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
             if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
@@ -287,12 +293,19 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 sql += scope.ServiceProvider.GetRequiredService<AuthzDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<TenancyDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.GenerateCreateScript();
-                if (platform) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript() + scope.ServiceProvider.GetRequiredService<Qian.Capabilities.CapabilitiesDbContext>().Database.GenerateCreateScript();
+                // 能力上下文随包提供迁移，下面经迁移器建表，不用 GenerateCreateScript。
+                if (platform) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript();
                 await Admin(sql);
                 if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                 await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
-                if (platform) await Admin($"GRANT USAGE ON SCHEMA plugin_qian_capabilities TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_capabilities TO \"{role}\";");
                 await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
+            }
+            if (platform)
+            {
+                // 与 --migrate-only 迁移任务同一入口：属主角色在 advisory lock 内执行包内迁移；没有迁移的上下文照常跳过。
+                var reports = await app.Services.GetRequiredService<IDataMigrator>().MigrateAsync(Ct);
+                Assert.NotEmpty(Assert.Single(reports, report => report.ContextType == typeof(Qian.Capabilities.CapabilitiesDbContext)).Applied);
+                await Admin($"GRANT USAGE ON SCHEMA plugin_qian_capabilities TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_capabilities TO \"{role}\";");
             }
             var data = app.Services.GetRequiredService<IDataService>(); var tenant = app.Services.GetRequiredService<ITenantContext>();
             await new PostgresPermissionCatalogStore(data).PutAsync(CrmPermissions.Compile(), Ct);
@@ -306,7 +319,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             if (platform) MapCapabilities(app);
             if (hooks) MapHookEntry(app);
             await app.StartAsync(Ct);
-            if (capabilities) await AttachCapabilities(app);
+            if (capabilities) await AttachCapabilities(app, humanOnlyProbe);
             if (hooks) await AttachHooks(app);
             using (tenant.BeginScope(A))
             {
@@ -314,7 +327,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 Assert.True(decision.Allow, decision.Reason);
             }
             var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
-            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role);
+            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role, connection);
         }
         catch { await app.DisposeAsync(); signing.Dispose(); throw; }
     }
@@ -350,10 +363,12 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
     }
 
-    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role) : IAsyncDisposable
+    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection) : IAsyncDisposable
     {
         internal WebApplication App => app;
         internal string BusinessRole => role;
+        // 受限业务登录（NOSUPERUSER / NOBYPASSRLS），用来从数据库侧核对 RLS 的实际效果。
+        internal string BusinessConnection => connection;
         internal HttpClient Client => client;
         internal string FailureEvidence => string.Join("\n", evidence.Failures);
         internal Task<HttpResponseMessage> Post(string tenant, CreateCustomerCommand command)
@@ -368,12 +383,13 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token(tenant, "crm.read"));
             return Send(message);
         }
-        internal string Token(string tenant, string scope, string? subject = null)
+        internal string Token(string tenant, string scope, string? subject = null, string kind = "service", object? actor = null)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var id = Guid.CreateVersion7().ToString();
-            var payload = JsonSerializer.Serialize(new { iss = Issuer, aud = new[] { Audience }, sub = subject ?? Writer, principal_kind = "service", tenant_id = tenant,
-                roles = DeclaredTokenRoles, scope, session_id = id, jti = id, iat = now, nbf = now, exp = now + 60 });
-            return new JsonWebTokenHandler().CreateToken(payload, new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
+            var payload = new Dictionary<string, object?> { ["iss"] = Issuer, ["aud"] = new[] { Audience }, ["sub"] = subject ?? Writer, ["principal_kind"] = kind,
+                ["tenant_id"] = tenant, ["roles"] = DeclaredTokenRoles, ["scope"] = scope, ["session_id"] = id, ["jti"] = id, ["iat"] = now, ["nbf"] = now, ["exp"] = now + 60 };
+            if (actor is not null) payload["act"] = actor;
+            return new JsonWebTokenHandler().CreateToken(JsonSerializer.Serialize(payload), new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
         }
         internal async Task<HttpResponseMessage> Send(HttpRequestMessage message)
         { using (message) return await client.SendAsync(message, Ct); }

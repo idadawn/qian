@@ -1,0 +1,152 @@
+[
+  {
+    "name": "同一能力 id 出现两次",
+    "data": {
+      "items": [
+        {
+          "id": "qian.sample.crm/customer.search",
+          "plugin": "qian.sample.crm",
+          "name": "customer.search",
+          "kind": "query",
+          "description": "按名称或手机号在当前租户里查找客户，返回最多 20 条摘要；要看详情再按 id 取。",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "q"
+            ],
+            "properties": {
+              "q": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          },
+          "sideEffect": "read",
+          "policyHint": "allow",
+          "idempotent": true,
+          "async": "none",
+          "requiredScopes": [
+            "qian.sample.crm:read"
+          ],
+          "requiredPermission": "qian.sample.crm:customer:read",
+          "requiredSecrets": [],
+          "dataClassification": "pii",
+          "costTier": "low",
+          "contractVersion": "crm-v1",
+          "schemaSha256": "b25f695084a2dadbc2e7f0fb9bbca8af2131fc380837d0304dd54765d01262ad",
+          "audit": false,
+          "agent": {
+            "expose": true,
+            "requiresConfirmation": false
+          }
+        },
+        {
+          "id": "qian.sample.crm/customer.search",
+          "plugin": "qian.sample.crm",
+          "name": "customer.search",
+          "kind": "query",
+          "description": "按名称或手机号在当前租户里查找客户，返回最多 20 条摘要；要看详情再按 id 取。",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "q"
+            ],
+            "properties": {
+              "q": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          },
+          "sideEffect": "read",
+          "policyHint": "allow",
+          "idempotent": true,
+          "async": "none",
+          "requiredScopes": [
+            "qian.sample.crm:read"
+          ],
+          "requiredPermission": "qian.sample.crm:customer:read",
+          "requiredSecrets": [],
+          "dataClassification": "pii",
+          "costTier": "low",
+          "contractVersion": "crm-v1",
+          "schemaSha256": "b25f695084a2dadbc2e7f0fb9bbca8af2131fc380837d0304dd54765d01262ad",
+          "audit": false,
+          "agent": {
+            "expose": true,
+            "requiresConfirmation": false
+          }
+        }
+      ],
+      "ttlMs": 1000,
+      "cacheScope": "private"
+    }
+  },
+  {
+    "name": "条目的 schemaSha256 与名称、描述、inputSchema 不符",
+    "data": {
+      "items": [
+        {
+          "id": "qian.sample.crm/customer.search",
+          "plugin": "qian.sample.crm",
+          "name": "customer.search",
+          "kind": "query",
+          "description": "按名称或手机号在当前租户里查找客户，返回最多 20 条摘要；要看详情再按 id 取。（改过）",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "q"
+            ],
+            "properties": {
+              "q": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          },
+          "sideEffect": "read",
+          "policyHint": "allow",
+          "idempotent": true,
+          "async": "none",
+          "requiredScopes": [
+            "qian.sample.crm:read"
+          ],
+          "requiredPermission": "qian.sample.crm:customer:read",
+          "requiredSecrets": [],
+          "dataClassification": "pii",
+          "costTier": "low",
+          "contractVersion": "crm-v1",
+          "schemaSha256": "b25f695084a2dadbc2e7f0fb9bbca8af2131fc380837d0304dd54765d01262ad",
+          "audit": false,
+          "agent": {
+            "expose": true,
+            "requiresConfirmation": false
+          }
+        }
+      ],
+      "ttlMs": 1000,
+      "cacheScope": "private"
+    }
+  }
+]

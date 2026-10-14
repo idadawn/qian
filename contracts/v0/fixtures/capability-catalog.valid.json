@@ -1,0 +1,187 @@
+[
+  {
+    "name": "空目录：调用者没有任何可调用的能力",
+    "data": {
+      "items": [],
+      "ttlMs": 1000,
+      "cacheScope": "private"
+    }
+  },
+  {
+    "name": "一条写命令与一条只读查询，ttlMs 取默认 1000",
+    "data": {
+      "items": [
+        {
+          "id": "qian.files/upload",
+          "plugin": "qian.files",
+          "name": "upload",
+          "kind": "command",
+          "description": "把一个文件上传到当前租户的文件库并返回文件 id；用于附件、头像、导出件。不用于批量迁移历史文件。",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "content",
+              "fileName",
+              "purpose",
+              "idempotencyKey"
+            ],
+            "properties": {
+              "content": {
+                "type": "string",
+                "contentEncoding": "base64"
+              },
+              "fileName": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "purpose": {
+                "enum": [
+                  "attachment",
+                  "avatar",
+                  "export"
+                ]
+              },
+              "idempotencyKey": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "outputSchema": {
+            "type": "object",
+            "required": [
+              "fileId"
+            ],
+            "properties": {
+              "fileId": {
+                "type": "string"
+              },
+              "sizeBytes": {
+                "type": "integer"
+              }
+            }
+          },
+          "operationId": "uploadFile",
+          "sideEffect": "write",
+          "policyHint": "confirm",
+          "idempotent": true,
+          "async": "none",
+          "requiredScopes": [
+            "qian.files:write"
+          ],
+          "requiredPermission": "qian.files:file:write",
+          "requiredSecrets": [],
+          "dataClassification": "internal",
+          "costTier": "low",
+          "contractVersion": "files-v1",
+          "schemaSha256": "523ed88312c5cbd2368cf7f243098548c4629c6b729cae82a427f35f0183ada8",
+          "audit": true,
+          "agent": {
+            "expose": true,
+            "requiresConfirmation": true
+          }
+        },
+        {
+          "id": "qian.sample.crm/customer.search",
+          "plugin": "qian.sample.crm",
+          "name": "customer.search",
+          "kind": "query",
+          "description": "按名称或手机号在当前租户里查找客户，返回最多 20 条摘要；要看详情再按 id 取。",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "q"
+            ],
+            "properties": {
+              "q": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          },
+          "sideEffect": "read",
+          "policyHint": "allow",
+          "idempotent": true,
+          "async": "none",
+          "requiredScopes": [
+            "qian.sample.crm:read"
+          ],
+          "requiredPermission": "qian.sample.crm:customer:read",
+          "requiredSecrets": [],
+          "dataClassification": "pii",
+          "costTier": "low",
+          "contractVersion": "crm-v1",
+          "schemaSha256": "b25f695084a2dadbc2e7f0fb9bbca8af2131fc380837d0304dd54765d01262ad",
+          "audit": false,
+          "agent": {
+            "expose": true,
+            "requiresConfirmation": false
+          }
+        }
+      ],
+      "ttlMs": 1000,
+      "cacheScope": "private"
+    }
+  },
+  {
+    "name": "ttlMs 为 0：客户端不缓存",
+    "data": {
+      "items": [
+        {
+          "id": "qian.sample.crm/customer.search",
+          "plugin": "qian.sample.crm",
+          "name": "customer.search",
+          "kind": "query",
+          "description": "按名称或手机号在当前租户里查找客户，返回最多 20 条摘要；要看详情再按 id 取。",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "q"
+            ],
+            "properties": {
+              "q": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          },
+          "sideEffect": "read",
+          "policyHint": "allow",
+          "idempotent": true,
+          "async": "none",
+          "requiredScopes": [
+            "qian.sample.crm:read"
+          ],
+          "requiredPermission": "qian.sample.crm:customer:read",
+          "requiredSecrets": [],
+          "dataClassification": "pii",
+          "costTier": "low",
+          "contractVersion": "crm-v1",
+          "schemaSha256": "b25f695084a2dadbc2e7f0fb9bbca8af2131fc380837d0304dd54765d01262ad",
+          "audit": false,
+          "agent": {
+            "expose": true,
+            "requiresConfirmation": false
+          }
+        }
+      ],
+      "ttlMs": 0,
+      "cacheScope": "private"
+    }
+  }
+]

@@ -41,7 +41,7 @@ public static partial class FilterContracts
             var group = expression.Groups[groupIndex];
             var path = $"#/groups/{groupIndex}";
             if (group is null) { errors.Add(new(path, "条件组不能为空。")); continue; }
-            CheckLogic(group.Logic, path + "#/logic", errors);
+            CheckLogic(group.Logic, path + "/logic", errors);
             if (group.Conditions is null || group.Conditions.Count == 0)
             {
                 errors.Add(new(path + "/conditions", "条件组至少包含一个条件。"));

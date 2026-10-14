@@ -4,6 +4,11 @@ import { sha256, type KbIndex, type KbPage } from './build-kb-index.ts';
 import { SITE_SIZE_BUDGET_MB, checkMachineReadable, checkMarkdownOutput, checkSizeBudget, countFences, stripCode } from './check-site.ts';
 
 describe('产物体积预算（R55）', () => {
+  it('当前默认预算在边界内通过，超出一个字节仍拒绝', () => {
+    const limit = SITE_SIZE_BUDGET_MB * 1e6;
+    assert.deepEqual(checkSizeBudget([['yue-vendor/editor.js', limit]]), []);
+    assert.equal(checkSizeBudget([['yue-vendor/editor.js', limit + 1]]).length, 1);
+  });
   it('预算内不报错', () => {
     assert.deepEqual(checkSizeBudget([['index.html', 1_000_000], ['sdk/api/kun/a.html', 2_000_000]], 10), []);
     assert.ok(SITE_SIZE_BUDGET_MB >= 50, '预算挡结构性膨胀，不挡正常增长');
