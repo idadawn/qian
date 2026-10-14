@@ -1,7 +1,7 @@
 ---
 id: S1-DATA-005
 title: 数据连接连通测试的出网约束与凭据格式错误
-status: doing
+status: done
 stage: S1
 area: DATA
 wave: 2
@@ -22,11 +22,13 @@ S1-DATA-003 交付后遗留两处：连通测试会从平台连到租户填写�
 
 ## 验收
 
-- [ ] UT：出网检查的缺省设置拒绝以下地址：回环、链路本地（含云元数据 169.254.169.254）、100.100.100.200、未指定地址、组播与广播地址。IPv4 映射的 IPv6 地址按 IPv4 判定。配置放行网段后，网段外的地址一律拒绝；拒绝网段优先于放行网段；网段写法无效时宿主启动即失败
-- [ ] IT：`POST /connections/{id}:test` 的目标主机解析出的任一地址被拒时，返回 422 `DATA_CONNECTION_TARGET_DENIED`，且不发起任何连接（本机假服务端收不到连接）；放行时只连接检查过的地址，不二次解析
-- [ ] IT：租户密钥内容不是 UTF-8 文本时，连通测试返回 422 `DATA_CONNECTION_CREDENTIAL_INVALID`，不再是 500
+- [x] UT：出网检查的缺省设置拒绝以下地址：回环、链路本地（含云元数据 169.254.169.254）、100.100.100.200、未指定地址、组播与广播地址。IPv4 映射的 IPv6 地址按 IPv4 判定。配置放行网段后，网段外的地址一律拒绝；拒绝网段优先于放行网段；网段写法无效时宿主启动即失败
+- [x] IT：`POST /connections/{id}:test` 的目标主机解析出的任一地址被拒时，返回 422 `DATA_CONNECTION_TARGET_DENIED`，且不发起任何连接（本机假服务端收不到连接）；放行时只连接检查过的地址，不二次解析
+- [x] IT：租户密钥内容不是 UTF-8 文本时，连通测试返回 422 `DATA_CONNECTION_CREDENTIAL_INVALID`，不再是 500
 
 ## 进度日志
 
 - 2026-10-15 claude：创建任务
 - 2026-10-15 claude：开始
+- 2026-10-15 claude：实现：连通测试先解析目标主机并按 QianDataConnectionOptions.Egress 逐个检查地址（缺省拒绝回环、链路本地含云元数据、100.100.100.200、未指定、组播与广播；可追加拒绝或限定放行网段，拒绝优先；被拒返回 DATA_CONNECTION_TARGET_DENIED 且不连接、不读密钥；只连检查过的地址）；PG 方言把非 UTF-8 密钥映射为 DATA_CONNECTION_CREDENTIAL_INVALID。验收证据：DataConnectionEgressTests 25 例；ConnectionEndpointTests 在缺省设置下对 9 种回环 / 元数据写法均 422 TARGET_DENIED，假服务端 0 连接、密钥审计无记录；FF FE 41 密钥 422 CREDENTIAL_INVALID（此前 500）。变异验证两项均失败；全量 702/702
+- 2026-10-15 claude：完成：随 idadawn/qian#99 合并完成（合并前提是 PR 全部检查通过）
