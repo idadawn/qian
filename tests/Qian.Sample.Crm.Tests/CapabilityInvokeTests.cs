@@ -1,8 +1,6 @@
-using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -17,12 +15,14 @@ using Qian.Audit;
 using Qian.Authz;
 using Qian.Capabilities;
 using Qian.Data;
+using Qian.Identity.Abstractions;
 using Qian.Plugin.Sdk;
 using Qian.Runtime;
+using Qian.Runtime.Errors;
 
 namespace Qian.Sample.Crm.Tests;
 
-// S1-RT-019：目录信封与别名头、通用执行入口的输入校验 / 幂等重放 / Agent 主体、能力上下文迁移。
+// S1-RT-019 / S1-RT-020：目录信封与别名头（含 PathBase）、通用执行入口的输入校验 / 幂等重放与回执策略 / Agent 与 Actor 主体、能力上下文迁移。
 public sealed partial class CustomerCommandTests
 {
     private const string ListId = "qian.sample.crm/customer.list";
@@ -32,7 +32,7 @@ public sealed partial class CustomerCommandTests
     private static readonly Lazy<(JsonSchema Catalog, JsonSchema Error)> ContractSchemas = new(LoadContractSchemas);
 
     [Fact]
-    public async Task 目录信封符合冻结契约_别名带Deprecation与successor链接_条目取值与独立重算摘要一致_非法参数与匿名请求返回ErrorDetail()
+    public async Task 目录信封符合冻结契约_别名带Deprecation与successor链接_条目取值与摘要一致_非法参数与匿名请求返回ErrorDetail()
     {
         await using var host = await Start(capabilities: true);
         using var response = await CatalogRequest(host, A, "/api/capabilities");
@@ -44,7 +44,8 @@ public sealed partial class CustomerCommandTests
         Assert.Equal(1000, catalog.GetProperty("ttlMs").GetInt32());
         var items = catalog.GetProperty("items").EnumerateArray().ToDictionary(item => item.GetProperty("id").GetString()!, StringComparer.Ordinal);
         Assert.Equal([CreateId, GetId, ListId], items.Keys.Order(StringComparer.Ordinal));
-        foreach (var item in items.Values) Assert.Equal(IndependentSchemaSha256(item), item.GetProperty("schemaSha256").GetString());
+        // schemaSha256 与生产实现 ToolContractHash 一致；该实现按 RFC 8785 的示例与附录 B 样本验证（Qian.Surfaces.Tests/ToolContractHashTests）。
+        foreach (var item in items.Values) Assert.Equal(Qian.Surfaces.ToolContractHash.Compute(item), item.GetProperty("schemaSha256").GetString());
         AssertEntry(items[CreateId], "command", "write", true, "crm.write");
         AssertEntry(items[ListId], "query", "read", false, "crm.read");
         AssertEntry(items[GetId], "query", "read", false, "crm.read");
@@ -271,6 +272,54 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
+    public async Task 绕过端点直接调用CapabilityService_带Actor委托的主体与不存在一样404且处理器不执行_去掉Actor的同一主体才执行()
+    {
+        var probe = new ReceiptProbe("customer.export", "internal", 16);
+        await using var host = await Start(capabilities: true, probes: [probe]);
+        var caller = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("capabilities", ScopeKey.Global).Scoped(new ScopeKey("tenant", A));
+        var service = caller.Capabilities();
+        var input = JsonSerializer.SerializeToElement(new CreateCustomerCommand(Guid.CreateVersion7(), "direct actor"), CrmCommandJson.Default.CreateCustomerCommand);
+        using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(A))
+        {
+            // HTTP 认证层已拒绝带 act 的令牌；服务端口自身同样拒绝，不依赖端点。委托方是 Agent 还是同一服务主体都一样。
+            foreach (var actor in new[] { new DelegationActor { Subject = AgentId, Kind = PrincipalKind.Agent }, new DelegationActor { Subject = Writer, Kind = PrincipalKind.Service } })
+            {
+                var delegated = new DirectUser(DirectPrincipal(actor));
+                foreach (var id in new[] { CreateId, probe.Id })
+                {
+                    var denied = await Assert.ThrowsAsync<QianErrorException>(() => service.InvokeAsync(caller, delegated, id, input, Guid.CreateVersion7(), Ct).AsTask());
+                    Assert.Equal("NOT_FOUND", denied.Error.Code.Code);
+                }
+                Assert.Equal("NOT_FOUND", (await Assert.ThrowsAsync<QianErrorException>(() => service.ListAsync(caller, delegated, cancellationToken: Ct).AsTask())).Error.Code.Code);
+            }
+            Assert.Equal(0, probe.Calls);
+            // 对照：同一主体去掉 Actor 后经同一端口执行，说明拒绝来自委托判定而不是装配。
+            var direct = await service.InvokeAsync(caller, new DirectUser(DirectPrincipal(null)), probe.Id, input, cancellationToken: Ct);
+            Assert.False(direct.Replayed); Assert.Equal(1, probe.Calls);
+        }
+        // CRM 的真实处理器没有执行：没有客户、审计与回执。
+        await AssertWrites(host, A, customers: 0, audit: 0);
+        Assert.Empty(await AdminRows("SELECT 1 FROM plugin_qian_capabilities.invoke_receipts"));
+    }
+
+    [Fact]
+    public async Task 宿主经UsePathBase挂在子路径下_别名的successor链接带PathBase与原查询串_后继路径可用()
+    {
+        await using var host = await Start(capabilities: true, pathBase: "/qian");
+        foreach (var (alias, successor) in new[] { ("/qian/api/kernel/capabilities?kind=command&q=create", "/qian/api/capabilities?kind=command&q=create"),
+            ("/qian/api/kernel/capabilities/openapi.json", "/qian/api/capabilities/openapi.json") })
+        {
+            using var deprecated = await CatalogRequest(host, A, alias);
+            Assert.True(deprecated.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await deprecated.Content.ReadAsStringAsync(Ct));
+            Assert.Equal(Deprecation, Assert.Single(deprecated.Headers.GetValues("Deprecation")));
+            Assert.Equal("<" + successor + ">; rel=\"successor-version\"", string.Join(", ", deprecated.Headers.GetValues("Link")));
+            using var current = await CatalogRequest(host, A, successor);
+            Assert.Equal(HttpStatusCode.OK, current.StatusCode);
+            Assert.True(JsonElement.DeepEquals(await Json(current), await Json(deprecated)), alias);
+        }
+    }
+
+    [Fact]
     public async Task 只读能力忽略幂等键_每次执行不存回执不带回放头_聚合OpenAPI只为写类能力声明幂等键()
     {
         await using var host = await Start(capabilities: true);
@@ -492,6 +541,21 @@ public sealed partial class CustomerCommandTests
         return host.Send(request);
     }
 
+    private static Principal DirectPrincipal(DelegationActor? actor) => new()
+    {
+        Issuer = Issuer, Audience = [Audience], Subject = Writer, Kind = PrincipalKind.Service, TenantId = A, Roles = [], Scope = "crm.read crm.write",
+        SessionId = Guid.CreateVersion7().ToString(), TokenId = Guid.CreateVersion7().ToString(), IssuedAt = 1, NotBefore = 1, ExpiresAt = long.MaxValue, Actor = actor
+    };
+
+    // 不经 HTTP 的已验证主体快照：直接交给 CapabilityService，观察端口自身的判定。
+    private sealed class DirectUser(Principal principal) : Qian.Identity.Abstractions.ICurrentUser
+    {
+        public Principal? Principal { get; } = principal;
+        public string? UserId => Principal?.Subject;
+        public IReadOnlyList<string> Roles => Principal?.Roles ?? [];
+        public bool IsAuthenticated => true;
+    }
+
     private static Task<HttpResponseMessage> InvokeProbe(RunningApp host, string id, string body, Guid key)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/capabilities/" + id + "/invoke") { Content = new StringContent(body, Encoding.UTF8, "application/json") };
@@ -543,69 +607,6 @@ public sealed partial class CustomerCommandTests
         string Read(string name) => File.ReadAllText(Path.Combine(RepositoryRoot(), "contracts/v0", name + ".schema.json"));
         JsonSchema.FromText(Read("capability-entry"), options);
         return (JsonSchema.FromText(Read("capability-catalog"), options), JsonSchema.FromText(Read("error-detail"), options));
-    }
-
-    // 独立于生产实现重算 contracts/v0 第 6 节的 schemaSha256：RFC 8785 JCS 规范化 {description, inputSchema, name} 后取 SHA-256。
-    private static string IndependentSchemaSha256(JsonElement entry)
-    {
-        // 三个成员名已按 JCS 顺序排列。
-        var text = new StringBuilder("{\"description\":");
-        Canonical(text, entry.GetProperty("description")); text.Append(",\"inputSchema\":");
-        Canonical(text, entry.GetProperty("inputSchema")); text.Append(",\"name\":");
-        Canonical(text, entry.GetProperty("name")); text.Append('}');
-        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())));
-
-        // 成员按 UTF-16 码元排序，字符串按 ECMAScript JSON.stringify 转义；本组契约只含整数，其余数值直接拒绝而不猜格式。
-        static void Canonical(StringBuilder output, JsonElement value)
-        {
-            switch (value.ValueKind)
-            {
-                case JsonValueKind.Object:
-                    output.Append('{');
-                    var first = true;
-                    foreach (var member in value.EnumerateObject().OrderBy(member => member.Name, StringComparer.Ordinal))
-                    {
-                        if (!first) output.Append(',');
-                        first = false; Quote(output, member.Name); output.Append(':'); Canonical(output, member.Value);
-                    }
-                    output.Append('}'); break;
-                case JsonValueKind.Array:
-                    output.Append('[');
-                    var index = 0;
-                    foreach (var item in value.EnumerateArray()) { if (index++ > 0) output.Append(','); Canonical(output, item); }
-                    output.Append(']'); break;
-                case JsonValueKind.String: Quote(output, value.GetString()!); break;
-                case JsonValueKind.Number:
-                    output.Append(value.TryGetInt64(out var integer) ? integer.ToString(CultureInfo.InvariantCulture) : throw new NotSupportedException("非整数需按 ECMAScript 数值格式输出。"));
-                    break;
-                case JsonValueKind.True: output.Append("true"); break;
-                case JsonValueKind.False: output.Append("false"); break;
-                default: output.Append("null"); break;
-            }
-        }
-
-        static void Quote(StringBuilder output, string value)
-        {
-            output.Append('"');
-            foreach (var character in value)
-            {
-                switch (character)
-                {
-                    case '"': output.Append("\\\""); break;
-                    case '\\': output.Append("\\\\"); break;
-                    case '\b': output.Append("\\b"); break;
-                    case '\f': output.Append("\\f"); break;
-                    case '\n': output.Append("\\n"); break;
-                    case '\r': output.Append("\\r"); break;
-                    case '\t': output.Append("\\t"); break;
-                    default:
-                        if (character < ' ') output.Append("\\u").Append(((int)character).ToString("x4", CultureInfo.InvariantCulture));
-                        else output.Append(character);
-                        break;
-                }
-            }
-            output.Append('"');
-        }
     }
 
     // 测试宿主把 Agent 主体的 RBAC 求值换成同 ID 服务主体，模拟后续阶段开放 Agent 授权；默认关闭，关闭时与生产判定相同。
