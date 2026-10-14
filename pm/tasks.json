@@ -5834,6 +5834,55 @@
   "file": "pm/tasks/S1-RT-021.md"
  },
  {
+  "id": "S1-RT-023",
+  "title": "装载器并发失效竞态：级联清理中途回到 Pending 的依赖者须先撤销旧上下文再重新 Apply",
+  "status": "done",
+  "stage": "S1",
+  "area": "RT",
+  "areaName": "运行时 / CLI / 市场",
+  "wave": 1,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-RT-018"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/specs/component-model.md#5.6",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/prd/specs/component-model.md#10.2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "packages/Qian.Runtime/PluginLoader.cs",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Runtime/PluginLoader.cs"
+   },
+   {
+    "path": "packages/qian-runtime/src/runtime.ts",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/qian-runtime/src/runtime.ts"
+   },
+   {
+    "path": "tck/runtime/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/tck/runtime/README.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 5,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>另一会话执行 S1-DEC-021 的阻塞任务序列时，本机全量 <code>dotnet test</code> 偶发 <code>Qian.Runtime.Tests</code> 的 <code>RuntimeScenarioTests</code> 失败（T25-replace：trace 第 4 项期望 <code>dispose:consumer</code>，实得 <code>apply:consumer</code>），单独跑该类 6 次全过。</p>\n<p>根因：<code>PluginLoader.ReconcileCoreAsync</code> 只在循环开始与每轮末尾经 <code>CleanPendingAsync</code> 快照并撤销 Pending 节点的旧上下文，挑选待 Apply 的节点时不检查它是否仍持有旧 <code>Context</code>。另一线程（<code>RegistrationHandle.Replace</code>、注册 <code>Dispose</code>、restriction 变更，例如表面热重载的文件监视线程）若在最后一次快照之后、下一次挑选之前经 <code>Notify → InvalidateDependents</code> 把依赖者标成 Pending，依赖者会在旧效果未撤销时重新 Apply：旧效果与旧注册泄漏且永不释放；旧上下文登记过服务时，新 Apply 的 <code>Provide</code> 撞同 scope 冲突而 Failed。T25 中挂载留下的异步级联恰好与测试线程的 <code>Replace</code> 交错。TS 运行时 <code>#reconcile</code> 结构相同：清理在等待某个撤销时，另一调用方让依赖者失效，同样会跳过撤销。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：确定性复现。provider 提供 X、Y 并留句柄；consumer 注入 X、登记服务与效果；D 注入 Y，效果撤销时等待 gate。<code>Replace(Y)</code> 使清理卡在 D 的撤销上，此时另一线程 <code>Replace(X)</code> 使 consumer 失效，再放开 gate。修复前 consumer 未撤销即重新 Apply，修复后先撤销再 Apply，无清理异常、无残留注册（<code>RegistrationHandleTests.Replace_during_cascade_cleanup_disposes_the_stale_dependent_before_reapply</code>；修复前连续 6 次失败，第 4 项期望 <code>dispose:consumer</code>、实得 <code>apply:consumer:x2</code>）</li>\n<li class='chk done'><span class='box'>✓</span>修复：两侧装载器挑选待 Apply 节点前，若仍有持旧上下文的 Pending 节点，先逆序撤销再重新挑选，保证「撤销后再 Apply」；不放宽既有断言</li>\n<li class='chk done'><span class='box'>✓</span>TCK：共用场景覆盖「级联清理期间依赖者被并发失效」，.NET 与 TS harness 读同一 YAML 通过；场景格式新增的操作写入 <code>tck/runtime/README.md</code>（<code>replace-during-cleanup.scenario.yml</code>；新增 <code>effect.gate</code>、<code>replace</code> 的 <code>idle: false</code> 与 <code>blocked</code> / <code>open</code> / <code>idle</code>；修复前两侧均稳定失败）</li>\n<li class='chk done'><span class='box'>✓</span>负载下 T25 不再偶发：修复前后在 CPU 压力下重复运行 T25，给出次数统计（未提交的临时压力测试，36 个并发 worker 反复跑 T25：修复前 7920 次失败 56 次，特征与报告一致；修复后 8640 次零失败）</li>\n<li class='chk done'><span class='box'>✓</span>门禁：dotnet 全量构建与测试（带 <code>QIAN_BUF_PATH</code> / <code>QIAN_OASDIFF_PATH</code>）、<code>check_deps</code>、门禁自测、<code>check_docs</code>、<code>pm.py validate</code> / <code>build</code> / <code>check-fresh</code>、<code>pnpm --filter ./packages/qian-runtime test</code> 通过（本机并入最新 main 后全量 732/732 零跳过；CI 以 [idadawn/qian#112](https://github.com/idadawn/qian/pull/112) 全部检查通过为合并前提）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：装载器挑选待 Apply 节点前先撤销仍持旧上下文的 Pending 节点，两侧同步修复并补确定性复现与共用 TCK</li>\n<li>2026-10-15 claude：提交评审：两侧装载器每轮先清理，挑选前若仍有持旧上下文的 Pending 节点就再清理后重挑，保证先撤销再 Apply。新增确定性单测与共用场景 replace-during-cleanup，修复前 .NET 单测 6/6 失败、两侧场景稳定失败，修复后通过。负载对照：36 并发反复跑 T25，修复前 7920 次失败 56 次，修复后 8640 次零失败。本机并入最新 main 后 dotnet 全量 732/732 零跳过（负载峰值时曾有一轮 Sample.Crm 夹具超时，单独与整轮重跑均通过），check_deps、门禁自测 49 项、check_docs、pm validate 通过；TS 运行时 37 项、check:api、类型、浏览器冒烟与打包消费、surfaces 与 CLI 双侧报告对照通过。另发现 Apply 进行中依赖被并发替换时条目永久 Failed（误报改变自身依赖可见性），不在本任务范围，留作后续</li>\n<li>2026-10-15 claude：随 idadawn/qian#112 合并完成（合并前提是 PR 全部检查通过）；并入最新 main（含 #114）后本机全部门禁复跑通过</li>\n</ul>",
+  "file": "pm/tasks/S1-RT-023.md"
+ },
+ {
   "id": "S1-RT-024",
   "title": "通用执行入口拒绝超出 decimal 范围的 JSON 数：输入按 400 BAD_REQUEST，输入 Schema 的 enum / const 在登记期拒绝",
   "status": "review",
