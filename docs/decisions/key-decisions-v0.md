@@ -450,3 +450,13 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 由 Claude 在产品负责人要求「验收 S1-QA-010」后作默认裁决，未经逐条确认；整改退回 `pm/tasks/S1-QA-010.md`，有异议时新建决策任务。
 
 - R80：契约目录的冻结状态统一显式写 `x-status: frozen`，不以「删除 `draft`」表示：contracts/v0 在 S1-AGT-002 去 draft 时改写为 `frozen`（v0 README §2、§7 与 R53 补注、`ContractSchemaTests` 届时改断言 `frozen`）；contracts/data/v1 已按此标记，README 写明批准依据为本条，并更正 `$id` 陈述（data-types / data-connection 两份的旧标识符前缀与目录不符，趁零消费方统一为 `contracts/data/v1/` 并在 PR 说明；S1-QA-010 已按此对齐）；data/v1 在零代码消费方时冻结是复核人在 S1-QA-010 验收里提出的要求（C# 契约 `Qian.Data.Abstractions` 已发布为消费边界），作为 R53「消费方全部进入 review 后才冻结」前提的例外记录；data/v1 冻结信封 `$ref` v0 草稿信封列为已知例外，v0 event-envelope 冻结时复核 data/v1 信封。（本条原文的旧前缀字面量由 #104 去除、语义不变，复核人 2026-10-15 认可）
+
+### 阻塞任务排序裁决 R81–R84（S1-DEC-021，2026-10-15）
+
+产品负责人 2026-10-15 问「现在阻塞的任务可以给一个人来做吗，能排一个先后顺序吗」，Claude 按看板依赖链与解锁数量给出顺序，产品负责人回复「认可，写进看板」。四条裁决把伸进下游任务范围的验收移交到归属任务，其余顺序与等待说明见 `pm/tasks/S1-DEC-021.md`。
+
+- R81：S1-TEN-001 收口。原 E2E「运营后台创建租户 A、B，各自管理员登录后只看到本租户数据」拆为运营后台页面（归 S1-TEN-005）与管理员登录（归 S1-IDP-003），TEN-001 只保留「A 令牌请求 B 记录 404」的 HTTP 租户边界；传播器 IT 的消费端归 S1-EVT-002、作业执行器归 S1-SCH-002，TEN-001 保留 gRPC 对端；「inputSchema 不出现 tenantId」由 S1-RT-020 的登记期契约检查实现，TEN-001 引用其测试勾选。TEN-001 的依赖已全部完成，状态由 blocked 改回 todo。
+- R82：S1-AZ-003「把角色授予组织 X，X 下成员 ≤ 3 秒获得权限」依赖 S1-IDP-009 组织目录，移交已依赖 IDP-009 的 S1-AZ-005；AZ-003 以直接主体授权验证求值引擎与 ≤ 3 秒失效传播。S1-AZ-002 的 `me/permissions` 验收与 AZ-003 一并交付。
+- R83：S1-RT-009 的 hooks 桥接验收用测试宿主发布的 `tenant.created.v1` 事件验证触发与审计 `channel = hook`；真实开户流程触发归 S1-TEN-003。
+- R84：S1-RT-011 的 E2E「qian add identity authz files」在 identity / files 交付前改为用市场条目已存在的三个组件验证；完整组合归 S1-QA-005。
+- 顺序与归属：一人（cody）串行 S1-TEN-001 → S1-RT-004 → S1-AUD-001 → S1-RT-014 → S1-RT-005 → S1-AZ-002 + S1-AZ-003 → S1-RT-011；S1-RT-009 剩余一条按 R83 可在 RT-005 后顺手做；S1-DEP-003 等 S1-IDP-002 / S1-IDP-005 / S1-GW-001 / S1-YUE-001 交付后再动。S1-RT-004 与 S1-AUD-001 的依赖已全部完成，状态由 blocked 改回 todo。
