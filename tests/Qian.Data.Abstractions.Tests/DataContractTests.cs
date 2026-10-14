@@ -130,14 +130,77 @@ public sealed class DataContractTests
         Assert.Equal(path == "#/logic" ? rootLogic : groupLogic, target.GetValue<string>());
     }
 
-    [Fact]
-    public void PublishedDataSchemas_AreExplicitlyFrozen()
+    public static TheoryData<string> SchemaFiles => new(Directory.GetFiles(Path.Combine(Root, "contracts/data/v1"), "*.schema.json")
+        .Select(file => Path.GetFileName(file)).Order(StringComparer.Ordinal));
+
+    [Theory]
+    [MemberData(nameof(SchemaFiles))]
+    public void PublishedDataSchema_IsValid202012_WithFrozenMetadata(string file)
     {
-        var schemas = Directory.GetFiles(Path.Combine(Root, "contracts/data/v1"), "*.schema.json");
-        Assert.NotEmpty(schemas);
-        foreach (var file in schemas)
-            Assert.Equal("frozen", JsonNode.Parse(File.ReadAllText(file))!["x-status"]!.GetValue<string>());
+        const string metaSchemaUri = "https://json-schema.org/draft/2020-12/schema";
+        var raw = File.ReadAllText(Path.Combine(Root, "contracts/data/v1", file));
+        using var document = JsonDocument.Parse(raw);
+        var root = document.RootElement;
+        var options = new BuildOptions { SchemaRegistry = new SchemaRegistry() };
+        JsonSchema.FromText(raw, options);
+        var meta = Assert.IsType<JsonSchema>(options.SchemaRegistry.Get(new Uri(metaSchemaUri)));
+        Assert.True(meta.Evaluate(root).IsValid, file);
+        Assert.Equal(metaSchemaUri, root.GetProperty("$schema").GetString());
+        Assert.Equal($"https://qian.dev/contracts/data/v1/{file}", root.GetProperty("$id").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("title").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("description").GetString()));
+        Assert.Equal("frozen", root.GetProperty("x-status").GetString());
     }
+
+    // 条件/组合片段只补充约束，不能独立关闭：否则会误拒绝外围 Schema 已声明的合法成员。
+    private static readonly IReadOnlyDictionary<string, string> CompositionExceptions = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["filter-ast.schema.json#/$defs/condition/allOf/0/if"] = "只判断 op 是否为空值运算符，condition 已关闭字段集合。",
+        ["filter-ast.schema.json#/$defs/condition/allOf/1/if"] = "只判断是否需要集合操作数，condition 已关闭字段集合。",
+        ["filter-ast.schema.json#/$defs/condition/allOf/1/then"] = "只限制 value 为集合，保留 condition 的 field/op/sysVar。",
+        ["filter-ast.schema.json#/$defs/condition/allOf/1/else"] = "只限制 value 为标量，保留 condition 的 field/op/sysVar。",
+        ["filter-ast.schema.json#/$defs/condition/allOf/2/if"] = "只判断 between，condition 已关闭字段集合。",
+        ["filter-ast.schema.json#/$defs/condition/allOf/2/then"] = "只限制 between 的 value 基数，保留 condition 的其它合法成员。",
+        ["record-changed-envelope.schema.json#/allOf/1"] = "继承 v0 event-envelope 的关闭规则，此分支仅收窄事件标识、租户与 payload。"
+    };
+
+    [Theory]
+    [MemberData(nameof(SchemaFiles))]
+    public void ObjectsWithDeclaredProperties_AreClosed_ExceptDocumentedCompositionFragments(string file)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "contracts/data/v1", file)));
+        var open = new List<string>();
+        FindOpenObjects(document.RootElement, file + "#", open);
+        var expected = CompositionExceptions.Where(item => item.Key.StartsWith(file + "#", StringComparison.Ordinal)).ToArray();
+        Assert.All(expected, item => Assert.False(string.IsNullOrWhiteSpace(item.Value)));
+        // 精确白名单：新增未关闭节点或删除/移动已登记例外都要求同步复核。
+        Assert.Equal(expected.Select(item => item.Key).Order(StringComparer.Ordinal), open.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void ComposedEnvelope_StillRejectsUndeclaredMembers()
+    {
+        var envelope = JsonNode.Parse(Fixture("record-changed-envelope.json"))!;
+        envelope["unexpected"] = true;
+        Assert.False(Schema(DataContractSchemas.RecordChangedEnvelope).Evaluate(JsonDocument.Parse(envelope.ToJsonString()).RootElement).IsValid);
+    }
+
+    private static void FindOpenObjects(JsonElement node, string path, List<string> open)
+    {
+        if (node.ValueKind == JsonValueKind.Object)
+        {
+            if (node.TryGetProperty("properties", out _) && !IsFalse(node, "additionalProperties") && !IsFalse(node, "unevaluatedProperties"))
+                open.Add(path);
+            foreach (var property in node.EnumerateObject()) FindOpenObjects(property.Value, $"{path}/{property.Name}", open);
+        }
+        else if (node.ValueKind == JsonValueKind.Array)
+        {
+            var index = 0;
+            foreach (var child in node.EnumerateArray()) FindOpenObjects(child, $"{path}/{index++}", open);
+        }
+    }
+
+    private static bool IsFalse(JsonElement node, string keyword) => node.TryGetProperty(keyword, out var value) && value.ValueKind == JsonValueKind.False;
 
     [Fact]
     public void MatrixAndVariables_ArePublishedFromSingleCatalog()

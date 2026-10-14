@@ -298,14 +298,14 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 
 ### contracts/v0 默认裁决 R45–R53（S1-DEC-010，2026-10-08）
 
-S1-AGT-001 写契约时的 8 条默认值由 Claude 在产品负责人授权下裁决：R45 错误码大写下划线、OAuth `error` 值仍小写；R46 业务错误只用 409 / 422，404 一律 `NOT_FOUND`，配额类为 422 业务错误；R47 `AUTHZ_DENIED` 平台内置；R48 R32 的 403 原因即错误码（`PLUGIN_NOT_ENTITLED` / `PLUGIN_NOT_MOUNTED` / `PLUGIN_RESTRICTED` / `PLUGIN_DEPENDENCY_PENDING`，`message` 带层级、`pointer` 指向 patch 条目，ErrorDetail 不加 `details`）；R49 `tenant_id` 可为 null，发往 iClaw 的不转发 null；R50 字段级码 + `pointer`，ADR-011 D11.5 在 S2 映射；R51 `schemaSha256` 用 RFC 8785 JCS；R52 `humanOnly` = `agent.expose: false` + 服务端 `ACTION_HUMAN_ONLY`；R53 `draft` 保留到 S1 第 1 波消费方全部 review，由 S1-AGT-002 统一去掉。原文见 contracts/v0/README.md 第 8 节。
+S1-AGT-001 写契约时的 8 条默认值由 Claude 在产品负责人授权下裁决：R45 错误码大写下划线、OAuth `error` 值仍小写；R46 业务错误只用 409 / 422，404 一律 `NOT_FOUND`，配额类为 422 业务错误；R47 `AUTHZ_DENIED` 平台内置；R48 R32 的 403 原因即错误码（`PLUGIN_NOT_ENTITLED` / `PLUGIN_NOT_MOUNTED` / `PLUGIN_RESTRICTED` / `PLUGIN_DEPENDENCY_PENDING`，`message` 带层级、`pointer` 指向 patch 条目，ErrorDetail 不加 `details`）；R49 `tenant_id` 可为 null，发往 iClaw 的不转发 null；R50 字段级码 + `pointer`，ADR-011 D11.5 在 S2 映射；R51 `schemaSha256` 用 RFC 8785 JCS；R52 `humanOnly` = `agent.expose: false` + 服务端 `ACTION_HUMAN_ONLY`；R53 `draft` 保留到 S1 第 1 波消费方全部 review，由 S1-AGT-002 统一去掉；R80 补注：届时将 `x-status: draft` 改写为 `x-status: frozen`。原文见 contracts/v0/README.md 第 8 节。
 
 ### 文档站 Kun 小节默认裁决 R54–R62（S1-DEC-011，2026-10-08）
 
 S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产品负责人授权（「按经验和教训处理掉」）下裁决：
 
 - R54：API 参考不进侧栏，命名空间页与类型页也不渲染侧栏（`sidebar: false`），两个概览页保留。原因：Rspress 把整棵侧栏渲染进每一页，四百多个 API 页进侧栏会让产物从 57 MB 涨到 170 MB；去掉 API 页上的侧栏后，产物从约 57 MB 降到约 48 MB。
-- R55：接受当前体积（每份约 48 MB，gzip 后约 10 MB），产物检查加 100 MB 总预算。
+- R55：接受当前体积（每份约 48 MB，gzip 后约 10 MB），产物检查加 100 MB 总预算。2026-10-15 S1-QA-010 按本条流程调为 120 MB（实测 96.2 MB / 756 页，原因见 [文档站规范 §7](../prd/specs/docs-site.md#7-门禁)）。
 - R56：API 参考统一挂在 `/sdk/api/{kun,dotnet,frontend,http}/` 下，不另设顶层 `/api/`；S1-DOCS-002 的验收按此改。
 - R57：SDK 侧栏的概览页在最前，「Kun 框架」是第一节。
 - R58：Kun ADR 白名单大小写都收，`adr-p2d-multitenancy`（已 Accepted）进站。
@@ -448,4 +448,4 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 
 由 Claude 在产品负责人要求「验收 S1-QA-010」后作默认裁决，未经逐条确认；整改退回 `pm/tasks/S1-QA-010.md`，有异议时新建决策任务。
 
-- R80：契约目录的冻结状态统一显式写 `x-status: frozen`，不以「删除 `draft`」表示：contracts/v0 在 S1-AGT-002 去 draft 时改写为 `frozen`（v0 README §2、§7 与 R53 补注、`ContractSchemaTests` 届时改断言 `frozen`）；contracts/data/v1 已按此标记，README 写明批准依据为本条，并更正 `$id` 陈述（data-types / data-connection 两份为 `schemas/data/v1/` 前缀，趁零消费方改回 `contracts/data/v1/` 并在 PR 说明）；data/v1 在零代码消费方时冻结是复核人在 S1-QA-010 验收里提出的要求（C# 契约 `Qian.Data.Abstractions` 已发布为消费边界），作为 R53「消费方全部进入 review 后才冻结」前提的例外记录；data/v1 冻结信封 `$ref` v0 草稿信封列为已知例外，v0 event-envelope 冻结时复核 data/v1 信封。
+- R80：契约目录的冻结状态统一显式写 `x-status: frozen`，不以「删除 `draft`」表示：contracts/v0 在 S1-AGT-002 去 draft 时改写为 `frozen`（v0 README §2、§7 与 R53 补注、`ContractSchemaTests` 届时改断言 `frozen`）；contracts/data/v1 已按此标记，README 写明批准依据为本条，并更正 `$id` 陈述（data-types / data-connection 两份的旧标识符前缀与目录不符，趁零消费方统一为 `contracts/data/v1/` 并在 PR 说明；S1-QA-010 已按此对齐）；data/v1 在零代码消费方时冻结是复核人在 S1-QA-010 验收里提出的要求（C# 契约 `Qian.Data.Abstractions` 已发布为消费边界），作为 R53「消费方全部进入 review 后才冻结」前提的例外记录；data/v1 冻结信封 `$ref` v0 草稿信封列为已知例外，v0 event-envelope 冻结时复核 data/v1 信封。
