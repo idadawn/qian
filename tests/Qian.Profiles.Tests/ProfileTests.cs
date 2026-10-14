@@ -24,6 +24,8 @@ public sealed class ProfileTests
             var name = item.GetProperty("name").GetString()!;
             Assert.True(result.IsValid == item.GetProperty("expect").GetBoolean(), name + ": " + JsonSerializer.Serialize(result, Json));
             if (item.TryGetProperty("pointer", out var expectedPointer)) Assert.True(result.Diagnostics.Any(d => d.Error.Pointer == expectedPointer.GetString()), name + ": " + JsonSerializer.Serialize(result.Diagnostics, Json));
+            if (item.TryGetProperty("reason", out var reason))
+                Assert.True(result.Diagnostics.Any(d => d.Error.Errors?.Any(e => e.Pointer == item.GetProperty("pointer").GetString() && e.Message == reason.GetString()) == true), name + ": " + JsonSerializer.Serialize(result.Diagnostics, Json));
             if (result.IsValid)
             {
                 var entries = result.Snapshot!.Entries;

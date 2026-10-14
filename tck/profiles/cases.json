@@ -683,5 +683,183 @@
     ],
     "expect": false,
     "pointer": "registry/tenant-a.json#/0"
+  },
+  {
+    "name": "sensitive-pattern-ecma-dialect",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"endpoints\": {\n        \"é\": \"DO-NOT-LEAK\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"secret\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^legacy_\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^\\\\W+$\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^[a-z]+$\": {\"type\": \"string\"}}}, \"limits\": {\"type\": \"object\", \"properties\": {\"size\": {\"type\": \"string\"}}, \"additionalProperties\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/endpoints/é",
+    "reason": "敏感配置必须为 secretRef，不能打印或保存明文。"
+  },
+  {
+    "name": "sensitive-pattern-ignore-case",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"endpoints\": {\n        \"Legacy_billing\": \"DO-NOT-LEAK\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"secret\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^legacy_\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^\\\\W+$\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^[a-z]+$\": {\"type\": \"string\"}}}, \"limits\": {\"type\": \"object\", \"properties\": {\"size\": {\"type\": \"string\"}}, \"additionalProperties\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/endpoints/Legacy_billing",
+    "reason": "敏感配置必须为 secretRef，不能打印或保存明文。"
+  },
+  {
+    "name": "sensitive-property-ignore-case",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"Secret\": \"DO-NOT-LEAK\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"secret\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^legacy_\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^\\\\W+$\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^[a-z]+$\": {\"type\": \"string\"}}}, \"limits\": {\"type\": \"object\", \"properties\": {\"size\": {\"type\": \"string\"}}, \"additionalProperties\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/Secret",
+    "reason": "敏感配置必须为 secretRef，不能打印或保存明文。"
+  },
+  {
+    "name": "sensitive-additional-exact-only",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"limits\": {\n        \"Size\": \"DO-NOT-LEAK\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"secret\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^legacy_\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^\\\\W+$\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^[a-z]+$\": {\"type\": \"string\"}}}, \"limits\": {\"type\": \"object\", \"properties\": {\"size\": {\"type\": \"string\"}}, \"additionalProperties\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/limits/Size",
+    "reason": "敏感配置必须为 secretRef，不能打印或保存明文。"
+  },
+  {
+    "name": "sensitive-pattern-folded-negation",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"endpoints\": {\n        \"abc\": \"DO-NOT-LEAK\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^[^a-z]+$\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/endpoints/abc",
+    "reason": "敏感配置必须为 secretRef，不能打印或保存明文。"
+  },
+  {
+    "name": "sensitive-property-supplementary-case",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"𐐀\": \"DO-NOT-LEAK\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"𐐨\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/𐐀",
+    "reason": "敏感配置必须为 secretRef，不能打印或保存明文。"
+  },
+  {
+    "name": "sensitive-property-ordinal-only",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"\\u00df\": \"plain\",\n      \"\\u017f\": \"plain\",\n      \"\\u0131\": \"plain\",\n      \"\\u212a\": \"plain\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"ss\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"s\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"i\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"k\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": true
+  },
+  {
+    "name": "sensitive-unstable-key",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"endpoints\": {\n        \"İstanbul\": \"DO-NOT-LEAK\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"secret\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^legacy_\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^\\\\W+$\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^[a-z]+$\": {\"type\": \"string\"}}}, \"limits\": {\"type\": \"object\", \"properties\": {\"size\": {\"type\": \"string\"}}, \"additionalProperties\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/endpoints/İstanbul",
+    "reason": "键名含各正则方言判断不同的字符，按敏感配置处理，必须为 secretRef。"
+  },
+  {
+    "name": "sensitive-unsupported-before-unstable",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"endpoints\": {\n        \"İstanbul\": \"secretRef://platform/settings/istanbul\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^(?=x)x\": {\"x-qian-sensitive\": true}}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/endpoints/İstanbul",
+    "reason": "组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
+  },
+  {
+    "name": "sensitive-pattern-unsupported",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"endpoints\": {\n        \"x\": \"secretRef://platform/settings/x\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^(?=x)x\": {\"x-qian-sensitive\": true}}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/endpoints/x",
+    "reason": "组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
+  },
+  {
+    "name": "sensitive-pattern-over-size",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"endpoints\": {\n        \"x\": \"plain\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^x{1001}\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#/0/config/endpoints/x",
+    "reason": "组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。"
+  },
+  {
+    "name": "sensitive-flag-not-boolean",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"secret\": \"secretRef://platform/settings/secret\"\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"secret\": {\"type\": \"string\", \"x-qian-sensitive\": \"true\"}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "profiles/test/qian.profile.yml#",
+    "reason": "profile 或组件内容无法解析。"
+  },
+  {
+    "name": "sensitive-key-references",
+    "files": {
+      "ops.yml": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"port\": 80,\n      \"Secret\": \"secretRef://platform/settings/secret\",\n      \"endpoints\": {\n        \"orders\": \"plain\",\n        \"Legacy_billing\": \"secretRef://platform/billing/legacy\",\n        \"é\": \"secretRef://platform/billing/accent\",\n        \"a\\u00a0b\": \"secretRef://platform/billing/spaced\",\n        \"İstanbul\": \"secretRef://platform/billing/istanbul\"\n      },\n      \"limits\": {\n        \"size\": \"large\"\n      }\n    }\n  }\n]\n",
+      "plugins/settings/schemas/config.schema.json": "{\"type\": \"object\", \"properties\": {\"port\": {\"type\": \"integer\"}, \"secret\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"endpoints\": {\"type\": \"object\", \"patternProperties\": {\"^legacy_\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^\\\\W+$\": {\"type\": \"string\", \"x-qian-sensitive\": true}, \"^[a-z]+$\": {\"type\": \"string\"}}}, \"limits\": {\"type\": \"object\", \"properties\": {\"size\": {\"type\": \"string\"}}, \"additionalProperties\": {\"type\": \"string\", \"x-qian-sensitive\": true}}}}"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": true
   }
 ]

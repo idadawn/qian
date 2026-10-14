@@ -4,7 +4,7 @@
 
 | 文件 | 编译进 | 用途 |
 |---|---|---|
-| `SchemaPattern.cs` | Qian.Audit、Qian.Config.Abstractions、Qian.Profiles | JSON Schema 动态键模式（`patternProperties`）的统一解释：按 ECMA-262 可移植子集翻译、可选按 OrdinalIgnoreCase 折叠、判断键名在各方言下是否稳定；NonBacktracking 引擎、1 秒超时与有界缓存也只在这里定义 |
+| `SchemaPattern.cs` | Qian.Audit、Qian.Config.Abstractions、Qian.Profiles | JSON Schema 动态键模式（`patternProperties`）的统一解释：按 ECMA-262 可移植子集翻译、可选按 OrdinalIgnoreCase 折叠、判断键名在各方言下是否稳定；NonBacktracking 引擎、1 秒超时与有界缓存也只在这里定义。CLI 有逐条对应的 TS 移植，见下文 |
 
 ## 约定
 
@@ -23,5 +23,26 @@
 
 - 模式按 ECMA-262 解释（JSON Schema 2020-12 核心规范 §6.4）。`\d`、`\w`、`\s` 只认 ASCII，`.` 不匹配换行。
 - 只接受各方言含义相同的写法：字面量、字符类与范围、`\d \w \s` 及其否定、`.`、`^`、`$`、分组、非捕获组、`|` 与量词（含惰性）。其余写法翻译时抛 `NotSupportedException`，由调用方按 Schema 无效失败关闭：词边界、内联选项、Unicode 属性、命名组、环视、反向引用、代理项等。
+- 分组必须配对，`{n,m}` 要求 n ≤ m。展开量词后，字符、类、`.` 与锚点的总数不超过 1000（`MaxSize`），每个量词边界也不超过 1000；`{n,}` 按 n+1 份计。NonBacktracking 按展开后的规模估算自动机，含锚点时约为该数的 5 倍，超过 10000 即拒绝构造。这条规则在翻译时先行拒绝，接受与否不取决于 .NET 的估算；上限处的对抗写法都能构造，有测试守住。
 - `IsStable` 为假的键名含有方言判断不同的码元（换行、只有 ECMA-262 算作空白的字符、U+0130、代理项），调用方不对它做匹配，而是整体按敏感处理。
 - `foldCase` 用于配置：配置键与 Web 默认反序列化都不区分大小写。折叠后，键名能匹配，当且仅当存在一个与它相等（`StringComparer.OrdinalIgnoreCase`）的键名按原模式能匹配。审计脱敏面对的是区分大小写的 JSON，不折叠。
+
+## CLI 的 TS 移植
+
+本地 CLI 的 profile 装配（`packages/qian-cli/src/profiles.ts`）与 `ProfileLoader` 判定相同，所以 `SchemaPattern` 有一份逐条对应的移植 `packages/qian-cli/src/schema-pattern.ts`：
+
+- 接受与拒绝、规模上限、`IsStable`、折叠与翻译输出都与本实现逐字一致。
+- 匹配不交给 JS 正则：`KeyPattern` 把翻译结果构造成自动机逐码元模拟，与 NonBacktracking 一样线性时间。折叠会让原本互斥的分支重叠，例如 `^(?:[a-z]|[A-Z])+$` 折叠后两个分支相同，V8 的回溯引擎遇到以 `!` 结尾的长键名会指数级变慢。`^` 只在开头、`$` 只在末尾成立；NonBacktracking 的 `$` 还匹配末尾换行之前，而含换行的键名不稳定，不做匹配。
+- 键名相等用 `sameKey`，按 .NET 的 `string.Equals(…, StringComparison.OrdinalIgnoreCase)` 判断，含增补平面的大小写对与残缺代理项的处理；不用 JS 的 `toUpperCase` / `toLowerCase`，它们会把 `ß` 变成 `SS`，也把 `ſ`、`ı`、开尔文符号归到 ASCII 字母。
+
+两份文件由 `tests/Qian.Common.Tests` 按本实现与 .NET 比较器生成，测试比对仓库里的内容：
+
+- `packages/qian-cli/src/ordinal-case.ts`：OrdinalIgnoreCase 等价类表（BMP 与增补平面）；
+- `tck/profiles/key-vectors.json`：模式的翻译结果、在固定键名上的匹配（不折叠与折叠，由 NonBacktracking 执行）、全部 BMP 码元的稳定性与键名相等向量。CLI 的 `test/schema-pattern.test.mjs` 逐条比对。
+
+改了 `SchemaPattern.cs` 或升级 .NET 后，重新生成并同步 TS 移植，直到两端测试都通过：
+
+```bash
+QIAN_UPDATE_VECTORS=1 dotnet run --project tests/Qian.Common.Tests -c Release
+pnpm --filter qian build && pnpm --filter qian test
+```

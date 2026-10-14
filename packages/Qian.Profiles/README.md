@@ -31,9 +31,9 @@ var result = composer.Load(new ProfileLoadOptions
 
 `ProfileSnapshot.DisabledEntries` 保留禁用项的身份、层号及来源指针，作为宿主装载辅助信息，不混入默认 dump-config。宿主必须据此对指定 scope 隐藏该全局条目的贡献，不能仅跳过局部挂载，否则仍会看见全局 fallback。装配器输出该信息不代表自动热重载已经完成。
 
-config 使用组件 `runtime.configSchema` 或 `schemas/config.schema.json` 校验；非空配置不能缺少 Schema。默认值补充发生在整体替换之后，支持对象属性、数组 items、文档内 JSON Pointer 引用及 allOf，不继承旧配置，也不为互斥分支猜默认值。配置 Schema 不联网取引用，文档内引用有深度限制。`x-qian-sensitive` 在对象、数组、组合分支及本地引用中均要求 secretRef；不会解析密钥。文件错误不回显字段值。
+config 使用组件 `runtime.configSchema` 或 `schemas/config.schema.json` 校验；非空配置不能缺少 Schema。默认值补充发生在整体替换之后，支持对象属性、数组 items、文档内 JSON Pointer 引用及 allOf，不继承旧配置，也不为互斥分支猜默认值。配置 Schema 不联网取引用，文档内引用有深度限制。`x-qian-sensitive` 在对象、数组、组合分支及本地引用中均要求 secretRef，取值必须是布尔值，否则装配失败；不会解析密钥。文件错误不回显字段值。
 
-敏感判定按两种读法取并集。`IQianPlugin<TConfig>` 按 Web 默认反序列化，不区分大小写，所以属性名与模式属性的键都不区分大小写匹配：`Password` 同样受 `password` 的标记约束。验证器与直接读 `JsonElement` 的插件区分大小写，所以 `additionalProperties` 只在按原样没有匹配时适用。模式属性的键按 ECMA-262 可移植子集解释，规则与配置扫描相同，见 [共享内部源文件](../Common/README.md)：超出子集的写法让装配失败；键名含各方言判断不同的字符时，值必须是 secretRef。CLI 的同名检查（`profiles.ts`）仍按 JS 方言、区分大小写判定，对这类键名可能放行；CI 的配置扫描门禁与运行时装配都走 .NET，以它为准。
+敏感判定按两种读法取并集。`IQianPlugin<TConfig>` 按 Web 默认反序列化，不区分大小写，所以属性名与模式属性的键都不区分大小写匹配：`Password` 同样受 `password` 的标记约束。验证器与直接读 `JsonElement` 的插件区分大小写，所以 `additionalProperties` 只在按原样没有匹配时适用。模式属性的键按 ECMA-262 可移植子集解释，规则与配置扫描相同，见 [共享内部源文件](../Common/README.md)：超出子集或规模上限的写法让装配失败；键名含各方言判断不同的字符时，值必须是 secretRef。CLI 的同名检查（`profiles.ts`）逐条移植同一规则，键名相等也按 .NET 的 OrdinalIgnoreCase 判断，不用 JS 的大小写转换；共享 TCK 要求两端给出逐字相同的诊断。
 
 gateway/identity 不允许 command hook，S1 拒绝代码热更新；AOT profile 拒绝 function 或未声明 AOT 的代码清单。这只是装配预检，不能代替组件 NativeAOT 编译验收。
 

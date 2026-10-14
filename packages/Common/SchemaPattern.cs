@@ -10,11 +10,15 @@ namespace Qian.Common;
 // JSON Schema 动态键模式（patternProperties）的统一解释，以内部源文件编译进需要它的包，见 packages/Common/README.md。
 // 模式按 ECMA-262 解释（JSON Schema 2020-12 核心规范 §6.4），Schema 验证器（RegexOptions.ECMAScript）也这样解释：\d \w \s 只认 ASCII。
 // 只接受各方言含义相同的写法，逐个记号翻译成 .NET 表达式交给 NonBacktracking；词边界、内联选项、Unicode 属性、命名组、环视、反向引用、代理项等一律拒绝。
+// 接受与拒绝全在翻译时按确定的规则判定（含分组配对、量词边界与规模上限），翻译结果必然能被 .NET 构造；CLI 的 TS 移植据此逐例一致。
 internal static class SchemaPattern
 {
     // 模式只来自可信契约，进程内条目有限；超过上限整表清空重建，内存有界，已取出的实例不受影响。
     internal const int CacheSize = 128;
     internal static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(1);
+    // 展开量词后字符、类、. 与锚点的总数上限，量词的每个边界也不能超过它。NonBacktracking 按展开后的规模估算自动机，含锚点时约为该数的 5 倍，
+    // 超过 10000 即拒绝构造；先按这条确定的规则拒绝，接受与否不再取决于 .NET 的估算，CLI 的移植（packages/qian-cli/src/schema-pattern.ts）才能逐例一致。
+    internal const int MaxSize = 1000;
     private const int Universe = char.MaxValue + 1;
     private static readonly ConcurrentDictionary<(string Pattern, bool FoldCase), Regex> Cache = new();
     // 方言判断不同的码元：. 与 $ 涉及的 \n \r U+2028 U+2029、只有 ECMA-262 算作空白的字符（含旧版 Unicode 的 U+180E）、验证器 \w 额外包含的 U+0130。
@@ -28,10 +32,10 @@ internal static class SchemaPattern
     // 上述码元与代理项在 OrdinalIgnoreCase 下各自成类，折叠后同样成立。
     internal static bool IsStable(string name) => !name.AsSpan().ContainsAny(Unstable) && !name.AsSpan().ContainsAnyInRange((char)0xD800, (char)0xDFFF);
 
-    // NonBacktracking 线性匹配，过大的自动机在构造时即拒绝；超时只兜底超长输入，调用方把构造失败与超时都按 Schema 无效失败关闭。
+    // NonBacktracking 线性匹配，自动机规模已由 MaxSize 限定；超时只兜底超长输入，调用方把构造失败与超时都按 Schema 无效失败关闭。
     // 墙钟只在物化新 DFA 转移和长输入分段时检查：复用实例后，常规长度的热匹配不受调度或 GC 停顿影响；首次 JIT 与建图仍可能被拖长，1 秒上限为此留出余量。
     // 静态 Regex.IsMatch 只靠框架共享的 15 项缓存复用实例，会被其他代码挤出，所以单独缓存。
-    // 不支持的写法抛 NotSupportedException，.NET 拒绝的抛 ArgumentException，都直接抛给调用方，不进缓存。
+    // 不支持的写法（含超出规模）抛 NotSupportedException；调用方另按 ArgumentException 兜底 .NET 自身的拒绝。都直接抛给调用方，不进缓存。
     internal static Regex Compile(string pattern, bool foldCase = false)
     {
         if (Cache.TryGetValue((pattern, foldCase), out var cached)) return cached;
@@ -48,6 +52,10 @@ internal static class SchemaPattern
     {
         var output = new StringBuilder(pattern.Length * 6);
         var quantifiable = false;
+        // size 是当前分组到此为止的规模，outer 存各外层分组进入时的规模，last 是可加量词的上一单元（字符、类、. 或分组）的规模。
+        // 量词不会缩小规模，所以逐步检查任一分组的规模，与检查整个模式展开后的规模等价。
+        var outer = new Stack<int>();
+        int size = 0, last = 0;
         for (var i = 0; i < pattern.Length;)
         {
             var c = pattern[i++];
@@ -56,30 +64,36 @@ internal static class SchemaPattern
                 case '\\':
                     var value = Escape(pattern, ref i, false, out var shorthand);
                     Emit(output, shorthand == 0 ? Single(value) : Shorthand(shorthand), foldCase);
-                    quantifiable = true; break;
-                case '[': Emit(output, Class(pattern, ref i), foldCase); quantifiable = true; break;
+                    size = Grow(size, last = 1); quantifiable = true; break;
+                case '[': Emit(output, Class(pattern, ref i), foldCase); size = Grow(size, last = 1); quantifiable = true; break;
                 case '(':
                     if (i < pattern.Length && pattern[i] == '?')
                     {
                         if (i + 1 >= pattern.Length || pattern[i + 1] != ':') throw Unsupported();
                         i += 2;
                     }
-                    output.Append("(?:"); quantifiable = false; break;
-                case ')': output.Append(')'); quantifiable = true; break;
-                case '|' or '^' or '$': output.Append(c); quantifiable = false; break;
-                case '.': Emit(output, Single('\n').Not(), foldCase); quantifiable = true; break;
+                    output.Append("(?:"); outer.Push(size); size = 0; quantifiable = false; break;
+                case ')':
+                    if (!outer.TryPop(out var enclosing)) throw Unsupported();
+                    output.Append(')'); size = Grow(enclosing, last = size); quantifiable = true; break;
+                case '|': output.Append(c); quantifiable = false; break;
+                case '^' or '$': output.Append(c); size = Grow(size, 1); quantifiable = false; break;
+                case '.': Emit(output, Single('\n').Not(), foldCase); size = Grow(size, last = 1); quantifiable = true; break;
                 case '*' or '+' or '?' or '{':
                     // 量词只能跟在字符、类、. 或分组之后；惰性 ? 之外不能叠加，未组成量词的 { 不当字面量。
                     if (!quantifiable) throw Unsupported();
-                    if (c == '{') Repeat(pattern, ref i, output); else output.Append(c);
+                    if (c == '{') size = Grow(size, last * (Repeat(pattern, ref i, output) - 1)); else output.Append(c);
                     if (i < pattern.Length && pattern[i] == '?') { output.Append('?'); i++; }
                     quantifiable = false; break;
                 case '}' or ']': throw Unsupported();
-                default: Emit(output, Single(c), foldCase); quantifiable = true; break;
+                default: Emit(output, Single(c), foldCase); size = Grow(size, last = 1); quantifiable = true; break;
             }
         }
+        if (outer.Count > 0) throw Unsupported();
         return output.ToString();
     }
+
+    private static int Grow(int size, int amount) => size + amount <= MaxSize ? size + amount : throw Unsupported();
 
     // [] 与 [^] 在 .NET 与 ECMA-262 含义不同；类内未转义的 [ 可能构成 .NET 的类减法；未转义的 - 只能在类首或类尾。
     // 否定类里再含否定简写的写法拒绝；范围两端只能是单个字符，且不能倒置。
@@ -147,15 +161,36 @@ internal static class SchemaPattern
         }
     }
 
-    private static void Repeat(string pattern, ref int i, StringBuilder output)
+    // {n}、{n,}、{n,m}，返回计入规模的份数：{n} 为 n、{n,m} 为 m、{n,} 为 n+1，至少 1。n > m 拒绝，不再留给 .NET 解析时报错。
+    private static int Repeat(string pattern, ref int i, StringBuilder output)
     {
-        var end = i;
-        while (end < pattern.Length && char.IsAsciiDigit(pattern[end])) end++;
-        if (end == i) throw Unsupported();
-        if (end < pattern.Length && pattern[end] == ',') { end++; while (end < pattern.Length && char.IsAsciiDigit(pattern[end])) end++; }
-        if (end >= pattern.Length || pattern[end] != '}') throw Unsupported();
-        output.Append('{').Append(pattern, i, end + 1 - i);
-        i = end + 1;
+        var start = i;
+        var low = Bound(pattern, ref i);
+        var copies = Math.Max(low, 1);
+        if (i < pattern.Length && pattern[i] == ',')
+        {
+            i++;
+            if (i < pattern.Length && char.IsAsciiDigit(pattern[i]))
+            {
+                var high = Bound(pattern, ref i);
+                if (high < low) throw Unsupported();
+                copies = Math.Max(high, 1);
+            }
+            else copies = low + 1;
+        }
+        if (i >= pattern.Length || pattern[i] != '}') throw Unsupported();
+        i++;
+        output.Append('{').Append(pattern, start, i - start);
+        return copies;
+    }
+
+    private static int Bound(string pattern, ref int i)
+    {
+        var start = i;
+        var value = 0;
+        while (i < pattern.Length && char.IsAsciiDigit(pattern[i]))
+            if ((value = value * 10 + pattern[i++] - '0') > MaxSize) throw Unsupported();
+        return i > start ? value : throw Unsupported();
     }
 
     // \d \w \s 按 ECMA-262 只认 ASCII，大写为补集；ECMA-262 \s 额外的空白都列在 Unstable 里。
