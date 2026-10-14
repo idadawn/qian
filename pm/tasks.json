@@ -348,6 +348,47 @@
   "file": "pm/tasks/S1-AUD-005.md"
  },
  {
+  "id": "S1-AUD-006",
+  "title": "审计脱敏动态键正则方言与 Schema 验证器不一致：按 ECMA-262 公共子集解释，方言有分歧的键整体遮盖",
+  "status": "doing",
+  "stage": "S1",
+  "area": "AUD",
+  "areaName": "审计与可观测",
+  "wave": 1,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-AUD-005"
+  ],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.11.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "docs/adr/ADR-009-audit.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-009-audit.md"
+   },
+   {
+    "path": "packages/Qian.Audit/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Audit/README.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 0,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p><code>AuditInputPolicy</code> 用 .NET 默认语义（Unicode）匹配 <code>patternProperties</code>。紧随其后的 Schema 验证器 JsonSchema.Net 9.4.0 按 <code>RegexOptions.ECMAScript</code> 评估同一键名，<code>\\d</code>、<code>\\w</code>、<code>\\s</code> 只认 ASCII。JSON Schema 2020-12 核心规范 §6.4 规定的方言则是带 u 标志的 ECMA-262。三者在否定类、<code>.</code>、<code>$</code>、非 ASCII 空白与代理项上判断不同。</p>\n<p>已复现两个方向的泄漏：</p>\n<ul>\n<li>敏感模式 <code>^\\W+$</code> 配非敏感的 <code>additionalProperties</code>：键 <code>é</code> 的值原样进入脱敏投影并参与 <code>input_hash</code>，验证器照常放行；</li>\n<li>非敏感模式 <code>^\\d+$</code> 配敏感的 <code>additionalProperties</code>：键 <code>١٢٣</code> 同样泄漏。</li>\n</ul>\n<p>仓库内现有契约都没有用 <code>patternProperties</code>。缺陷由 S1-AUD-001 引入，本任务建立在 S1-AUD-005 的编译实例缓存之上。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>动态键模式只接受各方言语义相同的子集：规范 §6.4 建议的记号，加 <code>.</code>、<code>(?:…)</code>、<code>\\d \\D \\w \\W \\s \\S</code> 与简单转义。翻译成 ECMA-262 语义的 .NET 表达式后仍用 NonBacktracking 与有界超时；其余构造返回 <code>AUDIT_SCHEMA_INVALID</code></li>\n<li class='chk'><span class='box'></span>键名含方言判断不同的字符（行终止符、非 ASCII 空白、U+0130、代理项），且对象声明了 <code>patternProperties</code> 时，该键的值整体遮盖</li>\n<li class='chk'><span class='box'></span>UT：上述两个方向的泄漏用例改为遮盖；在方言一致的键名上，翻译结果与验证器方言（.NET ECMAScript 模式）逐例一致，并与独立 ECMA-262 实现（V8）测得的字符集一致</li>\n<li class='chk'><span class='box'></span>UT：不支持的构造（词边界、内联选项、Unicode 属性、命名组、类减法、空类、孤立括号、代理项等）在构造策略时拒绝</li>\n<li class='chk'><span class='box'></span><code>dotnet build Qian.slnx -c Release</code> 与 <code>Qian.Audit.Tests</code> 全部通过；README 写明方言、接受的语法与歧义键的处理</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：动态键模式改按 ECMA-262 公共子集翻译，方言有分歧的键整体遮盖，补双向泄漏与方言一致性回归</li>\n</ul>",
+  "file": "pm/tasks/S1-AUD-006.md"
+ },
+ {
   "id": "S1-AZ-001",
   "title": "Qian.Authz.Abstractions 契约先行：端口、命名与错误码",
   "status": "done",
