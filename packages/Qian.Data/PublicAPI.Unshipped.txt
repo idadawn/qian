@@ -44,3 +44,9 @@ Qian.Data.QianDataConnectionOptions.TestTimeout.set -> void
 Qian.Data.QianDataTypeExtensions
 static Qian.Data.QianDataConnectionExtensions.AddQianDataConnections(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<System.IServiceProvider!, Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!>! configure, System.Action<Qian.Data.QianDataConnectionOptions!>? options = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Qian.Data.QianDataTypeExtensions.AddQianDataTypes(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Qian.Data.DataConnectionEgressOptions
+Qian.Data.DataConnectionEgressOptions.AllowedNetworks.get -> System.Collections.Generic.IList<string!>!
+Qian.Data.DataConnectionEgressOptions.BlockedNetworks.get -> System.Collections.Generic.IList<string!>!
+Qian.Data.DataConnectionEgressOptions.DataConnectionEgressOptions() -> void
+Qian.Data.DataConnectionEgressOptions.Permits(System.Net.IPAddress! address) -> bool
+Qian.Data.QianDataConnectionOptions.Egress.get -> Qian.Data.DataConnectionEgressOptions!

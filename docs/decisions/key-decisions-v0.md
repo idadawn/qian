@@ -437,3 +437,10 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
   - 实现说明（S1-RT-020）：回执按条目 `dataClassification` 与组件配置 `receiptMaxBytes`（默认 64 KiB、上限 1 MiB）决定是否保存响应体；`pii` / `finance` / `secret` 与超限的响应只记「已执行」，同键重放返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`、不再执行，回执表另以检查约束限定响应体不超过 1 MiB。条目与输入校验器在能力登记时生成和预编译，不合格的契约登记即被拒绝。口径由 S1-RT-020 按产品负责人认可的方案确定，写入组件规格 §9.5 与 PRD 7.2.1。
 - R76：S1-RT-006 验收第 3 项按「机制完成」勾选；平台挂载路径（`Mount` 与 Registry scope Reconciler）强制套用 `OpenApiContractPlugin` / `GrpcContractPlugin` 归 S1-RT-005，S1-RT-004 的 Reconciler 复用同一包装。
 - R77：目录四类 kind 的归属：事件类目录归 S1-EVT-003；实体类目录暂无任务，由产品负责人分配（建议 S1-RT-007 或 DATA 系列）；交付前 `?kind=event|entity` 返回空集合并在 README 注明。
+
+### S1-DATA-003 收口裁决 R78–R79（2026-10-15）
+
+产品负责人要求「把我需要知道的，都搞定吧」后，由 Claude 作默认裁决，未经逐条确认；有异议时新建决策任务。
+
+- R78：方言组件 id 定为 `qian.data.dialect.pg`，与组件模型 §6.1 的包名映射（`Qian.Data.Dialect.Pg` → `qian.data.dialect.pg`）一致；PRD 7.6 原写的 `qian.data.dialect.postgres` 已在 idadawn/qian#79 改正。组件形态（`plugins/qian.data.dialect.pg`，清单 `provides` 派生为 `Data.Dialects:pg`）登记为 S1-DATA-006，依赖 S1-RT-014 的具名注册派生。
+- R79：数据连接连通测试的进程内出网检查提前到 S1（S1-DATA-005）。缺省拒绝回环、链路本地（含云元数据）、100.100.100.200、未指定、组播与广播地址，运维可追加拒绝网段或限定放行网段。PRD 7.18 / 7.19「低代码连接器与第三方出网点的出口代理与 SSRF 基线归 S2」不变，生产环境仍以 7.17 的 NetworkPolicy 出网白名单或出口代理限定可达网段。
