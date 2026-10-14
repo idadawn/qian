@@ -8,12 +8,39 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Qian.Audit;
 using Qian.Data;
+using Qian.Plugin.Sdk;
 using Qian.Runtime;
 
 namespace Qian.Sample.Crm.Tests;
 
 public sealed partial class CustomerCommandTests
 {
+    // R68 的 TCK 平台组合包宿主装配了登记期契约检查（AddQianCapabilities）：容器里只有一个检查实例，组件上下文经宿主服务拿到同一个；
+    // 不合格的契约在该宿主下于登记期被拒，组件挂载失败。宿主漏掉装配时 SDK 不做检查，同样的组件会挂载成功。
+    [Fact]
+    public async Task TCK平台组合包宿主_容器里的契约检查是宿主单例且组件上下文共用_不合格契约在登记期被拒()
+    {
+        await using var host = await Start(runtimeProfile: "platform");
+        var loader = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        var plan = (ProfileModeAssembly)host.App.Services.GetRequiredService<ICrmRuntimeAssembly>();
+        Assert.Equal("qian.bundle.tck-platform@1.0.0", Assert.Single(plan.Snapshot.Layers, item => item.Kind == "bundle").Reference);
+        var check = host.App.Services.GetRequiredService<ICapabilityContractCheck>();
+        Assert.Same(check, host.App.Services.GetRequiredService<ICapabilityContractCheck>());
+        using (var scope = host.App.Services.CreateScope()) Assert.Same(check, scope.ServiceProvider.GetRequiredService<ICapabilityContractCheck>());
+        Assert.Same(check, host.App.Services.GetRequiredService<Qian.Capabilities.CapabilityContractCheck>());
+        Assert.Same(check, loader.GetContext("crm", ScopeKey.Global).Services.GetService(typeof(ICapabilityContractCheck)));
+
+        var crm = plan.Definitions["crm"];
+        await loader.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await loader.MountAsync([crm with { Plugin = new TenantFieldProbePlugin(crm.Plugin) }], Ct);
+        Assert.Equal(PluginState.Failed, loader.GetState("crm", ScopeKey.Global));
+        var failure = Assert.IsType<CapabilityContractException>(loader.GetFailure("crm", ScopeKey.Global));
+        Assert.Equal(("qian.sample.crm", "customer.tenant-probe", "tenant-field", "INPUT_INVALID"), (failure.ComponentId, failure.Name, failure.Rule, failure.Data["reasonCode"]));
+        await loader.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await loader.MountAsync([crm], Ct);
+        Assert.True(loader.GetState("crm", ScopeKey.Global) == PluginState.Ready, loader.GetFailure("crm", ScopeKey.Global)?.ToString());
+    }
+
     [Fact]
     public async Task T23_同组真实Provider从两个profile启动_业务权限隔离事务与依赖恢复结果等价()
     {

@@ -10,7 +10,7 @@ namespace Qian.Data;
 /// <summary>动态记录规则；主键策略首次保存后不可改，S2 引擎执行这些策略。</summary>
 public sealed record DataRulePolicy(string PrimaryKeyStrategy, bool OptimisticConcurrency, bool SoftDelete,
     bool RecordHistory, IReadOnlyList<string> BusinessKey);
-/// <summary>可信运行上下文提供的事件主体，与冻结信封 Actor 同形。</summary>
+/// <summary>可信运行上下文提供的事件主体，与 v0 信封的 Actor 同形。</summary>
 public sealed record RecordActor(string Kind, string Id, [property: JsonPropertyName("on_behalf_of")] string? OnBehalfOf = null)
 {
     /// <summary>按信封或事件来源的主体换算，载荷的 actor 由此与信封逐字段一致。</summary>

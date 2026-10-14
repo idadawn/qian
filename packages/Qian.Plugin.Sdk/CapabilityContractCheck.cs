@@ -4,7 +4,8 @@ namespace Qian.Plugin.Sdk;
 
 /// <summary>
 /// 能力登记期的契约检查端口。平台宿主登记实现后，<see cref="CapabilityBindingRegistration.ProvideCapability{TRequest, TResponse}"/>
-/// 在登记前调用它：生成目录条目并预编译输入校验器，不合格的契约在登记阶段拒绝，不留到首次调用。未登记时不做此检查（独立宿主没有通用执行入口）。
+/// 在登记前调用它：生成目录条目并预编译输入校验器，不合格的契约在登记阶段拒绝，不留到首次调用。platform profile 宿主必须登记
+/// （<c>AddQianCapabilities()</c>）；未登记时不做此检查，独立宿主没有通用执行入口，不需要它。
 /// </summary>
 public interface ICapabilityContractCheck
 {
@@ -22,7 +23,8 @@ public sealed class CapabilityContractException : InvalidOperationException
     /// <param name="componentId">拥有该能力的组件。</param>
     /// <param name="name">组件内能力短名。</param>
     /// <param name="location">出错位置：以能力 ID 为文件的 JSON Pointer，如 <c>qian.sample.crm/customer.create#/inputSchema/properties/tenantId</c>。</param>
-    /// <param name="rule">违反的规则：<c>tool-invalid</c>、<c>entry-invalid</c>、<c>tenant-field</c>、<c>unsupported-key</c>、<c>unresolved-reference</c>、<c>schema-invalid</c>。</param>
+    /// <param name="rule">违反的规则：<c>tool-invalid</c>、<c>entry-invalid</c>、<c>tenant-field</c>、<c>unsupported-key</c>、<c>unresolved-reference</c>、<c>schema-invalid</c>，
+    /// 其余无法生成条目的情况为 <c>contract-invalid</c>。</param>
     /// <param name="innerException">底层失败；只用于诊断，不进入消息。</param>
     public CapabilityContractException(string componentId, string name, string location, string rule, Exception? innerException = null)
         : base($"组件 {componentId} 的能力 {name} 契约不合格（{rule}），位置 {location}，登记被拒绝。", innerException)

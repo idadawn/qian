@@ -2,13 +2,17 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-15 执行入口补不可重放码，参考应用能力标为 pii（S1-RT-021）
+
+聚合 OpenAPI 为写类能力列出 409 `CAPABILITY_REPLAY_UNAVAILABLE` 及其两种 `reason`。参考应用的 `customer.create`、`customer.list`、`customer.get` 响应含客户名称，`dataClassification` 改为 `pii`：经通用执行入口带同一幂等键重放 `customer.create` 改为返回 409（`data_classification`）。[运维手册](ops/configuration-runbook.md)新增「部署步骤：平台宿主装配」（platform 宿主必须调用 `AddQianCapabilities()`）与「过期幂等回执清理」两节。详见 [Qian.Capabilities](../packages/Qian.Capabilities/README.md)。
+
 ## 2026-10-15 能力登记期契约检查与幂等回执上限（S1-RT-020）
 
-平台宿主调用 `AddQianCapabilities()` 后，`ctx.ProvideCapability` 在登记时生成目录条目并预编译输入校验器，不合格的契约（输入含租户字段、Schema 无法可靠校验等）以 `CapabilityContractException` 拒绝，组件挂载失败。通用执行入口的幂等回执按数据分级与组件配置 `receiptMaxBytes`（默认 64 KiB）决定是否保存响应体，不保存时同键重放返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；`Qian.Capabilities` 新增迁移 `InvokeReceiptLimits`。详见[组件规格 §9.5](prd/specs/component-model.md) 与 [Qian.Capabilities](../packages/Qian.Capabilities/README.md)。
+平台宿主调用 `AddQianCapabilities()` 后，`ctx.ProvideCapability` 在登记时生成目录条目并预编译输入校验器，不合格的契约（输入含租户字段、Schema 无法可靠校验等）以 `CapabilityContractException` 拒绝，组件挂载失败。通用执行入口的幂等回执按数据分级与组件配置 `receiptMaxBytes`（默认 64 KiB）决定是否保存响应体，不保存时同键重放返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；`Qian.Capabilities` 新增迁移 `InvokeReceiptLimits`。[Qian.Data](../packages/Qian.Data/README.md) 新增「迁移执行与 RLS 核查」一节（迁移必须经迁移器执行，附核查 SQL），[运维手册](ops/configuration-runbook.md)新增「部署步骤：数据库迁移」。详见[组件规格 §9.5](prd/specs/component-model.md) 与 [Qian.Capabilities](../packages/Qian.Capabilities/README.md)。
 
 ## 2026-10-15 数据契约冻结、组件元数据与文档预算整改（S1-QA-010）
 
-[data/v1 契约](../contracts/data/v1/README.md) 按 R80 明确 frozen 状态、修订规则和已知例外，统一 `$id` 前缀并补结构测试；[yue manifest](../packages/yue/core/README.md) 的属性元数据（含嵌套）递归取自 TS 注释，不存在的属性拒绝导出；[文档站预算](prd/specs/docs-site.md#7-门禁) 按 R55 调为 120 MB，main 实测 96.2 MB。
+[data/v1 契约](../contracts/data/v1/README.md) 按 R80 明确 frozen 状态、修订规则和已知例外，统一 `$id` 前缀并补结构测试；[yue manifest](../packages/yue/core/README.md) 的属性元数据（含嵌套）递归取自 TS 注释，不存在的属性拒绝导出；[文档站预算](prd/specs/docs-site.md#7-门禁) 按 R55 调为 120 MB，#95 合并时实测 96.2 MB。
 
 ## 2026-10-15 数据连接连通测试的出网约束与凭据错误（S1-DATA-005）
 

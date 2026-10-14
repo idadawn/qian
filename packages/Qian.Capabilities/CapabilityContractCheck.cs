@@ -13,7 +13,7 @@ internal sealed partial class CapabilityContractCheck(ISurfaceReader schemas, IT
 {
     private readonly ConditionalWeakTable<CapabilityContract, Outcome> _outcomes = new();
 
-    internal CapabilityInputValidator Inputs { get; } = new();
+    internal CapabilityInputValidator Inputs { get; } = new(logger);
 
     public void Check(CapabilityContract contract)
     {
