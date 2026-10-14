@@ -3,6 +3,7 @@
 // 让首页与其他部分的链接有落点、目录结构先定下来。S1-DOCS-002 把数据源换成各组件文件夹（README 契约 + docs/*.mdx），
 // 页面改为 §3 的九节模板；生成目录不进 Git，也不接受手改。
 import fs from 'node:fs';
+import { collectYuePages, readYueDocs } from './yue-docs.ts';
 import path from 'node:path';
 import { REPO_ROOT, repoFileDate, yamlString, type GeneratedFile } from './repo.ts';
 import { designRoute } from './sync-specs.ts';
@@ -150,11 +151,17 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
       '',
       '# yue 组件库',
       '',
-      `yue 是 Qian 的前端组件库（[ADR-013](${designRoute('docs/adr/ADR-013-frontend-yue.md')})、[yue 专题规格](${designRoute('docs/prd/specs/yue.md')})）。包发 GitHub Packages，包名 \`@idadawn/yue-<包>\`，设计文档里的 \`@yue/<包>\` 是同一个包的简称。S1-DOCS-002 起每个组件一页，带活演示与 props 表；下表是 S1 交付的包。`,
+      `yue 是 Qian 的前端组件库（[ADR-013](${designRoute('docs/adr/ADR-013-frontend-yue.md')})、[yue 专题规格](${designRoute('docs/prd/specs/yue.md')})）。包发 GitHub Packages，包名 \`@idadawn/yue-<包>\`，设计文档里的 \`@yue/<包>\` 是同一个包的简称。core 已提供 51 个组件入口，每页包含真实交互演示、源码与完整 Props。安装前请在项目 .npmrc 配置 @idadawn:registry=https://npm.pkg.github.com，并由本机 npm 登录提供读包权限。下表是 S1 各包的范围。`,
       '',
       '| 包 | 阶段 | 内容 |',
       '|---|---|---|',
       yueRows,
+      '',
+      '## 基础组件',
+      '',
+      ...readYueDocs(repoRoot).docs.map(d => `- [${d.name} ${d.label}](/components/yue/core/${d.name.toLowerCase()})：${d.description}`),
+      '',
+      '- [设计令牌](/components/yue/tokens)',
       '',
     ].join('\n'),
   });
@@ -185,6 +192,6 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
 
   files.push({ path: '_meta.json', content: `${JSON.stringify(['index', { type: 'dir', name: 'platform', label: '平台插件' }, { type: 'dir', name: 'yue', label: 'yue 组件库' }], null, 2)}\n` });
   files.push({ path: 'platform/_meta.json', content: `${JSON.stringify(['index', ...PLATFORM_COMPONENTS.map((c) => c.id)], null, 2)}\n` });
-  files.push({ path: 'yue/_meta.json', content: `${JSON.stringify(['index'], null, 2)}\n` });
-  return files;
+  files.push({ path: 'yue/_meta.json', content: `${JSON.stringify(['index', 'tokens', { type: 'dir', name: 'core', label: '基础组件' }], null, 2)}\n` });
+  return [...files, ...collectYuePages(repoRoot)];
 }
