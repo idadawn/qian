@@ -7,7 +7,7 @@ public static class CapabilitiesErrors
 {
     /// <summary>
     /// 同一幂等键的调用已执行成功，但回执按策略没有保存响应体，无法原样重放；不再执行。文案参数 <c>reason</c> 为
-    /// <c>response_too_large</c>（响应超过回执上限）或 <c>data_classification</c>（能力的数据分级为 pii、finance 或 secret）。
+    /// <c>response_too_large</c>（响应超过回执上限）或 <c>data_classification</c>（能力的数据分级不是 public 或 internal：pii、finance、secret 与未知分级）。
     /// 回执过期（24 小时）前，同一主体、同一能力、同一键的请求都得到该错误。
     /// </summary>
     public static readonly ErrorCode ReplayUnavailable = ErrorCode.Business("CAPABILITY_REPLAY_UNAVAILABLE", 409, "qian.capabilities",

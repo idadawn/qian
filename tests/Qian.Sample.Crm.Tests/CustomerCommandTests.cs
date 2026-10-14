@@ -333,10 +333,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
         catch { await app.DisposeAsync(); signing.Dispose(); throw; }
     }
-    private async Task Admin(string sql)
+    // 以管理员连接执行，返回受影响的行数。
+    private async Task<int> Admin(string sql)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
-        await using var command = new NpgsqlCommand(sql, connection); await command.ExecuteNonQueryAsync(Ct);
+        await using var command = new NpgsqlCommand(sql, connection); return await command.ExecuteNonQueryAsync(Ct);
     }
     private sealed class ConcurrentSaveBarrier : SaveChangesInterceptor
     {

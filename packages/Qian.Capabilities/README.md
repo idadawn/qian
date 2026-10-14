@@ -51,11 +51,13 @@
 2. 执行：不占数据库连接与锁，执行耗时不影响回执表。
 3. 收尾：成功时按回执策略写入原样响应或不保存的原因，并把过期时间延到 24 小时；失败撤销本次登记，不留回执。收尾用不可取消的令牌，请求在执行后取消也会完成；收尾本身失败时记录告警，照常返回执行结果或异常，标记在租约到期后失效，期间同键请求得到 409。
 
-**回执策略**（S1-RT-020）：只有条目 `dataClassification` 为 `public` 或 `internal`、且响应体不超过 `receiptMaxBytes`（UTF-8 字节）时保存响应体。`pii`、`finance`、`secret` 与未知分级一律不保存，超限的响应也不保存；这时回执只记「已执行」与原因（`withheld` 列：`data_classification` 或 `response_too_large`），回放窗口内同键请求返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`（业务类错误码，由 `CapabilitiesErrors` 登记），ErrorDetail 的说明带原因，不再执行。调用方据此通过查询确认结果，不要换新键重试——换键会再执行一次。这样敏感数据不以明文留在回执表里，大响应也不会撑大回执表。表上另有两条检查约束兜住写入前检查之外的写入：响应体不超过 1 MiB（与配置上限一致）；`withheld` 只取上述两值，且与响应体互斥。前者在迁移里以 `NOT VALID` 添加，只约束新写入：此前没有上限，存量回执可能超限，而强制 RLS 下迁移属主删不到它们，这些行在 24 小时回放窗口后由登记时的清理删除。
+**回执策略**（S1-RT-020）：只有条目 `dataClassification` 为 `public` 或 `internal`、且响应体不超过 `receiptMaxBytes`（UTF-8 字节）时保存响应体。`pii`、`finance`、`secret` 与未知分级一律不保存，超限的响应也不保存；这时回执只记「已执行」与原因（`withheld` 列：`data_classification` 或 `response_too_large`），回放窗口内同键请求返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`（业务类错误码，由 `CapabilitiesErrors` 登记），ErrorDetail 的说明带原因，不再执行。调用方据此通过查询确认结果，不要换新键重试——换键会再执行一次。这样敏感数据不以明文留在回执表里，大响应也不会撑大回执表。表上另有两条检查约束兜住写入前检查之外的写入：响应体不超过 1 MiB（与配置上限一致）；`withheld` 只取上述两值，且与响应体互斥。前者在迁移里以 `NOT VALID` 添加，只约束新写入：此前没有上限，存量回执可能超限，这些行会让带校验的约束失败，而迁移属主在 FORCE RLS 下删不掉它们；DDL 校验本身不经 RLS，照样会扫到这些行。
+
+**按数据分级标注能力**：回执是否保存响应体只看条目的 `dataClassification`。SDK `[Capability]` 的 `DataClassification` 默认 `internal`，也就是默认把响应体明文存进回执表、保留到回放窗口结束；响应含个人信息、财务或机密数据的能力要显式标为 `pii`、`finance` 或 `secret`。参考应用的 `customer.create`、`customer.list`、`customer.get` 响应含客户名称，标为 `pii`：`customer.create` 带键重放得到 409 `CAPABILITY_REPLAY_UNAVAILABLE`（`data_classification`），调用方按业务查询确认结果。
 
 登记后、写完成前进程崩溃时，租约到期后的重试会再执行一次，写类能力仍须按 `inputSchema` 中的 `idempotencyKey` 做业务幂等（tool/v2 的强制要求）。回放前照样重做第 1 步的判定（可见性、OAuth scope、RBAC），撤权后不能靠旧回执取回结果。
 
-回执存 `plugin_qian_capabilities.invoke_receipts`（租户 RLS，保存请求指纹，以及按回执策略保存的首次响应原文）；每次登记顺带清理本租户至多 100 行过期回执，用 `FOR UPDATE SKIP LOCKED` 跳过其他请求正在清理的行。没有用 R63 的 Redis 幂等键：Kun 的 `IProcessedMessageStore` 只记录「已处理」标记，HTTP 重放要原样返回首次响应，且回执要和租户行级隔离同库。未修改 Kun，不需要 KUN 任务。
+回执存 `plugin_qian_capabilities.invoke_receipts`（租户 RLS，保存请求指纹，以及按回执策略保存的首次响应原文）。回执过期后不再回放；物理删除靠本租户后续带键写调用登记时的惰性清理，每次最多 100 行，用 `FOR UPDATE SKIP LOCKED` 跳过其他请求正在清理的行。长期没有带键写调用的租户，过期回执会一直留在表里，由运维按[运维手册](../../docs/ops/configuration-runbook.md)「过期幂等回执清理」一节的 SQL 清理。没有用 R63 的 Redis 幂等键：Kun 的 `IProcessedMessageStore` 只记录「已处理」标记，HTTP 重放要原样返回首次响应，且回执要和租户行级隔离同库。未修改 Kun，不需要 KUN 任务。
 
 ApiExplorer 不列这条通用模板：它只能描述静态、与调用者无关的路由，而这里的请求与响应形状随能力而变，可见集合随调用者而变。`/api/capabilities/openapi.json` 按同一判定为每个可见能力列出具体路径（`/api/capabilities/<plugin>/<name>/invoke`）、真实输入 / 输出 Schema；写类能力另列 `Idempotency-Key` 参数与 `Idempotent-Replayed` 响应头，只读能力不列。
 
@@ -72,11 +74,13 @@ ApiExplorer 不列这条通用模板：它只能描述静态、与调用者无�
 | `schema-invalid` | Schema 无法编译，如关键字取值非法、正则无法解析 |
 | `contract-invalid` | 其余无法生成条目的情况 |
 
-SDK 生成的契约由 System.Text.Json 导出 Schema，不会出现后三类问题，这几条是兜底。宿主没有调用 `AddQianCapabilities` 时不做登记期检查（独立宿主没有通用执行入口）；目录读到不合格的契约时只排除该能力并记一次告警，不影响其他能力。
+SDK 生成的契约由 System.Text.Json 导出 Schema，不会出现后三类问题，这几条是兜底。
+
+**platform profile 宿主必须调用 `AddQianCapabilities()`**，[运维手册](../../docs/ops/configuration-runbook.md)的部署步骤同样要求。漏掉时宿主照常启动，但检查退化为首次读目录或调用时才生成条目、编译校验器：不合格的契约不会让组件挂载失败，目录读到时只排除该能力并记一次告警（不影响其他能力），执行入口对它返回 404。独立宿主没有通用执行入口，不需要调用。TCK 平台组合包宿主（R68）断言容器里解析到的 `ICapabilityContractCheck` 是宿主单例，且不合格的契约在该宿主下于登记期被拒。
 
 ## 验收与保留项
 
-`tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 与 `CapabilityInvokeTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证目录信封与条目契约（独立重算 `schemaSha256`）、别名的 `Deprecation` / `Link` 头、参数校验与匿名 401 的 ErrorDetail、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结、执行入口的输入校验 / 幂等重放（含执行中 409、失败不留回执、只读能力忽略幂等键）/ 回执策略（按分级与上限不存响应体时同键 409、表上的硬上限、非默认组件配置）/ Agent 主体、登记期拒绝（组件挂载失败，目录与执行入口没有该能力），并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。Agent 用例另在测试宿主打开「授权预览」，把 Agent 主体按同 ID 服务主体求值，以单独观察 `agent.expose` 过滤；预览默认关闭，不是生产判定。
+`tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 与 `CapabilityInvokeTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证目录信封与条目契约（`schemaSha256` 与生产实现 `ToolContractHash` 一致，该实现由 `Qian.Surfaces.Tests` 按 RFC 8785 的示例与附录 B 样本验证）、别名的 `Deprecation` / `Link` 头、参数校验与匿名 401 的 ErrorDetail、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结、执行入口的输入校验 / 幂等重放（含执行中 409、失败不留回执、只读能力忽略幂等键）/ 回执策略（按分级与上限不存响应体时同键 409、表上的硬上限、非默认组件配置）/ Agent 主体、登记期拒绝（组件挂载失败，目录与执行入口没有该能力），并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。Agent 用例另在测试宿主打开「授权预览」，把 Agent 主体按同 ID 服务主体求值，以单独观察 `agent.expose` 过滤；预览默认关闭，不是生产判定。
 
 OpenAPI 聚合已覆盖 SDK 真实调用入口及宿主标注绑定的原生 HTTP 路由，实际 gRPC 契约经独立反射探测；平台挂载路径强制套用契约准入归 S1-RT-005（R76）。菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。platform / minimal 双宿主等价与表面热重载的运行时语义由 S1-QA-002 的 TCK（T19、T23）覆盖。本组件的交付与复核记录见 S1-RT-006 与 S1-RT-019。
 
