@@ -10,7 +10,7 @@ on:
     types: [opened, synchronize, reopened, closed]
     paths:
       - "website/**"
-      - "packages/yue/tokens/**"
+      - "packages/yue/**"
       - "docs/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -22,7 +22,7 @@ on:
     branches: [main]
     paths:
       - "website/**"
-      - "packages/yue/tokens/**"
+      - "packages/yue/**"
       - "docs/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -131,6 +131,11 @@ jobs:
       # Kun 镜像页与 API 参考的源不在本仓库，生成后单独过文档门禁（禁用词、表格、断链）
       - name: 生成页过文档门禁（frontmatter、禁用词、链接；源不在本仓库的 Kun 页也在内）
         run: python3 scripts/check_docs.py website/docs/components website/docs/cli website/docs/design website/docs/sdk/kun website/docs/sdk/api website/docs/start/versions.md
+
+      - name: Chromium 与真实组件交互验收
+        run: |
+          pnpm --filter website exec playwright install --with-deps chromium
+          pnpm --filter website e2e
 
       - uses: actions/upload-artifact@v4
         with:
