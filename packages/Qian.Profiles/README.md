@@ -37,17 +37,51 @@ config 使用组件 `runtime.configSchema` 或 `schemas/config.schema.json` 校�
 
 配置键、属性名与模式属性按序数顺序遍历，敏感检查遇到首个违规即失败：JS 对象把整数形式的键排在前面，按文档顺序时两端报告的首个违规会不同。
 
-两端的 Schema 验证器（.NET 为 JsonSchema.Net，CLI 为 Ajv）对正则的写法与语义各有方言，所以都把 `pattern` 与 `patternProperties` 的键交给同一翻译规则执行：.NET 在构造后替换编译结果，CLI 通过 Ajv 的 `code.regExp`。字符串值与键名按 ECMA-262 不带标志的语义逐码元判断，additionalProperties、unevaluatedProperties、propertyNames 随之一致。交给验证器之前，两端按同一顺序检查各子 Schema 位置上的正则，超出可移植子集的写法在 Schema 文件的对应指针处失败，如 `plugins/x/schemas/config.schema.json#/properties/a/pattern`。这一检查不跟随 `$ref`：引用到其他位置的不支持写法在验证器编译时拒绝，按无法解析处理。
+gateway/identity 不允许 command hook，S1 拒绝代码热更新；AOT profile 拒绝 function 或未声明 AOT 的代码清单。这只是装配预检，不能代替组件 NativeAOT 编译验收。
+
+## 配置 Schema 验证
+
+两端的 Schema 验证器（.NET 为 JsonSchema.Net 9.4.0，CLI 为 Ajv 8.20）各有方言与缺陷。装配器先按同一组规则预检 Schema，再让两个验证器按同一语义判断，诊断归一后逐字一致，由共享 TCK 约束。
+
+### 写法要求
+
+交给验证器之前，两端按同一顺序预检 Schema（`ProfileLoader.Check` 与 `profiles.ts` 的 `check`）：从根开始按固定关键字表走遍各子 Schema 位置，映射按键名序数、数组按下标。`$ref` 只能指向这些子 Schema 位置，随后的元 Schema 校验因此覆盖每个引用目标。首个违规在 Schema 文件的对应指针处报告，如 `plugins/x/schemas/config.schema.json#/properties/a/pattern`：
+
+- `pattern` 与 `patternProperties` 的键只接受 ECMA-262 可移植子集，见下节。
+- `$schema` 只能是 `https://json-schema.org/draft/2020-12/schema`（可带空片段 `#`）：Ajv2020 不能编译 draft-07，JsonSchema.Net 则按声明的方言验证。
+- 不支持 `$id`、`$anchor`、`$dynamicAnchor`、`$dynamicRef`、`$recursiveAnchor`、`$recursiveRef`、`$vocabulary`。引用只用文档内的 JSON Pointer；标识与动态引用会改变 `#/…` 的含义，默认值补充与敏感检查也不认它们。
+- 不支持 draft-07 的 `dependencies`（改用 `dependentRequired` 或 `dependentSchemas`），也不支持 Ajv 自有的 `$async` 与 `nullable`（可空写成 `"type": ["string", "null"]`）。
+- 不支持 `unevaluatedItems` 与 `unevaluatedProperties`。Ajv 统计已求值的项与属性时与规范不同：失败的 `allOf` 分支与 `$ref`、不成立的 `if` 仍计入，`contains` 把全部项算作已求值，`anyOf` 各分支都失败时项数丢失，含 `items` 的分支成立后按数值比较项数；8.20.0 的这套统计在 `anyOf` 含 `if`/`then`、同级有 `patternProperties` 时还会在验证时抛错。封闭的元组写成 `prefixItems` 加 `items: false`，封闭的对象在同一层列全 `properties` 并加 `additionalProperties: false`。
+- `enum` 须为非空数组：Ajv 编译时拒绝空数组，JsonSchema.Net 让任何值都不符合。
+- `properties` 与 `patternProperties` 不能以 `__proto__` 为键名：Ajv 为防原型污染略过这样的键。
+- `$ref` 须为 `#/` 开头、字符合乎 URI 片段的 JSON Pointer，指向本文档内的子 Schema 位置：从根起逐段经上述子 Schema 关键字到达（映射再经键名、数组再经下标），如 `#/$defs/a`、`#/properties/a/items`，目标是对象或布尔值。其他位置（如根下的 `x-shared`）不在元 Schema 的校验范围内，Ajv 对其中不合规的写法（`minLength: -1`、空的 `allOf`）照常编译，JsonSchema.Net 构造失败；`#/` 按 JSON Pointer 指向根下的空键名，Ajv 却当作根。空格与非 ASCII 字符写成百分号编码，须为合法 UTF-8；键名里的 `/` 与 `~` 写成 `~1` 与 `~0`，不能写成 `%2F`（JsonSchema.Net 先解码整段再分段，Ajv 先分段再解码）；数组下标写成不带前导零的十进制数。
+- 子 Schema 不能经 `$ref`、`allOf`、`anyOf`、`oneOf`、`not`、`if`、`then`、`else`、`dependentSchemas` 不经属性或数组项又回到自身。这样的引用在同一实例上无限递归：JsonSchema.Net 在构造或求值时报循环，Ajv 在编译或验证时栈溢出，未被引用时两端的结论也不同。
+
+预检之后按 JSON Schema 2020-12 的元 Schema 校验，不符时在 Schema 根部报「组件 config.schema 不符合 JSON Schema 2020-12 的元 Schema。」（Ajv 编译时本就校验，JsonSchema.Net 不校验）。Schema 文件按 UTF-8 与严格 JSON 读取：开头可有一个 UTF-8 BOM，不按 BOM 改用 UTF-16 或 UTF-32；不合法的 UTF-8、重复键、超出双精度范围的数值、含残缺代理项的字符串或键名、超过 64 层的嵌套，都按「profile 或组件内容无法解析。」处理。
+
+### 验证语义
+
+- 正则：两端都把 `pattern` 与 `patternProperties` 的键交给同一翻译规则执行（.NET 在构造后替换编译结果，CLI 通过 Ajv 的 `code.regExp`），字符串值与键名按 ECMA-262 不带标志的语义逐码元判断，additionalProperties、propertyNames 随之一致，规则见 [共享内部源文件](../Common/README.md)。
+- 数值按双精度判断，同 JS：.NET 先把 Schema 与待验证的配置副本中的数值换成双精度（超过 2^53 的整数与超长小数随之舍入，`-0` 记为 `0`）。比较、`type: integer` 与 `multipleOf` 都作用在双精度的最短十进制表示上，`multipleOf` 按十进制精确判断，`0.3` 是 `0.1` 的倍数。
+- `const`、`enum`、`uniqueItems` 按 JS 的值相等比较：数值按双精度，对象不计键序。`uniqueItems` 比较全部项（Ajv 原本在 `items` 只声明标量类型时跳过类型不符的项）。
+- `minLength`、`maxLength` 按码点计数：代理对计 1，残缺代理项与组合字符各计 1（`e` 加组合重音计 2）。
+- 只认自有属性：`required`、`properties`、`dependentRequired`、`dependentSchemas` 不把 `constructor`、`toString` 等继承名称当成已提供，带 `toString` 键的对象也照常比较。
+- JsonSchema.Net 9.4.0 的三处缺陷由装配器绕过：`dependentSchemas` 与 `patternProperties` 按 JSON Pointer 转义后的段查找，键含 `/` 或 `~` 时前者静默跳过、后者求值时抛错；`prefixItems` 之后的 `items` 从 0 起算位置。
+- 属性的 `default` 可以是 `null`，补充后同样参与验证。
+
+### 逐项错误位置
 
 验证失败时，两个验证器的错误归一为出错实例位置，去重后按序数排序：
 
-- 容器关键字（properties、patternProperties、additionalProperties、propertyNames、unevaluatedProperties、items、prefixItems、allOf、dependentSchemas、`$ref`）只经由失败的子位置报告；
+- 容器关键字（properties、patternProperties、additionalProperties、propertyNames、items、prefixItems、allOf、dependentSchemas、`$ref`）只经由失败的子位置报告；
 - 其余失败的关键字报自身位置，含 anyOf、oneOf、not 以及 if 之后失败的 then 或 else；if 的条件本身不计，通过的组合下失败的分支也不计；
-- additionalProperties、unevaluatedProperties、propertyNames 的错误报到键名；contains 只报数组位置。
+- additionalProperties、propertyNames 的错误报到键名；`prefixItems` 之后的 `items: false` 报到多出的各项；contains 只报数组位置；
+- oneOf 因两个以上分支同时成立而失败时只报自身位置：Ajv 第二个分支成立后不再求值其余分支。
 
-验证器在少数语义上仍有分歧，暂未对齐：prefixItems 之后的 items（JsonSchema.Net 9.4.0 的逐项位置从 0 起算，Ajv 对 `items: false` 只报数组位置）；unevaluatedItems；minLength 与 maxLength（JsonSchema.Net 按文本元素计数，Ajv 按码点）；multipleOf 的小数（Ajv 用浮点）；contains 或 propertyNames 的子 Schema 经 `$ref` 引用时，Ajv 可能多报位置。配置 Schema 宜避开这些写法。
+### 已知分歧
 
-gateway/identity 不允许 command hook，S1 拒绝代码热更新；AOT profile 拒绝 function 或未声明 AOT 的代码清单。这只是装配预检，不能代替组件 NativeAOT 编译验收。
+- 数值只在验证时归一。装配结果中的配置值，.NET 返回原值（JSON 补丁里超过 2^53 的整数保留原文），CLI 返回双精度，`-0` 输出为 `0`。
+- 配置里的字符串或键名含残缺代理项时（`\u` 后接未成对的 D800–DFFF 码元），.NET 的 YAML 解析器报语法错误，CLI 解析通过、到验证前按无法解析处理；JSON 补丁两端都按无法解析处理，但 .NET 遇到这样的键名在读取补丁时就失败。表面解析器的对齐见 [S1-RT-022](../../pm/tasks/S1-RT-022.md)。
 
 ## 结果和边界
 

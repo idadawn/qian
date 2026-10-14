@@ -3,7 +3,10 @@ import path from 'node:path';
 import os from 'node:os';
 import {randomBytes} from 'node:crypto';
 import {satisfies, rcompare, validRange} from 'semver';
-import {Ajv2020, type ErrorObject} from 'ajv/dist/2020.js';
+import {Ajv2020, Name, _, type CodeKeywordDefinition, type ErrorObject} from 'ajv/dist/2020.js';
+import {not} from 'ajv/dist/compile/codegen/index.js';
+import {resetErrorsCount} from 'ajv/dist/compile/errors.js';
+import {alwaysValidSchema} from 'ajv/dist/compile/util.js';
 import {parseSurface, validateSurfaceSchema, type JsonValue, type SurfaceDiagnostic, type SurfaceSyntax} from '@qian/surfaces';
 import {compilePattern,isStable,sameKey,UnsupportedPattern,type KeyPattern} from './schema-pattern.js';
 
@@ -162,13 +165,18 @@ class Composition {
     const file=this.within(component.directory,str(obj(component.manifest.runtime).configSchema)||'./schemas/config.schema.json');
     if(!existsSync(file)){if(Object.keys(entry.config).length)this.fail(entry.configFile,entry.configPointer,'有配置的组件必须提供 config.schema.json。');return entry.config;}
     if(statSync(file).size>1_048_576)this.fail(file,'','Schema 超过大小限制。');
-    const schema=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(readFileSync(file))) as JsonValue;
-    this.patterns(schema,file,'');
+    // 与 ProfileLoader.ValidateConfig 同序：数值与层数、预检、元 Schema、默认值、验证。
+    const text=new TextDecoder('utf-8',{fatal:true}).decode(readFileSync(file)),schema=JSON.parse(text) as JsonValue;
+    uniqueKeys(text);portableJson(schema);
+    this.check(schema,file);
+    const ajv=validator();
+    if(schema===null||!ajv.validateSchema(schema as object))this.fail(file,'','组件 config.schema 不符合 JSON Schema 2020-12 的元 Schema。');
     const config=defaults(schema,structuredClone(entry.config));
-    // 正则交给共享翻译规则执行（同 ProfileLoader.UsePortablePatterns）；预检没有覆盖的位置遇到不支持的写法时编译抛错，按无法解析处理。
-    const validate=new Ajv2020({allErrors:true,strict:false,validateFormats:false,code:{regExp:portableRegExp}}).compile(schema as object);
+    // 预检已跟随 $ref 走遍验证器会求值的位置；这里编译仍抛错时按无法解析处理。
+    const validate=ajv.compile(schema as object);
+    portableJson(config);
     if(!validate(config)){
-      for(const location of locations(validate.errors??[]))this.error(entry.configFile,entry.configPointer+location,'条目配置不符合组件 config.schema。');
+      for(const location of locations(validate.errors??[],config))this.error(entry.configFile,entry.configPointer+location,'条目配置不符合组件 config.schema。');
       throw new CompositionFailed();
     }
     // 与 ProfileLoader.Sensitive 同序同义，诊断逐字相同。规则不是对象即返回；x-qian-sensitive 不是布尔值时 .NET 读取失败，这里同样按无法解析处理。
@@ -203,24 +211,71 @@ class Composition {
       }
     };sensitive(config,schema,entry.configPointer);return config;
   }
-  // 与 ProfileLoader.Patterns 同序同义：交给验证器之前，按 schemaKeywords 的顺序检查各子 Schema 位置上的 pattern 与 patternProperties 的键，
-  // 映射按键名序数、数组按下标，超出可移植子集的写法在 Schema 文件的对应指针处失败。不跟随 $ref。
-  private patterns(schema:JsonValue|undefined,file:string,pointer:string,depth=0):void{
-    if(depth>64)throw new Error('schema depth');
-    if(typeof schema!=='object'||schema===null||Array.isArray(schema))return;
-    if(typeof schema.pattern==='string')this.portable(schema.pattern,file,pointer+'/pattern','pattern');
-    for(const keyword of schemaKeywords){
-      const value=schema[keyword];
-      if(schemaMaps.has(keyword)){
-        if(typeof value!=='object'||value===null||Array.isArray(value))continue;
-        for(const key of Object.keys(value).sort()){
-          const at=pointer+'/'+keyword+'/'+escape(key);
-          if(keyword==='patternProperties')this.portable(key,file,at,keyword);
-          this.patterns(value[key],file,at,depth+1);
+  // 与 ProfileLoader.Check 同序同义的预检。从根开始按 schemaKeywords 的顺序走遍各子 Schema 位置，映射按键名序数、数组按下标。
+  // 不合规的写法在 Schema 文件的对应指针处失败，规则见 ProfileLoader.Check；$ref 的目标都在这次遍历之内。走完后检查循环引用（见 cycles）。
+  private check(root:JsonValue,file:string):void{
+    const visited=new Map<string,Obj>(),references=new Map<string,string>();
+    const visit=(schema:JsonValue|undefined,pointer:string,depth:number):void=>{
+      if(depth>64)throw new Error('schema depth');
+      if(typeof schema!=='object'||schema===null||Array.isArray(schema)||visited.has(pointer))return;
+      visited.set(pointer,schema);
+      if(Object.hasOwn(schema,'$schema')&&schema.$schema!=='https://json-schema.org/draft/2020-12/schema'&&schema.$schema!=='https://json-schema.org/draft/2020-12/schema#')
+        this.fail(file,pointer+'/$schema','组件 config.schema 只接受 JSON Schema 2020-12，$schema 须为 https://json-schema.org/draft/2020-12/schema。');
+      for(const keyword of unsupported)if(Object.hasOwn(schema,keyword))this.fail(file,pointer+'/'+keyword,'组件 config.schema 不支持 '+keyword+' 关键字。');
+      if(Object.hasOwn(schema,'enum')&&!(Array.isArray(schema.enum)&&schema.enum.length>0))this.fail(file,pointer+'/enum','组件 config.schema 的 enum 须为非空数组。');
+      if(typeof schema.pattern==='string')this.portable(schema.pattern,file,pointer+'/pattern','pattern');
+      for(const keyword of schemaKeywords){
+        const value=schema[keyword];
+        if(keyword==='$ref'){
+          if(typeof value!=='string')continue;
+          const reference=target(root,value);
+          if(!reference||!(typeof reference.value==='boolean'||typeof reference.value==='object'&&reference.value!==null&&!Array.isArray(reference.value)))
+            this.fail(file,pointer+'/$ref','组件 config.schema 的 $ref 须为 #/ 开头、指向本文档内子 Schema 位置（对象或布尔值）的 JSON Pointer。');
+          references.set(pointer,reference.pointer);
         }
+        else if(schemaMaps.has(keyword)){
+          if(typeof value!=='object'||value===null||Array.isArray(value))continue;
+          for(const key of Object.keys(value).sort()){
+            const at=pointer+'/'+keyword+'/'+escape(key);
+            // Ajv 为防原型污染略过这两个映射里的 __proto__ 键，.NET 照常求值。
+            if((keyword==='properties'||keyword==='patternProperties')&&key==='__proto__')this.fail(file,at,'组件 config.schema 的 '+keyword+' 不能以 __proto__ 为键名。');
+            if(keyword==='patternProperties')this.portable(key,file,at,keyword);
+            visit(value[key],at,depth+1);
+          }
+        }
+        else if(schemaLists.has(keyword)){if(Array.isArray(value))value.forEach((child,index)=>visit(child,pointer+'/'+keyword+'/'+index,depth+1));}
+        else visit(value,pointer+'/'+keyword,depth+1);
       }
-      else if(schemaLists.has(keyword)){if(Array.isArray(value))value.forEach((child,index)=>this.patterns(child,file,pointer+'/'+keyword+'/'+index,depth+1));}
-      else this.patterns(value,file,pointer+'/'+keyword,depth+1);
+    };
+    visit(root,'',0);
+    this.cycles([...visited.keys()],visited,references,file);
+  }
+  // 同 ProfileLoader.Cycles：子 Schema 经 $ref 与 inPlace 中的关键字回到自身时会在同一实例上无限递归，两端出错的时机不同。
+  // 按预检的访问顺序逐个出发，沿 inPlace 的顺序深度优先（显式栈），遇到回到栈上 Schema 的边即在该边处失败。
+  private cycles(order:string[],visited:Map<string,Obj>,references:Map<string,string>,file:string):void{
+    const edges=(pointer:string):[string,string][]=>{
+      const rule=visited.get(pointer)!,result:[string,string][]=[];
+      for(const keyword of schemaKeywords.filter(keyword=>inPlace.has(keyword))){
+        const at=pointer+'/'+keyword,value=rule[keyword];
+        if(keyword==='$ref'){const target=references.get(pointer);if(target!==undefined)result.push([at,target]);}
+        else if(schemaLists.has(keyword)){if(Array.isArray(value))value.forEach((_,index)=>result.push([at+'/'+index,at+'/'+index]));}
+        else if(schemaMaps.has(keyword)){if(typeof value==='object'&&value!==null&&!Array.isArray(value))for(const key of Object.keys(value).sort())result.push([at+'/'+escape(key),at+'/'+escape(key)]);}
+        else if(Object.hasOwn(rule,keyword))result.push([at,at]);
+      }
+      return result;
+    };
+    const done=new Map<string,boolean>();
+    for(const start of order){
+      if(done.has(start))continue;
+      const stack:{pointer:string;edges:[string,string][];next:number}[]=[{pointer:start,edges:edges(start),next:0}];done.set(start,false);
+      while(stack.length){
+        const frame=stack[stack.length-1];
+        if(frame.next===frame.edges.length){done.set(frame.pointer,true);stack.pop();continue;}
+        const[at,target]=frame.edges[frame.next++];
+        if(!visited.has(target))continue;
+        if(done.has(target)){if(!done.get(target))this.fail(file,at,'组件 config.schema 的引用构成循环：子 Schema 不经属性或数组项又回到了自身。');continue;}
+        done.set(target,false);stack.push({pointer:target,edges:edges(target),next:0});
+      }
     }
   }
   private portable(source:string,file:string,pointer:string,keyword:string):void{
@@ -255,35 +310,148 @@ class Composition {
     let current=directory;for(const part of path.relative(directory,full).split(path.sep)){current=path.join(current,part);if(existsSync(current)&&lstatSync(current).isSymbolicLink())throw new Error('link');}return full;
   }
 }
-// 含子 Schema 的关键字，按序数排列；值为映射或数组的分别列出。同 ProfileLoader.SchemaKeywords。
-const schemaKeywords=['$defs','additionalProperties','allOf','anyOf','contains','contentSchema','definitions','dependentSchemas',
-  'else','if','items','not','oneOf','patternProperties','prefixItems','properties','propertyNames','then','unevaluatedItems','unevaluatedProperties'];
+// 含子 Schema 的关键字与 $ref，按序数排列；值为映射或数组的分别列出。同 ProfileLoader.SchemaKeywords。
+const schemaKeywords=['$defs','$ref','additionalProperties','allOf','anyOf','contains','contentSchema','definitions','dependentSchemas',
+  'else','if','items','not','oneOf','patternProperties','prefixItems','properties','propertyNames','then'];
 const schemaMaps=new Set(['$defs','definitions','dependentSchemas','patternProperties','properties']);
 const schemaLists=new Set(['allOf','anyOf','oneOf','prefixItems']);
+// 在同一实例上求值子 Schema 的关键字。同 ProfileLoader.InPlace。
+const inPlace=new Set(['$ref','allOf','anyOf','dependentSchemas','else','if','not','oneOf','then']);
+// 两端验证器解释不同、或会让文档内 JSON Pointer 引用失去单一含义的关键字，按序数排列。同 ProfileLoader.Unsupported。
+const unsupported=['$anchor','$async','$dynamicAnchor','$dynamicRef','$id','$recursiveAnchor','$recursiveRef','$vocabulary','dependencies','nullable','unevaluatedItems','unevaluatedProperties'];
 // Ajv 默认按 u 标志构造 RegExp；换成共享翻译规则的匹配器，pattern 与 patternProperties 的键（含 additionalProperties 的判定）与 .NET 同义。
 const portableRegExp=Object.assign((source:string):KeyPattern=>compilePattern(source),{code:'compilePattern'});
 
+// 与 .NET 端（ProfileLoader.AjvSemantics）对齐的 Ajv。ownProperties 只认自有属性：默认按 data[key] !== undefined 判断属性存在，
+// constructor、toString 等继承的名称会被当成已提供。另替换以下关键字：
+// - multipleOf 按十进制精确判断，同 JsonSchema.Net 的 JsonMath.Divides；Ajv 默认用浮点取余，0.3 不算 0.1 的倍数。
+// - const、enum、uniqueItems 按 canonical 的规约形式比较，同 ProfileLoader.JsEquality。Ajv 的 fast-deep-equal 遇到自带 toString 或 valueOf 键的对象
+//   会调用它们而抛错；uniqueItems 在 items 只声明标量类型时还跳过类型不符的项，prefixItems 位置上的重复对象因此不报。
+// - contains 与 propertyNames 失败时只留自身的一条错误，丢弃子 Schema 的逐项错误：子 Schema 经未内联的 $ref 时，这些错误不带外层关联，归不到数组或键名上。
+// - oneOf 因两个以上分支同时成立而失败时只留自身的一条错误：Ajv 第二个分支成立后不再求值其余分支，已求值分支的错误两端无法一致。
+function validator():Ajv2020{
+  const ajv=new Ajv2020({allErrors:true,strict:false,validateFormats:false,ownProperties:true,code:{regExp:portableRegExp}});
+  // Ajv2020 构造时强制开启已求值属性与项的跟踪，只供 unevaluatedItems、unevaluatedProperties 使用，二者已在预检拒绝。
+  // 这套跟踪在 8.20.0 有缺陷：anyOf 的分支含 if/then、同级又有 patternProperties 时，验证抛 TypeError。关掉它，不影响其余关键字的判断。
+  ajv.opts.unevaluated=false;
+  const contains=ajv.getKeyword('contains') as CodeKeywordDefinition,oneOf=ajv.getKeyword('oneOf') as CodeKeywordDefinition,propertyNames=ajv.getKeyword('propertyNames') as CodeKeywordDefinition;
+  for(const keyword of ['const','contains','enum','multipleOf','oneOf','propertyNames','uniqueItems'])ajv.removeKeyword(keyword);
+  ajv.addKeyword({keyword:'multipleOf',type:'number',schemaType:'number',errors:false,validate:(divisor:number,value:number)=>divides(value,divisor)});
+  ajv.addKeyword({keyword:'uniqueItems',type:'array',schemaType:'boolean',errors:false,validate:(unique:boolean,items:JsonValue[])=>!unique||new Set(items.map(canonical)).size===items.length});
+  ajv.addKeyword({keyword:'const',errors:false,compile:(expected:JsonValue)=>{const key=canonical(expected);return(data:JsonValue)=>canonical(data)===key;}});
+  ajv.addKeyword({keyword:'enum',schemaType:'array',errors:false,compile:(values:JsonValue[])=>{const keys=new Set(values.map(canonical));return(data:JsonValue)=>keys.has(canonical(data));}});
+  ajv.addKeyword({...contains,code(cxt){
+    const result=cxt.result.bind(cxt);
+    cxt.result=(condition,success,failure)=>result(condition,success,failure??(()=>{cxt.reset();cxt.error();}));
+    contains.code(cxt);
+  }});
+  ajv.addKeyword({...oneOf,code(cxt){
+    const result=cxt.result.bind(cxt);
+    cxt.result=(condition,success,failure)=>result(condition,success,()=>{cxt.gen.if(_`Array.isArray(${cxt.params.passing})`,()=>cxt.reset());failure?.();});
+    oneOf.code(cxt);
+  }});
+  ajv.addKeyword({...propertyNames,code(cxt){
+    const{gen,schema,data,it}=cxt;
+    if(alwaysValidSchema(it,schema))return;
+    const valid=gen.name('valid');
+    gen.forIn('key',data,key=>{
+      cxt.setParams({propertyName:key});
+      const errors=gen.const('_errs',new Name('errors'));
+      cxt.subschema({keyword:'propertyNames',data:key,dataTypes:['string'],propertyName:key,compositeRule:true},valid);
+      gen.if(not(valid),()=>{resetErrorsCount(gen,errors);cxt.error(true);});
+    });
+    cxt.ok(valid);
+  }});
+  return ajv;
+}
+// 十进制精确判断 value 是否为 divisor 的整数倍，作用在双精度的最短十进制表示上，同 .NET 端对归一后数值的 JsonMath.Divides。
+function divides(value:number,divisor:number):boolean{
+  const decimal=(number:number):[bigint,number]=>{
+    const[digits,exponent='0']=Math.abs(number).toString().split('e'),[whole,fraction='']=digits.split('.');
+    return[BigInt(whole+fraction),Number(exponent)-fraction.length];
+  };
+  const[a,x]=decimal(value),[b,y]=decimal(divisor),scale=Math.min(x,y);
+  return b!==0n&&a*10n**BigInt(x-scale)%(b*10n**BigInt(y-scale))===0n;
+}
+// JS 值相等的规约形式，同 ProfileLoader.JsEquality：对象按键名排序，数值经 JSON.stringify（-0 记为 0）。
+const canonical=(value:JsonValue):string=>Array.isArray(value)?'['+value.map(canonical).join(',')+']':
+  typeof value==='object'&&value!==null?'{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+canonical(value[key])).join(',')+'}':JSON.stringify(value);
+// 同 .NET 的 JsonNode.Parse 与 ProfileLoader.Doubles：嵌套超过 64 层、数值超出双精度范围、字符串或键名含残缺代理项时按无法解析处理。
+function portableJson(value:JsonValue,depth=0):void{
+  if(typeof value==='number'&&!Number.isFinite(value))throw new Error('number');
+  if(typeof value==='string')wellFormed(value);
+  if(typeof value!=='object'||value===null)return;
+  if(depth>=64)throw new Error('depth');
+  if(Array.isArray(value))for(const child of value)portableJson(child,depth+1);
+  else for(const[key,child]of Object.entries(value)){wellFormed(key);portableJson(child,depth+1);}
+}
+function wellFormed(text:string):void{
+  for(let index=0;index<text.length;index++){
+    const unit=text.charCodeAt(index),next=text.charCodeAt(index+1);
+    if(unit>=0xd800&&unit<=0xdbff&&next>=0xdc00&&next<=0xdfff)index++;
+    else if(unit>=0xd800&&unit<=0xdfff)throw new Error('lone surrogate');
+  }
+}
+// JSON.parse 对重复键取后者，.NET 的 JsonNode 遇到重复键失败：按 JSON 语法扫一遍，同一对象内键名（解码后）重复时按无法解析处理。调用前 JSON.parse 已确认语法有效。
+function uniqueKeys(text:string):void{
+  const objects:(Set<string>|undefined)[]=[];
+  for(let index=0;index<text.length;index++){
+    const char=text[index];
+    if(char==='{'||char==='[')objects.push(char==='{'?new Set():undefined);
+    else if(char==='}'||char===']')objects.pop();
+    else if(char==='"'){
+      let end=index+1;while(text[end]!=='"')end+=text[end]==='\\'?2:1;
+      let next=end+1;while(text[next]===' '||text[next]==='\t'||text[next]==='\n'||text[next]==='\r')next++;
+      const keys=objects[objects.length-1];
+      if(keys&&text[next]===':'){const key=JSON.parse(text.slice(index,end+1)) as string;if(keys.has(key))throw new Error('duplicate key');keys.add(key);}
+      index=end;
+    }
+  }
+}
+
 // 与 ProfileLoader.Locations 同义，把 Ajv 的错误归一为出错实例位置：每个错误报自身位置，含 anyOf、oneOf、if、contains 的汇总错误；
-// additionalProperties、unevaluatedProperties、propertyNames 报到键名；contains 略去逐项错误（Ajv 计数达到上限即停止逐项检查）。去重后按序数排序。
-function locations(errors:ErrorObject[]):string[]{
-  const at=(error:ErrorObject):string=>error.instancePath+(
-    error.keyword==='additionalProperties'?'/'+escape(String(error.params.additionalProperty)):
-    error.keyword==='unevaluatedProperties'?'/'+escape(String(error.params.unevaluatedProperty)):
-    error.keyword==='propertyNames'?'/'+escape(String(error.params.propertyName)):
-    error.propertyName!==undefined?'/'+escape(error.propertyName):'');
-  const contains=errors.filter(error=>error.keyword==='contains'),found=new Set<string>();
-  for(const error of errors){
-    const location=at(error);
-    if(!contains.some(other=>error.schemaPath.startsWith(other.schemaPath+'/')&&location.startsWith(at(other)+'/')))found.add(location);
+// additionalProperties、propertyNames 报到键名。prefixItems 之后的 items 为 false 时 Ajv 只在数组上报一条，params.limit 为前缀的项数，
+// 这里展开为其后的各项，同 .NET 逐项报告。去重后按序数排序。
+function locations(errors:ErrorObject[],data:JsonValue):string[]{
+  const found=new Set<string>();
+  for(const{instancePath,keyword,params}of errors){
+    if(keyword==='items'&&typeof params.limit==='number'){
+      const array=instancePath.split('/').slice(1).reduce<JsonValue>((value,segment)=>{const key=segment.replaceAll('~1','/').replaceAll('~0','~');return Array.isArray(value)?value[Number(key)]:obj(value)[key];},data);
+      for(let index=params.limit;index<(array as JsonValue[]).length;index++)found.add(instancePath+'/'+index);
+    }
+    else found.add(instancePath+(
+      keyword==='additionalProperties'?'/'+escape(String(params.additionalProperty)):
+      keyword==='propertyNames'?'/'+escape(String(params.propertyName)):''));
   }
   return [...found].sort();
 }
+// 文档内引用的目标与其规范指针，同 ProfileLoader.Target：只接受 #/ 开头、字符合乎 URI 片段的 JSON Pointer；百分号编码须为合法 UTF-8，
+// 解码后不含 /，~ 只能出现在 ~0、~1 中。目标须为子 Schema 位置：从根起逐段经 schemaKeywords 中的关键字到达（$ref 除外），
+// 映射再经键名，数组再经不带前导零的十进制下标。Ajv 把 #/ 当作根，按 JSON Pointer 则指向根下的空键名，这里不接受。
+function target(root:JsonValue,reference:string):{value:JsonValue,pointer:string}|undefined{
+  if(!reference.startsWith('#/')||!/^(?:[A-Za-z0-9._~!$&'()*+,;=:@/?-]|%[0-9A-Fa-f]{2})*$/.test(reference.slice(1)))return undefined;
+  // container 为 undefined 时位于子 Schema 上，否则位于该映射或数组关键字的值上。
+  let value:JsonValue=root,pointer='',container:string|undefined;
+  for(const raw of reference.slice(2).split('/')){
+    let segment:string;
+    try{segment=decodeURIComponent(raw);}catch{return undefined;}
+    if(segment.includes('/')||/~(?![01])/.test(segment))return undefined;
+    segment=segment.replaceAll('~1','/').replaceAll('~0','~');
+    const map=typeof value==='object'&&value!==null&&!Array.isArray(value)?value:undefined;
+    if(container===undefined&&map&&segment!=='$ref'&&schemaKeywords.includes(segment)&&Object.hasOwn(map,segment)){value=map[segment];container=schemaMaps.has(segment)||schemaLists.has(segment)?segment:undefined;}
+    else if(container!==undefined&&schemaMaps.has(container)&&map&&Object.hasOwn(map,segment)){value=map[segment];container=undefined;}
+    else if(container!==undefined&&schemaLists.has(container)&&Array.isArray(value)&&/^(?:0|[1-9][0-9]{0,8})$/.test(segment)&&Number(segment)<value.length){value=value[Number(segment)];container=undefined;}
+    else return undefined;
+    pointer+='/'+escape(segment);
+  }
+  return container===undefined?{value,pointer}:undefined;
+}
+// 预检已确认走到的 $ref 都能解析；目标为 JSON null 时同没有引用。
 function localReference(schema:Obj,root:JsonValue):JsonValue|undefined{
   if(typeof schema.$ref!=='string')return undefined;
-  if(!schema.$ref.startsWith('#/'))throw new Error('local JSON Pointer only');
-  let result:JsonValue|undefined=root;
-  for(const segment of schema.$ref.slice(2).split('/'))result=obj(result)[decodeURIComponent(segment).replaceAll('~1','/').replaceAll('~0','~')];
-  if(result===undefined)throw new Error('missing schema reference');return result;
+  const reference=target(root,schema.$ref);
+  if(!reference)throw new Error('local JSON Pointer only');
+  return reference.value??undefined;
 }
 function defaults(schema:JsonValue,value:JsonValue,root:JsonValue=schema,depth=0):JsonValue{
   if(depth>64)throw new Error('schema depth');
@@ -292,7 +460,9 @@ function defaults(schema:JsonValue,value:JsonValue,root:JsonValue=schema,depth=0
   if(Array.isArray(rule.allOf))for(const child of rule.allOf)value=defaults(child,value,root,depth+1);
   if(Array.isArray(value)&&rule.items!==undefined)value=value.map(child=>defaults(rule.items,child,root,depth+1));
   if(value!==null&&typeof value==='object'&&!Array.isArray(value)){
-    for(const[key,fallback]of Object.entries(obj(rule.default)))if(!Object.hasOwn(value,key))value[key]=structuredClone(fallback);
-    for(const[key,shape]of Object.entries(obj(rule.properties))){if(!Object.hasOwn(value,key)&&Object.hasOwn(obj(shape),'default'))value[key]=structuredClone(obj(shape).default);if(Object.hasOwn(value,key))value[key]=defaults(shape,value[key],root,depth+1);}
+    // 按自有属性写入：键名为 __proto__ 时直接赋值会改原型而不是添加属性。
+    const put=(target:Obj,key:string,child:JsonValue):void=>{Object.defineProperty(target,key,{value:child,writable:true,enumerable:true,configurable:true});};
+    for(const[key,fallback]of Object.entries(obj(rule.default)))if(!Object.hasOwn(value,key))put(value,key,structuredClone(fallback));
+    for(const[key,shape]of Object.entries(obj(rule.properties))){if(!Object.hasOwn(value,key)&&Object.hasOwn(obj(shape),'default'))put(value,key,structuredClone(obj(shape).default));if(Object.hasOwn(value,key))put(value,key,defaults(shape,value[key],root,depth+1));}
   }return value;
 }
