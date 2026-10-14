@@ -66,6 +66,13 @@ class SiteContentTests(unittest.TestCase):
         ]
         self.assertEqual(self.errors_for(good), [])
 
+    def test_yue_routes_come_from_catalog_and_api_files_must_exist(self) -> None:
+        write(self.tmp / "packages/yue/core/docs/catalog.json", '{"Button": {}}')
+        write(self.tmp / "website/docs/components/yue/api/native-123456abcdef.mdx", "# 属性")
+        self.assertEqual(self.errors_for(["/components/yue/core/button", "/components/yue/tokens", "/components/yue/api/native-123456abcdef"]), [])
+        for route in ["/components/yue/core/invented", "/components/yue/api/native-000000000000"]:
+            self.assertTrue(self.errors_for([route]), route)
+
     def test_missing_routes_fail(self) -> None:
         bad = ["/start/missing", "./nope", "/design/adr/adr-999", "/design/adr/ADR-001-kun", "/cli/nope", "/components/platform/qian.nope"]
         errors = self.errors_for(bad)

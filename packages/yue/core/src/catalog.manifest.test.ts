@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import scenarios from '../docs/scenarios.json';
+import docs from '../docs/catalog.json';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import { componentManifestSchema } from '@idadawn/yue-contracts';
@@ -19,7 +20,9 @@ describe('组件机器目录', () => {
       const props = ajv.compile(manifest.props);
       for (const example of manifest.examples) expect(props(example.props), `${manifest.name}: ${JSON.stringify(props.errors)}`).toBe(true);
       for (const token of manifest.tokens) expect(tokens.has(token), token).toBe(true);
-      expect(readFileSync(new URL(`./storybook/${manifest.name}.stories.tsx`, import.meta.url), 'utf8')).toContain('meta.story(');
+      expect(docs).toHaveProperty(manifest.name);
+      expect(scenarios.some(s => s.id === `${manifest.name}/Default`)).toBe(true);
+      expect(scenarios.some(s => s.id === `${manifest.name}/Dark`)).toBe(true);
     }
   });
   it('畸形清单、未知组件属性与无效变体被拒绝', () => {

@@ -16,6 +16,7 @@ Kun 小节是 kun 仓库文档的镜像，源不在本仓库：CI 生成后显�
 from __future__ import annotations
 
 import re
+import json
 import subprocess
 import sys
 from functools import lru_cache
@@ -147,6 +148,11 @@ def generated_routes() -> frozenset[str]:
     routes |= {f"/cli/{slug}" for slug in re.findall(r"\bslug: '([a-z0-9-]+)'", sync)}
     collect = (scripts / "collect-components.ts").read_text(encoding="utf-8")
     routes |= {f"/components/platform/{cid}" for cid in re.findall(r"\bid: '(qian\.[a-z0-9.-]+)'", collect)}
+    catalog = ROOT / "packages/yue/core/docs/catalog.json"
+    if catalog.is_file():
+        names = json.loads(catalog.read_text(encoding="utf-8"))
+        routes |= {f"/components/yue/core/{name.lower()}" for name in names}
+        routes |= {"/components/yue/tokens", "/components/yue/core/shared-api"}
     return frozenset(routes)
 
 
@@ -168,6 +174,9 @@ def route_exists(route: str) -> bool:
         route = route[: -len(".html")]
     if route.startswith("/design/"):
         return route in design_routes()
+    # TypeScript 实际声明内容决定的去重属性页只接受构建后确实存在的文件。
+    if re.fullmatch(r"/components/yue/api/native-[0-9a-f]{12}", route):
+        return site_page_exists(SITE_DOCS / route.lstrip("/"))
     if route.startswith(("/cli/", "/components/")):
         return route in generated_routes()
     for part in ("sdk/kun", "sdk/api"):

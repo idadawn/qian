@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-14 yue 组件文档迁入 Rspress（S1-YUE-005）
+
+51 个组件入口、141 个公开组件/部件的 Props、令牌页与可编辑的真实演示统一进入现有 Rspress。共用示例及 126 个状态场景迁移到独立 Playwright，离线编辑器资源随站点发布；移除旧文档应用与依赖，保留原有八项门禁。使用说明见 [core 主文档](../packages/yue/core/README.md)。
+
 ## 2026-10-14 统一 Rspress 组件文档与验收口径（S1-YUE-005、S1-DOCS-002）
 
 产品负责人决定不再使用 Storybook；[ADR-022](adr/ADR-022-rspress-unified-component-docs.md) 记录真实组件试构建结果、Props 默认过滤问题及离线编辑器要求。YUE-005 重新打开承接替换，DOCS-002 复用接线；本次为评估与规格修订，迁移实现尚未完成。

@@ -91,9 +91,6 @@ jobs:
         run: |
           pnpm --filter @idadawn/yue-contracts contracts:check
           pnpm yue:test
-          pnpm --filter yue-storybook test
-          pnpm --filter yue-storybook build
-          pnpm --filter yue-storybook smoke
       - name: a11y（Playwright + axe，critical / serious = 0）
         if: matrix.gate == 'a11y'
         run: pnpm yue:a11y

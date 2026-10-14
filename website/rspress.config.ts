@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { rehypeAccessibleAnchors } from './scripts/rehype-a11y.ts';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@rspress/core';
 import mermaid from 'rspress-plugin-mermaid';
@@ -31,6 +32,7 @@ export default defineConfig({
     cleanUrls: false,
   },
   markdown: {
+    rehypePlugins: [rehypeAccessibleAnchors],
     link: { checkDeadLinks: true },
     shiki: {
       // 验收要求覆盖 C# / TypeScript / JSON / YAML / Bash；其余为 docs/ 里实际出现的语言。

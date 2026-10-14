@@ -8,7 +8,7 @@ packages:
 # 允许跑 postinstall 的依赖（pnpm 12 默认拒绝未审核的构建脚本）：unrs-resolver 只在预编译二进制缺失时才编译。
 allowBuilds:
   unrs-resolver: true
-  esbuild: true # Storybook 的 Vite 构建器，校验/安装官方平台二进制
+  esbuild: true # Vite 工具链，校验/安装官方平台二进制
 
 # 版本目录：前端依赖只在这里钉一次，各包的 package.json 写 "catalog:"。版本矩阵页从这里读 @idadawn/yue-* 的工作区包。
 # typescript 钉 6.0.x：typescript-eslint 8 只支持 < 6.1。
@@ -37,28 +37,20 @@ catalog:
   "@testing-library/react": ^16.3.3
   "@testing-library/dom": ^10.4.2
   publint: ^0.3.25
-  storybook: 10.6.2
-  "@storybook/react-vite": 10.6.2
-  "@storybook/addon-a11y": 10.6.2
-  "@storybook/addon-docs": 10.6.2
-  "@storybook/addon-vitest": 10.6.2
   lucide-react: 1.56.0
   react-resizable-panels: 4.14.5
   json-schema-to-typescript: 16.0.0
   ajv: 8.20.0
+  "@rsbuild/core": 2.2.10
+  "@rsbuild/plugin-react": 2.1.0
+  "@rsbuild/plugin-tailwindcss": 2.0.3
+  "@babel/standalone": 7.28.5
+  monaco-editor: 0.52.2
 
 minimumReleaseAgeExclude:
   - "@playwright/test@1.64.0"
   - playwright-core@1.64.0
   - playwright@1.64.0
   - vite@8.3.4
-  - "@storybook/addon-a11y@10.6.2"
-  - "@storybook/addon-docs@10.6.2"
-  - "@storybook/addon-vitest@10.6.2"
-  - "@storybook/builder-vite@10.6.2"
-  - "@storybook/react-dom-shim@10.6.2"
-  - "@storybook/react-vite@10.6.2"
-  - "@storybook/react@10.6.2"
   - lucide-react@1.56.0
   - react-resizable-panels@4.14.5
-  - storybook@10.6.2
