@@ -376,7 +376,8 @@ public sealed partial class CustomerCommandTests
                 http.RequestServices.GetRequiredService<Qian.Identity.Abstractions.ICurrentUser>(), http.RequestAborted));
         }).RequireAuthorization();
     }
-    private static async Task AttachCapabilities(WebApplication app, HumanOnlyProbe? humanOnlyProbe = null)
+    // probes 随 crm 条目一起登记（同一组件、同一安装条目）；capabilitiesConfig 是 qian.capabilities 条目的组件配置，缺省为 {}。
+    private static async Task AttachCapabilities(WebApplication app, IReadOnlyList<IExecutableCapability> probes, object? capabilitiesConfig = null)
     {
         var loader = app.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var directory = Path.Combine(Path.GetTempPath(), "qian-capabilities-" + Guid.NewGuid().ToString("N"));
@@ -398,9 +399,11 @@ public sealed partial class CustomerCommandTests
                 entry.Scope == "global" ? ScopeKey.Global : new ScopeKey(entry.Scope.Split(':', 2)[0], entry.Scope.Split(':', 2)[1]), entry.Layer, entry.Config) }
         });
         Add("registry", "qian.registry", registry, [RegistryDefinition.Key]);
-        Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey, CapabilitiesDefinition.NavigationKey]);
+        Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey, CapabilitiesDefinition.NavigationKey], capabilitiesConfig);
+        // 组件配置按仓库交付的 config.schema.json 校验（profile 装载要求有配置的组件提供它）。
+        Write("plugins/capabilities/schemas/config.schema.json", File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.capabilities/schemas/config.schema.json")));
         Write("profiles/platform/qian.profile.yml", """{"name":"platform","bundles":[],"patch":"./qian.patch.yml","hmr":{"surfaces":true,"code":false},"build":{"aot":false},"hooks":{"allowCommand":false}}""");
-        Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin + "@" + item.Entry.Version, config = new { } })));
+        Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin + "@" + item.Entry.Version, config = item.Entry.Config })));
         var fullContract = CapabilityContractCompiler.CreateOpenApi(
             [CreateCustomerCommand.QianCapability, ListCustomersQuery.QianCapability, GetCustomerQuery.QianCapability], validator, new ToolContractHasher());
         Write("plugins/crm/metadata/contracts.json", JsonSerializer.Serialize(new[]
@@ -419,7 +422,7 @@ public sealed partial class CustomerCommandTests
             installed.Add(binding);
             if (definition.Entry.Id == "crm")
             {
-                var plugin = humanOnlyProbe is null ? definition.Plugin : new HumanOnlyProbePlugin(definition.Plugin, humanOnlyProbe);
+                var plugin = probes.Count == 0 ? definition.Plugin : new ProbePlugin(definition.Plugin, probes);
                 definitions["crm"] = definition with { Plugin = new NavigationManifestPlugin(plugin, binding.Metadata, validator) };
                 installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "0.9.0" } }, Path.Combine(directory, "plugins", "crm")));
                 installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "1.1.0" } }, Path.Combine(directory, "plugins", "crm"), incompatible: true));
@@ -467,9 +470,9 @@ public sealed partial class CustomerCommandTests
                 new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
         }
 
-        void Add(string id, string component, IQianPlugin plugin, ServiceKey[] provides)
+        void Add(string id, string component, IQianPlugin plugin, ServiceKey[] provides, object? config = null)
         {
-            var definition = new PluginDefinition(new PluginEntry(id, component, "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), plugin, provides);
+            var definition = new PluginDefinition(new PluginEntry(id, component, "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(config ?? new { })), plugin, provides);
             definitions.Add(id, definition);
             Write($"plugins/{id}/.qian-plugin/plugin.json", JsonSerializer.Serialize(new
             {

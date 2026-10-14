@@ -6,7 +6,7 @@ using Qian.Runtime.Errors;
 
 namespace Qian.Capabilities.Tests;
 
-// S1-RT-019：执行前的输入 Schema 校验、组件配置 catalogTtlMs、buf 输出解析。
+// S1-RT-019 / S1-RT-020：执行前的输入 Schema 校验、组件配置 catalogTtlMs 与 receiptMaxBytes、buf 输出解析。
 public sealed class CapabilityInputTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -211,6 +211,31 @@ public sealed class CapabilityInputTests
         }
         var duplicate = Assert.Throws<QianErrorException>(() => CapabilitiesOptions.Parse(Json("""{"catalogTtlMs":1,"catalogTtlMs":2}""")));
         Assert.Equal("BAD_REQUEST", duplicate.Error.Code.Code);
+    }
+
+    [Fact]
+    public void 组件配置receiptMaxBytes默认65536_取值0到1MiB_与插件配置Schema判定一致()
+    {
+        Assert.Equal(65536, CapabilitiesOptions.Parse(Json("{}")).ReceiptMaxBytes);
+        Assert.Equal(65536, CapabilitiesOptions.Default.ReceiptMaxBytes);
+        // 配置上限与回执表的检查约束一致。
+        Assert.Equal(CapabilitiesDbContext.ReceiptResponseLimit, CapabilitiesOptions.MaxReceiptMaxBytes);
+        var schema = JsonSchema.FromText(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.capabilities/schemas/config.schema.json")));
+        var cases = new (string Config, int? Limit, string? Code)[]
+        {
+            ("""{"receiptMaxBytes":0}""", 0, null), ("""{"receiptMaxBytes":1048576}""", 1048576, null), ("""{"receiptMaxBytes":1024,"catalogTtlMs":2500}""", 1024, null),
+            ("""{"receiptMaxBytes":-1}""", null, "OUT_OF_RANGE"), ("""{"receiptMaxBytes":1048577}""", null, "OUT_OF_RANGE"),
+            ("""{"receiptMaxBytes":"64"}""", null, "TYPE_MISMATCH"), ("""{"receiptMaxBytes":0.5}""", null, "TYPE_MISMATCH"),
+        };
+        foreach (var (config, limit, code) in cases)
+        {
+            var value = Json(config);
+            Assert.Equal(limit is not null, schema.Evaluate(value).IsValid);
+            if (limit is { } expected) { Assert.Equal(expected, CapabilitiesOptions.Parse(value).ReceiptMaxBytes); continue; }
+            var error = Assert.Throws<QianErrorException>(() => CapabilitiesOptions.Parse(value));
+            Assert.Equal((code, "#/receiptMaxBytes"), (Assert.Single(error.Error.Errors!).Code.Code, error.Error.Errors![0].Pointer));
+        }
+        Assert.Equal(2500, CapabilitiesOptions.Parse(Json("""{"receiptMaxBytes":1024,"catalogTtlMs":2500}""")).CatalogTtlMs);
     }
 
     [Fact]

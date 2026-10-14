@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-15 能力登记期契约检查与幂等回执上限（S1-RT-020）
+
+平台宿主调用 `AddQianCapabilities()` 后，`ctx.ProvideCapability` 在登记时生成目录条目并预编译输入校验器，不合格的契约（输入含租户字段、Schema 无法可靠校验等）以 `CapabilityContractException` 拒绝，组件挂载失败。通用执行入口的幂等回执按数据分级与组件配置 `receiptMaxBytes`（默认 64 KiB）决定是否保存响应体，不保存时同键重放返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；`Qian.Capabilities` 新增迁移 `InvokeReceiptLimits`。详见[组件规格 §9.5](prd/specs/component-model.md) 与 [Qian.Capabilities](../packages/Qian.Capabilities/README.md)。
+
 ## 2026-10-14 能力目录信封契约、别名 Link 头与通用执行入口规范化（S1-RT-019）
 
 `GET /api/capabilities` 的响应冻结为 [`contracts/v0/capability-catalog`](../contracts/v0/capability-catalog.schema.json)（`items`、`ttlMs`、`cacheScope`），`ttlMs` 来自组件配置 `catalogTtlMs`；`/api/kernel/capabilities` 别名同时返回 `Deprecation` 与 `Link: <后继路径>; rel="successor-version"`；`POST /api/capabilities/{plugin}/{name}/invoke` 先按条目 `inputSchema` 校验（400 `INPUT_INVALID`），写类能力支持 `Idempotency-Key`（24 小时内重放返回首次响应并带 `Idempotent-Replayed: true`）；`Qian.Capabilities` 随包提供 EF 迁移（偏好表、回执表，经 `Qian.Data` 生成器带 RLS）。详见[组件规格 §9.5](prd/specs/component-model.md) 与 [PRD 7.2.1](prd/07-s1-foundation.md)。

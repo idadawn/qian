@@ -23,6 +23,7 @@ using Npgsql;
 using Qian.Audit;
 using Qian.Authz;
 using Qian.Data;
+using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Tenancy;
 using Qian.Testing.Containers;
@@ -250,7 +251,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
     }
 
     private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
-        HumanOnlyProbe? humanOnlyProbe = null)
+        HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null)
     {
         var platform = capabilities || runtimeProfile == "platform";
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
@@ -319,7 +320,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             if (platform) MapCapabilities(app);
             if (hooks) MapHookEntry(app);
             await app.StartAsync(Ct);
-            if (capabilities) await AttachCapabilities(app, humanOnlyProbe);
+            if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);
             if (hooks) await AttachHooks(app);
             using (tenant.BeginScope(A))
             {
