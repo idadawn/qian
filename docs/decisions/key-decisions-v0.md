@@ -430,7 +430,7 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 
 ### 验收复核裁决 R75–R77（S1-RT-006 复核，2026-10-14）
 
-由 Claude 在产品负责人要求「给我一个解决方案」后作默认裁决，未经逐条确认；整改任务见 `pm/tasks/S1-RT-019.md`，有异议时新建决策任务。2026-10-14 产品负责人认可 S1-RT-006 与 S1-RT-019 的交付，本组裁决按交付的方式落地（含 R75 实现说明）。
+由 Claude 在产品负责人要求「给我一个解决方案」后作默认裁决，未经逐条确认；整改任务见 `pm/tasks/S1-RT-019.md`，有异议时新建决策任务。2026-10-14 产品负责人认可 S1-RT-006 与 S1-RT-019 的交付，本组裁决按交付的方式落地（含 R75 实现说明）。 2026-10-15 claude 独立复核 S1-RT-019：八项验收成立、done 维持，非阻断缺陷记入该任务日志，本组裁决不变。
 
 - R75：保留通用执行入口 `POST /api/capabilities/{plugin}/{name}/invoke` 并写入规格 §9.5 与 PRD 7.2.1：只在 `platform` profile 存在；每次调用重做与目录同款的判定；请求体先按条目 `inputSchema` 校验，失败返回 ErrorDetail `INPUT_INVALID`（原文误写 `VALIDATION_FAILED`，contracts/v0 §3.2 的输入校验码是 `INPUT_INVALID`，S1-RT-019 按契约更正） 并带 JSON Pointer；支持 `Idempotency-Key`，与外壳桥接 `invoke` 的幂等键及 R63 一致；Agent 主体需 `agent.expose` 且 S1 不开放 Actor 委托；聚合 OpenAPI 列出每个能力的具体路径，ApiExplorer 不列通用模板并在 README 说明。
   - 实现说明（S1-RT-019）：幂等语义与 Kun 幂等消费相同（成功后才写回执、失败不留标记），按短事务登记「执行中」→ 不占连接执行 → 写完成或撤销三段实现，同键请求仍在执行时返回 409，只读能力（`sideEffect: read`）忽略幂等键；回执存 `plugin_qian_capabilities.invoke_receipts`（租户 RLS），不用 R63 的 Redis 键——R63 针对事件消费只需「已处理」标记，HTTP 重放要原样返回首次响应；Kun 未改动，不开 KUN 任务。
