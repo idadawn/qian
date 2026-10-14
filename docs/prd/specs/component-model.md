@@ -1255,7 +1255,7 @@ npx qian@latest [--skill <name>]… [--agent <name>]… [--command <name>]… [-
 
 全部管理面端点只在 `platform` profile 存在，受 `qian.authz` 的 PEP 保护；业务与模型表面（路由、`ctx.Tools`、能力目录、菜单）对未挂载 / 被过滤的组件一律 404（R32）。
 
-**执行入口的回执策略与登记期检查**（S1-RT-020）：幂等回执只在条目 `dataClassification` 为 `public` / `internal`、且响应体不超过组件配置 `receiptMaxBytes`（UTF-8 字节，默认 65536，取值 0–1048576）时保存响应体；`pii` / `finance` / `secret`（及未知分级）与超限的响应只记「已执行」和原因（`data_classification` / `response_too_large`），回放窗口内同键请求返回 409 `CAPABILITY_REPLAY_UNAVAILABLE` 且不再执行。回执表另以检查约束限定响应体不超过 1 MiB。条目在能力登记（`ctx.ProvideCapability`）时生成并预编译输入校验器：输入含租户字段、Schema 无法可靠校验（`patternProperties` / `dependentSchemas` 键含 `/` 或 `~`、`$ref` 找不到目标、无法编译）的契约在登记阶段以带组件 ID、能力名与 JSON Pointer 的异常拒绝，组件挂载失败，执行入口不会因此返回 500。
+**执行入口的回执策略与登记期检查**（S1-RT-020）：幂等回执只在条目 `dataClassification` 为 `public` / `internal`、且响应体不超过组件配置 `receiptMaxBytes`（UTF-8 字节，默认 65536，取值 0–1048576）时保存响应体；`pii` / `finance` / `secret`（及未知分级）与超限的响应只记「已执行」和原因（`data_classification` / `response_too_large`），回放窗口内同键请求返回 409 `CAPABILITY_REPLAY_UNAVAILABLE` 且不再执行。组件作者要按响应内容标注能力的 `dataClassification`：SDK 默认 `internal`，即默认保存响应体；响应含个人信息、财务或机密数据的能力标为 `pii` / `finance` / `secret`（参考应用响应含客户名称的 `customer.*` 能力标为 `pii`）。回执表另以检查约束限定响应体不超过 1 MiB，迁移以 `NOT VALID` 添加、只约束新写入：存量超限行会让带校验的约束失败，而迁移属主在 FORCE RLS 下删不掉这些行；DDL 校验本身不经 RLS。回执过期后不再回放，物理删除靠本租户后续带键写调用登记时的惰性清理（每次最多 100 行）；长期没有带键写调用的租户由运维清理（运维手册给出 SQL）。条目在能力登记（`ctx.ProvideCapability`）时生成并预编译输入校验器：输入含租户字段、Schema 无法可靠校验（`patternProperties` / `dependentSchemas` 键含 `/` 或 `~`、`$ref` 找不到目标、无法编译）的契约在登记阶段以带组件 ID、能力名与 JSON Pointer 的异常拒绝，组件挂载失败，执行入口不会因此返回 500。登记期检查由宿主调用 `AddQianCapabilities()` 装配，platform profile 宿主必须调用，否则退化为首次读目录或调用时才编译。
 
 ---
 
@@ -1417,4 +1417,5 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 | 2026-10-14 | 草案 v2（S1-RT-018） | §5.1 / §5.2 / §5.3 `Provide` 返回可原位替换实例的注册句柄（.NET `IRegistrationHandle<T>.Replace`、TS `RegistrationHandle<T>.replace`）；§5.6 声明式表面重载改为先新增、再原位替换、最后撤销；§10.2 T19 补替换期间不缺失，新增 T25。产品负责人在任务中要求修复热重载读取方瞬时看到注册缺失的竞态 |
 | 2026-10-14 | 草案 v2（S1-RT-019） | §9.5 增加通用执行入口 `POST /api/capabilities/{plugin}/{name}/invoke` 一行（R75），`/api/capabilities/*` 注明目录信封契约；§12 管理面别名验收补 `Link: rel="successor-version"`。S1-RT-006 复核发现执行入口未进规格、别名缺 Link 头 |
 | 2026-10-15 | 草案 v2（S1-RT-020） | §9.5 执行入口加回执策略：按数据分级与 `receiptMaxBytes` 决定是否保存响应体，不保存时同键重放返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；能力契约在登记阶段生成条目并预编译输入校验器，不合格即拒绝。S1-RT-019 复核发现回执明文无上限、输入 Schema 首次调用才编译 |
+| 2026-10-15 | 草案 v2（S1-RT-021） | §9.5 回执策略段更正两处说法：过期回执的物理删除靠本租户后续带键写调用登记时的惰性清理（每次最多 100 行），`NOT VALID` 的理由是存量超限行会让带校验的约束失败、迁移属主在 FORCE RLS 下删不掉；补作者按 `dataClassification` 标注能力（SDK 默认 `internal` 即默认保存响应体）与 platform 宿主必须调用 `AddQianCapabilities()`。S1-RT-020 复核发现两处说法不准、默认分级会让含个人信息的响应明文入回执 |
 | 2026-10-15 | 草案 v2（S1-RT-026） | §5.6 写明 `Apply` 尚未结束时所注入的键被其它条目撤销、替换或隐藏的处理：本次 `Apply` 作废、逆序释放后回到 `Pending`，不记为 `Failed`；`Apply` 自身造成的可见性变化仍为 `Failed`。S1-RT-023 调查时发现两侧装载器只让 `Ready` 条目失效，`Apply` 中途依赖变化的条目被误判 `Failed` 且不再重试 |

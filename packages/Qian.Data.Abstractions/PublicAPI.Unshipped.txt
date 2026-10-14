@@ -287,8 +287,8 @@ static Qian.Data.RecordHookContext.operator !=(Qian.Data.RecordHookContext? left
 static Qian.Data.RecordHookContext.operator ==(Qian.Data.RecordHookContext? left, Qian.Data.RecordHookContext? right) -> bool
 static Qian.Data.RecordHookResult.Accept(System.Text.Json.JsonElement? payload = null) -> Qian.Data.RecordHookResult!
 static Qian.Data.RecordHookResult.Reject(Qian.Runtime.Errors.QianError! error) -> Qian.Data.RecordHookResult!
-static Qian.Data.DataContractSchemas.FrozenEventEnvelope.get -> string!
-static Qian.Data.DataContractSchemas.FrozenS2sClaims.get -> string!
+static Qian.Data.DataContractSchemas.EventEnvelopeV0.get -> string!
+static Qian.Data.DataContractSchemas.S2sClaimsV0.get -> string!
 Qian.Data.RecordChangedPayload.EnsureConsistentContext(Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
 Qian.Data.BaseDataType
 Qian.Data.BaseDataType.<Clone>$() -> Qian.Data.BaseDataType!

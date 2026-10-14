@@ -239,7 +239,7 @@ internal sealed partial class RegistryScopeReconciler(
         var reason = failure switch
         {
             QianErrorException qian => qian.Error.Code.Code,
-            { } other when other.Data["reasonCode"] is string code && ReasonCodePattern().IsMatch(code) => code,
+            { } other when other.Data["reasonCode"] is string code && code.Length <= 64 && ReasonCodePattern().IsMatch(code) => code,
             _ => PlatformErrors.Internal.Code
         };
         return new RegistryScopeApplyException(scope, entry.Id, entry.Plugin, revisions.TryGetValue(entry.Id, out var revision) ? revision : null, reason, failure);
@@ -334,6 +334,7 @@ internal sealed partial class RegistryScopeReconciler(
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => inner.ApplyAsync(ctx, config, ct);
     }
 
-    [GeneratedRegex("^[A-Z][A-Z0-9_]{0,63}$", RegexOptions.CultureInvariant)]
+    // contracts/v0 error-detail 的错误码格式（$defs/Code）：大写字母开头，下划线只作分隔，最长 64。
+    [GeneratedRegex("^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$", RegexOptions.CultureInvariant)]
     private static partial Regex ReasonCodePattern();
 }
