@@ -172,31 +172,10 @@ Qian.Data.RecordActor.OnBehalfOf.get -> string?
 Qian.Data.RecordActor.OnBehalfOf.init -> void
 Qian.Data.RecordActor.RecordActor(string! Kind, string! Id, string? OnBehalfOf = null) -> void
 Qian.Data.RecordChangedEvent
-Qian.Data.RecordChangedEvent.<Clone>$() -> Qian.Data.RecordChangedEvent!
-Qian.Data.RecordChangedEvent.Actor.get -> Qian.Data.RecordActor!
-Qian.Data.RecordChangedEvent.Actor.init -> void
-Qian.Data.RecordChangedEvent.CausationId.get -> System.Guid?
-Qian.Data.RecordChangedEvent.CausationId.init -> void
-Qian.Data.RecordChangedEvent.CorrelationId.get -> System.Guid?
-Qian.Data.RecordChangedEvent.CorrelationId.init -> void
-Qian.Data.RecordChangedEvent.Deconstruct(out System.Guid EventId, out System.DateTime OccurredAt, out System.Guid TenantId, out string! Producer, out Qian.Data.RecordActor! Actor, out string! TraceParent, out Qian.Data.RecordChangedPayload! Payload, out System.Guid? CorrelationId, out System.Guid? CausationId) -> void
-Qian.Data.RecordChangedEvent.Equals(Qian.Data.RecordChangedEvent? other) -> bool
+Qian.Data.RecordChangedEvent.Envelope.get -> Qian.Events.QianEventEnvelope!
 Qian.Data.RecordChangedEvent.EventId.get -> System.Guid
-Qian.Data.RecordChangedEvent.EventId.init -> void
-Qian.Data.RecordChangedEvent.OccurredAt.get -> System.DateTime
-Qian.Data.RecordChangedEvent.OccurredAt.init -> void
 Qian.Data.RecordChangedEvent.Payload.get -> Qian.Data.RecordChangedPayload!
-Qian.Data.RecordChangedEvent.Payload.init -> void
-Qian.Data.RecordChangedEvent.Producer.get -> string!
-Qian.Data.RecordChangedEvent.Producer.init -> void
-Qian.Data.RecordChangedEvent.RecordChangedEvent(System.Guid EventId, System.DateTime OccurredAt, System.Guid TenantId, string! Producer, Qian.Data.RecordActor! Actor, string! TraceParent, Qian.Data.RecordChangedPayload! Payload, System.Guid? CorrelationId = null, System.Guid? CausationId = null) -> void
-Qian.Data.RecordChangedEvent.Subject.get -> string!
 Qian.Data.RecordChangedEvent.TenantId.get -> System.Guid
-Qian.Data.RecordChangedEvent.TenantId.init -> void
-Qian.Data.RecordChangedEvent.TraceParent.get -> string!
-Qian.Data.RecordChangedEvent.TraceParent.init -> void
-Qian.Data.RecordChangedEvent.Type.get -> string!
-Qian.Data.RecordChangedEvent.Version.get -> string!
 Qian.Data.RecordChangedPayload
 Qian.Data.RecordChangedPayload.<Clone>$() -> Qian.Data.RecordChangedPayload!
 Qian.Data.RecordChangedPayload.Actor.get -> Qian.Data.RecordActor!
@@ -242,7 +221,7 @@ Qian.Data.RecordHookResult
 Qian.Data.RecordHookResult.Allowed.get -> bool
 Qian.Data.RecordHookResult.Error.get -> Qian.Runtime.Errors.QianError?
 Qian.Data.RecordHookResult.Payload.get -> System.Text.Json.JsonElement?
-const Qian.Data.RecordChangedEvent.EventType = "qian.record.changed.v1" -> string!
+const Qian.Data.RecordChangedPayload.EventType = "qian.record.changed.v1" -> string!
 override Qian.Data.DataRulePolicy.Equals(object? obj) -> bool
 override Qian.Data.DataRulePolicy.GetHashCode() -> int
 override Qian.Data.DataRulePolicy.ToString() -> string!
@@ -264,8 +243,6 @@ override Qian.Data.FilterValidationIssue.ToString() -> string!
 override Qian.Data.RecordActor.Equals(object? obj) -> bool
 override Qian.Data.RecordActor.GetHashCode() -> int
 override Qian.Data.RecordActor.ToString() -> string!
-override Qian.Data.RecordChangedEvent.Equals(object? obj) -> bool
-override Qian.Data.RecordChangedEvent.GetHashCode() -> int
 override Qian.Data.RecordChangedEvent.ToString() -> string!
 override Qian.Data.RecordChangedPayload.Equals(object? obj) -> bool
 override Qian.Data.RecordChangedPayload.GetHashCode() -> int
@@ -275,7 +252,6 @@ override Qian.Data.RecordHookContext.GetHashCode() -> int
 override Qian.Data.RecordHookContext.ToString() -> string!
 override Qian.Data.RecordHookResult.ToString() -> string!
 static Qian.Data.DataContractJson.FilterTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Data.FilterExpression!>!
-static Qian.Data.DataContractJson.RecordChangedEventTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Data.RecordChangedEvent!>!
 static Qian.Data.DataContractJson.RecordChangedPayloadTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Data.RecordChangedPayload!>!
 static Qian.Data.DataContractJson.RulePolicyTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Data.DataRulePolicy!>!
 static Qian.Data.DataContractSchemas.Filter.get -> string!
@@ -302,8 +278,8 @@ static Qian.Data.FilterValidationIssue.operator !=(Qian.Data.FilterValidationIss
 static Qian.Data.FilterValidationIssue.operator ==(Qian.Data.FilterValidationIssue? left, Qian.Data.FilterValidationIssue? right) -> bool
 static Qian.Data.RecordActor.operator !=(Qian.Data.RecordActor? left, Qian.Data.RecordActor? right) -> bool
 static Qian.Data.RecordActor.operator ==(Qian.Data.RecordActor? left, Qian.Data.RecordActor? right) -> bool
-static Qian.Data.RecordChangedEvent.operator !=(Qian.Data.RecordChangedEvent? left, Qian.Data.RecordChangedEvent? right) -> bool
-static Qian.Data.RecordChangedEvent.operator ==(Qian.Data.RecordChangedEvent? left, Qian.Data.RecordChangedEvent? right) -> bool
+static Qian.Data.RecordActor.From(Qian.Events.EventActor! actor) -> Qian.Data.RecordActor!
+static Qian.Data.RecordChangedEvent.FromEnvelope(Qian.Events.QianEventEnvelope! envelope) -> Qian.Data.RecordChangedEvent!
 static Qian.Data.RecordChangedPayload.operator !=(Qian.Data.RecordChangedPayload? left, Qian.Data.RecordChangedPayload? right) -> bool
 static Qian.Data.RecordChangedPayload.operator ==(Qian.Data.RecordChangedPayload? left, Qian.Data.RecordChangedPayload? right) -> bool
 static Qian.Data.RecordEventRegistration.RegisterRecordEvents(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
@@ -313,7 +289,7 @@ static Qian.Data.RecordHookResult.Accept(System.Text.Json.JsonElement? payload =
 static Qian.Data.RecordHookResult.Reject(Qian.Runtime.Errors.QianError! error) -> Qian.Data.RecordHookResult!
 static Qian.Data.DataContractSchemas.FrozenEventEnvelope.get -> string!
 static Qian.Data.DataContractSchemas.FrozenS2sClaims.get -> string!
-Qian.Data.RecordChangedEvent.EnsureConsistentContext() -> void
+Qian.Data.RecordChangedPayload.EnsureConsistentContext(Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
 Qian.Data.BaseDataType
 Qian.Data.BaseDataType.<Clone>$() -> Qian.Data.BaseDataType!
 Qian.Data.BaseDataType.Accepts(string! facet) -> bool
