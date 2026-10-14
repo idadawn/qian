@@ -1,7 +1,7 @@
 {
   "name": "@idadawn/yue-core",
   "version": "0.1.0",
-  "description": "Base UI + shadcn 源码自有化的基础组件（约 30 个）。",
+  "description": "Base UI + shadcn 源码自有化的基础组件（51 个）。",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -36,7 +36,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "publint": "publint --strict --pack pnpm",
     "test": "vitest run",
-    "postbuild": "node scripts/export-manifests.mjs"
+    "postbuild": "node scripts/export-manifests.mjs",
+    "manifest:generate": "node scripts/export-manifests.mjs --generate",
+    "manifest:check": "node scripts/export-manifests.mjs --check"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",

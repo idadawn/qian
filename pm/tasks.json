@@ -65,11 +65,10 @@
    "S1-RT-004"
   ],
   "blockedBy": [
-   "S1-RT-006",
    "S1-RT-014",
    "S1-RT-004"
   ],
-  "order": 4,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -113,10 +112,9 @@
   ],
   "blockedBy": [
    "S1-IDP-002",
-   "S1-AUD-001",
-   "S1-RT-006"
+   "S1-AUD-001"
   ],
-  "order": 4,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -954,7 +952,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。</li>\n<li>2026-10-14 claude：修正：qian.record.changed.v1 改按 Qian.Events 模型——[IntegrationEventId] 与 RegisterRecordEvents 改为登记载荷 RecordChangedPayload，信封只由写入端生成一层；RecordChangedEvent 改为 after Hook 视图，经 FromEnvelope 从解析后的信封与类型化载荷派生并核对租户、主体，EnsureConsistentContext 移到载荷。线上信封、payload Schema 与 fixture 不变（规格未冻结 C# 登记类型，不另开 DEC）；Qian.Data.Abstractions 新增引用 Qian.Events.Abstractions。专项 75 项、Events 16 项、CRM 28 项、Data 40 项零失败</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。</li>\n<li>2026-10-14 claude：修正：qian.record.changed.v1 改按 Qian.Events 模型——[IntegrationEventId] 与 RegisterRecordEvents 改为登记载荷 RecordChangedPayload，信封只由写入端生成一层；RecordChangedEvent 改为 after Hook 视图，经 FromEnvelope 从解析后的信封与类型化载荷派生并核对租户、主体，EnsureConsistentContext 移到载荷。线上信封、payload Schema 与 fixture 不变（规格未冻结 C# 登记类型，不另开 DEC）；Qian.Data.Abstractions 新增引用 Qian.Events.Abstractions。专项 75 项、Events 16 项、CRM 28 项、Data 40 项零失败</li>\n<li>2026-10-14 claude：验收复核（claude，2026-10-14）：三项验收成立。Filter AST Schema（13 运算符、15 系统变量、拒绝 tenant_id 路径）、运算符矩阵以 const 形式发布为 JSON Schema、bool 加 between 被矩阵拒绝（DataContractTests）；RecordChangedPayload / IRecordHook / DataRulePolicy 随 Qian.Data.Abstractions 发布并过 PublicAPI 分析器，10-14 的登记模型修正只加 description、线上信封与 fixture 未变，依赖门禁允许 Abstractions 引 Qian.Events.Abstractions；规格被 7.5、7.6、§08 引用。本机全量 640/640。备注：矩阵今日只有文档消费方，代码消费方为零，首个消费方 S1-AZ-006 仍 todo；FilterContracts.cs 第 44 行组级 logic 的错误路径拼成 #/groups/0#/logic，应为 /logic，无测试覆盖；data/v1 Schema 无冻结标记；fixtures/field-types.json 无测试引用；done 后改登记模型的 PR #85 无人工评审</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-004.md"
  },
  {
@@ -1915,7 +1913,7 @@
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n<li>2026-10-14 cody：开始：按用户指派认领；核实真实 profile 宿主后完成镜像、SBOM、扫描、签名与配置漂移验收。</li>\n</ul>\n<h4>阻塞与恢复条件</h4>\n<p>2026-10-14 复核：identity、gateway 与 platform 的业务宿主和 shell 静态制品尚未交付，现有 profile 仍为静态装配骨架。原依赖只覆盖配置装载器与集群基线，不能支撑三个真实镜像的验收；补列 IDP-002、IDP-005、GW-001、YUE-001，详细输入与验收准备见 deploy/images/README.md。产品负责人已选择保持本轮四任务范围、记录真实前置阻塞；原验收不变，待前置完成后恢复构建与供应链验证。</p>\n<ul>\n<li>2026-10-14 cody：按用户确认保持四任务范围；已核实真实身份/网关/RP/外壳输入缺失并补列前置，交付镜像输入与验收准备文档；三项真实镜像验收保持未完成。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>R31：<code>platform</code> → <code>qian-platform</code>（JIT，含 <code>shell</code> 与 <code>model-gateway</code> 组合包）、<code>identity</code> → <code>qian-identity</code>（JIT）、<code>gateway</code> → <code>qian-gateway</code>（AOT distroless）、可选 <code>model-gateway</code> → <code>qian-model-gateway-adapter</code>（P1）；<code>standalone</code> / <code>minimal</code> 不出镜像；多阶段构建、非 root、只读根文件系统；SBOM（Syft）+ 漏洞扫描（Grype / Trivy）+ Cosign；profile 文件与 <code>qian.patch.yml</code> 随镜像发布，环境级 <code>--patch</code> overlay 由 ConfigMap 挂载。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>检查：三个 profile 镜像按 digest 引用、带 Cosign 签名与 SBOM；<code>gateway</code> 镜像为 AOT distroless</li>\n<li class='chk'><span class='box'></span>检查：每个 profile 镜像内 <code>qian --dump-config</code> 的输出与 git 中对应 profile + 组合包 + patch 的合成结果一致（配置漂移门禁）</li>\n<li class='chk'><span class='box'></span>检查：镜像以非 root 运行、根文件系统只读；<code>shell</code> 静态制品随 <code>platform</code> 镜像发布并经 <code>gateway</code> 提供</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>\n<ul>\n<li>2026-10-11 cody：按用户批准的 DEC-016，DEP-001 保留为真实基础设施前置；本任务产出须参与 DEP-005 的真实平台四依赖联调发布门，不能以基线探针替代。</li>\n<li>2026-10-14 cody：开始：按用户指派认领；核实真实 profile 宿主后完成镜像、SBOM、扫描、签名与配置漂移验收。</li>\n</ul>\n<h4>阻塞与恢复条件</h4>\n<p>2026-10-14 复核：identity、gateway 与 platform 的业务宿主和 shell 静态制品尚未交付，现有 profile 仍为静态装配骨架。原依赖只覆盖配置装载器与集群基线，不能支撑三个真实镜像的验收；补列 IDP-002、IDP-005、GW-001、YUE-001，详细输入与验收准备见 deploy/images/README.md。产品负责人已选择保持本轮四任务范围、记录真实前置阻塞；原验收不变，待前置完成后恢复构建与供应链验证。</p>\n<ul>\n<li>2026-10-14 cody：按用户确认保持四任务范围；已核实真实身份/网关/RP/外壳输入缺失并补列前置，交付镜像输入与验收准备文档；三项真实镜像验收保持未完成。</li>\n<li>2026-10-14 claude：验收复核（claude，2026-10-14）：blocked 成立。三项验收都依赖尚未交付的 qian-identity / qian-gateway / qian-platform 业务宿主与 shell 静态制品，补列的前置 S1-IDP-002 / S1-IDP-005 / S1-GW-001 / S1-YUE-001 当前均为 todo，仓库内没有任何 Dockerfile；deploy/images/README.md 把三个镜像的输入缺口、构建与供应链约定（多阶段、非 root、只读根、Syft / Grype / Cosign、dump-config 漂移比对）和恢复条件写清楚了，本轮没有可勾选的验收项</li>\n</ul>",
   "file": "pm/tasks/S1-DEP-003.md"
  },
  {
@@ -2155,10 +2153,11 @@
   "depends": [
    "S1-DOCS-001",
    "S1-YUE-005",
-   "S1-RT-010"
+   "S1-RT-010",
+   "S1-QA-010"
   ],
   "blockedBy": [
-   "S1-YUE-005"
+   "S1-QA-010"
   ],
   "order": 1,
   "readyNow": false,
@@ -2188,12 +2187,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-14",
+  "updated": "2026-10-15",
   "acceptance": {
    "done": 0,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>「介绍组件如何使用」是文档站的主体。按 ADR-020 D20.9，每个组件的文档源在它自己的文件夹里（<code>README.md</code> 含「模型体验」「已知限制」两节，<code>docs/*.mdx</code> 为使用指南），文档站在构建前汇总；yue 组件要能在 MDX 里活演示并自动出 API 表；.NET 包与 TypeScript 包的 API 参考由工具生成，不手写。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>收集脚本把各组件 <code>README.md</code> 与 <code>docs/*.mdx</code> 按 docs-site.md §3 的平台插件九节模板与 §3.1 的 yue 交互组件模板汇总进 <code>website/docs/components/</code>，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）</li>\n<li class='chk'><span class='box'></span>复用 S1-YUE-005 的 Rspress core 文档、preview、离线 playground 与完整 props 生成接线，接入通用收集管线；不再引入 Storybook，不重复建设 core 展示；检查组件来源、版本与生成目录一致，并保留 Props 完整性、离线及 HTML/SSG-MD 双产物门禁（docs-site.md §3.1）</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-typedoc</code> 生成 <code>@qian/runtime</code>、<code>@qian/plugin-sdk</code>、<code>@yue/sdk</code> 的 API 文档并挂在站点 <code>/sdk/api/frontend/</code>；DocFX 从 XML 注释生成 <code>Qian.*</code> .NET 包 API 参考并挂在 <code>/sdk/api/dotnet/</code>（复用 <code>website/scripts/build-kun-api.ts</code> 的流水线）；平台 OpenAPI 用 Scalar 渲染在 <code>/sdk/api/http/</code>；API 页不进侧栏、不渲染侧栏（R54、R56），并在 <code>/sdk/api/</code> 落地页更新状态</li>\n<li class='chk'><span class='box'></span><code>qian docs generate</code>（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新</li>\n<li class='chk'><span class='box'></span>UT：收集脚本对缺节、重复 id、断链三类错误各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收</li>\n<li>2026-10-08 claude：S1-DOCS-005 已搭好 DocFX 流水线（website/scripts/build-kun-api.ts：隔离目录构建、docfx metadata 输出 Markdown、xref 改写为站内路由与锚点），Qian.* 的 API 参考可复用；/sdk/api/index.md 落地页已为 dotnet/、frontend/ 留行。路径注意：本任务验收写 /api/dotnet/，docs-site.md §2b.2 与 §6 写 /sdk/api/dotnet/，落地页暂按后者</li>\n<li>2026-10-08 claude：S1-DEC-011 裁决：API 参考统一挂 /sdk/api/{dotnet,frontend,http}/（R56），API 页不进侧栏、不渲染侧栏（R54），验收已按此改；产物总大小预算 100 MB（R55），加 Qian.* 与组件页后若超出，先查重复渲染再调预算</li>\n<li>2026-10-14 cody：按用户要求与 ADR-022 对齐：复用 YUE-005 的 Rspress core 接入，不再引入 Storybook；保留通用收集和多语言 API 文档范围，补入 Props 完整性、离线及双产物验收。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>「介绍组件如何使用」是文档站的主体。按 ADR-020 D20.9，每个组件的文档源在它自己的文件夹里（<code>README.md</code> 含「模型体验」「已知限制」两节，<code>docs/*.mdx</code> 为使用指南），文档站在构建前汇总；yue 组件要能在 MDX 里活演示并自动出 API 表；.NET 包与 TypeScript 包的 API 参考由工具生成，不手写。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>收集脚本把各组件 <code>README.md</code> 与 <code>docs/*.mdx</code> 按 docs-site.md §3 的平台插件九节模板与 §3.1 的 yue 交互组件模板汇总进 <code>website/docs/components/</code>，保留组件 id、版本、所属 profile 等元数据到 frontmatter；缺「模型体验」或「已知限制」节的组件使构建失败（与 S1-QA-006 的 README 契约门禁同一规则）</li>\n<li class='chk'><span class='box'></span>复用 S1-YUE-005 的 Rspress core 文档、preview、离线 playground 与完整 props 生成接线，接入通用收集管线；不再引入 Storybook，不重复建设 core 展示；检查组件来源、版本与生成目录一致，并保留 Props 完整性、离线及 HTML/SSG-MD 双产物门禁（docs-site.md §3.1）</li>\n<li class='chk'><span class='box'></span><code>@rspress/plugin-typedoc</code> 生成 <code>@qian/runtime</code>、<code>@qian/plugin-sdk</code>、<code>@yue/sdk</code> 的 API 文档并挂在站点 <code>/sdk/api/frontend/</code>；DocFX 从 XML 注释生成 <code>Qian.*</code> .NET 包 API 参考并挂在 <code>/sdk/api/dotnet/</code>（复用 <code>website/scripts/build-kun-api.ts</code> 的流水线）；平台 OpenAPI 用 Scalar 渲染在 <code>/sdk/api/http/</code>；API 页不进侧栏、不渲染侧栏（R54、R56），并在 <code>/sdk/api/</code> 落地页更新状态</li>\n<li class='chk'><span class='box'></span><code>qian docs generate</code>（S1-RT-010）输出的配置目录、模块图、事件生产 / 消费图进入站点并随 CI 更新</li>\n<li class='chk'><span class='box'></span>UT：收集脚本对缺节、重复 id、断链三类错误各有一个失败用例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-07 claude：创建任务</li>\n<li>2026-10-07 claude：信息架构（七个部分）经产品负责人确认，写入 specs/docs-site.md 并对齐验收</li>\n<li>2026-10-08 claude：S1-DOCS-005 已搭好 DocFX 流水线（website/scripts/build-kun-api.ts：隔离目录构建、docfx metadata 输出 Markdown、xref 改写为站内路由与锚点），Qian.* 的 API 参考可复用；/sdk/api/index.md 落地页已为 dotnet/、frontend/ 留行。路径注意：本任务验收写 /api/dotnet/，docs-site.md §2b.2 与 §6 写 /sdk/api/dotnet/，落地页暂按后者</li>\n<li>2026-10-08 claude：S1-DEC-011 裁决：API 参考统一挂 /sdk/api/{dotnet,frontend,http}/（R56），API 页不进侧栏、不渲染侧栏（R54），验收已按此改；产物总大小预算 100 MB（R55），加 Qian.* 与组件页后若超出，先查重复渲染再调预算</li>\n<li>2026-10-14 cody：按用户要求与 ADR-022 对齐：复用 YUE-005 的 Rspress core 接入，不再引入 Storybook；保留通用收集和多语言 API 文档范围，补入 Props 完整性、离线及双产物验收。</li>\n<li>2026-10-15 cody：按 S1-QA-010 验收要求加入其前置依赖，文档预算整改复核完成后才能开工</li>\n</ul>",
   "file": "pm/tasks/S1-DOCS-002.md"
  },
  {
@@ -2585,11 +2584,9 @@
    "S1-EVT-001",
    "S1-RT-006"
   ],
-  "blockedBy": [
-   "S1-RT-006"
-  ],
-  "order": 4,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.10",
@@ -2605,7 +2602,7 @@
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>GET /api/capabilities/events</code> 返回每事件 ID、版本、Schema、发布插件、订阅者（按权限过滤）；AsyncAPI 描述随 <code>qian pack</code> 导出；清单 <code>provides.events.publish/subscribe</code> 生成 RabbitMQ 主题 ACL（P1）；<code>IOutboxWriter</code> 面向 <code>NpgsqlTransaction</code> 的契约（S2 动态表同事务）。事件契约化为 S4 Agent 触发器预留。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET /api/capabilities/events</code> 按权限过滤返回事件 ID、版本、Schema、发布插件与订阅者</li>\n<li class='chk'><span class='box'></span>UT：<code>qian pack</code> 导出的 AsyncAPI 与事件目录一致</li>\n<li class='chk'><span class='box'></span>TCK：清单未声明 <code>publish</code> 的事件被运行时拒绝发布（P1，主题 ACL）</li>\n<li class='chk'><span class='box'></span>UT：<code>IOutboxWriter</code> 契约随 <code>Qian.Events.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：提示（S1-DATA-004 修正）：qian.record.changed.v1 现登记载荷 RecordChangedPayload，事件目录与 AsyncAPI 的 payload Schema 取其 JsonTypeInfo 导出，成员与必填项和 contracts/data/v1/qian.record.changed.v1.schema.json 一致（Qian.Sample.Crm.Tests 比对）；面向 NpgsqlTransaction 的 IOutboxWriter 同样只收载荷，信封由写入端生成</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>GET /api/capabilities/events</code> 返回每事件 ID、版本、Schema、发布插件、订阅者（按权限过滤）；AsyncAPI 描述随 <code>qian pack</code> 导出；清单 <code>provides.events.publish/subscribe</code> 生成 RabbitMQ 主题 ACL（P1）；<code>IOutboxWriter</code> 面向 <code>NpgsqlTransaction</code> 的契约（S2 动态表同事务）。事件契约化为 S4 Agent 触发器预留。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET /api/capabilities/events</code> 按权限过滤返回事件 ID、版本、Schema、发布插件与订阅者</li>\n<li class='chk'><span class='box'></span>UT：<code>qian pack</code> 导出的 AsyncAPI 与事件目录一致</li>\n<li class='chk'><span class='box'></span>TCK：清单未声明 <code>publish</code> 的事件被运行时拒绝发布（P1，主题 ACL）</li>\n<li class='chk'><span class='box'></span>UT：<code>IOutboxWriter</code> 契约随 <code>Qian.Events.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：复核 S1-RT-006（R77）：能力目录当前只产出 command / query，<code>?kind=event</code> 恒空；事件类目录与 <code>GET /api/capabilities/events</code> 随本任务交付</li>\n<li>2026-10-14 claude：提示（S1-DATA-004 修正）：qian.record.changed.v1 现登记载荷 RecordChangedPayload，事件目录与 AsyncAPI 的 payload Schema 取其 JsonTypeInfo 导出，成员与必填项和 contracts/data/v1/qian.record.changed.v1.schema.json 一致（Qian.Sample.Crm.Tests 比对）；面向 NpgsqlTransaction 的 IOutboxWriter 同样只收载荷，信封由写入端生成</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-003.md"
  },
  {
@@ -2857,7 +2854,6 @@
   "blockedBy": [
    "S1-GW-001",
    "S1-RT-004",
-   "S1-RT-006",
    "S1-RT-013",
    "S1-AUD-003"
   ],
@@ -3784,7 +3780,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件规格 §6.1 与 ADR-019 D19.2 要求 Definition 包仅依赖 <code>Kun.*.Abstractions</code>，但 Kun 的稳定事件标记 <code>IntegrationEventIdAttribute</code> 与事件注册端口在 <code>Kun.EventBus</code> 包里，没有 <code>.Abstractions</code> 拆分，<code>Qian.Identity.Abstractions</code> 只能直接引用它，传递带入 StackExchange.Redis 等实现依赖（S1-IDP-001，S1-DEC-013 R64）。<code>scripts/check_deps.py</code> 的 <code>role_of()</code> 把非 <code>qian.</code> 包一律归 external 放行，所以这条规则目前没有门禁；同类现状还有 <code>Qian.Data.Abstractions</code> 直接依赖 <code>Kun.EntityFrameworkCore</code> / <code>Kun.MultiTenancy.EntityFrameworkCore</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>上游：Kun 拆出 <code>Kun.EventBus.Abstractions</code>（<code>IntegrationEventIdAttribute</code>、<code>IIntegrationEvent</code>、带 <code>JsonTypeInfo</code> 的事件注册端口），<code>Kun.EventBus</code> 依赖它；随下一次 Kun 发版</li>\n<li class='chk done'><span class='box'>✓</span>Qian：<code>Qian.Identity.Abstractions</code> 改引 <code>Kun.EventBus.Abstractions</code>，<code>DefinitionReferencesOnlyRuntimeAndFrameworkEventPort</code> 的期望值同步，包 README 的延期项移除</li>\n<li class='chk done'><span class='box'>✓</span>门禁：<code>check_deps.py</code> 对 <code>definition</code> 角色的 Kun 直接依赖只放行 <code>Kun.*.Abstractions</code> 与显式白名单（<code>Qian.Data.Abstractions</code> 的两项要么迁移要么登记理由），<code>tests/gates</code> 加正反例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的偏差）</li>\n<li>2026-10-14 cody：开始：按用户指派认领；先完成 Kun 事件抽象拆包、正式发布与 Qian 依赖门禁。</li>\n<li>2026-10-14 cody：上游Kun PR #59的25项CI全绿后合并并发布2026.10.14；Qian使用该次正式Release的35包闭包预验收，574项测试零失败零跳过、46项门禁通过。nuget.org公开索引仍未出现新版本，等待索引及最终主线组合验收后关闭。</li>\n<li>2026-10-14 cody：实际nuget.org上传返回Created且正式Release成功，但公开包索引超过一小时仍无2026.10.14，新EventBus.Abstractions为404；当前仅正式Release闭包预验收通过。Qian组合主线590测试零失败零跳过、47门禁和32包依赖通过，等待正式源可还原和最终CI，保留草稿。</li>\n<li>2026-10-14 cody：正式索引已可用，解除阻塞：18个声明包均可见；隔离Kun缓存从nuget.org重新还原实际14包，来源元数据均为官方v3索引。正式源Release构建零警告、590测试零失败零跳过、47门禁与32包依赖通过；文档站670页/63.5MB按2026.10.14构建检查通过。等待PR #77最终CI与合并。</li>\n<li>2026-10-14 cody：合入最新 DATA-002 主线后，以隔离缓存从 nuget.org 正式源还原、Release 构建通过；598 项 .NET 测试全部通过，零失败零跳过。</li>\n<li>2026-10-14 cody：完成：Kun PR #59 与正式 Release v2026.10.14 已发布；Qian PR #77 全部 7 项适用 CI 通过后合并（badd03b7）。隔离缓存从 nuget.org 正式源还原，最新组合 598 项 .NET 测试零失败零跳过、47 项门禁与 32 包依赖检查通过，文档站按新 Kun 版本生成验收通过。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件规格 §6.1 与 ADR-019 D19.2 要求 Definition 包仅依赖 <code>Kun.*.Abstractions</code>，但 Kun 的稳定事件标记 <code>IntegrationEventIdAttribute</code> 与事件注册端口在 <code>Kun.EventBus</code> 包里，没有 <code>.Abstractions</code> 拆分，<code>Qian.Identity.Abstractions</code> 只能直接引用它，传递带入 StackExchange.Redis 等实现依赖（S1-IDP-001，S1-DEC-013 R64）。<code>scripts/check_deps.py</code> 的 <code>role_of()</code> 把非 <code>qian.</code> 包一律归 external 放行，所以这条规则目前没有门禁；同类现状还有 <code>Qian.Data.Abstractions</code> 直接依赖 <code>Kun.EntityFrameworkCore</code> / <code>Kun.MultiTenancy.EntityFrameworkCore</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>上游：Kun 拆出 <code>Kun.EventBus.Abstractions</code>（<code>IntegrationEventIdAttribute</code>、<code>IIntegrationEvent</code>、带 <code>JsonTypeInfo</code> 的事件注册端口），<code>Kun.EventBus</code> 依赖它；随下一次 Kun 发版</li>\n<li class='chk done'><span class='box'>✓</span>Qian：<code>Qian.Identity.Abstractions</code> 改引 <code>Kun.EventBus.Abstractions</code>，<code>DefinitionReferencesOnlyRuntimeAndFrameworkEventPort</code> 的期望值同步，包 README 的延期项移除</li>\n<li class='chk done'><span class='box'>✓</span>门禁：<code>check_deps.py</code> 对 <code>definition</code> 角色的 Kun 直接依赖只放行 <code>Kun.*.Abstractions</code> 与显式白名单（<code>Qian.Data.Abstractions</code> 的两项要么迁移要么登记理由），<code>tests/gates</code> 加正反例</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-10 claude：创建任务（S1-DEC-013 验收复核发现的偏差）</li>\n<li>2026-10-14 cody：开始：按用户指派认领；先完成 Kun 事件抽象拆包、正式发布与 Qian 依赖门禁。</li>\n<li>2026-10-14 cody：上游Kun PR #59的25项CI全绿后合并并发布2026.10.14；Qian使用该次正式Release的35包闭包预验收，574项测试零失败零跳过、46项门禁通过。nuget.org公开索引仍未出现新版本，等待索引及最终主线组合验收后关闭。</li>\n<li>2026-10-14 cody：实际nuget.org上传返回Created且正式Release成功，但公开包索引超过一小时仍无2026.10.14，新EventBus.Abstractions为404；当前仅正式Release闭包预验收通过。Qian组合主线590测试零失败零跳过、47门禁和32包依赖通过，等待正式源可还原和最终CI，保留草稿。</li>\n<li>2026-10-14 cody：正式索引已可用，解除阻塞：18个声明包均可见；隔离Kun缓存从nuget.org重新还原实际14包，来源元数据均为官方v3索引。正式源Release构建零警告、590测试零失败零跳过、47门禁与32包依赖通过；文档站670页/63.5MB按2026.10.14构建检查通过。等待PR #77最终CI与合并。</li>\n<li>2026-10-14 cody：合入最新 DATA-002 主线后，以隔离缓存从 nuget.org 正式源还原、Release 构建通过；598 项 .NET 测试全部通过，零失败零跳过。</li>\n<li>2026-10-14 cody：完成：Kun PR #59 与正式 Release v2026.10.14 已发布；Qian PR #77 全部 7 项适用 CI 通过后合并（badd03b7）。隔离缓存从 nuget.org 正式源还原，最新组合 598 项 .NET 测试零失败零跳过、47 项门禁与 32 包依赖检查通过，文档站按新 Kun 版本生成验收通过。</li>\n<li>2026-10-14 claude：验收复核（claude，2026-10-14）：三项验收成立。Kun 侧 Kun.EventBus.Abstractions 独立包只依赖 Kun.Core，IIntegrationEvent 经类型转发导出，Kun.EventBus 依赖它，tag v2026.10.14 指向 PR #59 的合并提交，nuget.org 已索引；Qian 侧 Identity.Abstractions 改引 Abstractions 包、KunVersion 2026.10.14、闭包不含 Redis 的测试已更新、README 延期项已删；check_deps 对 definition 角色只放行 Kun.*.Abstractions 与四条逐边带理由的白名单，正反例含真实包样例。本机全量 640/640、门禁 49/49、依赖图通过。备注：website/docs/sdk/kun/with-qian.mdx 第 82 段仍写「截至 2026-10-13、当前锁定 2026.10.13」，任务表缺 S1-KUN-010 行，需补</li>\n</ul>",
   "file": "pm/tasks/S1-KUN-010.md"
  },
  {
@@ -4420,7 +4416,7 @@
    "S1-RT-005",
    "S1-AGT-002"
   ],
-  "order": 5,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4702,6 +4698,65 @@
   "file": "pm/tasks/S1-QA-009.md"
  },
  {
+  "id": "S1-QA-010",
+  "title": "验收整改：Filter 错误路径、manifest 契约标题、文档站预算与过期口径（YUE-005 / DATA-004 / KUN-010 复核）",
+  "status": "review",
+  "stage": "S1",
+  "area": "QA",
+  "areaName": "测试 / TCK / 门禁",
+  "wave": 2,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "cody",
+  "estimate": "2d",
+  "days": 2.0,
+  "depends": [
+   "S1-YUE-005",
+   "S1-DATA-004",
+   "S1-KUN-010"
+  ],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "pm/tasks/S1-YUE-005.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-YUE-005.md"
+   },
+   {
+    "path": "pm/tasks/S1-DATA-004.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DATA-004.md"
+   },
+   {
+    "path": "pm/tasks/S1-KUN-010.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-KUN-010.md"
+   },
+   {
+    "path": "packages/Qian.Data.Abstractions/FilterContracts.cs",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Data.Abstractions/FilterContracts.cs"
+   },
+   {
+    "path": "packages/yue/core/src/manifest-catalog.json",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/yue/core/src/manifest-catalog.json"
+   },
+   {
+    "path": "website/docs/sdk/kun/with-qian.mdx",
+    "url": "https://github.com/idadawn/qian/blob/main/website/docs/sdk/kun/with-qian.mdx"
+   },
+   {
+    "path": "docs/prd/specs/yue.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/yue.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 5,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-14 claude 验收 S1-YUE-005、S1-DATA-004、S1-KUN-010（三项 done 维持）时记入各任务日志的缺陷与口径偏差，按产品负责人要求汇成本任务统一整改。本机全量 .NET 640/640、yue 四项门禁、正式站 Playwright 132/132 都通过，所以这些都是小修，不改变三项任务的结论。接手时先认领：<code>python3 scripts/pm.py set &lt;本任务 id&gt; --status doing --owner &lt;名字&gt; --by &lt;名字&gt; --note &quot;开始&quot;</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>DATA：<code>packages/Qian.Data.Abstractions/FilterContracts.cs</code> 组级 logic 的错误路径由 <code>#/groups/{i}#/logic</code> 改为 <code>#/groups/{i}/logic</code>，<code>DataContractTests</code> 加一条非法 logic 的反例断言该路径；<code>contracts/data/v1/fixtures/field-types.json</code> 要么被测试引用要么删除；data/v1 各 Schema 加 <code>x-status</code> 冻结标记并在 <code>contracts/data/v1/README.md</code> 写修订规则，口径对照 <code>contracts/v0/README.md</code></li>\n<li class='chk done'><span class='box'>✓</span>KUN 文档：<code>website/docs/sdk/kun/with-qian.mdx</code> 第 82 段改为截至 2026-10-14、锁定 Kun 2026.10.14，任务表补 S1-KUN-010 一行；<code>check_docs.py</code> 与文档站构建通过</li>\n<li class='chk done'><span class='box'>✓</span>YUE 机器契约：<code>packages/yue/core/src/manifest-catalog.json</code>（及 <code>docs/catalog.json</code>）中每个 props 的 <code>title</code> 与属性名一致，<code>description</code> 取自真实 TypeScript 注释、没有注释时省略，不再生成「X 的 Y 属性」模板句；<code>catalog.manifest.test.ts</code> 加断言（title 等于属性名、description 不含模板句）；导出脚本修正后重新生成并提交</li>\n<li class='chk done'><span class='box'>✓</span>YUE 文档口径：<code>docs/prd/specs/yue.md</code> §3 与 S1-YUE-005 验收文字里的「分场景示例」按实现改写为预览工具栏切换 scenarios.json 的状态，或给 Dialog 等只有 Default / Dark 两种状态的交互组件补齐 Disabled / Error 场景；<code>docs/prd/specs/yue.md</code> 第 53 行、<code>packages/yue/core/package.json</code> 的 description、<code>website/scripts/collect-components.ts</code> 第 55 行的「约 30 个」改为 51；清理 <code>.changeset/qian-core-components.md</code>、<code>packages/yue/tokens/README.md</code> 的 Storybook 文案；<code>docs/prd/specs/docs-site.md</code> §6 改为自研 iframe 预览与 TypeScript checker、页面路径 <code>yue/core/&lt;name&gt;.mdx</code>；ADR-022 D22.4 与 <code>docs/README.md</code> 的「待实施」补注已于 2026-10-14 完成</li>\n<li class='chk done'><span class='box'>✓</span>文档站预算：当前产物 97.8 MB，距 <code>website/scripts/check-site.ts</code> 的 100 MB 预算约 2 MB。二选一并在 PR 写明：拆分或压缩离线编辑器的 Monaco / Babel vendor（只发布实际用到的语言与 worker），把产物降到 90 MB 以下；或按 R55 的流程调高预算并记录原因。必须在 S1-DOCS-002 开工前完成，<code>pnpm --filter website check</code> 通过</li>\n</ul>\n<h4>验证清单</h4>\n<p>```bash</p>\n<p>dotnet test --project tests/Qian.Data.Abstractions.Tests/Qian.Data.Abstractions.Tests.csproj -c Release</p>\n<p>pnpm yue:test &amp;&amp; pnpm yue:lint</p>\n<p>KUN_DOCS_PATH=/Users/dawn/project/kun pnpm --filter website build &amp;&amp; pnpm --filter website check</p>\n<p>python3 scripts/check_docs.py &amp;&amp; python3 scripts/pm.py validate &amp;&amp; python3 scripts/pm.py build</p>\n<p>```</p>\n<p>全部完成后 <code>pm.py set &lt;本任务 id&gt; --status review</code>，由 claude 复核。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 cody：开始五项整改：DATA 契约、Kun 锁定文档、yue manifest 与文档口径、离线编辑器体积预算</li>\n<li>2026-10-15 cody：五项整改完成待复核：Filter 路径与反例、fixture 消费、7 份 Schema 冻结；Kun 2026.10.14 及 KUN-010 文档；51 个 manifest 的 512 个属性元数据从 TypeScript 注释重新生成并检查漂移；Rspress 文档口径清理；按 R55 将预算调整为 120 MB（实测 96.2 MB）。本机 .NET 675/675、DATA 79/79、yue 158/158、靶场 64/64、Rspress 132/132、站点单测 73/73、49 项门禁自测及三页 Lighthouse 全通过；CI 与合并后正式站复验随后记录，按任务要求交 claude 复核</li>\n</ul>",
+  "file": "pm/tasks/S1-QA-010.md"
+ },
+ {
   "id": "S1-RT-001",
   "title": "Qian.Runtime 最小运行时：ctx、五种分发、Effect、scope",
   "status": "done",
@@ -4871,12 +4926,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-002-plugin-model.md"
    }
   ],
-  "updated": "2026-10-13",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 1,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>原 <code>qian.kernel</code> 注册表改为平台插件 <code>Qian.Registry</code>（<code>ctx.Registry</code>）：<code>IPluginManifestLoader</code> / <code>PluginManifestValidator</code>（JSON Schema 2020-12 + 语义校验，错误带 JSON Pointer）；PG schema <code>registry</code> 的 <code>plugin_artifacts</code> / <code>plugin_revisions</code> / <code>tenant_plugin_installs</code> / <code>scope_patches</code> / <code>extension_points</code> / <code>contracts</code> / <code>capabilities</code> / <code>event_types</code> / <code>entity_types</code> / <code>lifecycle_runs</code>；租户 scope patch 持久化与合入；<code>GET /api/registry/scopes/{scopeKey}/entries</code>；未挂载条目 404 / 403 <code>plugin_not_mounted</code> 规则（R32）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：缺任一 S1 必填字段、OCI 引用用 tag 而非 digest、<code>inputSchema</code> 含 <code>tenantId</code>、<code>inject[]</code> 引用无人提供的服务键、<code>scopes[]</code> 含非法种类的 <code>plugin.json</code>，安装失败并返回带 JSON Pointer 的结构化错误</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>policy.required: true</code> 只允许出现在 <code>policy.tier: system</code> 的平台插件上，否则校验失败</li>\n<li class='chk'><span class='box'></span>IT：对租户 A 写一条 scope patch、B 不写，<code>GET /api/registry/scopes/tenant:B/entries/&lt;id&gt;</code> 对持 <code>qian.registry:scope:read</code> 者返回 403 <code>plugin_not_mounted</code>、<code>reason = not_mounted</code>，无该权限者 404</li>\n<li class='chk'><span class='box'></span>IT：scope patch 变更事件触发装载器重新合入，撤销 patch 后 ≤ 5s 生效，不重启进程</li>\n<li class='chk'><span class='box'></span>IT：v1 别名 <code>/api/kernel/*</code> 返回同一结果并带 <code>Deprecation</code> 响应头（R33）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：依赖加 S1-DEC-010：R32 的 403 原因（not_entitled / not_mounted / restricted）在封闭 ErrorDetail 中的承载方式待定（contracts/v0/README.md 第 8 节第 4 条）</li>\n<li>2026-10-08 claude：依赖的默认裁决任务改号为 S1-DEC-010（原 S1-DEC-009 与 main 上已关闭的仓库归属拍板撞号）</li>\n<li>2026-10-08 claude：S1-DEC-010 已裁决 R48：R32 的 403 原因即错误码（PLUGIN_NOT_ENTITLED / PLUGIN_NOT_MOUNTED / PLUGIN_RESTRICTED / PLUGIN_DEPENDENCY_PENDING，由 Qian.Registry.Abstractions 登记），message 带层级或 restriction id、pointer 指向 patch 条目；该前置已满足</li>\n<li>2026-10-12 cody：为 QA-002 必要平台链路已在独立工作区开始，内部 patch 仓储真库测试曾暴露旧 Kun 访问器捕获问题；S1-KUN-011/012 已修复并完成正式包消费，框架前置解除。接着恢复已有注册表实现并继续完整服务、准入、视图、权限与变更传播验收，不提前关闭任务。</li>\n<li>2026-10-12 cody：PR #49 已合并；正式 hotfix.2 下原 6 项注册表真实 PG 测试全部通过，恢复 scope patch 共用装配与后续接口实现。</li>\n<li>2026-10-12 cody：完成内部 scope patch 持久化、事务内整树准入与数据库末层合入；受限 PG、独立宿主并发冲突、通知回滚等 10 项注册表 IT 通过，全仓 370 项测试零跳过、38 门禁、18 包依赖检查通过。两侧新增 10 个 scope 场景，合计 48 个 profile TCK 精确一致。准备草稿 PR 保全进展；真实服务/权限/权益、制品目录、运行时变更传播与 HTTP 验收仍未完成，全部任务验收项保持未勾选。</li>\n<li>2026-10-12 cody：内部监听器已复用 Data 受限连接完成 LISTEN、每秒补偿读取、断线重连和可等待释放，后台不继承请求租户。新增真实双宿主断连/恢复、前置失败立即退出、回调重试及日志脱敏验证；注册表 13 项通过，全仓 373/373 零跳过。通知回调尚未接到真实运行时重合入，不关闭 ≤5 秒装载或完整管理面验收。</li>\n<li>2026-10-12 cody：继续补制品候选目录：完整字节快照先校验与 CLI 一致的 D4 摘要，再复用组件静态校验；全局 plugin_artifacts 按摘要幂等保存清单、表面与元数据，真实双宿主竞争只保留首次提交。当前只登记 Submitted、签名结果为空，不将摘要或静态校验伪装成验签/发布；注册表定向 17 项、CLI 15 项通过，继续全仓验证。修订、完整管理服务与运行时重合入未完成。</li>\n<li>2026-10-12 cody：制品候选目录与共享元数据读取完成本地验证：全仓 379/379 零跳过、注册表 19 项、CLI 15 项通过，38 门禁和 18 包依赖检查通过。metadata 通用读取已放回 .NET/TS 共用校验器，新增 8 个表面场景，48 个表面 fixture 精确一致；48 个 profile fixture 保持通过。目录只保存 Submitted，验签/发布/修订激活、真实权限管理服务和运行时重合入仍待完成，草稿 PR #50 不转正式、不勾完整验收。</li>\n<li>2026-10-12 cody：接通真实 RegistryPlugin、Data 与 PluginLoader：独立宿主写入 PG 后，租户 scope 的新增/重载/禁用/撤销均由通知及补偿读取自动生效；逐步断言实际耗时不超过 5 秒，旧上下文失效，B/全局不变。坏配置只阻断本 scope，修复可恢复；跨 scope 的错误 Provider 解析被拒，重复核对不重装。定向 23 项通过；正在全仓回归。App/会话 lineage、真实管理权限/权益与完整发布仍缺，任务和草稿保持未完成。</li>\n<li>2026-10-12 cody：本轮运行时联动已完成本地全量验证：384/384 测试零跳过，注册表 24 项，38 门禁、18 包依赖检查通过。RegistryPlugin 提供宿主同步入口，真实双宿主 PG 变更驱动租户配置热重合入；按实际计时约束五秒，恢复/隔离与全树关闭排空后台任务通过。仍仅接受已验证的同租户 scope；App/会话归属、管理端点 404/403、真实权限/权益及发布修订流程尚未完成，保持 doing 和草稿。</li>\n<li>2026-10-12 cody：补齐权限模块所需的预装元数据端口：宿主绑定实际 Provider 与共用校验快照，Registry Ready 后即可读，业务组件无需先启动；Submitted 候选不会混入。快照不可变，骨架和错配身份被拒，目录新增未绑定组件也不能直接挂载。定向 27 项通过，继续全仓验证；具体权限/角色 Schema 与真实求值归 AZ-002/003，不以端口完成冒充管理权限验收。</li>\n<li>2026-10-12 cody：预装元数据端口已完成：全仓 387/387 零跳过、注册表 27 项、38 门禁与 18 包依赖检查通过。required/system 的正反例已由真实校验器覆盖，回写该 UT；其余完整验收保持未勾。管理面放行/拒绝必须接真实 AZ-002/003，现有声明端口已足够供它们开工；按串行领域规则暂存注册表草稿，下一步推进已授权的权限前置，不合并部分实现或用替身关闭管理面验收。</li>\n<li>2026-10-13 cody：SDK PR #56 补充 GetScopeEntriesAsync：与 scope 重合入共用锁，返回真实可见且 Ready 的非敏感绑定，预装声明不作为业务可调用资格。真库与 HTTP 验证停用、restrict、坏配置、跨租户拒绝和一致 404；完整 Registry 管理 API、app/session 归属及 platform 仍未完成。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>原 <code>qian.kernel</code> 注册表改为平台插件 <code>Qian.Registry</code>（<code>ctx.Registry</code>）：<code>IPluginManifestLoader</code> / <code>PluginManifestValidator</code>（JSON Schema 2020-12 + 语义校验，错误带 JSON Pointer）；PG schema <code>registry</code> 的 <code>plugin_artifacts</code> / <code>plugin_revisions</code> / <code>tenant_plugin_installs</code> / <code>scope_patches</code> / <code>extension_points</code> / <code>contracts</code> / <code>capabilities</code> / <code>event_types</code> / <code>entity_types</code> / <code>lifecycle_runs</code>；租户 scope patch 持久化与合入；<code>GET /api/registry/scopes/{scopeKey}/entries</code>；未挂载条目 404 / 403 <code>plugin_not_mounted</code> 规则（R32）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>TCK：缺任一 S1 必填字段、OCI 引用用 tag 而非 digest、<code>inputSchema</code> 含 <code>tenantId</code>、<code>inject[]</code> 引用无人提供的服务键、<code>scopes[]</code> 含非法种类的 <code>plugin.json</code>，安装失败并返回带 JSON Pointer 的结构化错误</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>policy.required: true</code> 只允许出现在 <code>policy.tier: system</code> 的平台插件上，否则校验失败</li>\n<li class='chk'><span class='box'></span>IT：对租户 A 写一条 scope patch、B 不写，<code>GET /api/registry/scopes/tenant:B/entries/&lt;id&gt;</code> 对持 <code>qian.registry:scope:read</code> 者返回 403 <code>plugin_not_mounted</code>、<code>reason = not_mounted</code>，无该权限者 404</li>\n<li class='chk'><span class='box'></span>IT：scope patch 变更事件触发装载器重新合入，撤销 patch 后 ≤ 5s 生效，不重启进程</li>\n<li class='chk'><span class='box'></span>IT：v1 别名 <code>/api/kernel/*</code> 返回同一结果并带 <code>Deprecation</code> 与指向后继路径的 <code>Link: &lt;…&gt;; rel=&quot;successor-version&quot;</code> 响应头（R33，组件规格 §9.5）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：依赖加 S1-DEC-010：R32 的 403 原因（not_entitled / not_mounted / restricted）在封闭 ErrorDetail 中的承载方式待定（contracts/v0/README.md 第 8 节第 4 条）</li>\n<li>2026-10-08 claude：依赖的默认裁决任务改号为 S1-DEC-010（原 S1-DEC-009 与 main 上已关闭的仓库归属拍板撞号）</li>\n<li>2026-10-08 claude：S1-DEC-010 已裁决 R48：R32 的 403 原因即错误码（PLUGIN_NOT_ENTITLED / PLUGIN_NOT_MOUNTED / PLUGIN_RESTRICTED / PLUGIN_DEPENDENCY_PENDING，由 Qian.Registry.Abstractions 登记），message 带层级或 restriction id、pointer 指向 patch 条目；该前置已满足</li>\n<li>2026-10-12 cody：为 QA-002 必要平台链路已在独立工作区开始，内部 patch 仓储真库测试曾暴露旧 Kun 访问器捕获问题；S1-KUN-011/012 已修复并完成正式包消费，框架前置解除。接着恢复已有注册表实现并继续完整服务、准入、视图、权限与变更传播验收，不提前关闭任务。</li>\n<li>2026-10-12 cody：PR #49 已合并；正式 hotfix.2 下原 6 项注册表真实 PG 测试全部通过，恢复 scope patch 共用装配与后续接口实现。</li>\n<li>2026-10-12 cody：完成内部 scope patch 持久化、事务内整树准入与数据库末层合入；受限 PG、独立宿主并发冲突、通知回滚等 10 项注册表 IT 通过，全仓 370 项测试零跳过、38 门禁、18 包依赖检查通过。两侧新增 10 个 scope 场景，合计 48 个 profile TCK 精确一致。准备草稿 PR 保全进展；真实服务/权限/权益、制品目录、运行时变更传播与 HTTP 验收仍未完成，全部任务验收项保持未勾选。</li>\n<li>2026-10-12 cody：内部监听器已复用 Data 受限连接完成 LISTEN、每秒补偿读取、断线重连和可等待释放，后台不继承请求租户。新增真实双宿主断连/恢复、前置失败立即退出、回调重试及日志脱敏验证；注册表 13 项通过，全仓 373/373 零跳过。通知回调尚未接到真实运行时重合入，不关闭 ≤5 秒装载或完整管理面验收。</li>\n<li>2026-10-12 cody：继续补制品候选目录：完整字节快照先校验与 CLI 一致的 D4 摘要，再复用组件静态校验；全局 plugin_artifacts 按摘要幂等保存清单、表面与元数据，真实双宿主竞争只保留首次提交。当前只登记 Submitted、签名结果为空，不将摘要或静态校验伪装成验签/发布；注册表定向 17 项、CLI 15 项通过，继续全仓验证。修订、完整管理服务与运行时重合入未完成。</li>\n<li>2026-10-12 cody：制品候选目录与共享元数据读取完成本地验证：全仓 379/379 零跳过、注册表 19 项、CLI 15 项通过，38 门禁和 18 包依赖检查通过。metadata 通用读取已放回 .NET/TS 共用校验器，新增 8 个表面场景，48 个表面 fixture 精确一致；48 个 profile fixture 保持通过。目录只保存 Submitted，验签/发布/修订激活、真实权限管理服务和运行时重合入仍待完成，草稿 PR #50 不转正式、不勾完整验收。</li>\n<li>2026-10-12 cody：接通真实 RegistryPlugin、Data 与 PluginLoader：独立宿主写入 PG 后，租户 scope 的新增/重载/禁用/撤销均由通知及补偿读取自动生效；逐步断言实际耗时不超过 5 秒，旧上下文失效，B/全局不变。坏配置只阻断本 scope，修复可恢复；跨 scope 的错误 Provider 解析被拒，重复核对不重装。定向 23 项通过；正在全仓回归。App/会话 lineage、真实管理权限/权益与完整发布仍缺，任务和草稿保持未完成。</li>\n<li>2026-10-12 cody：本轮运行时联动已完成本地全量验证：384/384 测试零跳过，注册表 24 项，38 门禁、18 包依赖检查通过。RegistryPlugin 提供宿主同步入口，真实双宿主 PG 变更驱动租户配置热重合入；按实际计时约束五秒，恢复/隔离与全树关闭排空后台任务通过。仍仅接受已验证的同租户 scope；App/会话归属、管理端点 404/403、真实权限/权益及发布修订流程尚未完成，保持 doing 和草稿。</li>\n<li>2026-10-12 cody：补齐权限模块所需的预装元数据端口：宿主绑定实际 Provider 与共用校验快照，Registry Ready 后即可读，业务组件无需先启动；Submitted 候选不会混入。快照不可变，骨架和错配身份被拒，目录新增未绑定组件也不能直接挂载。定向 27 项通过，继续全仓验证；具体权限/角色 Schema 与真实求值归 AZ-002/003，不以端口完成冒充管理权限验收。</li>\n<li>2026-10-12 cody：预装元数据端口已完成：全仓 387/387 零跳过、注册表 27 项、38 门禁与 18 包依赖检查通过。required/system 的正反例已由真实校验器覆盖，回写该 UT；其余完整验收保持未勾。管理面放行/拒绝必须接真实 AZ-002/003，现有声明端口已足够供它们开工；按串行领域规则暂存注册表草稿，下一步推进已授权的权限前置，不合并部分实现或用替身关闭管理面验收。</li>\n<li>2026-10-13 cody：SDK PR #56 补充 GetScopeEntriesAsync：与 scope 重合入共用锁，返回真实可见且 Ready 的非敏感绑定，预装声明不作为业务可调用资格。真库与 HTTP 验证停用、restrict、坏配置、跨租户拒绝和一致 404；完整 Registry 管理 API、app/session 归属及 platform 仍未完成。</li>\n<li>2026-10-14 claude：验收文字同步（S1-RT-019）：别名项补 Link: rel=&quot;successor-version&quot;，与组件规格 §9.5、PRD 7.2.1 一致；未改状态与负责人</li>\n</ul>",
   "file": "pm/tasks/S1-RT-004.md"
  },
  {
@@ -4915,18 +4970,18 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-020-component-model-v2.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 0,
-   "total": 5
+   "total": 6
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>平台插件 <code>Qian.Lifecycle</code>（<code>ctx.Lifecycle</code>）：平台级 <code>Install / Activate / Rollback / Deprecate / Retire</code>，租户级 <code>Provision / Upgrade / Uninstall / Purge</code>，<code>Mount / Unmount</code> 写租户 scope patch（取代 <code>Enable / Disable</code>）；钩子 <code>idempotencyKey = (tenant, plugin, hook, toVersion)</code> 入 <code>lifecycle_runs</code>；强制验签（OCI + cosign，声明式包 Ed25519，信任根经 Apollo <code>qian.common.trust</code>）；<code>IDeploymentExecutor</code> 的 <code>GitOps</code> 与 <code>Local</code> 两种实现；集成事件 <code>lifecycle.*.v1</code> / <code>registry.scope.*.v1</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：参考应用在租户 A、B 分别 <code>Provision</code> 并挂载，<code>lifecycle_runs</code> 各有一条成功记录；对租户 A 重复执行 <code>Provision</code> 不产生副作用（幂等）</li>\n<li class='chk'><span class='box'></span>E2E：发布参考应用修订 n+1 并激活，租户 A 升级、租户 B 保持 n；对 A 回切到 n 后 A 的请求由修订 n 处理且数据可读（前向兼容）</li>\n<li class='chk'><span class='box'></span>IT：未签名制品与签名不匹配制品均 <code>Install</code> 失败；信任根轮换后旧签名在重叠期内有效</li>\n<li class='chk'><span class='box'></span>IT：<code>Mount(scope, entry)</code> 写入 <code>scope_patches</code> 并发出 <code>registry.scope.mounted.v1</code>；<code>Unmount</code> 后 ≤ 5s 三处拦截恢复，不改数据库开关</li>\n<li class='chk'><span class='box'></span>IT：<code>GitOps</code> 执行器为 <code>runtime.form: service</code> 组件生成 Kustomize 片段并以 K8s 状态 + <code>/health</code> 双条件回写注册表（Local 执行器在开发态等价）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>平台插件 <code>Qian.Lifecycle</code>（<code>ctx.Lifecycle</code>）：平台级 <code>Install / Activate / Rollback / Deprecate / Retire</code>，租户级 <code>Provision / Upgrade / Uninstall / Purge</code>，<code>Mount / Unmount</code> 写租户 scope patch（取代 <code>Enable / Disable</code>）；钩子 <code>idempotencyKey = (tenant, plugin, hook, toVersion)</code> 入 <code>lifecycle_runs</code>；强制验签（OCI + cosign，声明式包 Ed25519，信任根经 Apollo <code>qian.common.trust</code>）；<code>IDeploymentExecutor</code> 的 <code>GitOps</code> 与 <code>Local</code> 两种实现；集成事件 <code>lifecycle.*.v1</code> / <code>registry.scope.*.v1</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：参考应用在租户 A、B 分别 <code>Provision</code> 并挂载，<code>lifecycle_runs</code> 各有一条成功记录；对租户 A 重复执行 <code>Provision</code> 不产生副作用（幂等）</li>\n<li class='chk'><span class='box'></span>E2E：发布参考应用修订 n+1 并激活，租户 A 升级、租户 B 保持 n；对 A 回切到 n 后 A 的请求由修订 n 处理且数据可读（前向兼容）</li>\n<li class='chk'><span class='box'></span>IT：未签名制品与签名不匹配制品均 <code>Install</code> 失败；信任根轮换后旧签名在重叠期内有效</li>\n<li class='chk'><span class='box'></span>IT：<code>Mount(scope, entry)</code> 写入 <code>scope_patches</code> 并发出 <code>registry.scope.mounted.v1</code>；<code>Unmount</code> 后 ≤ 5s 三处拦截恢复，不改数据库开关</li>\n<li class='chk'><span class='box'></span>IT：<code>Mount(scope, entry)</code> 与 Registry scope Reconciler 对声明契约索引的组件强制套用 <code>OpenApiContractPlugin</code> / <code>GrpcContractPlugin</code>，破坏性契约的挂载为 Failed 且原因进入 <code>/api/lifecycle/diagnostics</code>（S1-RT-006 复核 R76）</li>\n<li class='chk'><span class='box'></span>IT：<code>GitOps</code> 执行器为 <code>runtime.form: service</code> 组件生成 Kustomize 片段并以 K8s 状态 + <code>/health</code> 双条件回写注册表（Local 执行器在开发态等价）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：复核 S1-RT-006（R76）：契约准入包装 OpenApiContractPlugin / GrpcContractPlugin 未接入平台挂载路径，新增验收项要求 Mount 与 Reconciler 强制套用，失败原因进入 /api/lifecycle/diagnostics</li>\n</ul>",
   "file": "pm/tasks/S1-RT-005.md"
  },
  {
   "id": "S1-RT-006",
   "title": "qian.capabilities 插件：能力目录、契约仓库与聚合",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
@@ -4946,7 +5001,7 @@
    "S1-RT-004",
    "S1-AZ-003"
   ],
-  "order": 3,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -4970,12 +5025,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs"
    }
   ],
-  "updated": "2026-10-13",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 5,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>平台插件 <code>Qian.Capabilities</code>（<code>ctx.Capabilities</code>）：<code>ICapabilityRegistry</code> 收 <code>JsonTypeInfo</code> 生成请求 / 响应 Schema；<code>GET /api/capabilities?kind=&amp;q=</code> 按权限与 scope restrict 过滤（<code>ttlMs</code>、<code>cacheScope: private</code>）；<code>GET /api/capabilities/openapi.json</code> 聚合 OpenAPI 3.1；<code>IContractRepository</code>（<code>.proto</code> / OpenAPI 契约包带 <code>/vN</code>，挂载前契约一致性探测）；扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用事件定义及可逆服务注册；菜单由清单贡献 + URN 目录 + 用户偏好（<code>qian.navigation</code> 逻辑名）；<code>/api/kernel/capabilities</code> 别名。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：<code>GET /api/capabilities</code> 对无权限用户不返回其不可调用的能力，对被租户 scope <code>restrict</code> 掉的能力同样不返回；响应含 <code>cacheScope: private</code></li>\n<li class='chk done'><span class='box'>✓</span>IT：v1 别名 <code>GET /api/kernel/capabilities</code> 返回同一结果并带 <code>Deprecation</code> 响应头（R33）</li>\n<li class='chk done'><span class='box'>✓</span>IT：<code>GET /api/capabilities/openapi.json</code> 需认证并只聚合已挂载组件；挂载一个契约不兼容（OpenAPI diff 破坏性）的组件被拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：注册一个命令后目录出现其 ID、JSON Schema 与 Agent 字段（<code>sideEffect / policyHint / requiredScopes / schemaSha256</code>）</li>\n<li class='chk done'><span class='box'>✓</span>IT：菜单贡献可按租户 scope 遮蔽；未挂载组件的菜单项不出现（404 语义）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-13 cody：开始：消费已实现的 SDK 真实命令管道、生产 RBAC 与 Registry scope 视图，实现实际能力目录、契约聚合和目录/提示词/执行一致过滤；不以预装清单、替身 PDP 或元数据绿色替代已挂载可执行能力。SDK #56 的发布/安装余项保持保留。</li>\n<li>2026-10-13 cody：首个实现增量：SDK 以 Effect 登记真实、封闭泛型的执行绑定，客户三个命令/查询已注册，缓存引用在 restrict 或卸载后拒绝调用；新增真库参考宿主边界测试通过。工具哈希经 Definition 端口复用现有实现。能力目录/权限过滤/提示词/聚合尚未交付；先保存增量再合入 SDK 上游 CI 修复。</li>\n<li>2026-10-13 cody：执行绑定增量验证：Release 全量构建、26 包依赖、38 门禁通过。493 项测试首轮有 34 项在容器 fixture 初始化前失败（Registry 的 ResourceReaper 取消、Apollo 就绪超时）；分别重新初始化后 Registry 33/33、Config 12/12 通过，其余 459 项首轮已通过，零跳过。客户宿主 10/10、15 CLI 与实际文档生成通过；目录 Provider 与三处过滤尚未实现，保持 doing/草稿。</li>\n<li>2026-10-13 cody：真实能力目录、旧别名与生产提示词/执行端口已接通 Registry/RBAC/SDK。三个新真库用例通过，含成功创建的客户/Outbox/审计证据、权限与 OAuth scope 过滤、restrict/卸载、PG scope 禁用、撤权和租户冻结及恢复；参考宿主 12/12 通过。目录条目通过冻结 Schema 并含实际输入、敏感和 Agent 字段。OpenAPI/契约兼容、扩展点、菜单和完整 platform 仍未验收，保持草稿。</li>\n<li>2026-10-13 cody：本增量最终本地验证：Release 全量构建零警告；496/496 .NET 测试、29 包依赖、38 门禁自测、15 CLI 均通过且零跳过；实际文档生成、文档与任务校验通过。保留 OpenAPI/契约兼容与菜单未完成项。</li>\n<li>2026-10-13 cody：新增认证 OpenAPI 3.1 入口及旧别名，Schema 来自真实可执行绑定；真库验证无权限/restrict/卸载后移除路径与 Schema。接入固定版本、SHA-256 锁定的真实 oasdiff 探测器，禁外部引用、无 shell、限时限输出；普通插件包装在业务 Apply 前拒绝不兼容契约，真实客户组件失败后兼容恢复并成功执行。版本化契约仓库、完整注册表发布准入、其它组件 HTTP/gRPC 契约聚合与菜单仍未交付，第三项验收继续保留。</li>\n<li>2026-10-13 cody：本增量最终验证：Release 全量构建零警告；500/500 .NET 测试零跳过；29 包依赖与 38 门禁自测通过。新增 OpenAPI 真库与契约挂载正反例、真实兼容检查器通过；测试工具安装脚本已验证 macOS 固定摘要，Linux 由本 PR CI 安装验证。</li>\n<li>2026-10-13 cody：契约仓库增量：FromArtifact 核验 D4 摘要并保留不可变原始文件，Contracts 从 metadata/contracts.json 按组件精确版本读完整契约；OpenAPI 与 JSON Schema 结构校验、缺失/越界与副本不可变测试通过，proto 仅保存源码，不冒充协议探测。实际客户宿主从完整生成契约构建版本制品并经仓库准入，不再使用按用户过滤的 API 结果作基线。503/503 .NET、29 包依赖、38 门禁通过；原第三项仍保留协议探测及完整安装流程，菜单未完。按已接受 v2 对照表校正扩展点为事件与可逆注册，不重复建设旧版独立注册表。</li>\n<li>2026-10-13 cody：文档工具单次构建失败后，独立 Release 构建零警告，使用本机既定关闭共享编译配置重新执行真实文档生成成功；15/15 CLI 测试、文档与任务门禁通过。未改变验收断言或把未完成项标为完成。</li>\n<li>2026-10-13 cody：菜单验收通过：实际 UI 制品快照登记可逆菜单，真实 Registry/RBAC 过滤；PG scope patch 的 1.0.1 组件修订遮蔽全局标题，另一租户不变，禁用不回退，restrict/卸载后查询资源均 404。偏好按租户及主体类型/ID 存入受限 PG 与强制 RLS，不能改权限；同租户不同服务主体不串用。偏好和审计同 Serializable 事务，失败回滚、并发整笔重试通过。507/507 .NET、29 包依赖、38 门禁通过；剩余协议探测和完整准入流程仍未完成，菜单证明仅覆盖后端，不冒充 UI 模块或真实交互登录上线。</li>\n<li>2026-10-13 cody：菜单增量的实际文档生成、15/15 CLI、文档与任务校验通过，补充同租户不同主体偏好隔离后全量仍为 507/507，零跳过。</li>\n<li>2026-10-13 cody：协议探测增量：固定摘要 Buf 真实编译封闭 proto 文件与依赖，版本比较使用 FILE，实际反射使用 PACKAGE 保留 RPC/字段语义并允许 ProtoRoot 布局不同。Provider 公开契约仓库前编译所有声明的 proto；语法错误/缺失导入/缺检查器均拒绝。实际 RS256 认证 HTTP/2 Echo、官方 reflection、协议漂移/匿名拒绝，以及 GrpcContractPlugin 挂载失败和恢复后真实声明式表面登记通过。完整安装发布流程及非 SDK HTTP 聚合仍未完成，保留第三项验收。</li>\n<li>2026-10-13 cody：协议增量最终验证：Release 全量构建零警告，510/510 .NET 零跳过，29 包依赖、38 门禁、15 CLI、实际文档生成及文档任务校验全部通过；菜单提交 532d92cb 的全部适用 CI 也已成功。固定工具的 macOS 实际安装已验证，Linux 由本 PR CI 继续核验。</li>\n<li>2026-10-13 cody：五项显式验收已完成：原生 ApiExplorer 与 SDK 文档按真实绑定、端点 ASP.NET 策略及 Registry 过滤；12 条路径包括客户普通 REST 与目录菜单接口。无权限 POST、restrict/卸载后的业务路径及其引用 Schema 均不可见，实际 REST 同时 404。完整 HTTP 导出不依赖调用者权限，并进入精确版本制品；删原生路由会在挂载前拒绝。511/511 .NET、29 包依赖、38 门禁通过。转 review，但仍保留草稿与前置分支整合、统一私有发布及默认平台完整装配的门，不宣称 main 或部署完成；这些流程继续归相应前置任务。</li>\n<li>2026-10-13 cody：本次完整 HTTP 聚合增量的实际文档生成、15/15 CLI 与文档任务门禁通过，已保留五项验收证据；前置整合和统一发布仍由各自任务跟踪。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>平台插件 <code>Qian.Capabilities</code>（<code>ctx.Capabilities</code>）：<code>ICapabilityRegistry</code> 收 <code>JsonTypeInfo</code> 生成请求 / 响应 Schema；<code>GET /api/capabilities?kind=&amp;q=</code> 按权限与 scope restrict 过滤（<code>ttlMs</code>、<code>cacheScope: private</code>）；<code>GET /api/capabilities/openapi.json</code> 聚合 OpenAPI 3.1；<code>IContractRepository</code>（<code>.proto</code> / OpenAPI 契约包带 <code>/vN</code>，挂载前契约一致性探测）；扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用事件定义及可逆服务注册；菜单由清单贡献 + URN 目录 + 用户偏好（<code>qian.navigation</code> 逻辑名）；<code>/api/kernel/capabilities</code> 别名。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>IT：<code>GET /api/capabilities</code> 对无权限用户不返回其不可调用的能力，对被租户 scope <code>restrict</code> 掉的能力同样不返回；响应含 <code>cacheScope: private</code></li>\n<li class='chk done'><span class='box'>✓</span>IT：v1 别名 <code>GET /api/kernel/capabilities</code> 与 <code>/api/kernel/capabilities/openapi.json</code> 返回同一结果并带 <code>Deprecation</code> 与 <code>Link: &lt;后继路径&gt;; rel=&quot;successor-version&quot;</code> 响应头（R33；Link 由 S1-RT-019 补齐并断言头值）</li>\n<li class='chk done'><span class='box'>✓</span>IT：<code>GET /api/capabilities/openapi.json</code> 需认证并只聚合已挂载组件；契约准入机制完成——<code>OpenApiContractPlugin</code> / <code>GrpcContractPlugin</code> 在业务 Apply 前拒绝契约不兼容（OpenAPI diff / proto 破坏性）的组件；平台挂载路径（<code>Mount</code> 与 Registry scope Reconciler）的强制准入归 S1-RT-005（R76）</li>\n<li class='chk done'><span class='box'>✓</span>UT：注册一个命令后目录出现其 ID、JSON Schema 与 Agent 字段（<code>sideEffect / policyHint / requiredScopes / schemaSha256</code>）</li>\n<li class='chk done'><span class='box'>✓</span>IT：菜单贡献可按租户 scope 遮蔽；未挂载组件的菜单项不出现（404 语义）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-13 cody：开始：消费已实现的 SDK 真实命令管道、生产 RBAC 与 Registry scope 视图，实现实际能力目录、契约聚合和目录/提示词/执行一致过滤；不以预装清单、替身 PDP 或元数据绿色替代已挂载可执行能力。SDK #56 的发布/安装余项保持保留。</li>\n<li>2026-10-13 cody：首个实现增量：SDK 以 Effect 登记真实、封闭泛型的执行绑定，客户三个命令/查询已注册，缓存引用在 restrict 或卸载后拒绝调用；新增真库参考宿主边界测试通过。工具哈希经 Definition 端口复用现有实现。能力目录/权限过滤/提示词/聚合尚未交付；先保存增量再合入 SDK 上游 CI 修复。</li>\n<li>2026-10-13 cody：执行绑定增量验证：Release 全量构建、26 包依赖、38 门禁通过。493 项测试首轮有 34 项在容器 fixture 初始化前失败（Registry 的 ResourceReaper 取消、Apollo 就绪超时）；分别重新初始化后 Registry 33/33、Config 12/12 通过，其余 459 项首轮已通过，零跳过。客户宿主 10/10、15 CLI 与实际文档生成通过；目录 Provider 与三处过滤尚未实现，保持 doing/草稿。</li>\n<li>2026-10-13 cody：真实能力目录、旧别名与生产提示词/执行端口已接通 Registry/RBAC/SDK。三个新真库用例通过，含成功创建的客户/Outbox/审计证据、权限与 OAuth scope 过滤、restrict/卸载、PG scope 禁用、撤权和租户冻结及恢复；参考宿主 12/12 通过。目录条目通过冻结 Schema 并含实际输入、敏感和 Agent 字段。OpenAPI/契约兼容、扩展点、菜单和完整 platform 仍未验收，保持草稿。</li>\n<li>2026-10-13 cody：本增量最终本地验证：Release 全量构建零警告；496/496 .NET 测试、29 包依赖、38 门禁自测、15 CLI 均通过且零跳过；实际文档生成、文档与任务校验通过。保留 OpenAPI/契约兼容与菜单未完成项。</li>\n<li>2026-10-13 cody：新增认证 OpenAPI 3.1 入口及旧别名，Schema 来自真实可执行绑定；真库验证无权限/restrict/卸载后移除路径与 Schema。接入固定版本、SHA-256 锁定的真实 oasdiff 探测器，禁外部引用、无 shell、限时限输出；普通插件包装在业务 Apply 前拒绝不兼容契约，真实客户组件失败后兼容恢复并成功执行。版本化契约仓库、完整注册表发布准入、其它组件 HTTP/gRPC 契约聚合与菜单仍未交付，第三项验收继续保留。</li>\n<li>2026-10-13 cody：本增量最终验证：Release 全量构建零警告；500/500 .NET 测试零跳过；29 包依赖与 38 门禁自测通过。新增 OpenAPI 真库与契约挂载正反例、真实兼容检查器通过；测试工具安装脚本已验证 macOS 固定摘要，Linux 由本 PR CI 安装验证。</li>\n<li>2026-10-13 cody：契约仓库增量：FromArtifact 核验 D4 摘要并保留不可变原始文件，Contracts 从 metadata/contracts.json 按组件精确版本读完整契约；OpenAPI 与 JSON Schema 结构校验、缺失/越界与副本不可变测试通过，proto 仅保存源码，不冒充协议探测。实际客户宿主从完整生成契约构建版本制品并经仓库准入，不再使用按用户过滤的 API 结果作基线。503/503 .NET、29 包依赖、38 门禁通过；原第三项仍保留协议探测及完整安装流程，菜单未完。按已接受 v2 对照表校正扩展点为事件与可逆注册，不重复建设旧版独立注册表。</li>\n<li>2026-10-13 cody：文档工具单次构建失败后，独立 Release 构建零警告，使用本机既定关闭共享编译配置重新执行真实文档生成成功；15/15 CLI 测试、文档与任务门禁通过。未改变验收断言或把未完成项标为完成。</li>\n<li>2026-10-13 cody：菜单验收通过：实际 UI 制品快照登记可逆菜单，真实 Registry/RBAC 过滤；PG scope patch 的 1.0.1 组件修订遮蔽全局标题，另一租户不变，禁用不回退，restrict/卸载后查询资源均 404。偏好按租户及主体类型/ID 存入受限 PG 与强制 RLS，不能改权限；同租户不同服务主体不串用。偏好和审计同 Serializable 事务，失败回滚、并发整笔重试通过。507/507 .NET、29 包依赖、38 门禁通过；剩余协议探测和完整准入流程仍未完成，菜单证明仅覆盖后端，不冒充 UI 模块或真实交互登录上线。</li>\n<li>2026-10-13 cody：菜单增量的实际文档生成、15/15 CLI、文档与任务校验通过，补充同租户不同主体偏好隔离后全量仍为 507/507，零跳过。</li>\n<li>2026-10-13 cody：协议探测增量：固定摘要 Buf 真实编译封闭 proto 文件与依赖，版本比较使用 FILE，实际反射使用 PACKAGE 保留 RPC/字段语义并允许 ProtoRoot 布局不同。Provider 公开契约仓库前编译所有声明的 proto；语法错误/缺失导入/缺检查器均拒绝。实际 RS256 认证 HTTP/2 Echo、官方 reflection、协议漂移/匿名拒绝，以及 GrpcContractPlugin 挂载失败和恢复后真实声明式表面登记通过。完整安装发布流程及非 SDK HTTP 聚合仍未完成，保留第三项验收。</li>\n<li>2026-10-13 cody：协议增量最终验证：Release 全量构建零警告，510/510 .NET 零跳过，29 包依赖、38 门禁、15 CLI、实际文档生成及文档任务校验全部通过；菜单提交 532d92cb 的全部适用 CI 也已成功。固定工具的 macOS 实际安装已验证，Linux 由本 PR CI 继续核验。</li>\n<li>2026-10-13 cody：五项显式验收已完成：原生 ApiExplorer 与 SDK 文档按真实绑定、端点 ASP.NET 策略及 Registry 过滤；12 条路径包括客户普通 REST 与目录菜单接口。无权限 POST、restrict/卸载后的业务路径及其引用 Schema 均不可见，实际 REST 同时 404。完整 HTTP 导出不依赖调用者权限，并进入精确版本制品；删原生路由会在挂载前拒绝。511/511 .NET、29 包依赖、38 门禁通过。转 review，但仍保留草稿与前置分支整合、统一私有发布及默认平台完整装配的门，不宣称 main 或部署完成；这些流程继续归相应前置任务。</li>\n<li>2026-10-13 cody：本次完整 HTTP 聚合增量的实际文档生成、15/15 CLI 与文档任务门禁通过，已保留五项验收证据；前置整合和统一发布仍由各自任务跟踪。</li>\n<li>2026-10-14 claude：复核（claude，2026-10-14）：本机 Release 0 警告、全量 630/630、Capabilities 7/7、Sample.Crm 28/28；验收 1、2、4、5 成立，第 3 项只成立一半（契约准入只在测试手工包装时生效，平台挂载路径未强制），别名缺规格要求的 Link 头，invoke 为设计外新增的通用执行入口，偏好表无迁移随包、目录只产出 command / query。整改任务 S1-RT-019，裁决 R75–R77；本任务保持 review，待 S1-RT-019 完成后一起认可</li>\n<li>2026-10-14 claude：随 S1-RT-019 收口（R76）：验收第 2 项补 Link 头（S1-RT-019 实现并在 IT 断言 Deprecation 与 Link 的值），第 3 项改写为「机制完成；平台挂载路径的强制准入归 S1-RT-005」，depends 注明实际消费 S1-RT-004 / S1-AZ-003 已交付的端口；保持 review，待 S1-RT-019 复核后两者一起由产品负责人认可</li>\n<li>2026-10-14 claude：产品负责人与 S1-RT-019 一起认可（2026-10-14），随 idadawn/qian#92 合并完成（合并前提是 PR 全部检查通过；上游 #86 先合入）</li>\n</ul>",
   "file": "pm/tasks/S1-RT-006.md"
  },
  {
@@ -4994,11 +5049,9 @@
   "depends": [
    "S1-RT-006"
   ],
-  "blockedBy": [
-   "S1-RT-006"
-  ],
-  "order": 4,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.2.1",
@@ -5334,12 +5387,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
    }
   ],
-  "updated": "2026-10-13",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 1,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>NuGet <code>Qian.Plugin.Sdk</code>（<code>IQianPlugin</code> 基类、租户 / 身份 / 权限 / 配置 / 事件 / 存储 / 通知 / 调度客户端门面、生命周期钩子基类、默认安全装配、<code>PluginEnabledMiddleware</code>）与 <code>Qian.Plugin.Sdk.Generators</code>（<code>[QianPlugin]</code> / <code>[Capability]</code> / <code>[ExtensionPoint]</code> / <code>[Contributes]</code> / <code>[Permission]</code> / <code>[QianJob]</code> / <code>[QianEvent]</code> → DI 注册 + 派生字段带 <code>&quot;$generated&quot;: true</code> 合并进唯一 <code>plugin.json</code> + JSON Schema）；只依赖 <code>Qian.Runtime</code> 与各 <code>Qian.&lt;X&gt;.Abstractions</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>按 [S1-DEC-018](S1-DEC-018.md) 回验 DATA-001：真实 qian.data 的代码字段由源生成器派生、SDK 默认装配可用，Qian 包族在既定私有 NuGet 源锁步发布并能真实还原；未通过前保留组件骨架标记</li>\n<li class='chk'><span class='box'></span>UT：删除代码中的一个 <code>[Capability]</code> 但保留 <code>plugin.json</code> 中的派生条目，CI 比对失败并指出漂移项</li>\n<li class='chk'><span class='box'></span>UT：源生成器把 <code>[Capability]</code> 的 <code>Description</code>、<code>SideEffect</code>、<code>PolicyHint</code>、<code>RequiredScopes</code> 写入 <code>plugin.json</code> 的 <code>tools</code> 表面</li>\n<li class='chk'><span class='box'></span>CI：<code>Qian.Plugin.Sdk</code> 的传递依赖中不出现任何 Provider 包与 <code>Qian.Registry</code> / <code>Qian.Lifecycle</code> / <code>Qian.Capabilities</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>PluginEnabledMiddleware</code> 读 <code>ctx.Registry</code> scope 视图，对未挂载组件的请求返回 404，与不存在无法区分（R32）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：产品负责人已批准 DATA 本体分期交付；SDK 源生成、默认装配与包族私有 NuGet 锁步发布仍为完整 DATA 组件的必过项，不以本体验收完成替代本任务验证。</li>\n<li>2026-10-13 cody：开始：作为 QA-002 与 AUD-001 的必要前置，先实现真实 Capability 属性、可生成元数据及 command/dispatching 协议，供真实审计监听和创建命令复用；源生成漂移、默认安全装配和私有 NuGet/安装门继续完整保留。</li>\n<li>2026-10-13 cody：已实现 QianPlugin/Capability 声明、两类增量生成器、真实 JsonTypeInfo 契约和唯一清单 sync/check；真实 DataPlugin 的入口与提供键由代码派生，CI 校验漂移。生成工具拒绝手写覆盖、路径逃逸和遗留派生条目，先校验完整组件快照。全量 473/473 .NET、17 SDK 专项、38 门禁、25 包依赖及 15 CLI 用例通过；源生成器本地 NuGet 产物已打包，尚未私有发布。实际 command/dispatching、默认安全装配与安装门仍未完成。</li>\n<li>2026-10-13 cody：新增真实 Mediator/事务执行协议与基础策略存活检查；业务 handler 延迟到租户和权限检查后构造。已接入实际 Tenancy、RBAC PEP 和 Audit 监听，参考宿主默认启用创建命令，原只读入口保留为 --data-only。真实 HTTP 验证幂等、敏感姓名哈希、双租户业务/审计隔离和事件路由、审计失败与卸载取消整笔回滚；6 个 CRM 与 22 个 SDK 专项通过。仍在完成全量回归和其余 SDK 验收。</li>\n<li>2026-10-13 cody：本次执行接线最终回归：484/484 全量 .NET 测试通过，零跳过；22 SDK、7 CRM 专项，38 门禁、25 包依赖、15 CLI 用例及实际事件/文档派生检查通过。已覆盖真实生产 waterfall、延迟构造、受限业务事务、创建与两种查询、敏感字段、权限/冻结拒绝、幂等、并发与卸载回滚。完整 Registry 中间件、其余 SDK 表面/默认装配、平台与 app/session 边界、私有发布及安装仍在任务内，继续保留草稿。</li>\n<li>2026-10-13 cody：新增 SDK.AspNetCore 的实际 Registry scope 门禁：用当前已验证租户读取真实装载/遮蔽/restrict 后绑定，未挂载或停用与不存在同为 404；端点过滤器保证漏装/错序中间件不执行 handler。受限 PG、真实 S2S/Kestrel 与 Registry/Runtime 的 6 个新用例通过（Registry 专项现 33 项），该验收已勾选。完整平台和发布安装门继续保留。</li>\n<li>2026-10-13 cody：scope 中间件回归完成：490/490 全量 .NET 测试零跳过，33 个 Registry 真库专项，38 门禁、26 包依赖、15 CLI 用例和文档/PM 检查通过。真实 Data 清单无漂移，事件文档有效。该 HTTP 门禁仍不替代 QA-002 的完整目录/提示词/执行三处过滤或默认 platform 验收。</li>\n<li>2026-10-13 cody：供 QA-002 使用的代码契约、实际执行管道和 Registry HTTP 可见性门已交付草稿 PR #56。下一步必须接入 S1-RT-006 的实际能力目录与聚合，才能验证目录/提示词/执行一致性及完整平台默认装配；先串行转入这个已授权前置。本任务的其余源生成/装配、私有包发布和代码安装验收继续保留，不提前完成或合并。</li>\n<li>2026-10-13 cody：最新 CI 38301355424 出现双租户并发用例单请求 500；其余 489 项通过。本地原用例和真实保存屏障复现 8 次均通过，尚不能判为环境抖动。补充不含请求值的异常类型/SQLSTATE/堆栈证据，以及同租户同幂等键并发回归，保持成功与隔离断言，继续定位根因；不合并或提前报绿。</li>\n<li>2026-10-13 cody：已确定并修复一条 500 路径：真实 PG 首次保存返回 40001 时，Npgsql 默认策略包装为 InvalidOperationException→DbUpdateException→PostgresException，原重试判断漏识别。数据库故障注入测试先稳定失败、修复后通过，仍从新 Mediator/Data scope 重试整笔业务；普通错误不重试。8 次真实跨租户屏障和同租户同幂等键用例通过；诊断提交 17e02899 的 Linux CI 亦通过，旧 CI 缺根因堆栈，保留诊断而不将其全部归为环境抖动。</li>\n<li>2026-10-13 cody：c1a65925 的 Linux CI 已通过 CRM 并发/故障注入，另暴露既有 gRPC 负例的写流取消竞态。测试改为在写流提前 Cancelled 后继续读取最终 RPC 状态和 trailers，最终仍须 Unauthenticated 且业务调用为零；若响应成功仍抛写入错误，不放宽断言。真实 HTTP/2 三项专项本地通过，继续自动修复 CI。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>NuGet <code>Qian.Plugin.Sdk</code>（<code>IQianPlugin</code> 基类、租户 / 身份 / 权限 / 配置 / 事件 / 存储 / 通知 / 调度客户端门面、生命周期钩子基类、默认安全装配、<code>PluginEnabledMiddleware</code>）与 <code>Qian.Plugin.Sdk.Generators</code>（<code>[QianPlugin]</code> / <code>[Capability]</code> / <code>[ExtensionPoint]</code> / <code>[Contributes]</code> / <code>[Permission]</code> / <code>[QianJob]</code> / <code>[QianEvent]</code> → DI 注册 + 派生字段带 <code>&quot;$generated&quot;: true</code> 合并进唯一 <code>plugin.json</code> + JSON Schema）；只依赖 <code>Qian.Runtime</code> 与各 <code>Qian.&lt;X&gt;.Abstractions</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>按 [S1-DEC-018](S1-DEC-018.md) 回验 DATA-001：真实 qian.data 的代码字段由源生成器派生、SDK 默认装配可用，Qian 包族在既定私有 NuGet 源锁步发布并能真实还原；未通过前保留组件骨架标记</li>\n<li class='chk'><span class='box'></span>UT：删除代码中的一个 <code>[Capability]</code> 但保留 <code>plugin.json</code> 中的派生条目，CI 比对失败并指出漂移项</li>\n<li class='chk'><span class='box'></span>UT：源生成器把 <code>[Capability]</code> 的 <code>Description</code>、<code>SideEffect</code>、<code>PolicyHint</code>、<code>RequiredScopes</code> 写入 <code>plugin.json</code> 的 <code>tools</code> 表面</li>\n<li class='chk'><span class='box'></span>CI：<code>Qian.Plugin.Sdk</code> 的传递依赖中不出现任何 Provider 包与 <code>Qian.Registry</code> / <code>Qian.Lifecycle</code> / <code>Qian.Capabilities</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>PluginEnabledMiddleware</code> 读 <code>ctx.Registry</code> scope 视图，对未挂载组件的请求返回 404，与不存在无法区分（R32）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：产品负责人已批准 DATA 本体分期交付；SDK 源生成、默认装配与包族私有 NuGet 锁步发布仍为完整 DATA 组件的必过项，不以本体验收完成替代本任务验证。</li>\n<li>2026-10-13 cody：开始：作为 QA-002 与 AUD-001 的必要前置，先实现真实 Capability 属性、可生成元数据及 command/dispatching 协议，供真实审计监听和创建命令复用；源生成漂移、默认安全装配和私有 NuGet/安装门继续完整保留。</li>\n<li>2026-10-13 cody：已实现 QianPlugin/Capability 声明、两类增量生成器、真实 JsonTypeInfo 契约和唯一清单 sync/check；真实 DataPlugin 的入口与提供键由代码派生，CI 校验漂移。生成工具拒绝手写覆盖、路径逃逸和遗留派生条目，先校验完整组件快照。全量 473/473 .NET、17 SDK 专项、38 门禁、25 包依赖及 15 CLI 用例通过；源生成器本地 NuGet 产物已打包，尚未私有发布。实际 command/dispatching、默认安全装配与安装门仍未完成。</li>\n<li>2026-10-13 cody：新增真实 Mediator/事务执行协议与基础策略存活检查；业务 handler 延迟到租户和权限检查后构造。已接入实际 Tenancy、RBAC PEP 和 Audit 监听，参考宿主默认启用创建命令，原只读入口保留为 --data-only。真实 HTTP 验证幂等、敏感姓名哈希、双租户业务/审计隔离和事件路由、审计失败与卸载取消整笔回滚；6 个 CRM 与 22 个 SDK 专项通过。仍在完成全量回归和其余 SDK 验收。</li>\n<li>2026-10-13 cody：本次执行接线最终回归：484/484 全量 .NET 测试通过，零跳过；22 SDK、7 CRM 专项，38 门禁、25 包依赖、15 CLI 用例及实际事件/文档派生检查通过。已覆盖真实生产 waterfall、延迟构造、受限业务事务、创建与两种查询、敏感字段、权限/冻结拒绝、幂等、并发与卸载回滚。完整 Registry 中间件、其余 SDK 表面/默认装配、平台与 app/session 边界、私有发布及安装仍在任务内，继续保留草稿。</li>\n<li>2026-10-13 cody：新增 SDK.AspNetCore 的实际 Registry scope 门禁：用当前已验证租户读取真实装载/遮蔽/restrict 后绑定，未挂载或停用与不存在同为 404；端点过滤器保证漏装/错序中间件不执行 handler。受限 PG、真实 S2S/Kestrel 与 Registry/Runtime 的 6 个新用例通过（Registry 专项现 33 项），该验收已勾选。完整平台和发布安装门继续保留。</li>\n<li>2026-10-13 cody：scope 中间件回归完成：490/490 全量 .NET 测试零跳过，33 个 Registry 真库专项，38 门禁、26 包依赖、15 CLI 用例和文档/PM 检查通过。真实 Data 清单无漂移，事件文档有效。该 HTTP 门禁仍不替代 QA-002 的完整目录/提示词/执行三处过滤或默认 platform 验收。</li>\n<li>2026-10-13 cody：供 QA-002 使用的代码契约、实际执行管道和 Registry HTTP 可见性门已交付草稿 PR #56。下一步必须接入 S1-RT-006 的实际能力目录与聚合，才能验证目录/提示词/执行一致性及完整平台默认装配；先串行转入这个已授权前置。本任务的其余源生成/装配、私有包发布和代码安装验收继续保留，不提前完成或合并。</li>\n<li>2026-10-13 cody：最新 CI 38301355424 出现双租户并发用例单请求 500；其余 489 项通过。本地原用例和真实保存屏障复现 8 次均通过，尚不能判为环境抖动。补充不含请求值的异常类型/SQLSTATE/堆栈证据，以及同租户同幂等键并发回归，保持成功与隔离断言，继续定位根因；不合并或提前报绿。</li>\n<li>2026-10-13 cody：已确定并修复一条 500 路径：真实 PG 首次保存返回 40001 时，Npgsql 默认策略包装为 InvalidOperationException→DbUpdateException→PostgresException，原重试判断漏识别。数据库故障注入测试先稳定失败、修复后通过，仍从新 Mediator/Data scope 重试整笔业务；普通错误不重试。8 次真实跨租户屏障和同租户同幂等键用例通过；诊断提交 17e02899 的 Linux CI 亦通过，旧 CI 缺根因堆栈，保留诊断而不将其全部归为环境抖动。</li>\n<li>2026-10-13 cody：c1a65925 的 Linux CI 已通过 CRM 并发/故障注入，另暴露既有 gRPC 负例的写流取消竞态。测试改为在写流提前 Cancelled 后继续读取最终 RPC 状态和 trailers，最终仍须 Unauthenticated 且业务调用为零；若响应成功仍抛写入错误，不放宽断言。真实 HTTP/2 三项专项本地通过，继续自动修复 CI。</li>\n<li>2026-10-14 claude：复核 S1-RT-006：plugins/qian.capabilities 等 33 个平台插件清单仍为骨架（inject / provides 为空，x-skeleton），随本任务的清单合并生成替换，不手改</li>\n</ul>",
   "file": "pm/tasks/S1-RT-014.md"
  },
  {
@@ -5522,6 +5575,55 @@
   },
   "bodyHtml": "<h4>背景</h4>\n<p>[idadawn/qian#79](https://github.com/idadawn/qian/pull/79) 的 CI 运行 38448590040（「构建、门禁与测试」，2026-10-13T18:45Z）唯一失败的用例是 CRM 样例 <code>hooks文件更新后实际桥接行为五秒内改变_代码与业务服务不重启</code>：轮询 <code>Inject&lt;SurfaceDocument&gt;(SurfaceKeys.Hooks, &quot;qian.sample.crm/hooks&quot;)</code> 时一次抛出 NOT_FOUND；前一个提交与本机均通过，与负载和时序有关。</p>\n<p>根因：<code>SurfaceRegistrationSession.Replace</code> 先撤销旧注册、再登记新文档，会话锁不覆盖运行时的读取方，新旧快照都有的文档在两步之间对读取方短暂消失；hook 桥接若在这个窗口收到事件，会把 hook 当作不存在而跳过。注册按 key/name 独占（R38），不能先登记再撤销。TS 侧会话同样先 await 撤销再登记，窗口相同。</p>\n<p>做法：两侧运行时 <code>Provide</code> 返回的注册句柄支持原子替换实例（读取方只看到旧值或新值）；表面会话改为先新增、再原位替换、最后撤销，保留失败回滚；补并发回归测试与共用 TCK 场景。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：.NET 与 TS 运行时 <code>Provide</code> 返回的注册句柄可原子替换实例；多个读取方在反复替换期间只看到旧值或新值、从不缺失，<code>List</code> 顺序不变；句柄撤销或上下文卸载后拒绝替换</li>\n<li class='chk done'><span class='box'>✓</span>TCK：共用场景 T25 覆盖原位替换（新值可见、注册顺序不变、以 inject 依赖该键的条目重新 Apply、卸载无残留），.NET 与 TS harness 读同一 YAML 通过</li>\n<li class='chk done'><span class='box'>✓</span>UT：双侧 <code>SurfaceRegistrationSession</code> 改为先新增、再原位替换、最后撤销；读取方在反复替换期间对新旧快照都有的文档从不 NOT_FOUND；新增冲突时回滚，旧注册与旧内容不变</li>\n<li class='chk done'><span class='box'>✓</span>E2E：CRM hooks 热更新验收与双侧 T19 恢复严格断言，不再容忍过渡期缺失；超时报出最后观察到的内容与监视状态</li>\n<li class='chk done'><span class='box'>✓</span>门禁：.NET 全量构建与测试、<code>check_deps</code>、门禁自测、<code>check_docs</code>、<code>pm.py validate</code> 通过；规格 §5 / §10.2 与相关 README 同步（本机并入最新 main 后复跑通过；CI 以 [idadawn/qian#82](https://github.com/idadawn/qian/pull/82) 全部检查通过为合并前提）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：两侧运行时注册句柄原子替换，表面会话改为新增→原位替换→撤销</li>\n<li>2026-10-14 claude：提交评审：两侧运行时注册句柄原子替换，会话改为新增→原位替换→撤销，T25 两侧 harness 通过。修复前会话并发单测 3/3 复现（每次两万至三万余次缺失），把会话改回旧顺序的变异在 .NET 与 TS 都被并发与逐步检查抓到。本机 dotnet 全量 630/630 零跳过，check_deps、门禁自测 47 项、check_docs、pm validate 通过；TS 运行时 36 项、表面 9 项、CLI 55 项、浏览器冒烟与制品消费通过，surfaces 双侧报告对照一致；CRM hooks 热更新用例连续 5 次通过。@idadawn/qian-runtime 的新版本发布另走 runtime-ts-release</li>\n<li>2026-10-14 claude：随 idadawn/qian#82 合并完成（合并前提是 PR 全部检查通过）；并入最新 main 后本机全部门禁复跑通过（dotnet 全量 630/630 零跳过）</li>\n</ul>",
   "file": "pm/tasks/S1-RT-018.md"
+ },
+ {
+  "id": "S1-RT-019",
+  "title": "qian.capabilities 评审整改：别名 Link 头、invoke 规范化、偏好表迁移、口径与测试补强",
+  "status": "done",
+  "stage": "S1",
+  "area": "RT",
+  "areaName": "运行时 / CLI / 市场",
+  "wave": 2,
+  "priority": "P0",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "3d",
+  "days": 3.0,
+  "depends": [
+   "S1-RT-006"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "pm/tasks/S1-RT-006.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-RT-006.md"
+   },
+   {
+    "path": "packages/Qian.Capabilities/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Capabilities/README.md"
+   },
+   {
+    "path": "docs/prd/specs/component-model.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.2.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "docs/decisions/key-decisions-v0.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/decisions/key-decisions-v0.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 8,
+   "total": 8
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>2026-10-14 claude 复核 S1-RT-006（逐项验收对照 main 上的代码与测试，本机 Release 构建 0 警告、全量 630/630、Qian.Capabilities.Tests 7/7、Qian.Sample.Crm.Tests 28/28，共用过滤 TCK 五种情况目录 / 提示词 / 执行一致）。结论：代码与测试扎实，验收 1、2、4、5 成立，第 3 项只成立一半：「挂载不兼容组件被拒绝」只在测试手工用 <code>OpenApiContractPlugin</code> / <code>GrpcContractPlugin</code> 包装时发生，两者在 packages、samples、tools 内除自身外零引用，Registry 挂载路径不做包装。另有设计外新增的通用执行入口 <code>POST /api/capabilities/{plugin}/{name}/invoke</code>，PRD、规格、ADR-020 都未定义。</p>\n<p>本任务收拢能在 Capabilities 范围内完成的整改；不属本范围的余项按「余项归属」登记到归属任务。相关裁决 R75–R77 见 <code>docs/decisions/key-decisions-v0.md</code>，产品负责人指派本任务即视为认可默认裁决，有异议时新建决策任务。接手时先认领：<code>python3 scripts/pm.py set S1-RT-019 --status doing --owner &lt;名字&gt; --by &lt;名字&gt; --note &quot;开始&quot;</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>别名头：<code>GET /api/kernel/capabilities</code> 与 <code>/api/kernel/capabilities/openapi.json</code> 的响应同时带 <code>Deprecation</code> 与 <code>Link: &lt;后继路径&gt;; rel=&quot;successor-version&quot;</code>（规格 §9.5）；IT 断言两个头的值；PRD 7.2.1 与 S1-RT-006 验收文字补上 Link</li>\n<li class='chk done'><span class='box'>✓</span>invoke 规范化（R75）：规格 §9.5 的端点表加一行定义 <code>POST /api/capabilities/{plugin}/{name}/invoke</code>，PRD 7.2.1 同步；实现上请求体先按条目 <code>inputSchema</code> 用 JSON Schema 2020-12 校验，失败返回 ErrorDetail <code>INPUT_INVALID</code> 并带 JSON Pointer（原文 <code>VALIDATION_FAILED</code> 按 contracts/v0 §3.2 更正，见 R75）；读取 <code>Idempotency-Key</code>，同一键重放不重复执行（复用 Kun 的幂等行为，R63；若 Kun 侧需改动，另开 KUN 任务并在此记录）；Agent 主体仍需 <code>agent.expose</code> 且不开放 Actor 委托；README 第 22 行改为与实现一致，并说明 ApiExplorer 不列通用模板、聚合 OpenAPI 列具体路径的原因；IT 覆盖 schema 不符 400、幂等重放、Agent 主体三种情况</li>\n<li class='chk done'><span class='box'>✓</span>偏好表迁移：<code>CapabilitiesDbContext</code> 随包提供 EF 迁移（生成 ENABLE / FORCE RLS 与策略，与 <code>Qian.Data</code> 的生成器一致），<code>QianDataMigrator</code> 对该上下文不再因无迁移而跳过；IT 在真实 PostgreSQL 上经迁移器建表并断言 <code>pg_policies</code> 中存在该表的租户策略，不再依赖 <code>GenerateCreateScript</code></li>\n<li class='chk done'><span class='box'>✓</span>目录信封契约：<code>GET /api/capabilities</code> 返回具名类型，<code>Produces&lt;&gt;</code> 声明与实际一致；<code>contracts/v0</code> 新增目录信封 Schema（<code>items</code>、<code>ttlMs</code>、<code>cacheScope</code>）与 fixture，按仓库规则同步 <code>Qian.Runtime.Errors</code> 的一致性测试；IT 按信封 Schema 校验整个响应</li>\n<li class='chk done'><span class='box'>✓</span>测试补强：独立重算 <code>schemaSha256</code>（RFC 8785 JCS + SHA-256）并与目录值相等；断言 <code>sideEffect / policyHint / requiredScopes</code> 的实际取值；<code>kind</code> 非法与 <code>q</code> 超长返回 400 ErrorDetail，<code>kind=query</code> 有正例；目录与 openapi 的匿名 401 断言 ErrorDetail 体（<code>code</code> 为 <code>UNAUTHENTICATED</code>）</li>\n<li class='chk done'><span class='box'>✓</span>文档口径：README 删除「保持 doing / PR 保持草稿」等过期状态句，改为引用任务编号；README 或 PRD 7.1 第 12 项（原文误作 7.18，7.18 第 12 项是 Operation/Task）注明目录枚举机制是 SDK 具名绑定与 Registry scope 视图取交集，而非 <code>AddRequestHandler</code> 收集；导航只接受 User / Service 主体而目录多接受 Agent 的差异及理由写进 README；PRD 7.2.1 第 145 行删除 <code>extension_points</code> 表（与第 147 行一致，扩展点是事件与可逆注册）；<code>check_docs.py</code> 通过</li>\n<li class='chk done'><span class='box'>✓</span>工程细节：<code>ttlMs</code> 从组件配置读取（<code>plugins/qian.capabilities/schemas/config.schema.json</code> 增加 <code>catalogTtlMs</code>，默认 1000）；buf 输出解析只取合法 JSON 行、其余按 stderr 记录而不是抛异常；Registry scope Reconciler 的 Apply 失败异常带插件 ID、修订与原因码（管理面出口归 S1-RT-005）</li>\n<li class='chk done'><span class='box'>✓</span>S1-RT-006 收口（R76）：验收第 3 项改写为「机制完成；挂载路径的强制准入归 S1-RT-005」，<code>depends</code> 注明实际消费的是 S1-RT-004 / S1-AZ-003 已交付的端口；本任务转 review 后由 claude 复核，S1-RT-006 与本任务一起由产品负责人认可后才 done</li>\n</ul>\n<h4>余项归属（不在本任务实现）</h4>\n<p>| 余项 | 归属 | 说明 |</p>\n<p>|---|---|---|</p>\n<p>| 平台挂载路径强制契约准入 | S1-RT-005（Mount / Reconciler 套用 <code>OpenApiContractPlugin</code> / <code>GrpcContractPlugin</code>），S1-RT-004 的 Reconciler 复用同一包装 | 已在 S1-RT-005 增加验收项（R76） |</p>\n<p>| 事件类目录（<code>GET /api/capabilities/events</code>、<code>?kind=event</code>） | S1-EVT-003 | 已有验收，交付前 <code>?kind=event</code> 返回空集合并在 README 注明（R77） |</p>\n<p>| 实体类目录（<code>?kind=entity</code>） | 待产品负责人分配，建议 S1-RT-007 或 DATA 系列 | 交付前返回空集合并在 README 注明（R77） |</p>\n<p>| <code>plugins/qian.capabilities</code> 等 33 个平台插件的骨架清单 | S1-RT-014（清单合并生成） | 本任务不手改清单 |</p>\n<p>| 装载失败原因的管理面出口（<code>/api/lifecycle/diagnostics</code>） | S1-RT-005 | 本任务只要求异常带上下文 |</p>\n<h4>验证清单</h4>\n<p>```bash</p>\n<p>python3 scripts/prepare_contract_tools.py --destination /tmp/qian-contract-tools</p>\n<p>export QIAN_BUF_PATH=/tmp/qian-contract-tools/buf QIAN_OASDIFF_PATH=/tmp/qian-contract-tools/oasdiff</p>\n<p>dotnet build Qian.slnx -c Release</p>\n<p>dotnet test --project tests/Qian.Capabilities.Tests/Qian.Capabilities.Tests.csproj -c Release --no-build</p>\n<p>dotnet test --project tests/Qian.Sample.Crm.Tests/Qian.Sample.Crm.Tests.csproj -c Release --no-build</p>\n<p>pnpm --filter &quot;qian...&quot; build &amp;&amp; dotnet test --solution Qian.slnx -c Release --no-build</p>\n<p>python3 scripts/check_deps.py --solution Qian.slnx --no-restore &amp;&amp; python3 scripts/check_docs.py &amp;&amp; python3 scripts/pm.py validate &amp;&amp; python3 scripts/pm.py build</p>\n<p>```</p>\n<p>每项验收完成后把证据（测试名、数量、文档落点）写进进度日志；全部完成后 <code>pm.py set S1-RT-019 --status review</code>，由 claude 复核。</p>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：基于 PR #86 分支实现八项验收</li>\n<li>2026-10-14 claude：验收 1 别名头：两条别名带 <code>Deprecation: @1791331200</code> 与 <code>Link: &lt;PathBase + 后继路径 + 原查询串&gt;; rel=&quot;successor-version&quot;</code>，查询串里 URI 不允许的字符按 RFC 3986 百分号编码（<code>CapabilityEndpoints.SuccessorLink</code>）；IT <code>CapabilityInvokeTests.目录信封符合冻结契约_别名带Deprecation与successor链接_…</code> 断言两条别名的两个头全值（含查询串），单测 <code>CapabilityEndpointTests</code> 覆盖 PathBase 与转义；PRD 7.2.1 第 145 行、组件规格 §12、S1-RT-006 验收 2、S1-RT-004 别名验收同步</li>\n<li>2026-10-14 claude：验收 2 invoke 规范化：组件规格 §9.5 端点表新增一行、PRD 7.2.1 第 147 行同步；<code>CapabilityInputValidator</code> 按 JSON Schema 2020-12 校验，失败 400 <code>INPUT_INVALID</code>，<code>errors[]</code> 为字段级码 + 输入 JSON Pointer（<code>format</code> 只强制 uuid / date，anyOf / oneOf 只报最接近分支，超长 pointer 退到上级）；<code>Idempotency-Key</code> 三段式（短事务登记执行中 → 不占连接执行 → 写完成或撤销），同键异体或执行中 409、失败不留回执、只读能力忽略；Agent 仍需 <code>agent.expose</code>、委托令牌认证失败；README「通用执行入口」节取代原第 22 行并说明 ApiExplorer 与聚合 OpenAPI 的分工。IT：<code>通用执行入口先按inputSchema校验_…</code>、<code>幂等键重放返回首次成功响应且不再执行_…</code>、<code>只读能力忽略幂等键_…</code>、<code>Agent主体经通用执行入口_…</code>；单测 <code>CapabilityInputTests</code> 9 项。回执存 <code>plugin_qian_capabilities.invoke_receipts</code>，Kun 未改动，不需要 KUN 任务（R75 实现说明）</li>\n<li>2026-10-14 claude：验收 3 偏好表迁移：<code>packages/Qian.Capabilities/Migrations/20261014100230_NavigationAndInvokeReceipts</code>（navigation_preferences、invoke_receipts、outbox_messages），经 <code>Qian.Data</code> 生成器产出 ENABLE / FORCE RLS 与 <code>qian_tenant_access</code> / <code>qian_tenant_guard</code>，<code>dotnet ef migrations has-pending-model-changes</code> 无差异；CRM 测试宿主改由 <code>IDataMigrator</code> 以受限属主建表，不再用 <code>GenerateCreateScript</code>；IT <code>能力上下文随包迁移经迁移器在真实PostgreSQL建表_…</code> 断言迁移历史、RLS 标志、属主、<code>pg_policies</code>、受限业务登录跨租户不可见、重复迁移无操作</li>\n<li>2026-10-14 claude：验收 4 目录信封契约：<code>CapabilityCatalog</code> 具名类型，<code>Produces&lt;CapabilityCatalog&gt;()</code> 与源生成序列化一致；新增 <code>contracts/v0/capability-catalog.schema.json</code> 与 fixture（valid 3、invalid 7、semantic-invalid 2），<code>Qian.Runtime.Errors.Tests</code> 一致性测试同步（含 id 唯一与条目语义规则）；IT 按信封 Schema 校验整个响应</li>\n<li>2026-10-14 claude：验收 5 测试补强：IT 自带 RFC 8785 JCS + SHA-256 实现重算每个条目的 <code>schemaSha256</code>；<code>AssertEntry</code> 断言 <code>sideEffect / policyHint / requiredScopes</code> 等取值；<code>kind=tool</code> 返回 400 <code>VALUE_NOT_ALLOWED #/kind</code>（带 allowed）、<code>q</code> 201 字符返回 <code>OUT_OF_RANGE #/q</code>、<code>kind=query</code> 正例、<code>event</code> / <code>entity</code> 空集合；目录、openapi 与两条别名的匿名请求均为 401 ErrorDetail（<code>UNAUTHENTICATED</code>，按 error-detail Schema 校验）</li>\n<li>2026-10-14 claude：验收 6 文档口径：README 删除过期状态句、改引 S1-RT-005 / S1-QA-002 / S1-RT-006 / S1-RT-019 等任务编号；README 与 PRD 7.2.1 第 147 行注明目录枚举机制（SDK 具名绑定 ∩ Registry scope 视图，不收集 <code>AddRequestHandler</code>；原文「7.18 第 12 项」应为 7.1 第 12 项，已在验收文字更正）；README 写明导航只接受 User / Service、目录与执行另接受 Agent 的差异及理由；PRD 第 145 行删除 <code>extension_points</code> 表（第 134 行同步为事件 + 可逆注册）；<code>check_docs.py</code> 通过</li>\n<li>2026-10-14 claude：验收 7 工程细节：<code>catalogTtlMs</code>（config.schema.json 默认 1000、0–3000，<code>CapabilitiesOptions</code> 判定与 Schema 一致，docs/generated/config-catalog.md 已重生成）；buf 输出只取合法规则行，其余行截断后写日志并随失败带诊断（单测 <code>buf输出只取合法规则行_…</code>、<code>buf退出码与输出组合_…</code>）；<code>RegistryScopeApplyException</code> 带 scope、条目、组件版本、patch 修订与原因码，不带底层异常文本（<code>ScopeApplyFailureTests</code>）</li>\n<li>2026-10-14 claude：验收 8 S1-RT-006 收口：验收 3 改写为「机制完成；挂载路径强制准入归 S1-RT-005」，验收 2 补 Link，depends 注明实际消费的端口；S1-RT-006 保持 review，两任务待产品负责人一起认可</li>\n<li>2026-10-14 claude：自查复核两轮（只读子代理，结论经本机探针核实）：首轮指出超长 pointer 会变成 500、oneOf / anyOf 混报各分支要求、<code>format</code> 比 System.Text.Json 严、<code>$id</code> 内嵌引用无法定位、回执事务包住整个执行、Link 头缺 PathBase 且未转义；次轮指出孤立 UTF-16 代理项会变成 500、收尾未包显式事务（ADR-004 D4.8）、<code>patternProperties</code> / <code>dependentSchemas</code> 键含 <code>/</code> 或 <code>~</code> 时库抛异常或静默跳过、可空分支排序错误，以及同键异体 409 与同一位置只报一项两处测试证明力不足。均已整改并补测试。实现与复核同为 claude，独立复核待产品负责人</li>\n<li>2026-10-14 claude：八项验收完成转 review：Release 0 警告；全量 dotnet test 661/661 零跳过（Capabilities.Tests 17/17、Sample.Crm.Tests 34/34）；34 包依赖图、47 门禁自测、check_docs、pm validate 通过；两轮自查复核意见已整改。待产品负责人与 S1-RT-006 一起认可后 done</li>\n<li>2026-10-14 claude：产品负责人认可（2026-10-14，与 S1-RT-006 一起），随 idadawn/qian#92 合并完成（合并前提是 PR 全部检查通过；上游 #86 先合入）</li>\n</ul>",
+  "file": "pm/tasks/S1-RT-019.md"
  },
  {
   "id": "S1-SCH-001",
@@ -6053,7 +6155,7 @@
  {
   "id": "S1-YUE-005",
   "title": "@yue/core 基础组件与统一 Rspress 文档、验收",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "YUE",
   "areaName": "外壳与 yue",
@@ -6068,7 +6170,7 @@
    "S1-DOCS-001"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -6088,12 +6190,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/docs-site.md"
    }
   ],
-  "updated": "2026-10-14",
+  "updated": "2026-10-15",
   "acceptance": {
-   "done": 6,
+   "done": 8,
    "total": 8
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>修订范围（2026-10-14）</h4>\n<p>按产品负责人要求统一使用 Rspress，不再保留 Storybook。51 个组件入口与 manifest 已合并；现已实施文档、演示与测试迁移，保留历史完成日志；正式站点验证完成后恢复 done。</p>\n<p>本任务负责 core 的 Rspress 接入、共用示例和测试迁移、Storybook 清理；文档源仍在组件目录，允许修改 website 的收集器/插件/测试接线，不手改生成目录。S1-DOCS-002 复用该接入继续完成通用组件收集及 .NET/TS/HTTP API，不重复建设 core 展示，也不成为本任务的循环前置。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>组件基线：51 个组件入口与配套部件已合并；保留 <code>data-slot</code> / <code>data-testid</code>、现有公开 API 与统一令牌行为。</li>\n<li class='chk done'><span class='box'>✓</span>机器契约：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验。</li>\n<li class='chk done'><span class='box'>✓</span>Rspress：现有 <code>/components/yue/</code> 中每个 core 组件可发现、有独立页面，按 docs-site.md §3.1 提供首屏交互预览、源码展开/复制、安装、用法、组合结构、分场景示例、完整 props 表与键盘/无障碍说明；左右导航可定位组件及章节，令牌页和明暗状态同站可访问，预览/代码/API 均在现有 Rspress 一个入口内。</li>\n<li class='chk'><span class='box'></span>真实交互：每个可交互组件有可操作示例和「操作 → 可观察结果」断言，至少涵盖输入/校验、选择/值回写、弹层确认/取消与关闭回焦、Tab 切换、Toast/Notification 触发/关闭及适用键盘路径；静态构建后的 Rspress 页面及预览 iframe 在明暗两态跑 Playwright。展示型组件检查真实渲染与状态；全量入口与场景清单相互校验，不能以截图、仅渲染或外站链接替代。正式站点代表性交互实测通过后才能完成。</li>\n<li class='chk done'><span class='box'>✓</span>Props：从真实 TypeScript 类型生成，覆盖组合部件、继承属性、函数/回调、必填、联合类型和默认值；Button 的 variant/size/loading/disabled、Dialog 的 open/defaultOpen/onOpenChange 必须出现在 HTML 与 Markdown 中。建立 51 入口及部件清单的完整性门禁，禁止用仅可序列化的 manifest 替代完整 API。</li>\n<li class='chk done'><span class='box'>✓</span>共用示例与测试：保留默认/悬停/禁用/错误/暗色等适用状态及交互语义；原 126 条 Storybook 用例逐条登记迁移到独立 Vitest 浏览器测试或 Playwright，保留现有单元、SSR、键盘、焦点、ARIA、64 项页面 E2E 的覆盖，无遗漏；Rspress 真正构建页面（含预览 iframe）axe critical / serious = 0，页面异常使 CI 失败。</li>\n<li class='chk done'><span class='box'>✓</span>离线与构建：preview 使用本地组件源码；playground 的 Babel/Monaco/worker 与依赖全部同源打包，按需加载且无外部运行时请求，阻断外网后编辑仍能更新预览；HTML、SSG-MD、llms、搜索、站点前缀、深链刷新与明暗首帧通过验证。全站产物继续遵守 100 MB 预算，组件靶场保留已有 Lighthouse 预算。</li>\n<li class='chk'><span class='box'></span>清理与发布：删除 apps/yue-storybook、CSF/Storybook 专用配置、直接/传递 Storybook 依赖、脚本、缓存配置和 CI 入口；共用 React 示例保留，独立 Vitest/Playwright/axe 保留；更新 README/AGENTS 与命令，验证 frozen-lockfile 安装。CI 全绿合并后，核验正式 Rspress URL 的组件交互与 props 表，才恢复 done。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #76 全部15项适用CI通过后合并（a62f8004）。51组件入口、157项Vitest、126条Storybook用例、64项页面E2E与真实Docs烟测通过；三个页面Lighthouse a11y=100、脚本≤250KiB。实现分支与worktree已清理，独立本地预览保留。</li>\n<li>2026-10-14 cody：按用户要求评估统一 Rspress 并修订任务与规格；原 Storybook 验收仅作历史证据，新增替换验收完成前重新打开。</li>\n<li>2026-10-14 cody：评估与规格修订完成：ADR-022 确认统一 Rspress，实测 preview 可运行现有 Button/Dialog，默认 API 表存在属性过滤缺口，底层解析器可提取；离线编辑器、完整 Props、测试迁移和 Storybook 全量清理列为新增未完成验收。按本次修订范围回到待办，保留已交付组件与 manifest 记录。</li>\n<li>2026-10-14 cody：按用户补充的 Alert Dialog 页面参考，补入首屏交互预览、源码展开/复制、安装、用法、组合结构、场景示例、API 与章节导航验收；所有内容归现有 Rspress 单一入口，示例使用本仓库真实组件 API。</li>\n<li>2026-10-14 cody：按用户补充要求，将真实组件交互设为必过验收：可操作示例、逐组件动作与结果断言、明暗/iframe Playwright、正式站点代表性交互复验；静态截图或仅渲染不算完成。</li>\n<li>2026-10-14 cody：按用户指令开始实施 ADR-022：统一 Rspress 组件文档与真实交互演示，迁移测试并移除 Storybook，完整验收与正式站点验证后关闭。</li>\n<li>2026-10-14 cody：实现完成并提交验收：51 入口与 141 公开组件/部件 API 统一到 Rspress，同源 iframe 与离线 Babel/Monaco；126 条状态场景全部通过，原 157 单测、64 页面 E2E、八项门禁通过；前缀、离线编辑、Props 双产物及 iframe 负例验证通过。等待 PR CI、合并与正式站点交互复验后关闭。</li>\n<li>2026-10-14 cody：最新组合验收：131 条 Rspress 页面测试全部通过（含整页明暗、打开态 axe、离线编辑、iframe 负例、键盘主题切换与刷新保留偏好），71 项站点单测通过；带 PR 前缀静态产物 97.8 MB，低于 100 MB；生成页文档门禁通过。正式部署复验仍待合并后执行。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>Button 族、Input 族、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon 统一入口、Descriptions；每个暴露 <code>data-slot</code> 与 <code>data-testid</code>、机器可读 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）。</p>\n<h4>修订范围（2026-10-14）</h4>\n<p>按产品负责人要求统一使用 Rspress，不再保留 Storybook。51 个组件入口与 manifest 已合并；现已实施文档、演示与测试迁移，保留历史完成日志；正式站点验证完成后恢复 done。</p>\n<p>本任务负责 core 的 Rspress 接入、共用示例和测试迁移、Storybook 清理；文档源仍在组件目录，允许修改 website 的收集器/插件/测试接线，不手改生成目录。S1-DOCS-002 复用该接入继续完成通用组件收集及 .NET/TS/HTTP API，不重复建设 core 展示，也不成为本任务的循环前置。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>组件基线：51 个组件入口与配套部件已合并；保留 <code>data-slot</code> / <code>data-testid</code>、现有公开 API 与统一令牌行为。</li>\n<li class='chk done'><span class='box'>✓</span>机器契约：每个组件导出 manifest 并通过控件 manifest JSON Schema 校验。</li>\n<li class='chk done'><span class='box'>✓</span>Rspress：现有 <code>/components/yue/</code> 中每个 core 组件可发现、有独立页面，按 docs-site.md §3.1 提供首屏交互预览、源码展开/复制、安装、用法、组合结构、由预览工具栏切换 scenarios.json 所列状态的共用示例、完整 props 表与键盘/无障碍说明；左右导航可定位组件及章节，令牌页和明暗状态同站可访问，预览/代码/API 均在现有 Rspress 一个入口内。</li>\n<li class='chk done'><span class='box'>✓</span>真实交互：每个可交互组件有可操作示例和「操作 → 可观察结果」断言，至少涵盖输入/校验、选择/值回写、弹层确认/取消与关闭回焦、Tab 切换、Toast/Notification 触发/关闭及适用键盘路径；静态构建后的 Rspress 页面及预览 iframe 在明暗两态跑 Playwright。展示型组件检查真实渲染与状态；全量入口与场景清单相互校验，不能以截图、仅渲染或外站链接替代。正式站点代表性交互实测通过后才能完成。</li>\n<li class='chk done'><span class='box'>✓</span>Props：从真实 TypeScript 类型生成，覆盖组合部件、继承属性、函数/回调、必填、联合类型和默认值；Button 的 variant/size/loading/disabled、Dialog 的 open/defaultOpen/onOpenChange 必须出现在 HTML 与 Markdown 中。建立 51 入口及部件清单的完整性门禁，禁止用仅可序列化的 manifest 替代完整 API。</li>\n<li class='chk done'><span class='box'>✓</span>共用示例与测试：保留默认/悬停/禁用/错误/暗色等适用状态及交互语义；原 126 条 Storybook 用例逐条登记迁移到独立 Vitest 浏览器测试或 Playwright，保留现有单元、SSR、键盘、焦点、ARIA、64 项页面 E2E 的覆盖，无遗漏；Rspress 真正构建页面（含预览 iframe）axe critical / serious = 0，页面异常使 CI 失败。</li>\n<li class='chk done'><span class='box'>✓</span>离线与构建：preview 使用本地组件源码；playground 的 Babel/Monaco/worker 与依赖全部同源打包，按需加载且无外部运行时请求，阻断外网后编辑仍能更新预览；HTML、SSG-MD、llms、搜索、站点前缀、深链刷新与明暗首帧通过验证。交付时全站产物遵守 100 MB 预算（后续预算按 docs-site.md §7 的 R55 规则维护），组件靶场保留已有 Lighthouse 预算。</li>\n<li class='chk done'><span class='box'>✓</span>清理与发布：删除 apps/yue-storybook、CSF/Storybook 专用配置、直接/传递 Storybook 依赖、脚本、缓存配置和 CI 入口；共用 React 示例保留，独立 Vitest/Playwright/axe 保留；更新 README/AGENTS 与命令，验证 frozen-lockfile 安装。CI 全绿合并后，核验正式 Rspress URL 的组件交互与 props 表，才恢复 done。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；按现有分层、令牌及 Base UI 规范完成基础组件与全量验收。</li>\n<li>2026-10-14 cody：51组件入口、manifest与Schema生成类型、Storybook和令牌页已完成。157项Vitest、126条Storybook用例、64项页面E2E及静态Docs烟测通过；八项门禁、实际打包与三个页面Lighthouse a11y=100/脚本≤250KiB通过。等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #76 全部15项适用CI通过后合并（a62f8004）。51组件入口、157项Vitest、126条Storybook用例、64项页面E2E与真实Docs烟测通过；三个页面Lighthouse a11y=100、脚本≤250KiB。实现分支与worktree已清理，独立本地预览保留。</li>\n<li>2026-10-14 cody：按用户要求评估统一 Rspress 并修订任务与规格；原 Storybook 验收仅作历史证据，新增替换验收完成前重新打开。</li>\n<li>2026-10-14 cody：评估与规格修订完成：ADR-022 确认统一 Rspress，实测 preview 可运行现有 Button/Dialog，默认 API 表存在属性过滤缺口，底层解析器可提取；离线编辑器、完整 Props、测试迁移和 Storybook 全量清理列为新增未完成验收。按本次修订范围回到待办，保留已交付组件与 manifest 记录。</li>\n<li>2026-10-14 cody：按用户补充的 Alert Dialog 页面参考，补入首屏交互预览、源码展开/复制、安装、用法、组合结构、场景示例、API 与章节导航验收；所有内容归现有 Rspress 单一入口，示例使用本仓库真实组件 API。</li>\n<li>2026-10-14 cody：按用户补充要求，将真实组件交互设为必过验收：可操作示例、逐组件动作与结果断言、明暗/iframe Playwright、正式站点代表性交互复验；静态截图或仅渲染不算完成。</li>\n<li>2026-10-14 cody：按用户指令开始实施 ADR-022：统一 Rspress 组件文档与真实交互演示，迁移测试并移除 Storybook，完整验收与正式站点验证后关闭。</li>\n<li>2026-10-14 cody：实现完成并提交验收：51 入口与 141 公开组件/部件 API 统一到 Rspress，同源 iframe 与离线 Babel/Monaco；126 条状态场景全部通过，原 157 单测、64 页面 E2E、八项门禁通过；前缀、离线编辑、Props 双产物及 iframe 负例验证通过。等待 PR CI、合并与正式站点交互复验后关闭。</li>\n<li>2026-10-14 cody：最新组合验收：131 条 Rspress 页面测试全部通过（含整页明暗、打开态 axe、离线编辑、iframe 负例、键盘主题切换与刷新保留偏好），71 项站点单测通过；带 PR 前缀静态产物 97.8 MB，低于 100 MB；生成页文档门禁通过。正式部署复验仍待合并后执行。</li>\n<li>2026-10-14 cody：PR #88 已合并并发布。正式站点交互、Props、离线编辑与主题验证通过；复核发现快捷键淡入过渡低对比度，以及 API 类型中的安装器路径/自动链接，正在补齐后再关闭。</li>\n<li>2026-10-14 cody：完成：实现 PR #88（3cea21ad）与正式站复核修正 PR #90（db95a4fb）均在 CI 全绿后合并；main 文档发布 38545163630 成功。正式 http://10.78.1.161:30820/ 五项复验全部通过：按钮/输入/选择/弹层/Tab/通知、HTML/Markdown Props、断外网编辑并运行、主题切换与刷新、快捷键明暗对比度。Storybook 应用与依赖已移除，实现分支/worktree 已清理；保留 157 单测、64 原页面 E2E 和 132 Rspress 页面用例。</li>\n<li>2026-10-14 claude：验收复核（claude，2026-10-14）：八项验收成立，done 维持。证据：51 个 manifest 与 51 个入口一致并逐条过 Ajv 校验；正式站 http://10.78.1.161:30820 上重跑 website 的 Playwright 套件 132/132（126 条状态场景 + 6 条离线 / 主题），断言都是操作后的可观察结果并含 iframe 内 axe；手工确认 Button 页首屏预览可交互（点击后计数变 1），API 表含 variant / size / loading / disabled，Dialog 含 open / defaultOpen / onOpenChange；Props 由 TS checker 提取、141 个 API 无空表；126 条原 Storybook 用例 id 与 scenarios.json 台账完全相等；离线 Babel / Monaco 同源懒加载并有断网用例；apps 只剩 yue-playground、锁文件无 storybook；本机 yue 的 unit / boundaries / circular / lint 通过、@idadawn/yue-core vitest 82、website 单测 72。备注：「分场景示例」实现为预览工具栏切换 scenarios.json 的状态（Dialog 只有 Default / Dark），不是逐场景独立示例加源码，比验收文字弱；manifest-catalog.json 里大量 props 的 title 与属性名不符（Button.testId / className 的 title 都是 id）、description 为模板句，机器契约质量待修；产物 97.8 MB 距 100 MB 预算只剩约 2 MB，S1-DOCS-002 加页大概率超限；docs/prd/specs/yue.md、core/package.json、collect-components.ts 仍写「约 30 个」组件；.changeset、tokens README 残留 Storybook 文案；docs-site.md §6 与 ADR-022 D22.4 / docs/README.md 的「待实施」未补注</li>\n<li>2026-10-15 cody：S1-QA-010 校正文档措辞：适用状态由 scenarios.json 登记并在预览工具栏切换，弹层在示例内交互；原完成结论不变</li>\n</ul>",
   "file": "pm/tasks/S1-YUE-005.md"
  },
  {
@@ -6112,11 +6214,9 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -6151,11 +6251,9 @@
   "depends": [
    "S1-YUE-005"
   ],
-  "blockedBy": [
-   "S1-YUE-005"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.15.2",
@@ -6196,7 +6294,6 @@
    "S1-FILE-001"
   ],
   "blockedBy": [
-   "S1-YUE-005",
    "S1-FILE-001"
   ],
   "order": 5,
@@ -6238,7 +6335,6 @@
    "S1-IDP-010"
   ],
   "blockedBy": [
-   "S1-YUE-005",
    "S1-YUE-007",
    "S1-IDP-010"
   ],
@@ -6285,8 +6381,7 @@
    "S1-YUE-005"
   ],
   "blockedBy": [
-   "S1-MGW-001",
-   "S1-YUE-005"
+   "S1-MGW-001"
   ],
   "order": 2,
   "readyNow": false,

@@ -13,7 +13,8 @@ test('断外网后加载本地编辑器、修改代码并真实运行', async ({
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: '编辑代码' }).click();
   const editor = frame.locator('.monaco-editor textarea');
-  await expect(editor).toBeVisible();
+  // 正式站经网络首次加载本地编辑器资源，等待资源就绪后验证真实执行结果。
+  await expect(editor).toBeVisible({ timeout: 30_000 });
   await editor.press('ControlOrMeta+A');
   await editor.pressSequentially("import {useState} from 'react'; export default function Example(){const[n,s]=useState(0); return <button onClick={()=>s(n+1)}>离线 {n}</button>}");
   await frame.getByRole('button', { name: '运行', exact: true }).click();
@@ -32,6 +33,8 @@ test('属性表、继承回调、源码和 Markdown 同步', async ({ page, requ
     for (const prop of props) expect(markdown).toContain(prop);
     expect(markdown).toContain("@idadawn/yue-core");
     expect(markdown).not.toContain('<ComponentDemo');
+    expect(markdown).not.toContain('.pnpm');
+    await expect(page.locator('table a[href^="mailto:"]')).toHaveCount(0);
   }
 });
 
@@ -67,6 +70,7 @@ test('桌面快捷键文字在明暗主题均有足够对比度', async ({ page 
     await page.emulateMedia({ colorScheme: theme });
     await page.goto('components/yue/core/button.html');
     await expect(page.locator('.rp-search-button__hotkey')).toBeVisible();
+    await expect(page.locator('.rp-search-button__hotkey')).toContainText('Ctrl');
     const violations = (await new AxeBuilder({ page }).include('.rp-search-button').analyze()).violations;
     expect(violations).toEqual([]);
   }

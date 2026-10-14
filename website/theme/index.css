@@ -287,4 +287,5 @@
 .rp-switch-appearance__icon--sun { display: block; }
 .rp-switch-appearance__icon--moon, html.dark .rp-switch-appearance__icon--sun { display: none; }
 html.dark .rp-switch-appearance__icon--moon { display: block; }
-.rp-search-button .rp-search-button__hotkey { color: oklch(var(--yue-muted-foreground)); background: oklch(var(--yue-muted)); }
+/* 快捷键文字初次出现不淡入，避免过渡帧降低文本对比度。 */
+.rp-search-button .rp-search-button__hotkey { color: oklch(var(--yue-muted-foreground)); background: oklch(var(--yue-muted)); transition: none; }

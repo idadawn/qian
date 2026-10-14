@@ -1,6 +1,14 @@
 {
   "type": "object",
-  "properties": {},
+  "properties": {
+    "catalogTtlMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3000,
+      "default": 1000,
+      "description": "能力目录响应的 ttlMs：客户端可缓存目录列表的毫秒数。上限与权限变更 3 秒内生效的口径一致；执行入口每次重新判定，缓存不是执行授权。"
+    }
+  },
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

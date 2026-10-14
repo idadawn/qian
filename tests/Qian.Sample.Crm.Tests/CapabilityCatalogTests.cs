@@ -280,12 +280,14 @@ public sealed partial class CustomerCommandTests
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenant, "crm.read crm.write"));
         return host.Send(request);
     }
-    private static void ConfigureCapabilities(WebApplicationBuilder builder, string connection, string navigationConnection)
+    private static void ConfigureCapabilities(WebApplicationBuilder builder, string connection, string navigationConnection, string migrations)
     {
         builder.Services.AddKunSecurity();
         builder.Services.AddQianHttpContracts();
         builder.Services.AddQianPluginEndpoints(sp => sp.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("registry", ScopeKey.Global));
         builder.Services.AddQianData<CapabilitiesDbContext>((_, options) => options.UseNpgsql(navigationConnection).UseKunSchema(CapabilitiesDbContext.Schema));
+        // 只有能力上下文随包带迁移；迁移连接用属主角色，在线连接仍是受限业务角色。
+        builder.Services.AddQianDataMigrations(options => options.ResolveConnection = (_, type) => type == typeof(CapabilitiesDbContext) ? migrations : null);
         builder.Services.AddQianData<RegistryDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(RegistryDbContext.Schema));
         builder.Services.AddSingleton<ISurfaceReader, SurfaceValidator>();
         builder.Services.AddSingleton<IToolContractHasher, ToolContractHasher>();
@@ -319,7 +321,7 @@ public sealed partial class CustomerCommandTests
                 http.RequestServices.GetRequiredService<Qian.Identity.Abstractions.ICurrentUser>(), http.RequestAborted));
         }).RequireAuthorization();
     }
-    private static async Task AttachCapabilities(WebApplication app)
+    private static async Task AttachCapabilities(WebApplication app, HumanOnlyProbe? humanOnlyProbe = null)
     {
         var loader = app.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var directory = Path.Combine(Path.GetTempPath(), "qian-capabilities-" + Guid.NewGuid().ToString("N"));
@@ -362,7 +364,8 @@ public sealed partial class CustomerCommandTests
             installed.Add(binding);
             if (definition.Entry.Id == "crm")
             {
-                definitions["crm"] = definition with { Plugin = new NavigationManifestPlugin(definition.Plugin, binding.Metadata, validator) };
+                var plugin = humanOnlyProbe is null ? definition.Plugin : new HumanOnlyProbePlugin(definition.Plugin, humanOnlyProbe);
+                definitions["crm"] = definition with { Plugin = new NavigationManifestPlugin(plugin, binding.Metadata, validator) };
                 installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "0.9.0" } }, Path.Combine(directory, "plugins", "crm")));
                 installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "1.1.0" } }, Path.Combine(directory, "plugins", "crm"), incompatible: true));
             }

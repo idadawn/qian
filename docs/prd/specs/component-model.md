@@ -1248,7 +1248,8 @@ npx qian@latest [--skill <name>]… [--agent <name>]… [--command <name>]… [-
 |---|---|---|
 | `/api/registry/*` | `qian.registry` | 条目与插件树（`GET /api/registry/entries?scope=`，等价 `dump-config`）、scope patch（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`）、lock 与来源；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 原因码（`PLUGIN_NOT_MOUNTED` 等四个，R32 / R48），其他调用者 404 |
 | `/api/lifecycle/*` | `qian.lifecycle` | `mount` / `unmount` / `reload`（声明式表面）、滚动重启请求、`/api/lifecycle/diagnostics`（Pending / Failed / 环路） |
-| `/api/capabilities/*` | `qian.capabilities` | 能力目录（工具、事件、实体），鉴权后按 scope 与权限过滤，响应带 `ttlMs` 与 `cacheScope: private`；`/api/capabilities/openapi.json` 聚合 |
+| `/api/capabilities/*` | `qian.capabilities` | 能力目录（工具、事件、实体），鉴权后按 scope 与权限过滤，响应为信封 `contracts/v0/capability-catalog`（`items`、`ttlMs`、`cacheScope: private`）；`/api/capabilities/openapi.json` 聚合 |
+| `POST /api/capabilities/{plugin}/{name}/invoke` | `qian.capabilities` | 通用执行入口（R75）：每次重做与目录同款的判定，不可见与不存在一样 404；请求体先按条目 `inputSchema`（JSON Schema 2020-12）校验，不符返回 400 `INPUT_INVALID`，`errors[]` 带输入 JSON Pointer；写类能力可带 `Idempotency-Key`（UUID），同一主体、同一能力、同一键 24 小时内返回首次成功响应（`Idempotent-Replayed: true`）且不再执行，键相同而输入不同、或同键请求仍在执行，返回 409 `CONFLICT`，失败不留回执，只读能力（`sideEffect: read`）忽略该键；Agent 主体只见 `agent.expose: true` 的能力，S1 不开放 Agent 执行与 Actor 委托；ApiExplorer 不列此通用模板，`openapi.json` 为每个可见能力列出具体路径与 Schema |
 | `/api/kernel/*` | 别名 | v1 路径在 S1 内保留为别名，响应带 `Deprecation` 头与 `Link: rel="successor-version"`，S2 移除 |
 
 全部管理面端点只在 `platform` profile 存在，受 `qian.authz` 的 PEP 保护；业务与模型表面（路由、`ctx.Tools`、能力目录、菜单）对未挂载 / 被过滤的组件一律 404（R32）。
@@ -1372,7 +1373,7 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 - [ ] **seam 依赖图**：G3 对全部 `Qian.*` / `@qian/*` 包通过；故意让 `Qian.Files` 引用 `Qian.Authz` 时 G3 失败（CI）。
 - [ ] **profile 与 patch**：五个 profile 与组合包入库；`qian --profile platform dump-config` 输出通过 `patch/v2` 校验，任一条目复制为 patch 记录后再次 `dump-config` 结果不变；T15 在真实文件上复现（E2E）。
 - [ ] **租户 scope patch**：对租户 A 写 `files` 的 scope patch 后 A 的上传落到 A 的桶、B 不受影响；对 A 写 `disabled: true` 后 A 调用 `qian.files/upload`、访问其路由与菜单均得到与「不存在」相同的 404，而持有 `qian.registry:scope:read` 的运维调用 `/api/registry/entries` 得到 403 `PLUGIN_NOT_MOUNTED`，`message` 为「被租户 scope patch 禁用」、`pointer` 指向该条目（R32 / R48）；对 `policy.required: true` 的条目写 `disabled: true` 被拒；未授权租户写入返回 `NOT_ENTITLED`（E2E）。
-- [ ] **管理面别名**：`GET /api/kernel/capabilities` 与 `GET /api/capabilities` 返回相同内容，前者带 `Deprecation` 头（IT，R33）。
+- [ ] **管理面别名**：`GET /api/kernel/capabilities` 与 `GET /api/capabilities` 返回相同内容，前者带 `Deprecation` 头与 `Link: </api/capabilities>; rel="successor-version"`（保留原查询串），`openapi.json` 别名同理（IT，R33）。
 - [ ] **市场与 CLI**：官方市场仓库含 `marketplace.json` 与签名；空白项目 `qian init --template dotnet-webapi` 后 `qian add identity authz files`，照各包 README 在 30 分钟内跑通登录、权限检查与上传（ADR-020 §6 S1 退出标准）；`npx qian@latest --skill tenant-onboarding --yes` 只复制技能、不改依赖（E2E）。
 - [ ] **幂等与回滚**：重复 `qian add files@1.0.0` 返回 0 且工作区无变化；在加依赖步骤注入失败后工作区与 lock 恢复到安装前（`git status` 干净）；`qian remove files` 后条目 `disabled: true`、文件与依赖移除（IT）。
 - [ ] **热重载**：`platform` profile 运行中修改已安装技能的 `description`，5 秒内 `ctx.Tools` 与 Agent 门面返回新描述，代码条目未重启（E2E）。
@@ -1411,3 +1412,4 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 | 2026-10-06 | 草案 v2 | 首版：按 ADR-020 重写组件模型；取代 `plugin-manifest.md` v1 为权威规格 |
 | 2026-10-07 | 草案 v2（拍板传播） | ADR-020 §7 八条全部拍板：§13 改为已拍板清单；§3 清单 JSON 定稿；§3.4 `license` 改 Apache-2.0；§5.3 TS 运行时 S1 vendor Cordis、公共 API `@qian/runtime`；§8.3 / §8.4 官方市场仓库 `qian-plugins`（S1 私有）；§9.1 Node ≥ 22 前置、`dotnet qian` 薄包装 P2、遥测默认不采集 |
 | 2026-10-14 | 草案 v2（S1-RT-018） | §5.1 / §5.2 / §5.3 `Provide` 返回可原位替换实例的注册句柄（.NET `IRegistrationHandle<T>.Replace`、TS `RegistrationHandle<T>.replace`）；§5.6 声明式表面重载改为先新增、再原位替换、最后撤销；§10.2 T19 补替换期间不缺失，新增 T25。产品负责人在任务中要求修复热重载读取方瞬时看到注册缺失的竞态 |
+| 2026-10-14 | 草案 v2（S1-RT-019） | §9.5 增加通用执行入口 `POST /api/capabilities/{plugin}/{name}/invoke` 一行（R75），`/api/capabilities/*` 注明目录信封契约；§12 管理面别名验收补 `Link: rel="successor-version"`。S1-RT-006 复核发现执行入口未进规格、别名缺 Link 头 |

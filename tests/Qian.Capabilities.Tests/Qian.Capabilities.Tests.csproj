@@ -5,6 +5,7 @@
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Registry/Qian.Registry.csproj" />
     <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
