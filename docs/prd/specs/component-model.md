@@ -1417,4 +1417,4 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 | 2026-10-14 | 草案 v2（S1-RT-019） | §9.5 增加通用执行入口 `POST /api/capabilities/{plugin}/{name}/invoke` 一行（R75），`/api/capabilities/*` 注明目录信封契约；§12 管理面别名验收补 `Link: rel="successor-version"`。S1-RT-006 复核发现执行入口未进规格、别名缺 Link 头 |
 | 2026-10-15 | 草案 v2（S1-RT-020） | §9.5 执行入口加回执策略：按数据分级与 `receiptMaxBytes` 决定是否保存响应体，不保存时同键重放返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；能力契约在登记阶段生成条目并预编译输入校验器，不合格即拒绝。S1-RT-019 复核发现回执明文无上限、输入 Schema 首次调用才编译 |
 | 2026-10-15 | 草案 v2（S1-RT-021） | §9.5 回执策略段更正两处说法：过期回执的物理删除靠本租户后续带键写调用登记时的惰性清理（每次最多 100 行），`NOT VALID` 的理由是存量超限行会让带校验的约束失败、迁移属主在 FORCE RLS 下删不掉；补作者按 `dataClassification` 标注能力（SDK 默认 `internal` 即默认保存响应体）与 platform 宿主必须调用 `AddQianCapabilities()`。S1-RT-020 复核发现两处说法不准、默认分级会让含个人信息的响应明文入回执 |
-| 2026-10-15 | 草案 v2（S1-RT-022） | §9.5 执行入口补请求体读不成确定值时返回 400 `BAD_REQUEST`（含绝对值超过 decimal 范围的数）；登记期检查拒绝 `enum` / `const` 取值含这类数的输入 Schema。JsonSchema.Net 9.4 按 decimal 比较取值，这类数曾让执行入口返回 500 |
+| 2026-10-15 | 草案 v2（S1-RT-024） | §9.5 执行入口补请求体读不成确定值时返回 400 `BAD_REQUEST`（含绝对值超过 decimal 范围的数）；登记期检查拒绝 `enum` / `const` 取值含这类数的输入 Schema。JsonSchema.Net 9.4 按 decimal 比较取值，这类数曾让执行入口返回 500 |

@@ -94,5 +94,5 @@
 |---|---|---|---|
 | [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-15 |
 | [S1-RT-021](tasks/S1-RT-021.md) 验收整改：执行入口 OpenAPI 补不可重放码、回执清理与 NOT VALID 说法更正、登记期检查装配、数据分级标注与测试补强（S1-RT-020 复核） | review | claude | 2026-10-15 |
-| [S1-RT-022](tasks/S1-RT-022.md) 通用执行入口拒绝超出 decimal 范围的 JSON 数：输入按 400 BAD_REQUEST，输入 Schema 的 enum / const 在登记期拒绝 | review | claude | 2026-10-15 |
+| [S1-RT-024](tasks/S1-RT-024.md) 通用执行入口拒绝超出 decimal 范围的 JSON 数：输入按 400 BAD_REQUEST，输入 Schema 的 enum / const 在登记期拒绝 | review | claude | 2026-10-15 |
 | [S1-TEN-001](tasks/S1-TEN-001.md) 租户主档、fail-closed 租户上下文与传播器、tenancy API | review | cody | 2026-10-15 |

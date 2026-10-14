@@ -2,7 +2,7 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
-## 2026-10-15 执行入口拒绝超出 decimal 范围的数（S1-RT-022）
+## 2026-10-15 执行入口拒绝超出 decimal 范围的数（S1-RT-024）
 
 通用执行入口的请求体里有绝对值超过 decimal 范围（约 7.9e28）的数时返回 400 `BAD_REQUEST`，不再返回 500；输入 Schema 的 `enum` / `const` 取值含这类数的能力在登记阶段以新规则 `unsupported-number` 拒绝。详见 [Qian.Capabilities](../packages/Qian.Capabilities/README.md)。
 
