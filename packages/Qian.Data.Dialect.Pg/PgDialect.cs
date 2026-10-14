@@ -38,14 +38,22 @@ public sealed class PgDialect : IDataDialect
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(password);
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout, TimeSpan.Zero);
-        var seconds = (int)Math.Ceiling(timeout.TotalSeconds);
+        // Npgsql 的连接与命令超时以秒计，上限 1024 秒。
+        var seconds = (int)Math.Min(Math.Ceiling(timeout.TotalSeconds), 1024);
+        string secret;
+        try { secret = password.RevealUtf8(); }
+        catch (InvalidOperationException error) when (error is not ObjectDisposedException)
+        {
+            // PG 口令是文本；不是 UTF-8 的密钥在连接前就拒绝。
+            throw new QianErrorException(new QianError(DataErrors.ConnectionCredentialInvalid), error);
+        }
         var builder = new NpgsqlConnectionStringBuilder
         {
             Host = target.Host,
             Port = target.Port,
             Database = target.Database,
             Username = target.UserName,
-            Password = password.RevealUtf8(),
+            Password = secret,
             // 探测连接用完即关：不进连接池，避免以租户凭据长期占用目标库的连接。
             Pooling = false,
             Timeout = seconds,
