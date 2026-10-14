@@ -628,3 +628,5 @@ static readonly Qian.Data.DataErrors.FieldOutOfRange -> Qian.Runtime.Errors.Erro
 static readonly Qian.Data.DataErrors.FieldRangeInverted -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Data.DataErrors.TypeNotFound -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Data.DataErrors.TypeProtected -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Data.DataErrors.ConnectionCredentialInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Data.DataErrors.ConnectionTargetDenied -> Qian.Runtime.Errors.ErrorCode!

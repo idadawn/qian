@@ -2,6 +2,11 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-15 数据连接连通测试的出网约束与凭据错误（S1-DATA-005）
+
+- 连通测试先解析目标主机并逐个检查地址：缺省拒绝回环、链路本地（含云元数据）、100.100.100.200、未指定、组播与广播地址。运维可经 `QianDataConnectionOptions.Egress` 追加拒绝网段或限定放行网段；被拒返回 DATA_CONNECTION_TARGET_DENIED，不连接也不读取密钥，放行时只连检查过的地址。
+- 租户密钥不是 UTF-8 文本时，PG 方言返回 DATA_CONNECTION_CREDENTIAL_INVALID，不再是 500。见 [Qian.Data](../packages/Qian.Data/README.md)。
+
 ## 2026-10-14 yue 组件文档迁入 Rspress（S1-YUE-005）
 
 51 个组件入口、141 个公开组件/部件的 Props、令牌页与可编辑的真实演示统一进入现有 Rspress。共用示例及 126 个状态场景迁移到独立 Playwright，离线编辑器资源随站点发布；移除旧文档应用与依赖，保留原有八项门禁。使用说明见 [core 主文档](../packages/yue/core/README.md)。
