@@ -140,9 +140,9 @@ public sealed partial class PatchPersistenceTests
     }
 
     private async Task<RunningRegistry> CreateRunningRegistry(AsyncLocalTenantContext tenant, Func<PluginDefinition, PluginDefinition>? modify = null, bool start = true,
-        Action<IServiceCollection>? services = null)
+        bool capabilityChecks = false, Action<IServiceCollection>? services = null)
     {
-        var host = Host(tenant, services: services); await host.StartAsync(Ct); await Prepare(host);
+        var host = Host(tenant, capabilityChecks: capabilityChecks, services: services); await host.StartAsync(Ct); await Prepare(host);
         var profile = new RuntimeProfile(); var validator = new SurfaceValidator(); var profiles = new ProfileLoader(validator);
         var logger = new RecordingLogger(); var runtime = new PluginLoader(host.Services, logger);
         RegistryPlugin? registry = null;
