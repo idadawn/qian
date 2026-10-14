@@ -1,19 +1,22 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Qian.Runtime.Errors;
 
 namespace Qian.Capabilities;
 
 /// <summary>通过固定版本 Buf 进行离线编译与 FILE 级兼容检查，不执行任何 protoc 插件或制品配置。</summary>
-public sealed class BufProtoCompatibilityProbe : IProtoCompatibilityProbe
+public sealed partial class BufProtoCompatibilityProbe : IProtoCompatibilityProbe
 {
     private const string Config = "{\"version\":\"v2\",\"modules\":[{\"path\":\".\"}],\"breaking\":{\"use\":[\"FILE\"]}}";
+    private const int DiagnosticLines = 50, DiagnosticLineLength = 500;
     private readonly string _executable;
-    /// <summary>使用宿主预装且通过锁文件核验的绝对路径。</summary>
-    public BufProtoCompatibilityProbe(string executablePath)
+    private readonly ILogger? _logger;
+    /// <summary>使用宿主预装且通过锁文件核验的绝对路径；logger 记录检查器输出中不是规则报告的行。</summary>
+    public BufProtoCompatibilityProbe(string executablePath, ILogger? logger = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
         if (!Path.IsPathFullyQualified(executablePath) || !File.Exists(executablePath)) throw new ArgumentException("必须提供已安装检查器的绝对路径。", nameof(executablePath));
-        _executable = executablePath;
+        _executable = executablePath; _logger = logger;
     }
     /// <inheritdoc />
     public async ValueTask<ReadOnlyMemory<byte>> CompileAsync(ProtoContractSet source, CancellationToken cancellationToken = default)
@@ -56,20 +59,43 @@ public sealed class BufProtoCompatibilityProbe : IProtoCompatibilityProbe
             var config = Path.Combine(directory.FullName, "buf.yaml"); await File.WriteAllTextAsync(config, runtime ? Config.Replace("FILE", "PACKAGE", StringComparison.Ordinal) : Config, cancellationToken).ConfigureAwait(false);
             var result = await ContractToolProcess.RunAsync(_executable, directory.FullName,
                 ["breaking", afterPath, "--against", beforePath, "--config", config, "--error-format=json", "--disable-symlinks"], cancellationToken).ConfigureAwait(false);
+            var (rules, diagnostics) = ParseBreaking(result.Output, result.Error);
+            if (diagnostics.Count != 0 && _logger is not null) Log.ToolOutput(_logger, result.Exit, diagnostics.Count, string.Join("\n", diagnostics));
             if (result.Exit == 0) return new ContractCompatibility(true, []);
-            if (result.Exit != 100) throw new InvalidOperationException("proto 兼容检查器执行失败。");
-            var rules = new SortedSet<string>(StringComparer.Ordinal);
-            foreach (var line in (result.Output + "\n" + result.Error).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            {
-                using var report = JsonDocument.Parse(line);
-                var type = report.RootElement.GetProperty("type").GetString();
-                if (string.IsNullOrWhiteSpace(type) || type.Length > 200 || type.Any(ch => !char.IsAsciiLetterOrDigit(ch) && ch != '_')) throw new InvalidOperationException("proto 检查器返回无效诊断。");
-                rules.Add(type);
-            }
-            if (rules.Count == 0) throw new InvalidOperationException("proto 检查器缺少破坏性规则。");
-            return new ContractCompatibility(false, Array.AsReadOnly(rules.ToArray()));
+            if (result.Exit != 100) throw Failure("proto 兼容检查器执行失败。", diagnostics);
+            // 退出码 100 表示存在破坏性变更；没有任何合法规则行时不能当作兼容，也不能凭空给出结论。
+            if (rules.Count == 0) throw Failure("proto 检查器缺少破坏性规则。", diagnostics);
+            return new ContractCompatibility(false, rules);
         }
         finally { directory.Delete(true); }
+    }
+    // 只把形如 {"type":"<规则 ID>",...} 的合法 JSON 行当作规则报告；其余行（警告、进度、无效 JSON）按 stderr 诊断截断保留，不抛异常。
+    internal static (IReadOnlyList<string> Rules, IReadOnlyList<string> Diagnostics) ParseBreaking(string output, string error)
+    {
+        var rules = new SortedSet<string>(StringComparer.Ordinal); var diagnostics = new List<string>();
+        foreach (var line in (output + "\n" + error).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (Rule(line) is { } rule) rules.Add(rule);
+            else if (diagnostics.Count < DiagnosticLines) diagnostics.Add(line.Length > DiagnosticLineLength ? line[..DiagnosticLineLength] : line);
+        }
+        return (Array.AsReadOnly(rules.ToArray()), diagnostics.AsReadOnly());
+        static string? Rule(string line)
+        {
+            if (!line.StartsWith('{')) return null;
+            try
+            {
+                using var report = JsonDocument.Parse(line);
+                return report.RootElement.ValueKind == JsonValueKind.Object && report.RootElement.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String &&
+                    type.GetString() is { Length: > 0 and <= 200 } value && value.All(ch => char.IsAsciiLetterOrDigit(ch) || ch == '_') ? value : null;
+            }
+            catch (JsonException) { return null; }
+        }
+    }
+    private static InvalidOperationException Failure(string message, IReadOnlyList<string> diagnostics)
+    {
+        var error = new InvalidOperationException(message);
+        error.Data["contractDiagnostics"] = string.Join("\n", diagnostics);
+        return error;
     }
     private async Task Version(string directory, CancellationToken ct)
     {
@@ -92,5 +118,10 @@ public sealed class BufProtoCompatibilityProbe : IProtoCompatibilityProbe
         var info = new FileInfo(output);
         if (!info.Exists || info.Length is 0 or > 64 * 1024 * 1024) throw new InvalidOperationException("proto 编译结果大小无效。");
         return await File.ReadAllBytesAsync(output, ct).ConfigureAwait(false);
+    }
+    private static partial class Log
+    {
+        [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "proto 检查器（退出码 {Exit}）输出了 {Count} 行非规则内容：\n{Lines}")]
+        public static partial void ToolOutput(ILogger logger, int exit, int count, string lines);
     }
 }

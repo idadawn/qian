@@ -40,6 +40,20 @@ public sealed class CapabilityCatalog
     public string CacheScope { get; } = "private";
 }
 
+/// <summary>一次能力调用的结果：执行输出，或同一幂等键首次成功调用的原样回放。</summary>
+public sealed class CapabilityInvocation
+{
+    /// <summary>复制输出，避免调用方持有的文档被释放或修改。</summary>
+    public CapabilityInvocation(JsonElement output, bool replayed)
+    {
+        Output = output.Clone(); Replayed = replayed;
+    }
+    /// <summary>能力输出，形状由条目的 outputSchema 描述。</summary>
+    public JsonElement Output { get; }
+    /// <summary>为 true 表示本次没有执行，返回的是同一主体、同一能力、同一幂等键首次成功调用的响应。</summary>
+    public bool Replayed { get; }
+}
+
 /// <summary>权限与作用域一致的目录、模型提示和实际执行端口；身份来自已验证服务端口。</summary>
 public interface ICapabilityService
 {
@@ -49,6 +63,10 @@ public interface ICapabilityService
     ValueTask<string> ComposePromptAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default);
     /// <summary>聚合当前实际可调用绑定的 OpenAPI 3.1；与目录使用同一身份、权限和 scope 判定。</summary>
     ValueTask<JsonElement> GetOpenApiAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default);
-    /// <summary>按与目录相同的规则重新判定后调用真实绑定；隐藏与不存在统一 NOT_FOUND。</summary>
-    ValueTask<JsonElement> InvokeAsync(IPluginContext caller, ICurrentUser user, string id, JsonElement input, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 按与目录相同的规则重新判定后调用真实绑定；隐藏与不存在统一 NOT_FOUND。输入先按条目 inputSchema 校验，
+    /// 不符返回 INPUT_INVALID 与逐项 JSON Pointer；给出幂等键时，同一主体、同一能力、同一键的成功调用只执行一次，
+    /// 回放窗口内重复请求原样返回首次响应，键相同而输入不同返回 CONFLICT。
+    /// </summary>
+    ValueTask<CapabilityInvocation> InvokeAsync(IPluginContext caller, ICurrentUser user, string id, JsonElement input, Guid? idempotencyKey = null, CancellationToken cancellationToken = default);
 }

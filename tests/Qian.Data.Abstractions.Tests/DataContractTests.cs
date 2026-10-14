@@ -14,10 +14,8 @@ namespace Qian.Data.Abstractions.Tests;
 public sealed class DataContractTests
 {
     private static readonly string Root = FindRoot();
-    private static readonly IReadOnlyDictionary<string, string> Fields = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["age"] = "int", ["owner_id"] = "uuid", ["active"] = "bool", ["name"] = "varchar", ["tenant_id"] = "uuid"
-    };
+    private static readonly IReadOnlyDictionary<string, string> Fields =
+        JsonSerializer.Deserialize<Dictionary<string, string>>(Fixture("field-types.json"))!;
 
     [Fact]
     public void PublishedFilterFixture_PassesSchemaAndSemanticValidation_AndRoundTrips()
@@ -113,6 +111,32 @@ public sealed class DataContractTests
         Assert.NotEmpty(FilterContracts.Validate(new("and", [new("and", [])]), Fields));
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize("{\"logic\":\"and\"}", DataContractJson.FilterTypeInfo));
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize("{\"logic\":\"and\",\"groups\":[],\"sql\":\"1=1\"}", DataContractJson.FilterTypeInfo));
+    }
+
+    [Theory]
+    [InlineData("xor", "and", "#/logic")]
+    [InlineData("and", "xor", "#/groups/0/logic")]
+    [InlineData("and", "AND", "#/groups/0/logic")]
+    public void InvalidLogic_ReportsResolvableJsonPointer(string rootLogic, string groupLogic, string path)
+    {
+        var filter = new FilterExpression(rootLogic, [new(groupLogic, [new("age", "isNull")])]);
+        var error = Assert.Single(FilterContracts.Validate(filter, Fields));
+        Assert.Equal(path, error.Path);
+        var raw = JsonSerializer.Serialize(filter, DataContractJson.FilterTypeInfo);
+        Assert.False(Schema(DataContractSchemas.Filter).Evaluate(JsonDocument.Parse(raw).RootElement).IsValid);
+        var target = JsonNode.Parse(raw)!;
+        foreach (var segment in error.Path[2..].Split('/'))
+            target = target is JsonArray ? target[int.Parse(segment, System.Globalization.CultureInfo.InvariantCulture)]! : target[segment]!;
+        Assert.Equal(path == "#/logic" ? rootLogic : groupLogic, target.GetValue<string>());
+    }
+
+    [Fact]
+    public void PublishedDataSchemas_AreExplicitlyFrozen()
+    {
+        var schemas = Directory.GetFiles(Path.Combine(Root, "contracts/data/v1"), "*.schema.json");
+        Assert.NotEmpty(schemas);
+        foreach (var file in schemas)
+            Assert.Equal("frozen", JsonNode.Parse(File.ReadAllText(file))!["x-status"]!.GetValue<string>());
     }
 
     [Fact]

@@ -50,7 +50,7 @@ yue 同时承担三种角色，三者缺一不可：
 | 层 | 交付 |
 |---|---|
 | `@yue/tokens` | 三层令牌、明暗两态、shadcn 语义变量映射、对比度单测、运行时主题注入点；DTCG 导出可选 |
-| `@yue/core` | 约 30 个基础组件：Button 族、Input 族（Input / Textarea / InputNumber / InputPassword / PinInput）、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Label / Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon、Descriptions（提前）；每个组件暴露 `data-slot` 与稳定 `data-testid` |
+| `@yue/core` | 51 个基础组件：Button 族、Input 族（Input / Textarea / InputNumber / InputPassword / PinInput）、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Label / Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon、Descriptions（提前）；每个组件暴露 `data-slot` 与稳定 `data-testid` |
 | `@yue/shell` | AppShell 单一侧栏布局；后端菜单 → 路由 + `menuTypeRegistry`（页面 / 外链两类）；Page / PageHeader / ColPage / LeftTree；Preferences 对象与 `initPreferences({ namespace, overrides })`；租户切换器 + 平台代管横幅；主题 / 语言切换、用户下拉；兜底页三件套（403 / 404 / 500 + ErrorBoundary / OfflineBanner / UpdateBanner）；运行时配置注入；MF2 远程加载与插槽注册表 |
 | `@yue/data` | DataTable 基础版（TanStack Table v9：列 schema、服务端分页 / 排序 / 筛选、行选择、列显隐、固定列、空 / 加载 / 错误态、工具栏）；Tree / TreeSelect / Cascader；DatePicker / DateRange / TimePicker / TimeRange；Upload（分片 + MD5 秒传 + 进度 + 断点 + 预览）；ImagePreview |
 | `@yue/form` | Field 抽象 + react-hook-form 内核 + Ajv 校验；SchemaForm 基础版 + `FormApi`；`dependencies` 基础联动；编辑 / 只读态引擎级能力；校验与脱敏规则目录；弹层 API `useModal / useDrawer / usePopup`；Message / Confirm / Notification 统一出口 |
@@ -102,6 +102,8 @@ yue 同时承担三种角色，三者缺一不可：
 ---
 
 ## 3. 数据模型
+
+组件文档与交互预览统一在 Rspress。每个 core 入口共用一份 React 示例，预览工具栏按 `packages/yue/core/docs/scenarios.json` 切换已登记状态；Dialog 等弹层通过默认 / 暗色示例里的触发器展示打开、关闭与焦点恢复，不宣称每个入口都另有 Disabled / Error 示例。Hover 需要指针实际移入目标，测试也执行真实 hover。
 
 ### 3.1 包结构与依赖方向
 
@@ -335,7 +337,7 @@ export function listWidgets(filter?: { device?: Device; category?: string }): Wi
 ### 4.1 设计令牌 → 组件 → 文档站 → 视觉回归 → 发包
 
 1. **令牌**：在 `@yue/tokens` 修改 → 对比度单测与冲突单测 → 生成 CSS 变量与 TS 类型 →（可选）DTCG 导出。
-2. **组件**：shadcn CLI 生成源码进 `@yue/core` 后品牌化；每个组件必须带可供 Rspress 与测试共用的 React 示例（默认 / 悬停 / 禁用 / 错误 / 暗色）、manifest、`data-slot / data-testid`、i18n key。
+2. **组件**：shadcn CLI 生成源码进 `@yue/core` 后品牌化；每个组件必须带可供 Rspress 与测试共用的 React 示例（由 `docs/scenarios.json` 登记适用状态，在预览工具栏切换；交互在示例内实际操作）、manifest、`data-slot / data-testid`、i18n key。
 3. **文档站**：统一接入现有 Rspress 2 的 `/components/yue/`，提供源码示例、活演示、完整 props 表与令牌页；示例源在组件目录，测试由独立 Vitest / Playwright + axe 执行。移除 Storybook 应用、CSF、依赖、脚本和 CI 作业；Props 完整性、离线编辑器与迁移验收见 [文档站规范 §3.1](docs-site.md#31-yue-组件文档与演示)。
 4. **视觉回归**：Playwright 截图比对，CI 固定字体与容器镜像，基线入库；S1 可选、S2 阻断。
 5. **发包**：Changesets；SemVer（0.x 每个 minor 可破坏；1.0 后只在大版本破坏，废弃至少保留一个 minor 并附 codemod）；tsdown / Rslib 输出 ESM + d.ts，CSS 单独导出；重型物料（Monaco、富文本、ECharts、地图）独立包懒加载；publint；私有 npm。
@@ -474,7 +476,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 - [x] `data-theme / data-brand` 运行时注入生效：切换后无需刷新且无首帧闪烁（Playwright 用例）——`apps/yue-playground/e2e/theme.spec.ts` 的首帧状态快照，CI `yue` 的 a11y 门禁
 
 **基础组件**
-- [ ] `@yue/core` S1 清单约 30 个组件全部有 Rspress 共用示例（默认 / 悬停 / 禁用 / 错误 / 暗色）与 manifest
+- [ ] `@yue/core` S1 清单51 个组件全部有 Rspress 共用示例（默认 / 暗色及 `docs/scenarios.json` 中登记的适用状态）与 manifest
 - [ ] 全部组件 axe critical = 0；Menu / Select / Combobox / Tabs / Tooltip / Tree 键盘路径用例通过（验证门）
 - [ ] 每个组件暴露 `data-slot` 与稳定 `data-testid`
 - [ ] 组件文案 100% 走 i18n key；硬编码文案 lint 为零

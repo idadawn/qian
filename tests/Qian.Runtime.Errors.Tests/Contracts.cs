@@ -11,7 +11,7 @@ namespace Qian.Runtime.Errors.Tests;
 internal static partial class Contracts
 {
     /// <summary>按跨文件引用的依赖顺序排列。</summary>
-    public static readonly string[] SchemaNames = ["s2s-claims", "error-detail", "error-catalog", "event-envelope", "capability-entry"];
+    public static readonly string[] SchemaNames = ["s2s-claims", "error-detail", "error-catalog", "event-envelope", "capability-entry", "capability-catalog"];
 
     public const string MetaSchemaUri = "https://json-schema.org/draft/2020-12/schema";
 
@@ -134,6 +134,19 @@ internal static partial class Contracts
                 var expected = SchemaSha256(data);
                 if (data.GetProperty("schemaSha256").GetString() != expected)
                     errors.Add($"schemaSha256 须为 {expected}");
+                break;
+            }
+            case "capability-catalog":
+            {
+                var ids = new HashSet<string>(StringComparer.Ordinal);
+                var index = 0;
+                foreach (var item in data.GetProperty("items").EnumerateArray())
+                {
+                    if (!ids.Add(item.GetProperty("id").GetString()!))
+                        errors.Add($"items/{index} 的 id 重复");
+                    errors.AddRange(CheckSemantics("capability-entry", item).Select(error => $"items/{index}：{error}"));
+                    index++;
+                }
                 break;
             }
         }
