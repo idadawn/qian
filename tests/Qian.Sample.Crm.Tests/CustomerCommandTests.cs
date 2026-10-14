@@ -23,6 +23,7 @@ using Npgsql;
 using Qian.Audit;
 using Qian.Authz;
 using Qian.Data;
+using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Tenancy;
 using Qian.Testing.Containers;
@@ -250,7 +251,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
     }
 
     private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
-        HumanOnlyProbe? humanOnlyProbe = null)
+        HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null)
     {
         var platform = capabilities || runtimeProfile == "platform";
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
@@ -271,6 +272,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
             if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
             if (humanOnlyProbe is not null) PreviewAgentAuthorization(builder);
+            if (pathBase is not null) builder.Services.AddSingleton<IStartupFilter>(new PathBaseFilter(pathBase));
             if (runtimeProfile is not null) builder.Services.AddSingleton<ICrmRuntimeAssembly>(_ => new ProfileModeAssembly(runtimeProfile, RepositoryRoot()));
             builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
             if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
@@ -319,7 +321,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             if (platform) MapCapabilities(app);
             if (hooks) MapHookEntry(app);
             await app.StartAsync(Ct);
-            if (capabilities) await AttachCapabilities(app, humanOnlyProbe);
+            if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);
             if (hooks) await AttachHooks(app);
             using (tenant.BeginScope(A))
             {
@@ -351,6 +353,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
     }
     private sealed class FailureEvidence { internal ConcurrentQueue<string> Failures { get; } = new(); }
+    // 宿主挂在子路径下（反向代理常见做法）：UsePathBase 先于路由执行，应用看到去掉前缀的路径，PathBase 进入生成的链接。
+    private sealed class PathBaseFilter(string pathBase) : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app => { app.UsePathBase(pathBase); next(app); };
+    }
     private sealed class FailureRecorder(FailureEvidence evidence) : IExceptionHandler
     {
         public ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)

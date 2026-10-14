@@ -55,6 +55,35 @@ K8s 迁移 Job 以 `--migrate-only` 启动宿主（`QianDataMigrationExtensions.
 
 迁移用 `dotnet ef migrations add` 生成，放在所属 Provider 包的 Migrations 目录；仓库 `.editorconfig` 把该目录按生成代码处理。迁移执行时仍经 Qian 迁移生成器，租户表自动带上强制 RLS。
 
+### 迁移执行与 RLS 核查
+
+租户表的 `ENABLE` / `FORCE ROW LEVEL SECURITY` 与两条策略（`qian_tenant_access` 宽松、`qian_tenant_guard` 限制）不写在迁移文件里，由 `QianPostgresMigrationsSqlGenerator` 在迁移**执行期**紧跟每条 `CREATE TABLE` 生成。所以迁移必须经 `AddQianData<T>` 登记的 `IDataMigrator` 执行，也就是上文以 `--migrate-only` 启动的迁移任务。
+
+直接 `dotnet ef database update`（或 `dotnet ef migrations script` 后手工执行）走的是 `dotnet ef` 自己建的上下文：设计时入口没有经 `AddQianData<T>` 装配时，用的是 Npgsql 默认生成器，建出的租户表没有 RLS 与策略，租户隔离只剩查询过滤器。在线副本的启动检查会拒绝非 Qian 的迁移生成器，也会拒绝还有未应用迁移的数据库，但不检查已经建好的表有没有策略。曾绕过迁移任务建表的库，用下面的 SQL 逐表核查（以迁移属主或有权读 `information_schema` 的角色执行）：
+
+```sql
+-- 每张租户表（tenant_id 非空）应 rls、force_rls 都为 t，policies 恰为
+-- qian_tenant_access(PERMISSIVE), qian_tenant_guard(RESTRICTIVE)；有任何一行不符，说明该表绕过了 Qian 迁移生成器。
+SELECT c.table_schema, c.table_name, k.relrowsecurity AS rls, k.relforcerowsecurity AS force_rls,
+       string_agg(p.policyname || '(' || p.permissive || ')', ', ' ORDER BY p.policyname) AS policies
+FROM information_schema.columns c
+JOIN pg_namespace n ON n.nspname = c.table_schema
+JOIN pg_class k ON k.relnamespace = n.oid AND k.relname = c.table_name AND k.relkind = 'r'
+LEFT JOIN pg_policies p ON p.schemaname = c.table_schema AND p.tablename = c.table_name
+WHERE c.table_schema LIKE 'plugin\_%' AND c.column_name = 'tenant_id' AND c.is_nullable = 'NO'
+GROUP BY c.table_schema, c.table_name, k.relrowsecurity, k.relforcerowsecurity
+ORDER BY c.table_schema, c.table_name;
+```
+
+`dotnet ef` 的设计时入口要经 `AddQianData<T>` 取上下文，模型才与运行时一致（命名约定、租户标记、Outbox 表）。组件包不能为此依赖本包（依赖门禁只允许 Abstractions），所以 `IDesignTimeDbContextFactory<T>` 放在组件的测试项目里，以它作启动项目。以能力上下文为例（`tests/Qian.Capabilities.Tests/CapabilitiesDesignTimeFactory.cs`）：
+
+```bash
+dotnet ef migrations has-pending-model-changes --project packages/Qian.Capabilities --startup-project tests/Qian.Capabilities.Tests --context CapabilitiesDbContext
+dotnet ef migrations add <名称> --project packages/Qian.Capabilities --startup-project tests/Qian.Capabilities.Tests --context CapabilitiesDbContext --output-dir Migrations
+```
+
+生成的迁移类改为 `internal`，不进入组件的公开 API。
+
 ## 分布式 ID
 
 默认主键仍是 Guid v7。需要数值 ID 时调用 `AddQianSnowflakeIds`（宿主须登记 `IConnectionMultiplexer`），注入 `ISnowflakeIdGenerator`。ID 由 41 位毫秒时间戳、10 位 WorkerId、12 位序列组成。
