@@ -951,6 +951,43 @@
   "file": "pm/tasks/S1-CFG-007.md"
  },
  {
+  "id": "S1-CFG-008",
+  "title": "profile 配置诊断两端对齐：验证器正则方言、Schema 模式预检、键序与逐项错误位置",
+  "status": "doing",
+  "stage": "S1",
+  "area": "CFG",
+  "areaName": "配置",
+  "wave": 1,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-CFG-007"
+  ],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "packages/Qian.Profiles/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Profiles/README.md"
+   },
+   {
+    "path": "tck/profiles/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/tck/profiles/README.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 0,
+   "total": 6
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-007（idadawn/qian#97）之后，CLI 与 .NET 的 profile 装配在敏感检查上逐例一致；但配置 Schema 仍由两个验证器分别执行（CLI 为 Ajv，.NET 为 JsonSchema.Net），诊断还有三类分歧：</p>\n<p>1. 正则写法与语义。Ajv 按 JS 的 u 标志编译 <code>pattern</code> 与 <code>patternProperties</code> 的键，JsonSchema.Net 按 .NET 的 ECMAScript 选项编译，接受的写法不同：<code>(?i)a</code> 在 CLI 报「profile 或组件内容无法解析。」，在 .NET 由敏感检查报配置键处的「不支持的正则写法」；<code>\\u{41}</code> 只有 Ajv 接受，<code>[\\w-.]</code>、<code>a{,2}</code>、<code>]</code> 只有 .NET 接受。都能编译时，<code>.</code> 对 <code>\\r</code> 与 U+2028/2029、<code>$</code> 对末尾换行、<code>\\s</code> 对非 ASCII 空白、<code>\\w</code> 对 U+0130、代理对计数的判断也不同，值层 <code>pattern</code> 与 <code>additionalProperties</code> 的结果随之不同。</p>\n<p>2. 键序。JS 对象把整数形式的键排在前面，.NET 保留文档顺序；敏感检查遇到首个违规即失败，所以 <code>limits: {&quot;b&quot;: …, &quot;1&quot;: …}</code> 在 .NET 报 <code>limits/b</code>，在 CLI 报 <code>limits/1</code>。</p>\n<p>3. 逐项错误位置。Ajv 对每个缺失的 required 各报一次，给 anyOf、oneOf、if、contains 额外输出汇总错误，propertyNames 与 unevaluatedProperties 报在对象上；.NET 只取最深的失败节点，节点有失败的子节点时它自身的断言（required、uniqueItems 等）被丢弃。缺少 required 属性同时另一属性类型错误时 .NET 少报一条，诊断顺序也不同。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>两端验证器都改用共享翻译器执行 <code>pattern</code> 与 <code>patternProperties</code>（含 additionalProperties、unevaluatedProperties、propertyNames 的判定），语义按 ECMA-262 无标志、逐码元：<code>.</code> 不匹配四个行终止符，<code>\\s</code> 为 ECMA-262 空白，<code>$</code> 只在末尾成立；翻译器、TS 自动机与跨语言向量同步，稳定键名的判定不变</li>\n<li class='chk'><span class='box'></span>交给验证器之前，两端按同一顺序检查 Schema 各子 Schema 位置上的 <code>pattern</code> 与 <code>patternProperties</code> 键，超出可移植子集的写法在 Schema 文件的对应指针处失败、文案一致；验证器在其他位置编译到不受支持的写法时两端都按无法解析处理</li>\n<li class='chk'><span class='box'></span>敏感检查按序数顺序遍历配置键、<code>properties</code> 与 <code>patternProperties</code>，两端报告同一个首个违规</li>\n<li class='chk'><span class='box'></span>验证诊断按同一规则归一为出错实例位置并去重、按序数排序：断言报自身位置，组合与条件的汇总在分支已有错误时略去，contains 报数组位置，additionalProperties、unevaluatedProperties、propertyNames 报到键名</li>\n<li class='chk'><span class='box'></span>共享 TCK 补充上述用例（含 <code>reason</code>），两端测试与报告比较通过；验证器其余语义分歧（如 minLength 计数、prefixItems 之后 items 的位置）写入文档并另建任务</li>\n<li class='chk'><span class='box'></span>README 与规格同步；<code>pnpm --filter qian test</code>、<code>Qian.Profiles.Tests</code>、<code>Qian.Common.Tests</code>、审计与配置相关测试、全量测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：两端验证器改用共享翻译器执行正则，Schema 模式预检，敏感检查按序数键序，验证诊断归一为出错实例位置</li>\n</ul>",
+  "file": "pm/tasks/S1-CFG-008.md"
+ },
+ {
   "id": "S1-DATA-001",
   "title": "AddQianData 默认安全装配与 RLS 迁移模板",
   "status": "done",
