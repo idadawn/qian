@@ -42,7 +42,9 @@ AppendEnlistedAsync 接收调用方已有的 PostgreSQL SERIALIZABLE 事务，�
 
 ## 命令监听器
 
-AuditPlugin 在 SDK 的 command/dispatching Definition 上登记生产 waterfall 监听器。它读取生成契约的 sideEffect/audit、从真实输入 Schema 计算脱敏哈希，调用实际 handler 与 Data 保存后，使用同一 DbTransaction 追加审计。审计失败向外传播，事务由 SDK 回滚；查询默认不记录，显式 audit 开启时适用同一流程。已验证创建命令，以及真实列表默认不审计、详情显式 audit 后入链；逆序释放专项仍保留。
+AuditPlugin 在 SDK 的 command/dispatching Definition 上登记生产 waterfall 监听器。它读取生成契约的 sideEffect/audit、从真实输入 Schema 计算脱敏哈希，调用实际 handler 与 Data 保存后，使用同一 DbTransaction 追加审计。审计失败向外传播，事务由 SDK 回滚；查询默认不记录，显式 audit 开启时适用同一流程。已验证创建命令，以及真实列表默认不审计、详情显式 audit 后入链。
+
+卸载组件时，该监听器随效果栈按登记的逆序撤销（PRD 7.11.1、ADR-020 D20.2）。真实登记顺序依次为错误码、审计服务释放、审计服务、策略租约释放、waterfall 监听器、策略租约；撤销严格反过来，监听器在策略租约之后、审计服务注册与服务释放之前撤下，错误码最后撤销。卸载后链上只剩其它组件的监听器，审计服务与策略租约都不可解析，旧服务句柄已释放；重装得到新的单个监听器。`AuditListenerLifecycleTests` 用真实 AuditPlugin 与 PluginLoader 验证，记录器只原样转发上下文，并在每次登记后压入标记 effect 以读出撤销顺序。
 
 记录包含真实主体种类、主体 ID、生成能力 ID、契约版本、通道和链路 trace_id。S1 不签发的 act 委托入口明确拒绝，不将未知委托静默记为普通操作；直接存储端口的 Agent/on_behalf_of 预留验证继续保留。等待真实链锁时卸载 Audit，会取消在途命令并回滚已保存的客户、回执和 Outbox；依赖入口随后不可用。
 
@@ -60,6 +62,6 @@ AppendPlatformAsync、ReadPlatformAsync、VerifyPlatformAsync 是显式入口，
 
 真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。存储测试与参考应用执行测试分别验证其边界：AppendAsync 的独立事务只包含审计记录与链头；AppendEnlistedAsync 已覆盖真实 CRM 数据上下文回滚，已与实际命令执行和业务 Outbox 连接，跨进程审计事件发布及实体审计接线仍待完成，不能把独立追加成功当成业务回滚验证。
 
-尚未完成：监听器逆序撤销专项、实体审计与跨进程审计事件、完整默认组合包、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。
+尚未完成：实体审计与跨进程审计事件、完整默认组合包、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。
 
 RT-009 的已授权 hook 调用使用 hook 审计通道；SDK 可信适配器与同事务 SQL 校验同步支持该通道。普通请求不会继承上次 hook 标记，hook 查询按事件执行要求强制审计。
