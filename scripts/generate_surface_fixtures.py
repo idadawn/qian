@@ -82,6 +82,23 @@ bad('metadata-invalid-json',base({'metadata/roles.json':'{"roles":'}),'metadata/
 bad('metadata-duplicate-key',base({'metadata/roles.json':'{"name":"reader","name":"owner"}'}),'metadata/roles.json','/name','SYNTAX_INVALID')
 bad('metadata-plaintext-secret',base({'metadata/roles.json':'{"apiKey":"DO-NOT-LEAK"}'}),'metadata/roles.json','/apiKey','SECRET_LITERAL')
 bad('metadata-symlink',manifest(base(),surfaces={'metadata':'./linked'}),'.qian-plugin/plugin.json','/surfaces/metadata','PATH_INVALID',symlinks={'linked':'outside'})
+# 清单准入（S1-RT-004）：缺任一 S1 必填字段、OCI 引用用 tag、scope 种类非法、工具输入含租户字段、inject 无 Provider。
+for field in json.loads((ROOT/'schemas/v2/plugin.schema.json').read_text())['required']:
+ value=copy.deepcopy(MANIFEST);value.pop(field)
+ bad('manifest-missing-'+field,{'.qian-plugin/plugin.json':js(value)},'.qian-plugin/plugin.json','/'+field,'SCHEMA_INVALID')
+workload={**MANIFEST['policy'],'sandbox':'workload'}
+image='oci://registry.example.test/qian/fixture'
+bad('manifest-oci-tag',manifest(base(),runtime={'form':'service','image':image+':1.0.0'},policy=workload),'.qian-plugin/plugin.json','/runtime/image','SCHEMA_INVALID')
+case('manifest-oci-digest',manifest(base(),runtime={'form':'service','image':image+'@sha256:'+'a'*64},policy=workload))
+bad('manifest-scope-kind',manifest(base(),scopes=['global','tenant','org']),'.qian-plugin/plugin.json','/scopes/2','SCHEMA_INVALID')
+top=tool(inputSchema={'type':'object','additionalProperties':False,'properties':{'tenantId':{'type':'string'}}})
+bad('tool-top-level-tenant',base({tf:js(top)}),tf,'/inputSchema/properties/tenantId','SCHEMA_INVALID')
+# propertyNames 不合格时两侧都指向出错的属性名本身。
+bad('mcp-invalid-server-name',base({mf:js({'mcpServers':{'Bad_Name':{'type':'http','url':'https://api.example.test/mcp'}}})}),mf,'/mcpServers/Bad_Name','SCHEMA_INVALID')
+keys={'serviceKeys':['Data','Registry']}
+bad('inject-without-provider',manifest(base(),inject=['Data','Files']),'.qian-plugin/plugin.json','/inject/1','REFERENCE_UNKNOWN',keys)
+case('inject-with-provider',manifest(base(),inject=['Data']),options=keys)
+case('inject-unchecked-without-catalog',manifest(base(),inject=['Files']))
 (ROOT/'tck/surfaces/cases.json').write_text(js(CASES))
 # 文字规范值独立于生产实现，用于跨语言验证浮点、负零、Unicode 与 UTF-16 排序。
 vectors=[]
