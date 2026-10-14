@@ -16,9 +16,7 @@ public static class DataContractJson
     });
     /// <summary>Filter AST 元数据。</summary>
     public static JsonTypeInfo<FilterExpression> FilterTypeInfo => Context.FilterExpression;
-    /// <summary>记录变更完整信封元数据。</summary>
-    public static JsonTypeInfo<RecordChangedEvent> RecordChangedEventTypeInfo => Context.RecordChangedEvent;
-    /// <summary>记录变更载荷元数据。</summary>
+    /// <summary>记录变更载荷元数据，也是 qian.record.changed.v1 登记到事件目录的 JsonTypeInfo。</summary>
     public static JsonTypeInfo<RecordChangedPayload> RecordChangedPayloadTypeInfo => Context.RecordChangedPayload;
     /// <summary>数据规则元数据。</summary>
     public static JsonTypeInfo<DataRulePolicy> RulePolicyTypeInfo => Context.DataRulePolicy;
@@ -56,9 +54,9 @@ public static class DataContractSchemas
     public static string SystemVariables => Read("system-variables.json");
     /// <summary>数据规则 JSON Schema。</summary>
     public static string RulePolicy => Read("data-rule-policy.schema.json");
-    /// <summary>记录变更载荷 Schema。</summary>
+    /// <summary>记录变更载荷 Schema，即 qian.record.changed.v1 信封里 payload 的结构。</summary>
     public static string RecordChangedPayload => Read("qian.record.changed.v1.schema.json");
-    /// <summary>引用冻结 v0 信封的完整记录事件 Schema。</summary>
+    /// <summary>整条记录事件消息的 Schema：引用冻结 v0 信封，约束 Qian.Events 写入端生成的那一层信封与其中的载荷。</summary>
     public static string RecordChangedEnvelope => Read("record-changed-envelope.schema.json");
     /// <summary>基准类型目录、方言数据与字段定义的 JSON Schema。</summary>
     public static string DataTypes => Read("data-types.schema.json");
@@ -77,7 +75,6 @@ public static class DataContractSchemas
 }
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(FilterExpression))]
-[JsonSerializable(typeof(RecordChangedEvent))]
 [JsonSerializable(typeof(RecordChangedPayload))]
 [JsonSerializable(typeof(DataRulePolicy))]
 [JsonSerializable(typeof(DataTypeCatalog))]

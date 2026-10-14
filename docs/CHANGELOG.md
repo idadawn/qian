@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-14 记录变更事件改为登记载荷（S1-DATA-004）
+
+`qian.record.changed.v1` 按 Qian.Events 的模型发布：`[IntegrationEventId]` 移到 `RecordChangedPayload`，`RegisterRecordEvents` 登记载荷，信封只由写入端生成一层；`RecordChangedEvent` 改为 after Hook 视图，由 `RecordChangedEvent.FromEnvelope` 从收到的信封派生。破坏性变更：删除 `DataContractJson.RecordChangedEventTypeInfo`，`EnsureConsistentContext` 移到载荷，改为核对当前租户与事件来源。线上信封、payload Schema 与 fixture 不变，见 [数据契约规格 §6](prd/specs/data-contracts.md#6-record-hook-与变更事件)。
+
 ## 2026-10-14 基准类型、PG 方言组件与数据连接档案（S1-DATA-003）
 
 - 10 个系统基准类型作为种子数据随 `Qian.Data.Abstractions` 发布；新增方言 SPI qian.data.dialect/v1 与 PostgreSQL 方言包 `Qian.Data.Dialect.Pg`，`DialectTypeMapping` 拒绝超出长度、精度、小数位或取值区间的字段定义。

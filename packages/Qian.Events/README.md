@@ -30,6 +30,8 @@ builder.Services.AddQianEventsBroker(sp => sp.GetRequiredService<IConfiguration>
 - event_id 是以事件发生时间生成的 UUID v7；
 - 完整 v1 信封作为 Outbox 行的 payload，与业务数据在同一事务提交。
 
+登记与发布的类型就是信封里的 payload，不要把整封信封登记成事件类型。消费方需要信封上下文时，从解析后的信封派生视图，例如 Qian.Data 记录事件的 `RecordChangedEvent.FromEnvelope`。
+
 以下情况抛 EVENTS_PUBLISH_REJECTED，缓冲里不会留下半条：
 
 - 不在事件作用域内；

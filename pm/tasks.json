@@ -919,7 +919,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>第 3 波 S2 契约冻结：Filter AST <code>{ logic, groups: [{ logic, conditions: [{ field, op, value | sysVar }] }] }</code>，运算符 <code>eq ne like notLike isNull notNull in notIn ge gt le lt between</code>，矩阵 <code>{ fieldType: [op] }</code> 发布为 JSON Schema，五处共用；数据规则策略契约（主键策略、乐观锁、逻辑删、业务主键）；<code>IRecordHook</code> before / after 契约与 <code>qian.record.changed.v1</code> 信封；S2 SQL 生成只接受参数化 + 标识符白名单。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：Filter AST 示例通过 JSON Schema 校验；<code>between</code> 用于布尔字段被矩阵拒绝</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>qian.record.changed.v1</code> 信封与 <code>IRecordHook</code> 接口随 <code>Qian.Data.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>文档：契约写入 specs 并被 7.5 数据权限、§08 高级查询 / 流程条件引用</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 cody：开始：按用户指派认领；串行在 KUN-010 后完成 Filter AST、运算符矩阵与记录 Hook 契约。</li>\n<li>2026-10-14 cody：Filter AST、13运算符×10字段类型矩阵、15系统变量、数据规则和Hook/记录信封已交付；专项53项、全仓573项测试零失败零跳过，39项门禁与30包依赖检查通过；等待PR CI与合并。</li>\n<li>2026-10-14 cody：完成：PR #71 在最终CI全绿后合并（c386261f）；53项专项与573项全仓测试零失败零跳过，39项门禁和实际NuGet打包验证通过。实现分支与worktree已清理。</li>\n<li>2026-10-14 claude：修正：qian.record.changed.v1 改按 Qian.Events 模型——[IntegrationEventId] 与 RegisterRecordEvents 改为登记载荷 RecordChangedPayload，信封只由写入端生成一层；RecordChangedEvent 改为 after Hook 视图，经 FromEnvelope 从解析后的信封与类型化载荷派生并核对租户、主体，EnsureConsistentContext 移到载荷。线上信封、payload Schema 与 fixture 不变（规格未冻结 C# 登记类型，不另开 DEC）；Qian.Data.Abstractions 新增引用 Qian.Events.Abstractions。专项 75 项、Events 16 项、CRM 28 项、Data 40 项零失败</li>\n</ul>",
   "file": "pm/tasks/S1-DATA-004.md"
  },
  {
@@ -2468,12 +2468,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>Subscribe&lt;TEvent, THandler&gt;()</code>；处理成功后 ack；重试 5 次后进 <code>qian.dlx</code> 并告警；幂等装饰器先查 Redis <code>processed:{consumer}:{event_id}</code>（TTL 7 天）再执行、成功后写入，PG <code>processed_messages</code> 兜底；信封 <code>tenant_id</code> → <code>BeginScope</code> 与 baggage 注入在订阅器统一完成；竞争消费与广播两种订阅。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：消费端前两次抛异常、第三次成功，<code>processed_messages</code> 恰一行；第 6 次仍失败进 DLX 并发告警</li>\n<li class='chk'><span class='box'></span>IT：同一事件重投两次，幂等装饰器拦截第二次，handler 只执行一次</li>\n<li class='chk'><span class='box'></span>IT：消费端 handler 内租户上下文为该事件的租户，EF 查询自动带 <code>tenant_id</code> 过滤</li>\n<li class='chk'><span class='box'></span>IT：广播订阅下每个实例各收到一次，竞争订阅下只有一个实例收到</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>Subscribe&lt;TEvent, THandler&gt;()</code>；处理成功后 ack；重试 5 次后进 <code>qian.dlx</code> 并告警；幂等装饰器先查 Redis <code>processed:{consumer}:{event_id}</code>（TTL 7 天）再执行、成功后写入，PG <code>processed_messages</code> 兜底；信封 <code>tenant_id</code> → <code>BeginScope</code> 与 baggage 注入在订阅器统一完成；竞争消费与广播两种订阅。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：消费端前两次抛异常、第三次成功，<code>processed_messages</code> 恰一行；第 6 次仍失败进 DLX 并发告警</li>\n<li class='chk'><span class='box'></span>IT：同一事件重投两次，幂等装饰器拦截第二次，handler 只执行一次</li>\n<li class='chk'><span class='box'></span>IT：消费端 handler 内租户上下文为该事件的租户，EF 查询自动带 <code>tenant_id</code> 过滤</li>\n<li class='chk'><span class='box'></span>IT：广播订阅下每个实例各收到一次，竞争订阅下只有一个实例收到</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：提示（S1-DATA-004 修正）：qian.record.changed.v1 登记的是载荷 RecordChangedPayload；after Hook 视图由 RecordChangedEvent.FromEnvelope(QianEventEnvelope) 派生，订阅端交给 handler 的输入须保留解析后的信封（event_id 幂等键、tenant_id 回灌）。派生失败抛 InvalidOperationException，属确定性失败，重试不会成功</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-002.md"
  },
  {
@@ -2508,12 +2508,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
    }
   ],
-  "updated": "2026-10-06",
+  "updated": "2026-10-14",
   "acceptance": {
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>GET /api/capabilities/events</code> 返回每事件 ID、版本、Schema、发布插件、订阅者（按权限过滤）；AsyncAPI 描述随 <code>qian pack</code> 导出；清单 <code>provides.events.publish/subscribe</code> 生成 RabbitMQ 主题 ACL（P1）；<code>IOutboxWriter</code> 面向 <code>NpgsqlTransaction</code> 的契约（S2 动态表同事务）。事件契约化为 S4 Agent 触发器预留。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET /api/capabilities/events</code> 按权限过滤返回事件 ID、版本、Schema、发布插件与订阅者</li>\n<li class='chk'><span class='box'></span>UT：<code>qian pack</code> 导出的 AsyncAPI 与事件目录一致</li>\n<li class='chk'><span class='box'></span>TCK：清单未声明 <code>publish</code> 的事件被运行时拒绝发布（P1，主题 ACL）</li>\n<li class='chk'><span class='box'></span>UT：<code>IOutboxWriter</code> 契约随 <code>Qian.Events.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>GET /api/capabilities/events</code> 返回每事件 ID、版本、Schema、发布插件、订阅者（按权限过滤）；AsyncAPI 描述随 <code>qian pack</code> 导出；清单 <code>provides.events.publish/subscribe</code> 生成 RabbitMQ 主题 ACL（P1）；<code>IOutboxWriter</code> 面向 <code>NpgsqlTransaction</code> 的契约（S2 动态表同事务）。事件契约化为 S4 Agent 触发器预留。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET /api/capabilities/events</code> 按权限过滤返回事件 ID、版本、Schema、发布插件与订阅者</li>\n<li class='chk'><span class='box'></span>UT：<code>qian pack</code> 导出的 AsyncAPI 与事件目录一致</li>\n<li class='chk'><span class='box'></span>TCK：清单未声明 <code>publish</code> 的事件被运行时拒绝发布（P1，主题 ACL）</li>\n<li class='chk'><span class='box'></span>UT：<code>IOutboxWriter</code> 契约随 <code>Qian.Events.Abstractions</code> 发布并通过 PublicAPI 分析器</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：提示（S1-DATA-004 修正）：qian.record.changed.v1 现登记载荷 RecordChangedPayload，事件目录与 AsyncAPI 的 payload Schema 取其 JsonTypeInfo 导出，成员与必填项和 contracts/data/v1/qian.record.changed.v1.schema.json 一致（Qian.Sample.Crm.Tests 比对）；面向 NpgsqlTransaction 的 IOutboxWriter 同样只收载荷，信封由写入端生成</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-003.md"
  },
  {
