@@ -177,3 +177,5 @@ Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics
 static readonly Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.Key -> Qian.Runtime.ServiceKey
 static Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.Read(Qian.Runtime.IPluginContext! context) -> System.Text.Json.JsonElement
 static Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.ScopeName(Qian.Runtime.ScopeKey scope) -> string!
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.ServiceKeys.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Qian.Surfaces.Abstractions.SurfaceValidationOptions.ServiceKeys.init -> void
