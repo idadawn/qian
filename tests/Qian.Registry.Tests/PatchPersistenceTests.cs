@@ -385,7 +385,7 @@ public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IC
         public void Dispose() => System.IO.Directory.Delete(Directory, true);
     }
 
-    private IHost Host(ITenantContext tenant, IInterceptor? interceptor = null)
+    private IHost Host(ITenantContext tenant, IInterceptor? interceptor = null, Action<IServiceCollection>? services = null)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
         builder.Services.AddSingleton(tenant); builder.Services.AddKunEventBus();
@@ -395,6 +395,7 @@ public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IC
             options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(RegistryDbContext.Schema);
             if (interceptor is not null) options.AddInterceptors(interceptor);
         });
+        services?.Invoke(builder.Services);
         return builder.Build();
     }
     private static PostgresPatchRepository Repository(IHost host, ITenantContext tenant) => new(host.Services.GetRequiredService<IDataService>(), tenant, new SurfaceValidator());

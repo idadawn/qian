@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Http;
-using Qian.Capabilities.AspNetCore;
+using Qian.Plugin.Sdk.AspNetCore;
 
 namespace Qian.Capabilities.Tests;
 
 // S1-RT-019 / S1-RT-020：别名的 successor-version 链接带宿主 PathBase，查询串按 RFC 3986 转义，孤立代理项按替换字符编码。
+// 能力目录与注册表的 v1 别名共用 SDK 的 DeprecatedAlias（S1-RT-004）。
 public sealed class CapabilityEndpointTests
 {
     [Fact]
@@ -27,6 +28,6 @@ public sealed class CapabilityEndpointTests
         var http = new DefaultHttpContext();
         http.Request.PathBase = new PathString(pathBase);
         http.Request.QueryString = new QueryString(query);
-        return CapabilityEndpoints.SuccessorLink(http.Request, "/api/capabilities");
+        return DeprecatedAlias.SuccessorLink(http.Request, "/api/capabilities");
     }
 }
