@@ -155,20 +155,30 @@ internal sealed partial class DataConnectionRegistry(IServiceScopeFactory scopes
         var settings = options.Value;
         var started = clock.GetTimestamp();
         // 先检查出网目标再解析口令：被拒的目标既不出网，也不读取密钥。
-        var address = await ResolveAsync(record.Host, settings, cancellationToken).ConfigureAwait(false);
+        var addresses = await ResolveAsync(record.Host, settings, cancellationToken).ConfigureAwait(false);
         using var password = await secrets.ForHost(settings.SecretPolicyId, tenant).ResolveAsync(record.SecretRef, cancellationToken).ConfigureAwait(false);
-        var remaining = settings.TestTimeout - clock.GetElapsedTime(started);
-        if (remaining <= TimeSpan.Zero) throw Unreachable(null);
-        var probing = clock.GetTimestamp();
-        var probe = await dialect.ProbeAsync(new DataConnectionTarget(address.ToString(), record.Port, record.Database, record.UserName, record.Schema, record.Encoding),
-            password, remaining, cancellationToken).ConfigureAwait(false);
-        var latency = (int)Math.Min(int.MaxValue, Math.Round(clock.GetElapsedTime(probing).TotalMilliseconds));
-        return new DataConnectionTestResult(record.Dialect, probe.ServerVersion, latency);
+        // 与驱动自行解析时一样按顺序尝试每个地址（如双栈主机先 ::1 后 127.0.0.1），只有不可达才换下一个；全部地址共用同一个超时。
+        QianErrorException? unreachable = null;
+        foreach (var address in addresses)
+        {
+            var remaining = settings.TestTimeout - clock.GetElapsedTime(started);
+            if (remaining <= TimeSpan.Zero) break;
+            var probing = clock.GetTimestamp();
+            try
+            {
+                var probe = await dialect.ProbeAsync(new DataConnectionTarget(address.ToString(), record.Port, record.Database, record.UserName, record.Schema,
+                    record.Encoding), password, remaining, cancellationToken).ConfigureAwait(false);
+                var latency = (int)Math.Min(int.MaxValue, Math.Round(clock.GetElapsedTime(probing).TotalMilliseconds));
+                return new DataConnectionTestResult(record.Dialect, probe.ServerVersion, latency);
+            }
+            catch (QianErrorException error) when (error.Error.Code == DataErrors.ConnectionUnreachable) { unreachable = error; }
+        }
+        throw unreachable ?? Unreachable(null);
     }
 
-    // 解析目标主机的全部地址，任一地址被拒即整体拒绝（多条记录或解析结果轮换都绕不过）；连接只用检查过的第一个地址，不再二次解析。
-    // IP 字面量（含 127.1、十六进制这类变形写法）按解析后的地址判定，交给方言的也是规范写法。
-    private static async Task<IPAddress> ResolveAsync(string host, QianDataConnectionOptions settings, CancellationToken cancellationToken)
+    // 解析目标主机的全部地址，任一地址被拒即整体拒绝（多条记录或解析结果轮换都绕不过）；之后只连接这些检查过的地址，不再二次解析。
+    // IP 字面量（含 127.1、十六进制这类变形写法）按解析后的地址判定，交给方言的也是规范写法；IPv4 映射的 IPv6 地址换成 IPv4。
+    private static async Task<IPAddress[]> ResolveAsync(string host, QianDataConnectionOptions settings, CancellationToken cancellationToken)
     {
         IPAddress[] addresses;
         if (IPAddress.TryParse(host, out var literal)) addresses = [literal];
@@ -182,7 +192,7 @@ internal sealed partial class DataConnectionRegistry(IServiceScopeFactory scopes
         }
         if (addresses.Length == 0) throw Unreachable(null);
         if (!addresses.All(settings.Egress.Permits)) throw new QianErrorException(new QianError(DataErrors.ConnectionTargetDenied));
-        return addresses[0].IsIPv4MappedToIPv6 ? addresses[0].MapToIPv4() : addresses[0];
+        return addresses.Select(address => address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address).Distinct().ToArray();
     }
 
     private static QianErrorException Unreachable(Exception? inner) => new(new QianError(DataErrors.ConnectionUnreachable), inner);

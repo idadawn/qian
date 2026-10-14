@@ -170,6 +170,9 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
         {
             var unsupported = await CreateAsync(AdminA, Draft("kerberos-only", host: "127.0.0.1", port: kerberos.Port));
             await AssertTestFailsAsync(unsupported, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionRejected.Code, "authentication");
+            // 双栈主机名：localhost 可能先解析出 ::1，而假服务端只听 IPv4；该地址不可达时换下一个检查过的地址，与驱动自行解析一致。
+            var dualStack = await CreateAsync(AdminA, Draft("kerberos-localhost", host: "localhost", port: kerberos.Port));
+            await AssertTestFailsAsync(dualStack, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionRejected.Code, "authentication");
         }
     }
 
