@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qian.dev/schemas/data/v1/data-connection.schema.json",
+  "x-status": "frozen",
   "title": "Qian 数据连接档案",
   "description": "/api/data/connections 的请求与响应。口令只以租户 secretRef 引用给出，任何响应都不包含口令；未声明的成员（如 password）一律拒绝。",
   "$defs": {

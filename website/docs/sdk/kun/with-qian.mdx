@@ -79,7 +79,7 @@ Kun 关键路径上有一组在「K3s 多副本 + 多租户」下必然触发的
 1. 上游 PR 优先：改动提到 kun 仓库，Kun 发版后改 `KunVersion` 升级，本小节随之更新。
 2. 每项设 1 个迭代的回合入期限；逾期未合入，由 Qian 维护 `Kun.<Module>.Patches` 补丁包（同名命名空间 + `[Obsolete]` 转发），并记录回合入日期。
 
-截至 2026-10-13 的状态：§07 7.1 的七个修复任务（S1-KUN-001–007）都已随 Kun 发布并由 Qian 升级消费；之后又有四项 7.1 之外的后续修复（S1-KUN-011–014）。当前锁定的 Kun 2026.10.13 是首个包含 `2026.10.12-hotfix.2` / `-hotfix.3` 修复的无后缀正式版。Qian 没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
+截至 2026-10-14 的状态：§07 7.1 的七个修复任务（S1-KUN-001–007）都已随 Kun 发布并由 Qian 升级消费；之后又有四项 7.1 之外的后续修复（S1-KUN-011–014）与事件总线抽象拆包（S1-KUN-010）。当前锁定 Kun 2026.10.14，已包含上述修复及 Definition 包依赖门禁。Qian 没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
 
 | 任务 | 修复项（§07 7.1） | 状态 | 补丁包 |
 |---|---|---|---|
@@ -90,6 +90,7 @@ Kun 关键路径上有一组在「K3s 多副本 + 多租户」下必然触发的
 | S1-KUN-005 | 第 8 项 审计收敛、第 9 项 数据约定 | 已完成：上游 [idadawn/kun#45](https://github.com/idadawn/kun/pull/45) 随 Kun 2026.10.9 发布，Qian 已升级（S1-KUN-009）；snake_case / Guid v7 / `xmin` 约定为显式 opt-in，由 S1-DATA-001 装配 | 无 |
 | S1-KUN-006 | 第 10–13 项 配置、鉴权端口、能力目录、废弃 API；另含 `KunExceptionHandler` 走 `IProblemDetailsService` | 已完成：上游 [idadawn/kun#47](https://github.com/idadawn/kun/pull/47) 随 Kun 2026.10.9 发布，Qian 已升级（S1-KUN-009）；Qian 侧 Banned API 分析器与门禁样例随 PR #14 交付；`PermissionBehavior` 须逐命令或全局注册，由 S1-AZ-001 装配 | 无 |
 | S1-KUN-007 | 第 3 项 Saga 其余修补（P1） | 已完成：上游 [idadawn/kun#50](https://github.com/idadawn/kun/pull/50) 随 Kun 2026.10.11 发布；Qian 不引用 `Kun.Saga`（开通编排由 `qian.lifecycle` 承担） | 无 |
+| S1-KUN-010 | 7.1 之外：事件总线抽象拆包与 Definition 包依赖门禁 | 已完成：上游 [idadawn/kun#59](https://github.com/idadawn/kun/pull/59) 随 Kun 2026.10.14 发布；Qian 已升级并验证仅依赖抽象的消费方 | 无 |
 | S1-KUN-011 | 7.1 之外：EF 租户过滤器读当前 DbContext | 已完成：上游 [idadawn/kun#54](https://github.com/idadawn/kun/pull/54) 随 Kun 2026.10.12-hotfix.2 发布，Qian 已升级并补跨宿主回归 | 无 |
 | S1-KUN-012 | 7.1 之外：同日修复版的 NuGet 版本格式与发布校验 | 已完成：上游 [idadawn/kun#55](https://github.com/idadawn/kun/pull/55)，只改发布工具 | 无 |
 | S1-KUN-013 | 7.1 之外：鉴权保留主体类型 | 已完成：上游 [idadawn/kun#56](https://github.com/idadawn/kun/pull/56) 随 Kun 2026.10.12-hotfix.3 发布，Qian 已升级 | 无 |

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/v0/capability-catalog.schema.json",
+  "title": "CapabilityCatalog",
+  "description": "能力目录 GET /api/capabilities（及 S1 别名 GET /api/kernel/capabilities）的响应信封（PRD 7.2.1、组件模型规格 §9.5）：按调用者身份、OAuth scope、RBAC 与当前租户 scope 过滤后的能力条目，以及客户端缓存提示。条目形状见 capability-entry。",
+  "x-status": "draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "ttlMs", "cacheScope"],
+  "properties": {
+    "items": {
+      "description": "当前调用者可调用的能力条目；被权限、scope、restrict 过滤或未挂载的能力不出现（R32）。id 在集合内唯一（语义规则）。",
+      "type": "array",
+      "items": { "$ref": "capability-entry.schema.json" }
+    },
+    "ttlMs": {
+      "description": "客户端可缓存本列表的毫秒数，取自 qian.capabilities 组件配置 catalogTtlMs（默认 1000，上限 3000）。缓存不是执行授权：执行入口每次重新判定。",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3000
+    },
+    "cacheScope": {
+      "description": "固定 private：结果随调用者身份与权限变化，只能按当前主体缓存，不得进入跨用户的共享缓存。",
+      "const": "private"
+    }
+  }
+}

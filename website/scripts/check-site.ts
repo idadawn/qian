@@ -48,11 +48,12 @@ export interface SiteReport {
 }
 
 /**
- * 产物总大小预算（R55，docs-site.md §7）。S1-DOCS-005 之后约 48 MB；预算取两倍左右，挡住的是结构性膨胀——
+ * 产物总大小预算（R55，docs-site.md §7）。S1-QA-010 实测 96.2 MB（756 个页面，含完整 API/Markdown 与 15.6 MB 离线编辑器）；
+ * 按 R55 从 100 MB 调整为 120 MB，保留约 24 MB 增长空间，挡住的是结构性膨胀——
  * 例如整棵侧栏被渲染进几百个 API 页，曾让产物从 57 MB 涨到 170 MB——而不是正常增长。超出时先看报出的最大目录，
  * 确属正常增长再调高预算，并在 PR 里写明原因。
  */
-export const SITE_SIZE_BUDGET_MB = 100;
+export const SITE_SIZE_BUDGET_MB = 120;
 
 const mb = (bytes: number) => `${(bytes / 1e6).toFixed(1)} MB`;
 

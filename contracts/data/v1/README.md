@@ -11,3 +11,9 @@ S1-DATA-003 在同目录增加三份文件，同样嵌入 Qian.Data.Abstractions
 - data-connection.schema.json：/api/data/connections 的请求、详情、列表与连通测试结果；任何形状都没有口令成员。
 
 规则见 [数据契约规格 §8](../../../docs/prd/specs/data-contracts.md#8-基准类型方言与数据连接)。
+
+## 冻结与修订
+
+全部 Schema 为 JSON Schema 2020-12，`$id` 保持 `https://qian.dev/contracts/data/v1/` 前缀，状态统一为 `x-status: frozen`（2026-10-14）。它们与发布的 C# 契约、矩阵和 fixture 共同构成 v1 的消费边界；`fixtures/field-types.json` 是过滤正反例使用的可信字段目录，测试直接读取。
+
+参照 [通用契约的演进规则](../../v0/README.md#2-通用约定与演进)，冻结后只允许向后兼容的增量或不改变语义的说明修正。改动须在同一 PR 同步 Schema、fixture、Qian.Data.Abstractions 与已知消费方，说明兼容性并通过结构和语义校验；涉及错误响应时同时遵守 contracts/v0 的 ErrorDetail 约束。破坏性变更新开 `contracts/data/v2/`，不覆盖 v1；不得移除冻结标记恢复为 draft。引用的通用事件信封仍按 contracts/v0 自身的状态与规则演进。

@@ -4,4 +4,5 @@
   <ItemGroup><ProjectReference Include="../Qian.Capabilities.Abstractions/Qian.Capabilities.Abstractions.csproj" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" /><PackageReference Include="Kun.Security" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Capabilities.Tests" /></ItemGroup>
 </Project>
