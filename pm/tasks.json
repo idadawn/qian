@@ -5861,14 +5861,14 @@
  {
   "id": "S1-RT-022",
   "title": "表面解析器对残缺代理项的处理两端对齐（YAML 与 JSON 中未成对的代理项转义）",
-  "status": "todo",
+  "status": "doing",
   "stage": "S1",
   "area": "RT",
   "areaName": "运行时 / CLI / 市场",
   "wave": 1,
   "priority": "P2",
   "type": "fix",
-  "owner": "",
+  "owner": "claude",
   "estimate": "0.5d",
   "days": 0.5,
   "depends": [
@@ -5876,7 +5876,7 @@
   ],
   "blockedBy": [],
   "order": 0,
-  "readyNow": true,
+  "readyNow": false,
   "refs": [
    {
     "path": "packages/Qian.Surfaces/SurfaceReader.cs",
@@ -5896,7 +5896,7 @@
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-009 差分时发现：配置补丁里的字符串或键名含残缺代理项的转义（反斜杠 u 后接未成对的 D800 至 DFFF 码元）时，.NET 的 SurfaceReader 与 CLI 的 parseSurface 处理不同。YAML：YamlDotNet 报「YAML 语法无效或存在重复键。」，TS 的 yaml 包照常解析。JSON：.NET 读键名时 Utf8JsonReader.GetString 抛 InvalidOperationException，SurfaceReader.Parse 不捕获，profile 装配按无法解析处理；字符串值要到之后取用时才失败；TS 一律接受。S1-CFG-009 只让 profile 装配在配置验证前两端都按无法解析处理，报告的位置与时机仍不同（见 packages/Qian.Profiles/README.md 的已知分歧）。应在表面解析层统一：两端解析时都拒绝含残缺代理项的字符串与键名，给出同一诊断，补表面 TCK 场景。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>两端表面解析器对含残缺代理项的字符串与键名给出同一诊断（JSON、YAML 与 Markdown front matter），<code>SurfaceReader.Parse</code> 不再把 InvalidOperationException 抛给调用方</li>\n<li class='chk'><span class='box'></span>表面 TCK 与 profile TCK 补充用例，两端报告比较通过</li>\n<li class='chk'><span class='box'></span>删去 <code>packages/Qian.Profiles/README.md</code> 中对应的已知分歧</li>\n<li class='chk'><span class='box'></span>相关测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-CFG-009 差分时发现：配置补丁里的字符串或键名含残缺代理项的转义（反斜杠 u 后接未成对的 D800 至 DFFF 码元）时，.NET 的 SurfaceReader 与 CLI 的 parseSurface 处理不同。YAML：YamlDotNet 报「YAML 语法无效或存在重复键。」，TS 的 yaml 包照常解析。JSON：.NET 读键名时 Utf8JsonReader.GetString 抛 InvalidOperationException，SurfaceReader.Parse 不捕获，profile 装配按无法解析处理；字符串值要到之后取用时才失败；TS 一律接受。S1-CFG-009 只让 profile 装配在配置验证前两端都按无法解析处理，报告的位置与时机仍不同（见 packages/Qian.Profiles/README.md 的已知分歧）。应在表面解析层统一：两端解析时都拒绝含残缺代理项的字符串与键名，给出同一诊断，补表面 TCK 场景。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>两端表面解析器对含残缺代理项的字符串与键名给出同一诊断（JSON、YAML 与 Markdown front matter），<code>SurfaceReader.Parse</code> 不再把 InvalidOperationException 抛给调用方</li>\n<li class='chk'><span class='box'></span>表面 TCK 与 profile TCK 补充用例，两端报告比较通过</li>\n<li class='chk'><span class='box'></span>删去 <code>packages/Qian.Profiles/README.md</code> 中对应的已知分歧</li>\n<li class='chk'><span class='box'></span>相关测试、门禁、<code>check_docs.py</code>、<code>pm.py validate</code> 通过</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：两端表面解析器对未成对代理项（JSON 与 YAML 转义、字面量）给出同一诊断，SurfaceReader.Parse 不再泄漏 InvalidOperationException</li>\n</ul>",
   "file": "pm/tasks/S1-RT-022.md"
  },
  {
