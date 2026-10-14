@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import scenarios from '../docs/scenarios.json';
 import docs from '../docs/catalog.json';
 import { Ajv2020 } from 'ajv/dist/2020.js';
@@ -9,6 +11,12 @@ import { CORE_COMPONENT_MANIFESTS } from './manifests';
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 const validate = ajv.compile(componentManifestSchema);
 describe('组件机器目录', () => {
+  it('元数据由当前 TypeScript 注释生成且没有漂移', () => {
+    execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/export-manifests.mjs', import.meta.url)), '--check']);
+    const button = CORE_COMPONENT_MANIFESTS.find(item => item.name === 'Button')!;
+    expect(button.props).toHaveProperty('properties.loading.description', '加载中时禁用操作并显示忙碌状态。');
+    expect(button.props).not.toHaveProperty('properties.id.description');
+  }, 30_000);
   it('全部清单符合统一 Schema，名称唯一，示例通过自己的 props Schema，令牌均登记', () => {
     const names = CORE_COMPONENT_MANIFESTS.map(item => item.name);
     expect(new Set(names).size).toBe(names.length);
@@ -17,6 +25,10 @@ describe('组件机器目录', () => {
     for (const manifest of CORE_COMPONENT_MANIFESTS) {
       expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
       expect(ajv.validateSchema(manifest.props)).toBe(true);
+      for (const [name, prop] of Object.entries(manifest.props.properties ?? {})) {
+        expect(prop).toHaveProperty('title', name);
+        expect(prop).not.toHaveProperty('description', `${manifest.name} 的 ${name} 属性。`);
+      }
       const props = ajv.compile(manifest.props);
       for (const example of manifest.examples) expect(props(example.props), `${manifest.name}: ${JSON.stringify(props.errors)}`).toBe(true);
       for (const token of manifest.tokens) expect(tokens.has(token), token).toBe(true);
