@@ -96,9 +96,9 @@ export interface SurfaceContext {
         readonly version: string;
     };
     // (undocumented)
-    provide<T>(key: string, value: T): () => void | Promise<void>;
+    provide<T>(key: string, value: T): SurfaceRegistrationHandle<T>;
     // (undocumented)
-    provide<T>(key: string, name: string, value: T): () => void | Promise<void>;
+    provide<T>(key: string, name: string, value: T): SurfaceRegistrationHandle<T>;
     // (undocumented)
     readonly scope: string;
 }
@@ -149,12 +149,16 @@ export interface SurfaceParseResult {
 }
 
 // @public
+export type SurfaceRegistrationHandle<T> = (() => void | Promise<void>) & {
+    replace(value: T): void;
+};
+
+// @public
 export class SurfaceRegistrationSession {
     // (undocumented)
     static create(context: SurfaceContext, initial: SurfaceValidationResult): Promise<SurfaceRegistrationSession>;
     // (undocumented)
     dispose(): Promise<void>;
-    // (undocumented)
     replace(result: SurfaceValidationResult): Promise<number>;
 }
 

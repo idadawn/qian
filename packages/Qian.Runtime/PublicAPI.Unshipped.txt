@@ -12,7 +12,7 @@ Qian.Runtime.IPluginContext
 Qian.Runtime.IPluginContext.Entry.get -> Qian.Runtime.PluginEntry!
 Qian.Runtime.IPluginContext.Inject<TService>(Qian.Runtime.ServiceKey key) -> TService!
 Qian.Runtime.IPluginContext.Logger.get -> Microsoft.Extensions.Logging.ILogger!
-Qian.Runtime.IPluginContext.Provide<TService>(Qian.Runtime.ServiceKey key, TService! instance) -> System.IDisposable!
+Qian.Runtime.IPluginContext.Provide<TService>(Qian.Runtime.ServiceKey key, TService! instance) -> Qian.Runtime.IRegistrationHandle<TService!>!
 Qian.Runtime.IPluginContext.Scope.get -> Qian.Runtime.ScopeKey
 Qian.Runtime.IPluginContext.Services.get -> System.IServiceProvider!
 Qian.Runtime.IPluginContext.TryInject<TService>(Qian.Runtime.ServiceKey key) -> TService?
@@ -156,7 +156,7 @@ Qian.Runtime.Registration.Deconstruct(out Qian.Runtime.ServiceKey Key, out strin
 Qian.Runtime.Registration.Registration(Qian.Runtime.ServiceKey Key, string! Name, Qian.Runtime.ScopeKey Scope, string! OwnerEntryId, object! Value) -> void
 Qian.Runtime.IPluginContext.Scoped(Qian.Runtime.ScopeKey scope) -> Qian.Runtime.IPluginContext!
 Qian.Runtime.IPluginContext.Restrict(Qian.Runtime.ScopeKey scope, System.Func<Qian.Runtime.Registration!, bool>! keep) -> System.IDisposable!
-Qian.Runtime.IPluginContext.Provide<TService>(Qian.Runtime.ServiceKey key, string! name, TService! instance) -> System.IDisposable!
+Qian.Runtime.IPluginContext.Provide<TService>(Qian.Runtime.ServiceKey key, string! name, TService! instance) -> Qian.Runtime.IRegistrationHandle<TService!>!
 Qian.Runtime.IPluginContext.Inject<TService>(Qian.Runtime.ServiceKey key, string! name) -> TService!
 Qian.Runtime.IPluginContext.List(Qian.Runtime.ServiceKey key) -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Registration!>!
 Qian.Runtime.KunErrorBridge
@@ -174,3 +174,5 @@ Qian.Runtime.QianEventAttribute
 Qian.Runtime.QianEventAttribute.QianEventAttribute() -> void
 Qian.Runtime.QianEventAttribute.Mode.set -> void
 Qian.Runtime.QianEventAttribute.Mode.get -> Qian.Runtime.DispatchMode
+Qian.Runtime.IRegistrationHandle<TService>
+Qian.Runtime.IRegistrationHandle<TService>.Replace(TService! instance) -> void

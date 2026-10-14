@@ -18,32 +18,51 @@ public sealed class SurfaceRegistrationSession : IDisposable
         ArgumentNullException.ThrowIfNull(context); _context = context;
         Replace(initial);
     }
-    /// <summary>只替换内容改变或撤销的目录项；不改动代码服务、监听器或其它表面的注册引用。</summary>
+    /// <summary>
+    /// 只新增、原位替换或撤销变化的目录项，返回这三类注册的总数；不改动代码服务、监听器或其它表面的注册引用。
+    /// 新旧快照都有的项经注册句柄原子替换，读取方只看到旧文档或新文档；失败时撤销本次新增并恢复已替换的旧文档。
+    /// </summary>
     public int Replace(SurfaceValidationResult next)
     {
         var plan = Plan(next, _context);
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            var changed = plan.Where(item => !_active.TryGetValue(item.Key, out var old) || !Same(old.Document, item.Value)).ToArray();
-            var removed = _active.Where(item => !plan.ContainsKey(item.Key) || changed.Any(value => value.Key == item.Key)).ToArray();
-            foreach (var item in removed.Reverse()) { item.Value.Handle.Dispose(); _active.Remove(item.Key); }
+            var added = plan.Where(item => !_active.ContainsKey(item.Key)).ToArray();
+            var changed = plan.Where(item => _active.TryGetValue(item.Key, out var old) && !Same(old.Document, item.Value)).ToArray();
+            var removed = _active.Where(item => !plan.ContainsKey(item.Key)).ToArray();
+            // 注册按 key/name 独占（R38），不能先登记后撤销；先撤销后登记会让读取方在两步之间看到缺失。
+            // 因此先新增，再原位替换，最后撤销已删除的项，回滚也不必重新登记。
             var installed = new List<(ServiceKey Key, string Name)>();
+            var replaced = new List<((ServiceKey Key, string Name) Key, Active Old)>();
             try
             {
-                foreach (var item in changed)
+                foreach (var item in added)
                 {
                     _active.Add(item.Key, new Active(item.Value, _context.Provide(item.Key.Key, item.Key.Name, item.Value)));
                     installed.Add(item.Key);
                 }
+                foreach (var item in changed)
+                {
+                    var old = _active[item.Key];
+                    old.Handle.Replace(item.Value);
+                    _active[item.Key] = old with { Document = item.Value };
+                    replaced.Add((item.Key, old));
+                }
             }
             catch
             {
+                foreach (var (key, old) in replaced.AsEnumerable().Reverse())
+                {
+                    _active[key] = old;
+                    try { old.Handle.Replace(old.Document); }
+                    catch (ObjectDisposedException) { } // 上下文已卸载：注册随效果栈撤销，无须恢复。
+                }
                 foreach (var key in installed.AsEnumerable().Reverse()) { _active[key].Handle.Dispose(); _active.Remove(key); }
-                foreach (var item in removed) _active.Add(item.Key, new Active(item.Value.Document, _context.Provide(item.Key.Key, item.Key.Name, item.Value.Document)));
                 throw;
             }
-            return removed.Length + changed.Length;
+            foreach (var item in removed.Reverse()) { item.Value.Handle.Dispose(); _active.Remove(item.Key); }
+            return added.Length + changed.Length + removed.Length;
         }
     }
     /// <inheritdoc />
@@ -92,5 +111,5 @@ public sealed class SurfaceRegistrationSession : IDisposable
         }
     }
     private static bool Same(SurfaceDocument first, SurfaceDocument second) => first.Kind == second.Kind && first.Name == second.Name && first.File == second.File && first.Body == second.Body && JsonElement.DeepEquals(first.Data, second.Data);
-    private sealed record Active(SurfaceDocument Document, IDisposable Handle);
+    private sealed record Active(SurfaceDocument Document, IRegistrationHandle<SurfaceDocument> Handle);
 }

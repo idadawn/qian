@@ -5308,6 +5308,48 @@
   "file": "pm/tasks/S1-RT-017.md"
  },
  {
+  "id": "S1-RT-018",
+  "title": "表面热重载原子替换：读取方不再瞬时看到注册缺失",
+  "status": "done",
+  "stage": "S1",
+  "area": "RT",
+  "areaName": "运行时 / CLI / 市场",
+  "wave": 2,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-RT-001",
+   "S1-RT-003"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/specs/component-model.md#5.6",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/prd/specs/component-model.md#10.2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   },
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.2.2",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   }
+  ],
+  "updated": "2026-10-14",
+  "acceptance": {
+   "done": 5,
+   "total": 5
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>[idadawn/qian#79](https://github.com/idadawn/qian/pull/79) 的 CI 运行 38448590040（「构建、门禁与测试」，2026-10-13T18:45Z）唯一失败的用例是 CRM 样例 <code>hooks文件更新后实际桥接行为五秒内改变_代码与业务服务不重启</code>：轮询 <code>Inject&lt;SurfaceDocument&gt;(SurfaceKeys.Hooks, &quot;qian.sample.crm/hooks&quot;)</code> 时一次抛出 NOT_FOUND；前一个提交与本机均通过，与负载和时序有关。</p>\n<p>根因：<code>SurfaceRegistrationSession.Replace</code> 先撤销旧注册、再登记新文档，会话锁不覆盖运行时的读取方，新旧快照都有的文档在两步之间对读取方短暂消失；hook 桥接若在这个窗口收到事件，会把 hook 当作不存在而跳过。注册按 key/name 独占（R38），不能先登记再撤销。TS 侧会话同样先 await 撤销再登记，窗口相同。</p>\n<p>做法：两侧运行时 <code>Provide</code> 返回的注册句柄支持原子替换实例（读取方只看到旧值或新值）；表面会话改为先新增、再原位替换、最后撤销，保留失败回滚；补并发回归测试与共用 TCK 场景。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：.NET 与 TS 运行时 <code>Provide</code> 返回的注册句柄可原子替换实例；多个读取方在反复替换期间只看到旧值或新值、从不缺失，<code>List</code> 顺序不变；句柄撤销或上下文卸载后拒绝替换</li>\n<li class='chk done'><span class='box'>✓</span>TCK：共用场景 T25 覆盖原位替换（新值可见、注册顺序不变、以 inject 依赖该键的条目重新 Apply、卸载无残留），.NET 与 TS harness 读同一 YAML 通过</li>\n<li class='chk done'><span class='box'>✓</span>UT：双侧 <code>SurfaceRegistrationSession</code> 改为先新增、再原位替换、最后撤销；读取方在反复替换期间对新旧快照都有的文档从不 NOT_FOUND；新增冲突时回滚，旧注册与旧内容不变</li>\n<li class='chk done'><span class='box'>✓</span>E2E：CRM hooks 热更新验收与双侧 T19 恢复严格断言，不再容忍过渡期缺失；超时报出最后观察到的内容与监视状态</li>\n<li class='chk done'><span class='box'>✓</span>门禁：.NET 全量构建与测试、<code>check_deps</code>、门禁自测、<code>check_docs</code>、<code>pm.py validate</code> 通过；规格 §5 / §10.2 与相关 README 同步（本机并入最新 main 后复跑通过；CI 以 [idadawn/qian#82](https://github.com/idadawn/qian/pull/82) 全部检查通过为合并前提）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：两侧运行时注册句柄原子替换，表面会话改为新增→原位替换→撤销</li>\n<li>2026-10-14 claude：提交评审：两侧运行时注册句柄原子替换，会话改为新增→原位替换→撤销，T25 两侧 harness 通过。修复前会话并发单测 3/3 复现（每次两万至三万余次缺失），把会话改回旧顺序的变异在 .NET 与 TS 都被并发与逐步检查抓到。本机 dotnet 全量 630/630 零跳过，check_deps、门禁自测 47 项、check_docs、pm validate 通过；TS 运行时 36 项、表面 9 项、CLI 55 项、浏览器冒烟与制品消费通过，surfaces 双侧报告对照一致；CRM hooks 热更新用例连续 5 次通过。@idadawn/qian-runtime 的新版本发布另走 runtime-ts-release</li>\n<li>2026-10-14 claude：随 idadawn/qian#82 合并完成（合并前提是 PR 全部检查通过）；并入最新 main 后本机全部门禁复跑通过（dotnet 全量 630/630 零跳过）</li>\n</ul>",
+  "file": "pm/tasks/S1-RT-018.md"
+ },
+ {
   "id": "S1-SCH-001",
   "title": "qian.scheduler 核心：持久化作业、集群安全领取、Cancel",
   "status": "todo",
