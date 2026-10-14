@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-14 身份事件载荷不再重复信封字段（S1-DEC-020、S1-IDP-011）
+
+破坏性变更：五类身份事件的载荷去掉 `event_id`、`occurred_at`、`tenant_id`，构造参数随之减少，`IdentityIntegrationEvent` 不再实现 Kun 的 `IIntegrationEvent`；三项只由 Qian.Events 写入端生成在信封上。v1 尚无生产方、消费方与已发布包，按 S1-DEC-020 就地修正，此后的破坏性变化才升 v2。见 [身份事件契约](../contracts/identity/v1/README.md) 与 [ADR-008](adr/ADR-008-events-messaging.md) D8.7。
+
 ## 2026-10-14 记录变更事件改为登记载荷（S1-DATA-004）
 
 `qian.record.changed.v1` 按 Qian.Events 的模型发布：`[IntegrationEventId]` 移到 `RecordChangedPayload`，`RegisterRecordEvents` 登记载荷，信封只由写入端生成一层；`RecordChangedEvent` 改为 after Hook 视图，由 `RecordChangedEvent.FromEnvelope` 从收到的信封派生。破坏性变更：删除 `DataContractJson.RecordChangedEventTypeInfo`，`EnsureConsistentContext` 移到载荷，改为核对当前租户与事件来源。线上信封、payload Schema 与 fixture 不变，见 [数据契约规格 §6](prd/specs/data-contracts.md#6-record-hook-与变更事件)。

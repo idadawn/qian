@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Json.Schema;
+using Kun.Core.Domain;
 using Kun.EventBus;
 using Kun.EventBus.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +17,6 @@ public sealed class IdentityContractsTests
     private static readonly string Root = FindRoot();
     private static readonly Guid PersonId = Guid.Parse("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee");
     private static readonly Guid SessionId = Guid.Parse("11111111-2222-4333-8444-555555555555");
-    private static readonly DateTime At = new(2026, 10, 9, 0, 0, 0, DateTimeKind.Utc);
 
     [Fact]
     public void 当前身份经正式Kun接口读取时保留主体类型_缺少快照不默认成用户()
@@ -95,19 +95,25 @@ public sealed class IdentityContractsTests
         var schemas = new BuildOptions { SchemaRegistry = new SchemaRegistry() };
         _ = JsonSchema.FromText(File.ReadAllText(Path.Combine(Root, "contracts/v0/s2s-claims.schema.json")), schemas);
         IdentityIntegrationEvent[] events = [
-            new IdentityLoginEvent(Guid.NewGuid(), At, null, PersonId, 1, SessionId, "web", ["pwd"]),
-            new IdentityLogoutEvent(Guid.NewGuid(), At, null, PersonId, 2, SessionId, "user-request"),
-            new IdentityPasswordChangedEvent(Guid.NewGuid(), At, null, PersonId, 3),
-            new IdentityLockedEvent(Guid.NewGuid(), At, null, PersonId, 4, "policy"),
-            new IdentitySessionRevokedEvent(Guid.NewGuid(), At, null, PersonId, 5, SessionId, "password-changed")
+            new IdentityLoginEvent(PersonId, 1, SessionId, "web", ["pwd"]),
+            new IdentityLogoutEvent(PersonId, 2, SessionId, "user-request"),
+            new IdentityPasswordChangedEvent(PersonId, 3),
+            new IdentityLockedEvent(PersonId, 4, "policy"),
+            new IdentitySessionRevokedEvent(PersonId, 5, SessionId, "password-changed")
         ];
         Assert.Equal(IdentityEventIds.All.Order(), registry.GetAll().Select(e => e.EventId).Order());
+        // event_id、occurred_at 与 tenant_id 只在写入端生成的信封上（S1-DEC-020），载荷类型不再是 Kun 的 IIntegrationEvent。
+        Assert.False(typeof(IIntegrationEvent).IsAssignableFrom(typeof(IdentityIntegrationEvent)));
         foreach (var value in events)
         {
             var type = value.GetType();
             var id = type.GetCustomAttribute<IntegrationEventIdAttribute>()!.EventType;
             Assert.Same(type, registry.Resolve(id));
             Assert.NotNull(registry.GetJsonTypeInfo(type));
+            using var published = JsonDocument.Parse(IdentitySchemas.Event(id));
+            var members = published.RootElement.GetProperty("properties").EnumerateObject().Select(member => member.Name).Order(StringComparer.Ordinal).ToArray();
+            Assert.Equal(IdentityJson.EventTypeInfo(id)!.Properties.Select(property => property.Name).Order(StringComparer.Ordinal), members);
+            Assert.DoesNotContain(members, member => member is "event_id" or "occurred_at" or "tenant_id");
             var schema = JsonSchema.FromText(IdentitySchemas.Event(id), schemas);
             using var payload = JsonDocument.Parse(JsonSerializer.Serialize(value, IdentityJson.EventTypeInfo(id)!));
             Assert.True(schema.Evaluate(payload.RootElement).IsValid, id + ": " + payload.RootElement.GetRawText());

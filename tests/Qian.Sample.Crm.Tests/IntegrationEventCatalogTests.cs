@@ -36,8 +36,8 @@ public sealed class IntegrationEventCatalogTests
         {
             Assert.Equal("object", item.PayloadSchema.GetProperty("type").GetString());
             Assert.Equal(QianEventTopology.RoutingKey(item.Type), item.Subject);
-            // payload 不能再嵌一封信封：trace_parent 与 payload 只出现在写入端生成的外层信封里。
-            Assert.DoesNotContain(Members(item.PayloadSchema), member => member is "trace_parent" or "payload");
+            // 事件标识、发生时间与追踪只在写入端生成的信封上（S1-DEC-020），payload 也不能再嵌一封信封。
+            Assert.DoesNotContain(Members(item.PayloadSchema), member => member is "event_id" or "eventId" or "occurred_at" or "occurredAt" or "trace_parent" or "payload");
         }
         var created = catalog.Single(item => item.Type == CrmEvents.CustomerCreated);
         Assert.Equal(("crm.customer.created", 1), (created.Subject, created.Version));

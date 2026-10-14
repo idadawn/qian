@@ -1688,7 +1688,7 @@
  {
   "id": "S1-DEC-020",
   "title": "身份事件载荷重复信封的 event_id、occurred_at、tenant_id：v1 就地修正还是另发 v2",
-  "status": "todo",
+  "status": "done",
   "stage": "S1",
   "area": "DEC",
   "areaName": "待拍板决策",
@@ -1700,8 +1700,8 @@
   "days": 0.5,
   "depends": [],
   "blockedBy": [],
-  "order": 0,
-  "readyNow": true,
+  "order": -1,
+  "readyNow": false,
   "refs": [
    {
     "path": "contracts/identity/v1/README.md",
@@ -1730,10 +1730,10 @@
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 2,
    "total": 2
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-IDP-001（2026-10-09 合并，早于 S1-EVT-001 的信封写入端）让五类身份事件的载荷基类 <code>IdentityIntegrationEvent</code> 实现 Kun 的 <code>IIntegrationEvent</code>：载荷自带 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，contracts/identity/v1 的五份 Schema 把三者列为必填。ADR-008 D8.7 与 contracts/v0 第 5 节把这三项定在信封上。Qian.Events 写入端入队时自己生成信封的 event_id（UUID v7）、occurred_at（写入端时钟）与 tenant_id（当前租户上下文），不读载荷里的值；Kun 默认的 Outbox 累加器同样不读（<code>Guid.NewGuid()</code>、<code>DateTimeOffset.UtcNow</code>）。</p>\n<p>2026-10-14 实测（Qian.Events.Tests 的宿主装配下 Enqueue 一条 <code>identity.login.v1</code>，读取 Outbox 缓冲里的信封）：信封与载荷的 event_id、occurred_at 各不相同；载荷 tenant_id 与当前租户不同时，写入端照常入队。后果有两条：消费端按信封 event_id 幂等（D8.4），载荷里多出一个误导性的事件标识；handler 若按载荷 tenant_id 处理，会落到错误租户，而回灌依据是信封 tenant_id（contracts/v0 第 5 节第 3 条）。</p>\n<p>身份契约有自己的版本规则：contracts/identity/v1/README.md 写明「破坏性变化新增 v2 类型与 Schema，不覆盖 v1」，包 AGENTS.md 与 <code>IdentityEventIds</code> 的注释同此。删除必填成员属于破坏性变化，所以不在实现任务里直接改，提交拍板。现状：身份 Provider（S1-IDP-002 到 006）都未开始，没有生产方和消费方；全仓 PublicAPI.Shipped 为空，也没有发布 NuGet 包。可作对照的是 qian.record.changed.v1：已按「事件类型就是载荷、信封只由写入端生成」修正（S1-DATA-004，数据契约 §6）。</p>\n<h4>待拍板</h4>\n<ul>\n<li><strong>A（推荐）发布前就地修正 v1</strong>：五类载荷去掉 event_id、occurred_at、tenant_id，<code>IdentityIntegrationEvent</code> 不再实现 <code>IIntegrationEvent</code>；消费端从信封取这三项，做法同 <code>RecordChangedEvent.FromEnvelope</code>；「破坏性变化升 v2」改为自首个发布版本起生效。v1 还没有生产方、消费方和已发布的包，就地修正没有迁移成本，信封成为唯一真相源。</li>\n<li><strong>B 保留 v1，另发 v2</strong>：身份 Provider 落地时直接发 <code>identity.*.v2</code>（不含信封字段），v1 从未生产即作废。守住字面规则，但事件 ID、登记入口、Schema 与测试要两代并存。</li>\n<li><strong>C 保留字段，强制一致</strong>：载荷实现 <code>IIntegrationEvent</code> 时，写入端沿用其 EventId 与 OccurredAt，并要求 TenantId 等于当前租户。这与 Kun 对 <code>IIntegrationEvent.EventId</code> 的注释（「消息唯一标识，用于消费端幂等去重」）一致，身份契约不变；代价是改变 S1-EVT-001 写入端自行生成 event_id 的语义，载荷与信封仍是两份要保持相等的数据，Kun 默认累加器也要上游同步修改。</li>\n<li><strong>D 维持现状</strong>：只在文档里声明这三项不是幂等键或租户依据。成本最低，重复与错读风险都留着。</li>\n</ul>\n<p>裁决前的默认：消费端（S1-EVT-002）的幂等键、发生时间与租户回灌一律取信封字段，不读载荷里的这三项；身份事件的生产方从 S1-IDP-003 起，等本裁决后再实现发布。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>产品负责人选定 A–D 之一，结论写进 ADR-008 与 contracts/identity/v1/README.md</li>\n<li class='chk'><span class='box'></span>按结论拆出实现任务：A、B 改 Qian.Identity.Abstractions、契约 Schema、PublicAPI 与测试；C 改 Qian.Events 写入端，并向 kun 仓库提上游修改；同步更新受影响任务的依赖与日志</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-IDP-001（2026-10-09 合并，早于 S1-EVT-001 的信封写入端）让五类身份事件的载荷基类 <code>IdentityIntegrationEvent</code> 实现 Kun 的 <code>IIntegrationEvent</code>：载荷自带 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，contracts/identity/v1 的五份 Schema 把三者列为必填。ADR-008 D8.7 与 contracts/v0 第 5 节把这三项定在信封上。Qian.Events 写入端入队时自己生成信封的 event_id（UUID v7）、occurred_at（写入端时钟）与 tenant_id（当前租户上下文），不读载荷里的值；Kun 默认的 Outbox 累加器同样不读（<code>Guid.NewGuid()</code>、<code>DateTimeOffset.UtcNow</code>）。</p>\n<p>2026-10-14 实测（Qian.Events.Tests 的宿主装配下 Enqueue 一条 <code>identity.login.v1</code>，读取 Outbox 缓冲里的信封）：信封与载荷的 event_id、occurred_at 各不相同；载荷 tenant_id 与当前租户不同时，写入端照常入队。后果有两条：消费端按信封 event_id 幂等（D8.4），载荷里多出一个误导性的事件标识；handler 若按载荷 tenant_id 处理，会落到错误租户，而回灌依据是信封 tenant_id（contracts/v0 第 5 节第 3 条）。</p>\n<p>身份契约有自己的版本规则：contracts/identity/v1/README.md 写明「破坏性变化新增 v2 类型与 Schema，不覆盖 v1」，包 AGENTS.md 与 <code>IdentityEventIds</code> 的注释同此。删除必填成员属于破坏性变化，所以不在实现任务里直接改，提交拍板。现状：身份 Provider（S1-IDP-002 到 006）都未开始，没有生产方和消费方；全仓 PublicAPI.Shipped 为空，也没有发布 NuGet 包。可作对照的是 qian.record.changed.v1：已按「事件类型就是载荷、信封只由写入端生成」修正（S1-DATA-004，数据契约 §6）。</p>\n<h4>待拍板</h4>\n<ul>\n<li><strong>A（推荐）发布前就地修正 v1</strong>：五类载荷去掉 event_id、occurred_at、tenant_id，<code>IdentityIntegrationEvent</code> 不再实现 <code>IIntegrationEvent</code>；消费端从信封取这三项，做法同 <code>RecordChangedEvent.FromEnvelope</code>；「破坏性变化升 v2」改为自首个发布版本起生效。v1 还没有生产方、消费方和已发布的包，就地修正没有迁移成本，信封成为唯一真相源。</li>\n<li><strong>B 保留 v1，另发 v2</strong>：身份 Provider 落地时直接发 <code>identity.*.v2</code>（不含信封字段），v1 从未生产即作废。守住字面规则，但事件 ID、登记入口、Schema 与测试要两代并存。</li>\n<li><strong>C 保留字段，强制一致</strong>：载荷实现 <code>IIntegrationEvent</code> 时，写入端沿用其 EventId 与 OccurredAt，并要求 TenantId 等于当前租户。这与 Kun 对 <code>IIntegrationEvent.EventId</code> 的注释（「消息唯一标识，用于消费端幂等去重」）一致，身份契约不变；代价是改变 S1-EVT-001 写入端自行生成 event_id 的语义，载荷与信封仍是两份要保持相等的数据，Kun 默认累加器也要上游同步修改。</li>\n<li><strong>D 维持现状</strong>：只在文档里声明这三项不是幂等键或租户依据。成本最低，重复与错读风险都留着。</li>\n</ul>\n<p>裁决前的默认：消费端（S1-EVT-002）的幂等键、发生时间与租户回灌一律取信封字段，不读载荷里的这三项；身份事件的生产方从 S1-IDP-003 起，等本裁决后再实现发布。</p>\n<h4>已裁决</h4>\n<p>2026-10-14 产品负责人在聊天中选定方案 A（回复「选 A，按方案 A 实现」），由 claude 代录。结论写入 ADR-008 D8.7 与 contracts/identity/v1/README.md：信封字段只在信封上，载荷不再声明独立的事件标识或发生时间；身份事件 v1 发布前就地删去这三项，「破坏性变化升 v2」自首个发布版本起生效。实现拆为 S1-IDP-011，S1-IDP-003 的前置随之改为 S1-IDP-011。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>产品负责人选定 A–D 之一，结论写进 ADR-008 与 contracts/identity/v1/README.md</li>\n<li class='chk done'><span class='box'>✓</span>按结论拆出实现任务：A、B 改 Qian.Identity.Abstractions、契约 Schema、PublicAPI 与测试；C 改 Qian.Events 写入端，并向 kun 仓库提上游修改；同步更新受影响任务的依赖与日志</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：完成：产品负责人选定方案 A（聊天回复「选 A，按方案 A 实现」，claude 代录）；结论写入 ADR-008 D8.7 与 contracts/identity/v1/README.md，实现拆为 S1-IDP-011，S1-IDP-003 前置改为 S1-IDP-011</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-020.md"
  },
  {
@@ -2524,7 +2524,7 @@
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>Subscribe&lt;TEvent, THandler&gt;()</code>；处理成功后 ack；重试 5 次后进 <code>qian.dlx</code> 并告警；幂等装饰器先查 Redis <code>processed:{consumer}:{event_id}</code>（TTL 7 天）再执行、成功后写入，PG <code>processed_messages</code> 兜底；信封 <code>tenant_id</code> → <code>BeginScope</code> 与 baggage 注入在订阅器统一完成；竞争消费与广播两种订阅。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：消费端前两次抛异常、第三次成功，<code>processed_messages</code> 恰一行；第 6 次仍失败进 DLX 并发告警</li>\n<li class='chk'><span class='box'></span>IT：同一事件重投两次，幂等装饰器拦截第二次，handler 只执行一次</li>\n<li class='chk'><span class='box'></span>IT：消费端 handler 内租户上下文为该事件的租户，EF 查询自动带 <code>tenant_id</code> 过滤</li>\n<li class='chk'><span class='box'></span>IT：广播订阅下每个实例各收到一次，竞争订阅下只有一个实例收到</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：提示（S1-DATA-004 修正）：qian.record.changed.v1 登记的是载荷 RecordChangedPayload；after Hook 视图由 RecordChangedEvent.FromEnvelope(QianEventEnvelope) 派生，订阅端交给 handler 的输入须保留解析后的信封（event_id 幂等键、tenant_id 回灌）。派生失败抛 InvalidOperationException，属确定性失败，重试不会成功</li>\n<li>2026-10-14 claude：提示（S1-DEC-020 待拍板）：身份事件载荷自带的 event_id、occurred_at、tenant_id 与信封不同源；幂等键、发生时间与租户回灌一律取信封字段，handler 输入也要带上解析后的信封</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>Subscribe&lt;TEvent, THandler&gt;()</code>；处理成功后 ack；重试 5 次后进 <code>qian.dlx</code> 并告警；幂等装饰器先查 Redis <code>processed:{consumer}:{event_id}</code>（TTL 7 天）再执行、成功后写入，PG <code>processed_messages</code> 兜底；信封 <code>tenant_id</code> → <code>BeginScope</code> 与 baggage 注入在订阅器统一完成；竞争消费与广播两种订阅。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：消费端前两次抛异常、第三次成功，<code>processed_messages</code> 恰一行；第 6 次仍失败进 DLX 并发告警</li>\n<li class='chk'><span class='box'></span>IT：同一事件重投两次，幂等装饰器拦截第二次，handler 只执行一次</li>\n<li class='chk'><span class='box'></span>IT：消费端 handler 内租户上下文为该事件的租户，EF 查询自动带 <code>tenant_id</code> 过滤</li>\n<li class='chk'><span class='box'></span>IT：广播订阅下每个实例各收到一次，竞争订阅下只有一个实例收到</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：提示（S1-DATA-004 修正）：qian.record.changed.v1 登记的是载荷 RecordChangedPayload；after Hook 视图由 RecordChangedEvent.FromEnvelope(QianEventEnvelope) 派生，订阅端交给 handler 的输入须保留解析后的信封（event_id 幂等键、tenant_id 回灌）。派生失败抛 InvalidOperationException，属确定性失败，重试不会成功</li>\n<li>2026-10-14 claude：提示（S1-DEC-020 待拍板）：身份事件载荷自带的 event_id、occurred_at、tenant_id 与信封不同源；幂等键、发生时间与租户回灌一律取信封字段，handler 输入也要带上解析后的信封</li>\n<li>2026-10-14 claude：S1-DEC-020 已裁决（方案 A，S1-IDP-011 实施）：身份事件载荷不再带 event_id、occurred_at、tenant_id，消费端只从信封取；上一条的「待拍板」提示就此作废</li>\n</ul>",
   "file": "pm/tasks/S1-EVT-002.md"
  },
  {
@@ -2883,7 +2883,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Qian.Runtime</code> 与 Kun 的事件端口 <code>Kun.EventBus.Abstractions</code>（S1-KUN-010 已解除事件实现依赖），通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n<li>2026-10-09 cody：身份契约 PR #18 已合并（be696c17）；8 项专项及全量 236 项测试通过，CI 全绿。</li>\n<li>2026-10-10 claude：复核：claim 集、<code>agent</code> 枚举、五类事件与 Schema 均有测试且通过；第 1 条验收原文「只依赖 Kun.*.Abstractions」与实际（直接引用 <code>Kun.EventBus</code>）不符，且依赖图门禁不检查 <code>Kun.*</code>，已按实际改写验收并登记延期项（S1-DEC-013、S1-KUN-010）。</li>\n<li>2026-10-14 claude：复核：五类事件载荷自带的 event_id、occurred_at、tenant_id 与 Qian.Events 写入端生成的信封同名字段不同源（实测 event_id、occurred_at 不同，载荷 tenant_id 与当前租户不同也照常入队）；v1 规则禁止就地做破坏性修改，已开 S1-DEC-020 待拍板，本任务验收不受影响</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>身份与鉴权互为前置须并行、契约先行：Definition 包定义 <code>ctx.Identity</code>、<code>ICurrentUser</code> / <code>IAuthenticatedUser</code>、令牌 claim 规范集（<code>sub</code>、<code>tenant_id</code>、<code>membership_id</code>、<code>scope</code>、<code>identity_revision</code>、<code>sid</code>、<code>amr</code> / <code>acr</code>，预留 <code>profile</code>、<code>act</code>）、<code>IIdentityConnector</code> / <code>IAuthenticatorFactor</code> SPI、<code>ExternalAssertion</code>、事件 <code>identity.login/logout/password_changed/locked/session_revoked.v1</code>、<code>Client.type</code> 枚举含 <code>agent</code>。S1-AZ-003 只依赖本包。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：<code>Qian.Identity.Abstractions</code> 只依赖 <code>Qian.Runtime</code> 与 Kun 的事件端口 <code>Kun.EventBus.Abstractions</code>（S1-KUN-010 已解除事件实现依赖），通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：claim 规范集与 <code>contracts/v0</code> S2S claim Schema 一致；<code>Client.type</code> 枚举含 <code>agent</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：事件 <code>identity.*.v1</code> 带稳定 <code>[IntegrationEventId]</code> 与 JSON Schema</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-09 cody：开始：身份Definition、用户/S2S claim映射、连接器和因子SPI、稳定事件与Schema。</li>\n<li>2026-10-09 cody：三项验收完成：身份Definition、精确S2S与用户令牌词汇区分、SPI、Agent枚举、五类稳定事件及Schema；直接依赖Runtime与当前Kun事件抽象入口Kun.EventBus（未拆分.Abstractions包），不复制标记也不依赖身份Provider。专项与全量门禁通过，等待PR。</li>\n<li>2026-10-09 cody：身份契约 PR #18 已合并（be696c17）；8 项专项及全量 236 项测试通过，CI 全绿。</li>\n<li>2026-10-10 claude：复核：claim 集、<code>agent</code> 枚举、五类事件与 Schema 均有测试且通过；第 1 条验收原文「只依赖 Kun.*.Abstractions」与实际（直接引用 <code>Kun.EventBus</code>）不符，且依赖图门禁不检查 <code>Kun.*</code>，已按实际改写验收并登记延期项（S1-DEC-013、S1-KUN-010）。</li>\n<li>2026-10-14 claude：复核：五类事件载荷自带的 event_id、occurred_at、tenant_id 与 Qian.Events 写入端生成的信封同名字段不同源（实测 event_id、occurred_at 不同，载荷 tenant_id 与当前租户不同也照常入队）；v1 规则禁止就地做破坏性修改，已开 S1-DEC-020 待拍板，本任务验收不受影响</li>\n<li>2026-10-14 claude：S1-DEC-020 选方案 A：五类事件载荷去掉 event_id、occurred_at、tenant_id，由 S1-IDP-011 实施；本任务验收不受影响</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-001.md"
  },
  {
@@ -2956,11 +2956,11 @@
   "days": 5.0,
   "depends": [
    "S1-IDP-002",
-   "S1-DEC-020"
+   "S1-IDP-011"
   ],
   "blockedBy": [
    "S1-IDP-002",
-   "S1-DEC-020"
+   "S1-IDP-011"
   ],
   "order": 2,
   "readyNow": false,
@@ -2979,7 +2979,7 @@
    "done": 0,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p><code>Person</code>（标识集合、Argon2id 凭据与历史哈希、MFA 因子、状态）+ <code>Membership</code>（person × tenant、显示名、是否租户管理员、<code>profile</code> 预留）+ <code>ExternalIdentity</code> + <code>Client</code> + <code>Session</code> + <code>LoginAudit</code>；<code>ISignInPipeline</code> 所有方式同一 <code>LoginInput</code> 同一签发路径；错误阈值 → 锁定或延时；初始密码强制修改不可取消；多 Membership → <code>selection_token</code>（5 分钟）→ 正式令牌；切换租户 = 以选择令牌重签；图形验证码按策略开关。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：同一手机号在租户 A、B 各有 Membership，密码登录后出现租户选择，选 A 后令牌 <code>tenant_id = A</code>；在外壳切换到 B 时令牌重签且 <code>membership_id</code> 变化</li>\n<li class='chk'><span class='box'></span>IT：密码错误达到阈值触发锁定；初始密码账号登录后被强制跳转改密且不可跳过</li>\n<li class='chk'><span class='box'></span>UT：密码以 Argon2id 存储且历史哈希不可复用；<code>LoginAudit</code> 每次登录一条</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：depends 加 S1-DEC-020：本任务是第一个发布身份事件的生产方，载荷是否保留 event_id、occurred_at、tenant_id 待该裁决；其余实现不受影响</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p><code>Person</code>（标识集合、Argon2id 凭据与历史哈希、MFA 因子、状态）+ <code>Membership</code>（person × tenant、显示名、是否租户管理员、<code>profile</code> 预留）+ <code>ExternalIdentity</code> + <code>Client</code> + <code>Session</code> + <code>LoginAudit</code>；<code>ISignInPipeline</code> 所有方式同一 <code>LoginInput</code> 同一签发路径；错误阈值 → 锁定或延时；初始密码强制修改不可取消；多 Membership → <code>selection_token</code>（5 分钟）→ 正式令牌；切换租户 = 以选择令牌重签；图形验证码按策略开关。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：同一手机号在租户 A、B 各有 Membership，密码登录后出现租户选择，选 A 后令牌 <code>tenant_id = A</code>；在外壳切换到 B 时令牌重签且 <code>membership_id</code> 变化</li>\n<li class='chk'><span class='box'></span>IT：密码错误达到阈值触发锁定；初始密码账号登录后被强制跳转改密且不可跳过</li>\n<li class='chk'><span class='box'></span>UT：密码以 Argon2id 存储且历史哈希不可复用；<code>LoginAudit</code> 每次登录一条</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-14 claude：depends 加 S1-DEC-020：本任务是第一个发布身份事件的生产方，载荷是否保留 event_id、occurred_at、tenant_id 待该裁决；其余实现不受影响</li>\n<li>2026-10-14 claude：S1-DEC-020 已裁决（方案 A），depends 中的 S1-DEC-020 换成实现任务 S1-IDP-011：发布身份事件时载荷不带 event_id、occurred_at、tenant_id，在事件所属租户的作用域内入队</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-003.md"
  },
  {
@@ -3286,7 +3286,7 @@
  {
   "id": "S1-IDP-011",
   "title": "身份事件载荷去掉信封字段 event_id、occurred_at、tenant_id（S1-DEC-020 方案 A）",
-  "status": "doing",
+  "status": "review",
   "stage": "S1",
   "area": "IDP",
   "areaName": "身份与连接器",
@@ -3300,10 +3300,8 @@
    "S1-DEC-020",
    "S1-IDP-001"
   ],
-  "blockedBy": [
-   "S1-DEC-020"
-  ],
-  "order": 1,
+  "blockedBy": [],
+  "order": 0,
   "readyNow": false,
   "refs": [
    {
@@ -3325,10 +3323,10 @@
   ],
   "updated": "2026-10-14",
   "acceptance": {
-   "done": 0,
+   "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>S1-DEC-020 选定方案 A：身份事件 v1 尚无生产方、消费方与已发布包，就地删除五类载荷里重复信封的 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，<code>IdentityIntegrationEvent</code> 不再实现 Kun 的 <code>IIntegrationEvent</code>；三项只由 Qian.Events 写入端生成在信封上，消费端从信封取。「破坏性变化升 v2」自首个发布版本起生效。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：五类身份事件载荷与 Schema 都不含 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，Schema 成员与源生成 JSON 属性一致，<code>IdentityIntegrationEvent</code> 不实现 <code>IIntegrationEvent</code>，通过 PublicAPI 分析器</li>\n<li class='chk'><span class='box'></span>UT：经 Qian.Events 写入端发布的身份事件，三项只出现在信封上：event_id、occurred_at 由写入端生成，tenant_id 取当前租户，平台级事件为 null</li>\n<li class='chk'><span class='box'></span>文档：ADR-008、contracts/identity/v1/README.md 与包 README / AGENTS.md 记载 S1-DEC-020 结论</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：按 S1-DEC-020 方案 A 就地修正身份事件 v1 载荷</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-DEC-020 选定方案 A：身份事件 v1 尚无生产方、消费方与已发布包，就地删除五类载荷里重复信封的 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，<code>IdentityIntegrationEvent</code> 不再实现 Kun 的 <code>IIntegrationEvent</code>；三项只由 Qian.Events 写入端生成在信封上，消费端从信封取。「破坏性变化升 v2」自首个发布版本起生效。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：五类身份事件载荷与 Schema 都不含 <code>event_id</code>、<code>occurred_at</code>、<code>tenant_id</code>，Schema 成员与源生成 JSON 属性一致，<code>IdentityIntegrationEvent</code> 不实现 <code>IIntegrationEvent</code>，通过 PublicAPI 分析器</li>\n<li class='chk done'><span class='box'>✓</span>UT：经 Qian.Events 写入端发布的身份事件，三项只出现在信封上：event_id、occurred_at 由写入端生成，tenant_id 取当前租户，平台级事件为 null</li>\n<li class='chk done'><span class='box'>✓</span>文档：ADR-008、contracts/identity/v1/README.md 与包 README / AGENTS.md 记载 S1-DEC-020 结论</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-14 claude：创建任务</li>\n<li>2026-10-14 claude：开始：按 S1-DEC-020 方案 A 就地修正身份事件 v1 载荷</li>\n<li>2026-10-14 claude：实现完成待评审：五份身份 Schema 与载荷类型去掉 event_id、occurred_at、tenant_id，IdentityIntegrationEvent 不再实现 IIntegrationEvent，PublicAPI 已登记；身份契约测试补 Schema 与源生成属性逐一比对，Qian.Events.Tests 新增写入端端到端用例，CRM 事件目录断言收紧为任何载荷不得声明事件标识与发生时间。整解 Release 构建零警告，依赖与文档门禁通过；Identity 10、Events 17、Data.Abstractions 75、CRM 28 项零失败</li>\n</ul>",
   "file": "pm/tasks/S1-IDP-011.md"
  },
  {
