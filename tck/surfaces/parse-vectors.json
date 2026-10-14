@@ -1,5 +1,18 @@
 [
   { "name": "yaml-core-scalars", "source": "hex: 0x10\noctal: 0o10\nbinary: 0b10\nstring: !!str 12\nnumber: !!int \"12\"\n", "data": { "hex": 16, "octal": 8, "binary": "0b10", "string": "12", "number": 12 } },
   { "name": "empty-yaml", "source": "", "data": null },
-  { "name": "yaml-escaped-surrogate-pairs", "source": "pair: \"\\ud83d\\ude00\"\nlong: \"\\U0001F600\"\nmixed: \"\\ud83d\\U0000DE00\"\n", "data": { "pair": "😀", "long": "😀", "mixed": "😀" } }
+  { "name": "yaml-escaped-surrogate-pairs", "source": "pair: \"\\ud83d\\ude00\"\nlong: \"\\U0001F600\"\nmixed: \"\\ud83d\\U0000DE00\"\n", "data": { "pair": "😀", "long": "😀", "mixed": "😀" } },
+  { "name": "yaml-explicit-tags", "source": "a: !!str 1\nb: ! 12\nc: !!float 1\nd: !!bool true\ne: !!null\n", "data": {"a": "1", "b": "12", "c": 1, "d": true, "e": null} },
+  { "name": "yaml-hex-octal-rounding", "source": "a: 0x20000000000003\nb: 0o400000000000000003\n", "data": {"a": 9007199254740996, "b": 9007199254740996} },
+  { "name": "yaml-null-and-tilde-keys", "source": "null: 1\n~: 2\n", "data": {"null": 1, "~": 2} },
+  { "name": "yaml-crlf-and-bom", "source": "\ufeffa: 1\r\nb: 2\r\n", "data": {"a": 1, "b": 2} },
+  { "name": "yaml-explicit-document", "source": "---\na: 1\n...\n# 结束\n...\n", "data": {"a": 1} },
+  { "name": "yaml-block-scalar-final-newline", "source": "a: |\n  x", "data": {"a": "x\n"} },
+  { "name": "yaml-tab-in-block-scalar", "source": "a: |\n  x\n  \ty\n", "data": {"a": "x\n\ty\n"} },
+  { "name": "yaml-flow-closing-at-indent", "source": "a:\n  b: [1,\n    2\n  ]\n", "data": {"a": {"b": [1, 2]}} },
+  { "name": "yaml-flow-depth-64", "source": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]\n", "data": [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]] },
+  { "name": "yaml-block-depth-64", "source": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - x\n", "data": [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[["x"]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]] },
+  { "name": "yaml-flow-empty-key", "source": "a: {: 1}\n", "data": {"a": {"": 1}} },
+  { "name": "yaml-escaped-line-break", "source": "a: \"x\\\n  y\"\n", "data": {"a": "xy"} },
+  { "name": "yaml-tab-after-dash", "source": "a:\n  - \tb\n  - \t\"c\"\nd: \t!!str e\n", "data": {"a": ["b", "c"], "d": "e"} }
 ]

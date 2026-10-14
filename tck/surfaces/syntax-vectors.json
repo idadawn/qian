@@ -1,0 +1,594 @@
+[
+  {
+    "name": "yaml-unclosed-double-quote",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nb: \"x\n  y\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-unclosed-single-quote",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nb: 'x\n  y\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-unclosed-quote-without-final-newline",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nb: \"x",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-invalid-escape-inside-quote",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nb: \"x\n  \\q\"\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-underindented-double-quote",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a:\n  b: \"x\n  y\"\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-underindented-single-quote",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a:\n  b: 'x\n  y'\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-underindented-quote-after-escaped-quote",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a:\n  b: \"x\\\"\n  y\"\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-escaped-line-break-before-empty-line",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: \"x\\\n\n  y\"\n",
+    "line": 1,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-unclosed-flow-sequence",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: [1,\n  2,\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-unclosed-flow-without-final-newline",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: [1,\n  2,",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-unclosed-flow-mapping",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: {b: 1,\n  c: 2\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-underindented-flow",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a:\n  b: [1,\n  2]\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-nested-flow-closing-at-indent",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a:\n  b: [[1,\n    2\n  ]]\n",
+    "line": 4,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-tab-indentation",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a:\n\tb: 1\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-tab-after-indentation-spaces",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a:\n  b: 1\n  \tc: 2\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-tab-after-dash-before-tag",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "- \t!!str a\n",
+    "line": 1,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-tab-after-dash-before-compact-mapping",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "- \ta: 1\n",
+    "line": 1,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-multiline-plain-key",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nb\n c: 2\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-plain-key-ended-by-indentation",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "x:\n  a: 1\n  b\n  c: 2\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-multiline-quoted-first-key",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "\"b\n c\n d\": 2\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-multiline-quoted-later-key",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\n\"b\n c\": 2\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-colon-on-next-line",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nkey\n : value\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-colon-on-next-line-after-quoted-key",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\n\"key\"\n : value\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-second-document",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\n---\nb: 2\n",
+    "line": 2,
+    "message": "YAML 只能包含一个文档。"
+  },
+  {
+    "name": "yaml-content-after-document-end",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\n...\nb: 2\n",
+    "line": 3,
+    "message": "YAML 只能包含一个文档。"
+  },
+  {
+    "name": "yaml-second-document-before-its-errors",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\n---\nb: \"x\n",
+    "line": 2,
+    "message": "YAML 只能包含一个文档。"
+  },
+  {
+    "name": "yaml-document-marker-inside-quote",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: \"x\n---\nb: 1\n",
+    "line": 2,
+    "message": "YAML 只能包含一个文档。"
+  },
+  {
+    "name": "yaml-directive",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "%YAML 1.2\n---\na: 1\n",
+    "line": 1,
+    "message": "不支持 YAML 指令（以 % 开头的行）。"
+  },
+  {
+    "name": "yaml-directive-after-content",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\n%TAG ! x\n",
+    "line": 2,
+    "message": "不支持 YAML 指令（以 % 开头的行）。"
+  },
+  {
+    "name": "yaml-nul",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nb: x\u0000\n",
+    "line": 2,
+    "message": "YAML 不能含 NUL、单独的回车符、U+0085、U+2028 或 U+2029。"
+  },
+  {
+    "name": "yaml-lone-carriage-return",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\rb: 2\n",
+    "line": 1,
+    "message": "YAML 不能含 NUL、单独的回车符、U+0085、U+2028 或 U+2029。"
+  },
+  {
+    "name": "yaml-next-line",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nb: x\u0085\n",
+    "line": 2,
+    "message": "YAML 不能含 NUL、单独的回车符、U+0085、U+2028 或 U+2029。"
+  },
+  {
+    "name": "yaml-line-separator",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\nb: x\u2028\n",
+    "line": 2,
+    "message": "YAML 不能含 NUL、单独的回车符、U+0085、U+2028 或 U+2029。"
+  },
+  {
+    "name": "yaml-duplicate-nested-before-outer",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a:\n  x: 1\n  x: 2\na: 3\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-duplicate-outer-before-nested",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\na:\n  x: 1\n  x: 2\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-duplicate-quoted-and-plain",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "1: a\n\"1\": b\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-duplicate-empty-keys-in-flow",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "{: 1, : 2}\n",
+    "line": 1,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-empty-key",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: 1\n: 2\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-nested-empty-key",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "x:\n  : 1\n  b: 2\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-explicit-empty-key",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "? \n: 1\n",
+    "line": 1,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-alias",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: &x 1\nb: *x\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "yaml-syntax-error-precedes-alias",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: &x 1\nb: *x\nc: \"x\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-alias-precedes-duplicate",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: &x 1\na: *x\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "yaml-alias-key-before-colon",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: &x 1\n*x: 2\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-flow-depth-65",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "yaml-block-depth-65",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - x\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "yaml-explicit-int-mismatch",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: !!int x\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "yaml-explicit-int-trailing-newline",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: !!int \"12\\n\"\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "yaml-custom-tag",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: !custom x\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "yaml-infinity",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: .inf\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "yaml-bom-keeps-lines",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "\ufeffa: 1\nb: \"x\n",
+    "line": 2,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-literal-first-line-only-spaces",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: |\n  \n  x\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-folded-leading-blank-lines",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: >\n\n  \n",
+    "line": 4,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-flow-value-then-colon",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: []: b\n",
+    "line": 1,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "yaml-anchored-value-in-flow-mapping",
+    "file": "values.yml",
+    "markdown": false,
+    "source": "a: {x: &a 1, y: 2}\n",
+    "line": 1,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "front-matter-tab-indentation",
+    "file": "guide.md",
+    "markdown": true,
+    "source": "---\nname: guide\n\tdescription: x\n---\n\n正文\n",
+    "line": 3,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "front-matter-content-after-document-end",
+    "file": "guide.md",
+    "markdown": true,
+    "source": "---\nname: guide\n...\ndescription: x\n---\n\n正文\n",
+    "line": 4,
+    "message": "YAML 只能包含一个文档。"
+  },
+  {
+    "name": "front-matter-unclosed-flow",
+    "file": "guide.md",
+    "markdown": true,
+    "source": "---\nname: guide\ndescription: [x\n---\n\n正文\n",
+    "line": 4,
+    "message": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "json-non-finite",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\n  \"a\": 1e999\n}\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "json-non-finite-precedes-later-syntax-error",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\n  \"a\": 1e999,\n  \"b\": \n}\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "json-syntax-error-precedes-later-non-finite",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\n  \"a\": tru,\n  \"b\": 1e999\n}\n",
+    "line": 2,
+    "message": "JSON 语法无效。"
+  },
+  {
+    "name": "json-non-finite-at-end-of-input",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\n  \"a\": 1e999",
+    "line": 2,
+    "message": "JSON 语法无效。"
+  },
+  {
+    "name": "json-non-finite-root-at-end-of-input",
+    "file": "values.json",
+    "markdown": false,
+    "source": "1e999",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "json-non-finite-before-invalid-character",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\n  \"a\": 1e999x\n}\n",
+    "line": 2,
+    "message": "JSON 语法无效。"
+  },
+  {
+    "name": "json-non-finite-before-comment",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\n  \"a\": 1e999/* c */\n}\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "json-non-finite-before-extra-bracket",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\n  \"a\": 1e999]\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "json-depth-65",
+    "file": "values.json",
+    "markdown": false,
+    "source": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "json-depth-65-empty-object",
+    "file": "values.json",
+    "markdown": false,
+    "source": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[{}]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "json-syntax-error-precedes-depth",
+    "file": "values.json",
+    "markdown": false,
+    "source": "[\n  tru,\n  [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]\n]\n",
+    "line": 2,
+    "message": "JSON 语法无效。"
+  },
+  {
+    "name": "json-depth-precedes-syntax-error",
+    "file": "values.json",
+    "markdown": false,
+    "source": "[\n  [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[\n  tru\n",
+    "line": 1,
+    "message": "文件语法、大小、嵌套深度或值无效。"
+  },
+  {
+    "name": "json-trailing-content",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{}\n{}\n",
+    "line": 2,
+    "message": "JSON 语法无效。"
+  },
+  {
+    "name": "json-trailing-content-precedes-surrogate",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\"a\": \"\\ud800\"}\nx\n",
+    "line": 2,
+    "message": "JSON 语法无效。"
+  },
+  {
+    "name": "json-unclosed-at-end-of-input",
+    "file": "values.json",
+    "markdown": false,
+    "source": "{\"a\":\n",
+    "line": 2,
+    "message": "JSON 语法无效。"
+  },
+  {
+    "name": "json-bom-keeps-lines",
+    "file": "values.json",
+    "markdown": false,
+    "source": "\ufeff{\n  \"a\": tru\n}\n",
+    "line": 2,
+    "message": "JSON 语法无效。"
+  }
+]
