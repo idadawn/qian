@@ -70,14 +70,16 @@ export class PluginLoader {
  async #stop(node:Node):Promise<void>{const group=node.group;if(!group)return;group.active=false;group.closed=true;this.#signal();try{await group.backend?.stop();}catch(error){node.failure=node.failure?new AggregateError([node.failure,error],'撤销失败'):error;this.#report(error);}finally{node.group=undefined;}}
  async #disposeEffects(group:Group):Promise<void>{const errors:unknown[]=[];for(const effect of group.effects.splice(0).reverse())try{await effect();}catch(error){errors.push(error);}if(errors.length)throw new AggregateError(errors,'副作用撤销失败。');}
  async #reconcile(signal?:AbortSignal):Promise<void>{
-  await this.#cleanPending();while(!this.#disposed){const node=this.#nodes.find(n=>!n.removing&&n.state==='Pending'&&n.inject.every(k=>this.#find(k,n.entry.scope)));if(!node)return;signal?.throwIfAborted();
+  while(!this.#disposed){await this.#cleanPending();
+   // 清理等待撤销期间，别的调用方可能经 replace、撤销或 restriction 又让依赖者回到 Pending；旧 group 撤销完之前不能重新 apply，否则旧效果与旧注册泄漏，新 apply 的 provide 还会撞冲突。
+   if(this.#nodes.some(n=>n.state==='Pending'&&n.group))continue;
+   const node=this.#nodes.find(n=>!n.removing&&n.state==='Pending'&&n.inject.every(k=>this.#find(k,n.entry.scope)));if(!node)return;signal?.throwIfAborted();
    const group={entry:node.entry,active:false,closed:false,effects:[],ordinals:new Map()} as unknown as Group;group.context=this.#context({group,scope:node.entry.scope});node.group=group;node.dependencies=node.inject.map(k=>this.#find(k,node.entry.scope)!);node.state='Applying';node.sequence=++this.#sequence;
    try{group.backend=this.#backend.start(()=>Promise.resolve(node.definition.plugin.apply(group.context,node.entry.config)),()=>this.#disposeEffects(group));await group.backend.ready;signal?.throwIfAborted();
     if(!node.provides.every(k=>this.#services.some(s=>s.key===k&&s.view.scope===node.entry.scope&&s.view.group===group)))throw new Error('条目未注册声明的 provides。');
     if(!node.dependencies.every(d=>this.#find(d.key,node.entry.scope,{group,scope:node.entry.scope})===d))throw new Error('Apply 期间改变了自身依赖可见性。');
     node.state='Ready';group.active=true;this.#notify();
    }catch(error){node.failure=error;node.state='Failed';await this.#stop(node);if(signal?.aborted)throw error;}
-   await this.#cleanPending();
   }
  }
  #context(view:View):Context{
