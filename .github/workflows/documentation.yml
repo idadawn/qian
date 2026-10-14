@@ -2,9 +2,9 @@ name: documentation
 on:
   push:
     branches: [main]
-    paths: ['packages/**', 'plugins/**', 'profiles/**', 'src/**', 'tools/Qian.Docs.Tool/**', 'tests/Qian.Docs.Tests/**', 'schemas/**', '*.props', '*.targets', 'Qian.slnx', 'global.json', 'package.json', 'pnpm*', '.github/workflows/documentation.yml']
+    paths: ['packages/**', 'plugins/**', 'profiles/**', 'src/**', 'tools/Qian.Docs.Tool/**', 'tests/Qian.Docs.Tests/**', 'schemas/**', 'docs/generated/**', '*.props', '*.targets', 'Qian.slnx', 'global.json', 'package.json', 'pnpm*', '.github/workflows/documentation.yml']
   pull_request:
-    paths: ['packages/**', 'plugins/**', 'profiles/**', 'src/**', 'tools/Qian.Docs.Tool/**', 'tests/Qian.Docs.Tests/**', 'schemas/**', '*.props', '*.targets', 'Qian.slnx', 'global.json', 'package.json', 'pnpm*', '.github/workflows/documentation.yml']
+    paths: ['packages/**', 'plugins/**', 'profiles/**', 'src/**', 'tools/Qian.Docs.Tool/**', 'tests/Qian.Docs.Tests/**', 'schemas/**', 'docs/generated/**', '*.props', '*.targets', 'Qian.slnx', 'global.json', 'package.json', 'pnpm*', '.github/workflows/documentation.yml']
 permissions:
   contents: read
 concurrency:
@@ -37,6 +37,16 @@ jobs:
         run: |
           mkdir -p TestResults
           pnpm exec qian docs generate --profile platform --json > TestResults/docs-report.json 2> TestResults/docs-diagnostics.json || { cat TestResults/docs-diagnostics.json; exit 1; }
+      # G2 文档新鲜度（ADR-020 D20.9、组件模型规格 §10.3、PRD §14 C18）：上一步已按当前源码重写 docs/generated，有修改或新文件即失败。
+      - name: 派生文档新鲜度：docs/generated 必须与重新生成的结果一致
+        run: |
+          drift="$(git status --porcelain -- docs/generated)"
+          if [ -n "$drift" ]; then
+            echo "$drift"
+            git --no-pager diff --stat -- docs/generated
+            echo "::error::docs/generated 与源码派生结果不一致：先 pnpm --filter qian... build，再 pnpm exec qian docs generate --profile platform，提交 docs/generated；也可下载本次运行的 derived-docs-and-events 产物（ADR-020 D20.9 / 组件模型规格 §10.3 G2）。"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
