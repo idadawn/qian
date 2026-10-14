@@ -90,5 +90,5 @@
 
 | 任务 | 状态 | 负责人 | 更新 |
 |---|---|---|---|
-| [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-14 |
+| [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-15 |
 | [S1-QA-010](tasks/S1-QA-010.md) 验收整改：Filter 错误路径、manifest 契约标题、文档站预算与过期口径（YUE-005 / DATA-004 / KUN-010 复核） | review | cody | 2026-10-15 |
