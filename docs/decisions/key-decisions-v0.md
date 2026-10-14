@@ -436,3 +436,9 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
   - 实现说明（S1-RT-019）：幂等语义与 Kun 幂等消费相同（成功后才写回执、失败不留标记），按短事务登记「执行中」→ 不占连接执行 → 写完成或撤销三段实现，同键请求仍在执行时返回 409，只读能力（`sideEffect: read`）忽略幂等键；回执存 `plugin_qian_capabilities.invoke_receipts`（租户 RLS），不用 R63 的 Redis 键——R63 针对事件消费只需「已处理」标记，HTTP 重放要原样返回首次响应；Kun 未改动，不开 KUN 任务。
 - R76：S1-RT-006 验收第 3 项按「机制完成」勾选；平台挂载路径（`Mount` 与 Registry scope Reconciler）强制套用 `OpenApiContractPlugin` / `GrpcContractPlugin` 归 S1-RT-005，S1-RT-004 的 Reconciler 复用同一包装。
 - R77：目录四类 kind 的归属：事件类目录归 S1-EVT-003；实体类目录暂无任务，由产品负责人分配（建议 S1-RT-007 或 DATA 系列）；交付前 `?kind=event|entity` 返回空集合并在 README 注明。
+
+### 验收复核裁决 R78（S1-QA-010 复核，2026-10-15）
+
+由 Claude 在产品负责人要求「验收 S1-QA-010」后作默认裁决，未经逐条确认；整改退回 `pm/tasks/S1-QA-010.md`，有异议时新建决策任务。
+
+- R78：契约目录的冻结状态统一显式写 `x-status: frozen`，不以「删除 `draft`」表示：contracts/v0 在 S1-AGT-002 去 draft 时改写为 `frozen`（v0 README §2、§7 与 R53 补注、`ContractSchemaTests` 届时改断言 `frozen`）；contracts/data/v1 已按此标记，README 写明批准依据为本条，并更正 `$id` 陈述（data-types / data-connection 两份为 `schemas/data/v1/` 前缀，趁零消费方改回 `contracts/data/v1/` 并在 PR 说明）；data/v1 在零代码消费方时冻结是复核人在 S1-QA-010 验收里提出的要求（C# 契约 `Qian.Data.Abstractions` 已发布为消费边界），作为 R53「消费方全部进入 review 后才冻结」前提的例外记录；data/v1 冻结信封 `$ref` v0 草稿信封列为已知例外，v0 event-envelope 冻结时复核 data/v1 信封。
