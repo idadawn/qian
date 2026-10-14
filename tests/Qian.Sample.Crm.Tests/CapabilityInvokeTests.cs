@@ -126,63 +126,68 @@ public sealed partial class CustomerCommandTests
     [Fact]
     public async Task 幂等键重放返回首次成功响应且不再执行_同键异体或执行中409_非法键400_失败不留回执_窗口过期后重新执行_并发同键只执行一次()
     {
-        await using var host = await Start(capabilities: true);
-        var key = Guid.CreateVersion7(); var command = new CreateCustomerCommand(Guid.CreateVersion7(), "idempotent customer");
-        using var first = await InvokeKeyed(host, A, command, key.ToString());
+        // 回放成功由 internal 分级的探针承担：CRM 新建客户的响应含客户名称、标为 pii，回执不存响应体（见下一个用例）。
+        var mirror = new ReceiptProbe("customer.mirror", "internal", 16);
+        await using var host = await Start(capabilities: true, probes: [mirror]);
+        var key = Guid.CreateVersion7(); var body = ProbeInput("idempotent probe");
+        using var first = await InvokeProbe(host, mirror.Id, body, key.ToString());
         Assert.True(first.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await first.Content.ReadAsStringAsync(Ct));
         Assert.False(first.Headers.Contains("Idempotent-Replayed"));
-        var body = await first.Content.ReadAsStringAsync(Ct);
-        // 结构化字段的带引号形式与裸 UUID 是同一个键。
-        using var replay = await InvokeKeyed(host, A, command, "\"" + key + "\"");
+        var response = await first.Content.ReadAsStringAsync(Ct);
+        // 结构化字段的带引号形式与裸 UUID 是同一个键；探针每次执行都生成新 ID，响应逐字节相同说明是回放。
+        using var replay = await InvokeProbe(host, mirror.Id, body, "\"" + key + "\"");
         Assert.Equal(HttpStatusCode.OK, replay.StatusCode);
         Assert.Equal("true", Assert.Single(replay.Headers.GetValues("Idempotent-Replayed")));
-        Assert.Equal(body, await replay.Content.ReadAsStringAsync(Ct));
-        // CRM 业务幂等也会返回原客户，但每次执行都入审计；审计只有一条说明重放没有执行绑定。
-        await AssertWrites(host, A, customers: 1, audit: 1);
-        // 同键异体：用 CRM 本会接受的新业务键，409 只能来自回执层；若回执层放行，客户与审计都会增加。
-        using var conflict = await InvokeKeyed(host, A, new CreateCustomerCommand(Guid.CreateVersion7(), "another customer"), key.ToString());
+        Assert.Equal(response, await replay.Content.ReadAsStringAsync(Ct));
+        Assert.Equal(1, mirror.Calls);
+        // 同键异体：409 来自回执层，探针不执行。
+        using var conflict = await InvokeProbe(host, mirror.Id, ProbeInput("another probe"), key.ToString());
         await ErrorDetail(conflict, HttpStatusCode.Conflict, "CONFLICT");
         foreach (var invalid in new[] { "not-a-uuid", Guid.Empty.ToString(), "", "{" + key + "}", key + ", " + Guid.CreateVersion7() })
         {
-            using var rejected = await InvokeKeyed(host, A, command, invalid);
+            using var rejected = await InvokeProbe(host, mirror.Id, body, invalid);
             await ErrorDetail(rejected, HttpStatusCode.BadRequest, "BAD_REQUEST");
         }
-        await AssertWrites(host, A, customers: 1, audit: 1);
+        Assert.Equal(1, mirror.Calls);
 
-        // 回放窗口过期后同键重新执行（业务幂等返回原客户，审计增加一条）。
-        await Admin("UPDATE plugin_qian_capabilities.invoke_receipts SET expires_at = now() - interval '1 second';");
-        using var expired = await InvokeKeyed(host, A, command, key.ToString());
+        // 回放窗口过期后同键重新执行。
+        await Admin($"UPDATE plugin_qian_capabilities.invoke_receipts SET expires_at = now() - interval '1 second' WHERE idempotency_key = '{key}';");
+        using var expired = await InvokeProbe(host, mirror.Id, body, key.ToString());
         Assert.Equal(HttpStatusCode.OK, expired.StatusCode); Assert.False(expired.Headers.Contains("Idempotent-Replayed"));
-        Assert.Equal(body, await expired.Content.ReadAsStringAsync(Ct));
-        await AssertWrites(host, A, customers: 1, audit: 2);
+        Assert.NotEqual(response, await expired.Content.ReadAsStringAsync(Ct));
+        Assert.Equal(2, mirror.Calls);
 
         // 同键请求仍在执行（复制同一主体、同一输入的登记行，响应为空、租约未到期）：返回 409，不执行；租约到期后标记失效，同键重新执行并写完成。
         var pending = Guid.CreateVersion7();
         await Admin($"INSERT INTO plugin_qian_capabilities.invoke_receipts (tenant_id, subject_key, capability_id, idempotency_key, request_sha256, response, created_at, expires_at) " +
             $"SELECT tenant_id, subject_key, capability_id, '{pending}', request_sha256, NULL, now(), now() + interval '5 minutes' FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{key}';");
-        using var inFlight = await InvokeKeyed(host, A, command, pending.ToString());
+        using var inFlight = await InvokeProbe(host, mirror.Id, body, pending.ToString());
         await ErrorDetail(inFlight, HttpStatusCode.Conflict, "CONFLICT");
-        await AssertWrites(host, A, customers: 1, audit: 2);
+        Assert.Equal(2, mirror.Calls);
         await Admin($"UPDATE plugin_qian_capabilities.invoke_receipts SET expires_at = now() - interval '1 second' WHERE idempotency_key = '{pending}';");
-        using var leaseExpired = await InvokeKeyed(host, A, command, pending.ToString());
+        using var leaseExpired = await InvokeProbe(host, mirror.Id, body, pending.ToString());
         Assert.Equal(HttpStatusCode.OK, leaseExpired.StatusCode); Assert.False(leaseExpired.Headers.Contains("Idempotent-Replayed"));
-        await AssertWrites(host, A, customers: 1, audit: 3);
+        Assert.Equal(3, mirror.Calls);
         var settled = Assert.Single(await AdminRows($"SELECT response, expires_at > now() + interval '23 hours' FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{pending}'"));
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse((string)settled[0]), JsonNode.Parse(await leaseExpired.Content.ReadAsStringAsync(Ct)))); Assert.True((bool)settled[1]);
 
-        // 执行失败不留回执：业务幂等键相同而名称不同，CRM 返回 409；撤销登记后，同一个幂等键带正确的输入可以重新执行。
+        // 执行失败不留回执：CRM 新建客户的业务幂等键相同而名称不同，CRM 返回 409；撤销登记后，同一个幂等键带正确的输入可以重新执行。
+        var command = new CreateCustomerCommand(Guid.CreateVersion7(), "idempotent customer");
+        using (var created = await InvokeKeyed(host, A, command, Guid.CreateVersion7().ToString()))
+            Assert.True(created.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await created.Content.ReadAsStringAsync(Ct));
+        await AssertWrites(host, A, customers: 1, audit: 1);
         var failing = Guid.CreateVersion7();
         using var business = await InvokeKeyed(host, A, command with { Name = "renamed customer" }, failing.ToString());
         await ErrorDetail(business, HttpStatusCode.Conflict, "CONFLICT");
         Assert.Empty(await AdminRows($"SELECT 1 FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{failing}'"));
-        await AssertWrites(host, A, customers: 1, audit: 3);
+        await AssertWrites(host, A, customers: 1, audit: 1);
         using var recovered = await InvokeKeyed(host, A, command, failing.ToString());
         Assert.Equal(HttpStatusCode.OK, recovered.StatusCode); Assert.False(recovered.Headers.Contains("Idempotent-Replayed"));
-        await AssertWrites(host, A, customers: 1, audit: 4);
+        await AssertWrites(host, A, customers: 1, audit: 2);
 
         // 同键并发：登记经事务级 advisory lock 串行，只有一个请求执行；另一个回放其结果，或在其仍执行时得到 409。
-        var concurrent = Guid.CreateVersion7(); var other = new CreateCustomerCommand(Guid.CreateVersion7(), "concurrent customer");
-        var responses = await Task.WhenAll(InvokeKeyed(host, A, other, concurrent.ToString()), InvokeKeyed(host, A, other, concurrent.ToString()));
+        var concurrent = Guid.CreateVersion7(); var other = ProbeInput("concurrent probe");
+        var responses = await Task.WhenAll(InvokeProbe(host, mirror.Id, other, concurrent.ToString()), InvokeProbe(host, mirror.Id, other, concurrent.ToString()));
         try
         {
             var executed = Assert.Single(responses, item => item.StatusCode == HttpStatusCode.OK && !item.Headers.Contains("Idempotent-Replayed"));
@@ -195,16 +200,17 @@ public sealed partial class CustomerCommandTests
             }
         }
         finally { foreach (var item in responses) item.Dispose(); }
-        await AssertWrites(host, A, customers: 2, audit: 5);
+        Assert.Equal(4, mirror.Calls);
     }
 
     [Fact]
     public async Task 回执按数据分级与上限决定是否保存响应体_不保存时同键重放返回409且不再执行_窗口过期后重新执行_表上有响应体硬上限()
     {
-        // 默认上限 64 KiB：pii 能力的小响应按分级不保存；internal 能力约 66 KB 的响应按大小不保存。
+        // 默认上限 64 KiB：pii 能力的小响应按分级不保存；internal 能力约 66 KB 的响应按大小不保存；public 能力的小响应保存。
         var pii = new ReceiptProbe("customer.export", "pii", 64);
         var bulk = new ReceiptProbe("customer.bulk", "internal", 66 * 1024);
-        await using var host = await Start(capabilities: true, probes: [pii, bulk]);
+        var directory = new ReceiptProbe("customer.directory", "public", 64);
+        await using var host = await Start(capabilities: true, probes: [pii, bulk, directory]);
         foreach (var (probe, reason) in new[] { (pii, "data_classification"), (bulk, "response_too_large") })
         {
             var key = Guid.CreateVersion7();
@@ -235,6 +241,38 @@ public sealed partial class CustomerCommandTests
             Assert.Equal(2, probe.Calls);
         }
 
+        // public 分级：保存响应体，同键原样回放、不再执行。
+        var publicKey = Guid.CreateVersion7(); var publicBody = ProbeInput("public probe");
+        using (var stored = await InvokeProbe(host, directory.Id, publicBody, publicKey))
+        using (var replayed = await InvokeProbe(host, directory.Id, publicBody, publicKey))
+        {
+            Assert.True(stored.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await stored.Content.ReadAsStringAsync(Ct));
+            Assert.Equal("true", Assert.Single(replayed.Headers.GetValues("Idempotent-Replayed")));
+            Assert.Equal(await stored.Content.ReadAsStringAsync(Ct), await replayed.Content.ReadAsStringAsync(Ct));
+        }
+        Assert.Equal(1, directory.Calls);
+        var kept = Assert.Single(await AdminRows($"SELECT response IS NOT NULL, withheld IS NULL FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{publicKey}'"));
+        Assert.Equal((true, true), ((bool)kept[0], (bool)kept[1]));
+
+        // 参考应用的 customer.create 响应含客户名称、标为 pii：名称不进回执表，同键重放 409 data_classification，CRM 不再执行（客户与审计不增加）。
+        var name = "pii customer " + Guid.CreateVersion7().ToString("N");
+        var command = new CreateCustomerCommand(Guid.CreateVersion7(), name); var createKey = Guid.CreateVersion7();
+        using (var created = await InvokeKeyed(host, A, command, createKey.ToString()))
+        {
+            Assert.True(created.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await created.Content.ReadAsStringAsync(Ct));
+            Assert.Contains(name, await created.Content.ReadAsStringAsync(Ct), StringComparison.Ordinal);
+        }
+        await AssertWrites(host, A, customers: 1, audit: 1);
+        var receipt = Assert.Single(await AdminRows($"SELECT response IS NULL, withheld FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{createKey}'"));
+        Assert.Equal((true, "data_classification"), ((bool)receipt[0], (string)receipt[1]));
+        Assert.Empty(await AdminRows($"SELECT 1 FROM plugin_qian_capabilities.invoke_receipts WHERE strpos(response, '{name}') > 0"));
+        using (var replay = await InvokeKeyed(host, A, command, createKey.ToString()))
+        {
+            var error = await ErrorDetail(replay, HttpStatusCode.Conflict, "CAPABILITY_REPLAY_UNAVAILABLE");
+            Assert.Contains("data_classification", error.GetProperty("message").GetString(), StringComparison.Ordinal);
+        }
+        await AssertWrites(host, A, customers: 1, audit: 1);
+
         // 表上的检查约束兜住写入前检查之外的写入：响应体超过 1 MiB、或同时带响应体与不保存原因、或原因不在约定集合内，都被拒绝。
         var source = $"FROM plugin_qian_capabilities.invoke_receipts WHERE capability_id = '{pii.Id}' LIMIT 1";
         foreach (var (response, withheld, constraint) in new[] { ("repeat('x', 1048577)", "NULL", "ck_invoke_receipts_response_size"),
@@ -248,27 +286,59 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
-    public async Task 组件配置非默认值生效_目录ttlMs为2500_回执上限1024字节时超限响应不保存而小响应照常重放()
+    public async Task 组件配置非默认值生效_目录ttlMs为2500_回执上限1024字节时恰好1024字节的响应保存并重放_多1字节即不保存()
     {
-        var digest = new ReceiptProbe("customer.digest", "internal", 2048);
-        await using var host = await Start(capabilities: true, probes: [digest], capabilitiesConfig: new { catalogTtlMs = 2500, receiptMaxBytes = 1024 });
+        // 探针响应是 CustomerItem 的 JSON，名称以外的部分长度固定：按名称长度凑出恰好 1024 字节与 1025 字节的响应。
+        var overhead = JsonSerializer.SerializeToUtf8Bytes(new CustomerItem(Guid.Empty, A, ""), CrmCommandJson.Default.CustomerItem).Length;
+        var exact = new ReceiptProbe("customer.digest", "internal", 1024 - overhead);
+        var over = new ReceiptProbe("customer.overflow", "internal", 1025 - overhead);
+        await using var host = await Start(capabilities: true, probes: [exact, over], capabilitiesConfig: new { catalogTtlMs = 2500, receiptMaxBytes = 1024 });
         using (var catalog = await CatalogRequest(host, A, "/api/capabilities"))
         {
             Assert.True(catalog.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await catalog.Content.ReadAsStringAsync(Ct));
             Assert.Equal(2500, (await Json(catalog)).GetProperty("ttlMs").GetInt32());
         }
-        var key = Guid.CreateVersion7(); var body = JsonSerializer.Serialize(new CreateCustomerCommand(Guid.CreateVersion7(), "digest probe"), JsonSerializerOptions.Web);
-        using (var first = await InvokeProbe(host, digest.Id, body, key)) Assert.Equal(HttpStatusCode.OK, first.StatusCode);
-        using (var replay = await InvokeProbe(host, digest.Id, body, key)) await ErrorDetail(replay, HttpStatusCode.Conflict, "CAPABILITY_REPLAY_UNAVAILABLE");
-        Assert.Equal(1, digest.Calls);
-        Assert.Equal("response_too_large", (string)Assert.Single(await AdminRows($"SELECT withheld FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{key}'"))[0]);
-        // CRM 新建客户的响应不到 1024 字节：照常保存并原样重放。
-        var created = Guid.CreateVersion7(); var command = new CreateCustomerCommand(Guid.CreateVersion7(), "small receipt");
-        using var stored = await InvokeKeyed(host, A, command, created.ToString());
-        Assert.Equal(HttpStatusCode.OK, stored.StatusCode);
-        using var replayed = await InvokeKeyed(host, A, command, created.ToString());
-        Assert.Equal("true", Assert.Single(replayed.Headers.GetValues("Idempotent-Replayed")));
-        Assert.Equal(await stored.Content.ReadAsStringAsync(Ct), await replayed.Content.ReadAsStringAsync(Ct));
+        // 恰好等于上限：保存，同键原样回放、不再执行。
+        var key = Guid.CreateVersion7(); var body = ProbeInput("exact probe");
+        using (var stored = await InvokeProbe(host, exact.Id, body, key))
+        using (var replayed = await InvokeProbe(host, exact.Id, body, key))
+        {
+            Assert.True(stored.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await stored.Content.ReadAsStringAsync(Ct));
+            var text = await stored.Content.ReadAsStringAsync(Ct);
+            Assert.Equal(1024, Encoding.UTF8.GetByteCount(text));
+            Assert.Equal("true", Assert.Single(replayed.Headers.GetValues("Idempotent-Replayed")));
+            Assert.Equal(text, await replayed.Content.ReadAsStringAsync(Ct));
+        }
+        Assert.Equal(1, exact.Calls);
+        Assert.Equal(1024, (int)Assert.Single(await AdminRows($"SELECT octet_length(response) FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{key}'"))[0]);
+        // 多 1 字节：只记「已执行」，同键 409 response_too_large。
+        var overKey = Guid.CreateVersion7();
+        using (var first = await InvokeProbe(host, over.Id, body, overKey)) Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        using (var replay = await InvokeProbe(host, over.Id, body, overKey)) await ErrorDetail(replay, HttpStatusCode.Conflict, "CAPABILITY_REPLAY_UNAVAILABLE");
+        Assert.Equal(1, over.Calls);
+        Assert.Equal("response_too_large", (string)Assert.Single(await AdminRows($"SELECT withheld FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{overKey}'"))[0]);
+    }
+
+    [Fact]
+    public async Task 回执上限为0时写类能力的响应一律不保存_public与internal能力同键重放都返回409且不再执行()
+    {
+        var directory = new ReceiptProbe("customer.directory", "public", 0);
+        var mirror = new ReceiptProbe("customer.mirror", "internal", 0);
+        await using var host = await Start(capabilities: true, probes: [directory, mirror], capabilitiesConfig: new { receiptMaxBytes = 0 });
+        foreach (var probe in new[] { directory, mirror })
+        {
+            var key = Guid.CreateVersion7(); var body = ProbeInput("zero limit");
+            using (var first = await InvokeProbe(host, probe.Id, body, key))
+                Assert.True(first.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await first.Content.ReadAsStringAsync(Ct));
+            var row = Assert.Single(await AdminRows($"SELECT response IS NULL, withheld FROM plugin_qian_capabilities.invoke_receipts WHERE idempotency_key = '{key}'"));
+            Assert.Equal((true, "response_too_large"), ((bool)row[0], (string)row[1]));
+            using (var replay = await InvokeProbe(host, probe.Id, body, key))
+            {
+                var error = await ErrorDetail(replay, HttpStatusCode.Conflict, "CAPABILITY_REPLAY_UNAVAILABLE");
+                Assert.Contains("response_too_large", error.GetProperty("message").GetString(), StringComparison.Ordinal);
+            }
+            Assert.Equal(1, probe.Calls);
+        }
     }
 
     [Fact]
@@ -320,7 +390,7 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
-    public async Task 只读能力忽略幂等键_每次执行不存回执不带回放头_聚合OpenAPI只为写类能力声明幂等键()
+    public async Task 只读能力忽略幂等键_每次执行不存回执不带回放头_聚合OpenAPI只为写类能力声明幂等键与不可重放码()
     {
         await using var host = await Start(capabilities: true);
         var key = Guid.CreateVersion7().ToString();
@@ -333,15 +403,29 @@ public sealed partial class CustomerCommandTests
 
         using var document = await CatalogRequest(host, A, "/api/capabilities/openapi.json");
         Assert.Equal(HttpStatusCode.OK, document.StatusCode);
-        var paths = (await Json(document)).GetProperty("paths");
+        var text = await document.Content.ReadAsStringAsync(Ct);
+        // 写类能力的错误响应与幂等键说明都列出不可重放码及其两种 reason。
+        foreach (var expected in new[] { "CAPABILITY_REPLAY_UNAVAILABLE", "response_too_large", "data_classification" })
+            Assert.Contains(expected, text, StringComparison.Ordinal);
+        using var parsed = JsonDocument.Parse(text);
+        var paths = parsed.RootElement.GetProperty("paths");
         var write = paths.GetProperty("/api/capabilities/" + CreateId + "/invoke").GetProperty("post");
-        Assert.Equal("Idempotency-Key", Assert.Single(write.GetProperty("parameters").EnumerateArray()).GetProperty("name").GetString());
+        var parameter = Assert.Single(write.GetProperty("parameters").EnumerateArray());
+        Assert.Equal("Idempotency-Key", parameter.GetProperty("name").GetString());
         Assert.True(write.GetProperty("responses").GetProperty("200").GetProperty("headers").TryGetProperty("Idempotent-Replayed", out _));
+        foreach (var description in new[] { parameter.GetProperty("description").GetString()!, write.GetProperty("responses").GetProperty("default").GetProperty("description").GetString()! })
+        {
+            Assert.Contains("409 CONFLICT", description, StringComparison.Ordinal);
+            Assert.Contains("409 CAPABILITY_REPLAY_UNAVAILABLE", description, StringComparison.Ordinal);
+            Assert.Contains("response_too_large", description, StringComparison.Ordinal);
+            Assert.Contains("data_classification", description, StringComparison.Ordinal);
+        }
         foreach (var read in new[] { ListId, GetId })
         {
             var operation = paths.GetProperty("/api/capabilities/" + read + "/invoke").GetProperty("post");
             Assert.False(operation.TryGetProperty("parameters", out _), read);
             Assert.False(operation.GetProperty("responses").GetProperty("200").TryGetProperty("headers", out _), read);
+            Assert.DoesNotContain("409", operation.GetProperty("responses").GetProperty("default").GetProperty("description").GetString()!, StringComparison.Ordinal);
         }
 
         async Task<JsonElement> ListKeyed(RunningApp running, string idempotencyKey)
@@ -427,7 +511,7 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
-    public async Task 能力上下文随包迁移经迁移器在真实PostgreSQL建表_偏好与回执表强制租户RLS_回执只在本租户可见_重复迁移无操作()
+    public async Task 能力上下文随包迁移经迁移器在真实PostgreSQL建表_偏好与回执表强制租户RLS_回执只在本租户可见_上限约束NOT_VALID_运维清理SQL按租户边界删除过期回执_重复迁移无操作()
     {
         await using var host = await Start(capabilities: true);
         var schema = CapabilitiesDbContext.Schema;
@@ -455,9 +539,10 @@ public sealed partial class CustomerCommandTests
         Assert.Contains(tenantTables, row => (string)row[0] == schema && (string)row[1] == "invoke_receipts");
         Assert.Contains(tenantTables, row => (string)row[0] == schema && (string)row[1] == "navigation_preferences");
         Assert.All(tenantTables, row => Assert.Equal((true, true, "qian_tenant_access(PERMISSIVE), qian_tenant_guard(RESTRICTIVE)"), ((bool)row[2], (bool)row[3], (string)row[4])));
-        // 回执表的响应体硬上限与不保存原因的约束随第二个迁移交付。
-        Assert.Equal(["ck_invoke_receipts_response_size", "ck_invoke_receipts_withheld"],
-            (await AdminRows($"SELECT conname FROM pg_constraint WHERE conrelid = '{schema}.invoke_receipts'::regclass AND contype = 'c' ORDER BY conname")).Select(row => (string)row[0]));
+        // 回执表的响应体硬上限与不保存原因的约束随第二个迁移交付；前者以 NOT VALID 添加（存量行不校验），后者已校验。
+        Assert.Equal([("ck_invoke_receipts_response_size", false), ("ck_invoke_receipts_withheld", true)],
+            (await AdminRows($"SELECT conname, convalidated FROM pg_constraint WHERE conrelid = '{schema}.invoke_receipts'::regclass AND contype = 'c' ORDER BY conname"))
+            .Select(row => ((string)row[0], (bool)row[1])));
 
         var command = new CreateCustomerCommand(Guid.CreateVersion7(), "receipt owner");
         using var invoked = await InvokeKeyed(host, A, command, Guid.CreateVersion7().ToString());
@@ -465,6 +550,32 @@ public sealed partial class CustomerCommandTests
         Assert.Equal(1L, (long)Assert.Single(await AdminRows($"SELECT count(*) FROM {schema}.invoke_receipts WHERE tenant_id = '{A}'"))[0]);
         // 受限业务登录：未设租户与租户 B 都读不到 A 的回执，只有 A 的会话读得到。
         Assert.Equal(0L, await BusinessCount(host, null)); Assert.Equal(0L, await BusinessCount(host, B)); Assert.Equal(1L, await BusinessCount(host, A));
+
+        // docs/ops/configuration-runbook.md 给运维的过期回执清理 SQL 原样执行。A、B 各添一条已过期的回执，A 原有的回执未过期。
+        var runbook = File.ReadAllText(Path.Combine(RepositoryRoot(), "docs/ops/configuration-runbook.md"));
+        var cleanup = runbook.Split("```").Where(block => block.StartsWith("sql", StringComparison.Ordinal) && block.Contains("invoke_receipts", StringComparison.Ordinal))
+            .Select(block => block[3..]).ToArray();
+        var perTenant = Assert.Single(cleanup, block => block.Contains("set_config", StringComparison.Ordinal));
+        var allTenants = Assert.Single(cleanup, block => block.Contains("ctid", StringComparison.Ordinal));
+        foreach (var tenant in new[] { A, B })
+            await Admin($"INSERT INTO {schema}.invoke_receipts (tenant_id, subject_key, capability_id, idempotency_key, request_sha256, response, withheld, created_at, expires_at) " +
+                $"SELECT '{tenant}', subject_key, capability_id, '{Guid.CreateVersion7()}', request_sha256, NULL, withheld, now() - interval '2 days', now() - interval '1 day' " +
+                $"FROM {schema}.invoke_receipts WHERE tenant_id = '{A}' AND expires_at > now();");
+        var census = $"SELECT tenant_id, count(*) FILTER (WHERE expires_at <= now()), count(*) FILTER (WHERE expires_at > now()) FROM {schema}.invoke_receipts GROUP BY tenant_id ORDER BY tenant_id";
+        async Task<(string, long, long)[]> Census() => (await AdminRows(census)).Select(row => ((string)row[0], (long)row[1], (long)row[2])).ToArray();
+        Assert.Equal([(A, 1L, 1L), (B, 1L, 0L)], await Census());
+        // 逐租户的写法：受限业务登录（NOBYPASSRLS）只删得到指定租户的过期回执。
+        await using (var business = new NpgsqlConnection(new NpgsqlConnectionStringBuilder(host.BusinessConnection) { Pooling = false }.ConnectionString))
+        {
+            await business.OpenAsync(Ct);
+            await using var purge = new NpgsqlCommand(perTenant.Replace("<租户 ID>", A, StringComparison.Ordinal), business);
+            await purge.ExecuteNonQueryAsync(Ct);
+        }
+        Assert.Equal([(A, 0L, 1L), (B, 1L, 0L)], await Census());
+        // 有 BYPASSRLS 的维护角色：分批删除全部租户的过期回执，重复执行到删除 0 行；未过期的回执保留。
+        Assert.Equal(1, await Admin(allTenants));
+        Assert.Equal(0, await Admin(allTenants));
+        Assert.Equal([(A, 0L, 1L)], await Census());
 
         var again = await host.App.Services.GetRequiredService<IDataMigrator>().MigrateAsync(Ct);
         Assert.Empty(Assert.Single(again, report => report.ContextType == typeof(CapabilitiesDbContext)).Applied);
@@ -477,7 +588,8 @@ public sealed partial class CustomerCommandTests
         Assert.Equal("allow", entry.GetProperty("policyHint").GetString());
         Assert.Equal(idempotent, entry.GetProperty("idempotent").GetBoolean());
         Assert.Equal([scope], entry.GetProperty("requiredScopes").EnumerateArray().Select(item => item.GetString()!));
-        Assert.Equal("internal", entry.GetProperty("dataClassification").GetString());
+        // 三个 CRM 能力的响应都含客户名称（个人信息）。
+        Assert.Equal("pii", entry.GetProperty("dataClassification").GetString());
         Assert.Equal("low", entry.GetProperty("costTier").GetString());
         Assert.True(entry.GetProperty("agent").GetProperty("expose").GetBoolean());
         Assert.False(entry.GetProperty("agent").GetProperty("requiresConfirmation").GetBoolean());
@@ -556,13 +668,18 @@ public sealed partial class CustomerCommandTests
         public bool IsAuthenticated => true;
     }
 
-    private static Task<HttpResponseMessage> InvokeProbe(RunningApp host, string id, string body, Guid key)
+    private static Task<HttpResponseMessage> InvokeProbe(RunningApp host, string id, string body, Guid key) => InvokeProbe(host, id, body, key.ToString());
+
+    private static Task<HttpResponseMessage> InvokeProbe(RunningApp host, string id, string body, string key)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/capabilities/" + id + "/invoke") { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(A, "crm.read crm.write"));
-        Assert.True(request.Headers.TryAddWithoutValidation("Idempotency-Key", key.ToString()));
+        Assert.True(request.Headers.TryAddWithoutValidation("Idempotency-Key", key));
         return host.Send(request);
     }
+
+    // 回执探针的输入与 customer.create 同形；每次生成新的业务幂等键。
+    private static string ProbeInput(string name) => JsonSerializer.Serialize(new CreateCustomerCommand(Guid.CreateVersion7(), name), JsonSerializerOptions.Web);
 
     private static Task<HttpResponseMessage> InvokeKeyed(RunningApp host, string tenant, CreateCustomerCommand command, string key)
     {

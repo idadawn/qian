@@ -14,10 +14,10 @@ updated: 2026-10-15
 组件把自己的能力登记进**能力目录**（[qian.capabilities](/components/platform/qian.capabilities)），分四类：命令、查询、事件、实体。
 
 - 组件在 `Apply` 中用 `ctx.ProvideCapability<TRequest, TResponse>()` 登记能力，绑定携带源生成的契约，请求与响应的 JSON Schema 由类型信息派生；目录只列这些绑定里、当前 scope 已挂载且 Ready 的能力。
-- 平台宿主调用 `services.AddQianCapabilities()` 后，登记时就生成目录条目并预编译输入校验器。不合格的契约（输入含 `tenantId` 等租户字段、Schema 无法可靠校验）抛 `CapabilityContractException`，带组件 ID、能力短名与 JSON Pointer（如 `qian.sample.crm/customer.export#/inputSchema/properties/tenantId`），组件挂载失败；问题在登记时暴露，不会留到第一次调用。
+- platform profile 宿主必须调用 `services.AddQianCapabilities()`，登记时就生成目录条目并预编译输入校验器（漏掉时退化为首次读目录或调用时才编译）。不合格的契约（输入含 `tenantId` 等租户字段、Schema 无法可靠校验）抛 `CapabilityContractException`，带组件 ID、能力短名与 JSON Pointer（如 `qian.sample.crm/customer.export#/inputSchema/properties/tenantId`），组件挂载失败；问题在登记时暴露，不会留到第一次调用。
 - `GET /api/capabilities?kind=command|query|event|entity&q=` 按调用者权限与当前 scope 的 restrict 过滤，被过滤的项不出现；响应信封 `{ items, ttlMs, cacheScope: "private" }` 的冻结 Schema 是 `contracts/v0/capability-catalog.schema.json`。
 - `POST /api/capabilities/{plugin}/{name}/invoke` 是通用执行入口，规则见下节。
-- `GET /api/capabilities/openapi.json` 聚合全部已挂载组件的 OpenAPI 3.1（需认证，不等于公开 OpenAPI）；写类能力的路径列出 `Idempotency-Key` 参数与 `Idempotent-Replayed` 响应头。
+- `GET /api/capabilities/openapi.json` 聚合全部已挂载组件的 OpenAPI 3.1（需认证，不等于公开 OpenAPI）；写类能力的路径列出 `Idempotency-Key` 参数、`Idempotent-Replayed` 响应头与两种 409（`CONFLICT`、`CAPABILITY_REPLAY_UNAVAILABLE`）。
 - Agent 用的工具**定义**由能力目录机械生成，保证 schema 不漂移；**暴露**哪些、怎么描述，经 `agent.expose` 单独策划（[ADR-016 D16.10](/design/adr/adr-016-iclaw-boundary)）。
 
 ## 通用执行入口
@@ -34,7 +34,9 @@ updated: 2026-10-15
 同一租户、同一主体、同一能力、同一键在 24 小时内的重复请求都不会再执行。409 分两种：
 
 - `CONFLICT`：同键而输入不同，或同键请求仍在执行。改用新的键，或等前一个请求结束再重试。
-- `CAPABILITY_REPLAY_UNAVAILABLE`：同键请求已经执行成功，但回执没有保存响应体，无法回放。能力的 `dataClassification` 为 `pii`、`finance` 或 `secret` 时不保存，响应超过组件配置 `receiptMaxBytes`（默认 64 KiB）时也不保存。应通过查询确认结果，不要换新键重试，换键会再执行一次。
+- `CAPABILITY_REPLAY_UNAVAILABLE`：同键请求已经执行成功，但回执没有保存响应体，无法回放。只有 `dataClassification` 为 `public` 或 `internal` 的能力保存响应体：`pii`、`finance`、`secret` 不保存，未知分级也不保存；响应超过组件配置 `receiptMaxBytes`（默认 64 KiB）时同样不保存。应通过查询确认结果，不要换新键重试，换键会再执行一次。
+
+`[Capability]` 的 `DataClassification` 默认 `internal`，也就是默认把响应体明文存进回执表，24 小时内同键请求原样回放。响应含个人信息、财务或机密数据的能力要显式标注，如 `DataClassification = "pii"`（`finance`、`secret` 同理）；参考应用响应含客户名称的 `customer.*` 能力都标为 `pii`。
 
 执行失败不留回执，同一个键可以带正确的输入重试。服务端在执行后、写回执前崩溃时，5 分钟租约到期后的重试会再执行一次，所以写类能力仍要在 `inputSchema` 里带业务幂等键（`idempotencyKey`）。
 

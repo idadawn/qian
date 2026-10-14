@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import scenarios from '../docs/scenarios.json';
 import docs from '../docs/catalog.json';
@@ -9,6 +9,13 @@ import { TOKEN_REGISTRY, primitiveColors } from '@idadawn/yue-tokens';
 import { CORE_COMPONENT_MANIFESTS } from './manifests';
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
+// 子进程失败时把标准输出与标准错误并入断言信息：node --test 的失败详情写在标准输出里，只看退出码无从排查。
+function runNode(args: string[]) {
+  const result = spawnSync(process.execPath, args, { encoding: 'utf8' });
+  expect(result.error).toBeUndefined();
+  expect(result.status, `node ${args.join(' ')} 退出码 ${result.status}\n--- stdout ---\n${result.stdout}\n--- stderr ---\n${result.stderr}`).toBe(0);
+}
+const script = (name: string) => fileURLToPath(new URL(`../scripts/${name}`, import.meta.url));
 const validate = ajv.compile(componentManifestSchema);
 function assertMetadata(node: unknown, name?: string) {
   if (!node || typeof node !== 'object') return;
@@ -28,10 +35,10 @@ function assertMetadata(node: unknown, name?: string) {
 }
 describe('组件机器目录', () => {
   it('生成器覆盖联合、交叉、元组与各层不存在属性的反例', () => {
-    execFileSync(process.execPath, ['--test', fileURLToPath(new URL('../scripts/manifest-metadata.test.mjs', import.meta.url))]);
+    runNode(['--test', script('manifest-metadata.test.mjs')]);
   }, 30_000);
   it('元数据由当前 TypeScript 注释生成且没有漂移', () => {
-    execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/export-manifests.mjs', import.meta.url)), '--check']);
+    runNode([script('export-manifests.mjs'), '--check']);
     const button = CORE_COMPONENT_MANIFESTS.find(item => item.name === 'Button')!;
     expect(button.props).toHaveProperty('properties.loading.description', '加载中时禁用操作并显示忙碌状态。');
     expect(button.props).not.toHaveProperty('properties.id.description');

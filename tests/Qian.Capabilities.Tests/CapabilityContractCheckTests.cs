@@ -111,6 +111,95 @@ public sealed class CapabilityContractCheckTests
         Assert.Equal("qian.test/probe.long#/inputSchema/patternProperties", trimmed.Location);
     }
 
+    [Fact]
+    public void 工具声明合格而生成的条目不符合能力条目契约时按entry_invalid拒绝_位置指向条目内的字段()
+    {
+        var logger = new RecordingLogger();
+        var check = new CapabilityContractCheck(new SurfaceValidator(), new ToolContractHasher(), logger);
+        // tool/v2 允许 x- 扩展键、不要求 costTier；contracts/v0 的能力条目不允许未声明成员、要求 costTier。
+        var extension = Assert.Throws<CapabilityContractException>(() => check.Check(Custom("probe.extension", metadata => metadata["x-owner"] = "crm-team")));
+        Assert.Equal(("qian.test/probe.extension#/x-owner", "entry-invalid", "INPUT_INVALID"), (extension.Location, extension.Rule, extension.ReasonCode));
+        var missing = Assert.Throws<CapabilityContractException>(() => check.Check(Custom("probe.untiered", metadata => metadata.Remove("costTier"))));
+        // 缺少的成员也指到该成员。
+        Assert.Equal(("qian.test/probe.untiered#/costTier", "entry-invalid"), (missing.Location, missing.Rule));
+        Assert.All(new[] { extension, missing }, item => Assert.True(ErrorPointer.IsValid(item.Location), item.Location));
+        Assert.Equal(2, logger.Messages.Count);
+    }
+
+    [Fact]
+    public void 生成条目时的其余失败按contract_invalid拒绝_位置为能力本身_原异常留在InnerException_同一契约只告警一次()
+    {
+        var logger = new RecordingLogger(); var hasher = new FailingHasher();
+        var check = new CapabilityContractCheck(new SurfaceValidator(), hasher, logger);
+        var contract = Contract("probe.unhashed", ProbeJson.Default.PlainProbe);
+        var error = Assert.Throws<CapabilityContractException>(() => check.Check(contract));
+        Assert.Equal(("qian.test", "probe.unhashed", "qian.test/probe.unhashed#", "contract-invalid", "INPUT_INVALID"),
+            (error.ComponentId, error.Name, error.Location, error.Rule, error.ReasonCode));
+        Assert.Same(hasher.Failure, error.InnerException);
+        Assert.Null(check.Entry(contract));
+        Assert.IsType<CapabilityContractException>(Record.Exception(() => check.Check(contract)));
+        Assert.Equal(1, hasher.Calls);
+        Assert.Contains("contract-invalid", Assert.Single(logger.Messages), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void 校验器缓存满了只淘汰最久没用的一个_不整表清空_被淘汰的执行时按同一份Schema重新编译()
+    {
+        var validator = new CapabilityInputValidator(capacity: 3);
+        var entries = Enumerable.Range(0, 5).Select(index => Entry("{\"type\":\"object\",\"properties\":{\"p" + index + "\":{\"type\":\"string\"}}}")).ToArray();
+        static string Key(JsonElement entry) => entry.GetProperty("schemaSha256").GetString()!;
+        foreach (var entry in entries[..3]) validator.Prepare(Key(entry), entry.GetProperty("inputSchema"));
+        Assert.Equal(3, validator.Count);
+        // 执行用到第 0 个，它成为最近使用的；再登记两个时依次淘汰第 1、第 2 个，其余留在缓存。
+        validator.Validate(entries[0], Json("{}"));
+        validator.Prepare(Key(entries[3]), entries[3].GetProperty("inputSchema"));
+        Assert.Equal([true, false, true, true, false], entries.Select(entry => validator.IsPrepared(Key(entry))));
+        validator.Prepare(Key(entries[4]), entries[4].GetProperty("inputSchema"));
+        Assert.Equal([true, false, false, true, true], entries.Select(entry => validator.IsPrepared(Key(entry))));
+        Assert.Equal(3, validator.Count);
+        // 被淘汰的在执行时重新编译，结论不变；这次淘汰的是此时最久没用的第 0 个。
+        Assert.Equal("TYPE_MISMATCH", Assert.Throws<QianErrorException>(() => validator.Validate(entries[1], Json("""{"p1":1}"""))).Error.Errors![0].Code.Code);
+        Assert.Equal([false, true, false, true, true], entries.Select(entry => validator.IsPrepared(Key(entry))));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new CapabilityInputValidator(capacity: 0));
+    }
+
+    [Fact]
+    public void 求值时的意外异常记录组件与能力名后交给ErrorDetail中间件()
+    {
+        var logger = new RecordingLogger();
+        var validator = new CapabilityInputValidator(logger);
+        const string schema = """{"type":"object","properties":{"amounts":{"type":"array","uniqueItems":true}}}""";
+        using var document = JsonDocument.Parse(schema);
+        var entry = JsonSerializer.SerializeToElement(new
+        {
+            id = "qian.test/probe.amounts", plugin = "qian.test", name = "probe.amounts", inputSchema = document.RootElement,
+            schemaSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(schema)))
+        });
+        validator.Prepare(entry.GetProperty("schemaSha256").GetString()!, entry.GetProperty("inputSchema"));
+        // 1e400 是合法的 JSON 数，但超出 double 的范围：JsonSchema.Net 9.4 比较 uniqueItems 的元素时抛 FormatException，不在登记期能查出的三类里。
+        var error = Assert.Throws<InvalidOperationException>(() => validator.Validate(entry, Json("""{"amounts":[1e400,1e401]}""")));
+        Assert.Equal("能力输入 Schema 无法求值。", error.Message);
+        Assert.IsType<FormatException>(error.InnerException);
+        var message = Assert.Single(logger.Messages);
+        Assert.Contains("qian.test", message, StringComparison.Ordinal); Assert.Contains("probe.amounts", message, StringComparison.Ordinal);
+        Assert.Equal((LogLevel.Error, 2), (logger.Levels.Single(), logger.Events.Single()));
+    }
+
+    // 以合格的测试声明为底改动一处，模拟手写或其他生成器产出的声明。
+    private static CapabilityContract Custom(string name, Action<System.Text.Json.Nodes.JsonObject> change)
+    {
+        var metadata = System.Text.Json.Nodes.JsonNode.Parse(Contract(name, ProbeJson.Default.PlainProbe).Metadata.GetRawText())!.AsObject();
+        change(metadata);
+        return new CapabilityContract("qian.test", metadata.ToJsonString(), ProbeJson.Default.PlainProbe, ProbeJson.Default.ProbeResult);
+    }
+
+    private sealed class FailingHasher : Qian.Surfaces.Abstractions.IToolContractHasher
+    {
+        internal InvalidOperationException Failure { get; } = new("摘要实现不可用。");
+        internal int Calls { get; private set; }
+        public string Compute(JsonElement tool) { Calls++; throw Failure; }
+    }
+
     private static CapabilityContract Contract(string name, JsonTypeInfo request, string costTier = "low") => new("qian.test",
         "{\"name\":\"" + name + "\",\"description\":\"登记期契约检查的测试能力，只读取测试数据，不修改任何状态。\",\"sideEffect\":\"read\"," +
         "\"policyHint\":\"allow\",\"idempotent\":false,\"async\":\"none\",\"requiredScopes\":[],\"requiredSecrets\":[],\"dataClassification\":\"internal\",\"costTier\":\"" + costTier + "\"," +
@@ -132,10 +221,12 @@ public sealed class CapabilityContractCheckTests
     private sealed class RecordingLogger : ILogger
     {
         internal List<string> Messages { get; } = [];
+        internal List<LogLevel> Levels { get; } = [];
+        internal List<int> Events { get; } = [];
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-        { lock (Messages) Messages.Add(formatter(state, exception)); }
+        { lock (Messages) { Messages.Add(formatter(state, exception)); Levels.Add(logLevel); Events.Add(eventId.Id); } }
     }
 }
 
