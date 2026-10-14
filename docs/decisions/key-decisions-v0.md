@@ -436,3 +436,10 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
   - 实现说明（S1-RT-019）：幂等语义与 Kun 幂等消费相同（成功后才写回执、失败不留标记），按短事务登记「执行中」→ 不占连接执行 → 写完成或撤销三段实现，同键请求仍在执行时返回 409，只读能力（`sideEffect: read`）忽略幂等键；回执存 `plugin_qian_capabilities.invoke_receipts`（租户 RLS），不用 R63 的 Redis 键——R63 针对事件消费只需「已处理」标记，HTTP 重放要原样返回首次响应；Kun 未改动，不开 KUN 任务。
 - R76：S1-RT-006 验收第 3 项按「机制完成」勾选；平台挂载路径（`Mount` 与 Registry scope Reconciler）强制套用 `OpenApiContractPlugin` / `GrpcContractPlugin` 归 S1-RT-005，S1-RT-004 的 Reconciler 复用同一包装。
 - R77：目录四类 kind 的归属：事件类目录归 S1-EVT-003；实体类目录暂无任务，由产品负责人分配（建议 S1-RT-007 或 DATA 系列）；交付前 `?kind=event|entity` 返回空集合并在 README 注明。
+
+### S1-DATA-003 收口裁决 R78–R79（2026-10-15）
+
+产品负责人要求「把我需要知道的，都搞定吧」后，由 Claude 作默认裁决，未经逐条确认；有异议时新建决策任务。
+
+- R78：方言组件 id 定为 `qian.data.dialect.pg`，与组件模型 §6.1 的包名映射（`Qian.Data.Dialect.Pg` → `qian.data.dialect.pg`）一致；PRD 7.6 原写的 `qian.data.dialect.postgres` 已在 idadawn/qian#79 改正。组件形态（`plugins/qian.data.dialect.pg`，清单 `provides` 派生为 `Data.Dialects:pg`）登记为 S1-DATA-006，依赖 S1-RT-014 的具名注册派生。
+- R79：数据连接连通测试的进程内出网检查提前到 S1（S1-DATA-005）。缺省拒绝回环、链路本地（含云元数据）、100.100.100.200、未指定、组播与广播地址，运维可追加拒绝网段或限定放行网段。PRD 7.18 / 7.19「低代码连接器与第三方出网点的出口代理与 SSRF 基线归 S2」不变，生产环境仍以 7.17 的 NetworkPolicy 出网白名单或出口代理限定可达网段。

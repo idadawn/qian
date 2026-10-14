@@ -120,14 +120,21 @@ services.AddQianSecrets(new SecretResolverOptions
 - 表 `data_connections` 与序号表同在 plugin_qian_data，是同一个系统上下文：`AddQianSequences` 与本方法共用，两处的连接配置必须解析出同一个连接串，否则创建上下文时拒绝。
 - 它是租户表，强制 RLS；名称在租户内唯一，软删后可以复用；系统列沿用 AggregateRoot 约定（审计主体、xmin）。
 - 档案记录方言、主机、端口、库、用户名、可选 schema 与编码。口令只以租户作用域的 secretRef 保存：`secretRef://tenant/<路径>` 按当前租户解析。platform / dev 引用一律拒绝，避免租户借平台凭据连接任意主机。
-- `TestAsync` 在使用点经宿主密钥策略（`ForHost(SecretPolicyId, 当前租户)`，默认策略 ID 为 qian.data）解析口令，交给方言探测，用后即释放。成功返回服务端版本与耗时；失败为结构化错误：
-  - 网络不可达或超时：DATA_CONNECTION_UNREACHABLE，可重试；
+- `TestAsync` 先做出网检查（见下），再在使用点经宿主密钥策略（`ForHost(SecretPolicyId, 当前租户)`，默认策略 ID 为 qian.data）解析口令，交给方言探测，用后即释放。成功返回服务端版本与耗时；失败为结构化错误：
+  - 目标不在允许的出网范围内：DATA_CONNECTION_TARGET_DENIED，此时既不连接也不读取密钥；
+  - 网络不可达、域名解析失败或超时：DATA_CONNECTION_UNREACHABLE，可重试；
   - 服务端拒绝：DATA_CONNECTION_REJECTED，reason 为 authentication、database、schema、permission、parameter 或 server；
+  - 密钥内容不能用作口令（如 PG 要求 UTF-8 文本）：DATA_CONNECTION_CREDENTIAL_INVALID；
   - 密钥无权解析或缺失：SECRET_* 错误。
-- 超时由 `QianDataConnectionOptions.TestTimeout` 控制，1 秒到 1 分钟，默认 5 秒。
+- 超时由 `QianDataConnectionOptions.TestTimeout` 控制，含解析目标主机，1 秒到 1 分钟，默认 5 秒。
+- 出网检查由 `QianDataConnectionOptions.Egress` 控制：
+  - 目标主机解析出的每个地址都须通过，任一地址被拒即整体拒绝；连接只用检查过的地址，不再二次解析，并像驱动一样按顺序尝试，某个地址不可达才换下一个（如双栈主机先 ::1 后 127.0.0.1）。IP 字面量的变形写法（如 `127.1`、`0x7f.0.0.1`）按解析后的地址判定。
+  - `BlockedNetworks` 一律拒绝，优先于放行网段。缺省含回环、链路本地（含云元数据 169.254.169.254）、100.100.100.200（阿里云元数据）、未指定地址、组播与广播。可追加集群内部网段（如 K3s 的 10.42.0.0/16、10.43.0.0/16）；本机开发可移除回环。
+  - `AllowedNetworks` 非空时，只放行落在其中的地址，如租户数据库所在子网。
+  - 网段写作 CIDR，写法无效时宿主启动即失败。`Egress.Permits(address)` 可供宿主复用同一判定。
 - 详情与列表只返回 secretRef；任何响应、错误与审计记录都不含口令。
 
-连通测试会从平台向档案中的主机出网（Agent 契约标 external）。生产环境要用 NetworkPolicy 或出口代理限定可达网段；测试权限点单列为 qian.data:connection:test。
+连通测试会从平台向档案中的主机出网（Agent 契约标 external）。上面的出网检查只是进程内的一道防线，完整的出口代理与 SSRF 基线按 PRD 7.19 归 S2；生产环境仍要用 NetworkPolicy 或出口代理限定可达网段；测试权限点单列为 qian.data:connection:test。
 
 | 错误码 | HTTP | 含义 |
 |---|---|---|
@@ -137,8 +144,10 @@ services.AddQianSecrets(new SecretResolverOptions
 | DATA_FIELD_DEFINITION_INVALID | 422 | 字段定义不满足方言约束，errors[] 为 DATA_FIELD_OUT_OF_RANGE、DATA_FIELD_FACET_UNSUPPORTED、DATA_FIELD_RANGE_INVERTED 或 VALUE_NOT_ALLOWED |
 | DATA_CONNECTION_NOT_FOUND | 404 | 当前租户没有该连接 |
 | DATA_CONNECTION_NAME_CONFLICT | 409 | 当前租户已有同名连接 |
-| DATA_CONNECTION_UNREACHABLE | 422 | 网络不可达或超时，可重试 |
+| DATA_CONNECTION_UNREACHABLE | 422 | 网络不可达、域名解析失败或超时，可重试 |
 | DATA_CONNECTION_REJECTED | 422 | 数据库拒绝连接 |
+| DATA_CONNECTION_TARGET_DENIED | 422 | 连接目标不在允许的出网范围内，未连接 |
+| DATA_CONNECTION_CREDENTIAL_INVALID | 422 | 密钥内容不能用作该数据库的口令，未连接 |
 
 ## 删除审计
 

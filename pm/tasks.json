@@ -921,6 +921,83 @@
   "file": "pm/tasks/S1-DATA-004.md"
  },
  {
+  "id": "S1-DATA-005",
+  "title": "数据连接连通测试的出网约束与凭据格式错误",
+  "status": "done",
+  "stage": "S1",
+  "area": "DATA",
+  "areaName": "数据",
+  "wave": 2,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-DATA-003"
+  ],
+  "blockedBy": [],
+  "order": -1,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.6",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "packages/Qian.Data/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Data/README.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 3,
+   "total": 3
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-DATA-003 交付后遗留两处：连通测试会从平台连到租户填写的任意主机，回环、云元数据地址与集群内部服务都可能被当作探测目标；租户密钥内容不是 UTF-8 文本时 PG 方言抛出未映射的异常，端点返回 500。本任务在 qian.data 内加一道出网检查：目标主机解析出的每个地址都须通过运维可配置的拒绝 / 放行网段，连接只用检查过的地址；并为凭据格式补结构化错误。完整的出口代理与 SSRF 基线仍按 PRD 7.19 归 S2。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：出网检查的缺省设置拒绝以下地址：回环、链路本地（含云元数据 169.254.169.254）、100.100.100.200、未指定地址、组播与广播地址。IPv4 映射的 IPv6 地址按 IPv4 判定。配置放行网段后，网段外的地址一律拒绝；拒绝网段优先于放行网段；网段写法无效时宿主启动即失败</li>\n<li class='chk done'><span class='box'>✓</span>IT：<code>POST /connections/{id}:test</code> 的目标主机解析出的任一地址被拒时，返回 422 <code>DATA_CONNECTION_TARGET_DENIED</code>，且不发起任何连接（本机假服务端收不到连接）；放行时只连接检查过的地址，不二次解析</li>\n<li class='chk done'><span class='box'>✓</span>IT：租户密钥内容不是 UTF-8 文本时，连通测试返回 422 <code>DATA_CONNECTION_CREDENTIAL_INVALID</code>，不再是 500</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始</li>\n<li>2026-10-15 claude：实现：连通测试先解析目标主机并按 QianDataConnectionOptions.Egress 逐个检查地址（缺省拒绝回环、链路本地含云元数据、100.100.100.200、未指定、组播与广播；可追加拒绝或限定放行网段，拒绝优先；被拒返回 DATA_CONNECTION_TARGET_DENIED 且不连接、不读密钥；只连检查过的地址）；PG 方言把非 UTF-8 密钥映射为 DATA_CONNECTION_CREDENTIAL_INVALID。验收证据：DataConnectionEgressTests 25 例；ConnectionEndpointTests 在缺省设置下对 9 种回环 / 元数据写法均 422 TARGET_DENIED，假服务端 0 连接、密钥审计无记录；FF FE 41 密钥 422 CREDENTIAL_INVALID（此前 500）。变异验证两项均失败；全量 702/702</li>\n<li>2026-10-15 claude：完成：随 idadawn/qian#99 合并完成（合并前提是 PR 全部检查通过）</li>\n</ul>",
+  "file": "pm/tasks/S1-DATA-005.md"
+ },
+ {
+  "id": "S1-DATA-006",
+  "title": "PG 方言的组件形态：plugins/qian.data.dialect.pg 与 Data.Dialects:pg 派生",
+  "status": "todo",
+  "stage": "S1",
+  "area": "DATA",
+  "areaName": "数据",
+  "wave": 2,
+  "priority": "P1",
+  "type": "feature",
+  "owner": "",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [
+   "S1-DATA-003",
+   "S1-RT-014"
+  ],
+  "blockedBy": [
+   "S1-RT-014"
+  ],
+  "order": 2,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.6",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "docs/prd/specs/component-model.md#6.1",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/specs/component-model.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 0,
+   "total": 3
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-DATA-003 以宿主装配交付 PG 方言（AddQianPgDialect）。规格要求方言是独立组件 qian.data.dialect.pg，向 Data seam 的注册表子服务按名称注册（R38），清单 provides 写 Data.Dialects:pg 并由源生成器派生。当前源生成器遇到具名 Provide(key, name, …) 直接报「具名 seam 注册须由独立声明支持」，派生能力归 S1-RT-014（[ExtensionPoint] / [Contributes]），故本任务依赖它。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>组件文件夹 <code>plugins/qian.data.dialect.pg</code>：清单的 <code>provides</code> 由源生成器从 <code>Apply</code> 里的注册派生为 <code>Data.Dialects:pg</code>，Plugin.Tool check 无漂移</li>\n<li class='chk'><span class='box'></span>IT：平台模式下挂载 / 卸载该组件，<code>GET /api/data/meta/types</code> 的方言列表随之出现 / 消失；注册句柄撤销即注销（R38）</li>\n<li class='chk'><span class='box'></span>UT：宿主装配 <code>AddQianPgDialect()</code> 的行为不变（库优先，ADR-019）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n</ul>",
+  "file": "pm/tasks/S1-DATA-006.md"
+ },
+ {
   "id": "S1-DEC-001",
   "title": "拍板：TS 侧运行时采用现成 MIT 库还是自研 @qian/runtime",
   "status": "done",
@@ -5352,12 +5429,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/docs/adr/ADR-019-library-first-packages.md"
    }
   ],
-  "updated": "2026-10-14",
+  "updated": "2026-10-15",
   "acceptance": {
    "done": 1,
    "total": 5
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>NuGet <code>Qian.Plugin.Sdk</code>（<code>IQianPlugin</code> 基类、租户 / 身份 / 权限 / 配置 / 事件 / 存储 / 通知 / 调度客户端门面、生命周期钩子基类、默认安全装配、<code>PluginEnabledMiddleware</code>）与 <code>Qian.Plugin.Sdk.Generators</code>（<code>[QianPlugin]</code> / <code>[Capability]</code> / <code>[ExtensionPoint]</code> / <code>[Contributes]</code> / <code>[Permission]</code> / <code>[QianJob]</code> / <code>[QianEvent]</code> → DI 注册 + 派生字段带 <code>&quot;$generated&quot;: true</code> 合并进唯一 <code>plugin.json</code> + JSON Schema）；只依赖 <code>Qian.Runtime</code> 与各 <code>Qian.&lt;X&gt;.Abstractions</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>按 [S1-DEC-018](S1-DEC-018.md) 回验 DATA-001：真实 qian.data 的代码字段由源生成器派生、SDK 默认装配可用，Qian 包族在既定私有 NuGet 源锁步发布并能真实还原；未通过前保留组件骨架标记</li>\n<li class='chk'><span class='box'></span>UT：删除代码中的一个 <code>[Capability]</code> 但保留 <code>plugin.json</code> 中的派生条目，CI 比对失败并指出漂移项</li>\n<li class='chk'><span class='box'></span>UT：源生成器把 <code>[Capability]</code> 的 <code>Description</code>、<code>SideEffect</code>、<code>PolicyHint</code>、<code>RequiredScopes</code> 写入 <code>plugin.json</code> 的 <code>tools</code> 表面</li>\n<li class='chk'><span class='box'></span>CI：<code>Qian.Plugin.Sdk</code> 的传递依赖中不出现任何 Provider 包与 <code>Qian.Registry</code> / <code>Qian.Lifecycle</code> / <code>Qian.Capabilities</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>PluginEnabledMiddleware</code> 读 <code>ctx.Registry</code> scope 视图，对未挂载组件的请求返回 404，与不存在无法区分（R32）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：产品负责人已批准 DATA 本体分期交付；SDK 源生成、默认装配与包族私有 NuGet 锁步发布仍为完整 DATA 组件的必过项，不以本体验收完成替代本任务验证。</li>\n<li>2026-10-13 cody：开始：作为 QA-002 与 AUD-001 的必要前置，先实现真实 Capability 属性、可生成元数据及 command/dispatching 协议，供真实审计监听和创建命令复用；源生成漂移、默认安全装配和私有 NuGet/安装门继续完整保留。</li>\n<li>2026-10-13 cody：已实现 QianPlugin/Capability 声明、两类增量生成器、真实 JsonTypeInfo 契约和唯一清单 sync/check；真实 DataPlugin 的入口与提供键由代码派生，CI 校验漂移。生成工具拒绝手写覆盖、路径逃逸和遗留派生条目，先校验完整组件快照。全量 473/473 .NET、17 SDK 专项、38 门禁、25 包依赖及 15 CLI 用例通过；源生成器本地 NuGet 产物已打包，尚未私有发布。实际 command/dispatching、默认安全装配与安装门仍未完成。</li>\n<li>2026-10-13 cody：新增真实 Mediator/事务执行协议与基础策略存活检查；业务 handler 延迟到租户和权限检查后构造。已接入实际 Tenancy、RBAC PEP 和 Audit 监听，参考宿主默认启用创建命令，原只读入口保留为 --data-only。真实 HTTP 验证幂等、敏感姓名哈希、双租户业务/审计隔离和事件路由、审计失败与卸载取消整笔回滚；6 个 CRM 与 22 个 SDK 专项通过。仍在完成全量回归和其余 SDK 验收。</li>\n<li>2026-10-13 cody：本次执行接线最终回归：484/484 全量 .NET 测试通过，零跳过；22 SDK、7 CRM 专项，38 门禁、25 包依赖、15 CLI 用例及实际事件/文档派生检查通过。已覆盖真实生产 waterfall、延迟构造、受限业务事务、创建与两种查询、敏感字段、权限/冻结拒绝、幂等、并发与卸载回滚。完整 Registry 中间件、其余 SDK 表面/默认装配、平台与 app/session 边界、私有发布及安装仍在任务内，继续保留草稿。</li>\n<li>2026-10-13 cody：新增 SDK.AspNetCore 的实际 Registry scope 门禁：用当前已验证租户读取真实装载/遮蔽/restrict 后绑定，未挂载或停用与不存在同为 404；端点过滤器保证漏装/错序中间件不执行 handler。受限 PG、真实 S2S/Kestrel 与 Registry/Runtime 的 6 个新用例通过（Registry 专项现 33 项），该验收已勾选。完整平台和发布安装门继续保留。</li>\n<li>2026-10-13 cody：scope 中间件回归完成：490/490 全量 .NET 测试零跳过，33 个 Registry 真库专项，38 门禁、26 包依赖、15 CLI 用例和文档/PM 检查通过。真实 Data 清单无漂移，事件文档有效。该 HTTP 门禁仍不替代 QA-002 的完整目录/提示词/执行三处过滤或默认 platform 验收。</li>\n<li>2026-10-13 cody：供 QA-002 使用的代码契约、实际执行管道和 Registry HTTP 可见性门已交付草稿 PR #56。下一步必须接入 S1-RT-006 的实际能力目录与聚合，才能验证目录/提示词/执行一致性及完整平台默认装配；先串行转入这个已授权前置。本任务的其余源生成/装配、私有包发布和代码安装验收继续保留，不提前完成或合并。</li>\n<li>2026-10-13 cody：最新 CI 38301355424 出现双租户并发用例单请求 500；其余 489 项通过。本地原用例和真实保存屏障复现 8 次均通过，尚不能判为环境抖动。补充不含请求值的异常类型/SQLSTATE/堆栈证据，以及同租户同幂等键并发回归，保持成功与隔离断言，继续定位根因；不合并或提前报绿。</li>\n<li>2026-10-13 cody：已确定并修复一条 500 路径：真实 PG 首次保存返回 40001 时，Npgsql 默认策略包装为 InvalidOperationException→DbUpdateException→PostgresException，原重试判断漏识别。数据库故障注入测试先稳定失败、修复后通过，仍从新 Mediator/Data scope 重试整笔业务；普通错误不重试。8 次真实跨租户屏障和同租户同幂等键用例通过；诊断提交 17e02899 的 Linux CI 亦通过，旧 CI 缺根因堆栈，保留诊断而不将其全部归为环境抖动。</li>\n<li>2026-10-13 cody：c1a65925 的 Linux CI 已通过 CRM 并发/故障注入，另暴露既有 gRPC 负例的写流取消竞态。测试改为在写流提前 Cancelled 后继续读取最终 RPC 状态和 trailers，最终仍须 Unauthenticated 且业务调用为零；若响应成功仍抛写入错误，不放宽断言。真实 HTTP/2 三项专项本地通过，继续自动修复 CI。</li>\n<li>2026-10-14 claude：复核 S1-RT-006：plugins/qian.capabilities 等 33 个平台插件清单仍为骨架（inject / provides 为空，x-skeleton），随本任务的清单合并生成替换，不手改</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>NuGet <code>Qian.Plugin.Sdk</code>（<code>IQianPlugin</code> 基类、租户 / 身份 / 权限 / 配置 / 事件 / 存储 / 通知 / 调度客户端门面、生命周期钩子基类、默认安全装配、<code>PluginEnabledMiddleware</code>）与 <code>Qian.Plugin.Sdk.Generators</code>（<code>[QianPlugin]</code> / <code>[Capability]</code> / <code>[ExtensionPoint]</code> / <code>[Contributes]</code> / <code>[Permission]</code> / <code>[QianJob]</code> / <code>[QianEvent]</code> → DI 注册 + 派生字段带 <code>&quot;$generated&quot;: true</code> 合并进唯一 <code>plugin.json</code> + JSON Schema）；只依赖 <code>Qian.Runtime</code> 与各 <code>Qian.&lt;X&gt;.Abstractions</code>。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>按 [S1-DEC-018](S1-DEC-018.md) 回验 DATA-001：真实 qian.data 的代码字段由源生成器派生、SDK 默认装配可用，Qian 包族在既定私有 NuGet 源锁步发布并能真实还原；未通过前保留组件骨架标记</li>\n<li class='chk'><span class='box'></span>UT：删除代码中的一个 <code>[Capability]</code> 但保留 <code>plugin.json</code> 中的派生条目，CI 比对失败并指出漂移项</li>\n<li class='chk'><span class='box'></span>UT：源生成器把 <code>[Capability]</code> 的 <code>Description</code>、<code>SideEffect</code>、<code>PolicyHint</code>、<code>RequiredScopes</code> 写入 <code>plugin.json</code> 的 <code>tools</code> 表面</li>\n<li class='chk'><span class='box'></span>CI：<code>Qian.Plugin.Sdk</code> 的传递依赖中不出现任何 Provider 包与 <code>Qian.Registry</code> / <code>Qian.Lifecycle</code> / <code>Qian.Capabilities</code></li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>PluginEnabledMiddleware</code> 读 <code>ctx.Registry</code> scope 视图，对未挂载组件的请求返回 404，与不存在无法区分（R32）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：产品负责人已批准 DATA 本体分期交付；SDK 源生成、默认装配与包族私有 NuGet 锁步发布仍为完整 DATA 组件的必过项，不以本体验收完成替代本任务验证。</li>\n<li>2026-10-13 cody：开始：作为 QA-002 与 AUD-001 的必要前置，先实现真实 Capability 属性、可生成元数据及 command/dispatching 协议，供真实审计监听和创建命令复用；源生成漂移、默认安全装配和私有 NuGet/安装门继续完整保留。</li>\n<li>2026-10-13 cody：已实现 QianPlugin/Capability 声明、两类增量生成器、真实 JsonTypeInfo 契约和唯一清单 sync/check；真实 DataPlugin 的入口与提供键由代码派生，CI 校验漂移。生成工具拒绝手写覆盖、路径逃逸和遗留派生条目，先校验完整组件快照。全量 473/473 .NET、17 SDK 专项、38 门禁、25 包依赖及 15 CLI 用例通过；源生成器本地 NuGet 产物已打包，尚未私有发布。实际 command/dispatching、默认安全装配与安装门仍未完成。</li>\n<li>2026-10-13 cody：新增真实 Mediator/事务执行协议与基础策略存活检查；业务 handler 延迟到租户和权限检查后构造。已接入实际 Tenancy、RBAC PEP 和 Audit 监听，参考宿主默认启用创建命令，原只读入口保留为 --data-only。真实 HTTP 验证幂等、敏感姓名哈希、双租户业务/审计隔离和事件路由、审计失败与卸载取消整笔回滚；6 个 CRM 与 22 个 SDK 专项通过。仍在完成全量回归和其余 SDK 验收。</li>\n<li>2026-10-13 cody：本次执行接线最终回归：484/484 全量 .NET 测试通过，零跳过；22 SDK、7 CRM 专项，38 门禁、25 包依赖、15 CLI 用例及实际事件/文档派生检查通过。已覆盖真实生产 waterfall、延迟构造、受限业务事务、创建与两种查询、敏感字段、权限/冻结拒绝、幂等、并发与卸载回滚。完整 Registry 中间件、其余 SDK 表面/默认装配、平台与 app/session 边界、私有发布及安装仍在任务内，继续保留草稿。</li>\n<li>2026-10-13 cody：新增 SDK.AspNetCore 的实际 Registry scope 门禁：用当前已验证租户读取真实装载/遮蔽/restrict 后绑定，未挂载或停用与不存在同为 404；端点过滤器保证漏装/错序中间件不执行 handler。受限 PG、真实 S2S/Kestrel 与 Registry/Runtime 的 6 个新用例通过（Registry 专项现 33 项），该验收已勾选。完整平台和发布安装门继续保留。</li>\n<li>2026-10-13 cody：scope 中间件回归完成：490/490 全量 .NET 测试零跳过，33 个 Registry 真库专项，38 门禁、26 包依赖、15 CLI 用例和文档/PM 检查通过。真实 Data 清单无漂移，事件文档有效。该 HTTP 门禁仍不替代 QA-002 的完整目录/提示词/执行三处过滤或默认 platform 验收。</li>\n<li>2026-10-13 cody：供 QA-002 使用的代码契约、实际执行管道和 Registry HTTP 可见性门已交付草稿 PR #56。下一步必须接入 S1-RT-006 的实际能力目录与聚合，才能验证目录/提示词/执行一致性及完整平台默认装配；先串行转入这个已授权前置。本任务的其余源生成/装配、私有包发布和代码安装验收继续保留，不提前完成或合并。</li>\n<li>2026-10-13 cody：最新 CI 38301355424 出现双租户并发用例单请求 500；其余 489 项通过。本地原用例和真实保存屏障复现 8 次均通过，尚不能判为环境抖动。补充不含请求值的异常类型/SQLSTATE/堆栈证据，以及同租户同幂等键并发回归，保持成功与隔离断言，继续定位根因；不合并或提前报绿。</li>\n<li>2026-10-13 cody：已确定并修复一条 500 路径：真实 PG 首次保存返回 40001 时，Npgsql 默认策略包装为 InvalidOperationException→DbUpdateException→PostgresException，原重试判断漏识别。数据库故障注入测试先稳定失败、修复后通过，仍从新 Mediator/Data scope 重试整笔业务；普通错误不重试。8 次真实跨租户屏障和同租户同幂等键用例通过；诊断提交 17e02899 的 Linux CI 亦通过，旧 CI 缺根因堆栈，保留诊断而不将其全部归为环境抖动。</li>\n<li>2026-10-13 cody：c1a65925 的 Linux CI 已通过 CRM 并发/故障注入，另暴露既有 gRPC 负例的写流取消竞态。测试改为在写流提前 Cancelled 后继续读取最终 RPC 状态和 trailers，最终仍须 Unauthenticated 且业务调用为零；若响应成功仍抛写入错误，不放宽断言。真实 HTTP/2 三项专项本地通过，继续自动修复 CI。</li>\n<li>2026-10-14 claude：复核 S1-RT-006：plugins/qian.capabilities 等 33 个平台插件清单仍为骨架（inject / provides 为空，x-skeleton），随本任务的清单合并生成替换，不手改</li>\n<li>2026-10-15 claude：S1-DATA-006（PG 方言组件形态）依赖本任务：需要源生成器从 Apply 里的具名注册（ctx.Provide(key, name, …) 或 [Contributes] 一类声明）派生「注册表键:名称」provides，如 Data.Dialects:pg。当前生成器对具名 Provide 报「具名 seam 注册须由独立声明支持」</li>\n</ul>",
   "file": "pm/tasks/S1-RT-014.md"
  },
  {
