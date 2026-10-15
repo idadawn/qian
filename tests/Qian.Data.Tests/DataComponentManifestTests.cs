@@ -13,7 +13,7 @@ namespace Qian.Data.Tests;
 public sealed partial class DataSessionTests
 {
     [Fact]
-    public async Task 按仓库清单的代码派生入口装载真实qian_data_清单字段与生成元数据一致_数据会话默认带租户填充过滤与RLS_骨架标记保留()
+    public async Task 按仓库清单的代码派生入口装载真实qian_data_清单字段与生成元数据一致_数据会话默认带租户填充过滤与RLS_骨架标记已移除()
     {
         var ct = TestContext.Current.CancellationToken;
         using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.data/.qian-plugin/plugin.json")));
@@ -28,8 +28,8 @@ public sealed partial class DataSessionTests
         var generated = root.GetProperty("x-qian-generated");
         Assert.True(generated.GetProperty("$generated").GetBoolean());
         Assert.Equal(["/inject", "/provides", "/runtime/form", "/runtime/entry"], generated.GetProperty("fields").EnumerateArray().Select(item => item.GetString()!));
-        // S1-DEC-018：真实 qian add data 安装（S1-RT-011）通过前保留骨架标记。
-        Assert.True(root.GetProperty("x-skeleton").GetBoolean());
+        // S1-DEC-018：S1-RT-011 已从私有源真实安装 qian.data 并运行 Provider（private-feed.e2e.mjs），清单不再带骨架标记。
+        Assert.False(root.TryGetProperty("x-skeleton", out _));
 
         var type = Type.GetType(entry, throwOnError: true)!;
         Assert.Same(typeof(DataPlugin), type);
