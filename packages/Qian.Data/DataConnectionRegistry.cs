@@ -6,6 +6,7 @@ using Kun.Core.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Qian.Config;
@@ -32,12 +33,15 @@ public sealed class DataConnectionEgressOptions
 {
     /// <summary>
     /// 一律拒绝的网段，优先于放行网段。缺省含回环、链路本地（含云元数据 169.254.169.254）、100.100.100.200（阿里云元数据）、
-    /// 未指定地址、组播与广播；可追加集群内部网段（如 K3s 的 10.42.0.0/16 与 10.43.0.0/16），本机开发可移除回环。
+    /// 未指定地址、组播与广播，以及 K3s 缺省的 Pod 网段 10.42.0.0/16 与 Service 网段 10.43.0.0/16。
+    /// 宿主环境为 Development 时，AddQianDataConnections 从缺省值中去掉回环两项，便于连本机数据库。
+    /// 集群改用了自定义网段时，移除 K3s 两项并追加实际网段；节点网段因部署而异，由部署配置追加。
     /// </summary>
     public IList<string> BlockedNetworks { get; } =
     [
         "127.0.0.0/8", "::1/128", "169.254.0.0/16", "fe80::/10", "100.100.100.200/32",
-        "0.0.0.0/8", "::/128", "224.0.0.0/4", "ff00::/8", "255.255.255.255/32"
+        "0.0.0.0/8", "::/128", "224.0.0.0/4", "ff00::/8", "255.255.255.255/32",
+        "10.42.0.0/16", "10.43.0.0/16"
     ];
 
     /// <summary>非空时只放行落在这些网段内的地址（如租户数据库所在子网）；为空不额外限制。</summary>
@@ -55,6 +59,13 @@ public sealed class DataConnectionEgressOptions
     }
 
     internal bool IsValid() => BlockedNetworks.Concat(AllowedNetworks).All(network => IPNetwork.TryParse(network, out _));
+
+    /// <summary>从拒绝网段中去掉缺省的回环两项（开发环境的缺省值）。</summary>
+    internal void PermitLoopback()
+    {
+        BlockedNetworks.Remove("127.0.0.0/8");
+        BlockedNetworks.Remove("::1/128");
+    }
 }
 
 /// <summary>数据连接档案的宿主装配。</summary>
@@ -64,6 +75,7 @@ public static class QianDataConnectionExtensions
     /// 登记 <see cref="IDataConnectionRegistry"/> 及其表所在的 qian.data 系统上下文（与序号服务共用，schema plugin_qian_data），
     /// 并登记基准类型目录与方言注册表。<paramref name="configure"/> 只需配置连接；表随包内迁移交付。
     /// 连通测试经宿主登记的 ISecretResolverFactory（AddQianSecrets）解析口令，方言由 IDataDialect 组件提供（如 AddQianPgDialect）。
+    /// 宿主环境为 Development 时，出网检查缺省放行回环（见 <see cref="DataConnectionEgressOptions.BlockedNetworks"/>）。
     /// </summary>
     public static IServiceCollection AddQianDataConnections(this IServiceCollection services, Action<IServiceProvider, DbContextOptionsBuilder> configure,
         Action<QianDataConnectionOptions>? options = null)
@@ -77,6 +89,13 @@ public static class QianDataConnectionExtensions
                 && value.TestTimeout <= TimeSpan.FromMinutes(1), "SecretPolicyId 不能为空，TestTimeout 须在 1 秒到 1 分钟之间。")
             .Validate(value => value.Egress.IsValid(), "Egress 的网段须写作有效的 CIDR，如 10.0.0.0/8 或 fd00::/8。")
             .ValidateOnStart();
+        // 开发环境的缺省值放行回环。它是缺省值的一部分，须先于任何显式配置执行，包括在本方法之前登记的 Configure，
+        // 所以插在服务集合最前面；宿主显式把回环加回拒绝网段时，以显式配置为准。
+        services.Insert(0, ServiceDescriptor.Singleton<IConfigureOptions<QianDataConnectionOptions>>(sp =>
+            new ConfigureOptions<QianDataConnectionOptions>(value =>
+            {
+                if (sp.GetService<IHostEnvironment>()?.IsDevelopment() == true) value.Egress.PermitLoopback();
+            })));
         if (options is not null) settings.Configure(options);
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IDataConnectionRegistry>(sp => new DataConnectionRegistry(sp.GetRequiredService<IServiceScopeFactory>(),
