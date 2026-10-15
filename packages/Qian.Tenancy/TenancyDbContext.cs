@@ -30,6 +30,7 @@ public sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> options,
             entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
             entity.Property(x => x.ProvisionInput).HasColumnType("jsonb");
+            entity.Property(x => x.Quotas).HasColumnType("jsonb").HasDefaultValue("{}");
         });
         modelBuilder.Entity<TenantProvisionStepRow>(entity =>
         {
@@ -60,6 +61,7 @@ internal sealed class TenantRow : IAuditedObject<string>, IAggregateRoot
     public string Isolation { get; set; } = "row";
     public string Status { get; set; } = "pending";
     public string? ProvisionInput { get; set; }
+    public string Quotas { get; set; } = "{}";
     public DateTimeOffset? ValidUntil { get; set; }
     public string? SuspendedFrom { get; set; }
     public string? LastTransition { get; set; }

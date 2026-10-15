@@ -127,3 +127,5 @@ GetInstalledComponents 仍是可信安装声明集合：预装未挂载、或已
 `RegistryComponentBinding.FromArtifact` 接收原始文件字节与 D4 目录摘要，先复制内容、核验摘要及 platform/server 静态表面，再核对实际 Provider 的身份与服务声明。它把不可变文件快照交给 `InstalledComponentMetadata`；`FilePaths` 只列组件内路径，`ReadFile` 每次返回独立副本，不重新读取宿主目录或网络。已有只传静态校验结果的构造方式保留，但不持有文件快照或制品摘要，不能用于声明契约文件的组件。
 
 该快照让 Capabilities 从完整版本制品读取契约基线，避免拿当前用户过滤后的接口文档、可变工作目录或 Submitted 候选记录替代基线。摘要与静态校验仍不代表签名验证、发布、权益或安装授权已经完成。
+
+S1-TEN-004（R97）增加 GetConfigurationViewAsync：可信平台组件在当前租户上下文中读取同一合成器的 Ready 视图，外部调用仍走 GetScopeViewAsync 的主体授权。RegistryEntryView.Config 为实际合成配置，与 ITenantSettings 共用；默认 ToString 不输出配置。MountAsync 成功提交后以真实 qian.registry 上下文派发 registry/entry-mounted，载荷仅 entryId/revision，不广播 config/note；Tenancy 用它失效缓存。该补充不代表 RT-032 其它停用、卸载或宿主接线已经交付。

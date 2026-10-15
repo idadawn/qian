@@ -148,7 +148,7 @@ internal sealed partial class RegistryScopeReconciler(
 
     private static RegistryEntryView View(ScopeState state, PluginEntry entry, bool local) => new(entry.Id, entry.Plugin, entry.Version,
         entry.Scope == ScopeKey.Global ? "global" : entry.Scope.Kind + ":" + entry.Scope.Id, entry.Layer,
-        local && state.Revisions.TryGetValue(entry.Id, out var revision) ? revision : null);
+        local && state.Revisions.TryGetValue(entry.Id, out var revision) ? revision : null) { Config = entry.Config.Clone() };
 
     private static string Disabling(ScopeState state, DisabledProfileEntry disabled)
     {
