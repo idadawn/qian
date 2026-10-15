@@ -4,7 +4,7 @@
 
 每个用例在临时目录里搭出 git-sync 的布局（/git/.worktrees/<提交> + /git/current 链接），
 检出里放一个假的 scripts/pm.py，按检出里的 mode 文件模拟三种情形：正常生成、任务文件校验不过、
-生成途中 git-sync 同步到新提交（先改指 current，再删旧检出）。
+生成途中 git-sync 同步到新提交（先改指 current，再删旧检出）。另有一个用例确认收到 SIGTERM 立即退出。
 """
 from __future__ import annotations
 
@@ -12,6 +12,9 @@ import contextlib
 import io
 import os
 import shutil
+import signal
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -142,6 +145,22 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual(seen, c)
         self.assertIn(f"已上线 {C[:9]}", log)
         self.assertEqual(self.served(), C)
+
+    def test_exits_promptly_on_sigterm(self) -> None:
+        """收到 SIGTERM 立即退出：容器里的 1 号进程不处理 SIGTERM 就会忽略它，Pod 要等宽限期满才被强杀。
+
+        这里 builder 不是 1 号进程，没有处理函数时会被 SIGTERM 直接杀掉（返回码 -15），所以以返回码 0 与退出日志为准。
+        """
+        env = dict(os.environ, BOARD_GIT_LINK=self.link, BOARD_SITE=self.site, BOARD_PERIOD="60",
+                   PYTHONDONTWRITEBYTECODE="1")
+        proc = subprocess.Popen([sys.executable, "-u", builder.__file__], env=env, text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.addCleanup(proc.kill)
+        self.assertIn("开始", proc.stdout.readline())  # 处理函数在这条日志之前装好
+        proc.send_signal(signal.SIGTERM)
+        out, _ = proc.communicate(timeout=5)
+        self.assertEqual(proc.returncode, 0, out)
+        self.assertIn("收到 SIGTERM，退出", out)
 
 
 if __name__ == "__main__":
