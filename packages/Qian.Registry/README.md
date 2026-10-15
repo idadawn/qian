@@ -1,6 +1,6 @@
 # Qian.Registry
 
-注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，当前仍是配置骨架，消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面、完整发布准入与安装链仍未完成，不能以本地装载宣称组件已可从正式源安装。
+注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，当前仍是配置骨架，消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面 scope 视图（只读，HTTP 适配器为 `Qian.Registry.AspNetCore`）与候选制品的清单准入已接入，scope patch 的 HTTP 写入、完整发布准入与安装链仍未完成，不能以本地装载宣称组件已可从正式源安装。
 
 ## 已实现的持久化基础
 
@@ -67,9 +67,27 @@ await runtime.DisposeAsync();
 
 测试从文件构建平台测试 profile，实际挂载 `DataPlugin`、`RegistryPlugin` 与 `DeclarativeSurfacePlugin`。独立写入宿主修改真实受限 PG 后，另一宿主的真实 `PluginLoader` 在五秒内完成新增、重载、禁用与撤销，旧上下文失效，B 和全局条目保持不变；另验证坏配置隔离与恢复、解析器跨 scope 改写拒绝、重复核对不重载及停止后的清理。默认 platform 的全部 Provider、真实身份/权限接口和 App/会话 scope 验收仍在后续清单中。
 
-## 未完成门禁
+## 管理面 scope 视图（R32 / R48）
 
-S1-RT-004 仍为 doing：制品验签/发布与修订目录、完整安装准入、真实权限/权益检查、App/会话归属、管理 scope 视图与 404/403 隐藏语义、`/api/kernel/*` 兼容别名均需继续实现与验收。`plugins/qian.registry` 的骨架标记保留。完整任务验收不因这层持久化可用而提前勾选。
+`GetScopeViewAsync` / `GetScopeEntryAsync` 是管理面的读取入口。HTTP 适配器 `Qian.Registry.AspNetCore` 的 `MapQianRegistry` 把它们映射为 `GET /api/registry/scopes/{scopeKey}/entries` 与 `GET /api/registry/scopes/{scopeKey}/entries/{entryId}`，并保留 v1 别名 `/api/kernel/scopes/...`：别名返回同一结果（含错误响应），带 `Deprecation` 与指向后继路径的 `Link: <…>; rel="successor-version"`，与能力目录共用 SDK 的 `DeprecatedAlias`（R33）。
+
+判定先于一切读取：调用者须是当前已验证租户的用户或服务主体（无委托），scope 只能是该租户自己的 tenant scope；权限经宿主装配的 Kun `IPermissionChecker` 判定 `qian.registry:scope:read`（`RegistryDefinition.ScopeReadPermission`，声明在 `plugins/qian.registry/metadata`，默认授予租户 Owner 与 Admin）。缺判定端口、无权限、跨租户与不存在的条目一律 404 `NOT_FOUND`，彼此无法区分；令牌中的角色不授予权限。
+
+持有权限时，已挂载且 Ready 的条目返回视图：条目、组件、版本、所属 scope 文本（`global` 或 `tenant:<id>`）、层号与本 scope 的 patch 修订，不含配置。未挂载以 403 `PLUGIN_NOT_MOUNTED` 返回，message 说明哪一层导致——被租户 scope patch 禁用、被平台 profile 某层禁用、平台 profile 与租户 scope patch 均未声明、或 scope 合入失败已全部撤下；pointer 指向 `registry/scope-patches.json` 中的 patch 条目，本 scope 没有该条目时指向该层文档根。已挂载但仍在等待依赖为 403 `PLUGIN_DEPENDENCY_PENDING`。「已知条目」只取宿主预装绑定、全局已装配条目与本 scope 自己的 patch 行，其它租户的局部条目不会经 403 暴露。
+
+S1 不产生另外两个原因码：profile 没有 restriction 声明来源，`PLUGIN_RESTRICTED` 待 restriction 声明落地后接入；权益检查归 S1-ENT-001，`PLUGIN_NOT_ENTITLED` 由其接入。平台运营者跨租户查询依赖平台超管旁路（S1-AZ-003）。列表与单条读取都先在与装载相同的锁内合入该 scope 的数据库层；管理面不挂插件端点门禁，因为 scope 合入失败时本 scope 的注册（包括注册表自己的）全部收紧，诊断仍须可达。
+
+真实测试（`ScopeManagementTests`）使用受限 PG、Qian.Authz 的 `RbacPermissionChecker` 读真实角色授予、Kestrel + JWT 与租户边界：A 写 patch、B 不写时，B 的 Owner 得到 403 `PLUGIN_NOT_MOUNTED` 与 pointer，B 的使用者、未知条目与跨租户查询得到相同的 404；别名结果一致并带两个响应头；B 的禁用 patch、坏配置收紧与 A 的撤销各自给出原因；未装配判定端口时即使数据库已授予也只得到 404。
+
+## 候选制品登记入口（清单准入）
+
+`SubmitArtifactAsync` 供 Lifecycle 等可信平台插件登记候选制品，调用方负责权限：先核验 D4 摘要，再以 platform / server 做共用静态校验，`SurfaceValidationOptions.ServiceKeys` 取预装组件的 provides，inject 无 Provider 即被拒；通过后幂等写入 `Submitted`。不合格时抛 `INPUT_INVALID`，`errors[]` 为 `REGISTRY_INPUT_INVALID`，pointer 是指向制品文件的 JSON Pointer，候选目录不留记录。
+
+`tck/surfaces/cases.json` 中清单准入的五类反例——缺任一 S1 必填字段（按 Schema 的 required 逐个覆盖）、OCI 引用用 tag、`scopes[]` 含非法种类、工具顶层输入含租户字段、`inject[]` 无 Provider——在 .NET 与 TS 校验器上逐项一致，并经本入口全部拒绝、pointer 与 fixture 相同；digest 引用与 inject 有 Provider 的对照正例登记为 `Submitted`（`ManifestIntakeTests`）。登记不等于验签、发布、安装或任何租户已挂载。
+
+## 剩余工作
+
+制品验签、发布与修订目录、`Install(artifact)` 的完整安装链归 S1-RT-005；scope patch 的 HTTP 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`）、App / 会话归属、权益（S1-ENT-001）与平台超管旁路（S1-AZ-003）各在其任务中接入。`plugins/qian.registry` 的骨架标记保留，组件目录清单的合并生成与骨架移除归 S1-RT-014。
 
 ## 面向业务入口的 scope 视图
 

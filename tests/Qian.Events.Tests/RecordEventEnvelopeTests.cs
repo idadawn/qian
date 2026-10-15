@@ -17,8 +17,8 @@ public sealed class RecordEventEnvelopeTests
     private static readonly Lazy<JsonSchema> RecordEnvelope = new(() =>
     {
         var options = new BuildOptions { SchemaRegistry = new SchemaRegistry() };
-        JsonSchema.FromText(DataContractSchemas.FrozenS2sClaims, options);
-        JsonSchema.FromText(DataContractSchemas.FrozenEventEnvelope, options);
+        JsonSchema.FromText(DataContractSchemas.S2sClaimsV0, options);
+        JsonSchema.FromText(DataContractSchemas.EventEnvelopeV0, options);
         JsonSchema.FromText(DataContractSchemas.RecordChangedPayload, options);
         return JsonSchema.FromText(DataContractSchemas.RecordChangedEnvelope, options);
     });

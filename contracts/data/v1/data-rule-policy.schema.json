@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qian.dev/contracts/data/v1/data-rule-policy.schema.json",
   "x-status": "frozen",
+  "description": "数据规则策略：声明主键生成方式、乐观并发、逻辑删除、记录历史和业务唯一键，供数据组件与实体定义共用。",
   "title": "DataRulePolicy",
   "type": "object",
   "additionalProperties": false,
