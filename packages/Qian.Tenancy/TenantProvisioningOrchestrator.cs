@@ -65,7 +65,7 @@ internal sealed class TenantProvisioningOrchestrator(IPluginContext context, Pos
             await using (var session = await context.Data().OpenAsync<TenancyDbContext>(cancellationToken).ConfigureAwait(false))
                 row = await session.Context.Tenants.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, cancellationToken).ConfigureAwait(false) ?? throw Error(PlatformErrors.NotFound);
             var input = row.ProvisionInput is null ? throw Error(PlatformErrors.Conflict) : JsonSerializer.Deserialize<ProvisionInput>(row.ProvisionInput)!;
-            var descriptor = PostgresTenantDirectory.Describe(row);
+            var descriptor = (await directory.GetByIdAsync(id, cancellationToken).ConfigureAwait(false))!;
             await Step("02:isolation", async () =>
             {
                 // Shared 的 Kun 开户器是官方 no-op；RLS 由迁移建立，在线开户只校验，不使用 DDL 角色。

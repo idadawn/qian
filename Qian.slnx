@@ -10,6 +10,7 @@
     <Project Path="packages/Qian.Audit/Qian.Audit.csproj" />
     <Project Path="packages/Qian.Audit.Abstractions/Qian.Audit.Abstractions.csproj" />
     <Project Path="packages/Qian.Tenancy.Abstractions/Qian.Tenancy.Abstractions.csproj" />
+    <Project Path="packages/Qian.Tenancy.AspNetCore/Qian.Tenancy.AspNetCore.csproj" />
     <Project Path="packages/Qian.Tenancy/Qian.Tenancy.csproj" />
     <Project Path="packages/Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
     <Project Path="packages/Qian.Authz/Qian.Authz.csproj" />

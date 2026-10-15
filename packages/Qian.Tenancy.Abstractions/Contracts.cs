@@ -23,7 +23,11 @@ public interface ITenantDirectory
 }
 
 /// <summary>租户主档的非敏感投影。</summary>
-public sealed record TenantDescriptor(Guid Id, string Code, string Name, TenantIsolation Isolation, TenantStatus Status);
+public sealed record TenantDescriptor(Guid Id, string Code, string Name, TenantIsolation Isolation, TenantStatus Status)
+{
+    /// <summary>当前主档的乐观并发版本；编辑请求须回传。</summary>
+    public uint Revision { get; init; }
+}
 
 /// <summary>创建时决定的隔离策略；本期在线实现只接受 row。</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<TenantIsolation>))]
@@ -55,7 +59,11 @@ public enum TenantStatus
 
 /// <summary>新建租户请求；目标租户 ID 由服务端生成，不能经请求输入。</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record CreateTenant(string Code, string Name, TenantIsolation Isolation = TenantIsolation.Row);
+public sealed record CreateTenant(string Code, string Name, TenantIsolation Isolation = TenantIsolation.Row)
+{
+    /// <summary>运营开户的管理员指针；HTTP 新建必填，不代表 Identity 已创建 Membership。</summary>
+    public TenantAdministrator? Administrator { get; init; }
+}
 
 /// <summary>编辑主档；租户号和隔离策略不在可编辑字段中。</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]

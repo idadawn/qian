@@ -12,7 +12,7 @@
 
 租户 UUID 由服务端生成，code 为 1 至 64 位小写 ASCII 字母数字；name 非空且最多 200 字符。当前只允许 row 隔离，新建状态为 pending；不会在创建目录记录时冒充已完成管理员开户或激活。code 与 isolation 不在编辑 DTO 中，EF 持久化后也拒绝变更。唯一索引处理跨宿主同号竞争，过期编辑由 Data/Kun 的 xmin 并发令牌拒绝。
 
-主档是租户控制面全局目录，不承载业务行。内部写入实现尚未暴露为 HTTP 或运行时管理服务；后续运营入口须经过真实平台权限判定。tenant_admins 只保存 Membership UUID 指针，一租户一行，继承 Data 强制租户过滤与 RLS；Membership、密码和自然人内容归 Identity。管理员指针的开户编排属于 S1-TEN-003，不在目录写入时跨插件直写身份表。
+主档是租户控制面全局目录，不承载业务行。内部写入由平台运营服务与 HTTP 门面消费，运营入口须经过真实平台超管旁路与审计。tenant_admins 只保存 Membership UUID 指针，一租户一行，继承 Data 强制租户过滤与 RLS；Membership、密码和自然人内容归 Identity。管理员指针的开户编排属于 S1-TEN-003，不在目录写入时跨插件直写身份表。
 
 ## 上下文与传播
 
@@ -30,7 +30,7 @@ TenantGrpcClientInterceptor 从当前上下文为四类 RPC 写入 tenant_id，�
 
 使用共用 PostgreSQL 16 fixture 和受限应用角色验证真实目录写入、两宿主同号竞争、编辑冲突、租户过滤与原生 SQL RLS；通过真实 Data/Runtime/Tenancy 插件装载验证目录生命周期。HTTP 边界单元测试使用已认证 ClaimsPrincipal 测试宿主管道；另有真实 Kestrel、JwtBearer 验签与受 RLS 约束的应用角色集成测试：A 的令牌请求 B 的记录 id 与不存在的 id 一样返回 404，X-Tenant-Id 不能切换租户，无令牌、缺 tenant_id 或签名被篡改的请求在处理器之前被拒。两类测试都不代表真实 Qian Identity 的签发或管理员登录。JSON/元数据序列化往返验证通用传播逻辑；另外已用真实 Kestrel HTTP/2 与 gRPC 客户端验证四种 RPC、双租户并发、24 组非法入口和错误详情。测试令牌由临时 RSA 密钥签发并经 JwtBearer 完整验签，这是传输适配器集成测试，不代表已完成真实 Qian Identity 的签发/管理员登录验收。事件消费者和作业执行器尚未接通。
 
-按裁决 R81，TEN-001 的验收收口为上述 HTTP 租户边界、gRPC 对端传播与「目标租户不经请求体」：运营后台页面归 TEN-005，管理员登录归 IDP-003，事件消费端回灌归 EVT-002，作业执行器归 SCH-002。HTTP 运营接口（`GET/POST /api/tenancy/tenants`、`PUT /tenants/{id}`）尚未发布，它需要真实的平台运营授权，按裁决 R85 由 S1-TEN-006 交付（依赖 S1-AZ-003 的平台主体授权）。状态迁移、开户编排、租户设置分别归 TEN-002/003/004；不以目录基础实现关闭这些任务。
+按裁决 R81，TEN-001 的验收收口为上述 HTTP 租户边界、gRPC 对端传播与「目标租户不经请求体」：运营后台页面归 TEN-005，管理员登录归 IDP-003，事件消费端回灌归 EVT-002，作业执行器归 SCH-002。HTTP 运营接口已由 S1-TEN-006 发布：Qian.Tenancy.AspNetCore.MapQianTenancy(source) 提供 GET/POST /api/tenancy/tenants、PUT /api/tenancy/tenants/{id}，source 返回 global qian.tenancy 的实际上下文；宿主须排除这组路由的 TenantRequestBoundary，并配置 JwtBearer、ICurrentUser 与 ErrorDetail 管道。平台主体经 ISuperadminBypass 放行后写平台审计链 bypass=superadmin；租户主体 403，无凭据 401。状态迁移、开户编排、租户设置分别归 TEN-002/003/004；不以目录基础实现关闭这些任务。
 
 ## 命令执行入口
 
@@ -49,3 +49,9 @@ TenancyPlugin 额外提供 `TenantProvisioning.Key` 的 `ITenantProvisioning`。
 真库用例验证第三步失败后的续跑、平台组件和参考应用的 lifecycle_runs、管理员指针与初始授权、缺席端口的 skipped，以及重复请求的幂等。
 
 S1-DEC-023 经产品负责人批准：全局组件配置 `initializationCapabilities` 是初始化能力精确许可清单，缺省为空、不接受通配符，不能由请求体或租户 patch 增加。只有真实开通编排在派发 tenant/provisioned 时签发进程内短期凭据，绑定生产方上下文、目标租户、真实操作者和能力清单；SDK 的实际 hook 适配器只消费一次，每次调用再绑定请求类型与权限点。普通 Invoke/Send 不签发凭据；嵌套重入、重复消费、越租户及派发结束后逃逸的异步任务均拒绝。只接受 read/write 能力，拒绝 destructive/external。业务入口继续拒绝 pending，开户初始化通过专用凭据判定，既有 Kun 权限行为、command/dispatching、同事务审计仍执行，审计 channel=hook、actor 为真实平台操作者。该执行快照不是登录令牌或 Membership，不写入 Identity。
+
+## 平台运营 HTTP（S1-TEN-006）
+
+POST 复用 CreateTenant，Administrator 为必填管理员指针，id 由服务端生成；调用真实开通编排，返回 201、pending 与当前 Revision。GET 返回按 code 排序的分页 items（skip 默认 0、take 默认 50、最多 100）。PUT 复用 UpdateTenant，只按路径目标写主档，过期 expectedRevision 返回 409 CONFLICT，未知目标 404 NOT_FOUND；tenantId、tenant_id、id 及不可编辑的 code/isolation 字段均在反序列化时拒绝为 400 BAD_REQUEST。运营 DTO 不包含联系方式或数据库凭据。
+
+权限目录位于 plugins/qian.tenancy/metadata/permissions.json，Authz 必须实际登记该目录且配置专用平台登录，Audit 必须配置独立平台链角色。运营端点使用 PlatformHttpContract 标注构建契约归属，不走只接受租户的 PluginEnabledMiddleware；每次请求仍核对实际 qian.tenancy 上下文与超管旁路。IHttpContractSource 从实际端点生成 contracts/http-v1.openapi.json，经真实 oasdiff 与 OpenApiContractPlugin 准入；该构建描述不会出现在租户可见契约聚合里。TEN-005 页面与 S1-GW-001 探针可消费上述已发布接口，尚不表示相关任务已验收。

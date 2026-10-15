@@ -256,6 +256,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
         LifecyclePlatform? lifecycle = null)
     {
+        if (lifecycle is { Management: true }) await PreparePlatformLogins(lifecycle);
         var platform = capabilities || lifecycle is not null || runtimeProfile == "platform";
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
         var migrator = "qian_cap_owner_" + suffix;
@@ -306,6 +307,8 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                 await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
                 await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
+                if (lifecycle is { Management: true })
+                    await Admin("BEGIN;" + AuthzPlatformAccess.CreateMigrationSql(lifecycle.AuthzRole) + AuditPlatformAccess.CreateMigrationSql(lifecycle.AuditRole) + "COMMIT;");
             }
             if (platform)
             {
@@ -386,6 +389,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
     private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection) : IAsyncDisposable
     {
         internal WebApplication App => app;
+        internal RsaSecurityKey ManagementSigningKey => key;
         internal string BusinessRole => role;
         // 受限业务登录（NOSUPERUSER / NOBYPASSRLS），用来从数据库侧核对 RLS 的实际效果。
         internal string BusinessConnection => connection;
@@ -403,7 +407,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token(tenant, "crm.read"));
             return Send(message);
         }
-        internal string Token(string tenant, string scope, string? subject = null, string kind = "service", object? actor = null)
+        internal string Token(string? tenant, string scope, string? subject = null, string kind = "service", object? actor = null)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var id = Guid.CreateVersion7().ToString();
             var payload = new Dictionary<string, object?> { ["iss"] = Issuer, ["aud"] = new[] { Audience }, ["sub"] = subject ?? Writer, ["principal_kind"] = kind,
