@@ -26,13 +26,13 @@ Kun 的版本只在 `Directory.Packages.props` 的 `KunVersion` 写一次；升�
 | 目录 | 内容 | 入口 |
 |---|---|---|
 | `docs/` | 决策清单、21 份 ADR、PRD 17 章与四份专题规格、迁移方案、路线图 | [docs/README.md](docs/README.md) |
-| `pm/` | 任务文件、离线看板、进度概览（任务即文件，git 是唯一真相源） | [pm/README.md](pm/README.md) · [进度概览](pm/STATUS.md) |
+| `pm/` | 任务文件与看板模板（任务即文件，git 是唯一真相源；看板与进度表按需生成，不进 git） | [pm/README.md](pm/README.md) · [看板](http://10.78.1.161:30810/) |
 | `scripts/` | `pm.py`（任务校验 / 生成 / 改状态）、`check_docs.py`（文档门禁）、`check_deps.py`（.NET 依赖图门禁） | — |
 | `tests/` | 集成测试共用的 Testcontainers fixture（PostgreSQL 16 / Redis 7 / RabbitMQ / Apollo 替身）、门禁自测 | [tests/README.md](tests/README.md) |
 | `AGENTS.md` | 给 Codex、Claude Code 等编码代理的入口约定（`CLAUDE.md` 指向它） | [AGENTS.md](AGENTS.md) |
 | `website/` | 文档站（Rspress 2.0）：七个部分、首页、主题；设计文档在站内「设计与路线」镜像 | [website/README.md](website/README.md) |
 | `packages/yue/` · `apps/` | yue 前端工作区：`@yue/*` 八个 S1 包的骨架（pnpm workspace + `catalog:` + Turborepo）、六层分层边界、八项 CI 门禁、Base UI 验证门靶场 | [packages/yue/README.md](packages/yue/README.md) |
-| `.github/` | CI：文档门禁 + 任务校验 + 看板生成物新鲜度；.NET 构建、PublicAPI 与依赖图门禁、单元与集成测试；文档站构建、PR 预览与发布 | — |
+| `.github/` | CI：文档门禁 + 任务校验 + 生成看板（上传为产物）；.NET 构建、PublicAPI 与依赖图门禁、单元与集成测试；文档站构建、PR 预览与发布 | — |
 | `deploy/` | 开发期工具的 K3s 清单：`pm-board/` 把看板放进集群、`docs-site/` 托管文档站（都是 git-sync + nginx） | [deploy/pm-board/README.md](deploy/pm-board/README.md) · [deploy/docs-site/README.md](deploy/docs-site/README.md) |
 
 代码目录（`packages/`、`plugins/`、`profiles/`、`samples/`）由 S1 第一波任务建立，布局以 [组件模型规格](docs/prd/specs/component-model.md) 为准。
@@ -49,11 +49,13 @@ Kun 的版本只在 `Directory.Packages.props` 的 `KunVersion` 写一次；升�
 
 **任务是文件。** `pm/tasks/<id>.md` 一个任务一个文件，YAML 头里有状态、阶段、领域、波次、优先级、负责人、估算、依赖和文档链接，正文是背景、可勾选的验收和进度日志。改任务就是改文件、提交；人和编码代理用同一套命令。
 
-**进度是算出来的。** 运行 `python3 scripts/pm.py build` 会生成：
+**进度是算出来的。** 看板与进度表由 `python3 scripts/pm.py build` 按任务文件生成，**不进 git**（S1-PM-004），所以 PR 不会再因它们互相冲突：
 
-- `pm/index.html`：离线看板（看板 / 列表 / 进度 / 阻塞与依赖四个视图，可按阶段、领域、波次、状态、负责人筛选，点任务看详情），双击即可打开；集群里的实时副本在 <http://10.78.1.161:30810/>（WireGuard 侧）；
-- `pm/STATUS.md`：按阶段、波次、领域、负责人的进度表，在 GitHub 上直接可读；
-- `pm/tasks.json`：给其他工具用的数据。
+- 看板：看板 / 列表 / 进度 / 阻塞与依赖四个视图，可按阶段、领域、波次、状态、负责人筛选，点任务看详情。
+  - 集群里的实时看板在 <http://10.78.1.161:30810/>（WireGuard 侧；公司内网 <http://192.168.1.210/>），`main` 有新提交后一分钟左右更新。
+  - 本地运行 `build` 后，也可以双击 `pm/index.html` 离线打开。
+- 进度表：按阶段、波次、领域、负责人汇总，看集群看板的 `/STATUS.md`，或本地运行 `python3 scripts/pm.py stats` 直接打印。
+- `tasks.json`：给其他工具用的数据，在集群看板的 `/tasks.json`。
 
 常用命令（仓库根目录，只需 Python 3）：
 
@@ -62,10 +64,11 @@ python3 scripts/pm.py list --status todo                 # 找任务
 python3 scripts/pm.py set S1-RT-001 --status doing --owner 你的名字 --note "开始"
 python3 scripts/pm.py set S1-RT-001 --status done --note "验收全部通过"
 python3 scripts/pm.py add --stage S1 --area FILE --title "..." --priority P0 --wave 2 --estimate 2d
-python3 scripts/pm.py validate && python3 scripts/pm.py build   # 改完任务必跑，生成物一起提交
+python3 scripts/pm.py validate                           # 改完任务必跑；只提交任务文件
+python3 scripts/pm.py build                              # 想在本地看看板时再跑（生成到 pm/，不进 git）
 ```
 
-规则、领域代码、状态定义见 [pm/README.md](pm/README.md)；**怎么把任务下发给人或 Codex / Claude Code（含可复制的提示词模板）见其第 7 节**。CI 会在推送与 PR 时检查文档门禁、任务文件合法性和生成物是否过期。
+规则、领域代码、状态定义见 [pm/README.md](pm/README.md)；**怎么把任务下发给人或 Codex / Claude Code（含可复制的提示词模板）见其第 7 节**。CI 会在推送与 PR 时检查文档门禁与任务文件合法性，并生成看板、上传为工作流产物 `pm-board`。
 
 ## 开发怎么开始
 
