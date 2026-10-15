@@ -12,3 +12,6 @@ public interface IHttpContractSource
     /// <summary>读取当前请求可访问的组件 HTTP 文档；没有可信 HTTP 请求时不得推测端点权限。</summary>
     ValueTask<JsonElement> GetDocumentAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default);
 }
+
+/// <summary>平台运营端点的契约归属；只用于构建完整 OpenAPI，不开放租户业务挂载或授权旁路。</summary>
+public sealed record PlatformHttpContract(string PluginId);

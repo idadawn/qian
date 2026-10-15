@@ -31,6 +31,7 @@ public sealed class TenancyPlugin : IQianPlugin
         var directory = new PostgresTenantDirectory(ctx.Data());
         ctx.Effect(directory.Dispose);
         ctx.Provide<ITenantDirectory>(TenancyDefinition.Key, directory);
+        ctx.Provide<ITenantOperations>(TenantOperations.Key, new TenantOperationsService(ctx, directory));
         var provisioning = new TenantProvisioningOrchestrator(ctx, directory, initializationCapabilities);
         ctx.Effect(provisioning.Dispose);
         ctx.Provide<ITenantProvisioning>(TenantProvisioning.Key, provisioning);

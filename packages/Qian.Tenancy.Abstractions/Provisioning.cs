@@ -1,4 +1,5 @@
 using Qian.Runtime;
+using System.Text.Json.Serialization;
 
 namespace Qian.Tenancy;
 
@@ -14,6 +15,7 @@ public static class TenantProvisioning
 }
 
 /// <summary>可信运营方给出的管理员主体及成员指针；不代表 Identity 已创建该成员。</summary>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record TenantAdministrator(Guid MembershipId, string SubjectId);
 
 /// <summary>持久化步骤表驱动的租户级开通；同号同请求重试幂等，不负责激活租户。</summary>

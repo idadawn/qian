@@ -15,15 +15,17 @@ internal sealed class PostgresTenantDirectory(IDataService data) : ITenantDirect
     {
         EnsureActive(); ValidateCode(code);
         await using var session = await data.OpenAsync<TenancyDbContext>(cancellationToken).ConfigureAwait(false);
-        var row = await session.Context.Tenants.AsNoTracking().SingleOrDefaultAsync(x => x.Code == code, cancellationToken).ConfigureAwait(false);
-        EnsureActive(); return row is null ? null : Describe(row);
+        var result = await session.Context.Tenants.AsNoTracking().Where(x => x.Code == code)
+            .Select(row => new { Row = row, Revision = EF.Property<uint>(row, KunDataConventions.RowVersionPropertyName) }).SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        EnsureActive(); return result is null ? null : Describe(result.Row) with { Revision = result.Revision };
     }
     public async ValueTask<TenantDescriptor?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         EnsureActive();
         await using var session = await data.OpenAsync<TenancyDbContext>(cancellationToken).ConfigureAwait(false);
-        var row = await session.Context.Tenants.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, cancellationToken).ConfigureAwait(false);
-        EnsureActive(); return row is null ? null : Describe(row);
+        var result = await session.Context.Tenants.AsNoTracking().Where(x => x.Id == id)
+            .Select(row => new { Row = row, Revision = EF.Property<uint>(row, KunDataConventions.RowVersionPropertyName) }).SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        EnsureActive(); return result is null ? null : Describe(result.Row) with { Revision = result.Revision };
     }
     // 仅供已授权控制面/生命周期接线；不发布未经权限检查的 HTTP 写入入口。
     internal async Task<TenantDescriptor> CreateAsync(CreateTenant request, CancellationToken ct)
@@ -36,7 +38,7 @@ internal sealed class PostgresTenantDirectory(IDataService data) : ITenantDirect
         try { await session.SaveChangesAsync(ct).ConfigureAwait(false); }
         catch (DbUpdateException error) when (error.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { throw Error(PlatformErrors.Conflict); }
-        return Describe(row);
+        return Describe(row) with { Revision = session.Context.Entry(row).Property<uint>(KunDataConventions.RowVersionPropertyName).CurrentValue };
     }
     internal async Task<TenantDescriptor> UpdateAsync(Guid id, UpdateTenant request, CancellationToken ct)
     {
@@ -47,7 +49,7 @@ internal sealed class PostgresTenantDirectory(IDataService data) : ITenantDirect
         row.Name = request.Name;
         try { await session.SaveChangesAsync(ct).ConfigureAwait(false); }
         catch (DbUpdateConcurrencyException) { throw Error(PlatformErrors.PreconditionFailed); }
-        return Describe(row);
+        return Describe(row) with { Revision = session.Context.Entry(row).Property<uint>(KunDataConventions.RowVersionPropertyName).CurrentValue };
     }
     internal static TenantDescriptor Describe(TenantRow row) => new(row.Id, row.Code, row.Name,
         row.Isolation == "row" ? TenantIsolation.Row : throw new InvalidOperationException("未装配此隔离策略。"),
