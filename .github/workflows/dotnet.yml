@@ -57,6 +57,9 @@ jobs:
       - name: 真实 Events 代码与唯一清单不得漂移
         run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Events/bin/Release/net10.0/Qian.Events.dll plugins/qian.events
 
+      - name: 真实 Config 代码与唯一清单不得漂移
+        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Config.Apollo/bin/Release/net10.0/Qian.Config.Apollo.dll plugins/qian.config
+
       - name: 仓库 profile 生效配置的明文密钥扫描（S1-CFG-002）
         run: dotnet tools/Qian.Secrets.Tool/bin/Release/net10.0/Qian.Secrets.Tool.dll --profiles .
 
