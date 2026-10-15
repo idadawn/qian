@@ -97,3 +97,7 @@ SDK 自身的依赖边界由 CI 的依赖图门禁守住：`Qian.Plugin.Sdk`、`
 CapabilityBindingRegistration 在所属组件的 Apply 中，以生成契约的 component/name 登记 IExecutableCapability；实际调用反序列化为源生成请求类型，再进入真实 ISender 和已装配的命令管道。注册与取消随 Effect 撤销。调用者必须提供与当前租户一致的实际 scope 视图；每次调用重新解析同一具名绑定，缓存引用不能绕过 restrict、替换或卸载。Global 视图不能用于已有租户的调用。
 
 这只是目录与执行共享的基础绑定，尚未实现完整 Capabilities 权限过滤、模型提示词、OpenAPI 聚合或完整 platform。构建期组件生成器只识别真实 SDK 的 ProvideCapability 方法，不给应用伪造的同名方法豁免。
+
+## 开户初始化 hook（S1-DEC-023）
+
+仅租户开通编排可开启不可序列化的内部授权作用域，SDK hook 适配器核对生产方对象、租户、精确能力清单、请求类型与权限点后消费一次。生命周期结束、嵌套或重复消费均拒绝。正常能力仍要求已认证租户主体；初始化执行只使用编排传入的真实操作者快照，经过既有 Kun 权限行为与三项 command 策略、业务事务和 hook 审计，不伪造或签发登录令牌。Authz Definition 的内部注册重载只为 Kun 原行为提供受该凭据限制的身份/判定适配器，不更换宿主 DI 或普通 RBAC 引擎。

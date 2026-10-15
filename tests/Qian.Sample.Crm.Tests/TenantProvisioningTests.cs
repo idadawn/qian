@@ -1,4 +1,8 @@
 using System.Text.Json;
+using System.Net;
+using Qian.Audit;
+using Qian.Authz.Abstractions;
+using Qian.Plugin.Sdk;
 using Microsoft.AspNetCore.Builder;
 using Kun.Core.MultiTenancy;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +16,7 @@ namespace Qian.Sample.Crm.Tests;
 
 public sealed partial class CustomerCommandTests
 {
+    private static readonly string[] InitializationCapabilities = ["qian.sample.crm/customer.list"];
     [Fact]
     public async Task 真实开通事件接SDK业务hook时保留拒绝_不伪造租户身份或越过pending策略()
     {
@@ -38,6 +43,31 @@ public sealed partial class CustomerCommandTests
         Assert.Contains(await provisioning.GetStepsAsync(descriptor.Id, Ct), step => step.Step == "04:provisioned" && step.Status == "failed" && step.Reason == "AUTHZ_DENIED");
         // R96 要求初始授权在派发之后，失败不能越过该顺序给未完成租户授予 owner。
         Assert.Equal("0", await Text($"SELECT count(*)::text FROM plugin_qian_authz.role_assignments WHERE tenant_id='{descriptor.Id}'"));
+
+        // 仅部署配置中的精确清单允许开户执行；不向请求体、普通 hook 或常规命令签发凭据。
+        await loader.UnmountAsync("tenancy", ScopeKey.Global, Ct);
+        await loader.MountAsync([new PluginDefinition(new PluginEntry("tenancy", "qian.tenancy", "1.0.0", ScopeKey.Global, 0,
+            JsonSerializer.SerializeToElement(new { initializationCapabilities = InitializationCapabilities })),
+            new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey])], Ct);
+        source = loader.GetContext("tenancy", ScopeKey.Global);
+        provisioning = source.Inject<ITenantProvisioning>(TenantProvisioning.Key);
+        await provisioning.RetryAsync(descriptor.Id, "platform-operator", Ct);
+        Assert.Equal("succeeded", (await provisioning.GetStepsAsync(descriptor.Id, Ct)).Single(step => step.Step == "04:provisioned").Status);
+        using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(descriptor.Id.ToString()))
+        {
+            var audit = Assert.Single(await source.Audit().ReadAsync(0, 20, cancellationToken: Ct));
+            Assert.Equal(("hook", "platform-operator", "qian.sample.crm/customer.list"), (audit.Record.Channel, audit.Record.ActorId, audit.Record.CapabilityId));
+            Assert.True((await source.Audit().VerifyAsync(Ct)).Valid);
+            // 显式补一条测试主体的真实授权，让 HTTP 拒绝只剩 pending 租户策略。
+            await source.Inject<ITenantRoleGrant>(TenantRoleGrant.Key).AssignAsync("tenant.owner", "service", Writer, "operator", Ct);
+            await AssertCode(PlatformErrors.AuthzDenied, () => loader.GetContext("crm", ScopeKey.Global).Inject<IExecutableCapability>(
+                CapabilityBindingRegistration.Key, "qian.sample.crm/customer.list").InvokeAsync(source.Scoped(new ScopeKey("tenant", descriptor.Id.ToString())),
+                JsonSerializer.SerializeToElement(new ListCustomersQuery(), ListCustomersQuery.QianCapability.RequestTypeInfo), Ct).AsTask());
+        }
+        using (var pending = await host.Get(descriptor.Id.ToString(), "/api/customers")) Assert.Equal(HttpStatusCode.Forbidden, pending.StatusCode);
+        await provisioning.RetryAsync(descriptor.Id, "platform-operator", Ct);
+        using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(descriptor.Id.ToString()))
+            Assert.Single(await source.Audit().ReadAsync(0, 20, cancellationToken: Ct));
     }
 
     [Fact]

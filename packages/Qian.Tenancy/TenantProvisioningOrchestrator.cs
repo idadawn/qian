@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Qian.Authz.Abstractions;
 using Qian.Data;
 using Qian.Lifecycle;
+using Qian.Events;
 using Qian.Registry;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
@@ -14,7 +15,7 @@ namespace Qian.Tenancy;
 
 // 每步独立提交；会话级 advisory lock 只串行同一开户，不把外部组件副作用裹进数据库事务。
 // 进程退出会释放锁；running 步骤下次用相同幂等键重试。成功步骤永不重放，skipped 步骤可以补跑。
-internal sealed class TenantProvisioningOrchestrator(IPluginContext context, PostgresTenantDirectory directory) : ITenantProvisioning, IDisposable
+internal sealed class TenantProvisioningOrchestrator(IPluginContext context, PostgresTenantDirectory directory, IReadOnlySet<string> initializationCapabilities) : ITenantProvisioning, IDisposable
 {
     private readonly ITenantContext _tenant = context.Services.GetRequiredService<ITenantContext>();
     private int _disposed;
@@ -103,6 +104,11 @@ internal sealed class TenantProvisioningOrchestrator(IPluginContext context, Pos
             {
                 // 授予端口必须存在，不能把无监听的空分发标为成功；初始授权严格排在角色监听之后。
                 _ = scope.Inject<ITenantRoleGrant>(TenantRoleGrant.Key);
+                var origin = EventEnvelopeScope.Current;
+                if (origin is not null && (origin.Actor.Id != actor || origin.Actor.OnBehalfOf is not null || origin.Actor.Kind == EventActorKind.Agent))
+                    throw Error(PlatformErrors.AuthzDenied);
+                using var initialization = TenantInitializationAuthorization.Begin(scope, actor, initializationCapabilities,
+                    origin?.Actor.Kind == EventActorKind.Service ? "service" : "user");
                 await scope.DispatchAsync(SurfaceHookEvents.TenantProvisioned,
                     new HookNotification(scope, id.ToString(), JsonSerializer.SerializeToElement(new { code = row.Code }), cancellationToken), cancellationToken).ConfigureAwait(false);
                 return null;
