@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Qian.Audit;
 using Qian.Authz;
 using Qian.Authz.Abstractions;
+using Qian.Authz.AspNetCore;
 using Qian.Data;
 using Qian.Events;
 using Qian.Plugin.Sdk;
@@ -109,6 +110,8 @@ public static class CrmCommandApplication
             Results.Ok(await runtime.Source().Inject<ICrmCommands>(CrmDefinition.Key).GetAsync(new GetCustomerQuery(id), ct).ConfigureAwait(false)))
             .RequireAuthorization("crm-command-reader").RequireKunPermission("qian.sample.crm:customer:read")
             .WithMetadata(new PluginEndpointBinding("crm", "qian.sample.crm", CapabilityBindingRegistration.Key, "qian.sample.crm/customer.get")).Produces<CustomerItem>();
+        // 当前主体在本租户的有效权限（含风险、step-up 与终端元数据）；主体与租户只取自已验证令牌。
+        app.MapQianAuthz(http => http.RequestServices.GetRequiredService<CrmCommandRuntime>().AuthzSource());
         return app;
     }
 }
