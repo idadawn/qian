@@ -9,7 +9,7 @@ priority: P1
 type: feature
 owner: ""
 estimate: 1d
-depends: [S1-DATA-003, S1-RT-014]
+depends: [S1-DATA-003, S1-RT-014, S1-RT-033]
 refs:
   - docs/prd/07-s1-foundation.md#7.6
   - docs/prd/specs/component-model.md#6.1
@@ -29,3 +29,4 @@ S1-DATA-003 以宿主装配交付 PG 方言（AddQianPgDialect）。规格要求
 ## 进度日志
 
 - 2026-10-15 claude：创建任务
+- 2026-10-16 claude：R94：具名 Provide 的 provides 派生未随 S1-RT-014 交付（生成器仍报 QIANSDK002），转 S1-RT-033，depends 补上
