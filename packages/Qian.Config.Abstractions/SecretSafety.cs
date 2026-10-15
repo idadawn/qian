@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Qian.Common;
 
 namespace Qian.Config;
 
@@ -10,9 +10,8 @@ public sealed record SecretDiagnostic(string Code, string Location, string Reaso
 /// <summary>配置契约级敏感数据扫描，可供发布门禁与 Apollo 快照验证共用。</summary>
 public static partial class SecretSafety
 {
-    // 动态键模式只来自配置契约，进程内条目有限；超过上限整表清空重建，内存有界，已取出的实例不受影响。
-    internal const int PatternCacheSize = 128;
-    private static readonly ConcurrentDictionary<string, Regex> Patterns = new(StringComparer.Ordinal);
+    // 键名会让各正则方言判断不同时，用这个敏感标记代替模式判定：值只能是合法引用。
+    private static readonly JsonElement Ambiguous = JsonElement.Parse("""{"x-qian-sensitive":true}""");
 
     /// <summary>扫描 JSON；本地 Schema 引用和组合分支中的敏感标记都参与检查。</summary>
     public static IReadOnlyList<SecretDiagnostic> Scan(JsonElement value, JsonElement? schema = null)
@@ -100,16 +99,23 @@ public static partial class SecretSafety
             if (schema.TryGetProperty("properties", out var properties) && properties.ValueKind == JsonValueKind.Object)
                 foreach (var property in properties.EnumerateObject())
                     if (property.Name.Equals(key, StringComparison.OrdinalIgnoreCase)) { result.Add(property.Value); matched = true; }
-            if (schema.TryGetProperty("patternProperties", out var patterns) && patterns.ValueKind == JsonValueKind.Object)
+            if (schema.TryGetProperty("patternProperties", out var patterns) && patterns.ValueKind == JsonValueKind.Object && patterns.EnumerateObject().Any())
+            {
+                // 配置键不区分大小写：动态键按 ECMA-262 判定并按 OrdinalIgnoreCase 折叠（见 SchemaPattern）。
+                // 方言判断不同的键名不做匹配，整体按敏感处理；模式仍逐个编译，不受支持的写法照常报告。
+                var stable = SchemaPattern.IsStable(key);
                 foreach (var pattern in patterns.EnumerateObject())
                 {
                     try
                     {
-                        if (Pattern(pattern.Name).IsMatch(key)) { result.Add(pattern.Value); matched = true; }
+                        var regex = SchemaPattern.Compile(pattern.Name, foldCase: true);
+                        if (stable && regex.IsMatch(key)) { result.Add(pattern.Value); matched = true; }
                     }
                     catch (Exception error) when (error is ArgumentException or NotSupportedException or RegexMatchTimeoutException)
                     { output.Add(new("CONFIG_SECRET_SCHEMA_INVALID", pointer, "unsupported-pattern")); }
                 }
+                if (!stable) { result.Add(Ambiguous); matched = true; }
+            }
             if (!matched && schema.TryGetProperty("additionalProperties", out var additional) && additional.ValueKind == JsonValueKind.Object) result.Add(additional);
             if (int.TryParse(key, out var index) && index >= 0)
             {
@@ -179,17 +185,6 @@ public static partial class SecretSafety
         return classes >= 2 && entropy >= 4.0 || value.Length >= 40 && value.All(Uri.IsHexDigit) && entropy >= 3.2;
     }
     private static string Token(string value) => value.Replace("~", "~0", StringComparison.Ordinal).Replace("/", "~1", StringComparison.Ordinal);
-    // NonBacktracking 线性匹配，过大的自动机在构造时即拒绝；超时只兜底超长输入，触发即报 CONFIG_SECRET_SCHEMA_INVALID（失败关闭）。
-    // 墙钟只在物化新 DFA 转移和长输入分段时检查：复用实例后，常规长度的热匹配不受调度或 GC 停顿影响；首次 JIT 与建图仍可能被拖长，1 秒上限为此留出余量。
-    // 静态 Regex.IsMatch 只靠框架共享的 15 项缓存复用实例，会被其他代码挤出，所以单独缓存；构造失败直接抛给调用方，不进缓存。
-    internal static Regex Pattern(string pattern)
-    {
-        if (Patterns.TryGetValue(pattern, out var cached)) return cached;
-        var regex = new Regex(pattern, RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
-        if (Patterns.Count >= PatternCacheSize) Patterns.Clear();
-        return Patterns.GetOrAdd(pattern, regex);
-    }
-    internal static int CachedPatterns => Patterns.Count;
     [GeneratedRegex(@"\AeyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking)]
     private static partial Regex Jwt();
 }

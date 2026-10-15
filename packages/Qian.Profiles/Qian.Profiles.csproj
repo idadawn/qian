@@ -6,4 +6,5 @@
     <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
     <PackageReference Include="JsonSchema.Net" /><PackageReference Include="SemanticVersioning" />
   </ItemGroup>
+  <ItemGroup><Compile Include="../Common/SchemaPattern.cs" Link="Common/SchemaPattern.cs" /></ItemGroup>
 </Project>

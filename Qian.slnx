@@ -64,6 +64,7 @@
     <Project Path="tests/Qian.Lifecycle.Tests/Qian.Lifecycle.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Errors.Tests/Qian.Runtime.Errors.Tests.csproj" />
     <Project Path="tests/Qian.Sample.Crm.Tests/Qian.Sample.Crm.Tests.csproj" />
+    <Project Path="tests/Qian.Common.Tests/Qian.Common.Tests.csproj" />
     <Project Path="tests/Qian.Surfaces.Tests/Qian.Surfaces.Tests.csproj" />
     <Project Path="tests/Qian.Testing.Containers.IntegrationTests/Qian.Testing.Containers.IntegrationTests.csproj" />
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />

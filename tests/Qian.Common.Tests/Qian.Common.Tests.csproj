@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <!-- 直接编译 packages/Common 的源文件，按源码测试共享实现，不经任何包。 -->
+  <ItemGroup>
+    <Compile Include="../../packages/Common/SchemaPattern.cs" Link="Common/SchemaPattern.cs" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+</Project>
