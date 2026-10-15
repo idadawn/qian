@@ -1,11 +1,13 @@
 name: dotnet-release
 
-# Qian .NET 包族锁步发布到 GitHub Packages 私有源（S1-RT-014，ADR-019 D19.7、ADR-021 D21.1）。
+# Qian .NET 包族锁步发布到 GitHub Packages（S1-RT-014，ADR-019 D19.7、ADR-021 D21.1）。
 # 只从 main 手动触发，一次发布整个包族的同一版本：
-#   本提交的 dotnet 工作流已在 main 通过 → 版本号是 SemVer 且私有源里任何包都还没有这个版本 → 带版本号构建并打包 →
+#   本提交的 dotnet 工作流已在 main 通过 → 版本号是 SemVer 且包源里任何包都还没有这个版本 → 带版本号构建并打包 →
 #   核对制品（包族齐全、版本一致、包族内依赖钉在同一版本）→ 先用本地目录在干净消费者里还原验证 → 推送 →
-#   再从私有源在干净消费者里真实还原、构建并运行（独立包缓存，Qian.* 只允许来自私有源）。
-# 推送中途失败时私有源里会留下部分包；同一版本不能再发，换一个新版本号重新触发。说明见 packages/Qian.Plugin.Sdk/README.md「包族私有发布」。
+#   核对包源里每个包的版本、仓库关联与可见性 → 再从包源在干净消费者里真实还原、构建并运行（独立包缓存，Qian.* 只允许来自该源）。
+# GitHub 的 NuGet 包随关联仓库定可见性：idadawn/qian 是公开仓库，包随之公开（公开后不能改回私有），安装仍需 GitHub 令牌；
+# 产品负责人 2026-10-15 选择保留公开。推送中途失败时包源里会留下部分包；同一版本不能再发，换一个新版本号重新触发。
+# 说明见 packages/Qian.Plugin.Sdk/README.md「包族发布」。
 
 on:
   workflow_dispatch:
@@ -30,7 +32,7 @@ env:
 
 jobs:
   release:
-    name: 锁步打包、私有发布与真实还原
+    name: 锁步打包、发布与真实还原
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -65,7 +67,7 @@ jobs:
       - name: 还原
         run: dotnet restore Qian.slnx
 
-      - name: 版本号可用（SemVer 2.0，私有源里尚无该版本）
+      - name: 版本号可用（SemVer 2.0，包源里尚无该版本）
         run: python3 scripts/dotnet_release.py check-version --version "$RELEASE_VERSION" --feed "$QIAN_FEED" --token-env QIAN_FEED_TOKEN
 
       - name: 带版本号构建并打包全部 Qian 包
@@ -83,5 +85,8 @@ jobs:
             dotnet nuget push "$package" --source "$QIAN_FEED" --api-key "$QIAN_FEED_TOKEN"
           done
 
-      - name: 从私有源在干净消费者里真实还原、构建并运行
+      - name: 核对包源里的版本、仓库关联与可见性
+        run: python3 scripts/dotnet_release.py verify-feed --version "$RELEASE_VERSION" --repository "$GITHUB_REPOSITORY" --token-env QIAN_FEED_TOKEN
+
+      - name: 从包源在干净消费者里真实还原、构建并运行
         run: python3 scripts/dotnet_release.py verify-consumer --version "$RELEASE_VERSION" --source "$QIAN_FEED" --token-env QIAN_FEED_TOKEN --attempts 8

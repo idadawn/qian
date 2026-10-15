@@ -1,6 +1,6 @@
 # Qian.Plugin.Sdk
 
-本模块是 S1-RT-014 的 SDK 与源生成器入口。开发者规格为组件模型 §3、§5 及 PRD §7.2.3；组件库只依赖 Runtime、SDK 与 Definition，SDK 自身不引用 Provider。当前交付代码声明、源生成能力契约、唯一清单校验、已在真实 CRM 命令中使用的 Mediator/事务/waterfall 管道，以及包族的私有 NuGet 锁步发布；平台/App/会话入口、`qian init` 模板里的默认装配（S1-RT-012）和 `qian add` 代码安装（S1-RT-011）仍在实现。
+本模块是 S1-RT-014 的 SDK 与源生成器入口。开发者规格为组件模型 §3、§5 及 PRD §7.2.3；组件库只依赖 Runtime、SDK 与 Definition，SDK 自身不引用 Provider。当前交付代码声明、源生成能力契约、唯一清单校验、已在真实 CRM 命令中使用的 Mediator/事务/waterfall 管道，以及包族在 GitHub Packages 的 NuGet 锁步发布；平台/App/会话入口、`qian init` 模板里的默认装配（S1-RT-012）和 `qian add` 代码安装（S1-RT-011）仍在实现。
 
 ## 代码契约
 
@@ -53,15 +53,16 @@ Registry 条目整体卸载时，宿主上下文工厂的失效也映射为 NOT_
 
 端点执行中解析实际服务时仍使用同一租户 scope。视图是只读快照，不是永久授权租约；调用方不能把它缓存成永久可调用资格。当前为有可信租户的 Minimal API；MVC 适配、平台 null 租户及 app/session lineage 仍需对应入口实现。
 
-## 包族私有发布
+## 包族发布
 
-`Qian.slnx` 里 `IsPackable=true` 且包名以 `Qian.` 开头的全部项目组成包族（与依赖图门禁同一口径），按 ADR-019 D19.7 以同一 SemVer 版本发到 GitHub Packages 私有源 `https://nuget.pkg.github.com/idadawn/index.json`。发布只运行 main 上的 `dotnet-release` 工作流（手动触发，输入版本号），由 [scripts/dotnet_release.py](../../scripts/dotnet_release.py) 逐步核对：
+`Qian.slnx` 里 `IsPackable=true` 且包名以 `Qian.` 开头的全部项目组成包族（与依赖图门禁同一口径），按 ADR-019 D19.7 以同一 SemVer 版本发到 GitHub Packages 的 NuGet 源 `https://nuget.pkg.github.com/idadawn/index.json`。GitHub 的 NuGet 包随关联仓库定可见性：`idadawn/qian` 是公开仓库，包随之公开可见（公开后不能改回私有），从该源安装仍需 GitHub 令牌；首个版本 0.1.0 发布时出现这一情况，产品负责人 2026-10-15 选择保留公开，与 ADR-019「S1 私有源」的出入记在 S1-RT-014 日志。发布只运行 main 上的 `dotnet-release` 工作流（手动触发，输入版本号），由 [scripts/dotnet_release.py](../../scripts/dotnet_release.py) 逐步核对：
 
-1. 本提交的 dotnet 工作流已在 main 通过；版本号是不带 v 前缀与构建元数据的 SemVer 2.0，包族里任何包在私有源里都还没有这个版本。
+1. 本提交的 dotnet 工作流已在 main 通过；版本号是不带 v 前缀与构建元数据的 SemVer 2.0，包族里任何包在包源里都还没有这个版本。
 2. 带版本号打包后核对制品：包族齐全、各一个、版本一致，包族内依赖的下限钉在同一版本，源生成器包只在 `analyzers/dotnet/cs` 下带自身分析器且是开发依赖，许可证与仓库地址齐全。
-3. 先用本地目录、推送后再用私有源，在干净的消费者项目里以独立包缓存还原 `Qian.Plugin.Sdk`、`Qian.Plugin.Sdk.Generators`、`Qian.Data` 的精确版本；构建时包里的源生成器派生组件元数据，运行后核对派生结果与包里 qian.data 的生成元数据，并核对还原出的每个 `Qian.*` 包都是同一版本、都来自给定源。
+3. 推送后经 GitHub REST API 核对包族每个包都有这个版本、关联到发布仓库，且可见性与仓库一致。
+4. 先用本地目录、推送后再用包源，在干净的消费者项目里以独立包缓存还原 `Qian.Plugin.Sdk`、`Qian.Plugin.Sdk.Generators`、`Qian.Data` 的精确版本；构建时包里的源生成器派生组件元数据，运行后核对派生结果与包里 qian.data 的生成元数据，并核对还原出的每个 `Qian.*` 包都是同一版本、都来自给定源。
 
-推送中途失败会在私有源留下部分包；同一版本不能再发，换新版本号重新触发。本机可用同一脚本预检（`--no-build` 只验打包形态，程序集版本仍是本地构建的版本）：
+推送中途失败会在包源里留下部分包；同一版本不能再发，换新版本号重新触发。本机可用同一脚本预检（`--no-build` 只验打包形态，程序集版本仍是本地构建的版本）：
 
 ```bash
 dotnet pack Qian.slnx -c Release --no-build -p:Version=0.1.0-local.1 -o /tmp/qian-nupkgs
@@ -69,7 +70,7 @@ python3 scripts/dotnet_release.py verify-packages --version 0.1.0-local.1 --dir 
 python3 scripts/dotnet_release.py verify-consumer --version 0.1.0-local.1 --source /tmp/qian-nupkgs
 ```
 
-消费方的 `nuget.config` 用 `packageSourceMapping` 把 `Qian.*` 映射到私有源、其余映射到 nuget.org（Kun 正式包在 nuget.org，ADR-021）；读取 GitHub Packages 需要带 `read:packages` 权限的令牌。组件项目引用 `Qian.Plugin.Sdk` 与 `Qian.Plugin.Sdk.Generators`（后者 `PrivateAssets="all"`）的同一版本：
+消费方的 `nuget.config` 用 `packageSourceMapping` 把 `Qian.*` 映射到 GitHub Packages、其余映射到 nuget.org（Kun 正式包在 nuget.org，ADR-021）；读取 GitHub Packages 需要带 `read:packages` 权限的令牌。组件项目引用 `Qian.Plugin.Sdk` 与 `Qian.Plugin.Sdk.Generators`（后者 `PrivateAssets="all"`）的同一版本：
 
 ```xml
 <packageSources>
