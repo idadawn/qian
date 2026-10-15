@@ -2,6 +2,14 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-16 审计哈希链、权限点注册表与默认角色（S1-AUD-001、S1-AZ-002）
+
+`qian.audit` 在命令的同一事务里按租户追加哈希链审计：查询默认不记，`Audit = true` 时记录；输入按 Schema `sensitive` 脱敏后再取哈希。`qian.authz` 从组件 `metadata/permissions.json` / `roles.json` 登记权限点（独立模式用 `[Permission]`），新租户开通时实例化默认角色；`GET /api/authz/me/permissions` 列出当前主体的有效权限及风险、step-up。详见 [Qian.Audit](../packages/Qian.Audit/README.md)、[Qian.Authz](../packages/Qian.Authz/README.md)；复核裁决 R101–R103 见[关键决策](decisions/key-decisions-v0.md)。
+
+## 2026-10-16 qian CLI 包管理器超时可配置（S1-RT-030）
+
+`qian add` / `remove` 调用包管理器的超时缺省 600 秒，可用环境变量 `QIAN_PACKAGE_TIMEOUT`（1–86400 的整数秒）调整，非法值在任何改动之前以结构化错误失败；预检还原允许并行下载。详见 [qian CLI](../packages/qian-cli/README.md)。
+
 ## 2026-10-16 出网检查缺省值：开发环境放行回环，缺省拒绝 K3s 集群网段（S1-DATA-007）
 
 数据连接连通测试的出网检查改了两处缺省值。宿主环境为 Development 时缺省放行回环，本机开发连本机数据库不用再改配置。K3s 缺省的 Pod 网段 10.42.0.0/16 与 Service 网段 10.43.0.0/16 并入缺省拒绝列表：原本连这两个网段内数据库的宿主，需要从 `Egress.BlockedNetworks` 移除对应项；集群改用了自定义网段时，同样移除这两项并追加实际网段。产品负责人已确认 R79，见[决策清单](decisions/key-decisions-v0.md)与 [Qian.Data](../packages/Qian.Data/README.md)。
