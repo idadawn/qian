@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -218,6 +219,58 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
+    public async Task 输入Schema不合格的能力在登记阶段被拒绝_组件挂载失败_目录与执行入口都没有该能力_修复后恢复()
+    {
+        await using var host = await Start(capabilities: true);
+        var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        var entry = runtime.DumpConfig().Single(item => item.Id == "crm");
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await runtime.MountAsync([new PluginDefinition(entry, new TenantFieldProbePlugin(new CrmPlugin()), [CrmDefinition.Key])], Ct);
+        // 平台宿主登记了契约检查：ProvideCapability 生成条目时即拒绝，异常带组件、能力短名、条目内位置与原因码。
+        Assert.Equal(PluginState.Failed, runtime.GetState("crm", ScopeKey.Global));
+        var failure = Assert.IsType<CapabilityContractException>(runtime.GetFailure("crm", ScopeKey.Global));
+        Assert.Equal(("qian.sample.crm", "customer.tenant-probe", TenantProbeQuery.Id + "#/inputSchema/properties/tenantId", "tenant-field"),
+            (failure.ComponentId, failure.Name, failure.Location, failure.Rule));
+        Assert.Equal("INPUT_INVALID", failure.Data["reasonCode"]);
+        // 组件 Apply 失败，已登记的能力随作用域一起撤销；目录、提示与执行入口都没有该能力，执行入口是 404 而不是 500。
+        Assert.DoesNotContain(runtime.GetContext("capabilities", ScopeKey.Global).Scoped(new ScopeKey("tenant", A)).List(CapabilityBindingRegistration.Key),
+            item => item.Name == TenantProbeQuery.Id);
+        await AssertAbsent(host, A);
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/capabilities/" + TenantProbeQuery.Id + "/invoke") { Content = new StringContent("""{"tenantId":"x","take":1}""", Encoding.UTF8, "application/json") };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(A, "crm.read crm.write"));
+        using (var probe = await host.Send(request)) Assert.Equal(HttpStatusCode.NotFound, probe.StatusCode);
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await runtime.MountAsync([new PluginDefinition(entry, new CrmPlugin(), [CrmDefinition.Key])], Ct);
+        Assert.True(runtime.GetState("crm", ScopeKey.Global) == PluginState.Ready, runtime.GetFailure("crm", ScopeKey.Global)?.ToString());
+        using var created = await Invoke(host, A);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+    }
+
+    // 在真实 CRM 组件之后再登记一个输入带租户字段的能力（租户只能来自令牌，PRD 7.2.1）。
+    private sealed class TenantFieldProbePlugin(IQianPlugin inner) : IQianPlugin
+    {
+        public IReadOnlyList<ServiceKey> Inject => inner.Inject;
+        public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
+        {
+            await inner.ApplyAsync(ctx, config, ct);
+            ctx.ProvideCapability<TenantProbeQuery, CustomerPage>();
+        }
+    }
+
+    internal sealed record TenantProbeQuery(string TenantId, int Take) : ICapabilityRequest<CustomerPage>
+    {
+        internal const string Id = "qian.sample.crm/customer.tenant-probe";
+        public static IReadOnlyList<string> RequiredPermissions { get; } = ["qian.sample.crm:customer:read"];
+        public static CapabilityContract QianCapability { get; } = new("qian.sample.crm",
+            """{"name":"customer.tenant-probe","description":"按调用方给出的租户读取客户；契约不合格，平台宿主在登记阶段拒绝。","sideEffect":"read","policyHint":"allow","idempotent":false,"async":"none","requiredScopes":["crm.read"],"requiredSecrets":[],"dataClassification":"internal","costTier":"low","contractVersion":"crm-v1","audit":false,"agent":{"expose":false,"requiresConfirmation":false},"binding":{"kind":"command","id":"qian.sample.crm/customer.tenant-probe"},"requiredPermission":"qian.sample.crm:customer:read"}""",
+            ProbeJson.Default.TenantProbeQuery, CrmCommandJson.Default.CustomerPage);
+    }
+
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow, RespectRequiredConstructorParameters = true)]
+    [JsonSerializable(typeof(TenantProbeQuery))]
+    internal sealed partial class ProbeJson : JsonSerializerContext;
+
+    [Fact]
     public async Task 完整HTTP制品独立于调用者权限_原生路由删除在挂载前被拒绝()
     {
         await using var host = await Start(capabilities: true);
@@ -291,6 +344,8 @@ public sealed partial class CustomerCommandTests
         builder.Services.AddQianData<RegistryDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(RegistryDbContext.Schema));
         builder.Services.AddSingleton<ISurfaceReader, SurfaceValidator>();
         builder.Services.AddSingleton<IToolContractHasher, ToolContractHasher>();
+        // 登记期契约检查：组件 ProvideCapability 时生成目录条目并预编译输入校验器，不合格的契约在登记阶段拒绝。
+        builder.Services.AddQianCapabilities();
         builder.Services.AddSingleton<IOpenApiCompatibilityProbe>(_ => new OasDiffOpenApiProbe(Environment.GetEnvironmentVariable("QIAN_OASDIFF_PATH")
             ?? throw new InvalidOperationException("契约检查器必须预装。")));
     }
@@ -307,7 +362,7 @@ public sealed partial class CustomerCommandTests
             try { await next(http); }
             catch (Exception error)
             {
-                app.Services.GetRequiredService<FailureEvidence>().Failures.Enqueue(error.GetType().Name + "\n" + error.Data["contractDiagnostics"] + "\n" + error.StackTrace);
+                app.Services.GetRequiredService<FailureEvidence>().Failures.Enqueue(error.GetType().Name + "\n" + error.Data["contractDiagnostics"] + "\n" + error.Data["contractErrors"] + "\n" + error.StackTrace);
                 throw;
             }
         });
@@ -321,7 +376,8 @@ public sealed partial class CustomerCommandTests
                 http.RequestServices.GetRequiredService<Qian.Identity.Abstractions.ICurrentUser>(), http.RequestAborted));
         }).RequireAuthorization();
     }
-    private static async Task AttachCapabilities(WebApplication app, HumanOnlyProbe? humanOnlyProbe = null)
+    // probes 随 crm 条目一起登记（同一组件、同一安装条目）；capabilitiesConfig 是 qian.capabilities 条目的组件配置，缺省为 {}。
+    private static async Task AttachCapabilities(WebApplication app, IReadOnlyList<IExecutableCapability> probes, object? capabilitiesConfig = null)
     {
         var loader = app.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var directory = Path.Combine(Path.GetTempPath(), "qian-capabilities-" + Guid.NewGuid().ToString("N"));
@@ -343,9 +399,11 @@ public sealed partial class CustomerCommandTests
                 entry.Scope == "global" ? ScopeKey.Global : new ScopeKey(entry.Scope.Split(':', 2)[0], entry.Scope.Split(':', 2)[1]), entry.Layer, entry.Config) }
         });
         Add("registry", "qian.registry", registry, [RegistryDefinition.Key]);
-        Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey, CapabilitiesDefinition.NavigationKey]);
+        Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey, CapabilitiesDefinition.NavigationKey], capabilitiesConfig);
+        // 组件配置按仓库交付的 config.schema.json 校验（profile 装载要求有配置的组件提供它）。
+        Write("plugins/capabilities/schemas/config.schema.json", File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.capabilities/schemas/config.schema.json")));
         Write("profiles/platform/qian.profile.yml", """{"name":"platform","bundles":[],"patch":"./qian.patch.yml","hmr":{"surfaces":true,"code":false},"build":{"aot":false},"hooks":{"allowCommand":false}}""");
-        Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin + "@" + item.Entry.Version, config = new { } })));
+        Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin + "@" + item.Entry.Version, config = item.Entry.Config })));
         var fullContract = CapabilityContractCompiler.CreateOpenApi(
             [CreateCustomerCommand.QianCapability, ListCustomersQuery.QianCapability, GetCustomerQuery.QianCapability], validator, new ToolContractHasher());
         Write("plugins/crm/metadata/contracts.json", JsonSerializer.Serialize(new[]
@@ -364,7 +422,7 @@ public sealed partial class CustomerCommandTests
             installed.Add(binding);
             if (definition.Entry.Id == "crm")
             {
-                var plugin = humanOnlyProbe is null ? definition.Plugin : new HumanOnlyProbePlugin(definition.Plugin, humanOnlyProbe);
+                var plugin = probes.Count == 0 ? definition.Plugin : new ProbePlugin(definition.Plugin, probes);
                 definitions["crm"] = definition with { Plugin = new NavigationManifestPlugin(plugin, binding.Metadata, validator) };
                 installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "0.9.0" } }, Path.Combine(directory, "plugins", "crm")));
                 installed.Add(BindArtifact(definition with { Entry = definition.Entry with { Version = "1.1.0" } }, Path.Combine(directory, "plugins", "crm"), incompatible: true));
@@ -412,9 +470,9 @@ public sealed partial class CustomerCommandTests
                 new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
         }
 
-        void Add(string id, string component, IQianPlugin plugin, ServiceKey[] provides)
+        void Add(string id, string component, IQianPlugin plugin, ServiceKey[] provides, object? config = null)
         {
-            var definition = new PluginDefinition(new PluginEntry(id, component, "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), plugin, provides);
+            var definition = new PluginDefinition(new PluginEntry(id, component, "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(config ?? new { })), plugin, provides);
             definitions.Add(id, definition);
             Write($"plugins/{id}/.qian-plugin/plugin.json", JsonSerializer.Serialize(new
             {

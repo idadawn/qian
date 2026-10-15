@@ -92,6 +92,12 @@ public sealed class TenantBoundaryTests
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<CreateTenant>("{\"code\":\"a\",\"name\":\"A\",\"tenantId\":\"other\"}", options));
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<UpdateTenant>("{\"name\":\"A\",\"expectedRevision\":1,\"isolation\":\"database\"}", options));
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<UpdateTenant>("{\"name\":\"A\",\"expectedRevision\":1,\"code\":\"b\"}", options));
+        // 目标租户只经资源标识传入（编辑为 UpdateAsync 的 id 参数，新建由服务端生成），请求体里的租户或 id 字段一律拒绝。
+        foreach (var field in new[] { "\"tenantId\"", "\"tenant_id\"", "\"id\"" })
+        {
+            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<CreateTenant>($"{{\"code\":\"a\",\"name\":\"A\",{field}:\"{B}\"}}", options));
+            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<UpdateTenant>($"{{\"name\":\"A\",\"expectedRevision\":1,{field}:\"{B}\"}}", options));
+        }
     }
     private static ClaimsPrincipal Principal(Guid id) => new(new ClaimsIdentity([new Claim("tenant_id", id.ToString())], "validated"));
 }

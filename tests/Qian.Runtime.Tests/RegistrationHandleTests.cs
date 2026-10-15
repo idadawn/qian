@@ -103,4 +103,62 @@ public sealed class RegistrationHandleTests
         Assert.Equal(PluginState.Ready, loader.GetState("consumer", ScopeKey.Global));
         Assert.Equal(PluginState.Ready, loader.GetState("provider", ScopeKey.Global));
     }
+
+    [Fact]
+    public async Task Replace_during_cascade_cleanup_disposes_the_stale_dependent_before_reapply()
+    {
+        using var host = new ServiceCollection().BuildServiceProvider();
+        await using var loader = new PluginLoader(host);
+        IRegistrationHandle<string> x = null!, y = null!;
+        ConcurrentQueue<string> trace = [];
+        var blocked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await loader.MountAsync([
+            Define("provider", ctx => { x = ctx.Provide(new("X"), "x1"); y = ctx.Provide(new("Y"), "y1"); }, provides: [new("X"), new("Y")]),
+            Define("consumer", ctx =>
+            {
+                var value = ctx.Inject<string>(new("X"));
+                trace.Enqueue($"apply:consumer:{value}");
+                ctx.Provide(new("C"), value);
+                ctx.Effect(() => trace.Enqueue("dispose:consumer"));
+            }, inject: [new("X")], provides: [new("C")]),
+            Define("slow", ctx =>
+            {
+                trace.Enqueue("apply:slow");
+                ctx.Effect(async () =>
+                {
+                    blocked.TrySetResult();
+                    await gate.Task;
+                    trace.Enqueue("dispose:slow");
+                });
+            }, inject: [new("Y")]),
+            Define("observer", _ => { })], TestContext.Current.CancellationToken);
+        await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+        var stale = loader.GetContext("consumer", ScopeKey.Global);
+        try
+        {
+            // 替换 Y 让 slow 失效，级联清理停在 slow 的撤销上；此时本线程替换 X，consumer 在清理快照之后回到 Pending。
+            y.Replace("y2");
+            await blocked.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+            x.Replace("x2");
+            Assert.Equal(PluginState.Pending, loader.GetState("consumer", ScopeKey.Global));
+        }
+        finally { gate.TrySetResult(); }
+        await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+        // 旧上下文的效果与注册先撤销，再以新实例重新 Apply；否则旧注册残留，新 Apply 的 Provide 撞冲突。
+        Assert.Equal(["apply:consumer:x1", "apply:slow", "dispose:slow", "dispose:consumer", "apply:consumer:x2", "apply:slow"], trace);
+        foreach (var id in (string[])["provider", "consumer", "slow"])
+        {
+            Assert.Equal(PluginState.Ready, loader.GetState(id, ScopeKey.Global));
+            Assert.Null(loader.GetFailure(id, ScopeKey.Global));
+        }
+        Assert.Throws<ObjectDisposedException>(() => stale.Provide(new("leak"), "late"));
+        var observer = loader.GetContext("observer", ScopeKey.Global);
+        Assert.Equal("x2", observer.Inject<string>(new("C")));
+        await loader.UnmountAsync("consumer", ScopeKey.Global, TestContext.Current.CancellationToken);
+        Assert.Null(observer.TryInject<string>(new("C")));
+        await loader.MountAsync([Define("probe", ctx => ctx.Provide(new("C"), "probe"), provides: [new("C")])], TestContext.Current.CancellationToken);
+        Assert.Equal(PluginState.Ready, loader.GetState("probe", ScopeKey.Global));
+        Assert.Equal("probe", observer.Inject<string>(new("C")));
+    }
 }
