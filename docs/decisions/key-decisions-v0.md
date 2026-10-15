@@ -298,14 +298,14 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 
 ### contracts/v0 默认裁决 R45–R53（S1-DEC-010，2026-10-08）
 
-S1-AGT-001 写契约时的 8 条默认值由 Claude 在产品负责人授权下裁决：R45 错误码大写下划线、OAuth `error` 值仍小写；R46 业务错误只用 409 / 422，404 一律 `NOT_FOUND`，配额类为 422 业务错误；R47 `AUTHZ_DENIED` 平台内置；R48 R32 的 403 原因即错误码（`PLUGIN_NOT_ENTITLED` / `PLUGIN_NOT_MOUNTED` / `PLUGIN_RESTRICTED` / `PLUGIN_DEPENDENCY_PENDING`，`message` 带层级、`pointer` 指向 patch 条目，ErrorDetail 不加 `details`）；R49 `tenant_id` 可为 null，发往 iClaw 的不转发 null；R50 字段级码 + `pointer`，ADR-011 D11.5 在 S2 映射；R51 `schemaSha256` 用 RFC 8785 JCS；R52 `humanOnly` = `agent.expose: false` + 服务端 `ACTION_HUMAN_ONLY`；R53 `draft` 保留到 S1 第 1 波消费方全部 review，由 S1-AGT-002 统一去掉。原文见 contracts/v0/README.md 第 8 节。
+S1-AGT-001 写契约时的 8 条默认值由 Claude 在产品负责人授权下裁决：R45 错误码大写下划线、OAuth `error` 值仍小写；R46 业务错误只用 409 / 422，404 一律 `NOT_FOUND`，配额类为 422 业务错误；R47 `AUTHZ_DENIED` 平台内置；R48 R32 的 403 原因即错误码（`PLUGIN_NOT_ENTITLED` / `PLUGIN_NOT_MOUNTED` / `PLUGIN_RESTRICTED` / `PLUGIN_DEPENDENCY_PENDING`，`message` 带层级、`pointer` 指向 patch 条目，ErrorDetail 不加 `details`）；R49 `tenant_id` 可为 null，发往 iClaw 的不转发 null；R50 字段级码 + `pointer`，ADR-011 D11.5 在 S2 映射；R51 `schemaSha256` 用 RFC 8785 JCS；R52 `humanOnly` = `agent.expose: false` + 服务端 `ACTION_HUMAN_ONLY`；R53 `draft` 保留到 S1 第 1 波消费方全部 review，由 S1-AGT-002 统一去掉；R80 补注：届时将 `x-status: draft` 改写为 `x-status: frozen`。原文见 contracts/v0/README.md 第 8 节。
 
 ### 文档站 Kun 小节默认裁决 R54–R62（S1-DEC-011，2026-10-08）
 
 S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产品负责人授权（「按经验和教训处理掉」）下裁决：
 
 - R54：API 参考不进侧栏，命名空间页与类型页也不渲染侧栏（`sidebar: false`），两个概览页保留。原因：Rspress 把整棵侧栏渲染进每一页，四百多个 API 页进侧栏会让产物从 57 MB 涨到 170 MB；去掉 API 页上的侧栏后，产物从约 57 MB 降到约 48 MB。
-- R55：接受当前体积（每份约 48 MB，gzip 后约 10 MB），产物检查加 100 MB 总预算。
+- R55：接受当前体积（每份约 48 MB，gzip 后约 10 MB），产物检查加 100 MB 总预算。2026-10-15 S1-QA-010 按本条流程调为 120 MB（#95 合并时实测 96.2 MB / 756 页，原因见 [文档站规范 §7](../prd/specs/docs-site.md#7-门禁)）。
 - R56：API 参考统一挂在 `/sdk/api/{kun,dotnet,frontend,http}/` 下，不另设顶层 `/api/`；S1-DOCS-002 的验收按此改。
 - R57：SDK 侧栏的概览页在最前，「Kun 框架」是第一节。
 - R58：Kun ADR 白名单大小写都收，`adr-p2d-multitenancy`（已 Accepted）进站。
@@ -430,9 +430,46 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 
 ### 验收复核裁决 R75–R77（S1-RT-006 复核，2026-10-14）
 
-由 Claude 在产品负责人要求「给我一个解决方案」后作默认裁决，未经逐条确认；整改任务见 `pm/tasks/S1-RT-019.md`，有异议时新建决策任务。2026-10-14 产品负责人认可 S1-RT-006 与 S1-RT-019 的交付，本组裁决按交付的方式落地（含 R75 实现说明）。
+由 Claude 在产品负责人要求「给我一个解决方案」后作默认裁决，未经逐条确认；整改任务见 `pm/tasks/S1-RT-019.md`，有异议时新建决策任务。2026-10-14 产品负责人认可 S1-RT-006 与 S1-RT-019 的交付，本组裁决按交付的方式落地（含 R75 实现说明）。 2026-10-15 claude 独立复核 S1-RT-019：八项验收成立、done 维持，非阻断缺陷记入该任务日志，本组裁决不变。
 
 - R75：保留通用执行入口 `POST /api/capabilities/{plugin}/{name}/invoke` 并写入规格 §9.5 与 PRD 7.2.1：只在 `platform` profile 存在；每次调用重做与目录同款的判定；请求体先按条目 `inputSchema` 校验，失败返回 ErrorDetail `INPUT_INVALID`（原文误写 `VALIDATION_FAILED`，contracts/v0 §3.2 的输入校验码是 `INPUT_INVALID`，S1-RT-019 按契约更正） 并带 JSON Pointer；支持 `Idempotency-Key`，与外壳桥接 `invoke` 的幂等键及 R63 一致；Agent 主体需 `agent.expose` 且 S1 不开放 Actor 委托；聚合 OpenAPI 列出每个能力的具体路径，ApiExplorer 不列通用模板并在 README 说明。
   - 实现说明（S1-RT-019）：幂等语义与 Kun 幂等消费相同（成功后才写回执、失败不留标记），按短事务登记「执行中」→ 不占连接执行 → 写完成或撤销三段实现，同键请求仍在执行时返回 409，只读能力（`sideEffect: read`）忽略幂等键；回执存 `plugin_qian_capabilities.invoke_receipts`（租户 RLS），不用 R63 的 Redis 键——R63 针对事件消费只需「已处理」标记，HTTP 重放要原样返回首次响应；Kun 未改动，不开 KUN 任务。
+  - 实现说明（S1-RT-020）：回执按条目 `dataClassification` 与组件配置 `receiptMaxBytes`（默认 64 KiB、上限 1 MiB）决定是否保存响应体；`pii` / `finance` / `secret` 与超限的响应只记「已执行」，同键重放返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`、不再执行，回执表另以检查约束限定响应体不超过 1 MiB。条目与输入校验器在能力登记时生成和预编译，不合格的契约登记即被拒绝。口径由 S1-RT-020 按产品负责人认可的方案确定，写入组件规格 §9.5 与 PRD 7.2.1。
 - R76：S1-RT-006 验收第 3 项按「机制完成」勾选；平台挂载路径（`Mount` 与 Registry scope Reconciler）强制套用 `OpenApiContractPlugin` / `GrpcContractPlugin` 归 S1-RT-005，S1-RT-004 的 Reconciler 复用同一包装。
 - R77：目录四类 kind 的归属：事件类目录归 S1-EVT-003；实体类目录暂无任务，由产品负责人分配（建议 S1-RT-007 或 DATA 系列）；交付前 `?kind=event|entity` 返回空集合并在 README 注明。
+
+### S1-DATA-003 收口裁决 R78–R79（2026-10-15）
+
+产品负责人要求「把我需要知道的，都搞定吧」后，由 Claude 作默认裁决，未经逐条确认；有异议时新建决策任务。
+
+- R78：方言组件 id 定为 `qian.data.dialect.pg`，与组件模型 §6.1 的包名映射（`Qian.Data.Dialect.Pg` → `qian.data.dialect.pg`）一致；PRD 7.6 原写的 `qian.data.dialect.postgres` 已在 idadawn/qian#79 改正。组件形态（`plugins/qian.data.dialect.pg`，清单 `provides` 派生为 `Data.Dialects:pg`）登记为 S1-DATA-006，依赖 S1-RT-014 的具名注册派生。
+- R79：数据连接连通测试的进程内出网检查提前到 S1（S1-DATA-005）。缺省拒绝回环、链路本地（含云元数据）、100.100.100.200、未指定、组播与广播地址，运维可追加拒绝网段或限定放行网段。PRD 7.18 / 7.19「低代码连接器与第三方出网点的出口代理与 SSRF 基线归 S2」不变，生产环境仍以 7.17 的 NetworkPolicy 出网白名单或出口代理限定可达网段。
+
+### 验收复核裁决 R80（S1-QA-010 复核，2026-10-15）
+
+由 Claude 在产品负责人要求「验收 S1-QA-010」后作默认裁决，未经逐条确认；整改退回 `pm/tasks/S1-QA-010.md`，有异议时新建决策任务。
+
+- R80：契约目录的冻结状态统一显式写 `x-status: frozen`，不以「删除 `draft`」表示：contracts/v0 在 S1-AGT-002 去 draft 时改写为 `frozen`（v0 README §2、§7 与 R53 补注、`ContractSchemaTests` 届时改断言 `frozen`）；contracts/data/v1 已按此标记，README 写明批准依据为本条，并更正 `$id` 陈述（data-types / data-connection 两份的旧标识符前缀与目录不符，趁零消费方统一为 `contracts/data/v1/` 并在 PR 说明；S1-QA-010 已按此对齐）；data/v1 在零代码消费方时冻结是复核人在 S1-QA-010 验收里提出的要求（C# 契约 `Qian.Data.Abstractions` 已发布为消费边界），作为 R53「消费方全部进入 review 后才冻结」前提的例外记录；data/v1 冻结信封 `$ref` v0 草稿信封列为已知例外，v0 event-envelope 冻结时复核 data/v1 信封。（本条原文的旧前缀字面量由 #104 去除、语义不变，复核人 2026-10-15 认可）
+
+### 阻塞任务排序裁决 R81–R84（S1-DEC-021，2026-10-15）
+
+产品负责人 2026-10-15 问「现在阻塞的任务可以给一个人来做吗，能排一个先后顺序吗」，Claude 按看板依赖链与解锁数量给出顺序，产品负责人回复「认可，写进看板」。四条裁决把伸进下游任务范围的验收移交到归属任务，其余顺序与等待说明见 `pm/tasks/S1-DEC-021.md`。
+
+- R81：S1-TEN-001 收口。原 E2E「运营后台创建租户 A、B，各自管理员登录后只看到本租户数据」拆为运营后台页面（归 S1-TEN-005）与管理员登录（归 S1-IDP-003），TEN-001 只保留「A 令牌请求 B 记录 404」的 HTTP 租户边界；传播器 IT 的消费端归 S1-EVT-002、作业执行器归 S1-SCH-002，TEN-001 保留 gRPC 对端；「inputSchema 不出现 tenantId」由 S1-RT-020 的登记期契约检查实现，TEN-001 引用其测试勾选。TEN-001 的依赖已全部完成，状态由 blocked 改回 todo。
+- R82：S1-AZ-003「把角色授予组织 X，X 下成员 ≤ 3 秒获得权限」依赖 S1-IDP-009 组织目录，移交已依赖 IDP-009 的 S1-AZ-005；AZ-003 以直接主体授权验证求值引擎与 ≤ 3 秒失效传播。S1-AZ-002 的 `me/permissions` 验收与 AZ-003 一并交付。
+- R83：S1-RT-009 的 hooks 桥接验收用测试宿主发布的 `tenant.created.v1` 事件验证触发与审计 `channel = hook`；真实开户流程触发归 S1-TEN-003。
+- R84：S1-RT-011 的 E2E「qian add identity authz files」在 identity / files 交付前改为用市场条目已存在的三个组件验证；完整组合归 S1-QA-005。
+- 顺序与归属：一人（cody）串行 S1-TEN-001 → S1-RT-004 → S1-AUD-001 → S1-RT-014 → S1-RT-005 → S1-AZ-002 + S1-AZ-003 → S1-RT-011；S1-RT-009 剩余一条按 R83 可在 RT-005 后顺手做；S1-DEP-003 等 S1-IDP-002 / S1-IDP-005 / S1-GW-001 / S1-YUE-001 交付后再动。S1-RT-004 与 S1-AUD-001 的依赖已全部完成，状态由 blocked 改回 todo。
+
+### 验收复核裁决 R85（S1-TEN-001 复核，2026-10-15）
+
+由 Claude 在产品负责人要求「验收 S1-TEN-001」后作默认裁决，未经逐条确认；执行人在该任务日志的偏离 ② 提出归属待定，有异议时新建决策任务。
+
+- R85：tenancy HTTP 运营接口 `GET/POST /api/tenancy/tenants`、`PUT /api/tenancy/tenants/{id}`（PRD 7.3 API 行的前两组）不在 S1-TEN-001 交付范围，另立 S1-TEN-006 交付，depends `S1-TEN-001`、`S1-AZ-003`：调用方是没有租户的平台主体，要走 AZ-003 的超管旁路显式声明并审计，`TenantRequestBoundary` 已写明平台运营入口不经租户边界回退。不并入 S1-TEN-002（它承接同一资源上的状态迁移端点与审批钩子，依赖 EVT-001 / SCH-001 / IDP-004，列表、新建、编辑不应被这些拖住），也不并入 S1-TEN-005（页面任务是消费方不是提供方）；S1-TEN-005 depends 加 S1-TEN-006。S1-GW-001 的 E2E 探针路由 `/api/tenancy/tenants` 以 TEN-006 交付为准，TEN-006 未交付时以测试宿主的任意受保护路由代替，GW-001 不加依赖。TEN-001 验收第 4 条后半句「运营接口的目标租户是资源路径」在 TEN-001 按内部 API 与 DTO 现状成立（写入口 `internal`、id 服务端生成、`CreateTenant` / `UpdateTenant` 请求体拒绝 `tenantId` / `tenant_id` / `id`），HTTP 层复验列入 S1-TEN-006 验收；TEN-001 题名中的「tenancy API」自此指 `ITenantDirectory` 内部 API 与 HTTP 租户边界。
+
+### 验收复核裁决 R86–R87（S1-RT-004 复核，2026-10-15）
+
+由 Claude 在产品负责人要求「验收 S1-RT-004」后作默认裁决，未经逐条确认；执行人在 S1-RT-004 与 S1-RT-011 的任务日志里分别提出建议裁决，有异议时新建决策任务。
+
+- R86：注册表管理面路径以 PRD 7.2.1 为准——scope 视图 `GET /api/registry/scopes/{scopeKey}/entries[/{entryId}]`，v1 别名 `/api/kernel/scopes/...`；组件规格 §9.5 表与 §12 验收里的 `GET /api/registry/entries?scope=` / `/api/registry/entries` 改为该路径，S1 不另设 dump-config 等价的全树 HTTP 端点，全树视图由 CLI `qian dump-config` 承担（S1-RT-012 的 `--scope tenant:<id>` UT）。写入端点 `PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`（幂等、带 `revision`，§7.6 / §9.5）在 S1-RT-004、S1-RT-005、S1-RT-011 三个任务里都没有承接：另立 S1-RT-029 交付，depends S1-RT-004（视图与通知）、S1-RT-005（`MountAsync` / `UnmountAsync` 与 `registry.scope.*.v1`）、S1-RT-011（CLI）、S1-AZ-003（平台主体授权）；S1-RT-011 验收第 5 条「`qian add --scope tenant:<id>`」随之移交 S1-RT-029（执行人建议 ② 采纳「拆出新任务」而非「并入 RT-005 后续」），RT-005 范围不变。
+- R87：管理面 403 的口径按 R45 / R48 读：错误码即原因（S1 产生 `PLUGIN_NOT_MOUNTED` 与 `PLUGIN_DEPENDENCY_PENDING`，`PLUGIN_RESTRICTED` / `PLUGIN_NOT_ENTITLED` 待 restriction 来源与 S1-ENT-001），`message` 说明被哪层 patch 禁用，ErrorDetail 不加 `reason` 字段；S1-RT-004 验收第 3 条的旧写法 `plugin_not_mounted`、`reason = not_mounted` 按此解读。`pointer` 约定写进规格 §7.6 与 PRD 7.2.1：以逻辑文档 `registry/scope-patches.json` 为前缀，`#/n` 为该 scope patch 行按条目标识排序后的序号（增删行会漂移，是行位置不是稳定标识），目标租户没有该条目时指向文档根 `#`，被 profile 某层禁用时指向该层文件位置。PRD 7.2.1 第 11 条（R32 摘要）补齐第四个码 `PLUGIN_DEPENDENCY_PENDING`，与 7.2.1 正文、规格 §9.5、R48 一致。

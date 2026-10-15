@@ -20,7 +20,8 @@ namespace Qian.Data.AspNetCore.Tests;
 
 /// <summary>
 /// 真实 PostgreSQL 与受 RLS 约束的应用角色：数据连接档案按租户隔离、口令只存租户 secretRef；
-/// POST /api/data/connections/{id}:test 对可达库返回成功，对不可达库、错误口令、缺失 schema、越权密钥返回结构化错误；任何响应都不含口令。
+/// POST /api/data/connections/{id}:test 对可达库返回成功，对不可达库、错误口令、缺失 schema、越权密钥、出网约束拒绝的目标与非文本密钥返回结构化错误；
+/// 任何响应都不含口令。
 /// </summary>
 public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
@@ -37,6 +38,7 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
     private string _password = null!;
     private string _host = null!;
     private int _port;
+    private string _owner = null!;
     private WebApplication _app = null!;
     private HttpClient _client = null!;
 
@@ -48,16 +50,32 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
         WriteSecret("probe", _password);
         WriteSecret("wrong", WrongPassword);
         WriteSecret("denied", _password);
-        var owner = await DataOwner.ConnectionStringAsync(postgres);
+        // 不是 UTF-8 文本的密钥：PG 口令无法使用。
+        WriteSecret("binary", [0xFF, 0xFE, 0x41]);
+        _owner = await DataOwner.ConnectionStringAsync(postgres);
+        // 测试库与本机假服务端都在回环上，本类的宿主放行回环；缺省出网约束由另起的宿主验证。
+        _app = await StartAsync(egress =>
+        {
+            egress.BlockedNetworks.Remove("127.0.0.0/8");
+            egress.BlockedNetworks.Remove("::1/128");
+        });
+        _client = _app.GetTestClient();
+    }
+
+    private async Task<WebApplication> StartAsync(Action<DataConnectionEgressOptions> egress)
+    {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Logging.ClearProviders();
         TestIdentity.Add(builder.Services);
         builder.Services.AddKunEventBus();
         builder.Services.AddQianPgDialect();
-        builder.Services.AddQianDataConnections((_, options) => options.UseNpgsql(postgres.AppConnectionString),
-            options => options.TestTimeout = TimeSpan.FromSeconds(3));
-        builder.Services.AddQianDataMigrations(options => options.ResolveConnection = (_, _) => owner);
+        builder.Services.AddQianDataConnections((_, options) => options.UseNpgsql(postgres.AppConnectionString), options =>
+        {
+            options.TestTimeout = TimeSpan.FromSeconds(3);
+            egress(options.Egress);
+        });
+        builder.Services.AddQianDataMigrations(options => options.ResolveConnection = (_, _) => _owner);
         builder.Services.AddSingleton<ISecretAccessObserver>(_observer);
         builder.Services.AddQianSecrets(new SecretResolverOptions
         {
@@ -66,19 +84,19 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
             [
                 new("secretRef://tenant/" + TenantA + "/data/probe", new("qian", "probe", "token"), TenantA),
                 new("secretRef://tenant/" + TenantA + "/data/wrong", new("qian", "wrong", "token"), TenantA),
+                new("secretRef://tenant/" + TenantA + "/data/binary", new("qian", "binary", "token"), TenantA),
                 new("secretRef://tenant/" + TenantA + "/other/denied", new("qian", "denied", "token"), TenantA),
                 new("secretRef://tenant/" + TenantB + "/data/probe", new("qian", "probe", "token"), TenantB)
             ],
             // qian.data 的宿主策略只批准租户作用域的 data/*：other/* 即使已绑定也不能解析。
             Policies = [new("qian.data", [new("data/*", "tenant")], [new("data/*", "tenant")])]
         });
-        _app = builder.Build();
-        TestIdentity.Use(_app);
-        _app.MapQianData();
-        var app = _app;
+        var app = builder.Build();
+        TestIdentity.Use(app);
+        app.MapQianData();
         await Migrated.GetOrAdd(postgres, _ => new Lazy<Task>(() => app.Services.GetRequiredService<IDataMigrator>().MigrateAsync(Ct))).Value;
-        await _app.StartAsync(Ct);
-        _client = _app.GetTestClient();
+        await app.StartAsync(Ct);
+        return app;
     }
 
     public async ValueTask DisposeAsync()
@@ -152,7 +170,37 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
         {
             var unsupported = await CreateAsync(AdminA, Draft("kerberos-only", host: "127.0.0.1", port: kerberos.Port));
             await AssertTestFailsAsync(unsupported, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionRejected.Code, "authentication");
+            // 双栈主机名：localhost 可能先解析出 ::1，而假服务端只听 IPv4；该地址不可达时换下一个检查过的地址，与驱动自行解析一致。
+            var dualStack = await CreateAsync(AdminA, Draft("kerberos-localhost", host: "localhost", port: kerberos.Port));
+            await AssertTestFailsAsync(dualStack, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionRejected.Code, "authentication");
         }
+    }
+
+    [Fact]
+    public async Task 缺省出网约束拒绝回环与云元数据目标_变形写法同样拒绝_不连接也不读取密钥()
+    {
+        await using var app = await StartAsync(_ => { });
+        using var client = app.GetTestClient();
+        using var listener = FakeServer.Http();
+        // 回环：主机名、短写、十六进制、十进制整数与 IPv4 映射的 IPv6 写法都解析成 127.0.0.1 或 ::1。
+        string[] loopback = ["127.0.0.1", "localhost", "127.1", "0x7f.0.0.1", "2130706433", "0:0:0:0:0:ffff:7f00:1"];
+        string[] metadata = ["169.254.169.254", "100.100.100.200", "0.0.0.0"];
+        foreach (var (host, index) in loopback.Concat(metadata).Select((host, index) => (host, index)))
+        {
+            var id = await CreateAsync(AdminA, Draft("egress-denied-" + index, host: host, port: listener.Port), client);
+            await AssertTestFailsAsync(id, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionTargetDenied.Code, null, client);
+        }
+        Assert.Equal(0, listener.Accepted);
+        Assert.Empty(_observer.Events);
+    }
+
+    [Fact]
+    public async Task 密钥内容不是UTF8文本时返回凭据不可用_不再是500()
+    {
+        var binary = await CreateAsync(AdminA, Draft("binary-secret", secretRef: "secretRef://tenant/data/binary"));
+        await AssertTestFailsAsync(binary, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionCredentialInvalid.Code, null);
+        // 密钥照常经宿主策略解析（审计记一次放行），格式问题在连接前拒绝。
+        Assert.Contains(_observer.Events, access => access.Allowed && access.Reference.EndsWith("/data/binary", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -228,9 +276,9 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
         name, dialect, host = host ?? _host, port = port ?? _port, database, userName = ProbeRole, secretRef, schema, encoding
     };
 
-    private async Task<string> CreateAsync(string user, object draft)
+    private async Task<string> CreateAsync(string user, object draft, HttpClient? client = null)
     {
-        using var response = await SendAsync(HttpMethod.Post, "/api/data/connections", user, draft);
+        using var response = await SendAsync(HttpMethod.Post, "/api/data/connections", user, draft, client);
         var json = await response.Content.ReadAsStringAsync(Ct);
         Assert.True(response.StatusCode == HttpStatusCode.Created, json);
         AssertProfile(json);
@@ -247,9 +295,9 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
             member => member.Name.Contains("password", StringComparison.OrdinalIgnoreCase));
     }
 
-    private async Task AssertTestFailsAsync(string id, HttpStatusCode status, string code, string? reason)
+    private async Task AssertTestFailsAsync(string id, HttpStatusCode status, string code, string? reason, HttpClient? client = null)
     {
-        using var response = await SendAsync(HttpMethod.Post, "/api/data/connections/" + id + ":test", AdminA);
+        using var response = await SendAsync(HttpMethod.Post, "/api/data/connections/" + id + ":test", AdminA, client: client);
         var json = await response.Content.ReadAsStringAsync(Ct);
         Assert.True(response.StatusCode == status, json);
         using var body = JsonDocument.Parse(json);
@@ -285,8 +333,8 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
         return body.RootElement.GetProperty("items").EnumerateArray().Select(item => item.GetProperty(member).GetString()!).ToArray();
     }
 
-    private Task<HttpResponseMessage> SendAsync(HttpMethod method, string uri, string user, object? body = null) =>
-        _client.SendAsync(TestIdentity.Request(method, uri, user, body), Ct);
+    private Task<HttpResponseMessage> SendAsync(HttpMethod method, string uri, string user, object? body = null, HttpClient? client = null) =>
+        (client ?? _client).SendAsync(TestIdentity.Request(method, uri, user, body), Ct);
 
     private static JsonSchema Definition(string name)
     {
@@ -317,10 +365,12 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
         return (long)(await command.ExecuteScalarAsync(Ct))!;
     }
 
-    private void WriteSecret(string name, string value)
+    private void WriteSecret(string name, string value) => WriteSecret(name, System.Text.Encoding.UTF8.GetBytes(value));
+
+    private void WriteSecret(string name, byte[] value)
     {
         var directory = Directory.CreateDirectory(Path.Combine(_mount, "qian", name)).FullName;
-        File.WriteAllText(Path.Combine(directory, "token"), value);
+        File.WriteAllBytes(Path.Combine(directory, "token"), value);
     }
 
     // 拿一个刚释放的本机端口：此刻没有进程监听，连接会被立即拒绝。

@@ -32,6 +32,40 @@
 4. 401/403 检查访问密钥引用与授权；只检查引用名和解析是否成功，不输出值。签名前每次解析引用，缺失不发送未签名请求。
 5. 检查缓存所属环境、目录权限与完整性；UAT/PRO 缓存在不同子目录，快照还按端点、应用、集群、namespace 顺序和标签分隔。
 
+## 部署步骤：平台宿主装配
+
+platform profile 宿主（包括自建的组合包）在登记 `ISurfaceReader` 与 `IToolContractHasher` 之后，必须调用 `services.AddQianCapabilities()`。它装配能力契约的登记期检查：组件登记能力时就生成目录条目、预编译输入校验器，不合格的契约让组件挂载为 Failed，见 [Qian.Capabilities](../../packages/Qian.Capabilities/README.md)「登记期契约检查」。
+
+漏掉这一步宿主照常启动，但检查退化为首次读目录或调用时才编译：不合格的能力不会在挂载时暴露，目录排除它并记一次告警（「能力 … 的契约不合格（规则），位置 …；该能力不登记、不进入目录。」），执行入口对它返回 404。预发环境上线后检查宿主日志：出现这条告警说明有组件带了不合格的契约；该组件的挂载状态仍是 Ready 而不是 Failed，说明组合包漏了这一步。
+
+## 部署步骤：数据库迁移
+
+带迁移的组件上下文（如 `qian.capabilities` 的菜单偏好与幂等回执表）随宿主镜像交付迁移，每次发布按下面的顺序上线：
+
+1. 以 `--migrate-only` 启动迁移任务（K8s Job），用迁移属主连接执行全部待应用迁移。属主同样必须是 NOSUPERUSER / NOBYPASSRLS。
+2. 用 [Qian.Data](../../packages/Qian.Data/README.md) 「迁移执行与 RLS 核查」一节的 SQL 核对：每张租户表都强制 RLS，且恰有 `qian_tenant_access` 与 `qian_tenant_guard` 两条策略。不要用 `dotnet ef database update` 代替第 1 步：RLS 由 `AddQianData<T>` 登记的生成器在迁移执行期产出，`dotnet ef` 的设计时入口没有经 `AddQianData<T>` 装配时用的是 Npgsql 默认生成器，建出的租户表没有 RLS 与策略。设计时入口经 `AddQianData<T>` 装配时，`dotnet ef migrations script` 同样带 RLS，可以用来审阅将要执行的 SQL。
+3. 再滚动在线副本。启动检查发现未应用的迁移，或迁移生成器不是 Qian 的，会拒绝启动；按第 1 步处理，不要绕过。
+
+## 过期幂等回执清理
+
+通用执行入口的幂等回执（`plugin_qian_capabilities.invoke_receipts`）过期后不再回放。物理删除靠本租户后续带键写调用登记时的惰性清理，每次最多 100 行；长期没有带键写调用的租户，过期回执会一直留在表里，其中可能有 `public` / `internal` 能力的响应原文。按需定期用下面的 SQL 清理，删除条件与惰性清理相同（`expires_at <= now()`）。执行中的登记租约未到期，不会被删。
+
+有 BYPASSRLS 的维护角色（如数据库管理员）一次清理全部租户，分批删除以免长时间持锁，重复执行到返回 `DELETE 0`：
+
+```sql
+DELETE FROM plugin_qian_capabilities.invoke_receipts
+WHERE ctid = ANY (ARRAY(SELECT ctid FROM plugin_qian_capabilities.invoke_receipts WHERE expires_at <= now() LIMIT 10000));
+```
+
+迁移属主与在线业务角色都是 NOBYPASSRLS，表又强制 RLS，它们只看得到会话变量 `app.current_tenant_id` 指定的租户，要逐个租户执行（把 `<租户 ID>` 换成租户主档里的 ID）：
+
+```sql
+BEGIN;
+SELECT set_config('app.current_tenant_id', '<租户 ID>', true);
+DELETE FROM plugin_qian_capabilities.invoke_receipts WHERE expires_at <= now();
+COMMIT;
+```
+
 ## 生命周期和验证
 
 配置根由创建者释放，释放会停止文件监视和 Apollo 长轮询。配置插件借用宿主根，卸载时撤销自己的 Config 服务与错误码登记，不释放其它独立消费者共用的根。

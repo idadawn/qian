@@ -38,9 +38,10 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
  if(process.env.QIAN_PROFILE_REPORT){mkdirSync(path.dirname(process.env.QIAN_PROFILE_REPORT),{recursive:true});writeFileSync(process.env.QIAN_PROFILE_REPORT,JSON.stringify(report,null,2));}
 });
 test('交付的五个 profile 具有正确业务边界及骨架警告',()=>{
- for(const[profile,count]of Object.entries({platform:21,gateway:5,identity:8,standalone:2,minimal:0})){
+ // [条目数, 骨架警告数]：qian.data 经 S1-RT-011 真实安装后不再是骨架。
+ for(const[profile,[count,skeletons]]of Object.entries({platform:[21,20],gateway:[5,5],identity:[8,7],standalone:[2,2],minimal:[0,0]})){
   const result=loadProfile({workingDirectory:root,profile,includeHomePatch:false});
-  assert.ok(result.isValid,JSON.stringify(result));assert.equal(result.snapshot.entries.length,count);assert.equal(result.diagnostics.filter(d=>d.severity==='warning').length,count);
+  assert.ok(result.isValid,JSON.stringify(result));assert.equal(result.snapshot.entries.length,count);assert.equal(result.diagnostics.filter(d=>d.severity==='warning').length,skeletons);
   if(profile!=='platform')assert.ok(!result.snapshot.entries.some(e=>/^qian\.(registry|lifecycle|capabilities)@/.test(e.plugin)));
  }
 });

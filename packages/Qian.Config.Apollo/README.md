@@ -44,7 +44,7 @@ AccessKey 每次签名前解析；解析为空或服务返回 401/403 时，不�
 
 ConfigurationPlugin 对应 qian.config，借用宿主标准配置根。ApolloConfigurationPlugin 对应 qian.config.apollo，要求根中确有本包安装的 Apollo 源，并核对 appId、env、meta 和 namespaces 声明；不匹配直接失败。两者只挂载于 global，提供 Config 服务键，经 ctx.Config() 读取。插件卸载撤销自己登记的服务和错误码，宿主配置根继续由宿主管理，不破坏独立消费者。
 
-本包可供全部 .NET profile 使用；组件文件夹的代码字段源生成及 qian add 代码安装由 SDK/CLI 任务继续完成。当前不因库和适配器存在而宣称安装门已通过。
+ConfigurationPlugin 带 `[QianPlugin("qian.config")]`，plugins/qian.config 清单的 inject、provides 与 runtime 字段由源生成器派生，CI 检查不漂移；生成器只从 Apply 本体派生 provides，所以注册直接写在 ConfigurationPlugin.ApplyAsync 里，与 Apollo 适配器复用的 Register 保持一致。本包因此引用 Qian.Plugin.Sdk（生成器只在编译期）。一个程序集只能有一个 QianPlugin，qian.config.apollo 要接代码派生字段须拆到独立程序集，目前仍是骨架。S1-RT-011 的 E2E 已从私有源 `qian add config` 安装并运行 ConfigurationPlugin。
 
 只读配置端口面向受信任代码，不自动生成模型工具。涉及秘密解析权限、脱敏导出、Schema 治理与发布审计的接口仍由后续 CFG 任务实现。
 

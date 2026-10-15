@@ -6,6 +6,8 @@
     <ProjectReference Include="../../packages/Qian.Profiles/Qian.Profiles.csproj" />
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
     <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities/Qian.Capabilities.csproj" />
+    <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="xunit.v3" />
@@ -15,6 +17,9 @@
     <ProjectReference Include="../../packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Tenancy/Qian.Tenancy.csproj" />
+    <ProjectReference Include="../../packages/Qian.Registry.AspNetCore/Qian.Registry.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Authz/Qian.Authz.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
     <PackageReference Include="Kun.Security" />
   </ItemGroup>
 </Project>

@@ -16,3 +16,7 @@ Qian.Plugin.Sdk.AspNetCore.PluginEndpointOptions.RegistryContext.get -> System.F
 static Qian.Plugin.Sdk.AspNetCore.PluginEndpointExtensions.AddQianPluginEndpoints(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<System.IServiceProvider!, Qian.Runtime.IPluginContext!>! registryContext) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Qian.Plugin.Sdk.AspNetCore.PluginEndpointExtensions.RequireQianPlugin(this Microsoft.AspNetCore.Builder.RouteHandlerBuilder! builder, Qian.Plugin.Sdk.AspNetCore.PluginEndpointBinding! binding) -> Microsoft.AspNetCore.Builder.RouteHandlerBuilder!
 static Qian.Plugin.Sdk.AspNetCore.PluginEndpointExtensions.UseQianPluginEndpoints(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+const Qian.Plugin.Sdk.AspNetCore.DeprecatedAlias.Deprecation = "@1791331200" -> string!
+Qian.Plugin.Sdk.AspNetCore.DeprecatedAlias
+static Qian.Plugin.Sdk.AspNetCore.DeprecatedAlias.Apply(Microsoft.AspNetCore.Http.HttpContext! http, string! successor) -> void
+static Qian.Plugin.Sdk.AspNetCore.DeprecatedAlias.SuccessorLink(Microsoft.AspNetCore.Http.HttpRequest! request, string! successor) -> string!

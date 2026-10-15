@@ -37,7 +37,7 @@ await runtime.dispose();
 
 `provide`、`on`、`restrict` 返回幂等 disposer，并自动进入本次 Apply 的效果栈；第三方资源用 `effect`。`provide` 返回的 `RegistrationHandle` 另有 `replace(value)`：同步地在原注册位替换值，读取方只看到旧值或新值，scope、顺序与独占性不变；依赖该键的条目与撤销后再登记一样重新 apply；已撤销或上下文已卸载时抛错。`scoped` 视图共享当前 Apply 的生命周期，scope 之间没有隐含继承。服务名与 Context 方法重名时使用显式 `inject`。必需依赖由 plugin.inject 与 definition.provides 共同建立，缺失/环路在任何 Apply 前拒绝；optionalInject 不阻止 Apply。配置输入克隆并冻结，宿主不得依赖插件修改原配置。
 
-`mount`、`unmount`、`dispose` 串行执行；动态撤销使依赖者立即不可见，`whenIdle` 等待级联释放与恢复。`reload` 用新配置重新挂载，未提供运行时代码替换。`dumpConfig` 返回当前条目快照，卸载条目不残留。
+`mount`、`unmount`、`dispose` 串行执行；动态撤销使依赖者立即不可见，`whenIdle` 等待级联释放与恢复。级联清理等待某个撤销期间，别的调用方再撤销、替换或改 restriction 时，装载器同样先逆序撤销所有回到 Pending 的旧上下文，再重新 apply。`reload` 用新配置重新挂载，未提供运行时代码替换。`dumpConfig` 返回当前条目快照，卸载条目不残留。
 
 ## 固定依赖与语义差异
 
@@ -70,7 +70,7 @@ pnpm --filter ./packages/qian-runtime test:types
 pnpm --filter ./packages/qian-runtime test:browser
 ```
 
-TS harness 复用 `tck/runtime/harness-ts.mjs` 与 `assembly-ts.mjs`，直接读取 24 个 YAML 场景与 T15–T17 的 3 个装配场景，不复制语言独立输入；从真实 minimal profile 起步，并调用真实 profile 装配器后挂载运行时。另有 9 项边界/错误验证，共 36 项测试。T19 自动热重载、T23 完整 platform 以及产品提示词链路的剩余验收见 S1-QA-002；不在测试里伪造这些产品功能。
+TS harness 复用 `tck/runtime/harness-ts.mjs` 与 `assembly-ts.mjs`，直接读取 25 个 YAML 场景与 T15–T17 的 3 个装配场景，不复制语言独立输入；从真实 minimal profile 起步，并调用真实 profile 装配器后挂载运行时。另有 9 项边界/错误验证，共 37 项测试。T19 自动热重载、T23 完整 platform 以及产品提示词链路的剩余验收见 S1-QA-002；不在测试里伪造这些产品功能。
 
 ## 已知限制与延期项
 

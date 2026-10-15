@@ -23,7 +23,10 @@ using Npgsql;
 using Qian.Audit;
 using Qian.Authz;
 using Qian.Data;
+using Qian.Plugin.Sdk;
 using Qian.Runtime;
+using Qian.Lifecycle;
+using Qian.Registry;
 using Qian.Tenancy;
 using Qian.Testing.Containers;
 
@@ -250,9 +253,10 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
     }
 
     private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
-        HumanOnlyProbe? humanOnlyProbe = null)
+        HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
+        LifecyclePlatform? lifecycle = null)
     {
-        var platform = capabilities || runtimeProfile == "platform";
+        var platform = capabilities || lifecycle is not null || runtimeProfile == "platform";
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
         var migrator = "qian_cap_owner_" + suffix;
         var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
@@ -270,7 +274,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         {
             builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
             if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
+            if (lifecycle is not null) ConfigureLifecycle(builder, connection, lifecycle);
             if (humanOnlyProbe is not null) PreviewAgentAuthorization(builder);
+            if (pathBase is not null) builder.Services.AddSingleton<IStartupFilter>(new PathBaseFilter(pathBase));
             if (runtimeProfile is not null) builder.Services.AddSingleton<ICrmRuntimeAssembly>(_ => new ProfileModeAssembly(runtimeProfile, RepositoryRoot()));
             builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
             if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
@@ -281,13 +287,14 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 ["S2S:Issuer"] = Issuer, ["S2S:Audience"] = Audience, ["S2S:PublicJwks"] = publicJwks,
                 ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events
             });
-        });
+        }, lifecycle is null ? null : registrar => registrar.RegisterRegistryEvents().RegisterLifecycleEvents(),
+            lifecycle is null ? null : mediator => mediator.AddQianRegistryEvents().AddQianLifecycleEvents());
         try
         {
             using (var scope = app.Services.CreateScope())
             {
                 var schemas = new[] { CrmDbContext.Schema, AuthzDbContext.Schema, TenancyDbContext.Schema, AuditDbContext.Schema };
-                if (platform) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema, Qian.Capabilities.CapabilitiesDbContext.Schema];
+                if (platform) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema, Qian.Capabilities.CapabilitiesDbContext.Schema, Qian.Lifecycle.LifecycleDbContext.Schema];
                 var sql = string.Join('\n', schemas.Select(schema => "DROP SCHEMA IF EXISTS " + schema + " CASCADE;"));
                 sql += scope.ServiceProvider.GetRequiredService<CrmDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuthzDbContext>().Database.GenerateCreateScript();
@@ -306,6 +313,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 var reports = await app.Services.GetRequiredService<IDataMigrator>().MigrateAsync(Ct);
                 Assert.NotEmpty(Assert.Single(reports, report => report.ContextType == typeof(Qian.Capabilities.CapabilitiesDbContext)).Applied);
                 await Admin($"GRANT USAGE ON SCHEMA plugin_qian_capabilities TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_capabilities TO \"{role}\";");
+                if (lifecycle is not null)
+                {
+                    Assert.NotEmpty(Assert.Single(reports, report => report.ContextType == typeof(Qian.Lifecycle.LifecycleDbContext)).Applied);
+                    await Admin($"GRANT USAGE ON SCHEMA plugin_qian_lifecycle TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_lifecycle TO \"{role}\";");
+                }
             }
             var data = app.Services.GetRequiredService<IDataService>(); var tenant = app.Services.GetRequiredService<ITenantContext>();
             await new PostgresPermissionCatalogStore(data).PutAsync(CrmPermissions.Compile(), Ct);
@@ -317,9 +329,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 await roles.AssignAsync(id == A ? "tenant.owner" : "tenant.user", "service", Writer, "test-bootstrap", Ct);
             }
             if (platform) MapCapabilities(app);
+            if (lifecycle is not null) MapLifecycle(app);
             if (hooks) MapHookEntry(app);
             await app.StartAsync(Ct);
-            if (capabilities) await AttachCapabilities(app, humanOnlyProbe);
+            if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);
+            if (lifecycle is not null) await AttachLifecycle(app, lifecycle);
             if (hooks) await AttachHooks(app);
             using (tenant.BeginScope(A))
             {
@@ -331,10 +345,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
         catch { await app.DisposeAsync(); signing.Dispose(); throw; }
     }
-    private async Task Admin(string sql)
+    // 以管理员连接执行，返回受影响的行数。
+    private async Task<int> Admin(string sql)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
-        await using var command = new NpgsqlCommand(sql, connection); await command.ExecuteNonQueryAsync(Ct);
+        await using var command = new NpgsqlCommand(sql, connection); return await command.ExecuteNonQueryAsync(Ct);
     }
     private sealed class ConcurrentSaveBarrier : SaveChangesInterceptor
     {
@@ -351,6 +366,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
     }
     private sealed class FailureEvidence { internal ConcurrentQueue<string> Failures { get; } = new(); }
+    // 宿主挂在子路径下（反向代理常见做法）：UsePathBase 先于路由执行，应用看到去掉前缀的路径，PathBase 进入生成的链接。
+    private sealed class PathBaseFilter(string pathBase) : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app => { app.UsePathBase(pathBase); next(app); };
+    }
     private sealed class FailureRecorder(FailureEvidence evidence) : IExceptionHandler
     {
         public ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)
