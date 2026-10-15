@@ -17,7 +17,7 @@ GitHub idadawn/qian (main) --git-sync 每 60s--> /git/current --builder（pm.py 
 | 文件 | 作用 |
 |---|---|
 | `kustomization.yaml` | 命名空间 `qian-tools`（开发期工具，与平台本体 `qian` 分开） |
-| `deployment.yaml` | `git-sync` + `builder`（官方 `python:3.13-alpine`）+ `nginx-unprivileged` 三个容器，非 root；builder 的根文件系统只读，只写 `/site`。首版看板生成前 Pod 不就绪 |
+| `deployment.yaml` | `git-sync` + `builder`（官方 `python:3.13-alpine`）+ `nginx-unprivileged` 三个容器，非 root；builder 的根文件系统只读，只写 `/site`。首版看板生成前 Pod 不就绪。与文档站一样固定在 qd：worker 节点经镜像代理拉 `registry.k8s.io` 的 git-sync 会失败（2026-10-15 遇到 502） |
 | `builder.py` | builder 的主循环：发现新提交就生成到 `/site/<提交>`，原子切换 `/site/current`，删掉旧版。生成失败（任务文件校验不过）时继续提供上一版，只记日志。kustomize 把它生成为带哈希后缀的 ConfigMap，改脚本即滚动更新 |
 | `nginx-configmap.yaml` | 只暴露 `/`、`/tasks.json`、`/STATUS.md`（取自 `/site/current`）与 `/tasks/*`（取自 git 检出），禁缓存 |
 | `service.yaml`、`ingress.yaml` | Service 为 LoadBalancer（MetalLB 固定 192.168.1.210）+ 固定 NodePort 30810；Traefik Ingress 域名占位 `qian-pm.deepsingularity.cn` |
