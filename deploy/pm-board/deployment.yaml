@@ -14,6 +14,10 @@ spec:
       labels:
         app.kubernetes.io/name: qian-pm-board
     spec:
+      # 与文档站一样固定在 qd：worker 节点从 registry.k8s.io 的镜像代理拉 git-sync 时会遇到 502（2026-10-15），
+      # qd 上文档站已在用同版本的 git-sync 与 nginx 镜像，无需再拉
+      nodeSelector:
+        kubernetes.io/hostname: qd
       automountServiceAccountToken: false
       securityContext:
         # git-sync 默认以 65533 运行；nginx-unprivileged 可用任意 uid，统一成同一用户以便共享 emptyDir
@@ -57,6 +61,29 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
+        # 看板生成物不进 git（S1-PM-004）：每次 git-sync 换了提交，就用该提交的 scripts/pm.py 生成到 /site
+        - name: builder
+          image: python:3.13-alpine
+          command: ["python3", "-u", "/opt/builder/builder.py"]
+          env:
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+          volumeMounts:
+            - name: repo
+              mountPath: /git
+              readOnly: true
+            - name: site
+              mountPath: /site
+            - name: builder
+              mountPath: /opt/builder
+              readOnly: true
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 500m, memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
         - name: nginx
           image: nginxinc/nginx-unprivileged:1.27-alpine
           ports:
@@ -66,12 +93,16 @@ spec:
             - name: repo
               mountPath: /git
               readOnly: true
+            - name: site
+              mountPath: /site
+              readOnly: true
             - name: nginx-conf
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
               readOnly: true
+          # 首版看板生成之前 / 返回 404，Pod 不就绪
           readinessProbe:
-            httpGet: { path: /healthz, port: http }
+            httpGet: { path: /, port: http }
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /healthz, port: http }
@@ -85,6 +116,12 @@ spec:
       volumes:
         - name: repo
           emptyDir: {}
+        - name: site
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: builder
+          configMap:
+            name: qian-pm-board-builder   # kustomize 由 builder.py 生成并加哈希后缀，改脚本即滚动更新
         - name: nginx-conf
           configMap:
             name: qian-pm-board-nginx
