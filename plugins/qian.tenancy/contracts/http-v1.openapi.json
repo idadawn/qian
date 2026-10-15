@@ -1,1 +1,312 @@
-{"openapi":"3.1.1","info":{"title":"\u7EC4\u4EF6 HTTP \u63A5\u53E3","version":"1.0.0"},"paths":{"/api/tenancy/tenants":{"get":{"operationId":"Hf958b36220b04fdafafd4ce1bf1cc7bb286010b9174b9603f521db51c2838ed4","x-qian-plugin":"qian.tenancy","security":[{"bearerAuth":[]}],"parameters":[{"name":"skip","in":"query","required":false,"schema":{"$ref":"#/components/schemas/He9145e3c95bcd7d798c9067075337bc5cc20b7338aafdc06fa02b4798a4eceb6"}},{"name":"take","in":"query","required":false,"schema":{"$ref":"#/components/schemas/He9145e3c95bcd7d798c9067075337bc5cc20b7338aafdc06fa02b4798a4eceb6"}}],"responses":{"200":{"description":"HTTP 200","content":{"application/json":{"schema":{"$ref":"#/components/schemas/H1ce4c270da9a9fe630df13cec9a88447a330bf39b1633e580ad9f963176ac679"}}}}}},"post":{"operationId":"H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e","x-qian-plugin":"qian.tenancy","security":[{"bearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/H4753a953f12e40c697f3d5ece0fd58f9b8abd100c65a42f6e1f9cd8e59679c03"}}}},"responses":{"201":{"description":"HTTP 201","content":{"application/json":{"schema":{"$ref":"#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"}}}}}}},"/api/tenancy/tenants/{id}":{"put":{"operationId":"H0c94440aa57ef71f7214584848f8d938319335c6bc11651d69daea25551ccefb","x-qian-plugin":"qian.tenancy","security":[{"bearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/H8d8028428010710bc85efd2c530790b2723a7e2304444ef98c407037b42a3aa6"}}}},"parameters":[{"name":"id","in":"path","required":true,"schema":{"$ref":"#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"}}],"responses":{"200":{"description":"HTTP 200","content":{"application/json":{"schema":{"$ref":"#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"}}}}}}}},"components":{"schemas":{"He9145e3c95bcd7d798c9067075337bc5cc20b7338aafdc06fa02b4798a4eceb6":{"type":["string","integer","null"],"pattern":"^-?(?:0|[1-9]\\d*)$"},"H1ce4c270da9a9fe630df13cec9a88447a330bf39b1633e580ad9f963176ac679":{"type":"object","properties":{"items":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string","format":"uuid"},"code":{"type":"string"},"name":{"type":"string"},"isolation":{"enum":["row","schema","database"]},"status":{"enum":["pending","trial","active","grace","suspended"]},"revision":{"type":["string","integer"],"pattern":"^-?(?:0|[1-9]\\d*)$"}},"required":["id","code","name","isolation","status"]}}},"required":["items"]},"H4753a953f12e40c697f3d5ece0fd58f9b8abd100c65a42f6e1f9cd8e59679c03":{"type":"object","properties":{"code":{"type":"string"},"name":{"type":"string"},"isolation":{"enum":["row","schema","database"],"default":"row"},"administrator":{"type":["object","null"],"properties":{"membershipId":{"type":"string","format":"uuid"},"subjectId":{"type":"string"}},"required":["membershipId","subjectId"],"additionalProperties":false}},"required":["code","name"],"additionalProperties":false},"H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549":{"type":"object","properties":{"id":{"type":"string","format":"uuid"},"code":{"type":"string"},"name":{"type":"string"},"isolation":{"enum":["row","schema","database"]},"status":{"enum":["pending","trial","active","grace","suspended"]},"revision":{"type":["string","integer"],"pattern":"^-?(?:0|[1-9]\\d*)$"}},"required":["id","code","name","isolation","status"]},"H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b":{"type":"string","format":"uuid"},"H8d8028428010710bc85efd2c530790b2723a7e2304444ef98c407037b42a3aa6":{"type":"object","properties":{"name":{"type":"string"},"expectedRevision":{"type":["string","integer"],"pattern":"^-?(?:0|[1-9]\\d*)$"}},"required":["name","expectedRevision"],"additionalProperties":false}},"securitySchemes":{"bearerAuth":{"type":"http","scheme":"bearer","bearerFormat":"JWT"}}}}
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "组件 HTTP 接口",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/tenancy/tenants": {
+      "get": {
+        "operationId": "Hf958b36220b04fdafafd4ce1bf1cc7bb286010b9174b9603f521db51c2838ed4",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/He9145e3c95bcd7d798c9067075337bc5cc20b7338aafdc06fa02b4798a4eceb6"
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/He9145e3c95bcd7d798c9067075337bc5cc20b7338aafdc06fa02b4798a4eceb6"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H1ce4c270da9a9fe630df13cec9a88447a330bf39b1633e580ad9f963176ac679"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H4753a953f12e40c697f3d5ece0fd58f9b8abd100c65a42f6e1f9cd8e59679c03"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "HTTP 201",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}": {
+      "put": {
+        "operationId": "H0c94440aa57ef71f7214584848f8d938319335c6bc11651d69daea25551ccefb",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H8d8028428010710bc85efd2c530790b2723a7e2304444ef98c407037b42a3aa6"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "He9145e3c95bcd7d798c9067075337bc5cc20b7338aafdc06fa02b4798a4eceb6": {
+        "type": [
+          "string",
+          "integer",
+          "null"
+        ],
+        "pattern": "^-?(?:0|[1-9]\\d*)$"
+      },
+      "H1ce4c270da9a9fe630df13cec9a88447a330bf39b1633e580ad9f963176ac679": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "isolation": {
+                  "enum": [
+                    "row",
+                    "schema",
+                    "database"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "pending",
+                    "trial",
+                    "active",
+                    "grace",
+                    "suspended"
+                  ]
+                },
+                "revision": {
+                  "type": [
+                    "string",
+                    "integer"
+                  ],
+                  "pattern": "^-?(?:0|[1-9]\\d*)$"
+                }
+              },
+              "required": [
+                "id",
+                "code",
+                "name",
+                "isolation",
+                "status"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "H4753a953f12e40c697f3d5ece0fd58f9b8abd100c65a42f6e1f9cd8e59679c03": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isolation": {
+            "enum": [
+              "row",
+              "schema",
+              "database"
+            ],
+            "default": "row"
+          },
+          "administrator": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "membershipId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "subjectId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "membershipId",
+              "subjectId"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isolation": {
+            "enum": [
+              "row",
+              "schema",
+              "database"
+            ]
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "trial",
+              "active",
+              "grace",
+              "suspended"
+            ]
+          },
+          "revision": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "isolation",
+          "status"
+        ]
+      },
+      "H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "H8d8028428010710bc85efd2c530790b2723a7e2304444ef98c407037b42a3aa6": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "expectedRevision": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "name",
+          "expectedRevision"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
