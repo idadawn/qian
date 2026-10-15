@@ -7,9 +7,10 @@ using System.Text.RegularExpressions;
 
 namespace Qian.Common;
 
-// JSON Schema 动态键模式（patternProperties）的统一解释，以内部源文件编译进需要它的包，见 packages/Common/README.md。
-// 模式按 ECMA-262 解释（JSON Schema 2020-12 核心规范 §6.4），Schema 验证器（RegexOptions.ECMAScript）也这样解释：\d \w \s 只认 ASCII。
-// 只接受各方言含义相同的写法，逐个记号翻译成 .NET 表达式交给 NonBacktracking；词边界、内联选项、Unicode 属性、命名组、环视、反向引用、代理项等一律拒绝。
+// JSON Schema 正则（pattern 与 patternProperties 的键）的统一解释，以内部源文件编译进需要它的包，见 packages/Common/README.md。
+// 模式按 ECMA-262 不带标志的语义解释（JSON Schema 2020-12 核心规范 §6.4），逐 UTF-16 码元匹配：. 不匹配 \n \r U+2028 U+2029，
+// \s 为 ECMA-262 空白，\d \w 只认 ASCII，^ 与 $ 只在开头与末尾成立。
+// 只接受各方言写法含义相同的子集，逐个记号翻译成 .NET 表达式交给 NonBacktracking；词边界、内联选项、Unicode 属性、命名组、环视、反向引用、代理项等一律拒绝。
 // 接受与拒绝全在翻译时按确定的规则判定（含分组配对、量词边界与规模上限），翻译结果必然能被 .NET 构造；CLI 的 TS 移植据此逐例一致。
 internal static class SchemaPattern
 {
@@ -21,14 +22,15 @@ internal static class SchemaPattern
     internal const int MaxSize = 1000;
     private const int Universe = char.MaxValue + 1;
     private static readonly ConcurrentDictionary<(string Pattern, bool FoldCase), Regex> Cache = new();
-    // 方言判断不同的码元：. 与 $ 涉及的 \n \r U+2028 U+2029、只有 ECMA-262 算作空白的字符（含旧版 Unicode 的 U+180E）、验证器 \w 额外包含的 U+0130。
+    // 各验证器方言判断不同的码元：. 与 $ 涉及的 \n \r U+2028 U+2029、只有 ECMA-262 算作空白的字符（含旧版 Unicode 的 U+180E）、
+    // .NET ECMAScript 选项的 \w 额外包含的 U+0130。翻译结果按 ECMA-262 判断它们，但审计与配置扫描的验证器仍按自己的方言判断。
     private static readonly SearchValues<char> Unstable = SearchValues.Create([
         '\n', '\r', (char)0x00A0, (char)0x0130, (char)0x1680, (char)0x180E, .. Enumerable.Range(0x2000, 11).Select(code => (char)code),
         (char)0x2028, (char)0x2029, (char)0x202F, (char)0x205F, (char)0x3000, (char)0xFEFF]);
     // 每个码元所在 OrdinalIgnoreCase 等价类的代表。配置键（IConfiguration）与 Web 默认反序列化都按它判断键名相等；首次折叠时构建。
     private static readonly Lazy<char[]> Representatives = new(BuildRepresentatives);
 
-    // 键名不含上述码元与代理项（u 标志下按码点处理）时，接受的每种写法在验证器方言与 ECMA-262 下判断相同。
+    // 键名不含上述码元与代理项（u 标志下按码点处理）时，接受的每种写法在各验证器方言与翻译结果下判断相同。
     // 上述码元与代理项在 OrdinalIgnoreCase 下各自成类，折叠后同样成立。
     internal static bool IsStable(string name) => !name.AsSpan().ContainsAny(Unstable) && !name.AsSpan().ContainsAnyInRange((char)0xD800, (char)0xDFFF);
 
@@ -77,8 +79,10 @@ internal static class SchemaPattern
                     if (!outer.TryPop(out var enclosing)) throw Unsupported();
                     output.Append(')'); size = Grow(enclosing, last = size); quantifiable = true; break;
                 case '|': output.Append(c); quantifiable = false; break;
-                case '^' or '$': output.Append(c); size = Grow(size, 1); quantifiable = false; break;
-                case '.': Emit(output, Single('\n').Not(), foldCase); size = Grow(size, last = 1); quantifiable = true; break;
+                case '^': output.Append(c); size = Grow(size, 1); quantifiable = false; break;
+                // .NET 的 $ 还匹配末尾换行之前，ECMA-262 不带 m 标志时只在末尾成立。
+                case '$': output.Append(@"\z"); size = Grow(size, 1); quantifiable = false; break;
+                case '.': Emit(output, Dot(), foldCase); size = Grow(size, last = 1); quantifiable = true; break;
                 case '*' or '+' or '?' or '{':
                     // 量词只能跟在字符、类、. 或分组之后；惰性 ? 之外不能叠加，未组成量词的 { 不当字面量。
                     if (!quantifiable) throw Unsupported();
@@ -193,7 +197,7 @@ internal static class SchemaPattern
         return i > start ? value : throw Unsupported();
     }
 
-    // \d \w \s 按 ECMA-262 只认 ASCII，大写为补集；ECMA-262 \s 额外的空白都列在 Unstable 里。
+    // \d \w 按 ECMA-262 只认 ASCII，\s 为 ECMA-262 的空白与行终止符，大写为补集。
     private static BitArray Shorthand(char c)
     {
         var set = new BitArray(Universe);
@@ -201,9 +205,20 @@ internal static class SchemaPattern
         {
             case 'd': Range(set, '0', '9'); break;
             case 'w': Range(set, '0', '9'); Range(set, 'A', 'Z'); Range(set, 'a', 'z'); set['_'] = true; break;
-            default: Range(set, '\t', '\r'); set[' '] = true; break;
+            default: foreach (var code in Spaces) set[code] = true; break;
         }
         return char.IsUpper(c) ? set.Not() : set;
+    }
+
+    private static readonly char[] Spaces = [.. "\t\n\v\f\r ", (char)0x00A0, (char)0x1680, .. Enumerable.Range(0x2000, 11).Select(code => (char)code),
+        (char)0x2028, (char)0x2029, (char)0x202F, (char)0x205F, (char)0x3000, (char)0xFEFF];
+
+    // . 不匹配 ECMA-262 的四个行终止符；.NET 的 . 只排除 \n。
+    private static BitArray Dot()
+    {
+        var set = new BitArray(Universe, true);
+        foreach (var code in "\n\r" + (char)0x2028 + (char)0x2029) set[code] = false;
+        return set;
     }
 
     private static void Range(BitArray set, char low, char high)

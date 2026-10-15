@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {randomBytes} from 'node:crypto';
 import {satisfies, rcompare, validRange} from 'semver';
-import {Ajv2020} from 'ajv/dist/2020.js';
+import {Ajv2020, type ErrorObject} from 'ajv/dist/2020.js';
 import {parseSurface, validateSurfaceSchema, type JsonValue, type SurfaceDiagnostic, type SurfaceSyntax} from '@qian/surfaces';
 import {compilePattern,isStable,sameKey,UnsupportedPattern,type KeyPattern} from './schema-pattern.js';
 
@@ -162,10 +162,13 @@ class Composition {
     const file=this.within(component.directory,str(obj(component.manifest.runtime).configSchema)||'./schemas/config.schema.json');
     if(!existsSync(file)){if(Object.keys(entry.config).length)this.fail(entry.configFile,entry.configPointer,'有配置的组件必须提供 config.schema.json。');return entry.config;}
     if(statSync(file).size>1_048_576)this.fail(file,'','Schema 超过大小限制。');
-    const schema=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(readFileSync(file))) as JsonValue,config=defaults(schema,structuredClone(entry.config));
-    const validate=new Ajv2020({allErrors:true,strict:false,validateFormats:false}).compile(schema as object);
+    const schema=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(readFileSync(file))) as JsonValue;
+    this.patterns(schema,file,'');
+    const config=defaults(schema,structuredClone(entry.config));
+    // 正则交给共享翻译规则执行（同 ProfileLoader.UsePortablePatterns）；预检没有覆盖的位置遇到不支持的写法时编译抛错，按无法解析处理。
+    const validate=new Ajv2020({allErrors:true,strict:false,validateFormats:false,code:{regExp:portableRegExp}}).compile(schema as object);
     if(!validate(config)){
-      for(const error of validate.errors??[])this.error(entry.configFile,entry.configPointer+error.instancePath+(error.keyword==='additionalProperties'?'/'+escape(String(error.params.additionalProperty)):''),'条目配置不符合组件 config.schema。');
+      for(const location of locations(validate.errors??[]))this.error(entry.configFile,entry.configPointer+location,'条目配置不符合组件 config.schema。');
       throw new CompositionFailed();
     }
     // 与 ProfileLoader.Sensitive 同序同义，诊断逐字相同。规则不是对象即返回；x-qian-sensitive 不是布尔值时 .NET 读取失败，这里同样按无法解析处理。
@@ -177,16 +180,18 @@ class Composition {
       if(flag===true&&!secretReference(value))this.fail(entry.configFile,pointer,'敏感配置必须为 secretRef，不能打印或保存明文。');
       for(const name of ['allOf','anyOf','oneOf'])if(Array.isArray(rule[name]))for(const branch of rule[name] as JsonValue[])sensitive(value,branch,pointer,depth+1);
       if(Array.isArray(value)&&rule.items!=null)value.forEach((child,index)=>sensitive(child,rule.items,pointer+'/'+index,depth+1));
-      for(const[key,child]of Object.entries(obj(value))){
+      for(const key of Object.keys(obj(value)).sort()){
+        const child=obj(value)[key];
         // 键名按两种读法判定，敏感标记取并集：IQianPlugin<TConfig> 按 Web 默认不区分大小写绑定（Password 会绑到 password），
         // 验证器与直接读 JsonElement 的插件区分大小写。所以属性名与动态键都按 OrdinalIgnoreCase 匹配，additionalProperties 只在按原样没有匹配时适用。
-        const at=pointer+'/'+escape(key);let exact=false;
-        for(const[name,shape]of Object.entries(obj(rule.properties)))if(sameKey(name,key)){sensitive(child,shape,at,depth+1);exact=name===key||exact;}
-        const patterns=Object.entries(obj(rule.patternProperties));
-        if(patterns.length){
+        // 配置键、属性名与模式都按序数顺序遍历：JS 对象把整数形式的键排在前面，按各自的迭代顺序时两端报告的首个违规会不同。
+        const at=pointer+'/'+escape(key),properties=obj(rule.properties),patterns=obj(rule.patternProperties);let exact=false;
+        for(const name of Object.keys(properties).sort())if(sameKey(name,key)){sensitive(child,properties[name],at,depth+1);exact=name===key||exact;}
+        if(Object.keys(patterns).length){
           // 动态键按 ECMA-262 判定（见 schema-pattern.ts）。方言判断不同的键名不做匹配，值必须是 secretRef；模式仍逐个编译，不受支持的写法照常失败。
           const stable=isStable(key);
-          for(const[source,shape]of patterns){
+          for(const source of Object.keys(patterns).sort()){
+            const shape=patterns[source];
             const folded=this.pattern(source,true,entry.configFile,at);
             if(!stable||!folded.test(key))continue;
             sensitive(child,shape,at,depth+1);
@@ -197,6 +202,30 @@ class Composition {
         if(!exact)sensitive(child,rule.additionalProperties,at,depth+1);
       }
     };sensitive(config,schema,entry.configPointer);return config;
+  }
+  // 与 ProfileLoader.Patterns 同序同义：交给验证器之前，按 schemaKeywords 的顺序检查各子 Schema 位置上的 pattern 与 patternProperties 的键，
+  // 映射按键名序数、数组按下标，超出可移植子集的写法在 Schema 文件的对应指针处失败。不跟随 $ref。
+  private patterns(schema:JsonValue|undefined,file:string,pointer:string,depth=0):void{
+    if(depth>64)throw new Error('schema depth');
+    if(typeof schema!=='object'||schema===null||Array.isArray(schema))return;
+    if(typeof schema.pattern==='string')this.portable(schema.pattern,file,pointer+'/pattern','pattern');
+    for(const keyword of schemaKeywords){
+      const value=schema[keyword];
+      if(schemaMaps.has(keyword)){
+        if(typeof value!=='object'||value===null||Array.isArray(value))continue;
+        for(const key of Object.keys(value).sort()){
+          const at=pointer+'/'+keyword+'/'+escape(key);
+          if(keyword==='patternProperties')this.portable(key,file,at,keyword);
+          this.patterns(value[key],file,at,depth+1);
+        }
+      }
+      else if(schemaLists.has(keyword)){if(Array.isArray(value))value.forEach((child,index)=>this.patterns(child,file,pointer+'/'+keyword+'/'+index,depth+1));}
+      else this.patterns(value,file,pointer+'/'+keyword,depth+1);
+    }
+  }
+  private portable(source:string,file:string,pointer:string,keyword:string):void{
+    try{compilePattern(source);}
+    catch(error){if(error instanceof UnsupportedPattern)this.fail(file,pointer,'组件 config.schema 的 '+keyword+' 含不支持的正则写法，只接受 ECMA-262 可移植子集。');throw error;}
   }
   // 超出 ECMA-262 可移植子集或规模上限的写法让装配失败，不跳过敏感标记。
   private pattern(source:string,foldCase:boolean,file:string,pointer:string):KeyPattern{
@@ -225,6 +254,29 @@ class Composition {
     const full=path.resolve(directory,relative);if(!full.startsWith(path.resolve(directory)+path.sep))throw new Error('outside');
     let current=directory;for(const part of path.relative(directory,full).split(path.sep)){current=path.join(current,part);if(existsSync(current)&&lstatSync(current).isSymbolicLink())throw new Error('link');}return full;
   }
+}
+// 含子 Schema 的关键字，按序数排列；值为映射或数组的分别列出。同 ProfileLoader.SchemaKeywords。
+const schemaKeywords=['$defs','additionalProperties','allOf','anyOf','contains','contentSchema','definitions','dependentSchemas',
+  'else','if','items','not','oneOf','patternProperties','prefixItems','properties','propertyNames','then','unevaluatedItems','unevaluatedProperties'];
+const schemaMaps=new Set(['$defs','definitions','dependentSchemas','patternProperties','properties']);
+const schemaLists=new Set(['allOf','anyOf','oneOf','prefixItems']);
+// Ajv 默认按 u 标志构造 RegExp；换成共享翻译规则的匹配器，pattern 与 patternProperties 的键（含 additionalProperties 的判定）与 .NET 同义。
+const portableRegExp=Object.assign((source:string):KeyPattern=>compilePattern(source),{code:'compilePattern'});
+
+// 与 ProfileLoader.Locations 同义，把 Ajv 的错误归一为出错实例位置：每个错误报自身位置，含 anyOf、oneOf、if、contains 的汇总错误；
+// additionalProperties、unevaluatedProperties、propertyNames 报到键名；contains 略去逐项错误（Ajv 计数达到上限即停止逐项检查）。去重后按序数排序。
+function locations(errors:ErrorObject[]):string[]{
+  const at=(error:ErrorObject):string=>error.instancePath+(
+    error.keyword==='additionalProperties'?'/'+escape(String(error.params.additionalProperty)):
+    error.keyword==='unevaluatedProperties'?'/'+escape(String(error.params.unevaluatedProperty)):
+    error.keyword==='propertyNames'?'/'+escape(String(error.params.propertyName)):
+    error.propertyName!==undefined?'/'+escape(error.propertyName):'');
+  const contains=errors.filter(error=>error.keyword==='contains'),found=new Set<string>();
+  for(const error of errors){
+    const location=at(error);
+    if(!contains.some(other=>error.schemaPath.startsWith(other.schemaPath+'/')&&location.startsWith(at(other)+'/')))found.add(location);
+  }
+  return [...found].sort();
 }
 function localReference(schema:Obj,root:JsonValue):JsonValue|undefined{
   if(typeof schema.$ref!=='string')return undefined;

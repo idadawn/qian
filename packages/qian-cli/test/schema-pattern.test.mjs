@@ -18,6 +18,19 @@ test('翻译结果与在固定键名上的匹配与 .NET 逐条一致，拒绝�
   assert.equal(bits(compilePattern(vector.pattern,true)),vector.foldedMatches,vector.pattern);
  }
 });
+test('值层按 ECMA-262 不带标志的语义逐码元匹配：与 .NET 的翻译结果和 V8 的 RegExp 逐例一致',()=>{
+ const valueBits=matcher=>vectors.values.map(value=>matcher.test(value)?'1':'0').join('');
+ for(const vector of vectors.patterns){
+  if(vector.rejected)continue;
+  assert.equal(valueBits(compilePattern(vector.pattern)),vector.valueMatches,vector.pattern);
+  assert.equal(valueBits(new RegExp(vector.pattern)),vector.valueMatches,vector.pattern);
+ }
+ // 单字符写法在全部码元上与 V8 相同，含行终止符、非 ASCII 空白与残缺代理项。
+ for(const token of ['.','\\s','\\S','\\w','\\W','\\d','\\D']){
+  const ours=compilePattern('^'+token+'$'),engine=new RegExp('^'+token+'$');
+  for(let code=0;code<=0xFFFF;code++){const text=String.fromCharCode(code);if(ours.test(text)!==engine.test(text))assert.fail(token+' 在 U+'+code.toString(16)+' 上与 V8 不同');}
+ }
+});
 test('键名稳定性与 OrdinalIgnoreCase 相等与 .NET 逐条一致',()=>{
  const unstable=new Set(vectors.unstable.flatMap(([low,high])=>Array.from({length:high-low+1},(_,offset)=>low+offset)));
  for(let code=0;code<=0xFFFF;code++)if(isStable(String.fromCharCode(code))===unstable.has(code))assert.fail('U+'+code.toString(16)+' 的稳定性与 .NET 不同');

@@ -35,6 +35,18 @@ config 使用组件 `runtime.configSchema` 或 `schemas/config.schema.json` 校�
 
 敏感判定按两种读法取并集。`IQianPlugin<TConfig>` 按 Web 默认反序列化，不区分大小写，所以属性名与模式属性的键都不区分大小写匹配：`Password` 同样受 `password` 的标记约束。验证器与直接读 `JsonElement` 的插件区分大小写，所以 `additionalProperties` 只在按原样没有匹配时适用。模式属性的键按 ECMA-262 可移植子集解释，规则与配置扫描相同，见 [共享内部源文件](../Common/README.md)：超出子集或规模上限的写法让装配失败；键名含各方言判断不同的字符时，值必须是 secretRef。CLI 的同名检查（`profiles.ts`）逐条移植同一规则，键名相等也按 .NET 的 OrdinalIgnoreCase 判断，不用 JS 的大小写转换；共享 TCK 要求两端给出逐字相同的诊断。
 
+配置键、属性名与模式属性按序数顺序遍历，敏感检查遇到首个违规即失败：JS 对象把整数形式的键排在前面，按文档顺序时两端报告的首个违规会不同。
+
+两端的 Schema 验证器（.NET 为 JsonSchema.Net，CLI 为 Ajv）对正则的写法与语义各有方言，所以都把 `pattern` 与 `patternProperties` 的键交给同一翻译规则执行：.NET 在构造后替换编译结果，CLI 通过 Ajv 的 `code.regExp`。字符串值与键名按 ECMA-262 不带标志的语义逐码元判断，additionalProperties、unevaluatedProperties、propertyNames 随之一致。交给验证器之前，两端按同一顺序检查各子 Schema 位置上的正则，超出可移植子集的写法在 Schema 文件的对应指针处失败，如 `plugins/x/schemas/config.schema.json#/properties/a/pattern`。这一检查不跟随 `$ref`：引用到其他位置的不支持写法在验证器编译时拒绝，按无法解析处理。
+
+验证失败时，两个验证器的错误归一为出错实例位置，去重后按序数排序：
+
+- 容器关键字（properties、patternProperties、additionalProperties、propertyNames、unevaluatedProperties、items、prefixItems、allOf、dependentSchemas、`$ref`）只经由失败的子位置报告；
+- 其余失败的关键字报自身位置，含 anyOf、oneOf、not 以及 if 之后失败的 then 或 else；if 的条件本身不计，通过的组合下失败的分支也不计；
+- additionalProperties、unevaluatedProperties、propertyNames 的错误报到键名；contains 只报数组位置。
+
+验证器在少数语义上仍有分歧，暂未对齐：prefixItems 之后的 items（JsonSchema.Net 9.4.0 的逐项位置从 0 起算，Ajv 对 `items: false` 只报数组位置）；unevaluatedItems；minLength 与 maxLength（JsonSchema.Net 按文本元素计数，Ajv 按码点）；multipleOf 的小数（Ajv 用浮点）；contains 或 propertyNames 的子 Schema 经 `$ref` 引用时，Ajv 可能多报位置。配置 Schema 宜避开这些写法。
+
 gateway/identity 不允许 command hook，S1 拒绝代码热更新；AOT profile 拒绝 function 或未声明 AOT 的代码清单。这只是装配预检，不能代替组件 NativeAOT 编译验收。
 
 ## 结果和边界
