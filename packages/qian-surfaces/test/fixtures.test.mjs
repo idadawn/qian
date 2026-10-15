@@ -22,7 +22,7 @@ test('共享正反例与结构化错误', () => {
       assert.equal(result.isValid, entry.valid, entry.name + ': ' + JSON.stringify(normalize(result)));
       if(['hooks-shell-command','command-server-shell','command-unapproved-shell'].includes(entry.name))assert.throws(()=>new HotReloadSurfacePlugin(root,entry.options),/INPUT_INVALID/);
       if(entry.name==='all-surfaces')assert.doesNotThrow(()=>new HotReloadSurfacePlugin(root,entry.options));
-      for (const expected of entry.expected) assert.ok(result.diagnostics.some(d => d.file === expected.file && d.error.pointer === expected.pointer && d.error.errors[0].code === expected.code), entry.name + ': ' + JSON.stringify(normalize(result)));
+      for (const expected of entry.expected) assert.ok(result.diagnostics.some(d => d.file === expected.file && d.error.pointer === expected.pointer && d.error.errors[0].code === expected.code && (expected.line === undefined || d.line === expected.line)), entry.name + ': ' + JSON.stringify(normalize(result)));
       for (const d of result.diagnostics) { assert.ok(d.line >= 1); assert.match(d.error.pointer, /^[^#\s]*#(?:\/.*)?$/); assert.equal(d.error.code, 'INPUT_INVALID'); }
       report[entry.name] = normalize(result);
     } finally { rmSync(temporary, { recursive: true, force: true }); }
@@ -43,6 +43,15 @@ test('字面量的未成对代理项按值无效处理', async () => {
     const parsed = parseSurface(file, content, markdown, '0'.repeat(32));
     assert.equal(parsed.syntax, null, file);
     assert.deepEqual(parsed.diagnostics.map(d => [d.line, d.error.pointer, d.error.errors[0].code]), [[1, file + '#', 'SURFACE_SYNTAX_INVALID']], file);
+  }
+});
+test('解析诊断的行号与文案一致', async () => {
+  // 与 .NET 的 SyntaxVectors_ReportSameLineAndMessage 同断言：恰好一条文件根诊断，行号与文案逐字相同（S1-RT-025）。
+  const {parseSurface} = await import('../dist/index.js');
+  for (const vector of JSON.parse(readFileSync(path.join(repo, 'tck/surfaces/syntax-vectors.json'), 'utf8'))) {
+    const parsed = parseSurface(vector.file, vector.source, vector.markdown, '0'.repeat(32));
+    assert.equal(parsed.syntax, null, vector.name);
+    assert.deepEqual(parsed.diagnostics.map(d => [d.line, d.error.pointer, d.error.errors[0].code, d.error.errors[0].message]), [[vector.line, vector.file + '#', 'SURFACE_SYNTAX_INVALID', vector.message]], vector.name);
   }
 });
 test('YAML 核心标量解释一致', async () => {

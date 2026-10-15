@@ -1160,5 +1160,188 @@
     "options": {},
     "valid": true,
     "expected": []
+  },
+  {
+    "name": "patch-tab-indentation",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "config/qian.patch.yml": "- id: files\n  config:\n\tquota: 100\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "config/qian.patch.yml",
+        "pointer": "config/qian.patch.yml#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 3
+      }
+    ]
+  },
+  {
+    "name": "patch-unclosed-quote",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "config/qian.patch.yml": "- id: files\n  config:\n    title: \"x\n    quota: 100\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "config/qian.patch.yml",
+        "pointer": "config/qian.patch.yml#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 3
+      }
+    ]
+  },
+  {
+    "name": "patch-second-document",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "config/qian.patch.yml": "- id: files\n  config: {}\n---\n- id: other\n  config: {}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "config/qian.patch.yml",
+        "pointer": "config/qian.patch.yml#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 3
+      }
+    ]
+  },
+  {
+    "name": "patch-directive",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "config/qian.patch.yml": "%YAML 1.2\n---\n- id: files\n  config: {}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "config/qian.patch.yml",
+        "pointer": "config/qian.patch.yml#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "patch-empty-key",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "config/qian.patch.yml": "- id: files\n  config:\n    : 1\n    quota: 100\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "config/qian.patch.yml",
+        "pointer": "config/qian.patch.yml#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 3
+      }
+    ]
+  },
+  {
+    "name": "patch-duplicate-outer-before-nested",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "config/qian.patch.yml": "- id: files\n  config:\n    a: 1\n  config:\n    b: 1\n    b: 2\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "config/qian.patch.yml",
+        "pointer": "config/qian.patch.yml#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 4
+      }
+    ]
+  },
+  {
+    "name": "skill-front-matter-tab",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "skills/guide/SKILL.md": "---\nname: guide\n\tdescription: 当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\n---\n\n正文\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "skills/guide/SKILL.md",
+        "pointer": "skills/guide/SKILL.md#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 3
+      }
+    ]
+  },
+  {
+    "name": "skill-block-scalar-at-end",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "skills/guide/SKILL.md": "---\nname: guide\ndescription: |\n  当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\n---\n\n正文\n"
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "metadata-json-depth-64",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]\n"
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "metadata-json-depth-65",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "metadata-non-finite",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": "{\n  \"limit\": 1e999\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "metadata-json-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": "\ufeff[\n  {\n    \"name\": \"reader\"\n  }\n]\n"
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
   }
 ]

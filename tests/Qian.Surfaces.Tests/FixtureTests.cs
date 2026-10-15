@@ -12,7 +12,10 @@ public sealed class FixtureTests
 {
     private static readonly string Root = FindRoot();
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private static readonly JsonSerializerOptions ReportOptions = new() { WriteIndented = true };
+    // 样例里有 64 层嵌套的数据（深度边界），外面再包几层报告结构，读写时放宽深度上限。
+    private static readonly JsonSerializerOptions ReportOptions = new() { WriteIndented = true, MaxDepth = 128 };
+    private static readonly JsonSerializerOptions DetailOptions = new() { MaxDepth = 128 };
+    private static readonly JsonDocumentOptions VectorOptions = new() { MaxDepth = 128 };
     [Fact]
     public void SharedFixtures_ValidateWithStructuredErrors()
     {
@@ -33,14 +36,15 @@ public sealed class FixtureTests
                 documents = result.Component?.Documents.Select(d => new { kind = d.Kind, name = d.Name, file = d.File, data = d.Data, body = d.Body }).ToArray() ?? [],
                 diagnostics = result.Diagnostics.Select(d => new { file = d.File, line = d.Line, severity = d.Severity, pointer = d.Error.Pointer, code = d.Error.Errors![0].Code }).ToArray()
             };
-            var details = name + ": " + JsonSerializer.Serialize(normalized);
+            var details = name + ": " + JsonSerializer.Serialize(normalized, DetailOptions);
             Assert.True(result.IsValid == entry.GetProperty("valid").GetBoolean(), details);
             if (name is "hooks-shell-command" or "command-server-shell" or "command-unapproved-shell")
                 Assert.Equal(PlatformErrors.InputInvalid, Assert.Throws<QianErrorException>(() => new HotReloadSurfacePlugin(fixture.Directory, validator, options)).Error.Code);
             if (name == "all-surfaces") _ = new HotReloadSurfacePlugin(fixture.Directory, validator, options); // 明确授权的人类 CLI 声明仍可装载。
             foreach (var expected in entry.GetProperty("expected").EnumerateArray())
                 Assert.True(result.Diagnostics.Any(d => d.File == expected.GetProperty("file").GetString() &&
-                    d.Error.Pointer == expected.GetProperty("pointer").GetString() && d.Error.Errors![0].Code == expected.GetProperty("code").GetString()), details);
+                    d.Error.Pointer == expected.GetProperty("pointer").GetString() && d.Error.Errors![0].Code == expected.GetProperty("code").GetString() &&
+                    (!expected.TryGetProperty("line", out var line) || d.Line == line.GetInt32())), details);
             foreach (var diagnostic in result.Diagnostics)
             {
                 Assert.True(diagnostic.Line >= 1, details);
@@ -70,13 +74,29 @@ public sealed class FixtureTests
     [Fact]
     public void YamlCoreScalars_MatchLanguageIndependentValues()
     {
-        using var vectors = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "tck/surfaces/parse-vectors.json")));
+        using var vectors = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "tck/surfaces/parse-vectors.json")), VectorOptions);
         foreach (var vector in vectors.RootElement.EnumerateArray())
         {
             var parsed = new SurfaceValidator().Parse("values.yml", vector.GetProperty("source").GetString()!);
             Assert.Empty(parsed.Diagnostics);
             Assert.NotNull(parsed.Syntax);
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(vector.GetProperty("data").GetRawText()), JsonNode.Parse(parsed.Syntax.Data.GetRawText())));
+        }
+    }
+
+    // 与 CLI 的「解析诊断的行号与文案一致」同断言：恰好一条文件根诊断，行号与文案逐字相同（S1-RT-025）。
+    [Fact]
+    public void SyntaxVectors_ReportSameLineAndMessage()
+    {
+        using var vectors = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "tck/surfaces/syntax-vectors.json")));
+        foreach (var vector in vectors.RootElement.EnumerateArray())
+        {
+            var (name, file) = (vector.GetProperty("name").GetString(), vector.GetProperty("file").GetString()!);
+            var parsed = new SurfaceValidator().Parse(file, vector.GetProperty("source").GetString()!, vector.GetProperty("markdown").GetBoolean());
+            Assert.True(parsed.Syntax is null, name);
+            var diagnostic = Assert.Single(parsed.Diagnostics);
+            Assert.Equal((name, vector.GetProperty("line").GetInt32(), file + "#", "SURFACE_SYNTAX_INVALID", vector.GetProperty("message").GetString()),
+                (name, diagnostic.Line, diagnostic.Error.Pointer, diagnostic.Error.Errors![0].Code, diagnostic.Error.Errors[0].Message));
         }
     }
 
