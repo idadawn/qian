@@ -56,6 +56,20 @@ public interface IRegistryService : IAsyncDisposable
     ValueTask<int> UnmountAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken cancellationToken = default);
     /// <summary>读取当前已验证租户 scope 中某条目的有效 patch（含修订）；没有时返回 null。供可信平台插件取得条件写入的预期修订。</summary>
     ValueTask<ScopePatchSnapshot?> GetScopePatchAsync(ScopeKey scope, string entryId, CancellationToken cancellationToken = default);
+    /// <summary>读取当前已验证租户 scope 的全部有效 patch（按条目标识排序）；供 Lifecycle 升级、卸载时找出引用某组件的条目。</summary>
+    ValueTask<IReadOnlyList<ScopePatchSnapshot>> GetScopePatchesAsync(ScopeKey scope, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 补偿写入：把条目恢复为挂载前的 patch（可以是禁用 patch），previous 为 null 时撤销本 scope 的 patch（平台条目随之恢复可见，不写禁用）；
+    /// 校验、条件修订与事件同 <see cref="MountAsync"/>，恢复后可见即发 <see cref="RegistryEvents.ScopeMounted"/>，否则发 <see cref="RegistryEvents.ScopeUnmounted"/>。
+    /// 供 Lifecycle 在新条目装配失败时撤回自己的写入，调用方负责权限；返回写入后的 patch 修订。
+    /// </summary>
+    ValueTask<int> RestoreScopePatchAsync(ScopeKey scope, string entryId, System.Text.Json.JsonElement? previous, int expectedRevision, string actor, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 生命周期回写（PRD 7.2.1）：把安装结论写回制品目录记录。state 为 Installed（验签通过、无需部署）、Progressing 或 Healthy
+    /// （service 修订的部署健康 = 工作负载状态 + 组件 /health 双条件）；signedBy 为验签公钥指纹（sha256:…），写入验签结论。
+    /// 只接受已登记的制品，未知摘要抛 NOT_FOUND；供 Lifecycle 等可信平台插件调用，调用方负责权限。
+    /// </summary>
+    ValueTask<RegistryArtifactEntry> RecordArtifactStateAsync(string digest, string state, string signedBy, CancellationToken cancellationToken = default);
     /// <summary>
     /// 合入当前已验证租户的数据库 scope 后，返回该 scope 最近一次装配失败的诊断（条目 Apply 失败或整个 scope 无法装配）；装配正常时为空。
     /// 供 Lifecycle 等可信平台插件的管理面使用，调用方负责权限。

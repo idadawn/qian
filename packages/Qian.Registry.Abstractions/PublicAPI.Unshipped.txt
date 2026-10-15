@@ -187,3 +187,11 @@ override Qian.Registry.RegistryScopeDiagnostic.GetHashCode() -> int
 override Qian.Registry.RegistryScopeDiagnostic.ToString() -> string!
 static Qian.Registry.RegistryScopeDiagnostic.operator !=(Qian.Registry.RegistryScopeDiagnostic? left, Qian.Registry.RegistryScopeDiagnostic? right) -> bool
 static Qian.Registry.RegistryScopeDiagnostic.operator ==(Qian.Registry.RegistryScopeDiagnostic? left, Qian.Registry.RegistryScopeDiagnostic? right) -> bool
+Qian.Registry.IRegistryService.GetScopePatchesAsync(Qian.Runtime.ScopeKey scope, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.ScopePatchSnapshot!>!>
+Qian.Registry.IRegistryService.RecordArtifactStateAsync(string! digest, string! state, string! signedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Registry.RegistryArtifactEntry!>
+Qian.Registry.IRegistryService.RestoreScopePatchAsync(Qian.Runtime.ScopeKey scope, string! entryId, System.Text.Json.JsonElement? previous, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+Qian.Registry.RegistryArtifactStates
+const Qian.Registry.RegistryArtifactStates.Healthy = "Healthy" -> string!
+const Qian.Registry.RegistryArtifactStates.Installed = "Installed" -> string!
+const Qian.Registry.RegistryArtifactStates.Progressing = "Progressing" -> string!
+const Qian.Registry.RegistryArtifactStates.Submitted = "Submitted" -> string!

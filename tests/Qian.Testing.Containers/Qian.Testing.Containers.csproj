@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>集成测试共用的 Testcontainers fixture：PostgreSQL 16（含 NOBYPASSRLS 应用角色）、Redis 7、RabbitMQ、Apollo 协议替身。</Description>
+    <Description>集成测试共用的 Testcontainers fixture：PostgreSQL 16（含 NOBYPASSRLS 应用角色）、Redis 7、RabbitMQ、Apollo 协议替身、K3s 单节点集群。</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +19,7 @@
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Testcontainers.RabbitMq" />
     <PackageReference Include="Testcontainers.Redis" />
+    <PackageReference Include="Testcontainers.K3s" />
     <PackageReference Include="xunit.v3.assert" />
     <PackageReference Include="xunit.v3.extensibility.core" />
   </ItemGroup>

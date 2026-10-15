@@ -146,13 +146,7 @@ internal sealed class RegistryService : IRegistryService
             throw Invalid("#/0/id", "挂载条目必须是带 id 的 patch 对象。");
         if (entry.TryGetProperty("disabled", out var disabled) && disabled.ValueKind == JsonValueKind.True)
             throw Invalid("#/0/disabled", "挂载条目不能带 disabled: true；卸载请用 Unmount。");
-        // 新增条目必须写明宿主预装的组件版本；只替换平台条目配置的 patch 不带 plugin。
-        if (entry.TryGetProperty("plugin", out var plugin))
-        {
-            var reference = plugin.ValueKind == JsonValueKind.String ? plugin.GetString()!.Split('@', 2) : [];
-            if (reference.Length != 2 || !_installed.Any(component => component.PluginId == reference[0] && component.Version == reference[1]))
-                throw Invalid("#/0/plugin", "挂载条目须写明宿主预装集合中的组件版本（plugin@version）。");
-        }
+        CheckInstalled(entry);
         using var origin = Origin();
         return await _writer.PutAsync(scope, id.GetString()!, entry, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
     }
@@ -179,11 +173,45 @@ internal sealed class RegistryService : IRegistryService
         return await _patches.GetAsync(scope, entryId, cancellationToken).ConfigureAwait(false);
     }
 
+    public async ValueTask<IReadOnlyList<ScopePatchSnapshot>> GetScopePatchesAsync(ScopeKey scope, CancellationToken cancellationToken = default)
+    {
+        WriteTenant(scope);
+        return await _patches.ListAsync(scope, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask<int> RestoreScopePatchAsync(ScopeKey scope, string entryId, JsonElement? previous, int expectedRevision, string actor, CancellationToken cancellationToken = default)
+    {
+        WriteTenant(scope);
+        using var origin = Origin();
+        if (previous is not { } patch) return await _writer.RemoveAsync(scope, entryId, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
+        if (patch.ValueKind != JsonValueKind.Object || !patch.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.String || id.GetString() != entryId)
+            throw Invalid("#/0/id", "恢复的 patch 必须是同一条目。");
+        CheckInstalled(patch);
+        return (await _writer.PutAsync(scope, entryId, patch, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false)).Revision;
+    }
+
+    public async ValueTask<RegistryArtifactEntry> RecordArtifactStateAsync(string digest, string state, string signedBy, CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _lifetime.IsCancellationRequested) throw new ServiceNotReadyException();
+        var saved = await _artifacts.RecordAsync(digest, state, signedBy, cancellationToken).ConfigureAwait(false);
+        return new RegistryArtifactEntry(saved.Digest, saved.Component.Id, saved.Component.Manifest.GetProperty("version").GetString()!,
+            saved.State, saved.SubmittedBy, saved.SubmittedAt);
+    }
+
     public async ValueTask<IReadOnlyList<RegistryScopeDiagnostic>> GetScopeDiagnosticsAsync(ScopeKey scope, CancellationToken cancellationToken = default)
     {
         if (_listener is null) throw new ServiceNotReadyException();
         WriteTenant(scope);
         return await _scopes.DiagnoseAsync(_tenant.TenantId!, scope, cancellationToken).ConfigureAwait(false);
+    }
+
+    // 新增条目必须写明宿主预装的组件版本；只替换平台条目配置的 patch 不带 plugin。
+    private void CheckInstalled(JsonElement entry)
+    {
+        if (!entry.TryGetProperty("plugin", out var plugin)) return;
+        var reference = plugin.ValueKind == JsonValueKind.String ? plugin.GetString()!.Split('@', 2) : [];
+        if (reference.Length != 2 || !_installed.Any(component => component.PluginId == reference[0] && component.Version == reference[1]))
+            throw Invalid("#/0/plugin", "挂载条目须写明宿主预装集合中的组件版本（plugin@version）。");
     }
 
     // 公开写入只接受当前已验证租户自己的 tenant scope；应用 / 会话 scope 待 Tenancy 的真实归属证明。
