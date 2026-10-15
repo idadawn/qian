@@ -13,8 +13,9 @@
 | ` identity/signing-in ` | ` waterfall ` | ` Qian.Identity.Abstractions.IdentityRuntimeEvents.SigningIn `（` packages/Qian.Identity.Abstractions/IdentityEvents.cs `:72） |  |  |
 | ` registry/entry-disabled ` | ` serial ` | ` Qian.Surfaces.Abstractions.SurfaceHookEvents.EntryDisabled `（` packages/Qian.Surfaces.Abstractions/HookContracts.cs `:51） |  |  |
 | ` registry/entry-mounted ` | ` serial ` | ` Qian.Surfaces.Abstractions.SurfaceHookEvents.EntryMounted `（` packages/Qian.Surfaces.Abstractions/HookContracts.cs `:49） |  |  |
-| ` tenant/provisioned ` | ` serial ` | ` Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantProvisioned `（` packages/Qian.Surfaces.Abstractions/HookContracts.cs `:45） | ` lambda expression `（` packages/Qian.Tenancy/TenantProvisioningOrchestrator.cs `:112） | ` Qian.Authz.AuthzPlugin.ApplyAsync(Qian.Runtime.IPluginContext, System.Text.Json.JsonElement, System.Threading.CancellationToken) `（` packages/Qian.Authz/AuthzPlugin.cs `:83） |
+| ` tenant/provisioned ` | ` serial ` | ` Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantProvisioned `（` packages/Qian.Surfaces.Abstractions/HookContracts.cs `:45） | ` lambda expression `（` packages/Qian.Tenancy/TenantProvisioningOrchestrator.cs `:116） | ` Qian.Authz.AuthzPlugin.ApplyAsync(Qian.Runtime.IPluginContext, System.Text.Json.JsonElement, System.Threading.CancellationToken) `（` packages/Qian.Authz/AuthzPlugin.cs `:83） |
 | ` tenant/purged ` | ` serial ` | ` Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantPurged `（` packages/Qian.Surfaces.Abstractions/HookContracts.cs `:47） |  |  |
+| ` tenant/transition-approving ` | ` serial ` | ` Qian.Tenancy.TenantLifecycle.Approving `（` packages/Qian.Tenancy.Abstractions/StateMachine.cs `:13） | ` Qian.Tenancy.TenantStateMachine.Change(System.Guid, string, string, System.DateTimeOffset?, System.Threading.CancellationToken, System.Action?) `（` packages/Qian.Tenancy/TenantStateMachine.cs `:59） |  |
 
 ```mermaid
 flowchart LR
@@ -31,6 +32,8 @@ flowchart LR
   p7_0["lambda expression"] --> e7
   e7 --> c7_0["Qian.Authz.AuthzPlugin.ApplyAsync(Qian.Runtime.IPluginContext, System.Text.Json.JsonElement, System.Threading.CancellationToken)"]
   e8["tenant/purged / serial"]
+  e9["tenant/transition-approving / serial"]
+  p9_0["Qian.Tenancy.TenantStateMachine.Change(System.Guid, string, string, System.DateTimeOffset?, System.Threading.CancellationToken, System.Action?)"] --> e9
 ```
 
 ## 校验诊断

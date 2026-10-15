@@ -72,7 +72,7 @@ public sealed partial class CustomerCommandTests
         var records = await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct);
         Assert.NotEmpty(records); Assert.All(records, entry => Assert.Equal("superadmin", entry.Record.Payload.GetProperty("bypass").GetString()));
         var contract = await management.Services.GetRequiredService<IHttpContractSource>().CompileDocumentAsync("qian.tenancy", Ct);
-        Assert.Equal(2, contract.GetProperty("paths").EnumerateObject().Count());
+        Assert.Equal(6, contract.GetProperty("paths").EnumerateObject().Count());
         Assert.True(contract.GetProperty("paths").GetProperty(path).TryGetProperty("post", out var post));
         Assert.True(contract.GetProperty("paths").GetProperty(path + "/{id}").TryGetProperty("put", out _));
         Assert.DoesNotContain("tenantId", post.GetProperty("requestBody").GetRawText(), StringComparison.Ordinal);
@@ -146,6 +146,7 @@ public sealed partial class CustomerCommandTests
                 return Task.CompletedTask;
             };
         });
+        builder.Services.AddSingleton(business.App.Services.GetRequiredService<ErrorCatalog>());
         builder.Services.AddAuthorization(); builder.Services.AddQianErrors(); builder.Services.AddQianHttpContracts();
         builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.PropertyNameCaseInsensitive = false; options.SerializerOptions.RespectRequiredConstructorParameters = true; });
         var app = builder.Build(); app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();

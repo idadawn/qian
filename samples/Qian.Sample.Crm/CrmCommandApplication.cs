@@ -65,7 +65,7 @@ public static class CrmCommandApplication
                 .RequireAssertion(context => (context.User.FindFirstValue("scope") ?? "").Split(' ').Contains("crm.read", StringComparer.Ordinal)));
             builder.Services.AddKunEventBus(registrar =>
             {
-                registrar.RegisterCrmEvents();
+                registrar.RegisterCrmEvents().RegisterTenancyEvents();
                 events?.Invoke(registrar);
             });
             // Outbox 行即 v1 信封；配置了 broker 才投递到 RabbitMQ，未配置时只写 Outbox（本地无 MQ 的开发与测试）。
@@ -82,6 +82,7 @@ public static class CrmCommandApplication
             builder.Services.AddHostedService(sp => sp.GetRequiredService<CrmCommandRuntime>());
             builder.Services.AddKunMediator(registry =>
             {
+                registry.AddQianTenancyEvents();
                 registry.AddQianCapability<CreateCustomerCommand, CustomerItem, CreateCustomerHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 registry.AddQianCapability<ListCustomersQuery, CustomerPage, ListCustomersHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 registry.AddQianCapability<GetCustomerQuery, CustomerItem, GetCustomerHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());

@@ -29,3 +29,5 @@ override Qian.Tenancy.TenantGrpcServerInterceptor.DuplexStreamingServerHandler<T
 override Qian.Tenancy.TenantGrpcServerInterceptor.ServerStreamingServerHandler<TRequest, TResponse>(TRequest! request, Grpc.Core.IServerStreamWriter<TResponse!>! responseStream, Grpc.Core.ServerCallContext! context, Grpc.Core.ServerStreamingServerMethod<TRequest!, TResponse!>! continuation) -> System.Threading.Tasks.Task!
 override Qian.Tenancy.TenantGrpcServerInterceptor.UnaryServerHandler<TRequest, TResponse>(TRequest! request, Grpc.Core.ServerCallContext! context, Grpc.Core.UnaryServerMethod<TRequest!, TResponse!>! continuation) -> System.Threading.Tasks.Task<TResponse!>!
 const Qian.Tenancy.TenantGrpcServerInterceptor.ErrorDetailTrailer = "qian-error-bin" -> string!
+Qian.Tenancy.TenancyEventHandlers
+static Qian.Tenancy.TenancyEventHandlers.AddQianTenancyEvents(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!

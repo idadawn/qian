@@ -55,3 +55,11 @@ S1-DEC-023 经产品负责人批准：全局组件配置 `initializationCapabili
 POST 复用 CreateTenant，Administrator 为必填管理员指针，id 由服务端生成；调用真实开通编排，返回 201、pending 与当前 Revision。GET 返回按 code 排序的分页 items（skip 默认 0、take 默认 50、最多 100）。PUT 复用 UpdateTenant，只按路径目标写主档，过期 expectedRevision 返回 409 CONFLICT，未知目标 404 NOT_FOUND；tenantId、tenant_id、id 及不可编辑的 code/isolation 字段均在反序列化时拒绝为 400 BAD_REQUEST。运营 DTO 不包含联系方式或数据库凭据。
 
 权限目录位于 plugins/qian.tenancy/metadata/permissions.json，Authz 必须实际登记该目录且配置专用平台登录，Audit 必须配置独立平台链角色。运营端点使用 PlatformHttpContract 标注构建契约归属，不走只接受租户的 PluginEnabledMiddleware；每次请求仍核对实际 qian.tenancy 上下文与超管旁路。IHttpContractSource 从实际端点生成 contracts/http-v1.openapi.json，经真实 oasdiff 与 OpenApiContractPlugin 准入；该构建描述不会出现在租户可见契约聚合里。TEN-005 页面与 S1-GW-001 探针可消费上述已发布接口，尚不表示相关任务已验收。
+
+## 状态机与到期扫描（S1-TEN-002）
+
+pending 可激活为 trial/active；有效期到期由扫描迁移到 grace；suspend 记录当前 S1 状态，resume 恢复原状态。重复同目标操作不重写状态或再发集成事件；非法迁移返回 409 TENANCY_STATE_CONFLICT。POST /api/tenancy/tenants/{id}:activate、:suspend、:resume 与 GET /api/tenancy/meta/state-machine 复用运营超管旁路。审批使用 TenantLifecycle.Approving 的进程内 serial 事件，无监听器放行、任一 false 否决，不加入 hooks.json 矩阵。监听器不得递归请求同一租户迁移。purge 只在元数据保留 S3 的 destructive + humanOnly 描述，不发布执行入口；humanOnly 按 R52 是 agent.expose=false。
+
+主档创建、激活、冻结、恢复、到期分别在同一数据库事务发出 tenant.created/activated/suspended/resumed/expired.v1；宿主必须在唯一的 Kun 事件登记与 Mediator 登记中调用 RegisterTenancyEvents、AddQianTenancyEvents，并装配 AddQianEvents。缺少领域事件处理器时保存回滚，不会留无事件的状态。tenant.created.v1 与开通的进程内 tenant/provisioned 分工不变。
+
+qian.tenancy/tenant.scan-expired 是真实运行时能力（非 humanOnly、幂等），只接受 global qian.tenancy 或 qian.scheduler 的可信调用，输入为 idempotencyKey 与 limit（1–1000，默认100），拒绝请求体租户字段；扫描平台审计以 job 通道记录服务操作者。每次只处理 active/trial 且 valid_until 已过的租户；重复扫描不新增状态事件。到期业务命令立即403，能力目录按现有过滤语义返回空集合。调度器准点触发、登录与会话吊销仍归 SCH-002、IDP-003/004。

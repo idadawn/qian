@@ -9,4 +9,5 @@
     <PackageReference Include="Kun.Security" /><PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Microsoft.Extensions.Hosting" /><PackageReference Include="xunit.v3" />
   </ItemGroup>
+<ItemGroup><ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" /></ItemGroup>
 </Project>

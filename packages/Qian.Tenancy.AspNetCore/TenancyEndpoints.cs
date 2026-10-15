@@ -34,6 +34,7 @@ public static partial class TenancyEndpoints
         Bind(endpoints.MapPut("/api/tenancy/tenants/{id:guid}", (HttpContext http, Guid id, UpdateTenant input) =>
             Respond(http, source, "edit", id, async (ctx, _) => Results.Ok(await ctx.Inject<ITenantOperations>(TenantOperations.Key)
                 .UpdateAsync(id, input, http.RequestAborted).ConfigureAwait(false))))).Produces<TenantDescriptor>();
+        MapState(endpoints, source);
         return endpoints;
     }
     private static RouteHandlerBuilder Bind(RouteHandlerBuilder route) => route.RequireAuthorization().WithMetadata(new PlatformHttpContract("qian.tenancy"));

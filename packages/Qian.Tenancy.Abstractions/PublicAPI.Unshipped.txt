@@ -123,3 +123,128 @@ Qian.Tenancy.TenantDescriptor.Revision.get -> uint
 Qian.Tenancy.TenantDescriptor.Revision.init -> void
 Qian.Tenancy.TenantOperations
 static readonly Qian.Tenancy.TenantOperations.Key -> Qian.Runtime.ServiceKey
+Qian.Tenancy.ActivateTenant
+Qian.Tenancy.ActivateTenant.<Clone>$() -> Qian.Tenancy.ActivateTenant!
+Qian.Tenancy.ActivateTenant.ActivateTenant(bool Trial = false, System.DateTimeOffset? ValidUntil = null) -> void
+Qian.Tenancy.ActivateTenant.Deconstruct(out bool Trial, out System.DateTimeOffset? ValidUntil) -> void
+Qian.Tenancy.ActivateTenant.Equals(Qian.Tenancy.ActivateTenant? other) -> bool
+Qian.Tenancy.ActivateTenant.Trial.get -> bool
+Qian.Tenancy.ActivateTenant.Trial.init -> void
+Qian.Tenancy.ActivateTenant.ValidUntil.get -> System.DateTimeOffset?
+Qian.Tenancy.ActivateTenant.ValidUntil.init -> void
+Qian.Tenancy.ITenantLifecycle
+Qian.Tenancy.ITenantLifecycle.ActivateAsync(System.Guid id, Qian.Tenancy.ActivateTenant! request, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantDescriptor!>
+Qian.Tenancy.ITenantLifecycle.ResumeAsync(System.Guid id, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantDescriptor!>
+Qian.Tenancy.ITenantLifecycle.ScanExpiredAsync(int limit, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+Qian.Tenancy.ITenantLifecycle.SuspendAsync(System.Guid id, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantDescriptor!>
+Qian.Tenancy.TenancyErrors
+Qian.Tenancy.TenancyEvents
+Qian.Tenancy.TenantActivated
+Qian.Tenancy.TenantActivated.<Clone>$() -> Qian.Tenancy.TenantActivated!
+Qian.Tenancy.TenantActivated.Deconstruct(out System.Guid Id, out Qian.Tenancy.TenantStatus Status, out System.DateTimeOffset? ValidUntil) -> void
+Qian.Tenancy.TenantActivated.Equals(Qian.Tenancy.TenantActivated? other) -> bool
+Qian.Tenancy.TenantActivated.Id.get -> System.Guid
+Qian.Tenancy.TenantActivated.Id.init -> void
+Qian.Tenancy.TenantActivated.Status.get -> Qian.Tenancy.TenantStatus
+Qian.Tenancy.TenantActivated.Status.init -> void
+Qian.Tenancy.TenantActivated.TenantActivated(System.Guid Id, Qian.Tenancy.TenantStatus Status, System.DateTimeOffset? ValidUntil) -> void
+Qian.Tenancy.TenantActivated.ValidUntil.get -> System.DateTimeOffset?
+Qian.Tenancy.TenantActivated.ValidUntil.init -> void
+Qian.Tenancy.TenantCreated
+Qian.Tenancy.TenantCreated.<Clone>$() -> Qian.Tenancy.TenantCreated!
+Qian.Tenancy.TenantCreated.Code.get -> string!
+Qian.Tenancy.TenantCreated.Code.init -> void
+Qian.Tenancy.TenantCreated.Deconstruct(out System.Guid Id, out string! Code) -> void
+Qian.Tenancy.TenantCreated.Equals(Qian.Tenancy.TenantCreated? other) -> bool
+Qian.Tenancy.TenantCreated.Id.get -> System.Guid
+Qian.Tenancy.TenantCreated.Id.init -> void
+Qian.Tenancy.TenantCreated.TenantCreated(System.Guid Id, string! Code) -> void
+Qian.Tenancy.TenantExpired
+Qian.Tenancy.TenantExpired.<Clone>$() -> Qian.Tenancy.TenantExpired!
+Qian.Tenancy.TenantExpired.Deconstruct(out System.Guid Id, out System.DateTimeOffset ValidUntil) -> void
+Qian.Tenancy.TenantExpired.Equals(Qian.Tenancy.TenantExpired? other) -> bool
+Qian.Tenancy.TenantExpired.Id.get -> System.Guid
+Qian.Tenancy.TenantExpired.Id.init -> void
+Qian.Tenancy.TenantExpired.TenantExpired(System.Guid Id, System.DateTimeOffset ValidUntil) -> void
+Qian.Tenancy.TenantExpired.ValidUntil.get -> System.DateTimeOffset
+Qian.Tenancy.TenantExpired.ValidUntil.init -> void
+Qian.Tenancy.TenantLifecycle
+Qian.Tenancy.TenantResumed
+Qian.Tenancy.TenantResumed.<Clone>$() -> Qian.Tenancy.TenantResumed!
+Qian.Tenancy.TenantResumed.Deconstruct(out System.Guid Id, out Qian.Tenancy.TenantStatus Status) -> void
+Qian.Tenancy.TenantResumed.Equals(Qian.Tenancy.TenantResumed? other) -> bool
+Qian.Tenancy.TenantResumed.Id.get -> System.Guid
+Qian.Tenancy.TenantResumed.Id.init -> void
+Qian.Tenancy.TenantResumed.Status.get -> Qian.Tenancy.TenantStatus
+Qian.Tenancy.TenantResumed.Status.init -> void
+Qian.Tenancy.TenantResumed.TenantResumed(System.Guid Id, Qian.Tenancy.TenantStatus Status) -> void
+Qian.Tenancy.TenantStateMetadata
+Qian.Tenancy.TenantSuspended
+Qian.Tenancy.TenantSuspended.<Clone>$() -> Qian.Tenancy.TenantSuspended!
+Qian.Tenancy.TenantSuspended.Deconstruct(out System.Guid Id, out Qian.Tenancy.TenantStatus Previous) -> void
+Qian.Tenancy.TenantSuspended.Equals(Qian.Tenancy.TenantSuspended? other) -> bool
+Qian.Tenancy.TenantSuspended.Id.get -> System.Guid
+Qian.Tenancy.TenantSuspended.Id.init -> void
+Qian.Tenancy.TenantSuspended.Previous.get -> Qian.Tenancy.TenantStatus
+Qian.Tenancy.TenantSuspended.Previous.init -> void
+Qian.Tenancy.TenantSuspended.TenantSuspended(System.Guid Id, Qian.Tenancy.TenantStatus Previous) -> void
+Qian.Tenancy.TenantTransitionApproval
+Qian.Tenancy.TenantTransitionApproval.<Clone>$() -> Qian.Tenancy.TenantTransitionApproval!
+Qian.Tenancy.TenantTransitionApproval.Action.get -> string!
+Qian.Tenancy.TenantTransitionApproval.Action.init -> void
+Qian.Tenancy.TenantTransitionApproval.Actor.get -> string!
+Qian.Tenancy.TenantTransitionApproval.Actor.init -> void
+Qian.Tenancy.TenantTransitionApproval.Deconstruct(out System.Guid Id, out Qian.Tenancy.TenantStatus From, out Qian.Tenancy.TenantStatus To, out string! Action, out string! Actor) -> void
+Qian.Tenancy.TenantTransitionApproval.Equals(Qian.Tenancy.TenantTransitionApproval? other) -> bool
+Qian.Tenancy.TenantTransitionApproval.From.get -> Qian.Tenancy.TenantStatus
+Qian.Tenancy.TenantTransitionApproval.From.init -> void
+Qian.Tenancy.TenantTransitionApproval.Id.get -> System.Guid
+Qian.Tenancy.TenantTransitionApproval.Id.init -> void
+Qian.Tenancy.TenantTransitionApproval.TenantTransitionApproval(System.Guid Id, Qian.Tenancy.TenantStatus From, Qian.Tenancy.TenantStatus To, string! Action, string! Actor) -> void
+Qian.Tenancy.TenantTransitionApproval.To.get -> Qian.Tenancy.TenantStatus
+Qian.Tenancy.TenantTransitionApproval.To.init -> void
+const Qian.Tenancy.TenancyEvents.Activated = "tenant.activated.v1" -> string!
+const Qian.Tenancy.TenancyEvents.Created = "tenant.created.v1" -> string!
+const Qian.Tenancy.TenancyEvents.Expired = "tenant.expired.v1" -> string!
+const Qian.Tenancy.TenancyEvents.Resumed = "tenant.resumed.v1" -> string!
+const Qian.Tenancy.TenancyEvents.Suspended = "tenant.suspended.v1" -> string!
+override Qian.Tenancy.ActivateTenant.Equals(object? obj) -> bool
+override Qian.Tenancy.ActivateTenant.GetHashCode() -> int
+override Qian.Tenancy.ActivateTenant.ToString() -> string!
+override Qian.Tenancy.TenantActivated.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantActivated.GetHashCode() -> int
+override Qian.Tenancy.TenantActivated.ToString() -> string!
+override Qian.Tenancy.TenantCreated.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantCreated.GetHashCode() -> int
+override Qian.Tenancy.TenantCreated.ToString() -> string!
+override Qian.Tenancy.TenantExpired.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantExpired.GetHashCode() -> int
+override Qian.Tenancy.TenantExpired.ToString() -> string!
+override Qian.Tenancy.TenantResumed.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantResumed.GetHashCode() -> int
+override Qian.Tenancy.TenantResumed.ToString() -> string!
+override Qian.Tenancy.TenantSuspended.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantSuspended.GetHashCode() -> int
+override Qian.Tenancy.TenantSuspended.ToString() -> string!
+override Qian.Tenancy.TenantTransitionApproval.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantTransitionApproval.GetHashCode() -> int
+override Qian.Tenancy.TenantTransitionApproval.ToString() -> string!
+static Qian.Tenancy.ActivateTenant.operator !=(Qian.Tenancy.ActivateTenant? left, Qian.Tenancy.ActivateTenant? right) -> bool
+static Qian.Tenancy.ActivateTenant.operator ==(Qian.Tenancy.ActivateTenant? left, Qian.Tenancy.ActivateTenant? right) -> bool
+static Qian.Tenancy.TenancyEvents.RegisterTenancyEvents(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
+static Qian.Tenancy.TenantActivated.operator !=(Qian.Tenancy.TenantActivated? left, Qian.Tenancy.TenantActivated? right) -> bool
+static Qian.Tenancy.TenantActivated.operator ==(Qian.Tenancy.TenantActivated? left, Qian.Tenancy.TenantActivated? right) -> bool
+static Qian.Tenancy.TenantCreated.operator !=(Qian.Tenancy.TenantCreated? left, Qian.Tenancy.TenantCreated? right) -> bool
+static Qian.Tenancy.TenantCreated.operator ==(Qian.Tenancy.TenantCreated? left, Qian.Tenancy.TenantCreated? right) -> bool
+static Qian.Tenancy.TenantExpired.operator !=(Qian.Tenancy.TenantExpired? left, Qian.Tenancy.TenantExpired? right) -> bool
+static Qian.Tenancy.TenantExpired.operator ==(Qian.Tenancy.TenantExpired? left, Qian.Tenancy.TenantExpired? right) -> bool
+static Qian.Tenancy.TenantResumed.operator !=(Qian.Tenancy.TenantResumed? left, Qian.Tenancy.TenantResumed? right) -> bool
+static Qian.Tenancy.TenantResumed.operator ==(Qian.Tenancy.TenantResumed? left, Qian.Tenancy.TenantResumed? right) -> bool
+static Qian.Tenancy.TenantStateMetadata.Document.get -> System.Text.Json.JsonElement
+static Qian.Tenancy.TenantSuspended.operator !=(Qian.Tenancy.TenantSuspended? left, Qian.Tenancy.TenantSuspended? right) -> bool
+static Qian.Tenancy.TenantSuspended.operator ==(Qian.Tenancy.TenantSuspended? left, Qian.Tenancy.TenantSuspended? right) -> bool
+static Qian.Tenancy.TenantTransitionApproval.operator !=(Qian.Tenancy.TenantTransitionApproval? left, Qian.Tenancy.TenantTransitionApproval? right) -> bool
+static Qian.Tenancy.TenantTransitionApproval.operator ==(Qian.Tenancy.TenantTransitionApproval? left, Qian.Tenancy.TenantTransitionApproval? right) -> bool
+static readonly Qian.Tenancy.TenancyErrors.StateConflict -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Tenancy.TenantLifecycle.Approving -> Qian.Runtime.QianEvent<Qian.Tenancy.TenantTransitionApproval!, System.Collections.Generic.IReadOnlyList<bool>!>!
+static readonly Qian.Tenancy.TenantLifecycle.Key -> Qian.Runtime.ServiceKey
