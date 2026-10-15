@@ -5,7 +5,7 @@
 发布工作流 .github/workflows/dotnet-release.yml 依次调用：
 
   python3 scripts/dotnet_release.py check-version --version 0.1.0 [--feed URL --token-env NAME]
-      SemVer 2.0 版本号；给了私有源时，包族里任何一个包在源里已有这个版本即失败（锁步版本只发一次）。
+      SemVer 2.0 版本号；给了包源时，包族里任何一个包在源里已有这个版本即失败（锁步版本只发一次）。
   python3 scripts/dotnet_release.py verify-packages --version 0.1.0 --dir <nupkg 目录>
       制品恰好是包族全部包、各一个且版本都是 0.1.0；包族内依赖的下限都钉在同一版本；
       源生成器包只带 analyzers/dotnet/cs 下的分析器且是开发依赖；许可证与仓库地址齐全。
@@ -13,6 +13,9 @@
       在临时目录建一个干净的消费者项目，用独立的包缓存、按 packageSourceMapping 只从给定源还原 Qian.*，
       引用 Qian.Plugin.Sdk / Qian.Plugin.Sdk.Generators / Qian.Data 的精确版本；构建时包里的源生成器派生组件元数据，
       运行后核对派生结果，并核对还原出的每个 Qian.* 包都是同一版本、都来自给定源。
+  python3 scripts/dotnet_release.py verify-feed --version 0.1.0 --repository idadawn/qian --token-env NAME
+      推送后经 GitHub REST API 核对：包族每个包都有这个版本、关联到发布仓库，且可见性与仓库一致
+      （GitHub 的 NuGet 包随关联仓库定可见性，公开后不能改回私有；产品负责人 2026-10-15 选择随公开仓库公开）。
 
 退出码：0 通过；1 核对不通过；2 工具出错。
 """
@@ -76,7 +79,7 @@ def check_version(version: str, feed: Optional[str], token: Optional[str], packa
         if versions and version.lower() in [v.lower() for v in versions.get("versions", [])]:
             existing.append(package)
     if existing:
-        raise Failure(f"私有源里已有 {version} 的包：{', '.join(existing)}。锁步版本只发一次，请换新版本号。")
+        raise Failure(f"包源里已有 {version} 的包：{', '.join(existing)}。锁步版本只发一次，请换新版本号。")
     return packages
 
 
@@ -291,7 +294,7 @@ public static class Program
 
 def verify_consumer(version: str, source: str, token_variable: Optional[str], attempts: int, keep: Optional[Path]) -> dict:
     if token_variable and not os.environ.get(token_variable):
-        raise Failure(f"环境变量 {token_variable} 没有值，无法向私有源认证")
+        raise Failure(f"环境变量 {token_variable} 没有值，无法向包源认证")
     work = Path(tempfile.mkdtemp(prefix="qian-release-consumer-")) if keep is None else keep
     work.mkdir(parents=True, exist_ok=True)
     feed = str(Path(source).resolve()) if Path(source).exists() else source
@@ -358,16 +361,64 @@ def _normalize(location: str) -> str:
     return location.rstrip("/\\").lower()
 
 
+# ---------- 发布后的包源 ----------
+
+def check_feed(packages: List[str], version: str, records: Dict[str, Optional[dict]], repository: str, repository_visibility: str) -> List[str]:
+    """records：包名 → {visibility, repository, versions}，查不到的包为 None。返回核对通过的包名。"""
+    problems: List[str] = []
+    for package in packages:
+        record = records.get(package)
+        if record is None:
+            problems.append(f"GitHub Packages 里没有 {package}")
+            continue
+        if record["repository"] != repository:
+            problems.append(f"{package} 关联的仓库是 {record['repository']}，不是 {repository}")
+        if record["visibility"] != repository_visibility:
+            problems.append(f"{package} 的可见性是 {record['visibility']}，与仓库的 {repository_visibility} 不一致")
+        if version not in record["versions"]:
+            problems.append(f"{package} 没有 {version} 版本")
+    if problems:
+        raise Failure("包源核对不通过：\n  " + "\n  ".join(problems))
+    return packages
+
+
+def _github(path: str, token: str, missing_ok: bool = False):
+    request = urllib.request.Request("https://api.github.com" + path, headers={
+        "Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"})
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        if missing_ok and error.code == 404:
+            return None
+        raise Failure(f"GitHub API 请求失败：{path} → HTTP {error.code}") from error
+
+
+def feed_records(packages: List[str], repository: str, token: str) -> Tuple[str, Dict[str, Optional[dict]]]:
+    owner = repository.split("/", 1)[0]
+    kind = "orgs" if _github(f"/users/{owner}", token).get("type") == "Organization" else "users"
+    records: Dict[str, Optional[dict]] = {}
+    for package in packages:
+        record = _github(f"/{kind}/{owner}/packages/nuget/{package}", token, missing_ok=True)
+        if record is None:
+            records[package] = None
+            continue
+        versions = _github(f"/{kind}/{owner}/packages/nuget/{package}/versions?per_page=100", token)
+        records[package] = {"visibility": record.get("visibility"), "repository": (record.get("repository") or {}).get("full_name"),
+                            "versions": [item.get("name") for item in versions]}
+    return _github(f"/repos/{repository}", token)["visibility"], records
+
+
 # ---------- 入口 ----------
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Qian .NET 包族锁步发布核对")
     commands = parser.add_subparsers(dest="command", required=True)
-    version_parser = commands.add_parser("check-version", help="版本号格式，以及私有源里尚无该版本")
+    version_parser = commands.add_parser("check-version", help="版本号格式，以及包源里尚无该版本")
     version_parser.add_argument("--version", required=True)
     version_parser.add_argument("--solution", default="Qian.slnx")
     version_parser.add_argument("--feed", help="NuGet v3 服务索引，例如 https://nuget.pkg.github.com/idadawn/index.json")
-    version_parser.add_argument("--token-env", help="保存私有源令牌的环境变量名")
+    version_parser.add_argument("--token-env", help="保存包源令牌的环境变量名")
     packages_parser = commands.add_parser("verify-packages", help="核对打出的制品")
     packages_parser.add_argument("--version", required=True)
     packages_parser.add_argument("--dir", required=True, type=Path)
@@ -375,9 +426,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     consumer_parser = commands.add_parser("verify-consumer", help="干净消费者项目从给定源真实还原、构建并运行")
     consumer_parser.add_argument("--version", required=True)
     consumer_parser.add_argument("--source", required=True, help="NuGet v3 服务索引地址或本地目录")
-    consumer_parser.add_argument("--token-env", help="保存私有源令牌的环境变量名")
+    consumer_parser.add_argument("--token-env", help="保存包源令牌的环境变量名")
     consumer_parser.add_argument("--attempts", type=int, default=1, help="还原重试次数（刚推送的包可能稍后才可见）")
     consumer_parser.add_argument("--work", type=Path, help="消费者项目目录（默认新建临时目录）")
+    feed_parser = commands.add_parser("verify-feed", help="推送后核对 GitHub Packages 里的版本、仓库关联与可见性")
+    feed_parser.add_argument("--version", required=True)
+    feed_parser.add_argument("--repository", required=True, help="owner/repo，例如 idadawn/qian")
+    feed_parser.add_argument("--token-env", required=True, help="保存 GitHub 令牌的环境变量名")
+    feed_parser.add_argument("--solution", default="Qian.slnx")
     args = parser.parse_args(argv)
 
     try:
@@ -385,12 +441,20 @@ def main(argv: Optional[List[str]] = None) -> int:
             packages = family((ROOT / args.solution).resolve())
             token = os.environ.get(args.token_env) if args.token_env else None
             check_version(args.version, args.feed, token, packages)
-            where = f"，私有源 {args.feed} 里尚无该版本" if args.feed else ""
+            where = f"，包源 {args.feed} 里尚无该版本" if args.feed else ""
             print(f"版本 {args.version} 可用{where}；包族 {len(packages)} 个包")
         elif args.command == "verify-packages":
             packages = family((ROOT / args.solution).resolve())
             found = verify_packages(args.version, args.dir, packages)
             print(f"制品核对通过：{len(found)} 个包均为 {args.version}，包族内依赖下限钉在同一版本")
+        elif args.command == "verify-feed":
+            token = os.environ.get(args.token_env)
+            if not token:
+                raise Failure(f"环境变量 {args.token_env} 没有值，无法读取 GitHub Packages")
+            packages = family((ROOT / args.solution).resolve())
+            visibility, records = feed_records(packages, args.repository, token)
+            check_feed(packages, args.version, records, args.repository, visibility)
+            print(f"包源核对通过：{len(packages)} 个包都有 {args.version}，均关联 {args.repository}，可见性与仓库一致（{visibility}）")
         else:
             report = verify_consumer(args.version, args.source, args.token_env, args.attempts, args.work)
             print(json.dumps(report, ensure_ascii=False, indent=2))
