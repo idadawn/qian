@@ -4,7 +4,9 @@ using Qian.Plugin.Sdk.AspNetCore;
 using Kun.Authorization;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Extensions;
+using Kun.EventBus;
 using Kun.EventBus.DependencyInjection;
+using Kun.Mediator;
 using Kun.Mediator.DependencyInjection;
 using Kun.Security.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,7 +24,10 @@ namespace Qian.Sample.Crm;
 /// <summary>独立参考宿主：真实 S2S、RBAC、租户、业务/Outbox/审计事务。凭据和迁移由宿主负责。</summary>
 public static class CrmCommandApplication
 {
-    public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null)
+    // Kun 的事件类型表只认第一次 AddKunEventBus，中介者只认最后一次 AddKunMediator：嵌入平台组件（Registry、Lifecycle）的宿主
+    // 经 events / mediator 把自己的登记并进本宿主的同一次调用，而不是另行调用。
+    public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null, Action<IEventTypeRegistrar>? events = null,
+        Action<KunMediatorBuilder>? mediator = null)
     {
         var app = CrmApplication.Build(args, builder =>
         {
@@ -57,7 +62,11 @@ public static class CrmCommandApplication
             builder.Services.AddAuthorizationBuilder().AddPolicy("crm-command-reader", policy => policy.RequireAuthenticatedUser().RequireClaim("principal_kind", "service")
                 .RequireAssertion(context => context.User.FindFirstValue("sub") is { } subject && (subject == reader || subject == writer))
                 .RequireAssertion(context => (context.User.FindFirstValue("scope") ?? "").Split(' ').Contains("crm.read", StringComparer.Ordinal)));
-            builder.Services.AddKunEventBus(events => events.RegisterCrmEvents());
+            builder.Services.AddKunEventBus(registrar =>
+            {
+                registrar.RegisterCrmEvents();
+                events?.Invoke(registrar);
+            });
             // Outbox 行即 v1 信封；配置了 broker 才投递到 RabbitMQ，未配置时只写 Outbox（本地无 MQ 的开发与测试）。
             builder.Services.AddQianEvents();
             if (builder.Configuration.GetConnectionString("Events") is { Length: > 0 })
@@ -75,6 +84,7 @@ public static class CrmCommandApplication
                 registry.AddQianCapability<CreateCustomerCommand, CustomerItem, CreateCustomerHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 registry.AddQianCapability<ListCustomersQuery, CustomerPage, ListCustomersHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 registry.AddQianCapability<GetCustomerQuery, CustomerItem, GetCustomerHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
+                mediator?.Invoke(registry);
             });
             string Connection(string name) => builder.Configuration.GetConnectionString(name) ?? throw new InvalidOperationException("缺少连接引用：" + name);
         }, mapReadEndpoints: false);

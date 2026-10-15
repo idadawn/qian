@@ -1,0 +1,4 @@
+[
+  { "role": "tenant.owner", "grant": ["qian.lifecycle:diagnostics:read"] },
+  { "role": "tenant.admin", "grant": ["qian.lifecycle:diagnostics:read"] }
+]
