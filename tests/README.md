@@ -35,6 +35,7 @@ dotnet test --solution Qian.slnx -c Release --no-build
   - `python3 scripts/prepare_contract_tools.py --destination <目录>`，再导出 `QIAN_BUF_PATH=<目录>/buf` 与 `QIAN_OASDIFF_PATH=<目录>/oasdiff`：能力契约的真实兼容检查器，缺失时相关用例按设计拒绝跳过。
 - `dotnet test` 走 Microsoft Testing Platform（[global.json](../global.json) 的 `test.runner`）；xUnit v3 测试项目是可执行程序，csproj 里写 `<OutputType>Exe</OutputType>`。
 - 单跑一个测试项目用 `dotnet run --project tests/<X>.Tests -c Release`；`dotnet test <项目路径>` 或 `dotnet test --project …` 在部分机器上会报「运行了零个测试、退出码 5」，以 `--solution` 或 `dotnet run` 的结果为准。
+- CLI 的私有源 E2E（`packages/qian-cli/test/private-feed.e2e.mjs`）不随 `pnpm --filter qian test` 运行，单独用 `QIAN_FEED_TOKEN=<读包令牌> pnpm --filter qian test:feed`；本机可取 `gh auth token`（需 `read:packages`）。令牌只放环境变量，缺失即失败、不跳过。
 - 集成测试需要 Docker。本机没有 Docker 时集成测试**跳过**；在 CI（`CI=true`）或设置了 `QIAN_REQUIRE_DOCKER=1` 时**直接失败**，不会悄悄跳过（C10：集成测试必须跑）。
 - 首次运行要拉镜像，之后整套测试十秒左右。
 

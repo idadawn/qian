@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`█████░░░░░` 50%（77/153）
-- 状态：todo 66 · doing 1 · review 7 · done 77 · blocked 2
+- 状态：todo 66 · doing 1 · review 8 · done 77 · blocked 1
 - 最近更新：2026-10-15
 
 ## 按阶段
@@ -81,7 +81,7 @@
 |---|---|---|
 | 第 1 层 | 12 | 46d |
 | 第 2 层 | 8 | 27d |
-| 第 3 层 | 14 | 45d |
+| 第 3 层 | 13 | 40d |
 | 第 4 层 | 11 | 41d |
 | 第 5 层 | 6 | 28d |
 | 第 6 层 | 7 | 27d |
@@ -101,4 +101,5 @@
 | [S1-RT-004](tasks/S1-RT-004.md) qian.registry 插件：清单校验、注册表与 scope 视图 | review | cody | 2026-10-15 |
 | [S1-RT-005](tasks/S1-RT-005.md) qian.lifecycle 插件：两层生命周期、幂等钩子、验签与执行器 | review | cody | 2026-10-15 |
 | [S1-RT-009](tasks/S1-RT-009.md) 表面注册、scope 过滤、hooks 桥接、MCP 登记与热重载 | review | cody | 2026-10-15 |
+| [S1-RT-011](tasks/S1-RT-011.md) qian CLI 骨架与 add / remove / list | review | cody | 2026-10-15 |
 | [S1-RT-014](tasks/S1-RT-014.md) Qian.Plugin.Sdk 与源生成器（plugin.json 合并） | review | cody | 2026-10-15 |

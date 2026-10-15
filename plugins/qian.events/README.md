@@ -1,6 +1,6 @@
 # qian.events
 
-Events Provider 的实现位于 [packages/Qian.Events](../../packages/Qian.Events/README.md)，契约在 [Qian.Events.Abstractions](../../packages/Qian.Events.Abstractions/README.md)。已提供 v1 信封写入、按租约领取的 Outbox 投递（publisher confirm）、RabbitMQ 拓扑声明与 payload Schema 导出。本文件夹仍标记 x-skeleton：SDK 正式发布与 `qian add` 代码安装尚未验收，当前不能把它当作可安装组件。
+Events Provider 的实现位于 [packages/Qian.Events](../../packages/Qian.Events/README.md)，契约在 [Qian.Events.Abstractions](../../packages/Qian.Events.Abstractions/README.md)。已提供 v1 信封写入、按租约领取的 Outbox 投递（publisher confirm）、RabbitMQ 拓扑声明与 payload Schema 导出。`runtime.nuget` 钉到私有源已发布的 `Qian.Events` 版本与摘要，S1-RT-011 的 E2E 已用 `qian add events` 从私有源安装并运行 Provider。本文件夹仍标记 x-skeleton：该任务的验收只移除 qian.data 的标记，本组件标记的去留记在 S1-RT-011 日志的建议裁决里。
 
 清单的 inject、provides 与 runtime 字段由 Qian.Plugin.Tool 从实际程序集同步，CI 检查两者不漂移。配置契约与 EventsPlugin 一致：
 
