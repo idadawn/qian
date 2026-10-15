@@ -1,14 +1,14 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
-- 总体：`█████░░░░░` 51%（80/157）
-- 状态：todo 67 · doing 1 · review 8 · done 80 · blocked 1
+- 总体：`█████░░░░░` 51%（81/158）
+- 状态：todo 68 · doing 1 · review 7 · done 81 · blocked 1
 - 最近更新：2026-10-15
 
 ## 按阶段
 
 | 分组 | 进度 | 进行中 | 阻塞 |
 |---|---|---|---|
-| S1 | `█████░░░░░` 51%（80/156） | 1 | 59 |
+| S1 | `█████░░░░░` 52%（81/157） | 1 | 59 |
 | S2 | `░░░░░░░░░░` 0%（0/1） | 0 | 1 |
 
 ## 按波次
@@ -16,8 +16,8 @@
 | 分组 | 进度 | 进行中 | 阻塞 |
 |---|---|---|---|
 | 决策 | `█████████░` 95%（21/22） | 1 | 0 |
-| 第 1 波 | `██████░░░░` 65%（34/52） | 0 | 12 |
-| 第 2 波 | `███░░░░░░░` 31%（21/68） | 0 | 40 |
+| 第 1 波 | `██████░░░░` 67%（35/52） | 0 | 11 |
+| 第 2 波 | `███░░░░░░░` 30%（21/69） | 0 | 41 |
 | 第 3 波 | `███░░░░░░░` 33%（3/9） | 0 | 4 |
 | 第 4 波 | `█░░░░░░░░░` 17%（1/6） | 0 | 4 |
 
@@ -43,9 +43,9 @@
 | NTF 消息通知 | `░░░░░░░░░░` 0%（0/3） | 0 | 3 |
 | PM 流程与协作 | `██████████` 100%（3/3） | 0 | 0 |
 | QA 测试 / TCK / 门禁 | `████░░░░░░` 40%（4/10） | 0 | 6 |
-| RT 运行时 / CLI / 市场 | `█████░░░░░` 59%（16/27） | 0 | 8 |
+| RT 运行时 / CLI / 市场 | `██████░░░░` 61%（17/28） | 0 | 9 |
 | SCH 调度与实时 | `░░░░░░░░░░` 0%（0/3） | 0 | 2 |
-| TEN 租户 | `█░░░░░░░░░` 17%（1/6） | 0 | 5 |
+| TEN 租户 | `█░░░░░░░░░` 17%（1/6） | 0 | 4 |
 | YUE 外壳与 yue | `███░░░░░░░` 33%（3/9） | 0 | 4 |
 
 ## 按负责人
@@ -54,9 +54,9 @@
 |---|---|---|---|
 | claude | `██████████` 100%（41/41） | 0 | 0 |
 | codex | `██████████` 100%（1/1） | 0 | 0 |
-| cody | `███████░░░` 78%（36/46） | 1 | 5 |
+| cody | `████████░░` 80%（37/46） | 1 | 5 |
 | 产品负责人 | `██████████` 100%（1/1） | 0 | 0 |
-| （未认领） | `░░░░░░░░░░` 1%（1/68） | 0 | 55 |
+| （未认领） | `░░░░░░░░░░` 1%（1/69） | 0 | 55 |
 
 ## 接下来可做（无未完成前置的待办，按优先级 / 波次）
 
@@ -65,23 +65,24 @@
 | 1 | [S1-DEP-002](tasks/S1-DEP-002.md) L1 组件上 K3s：RabbitMQ、Apollo + MySQL、OIDC | P0 | 1 | 5d | DEP |
 | 2 | [S1-EVT-002](tasks/S1-EVT-002.md) 消费端至少一次：手动 ack、指数退避、DLX、Redis 幂等装饰器与租户回灌 | P0 | 1 | 3d | EVT |
 | 3 | [S1-IDP-002](tasks/S1-IDP-002.md) Identity.Server：OpenIddict 唯一 issuer 与端点 | P0 | 1 | 5d | IDP |
-| 4 | [S1-CFG-004](tasks/S1-CFG-004.md) 特性开关 IFeatureFlags（按租户灰度） | P0 | 2 | 2d | CFG |
-| 5 | [S1-DOCS-002](tasks/S1-DOCS-002.md) 组件文档收集、活演示与 API 参考生成 | P0 | 2 | 5d | DOCS |
-| 6 | [S1-EVT-003](tasks/S1-EVT-003.md) 事件目录、AsyncAPI 导出、主题 ACL 与 IOutboxWriter | P0 | 2 | 3d | EVT |
-| 7 | [S1-SCH-001](tasks/S1-SCH-001.md) qian.scheduler 核心：持久化作业、集群安全领取、Cancel | P0 | 2 | 5d | SCH |
-| 8 | [S1-YUE-006](tasks/S1-YUE-006.md) @yue/shell：AppShell、Page 族、菜单注册表与认证页族 | P0 | 2 | 3d | YUE |
-| 9 | [S1-YUE-007](tasks/S1-YUE-007.md) @yue/form：SchemaForm、弹层 API 与 Schema 草案 | P0 | 2 | 5d | YUE |
-| 10 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
-| 11 | [S1-RT-007](tasks/S1-RT-007.md) 能力契约预留：可发布元数据、导入导出、Operation、App | P1 | 3 | 3d | RT |
-| 12 | [S1-MGW-001](tasks/S1-MGW-001.md) 模型网关 adapter：GPUStack 发现、能力契约与模型目录 | P1 | 4 | 5d | MGW |
+| 4 | [S1-TEN-003](tasks/S1-TEN-003.md) 开通编排 Orchestrator 与幂等步骤表 | P0 | 1 | 3d | TEN |
+| 5 | [S1-CFG-004](tasks/S1-CFG-004.md) 特性开关 IFeatureFlags（按租户灰度） | P0 | 2 | 2d | CFG |
+| 6 | [S1-DOCS-002](tasks/S1-DOCS-002.md) 组件文档收集、活演示与 API 参考生成 | P0 | 2 | 5d | DOCS |
+| 7 | [S1-EVT-003](tasks/S1-EVT-003.md) 事件目录、AsyncAPI 导出、主题 ACL 与 IOutboxWriter | P0 | 2 | 3d | EVT |
+| 8 | [S1-SCH-001](tasks/S1-SCH-001.md) qian.scheduler 核心：持久化作业、集群安全领取、Cancel | P0 | 2 | 5d | SCH |
+| 9 | [S1-YUE-006](tasks/S1-YUE-006.md) @yue/shell：AppShell、Page 族、菜单注册表与认证页族 | P0 | 2 | 3d | YUE |
+| 10 | [S1-YUE-007](tasks/S1-YUE-007.md) @yue/form：SchemaForm、弹层 API 与 Schema 草案 | P0 | 2 | 5d | YUE |
+| 11 | [S1-AZ-006](tasks/S1-AZ-006.md) 数据权限契约：DataScopeRule、系统变量与 authz/meta | P0 | 3 | 2d | AZ |
+| 12 | [S1-RT-007](tasks/S1-RT-007.md) 能力契约预留：可发布元数据、导入导出、Operation、App | P1 | 3 | 3d | RT |
+| 13 | [S1-MGW-001](tasks/S1-MGW-001.md) 模型网关 adapter：GPUStack 发现、能力契约与模型目录 | P1 | 4 | 5d | MGW |
 
 ## 待办的可做层级（第 1 层 = 现在可做，第 n 层 = 等前面 n-1 层完成）
 
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
-| 第 1 层 | 12 | 46d |
-| 第 2 层 | 14 | 42d |
-| 第 3 层 | 13 | 48d |
+| 第 1 层 | 13 | 49d |
+| 第 2 层 | 13 | 39d |
+| 第 3 层 | 14 | 52d |
 | 第 4 层 | 9 | 36d |
 | 第 5 层 | 7 | 27d |
 | 第 6 层 | 6 | 22d |
@@ -98,7 +99,6 @@
 | [S1-AZ-002](tasks/S1-AZ-002.md) 权限点注册表、资源类型与默认角色模板 | review | cody | 2026-10-15 |
 | [S1-AZ-003](tasks/S1-AZ-003.md) 租户域 RBAC 存储与求值引擎（Check / Explain、缓存） | review | cody | 2026-10-15 |
 | [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-15 |
-| [S1-RT-005](tasks/S1-RT-005.md) qian.lifecycle 插件：两层生命周期、幂等钩子、验签与执行器 | review | cody | 2026-10-15 |
 | [S1-RT-009](tasks/S1-RT-009.md) 表面注册、scope 过滤、hooks 桥接、MCP 登记与热重载 | review | cody | 2026-10-15 |
 | [S1-RT-011](tasks/S1-RT-011.md) qian CLI 骨架与 add / remove / list | review | cody | 2026-10-15 |
 | [S1-RT-014](tasks/S1-RT-014.md) Qian.Plugin.Sdk 与源生成器（plugin.json 合并） | review | cody | 2026-10-15 |
