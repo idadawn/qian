@@ -164,3 +164,26 @@ static Qian.Registry.RegistryScopeMounted.operator !=(Qian.Registry.RegistryScop
 static Qian.Registry.RegistryScopeMounted.operator ==(Qian.Registry.RegistryScopeMounted? left, Qian.Registry.RegistryScopeMounted? right) -> bool
 static Qian.Registry.RegistryScopeUnmounted.operator !=(Qian.Registry.RegistryScopeUnmounted? left, Qian.Registry.RegistryScopeUnmounted? right) -> bool
 static Qian.Registry.RegistryScopeUnmounted.operator ==(Qian.Registry.RegistryScopeUnmounted? left, Qian.Registry.RegistryScopeUnmounted? right) -> bool
+Qian.Registry.IRegistryService.GetScopeDiagnosticsAsync(Qian.Runtime.ScopeKey scope, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryScopeDiagnostic!>!>
+Qian.Registry.RegistryScopeDiagnostic
+Qian.Registry.RegistryScopeDiagnostic.<Clone>$() -> Qian.Registry.RegistryScopeDiagnostic!
+Qian.Registry.RegistryScopeDiagnostic.Deconstruct(out string! Scope, out string? EntryId, out string? Plugin, out int? Revision, out string! ReasonCode, out System.DateTimeOffset OccurredAt) -> void
+Qian.Registry.RegistryScopeDiagnostic.EntryId.get -> string?
+Qian.Registry.RegistryScopeDiagnostic.EntryId.init -> void
+Qian.Registry.RegistryScopeDiagnostic.Equals(Qian.Registry.RegistryScopeDiagnostic? other) -> bool
+Qian.Registry.RegistryScopeDiagnostic.OccurredAt.get -> System.DateTimeOffset
+Qian.Registry.RegistryScopeDiagnostic.OccurredAt.init -> void
+Qian.Registry.RegistryScopeDiagnostic.Plugin.get -> string?
+Qian.Registry.RegistryScopeDiagnostic.Plugin.init -> void
+Qian.Registry.RegistryScopeDiagnostic.ReasonCode.get -> string!
+Qian.Registry.RegistryScopeDiagnostic.ReasonCode.init -> void
+Qian.Registry.RegistryScopeDiagnostic.RegistryScopeDiagnostic(string! Scope, string? EntryId, string? Plugin, int? Revision, string! ReasonCode, System.DateTimeOffset OccurredAt) -> void
+Qian.Registry.RegistryScopeDiagnostic.Revision.get -> int?
+Qian.Registry.RegistryScopeDiagnostic.Revision.init -> void
+Qian.Registry.RegistryScopeDiagnostic.Scope.get -> string!
+Qian.Registry.RegistryScopeDiagnostic.Scope.init -> void
+override Qian.Registry.RegistryScopeDiagnostic.Equals(object? obj) -> bool
+override Qian.Registry.RegistryScopeDiagnostic.GetHashCode() -> int
+override Qian.Registry.RegistryScopeDiagnostic.ToString() -> string!
+static Qian.Registry.RegistryScopeDiagnostic.operator !=(Qian.Registry.RegistryScopeDiagnostic? left, Qian.Registry.RegistryScopeDiagnostic? right) -> bool
+static Qian.Registry.RegistryScopeDiagnostic.operator ==(Qian.Registry.RegistryScopeDiagnostic? left, Qian.Registry.RegistryScopeDiagnostic? right) -> bool

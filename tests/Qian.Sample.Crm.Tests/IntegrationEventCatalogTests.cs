@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Qian.Data;
 using Qian.Events;
 using Qian.Identity.Abstractions;
+using Qian.Registry;
 
 namespace Qian.Sample.Crm.Tests;
 
@@ -28,8 +29,10 @@ public sealed class IntegrationEventCatalogTests
         Assert.Contains(CrmEvents.CustomerCreated, declared.Keys);
         Assert.Contains(IdentityEventIds.Login, declared.Keys);
         Assert.Same(typeof(RecordChangedPayload), declared[RecordChangedPayload.EventType]);
+        Assert.Same(typeof(RegistryScopeMounted), declared[RegistryEvents.ScopeMounted]);
+        Assert.Same(typeof(RegistryScopeUnmounted), declared[RegistryEvents.ScopeUnmounted]);
         var services = new ServiceCollection();
-        services.AddKunEventBus(events => events.RegisterIdentityEvents().RegisterRecordEvents().RegisterCrmEvents());
+        services.AddKunEventBus(events => events.RegisterIdentityEvents().RegisterRecordEvents().RegisterCrmEvents().RegisterRegistryEvents());
         var catalog = IntegrationEventSchemas.Describe(services.BuildServiceProvider().GetRequiredService<IEventTypeRegistry>());
         Assert.Equal(declared.Keys, catalog.Select(item => item.Type));
         foreach (var item in catalog)

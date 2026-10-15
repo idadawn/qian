@@ -56,6 +56,11 @@ public interface IRegistryService : IAsyncDisposable
     ValueTask<int> UnmountAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken cancellationToken = default);
     /// <summary>读取当前已验证租户 scope 中某条目的有效 patch（含修订）；没有时返回 null。供可信平台插件取得条件写入的预期修订。</summary>
     ValueTask<ScopePatchSnapshot?> GetScopePatchAsync(ScopeKey scope, string entryId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 合入当前已验证租户的数据库 scope 后，返回该 scope 最近一次装配失败的诊断（条目 Apply 失败或整个 scope 无法装配）；装配正常时为空。
+    /// 供 Lifecycle 等可信平台插件的管理面使用，调用方负责权限。
+    /// </summary>
+    ValueTask<IReadOnlyList<RegistryScopeDiagnostic>> GetScopeDiagnosticsAsync(ScopeKey scope, CancellationToken cancellationToken = default);
     /// <summary>停止监听并撤销拥有的局部条目；宿主须在 Runtime.Dispose 之前、在 Apply/effect 之外调用。</summary>
     new ValueTask DisposeAsync();
 }

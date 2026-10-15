@@ -36,6 +36,8 @@ public sealed class CapabilitiesPlugin : IQianPlugin
         ctx.Effect(contracts.Dispose);
         await contracts.ValidateProtoAsync(ct).ConfigureAwait(false);
         ctx.Provide<IContractRepository>(CapabilitiesDefinition.ContractsKey, contracts);
+        // 平台挂载路径（Registry scope Reconciler 与 Lifecycle 挂载）经此套用同一组契约包装（R76）。
+        ctx.Provide<IContractAdmission>(CapabilitiesDefinition.AdmissionKey, new ContractAdmission(contracts, ctx.Services.GetService<IGrpcContractPeers>()));
         var navigation = new NavigationService(ctx.Registry(), ctx.Services.GetRequiredService<IPermissionChecker>(), ctx.Data());
         ctx.Effect(navigation.Dispose);
         ctx.Provide<INavigationService>(CapabilitiesDefinition.NavigationKey, navigation);

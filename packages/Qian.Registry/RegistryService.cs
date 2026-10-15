@@ -52,8 +52,12 @@ internal sealed class RegistryService : IRegistryService
         _patches = new PostgresPatchRepository(data, tenant, options.Surfaces);
         _composer = new RegistryProfileComposer(_patches, options.Profiles, options.Profile);
         _writer = new RegistryPatchWriter(_patches, _composer);
-        _scopes = new RegistryScopeReconciler(tenant, _composer, options.Runtime, context, ResolveInstalled);
+        _scopes = new RegistryScopeReconciler(tenant, _composer, options.Runtime, context, ResolveInstalled, DeclaresContracts);
     }
+
+    // 预装制品带契约索引（metadata/contracts.json）的组件版本，挂载时必须经平台契约准入（R76）。
+    private bool DeclaresContracts(string pluginId, string version) => _installed.Any(component => component.PluginId == pluginId && component.Version == version &&
+        component.Metadata.Keys.Any(path => Path.GetFileName(path) == "contracts.json"));
 
     private PluginDefinition ResolveInstalled(Qian.Profiles.Abstractions.ResolvedProfileEntry entry)
     {
@@ -173,6 +177,13 @@ internal sealed class RegistryService : IRegistryService
     {
         WriteTenant(scope);
         return await _patches.GetAsync(scope, entryId, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask<IReadOnlyList<RegistryScopeDiagnostic>> GetScopeDiagnosticsAsync(ScopeKey scope, CancellationToken cancellationToken = default)
+    {
+        if (_listener is null) throw new ServiceNotReadyException();
+        WriteTenant(scope);
+        return await _scopes.DiagnoseAsync(_tenant.TenantId!, scope, cancellationToken).ConfigureAwait(false);
     }
 
     // 公开写入只接受当前已验证租户自己的 tenant scope；应用 / 会话 scope 待 Tenancy 的真实归属证明。

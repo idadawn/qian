@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kun.Core.MultiTenancy;
+using Qian.Capabilities;
 using Qian.Profiles.Abstractions;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
@@ -10,7 +11,7 @@ namespace Qian.Registry;
 // 只操作平台宿主交给自己的 scope 条目；没有数据库写入口，也不加载代码程序集。
 internal sealed partial class RegistryScopeReconciler(
     ITenantContext tenant, RegistryProfileComposer composer, PluginLoader runtime, IPluginContext owner,
-    Func<ResolvedProfileEntry, PluginDefinition> resolve) : IAsyncDisposable
+    Func<ResolvedProfileEntry, PluginDefinition> resolve, Func<string, string, bool> declaresContracts) : IAsyncDisposable
 {
     private const string PatchFile = "registry/scope-patches.json";
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -110,6 +111,15 @@ internal sealed partial class RegistryScopeReconciler(
         finally { _gate.Release(); }
     }
 
+    // 管理面诊断（/api/lifecycle/diagnostics）：与装载同一把锁，先合入数据库 scope，再给出最近一次装配失败的结论。
+    internal async ValueTask<IReadOnlyList<RegistryScopeDiagnostic>> DiagnoseAsync(string tenantId, ScopeKey scope, CancellationToken ct)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+        try { return (await Inspected(tenantId, scope, linked.Token).ConfigureAwait(false)).Failures.ToArray(); }
+        finally { _gate.Release(); }
+    }
+
     // 只接受已验证租户自己的 scope；合入失败已把本 scope 收紧为 Blocked，诊断照常给出原因而不是抛出装配异常。
     private async ValueTask<ScopeState> Inspected(string tenantId, ScopeKey scope, CancellationToken ct)
     {
@@ -191,7 +201,7 @@ internal sealed partial class RegistryScopeReconciler(
                 .Concat(entries.Keys).ToHashSet(StringComparer.Ordinal);
             var changed = entries.Values.Where(entry => !state.Mounted.TryGetValue(entry.Id, out var previous) || !Same(previous, entry)).ToArray();
             var removed = state.Mounted.Keys.Where(id => !entries.ContainsKey(id)).ToArray();
-            if (!state.Blocked && changed.Length == 0 && removed.Length == 0 && state.Hidden.SetEquals(hidden)) return;
+            if (!state.Blocked && changed.Length == 0 && removed.Length == 0 && state.Hidden.SetEquals(hidden)) { state.Failures.Clear(); return; }
 
             var definitions = changed.ToDictionary(entry => entry.Id, entry => Resolve(entry, state.Scope), StringComparer.Ordinal);
             foreach (var definition in definitions.Values)
@@ -216,11 +226,13 @@ internal sealed partial class RegistryScopeReconciler(
             await runtime.WhenIdleAsync(ct).ConfigureAwait(false);
             if (state.Order.Concat(state.Mounted.Keys).FirstOrDefault(id => state.Mounted.ContainsKey(id) && runtime.GetState(id, state.Scope) == PluginState.Failed) is { } broken)
                 throw ApplyFailed(state.Scope, state.Mounted[broken], revisions);
+            state.Failures.Clear();
         }
-        catch
+        catch (Exception error)
         {
             if (!_stop.IsCancellationRequested)
             {
+                RecordFailure(state, error);
                 // 已提交的禁用不能因重装失败而恢复旧权限；此 scope 先收紧，其他 scope 不受影响。
                 SetRestriction(state, state.Hidden, true);
                 state.Blocked = true;
@@ -245,6 +257,17 @@ internal sealed partial class RegistryScopeReconciler(
         return new RegistryScopeApplyException(scope, entry.Id, entry.Plugin, revisions.TryGetValue(entry.Id, out var revision) ? revision : null, reason, failure);
     }
 
+    // 本副本最近一次装配失败的结论：条目 Apply 失败带条目、组件修订与原因码，其余为 scope 级失败；调用方取消不算失败。
+    private static void RecordFailure(ScopeState state, Exception error)
+    {
+        if (error is OperationCanceledException) return;
+        var name = state.Scope.Kind + ":" + state.Scope.Id;
+        state.Failures.Clear();
+        state.Failures.Add(error is RegistryScopeApplyException apply
+            ? new RegistryScopeDiagnostic(name, apply.EntryId, apply.Plugin, apply.Revision, apply.ReasonCode, DateTimeOffset.UtcNow)
+            : new RegistryScopeDiagnostic(name, null, null, null, error is QianErrorException qian ? qian.Error.Code.Code : PlatformErrors.Internal.Code, DateTimeOffset.UtcNow));
+    }
+
     private PluginDefinition Resolve(ResolvedProfileEntry entry, ScopeKey scope)
     {
         var definition = resolve(entry);
@@ -255,8 +278,13 @@ internal sealed partial class RegistryScopeReconciler(
         if (!definition.Plugin.Inject.Select(key => key.Name).Order(StringComparer.Ordinal).SequenceEqual(entry.Inject.Order(StringComparer.Ordinal), StringComparer.Ordinal) ||
             entry.Provides.Any(key => !definition.Provides.Contains(new ServiceKey(key))))
             throw new InvalidOperationException("宿主 Provider 的依赖与服务声明不符合组件清单。");
+        var plugin = definition.Plugin;
+        // 声明了契约索引的组件版本必须经平台契约准入（R76）；准入服务不可见时 fail-closed，条目 Apply 失败而不是跳过检查。
+        if (declaresContracts(reference[0], reference[1]))
+            plugin = owner.TryInject<IContractAdmission>(CapabilitiesDefinition.AdmissionKey) is { } admission
+                ? admission.Admit(plugin, reference[0], reference[1]) : new AdmissionUnavailablePlugin(plugin);
         // 平台里的局部节点随 Registry 服务失效，不改变组件库在 minimal/standalone 下的依赖。
-        return definition with { Plugin = new ScopedPlugin(definition.Plugin) };
+        return definition with { Plugin = new ScopedPlugin(plugin) };
     }
 
     // 管理面诊断用的最近一次装配结论：禁用来源（本 scope 优先于全局）、patch 行定位与修订；不保存配置原文。
@@ -326,6 +354,14 @@ internal sealed partial class RegistryScopeReconciler(
         internal Dictionary<string, DisabledProfileEntry> Disabled = new(StringComparer.Ordinal);
         internal Dictionary<string, string> Sources = new(StringComparer.Ordinal);
         internal Dictionary<string, int> Revisions = new(StringComparer.Ordinal);
+        internal List<RegistryScopeDiagnostic> Failures = [];
+    }
+
+    private sealed class AdmissionUnavailablePlugin(IQianPlugin inner) : IQianPlugin
+    {
+        public IReadOnlyList<ServiceKey> Inject => inner.Inject;
+        public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) =>
+            throw new QianErrorException(new QianError(PlatformErrors.Unavailable) { Pointer = ErrorPointer.Input("contracts") });
     }
 
     private sealed class ScopedPlugin(IQianPlugin inner) : IQianPlugin
