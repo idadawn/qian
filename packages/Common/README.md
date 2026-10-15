@@ -37,10 +37,12 @@
 
 两份文件由 `tests/Qian.Common.Tests` 按本实现与 .NET 比较器生成，测试比对仓库里的内容：
 
-- `packages/qian-cli/src/ordinal-case.ts`：OrdinalIgnoreCase 等价类表（BMP 与增补平面）；
+- `packages/qian-cli/src/ordinal-case.ts`：OrdinalIgnoreCase 等价类表（BMP 与增补平面），只收录各宿主一致的部分（见下文）；
 - `tck/profiles/key-vectors.json`：模式的翻译结果、在固定键名上的匹配（不折叠与折叠，由 NonBacktracking 执行）、全部 BMP 码元的稳定性与键名相等向量。CLI 的 `test/schema-pattern.test.mjs` 逐条比对。
 
-改了 `SchemaPattern.cs` 或升级 .NET 后，重新生成并同步 TS 移植，直到两端测试都通过：
+OrdinalIgnoreCase 在 Linux 与 macOS 上按宿主 ICU 的大小写映射判断，所以 .NET 的结果随宿主而异。Unicode 16.0 起新增的大小写字母（如 U+A7CB 与 U+0264、U+1C89 与 U+1C8A、Garay 文字），Ubuntu 24.04 的 ICU 74 视为不等，较新的 ICU（如 macOS 的）视为相等；CI 与 .NET 10 的默认镜像都是 ICU 74。等价类表不收录这些字母，CLI 按 ICU 74 的结果把它们当作互不相等；测试生成表时按名单去掉它们，所以在各宿主上生成的表相同。宿主 ICU 较新时，.NET 对这些键名的比较与 CLI 不同。
+
+改了 `SchemaPattern.cs` 或升级 .NET 后，重新生成并同步 TS 移植，直到两端测试都通过。宿主 ICU 又新增大小写对时，测试在该宿主上会列出多出的等价类，把新字母补进 `SchemaPatternTests` 的名单：
 
 ```bash
 QIAN_UPDATE_VECTORS=1 dotnet run --project tests/Qian.Common.Tests -c Release
