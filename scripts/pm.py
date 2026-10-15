@@ -3,8 +3,7 @@
 
 用法：
   python3 scripts/pm.py validate                 # 校验全部任务文件
-  python3 scripts/pm.py build                    # 生成 pm/index.html、pm/tasks.json、pm/STATUS.md
-  python3 scripts/pm.py check-fresh              # CI：生成物是否与任务文件一致
+  python3 scripts/pm.py build [--out 目录]       # 生成 pm/index.html、pm/tasks.json、pm/STATUS.md（或写到指定目录）；生成物不进 git
   python3 scripts/pm.py list [--status s] [--area a] [--owner o] [--stage S1]
   python3 scripts/pm.py stats
   python3 scripts/pm.py add --by <代理名> --stage S1 --area RT --title "..." [--priority P0 --wave 1 --type feature
@@ -355,7 +354,8 @@ def render(rows: list[dict]) -> str:
     return tpl.replace("/*__TASKS_JSON__*/[]", payload)
 
 
-def build(write: bool = True) -> dict[str, str]:
+def build(out: Path | None = None) -> dict[str, str]:
+    """生成三个看板文件；给了 out 时写到该目录（文件名不带 pm/ 前缀），否则写回仓库的 pm/（已被 .gitignore 忽略，不进 git）。"""
     tasks = load_tasks()
     errs = validate(tasks)
     if errs:
@@ -367,9 +367,14 @@ def build(write: bool = True) -> dict[str, str]:
         "pm/index.html": render(rows),
         "pm/STATUS.md": status_md(rows),
     }
-    if write:
-        for rel, content in outputs.items():
-            (ROOT / rel).write_text(content, encoding="utf-8")
+    if out is not None:
+        out.mkdir(parents=True, exist_ok=True)
+    targets = [(out / Path(rel).name) if out is not None else ROOT / rel for rel in outputs]
+    for target, content in zip(targets, outputs.values()):
+        target.write_text(content, encoding="utf-8")
+    if out is not None:
+        print(f"已生成 {', '.join(t.name for t in targets)} 到 {out}（{len(rows)} 个任务）")
+    else:
         print(f"已生成 {', '.join(outputs)}（{len(rows)} 个任务）")
     return outputs
 
@@ -448,21 +453,12 @@ def cmd_stats(_: argparse.Namespace) -> None:
     print(status_md(export(load_tasks())))
 
 
-def cmd_check_fresh(_: argparse.Namespace) -> None:
-    outputs = build(write=False)
-    stale = [rel for rel, content in outputs.items()
-             if not (ROOT / rel).exists() or (ROOT / rel).read_text(encoding="utf-8") != content]
-    if stale:
-        sys.exit("生成物过期，请运行 python3 scripts/pm.py build 并提交：" + ", ".join(stale))
-    print("生成物与任务文件一致")
-
-
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("validate")
-    sub.add_parser("build")
-    sub.add_parser("check-fresh")
+    p = sub.add_parser("build")
+    p.add_argument("--out", type=Path, help="写到该目录（文件名不带 pm/ 前缀），缺省写回仓库的 pm/")
     sub.add_parser("stats")
     p = sub.add_parser("list")
     p.add_argument("--status"); p.add_argument("--area"); p.add_argument("--owner"); p.add_argument("--stage")
@@ -483,9 +479,7 @@ def main() -> None:
             print("\n".join(errs)); sys.exit(1)
         print(f"校验通过（{len(list(TASKS_DIR.glob('*.md')))} 个任务）")
     elif a.cmd == "build":
-        build()
-    elif a.cmd == "check-fresh":
-        cmd_check_fresh(a)
+        build(out=a.out)
     elif a.cmd == "stats":
         cmd_stats(a)
     elif a.cmd == "list":

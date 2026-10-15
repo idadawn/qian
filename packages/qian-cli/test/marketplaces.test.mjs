@@ -77,6 +77,24 @@ test('未通过校验器或验签的组件经真实 CLI add 失败，--json 输�
   const installed=run(f.project,'--no-home','add','guide','--no-code','--yes');assert.equal(installed.status,0,installed.stderr);assert.equal(JSON.parse(installed.stdout).status,'installed');
  }finally{f.dispose();}
 });
+test('QIAN_PACKAGE_TIMEOUT 非法时 add / remove 在任何改动前以结构化错误失败',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide');configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  const lockFile=path.join(f.project,'.qian/lock.json'),patchFile=path.join(f.project,'profiles/minimal/qian.patch.yml');
+  const withTimeout=(value,...args)=>spawnSync(process.execPath,[path.join(repo,'packages/qian-cli/dist/main.js'),'--cwd',f.project,'--json','--no-home',...args],{encoding:'utf8',timeout:60000,env:{...process.env,QIAN_PACKAGE_TIMEOUT:value}});
+  const rejected=output=>{
+   assert.equal(output.status,1);assert.equal(output.stdout,'');
+   const[diagnostic]=JSON.parse(output.stderr).diagnostics;assert.equal(diagnostic.file,'QIAN_PACKAGE_TIMEOUT');assert.equal(diagnostic.error.code,'INPUT_INVALID');
+  };
+  const patch=readFileSync(patchFile,'utf8');
+  rejected(withTimeout('5m','add','guide','--no-code','--yes'));
+  assert.ok(!existsSync(lockFile));assert.ok(!existsSync(path.join(f.project,'.qian/plugins/test.guide')));assert.equal(readFileSync(patchFile,'utf8'),patch);
+  const installed=withTimeout('30','add','guide','--no-code','--yes');assert.equal(installed.status,0,installed.stderr);
+  const lock=readFileSync(lockFile,'utf8'),installedPatch=readFileSync(patchFile,'utf8');
+  rejected(withTimeout('0','remove','guide','--purge'));
+  assert.equal(readFileSync(lockFile,'utf8'),lock);assert.equal(readFileSync(patchFile,'utf8'),installedPatch);assert.ok(existsSync(path.join(f.project,'.qian/plugins/test.guide')));
+ }finally{f.dispose();}
+});
 test('ON_USE 只提示登记，confirm 需要明确确认，失败不留下锁或文件',()=>{
  const f=fixture();try{
   const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide',{authentication:'ON_USE'});configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
