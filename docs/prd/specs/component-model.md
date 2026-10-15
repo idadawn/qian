@@ -1366,6 +1366,10 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 - 未签名市场或未命中信任根的条目：需 `--allow-unverified`，只允许无代码组件，tier 最高 `community`；`qian list` 持续标记 `unverified`（已裁决 R40）。
 - 撤销：信任根支持多把公钥与重叠轮换；`owner.publicKeys[]` 移除某钥后，用它签名的旧市场快照在 CLI 缓存中失效；发布者撤销与黑名单（S3）触发自动下线。
 
+### 11.6 开户初始化凭据（S1-DEC-023 / R104）
+
+`tenant/provisioned` 监听器里经 hook 触发的 `type: plugin` 能力，在 pending 租户上以开通编排签发的进程内一次性凭据执行：只能由 `qian.tenancy` 在目标租户 scope 的生产方上下文开启，绑定真实平台操作者、`qian.tenancy` 全局配置 `initializationCapabilities` 精确清单（`<组件>/<能力>`，禁通配符，只接受 read / write）、请求类型与权限点，每能力每次开通一次；不可序列化、不跨进程（`service` 形态组件不经此初始化）、不签发令牌；审计 `channel = hook`、actor 为平台操作者。pending 租户对其它入口仍拒绝。
+
 ---
 
 ## 12. 验收标准
