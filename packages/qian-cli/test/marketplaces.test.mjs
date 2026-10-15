@@ -51,6 +51,32 @@ test('签名、内容、组件校验及未验证市场权限均不可绕过',asy
   component(path.join(location,'plugins/test.guide'),'test.guide','community');const resolved=await resolveMarketplacePlugin('guide',{workingDirectory:f.project,includeHome:false,allowUnverified:true});assert.equal(resolved.trust,'unverified');
  }finally{f.dispose();}
 });
+test('未通过校验器或验签的组件经真实 CLI add 失败，--json 输出结构化错误且不留下锁、patch 或文件',()=>{
+ const f=fixture();try{
+  const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide');configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
+  const patchFile=path.join(f.project,'profiles/minimal/qian.patch.yml'),patch=readFileSync(patchFile,'utf8');
+  // 失败只写 stderr：一行 {diagnostics:[…]}，每条是带 trace_id 的问题详情，逐项错误给出机器可读的 code 与 JSON Pointer。
+  const rejected=(file,code,pointer,message)=>{
+   const output=run(f.project,'--no-home','add','guide','--no-code','--yes');
+   assert.equal(output.status,1);assert.equal(output.stdout,'');
+   const[diagnostic,...rest]=JSON.parse(output.stderr).diagnostics;assert.deepEqual(rest,[]);
+   assert.equal(diagnostic.file,file);assert.equal(diagnostic.severity,'error');
+   assert.equal(diagnostic.error.code,'INPUT_INVALID');assert.equal(diagnostic.error.status,400);assert.match(diagnostic.error.trace_id,/^[0-9a-f]{32}$/);
+   assert.deepEqual(diagnostic.error.errors.map(item=>[item.code,item.pointer]),[[code,pointer]]);assert.match(diagnostic.error.errors[0].message,message);
+   assert.ok(!existsSync(path.join(f.project,'.qian/lock.json')));assert.ok(!existsSync(path.join(f.project,'.qian/plugins/test.guide')));assert.equal(readFileSync(patchFile,'utf8'),patch);
+  };
+  // 校验器：技能文件不是合法表面。
+  write(location,'plugins/test.guide/skills/guide/SKILL.md','不是合法技能\n');rejected('skills/guide/SKILL.md','SURFACE_SYNTAX_INVALID','skills/guide/SKILL.md#',/语法/);
+  // 验签：市场签名不是受信任公钥签出的。
+  component(path.join(location,'plugins/test.guide'),'test.guide');write(location,'.qian/marketplace.json.sig',Buffer.alloc(64));
+  rejected('.qian/marketplace.json','SURFACE_POLICY_DENIED','.qian/marketplace.json#',/验签/);
+  // 签名有效，但条目 digest 与组件目录内容不符。
+  created.data.plugins[0].source.digest='sha256:'+'0'.repeat(64);created.persist();rejected('.qian/marketplace.json','SURFACE_POLICY_DENIED','.qian/marketplace.json#/plugins',/digest 不匹配/);
+  // 修好后同一命令成功，证明失败来自上述校验而不是夹具。
+  delete created.data.plugins[0].source.digest;created.persist();
+  const installed=run(f.project,'--no-home','add','guide','--no-code','--yes');assert.equal(installed.status,0,installed.stderr);assert.equal(JSON.parse(installed.stdout).status,'installed');
+ }finally{f.dispose();}
+});
 test('ON_USE 只提示登记，confirm 需要明确确认，失败不留下锁或文件',()=>{
  const f=fixture();try{
   const location=path.join(f.root,'catalog'),created=market(location,'catalog','test.guide',{authentication:'ON_USE'});configure(f,[{name:'catalog',source:location,priority:10}],[created.publicPem]);
@@ -129,7 +155,14 @@ test('真实 Config Provider 制成临时 NuGet 包后经签名市场安装，�
   const packageComponent=path.join(f.root,'package-component');component(packageComponent,'qian.config','official',extra);
   const packTargets=path.join(f.root,'pack-components.targets');
   writeFileSync(packTargets,`<Project><ItemGroup Condition="'$(MSBuildProjectName)' == 'Qian.Config.Apollo'"><None Include="${xml(packageComponent)}/**/*" Pack="true" PackagePath="qian/%(RecursiveDir)%(Filename)%(Extension)" /></ItemGroup></Project>`);
-  for(const name of ['Qian.Runtime.Errors','Qian.Runtime','Qian.Config.Abstractions','Qian.Config.Apollo']){
+  // 按项目引用求 Qian.Config.Apollo 的 Qian 依赖闭包（依赖在前）全部打进临时源；只在编译期使用的生成器引用不成为包依赖。
+  const closure=(name,order=[])=>{
+   if(order.includes(name))return order;
+   for(const match of readFileSync(path.join(repo,'packages',name,name+'.csproj'),'utf8').matchAll(/<ProjectReference Include="([^"]+)"([^>]*)>/g))
+    if(!match[2].includes('ReferenceOutputAssembly="false"'))closure(path.basename(match[1],'.csproj'),order);
+   order.push(name);return order;
+  };
+  for(const name of closure('Qian.Config.Apollo')){
    const packed=spawnSync('dotnet',['pack',path.join(repo,'packages',name,name+'.csproj'),'-c','Release','-p:Version='+version,'-p:CustomAfterMicrosoftCommonTargets='+packTargets,'-o',feed,'--artifacts-path',path.join(f.root,'build'),'--disable-build-servers','-m:1'],{cwd:repo,encoding:'utf8',timeout:120000});
    assert.equal(packed.status,0,packed.stdout+packed.stderr);
   }

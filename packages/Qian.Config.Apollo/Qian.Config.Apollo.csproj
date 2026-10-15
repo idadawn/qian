@@ -8,4 +8,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

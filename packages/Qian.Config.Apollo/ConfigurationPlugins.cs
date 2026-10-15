@@ -1,12 +1,14 @@
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 
 namespace Qian.Config.Apollo;
 
 /// <summary>标准配置适配器，借用宿主配置根；只撤销本组件拥有的服务登记。</summary>
+[QianPlugin("qian.config")]
 public sealed class ConfigurationPlugin : IQianPlugin
 {
     /// <inheritdoc />
@@ -17,9 +19,13 @@ public sealed class ConfigurationPlugin : IQianPlugin
         ct.ThrowIfCancellationRequested();
         if (ctx.Scope != ScopeKey.Global || config.ValueKind != JsonValueKind.Object || config.EnumerateObject().Any())
             throw QianConfigurationExtensions.Invalid("qian.config");
-        Register(ctx);
+        // 与 Register 相同的三步直接写在 Apply 里：源生成器只从 Apply 本体派生 provides，上下文传给辅助方法即 QIANSDK002。
+        var root = ctx.Services.GetRequiredService<IConfiguration>();
+        ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
+        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
         return ValueTask.CompletedTask;
     }
+    // Apollo 适配器校验引导后复用同一注册；两处须保持一致。
     internal static void Register(IPluginContext ctx)
     {
         var root = ctx.Services.GetRequiredService<IConfiguration>();
