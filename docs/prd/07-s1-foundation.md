@@ -178,8 +178,8 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - 目录约定与清单字段族以 ADR-020 D20.6 为准，权威规格为 specs/component-model.md（v1 specs/plugin-manifest.md 保留为 `kind` → `runtime.form` 字段迁移对照）。`plugin.json` 的表面指针（`skills`、`agents`、`commands`、`hooks`、`mcpServers`、`tools`、`ui`、`metadata`）缺省指向约定目录，可覆盖。
 - 校验器：每种表面一份 JSON Schema 2020-12（front matter 解析为 JSON 后校验）+ 语义校验（`allowed-tools` 引用的工具必须存在于 `ctx.Tools` 或本组件 `tools/`；hooks 引用的 Qian 事件必须在事件目录、能力 URI 必须在能力目录；`.mcp.json` 的服务器名在组件内唯一；`commands/` 内联 shell 仅允许在人类 CLI 侧执行）。库 `Qian.Surfaces`（.NET）与 `@qian/surfaces`（TS）跑同一组 fixture；错误格式 = `ErrorDetail`（7.18 第 2 项）+ 文件路径 + 行号 + JSON Pointer。
 - 注册：装载器读组件文件夹 → 解析表面 → 以 `ctx.Effect()` 注册，scope 取自挂载该组件的条目（`scope?`）并受 `plugin.json.scopes[]` 约束；表面变更走 7.2.1 的热重载路径。
-- hooks：一条 hook = 触发源（Qian 事件 ID 或 Agent 宿主事件名）× 动作（能力 URI 或 `commands/` 命令名）× 分发模式；服务端触发的 hook 以 `channel = hook` 进审计；精确 Schema 在 specs/component-model.md 定稿。
-- MCP：`.mcp.json` 在 S1 只被校验、登记、按 scope 过滤，并由 `qian add` 装进开发者的 Agent 宿主配置；平台侧运行 MCP 服务器与每租户门面是 S4（§10）。
+- hooks：一条 hook = 触发源（Qian 事件 ID 或 Agent 宿主事件名）× 动作（能力 URI 或 `commands/` 命令名）× 分发模式；服务端触发的 hook 以 `channel = hook` 进审计；精确 Schema 在 specs/component-model.md 定稿。S1 范围（R92）：桥接矩阵里四个 serial 事件 × `type: plugin`，Agent 宿主事件透传；`command` / `http` 执行器、非 serial 分发模式与 `identity/*`、`files/*`、`tenant/purging` 的桥接归 S2。
+- MCP：`.mcp.json` 在 S1 只被校验、登记、按 scope 过滤，并由 `qian add` 装进开发者的 Agent 宿主配置（装进宿主配置这一步归 S1-RT-032，R92）；平台侧运行 MCP 服务器与每租户门面是 S4（§10）。
 - `AGENTS.md` 与 README：模板随 `qian init` 生成；CI 检查存在性与必需节；文档生成器 `qian docs generate` 输出 `docs/generated/{config-catalog,module-graph,event-graph,seam-graph}.md`，CI 比对生成结果与提交内容，漂移即失败。
 - 官方市场（7.2.4）全部组件必须过校验器，作为市场条目的准入门禁。
 
@@ -192,7 +192,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - [ ] TCK：一个只含 `skills/` 与 `.qian-plugin/plugin.json`、没有 `src/` 的组件可被 `qian add` 装入 `minimal` profile 并出现在 `dump-config` 与 `ctx.Skills`；挂载到租户 A scope 后 B 不可见。
 - [ ] CI：删除某组件 README 的「已知限制与延期项」节或仓库根 `AGENTS.md`，门禁失败；修改一个事件声明而不重新生成事件图，新鲜度门禁失败。
 - [ ] E2E：修改已挂载组件的 SKILL.md 后 ≤ 5s 新描述出现在 `ctx.Skills` 与 `qian list`，无进程重启。
-- [ ] IT：`hooks.json` 把 `tenant.created.v1` 桥接到一个能力 URI，租户创建时被触发且审计记录 `channel = hook`；桥接到不存在的能力在装载期被拒。
+- [ ] IT：`hooks.json` 把进程内事件 `tenant/provisioned`（R39 矩阵；`tenant.created.v1` 是 S1-TEN-002 发布的集成事件，不进 hooks 矩阵，R91）桥接到一个能力，测试宿主在 `qian.tenancy` 上下文发布该事件时被触发且审计记录 `channel = hook`，真实开户流程的触发归 S1-TEN-003（R83）；桥接到不存在的能力在装载期被拒。
 
 #### 7.2.3 `qian` CLI 与 `Qian.Plugin.Sdk`（P0 · S1）
 
