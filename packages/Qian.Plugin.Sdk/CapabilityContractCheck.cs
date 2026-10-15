@@ -23,7 +23,7 @@ public sealed class CapabilityContractException : InvalidOperationException
     /// <param name="componentId">拥有该能力的组件。</param>
     /// <param name="name">组件内能力短名。</param>
     /// <param name="location">出错位置：以能力 ID 为文件的 JSON Pointer，如 <c>qian.sample.crm/customer.create#/inputSchema/properties/tenantId</c>。</param>
-    /// <param name="rule">违反的规则：<c>tool-invalid</c>、<c>entry-invalid</c>、<c>tenant-field</c>、<c>unsupported-key</c>、<c>unresolved-reference</c>、<c>schema-invalid</c>，
+    /// <param name="rule">违反的规则：<c>tool-invalid</c>、<c>entry-invalid</c>、<c>tenant-field</c>、<c>unsupported-key</c>、<c>unsupported-number</c>、<c>unresolved-reference</c>、<c>schema-invalid</c>，
     /// 其余无法生成条目的情况为 <c>contract-invalid</c>。</param>
     /// <param name="innerException">底层失败；只用于诊断，不进入消息。</param>
     public CapabilityContractException(string componentId, string name, string location, string rule, Exception? innerException = null)
