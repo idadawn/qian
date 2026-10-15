@@ -250,7 +250,7 @@ public sealed class SchemaPatternTests
     }
 
     // tck/profiles/key-vectors.json 与 packages/qian-cli/src/ordinal-case.ts 由本实现生成，CLI 的 TS 移植（schema-pattern.ts）逐条比对。
-    // 改了 SchemaPattern 或升级 .NET 后，以 QIAN_UPDATE_VECTORS=1 运行本测试重新生成，再同步 TS 移植直到 CLI 测试通过。
+    // 改了 SchemaPattern、升级 .NET 或宿主 ICU 新增大小写对后，以 QIAN_UPDATE_VECTORS=1 运行本测试重新生成，再同步 TS 移植直到 CLI 测试通过。
     [Fact]
     public void 跨语言向量与等价类表由本实现生成_与仓库文件逐字一致()
     {
@@ -261,8 +261,17 @@ public sealed class SchemaPatternTests
         {
             var path = Path.Combine(root.FullName, relative);
             if (Environment.GetEnvironmentVariable("QIAN_UPDATE_VECTORS") == "1") File.WriteAllText(path, content);
-            Assert.True(File.Exists(path) && File.ReadAllText(path) == content, $"{relative} 与本实现不一致：以 QIAN_UPDATE_VECTORS=1 运行本测试重新生成，再同步 CLI 的 schema-pattern.ts。");
+            var actual = File.Exists(path) ? File.ReadAllText(path) : "";
+            Assert.True(actual == content, $"{relative} 与本实现不一致：以 QIAN_UPDATE_VECTORS=1 运行本测试重新生成，再同步 CLI 的 schema-pattern.ts。" + Difference(actual, content));
         }
+    }
+
+    // 按行列出仓库文件与本实现各自多出的内容（各取前 10 行，每行截到 200 个字符），宿主环境不同时便于定位。
+    private static string Difference(string actual, string expected)
+    {
+        static string Lines(IEnumerable<string> lines) => string.Join("\n  ", lines.Take(10).Select(line => line.Length > 200 ? line[..200] + "…" : line));
+        var (left, right) = (actual.Split('\n'), expected.Split('\n'));
+        return "\n仓库文件多出：\n  " + Lines(left.Except(right)) + "\n本实现多出：\n  " + Lines(right.Except(left));
     }
 
     // 翻译结果与在 Keys 上的匹配（不折叠与折叠）、在 Values 上的匹配（不折叠）、全部 BMP 码元的稳定性、键名相等，都按本实现与 .NET 比较器给出。
@@ -348,7 +357,13 @@ public sealed class SchemaPatternTests
         }
     }
 
-    // 按 StringComparer.OrdinalIgnoreCase 给全部码点分组（BMP 逐码元、增补平面逐码点），只列两个及以上成员的类。
+    // Unicode 16.0、17.0 新增的大小写字母。OrdinalIgnoreCase 在 Linux 与 macOS 上按宿主 ICU 的大小写映射判断：Ubuntu 24.04 的 ICU 74（Unicode 15.1，
+    // CI 与 .NET 10 默认镜像）不认这些字母，较新的 ICU 才把它们与对应字母视为相等。等价类表只收录各宿主一致的部分：这些码点从等价类里去掉，
+    // CLI 把它们当作自成一类，同 ICU 74。宿主 ICU 再新增大小写对时，本测试会在该宿主上失败，把新字母补进这里。
+    private static readonly HashSet<int> IcuDependentCase = [0x1C89, 0x1C8A, 0xA7CB, 0xA7CC, 0xA7CD, 0xA7CE, 0xA7CF, 0xA7D2, 0xA7D4, 0xA7DA, 0xA7DB, 0xA7DC,
+        .. Enumerable.Range(0x10D50, 0x16), .. Enumerable.Range(0x10D70, 0x16)];
+
+    // 按 StringComparer.OrdinalIgnoreCase 给全部码点分组（BMP 逐码元、增补平面逐码点），去掉随宿主 ICU 而异的字母，只列两个及以上成员的类。
     private static string CaseTable()
     {
         var groups = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
@@ -358,10 +373,11 @@ public sealed class SchemaPatternTests
             if (!groups.TryGetValue(text, out var members)) groups[text] = members = [];
             members.Add(code);
         }
-        var lines = groups.Values.Where(members => members.Count > 1).OrderBy(members => members[0])
+        var lines = groups.Values.Select(members => members.Where(code => !IcuDependentCase.Contains(code)).ToList()).Where(members => members.Count > 1).OrderBy(members => members[0])
             .Select(members => "[" + string.Join(",", members.Select(code => "0x" + code.ToString("X4", CultureInfo.InvariantCulture))) + "]");
         return "// 由 tests/Qian.Common.Tests 的 SchemaPatternTests 按 .NET StringComparer.OrdinalIgnoreCase 生成，不要手改；重新生成见 packages/Common/README.md。\n" +
             "// 每项是一个含两个及以上码点的等价类，码点升序；BMP 码元与增补平面码点不会同类，未列出的码点自成一类。\n" +
+            "// 只收录各宿主 ICU 一致的部分：Unicode 16.0 起新增的大小写字母（如 U+A7CB）随宿主 ICU 而异，这里不列，同 ICU 74 自成一类。\n" +
             "export const ordinalIgnoreCaseClasses:readonly (readonly number[])[]=[\n" + string.Join(",\n", lines) + "\n];\n";
     }
 }
