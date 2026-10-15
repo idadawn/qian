@@ -114,7 +114,7 @@
    "S1-IDP-002",
    "S1-AUD-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -204,7 +204,7 @@
    "S1-AUD-001",
    "S1-SCH-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -243,10 +243,9 @@
    "S1-EVT-002"
   ],
   "blockedBy": [
-   "S1-TEN-001",
    "S1-EVT-002"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -286,7 +285,7 @@
   "blockedBy": [
    "S1-AUD-003"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -418,8 +417,7 @@
    "S1-DATA-001"
   ],
   "blockedBy": [
-   "S1-AZ-002",
-   "S1-TEN-001"
+   "S1-AZ-002"
   ],
   "order": 2,
   "readyNow": false,
@@ -510,7 +508,7 @@
    "S1-IDP-009",
    "S1-YUE-009"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -729,11 +727,9 @@
    "S1-CFG-001",
    "S1-TEN-001"
   ],
-  "blockedBy": [
-   "S1-TEN-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.8",
@@ -1861,7 +1857,7 @@
    "done": 3,
    "total": 3
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人 2026-10-15 问「现在阻塞的任务可以给一个人来做吗，能排一个先后顺序吗」。看板上 status 为 blocked 的九项全部由 cody 持有、都有部分交付：三项（S1-TEN-001、S1-RT-004、S1-AUD-001）的依赖其实已全部完成，只是验收文字伸进了下游任务的范围；其余按依赖链互相卡住，再卡住后面六十多项 todo。Claude 按「解锁下游数量 + 依赖链」排序并给出改口径建议，产品负责人回复「认可，写进看板」。本任务记录顺序、裁决 R81–R84 的落点与给执行方的提示词。</p>\n<h4>顺序（一人串行，估计为剩余量）</h4>\n<p>| 序 | 任务 | 剩余 | 解锁下游 | 说明 | 估计 |</p>\n<p>|---|---|---|---|---|---|</p>\n<p>| 1 | S1-TEN-001 租户主档 | 3 条 | 51 项 | 按 R81 改口径后核对证据勾选 | 1 天 |</p>\n<p>| 2 | S1-RT-004 注册表 | 4 条 | 39 项 | 补 TCK 反例；scope patch 5 秒重载与别名 Link 头已有实现，核对后勾选 | 2 天 |</p>\n<p>| 3 | S1-AUD-001 审计链 | 1 条 | 21 项 | 补 waterfall 监听器逆序撤销单测 | 0.5 天 |</p>\n<p>| 4 | S1-RT-014 SDK 与源生成器 | 5 条 | 18 项 | 需 RT-004；含平台组合包迁移装配与 <code>AddQianCapabilities()</code> | 4 天 |</p>\n<p>| 5 | S1-RT-005 生命周期（todo） | 全部 | TEN-003、RT-013、QA-004、ENT-001 | RT-004 之后最大的闸门，同一人接着做 | 8 天 |</p>\n<p>| 6 | S1-AZ-002 + S1-AZ-003 权限 | 2 + 4 条 | 12 项 | 一起做；组织继承按 R82 移交 AZ-005 | 5 天 |</p>\n<p>| 7 | S1-RT-011 CLI | 5 条 | 11 项 | 需 RT-014；E2E 按 R84 用已发布组件 | 4 天 |</p>\n<p>暂缓：S1-RT-009 剩余一条按 R83 用测试宿主事件验证，可在第 5 步后顺手做；S1-DEP-003 的四个前置（S1-IDP-002、S1-IDP-005、S1-GW-001、S1-YUE-001）全是 todo，先不动。</p>\n<p>可并行给第二人、与上面不冲突的 todo：S1-DEP-002（K3s 基础组件）、S1-EVT-003、S1-YUE-006、S1-YUE-007、S1-AZ-006、S1-RT-007。</p>\n<h4>裁决落点</h4>\n<ul>\n<li>R81：S1-TEN-001 三条验收改写；移交条目加到 S1-TEN-005、S1-IDP-003、S1-EVT-002、S1-SCH-002；TEN-001 状态 blocked → todo。</li>\n<li>R82：S1-AZ-003 第三条改为直接主体；移交条目加到 S1-AZ-005。</li>\n<li>R83：S1-RT-009 最后一条改为测试宿主事件；移交条目加到 S1-TEN-003。</li>\n<li>R84：S1-RT-011 的 E2E 改为已发布组件；移交条目加到 S1-QA-005。</li>\n<li>S1-RT-004 两条验收加既有实现的核对提示，状态 blocked → todo；S1-AUD-001 状态 blocked → todo；S1-RT-005 owner 设为 cody。</li>\n</ul>\n<h4>执行提示词（交给执行方）</h4>\n<p>```text</p>\n<p>你是 cody，Qian 仓库（本地 /Users/dawn/prd/qian，远端 idadawn/qian）的执行方。按 pm/tasks/S1-DEC-021.md 的顺序把阻塞任务逐个做完。开始前读 AGENTS.md、pm/README.md、该任务文件，以及 docs/decisions/key-decisions-v0.md 的 R81–R84。</p>\n<p>顺序与每项要做的事：</p>\n<p>1. S1-TEN-001：按 R81 改过的三条验收核对证据、勾选、转 review；不做运营后台页面与登录。</p>\n<p>2. S1-RT-004：补 TCK 反例（五类非法 plugin.json 返回带 JSON Pointer 的结构化错误）；核对 scope patch 的 403 / 404、≤ 5 秒重载与别名两个响应头的既有实现并勾选；转 review。</p>\n<p>3. S1-AUD-001：补「卸载组件时 waterfall 监听器逆序撤销」单测，转 review。</p>\n<p>4. S1-RT-014：五条验收全部做完（DATA-001 回验、漂移 UT、源生成器写 tools 表面 UT、SDK 传递依赖门禁、platform 组合包迁移装配并调用 AddQianCapabilities()）。</p>\n<p>5. S1-RT-005：qian.lifecycle 全部验收。</p>\n<p>6. S1-AZ-002 与 S1-AZ-003 一起：Check / Explain、me/permissions、超管 bypass、fail-closed、直接主体 ≤ 3 秒生效与失效；组织继承按 R82 不做。</p>\n<p>7. S1-RT-011：E2E 按 R84 用市场条目已存在的三个组件；其余四条照原文。</p>\n<p>S1-RT-009 剩余一条按 R83 用测试宿主发布的 tenant.created.v1 验证，可在第 5 步后顺手做；S1-DEP-003 不动。</p>\n<p>规则：</p>\n<ul>\n<li>一个任务一个分支一个 PR。开始时 python3 scripts/pm.py set &lt;ID&gt; --status doing --owner cody --by cody --note &quot;开始&quot;；做完 --status review；不自己置 done。</li>\n<li>一个任务进入 review 后再开始下一个；复核退回时先处理退回项。</li>\n<li>每条验收的证据（测试名、数量、文档落点）写进任务进度日志；与任务原文的偏离写进任务日志，不只写 PR 正文；合并后的核验也补进日志。</li>\n<li>不改 docs/decisions 里裁决的正文；需要改口径时在任务日志写「建议裁决」，交复核人处理。</li>\n<li>验收伸进了别的任务范围时，按 R81–R84 的方式移交并登记，不扩大本任务范围，也不用测试替身冒充真实前置。</li>\n<li>合并前读一次 CI，所有作业（含 docs-site 的预览发布）结束且全绿再合；不轮询。</li>\n<li>全量验证按 tests/README.md 的前置（QIAN_BUF_PATH / QIAN_OASDIFF_PATH）跑 dotnet test；门禁跑 check_deps.py、check_docs.py、pm.py validate / build / check-fresh；改了事件声明或配置 Schema 要重新生成 docs/generated。</li>\n<li>文档与注释里不出现参考平台的品牌名。</li>\n<li>提交信息末尾带 [&lt;ID&gt;]；每个任务转 review 后在聊天里报 PR 链接、验收逐条证据与偏离。</li>\n</ul>\n<p>```</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>R81–R84 写入 <code>docs/decisions/key-decisions-v0.md</code>，移交条目加到归属任务，原任务验收文字改写</li>\n<li class='chk done'><span class='box'>✓</span>S1-TEN-001、S1-RT-004、S1-AUD-001 由 blocked 改回 todo，S1-RT-005 owner 设为 cody；顺序表与暂缓说明记入本文件</li>\n<li class='chk done'><span class='box'>✓</span>执行提示词写入本文件并交给产品负责人</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：产品负责人 2026-10-15 认可排序与改口径（R81–R84）并要求写进看板、生成提示词；裁决与移交已落地，提示词见本文件</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>产品负责人 2026-10-15 问「现在阻塞的任务可以给一个人来做吗，能排一个先后顺序吗」。看板上 status 为 blocked 的九项全部由 cody 持有、都有部分交付：三项（S1-TEN-001、S1-RT-004、S1-AUD-001）的依赖其实已全部完成，只是验收文字伸进了下游任务的范围；其余按依赖链互相卡住，再卡住后面六十多项 todo。Claude 按「解锁下游数量 + 依赖链」排序并给出改口径建议，产品负责人回复「认可，写进看板」。本任务记录顺序、裁决 R81–R84 的落点与给执行方的提示词。</p>\n<h4>顺序（一人串行，估计为剩余量）</h4>\n<p>| 序 | 任务 | 剩余 | 解锁下游 | 说明 | 估计 |</p>\n<p>|---|---|---|---|---|---|</p>\n<p>| 1 | S1-TEN-001 租户主档 | 3 条 | 51 项 | 按 R81 改口径后核对证据勾选 | 1 天 |</p>\n<p>| 2 | S1-RT-004 注册表 | 4 条 | 39 项 | 补 TCK 反例；scope patch 5 秒重载与别名 Link 头已有实现，核对后勾选 | 2 天 |</p>\n<p>| 3 | S1-AUD-001 审计链 | 1 条 | 21 项 | 补 waterfall 监听器逆序撤销单测 | 0.5 天 |</p>\n<p>| 4 | S1-RT-014 SDK 与源生成器 | 5 条 | 18 项 | 需 RT-004；含平台组合包迁移装配与 <code>AddQianCapabilities()</code> | 4 天 |</p>\n<p>| 5 | S1-RT-005 生命周期（todo） | 全部 | TEN-003、RT-013、QA-004、ENT-001 | RT-004 之后最大的闸门，同一人接着做 | 8 天 |</p>\n<p>| 6 | S1-AZ-002 + S1-AZ-003 权限 | 2 + 4 条 | 12 项 | 一起做；组织继承按 R82 移交 AZ-005 | 5 天 |</p>\n<p>| 7 | S1-RT-011 CLI | 5 条 | 11 项 | 需 RT-014；E2E 按 R84 用已发布组件 | 4 天 |</p>\n<p>暂缓：S1-RT-009 剩余一条按 R83 用测试宿主事件验证，可在第 5 步后顺手做；S1-DEP-003 的四个前置（S1-IDP-002、S1-IDP-005、S1-GW-001、S1-YUE-001）全是 todo，先不动。</p>\n<p>可并行给第二人、与上面不冲突的 todo：S1-DEP-002（K3s 基础组件）、S1-EVT-003、S1-YUE-006、S1-YUE-007、S1-AZ-006、S1-RT-007。</p>\n<h4>裁决落点</h4>\n<ul>\n<li>R81：S1-TEN-001 三条验收改写；移交条目加到 S1-TEN-005、S1-IDP-003、S1-EVT-002、S1-SCH-002；TEN-001 状态 blocked → todo。</li>\n<li>R82：S1-AZ-003 第三条改为直接主体；移交条目加到 S1-AZ-005。</li>\n<li>R83：S1-RT-009 最后一条改为测试宿主事件；移交条目加到 S1-TEN-003。</li>\n<li>R84：S1-RT-011 的 E2E 改为已发布组件；移交条目加到 S1-QA-005。</li>\n<li>S1-RT-004 两条验收加既有实现的核对提示，状态 blocked → todo；S1-AUD-001 状态 blocked → todo；S1-RT-005 owner 设为 cody。</li>\n</ul>\n<h4>执行提示词（交给执行方）</h4>\n<p>```text</p>\n<p>你是 cody，Qian 仓库（本地 /Users/dawn/prd/qian，远端 idadawn/qian）的执行方。按 pm/tasks/S1-DEC-021.md 的顺序把阻塞任务逐个做完。开始前读 AGENTS.md、pm/README.md、该任务文件，以及 docs/decisions/key-decisions-v0.md 的 R81–R84。</p>\n<p>顺序与每项要做的事：</p>\n<p>1. S1-TEN-001：按 R81 改过的三条验收核对证据、勾选、转 review；不做运营后台页面与登录。</p>\n<p>2. S1-RT-004：补 TCK 反例（五类非法 plugin.json 返回带 JSON Pointer 的结构化错误）；核对 scope patch 的 403 / 404、≤ 5 秒重载与别名两个响应头的既有实现并勾选；转 review。</p>\n<p>3. S1-AUD-001：补「卸载组件时 waterfall 监听器逆序撤销」单测，转 review。</p>\n<p>4. S1-RT-014：五条验收全部做完（DATA-001 回验、漂移 UT、源生成器写 tools 表面 UT、SDK 传递依赖门禁、platform 组合包迁移装配并调用 AddQianCapabilities()）。</p>\n<p>5. S1-RT-005：qian.lifecycle 全部验收。</p>\n<p>6. S1-AZ-002 与 S1-AZ-003 一起：Check / Explain、me/permissions、超管 bypass、fail-closed、直接主体 ≤ 3 秒生效与失效；组织继承按 R82 不做。</p>\n<p>7. S1-RT-011：E2E 按 R84 用市场条目已存在的三个组件；其余四条照原文。</p>\n<p>S1-RT-009 剩余一条按 R83 用测试宿主发布的 tenant.created.v1 验证，可在第 5 步后顺手做；S1-DEP-003 不动。</p>\n<p>规则：</p>\n<ul>\n<li>一个任务一个分支一个 PR。开始时 python3 scripts/pm.py set &lt;ID&gt; --status doing --owner cody --by cody --note &quot;开始&quot;；做完 --status review；不自己置 done。</li>\n<li>一个任务进入 review 后再开始下一个；复核退回时先处理退回项。</li>\n<li>每条验收的证据（测试名、数量、文档落点）写进任务进度日志；与任务原文的偏离写进任务日志，不只写 PR 正文；合并后的核验也补进日志。</li>\n<li>不改 docs/decisions 里裁决的正文；需要改口径时在任务日志写「建议裁决」，交复核人处理。</li>\n<li>验收伸进了别的任务范围时，按 R81–R84 的方式移交并登记，不扩大本任务范围，也不用测试替身冒充真实前置。</li>\n<li>合并前读一次 CI，所有作业（含 docs-site 的预览发布）结束且全绿再合；不轮询。</li>\n<li>全量验证按 tests/README.md 的前置（QIAN_BUF_PATH / QIAN_OASDIFF_PATH）跑 dotnet test；门禁跑 check_deps.py、check_docs.py、pm.py validate / build / check-fresh；改了事件声明或配置 Schema 要重新生成 docs/generated。</li>\n<li>文档与注释里不出现参考平台的品牌名。</li>\n<li>提交信息末尾带 [&lt;ID&gt;]；每个任务转 review 后在聊天里报 PR 链接、验收逐条证据与偏离。</li>\n</ul>\n<p>```</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>R81–R84 写入 <code>docs/decisions/key-decisions-v0.md</code>，移交条目加到归属任务，原任务验收文字改写</li>\n<li class='chk done'><span class='box'>✓</span>S1-TEN-001、S1-RT-004、S1-AUD-001 由 blocked 改回 todo，S1-RT-005 owner 设为 cody；顺序表与暂缓说明记入本文件</li>\n<li class='chk done'><span class='box'>✓</span>执行提示词写入本文件并交给产品负责人</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：产品负责人 2026-10-15 认可排序与改口径（R81–R84）并要求写进看板、生成提示词；裁决与移交已落地，提示词见本文件</li>\n<li>2026-10-15 claude：R85（S1-TEN-001 复核）：HTTP 运营接口另立 S1-TEN-006，依赖 S1-AZ-003，在 S1-AZ-002 + S1-AZ-003 之后顺手做；R81–R84 与排序不变</li>\n</ul>",
   "file": "pm/tasks/S1-DEC-021.md"
  },
  {
@@ -1983,7 +1979,7 @@
    "S1-GW-001",
    "S1-YUE-001"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -2032,7 +2028,7 @@
    "S1-RT-013",
    "S1-DEP-003"
   ],
-  "order": 8,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -2074,7 +2070,7 @@
    "S1-DEP-004",
    "S1-DEP-002"
   ],
-  "order": 9,
+  "order": 8,
   "readyNow": false,
   "refs": [
    {
@@ -2118,7 +2114,7 @@
   "blockedBy": [
    "S1-AUD-003"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -2485,7 +2481,6 @@
    "S1-AUD-001"
   ],
   "blockedBy": [
-   "S1-TEN-001",
    "S1-RT-005",
    "S1-AUD-001"
   ],
@@ -2540,7 +2535,7 @@
    "S1-YUE-002",
    "S1-CFG-004"
   ],
-  "order": 8,
+  "order": 7,
   "readyNow": false,
   "refs": [
    {
@@ -2637,11 +2632,9 @@
    "S1-EVT-001",
    "S1-TEN-001"
   ],
-  "blockedBy": [
-   "S1-TEN-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.10",
@@ -2853,7 +2846,7 @@
   "blockedBy": [
    "S1-IDP-005"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -2877,12 +2870,12 @@
     "url": "https://github.com/idadawn/qian/blob/main/contracts/v0/iclaw-alignment.md"
    }
   ],
-  "updated": "2026-10-07",
+  "updated": "2026-10-15",
   "acceptance": {
    "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.gateway</code>（<code>Qian.Gateway.Abstractions</code> + <code>Qian.Gateway</code>，<code>gateway</code> profile 独立 Pod、可 AOT）在 Kun.Gateway 之上写死安全默认值：回退策略 = 已认证、匿名白名单显式枚举；只信任 <code>qian-identity</code> 一个 issuer；外部 Bearer 或 Cookie <code>qian.sid</code> 统一解析主体后由 <code>S2sTokenIssuer</code> 签 60s S2S（RS256、<code>kid</code> 轮换），<code>aud</code> = 目标 cluster，禁透传；<code>ForwardedClaimTypes</code> 白名单；<code>KnownNetworks</code> 只含 Traefik 网段；机器身份同样换签（<code>principal_kind = service</code>）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：未带凭据访问 <code>/api/tenancy/tenants</code> 返回 401；带外壳 Cookie 访问同一路由，下游收到 60s S2S 且 <code>aud = qian-platform</code>、<code>tenant_id</code> 正确</li>\n<li class='chk'><span class='box'></span>IT：S2S 令牌通过 iClaw <code>s2s-jwt-claims</code> Schema 校验；<code>exp − iat ≤ 300s</code></li>\n<li class='chk'><span class='box'></span>IT：轮换私钥期间（双钥重叠 10 分钟）在途请求零失败；重叠期后旧 <code>kid</code> 被拒绝</li>\n<li class='chk'><span class='box'></span>E2E：伪造 <code>X-Forwarded-For</code> 的请求（非可信网段发出）不改变限流分区与客户端 IP</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/s2s-claims.schema.json：iClaw 无 S2S JSON Schema，验收以该文件为准（iclaw-alignment.md 第 2 节）</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.gateway</code>（<code>Qian.Gateway.Abstractions</code> + <code>Qian.Gateway</code>，<code>gateway</code> profile 独立 Pod、可 AOT）在 Kun.Gateway 之上写死安全默认值：回退策略 = 已认证、匿名白名单显式枚举；只信任 <code>qian-identity</code> 一个 issuer；外部 Bearer 或 Cookie <code>qian.sid</code> 统一解析主体后由 <code>S2sTokenIssuer</code> 签 60s S2S（RS256、<code>kid</code> 轮换），<code>aud</code> = 目标 cluster，禁透传；<code>ForwardedClaimTypes</code> 白名单；<code>KnownNetworks</code> 只含 Traefik 网段；机器身份同样换签（<code>principal_kind = service</code>）。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：未带凭据访问 <code>/api/tenancy/tenants</code> 返回 401；带外壳 Cookie 访问同一路由，下游收到 60s S2S 且 <code>aud = qian-platform</code>、<code>tenant_id</code> 正确</li>\n<li class='chk'><span class='box'></span>IT：S2S 令牌通过 iClaw <code>s2s-jwt-claims</code> Schema 校验；<code>exp − iat ≤ 300s</code></li>\n<li class='chk'><span class='box'></span>IT：轮换私钥期间（双钥重叠 10 分钟）在途请求零失败；重叠期后旧 <code>kid</code> 被拒绝</li>\n<li class='chk'><span class='box'></span>E2E：伪造 <code>X-Forwarded-For</code> 的请求（非可信网段发出）不改变限流分区与客户端 IP</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-07 claude：refs 加 contracts/v0/s2s-claims.schema.json：iClaw 无 S2S JSON Schema，验收以该文件为准（iclaw-alignment.md 第 2 节）</li>\n<li>2026-10-15 claude：R85：E2E 探针路由 /api/tenancy/tenants 由 S1-TEN-006 交付；TEN-006 未交付时以测试宿主的任意受保护路由代替，本任务不加依赖</li>\n</ul>",
   "file": "pm/tasks/S1-GW-001.md"
  },
  {
@@ -2904,7 +2897,7 @@
   "blockedBy": [
    "S1-GW-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -3036,11 +3029,9 @@
    "S1-TEN-001",
    "S1-AZ-001"
   ],
-  "blockedBy": [
-   "S1-TEN-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.4.1",
@@ -3091,7 +3082,7 @@
   "blockedBy": [
    "S1-IDP-002"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -3130,7 +3121,7 @@
   "blockedBy": [
    "S1-IDP-003"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -3170,7 +3161,7 @@
   "blockedBy": [
    "S1-IDP-002"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -3219,7 +3210,7 @@
    "S1-TEN-004",
    "S1-AUD-001"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -3263,7 +3254,7 @@
   "blockedBy": [
    "S1-IDP-003"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -3308,7 +3299,7 @@
    "S1-IDP-007",
    "S1-RT-004"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -3348,7 +3339,7 @@
   "blockedBy": [
    "S1-IDP-003"
   ],
-  "order": 3,
+  "order": 2,
   "readyNow": false,
   "refs": [
    {
@@ -3392,7 +3383,7 @@
   "blockedBy": [
    "S1-IDP-009"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4035,11 +4026,9 @@
    "S1-CFG-002",
    "S1-TEN-001"
   ],
-  "blockedBy": [
-   "S1-TEN-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.16",
@@ -4085,7 +4074,7 @@
    "S1-AUD-004",
    "S1-DEP-005"
   ],
-  "order": 10,
+  "order": 9,
   "readyNow": false,
   "refs": [
    {
@@ -4127,11 +4116,10 @@
   ],
   "blockedBy": [
    "S1-RT-004",
-   "S1-TEN-001",
    "S1-IDP-009",
    "S1-AUD-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -4173,7 +4161,7 @@
    "S1-NTF-001",
    "S1-SCH-001"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -4214,7 +4202,7 @@
   "blockedBy": [
    "S1-NTF-001"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -4458,7 +4446,6 @@
   "blockedBy": [
    "S1-RT-014",
    "S1-AZ-002",
-   "S1-TEN-001",
    "S1-FILE-001"
   ],
   "order": 5,
@@ -4721,7 +4708,7 @@
    "S1-IDP-002",
    "S1-ENT-002"
   ],
-  "order": 10,
+  "order": 9,
   "readyNow": false,
   "refs": [
    {
@@ -5941,11 +5928,9 @@
    "S1-RT-001",
    "S1-TEN-001"
   ],
-  "blockedBy": [
-   "S1-TEN-001"
-  ],
-  "order": 1,
-  "readyNow": false,
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": true,
   "refs": [
    {
     "path": "docs/prd/07-s1-foundation.md#7.13.1",
@@ -5987,7 +5972,7 @@
    "S1-SCH-001",
    "S1-IDP-002"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
@@ -6029,7 +6014,7 @@
    "S1-IDP-004",
    "S1-GW-001"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -6052,7 +6037,7 @@
  {
   "id": "S1-TEN-001",
   "title": "租户主档、fail-closed 租户上下文与传播器、tenancy API",
-  "status": "review",
+  "status": "done",
   "stage": "S1",
   "area": "TEN",
   "areaName": "租户",
@@ -6068,7 +6053,7 @@
    "S1-DATA-001"
   ],
   "blockedBy": [],
-  "order": 0,
+  "order": -1,
   "readyNow": false,
   "refs": [
    {
@@ -6089,7 +6074,7 @@
    "done": 4,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.tenancy</code>（<code>Qian.Tenancy.Abstractions</code> / <code>ctx.Tenancy</code> + <code>Qian.Tenancy</code>）：<code>Tenant</code> / <code>TenantAdmin</code> 实体（租户号小写字母数字、创建后不可改；隔离策略创建时一次性决定）、<code>ITenantContext</code> 唯一实现（AsyncLocal + 中间件，claim <code>tenant_id</code>，生产模式禁头兜底与 <code>default</code> 回退）、<code>ITenantContextPropagator</code>（事件信封、作业参数、gRPC 元数据）、<code>ITenantDirectory.Get(code)</code>、<code>GET/POST /api/tenancy/tenants</code>、<code>PUT /tenants/{id}</code>；独立模式可换宿主 <code>ITenantContext</code> 或 <code>SingleTenant</code>。第 1 波可信计算基。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：生产模式下无令牌、仅带 <code>X-Tenant-Id</code> 的请求与无 <code>tenant_id</code> 的消息都被拒绝</li>\n<li class='chk done'><span class='box'>✓</span>IT：以 A 的令牌直接请求 B 的记录 id 返回 404（R81：原 E2E 的运营后台创建租户归 S1-TEN-005、管理员登录归 S1-IDP-003；本任务只保留 HTTP 租户边界，cody 10-12 已交付严格 HTTP 租户边界，核对后勾选）</li>\n<li class='chk done'><span class='box'>✓</span>IT：<code>ITenantContextPropagator</code> 写入的 <code>tenant_id</code> 在 gRPC 对端 <code>BeginScope</code> 后可读（R81：消费端归 S1-EVT-002、作业执行器归 S1-SCH-002；gRPC 对端适配 cody 10-12 已随 PR #53 交付，核对后勾选）</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>inputSchema</code> 中不出现 <code>tenantId</code>；运营接口的目标租户是资源路径（R81：前半句由 S1-RT-020 的登记期契约检查 <code>tenant-field</code> 规则实现，引用 <code>CapabilityContractCheckTests</code> 勾选；后半句按 tenancy API 现状核对）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：开始：沿用 Kun 唯一租户上下文，实现租户目录和严格入口/传播，保留真实身份及运营授权端到端验收。</li>\n<li>2026-10-12 cody：完成目录 Definition/Provider、真实受限 PG 主档与单管理员指针、同号并发/编辑版本/不可变号和策略、严格 HTTP 租户边界及 JSON/元数据传播。10 项专项通过；真实运营授权 API、Identity 登录及事件/作业/gRPC 对端适配仍待完成，不以序列化测试替代联调。</li>\n<li>2026-10-12 cody：新增真实 gRPC 客户端/服务端传播适配器：Kestrel HTTP/2 上覆盖 unary/双向及单向流、双租户并发；已验证令牌 claim 必须与 metadata 相同，24 组非法入口业务调用数为零；通过 ErrorCatalog 传递 ErrorDetail。临时 RSA 签发仅用于传输验签测试，不替代真实 Qian Identity；事件与作业适配、运营授权和完整登录仍保留。</li>\n<li>2026-10-12 cody：目录与真实 gRPC 适配已提交 PR #53，428 项全量测试和全部适用 CI 通过；剩余真实运营授权依赖 Authz/Audit，登录依赖 Identity，消息/作业传播依赖 Events/Scheduler。先转入已授权的 AUD-001 必要前置，保留本任务完整验收。</li>\n<li>2026-10-15 claude：S1-DEC-021 / R81：三条验收改口径（运营后台归 TEN-005、登录归 IDP-003、消费端归 EVT-002、作业归 SCH-002、tenantId 规则引用 RT-020），依赖已全部完成，blocked → todo；排序第 1</li>\n<li>2026-10-15 cody：开始</li>\n<li>2026-10-15 cody：验收 2 证据（IT，A 的令牌请求 B 的记录 id 返回 404）：新增 TenantHttpBoundaryTests.真实HTTP_A的令牌请求B的记录id返回404_与不存在无法区分_请求头不能切换租户——真实 Kestrel + JwtBearer（RSA 验签）+ 本组件 TenantRequestBoundary + Data 强制 RLS 的应用角色 qian_app；A→B、B→A 与未知 id 同为 404 NOT_FOUND 且错误文案相同，A 的令牌带 X-Tenant-Id: B 仍只在 A 的范围（读 B 404、读 A 200），无令牌只带头、缺 tenant_id、签名被篡改均 401 UNAUTHENTICATED 且处理器零调用。变异检查：把边界换成信任 X-Tenant-Id 后该用例失败（期望 404 实得 200）。旁证：CRM 参考宿主 CustomerIsolationTests.两租户各千行_真实HTTP签名身份与数据库隔离_列表原SQL使用租户索引（B 的令牌读 A 的记录 404，经 Kun 生产模式租户中间件）与 CustomerCommandTests.真实查询默认不审计_详情显式Audit后入链_跨租户仍是404，本地各 1/1 通过</li>\n<li>2026-10-15 cody：验收 3 证据（IT，gRPC 对端 BeginScope 后可读）：TenantGrpcTests.真实HTTP2四种调用传递租户_双租户并发不串范围_原始调用头不被修改——客户端拦截器经 ITenantContextPropagator.WriteHeaders 写 tenant_id，服务端拦截器在 JWT 验签后经 BeginScope 进入范围，四种调用形态 × 两租户并发，对端读到的 tenant_id 与发送方一致（8 次调用，A、B 各 4 次）；反例 真实服务在读取业务流前拒绝缺失重复冲突元数据_无令牌_篡改签名_缺少claim（6 类元数据 × 4 种形态全部 Unauthenticated，业务调用 0）与 发送端不使用默认租户_拒绝已有冲突或重复字段_不发出网络调用。Qian.Tenancy.Tests 共 14/14（含新增 1 例）</li>\n<li>2026-10-15 cody：验收 4 证据（UT）：前半句 CapabilityContractCheckTests.登记期检查拒绝租户字段_异常带组件_能力_条目内位置与原因码_同一契约只生成一次并只告警一次（tenant-field 规则：顶层 tenantId、嵌套 tenant 均在登记期拒绝并给出条目内 JSON Pointer，HTTP 契约生成走同一检查；该类 3/3）。后半句按 tenancy API 现状核对：本组件尚未发布 HTTP 运营接口，内部写接口 UpdateAsync(id, UpdateTenant) 以资源 id 为目标、CreateTenant 的 id 由服务端生成；TenantBoundaryTests.创建编辑输入不接受tenantId_编辑不能改变租户号和隔离策略 补断言：CreateTenant 与 UpdateTenant 的请求体对 tenantId、tenant_id、id 一律拒绝（JsonUnmappedMemberHandling.Disallow）</li>\n<li>2026-10-15 cody：偏离：① R81 写的是核对后勾选，但现有证据只有 CRM 宿主（用 Kun 中间件）与 DefaultHttpContext 单测，没有覆盖本组件 TenantRequestBoundary 的真实 HTTP 集成测试，故补上述 IT 并给 DTO 单测加断言；只加测试，不改实现。② 背景与 PRD 7.3 列出的 HTTP 运营接口 GET/POST /api/tenancy/tenants、PUT /tenants/{id} 本任务未交付：它需要真实的平台运营授权（S1-AZ-003 的超管旁路或平台权限点），R81 已写明后半句按现状核对。建议裁决：这三个端点连同运营授权由 S1-TEN-005 交付（其页面直接消费，背景已列 GET/PUT /tenants/{id}/admins），depends 加 S1-AZ-003，并在 HTTP 层复验「运营接口的目标租户是资源路径」；或并入已含 POST /tenants/{id}:activate|suspend|resume 的 S1-TEN-002。交复核人定。文档落点：packages/Qian.Tenancy/README.md「验证与剩余验收」按 R81 改写</li>\n<li>2026-10-15 cody：转 review：四条验收全部勾选。本地验证：dotnet build 0 警告 0 错误；check_deps 34 个 Qian 包通过；门禁自测 49/49；dotnet test 全量（QIAN_BUF_PATH / QIAN_OASDIFF_PATH 已设）730 例 729 通过、1 例失败——Qian.Runtime.Tests 的 T25-replace 场景（与本任务无关，单独连跑 6 次 24/24 全过），根因是 PluginLoader.ReconcileCoreAsync 挑选 Pending 节点时不检查旧上下文是否已停止，句柄 Replace 在两次 CleanPendingAsync 之间触发失效时，依赖者会在旧 effect 未撤销的情况下重新 Apply，另行提整改</li>\n<li>2026-10-15 cody：合并后核验：PR #109 已以 merge commit 60169cd7e 并入 main，main 的 push CI（dotnet、docs-and-pm、documentation）全部成功；在其上的 S1-RT-004 分支全量 dotnet test 734/734 零跳过，Qian.Tenancy.Tests 全部通过（含「真实HTTP_A的令牌请求B的记录id返回404_与不存在无法区分_请求头不能切换租户」与运营写入请求体断言）。</li>\n</ul>",
+  "bodyHtml": "<h4>背景</h4>\n<p>组件 <code>qian.tenancy</code>（<code>Qian.Tenancy.Abstractions</code> / <code>ctx.Tenancy</code> + <code>Qian.Tenancy</code>）：<code>Tenant</code> / <code>TenantAdmin</code> 实体（租户号小写字母数字、创建后不可改；隔离策略创建时一次性决定）、<code>ITenantContext</code> 唯一实现（AsyncLocal + 中间件，claim <code>tenant_id</code>，生产模式禁头兜底与 <code>default</code> 回退）、<code>ITenantContextPropagator</code>（事件信封、作业参数、gRPC 元数据）、<code>ITenantDirectory.Get(code)</code>、<code>GET/POST /api/tenancy/tenants</code>、<code>PUT /tenants/{id}</code>（R85：这组 HTTP 运营接口归 S1-TEN-006，本任务的 tenancy API 指 <code>ITenantDirectory</code> 内部 API 与 HTTP 租户边界）；独立模式可换宿主 <code>ITenantContext</code> 或 <code>SingleTenant</code>。第 1 波可信计算基。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：生产模式下无令牌、仅带 <code>X-Tenant-Id</code> 的请求与无 <code>tenant_id</code> 的消息都被拒绝</li>\n<li class='chk done'><span class='box'>✓</span>IT：以 A 的令牌直接请求 B 的记录 id 返回 404（R81：原 E2E 的运营后台创建租户归 S1-TEN-005、管理员登录归 S1-IDP-003；本任务只保留 HTTP 租户边界，cody 10-12 已交付严格 HTTP 租户边界，核对后勾选）</li>\n<li class='chk done'><span class='box'>✓</span>IT：<code>ITenantContextPropagator</code> 写入的 <code>tenant_id</code> 在 gRPC 对端 <code>BeginScope</code> 后可读（R81：消费端归 S1-EVT-002、作业执行器归 S1-SCH-002；gRPC 对端适配 cody 10-12 已随 PR #53 交付，核对后勾选）</li>\n<li class='chk done'><span class='box'>✓</span>UT：<code>inputSchema</code> 中不出现 <code>tenantId</code>；运营接口的目标租户是资源路径（R81：前半句由 S1-RT-020 的登记期契约检查 <code>tenant-field</code> 规则实现，引用 <code>CapabilityContractCheckTests</code> 勾选；后半句按内部 API 与 DTO 现状核对成立——写入口 <code>internal</code>、id 服务端生成、Create/Update 请求体拒绝 <code>tenantId</code> / <code>tenant_id</code> / <code>id</code>；HTTP 层复验随 S1-TEN-006，R85）</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-12 cody：开始：沿用 Kun 唯一租户上下文，实现租户目录和严格入口/传播，保留真实身份及运营授权端到端验收。</li>\n<li>2026-10-12 cody：完成目录 Definition/Provider、真实受限 PG 主档与单管理员指针、同号并发/编辑版本/不可变号和策略、严格 HTTP 租户边界及 JSON/元数据传播。10 项专项通过；真实运营授权 API、Identity 登录及事件/作业/gRPC 对端适配仍待完成，不以序列化测试替代联调。</li>\n<li>2026-10-12 cody：新增真实 gRPC 客户端/服务端传播适配器：Kestrel HTTP/2 上覆盖 unary/双向及单向流、双租户并发；已验证令牌 claim 必须与 metadata 相同，24 组非法入口业务调用数为零；通过 ErrorCatalog 传递 ErrorDetail。临时 RSA 签发仅用于传输验签测试，不替代真实 Qian Identity；事件与作业适配、运营授权和完整登录仍保留。</li>\n<li>2026-10-12 cody：目录与真实 gRPC 适配已提交 PR #53，428 项全量测试和全部适用 CI 通过；剩余真实运营授权依赖 Authz/Audit，登录依赖 Identity，消息/作业传播依赖 Events/Scheduler。先转入已授权的 AUD-001 必要前置，保留本任务完整验收。</li>\n<li>2026-10-15 claude：S1-DEC-021 / R81：三条验收改口径（运营后台归 TEN-005、登录归 IDP-003、消费端归 EVT-002、作业归 SCH-002、tenantId 规则引用 RT-020），依赖已全部完成，blocked → todo；排序第 1</li>\n<li>2026-10-15 cody：开始</li>\n<li>2026-10-15 cody：验收 2 证据（IT，A 的令牌请求 B 的记录 id 返回 404）：新增 TenantHttpBoundaryTests.真实HTTP_A的令牌请求B的记录id返回404_与不存在无法区分_请求头不能切换租户——真实 Kestrel + JwtBearer（RSA 验签）+ 本组件 TenantRequestBoundary + Data 强制 RLS 的应用角色 qian_app；A→B、B→A 与未知 id 同为 404 NOT_FOUND 且错误文案相同，A 的令牌带 X-Tenant-Id: B 仍只在 A 的范围（读 B 404、读 A 200），无令牌只带头、缺 tenant_id、签名被篡改均 401 UNAUTHENTICATED 且处理器零调用。变异检查：把边界换成信任 X-Tenant-Id 后该用例失败（期望 404 实得 200）。旁证：CRM 参考宿主 CustomerIsolationTests.两租户各千行_真实HTTP签名身份与数据库隔离_列表原SQL使用租户索引（B 的令牌读 A 的记录 404，经 Kun 生产模式租户中间件）与 CustomerCommandTests.真实查询默认不审计_详情显式Audit后入链_跨租户仍是404，本地各 1/1 通过</li>\n<li>2026-10-15 cody：验收 3 证据（IT，gRPC 对端 BeginScope 后可读）：TenantGrpcTests.真实HTTP2四种调用传递租户_双租户并发不串范围_原始调用头不被修改——客户端拦截器经 ITenantContextPropagator.WriteHeaders 写 tenant_id，服务端拦截器在 JWT 验签后经 BeginScope 进入范围，四种调用形态 × 两租户并发，对端读到的 tenant_id 与发送方一致（8 次调用，A、B 各 4 次）；反例 真实服务在读取业务流前拒绝缺失重复冲突元数据_无令牌_篡改签名_缺少claim（6 类元数据 × 4 种形态全部 Unauthenticated，业务调用 0）与 发送端不使用默认租户_拒绝已有冲突或重复字段_不发出网络调用。Qian.Tenancy.Tests 共 14/14（含新增 1 例）</li>\n<li>2026-10-15 cody：验收 4 证据（UT）：前半句 CapabilityContractCheckTests.登记期检查拒绝租户字段_异常带组件_能力_条目内位置与原因码_同一契约只生成一次并只告警一次（tenant-field 规则：顶层 tenantId、嵌套 tenant 均在登记期拒绝并给出条目内 JSON Pointer，HTTP 契约生成走同一检查；该类 3/3）。后半句按 tenancy API 现状核对：本组件尚未发布 HTTP 运营接口，内部写接口 UpdateAsync(id, UpdateTenant) 以资源 id 为目标、CreateTenant 的 id 由服务端生成；TenantBoundaryTests.创建编辑输入不接受tenantId_编辑不能改变租户号和隔离策略 补断言：CreateTenant 与 UpdateTenant 的请求体对 tenantId、tenant_id、id 一律拒绝（JsonUnmappedMemberHandling.Disallow）</li>\n<li>2026-10-15 cody：偏离：① R81 写的是核对后勾选，但现有证据只有 CRM 宿主（用 Kun 中间件）与 DefaultHttpContext 单测，没有覆盖本组件 TenantRequestBoundary 的真实 HTTP 集成测试，故补上述 IT 并给 DTO 单测加断言；只加测试，不改实现。② 背景与 PRD 7.3 列出的 HTTP 运营接口 GET/POST /api/tenancy/tenants、PUT /tenants/{id} 本任务未交付：它需要真实的平台运营授权（S1-AZ-003 的超管旁路或平台权限点），R81 已写明后半句按现状核对。建议裁决：这三个端点连同运营授权由 S1-TEN-005 交付（其页面直接消费，背景已列 GET/PUT /tenants/{id}/admins），depends 加 S1-AZ-003，并在 HTTP 层复验「运营接口的目标租户是资源路径」；或并入已含 POST /tenants/{id}:activate|suspend|resume 的 S1-TEN-002。交复核人定。文档落点：packages/Qian.Tenancy/README.md「验证与剩余验收」按 R81 改写</li>\n<li>2026-10-15 cody：转 review：四条验收全部勾选。本地验证：dotnet build 0 警告 0 错误；check_deps 34 个 Qian 包通过；门禁自测 49/49；dotnet test 全量（QIAN_BUF_PATH / QIAN_OASDIFF_PATH 已设）730 例 729 通过、1 例失败——Qian.Runtime.Tests 的 T25-replace 场景（与本任务无关，单独连跑 6 次 24/24 全过），根因是 PluginLoader.ReconcileCoreAsync 挑选 Pending 节点时不检查旧上下文是否已停止，句柄 Replace 在两次 CleanPendingAsync 之间触发失效时，依赖者会在旧 effect 未撤销的情况下重新 Apply，另行提整改</li>\n<li>2026-10-15 cody：合并后核验：PR #109 已以 merge commit 60169cd7e 并入 main，main 的 push CI（dotnet、docs-and-pm、documentation）全部成功；在其上的 S1-RT-004 分支全量 dotnet test 734/734 零跳过，Qian.Tenancy.Tests 全部通过（含「真实HTTP_A的令牌请求B的记录id返回404_与不存在无法区分_请求头不能切换租户」与运营写入请求体断言）。</li>\n<li>2026-10-15 claude：验收复核（claude，2026-10-15，产品负责人要求「验收 S1-TEN-001」）：对照 main 134b40cc1（PR #109 合并提交 60169cd7e）本机复现——Release 0 警告、check_deps 35 包、门禁 49 项、Qian.Tenancy.Tests 14/14 连跑三遍无偶发、Capabilities 27/27、全量 748/748 零跳过、check_docs 257 文件、pm validate 151 任务；两路只读核对与抽查后四条验收成立，done。验收 1 证据（执行人未记）：TenantBoundaryTests.无认证或仅有请求头_重复或缺失租户claim_均不进入业务（无令牌、仅带头、缺 claim、重复 claim、default 五种身份均 UNAUTHENTICATED 且处理器不执行）与 缺少重复空值跨租户传播均拒绝_…（无 tenant_id 的消息）；「生产模式」是 TenantRequestBoundary 硬编码 Production=true，组件没有非生产路径。验收 2 口径修正三处：404 由 Kun EF 租户全局过滤先于 RLS 产生，该 IT 没有单独隔离 RLS（RLS 已安装并对 qian_app 生效，原生 SQL 证据在 TenantDirectoryTests）；三个 404 文案相同是同一错误码同一行渲染的必然，真正证明「与不存在无法区分」的是处理器调用序列 [A,A,A,B,A,A]；无令牌与坏签名两例的 401 宿主挑战也会给出，唯一归因于边界的是缺 tenant_id 一例；变异检查未入库、只对头优先变体成立。验收 3 证据全部是 PR #53（10-12）与 S1-RT-014（10-13）的既有用例，#109 未改 TenantGrpcTests，与「核对后勾选」一致。验收 4 前半句成立（该类现为 7 个 Fact），后半句按内部 API 与 DTO 现状成立，HTTP 层复验随 S1-TEN-006。偏离 ① 属实（#109 只有 tests、README、pm）；偏离 ② 裁决 R85：HTTP 运营接口另立 S1-TEN-006（depends TEN-001、AZ-003），TEN-005 depends 加 TEN-006，GW-001 探针路由不加依赖。T25-replace 偶发根因已由 S1-RT-023（#112）修复。R81 四条移交均已落地；TEN-005 两条同义验收合并为一条；IDP-003 末句是真实签发令牌下的复验，保留</li>\n</ul>",
   "file": "pm/tasks/S1-TEN-001.md"
  },
  {
@@ -6112,11 +6097,10 @@
    "S1-IDP-004"
   ],
   "blockedBy": [
-   "S1-TEN-001",
    "S1-SCH-001",
    "S1-IDP-004"
   ],
-  "order": 4,
+  "order": 3,
   "readyNow": false,
   "refs": [
    {
@@ -6154,7 +6138,6 @@
    "S1-RT-005"
   ],
   "blockedBy": [
-   "S1-TEN-001",
    "S1-RT-005"
   ],
   "order": 2,
@@ -6201,7 +6184,6 @@
    "S1-AUD-001"
   ],
   "blockedBy": [
-   "S1-TEN-001",
    "S1-RT-004",
    "S1-CFG-003",
    "S1-AUD-001"
@@ -6245,12 +6227,13 @@
   "days": 2.0,
   "depends": [
    "S1-TEN-001",
+   "S1-TEN-006",
    "S1-YUE-007",
    "S1-YUE-008",
    "S1-YUE-009"
   ],
   "blockedBy": [
-   "S1-TEN-001",
+   "S1-TEN-006",
    "S1-YUE-007",
    "S1-YUE-008",
    "S1-YUE-009"
@@ -6270,10 +6253,58 @@
   "updated": "2026-10-15",
   "acceptance": {
    "done": 0,
+   "total": 3
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>运营后台页面：列表 / 筛选、新建 / 编辑抽屉、授权（调 7.14）、管理员维护（<code>GET/PUT /tenants/{id}/admins</code>）、重置密码；用 SchemaForm + DataTable 实现，不出现第二套表单或表格实现。自助申请 / 审核 / 邀请为 S3。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E（含 R81 自 S1-TEN-001 移交的一条，两条同义合并）：运营后台创建租户 A、B（共享库 + RLS）并各设管理员，管理员登录后只看到本租户数据；页面经 S1-TEN-006 的 <code>GET/POST /api/tenancy/tenants</code>、<code>PUT /api/tenancy/tenants/{id}</code> 完成列表、新建与编辑（R85）</li>\n<li class='chk'><span class='box'></span>E2E：租户管理页用 OrganizeSelect / UserSelect / RoleSelect / 授权树完成角色授予</li>\n<li class='chk'><span class='box'></span>代码审查：页面只用 <code>@yue/form</code> SchemaForm 与 <code>@yue/data</code> DataTable，无第二套实现</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-15 claude：S1-DEC-021 / R81：自 S1-TEN-001 移交一条验收（见验收末行）</li>\n<li>2026-10-15 claude：R85：depends 加 S1-TEN-006（页面消费其列表、新建、编辑端点）；R81 移交的一条与原第 1 条同义，合并为一条</li>\n</ul>",
+  "file": "pm/tasks/S1-TEN-005.md"
+ },
+ {
+  "id": "S1-TEN-006",
+  "title": "tenancy HTTP 运营接口：租户列表、新建与编辑（平台主体授权）",
+  "status": "todo",
+  "stage": "S1",
+  "area": "TEN",
+  "areaName": "租户",
+  "wave": 2,
+  "priority": "P0",
+  "type": "feature",
+  "owner": "",
+  "estimate": "2d",
+  "days": 2.0,
+  "depends": [
+   "S1-TEN-001",
+   "S1-AZ-003"
+  ],
+  "blockedBy": [
+   "S1-AZ-003"
+  ],
+  "order": 3,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   },
+   {
+    "path": "docs/decisions/key-decisions-v0.md",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/decisions/key-decisions-v0.md"
+   },
+   {
+    "path": "packages/Qian.Tenancy/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/packages/Qian.Tenancy/README.md"
+   },
+   {
+    "path": "pm/tasks/S1-TEN-001.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/tasks/S1-TEN-001.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 0,
    "total": 4
   },
-  "bodyHtml": "<h4>背景</h4>\n<p>运营后台页面：列表 / 筛选、新建 / 编辑抽屉、授权（调 7.14）、管理员维护（<code>GET/PUT /tenants/{id}/admins</code>）、重置密码；用 SchemaForm + DataTable 实现，不出现第二套表单或表格实现。自助申请 / 审核 / 邀请为 S3。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>E2E：运营后台创建租户 A、B 并各设管理员，管理员登录后只看到本租户数据</li>\n<li class='chk'><span class='box'></span>E2E：租户管理页用 OrganizeSelect / UserSelect / RoleSelect / 授权树完成角色授予</li>\n<li class='chk'><span class='box'></span>代码审查：页面只用 <code>@yue/form</code> SchemaForm 与 <code>@yue/data</code> DataTable，无第二套实现</li>\n<li class='chk'><span class='box'></span>E2E（R81，自 S1-TEN-001 移交）：运营后台创建租户 A、B（共享库 + RLS），各自管理员登录后只看到本租户数据</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-06 planner：创建任务</li>\n<li>2026-10-15 claude：S1-DEC-021 / R81：自 S1-TEN-001 移交一条验收（见验收末行）</li>\n</ul>",
-  "file": "pm/tasks/S1-TEN-005.md"
+  "bodyHtml": "<h4>背景</h4>\n<p>PRD 7.3 API 行的 <code>GET/POST /api/tenancy/tenants</code>、<code>PUT /api/tenancy/tenants/{id}</code> 由本任务交付（R85）。S1-TEN-001 只交付了 <code>ITenantDirectory</code> 内部 API（<code>CreateAsync</code> / <code>UpdateAsync</code> 为 <code>internal</code>，id 由服务端生成，<code>CreateTenant</code> / <code>UpdateTenant</code> 请求体拒绝 <code>tenantId</code> / <code>tenant_id</code> / <code>id</code>）与 HTTP 租户边界；运营接口的调用方是没有租户的平台主体，必须走 S1-AZ-003 的超管旁路显式声明并审计，不能由 <code>TenantRequestBoundary</code> 回退为租户范围。同一资源上的状态迁移端点归 S1-TEN-002，管理员维护归 S1-TEN-005，设置与配额归 S1-TEN-004。消费方：S1-TEN-005 运营后台页面（列表 / 新建 / 编辑抽屉）与 S1-GW-001 的 E2E 探针路由。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>IT：<code>GET/POST /api/tenancy/tenants</code>、<code>PUT /api/tenancy/tenants/{id}</code> 只对平台主体开放：经 S1-AZ-003 的超管旁路放行并审计 <code>bypass = superadmin</code>；未带凭据 401 <code>UNAUTHENTICATED</code>；租户主体的有效令牌 403 <code>AUTHZ_DENIED</code>，不经 <code>TenantRequestBoundary</code> 回退为租户范围</li>\n<li class='chk'><span class='box'></span>IT（R85，承接 S1-TEN-001 验收第 4 条后半句）：目标租户只来自资源路径——<code>PUT</code> 请求体含 <code>tenantId</code> / <code>tenant_id</code> / <code>id</code> 返回 400 且不写入（码按 <code>UseQianErrors</code> 对请求体反序列化失败的既定映射）；<code>POST</code> 的 id 由服务端生成并在响应返回；路径 id 不存在返回 404 <code>NOT_FOUND</code></li>\n<li class='chk'><span class='box'></span>IT：<code>PUT</code> 以 <code>expectedRevision</code> 做乐观并发，过期版本返回 409 <code>CONFLICT</code>；租户号与隔离策略不可经编辑修改（复用 <code>UpdateTenant</code> 契约，不出现第二套 DTO）</li>\n<li class='chk'><span class='box'></span>契约：三个端点进入组件 OpenAPI 契约并经 S1-RT-006 的契约准入；<code>inputSchema</code> 不出现 <code>tenantId</code>（S1-RT-020 <code>tenant-field</code> 规则）；<code>packages/Qian.Tenancy/README.md</code>「验证与剩余验收」改写为已发布，S1-GW-001 的 E2E 探针路由以此为准</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n</ul>",
+  "file": "pm/tasks/S1-TEN-006.md"
  },
  {
   "id": "S1-YUE-001",
@@ -6297,7 +6328,7 @@
    "S1-YUE-006",
    "S1-YUE-009"
   ],
-  "order": 6,
+  "order": 5,
   "readyNow": false,
   "refs": [
    {
@@ -6346,7 +6377,7 @@
    "S1-GW-001",
    "S1-RT-004"
   ],
-  "order": 7,
+  "order": 6,
   "readyNow": false,
   "refs": [
    {
@@ -6636,7 +6667,7 @@
    "S1-YUE-007",
    "S1-IDP-010"
   ],
-  "order": 5,
+  "order": 4,
   "readyNow": false,
   "refs": [
    {
@@ -6681,7 +6712,7 @@
   "blockedBy": [
    "S1-MGW-001"
   ],
-  "order": 2,
+  "order": 1,
   "readyNow": false,
   "refs": [
    {
