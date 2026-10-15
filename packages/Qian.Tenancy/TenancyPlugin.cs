@@ -20,6 +20,9 @@ public sealed class TenancyPlugin : IQianPlugin
         var directory = new PostgresTenantDirectory(ctx.Data());
         ctx.Effect(directory.Dispose);
         ctx.Provide<ITenantDirectory>(TenancyDefinition.Key, directory);
+        var provisioning = new TenantProvisioningOrchestrator(ctx, directory);
+        ctx.Effect(provisioning.Dispose);
+        ctx.Provide<ITenantProvisioning>(TenantProvisioning.Key, provisioning);
         CommandPolicies.Register(ctx, CommandPolicyKind.Tenancy, async (invocation, next) =>
         {
             var tenant = await directory.GetByIdAsync(Guid.Parse(invocation.Principal.TenantId!), invocation.CancellationToken).ConfigureAwait(false);
