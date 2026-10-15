@@ -34,7 +34,7 @@ if (result.IsValid)
 
 `metadata/*.json` 使用同一个 JSON 解析器和路径边界，支持显式目录（包含组件根目录），只读取该目录第一层 JSON 文件；返回 `kind: metadata` 的原始文档快照，并应用通用敏感值检查。目录指向文件、重复键、非法 JSON 或链接均被拒绝。权限点、默认角色、事件等业务 Schema 由各 seam 在登记/发布时验证；解析通过不代表角色授权或安装准入通过。
 
-工具／技能引用从本组件与调用方目录解析；离线时未知的跨组件引用为 warning，`CatalogComplete=true` 时为 error。Qian 事件来自共同事件矩阵或宿主目录；未知大驼峰 Agent 事件告警并透传。hook handler、命令能力和服务方法需由宿主提供已解析目录，不会靠试运行代码推测。
+工具／技能引用从本组件与调用方目录解析；离线时未知的跨组件引用为 warning，`CatalogComplete=true` 时为 error。`inject[]` 只在宿主给出 `ServiceKeys`（目标装配中已有 Provider 的服务键，含具名注册）时检查：给出即视为完整目录，目录外的键为 error，`optionalInject` 不检查；注册表的候选登记总会带上预装组件的 provides。Qian 事件来自共同事件矩阵或宿主目录；未知大驼峰 Agent 事件告警并透传。hook handler、命令能力和服务方法需由宿主提供已解析目录，不会靠试运行代码推测。
 
 结构校验使用 JSON Schema 2020-12，工具词汇引用冻结 capability-entry 的 `$defs`。工具输入不能包含嵌套租户字段；有副作用时要求幂等键；描述哈希按 RFC 8785 的 IEEE-754 数值域与 UTF-16 字段顺序计算。`ToolContractHash.Compute` 只返回哈希，不擅自改写组件文件。
 
@@ -71,7 +71,7 @@ if (result.IsValid)
 
 [无代码技能场景](../../tck/runtime/skill-only.json) 另覆盖真实交付的 minimal profile 装配：组件只有清单与 SKILL.md，没有 runtime 声明或 src，两端均能装入租户 A、进入配置输出与 Skills/Tools，租户 B 不可见，卸载无残留。共享反例还验证任意 shell hook、服务端内联 shell 和未授权内联 shell 在创建运行时表面插件时即被拒绝；明确允许的人类 CLI 声明可以通过加载准入。这不代表本包实现了人类 CLI 的 shell 执行器。
 
-当前已接入下节的 hook 执行增量与运行态诊断；完整事件矩阵、真实开户事件生产方及生产注册表变更触发仍未完成，RT-009 保持 doing。本次还修正运行时手动撤销注册后的效果栈清理；TypeScript 运行时需要在后续发布流程发布新的兼容补丁版本，不能覆盖已发布的 0.1.0。
+当前已接入下节的 hook 执行增量与运行态诊断。按 R83，RT-009 的 hooks 桥接验收以测试宿主经真实 qian.tenancy 生产方上下文发布的租户事件为准，四项验收均有证据（见下节末段）；完整事件矩阵、真实开户事件生产方（S1-TEN-003）与 registry/entry-mounted 等生产方接线仍未完成。本次还修正运行时手动撤销注册后的效果栈清理；TypeScript 运行时需要在后续发布流程发布新的兼容补丁版本，不能覆盖已发布的 0.1.0。
 
 ### 运行态诊断
 
@@ -89,4 +89,6 @@ if (result.IsValid)
 
 桥接执行时重新读取当前 scope 的 hook 文档与处理器；隐藏、卸载及目标撤销均不能沿旧声明继续调用。`ISurfaceRuntimeValidator` 在热替换之前复核实际依赖。修改 matcher 或目标后，实际文件监视会更新下一次事件的执行行为，不重放代码 Apply。
 
-真库验收使用经过 RS256 认证的 HTTP 入口、实际 Tenancy 生产方上下文、真实事件分发、客户能力、RBAC、Outbox 和 Audit。它证明桥接、通道隔离、权限拒绝、不可见声明不执行、缺失 handler 装载失败以及文件热更新；测试入口不执行租户完整开户或开通编排，不能据此关闭“租户创建触发”的整项验收。HTTP/受限 argv 执行器、其它分发模式与真实生产方流程接线仍未完成，目前这些未支持声明会拒绝装载。
+真库验收使用经过 RS256 认证的 HTTP 入口、实际 Tenancy 生产方上下文、真实事件分发、客户能力、RBAC、Outbox 和 Audit。它证明桥接、通道隔离、权限拒绝、不可见声明不执行、缺失 handler 装载失败以及文件热更新。测试入口不执行租户完整开户或开通编排：R83 把「租户创建触发」的验收改为测试宿主发布事件，真实开户流程的触发归 S1-TEN-003。
+
+hooks.json 的 Qian 事件名按 R39 的固定矩阵是 `<domain>/<event>`，租户创建对应 `tenant/provisioned`。验收原文写的 `tenant.created.v1` 是跨进程集成事件 ID（ADR-008 D8.7），hooks 校验器不接受它作触发名；要让集成事件触发 hooks，需要事件订阅端（S1-EVT-002）把它转成进程内事件。这条衔接已登记到 S1-TEN-003 的日志，随真实开户触发一并处理，归属待复核裁决。HTTP / 受限 argv 执行器与其它分发模式仍未完成，目前这些未支持的声明会拒绝装载。

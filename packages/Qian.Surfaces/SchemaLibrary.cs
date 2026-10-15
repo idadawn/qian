@@ -40,7 +40,8 @@ internal sealed class SchemaLibrary
             var pointer = item.InstanceLocation.ToString();
             foreach (var keyword in item.Errors.Keys)
             {
-                if (keyword is "allOf" or "anyOf" or "oneOf" or "if" or "then" or "else" or "$ref" or "$dynamicRef" or "properties" or "items" or "prefixItems" or "patternProperties") continue;
+                // propertyNames 的子约束已按出错的属性名定位，父级汇总不再重复报告。
+                if (keyword is "allOf" or "anyOf" or "oneOf" or "if" or "then" or "else" or "$ref" or "$dynamicRef" or "properties" or "items" or "prefixItems" or "patternProperties" or "propertyNames") continue;
                 var schema = AtSchema(item.SchemaLocation);
                 var instance = At(data, pointer);
                 if (keyword == "required" && schema is { } schemaValue && schemaValue.TryGetProperty("required", out var required) && instance is { ValueKind: JsonValueKind.Object } parent)

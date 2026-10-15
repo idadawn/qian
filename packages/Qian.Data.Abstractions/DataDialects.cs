@@ -11,7 +11,7 @@ public static class DataDialectContract
     public const string Registry = "Data.Dialects";
 }
 
-/// <summary>连通测试的目标；不含凭据。</summary>
+/// <summary>连通测试的目标；不含凭据。由平台交给方言时，Host 已是通过出网检查的 IP 地址，方言不得再解析档案里的主机名。</summary>
 public sealed record DataConnectionTarget(string Host, int Port, string Database, string UserName, string? Schema = null, string? Encoding = null);
 
 /// <summary>一次成功探测得到的服务端信息。</summary>
@@ -25,8 +25,8 @@ public interface IDataDialect
 
     /// <summary>
     /// 用驱动的连接串构建器（不拼接字符串）打开一次连接并执行只读探测，超过 <paramref name="timeout"/> 视为不可达。
-    /// 网络不可达或超时抛 DATA_CONNECTION_UNREACHABLE，服务端拒绝（认证、库、schema、权限、参数）抛 DATA_CONNECTION_REJECTED；
-    /// 错误不得携带口令或驱动原文。
+    /// 网络不可达或超时抛 DATA_CONNECTION_UNREACHABLE，服务端拒绝（认证、库、schema、权限、参数）抛 DATA_CONNECTION_REJECTED，
+    /// 密钥内容不能用作口令时抛 DATA_CONNECTION_CREDENTIAL_INVALID；错误不得携带口令或驱动原文。
     /// </summary>
     ValueTask<DataConnectionProbe> ProbeAsync(DataConnectionTarget target, SecretValue password, TimeSpan timeout, CancellationToken cancellationToken = default);
 }

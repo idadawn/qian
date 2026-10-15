@@ -140,6 +140,33 @@ class RuleTests(unittest.TestCase):
         self.assertEqual([], violations("Qian.Bundle.Base", assets))
 
 
+class SdkBoundaryTests(unittest.TestCase):
+    """S1-RT-014：SDK 的传递依赖不得出现 Provider 包与 Qian.Registry / Qian.Lifecycle / Qian.Capabilities。"""
+
+    def test_sdk_transitive_provider_and_platform_plugins_are_reported(self):
+        # 经 Definition、第三方包或另一个 SDK 包间接带入也算：门禁按完整依赖闭包检查，不只看直接引用。
+        assets = make_assets(
+            direct=["Qian.Data.Abstractions", "Qian.Plugin.Sdk.Extras", "Some.Vendor"],
+            edges={
+                "Qian.Data.Abstractions": ["Qian.Data"],
+                "Qian.Data": [],
+                "Qian.Plugin.Sdk.Extras": ["Qian.Registry"],
+                "Qian.Registry": [],
+                "Some.Vendor": ["Qian.Lifecycle", "Qian.Capabilities"],
+                "Qian.Lifecycle": [],
+                "Qian.Capabilities": [],
+            },
+            projects={"Qian.Data.Abstractions", "Qian.Data", "Qian.Plugin.Sdk.Extras", "Qian.Registry"},
+        )
+        found = {(v.dependency, v.role, " → ".join(v.path)) for v in violations("Qian.Plugin.Sdk", assets)}
+        self.assertEqual({
+            ("Qian.Data", "provider", "Qian.Plugin.Sdk → Qian.Data.Abstractions → Qian.Data"),
+            ("Qian.Registry", "platform-plugin", "Qian.Plugin.Sdk → Qian.Plugin.Sdk.Extras → Qian.Registry"),
+            ("Qian.Lifecycle", "platform-plugin", "Qian.Plugin.Sdk → Some.Vendor → Qian.Lifecycle"),
+            ("Qian.Capabilities", "platform-plugin", "Qian.Plugin.Sdk → Some.Vendor → Qian.Capabilities"),
+        }, found)
+
+
 class DefinitionKunRuleTests(unittest.TestCase):
     def test_definition_rejects_kun_implementation_package(self):
         assets = make_assets(["Kun.EventBus"], {"Kun.EventBus": ["StackExchange.Redis"], "StackExchange.Redis": []})
@@ -209,6 +236,40 @@ class SampleProjectTests(unittest.TestCase):
             ("Qian.GateSample.Notify → Qian.GateSample.Authz", "provider"),
             ("Qian.GateSample.Reports → Qian.GateSample.Files.Abstractions → Qian.GateSample.Authz", "provider"),
         }, found)
+
+
+@NEEDS_DOTNET
+class RealSdkClosureTests(unittest.TestCase):
+    """S1-RT-014：仓库里真实的 SDK 包族在 CI 的依赖图门禁范围内，其完整传递依赖只有 Runtime / SDK / Definition 与第三方包。
+
+    读已还原的 project.assets.json（CI 在本步之前已构建解决方案）；包被移出解决方案或改名时本测试失败，门禁不会静默跳过它。
+    """
+
+    SDK_PROJECTS = {
+        "Qian.Plugin.Sdk": "packages/Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj",
+        "Qian.Plugin.Sdk.AspNetCore": "packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj",
+        "Qian.Plugin.Sdk.Generators": "packages/Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj",
+    }
+
+    def test_real_sdk_closure_has_no_provider_or_platform_plugin(self):
+        solution = set(check_deps.solution_projects(ROOT / "Qian.slnx"))
+        for package_id, relative in self.SDK_PROJECTS.items():
+            with self.subTest(package=package_id):
+                project = (ROOT / relative).resolve()
+                self.assertIn(project, solution, "SDK 包必须在 Qian.slnx 里，CI 的依赖图门禁才会检查它")
+                props = check_deps._properties(project)
+                self.assertEqual(("true", package_id), (props.get("QianIsPackage"), props.get("QianPackageId")))
+                assets_file = Path(props["ProjectAssetsFile"])
+                self.assertTrue(assets_file.exists(), f"缺少 {assets_file}：先 dotnet restore Qian.slnx")
+                assets = check_deps._load(assets_file)
+                closure = {key.split("/", 1)[0] for framework, entries in assets["targets"].items() if "/" not in framework for key in entries}
+                roles = {name: check_deps.role_of(name) for name in closure}
+                self.assertEqual([], sorted(name for name, role in roles.items() if role not in check_deps.ALLOWED_ROLES))
+                self.assertFalse({"qian.registry", "qian.lifecycle", "qian.capabilities"} & {name.lower() for name in closure})
+                self.assertEqual([], check_deps.evaluate([check_deps.Package(package_id, project, assets_file)], check_deps._load))
+                if package_id != "Qian.Plugin.Sdk.Generators":
+                    # 读到的是真实依赖图而不是空图：运行时包确实在闭包里。
+                    self.assertIn("Qian.Runtime", closure)
 
 
 if __name__ == "__main__":

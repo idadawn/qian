@@ -1,6 +1,6 @@
 # Qian.Data
 
-Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。参考应用数据验收已补齐，SDK / CLI 的完整代码安装仍有后续门禁，当前进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
+Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。参考应用数据验收、SDK 源生成与私有源发布、`qian add data` 真实安装三道门均已通过，进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
 
 ## 跨宿主租户模型
 
@@ -54,6 +54,35 @@ ALTER DEFAULT PRIVILEGES FOR ROLE qian_owner GRANT SELECT, INSERT, UPDATE, DELET
 K8s 迁移 Job 以 `--migrate-only` 启动宿主（`QianDataMigrationExtensions.IsMigrateOnly`），迁移完即退出。在线副本启动时只校验：上下文带有迁移而数据库还有未应用项时拒绝启动，提示先跑迁移任务。
 
 迁移用 `dotnet ef migrations add` 生成，放在所属 Provider 包的 Migrations 目录；仓库 `.editorconfig` 把该目录按生成代码处理。迁移执行时仍经 Qian 迁移生成器，租户表自动带上强制 RLS。
+
+### 迁移执行与 RLS 核查
+
+租户表的 `ENABLE` / `FORCE ROW LEVEL SECURITY` 与两条策略（`qian_tenant_access` 宽松、`qian_tenant_guard` 限制）不写在迁移文件里，由 `QianPostgresMigrationsSqlGenerator` 在迁移**执行期**紧跟每条 `CREATE TABLE` 生成。所以迁移必须经 `AddQianData<T>` 登记的 `IDataMigrator` 执行，也就是上文以 `--migrate-only` 启动的迁移任务。
+
+直接 `dotnet ef database update`（或 `dotnet ef migrations script` 后手工执行）走的是 `dotnet ef` 自己建的上下文：设计时入口没有经 `AddQianData<T>` 装配时，用的是 Npgsql 默认生成器，建出的租户表没有 RLS 与策略，租户隔离只剩查询过滤器。在线副本的启动检查会拒绝非 Qian 的迁移生成器，也会拒绝还有未应用迁移的数据库，但不检查已经建好的表有没有策略。曾绕过迁移任务建表的库，用下面的 SQL 逐表核查（以迁移属主或有权读 `information_schema` 的角色执行）：
+
+```sql
+-- 每张租户表（tenant_id 非空）应 rls、force_rls 都为 t，policies 恰为
+-- qian_tenant_access(PERMISSIVE), qian_tenant_guard(RESTRICTIVE)；有任何一行不符，说明该表绕过了 Qian 迁移生成器。
+SELECT c.table_schema, c.table_name, k.relrowsecurity AS rls, k.relforcerowsecurity AS force_rls,
+       string_agg(p.policyname || '(' || p.permissive || ')', ', ' ORDER BY p.policyname) AS policies
+FROM information_schema.columns c
+JOIN pg_namespace n ON n.nspname = c.table_schema
+JOIN pg_class k ON k.relnamespace = n.oid AND k.relname = c.table_name AND k.relkind = 'r'
+LEFT JOIN pg_policies p ON p.schemaname = c.table_schema AND p.tablename = c.table_name
+WHERE c.table_schema LIKE 'plugin\_%' AND c.column_name = 'tenant_id' AND c.is_nullable = 'NO'
+GROUP BY c.table_schema, c.table_name, k.relrowsecurity, k.relforcerowsecurity
+ORDER BY c.table_schema, c.table_name;
+```
+
+`dotnet ef` 的设计时入口要经 `AddQianData<T>` 取上下文，模型才与运行时一致（命名约定、租户标记、Outbox 表）。组件包不能为此依赖本包（依赖门禁只允许 Abstractions），所以 `IDesignTimeDbContextFactory<T>` 放在组件的测试项目里，以它作启动项目。以能力上下文为例（`tests/Qian.Capabilities.Tests/CapabilitiesDesignTimeFactory.cs`）：
+
+```bash
+dotnet ef migrations has-pending-model-changes --project packages/Qian.Capabilities --startup-project tests/Qian.Capabilities.Tests --context CapabilitiesDbContext
+dotnet ef migrations add <名称> --project packages/Qian.Capabilities --startup-project tests/Qian.Capabilities.Tests --context CapabilitiesDbContext --output-dir Migrations
+```
+
+生成的迁移类改为 `internal`，不进入组件的公开 API。
 
 ## 分布式 ID
 
@@ -120,14 +149,21 @@ services.AddQianSecrets(new SecretResolverOptions
 - 表 `data_connections` 与序号表同在 plugin_qian_data，是同一个系统上下文：`AddQianSequences` 与本方法共用，两处的连接配置必须解析出同一个连接串，否则创建上下文时拒绝。
 - 它是租户表，强制 RLS；名称在租户内唯一，软删后可以复用；系统列沿用 AggregateRoot 约定（审计主体、xmin）。
 - 档案记录方言、主机、端口、库、用户名、可选 schema 与编码。口令只以租户作用域的 secretRef 保存：`secretRef://tenant/<路径>` 按当前租户解析。platform / dev 引用一律拒绝，避免租户借平台凭据连接任意主机。
-- `TestAsync` 在使用点经宿主密钥策略（`ForHost(SecretPolicyId, 当前租户)`，默认策略 ID 为 qian.data）解析口令，交给方言探测，用后即释放。成功返回服务端版本与耗时；失败为结构化错误：
-  - 网络不可达或超时：DATA_CONNECTION_UNREACHABLE，可重试；
+- `TestAsync` 先做出网检查（见下），再在使用点经宿主密钥策略（`ForHost(SecretPolicyId, 当前租户)`，默认策略 ID 为 qian.data）解析口令，交给方言探测，用后即释放。成功返回服务端版本与耗时；失败为结构化错误：
+  - 目标不在允许的出网范围内：DATA_CONNECTION_TARGET_DENIED，此时既不连接也不读取密钥；
+  - 网络不可达、域名解析失败或超时：DATA_CONNECTION_UNREACHABLE，可重试；
   - 服务端拒绝：DATA_CONNECTION_REJECTED，reason 为 authentication、database、schema、permission、parameter 或 server；
+  - 密钥内容不能用作口令（如 PG 要求 UTF-8 文本）：DATA_CONNECTION_CREDENTIAL_INVALID；
   - 密钥无权解析或缺失：SECRET_* 错误。
-- 超时由 `QianDataConnectionOptions.TestTimeout` 控制，1 秒到 1 分钟，默认 5 秒。
+- 超时由 `QianDataConnectionOptions.TestTimeout` 控制，含解析目标主机，1 秒到 1 分钟，默认 5 秒。
+- 出网检查由 `QianDataConnectionOptions.Egress` 控制：
+  - 目标主机解析出的每个地址都须通过，任一地址被拒即整体拒绝；连接只用检查过的地址，不再二次解析，并像驱动一样按顺序尝试，某个地址不可达才换下一个（如双栈主机先 ::1 后 127.0.0.1）。IP 字面量的变形写法（如 `127.1`、`0x7f.0.0.1`）按解析后的地址判定。
+  - `BlockedNetworks` 一律拒绝，优先于放行网段。缺省含回环、链路本地（含云元数据 169.254.169.254）、100.100.100.200（阿里云元数据）、未指定地址、组播与广播。可追加集群内部网段（如 K3s 的 10.42.0.0/16、10.43.0.0/16）；本机开发可移除回环。
+  - `AllowedNetworks` 非空时，只放行落在其中的地址，如租户数据库所在子网。
+  - 网段写作 CIDR，写法无效时宿主启动即失败。`Egress.Permits(address)` 可供宿主复用同一判定。
 - 详情与列表只返回 secretRef；任何响应、错误与审计记录都不含口令。
 
-连通测试会从平台向档案中的主机出网（Agent 契约标 external）。生产环境要用 NetworkPolicy 或出口代理限定可达网段；测试权限点单列为 qian.data:connection:test。
+连通测试会从平台向档案中的主机出网（Agent 契约标 external）。上面的出网检查只是进程内的一道防线，完整的出口代理与 SSRF 基线按 PRD 7.19 归 S2；生产环境仍要用 NetworkPolicy 或出口代理限定可达网段；测试权限点单列为 qian.data:connection:test。
 
 | 错误码 | HTTP | 含义 |
 |---|---|---|
@@ -137,8 +173,10 @@ services.AddQianSecrets(new SecretResolverOptions
 | DATA_FIELD_DEFINITION_INVALID | 422 | 字段定义不满足方言约束，errors[] 为 DATA_FIELD_OUT_OF_RANGE、DATA_FIELD_FACET_UNSUPPORTED、DATA_FIELD_RANGE_INVERTED 或 VALUE_NOT_ALLOWED |
 | DATA_CONNECTION_NOT_FOUND | 404 | 当前租户没有该连接 |
 | DATA_CONNECTION_NAME_CONFLICT | 409 | 当前租户已有同名连接 |
-| DATA_CONNECTION_UNREACHABLE | 422 | 网络不可达或超时，可重试 |
+| DATA_CONNECTION_UNREACHABLE | 422 | 网络不可达、域名解析失败或超时，可重试 |
 | DATA_CONNECTION_REJECTED | 422 | 数据库拒绝连接 |
+| DATA_CONNECTION_TARGET_DENIED | 422 | 连接目标不在允许的出网范围内，未连接 |
+| DATA_CONNECTION_CREDENTIAL_INVALID | 422 | 密钥内容不能用作该数据库的口令，未连接 |
 
 ## 删除审计
 
@@ -148,7 +186,7 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 
 本目录已有 DataPlugin 的实际入口和生命周期，契约放在 Qian.Data.Abstractions，业务组件只依赖 Definition。组件接受 dialect=pg、rls.enforce=true 和可选 connection 引用。带连接引用的 AddQianData 重载将上下文绑定到 platform/dev secretRef，凭据由宿主工厂在每次创建上下文时读取；组件的 connection 选择对应的上下文集合，未登记的引用或上下文会被拒绝。省略 connection 时沿用各上下文自身的配置，方便按组件使用独立 schema 和受限角色。租户挂载的 Data 只接受相同租户上下文，租户自带业务库仍在 S3 范围。
 
-按已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，数据本体先交付以解除注册表的实现前置。`plugins/qian.data` 仍保留配置骨架标记；SDK 代码字段源生成、默认装配与私有 NuGet 锁步发布由 S1-RT-014 回验，真实 `qian add data` 代码安装与 Provider 运行由 S1-RT-011 回验。这些门禁通过前，不宣称完整组件安装或正式私有发布已经完成。
+按已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，数据本体先交付以解除注册表的实现前置。S1-RT-014 已回验第二阶段的 SDK 部分：清单的代码字段由源生成器派生（CI 以真实 Data 程序集 check；Qian.Data.Tests 按清单的 runtime.entry 装载真实 Provider，会话默认带租户填充、过滤与 RLS），包族经 main 上的 dotnet-release 工作流锁步发布到 GitHub Packages，发布与从该源真实还原的证据记在 S1-RT-014 日志。S1-RT-011 回验了第三阶段：空白 ASP.NET Core 项目经签名市场执行 `qian add data events config`，`Qian.Data` 按清单的精确版本从私有源还原、归档摘要与清单一致，宿主按 runtime.entry 挂载的 Provider 就绪，`qian remove` 逆序撤销（`packages/qian-cli/test/private-feed.e2e.mjs`，CI 用带读包权限的令牌运行）。`plugins/qian.data` 随之移除配置骨架标记；发布新版本后须同步清单 `runtime.nuget` 的版本与摘要。
 
 ## 模型体验
 
@@ -156,7 +194,7 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 
 ## 已知限制与延期项
 
-真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。samples/Qian.Sample.Crm 已通过真实签名身份、HTTP 与 PostgreSQL 的千行双租户及原 SQL 索引验收。SDK 源生成、私有发布与代码安装尚待后续任务验收；S1-DEC-017 / S1-DEC-018 均已批准并落实到对应验收边界。
+真实测试覆盖角色边界、自动迁移、空租户/跨租户写拒绝、数据约定、软删审计、同上下文 Outbox 原子性、不同上下文的缓冲隔离以及卸载释放。samples/Qian.Sample.Crm 已通过真实签名身份、HTTP 与 PostgreSQL 的千行双租户及原 SQL 索引验收。代码安装尚待 S1-RT-011 验收；S1-DEC-017 / S1-DEC-018 均已批准并落实到对应验收边界。
 
 迁移协调、序号服务与雪花 ID 由 S1-DATA-002 交付，真实 PostgreSQL / Redis 测试覆盖两副本同时迁移、100 并发取号、规则修改与周期重置、三副本 WorkerId 互斥及正常停止和崩溃后的编号回收。它们目前以宿主装配（AddQianSequences、AddQianSnowflakeIds）提供，DataPlugin 还没有对应的服务键；业务组件经插件上下文取用要等组件安装验收一并补齐。其余组件的表还没有包内迁移，迁移任务对它们不执行 DDL。
 

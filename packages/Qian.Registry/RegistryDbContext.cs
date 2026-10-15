@@ -50,13 +50,16 @@ public sealed class RegistryDbContext(DbContextOptions<RegistryDbContext> option
             entity.Property(row => row.Revision).IsConcurrencyToken();
             entity.Property(row => row.UpdatedBy).HasMaxLength(200).IsRequired();
             entity.Property(row => row.UpdatedAt).HasColumnType("timestamp with time zone");
+            entity.Ignore(row => row.DomainEvents);
         });
     }
 }
 
 // 撤销保留内部墓碑和修订，避免删除/重建后接受旧客户端的相同修订（ABA）。
-internal sealed class ScopePatchRow : IMultiTenant
+// 公开挂载 / 卸载经领域事件把集成事件放进同一事务的 Outbox；内部持久化原语不登记事件。
+internal sealed class ScopePatchRow : IMultiTenant, IAggregateRoot
 {
+    private List<IDomainEvent>? _changes;
     public string TenantId { get; set; } = "";
     public string Scope { get; set; } = "";
     public string EntryId { get; set; } = "";
@@ -71,6 +74,9 @@ internal sealed class ScopePatchRow : IMultiTenant
     public string UpdatedBy { get; set; } = "";
     public DateTimeOffset UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _changes ?? [];
+    public void ClearDomainEvents() => _changes?.Clear();
+    internal void Raise(IDomainEvent change) => (_changes ??= []).Add(change);
 }
 
 // 注册表的全局候选目录；公开管理写入必须另经平台权限，Submitted 不可作为挂载依据。

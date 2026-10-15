@@ -241,13 +241,16 @@ public sealed partial class PluginLoader : IAsyncDisposable
 
     private async Task ReconcileCoreAsync(CancellationToken ct)
     {
-        await CleanPendingAsync().ConfigureAwait(false);
         while (true)
         {
+            await CleanPendingAsync().ConfigureAwait(false);
             Node? node;
             lock (Sync)
             {
                 if (_disposed) return;
+                // 清理快照之后，其它线程的 Replace、撤销或 restriction 变更可能又让依赖者回到 Pending；
+                // 旧上下文撤销完之前不能重新 Apply，否则旧效果与旧注册泄漏，新 Apply 的 Provide 还会撞冲突。
+                if (_nodes.Any(n => n.State == PluginState.Pending && n.Context is not null)) continue;
                 node = _nodes.FirstOrDefault(n => !n.Removing && n.State == PluginState.Pending && n.Inject.All(k => Find(k, n.Entry.Scope) is not null));
                 if (node is null) return;
                 ct.ThrowIfCancellationRequested();
@@ -276,7 +279,6 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 await StopAsync(node).ConfigureAwait(false);
                 if (error is OperationCanceledException && ct.IsCancellationRequested) throw;
             }
-            await CleanPendingAsync().ConfigureAwait(false);
         }
     }
 

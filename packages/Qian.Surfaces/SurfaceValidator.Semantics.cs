@@ -13,6 +13,14 @@ public sealed partial class SurfaceValidator
         {
             if (Strings(_manifest, "inject").Intersect(Strings(_manifest, "provides"), StringComparer.Ordinal).Any())
                 Error(ManifestFile, "/provides", SurfaceErrors.Policy, "inject 与 provides 不能相交。");
+            // 宿主给出目标装配的服务键目录时，inject 必须全部有 Provider（PRD 7.2.1）；optionalInject 允许缺席。
+            if (options.ServiceKeys is { } provided)
+            {
+                var inject = Strings(_manifest, "inject");
+                for (var index = 0; index < inject.Length; index++)
+                    if (!provided.Contains(inject[index], StringComparer.Ordinal))
+                        Error(ManifestFile, "/inject/" + index, SurfaceErrors.Reference, "inject 的服务键在目标装配中没有 Provider。");
+            }
             var policy = _manifest.GetProperty("policy");
             if (_id.StartsWith("qian.", StringComparison.Ordinal) && _tier is not ("system" or "official"))
                 Error(ManifestFile, "/id", SurfaceErrors.Policy, "qian. 前缀保留给平台与官方组件。");

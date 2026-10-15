@@ -5,8 +5,14 @@ using Qian.Data;
 namespace Qian.Authz;
 
 /// <summary>权限目录上下文；连接、迁移和应用角色校验由 Data 的强制装配提供。</summary>
-public sealed class AuthzDbContext(DbContextOptions<AuthzDbContext> options, ITenantContext tenant) : QianDbContext(options, tenant)
+public class AuthzDbContext : QianDbContext
 {
+    /// <summary>普通租户上下文：角色、主体绑定与授权只读写当前租户的行，平台行（tenant_id 为 null）不可见。</summary>
+    public AuthzDbContext(DbContextOptions<AuthzDbContext> options, ITenantContext tenant) : this(options, tenant, false) { }
+    /// <summary>显式平台模式只改变查询投影；实际平台权限由独立数据库登录角色与 RLS 约束（<see cref="AuthzPlatformAccess"/>）。</summary>
+    protected AuthzDbContext(DbContextOptions options, ITenantContext tenant, bool platform) : base(options, tenant) => PlatformMode = platform;
+    private bool PlatformMode { get; }
+
     /// <summary>Authz 拥有的独立 schema。</summary>
     public const string Schema = "plugin_qian_authz";
     internal DbSet<PermissionCatalogRow> Catalogs => Set<PermissionCatalogRow>();
@@ -17,6 +23,7 @@ public sealed class AuthzDbContext(DbContextOptions<AuthzDbContext> options, ITe
     internal DbSet<RoleAssignmentRow> RoleAssignments => Set<RoleAssignmentRow>();
     internal DbSet<RoleGrantRow> Grants => Set<RoleGrantRow>();
     internal DbSet<TenantPolicyInstallRow> PolicyInstalls => Set<TenantPolicyInstallRow>();
+    internal DbSet<TenantAuthzRevisionRow> Revisions => Set<TenantAuthzRevisionRow>();
     // 查询过滤器读取当前 DbContext 成员，不捕获首次建模时的访问器。
     private string? ScopeTenant => TenantIdForModelCacheKey;
 
@@ -28,9 +35,10 @@ public sealed class AuthzDbContext(DbContextOptions<AuthzDbContext> options, ITe
             entity.ToTable("roles"); entity.HasKey(row => row.Id);
             entity.Property(row => row.TenantId).HasMaxLength(200).IsRequired(false);
             entity.Property(row => row.Code).HasMaxLength(128).IsRequired(); entity.Property(row => row.SourcePack).HasMaxLength(384);
-            entity.HasIndex(row => new { row.TenantId, row.Code }).IsUnique();
+            // 平台角色的 tenant_id 为 null，唯一性须把 null 视为同一值，否则平台角色可重复建出。
+            entity.HasIndex(row => new { row.TenantId, row.Code }).IsUnique().AreNullsDistinct(false);
             entity.HasAnnotation("Qian:MultiTenant", true);
-            entity.HasQueryFilter(row => row.TenantId != null && row.TenantId == ScopeTenant);
+            entity.HasQueryFilter(row => PlatformMode ? row.TenantId == null : row.TenantId != null && row.TenantId == ScopeTenant);
         });
         modelBuilder.Entity<RoleAssignmentRow>(entity =>
         {
@@ -38,10 +46,10 @@ public sealed class AuthzDbContext(DbContextOptions<AuthzDbContext> options, ITe
             entity.Property(row => row.TenantId).HasMaxLength(200).IsRequired(false);
             entity.Property(row => row.SubjectType).HasMaxLength(32).IsRequired(); entity.Property(row => row.SubjectId).HasMaxLength(200).IsRequired();
             entity.Property(row => row.AssignedBy).HasMaxLength(200).IsRequired();
-            entity.HasIndex(row => new { row.TenantId, row.RoleId, row.SubjectType, row.SubjectId }).IsUnique();
+            entity.HasIndex(row => new { row.TenantId, row.RoleId, row.SubjectType, row.SubjectId }).IsUnique().AreNullsDistinct(false);
             entity.HasOne<AuthzRoleRow>().WithMany().HasForeignKey(row => row.RoleId).OnDelete(DeleteBehavior.Cascade);
             entity.HasAnnotation("Qian:MultiTenant", true);
-            entity.HasQueryFilter(row => row.TenantId != null && row.TenantId == ScopeTenant);
+            entity.HasQueryFilter(row => PlatformMode ? row.TenantId == null : row.TenantId != null && row.TenantId == ScopeTenant);
         });
         modelBuilder.Entity<RoleGrantRow>(entity =>
         {
@@ -53,7 +61,8 @@ public sealed class AuthzDbContext(DbContextOptions<AuthzDbContext> options, ITe
             entity.HasIndex(row => new { row.TenantId, row.RoleId, row.PluginId, row.PermissionCode, row.Source }).IsUnique();
             entity.HasOne<AuthzRoleRow>().WithMany().HasForeignKey(row => row.RoleId).OnDelete(DeleteBehavior.Cascade);
             entity.HasAnnotation("Qian:MultiTenant", true);
-            entity.HasQueryFilter(row => row.TenantId != null && row.TenantId == ScopeTenant);
+            // 平台角色不经授权表放行（超管只走显式旁路），平台模式下授权表恒为空。
+            entity.HasQueryFilter(row => !PlatformMode && row.TenantId != null && row.TenantId == ScopeTenant);
         });
         modelBuilder.Entity<TenantPolicyInstallRow>(entity =>
         {
@@ -61,6 +70,12 @@ public sealed class AuthzDbContext(DbContextOptions<AuthzDbContext> options, ITe
             entity.Property(row => row.TenantId).HasMaxLength(200); entity.Property(row => row.PluginId).HasMaxLength(128);
             entity.Property(row => row.Version).HasMaxLength(200).IsRequired(); entity.Property(row => row.UpdatedBy).HasMaxLength(200).IsRequired();
             entity.Property(row => row.Revision).IsConcurrencyToken();
+        });
+        modelBuilder.Entity<TenantAuthzRevisionRow>(entity =>
+        {
+            // 租户内任一角色、绑定、授权或策略安装变更都在同一事务里递增；判定快照缓存以它为键，跨宿主立即失效。
+            entity.ToTable("tenant_authz_revisions"); entity.HasKey(row => row.TenantId);
+            entity.Property(row => row.TenantId).HasMaxLength(200); entity.Property(row => row.UpdatedBy).HasMaxLength(200).IsRequired();
         });
         modelBuilder.Entity<PermissionCatalogRow>(entity =>
         {
@@ -166,3 +181,13 @@ internal sealed class TenantPolicyInstallRow : Kun.Core.Domain.IMultiTenant
     public int Revision { get; set; }
     public string UpdatedBy { get; set; } = "";
 }
+internal sealed class TenantAuthzRevisionRow : Kun.Core.Domain.IMultiTenant
+{
+    public string TenantId { get; set; } = "";
+    public long Revision { get; set; }
+    public string UpdatedBy { get; set; } = "";
+}
+
+/// <summary>仅绑定专用平台授权登录角色的上下文：只看平台行（tenant_id 为 null）；普通租户上下文不会自动切换到本类型。</summary>
+public sealed class PlatformAuthzDbContext(DbContextOptions<PlatformAuthzDbContext> options, ITenantContext tenant)
+    : AuthzDbContext(options, tenant, true);

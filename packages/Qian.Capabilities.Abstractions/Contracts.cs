@@ -15,6 +15,8 @@ public static class CapabilitiesDefinition
     public static readonly ServiceKey NavigationKey = new("Navigation");
     /// <summary>可遮蔽、可过滤的菜单贡献集合。</summary>
     public static readonly ServiceKey NavigationItemsKey = new("NavigationItems");
+    /// <summary>平台挂载路径的契约准入服务键（R76）。</summary>
+    public static readonly ServiceKey AdmissionKey = new("ContractAdmission");
     /// <summary>解析当前可见的菜单服务。</summary>
     public static INavigationService Navigation(this IPluginContext context) => context.Inject<INavigationService>(NavigationKey);
     /// <summary>读取平台预装制品的契约仓库。</summary>
