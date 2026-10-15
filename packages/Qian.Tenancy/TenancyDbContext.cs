@@ -48,7 +48,7 @@ public sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> options,
     }
 }
 
-internal sealed class TenantRow : IAuditedObject<string>
+internal sealed class TenantRow : IAuditedObject<string>, IAggregateRoot
 {
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
@@ -60,6 +60,13 @@ internal sealed class TenantRow : IAuditedObject<string>
     public string Isolation { get; set; } = "row";
     public string Status { get; set; } = "pending";
     public string? ProvisionInput { get; set; }
+    public DateTimeOffset? ValidUntil { get; set; }
+    public string? SuspendedFrom { get; set; }
+    public string? LastTransition { get; set; }
+    private readonly List<IDomainEvent> _events = [];
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _events;
+    public void ClearDomainEvents() => _events.Clear();
+    internal void Raise(TenantChange change) => _events.Add(change);
 }
 
 internal sealed class TenantProvisionStepRow : IMultiTenant

@@ -19,7 +19,7 @@ public sealed partial class CustomerCommandTests
         var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>();
         var tenant = host.App.Services.GetRequiredService<ITenantContext>();
         using var scope = tenant.BeginScope(A); var caller = runtime.Source();
-        var registrations = caller.List(CapabilityBindingRegistration.Key); Assert.Equal(3, registrations.Count);
+        var registrations = caller.List(CapabilityBindingRegistration.Key).Where(item => item.Name.StartsWith("qian.sample.crm/", StringComparison.Ordinal)).ToArray(); Assert.Equal(3, registrations.Length);
         Assert.Equal(ExecutableNames, registrations.Select(item => item.Name).Order(StringComparer.Ordinal));
         var binding = caller.Inject<IExecutableCapability>(CapabilityBindingRegistration.Key, "qian.sample.crm/customer.create");
         Assert.Same(CreateCustomerCommand.QianCapability, binding.Contract);

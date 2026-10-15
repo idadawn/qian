@@ -2,6 +2,8 @@ using System.Text.Json;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.EntityFrameworkCore.Conventions;
 using Kun.EventBus.DependencyInjection;
+using Kun.Mediator.DependencyInjection;
+using Qian.Events;
 using Kun.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -20,7 +22,15 @@ namespace Qian.Tenancy.Tests;
 public sealed class TenantDirectoryTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
-    private static PostgresTenantDirectory Store(IHost host) => new(host.Services.GetRequiredService<IDataService>());
+    private static PostgresTenantDirectory Store(IHost host) => new(host.Services.GetRequiredService<IDataService>(), host.Services.GetRequiredService<Kun.Core.MultiTenancy.ITenantContext>());
+
+    [Fact]
+    public async Task 缺少租户事件处理器时主档与Outbox一起回滚()
+    {
+        using var host = Host(withTenantEvents: false); await host.StartAsync(Ct); await Prepare(host);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Store(host).CreateAsync(new("rollback", "回滚"), Ct));
+        Assert.Null(await Store(host).GetAsync("rollback", Ct));
+    }
 
     [Fact]
     public async Task 真库创建待激活租户_目录跨宿主读取_并发同号只能创建一个()
@@ -123,10 +133,10 @@ public sealed class TenantDirectoryTests(PostgresFixture postgres) : IClassFixtu
         public IReadOnlyList<ServiceKey> Inject => [TenancyDefinition.Key];
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) { Context = ctx; return ValueTask.CompletedTask; }
     }
-    private IHost Host(Kun.Core.MultiTenancy.ITenantContext? tenant = null)
+    private IHost Host(Kun.Core.MultiTenancy.ITenantContext? tenant = null, bool withTenantEvents = true)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
-        builder.Services.AddSingleton<Kun.Core.MultiTenancy.ITenantContext>(tenant ?? new AsyncLocalTenantContext()); builder.Services.AddKunEventBus();
+        builder.Services.AddSingleton<Kun.Core.MultiTenancy.ITenantContext>(tenant ?? new AsyncLocalTenantContext()); builder.Services.AddKunEventBus(registrar => registrar.RegisterTenancyEvents()); builder.Services.AddKunMediator(builder => { if (withTenantEvents) builder.AddQianTenancyEvents(); }); builder.Services.AddQianEvents();
         builder.Services.AddQianData<TenancyDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(TenancyDbContext.Schema));
         return builder.Build();
     }

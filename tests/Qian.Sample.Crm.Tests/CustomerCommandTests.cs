@@ -344,7 +344,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 Assert.True(decision.Allow, decision.Reason);
             }
             var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
-            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role, connection);
+            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role, connection, migrations);
         }
         catch { await app.DisposeAsync(); signing.Dispose(); throw; }
     }
@@ -386,7 +386,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
     }
 
-    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection) : IAsyncDisposable
+    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection, string migrations) : IAsyncDisposable
     {
         internal WebApplication App => app;
         internal RsaSecurityKey ManagementSigningKey => key;
@@ -417,6 +417,12 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
         internal async Task<HttpResponseMessage> Send(HttpRequestMessage message)
         { using (message) return await client.SendAsync(message, Ct); }
-        public async ValueTask DisposeAsync() { client.Dispose(); await app.StopAsync(Ct); await app.DisposeAsync(); signing.Dispose(); }
+        public async ValueTask DisposeAsync()
+        {
+            client.Dispose(); await app.StopAsync(Ct); await app.DisposeAsync(); signing.Dispose();
+            // 每次宿主创建独立受限登录，池不能积压到 PostgreSQL 默认连接上限；只清理本宿主的池。
+            using var business = new NpgsqlConnection(connection); NpgsqlConnection.ClearPool(business);
+            using var migration = new NpgsqlConnection(migrations); NpgsqlConnection.ClearPool(migration);
+        }
     }
 }

@@ -1,1 +1,22 @@
-[{"resource":"tenant","actions":["read","create","edit"],"risk":{"create":"critical","edit":"high"}}]
+[
+  {
+    "resource": "tenant",
+    "actions": [
+      "read",
+      "create",
+      "edit",
+      "activate",
+      "suspend",
+      "resume",
+      "scan"
+    ],
+    "risk": {
+      "create": "critical",
+      "edit": "high",
+      "suspend": "critical",
+      "activate": "high",
+      "resume": "high",
+      "scan": "high"
+    }
+  }
+]

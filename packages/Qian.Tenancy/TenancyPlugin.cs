@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Qian.Data;
+using Microsoft.Extensions.DependencyInjection;
 using Qian.Authz.Abstractions;
 using Qian.Runtime;
 using Qian.Plugin.Sdk;
@@ -28,9 +29,16 @@ public sealed class TenancyPlugin : IQianPlugin
                     id.Contains('*', StringComparison.Ordinal) || !id.Contains('/', StringComparison.Ordinal) || !initializationCapabilities.Add(id))
                     throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
         }
-        var directory = new PostgresTenantDirectory(ctx.Data());
+        var directory = new PostgresTenantDirectory(ctx.Data(), ctx.Services.GetRequiredService<Kun.Core.MultiTenancy.ITenantContext>());
         ctx.Effect(directory.Dispose);
         ctx.Provide<ITenantDirectory>(TenancyDefinition.Key, directory);
+        ctx.Effect(ctx.Services.GetRequiredService<ErrorCatalog>().Register(TenancyErrors.StateConflict));
+        var lifecycle = new TenantStateMachine(ctx, directory);
+        ctx.Provide<ITenantLifecycle>(TenantLifecycle.Key, lifecycle);
+        var scanner = new TenantExpiryCapability(ctx, lifecycle);
+        ctx.Effect(scanner.Dispose);
+        ctx.Services.GetService<ICapabilityContractCheck>()?.Check(scanner.Contract);
+        ctx.Provide<IExecutableCapability>(CapabilityBindingRegistration.Key, scanner.Contract.Id, scanner);
         ctx.Provide<ITenantOperations>(TenantOperations.Key, new TenantOperationsService(ctx, directory));
         var provisioning = new TenantProvisioningOrchestrator(ctx, directory, initializationCapabilities);
         ctx.Effect(provisioning.Dispose);

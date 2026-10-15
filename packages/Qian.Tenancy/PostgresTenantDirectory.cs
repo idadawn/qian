@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Kun.EntityFrameworkCore.Conventions;
 using Npgsql;
 using Qian.Data;
+using Kun.Core.MultiTenancy;
+using Qian.Events;
 using Qian.Runtime.Errors;
 
 namespace Qian.Tenancy;
 
-internal sealed class PostgresTenantDirectory(IDataService data) : ITenantDirectory, IDisposable
+internal sealed class PostgresTenantDirectory(IDataService data, ITenantContext tenant) : ITenantDirectory, IDisposable
 {
     private int _disposed;
     public void Dispose() => Interlocked.Exchange(ref _disposed, 1);
@@ -32,12 +34,18 @@ internal sealed class PostgresTenantDirectory(IDataService data) : ITenantDirect
     {
         EnsureActive(); ArgumentNullException.ThrowIfNull(request); ValidateCode(request.Code); ValidateName(request.Name);
         if (request.Isolation != TenantIsolation.Row) throw Error(PlatformErrors.InputInvalid);
-        await using var session = await data.OpenAsync<TenancyDbContext>(ct).ConfigureAwait(false);
+        if (tenant.TenantId is not null) throw Error(PlatformErrors.AuthzDenied);
         var row = new TenantRow { Code = request.Code, Name = request.Name };
+        using var scope = tenant.BeginScope(row.Id.ToString());
+        await using var session = await data.OpenAsync<TenancyDbContext>(ct).ConfigureAwait(false);
+        await using var transaction = await session.Context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        using var origin = EventEnvelopeScope.Begin(new EventOrigin("qian.tenancy", EventEnvelopeScope.Current?.Actor ?? EventActor.Service("qian.tenancy")));
+        var created = new TenantChange(TenancyEvents.Created, row); row.Raise(created);
         session.Context.Tenants.Add(row);
-        try { await session.SaveChangesAsync(ct).ConfigureAwait(false); }
+        try { await TenantChange.Save(session, created, ct).ConfigureAwait(false); }
         catch (DbUpdateException error) when (error.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { throw Error(PlatformErrors.Conflict); }
+        await transaction.CommitAsync(ct).ConfigureAwait(false);
         return Describe(row) with { Revision = session.Context.Entry(row).Property<uint>(KunDataConventions.RowVersionPropertyName).CurrentValue };
     }
     internal async Task<TenantDescriptor> UpdateAsync(Guid id, UpdateTenant request, CancellationToken ct)

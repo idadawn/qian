@@ -46,9 +46,13 @@ internal sealed class TenantProvisioningOrchestrator(IPluginContext context, Pos
             var row = new TenantRow { Code = request.Code, Name = request.Name, ProvisionInput = input, CreatedBy = actor };
             using var tenantScope = _tenant.BeginScope(row.Id.ToString());
             await using var session = await context.Data().OpenAsync<TenancyDbContext>(cancellationToken).ConfigureAwait(false);
+            await using var transaction = await session.Context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            using var origin = EventEnvelopeScope.Begin(new EventOrigin("qian.tenancy", EventEnvelopeScope.Current?.Actor ?? EventActor.Service(actor)));
+            var created = new TenantChange(TenancyEvents.Created, row); row.Raise(created);
             session.Context.Tenants.Add(row);
             session.Context.ProvisionSteps.Add(new TenantProvisionStepRow { Step = "01:directory", Status = "succeeded", Attempts = 1 });
-            await session.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await TenantChange.Save(session, created, cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return row.Id;
         }, cancellationToken).ConfigureAwait(false);
         return await RetryAsync(id, actor, cancellationToken).ConfigureAwait(false);

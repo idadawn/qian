@@ -503,6 +503,11 @@ public sealed partial class CustomerCommandTests
             return new ArtifactSignature(Fingerprint, signer.GenerateSignature());
         }
         public ValueTask RecordAsync(SecretAccessEvent access, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public void Dispose() { try { Directory.Delete(SecretRoot, true); } catch (IOException) { } }
+        public void Dispose()
+        {
+            if (AuthzConnection.Length > 0) { using var authz = new NpgsqlConnection(AuthzConnection); NpgsqlConnection.ClearPool(authz); }
+            if (AuditConnection.Length > 0) { using var audit = new NpgsqlConnection(AuditConnection); NpgsqlConnection.ClearPool(audit); }
+            try { Directory.Delete(SecretRoot, true); } catch (IOException) { }
+        }
     }
 }
