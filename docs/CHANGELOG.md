@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-16 出网检查缺省值：开发环境放行回环，缺省拒绝 K3s 集群网段（S1-DATA-007）
+
+数据连接连通测试的出网检查改了两处缺省值。宿主环境为 Development 时缺省放行回环，本机开发连本机数据库不用再改配置。K3s 缺省的 Pod 网段 10.42.0.0/16 与 Service 网段 10.43.0.0/16 并入缺省拒绝列表：原本连这两个网段内数据库的宿主，需要从 `Egress.BlockedNetworks` 移除对应项；集群改用了自定义网段时，同样移除这两项并追加实际网段。产品负责人已确认 R79，见[决策清单](decisions/key-decisions-v0.md)与 [Qian.Data](../packages/Qian.Data/README.md)。
+
 ## 2026-10-16 qian add / remove / list 从 GitHub Packages 真实安装（S1-RT-011）
 
 `qian add <组件>…` 经签名市场把表面复制到 `.qian/plugins/<id>/`、按组件清单钉精确版本从 GitHub Packages 还原代码包、写 profile patch 与 `.qian/lock.json`，`qian remove` 逆序撤销、`qian list` 列出来源；未通过校验器或验签时以一行结构化错误失败且不留残留。真实源 E2E 用 data / events / config 三个组件（R98），PRD 7.2.3 的表面目录、patch 路径与钉版措辞按规格 §9 改写（R100）；收口项见 [S1-RT-035](../pm/tasks/S1-RT-035.md)。用法见 [qian CLI README](../packages/qian-cli/README.md)。
