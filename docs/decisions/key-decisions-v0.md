@@ -457,7 +457,7 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 
 - R81：S1-TEN-001 收口。原 E2E「运营后台创建租户 A、B，各自管理员登录后只看到本租户数据」拆为运营后台页面（归 S1-TEN-005）与管理员登录（归 S1-IDP-003），TEN-001 只保留「A 令牌请求 B 记录 404」的 HTTP 租户边界；传播器 IT 的消费端归 S1-EVT-002、作业执行器归 S1-SCH-002，TEN-001 保留 gRPC 对端；「inputSchema 不出现 tenantId」由 S1-RT-020 的登记期契约检查实现，TEN-001 引用其测试勾选。TEN-001 的依赖已全部完成，状态由 blocked 改回 todo。
 - R82：S1-AZ-003「把角色授予组织 X，X 下成员 ≤ 3 秒获得权限」依赖 S1-IDP-009 组织目录，移交已依赖 IDP-009 的 S1-AZ-005；AZ-003 以直接主体授权验证求值引擎与 ≤ 3 秒失效传播。S1-AZ-002 的 `me/permissions` 验收与 AZ-003 一并交付。
-- R83：S1-RT-009 的 hooks 桥接验收用测试宿主发布的 `tenant.created.v1` 事件验证触发与审计 `channel = hook`；真实开户流程触发归 S1-TEN-003。
+- R83：S1-RT-009 的 hooks 桥接验收用测试宿主发布的 `tenant.created.v1` 事件验证触发与审计 `channel = hook`；真实开户流程触发归 S1-TEN-003。（R91 更正：触发名为进程内事件 `tenant/provisioned`，本条原文的 `tenant.created.v1` 是集成事件 ID，hooks 矩阵不收）
 - R84：S1-RT-011 的 E2E「qian add identity authz files」在 identity / files 交付前改为用市场条目已存在的三个组件验证；完整组合归 S1-QA-005。
 - 顺序与归属：一人（cody）串行 S1-TEN-001 → S1-RT-004 → S1-AUD-001 → S1-RT-014 → S1-RT-005 → S1-AZ-002 + S1-AZ-003 → S1-RT-011；S1-RT-009 剩余一条按 R83 可在 RT-005 后顺手做；S1-DEP-003 等 S1-IDP-002 / S1-IDP-005 / S1-GW-001 / S1-YUE-001 交付后再动。S1-RT-004 与 S1-AUD-001 的依赖已全部完成，状态由 blocked 改回 todo。
 
@@ -481,3 +481,10 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 - R88：S1-RT-005 验收第 4 条「Unmount 后 ≤ 5s 三处拦截恢复」以 SDK 请求入口（`PluginEnabledMiddleware`）的证据勾选；网关路由的「未挂载 404 / 挂载后 ≤ 5s 放行」已在 S1-GW-003 验收第 1 条，外壳的「未挂载不加载」在 S1-ENT-002 验收第 3 条，ENT-002 验收第 2 条改写为三处都验证。执行人建议 A 采纳。S1-ENT-002、S1-DEP-004、S1-DEP-005 的移交登记都以 RT-005 的交付为前提，depends 补 S1-RT-005。
 - R89：生命周期钩子口径以组件规格为准：S1 不建 `service` 的 gRPC `qian.lifecycle.v1.Lifecycle` 钩子、平台级 install 钩子与 `migrations.platform / tenant` 编排（规格 §3.6 已把两层钩子取消，§5.6 把逐租户初始化放在 `tenant/provisioned` 监听器，迁移随包），`IPluginLifecycleHooks` 保留为 `module` 组件可选的进程内钩子；PRD 7.2.1 的钩子契约句按此改写。执行人建议 C（另立任务）不采纳。OCI 制品的 cosign 验签在 `Install` 侧随 S1-RT-013 产出 OCI 制品时补齐，RT-013 加一条验收（执行人建议 B 采纳为「记入 RT-013」）。
 - R90：开通分两层，细化 R13：组件级 `Provision(tenant, plugin)` 与钩子幂等（`lifecycle_runs`）由 `qian.lifecycle` 承担；租户级步骤表（创建主档 → Kun `ITenantProvisioner` → 逐组件调用 `Provision(tenant, plugin)` → 管理员 Membership → 初始授权 → 通知，`tenant_provision_steps`）由 `qian.tenancy` 的 `TenantProvisioningOrchestrator`（S1-TEN-003）承担；PRD 7.3 与 7.2.1 按此改写，7.2.1 的表清单按包归属标注（`plugin_revisions` / `tenant_plugin_installs` / `lifecycle_runs` / `mount_failures` 在 `plugin_qian_lifecycle`）。同时固定四条语义交 S1-RT-031 落地：Purged / Uninstalled 的租户再次开通须重新授权；Deprecated 修订不能被 Activate / Rollback / Upgrade 到、Retired 修订不能被挂载与开通、`Retire` 在仍有租户停留时拒绝（经 S1-AZ-003 超管旁路跨租户查询）；升级 → 回切 → 再升级到同一版本时钩子要再次执行（幂等键加入 fromVersion 或执行序号）；经 Lifecycle 挂载或升级失败并恢复前值时发出 `registry.scope.mount-failed.v1`，注册表的 mounted 表示写入而非 Ready。
+
+### 验收复核裁决 R91–R92（S1-RT-009 复核，2026-10-16）
+
+由 Claude 在产品负责人要求「验收 S1-RT-009」后作默认裁决，未经逐条确认；执行人在任务日志提出建议裁决，剩余范围见 `pm/tasks/S1-RT-032.md`，有异议时新建决策任务。
+
+- R91：hooks 的触发名只收 R39 冻结矩阵里的进程内事件 `<domain>/<event>`，租户创建对应 `tenant/provisioned`（生产方 `qian.tenancy`，serial）。S1-RT-009 验收第 3 条、R83 与 PRD 7.2.2 验收句里的 `tenant.created.v1` 更正为 `tenant/provisioned`：`tenant.created.v1` 是 ADR-008 D8.7 的跨进程集成事件，由 S1-TEN-002 的状态机经 Outbox 发布，不进 hooks 矩阵，也不扩展 hooks/v2 接受集成事件 ID。真实开户触发（R83 移交 S1-TEN-003）定为：开通编排在 `qian.tenancy` 上下文派发 `tenant/provisioned`（执行人做法 ①），S1-AZ-002 的内置角色监听与 hooks 桥接共用这一派发；不走 S1-EVT-002 把集成事件转成进程内事件（做法 ②），EVT-002 范围不变。执行人建议采纳。
+- R92：S1 的 hook 桥接范围 = 矩阵里四个 serial 事件（`tenant/provisioned`、`tenant/purged`、`registry/entry-mounted`、`registry/entry-disabled`）× `type: plugin`；Agent 宿主事件按 R39 透传、不得拒装；`command` / `http` 类型在 S1 不实现执行器（规格 §5.4 的 `qian.hooks` 转换器、非 serial 分发模式与 `identity/*`、`files/*`、`tenant/purging` 的桥接归 S2，PRD 7.2.2 据此标注），静态校验器与运行时对 `command` / `http` 的口径统一为「S1 拒装并给出 `SURFACE_POLICY_DENIED` 级诊断」，R41 的受限 argv 规则保留在校验器里待 S2 执行器启用。`registry/entry-*` 的生产方接线、`.mcp.json` 经 `qian add` 装进 Agent 宿主配置（PRD 7.2.2 列入 S1）、TS 热重载与 doctor 的发布形态、产品宿主映射表面诊断端点，归 S1-RT-032。
