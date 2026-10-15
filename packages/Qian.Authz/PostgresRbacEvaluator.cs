@@ -43,6 +43,22 @@ internal sealed class PostgresRbacEvaluator(IDataService data, ITenantContext te
         return tenant.TenantId == owner ? allowed.AsReadOnly() : [];
     }
 
+    // 经角色授予的权限点（含因 step-up / 终端条件当前未放行的），与 Check 用同一快照和同一求值；没有授予记录的权限点不列出。
+    internal async ValueTask<IReadOnlyList<EffectiveGrant>> ListEffectiveAsync(AuthorizationSubject subject, CancellationToken ct)
+    {
+        if (Validate(subject) is not null) return [];
+        var owner = tenant.TenantId!;
+        var snapshot = await LoadAsync(owner, subject, ct).ConfigureAwait(false);
+        var result = new List<EffectiveGrant>();
+        foreach (var install in snapshot.Installs.OrderBy(row => row.PluginId, StringComparer.Ordinal))
+            foreach (var definition in registry.List(install.PluginId, install.Version))
+            {
+                var explanation = await EvaluateAsync(snapshot, owner, new PermissionRequest(subject, definition.Code), ct).ConfigureAwait(false);
+                if (explanation.MatchedGrants.Count != 0) result.Add(new EffectiveGrant(definition, explanation.Decision.Allow, explanation.Decision.Reason));
+            }
+        return tenant.TenantId == owner ? Array.AsReadOnly(result.OrderBy(item => item.Definition.Code, StringComparer.Ordinal).ToArray()) : [];
+    }
+
     private async ValueTask<AuthorizationExplanation> EvaluateAsync(RbacSnapshot snapshot, string owner, PermissionRequest request, CancellationToken ct)
     {
         var plugin = request.Permission.Split(':')[0];

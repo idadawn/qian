@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../packages/Qian.Authz/Qian.Authz.csproj" />
+    <ProjectReference Include="../../packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
     <ProjectReference Include="../../packages/Qian.Tenancy/Qian.Tenancy.csproj" />
   </ItemGroup>
