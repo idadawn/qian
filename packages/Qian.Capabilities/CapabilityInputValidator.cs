@@ -22,7 +22,8 @@ internal sealed partial class CapabilityInputValidator
     { "items", "additionalProperties", "unevaluatedProperties", "unevaluatedItems", "propertyNames", "contains", "if", "then", "else", "not" };
     private static readonly string[] AnchorKeywords = ["$anchor", "$dynamicAnchor"];
     // 登记期拒绝的规则名，与 CapabilityContractException.Rule 一致。
-    internal const string UnsupportedKey = "unsupported-key", UnresolvedReference = "unresolved-reference", SchemaInvalid = "schema-invalid";
+    internal const string UnsupportedKey = "unsupported-key", UnsupportedNumber = "unsupported-number", UnresolvedReference = "unresolved-reference",
+        SchemaInvalid = "schema-invalid";
     // 编译结果按 schemaSha256 缓存，最多 capacity 个。满了只淘汰最久没用的一个，不整表清空：常用能力在登记期预编译的校验器一直留在缓存里，
     // 被淘汰的在下次执行时按同一份 Schema 重新编译，登记期已经检查过，结论不变。
     private readonly Dictionary<string, LinkedListNode<(string Key, JsonSchema Schema)>> _schemas = new(StringComparer.Ordinal);
@@ -30,11 +31,14 @@ internal sealed partial class CapabilityInputValidator
     private readonly Lock _gate = new();
     private readonly int _capacity;
     private readonly ILogger? _logger;
+    private readonly Func<JsonSchema, JsonElement, EvaluationOptions, EvaluationResults> _evaluate;
 
-    internal CapabilityInputValidator(ILogger? logger = null, int capacity = CacheLimit)
+    // evaluate 只供测试替换：登记期检查与输入检查排除了已知会让库抛异常的写法，测试经它模拟其余的意外求值失败。
+    internal CapabilityInputValidator(ILogger? logger = null, int capacity = CacheLimit,
+        Func<JsonSchema, JsonElement, EvaluationOptions, EvaluationResults>? evaluate = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 1);
-        _logger = logger; _capacity = capacity;
+        _logger = logger; _capacity = capacity; _evaluate = evaluate ?? ((schema, input, options) => schema.Evaluate(input, options));
     }
 
     // 登记期预编译：不受支持的键、找不到目标的 $ref / $dynamicRef 与无法编译的 Schema 带出错位置拒绝；通过后编译结果进入缓存，执行时不再编译。
@@ -56,8 +60,8 @@ internal sealed partial class CapabilityInputValidator
         if (Unreadable(input, 0)) throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
         var schema = Compile(entry.GetProperty("schemaSha256").GetString()!, source);
         EvaluationResults results;
-        try { results = schema.Evaluate(input, new EvaluationOptions { OutputFormat = OutputFormat.Hierarchical, RequireFormatValidation = true }); }
-        // 三类已知问题在登记期就被拒绝；其余求值失败是意外，记下组件与能力再交给 ErrorDetail 中间件，按 500 INTERNAL 返回。
+        try { results = _evaluate(schema, input, new EvaluationOptions { OutputFormat = OutputFormat.Hierarchical, RequireFormatValidation = true }); }
+        // 已知会让库抛异常的写法在登记期（Schema）与上面的输入检查里拒绝；其余求值失败是意外，记下组件与能力再交给 ErrorDetail 中间件，按 500 INTERNAL 返回。
         catch (Exception error) when (error is not OperationCanceledException)
         {
             if (_logger is not null) Log.EvaluationFailed(_logger, error, Text(entry, "plugin"), Text(entry, "name"));
@@ -283,6 +287,7 @@ internal sealed partial class CapabilityInputValidator
 
     // 编译前检查库无法可靠处理的写法，返回第一处问题在输入 Schema 内的位置与规则：
     // - JsonSchema.Net 9.4 按 JSON Pointer 转义后的键回查 patternProperties 与 dependentSchemas，键含 / 或 ~ 时前者每次求值都抛异常、后者被静默跳过；
+    // - enum / const 的取值按 decimal 与输入比较，取值里（含嵌套的对象与数组）有超出 decimal 范围的数时，任何数值输入都会让求值抛异常；
     // - $ref / $dynamicRef 找不到目标时编译照常通过，求值才抛异常。
     private static (string[] Path, string Rule)? Problem(JsonElement source, JsonElement schema, string[] path, Uri scope)
     {
@@ -295,6 +300,7 @@ internal sealed partial class CapabilityInputValidator
                     if (item.Name.AsSpan().IndexOfAny('/', '~') >= 0) return ([.. path, member.Name, item.Name], UnsupportedKey);
             if (member.Name is "$ref" or "$dynamicRef" && member.Value.ValueKind == JsonValueKind.String && Resolve(source, scope, member.Value.GetString()!).Schema is null)
                 return ([.. path, member.Name], UnresolvedReference);
+            if (member.Name is "enum" or "const" && Undecimal(member.Value, [.. path, member.Name]) is { } number) return (number, UnsupportedNumber);
         }
         foreach (var (segments, child) in Children(schema))
             if (Problem(source, child, [.. path, .. segments], scope) is { } found) return found;
@@ -416,7 +422,8 @@ internal sealed partial class CapabilityInputValidator
         return values.Length is > 0 and <= AllowedValues.MaxCount ? values : null;
     }
 
-    // 输入读不成确定的 JSON 值时按无法解析的请求处理：嵌套超过 64 层、成员重名，或成员名 / 字符串含孤立的 UTF-16 代理项（如 \ud800 转义）。
+    // 输入读不成确定的 JSON 值时按无法解析的请求处理：嵌套超过 64 层、成员重名，成员名 / 字符串含孤立的 UTF-16 代理项（如 \ud800 转义），
+    // 或数超出 decimal 范围（绝对值大于约 7.9e28）：JsonSchema.Net 9.4 按 decimal 比较 enum、const 与 uniqueItems 的取值，这类数会让求值抛异常。
     private static bool Unreadable(JsonElement value, int depth)
     {
         if (depth > 64) return true;
@@ -426,6 +433,7 @@ internal sealed partial class CapabilityInputValidator
             {
                 case JsonValueKind.Array: return value.EnumerateArray().Any(item => Unreadable(item, depth + 1));
                 case JsonValueKind.String: _ = value.GetString(); return false;
+                case JsonValueKind.Number: return !value.TryGetDecimal(out _);
                 case JsonValueKind.Object:
                     var names = new HashSet<string>(StringComparer.Ordinal);
                     foreach (var member in value.EnumerateObject())
@@ -435,6 +443,25 @@ internal sealed partial class CapabilityInputValidator
             }
         }
         catch (InvalidOperationException) { return true; }
+    }
+
+    // 数据取值（enum / const）里第一个超出 decimal 范围的数的位置；没有时返回 null。
+    private static string[]? Undecimal(JsonElement value, string[] path)
+    {
+        switch (value.ValueKind)
+        {
+            case JsonValueKind.Number: return value.TryGetDecimal(out _) ? null : path;
+            case JsonValueKind.Array:
+                var index = 0;
+                foreach (var item in value.EnumerateArray())
+                    if (Undecimal(item, [.. path, (index++).ToString(CultureInfo.InvariantCulture)]) is { } found) return found;
+                return null;
+            case JsonValueKind.Object:
+                foreach (var member in value.EnumerateObject())
+                    if (Undecimal(member.Value, [.. path, member.Name]) is { } found) return found;
+                return null;
+            default: return null;
+        }
     }
 
     private static string[] Segments(string pointer) => pointer.Length == 0 ? [] :
