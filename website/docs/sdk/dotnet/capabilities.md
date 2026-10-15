@@ -22,7 +22,7 @@ updated: 2026-10-15
 
 ## 通用执行入口
 
-`POST /api/capabilities/{plugin}/{name}/invoke` 先重做与目录相同的过滤（不可见与不存在一样 404），再按条目 `inputSchema` 校验请求体（不符返回 400 `INPUT_INVALID`，`errors[]` 带 JSON Pointer），然后走组件自己的命令管道，租户、授权与审计照常生效。
+`POST /api/capabilities/{plugin}/{name}/invoke` 先重做与目录相同的过滤（不可见与不存在一样 404），再按条目 `inputSchema` 校验请求体（不符返回 400 `INPUT_INVALID`，`errors[]` 带 JSON Pointer；请求体读不成确定的 JSON 值，如成员重名或有绝对值超过 decimal 范围约 7.9e28 的数，返回 400 `BAD_REQUEST`），然后走组件自己的命令管道，租户、授权与审计照常生效。
 
 写类能力可以带幂等键，只读能力（`sideEffect: read`）忽略它、每次都执行：
 

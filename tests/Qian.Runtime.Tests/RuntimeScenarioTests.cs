@@ -42,6 +42,7 @@ public sealed class RuntimeScenarioTests
         ConcurrentDictionary<string, IRegistrationHandle<string>> handles = [];
         // 先于 loader 释放：断言失败时打开全部闸门，整树卸载不会卡在等待中的撤销上。
         using var gates = new ScenarioGates();
+        List<Task> pending = []; // idle: false 发起、留给 idle 步骤等待的挂载
         var events = new ScenarioEvents(scenario, trace);
         var entries = scenario.GetProperty("entries").EnumerateArray().ToDictionary(e => e.GetProperty("id").GetString()!, e => e);
         PluginDefinition Definition(string id)
@@ -67,7 +68,8 @@ public sealed class RuntimeScenarioTests
                         var detail = ErrorCatalog.CreateDefault().CreateDetail(exception.Error, new string('a', 32), CultureInfo.InvariantCulture);
                         Assert.Equal(exception.Error.Code.Code, detail.Code);
                     }
-                    else await loader.MountAsync(definitions, TestContext.Current.CancellationToken);
+                    else if (Waits(step)) await loader.MountAsync(definitions, TestContext.Current.CancellationToken);
+                    else pending.Add(loader.MountAsync(definitions, TestContext.Current.CancellationToken).AsTask());
                     break;
                 case "state":
                     Assert.Equal(step.GetProperty("value").GetString(), loader.GetState(step.GetProperty("entry").GetString()!, Scope(step)).ToString());
@@ -95,13 +97,21 @@ public sealed class RuntimeScenarioTests
                     var replacement = step.GetProperty("value").GetString()!;
                     if (step.TryGetProperty("error", out _)) Assert.Throws<ObjectDisposedException>(() => handle.Replace(replacement));
                     else handle.Replace(replacement);
-                    if (!step.TryGetProperty("idle", out var idle) || idle.GetBoolean()) await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+                    if (Waits(step)) await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+                    break;
+                case "revoke":
+                    handles[step.GetProperty("handle").GetString()!].Dispose();
+                    if (Waits(step)) await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
                     break;
                 case "blocked":
                     await gates[step.GetProperty("gate").GetString()!].Blocked.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
                     break;
                 case "open": gates[step.GetProperty("gate").GetString()!].Open.TrySetResult(); break;
-                case "idle": await loader.WhenIdleAsync(TestContext.Current.CancellationToken); break;
+                case "idle":
+                    await Task.WhenAll(pending);
+                    pending.Clear();
+                    await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+                    break;
                 case "traceContains":
                     foreach (var value in step.GetProperty("value").EnumerateArray()) Assert.Contains(value.GetString(), trace);
                     break;
@@ -163,6 +173,8 @@ public sealed class RuntimeScenarioTests
         }
     }
 
+    private static bool Waits(JsonElement step) => !step.TryGetProperty("idle", out var idle) || idle.GetBoolean();
+
     private static ServiceKey[] Keys(JsonElement node, string name) => node.TryGetProperty(name, out var values)
         ? values.EnumerateArray().Select(v => new ServiceKey(v.GetString()!)).ToArray() : [];
 
@@ -202,7 +214,7 @@ public sealed class RuntimeScenarioTests
     {
         public IReadOnlyList<ServiceKey> Inject => Keys(entry, "inject");
 
-        public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
+        public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
         {
             trace.Enqueue($"apply:{ctx.Entry.Id}");
             foreach (var action in entry.GetProperty("apply").EnumerateArray())
@@ -210,6 +222,11 @@ public sealed class RuntimeScenarioTests
                 var target = action.TryGetProperty("scope", out _) ? ctx.Scoped(Scope(action)) : ctx;
                 switch (action.GetProperty("op").GetString())
                 {
+                    case "wait":
+                        var waiting = gates[action.GetProperty("gate").GetString()!];
+                        waiting.Blocked.TrySetResult();
+                        await waiting.Open.Task;
+                        break;
                     case "provide":
                         var key = new ServiceKey(action.GetProperty("key").GetString()!);
                         var handle = action.TryGetProperty("name", out var name)
@@ -238,12 +255,12 @@ public sealed class RuntimeScenarioTests
                     case "optional":
                         Assert.Null(ctx.TryInject<string>(new ServiceKey(action.GetProperty("key").GetString()!)));
                         break;
+                    case "inject": ctx.Inject<string>(new ServiceKey(action.GetProperty("key").GetString()!)); break;
                     case "on": events.On(target, action); break;
                     case "fail": throw new InvalidOperationException("场景中的 Apply 失败。");
                     default: throw new InvalidOperationException("未知 TCK Apply 操作。");
                 }
             }
-            return ValueTask.CompletedTask;
         }
     }
 

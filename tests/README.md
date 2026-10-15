@@ -10,7 +10,9 @@ tests/
   Qian.Testing.Containers/                    集成测试共用的 Testcontainers fixture（不打包）
     ApolloMock/apollo_mock.py                 Apollo 协议替身，在容器里运行
   Qian.Testing.Containers.IntegrationTests/   fixture 自身的集成测试与单元测试
+  Qian.Authz.Tests/                           授权：权限目录与默认角色、RBAC 判定与快照缓存（真实 PostgreSQL + Redis，两宿主授予 / 撤销传播）、平台超管旁路（专用平台登录 + 真实 Audit 插件）
   Qian.Data.AspNetCore.Tests/                 数据端点：基准类型目录（无数据库）与数据连接档案（真实 PostgreSQL、挂载式密钥、连通测试）
+  Qian.Lifecycle.Tests/                       生命周期：验签与信任根轮换（真实 PostgreSQL）、GitOps 执行器（本机裸仓库 + K3s 单节点集群）、Local 执行器
   Qian.Runtime.Errors.Tests/                  contracts/v0 契约测试（Schema、fixture、语义规则、内置错误码目录）与 ErrorDetail 内存宿主测试
   Qian.Runtime.Tests/                         最小运行时单元测试与 tck/runtime/*.scenario.yml 的 .NET harness
   Qian.Common.Tests/                          packages/Common 共享内部源文件的测试，直接编译源文件；并生成 CLI 移植比对用的 tck/profiles/key-vectors.json 与等价类表
@@ -34,6 +36,7 @@ dotnet test --solution Qian.slnx -c Release --no-build
   - `python3 scripts/prepare_contract_tools.py --destination <目录>`，再导出 `QIAN_BUF_PATH=<目录>/buf` 与 `QIAN_OASDIFF_PATH=<目录>/oasdiff`：能力契约的真实兼容检查器，缺失时相关用例按设计拒绝跳过。
 - `dotnet test` 走 Microsoft Testing Platform（[global.json](../global.json) 的 `test.runner`）；xUnit v3 测试项目是可执行程序，csproj 里写 `<OutputType>Exe</OutputType>`。
 - 单跑一个测试项目用 `dotnet run --project tests/<X>.Tests -c Release`；`dotnet test <项目路径>` 或 `dotnet test --project …` 在部分机器上会报「运行了零个测试、退出码 5」，以 `--solution` 或 `dotnet run` 的结果为准。
+- CLI 的私有源 E2E（`packages/qian-cli/test/private-feed.e2e.mjs`）不随 `pnpm --filter qian test` 运行，单独用 `QIAN_FEED_TOKEN=<读包令牌> pnpm --filter qian test:feed`；本机可取 `gh auth token`（需 `read:packages`）。令牌只放环境变量，缺失即失败、不跳过。
 - 集成测试需要 Docker。本机没有 Docker 时集成测试**跳过**；在 CI（`CI=true`）或设置了 `QIAN_REQUIRE_DOCKER=1` 时**直接失败**，不会悄悄跳过（C10：集成测试必须跑）。
 - 首次运行要拉镜像，之后整套测试十秒左右。
 
@@ -71,6 +74,7 @@ public sealed class OrderVisibilityTests(InfrastructureFixture infra)
 | `RabbitMqFixture` | `rabbitmq:4.3-alpine`（`QIAN_TEST_IMAGE_RABBITMQ`） | `ConnectionString`（AMQP URI）；`Container` 可停启 broker，做「重启后消息不丢」这类韧性测试 |
 | `ApolloFixture` | `python:3.13-alpine` 运行 `apollo_mock.py`（`QIAN_TEST_IMAGE_APOLLO_MOCK`） | `ConfigServiceUri`（即客户端的 `Apollo__ConfigServer__0`）；`PublishAsync`、`DeleteAsync`、`SetAccessKeyAsync`、`SetHoldAsync`、`ResetAsync` |
 | `InfrastructureFixture` | 以上四个并行启动 | `Postgres`、`Redis`、`RabbitMq`、`Apollo` |
+| `K3sFixture` | `rancher/k3s:v1.31.5-k3s1`（`QIAN_TEST_IMAGE_K3S`），特权容器 | `Kubeconfig`（API Server 已映射到宿主端口）；`KubectlAsync` 在容器内执行 kubectl（含 kustomize），`CopyAsync` 写入待 apply 的清单。K3s 启动时会短暂占满 CPU，容器在就绪前自行退出时重建，最多三次（只重建容器，不重试断言）；用例里的工作负载镜像由集群自行拉取，需要出网 |
 
 - 版本：PostgreSQL 16、Redis 7 与部署基线一致（ADR-017 D17.2）；RabbitMQ 取当前 4.x 稳定线。环境变量用来与 staging 对齐或换内网镜像源。
 - 容器口令每次运行随机生成，仓库里没有写死的凭据。

@@ -1,7 +1,10 @@
+using System.Text.Json;
 using Kun.Authorization;
 using Kun.Core.MultiTenancy;
 using Microsoft.Extensions.DependencyInjection;
+using Qian.Authz.Abstractions;
 using Qian.Data;
+using Qian.Events;
 using Qian.Identity.Abstractions;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
@@ -20,6 +23,9 @@ internal sealed class RegistryService : IRegistryService
     private readonly IReadOnlySet<string> _installedEntries;
     private readonly IReadOnlyList<string> _serviceKeys;
     private readonly PostgresArtifactCatalog _artifacts;
+    private readonly PostgresPatchRepository _patches;
+    private readonly RegistryProfileComposer _composer;
+    private readonly RegistryPatchWriter _writer;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly SemaphoreSlim _control = new(1, 1);
     private PostgresPatchListener? _listener;
@@ -44,10 +50,15 @@ internal sealed class RegistryService : IRegistryService
         _serviceKeys = Array.AsReadOnly(_installed.SelectMany(component => component.Manifest.GetProperty("provides").EnumerateArray().Select(key => key.GetString()!))
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray());
         _artifacts = new PostgresArtifactCatalog(data);
-        var repository = new PostgresPatchRepository(data, tenant, options.Surfaces);
-        var composer = new RegistryProfileComposer(repository, options.Profiles, options.Profile);
-        _scopes = new RegistryScopeReconciler(tenant, composer, options.Runtime, context, ResolveInstalled);
+        _patches = new PostgresPatchRepository(data, tenant, options.Surfaces);
+        _composer = new RegistryProfileComposer(_patches, options.Profiles, options.Profile);
+        _writer = new RegistryPatchWriter(_patches, _composer);
+        _scopes = new RegistryScopeReconciler(tenant, _composer, options.Runtime, context, ResolveInstalled, DeclaresContracts);
     }
+
+    // 预装制品带契约索引（metadata/contracts.json）的组件版本，挂载时必须经平台契约准入（R76）。
+    private bool DeclaresContracts(string pluginId, string version) => _installed.Any(component => component.PluginId == pluginId && component.Version == version &&
+        component.Metadata.Keys.Any(path => Path.GetFileName(path) == "contracts.json"));
 
     private PluginDefinition ResolveInstalled(Qian.Profiles.Abstractions.ResolvedProfileEntry entry)
     {
@@ -129,6 +140,108 @@ internal sealed class RegistryService : IRegistryService
             saved.State, saved.SubmittedBy, saved.SubmittedAt);
     }
 
+    public async ValueTask<ScopePatchSnapshot> MountAsync(ScopeKey scope, JsonElement entry, int expectedRevision, string actor, CancellationToken cancellationToken = default)
+    {
+        WriteTenant(scope);
+        if (entry.ValueKind != JsonValueKind.Object || !entry.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.String)
+            throw Invalid("#/0/id", "挂载条目必须是带 id 的 patch 对象。");
+        if (entry.TryGetProperty("disabled", out var disabled) && disabled.ValueKind == JsonValueKind.True)
+            throw Invalid("#/0/disabled", "挂载条目不能带 disabled: true；卸载请用 Unmount。");
+        CheckInstalled(entry);
+        using var origin = Origin();
+        return await _writer.PutAsync(scope, id.GetString()!, entry, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask<int> UnmountAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken cancellationToken = default)
+    {
+        WriteTenant(scope);
+        var current = await _patches.GetAsync(scope, entryId, cancellationToken).ConfigureAwait(false);
+        using var origin = Origin();
+        if (ProfileEntries(scope).Contains(entryId))
+        {
+            // 平台条目在本 scope 写禁用 patch（取代数据库开关）；已禁用即本 scope 看不到，与不存在相同。
+            if (current is not null && current.Patch.TryGetProperty("disabled", out var disabled) && disabled.ValueKind == JsonValueKind.True) throw NotFound();
+            var patch = JsonSerializer.SerializeToElement(new Dictionary<string, object> { ["id"] = entryId, ["disabled"] = true });
+            return (await _writer.PutAsync(scope, entryId, patch, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false)).Revision;
+        }
+        if (current is null) throw NotFound();
+        return await _writer.RemoveAsync(scope, entryId, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask<ScopePatchSnapshot?> GetScopePatchAsync(ScopeKey scope, string entryId, CancellationToken cancellationToken = default)
+    {
+        WriteTenant(scope);
+        return await _patches.GetAsync(scope, entryId, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask<IReadOnlyList<ScopePatchSnapshot>> GetScopePatchesAsync(ScopeKey scope, CancellationToken cancellationToken = default)
+    {
+        WriteTenant(scope);
+        return await _patches.ListAsync(scope, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask<int> RestoreScopePatchAsync(ScopeKey scope, string entryId, JsonElement? previous, int expectedRevision, string actor, CancellationToken cancellationToken = default)
+    {
+        WriteTenant(scope);
+        using var origin = Origin();
+        if (previous is not { } patch) return await _writer.RemoveAsync(scope, entryId, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
+        if (patch.ValueKind != JsonValueKind.Object || !patch.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.String || id.GetString() != entryId)
+            throw Invalid("#/0/id", "恢复的 patch 必须是同一条目。");
+        CheckInstalled(patch);
+        return (await _writer.PutAsync(scope, entryId, patch, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false)).Revision;
+    }
+
+    public async ValueTask<RegistryArtifactEntry> RecordArtifactStateAsync(string digest, string state, string signedBy, CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _lifetime.IsCancellationRequested) throw new ServiceNotReadyException();
+        var saved = await _artifacts.RecordAsync(digest, state, signedBy, cancellationToken).ConfigureAwait(false);
+        return new RegistryArtifactEntry(saved.Digest, saved.Component.Id, saved.Component.Manifest.GetProperty("version").GetString()!,
+            saved.State, saved.SubmittedBy, saved.SubmittedAt);
+    }
+
+    public async ValueTask<IReadOnlyList<RegistryScopeDiagnostic>> GetScopeDiagnosticsAsync(ScopeKey scope, CancellationToken cancellationToken = default)
+    {
+        if (_listener is null) throw new ServiceNotReadyException();
+        WriteTenant(scope);
+        return await _scopes.DiagnoseAsync(_tenant.TenantId!, scope, cancellationToken).ConfigureAwait(false);
+    }
+
+    // 新增条目必须写明宿主预装的组件版本；只替换平台条目配置的 patch 不带 plugin。
+    private void CheckInstalled(JsonElement entry)
+    {
+        if (!entry.TryGetProperty("plugin", out var plugin)) return;
+        var reference = plugin.ValueKind == JsonValueKind.String ? plugin.GetString()!.Split('@', 2) : [];
+        if (reference.Length != 2 || !_installed.Any(component => component.PluginId == reference[0] && component.Version == reference[1]))
+            throw Invalid("#/0/plugin", "挂载条目须写明宿主预装集合中的组件版本（plugin@version）。");
+    }
+
+    // 公开写入只接受当前已验证租户自己的 tenant scope；应用 / 会话 scope 待 Tenancy 的真实归属证明。
+    private void WriteTenant(ScopeKey scope)
+    {
+        if (_disposed || _lifetime.IsCancellationRequested) throw new ServiceNotReadyException();
+        if (!_tenant.IsMultiTenant || string.IsNullOrWhiteSpace(_tenant.TenantId)) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
+        if (scope.Kind != "tenant" || scope.Id != _tenant.TenantId) throw NotFound();
+    }
+
+    // 只看文件层（profile、组合包与 patch 文件）装配出的平台条目，不含任何数据库 scope patch。
+    private HashSet<string> ProfileEntries(ScopeKey scope)
+    {
+        var result = _composer.Compose(scope, []);
+        if (!result.IsValid) throw new InvalidOperationException("平台 profile 无法装配。");
+        return result.Snapshot!.Entries.Where(entry => entry.Scope == "global").Select(entry => entry.Id).ToHashSet(StringComparer.Ordinal);
+    }
+
+    // 集成事件来源：producer 为本组件；actor 与关联沿用调用方（如代表运营者的 Lifecycle）打开的事件作用域，没有时以本组件服务主体发布。
+    private static IDisposable Origin()
+    {
+        var outer = EventEnvelopeScope.Current;
+        return EventEnvelopeScope.Begin(new EventOrigin("qian.registry", outer?.Actor ?? EventActor.Service("qian.registry"))
+        { CorrelationId = outer?.CorrelationId, CausationId = outer?.CausationId, TraceParent = outer?.TraceParent });
+    }
+
+    private static QianErrorException Invalid(string pointer, string reason) => new(new QianError(PlatformErrors.InputInvalid)
+    { Errors = [new QianFieldError(RegistryErrors.Invalid, "registry/scope-patches.json" + pointer, new Dictionary<string, string> { ["reason"] = reason })] });
+
     // 管理面只认宿主已验证的主体与租户上下文；委托、Agent、跨租户、缺判定端口或无权限一律与不存在同为 NOT_FOUND（R32）。
     private async ValueTask<string> AuthorizeAsync(ScopeKey scope, ICurrentUser user, CancellationToken ct)
     {
@@ -138,6 +251,8 @@ internal sealed class RegistryService : IRegistryService
         if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject || !_tenant.IsMultiTenant || string.IsNullOrWhiteSpace(_tenant.TenantId))
             throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
         var tenantId = _tenant.TenantId;
+        if (principal.Actor is null && principal.Kind == PrincipalKind.User && principal.TenantId is null && scope.Kind == "tenant" && scope.Id == tenantId)
+            return await BypassAsync(scope, user, principal, tenantId, ct).ConfigureAwait(false);
         if (principal.Actor is not null || principal.Kind is not (PrincipalKind.User or PrincipalKind.Service) || principal.TenantId != tenantId ||
             scope.Kind != "tenant" || scope.Id != tenantId) throw NotFound();
         // 判定端口由宿主的 Authz Provider 装配；缺失时 fail-closed，不回退到令牌角色。
@@ -147,6 +262,18 @@ internal sealed class RegistryService : IRegistryService
         // 判定之后再确认请求主体与租户上下文没有变化。
         if (!decision.Allow || !user.IsAuthenticated || user.UserId != principal.Subject || user.Principal?.TenantId != tenantId ||
             user.Principal?.Kind != principal.Kind || user.Principal?.Actor is not null || _tenant.TenantId != tenantId) throw NotFound();
+        return tenantId;
+    }
+
+    // 平台主体（无租户）读取目标租户的 scope 视图：调用方已把租户上下文切到目标租户，判定只走 Authz 的超管显式旁路（ADR-006 D6.3），
+    // 由旁路写入目标租户审计链（bypass = superadmin）。旁路端口未装配、非超管或审计失败时与不存在同为 404。
+    private async ValueTask<string> BypassAsync(ScopeKey scope, ICurrentUser user, Principal principal, string tenantId, CancellationToken ct)
+    {
+        if (_context.TryInject<ISuperadminBypass>(AuthzDefinition.SuperadminBypassKey) is not { } bypass) throw NotFound();
+        var decision = await bypass.AuthorizeAsync(new SuperadminAccess(new AuthorizationSubject(principal.Subject, null, "user"),
+            RegistryDefinition.ScopeReadPermission, tenantId, "registry/scope:" + scope.Kind + ":" + scope.Id, "api"), ct).ConfigureAwait(false);
+        if (!decision.Allow || !user.IsAuthenticated || user.UserId != principal.Subject || user.Principal?.TenantId is not null ||
+            user.Principal?.Kind != PrincipalKind.User || user.Principal?.Actor is not null || _tenant.TenantId != tenantId) throw NotFound();
         return tenantId;
     }
 

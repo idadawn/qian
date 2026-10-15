@@ -1,14 +1,19 @@
 using Kun.Authorization;
+using Kun.Caching.Abstractions;
 using Kun.Core.MultiTenancy;
 using Qian.Authz.Abstractions;
 using Qian.Data;
 
 namespace Qian.Authz;
 
-/// <summary>消费实际授权存储和活动声明的 RBAC 判定端口；主体须由已认证宿主提供，完整策略组合由 Authz Provider 接入。</summary>
-public sealed class RbacPermissionChecker(IDataService data, ITenantContext tenant, IPermissionRegistry registry, IAuthzExecutionConstraints? constraints = null) : IPermissionChecker
+/// <summary>
+/// 消费实际授权存储和活动声明的 RBAC 判定端口；主体须由已认证宿主提供。传入 <paramref name="cache"/>（Kun.Caching 的内存或 Redis 后端）时，
+/// 主体的角色与授权快照按租户授权修订缓存 10 分钟，授予、撤销与策略安装提交后各宿主下一次判定即读到新快照。
+/// </summary>
+public sealed class RbacPermissionChecker(IDataService data, ITenantContext tenant, IPermissionRegistry registry, IAuthzExecutionConstraints? constraints = null,
+    IKunCache? cache = null) : IPermissionChecker
 {
-    private readonly PostgresRbacEvaluator _evaluator = new(data, tenant, registry, constraints);
+    private readonly PostgresRbacEvaluator _evaluator = new(data, tenant, registry, constraints, cache);
     /// <inheritdoc />
     public async ValueTask<PermissionDecision> CheckAsync(PermissionRequest request, CancellationToken cancellationToken = default)
     {
@@ -41,6 +46,11 @@ public sealed class RbacPermissionChecker(IDataService data, ITenantContext tena
     /// <inheritdoc />
     public async ValueTask<PermissionDecision> ExplainAsync(PermissionRequest request, CancellationToken cancellationToken = default)
         => (await ExplainDetailedAsync(request, cancellationToken).ConfigureAwait(false)).Decision;
+    /// <summary>主体经角色授权持有的权限点、元数据与当前判定（需要 step-up 或终端证明的照常列出，Allowed 为 false）。</summary>
+    public ValueTask<IReadOnlyList<EffectiveGrant>> ListEffectivePermissionsAsync(AuthorizationSubject subject, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(subject); return _evaluator.ListEffectiveAsync(subject, cancellationToken);
+    }
     /// <summary>读取真实命中角色、授权记录和缺失权限。</summary>
     public ValueTask<AuthorizationExplanation> ExplainDetailedAsync(PermissionRequest request, CancellationToken cancellationToken = default)
     {

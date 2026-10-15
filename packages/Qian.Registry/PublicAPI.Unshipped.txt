@@ -25,3 +25,5 @@ Qian.Registry.RegistryComponentBinding.RegistryComponentBinding(Qian.Runtime.Plu
 Qian.Registry.RegistryRuntimeOptions.InstalledComponents.get -> System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryComponentBinding!>!
 Qian.Registry.RegistryRuntimeOptions.InstalledComponents.init -> void
 static Qian.Registry.RegistryComponentBinding.FromArtifact(Qian.Runtime.PluginDefinition! definition, System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files, string! expectedDigest, Qian.Surfaces.Abstractions.ISurfaceValidator! validator, Qian.Surfaces.Abstractions.SurfaceValidationOptions! options) -> Qian.Registry.RegistryComponentBinding!
+Qian.Registry.RegistryEventHandlers
+static Qian.Registry.RegistryEventHandlers.AddQianRegistryEvents(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!

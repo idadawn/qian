@@ -1,0 +1,56 @@
+version: 1
+id: invalidate-during-apply
+description: Apply 尚未结束时所注入的键被另一调用方替换或撤销；本次 Apply 无论成败都作废，先撤销已登记的效果与注册，替换后以新实例重新 Apply，撤销后留在 Pending 等键再就绪。Apply 自己隐藏所注入的键仍为 Failed。
+entries:
+  - id: provider
+    provides: [X, Y]
+    apply:
+      - {op: provide, key: X, value: x1, handle: x}
+      - {op: provide, key: Y, value: y1, handle: y}
+  - id: replaced
+    inject: [X]
+    provides: [C]
+    apply:
+      - {op: provide, key: C, value: c}
+      - {op: effect, name: replaced}
+      - {op: wait, gate: first}
+  - id: revoked
+    inject: [Y]
+    apply:
+      - {op: effect, name: revoked}
+      - {op: wait, gate: second}
+      - {op: inject, key: Y}
+  - id: restorer
+    provides: [Y]
+    apply:
+      - {op: provide, key: Y, value: y2}
+  - id: selfish
+    scope: 'tenant:t-001'
+    inject: [X]
+    apply:
+      - {op: restrict, scope: 'tenant:t-001', keep: []}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [provider, selfish, observer]}
+  - {op: state, entry: selfish, scope: 'tenant:t-001', value: Failed}
+  - {op: mount, entries: [replaced], idle: false}
+  - {op: blocked, gate: first}
+  - {op: state, entry: replaced, value: Applying}
+  - {op: replace, handle: x, value: x2, idle: false}
+  - {op: state, entry: replaced, value: Pending}
+  - {op: open, gate: first}
+  - {op: idle}
+  - {op: state, entry: replaced, value: Ready}
+  - {op: inject, entry: observer, key: C, value: c}
+  - {op: mount, entries: [revoked], idle: false}
+  - {op: blocked, gate: second}
+  - {op: revoke, handle: y, idle: false}
+  - {op: state, entry: revoked, value: Pending}
+  - {op: open, gate: second}
+  - {op: idle}
+  - {op: state, entry: revoked, value: Pending}
+  - {op: missing, entry: observer, key: Y}
+  - {op: mount, entries: [restorer]}
+  - {op: state, entry: revoked, value: Ready}
+  - {op: trace, value: ['apply:provider', 'apply:selfish', 'apply:observer', 'apply:replaced', 'dispose:replaced', 'apply:replaced', 'apply:revoked', 'dispose:revoked', 'apply:restorer', 'apply:revoked']}
+  - {op: cleanupErrors, value: 0}
