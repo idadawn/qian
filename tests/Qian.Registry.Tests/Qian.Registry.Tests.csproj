@@ -19,6 +19,7 @@
     <ProjectReference Include="../../packages/Qian.Tenancy/Qian.Tenancy.csproj" />
     <ProjectReference Include="../../packages/Qian.Registry.AspNetCore/Qian.Registry.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Authz/Qian.Authz.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
     <PackageReference Include="Kun.Security" />
   </ItemGroup>
 </Project>

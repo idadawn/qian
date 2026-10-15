@@ -39,6 +39,40 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
         }, ct);
     }
 
+    // 撤销直接主体的角色绑定；同一事务递增租户授权修订，各宿主的判定快照随之失效。不存在的绑定返回 false，不泄露其它租户信息。
+    internal async Task<bool> RevokeAsync(string roleCode, string subjectType, string subjectId, string actor, CancellationToken ct)
+    {
+        Identifier(subjectId);
+        if (subjectType is not ("user" or "organization" or "position" or "group" or "service" or "agent")) throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
+        var removed = false;
+        await Write(actor, async (db, _) =>
+        {
+            var assignment = await (from row in db.RoleAssignments
+                                    join role in db.Roles on row.RoleId equals role.Id
+                                    where role.Code == roleCode && row.SubjectType == subjectType && row.SubjectId == subjectId
+                                    select row).SingleOrDefaultAsync(ct).ConfigureAwait(false);
+            if (assignment is null) return;
+            db.RoleAssignments.Remove(assignment); removed = true;
+        }, ct).ConfigureAwait(false);
+        return removed;
+    }
+
+    // Authz 视角的租户成员（持有本租户角色绑定的主体）；平台超管的绑定是平台行，按 RLS 与查询投影都不会出现在这里。
+    internal async Task<IReadOnlyList<TenantRoleMember>> ListMembersAsync(CancellationToken ct)
+    {
+        var owner = Owner();
+        await using var session = await data.OpenAsync<AuthzDbContext>(ct).ConfigureAwait(false);
+        var db = session.Context;
+        var rows = await (from assignment in db.RoleAssignments.AsNoTracking()
+                          join role in db.Roles.AsNoTracking() on assignment.RoleId equals role.Id
+                          select new { assignment.SubjectType, assignment.SubjectId, role.Code }).ToArrayAsync(ct).ConfigureAwait(false);
+        CheckOwner(owner);
+        return Array.AsReadOnly(rows.GroupBy(row => (row.SubjectType, row.SubjectId))
+            .OrderBy(group => group.Key.SubjectType, StringComparer.Ordinal).ThenBy(group => group.Key.SubjectId, StringComparer.Ordinal)
+            .Select(group => new TenantRoleMember(group.Key.SubjectType, group.Key.SubjectId,
+                Array.AsReadOnly(group.Select(row => row.Code).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray()))).ToArray());
+    }
+
     internal Task InstallDefaultsAsync(string pluginId, string version, string? expectedVersion, string actor, CancellationToken ct) => Write(actor, async (db, owner) =>
     {
         var source = await db.Catalogs.AsNoTracking().SingleOrDefaultAsync(row => row.PluginId == pluginId && row.Version == version, ct).ConfigureAwait(false)
@@ -100,6 +134,13 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
         await session.Context.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))", ct).ConfigureAwait(false);
         await update(session.Context, owner).ConfigureAwait(false);
         CheckOwner(owner);
+        // 修订号与变更同事务提交：快照缓存以 (租户, 主体, 修订) 为键，提交即对所有宿主失效；没有变更（重复开通、撤销不存在的绑定）不递增。
+        if (session.Context.ChangeTracker.HasChanges())
+        {
+            var revision = await session.Context.Revisions.SingleOrDefaultAsync(row => row.TenantId == owner, ct).ConfigureAwait(false);
+            if (revision is null) session.Context.Revisions.Add(revision = new TenantAuthzRevisionRow { TenantId = owner });
+            revision.Revision++; revision.UpdatedBy = actor;
+        }
         await session.SaveChangesAsync(ct).ConfigureAwait(false);
         CheckOwner(owner);
         await transaction.CommitAsync(ct).ConfigureAwait(false);
@@ -118,3 +159,6 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
         if (string.IsNullOrWhiteSpace(value) || value.Length > 200 || value.Any(char.IsControl)) throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
     }
 }
+
+/// <summary>租户内持有角色绑定的主体及其角色编码。</summary>
+internal sealed record TenantRoleMember(string SubjectType, string SubjectId, IReadOnlyList<string> Roles);

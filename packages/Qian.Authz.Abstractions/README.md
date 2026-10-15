@@ -6,7 +6,11 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 
 所有 profile 均可引用 Definition；真正提供 `Authz` 的组件是后续 `Qian.Authz` / `qian.authz`。`ctx.Authz()` 按当前 scope 解析 `IAuthzService`，缺 Provider 或上下文已卸载时拒绝解析。Provider 必须在 Apply 中提供服务，并将错误码登记句柄交给 `ctx.Effect`。
 
-`qian add authz` 安装组件及其 Provider，本 Definition 包不自行启动服务，也不把平台能力绑定到宿主 DI。当前组件目录仍是骨架；权限注册表、清单表面与角色模板由 S1-AZ-002 实现，RBAC 由 S1-AZ-003 实现。
+`qian add authz` 安装组件及其 Provider，本 Definition 包不自行启动服务，也不把平台能力绑定到宿主 DI。当前组件目录仍是骨架；Provider `Qian.Authz` 的 `AuthzPlugin` 已提供 `Authz`、`Authz.Permissions`、`qian.authz.resource-type/v1` 与 `Authz.SuperadminBypass` 四个服务键（S1-AZ-002 / S1-AZ-003），细节见 Qian.Authz 主文档。
+
+## 平台超管显式旁路
+
+`ISuperadminBypass`（服务键 `AuthzDefinition.SuperadminBypassKey`）是平台超管的唯一放行端口（ADR-006 D6.3）。调用方以平台主体（`AuthorizationSubject.TenantId` 为 null）显式请求，普通 Check 对平台主体一律拒绝；`SuperadminAccess` 携带权限点、目标租户（平台资源为 null，须与当前租户上下文一致）、可选资源引用与调用通道（ui / api / mcp / a2a / job / event / hook）。Provider 只在主体持有效 `platform.superadmin`（`PlatformRoles.Superadmin`）且审计写入成功后放行，审计 payload 的 bypass 值为 `PlatformRoles.SuperadminBypass`（`superadmin`）；拒绝不写审计，只给稳定原因码。端口缺失时调用方必须 fail-closed，不得回退到租户判定器或令牌角色。
 
 ## 权限契约
 

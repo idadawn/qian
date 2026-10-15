@@ -12,6 +12,8 @@ public static class AuthzDefinition
     public static readonly ServiceKey PermissionsKey = new("Authz.Permissions");
     /// <summary>资源类型扩展端口的稳定服务键。</summary>
     public static readonly ServiceKey ResourceTypesKey = new("qian.authz.resource-type/v1");
+    /// <summary>平台超管显式旁路端口（<see cref="ISuperadminBypass"/>）；缺失时调用方须 fail-closed。</summary>
+    public static readonly ServiceKey SuperadminBypassKey = new("Authz.SuperadminBypass");
     /// <summary>解析当前 scope 的授权服务；没有 Provider 时沿用运行时的缺失服务错误。</summary>
     public static IAuthzService Authz(this IPluginContext context) => context.Inject<IAuthzService>(Key);
 }
