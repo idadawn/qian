@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>平台生命周期控制器的服务键、操作端口、进程内钩子与部署执行器扩展点、集成事件与错误词汇。</Description></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /><ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" /><PackageReference Include="Kun.EventBus.Abstractions" /></ItemGroup>
+</Project>
