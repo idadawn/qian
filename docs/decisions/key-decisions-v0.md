@@ -493,7 +493,7 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 
 ### 租户批次排序裁决 R95–R97（S1-DEC-022，2026-10-16）
 
-产品负责人 2026-10-16 要求把看板上租户领域的全部待办按顺序交 cody 一次做完并「确保租户可用」。Claude 按 S1-DEC-021 的做法把伸进别的领域的验收移交到归属任务、解除不必要的依赖，未经逐条确认；顺序、暂缓说明（S1-TEN-005 等 yue 第 2 波）、「租户可用」收口检查与执行提示词见 `pm/tasks/S1-DEC-022.md`，有异议时新建决策任务。
+产品负责人 2026-10-16 要求把看板上租户领域的全部待办按顺序交 cody 一次做完并「确保租户可用」。Claude 按 S1-DEC-021 的做法把伸进别的领域的验收移交到归属任务、解除不必要的依赖，产品负责人 2026-10-16 回复「认可 R95–R97」并自行把执行提示词交给 cody；顺序、暂缓说明（S1-TEN-005 等 yue 第 2 波）、「租户可用」收口检查与执行提示词见 `pm/tasks/S1-DEC-022.md`，有异议时新建决策任务。
 
 - R95：S1-TEN-002 收口。到期扫描交付为 `qian.tenancy` 的幂等能力（能力目录条目，供 7.13 调度器以 callback 类型调用，不标 `humanOnly`），TEN-002 以进程内 IT 验证「到期 → 宽限 + `tenant.expired.v1` + 业务入口即时拒绝」；调度器准点触发与 staging E2E 移交 S1-SCH-002（callback 类型的首个真实作业），「新登录被拒」移交 S1-IDP-003（登录流水线按租户状态拒绝 pending / grace / suspended），「已登录会话 ≤ 60s 失效」移交 S1-IDP-004（会话中心订阅 `tenant.expired.v1` / `tenant.suspended.v1`）。状态迁移端点 `:activate|suspend|resume` 与 S1-TEN-006 同一资源、同一平台主体授权与审计路径；审批钩子是 `Qian.Tenancy.Abstractions` 定义的进程内事件，不进 hooks.json 矩阵（R92），S1 无监听器时放行。TEN-002 depends 改为 S1-TEN-001、S1-TEN-006、S1-EVT-001、S1-AZ-003，不再依赖 S1-SCH-001 / S1-IDP-004。
 - R96：S1-TEN-003 收口。验收第 3 条「租户管理员可登录」改为「管理员指针与 tenant.owner 初始授权已写入」，登录复验归 S1-IDP-003（R81 同口径）。步骤表里「创建租户管理员 Membership」「发通知」经 `qian.identity` / `qian.notify` 的端口调用，组件缺席时该步记 `skipped` 并写原因（不记成功、不算失败），整轮保持可重入，端口就位后重跑只补这些步；「写初始授权」经 `Qian.Authz.Abstractions` 的最小授予端口（为租户内主体绑定内置角色，幂等；TEN-003 顺手加入 Definition、`AuthzPlugin` 提供、登记 PublicAPI，并向 S1-AZ-005 登记，AZ-005 的授权 API 建在其上），`qian.tenancy` 不直写 authz 表、不引用 Provider 包；派发 `tenant/provisioned` 之后再写初始授权（S1-AZ-002 登记的时序）。S1-TEN-006 的 `POST /api/tenancy/tenants` 进入该编排（创建主档为第 1 步），重跑入口由 TEN-003 定并记入任务日志；TEN-003 depends 加 S1-AZ-002。
