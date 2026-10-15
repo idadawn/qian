@@ -40,10 +40,10 @@ public static class DataContractJson
 /// <summary>嵌入 NuGet 的数据契约与目录，源文件位于 contracts/data/v1。</summary>
 public static class DataContractSchemas
 {
-    /// <summary>原样随包分发的冻结 v0 信封 Schema，供离线解析引用。</summary>
-    public static string FrozenEventEnvelope => Read("v0/event-envelope.schema.json");
-    /// <summary>冻结信封引用的 S2S UUID 定义所在 Schema，供离线解析引用。</summary>
-    public static string FrozenS2sClaims => Read("v0/s2s-claims.schema.json");
+    /// <summary>原样随包分发的 v0 信封 Schema（contracts/v0 草稿，<c>x-status: draft</c>；v0 冻结时复核引用它的 data/v1 信封），供离线解析引用。</summary>
+    public static string EventEnvelopeV0 => Read("v0/event-envelope.schema.json");
+    /// <summary>v0 信封引用的 S2S UUID 定义所在 Schema（同为 v0 草稿），供离线解析引用。</summary>
+    public static string S2sClaimsV0 => Read("v0/s2s-claims.schema.json");
     /// <summary>Filter AST JSON Schema 2020-12。</summary>
     public static string Filter => Read("filter-ast.schema.json");
     /// <summary>字段类型 × 运算符目录。</summary>
@@ -56,7 +56,7 @@ public static class DataContractSchemas
     public static string RulePolicy => Read("data-rule-policy.schema.json");
     /// <summary>记录变更载荷 Schema，即 qian.record.changed.v1 信封里 payload 的结构。</summary>
     public static string RecordChangedPayload => Read("qian.record.changed.v1.schema.json");
-    /// <summary>整条记录事件消息的 Schema：引用冻结 v0 信封，约束 Qian.Events 写入端生成的那一层信封与其中的载荷。</summary>
+    /// <summary>整条记录事件消息的 Schema：引用 v0 草稿信封，约束 Qian.Events 写入端生成的那一层信封与其中的载荷。</summary>
     public static string RecordChangedEnvelope => Read("record-changed-envelope.schema.json");
     /// <summary>基准类型目录、方言数据与字段定义的 JSON Schema。</summary>
     public static string DataTypes => Read("data-types.schema.json");

@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Json.Schema;
@@ -153,17 +150,8 @@ internal static partial class Contracts
         return errors;
     }
 
-    /// <summary>contracts/v0 规定的 schemaSha256：对 {name, description, inputSchema} 做 RFC 8785 规范化后 SHA-256。</summary>
-    public static string SchemaSha256(JsonElement capability)
-    {
-        var sb = new StringBuilder();
-        sb.Append('{');
-        sb.Append("\"description\":"); Jcs.Write(sb, capability.GetProperty("description"));
-        sb.Append(",\"inputSchema\":"); Jcs.Write(sb, capability.GetProperty("inputSchema"));
-        sb.Append(",\"name\":"); Jcs.Write(sb, capability.GetProperty("name"));
-        sb.Append('}');
-        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(sb.ToString())));
-    }
+    /// <summary>contracts/v0 规定的 schemaSha256：生产实现 <see cref="Qian.Surfaces.ToolContractHash"/>（RFC 8785 规范化后 SHA-256），测试不另写 JCS。</summary>
+    public static string SchemaSha256(JsonElement capability) => Qian.Surfaces.ToolContractHash.Compute(capability);
 
     private static (BuildOptions, Dictionary<string, JsonSchema>) Load()
     {
@@ -189,80 +177,4 @@ internal static partial class Contracts
 
     [GeneratedRegex("\\{[A-Za-z_][A-Za-z0-9_]*\\}")]
     private static partial Regex Placeholder();
-}
-
-/// <summary>RFC 8785（JCS）规范化的测试用实现：成员按 UTF-16 码元排序、无空白、字符串按 ECMAScript 规则转义；只支持整数。</summary>
-internal static class Jcs
-{
-    public static void Write(StringBuilder sb, JsonElement e)
-    {
-        switch (e.ValueKind)
-        {
-            case JsonValueKind.Object:
-                sb.Append('{');
-                var first = true;
-                foreach (var p in e.EnumerateObject().OrderBy(p => p.Name, StringComparer.Ordinal))
-                {
-                    if (!first)
-                        sb.Append(',');
-                    first = false;
-                    WriteString(sb, p.Name);
-                    sb.Append(':');
-                    Write(sb, p.Value);
-                }
-                sb.Append('}');
-                break;
-            case JsonValueKind.Array:
-                sb.Append('[');
-                var i = 0;
-                foreach (var item in e.EnumerateArray())
-                {
-                    if (i++ > 0)
-                        sb.Append(',');
-                    Write(sb, item);
-                }
-                sb.Append(']');
-                break;
-            case JsonValueKind.String:
-                WriteString(sb, e.GetString()!);
-                break;
-            case JsonValueKind.Number:
-                sb.Append(e.TryGetInt64(out var n) ? n.ToString(CultureInfo.InvariantCulture) : throw new NotSupportedException("测试用 JCS 只支持整数"));
-                break;
-            case JsonValueKind.True:
-                sb.Append("true");
-                break;
-            case JsonValueKind.False:
-                sb.Append("false");
-                break;
-            default:
-                sb.Append("null");
-                break;
-        }
-    }
-
-    private static void WriteString(StringBuilder sb, string s)
-    {
-        sb.Append('"');
-        foreach (var c in s)
-        {
-            switch (c)
-            {
-                case '"': sb.Append("\\\""); break;
-                case '\\': sb.Append("\\\\"); break;
-                case '\b': sb.Append("\\b"); break;
-                case '\f': sb.Append("\\f"); break;
-                case '\n': sb.Append("\\n"); break;
-                case '\r': sb.Append("\\r"); break;
-                case '\t': sb.Append("\\t"); break;
-                default:
-                    if (c < 0x20)
-                        sb.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
-                    else
-                        sb.Append(c);
-                    break;
-            }
-        }
-        sb.Append('"');
-    }
 }

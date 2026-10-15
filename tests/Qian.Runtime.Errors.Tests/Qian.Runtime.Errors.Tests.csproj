@@ -17,6 +17,8 @@
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
     <ProjectReference Include="../../packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
+    <!-- schemaSha256 语义规则用生产实现 ToolContractHash，不在测试里复刻 JCS。 -->
+    <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
   </ItemGroup>
 
   <ItemGroup>
