@@ -78,6 +78,7 @@ public sealed class AuthzPlugin : IQianPlugin
             ctx.Effect(registry.Register(catalog.Version, catalog.Permissions));
         }
         var roles = new PostgresTenantRoleStore(ctx.Data(), tenant);
+        ctx.Provide<ITenantRoleGrant>(TenantRoleGrant.Key, new TenantRoleGrantService(roles));
         var components = Array.AsReadOnly(catalogs.Select(catalog => (catalog.PluginId, catalog.Version)).ToArray());
         ctx.On(SurfaceHookEvents.TenantProvisioned, DispatchMode.Serial, (Func<HookNotification, ValueTask<JsonElement>>)(notification => ProvisionAsync(notification)));
         CommandPolicies.Register(ctx, CommandPolicyKind.Authorization, new RbacCommandPolicy(checker).Handle);

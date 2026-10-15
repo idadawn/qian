@@ -49,13 +49,13 @@ internal sealed class PostgresTenantDirectory(IDataService data) : ITenantDirect
         catch (DbUpdateConcurrencyException) { throw Error(PlatformErrors.PreconditionFailed); }
         return Describe(row);
     }
-    private static TenantDescriptor Describe(TenantRow row) => new(row.Id, row.Code, row.Name,
+    internal static TenantDescriptor Describe(TenantRow row) => new(row.Id, row.Code, row.Name,
         row.Isolation == "row" ? TenantIsolation.Row : throw new InvalidOperationException("未装配此隔离策略。"),
         row.Status switch { "pending" => TenantStatus.Pending, "trial" => TenantStatus.Trial, "active" => TenantStatus.Active,
             "grace" => TenantStatus.Grace, "suspended" => TenantStatus.Suspended, _ => throw new InvalidOperationException("未知租户状态。") });
-    private static void ValidateCode(string code)
+    internal static void ValidateCode(string code)
     { if (code is not { Length: > 0 and <= 64 } || code.Any(c => !(c is >= 'a' and <= 'z' or >= '0' and <= '9'))) throw Error(PlatformErrors.InputInvalid); }
-    private static void ValidateName(string name)
+    internal static void ValidateName(string name)
     { if (string.IsNullOrWhiteSpace(name) || name.Length > 200 || name.Any(char.IsControl)) throw Error(PlatformErrors.InputInvalid); }
     private static QianErrorException Error(ErrorCode code) => new(new QianError(code));
 }

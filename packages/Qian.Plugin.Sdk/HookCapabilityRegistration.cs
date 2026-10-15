@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Qian.Runtime;
+using Qian.Authz.Abstractions;
 using Qian.Runtime.Errors;
 using Qian.Surfaces.Abstractions;
 
@@ -19,11 +20,16 @@ public static class HookCapabilityRegistration
         return context.Provide<IHookHandler>(HookDefinition.Handlers, contract.ComponentId + "/" + name, new CapabilityHook<TRequest>(binding, request));
     }
     private sealed class CapabilityHook<TRequest>(IExecutableCapability binding, Func<HookNotification, TRequest> convert) : IHookHandler
+        where TRequest : Kun.Authorization.IPermissionProtectedRequest
     {
         public async ValueTask<JsonElement> InvokeAsync(HookNotification notification, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(notification);
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(notification.CancellationToken, cancellationToken);
+            // 只有此真实 hook 适配器能够消费开户凭据；普通 Invoke/Send 没有该分支。
+            using var initialization = TenantInitializationAuthorization.Enter(notification.Source, binding.Contract.Id, typeof(TRequest), TRequest.RequiredPermissions);
+            if (initialization is not null && binding.Contract.Metadata.GetProperty("sideEffect").GetString() is not ("read" or "write"))
+                throw new QianErrorException(new QianError(PlatformErrors.AuthzDenied));
             using var origin = HookCommandOrigin.Begin(binding.Contract.Id, notification.Source.Scope);
             var input = JsonSerializer.SerializeToElement(convert(notification), binding.Contract.RequestTypeInfo);
             return await binding.InvokeAsync(notification.Source, input, linked.Token).ConfigureAwait(false);
