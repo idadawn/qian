@@ -28,7 +28,8 @@ export async function fetchPackageComponents(rootDirectory:string,packages:{nuge
    for(const name of ['Directory.Build.props','Directory.Build.targets','Directory.Packages.props'])writeFileSync(path.join(folder,name),'<Project />');
    const project=path.join(folder,'Inspect.csproj');
    writeFileSync(project,'<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFrameworks>'+xml(frameworks.join(';'))+'</TargetFrameworks><ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally></PropertyGroup><ItemGroup>'+nuget.map(reference=>'<PackageReference Include="'+xml(reference.name)+'" Version="['+xml(reference.version)+']" />').join('')+'</ItemGroup></Project>');
-   await runPackageCommand('dotnet',['restore',project,'--packages',path.join(folder,'packages'),'--disable-parallel',
+   // 与安装阶段的还原一致允许并行下载：包与版本已精确钉定，结果另经归档摘要核验，逐个下载只会拖慢冷缓存下的预检。
+   await runPackageCommand('dotnet',['restore',project,'--packages',path.join(folder,'packages'),
     '-p:ImportDirectoryBuildProps=false','-p:ImportDirectoryBuildTargets=false','-p:ImportDirectoryPackagesProps=false','-p:ManagePackageVersionsCentrally=false'],folder,'dotnet');
    const assetsFile=path.join(folder,'obj/project.assets.json');assertNoLinks(assetsFile);
    const assets=JSON.parse(readFileSync(assetsFile,'utf8')) as {libraries:Record<string,{type?:string;path?:string;files?:string[]}>;packageFolders:Record<string,unknown>};

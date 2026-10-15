@@ -11,6 +11,11 @@ resources:
   - ingress.yaml
   - networkpolicy.yaml
 
+configMapGenerator:
+  - name: qian-pm-board-builder
+    files:
+      - builder.py
+
 labels:
   - includeSelectors: true
     pairs:

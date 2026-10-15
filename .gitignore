@@ -35,3 +35,8 @@ playwright-report/
 # Rspress 组件演示与离线编辑器资源，由 website 构建生成
 website/docs/public/yue-demo/
 website/docs/public/yue-vendor/
+
+# 任务看板生成物（S1-PM-004）：scripts/pm.py build 按任务文件生成，不进 git；集群看板由看板 Pod 按 main 自行生成
+pm/index.html
+pm/tasks.json
+pm/STATUS.md
