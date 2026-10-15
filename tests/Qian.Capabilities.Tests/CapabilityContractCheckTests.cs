@@ -166,23 +166,81 @@ public sealed class CapabilityContractCheckTests
     [Fact]
     public void 求值时的意外异常记录组件与能力名后交给ErrorDetail中间件()
     {
-        var logger = new RecordingLogger();
-        var validator = new CapabilityInputValidator(logger);
-        const string schema = """{"type":"object","properties":{"amounts":{"type":"array","uniqueItems":true}}}""";
-        using var document = JsonDocument.Parse(schema);
-        var entry = JsonSerializer.SerializeToElement(new
-        {
-            id = "qian.test/probe.amounts", plugin = "qian.test", name = "probe.amounts", inputSchema = document.RootElement,
-            schemaSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(schema)))
-        });
+        // 已知会让 JsonSchema.Net 9.4 求值抛异常的写法都在登记期或输入检查里拒绝了，这里经内部求值入口模拟其余的意外失败。
+        var logger = new RecordingLogger(); var failure = new FormatException("模拟库在求值时抛出的意外异常。");
+        var validator = new CapabilityInputValidator(logger, evaluate: (_, _, _) => throw failure);
+        var entry = Described("probe.amounts", """{"type":"object","properties":{"amounts":{"type":"array","uniqueItems":true}}}""");
         validator.Prepare(entry.GetProperty("schemaSha256").GetString()!, entry.GetProperty("inputSchema"));
-        // 1e400 是合法的 JSON 数，但超出 double 的范围：JsonSchema.Net 9.4 比较 uniqueItems 的元素时抛 FormatException，不在登记期能查出的三类里。
-        var error = Assert.Throws<InvalidOperationException>(() => validator.Validate(entry, Json("""{"amounts":[1e400,1e401]}""")));
+        var error = Assert.Throws<InvalidOperationException>(() => validator.Validate(entry, Json("""{"amounts":[1,2]}""")));
         Assert.Equal("能力输入 Schema 无法求值。", error.Message);
-        Assert.IsType<FormatException>(error.InnerException);
+        Assert.Same(failure, error.InnerException);
         var message = Assert.Single(logger.Messages);
         Assert.Contains("qian.test", message, StringComparison.Ordinal); Assert.Contains("probe.amounts", message, StringComparison.Ordinal);
         Assert.Equal((LogLevel.Error, 2), (logger.Levels.Single(), logger.Events.Single()));
+        // S1-RT-021 用来触发的输入（uniqueItems 比较 1e400）现在求值前就按 BAD_REQUEST 拒绝，不再走到这里。
+        Assert.Equal("BAD_REQUEST", Assert.Throws<QianErrorException>(() => validator.Validate(entry, Json("""{"amounts":[1e400,1e401]}"""))).Error.Code.Code);
+        Assert.Single(logger.Messages);
+    }
+
+    [Fact]
+    public void 输入里超出decimal范围的数在求值前按BAD_REQUEST拒绝_原先会让uniqueItems_enum_const求值抛异常_边界值照常校验()
+    {
+        var logger = new RecordingLogger();
+        var validator = new CapabilityInputValidator(logger);
+        var unique = Described("probe.unique", """{"type":"object","properties":{"x":{"type":"array","uniqueItems":true}}}""");
+        var choice = Described("probe.choice", """{"type":"object","properties":{"x":{"enum":[1,2]}}}""");
+        var fixedValue = Described("probe.fixed", """{"type":"object","properties":{"x":{"const":1}}}""");
+        foreach (var entry in new[] { unique, choice, fixedValue }) validator.Prepare(entry.GetProperty("schemaSha256").GetString()!, entry.GetProperty("inputSchema"));
+        // JsonSchema.Net 9.4 按 decimal 比较这三种取值：超过 decimal.MaxValue（约 7.9e28）就抛 FormatException，与是否超出 double 无关。
+        foreach (var (entry, input) in new[]
+        {
+            (unique, """{"x":[1e29,2e29]}"""), (unique, """{"x":[1.7e308,1]}"""), (unique, """{"x":[1e400,1e401]}"""),
+            (choice, """{"x":1e29}"""), (choice, """{"x":-79228162514264337593543950336}"""), (fixedValue, """{"x":1e400}"""),
+            // 不在比较位置上的超大数同样拒绝：规则只看输入本身，与 Schema 无关。
+            (fixedValue, """{"x":1,"y":{"z":[0,1e29]}}"""),
+        })
+            Assert.Equal("BAD_REQUEST", Assert.Throws<QianErrorException>(() => validator.Validate(entry, Json(input))).Error.Code.Code);
+        Assert.Empty(logger.Messages);
+
+        // decimal.MaxValue 本身与下溢的 1e-400（按 0 比较）照常进入校验：通过，或按 Schema 报字段级错误。
+        validator.Validate(unique, Json("""{"x":[79228162514264337593543950335,-79228162514264337593543950335,1e-400]}"""));
+        Assert.Equal([("VALUE_NOT_ALLOWED", "#/x")], Fields(Assert.Throws<QianErrorException>(() => validator.Validate(choice, Json("""{"x":79228162514264337593543950335}""")))));
+        Assert.Equal([("VALUE_NOT_ALLOWED", "#/x")], Fields(Assert.Throws<QianErrorException>(() => validator.Validate(fixedValue, Json("""{"x":1e-400}""")))));
+        Assert.Empty(logger.Messages);
+    }
+
+    [Fact]
+    public void 输入Schema的enum与const取值里有超出decimal范围的数时登记期按unsupported_number拒绝_位置指向该数_边界值通过()
+    {
+        var validator = new CapabilityInputValidator();
+        foreach (var (schema, path) in new (string, string[])[]
+        {
+            ("""{"type":"object","properties":{"x":{"const":1e29}}}""", ["properties", "x", "const"]),
+            ("""{"type":"object","properties":{"x":{"enum":[1,"a",-1e400]}}}""", ["properties", "x", "enum", "2"]),
+            ("""{"type":"object","properties":{"x":{"const":{"a":[1,{"b":79228162514264337593543950336}]}}}}""", ["properties", "x", "const", "a", "1", "b"]),
+            ("""{"type":"object","$defs":{"n":{"enum":[[1e300]]}},"properties":{"x":{"$ref":"#/$defs/n"}}}""", ["$defs", "n", "enum", "0", "0"]),
+        })
+        {
+            var entry = Entry(schema); var key = entry.GetProperty("schemaSha256").GetString()!;
+            var error = Assert.Throws<CapabilityInputSchemaException>(() => validator.Prepare(key, entry.GetProperty("inputSchema")));
+            Assert.Equal(path, error.Path); Assert.Equal("unsupported-number", error.Rule);
+            Assert.False(validator.IsPrepared(key));
+        }
+
+        // 经登记期检查：位置以能力 ID 为文件，指到条目里的那个数。
+        var check = new CapabilityContractCheck(new SurfaceValidator(), new ToolContractHasher());
+        var rejected = Assert.Throws<CapabilityContractException>(() => check.Prepare("qian.test", "probe.limit",
+            Entry("""{"type":"object","properties":{"limit":{"enum":[10,100,1e29]}}}""")));
+        Assert.Equal(("qian.test/probe.limit#/inputSchema/properties/limit/enum/2", "unsupported-number", "INPUT_INVALID"), (rejected.Location, rejected.Rule, rejected.ReasonCode));
+        Assert.IsType<CapabilityInputSchemaException>(rejected.InnerException);
+
+        // 边界值与非比较位置的超大数不拒绝：decimal.MaxValue、下溢的 1e-400、名为 const 的属性、maximum / default / examples 里的超大数。
+        var accepted = Entry("""
+            {"type":"object","properties":{"top":{"enum":[79228162514264337593543950335,-79228162514264337593543950335]},"tiny":{"const":1e-400},
+             "const":{"type":"number","maximum":1e400,"default":1e400,"examples":[1e400]}}}
+            """);
+        validator.Prepare(accepted.GetProperty("schemaSha256").GetString()!, accepted.GetProperty("inputSchema"));
+        validator.Validate(accepted, Json("""{"top":79228162514264337593543950335,"const":12.5}"""));
     }
 
     // 以合格的测试声明为底改动一处，模拟手写或其他生成器产出的声明。
@@ -212,6 +270,20 @@ public sealed class CapabilityContractCheckTests
         var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(inputSchema)));
         return JsonSerializer.SerializeToElement(new { inputSchema = schema.RootElement, schemaSha256 = hash });
     }
+
+    // 带组件与能力名的条目，供日志断言。
+    private static JsonElement Described(string name, string inputSchema)
+    {
+        using var schema = JsonDocument.Parse(inputSchema);
+        return JsonSerializer.SerializeToElement(new
+        {
+            id = "qian.test/" + name, plugin = "qian.test", name, inputSchema = schema.RootElement,
+            schemaSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(inputSchema)))
+        });
+    }
+
+    private static (string Code, string Pointer)[] Fields(QianErrorException error) =>
+        error.Error.Errors!.Select(item => (item.Code.Code, item.Pointer)).ToArray();
 
     private static JsonElement Json(string text)
     {

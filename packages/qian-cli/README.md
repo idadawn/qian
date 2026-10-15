@@ -6,7 +6,11 @@
 
 移除只处理所选 profile 的条目，默认保留 disabled 配置，`--purge` 删除条目；其它 profile 或组件仍引用的包不会删除，宿主原有依赖只借用。卸载记录只保留定位信息，允许随后按原安装名清理保留配置；被复用或改写的条目不会被删除。完成日志保留最近 20 次。
 
-测试使用正式 `Kun.Core` 包编译消费者、实际 npm 包验证导入/移除；另把仓库真实 Config Provider 制成临时 NuGet 包，经签名市场批量安装、消费者运行、重装和移除，并验证实际依赖安装失败时没有半批残留。临时包测试不等于私有包族发布，也不替代 identity/authz/files 命名 E2E 或真实平台运营权限验收。组合层复杂边界、一键简写参数、引擎校验和受控中断恢复仍待完成，任务保持 doing。
+测试使用正式 `Kun.Core` 包编译消费者、实际 npm 包验证导入/移除；另把仓库真实 Config Provider 制成临时 NuGet 包，经签名市场批量安装、消费者运行、重装和移除，并验证实际依赖安装失败时没有半批残留。临时包测试不等于私有包族发布，私有源上的真实安装见下一段。identity / authz / files 的完整组合归 S1-QA-005（R84）；租户 scope patch 需要的平台写入端点尚不存在；组合层复杂边界、一键简写参数、引擎版本兼容校验（目前只要求 NuGet 组件声明 `engines.kun`）和受控中断恢复仍待完成。
+
+私有源 E2E（`test/private-feed.e2e.mjs`，`pnpm --filter qian test:feed`，需要读包令牌 `QIAN_FEED_TOKEN`）：空白 ASP.NET Core 项目经 CLI 支持的签名本地市场执行 `qian add data events config --yes`，市场条目指向仓库里的真实组件文件夹。`Qian.Data`、`Qian.Events`、`Qian.Config.Apollo` 只从正式私有源（GitHub Packages）还原，宿主 csproj 写入精确版本区间（如 `[0.1.0]`），归档摘要等于清单 `runtime.nuget[].digest`，`.qian/lock.json` 记录来源市场、组件摘要与包归档摘要。宿主按 `dump-config` 解析出的条目和清单 `runtime.entry` 挂载三个 Provider，全部就绪；`qian list` 列出来源市场；`qian remove config events data --purge` 逆序撤销后，项目文件、profile patch 与文件集合回到安装前。保留的只有 `.qian/` 工作区本身、`.gitignore` 里两条 `.qian` 忽略规则，以及已不锁任何包的 `packages.lock.json`（与包管理器惯例一致）。令牌只经环境变量传给 NuGet.Config 的 `%QIAN_FEED_TOKEN%`，不写文件、不回显。CI 的 surfaces 工作流以带 `packages: read` 的 `GITHUB_TOKEN` 运行此用例；发布新版本后要同步各组件清单的 `runtime.nuget` 版本与摘要。
+
+未通过校验器或验签的组件 `add` 失败时退出 1、标准输出为空，标准错误是一行 `{diagnostics:[…]}`：每条带 ErrorDetail（含 trace_id），逐项错误给出 `SURFACE_SYNTAX_INVALID` / `SURFACE_POLICY_DENIED` 与 JSON Pointer；不留下锁、patch 或组件目录（`marketplaces.test.mjs`）。
 
 `add --surfaces skills,commands --no-code` 从已经整体通过来源与语义校验的组件中选择表面，保留技能目录附件和被引用文件，再重新校验投影。原来源摘要与安装文件摘要分别记录；代码组件的运行时字段与代码服务声明不会留在投影清单里，未选中的工具仍被技能引用时拒绝安装。相同版本改选表面属于内容替换，需要 `--force`；已有 required 代码及子组件不能借此被移除。选择普通组件的现有技能不会获取或安装其代码依赖；包内组合组件需要在隔离目录读取包元数据，NuGet 元数据发现仍需 .NET SDK，但不改变宿主依赖。组合包自身的声明表面也有独立挂载条目，使用完整组件 id 加 `-surfaces` 避免覆盖其子组件配置。
 
@@ -46,7 +50,7 @@ overlay 示例（不会修改 base 组合包）：
 
 `--resolve`、`--redact` 表示本切片始终采用的行为：始终解析并验证依赖，始终保留 secretRef，不读取密钥。合法配置退出 0；非法参数或配置退出 1、标准输出为空、标准错误输出带 ErrorDetail 的 diagnostics。业务骨架 warning 会出现在成功输出中，不能用作 Provider 就绪证明。
 
-此工作区包尚未发布。完整安装与远程平台 scope patch 继续由 S1-RT-011 完成；当前支持范围和剩余项见本页开头。五个默认 profile 均可静态解析；minimal 仅 Runtime 与表面装载器，默认输出空条目和空诊断。
+此工作区包尚未发布。当前支持范围和剩余项（含远程平台 scope patch）见本页开头。五个默认 profile 均可静态解析；minimal 仅 Runtime 与表面装载器，默认输出空条目和空诊断。
 
 ## 运行态表面诊断
 
