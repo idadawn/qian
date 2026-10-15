@@ -15,6 +15,10 @@ public sealed class K3sFixture : ContainerFixture<K3sContainer>
     protected override K3sContainer CreateContainer() => new K3sBuilder(ContainerImages.K3s).Build();
 
     /// <inheritdoc />
+    /// <remarks>K3s 启动时短暂占满全部 CPU；宿主繁忙时 API Server 的启动后钩子可能超时、进程退出（退出码 2），此时重建容器，最多三次。</remarks>
+    protected override int StartAttempts => 3;
+
+    /// <inheritdoc />
     protected override async ValueTask OnStartedAsync(K3sContainer container, CancellationToken cancellationToken)
     {
         Kubeconfig = await container.GetKubeconfigAsync().ConfigureAwait(false);

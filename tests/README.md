@@ -11,6 +11,7 @@ tests/
     ApolloMock/apollo_mock.py                 Apollo 协议替身，在容器里运行
   Qian.Testing.Containers.IntegrationTests/   fixture 自身的集成测试与单元测试
   Qian.Data.AspNetCore.Tests/                 数据端点：基准类型目录（无数据库）与数据连接档案（真实 PostgreSQL、挂载式密钥、连通测试）
+  Qian.Lifecycle.Tests/                       生命周期：验签与信任根轮换（真实 PostgreSQL）、GitOps 执行器（本机裸仓库 + K3s 单节点集群）、Local 执行器
   Qian.Runtime.Errors.Tests/                  contracts/v0 契约测试（Schema、fixture、语义规则、内置错误码目录）与 ErrorDetail 内存宿主测试
   Qian.Runtime.Tests/                         最小运行时单元测试与 tck/runtime/*.scenario.yml 的 .NET harness
   gates/                                      门禁自测：样例项目 + Python 测试，不在 Qian.slnx 里
@@ -70,6 +71,7 @@ public sealed class OrderVisibilityTests(InfrastructureFixture infra)
 | `RabbitMqFixture` | `rabbitmq:4.3-alpine`（`QIAN_TEST_IMAGE_RABBITMQ`） | `ConnectionString`（AMQP URI）；`Container` 可停启 broker，做「重启后消息不丢」这类韧性测试 |
 | `ApolloFixture` | `python:3.13-alpine` 运行 `apollo_mock.py`（`QIAN_TEST_IMAGE_APOLLO_MOCK`） | `ConfigServiceUri`（即客户端的 `Apollo__ConfigServer__0`）；`PublishAsync`、`DeleteAsync`、`SetAccessKeyAsync`、`SetHoldAsync`、`ResetAsync` |
 | `InfrastructureFixture` | 以上四个并行启动 | `Postgres`、`Redis`、`RabbitMq`、`Apollo` |
+| `K3sFixture` | `rancher/k3s:v1.31.5-k3s1`（`QIAN_TEST_IMAGE_K3S`），特权容器 | `Kubeconfig`（API Server 已映射到宿主端口）；`KubectlAsync` 在容器内执行 kubectl（含 kustomize），`CopyAsync` 写入待 apply 的清单。K3s 启动时会短暂占满 CPU，容器在就绪前自行退出时重建，最多三次（只重建容器，不重试断言）；用例里的工作负载镜像由集群自行拉取，需要出网 |
 
 - 版本：PostgreSQL 16、Redis 7 与部署基线一致（ADR-017 D17.2）；RabbitMQ 取当前 4.x 稳定线。环境变量用来与 staging 对齐或换内网镜像源。
 - 容器口令每次运行随机生成，仓库里没有写死的凭据。

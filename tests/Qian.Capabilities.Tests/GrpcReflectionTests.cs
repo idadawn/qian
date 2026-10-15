@@ -81,12 +81,30 @@ public sealed class GrpcReflectionTests
             await runtime.MountAsync([candidate.Definition with { Plugin = new GrpcContractPlugin(candidate.Definition.Plugin, repository, probe, "test.rpc", "0.9.0", "1.0.0", "test.rpc.api/v1") }], Ct);
             Assert.Equal(PluginState.Ready, runtime.GetState("remote", ScopeKey.Global));
             Assert.Single(runtime.GetContext("remote", ScopeKey.Global).List(SurfaceKeys.Commands));
+            // 平台挂载路径的契约准入（R76，S1-RT-005）：按预装基线套用同一个 GrpcContractPlugin；契约族首个版本不比较，
+            // 没有宿主授权的反射对端时 fail-closed（PRECONDITION_FAILED，pointer 指向契约）。
+            await runtime.UnmountAsync("remote", ScopeKey.Global, Ct);
+            Assert.Same(baseline.Definition.Plugin, new ContractAdmission(repository, null).Admit(baseline.Definition.Plugin, "test.rpc", "0.9.0"));
+            await runtime.MountAsync([candidate.Definition with { Plugin = new ContractAdmission(repository, null).Admit(candidate.Definition.Plugin, "test.rpc", "1.0.0") }], Ct);
+            Assert.Equal(PluginState.Failed, runtime.GetState("remote", ScopeKey.Global));
+            var unavailable = Assert.IsType<Qian.Runtime.Errors.QianErrorException>(runtime.GetFailure("remote", ScopeKey.Global));
+            Assert.Equal(("PRECONDITION_FAILED", "#/contracts/test.rpc.api~1v1"), (unavailable.Error.Code.Code, unavailable.Error.Pointer));
+            await runtime.UnmountAsync("remote", ScopeKey.Global, Ct);
+            var admitted = new ContractAdmission(repository, new Peers(probe)).Admit(candidate.Definition.Plugin, "test.rpc", "1.0.0");
+            Assert.IsType<GrpcContractPlugin>(admitted);
+            await runtime.MountAsync([candidate.Definition with { Plugin = admitted }], Ct);
+            Assert.Equal(PluginState.Ready, runtime.GetState("remote", ScopeKey.Global));
             var mismatch = await probe.CheckAsync(Source("google.protobuf.Int32Value"), Ct);
             Assert.False(mismatch.IsCompatible); Assert.NotEmpty(mismatch.BreakingRules);
             var error = await Assert.ThrowsAsync<RpcException>(() => new GrpcReflectionContractProbe(compiler, invoker).CheckAsync(Source(), Ct).AsTask());
             Assert.Equal(StatusCode.Unauthenticated, error.StatusCode);
         }
         finally { await app.StopAsync(Ct); }
+    }
+    // 宿主按出网与安装授权配置的反射对端：只对确切的组件版本给出探针。
+    private sealed class Peers(IGrpcContractProbe probe) : IGrpcContractPeers
+    {
+        public IGrpcContractProbe? Find(string pluginId, string version) => pluginId == "test.rpc" && version == "1.0.0" ? probe : null;
     }
     private static ProtoContractSet Source(string input = "google.protobuf.StringValue", string path = "echo.proto") => new(new Dictionary<string, ReadOnlyMemory<byte>>
     {
