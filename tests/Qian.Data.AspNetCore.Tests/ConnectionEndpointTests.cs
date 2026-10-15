@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Qian.Config;
@@ -53,8 +54,8 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
         // 不是 UTF-8 文本的密钥：PG 口令无法使用。
         WriteSecret("binary", [0xFF, 0xFE, 0x41]);
         _owner = await DataOwner.ConnectionStringAsync(postgres);
-        // 测试库与本机假服务端都在回环上，本类的宿主放行回环；缺省出网约束由另起的宿主验证。
-        _app = await StartAsync(egress =>
+        // 测试库与本机假服务端都在回环上，本类的宿主（生产环境）显式放行回环；缺省出网约束由另起的宿主验证。
+        _app = await StartAsync(Environments.Production, egress =>
         {
             egress.BlockedNetworks.Remove("127.0.0.0/8");
             egress.BlockedNetworks.Remove("::1/128");
@@ -62,9 +63,10 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
         _client = _app.GetTestClient();
     }
 
-    private async Task<WebApplication> StartAsync(Action<DataConnectionEgressOptions> egress)
+    private async Task<WebApplication> StartAsync(string environment, Action<DataConnectionEgressOptions> egress)
     {
-        var builder = WebApplication.CreateBuilder();
+        // 显式指定宿主环境：出网约束的缺省值随环境变化，不能受本机 ASPNETCORE_ENVIRONMENT / DOTNET_ENVIRONMENT 影响。
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.WebHost.UseTestServer();
         builder.Logging.ClearProviders();
         TestIdentity.Add(builder.Services);
@@ -177,21 +179,41 @@ public sealed class ConnectionEndpointTests(PostgresFixture postgres) : IClassFi
     }
 
     [Fact]
-    public async Task 缺省出网约束拒绝回环与云元数据目标_变形写法同样拒绝_不连接也不读取密钥()
+    public async Task 缺省出网约束拒绝回环云元数据与K3s集群网段目标_变形写法同样拒绝_不连接也不读取密钥()
     {
-        await using var app = await StartAsync(_ => { });
+        await using var app = await StartAsync(Environments.Production, _ => { });
         using var client = app.GetTestClient();
         using var listener = FakeServer.Http();
         // 回环：主机名、短写、十六进制、十进制整数与 IPv4 映射的 IPv6 写法都解析成 127.0.0.1 或 ::1。
         string[] loopback = ["127.0.0.1", "localhost", "127.1", "0x7f.0.0.1", "2130706433", "0:0:0:0:0:ffff:7f00:1"];
         string[] metadata = ["169.254.169.254", "100.100.100.200", "0.0.0.0"];
-        foreach (var (host, index) in loopback.Concat(metadata).Select((host, index) => (host, index)))
+        // K3s 的 Pod 网段与 Service 网段（10.43.0.1 是集群内 API Server 的 Service 地址）。
+        string[] cluster = ["10.42.0.10", "10.43.0.1"];
+        foreach (var (host, index) in loopback.Concat(metadata).Concat(cluster).Select((host, index) => (host, index)))
         {
             var id = await CreateAsync(AdminA, Draft("egress-denied-" + index, host: host, port: listener.Port), client);
             await AssertTestFailsAsync(id, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionTargetDenied.Code, null, client);
         }
         Assert.Equal(0, listener.Accepted);
         Assert.Empty(_observer.Events);
+    }
+
+    [Fact]
+    public async Task 开发环境宿主缺省放行回环_连通测试真正连上本机服务_仍拒绝云元数据与集群网段()
+    {
+        await using var app = await StartAsync(Environments.Development, _ => { });
+        using var client = app.GetTestClient();
+        using var listener = FakeServer.Http();
+        // 假服务端不讲 PostgreSQL 协议，所以结果是不可达；关键是请求通过了出网检查并真正连了过去。
+        var local = await CreateAsync(AdminA, Draft("development-loopback", host: "127.0.0.1", port: listener.Port), client);
+        await AssertTestFailsAsync(local, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionUnreachable.Code, null, client);
+        Assert.True(listener.Accepted > 0);
+        string[] denied = ["169.254.169.254", "10.43.0.1"];
+        foreach (var (host, index) in denied.Select((host, index) => (host, index)))
+        {
+            var id = await CreateAsync(AdminA, Draft("development-denied-" + index, host: host, port: listener.Port), client);
+            await AssertTestFailsAsync(id, HttpStatusCode.UnprocessableEntity, DataErrors.ConnectionTargetDenied.Code, null, client);
+        }
     }
 
     [Fact]

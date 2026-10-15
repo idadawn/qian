@@ -75,7 +75,7 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
         {
             cancellationToken.ThrowIfCancellationRequested();
             var metadata = api.ActionDescriptor.EndpointMetadata;
-            if (metadata.OfType<PluginEndpointBinding>().SingleOrDefault()?.PluginId != pluginId || api.HttpMethod is null || api.RelativePath is null) continue;
+            if ((metadata.OfType<PluginEndpointBinding>().SingleOrDefault()?.PluginId ?? metadata.OfType<PlatformHttpContract>().SingleOrDefault()?.PluginId) != pluginId || api.HttpMethod is null || api.RelativePath is null) continue;
             var policy = await AuthorizationPolicy.CombineAsync(policies, metadata.OfType<IAuthorizeData>(), metadata.OfType<AuthorizationPolicy>()).ConfigureAwait(false)
                 ?? await policies.GetFallbackPolicyAsync().ConfigureAwait(false);
             selected.Add((api, metadata.OfType<IAllowAnonymous>().Any() || policy is null));
@@ -87,7 +87,8 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
         var paths = new JsonObject(); var schemas = new JsonObject();
         foreach (var (api, anonymous) in selected)
         {
-            var binding = api.ActionDescriptor.EndpointMetadata.OfType<PluginEndpointBinding>().Single();
+            var component = api.ActionDescriptor.EndpointMetadata.OfType<PluginEndpointBinding>().SingleOrDefault()?.PluginId
+                ?? api.ActionDescriptor.EndpointMetadata.OfType<PlatformHttpContract>().Single().PluginId;
             var pattern = RoutePatternFactory.Parse(api.RelativePath!);
             var path = "/" + string.Join('/', pattern.PathSegments.Select(segment => string.Concat(segment.Parts.Select(part => part switch
             {
@@ -102,8 +103,8 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
             if (operations.ContainsKey(method)) throw new InvalidOperationException("HTTP 契约存在重复路径和方法。");
             var operation = new JsonObject
             {
-                ["operationId"] = "H" + Hash(binding.PluginId + ":" + method + ":" + path),
-                ["x-qian-plugin"] = binding.PluginId,
+                ["operationId"] = "H" + Hash(component + ":" + method + ":" + path),
+                ["x-qian-plugin"] = component,
                 ["security"] = anonymous ? new JsonArray() : new JsonArray(new JsonObject { ["bearerAuth"] = new JsonArray() })
             };
             var parameters = new JsonArray();
@@ -111,7 +112,7 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
             {
                 var type = parameter.Type ?? parameter.ModelMetadata?.ModelType;
                 if (type is null) continue;
-                var schema = Export(type, binding.PluginId, options, schemas);
+                var schema = Export(type, component, options, schemas);
                 if (parameter.Source == BindingSource.Body)
                 {
                     var content = new JsonObject();
@@ -131,7 +132,7 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
                 var value = new JsonObject { ["description"] = "HTTP " + response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture) };
                 if (response.Type is { } type && type != typeof(void))
                 {
-                    var schema = Export(type, binding.PluginId, options, schemas); var content = new JsonObject();
+                    var schema = Export(type, component, options, schemas); var content = new JsonObject();
                     foreach (var format in response.ApiResponseFormats.Select(format => format.MediaType).Where(value => value is not null).Distinct(StringComparer.Ordinal))
                         content[format!] = new JsonObject { ["schema"] = schema.DeepClone() };
                     if (content.Count == 0) content["application/json"] = new JsonObject { ["schema"] = schema };

@@ -304,6 +304,11 @@ public sealed partial class CustomerCommandTests
     // 信任根照生产形状经配置节 Trust:PlatformKeys 引用 K8s Secret 挂载里的公钥。
     private static void ConfigureLifecycle(WebApplicationBuilder builder, string connection, LifecyclePlatform platform)
     {
+        if (platform.Management)
+        {
+            builder.Services.AddQianData<PlatformAuthzDbContext>((_, options) => options.UseNpgsql(platform.AuthzConnection).UseKunSchema(AuthzDbContext.Schema));
+            builder.Services.AddQianData<PlatformAuditDbContext>((_, options) => options.UseNpgsql(platform.AuditConnection).UseKunSchema(AuditDbContext.Schema));
+        }
         builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(LifecycleDbContext.Schema));
         builder.Services.AddSingleton<ISecretAccessObserver>(platform);
         builder.Services.AddQianSecrets(new SecretResolverOptions
@@ -481,6 +486,11 @@ public sealed partial class CustomerCommandTests
             File.WriteAllText(Path.Combine(target, "public-key"), "-----BEGIN PUBLIC KEY-----\n" + Convert.ToBase64String(spki) + "\n-----END PUBLIC KEY-----\n");
         }
         internal string SecretRoot { get; } = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "qian-lifecycle-secrets-" + Guid.NewGuid().ToString("N"))).FullName;
+        internal bool Management { get; init; }
+        internal string AuthzRole { get; set; } = "";
+        internal string AuditRole { get; set; } = "";
+        internal string AuthzConnection { get; set; } = "";
+        internal string AuditConnection { get; set; } = "";
         internal string Fingerprint { get; }
         internal Dictionary<string, PluginArtifact> SystemArtifacts { get; } = new(StringComparer.Ordinal);
         internal Dictionary<string, PluginArtifact> Artifacts { get; } = new(StringComparer.Ordinal);

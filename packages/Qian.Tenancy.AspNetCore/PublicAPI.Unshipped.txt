@@ -1,0 +1,15 @@
+#nullable enable
+Qian.Tenancy.AspNetCore.TenancyEndpoints
+Qian.Tenancy.AspNetCore.TenantList
+Qian.Tenancy.AspNetCore.TenantList.<Clone>$() -> Qian.Tenancy.AspNetCore.TenantList!
+Qian.Tenancy.AspNetCore.TenantList.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantDescriptor!>! Items) -> void
+Qian.Tenancy.AspNetCore.TenantList.Equals(Qian.Tenancy.AspNetCore.TenantList? other) -> bool
+Qian.Tenancy.AspNetCore.TenantList.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantDescriptor!>!
+Qian.Tenancy.AspNetCore.TenantList.Items.init -> void
+Qian.Tenancy.AspNetCore.TenantList.TenantList(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantDescriptor!>! Items) -> void
+override Qian.Tenancy.AspNetCore.TenantList.Equals(object? obj) -> bool
+override Qian.Tenancy.AspNetCore.TenantList.GetHashCode() -> int
+override Qian.Tenancy.AspNetCore.TenantList.ToString() -> string!
+static Qian.Tenancy.AspNetCore.TenancyEndpoints.MapQianTenancy(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Tenancy.AspNetCore.TenantList.operator !=(Qian.Tenancy.AspNetCore.TenantList? left, Qian.Tenancy.AspNetCore.TenantList? right) -> bool
+static Qian.Tenancy.AspNetCore.TenantList.operator ==(Qian.Tenancy.AspNetCore.TenantList? left, Qian.Tenancy.AspNetCore.TenantList? right) -> bool

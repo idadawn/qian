@@ -26,7 +26,7 @@ public sealed class DockerRequirementTests
     {
         string? skipped = null;
         await using var fixture = new NoDockerFixture { EnvironmentReader = _ => null, SkipAction = message => skipped = message };
-        await fixture.InitializeAsync();
+        await fixture.InitializeAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(skipped);
         Assert.Contains("跳过集成测试", skipped, StringComparison.Ordinal);
     }
@@ -35,7 +35,7 @@ public sealed class DockerRequirementTests
     public async Task Missing_docker_fails_integration_tests_on_ci()
     {
         await using var fixture = new NoDockerFixture { EnvironmentReader = name => name == "CI" ? "true" : null };
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.InitializeAsync().AsTask());
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.InitializeAsync(TestContext.Current.CancellationToken).AsTask());
         Assert.IsType<DockerUnavailableException>(ex.InnerException);
     }
 

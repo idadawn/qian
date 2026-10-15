@@ -128,3 +128,15 @@ Qian.Capabilities.IContractAdmission.Admit(Qian.Runtime.IQianPlugin! plugin, str
 Qian.Capabilities.IGrpcContractPeers
 Qian.Capabilities.IGrpcContractPeers.Find(string! pluginId, string! version) -> Qian.Capabilities.IGrpcContractProbe?
 static readonly Qian.Capabilities.CapabilitiesDefinition.AdmissionKey -> Qian.Runtime.ServiceKey
+Qian.Capabilities.PlatformHttpContract
+Qian.Capabilities.PlatformHttpContract.<Clone>$() -> Qian.Capabilities.PlatformHttpContract!
+Qian.Capabilities.PlatformHttpContract.Deconstruct(out string! PluginId) -> void
+Qian.Capabilities.PlatformHttpContract.Equals(Qian.Capabilities.PlatformHttpContract? other) -> bool
+Qian.Capabilities.PlatformHttpContract.PlatformHttpContract(string! PluginId) -> void
+Qian.Capabilities.PlatformHttpContract.PluginId.get -> string!
+Qian.Capabilities.PlatformHttpContract.PluginId.init -> void
+override Qian.Capabilities.PlatformHttpContract.Equals(object? obj) -> bool
+override Qian.Capabilities.PlatformHttpContract.GetHashCode() -> int
+override Qian.Capabilities.PlatformHttpContract.ToString() -> string!
+static Qian.Capabilities.PlatformHttpContract.operator !=(Qian.Capabilities.PlatformHttpContract? left, Qian.Capabilities.PlatformHttpContract? right) -> bool
+static Qian.Capabilities.PlatformHttpContract.operator ==(Qian.Capabilities.PlatformHttpContract? left, Qian.Capabilities.PlatformHttpContract? right) -> bool
