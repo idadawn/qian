@@ -17,8 +17,9 @@ GitHub idadawn/qian (main) --git-sync 每 60s--> /git/current --builder（pm.py 
 | 文件 | 作用 |
 |---|---|
 | `kustomization.yaml` | 命名空间 `qian-tools`（开发期工具，与平台本体 `qian` 分开） |
-| `deployment.yaml` | `git-sync` + `builder`（官方 `python:3.13-alpine`）+ `nginx-unprivileged` 三个容器，非 root；builder 的根文件系统只读，只写 `/site`。首版看板生成前 Pod 不就绪。与文档站一样固定在 qd：worker 节点经镜像代理拉 `registry.k8s.io` 的 git-sync 会失败（2026-10-15 遇到 502） |
-| `builder.py` | builder 的主循环：发现新提交就生成到 `/site/<提交>`，原子切换 `/site/current`，删掉旧版。生成失败（任务文件校验不过）时继续提供上一版，只记日志。kustomize 把它生成为带哈希后缀的 ConfigMap，改脚本即滚动更新 |
+| `deployment.yaml` | `git-sync` + `builder`（官方 `python:3.13-alpine`）+ `nginx-unprivileged` 三个容器，非 root；builder 的根文件系统只读，只写 `/site`。首版看板生成前 Pod 不就绪。与文档站一样固定在 qd：worker 节点经镜像代理拉 `registry.k8s.io` 的 git-sync 会失败（2026-10-15 遇到 502）。滚动更新（S1-PM-005）：新 Pod 就绪后才停旧 Pod，新 Pod 起不来时旧版照常提供看板；为此三个容器各只请求 5m CPU（实测 git-sync 4m、builder 1m、nginx 1m），新旧两个 Pod 才放得进 qd 的余量（2026-10-16 qd 已请求 7980m / 8000m） |
+| `builder.py` | builder 的主循环：发现新提交就生成到 `/site/<提交>`，原子切换 `/site/current`，删掉旧版。生成失败（任务文件校验不过）时继续提供上一版，只记日志；生成途中 git-sync 已切到更新的提交（旧检出随之被删）不算失败，只记一条跳过说明，下一轮生成新提交。kustomize 把它生成为带哈希后缀的 ConfigMap，改脚本即滚动更新 |
+| `test_builder.py` | builder 的自测（只用标准库）：正常生成、任务文件校验不过、生成途中切换提交。`python3 -m unittest discover -s deploy/pm-board -p 'test_*.py'`，docs-and-pm 工作流也会跑 |
 | `nginx-configmap.yaml` | 只暴露 `/`、`/tasks.json`、`/STATUS.md`（取自 `/site/current`）与 `/tasks/*`（取自 git 检出），禁缓存 |
 | `service.yaml`、`ingress.yaml` | Service 为 LoadBalancer（MetalLB 固定 192.168.1.210）+ 固定 NodePort 30810；Traefik Ingress 域名占位 `qian-pm.deepsingularity.cn` |
 | `networkpolicy.yaml` | 只放行入站 8080 与出站 DNS / 22 / 443 |
@@ -51,6 +52,7 @@ bash deploy/pm-board/bootstrap.sh --check --kube-ssh qd   # 只核验：deploy k
 
 - 交给 ArgoCD：复制 `argocd-application.example.yaml` 到部署仓库 `env-ds/argocd/` 并加入其 kustomization；ArgoCD 需要能读 `idadawn/qian` 的仓库凭据。此后清单改动随 `main` 自动同步。
 - 换分支或缩短刷新间隔：改 `deployment.yaml` 的 `GITSYNC_REF`、`GITSYNC_PERIOD`。
-- 看板没更新：先看 `bootstrap.sh --check` 的两项提交对比，再看 builder 日志（`kubectl -n qian-tools logs deploy/qian-pm-board -c builder`）。日志里「生成失败」说明该提交的任务文件校验不过，看板仍是上一版。
+- 看板没更新：先看 `bootstrap.sh --check` 的两项提交对比，再看 builder 日志（`kubectl -n qian-tools logs deploy/qian-pm-board -c builder`）。日志里「生成失败」说明该提交的任务文件校验不过，看板仍是上一版；「跳过这一版」说明生成途中 git-sync 已同步到更新的提交，下一轮会生成，不用处理。
+- 改了清单却一直没换上新 Pod：多半是新 Pod 停在 Pending（`kubectl -n qian-tools describe pod` 的事件里有 `Insufficient cpu`），即 qd 的 CPU 请求余量放不下第二个 Pod。旧 Pod 仍在提供看板；腾出余量后会自动继续，超过 10 分钟 Deployment 会标为 `ProgressDeadlineExceeded`。
 - 不想用 SSH：把 `GITSYNC_REPO` 改为 `https://github.com/idadawn/qian.git`，Secret 改放 `GITSYNC_USERNAME` / `GITSYNC_PASSWORD`（只读 fine-grained PAT），去掉两个 SSH 环境变量。
 - 文档站（S1-DOCS-001）上线后可以复用同一套方式先做预览，再决定是否走 Cloudflare Pages。
