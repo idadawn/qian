@@ -1,14 +1,14 @@
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using Json.Schema;
+using Microsoft.Extensions.Logging;
 using Qian.Runtime.Errors;
 
 namespace Qian.Capabilities;
 
 // 执行前按条目 inputSchema（JSON Schema 2020-12）校验输入；每个违反项映射为 contracts/v0 的字段级错误码与输入 JSON Pointer。
-internal sealed class CapabilityInputValidator
+internal sealed partial class CapabilityInputValidator
 {
     private const int CacheLimit = 1024;
     private static readonly Uri BaseUri = new("https://qian.dev/capabilities/input.schema.json");
@@ -21,7 +21,34 @@ internal sealed class CapabilityInputValidator
     private static readonly HashSet<string> SchemaValues = new(StringComparer.Ordinal)
     { "items", "additionalProperties", "unevaluatedProperties", "unevaluatedItems", "propertyNames", "contains", "if", "then", "else", "not" };
     private static readonly string[] AnchorKeywords = ["$anchor", "$dynamicAnchor"];
-    private readonly ConcurrentDictionary<string, JsonSchema> _schemas = new(StringComparer.Ordinal);
+    // 登记期拒绝的规则名，与 CapabilityContractException.Rule 一致。
+    internal const string UnsupportedKey = "unsupported-key", UnresolvedReference = "unresolved-reference", SchemaInvalid = "schema-invalid";
+    // 编译结果按 schemaSha256 缓存，最多 capacity 个。满了只淘汰最久没用的一个，不整表清空：常用能力在登记期预编译的校验器一直留在缓存里，
+    // 被淘汰的在下次执行时按同一份 Schema 重新编译，登记期已经检查过，结论不变。
+    private readonly Dictionary<string, LinkedListNode<(string Key, JsonSchema Schema)>> _schemas = new(StringComparer.Ordinal);
+    private readonly LinkedList<(string Key, JsonSchema Schema)> _recent = new();
+    private readonly Lock _gate = new();
+    private readonly int _capacity;
+    private readonly ILogger? _logger;
+
+    internal CapabilityInputValidator(ILogger? logger = null, int capacity = CacheLimit)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 1);
+        _logger = logger; _capacity = capacity;
+    }
+
+    // 登记期预编译：不受支持的键、找不到目标的 $ref / $dynamicRef 与无法编译的 Schema 带出错位置拒绝；通过后编译结果进入缓存，执行时不再编译。
+    internal void Prepare(string key, JsonElement source) => _ = Compile(key, source);
+
+    internal bool IsPrepared(string key)
+    {
+        lock (_gate) return _schemas.ContainsKey(key);
+    }
+
+    internal int Count
+    {
+        get { lock (_gate) return _schemas.Count; }
+    }
 
     internal void Validate(JsonElement entry, JsonElement input)
     {
@@ -30,8 +57,12 @@ internal sealed class CapabilityInputValidator
         var schema = Compile(entry.GetProperty("schemaSha256").GetString()!, source);
         EvaluationResults results;
         try { results = schema.Evaluate(input, new EvaluationOptions { OutputFormat = OutputFormat.Hierarchical, RequireFormatValidation = true }); }
-        catch (Exception error) when (error is KeyNotFoundException or ArgumentException or InvalidOperationException or JsonException)
-        { throw new InvalidOperationException("能力输入 Schema 无法求值。", error); }
+        // 三类已知问题在登记期就被拒绝；其余求值失败是意外，记下组件与能力再交给 ErrorDetail 中间件，按 500 INTERNAL 返回。
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            if (_logger is not null) Log.EvaluationFailed(_logger, error, Text(entry, "plugin"), Text(entry, "name"));
+            throw new InvalidOperationException("能力输入 Schema 无法求值。", error);
+        }
         if (results.IsValid) return;
         var found = new Findings();
         new Walker(source, input).Visit(results, source, BaseUri, null, [], [], found);
@@ -143,16 +174,18 @@ internal sealed class CapabilityInputValidator
             return (value, scope);
         }
 
-        // 引用相对当前基准 URI 解析到本文档或带 $id 的内嵌资源，片段是 JSON Pointer 或 $anchor 名；外部引用在编译时已禁用。
-        // $dynamicRef 按同名锚点静态解析：只用于定位违反项，是否通过已由库判定。
-        private (JsonElement? Schema, Uri Scope) Resolve(Uri scope, string reference)
-        {
-            if (!Uri.TryCreate(scope, reference, out var target)) return (null, scope);
-            var document = Document(target);
-            if ((document == BaseUri ? source : Embedded(source, BaseUri, document)) is not { } resource) return (null, document);
-            var fragment = Uri.UnescapeDataString(target.Fragment.TrimStart('#'));
-            return (fragment.Length == 0 || fragment[0] == '/' ? At(resource, Segments(fragment)) : Anchor(resource, fragment, true), document);
-        }
+        private (JsonElement? Schema, Uri Scope) Resolve(Uri scope, string reference) => CapabilityInputValidator.Resolve(source, scope, reference);
+    }
+
+    // 引用相对当前基准 URI 解析到本文档或带 $id 的内嵌资源，片段是 JSON Pointer 或 $anchor 名；外部引用在编译时已禁用。
+    // $dynamicRef 按同名锚点静态解析：只用于定位违反项与登记期检查，是否通过由库判定。
+    private static (JsonElement? Schema, Uri Scope) Resolve(JsonElement source, Uri scope, string reference)
+    {
+        if (!Uri.TryCreate(scope, reference, out var target)) return (null, scope);
+        var document = Document(target);
+        if ((document == BaseUri ? source : Embedded(source, BaseUri, document)) is not { } resource) return (null, document);
+        var fragment = Uri.UnescapeDataString(target.Fragment.TrimStart('#'));
+        return (fragment.Length == 0 || fragment[0] == '/' ? At(resource, Segments(fragment)) : Anchor(resource, fragment, true), document);
     }
 
     private sealed class Findings
@@ -212,18 +245,60 @@ internal sealed class CapabilityInputValidator
 
     private JsonSchema Compile(string key, JsonElement source)
     {
-        if (_schemas.TryGetValue(key, out var cached)) return cached;
-        if (_schemas.Count >= CacheLimit) _schemas.Clear();
-        // JsonSchema.Net 9.4 按 JSON Pointer 转义后的键回查 patternProperties 与 dependentSchemas：键含 / 或 ~ 时前者每次求值都抛异常，
-        // 后者被静默跳过。这类 Schema 无法可靠校验，按配置错误拒绝执行，不放过约束。
-        if (Unsupported(source)) throw new InvalidOperationException("能力输入 Schema 的 patternProperties / dependentSchemas 键含 / 或 ~，无法可靠校验。");
+        lock (_gate)
+        {
+            if (_schemas.TryGetValue(key, out var cached)) return Touch(cached);
+        }
+        if (Problem(source, source, [], BaseUri) is { } problem) throw new CapabilityInputSchemaException(problem.Path, problem.Rule);
+        JsonSchema built;
         try
         {
             var options = new BuildOptions { Dialect = Dialect.Draft202012, SchemaRegistry = new SchemaRegistry { Fetch = (_, _) => null } };
-            return _schemas.GetOrAdd(key, JsonSchema.Build(Sanitize(source), options, BaseUri));
+            built = JsonSchema.Build(Sanitize(source), options, BaseUri);
         }
         catch (Exception error) when (error is JsonSchemaException or JsonException or ArgumentException or InvalidOperationException)
-        { throw new InvalidOperationException("能力输入 Schema 无法编译。", error); }
+        { throw new CapabilityInputSchemaException([], SchemaInvalid, error); }
+        lock (_gate)
+        {
+            // 同一份 Schema 并发编译时保留先进入缓存的一份。
+            if (_schemas.TryGetValue(key, out var raced)) return Touch(raced);
+            if (_schemas.Count >= _capacity)
+            {
+                _schemas.Remove(_recent.Last!.Value.Key); _recent.RemoveLast();
+            }
+            _schemas.Add(key, _recent.AddFirst((key, built)));
+            return built;
+        }
+    }
+
+    // 调用方持有 _gate：命中的条目移到最近使用的一端。
+    private JsonSchema Touch(LinkedListNode<(string Key, JsonSchema Schema)> node)
+    {
+        if (node != _recent.First) { _recent.Remove(node); _recent.AddFirst(node); }
+        return node.Value.Schema;
+    }
+
+    private static string Text(JsonElement entry, string name) =>
+        entry.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()! : "?";
+
+    // 编译前检查库无法可靠处理的写法，返回第一处问题在输入 Schema 内的位置与规则：
+    // - JsonSchema.Net 9.4 按 JSON Pointer 转义后的键回查 patternProperties 与 dependentSchemas，键含 / 或 ~ 时前者每次求值都抛异常、后者被静默跳过；
+    // - $ref / $dynamicRef 找不到目标时编译照常通过，求值才抛异常。
+    private static (string[] Path, string Rule)? Problem(JsonElement source, JsonElement schema, string[] path, Uri scope)
+    {
+        if (schema.ValueKind != JsonValueKind.Object) return null;
+        if (schema.TryGetProperty("$id", out var id) && id.ValueKind == JsonValueKind.String && Uri.TryCreate(scope, id.GetString(), out var based)) scope = Document(based);
+        foreach (var member in schema.EnumerateObject())
+        {
+            if (member.Name is "patternProperties" or "dependentSchemas" && member.Value.ValueKind == JsonValueKind.Object)
+                foreach (var item in member.Value.EnumerateObject())
+                    if (item.Name.AsSpan().IndexOfAny('/', '~') >= 0) return ([.. path, member.Name, item.Name], UnsupportedKey);
+            if (member.Name is "$ref" or "$dynamicRef" && member.Value.ValueKind == JsonValueKind.String && Resolve(source, scope, member.Value.GetString()!).Schema is null)
+                return ([.. path, member.Name], UnresolvedReference);
+        }
+        foreach (var (segments, child) in Children(schema))
+            if (Problem(source, child, [.. path, .. segments], scope) is { } found) return found;
+        return null;
     }
 
     // 编译用副本：去掉不强制的 format。只在 Schema 位置上处理，名为 format 的属性与 enum、const 等数据原样保留；结构不变，定位仍按源 Schema。
@@ -261,21 +336,22 @@ internal sealed class CapabilityInputValidator
         writer.WriteEndObject();
     }
 
-    private static bool Unsupported(JsonElement schema) =>
-        schema.ValueKind == JsonValueKind.Object && (schema.EnumerateObject().Any(member => member.Name is "patternProperties" or "dependentSchemas" &&
-            member.Value.ValueKind == JsonValueKind.Object && member.Value.EnumerateObject().Any(item => item.Name.AsSpan().IndexOfAny('/', '~') >= 0)) ||
-        Subschemas(schema).Any(Unsupported));
+    private static IEnumerable<JsonElement> Subschemas(JsonElement schema) => Children(schema).Select(child => child.Schema);
 
-    private static IEnumerable<JsonElement> Subschemas(JsonElement schema)
+    // 子 Schema 及其相对父 Schema 的路径段。
+    private static IEnumerable<(string[] Path, JsonElement Schema)> Children(JsonElement schema)
     {
         if (schema.ValueKind != JsonValueKind.Object) yield break;
         foreach (var member in schema.EnumerateObject())
         {
             if (SchemaMaps.Contains(member.Name) && member.Value.ValueKind == JsonValueKind.Object)
-                foreach (var item in member.Value.EnumerateObject()) yield return item.Value;
+                foreach (var item in member.Value.EnumerateObject()) yield return ([member.Name, item.Name], item.Value);
             else if (SchemaArrays.Contains(member.Name) && member.Value.ValueKind == JsonValueKind.Array)
-                foreach (var item in member.Value.EnumerateArray()) yield return item;
-            else if (SchemaValues.Contains(member.Name)) yield return member.Value;
+            {
+                var index = 0;
+                foreach (var item in member.Value.EnumerateArray()) yield return ([member.Name, (index++).ToString(CultureInfo.InvariantCulture)], item);
+            }
+            else if (SchemaValues.Contains(member.Name)) yield return ([member.Name], member.Value);
         }
     }
 
@@ -375,4 +451,19 @@ internal sealed class CapabilityInputValidator
         }
         return current;
     }
+
+    private static partial class Log
+    {
+        // 与 CapabilityContractCheck 共用日志类别，EventId 1 是登记期拒绝。
+        [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "组件 {Plugin} 的能力 {Name} 输入 Schema 求值失败；交给 ErrorDetail 中间件按 500 INTERNAL 返回。")]
+        public static partial void EvaluationFailed(ILogger logger, Exception error, string plugin, string name);
+    }
+}
+
+// 输入 Schema 无法可靠校验：Path 是问题在输入 Schema 内的位置段（编译失败时为空），Rule 是登记期拒绝的规则名。
+internal sealed class CapabilityInputSchemaException(string[] path, string rule, Exception? innerException = null)
+    : InvalidOperationException("能力输入 Schema 无法可靠校验（" + rule + "）。", innerException)
+{
+    internal string[] Path { get; } = path;
+    internal string Rule { get; } = rule;
 }

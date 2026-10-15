@@ -1,5 +1,7 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Kun.Core.MultiTenancy;
+using Qian.Capabilities;
 using Qian.Profiles.Abstractions;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
@@ -7,10 +9,11 @@ using Qian.Runtime.Errors;
 namespace Qian.Registry;
 
 // 只操作平台宿主交给自己的 scope 条目；没有数据库写入口，也不加载代码程序集。
-internal sealed class RegistryScopeReconciler(
+internal sealed partial class RegistryScopeReconciler(
     ITenantContext tenant, RegistryProfileComposer composer, PluginLoader runtime, IPluginContext owner,
-    Func<ResolvedProfileEntry, PluginDefinition> resolve) : IAsyncDisposable
+    Func<ResolvedProfileEntry, PluginDefinition> resolve, Func<string, string, bool> declaresContracts) : IAsyncDisposable
 {
+    private const string PatchFile = "registry/scope-patches.json";
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Dictionary<ScopeKey, ScopeState> _scopes = [];
     private readonly CancellationTokenSource _stop = new();
@@ -61,6 +64,102 @@ internal sealed class RegistryScopeReconciler(
         finally { _gate.Release(); }
     }
 
+    // 管理面视图（R32）：与装载同一把锁，先合入数据库 scope，再按实际运行时状态列出本 scope 已挂载且 Ready 的条目。
+    internal async ValueTask<IReadOnlyList<RegistryEntryView>> ViewAsync(string tenantId, ScopeKey scope, CancellationToken ct)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            var state = await Inspected(tenantId, scope, linked.Token).ConfigureAwait(false);
+            if (state.Blocked) return [];
+            var result = new List<RegistryEntryView>();
+            foreach (var entry in runtime.DumpConfig())
+            {
+                var local = entry.Scope == scope && state.Mounted.ContainsKey(entry.Id);
+                if (!local && (entry.Scope != ScopeKey.Global || state.Hidden.Contains(entry.Id))) continue;
+                try { if (runtime.GetState(entry.Id, entry.Scope) != PluginState.Ready) continue; }
+                catch (InvalidOperationException) { continue; }
+                result.Add(View(state, entry, local));
+            }
+            return result.OrderBy(view => view.EntryId, StringComparer.Ordinal).ToArray().AsReadOnly();
+        }
+        finally { _gate.Release(); }
+    }
+
+    // 管理面单个条目（R32 / R48）：Ready 返回视图；其余以原因码说明哪一层导致，pointer 指向 patch 条目。
+    // 已知 = 宿主预装绑定、全局已装配条目与本 scope 自己的 patch 行；其它租户的局部条目不会因此暴露。
+    internal async ValueTask<RegistryEntryView> InspectAsync(string tenantId, ScopeKey scope, string entryId, IReadOnlySet<string> installed, CancellationToken ct)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            var state = await Inspected(tenantId, scope, linked.Token).ConfigureAwait(false);
+            var live = runtime.DumpConfig();
+            var global = live.SingleOrDefault(entry => entry.Scope == ScopeKey.Global && entry.Id == entryId);
+            if (!installed.Contains(entryId) && global is null && !state.Mounted.ContainsKey(entryId) && !state.Sources.ContainsKey(entryId) && !state.Disabled.ContainsKey(entryId))
+                throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+            if (state.Blocked) throw Reason(RegistryErrors.NotMounted, "租户 scope patch 无法装配，本 scope 的条目已全部撤下", PatchFile + "#");
+            if (state.Mounted.ContainsKey(entryId) && live.SingleOrDefault(entry => entry.Scope == scope && entry.Id == entryId) is { } local)
+                return Judge(state, local, true, state.Sources.GetValueOrDefault(entryId));
+            if (state.Disabled.TryGetValue(entryId, out var disabled))
+                throw Reason(RegistryErrors.NotMounted, Disabling(state, disabled), disabled.SourceLocation);
+            if (global is not null && !state.Hidden.Contains(entryId)) return Judge(state, global, false, null);
+            throw Reason(RegistryErrors.NotMounted, "未挂载：平台 profile 与租户 scope patch 均未声明此条目", PatchFile + "#");
+        }
+        finally { _gate.Release(); }
+    }
+
+    // 管理面诊断（/api/lifecycle/diagnostics）：与装载同一把锁，先合入数据库 scope，再给出最近一次装配失败的结论。
+    internal async ValueTask<IReadOnlyList<RegistryScopeDiagnostic>> DiagnoseAsync(string tenantId, ScopeKey scope, CancellationToken ct)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+        try { return (await Inspected(tenantId, scope, linked.Token).ConfigureAwait(false)).Failures.ToArray(); }
+        finally { _gate.Release(); }
+    }
+
+    // 只接受已验证租户自己的 scope；合入失败已把本 scope 收紧为 Blocked，诊断照常给出原因而不是抛出装配异常。
+    private async ValueTask<ScopeState> Inspected(string tenantId, ScopeKey scope, CancellationToken ct)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (scope.Kind != "tenant" || scope.Id != tenantId) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+        if (!_scopes.TryGetValue(scope, out var state)) _scopes.Add(scope, state = new ScopeState(tenantId, scope));
+        if (state.TenantId != tenantId) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+        try { await Refresh(state, ct).ConfigureAwait(false); }
+        catch (Exception error) when (state.Blocked && !ct.IsCancellationRequested && error is QianErrorException or InvalidOperationException) { }
+        ct.ThrowIfCancellationRequested();
+        return state;
+    }
+
+    private RegistryEntryView Judge(ScopeState state, PluginEntry entry, bool local, string? pointer)
+    {
+        PluginState current;
+        try { current = runtime.GetState(entry.Id, entry.Scope); }
+        catch (InvalidOperationException) { throw Reason(RegistryErrors.NotMounted, "条目正在撤下", pointer); } // 两个快照之间被撤销。
+        return current switch
+        {
+            PluginState.Ready => View(state, entry, local),
+            PluginState.Pending or PluginState.Applying => throw Reason(RegistryErrors.DependencyPending, "条目已挂载，等待依赖的服务就绪", pointer),
+            _ => throw Reason(RegistryErrors.NotMounted, "条目装配失败，已撤下", pointer)
+        };
+    }
+
+    private static RegistryEntryView View(ScopeState state, PluginEntry entry, bool local) => new(entry.Id, entry.Plugin, entry.Version,
+        entry.Scope == ScopeKey.Global ? "global" : entry.Scope.Kind + ":" + entry.Scope.Id, entry.Layer,
+        local && state.Revisions.TryGetValue(entry.Id, out var revision) ? revision : null);
+
+    private static string Disabling(ScopeState state, DisabledProfileEntry disabled)
+    {
+        if (disabled.Scope != "global") return "被租户 scope patch 禁用";
+        var layer = state.Layers.FirstOrDefault(item => item.Index == disabled.Layer);
+        return layer is null ? "被平台 profile 禁用" : $"被平台 profile 的 {layer.Kind} 层禁用（{layer.Path}）";
+    }
+
+    private static QianErrorException Reason(Qian.Runtime.Errors.ErrorCode code, string reason, string? pointer) =>
+        new(new QianError(code, new Dictionary<string, string> { ["reason"] = reason }) { Pointer = pointer });
+
     internal async ValueTask RefreshAllAsync(CancellationToken ct)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
@@ -93,6 +192,7 @@ internal sealed class RegistryScopeReconciler(
                     d.Error.Pointer ?? "registry/scope-patches.json#", new Dictionary<string, string> { ["reason"] = "scope 配置无法装配。" })).ToArray()
             });
             var name = state.Scope.Kind + ":" + state.Scope.Id;
+            Record(state, result.Snapshot!, rows, name);
             var entries = result.Snapshot!.Entries.Where(e => e.Scope == name).ToDictionary(e => e.Id, StringComparer.Ordinal);
             var order = result.Snapshot.MountOrder.Where(id => id.StartsWith(name + "/", StringComparison.Ordinal))
                 .Select(id => id[(name.Length + 1)..]).ToArray();
@@ -101,7 +201,7 @@ internal sealed class RegistryScopeReconciler(
                 .Concat(entries.Keys).ToHashSet(StringComparer.Ordinal);
             var changed = entries.Values.Where(entry => !state.Mounted.TryGetValue(entry.Id, out var previous) || !Same(previous, entry)).ToArray();
             var removed = state.Mounted.Keys.Where(id => !entries.ContainsKey(id)).ToArray();
-            if (!state.Blocked && changed.Length == 0 && removed.Length == 0 && state.Hidden.SetEquals(hidden)) return;
+            if (!state.Blocked && changed.Length == 0 && removed.Length == 0 && state.Hidden.SetEquals(hidden)) { state.Failures.Clear(); return; }
 
             var definitions = changed.ToDictionary(entry => entry.Id, entry => Resolve(entry, state.Scope), StringComparer.Ordinal);
             foreach (var definition in definitions.Values)
@@ -126,11 +226,13 @@ internal sealed class RegistryScopeReconciler(
             await runtime.WhenIdleAsync(ct).ConfigureAwait(false);
             if (state.Order.Concat(state.Mounted.Keys).FirstOrDefault(id => state.Mounted.ContainsKey(id) && runtime.GetState(id, state.Scope) == PluginState.Failed) is { } broken)
                 throw ApplyFailed(state.Scope, state.Mounted[broken], revisions);
+            state.Failures.Clear();
         }
-        catch
+        catch (Exception error)
         {
             if (!_stop.IsCancellationRequested)
             {
+                RecordFailure(state, error);
                 // 已提交的禁用不能因重装失败而恢复旧权限；此 scope 先收紧，其他 scope 不受影响。
                 SetRestriction(state, state.Hidden, true);
                 state.Blocked = true;
@@ -145,8 +247,25 @@ internal sealed class RegistryScopeReconciler(
     private RegistryScopeApplyException ApplyFailed(ScopeKey scope, ResolvedProfileEntry entry, Dictionary<string, int> revisions)
     {
         var failure = runtime.GetFailure(entry.Id, scope);
-        var reason = failure is QianErrorException qian ? qian.Error.Code.Code : PlatformErrors.Internal.Code;
+        // 自带原因码的失败（如能力契约在登记阶段被拒绝，Data["reasonCode"] 为 INPUT_INVALID）沿用其错误码，其余按 INTERNAL。
+        var reason = failure switch
+        {
+            QianErrorException qian => qian.Error.Code.Code,
+            { } other when other.Data["reasonCode"] is string code && code.Length <= 64 && ReasonCodePattern().IsMatch(code) => code,
+            _ => PlatformErrors.Internal.Code
+        };
         return new RegistryScopeApplyException(scope, entry.Id, entry.Plugin, revisions.TryGetValue(entry.Id, out var revision) ? revision : null, reason, failure);
+    }
+
+    // 本副本最近一次装配失败的结论：条目 Apply 失败带条目、组件修订与原因码，其余为 scope 级失败；调用方取消不算失败。
+    private static void RecordFailure(ScopeState state, Exception error)
+    {
+        if (error is OperationCanceledException) return;
+        var name = state.Scope.Kind + ":" + state.Scope.Id;
+        state.Failures.Clear();
+        state.Failures.Add(error is RegistryScopeApplyException apply
+            ? new RegistryScopeDiagnostic(name, apply.EntryId, apply.Plugin, apply.Revision, apply.ReasonCode, DateTimeOffset.UtcNow)
+            : new RegistryScopeDiagnostic(name, null, null, null, error is QianErrorException qian ? qian.Error.Code.Code : PlatformErrors.Internal.Code, DateTimeOffset.UtcNow));
     }
 
     private PluginDefinition Resolve(ResolvedProfileEntry entry, ScopeKey scope)
@@ -159,8 +278,25 @@ internal sealed class RegistryScopeReconciler(
         if (!definition.Plugin.Inject.Select(key => key.Name).Order(StringComparer.Ordinal).SequenceEqual(entry.Inject.Order(StringComparer.Ordinal), StringComparer.Ordinal) ||
             entry.Provides.Any(key => !definition.Provides.Contains(new ServiceKey(key))))
             throw new InvalidOperationException("宿主 Provider 的依赖与服务声明不符合组件清单。");
+        var plugin = definition.Plugin;
+        // 声明了契约索引的组件版本必须经平台契约准入（R76）；准入服务不可见时 fail-closed，条目 Apply 失败而不是跳过检查。
+        if (declaresContracts(reference[0], reference[1]))
+            plugin = owner.TryInject<IContractAdmission>(CapabilitiesDefinition.AdmissionKey) is { } admission
+                ? admission.Admit(plugin, reference[0], reference[1]) : new AdmissionUnavailablePlugin(plugin);
         // 平台里的局部节点随 Registry 服务失效，不改变组件库在 minimal/standalone 下的依赖。
-        return definition with { Plugin = new ScopedPlugin(definition.Plugin) };
+        return definition with { Plugin = new ScopedPlugin(plugin) };
+    }
+
+    // 管理面诊断用的最近一次装配结论：禁用来源（本 scope 优先于全局）、patch 行定位与修订；不保存配置原文。
+    // 行按 entry id 序数排序后合入（RegistryProfileComposer），所以第 n 行的指针即 /n。
+    private static void Record(ScopeState state, ProfileSnapshot snapshot, IReadOnlyList<ScopePatchSnapshot> rows, string name)
+    {
+        state.Layers = snapshot.Layers;
+        state.Disabled = snapshot.DisabledEntries.Where(entry => entry.Scope == "global").Concat(snapshot.DisabledEntries.Where(entry => entry.Scope == name))
+            .GroupBy(entry => entry.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.Last(), StringComparer.Ordinal);
+        var ordered = rows.OrderBy(row => row.EntryId, StringComparer.Ordinal).ToArray();
+        state.Sources = ordered.Select((row, index) => (row.EntryId, index)).ToDictionary(item => item.EntryId, item => PatchFile + "#/" + item.index, StringComparer.Ordinal);
+        state.Revisions = ordered.ToDictionary(row => row.EntryId, row => row.Revision, StringComparer.Ordinal);
     }
 
     private void SetRestriction(ScopeState state, HashSet<string> hidden, bool blockAll)
@@ -214,6 +350,18 @@ internal sealed class RegistryScopeReconciler(
         internal HashSet<string> Hidden = new(StringComparer.Ordinal);
         internal IDisposable? Filter;
         internal bool Blocked;
+        internal IReadOnlyList<ProfileLayer> Layers = [];
+        internal Dictionary<string, DisabledProfileEntry> Disabled = new(StringComparer.Ordinal);
+        internal Dictionary<string, string> Sources = new(StringComparer.Ordinal);
+        internal Dictionary<string, int> Revisions = new(StringComparer.Ordinal);
+        internal List<RegistryScopeDiagnostic> Failures = [];
+    }
+
+    private sealed class AdmissionUnavailablePlugin(IQianPlugin inner) : IQianPlugin
+    {
+        public IReadOnlyList<ServiceKey> Inject => inner.Inject;
+        public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) =>
+            throw new QianErrorException(new QianError(PlatformErrors.Unavailable) { Pointer = ErrorPointer.Input("contracts") });
     }
 
     private sealed class ScopedPlugin(IQianPlugin inner) : IQianPlugin
@@ -221,4 +369,8 @@ internal sealed class RegistryScopeReconciler(
         public IReadOnlyList<ServiceKey> Inject { get; } = inner.Inject.Append(RegistryDefinition.Key).Distinct().ToArray();
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => inner.ApplyAsync(ctx, config, ct);
     }
+
+    // contracts/v0 error-detail 的错误码格式（$defs/Code）：大写字母开头，下划线只作分隔，最长 64。
+    [GeneratedRegex("^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$", RegexOptions.CultureInvariant)]
+    private static partial Regex ReasonCodePattern();
 }

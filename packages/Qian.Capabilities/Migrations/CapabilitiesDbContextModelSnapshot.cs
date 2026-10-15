@@ -129,6 +129,11 @@ namespace Qian.Capabilities.Migrations
                         .HasColumnType("text")
                         .HasColumnName("response");
 
+                    b.Property<string>("Withheld")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("withheld");
+
                     b.HasKey("TenantId", "SubjectKey", "CapabilityId", "IdempotencyKey")
                         .HasName("pk_invoke_receipts");
 
@@ -138,7 +143,12 @@ namespace Qian.Capabilities.Migrations
                     b.HasIndex("TenantId", "ExpiresAt")
                         .HasDatabaseName("ix_invoke_receipts_tenant_id_expires_at");
 
-                    b.ToTable("invoke_receipts", "plugin_qian_capabilities");
+                    b.ToTable("invoke_receipts", "plugin_qian_capabilities", t =>
+                        {
+                            t.HasCheckConstraint("ck_invoke_receipts_response_size", "octet_length(response) <= 1048576");
+
+                            t.HasCheckConstraint("ck_invoke_receipts_withheld", "withheld IS NULL OR (response IS NULL AND withheld IN ('response_too_large', 'data_classification'))");
+                        });
 
                     b.HasAnnotation("Qian:MultiTenant", true);
                 });

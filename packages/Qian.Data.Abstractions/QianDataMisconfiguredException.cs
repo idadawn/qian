@@ -103,11 +103,23 @@ public static class DataErrors
         new Dictionary<string, string> { ["zh-CN"] = "数据库拒绝连接" },
         new Dictionary<string, string> { ["zh-CN"] = "数据库拒绝了连接，原因：{reason}" });
 
+    /// <summary>连接目标解析出的地址不在平台允许的出网范围内；没有发起连接。</summary>
+    public static readonly ErrorCode ConnectionTargetDenied = ErrorCode.Business(
+        "DATA_CONNECTION_TARGET_DENIED", 422, "qian.data",
+        new Dictionary<string, string> { ["zh-CN"] = "连接目标被拒绝" },
+        new Dictionary<string, string> { ["zh-CN"] = "连接目标不在平台允许的出网范围内" });
+
+    /// <summary>密钥内容不能用作该方言的口令（如 PG 要求 UTF-8 文本）；没有发起连接。</summary>
+    public static readonly ErrorCode ConnectionCredentialInvalid = ErrorCode.Business(
+        "DATA_CONNECTION_CREDENTIAL_INVALID", 422, "qian.data",
+        new Dictionary<string, string> { ["zh-CN"] = "连接凭据不可用" },
+        new Dictionary<string, string> { ["zh-CN"] = "密钥内容不能用作该数据库的口令" });
+
     /// <summary>基准类型目录与数据连接档案使用的全部错误码，供宿主登记。</summary>
     public static IReadOnlyList<ErrorCode> TypesAndConnections { get; } =
     [
         TypeNotFound, TypeProtected, DialectNotFound, FieldDefinitionInvalid, FieldOutOfRange, FieldFacetUnsupported, FieldRangeInverted,
-        ConnectionNotFound, ConnectionNameConflict, ConnectionUnreachable, ConnectionRejected
+        ConnectionNotFound, ConnectionNameConflict, ConnectionUnreachable, ConnectionRejected, ConnectionTargetDenied, ConnectionCredentialInvalid
     ];
 }
 

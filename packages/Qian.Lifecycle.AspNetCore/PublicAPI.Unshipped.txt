@@ -1,0 +1,15 @@
+#nullable enable
+Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList
+Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.<Clone>$() -> Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList!
+Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.LifecycleDiagnosticView!>! Items) -> void
+Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.Equals(Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList? other) -> bool
+Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.LifecycleDiagnosticView!>!
+Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.Items.init -> void
+Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.LifecycleDiagnosticList(System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.LifecycleDiagnosticView!>! Items) -> void
+Qian.Lifecycle.AspNetCore.LifecycleEndpoints
+override Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.Equals(object? obj) -> bool
+override Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.GetHashCode() -> int
+override Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.ToString() -> string!
+static Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.operator !=(Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList? left, Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList? right) -> bool
+static Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList.operator ==(Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList? left, Qian.Lifecycle.AspNetCore.LifecycleDiagnosticList? right) -> bool
+static Qian.Lifecycle.AspNetCore.LifecycleEndpoints.MapQianLifecycle(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!

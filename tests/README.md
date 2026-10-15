@@ -10,7 +10,9 @@ tests/
   Qian.Testing.Containers/                    集成测试共用的 Testcontainers fixture（不打包）
     ApolloMock/apollo_mock.py                 Apollo 协议替身，在容器里运行
   Qian.Testing.Containers.IntegrationTests/   fixture 自身的集成测试与单元测试
+  Qian.Authz.Tests/                           授权：权限目录与默认角色、RBAC 判定与快照缓存（真实 PostgreSQL + Redis，两宿主授予 / 撤销传播）、平台超管旁路（专用平台登录 + 真实 Audit 插件）
   Qian.Data.AspNetCore.Tests/                 数据端点：基准类型目录（无数据库）与数据连接档案（真实 PostgreSQL、挂载式密钥、连通测试）
+  Qian.Lifecycle.Tests/                       生命周期：验签与信任根轮换（真实 PostgreSQL）、GitOps 执行器（本机裸仓库 + K3s 单节点集群）、Local 执行器
   Qian.Runtime.Errors.Tests/                  contracts/v0 契约测试（Schema、fixture、语义规则、内置错误码目录）与 ErrorDetail 内存宿主测试
   Qian.Runtime.Tests/                         最小运行时单元测试与 tck/runtime/*.scenario.yml 的 .NET harness
   gates/                                      门禁自测：样例项目 + Python 测试，不在 Qian.slnx 里
@@ -70,6 +72,7 @@ public sealed class OrderVisibilityTests(InfrastructureFixture infra)
 | `RabbitMqFixture` | `rabbitmq:4.3-alpine`（`QIAN_TEST_IMAGE_RABBITMQ`） | `ConnectionString`（AMQP URI）；`Container` 可停启 broker，做「重启后消息不丢」这类韧性测试 |
 | `ApolloFixture` | `python:3.13-alpine` 运行 `apollo_mock.py`（`QIAN_TEST_IMAGE_APOLLO_MOCK`） | `ConfigServiceUri`（即客户端的 `Apollo__ConfigServer__0`）；`PublishAsync`、`DeleteAsync`、`SetAccessKeyAsync`、`SetHoldAsync`、`ResetAsync` |
 | `InfrastructureFixture` | 以上四个并行启动 | `Postgres`、`Redis`、`RabbitMq`、`Apollo` |
+| `K3sFixture` | `rancher/k3s:v1.31.5-k3s1`（`QIAN_TEST_IMAGE_K3S`），特权容器 | `Kubeconfig`（API Server 已映射到宿主端口）；`KubectlAsync` 在容器内执行 kubectl（含 kustomize），`CopyAsync` 写入待 apply 的清单。K3s 启动时会短暂占满 CPU，容器在就绪前自行退出时重建，最多三次（只重建容器，不重试断言）；用例里的工作负载镜像由集群自行拉取，需要出网 |
 
 - 版本：PostgreSQL 16、Redis 7 与部署基线一致（ADR-017 D17.2）；RabbitMQ 取当前 4.x 稳定线。环境变量用来与 staging 对齐或换内网镜像源。
 - 容器口令每次运行随机生成，仓库里没有写死的凭据。
@@ -142,11 +145,15 @@ Data 的两项依赖保留现有实现与公开 API；本任务不通过删除�
 | `publicapi/Qian.GateSample.Stale` | RS0017，构建失败 |
 | `publicapi/Qian.GateSample.NoApiFiles` | QIAN0001，构建失败 |
 | `publicapi/GateSample.NotPackable` | 构建通过：不打包的项目不受约束 |
+| `test_check_deps.py` 的 `SdkBoundaryTests` / `RealSdkClosureTests` | SDK 经 Definition、第三方包或另一个 SDK 包间接带入 Provider 与 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 都报出完整路径；仓库里真实的 `Qian.Plugin.Sdk`、`.AspNetCore`、`.Generators` 在 `Qian.slnx` 的门禁范围内，其完整传递依赖只有 Runtime / SDK / Definition 与第三方包（S1-RT-014） |
+| `test_dotnet_release.py`（合成 `.nupkg`，不需要 dotnet 与网络） | 包族锁步发布的制品核对：缺包、多包、版本不一致、包族内依赖下限未钉同一版本或指向包族外、源生成器包带 `lib/` 或不是开发依赖、许可证与仓库地址缺失都失败；版本号须为不带前缀与构建元数据的 SemVer 2.0；推送后的包源核对缺包、仓库关联不符、可见性与仓库不一致或缺版本都失败（S1-RT-014） |
 | `test_check_docs.py`（不用样例项目，临时目录里搭最小仓库） | 文档门禁对文档站内容生效：站内路由、`/design/` 镜像路由与生成页路由的解析，生成目录跳过，禁用词在 `.mdx` 与站点源码里同样拦截（S1-DOCS-001）；Kun 小节的路由在生成前交给构建时的断链检查，显式给出的生成目录照查，生成目录里的文件进 Git 即失败，禁用词整词匹配（S1-DOCS-005） |
 
 ## 5 CI
 
 [.github/workflows/dotnet.yml](../.github/workflows/dotnet.yml)：还原 → 构建（PublicAPI 门禁）→ 依赖图门禁 → 门禁自测 → 单元与集成测试，测试结果（TRX）作为构件上传，整体限时 20 分钟（PRD §14.2.1）。仓库暂无自托管 runner，先用 GitHub 托管的 ubuntu-latest（自带 Docker）；自托管 runner 就位后只需改 `runs-on`。
+
+包族发布不在 PR 门禁里：[.github/workflows/dotnet-release.yml](../.github/workflows/dotnet-release.yml) 只从 main 手动触发，把全部 Qian 包以同一版本发到 GitHub Packages，核对包源里的版本、仓库关联与可见性，并在干净消费者项目里从该源真实还原、构建、运行（S1-RT-014，ADR-019 D19.7）；做法与失败处理见 [SDK 文档「包族发布」](../packages/Qian.Plugin.Sdk/README.md#包族发布)。
 
 
 ## 旧 Kun API 门禁（S1-KUN-006、S1-KUN-004）

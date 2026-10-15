@@ -5,6 +5,7 @@
     <ProjectReference Include="../../packages/Qian.Authz/Qian.Authz.csproj" />
     <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Kun.Security" />

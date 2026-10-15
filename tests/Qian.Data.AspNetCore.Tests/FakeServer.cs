@@ -13,6 +13,7 @@ internal sealed class FakeServer : IDisposable
     private const int GssEncRequest = 80877104;
     private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
     private readonly CancellationTokenSource _stop = new();
+    private int _accepted;
 
     private FakeServer(Func<Socket, CancellationToken, Task> respond)
     {
@@ -22,6 +23,9 @@ internal sealed class FakeServer : IDisposable
     }
 
     public int Port { get; }
+
+    /// <summary>已接受的连接数；出网约束拒绝的目标不应产生任何连接。</summary>
+    public int Accepted => Volatile.Read(ref _accepted);
 
     /// <summary>不讲 PostgreSQL 协议的服务（如 HTTP）：一连上就回一段 HTTP 响应。</summary>
     public static FakeServer Http() => new((socket, cancellationToken) =>
@@ -62,6 +66,7 @@ internal sealed class FakeServer : IDisposable
             Socket socket;
             try { socket = await _listener.AcceptSocketAsync(cancellationToken); }
             catch (Exception error) when (error is OperationCanceledException or SocketException or ObjectDisposedException) { return; }
+            Interlocked.Increment(ref _accepted);
             _ = ServeAsync(socket, respond, cancellationToken);
         }
     }

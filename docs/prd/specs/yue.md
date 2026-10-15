@@ -476,7 +476,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 - [x] `data-theme / data-brand` 运行时注入生效：切换后无需刷新且无首帧闪烁（Playwright 用例）——`apps/yue-playground/e2e/theme.spec.ts` 的首帧状态快照，CI `yue` 的 a11y 门禁
 
 **基础组件**
-- [ ] `@yue/core` S1 清单51 个组件全部有 Rspress 共用示例（默认 / 暗色及 `docs/scenarios.json` 中登记的适用状态）与 manifest
+- [ ] `@yue/core` S1 清单 51 个组件全部有 Rspress 共用示例（默认 / 暗色及 `docs/scenarios.json` 中登记的适用状态）与 manifest
 - [ ] 全部组件 axe critical = 0；Menu / Select / Combobox / Tabs / Tooltip / Tree 键盘路径用例通过（验证门）
 - [ ] 每个组件暴露 `data-slot` 与稳定 `data-testid`
 - [ ] 组件文案 100% 走 i18n key；硬编码文案 lint 为零

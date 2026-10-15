@@ -32,8 +32,21 @@ public abstract class ContainerFixture<TContainer> : IAsyncLifetime
         try
         {
             await OnStartingAsync(cancellationToken).ConfigureAwait(false);
-            _container = CreateContainer();
-            await _container.StartAsync(cancellationToken).ConfigureAwait(false);
+            for (var attempt = 1; ; attempt++)
+            {
+                _container = CreateContainer();
+                try
+                {
+                    await _container.StartAsync(cancellationToken).ConfigureAwait(false);
+                    break;
+                }
+                // 容器在就绪检查之前自行退出：只重建容器本身，不重试任何测试断言。
+                catch (ContainerNotRunningException) when (attempt < StartAttempts)
+                {
+                    var exited = Interlocked.Exchange(ref _container, null);
+                    if (exited is not null) await exited.DisposeAsync().ConfigureAwait(false);
+                }
+            }
             await OnStartedAsync(_container, cancellationToken).ConfigureAwait(false);
         }
         catch (DockerUnavailableException ex)
@@ -73,8 +86,11 @@ public abstract class ContainerFixture<TContainer> : IAsyncLifetime
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>构造容器（尚未启动）。</summary>
+    /// <summary>构造容器（尚未启动）；启动重试时每次重新构造。</summary>
     protected abstract TContainer CreateContainer();
+
+    /// <summary>容器在就绪之前自行退出时的最多启动次数，默认 1（不重试）。</summary>
+    protected virtual int StartAttempts => 1;
 
     /// <summary>组合 fixture 可先准备受其拥有的依赖与网络；失败时统一清理。</summary>
     protected virtual ValueTask OnStartingAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
