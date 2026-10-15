@@ -107,7 +107,7 @@ supersedes: ADR-002 §D2.1/D2.9/D2.10（形态轴与两层生命周期）、ADR-
 3. **`qian` CLI：单一 Node / TypeScript 实现，发布到 npm，`npx qian@latest` 为一键入口；Node ≥ 22 为前置。** `dotnet qian` 薄包装（只负责定位并调用 Node 版 CLI、缺 Node 时给出安装提示）为 S1 可选 P2。理由：与 `@qian/runtime`、yue 工具链同栈；`pack / sign / publish / dev` 本就需要 dotnet SDK，再维护一套 .NET CLI 不值。
 4. **官方市场仓库：与 Qian 同组织下的独立仓库 `qian-plugins`，根目录 `.qian/marketplace.json`；S1 私有，S3 随许可证评估公开；社区发现用 GitHub topic `qian-plugin`。**
 5. **代码插件热装卸不进 S2 核心交付；S2 内由 RT 领域做一个时间盒 5 天的 spike，验证 collectible `AssemblyLoadContext` 与 Kun 约束，结论写回本 ADR。** 生产默认滚动重启；声明式表面热重载 S1 不变。理由：收益集中在开发态，而开发态已有 `qian dev --watch`；生产可靠性优先。
-6. **许可证：Qian 包族、`qian` CLI、yue 一律 Apache-2.0；S3 商业市场与计费组件的许可证到 S3 再定。公开 feed：S1 GitHub Packages 私有；S2 末或首个外部宿主试用时公开到 nuget.org 与 npm，前提是 PublicApiAnalyzers 门禁与 0.x → 1.0 的 SemVer 策略就位。** 理由：Apache-2.0 含专利授权、对企业采用友好、与 Kun 的 MIT 兼容，与「别人装一个包就能用」的定位一致。可回退条件：首个公开发布前可改为源码可见类许可证；一旦公开发布不再收回。
+6. **许可证：Qian 包族、`qian` CLI、yue 一律 Apache-2.0；S3 商业市场与计费组件的许可证到 S3 再定。公开 feed：S1 GitHub Packages（.NET 包公开可见、安装需令牌，TS 包私有，R93）；S2 末或首个外部宿主试用时公开到 nuget.org 与 npm，前提是 PublicApiAnalyzers 门禁与 0.x → 1.0 的 SemVer 策略就位。** 理由：Apache-2.0 含专利授权、对企业采用友好、与 Kun 的 MIT 兼容，与「别人装一个包就能用」的定位一致。可回退条件：首个公开发布前可改为源码可见类许可证；一旦公开发布不再收回。
 7. **CLI 遥测：默认不采集；S2 提供 opt-in `qian telemetry on`，只采集命令名、CLI 版本、操作系统与匿名安装 id，不含路径、租户与代码；私有化部署可在 profile 中禁用。** 外部宿主安装数在 S1 只用 feed 下载统计。
 8. `qian init --template` 模板名已统一为 specs/component-model.md §9.1 的集合（R42）；后续新增模板在 spec 登记。
 

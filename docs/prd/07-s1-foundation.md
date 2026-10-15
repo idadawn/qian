@@ -178,8 +178,8 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - 目录约定与清单字段族以 ADR-020 D20.6 为准，权威规格为 specs/component-model.md（v1 specs/plugin-manifest.md 保留为 `kind` → `runtime.form` 字段迁移对照）。`plugin.json` 的表面指针（`skills`、`agents`、`commands`、`hooks`、`mcpServers`、`tools`、`ui`、`metadata`）缺省指向约定目录，可覆盖。
 - 校验器：每种表面一份 JSON Schema 2020-12（front matter 解析为 JSON 后校验）+ 语义校验（`allowed-tools` 引用的工具必须存在于 `ctx.Tools` 或本组件 `tools/`；hooks 引用的 Qian 事件必须在事件目录、能力 URI 必须在能力目录；`.mcp.json` 的服务器名在组件内唯一；`commands/` 内联 shell 仅允许在人类 CLI 侧执行）。库 `Qian.Surfaces`（.NET）与 `@qian/surfaces`（TS）跑同一组 fixture；错误格式 = `ErrorDetail`（7.18 第 2 项）+ 文件路径 + 行号 + JSON Pointer。
 - 注册：装载器读组件文件夹 → 解析表面 → 以 `ctx.Effect()` 注册，scope 取自挂载该组件的条目（`scope?`）并受 `plugin.json.scopes[]` 约束；表面变更走 7.2.1 的热重载路径。
-- hooks：一条 hook = 触发源（Qian 事件 ID 或 Agent 宿主事件名）× 动作（能力 URI 或 `commands/` 命令名）× 分发模式；服务端触发的 hook 以 `channel = hook` 进审计；精确 Schema 在 specs/component-model.md 定稿。
-- MCP：`.mcp.json` 在 S1 只被校验、登记、按 scope 过滤，并由 `qian add` 装进开发者的 Agent 宿主配置；平台侧运行 MCP 服务器与每租户门面是 S4（§10）。
+- hooks：一条 hook = 触发源（Qian 事件 ID 或 Agent 宿主事件名）× 动作（能力 URI 或 `commands/` 命令名）× 分发模式；服务端触发的 hook 以 `channel = hook` 进审计；精确 Schema 在 specs/component-model.md 定稿。S1 范围（R92）：桥接矩阵里四个 serial 事件 × `type: plugin`，Agent 宿主事件透传；`command` / `http` 执行器、非 serial 分发模式与 `identity/*`、`files/*`、`tenant/purging` 的桥接归 S2。
+- MCP：`.mcp.json` 在 S1 只被校验、登记、按 scope 过滤，并由 `qian add` 装进开发者的 Agent 宿主配置（装进宿主配置这一步归 S1-RT-032，R92）；平台侧运行 MCP 服务器与每租户门面是 S4（§10）。
 - `AGENTS.md` 与 README：模板随 `qian init` 生成；CI 检查存在性与必需节；文档生成器 `qian docs generate` 输出 `docs/generated/{config-catalog,module-graph,event-graph,seam-graph}.md`，CI 比对生成结果与提交内容，漂移即失败。
 - 官方市场（7.2.4）全部组件必须过校验器，作为市场条目的准入门禁。
 
@@ -192,13 +192,13 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - [ ] TCK：一个只含 `skills/` 与 `.qian-plugin/plugin.json`、没有 `src/` 的组件可被 `qian add` 装入 `minimal` profile 并出现在 `dump-config` 与 `ctx.Skills`；挂载到租户 A scope 后 B 不可见。
 - [ ] CI：删除某组件 README 的「已知限制与延期项」节或仓库根 `AGENTS.md`，门禁失败；修改一个事件声明而不重新生成事件图，新鲜度门禁失败。
 - [ ] E2E：修改已挂载组件的 SKILL.md 后 ≤ 5s 新描述出现在 `ctx.Skills` 与 `qian list`，无进程重启。
-- [ ] IT：`hooks.json` 把 `tenant.created.v1` 桥接到一个能力 URI，租户创建时被触发且审计记录 `channel = hook`；桥接到不存在的能力在装载期被拒。
+- [ ] IT：`hooks.json` 把进程内事件 `tenant/provisioned`（R39 矩阵；`tenant.created.v1` 是 S1-TEN-002 发布的集成事件，不进 hooks 矩阵，R91）桥接到一个能力，测试宿主在 `qian.tenancy` 上下文发布该事件时被触发且审计记录 `channel = hook`，真实开户流程的触发归 S1-TEN-003（R83）；桥接到不存在的能力在装载期被拒。
 
 #### 7.2.3 `qian` CLI 与 `Qian.Plugin.Sdk`（P0 · S1）
 
 **设计理念**。一条命令、不需要理解平台（ADR-020 D20.8）：开发者安装 Qian 的登录或文件组件时面对的是 `qian add identity`，而不是 Helm values、DI 扩展方法与 Apollo namespace；`AddQian<X>()` 只是 `Apply` 内部的装配细节，不是开发者入口（D20.10）。清单从代码派生、不手写：源生成器把代码派生的字段合并进唯一的 `.qian-plugin/plugin.json`，CI 比对清单与代码，漂移即失败（P 基线原则 P4）。SDK 是组件作者的唯一入口，Kun 的安全默认值在模板里是**默认装配**而不是 opt-in（iClaw 的教训：RLS 拦截器、多租户、限流、可观测「有而未被用上」）。
 
-**范围与边界**。✅ 做：CLI `qian add <component>[@version] ...`（等价 `npx qian@latest --skill x --agent y --plugin z --yes`：声明式表面复制进项目 `.qian/` 目录、代码部分加为 NuGet / npm 依赖、配置条目写进当前 profile 的 patch）、`qian remove`、`qian list`、`qian doctor`（健康检查：清单校验、依赖图、未满足的 `inject`、过期版本、表面校验、profile 一致性、需滚动重启的代码变更）、`qian dump-config`、`qian init --template <stack>`（S1 模板：`component-dotnet`、`dotnet-webapi`、`ts-shell` / `component-ts`、`skill-only`；S2 加 `package`）；代码部分的子命令 `qian pack | sign | publish`（OCI 制品只用于代码部分；R33 统一去掉 v1 的 `plugin` 名词）与 `qian dev`（Aspire AppHost 本地编排：PG、Redis、RabbitMQ、Apollo 用容器）；NuGet `Qian.Plugin.Sdk`（`IQianPlugin` 基类、租户 / 身份 / 权限 / 配置 / 事件 / 存储 / 通知 / 调度客户端门面、生命周期钩子基类、默认安全装配）与 `Qian.Plugin.Sdk.Generators`（`IIncrementalGenerator`：`[QianPlugin]`、`[Capability]`、`[ExtensionPoint]`、`[Contributes]`、`[Permission]`、`[QianJob]`、`[QianEvent]` → DI 注册代码 + 合并进 `plugin.json` 的派生字段 + JSON Schema）；分析器（禁 `IgnoreQueryFilters`、禁废弃 API、集成事件只在命令 handler 发出、写命令必须有 Schema 与 `idempotencyKey`、`Apply` 内的注册必须经 `ctx.Effect()`、组件库引用 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 或任何 Provider 包即报错）；npm `@qian/plugin-sdk`（注册远程模块、导航与插槽贡献、`PlatformClient`、拦截器链）；TCK 三套（运行时语义、独立模式、组件一致性）；`samples/standalone-minimal` 入源码仓。❌ 不做：开发者租户与远程调试通道（S2 可选）；Pact can-i-deploy（S3 可选）；C# 以外语言的 `service` 模板（S3 视第三方开放情况）；`Qian.All` / `Qian.Platform` 元包（ADR-019 §7 已拍板：S1 不提供，profile 的组合包承担该职责）；`qian add --scope tenant:<id>` 之外的租户级运维 UI（S2 控制台）。
+**范围与边界**。✅ 做：CLI `qian add <component>[@version] ...`（等价 `npx qian@latest --skill x --agent y --plugin z --yes`：声明式表面复制进项目 `.qian/` 目录、代码部分加为 NuGet / npm 依赖、配置条目写进当前 profile 的 patch）、`qian remove`、`qian list`、`qian doctor`（健康检查：清单校验、依赖图、未满足的 `inject`、过期版本、表面校验、profile 一致性、需滚动重启的代码变更）、`qian dump-config`、`qian init --template <stack>`（S1 模板：`component-dotnet`、`dotnet-webapi`、`ts-shell` / `component-ts`、`skill-only`；S2 加 `package`）；代码部分的子命令 `qian pack | sign | publish`（OCI 制品只用于代码部分；R33 统一去掉 v1 的 `plugin` 名词）与 `qian dev`（Aspire AppHost 本地编排：PG、Redis、RabbitMQ、Apollo 用容器）；NuGet `Qian.Plugin.Sdk`（`IQianPlugin` 基类、租户 / 身份 / 权限 / 配置 / 事件 / 存储 / 通知 / 调度客户端门面、生命周期钩子基类、默认安全装配）与 `Qian.Plugin.Sdk.Generators`（`IIncrementalGenerator`：`[QianPlugin]`、`[Capability]`、`[ExtensionPoint]`、`[Contributes]`、`[Permission]`、`[QianJob]`、`[QianEvent]` → DI 注册代码 + 合并进 `plugin.json` 的派生字段 + JSON Schema）；分析器（禁 `IgnoreQueryFilters`、禁废弃 API、集成事件只在命令 handler 发出、写命令必须有 Schema 与 `idempotencyKey`、`Apply` 内的注册必须经 `ctx.Effect()`、组件库引用 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities` 或任何 Provider 包即报错）；npm `@qian/plugin-sdk`（注册远程模块、导航与插槽贡献、`PlatformClient`、拦截器链）；TCK 三套（运行时语义、独立模式、组件一致性）；`samples/standalone-minimal` 入源码仓（SDK 与生成器各项的 S1 归属，以及推迟到 S2 的基类 / 门面 / DI 注册生成，见 R94）。❌ 不做：开发者租户与远程调试通道（S2 可选）；Pact can-i-deploy（S3 可选）；C# 以外语言的 `service` 模板（S3 视第三方开放情况）；`Qian.All` / `Qian.Platform` 元包（ADR-019 §7 已拍板：S1 不提供，profile 的组合包承担该职责）；`qian add --scope tenant:<id>` 之外的租户级运维 UI（S2 控制台）。
 
 **技术落点**。
 - `qian add` 流程：从已登记的市场（7.2.4）解析条目 → 取组件文件夹（`local` / `url` / `git-subdir`）→ 过 7.2.2 校验器与验签要求 → 表面复制到 `.qian/<id>/` → `runtime.nuget[]` 执行 `dotnet add package`（版本按市场条目钉）、`runtime.npm[]` 执行包管理器安装 → 在当前 profile 的 `config/qian.patch.yml`（`standalone` 为 `.qian/patch.yml`）追加条目 → 运行 `qian doctor`；`--yes` 跳过交互；`--profile <p>` 指定目标 profile；`--scope tenant:<id>` 写租户 scope patch（需平台连接与运营权限，S1 仅运营 CLI）；`.qian/lock.json` 记录每个组件的来源与 digest / commit。
@@ -403,7 +403,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - [ ] UT：Filter AST 示例通过 JSON Schema 校验；`between` 用于布尔字段被矩阵拒绝。
 - [ ] E2E：参考应用的客户表在租户 A、B 各插入 1000 行，A 的列表查询只返回 A 的数据且 `EXPLAIN` 显示走租户索引。
 
-**DATA-001 交付分期**。按产品负责人已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，默认安全装配、RLS 迁移与参考应用的数据本体通过真实验收后先合并，解除注册表实现前置。SDK 代码字段源生成、默认装配及私有 NuGet 锁步发布由 RT-014 回验，真实 `qian add data` 安装由 RT-011 回验；这些门通过前保留组件骨架标记，不宣称完整组件安装。此分期不豁免本节其它数据任务的独立验收。
+**DATA-001 交付分期**。按产品负责人已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，默认安全装配、RLS 迁移与参考应用的数据本体通过真实验收后先合并，解除注册表实现前置。SDK 代码字段源生成、默认装配及 GitHub Packages 锁步发布（公开可见、安装需令牌，R93）由 RT-014 回验（2026-10-16 复核成立，口径见 R94），真实 `qian add data` 安装由 RT-011 回验；这些门通过前保留组件骨架标记，不宣称完整组件安装。此分期不豁免本节其它数据任务的独立验收。
 
 ### 7.7 qian.files 文件存储（P0 · S1）
 
