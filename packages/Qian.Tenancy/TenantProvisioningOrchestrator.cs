@@ -43,7 +43,7 @@ internal sealed class TenantProvisioningOrchestrator(IPluginContext context, Pos
                     throw Error(PlatformErrors.Conflict);
                 return existing.Id;
             }
-            var row = new TenantRow { Code = request.Code, Name = request.Name, ProvisionInput = input, CreatedBy = actor };
+            var row = new TenantRow { Code = request.Code, Name = request.Name, Quotas = TenantQuotaRules.Serialize(request.Quotas), ProvisionInput = input, CreatedBy = actor };
             using var tenantScope = _tenant.BeginScope(row.Id.ToString());
             await using var session = await context.Data().OpenAsync<TenancyDbContext>(cancellationToken).ConfigureAwait(false);
             await using var transaction = await session.Context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);

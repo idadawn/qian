@@ -35,7 +35,7 @@ internal sealed class PostgresTenantDirectory(IDataService data, ITenantContext 
         EnsureActive(); ArgumentNullException.ThrowIfNull(request); ValidateCode(request.Code); ValidateName(request.Name);
         if (request.Isolation != TenantIsolation.Row) throw Error(PlatformErrors.InputInvalid);
         if (tenant.TenantId is not null) throw Error(PlatformErrors.AuthzDenied);
-        var row = new TenantRow { Code = request.Code, Name = request.Name };
+        var row = new TenantRow { Code = request.Code, Name = request.Name, Quotas = TenantQuotaRules.Serialize(request.Quotas) };
         using var scope = tenant.BeginScope(row.Id.ToString());
         await using var session = await data.OpenAsync<TenancyDbContext>(ct).ConfigureAwait(false);
         await using var transaction = await session.Context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
@@ -55,6 +55,7 @@ internal sealed class PostgresTenantDirectory(IDataService data, ITenantContext 
         var row = await session.Context.Tenants.SingleOrDefaultAsync(x => x.Id == id, ct).ConfigureAwait(false) ?? throw Error(PlatformErrors.NotFound);
         if (request.ExpectedRevision != session.Context.Entry(row).Property<uint>(KunDataConventions.RowVersionPropertyName).CurrentValue) throw Error(PlatformErrors.PreconditionFailed);
         row.Name = request.Name;
+        if (request.Quotas is not null) row.Quotas = TenantQuotaRules.Serialize(request.Quotas);
         try { await session.SaveChangesAsync(ct).ConfigureAwait(false); }
         catch (DbUpdateConcurrencyException) { throw Error(PlatformErrors.PreconditionFailed); }
         return Describe(row) with { Revision = session.Context.Entry(row).Property<uint>(KunDataConventions.RowVersionPropertyName).CurrentValue };

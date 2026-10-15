@@ -195,3 +195,6 @@ const Qian.Registry.RegistryArtifactStates.Healthy = "Healthy" -> string!
 const Qian.Registry.RegistryArtifactStates.Installed = "Installed" -> string!
 const Qian.Registry.RegistryArtifactStates.Progressing = "Progressing" -> string!
 const Qian.Registry.RegistryArtifactStates.Submitted = "Submitted" -> string!
+Qian.Registry.IRegistryService.GetConfigurationViewAsync(Qian.Runtime.ScopeKey scope, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryEntryView!>!>
+Qian.Registry.RegistryEntryView.Config.get -> System.Text.Json.JsonElement?
+Qian.Registry.RegistryEntryView.Config.init -> void

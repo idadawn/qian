@@ -114,6 +114,13 @@ internal sealed class RegistryService : IRegistryService
         return Array.AsReadOnly(entries.Where(entry => _installed.Any(component => component.PluginId == entry.PluginId && component.Version == entry.Version)).ToArray());
     }
 
+    public async ValueTask<IReadOnlyList<RegistryEntryView>> GetConfigurationViewAsync(ScopeKey scope, CancellationToken cancellationToken = default)
+    {
+        if (_listener is null) throw new ServiceNotReadyException();
+        WriteTenant(scope);
+        return await _scopes.ViewAsync(_tenant.TenantId!, scope, cancellationToken).ConfigureAwait(false);
+    }
+
     public async ValueTask<IReadOnlyList<RegistryEntryView>> GetScopeViewAsync(ScopeKey scope, ICurrentUser user, CancellationToken cancellationToken = default)
     {
         var tenantId = await AuthorizeAsync(scope, user, cancellationToken).ConfigureAwait(false);
@@ -149,7 +156,11 @@ internal sealed class RegistryService : IRegistryService
             throw Invalid("#/0/disabled", "挂载条目不能带 disabled: true；卸载请用 Unmount。");
         CheckInstalled(entry);
         using var origin = Origin();
-        return await _writer.PutAsync(scope, id.GetString()!, entry, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
+        var saved = await _writer.PutAsync(scope, id.GetString()!, entry, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
+        var source = _context.Scoped(scope);
+        await source.DispatchAsync(SurfaceHookEvents.EntryMounted, new HookNotification(source, saved.EntryId,
+            JsonSerializer.SerializeToElement(new { entryId = saved.EntryId, revision = saved.Revision }), cancellationToken), cancellationToken).ConfigureAwait(false);
+        return saved;
     }
 
     public async ValueTask<int> UnmountAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken cancellationToken = default)
