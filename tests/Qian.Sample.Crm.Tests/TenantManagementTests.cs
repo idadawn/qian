@@ -72,7 +72,7 @@ public sealed partial class CustomerCommandTests
         var records = await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct);
         Assert.NotEmpty(records); Assert.All(records, entry => Assert.Equal("superadmin", entry.Record.Payload.GetProperty("bypass").GetString()));
         var contract = await management.Services.GetRequiredService<IHttpContractSource>().CompileDocumentAsync("qian.tenancy", Ct);
-        Assert.Equal(6, contract.GetProperty("paths").EnumerateObject().Count());
+        Assert.Equal(8, contract.GetProperty("paths").EnumerateObject().Count());
         Assert.True(contract.GetProperty("paths").GetProperty(path).TryGetProperty("post", out var post));
         Assert.True(contract.GetProperty("paths").GetProperty(path + "/{id}").TryGetProperty("put", out _));
         Assert.DoesNotContain("tenantId", post.GetProperty("requestBody").GetRawText(), StringComparison.Ordinal);
@@ -88,7 +88,7 @@ public sealed partial class CustomerCommandTests
         await runtime.UnmountAsync("tenancy", ScopeKey.Global, Ct);
         await runtime.MountAsync([new PluginDefinition(new PluginEntry("tenancy", "qian.tenancy", "1.0.0", ScopeKey.Global, 0,
             JsonSerializer.SerializeToElement(new { })), admitted, [TenancyDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.TenancyKey])], Ct);
-        Assert.Equal(PluginState.Ready, runtime.GetState("tenancy", ScopeKey.Global));
+        Assert.True(runtime.GetState("tenancy", ScopeKey.Global) == PluginState.Ready, runtime.GetFailure("tenancy", ScopeKey.Global)?.ToString());
 
 
         Task<HttpResponseMessage> Request(HttpMethod method, string url, string? token, object? body = null)
@@ -118,15 +118,23 @@ public sealed partial class CustomerCommandTests
         var loader = business.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var permissions = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy/metadata/permissions.json")));
         var catalog = new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata("qian.tenancy", "1.0.0", permissions, JsonSerializer.SerializeToElement(Array.Empty<object>()));
+        var registryCatalog = new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata("qian.registry", "1.0.0",
+            JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.registry/metadata/permissions.json"))),
+            JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.registry/metadata/roles.json"))));
         await loader.UnmountAsync("authz", ScopeKey.Global, Ct); await loader.UnmountAsync("audit", ScopeKey.Global, Ct);
         await loader.MountAsync([
             new PluginDefinition(new PluginEntry("audit", "qian.audit", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { chain = new { platformRole = platform.AuditRole } })), new AuditPlugin(), [AuditDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.AuditKey]),
-            new PluginDefinition(new PluginEntry("authz", "qian.authz", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { platformRole = platform.AuthzRole })), new AuthzPlugin([CrmPermissions.Compile(), catalog]), [AuthzDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.AuthorizationKey])], Ct);
+            new PluginDefinition(new PluginEntry("authz", "qian.authz", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { platformRole = platform.AuthzRole })), new AuthzPlugin([CrmPermissions.Compile(), catalog, registryCatalog]), [AuthzDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.AuthorizationKey])], Ct);
         Assert.Equal(PluginState.Ready, loader.GetState("authz", ScopeKey.Global));
         await new PostgresPlatformRoleStore(business.App.Services.GetRequiredService<IDataService>(), business.App.Services.GetRequiredService<ITenantContext>(), platform.AuthzRole).AssignSuperadminAsync("root", "operator", Ct);
         var lifecycle = LifecyclePlatform.Lifecycle(business);
         foreach (var artifact in platform.SystemArtifacts.Values)
         { var revision = await lifecycle.InstallAsync(artifact, "root", Ct); await lifecycle.ActivateAsync(revision.PluginId, revision.Revision, "root", Ct); }
+        if (platform.ProvisionCrmByDefault)
+        {
+            var crm = await lifecycle.InstallAsync(platform.Artifacts["1.0.0"], "root", Ct);
+            await lifecycle.ActivateAsync(crm.PluginId, crm.Revision, "root", Ct);
+        }
         var builder = WebApplication.CreateBuilder(); builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
         builder.Services.AddSingleton(business.App.Services.GetRequiredService<ITenantContext>());
         builder.Services.AddHttpContextAccessor(); builder.Services.AddScoped<ICurrentUser, ManagementCurrentUser>();

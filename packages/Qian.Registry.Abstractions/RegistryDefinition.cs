@@ -25,6 +25,8 @@ public interface IRegistryService : IAsyncDisposable
     ValueTask SynchronizeAsync(ScopeKey scope, CancellationToken cancellationToken = default);
     /// <summary>同步当前已验证租户的数据库 scope 后，读取已挂载且未被遮蔽/restrict 过滤的服务绑定；不可把预装清单作为此视图。</summary>
     ValueTask<IReadOnlyList<RegistryScopeEntry>> GetScopeEntriesAsync(ScopeKey scope, ServiceKey key, CancellationToken cancellationToken = default);
+    /// <summary>可信平台插件使用的合成配置读模型，只接受当前租户 scope；外部 HTTP 必须使用已授权的 GetScopeViewAsync。</summary>
+    ValueTask<IReadOnlyList<RegistryEntryView>> GetConfigurationViewAsync(ScopeKey scope, CancellationToken cancellationToken = default);
     /// <summary>
     /// 管理面 scope 视图：同步后返回该 scope 已挂载且 Ready 的条目。调用者须是当前已验证租户的用户或服务主体（无委托），
     /// 并经宿主的权限判定端口持有 <see cref="RegistryDefinition.ScopeReadPermission"/>；否则与不存在同为 NOT_FOUND。

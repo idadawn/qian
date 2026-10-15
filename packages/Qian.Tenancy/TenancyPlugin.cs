@@ -5,6 +5,7 @@ using Qian.Authz.Abstractions;
 using Qian.Runtime;
 using Qian.Plugin.Sdk;
 using Qian.Runtime.Errors;
+using Qian.Surfaces.Abstractions;
 
 namespace Qian.Tenancy;
 
@@ -32,6 +33,13 @@ public sealed class TenancyPlugin : IQianPlugin
         var directory = new PostgresTenantDirectory(ctx.Data(), ctx.Services.GetRequiredService<Kun.Core.MultiTenancy.ITenantContext>());
         ctx.Effect(directory.Dispose);
         ctx.Provide<ITenantDirectory>(TenancyDefinition.Key, directory);
+        ctx.Effect(ctx.Services.GetRequiredService<ErrorCatalog>().Register(TenancyErrors.UserLimit));
+        var settings = new TenantSettingsService(ctx, directory); ctx.Effect(settings.Dispose);
+        ctx.Provide<ITenantSettings>(TenantSettings.Key, settings);
+        ctx.Provide<ITenantSettingsOperations>(TenantSettings.OperationsKey, settings);
+        ctx.Provide<ITenantQuota>(TenantSettings.QuotaKey, settings);
+        ctx.On(SurfaceHookEvents.EntryMounted, DispatchMode.Serial, (Func<HookNotification, ValueTask<JsonElement>>)(notification =>
+        { settings.Invalidate(notification); return ValueTask.FromResult(JsonSerializer.SerializeToElement<object?>(null)); }));
         ctx.Effect(ctx.Services.GetRequiredService<ErrorCatalog>().Register(TenancyErrors.StateConflict));
         var lifecycle = new TenantStateMachine(ctx, directory);
         ctx.Provide<ITenantLifecycle>(TenantLifecycle.Key, lifecycle);

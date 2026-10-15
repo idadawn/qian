@@ -44,6 +44,7 @@ namespace Qian.Sample.Crm.Tests;
 // 业务请求经 SDK 插件端点门禁与 CRM 命令处理器，管理面诊断经 GET /api/lifecycle/diagnostics。网关与外壳两处拦截归 S1-ENT-002。
 public sealed partial class CustomerCommandTests
 {
+    private static readonly string[] GlobalSettingsScopes = ["global"];
     private static readonly EventOrigin Operator = new("qian.lifecycle", EventActor.User("platform-operator")) { CorrelationId = Guid.CreateVersion7() };
 
     [Fact]
@@ -341,7 +342,7 @@ public sealed partial class CustomerCommandTests
         Add("authz", "qian.authz", new AuthzPlugin([CrmPermissions.Compile()]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key]);
         Add("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]);
         Add("config", "qian.config", new ConfigurationPlugin(), [ConfigDefinition.Key]);
-        var registry = new RegistryPlugin(new RegistryRuntimeOptions
+        var registryOptions = new RegistryRuntimeOptions
         {
             InstalledComponents = installed, Runtime = loader, Profiles = new ProfileLoader(validator), Profile = options, Surfaces = validator,
             Resolve = entry =>
@@ -351,11 +352,13 @@ public sealed partial class CustomerCommandTests
                 var definition = reference[0] == "qian.sample.crm" ? versions[reference[1]] : definitions[entry.Id];
                 return definition with { Entry = new PluginEntry(entry.Id, reference[0], reference[1], scope, entry.Layer, entry.Config) };
             }
-        });
+        };
+        platform.RegistryOptions = registryOptions;
+        var registry = new RegistryPlugin(registryOptions);
         Add("registry", "qian.registry", registry, [RegistryDefinition.Key], new { store = "pg" });
         Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey, CapabilitiesDefinition.NavigationKey]);
         Add("lifecycle", "qian.lifecycle", new LifecyclePlugin(new LifecycleRuntimeOptions { Hooks = (id, _) => id == "qian.sample.crm" ? new CrmPlugin() : null }), [LifecycleDefinition.Key]);
-        foreach (var id in new[] { "registry", "capabilities", "lifecycle" })
+        foreach (var id in new[] { "registry", "capabilities", "lifecycle", "audit" })
             Write($"plugins/{id}/schemas/config.schema.json", File.ReadAllText(Path.Combine(RepositoryRoot(), $"plugins/qian.{id}/schemas/config.schema.json")));
         Write("profiles/platform/qian.profile.yml", """{"name":"platform","bundles":[],"patch":"./qian.patch.yml","hmr":{"surfaces":true,"code":false},"build":{"aot":false},"hooks":{"allowCommand":false}}""");
         Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin + "@" + item.Entry.Version, config = item.Entry.Config })));
@@ -365,7 +368,7 @@ public sealed partial class CustomerCommandTests
         {
             id = "qian.sample.crm", version = "1.0.0", description = "参考应用：客户管理，由生命周期装进租户 scope。", author = new { name = "Qian" }, license = "Apache-2.0",
             @interface = new { displayName = "crm", category = "sample" }, inject = crm.Inject.Select(key => key.Name), provides = new[] { CrmDefinition.Key.Name },
-            policy = new { tier = "official", sandbox = "none", authentication = "ON_INSTALL", required = false }, scopes = CatalogScopes,
+            policy = new { tier = platform.ProvisionCrmByDefault ? "system" : "official", sandbox = "none", authentication = "ON_INSTALL", required = platform.ProvisionCrmByDefault }, scopes = CatalogScopes,
             runtime = new { form = "module", entry = "Qian.Sample.Crm" }
         }));
         var contract = CapabilityContractCompiler.CreateOpenApi([CreateCustomerCommand.QianCapability, ListCustomersQuery.QianCapability, GetCustomerQuery.QianCapability], validator, new ToolContractHasher());
@@ -416,7 +419,7 @@ public sealed partial class CustomerCommandTests
             {
                 id = component, version = "1.0.0", description = "生命周期端到端验收使用实际 Provider 的平台组合。", author = new { name = "Qian" }, license = "Apache-2.0",
                 @interface = new { displayName = id, category = "testing" }, inject = plugin.Inject.Select(key => key.Name), provides = provides.Select(key => key.Name),
-                policy = new { tier = "system", sandbox = "none", authentication = "ON_INSTALL", required = true }, scopes = CatalogScopes,
+                policy = new { tier = "system", sandbox = "none", authentication = "ON_INSTALL", required = true }, scopes = component == "qian.config" ? GlobalSettingsScopes : CatalogScopes,
                 runtime = new { form = "module", entry = plugin.GetType().FullName + ", " + plugin.GetType().Assembly.GetName().Name }
             }));
         }
@@ -487,6 +490,8 @@ public sealed partial class CustomerCommandTests
         }
         internal string SecretRoot { get; } = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "qian-lifecycle-secrets-" + Guid.NewGuid().ToString("N"))).FullName;
         internal bool Management { get; init; }
+        internal bool ProvisionCrmByDefault { get; init; }
+        internal RegistryRuntimeOptions RegistryOptions { get; set; } = null!;
         internal string AuthzRole { get; set; } = "";
         internal string AuditRole { get; set; } = "";
         internal string AuthzConnection { get; set; } = "";

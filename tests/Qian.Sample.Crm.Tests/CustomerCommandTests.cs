@@ -333,6 +333,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             }
             if (platform) MapCapabilities(app);
             if (lifecycle is not null) MapLifecycle(app);
+            if (lifecycle is { Management: true }) MapSettingsRegistry(app);
             if (hooks) MapHookEntry(app);
             await app.StartAsync(Ct);
             if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);

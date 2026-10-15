@@ -18,4 +18,5 @@
   </ItemGroup>
   <ItemGroup><ProjectReference Include="../../packages/Qian.Surfaces.Hosting/Qian.Surfaces.Hosting.csproj" /></ItemGroup>
 <ItemGroup><ProjectReference Include="../../packages/Qian.Tenancy.AspNetCore/Qian.Tenancy.AspNetCore.csproj" /></ItemGroup>
+<ItemGroup><ProjectReference Include="../../packages/Qian.Registry.AspNetCore/Qian.Registry.AspNetCore.csproj" /></ItemGroup>
 </Project>
