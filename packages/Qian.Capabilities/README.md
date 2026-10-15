@@ -143,7 +143,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 
 破坏性规则只从检查器的标准输出取，且只认形如 `{"type":"<规则 ID>",…}` 的合法 JSON 行；标准输出里的警告、进度、无效 JSON 等其余行，与标准错误分开处理：两路各最多 50 行、每行截断到 500 字符，经宿主传入的 `ILogger` 分别记为警告，失败时分别附在异常的 `Data["contractDiagnostics"]`（标准输出）与 `Data["contractErrors"]`（标准错误）。标准错误不参与规则解析，形似规则的行也不算；不会因为混入一行非 JSON 而抛异常。判定只看退出码：0 兼容；100 且至少有一条规则为不兼容；100 却没有任何规则、或其他退出码，都拒绝准入。
 
-`GrpcReflectionContractProbe` 使用宿主提供的 CallInvoker 和认证元数据连接真实 HTTP/2 reflection 服务，复制凭据且不写入诊断。它查询声明中的每个服务，收集文件和依赖，核验冲突、大小及 RPC 最终状态，再按 PACKAGE 规则检查 RPC、消息与字段；允许服务构建的 ProtoRoot 文件前缀不同，不因仅有文件布局差异误拒。两类规则依据 [Buf 兼容规则说明](https://buf.build/docs/breaking/rules/)。宿主负责端点、TLS、出网范围和探测授权；探测入口不接受客户端 URL 或可信标记。
+`GrpcReflectionContractProbe` 使用宿主提供的 CallInvoker 和认证元数据连接真实 HTTP/2 reflection 服务，复制凭据且不写入诊断。它查询声明中的每个服务，收集文件和依赖，核验冲突、大小及 RPC 最终状态，再按 PACKAGE 规则检查 RPC、消息与字段；允许服务构建的 ProtoRoot 文件前缀不同，不因仅有文件布局差异误拒。两类规则依据 [Buf 兼容规则说明](https://buf.build/docs/breaking/rules/)。宿主负责端点、TLS、出网范围和探测授权；探测入口不接受客户端 URL 或可信标记。服务端在读请求前就结束调用时（如认证拒绝后立即回 401 并重置流），写请求可能先于调用状态就绪而失败：Grpc.Net.Client 会报 `Cancelled`，或直接抛传输层 `IOException`。调用方没有取消时，探测器改读响应流，按调用的最终状态报错（如 `Unauthenticated`）；调用方自己取消、截止时间到期仍分别报 `Cancelled`、`DeadlineExceeded`（S1-RT-028）。
 
 `GrpcContractPlugin` 在业务 Apply 前先检查精确版本制品，再探测实际服务；任一失败都不能公开业务注册。测试使用实际 protobuf Echo 调用、官方 reflection 实现和 RS256 认证，验证正确协议、类型漂移、匿名拒绝、挂载失败与认证恢复后的真实声明式表面登记。此证明不代替完整注册表/生命周期安装编排或生产服务部署验收。
 
