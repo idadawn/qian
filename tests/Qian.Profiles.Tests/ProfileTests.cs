@@ -52,17 +52,18 @@ public sealed class ProfileTests
     }
 
     [Theory]
-    [InlineData("platform", 21)]
-    [InlineData("gateway", 5)]
-    [InlineData("identity", 8)]
-    [InlineData("standalone", 2)]
-    [InlineData("minimal", 0)]
-    public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count)
+    // 警告只来自仍带骨架标记的条目；qian.data 经 S1-RT-011 真实安装后不再是骨架（platform / identity 各少一条）。
+    [InlineData("platform", 21, 20)]
+    [InlineData("gateway", 5, 5)]
+    [InlineData("identity", 8, 7)]
+    [InlineData("standalone", 2, 2)]
+    [InlineData("minimal", 0, 0)]
+    public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count, int skeletons)
     {
         var result = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = profile, IncludeHomePatch = false });
         Assert.True(result.IsValid, JsonSerializer.Serialize(result, Json));
         Assert.Equal(count, result.Snapshot!.Entries.Count);
-        Assert.Equal(count, result.Diagnostics.Count(d => d.Severity == "warning"));
+        Assert.Equal(skeletons, result.Diagnostics.Count(d => d.Severity == "warning"));
         if (profile != "platform") Assert.DoesNotContain(result.Snapshot.Entries, e => e.Plugin.StartsWith("qian.registry@", StringComparison.Ordinal) || e.Plugin.StartsWith("qian.lifecycle@", StringComparison.Ordinal) || e.Plugin.StartsWith("qian.capabilities@", StringComparison.Ordinal));
     }
 

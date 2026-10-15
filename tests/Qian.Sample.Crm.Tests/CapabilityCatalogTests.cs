@@ -340,7 +340,8 @@ public sealed partial class CustomerCommandTests
         builder.Services.AddQianPluginEndpoints(sp => sp.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("registry", ScopeKey.Global));
         builder.Services.AddQianData<CapabilitiesDbContext>((_, options) => options.UseNpgsql(navigationConnection).UseKunSchema(CapabilitiesDbContext.Schema));
         // 只有能力上下文随包带迁移；迁移连接用属主角色，在线连接仍是受限业务角色。
-        builder.Services.AddQianDataMigrations(options => options.ResolveConnection = (_, type) => type == typeof(CapabilitiesDbContext) ? migrations : null);
+        builder.Services.AddQianDataMigrations(options => options.ResolveConnection = (_, type) =>
+            type == typeof(CapabilitiesDbContext) || type == typeof(Qian.Lifecycle.LifecycleDbContext) ? migrations : null);
         builder.Services.AddQianData<RegistryDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(RegistryDbContext.Schema));
         builder.Services.AddSingleton<ISurfaceReader, SurfaceValidator>();
         builder.Services.AddSingleton<IToolContractHasher, ToolContractHasher>();

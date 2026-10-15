@@ -140,6 +140,7 @@ public sealed class AuthorizedHandlerTests
     {
         public IDataPermissionFilter DataPermissions => throw new NotSupportedException();
         public IFieldPolicy Fields => throw new NotSupportedException();
+        public ValueTask<IReadOnlyList<EffectiveGrant>> ListEffectivePermissionsAsync(AuthorizationSubject subject, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public ValueTask<PermissionDecision> CheckAsync(PermissionRequest request, CancellationToken cancellationToken = default)
         {
             Assert.Equal("tenant-a", request.Subject.TenantId);

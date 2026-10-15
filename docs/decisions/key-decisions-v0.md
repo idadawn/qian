@@ -460,3 +460,9 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 - R83：S1-RT-009 的 hooks 桥接验收用测试宿主发布的 `tenant.created.v1` 事件验证触发与审计 `channel = hook`；真实开户流程触发归 S1-TEN-003。
 - R84：S1-RT-011 的 E2E「qian add identity authz files」在 identity / files 交付前改为用市场条目已存在的三个组件验证；完整组合归 S1-QA-005。
 - 顺序与归属：一人（cody）串行 S1-TEN-001 → S1-RT-004 → S1-AUD-001 → S1-RT-014 → S1-RT-005 → S1-AZ-002 + S1-AZ-003 → S1-RT-011；S1-RT-009 剩余一条按 R83 可在 RT-005 后顺手做；S1-DEP-003 等 S1-IDP-002 / S1-IDP-005 / S1-GW-001 / S1-YUE-001 交付后再动。S1-RT-004 与 S1-AUD-001 的依赖已全部完成，状态由 blocked 改回 todo。
+
+### 验收复核裁决 R85（S1-TEN-001 复核，2026-10-15）
+
+由 Claude 在产品负责人要求「验收 S1-TEN-001」后作默认裁决，未经逐条确认；执行人在该任务日志的偏离 ② 提出归属待定，有异议时新建决策任务。
+
+- R85：tenancy HTTP 运营接口 `GET/POST /api/tenancy/tenants`、`PUT /api/tenancy/tenants/{id}`（PRD 7.3 API 行的前两组）不在 S1-TEN-001 交付范围，另立 S1-TEN-006 交付，depends `S1-TEN-001`、`S1-AZ-003`：调用方是没有租户的平台主体，要走 AZ-003 的超管旁路显式声明并审计，`TenantRequestBoundary` 已写明平台运营入口不经租户边界回退。不并入 S1-TEN-002（它承接同一资源上的状态迁移端点与审批钩子，依赖 EVT-001 / SCH-001 / IDP-004，列表、新建、编辑不应被这些拖住），也不并入 S1-TEN-005（页面任务是消费方不是提供方）；S1-TEN-005 depends 加 S1-TEN-006。S1-GW-001 的 E2E 探针路由 `/api/tenancy/tenants` 以 TEN-006 交付为准，TEN-006 未交付时以测试宿主的任意受保护路由代替，GW-001 不加依赖。TEN-001 验收第 4 条后半句「运营接口的目标租户是资源路径」在 TEN-001 按内部 API 与 DTO 现状成立（写入口 `internal`、id 服务端生成、`CreateTenant` / `UpdateTenant` 请求体拒绝 `tenantId` / `tenant_id` / `id`），HTTP 层复验列入 S1-TEN-006 验收；TEN-001 题名中的「tenancy API」自此指 `ITenantDirectory` 内部 API 与 HTTP 租户边界。

@@ -83,7 +83,7 @@ SDK 生成的契约由 System.Text.Json 导出 Schema，不会出现后三类问
 
 `tests/Qian.Sample.Crm.Tests/CapabilityCatalogTests.cs` 与 `CapabilityInvokeTests.cs` 使用真实 Kestrel、签名 S2S、受限 PostgreSQL、RBAC、Registry、SDK 绑定与客户业务。验证目录信封与条目契约（`schemaSha256` 与生产实现 `ToolContractHash` 一致，该实现由 `Qian.Surfaces.Tests` 按 RFC 8785 的示例与附录 B 样本验证）、别名的 `Deprecation` / `Link` 头、参数校验与匿名 401 的 ErrorDetail、缺权限/scope、restrict、卸载、数据库 scope patch、撤权与冻结、执行入口的输入校验 / 幂等重放（含执行中 409、失败不留回执、只读能力忽略幂等键）/ 回执策略（按分级与上限不存响应体时同键 409、表上的硬上限、非默认组件配置）/ Agent 主体、登记期拒绝（组件挂载失败，目录与执行入口没有该能力），并检查实际客户、Outbox 和审计。测试组合使用必要的实际 Provider，不声称已经覆盖默认 platform 全部 Provider；测试签发器也不替代真实 Identity 登录验收。Agent 用例另在测试宿主打开「授权预览」，把 Agent 主体按同 ID 服务主体求值，以单独观察 `agent.expose` 过滤；预览默认关闭，不是生产判定。
 
-OpenAPI 聚合已覆盖 SDK 真实调用入口及宿主标注绑定的原生 HTTP 路由，实际 gRPC 契约经独立反射探测；平台挂载路径强制套用契约准入归 S1-RT-005（R76）。菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。platform / minimal 双宿主等价与表面热重载的运行时语义由 S1-QA-002 的 TCK（T19、T23）覆盖。本组件的交付与复核记录见 S1-RT-006 与 S1-RT-019。
+OpenAPI 聚合已覆盖 SDK 真实调用入口及宿主标注绑定的原生 HTTP 路由，实际 gRPC 契约经独立反射探测；平台挂载路径的契约准入已由 S1-RT-005 接入（R76，见「平台挂载准入」）。菜单贡献及偏好已接入，范围与验证见下节。扩展点按 ADR-020 D20.3 和组件规格 §3.6 使用既有事件定义及可逆服务注册，不另建旧版独立扩展点注册表。platform / minimal 双宿主等价与表面热重载的运行时语义由 S1-QA-002 的 TCK（T19、T23）覆盖。本组件的交付与复核记录见 S1-RT-006 与 S1-RT-019。
 
 ## 契约兼容检查
 
@@ -91,7 +91,7 @@ OpenAPI 聚合已覆盖 SDK 真实调用入口及宿主标注绑定的原生 HTT
 
 探测对基线和候选文档先做 OpenAPI 3.1 解析，再运行固定参数的兼容检查。外部 `$ref` 明确禁用；不调用 shell，不继承环境配置，使用独立空配置、受限输出和 30 秒超时。取消会终止子进程，临时契约文件在退出后删除。检测失败、版本不符和报告异常都抛错，不能视为兼容。
 
-`OpenApiContractPlugin` 是平台装配器使用的普通包装，保持原业务插件依赖，在其 Apply 之前探测带 `/vN` 的同组件命名空间契约；破坏性变更导致挂载 Failed，业务注册不会公开。它不修改 Runtime，也不是调用者可绕过的请求参数。生产装配必须从已验证的版本化制品取得完整基线与候选，不能使用当前用户权限过滤后的 OpenAPI 返回值。宿主可用 FromRepository 选择已捕获的精确版本契约，候选版本必须与实际装载条目一致。在 S1-RT-005 让 `Mount` 与 Registry scope Reconciler 强制套用此包装之前（R76），宿主需显式采用它。
+`OpenApiContractPlugin` 是平台装配器使用的普通包装，保持原业务插件依赖，在其 Apply 之前探测带 `/vN` 的同组件命名空间契约；破坏性变更导致挂载 Failed，业务注册不会公开。它不修改 Runtime，也不是调用者可绕过的请求参数。生产装配必须从已验证的版本化制品取得完整基线与候选，不能使用当前用户权限过滤后的 OpenAPI 返回值。宿主可用 FromRepository 选择已捕获的精确版本契约，候选版本必须与实际装载条目一致。平台挂载路径由 Registry scope Reconciler 经契约准入强制套用此包装（R76），宿主不再自行决定是否采用。
 
 测试通过 `QIAN_OASDIFF_PATH` 指向实际锁定工具；CI 会先校验下载，缺失工具不会跳过测试。相关测试覆盖说明与兼容响应扩展、输入类型破坏、路径删除、外部引用拒绝，以及真实客户组件挂载被拒/兼容恢复后实际执行。
 
@@ -113,7 +113,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 
 按组件 ID、精确制品版本和契约 ID 查询，返回原始内容的副本、文件 SHA-256 与制品目录摘要。仓库不按业务用户裁剪契约，也没有匿名 HTTP 读取入口；卸载后旧服务引用失效，在途兼容检查会取消。`CheckOpenApiAsync` 只比较两个完整版本制品中的同族 OpenAPI，缺基线、候选或检查器均拒绝。
 
-`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布：CLI 产出契约制品与签名发布归 S1-RT-013，挂载准入归 S1-RT-005，默认平台的组件装配归 S1-RT-014。
+`CapabilityContractCompiler.CreateOpenApi` 在构建期从一个组件的完整生成契约派生文档；目录和该编译器复用同一条目校验及哈希实现。真实客户验收宿主已使用生成契约构建三个有摘要的版本制品，再经 `FromRepository` 验证破坏性修订拒绝与兼容修订恢复；不再从用户过滤后的接口响应构造基线。这些是测试宿主生成的版本制品，不等于正式 NuGet/OCI 发布：CLI 产出契约制品与签名发布归 S1-RT-013，挂载准入由 S1-RT-005 接入，默认平台的组件装配归 S1-RT-014。
 
 ## 菜单贡献、资源引用与个人偏好
 
@@ -145,7 +145,20 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 
 `GrpcReflectionContractProbe` 使用宿主提供的 CallInvoker 和认证元数据连接真实 HTTP/2 reflection 服务，复制凭据且不写入诊断。它查询声明中的每个服务，收集文件和依赖，核验冲突、大小及 RPC 最终状态，再按 PACKAGE 规则检查 RPC、消息与字段；允许服务构建的 ProtoRoot 文件前缀不同，不因仅有文件布局差异误拒。两类规则依据 [Buf 兼容规则说明](https://buf.build/docs/breaking/rules/)。宿主负责端点、TLS、出网范围和探测授权；探测入口不接受客户端 URL 或可信标记。
 
-`GrpcContractPlugin` 在业务 Apply 前先检查精确版本制品，再探测实际服务；任一失败都不能公开业务注册。测试使用实际 protobuf Echo 调用、官方 reflection 实现和 RS256 认证，验证正确协议、类型漂移、匿名拒绝、挂载失败与认证恢复后的真实声明式表面登记。此证明不代替完整注册表/生命周期安装编排或生产服务部署验收。
+`GrpcContractPlugin` 在业务 Apply 前先检查精确版本制品，再探测实际服务；任一失败都不能公开业务注册。测试使用实际 protobuf Echo 调用、官方 reflection 实现和 RS256 认证，验证正确协议、类型漂移、匿名拒绝、挂载失败与认证恢复后的真实声明式表面登记，并验证平台挂载准入对 proto 契约的选择（见下节）。此证明不代替生产服务部署验收。
+
+## 平台挂载准入（R76）
+
+`CapabilitiesPlugin` 以 `CapabilitiesDefinition.AdmissionKey` 提供 `IContractAdmission`。Registry 的 scope Reconciler 合入声明契约索引的组件版本时，经它包装解析出的插件；Lifecycle 的 `Mount` 与 `Upgrade` 走同一合入路径。准入服务不可见时，Reconciler 让该条目 Apply 失败，不会跳过检查。
+
+`Admit(plugin, pluginId, version)` 的规则：
+
+- 基线：同一组件已预装的版本中，低于候选、且声明同一契约 ID 与同一种类的最高版本。契约族的首个版本没有基线，不做比较。
+- OpenAPI 契约套用 `OpenApiContractPlugin.FromRepository`，从预装制品取完整基线与候选。
+- proto 契约套用 `GrpcContractPlugin`，反射对端由宿主经 DI 注册的 `IGrpcContractPeers` 按组件与精确版本给出。没有对端时 Apply 以 `PRECONDITION_FAILED` 失败，pointer 指向 `contracts/<契约 ID>`，不当作兼容。
+- json-schema 契约随制品登记，挂载时不比较。
+
+不兼容、比较无法完成或缺对端时条目为 Failed，业务注册不公开；失败原因经 `/api/lifecycle/diagnostics` 给出，见 [Qian.Lifecycle](../Qian.Lifecycle/README.md)。`GrpcReflectionTests` 验证 proto 的首个版本不比较、无对端 fail-closed、有对端时兼容版本 Ready；OpenAPI 的挂载、Reconciler 与升级三条路径由 `tests/Qian.Sample.Crm.Tests` 的 `LifecycleAcceptanceTests` 验证。
 
 ## 实际 HTTP 端点聚合
 
