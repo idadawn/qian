@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-16 qian add / remove / list 从 GitHub Packages 真实安装（S1-RT-011）
+
+`qian add <组件>…` 经签名市场把表面复制到 `.qian/plugins/<id>/`、按组件清单钉精确版本从 GitHub Packages 还原代码包、写 profile patch 与 `.qian/lock.json`，`qian remove` 逆序撤销、`qian list` 列出来源；未通过校验器或验签时以一行结构化错误失败且不留残留。真实源 E2E 用 data / events / config 三个组件（R98），PRD 7.2.3 的表面目录、patch 路径与钉版措辞按规格 §9 改写（R100）；收口项见 [S1-RT-035](../pm/tasks/S1-RT-035.md)。用法见 [qian CLI README](../packages/qian-cli/README.md)。
+
 ## 2026-10-16 Qian 包族 0.1.0 发到 GitHub Packages，SDK 源生成器与清单漂移门（S1-RT-014）
 
 `Qian.*` 35 个包以 0.1.0 锁步发布到 GitHub Packages（随公开仓库可见，安装需 GitHub 令牌，R93）；`Qian.Plugin.Sdk` / `Qian.Plugin.Sdk.Generators` 从 `[QianPlugin]` / `[Capability]` 派生 `inject` / `provides` / `runtime` 与 `tools/*.json`，`qian-plugin check` 在 CI 比对 qian.data / qian.events / qian.config 的清单与代码；`PluginEnabledMiddleware` 对未挂载组件返回 404。SDK 范围的 S1 收敛与后续见 R94 与 [S1-RT-033](../pm/tasks/S1-RT-033.md)；安装方式见 [SDK 文档](../website/docs/sdk/dotnet/index.md)。
