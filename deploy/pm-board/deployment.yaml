@@ -14,6 +14,10 @@ spec:
       labels:
         app.kubernetes.io/name: qian-pm-board
     spec:
+      # 与文档站一样固定在 qd：worker 节点从 registry.k8s.io 的镜像代理拉 git-sync 时会遇到 502（2026-10-15），
+      # qd 上文档站已在用同版本的 git-sync 与 nginx 镜像，无需再拉
+      nodeSelector:
+        kubernetes.io/hostname: qd
       automountServiceAccountToken: false
       securityContext:
         # git-sync 默认以 65533 运行；nginx-unprivileged 可用任意 uid，统一成同一用户以便共享 emptyDir
