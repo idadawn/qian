@@ -3,6 +3,7 @@ using Kun.Mediator;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Qian.Data;
+using Qian.Lifecycle;
 using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
@@ -21,7 +22,7 @@ public interface ICrmCommands
 }
 
 [QianPlugin("qian.sample.crm")]
-public sealed class CrmPlugin : IQianPlugin
+public sealed class CrmPlugin : IQianPlugin, IPluginLifecycleHooks
 {
     public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key, CommandPolicies.TenancyKey, CommandPolicies.AuthorizationKey, CommandPolicies.AuditKey];
     public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
@@ -35,6 +36,24 @@ public sealed class CrmPlugin : IQianPlugin
         ctx.ExposeCapabilityHook<ListCustomersQuery, CustomerPage>("listCustomers", _ => new ListCustomersQuery());
         return ValueTask.CompletedTask;
     }
+
+    // 生命周期钩子（qian.lifecycle.hook/v1）：开通时为租户种一条示例客户，主键取幂等键，重试或重复调用都不会多写；
+    // 1.0.x 之间表结构不变，升级与回切没有数据迁移。种子数据不经命令处理器，不发客户创建事件。
+    public async ValueTask<JsonElement?> InvokeAsync(LifecycleHookContext context, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (context.Hook != LifecycleHooks.TenantProvision) return null;
+        await using var session = await context.Context.Data().OpenAsync<CrmDbContext>(cancellationToken).ConfigureAwait(false);
+        var seeded = !await session.Context.Customers.AnyAsync(customer => customer.Id == context.IdempotencyKey, cancellationToken).ConfigureAwait(false);
+        if (seeded)
+        {
+            session.Context.Customers.Add(new Customer(context.IdempotencyKey, SampleCustomer));
+            await session.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        return JsonSerializer.SerializeToElement(new { seeded });
+    }
+
+    public const string SampleCustomer = "示例客户";
 }
 internal sealed class CrmCommands(ISender sender) : ICrmCommands
 {

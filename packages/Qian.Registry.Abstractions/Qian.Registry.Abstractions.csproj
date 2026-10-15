@@ -1,4 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><IsPackable>true</IsPackable><Description>注册表的稳定错误词汇、scope patch 快照与管理面视图。</Description></PropertyGroup>
-  <ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /><ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" /></ItemGroup>
+  <PropertyGroup><IsPackable>true</IsPackable><Description>注册表的稳定错误词汇、scope patch 快照、管理面视图与集成事件。</Description></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /><ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" /><PackageReference Include="Kun.EventBus.Abstractions" /></ItemGroup>
 </Project>

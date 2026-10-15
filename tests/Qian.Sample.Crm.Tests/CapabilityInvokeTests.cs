@@ -93,7 +93,7 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
-    public async Task 通用执行入口先按inputSchema校验_不符返回INPUT_INVALID与JSON_Pointer_不可见能力不暴露校验结果_均无写入()
+    public async Task 通用执行入口先按inputSchema校验_不符返回INPUT_INVALID与JSON_Pointer_读不成确定值或数超出decimal范围返回BAD_REQUEST_不可见能力不暴露校验结果_均无写入()
     {
         await using var host = await Start(capabilities: true);
         var key = Guid.CreateVersion7().ToString();
@@ -112,6 +112,17 @@ public sealed partial class CustomerCommandTests
         // 字符串含孤立的 UTF-16 代理项（\ud800 转义）：读不成确定的值，同样是 400 BAD_REQUEST 而不是 500。
         using var surrogate = await InvokeRaw(host, A, CreateId, "{\"idempotencyKey\":\"" + key + "\",\"name\":\"" + "\\" + "ud800\"}");
         await ErrorDetail(surrogate, HttpStatusCode.BadRequest, "BAD_REQUEST");
+        // 超出 decimal 范围的数（绝对值大于约 7.9e28，任何位置）：JsonSchema.Net 9.4 比较 enum、const、uniqueItems 时会因此抛异常，
+        // 求值前就按 400 BAD_REQUEST 拒绝，不执行。decimal.MaxValue 本身照常进入校验与绑定（int 放不下，按 INPUT_INVALID 拒绝）。
+        foreach (var number in new[] { "1e29", "-1e400", "79228162514264337593543950336" })
+        {
+            using var huge = await InvokeRaw(host, A, CreateId, "{\"idempotencyKey\":\"" + key + "\",\"name\":\"huge\",\"extra\":{\"values\":[1," + number + "]}}");
+            await ErrorDetail(huge, HttpStatusCode.BadRequest, "BAD_REQUEST");
+            using var skip = await InvokeRaw(host, A, ListId, "{\"skip\":" + number + ",\"take\":10}");
+            await ErrorDetail(skip, HttpStatusCode.BadRequest, "BAD_REQUEST");
+        }
+        using var largest = await InvokeRaw(host, A, ListId, "{\"skip\":79228162514264337593543950335,\"take\":10}");
+        await ErrorDetail(largest, HttpStatusCode.BadRequest, "INPUT_INVALID");
         // 先判可见再校验：租户 B 无写权限，同样的坏输入只得到与不存在相同的 404。
         using var hidden = await InvokeRaw(host, B, CreateId, "{\"nickname\":\"x\"}");
         using var unknown = await InvokeRaw(host, B, "qian.sample.crm/customer.unknown", "{\"nickname\":\"x\"}");

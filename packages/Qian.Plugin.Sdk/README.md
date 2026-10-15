@@ -18,7 +18,7 @@ Kun 每次 Send 建立新的 DI scope。SDK 在这个 scope 中通过 IDataServi
 
 写命令的 handler、领域通知与保存都运行在 SDK 开启的事件来源作用域（Qian.Events.Abstractions 的 EventEnvelopeScope）内：producer 是能力所属组件，actor 是已验证主体（有委托时 actor 为代理、on_behalf_of 为被代表人），causation_id 是本次调用 id，traceparent 与调用的 trace 一致。这样经 Outbox 发出的集成事件都带完整的 v1 信封；作用域外发布在运行时被拒绝，编译期另有 QIAN0006 拦截（见 [Qian.Events](../Qian.Events/README.md)）。
 
-CommandPolicies 只允许对应的 qian.tenancy、qian.authz、qian.audit 生产方登记监听器；服务键、监听器和取消资源归属同一 Effect 生命周期。执行前要求三种存活登记，进入链尾前要求三种监听器实际参与；重复调用 next 不能再次执行业务。卸载撤销后新请求拒绝，进行中的数据库操作可取消并回滚。租户策略读取真实主档，RBAC 策略读取真实授权并核对 OAuth scope，AuditPlugin 根据真实生成 Schema 写同事务审计。当前 RbacCommandPolicyPlugin 仅提供命令 PEP，完整 Authz 数据/字段策略与管理服务仍待完成。
+CommandPolicies 只允许对应的 qian.tenancy、qian.authz、qian.audit 生产方登记监听器；服务键、监听器和取消资源归属同一 Effect 生命周期。执行前要求三种存活登记，进入链尾前要求三种监听器实际参与；重复调用 next 不能再次执行业务。卸载撤销后新请求拒绝，进行中的数据库操作可取消并回滚。租户策略读取真实主档，RBAC 策略读取真实授权并核对 OAuth scope，AuditPlugin 根据真实生成 Schema 写同事务审计。RBAC 策略由 Qian.Authz 的 `AuthzPlugin` 在 Apply 中登记（只含命令 PEP 的子插件为 `RbacCommandPolicyPlugin`）；完整 Authz 数据/字段策略与管理服务仍待完成。
 
 宿主须先装身份适配器，再装数据默认服务，防止匿名兜底先占用 Kun 当前用户端口。SDK 同时核验 Kun 与 Qian 身份一致，并复制主体快照；不通过替换成宽松策略修复装配错误。参考宿主的 S2S 验签与主体映射已经过真实 HTTP 回归，但不替代真实 Qian Identity 交互登录。
 
@@ -26,7 +26,7 @@ SensitiveAttribute 把实际 JSON 属性标记为 sensitive。顶层字段及整
 
 ## 单一清单与构建期工具
 
-生成代码提供 IComponentCodeMetadataFactory；构建工具读取此工厂，不实例化业务插件或调用 Apply。源生成器只向编译器提交 C#，不在编译过程中写项目文件。真实 DataPlugin 已采用该路径，CI 用其编译程序集复验 plugins/qian.data/.qian-plugin/plugin.json。
+生成代码提供 IComponentCodeMetadataFactory；构建工具读取此工厂，不实例化业务插件或调用 Apply。源生成器只向编译器提交 C#，不在编译过程中写项目文件。真实 DataPlugin、EventsPlugin 与 ConfigurationPlugin 已采用该路径，CI 用各自的编译程序集复验 plugins/qian.data、plugins/qian.events 与 plugins/qian.config 的清单。
 
 工具只用于显式选择的本地可信项目构建。加载生成工厂及 JsonTypeInfo 会加载程序集，因此不能用于未知市场制品的准入或沙箱校验。工具与组件共用 SDK/Runtime 的程序集身份，避免独立加载上下文复制服务键类型。
 
@@ -86,7 +86,7 @@ python3 scripts/dotnet_release.py verify-consumer --version 0.1.0-local.1 --sour
 
 ## 验证与剩余边界
 
-专项覆盖实际编译生成与 JsonTypeInfo、审计默认值、元数据副本、错误声明诊断、代码删除与重复能力、服务注册不可静态证明时拒绝、唯一清单同步/漂移以及手写文件和路径保护。真实 Data 程序集的 sync/check 已接入 CI；Qian.Data.Tests 另按仓库清单的 runtime.entry 装载真实 Provider（不直接构造具体类型），核对清单派生字段与生成元数据一致，挂载后的会话默认带租户填充、租户过滤与 RLS。按 S1-DEC-018，plugins/qian.data 的 x-skeleton 保留到 S1-RT-011 的真实 `qian add data` 安装通过。
+专项覆盖实际编译生成与 JsonTypeInfo、审计默认值、元数据副本、错误声明诊断、代码删除与重复能力、服务注册不可静态证明时拒绝、唯一清单同步/漂移以及手写文件和路径保护。真实 Data、Events、Config 程序集的 check 已接入 CI；Qian.Data.Tests 另按仓库清单的 runtime.entry 装载真实 Provider（不直接构造具体类型），核对清单派生字段与生成元数据一致，挂载后的会话默认带租户填充、租户过滤与 RLS。按 S1-DEC-018，S1-RT-011 从私有源真实执行 `qian add data` 并运行 Provider 后，plugins/qian.data 已移除 x-skeleton。
 
 SDK 自身的依赖边界由 CI 的依赖图门禁守住：`Qian.Plugin.Sdk`、`.AspNetCore`、`.Generators` 的完整传递依赖里不能出现任何 Provider 包与 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities`，门禁自测另断言这三个包在 `Qian.slnx` 的检查范围内（见 [tests/README.md](../../tests/README.md) 4.3）。
 
