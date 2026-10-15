@@ -62,6 +62,6 @@ AppendPlatformAsync、ReadPlatformAsync、VerifyPlatformAsync 是显式入口，
 
 真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。存储测试与参考应用执行测试分别验证其边界：AppendAsync 的独立事务只包含审计记录与链头；AppendEnlistedAsync 已覆盖真实 CRM 数据上下文回滚，已与实际命令执行和业务 Outbox 连接，跨进程审计事件发布及实体审计接线仍待完成，不能把独立追加成功当成业务回滚验证。
 
-尚未完成：实体审计与跨进程审计事件、完整默认组合包、私有包发布和 qian add 安装。未引入事后不同事务的旧审计拦截器。
+尚未完成：实体审计与跨进程审计事件、完整默认组合包和 qian add 安装（包已随 0.1.0 发到 GitHub Packages，R93）。未引入事后不同事务的旧审计拦截器。
 
 RT-009 的已授权 hook 调用使用 hook 审计通道；SDK 可信适配器与同事务 SQL 校验同步支持该通道。普通请求不会继承上次 hook 标记，hook 查询按事件执行要求强制审计。

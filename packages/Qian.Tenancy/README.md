@@ -6,7 +6,7 @@
 
 代码目录包含 Provider、租户入口边界、传播器、gRPC 适配器、主档上下文及内部持久化实现。TenancyPlugin 消费 Data、提供 Tenancy 服务键，目录挂在 global scope，供 Identity 等可信服务读取最小投影；不把联系方式、管理员、连接凭据或完整租户列表暴露给匿名调用方。物理 schema 遵循 Data 的插件命名规则，使用 plugin_qian_tenancy。
 
-默认目标为 platform profile。当前尚未完成授权管理 API、真实 Identity 联调、私有包发布和 qian add tenancy，因此 plugins/qian.tenancy 保留 x-skeleton，不能视为已安装的完整平台组件。主档目录先提供稳定端口，避免 Identity 登录前查目录依赖尚未创建的 Membership。
+默认目标为 platform profile。当前尚未完成授权管理 API、真实 Identity 联调和 qian add tenancy（包已随 0.1.0 发到 GitHub Packages，R93），因此 plugins/qian.tenancy 保留 x-skeleton，不能视为已安装的完整平台组件。主档目录先提供稳定端口，避免 Identity 登录前查目录依赖尚未创建的 Membership。
 
 ## 主档存储
 

@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-16 Qian 包族 0.1.0 发到 GitHub Packages，SDK 源生成器与清单漂移门（S1-RT-014）
+
+`Qian.*` 35 个包以 0.1.0 锁步发布到 GitHub Packages（随公开仓库可见，安装需 GitHub 令牌，R93）；`Qian.Plugin.Sdk` / `Qian.Plugin.Sdk.Generators` 从 `[QianPlugin]` / `[Capability]` 派生 `inject` / `provides` / `runtime` 与 `tools/*.json`，`qian-plugin check` 在 CI 比对 qian.data / qian.events / qian.config 的清单与代码；`PluginEnabledMiddleware` 对未挂载组件返回 404。SDK 范围的 S1 收敛与后续见 R94 与 [S1-RT-033](../pm/tasks/S1-RT-033.md)；安装方式见 [SDK 文档](../website/docs/sdk/dotnet/index.md)。
+
 ## 2026-10-15 任务看板生成物不再进 git（S1-PM-004）
 
 改了任务文件只提交任务文件。`pm/index.html`、`pm/tasks.json`、`pm/STATUS.md` 不再提交，PR 也就不会再因它们互相冲突。集群看板由看板 Pod 按 `main` 自行生成；CI 把生成的看板上传为工作流产物；本地 `pm.py build` 照常可用，新增 `--out`；`pm.py check-fresh` 已删除。见 [pm/README.md](../pm/README.md)。

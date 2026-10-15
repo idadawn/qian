@@ -285,5 +285,5 @@ S4 退出标准：Agent 能发现、调用、编排乃至生成平台能力与�
 10. 已拍板（ADR-020 §7 第 3 条）：`qian` CLI 为单一 Node / TypeScript 实现、`npx qian@latest` 一键入口、Node ≥ 22 前置，`dotnet qian` 薄包装为 S1 可选 P2；C6 的 `npx` 一键体验据此成立。
 11. 已拍板（ADR-020 §7 第 4 条）：官方市场仓库为同组织独立仓库 `qian-plugins`，S1 私有、S3 随许可证评估公开，社区发现用 GitHub topic `qian-plugin`；C6 与 §12.4 按此写。
 12. 已裁决（R27）、已拍板（ADR-020 §7 第 5 条）：N1 收窄为「不为第三方代码与可 AOT 的边缘 profile 做运行时热插 DLL」；代码插件热装卸不进 S2 核心交付，S2 内由 RT 领域做 5 天时间盒 spike 验证 collectible `AssemblyLoadContext` 与 Kun 约束、结论写回 ADR-020；生产默认滚动重启（ADR-020 D20.7 / D20.11），C4 按「S1 不承诺」写。
-13. 已拍板（ADR-020 §7 第 6 条）：Qian 包族、`qian` CLI、yue 一律 Apache-2.0；S1 GitHub Packages 私有，S2 末或首个外部宿主试用时公开到 nuget.org / npm；§12.2 第 33 条 SDK 的分发渠道按此写。
+13. 已拍板（ADR-020 §7 第 6 条）：Qian 包族、`qian` CLI、yue 一律 Apache-2.0；S1 GitHub Packages（.NET 包公开可见、安装需令牌，TS 包私有，R93），S2 末或首个外部宿主试用时公开到 nuget.org / npm；§12.2 第 33 条 SDK 的分发渠道按此写。
 14. 已裁决（R28）：`connector` 不是 `runtime.form`，而是「为某个 seam 提供 Provider 的组件」——清单上体现为 `provides[]` 写出服务键 + `policy.egress` 声明出网目标，`runtime.form` 按其实现取 `module` 或 `service`；`bundle` = 组合包（有 `config/qian.patch.yml`，可携带多个组件），应用 = 组合包 + marketplace 条目。T3 / N2 与 §03 3.4 已按 `runtime.form` / `policy.tier` / `provides` 口径改写；字段细节以 specs/component-model.md 为准。
