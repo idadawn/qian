@@ -120,3 +120,11 @@ Qian.Capabilities.CapabilityInvocation
 Qian.Capabilities.CapabilityInvocation.CapabilityInvocation(System.Text.Json.JsonElement output, bool replayed) -> void
 Qian.Capabilities.CapabilityInvocation.Output.get -> System.Text.Json.JsonElement
 Qian.Capabilities.CapabilityInvocation.Replayed.get -> bool
+Qian.Capabilities.CapabilitiesErrors
+static Qian.Capabilities.CapabilitiesErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!
+static readonly Qian.Capabilities.CapabilitiesErrors.ReplayUnavailable -> Qian.Runtime.Errors.ErrorCode!
+Qian.Capabilities.IContractAdmission
+Qian.Capabilities.IContractAdmission.Admit(Qian.Runtime.IQianPlugin! plugin, string! pluginId, string! version) -> Qian.Runtime.IQianPlugin!
+Qian.Capabilities.IGrpcContractPeers
+Qian.Capabilities.IGrpcContractPeers.Find(string! pluginId, string! version) -> Qian.Capabilities.IGrpcContractProbe?
+static readonly Qian.Capabilities.CapabilitiesDefinition.AdmissionKey -> Qian.Runtime.ServiceKey

@@ -48,6 +48,8 @@ public sealed class SurfaceValidationOptions
     public IReadOnlyList<string> Capabilities { get; init; } = [];
     /// <summary>完整目录中不存在的跨组件引用为 error；离线不完整目录中为 warning。</summary>
     public bool CatalogComplete { get; init; }
+    /// <summary>目标装配中已有 Provider 的服务键（含具名注册）；提供时视为完整目录，inject 引用目录外的键为 error，省略时不检查。</summary>
+    public IReadOnlyList<string>? ServiceKeys { get; init; }
     /// <summary>调用方 trace-id；省略时为本次校验生成。</summary>
     public string? TraceId { get; init; }
 }

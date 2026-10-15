@@ -23,6 +23,7 @@ public sealed class ContractSchemaTests
         Assert.Empty(Contracts.Validate(Contracts.MetaSchema, root));
         Assert.Equal(Contracts.MetaSchemaUri, root.GetProperty("$schema").GetString());
         Assert.Equal($"https://qian.dev/contracts/v0/{name}.schema.json", root.GetProperty("$id").GetString());
+        // R80：本轮仍保持 draft；S1-AGT-002 满足 R53 前提时统一改写为 frozen，见 key-decisions-v0.md。
         Assert.Equal("draft", root.GetProperty("x-status").GetString());
         Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("title").GetString()));
         Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("description").GetString()));

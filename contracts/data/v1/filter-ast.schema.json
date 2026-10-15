@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qian.dev/contracts/data/v1/filter-ast.schema.json",
   "x-status": "frozen",
+  "description": "两层 Filter AST 的结构契约；字段白名单、类型运算符矩阵和系统变量的语义由可信字段目录另行校验。",
   "title": "FilterExpression",
   "type": "object",
   "additionalProperties": false,

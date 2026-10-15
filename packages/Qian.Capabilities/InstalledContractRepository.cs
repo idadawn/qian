@@ -58,6 +58,11 @@ internal sealed partial class InstalledContractRepository : IContractRepository,
         EnsureActive(); return _documents.TryGetValue((pluginId, version), out var documents) ? documents : [];
     }
     public ContractDocument? Find(string pluginId, string version, string contractId) => GetContracts(pluginId, version).SingleOrDefault(document => document.Id == contractId);
+    // 某组件的全部预装版本（含未声明契约的版本），供挂载准入选择基线。
+    internal IReadOnlyList<string> Versions(string pluginId)
+    {
+        EnsureActive(); return _documents.Keys.Where(key => key.Plugin == pluginId).Select(key => key.Version).ToArray();
+    }
     public ProtoContractSet GetProtoSource(string pluginId, string version, string contractId)
     {
         EnsureActive();

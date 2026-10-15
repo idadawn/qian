@@ -3,6 +3,7 @@ using System.Text.Json;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus.DependencyInjection;
+using Kun.Mediator.DependencyInjection;
 using Kun.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -14,12 +15,15 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
+using Qian.Capabilities;
 using Qian.Data;
+using Qian.Events;
 using Qian.Profiles;
 using Qian.Profiles.Abstractions;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Surfaces;
+using Qian.Surfaces.Abstractions;
 using Qian.Testing.Containers;
 
 namespace Qian.Registry.Tests;
@@ -385,16 +389,25 @@ public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IC
         public void Dispose() => System.IO.Directory.Delete(Directory, true);
     }
 
-    private IHost Host(ITenantContext tenant, IInterceptor? interceptor = null)
+    private IHost Host(ITenantContext tenant, IInterceptor? interceptor = null, bool capabilityChecks = false, Action<IServiceCollection>? services = null, bool events = false)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
-        builder.Services.AddSingleton(tenant); builder.Services.AddKunEventBus();
+        builder.Services.AddSingleton(tenant); builder.Services.AddKunEventBus(registry => registry.RegisterRegistryEvents());
         builder.Services.AddSingleton(ErrorCatalog.CreateDefault());
+        if (capabilityChecks)
+        {
+            // 与 platform 宿主相同的登记期能力契约检查：组件经 SDK ProvideCapability 登记时即检查。
+            builder.Services.AddSingleton<ISurfaceReader, SurfaceValidator>(); builder.Services.AddSingleton<IToolContractHasher, ToolContractHasher>();
+            builder.Services.AddQianCapabilities();
+        }
         builder.Services.AddQianData<RegistryDbContext>((_, options) =>
         {
             options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(RegistryDbContext.Schema);
             if (interceptor is not null) options.AddInterceptors(interceptor);
         });
+        // 公开挂载 / 卸载的平台接线：领域事件处理器 + 写信封的 Outbox 端口（替换 AddQianData 登记的 Kun 累加器）。
+        if (events) { builder.Services.AddKunMediator(mediator => mediator.AddQianRegistryEvents()); builder.Services.AddQianEvents(); }
+        services?.Invoke(builder.Services);
         return builder.Build();
     }
     private static PostgresPatchRepository Repository(IHost host, ITenantContext tenant) => new(host.Services.GetRequiredService<IDataService>(), tenant, new SurfaceValidator());

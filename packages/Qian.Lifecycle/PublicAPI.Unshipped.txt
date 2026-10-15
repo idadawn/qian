@@ -1,0 +1,14 @@
+#nullable enable
+Qian.Lifecycle.LifecycleDbContext
+Qian.Lifecycle.LifecycleDbContext.LifecycleDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Lifecycle.LifecycleDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Lifecycle.LifecycleEventHandlers
+Qian.Lifecycle.LifecyclePlugin
+Qian.Lifecycle.LifecyclePlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Lifecycle.LifecyclePlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Lifecycle.LifecyclePlugin.LifecyclePlugin(Qian.Lifecycle.LifecycleRuntimeOptions! options) -> void
+Qian.Lifecycle.LifecycleRuntimeOptions
+Qian.Lifecycle.LifecycleRuntimeOptions.Hooks.get -> System.Func<string!, string!, Qian.Lifecycle.IPluginLifecycleHooks?>!
+Qian.Lifecycle.LifecycleRuntimeOptions.Hooks.init -> void
+Qian.Lifecycle.LifecycleRuntimeOptions.LifecycleRuntimeOptions() -> void
+const Qian.Lifecycle.LifecycleDbContext.Schema = "plugin_qian_lifecycle" -> string!
+static Qian.Lifecycle.LifecycleEventHandlers.AddQianLifecycleEvents(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!
