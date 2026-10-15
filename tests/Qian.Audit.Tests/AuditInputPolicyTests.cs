@@ -102,6 +102,33 @@ public sealed class AuditInputPolicyTests
     }
 
     [Fact]
+    public void 动态键按ECMA262方言判定_两个方向的方言差异都不漏遮盖_有分歧的键整体遮盖()
+    {
+        // 验证器按 ECMAScript 方言判定：é 命中 ^\W+$（敏感），١٢٣ 不命中 ^\d+$、落到敏感的 additionalProperties。
+        var word = new AuditInputPolicy(Json("""{"type":"object","patternProperties":{"^\\W+$":{"type":"string","sensitive":true}},"additionalProperties":{"type":"string"}}"""), true);
+        var first = word.Redact(Json("""{"é":"secret-a","ok":"visible"}"""));
+        Assert.Equal(AuditInputPolicy.Redacted, first.GetProperty("é").GetString()); Assert.Equal("visible", first.GetProperty("ok").GetString());
+        var digit = new AuditInputPolicy(Json("""{"type":"object","patternProperties":{"^\\d+$":{"type":"string"}},"additionalProperties":{"type":"string","sensitive":true}}"""), true);
+        var second = digit.Redact(Json("""{"١٢٣":"secret-b","123":"visible"}"""));
+        Assert.Equal(AuditInputPolicy.Redacted, second.GetProperty("١٢٣").GetString()); Assert.Equal("visible", second.GetProperty("123").GetString());
+        // 末尾换行让 $ 在验证器与 ECMA-262 下判断不同，代理项让 . 在带 u 标志时按码点计数：这类键只要对象声明了模式就整体遮盖，方言一致的中文键照常判定。
+        var mixed = new AuditInputPolicy(Json("""{"type":"object","patternProperties":{"^item\\d+$":{"type":"string"},"^.{2}$":{"type":"string"}},"additionalProperties":{"type":"string","sensitive":true}}"""), true);
+        var third = mixed.Redact(Json("""{"item1\n":"secret-c","😀":"secret-d","item2":"visible","客户":"visible"}"""));
+        foreach (var key in new[] { "item1\n", "😀" }) Assert.Equal(AuditInputPolicy.Redacted, third.GetProperty(key).GetString());
+        foreach (var key in new[] { "item2", "客户" }) Assert.Equal("visible", third.GetProperty(key).GetString());
+        // 依赖升级若改变验证器方言（例如 \w 不再只认 ASCII），这里先失败，提醒同步脱敏方言。
+        var strict = new AuditInputPolicy(Json("""{"type":"object","patternProperties":{"^\\w$":{"type":"string"}},"additionalProperties":false}"""), true);
+        Assert.Equal("x", strict.Redact(Json("""{"a":"x"}""")).GetProperty("a").GetString());
+        Assert.Equal("INPUT_INVALID", Assert.Throws<QianErrorException>(() => strict.Redact(Json("""{"é":"x"}"""))).Error.Code.Code);
+        // 各方言含义不同或无法线性执行的写法在构造策略时拒绝。
+        foreach (var pattern in new[] { "\\bkey", "(?i)secret", "[]a]", "\\p{L}", "(?<name>a)", "[a-z-[aeiou]]", "a{", "\\A", "😀" })
+        {
+            var schema = JsonSerializer.SerializeToElement(new { patternProperties = new Dictionary<string, object> { [pattern] = new { sensitive = true } } });
+            Assert.Equal("AUDIT_SCHEMA_INVALID", Assert.Throws<QianErrorException>(() => new AuditInputPolicy(schema, true)).Error.Code.Code);
+        }
+    }
+
+    [Fact]
     public void 外部引用_同层引用循环_不支持语义_重复定义与错误标记拒绝且错误不含原值()
     {
         string[] schemas = [
