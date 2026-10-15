@@ -5870,6 +5870,41 @@
   "file": "pm/tasks/S1-RT-023.md"
  },
  {
+  "id": "S1-RT-029",
+  "title": "qian CLI 包管理器超时可配置（默认 600 秒），预检还原允许并行下载",
+  "status": "doing",
+  "stage": "S1",
+  "area": "RT",
+  "areaName": "运行时 / CLI / 市场",
+  "wave": 2,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "cody",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-RT-011"
+  ],
+  "blockedBy": [
+   "S1-RT-011"
+  ],
+  "order": 3,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.2.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 0,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-RT-011 合并后复核发现：qian add 的包管理器子进程超时写死 120 秒，预检还原又带 --disable-parallel 逐个下载；冷 NuGet 缓存加私有源下载偏慢时，预检还原超时，add 报 UNAVAILABLE。2026-10-15 在 main 5665b31e4 上本机跑 private-feed.e2e.mjs，连续两次约 121 秒失败，预热缓存后 22.9 秒通过，CI 约 1 分钟通过。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span>UT：包管理器操作的超时由环境变量 <code>QIAN_PACKAGE_TIMEOUT</code>（整数秒）配置，缺省 600 秒；非整数、小于 1 或大于 86400 时，<code>qian add</code> / <code>qian remove</code> 在任何改动前以结构化错误（<code>--json</code>）失败</li>\n<li class='chk'><span class='box'></span>UT：用真实子进程验证超时：在配置的秒数内停止整个进程组，诊断写明超时秒数与配置方式；未确认停止时仍保留安装锁与备份（既有语义不变）</li>\n<li class='chk'><span class='box'></span>IT：预检还原不再逐个下载（去掉 <code>--disable-parallel</code>，与安装阶段的还原一致）；私有源 E2E 在全新的 NuGet HTTP 缓存下通过并记录耗时</li>\n<li class='chk'><span class='box'></span>文档：qian-cli 的 README 与 AGENTS 写明超时配置、默认值与预检并行</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 cody：创建任务</li>\n<li>2026-10-15 cody：开始：在本会话直接修复（用户要求）；默认超时 600 秒、QIAN_PACKAGE_TIMEOUT 可配置、超时诊断给出配置方式、预检还原去掉 --disable-parallel</li>\n</ul>",
+  "file": "pm/tasks/S1-RT-029.md"
+ },
+ {
   "id": "S1-SCH-001",
   "title": "qian.scheduler 核心：持久化作业、集群安全领取、Cancel",
   "status": "todo",
