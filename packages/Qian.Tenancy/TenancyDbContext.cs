@@ -13,6 +13,7 @@ public sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> options,
     public const string Schema = "plugin_qian_tenancy";
     internal DbSet<TenantRow> Tenants => Set<TenantRow>();
     internal DbSet<TenantAdminRow> Administrators => Set<TenantAdminRow>();
+    internal DbSet<TenantProvisionStepRow> ProvisionSteps => Set<TenantProvisionStepRow>();
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,6 +29,15 @@ public sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> options,
             entity.Property(x => x.Isolation).HasMaxLength(16).IsRequired().Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Throw);
             entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.ProvisionInput).HasColumnType("jsonb");
+        });
+        modelBuilder.Entity<TenantProvisionStepRow>(entity =>
+        {
+            entity.ToTable("tenant_provision_steps"); entity.HasKey(x => new { x.TenantId, x.Step });
+            entity.Property(x => x.TenantId).HasMaxLength(36);
+            entity.Property(x => x.Step).HasMaxLength(240);
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.Reason).HasMaxLength(64);
         });
         modelBuilder.Entity<TenantAdminRow>(entity =>
         {
@@ -49,6 +59,16 @@ internal sealed class TenantRow : IAuditedObject<string>
     public string Name { get; set; } = "";
     public string Isolation { get; set; } = "row";
     public string Status { get; set; } = "pending";
+    public string? ProvisionInput { get; set; }
+}
+
+internal sealed class TenantProvisionStepRow : IMultiTenant
+{
+    public string TenantId { get; set; } = "";
+    public string Step { get; set; } = "";
+    public string Status { get; set; } = "pending";
+    public int Attempts { get; set; }
+    public string? Reason { get; set; }
 }
 internal sealed class TenantAdminRow : IMultiTenant, IAuditedObject<string>
 {

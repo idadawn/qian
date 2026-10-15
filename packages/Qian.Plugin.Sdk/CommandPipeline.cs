@@ -44,7 +44,7 @@ public static class QianCommandRegistration
         builder.AddPipelineBehavior<TRequest, TResponse, CommandSaveBehavior<TRequest, TResponse, TContext>>();
         return builder.AddAuthorizedHandler<TRequest, TResponse, CommandHandlerProxy<TRequest, TResponse, THandler>>(
             error => throw new QianErrorException(new QianError(error.Type == ErrorType.Unauthorized ? PlatformErrors.Unauthenticated : PlatformErrors.AuthzDenied)),
-            contract.Id, request, response);
+            contract.Id, request, response, tenantInitialization: true);
     }
 }
 
@@ -65,9 +65,12 @@ internal sealed class CommandTransactionBehavior<TRequest, TResponse, TContext>(
     {
         var source = registration.Source(services); var contract = TRequest.QianCapability;
         if (source.Entry.Plugin != contract.ComponentId || state.Invocation is not null) throw CommandPolicies.Denied();
-        var principal = Capture(currentUser, tenant, source);
-        if (!frameworkUser.IsAuthenticated || frameworkUser.UserId != principal.Subject || frameworkUser.PrincipalKind != ((Kun.Core.Security.ICurrentUser)currentUser).PrincipalKind)
+        var initialization = TenantInitializationAuthorization.Allows(contract.Id, source.Scope);
+        if (initialization) TenantInitializationAuthorization.Claim<TRequest>(contract.Id, source.Scope);
+        var principal = initialization ? InitializationPrincipal() : Capture(currentUser, tenant, source);
+        if (!initialization && (!frameworkUser.IsAuthenticated || frameworkUser.UserId != principal.Subject || frameworkUser.PrincipalKind != ((Kun.Core.Security.ICurrentUser)currentUser).PrincipalKind))
             throw CommandPolicies.Denied();
+        if (tenant.TenantId != principal.TenantId) throw CommandPolicies.Denied();
         var input = JsonSerializer.SerializeToElement(request, contract.RequestTypeInfo);
         var policies = CommandPolicies.Require(source);
         using var linked = policies.Link(cancellationToken); policies.Check();
@@ -88,6 +91,14 @@ internal sealed class CommandTransactionBehavior<TRequest, TResponse, TContext>(
         }
         finally { state.Invocation = null; state.Policies = null; work.Clear(); }
     }
+
+    // 此快照只在同一次已授权开户 hook 内使用，不进入 Identity，不签发令牌或建立 Membership。
+    private static Principal InitializationPrincipal() => new()
+    {
+        Issuer = "qian.tenancy/initialization", Audience = [], Subject = TenantInitializationAuthorization.Actor,
+        Kind = TenantInitializationAuthorization.ActorKind == "user" ? PrincipalKind.User : PrincipalKind.Service, TenantId = TenantInitializationAuthorization.Tenant, Roles = [], Scope = "",
+        SessionId = "", TokenId = "", IssuedAt = 0, NotBefore = 0, ExpiresAt = 0
+    };
 
     private static Principal Capture(Qian.Identity.Abstractions.ICurrentUser user, ITenantContext tenant, IPluginContext source)
     {

@@ -50,3 +50,9 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 `IPermissionRegistry` 是活动权限声明的可逆端口，`IResourceTypeRegistry` 对应资源类型扩展点；版本参数是确切组件版本。返回句柄由组件交给 Effect，登记与撤销均不直接修改主体角色。Provider 实现及租约、冲突和派生资源规则统一见 Qian.Authz 主文档。
 
 `AuthorizationExplanation` 保留命中角色、授权定位与缺失权限，经 `IAuthzService.ExplainDetailedAsync` 返回；`IAuthzExecutionConstraints` 是可信身份和终端适配端口，不接受请求体布尔值作为 MFA 或终端证明。判定快照缓存与超管旁路审计已由 Qian.Authz 实现（S1-AZ-003）；组织 / 岗位 / 组目录主体尚未接入（S1-AZ-005）。
+
+## 最小内置角色授予端口
+
+`ITenantRoleGrant.AssignAsync(roleCode, subjectType, subjectId, actor)` 经 `TenantRoleGrant.Key` 解析。AuthzPlugin 提供实现，只接受四个内置 tenant 角色，在当前租户内调用既有 Write 事务与授权修订失效机制。它不创建角色，不替代上层授权，缺失角色或租户上下文会拒绝。开户调用须在 tenant/provisioned 之后；授权管理 API（S1-AZ-005）可复用该端口。
+
+DEC-023 的内部开户凭据不对组件公开：仅 Tenancy、SDK、Authz 受信程序集可签发或消费。SDK 注册重载保留 Kun 的原始 PermissionBehavior，初始化适配器只对凭据绑定的主体、租户与权限点放行；普通请求完整委托原判定器。
