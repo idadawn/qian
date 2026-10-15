@@ -17,5 +17,11 @@ jobs:
         run: python3 scripts/check_docs.py
       - name: 任务文件校验
         run: python3 scripts/pm.py validate
-      - name: 看板生成物是否最新
-        run: python3 scripts/pm.py check-fresh
+      # 看板生成物不进 git（S1-PM-004）：这里只确认能生成，并把看板上传为产物，可下载后离线打开
+      - name: 生成看板
+        run: python3 scripts/pm.py build --out "$RUNNER_TEMP/pm-board"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pm-board
+          path: ${{ runner.temp }}/pm-board
+          retention-days: 14

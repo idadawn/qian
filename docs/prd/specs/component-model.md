@@ -759,6 +759,7 @@ TS 侧服务键小驼峰（`files`），.NET 侧大驼峰（`Files`）；两侧 
 
 - `Apply` 只描述「我提供什么、监听什么」，不做一次性业务动作；逐租户初始化放在 `tenant/provisioned` 监听器。
 - `Apply` 抛异常 = 条目 `Failed`：效果栈立即逆序释放，依赖者保持 `Pending`，宿主继续启动其它条目；`policy.tier: system` 的条目 `Failed` 使 `/readyz` 失败（profile `health.readyRequiresTiers`）。
+- `Apply` 尚未结束时，所 `inject` 的键被其它条目撤销、替换或经 restriction 隐藏（例如热重载的文件监视线程、Registry 刷新租户 scope），本次 `Apply` 无论成败都作废：效果栈逆序释放、条目回到 `Pending`，键再就绪后重新 `Apply`，判据与 `Ready` 后失效相同，不记为 `Failed`。`Apply` 自己的注册或 restriction 改变了所注入键的可见性时仍为 `Failed`，否则条目 `Ready` 后会立即自我失效。
 - 整树 teardown 按挂载顺序逆序 Unmount；同一 `(scope, id)` 只能有一个条目；`service` 形态的条目在其 `/readyz` 通过后由装载器把 `provides[]` 标记就绪（Provider 为远程代理；`platform` 下其状态由 `qian.registry` 维护）。
 - 装载器属于 `Qian.Runtime`（D20.1），任何 profile 都能从文件 patch 直接装树；`qian.registry` / `qian.lifecycle` / `qian.capabilities` 只是 `platform` profile 里叠加的数据库注册表、生命周期管理 API 与能力目录（R34）。
 
@@ -1419,3 +1420,4 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 | 2026-10-15 | 草案 v2（S1-RT-020） | §9.5 执行入口加回执策略：按数据分级与 `receiptMaxBytes` 决定是否保存响应体，不保存时同键重放返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；能力契约在登记阶段生成条目并预编译输入校验器，不合格即拒绝。S1-RT-019 复核发现回执明文无上限、输入 Schema 首次调用才编译 |
 | 2026-10-15 | 草案 v2（S1-RT-021） | §9.5 回执策略段更正两处说法：过期回执的物理删除靠本租户后续带键写调用登记时的惰性清理（每次最多 100 行），`NOT VALID` 的理由是存量超限行会让带校验的约束失败、迁移属主在 FORCE RLS 下删不掉；补作者按 `dataClassification` 标注能力（SDK 默认 `internal` 即默认保存响应体）与 platform 宿主必须调用 `AddQianCapabilities()`。S1-RT-020 复核发现两处说法不准、默认分级会让含个人信息的响应明文入回执 |
 | 2026-10-15 | 草案 v2（S1-RT-024） | §9.5 执行入口补请求体读不成确定值时返回 400 `BAD_REQUEST`（含绝对值超过 decimal 范围的数）；登记期检查拒绝 `enum` / `const` 取值含这类数的输入 Schema。JsonSchema.Net 9.4 按 decimal 比较取值，这类数曾让执行入口返回 500 |
+| 2026-10-15 | 草案 v2（S1-RT-026） | §5.6 写明 `Apply` 尚未结束时所注入的键被其它条目撤销、替换或隐藏的处理：本次 `Apply` 作废、逆序释放后回到 `Pending`，不记为 `Failed`；`Apply` 自身造成的可见性变化仍为 `Failed`。S1-RT-023 调查时发现两侧装载器只让 `Ready` 条目失效，`Apply` 中途依赖变化的条目被误判 `Failed` 且不再重试 |
