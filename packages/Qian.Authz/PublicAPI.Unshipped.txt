@@ -36,3 +36,6 @@ Qian.Authz.PlatformAuthzDbContext.PlatformAuthzDbContext(Microsoft.EntityFramewo
 Qian.Authz.RbacPermissionChecker.RbacPermissionChecker(Qian.Data.IDataService! data, Kun.Core.MultiTenancy.ITenantContext! tenant, Qian.Authz.Abstractions.IPermissionRegistry! registry, Qian.Authz.Abstractions.IAuthzExecutionConstraints? constraints = null, Kun.Caching.Abstractions.IKunCache? cache = null) -> void
 override Qian.Authz.AuthzDbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> void
 static Qian.Authz.AuthzPlatformAccess.CreateMigrationSql(string! platformRole) -> string!
+Qian.Authz.AuthzPlugin.AuthzPlugin(System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionCatalog!>! catalogs) -> void
+Qian.Authz.RbacPermissionChecker.ListEffectivePermissionsAsync(Kun.Authorization.AuthorizationSubject! subject, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.EffectiveGrant!>!>
+static Qian.Authz.AuthzPlugin.FromInstalledComponents() -> Qian.Authz.AuthzPlugin!

@@ -40,9 +40,9 @@ Qian.Sample.Crm.Tests 启动真实 Kestrel 与共享 PostgresFixture，使用受
 
 ## 权限声明与默认角色
 
-`metadata/permissions.json` 是客户资源 read/write/export 的声明，`metadata/roles.json` 定义 Owner 的本组件权限全集和使用者的 read。Authz 真实数据库测试直接读取这两份文件，先建立租户角色与主体绑定，再安装策略包，验证新增授权自动作用于已有角色；这不是另一份仅存在于测试中的权限清单。
+`metadata/permissions.json` 是客户资源 read/write/export 的声明（export 为 high 风险、要求 step-up、限 web 终端），`metadata/roles.json` 定义 Owner 的本组件权限全集和使用者的 read。默认命令宿主的 authz 条目是完整 Provider `AuthzPlugin`，目录由 `CrmPermissions.Compile()` 从这两份文件编译后传入：启动时持久化并登记为 `qian.sample.crm:customer:<action>`，`tenant/provisioned` 到达时为新租户建内置角色并实例化默认策略，已有 Owner / 使用者随之得到对应权限。宿主自己也持有一份同内容的活动登记（与 Provider 共享租约），供端点的权限判定器使用：authz 组件卸载时业务端点按依赖缺失返回 404。这不是另一份仅存在于测试中的权限清单。
 
---data-only 使用上面的固定只读服务策略；默认命令宿主使用真实 RBAC。权限和角色模板需由可信安装流程存入 Authz，再为具体主体授予角色；应用启动不会给令牌中的 roles 自动授予权限。完整用户管理、me/permissions、导出、组件打包和 QA-007 仍未完成。
+--data-only 使用上面的固定只读服务策略；默认命令宿主使用真实 RBAC。为具体主体授予角色仍需可信流程（开通编排的初始授权、授权管理 API）；应用启动不会给令牌中的 roles 自动授予权限。`GET /api/authz/me/permissions` 返回当前服务主体在本租户的有效权限及风险、step-up、终端元数据，主体与租户只取自令牌。完整用户管理、导出、组件打包和 QA-007 仍未完成。
 
 ## 创建命令与回滚
 
