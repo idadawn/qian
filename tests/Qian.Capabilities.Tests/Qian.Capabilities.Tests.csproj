@@ -13,4 +13,11 @@
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Kun.Security" />
   </ItemGroup>
+  <!-- dotnet ef 设计时入口（CapabilitiesDesignTimeFactory）：经 AddQianData 取上下文，迁移模型与运行时一致。 -->
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <PackageReference Include="Kun.EventBus" />
+    <PackageReference Include="Kun.MultiTenancy" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

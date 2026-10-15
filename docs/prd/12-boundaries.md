@@ -82,7 +82,7 @@ S1 退出标准（ADR-018；ADR-020 §6 新增末句）：开发人员用代码�
 - C7. skill / agent / command / hook / MCP 五种表面的解析器与校验器 S1 交付；模型可见的一切注册在 `ctx.Tools` 等注册表并受 scope 过滤；配置目录、模块图、事件图、seam 图由代码生成并设 CI 新鲜度门禁。
 
 **前端 yue 与外壳（ADR-013；详见专题 spec《yue 组件库》）**
-37. `@yue/tokens` 三层令牌、明暗两态、WCAG AA 对比度单测；`@yue/core` 约 30 个基础组件；`@yue/shell` 单一侧栏布局外壳（后端菜单 → 路由、`menuTypeRegistry`、租户切换器、兜底页）；DataTable 基础版、SchemaForm 基础版、Upload、组织 / 用户 / 角色选择器、认证页族可用。
+37. `@yue/tokens` 三层令牌、明暗两态、WCAG AA 对比度单测；`@yue/core` 51 个基础组件；`@yue/shell` 单一侧栏布局外壳（后端菜单 → 路由、`menuTypeRegistry`、租户切换器、兜底页）；DataTable 基础版、SchemaForm 基础版、Upload、组织 / 用户 / 角色选择器、认证页族可用。
 38. 外壳以 Module Federation 2 运行时加载官方插件 UI，带版本号的插槽注册表；共享依赖 singleton。
 39. 元数据契约草案（FormSchema / ListSchema，含 `device`、`auth` 字段）、控件注册表契约、SSE 事件 JSON Schema、权限码目录格式发布；分层依赖 lint 进 CI。
 

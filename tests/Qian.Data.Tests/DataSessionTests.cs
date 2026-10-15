@@ -17,7 +17,7 @@ using Qian.Testing.Containers;
 
 namespace Qian.Data.Tests;
 
-public sealed class DataSessionTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
+public sealed partial class DataSessionTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task 缺少事件目录或含未实现配置_Provider挂载失败()

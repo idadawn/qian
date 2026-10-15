@@ -22,7 +22,7 @@ export interface SurfaceParseResult { syntax: SurfaceSyntax | null; diagnostics:
 export interface SurfaceValidationOptions {
   profile?: string; executionPlane?: 'human-cli' | 'server'; allowCommandHooks?: boolean;
   tools?: readonly string[]; skills?: readonly string[]; events?: readonly string[]; capabilities?: readonly string[];
-  catalogComplete?: boolean; traceId?: string;
+  catalogComplete?: boolean; traceId?: string; serviceKeys?: readonly string[];
 }
 const codes = { syntax: 'SURFACE_SYNTAX_INVALID', schema: 'SURFACE_SCHEMA_INVALID', name: 'SURFACE_NAME_MISMATCH', reference: 'SURFACE_REFERENCE_UNKNOWN', path: 'SURFACE_PATH_INVALID', policy: 'SURFACE_POLICY_DENIED', secret: 'SURFACE_SECRET_LITERAL', hash: 'SURFACE_HASH_MISMATCH' };
 type Obj = { [key: string]: JsonValue };
@@ -149,8 +149,10 @@ export function validateSurfaceSchema(schema: string, file: string, data: JsonVa
   if (validate(data)) return [];
   const errors = new Map<string, SurfaceDiagnostic>();
   for (const error of validate.errors ?? []) {
-    if (['allOf', 'anyOf', 'oneOf', 'if', 'then', 'else', '$ref'].includes(error.keyword)) continue;
+    if (['allOf', 'anyOf', 'oneOf', 'if', 'then', 'else', '$ref', 'propertyNames'].includes(error.keyword)) continue;
     let pointer = error.instancePath;
+    // propertyNames 子约束的错误指向出错的属性名本身，与 .NET 侧一致。
+    if (error.propertyName !== undefined) pointer += '/' + token(error.propertyName);
     if (error.keyword === 'required') pointer += '/' + token(error.params.missingProperty as string);
     if (error.keyword === 'additionalProperties') pointer += '/' + token(error.params.additionalProperty as string);
     errors.set(pointer, diagnostic(file, pointer, closest(lines, pointer), codes.schema, '字段不符合 Schema 约束（' + error.keyword + '）。', traceId));
@@ -291,6 +293,9 @@ class ValidationContext {
     const file = '.qian-plugin/plugin.json', policy = obj(this.manifest.policy), runtime = obj(this.manifest.runtime), form = str(runtime.form);
     if (this.id.startsWith('qian.') && !['system', 'official'].includes(this.tier)) this.error(file, '/id', codes.policy, 'qian. 前缀保留给平台与官方组件。');
     if (strings(this.manifest.inject).some(key => strings(this.manifest.provides).includes(key))) this.error(file, '/provides', codes.policy, 'inject 与 provides 不能相交。');
+    // 宿主给出目标装配的服务键目录时，inject 必须全部有 Provider（PRD 7.2.1）；optionalInject 允许缺席。
+    const provided = this.options.serviceKeys;
+    if (provided) strings(this.manifest.inject).forEach((key, index) => { if (!provided.includes(key)) this.error(file, '/inject/' + index, codes.reference, 'inject 的服务键在目标装配中没有 Provider。'); });
     if (policy.required === true && this.tier !== 'system') this.error(file, '/policy/required', codes.policy, 'required 只允许平台插件声明。');
     for (const [key, pointer] of Object.entries(obj(this.manifest.surfaces))) this.safe(str(pointer), file, '/surfaces/' + key, true);
     if (existsSync(path.join(this.root, 'src')) && !form) this.error(file, '/runtime/form', codes.schema, '存在 src 时必须声明运行时形态。');

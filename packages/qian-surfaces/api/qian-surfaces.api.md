@@ -227,6 +227,8 @@ export interface SurfaceValidationOptions {
     // (undocumented)
     profile?: string;
     // (undocumented)
+    serviceKeys?: readonly string[];
+    // (undocumented)
     skills?: readonly string[];
     // (undocumented)
     tools?: readonly string[];

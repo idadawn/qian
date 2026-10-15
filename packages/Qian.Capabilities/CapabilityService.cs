@@ -15,11 +15,10 @@ using Qian.Registry;
 using Qian.Tenancy;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
-using Qian.Surfaces.Abstractions;
 
 namespace Qian.Capabilities;
 
-internal sealed partial class CapabilityService(IRegistryService registry, IPermissionChecker permissions, ISurfaceReader schemas, IToolContractHasher hasher,
+internal sealed partial class CapabilityService(IRegistryService registry, IPermissionChecker permissions, CapabilityContractCheck contracts,
     IDataService data, CapabilitiesOptions options, IHttpContractSource? httpContracts = null, ILogger? logger = null) : ICapabilityService, IDisposable
 {
     // 回放窗口：同一主体、同一能力、同一幂等键的首次成功响应保留 24 小时，之后同键请求重新执行。
@@ -31,7 +30,6 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
         CapabilitiesDbContext.Schema + "." + CapabilitiesDbContext.ReceiptsTable + " WHERE tenant_id = {0} AND expires_at <= {1} LIMIT 100 FOR UPDATE SKIP LOCKED)";
     private static readonly string[] Kinds = ["command", "query", "event", "entity"];
     private readonly (CancellationTokenSource Source, CancellationToken Token) _lifetime = CreateLifetime();
-    private readonly CapabilityInputValidator _inputs = new();
     private int _disposed;
 
     public async ValueTask<CapabilityCatalog> ListAsync(IPluginContext caller, ICurrentUser user, string? kind = null, string? query = null, CancellationToken cancellationToken = default)
@@ -101,7 +99,7 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
         // 不缓存目录结果为授权；执行前还会由绑定和实际 Mediator 策略核验可见性与权限。
         if (!Current(caller, item)) throw Error(PlatformErrors.NotFound);
         // 先过可见性再校验输入：不可见的能力不暴露其 Schema 约束。
-        _inputs.Validate(item.Entry, input);
+        contracts.Inputs.Validate(item.Entry, input);
         // 只读能力重复执行没有副作用：忽略幂等键，不存回执。
         if (idempotencyKey is not { } key || item.Entry.GetProperty("sideEffect").GetString() == "read")
             return new CapabilityInvocation(await item.Binding.InvokeAsync(caller, input, linked.Token).ConfigureAwait(false), false);
@@ -109,8 +107,9 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
     }
 
     // 与 Kun 幂等消费同一语义（R63），分三段：短事务登记「执行中」→ 不占数据库连接执行 → 写完成或撤销登记。同键请求经事务级
-    // advisory lock 串行登记：未过期的完成回执回放，仍在执行的同键请求返回 409，失败或中断不留回执。登记后、写完成前进程崩溃时，
-    // 标记在租约到期后失效，重试会再次执行；写类能力仍须按 inputSchema 中的 idempotencyKey 业务幂等。
+    // advisory lock 串行登记：未过期的完成回执回放，没保存响应体的回执返回 409 CAPABILITY_REPLAY_UNAVAILABLE，仍在执行的同键请求
+    // 返回 409 CONFLICT，失败或中断不留回执。登记后、写完成前进程崩溃时，标记在租约到期后失效，重试会再次执行；写类能力仍须按
+    // inputSchema 中的 idempotencyKey 业务幂等。
     private async Task<CapabilityInvocation> InvokeOnce(IPluginContext caller, ICurrentUser user, VisibleCapability item, JsonElement input, Guid idempotencyKey, CancellationToken ct)
     {
         var principal = user.Principal!;
@@ -130,12 +129,21 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
             await SettleAsync(key, fingerprint, claimed, null).ConfigureAwait(false);
             throw;
         }
-        await SettleAsync(key, fingerprint, claimed, output.GetRawText()).ConfigureAwait(false);
+        var text = output.GetRawText();
+        var withheld = Withheld(item.Entry, text);
+        await SettleAsync(key, fingerprint, claimed, new Completion(withheld is null ? text : null, withheld)).ConfigureAwait(false);
         return new CapabilityInvocation(output, false);
     }
 
-    // 第一段：同键串行登记。未过期的完成回执返回其响应；未过期的执行中标记或输入不同返回 409；否则删除同键旧行、清理少量过期回执，
-    // 登记执行中标记后立即提交。显式 ReadCommitted：取得锁之后的查询要看到上一持锁者已提交的登记。
+    // 回执策略（组件规格 §9.5）：只有数据分级为 public / internal 且不超过 receiptMaxBytes（UTF-8 字节）的响应保存响应体；
+    // pii、finance、secret 与未知分级一律不保存，超限的响应同样不保存。不保存时只记「已执行」与原因，回放窗口内同键请求得到 409，不再执行。
+    private string? Withheld(JsonElement entry, string response) =>
+        entry.GetProperty("dataClassification").GetString() is not ("public" or "internal") ? CapabilitiesDbContext.WithheldClassification
+        : Encoding.UTF8.GetByteCount(response) > options.ReceiptMaxBytes ? CapabilitiesDbContext.WithheldTooLarge : null;
+
+    // 第一段：同键串行登记。未过期的完成回执返回其响应；输入不同或仍在执行返回 409 CONFLICT，已执行但没保存响应体返回 409
+    // CAPABILITY_REPLAY_UNAVAILABLE；否则删除同键旧行、清理少量过期回执，登记执行中标记后立即提交。显式 ReadCommitted：取得锁之后的
+    // 查询要看到上一持锁者已提交的登记。
     private async Task<(string? Replay, DateTimeOffset Claimed)> ClaimAsync(ReceiptKey key, string fingerprint, CancellationToken ct)
     {
         await using var session = await data.OpenAsync<CapabilitiesDbContext>(ct).ConfigureAwait(false);
@@ -147,7 +155,10 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
         var receipt = await Find(session.Context, key).AsNoTracking().SingleOrDefaultAsync(ct).ConfigureAwait(false);
         if (receipt is not null && receipt.ExpiresAt > now)
         {
-            if (receipt.RequestSha256 != fingerprint || receipt.Response is null) throw Error(PlatformErrors.Conflict);
+            if (receipt.RequestSha256 != fingerprint) throw Error(PlatformErrors.Conflict);
+            if (receipt.Withheld is { } reason)
+                throw new QianErrorException(new QianError(CapabilitiesErrors.ReplayUnavailable, new Dictionary<string, string>(StringComparer.Ordinal) { ["reason"] = reason }));
+            if (receipt.Response is null) throw Error(PlatformErrors.Conflict);
             return (receipt.Response, default);
         }
         if (receipt is not null) await Find(session.Context, key).ExecuteDeleteAsync(ct).ConfigureAwait(false);
@@ -162,21 +173,23 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
         return (null, now);
     }
 
-    // 第三段：成功时写入原样响应并把过期时间延到回放窗口，失败时删除本次登记。只动本次登记的行（登记时间即标识），租约过期后被
-    // 同键新请求接手的行不受影响。显式事务：租户会话变量只在显式事务内生效（ADR-004 D4.8，PgBouncer 事务池同样如此）。
-    // 用 CancellationToken.None：请求此时取消也要收尾。收尾失败不掩盖执行结果或执行异常：标记在租约到期后失效，期间同键请求返回 409。
-    private async Task SettleAsync(ReceiptKey key, string fingerprint, DateTimeOffset claimed, string? response)
+    // 第三段：成功时写入原样响应（或不保存响应体的原因）并把过期时间延到回放窗口，失败时（completion 为 null）删除本次登记。只动本次
+    // 登记的行（登记时间即标识），租约过期后被同键新请求接手的行不受影响。显式事务：租户会话变量只在显式事务内生效（ADR-004 D4.8，
+    // PgBouncer 事务池同样如此）。用 CancellationToken.None：请求此时取消也要收尾。收尾失败不掩盖执行结果或执行异常：标记在租约到期后
+    // 失效，期间同键请求返回 409。
+    private async Task SettleAsync(ReceiptKey key, string fingerprint, DateTimeOffset claimed, Completion? completion)
     {
-        var step = response is null ? "撤销登记" : "写完成";
+        var step = completion is null ? "撤销登记" : "写完成";
         try
         {
             await using var session = await data.OpenAsync<CapabilitiesDbContext>(CancellationToken.None).ConfigureAwait(false);
             await using var transaction = await session.Context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, CancellationToken.None).ConfigureAwait(false);
-            var pending = Find(session.Context, key).Where(row => row.Response == null && row.RequestSha256 == fingerprint && row.CreatedAt == claimed);
+            var pending = Find(session.Context, key).Where(row => row.Response == null && row.Withheld == null && row.RequestSha256 == fingerprint && row.CreatedAt == claimed);
             var expires = Now() + ReplayWindow;
-            var affected = response is null
+            var affected = completion is null
                 ? await pending.ExecuteDeleteAsync(CancellationToken.None).ConfigureAwait(false)
-                : await pending.ExecuteUpdateAsync(row => row.SetProperty(item => item.Response, response).SetProperty(item => item.ExpiresAt, expires), CancellationToken.None).ConfigureAwait(false);
+                : await pending.ExecuteUpdateAsync(row => row.SetProperty(item => item.Response, completion.Response).SetProperty(item => item.Withheld, completion.Withheld)
+                    .SetProperty(item => item.ExpiresAt, expires), CancellationToken.None).ConfigureAwait(false);
             await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
             // 本次登记已不在：租约到期后被同键请求接手，或会话没有带上租户。
             if (affected == 0 && logger is not null) Log.SettleMissed(logger, key.CapabilityId, step);
@@ -217,7 +230,9 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
             ct.ThrowIfCancellationRequested();
             if (registration.Value is not IExecutableCapability binding || binding.Contract.Id != registration.Name ||
                 !view.Any(entry => entry.EntryId == registration.OwnerEntryId && entry.Scope == registration.Scope && entry.Name == registration.Name && entry.PluginId == binding.Contract.ComponentId)) continue;
-            var entry = CapabilityContractCompiler.Describe(binding.Contract, schemas, hasher); var metadata = binding.Contract.Metadata;
+            // 不合格的契约在登记期已被拒绝；宿主未登记检查时在这里排除，不影响其余能力。
+            if (contracts.Entry(binding.Contract) is not { } entry) continue;
+            var metadata = binding.Contract.Metadata;
             if ((model || principal.Kind == PrincipalKind.Agent) && !metadata.GetProperty("agent").GetProperty("expose").GetBoolean()) continue;
             if (metadata.GetProperty("requiredScopes").EnumerateArray().Any(scope => !scopes.Contains(scope.GetString()!))) continue;
             if (!metadata.TryGetProperty("requiredPermission", out var permission) || string.IsNullOrWhiteSpace(permission.GetString())) continue;
@@ -290,6 +305,8 @@ internal sealed partial class CapabilityService(IRegistryService registry, IPerm
     private static QianErrorException Error(ErrorCode code) => new(new QianError(code));
     private sealed record VisibleCapability(string Id, JsonElement Entry, IExecutableCapability Binding);
     private sealed record ReceiptKey(string TenantId, string SubjectKey, string CapabilityId, Guid IdempotencyKey);
+    // 成功收尾写入的内容：原样响应与不保存的原因二者取一。
+    private sealed record Completion(string? Response, string? Withheld);
     private static partial class Log
     {
         [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "能力 {Capability} 的幂等回执{Step}失败；该键在执行中租约到期前返回 409。")]

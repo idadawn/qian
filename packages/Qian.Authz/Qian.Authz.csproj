@@ -12,4 +12,5 @@
   <ItemGroup><InternalsVisibleTo Include="Qian.Authz.Tests" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" /></ItemGroup>
   <ItemGroup><InternalsVisibleTo Include="Qian.Sample.Crm.Tests" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Registry.Tests" /></ItemGroup>
 </Project>

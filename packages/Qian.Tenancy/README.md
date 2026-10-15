@@ -28,9 +28,9 @@ TenantGrpcClientInterceptor 从当前上下文为四类 RPC 写入 tenant_id，�
 
 ## 验证与剩余验收
 
-使用共用 PostgreSQL 16 fixture 和受限应用角色验证真实目录写入、两宿主同号竞争、编辑冲突、租户过滤与原生 SQL RLS；通过真实 Data/Runtime/Tenancy 插件装载验证目录生命周期。HTTP 边界单元测试使用已认证 ClaimsPrincipal 测试宿主管道，不代表真实签名或管理员登录。JSON/元数据序列化往返验证通用传播逻辑；另外已用真实 Kestrel HTTP/2 与 gRPC 客户端验证四种 RPC、双租户并发、24 组非法入口和错误详情。测试令牌由临时 RSA 密钥签发并经 JwtBearer 完整验签，这是传输适配器集成测试，不代表已完成真实 Qian Identity 的签发/管理员登录验收。事件消费者和作业执行器尚未接通。
+使用共用 PostgreSQL 16 fixture 和受限应用角色验证真实目录写入、两宿主同号竞争、编辑冲突、租户过滤与原生 SQL RLS；通过真实 Data/Runtime/Tenancy 插件装载验证目录生命周期。HTTP 边界单元测试使用已认证 ClaimsPrincipal 测试宿主管道；另有真实 Kestrel、JwtBearer 验签与受 RLS 约束的应用角色集成测试：A 的令牌请求 B 的记录 id 与不存在的 id 一样返回 404，X-Tenant-Id 不能切换租户，无令牌、缺 tenant_id 或签名被篡改的请求在处理器之前被拒。两类测试都不代表真实 Qian Identity 的签发或管理员登录。JSON/元数据序列化往返验证通用传播逻辑；另外已用真实 Kestrel HTTP/2 与 gRPC 客户端验证四种 RPC、双租户并发、24 组非法入口和错误详情。测试令牌由临时 RSA 密钥签发并经 JwtBearer 完整验签，这是传输适配器集成测试，不代表已完成真实 Qian Identity 的签发/管理员登录验收。事件消费者和作业执行器尚未接通。
 
-完整 TEN-001 验收仍需真实运营授权 API、Identity 管理员登录、事件/作业传播适配器和端到端 A/B 隔离。状态迁移、开户编排、租户设置分别归 TEN-002/003/004；不以目录基础实现关闭这些任务。
+按裁决 R81，TEN-001 的验收收口为上述 HTTP 租户边界、gRPC 对端传播与「目标租户不经请求体」：运营后台页面归 TEN-005，管理员登录归 IDP-003，事件消费端回灌归 EVT-002，作业执行器归 SCH-002。HTTP 运营接口（`GET/POST /api/tenancy/tenants`、`PUT /tenants/{id}`）尚未发布，它需要真实的平台运营授权，按裁决 R85 由 S1-TEN-006 交付（依赖 S1-AZ-003 的平台主体授权）。状态迁移、开户编排、租户设置分别归 TEN-002/003/004；不以目录基础实现关闭这些任务。
 
 ## 命令执行入口
 

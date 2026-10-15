@@ -34,7 +34,7 @@ if (result.IsValid)
 
 `metadata/*.json` 使用同一个 JSON 解析器和路径边界，支持显式目录（包含组件根目录），只读取该目录第一层 JSON 文件；返回 `kind: metadata` 的原始文档快照，并应用通用敏感值检查。目录指向文件、重复键、非法 JSON 或链接均被拒绝。权限点、默认角色、事件等业务 Schema 由各 seam 在登记/发布时验证；解析通过不代表角色授权或安装准入通过。
 
-工具／技能引用从本组件与调用方目录解析；离线时未知的跨组件引用为 warning，`CatalogComplete=true` 时为 error。Qian 事件来自共同事件矩阵或宿主目录；未知大驼峰 Agent 事件告警并透传。hook handler、命令能力和服务方法需由宿主提供已解析目录，不会靠试运行代码推测。
+工具／技能引用从本组件与调用方目录解析；离线时未知的跨组件引用为 warning，`CatalogComplete=true` 时为 error。`inject[]` 只在宿主给出 `ServiceKeys`（目标装配中已有 Provider 的服务键，含具名注册）时检查：给出即视为完整目录，目录外的键为 error，`optionalInject` 不检查；注册表的候选登记总会带上预装组件的 provides。Qian 事件来自共同事件矩阵或宿主目录；未知大驼峰 Agent 事件告警并透传。hook handler、命令能力和服务方法需由宿主提供已解析目录，不会靠试运行代码推测。
 
 结构校验使用 JSON Schema 2020-12，工具词汇引用冻结 capability-entry 的 `$defs`。工具输入不能包含嵌套租户字段；有副作用时要求幂等键；描述哈希按 RFC 8785 的 IEEE-754 数值域与 UTF-16 字段顺序计算。`ToolContractHash.Compute` 只返回哈希，不擅自改写组件文件。
 

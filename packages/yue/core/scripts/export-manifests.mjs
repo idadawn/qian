@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import ts from 'typescript';
+import { updatePropsMetadata } from './manifest-metadata.mjs';
 
 // 机器契约的属性形状仍由目录维护；标题和说明只从属性名与真实 TypeScript 注释派生。
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -23,13 +24,7 @@ for (const [name, item] of Object.entries(catalog)) {
   const parameter = call?.getParameters()[0];
   if (!parameter) throw new Error(`无法解析 ${name} 的 props`);
   const props = checker.getTypeOfSymbolAtLocation(parameter, declaration);
-  for (const [propName, schema] of Object.entries(item.props.properties)) {
-    schema.title = propName;
-    const prop = checker.getPropertyOfType(props, propName);
-    const description = prop ? ts.displayPartsToString(prop.getDocumentationComment(checker)).trim() : '';
-    if (description) schema.description = description;
-    else delete schema.description;
-  }
+  updatePropsMetadata(item.props, props, checker, name);
 }
 const generated = JSON.stringify(catalog, null, 2) + '\n';
 if (process.argv.includes('--generate')) {

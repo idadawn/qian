@@ -16,7 +16,7 @@ const result = validateComponent(componentDirectory, {
 
 ## 模型体验
 
-返回 ErrorDetail 外加文件、行号和级别。调用方可按 pointer 修复源文件；跨组件引用在不完整目录下告警，完整目录下拒绝未知项。任何文件内容都不会被执行。
+返回 ErrorDetail 外加文件、行号和级别。调用方可按 pointer 修复源文件；跨组件引用在不完整目录下告警，完整目录下拒绝未知项；给出 `serviceKeys` 时 `inject[]` 引用目录外的服务键为 error。任何文件内容都不会被执行。
 
 ## 已知限制与延期项
 

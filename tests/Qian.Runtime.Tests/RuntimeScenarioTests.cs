@@ -40,13 +40,15 @@ public sealed class RuntimeScenarioTests
         await loader.MountAsync([], TestContext.Current.CancellationToken);
         ConcurrentQueue<string> trace = [];
         ConcurrentDictionary<string, IRegistrationHandle<string>> handles = [];
+        // 先于 loader 释放：断言失败时打开全部闸门，整树卸载不会卡在等待中的撤销上。
+        using var gates = new ScenarioGates();
         var events = new ScenarioEvents(scenario, trace);
         var entries = scenario.GetProperty("entries").EnumerateArray().ToDictionary(e => e.GetProperty("id").GetString()!, e => e);
         PluginDefinition Definition(string id)
         {
             var entry = entries[id];
             return new PluginDefinition(new PluginEntry(id, id, "1.0.0", Scope(entry), 0, JsonSerializer.SerializeToElement(new { })),
-                new ScenarioPlugin(entry, trace, events, handles), Keys(entry, "provides"));
+                new ScenarioPlugin(entry, trace, events, handles, gates), Keys(entry, "provides"));
         }
         foreach (var step in scenario.GetProperty("steps").EnumerateArray())
         {
@@ -93,8 +95,13 @@ public sealed class RuntimeScenarioTests
                     var replacement = step.GetProperty("value").GetString()!;
                     if (step.TryGetProperty("error", out _)) Assert.Throws<ObjectDisposedException>(() => handle.Replace(replacement));
                     else handle.Replace(replacement);
-                    await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+                    if (!step.TryGetProperty("idle", out var idle) || idle.GetBoolean()) await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
                     break;
+                case "blocked":
+                    await gates[step.GetProperty("gate").GetString()!].Blocked.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+                    break;
+                case "open": gates[step.GetProperty("gate").GetString()!].Open.TrySetResult(); break;
+                case "idle": await loader.WhenIdleAsync(TestContext.Current.CancellationToken); break;
                 case "traceContains":
                     foreach (var value in step.GetProperty("value").EnumerateArray()) Assert.Contains(value.GetString(), trace);
                     break;
@@ -178,7 +185,20 @@ public sealed class RuntimeScenarioTests
         return new ScopeKey(parts[0], parts[1]);
     }
 
-    private sealed class ScenarioPlugin(JsonElement entry, ConcurrentQueue<string> trace, ScenarioEvents events, ConcurrentDictionary<string, IRegistrationHandle<string>> handles) : IQianPlugin
+    private sealed class ScenarioGates : IDisposable
+    {
+        private readonly ConcurrentDictionary<string, Gate> _gates = new(StringComparer.Ordinal);
+        internal Gate this[string name] => _gates.GetOrAdd(name, _ => new Gate());
+        public void Dispose() { foreach (var gate in _gates.Values) gate.Open.TrySetResult(); }
+
+        internal sealed class Gate
+        {
+            internal TaskCompletionSource Blocked { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            internal TaskCompletionSource Open { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
+    }
+
+    private sealed class ScenarioPlugin(JsonElement entry, ConcurrentQueue<string> trace, ScenarioEvents events, ConcurrentDictionary<string, IRegistrationHandle<string>> handles, ScenarioGates gates) : IQianPlugin
     {
         public IReadOnlyList<ServiceKey> Inject => Keys(entry, "inject");
 
@@ -202,9 +222,15 @@ public sealed class RuntimeScenarioTests
                         ctx.Restrict(Scope(action), r => keep.Contains(r.Name, StringComparer.Ordinal));
                         break;
                     case "effect":
+                        var gate = action.TryGetProperty("gate", out var gateName) ? gates[gateName.GetString()!] : null;
                         ctx.Effect(async () =>
                         {
                             await Task.Yield();
+                            if (gate is not null)
+                            {
+                                gate.Blocked.TrySetResult();
+                                await gate.Open.Task;
+                            }
                             trace.Enqueue($"dispose:{action.GetProperty("name").GetString()}");
                             if (action.TryGetProperty("fail", out var fail) && fail.GetBoolean()) throw new InvalidOperationException("撤销失败。");
                         });
