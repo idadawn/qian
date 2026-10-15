@@ -1,7 +1,7 @@
 # 进度概览（由 `python3 scripts/pm.py build` 生成，勿手改）
 
 - 总体：`█████░░░░░` 50%（76/152）
-- 状态：todo 66 · doing 2 · review 5 · done 76 · blocked 3
+- 状态：todo 66 · doing 2 · review 6 · done 76 · blocked 2
 - 最近更新：2026-10-15
 
 ## 按阶段
@@ -80,7 +80,7 @@
 | 层级 | 任务数 | 合计估算 |
 |---|---|---|
 | 第 1 层 | 12 | 46d |
-| 第 2 层 | 9 | 32d |
+| 第 2 层 | 8 | 27d |
 | 第 3 层 | 14 | 45d |
 | 第 4 层 | 11 | 41d |
 | 第 5 层 | 6 | 28d |
@@ -100,4 +100,5 @@
 | [S1-DEP-007](tasks/S1-DEP-007.md) K3s 控制面故障：qd 的 k3s 自 10-11 起因 leaderelection lost 反复重启 | doing | cody | 2026-10-15 |
 | [S1-RT-004](tasks/S1-RT-004.md) qian.registry 插件：清单校验、注册表与 scope 视图 | review | cody | 2026-10-15 |
 | [S1-RT-005](tasks/S1-RT-005.md) qian.lifecycle 插件：两层生命周期、幂等钩子、验签与执行器 | review | cody | 2026-10-15 |
+| [S1-RT-009](tasks/S1-RT-009.md) 表面注册、scope 过滤、hooks 桥接、MCP 登记与热重载 | review | cody | 2026-10-15 |
 | [S1-RT-014](tasks/S1-RT-014.md) Qian.Plugin.Sdk 与源生成器（plugin.json 合并） | review | cody | 2026-10-15 |
