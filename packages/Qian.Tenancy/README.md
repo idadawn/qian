@@ -37,3 +37,15 @@ TenantGrpcClientInterceptor 从当前上下文为四类 RPC 写入 tenant_id，�
 TenancyPlugin 已在 SDK 的真实 command/dispatching 上登记租户策略，按已验证主体的租户 UUID 查询主档，只有 active/trial 可进入业务；pending/grace/suspended 和未知租户拒绝。此处不实施租户激活或到期调度，不代替尚未完成的生命周期和身份会话吊销。真实 CRM 命令已覆盖冻结拒绝及双租户并发。
 
 能力目录可经 ITenantDirectory.GetByIdAsync 读取已验证主体的租户主档，复用命令策略的 active/trial 状态边界；该内部端口未增加匿名查询或管理写接口。
+
+## 开通编排（S1-TEN-003）
+
+TenancyPlugin 额外提供 `TenantProvisioning.Key` 的 `ITenantProvisioning`。`ProvisionAsync(CreateTenant, TenantAdministrator, actor)` 以租户号和不可变输入判定同一请求；不同输入返回 CONFLICT。可信运营面授权后可调用 `RetryAsync(id, actor)` 续跑，或 `GetStepsAsync` 读取诊断；这些内部端口只接受无租户上下文，不能直接映射无授权 HTTP。目录基础功能仍只依赖 Data；开通运行时必须能解析 Registry、Lifecycle 与 Authz 的授予端口，缺失即失败。
+
+`tenant_provision_steps` 受租户过滤和 RLS 保护。步骤为主档（同事务保存输入和成功标记）、Kun Shared 开户器与 GUC/RLS 校验、逐组件 Lifecycle.ProvisionAsync、tenant/provisioned、Membership、管理员指针、tenant.owner 授予、通知。每步独立提交，同一租户由 PostgreSQL 会话锁串行化，进程退出后锁释放；成功步骤不再执行，running/failed 按稳定幂等键重试。组件级仍使用 Lifecycle 的独立步骤表。步骤原因只保存稳定码，不保存上游异常内容。
+
+管理员输入含已有或待 Identity 确认的 Membership UUID 与主体 ID；指针存在不代表成员已能登录。Identity/Notify 通过 `TenantProvisioning.MembershipKey` / `NotificationKey` 的可选端口提供适配器，缺席时分别保存 skipped 和 identity_unavailable / notify_unavailable；后续续跑重新解析端口，仅补未成功步骤。初始授权通过 `Qian.Authz.Abstractions.ITenantRoleGrant`，不引用 Authz Provider 或跨插件写表。
+
+真库用例验证第三步失败后的续跑、平台组件和参考应用的 lifecycle_runs、管理员指针与初始授权、缺席端口的 skipped，以及重复请求的幂等。
+
+S1-DEC-023 经产品负责人批准：全局组件配置 `initializationCapabilities` 是初始化能力精确许可清单，缺省为空、不接受通配符，不能由请求体或租户 patch 增加。只有真实开通编排在派发 tenant/provisioned 时签发进程内短期凭据，绑定生产方上下文、目标租户、真实操作者和能力清单；SDK 的实际 hook 适配器只消费一次，每次调用再绑定请求类型与权限点。普通 Invoke/Send 不签发凭据；嵌套重入、重复消费、越租户及派发结束后逃逸的异步任务均拒绝。只接受 read/write 能力，拒绝 destructive/external。业务入口继续拒绝 pending，开户初始化通过专用凭据判定，既有 Kun 权限行为、command/dispatching、同事务审计仍执行，审计 channel=hook、actor 为真实平台操作者。该执行快照不是登录令牌或 Membership，不写入 Identity。

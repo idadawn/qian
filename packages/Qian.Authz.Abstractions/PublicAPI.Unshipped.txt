@@ -120,3 +120,7 @@ override Qian.Authz.Abstractions.EffectiveGrant.GetHashCode() -> int
 override Qian.Authz.Abstractions.EffectiveGrant.ToString() -> string!
 static Qian.Authz.Abstractions.EffectiveGrant.operator !=(Qian.Authz.Abstractions.EffectiveGrant? left, Qian.Authz.Abstractions.EffectiveGrant? right) -> bool
 static Qian.Authz.Abstractions.EffectiveGrant.operator ==(Qian.Authz.Abstractions.EffectiveGrant? left, Qian.Authz.Abstractions.EffectiveGrant? right) -> bool
+Qian.Authz.Abstractions.ITenantRoleGrant
+Qian.Authz.Abstractions.ITenantRoleGrant.AssignAsync(string! roleCode, string! subjectType, string! subjectId, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Authz.Abstractions.TenantRoleGrant
+static readonly Qian.Authz.Abstractions.TenantRoleGrant.Key -> Qian.Runtime.ServiceKey

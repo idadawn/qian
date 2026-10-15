@@ -333,7 +333,7 @@ public sealed partial class CustomerCommandTests
         var versions = new Dictionary<string, PluginDefinition>(StringComparer.Ordinal);
         Add("data", "qian.data", new DataPlugin(), [DataDefinition.Key]);
         Add("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey]);
-        Add("authz", "qian.authz", new RbacCommandPolicyPlugin(), [CommandPolicies.AuthorizationKey]);
+        Add("authz", "qian.authz", new AuthzPlugin([CrmPermissions.Compile()]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key]);
         Add("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]);
         Add("config", "qian.config", new ConfigurationPlugin(), [ConfigDefinition.Key]);
         var registry = new RegistryPlugin(new RegistryRuntimeOptions
@@ -375,7 +375,11 @@ public sealed partial class CustomerCommandTests
             var validation = validator.ValidateComponent(Path.Combine(directory, "plugins", definition.Entry.Id),
                 new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
             Assert.True(validation.IsValid, definition.Entry.Id + ": " + JsonSerializer.Serialize(validation.Diagnostics));
-            installed.Add(new RegistryComponentBinding(definition, validation));
+            var files = Directory.EnumerateFiles(Path.Combine(directory, "plugins", definition.Entry.Id), "*", SearchOption.AllDirectories).ToDictionary(
+                file => Path.GetRelativePath(Path.Combine(directory, "plugins", definition.Entry.Id), file).Replace(Path.DirectorySeparatorChar, '/'), file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
+            var digest = LifecycleArtifactDigest(files);
+            installed.Add(RegistryComponentBinding.FromArtifact(definition, files, digest, validator, new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true }));
+            platform.SystemArtifacts[definition.Entry.Plugin] = new PluginArtifact(files, digest, platform.Sign(digest));
         }
         foreach (var version in new[] { "1.0.0", "1.0.1", "1.1.0" })
         {
@@ -407,7 +411,8 @@ public sealed partial class CustomerCommandTests
             {
                 id = component, version = "1.0.0", description = "生命周期端到端验收使用实际 Provider 的平台组合。", author = new { name = "Qian" }, license = "Apache-2.0",
                 @interface = new { displayName = id, category = "testing" }, inject = plugin.Inject.Select(key => key.Name), provides = provides.Select(key => key.Name),
-                policy = new { tier = "system", sandbox = "none", authentication = "ON_INSTALL", required = true }, scopes = CatalogScopes
+                policy = new { tier = "system", sandbox = "none", authentication = "ON_INSTALL", required = true }, scopes = CatalogScopes,
+                runtime = new { form = "module", entry = plugin.GetType().FullName + ", " + plugin.GetType().Assembly.GetName().Name }
             }));
         }
         void Write(string path, string content)
@@ -477,6 +482,7 @@ public sealed partial class CustomerCommandTests
         }
         internal string SecretRoot { get; } = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "qian-lifecycle-secrets-" + Guid.NewGuid().ToString("N"))).FullName;
         internal string Fingerprint { get; }
+        internal Dictionary<string, PluginArtifact> SystemArtifacts { get; } = new(StringComparer.Ordinal);
         internal Dictionary<string, PluginArtifact> Artifacts { get; } = new(StringComparer.Ordinal);
         internal static IPluginLifecycleController Lifecycle(RunningApp host) =>
             host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("lifecycle", ScopeKey.Global).Lifecycle();

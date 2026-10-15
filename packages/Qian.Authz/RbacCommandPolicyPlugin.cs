@@ -33,6 +33,8 @@ internal sealed class RbacCommandPolicy(IPermissionChecker checker)
 {
     internal async ValueTask<object?> Handle(CommandInvocation invocation, Func<ValueTask<object?>> next)
     {
+        if (invocation.Channel == "hook" && TenantInitializationAuthorization.Allows(invocation.Contract.Id, invocation.Source.Scope))
+            return await next().ConfigureAwait(false);
         var principal = invocation.Principal; var metadata = invocation.Contract.Metadata;
         if (principal.Kind is not (PrincipalKind.User or PrincipalKind.Service) || principal.Actor is not null) throw Error(PlatformErrors.AuthzDenied);
         var scopes = principal.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);

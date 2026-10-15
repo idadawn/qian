@@ -70,3 +70,47 @@ static Qian.Tenancy.UpdateTenant.operator !=(Qian.Tenancy.UpdateTenant? left, Qi
 static Qian.Tenancy.UpdateTenant.operator ==(Qian.Tenancy.UpdateTenant? left, Qian.Tenancy.UpdateTenant? right) -> bool
 static readonly Qian.Tenancy.TenancyDefinition.Key -> Qian.Runtime.ServiceKey
 Qian.Tenancy.ITenantDirectory.GetByIdAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantDescriptor?>
+Qian.Tenancy.ITenantMembershipProvisioner
+Qian.Tenancy.ITenantMembershipProvisioner.ProvisionAsync(Qian.Tenancy.TenantAdministrator! administrator, string! idempotencyKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.ITenantProvisionedNotifier
+Qian.Tenancy.ITenantProvisionedNotifier.NotifyAsync(Qian.Tenancy.TenantDescriptor! tenant, string! idempotencyKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.ITenantProvisioning
+Qian.Tenancy.ITenantProvisioning.GetStepsAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantProvisionStep!>!>
+Qian.Tenancy.ITenantProvisioning.ProvisionAsync(Qian.Tenancy.CreateTenant! request, Qian.Tenancy.TenantAdministrator! administrator, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantDescriptor!>
+Qian.Tenancy.ITenantProvisioning.RetryAsync(System.Guid id, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantDescriptor!>
+Qian.Tenancy.TenantAdministrator
+Qian.Tenancy.TenantAdministrator.<Clone>$() -> Qian.Tenancy.TenantAdministrator!
+Qian.Tenancy.TenantAdministrator.Deconstruct(out System.Guid MembershipId, out string! SubjectId) -> void
+Qian.Tenancy.TenantAdministrator.Equals(Qian.Tenancy.TenantAdministrator? other) -> bool
+Qian.Tenancy.TenantAdministrator.MembershipId.get -> System.Guid
+Qian.Tenancy.TenantAdministrator.MembershipId.init -> void
+Qian.Tenancy.TenantAdministrator.SubjectId.get -> string!
+Qian.Tenancy.TenantAdministrator.SubjectId.init -> void
+Qian.Tenancy.TenantAdministrator.TenantAdministrator(System.Guid MembershipId, string! SubjectId) -> void
+Qian.Tenancy.TenantProvisionStep
+Qian.Tenancy.TenantProvisionStep.<Clone>$() -> Qian.Tenancy.TenantProvisionStep!
+Qian.Tenancy.TenantProvisionStep.Attempts.get -> int
+Qian.Tenancy.TenantProvisionStep.Attempts.init -> void
+Qian.Tenancy.TenantProvisionStep.Deconstruct(out string! Step, out string! Status, out int Attempts, out string? Reason) -> void
+Qian.Tenancy.TenantProvisionStep.Equals(Qian.Tenancy.TenantProvisionStep? other) -> bool
+Qian.Tenancy.TenantProvisionStep.Reason.get -> string?
+Qian.Tenancy.TenantProvisionStep.Reason.init -> void
+Qian.Tenancy.TenantProvisionStep.Status.get -> string!
+Qian.Tenancy.TenantProvisionStep.Status.init -> void
+Qian.Tenancy.TenantProvisionStep.Step.get -> string!
+Qian.Tenancy.TenantProvisionStep.Step.init -> void
+Qian.Tenancy.TenantProvisionStep.TenantProvisionStep(string! Step, string! Status, int Attempts, string? Reason) -> void
+Qian.Tenancy.TenantProvisioning
+override Qian.Tenancy.TenantAdministrator.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantAdministrator.GetHashCode() -> int
+override Qian.Tenancy.TenantAdministrator.ToString() -> string!
+override Qian.Tenancy.TenantProvisionStep.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantProvisionStep.GetHashCode() -> int
+override Qian.Tenancy.TenantProvisionStep.ToString() -> string!
+static Qian.Tenancy.TenantAdministrator.operator !=(Qian.Tenancy.TenantAdministrator? left, Qian.Tenancy.TenantAdministrator? right) -> bool
+static Qian.Tenancy.TenantAdministrator.operator ==(Qian.Tenancy.TenantAdministrator? left, Qian.Tenancy.TenantAdministrator? right) -> bool
+static Qian.Tenancy.TenantProvisionStep.operator !=(Qian.Tenancy.TenantProvisionStep? left, Qian.Tenancy.TenantProvisionStep? right) -> bool
+static Qian.Tenancy.TenantProvisionStep.operator ==(Qian.Tenancy.TenantProvisionStep? left, Qian.Tenancy.TenantProvisionStep? right) -> bool
+static readonly Qian.Tenancy.TenantProvisioning.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Tenancy.TenantProvisioning.MembershipKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Tenancy.TenantProvisioning.NotificationKey -> Qian.Runtime.ServiceKey

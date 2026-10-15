@@ -5,6 +5,7 @@ using Kun.Core.Cqrs;
 using Kun.Core.Results;
 using Kun.Mediator;
 using Kun.Mediator.Behaviors;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Qian.Authz.Abstractions;
 
@@ -34,6 +35,24 @@ public static class AuthorizedHandlerRegistration
         Validate<TRequest>(builder, denied);
         builder.AddRequestHandler<TRequest, TResponse, THandler>(capabilityId, request, response);
         return builder.AddPermissionBehavior<TRequest, TResponse>(denied);
+    }
+
+    // 仅 SDK 使用的受限开户分支；正常调用仍委托 Kun 原有 PermissionBehavior，不复制 RBAC 算法。
+    internal static KunMediatorBuilder AddAuthorizedHandler<TRequest, TResponse,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>(
+        this KunMediatorBuilder builder, Func<Error, TResponse> denied, string capabilityId,
+        JsonTypeInfo<TRequest> request, JsonTypeInfo<TResponse> response, bool tenantInitialization)
+        where TRequest : IRequest<TResponse>, IPermissionProtectedRequest
+        where THandler : class, IRequestHandler<TRequest, TResponse>
+    {
+        Validate<TRequest>(builder, denied);
+        if (!tenantInitialization) return builder.AddAuthorizedHandler<TRequest, TResponse, THandler>(denied, capabilityId, request, response);
+        builder.AddAuthorizedHandler<TRequest, TResponse, THandler>(denied, capabilityId, request, response);
+        var descriptor = builder.Services.Last();
+        var factory = descriptor.ImplementationFactory ?? throw new InvalidOperationException("Kun 权限行为工厂缺失。");
+        builder.Services[^1] = new ServiceDescriptor(descriptor.ServiceType,
+            sp => factory(new InitializationPermissionServices(sp)), descriptor.Lifetime);
+        return builder;
     }
 
     private static void Validate<TRequest>(KunMediatorBuilder builder, Delegate denied)

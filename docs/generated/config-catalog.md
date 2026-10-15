@@ -256,7 +256,8 @@
   "resolver": {
     "mode": "production",
     "allowHeaderFallback": false
-  }
+  },
+  "initializationCapabilities": []
 }
 ```
 
@@ -279,6 +280,16 @@
         }
       },
       "additionalProperties": false
+    },
+    "initializationCapabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9.-]*/[a-z][A-Za-z0-9_.-]*$"
+      },
+      "uniqueItems": true,
+      "default": [],
+      "description": "仅全局开户编排可以执行的初始化能力精确标识；不接受通配符。"
     }
   },
   "additionalProperties": false,
