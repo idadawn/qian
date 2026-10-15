@@ -8,4 +8,4 @@
 - 基准类型与方言映射是数据：改系统类型改 contracts/data/v1/base-data-types.json，改映射改方言包的 JSON，不在代码里写类型分支；方言注册必须经 DbDialect.Validate。
 - 数据连接只存租户作用域的 secretRef；口令只在 TestAsync 的使用点经宿主密钥策略解析、用后即释放，不得进入日志、错误、响应、审计或数据库。序号服务与数据连接共用 DataSystemContext 登记的系统上下文，不要再单独 AddQianData<DataSystemDbContext>。
 - 数据会话必须将选定业务上下文、领域通知与 Outbox 缓冲绑定在同一 scope，不把非泛型 KunDbContext 指向最后登记的上下文。
-- 按已批准的 S1-DEC-018，S1-DATA-001 先交付经真实参考应用验收的数据本体；SDK 源生成、私有 NuGet 锁步发布与真实 qian add 安装分别由 S1-RT-014 / S1-RT-011 回验。后续门未通过前保留组件骨架标记，不把本体完成写成完整组件交付。
+- 按已批准的 S1-DEC-018，数据本体（S1-DATA-001）、SDK 源生成与私有 NuGet 锁步发布（S1-RT-014）、真实 qian add 安装（S1-RT-011）三道门已依次通过，plugins/qian.data 不再带骨架标记。发布新版本后同步清单 runtime.nuget 的版本与摘要，私有源 E2E（packages/qian-cli/test/private-feed.e2e.mjs）必须保持通过。

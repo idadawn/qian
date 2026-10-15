@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Qian.Data;
+using Qian.Runtime.Errors;
 using Qian.Surfaces.Abstractions;
 
 namespace Qian.Registry;
@@ -52,6 +53,22 @@ internal sealed class PostgresArtifactCatalog(IDataService data)
         try { await session.SaveChangesAsync(ct).ConfigureAwait(false); }
         catch (DbUpdateException error) when (error.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "pk_plugin_artifacts" })
         { return await GetAsync(artifact.Digest, ct).ConfigureAwait(false) ?? throw new InvalidOperationException("并发登记的制品未找到。"); }
+        return Snapshot(row);
+    }
+
+    // Lifecycle 的回写：验签结论只记算法与公钥指纹，不保存签名字节或公钥原文。
+    internal async Task<RegistryArtifactSnapshot> RecordAsync(string digest, string state, string signedBy, CancellationToken ct)
+    {
+        if (!RegistryArtifactContent.ValidDigest(digest)) throw RegistryArtifactContent.Invalid("artifact.json#/digest", "制品摘要无效。");
+        if (state is not (RegistryArtifactStates.Installed or RegistryArtifactStates.Progressing or RegistryArtifactStates.Healthy))
+            throw RegistryArtifactContent.Invalid("artifact.json#/state", "回写状态只能是 Installed、Progressing 或 Healthy。");
+        if (!RegistryArtifactContent.ValidDigest(signedBy)) throw RegistryArtifactContent.Invalid("artifact.json#/signedBy", "验签公钥指纹无效。");
+        await using var session = await data.OpenAsync<RegistryDbContext>(ct).ConfigureAwait(false);
+        var row = await session.Context.PluginArtifacts.SingleOrDefaultAsync(row => row.Digest == digest, ct).ConfigureAwait(false)
+            ?? throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+        row.State = state;
+        row.SignatureVerification = JsonSerializer.Serialize(new { algorithm = "ed25519", keyId = signedBy });
+        await session.SaveChangesAsync(ct).ConfigureAwait(false);
         return Snapshot(row);
     }
 

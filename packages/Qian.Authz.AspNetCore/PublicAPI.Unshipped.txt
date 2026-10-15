@@ -1,0 +1,41 @@
+#nullable enable
+Qian.Authz.AspNetCore.AuthzEndpoints
+Qian.Authz.AspNetCore.AuthzPermissionList
+Qian.Authz.AspNetCore.AuthzPermissionList.<Clone>$() -> Qian.Authz.AspNetCore.AuthzPermissionList!
+Qian.Authz.AspNetCore.AuthzPermissionList.AuthzPermissionList(System.Collections.Generic.IReadOnlyList<Qian.Authz.AspNetCore.AuthzPermissionView!>! Items) -> void
+Qian.Authz.AspNetCore.AuthzPermissionList.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Authz.AspNetCore.AuthzPermissionView!>! Items) -> void
+Qian.Authz.AspNetCore.AuthzPermissionList.Equals(Qian.Authz.AspNetCore.AuthzPermissionList? other) -> bool
+Qian.Authz.AspNetCore.AuthzPermissionList.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Authz.AspNetCore.AuthzPermissionView!>!
+Qian.Authz.AspNetCore.AuthzPermissionList.Items.init -> void
+Qian.Authz.AspNetCore.AuthzPermissionView
+Qian.Authz.AspNetCore.AuthzPermissionView.<Clone>$() -> Qian.Authz.AspNetCore.AuthzPermissionView!
+Qian.Authz.AspNetCore.AuthzPermissionView.Action.get -> string!
+Qian.Authz.AspNetCore.AuthzPermissionView.Action.init -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.Allowed.get -> bool
+Qian.Authz.AspNetCore.AuthzPermissionView.Allowed.init -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.AuthzPermissionView(string! Permission, string! Resource, string! Action, Qian.Authz.Abstractions.PermissionRisk Risk, bool StepUp, System.Collections.Generic.IReadOnlyList<string!>! Terminals, bool Allowed, string! Reason) -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.Deconstruct(out string! Permission, out string! Resource, out string! Action, out Qian.Authz.Abstractions.PermissionRisk Risk, out bool StepUp, out System.Collections.Generic.IReadOnlyList<string!>! Terminals, out bool Allowed, out string! Reason) -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.Equals(Qian.Authz.AspNetCore.AuthzPermissionView? other) -> bool
+Qian.Authz.AspNetCore.AuthzPermissionView.Permission.get -> string!
+Qian.Authz.AspNetCore.AuthzPermissionView.Permission.init -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.Reason.get -> string!
+Qian.Authz.AspNetCore.AuthzPermissionView.Reason.init -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.Resource.get -> string!
+Qian.Authz.AspNetCore.AuthzPermissionView.Resource.init -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.Risk.get -> Qian.Authz.Abstractions.PermissionRisk
+Qian.Authz.AspNetCore.AuthzPermissionView.Risk.init -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.StepUp.get -> bool
+Qian.Authz.AspNetCore.AuthzPermissionView.StepUp.init -> void
+Qian.Authz.AspNetCore.AuthzPermissionView.Terminals.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Authz.AspNetCore.AuthzPermissionView.Terminals.init -> void
+override Qian.Authz.AspNetCore.AuthzPermissionList.Equals(object? obj) -> bool
+override Qian.Authz.AspNetCore.AuthzPermissionList.GetHashCode() -> int
+override Qian.Authz.AspNetCore.AuthzPermissionList.ToString() -> string!
+override Qian.Authz.AspNetCore.AuthzPermissionView.Equals(object? obj) -> bool
+override Qian.Authz.AspNetCore.AuthzPermissionView.GetHashCode() -> int
+override Qian.Authz.AspNetCore.AuthzPermissionView.ToString() -> string!
+static Qian.Authz.AspNetCore.AuthzEndpoints.MapQianAuthz(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Authz.AspNetCore.AuthzPermissionList.operator !=(Qian.Authz.AspNetCore.AuthzPermissionList? left, Qian.Authz.AspNetCore.AuthzPermissionList? right) -> bool
+static Qian.Authz.AspNetCore.AuthzPermissionList.operator ==(Qian.Authz.AspNetCore.AuthzPermissionList? left, Qian.Authz.AspNetCore.AuthzPermissionList? right) -> bool
+static Qian.Authz.AspNetCore.AuthzPermissionView.operator !=(Qian.Authz.AspNetCore.AuthzPermissionView? left, Qian.Authz.AspNetCore.AuthzPermissionView? right) -> bool
+static Qian.Authz.AspNetCore.AuthzPermissionView.operator ==(Qian.Authz.AspNetCore.AuthzPermissionView? left, Qian.Authz.AspNetCore.AuthzPermissionView? right) -> bool

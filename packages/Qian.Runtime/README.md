@@ -30,7 +30,7 @@ await runtime.MountAsync(definitions, cancellationToken);
 
 `Provide`、`On`、`Restrict` 自动进入当前 Apply 的效果栈。第三方资源用 `Effect(IDisposable)`、`Effect(Action)` 或 `Effect(Func<ValueTask>)` 登记。卸载按逆序逐项等待，某一撤销失败仍继续其它项并记录失败。服务实例的资源所有权由插件用 `Effect` 显式管理。
 
-`Provide` 返回注册句柄 `IRegistrationHandle<T>`，`Dispose()` 撤销且幂等。手动 `Dispose()` 后，受影响依赖者立即退出 Ready，异步清理和恢复可用 `runtime.WhenIdleAsync(ct)` 等待；`UnmountAsync` 自身会等待清理完成。撤销、替换与 restriction 变更可以来自任意线程（例如表面热重载的文件监视线程）；即使发生在另一次级联清理的中途，装载器也先逆序撤销所有回到 Pending 的旧上下文，再重新 Apply。已经卸载的上下文不能再注册或等待服务。
+`Provide` 返回注册句柄 `IRegistrationHandle<T>`，`Dispose()` 撤销且幂等。手动 `Dispose()` 后，受影响依赖者立即退出 Ready，异步清理和恢复可用 `runtime.WhenIdleAsync(ct)` 等待；`UnmountAsync` 自身会等待清理完成。撤销、替换与 restriction 变更可以来自任意线程（例如表面热重载的文件监视线程）；即使发生在另一次级联清理的中途，装载器也先逆序撤销所有回到 Pending 的旧上下文，再重新 Apply。依赖若在某个条目的 Apply 尚未结束时被撤销或替换，这次 Apply 无论成败都作废：逆序撤销后回到 Pending，键再就绪时重新 Apply，不记为 Failed；Apply 自己的注册或 restriction 改变了所注入键的可见性时仍为 Failed。已经卸载的上下文不能再注册或等待服务。
 
 `Replace(instance)` 在原注册位原子替换实例：撤销与再登记在装载器同一把锁内完成，`Inject`、`TryInject`、keyed service 与 `List` 只会看到旧实例或新实例，不会看到缺失；scope、注册顺序、独占性与效果栈位置不变。注册身份随之改变，以 `inject` 依赖该键的条目与撤销后再登记一样回到 Pending 并重新 Apply，拿到新实例。句柄已撤销或上下文已卸载时抛 `ObjectDisposedException`。声明式表面热重载用它替换内容改变的目录项。
 
