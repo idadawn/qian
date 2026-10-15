@@ -170,3 +170,5 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 `CompileDocumentAsync(pluginId)` 是可信构建流程的完整组件导出端口，不依赖当前 HTTP 用户或运行时权限裁剪，也没有公开 HTTP 路由。客户宿主的版本制品现已同时包含生成能力契约及实际 REST 路由契约；有限权限用户看不到创建接口，但发布基线仍保留完整操作，删掉原生路径会在挂载前被拒绝。
 
 `MapQianCapabilities` 的端点绑定默认为 capabilities 条目，可用重载指定真实条目。宿主必须先注册并安装 SDK 插件端点中间件；目录端点过滤器会拒绝缺失的中间件证据。业务宿主需使用同一绑定与中间件保护实际入口，不能只在文档里隐藏路径。参考客户 REST 路由已绑定到实际可执行能力，因此 restrict 后文档和直接访问都拒绝。
+
+平台运营端点可使用 Definition 的 PlatformHttpContract 标注归属，CompileDocumentAsync 将其纳入完整制品 OpenAPI；它不授予运行权限，也不进入租户可见的 GetDocumentAsync。租户业务端点仍使用 PluginEndpointBinding 与实际 Registry 挂载门禁（TEN-006）。

@@ -114,3 +114,12 @@ static Qian.Tenancy.TenantProvisionStep.operator ==(Qian.Tenancy.TenantProvision
 static readonly Qian.Tenancy.TenantProvisioning.Key -> Qian.Runtime.ServiceKey
 static readonly Qian.Tenancy.TenantProvisioning.MembershipKey -> Qian.Runtime.ServiceKey
 static readonly Qian.Tenancy.TenantProvisioning.NotificationKey -> Qian.Runtime.ServiceKey
+Qian.Tenancy.CreateTenant.Administrator.get -> Qian.Tenancy.TenantAdministrator?
+Qian.Tenancy.CreateTenant.Administrator.init -> void
+Qian.Tenancy.ITenantOperations
+Qian.Tenancy.ITenantOperations.ListAsync(int skip, int take, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantDescriptor!>!>
+Qian.Tenancy.ITenantOperations.UpdateAsync(System.Guid id, Qian.Tenancy.UpdateTenant! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantDescriptor!>
+Qian.Tenancy.TenantDescriptor.Revision.get -> uint
+Qian.Tenancy.TenantDescriptor.Revision.init -> void
+Qian.Tenancy.TenantOperations
+static readonly Qian.Tenancy.TenantOperations.Key -> Qian.Runtime.ServiceKey

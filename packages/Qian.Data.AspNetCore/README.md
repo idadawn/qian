@@ -39,4 +39,4 @@ app.MapQianData();                                  // 或分别 MapQianDataType
 
 ## 已知限制
 
-不提供编辑未保存档案时的连通测试。连通测试会从平台出网：`QianDataConnectionOptions.Egress` 在进程内拒绝回环、链路本地与云元数据等地址，生产环境仍要用 NetworkPolicy 或出口代理限定可达网段，见 [Qian.Data](../Qian.Data/README.md)。
+不提供编辑未保存档案时的连通测试。连通测试会从平台出网：`QianDataConnectionOptions.Egress` 在进程内拒绝回环、链路本地、云元数据与 K3s 集群网段等地址（开发环境缺省放行回环），生产环境仍要用 NetworkPolicy 或出口代理限定可达网段，见 [Qian.Data](../Qian.Data/README.md)。
