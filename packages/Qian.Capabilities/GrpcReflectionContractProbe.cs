@@ -31,7 +31,7 @@ public sealed class GrpcReflectionContractProbe : IGrpcContractProbe
         var received = new Dictionary<string, FileDescriptorProto>(StringComparer.Ordinal); long total = 0;
         foreach (var service in services)
         {
-            await call.RequestStream.WriteAsync(new ServerReflectionRequest { FileContainingSymbol = service }, cancellationToken).ConfigureAwait(false);
+            await SendAsync(call, new ServerReflectionRequest { FileContainingSymbol = service }, cancellationToken).ConfigureAwait(false);
             if (!await call.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false)) throw new InvalidOperationException("反射服务提前结束。");
             var response = call.ResponseStream.Current;
             if (response.MessageResponseCase == ServerReflectionResponse.MessageResponseOneofCase.ErrorResponse)
@@ -55,5 +55,16 @@ public sealed class GrpcReflectionContractProbe : IGrpcContractProbe
         while (await call.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false)) throw new InvalidOperationException("反射服务返回了额外响应。");
         var actual = new FileDescriptorSet(); actual.File.AddRange(received.Values.OrderBy(file => file.Name, StringComparer.Ordinal));
         return await _compiler.CompareRuntimeDescriptorsAsync(bytes, actual.ToByteArray(), cancellationToken).ConfigureAwait(false);
+    }
+    // 服务端读请求前就结束调用（如认证拒绝后立即回 401 并重置流）时，写请求可能先于调用状态就绪而失败：Grpc.Net.Client 报 Cancelled，
+    // 或直接抛传输层 IOException。调用方没有取消时改读响应流，它会等到调用结束并抛出最终状态（如 Unauthenticated）；读不到失败状态时仍报原异常。
+    private static async Task SendAsync(AsyncDuplexStreamingCall<ServerReflectionRequest, ServerReflectionResponse> call, ServerReflectionRequest request, CancellationToken cancellationToken)
+    {
+        try { await call.RequestStream.WriteAsync(request, cancellationToken).ConfigureAwait(false); }
+        catch (Exception error) when (!cancellationToken.IsCancellationRequested && error is RpcException { StatusCode: StatusCode.Cancelled } or IOException)
+        {
+            await call.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
     }
 }
