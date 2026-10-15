@@ -4,8 +4,14 @@ metadata:
   name: qian-pm-board
 spec:
   replicas: 1
+  # 滚动更新（S1-PM-005）：新 Pod 就绪（首版看板生成完）后才停旧 Pod；新 Pod 拉不到镜像或排不上时，旧版照常提供看板。
+  # 前提是 qd 的 CPU 请求余量放得下第二个 Pod：2026-10-16 qd 已请求 7980m / 8000m，所以三个容器各只请求 5m
+  #（实测 git-sync 4m、builder 1m、nginx 1m），一个 Pod 共 15m。余量不足时新 Pod 停在 Pending，不影响旧版。
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: qian-pm-board
@@ -56,7 +62,7 @@ spec:
               mountPath: /etc/git-secret
               readOnly: true
           resources:
-            requests: { cpu: 10m, memory: 32Mi }
+            requests: { cpu: 5m, memory: 32Mi }
             limits: { cpu: 200m, memory: 128Mi }
           securityContext:
             allowPrivilegeEscalation: false
@@ -78,7 +84,7 @@ spec:
               mountPath: /opt/builder
               readOnly: true
           resources:
-            requests: { cpu: 10m, memory: 32Mi }
+            requests: { cpu: 5m, memory: 32Mi }
             limits: { cpu: 500m, memory: 128Mi }
           securityContext:
             allowPrivilegeEscalation: false
@@ -108,7 +114,7 @@ spec:
             httpGet: { path: /healthz, port: http }
             periodSeconds: 30
           resources:
-            requests: { cpu: 10m, memory: 16Mi }
+            requests: { cpu: 5m, memory: 16Mi }
             limits: { cpu: 100m, memory: 64Mi }
           securityContext:
             allowPrivilegeEscalation: false

@@ -25,3 +25,6 @@ jobs:
           name: pm-board
           path: ${{ runner.temp }}/pm-board
           retention-days: 14
+      # 看板 Pod 的构建容器（deploy/pm-board/builder.py）的自测，只用标准库（S1-PM-005）
+      - name: 看板 builder 自测
+        run: python3 -m unittest discover -s deploy/pm-board -p 'test_*.py' -v
