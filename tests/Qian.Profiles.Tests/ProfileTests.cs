@@ -139,7 +139,10 @@ public sealed class ProfileTests
             }
             foreach (var file in item.GetProperty("files").EnumerateObject())
             {
-                var target = Path.Combine(Directory, file.Name); System.IO.Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.WriteAllText(target, file.Value.GetString());
+                var target = Path.Combine(Directory, file.Name); System.IO.Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                // 字符串按 UTF-8 写入；{"base64": …} 按原样字节写入，用于 BOM 与其他编码。
+                if (file.Value.ValueKind == JsonValueKind.Object) File.WriteAllBytes(target, Convert.FromBase64String(file.Value.GetProperty("base64").GetString()!));
+                else File.WriteAllText(target, file.Value.GetString());
             }
             if (item.TryGetProperty("missingHome", out var absent) && absent.GetBoolean()) File.Delete(Path.Combine(Directory, "home/qian.patch.yml"));
             Options = new ProfileLoadOptions { WorkingDirectory = Directory, Profile = "test", HomeDirectory = "home", IncludeHomePatch = item.GetProperty("home").GetBoolean(), Patches = item.GetProperty("patches").EnumerateArray().Select(v => v.GetString()!).ToArray(),

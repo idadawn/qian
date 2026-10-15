@@ -14,7 +14,7 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
   const directory=mkdtempSync(path.join(os.tmpdir(),'qian-profile-'));
   try{
    cpSync(path.join(root,'tck/profiles/base'),directory,{recursive:true});
-   for(const[file,content]of Object.entries(item.files)){mkdirSync(path.dirname(path.join(directory,file)),{recursive:true});writeFileSync(path.join(directory,file),content);}
+   for(const[file,content]of Object.entries(item.files)){mkdirSync(path.dirname(path.join(directory,file)),{recursive:true});writeFileSync(path.join(directory,file),typeof content==='string'?content:Buffer.from(content.base64,'base64'));}
    if(item.missingHome)rmSync(path.join(directory,'home/qian.patch.yml'));
    const result=loadProfile({workingDirectory:directory,profile:'test',patches:item.patches,homeDirectory:'home',includeHomePatch:item.home,scopePatches:item.scopePatches});
    assert.equal(result.isValid,item.expect,item.name+': '+JSON.stringify(result));
