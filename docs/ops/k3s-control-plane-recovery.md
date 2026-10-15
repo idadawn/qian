@@ -193,15 +193,15 @@ for i in $(seq 1 288); do date -u +%FT%TZ; systemctl show k3s -p NRestarts; kube
 
 2026-10-15T12:38Z复核，11:44:24至11:44:31 UTC出现9条集中慢请求（114至433ms），11:54:11另有1条239ms。qd及worker agent没有重启、readyz和业务检查正常，WAL慢同步与ReadIndex重试也未出现，但不能将“不成片”改成“只有秒级才算”，故该轮仍未通过。最新恢复起点为2026-10-15T11:59:15.792146Z，最早截止2026-10-16T11:59:15.792146Z（北京时间10-16 19:59:15.792146）；未满新窗口不勾验收。
 
-## 9 待批准的文档站缓存隔离试验
+## 9 已批准的文档站缓存隔离试验
 
-此节与[补丁提案](proposals/dep007-docs-tmpfs.patch)只供审核，尚未修改部署清单或现网。本轮验收指令要求只读检查，应用前须由产品负责人放行；方案 B 的控制面拓扑决策不重开。
+产品负责人已在聊天中回复「批准试验并完成验收」。本次将[已审核补丁](proposals/dep007-docs-tmpfs.patch)应用到部署清单，经 CI 全绿合并后由 Argo CD 自动同步；实际部署证据和新验收起点另行回写。方案 B 的控制面拓扑决策不重开。
 
 I/O取样将高峰中的git/git-sync进程对应到`qian-tools/qian-docs-site`的磁盘`emptyDir`。同步22:28:38至22:29:24 UTC与75条告警重合；11:44:34 UTC另一个五秒样本中NVMe平均await为104.13ms，也与新告警邻近。其他同步曾有大批写入却没有etcd告警，因此这是隔离试验的依据，尚不是单一根因的证明。父进程回收子进程后可能包含子进程I/O计数，不能相加当成设备写入总量。
 
-拟将可从`docs-site`分支重建的检出缓存从根盘移到内存，参数如下：
+已批准将可从`docs-site`分支重建的检出缓存从根盘移到内存，参数如下：
 
-| 项目 | 现网 | 提案 |
+| 项目 | 变更前基线 | 已批准目标 |
 |---|---|---|
 | `repo.emptyDir` | 默认磁盘；实测1038102528字节，约990Mi | `medium: Memory`、`sizeLimit: 4Gi` |
 | git-sync内存请求 / 上限 | 32Mi / 256Mi | 2Gi / 5Gi |
@@ -211,6 +211,6 @@ I/O取样将高峰中的git/git-sync进程对应到`qian-tools/qian-docs-site`�
 
 2026-10-15T12:46Z实测qd可用内存约332Gi、swap为0；节点内存请求34614Mi（9%），CPU请求7970m（99%），`qian-tools`没有ResourceQuota。新旧Pod的CPU请求相同，按现有Recreate策略先释放旧Pod，不额外挤占CPU；新增内存请求约2016Mi。内存卷计入写入容器的内存额度，所以必须同时上调git-sync预算，不能只改`medium`，依据见[Kubernetes emptyDir文档](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir)。
 
-补丁已完成Kustomize渲染、客户端清单校验与可应用性检查；这些检查不代替现网试验。批准后将补丁应用到`deploy/docs-site/deployment.yaml`与对应README，走CI全绿、合并、Argo CD自动同步；仅观察既有prune/selfHeal设置。现有Recreate策略会让文档站在首次Git同步期间短暂不可用，时长以现场为准；既有一次更新约46秒，不作为冷启动保证。
+补丁已完成Kustomize渲染、客户端清单校验与可应用性检查；这些检查不代替现网试验。补丁应用到`deploy/docs-site/deployment.yaml`与对应README，走CI全绿、合并、Argo CD自动同步；2026-10-15T14:13Z核实该应用既有prune=false/selfHeal=true，保持原值。现有Recreate策略会让文档站在首次Git同步期间短暂不可用，时长以现场为准；既有一次更新约46秒，不作为冷启动保证。
 
 部署后核对新Pod Ready、实际卷为tmpfs、正式站点与预览可访问，再比较正常发布时的根盘写入与etcd告警。若出现OOM、同步失败或站点不能恢复，通过GitOps撤回该配置提交。应用后的稳定性仍从首个正常采样重新计满24小时，不能以Pod Ready冒充完成。
