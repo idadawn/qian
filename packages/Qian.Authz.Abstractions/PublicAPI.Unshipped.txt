@@ -103,3 +103,20 @@ override Qian.Authz.Abstractions.SuperadminAccess.ToString() -> string!
 static Qian.Authz.Abstractions.SuperadminAccess.operator !=(Qian.Authz.Abstractions.SuperadminAccess? left, Qian.Authz.Abstractions.SuperadminAccess? right) -> bool
 static Qian.Authz.Abstractions.SuperadminAccess.operator ==(Qian.Authz.Abstractions.SuperadminAccess? left, Qian.Authz.Abstractions.SuperadminAccess? right) -> bool
 static readonly Qian.Authz.Abstractions.AuthzDefinition.SuperadminBypassKey -> Qian.Runtime.ServiceKey
+Qian.Authz.Abstractions.EffectiveGrant
+Qian.Authz.Abstractions.EffectiveGrant.<Clone>$() -> Qian.Authz.Abstractions.EffectiveGrant!
+Qian.Authz.Abstractions.EffectiveGrant.Allowed.get -> bool
+Qian.Authz.Abstractions.EffectiveGrant.Allowed.init -> void
+Qian.Authz.Abstractions.EffectiveGrant.Deconstruct(out Qian.Authz.Abstractions.PermissionDefinition! Definition, out bool Allowed, out string! Reason) -> void
+Qian.Authz.Abstractions.EffectiveGrant.Definition.get -> Qian.Authz.Abstractions.PermissionDefinition!
+Qian.Authz.Abstractions.EffectiveGrant.Definition.init -> void
+Qian.Authz.Abstractions.EffectiveGrant.EffectiveGrant(Qian.Authz.Abstractions.PermissionDefinition! Definition, bool Allowed, string! Reason) -> void
+Qian.Authz.Abstractions.EffectiveGrant.Equals(Qian.Authz.Abstractions.EffectiveGrant? other) -> bool
+Qian.Authz.Abstractions.EffectiveGrant.Reason.get -> string!
+Qian.Authz.Abstractions.EffectiveGrant.Reason.init -> void
+Qian.Authz.Abstractions.IAuthzService.ListEffectivePermissionsAsync(Kun.Authorization.AuthorizationSubject! subject, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.EffectiveGrant!>!>
+override Qian.Authz.Abstractions.EffectiveGrant.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.EffectiveGrant.GetHashCode() -> int
+override Qian.Authz.Abstractions.EffectiveGrant.ToString() -> string!
+static Qian.Authz.Abstractions.EffectiveGrant.operator !=(Qian.Authz.Abstractions.EffectiveGrant? left, Qian.Authz.Abstractions.EffectiveGrant? right) -> bool
+static Qian.Authz.Abstractions.EffectiveGrant.operator ==(Qian.Authz.Abstractions.EffectiveGrant? left, Qian.Authz.Abstractions.EffectiveGrant? right) -> bool

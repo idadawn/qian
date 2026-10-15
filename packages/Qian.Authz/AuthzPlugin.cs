@@ -6,20 +6,43 @@ using Kun.Core.MultiTenancy;
 using Microsoft.Extensions.DependencyInjection;
 using Qian.Authz.Abstractions;
 using Qian.Data;
+using Qian.Plugin.Sdk;
+using Qian.Registry;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
+using Qian.Surfaces.Abstractions;
 
 namespace Qian.Authz;
 
 /// <summary>
 /// Authz Provider 的组件入口（global scope）：提供 ctx.Authz 判定服务（真实 RBAC，宿主装配 Kun.Caching 时缓存主体快照）、活动权限登记表与
 /// qian.authz.resource-type/v1 扩展点，以及平台超管显式旁路（<see cref="ISuperadminBypass"/>）：未配置 platformRole 时旁路端口一律拒绝。
+/// Apply 时持久化并登记组件的权限目录、注册命令 PEP，并监听 tenant/provisioned 为新租户实例化内置角色与各组件的默认策略（组件规格 §6.3）。
 /// 数据与字段权限编译属 S2，本阶段两个端口一律 fail-closed。
 /// </summary>
 public sealed class AuthzPlugin : IQianPlugin
 {
+    private const string Actor = "qian.authz";
+    private static readonly JsonElement Nothing = JsonDocument.Parse("null").RootElement.Clone();
+    private readonly IReadOnlyList<PermissionCatalog> _catalogs;
+    private readonly bool _installed;
+
+    /// <summary>不预置目录：组件经 <c>Authz.Permissions</c> 自行登记活动声明。</summary>
+    public AuthzPlugin() : this([], false) { }
+    /// <summary>独立宿主：目录由宿主从 PermissionAttribute 或随包 metadata 编译后传入（ADR-019 D19.4）。</summary>
+    public AuthzPlugin(IReadOnlyList<PermissionCatalog> catalogs) : this(catalogs, false) { }
+    private AuthzPlugin(IReadOnlyList<PermissionCatalog> catalogs, bool installed)
+    {
+        ArgumentNullException.ThrowIfNull(catalogs);
+        if (catalogs.Any(catalog => catalog is null) || catalogs.Select(catalog => catalog.PluginId).Distinct(StringComparer.Ordinal).Count() != catalogs.Count)
+            throw new ArgumentException("每个组件只能有一份权限目录。", nameof(catalogs));
+        _catalogs = Array.AsReadOnly(catalogs.ToArray()); _installed = installed;
+    }
+    /// <summary>平台宿主：Apply 时从 ctx.Registry 的预装组件读取 metadata/permissions.json 与 roles.json（PRD 7.5）；宿主须登记 ISurfaceReader。</summary>
+    public static AuthzPlugin FromInstalledComponents() => new([], true);
+
     /// <inheritdoc />
-    public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key];
+    public IReadOnlyList<ServiceKey> Inject => _installed ? [DataDefinition.Key, RegistryDefinition.Key] : [DataDefinition.Key];
 
     /// <inheritdoc />
     public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
@@ -46,10 +69,40 @@ public sealed class AuthzPlugin : IQianPlugin
             platform = new PostgresPlatformRoleStore(ctx.Data(), tenant, role);
             await platform.ValidateAsync(ct).ConfigureAwait(false);
         }
+        // 目录按组件版本不可变（同版本内容不同返回 CONFLICT，Apply 失败）；活动登记随本组件卸载撤销，持久目录与租户授予保留。
+        var catalogs = _installed ? Installed(ctx) : _catalogs;
+        var store = new PostgresPermissionCatalogStore(ctx.Data());
+        foreach (var catalog in catalogs)
+        {
+            await store.PutAsync(catalog, ct).ConfigureAwait(false);
+            ctx.Effect(registry.Register(catalog.Version, catalog.Permissions));
+        }
+        var roles = new PostgresTenantRoleStore(ctx.Data(), tenant);
+        var components = Array.AsReadOnly(catalogs.Select(catalog => (catalog.PluginId, catalog.Version)).ToArray());
+        ctx.On(SurfaceHookEvents.TenantProvisioned, DispatchMode.Serial, (Func<HookNotification, ValueTask<JsonElement>>)(notification => ProvisionAsync(notification)));
+        CommandPolicies.Register(ctx, CommandPolicyKind.Authorization, new RbacCommandPolicy(checker).Handle);
         ctx.Provide<ISuperadminBypass>(AuthzDefinition.SuperadminBypassKey, new SuperadminBypassService(ctx.Data(), tenant, registry, platform, ctx));
         ctx.Provide(AuthzDefinition.PermissionsKey, registry);
         ctx.Provide<IResourceTypeRegistry>(AuthzDefinition.ResourceTypesKey, registry);
         ctx.Provide<IAuthzService>(AuthzDefinition.Key, new AuthzService(checker));
+
+        // 只接受 qian.tenancy 在目标租户 scope 派发、主体即该租户的通知（与 hooks 桥接同一校验）；在该租户上下文中一个事务完成内置角色与默认策略。
+        async ValueTask<JsonElement> ProvisionAsync(HookNotification notification)
+        {
+            var source = notification.Source;
+            if (source.Entry.Plugin != "qian.tenancy" || source.Scope.Kind != "tenant" || notification.Subject != source.Scope.Id) throw Invalid();
+            using var scope = tenant.BeginScope(notification.Subject);
+            await roles.ProvisionAsync(components, Actor, notification.CancellationToken).ConfigureAwait(false);
+            return Nothing;
+        }
+    }
+
+    private static PermissionCatalog[] Installed(IPluginContext ctx)
+    {
+        var compiler = new PermissionCatalogCompiler(ctx.Services.GetRequiredService<ISurfaceReader>());
+        return ctx.Registry().GetInstalledComponents()
+            .Where(component => component.Metadata.Keys.Any(path => path.Split('/')[^1] == "permissions.json"))
+            .Select(compiler.FromInstalled).ToArray();
     }
 
     private static QianErrorException Invalid() => new(new QianError(PlatformErrors.InputInvalid));
@@ -68,6 +121,8 @@ internal sealed class AuthzService(RbacPermissionChecker checker) : IAuthzServic
     public ValueTask<IReadOnlyList<string>> ListPermissionsAsync(AuthorizationSubject subject, CancellationToken cancellationToken = default) =>
         checker.ListPermissionsAsync(subject, cancellationToken);
     public ValueTask<PermissionDecision> ExplainAsync(PermissionRequest request, CancellationToken cancellationToken = default) => checker.ExplainAsync(request, cancellationToken);
+    public ValueTask<IReadOnlyList<EffectiveGrant>> ListEffectivePermissionsAsync(AuthorizationSubject subject, CancellationToken cancellationToken = default) =>
+        checker.ListEffectivePermissionsAsync(subject, cancellationToken);
 
     private sealed class DenyAllDataPermissions : IDataPermissionFilter
     {

@@ -18,7 +18,7 @@ Kun 每次 Send 建立新的 DI scope。SDK 在这个 scope 中通过 IDataServi
 
 写命令的 handler、领域通知与保存都运行在 SDK 开启的事件来源作用域（Qian.Events.Abstractions 的 EventEnvelopeScope）内：producer 是能力所属组件，actor 是已验证主体（有委托时 actor 为代理、on_behalf_of 为被代表人），causation_id 是本次调用 id，traceparent 与调用的 trace 一致。这样经 Outbox 发出的集成事件都带完整的 v1 信封；作用域外发布在运行时被拒绝，编译期另有 QIAN0006 拦截（见 [Qian.Events](../Qian.Events/README.md)）。
 
-CommandPolicies 只允许对应的 qian.tenancy、qian.authz、qian.audit 生产方登记监听器；服务键、监听器和取消资源归属同一 Effect 生命周期。执行前要求三种存活登记，进入链尾前要求三种监听器实际参与；重复调用 next 不能再次执行业务。卸载撤销后新请求拒绝，进行中的数据库操作可取消并回滚。租户策略读取真实主档，RBAC 策略读取真实授权并核对 OAuth scope，AuditPlugin 根据真实生成 Schema 写同事务审计。当前 RbacCommandPolicyPlugin 仅提供命令 PEP，完整 Authz 数据/字段策略与管理服务仍待完成。
+CommandPolicies 只允许对应的 qian.tenancy、qian.authz、qian.audit 生产方登记监听器；服务键、监听器和取消资源归属同一 Effect 生命周期。执行前要求三种存活登记，进入链尾前要求三种监听器实际参与；重复调用 next 不能再次执行业务。卸载撤销后新请求拒绝，进行中的数据库操作可取消并回滚。租户策略读取真实主档，RBAC 策略读取真实授权并核对 OAuth scope，AuditPlugin 根据真实生成 Schema 写同事务审计。RBAC 策略由 Qian.Authz 的 `AuthzPlugin` 在 Apply 中登记（只含命令 PEP 的子插件为 `RbacCommandPolicyPlugin`）；完整 Authz 数据/字段策略与管理服务仍待完成。
 
 宿主须先装身份适配器，再装数据默认服务，防止匿名兜底先占用 Kun 当前用户端口。SDK 同时核验 Kun 与 Qian 身份一致，并复制主体快照；不通过替换成宽松策略修复装配错误。参考宿主的 S2S 验签与主体映射已经过真实 HTTP 回归，但不替代真实 Qian Identity 交互登录。
 
