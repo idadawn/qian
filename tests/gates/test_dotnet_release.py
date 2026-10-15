@@ -1,7 +1,7 @@
 """包族锁步发布核对 scripts/dotnet_release.py 的自测（S1-RT-014）。
 
 运行：python3 -m unittest discover -s tests/gates -v
-制品核对用合成的 .nupkg 验证，不需要 dotnet 与网络；真实打包、私有源推送与消费者还原在 .github/workflows/dotnet-release.yml 里执行。
+制品与包源核对用合成数据验证，不需要 dotnet 与网络；真实打包、推送、包源核对与消费者还原在 .github/workflows/dotnet-release.yml 里执行。
 """
 from __future__ import annotations
 
@@ -91,6 +91,31 @@ class PackageVerificationTests(unittest.TestCase):
         message = self.failures()
         self.assertIn("Qian.Runtime 的许可证不是 Apache-2.0", message)
         self.assertIn("GitHub Packages 无法关联到仓库", message)
+
+
+class FeedVerificationTests(unittest.TestCase):
+    REPOSITORY = "idadawn/qian"
+
+    def record(self, visibility="public", repository=REPOSITORY, versions=(VERSION,)):
+        return {"visibility": visibility, "repository": repository, "versions": list(versions)}
+
+    def test_every_package_has_the_version_is_linked_and_matches_repository_visibility(self):
+        records = {package: self.record() for package in FAMILY}
+        self.assertEqual(FAMILY, dotnet_release.check_feed(FAMILY, VERSION, records, self.REPOSITORY, "public"))
+
+    def test_missing_package_wrong_link_visibility_or_version_fail(self):
+        records = {
+            "Qian.Runtime": None,
+            "Qian.Plugin.Sdk": self.record(repository="someone/fork", versions=("0.0.9",)),
+            "Qian.Plugin.Sdk.Generators": self.record(visibility="private"),
+        }
+        with self.assertRaises(dotnet_release.Failure) as caught:
+            dotnet_release.check_feed(FAMILY, VERSION, records, self.REPOSITORY, "public")
+        message = str(caught.exception)
+        self.assertIn("GitHub Packages 里没有 Qian.Runtime", message)
+        self.assertIn("Qian.Plugin.Sdk 关联的仓库是 someone/fork", message)
+        self.assertIn("Qian.Plugin.Sdk 没有 0.1.0 版本", message)
+        self.assertIn("Qian.Plugin.Sdk.Generators 的可见性是 private，与仓库的 public 不一致", message)
 
 
 class VersionTests(unittest.TestCase):
