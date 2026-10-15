@@ -1,13 +1,14 @@
 # Qian 项目管理（任务即文件）
 
-> 一句话：**任务是 `pm/tasks/` 下的 Markdown 文件，git 是唯一真相源；看板 `pm/index.html` 和进度表 `pm/STATUS.md` 由脚本生成。** 人和编码代理（Codex、Claude Code 等）都用同一套文件、同一套命令，没有第二个系统。
+> 一句话：**任务是 `pm/tasks/` 下的 Markdown 文件，git 是唯一真相源；看板与进度表由脚本按任务文件生成，不进 git。** 人和编码代理（Codex、Claude Code 等）都用同一套文件、同一套命令，没有第二个系统。
 
 ## 1. 为什么这么做
 
 - 文档、任务、代码在同一个仓库里，一次提交同时改需求与任务状态，可评审、可回溯。
 - 编码代理最擅长读写文件与跑命令；给它们一个网页后台反而用不起来。
-- 看板是纯静态页面，不需要服务器与账号：双击打开、放到 GitHub Pages 或任何静态托管都行。
+- 看板是纯静态页面，不需要服务器与账号：集群里按 `main` 自动生成，本地生成后也能双击打开。
 - 进度不是手填的，是从任务状态算出来的，所以不会和实际脱节。
+- 生成物不进 git（S1-PM-004）：它们汇总全部任务，若随每个 PR 提交，任何两个改了任务的 PR 都会在它们上冲突。
 
 ## 2. 目录
 
@@ -16,9 +17,9 @@ pm/
   README.md        本文
   tasks/           任务文件，一个任务一个文件：<id>.md
   _template.html   看板模板（改样式在这里）
-  index.html       生成：看板页面（数据已内嵌，可离线打开）
-  tasks.json       生成：任务数据
-  STATUS.md        生成：进度概览（GitHub 上直接可读）
+  index.html       生成，不进 git：看板页面（数据已内嵌，可离线打开）
+  tasks.json       生成，不进 git：任务数据
+  STATUS.md        生成，不进 git：进度概览
 scripts/
   pm.py            校验 / 生成 / 新建 / 改状态
   check_docs.py    文档门禁（禁用词、表格、链接）
@@ -80,17 +81,17 @@ id 规则：`S<阶段>-<领域>-<三位序号>`。领域代码与 PRD §07 小�
 
 | 想做什么 | 命令 |
 |---|---|
-| 看进度 | 打开 `pm/index.html`，或在 GitHub 上看 `pm/STATUS.md` |
-| 找能开始的任务 | 看板「待办」列已按可做先后排序（绿色「可开始」在前，之后是「第 n 批」）；`pm/STATUS.md` 的「接下来可做」表；或 `python3 scripts/pm.py list --status todo` |
+| 看进度 | 集群看板 <http://10.78.1.161:30810/>（进度表在其 `/STATUS.md`）；或本地 `python3 scripts/pm.py build` 后双击 `pm/index.html`；或 `python3 scripts/pm.py stats` 打印进度表 |
+| 找能开始的任务 | 看板「待办」列已按可做先后排序（绿色「可开始」在前，之后是「第 n 批」）；进度表的「接下来可做」表；或 `python3 scripts/pm.py list --status todo` |
 | 认领并开始 | `python3 scripts/pm.py set S1-RT-001 --status doing --owner 你的名字 --by 你的名字 --note "开始"` |
 | 记录进展 | `python3 scripts/pm.py set S1-RT-001 --by 你的名字 --note "runtime 骨架可编译"` |
 | 提交评审 / 完成 | `--status review` / `--status done`，并把「验收」里完成的项打勾 `[x]` |
 | 卡住了 | `--status blocked --note "等 S1-DEC-002 拍板"` |
 | 新建任务 | `python3 scripts/pm.py add --by 你的名字 --stage S1 --area FILE --title "..." --priority P0 --wave 2 --estimate 2d --depends S1-RT-001 --ref docs/prd/07-s1-foundation.md#7.7` |
 | 校验 | `python3 scripts/pm.py validate` |
-| 重新生成看板与进度表 | `python3 scripts/pm.py build` |
+| 本地生成看板与进度表 | `python3 scripts/pm.py build`（写到 `pm/`，已被 `.gitignore` 忽略；`--out 目录` 写到别处） |
 
-**每次改了任务文件，都要 `build` 一次并把生成物一起提交。** CI 会用 `check-fresh` 检查生成物是否过期，过期会失败。日志必须署名：`set` / `add` 带 `--by 你的名字`，或设置环境变量 `PM_ACTOR=你的名字`；两者都没有时命令报错，`validate` 也拒绝署名为 someone 的日志行（S1-DEC-019 R71）。任务先建档、认领再交付，不要在创建任务的提交里直接写 done。
+**生成物不进 git（S1-PM-004）。** 改了任务文件只提交任务文件，跑一遍 `validate` 即可；不要提交 `pm/index.html`、`pm/tasks.json`、`pm/STATUS.md`。CI 校验任务文件，并把生成的看板上传为工作流产物 `pm-board`。早先开出的分支合入 `main` 时，若这三个文件出现「一边修改、一边删除」的冲突，直接 `git rm` 它们。日志必须署名：`set` / `add` 带 `--by 你的名字`，或设置环境变量 `PM_ACTOR=你的名字`；两者都没有时命令报错，`validate` 也拒绝署名为 someone 的日志行（S1-DEC-019 R71）。任务先建档、认领再交付，不要在创建任务的提交里直接写 done。
 
 提交信息里带任务 id，例如 `feat(runtime): ctx.Effect 逆序释放 [S1-RT-001]`，这样从任务能追到提交，从提交能追到任务。
 
@@ -105,7 +106,7 @@ id 规则：`S<阶段>-<领域>-<三位序号>`。领域代码与 PRD §07 小�
 
 ## 6. 给编码代理的约定
 
-仓库根目录的 `AGENTS.md` 是代理的入口说明，和本文一致。代理开始一个任务前先 `set --status doing --owner <代理名>`，结束时更新验收勾选与状态，并在同一个提交里带上 `build` 生成物。代理不得自行新增领域代码或修改 `pm/_template.html` 以外的生成文件。
+仓库根目录的 `AGENTS.md` 是代理的入口说明，和本文一致。代理开始一个任务前先 `set --status doing --owner <代理名>`，结束时更新验收勾选与状态并跑 `validate`，只提交任务文件，不提交 `build` 生成物。代理不得自行新增领域代码；看板的样式与结构只在模板 `pm/_template.html` 里改。
 
 ## 7. 怎么下发任务
 
@@ -122,7 +123,7 @@ python3 scripts/pm.py set <ID> --status doing --owner <你的代理名> --by <�
 按任务 refs 指向的文档实现，验收条目逐条满足并在任务文件里打勾 [x]。
 在分支 feat/<ID>-<简短英文> 上工作，每次提交信息末尾带 [<ID>]。
 完成后：python3 scripts/pm.py set <ID> --status review --by <你的代理名> --note "一句话总结"，
-再 python3 scripts/pm.py build 并把生成物一起提交，然后开 PR，描述里列出验收完成情况与未决问题。
+再 python3 scripts/pm.py validate 并提交任务文件（生成物不进 git），然后开 PR，描述里列出验收完成情况与未决问题。
 遇到需要人拍板的问题：新建 DEC 任务（pm.py add --area DEC --type decision --wave 0），把本任务标 blocked，不要自行改设计。
 ```
 
@@ -150,7 +151,7 @@ python3 scripts/pm.py set <ID> --status doing --owner <你的代理名> --by <�
 
 ```text
 读 AGENTS.md。为下面的需求建任务并拆到可在 1–5 天完成的粒度，refs 指向 PRD 对应小节，depends 写清前置，
-然后 python3 scripts/pm.py build 并提交，不要开始实现：
+然后 python3 scripts/pm.py validate 并提交任务文件，不要开始实现：
 <需求描述>
 ```
 
@@ -158,15 +159,15 @@ python3 scripts/pm.py set <ID> --status doing --owner <你的代理名> --by <�
 
 ### 7.4 节奏
 
-- 每天：看 `pm/STATUS.md` 或看板首页的进度条与「进行中」；评审待合并的 PR；处理 `blocked` 与 DEC 任务。
+- 每天：看集群看板首页的进度条与「进行中」（或看板的 `/STATUS.md`）；评审待合并的 PR；处理 `blocked` 与 DEC 任务。
 - 每周：`python3 scripts/pm.py stats` 看各波次与领域进度；把拆得太大的任务拆开、过时的标 `done` 并在日志里写「作废：原因」；重新排优先级只改 `priority` 字段。
 - 不开第二套系统：不用 GitHub Issues、不用聊天记录当需求；要讨论就在 PR 或任务文件的进度日志里留痕。
 
 ## 8. 托管看板（可选）
 
-`pm/index.html` 不依赖任何外部资源，可以：
+看板页面不依赖任何外部资源（数据内嵌在 `index.html` 里），生成后放在哪里都能打开：
 
-- 本地双击打开；
-- K3s（已部署）：WireGuard 侧打开 <http://10.78.1.161:30810/>，公司内网打开 <http://192.168.1.210/>；每次 `main` 有提交，一分钟内更新。清单与说明见 [deploy/pm-board/README.md](../deploy/pm-board/README.md)；
-- 开启 GitHub Pages 指向 `main` 分支的 `/pm` 目录（私有仓库需要 GitHub 的付费方案）；
-- 或者放到任何静态托管。
+- K3s（已部署）：WireGuard 侧打开 <http://10.78.1.161:30810/>，公司内网打开 <http://192.168.1.210/>。看板 Pod 按 `main` 的任务文件自行生成，`main` 有新提交后一分钟左右更新。清单与说明见 [deploy/pm-board/README.md](../deploy/pm-board/README.md)；
+- 本地：`python3 scripts/pm.py build` 后双击 `pm/index.html`；
+- CI 产物：docs-and-pm 工作流每次运行都上传 `pm-board`，下载后离线打开；
+- 其他静态托管：`python3 scripts/pm.py build --out <目录>`，再发布该目录。

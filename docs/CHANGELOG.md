@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-15 任务看板生成物不再进 git（S1-PM-004）
+
+改了任务文件只提交任务文件。`pm/index.html`、`pm/tasks.json`、`pm/STATUS.md` 不再提交，PR 也就不会再因它们互相冲突。集群看板由看板 Pod 按 `main` 自行生成；CI 把生成的看板上传为工作流产物；本地 `pm.py build` 照常可用，新增 `--out`；`pm.py check-fresh` 已删除。见 [pm/README.md](../pm/README.md)。
+
 ## 2026-10-15 执行入口拒绝超出 decimal 范围的数（S1-RT-024）
 
 通用执行入口的请求体里有绝对值超过 decimal 范围（约 7.9e28）的数时返回 400 `BAD_REQUEST`，不再返回 500；输入 Schema 的 `enum` / `const` 取值含这类数的能力在登记阶段以新规则 `unsupported-number` 拒绝。详见 [Qian.Capabilities](../packages/Qian.Capabilities/README.md)。
