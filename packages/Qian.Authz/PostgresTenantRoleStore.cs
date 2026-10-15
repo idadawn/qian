@@ -12,12 +12,24 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
 {
     private static readonly string[] Builtins = ["tenant.owner", "tenant.admin", "tenant.developer", "tenant.user"];
 
-    internal Task EnsureBuiltinsAsync(string actor, CancellationToken ct) => Write(actor, async (db, owner) =>
+    internal Task EnsureBuiltinsAsync(string actor, CancellationToken ct) => Write(actor, (db, owner) => EnsureBuiltinsCore(db, owner, ct), ct);
+
+    // 租户开通（tenant/provisioned）的授权步骤：同一事务内建内置角色，并为尚未装进该租户的组件实例化默认策略。
+    // 已装任意版本的组件保持不变（版本升级归 Lifecycle 的租户级升级），所以重复投递幂等，不会把旧租户静默升到新模板。
+    internal Task ProvisionAsync(IReadOnlyList<(string PluginId, string Version)> components, string actor, CancellationToken ct) => Write(actor, async (db, owner) =>
+    {
+        await EnsureBuiltinsCore(db, owner, ct).ConfigureAwait(false);
+        var installed = await db.PolicyInstalls.Select(row => row.PluginId).ToListAsync(ct).ConfigureAwait(false);
+        foreach (var (pluginId, version) in components.Where(component => !installed.Contains(component.PluginId, StringComparer.Ordinal)))
+            await InstallCore(db, owner, pluginId, version, null, actor, ct).ConfigureAwait(false);
+    }, ct);
+
+    private static async Task EnsureBuiltinsCore(AuthzDbContext db, string owner, CancellationToken ct)
     {
         var existing = await db.Roles.Select(role => role.Code).ToListAsync(ct).ConfigureAwait(false);
-        foreach (var code in Builtins.Where(code => !existing.Contains(code, StringComparer.Ordinal)))
+        foreach (var code in Builtins.Where(code => !existing.Contains(code, StringComparer.Ordinal) && !db.Roles.Local.Any(role => role.Code == code)))
             db.Roles.Add(new AuthzRoleRow { TenantId = owner, Code = code, Builtin = true });
-    }, ct);
+    }
 
     internal Task AssignAsync(string roleCode, string subjectType, string subjectId, string actor, CancellationToken ct,
         DateTimeOffset? validFrom = null, DateTimeOffset? validTo = null)
@@ -73,7 +85,10 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
                 Array.AsReadOnly(group.Select(row => row.Code).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray()))).ToArray());
     }
 
-    internal Task InstallDefaultsAsync(string pluginId, string version, string? expectedVersion, string actor, CancellationToken ct) => Write(actor, async (db, owner) =>
+    internal Task InstallDefaultsAsync(string pluginId, string version, string? expectedVersion, string actor, CancellationToken ct) =>
+        Write(actor, (db, owner) => InstallCore(db, owner, pluginId, version, expectedVersion, actor, ct), ct);
+
+    private static async Task InstallCore(AuthzDbContext db, string owner, string pluginId, string version, string? expectedVersion, string actor, CancellationToken ct)
     {
         var source = await db.Catalogs.AsNoTracking().SingleOrDefaultAsync(row => row.PluginId == pluginId && row.Version == version, ct).ConfigureAwait(false)
             ?? throw new QianErrorException(new QianError(PlatformErrors.NotFound));
@@ -85,6 +100,8 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
         var permissions = catalog.Permissions.Select(permission => permission.Code).ToHashSet(StringComparer.Ordinal);
         if (catalog.Roles.Any(role => role.Grants.Any(grant => !permissions.Contains(grant)))) throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
         var roles = await db.Roles.ToDictionaryAsync(role => role.Code, StringComparer.Ordinal, ct).ConfigureAwait(false);
+        // 同一事务里先前步骤新建、尚未保存的角色（开通时的内置角色、前一个组件模板的角色）也要复用，不能重复建出。
+        foreach (var local in db.Roles.Local) roles.TryAdd(local.Code, local);
         // 只更新此组件管理的默认授权；其他组件和人工授权不受影响。
         await db.Grants.Where(grant => grant.PluginId == pluginId && grant.Source == "default").ExecuteDeleteAsync(ct).ConfigureAwait(false);
         foreach (var template in catalog.Roles)
@@ -105,7 +122,7 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
         }
         if (install.Revision == int.MaxValue) throw new QianErrorException(new QianError(PlatformErrors.Conflict));
         install.Version = version; install.Revision++; install.UpdatedBy = actor;
-    }, ct);
+    }
 
     internal async Task<IReadOnlyList<string>> ReadDirectUserPermissionsAsync(string subjectId, CancellationToken ct)
     {

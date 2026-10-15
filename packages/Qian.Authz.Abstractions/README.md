@@ -6,7 +6,7 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 
 所有 profile 均可引用 Definition；真正提供 `Authz` 的组件是后续 `Qian.Authz` / `qian.authz`。`ctx.Authz()` 按当前 scope 解析 `IAuthzService`，缺 Provider 或上下文已卸载时拒绝解析。Provider 必须在 Apply 中提供服务，并将错误码登记句柄交给 `ctx.Effect`。
 
-`qian add authz` 安装组件及其 Provider，本 Definition 包不自行启动服务，也不把平台能力绑定到宿主 DI。当前组件目录仍是骨架；Provider `Qian.Authz` 的 `AuthzPlugin` 已提供 `Authz`、`Authz.Permissions`、`qian.authz.resource-type/v1` 与 `Authz.SuperadminBypass` 四个服务键（S1-AZ-002 / S1-AZ-003），细节见 Qian.Authz 主文档。
+`qian add authz` 安装组件及其 Provider，本 Definition 包不自行启动服务，也不把平台能力绑定到宿主 DI。当前组件目录仍是骨架；Provider `Qian.Authz` 的 `AuthzPlugin` 已提供 `Authz`、`Authz.Permissions`、`qian.authz.resource-type/v1` 与 `Authz.SuperadminBypass` 四个服务键及命令 PEP，并在 `tenant/provisioned` 时实例化默认角色（S1-AZ-002 / S1-AZ-003），细节见 Qian.Authz 主文档。
 
 ## 平台超管显式旁路
 
@@ -14,7 +14,7 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 
 ## 权限契约
 
-`IAuthzService` 直接继承 `Kun.Authorization.IPermissionChecker`，复用 Check、BatchCheck、ListAllowedActions、ListPermissions、Explain 的原始类型；DataPermissions 与 Fields 分别使用原 `IDataPermissionFilter`、`IFieldPolicy`。不复制同名接口，不从令牌中的权限集合推导有效授权。S1 的数据与字段权限端口不等于 S2 求值能力已完成。
+`IAuthzService` 直接继承 `Kun.Authorization.IPermissionChecker`，复用 Check、BatchCheck、ListAllowedActions、ListPermissions、Explain 的原始类型；DataPermissions 与 Fields 分别使用原 `IDataPermissionFilter`、`IFieldPolicy`。另加 `ListEffectivePermissionsAsync`：返回主体经角色授权命中的每个权限点 `EffectiveGrant`（完整权限元数据、与 Check 一致的当前判定与原因），需要 step-up 或终端证明的权限点照样列出、判定为拒绝；供 `GET /api/authz/me/permissions` 使用。不复制同名接口，不从令牌中的权限集合推导有效授权。S1 的数据与字段权限端口不等于 S2 求值能力已完成。
 
 `PermissionCode.Format("qian.sample.crm", "customer", "read")` 产生 `qian.sample.crm:customer:read`。组件 id 至少含一个点，资源与动作是插件内短名；拒绝空值、大写、通配符、额外前缀和换行，不静默修正。`PermissionDefinition` 保留 resource/action 短名；Code 始终派生。风险词汇是 low/medium/high/critical，step-up 与终端列表是元数据，不能单凭客户端传来的终端或风险值放行。
 

@@ -46,6 +46,11 @@ public sealed class RbacPermissionChecker(IDataService data, ITenantContext tena
     /// <inheritdoc />
     public async ValueTask<PermissionDecision> ExplainAsync(PermissionRequest request, CancellationToken cancellationToken = default)
         => (await ExplainDetailedAsync(request, cancellationToken).ConfigureAwait(false)).Decision;
+    /// <summary>主体经角色授权持有的权限点、元数据与当前判定（需要 step-up 或终端证明的照常列出，Allowed 为 false）。</summary>
+    public ValueTask<IReadOnlyList<EffectiveGrant>> ListEffectivePermissionsAsync(AuthorizationSubject subject, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(subject); return _evaluator.ListEffectiveAsync(subject, cancellationToken);
+    }
     /// <summary>读取真实命中角色、授权记录和缺失权限。</summary>
     public ValueTask<AuthorizationExplanation> ExplainDetailedAsync(PermissionRequest request, CancellationToken cancellationToken = default)
     {
