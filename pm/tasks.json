@@ -4332,6 +4332,49 @@
   "file": "pm/tasks/S1-PM-003.md"
  },
  {
+  "id": "S1-PM-004",
+  "title": "看板生成物不再进 git：看板 Pod 自行生成，PR 不再因生成物冲突",
+  "status": "doing",
+  "stage": "S1",
+  "area": "PM",
+  "areaName": "流程与协作",
+  "wave": 1,
+  "priority": "P1",
+  "type": "infra",
+  "owner": "claude",
+  "estimate": "1d",
+  "days": 1.0,
+  "depends": [],
+  "blockedBy": [],
+  "order": 0,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "deploy/pm-board/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/deploy/pm-board/README.md"
+   },
+   {
+    "path": "pm/README.md",
+    "url": "https://github.com/idadawn/qian/blob/main/pm/README.md"
+   },
+   {
+    "path": "AGENTS.md",
+    "url": "https://github.com/idadawn/qian/blob/main/AGENTS.md"
+   },
+   {
+    "path": ".github/workflows/docs-and-pm.yml",
+    "url": "https://github.com/idadawn/qian/blob/main/.github/workflows/docs-and-pm.yml"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 0,
+   "total": 6
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>现在每个 PR 都要把 <code>pm.py build</code> 的生成物（<code>pm/index.html</code>、<code>pm/tasks.json</code>、<code>pm/STATUS.md</code>）一起提交。这三个文件汇总了全部任务，所以任何两个改了任务文件的 PR，只要先合入一个，另一个就会在这三个文件上冲突。GitHub 对有冲突的 PR 不触发 pull_request 工作流，CI 也就跑不起来。2026-10-15 约两小时内，main 合入了 #111、#115、#122–#128、#130、#131；开着的 #81、#84、#87、#89、#97 等每次都要重新合入 main、重跑 build 再推送，而冲突从来只在这三个文件上。</p>\n<p>用户选定的方案：生成物不再进 git。K3s 看板 Pod 按 main 自行生成，CI 只校验任务文件，并把生成的看板上传为产物。分两个 PR 交付：</p>\n<p>1. 先让看板 Pod 自行生成。这时生成物仍在 git 里，看板不受影响。</p>\n<p>2. 第一个 PR 合入、看板核验通过后，再把生成物移出 git，同时更新文档与 CI。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk'><span class='box'></span><code>pm.py build --out &lt;目录&gt;</code> 把三个生成物写到指定目录，不带 <code>--out</code> 时仍写到 <code>pm/</code>。</li>\n<li class='chk'><span class='box'></span>看板 Pod 增加构建容器：</li>\n<li>git-sync 每切换到一个新提交，就用该提交的 <code>scripts/pm.py</code> 生成看板，并原子替换。</li>\n<li>nginx 从生成目录提供 <code>/</code>、<code>/tasks.json</code>、<code>/STATUS.md</code>，<code>/tasks/*</code> 仍取任务源文件。</li>\n<li>首次生成完成前，Pod 不就绪。</li>\n<li class='chk'><span class='box'></span>本机用同版本镜像验证构建容器（非 root、只读根文件系统）与 nginx 配置，<code>kustomize build</code> 通过。</li>\n<li class='chk'><span class='box'></span>第一个 PR 合入、ArgoCD 同步后，看板提供的 <code>tasks.json</code> 与按 main 生成的结果一致；<code>bootstrap.sh --check</code> 核验生成提交与同步提交相同。</li>\n<li class='chk'><span class='box'></span><code>pm/index.html</code>、<code>pm/tasks.json</code>、<code>pm/STATUS.md</code> 移出 git 并写入 <code>.gitignore</code>；删除 <code>check-fresh</code>，docs-and-pm 改为生成看板并上传为产物。</li>\n<li class='chk'><span class='box'></span>AGENTS.md、pm/README.md、README.md、deploy/pm-board/README.md 写明新流程：不再提交生成物、在哪看进度、旧分支合入 main 时怎么处理。</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 claude：创建任务</li>\n<li>2026-10-15 claude：开始：先做第一个 PR（看板 Pod 自行生成），生成物暂留 git</li>\n</ul>",
+  "file": "pm/tasks/S1-PM-004.md"
+ },
+ {
   "id": "S1-QA-001",
   "title": "CI 基础：Testcontainers、依赖图断言、PublicAPI",
   "status": "done",
