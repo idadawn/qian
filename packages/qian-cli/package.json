@@ -15,7 +15,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "test:feed": "node --test test/*.e2e.mjs"
   },
   "dependencies": {
     "@qian/surfaces": "workspace:*",

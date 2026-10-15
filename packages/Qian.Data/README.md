@@ -1,6 +1,6 @@
 # Qian.Data
 
-Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。参考应用数据验收已补齐，SDK / CLI 的完整代码安装仍有后续门禁，当前进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
+Data seam 的 Provider，配合 Qian.Data.Abstractions 的安全上下文、服务键和会话契约。参考应用数据验收、SDK 源生成与私有源发布、`qian add data` 真实安装三道门均已通过，进度见 [任务](../../pm/tasks/S1-DATA-001.md)。
 
 ## 跨宿主租户模型
 
@@ -186,7 +186,7 @@ QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.De
 
 本目录已有 DataPlugin 的实际入口和生命周期，契约放在 Qian.Data.Abstractions，业务组件只依赖 Definition。组件接受 dialect=pg、rls.enforce=true 和可选 connection 引用。带连接引用的 AddQianData 重载将上下文绑定到 platform/dev secretRef，凭据由宿主工厂在每次创建上下文时读取；组件的 connection 选择对应的上下文集合，未登记的引用或上下文会被拒绝。省略 connection 时沿用各上下文自身的配置，方便按组件使用独立 schema 和受限角色。租户挂载的 Data 只接受相同租户上下文，租户自带业务库仍在 S3 范围。
 
-按已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，数据本体先交付以解除注册表的实现前置。S1-RT-014 已回验第二阶段的 SDK 部分：清单的代码字段由源生成器派生（CI 以真实 Data 程序集 check；Qian.Data.Tests 按清单的 runtime.entry 装载真实 Provider，会话默认带租户填充、过滤与 RLS），包族经 main 上的 dotnet-release 工作流锁步发布到 GitHub Packages，发布与从该源真实还原的证据记在 S1-RT-014 日志。真实 `qian add data` 代码安装与 Provider 运行由 S1-RT-011 回验；通过前 `plugins/qian.data` 保留配置骨架标记，不宣称完整组件安装已经完成。
+按已批准的 [S1-DEC-018](../../pm/tasks/S1-DEC-018.md)，数据本体先交付以解除注册表的实现前置。S1-RT-014 已回验第二阶段的 SDK 部分：清单的代码字段由源生成器派生（CI 以真实 Data 程序集 check；Qian.Data.Tests 按清单的 runtime.entry 装载真实 Provider，会话默认带租户填充、过滤与 RLS），包族经 main 上的 dotnet-release 工作流锁步发布到 GitHub Packages，发布与从该源真实还原的证据记在 S1-RT-014 日志。S1-RT-011 回验了第三阶段：空白 ASP.NET Core 项目经签名市场执行 `qian add data events config`，`Qian.Data` 按清单的精确版本从私有源还原、归档摘要与清单一致，宿主按 runtime.entry 挂载的 Provider 就绪，`qian remove` 逆序撤销（`packages/qian-cli/test/private-feed.e2e.mjs`，CI 用带读包权限的令牌运行）。`plugins/qian.data` 随之移除配置骨架标记；发布新版本后须同步清单 `runtime.nuget` 的版本与摘要。
 
 ## 模型体验
 

@@ -26,7 +26,7 @@ SensitiveAttribute 把实际 JSON 属性标记为 sensitive。顶层字段及整
 
 ## 单一清单与构建期工具
 
-生成代码提供 IComponentCodeMetadataFactory；构建工具读取此工厂，不实例化业务插件或调用 Apply。源生成器只向编译器提交 C#，不在编译过程中写项目文件。真实 DataPlugin 已采用该路径，CI 用其编译程序集复验 plugins/qian.data/.qian-plugin/plugin.json。
+生成代码提供 IComponentCodeMetadataFactory；构建工具读取此工厂，不实例化业务插件或调用 Apply。源生成器只向编译器提交 C#，不在编译过程中写项目文件。真实 DataPlugin、EventsPlugin 与 ConfigurationPlugin 已采用该路径，CI 用各自的编译程序集复验 plugins/qian.data、plugins/qian.events 与 plugins/qian.config 的清单。
 
 工具只用于显式选择的本地可信项目构建。加载生成工厂及 JsonTypeInfo 会加载程序集，因此不能用于未知市场制品的准入或沙箱校验。工具与组件共用 SDK/Runtime 的程序集身份，避免独立加载上下文复制服务键类型。
 
@@ -86,7 +86,7 @@ python3 scripts/dotnet_release.py verify-consumer --version 0.1.0-local.1 --sour
 
 ## 验证与剩余边界
 
-专项覆盖实际编译生成与 JsonTypeInfo、审计默认值、元数据副本、错误声明诊断、代码删除与重复能力、服务注册不可静态证明时拒绝、唯一清单同步/漂移以及手写文件和路径保护。真实 Data 程序集的 sync/check 已接入 CI；Qian.Data.Tests 另按仓库清单的 runtime.entry 装载真实 Provider（不直接构造具体类型），核对清单派生字段与生成元数据一致，挂载后的会话默认带租户填充、租户过滤与 RLS。按 S1-DEC-018，plugins/qian.data 的 x-skeleton 保留到 S1-RT-011 的真实 `qian add data` 安装通过。
+专项覆盖实际编译生成与 JsonTypeInfo、审计默认值、元数据副本、错误声明诊断、代码删除与重复能力、服务注册不可静态证明时拒绝、唯一清单同步/漂移以及手写文件和路径保护。真实 Data、Events、Config 程序集的 check 已接入 CI；Qian.Data.Tests 另按仓库清单的 runtime.entry 装载真实 Provider（不直接构造具体类型），核对清单派生字段与生成元数据一致，挂载后的会话默认带租户填充、租户过滤与 RLS。按 S1-DEC-018，S1-RT-011 从私有源真实执行 `qian add data` 并运行 Provider 后，plugins/qian.data 已移除 x-skeleton。
 
 SDK 自身的依赖边界由 CI 的依赖图门禁守住：`Qian.Plugin.Sdk`、`.AspNetCore`、`.Generators` 的完整传递依赖里不能出现任何 Provider 包与 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities`，门禁自测另断言这三个包在 `Qian.slnx` 的检查范围内（见 [tests/README.md](../../tests/README.md) 4.3）。
 
