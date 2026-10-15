@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-15 执行入口拒绝超出 decimal 范围的数（S1-RT-024）
+
+通用执行入口的请求体里有绝对值超过 decimal 范围（约 7.9e28）的数时返回 400 `BAD_REQUEST`，不再返回 500；输入 Schema 的 `enum` / `const` 取值含这类数的能力在登记阶段以新规则 `unsupported-number` 拒绝。详见 [Qian.Capabilities](../packages/Qian.Capabilities/README.md)。
+
 ## 2026-10-15 执行入口补不可重放码，参考应用能力标为 pii（S1-RT-021）
 
 聚合 OpenAPI 为写类能力列出 409 `CAPABILITY_REPLAY_UNAVAILABLE` 及其两种 `reason`。参考应用的 `customer.create`、`customer.list`、`customer.get` 响应含客户名称，`dataClassification` 改为 `pii`：经通用执行入口带同一幂等键重放 `customer.create` 改为返回 409（`data_classification`）。[运维手册](ops/configuration-runbook.md)新增「部署步骤：平台宿主装配」（platform 宿主必须调用 `AddQianCapabilities()`）与「过期幂等回执清理」两节。详见 [Qian.Capabilities](../packages/Qian.Capabilities/README.md)。
