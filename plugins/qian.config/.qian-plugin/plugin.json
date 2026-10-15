@@ -12,7 +12,9 @@
     "category": "platform"
   },
   "inject": [],
-  "provides": [],
+  "provides": [
+    "Config"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -23,5 +25,29 @@
     "global",
     "tenant"
   ],
-  "x-skeleton": true
+  "engines": {
+    "kun": ">=2026.10.14"
+  },
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Config.Apollo.ConfigurationPlugin, Qian.Config.Apollo",
+    "nuget": [
+      {
+        "id": "Qian.Config.Apollo",
+        "version": "0.1.0",
+        "digest": "sha256:48a312c7fa3b371f38dfab5ccbccdd55ed1b57dc3b4b19657c22fde7d48202bb"
+      }
+    ]
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry"
+    ],
+    "tools": []
+  }
 }

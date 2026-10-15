@@ -94,4 +94,4 @@ builder.Services.AddQianEventsBroker(sp => sp.GetRequiredService<IConfiguration>
 - 消费端（订阅、处理成功后 ack、Redis 幂等键、按 tenant_id 回灌租户、DLX）由 [S1-EVT-002](../../pm/tasks/S1-EVT-002.md) 交付，本包只声明拓扑。
 - 事件目录 HTTP 接口、AsyncAPI 导出、主题 ACL 与面向 `NpgsqlTransaction` 的写入端由 [S1-EVT-003](../../pm/tasks/S1-EVT-003.md) 交付。
 - S1-DEC-013 列为可选项的 PG `processed_messages` 兜底表没有做。
-- `plugins/qian.events` 仍保留骨架标记：SDK 发布与 `qian add` 安装验收通过前，不把本包写成完整的组件交付。
+- `plugins/qian.events` 仍保留骨架标记：SDK 发布（S1-RT-014）与私有源 `qian add events` 安装（S1-RT-011 的 E2E）均已验证，但该任务的验收只移除 qian.data 的标记，本组件标记的去留记在 S1-RT-011 日志的建议裁决里。

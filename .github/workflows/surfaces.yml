@@ -54,3 +54,30 @@ jobs:
         run: node packages/qian-surfaces/scripts/compare-fixtures.mjs TestResults/skill-only-dotnet.json TestResults/skill-only-ts.json
       - name: 精确比较 profile 来源、配置和诊断
         run: node packages/qian-surfaces/scripts/compare-fixtures.mjs TestResults/profiles-dotnet.json TestResults/profiles-ts.json
+
+  private-feed:
+    name: 私有源已发布组件的 qian add E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # 只读私有 NuGet 源（GitHub Packages）；令牌经环境变量传给 NuGet.Config 的 %QIAN_FEED_TOKEN% 引用，不写进文件。
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+      - run: pnpm install --frozen-lockfile
+      - name: 空白宿主经签名市场安装 data / events / config，运行 Provider 后逆序卸载
+        env:
+          QIAN_FEED_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pnpm --filter qian... build
+          pnpm --filter qian test:feed

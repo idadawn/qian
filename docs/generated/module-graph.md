@@ -13,7 +13,7 @@
 | ` global/tenancy ` | ` qian.tenancy@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/identity ` | ` qian.identity.client@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/authz ` | ` qian.authz@1.0.0 ` | 0（bundle） | 配置骨架 |
-| ` global/data ` | ` qian.data@1.0.0 ` | 0（bundle） | 配置骨架 |
+| ` global/data ` | ` qian.data@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/files ` | ` qian.files@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/config ` | ` qian.config.apollo@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/events ` | ` qian.events@1.0.0 ` | 0（bundle） | 配置骨架 |
