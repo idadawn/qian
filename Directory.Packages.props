@@ -41,6 +41,8 @@
     <PackageVersion Include="Kun.Infrastructure" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Storage" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Storage.Abstractions" Version="[$(KunVersion)]" />
+    <!-- 授权快照缓存（qian.authz，PRD 7.5「Redis，TTL 10 分钟」）：内存与 Redis 两种后端。 -->
+    <PackageVersion Include="Kun.Caching" Version="[$(KunVersion)]" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
     <!-- Ed25519 分离签名验签（qian.lifecycle）：.NET 10 没有独立的 Ed25519 API。 -->
