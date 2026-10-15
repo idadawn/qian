@@ -77,3 +77,29 @@ Qian.Authz.Abstractions.AuthorizationExplanation.MatchedRoles.get -> System.Coll
 Qian.Authz.Abstractions.AuthorizationExplanation.Missing.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Qian.Authz.Abstractions.IAuthzExecutionConstraints
 Qian.Authz.Abstractions.IAuthzExecutionConstraints.CheckAsync(Kun.Authorization.AuthorizationSubject! subject, Qian.Authz.Abstractions.PermissionDefinition! permission, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kun.Authorization.PermissionDecision!>
+Qian.Authz.Abstractions.ISuperadminBypass
+Qian.Authz.Abstractions.ISuperadminBypass.AuthorizeAsync(Qian.Authz.Abstractions.SuperadminAccess! access, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kun.Authorization.PermissionDecision!>
+Qian.Authz.Abstractions.PlatformRoles
+Qian.Authz.Abstractions.SuperadminAccess
+Qian.Authz.Abstractions.SuperadminAccess.<Clone>$() -> Qian.Authz.Abstractions.SuperadminAccess!
+Qian.Authz.Abstractions.SuperadminAccess.Channel.get -> string!
+Qian.Authz.Abstractions.SuperadminAccess.Channel.init -> void
+Qian.Authz.Abstractions.SuperadminAccess.Deconstruct(out Kun.Authorization.AuthorizationSubject! Subject, out string! Permission, out string? TenantId, out string? Resource, out string! Channel) -> void
+Qian.Authz.Abstractions.SuperadminAccess.Equals(Qian.Authz.Abstractions.SuperadminAccess? other) -> bool
+Qian.Authz.Abstractions.SuperadminAccess.Permission.get -> string!
+Qian.Authz.Abstractions.SuperadminAccess.Permission.init -> void
+Qian.Authz.Abstractions.SuperadminAccess.Resource.get -> string?
+Qian.Authz.Abstractions.SuperadminAccess.Resource.init -> void
+Qian.Authz.Abstractions.SuperadminAccess.Subject.get -> Kun.Authorization.AuthorizationSubject!
+Qian.Authz.Abstractions.SuperadminAccess.Subject.init -> void
+Qian.Authz.Abstractions.SuperadminAccess.SuperadminAccess(Kun.Authorization.AuthorizationSubject! Subject, string! Permission, string? TenantId, string? Resource, string! Channel) -> void
+Qian.Authz.Abstractions.SuperadminAccess.TenantId.get -> string?
+Qian.Authz.Abstractions.SuperadminAccess.TenantId.init -> void
+const Qian.Authz.Abstractions.PlatformRoles.Superadmin = "platform.superadmin" -> string!
+const Qian.Authz.Abstractions.PlatformRoles.SuperadminBypass = "superadmin" -> string!
+override Qian.Authz.Abstractions.SuperadminAccess.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.SuperadminAccess.GetHashCode() -> int
+override Qian.Authz.Abstractions.SuperadminAccess.ToString() -> string!
+static Qian.Authz.Abstractions.SuperadminAccess.operator !=(Qian.Authz.Abstractions.SuperadminAccess? left, Qian.Authz.Abstractions.SuperadminAccess? right) -> bool
+static Qian.Authz.Abstractions.SuperadminAccess.operator ==(Qian.Authz.Abstractions.SuperadminAccess? left, Qian.Authz.Abstractions.SuperadminAccess? right) -> bool
+static readonly Qian.Authz.Abstractions.AuthzDefinition.SuperadminBypassKey -> Qian.Runtime.ServiceKey
