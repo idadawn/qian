@@ -84,6 +84,8 @@ gateway/identity 不允许 command hook，S1 拒绝代码热更新；AOT profile
 
 补丁里含未成对代理项的字符串或键名由表面解析器在补丁文件处拒绝，两端诊断相同，见 [Qian.Surfaces](../Qian.Surfaces/README.md)（S1-RT-022）。
 
+键名不区分大小写的比较：.NET 按宿主 ICU 判断 OrdinalIgnoreCase，CLI 按 ICU 74 的等价类表。Unicode 16.0 起新增的大小写字母（如 U+A7CB 与 U+0264），宿主 ICU 较新（如 macOS）时 .NET 视为相等、CLI 视为不等，见[共享内部源文件](../Common/README.md#cli-的-ts-移植)。
+
 ## 结果和边界
 
 `ProfileLoadResult` 返回快照与 `SurfaceDiagnostic`；错误时 Snapshot 为空。诊断外层有文件、行号和级别，内层遵循冻结 ErrorDetail，字段码 `PROFILE_INVALID` 由 Definition 包声明。错误指针定位原 patch 的 `/条目序号/config/字段`；来源层指向最后改写条目的文件。
