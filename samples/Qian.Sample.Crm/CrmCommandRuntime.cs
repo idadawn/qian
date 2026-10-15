@@ -43,7 +43,10 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
         if (!Guid.TryParseExact(tenant.TenantId, "D", out var id) || id == Guid.Empty) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
         try
         {
-            var context = _loader.GetContext("crm", ScopeKey.Global).Scoped(new ScopeKey("tenant", tenant.TenantId!));
+            // 平台宿主经 Lifecycle 把组件挂进租户 scope 时优先用该租户自己的条目（版本可能与全局不同），否则用全局条目。
+            var scope = new ScopeKey("tenant", tenant.TenantId!);
+            var context = _loader.DumpConfig().Any(entry => entry.Id == "crm" && entry.Scope == scope)
+                ? _loader.GetContext("crm", scope) : _loader.GetContext("crm", ScopeKey.Global).Scoped(scope);
             _ = context.Inject<ICrmCommands>(CrmDefinition.Key); return context;
         }
         catch (Exception error) when (error is ServiceNotReadyException or KeyNotFoundException or ObjectDisposedException or InvalidOperationException)

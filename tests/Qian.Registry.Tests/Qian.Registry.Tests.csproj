@@ -7,6 +7,7 @@
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
     <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
     <ProjectReference Include="../../packages/Qian.Capabilities/Qian.Capabilities.csproj" />
+    <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="xunit.v3" />
