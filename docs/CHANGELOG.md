@@ -2,6 +2,14 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-16 审计哈希链、权限点注册表与默认角色（S1-AUD-001、S1-AZ-002）
+
+`qian.audit` 在命令的同一事务里按租户追加哈希链审计：查询默认不记，`Audit = true` 时记录；输入按 Schema `sensitive` 脱敏后再取哈希。`qian.authz` 从组件 `metadata/permissions.json` / `roles.json` 登记权限点（独立模式用 `[Permission]`），新租户开通时实例化默认角色；`GET /api/authz/me/permissions` 列出当前主体的有效权限及风险、step-up。详见 [Qian.Audit](../packages/Qian.Audit/README.md)、[Qian.Authz](../packages/Qian.Authz/README.md)；复核裁决 R101–R103 见[关键决策](decisions/key-decisions-v0.md)。
+
+## 2026-10-16 qian CLI 包管理器超时可配置（S1-RT-030）
+
+`qian add` / `remove` 调用包管理器的超时缺省 600 秒，可用环境变量 `QIAN_PACKAGE_TIMEOUT`（1–86400 的整数秒）调整，非法值在任何改动之前以结构化错误失败；预检还原允许并行下载。详见 [qian CLI](../packages/qian-cli/README.md)。
+
 ## 2026-10-16 qian add / remove / list 从 GitHub Packages 真实安装（S1-RT-011）
 
 `qian add <组件>…` 经签名市场把表面复制到 `.qian/plugins/<id>/`、按组件清单钉精确版本从 GitHub Packages 还原代码包、写 profile patch 与 `.qian/lock.json`，`qian remove` 逆序撤销、`qian list` 列出来源；未通过校验器或验签时以一行结构化错误失败且不留残留。真实源 E2E 用 data / events / config 三个组件（R98），PRD 7.2.3 的表面目录、patch 路径与钉版措辞按规格 §9 改写（R100）；收口项见 [S1-RT-035](../pm/tasks/S1-RT-035.md)。用法见 [qian CLI README](../packages/qian-cli/README.md)。
