@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -106,6 +107,87 @@ public sealed class LifecycleTests
         Assert.Null(context.TryInject<string>(new("Y")));
     }
 
+    [Fact]
+    public async Task Replace_during_Apply_discards_the_attempt_and_reapplies_with_the_new_instance()
+    {
+        using var host = new ServiceCollection().BuildServiceProvider();
+        await using var loader = new PluginLoader(host);
+        IRegistrationHandle<string> x = null!;
+        await loader.MountAsync([
+            Define("provider", ctx => x = ctx.Provide(new("X"), "x1"), provides: [new("X")]),
+            Define("observer", _ => { })], TestContext.Current.CancellationToken);
+        var consumer = new GatedConsumer();
+        var mounting = loader.MountAsync([consumer.Definition], TestContext.Current.CancellationToken).AsTask();
+        IPluginContext attempt;
+        try
+        {
+            await consumer.Blocked.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+            attempt = loader.GetContext("consumer", ScopeKey.Global);
+            Assert.Equal(PluginState.Applying, loader.GetState("consumer", ScopeKey.Global));
+            // Apply 尚未结束时另一线程替换 X：本次 Apply 捕获的是旧实例，应与 Ready 后被替换一样作废重来。
+            x.Replace("x2");
+            Assert.Equal(PluginState.Pending, loader.GetState("consumer", ScopeKey.Global));
+        }
+        finally { consumer.Gate.TrySetResult(); }
+        await mounting;
+        await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(["apply:x1", "dispose:x1", "apply:x2"], consumer.Trace);
+        Assert.Equal(PluginState.Ready, loader.GetState("consumer", ScopeKey.Global));
+        Assert.Null(loader.GetFailure("consumer", ScopeKey.Global));
+        Assert.Equal("x2", loader.GetContext("observer", ScopeKey.Global).Inject<string>(new("C")));
+        Assert.Throws<ObjectDisposedException>(() => attempt.Provide(new("leak"), "late"));
+    }
+
+    [Fact]
+    public async Task Revoke_during_Apply_returns_the_entry_to_Pending_until_the_key_is_back()
+    {
+        using var host = new ServiceCollection().BuildServiceProvider();
+        await using var loader = new PluginLoader(host);
+        IRegistrationHandle<string> x = null!;
+        await loader.MountAsync([
+            Define("provider", ctx => x = ctx.Provide(new("X"), "x1"), provides: [new("X")]),
+            Define("observer", _ => { })], TestContext.Current.CancellationToken);
+        var consumer = new GatedConsumer();
+        var mounting = loader.MountAsync([consumer.Definition], TestContext.Current.CancellationToken).AsTask();
+        try
+        {
+            await consumer.Blocked.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+            x.Dispose();
+            Assert.Equal(PluginState.Pending, loader.GetState("consumer", ScopeKey.Global));
+        }
+        finally { consumer.Gate.TrySetResult(); }
+        await mounting;
+        await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+        // 依赖已不在：作废的这次 Apply 撤销后条目留在 Pending，而不是 Failed。
+        Assert.Equal(["apply:x1", "dispose:x1"], consumer.Trace);
+        Assert.Equal(PluginState.Pending, loader.GetState("consumer", ScopeKey.Global));
+        Assert.Null(loader.GetFailure("consumer", ScopeKey.Global));
+        Assert.Equal([new ServiceKey("X")], loader.GetPendingDependencies("consumer", ScopeKey.Global));
+        var observer = loader.GetContext("observer", ScopeKey.Global);
+        Assert.Null(observer.TryInject<string>(new("C")));
+        loader.GetContext("provider", ScopeKey.Global).Provide(new("X"), "x3");
+        await loader.WhenIdleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(["apply:x1", "dispose:x1", "apply:x3"], consumer.Trace);
+        Assert.Equal(PluginState.Ready, loader.GetState("consumer", ScopeKey.Global));
+        Assert.Equal("x3", observer.Inject<string>(new("C")));
+    }
+
+    [Fact]
+    public async Task Hiding_its_own_dependency_during_Apply_still_fails()
+    {
+        using var host = new ServiceCollection().BuildServiceProvider();
+        await using var loader = new PluginLoader(host);
+        var tenant = new ScopeKey("tenant", "t-001");
+        await loader.MountAsync([
+            Define("provider", ctx => ctx.Provide(new("X"), "x1"), provides: [new("X")]),
+            // 自己的 restriction 只对自己生效：别的条目看不到变化，不能当作外部失效重来，否则 Ready 后立刻自我失效。
+            Define("selfish", ctx => ctx.Restrict(tenant, _ => false), inject: [new("X")], scope: tenant),
+            Define("observer", _ => { }, scope: tenant)], TestContext.Current.CancellationToken);
+        Assert.Equal(PluginState.Failed, loader.GetState("selfish", tenant));
+        Assert.Contains("改变了自身依赖的可见性", Assert.IsType<InvalidOperationException>(loader.GetFailure("selfish", tenant)).Message, StringComparison.Ordinal);
+        Assert.Equal("x1", loader.GetContext("observer", tenant).Inject<string>(new("X")));
+    }
+
     internal static PluginDefinition Define(string id, Action<IPluginContext> apply, ServiceKey[]? inject = null, ServiceKey[]? provides = null, ScopeKey? scope = null)
         => new(new PluginEntry(id, id, "1.0.0", scope ?? ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), new TestPlugin(apply, inject ?? []), provides ?? []);
 
@@ -119,10 +201,30 @@ public sealed class LifecycleTests
         }
     }
 
-    private sealed class AsyncPlugin(Func<IPluginContext, CancellationToken, ValueTask> apply) : IQianPlugin
+    private sealed class AsyncPlugin(Func<IPluginContext, CancellationToken, ValueTask> apply, ServiceKey[]? inject = null) : IQianPlugin
     {
-        public IReadOnlyList<ServiceKey> Inject => [];
+        public IReadOnlyList<ServiceKey> Inject => inject ?? [];
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => apply(ctx, ct);
+    }
+
+    // 注入 X、提供 C 并登记效果，然后停在 Gate 上，放行后再解析一次 X；Gate 打开后的重新 Apply 不再等待。
+    private sealed class GatedConsumer
+    {
+        internal ConcurrentQueue<string> Trace { get; } = [];
+        internal TaskCompletionSource Blocked { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal TaskCompletionSource Gate { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal PluginDefinition Definition => new(new PluginEntry("consumer", "consumer", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })),
+            new AsyncPlugin(async (ctx, _) =>
+            {
+                var value = ctx.Inject<string>(new("X"));
+                Trace.Enqueue($"apply:{value}");
+                ctx.Provide(new("C"), value);
+                ctx.Effect(() => Trace.Enqueue($"dispose:{value}"));
+                Blocked.TrySetResult();
+                await Gate.Task;
+                // X 若已被撤销，这里抛 ServiceNotReadyException：依赖失效之后的 Apply 失败同样作废重来，不记为 Failed。
+                ctx.Inject<string>(new("X"));
+            }, [new("X")]), [new("C")]);
     }
 
     private sealed record SampleConfig(string Message);

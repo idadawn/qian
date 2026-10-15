@@ -65,7 +65,8 @@ export class PluginLoader {
   const edges=new Map<Node,Node[]>();for(const node of all){const dependencies:Node[]=[];for(const key of node.inject){const provider=all.find(n=>n.entry.scope===node.entry.scope&&n.provides.includes(key))??all.find(n=>n.entry.scope==='global'&&n.provides.includes(key));if(!provider){if(!added.includes(node))continue;throw new RuntimeError('DEPENDENCY_MISSING',{key,entry:node.entry.id},'/entries/'+node.entry.id.replaceAll('~','~0').replaceAll('/','~1')+'/inject');}dependencies.push(provider);}edges.set(node,dependencies);}
   const visited=new Set<Node>(),stack:Node[]=[];const visit=(node:Node):void=>{const index=stack.indexOf(node);if(index>=0)throw new RuntimeError('DEPENDENCY_CYCLE',{cycle:[...stack.slice(index),node].map(n=>n.entry.id).join(' → ')},'/entries/'+node.entry.id.replaceAll('~','~0').replaceAll('/','~1')+'/inject');if(visited.has(node))return;visited.add(node);stack.push(node);for(const dep of edges.get(node)??[])visit(dep);stack.pop();};for(const node of all)visit(node);
  }
- #invalidate():void{let changed:boolean;do{changed=false;for(const node of this.#nodes)if(node.state==='Ready'&&!node.removing&&!node.dependencies.every(d=>this.#find(d.key,node.entry.scope)===d)){node.group!.active=false;node.state='Pending';node.pendingSince=Date.now();node.warned=false;changed=true;}}while(changed);}
+ // Applying 条目按与 Ready 相同的判据失效：依赖在其它条目看来已被撤销、替换或隐藏，本次 apply 作废；它自己的注册与 restriction 尚未对外生效，自身造成的可见性变化仍由 apply 后的自检判为 Failed。
+ #invalidate():void{let changed:boolean;do{changed=false;for(const node of this.#nodes)if((node.state==='Ready'||node.state==='Applying')&&!node.removing&&!node.dependencies.every(d=>this.#find(d.key,node.entry.scope)===d)){node.group!.active=false;node.state='Pending';node.pendingSince=Date.now();node.warned=false;changed=true;}}while(changed);}
  async #cleanPending():Promise<void>{for(const n of this.#nodes.filter(n=>n.state==='Pending'&&n.group).sort((a,b)=>b.sequence-a.sequence))await this.#stop(n);}
  async #stop(node:Node):Promise<void>{const group=node.group;if(!group)return;group.active=false;group.closed=true;this.#signal();try{await group.backend?.stop();}catch(error){node.failure=node.failure?new AggregateError([node.failure,error],'撤销失败'):error;this.#report(error);}finally{node.group=undefined;}}
  async #disposeEffects(group:Group):Promise<void>{const errors:unknown[]=[];for(const effect of group.effects.splice(0).reverse())try{await effect();}catch(error){errors.push(error);}if(errors.length)throw new AggregateError(errors,'副作用撤销失败。');}
@@ -76,10 +77,12 @@ export class PluginLoader {
    const node=this.#nodes.find(n=>!n.removing&&n.state==='Pending'&&n.inject.every(k=>this.#find(k,n.entry.scope)));if(!node)return;signal?.throwIfAborted();
    const group={entry:node.entry,active:false,closed:false,effects:[],ordinals:new Map()} as unknown as Group;group.context=this.#context({group,scope:node.entry.scope});node.group=group;node.dependencies=node.inject.map(k=>this.#find(k,node.entry.scope)!);node.state='Applying';node.sequence=++this.#sequence;
    try{group.backend=this.#backend.start(()=>Promise.resolve(node.definition.plugin.apply(group.context,node.entry.config)),()=>this.#disposeEffects(group));await group.backend.ready;signal?.throwIfAborted();
+    // apply 期间依赖被其它条目撤销或替换时 #invalidate 已把它放回 Pending：本次结果作废，下一轮先撤销再重来（state 可能在 await 期间被改写，按 PluginState 读取）。
+    if((node.state as PluginState)==='Pending')continue;
     if(!node.provides.every(k=>this.#services.some(s=>s.key===k&&s.view.scope===node.entry.scope&&s.view.group===group)))throw new Error('条目未注册声明的 provides。');
     if(!node.dependencies.every(d=>this.#find(d.key,node.entry.scope,{group,scope:node.entry.scope})===d))throw new Error('Apply 期间改变了自身依赖可见性。');
     node.state='Ready';group.active=true;this.#notify();
-   }catch(error){node.failure=error;node.state='Failed';await this.#stop(node);if(signal?.aborted)throw error;}
+   }catch(error){if(!signal?.aborted&&(node.state as PluginState)==='Pending')continue;node.failure=error;node.state='Failed';await this.#stop(node);if(signal?.aborted)throw error;}
   }
  }
  #context(view:View):Context{
