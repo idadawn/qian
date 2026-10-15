@@ -2,7 +2,7 @@
 
 - 总体：`█████░░░░░` 51%（81/158）
 - 状态：todo 68 · doing 1 · review 7 · done 81 · blocked 1
-- 最近更新：2026-10-15
+- 最近更新：2026-10-16
 
 ## 按阶段
 
@@ -102,4 +102,4 @@
 | [S1-RT-009](tasks/S1-RT-009.md) 表面注册、scope 过滤、hooks 桥接、MCP 登记与热重载 | review | cody | 2026-10-15 |
 | [S1-RT-011](tasks/S1-RT-011.md) qian CLI 骨架与 add / remove / list | review | cody | 2026-10-15 |
 | [S1-RT-014](tasks/S1-RT-014.md) Qian.Plugin.Sdk 与源生成器（plugin.json 合并） | review | cody | 2026-10-15 |
-| [S1-RT-030](tasks/S1-RT-030.md) qian CLI 包管理器超时可配置（默认 600 秒），预检还原允许并行下载 | review | cody | 2026-10-15 |
+| [S1-RT-030](tasks/S1-RT-030.md) qian CLI 包管理器超时可配置（默认 600 秒），预检还原允许并行下载 | review | cody | 2026-10-16 |
