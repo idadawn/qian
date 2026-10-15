@@ -11,6 +11,7 @@ import {listRemoteMarketplaces,marketplaceRegistrations,MarketplaceFailure} from
 import {installMarketplacePlugins} from './marketplace-install.js';
 import {removeMarketplacePlugins} from './marketplace-remove.js';
 import {listInstalledComponents} from './installed-components.js';
+import {packageCommandTimeout} from './package-process.js';
 import {parseSurfaceNames,type SurfaceName} from './surface-selection.js';
 import {randomBytes} from 'node:crypto';
 import type {SurfaceDiagnostic} from '@qian/surfaces';
@@ -75,6 +76,8 @@ try{
     process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':stringify(result,{lineWidth:0}));
     if(!result.healthy)process.exitCode=1;
   }else if(command==='list'||command==='add'||command==='remove'){
+    // 包管理器超时配置在任何改动之前校验，不让非法值拖到事务中途才失败。
+    if(command!=='list')packageCommandTimeout();
     const options={workingDirectory:cwd,homeDirectory:home,includeHome,profile:profile??'minimal',allowUnverified,from};
     let result:unknown;
     if(command==='list') {

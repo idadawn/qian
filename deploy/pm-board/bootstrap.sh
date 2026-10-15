@@ -47,6 +47,10 @@ check() {
   synced="$(kc -n "$NS" exec deploy/qian-pm-board -c nginx -- readlink /git/current | tr -d '\r' | sed 's#.*/##')"
   head="$(git -C "$HERE" ls-remote -q "git@github.com:${REPO}.git" refs/heads/main 2>/dev/null | cut -f1 || true)"
   if [[ -n "$synced" && "$synced" == "$head" ]]; then echo "   ok：${synced:0:7}"; else echo "   看板 ${synced:0:7} ≠ main ${head:0:7}（等下一次同步或检查 git-sync 日志）"; ok=0; fi
+  echo "-- 生成看板的提交 vs 同步到的提交"
+  local built
+  built="$(kc -n "$NS" exec deploy/qian-pm-board -c nginx -- readlink /site/current | tr -d '\r')"
+  if [[ -n "$built" && "$built" == "$synced" ]]; then echo "   ok：${built:0:7}"; else echo "   生成 ${built:0:7} ≠ 同步 ${synced:0:7}（等几秒再查，或看 builder 容器日志）"; ok=0; fi
   echo "-- 入口"
   local np lb
   np="$(kc -n "$NS" get svc qian-pm-board -o jsonpath='{.spec.ports[0].nodePort}')"

@@ -8,8 +8,9 @@ data:
       listen 8080;
       server_name _;
 
-      # git-sync 把仓库同步到 /git/current（符号链接指向最新提交）
-      root /git/current/pm;
+      # builder 容器把看板生成到 /site/current（符号链接指向最近一次生成的提交）；
+      # 任务源文件仍取 git-sync 的检出 /git/current（符号链接指向最新提交）
+      root /site/current;
       index index.html;
       autoindex off;
 
@@ -38,6 +39,6 @@ data:
       location = /index.html { }
       location = /tasks.json { }
       location = /STATUS.md { default_type text/markdown; }
-      location /tasks/ { default_type text/markdown; }
+      location /tasks/ { alias /git/current/pm/tasks/; default_type text/markdown; }
       location / { return 404; }
     }
