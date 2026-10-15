@@ -31,6 +31,8 @@ public static class CapabilityBindingRegistration
         var contract = TRequest.QianCapability;
         if (contract.ComponentId != context.Entry.Plugin || contract.RequestTypeInfo is not JsonTypeInfo<TRequest> request || contract.ResponseTypeInfo is not JsonTypeInfo<TResponse> response)
             throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
+        // 平台宿主登记了契约检查时，登记前生成目录条目并预编译输入校验器：不合格的契约在登记阶段拒绝，不留到首次调用。
+        context.Services.GetService<ICapabilityContractCheck>()?.Check(contract);
         var binding = new Binding<TRequest, TResponse>(context, contract, request, response,
             context.Services.GetRequiredService<ISender>(), context.Services.GetRequiredService<ITenantContext>());
         context.Effect(binding.Dispose);

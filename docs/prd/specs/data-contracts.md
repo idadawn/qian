@@ -8,6 +8,10 @@
 - 所有 .NET profile 可引用 Definition；组件安装入口沿用 `qian add data`，契约不单独启动 Provider。现有数据组件的装配与安装验收见 [Data 主文档](../../../packages/Qian.Data/README.md)。
 - S1 交付可编译、可校验、可分发的契约。S2 的 `qian.dynamic-data` 负责 SQL/条件求值、Hook 调度、事务、Outbox 消费及元数据 HTTP 端点。
 
+### 冻结与修订
+
+data/v1 的冻结标记于 2026-10-15 随 PR #95 落盘，按 [R80](../../decisions/key-decisions-v0.md#验收复核裁决-r80s1-qa-010-复核2026-10-15) 显式使用 `x-status: frozen`；`$id` 统一为 `https://qian.dev/contracts/data/v1/<文件名>`。冻结后只允许兼容增量，破坏性变更新开 v2，并同步 Schema、fixture、C# 契约与已知消费方。零代码消费方即冻结以及引用 v0 草稿信封的两条例外、结构门禁和复核时点，以 [data/v1 冻结与修订](../../../contracts/data/v1/README.md#冻结与修订) 为准；本轮不提前冻结 v0。
+
 ## 2. Filter AST 与检查顺序
 
 ```json
@@ -115,4 +119,10 @@ S2 的五处消费方引用同一份 Schema 和矩阵，不重建自己的运算
 
 违反时返回 DATA_FIELD_DEFINITION_INVALID（422），errors[] 逐项指向 `#/length` 等成员。
 
-**数据连接**。[data-connection.schema.json](../../../contracts/data/v1/data-connection.schema.json) 定义请求与响应。口令只以租户作用域的 secretRef 给出，请求中出现 password 等未声明成员即拒绝，任何响应都不含口令。连通测试在使用点解析凭据：成功返回服务端版本与耗时；失败返回 DATA_CONNECTION_UNREACHABLE（可重试）或 DATA_CONNECTION_REJECTED（reason 为 authentication、database、schema、permission、parameter 或 server）。该操作会从平台出网，Agent 契约标 external。
+**数据连接**。[data-connection.schema.json](../../../contracts/data/v1/data-connection.schema.json) 定义请求与响应。口令只以租户作用域的 secretRef 给出，请求中出现 password 等未声明成员即拒绝，任何响应都不含口令。连通测试先做出网检查，再在使用点解析凭据：目标主机解析出的每个地址都须通过宿主配置的拒绝 / 放行网段，连接只用检查过的地址。成功返回服务端版本与耗时；失败返回以下错误之一：
+- DATA_CONNECTION_TARGET_DENIED：目标不在允许的出网范围内，此时不连接也不读取密钥；
+- DATA_CONNECTION_UNREACHABLE：可重试；
+- DATA_CONNECTION_REJECTED：reason 为 authentication、database、schema、permission、parameter 或 server；
+- DATA_CONNECTION_CREDENTIAL_INVALID：密钥内容不能用作口令。
+
+该操作会从平台出网，Agent 契约标 external。完整的出口代理与 SSRF 基线按 PRD 7.19 归 S2。

@@ -1,0 +1,37 @@
+version: 1
+id: replace-during-cleanup
+description: 级联清理停在一个撤销上时，另一调用方替换依赖者注入的键；依赖者先撤销旧效果与旧注册再重新 Apply，无清理异常与残留。
+entries:
+  - id: provider
+    provides: [X, Y]
+    apply:
+      - {op: provide, key: X, value: x1, handle: x}
+      - {op: provide, key: Y, value: y1, handle: y}
+  - id: consumer
+    inject: [X]
+    provides: [C]
+    apply:
+      - {op: provide, key: C, value: c}
+      - {op: effect, name: consumer}
+  - id: slow
+    inject: [Y]
+    apply:
+      - {op: effect, name: slow, gate: cleanup}
+  - {id: observer, apply: []}
+steps:
+  - {op: mount, entries: [provider, consumer, slow, observer]}
+  - {op: idle}
+  - {op: replace, handle: y, value: y2, idle: false}
+  - {op: blocked, gate: cleanup}
+  - {op: replace, handle: x, value: x2, idle: false}
+  - {op: state, entry: consumer, value: Pending}
+  - {op: open, gate: cleanup}
+  - {op: idle}
+  - {op: trace, value: ['apply:provider', 'apply:consumer', 'apply:slow', 'apply:observer', 'dispose:slow', 'dispose:consumer', 'apply:consumer', 'apply:slow']}
+  - {op: state, entry: consumer, value: Ready}
+  - {op: state, entry: slow, value: Ready}
+  - {op: inject, entry: observer, key: C, value: c}
+  - {op: unmount, entry: consumer}
+  - {op: missing, entry: observer, key: C}
+  - {op: dump, entries: [provider, slow, observer]}
+  - {op: cleanupErrors, value: 0}

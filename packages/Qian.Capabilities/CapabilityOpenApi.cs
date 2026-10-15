@@ -10,6 +10,11 @@ namespace Qian.Capabilities;
 // 来自可执行绑定的实际 HTTP 入口，不从预装清单推测可用路径。
 internal static class CapabilityOpenApi
 {
+    // 回执没有保存响应体时同键请求不可回放；reason 取值即回执表 withheld 列的取值。
+    private const string NotReplayable = "同键请求已执行成功但回执没有保存响应体时返回 409 CAPABILITY_REPLAY_UNAVAILABLE（reason 为 " +
+        CapabilitiesDbContext.WithheldTooLarge + "：响应超过组件配置 receiptMaxBytes；" + CapabilitiesDbContext.WithheldClassification +
+        "：能力的 dataClassification 不是 public 或 internal），不再执行，应通过查询确认结果，换用新键会再执行一次";
+
     internal static JsonElement Build(IEnumerable<JsonElement> entries)
     {
         var paths = new JsonObject(); var schemas = new JsonObject();
@@ -40,7 +45,7 @@ internal static class CapabilityOpenApi
                     ["default"] = new JsonObject
                     {
                         ["description"] = "ErrorDetail 结构化错误：输入不符 400 INPUT_INVALID（errors 带 JSON Pointer），不可见或不存在 404 NOT_FOUND" +
-                            (keyed ? "，幂等键冲突 409 CONFLICT" : "")
+                            (keyed ? "，幂等键冲突 409 CONFLICT，" + NotReplayable : "")
                     }
                 },
                 ["security"] = new JsonArray(new JsonObject { ["bearerAuth"] = new JsonArray() })
@@ -50,7 +55,7 @@ internal static class CapabilityOpenApi
                 {
                     ["name"] = "Idempotency-Key", ["in"] = "header", ["required"] = false,
                     ["description"] = "可选幂等键（UUID）：同一主体、同一能力、同一键在回放窗口内重复请求时返回首次成功响应且不再执行；" +
-                        "同键请求仍在执行或键相同而输入不同时返回 409 CONFLICT。",
+                        "同键请求仍在执行或键相同而输入不同时返回 409 CONFLICT；" + NotReplayable + "。",
                     ["schema"] = new JsonObject { ["type"] = "string", ["format"] = "uuid" }
                 });
             paths["/api/capabilities/" + id + "/invoke"] = new JsonObject { ["post"] = operation };
