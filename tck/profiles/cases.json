@@ -1679,5 +1679,44 @@
     "expect": false,
     "pointer": "profiles/test/qian.profile.yml#",
     "reason": "profile 或组件内容无法解析。"
+  },
+  {
+    "name": "patch-unpaired-surrogate-json-value",
+    "files": {
+      "ops.json": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"a\": \"x\\ud800\"\n    }\n  }\n]\n"
+    },
+    "patches": [
+      "ops.json"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.json#",
+    "reason": "JSON 字符串或键名含未成对的代理项。"
+  },
+  {
+    "name": "patch-unpaired-surrogate-json-key",
+    "files": {
+      "ops.json": "[\n  {\n    \"id\": \"settings\",\n    \"config\": {\n      \"\\udc00\": 1\n    }\n  }\n]\n"
+    },
+    "patches": [
+      "ops.json"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.json#",
+    "reason": "JSON 字符串或键名含未成对的代理项。"
+  },
+  {
+    "name": "patch-unpaired-surrogate-yaml",
+    "files": {
+      "ops.yml": "- id: settings\n  config:\n    a: \"x\\ud800\"\n"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": false,
+    "pointer": "ops.yml#",
+    "reason": "YAML 语法无效或存在重复键。"
   }
 ]

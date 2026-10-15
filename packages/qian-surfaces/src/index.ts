@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash, randomBytes } from 'node:crypto';
 import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
 import { parseTree, type Node as JsonTree, type ParseError } from 'jsonc-parser';
-import { parseDocument as yamlDocument, isAlias, isMap, isSeq, isScalar, LineCounter } from 'yaml';
+import { parseDocument as yamlDocument, isAlias, isMap, isSeq, isScalar, visit, LineCounter } from 'yaml';
 
 /** JSON 数据；校验器不执行任何表面内容。 */
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -41,12 +41,24 @@ function diagnostic(file: string, pointer: string, line: number, code: string, r
   const message = '输入不符合该能力的输入 Schema，逐项错误见 errors。';
   return { file, line: Math.max(1, line), severity, error: { type: 'https://qian.dev/problems/protocol/INPUT_INVALID', title: '输入不符合契约', status: 400, code: 'INPUT_INVALID', message, detail: message, trace_id: traceId, pointer: full, errors: [{ code, message: reason, pointer: full }] } };
 }
-/** 解析 JSON、YAML 或 Markdown front matter，并保留行号。 */
+/** 是否含未成对的 UTF-16 代理项。 */
+function unpaired(text: string): boolean {
+  for (let index = 0; index < text.length; index++) {
+    const unit = text.charCodeAt(index);
+    if (unit >= 0xd800 && unit <= 0xdbff && (text.charCodeAt(index + 1) & 0xfc00) === 0xdc00) index++;
+    else if (unit >= 0xd800 && unit <= 0xdfff) return true;
+  }
+  return false;
+}
+/** 解析 JSON、YAML 或 Markdown front matter，并保留行号。与 SurfaceReader.Parse 同序同义，致命错误只报它自己。 */
 export function parseSurface(file: string, content: string, markdown = false, traceId = trace()): SurfaceParseResult {
   const lines: Record<string, number> = Object.create(null);
   const diagnostics: SurfaceDiagnostic[] = [];
   let source = content.replace(/^\uFEFF/, '').replaceAll('\r\n', '\n'), body = '', offset = 0;
+  const fail = (line: number, reason: string): SurfaceParseResult => ({ syntax: null, diagnostics: [diagnostic(file, '', line, codes.syntax, reason, traceId)] });
   try {
+    // 字面量的未成对代理项只可能来自直接传入的字符串（文件按 UTF-8 严格解码），按值无效处理，同 .NET 的严格编码。
+    if (unpaired(source)) throw new Error('surrogate');
     if (Buffer.byteLength(source) > 1_048_576) throw new Error('size');
     if (markdown) {
       if (!source.startsWith('---\n')) throw new Error('front matter');
@@ -58,10 +70,9 @@ export function parseSurface(file: string, content: string, markdown = false, tr
     if (!markdown && file.endsWith('.json')) {
       const errors: ParseError[] = [];
       const tree = parseTree(source, errors, { allowTrailingComma: false, disallowComments: true });
-      if (!tree || errors.length) {
-        const line = lineAt(source, errors[0]?.offset ?? 0);
-        return { syntax: null, diagnostics: [diagnostic(file, '', line, codes.syntax, 'JSON 语法无效。', traceId)] };
-      }
+      if (!tree || errors.length) return fail(lineAt(source, errors[0]?.offset ?? 0), 'JSON 语法无效。');
+      // 键名与字符串值含未成对的代理项转义时记下首个所在行，走完整篇再报：过深与非有限数值优先，同 SurfaceReader.Text。
+      let surrogate = 0;
       const walk = (node: JsonTree, pointer: string, depth: number): void => {
         if (depth > 64) throw new Error('depth');
         lines[pointer] ??= lineAt(source, node.offset);
@@ -71,17 +82,31 @@ export function parseSurface(file: string, content: string, markdown = false, tr
             const [key, value] = property.children!;
             const name = String(key.value), child = pointer + '/' + token(name);
             lines[child] = lineAt(source, key.offset);
+            if (!surrogate && unpaired(name)) surrogate = lines[child];
             if (seen.has(name)) diagnostics.push(diagnostic(file, child, lines[child], codes.syntax, 'JSON 对象存在重复键。', traceId));
             seen.add(name); walk(value, child, depth + 1);
           }
         } else if (node.type === 'array') (node.children ?? []).forEach((value, index) => walk(value, pointer + '/' + index, depth + 1));
+        else if (node.type === 'string' && !surrogate && unpaired(node.value)) surrogate = lineAt(source, node.offset);
         else if (node.type === 'number' && !Number.isFinite(node.value)) throw new Error('number');
       };
-      walk(tree, '', 0); data = JSON.parse(source) as JsonValue;
+      walk(tree, '', 0);
+      if (surrogate) return fail(surrogate, 'JSON 字符串或键名含未成对的代理项。');
+      data = JSON.parse(source) as JsonValue;
     } else {
       const counter = new LineCounter();
       const document = yamlDocument(source, { version: '1.2', uniqueKeys: true, lineCounter: counter });
-      if (document.errors.length) return { syntax: null, diagnostics: [diagnostic(file, '', counter.linePos(document.errors[0].pos[0]).line + offset, codes.syntax, 'YAML 语法无效或存在重复键。', traceId)] };
+      // 同 SurfaceReader：YamlDotNet 边扫描边检查，语法错误、alias 与含未成对代理项的标量（键与值，YamlDotNet 拒绝这样的转义并指向标量起点）
+      // 按出现顺序先到先报；重复键在整篇读完后才检查。
+      const stops: { offset: number; alias: boolean }[] = [];
+      for (const error of document.errors) if (error.code !== 'DUPLICATE_KEY') stops.push({ offset: error.pos[0], alias: false });
+      visit(document, {
+        Alias: (_, node) => { stops.push({ offset: node.range?.[0] ?? 0, alias: true }); },
+        Scalar: (_, node) => { if (typeof node.value === 'string' && unpaired(node.value)) stops.push({ offset: node.range?.[0] ?? 0, alias: false }); },
+      });
+      const stop = stops.sort((a, b) => a.offset - b.offset)[0] ?? (document.errors.length ? { offset: document.errors[0].pos[0], alias: false } : undefined);
+      if (stop?.alias) throw new Error('alias');
+      if (stop) return fail(counter.linePos(stop.offset).line + offset, 'YAML 语法无效或存在重复键。');
       const walk = (node: unknown, pointer: string, depth: number): JsonValue => {
         if (depth > 64 || isAlias(node)) throw new Error('alias/depth');
         const tag = (node as {tag?: string} | null)?.tag;
@@ -107,7 +132,7 @@ export function parseSurface(file: string, content: string, markdown = false, tr
       data = walk(document.contents, '', 0);
     }
     return { syntax: { data, body, lines }, diagnostics };
-  } catch { return { syntax: null, diagnostics: [diagnostic(file, '', 1 + offset, codes.syntax, '文件语法、大小、嵌套深度或值无效。', traceId)] }; }
+  } catch { return fail(1 + offset, '文件语法、大小、嵌套深度或值无效。'); }
 }
 const resources = new URL('./schemas/', import.meta.url);
 const rules = JSON.parse(readFileSync(new URL('surface-rules.json', resources), 'utf8')) as { defaults: Record<string, string>; agentEvents: string[]; qianEvents: string[]; shells: string[] };

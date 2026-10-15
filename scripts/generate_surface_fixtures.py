@@ -99,6 +99,18 @@ keys={'serviceKeys':['Data','Registry']}
 bad('inject-without-provider',manifest(base(),inject=['Data','Files']),'.qian-plugin/plugin.json','/inject/1','REFERENCE_UNKNOWN',keys)
 case('inject-with-provider',manifest(base(),inject=['Data']),options=keys)
 case('inject-unchecked-without-catalog',manifest(base(),inject=['Files']))
+# 未成对的代理项（S1-RT-022）：JSON 与 YAML 里的这类转义两端同样拒绝，致命错误只报它自己；转义的代理对照常接受。U 是文本里反斜杠加 u 的转义前缀。
+U=chr(92)+'u'
+bad('metadata-unpaired-surrogate-value',base({'metadata/roles.json':'[\n  {\n    "name": "reader'+U+'d800"\n  }\n]\n'}),'metadata/roles.json','','SYNTAX_INVALID')
+bad('metadata-unpaired-surrogate-key',base({'metadata/roles.json':'{\n  "name": "reader",\n  "'+U+'dc00": 1\n}\n'}),'metadata/roles.json','','SYNTAX_INVALID')
+bad('metadata-unpaired-surrogate-after-duplicate',base({'metadata/roles.json':'{\n  "name": "reader",\n  "name": "owner",\n  "title": "'+U+'d800"\n}\n'}),'metadata/roles.json','','SYNTAX_INVALID')
+bad('patch-unpaired-surrogate',base({pf:'- id: files\n  config:\n    title: "x'+U+'d800"\n'}),pf,'','SYNTAX_INVALID')
+bad('patch-unpaired-surrogate-after-duplicate',base({pf:'- id: files\n  config:\n    a: 1\n    a: 2\n    title: "'+U+'dc00"\n'}),pf,'','SYNTAX_INVALID')
+bad('patch-alias-before-unpaired-surrogate',base({pf:'- id: files\n  config:\n    a: &x 1\n    b: *x\n    title: "'+U+'d800"\n'}),pf,'','SYNTAX_INVALID')
+bad('patch-double-high-surrogate',base({pf:'- id: files\n  config:\n    title: "'+U+'d83d'+U+'d83d'+U+'de00"\n'}),pf,'','SYNTAX_INVALID')
+bad('patch-unclosed-flow',base({pf:'- id: files\n  config: [\n'}),pf,'','SYNTAX_INVALID')
+bad('skill-unpaired-surrogate',base({sf:'---\nname: guide\ndescription: "'+DESC+U+'d800"\n---\n\n正文\n'}),sf,'','SYNTAX_INVALID')
+case('escaped-surrogate-pairs',base({sf:'---\nname: guide\ndescription: "'+DESC+U+'d83d'+U+'de00"\n---\n\n正文\n','metadata/roles.json':'[\n  {\n    "name": "reader'+U+'d83d'+U+'de00"\n  }\n]\n'}))
 (ROOT/'tck/surfaces/cases.json').write_text(js(CASES))
 # 文字规范值独立于生产实现，用于跨语言验证浮点、负零、Unicode 与 UTF-16 排序。
 vectors=[]
