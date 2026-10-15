@@ -73,11 +73,13 @@ await runtime.DisposeAsync();
 
 判定先于一切读取：调用者须是当前已验证租户的用户或服务主体（无委托），scope 只能是该租户自己的 tenant scope；权限经宿主装配的 Kun `IPermissionChecker` 判定 `qian.registry:scope:read`（`RegistryDefinition.ScopeReadPermission`，声明在 `plugins/qian.registry/metadata`，默认授予租户 Owner 与 Admin）。缺判定端口、无权限、跨租户与不存在的条目一律 404 `NOT_FOUND`，彼此无法区分；令牌中的角色不授予权限。
 
+平台主体（令牌 `tenant_id` 为 null 的用户，无委托）读取目标租户的 scope 视图时，调用方先把租户上下文切到该租户，判定只走 Authz 的平台超管显式旁路 `ISuperadminBypass`（ADR-006 D6.3，S1-AZ-003），资源记为 `registry/scope:tenant:<id>`、通道 `api`；旁路放行前把 `bypass = superadmin` 记入目标租户的审计链。旁路端口未装配、未配置专用平台登录、非超管、审计失败或 scope 不是当前租户上下文时，与不存在同为 404；不回退到租户判定器，也不认令牌里的角色。HTTP 入口仍经租户边界（缺 `tenant_id` 拒绝），平台运营者的 HTTP 入口随 S1-TEN-006 的平台运营接口提供。
+
 持有权限时，已挂载且 Ready 的条目返回视图：条目、组件、版本、所属 scope 文本（`global` 或 `tenant:<id>`）、层号与本 scope 的 patch 修订，不含配置。未挂载以 403 `PLUGIN_NOT_MOUNTED` 返回，message 说明哪一层导致——被租户 scope patch 禁用、被平台 profile 某层禁用、平台 profile 与租户 scope patch 均未声明、或 scope 合入失败已全部撤下；pointer 指向 `registry/scope-patches.json` 中的 patch 条目，本 scope 没有该条目时指向该层文档根。已挂载但仍在等待依赖为 403 `PLUGIN_DEPENDENCY_PENDING`。「已知条目」只取宿主预装绑定、全局已装配条目与本 scope 自己的 patch 行，其它租户的局部条目不会经 403 暴露。
 
-S1 不产生另外两个原因码：profile 没有 restriction 声明来源，`PLUGIN_RESTRICTED` 待 restriction 声明落地后接入；权益检查归 S1-ENT-001，`PLUGIN_NOT_ENTITLED` 由其接入。平台运营者跨租户查询依赖平台超管旁路（S1-AZ-003）。列表与单条读取都先在与装载相同的锁内合入该 scope 的数据库层；管理面不挂插件端点门禁，因为 scope 合入失败时本 scope 的注册（包括注册表自己的）全部收紧，诊断仍须可达。
+S1 不产生另外两个原因码：profile 没有 restriction 声明来源，`PLUGIN_RESTRICTED` 待 restriction 声明落地后接入；权益检查归 S1-ENT-001，`PLUGIN_NOT_ENTITLED` 由其接入。平台运营者跨租户查询走上述超管旁路。列表与单条读取都先在与装载相同的锁内合入该 scope 的数据库层；管理面不挂插件端点门禁，因为 scope 合入失败时本 scope 的注册（包括注册表自己的）全部收紧，诊断仍须可达。
 
-真实测试（`ScopeManagementTests`）使用受限 PG、Qian.Authz 的 `RbacPermissionChecker` 读真实角色授予、Kestrel + JWT 与租户边界：A 写 patch、B 不写时，B 的 Owner 得到 403 `PLUGIN_NOT_MOUNTED` 与 pointer，B 的使用者、未知条目与跨租户查询得到相同的 404；别名结果一致并带两个响应头；B 的禁用 patch、坏配置收紧与 A 的撤销各自给出原因；未装配判定端口时即使数据库已授予也只得到 404。
+真实测试（`ScopeManagementTests`）使用受限 PG、Qian.Authz 的 `RbacPermissionChecker` 读真实角色授予、Kestrel + JWT 与租户边界：A 写 patch、B 不写时，B 的 Owner 得到 403 `PLUGIN_NOT_MOUNTED` 与 pointer，B 的使用者、未知条目与跨租户查询得到相同的 404；别名结果一致并带两个响应头；B 的禁用 patch、坏配置收紧与 A 的撤销各自给出原因；未装配判定端口时即使数据库已授予也只得到 404。`ScopeSuperadminTests` 用真实 Authz / Audit 插件与专用平台登录验证超管旁路：未装 Authz 时 404，装上后超管读到租户 A 的视图且 A 的审计链有 bypass 记录，非超管与跨租户 scope 仍为 404 且不写审计。
 
 ## 候选制品登记入口（清单准入）
 
