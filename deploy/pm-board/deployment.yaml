@@ -106,6 +106,12 @@ spec:
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
               readOnly: true
+          # 滚动更新时旧 Pod 先从 Service 端点里摘掉，各节点的转发规则随后才更新，这几秒里仍会有新连接进来。
+          # 停 nginx 前先等 5 秒、照常服务，切换瞬间不丢请求（S1-PM-005：#141 上线时切换瞬间有 1 次连接被拒）。
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
           # 首版看板生成之前 / 返回 404，Pod 不就绪
           readinessProbe:
             httpGet: { path: /, port: http }

@@ -7,6 +7,7 @@ git-sync 把仓库检出到 /git/.worktrees/<提交>，再把 /git/current 指�
 生成失败（任务文件校验不过等）时保留上一版看板，记一条日志，同一提交不再重试。
 生成途中 git-sync 换了提交、删掉旧检出，这一版读不到文件而中断，不算失败（S1-PM-005）：
 只记一条跳过说明，下一轮生成新提交。
+收到 SIGTERM 立即退出：在容器里是 1 号进程，不处理的话内核会忽略它，Pod 要等宽限期满才被强杀。
 只用 Python 标准库；加 --once 只检查一次就退出，供本机验证；自测见 test_builder.py。
 """
 from __future__ import annotations
@@ -14,6 +15,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -76,9 +78,15 @@ def check(seen: str | None) -> str | None:
     return seen
 
 
+def stop(_signum: int, _frame: object) -> None:
+    log("收到 SIGTERM，退出")
+    sys.exit(0)
+
+
 def main() -> None:
     once = "--once" in sys.argv[1:]
     seen = None
+    signal.signal(signal.SIGTERM, stop)
     log(f"开始：{GIT_LINK} → {SITE}，每 {PERIOD:g} 秒检查一次")
     while True:
         seen = check(seen)
