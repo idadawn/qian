@@ -6043,6 +6043,41 @@
   "file": "pm/tasks/S1-RT-029.md"
  },
  {
+  "id": "S1-RT-030",
+  "title": "qian CLI 包管理器超时可配置（默认 600 秒），预检还原允许并行下载",
+  "status": "review",
+  "stage": "S1",
+  "area": "RT",
+  "areaName": "运行时 / CLI / 市场",
+  "wave": 2,
+  "priority": "P1",
+  "type": "fix",
+  "owner": "cody",
+  "estimate": "0.5d",
+  "days": 0.5,
+  "depends": [
+   "S1-RT-011"
+  ],
+  "blockedBy": [
+   "S1-RT-011"
+  ],
+  "order": 2,
+  "readyNow": false,
+  "refs": [
+   {
+    "path": "docs/prd/07-s1-foundation.md#7.2.3",
+    "url": "https://github.com/idadawn/qian/blob/main/docs/prd/07-s1-foundation.md"
+   }
+  ],
+  "updated": "2026-10-15",
+  "acceptance": {
+   "done": 4,
+   "total": 4
+  },
+  "bodyHtml": "<h4>背景</h4>\n<p>S1-RT-011 合并后复核发现：qian add 的包管理器子进程超时写死 120 秒，预检还原又带 --disable-parallel 逐个下载；冷 NuGet 缓存加私有源下载偏慢时，预检还原超时，add 报 UNAVAILABLE。2026-10-15 在 main 5665b31e4 上本机跑 private-feed.e2e.mjs，连续两次约 121 秒失败，预热缓存后 22.9 秒通过，CI 约 1 分钟通过。</p>\n<h4>验收</h4>\n<ul>\n<li class='chk done'><span class='box'>✓</span>UT：包管理器操作的超时由环境变量 <code>QIAN_PACKAGE_TIMEOUT</code>（整数秒）配置，缺省 600 秒；非整数、小于 1 或大于 86400 时，<code>qian add</code> / <code>qian remove</code> 在任何改动前以结构化错误（<code>--json</code>）失败</li>\n<li class='chk done'><span class='box'>✓</span>UT：用真实子进程验证超时：在配置的秒数内停止整个进程组，诊断写明超时秒数与配置方式；未确认停止时仍保留安装锁与备份（既有语义不变）</li>\n<li class='chk done'><span class='box'>✓</span>IT：预检还原不再逐个下载（去掉 <code>--disable-parallel</code>，与安装阶段的还原一致）；私有源 E2E 在全新的 NuGet HTTP 缓存下通过并记录耗时</li>\n<li class='chk done'><span class='box'>✓</span>文档：qian-cli 的 README 与 AGENTS 写明超时配置、默认值与预检并行</li>\n</ul>\n<h4>进度日志</h4>\n<ul>\n<li>2026-10-15 cody：创建任务</li>\n<li>2026-10-15 cody：开始：在本会话直接修复（用户要求）；默认超时 600 秒、QIAN_PACKAGE_TIMEOUT 可配置、超时诊断给出配置方式、预检还原去掉 --disable-parallel</li>\n<li>2026-10-15 cody：验收证据：① package-process.test.mjs「QIAN_PACKAGE_TIMEOUT 以整数秒配置包管理器超时：缺省 600 秒，其它写法给出结构化错误」：未设置或为空得 600 秒，1 / 86400 生效；0、-5、1.5、30s、带空格、007、abc、86401、100000 都以 INPUT_INVALID 拒绝，定位 QIAN_PACKAGE_TIMEOUT#。marketplaces.test.mjs「QIAN_PACKAGE_TIMEOUT 非法时 add / remove 在任何改动前以结构化错误失败」：真实 CLI 在 add 时不写 lock、patch 与组件目录，在 remove 时 lock、patch 与已装组件都不变（main.ts 在 add / remove 开始前校验）。② package-process.test.mjs「未显式传入超时时按 QIAN_PACKAGE_TIMEOUT 停止真实子进程，只有超时的诊断给出秒数与配置方式」：QIAN_PACKAGE_TIMEOUT=1 时，真实 node 子进程约 1 秒被停止，terminationConfirmed 为 true，诊断为「包管理器未在 1 秒内完成…可用环境变量 QIAN_PACKAGE_TIMEOUT（整数秒）加长后重试」；非零退出仍是原来的通用提示；非法配置在启动子进程前拒绝。既有的进程组停止、未确认停止保留锁与备份两项用例不变并通过。③ 预检还原去掉 --disable-parallel：用两份全新的 NuGet HTTP 缓存还原 Qian.Data / Qian.Events / Qian.Config.Apollo 0.1.0（同一组 53 个包），逐个下载 152 秒（超过旧的 120 秒上限），并行 51 秒；私有源 E2E 在全新 HTTP 缓存下通过，全程 175 秒（含预检、安装、宿主编译运行与逆序卸载）；旧代码下单是逐个下载的预检就要约 152 秒，必然超过 120 秒上限。④ 文档：packages/qian-cli/README.md 增加超时与预检并行一段，AGENTS.md 增加一条约定，tests/README.md 的私有源 E2E 条目补充 QIAN_PACKAGE_TIMEOUT</li>\n<li>2026-10-15 cody：验收全部勾选，转 review；与任务原文无偏离。验证：CLI 测试 59/59（新增 3 项），私有源 E2E 在全新 NuGet HTTP 缓存下 1/1；Release 构建 0 警告 0 错误；全量 dotnet test 781/781，零跳过（带 QIAN_BUF_PATH / QIAN_OASDIFF_PATH）；门禁自测 60/60；依赖图门禁 39 包；文档门禁、pm validate / check-fresh 通过</li>\n<li>2026-10-15 cody：与 main（035d9e718，含 #111 / #122）同步后复跑：Release 构建 0 警告 0 错误，全量 dotnet test 788/788 零跳过，CLI 测试 59/59，门禁自测 60/60，依赖图门禁 39 包，文档门禁与 pm validate / check-fresh 通过</li>\n<li>2026-10-15 cody：编号更正：本任务建档时用 S1-RT-029（a9aad79ad，21:58）；复核人随后在 #130 为 S1-RT-011 验收 5 另立的 scope patch 写入端点任务也用了 S1-RT-029（8c10bb92c，22:00），已合入 main 并写进裁决 R86。为不改裁决正文，本任务改为 S1-RT-030。本分支已推送的 a9aad79ad、408f82c47、33c47f5bd、f93d0a0eb 提交信息仍带旧编号 [S1-RT-029]，不改写历史；分支名同理保留</li>\n</ul>",
+  "file": "pm/tasks/S1-RT-030.md"
+ },
+ {
   "id": "S1-RT-031",
   "title": "qian.lifecycle 验收复核整改：前向兼容实证、钩子幂等与重试、Deprecate / Retire 守卫、失败挂载事件、诊断与执行器边界",
   "status": "todo",
