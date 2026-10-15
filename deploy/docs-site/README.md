@@ -10,6 +10,8 @@ PR / main 的 CI ──构建──> 推到 docs-site 分支 ──git-sync 每 
 - 每个 PR：发布预览到 `pr-preview/pr-<n>/`，CI 在 PR 里留链接；PR 关闭后自动删除。
 - `docs-site` 分支只有一个提交，每次发布在当前内容上改完后强推（`--force-with-lease` 防并发覆盖，冲突自动重试），构建产物不在仓库里累积历史。
 
+`repo` 检出缓存固定在 qd，使用上限 4Gi 的内存 `emptyDir`；git-sync 请求 2Gi、上限 5Gi，CPU 预算保持 10m / 300m。2026-10-15 实测原缓存约 990Mi，qd 可用内存约 332Gi。该隔离用于减少与 etcd 共用根盘的批量检出写入，是否消除慢请求仍按 S1-DEP-007 的实际采样验收。内存卷占用计入写入容器的内存额度，见 [Kubernetes emptyDir 文档](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir)。Pod 重建后从 `docs-site` 分支重新拉取，沿用现有 `Recreate` 策略，文档站会在首次同步期间短暂不可用。
+
 为什么不用 Cloudflare Pages：仓库是私有的，文档面向内部团队，现有网络入口与看板一致（WireGuard 与公司内网），不需要再开外部账号与访问控制；以后要公网访问时，在边缘 nginx 加一条到 Ingress 域名的转发即可。
 
 ## 文件

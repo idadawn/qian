@@ -14,6 +14,8 @@ spec:
       labels:
         app.kubernetes.io/name: qian-docs-site
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: qd
       automountServiceAccountToken: false
       securityContext:
         # git-sync 默认以 65533 运行；nginx-unprivileged 可用任意 uid，统一成同一用户以便共享 emptyDir
@@ -53,8 +55,8 @@ spec:
               mountPath: /etc/git-secret
               readOnly: true
           resources:
-            requests: { cpu: 10m, memory: 32Mi }
-            limits: { cpu: 300m, memory: 256Mi }
+            requests: { cpu: 10m, memory: 2Gi }
+            limits: { cpu: 300m, memory: 5Gi }
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
@@ -85,7 +87,10 @@ spec:
             capabilities: { drop: [ALL] }
       volumes:
         - name: repo
-          emptyDir: {}
+          # 可从 docs-site 重建的缓存放入内存，隔离与 qd etcd 共用的根盘写入。
+          emptyDir:
+            medium: Memory
+            sizeLimit: 4Gi
         - name: nginx-conf
           configMap:
             name: qian-docs-site-nginx
