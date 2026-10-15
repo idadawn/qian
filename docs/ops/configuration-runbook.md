@@ -12,7 +12,7 @@
 | 租户级在线设置 | ITenantSettings | 不进入 Apollo；能力随 TEN 任务交付 |
 | 前端公开运行配置 | window.__APP_CONF__ | 只允许浏览器可公开的数据，不能放原始密钥或后端解析能力 |
 
-密钥解析、审计端口与内存边界见 [密钥 Provider 开发说明](../../packages/Qian.Config.Secrets/README.md)，提交发布前使用 [配置扫描门禁](../../tools/Qian.Secrets.Tool/README.md)。`ApolloConfigurationSchema` 由宿主传入合成配置 Schema，敏感属性使用 `x-qian-sensitive`；Schema 自动收集仍属后续 CFG 任务。属性名与 `patternProperties` 的键都和配置键一样不区分大小写；模式按 ECMA-262 可移植子集解释，超出子集即判 Schema 无效，键名含各方言判断不同的字符时按敏感处理。
+密钥解析、审计端口与内存边界见 [密钥 Provider 开发说明](../../packages/Qian.Config.Secrets/README.md)，提交发布前使用 [配置扫描门禁](../../tools/Qian.Secrets.Tool/README.md)。`ApolloConfigurationSchema` 由宿主传入合成配置 Schema，敏感属性使用 `x-qian-sensitive`；Schema 自动收集仍属后续 CFG 任务。属性名与 `patternProperties` 的键都和配置键一样不区分大小写；模式按 ECMA-262 可移植子集解释，超出子集或规模上限即判 Schema 无效，键名含各方言判断不同的字符时按敏感处理。
 
 ## 降级矩阵
 

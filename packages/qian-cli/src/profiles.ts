@@ -5,12 +5,14 @@ import {randomBytes} from 'node:crypto';
 import {satisfies, rcompare, validRange} from 'semver';
 import {Ajv2020} from 'ajv/dist/2020.js';
 import {parseSurface, validateSurfaceSchema, type JsonValue, type SurfaceDiagnostic, type SurfaceSyntax} from '@qian/surfaces';
+import {compilePattern,isStable,sameKey,UnsupportedPattern,type KeyPattern} from './schema-pattern.js';
 
 type Obj = {[key: string]: JsonValue};
 const obj = (value: JsonValue | undefined): Obj => typeof value === 'object' && value !== null && !Array.isArray(value) ? value : {};
 const str = (value: JsonValue | undefined): string => typeof value === 'string' ? value : '';
 const strings = (value: JsonValue | undefined): string[] => Array.isArray(value) ? value.map(v => String(v)) : [];
 const escape = (value: string): string => value.replaceAll('~','~0').replaceAll('/','~1');
+const secretReference = (value: JsonValue): boolean => typeof value === 'string' && value.startsWith('secretRef://');
 export interface ProfileOptions { workingDirectory: string; profile?: string; patches?: readonly string[]; homeDirectory?: string; includeHomePatch?: boolean; componentDirectories?: readonly string[]; scopePatches?: readonly ScopePatchLayer[] }
 export interface ProfileLayer {index: number; kind: string; path: string; ref: string | null; present: boolean}
 export interface ProfileEntry {id: string; scope: string; plugin: string; config: JsonValue; layer: number; inject: string[]; provides: string[]; note?: string}
@@ -166,19 +168,40 @@ class Composition {
       for(const error of validate.errors??[])this.error(entry.configFile,entry.configPointer+error.instancePath+(error.keyword==='additionalProperties'?'/'+escape(String(error.params.additionalProperty)):''),'条目配置不符合组件 config.schema。');
       throw new CompositionFailed();
     }
-    const sensitive=(value:JsonValue,rule:JsonValue|undefined,pointer:string,depth=0):void=>{
+    // 与 ProfileLoader.Sensitive 同序同义，诊断逐字相同。规则不是对象即返回；x-qian-sensitive 不是布尔值时 .NET 读取失败，这里同样按无法解析处理。
+    const sensitive=(value:JsonValue,schemaRule:JsonValue|undefined,pointer:string,depth=0):void=>{
       if(depth>64)throw new Error('schema depth');
-      const referenced=localReference(obj(rule),schema);if(referenced!==undefined)sensitive(value,referenced,pointer,depth+1);
-      if(obj(rule)['x-qian-sensitive']===true&&(typeof value!=='string'||!value.startsWith('secretRef://')))this.fail(entry.configFile,pointer,'敏感配置必须为 secretRef，不能打印或保存明文。');
-      for(const name of ['allOf','anyOf','oneOf'])if(Array.isArray(obj(rule)[name]))for(const branch of obj(rule)[name] as JsonValue[])sensitive(value,branch,pointer,depth+1);
-      if(Array.isArray(value)&&obj(rule).items!==undefined)value.forEach((child,index)=>sensitive(child,obj(rule).items,pointer+'/'+index,depth+1));
+      if(typeof schemaRule!=='object'||schemaRule===null||Array.isArray(schemaRule))return;
+      const rule=schemaRule,referenced=localReference(rule,schema);if(referenced!==undefined)sensitive(value,referenced,pointer,depth+1);
+      const flag=rule['x-qian-sensitive'];if(flag!==undefined&&flag!==null&&typeof flag!=='boolean')throw new Error('x-qian-sensitive');
+      if(flag===true&&!secretReference(value))this.fail(entry.configFile,pointer,'敏感配置必须为 secretRef，不能打印或保存明文。');
+      for(const name of ['allOf','anyOf','oneOf'])if(Array.isArray(rule[name]))for(const branch of rule[name] as JsonValue[])sensitive(value,branch,pointer,depth+1);
+      if(Array.isArray(value)&&rule.items!=null)value.forEach((child,index)=>sensitive(child,rule.items,pointer+'/'+index,depth+1));
       for(const[key,child]of Object.entries(obj(value))){
-        let found=false;const properties=obj(obj(rule).properties);
-        if(Object.hasOwn(properties,key)){sensitive(child,properties[key],pointer+'/'+escape(key),depth+1);found=true;}
-        for(const[pattern,shape]of Object.entries(obj(obj(rule).patternProperties)))if(new RegExp(pattern).test(key)){sensitive(child,shape,pointer+'/'+escape(key),depth+1);found=true;}
-        if(!found)sensitive(child,obj(rule).additionalProperties,pointer+'/'+escape(key),depth+1);
+        // 键名按两种读法判定，敏感标记取并集：IQianPlugin<TConfig> 按 Web 默认不区分大小写绑定（Password 会绑到 password），
+        // 验证器与直接读 JsonElement 的插件区分大小写。所以属性名与动态键都按 OrdinalIgnoreCase 匹配，additionalProperties 只在按原样没有匹配时适用。
+        const at=pointer+'/'+escape(key);let exact=false;
+        for(const[name,shape]of Object.entries(obj(rule.properties)))if(sameKey(name,key)){sensitive(child,shape,at,depth+1);exact=name===key||exact;}
+        const patterns=Object.entries(obj(rule.patternProperties));
+        if(patterns.length){
+          // 动态键按 ECMA-262 判定（见 schema-pattern.ts）。方言判断不同的键名不做匹配，值必须是 secretRef；模式仍逐个编译，不受支持的写法照常失败。
+          const stable=isStable(key);
+          for(const[source,shape]of patterns){
+            const folded=this.pattern(source,true,entry.configFile,at);
+            if(!stable||!folded.test(key))continue;
+            sensitive(child,shape,at,depth+1);
+            exact=this.pattern(source,false,entry.configFile,at).test(key)||exact;
+          }
+          if(!stable&&!secretReference(child))this.fail(entry.configFile,at,'键名含各正则方言判断不同的字符，按敏感配置处理，必须为 secretRef。');
+        }
+        if(!exact)sensitive(child,rule.additionalProperties,at,depth+1);
       }
     };sensitive(config,schema,entry.configPointer);return config;
+  }
+  // 超出 ECMA-262 可移植子集或规模上限的写法让装配失败，不跳过敏感标记。
+  private pattern(source:string,foldCase:boolean,file:string,pointer:string):KeyPattern{
+    try{return compilePattern(source,foldCase);}
+    catch(error){if(error instanceof UnsupportedPattern)this.fail(file,pointer,'组件 config.schema 的 patternProperties 含不支持的正则写法，只接受 ECMA-262 可移植子集。');throw error;}
   }
   private order(entries:ProfileEntry[]):string[]{
     const providers=new Map<string,ProfileEntry>();

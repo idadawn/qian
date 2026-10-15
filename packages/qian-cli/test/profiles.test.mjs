@@ -19,6 +19,7 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
    const result=loadProfile({workingDirectory:directory,profile:'test',patches:item.patches,homeDirectory:'home',includeHomePatch:item.home,scopePatches:item.scopePatches});
    assert.equal(result.isValid,item.expect,item.name+': '+JSON.stringify(result));
    if(item.pointer)assert.ok(result.diagnostics.some(d=>d.error.pointer===item.pointer),item.name+': '+JSON.stringify(result));
+   if(item.reason)assert.ok(result.diagnostics.some(d=>d.error.errors.some(e=>e.pointer===item.pointer&&e.message===item.reason)),item.name+': '+JSON.stringify(result));
    if(result.isValid){
     const entries=result.snapshot.entries,settings=entries.find(e=>e.id==='settings'&&e.scope==='global');
     if(item.count!==undefined)assert.equal(entries.length,item.count,item.name);

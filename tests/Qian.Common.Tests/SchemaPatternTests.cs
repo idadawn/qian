@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Qian.Common.Tests;
@@ -107,19 +108,40 @@ public sealed class SchemaPatternTests
         }
     }
 
+    // 各方言含义不同、无法线性执行、分组未配对、量词倒置或超出规模的写法。
+    private static readonly string[] Rejected = [
+        @"\bx", @"\Bx", "(?i)a", "(?<n>a)", "(?'n'a)", "(?=a)", "(?!a)", "(?<=a)b", "(?<!a)b", "(?>a)", "(?#c)", "(?(a)b)",
+        @"\p{L}", @"\P{L}", @"\A", @"\Z", @"\z", @"\G", @"\e", @"\cA", @"\0", @"\1", @"\k<n>", @"\-", @"\ ", @"\#", @"\x4", @"\", "\\u{41}",
+        "[a-z-[aeiou]]", "[]a]", "[^]", @"[^\D]", @"[^\W_]", @"[^\S]", @"[\d-z]", @"[a-\d]", "[a-b-c]", "[a--]", "[z-a]", "[abc", @"[\b]",
+        "a{", "a{1", "a{,2}", "a{x}", "}", "]", "*a", "^*", "$+", "(*a)", "a|*", "a**", "a*??", "a{2}{3}",
+        "(a", "a)", "(?:a))", ")(", "a{2,1}", "a{1000,999}", "a{1001}", "a{0,1001}", "a{1001,}", "(?:){1001}", "a{00000000001001}",
+        "^a{999}$", "^a{998,}$", "(?:a{100}){10}b", "(?:(?:^|a){10}){50}a",
+        "😀", "[😀]", @"\" + "uD83D", @"[\" + "uDE00]"];
+    // 展开后恰为 MaxSize 的写法：锚点密集、分组嵌套、交替与开区间量词，覆盖 NonBacktracking 估算最高的形状（含锚点时约为规模的 5 倍）。
+    private static readonly string[] AtLimit = [
+        "^a{998}$", "^(?:a|b){499}$", "(?:^a$){333}a", "(?:(?:^|a){10}){50}", "^(?:a*b){499}$", "^a{997,}$", "^(?:a{1,2}?){499}$",
+        "^(?:[^a]|.){499}$", "(?:){1000}a{1000}", string.Concat(Enumerable.Repeat("^a$", 333)) + "a",
+        "^(?:" + string.Join("|", Enumerable.Range(0, 499).Select(i => (char)(0x4E00 + i) + "a")) + ")$"];
+
     [Fact]
-    public void 各方言含义不同或无法线性执行的写法在翻译时拒绝()
+    public void 各方言含义不同_无法线性执行_未配对_倒置或超出规模的写法在翻译时拒绝()
     {
-        string[] rejected = [
-            @"\bx", @"\Bx", "(?i)a", "(?<n>a)", "(?'n'a)", "(?=a)", "(?!a)", "(?<=a)b", "(?<!a)b", "(?>a)", "(?#c)", "(?(a)b)",
-            @"\p{L}", @"\P{L}", @"\A", @"\Z", @"\z", @"\G", @"\e", @"\cA", @"\0", @"\1", @"\k<n>", @"\-", @"\ ", @"\#", @"\x4", @"\", "\\u{41}",
-            "[a-z-[aeiou]]", "[]a]", "[^]", @"[^\D]", @"[^\W_]", @"[^\S]", @"[\d-z]", @"[a-\d]", "[a-b-c]", "[a--]", "[z-a]", "[abc", @"[\b]",
-            "a{", "a{1", "a{,2}", "a{x}", "}", "]", "*a", "^*", "$+", "(*a)", "a|*", "a**", "a*??", "a{2}{3}",
-            "😀", "[😀]", @"\" + "uD83D", @"[\" + "uDE00]"];
-        foreach (var pattern in rejected)
+        foreach (var pattern in Rejected)
         {
             Assert.Throws<NotSupportedException>(() => SchemaPattern.Translate(pattern));
             Assert.Throws<NotSupportedException>(() => SchemaPattern.Translate(pattern, foldCase: true));
+        }
+    }
+
+    [Fact]
+    public void 规模恰在上限的写法都能构造_再多一个字符即在翻译时拒绝()
+    {
+        foreach (var pattern in AtLimit)
+        {
+            // 接受的模式必须能被 .NET 构造，否则 CLI 与 .NET 的接受集合又会分开。
+            _ = Compile(pattern);
+            _ = Folded(pattern);
+            Assert.Throws<NotSupportedException>(() => SchemaPattern.Translate(pattern + "a"));
         }
     }
 
@@ -206,11 +228,141 @@ public sealed class SchemaPatternTests
             Assert.Equal(RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, regex.Options);
             Assert.Equal(TimeSpan.FromSeconds(1), regex.MatchTimeout);
         }
-        // 不支持的写法、.NET 拒绝的量词与超限自动机，第二次仍抛出。
+        // 不支持的写法、倒置的量词与超出规模的写法，第二次仍抛出。
         foreach (var pattern in new[] { "(?=x)", "a{2,1}", "a{20000}" })
             for (var attempt = 0; attempt < 2; attempt++)
-                Assert.ThrowsAny<Exception>(() => SchemaPattern.Compile(pattern, foldCase: attempt == 1));
+                Assert.Throws<NotSupportedException>(() => SchemaPattern.Compile(pattern, foldCase: attempt == 1));
         for (var index = 0; index <= SchemaPattern.CacheSize; index++) _ = SchemaPattern.Compile($"^bounded_{index}$", index % 2 == 0);
         Assert.InRange(SchemaPattern.Cached, 1, SchemaPattern.CacheSize);
+    }
+
+    // tck/profiles/key-vectors.json 与 packages/qian-cli/src/ordinal-case.ts 由本实现生成，CLI 的 TS 移植（schema-pattern.ts）逐条比对。
+    // 改了 SchemaPattern、升级 .NET 或宿主 ICU 新增大小写对后，以 QIAN_UPDATE_VECTORS=1 运行本测试重新生成，再同步 TS 移植直到 CLI 测试通过。
+    [Fact]
+    public void 跨语言向量与等价类表由本实现生成_与仓库文件逐字一致()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
+        Assert.NotNull(root);
+        foreach (var (relative, content) in new[] { ("tck/profiles/key-vectors.json", Vectors()), ("packages/qian-cli/src/ordinal-case.ts", CaseTable()) })
+        {
+            var path = Path.Combine(root.FullName, relative);
+            if (Environment.GetEnvironmentVariable("QIAN_UPDATE_VECTORS") == "1") File.WriteAllText(path, content);
+            var actual = File.Exists(path) ? File.ReadAllText(path) : "";
+            Assert.True(actual == content, $"{relative} 与本实现不一致：以 QIAN_UPDATE_VECTORS=1 运行本测试重新生成，再同步 CLI 的 schema-pattern.ts。" + Difference(actual, content));
+        }
+    }
+
+    // 按行列出仓库文件与本实现各自多出的内容（各取前 10 行，每行截到 200 个字符），宿主环境不同时便于定位。
+    private static string Difference(string actual, string expected)
+    {
+        static string Lines(IEnumerable<string> lines) => string.Join("\n  ", lines.Take(10).Select(line => line.Length > 200 ? line[..200] + "…" : line));
+        var (left, right) = (actual.Split('\n'), expected.Split('\n'));
+        return "\n仓库文件多出：\n  " + Lines(left.Except(right)) + "\n本实现多出：\n  " + Lines(right.Except(left));
+    }
+
+    // 翻译结果与在 Keys 上的匹配（不折叠与折叠）、全部 BMP 码元的稳定性、键名相等，都按本实现与 .NET 比较器给出。
+    private static string Vectors()
+    {
+        var unstable = new List<string>();
+        for (var code = 0; code <= char.MaxValue; code++)
+        {
+            if (SchemaPattern.IsStable(new string((char)code, 1))) continue;
+            var start = code;
+            while (code < char.MaxValue && !SchemaPattern.IsStable(new string((char)(code + 1), 1))) code++;
+            unstable.Add($"[{start}, {code}]");
+        }
+        // 恰在上限的写法只收短的，各配一个多一个字符的反例；长写法的翻译结果冗长且没有新的记号。
+        var limit = AtLimit.Where(pattern => pattern.Length <= 64).ToArray();
+        var patterns = Patterns.Concat(FoldPatterns).Concat(limit).Concat(limit.Select(pattern => pattern + "a")).Concat(Rejected).Select(pattern =>
+        {
+            string plain;
+            try { plain = SchemaPattern.Translate(pattern); }
+            catch (NotSupportedException)
+            {
+                Assert.Throws<NotSupportedException>(() => SchemaPattern.Translate(pattern, foldCase: true));
+                return $"{{\"pattern\": {Quote(pattern)}, \"rejected\": true}}";
+            }
+            var folded = SchemaPattern.Translate(pattern, foldCase: true);
+            return $"{{\"pattern\": {Quote(pattern)}, \"plain\": {Quote(plain)}, \"matches\": \"{Bits(plain)}\", \"folded\": {Quote(folded)}, \"foldedMatches\": \"{Bits(folded)}\"}}";
+        });
+        var equality = EqualityPairs().Select(pair =>
+            $"{{\"left\": {Quote(pair.Left)}, \"right\": {Quote(pair.Right)}, \"equal\": {(string.Equals(pair.Left, pair.Right, StringComparison.OrdinalIgnoreCase) ? "true" : "false")}}}");
+        return "{\n" +
+            $"  \"maxSize\": {SchemaPattern.MaxSize},\n" +
+            $"  \"unstable\": [{string.Join(", ", unstable)}],\n" +
+            $"  \"keys\": [{string.Join(", ", Keys.Select(Quote))}],\n" +
+            $"  \"patterns\": [\n    {string.Join(",\n    ", patterns)}\n  ],\n" +
+            $"  \"equality\": [\n    {string.Join(",\n    ", equality)}\n  ]\n}}\n";
+    }
+
+    private static string Bits(string translated)
+    {
+        var regex = new Regex(translated, RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
+        return string.Concat(Keys.Select(key => regex.IsMatch(key) ? '1' : '0'));
+    }
+
+    // 只原样输出可打印 ASCII，其余码元一律写成 JSON 转义，残缺的代理项也能原样往返。
+    private static string Quote(string text) => "\"" + string.Concat(text.Select(c => c switch
+    {
+        '"' => "\\\"", '\\' => "\\\\", >= ' ' and <= '~' => c.ToString(),
+        _ => "\\u" + ((int)c).ToString("x4", CultureInfo.InvariantCulture),
+    })) + "\"";
+
+    // 随机组合用的码点：与 ASCII 字母相关的特殊码元、三元等价类、增补平面的一对大小写与残缺代理项。
+    private static readonly int[] TokenCodes = [0xDF, 0x17F, 0x131, 0x130, 0x212A, 0xB5, 0x39C, 0x3BC, 0x1C4, 0x1C5, 0x1C6, 0x3C2, 0x3C3, 0x3A3, 0xE9, 0xC9, 0x10400, 0x10428, 0xD801, 0xDC00, 0xDC28];
+
+    // 键名相等的向量：Unicode 大小写转换与 OrdinalIgnoreCase 结论不同的码元、三元等价类、增补平面与残缺代理项，另加固定种子的随机组合。
+    private static IEnumerable<(string Left, string Right)> EqualityPairs()
+    {
+        static string S(params int[] codes) => string.Concat(codes.Select(code => code > char.MaxValue ? char.ConvertFromUtf32(code) : new string((char)code, 1)));
+        (string, string)[] chosen = [
+            ("Secret", "secret"), ("LEGACY_X", "legacy_x"), ("a", "aa"), ("", ""), ("a", ""),
+            (S(0xDF), "ss"), (S(0xDF), "SS"), (S(0x1E9E), S(0xDF)), (S(0x17F), "s"), (S(0x17F), "S"), (S(0x131), "I"), (S(0x131), "i"),
+            (S(0x130), "i"), (S(0x130), "I"), (S(0x212A), "k"), (S(0x212A), "K"), (S(0x212B), S(0xE5)), (S(0x2126), S(0x3C9)),
+            (S(0xB5), S(0x39C)), (S(0xB5), S(0x3BC)), (S(0x1C5), S(0x1C4)), (S(0x1C5), S(0x1C6)), (S(0x3C3), S(0x3C2)), (S(0x3C2), S(0x3A3)),
+            (S(0xE9), S(0xC9)), (S(0xFF), S(0x178)), (S(0x10400), S(0x10428)), ("x" + S(0x10400), "X" + S(0x10428)), (S(0x10400), S(0x10401)),
+            (S(0x1E900), S(0x1E922)), (S(0xD801, 'a'), S(0xD801, 'A')), (S(0xD801, 'a'), S(0xD802, 'A')), (S(0xDC00), S(0xDC00)), (S(0xDC28), S(0xDC00)),
+            (S(0xD801), S(0xD801)), (S('a', 0xD801), S('A', 0xD801)), (S(0x10400, 'a'), S(0x10428, 'A')), (S(0xD801, 0x10400), S(0xD801, 0x10428)),
+            (S(0x10400), "ab")];
+        foreach (var pair in chosen) yield return pair;
+        string[] tokens = ["a", "A", "s", "S", "k", "K", "i", "I", "x", "_", .. TokenCodes.Select(code => S(code))];
+        var random = new Random(20261014);
+        for (var index = 0; index < 300; index++)
+        {
+            string left = "", right = "";
+            for (var count = random.Next(1, 5); count > 0; count--)
+            {
+                var token = tokens[random.Next(tokens.Length)];
+                var equal = tokens.Where(other => string.Equals(other, token, StringComparison.OrdinalIgnoreCase)).ToArray();
+                left += token;
+                right += random.Next(10) < 7 ? equal[random.Next(equal.Length)] : tokens[random.Next(tokens.Length)];
+            }
+            yield return (left, right);
+        }
+    }
+
+    // Unicode 16.0、17.0 新增的大小写字母。OrdinalIgnoreCase 在 Linux 与 macOS 上按宿主 ICU 的大小写映射判断：Ubuntu 24.04 的 ICU 74（Unicode 15.1，
+    // CI 与 .NET 10 默认镜像）不认这些字母，较新的 ICU 才把它们与对应字母视为相等。等价类表只收录各宿主一致的部分：这些码点从等价类里去掉，
+    // CLI 把它们当作自成一类，同 ICU 74。宿主 ICU 再新增大小写对时，本测试会在该宿主上失败，把新字母补进这里。
+    private static readonly HashSet<int> IcuDependentCase = [0x1C89, 0x1C8A, 0xA7CB, 0xA7CC, 0xA7CD, 0xA7CE, 0xA7CF, 0xA7D2, 0xA7D4, 0xA7DA, 0xA7DB, 0xA7DC,
+        .. Enumerable.Range(0x10D50, 0x16), .. Enumerable.Range(0x10D70, 0x16)];
+
+    // 按 StringComparer.OrdinalIgnoreCase 给全部码点分组（BMP 逐码元、增补平面逐码点），去掉随宿主 ICU 而异的字母，只列两个及以上成员的类。
+    private static string CaseTable()
+    {
+        var groups = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
+        for (var code = 0; code <= 0x10FFFF; code++)
+        {
+            var text = code > char.MaxValue ? char.ConvertFromUtf32(code) : new string((char)code, 1);
+            if (!groups.TryGetValue(text, out var members)) groups[text] = members = [];
+            members.Add(code);
+        }
+        var lines = groups.Values.Select(members => members.Where(code => !IcuDependentCase.Contains(code)).ToList()).Where(members => members.Count > 1).OrderBy(members => members[0])
+            .Select(members => "[" + string.Join(",", members.Select(code => "0x" + code.ToString("X4", CultureInfo.InvariantCulture))) + "]");
+        return "// 由 tests/Qian.Common.Tests 的 SchemaPatternTests 按 .NET StringComparer.OrdinalIgnoreCase 生成，不要手改；重新生成见 packages/Common/README.md。\n" +
+            "// 每项是一个含两个及以上码点的等价类，码点升序；BMP 码元与增补平面码点不会同类，未列出的码点自成一类。\n" +
+            "// 只收录各宿主 ICU 一致的部分：Unicode 16.0 起新增的大小写字母（如 U+A7CB）随宿主 ICU 而异，这里不列，同 ICU 74 自成一类。\n" +
+            "export const ordinalIgnoreCaseClasses:readonly (readonly number[])[]=[\n" + string.Join(",\n", lines) + "\n];\n";
     }
 }

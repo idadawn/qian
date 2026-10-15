@@ -24,7 +24,7 @@
 
 `SecretSafety` 同时用于 Apollo 候选快照与 [CI 工具](../../tools/Qian.Secrets.Tool/README.md)。Schema 的 `x-qian-sensitive: true`（兼容旧 `sensitive: true`）只接受合法公开引用。支持本地 `$ref`、属性、模式属性、数组和组合/条件分支；各分支敏感标记保守取并集。外部或无法解释的 Schema 引用报错，不静默跳过。它不是完整 JSON Schema 验证器。
 
-模式属性的键按 ECMA-262 方言解释，即 JSON Schema 2020-12 的规定：`\d`、`\w`、`\s` 只认 ASCII。判定与配置键一样不区分大小写：与键名相等（OrdinalIgnoreCase）的任一写法能匹配就算匹配，所以 `Endpoints:Legacy_billing` 同样落在 `^legacy_` 下。只接受各方言含义相同的写法，规则见 [共享内部源文件](../Common/README.md)。词边界、内联选项、Unicode 属性、环视、反向引用等不支持的写法，以及语法错误、过大的自动机和匹配超时，都报 `CONFIG_SECRET_SCHEMA_INVALID`，不会跳过敏感标记。
+模式属性的键按 ECMA-262 方言解释，即 JSON Schema 2020-12 的规定：`\d`、`\w`、`\s` 只认 ASCII。判定与配置键一样不区分大小写：与键名相等（OrdinalIgnoreCase）的任一写法能匹配就算匹配，所以 `Endpoints:Legacy_billing` 同样落在 `^legacy_` 下。只接受各方言含义相同的写法，规则见 [共享内部源文件](../Common/README.md)。词边界、内联选项、Unicode 属性、环视、反向引用等不支持的写法，以及语法错误、超出规模上限的写法和匹配超时，都报 `CONFIG_SECRET_SCHEMA_INVALID`，不会跳过敏感标记。
 
 键名含各方言判断不同的字符（换行、只有 ECMA-262 算作空白的字符、U+0130、代理项），且所在对象声明了模式属性时，不按模式取舍，整体按敏感处理，只接受合法引用。匹配用 .NET NonBacktracking 引擎，线性时间；同一模式在进程内复用编译实例，最多缓存 128 个，超出时清空重建，失败的模式不进缓存。单次匹配超时 1 秒。
 
