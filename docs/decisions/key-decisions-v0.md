@@ -506,3 +506,21 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 - R98：R84 的「市场条目已存在的三个组件」在 S1 读作：条目在 CLI 支持的签名市场里存在（可以是指向仓库真实组件文件夹的签名本地市场，E2E 现场生成亦可），且其代码包已发布到正式源（R93）；S1-RT-011 验收 2 以 data / events / config 三个组件成立。官方市场仓库 `qian-plugins` 建立后，由 S1-RT-017 的 CI smoke 用真实市场条目重跑同一 E2E 回验（RT-017 补一条验收）。
 - R99：`qian remove` 的「逆序撤销 add 的全部改动」读作撤销组件带来的改动——表面目录、代码依赖、patch 条目与 lock 记录；`.qian/` 工作区（`config.yml`、空 `lock.json`、`journal/`、`.staging/`）与 `.gitignore` 的两条忽略规则是规格 §9.3 的工作区布局，不随最后一个组件移除而删除。CLI 用 `dotnet restore --use-lock-file` 生成的 `packages.lock.json` 不在此列：它让宿主此后进入锁文件模式，是 add 对宿主的持久改动，最后一个 CLI 管理的包移除时必须一并删除（或 add 改为不生成锁文件），归 S1-RT-035；卸载顺序以 lock 记录顺序为准，命令行参数顺序不影响。
 - R100：PRD 7.2.3 / 7.2.4 与 S1-RT-017 的旧措辞按规格 §9 与实现改写：表面复制到 `.qian/plugins/<id>/`；patch 写进当前 profile 定义里 `patch` 键指向的文件（默认 `profiles/<p>/qian.patch.yml`，standalone 为 profile 目录下的 `./qian.patch.yml`）；NuGet / npm 版本按组件清单 `runtime.nuget[]` / `npm[]` 钉精确版本（市场条目没有版本字段）；未验证市场的安装开关是 `--allow-unverified`（R40），不是 `--trust`。S1-DEC-018 第二阶段（RT-014 + RT-011）两门均过、关闭；qian.events / qian.config 已同时通过发布与真实安装两门，其 `x-skeleton` 按同一口径随 S1-RT-033 第 3 条移除。
+
+### 验收复核裁决 R101–R103（S1-AZ-002 / S1-AZ-003 复核，2026-10-16）
+
+由 Claude 在产品负责人要求「验收复核 AUD-001 / AZ-002 / AZ-003 / RT-011 / RT-030」后作默认裁决，未经逐条确认；复核在执行方 cody 所在会话内进行（产品负责人选择在该会话做，非独立复核）。RT-011 已由另一会话复核（R98–R100），本组不重复。承接范围见 `pm/tasks/S1-AZ-007.md`、`pm/tasks/S1-RT-033.md`、`pm/tasks/S1-DEP-005.md`，有异议时新建决策任务。
+
+- R101：服务键语法以组件规格术语表与 §3 `inject[]` 的写法及 R38 为准，不放宽 `plugin.schema.json` 的 `serviceKeys` 模式：单例 seam 为单段 `<Key>`，注册表 seam 的具名注册为 `<Key>.<Registry>:<name>`。`Qian.Authz.Abstractions` 的 `Authz.Permissions`、`Authz.SuperadminBypass` 改为单段键（例如 `AuthzPermissions`、`AuthzSuperadminBypass`）。`qian.authz.resource-type/v1` 只作扩展点契约名，资源类型端口另给单段键（例如 `AuthzResourceTypes`）。三者都没进 `PublicAPI.Shipped.txt`，改名没有兼容负担。改名由 S1-RT-033 在给 Authz 加 `[QianPlugin]` 并同步清单之前完成，在此之前其它组件不得把这三个键写进 `inject`。同时澄清 R94：S1-RT-033 验收 2 的 `[Permission]` / `[QianEvent]` 派生落点按 R37 是组件文件夹的 `metadata/permissions.json` / `metadata/events.json`，不进 `plugin.json`。PRD 7.2.3「合并进 `plugin.json` 的派生字段」与 7.5「权限点来源：清单 `provides.permissions`」按 R37 改写。
+- R102：S1-AZ-002 验收 1「安装后租户 Owner 自动拥有」按组件规格（监听 `tenant/provisioned` 实例化 `roles.json`），对新开通租户成立。以下四条生产路径另立 S1-AZ-007（P1，depends S1-AZ-002、S1-RT-005）：
+  - 平台模式运行期激活、退役组件的权限目录，增量登记与撤销；
+  - 已有租户 `Provision(tenant, plugin)` 时实例化该组件的默认策略；Lifecycle 缺少的租户级开通通知由 S1-AZ-007 或 S1-RT-031 补齐；
+  - 租户级升级（`lifecycle.tenant-plugin.upgraded.v1`）升级默认授权，不覆盖租户自定义；
+  - 独立宿主组件升级后，已有租户的默认授权随之升级。
+
+  开通时绑定 tenant.owner 的初始授权仍按 R96 归 S1-TEN-003。
+- R103：PRD 7.5 的判定缓存键 `(tenant, membership, identity_revision)` 仍是目标。
+  - **过渡口径**：identity_revision（S1-IDP-003 / S1-AZ-004）与组织、岗位、组归属（S1-AZ-005）接入前，S1 以 `(tenant, 主体种类, 主体, 租户授权修订)` 为键。租户内角色、绑定、授权或策略安装的变更与修订号同事务递增，每次判定读当前修订，失效不依赖 TTL（TTL 10 分钟只回收旧键）。S1-AZ-003 验收 3「直接主体 ≤ 3 秒」按此成立。
+  - **后续接入**：S1-AZ-004 接入 identity_revision 与 `authz.grant.changed.v1` 时，把 identity_revision 并入键，并评估是否保留「每次判定读一次修订号」。
+  - **平台超管行**：存于 `roles` / `role_assignments` 中 `tenant_id` 为空的行，经专用平台授权登录读写（`AuthzPlatformAccess`，与审计平台链的 `AuditPlatformAccess` 同构）。`platformRole` 未配置时旁路一律拒绝；生产接线写进 S1-DEP-005 验收。
+  - **成员列表**：「平台超管不出现在租户成员列表」（ADR-006 D6.11）写进 S1-IDP-009 与 S1-AZ-005 的验收。
