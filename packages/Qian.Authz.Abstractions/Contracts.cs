@@ -30,6 +30,12 @@ public interface IAuthzService : IPermissionChecker
     /// 供 me/permissions 与界面过滤使用：需要 step-up 或终端证明的权限点照常列出，Allowed 为 false、Reason 给出缺少的条件。
     /// </summary>
     ValueTask<IReadOnlyList<EffectiveGrant>> ListEffectivePermissionsAsync(AuthorizationSubject subject, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 判定并给出完整解释：命中的角色、授权记录与缺少的权限点（PRD 7.5 的 Explain 形状），判定与 Check 一致。
+    /// 继承自 Kun 的 <see cref="IPermissionChecker.ExplainAsync"/> 只返回判定；Authz API 的 explain、管理界面等要说明「为什么」的调用方用本方法。
+    /// 拒绝时不包含其它租户的角色或授权。
+    /// </summary>
+    ValueTask<AuthorizationExplanation> ExplainDetailedAsync(PermissionRequest request, CancellationToken cancellationToken = default);
 }
 
 /// <summary>主体实际持有的一个权限点：声明元数据与当前请求上下文下的判定（Allowed / Reason 与 Check 一致）。</summary>

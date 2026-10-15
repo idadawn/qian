@@ -108,7 +108,7 @@ public sealed class AuthzPlugin : IQianPlugin
     private static QianErrorException Invalid() => new(new QianError(PlatformErrors.InputInvalid));
 }
 
-// ctx.Authz 的实现：五个判定方法直接委托真实 RBAC；数据与字段端口在 S2 编译器交付前恒拒绝，而不是放行全部。
+// ctx.Authz 的实现：Kun 的五个判定方法、有效权限列表与完整解释直接委托真实 RBAC；数据与字段端口在 S2 编译器交付前恒拒绝，而不是放行全部。
 internal sealed class AuthzService(RbacPermissionChecker checker) : IAuthzService
 {
     public IDataPermissionFilter DataPermissions { get; } = new DenyAllDataPermissions();
@@ -123,6 +123,8 @@ internal sealed class AuthzService(RbacPermissionChecker checker) : IAuthzServic
     public ValueTask<PermissionDecision> ExplainAsync(PermissionRequest request, CancellationToken cancellationToken = default) => checker.ExplainAsync(request, cancellationToken);
     public ValueTask<IReadOnlyList<EffectiveGrant>> ListEffectivePermissionsAsync(AuthorizationSubject subject, CancellationToken cancellationToken = default) =>
         checker.ListEffectivePermissionsAsync(subject, cancellationToken);
+    public ValueTask<AuthorizationExplanation> ExplainDetailedAsync(PermissionRequest request, CancellationToken cancellationToken = default) =>
+        checker.ExplainDetailedAsync(request, cancellationToken);
 
     private sealed class DenyAllDataPermissions : IDataPermissionFilter
     {

@@ -27,7 +27,7 @@ using Qian.Testing.Containers;
 
 namespace Qian.Authz.Tests;
 
-// S1-AZ-003：平台超管显式旁路与审计、直接主体授予 / 撤销的失效传播。真实 PostgreSQL（受限应用角色 + 专用平台登录）、真实 Audit 插件与审计链、
+// S1-AZ-003：平台超管显式旁路与审计、直接主体授予 / 撤销的失效传播、经 ctx.Authz() 的完整解释。真实 PostgreSQL（受限应用角色 + 专用平台登录）、真实 Audit 插件与审计链、
 // 真实 Redis；没有替身判定器、替身审计或测试快照。
 public sealed class SuperadminBypassTests(PostgresFixture postgres, RedisFixture redis) : IClassFixture<PostgresFixture>, IClassFixture<RedisFixture>
 {
@@ -235,6 +235,51 @@ public sealed class SuperadminBypassTests(PostgresFixture postgres, RedisFixture
         await runtime.MountAsync([Define("shared-login", new AuthzPlugin(), AuthzKeys, new { platformRole = "qian_app" })], Ct);
         Assert.Equal(PluginState.Failed, runtime.GetState("shared-login", ScopeKey.Global));
         Assert.IsType<QianDataMisconfiguredException>(runtime.GetFailure("shared-login", ScopeKey.Global));
+    }
+
+    [Fact]
+    public async Task 经ctx_Authz取完整解释_拒绝给出缺少的权限点与命中角色_放行与stepup拒绝给出命中链路_跨租户不泄露()
+    {
+        // 消费方只依赖 Qian.Authz.Abstractions：完整解释必须经组件端口拿到，不能靠 Provider 的 RbacPermissionChecker。
+        var tenant = new AsyncLocalTenantContext(); using var host = Host(tenant); await host.StartAsync(Ct); await Prepare(host);
+        var data = host.Services.GetRequiredService<IDataService>(); var catalog = Catalog(); await new PostgresPermissionCatalogStore(data).PutAsync(catalog, Ct);
+        var registry = host.Services.GetRequiredService<IPermissionRegistry>(); using var lease = registry.Register(catalog.Version, catalog.Permissions);
+        await using var runtime = new PluginLoader(host.Services); var consumer = new Consumer();
+        await runtime.MountAsync([Define("data", new DataPlugin(), [DataDefinition.Key]), Define("authz", new AuthzPlugin(), AuthzKeys, new { advancedMode = false }),
+            Define("consumer", consumer, [])], Ct);
+        Assert.Equal(PluginState.Ready, runtime.GetState("authz", ScopeKey.Global));
+        var authz = consumer.Context!.Authz();
+        const string Write = "qian.sample.crm:customer:write", Export = "qian.sample.crm:customer:export";
+        AuthorizationSubject owner = new("owner-a", A, "user"), reader = new("reader-a", A, "user");
+        using (tenant.BeginScope(A))
+        {
+            var roles = new PostgresTenantRoleStore(data, tenant);
+            await roles.EnsureBuiltinsAsync("operator", Ct); await roles.AssignAsync("tenant.owner", "user", "owner-a", "operator", Ct);
+            await roles.AssignAsync("tenant.user", "user", "reader-a", "operator", Ct); await roles.InstallDefaultsAsync(catalog.PluginId, catalog.Version, null, "operator", Ct);
+            var allowed = await authz.ExplainDetailedAsync(new PermissionRequest(owner, Write), Ct);
+            Assert.True(allowed.Decision.Allow); Assert.Equal("role_grant", allowed.Decision.Reason); Assert.Equal(["tenant.owner"], allowed.MatchedRoles);
+            Assert.Single(allowed.MatchedGrants); Assert.StartsWith("grant:", allowed.MatchedGrants[0], StringComparison.Ordinal); Assert.Empty(allowed.Missing);
+            var denied = await authz.ExplainDetailedAsync(new PermissionRequest(reader, Write), Ct);
+            Assert.False(denied.Decision.Allow); Assert.Equal("no_matching_grant", denied.Decision.Reason);
+            Assert.Equal(["tenant.user"], denied.MatchedRoles); Assert.Empty(denied.MatchedGrants); Assert.Equal([Write], denied.Missing);
+            // RBAC 已命中、只缺 step-up 证明的拒绝也带命中链路（宿主没有注册执行约束）。
+            var stepUp = await authz.ExplainDetailedAsync(new PermissionRequest(owner, Export), Ct);
+            Assert.False(stepUp.Decision.Allow); Assert.Equal("step_up_required", stepUp.Decision.Reason); Assert.Equal(["tenant.owner"], stepUp.MatchedRoles);
+            Assert.Single(stepUp.MatchedGrants); Assert.Empty(stepUp.Missing);
+            // 继承自 Kun 的 ExplainAsync 只给判定，与 Check 和完整解释的结论一致。
+            foreach (var (subject, permission, explanation) in new[] { (owner, Write, allowed), (reader, Write, denied), (owner, Export, stepUp) })
+            {
+                var decision = await authz.ExplainAsync(new PermissionRequest(subject, permission), Ct);
+                Assert.Equal((explanation.Decision.Allow, explanation.Decision.Reason), (decision.Allow, decision.Reason));
+                Assert.Equal(explanation.Decision.Allow, (await authz.CheckAsync(new PermissionRequest(subject, permission), Ct)).Allow);
+            }
+        }
+        using (tenant.BeginScope(B))
+        {
+            var foreign = await authz.ExplainDetailedAsync(new PermissionRequest(owner, Write), Ct);
+            Assert.False(foreign.Decision.Allow); Assert.Equal("subject_tenant_mismatch", foreign.Decision.Reason);
+            Assert.Empty(foreign.MatchedRoles); Assert.Empty(foreign.MatchedGrants);
+        }
     }
 
     private IHost Host(AsyncLocalTenantContext tenant, string? authzPlatform = null, string? auditPlatform = null)

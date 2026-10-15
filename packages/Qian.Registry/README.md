@@ -114,7 +114,7 @@ scope Reconciler 解析条目时，对在 `metadata/contracts.json` 声明契约
 
 ## 剩余工作
 
-scope patch 的 HTTP 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`）尚未开放。App / 会话归属、权益（S1-ENT-001）与平台超管旁路（S1-AZ-003）各在其任务中接入。`plugins/qian.registry` 的骨架标记保留，组件目录清单的合并生成与骨架移除归 S1-RT-014。
+scope patch 的 HTTP 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`）尚未开放，归 S1-RT-029（R86）。App / 会话归属与权益（S1-ENT-001）在各自任务中接入；平台超管旁路已接入（S1-AZ-003，见上文管理面一节）。`plugins/qian.registry` 的骨架标记保留，组件目录清单的合并生成与骨架移除归 S1-RT-033（R94）。
 
 ## 面向业务入口的 scope 视图
 

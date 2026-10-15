@@ -115,6 +115,7 @@ Qian.Authz.Abstractions.EffectiveGrant.Equals(Qian.Authz.Abstractions.EffectiveG
 Qian.Authz.Abstractions.EffectiveGrant.Reason.get -> string!
 Qian.Authz.Abstractions.EffectiveGrant.Reason.init -> void
 Qian.Authz.Abstractions.IAuthzService.ListEffectivePermissionsAsync(Kun.Authorization.AuthorizationSubject! subject, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.EffectiveGrant!>!>
+Qian.Authz.Abstractions.IAuthzService.ExplainDetailedAsync(Kun.Authorization.PermissionRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Authz.Abstractions.AuthorizationExplanation!>
 override Qian.Authz.Abstractions.EffectiveGrant.Equals(object? obj) -> bool
 override Qian.Authz.Abstractions.EffectiveGrant.GetHashCode() -> int
 override Qian.Authz.Abstractions.EffectiveGrant.ToString() -> string!

@@ -39,7 +39,7 @@ roles、role_assignments、grants 保留可空 tenant_id 的平台角色存储�
 
 ## RBAC 判定基础（S1-AZ-003）
 
-`RbacPermissionChecker` 实现 Kun 的 Check、BatchCheck、ListPermissions、ListAllowedActions 和 Explain 端口。当前查询真实租户角色与授权、有效期，并结合该租户策略版本和活动权限登记。缺少租户上下文、主体租户不一致、非法主体、未安装策略版本、未登记权限或无匹配授权均拒绝。`ExplainDetailedAsync` 返回命中角色、实际授权记录定位和缺少权限，不返回另一租户的命中信息。
+`RbacPermissionChecker` 实现 Kun 的 Check、BatchCheck、ListPermissions、ListAllowedActions 和 Explain 端口。当前查询真实租户角色与授权、有效期，并结合该租户策略版本和活动权限登记。缺少租户上下文、主体租户不一致、非法主体、未安装策略版本、未登记权限或无匹配授权均拒绝。`ExplainDetailedAsync` 返回命中角色、实际授权记录定位和缺少权限，不返回另一租户的命中信息。组件端口 `IAuthzService.ExplainDetailedAsync`（经 `ctx.Authz()`）委托同一方法，消费方只依赖 Qian.Authz.Abstractions 就能取得完整解释；继承自 Kun 的 `ExplainAsync` 只返回判定。
 
 主体须由已认证宿主提供，不从请求角色或权限数组推导授权。step-up 与终端限制需要可信身份/终端适配器提供 `IAuthzExecutionConstraints` 证据；未接入时保持拒绝。资源实例 ACL、L4/L5 仍在各自阶段，当前只消费未限定 ResourceRef 的角色授权。平台主体（TenantId 为 null）在普通判定中一律拒绝，原因 `platform_subject_requires_bypass`；平台超管只能经显式旁路放行。
 
