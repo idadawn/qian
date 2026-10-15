@@ -1,10 +1,10 @@
 # qian.data
 
-Data Provider 的实现位于 packages/Qian.Data，已提供数据会话、同上下文 Outbox、角色检查、RLS 迁移与软删审计。本文件夹仍标记 x-skeleton：SDK 代码字段源生成和 CLI 代码包安装尚未完成，当前不能把配置骨架当作可执行组件安装。
+Data Provider 的实现位于 packages/Qian.Data，已提供数据会话、同上下文 Outbox、角色检查、RLS 迁移与软删审计。清单的代码字段（inject、provides、runtime.form / entry）由 Qian.Plugin.Tool 从实际程序集同步，CI 检查两者不漂移（S1-RT-014）；`runtime.nuget` 钉到私有源已发布的 `Qian.Data` 版本与摘要。S1-RT-011 已用 `qian add data` 从私有源真实安装并运行 Provider，本文件夹不再标记 x-skeleton。
 
 配置契约已与实际 DataPlugin 对齐：dialect 固定 pg，rls.enforce 固定 true；可选 connection 为宿主显式绑定的 platform/dev secretRef，用于选择上下文集合。凭据不写入组件文件夹，按上下文创建时读取。
 
-计划进入全部 .NET profile，角色为 Data seam 的 Provider。标准原生入口是 Qian.Data.DataPlugin；完成 S1-RT-014 的派生字段与 S1-RT-011 的安装事务后，由 qian add data 交付。库模式目前可通过 AddQianData 与 IDataService 独立使用。
+计划进入全部 .NET profile，角色为 Data seam 的 Provider。标准原生入口是 Qian.Data.DataPlugin，由 `qian add data` 交付：代码包按清单的精确版本从私有源还原，宿主按清单的 runtime.entry 挂载。库模式可通过 AddQianData 与 IDataService 独立使用。
 
 S1-DATA-003 增加两项声明：
 

@@ -44,7 +44,9 @@
 ### 生效配置
 
 ```json
-{}
+{
+  "runLeaseSeconds": 600
+}
 ```
 
 ### 配置 Schema
@@ -53,10 +55,123 @@
 
 ```json
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "properties": {},
-  "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "properties": {
+    "runLeaseSeconds": {
+      "type": "integer",
+      "minimum": 30,
+      "maximum": 3600,
+      "default": 600,
+      "description": "钩子执行记录的租约秒数：执行中的记录超过租约仍未写结论时，重试可以接管；未过期时同一幂等键的重试返回 LIFECYCLE_IN_PROGRESS。"
+    },
+    "executor": {
+      "description": "runtime.form: service 组件的部署执行器；省略时安装 service 组件返回 LIFECYCLE_DEPLOYMENT_UNAVAILABLE，module 与声明式组件不受影响。",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "gitops"
+            },
+            "repository": {
+              "type": "string",
+              "description": "部署仓库：不含凭据的 https / ssh 地址或本机绝对路径；推送凭据由宿主环境的 git 凭据助手提供。"
+            },
+            "branch": {
+              "type": "string",
+              "default": "main"
+            },
+            "path": {
+              "type": "string",
+              "default": "apps/qian-plugins",
+              "description": "仓库内放组件片段的目录；目录下的 kustomization.yaml 由执行器维护。"
+            },
+            "namespace": {
+              "type": "string",
+              "default": "qian-plugins",
+              "pattern": "^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$"
+            },
+            "workingDirectory": {
+              "type": "string",
+              "description": "本地工作副本目录（绝对路径）；缺省在系统临时目录下按仓库生成。"
+            },
+            "healthTimeoutSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60,
+              "default": 5
+            },
+            "kubernetes": {
+              "type": "object",
+              "properties": {
+                "server": {
+                  "type": "string",
+                  "pattern": "^https://[^\\s@?#]\u002B$",
+                  "description": "K8s API Server 地址，用于读 Deployment 状态与经服务代理访问组件 /health。"
+                },
+                "token": {
+                  "type": "string",
+                  "pattern": "^secretRef://platform/[^\\s?#]\u002B$",
+                  "x-qian-sensitive": true,
+                  "description": "只读令牌的引用：需要目标命名空间 deployments 的 get 与 services/proxy 的 get。"
+                },
+                "certificateAuthority": {
+                  "type": "string",
+                  "pattern": "^secretRef://platform/[^\\s?#]\u002B$",
+                  "x-qian-sensitive": true,
+                  "description": "集群 CA（PEM）的引用；配置后只信任它签发的证书链。"
+                }
+              },
+              "required": [
+                "server",
+                "token"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "kind",
+            "repository",
+            "kubernetes"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "local"
+            },
+            "stateDirectory": {
+              "type": "string",
+              "description": "开发态期望状态目录（绝对路径）：每个工作负载一个子目录，内容与 GitOps 片段相同。"
+            },
+            "endpoints": {
+              "type": "object",
+              "description": "组件端点：键为 组件@版本 或 组件，值为不含路径的 http(s) 地址；缺省 http://127.0.0.1:\u003Cruntime.service.port\u003E。",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^https?://[^\\s/@?#]\u002B/?$"
+              }
+            },
+            "healthTimeoutSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60,
+              "default": 5
+            }
+          },
+          "required": [
+            "kind",
+            "stateDirectory"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
 }
 ```
 
@@ -234,7 +349,18 @@
   "type": "object",
   "properties": {
     "advancedMode": {
-      "type": "boolean"
+      "type": "boolean",
+      "const": false,
+      "description": "S1 没有高级模式（数据 / 字段权限编译属 S2），Provider 只接受 false。"
+    },
+    "platformRole": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,62}$",
+      "maxLength": 63,
+      "description": "可选的独立平台授权登录角色，配置后提供平台超管显式旁路；仅 global Provider；凭据由宿主单独绑定，不写入配置。",
+      "not": {
+        "pattern": "[^a-z0-9_]"
+      }
     }
   },
   "additionalProperties": false,
@@ -245,8 +371,6 @@
 ## global/data
 
 组件：` qian.data@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
-
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
 
 ### 生效配置
 

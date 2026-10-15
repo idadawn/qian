@@ -91,6 +91,13 @@ public sealed partial class PatchPersistenceTests
             var document = running.Root.Scoped(new ScopeKey("tenant", tenant.TenantId!)).Inject<SurfaceDocument>(SurfaceKeys.Commands, "test.shared/hello");
             return Results.Text(document.Body);
         }).RequireQianPlugin(new PluginEndpointBinding("shared", "test.shared", SurfaceKeys.Commands, "test.shared/hello", "1.0.0"));
+        // 只经租户 scope patch 挂载的条目（S1-RT-005 公开挂载 / 卸载验收）。
+        app.MapGet("/private", () =>
+        {
+            Interlocked.Increment(ref calls);
+            var document = running.Root.Scoped(new ScopeKey("tenant", tenant.TenantId!)).Inject<SurfaceDocument>(SurfaceKeys.Commands, "test.private/hello");
+            return Results.Text(document.Body);
+        }).RequireQianPlugin(new PluginEndpointBinding("private", "test.private", SurfaceKeys.Commands, "test.private/hello", "1.0.0"));
         app.MapGet("/unknown", () => { Interlocked.Increment(ref calls); return Results.Ok(); })
             .RequireQianPlugin(new PluginEndpointBinding("unknown", "test.unknown", SurfaceKeys.Commands, "test.unknown/hello"));
         try

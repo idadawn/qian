@@ -1,0 +1,337 @@
+#nullable enable
+Qian.Lifecycle.ArtifactSignature
+Qian.Lifecycle.ArtifactSignature.<Clone>$() -> Qian.Lifecycle.ArtifactSignature!
+Qian.Lifecycle.ArtifactSignature.ArtifactSignature(string! KeyId, System.ReadOnlyMemory<byte> Value) -> void
+Qian.Lifecycle.ArtifactSignature.Deconstruct(out string! KeyId, out System.ReadOnlyMemory<byte> Value) -> void
+Qian.Lifecycle.ArtifactSignature.Equals(Qian.Lifecycle.ArtifactSignature? other) -> bool
+Qian.Lifecycle.ArtifactSignature.KeyId.get -> string!
+Qian.Lifecycle.ArtifactSignature.KeyId.init -> void
+Qian.Lifecycle.ArtifactSignature.Value.get -> System.ReadOnlyMemory<byte>
+Qian.Lifecycle.ArtifactSignature.Value.init -> void
+Qian.Lifecycle.DeploymentHandle
+Qian.Lifecycle.DeploymentHandle.<Clone>$() -> Qian.Lifecycle.DeploymentHandle!
+Qian.Lifecycle.DeploymentHandle.Deconstruct(out string! Executor, out string! PluginId, out string! Version, out string! Workload, out string! Reference, out int Port, out string! HealthPath) -> void
+Qian.Lifecycle.DeploymentHandle.DeploymentHandle(string! Executor, string! PluginId, string! Version, string! Workload, string! Reference, int Port, string! HealthPath) -> void
+Qian.Lifecycle.DeploymentHandle.Equals(Qian.Lifecycle.DeploymentHandle? other) -> bool
+Qian.Lifecycle.DeploymentHandle.Executor.get -> string!
+Qian.Lifecycle.DeploymentHandle.Executor.init -> void
+Qian.Lifecycle.DeploymentHandle.HealthPath.get -> string!
+Qian.Lifecycle.DeploymentHandle.HealthPath.init -> void
+Qian.Lifecycle.DeploymentHandle.PluginId.get -> string!
+Qian.Lifecycle.DeploymentHandle.PluginId.init -> void
+Qian.Lifecycle.DeploymentHandle.Port.get -> int
+Qian.Lifecycle.DeploymentHandle.Port.init -> void
+Qian.Lifecycle.DeploymentHandle.Reference.get -> string!
+Qian.Lifecycle.DeploymentHandle.Reference.init -> void
+Qian.Lifecycle.DeploymentHandle.Version.get -> string!
+Qian.Lifecycle.DeploymentHandle.Version.init -> void
+Qian.Lifecycle.DeploymentHandle.Workload.get -> string!
+Qian.Lifecycle.DeploymentHandle.Workload.init -> void
+Qian.Lifecycle.DeploymentHealth
+Qian.Lifecycle.DeploymentHealth.<Clone>$() -> Qian.Lifecycle.DeploymentHealth!
+Qian.Lifecycle.DeploymentHealth.Deconstruct(out bool WorkloadReady, out bool HealthEndpointOk, out string! Detail) -> void
+Qian.Lifecycle.DeploymentHealth.DeploymentHealth(bool WorkloadReady, bool HealthEndpointOk, string! Detail) -> void
+Qian.Lifecycle.DeploymentHealth.Detail.get -> string!
+Qian.Lifecycle.DeploymentHealth.Detail.init -> void
+Qian.Lifecycle.DeploymentHealth.Equals(Qian.Lifecycle.DeploymentHealth? other) -> bool
+Qian.Lifecycle.DeploymentHealth.HealthEndpointOk.get -> bool
+Qian.Lifecycle.DeploymentHealth.HealthEndpointOk.init -> void
+Qian.Lifecycle.DeploymentHealth.Healthy.get -> bool
+Qian.Lifecycle.DeploymentHealth.WorkloadReady.get -> bool
+Qian.Lifecycle.DeploymentHealth.WorkloadReady.init -> void
+Qian.Lifecycle.DeploymentHealthStates
+Qian.Lifecycle.DeploymentRequest
+Qian.Lifecycle.DeploymentRequest.<Clone>$() -> Qian.Lifecycle.DeploymentRequest!
+Qian.Lifecycle.DeploymentRequest.ArtifactDigest.get -> string!
+Qian.Lifecycle.DeploymentRequest.ArtifactDigest.init -> void
+Qian.Lifecycle.DeploymentRequest.Deconstruct(out string! PluginId, out string! Version, out int Revision, out string! ArtifactDigest, out string! Image, out int Port, out string! HealthPath) -> void
+Qian.Lifecycle.DeploymentRequest.DeploymentRequest(string! PluginId, string! Version, int Revision, string! ArtifactDigest, string! Image, int Port, string! HealthPath) -> void
+Qian.Lifecycle.DeploymentRequest.Equals(Qian.Lifecycle.DeploymentRequest? other) -> bool
+Qian.Lifecycle.DeploymentRequest.HealthPath.get -> string!
+Qian.Lifecycle.DeploymentRequest.HealthPath.init -> void
+Qian.Lifecycle.DeploymentRequest.Image.get -> string!
+Qian.Lifecycle.DeploymentRequest.Image.init -> void
+Qian.Lifecycle.DeploymentRequest.PluginId.get -> string!
+Qian.Lifecycle.DeploymentRequest.PluginId.init -> void
+Qian.Lifecycle.DeploymentRequest.Port.get -> int
+Qian.Lifecycle.DeploymentRequest.Port.init -> void
+Qian.Lifecycle.DeploymentRequest.Revision.get -> int
+Qian.Lifecycle.DeploymentRequest.Revision.init -> void
+Qian.Lifecycle.DeploymentRequest.Version.get -> string!
+Qian.Lifecycle.DeploymentRequest.Version.init -> void
+Qian.Lifecycle.IDeploymentExecutor
+Qian.Lifecycle.IDeploymentExecutor.ApplyAsync(Qian.Lifecycle.DeploymentRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.DeploymentHandle!>
+Qian.Lifecycle.IDeploymentExecutor.Name.get -> string!
+Qian.Lifecycle.IDeploymentExecutor.ObserveAsync(Qian.Lifecycle.DeploymentHandle! handle, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.DeploymentHealth!>
+Qian.Lifecycle.IPluginLifecycleController
+Qian.Lifecycle.IPluginLifecycleController.ActivateAsync(string! pluginId, int revision, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PluginRevisionView!>
+Qian.Lifecycle.IPluginLifecycleController.DeprecateAsync(string! pluginId, int revision, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PluginRevisionView!>
+Qian.Lifecycle.IPluginLifecycleController.EntitleAsync(string! tenantId, string! pluginId, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.TenantPluginInstallView!>
+Qian.Lifecycle.IPluginLifecycleController.GetDiagnosticsAsync(Qian.Runtime.ScopeKey scope, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.LifecycleDiagnosticView!>!>
+Qian.Lifecycle.IPluginLifecycleController.GetInstallAsync(string! tenantId, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.TenantPluginInstallView?>
+Qian.Lifecycle.IPluginLifecycleController.GetRevisionsAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.PluginRevisionView!>!>
+Qian.Lifecycle.IPluginLifecycleController.GetRunsAsync(string! tenantId, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.LifecycleRunView!>!>
+Qian.Lifecycle.IPluginLifecycleController.InstallAsync(Qian.Lifecycle.PluginArtifact! artifact, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PluginRevisionView!>
+Qian.Lifecycle.IPluginLifecycleController.MountAsync(Qian.Runtime.ScopeKey scope, System.Text.Json.JsonElement entry, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.MountResult!>
+Qian.Lifecycle.IPluginLifecycleController.ProvisionAsync(string! tenantId, string! pluginId, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.TenantPluginInstallView!>
+Qian.Lifecycle.IPluginLifecycleController.PurgeAsync(string! tenantId, string! pluginId, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.TenantPluginInstallView!>
+Qian.Lifecycle.IPluginLifecycleController.RefreshDeploymentAsync(string! pluginId, int revision, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PluginRevisionView!>
+Qian.Lifecycle.IPluginLifecycleController.RetireAsync(string! pluginId, int revision, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PluginRevisionView!>
+Qian.Lifecycle.IPluginLifecycleController.RollbackAsync(string! pluginId, int toRevision, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PluginRevisionView!>
+Qian.Lifecycle.IPluginLifecycleController.UninstallAsync(string! tenantId, string! pluginId, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.TenantPluginInstallView!>
+Qian.Lifecycle.IPluginLifecycleController.UnmountAsync(Qian.Runtime.ScopeKey scope, string! entryId, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.MountResult!>
+Qian.Lifecycle.IPluginLifecycleController.UpgradeAsync(string! tenantId, string! pluginId, string! fromVersion, string! toVersion, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.TenantPluginInstallView!>
+Qian.Lifecycle.IPluginLifecycleHooks
+Qian.Lifecycle.IPluginLifecycleHooks.InvokeAsync(Qian.Lifecycle.LifecycleHookContext! context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Text.Json.JsonElement?>
+Qian.Lifecycle.LifecycleDefinition
+Qian.Lifecycle.LifecycleDiagnosticView
+Qian.Lifecycle.LifecycleDiagnosticView.<Clone>$() -> Qian.Lifecycle.LifecycleDiagnosticView!
+Qian.Lifecycle.LifecycleDiagnosticView.Deconstruct(out string! Scope, out string? EntryId, out string? Plugin, out int? Revision, out string! ReasonCode, out System.DateTimeOffset OccurredAt) -> void
+Qian.Lifecycle.LifecycleDiagnosticView.EntryId.get -> string?
+Qian.Lifecycle.LifecycleDiagnosticView.EntryId.init -> void
+Qian.Lifecycle.LifecycleDiagnosticView.Equals(Qian.Lifecycle.LifecycleDiagnosticView? other) -> bool
+Qian.Lifecycle.LifecycleDiagnosticView.LifecycleDiagnosticView(string! Scope, string? EntryId, string? Plugin, int? Revision, string! ReasonCode, System.DateTimeOffset OccurredAt) -> void
+Qian.Lifecycle.LifecycleDiagnosticView.OccurredAt.get -> System.DateTimeOffset
+Qian.Lifecycle.LifecycleDiagnosticView.OccurredAt.init -> void
+Qian.Lifecycle.LifecycleDiagnosticView.Plugin.get -> string?
+Qian.Lifecycle.LifecycleDiagnosticView.Plugin.init -> void
+Qian.Lifecycle.LifecycleDiagnosticView.ReasonCode.get -> string!
+Qian.Lifecycle.LifecycleDiagnosticView.ReasonCode.init -> void
+Qian.Lifecycle.LifecycleDiagnosticView.Revision.get -> int?
+Qian.Lifecycle.LifecycleDiagnosticView.Revision.init -> void
+Qian.Lifecycle.LifecycleDiagnosticView.Scope.get -> string!
+Qian.Lifecycle.LifecycleDiagnosticView.Scope.init -> void
+Qian.Lifecycle.LifecycleErrors
+Qian.Lifecycle.LifecycleEvents
+Qian.Lifecycle.LifecycleHookContext
+Qian.Lifecycle.LifecycleHookContext.Context.get -> Qian.Runtime.IPluginContext!
+Qian.Lifecycle.LifecycleHookContext.Context.init -> void
+Qian.Lifecycle.LifecycleHookContext.FromVersion.get -> string?
+Qian.Lifecycle.LifecycleHookContext.FromVersion.init -> void
+Qian.Lifecycle.LifecycleHookContext.Hook.get -> string!
+Qian.Lifecycle.LifecycleHookContext.Hook.init -> void
+Qian.Lifecycle.LifecycleHookContext.IdempotencyKey.get -> System.Guid
+Qian.Lifecycle.LifecycleHookContext.IdempotencyKey.init -> void
+Qian.Lifecycle.LifecycleHookContext.LifecycleHookContext() -> void
+Qian.Lifecycle.LifecycleHookContext.PluginId.get -> string!
+Qian.Lifecycle.LifecycleHookContext.PluginId.init -> void
+Qian.Lifecycle.LifecycleHookContext.TenantId.get -> string!
+Qian.Lifecycle.LifecycleHookContext.TenantId.init -> void
+Qian.Lifecycle.LifecycleHookContext.ToVersion.get -> string!
+Qian.Lifecycle.LifecycleHookContext.ToVersion.init -> void
+Qian.Lifecycle.LifecycleHooks
+Qian.Lifecycle.LifecyclePluginActivated
+Qian.Lifecycle.LifecyclePluginActivated.<Clone>$() -> Qian.Lifecycle.LifecyclePluginActivated!
+Qian.Lifecycle.LifecyclePluginActivated.Deconstruct(out string! PluginId, out int Revision, out string! Version, out int? PreviousRevision) -> void
+Qian.Lifecycle.LifecyclePluginActivated.Equals(Qian.Lifecycle.LifecyclePluginActivated? other) -> bool
+Qian.Lifecycle.LifecyclePluginActivated.LifecyclePluginActivated(string! PluginId, int Revision, string! Version, int? PreviousRevision) -> void
+Qian.Lifecycle.LifecyclePluginActivated.PluginId.get -> string!
+Qian.Lifecycle.LifecyclePluginActivated.PluginId.init -> void
+Qian.Lifecycle.LifecyclePluginActivated.PreviousRevision.get -> int?
+Qian.Lifecycle.LifecyclePluginActivated.PreviousRevision.init -> void
+Qian.Lifecycle.LifecyclePluginActivated.Revision.get -> int
+Qian.Lifecycle.LifecyclePluginActivated.Revision.init -> void
+Qian.Lifecycle.LifecyclePluginActivated.Version.get -> string!
+Qian.Lifecycle.LifecyclePluginActivated.Version.init -> void
+Qian.Lifecycle.LifecycleRunStates
+Qian.Lifecycle.LifecycleRunView
+Qian.Lifecycle.LifecycleRunView.<Clone>$() -> Qian.Lifecycle.LifecycleRunView!
+Qian.Lifecycle.LifecycleRunView.Attempts.get -> int
+Qian.Lifecycle.LifecycleRunView.Attempts.init -> void
+Qian.Lifecycle.LifecycleRunView.Deconstruct(out string! TenantId, out string! PluginId, out string! Hook, out string? FromVersion, out string! ToVersion, out string! Status, out int Attempts, out string? ReasonCode, out System.DateTimeOffset StartedAt, out System.DateTimeOffset? FinishedAt) -> void
+Qian.Lifecycle.LifecycleRunView.Equals(Qian.Lifecycle.LifecycleRunView? other) -> bool
+Qian.Lifecycle.LifecycleRunView.FinishedAt.get -> System.DateTimeOffset?
+Qian.Lifecycle.LifecycleRunView.FinishedAt.init -> void
+Qian.Lifecycle.LifecycleRunView.FromVersion.get -> string?
+Qian.Lifecycle.LifecycleRunView.FromVersion.init -> void
+Qian.Lifecycle.LifecycleRunView.Hook.get -> string!
+Qian.Lifecycle.LifecycleRunView.Hook.init -> void
+Qian.Lifecycle.LifecycleRunView.LifecycleRunView(string! TenantId, string! PluginId, string! Hook, string? FromVersion, string! ToVersion, string! Status, int Attempts, string? ReasonCode, System.DateTimeOffset StartedAt, System.DateTimeOffset? FinishedAt) -> void
+Qian.Lifecycle.LifecycleRunView.PluginId.get -> string!
+Qian.Lifecycle.LifecycleRunView.PluginId.init -> void
+Qian.Lifecycle.LifecycleRunView.ReasonCode.get -> string?
+Qian.Lifecycle.LifecycleRunView.ReasonCode.init -> void
+Qian.Lifecycle.LifecycleRunView.StartedAt.get -> System.DateTimeOffset
+Qian.Lifecycle.LifecycleRunView.StartedAt.init -> void
+Qian.Lifecycle.LifecycleRunView.Status.get -> string!
+Qian.Lifecycle.LifecycleRunView.Status.init -> void
+Qian.Lifecycle.LifecycleRunView.TenantId.get -> string!
+Qian.Lifecycle.LifecycleRunView.TenantId.init -> void
+Qian.Lifecycle.LifecycleRunView.ToVersion.get -> string!
+Qian.Lifecycle.LifecycleRunView.ToVersion.init -> void
+Qian.Lifecycle.LifecycleTenantPluginUpgraded
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.<Clone>$() -> Qian.Lifecycle.LifecycleTenantPluginUpgraded!
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.Deconstruct(out string! PluginId, out string! FromVersion, out string! ToVersion) -> void
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.Equals(Qian.Lifecycle.LifecycleTenantPluginUpgraded? other) -> bool
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.FromVersion.get -> string!
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.FromVersion.init -> void
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.LifecycleTenantPluginUpgraded(string! PluginId, string! FromVersion, string! ToVersion) -> void
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.PluginId.get -> string!
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.PluginId.init -> void
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.ToVersion.get -> string!
+Qian.Lifecycle.LifecycleTenantPluginUpgraded.ToVersion.init -> void
+Qian.Lifecycle.MountResult
+Qian.Lifecycle.MountResult.<Clone>$() -> Qian.Lifecycle.MountResult!
+Qian.Lifecycle.MountResult.Deconstruct(out string! Scope, out string! EntryId, out int Revision, out string! State, out string? ReasonCode) -> void
+Qian.Lifecycle.MountResult.EntryId.get -> string!
+Qian.Lifecycle.MountResult.EntryId.init -> void
+Qian.Lifecycle.MountResult.Equals(Qian.Lifecycle.MountResult? other) -> bool
+Qian.Lifecycle.MountResult.MountResult(string! Scope, string! EntryId, int Revision, string! State, string? ReasonCode) -> void
+Qian.Lifecycle.MountResult.ReasonCode.get -> string?
+Qian.Lifecycle.MountResult.ReasonCode.init -> void
+Qian.Lifecycle.MountResult.Revision.get -> int
+Qian.Lifecycle.MountResult.Revision.init -> void
+Qian.Lifecycle.MountResult.Scope.get -> string!
+Qian.Lifecycle.MountResult.Scope.init -> void
+Qian.Lifecycle.MountResult.State.get -> string!
+Qian.Lifecycle.MountResult.State.init -> void
+Qian.Lifecycle.MountStates
+Qian.Lifecycle.PluginArtifact
+Qian.Lifecycle.PluginArtifact.Digest.get -> string!
+Qian.Lifecycle.PluginArtifact.Files.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>!
+Qian.Lifecycle.PluginArtifact.PluginArtifact(System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files, string! digest, Qian.Lifecycle.ArtifactSignature? signature) -> void
+Qian.Lifecycle.PluginArtifact.Signature.get -> Qian.Lifecycle.ArtifactSignature?
+Qian.Lifecycle.PluginRevisionStates
+Qian.Lifecycle.PluginRevisionView
+Qian.Lifecycle.PluginRevisionView.<Clone>$() -> Qian.Lifecycle.PluginRevisionView!
+Qian.Lifecycle.PluginRevisionView.ActivatedAt.get -> System.DateTimeOffset?
+Qian.Lifecycle.PluginRevisionView.ActivatedAt.init -> void
+Qian.Lifecycle.PluginRevisionView.ArtifactDigest.get -> string!
+Qian.Lifecycle.PluginRevisionView.ArtifactDigest.init -> void
+Qian.Lifecycle.PluginRevisionView.Deconstruct(out string! PluginId, out int Revision, out string! Version, out string! ArtifactDigest, out string! Form, out string! State, out string! SignedBy, out string? Health, out string? DeploymentReference, out System.DateTimeOffset InstalledAt, out System.DateTimeOffset? ActivatedAt) -> void
+Qian.Lifecycle.PluginRevisionView.DeploymentReference.get -> string?
+Qian.Lifecycle.PluginRevisionView.DeploymentReference.init -> void
+Qian.Lifecycle.PluginRevisionView.Equals(Qian.Lifecycle.PluginRevisionView? other) -> bool
+Qian.Lifecycle.PluginRevisionView.Form.get -> string!
+Qian.Lifecycle.PluginRevisionView.Form.init -> void
+Qian.Lifecycle.PluginRevisionView.Health.get -> string?
+Qian.Lifecycle.PluginRevisionView.Health.init -> void
+Qian.Lifecycle.PluginRevisionView.InstalledAt.get -> System.DateTimeOffset
+Qian.Lifecycle.PluginRevisionView.InstalledAt.init -> void
+Qian.Lifecycle.PluginRevisionView.PluginId.get -> string!
+Qian.Lifecycle.PluginRevisionView.PluginId.init -> void
+Qian.Lifecycle.PluginRevisionView.PluginRevisionView(string! PluginId, int Revision, string! Version, string! ArtifactDigest, string! Form, string! State, string! SignedBy, string? Health, string? DeploymentReference, System.DateTimeOffset InstalledAt, System.DateTimeOffset? ActivatedAt) -> void
+Qian.Lifecycle.PluginRevisionView.Revision.get -> int
+Qian.Lifecycle.PluginRevisionView.Revision.init -> void
+Qian.Lifecycle.PluginRevisionView.SignedBy.get -> string!
+Qian.Lifecycle.PluginRevisionView.SignedBy.init -> void
+Qian.Lifecycle.PluginRevisionView.State.get -> string!
+Qian.Lifecycle.PluginRevisionView.State.init -> void
+Qian.Lifecycle.PluginRevisionView.Version.get -> string!
+Qian.Lifecycle.PluginRevisionView.Version.init -> void
+Qian.Lifecycle.TenantInstallStates
+Qian.Lifecycle.TenantPluginInstallView
+Qian.Lifecycle.TenantPluginInstallView.<Clone>$() -> Qian.Lifecycle.TenantPluginInstallView!
+Qian.Lifecycle.TenantPluginInstallView.Deconstruct(out string! TenantId, out string! PluginId, out string! State, out string? Version, out string? TargetVersion, out string! UpdatedBy, out System.DateTimeOffset UpdatedAt) -> void
+Qian.Lifecycle.TenantPluginInstallView.Equals(Qian.Lifecycle.TenantPluginInstallView? other) -> bool
+Qian.Lifecycle.TenantPluginInstallView.PluginId.get -> string!
+Qian.Lifecycle.TenantPluginInstallView.PluginId.init -> void
+Qian.Lifecycle.TenantPluginInstallView.State.get -> string!
+Qian.Lifecycle.TenantPluginInstallView.State.init -> void
+Qian.Lifecycle.TenantPluginInstallView.TargetVersion.get -> string?
+Qian.Lifecycle.TenantPluginInstallView.TargetVersion.init -> void
+Qian.Lifecycle.TenantPluginInstallView.TenantId.get -> string!
+Qian.Lifecycle.TenantPluginInstallView.TenantId.init -> void
+Qian.Lifecycle.TenantPluginInstallView.TenantPluginInstallView(string! TenantId, string! PluginId, string! State, string? Version, string? TargetVersion, string! UpdatedBy, System.DateTimeOffset UpdatedAt) -> void
+Qian.Lifecycle.TenantPluginInstallView.UpdatedAt.get -> System.DateTimeOffset
+Qian.Lifecycle.TenantPluginInstallView.UpdatedAt.init -> void
+Qian.Lifecycle.TenantPluginInstallView.UpdatedBy.get -> string!
+Qian.Lifecycle.TenantPluginInstallView.UpdatedBy.init -> void
+Qian.Lifecycle.TenantPluginInstallView.Version.get -> string?
+Qian.Lifecycle.TenantPluginInstallView.Version.init -> void
+const Qian.Lifecycle.DeploymentHealthStates.Healthy = "Healthy" -> string!
+const Qian.Lifecycle.DeploymentHealthStates.Progressing = "Progressing" -> string!
+const Qian.Lifecycle.LifecycleDefinition.DiagnosticsReadPermission = "qian.lifecycle:diagnostics:read" -> string!
+const Qian.Lifecycle.LifecycleEvents.PluginActivated = "lifecycle.plugin.activated.v1" -> string!
+const Qian.Lifecycle.LifecycleEvents.TenantPluginUpgraded = "lifecycle.tenant-plugin.upgraded.v1" -> string!
+const Qian.Lifecycle.LifecycleHooks.TenantProvision = "tenant-provision" -> string!
+const Qian.Lifecycle.LifecycleHooks.TenantPurge = "tenant-purge" -> string!
+const Qian.Lifecycle.LifecycleHooks.TenantUninstall = "tenant-uninstall" -> string!
+const Qian.Lifecycle.LifecycleHooks.TenantUpgrade = "tenant-upgrade" -> string!
+const Qian.Lifecycle.LifecycleRunStates.Failed = "Failed" -> string!
+const Qian.Lifecycle.LifecycleRunStates.Running = "Running" -> string!
+const Qian.Lifecycle.LifecycleRunStates.Succeeded = "Succeeded" -> string!
+const Qian.Lifecycle.MountStates.Failed = "Failed" -> string!
+const Qian.Lifecycle.MountStates.Ready = "Ready" -> string!
+const Qian.Lifecycle.MountStates.Unmounted = "Unmounted" -> string!
+const Qian.Lifecycle.PluginRevisionStates.Active = "Active" -> string!
+const Qian.Lifecycle.PluginRevisionStates.Deprecated = "Deprecated" -> string!
+const Qian.Lifecycle.PluginRevisionStates.Installed = "Installed" -> string!
+const Qian.Lifecycle.PluginRevisionStates.Retired = "Retired" -> string!
+const Qian.Lifecycle.TenantInstallStates.Entitled = "Entitled" -> string!
+const Qian.Lifecycle.TenantInstallStates.Installed = "Installed" -> string!
+const Qian.Lifecycle.TenantInstallStates.Provisioning = "Provisioning" -> string!
+const Qian.Lifecycle.TenantInstallStates.Purged = "Purged" -> string!
+const Qian.Lifecycle.TenantInstallStates.Uninstalled = "Uninstalled" -> string!
+const Qian.Lifecycle.TenantInstallStates.Upgrading = "Upgrading" -> string!
+override Qian.Lifecycle.ArtifactSignature.Equals(object? obj) -> bool
+override Qian.Lifecycle.ArtifactSignature.GetHashCode() -> int
+override Qian.Lifecycle.ArtifactSignature.ToString() -> string!
+override Qian.Lifecycle.DeploymentHandle.Equals(object? obj) -> bool
+override Qian.Lifecycle.DeploymentHandle.GetHashCode() -> int
+override Qian.Lifecycle.DeploymentHandle.ToString() -> string!
+override Qian.Lifecycle.DeploymentHealth.Equals(object? obj) -> bool
+override Qian.Lifecycle.DeploymentHealth.GetHashCode() -> int
+override Qian.Lifecycle.DeploymentHealth.ToString() -> string!
+override Qian.Lifecycle.DeploymentRequest.Equals(object? obj) -> bool
+override Qian.Lifecycle.DeploymentRequest.GetHashCode() -> int
+override Qian.Lifecycle.DeploymentRequest.ToString() -> string!
+override Qian.Lifecycle.LifecycleDiagnosticView.Equals(object? obj) -> bool
+override Qian.Lifecycle.LifecycleDiagnosticView.GetHashCode() -> int
+override Qian.Lifecycle.LifecycleDiagnosticView.ToString() -> string!
+override Qian.Lifecycle.LifecycleHookContext.ToString() -> string!
+override Qian.Lifecycle.LifecyclePluginActivated.Equals(object? obj) -> bool
+override Qian.Lifecycle.LifecyclePluginActivated.GetHashCode() -> int
+override Qian.Lifecycle.LifecyclePluginActivated.ToString() -> string!
+override Qian.Lifecycle.LifecycleRunView.Equals(object? obj) -> bool
+override Qian.Lifecycle.LifecycleRunView.GetHashCode() -> int
+override Qian.Lifecycle.LifecycleRunView.ToString() -> string!
+override Qian.Lifecycle.LifecycleTenantPluginUpgraded.Equals(object? obj) -> bool
+override Qian.Lifecycle.LifecycleTenantPluginUpgraded.GetHashCode() -> int
+override Qian.Lifecycle.LifecycleTenantPluginUpgraded.ToString() -> string!
+override Qian.Lifecycle.MountResult.Equals(object? obj) -> bool
+override Qian.Lifecycle.MountResult.GetHashCode() -> int
+override Qian.Lifecycle.MountResult.ToString() -> string!
+override Qian.Lifecycle.PluginArtifact.ToString() -> string!
+override Qian.Lifecycle.PluginRevisionView.Equals(object? obj) -> bool
+override Qian.Lifecycle.PluginRevisionView.GetHashCode() -> int
+override Qian.Lifecycle.PluginRevisionView.ToString() -> string!
+override Qian.Lifecycle.TenantPluginInstallView.Equals(object? obj) -> bool
+override Qian.Lifecycle.TenantPluginInstallView.GetHashCode() -> int
+override Qian.Lifecycle.TenantPluginInstallView.ToString() -> string!
+static Qian.Lifecycle.ArtifactSignature.operator !=(Qian.Lifecycle.ArtifactSignature? left, Qian.Lifecycle.ArtifactSignature? right) -> bool
+static Qian.Lifecycle.ArtifactSignature.operator ==(Qian.Lifecycle.ArtifactSignature? left, Qian.Lifecycle.ArtifactSignature? right) -> bool
+static Qian.Lifecycle.DeploymentHandle.operator !=(Qian.Lifecycle.DeploymentHandle? left, Qian.Lifecycle.DeploymentHandle? right) -> bool
+static Qian.Lifecycle.DeploymentHandle.operator ==(Qian.Lifecycle.DeploymentHandle? left, Qian.Lifecycle.DeploymentHandle? right) -> bool
+static Qian.Lifecycle.DeploymentHealth.operator !=(Qian.Lifecycle.DeploymentHealth? left, Qian.Lifecycle.DeploymentHealth? right) -> bool
+static Qian.Lifecycle.DeploymentHealth.operator ==(Qian.Lifecycle.DeploymentHealth? left, Qian.Lifecycle.DeploymentHealth? right) -> bool
+static Qian.Lifecycle.DeploymentRequest.operator !=(Qian.Lifecycle.DeploymentRequest? left, Qian.Lifecycle.DeploymentRequest? right) -> bool
+static Qian.Lifecycle.DeploymentRequest.operator ==(Qian.Lifecycle.DeploymentRequest? left, Qian.Lifecycle.DeploymentRequest? right) -> bool
+static Qian.Lifecycle.LifecycleDefinition.Lifecycle(this Qian.Runtime.IPluginContext! context) -> Qian.Lifecycle.IPluginLifecycleController!
+static Qian.Lifecycle.LifecycleDiagnosticView.operator !=(Qian.Lifecycle.LifecycleDiagnosticView? left, Qian.Lifecycle.LifecycleDiagnosticView? right) -> bool
+static Qian.Lifecycle.LifecycleDiagnosticView.operator ==(Qian.Lifecycle.LifecycleDiagnosticView? left, Qian.Lifecycle.LifecycleDiagnosticView? right) -> bool
+static Qian.Lifecycle.LifecycleErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!
+static Qian.Lifecycle.LifecycleEvents.RegisterLifecycleEvents(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
+static Qian.Lifecycle.LifecyclePluginActivated.operator !=(Qian.Lifecycle.LifecyclePluginActivated? left, Qian.Lifecycle.LifecyclePluginActivated? right) -> bool
+static Qian.Lifecycle.LifecyclePluginActivated.operator ==(Qian.Lifecycle.LifecyclePluginActivated? left, Qian.Lifecycle.LifecyclePluginActivated? right) -> bool
+static Qian.Lifecycle.LifecycleRunView.operator !=(Qian.Lifecycle.LifecycleRunView? left, Qian.Lifecycle.LifecycleRunView? right) -> bool
+static Qian.Lifecycle.LifecycleRunView.operator ==(Qian.Lifecycle.LifecycleRunView? left, Qian.Lifecycle.LifecycleRunView? right) -> bool
+static Qian.Lifecycle.LifecycleTenantPluginUpgraded.operator !=(Qian.Lifecycle.LifecycleTenantPluginUpgraded? left, Qian.Lifecycle.LifecycleTenantPluginUpgraded? right) -> bool
+static Qian.Lifecycle.LifecycleTenantPluginUpgraded.operator ==(Qian.Lifecycle.LifecycleTenantPluginUpgraded? left, Qian.Lifecycle.LifecycleTenantPluginUpgraded? right) -> bool
+static Qian.Lifecycle.MountResult.operator !=(Qian.Lifecycle.MountResult? left, Qian.Lifecycle.MountResult? right) -> bool
+static Qian.Lifecycle.MountResult.operator ==(Qian.Lifecycle.MountResult? left, Qian.Lifecycle.MountResult? right) -> bool
+static Qian.Lifecycle.PluginRevisionView.operator !=(Qian.Lifecycle.PluginRevisionView? left, Qian.Lifecycle.PluginRevisionView? right) -> bool
+static Qian.Lifecycle.PluginRevisionView.operator ==(Qian.Lifecycle.PluginRevisionView? left, Qian.Lifecycle.PluginRevisionView? right) -> bool
+static Qian.Lifecycle.TenantPluginInstallView.operator !=(Qian.Lifecycle.TenantPluginInstallView? left, Qian.Lifecycle.TenantPluginInstallView? right) -> bool
+static Qian.Lifecycle.TenantPluginInstallView.operator ==(Qian.Lifecycle.TenantPluginInstallView? left, Qian.Lifecycle.TenantPluginInstallView? right) -> bool
+static readonly Qian.Lifecycle.LifecycleDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Lifecycle.LifecycleErrors.ArtifactUnsigned -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.DeploymentUnavailable -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.HookFailed -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.InProgress -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.MountFailed -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.NotEntitled -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.RevisionNotDeployed -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.SignatureInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.StateConflict -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.Invalid -> Qian.Runtime.Errors.ErrorCode!

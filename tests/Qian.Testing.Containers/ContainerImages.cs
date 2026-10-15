@@ -15,6 +15,9 @@ public static class ContainerImages
     /// <summary>RabbitMQ 镜像，覆盖变量 <c>QIAN_TEST_IMAGE_RABBITMQ</c>。</summary>
     public static string RabbitMq => FromEnvironment("QIAN_TEST_IMAGE_RABBITMQ", "rabbitmq:4.3-alpine");
 
+    /// <summary>K3s 单节点集群镜像，覆盖变量 <c>QIAN_TEST_IMAGE_K3S</c>。</summary>
+    public static string K3s => FromEnvironment("QIAN_TEST_IMAGE_K3S", "rancher/k3s:v1.31.5-k3s1");
+
     /// <summary>运行 Apollo 协议替身的 Python 镜像，覆盖变量 <c>QIAN_TEST_IMAGE_APOLLO_MOCK</c>。</summary>
     public static string ApolloMock => FromEnvironment("QIAN_TEST_IMAGE_APOLLO_MOCK", "python:3.13-alpine");
 
