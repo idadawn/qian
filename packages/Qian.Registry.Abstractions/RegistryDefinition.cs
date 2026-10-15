@@ -41,6 +41,21 @@ public interface IRegistryService : IAsyncDisposable
     /// 供 Lifecycle 等可信平台插件调用，调用方负责权限；登记不等于验签、发布或任何租户已挂载。
     /// </summary>
     ValueTask<RegistryArtifactEntry> SubmitArtifactAsync(IReadOnlyDictionary<string, ReadOnlyMemory<byte>> files, string digest, string actor, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 挂载（PRD 7.2.1 Mount）：把一条 patch/v2 条目写入当前已验证租户 scope 的 scope_patches，经与文件 patch 相同的装配校验
+    /// （格式、组件须在宿主预装集合、配置 Schema、依赖）后按条件修订写入，同一事务把 <see cref="RegistryEvents.ScopeMounted"/> 放进 Outbox。
+    /// 条目不能带 disabled: true（卸载用 <see cref="UnmountAsync"/>）；expectedRevision 为该条目当前 patch 的修订，没有 patch 时为 0，不符抛
+    /// REGISTRY_REVISION_CONFLICT。只接受与租户上下文一致的 tenant scope，租户须为小写规范 UUID；供 Lifecycle 等可信平台插件调用，调用方负责权限。
+    /// </summary>
+    ValueTask<ScopePatchSnapshot> MountAsync(ScopeKey scope, System.Text.Json.JsonElement entry, int expectedRevision, string actor, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 卸载（PRD 7.2.1 Unmount，不改数据库开关）：条目来自平台 profile 时写入 {id, disabled: true}，只由本 scope 的 patch 引入时撤销该 patch；
+    /// 同一事务把 <see cref="RegistryEvents.ScopeUnmounted"/> 放进 Outbox。expectedRevision 同 <see cref="MountAsync"/>；返回卸载后的 patch 修订。
+    /// 本 scope 本来就看不到该条目时抛 NOT_FOUND。调用约束同 <see cref="MountAsync"/>。
+    /// </summary>
+    ValueTask<int> UnmountAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken cancellationToken = default);
+    /// <summary>读取当前已验证租户 scope 中某条目的有效 patch（含修订）；没有时返回 null。供可信平台插件取得条件写入的预期修订。</summary>
+    ValueTask<ScopePatchSnapshot?> GetScopePatchAsync(ScopeKey scope, string entryId, CancellationToken cancellationToken = default);
     /// <summary>停止监听并撤销拥有的局部条目；宿主须在 Runtime.Dispose 之前、在 Apply/effect 之外调用。</summary>
     new ValueTask DisposeAsync();
 }

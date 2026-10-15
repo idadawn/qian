@@ -121,3 +121,46 @@ Qian.Registry.IRegistryService.GetScopeEntryAsync(Qian.Runtime.ScopeKey scope, s
 Qian.Registry.IRegistryService.GetScopeViewAsync(Qian.Runtime.ScopeKey scope, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryEntryView!>!>
 Qian.Registry.RegistryArtifactEntry.RegistryArtifactEntry(string! Digest, string! PluginId, string! Version, string! State, string! SubmittedBy, System.DateTimeOffset SubmittedAt) -> void
 Qian.Registry.IRegistryService.SubmitArtifactAsync(System.Collections.Generic.IReadOnlyDictionary<string!, System.ReadOnlyMemory<byte>>! files, string! digest, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Registry.RegistryArtifactEntry!>
+Qian.Registry.IRegistryService.GetScopePatchAsync(Qian.Runtime.ScopeKey scope, string! entryId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Registry.ScopePatchSnapshot?>
+Qian.Registry.IRegistryService.MountAsync(Qian.Runtime.ScopeKey scope, System.Text.Json.JsonElement entry, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Registry.ScopePatchSnapshot!>
+Qian.Registry.IRegistryService.UnmountAsync(Qian.Runtime.ScopeKey scope, string! entryId, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+Qian.Registry.RegistryEvents
+Qian.Registry.RegistryScopeMounted
+Qian.Registry.RegistryScopeMounted.<Clone>$() -> Qian.Registry.RegistryScopeMounted!
+Qian.Registry.RegistryScopeMounted.Deconstruct(out string! Scope, out string! EntryId, out string? Plugin, out string? Version, out int Revision) -> void
+Qian.Registry.RegistryScopeMounted.EntryId.get -> string!
+Qian.Registry.RegistryScopeMounted.EntryId.init -> void
+Qian.Registry.RegistryScopeMounted.Equals(Qian.Registry.RegistryScopeMounted? other) -> bool
+Qian.Registry.RegistryScopeMounted.Plugin.get -> string?
+Qian.Registry.RegistryScopeMounted.Plugin.init -> void
+Qian.Registry.RegistryScopeMounted.RegistryScopeMounted(string! Scope, string! EntryId, string? Plugin, string? Version, int Revision) -> void
+Qian.Registry.RegistryScopeMounted.Revision.get -> int
+Qian.Registry.RegistryScopeMounted.Revision.init -> void
+Qian.Registry.RegistryScopeMounted.Scope.get -> string!
+Qian.Registry.RegistryScopeMounted.Scope.init -> void
+Qian.Registry.RegistryScopeMounted.Version.get -> string?
+Qian.Registry.RegistryScopeMounted.Version.init -> void
+Qian.Registry.RegistryScopeUnmounted
+Qian.Registry.RegistryScopeUnmounted.<Clone>$() -> Qian.Registry.RegistryScopeUnmounted!
+Qian.Registry.RegistryScopeUnmounted.Deconstruct(out string! Scope, out string! EntryId, out int Revision) -> void
+Qian.Registry.RegistryScopeUnmounted.EntryId.get -> string!
+Qian.Registry.RegistryScopeUnmounted.EntryId.init -> void
+Qian.Registry.RegistryScopeUnmounted.Equals(Qian.Registry.RegistryScopeUnmounted? other) -> bool
+Qian.Registry.RegistryScopeUnmounted.RegistryScopeUnmounted(string! Scope, string! EntryId, int Revision) -> void
+Qian.Registry.RegistryScopeUnmounted.Revision.get -> int
+Qian.Registry.RegistryScopeUnmounted.Revision.init -> void
+Qian.Registry.RegistryScopeUnmounted.Scope.get -> string!
+Qian.Registry.RegistryScopeUnmounted.Scope.init -> void
+const Qian.Registry.RegistryEvents.ScopeMounted = "registry.scope.mounted.v1" -> string!
+const Qian.Registry.RegistryEvents.ScopeUnmounted = "registry.scope.unmounted.v1" -> string!
+override Qian.Registry.RegistryScopeMounted.Equals(object? obj) -> bool
+override Qian.Registry.RegistryScopeMounted.GetHashCode() -> int
+override Qian.Registry.RegistryScopeMounted.ToString() -> string!
+override Qian.Registry.RegistryScopeUnmounted.Equals(object? obj) -> bool
+override Qian.Registry.RegistryScopeUnmounted.GetHashCode() -> int
+override Qian.Registry.RegistryScopeUnmounted.ToString() -> string!
+static Qian.Registry.RegistryEvents.RegisterRegistryEvents(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
+static Qian.Registry.RegistryScopeMounted.operator !=(Qian.Registry.RegistryScopeMounted? left, Qian.Registry.RegistryScopeMounted? right) -> bool
+static Qian.Registry.RegistryScopeMounted.operator ==(Qian.Registry.RegistryScopeMounted? left, Qian.Registry.RegistryScopeMounted? right) -> bool
+static Qian.Registry.RegistryScopeUnmounted.operator !=(Qian.Registry.RegistryScopeUnmounted? left, Qian.Registry.RegistryScopeUnmounted? right) -> bool
+static Qian.Registry.RegistryScopeUnmounted.operator ==(Qian.Registry.RegistryScopeUnmounted? left, Qian.Registry.RegistryScopeUnmounted? right) -> bool

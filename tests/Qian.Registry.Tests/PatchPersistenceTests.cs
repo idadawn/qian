@@ -3,6 +3,7 @@ using System.Text.Json;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus.DependencyInjection;
+using Kun.Mediator.DependencyInjection;
 using Kun.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Qian.Capabilities;
 using Qian.Data;
+using Qian.Events;
 using Qian.Profiles;
 using Qian.Profiles.Abstractions;
 using Qian.Runtime;
@@ -387,10 +389,10 @@ public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IC
         public void Dispose() => System.IO.Directory.Delete(Directory, true);
     }
 
-    private IHost Host(ITenantContext tenant, IInterceptor? interceptor = null, bool capabilityChecks = false, Action<IServiceCollection>? services = null)
+    private IHost Host(ITenantContext tenant, IInterceptor? interceptor = null, bool capabilityChecks = false, Action<IServiceCollection>? services = null, bool events = false)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
-        builder.Services.AddSingleton(tenant); builder.Services.AddKunEventBus();
+        builder.Services.AddSingleton(tenant); builder.Services.AddKunEventBus(registry => registry.RegisterRegistryEvents());
         builder.Services.AddSingleton(ErrorCatalog.CreateDefault());
         if (capabilityChecks)
         {
@@ -403,6 +405,8 @@ public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IC
             options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(RegistryDbContext.Schema);
             if (interceptor is not null) options.AddInterceptors(interceptor);
         });
+        // 公开挂载 / 卸载的平台接线：领域事件处理器 + 写信封的 Outbox 端口（替换 AddQianData 登记的 Kun 累加器）。
+        if (events) { builder.Services.AddKunMediator(mediator => mediator.AddQianRegistryEvents()); builder.Services.AddQianEvents(); }
         services?.Invoke(builder.Services);
         return builder.Build();
     }
