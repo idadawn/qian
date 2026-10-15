@@ -72,3 +72,20 @@ IntegrationEventCatalogTests 扫描测试输出里全部 Qian 程序集的 `[Int
 `ICrmRuntimeAssembly` 是宿主的装配入口：在首次 Mount 前接收上述同组真实业务 Provider，交由宿主的 ProfileLoader 与已安装组件解析器决定条目、配置及顺序；全部 Ready 后启动宿主监听。未注册该入口时仍使用默认独立装配。接口只依赖 Runtime，客户业务组件没有新增 Registry/Capabilities 依赖，也没有按运行模式分叉业务处理。
 
 T23 的具体宿主装配在测试工程的 `ProfileModeAssembly`，复用真实 ProfileLoader、模块清单、制品摘要、Registry/Capabilities 与 PostgreSQL；minimal 与 platform 的边界和四次实际执行结果见 [运行时 TCK](../../tck/runtime/README.md#t23-的真实-profile-宿主对照)。这证明该运行时组合的行为等价，不宣称所有平台模块或 QA-003/QA-005 的独立安装验收已经完成。
+
+## 生命周期钩子与平台宿主（S1-RT-005）
+
+`CrmPlugin` 同时实现 `IPluginLifecycleHooks`。
+
+- 只处理 `tenant-provision`：在 Lifecycle 已进入的租户数据上下文里，以钩子的幂等键为主键写一条示例客户。同一键已存在时不再写，结果记 `{ "seeded": false }`。
+- 其余钩子返回 null，按无操作记为成功。
+
+钩子不要求组件已挂载，也不读取请求头或令牌。
+
+`CrmCommandApplication.Build` 新增两个可选参数 `events` 与 `mediator`。
+
+- Kun 的事件类型表只认第一次 `AddKunEventBus`，中介者只认最后一次 `AddKunMediator`。嵌入 Registry、Lifecycle 等平台组件的宿主，经这两个参数把它们的事件类型与领域事件处理器并进参考宿主的同一次调用，不另行调用。
+- 不传时行为与独立宿主相同。
+- `CrmCommandRuntime.Source()` 优先取本租户 scope 的 `crm` 条目；没有时回到全局条目的 scope 视图。由 Lifecycle 装进租户 scope 的版本因此由各租户自己的条目处理。
+
+真实验收在测试工程的 `LifecycleAcceptanceTests`。宿主只预装参考应用 1.0.0 / 1.0.1 / 1.1.0 三个版本、不挂全局条目，由 Lifecycle 完成开通、挂载、升级、回切与契约准入。证据与边界见 [Qian.Lifecycle](../../packages/Qian.Lifecycle/README.md#测试证据)。这不代表参考应用已经以正式包安装，正式安装验收仍归 S1-RT-011。

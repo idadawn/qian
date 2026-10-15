@@ -39,14 +39,15 @@ internal sealed partial class PostgresPatchRepository(IDataService data, ITenant
     }
 
     internal Task<ScopePatchSnapshot> PutAsync(ScopeKey scope, string entryId, JsonElement patch, int expectedRevision, string actor, CancellationToken ct)
-        => PutCore(scope, entryId, patch, expectedRevision, actor, null, ct);
+        => PutCore(scope, entryId, patch, expectedRevision, actor, null, false, ct);
 
+    // publish：公开挂载 / 卸载写入，随行登记领域事件，集成事件经处理器进入同一事务的 Outbox。
     internal Task<ScopePatchSnapshot> PutValidatedAsync(ScopeKey scope, string entryId, JsonElement patch, int expectedRevision, string actor,
-        Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask> validate, CancellationToken ct)
-        => PutCore(scope, entryId, patch, expectedRevision, actor, validate, ct);
+        Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask> validate, bool publish, CancellationToken ct)
+        => PutCore(scope, entryId, patch, expectedRevision, actor, validate, publish, ct);
 
     private async Task<ScopePatchSnapshot> PutCore(ScopeKey scope, string entryId, JsonElement patch, int expectedRevision, string actor,
-        Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask>? validate, CancellationToken ct)
+        Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask>? validate, bool publish, CancellationToken ct)
     {
         var owner = Owner(scope); CheckEntry(entryId); CheckActor(actor);
         if (expectedRevision < 0) throw Invalid("#/revision", "修订不能为负数。");
@@ -74,19 +75,19 @@ internal sealed partial class PostgresPatchRepository(IDataService data, ITenant
         row.Note = replacement.Note; row.IsDeleted = false;
         row.Revision++; row.UpdatedBy = actor; row.UpdatedAt = DatabaseTime();
         if (validate is not null) await ValidateCandidate(session.Context, row, scope, validate, ct).ConfigureAwait(false);
-        await Commit(session, row, transaction, owner, ct).ConfigureAwait(false);
+        await Commit(session, row, transaction, owner, publish ? Change(row) : null, ct).ConfigureAwait(false);
         return Snapshot(row, scope);
     }
 
     internal Task<int> RemoveAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken ct)
-        => RemoveCore(scope, entryId, expectedRevision, actor, null, ct);
+        => RemoveCore(scope, entryId, expectedRevision, actor, null, false, ct);
 
     internal Task<int> RemoveValidatedAsync(ScopeKey scope, string entryId, int expectedRevision, string actor,
-        Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask> validate, CancellationToken ct)
-        => RemoveCore(scope, entryId, expectedRevision, actor, validate, ct);
+        Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask> validate, bool publish, CancellationToken ct)
+        => RemoveCore(scope, entryId, expectedRevision, actor, validate, publish, ct);
 
     private async Task<int> RemoveCore(ScopeKey scope, string entryId, int expectedRevision, string actor,
-        Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask>? validate, CancellationToken ct)
+        Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask>? validate, bool publish, CancellationToken ct)
     {
         var owner = Owner(scope); CheckEntry(entryId); CheckActor(actor);
         if (expectedRevision <= 0) throw Invalid("#/revision", "撤销必须携带当前正整数修订。");
@@ -100,7 +101,7 @@ internal sealed partial class PostgresPatchRepository(IDataService data, ITenant
         // 撤销后不保留配置内容；墓碑仅保留并发控制及归属信息。
         row.Plugin = null; row.PluginVersion = null; row.Config = null; row.Extensions = null; row.Note = null; row.Disabled = false; row.DisabledSpecified = false;
         if (validate is not null) await ValidateCandidate(session.Context, row, scope, validate, ct).ConfigureAwait(false);
-        await Commit(session, row, transaction, owner, ct).ConfigureAwait(false);
+        await Commit(session, row, transaction, owner, publish ? Change(row) : null, ct).ConfigureAwait(false);
         return row.Revision;
     }
 
@@ -120,13 +121,23 @@ internal sealed partial class PostgresPatchRepository(IDataService data, ITenant
         await validate(rows.Select(row => Snapshot(row, scope)).ToArray(), ct).ConfigureAwait(false);
     }
 
+    // 撤销或禁用即卸载；其余写入（新增条目或替换配置）即挂载。
+    private static ScopePatchChanged Change(ScopePatchRow row)
+    {
+        var change = new ScopePatchChanged(row.Scope, row.EntryId, row.Plugin, row.PluginVersion, row.Revision, !row.IsDeleted && !row.Disabled);
+        row.Raise(change);
+        return change;
+    }
+
     private async Task Commit(IDataSession<RegistryDbContext> session, ScopePatchRow row,
-        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction, string owner, CancellationToken ct)
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction, string owner, ScopePatchChanged? change, CancellationToken ct)
     {
         CheckOwner(owner);
         try
         {
             await session.SaveChangesAsync(ct).ConfigureAwait(false);
+            // 保存前领域事件已分发；处理器没有执行说明宿主漏装了事件接线，宁可不提交也不丢事件。
+            if (change is { Published: false }) throw new InvalidOperationException("注册表变更事件未进入 Outbox：平台宿主须以 AddQianRegistryEvents 登记处理器。");
             // PostgreSQL 仅在事务提交后投递通知；载荷不包含 config、note 或凭据。
             var payload = JsonSerializer.Serialize(new { tenantId = owner, scope = row.Scope, entryId = row.EntryId, revision = row.Revision, removed = row.IsDeleted });
             await session.Context.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_notify({ChangeChannel}, {payload})", ct).ConfigureAwait(false);
