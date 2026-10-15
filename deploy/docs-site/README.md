@@ -12,6 +12,8 @@ PR / main 的 CI ──构建──> 推到 docs-site 分支 ──git-sync 每 
 
 `repo` 检出缓存固定在 qd，使用上限 4Gi 的内存 `emptyDir`；git-sync 请求 2Gi、上限 5Gi，CPU 预算保持 10m / 300m。2026-10-15 实测原缓存约 990Mi，qd 可用内存约 332Gi。该隔离用于减少与 etcd 共用根盘的批量检出写入，是否消除慢请求仍按 S1-DEP-007 的实际采样验收。内存卷占用计入写入容器的内存额度，见 [Kubernetes emptyDir 文档](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir)。Pod 重建后从 `docs-site` 分支重新拉取，沿用现有 `Recreate` 策略，文档站会在首次同步期间短暂不可用。
 
+git-sync 的 SSH 传输使用 `ssh.github.com:443`，通过 `HostKeyAlias=github.com` 沿用已有主机密钥记录；仓库地址及部署密钥来源保持现值。2026-10-15 现场原 22 端口下载多次超时，导致检出目录被重置；同 Pod、同凭据的 443 入口受限下载约 38 秒完成。配置使用 git-sync v4.4.0 原生支持的 `GIT_SSH_COMMAND`，组件仍会追加现有私钥文件及严格主机密钥校验参数。
+
 为什么不用 Cloudflare Pages：仓库是私有的，文档面向内部团队，现有网络入口与看板一致（WireGuard 与公司内网），不需要再开外部账号与访问控制；以后要公网访问时，在边缘 nginx 加一条到 Ingress 域名的转发即可。
 
 ## 文件
