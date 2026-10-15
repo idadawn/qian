@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Qian.Runtime.Errors;
 
 namespace Qian.Audit.Tests;
@@ -62,6 +63,42 @@ public sealed class AuditInputPolicyTests
         var recursive = new AuditInputPolicy(Json("""{"type":"object","properties":{"secret":{"type":"string","sensitive":true},"child":{"$ref":"#"}}}"""), true);
         var tree = recursive.Redact(Json("""{"secret":"first","child":{"secret":"second"}}"""));
         Assert.Equal(AuditInputPolicy.Redacted, tree.GetProperty("child").GetProperty("secret").GetString());
+    }
+
+    [Fact]
+    public async Task 动态键脱敏在并发与反复新建策略时结果稳定()
+    {
+        // 生产路径每条命令都新建策略；同一模式在多线程下共享编译实例，并发建图与热匹配都不能误判超时或串结果。
+        const string source = """{"type":"object","patternProperties":{"^secret_":{"type":"string","sensitive":true},"^x-[a-z0-9]+$":{"type":"string"}},"additionalProperties":{"type":"integer"}}""";
+        await Task.WhenAll(Enumerable.Range(0, 32).Select(worker => Task.Run(() =>
+        {
+            for (var round = 0; round < 40; round++)
+            {
+                var safe = new AuditInputPolicy(Json(source), true).Redact(Json($$"""{"secret_{{worker}}_{{round}}":"hidden","x-{{worker}}k{{round}}":"visible","n{{round}}":{{round}}}"""));
+                Assert.Equal(AuditInputPolicy.Redacted, safe.GetProperty($"secret_{worker}_{round}").GetString());
+                Assert.Equal("visible", safe.GetProperty($"x-{worker}k{round}").GetString());
+                Assert.Equal(round, safe.GetProperty($"n{round}").GetInt32());
+            }
+        }, TestContext.Current.CancellationToken)));
+        Assert.Same(AuditInputPolicy.Pattern("^secret_"), AuditInputPolicy.Pattern("^secret_"));
+    }
+
+    [Fact]
+    public void 动态键模式复用线性引擎且超时有界_非法模式每次构造都拒绝_缓存有上限()
+    {
+        var compiled = AuditInputPolicy.Pattern("^secret_");
+        Assert.Same(compiled, AuditInputPolicy.Pattern("^secret_"));
+        Assert.Equal(RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, compiled.Options);
+        Assert.Equal(TimeSpan.FromSeconds(1), compiled.MatchTimeout);
+        // 语法错误、环视、反向引用、原子组、条件、\G 与超限自动机；第二次构造仍拒绝，失败不会留下可用实例。
+        foreach (var pattern in new[] { "(", "a{2,1}", "(?=x)", "(?<=x)y", "(a)\\1", "(?>a)", "(?(a)b|c)", "\\Gx", "a{20000}" })
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                var schema = JsonSerializer.SerializeToElement(new { patternProperties = new Dictionary<string, object> { [pattern] = new { sensitive = true } } });
+                Assert.Equal("AUDIT_SCHEMA_INVALID", Assert.Throws<QianErrorException>(() => new AuditInputPolicy(schema, true)).Error.Code.Code);
+            }
+        for (var index = 0; index <= AuditInputPolicy.PatternCacheSize; index++) _ = AuditInputPolicy.Pattern($"^bounded_{index}$");
+        Assert.InRange(AuditInputPolicy.CachedPatterns, 1, AuditInputPolicy.PatternCacheSize);
     }
 
     [Fact]

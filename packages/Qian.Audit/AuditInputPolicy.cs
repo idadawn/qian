@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -14,6 +15,9 @@ public sealed class AuditInputPolicy
     /// <summary>所有敏感值使用同一标记，不保存原值的哈希、长度或类型。</summary>
     public const string Redacted = "[REDACTED]";
     private const string Draft = "https://json-schema.org/draft/2020-12/schema";
+    // 动态键模式只来自可信契约，进程内条目有限；超过上限整表清空重建，内存有界，已取出的实例不受影响。
+    internal const int PatternCacheSize = 128;
+    private static readonly ConcurrentDictionary<string, Regex> Patterns = new(StringComparer.Ordinal);
     private readonly JsonElement _source;
     private readonly JsonSchema _validator;
 
@@ -211,11 +215,18 @@ public sealed class AuditInputPolicy
         ((schema.TryGetProperty("sensitive", out var value) && value.ValueKind == JsonValueKind.True) ||
          (schema.TryGetProperty("x-qian-sensitive", out value) && value.ValueKind == JsonValueKind.True));
     private static bool IsUnspecified(JsonElement schema) => schema.ValueKind == JsonValueKind.True || schema.ValueKind == JsonValueKind.Object && !schema.EnumerateObject().Any();
-    private static Regex Pattern(string pattern)
+    // NonBacktracking 线性匹配，过大的自动机在构造时即拒绝；超时只兜底超长输入，触发即按 Schema 无效失败关闭。
+    // 墙钟只在物化新 DFA 转移和长输入分段时检查：复用实例后，常规长度的热匹配不受调度或 GC 停顿影响；首次 JIT 与建图仍可能被拖长，1 秒上限为此留出余量。
+    internal static Regex Pattern(string pattern)
     {
-        try { return new Regex(pattern, RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, TimeSpan.FromMilliseconds(100)); }
+        if (Patterns.TryGetValue(pattern, out var cached)) return cached;
+        Regex regex;
+        try { regex = new Regex(pattern, RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1)); }
         catch (Exception error) when (error is ArgumentException or NotSupportedException) { throw InvalidSchema(); }
+        if (Patterns.Count >= PatternCacheSize) Patterns.Clear();
+        return Patterns.GetOrAdd(pattern, regex);
     }
+    internal static int CachedPatterns => Patterns.Count;
     private static QianErrorException InvalidSchema() => new(new QianError(AuditErrors.SchemaInvalid));
     private static QianErrorException InvalidInput() => new(new QianError(PlatformErrors.InputInvalid));
     private sealed class Budget
