@@ -54,8 +54,8 @@ pm/          任务与看板（见 pm/README.md）
 scripts/     pm.py、check_docs.py、check_deps.py（依赖图门禁）
 tests/       Testcontainers fixture、集成测试、门禁自测（见 tests/README.md）；tests/gates/yue/ 是 yue 门禁自测
 website/     文档站（Rspress 2.0，见 website/README.md 与 website/AGENTS.md）；components/、cli/、design/、sdk/kun/（with-qian.mdx 除外）、sdk/api/ 为生成目录
-deploy/      开发期工具的 K3s 清单：pm-board/（看板）、docs-site/（文档站）
-.github/     CI：文档门禁 + 任务校验 + 看板新鲜度；dotnet 构建、门禁与测试；文档站构建、预览与发布；yue 八项门禁矩阵
+deploy/      开发期工具的 K3s 清单：pm-board/（看板）、docs-site/（文档站）；images/ 是 profile 镜像模板与供应链门禁（见 deploy/images/README.md）
+.github/     CI：文档门禁 + 任务校验 + 看板新鲜度；dotnet 构建、门禁与测试；文档站构建、预览与发布；yue 八项门禁矩阵；镜像供应链自检
 Qian.slnx、global.json、Directory.Build.props / .targets、Directory.Packages.props、NuGet.config
              .NET 构建基线：net10.0、警告即错误、中央包版本、PublicAPI 门禁
 ```

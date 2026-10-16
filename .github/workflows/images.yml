@@ -1,0 +1,51 @@
+name: images
+
+# profile 镜像构建与供应链门禁自检（S1-DEP-003 / R106）：用统一构建入口构建 JIT 与 NativeAOT 两个自检镜像，
+# 按 digest 生成 Syft SBOM、Grype 扫描、Cosign 签名与 SBOM 证明并验签，dump-config 漂移比对五个 profile，
+# 以非 root、只读根文件系统实际启动取运行期证据；已知漏洞组件的扫描、缺签名、签名身份不符、issuer 不符、
+# 缺 SBOM 证明、镜像内改动 patch 六个反例都必须按预期原因被拦住。自检镜像只推到本 job 内的临时 registry，不发布任何镜像；
+# 签名用本 job 临时签发的 CA，不申请 OIDC 令牌，也不写公共透明日志。三个业务镜像的接入归 S1-DEP-008。
+
+on:
+  push:
+    branches: [main]
+    paths: ['deploy/images/**', 'tools/Qian.Image.SelfCheck*/**', 'tools/Qian.Build.Analyzers/**', 'scripts/images.py', 'scripts/prepare_image_tools.py', 'scripts/image-tools.lock.json', 'tests/gates/test_images.py', 'profiles/**', 'plugins/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/Qian.Runtime.Errors/**', 'packages/Common/**', 'schemas/**', 'contracts/v0/**', '*.props', '*.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', '.github/workflows/images.yml']
+  pull_request:
+    paths: ['deploy/images/**', 'tools/Qian.Image.SelfCheck*/**', 'tools/Qian.Build.Analyzers/**', 'scripts/images.py', 'scripts/prepare_image_tools.py', 'scripts/image-tools.lock.json', 'tests/gates/test_images.py', 'profiles/**', 'plugins/**', 'packages/Qian.Profiles*/**', 'packages/Qian.Surfaces*/**', 'packages/Qian.Runtime/**', 'packages/Qian.Runtime.Errors/**', 'packages/Common/**', 'schemas/**', 'contracts/v0/**', '*.props', '*.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', '.github/workflows/images.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  selfcheck:
+    name: 自检镜像构建与供应链门禁
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: 门禁判定逻辑自测
+        run: python3 -m unittest discover -s tests/gates -p 'test_images.py' -v
+      - name: 准备 syft / grype / cosign（锁定版本，校验 sha256）
+        run: python3 scripts/prepare_image_tools.py --destination "$RUNNER_TEMP/image-tools"
+      - name: 构建自检镜像，跑 SBOM、扫描、签名验签、漂移与运行期门禁及反例
+        run: python3 scripts/images.py selfcheck --tools "$RUNNER_TEMP/image-tools" --out "$GITHUB_WORKSPACE/TestResults/images"
+      - name: 上传证据（evidence.json、SBOM、扫描报告、命令日志）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-selfcheck
+          path: TestResults/images/
+          if-no-files-found: ignore

@@ -75,5 +75,7 @@
     <Project Path="tools/Qian.Secrets.Tool/Qian.Secrets.Tool.csproj" />
     <Project Path="tools/Qian.Docs.Tool/Qian.Docs.Tool.csproj" />
     <Project Path="tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj" />
+    <Project Path="tools/Qian.Image.SelfCheck/Qian.Image.SelfCheck.csproj" />
+    <Project Path="tools/Qian.Image.SelfCheck.Aot/Qian.Image.SelfCheck.Aot.csproj" />
   </Folder>
 </Solution>
