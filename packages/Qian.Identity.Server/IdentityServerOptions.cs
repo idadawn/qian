@@ -11,10 +11,10 @@ public sealed class IdentityServerOptions
     public required Uri Issuer { get; init; }
     /// <summary>当前及轮换中的签名证书；调用方负责证书的生命周期。</summary>
     [JsonIgnore]
-    public required IReadOnlyList<X509Certificate2> SigningCertificates { get; init; }
+    public IReadOnlyList<X509Certificate2> SigningCertificates { get; init; } = [];
     /// <summary>用于授权码、刷新令牌加密的证书。</summary>
     [JsonIgnore]
-    public required IReadOnlyList<X509Certificate2> EncryptionCertificates { get; init; }
+    public IReadOnlyList<X509Certificate2> EncryptionCertificates { get; init; } = [];
     /// <summary>账号流水线建立的可信服务端 Cookie scheme；不接受来自请求体的主体。</summary>
     public string SignInScheme { get; init; } = "qian.identity.signin";
     /// <summary>经宿主确认的官方客户端；数据库持久化管理由 OpenIddict 承担。</summary>
@@ -31,7 +31,7 @@ public sealed class IdentityClientRegistration
 {
     /// <summary>OpenIddict 的客户端、回调与 grant/scope 权限；机密客户端必须带密钥。</summary>
     [JsonIgnore]
-    public required OpenIddictApplicationDescriptor Application { get; init; }
+    public OpenIddictApplicationDescriptor Application { get; init; } = new();
     /// <summary>此客户端允许请求的 RFC 8707 resource；必须为无 fragment 的绝对 URI。</summary>
     public required IReadOnlyList<string> Resources { get; init; }
     /// <summary>机器身份归属的租户；null 表示平台服务，不从令牌请求读取。</summary>

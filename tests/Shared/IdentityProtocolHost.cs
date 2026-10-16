@@ -87,7 +87,7 @@ internal static class IdentityProtocolHost
         app.MapPost("/_test/backchannel", async (HttpContext http) =>
         {
             var attempt = Interlocked.Increment(ref backchannel.Attempts);
-            if (attempt <= Volatile.Read(ref backchannel.Failures)) return Results.StatusCode(503);
+            if (attempt <= backchannel.Failures) return Results.StatusCode(503);
             var form = await http.Request.ReadFormAsync(http.RequestAborted); logoutTokens.Enqueue(form["logout_token"].ToString());
             return Results.Ok();
         });
@@ -147,7 +147,12 @@ internal static class IdentityProtocolHost
         }
         public async ValueTask DisposeAsync() { await loader.DisposeAsync(); await app.DisposeAsync(); browser.Dispose(); certificate.Dispose(); retired?.Dispose(); }
     }
-    internal sealed class BackchannelStatus { internal int Attempts; internal int Failures; }
+    internal sealed class BackchannelStatus
+    {
+        internal int Attempts;
+        private int _failures;
+        internal int Failures { get => Volatile.Read(ref _failures); set => Volatile.Write(ref _failures, value); }
+    }
 
     internal sealed class ProtocolLogs : ILoggerProvider
     {
