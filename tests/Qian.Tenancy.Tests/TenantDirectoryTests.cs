@@ -19,7 +19,7 @@ using Qian.Testing.Containers;
 
 namespace Qian.Tenancy.Tests;
 
-public sealed class TenantDirectoryTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
+public sealed partial class TenantDirectoryTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
     private static PostgresTenantDirectory Store(IHost host) => new(host.Services.GetRequiredService<IDataService>(), host.Services.GetRequiredService<Kun.Core.MultiTenancy.ITenantContext>());

@@ -4,6 +4,4 @@
 - id: tenancy
   plugin: qian.tenancy
   config:
-    resolver:
-      mode: single-tenant
-      allowHeaderFallback: false
+    initializationCapabilities: []

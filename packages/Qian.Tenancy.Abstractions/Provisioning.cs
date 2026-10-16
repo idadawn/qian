@@ -7,11 +7,11 @@ namespace Qian.Tenancy;
 public static class TenantProvisioning
 {
     /// <summary>租户级开通服务键。</summary>
-    public static readonly ServiceKey Key = new("Tenancy.Provisioning");
+    public static readonly ServiceKey Key = new("TenancyProvisioning");
     /// <summary>Identity 的可选成员开户适配器；缺席时保留 skipped 步骤。</summary>
-    public static readonly ServiceKey MembershipKey = new("Tenancy.MembershipProvisioner");
+    public static readonly ServiceKey MembershipKey = new("TenancyMembershipProvisioner");
     /// <summary>Notify 的可选开通通知适配器；缺席时保留 skipped 步骤。</summary>
-    public static readonly ServiceKey NotificationKey = new("Tenancy.ProvisionedNotifier");
+    public static readonly ServiceKey NotificationKey = new("TenancyProvisionedNotifier");
 }
 
 /// <summary>可信运营方给出的管理员主体及成员指针；不代表 Identity 已创建该成员。</summary>

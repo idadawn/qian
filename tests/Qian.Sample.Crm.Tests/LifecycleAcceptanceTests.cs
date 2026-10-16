@@ -305,6 +305,8 @@ public sealed partial class CustomerCommandTests
     // 信任根照生产形状经配置节 Trust:PlatformKeys 引用 K8s Secret 挂载里的公钥。
     private static void ConfigureLifecycle(WebApplicationBuilder builder, string connection, LifecyclePlatform platform)
     {
+        builder.Configuration.AddInMemoryCollection(platform.InitializationCapabilities.Select((id, index) =>
+            new KeyValuePair<string, string?>("Tenancy:InitializationCapabilities:" + index, id)));
         if (platform.Management)
         {
             builder.Services.AddQianData<PlatformAuthzDbContext>((_, options) => options.UseNpgsql(platform.AuthzConnection).UseKunSchema(AuthzDbContext.Schema));
@@ -338,7 +340,7 @@ public sealed partial class CustomerCommandTests
         var definitions = new Dictionary<string, PluginDefinition>(StringComparer.Ordinal);
         var versions = new Dictionary<string, PluginDefinition>(StringComparer.Ordinal);
         Add("data", "qian.data", new DataPlugin(), [DataDefinition.Key]);
-        Add("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey]);
+        Add("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey], CrmCommandRuntime.TenancyConfiguration(app.Configuration));
         Add("authz", "qian.authz", new AuthzPlugin([CrmPermissions.Compile()]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key]);
         Add("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]);
         Add("config", "qian.config", new ConfigurationPlugin(), [ConfigDefinition.Key]);
@@ -358,7 +360,7 @@ public sealed partial class CustomerCommandTests
         Add("registry", "qian.registry", registry, [RegistryDefinition.Key], new { store = "pg" });
         Add("capabilities", "qian.capabilities", new CapabilitiesPlugin(), [CapabilitiesDefinition.Key, CapabilitiesDefinition.ContractsKey, CapabilitiesDefinition.NavigationKey]);
         Add("lifecycle", "qian.lifecycle", new LifecyclePlugin(new LifecycleRuntimeOptions { Hooks = (id, _) => id == "qian.sample.crm" ? new CrmPlugin() : null }), [LifecycleDefinition.Key]);
-        foreach (var id in new[] { "registry", "capabilities", "lifecycle", "audit" })
+        foreach (var id in new[] { "registry", "capabilities", "lifecycle", "audit", "tenancy" })
             Write($"plugins/{id}/schemas/config.schema.json", File.ReadAllText(Path.Combine(RepositoryRoot(), $"plugins/qian.{id}/schemas/config.schema.json")));
         Write("profiles/platform/qian.profile.yml", """{"name":"platform","bundles":[],"patch":"./qian.patch.yml","hmr":{"surfaces":true,"code":false},"build":{"aot":false},"hooks":{"allowCommand":false}}""");
         Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin + "@" + item.Entry.Version, config = item.Entry.Config })));
@@ -419,7 +421,7 @@ public sealed partial class CustomerCommandTests
             {
                 id = component, version = "1.0.0", description = "生命周期端到端验收使用实际 Provider 的平台组合。", author = new { name = "Qian" }, license = "Apache-2.0",
                 @interface = new { displayName = id, category = "testing" }, inject = plugin.Inject.Select(key => key.Name), provides = provides.Select(key => key.Name),
-                policy = new { tier = "system", sandbox = "none", authentication = "ON_INSTALL", required = true }, scopes = component == "qian.config" ? GlobalSettingsScopes : CatalogScopes,
+                policy = new { tier = "system", sandbox = "none", authentication = "ON_INSTALL", required = true }, scopes = component is "qian.config" or "qian.tenancy" ? GlobalSettingsScopes : CatalogScopes,
                 runtime = new { form = "module", entry = plugin.GetType().FullName + ", " + plugin.GetType().Assembly.GetName().Name }
             }));
         }
@@ -490,6 +492,7 @@ public sealed partial class CustomerCommandTests
         }
         internal string SecretRoot { get; } = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "qian-lifecycle-secrets-" + Guid.NewGuid().ToString("N"))).FullName;
         internal bool Management { get; init; }
+        internal string[] InitializationCapabilities { get; init; } = [];
         internal bool ProvisionCrmByDefault { get; init; }
         internal RegistryRuntimeOptions RegistryOptions { get; set; } = null!;
         internal string AuthzRole { get; set; } = "";

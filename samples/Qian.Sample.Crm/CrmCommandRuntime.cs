@@ -27,7 +27,7 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
         IReadOnlyList<PluginDefinition> providers = [
             Define("data", "qian.data", new DataPlugin(), [DataDefinition.Key]),
             Define("events", "qian.events", new EventsPlugin(), [EventsDefinition.Key]),
-            Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey]),
+            Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey], TenancyConfiguration(services.GetRequiredService<IConfiguration>())),
             // 完整 Authz Provider：持久化并登记本应用 metadata 编译出的权限目录、注册命令 PEP、提供 ctx.Authz，并监听 tenant/provisioned 实例化默认角色。
             // 声明的 provides 只列 plugin.schema.json 服务键模式接受的两个键；Authz.Permissions 等其余端口由 Provider 额外提供，不进清单。
             Define("authz", "qian.authz", new AuthzPlugin([catalog]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key]),
@@ -68,6 +68,11 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
     {
         await _loader.DisposeAsync().ConfigureAwait(false); Interlocked.Exchange(ref _permissions, null)?.Dispose();
     }
-    private static PluginDefinition Define(string id, string component, IQianPlugin plugin, IReadOnlyList<ServiceKey> provides) => new(
-        new PluginEntry(id, component, "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), plugin, provides);
+    internal static JsonElement TenancyConfiguration(IConfiguration configuration) => JsonSerializer.SerializeToElement(new
+    {
+        resolver = new { mode = configuration["Tenancy:Resolver:Mode"] ?? "production", allowHeaderFallback = configuration.GetValue<bool>("Tenancy:Resolver:AllowHeaderFallback") },
+        initializationCapabilities = configuration.GetSection("Tenancy:InitializationCapabilities").Get<string[]>() ?? []
+    });
+    private static PluginDefinition Define(string id, string component, IQianPlugin plugin, IReadOnlyList<ServiceKey> provides, object? config = null) => new(
+        new PluginEntry(id, component, "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(config ?? new { })), plugin, provides);
 }

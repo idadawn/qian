@@ -273,19 +273,23 @@
       "type": "object",
       "properties": {
         "mode": {
-          "type": "string"
+          "type": "string",
+          "const": "production"
         },
         "allowHeaderFallback": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": false
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "严格生产解析边界的声明；仅支持已验证 tenant_id，禁止请求头兜底。"
     },
     "initializationCapabilities": {
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^[a-z][a-z0-9.-]*/[a-z][A-Za-z0-9_.-]*$"
+        "pattern": "^[a-z][a-z0-9.-]*/[a-z][A-Za-z0-9_.-]*$",
+        "maxLength": 384
       },
       "uniqueItems": true,
       "default": [],

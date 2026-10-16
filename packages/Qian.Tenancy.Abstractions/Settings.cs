@@ -8,13 +8,13 @@ namespace Qian.Tenancy;
 public static class TenantSettings
 {
     /// <summary>当前租户的设置读模型。</summary>
-    public static readonly ServiceKey Key = new("Tenancy.Settings");
+    public static readonly ServiceKey Key = new("TenancySettings");
     /// <summary>平台运营设置端口。</summary>
-    public static readonly ServiceKey OperationsKey = new("Tenancy.SettingsOperations");
+    public static readonly ServiceKey OperationsKey = new("TenancySettingsOperations");
     /// <summary>当前租户的配额判定端口。</summary>
-    public static readonly ServiceKey QuotaKey = new("Tenancy.Quota");
+    public static readonly ServiceKey QuotaKey = new("TenancyQuota");
     /// <summary>Identity 的可选真实人数统计端口。</summary>
-    public static readonly ServiceKey UserCounterKey = new("Tenancy.UserCounter");
+    public static readonly ServiceKey UserCounterKey = new("TenancyUserCounter");
 }
 /// <summary>只读取当前可信租户的运行时合成配置；不保存第二份配置表。</summary>
 public interface ITenantSettings
