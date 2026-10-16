@@ -61,7 +61,7 @@ DatePicker / TimePicker 使用浏览器原生日期、时间输入；属性为 v
 
 <ComponentDemo name="Upload" />
 
-四个端点沿 S1-FILE-003：GET /uploads:lookup、POST /uploads:init、PUT /uploads/{id}/parts/{n}、POST /uploads/{id}:complete。组件的 mock 契约草案在 data/contracts/upload.openapi.json，类型由 OpenAPI 生成；响应字段为 uploadId、partSize、uploadedParts 与文件 id / name / size / contentType，分片从 1 编号。真实提供方接线与 200 MB 上传 E2E 仍归 S1-FILE-003。
+四个端点沿 S1-FILE-003：`GET /uploads:lookup`、`POST /uploads:init`、`PUT /uploads/{id}/parts/{n}`、`POST /uploads/{id}:complete`。组件的 mock 契约草案在 data/contracts/upload.openapi.json，类型由 OpenAPI 生成；响应字段为 uploadId、partSize、uploadedParts 与文件 id / name / size / contentType，分片从 1 编号。真实提供方接线与 200 MB 上传 E2E 仍归 S1-FILE-003。
 
 ## ImagePreview
 
