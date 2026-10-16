@@ -27,6 +27,12 @@ public sealed class TenantInitializationHookTests
             JsonSerializer.SerializeToElement(new { }), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken).AsTask());
         Assert.Equal("AUTHZ_DENIED", error.Error.Code.Code);
         Assert.Equal(0, fixture.Binding.Calls);
+        fixture.Binding.SetSideEffect("write");
+        await target.InvokeAsync(new HookNotification(source, source.Scope.Id!, JsonSerializer.SerializeToElement(new { }), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+        Assert.Equal(1, fixture.Binding.Calls);
+        await Assert.ThrowsAsync<QianErrorException>(() => target.InvokeAsync(new HookNotification(source, source.Scope.Id!,
+            JsonSerializer.SerializeToElement(new { }), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken).AsTask());
+        Assert.Equal(1, fixture.Binding.Calls);
     }
     private static PluginDefinition Define(string id, string plugin, IQianPlugin provider) => new(
         new PluginEntry(id, plugin, "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), provider, []);
@@ -50,8 +56,10 @@ public sealed class TenantInitializationHookTests
     private sealed class Probe : IExecutableCapability
     {
         internal int Calls { get; private set; }
-        public CapabilityContract Contract { get; }
+        public CapabilityContract Contract { get; private set; } = null!;
         internal Probe(string sideEffect)
+            => SetSideEffect(sideEffect);
+        internal void SetSideEffect(string sideEffect)
         {
             var original = CreateRequest.QianCapability;
             var metadata = JsonNode.Parse(original.Metadata.GetRawText())!; metadata["sideEffect"] = sideEffect;

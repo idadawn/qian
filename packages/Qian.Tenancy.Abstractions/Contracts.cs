@@ -61,7 +61,10 @@ public enum TenantStatus
 
 /// <summary>新建租户请求；目标租户 ID 由服务端生成，不能经请求输入。</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record CreateTenant(string Code, string Name, [property: AllowedValues(TenantIsolation.Row)] TenantIsolation Isolation = TenantIsolation.Row)
+public sealed record CreateTenant(
+    [property: MinLength(1), MaxLength(64), RegularExpression(@"^[a-z0-9]+$(?![\s\S])")] string Code,
+    [property: MinLength(1), MaxLength(200), RegularExpression(@"^(?=[\s\S]*[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000])[^\u0000-\u001F\u007F-\u009F]*$(?![\s\S])")] string Name,
+    [property: AllowedValues(TenantIsolation.Row)] TenantIsolation Isolation = TenantIsolation.Row)
 {
     /// <summary>运营开户的管理员指针；HTTP 新建必填，不代表 Identity 已创建 Membership。</summary>
     [JsonRequired, DisallowNull]
@@ -72,7 +75,9 @@ public sealed record CreateTenant(string Code, string Name, [property: AllowedVa
 
 /// <summary>编辑主档；租户号和隔离策略不在可编辑字段中。</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record UpdateTenant(string Name, uint ExpectedRevision)
+public sealed record UpdateTenant(
+    [property: MinLength(1), MaxLength(200), RegularExpression(@"^(?=[\s\S]*[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000])[^\u0000-\u001F\u007F-\u009F]*$(?![\s\S])")] string Name,
+    uint ExpectedRevision)
 {
     /// <summary>非空时替换限额；省略保持原值。</summary>
     public TenantQuotas? Quotas { get; init; }

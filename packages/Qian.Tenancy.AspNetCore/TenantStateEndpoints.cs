@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Qian.Runtime;
+using Qian.Capabilities;
 
 namespace Qian.Tenancy.AspNetCore;
 
@@ -20,6 +21,7 @@ public static partial class TenancyEndpoints
             Respond(http, source, "resume", id, async (ctx, principal) => Results.Ok(await ctx.Inject<ITenantLifecycle>(TenantLifecycle.Key)
                 .ResumeAsync(id, principal.Subject, http.RequestAborted).ConfigureAwait(false))))).Produces<TenantDescriptor>();
         Bind(endpoints.MapGet("/api/tenancy/meta/state-machine", (Func<HttpContext, Task<IResult>>)(http => Respond(http, source, "read", null,
-            (_, _) => Task.FromResult<IResult>(Results.Json(TenantStateMetadata.Document)))))).Produces<JsonElement>();
+            (_, _) => Task.FromResult<IResult>(Results.Json(TenantStateMetadata.Document)))))).Produces<JsonElement>()
+            .WithMetadata(new HttpResponseSchema(200, TenantStateMetadata.Schema));
     }
 }

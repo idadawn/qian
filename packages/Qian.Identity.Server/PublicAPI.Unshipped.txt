@@ -1,0 +1,41 @@
+#nullable enable
+Qian.Identity.Server.IdentityClientRegistration
+Qian.Identity.Server.IdentityClientRegistration.Application.get -> OpenIddict.Abstractions.OpenIddictApplicationDescriptor!
+Qian.Identity.Server.IdentityClientRegistration.Application.init -> void
+Qian.Identity.Server.IdentityClientRegistration.BackchannelLogoutUri.get -> System.Uri?
+Qian.Identity.Server.IdentityClientRegistration.BackchannelLogoutUri.init -> void
+Qian.Identity.Server.IdentityClientRegistration.IdentityClientRegistration() -> void
+Qian.Identity.Server.IdentityClientRegistration.PluginId.get -> string?
+Qian.Identity.Server.IdentityClientRegistration.PluginId.init -> void
+Qian.Identity.Server.IdentityClientRegistration.Resources.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Server.IdentityClientRegistration.Resources.init -> void
+Qian.Identity.Server.IdentityClientRegistration.TenantId.get -> System.Guid?
+Qian.Identity.Server.IdentityClientRegistration.TenantId.init -> void
+Qian.Identity.Server.IdentityDbContext
+Qian.Identity.Server.IdentityDbContext.IdentityDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Identity.Server.IdentityDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Identity.Server.IdentityProtocolEndpoints
+Qian.Identity.Server.IdentityServerHosting
+Qian.Identity.Server.IdentityServerOptions
+Qian.Identity.Server.IdentityServerOptions.AllowLoopbackHttp.get -> bool
+Qian.Identity.Server.IdentityServerOptions.AllowLoopbackHttp.init -> void
+Qian.Identity.Server.IdentityServerOptions.Clients.get -> System.Collections.Generic.IReadOnlyList<Qian.Identity.Server.IdentityClientRegistration!>!
+Qian.Identity.Server.IdentityServerOptions.Clients.init -> void
+Qian.Identity.Server.IdentityServerOptions.EncryptionCertificates.get -> System.Collections.Generic.IReadOnlyList<System.Security.Cryptography.X509Certificates.X509Certificate2!>!
+Qian.Identity.Server.IdentityServerOptions.EncryptionCertificates.init -> void
+Qian.Identity.Server.IdentityServerOptions.IdentityServerOptions() -> void
+Qian.Identity.Server.IdentityServerOptions.Issuer.get -> System.Uri!
+Qian.Identity.Server.IdentityServerOptions.Issuer.init -> void
+Qian.Identity.Server.IdentityServerOptions.SignInScheme.get -> string!
+Qian.Identity.Server.IdentityServerOptions.SignInScheme.init -> void
+Qian.Identity.Server.IdentityServerOptions.SigningCertificates.get -> System.Collections.Generic.IReadOnlyList<System.Security.Cryptography.X509Certificates.X509Certificate2!>!
+Qian.Identity.Server.IdentityServerOptions.SigningCertificates.init -> void
+Qian.Identity.Server.IdentityServerPlugin
+Qian.Identity.Server.IdentityServerPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Server.IdentityServerPlugin.IdentityServerPlugin(Qian.Identity.Abstractions.IIdentityService! accounts) -> void
+Qian.Identity.Server.IdentityServerPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+const Qian.Identity.Server.IdentityDbContext.Schema = "plugin_qian_identity" -> string!
+override Qian.Identity.Server.IdentityClientRegistration.ToString() -> string!
+override Qian.Identity.Server.IdentityServerOptions.ToString() -> string!
+static Qian.Identity.Server.IdentityProtocolEndpoints.MapQianIdentityServer(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Identity.Server.IdentityServerHosting.AddQianIdentityServer(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Qian.Identity.Server.IdentityServerOptions! options, Microsoft.Extensions.Hosting.IHostEnvironment! environment) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Identity.Server.IdentityServerHosting.UseQianIdentityServer(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!

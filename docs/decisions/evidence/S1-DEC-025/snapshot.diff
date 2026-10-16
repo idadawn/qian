@@ -1,0 +1,322 @@
+--- before.openapi.json
++++ after.openapi.json
+@@ -22,7 +22,6 @@
+             "schema": {
+               "$ref": "#/components/schemas/H98ee36e693dce8c0534fa5498aa174271884d6e3c95afffed9488a0902088eff",
+               "minimum": 0,
+-              "maximum": 2147483647,
+               "default": 0
+             }
+           },
+@@ -36,6 +35,30 @@
+               "maximum": 100,
+               "default": 50
+             }
++          },
++          {
++            "name": "status",
++            "in": "query",
++            "required": false,
++            "schema": {
++              "$ref": "#/components/schemas/H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53",
++              "enum": [
++                "pending",
++                "trial",
++                "active",
++                "grace",
++                "suspended"
++              ]
++            }
++          },
++          {
++            "name": "keyword",
++            "in": "query",
++            "required": false,
++            "schema": {
++              "$ref": "#/components/schemas/H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53",
++              "maxLength": 200
++            }
+           }
+         ],
+         "responses": {
+@@ -114,7 +137,7 @@
+           "content": {
+             "application/json": {
+               "schema": {
+-                "$ref": "#/components/schemas/H4753a953f12e40c697f3d5ece0fd58f9b8abd100c65a42f6e1f9cd8e59679c03"
++                "$ref": "#/components/schemas/Hd23762d7d3c9ec88577858c45d6a88fd7f574569381c9fd4921a6fedd762932c"
+               }
+             }
+           }
+@@ -278,7 +301,7 @@
+           "content": {
+             "application/json": {
+               "schema": {
+-                "$ref": "#/components/schemas/H8d8028428010710bc85efd2c530790b2723a7e2304444ef98c407037b42a3aa6"
++                "$ref": "#/components/schemas/He002567801fc664e5a652b25459121b07dda574e55a097298d87bb2bba392801"
+               }
+             }
+           }
+@@ -371,7 +394,7 @@
+           "content": {
+             "application/json": {
+               "schema": {
+-                "$ref": "#/components/schemas/Hc60bbf5956a1f0226b1b836acd89908931dbc758188e05bb9913dd4eb6744de1"
++                "$ref": "#/components/schemas/H95536bbad0a04b0614958ee97f65d39079194641141ae8407dc9eb82466a8088"
+               }
+             }
+           }
+@@ -681,7 +704,7 @@
+             "content": {
+               "application/json": {
+                 "schema": {
+-                  "$ref": "#/components/schemas/H2e04a1b175b0470dda78892de91869c433532267f568cd8d4dc195c1c9fac39c"
++                  "$ref": "#/components/schemas/H591ab0ca13d5f0bee30459b9d177be3b8ada88c3bfb037965f829113e19a8b4d"
+                 }
+               }
+             }
+@@ -792,7 +815,7 @@
+           "content": {
+             "application/json": {
+               "schema": {
+-                "$ref": "#/components/schemas/Hc4f85a369042ba50615c811c0847616e7a6799516f31800b28b0d9f54c41d860"
++                "$ref": "#/components/schemas/H12431d9d68dd1bacb508db57db17e615b1c4cb8afee0e1a391f951695dd0755c"
+               }
+             }
+           }
+@@ -971,6 +994,9 @@
+           "integer"
+         ],
+         "pattern": "^-?(?:0|[1-9]\\d*)$"
++      },
++      "H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53": {
++        "type": "string"
+       },
+       "Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36": {
+         "type": "object",
+@@ -1112,20 +1138,33 @@
+                 "status"
+               ]
+             }
++          },
++          "total": {
++            "type": [
++              "string",
++              "integer"
++            ],
++            "pattern": "^-?(?:0|[1-9]\\d*)$"
+           }
+         },
+         "required": [
+           "items"
+         ]
+       },
+-      "H4753a953f12e40c697f3d5ece0fd58f9b8abd100c65a42f6e1f9cd8e59679c03": {
++      "Hd23762d7d3c9ec88577858c45d6a88fd7f574569381c9fd4921a6fedd762932c": {
+         "type": "object",
+         "properties": {
+           "code": {
+-            "type": "string"
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 64,
++            "pattern": "^[a-z0-9]\u002B$(?![\\s\\S])"
+           },
+           "name": {
+-            "type": "string"
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 200,
++            "pattern": "^(?=[\\s\\S]*[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000])[^\\u0000-\\u001F\\u007F-\\u009F]*$(?![\\s\\S])"
+           },
+           "isolation": {
+             "enum": [
+@@ -1225,11 +1264,14 @@
+         "type": "string",
+         "format": "uuid"
+       },
+-      "H8d8028428010710bc85efd2c530790b2723a7e2304444ef98c407037b42a3aa6": {
++      "He002567801fc664e5a652b25459121b07dda574e55a097298d87bb2bba392801": {
+         "type": "object",
+         "properties": {
+           "name": {
+-            "type": "string"
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 200,
++            "pattern": "^(?=[\\s\\S]*[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000])[^\\u0000-\\u001F\\u007F-\\u009F]*$(?![\\s\\S])"
+           },
+           "expectedRevision": {
+             "type": [
+@@ -1263,7 +1305,7 @@
+         ],
+         "additionalProperties": false
+       },
+-      "Hc60bbf5956a1f0226b1b836acd89908931dbc758188e05bb9913dd4eb6744de1": {
++      "H95536bbad0a04b0614958ee97f65d39079194641141ae8407dc9eb82466a8088": {
+         "type": "object",
+         "properties": {
+           "trial": {
+@@ -1281,9 +1323,150 @@
+         },
+         "additionalProperties": false
+       },
+-      "H2e04a1b175b0470dda78892de91869c433532267f568cd8d4dc195c1c9fac39c": {},
+-      "H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53": {
+-        "type": "string"
++      "H591ab0ca13d5f0bee30459b9d177be3b8ada88c3bfb037965f829113e19a8b4d": {
++        "type": "object",
++        "additionalProperties": false,
++        "properties": {
++          "states": {
++            "type": "array",
++            "items": {
++              "enum": [
++                "pending",
++                "trial",
++                "active",
++                "grace",
++                "suspended"
++              ]
++            }
++          },
++          "transitions": {
++            "type": "array",
++            "items": {
++              "type": "object",
++              "additionalProperties": false,
++              "properties": {
++                "from": {
++                  "oneOf": [
++                    {
++                      "enum": [
++                        "pending",
++                        "trial",
++                        "active",
++                        "grace",
++                        "suspended",
++                        "any-s1",
++                        "previous"
++                      ]
++                    },
++                    {
++                      "type": "array",
++                      "items": {
++                        "enum": [
++                          "pending",
++                          "trial",
++                          "active",
++                          "grace",
++                          "suspended"
++                        ]
++                      }
++                    }
++                  ]
++                },
++                "action": {
++                  "type": "string"
++                },
++                "to": {
++                  "oneOf": [
++                    {
++                      "enum": [
++                        "pending",
++                        "trial",
++                        "active",
++                        "grace",
++                        "suspended",
++                        "any-s1",
++                        "previous"
++                      ]
++                    },
++                    {
++                      "type": "array",
++                      "items": {
++                        "enum": [
++                          "pending",
++                          "trial",
++                          "active",
++                          "grace",
++                          "suspended"
++                        ]
++                      }
++                    }
++                  ]
++                }
++              },
++              "required": [
++                "from",
++                "action",
++                "to"
++              ]
++            }
++          },
++          "actions": {
++            "type": "array",
++            "items": {
++              "type": "object",
++              "additionalProperties": false,
++              "properties": {
++                "name": {
++                  "type": "string"
++                },
++                "sideEffect": {
++                  "enum": [
++                    "read",
++                    "write",
++                    "destructive"
++                  ]
++                },
++                "agent": {
++                  "type": "object",
++                  "additionalProperties": false,
++                  "properties": {
++                    "expose": {
++                      "type": "boolean"
++                    },
++                    "requiresConfirmation": {
++                      "type": "boolean"
++                    }
++                  },
++                  "required": [
++                    "expose",
++                    "requiresConfirmation"
++                  ]
++                },
++                "available": {
++                  "type": "boolean"
++                },
++                "stage": {
++                  "type": "string"
++                },
++                "idempotent": {
++                  "type": "boolean"
++                }
++              },
++              "required": [
++                "name",
++                "sideEffect",
++                "agent"
++              ]
++            }
++          }
++        },
++        "required": [
++          "states",
++          "transitions",
++          "actions"
++        ],
++        "$schema": "https://json-schema.org/draft/2020-12/schema",
++        "title": "\u79DF\u6237\u72B6\u6001\u673A\u5143\u6570\u636E"
+       },
+       "Hbfacefa4e5e49e3d17f03c7035114384bdd3214d6937f92ddbe1b7ef3b8a571d": {
+         "type": "object",
+@@ -1310,7 +1493,7 @@
+           "config"
+         ]
+       },
+-      "Hc4f85a369042ba50615c811c0847616e7a6799516f31800b28b0d9f54c41d860": {
++      "H12431d9d68dd1bacb508db57db17e615b1c4cb8afee0e1a391f951695dd0755c": {
+         "type": "object",
+         "properties": {
+           "config": {},

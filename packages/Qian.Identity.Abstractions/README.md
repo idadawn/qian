@@ -4,7 +4,7 @@
 
 ## 装配位置
 
-所有 profile 都可引用 Definition。`IdentityDefinition.Key` 拥有 `Identity` 服务键，`ctx.Identity()` 按当前 scope 注入 `IIdentityService`；真正 Provider 分别由后续 `Qian.Identity.Server` 与 `.Client` 提供。连接器通过 `IIdentityConnectorRegistry.Register` 挂载，释放句柄交给 `ctx.Effect`，同名独占与 scope 遮蔽由 Provider 遵守。
+所有 profile 都可引用 Definition。`IdentityDefinition.Key` 拥有 `Identity` 服务键，`ctx.Identity()` 按当前 scope 注入 `IIdentityService`；协议 Provider 已由 [Qian.Identity.Server](../Qian.Identity.Server/README.md) 提供，账号与会话业务继续由 IDP-003/004 接入；RP Provider `.Client` 仍由后续任务提供。连接器通过 `IIdentityConnectorRegistry.Register` 挂载，释放句柄交给 `ctx.Effect`，同名独占与 scope 遮蔽由 Provider 遵守。
 
 `qian add identity` 安装的是组件与所选 Provider，本包不自行创建身份服务。扩展只需依赖 Definition 即可调用当前主体、Person/Membership 投影、会话与连接器目录。
 
@@ -33,7 +33,7 @@
 
 ## 已知限制与延期项
 
-本任务仅契约先行，不代表 OpenIddict 服务、SSO、连接器、三因子认证或会话失效链路已实现／上线。对应后续 IDP 任务负责真正的认证、权限与生命周期实现。
+本包仅契约；OpenIddict 协议服务的实现与验收见 Qian.Identity.Server 主文档。它不代表账号密码、多租户选择、外壳 SSO、连接器、三因子认证或完整会话失效链路已实现／上线；这些业务按后续 IDP 任务继续交付。
 
 
 ## 授权主体类型透传

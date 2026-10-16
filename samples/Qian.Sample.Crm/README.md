@@ -97,3 +97,5 @@ T23 的具体宿主装配在测试工程的 `ProfileModeAssembly`，复用真实
 这与只接受机器业务请求的CrmCommandApplication是两个监听宿主；S1-GW-001探针应使用运营宿主的地址、真实平台超管令牌及已就绪的Registry/Lifecycle/Authz/Audit，不能把CRM业务端口当作运营端口。TenantManagementTests与六步用例直接调用同一Build工厂；测试密钥不替代正式Identity签发，部署由相应任务完成。具体HTTP契约与前置见[Tenancy主文档](../../packages/Qian.Tenancy/README.md#运营-http-契约与宿主s1-ten-008)。
 
 本机想逐个调用这些运营接口，见 [本机租户运营手测环境](../../tools/Qian.Dev.TenantOps/README.md)（S1-QA-012）：一条命令起 PostgreSQL 并用同一个 Build 工厂启动运营宿主，不替代 qian dev（S1-RT-013）或 K3s 部署（S1-DEP-002）。
+
+宿主读取 Tenancy:Resolver:Mode、Tenancy:Resolver:AllowHeaderFallback 和 Tenancy:InitializationCapabilities 配置节，并传入 tenancy 的同一 config。Resolver 仅接受 production/false，初始化清单须是完整能力 ID，不支持通配符；空清单不会授予开户 hook 例外。失败诊断先查 GetStepsAsync 的 04:provisioned Reason，再按 [Tenancy 主文档](../../packages/Qian.Tenancy/README.md) 区分重放、清单缺席和高风险能力拒绝。

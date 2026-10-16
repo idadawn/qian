@@ -99,3 +99,15 @@ S1-GW-001探针应接入这个运营宿主的监听地址和平台issuer/audienc
 匿名、租户主体、非超管及请求绑定/创建必填项/隔离值/分页校验的400/401/403不写成功旁路审计；成功授权的每次调用恰有一条bypass=superadmin，payload.permission为本次权限点。按R97，授权后的业务校验仍可失败（例如设置configSchema不合格），已发生的授权审计保留，不能删除审计链记录或伪装为业务写入成功。运营旁路拒绝原因只进入结构化日志（Reason、Subject、Permission），响应仍是统一AUTHZ_DENIED。
 
 OpenAPI请求租户字段门禁放在契约测试：解析全部本地$ref并遍历所有请求schema（含PUT），按RT-020的tenant-field词表拒绝任意层级tenant/tenantId/tenant_id/tenant-id；变异用例对4个请求体分别注入字段，保证不是只检查引用文本。真实oasdiff/OpenApiContractPlugin对删除PUT、改响应字段类型分别拒绝且Pointer指向该契约。PlatformHttpContract端点不进入租户GetDocumentAsync，即使额外携带业务绑定也先排除。x-qian-permission仍按R105等S1-AZ-004的生成器交付。
+
+## 契约首次发布收口（S1-TEN-011）
+
+R113 的处理顺序固定为：认证及平台主体检查 → 请求绑定与输入校验 → 组件上下文核对 → 超管旁路与审计 → 执行。绑定与入口校验失败不进入审计；非超管平台主体也可能先收到 400，因为这一步不读取租户数据。授权后的业务校验仍按 R97 保留已有授权审计。DTO 的 JsonRequired/DisallowNull/AllowedValues/Range 是导出契约的声明，不能假定 ASP.NET 自动运行所有标注；创建必填项由入口检查，分页与筛选调用同一参数标注校验，主档名称和租户号由 Provider 校验。tenant_principal、context_mismatch 与旁路拒绝原因只进结构化日志，不暴露在响应里。
+
+列表增加可选 status（五种租户状态）和 keyword（租户号或名称，最长 200），按 code、id 稳定排序；total 与当前页在同一 RepeatableRead 快照读取，空页仍保留总数。百分号、下划线和反斜杠按字面量搜索。状态机元数据的实际 Document 不变，响应 Schema 来自 Definition 嵌入资源；主档校验失败保持 INPUT_INVALID/400，补逐字段错误码与 JSON Pointer。名称长度的服务端历史口径是 UTF-16 单元数（String.Length），标准 maxLength 声明是其 Unicode 字符数上界，超出服务端单元数的补充字符输入仍由同一 400/pointer 拒绝；本次不改变接受范围。
+
+契约门禁的词表、递归遍历和示例跳过规则统一由 TenantInputContract 提供，能力编译器与 HTTP 契约测试共用。请求体嵌套字段、参数名称及参数 schema 都纳入扫描，本地引用有循环守卫；example/examples/default/const/enum 中的实例数据不当成字段定义。输入的非空写入约束不再改变响应的可空读取类型。
+
+开户失败先通过 ITenantProvisioning.GetStepsAsync 或步骤表查看 04:provisioned 的 Reason，再核对配置清单与实际能力元数据。二次 Enter、能力不在 initializationCapabilities、destructive/external 三种拒绝对外都是 AUTHZ_DENIED，分别核对本次已消费能力、清单的精确能力 ID、sideEffect。高风险能力在消费一次性槽位之前被拒；改为合法元数据后同一派发仍只能成功消费一次。
+
+契约发布前必须带齐已有服务端校验约束并通过真实端点与快照一致性测试。S1-DEC-025 只允许在 qian.tenancy 从未进入平台契约仓库时纠偏一次；后续 v1 收窄必须走 v2，并提供 R33 的别名、Deprecation 和 successor-version Link。TEN-005 消费 TEN-011 统一快照，不再另改同一 v1 基线。

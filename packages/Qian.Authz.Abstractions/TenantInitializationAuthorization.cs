@@ -10,6 +10,7 @@ internal static class TenantInitializationAuthorization
 {
     private static readonly AsyncLocal<Grant?> CurrentGrant = new();
     private static readonly AsyncLocal<Invocation?> CurrentInvocation = new();
+    internal static bool HasGrant => CurrentGrant.Value is not null;
 
     internal static IDisposable Begin(IPluginContext source, string actor, IReadOnlySet<string> capabilities, string actorKind = "user")
     {
