@@ -13,4 +13,4 @@ pnpm --filter @idadawn/yue-contracts contracts:check
 
 S1-YUE-009 已增加 `sseEventSchema` / `SseEvent`（SSE 九类事件草案）和 `errorDetailSchema` / `ErrorDetail`。ErrorDetail 的副本从冻结契约 `contracts/v0/error-detail.schema.json` 生成，不能手改；生成检查同时验证副本和类型。SSE 的 `clientAction` 只描述名称与参数，执行方须按 SDK 动作注册表做参数校验，服务端重新授权。
 
-FormSchema/ListSchema 与控件元数据草案由 S1-YUE-007 交付；Filter AST 的前端生成类型与 Field Type 配对留给后续任务。组件 manifest 不替代低代码控件契约。
+S1-YUE-007 已交付 FormSchema / ListSchema 与 WidgetMeta 草案及生成类型：分别导出 formSchema、listSchema 与 widgetSchema；FormSchema 带 ui.device 与 auth，ListSchema 带 overrides 与 auth。SDK 的控件注册表复用生成的 WidgetMeta。Filter AST 的前端生成类型与 Field Type 配对留给后续任务。组件 manifest 不替代低代码控件契约。
