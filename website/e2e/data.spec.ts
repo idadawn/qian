@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import scenarios from '../../packages/yue/data/docs/scenarios.json' with { type: 'json' };
 
 for (const scenario of scenarios) test(`${scenario.component}/${scenario.state} 数据组件文档场景`, async ({ page }) => {
-  await page.goto(`/yue-demo/index.html?component=${scenario.component}&state=${scenario.state}&theme=${scenario.theme}`);
+  await page.goto(`yue-demo/index.html?component=${scenario.component}&state=${scenario.state}&theme=${scenario.theme}`);
   if (scenario.component === 'DataTable') {
     if (scenario.state === 'Loading') await expect(page.getByTestId('yue-data-table-loading')).toBeVisible();
     else if (scenario.state === 'Empty') await expect(page.getByTestId('yue-data-table-empty')).toBeVisible();

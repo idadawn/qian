@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import scenarios from '../../packages/yue/form/docs/scenarios.json' with { type: 'json' };
 
 for (const scenario of scenarios) test(`SchemaForm/${scenario.state} 文档场景`, async ({ page }) => {
-  await page.goto(`/yue-demo/index.html?component=SchemaForm&state=${scenario.state}&theme=${scenario.theme}`);
+  await page.goto(`yue-demo/index.html?component=SchemaForm&state=${scenario.state}&theme=${scenario.theme}`);
   if (scenario.state === 'Readonly') await expect(page.getByText('••••5678')).toBeVisible();
   else {
     await page.getByRole('button', { name: '新建客户', exact: true }).click();
