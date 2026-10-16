@@ -252,15 +252,24 @@ catalogs:
     clsx:
       specifier: ^2.1.1
       version: 2.1.1
+    i18next:
+      specifier: 26.4.7
+      version: 26.4.7
     json-schema-to-typescript:
       specifier: 16.0.0
       version: 16.0.0
+    lossless-json:
+      specifier: 4.3.2
+      version: 4.3.2
     lucide-react:
       specifier: 1.56.0
       version: 1.56.0
     monaco-editor:
       specifier: 0.52.2
       version: 0.52.2
+    openapi-fetch:
+      specifier: 0.17.0
+      version: 0.17.0
     playwright:
       specifier: ^1.64.0
       version: 1.64.0
@@ -526,6 +535,9 @@ importers:
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
+      ajv:
+        specifier: 'catalog:'
+        version: 8.20.0
       json-schema-to-typescript:
         specifier: 'catalog:'
         version: 16.0.0
@@ -718,6 +730,15 @@ importers:
       '@idadawn/yue-tokens':
         specifier: workspace:^
         version: link:../tokens
+      i18next:
+        specifier: 'catalog:'
+        version: 26.4.7(typescript@6.0.3)
+      lossless-json:
+        specifier: 'catalog:'
+        version: 4.3.2
+      openapi-fetch:
+        specifier: 'catalog:'
+        version: 0.17.0
     devDependencies:
       '@rslib/core':
         specifier: 'catalog:'
@@ -3479,6 +3500,14 @@ packages:
     resolution: {integrity: sha512-Z+8unD6em/MJwyrkWQ2M3wygRGI1+MztbutiNwk1DCuEPXOZRWGjtcMPZYP1exY9iNZMhd7ZOSMQSo9WYtiQRw==}
     hasBin: true
 
+  i18next@26.4.7:
+    resolution: {integrity: sha512-p/3hqy6EcuqRs6wNwBYwGGC1fzBJSMxV9zMuN814ab/7QjdZbXfjXwuPZdQbngX6KDOTxM01uUiZyqmMB8ghZg==}
+    peerDependencies:
+      typescript: ^5 || ^6 || ^7
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
     engines: {node: '>=0.10.0'}
@@ -3914,6 +3943,9 @@ packages:
 
   lookup-closest-locale@6.2.0:
     resolution: {integrity: sha512-/c2kL+Vnp1jnV6K6RpDTHK3dgg0Tu2VVp+elEiJpjfS1UyY7AjOYHohRug6wT0OpoX2qFgNORndE9RqesfVxWQ==}
+
+  lossless-json@4.3.2:
+    resolution: {integrity: sha512-TWT1oIGJKaHkme0nDFoW9Tsv0/IZxy6P8rzD03hZpk7de04PWGfl/uMj/WcENrJLNF4P+QGGByPjap6qx++bDQ==}
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
@@ -4400,6 +4432,12 @@ packages:
   open@8.4.2:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
     engines: {node: '>=12'}
+
+  openapi-fetch@0.17.0:
+    resolution: {integrity: sha512-PsbZR1wAPcG91eEthKhN+Zn92FMHxv+/faECIwjXdxfTODGSGegYv0sc1Olz+HYPvKOuoXfp+0pA2XVt2cI0Ig==}
+
+  openapi-typescript-helpers@0.1.0:
+    resolution: {integrity: sha512-OKTGPthhivLw/fHz6c3OPtg72vi86qaMlqbJuVJ23qOvQ+53uw1n7HdmkJFibloF7QEjDrDkzJiOJuockM/ljw==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -8335,6 +8373,10 @@ snapshots:
 
   human-id@4.2.2: {}
 
+  i18next@26.4.7(typescript@6.0.3):
+    optionalDependencies:
+      typescript: 6.0.3
+
   iconv-lite@0.4.24:
     dependencies:
       safer-buffer: 2.1.2
@@ -8723,6 +8765,8 @@ snapshots:
   longest-streak@3.1.0: {}
 
   lookup-closest-locale@6.2.0: {}
+
+  lossless-json@4.3.2: {}
 
   lru-cache@5.1.1:
     dependencies:
@@ -9545,6 +9589,12 @@ snapshots:
       define-lazy-prop: 2.0.0
       is-docker: 2.2.1
       is-wsl: 2.2.0
+
+  openapi-fetch@0.17.0:
+    dependencies:
+      openapi-typescript-helpers: 0.1.0
+
+  openapi-typescript-helpers@0.1.0: {}
 
   optionator@0.9.4:
     dependencies:

@@ -5,6 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import { yueBoundariesConfig } from './packages/yue/boundaries.config.mjs';
+import { noHardcodedText } from './packages/yue/sdk/eslint-i18n.mjs';
 
 export default tseslint.config(
   {
@@ -27,4 +28,10 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   ...yueBoundariesConfig,
+  {
+    files: ['packages/yue/{sdk,shell,data,form,biz}/src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.ts', '**/*.test.tsx', '**/test/**', '**/*.generated.ts', '**/i18n.ts', '**/locales.ts'],
+    plugins: { 'yue-i18n': { rules: { 'no-hardcoded-text': noHardcodedText } } },
+    rules: { 'yue-i18n/no-hardcoded-text': 'error' },
+  },
 );

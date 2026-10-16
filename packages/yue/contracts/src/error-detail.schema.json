@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/v0/error-detail.schema.json",
+  "title": "ErrorDetail",
+  "description": "Qian 的错误响应体：RFC 9457 problem+json 的 Qian 配置文件。媒体类型 application/problem+json。type 区分协议错误与业务错误；code 为错误码目录中登记的稳定错误码；字段错误给出 JSON Pointer。规则见 contracts/v0/README.md「ErrorDetail」。",
+  "x-status": "draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "title", "status", "code", "message", "trace_id"],
+  "properties": {
+    "type": {
+      "description": "问题类型 URI：https://qian.dev/problems/<kind>/<code>；kind 为 protocol 或 business，末段与 code 相同。它是标识符，不要求可解引用。",
+      "type": "string",
+      "pattern": "^https://qian\\.dev/problems/(protocol|business)/[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+    },
+    "title": {
+      "description": "问题类型的简短摘要（按请求语言本地化），同一 code 不随出现而变。",
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "description": "HTTP 状态码，与响应状态行一致。业务错误只用 409 / 422，协议错误不用这两个值。",
+      "type": "integer",
+      "minimum": 400,
+      "maximum": 599
+    },
+    "detail": {
+      "description": "RFC 9457 通用客户端读取的说明；出现时与 message 相同。",
+      "type": "string",
+      "minLength": 1
+    },
+    "instance": {
+      "description": "本次出错的请求路径（URI 引用）。",
+      "type": "string",
+      "minLength": 1
+    },
+    "code": { "$ref": "#/$defs/Code" },
+    "message": {
+      "description": "面向人与模型的说明（按请求语言本地化），由错误码目录的文案模板渲染。",
+      "type": "string",
+      "minLength": 1
+    },
+    "trace_id": { "$ref": "#/$defs/TraceId" },
+    "pointer": {
+      "description": "出错的输入位置。errors 非空时取 errors[0].pointer。",
+      "$ref": "#/$defs/Pointer"
+    },
+    "allowed": {
+      "description": "该位置允许的取值。errors 非空时取 errors[0].allowed。",
+      "$ref": "#/$defs/Allowed"
+    },
+    "errors": {
+      "description": "逐项的字段错误（输入校验失败时必有）。",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/FieldError" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["type"],
+        "properties": { "type": { "pattern": "^https://qian\\.dev/problems/business/" } }
+      },
+      "then": { "properties": { "status": { "enum": [409, 422] } } },
+      "else": { "properties": { "status": { "not": { "enum": [409, 422] } } } }
+    },
+    {
+      "if": { "required": ["errors"] },
+      "then": { "required": ["pointer"] }
+    }
+  ],
+  "$defs": {
+    "Code": {
+      "description": "稳定错误码：大写下划线，全局唯一，登记在错误码目录（error-catalog.schema.json）。",
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+    },
+    "TraceId": {
+      "description": "W3C Trace Context 的 trace-id（32 位小写十六进制），与日志、审计、事件信封 trace_parent 中的 trace-id 一致。",
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "Pointer": {
+      "description": "RFC 6901 JSON Pointer 的 URI 片段形式，可带文档前缀：请求输入写 #/items/0/qty；文件写 <相对路径>#/<pointer>，如 .qian-plugin/plugin.json#/runtime/nuget/0。",
+      "type": "string",
+      "maxLength": 1024,
+      "pattern": "^[^#\\s]*#(/([^~/]|~[01])*)*$"
+    },
+    "Allowed": {
+      "description": "允许的取值（枚举值或可选项），任意 JSON 值。",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100
+    },
+    "FieldError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "pointer"],
+      "properties": {
+        "code": { "$ref": "#/$defs/Code" },
+        "message": { "type": "string", "minLength": 1 },
+        "pointer": { "$ref": "#/$defs/Pointer" },
+        "allowed": { "$ref": "#/$defs/Allowed" }
+      }
+    }
+  }
+}
