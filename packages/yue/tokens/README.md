@@ -18,7 +18,7 @@ const translucentPrimary = tokenColor('--yue-primary', 0.4);
 
 内置 `default`（蓝色）与 `teal`（青绿色）两套品牌。语义色由 `contrast` 标注类别：文字配对 `text` ≥ 4.5:1，控件边界与信息图形 `boundary` ≥ 3:1，分隔线 `decorative` 不设阈值；缺失分类会报错。透明色先按浏览器的 sRGB 通道合成，再计算 WCAG 亮度，不能直接混合线性亮度。
 
-视觉值以 shadcn base-nova / neutral 为基准，主色保留品牌色。按 R114 与产品负责人裁决，输入边界以 3:1 为先：亮色 neutral-450（L = 0.646）在页面、卡片和 muted 背景上均达标，暗色使用白色 34% alpha；装饰边框仍为亮色 L = 0.922、暗色白色 10% alpha。`muted-foreground` 的亮色使用最近的达标档 L = 0.546，使其在 L = 0.97 的 muted 底色上保持 4.5:1。明暗焦点色与 primary 一致。自定义背景、透明度、品牌后仍需检查实际配对。
+视觉值以 shadcn base-nova / neutral 为基准，主色保留品牌色。按 R116 与产品负责人裁决，输入边界以 3:1 为先：亮色 neutral-450（L = 0.646）在页面、卡片和 muted 背景上均达标，暗色使用白色 34% alpha；装饰边框仍为亮色 L = 0.922、暗色白色 10% alpha。`muted-foreground` 的亮色使用最近的达标档 L = 0.546，使其在 L = 0.97 的 muted 底色上保持 4.5:1。明暗焦点色与 primary 一致。自定义背景、透明度、品牌后仍需检查实际配对。
 
 Tailwind v4 宿主导入主题入口（已包含 `index.css`），并扫描组件源码：
 
