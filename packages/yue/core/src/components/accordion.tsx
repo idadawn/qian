@@ -26,5 +26,5 @@ export function AccordionTrigger({ className, testId, ...props }: AccordionTrigg
 
 export type AccordionContentProps = YueProps<ComponentProps<typeof BaseAccordion.Panel>>;
 export function AccordionContent({ className, testId, ...props }: AccordionContentProps) {
-  return <BaseAccordion.Panel {...props} data-slot="accordion-content" data-testid={testId ?? 'yue-accordion-content'} className={cn('h-(--accordion-panel-height) overflow-hidden text-sm transition-[height,opacity] duration-normal data-[starting-style]:h-0 data-[ending-style]:h-0 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 [&>*]:pb-4 motion-reduce:transition-none', className)} />;
+  return <BaseAccordion.Panel {...props} data-slot="accordion-content" data-testid={testId ?? 'yue-accordion-content'} className={cn('h-(--accordion-panel-height) overflow-hidden text-sm transition-[height] duration-normal data-[starting-style]:h-0 data-[ending-style]:h-0 [&>*]:pb-4 motion-reduce:transition-none', className)} />;
 }
