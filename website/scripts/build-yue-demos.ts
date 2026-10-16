@@ -11,7 +11,10 @@ const require = createRequire(import.meta.url);
 const cache = path.join(WEBSITE_ROOT, '.cache/yue');
 fs.mkdirSync(cache, { recursive: true });
 const data = readYueDocs();
-fs.writeFileSync(path.join(cache, 'sources.json'), JSON.stringify(Object.fromEntries(data.docs.map(d => [d.name, d.source]))));
+fs.writeFileSync(path.join(cache, 'sources.json'), JSON.stringify({
+  ...Object.fromEntries(data.docs.map(d => [d.name, d.source])),
+  SchemaForm: fs.readFileSync(path.join(WEBSITE_ROOT, '../packages/yue/form/docs/examples/schema-form-demo.tsx'), 'utf8'),
+}));
 const vendor = path.join(WEBSITE_ROOT, 'docs/public/yue-vendor');
 fs.rmSync(vendor, { recursive: true, force: true });
 fs.mkdirSync(vendor, { recursive: true });

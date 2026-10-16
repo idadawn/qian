@@ -1,0 +1,428 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "https://schema.qian.dev/list/v1"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string"
+    },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dataSource": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string"
+            },
+            "ref": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "ref"
+          ]
+        },
+        "layout": {
+          "enum": [
+            "table",
+            "left-tree",
+            "tree-table",
+            "group",
+            "card",
+            "inline-edit"
+          ]
+        },
+        "query": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "widget": {
+                "type": "string"
+              },
+              "labelKey": {
+                "type": "string"
+              },
+              "descriptionKey": {
+                "type": "string"
+              },
+              "props": {
+                "type": "object"
+              },
+              "children": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/UiNode"
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "titleKey": {
+                "type": "string"
+              },
+              "width": {
+                "type": "number",
+                "minimum": 1
+              },
+              "fixed": {
+                "enum": [
+                  "left",
+                  "right"
+                ]
+              },
+              "align": {
+                "enum": [
+                  "left",
+                  "center",
+                  "right"
+                ]
+              },
+              "summary": {
+                "type": "string"
+              },
+              "resolver": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "field"
+            ]
+          }
+        },
+        "actions": {
+          "type": "object"
+        },
+        "filter": {
+          "type": "object"
+        },
+        "sort": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "dir": {
+                "enum": [
+                  "asc",
+                  "desc"
+                ]
+              }
+            },
+            "required": [
+              "field",
+              "dir"
+            ]
+          }
+        }
+      },
+      "required": [
+        "dataSource",
+        "layout",
+        "columns"
+      ]
+    },
+    "overrides": {
+      "type": "object",
+      "properties": {
+        "h5": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "layout": {
+              "enum": [
+                "table",
+                "left-tree",
+                "tree-table",
+                "group",
+                "card",
+                "inline-edit"
+              ]
+            },
+            "columns": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "field": {
+                        "type": "string"
+                      },
+                      "titleKey": {
+                        "type": "string"
+                      },
+                      "width": {
+                        "type": "number",
+                        "minimum": 1
+                      },
+                      "fixed": {
+                        "enum": [
+                          "left",
+                          "right"
+                        ]
+                      },
+                      "align": {
+                        "enum": [
+                          "left",
+                          "center",
+                          "right"
+                        ]
+                      },
+                      "summary": {
+                        "type": "string"
+                      },
+                      "resolver": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "field"
+                    ]
+                  }
+                }
+              ]
+            },
+            "query": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "widget": {
+                    "type": "string"
+                  },
+                  "labelKey": {
+                    "type": "string"
+                  },
+                  "descriptionKey": {
+                    "type": "string"
+                  },
+                  "props": {
+                    "type": "object"
+                  },
+                  "children": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/UiNode"
+                    }
+                  }
+                },
+                "required": []
+              }
+            },
+            "actions": {
+              "type": "object"
+            }
+          },
+          "required": []
+        },
+        "pc": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "layout": {
+              "enum": [
+                "table",
+                "left-tree",
+                "tree-table",
+                "group",
+                "card",
+                "inline-edit"
+              ]
+            },
+            "columns": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "field": {
+                        "type": "string"
+                      },
+                      "titleKey": {
+                        "type": "string"
+                      },
+                      "width": {
+                        "type": "number",
+                        "minimum": 1
+                      },
+                      "fixed": {
+                        "enum": [
+                          "left",
+                          "right"
+                        ]
+                      },
+                      "align": {
+                        "enum": [
+                          "left",
+                          "center",
+                          "right"
+                        ]
+                      },
+                      "summary": {
+                        "type": "string"
+                      },
+                      "resolver": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "field"
+                    ]
+                  }
+                }
+              ]
+            },
+            "query": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "widget": {
+                    "type": "string"
+                  },
+                  "labelKey": {
+                    "type": "string"
+                  },
+                  "descriptionKey": {
+                    "type": "string"
+                  },
+                  "props": {
+                    "type": "object"
+                  },
+                  "children": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/UiNode"
+                    }
+                  }
+                },
+                "required": []
+              }
+            },
+            "actions": {
+              "type": "object"
+            }
+          },
+          "required": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "buttons": {
+          "type": "boolean"
+        },
+        "columns": {
+          "type": "boolean"
+        },
+        "fields": {
+          "type": "boolean"
+        },
+        "dataScope": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "buttons",
+        "columns",
+        "fields",
+        "dataScope"
+      ]
+    }
+  },
+  "required": [
+    "$schema",
+    "version",
+    "id",
+    "base",
+    "overrides",
+    "auth"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.qian.dev/list/v1",
+  "title": "ListSchema",
+  "$defs": {
+    "UiNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "widget": {
+          "type": "string"
+        },
+        "labelKey": {
+          "type": "string"
+        },
+        "descriptionKey": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UiNode"
+          }
+        }
+      },
+      "required": []
+    }
+  }
+}

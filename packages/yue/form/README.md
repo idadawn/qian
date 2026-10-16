@@ -1,10 +1,31 @@
 # @idadawn/yue-form
 
-Field、SchemaForm、FormApi、联动、校验与脱敏规则目录、弹层 API 与消息出口。
+唯一的 SchemaForm、FormApi、弹层和消息 API。S1-YUE-007 按 S1-DEC-024 / R108 在靶场对 SDK mock 验收；真实租户页面归 S1-TEN-005。
 
-- 分层与允许依赖：[yue 专题规格 §3.1](../../../docs/prd/specs/yue.md#31-包结构与依赖方向)；依赖方向由 `packages/yue/boundaries.config.mjs` 与 CI 门禁强制。
-- 实现任务：S1-YUE-007（S1-YUE-003 只建立骨架）。
+## 使用
+
+`SchemaForm` 接收 `schema`、`i18n`、`initialValues` 和 `onSubmit`；从 JSON Schema 2020-12 提取字段类型与约束，以 react-hook-form 管理状态，控件复用 core。字段标签用 `ui.layout[].labelKey` 或数据 Schema 的 title key。原始 Schema 不被联动修改。
+
+`mode="readonly"` 与编辑共用字段目录与状态，`auth.fields` 只做体验裁剪；脱敏支持 none、full、last4，不能替代服务端授权与脱敏。`apiRef` 提供 getValues / setValue / reset / validate / submit / setErrors / clearErrors。切换记录用新的 React key 或 reset，避免覆盖正在编辑的数据。
+
+提交回调可以直接调用 `PlatformClient.api<paths>()`；它抛出的 `PlatformError` 按 RFC 6901 pointer 映射到字段，提交结束后聚焦第一处错误。其他异常显示 i18n 错误文案；onError 可进一步处理 409 刷新提示等页面行为。日期时间输入按本地时间展示，提交使用带时区的 ISO 字符串。
+
+`rules.dependencies` 是基础联动：当 source 等于 equals 时，对 target 设置 required、disabled、visible 或 value。复杂 actions、表达式和脚本留给 S2，本期显式拒绝执行，避免静默产生错误结果。
+
+## 弹层与消息
+
+`useModal(i18n)`、`useDrawer(i18n)` 返回 open(options)、close 与 holder，分别复用 core Dialog 与 Sheet。`usePopup(i18n, triggerElement, options)` 复用 Popover，触发元素合并到单个按钮，不产生嵌套交互元素。options 提供 title、description、content 与 onClose。把 holder 放在 React 树中，所有关闭路径恢复焦点。
+
+`FeedbackProvider` 下，`useMessage()` 提供 info / success / error / notification（参数为文案 key）；`useConfirm()` 接收标题与说明，返回 Promise<boolean>。确认、取消、被新确认替换或 Provider 卸载都有明确结果。Toast / Notification 共用 core 的队列与可访问播报。
+
+## 契约与模型体验
+
+FormSchema / ListSchema / WidgetMeta 的 Schema 和生成类型在 contracts 包。运行 `pnpm --filter @idadawn/yue-contracts contracts:generate` 更新，`contracts:check` 验证。SDK 的 WidgetMeta 同源。FormSchema 带 ui.device 与 auth，ListSchema 带 overrides 与 auth；模型生成的元数据先经 validateMetadata 验证，再渲染。`exportRuleCatalog()` 导出校验和脱敏规则的 id 与参数 Schema。
+
+## 文档与验证
+
+权威交互说明是 [docs/index.mdx](docs/index.mdx)，共用示例在 [docs/examples/schema-form-demo.tsx](docs/examples/schema-form-demo.tsx)，状态登记在 docs/scenarios.json。Rspress 收集这些源到组件页，靶场 `/form.html` 用相同示例。运行 `pnpm yue:gates` 验证整体；浏览器测试覆盖字段校验、联动、ErrorDetail、焦点及 FormApi，SSR 测试覆盖元数据和只读，靶场与文档 E2E 覆盖真实交互及 axe。
 
 ## 已知限制与延期项
 
-- 尚未实现；版本 0.1.0 只是工作区占位，未发布。
+S1 支持字符串、数字、布尔、枚举、日期与嵌套对象；数组编辑器、复杂表达式、端布局覆盖执行和低代码设计器留给 S2。参考应用 CRUD 归 S1-QA-007；本任务的网络证据是 SDK mock，不代表真实后端验收。

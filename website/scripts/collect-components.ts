@@ -136,6 +136,8 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
     ].join('\n'),
   });
 
+  files.push({ path: 'yue/form.mdx', content: fs.readFileSync(path.join(repoRoot, 'packages/yue/form/docs/index.mdx'), 'utf8') });
+
   const yueRows = YUE_PACKAGES.map((p) => `| \`${p.name}\` | ${p.stage} | ${p.summary} |`).join('\n');
   files.push({
     path: 'yue/index.md',
@@ -162,6 +164,7 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
       ...readYueDocs(repoRoot).docs.map(d => `- [${d.name} ${d.label}](/components/yue/core/${d.name.toLowerCase()})：${d.description}`),
       '',
       '- [设计令牌](/components/yue/tokens)',
+      '- [SchemaForm 表单与弹层](/components/yue/form)',
       '',
     ].join('\n'),
   });
@@ -192,6 +195,6 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
 
   files.push({ path: '_meta.json', content: `${JSON.stringify(['index', { type: 'dir', name: 'platform', label: '平台插件' }, { type: 'dir', name: 'yue', label: 'yue 组件库' }], null, 2)}\n` });
   files.push({ path: 'platform/_meta.json', content: `${JSON.stringify(['index', ...PLATFORM_COMPONENTS.map((c) => c.id)], null, 2)}\n` });
-  files.push({ path: 'yue/_meta.json', content: `${JSON.stringify(['index', 'tokens', { type: 'dir', name: 'core', label: '基础组件' }], null, 2)}\n` });
+  files.push({ path: 'yue/_meta.json', content: `${JSON.stringify(['index', 'tokens', 'form', { type: 'dir', name: 'core', label: '基础组件' }], null, 2)}\n` });
   return [...files, ...collectYuePages(repoRoot)];
 }
