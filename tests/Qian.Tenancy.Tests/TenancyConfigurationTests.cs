@@ -11,6 +11,7 @@ namespace Qian.Tenancy.Tests;
 
 public sealed partial class TenantDirectoryTests
 {
+    private static readonly string[] ConfigurationProfiles = ["identity", "standalone", "gateway"];
     [Fact]
     public async Task base组合与派生文档配置实际可挂载_同时保留resolver与初始化清单()
     {
@@ -28,7 +29,7 @@ public sealed partial class TenantDirectoryTests
         using var host = Host(); await host.StartAsync(Ct); await Prepare(host);
         await using var loader = new PluginLoader(host.Services);
         await loader.MountAsync([Definition("data", new DataPlugin(), [DataDefinition.Key])], Ct);
-        var otherProfiles = new[] { "identity", "standalone", "gateway" }.Select(name =>
+        var otherProfiles = ConfigurationProfiles.Select(name =>
             new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = root, Profile = name, IncludeHomePatch = false }))
             .SelectMany(result => { Assert.True(result.IsValid); return result.Snapshot!.Entries.Where(entry => entry.Id == "tenancy").Select(entry => entry.Config); });
         foreach (var value in new[] { config, published, JsonSerializer.SerializeToElement(configured) }.Concat(otherProfiles))
