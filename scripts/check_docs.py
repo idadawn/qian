@@ -148,6 +148,8 @@ def generated_routes() -> frozenset[str]:
     routes |= {f"/cli/{slug}" for slug in re.findall(r"\bslug: '([a-z0-9-]+)'", sync)}
     collect = (scripts / "collect-components.ts").read_text(encoding="utf-8")
     routes |= {f"/components/platform/{cid}" for cid in re.findall(r"\bid: '(qian\.[a-z0-9.-]+)'", collect)}
+    # 非 core 包的文档源由收集器显式登记；预生成检查也只接受这些已声明的路由。
+    routes |= {f"/components/{slug}" for slug in re.findall(r"\bpath: '(yue/[a-z0-9-]+)\.(?:md|mdx)'", collect)}
     catalog = ROOT / "packages/yue/core/docs/catalog.json"
     if catalog.is_file():
         names = json.loads(catalog.read_text(encoding="utf-8"))

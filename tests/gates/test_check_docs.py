@@ -73,6 +73,11 @@ class SiteContentTests(unittest.TestCase):
         for route in ["/components/yue/core/invented", "/components/yue/api/native-000000000000"]:
             self.assertTrue(self.errors_for([route]), route)
 
+    def test_yue_package_routes_must_be_declared_by_collector(self) -> None:
+        write(self.tmp / "website/scripts/collect-components.ts", "{ path: 'yue/form.mdx' }, { path: 'yue/data.md' }\n")
+        self.assertEqual(self.errors_for(["/components/yue/form", "/components/yue/data"]), [])
+        self.assertTrue(self.errors_for(["/components/yue/undeclared"]))
+
     def test_missing_routes_fail(self) -> None:
         bad = ["/start/missing", "./nope", "/design/adr/adr-999", "/design/adr/ADR-001-kun", "/cli/nope", "/components/platform/qian.nope"]
         errors = self.errors_for(bad)
