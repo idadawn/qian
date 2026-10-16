@@ -125,3 +125,68 @@ Qian.Authz.Abstractions.ITenantRoleGrant
 Qian.Authz.Abstractions.ITenantRoleGrant.AssignAsync(string! roleCode, string! subjectType, string! subjectId, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Qian.Authz.Abstractions.TenantRoleGrant
 static readonly Qian.Authz.Abstractions.TenantRoleGrant.Key -> Qian.Runtime.ServiceKey
+Qian.Authz.Abstractions.DataScopeContracts
+Qian.Authz.Abstractions.DataScopePlan
+Qian.Authz.Abstractions.DataScopePlan.<Clone>$() -> Qian.Authz.Abstractions.DataScopePlan!
+Qian.Authz.Abstractions.DataScopePlan.AllData.get -> bool
+Qian.Authz.Abstractions.DataScopePlan.AllData.init -> void
+Qian.Authz.Abstractions.DataScopePlan.DataScopePlan(string! Resource, bool AllData, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.DataScopeRolePlan!>! Roles) -> void
+Qian.Authz.Abstractions.DataScopePlan.Deconstruct(out string! Resource, out bool AllData, out System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.DataScopeRolePlan!>! Roles) -> void
+Qian.Authz.Abstractions.DataScopePlan.Equals(Qian.Authz.Abstractions.DataScopePlan? other) -> bool
+Qian.Authz.Abstractions.DataScopePlan.Resource.get -> string!
+Qian.Authz.Abstractions.DataScopePlan.Resource.init -> void
+Qian.Authz.Abstractions.DataScopePlan.Roles.get -> System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.DataScopeRolePlan!>!
+Qian.Authz.Abstractions.DataScopePlan.Roles.init -> void
+Qian.Authz.Abstractions.DataScopeRolePlan
+Qian.Authz.Abstractions.DataScopeRolePlan.<Clone>$() -> Qian.Authz.Abstractions.DataScopeRolePlan!
+Qian.Authz.Abstractions.DataScopeRolePlan.DataScopeRolePlan(string! Role, System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>! Filters) -> void
+Qian.Authz.Abstractions.DataScopeRolePlan.Deconstruct(out string! Role, out System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>! Filters) -> void
+Qian.Authz.Abstractions.DataScopeRolePlan.Equals(Qian.Authz.Abstractions.DataScopeRolePlan? other) -> bool
+Qian.Authz.Abstractions.DataScopeRolePlan.Filters.get -> System.Collections.Generic.IReadOnlyList<System.Text.Json.JsonElement>!
+Qian.Authz.Abstractions.DataScopeRolePlan.Filters.init -> void
+Qian.Authz.Abstractions.DataScopeRolePlan.Role.get -> string!
+Qian.Authz.Abstractions.DataScopeRolePlan.Role.init -> void
+Qian.Authz.Abstractions.DataScopeRule
+Qian.Authz.Abstractions.DataScopeRule.<Clone>$() -> Qian.Authz.Abstractions.DataScopeRule!
+Qian.Authz.Abstractions.DataScopeRule.AllData.get -> bool
+Qian.Authz.Abstractions.DataScopeRule.AllData.init -> void
+Qian.Authz.Abstractions.DataScopeRule.DataScopeRule(string! Resource, bool AllData, System.Text.Json.JsonElement? Filter = null) -> void
+Qian.Authz.Abstractions.DataScopeRule.Deconstruct(out string! Resource, out bool AllData, out System.Text.Json.JsonElement? Filter) -> void
+Qian.Authz.Abstractions.DataScopeRule.Equals(Qian.Authz.Abstractions.DataScopeRule? other) -> bool
+Qian.Authz.Abstractions.DataScopeRule.Filter.get -> System.Text.Json.JsonElement?
+Qian.Authz.Abstractions.DataScopeRule.Filter.init -> void
+Qian.Authz.Abstractions.DataScopeRule.Resource.get -> string!
+Qian.Authz.Abstractions.DataScopeRule.Resource.init -> void
+Qian.Authz.Abstractions.RoleDataScope
+Qian.Authz.Abstractions.RoleDataScope.<Clone>$() -> Qian.Authz.Abstractions.RoleDataScope!
+Qian.Authz.Abstractions.RoleDataScope.Deconstruct(out string! Role, out System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.DataScopeRule!>! Rules) -> void
+Qian.Authz.Abstractions.RoleDataScope.Equals(Qian.Authz.Abstractions.RoleDataScope? other) -> bool
+Qian.Authz.Abstractions.RoleDataScope.Role.get -> string!
+Qian.Authz.Abstractions.RoleDataScope.Role.init -> void
+Qian.Authz.Abstractions.RoleDataScope.RoleDataScope(string! Role, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.DataScopeRule!>! Rules) -> void
+Qian.Authz.Abstractions.RoleDataScope.Rules.get -> System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.DataScopeRule!>!
+Qian.Authz.Abstractions.RoleDataScope.Rules.init -> void
+override Qian.Authz.Abstractions.DataScopePlan.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.DataScopePlan.GetHashCode() -> int
+override Qian.Authz.Abstractions.DataScopePlan.ToString() -> string!
+override Qian.Authz.Abstractions.DataScopeRolePlan.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.DataScopeRolePlan.GetHashCode() -> int
+override Qian.Authz.Abstractions.DataScopeRolePlan.ToString() -> string!
+override Qian.Authz.Abstractions.DataScopeRule.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.DataScopeRule.GetHashCode() -> int
+override Qian.Authz.Abstractions.DataScopeRule.ToString() -> string!
+override Qian.Authz.Abstractions.RoleDataScope.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.RoleDataScope.GetHashCode() -> int
+override Qian.Authz.Abstractions.RoleDataScope.ToString() -> string!
+static Qian.Authz.Abstractions.DataScopeContracts.Metadata.get -> System.Text.Json.JsonElement
+static Qian.Authz.Abstractions.DataScopeContracts.PlanTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Authz.Abstractions.DataScopePlan!>!
+static Qian.Authz.Abstractions.DataScopeContracts.RuleSchema.get -> string!
+static Qian.Authz.Abstractions.DataScopeContracts.RuleTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Authz.Abstractions.DataScopeRule!>!
+static Qian.Authz.Abstractions.DataScopePlan.operator !=(Qian.Authz.Abstractions.DataScopePlan? left, Qian.Authz.Abstractions.DataScopePlan? right) -> bool
+static Qian.Authz.Abstractions.DataScopePlan.operator ==(Qian.Authz.Abstractions.DataScopePlan? left, Qian.Authz.Abstractions.DataScopePlan? right) -> bool
+static Qian.Authz.Abstractions.DataScopeRolePlan.operator !=(Qian.Authz.Abstractions.DataScopeRolePlan? left, Qian.Authz.Abstractions.DataScopeRolePlan? right) -> bool
+static Qian.Authz.Abstractions.DataScopeRolePlan.operator ==(Qian.Authz.Abstractions.DataScopeRolePlan? left, Qian.Authz.Abstractions.DataScopeRolePlan? right) -> bool
+static Qian.Authz.Abstractions.DataScopeRule.operator !=(Qian.Authz.Abstractions.DataScopeRule? left, Qian.Authz.Abstractions.DataScopeRule? right) -> bool
+static Qian.Authz.Abstractions.DataScopeRule.operator ==(Qian.Authz.Abstractions.DataScopeRule? left, Qian.Authz.Abstractions.DataScopeRule? right) -> bool
+static Qian.Authz.Abstractions.RoleDataScope.operator !=(Qian.Authz.Abstractions.RoleDataScope? left, Qian.Authz.Abstractions.RoleDataScope? right) -> bool
+static Qian.Authz.Abstractions.RoleDataScope.operator ==(Qian.Authz.Abstractions.RoleDataScope? left, Qian.Authz.Abstractions.RoleDataScope? right) -> bool

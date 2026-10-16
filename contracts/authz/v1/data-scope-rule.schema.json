@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/authz/v1/data-scope-rule.schema.json",
+  "x-status": "frozen",
+  "title": "DataScopeRule",
+  "description": "命名资源的数据范围；同角色 AND、跨角色 OR，任一明确 allData 放开该资源的数据范围，租户隔离仍强制叠加。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["resource", "allData"],
+  "properties": {
+    "resource": {
+      "type": "string",
+      "maxLength": 384,
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+:[a-z][a-z0-9_-]*$",
+      "not": { "pattern": "[\\r\\n]" }
+    },
+    "allData": { "type": "boolean" },
+    "filter": { "$ref": "https://qian.dev/contracts/data/v1/filter-ast.schema.json" }
+  },
+  "oneOf": [
+    { "properties": { "allData": { "const": true } }, "not": { "required": ["filter"] } },
+    { "properties": { "allData": { "const": false } }, "required": ["filter"] }
+  ]
+}

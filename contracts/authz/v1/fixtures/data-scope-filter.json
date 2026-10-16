@@ -1,0 +1,8 @@
+{
+  "resource": "qian.sample.crm:customer",
+  "allData": false,
+  "filter": {
+    "logic": "and",
+    "groups": [{ "logic": "and", "conditions": [{ "field": "owner_id", "op": "eq", "sysVar": "currentUser" }] }]
+  }
+}
