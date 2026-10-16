@@ -524,10 +524,34 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
   - **后续接入**：S1-AZ-004 接入 identity_revision 与 `authz.grant.changed.v1` 时，把 identity_revision 并入键，并评估是否保留「每次判定读一次修订号」。
   - **平台超管行**：存于 `roles` / `role_assignments` 中 `tenant_id` 为空的行，经专用平台授权登录读写（`AuthzPlatformAccess`，与审计平台链的 `AuditPlatformAccess` 同构）。`platformRole` 未配置时旁路一律拒绝；生产接线写进 S1-DEP-005 验收。
   - **成员列表**：「平台超管不出现在租户成员列表」（ADR-006 D6.11）写进 S1-IDP-009 与 S1-AZ-005 的验收。
+
 ### 验收复核裁决 R104–R105（S1-DEC-023 / S1-TEN-003 / S1-TEN-006 复核，2026-10-16）
 
 - R104：S1-DEC-023「开户期间 hook 的执行身份与 pending 租户授权边界」的留痕（产品负责人 2026-10-16 在执行会话批准最小权限方案，执行人记录；有异议另立决策任务）：`tenant/provisioned` 监听器里经 SDK hook 触发的能力，以进程内、不可序列化的一次性初始化凭据执行——只能由 `qian.tenancy` 的开通编排在目标租户 scope 的生产方上下文开启，绑定真实平台操作者（HTTP 路径绑定到已认证的超管主体；无请求来源的进程内调用只做格式校验，调用方须是可信控制面）、`qian.tenancy` 全局配置 `initializationCapabilities` 的精确清单（`<组件>/<能力>`，禁通配符，只接受 read / write 副作用）、请求类型与权限点；每个能力每次开通只执行一次、不嵌套；不更换宿主当前用户、不签发登录令牌、不建 Membership；审计 `channel = hook`、actor 为平台操作者，重复开通不新增审计；pending 租户对 HTTP 与普通命令入口仍一律拒绝。该凭据下三项命令策略与 Kun PermissionBehavior 仍运行，但判定由凭据给出、不查 RBAC。部署配置可用性（base 组合包 tenancy 条目同时带 `resolver` 时 Apply 被拒）、负例补齐、清单 `scopes` 与文档措辞归 S1-TEN-007。
 - R105：R101 的服务键规则（单例 seam 单段 `<Key>`，注册表 seam `<Key>.<Registry>:<name>`）同样适用于 PR #147 / #152 / #154 / #155 新增的 `Authz.TenantRoleGrant`、`Tenancy.Provisioning`、`Tenancy.Operations`、`Tenancy.Lifecycle`、`Tenancy.Settings`、`Tenancy.SettingsOperations`、`Tenancy.Quota`、`Tenancy.UserCounter`、`Tenancy.MembershipProvisioner`、`Tenancy.ProvisionedNotifier`：都改为单段键（例如 `AuthzTenantRoleGrant`、`TenancyProvisioning`），未进 `PublicAPI.Shipped.txt`、无兼容负担；Authz 侧随 S1-RT-033 的改名一起做，Tenancy 侧由 S1-TEN-007 承担，在给 qian.tenancy 加 `[QianPlugin]` 并同步清单之前完成；在此之前其它组件不得把这些键写进 `inject`。S1-TEN-006 验收 4「契约」按以下口径成立：三端点进入组件 OpenAPI 契约、登记 `qian.tenancy.http/v1` 并经 S1-RT-006 的准入接线；契约里缺 4xx 响应与 `x-qian-permission`（PRD 7.5 列为 S1 范围，生成器归 S1-AZ-004 的 API 层 PEP）、准入用例为自比、`tenantId` 断言为空断言、`PlatformHttpContract` 排除无用例，归 S1-TEN-008。
+
+### DEP-003 解阻裁决 R106（2026-10-16）
+
+产品负责人 2026-10-16 要求「处理掉 S1-DEP-003 阻塞」，由 Claude 作默认裁决，未经逐条确认。本条取代以下两处安排：
+
+- 2026-10-14「DEP-003 保持 blocked、四任务范围不变」；
+- S1-DEC-021（R81–R84 一节）「顺序与归属」里「S1-DEP-003 等 S1-IDP-002 / S1-IDP-005 / S1-GW-001 / S1-YUE-001 交付后再动」一句。
+
+- R106：S1-DEP-003 拆为两段。
+  - **S1-DEP-003 收窄为镜像构建与供应链流水线。** 交付内容：
+    - 统一构建入口：多阶段，JIT 与 NativeAOT distroless 两种运行镜像模板，非 root、只读根。
+    - 供应链门禁：Syft SBOM、漏洞扫描、Cosign 签名与 SBOM 证明、带发布者身份与 issuer 约束的验签。
+    - dump-config 漂移门禁。
+
+    用 CI 内构建、不发布的自检镜像做端到端验证。自检镜像不是任何 profile 的产品镜像，所以不违反 R31「standalone / minimal 不出镜像」，也不替代业务镜像。依赖改为 S1-RT-002、S1-DEP-001，状态由 blocked 改为 todo。
+  - **三项真实镜像验收原文移到新任务 S1-DEP-008。** 它依赖 S1-DEP-003，以及 S1-IDP-002、S1-IDP-005、S1-GW-001、S1-YUE-001。只有真实镜像及其证据齐全才可勾选。
+  - **发布链**：
+    - S1-DEP-004 仍依赖 S1-DEP-003，片段只需 digest 引用约定。
+    - S1-DEP-005 显式加依赖 S1-DEP-008，S1-DEC-016「发布门要求真实 qian-platform」的口径不变。
+    - ADR-017 §9、deploy/baseline 与 deploy/images 的 README 同步改写。
+  - **前置链**按各自 wave 推进，本条不另排期：
+    - 身份 / 网关：S1-IDP-002 → S1-IDP-005 → S1-GW-001。
+    - 外壳：S1-YUE-006、S1-YUE-007 与 S1-IDP-009 → S1-IDP-010 → S1-YUE-009，最后到 S1-YUE-001。其中 IDP-009 依赖 S1-IDP-003。
 
 ### 验收复核裁决 R107（S1-TEN-002 / S1-TEN-004 复核，2026-10-16）
 

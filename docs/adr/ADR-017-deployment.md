@@ -78,6 +78,6 @@ Kun 仓库没有 Dockerfile、compose、Helm、manifest、健康端点映射或�
 产品负责人已通过 [S1-DEC-016](../../pm/tasks/S1-DEC-016.md) 确认分阶段验收，消除 DEP-001 要求 L1/应用先就绪、DEP-002/003 又依赖 DEP-001 的循环。
 
 - 基线阶段（S1-DEP-001）：在真实集群验证两环境独立命名空间、专属 PG/Redis、默认拒绝网络策略、配额/限制、生产独立节点池与入口/加密基线。staging 用明确标识的诊断工作负载验证拒绝路径与已授权的 PG/Redis 协议访问；其结果只证明基础设施与策略，不标作真实 qian-platform 联调。
-- 应用阶段（S1-DEP-005 发布验收）：待 DEP-002 的专属 RabbitMQ/Apollo 和 DEP-003 的真实平台镜像就绪，补充精确网络放行，从真实 qian-platform 验证 PG、Redis、RabbitMQ、Apollo 四类依赖的协议与认证，并关联应用就绪状态。该项是发布必过门，不能以探针、同名标签 Pod、共享服务或仅 TCP 连通代替。
+- 应用阶段（S1-DEP-005 发布验收）：待 DEP-002 的专属 RabbitMQ/Apollo 和 DEP-008 的真实平台镜像（R106 自 DEP-003 拆出）就绪，补充精确网络放行，从真实 qian-platform 验证 PG、Redis、RabbitMQ、Apollo 四类依赖的协议与认证，并关联应用就绪状态。该项是发布必过门，不能以探针、同名标签 Pod、共享服务或仅 TCP 连通代替。
 
-DEP-002/003 的基线前置保持，DEP-005 显式依赖 DEP-002，并经 DEP-004 依赖 DEP-003。上述裁决只调整验收顺序，不豁免真实集群检查、生产节点池、实际 HTTPS issuer、secrets-encryption、制品证据或发布准入；静态清单和本机容器通过不能将 DEP-001 标为完成。
+DEP-002/003 的基线前置保持，DEP-005 显式依赖 DEP-002 与 DEP-008（真实镜像，R106），并经 DEP-004 依赖 DEP-003（镜像构建与供应链流水线）。上述裁决只调整验收顺序，不豁免真实集群检查、生产节点池、实际 HTTPS issuer、secrets-encryption、制品证据或发布准入；静态清单和本机容器通过不能将 DEP-001 标为完成。
