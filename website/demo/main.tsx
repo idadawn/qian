@@ -37,7 +37,7 @@ async function loadEditor() {
   return editorPromise;
 }
 function Tokens() {
-  return <div><h1 className="mb-4 text-xl font-semibold">yue 设计令牌</h1><div className="grid grid-cols-2 gap-3">{TOKEN_REGISTRY.semantics.filter(token => token.kind === 'color').map(token => <div key={token.name} className="rounded-lg p-4" style={{ background: `oklch(var(${token.contrastWith}))`, color: `oklch(var(${token.name}))` }}><strong className="break-all text-sm">{token.name}</strong><p className="mt-2 text-xs">{token.meaning}</p></div>)}</div><h2 className="mt-6 font-semibold">组件令牌</h2><dl>{TOKEN_REGISTRY.components.map(token => <div key={token.name}><dt>{token.name}</dt><dd>{token.meaning}：{token.value}</dd></div>)}</dl></div>;
+  return <div><h1 className="mb-4 text-xl font-semibold">yue 设计令牌</h1><div className="grid grid-cols-2 gap-3">{TOKEN_REGISTRY.semantics.filter(token => token.kind === 'color').map(token => <div key={token.name} className="rounded-lg p-4" style={token.contrast === 'text' ? { background: `oklch(var(${token.contrastWith}))`, color: `oklch(var(${token.name}))` } : { background: 'var(--background)', color: 'var(--foreground)', border: `3px solid oklch(var(${token.name}))` }}><strong className="break-all text-sm">{token.name}</strong><p className="mt-2 text-xs">{token.meaning}</p></div>)}</div><h2 className="mt-6 font-semibold">组件令牌</h2><dl>{TOKEN_REGISTRY.components.map(token => <div key={token.name}><dt>{token.name}</dt><dd>{token.meaning}：{token.value}</dd></div>)}</dl></div>;
 }
 class Boundary extends React.Component<{ children: React.ReactNode }, { error: string }> {
   state = { error: '' };

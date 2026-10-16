@@ -1,4 +1,4 @@
 @import 'tailwindcss';
-@import '@idadawn/yue-tokens/index.css';
+@import '@idadawn/yue-tokens/theme.css';
 @source '../../../core';
 @source '..';

@@ -15,7 +15,14 @@ export function fitSrgb(color: Oklch): Oklch {
   for (let step = 0; step < 28; step++) { const middle = (lower + upper) / 2; if (inSrgb([color[0], middle, color[2]])) lower = middle; else upper = middle; }
   return [color[0], Math.floor(lower * 100000) / 100000, color[2]];
 }
-export function contrastRatio(first: Oklch, second: Oklch): number {
-  const luminance = (color: Oklch): number => { const [r, g, b] = oklchToLinearSrgb(color); return 0.2126 * Math.max(0, Math.min(1, r)) + 0.7152 * Math.max(0, Math.min(1, g)) + 0.0722 * Math.max(0, Math.min(1, b)); };
-  const a = luminance(first), b = luminance(second); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+export function contrastRatio(first: Oklch, second: Oklch, alpha = 1): number {
+  if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new Error('alpha 必须在 0–1 内。');
+  const clamp = (value: number): number => Math.max(0, Math.min(1, value));
+  const encode = (value: number): number => value <= 0.0031308 ? value * 12.92 : 1.055 * value ** (1 / 2.4) - 0.055;
+  const decode = (value: number): number => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  const background = oklchToLinearSrgb(second).map(clamp);
+  // CSS 透明色先在 sRGB 通道上合成，再转换线性亮度；不能直接线性混合亮度。
+  const foreground = oklchToLinearSrgb(first).map((value, index) => decode(encode(clamp(value)) * alpha + encode(background[index]!) * (1 - alpha)));
+  const luminance = (rgb: readonly number[]): number => 0.2126 * rgb[0]! + 0.7152 * rgb[1]! + 0.0722 * rgb[2]!;
+  const a = luminance(foreground), b = luminance(background); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }

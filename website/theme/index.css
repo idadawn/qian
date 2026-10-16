@@ -7,6 +7,8 @@
  * 这里不写暗色分支。Rspress 的默认变量挂在 :where(...) 上、优先级为 0，:root 足以覆盖。
  */
 :root {
+  --rp-font-family-base: var(--yue-p-font-sans);
+  --rp-font-family-mono: var(--yue-p-font-mono);
   --rp-c-brand: oklch(var(--yue-primary));
   --rp-c-brand-light: color-mix(in oklch, oklch(var(--yue-primary)) 80%, white);
   --rp-c-brand-lighter: color-mix(in oklch, oklch(var(--yue-primary)) 30%, white);
