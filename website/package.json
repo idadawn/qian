@@ -25,7 +25,8 @@
     "@idadawn/yue-core": "workspace:*",
     "@rspress/shared": "catalog:",
     "@idadawn/yue-form": "workspace:*",
-    "@idadawn/yue-sdk": "workspace:*"
+    "@idadawn/yue-sdk": "workspace:*",
+    "@idadawn/yue-data": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

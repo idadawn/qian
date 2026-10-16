@@ -1,0 +1,222 @@
+[
+  {
+    "id": "DataTable.Default",
+    "component": "DataTable",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "DataTable"
+    }
+  },
+  {
+    "id": "DataTable.Dark",
+    "component": "DataTable",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "DataTable"
+    }
+  },
+  {
+    "id": "DataTable.Loading",
+    "component": "DataTable",
+    "state": "Loading",
+    "theme": "light",
+    "props": {
+      "kind": "DataTable",
+      "loading": true
+    }
+  },
+  {
+    "id": "DataTable.Empty",
+    "component": "DataTable",
+    "state": "Empty",
+    "theme": "light",
+    "props": {
+      "kind": "DataTable",
+      "empty": true
+    }
+  },
+  {
+    "id": "DataTable.Error",
+    "component": "DataTable",
+    "state": "Error",
+    "theme": "light",
+    "props": {
+      "kind": "DataTable",
+      "invalid": true
+    }
+  },
+  {
+    "id": "Tree.Default",
+    "component": "Tree",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "Tree"
+    }
+  },
+  {
+    "id": "Tree.Dark",
+    "component": "Tree",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "Tree"
+    }
+  },
+  {
+    "id": "TreeSelect.Default",
+    "component": "TreeSelect",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "TreeSelect"
+    }
+  },
+  {
+    "id": "TreeSelect.Dark",
+    "component": "TreeSelect",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "TreeSelect"
+    }
+  },
+  {
+    "id": "Cascader.Default",
+    "component": "Cascader",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "Cascader"
+    }
+  },
+  {
+    "id": "Cascader.Dark",
+    "component": "Cascader",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "Cascader"
+    }
+  },
+  {
+    "id": "DatePicker.Default",
+    "component": "DatePicker",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "DatePicker"
+    }
+  },
+  {
+    "id": "DatePicker.Dark",
+    "component": "DatePicker",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "DatePicker"
+    }
+  },
+  {
+    "id": "DateRange.Default",
+    "component": "DateRange",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "DateRange"
+    }
+  },
+  {
+    "id": "DateRange.Dark",
+    "component": "DateRange",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "DateRange"
+    }
+  },
+  {
+    "id": "TimePicker.Default",
+    "component": "TimePicker",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "TimePicker"
+    }
+  },
+  {
+    "id": "TimePicker.Dark",
+    "component": "TimePicker",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "TimePicker"
+    }
+  },
+  {
+    "id": "TimeRange.Default",
+    "component": "TimeRange",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "TimeRange"
+    }
+  },
+  {
+    "id": "TimeRange.Dark",
+    "component": "TimeRange",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "TimeRange"
+    }
+  },
+  {
+    "id": "Upload.Default",
+    "component": "Upload",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "Upload"
+    }
+  },
+  {
+    "id": "Upload.Dark",
+    "component": "Upload",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "Upload"
+    }
+  },
+  {
+    "id": "Upload.Error",
+    "component": "Upload",
+    "state": "Error",
+    "theme": "light",
+    "props": {
+      "kind": "Upload",
+      "invalid": true
+    }
+  },
+  {
+    "id": "ImagePreview.Default",
+    "component": "ImagePreview",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "ImagePreview"
+    }
+  },
+  {
+    "id": "ImagePreview.Dark",
+    "component": "ImagePreview",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "ImagePreview"
+    }
+  }
+]

@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - "packages/yue/**"
+      - "tools/openapi-codegen/**"
       - "apps/**"
       - "tests/gates/yue/**"
       - "package.json"
@@ -23,6 +24,7 @@ on:
   pull_request:
     paths:
       - "packages/yue/**"
+      - "tools/openapi-codegen/**"
       - "apps/**"
       - "tests/gates/yue/**"
       - "package.json"

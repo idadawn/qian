@@ -33,11 +33,16 @@
     "build": "rslib build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "publint": "publint --strict --pack pnpm",
-    "test": "vitest run"
+    "test": "vitest run",
+    "contracts:generate": "pnpm --workspace-root openapi:generate --source packages/yue/data/contracts/upload.openapi.json --output packages/yue/data/src/upload.generated.ts",
+    "contracts:check": "pnpm --workspace-root openapi:generate --source packages/yue/data/contracts/upload.openapi.json --output packages/yue/data/src/upload.generated.ts --check"
   },
   "dependencies": {
     "@idadawn/yue-core": "workspace:^",
-    "@idadawn/yue-sdk": "workspace:^"
+    "@idadawn/yue-sdk": "workspace:^",
+    "@tanstack/react-table": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
+    "@idadawn/yue-contracts": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -58,6 +63,10 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "tailwindcss": "catalog:",
+    "@idadawn/yue-tokens": "workspace:^",
+    "ajv": "catalog:"
   }
 }

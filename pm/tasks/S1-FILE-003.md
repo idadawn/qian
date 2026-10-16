@@ -14,7 +14,7 @@ refs:
   - docs/prd/07-s1-foundation.md#7.7
   - docs/prd/07-s1-foundation.md#7.15.2
   - docs/decisions/key-decisions-v0.md
-updated: 2026-10-16
+updated: 2026-10-17
 ---
 
 ## 背景
@@ -31,3 +31,4 @@ updated: 2026-10-16
 
 - 2026-10-06 planner：创建任务
 - 2026-10-16 claude：S1-DEC-024 / R108：原 S1-YUE-008 验收 2（Upload 分片上传经 7.7、秒传命中返回已有 id）与本任务验收 1 同义，合并于此；depends 加 S1-YUE-008（Upload 组件按本任务背景的分片契约对 mock 先行交付）。PRD 7.7 与题名写「MD5 秒传」而契约以 sha256 查询，实现时统一口径
+- 2026-10-17 cody：S1-YUE-008 对接登记：Upload 按本任务四个端点以 SHA-256 完成组件 mock 验收；夹具 OpenAPI 位于 packages/yue/data/contracts/upload.openapi.json，init 响应 uploadId/partSize/已确认 uploadedParts（序号从 1 开始），complete/lookup 返回文件 id/name/size/contentType。该文件是组件夹具草案，真实响应接线与契约冻结由本任务复核；未宣称真实上传 E2E 完成。

@@ -254,7 +254,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
 
     private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
-        LifecyclePlatform? lifecycle = null)
+        LifecyclePlatform? lifecycle = null, bool contractExclusion = false)
     {
         if (lifecycle is { Management: true }) await PreparePlatformLogins(lifecycle);
         var platform = capabilities || lifecycle is not null || runtimeProfile == "platform";
@@ -332,6 +332,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 await roles.AssignAsync(id == A ? "tenant.owner" : "tenant.user", "service", Writer, "test-bootstrap", Ct);
             }
             if (platform) MapCapabilities(app);
+            if (contractExclusion) MapContractExclusion(app);
             if (lifecycle is not null) MapLifecycle(app);
             if (lifecycle is { Management: true }) MapSettingsRegistry(app);
             if (hooks) MapHookEntry(app);
