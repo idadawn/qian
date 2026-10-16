@@ -1,0 +1,27 @@
+> For AI agents: the complete documentation index is available at /llms.txt, the full documentation bundle is available at /llms-full.txt.
+
+# Namespace Kun.RateLimit.Abstractions
+
+:::info 生成页
+本页由 DocFX 从 nuget.org 上 `Kun.RateLimit` 2026.10.14 的 XML 注释生成，源码在 kun 仓库 [`src/Kun.RateLimit`](https://github.com/idadawn/kun/tree/v2026.10.14/src/Kun.RateLimit)（`v2026.10.14`）。Kun 文档与代码不一致处以代码为准（[ADR-001 D1.8](/design/adr/adr-001-kun-relationship.md)）；Qian 对 Kun 的选用与约束见[与 Qian 的关系](/sdk/kun/with-qian.md)。
+:::
+
+### Classes
+
+[KunRateLimitOptions](/sdk/api/kun/kun-ratelimit-abstractions/kunratelimitoptions.md)
+
+Root configuration for `AddKunRateLimit`. Callers register one
+or more named windows — typically `"api"` for bulk read / write
+traffic and `"auth"` for stricter login paths — and optionally
+supply a custom [KunRateLimitOptions.OnRejected](/sdk/api/kun/kun-ratelimit-abstractions/kunratelimitoptions.md#Kun_RateLimit_Abstractions_KunRateLimitOptions_OnRejected) hook that runs after the
+default 429 response is written.
+
+[WindowRule](/sdk/api/kun/kun-ratelimit-abstractions/windowrule.md)
+
+Configuration for a single named rate-limit window.
+
+### Enums
+
+[RateLimitPartitionKey](/sdk/api/kun/kun-ratelimit-abstractions/ratelimitpartitionkey.md)
+
+Identity dimension the rate limiter partitions on.

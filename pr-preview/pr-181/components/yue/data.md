@@ -1,0 +1,84 @@
+> For AI agents: the complete documentation index is available at /pr-preview/pr-181/llms.txt, the full documentation bundle is available at /pr-preview/pr-181/llms-full.txt.
+
+# 数据组件
+
+数据请求由消费方通过 PlatformClient 发起。示例只替换 SDK 网络层，表格不会把服务端当前页再做一次客户端分页、排序或筛选。
+
+## DataTable
+
+基于 TanStack Table 9，支持服务端分页、排序、筛选、行选择、列显隐、固定列和工具栏。切换示例状态可看加载、空和错误态；默认例子支持实际翻页、按名称排序与筛选。
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+| 属性 | 说明 |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| columns | field、titleKey、sortable、filterable、width、fixed；可序列化部分由 dataColumnSchema 定义，render 是宿主注入的单元格渲染函数 |
+| data / total | 服务端当前页与筛选后的总数 |
+| query / onQueryChange | pageIndex、pageSize、sorting、filters；排序和筛选后回第一页 |
+| getRowId | 稳定记录 id，行选择以它为准 |
+| i18n / label | 文案实例和表格可访问名称；使用 createDataI18n 或先 addDataLanguagePacks |
+| loading / error / onRetry | 加载、错误与重试；空态由当前页为空决定 |
+| selectable / selectedIds / onSelectionChange | 行选择；可受控或由表格维护 |
+| toolbar / className / testId | 工具栏内容、样式字符串与稳定测试标识 |
+
+## Tree、TreeSelect 与 Cascader
+
+Tree 在可见节点超过 100 时默认虚拟化，也可用 virtual 指定；height、rowHeight 控制窗口和固定行高。保留完整 aria-level / setsize / posinset，End / Home 跨窗口移动焦点。checkedIds / onCheckedChange 复用同一棵树做复选，禁用节点不参与分支勾选。
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+TreeSelect 接收 nodes、value、onChange、label、i18n；Cascader 的 value / onChange 为 id 路径数组，各层复用虚拟化 Tree。两者支持 disabled、className、testId。
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+## 日期与时间
+
+DatePicker / TimePicker 使用浏览器原生日期、时间输入；属性为 value、onChange、label、min、max、disabled、className、testId。DateRange / TimeRange 的 value 是二元组，另接收 i18n；结束值早于开始值时显示可访问错误。日期值使用 YYYY-MM-DD，时间值使用 HH:mm。
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+## Upload
+
+接收 client、i18n、label、accept、disabled、onComplete、onError、className、testId。选择文件后计算 SHA-256，查询秒传、初始化或恢复会话、只发送未确认分片，再完成上传；进度按服务器确认字节计算。可取消并继续，错误示例会在第二片失败一次，继续后不重传第一片。
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+四个端点沿 S1-FILE-003：`GET /uploads:lookup`、`POST /uploads:init`、`PUT /uploads/{id}/parts/{n}`、`POST /uploads/{id}:complete`。组件的 mock 契约草案在 data/contracts/upload.openapi.json，类型由 OpenAPI 生成；响应字段为 uploadId、partSize、uploadedParts 与文件 id / name / size / contentType，分片从 1 编号。真实提供方接线与 200 MB 上传 E2E 仍归 S1-FILE-003。
+
+## ImagePreview
+
+src、alt、i18n 为必填，支持 className、testId。缩略图打开 core Dialog，Escape 关闭；图片 URL 不拼接认证令牌。
+
+
+本页交互预览支持状态、主题切换与本地代码编辑。示例源码见下方「用法与源码」。
+
+
+## 限制
+
+树使用固定行高，长标签应保持单行。DataTable 树表、行内编辑与列权限留给 S2。Upload 的浏览器摘要当前读取整个文件，未承诺超大文件的恒定内存；真实对象存储和权限行为由文件组件验收。所有示例与浏览器测试共用源码，场景登记在 data/docs/scenarios.json。

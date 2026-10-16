@@ -1,0 +1,17 @@
+> For AI agents: the complete documentation index is available at /llms.txt, the full documentation bundle is available at /llms-full.txt.
+
+# Namespace Kun.Configuration.Abstractions
+
+:::info 生成页
+本页由 DocFX 从 nuget.org 上 `Kun.Configuration` 2026.10.14 的 XML 注释生成，源码在 kun 仓库 [`src/Kun.Configuration`](https://github.com/idadawn/kun/tree/v2026.10.14/src/Kun.Configuration)（`v2026.10.14`）。Kun 文档与代码不一致处以代码为准（[ADR-001 D1.8](/design/adr/adr-001-kun-relationship.md)）；Qian 对 Kun 的选用与约束见[与 Qian 的关系](/sdk/kun/with-qian.md)。
+:::
+
+### Interfaces
+
+[IKunConfigurationValidator\<TOptions>](/sdk/api/kun/kun-configuration-abstractions/ikunconfigurationvalidator-1.md)
+
+Reflection-free options validator — the AOT-safe alternative to
+DataAnnotations. Register one per options type via
+`services.AddSingleton<IKunConfigurationValidator<T>, MyValidator>()`
+and `AddKunOptions<T>` will merge the results with any
+DataAnnotations-driven validation.

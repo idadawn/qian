@@ -1,0 +1,30 @@
+> For AI agents: the complete documentation index is available at /pr-preview/pr-181/llms.txt, the full documentation bundle is available at /pr-preview/pr-181/llms-full.txt.
+
+# Namespace Kun.Configuration.Attributes
+
+:::info 生成页
+本页由 DocFX 从 nuget.org 上 `Kun.Configuration` 2026.10.14 的 XML 注释生成，源码在 kun 仓库 [`src/Kun.Configuration`](https://github.com/idadawn/kun/tree/v2026.10.14/src/Kun.Configuration)（`v2026.10.14`）。Kun 文档与代码不一致处以代码为准（[ADR-001 D1.8](/pr-preview/pr-181/design/adr/adr-001-kun-relationship.md)）；Qian 对 Kun 的选用与约束见[与 Qian 的关系](/pr-preview/pr-181/sdk/kun/with-qian.md)。
+:::
+
+### Classes
+
+[NonEmptyStringConfigAttribute](/pr-preview/pr-181/sdk/api/kun/kun-configuration-attributes/nonemptystringconfigattribute.md)
+
+Validates that the string value is non-null and non-whitespace.
+Combine with [RequiredConfigAttribute](/pr-preview/pr-181/sdk/api/kun/kun-configuration-attributes/requiredconfigattribute.md) when the key
+must also be present in the configuration tree — by itself this
+attribute accepts [null](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null).
+
+[RequiredConfigAttribute](/pr-preview/pr-181/sdk/api/kun/kun-configuration-attributes/requiredconfigattribute.md)
+
+[`RequiredAttribute`](https://learn.microsoft.com/dotnet/api/system.componentmodel.dataannotations.requiredattribute) tuned for configuration errors —
+rejects [null](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null) values and produces an error
+message that names the missing key rather than the generic
+"field is required" text.
+
+[UrlConfigAttribute](/pr-preview/pr-181/sdk/api/kun/kun-configuration-attributes/urlconfigattribute.md)
+
+Validates that the string value parses as an absolute URI via
+[`TryCreate`](https://learn.microsoft.com/dotnet/api/system.uri.trycreate). Accepts
+[null](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null) — pair with
+[RequiredConfigAttribute](/pr-preview/pr-181/sdk/api/kun/kun-configuration-attributes/requiredconfigattribute.md) when the key is mandatory.
