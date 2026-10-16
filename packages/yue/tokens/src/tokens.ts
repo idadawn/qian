@@ -92,6 +92,7 @@ export function generateTokenCss(registry: TokenRegistry = TOKEN_REGISTRY): stri
 export function generateThemeCss(registry: TokenRegistry = TOKEN_REGISTRY): string {
   const lines = ['/* 由 registry.json 生成；运行 tokens:generate。 */', "@import './index.css';", "@import 'tw-animate-css';", '@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));', '@theme inline {'];
   for (const alias of registry.aliases) if (registry.semantics.find(token => token.name === alias.target)?.kind === 'color') lines.push(`  --color-${alias.name.slice(2)}: var(${alias.name});`);
+  lines.push('  --color-table-header: var(--yue-table-header-background);');
   lines.push('  --font-sans: var(--yue-p-font-sans);', '  --font-mono: var(--yue-p-font-mono);', '  --radius-sm: calc(var(--radius) - 4px);', '  --radius-md: calc(var(--radius) - 2px);', '  --radius-lg: var(--radius);', '  --radius-xl: calc(var(--radius) + 4px);');
   for (const size of ['xs', 'sm', 'md', 'lg', 'xl']) lines.push(`  --shadow-${size}: var(--yue-p-shadow-${size});`);
   for (const speed of ['fast', 'normal', 'slow']) lines.push(`  --transition-duration-${speed}: var(--yue-p-duration-${speed});`);

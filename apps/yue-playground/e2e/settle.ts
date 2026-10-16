@@ -4,9 +4,12 @@ import type { Page } from '@playwright/test';
 export async function settleVisuals(page: Page): Promise<void> {
   for (const frame of page.frames()) await frame.evaluate(async () => {
     await document.fonts.ready;
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-    const finite = document.getAnimations().filter(animation => Number.isFinite(Number(animation.effect?.getComputedTiming().endTime)));
-    await Promise.all(finite.map(animation => animation.finished.catch(() => {})));
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    let stableFrames = 0;
+    while (stableFrames < 2) {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      const finite = document.getAnimations().filter(animation => animation.playState !== 'finished' && Number.isFinite(Number(animation.effect?.getComputedTiming().endTime)));
+      if (finite.length) { await Promise.all(finite.map(animation => animation.finished.catch(() => {}))); stableFrames = 0; }
+      else stableFrames++;
+    }
   });
 }

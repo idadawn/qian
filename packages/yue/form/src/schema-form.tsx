@@ -132,17 +132,18 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       const access = schema.auth.fields?.[path];
       if (state?.visible === false || (access && !access.includes('read'))) return null;
       const readonly = mode === 'readonly' || (access && !access.includes('write'));
+      const horizontal = fieldSchema.type === 'boolean' && !readonly;
       const fieldId = `${id}-${path}`;
       const error = getValue(errors, path) as { message?: string } | undefined;
       const label = i18n.t(ui.labelKey ?? fieldSchema.title ?? path);
       const description = ui.descriptionKey ? i18n.t(ui.descriptionKey) : undefined;
       const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : ''].filter(Boolean).join(' ') || undefined;
-      return <CoreField key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
-        <FieldLabel htmlFor={fieldId}>{label}{required ? <span aria-hidden className="text-destructive"> *</span> : null}</FieldLabel>
+      return <CoreField className={horizontal ? 'grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2' : undefined} key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
+        <FieldLabel className={horizontal ? 'col-start-2 row-start-1 leading-5' : undefined} htmlFor={fieldId}>{label}{required ? <span aria-hidden className="text-destructive"> *</span> : null}</FieldLabel>
         <Controller name={path} control={form.control} render={({ field }) => {
           if (readonly) return <output id={fieldId} className="min-h-9 rounded-md bg-muted/40 px-3 py-2 text-sm text-foreground" data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
           const common = { id: fieldId, name: field.name, ref: field.ref, onBlur: field.onBlur, disabled: state?.disabled || isSubmitting, 'aria-required': required, 'aria-invalid': !!error, 'aria-describedby': describedBy };
-          if (fieldSchema.type === 'boolean') return <Checkbox {...common} checked={!!field.value} onCheckedChange={field.onChange} aria-label={label} />;
+          if (fieldSchema.type === 'boolean') return <Checkbox {...common} className="col-start-1 row-start-1" checked={!!field.value} onCheckedChange={field.onChange} aria-label={label} />;
           if (fieldSchema.enum) return <Select value={field.value ?? null} onValueChange={field.onChange} items={fieldSchema.enum.map((value) => ({ value, label: String(value) }))} disabled={common.disabled}>
             <SelectTrigger {...common} aria-label={label} /><SelectContent>{fieldSchema.enum.map((value) => <SelectItem key={String(value)} value={value}>{String(value)}</SelectItem>)}</SelectContent>
           </Select>;
@@ -160,8 +161,8 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
             field.onChange(numeric ? value === '' ? undefined : Number(value) : dateTime ? value ? new Date(value).toISOString() : undefined : value);
           }} />;
         }} />
-        {description && <FieldDescription id={`${fieldId}-description`}>{description}</FieldDescription>}
-        {error?.message && <p id={`${fieldId}-error`} role="alert" data-slot="schema-field-error" data-testid={`${testId}-error-${path}`} className="text-sm text-destructive">{error.message}</p>}
+        {description && <FieldDescription className={horizontal ? 'col-start-2' : undefined} id={`${fieldId}-description`}>{description}</FieldDescription>}
+        {error?.message && <p id={`${fieldId}-error`} role="alert" data-slot="schema-field-error" data-testid={`${testId}-error-${path}`} className={horizontal ? 'col-start-2 text-sm text-destructive' : 'text-sm text-destructive'}>{error.message}</p>}
       </CoreField>;
     })}
     {errors.root?.message && <p role="alert" className="text-sm text-destructive" data-slot="schema-form-error">{String(errors.root.message)}</p>}

@@ -29,3 +29,17 @@ for (const name of Object.keys(catalog)) {
     }
   });
 }
+
+
+for (const [name, slot, triggerName] of [['Dialog', 'dialog', '打开对话框'], ['AlertDialog', 'alert-dialog', '打开确认框'], ['Sheet', 'sheet', '打开侧栏']]) test(`${name} 右上角关闭按钮可键盘到达且恢复焦点`, async ({ page }) => {
+  await page.goto(`/core.html?component=${name}`);
+  const trigger = page.getByRole('button', { name: triggerName, exact: true });
+  await trigger.click();
+  const close = page.getByTestId(`yue-${slot}-close-button`);
+  const content = await page.getByTestId(`yue-${slot}-content`).boundingBox();
+  const button = await close.boundingBox();
+  expect(button!.x).toBeGreaterThan(content!.x + content!.width / 2);
+  expect(button!.y - content!.y).toBeLessThan(24);
+  await close.focus(); await close.press('Enter');
+  await expect(page.getByTestId(`yue-${slot}-content`)).not.toBeVisible(); await expect(trigger).toBeFocused();
+});

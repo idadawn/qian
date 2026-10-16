@@ -11,7 +11,7 @@ import { Icon } from './icon';
 
 export type CheckboxProps = YueProps<ComponentProps<typeof BaseCheckbox.Root>>;
 export function Checkbox({ className, testId, indeterminate, ...props }: CheckboxProps) {
-  return <BaseCheckbox.Root {...props} indeterminate={indeterminate} data-slot="checkbox" data-testid={testId ?? 'yue-checkbox'} className={cn(control, 'inline-flex size-4 items-center justify-center rounded-sm data-[checked]:border-primary data-[checked]:bg-primary data-[checked]:text-primary-foreground', className)}><BaseCheckbox.Indicator><Icon name={indeterminate ? 'minus' : 'check'} /></BaseCheckbox.Indicator></BaseCheckbox.Root>;
+  return <BaseCheckbox.Root {...props} indeterminate={indeterminate} data-slot="checkbox" data-testid={testId ?? 'yue-checkbox'} className={cn(control, 'inline-flex size-4 items-center justify-center rounded-[4px] data-[checked]:border-primary data-[checked]:bg-primary data-[checked]:text-primary-foreground', className)}><BaseCheckbox.Indicator><Icon name={indeterminate ? 'minus' : 'check'} /></BaseCheckbox.Indicator></BaseCheckbox.Root>;
 }
 export type RadioGroupProps = YueProps<ComponentProps<typeof BaseRadioGroup>>;
 export function RadioGroup({ className, testId, ...props }: RadioGroupProps) { return <BaseRadioGroup {...props} data-slot="radio-group" data-testid={testId ?? 'yue-radio-group'} className={cn('flex flex-col gap-2', className)} />; }

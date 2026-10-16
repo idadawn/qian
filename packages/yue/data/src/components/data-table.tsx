@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { Button, Checkbox, Input, Pagination, Popover, PopoverTrigger, PopoverContent, cn, useDirection } from '@idadawn/yue-core';
+import { Button, Checkbox, Input, Select, SelectTrigger, SelectContent, SelectItem, Pagination, Popover, PopoverTrigger, PopoverContent, cn, useDirection } from '@idadawn/yue-core';
 import type { DataColumnMeta } from '@idadawn/yue-contracts';
 import type { PlatformI18n } from '@idadawn/yue-sdk';
 import { columnFilteringFeature, columnPinningFeature, columnSizingFeature, columnVisibilityFeature, functionalUpdate, rowPaginationFeature, rowSelectionFeature, rowSortingFeature, tableFeatures, useTable, type ColumnDef, type RowSelectionState } from '@tanstack/react-table';
@@ -62,6 +62,7 @@ export function DataTable<T extends object>({ columns, data, total, query, onQue
   };
   const state = loading ? 'loading' : error ? 'error' : data.length ? 'ready' : 'empty';
   const filters = table.getAllLeafColumns().filter(column => column.getCanFilter());
+  const pageSizes = [...new Set([query.pageSize, 10, 20, 50, 100])].sort((a, b) => a - b);
   const cell = 'p-2 align-middle text-sm [[data-yue-density=compact]_&]:py-1';
   return <section className={cn('space-y-4', className)} data-slot="data-table" data-testid={testId} aria-label={label} aria-busy={!!loading}>
     {filters.length > 0 && <div data-slot="data-table-filters" role="search" aria-label={i18n.t('data.filters')} className="flex flex-wrap items-end gap-3 rounded-lg bg-muted/30 p-3">
@@ -79,8 +80,8 @@ export function DataTable<T extends object>({ columns, data, total, query, onQue
     </div>
     <div className="overflow-auto outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50" tabIndex={0} role="region" aria-label={label}>
       <table dir={direction} className="w-full caption-bottom border-collapse text-sm" aria-label={label}>
-        <thead className="bg-muted/50"><tr className="h-10 border-b border-border text-muted-foreground">{selectable && <th scope="col" className={cn(cell, 'w-10')}><Checkbox aria-label={i18n.t('data.selectAll')} checked={table.getIsAllPageRowsSelected()} indeterminate={table.getIsSomePageRowsSelected()} onCheckedChange={checked => table.toggleAllPageRowsSelected(!!checked)} /></th>}
-          {visible.map(column => <th scope="col" key={column.id} style={pinned(column.id)} className={cn(cell, 'h-10 text-start font-medium', column.getIsPinned() && 'bg-background bg-linear-to-b from-muted/50 to-muted/50')} aria-sort={column.getIsSorted() === 'asc' ? 'ascending' : column.getIsSorted() === 'desc' ? 'descending' : undefined}>
+        <thead className="bg-table-header"><tr className="h-10 border-b border-border text-muted-foreground">{selectable && <th scope="col" className={cn(cell, 'h-10 w-10 py-0')}><Checkbox aria-label={i18n.t('data.selectAll')} checked={table.getIsAllPageRowsSelected()} indeterminate={table.getIsSomePageRowsSelected()} onCheckedChange={checked => table.toggleAllPageRowsSelected(!!checked)} /></th>}
+          {visible.map(column => <th scope="col" key={column.id} style={pinned(column.id)} className={cn(cell, 'h-10 py-0 text-start font-medium', column.getIsPinned() && 'bg-table-header')} aria-sort={column.getIsSorted() === 'asc' ? 'ascending' : column.getIsSorted() === 'desc' ? 'descending' : undefined}>
             {column.getCanSort() ? <Button variant="ghost" size="sm" className="-ml-2 h-8 text-muted-foreground" onClick={column.getToggleSortingHandler()}>{i18n.t(String(column.columnDef.header))}{column.getIsSorted() === 'asc' ? ' ↑' : column.getIsSorted() === 'desc' ? ' ↓' : ''}</Button> : i18n.t(String(column.columnDef.header))}
           </th>)}
         </tr></thead>
@@ -92,7 +93,9 @@ export function DataTable<T extends object>({ columns, data, total, query, onQue
     </div>
     <div data-slot="data-table-pagination" className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground"><span>{i18n.t('data.total', { total })}</span>
-        <label className="flex items-center gap-2">{i18n.t('data.pageSize')}<select aria-label={i18n.t('data.pageSize')} disabled={loading} value={query.pageSize} onChange={event => onQueryChange({ ...query, pageIndex: 0, pageSize: Number(event.target.value) })} className="h-8 rounded-md border border-input bg-transparent px-2 text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50">{[...new Set([query.pageSize, 10, 20, 50, 100])].sort((a, b) => a - b).map(size => <option key={size} value={size}>{size}</option>)}</select></label>
+        <label className="flex items-center gap-2">{i18n.t('data.pageSize')}<Select value={query.pageSize} items={pageSizes.map(size => ({ value: size, label: String(size) }))} disabled={loading} onValueChange={size => { if (size !== null) onQueryChange({ ...query, pageIndex: 0, pageSize: size }); }}>
+          <SelectTrigger aria-label={i18n.t('data.pageSize')} className="h-8 min-w-20 px-2" /><SelectContent className="min-w-20">{pageSizes.map(size => <SelectItem key={size} value={size}>{size}</SelectItem>)}</SelectContent>
+        </Select></label>
       </div>
       <div className="flex items-center gap-3"><span className="text-sm text-muted-foreground">{i18n.t('data.page', { page: query.pageIndex + 1 })}</span>
         <Pagination page={query.pageIndex + 1} totalPages={Math.max(1, Math.ceil(total / query.pageSize))} onPageChange={page => table.setPageIndex(page - 1)} disabled={loading} label={i18n.t('data.pagination')} previousLabel={i18n.t('data.previous')} nextLabel={i18n.t('data.next')} getPageLabel={page => i18n.t('data.page', { page })} />

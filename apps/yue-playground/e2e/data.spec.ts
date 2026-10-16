@@ -40,7 +40,8 @@ test('页长切换与紧凑密度使用同一表格协议，选择态有一致�
   await page.goto('/data.html');
   await expect(page.getByTestId('yue-data-table-row')).toHaveCount(5);
   const normal = await page.getByTestId('yue-data-table-row').first().evaluate(row => row.getBoundingClientRect().height);
-  await page.getByLabel('每页条数').selectOption('10');
+  await page.getByRole('combobox', { name: '每页条数' }).click();
+  await page.getByRole('option', { name: '10', exact: true }).click();
   await expect(page.getByTestId('yue-data-table-row')).toHaveCount(10);
   await expect(page.getByText('第 1 页', { exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: '选择第 1 行' }).check();
@@ -49,4 +50,17 @@ test('页长切换与紧凑密度使用同一表格协议，选择态有一致�
   await expect(page.getByTestId('yue-data-table-row')).toHaveCount(5);
   const compact = await page.getByTestId('yue-data-table-row').first().evaluate(row => row.getBoundingClientRect().height);
   expect(normal).toBe(40); expect(compact).toBe(32);
+});
+
+
+for (const theme of ['light', 'dark']) test(`固定列表头 ${theme} 使用与整行一致的不透明底色`, async ({ page }) => {
+  await page.goto(`/data.html?theme=${theme}`);
+  const colors = await page.locator('thead').evaluate(header => {
+    const fixed = [...header.querySelectorAll('th')].find(cell => getComputedStyle(cell).position === 'sticky')!;
+    const background = getComputedStyle(header).backgroundColor;
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d')!; context.fillStyle = getComputedStyle(fixed).backgroundColor; context.fillRect(0, 0, 1, 1);
+    return { background, height: header.getBoundingClientRect().height, fixed: getComputedStyle(fixed).backgroundColor, alpha: context.getImageData(0, 0, 1, 1).data[3] };
+  });
+  expect(colors.fixed).toBe(colors.background); expect(colors.alpha).toBe(255); expect(colors.height).toBe(40);
 });

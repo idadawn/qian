@@ -5,10 +5,13 @@ export const BLOCKING_IMPACTS = new Set(['critical', 'serious']);
 
 export async function runAxe(root: Element | Document = document): Promise<AxeResults> {
   // 等待有限的进出场过渡和随后的焦点安排，避免把动画中间帧当成稳定打开态。
-  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-  const transitions = document.getAnimations().filter(animation => Number.isFinite(Number(animation.effect?.getComputedTiming().endTime)));
-  await Promise.all(transitions.map(animation => animation.finished.catch(() => {})));
-  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+  let stableFrames = 0;
+  while (stableFrames < 2) {
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    const finite = document.getAnimations().filter(animation => animation.playState !== 'finished' && Number.isFinite(Number(animation.effect?.getComputedTiming().endTime)));
+    if (finite.length) { await Promise.all(finite.map(animation => animation.finished.catch(() => {}))); stableFrames = 0; }
+    else stableFrames++;
+  }
   return axe.run(root, { resultTypes: ['violations'] });
 }
 

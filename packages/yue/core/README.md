@@ -91,6 +91,8 @@ Dialog / AlertDialog / Sheet / Drawer / Popover 的 Trigger 由宿主决定视�
 <DialogTrigger render={<Button variant="outline" />}>打开对话框</DialogTrigger>
 ```
 
+`DialogContent` / `AlertDialogContent` / `SheetContent` 提供 `closeLabel` 后默认显示右上角关闭图标；标签由宿主本地化，`showCloseButton={false}` 可隐藏。旧调用不传标签时保持原有结构。图标有独立的 `*-close-button` 标识，既有 Close 部件的标识不变。
+
 组合后仍保留 Trigger 的 `data-slot`、默认或自定义 `data-testid`，不会产生嵌套按钮。直接传 `data-slot` 给 Button 仍不能改写组件身份。
 
 视觉基线位于 `apps/yue-playground/visual/__snapshots__/`，覆盖全部入口、DataTable / SchemaForm 以及状态清单在明暗两态的截图，弹层拍摄打开态。基线使用固定 Playwright Linux 镜像和系统字体环境，本机需要 Docker；不引入 webfont。`pnpm yue:visual` 校验现有基线，`pnpm yue:visual --update-snapshots` 仅在确认预期样式变化后更新。样式 PR 应提交变化的基线并列出变化页面；CI 的「视觉回归」检查上传实际图、期望图、差异图和追踪。

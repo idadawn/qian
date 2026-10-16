@@ -257,6 +257,7 @@
   --yue-table-row-height: var(--yue-p-space-10);
   --yue-popover-shadow: var(--yue-p-shadow-lg);
   --yue-table-row-height-compact: var(--yue-p-space-8);
+  --yue-table-header-background: color-mix(in srgb, oklch(var(--yue-muted)) 50%, oklch(var(--yue-background)));
   --background: oklch(var(--yue-background));
   --foreground: oklch(var(--yue-foreground));
   --card: oklch(var(--yue-card));

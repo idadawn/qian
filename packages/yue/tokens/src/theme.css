@@ -45,6 +45,7 @@
   --color-info-bg: var(--info-bg);
   --color-neutral: var(--neutral);
   --color-neutral-bg: var(--neutral-bg);
+  --color-table-header: var(--yue-table-header-background);
   --font-sans: var(--yue-p-font-sans);
   --font-mono: var(--yue-p-font-mono);
   --radius-sm: calc(var(--radius) - 4px);

@@ -22,7 +22,7 @@ function useOverlay(kind: 'modal' | 'drawer' | 'popup', i18n: PlatformI18n, trig
   const Close = kind === 'drawer' ? SheetClose : kind === 'popup' ? PopoverClose : DialogClose;
   return { open, close, holder: <Root open={!!options} onOpenChange={(value) => { if (!value) close(); else if (defaultOptions) open(defaultOptions); }}>
     {kind === 'popup' && <PopoverTrigger render={trigger} />}
-    {options && <Content data-slot={`form-${kind}`} testId={`yue-form-${kind}`}>
+    {options && <Content {...(kind === 'popup' ? {} : { closeLabel: i18n.t('common.close') })} data-slot={`form-${kind}`} testId={`yue-form-${kind}`}>
       <Title>{options.title}</Title>
       {options.description && <Description>{options.description}</Description>}
       <OverlayFormContext value={{ cancel: <Close render={<Button variant="outline" type="button" />}>{i18n.t('common.cancel')}</Close>, register }}><div className="my-4">{options.content}</div></OverlayFormContext>
@@ -57,7 +57,7 @@ function FeedbackContent({ i18n, children }: { i18n: PlatformI18n; children: Rea
   };
   return <FeedbackContext.Provider value={value}>{children}<ToastList closeLabel={i18n.t('common.close')} />
     <AlertDialog open={!!confirmation} onOpenChange={(open) => { if (!open) finish(false); }}>
-      {confirmation && <AlertDialogContent testId="yue-form-confirm"><AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
+      {confirmation && <AlertDialogContent closeLabel={i18n.t('common.close')} testId="yue-form-confirm"><AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
         {confirmation.description && <AlertDialogDescription>{confirmation.description}</AlertDialogDescription>}
         <div className="mt-4 flex justify-end gap-2"><AlertDialogClose render={<Button variant="outline" />}>{i18n.t('common.cancel')}</AlertDialogClose><Button onClick={() => finish(true)}>{i18n.t('common.confirm')}</Button></div>
       </AlertDialogContent>}

@@ -37,6 +37,15 @@ describe('全组件部件与无障碍', () => {
 });
 
 describe('基础交互', () => {
+  it('关闭图标使用宿主标签，showCloseButton=false 可隐藏且兼容既有调用', () => {
+    const view = render(<C.Dialog defaultOpen><C.DialogContent closeLabel="关闭资料"><C.DialogTitle>资料</C.DialogTitle></C.DialogContent></C.Dialog>);
+    expect(screen.getByTestId('yue-dialog-close-button').getAttribute('aria-label')).toBe('关闭资料');
+    view.rerender(<C.Dialog defaultOpen><C.DialogContent closeLabel="关闭资料" showCloseButton={false}><C.DialogTitle>资料</C.DialogTitle></C.DialogContent></C.Dialog>);
+    expect(screen.queryByTestId('yue-dialog-close-button')).toBeNull();
+    view.rerender(<C.Dialog defaultOpen><C.DialogContent><C.DialogTitle>资料</C.DialogTitle></C.DialogContent></C.Dialog>);
+    expect(screen.queryByTestId('yue-dialog-close-button')).toBeNull();
+  });
+
   it('render Button 保留 Trigger 与 Close 身份，仍拒绝直接改写 Button 身份', async () => {
     render(<C.Dialog><C.DialogTrigger render={<C.Button variant="outline" />} testId="open-profile">打开</C.DialogTrigger><C.DialogContent><C.DialogTitle>资料</C.DialogTitle><C.DialogClose render={<C.Button variant="outline" />} testId="close-profile">关闭</C.DialogClose></C.DialogContent></C.Dialog>);
     const trigger = screen.getByTestId('open-profile');
