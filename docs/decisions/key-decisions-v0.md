@@ -551,10 +551,37 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
     - ADR-017 §9、deploy/baseline 与 deploy/images 的 README 同步改写。
   - **前置链**按各自 wave 推进，本条不另排期：
     - 身份 / 网关：S1-IDP-002 → S1-IDP-005 → S1-GW-001。
-    - 外壳：S1-YUE-006、S1-YUE-007 与 S1-IDP-009 → S1-IDP-010 → S1-YUE-009，最后到 S1-YUE-001。其中 IDP-009 依赖 S1-IDP-003。
+    - 外壳：S1-YUE-006、S1-YUE-007 与 S1-IDP-009 → S1-IDP-010 → S1-YUE-009，最后到 S1-YUE-001。其中 IDP-009 依赖 S1-IDP-003。（R109 补注：S1-YUE-009 拆分后只含 `@yue/sdk`，不再依赖 S1-YUE-007 与 S1-IDP-010，外壳一段为 S1-YUE-006 与 S1-YUE-009 → S1-YUE-001）
 
 ### 验收复核裁决 R107（S1-TEN-002 / S1-TEN-004 复核，2026-10-16）
 
 由 Claude 在产品负责人要求「独立验收 S1-TEN-002 与 S1-TEN-004」后作默认裁决，未经逐条确认；复核记录在两个任务文件的进度日志，缺口归 `pm/tasks/S1-TEN-009.md`，有异议时新建决策任务。
 
 - R107：到期扫描能力 `qian.tenancy/tenant.scan-expired` 对模型不可见，契约 `agent.expose` 改为 `false`。R95 写「不标 humanOnly」时把 humanOnly 读成了「只许人调用」；R52 的定义是 `agent.expose: false` = 不派生为模型可见工具、服务端拒绝 `principal_kind = agent`，服务主体不受影响——调度器（S1-SCH-002 的 callback）是服务主体，照样可调。实现里 `TenantExpiryCapability.InvokeAsync` 只接受 global 的 `qian.tenancy` / `qian.scheduler` 调用方，与 `expose: true` 自相矛盾（目录把它派生给 Agent，调用却必拒）。R95 验收 2 的括注据此更正为「不派生为模型工具、服务主体可调」；契约、`TenantStateMetadata`、`TenantStateMachineTests` 的 expose 断言与 README「非 humanOnly」措辞的修改归 S1-TEN-009。S1-TEN-002 / S1-TEN-004 的四条验收按原文成立，done 维持；扫描审计无收尾、`settings.write` 审计追加失败的语义、迁移端点的审计口径一并归 S1-TEN-009。
+
+### yue 第 2 波与租户运营页面批次裁决 R108–R111（S1-DEC-024，2026-10-16）
+
+产品负责人 2026-10-16 想要一个能点的前端页面来测试租户。页面任务 S1-TEN-005 的三个 yue 前置（S1-YUE-007 / 008 / 009）全是 todo：YUE-008 后面排着 S1-FILE-001（其前置 S1-AZ-004 未开工），YUE-009 后面排着 S1-IDP-010 → S1-IDP-009 → S1-IDP-003 → S1-IDP-002。Claude 按 S1-DEC-021 / 022 的做法作默认裁决，未经逐条确认：把伸进别的领域的验收移交到归属任务，解除互锁与不必要的依赖；产品负责人随后要求把不在页面路径上的 S1-YUE-006 也改好口径、便于交第二人并行（R111）。顺序、「页面可用」收口检查与执行提示词见 `pm/tasks/S1-DEC-024.md`，有异议时新建决策任务。
+
+- R108：yue 组件任务在靶场对契约夹具与 mock 验收，真实后端的 E2E 归提供方或消费方任务。
+  - S1-YUE-007 验收 1「用 SchemaForm + DataTable 实现参考应用的客户 CRUD」改为在靶场（`apps/yue-playground`）用 SchemaForm 完成新增 / 编辑弹层、只读详情与提交，请求经 `@yue/sdk` 的 mock 中间件。参考应用 `qian.sample.crm` 没有前端，后端只有服务主体可调的列表、详情与新建，没有编辑与排序筛选；参考应用版本的 CRUD 已在 S1-QA-007 验收 2。真实后端上第一个 SchemaForm + DataTable 的 CRUD 由 S1-TEN-005 承担（R110）。
+  - S1-YUE-008 去掉对 S1-FILE-001 的依赖。验收 1 的「参考应用客户列表」改为靶场列表对 mock 中间件完成服务端分页 / 排序 / 筛选与列显隐，参考应用版本同在 QA-007。验收 2「Upload 分片上传经 7.7 成功；秒传命中返回已有 id」与 S1-FILE-003 验收 1 同义，合并到 FILE-003：分片端点 `uploads:init`、`parts`、`complete`、`lookup` 由 FILE-003 交付，FILE-001 只有单次预签名。YUE-008 改为按 FILE-003 背景所列契约，对 mock 完成分片、哈希、进度、断点续传与秒传命中的浏览器测试；FILE-003 depends 加 S1-YUE-008。原口径下两边互锁：YUE-008 的 Upload E2E 需要 FILE-003 的分片端点，FILE-003 的 E2E 又需要 YUE-008 的 Upload。PRD 7.7 写「MD5 秒传」而契约以 `sha256` 查询，Upload 按契约做，口径统一归 FILE-003。验收 3 的「story」读作 Rspress 场景示例（ADR-022 已移除 Storybook）。
+  - YUE-007 与 YUE-008 的 depends 加 S1-YUE-009（mock 中间件与 i18n）。
+  - PRD 7.15.2 验收第 4 条（参考应用 CRUD）由 S1-QA-007 承担；第 5 条拆为角色授予（S1-AZ-005，R109）与 Upload（S1-FILE-003）。
+- R109：S1-YUE-009 拆分，解除对 S1-IDP-010 的依赖。
+  - YUE-009 只保留 `@yue/sdk`（注册表 API、`PlatformClient`、请求拦截器链、i18n、mock 中间件、`.d.ts` 契约与 SSE 事件类型），depends 改为 S1-YUE-005，排在 S1-YUE-007 之前：form、data、页面与 biz 都经它取数、取文案、用 mock 测试。
+  - `@yue/biz` 基础版另立 S1-YUE-010，depends S1-YUE-007、S1-YUE-008、S1-YUE-009。OrganizeSelect 与授权树建在 `@yue/data` 的 Tree / TreeSelect 上，不另做一套树（yue 规格 D3）。
+  - 原 YUE-009 验收 1「参考应用用 OrganizeSelect 选部门、UserSelect 选人，数据来自本租户目录」与 S1-IDP-010 验收 2 同义，合并到 IDP-010，IDP-010 depends 加 S1-YUE-010；YUE-010 对 mock 中间件按 PRD 7.4.3 的目录 API 验证选择器。原口径下两边互锁：YUE-009 依赖 IDP-010，IDP-010 的 E2E 又需要 YUE-009 的选择器。
+  - S1-TEN-005 验收 2「租户管理页用 OrganizeSelect / UserSelect / RoleSelect / 授权树完成角色授予」与 S1-AZ-005 验收 2 同义，合并到 AZ-005。AZ-005 depends 的 S1-YUE-009 换为 S1-YUE-010，并加 S1-IDP-010（选择器的真实数据源）。
+  - S1-YUE-001 仍依赖 S1-YUE-009：外壳只用 sdk。R106「前置链」的外壳一段据此为 S1-YUE-006 与 S1-YUE-009 → S1-YUE-001，S1-IDP-009 → S1-IDP-010 不再在外壳链上（R106 原文处加补注）。
+- R110：S1-TEN-005 收口为「租户运营页面」，在真实后端上验收，不含登录。
+  - **范围**：租户列表与筛选（DataTable 服务端分页）、新建 / 编辑抽屉（SchemaForm，字段与校验取自 `qian.tenancy` 的 OpenAPI 契约）、按 `GET /api/tenancy/meta/state-machine` 给出的合法动作做激活 / 冻结 / 恢复（S1-TEN-002 的端点，与 S1-TEN-006 同一平台主体路径，R95）、只读详情与配额（S1-TEN-004 的 `GET /tenants/{id}/quota`）。depends 加 S1-TEN-002、S1-TEN-004（均已 done）。状态迁移是本条对 PRD 7.3 页面清单的补充：新建租户处于 pending，不激活就用不了。
+  - **后端补齐**：S1-TEN-006 交付的 `GET /api/tenancy/tenants` 只有 `skip` / `take`，响应没有总数；状态机元数据端点在契约里没有响应 Schema；租户号（小写字母数字、≤ 64）与名称（≤ 200）的约束只在 `PostgresTenantDirectory` 里校验，契约没有，违反时的 400 也不带 `pointer`。TEN-005 顺手补上：列表的可选筛选参数（状态、租户号或名称关键字）、稳定排序与总数；状态机元数据的响应 Schema；新建 / 编辑请求的这两项约束进契约，违反时的 400 带 `pointer`（R50）。契约经 S1-RT-006 准入，只增加可选参数、字段与约束说明，与服务端既有校验一致、向后兼容。这是同一组件的接口补齐，不违背 R85「页面任务是消费方」：端点仍由 qian.tenancy 提供，页面是第一个提出需要的消费方。
+  - **移出**：管理员维护（PRD 7.3 API 行的 `GET/PUT /tenants/{id}/admins`，此前没有任务承接）、重置密码与「授权（调 7.14）」另立 S1-TEN-010，depends S1-TEN-005、S1-IDP-003、S1-ENT-001。R81 移交来的「各设管理员，管理员登录后只看到本租户数据」随之归 TEN-010，登录本身仍在 S1-IDP-003 的 R81 条目。角色授予归 S1-AZ-005（R109）。
+  - **验收载体**：S1-TEN-006 的真实宿主（Kestrel + JwtBearer RS256 + 受限 PG 应用角色 + 专用平台授权登录写入的超管行）与测试签发的超管令牌。令牌不进 localStorage、URL 与 iframe（PRD 7.15.1 代码审查条）；登录页、令牌刷新与过期弹窗归 S1-YUE-002 / S1-IDP-003。S1-IDP-003 与 S1-TEN-010 交付前，新建表单的管理员按契约直接填 `membershipId` / `subjectId`；开通第 5 步因 `qian.identity` 缺席记 `skipped`，这是 R96 的既定行为，不是测试替身。
+  - **形态**：页面是 `qian.tenancy` 的 `ui` 表面（组件规格 §4.7、yue 规格 §5.1），源码作为 pnpm 工作区包交付，带独立开发入口。MF2 远程打包、`ui/manifest.json`（`ui/v2` Schema 尚未入库）与外壳加载归 S1-YUE-001。
+- R111：S1-YUE-006 改口径，可交第二人与本批并行。
+  - `@yue/shell` 是库，`qian.shell` 是用它的部署单元（yue 规格 §5.2）。YUE-006 验收 1「认证页族完成账号密码登录、SSO 回调与多租户二次选择；登录过期弹窗可触发」改为：在靶场经注入的 `AuthProvider` 与 `@yue/sdk` 的 mock 中间件完成，租户切换器同理。接 qian-identity 的真实流程（OIDC code + PKCE、selection_token、令牌重签）与 S1-YUE-002 验收 1 同义，合并到 YUE-002：它已依赖 S1-IDP-003，并经 S1-YUE-001 依赖 YUE-006。以 Authentik 为上游、经通用 OIDC 连接器的 SSO 登录仍以 S1-IDP-007 验收 1 为准，不重复登记。原口径下 YUE-006 只依赖 YUE-005，验收却要 S1-IDP-002 / 003 的真实登录。
+  - YUE-006 depends 加 S1-YUE-009 与 S1-YUE-007：菜单类型注册表建在 `@yue/sdk` 的注册表 API 上（规格 §3.1）；登录表单用 `@yue/form`，shell → form 是同层唯一例外，D3 只留一套表单引擎。验收 3 的「story」读作 Rspress 场景示例（ADR-022）。
+  - 第二人在 YUE-009、YUE-007 合入后开工，与 cody 的 YUE-008 / TEN-005 同期，只改 `packages/yue/shell` 与靶场；需要改 sdk、form 或 data 时在任务日志写建议，交 cody 处理。YUE-006 若先合入，TEN-005 可以用 Page / PageHeader，否则用 core 拼骨架。外壳链据此为 YUE-009 → YUE-007 → YUE-006 → YUE-001。
+- **顺序与归属**：一人（cody）串行 S1-YUE-009 → S1-YUE-007 → S1-YUE-008 → S1-TEN-005，TEN-005 转 review 前按 S1-DEC-024「页面可用」在本机真实宿主收口；S1-YUE-010 收尾，不阻塞页面可用。S1-YUE-006 按 R111 交第二人并行，不在 cody 的串行顺序里。
