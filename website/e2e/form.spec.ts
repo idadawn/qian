@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import scenarios from '../../packages/yue/form/docs/scenarios.json';
+import scenarios from '../../packages/yue/form/docs/scenarios.json' with { type: 'json' };
 
 for (const scenario of scenarios) test(`SchemaForm/${scenario.state} 文档场景`, async ({ page }) => {
   await page.goto(`/yue-demo/index.html?component=SchemaForm&state=${scenario.state}&theme=${scenario.theme}`);
