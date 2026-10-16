@@ -60,15 +60,15 @@ POST 复用 CreateTenant，Administrator 为必填管理员指针，id 由服务
 
 pending 可激活为 trial/active；有效期到期由扫描迁移到 grace；suspend 记录当前 S1 状态，resume 恢复原状态。重复同目标操作不重写状态或再发集成事件；非法迁移返回 409 TENANCY_STATE_CONFLICT。POST /api/tenancy/tenants/{id}:activate、:suspend、:resume 与 GET /api/tenancy/meta/state-machine 复用运营超管旁路。审批使用 TenantLifecycle.Approving 的进程内 serial 事件，无监听器放行、任一 false 否决，不加入 hooks.json 矩阵。监听器不得递归请求同一租户迁移。purge 只在元数据保留 S3 的 destructive + humanOnly 描述，不发布执行入口；humanOnly 按 R52 是 agent.expose=false。
 
-主档创建、激活、冻结、恢复、到期分别在同一数据库事务发出 tenant.created/activated/suspended/resumed/expired.v1；宿主必须在唯一的 Kun 事件登记与 Mediator 登记中调用 RegisterTenancyEvents、AddQianTenancyEvents，并装配 AddQianEvents。缺少领域事件处理器时保存回滚，不会留无事件的状态。tenant.created.v1 与开通的进程内 tenant/provisioned 分工不变。
+主档创建、激活、冻结、恢复、到期分别在同一数据库事务发出 tenant.created/activated/suspended/resumed/expired.v1；宿主必须在唯一的 Kun 事件登记与 Mediator 登记中调用 RegisterTenancyEvents、AddQianTenancyEvents，并装配 AddQianEvents。缺少领域事件处理器时保存回滚，不会留无事件的状态。状态迁移端点的审计口径为授权旁路的平台链记录 + 同事务 Outbox 事件，不另写租户链状态审计；meta/state-machine 也仅允许平台主体通过同一超管授权读取。tenant.created.v1 与开通的进程内 tenant/provisioned 分工不变。
 
-qian.tenancy/tenant.scan-expired 是真实运行时能力（非 humanOnly、幂等），只接受 global qian.tenancy 或 qian.scheduler 的可信调用，输入为 idempotencyKey 与 limit（1–1000，默认100），拒绝请求体租户字段；扫描平台审计以 job 通道记录服务操作者。每次只处理 active/trial 且 valid_until 已过的租户；重复扫描不新增状态事件。到期业务命令立即403，能力目录按现有过滤语义返回空集合。调度器准点触发、登录与会话吊销仍归 SCH-002、IDP-003/004。
+qian.tenancy/tenant.scan-expired 是真实运行时能力（幂等，按 R107 设置 agent.expose=false，不派生为模型工具；服务主体不受 humanOnly 限制），只接受 global qian.tenancy 或 qian.scheduler 的可信调用，输入为 idempotencyKey 与 limit（1–1000，默认100），拒绝请求体租户字段；扫描平台审计以 job 通道记录服务操作者；每次尝试以同一 attempt、idempotencyKey、TraceId 关联 started 与 success/failure/cancelled 记录，成功记录含 expired 数量。失败可能已完成部分租户迁移，未完成的租户可安全重扫，失败记录不虚报 expired=0。开始审计失败时扫描不执行；收尾审计使用独立 5 秒期限，审计服务本身故障时记录结构化错误日志，不覆盖扫描原异常或已完成结果。每次只处理 active/trial 且 valid_until 已过的租户；重复扫描不新增状态事件。到期业务命令立即403，能力目录按现有过滤语义返回空集合。调度器准点触发、登录与会话吊销仍归 SCH-002、IDP-003/004。
 
 ## 设置读模型与配额（S1-TEN-004）
 
 ITenantSettings.Get<T>(pluginId, key) 返回 ValueTask，读取当前可信租户的实际 Registry 合成配置；key 支持点或冒号路径。租户配置是 scope_patches 的 config 整体替换，不建立 TenantSetting 表、不逐字段混入旧租户配置。没有覆盖时读取全局条目；缺失键经 Config seam 按 pluginId:key 回退平台配置源（可由 Apollo 提供），仍缺失返回 default。缓存键含租户前缀、最长1秒且有容量上限；真实 registry/entry-mounted 事件立即失效当前宿主缓存，跨宿主通过数据库监听与有界缓存收敛，源宿主退出不影响持久值。
 
-GET/PUT /api/tenancy/tenants/{id}/settings/{plugin} 使用同一平台超管授权与旁路审计。PUT 仅接受 scopes 含 tenant 且已挂载的唯一组件条目，复用 IRegistryService.MountAsync：同一 configSchema、JSON Pointer 错误、expectedRevision 并发与 registry.scope.mounted.v1 事务；应用成功后追加 settings.write 成功审计，只有配置哈希、组件、条目和修订，不记录配置原文。读取与注册表授权管理视图中的 config 来自同一合成器。发布 OpenAPI 对 JsonElement 的布尔 Schema 做等价对象展开，以兼容锁定的读取器，default/examples 的实例值保持原样。
+GET/PUT /api/tenancy/tenants/{id}/settings/{plugin} 使用同一平台超管授权与旁路审计。PUT 仅接受 scopes 含 tenant 且已挂载的唯一组件条目，复用 IRegistryService.MountAsync：同一 configSchema、JSON Pointer 错误、expectedRevision 并发与 registry.scope.mounted.v1 事务；应用成功后追加 settings.write 成功审计，只有配置哈希、组件、条目和修订，不记录配置原文。若这条补充审计追加失败，写入和 registry.scope.mounted.v1 已提交，仍返回 200 与已保存修订，结构化日志 Qian.Tenancy.AuditCompletion / 1002 告警（仅能力、租户、资源、结果、TraceId、AuditId、异常类型）。客户端以返回修订继续编辑，旧 expectedRevision 的重试仍返回 409；不能将补充审计故障当成业务写入失败。前置超管授权审计失败仍拒绝操作；配置提交前的校验和并发冲突照常返回错误。读取与注册表授权管理视图中的 config 来自同一合成器。发布 OpenAPI 对 JsonElement 的布尔 Schema 做等价对象展开，以兼容锁定的读取器，default/examples 的实例值保持原样。
 
 主档 quotas 保存 TenantQuotas（users=null 为无限额），CreateTenant/UpdateTenant 支持设置，GET /api/tenancy/tenants/{id}/quota 返回 limits、usersUsed、usageAvailable。Identity 未提供 TenantSettings.UserCounterKey 的 ITenantUserCounter 时，usersUsed=null、usageAvailable=false，不报告成零。ITenantQuota.EnsureCanAddUserAsync 接受服务端统计与已验证成员类别，普通成员和租户管理员计入，平台超管不计；满额复用既有 AuthzErrors.CardinalityUserLimit 原对象（422 CARDINALITY_USER_LIMIT，参数 limit），不重定义全局错误码。计数锁、成员写入同事务与登录消费分别归 IDP-003/006。
 
