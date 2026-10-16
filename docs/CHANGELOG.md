@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-16 租户域 RBAC 判定、完整 Explain 与平台超管旁路（S1-AZ-003）
+
+`qian.authz` 按租户的真实角色、授权与当前策略版本判定权限，缺省拒绝：缺租户上下文、主体跨租户、未登记权限点或无匹配授权都拒绝，BatchCheck 与逐条 Check 结果一致。判定快照按租户授权修订缓存，授予或撤销后下一次判定即生效（R103）。组件经 `ctx.Authz()` 调 `ExplainDetailedAsync`，得到命中角色、授权定位与缺少的权限点。平台超管只能经显式旁路访问租户资源：放行前写入目标租户审计链（`bypass = superadmin`），审计写不进就拒绝。详见 [Qian.Authz](../packages/Qian.Authz/README.md)。
+
 ## 2026-10-16 审计哈希链、权限点注册表与默认角色（S1-AUD-001、S1-AZ-002）
 
 `qian.audit` 在命令的同一事务里按租户追加哈希链审计：查询默认不记，`Audit = true` 时记录；输入按 Schema `sensitive` 脱敏后再取哈希。`qian.authz` 从组件 `metadata/permissions.json` / `roles.json` 登记权限点（独立模式用 `[Permission]`），新租户开通时实例化默认角色；`GET /api/authz/me/permissions` 列出当前主体的有效权限及风险、step-up。详见 [Qian.Audit](../packages/Qian.Audit/README.md)、[Qian.Authz](../packages/Qian.Authz/README.md)；复核裁决 R101–R103 见[关键决策](decisions/key-decisions-v0.md)。

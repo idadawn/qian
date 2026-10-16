@@ -39,7 +39,7 @@ roles、role_assignments、grants 保留可空 tenant_id 的平台角色存储�
 
 ## RBAC 判定基础（S1-AZ-003）
 
-`RbacPermissionChecker` 实现 Kun 的 Check、BatchCheck、ListPermissions、ListAllowedActions 和 Explain 端口。当前查询真实租户角色与授权、有效期，并结合该租户策略版本和活动权限登记。缺少租户上下文、主体租户不一致、非法主体、未安装策略版本、未登记权限或无匹配授权均拒绝。`ExplainDetailedAsync` 返回命中角色、实际授权记录定位和缺少权限，不返回另一租户的命中信息。
+`RbacPermissionChecker` 实现 Kun 的 Check、BatchCheck、ListPermissions、ListAllowedActions 和 Explain 端口。当前查询真实租户角色与授权、有效期，并结合该租户策略版本和活动权限登记。缺少租户上下文、主体租户不一致、非法主体、未安装策略版本、未登记权限或无匹配授权均拒绝。`ExplainDetailedAsync` 返回命中角色、实际授权记录定位和缺少权限，不返回另一租户的命中信息。组件端口 `IAuthzService.ExplainDetailedAsync`（经 `ctx.Authz()`）委托同一方法，消费方只依赖 Qian.Authz.Abstractions 就能取得完整解释；继承自 Kun 的 `ExplainAsync` 只返回判定。
 
 主体须由已认证宿主提供，不从请求角色或权限数组推导授权。step-up 与终端限制需要可信身份/终端适配器提供 `IAuthzExecutionConstraints` 证据；未接入时保持拒绝。资源实例 ACL、L4/L5 仍在各自阶段，当前只消费未限定 ResourceRef 的角色授权。平台主体（TenantId 为 null）在普通判定中一律拒绝，原因 `platform_subject_requires_bypass`；平台超管只能经显式旁路放行。
 
@@ -57,11 +57,11 @@ roles、role_assignments、grants 保留可空 tenant_id 的平台角色存储�
 
 ## 组件入口（AuthzPlugin）
 
-`AuthzPlugin` 装在 global scope，提供四个服务键：`Authz`（`IAuthzService`，五个判定方法与有效权限列表委托真实 RBAC，宿主装配 Kun.Caching 时缓存主体快照）、`Authz.Permissions` 与 `qian.authz.resource-type/v1`（活动权限登记表；宿主 DI 已有 `IPermissionRegistry` 时共用同一实例，供宿主端点的判定器与注册表管理面读取），以及 `Authz.SuperadminBypass`（平台超管显式旁路）；另经 `CommandPolicies.Register` 提供命令 PEP（`CommandAuthorization`）。错误码随 Apply 登记、卸载时撤销。
+`AuthzPlugin` 装在 global scope，提供五个服务键：`Authz`（`IAuthzService`，五个判定方法、有效权限列表与完整解释委托真实 RBAC，宿主装配 Kun.Caching 时缓存主体快照）、`Authz.Permissions` 与 `qian.authz.resource-type/v1`（活动权限登记表；宿主 DI 已有 `IPermissionRegistry` 时共用同一实例，供宿主端点的判定器与注册表管理面读取）、`Authz.SuperadminBypass`（平台超管显式旁路），以及 `Authz.TenantRoleGrant`（`ITenantRoleGrant`，开户编排为主体绑定内置租户角色的最小授予端口，S1-TEN-003）；另经 `CommandPolicies.Register` 提供命令 PEP（`CommandAuthorization`）。错误码随 Apply 登记、卸载时撤销。
 
 权限目录有三种来源，对应三个构造方式：`new AuthzPlugin()` 不预置目录，组件经 `Authz.Permissions` 自行登记；`new AuthzPlugin(catalogs)` 用于独立宿主，目录由宿主从 PermissionAttribute 或随包 metadata 编译后传入（每个组件一份），依赖 Data；`AuthzPlugin.FromInstalledComponents()` 用于平台宿主，Apply 时从 `ctx.Registry()` 的预装组件读取 metadata/permissions.json 与 roles.json（缺 roles.json 视为没有默认角色），依赖 Data 与 Registry，宿主须登记 `ISurfaceReader`。Apply 对每份目录先持久化（同版本同内容幂等，内容不同 CONFLICT 使 Apply 失败），再登记活动声明并交给 Effect。平台模式只读 Apply 时的预装快照；运行期新安装组件的目录登记不在本组件内。
 
-清单声明的 provides 受 plugin.schema.json 服务键模式约束（`Name` 或 `Name.Port:variant`），`Authz.Permissions`、`Authz.SuperadminBypass` 与扩展点名 `qian.authz.resource-type/v1` 不符合该模式。参考应用与 T23 宿主的清单只声明 `CommandAuthorization` 与 `Authz`；其余三个键由 Provider 额外提供（装载器只要求声明的键都已提供，不禁止额外提供），运行期可按服务键 `TryInject` 取用（注册表管理面取旁路端口即如此），但其它组件不能把它们写进 inject：装载器按 provides 声明校验依赖并排定挂载顺序，找不到声明时报 DEPENDENCY_MISSING。键名与模式如何统一另行裁定。
+清单声明的 provides 受 plugin.schema.json 服务键模式约束（`Name` 或 `Name.Port:variant`），`Authz.Permissions`、`Authz.SuperadminBypass`、`Authz.TenantRoleGrant` 与扩展点名 `qian.authz.resource-type/v1` 不符合该模式。参考应用与 T23 宿主的清单只声明 `CommandAuthorization` 与 `Authz`；其余四个键由 Provider 额外提供（装载器只要求声明的键都已提供，不禁止额外提供），运行期可按服务键取用（注册表管理面用 `TryInject` 取旁路端口，开户编排用 `Inject` 取授予端口），但其它组件不能把它们写进 inject：装载器按 provides 声明校验依赖并排定挂载顺序，找不到声明时报 DEPENDENCY_MISSING。键名按 R101 统一：服务键改为单段键，`qian.authz.resource-type/v1` 只作扩展点契约名，由 S1-RT-033 落地；`Authz.TenantRoleGrant` 由 S1-TEN-003 新增、晚于 R101，按同一通则处理。
 
 配置只接受两个字段：`advancedMode` 只能为 false（S1 没有高级模式，数据 / 字段权限编译属 S2）；可选的 `platformRole` 是专用平台授权登录角色名，配置后旁路才可能放行，未配置时旁路端口仍在但一律拒绝（`platform_role_not_configured`），因为清单的 provides 是静态的，缺配置不等于放行。tenant scope 装载、未知字段、非法角色名都使 Apply 失败；`platformRole` 指向的连接若是普通应用凭据（可继承、能读租户授权表），Apply 以 `QianDataMisconfiguredException` 失败。
 
