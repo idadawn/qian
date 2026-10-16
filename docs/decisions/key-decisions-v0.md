@@ -524,3 +524,26 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
   - **后续接入**：S1-AZ-004 接入 identity_revision 与 `authz.grant.changed.v1` 时，把 identity_revision 并入键，并评估是否保留「每次判定读一次修订号」。
   - **平台超管行**：存于 `roles` / `role_assignments` 中 `tenant_id` 为空的行，经专用平台授权登录读写（`AuthzPlatformAccess`，与审计平台链的 `AuditPlatformAccess` 同构）。`platformRole` 未配置时旁路一律拒绝；生产接线写进 S1-DEP-005 验收。
   - **成员列表**：「平台超管不出现在租户成员列表」（ADR-006 D6.11）写进 S1-IDP-009 与 S1-AZ-005 的验收。
+
+### DEP-003 解阻裁决 R106（2026-10-16）
+
+产品负责人 2026-10-16 要求「处理掉 S1-DEP-003 阻塞」，由 Claude 作默认裁决，未经逐条确认。本条取代以下两处安排：
+
+- 2026-10-14「DEP-003 保持 blocked、四任务范围不变」；
+- S1-DEC-021（R81–R84 一节）「顺序与归属」里「S1-DEP-003 等 S1-IDP-002 / S1-IDP-005 / S1-GW-001 / S1-YUE-001 交付后再动」一句。
+
+- R106：S1-DEP-003 拆为两段。
+  - **S1-DEP-003 收窄为镜像构建与供应链流水线。** 交付内容：
+    - 统一构建入口：多阶段，JIT 与 NativeAOT distroless 两种运行镜像模板，非 root、只读根。
+    - 供应链门禁：Syft SBOM、漏洞扫描、Cosign 签名与 SBOM 证明、带发布者身份与 issuer 约束的验签。
+    - dump-config 漂移门禁。
+
+    用 CI 内构建、不发布的自检镜像做端到端验证。自检镜像不是任何 profile 的产品镜像，所以不违反 R31「standalone / minimal 不出镜像」，也不替代业务镜像。依赖改为 S1-RT-002、S1-DEP-001，状态由 blocked 改为 todo。
+  - **三项真实镜像验收原文移到新任务 S1-DEP-008。** 它依赖 S1-DEP-003，以及 S1-IDP-002、S1-IDP-005、S1-GW-001、S1-YUE-001。只有真实镜像及其证据齐全才可勾选。
+  - **发布链**：
+    - S1-DEP-004 仍依赖 S1-DEP-003，片段只需 digest 引用约定。
+    - S1-DEP-005 显式加依赖 S1-DEP-008，S1-DEC-016「发布门要求真实 qian-platform」的口径不变。
+    - ADR-017 §9、deploy/baseline 与 deploy/images 的 README 同步改写。
+  - **前置链**按各自 wave 推进，本条不另排期：
+    - 身份 / 网关：S1-IDP-002 → S1-IDP-005 → S1-GW-001。
+    - 外壳：S1-YUE-006、S1-YUE-007 与 S1-IDP-009 → S1-IDP-010 → S1-YUE-009，最后到 S1-YUE-001。其中 IDP-009 依赖 S1-IDP-003。
