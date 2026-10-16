@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+@import '@idadawn/yue-tokens/index.css';
+@source '../../yue';
+
+body { margin: 0; background: oklch(var(--yue-muted)); color: var(--foreground); font-family: system-ui, sans-serif; }
