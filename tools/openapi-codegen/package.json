@@ -1,0 +1,10 @@
+{
+  "name": "@qian/openapi-codegen",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "devDependencies": {
+    "openapi-typescript": "catalog:",
+    "typescript": "catalog:openapi-codegen"
+  }
+}

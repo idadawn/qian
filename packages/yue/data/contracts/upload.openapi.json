@@ -1,0 +1,270 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Upload 组件 mock 契约草案",
+    "version": "0.1.0",
+    "description": "S1-YUE-008 对 S1-FILE-003 所列四个端点的组件验收夹具。响应字段供提供方接线，不宣称后端已经交付。"
+  },
+  "paths": {
+    "/uploads:lookup": {
+      "get": {
+        "parameters": [
+          {
+            "name": "sha256",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已有文件",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileObject"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ErrorDetail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "../../contracts/src/error-detail.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads:init": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "size",
+                  "contentType",
+                  "sha256"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "contentType": {
+                    "type": "string"
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "可重入分片会话",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "ErrorDetail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "../../contracts/src/error-detail.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/{id}/parts/{n}": {
+      "put": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "n",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "分片已接收"
+          },
+          "default": {
+            "description": "ErrorDetail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "../../contracts/src/error-detail.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/{id}:complete": {
+      "post": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sha256",
+                  "partCount"
+                ],
+                "properties": {
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "partCount": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "完整文件",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileObject"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "ErrorDetail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "../../contracts/src/error-detail.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FileObject": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "size",
+          "contentType"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "contentType": {
+            "type": "string"
+          }
+        }
+      },
+      "UploadSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "uploadId",
+          "partSize",
+          "uploadedParts"
+        ],
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "partSize": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uploadedParts": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
