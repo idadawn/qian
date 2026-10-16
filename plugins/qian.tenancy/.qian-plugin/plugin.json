@@ -20,8 +20,7 @@
     "required": false
   },
   "scopes": [
-    "global",
-    "tenant"
+    "global"
   ],
   "x-skeleton": true
 }

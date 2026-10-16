@@ -6,7 +6,7 @@ namespace Qian.Tenancy;
 public static class TenantOperations
 {
     /// <summary>由 TenancyPlugin 提供的管理端口。</summary>
-    public static readonly ServiceKey Key = new("Tenancy.Operations");
+    public static readonly ServiceKey Key = new("TenancyOperations");
 }
 /// <summary>平台租户列表与主档编辑；拒绝租户上下文，不能直接作为无授权接口。</summary>
 public interface ITenantOperations

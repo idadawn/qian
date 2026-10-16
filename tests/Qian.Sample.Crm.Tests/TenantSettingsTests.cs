@@ -32,10 +32,8 @@ public sealed partial class CustomerCommandTests
     [Fact]
     public async Task 租户可用六步_真实开户hook状态事件_配置写入跨宿主与合成视图一致_配额缺席明确_双租户隔离()
     {
-        using var platform = new LifecyclePlatform { Management = true, ProvisionCrmByDefault = true };
+        using var platform = new LifecyclePlatform { Management = true, ProvisionCrmByDefault = true, InitializationCapabilities = InitializationCapabilities };
         await using var business = await Start(lifecycle: platform);
-        await using var management = await ManagementHost(business, platform);
-        using var client = new HttpClient { BaseAddress = new Uri(management.Urls.Single()) };
         var loader = business.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         await loader.MountAsync([new PluginDefinition(new PluginEntry("crm", "qian.sample.crm", "1.0.0", ScopeKey.Global, 0,
             JsonSerializer.SerializeToElement(new { })), new CrmPlugin(), [CrmDefinition.Key])], Ct);
@@ -43,10 +41,16 @@ public sealed partial class CustomerCommandTests
         var hookDirectory = (string)((IApplicationBuilder)business.App).Properties["qian.tests.hooks"]!;
         File.WriteAllText(Path.Combine(hookDirectory, "hooks/hooks.json"), """{"hooks":{"tenant/provisioned":[{"hooks":[{"type":"plugin","plugin":"qian.sample.crm","handler":"listCustomers"}]}]}}""");
         await WaitForHooks(loader.GetContext("crm", ScopeKey.Global), group => group.GetProperty("hooks")[0].GetProperty("handler").GetString() == "listCustomers");
-        await loader.UnmountAsync("tenancy", ScopeKey.Global, Ct);
-        await loader.MountAsync([new PluginDefinition(new PluginEntry("tenancy", "qian.tenancy", "1.0.0", ScopeKey.Global, 0,
-            JsonSerializer.SerializeToElement(new { initializationCapabilities = InitializationCapabilities })), new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey])], Ct);
         var source = loader.GetContext("tenancy", ScopeKey.Global);
+        // 先装组件 hook 与观察器，再由运营宿主重挂载 Authz；验证角色创建不依赖注册先后。
+        using var rolesBeforeHooks = source.On(SurfaceHookEvents.TenantProvisioned, DispatchMode.Serial,
+            (Func<HookNotification, ValueTask<JsonElement>>)(async notification =>
+            {
+                Assert.Equal("4", await Text($"SELECT count(*)::text FROM plugin_qian_authz.roles WHERE tenant_id='{notification.Subject}'"));
+                return JsonSerializer.SerializeToElement<object?>(null);
+            }), priority: 1);
+        await using var management = await ManagementHost(business, platform);
+        using var client = new HttpClient { BaseAddress = new Uri(management.Urls.Single()) };
         var created = new List<TenantDescriptor>();
         foreach (var code in new[] { "c", "d" })
         {

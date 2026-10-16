@@ -51,6 +51,14 @@ public sealed partial class CustomerCommandTests
             new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey])], Ct);
         source = loader.GetContext("tenancy", ScopeKey.Global);
         provisioning = source.Inject<ITenantProvisioning>(TenantProvisioning.Key);
+        // 同一个已配置的生产方上下文，测试宿主直接派发没有编排凭据，不能借 hook 执行业务。
+        using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(descriptor.Id.ToString()))
+        {
+            var scoped = source.Scoped(new ScopeKey("tenant", descriptor.Id.ToString()));
+            await AssertCode(PlatformErrors.AuthzDenied, () => scoped.DispatchAsync(Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantProvisioned,
+                new Qian.Surfaces.Abstractions.HookNotification(scoped, descriptor.Id.ToString(), JsonSerializer.SerializeToElement(new { }), Ct), Ct).AsTask());
+            Assert.Empty(await source.Audit().ReadAsync(0, 20, cancellationToken: Ct));
+        }
         await provisioning.RetryAsync(descriptor.Id, "platform-operator", Ct);
         Assert.Equal("succeeded", (await provisioning.GetStepsAsync(descriptor.Id, Ct)).Single(step => step.Step == "04:provisioned").Status);
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(descriptor.Id.ToString()))
@@ -84,7 +92,8 @@ public sealed partial class CustomerCommandTests
         var first = (await source.Tenancy().GetAsync("c", Ct))!;
         var failed = await provisioning.GetStepsAsync(first.Id, Ct);
         Assert.Equal([("01:directory", "succeeded", 1), ("02:isolation", "succeeded", 1)], failed.Take(2).Select(s => (s.Step, s.Status, s.Attempts)));
-        Assert.Contains(failed, step => step.Step == "03:components" && step.Status == "failed");
+        Assert.Contains(failed, step => step.Step == "03:components" && step.Status == "failed" && step.Attempts == 1);
+        Assert.Contains(failed, step => step.Step == "03:component:qian.audit" && step.Status == "failed" && step.Attempts == 1);
         var secondAdmin = new TenantAdministrator(Guid.CreateVersion7(), "owner-d");
         await Assert.ThrowsAsync<QianErrorException>(() => provisioning.ProvisionAsync(new("d", "D"), secondAdmin, "operator", Ct).AsTask());
         var second = (await source.Tenancy().GetAsync("d", Ct))!;
@@ -111,6 +120,8 @@ public sealed partial class CustomerCommandTests
             var before = await provisioning.GetStepsAsync(descriptor.Id, Ct);
             Assert.Equal(1, before.Single(step => step.Step == "01:directory").Attempts);
             Assert.Equal(1, before.Single(step => step.Step == "02:isolation").Attempts);
+            Assert.Equal(2, before.Single(step => step.Step == "03:components").Attempts);
+            Assert.Equal(2, before.Single(step => step.Step == "03:component:qian.audit").Attempts);
             Assert.Equal("identity_unavailable", before.Single(step => step.Step == "05:membership").Reason);
             Assert.Equal("notify_unavailable", before.Single(step => step.Step == "08:notification").Reason);
             Assert.Equal(2, before.Count(step => step.Status == "skipped"));

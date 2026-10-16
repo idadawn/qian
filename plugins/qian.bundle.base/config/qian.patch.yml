@@ -17,6 +17,7 @@
     resolver:
       mode: production
       allowHeaderFallback: false
+    initializationCapabilities: []
 - id: identity
   plugin: qian.identity.client
   config:

@@ -80,7 +80,7 @@ public sealed class AuthzPlugin : IQianPlugin
         var roles = new PostgresTenantRoleStore(ctx.Data(), tenant);
         ctx.Provide<ITenantRoleGrant>(TenantRoleGrant.Key, new TenantRoleGrantService(roles));
         var components = Array.AsReadOnly(catalogs.Select(catalog => (catalog.PluginId, catalog.Version)).ToArray());
-        ctx.On(SurfaceHookEvents.TenantProvisioned, DispatchMode.Serial, (Func<HookNotification, ValueTask<JsonElement>>)(notification => ProvisionAsync(notification)));
+        ctx.On(SurfaceHookEvents.TenantProvisioned, DispatchMode.Serial, (Func<HookNotification, ValueTask<JsonElement>>)(notification => ProvisionAsync(notification)), priority: 1000);
         CommandPolicies.Register(ctx, CommandPolicyKind.Authorization, new RbacCommandPolicy(checker).Handle);
         ctx.Provide<ISuperadminBypass>(AuthzDefinition.SuperadminBypassKey, new SuperadminBypassService(ctx.Data(), tenant, registry, platform, ctx));
         ctx.Provide(AuthzDefinition.PermissionsKey, registry);
