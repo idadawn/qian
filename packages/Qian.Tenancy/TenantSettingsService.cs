@@ -93,10 +93,11 @@ internal sealed class TenantSettingsService(IPluginContext context, PostgresTena
         Interlocked.Increment(ref _generation);
         _cache.TryRemove(id + ":settings:" + pluginId, out _);
         var result = await Read(pluginId, cancellationToken, fresh: true).ConfigureAwait(false);
-        await context.Scoped(Scope()).Audit().AppendAsync(new AuditRecord(Guid.CreateVersion7(), id.ToString(), "user", actor, null,
+        await TenantAuditCompletion.AppendAsync(context, new AuditRecord(Guid.CreateVersion7(), id.ToString(), "user", actor, null,
             "qian.tenancy/settings.write", "v1", Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(request.Config.GetRawText()))),
             "api", pluginId, "success", System.Diagnostics.ActivityTraceId.CreateRandom().ToHexString(), DateTimeOffset.UtcNow,
-            JsonSerializer.SerializeToElement(new { pluginId, entryId = result.EntryId, revision = saved.Revision })), cancellationToken).ConfigureAwait(false);
+            JsonSerializer.SerializeToElement(new { pluginId, entryId = result.EntryId, revision = saved.Revision })),
+            (record, token) => context.Scoped(Scope()).Audit().AppendAsync(record, token)).ConfigureAwait(false);
         return result;
     }
     private async Task<TenantQuotas> Limits(Guid id, CancellationToken ct)
