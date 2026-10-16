@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 本机租户运营手测环境（S1-QA-012）。说明见 tools/Qian.Dev.TenantOps/README.md。
+# 本机租户运营手测环境（S1-QA-012；CI 冒烟 S1-QA-013）。说明见 tools/Qian.Dev.TenantOps/README.md。
 # 这是开发机上的手测环境：不替代 qian dev（S1-RT-013），也不替代 K3s 部署（S1-DEP-002）。
 # 兼容 macOS 自带的 bash 3.2：不用关联数组，也不在 set -u 下展开空数组。
 set -euo pipefail
@@ -22,7 +22,8 @@ usage() {
   walkthrough [--yes]   另开一个终端运行：按「建租户 → 开通步骤 → 激活 → 写设置/读配额 → 冻结/恢复 → 扫描到期」逐步调用
   api 方法 路径 [JSON]   以平台超管身份调用一次运营宿主，例如：api GET /api/tenancy/tenants
   token [选项]          打印本机开发令牌；选项 --sub、--tenant、--kind、--ttl（分钟），默认是平台超管 root
-  status                查看容器与运营宿主是否在运行
+  status                查看容器与运营宿主是否在运行；运营宿主在运行时退出码为 0，否则为 1
+  smoke                 CI 冒烟：后台起环境、等就绪、跑一遍 walkthrough --yes、停宿主；退出码即走查结果
   down [--purge]        删除 PostgreSQL 容器；--purge 同时删除本机开发密钥与口令（$STATE）
 EOF
 }
@@ -41,6 +42,9 @@ container_state() {
   local status
   if status="$(docker inspect -f '{{.State.Status}}' "$CONTAINER" 2>/dev/null)"; then echo "$status"; else echo missing; fi
 }
+
+# 探测运营宿主，输出 HTTP 状态码，没有响应时是 000。运营端点不带令牌应答 401，据此认出是本宿主在监听。
+ops_probe() { curl --noproxy '*' -s -o /dev/null -w '%{http_code}' --max-time 2 "$OPS_URL/api/tenancy/meta/state-machine" || true; }
 
 start_postgres() {
   need docker "安装并启动 Docker Desktop 或其他 Docker 引擎"
@@ -71,7 +75,7 @@ start_postgres() {
 
 cmd_up() {
   need python3 "macOS 自带 /usr/bin/python3"
-  if curl --noproxy '*' -s -o /dev/null --max-time 2 "$OPS_URL/api/tenancy/meta/state-machine"; then
+  if [ "$(ops_probe)" != 000 ]; then
     echo "$OPS_URL 已有服务在监听；先停掉它（或设 QIAN_DEV_OPS_URL 换端口）。" >&2; exit 1
   fi
   start_postgres
@@ -91,8 +95,8 @@ cmd_token() { ensure_built; dotnet "$DLL" token --state "$STATE" "$@"; }
 cmd_api() {
   [ $# -ge 2 ] || { echo "用法：api 方法 路径 [JSON 请求体]" >&2; exit 2; }
   local method="$1" path="$2" body="${3:-}" token
-  if ! curl --noproxy '*' -s -o /dev/null --max-time 2 "$OPS_URL/api/tenancy/meta/state-machine"; then
-    echo "运营宿主 $OPS_URL 没有响应：先在另一个终端运行 scripts/dev-tenant-ops.sh up" >&2; exit 1
+  if [ "$(ops_probe)" != 401 ]; then
+    echo "运营宿主 $OPS_URL 没有就绪：先在另一个终端运行 scripts/dev-tenant-ops.sh up" >&2; exit 1
   fi
   token="$(cmd_token)"
   if [ -n "$body" ]; then
@@ -119,13 +123,48 @@ except ValueError:
 
 cmd_status() {
   echo "PostgreSQL 容器 $CONTAINER：$(container_state)"
-  local code
-  code="$(curl --noproxy '*' -s -o /dev/null -w '%{http_code}' --max-time 2 "$OPS_URL/api/tenancy/meta/state-machine" || true)"
+  local code; code="$(ops_probe)"
   case "$code" in
-    401) echo "运营宿主 $OPS_URL：运行中" ;;
-    000|"") echo "运营宿主 $OPS_URL：未运行" ;;
+    401) echo "运营宿主 $OPS_URL：运行中"; return 0 ;;
+    000) echo "运营宿主 $OPS_URL：未运行" ;;
     *) echo "运营宿主 $OPS_URL：有别的服务在监听（探测返回 $code）" ;;
   esac
+  return 1
+}
+
+# 停后台宿主：非交互 shell 的后台作业忽略 SIGINT，所以发 SIGTERM（.NET 宿主据此优雅退出），30 秒不退再强杀。
+stop_host() {
+  kill -TERM "$1" 2>/dev/null || return 0
+  local i
+  for i in $(seq 1 30); do kill -0 "$1" 2>/dev/null || break; sleep 1; done
+  kill -KILL "$1" 2>/dev/null || true
+  wait "$1" 2>/dev/null || true
+}
+
+# CI 冒烟（S1-QA-013）：后台起环境，等运营宿主就绪，跑一遍走查，再停宿主。退出码即走查结果，失败时打印宿主日志。
+# CI 工作流与本机执行的是同一条命令；结束后容器保留，用 down 删除。
+cmd_smoke() {
+  local log="${QIAN_DEV_SMOKE_LOG:-$STATE/smoke-up.log}" timeout="${QIAN_DEV_SMOKE_TIMEOUT:-600}" waited=0 code=0 pid
+  if [ "$(ops_probe)" != 000 ]; then
+    echo "$OPS_URL 已有服务在监听；冒烟要自己起宿主，先停掉它（或设 QIAN_DEV_OPS_URL 换端口）。" >&2; exit 1
+  fi
+  mkdir -p "$(dirname "$log")"
+  bash "$ROOT/scripts/dev-tenant-ops.sh" up > "$log" 2>&1 &
+  pid=$!
+  echo "等运营宿主就绪（最多 $timeout 秒；宿主日志 $log）……"
+  until [ "$(ops_probe)" = 401 ]; do
+    if ! kill -0 "$pid" 2>/dev/null; then printf 'up 提前退出，宿主日志：\n' >&2; cat "$log" >&2; exit 1; fi
+    if [ "$waited" -ge "$timeout" ]; then
+      printf '%s 秒内没有就绪，宿主日志：\n' "$timeout" >&2; cat "$log" >&2; stop_host "$pid"; exit 1
+    fi
+    sleep 2; waited=$((waited + 2))
+  done
+  echo "运营宿主已就绪（约 $waited 秒），开始走查。"
+  QIAN_DEV_VALID_SECONDS="${QIAN_DEV_VALID_SECONDS:-5}" QIAN_DEV_OPS_URL="$OPS_URL" QIAN_DEV_STATE="$STATE" \
+    bash "$PROJECT/walkthrough.sh" --yes || code=$?
+  stop_host "$pid"
+  if [ "$code" != 0 ]; then printf '\n--- 宿主日志（%s）---\n' "$log"; cat "$log"; fi
+  return "$code"
 }
 
 command="${1:-}"; [ $# -gt 0 ] && shift
@@ -136,5 +175,6 @@ case "$command" in
   api) cmd_api "$@" ;;
   walkthrough) ensure_built; QIAN_DEV_OPS_URL="$OPS_URL" QIAN_DEV_STATE="$STATE" exec bash "$PROJECT/walkthrough.sh" "$@" ;;
   status) cmd_status ;;
+  smoke) cmd_smoke ;;
   *) usage; [ -z "$command" ] || exit 2 ;;
 esac

@@ -5,4 +5,4 @@
 - 运行期连接只用受限角色；不得为图方便改用超级用户、BYPASSRLS，或关闭验签、issuer、audience、有效期校验。
 - `/__dev/` 路由不是产品契约，授权不得弱于运营端点；对应产品端点交付后删除或替换。
 - 开发密钥、口令只在 `.qian-dev/`（git 忽略），不提交、不打印。
-- 改了走查脚本，本机实际跑一遍 `scripts/dev-tenant-ops.sh walkthrough --yes`。
+- 改了本工程、脚本或走查，本机跑一遍 `scripts/dev-tenant-ops.sh smoke`；CI 的 dev-tenant-ops 工作流跑的是同一条命令（S1-QA-013），不要在工作流里另写一套步骤。

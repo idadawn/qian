@@ -1,0 +1,51 @@
+name: dev-tenant-ops
+
+# 本机租户运营手测环境的 CI 冒烟（S1-QA-013）：在托管 runner 上原样执行 scripts/dev-tenant-ops.sh smoke，
+# 即后台 up（Docker PostgreSQL 16 + 运营宿主）、等就绪、walkthrough --yes 走查运营契约 8 个路径与反例、停宿主。
+# 手测宿主照搬集成测试的平台装配，装配一变就可能在运行期失效；这道冒烟让它随代码一起保持可用（S1-DEC-024 要求
+# TEN-005 的「页面可用」检查复用它）。与 dotnet 工作流并行，不占用其时长预算；只改文档与任务文件时不运行。
+
+on:
+  push:
+    branches: [main]
+    paths: ['packages/**', 'samples/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-tenant-ops.sh', '*.props', '*.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', '.github/workflows/dev-tenant-ops.yml']
+  pull_request:
+    paths: ['packages/**', 'samples/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-tenant-ops.sh', '*.props', '*.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', '.github/workflows/dev-tenant-ops.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-tenant-ops-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  smoke:
+    name: 手测环境冒烟（up + walkthrough）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: 起环境、走查、停宿主（与本机 scripts/dev-tenant-ops.sh smoke 同一条命令）
+        env:
+          QIAN_DEV_SMOKE_LOG: ${{ runner.temp }}/dev-tenant-ops-up.log
+        run: scripts/dev-tenant-ops.sh smoke
+
+      - name: 失败时上传宿主日志
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-tenant-ops-up-log
+          path: ${{ runner.temp }}/dev-tenant-ops-up.log
+          if-no-files-found: ignore
