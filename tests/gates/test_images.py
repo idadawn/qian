@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -60,6 +61,12 @@ class DriftTests(unittest.TestCase):
         self.assertEqual(len(images.diff_json(images.normalize_dump(dump([], diagnostics=[diagnostic])),
                                               images.normalize_dump(dump([], diagnostics=[other])))), 1)
 
+    def test_trace_id_in_component_config_is_still_compared(self):
+        source = dump([{"id": "telemetry", "config": {"trace_id": "x-trace"}, "layer": 0}])
+        image = dump([{"id": "telemetry", "config": {"trace_id": "x-other"}, "layer": 0}])
+        self.assertEqual(images.diff_json(images.normalize_dump(source), images.normalize_dump(image)),
+                         [("/entries/0/config/trace_id", "x-trace", "x-other")])
+
 
 class ScanTests(unittest.TestCase):
     REPORT = {"matches": [match("CVE-1", "Critical"), match("CVE-2", "High", "lib"), match("CVE-3", "Medium"), match("CVE-4", "Unknown")]}
@@ -75,6 +82,19 @@ class ScanTests(unittest.TestCase):
         self.assertEqual([item["id"] for item in images.scan_violations(self.REPORT, "high", allowlist, "2026-10-16")], ["CVE-2"])
         self.assertEqual([item["id"] for item in images.scan_violations(self.REPORT, "high", allowlist, "2027-01-01")], ["CVE-1", "CVE-2"])
 
+    def test_allowlist_until_must_be_a_full_date(self):
+        for until in ("2027", "2027-1-1", "长期", ""):
+            allowlist = [{"id": "CVE-1", "reason": "上游未修复", "until": until}]
+            self.assertIn("CVE-1", [item["id"] for item in images.scan_violations(self.REPORT, "high", allowlist, "2026-10-16")], until)
+
+    def test_probe_sbom_names_the_probe_component(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "probe.cdx.json"
+            images.write_probe_sbom(path)
+            component = json.loads(path.read_text(encoding="utf-8"))["components"][0]
+        name, version = images.SCAN_PROBE
+        self.assertEqual(component["purl"], f"pkg:nuget/{name}@{version}")
+
     def test_violation_carries_package_and_fix(self):
         violation = images.scan_violations(self.REPORT, "high", [], "2026-10-16")[1]
         self.assertEqual(violation, {"id": "CVE-2", "severity": "high", "package": "lib", "version": "1.0", "fixedIn": ["9.9"]})
@@ -88,8 +108,22 @@ class NegativeTests(unittest.TestCase):
         self.assertEqual(images.negative_verdict(False, "dial tcp 127.0.0.1:5000: connect: connection refused", reason), "失败原因不符")
 
     def test_every_negative_has_a_reason(self):
-        self.assertEqual(set(images.NEGATIVE_REASONS), {"签名身份不符", "issuer 不符", "缺签名", "缺 SBOM 证明", "镜像内改动 patch"})
+        self.assertEqual(set(images.NEGATIVE_REASONS),
+                         {"签名身份不符", "issuer 不符", "缺签名", "缺 SBOM 证明", "镜像内改动 patch", "漏洞达到阈值"})
         self.assertIn(images.NEGATIVE_REASONS["镜像内改动 patch"], images.TAMPER_PATCH)
+        self.assertEqual(images.NEGATIVE_REASONS["漏洞达到阈值"], images.SCAN_PROBE[0])
+
+
+class CiContextTests(unittest.TestCase):
+    def test_pull_request_run_records_head_and_base(self):
+        with tempfile.TemporaryDirectory() as directory:
+            event = Path(directory) / "event.json"
+            event.write_text(json.dumps({"pull_request": {"head": {"sha": "a" * 40}, "base": {"sha": "b" * 40}}}), encoding="utf-8")
+            context = images.ci_context({"GITHUB_EVENT_NAME": "pull_request", "GITHUB_RUN_ID": "7", "GITHUB_EVENT_PATH": str(event)})
+        self.assertEqual(context, {"event": "pull_request", "runId": "7", "headSha": "a" * 40, "baseSha": "b" * 40})
+
+    def test_outside_ci_there_is_no_context(self):
+        self.assertEqual(images.ci_context({}), {})
 
 
 class RuntimeTests(unittest.TestCase):
@@ -129,7 +163,8 @@ class LockTests(unittest.TestCase):
             self.assertEqual(set(spec["assets"]), {"linux_amd64", "linux_arm64", "darwin_amd64", "darwin_arm64"}, name)
             for asset in spec["assets"].values():
                 self.assertRegex(asset["sha256"], r"^[0-9a-f]{64}$")
-                self.assertIn(spec["version"], asset["name"]) if name != "cosign" else None
+                if name != "cosign":
+                    self.assertIn(spec["version"], asset["name"])
 
     def test_dockerfiles_pin_base_images_by_digest(self):
         for kind in ("jit", "aot"):

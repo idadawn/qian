@@ -2,8 +2,8 @@ name: images
 
 # profile 镜像构建与供应链门禁自检（S1-DEP-003 / R106）：用统一构建入口构建 JIT 与 NativeAOT 两个自检镜像，
 # 按 digest 生成 Syft SBOM、Grype 扫描、Cosign 签名与 SBOM 证明并验签，dump-config 漂移比对五个 profile，
-# 以非 root、只读根文件系统实际启动取运行期证据；缺签名、签名身份不符、issuer 不符、缺 SBOM 证明、
-# 镜像内改动 patch 五个反例都必须被拦住。自检镜像只推到本 job 内的临时 registry，不发布任何镜像；
+# 以非 root、只读根文件系统实际启动取运行期证据；已知漏洞组件的扫描、缺签名、签名身份不符、issuer 不符、
+# 缺 SBOM 证明、镜像内改动 patch 六个反例都必须按预期原因被拦住。自检镜像只推到本 job 内的临时 registry，不发布任何镜像；
 # 签名用本 job 临时签发的 CA，不申请 OIDC 令牌，也不写公共透明日志。三个业务镜像的接入归 S1-DEP-008。
 
 on:

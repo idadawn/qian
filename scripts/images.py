@@ -9,7 +9,8 @@ profile 与组件目录的 git 树修订）。推到哪个 registry 由 --tag �
 
 selfcheck：CI 自检（.github/workflows/images.yml）。在本机起临时 registry，构建 JIT 与 AOT 两个自检镜像，依次跑：
   1. Syft 按 digest 生成 SBOM，Grype 扫描；达到 --fail-on 的漏洞即失败，豁免写在
-     deploy/images/vulnerability-allowlist.json，必须带理由与期限，过期失效；
+     deploy/images/vulnerability-allowlist.json，必须带理由与 YYYY-MM-DD 期限，过期失效；
+     反例：已知含严重漏洞的组件清单经同一 Grype 与阈值判定，必须报出违规；
   2. Cosign 签名并附 SBOM 证明，验签约束发布者身份与 issuer；反例：缺签名、签名身份不符、issuer 不符、
      缺 SBOM 证明，四种都必须验不过，且报错原因与预期一致；
   3. dump-config 漂移门禁：源码树与镜像内对五个 profile 分别合成，逐项比较解析后的结构与来源层；
@@ -51,6 +52,9 @@ SELFCHECK_IMAGES = {
 }
 TAMPER_PROFILE = "standalone"
 TAMPER_PATCH = "- id: config\n  note: 镜像内篡改（漂移门禁反例）\n"
+# 扫描阈值反例：已知含严重漏洞（CVE-2021-26701，critical）的 NuGet 组件，任何阈值下都必须报出违规。
+SCAN_PROBE = ("System.Text.Encodings.Web", "4.5.0")
+DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 ALLOWLIST = ROOT / "deploy" / "images" / "vulnerability-allowlist.json"
 # 每个反例预期的失败原因（cosign v3.1 报错原文与篡改内容）。门禁失败但原因对不上（网络、配置错误）不算拦住。
 NEGATIVE_REASONS = {
@@ -59,6 +63,7 @@ NEGATIVE_REASONS = {
     "缺签名": "no signatures found",
     "缺 SBOM 证明": "none of the attestations matched the predicate type",
     "镜像内改动 patch": "镜像内篡改（漂移门禁反例）",
+    "漏洞达到阈值": SCAN_PROBE[0],
 }
 MISSING = "<缺失>"
 # cosign 只该访问本机临时 registry：外网请求经不可达代理失败（回环地址不走代理），不会触达公共 Sigstore 服务。
@@ -74,11 +79,15 @@ class StepFailed(Exception):
 # ---------- 纯逻辑：门禁判定（tests/gates/test_images.py 覆盖） ----------
 
 def normalize_dump(dump):
-    """去掉每次装配随机生成的诊断追踪号，其余字段（结构、来源层、诊断内容）原样参与比较。"""
-    if isinstance(dump, dict):
-        return {key: normalize_dump(value) for key, value in dump.items() if key not in ("trace_id", "traceId")}
-    if isinstance(dump, list):
-        return [normalize_dump(value) for value in dump]
+    """只去掉诊断里每次装配随机生成的追踪号；组件配置等其余字段（结构、来源层、诊断内容）原样参与比较。"""
+    def strip(node):
+        if isinstance(node, dict):
+            return {key: strip(value) for key, value in node.items() if key not in ("trace_id", "traceId")}
+        if isinstance(node, list):
+            return [strip(value) for value in node]
+        return node
+    if isinstance(dump, dict) and isinstance(dump.get("diagnostics"), list):
+        return {**dump, "diagnostics": strip(dump["diagnostics"])}
     return dump
 
 
@@ -119,10 +128,10 @@ def severity_counts(report):
 
 
 def scan_violations(report, threshold, allowlist, today):
-    """达到阈值且没有有效豁免的漏洞。豁免必须写理由与期限（YYYY-MM-DD），过了期限即失效。"""
+    """达到阈值且没有有效豁免的漏洞。豁免必须写理由与期限（YYYY-MM-DD），过了期限或期限格式不对即失效。"""
     limit = SEVERITIES.index(threshold)
     exempt = {item["id"] for item in allowlist if item.get("id") and str(item.get("reason", "")).strip()
-              and str(item.get("until", "")) >= today}
+              and DATE.match(str(item.get("until", ""))) and str(item["until"]) >= today}
     found = []
     for match in report.get("matches", []):
         vulnerability, artifact = match.get("vulnerability", {}), match.get("artifact", {})
@@ -189,17 +198,35 @@ def run(command, *, env=None, check=True, log=None, cwd=ROOT):
     return result
 
 
+def ci_context(environ=os.environ):
+    """CI 运行信息。PR 运行里 HEAD 是 GitHub 合成的合并提交，合入后查不到，另记 PR 头与 base 的 SHA 以便追溯。"""
+    context = {name: environ[key] for name, key in (("event", "GITHUB_EVENT_NAME"), ("runId", "GITHUB_RUN_ID"))
+               if environ.get(key)}
+    event_path = environ.get("GITHUB_EVENT_PATH")
+    if event_path and Path(event_path).is_file():
+        pull = json.loads(Path(event_path).read_text(encoding="utf-8")).get("pull_request") or {}
+        for side in ("head", "base"):
+            sha = (pull.get(side) or {}).get("sha")
+            if sha:
+                context[f"{side}Sha"] = sha
+    return context
+
+
 def build_evidence():
-    """源码 SHA、KunVersion 与 profile / 组件目录的 git 树修订；工作区改过这两个目录时如实标出。"""
+    """源码 SHA、KunVersion 与 profile / 组件目录的 git 树修订；工作区改过这两个目录时如实标出；CI 里另记运行信息。"""
     def git(*args):
         return run(["git", *args]).stdout.strip()
     props = (ROOT / "Directory.Packages.props").read_text(encoding="utf-8")
     match = re.search(r"<KunVersion>([^<]+)</KunVersion>", props)
     if match is None:
         raise StepFailed("Directory.Packages.props 里没有 KunVersion。")
-    return {"sourceSha": git("rev-parse", "HEAD"), "kunVersion": match.group(1),
-            "profileRevision": git("rev-parse", "HEAD:profiles"), "pluginsRevision": git("rev-parse", "HEAD:plugins"),
-            "profileTreeDirty": bool(git("status", "--porcelain", "--", "profiles", "plugins"))}
+    evidence = {"sourceSha": git("rev-parse", "HEAD"), "kunVersion": match.group(1),
+                "profileRevision": git("rev-parse", "HEAD:profiles"), "pluginsRevision": git("rev-parse", "HEAD:plugins"),
+                "profileTreeDirty": bool(git("status", "--porcelain", "--", "profiles", "plugins"))}
+    ci = ci_context()
+    if ci:
+        evidence["ci"] = ci
+    return evidence
 
 
 def push_digest(tag, log):
@@ -319,6 +346,14 @@ class Cosign:
                                        check=False))
 
 
+def write_probe_sbom(path):
+    """扫描阈值反例用的 CycloneDX 组件清单，只含 SCAN_PROBE 一个组件。"""
+    name, version = SCAN_PROBE
+    component = {"type": "library", "name": name, "version": version, "purl": f"pkg:nuget/{name}@{version}"}
+    path.write_text(json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.5", "version": 1, "components": [component]}),
+                    encoding="utf-8")
+
+
 def dump_source(tool, profile, log):
     result = run(["dotnet", tool, "dump-config", "--root", ROOT, "--profile", profile], log=log)
     return json.loads(result.stdout)
@@ -424,6 +459,15 @@ def cmd_selfcheck(args):
                 gate(f"{kind} 镜像运行期证据", not problems, "；".join(problems))
                 image["runtime"] = {"user": config.get("User"), "labels": labels, "readOnly": read_only, "control": control}
 
+            print("== 反例：已知漏洞组件的扫描", flush=True)
+            probe, probe_report = out / "scan-probe.cdx.json", out / "scan-probe.json"
+            write_probe_sbom(probe)
+            run([tools / "grype", f"sbom:{probe}", "-o", "json", "--file", probe_report, "-q"],
+                env={"GRYPE_CHECK_FOR_APP_UPDATE": "false"}, log=log)
+            probe_violations = scan_violations(json.loads(probe_report.read_text(encoding="utf-8")), args.fail_on, allowlist, today)
+            evidence["scanProbe"] = {"component": "@".join(SCAN_PROBE), "violations": probe_violations}
+            negative("漏洞达到阈值", (not probe_violations, json.dumps(probe_violations, ensure_ascii=False)))
+
             jit = evidence["images"]["jit"]
             jit_ref = f"{registry}/{jit['ref']}"
             negative("签名身份不符", cosign.verify(jit_ref, identity="https://github.com/someone/else/.github/workflows/x.yml@refs/heads/main"))
@@ -447,7 +491,7 @@ def cmd_selfcheck(args):
             negative("缺 SBOM 证明", cosign.verify_attestation(tampered_ref))
     except StepFailed as error:
         failures.append(f"步骤中断：{error}")
-    gate("五个反例全部执行", {item["check"] for item in evidence["negativeChecks"]} == set(NEGATIVE_REASONS))
+    gate("反例全部执行", {item["check"] for item in evidence["negativeChecks"]} == set(NEGATIVE_REASONS))
 
     evidence["ok"] = not failures
     (out / "evidence.json").write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
