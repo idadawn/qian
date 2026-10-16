@@ -41,6 +41,10 @@ catalog:
   react-resizable-panels: 4.14.5
   json-schema-to-typescript: 16.0.0
   ajv: 8.20.0
+  i18next: 26.4.7
+  openapi-fetch: 0.17.0
+  openapi-typescript: 7.13.0
+  lossless-json: 4.3.2
   "@rspress/shared": 2.0.23
   "@rsbuild/core": 2.2.10
   "@rsbuild/plugin-react": 2.1.0
@@ -55,3 +59,5 @@ minimumReleaseAgeExclude:
   - vite@8.3.4
   - lucide-react@1.56.0
   - react-resizable-panels@4.14.5
+  - i18next@26.4.7
+  - lossless-json@4.3.2
