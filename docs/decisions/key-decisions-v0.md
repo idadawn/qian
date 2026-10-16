@@ -559,9 +559,9 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 
 - R107：到期扫描能力 `qian.tenancy/tenant.scan-expired` 对模型不可见，契约 `agent.expose` 改为 `false`。R95 写「不标 humanOnly」时把 humanOnly 读成了「只许人调用」；R52 的定义是 `agent.expose: false` = 不派生为模型可见工具、服务端拒绝 `principal_kind = agent`，服务主体不受影响——调度器（S1-SCH-002 的 callback）是服务主体，照样可调。实现里 `TenantExpiryCapability.InvokeAsync` 只接受 global 的 `qian.tenancy` / `qian.scheduler` 调用方，与 `expose: true` 自相矛盾（目录把它派生给 Agent，调用却必拒）。R95 验收 2 的括注据此更正为「不派生为模型工具、服务主体可调」；契约、`TenantStateMetadata`、`TenantStateMachineTests` 的 expose 断言与 README「非 humanOnly」措辞的修改归 S1-TEN-009。S1-TEN-002 / S1-TEN-004 的四条验收按原文成立，done 维持；扫描审计无收尾、`settings.write` 审计追加失败的语义、迁移端点的审计口径一并归 S1-TEN-009。
 
-### yue 第 2 波与租户运营页面批次裁决 R108–R110（S1-DEC-024，2026-10-16）
+### yue 第 2 波与租户运营页面批次裁决 R108–R111（S1-DEC-024，2026-10-16）
 
-产品负责人 2026-10-16 想要一个能点的前端页面来测试租户。页面任务 S1-TEN-005 的三个 yue 前置（S1-YUE-007 / 008 / 009）全是 todo：YUE-008 后面排着 S1-FILE-001（其前置 S1-AZ-004 未开工），YUE-009 后面排着 S1-IDP-010 → S1-IDP-009 → S1-IDP-003 → S1-IDP-002。Claude 按 S1-DEC-021 / 022 的做法作默认裁决，未经逐条确认：把伸进别的领域的验收移交到归属任务，解除互锁与不必要的依赖。顺序、「页面可用」收口检查与执行提示词见 `pm/tasks/S1-DEC-024.md`，有异议时新建决策任务。
+产品负责人 2026-10-16 想要一个能点的前端页面来测试租户。页面任务 S1-TEN-005 的三个 yue 前置（S1-YUE-007 / 008 / 009）全是 todo：YUE-008 后面排着 S1-FILE-001（其前置 S1-AZ-004 未开工），YUE-009 后面排着 S1-IDP-010 → S1-IDP-009 → S1-IDP-003 → S1-IDP-002。Claude 按 S1-DEC-021 / 022 的做法作默认裁决，未经逐条确认：把伸进别的领域的验收移交到归属任务，解除互锁与不必要的依赖；产品负责人随后要求把不在页面路径上的 S1-YUE-006 也改好口径、便于交第二人并行（R111）。顺序、「页面可用」收口检查与执行提示词见 `pm/tasks/S1-DEC-024.md`，有异议时新建决策任务。
 
 - R108：yue 组件任务在靶场对契约夹具与 mock 验收，真实后端的 E2E 归提供方或消费方任务。
   - S1-YUE-007 验收 1「用 SchemaForm + DataTable 实现参考应用的客户 CRUD」改为在靶场（`apps/yue-playground`）用 SchemaForm 完成新增 / 编辑弹层、只读详情与提交，请求经 `@yue/sdk` 的 mock 中间件。参考应用 `qian.sample.crm` 没有前端，后端只有服务主体可调的列表、详情与新建，没有编辑与排序筛选；参考应用版本的 CRUD 已在 S1-QA-007 验收 2。真实后端上第一个 SchemaForm + DataTable 的 CRUD 由 S1-TEN-005 承担（R110）。
@@ -580,4 +580,8 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
   - **移出**：管理员维护（PRD 7.3 API 行的 `GET/PUT /tenants/{id}/admins`，此前没有任务承接）、重置密码与「授权（调 7.14）」另立 S1-TEN-010，depends S1-TEN-005、S1-IDP-003、S1-ENT-001。R81 移交来的「各设管理员，管理员登录后只看到本租户数据」随之归 TEN-010，登录本身仍在 S1-IDP-003 的 R81 条目。角色授予归 S1-AZ-005（R109）。
   - **验收载体**：S1-TEN-006 的真实宿主（Kestrel + JwtBearer RS256 + 受限 PG 应用角色 + 专用平台授权登录写入的超管行）与测试签发的超管令牌。令牌不进 localStorage、URL 与 iframe（PRD 7.15.1 代码审查条）；登录页、令牌刷新与过期弹窗归 S1-YUE-002 / S1-IDP-003。S1-IDP-003 与 S1-TEN-010 交付前，新建表单的管理员按契约直接填 `membershipId` / `subjectId`；开通第 5 步因 `qian.identity` 缺席记 `skipped`，这是 R96 的既定行为，不是测试替身。
   - **形态**：页面是 `qian.tenancy` 的 `ui` 表面（组件规格 §4.7、yue 规格 §5.1），源码作为 pnpm 工作区包交付，带独立开发入口。MF2 远程打包、`ui/manifest.json`（`ui/v2` Schema 尚未入库）与外壳加载归 S1-YUE-001。
-- **顺序与归属**：一人（cody）串行 S1-YUE-009 → S1-YUE-007 → S1-YUE-008 → S1-TEN-005，TEN-005 转 review 前按 S1-DEC-024「页面可用」在本机真实宿主收口；S1-YUE-010 收尾，不阻塞页面可用。S1-YUE-006 不在本批：它不在页面路径上，其认证页族 E2E 实际需要 S1-IDP-002 / 003，排期时另作裁决。
+- R111：S1-YUE-006 改口径，可交第二人与本批并行。
+  - `@yue/shell` 是库，`qian.shell` 是用它的部署单元（yue 规格 §5.2）。YUE-006 验收 1「认证页族完成账号密码登录、SSO 回调与多租户二次选择；登录过期弹窗可触发」改为：在靶场经注入的 `AuthProvider` 与 `@yue/sdk` 的 mock 中间件完成，租户切换器同理。接 qian-identity 的真实流程（OIDC code + PKCE、selection_token、令牌重签）与 S1-YUE-002 验收 1 同义，合并到 YUE-002：它已依赖 S1-IDP-003，并经 S1-YUE-001 依赖 YUE-006。以 Authentik 为上游、经通用 OIDC 连接器的 SSO 登录仍以 S1-IDP-007 验收 1 为准，不重复登记。原口径下 YUE-006 只依赖 YUE-005，验收却要 S1-IDP-002 / 003 的真实登录。
+  - YUE-006 depends 加 S1-YUE-009 与 S1-YUE-007：菜单类型注册表建在 `@yue/sdk` 的注册表 API 上（规格 §3.1）；登录表单用 `@yue/form`，shell → form 是同层唯一例外，D3 只留一套表单引擎。验收 3 的「story」读作 Rspress 场景示例（ADR-022）。
+  - 第二人在 YUE-009、YUE-007 合入后开工，与 cody 的 YUE-008 / TEN-005 同期，只改 `packages/yue/shell` 与靶场；需要改 sdk、form 或 data 时在任务日志写建议，交 cody 处理。YUE-006 若先合入，TEN-005 可以用 Page / PageHeader，否则用 core 拼骨架。外壳链据此为 YUE-009 → YUE-007 → YUE-006 → YUE-001。
+- **顺序与归属**：一人（cody）串行 S1-YUE-009 → S1-YUE-007 → S1-YUE-008 → S1-TEN-005，TEN-005 转 review 前按 S1-DEC-024「页面可用」在本机真实宿主收口；S1-YUE-010 收尾，不阻塞页面可用。S1-YUE-006 按 R111 交第二人并行，不在 cody 的串行顺序里。
