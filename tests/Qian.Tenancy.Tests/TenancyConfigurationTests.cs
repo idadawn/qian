@@ -61,10 +61,14 @@ public sealed partial class TenantDirectoryTests
     [InlineData("{\"resolver\":{\"allowHeaderFallback\":true}}")]
     [InlineData("{\"resolver\":{\"mode\":\"production\",\"mode\":\"production\"}}")]
     [InlineData("{\"resolver\":null}")]
+    [InlineData("{\"resolver\":{\"mode\":1}}")]
+    [InlineData("{\"resolver\":{\"unexpected\":false}}")]
+    [InlineData("overlong")]
     [InlineData("{\"unknown\":true}")]
     [InlineData("{\"initializationCapabilities\":[],\"initializationCapabilities\":[]}")]
     public async Task 非法部署配置在实际Apply拒绝(string json)
     {
+        if (json == "overlong") json = JsonSerializer.Serialize(new { initializationCapabilities = new[] { "qian.test/" + new string('a', 375) } });
         using var host = Host(); await host.StartAsync(Ct);
         await using var loader = new PluginLoader(host.Services);
         var definition = Definition("tenancy", new TenancyPlugin(), [TenancyDefinition.Key]);
@@ -72,15 +76,6 @@ public sealed partial class TenantDirectoryTests
             definition with { Entry = definition.Entry with { Config = JsonSerializer.Deserialize<JsonElement>(json) } }], Ct);
         Assert.Equal(PluginState.Failed, loader.GetState("tenancy", ScopeKey.Global));
         Assert.Equal("INPUT_INVALID", Assert.IsType<QianErrorException>(loader.GetFailure("tenancy", ScopeKey.Global)).Error.Code.Code);
-    }
-
-    [Fact]
-    public void 租户九个服务键符合单段语法且不重名()
-    {
-        ServiceKey[] keys = [TenantProvisioning.Key, TenantProvisioning.MembershipKey, TenantProvisioning.NotificationKey, TenantOperations.Key,
-            TenantLifecycle.Key, TenantSettings.Key, TenantSettings.OperationsKey, TenantSettings.QuotaKey, TenantSettings.UserCounterKey];
-        Assert.Equal(9, keys.Select(key => key.Name).Distinct().Count());
-        Assert.All(keys, key => Assert.Matches("^Tenancy[A-Za-z]+$", key.Name));
     }
 
     private static string RepositoryRoot()

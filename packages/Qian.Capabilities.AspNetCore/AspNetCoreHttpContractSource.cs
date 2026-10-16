@@ -117,12 +117,16 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
             {
                 var type = parameter.Type ?? parameter.ModelMetadata?.ModelType;
                 if (type is null) continue;
-                var schema = Export(type, component, options, schemas);
+                var schema = Export(type, component, options, schemas, parameter.Source == BindingSource.Body);
                 var parameterInfo = api.ActionDescriptor.EndpointMetadata.OfType<IParameterBindingMetadata>().SingleOrDefault(binding => binding.Name == parameter.Name)?.ParameterInfo;
+                StringConstraints(schema, parameterInfo, type);
+                if (parameterInfo?.GetCustomAttribute<AllowedValuesAttribute>() is { } allowedParameter)
+                    schema["enum"] = JsonSerializer.SerializeToNode(allowedParameter.Values, options);
                 if (parameterInfo?.GetCustomAttribute<RangeAttribute>() is { } range)
                 {
                     schema["minimum"] = Convert.ToDecimal(range.Minimum, System.Globalization.CultureInfo.InvariantCulture);
-                    schema["maximum"] = Convert.ToDecimal(range.Maximum, System.Globalization.CultureInfo.InvariantCulture);
+                    if (type != typeof(int) || Convert.ToDecimal(range.Maximum, System.Globalization.CultureInfo.InvariantCulture) != int.MaxValue)
+                        schema["maximum"] = Convert.ToDecimal(range.Maximum, System.Globalization.CultureInfo.InvariantCulture);
                 }
                 if (parameterInfo?.HasDefaultValue == true && parameterInfo.DefaultValue is not null)
                     schema["default"] = JsonSerializer.SerializeToNode(parameterInfo.DefaultValue, options);
@@ -145,10 +149,21 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
                 var value = new JsonObject { ["description"] = "HTTP " + response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture) };
                 if (response.Type is { } type && type != typeof(void))
                 {
-                    var schema = Export(type, component, options, schemas); var content = new JsonObject();
-                    foreach (var format in response.ApiResponseFormats.Select(format => format.MediaType).Where(value => value is not null).Distinct(StringComparer.Ordinal))
-                        content[format!] = new JsonObject { ["schema"] = schema.DeepClone() };
-                    if (content.Count == 0) content["application/json"] = new JsonObject { ["schema"] = schema };
+                    var content = new JsonObject();
+                    var formats = response.ApiResponseFormats.Select(format => format.MediaType).Where(value => value is not null).Distinct(StringComparer.Ordinal).ToArray();
+                    foreach (var format in formats.Length == 0 ? ["application/json"] : formats)
+                    {
+                        var declared = api.ActionDescriptor.EndpointMetadata.OfType<HttpResponseSchema>().SingleOrDefault(value => value.StatusCode == response.StatusCode && value.MediaType == format);
+                        JsonObject schema;
+                        if (declared is null) schema = Export(type, component, options, schemas);
+                        else
+                        {
+                            var key = "H" + Hash(component + ":response:" + method + ":" + path + ":" + response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + format);
+                            schemas[key] = JsonSchemaReferences.RebaseToComponent(declared.Schema, key);
+                            schema = new JsonObject { ["$ref"] = "#/components/schemas/" + key };
+                        }
+                        content[format!] = new JsonObject { ["schema"] = schema };
+                    }
                     value["content"] = content;
                 }
                 responses[response.IsDefaultResponse ? "default" : response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture)] = value;
@@ -164,9 +179,9 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
         }.ToJsonString());
         return document.RootElement.Clone();
     }
-    private static JsonObject Export(Type type, string plugin, JsonSerializerOptions options, JsonObject schemas)
+    private static JsonObject Export(Type type, string plugin, JsonSerializerOptions options, JsonObject schemas, bool requestBody = false)
     {
-        var key = "H" + Hash(plugin + ":" + type.AssemblyQualifiedName);
+        var key = "H" + Hash(plugin + ":" + type.AssemblyQualifiedName + (requestBody ? ":input" : ""));
         if (!schemas.ContainsKey(key))
         {
             var info = options.GetTypeInfo(type);
@@ -175,10 +190,11 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
                 TreatNullObliviousAsNonNullable = true,
                 TransformSchemaNode = (context, schema) =>
                 {
+                    StringConstraints(schema, context.PropertyInfo?.AttributeProvider, context.PropertyInfo?.PropertyType);
                     if (context.PropertyInfo?.AttributeProvider?.GetCustomAttributes(typeof(AllowedValuesAttribute), true).OfType<AllowedValuesAttribute>().SingleOrDefault() is { } allowed)
                         schema["enum"] = JsonSerializer.SerializeToNode(allowed.Values, options);
                     // 输入属性可写性以 DisallowNull 为准；内部读取仍可能是 nullable。
-                    if (context.PropertyInfo is { Set: not null, IsSetNullable: false } && schema is JsonObject objectSchema && objectSchema["type"] is JsonArray types)
+                    if (requestBody && context.PropertyInfo is { Set: not null, IsSetNullable: false } && schema is JsonObject objectSchema && objectSchema["type"] is JsonArray types)
                     {
                         var nonNull = types.Where(value => value?.GetValue<string>() != "null").Select(value => value!.DeepClone()).ToArray();
                         schema["type"] = nonNull.Length == 1 ? nonNull[0] : new JsonArray(nonNull);
@@ -189,6 +205,16 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
             using var schema = JsonDocument.Parse(node.ToJsonString()); schemas[key] = JsonSchemaReferences.RebaseToComponent(schema.RootElement, key);
         }
         return new JsonObject { ["$ref"] = "#/components/schemas/" + key };
+    }
+    private static void StringConstraints(JsonNode schema, ICustomAttributeProvider? provider, Type? type)
+    {
+        if (provider is null || schema is not JsonObject || type != typeof(string)) return;
+        foreach (var attribute in provider.GetCustomAttributes(true))
+        {
+            if (attribute is MinLengthAttribute minimum) schema["minLength"] = minimum.Length;
+            else if (attribute is MaxLengthAttribute maximum) schema["maxLength"] = maximum.Length;
+            else if (attribute is RegularExpressionAttribute expression) schema["pattern"] = expression.Pattern;
+        }
     }
     private static bool SameIdentity(System.Security.Claims.ClaimsPrincipal principal, ICurrentUser user)
         => Kun.Security.Authentication.PrincipalClaims.TryRead(principal, out var subject, out var tenant, out var kind) && subject == user.UserId && tenant == user.Principal?.TenantId &&

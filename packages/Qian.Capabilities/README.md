@@ -174,3 +174,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 平台运营端点可使用 Definition 的 PlatformHttpContract 标注归属，CompileDocumentAsync 将其纳入完整制品 OpenAPI；它不授予运行权限，也不进入租户可见的 GetDocumentAsync。租户业务端点仍使用 PluginEndpointBinding 与实际 Registry 挂载门禁（TEN-006）。
 
 原生HTTP契约导出保留实际参数默认值与Range约束、DTO的AllowedValues及非空写入约束（包括DisallowNull），不以原始宽泛类型冒充接口已接受的输入。PlatformHttpContract标记优先于业务绑定，在租户可见聚合中直接排除；完整构建契约仍包含运营端点。Tenancy真宿主用例验证此区分与破坏性契约准入，schema租户字段遍历门禁落在其契约测试。
+
+TEN-011 收口：原生 HTTP 导出同时读取字符串 MinLength/MaxLength/RegularExpression，查询取值来自 AllowedValues；与 CLR int 类型边界相同的 Range 上限不重复写成业务 maximum。DisallowNull/IsSetNullable 的去空变换仅适用于请求体，输入与输出 Schema 分开缓存，避免同一 DTO 的写入限制污染响应。动态 JsonElement 响应由 Definition 的 HttpResponseSchema 元数据提供完整 Schema；它只描述响应，不授予权限或改变执行。
+
+TenantInputContract 是能力 inputSchema 与 HTTP 契约检查共用的租户字段规则，解析本地引用并跳过实例注解，HTTP 调用方另外按同一词表检查参数名。平台排除用例同时提供正常绑定与双标记端点；删除生产排除分支时用例必须失败（R112）。本次没有放宽 oasdiff、准入探针或失败等级。

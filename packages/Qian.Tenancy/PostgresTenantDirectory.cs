@@ -65,8 +65,17 @@ internal sealed class PostgresTenantDirectory(IDataService data, ITenantContext 
         row.Status switch { "pending" => TenantStatus.Pending, "trial" => TenantStatus.Trial, "active" => TenantStatus.Active,
             "grace" => TenantStatus.Grace, "suspended" => TenantStatus.Suspended, _ => throw new InvalidOperationException("未知租户状态。") });
     internal static void ValidateCode(string code)
-    { if (code is not { Length: > 0 and <= 64 } || code.Any(c => !(c is >= 'a' and <= 'z' or >= '0' and <= '9'))) throw Error(PlatformErrors.InputInvalid); }
+    {
+        if (string.IsNullOrEmpty(code)) throw Invalid(PlatformErrors.Required, "#/code");
+        if (code.Length > 64) throw Invalid(PlatformErrors.OutOfRange, "#/code");
+        if (code.Any(c => !(c is >= 'a' and <= 'z' or >= '0' and <= '9'))) throw Invalid(PlatformErrors.PatternMismatch, "#/code");
+    }
     internal static void ValidateName(string name)
-    { if (string.IsNullOrWhiteSpace(name) || name.Length > 200 || name.Any(char.IsControl)) throw Error(PlatformErrors.InputInvalid); }
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw Invalid(PlatformErrors.Required, "#/name");
+        if (name.Length > 200) throw Invalid(PlatformErrors.OutOfRange, "#/name");
+        if (name.Any(char.IsControl)) throw Invalid(PlatformErrors.PatternMismatch, "#/name");
+    }
+    private static QianErrorException Invalid(ErrorCode code, string pointer) => new(new QianError(PlatformErrors.InputInvalid) { Errors = [new QianFieldError(code, pointer)] });
     private static QianErrorException Error(ErrorCode code) => new(new QianError(code));
 }

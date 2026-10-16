@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Qian.Plugin.Sdk;
@@ -29,8 +28,9 @@ public static class CapabilityContractCompiler
         using (var json = JsonDocument.Parse(tool.ToJsonString()))
         {
             // 租户字段先于结构校验检查：契约 Schema 只能在 properties 这一级报出顶层租户字段，这里给出字段本身的位置，嵌套层也一并覆盖。
-            if (TenantField(json.RootElement.GetProperty("inputSchema"), ["inputSchema"]) is { } field)
-                throw new CapabilityContractException(contract.ComponentId, contract.Name, Locate(contract.Id, field), "tenant-field");
+            var fields = TenantInputContract.FindFields(json.RootElement.GetProperty("inputSchema"));
+            if (fields.Count != 0)
+                throw new CapabilityContractException(contract.ComponentId, contract.Name, Locate(contract.Id, ["inputSchema", .. fields[0]]), "tenant-field");
             if (Rejected(contract, schemas.ValidateSchema("tool", contract.Id, json.RootElement), "tool-invalid") is { } rejected) throw rejected;
         }
         tool.Remove("binding"); tool.Remove("$schema");
@@ -61,27 +61,5 @@ public static class CapabilityContractCompiler
                 error.Error.Pointer is { } pointer && ErrorPointer.IsValid(pointer) ? pointer : Locate(contract.Id, []), rule)
             : null;
 
-    private static readonly HashSet<string> TenantNames = new(StringComparer.OrdinalIgnoreCase) { "tenant", "tenantId", "tenant_id", "tenant-id" };
-
-    // 输入 Schema 里任何层级的租户字段（PRD 7.2.1：inputSchema 不含租户字段），返回其在条目内的位置段。
-    private static string[]? TenantField(JsonElement schema, string[] path)
-    {
-        if (schema.ValueKind == JsonValueKind.Array)
-        {
-            var index = 0;
-            foreach (var item in schema.EnumerateArray())
-                if (TenantField(item, [.. path, (index++).ToString(CultureInfo.InvariantCulture)]) is { } found) return found;
-            return null;
-        }
-        if (schema.ValueKind != JsonValueKind.Object) return null;
-        foreach (var property in schema.EnumerateObject())
-        {
-            if (property.Name == "properties" && property.Value.ValueKind == JsonValueKind.Object)
-                foreach (var field in property.Value.EnumerateObject())
-                    if (TenantNames.Contains(field.Name)) return [.. path, "properties", field.Name];
-            if (TenantField(property.Value, [.. path, property.Name]) is { } found) return found;
-        }
-        return null;
-    }
     private static QianErrorException Error(ErrorCode code) => new(new QianError(code));
 }
