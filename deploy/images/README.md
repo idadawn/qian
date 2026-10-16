@@ -53,7 +53,7 @@ python3 scripts/images.py build --kind jit --project <csproj> --assembly <程序
 
 `selfcheck` 在本机起临时 registry，用 `build` 同一路径构建 JIT 与 NativeAOT 两个自检镜像（角色 `selfcheck`，只存在于这个临时 registry），然后依次检查：
 
-1. **SBOM 与漏洞扫描**：Syft 按 digest 生成 SPDX SBOM，Grype 扫描 SBOM，达到 `--fail-on`（默认 `high`）的漏洞即失败。豁免项写成 `{"id": "CVE-…", "reason": "…", "until": "YYYY-MM-DD"}`，理由与期限缺一不可，过期失效。
+1. **SBOM 与漏洞扫描**：Syft 按 digest 生成 SPDX SBOM，Grype 扫描 SBOM，达到 `--fail-on`（默认 `high`）的漏洞即失败。豁免项写成 `{"id": "CVE-…", "reason": "…", "until": "YYYY-MM-DD"}`，理由与期限缺一不可，过期失效。JIT 镜像的 SBOM 含 .NET 共享框架和应用的 NuGet 依赖。NativeAOT 镜像的 SBOM 只有 chiseled 系统包：编进原生可执行文件的 .NET 运行时和 NuGet 依赖，Syft 读不到。qian-gateway 接入时（S1-DEP-008）要另补发布期依赖清单，并纳入扫描。
 2. **签名与 SBOM 证明**：Cosign 签名并附 SBOM 证明（`spdxjson`）。验签用 `--certificate-identity` 与 `--certificate-oidc-issuer` 精确约束发布者身份与 issuer。四个反例：缺签名、签名身份不符、issuer 不符、缺 SBOM 证明，都必须验不过，而且报错要对得上预期原因，网络或配置错误不算拦住。
 3. **配置漂移**：五个 profile 分别在源码树与镜像内执行 `dump-config` 合成，逐项比较解析后的结构、来源层与诊断（只忽略每次随机生成的 `trace_id`）。反例：在镜像内改动 standalone 的 `qian.patch.yml`，必须报出漂移。
 4. **运行期证据**：镜像配置的用户不是 root。以 `--read-only` 加 `/tmp` 临时卷启动后，自报的有效 UID / GID 非 0、根挂载只读、写探针被拒、`/tmp` 可写；JIT 镜像可以动态生成代码，NativeAOT 镜像不可以。另做一次不加只读的对照运行，写探针必须可写，证明只读运行里的写失败来自只读根，而不是权限不足。
