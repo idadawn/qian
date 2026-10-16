@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - "packages/yue/**"
+      - "packages/qian-tenancy-ui/**"
       - "tools/openapi-codegen/**"
       - "apps/**"
       - "tests/gates/yue/**"
@@ -24,6 +25,7 @@ on:
   pull_request:
     paths:
       - "packages/yue/**"
+      - "packages/qian-tenancy-ui/**"
       - "tools/openapi-codegen/**"
       - "apps/**"
       - "tests/gates/yue/**"
