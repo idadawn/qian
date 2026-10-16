@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Qian.Runtime;
 
@@ -59,9 +61,10 @@ public enum TenantStatus
 
 /// <summary>新建租户请求；目标租户 ID 由服务端生成，不能经请求输入。</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record CreateTenant(string Code, string Name, TenantIsolation Isolation = TenantIsolation.Row)
+public sealed record CreateTenant(string Code, string Name, [property: AllowedValues(TenantIsolation.Row)] TenantIsolation Isolation = TenantIsolation.Row)
 {
     /// <summary>运营开户的管理员指针；HTTP 新建必填，不代表 Identity 已创建 Membership。</summary>
+    [JsonRequired, DisallowNull]
     public TenantAdministrator? Administrator { get; init; }
     /// <summary>初始限额；空表示无限额。</summary>
     public TenantQuotas? Quotas { get; init; }

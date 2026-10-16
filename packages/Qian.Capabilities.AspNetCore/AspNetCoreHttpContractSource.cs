@@ -1,4 +1,7 @@
 using System.Security.Cryptography;
+using System.Reflection;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -34,6 +37,8 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
         {
             cancellationToken.ThrowIfCancellationRequested();
             var metadata = api.ActionDescriptor.EndpointMetadata;
+            // 平台端点即使误带业务绑定，也不能进入租户可见聚合。
+            if (metadata.OfType<PlatformHttpContract>().Any()) continue;
             var binding = metadata.OfType<PluginEndpointBinding>().SingleOrDefault();
             if (binding is null || api.HttpMethod is null || api.RelativePath is null) continue;
             if (!scopes.TryGetValue(binding.Key, out var view))
@@ -113,6 +118,14 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
                 var type = parameter.Type ?? parameter.ModelMetadata?.ModelType;
                 if (type is null) continue;
                 var schema = Export(type, component, options, schemas);
+                var parameterInfo = api.ActionDescriptor.EndpointMetadata.OfType<IParameterBindingMetadata>().SingleOrDefault(binding => binding.Name == parameter.Name)?.ParameterInfo;
+                if (parameterInfo?.GetCustomAttribute<RangeAttribute>() is { } range)
+                {
+                    schema["minimum"] = Convert.ToDecimal(range.Minimum, System.Globalization.CultureInfo.InvariantCulture);
+                    schema["maximum"] = Convert.ToDecimal(range.Maximum, System.Globalization.CultureInfo.InvariantCulture);
+                }
+                if (parameterInfo?.HasDefaultValue == true && parameterInfo.DefaultValue is not null)
+                    schema["default"] = JsonSerializer.SerializeToNode(parameterInfo.DefaultValue, options);
                 if (parameter.Source == BindingSource.Body)
                 {
                     var content = new JsonObject();
@@ -157,7 +170,22 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
         if (!schemas.ContainsKey(key))
         {
             var info = options.GetTypeInfo(type);
-            var node = info.GetJsonSchemaAsNode(new JsonSchemaExporterOptions { TreatNullObliviousAsNonNullable = true });
+            var node = info.GetJsonSchemaAsNode(new JsonSchemaExporterOptions
+            {
+                TreatNullObliviousAsNonNullable = true,
+                TransformSchemaNode = (context, schema) =>
+                {
+                    if (context.PropertyInfo?.AttributeProvider?.GetCustomAttributes(typeof(AllowedValuesAttribute), true).OfType<AllowedValuesAttribute>().SingleOrDefault() is { } allowed)
+                        schema["enum"] = JsonSerializer.SerializeToNode(allowed.Values, options);
+                    // 输入属性可写性以 DisallowNull 为准；内部读取仍可能是 nullable。
+                    if (context.PropertyInfo is { Set: not null, IsSetNullable: false } && schema is JsonObject objectSchema && objectSchema["type"] is JsonArray types)
+                    {
+                        var nonNull = types.Where(value => value?.GetValue<string>() != "null").Select(value => value!.DeepClone()).ToArray();
+                        schema["type"] = nonNull.Length == 1 ? nonNull[0] : new JsonArray(nonNull);
+                    }
+                    return schema;
+                }
+            });
             using var schema = JsonDocument.Parse(node.ToJsonString()); schemas[key] = JsonSchemaReferences.RebaseToComponent(schema.RootElement, key);
         }
         return new JsonObject { ["$ref"] = "#/components/schemas/" + key };
