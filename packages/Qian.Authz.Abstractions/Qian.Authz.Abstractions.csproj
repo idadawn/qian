@@ -7,5 +7,5 @@
     <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
     <PackageReference Include="Kun.Authorization" />
   </ItemGroup>
-  <ItemGroup><InternalsVisibleTo Include="Qian.Plugin.Sdk" /><InternalsVisibleTo Include="Qian.Tenancy" /><InternalsVisibleTo Include="Qian.Authz" /><InternalsVisibleTo Include="Qian.Authz.Abstractions.Tests" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Qian.Plugin.Sdk" /><InternalsVisibleTo Include="Qian.Tenancy" /><InternalsVisibleTo Include="Qian.Authz" /></ItemGroup>
 </Project>

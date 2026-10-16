@@ -49,6 +49,11 @@ public static class AuthorizedHandlerRegistration
         if (!tenantInitialization) return builder.AddAuthorizedHandler<TRequest, TResponse, THandler>(denied, capabilityId, request, response);
         builder.AddAuthorizedHandler<TRequest, TResponse, THandler>(denied, capabilityId, request, response);
         var descriptor = builder.Services.Last();
+        var serviceType = descriptor.ServiceType;
+        if (!serviceType.IsConstructedGenericType || serviceType.GetGenericTypeDefinition().FullName != "Kun.Mediator.Behaviors.PermissionBehavior`2" ||
+            serviceType.Assembly != typeof(PermissionBehaviorExtensions).Assembly ||
+            !serviceType.GenericTypeArguments.SequenceEqual([typeof(TRequest), typeof(TResponse)]))
+            throw new InvalidOperationException("Kun 权限行为登记类型与预期不一致。");
         var factory = descriptor.ImplementationFactory ?? throw new InvalidOperationException("Kun 权限行为工厂缺失。");
         builder.Services[^1] = new ServiceDescriptor(descriptor.ServiceType,
             sp => factory(new InitializationPermissionServices(sp)), descriptor.Lifetime);

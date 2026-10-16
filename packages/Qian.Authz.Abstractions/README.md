@@ -55,4 +55,4 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 
 `ITenantRoleGrant.AssignAsync(roleCode, subjectType, subjectId, actor)` 经 `TenantRoleGrant.Key` 解析。AuthzPlugin 提供实现，只接受四个内置 tenant 角色，在当前租户内调用既有 Write 事务与授权修订失效机制。它不创建角色，不替代上层授权，缺失角色或租户上下文会拒绝。开户调用须在 tenant/provisioned 之后；授权管理 API（S1-AZ-005）可复用该端口。
 
-DEC-023 的内部开户凭据不对组件公开：仅 Tenancy、SDK、Authz 受信程序集可签发或消费。SDK 注册重载保留 Kun 的原始 PermissionBehavior，初始化适配器只对凭据绑定的主体、租户与权限点放行；普通请求完整委托原判定器。
+DEC-023 的内部开户凭据不对组件公开：发布程序集的 InternalsVisibleTo 仅包含 Qian.Tenancy、Qian.Plugin.Sdk、Qian.Authz 三个受信程序集，不包含测试程序集；测试通过反射验证同一发布程序集的内部边界。SDK 注册重载保留 Kun 的原始 PermissionBehavior，初始化适配器只对凭据绑定的主体、租户与权限点放行，此分支不查普通 RBAC；普通请求完整委托原判定器。

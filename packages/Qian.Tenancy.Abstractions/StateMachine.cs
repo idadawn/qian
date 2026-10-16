@@ -8,7 +8,7 @@ namespace Qian.Tenancy;
 public static class TenantLifecycle
 {
     /// <summary>真实状态迁移与扫描端口。</summary>
-    public static readonly ServiceKey Key = new("Tenancy.Lifecycle");
+    public static readonly ServiceKey Key = new("TenancyLifecycle");
     /// <summary>顺序审批；任一 false 拒绝，无监听器放行。</summary>
     public static readonly QianEvent<TenantTransitionApproval, IReadOnlyList<bool>> Approving = QianEvent.Define<TenantTransitionApproval, IReadOnlyList<bool>>("tenant/transition-approving", DispatchMode.Serial);
 }

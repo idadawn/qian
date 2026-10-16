@@ -48,7 +48,7 @@ TenancyPlugin 额外提供 `TenantProvisioning.Key` 的 `ITenantProvisioning`。
 
 真库用例验证第三步失败后的续跑、平台组件和参考应用的 lifecycle_runs、管理员指针与初始授权、缺席端口的 skipped，以及重复请求的幂等。
 
-S1-DEC-023 经产品负责人批准：全局组件配置 `initializationCapabilities` 是初始化能力精确许可清单，缺省为空、不接受通配符，不能由请求体或租户 patch 增加。只有真实开通编排在派发 tenant/provisioned 时签发进程内短期凭据，绑定生产方上下文、目标租户、真实操作者和能力清单；SDK 的实际 hook 适配器只消费一次，每次调用再绑定请求类型与权限点。普通 Invoke/Send 不签发凭据；嵌套重入、重复消费、越租户及派发结束后逃逸的异步任务均拒绝。只接受 read/write 能力，拒绝 destructive/external。业务入口继续拒绝 pending，开户初始化通过专用凭据判定，既有 Kun 权限行为、command/dispatching、同事务审计仍执行，审计 channel=hook、actor 为真实平台操作者。该执行快照不是登录令牌或 Membership，不写入 Identity。
+S1-DEC-023 经产品负责人批准：全局组件配置 `initializationCapabilities` 是初始化能力精确许可清单，缺省为空、不接受通配符，不能由请求体或租户 patch 增加。只有真实开通编排在派发 tenant/provisioned 时签发进程内作用域凭据（寿命等于本次事件派发，没有按时间自动过期），绑定生产方上下文、目标租户、真实操作者和能力清单；SDK 的实际 hook 适配器只消费一次，每次调用再绑定请求类型与权限点。普通 Invoke/Send 不签发凭据；嵌套重入、重复消费、越租户及派发结束后逃逸的异步任务均拒绝。只接受 read/write 能力，拒绝 destructive/external。业务入口继续拒绝 pending，开户初始化通过专用凭据判定，Kun PermissionBehavior 与三项 command/dispatching 策略仍执行，初始化的身份及权限判定来自绑定凭据，不查询普通 RBAC；业务事务与同事务审计仍执行，审计 channel=hook、actor 为真实平台操作者。该执行快照不是登录令牌或 Membership，不写入 Identity。
 
 ## 平台运营 HTTP（S1-TEN-006）
 
@@ -73,3 +73,17 @@ GET/PUT /api/tenancy/tenants/{id}/settings/{plugin} 使用同一平台超管授�
 主档 quotas 保存 TenantQuotas（users=null 为无限额），CreateTenant/UpdateTenant 支持设置，GET /api/tenancy/tenants/{id}/quota 返回 limits、usersUsed、usageAvailable。Identity 未提供 TenantSettings.UserCounterKey 的 ITenantUserCounter 时，usersUsed=null、usageAvailable=false，不报告成零。ITenantQuota.EnsureCanAddUserAsync 接受服务端统计与已验证成员类别，普通成员和租户管理员计入，平台超管不计；满额复用既有 AuthzErrors.CardinalityUserLimit 原对象（422 CARDINALITY_USER_LIMIT，参数 limit），不重定义全局错误码。计数锁、成员写入同事务与登录消费分别归 IDP-003/006。
 
 真实验收使用两个独立宿主、两个 Runtime 和受限 PG 角色，写实际 Audit 组件配置后另一宿主在5秒内读到，并与 GET /api/registry/scopes/{scopeKey}/entries 的 config 相同；也验证非法值指针、过期修订、global-only 组件拒绝、Config 默认值回退与配额规则。Identity 尚缺，因此用真实可挂载组件验证通用配置链路，不伪造 Identity、登录或成员统计。完整租户可用六步见 TEN-004 的测试与任务日志。
+
+## 开户部署配置与诊断（S1-TEN-007）
+
+`qian.tenancy` 只挂载在 global；租户配置读写是它提供的服务，不意味着把 Tenancy Provider 再挂到 tenant scope。base 组合包同时声明 `resolver` 与 `initializationCapabilities`。`resolver` 确认当前实现的严格生产边界：`mode` 只接受 `production`，`allowHeaderFallback` 只接受 `false`，省略时保持同样的行为；其它值在 Schema 与 Apply 拒绝，不提供开发模式或请求头兜底。租户仍只来自验签后的 `tenant_id`。
+
+在部署的 tenancy 条目 config 中填写 `initializationCapabilities: ["qian.sample.crm/customer.list"]` 可为具体开户 hook 授权，默认是空数组。参考 CRM 宿主从 `Tenancy:InitializationCapabilities` 配置节传入相同清单；配置生效不需要测试代码卸载重挂载。声明式 profile 仍经共同合成器传递该 config，派生配置目录与实际 Apply 一致。
+
+生产装配前置：所有 `policy.tier=system` 组件必须已有 Lifecycle 的 Active 修订；缺少修订会在 `03:components` 及对应 `03:component:<id>` 子步失败，补齐制品后重试。`qian.authz` 的默认角色监听优先级为 1000，组件 hook 桥接为 0，角色先于组件 hook 创建，不依赖挂载先后。
+
+一次派发中每个初始化能力只能被消费一次；若两组 hooks 引用同一能力，第二次会返回 `AUTHZ_DENIED`，步骤停在 `04:provisioned`。排查时检查该事件的所有 matcher 命中组及 handler 到能力的映射，合并重复引用后再重试；反复重试不会改变一次性语义。并发消费、嵌套 Begin/Enter、重复 Claim、作用域关闭后的逃逸执行均拒绝。
+
+按 R105，九个单例服务键为 `TenancyProvisioning`、`TenancyMembershipProvisioner`、`TenancyProvisionedNotifier`、`TenancyOperations`、`TenancyLifecycle`、`TenancySettings`、`TenancySettingsOperations`、`TenancyQuota`、`TenancyUserCounter`。消费者使用 Definition 的现有静态字段，字段签名没有改变；未发布旧键不保留别名。`Authz.TenantRoleGrant` 的改名仍归 S1-RT-033。
+
+standalone 组合包移除从未被运行时消费的 `resolver.mode: single-tenant` 占位配置；独立宿主仍显式选择自己的 `ITenantContext` / SingleTenant 实现，不能以配置字符串切换可信租户边界。各 profile 的现有 Tenancy 配置均经实际 Apply 回归。

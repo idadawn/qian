@@ -536,6 +536,8 @@ Agent 宿主事件（大驼峰）由 Agent 运行时定义并透传：校验器�
 | `http` | `url`、`method?`（默认 `POST`）、`headers?`、`timeout`（默认 10s）、`retries?`（≤ 3） | POST 事件信封（ADR-016：`version / event_id / subject / occurred_at / tenant_id / payload`）；2xx 成功；`waterfall` / `bail` 读响应体 | 全部；域名须在 `policy.egress` |
 | `plugin` | `plugin`（组件 id）、`handler`（该组件在 `Apply` 中以 `ctx.Hooks().Expose(name, fn)` 暴露） | 进程内调用 | 由被调用组件的 tier 决定 |
 
+`tenant/provisioned` 的默认角色监听（qian.authz）使用 priority=1000，组件 hook 桥接使用默认 priority=0；运行时按优先级降序执行，同优先级才按登记顺序。默认角色先创建，组件 hook 随后执行，初始主体授予仍在整个派发之后。
+
 ### 4.5 `.mcp.json`
 
 平台形态按 ADR-016 D16.10：MCP 服务器按租户逻辑门面托管在 Higress，不是每插件一个进程；平台宿主只接受 `http`，`stdio` 只在开发者本机与 `standalone` / `minimal` profile 生效。
