@@ -57,7 +57,7 @@
 scripts/dev-tenant-ops.sh api GET /api/tenancy/tenants
 ```
 
-带请求体时把 JSON 作为第三个参数，路径里的冒号要连同路径一起加引号：
+带请求体时把 JSON 作为第三个参数；路径和 JSON 都用单引号括起来：
 
 ```bash
 scripts/dev-tenant-ops.sh api POST '/api/tenancy/tenants/<租户 id>:activate' '{"validUntil":"2026-12-31T00:00:00Z"}'
@@ -82,7 +82,7 @@ export TOKEN=$(scripts/dev-tenant-ops.sh token)
 
 | 方法 | 路径 | 用途 | 走查步骤 |
 |---|---|---|---|
-| GET | `/api/tenancy/tenants?skip=&take=` | 租户列表（take 1–100，默认 50） | 1.1、7.x |
+| GET | `/api/tenancy/tenants?skip=&take=` | 租户列表（take 1–100，默认 50） | 1.1、7.1–7.3 |
 | POST | `/api/tenancy/tenants` | 新建，同步跑开通编排，返回 201 与 pending | 1.2 |
 | GET | `/api/tenancy/tenants/{id}` | 详情 | 1.3、6.2 |
 | PUT | `/api/tenancy/tenants/{id}` | 改名、改配额，需带 `expectedRevision` | 1.4、1.5 |
@@ -114,7 +114,7 @@ export TOKEN=$(scripts/dev-tenant-ops.sh token)
    - Authz、Audit 各一个专用平台登录。
 
    运行期登录的口令每次随机生成，只在宿主进程内存里。
-3. 建表：没有包内迁移的上下文用 EF 建表脚本；Capabilities 与 Lifecycle 由迁移属主在 advisory lock 内执行包内迁移；再写入审计受控入口与平台登录的授权。
+3. 建表与授权：没有包内迁移的上下文用 EF 建表脚本，并写入审计受控入口与两个平台登录的授权；Capabilities 与 Lifecycle 由迁移属主在 advisory lock 内执行包内迁移。
 4. 装平台插件树：Data、Tenancy、Authz、Audit、Config、Registry、Capabilities、Lifecycle。组件文件夹写进临时 platform profile，制品摘要用本次启动生成的 Ed25519 平台钥签名；公钥按生产形状放进 K8s Secret 挂载目录，经 `secretRef` 引用。
 5. 引导平台超管 `root`，经 Lifecycle 安装并激活全部 system 组件制品，然后启动运营宿主。
 
@@ -132,7 +132,7 @@ CRM 命令宿主只充当运行时容器，监听随机本机端口，手测流�
 - **403 看不出原因**：按设计，拒绝原因只进宿主日志，响应统一是 `AUTHZ_DENIED`。看 `up` 那个终端，例如 `not_superadmin`。
 - **激活返回 400**：`validUntil` 必须晚于当前时间。
 - **想让到期来得更快或更慢**：走查默认激活 30 秒后到期，用 `QIAN_DEV_VALID_SECONDS` 调整。
-- **端口被占用**：设 `QIAN_DEV_OPS_URL` 或 `QIAN_DEV_PG_PORT`。`up`、`walkthrough`、`api` 要用同一组变量。
+- **端口被占用**：设 `QIAN_DEV_OPS_URL` 或 `QIAN_DEV_PG_PORT`。各个子命令要用同一组变量。
 - **系统代理**：脚本里的 curl 都带 `--noproxy '*'`，只访问本机。
 
 ## 环境变量

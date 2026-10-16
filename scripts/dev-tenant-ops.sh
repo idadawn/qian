@@ -91,6 +91,9 @@ cmd_token() { ensure_built; dotnet "$DLL" token --state "$STATE" "$@"; }
 cmd_api() {
   [ $# -ge 2 ] || { echo "用法：api 方法 路径 [JSON 请求体]" >&2; exit 2; }
   local method="$1" path="$2" body="${3:-}" token
+  if ! curl --noproxy '*' -s -o /dev/null --max-time 2 "$OPS_URL/api/tenancy/meta/state-machine"; then
+    echo "运营宿主 $OPS_URL 没有响应：先在另一个终端运行 scripts/dev-tenant-ops.sh up" >&2; exit 1
+  fi
   token="$(cmd_token)"
   if [ -n "$body" ]; then
     curl --noproxy '*' -sS -X "$method" "$OPS_URL$path" -H "Authorization: Bearer $token" \
