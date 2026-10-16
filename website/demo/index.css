@@ -2,6 +2,7 @@
 @import '@idadawn/yue-tokens/index.css';
 @source '../../packages/yue/core';
 @source '../../packages/yue/form';
+@source '../../packages/yue/data';
 @source '../../packages/yue/tokens';
 @source './main.tsx';
 body { margin: 0; background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; }

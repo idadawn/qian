@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import * as Core from '@idadawn/yue-core';
 import * as Form from '@idadawn/yue-form';
 import * as Sdk from '@idadawn/yue-sdk';
+import * as Data from '@idadawn/yue-data';
+import { DATA_DEMOS } from '../../packages/yue/data/docs/examples/data-demo';
+import dataScenarios from '../../packages/yue/data/docs/scenarios.json';
 import SchemaFormDemo from '../../packages/yue/form/docs/examples/schema-form-demo';
 import formScenarios from '../../packages/yue/form/docs/scenarios.json';
 import { TOKEN_REGISTRY } from '@idadawn/yue-tokens';
@@ -15,9 +18,9 @@ const query = new URLSearchParams(location.search);
 const name = query.get('component') ?? 'Button';
 const initialState = query.get('state') ?? (name === 'Tokens' ? 'Light' : 'Default');
 const themes = ['light', 'dark'] as const;
-const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读' };
-const modules: Record<string, unknown> = { react: React, '@idadawn/yue-core': Core, '@idadawn/yue-form': Form, '@idadawn/yue-sdk': Sdk, '@idadawn/yue-tokens': { TOKEN_REGISTRY } };
-const states = [...scenarios, ...formScenarios].filter(s => s.component === name);
+const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空' };
+const modules: Record<string, unknown> = { react: React, '@idadawn/yue-core': Core, '@idadawn/yue-form': Form, '@idadawn/yue-data': Data, '@idadawn/yue-sdk': Sdk, '@idadawn/yue-tokens': { TOKEN_REGISTRY } };
+const states = [...scenarios, ...formScenarios, ...dataScenarios].filter(s => s.component === name);
 let editorPromise: Promise<void> | undefined;
 function script(url: string) {
   return new Promise<void>((resolve, reject) => {
@@ -52,7 +55,7 @@ function App() {
   const [edited, setEdited] = React.useState<React.ComponentType<DemoProps> | null>(null);
   const editorHost = React.useRef<HTMLDivElement>(null);
   const editor = React.useRef<ReturnType<Window['monaco']['editor']['create']> | null>(null);
-  const original = name === 'Tokens' ? Tokens : name === 'SchemaForm' ? SchemaFormDemo : DEMOS[name as keyof typeof DEMOS];
+  const original = name === 'Tokens' ? Tokens : name === 'SchemaForm' ? SchemaFormDemo : DATA_DEMOS[name] ?? DEMOS[name as keyof typeof DEMOS];
   const Demo = edited ?? original;
   const scenario = states.find(s => s.state === state) ?? states[0];
   React.useEffect(() => {

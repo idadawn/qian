@@ -11,3 +11,5 @@ export type { WidgetMeta } from './widget.generated';
 export { default as formSchema } from './form.schema.json';
 export { default as listSchema } from './list.schema.json';
 export { default as widgetSchema } from './widget.schema.json';
+export type { DataColumnMeta } from './data-column.generated';
+export { default as dataColumnSchema } from './data-column.schema.json';

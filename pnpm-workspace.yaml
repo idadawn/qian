@@ -4,6 +4,7 @@ packages:
   - packages/qian-*
   - packages/yue/*
   - apps/*
+  - tools/openapi-codegen
 
 # 允许跑 postinstall 的依赖（pnpm 12 默认拒绝未审核的构建脚本）：unrs-resolver 只在预编译二进制缺失时才编译。
 allowBuilds:
@@ -43,6 +44,8 @@ catalog:
   ajv: 8.20.0
   ajv-formats: 3.0.1
   react-hook-form: 7.90.0
+  "@tanstack/react-table": 9.3.1
+  "@tanstack/react-virtual": 3.14.21
   i18next: 26.4.7
   openapi-fetch: 0.17.0
   openapi-typescript: 7.13.0
@@ -63,3 +66,10 @@ minimumReleaseAgeExclude:
   - react-resizable-panels@4.14.5
   - i18next@26.4.7
   - lossless-json@4.3.2
+  - "@tanstack/react-virtual@3.14.21"
+  - "@tanstack/virtual-core@3.19.6"
+
+# OpenAPI 生成器的 peer 仅支持 TypeScript 5；隔离工具，不改变工作区 TypeScript 6 编译基线。
+catalogs:
+  openapi-codegen:
+    typescript: 5.9.3
