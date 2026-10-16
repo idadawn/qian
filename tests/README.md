@@ -10,6 +10,7 @@ tests/
   Qian.Testing.Containers/                    集成测试共用的 Testcontainers fixture（不打包）
     ApolloMock/apollo_mock.py                 Apollo 协议替身，在容器里运行
   Qian.Testing.Containers.IntegrationTests/   fixture 自身的集成测试与单元测试
+  Qian.Identity.Server.Tests/                 真实 OpenIddict + PostgreSQL + Kun 客户端协议验收、跨宿主吊销、后通道与密钥轮换
   Qian.Authz.Tests/                           授权：权限目录与默认角色、RBAC 判定与快照缓存（真实 PostgreSQL + Redis，两宿主授予 / 撤销传播）、平台超管旁路（专用平台登录 + 真实 Audit 插件）
   Qian.Data.AspNetCore.Tests/                 数据端点：基准类型目录（无数据库）与数据连接档案（真实 PostgreSQL、挂载式密钥、连通测试）
   Qian.Lifecycle.Tests/                       生命周期：验签与信任根轮换（真实 PostgreSQL）、GitOps 执行器（本机裸仓库 + K3s 单节点集群）、Local 执行器
