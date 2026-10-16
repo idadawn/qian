@@ -75,6 +75,15 @@ public sealed class DataScopeContractTests
         Assert.Throws<ArgumentException>(() => DataScopeComposition.ForResource(Resource, [new("bad", [new(Resource, true, Rule("team", "sales").Filter)])]));
     }
 
+    [Fact]
+    public void 合并结果独立持有过滤JSON_输入文档释放后仍可使用()
+    {
+        DataScopePlan plan;
+        using (var document = JsonDocument.Parse("""{"logic":"and","groups":[]}"""))
+            plan = DataScopeComposition.ForResource(Resource, [new("owner", [new(Resource, false, document.RootElement)])]);
+        Assert.Equal("and", Assert.Single(Assert.Single(plan.Roles).Filters).GetProperty("logic").GetString());
+    }
+
     private static DataScopeRule Rule(string field, string value) => new(Resource, false, JsonSerializer.SerializeToElement(new FilterExpression("and", [new("and", [new(field, "eq", JsonSerializer.SerializeToElement(value))])]), DataContractJson.FilterTypeInfo));
     private static Dictionary<string, string> Row(string team, string state, string owner) => new() { ["team"] = team, ["state"] = state, ["owner"] = owner };
     // 仅测试中的集合语义解释器；生产仍无数据权限编译器，不能把它作为执行入口。

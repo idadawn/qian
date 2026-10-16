@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Json.Schema;
@@ -15,8 +16,11 @@ public sealed partial class CustomerCommandTests
     [Fact]
     public async Task 真实认证meta端点返回可离线使用的契约_匿名拒绝_卸载隐藏_数据执行仍缺省拒绝()
     {
-        await using var host = await Start();
+        await using var host = await Start(humanOnlyProbe: new HumanOnlyProbe());
         using var anonymous = await host.Client.GetAsync("/api/authz/meta", Ct); Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        using var agentRequest = new HttpRequestMessage(HttpMethod.Get, "/api/authz/meta");
+        agentRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(A, "crm.read", Writer, "agent"));
+        using var agent = await host.Send(agentRequest); Assert.Equal(HttpStatusCode.Forbidden, agent.StatusCode);
         using var response = await host.Get(A, "/api/authz/meta"); Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(response.Headers.CacheControl is { Private: true, NoStore: true });
         var metadata = await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
