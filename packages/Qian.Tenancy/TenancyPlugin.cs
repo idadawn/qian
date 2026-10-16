@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Qian.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Qian.Authz.Abstractions;
@@ -20,16 +21,7 @@ public sealed class TenancyPlugin : IQianPlugin
         ArgumentNullException.ThrowIfNull(ctx); ct.ThrowIfCancellationRequested();
         if (ctx.Scope != ScopeKey.Global || config.ValueKind != JsonValueKind.Object)
             throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
-        var initializationCapabilities = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var property in config.EnumerateObject())
-        {
-            if (property.Name != "initializationCapabilities" || property.Value.ValueKind != JsonValueKind.Array)
-                throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
-            foreach (var capability in property.Value.EnumerateArray())
-                if (capability.ValueKind != JsonValueKind.String || capability.GetString() is not { Length: > 0 and <= 384 } id ||
-                    id.Contains('*', StringComparison.Ordinal) || !id.Contains('/', StringComparison.Ordinal) || !initializationCapabilities.Add(id))
-                    throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
-        }
+        var initializationCapabilities = ReadConfiguration(config);
         var directory = new PostgresTenantDirectory(ctx.Data(), ctx.Services.GetRequiredService<Kun.Core.MultiTenancy.ITenantContext>());
         ctx.Effect(directory.Dispose);
         ctx.Provide<ITenantDirectory>(TenancyDefinition.Key, directory);
@@ -61,4 +53,33 @@ public sealed class TenancyPlugin : IQianPlugin
         });
         return ValueTask.CompletedTask;
     }
+
+    internal static IReadOnlySet<string> ReadConfiguration(JsonElement config)
+    {
+        if (config.ValueKind != JsonValueKind.Object) throw Invalid();
+        var initializationCapabilities = new HashSet<string>(StringComparer.Ordinal);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var property in config.EnumerateObject())
+        {
+            if (!seen.Add(property.Name)) throw Invalid();
+            // 兼容 base profile 的既有声明；这里只确认严格生产边界，不提供 header 兜底开关。
+            if (property.Name == "resolver")
+            {
+                if (property.Value.ValueKind != JsonValueKind.Object) throw Invalid();
+                var resolverKeys = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var option in property.Value.EnumerateObject())
+                    if (!resolverKeys.Add(option.Name) || !(option.Name == "mode" && option.Value.ValueKind == JsonValueKind.String && option.Value.GetString() == "production" ||
+                        option.Name == "allowHeaderFallback" && option.Value.ValueKind == JsonValueKind.False)) throw Invalid();
+                continue;
+            }
+            if (property.Name != "initializationCapabilities" || property.Value.ValueKind != JsonValueKind.Array)
+                throw Invalid();
+            foreach (var capability in property.Value.EnumerateArray())
+                if (capability.ValueKind != JsonValueKind.String || capability.GetString() is not { Length: > 0 and <= 384 } id ||
+                    !CapabilityId.IsMatch(id) || !initializationCapabilities.Add(id)) throw Invalid();
+        }
+        return initializationCapabilities;
+    }
+    private static readonly Regex CapabilityId = new("\\A[a-z][a-z0-9.-]*/[a-z][A-Za-z0-9_.-]*\\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
+    private static QianErrorException Invalid() => new(new QianError(PlatformErrors.InputInvalid));
 }

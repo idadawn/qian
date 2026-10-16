@@ -98,3 +98,5 @@ HTTP 端点由 Qian.Authz.AspNetCore 提供：`MapQianAuthz(source)` 登记 `GET
 内部 `PostgresPlatformRoleStore` 只供平台运营流程与测试引导：授予与撤销必须在无租户上下文中进行（从某个租户的请求里顺手提升被拒绝），只授予人类用户；判定时临时退到无租户上下文读取平台行，退出后恢复原上下文。授予平台超管的管理能力属 humanOnly（PRD 7.5 Agent 契约），随 S1-AZ-005 的管理 API 交付。真实 PG 测试验证：应用角色看不到、也写不进平台行；平台登录看不到租户行、读不到授权表；在租户上下文中授予被拒；平台登录复用普通凭据时组件装载失败。
 
 S1-TEN-003 增补 `TenantRoleGrant.Key` / `ITenantRoleGrant`：为当前租户主体幂等绑定既有内置角色，实际写入仍走 PostgresTenantRoleStore.Write，不新增跨租户权限或第二套授权表。TEN-003 的开户 hook 使用经批准的 DEC-023 内部凭据：仅绑定能力的一次执行可以走初始化授权，其余命令继续真实 RBAC 判定。
+
+开户默认角色监听以 priority=1000 先于默认 priority=0 的组件 hook 桥接执行；无论 Authz 在挂载或重挂载时先后登记，组件 hook 看到的四个内置角色均已建好。该顺序不改变初始主体授予仍在整个 tenant/provisioned 派发之后的 R96 约束。

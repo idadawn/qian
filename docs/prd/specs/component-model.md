@@ -536,6 +536,8 @@ Agent 宿主事件（大驼峰）由 Agent 运行时定义并透传：校验器�
 | `http` | `url`、`method?`（默认 `POST`）、`headers?`、`timeout`（默认 10s）、`retries?`（≤ 3） | POST 事件信封（ADR-016：`version / event_id / subject / occurred_at / tenant_id / payload`）；2xx 成功；`waterfall` / `bail` 读响应体 | 全部；域名须在 `policy.egress` |
 | `plugin` | `plugin`（组件 id）、`handler`（该组件在 `Apply` 中以 `ctx.Hooks().Expose(name, fn)` 暴露） | 进程内调用 | 由被调用组件的 tier 决定 |
 
+`tenant/provisioned` 的默认角色监听（qian.authz）使用 priority=1000，组件 hook 桥接使用默认 priority=0；运行时按优先级降序执行，同优先级才按登记顺序。默认角色先创建，组件 hook 随后执行，初始主体授予仍在整个派发之后。
+
 ### 4.5 `.mcp.json`
 
 平台形态按 ADR-016 D16.10：MCP 服务器按租户逻辑门面托管在 Higress，不是每插件一个进程；平台宿主只接受 `http`，`stdio` 只在开发者本机与 `standalone` / `minimal` profile 生效。
@@ -1365,6 +1367,10 @@ TCK 是**语言无关的场景文件**（`tck/runtime/*.scenario.yml`：给定�
 - 内容校验：`source.digest` 与实际内容一致；`url` 来源无 `digest` 即拒绝；`git-subdir` 的 `ref` 为分支时必须有 `digest`，为标签 / 提交时可省略但安装后写入 lock。代码包由 NuGet 签名 / npm provenance 校验，`runtime.nuget[] / npm[].digest`（S3 第三方必填）与 lock 比对。
 - 未签名市场或未命中信任根的条目：需 `--allow-unverified`，只允许无代码组件，tier 最高 `community`；`qian list` 持续标记 `unverified`（已裁决 R40）。
 - 撤销：信任根支持多把公钥与重叠轮换；`owner.publicKeys[]` 移除某钥后，用它签名的旧市场快照在 CLI 缓存中失效；发布者撤销与黑名单（S3）触发自动下线。
+
+### 11.6 开户初始化凭据（S1-DEC-023 / R104）
+
+`tenant/provisioned` 监听器里经 hook 触发的 `type: plugin` 能力，在 pending 租户上以开通编排签发的进程内一次性凭据执行：只能由 `qian.tenancy` 在目标租户 scope 的生产方上下文开启，绑定真实平台操作者、`qian.tenancy` 全局配置 `initializationCapabilities` 精确清单（`<组件>/<能力>`，禁通配符，只接受 read / write）、请求类型与权限点，每能力每次开通一次；不可序列化、不跨进程（`service` 形态组件不经此初始化）、不签发令牌；审计 `channel = hook`、actor 为平台操作者。pending 租户对其它入口仍拒绝。
 
 ---
 
