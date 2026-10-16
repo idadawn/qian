@@ -39,3 +39,5 @@ static Qian.Authz.AuthzPlatformAccess.CreateMigrationSql(string! platformRole) -
 Qian.Authz.AuthzPlugin.AuthzPlugin(System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionCatalog!>! catalogs) -> void
 Qian.Authz.RbacPermissionChecker.ListEffectivePermissionsAsync(Kun.Authorization.AuthorizationSubject! subject, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.EffectiveGrant!>!>
 static Qian.Authz.AuthzPlugin.FromInstalledComponents() -> Qian.Authz.AuthzPlugin!
+Qian.Authz.DataScopeComposition
+static Qian.Authz.DataScopeComposition.ForResource(string! resource, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.RoleDataScope!>! roles) -> Qian.Authz.Abstractions.DataScopePlan!

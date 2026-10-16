@@ -11,11 +11,12 @@ using Qian.Runtime.Errors.AspNetCore;
 
 namespace Qian.Authz.AspNetCore;
 
-/// <summary>授权的认证 HTTP 表面（PRD 7.5 API 行）；当前只含 me/permissions，其余判定与管理端点归 S1-AZ-005。</summary>
+/// <summary>授权的认证 HTTP 表面（PRD 7.5 API 行）；含 me/permissions 与数据权限 meta，其余判定与管理端点归 S1-AZ-005。</summary>
 public static class AuthzEndpoints
 {
     /// <summary>
     /// 登记 <c>GET /api/authz/me/permissions</c>：列出当前已验证主体经角色授权持有的权限点及其风险、step-up、终端元数据与当前判定。
+    /// 同时登记 <c>GET /api/authz/meta</c>，发布同源数据范围/过滤/系统变量元数据；不返回实际授予。
     /// 宿主须先配置身份、租户与 ErrorDetail 中间件；source 返回可注入 <c>Authz</c> 的插件上下文。主体与租户只来自已认证请求，不读请求参数。
     /// </summary>
     public static IEndpointRouteBuilder MapQianAuthz(this IEndpointRouteBuilder endpoints, Func<HttpContext, IPluginContext> source)
@@ -41,6 +42,19 @@ public static class AuthzEndpoints
             // 授权组件尚未就绪或已卸载时与不存在无法区分。
             catch (Exception error) when (error is ServiceNotReadyException or ObjectDisposedException) { return QianResults.Error(new QianError(PlatformErrors.NotFound)); }
         }).RequireAuthorization().Produces<AuthzPermissionList>();
+        endpoints.MapGet("/api/authz/meta", (HttpContext http) =>
+        {
+            http.Response.Headers.CacheControl = "private, no-store";
+            var user = http.RequestServices.GetRequiredService<ICurrentUser>(); var principal = user.Principal;
+            if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject) return QianResults.Error(new QianError(PlatformErrors.Unauthenticated));
+            if (principal.Actor is not null || principal.Kind is not (PrincipalKind.User or PrincipalKind.Service)) return QianResults.Error(new QianError(PlatformErrors.AuthzDenied));
+            try
+            {
+                _ = source(http).Authz(); // 必须有当前 scope 可见且仍挂载的真实 Provider。
+                return Results.Json(DataScopeContracts.Metadata, AuthzHttpJson.Default.JsonElement);
+            }
+            catch (Exception error) when (error is ServiceNotReadyException or ObjectDisposedException) { return QianResults.Error(new QianError(PlatformErrors.NotFound)); }
+        }).RequireAuthorization();
         return endpoints;
     }
 }

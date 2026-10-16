@@ -100,3 +100,13 @@ HTTP 端点由 Qian.Authz.AspNetCore 提供：`MapQianAuthz(source)` 登记 `GET
 S1-TEN-003 增补 `TenantRoleGrant.Key` / `ITenantRoleGrant`：为当前租户主体幂等绑定既有内置角色，实际写入仍走 PostgresTenantRoleStore.Write，不新增跨租户权限或第二套授权表。TEN-003 的开户 hook 使用经批准的 DEC-023 内部凭据：仅绑定能力的一次执行可以走初始化授权，其余命令继续真实 RBAC 判定。
 
 开户默认角色监听以 priority=1000 先于默认 priority=0 的组件 hook 桥接执行；无论 Authz 在挂载或重挂载时先后登记，组件 hook 看到的四个内置角色均已建好。该顺序不改变初始主体授予仍在整个 tenant/provisioned 派发之后的 R96 约束。
+
+## 数据范围契约与元数据（S1-AZ-006）
+
+DataScopeRule 在 Authz Definition 声明 resource、allData 与可选的 JSON Filter AST；规则 Schema、样例与离线用法见 [数据权限契约 v1](../../contracts/authz/v1/README.md)。Filter AST、矩阵和系统变量直接取 Data 的同一份源文件，不在授权库重建字段类型或变量目录，也不为 Definition 增加数据库依赖。
+
+GET /api/authz/meta 与 me/permissions 共用 MapQianAuthz 的认证入口；返回 dataScopeRule、filterAst、operators、systemVariables 和 merge 元数据，不返回主体角色、授权集合或实际数据。匿名拒绝，Agent/委托主体拒绝，Authz 未挂载时 404；响应 private/no-store。
+
+DataScopeComposition.ForResource 只建立逻辑计划：同角色 AND（重复角色输入仍属于同一分支）、不同角色 OR，任何明确 allData 只覆盖该资源的数据范围，缺少规则/空角色默认拒绝。每条规则先经同源 Schema 结构校验，计划克隆 JSON 片段，保留各 Filter AST 内部逻辑，避免展平时改变括号含义或指数展开。allData=true 与 filter 不可同时存在；false 时 filter 必填。
+
+这些类型不开放行级访问。S1 的 DataPermissions/Fields 端口保持原先拒绝实现；字段语义、变量解析、SQL/表达式编译及 RLS 叠加由 S2 执行。元数据可供前端/模型解释规则，不作为工具授予权限。

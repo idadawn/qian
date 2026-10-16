@@ -126,3 +126,11 @@ S2 的五处消费方引用同一份 Schema 和矩阵，不重建自己的运算
 - DATA_CONNECTION_CREDENTIAL_INVALID：密钥内容不能用作口令。
 
 该操作会从平台出网，Agent 契约标 external。完整的出口代理与 SSRF 基线按 PRD 7.19 归 S2。
+
+## 9. 数据权限范围（S1-AZ-006）
+
+Authz 的 [DataScopeRule Schema](../../../contracts/authz/v1/data-scope-rule.schema.json) 引用本规格的 Filter AST。形状为 resource、allData 与 filter：resource 使用组件 id:资源短名；allData=true 时 filter 缺席，false 时 filter 必须存在。额外字段与矛盾形状拒绝。C# Definition 的 filter 是 JSON 载荷，Provider/S2 编译器可按本包 DataContractJson.FilterTypeInfo 读取，不复制第二套 Filter 类型或变量定义。
+
+合并规则固定为同角色 AND、跨角色 OR、任一全部数据放开目标资源的数据范围；重复角色分段必须先归并，其他资源的 allData 不影响当前资源。没有适用规则或空角色集合为拒绝。合并计划保留每份 AST 的边界，不把 AST 内部 OR 与角色间 OR 混为一层；租户隔离、软删除与业务权限始终叠加。
+
+GET /api/authz/meta 发布 dataScopeRule、filterAst、operators、systemVariables 与 merge，均由同一套源文件生成或原样嵌入。消费者先注册 filterAst 的 $id 再解析引用，支持离线使用；15 个系统变量继续沿用 §4 的中文说明、基数与类型。Authz 元数据及逻辑计划不代表 S2 行级/字段编译器已实现，S1 的执行端口仍拒绝。实现边界与验收见 [数据权限契约 v1](../../../contracts/authz/v1/README.md) 和 [Qian.Authz](../../../packages/Qian.Authz/README.md)。
