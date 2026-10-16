@@ -18,13 +18,13 @@ usage() {
   cat <<EOF
 用法：scripts/dev-tenant-ops.sh <命令>
 
-  up                    起 PostgreSQL 16 容器（只绑 127.0.0.1:$PG_PORT），重建开发库，前台启动运营宿主（$OPS_URL）
+  up                    起 PostgreSQL 16 容器（只绑 127.0.0.1:${PG_PORT}），重建开发库，前台启动运营宿主（${OPS_URL}）
   walkthrough [--yes]   另开一个终端运行：按「建租户 → 开通步骤 → 激活 → 写设置/读配额 → 冻结/恢复 → 扫描到期」逐步调用
   api 方法 路径 [JSON]   以平台超管身份调用一次运营宿主，例如：api GET /api/tenancy/tenants
   token [选项]          打印本机开发令牌；选项 --sub、--tenant、--kind、--ttl（分钟），默认是平台超管 root
   status                查看容器与运营宿主是否在运行；运营宿主在运行时退出码为 0，否则为 1
   smoke                 CI 冒烟：后台起环境、等就绪、跑一遍 walkthrough --yes、停宿主；退出码即走查结果
-  down [--purge]        删除 PostgreSQL 容器；--purge 同时删除本机开发密钥与口令（$STATE）
+  down [--purge]        删除 PostgreSQL 容器；--purge 同时删除本机开发密钥与口令（${STATE}）
 EOF
 }
 
@@ -58,7 +58,7 @@ start_postgres() {
   if [ "$state" = missing ]; then
     # 管理员口令在本机随机生成，只存在仅本人可读的状态目录里（git 忽略），不进仓库。
     (umask 077; python3 -c 'import secrets; print(secrets.token_hex(24))' > "$PASSWORD_FILE")
-    echo "创建 PostgreSQL 容器 $CONTAINER（$PG_IMAGE，127.0.0.1:$PG_PORT）"
+    echo "创建 PostgreSQL 容器 ${CONTAINER}（${PG_IMAGE}，127.0.0.1:${PG_PORT}）"
     docker run -d --name "$CONTAINER" -p "127.0.0.1:$PG_PORT:5432" \
       -e POSTGRES_USER=qian -e POSTGRES_DB=postgres -e "POSTGRES_PASSWORD=$(cat "$PASSWORD_FILE")" \
       --label qian.dev=tenant-ops "$PG_IMAGE" >/dev/null
@@ -87,7 +87,7 @@ cmd_up() {
 cmd_down() {
   if [ "$(container_state)" != missing ]; then docker rm -f "$CONTAINER" >/dev/null; echo "已删除容器 $CONTAINER"; fi
   rm -f "$PASSWORD_FILE"
-  if [ "${1:-}" = "--purge" ]; then rm -rf "$STATE"; echo "已删除 $STATE（下次 up 会重新生成开发密钥）"; fi
+  if [ "${1:-}" = "--purge" ]; then rm -rf "$STATE"; echo "已删除 ${STATE}（下次 up 会重新生成开发密钥）"; fi
 }
 
 cmd_token() { ensure_built; dotnet "$DLL" token --state "$STATE" "$@"; }
@@ -122,12 +122,12 @@ except ValueError:
 }
 
 cmd_status() {
-  echo "PostgreSQL 容器 $CONTAINER：$(container_state)"
+  echo "PostgreSQL 容器 ${CONTAINER}：$(container_state)"
   local code; code="$(ops_probe)"
   case "$code" in
-    401) echo "运营宿主 $OPS_URL：运行中"; return 0 ;;
-    000) echo "运营宿主 $OPS_URL：未运行" ;;
-    *) echo "运营宿主 $OPS_URL：有别的服务在监听（探测返回 $code）" ;;
+    401) echo "运营宿主 ${OPS_URL}：运行中"; return 0 ;;
+    000) echo "运营宿主 ${OPS_URL}：未运行" ;;
+    *) echo "运营宿主 ${OPS_URL}：有别的服务在监听（探测返回 ${code}）" ;;
   esac
   return 1
 }
@@ -151,7 +151,7 @@ cmd_smoke() {
   mkdir -p "$(dirname "$log")"
   bash "$ROOT/scripts/dev-tenant-ops.sh" up > "$log" 2>&1 &
   pid=$!
-  echo "等运营宿主就绪（最多 $timeout 秒；宿主日志 $log）……"
+  echo "等运营宿主就绪（最多 $timeout 秒；宿主日志 ${log}）……"
   until [ "$(ops_probe)" = 401 ]; do
     if ! kill -0 "$pid" 2>/dev/null; then printf 'up 提前退出，宿主日志：\n' >&2; cat "$log" >&2; exit 1; fi
     if [ "$waited" -ge "$timeout" ]; then

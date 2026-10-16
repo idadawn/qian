@@ -110,7 +110,7 @@ check "未成功的步骤（skipped 之外）" "$(python3 -c 'import json,sys; p
 section "3 激活"
 call "3.1 状态机元数据（GET /api/tenancy/meta/state-machine）：先查合法迁移" GET /api/tenancy/meta/state-machine 200
 VALID_UNTIL="$(now_plus "$VALID_SECONDS")"
-call "3.2 激活（POST /api/tenancy/tenants/{id}:activate）：有效期到 $VALID_UNTIL（${VALID_SECONDS} 秒后，第 6 步用来演示到期）" \
+call "3.2 激活（POST /api/tenancy/tenants/{id}:activate）：有效期到 ${VALID_UNTIL}（${VALID_SECONDS} 秒后，第 6 步用来演示到期）" \
   POST "/api/tenancy/tenants/$TENANT:activate" 200 "{\"trial\":false,\"validUntil\":\"$VALID_UNTIL\"}"
 check "状态" "$(field status)" active
 

@@ -1,0 +1,39 @@
+name: tenant-ui
+on:
+  push:
+    branches: [main]
+    paths: ['packages/qian-tenancy-ui/**', 'packages/yue/**', 'packages/Qian.Tenancy*/**', 'packages/Qian.Capabilities*/**', 'samples/Qian.Sample.Crm/**', 'plugins/qian.tenancy/**', 'tools/Qian.Dev.TenantOps/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
+  pull_request:
+    paths: ['packages/qian-tenancy-ui/**', 'packages/yue/**', 'packages/Qian.Tenancy*/**', 'packages/Qian.Capabilities*/**', 'samples/Qian.Sample.Crm/**', 'plugins/qian.tenancy/**', 'tools/Qian.Dev.TenantOps/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tenant-ui-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  acceptance:
+    name: 真实租户运营页面七步验收
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @qian/tenancy-ui exec playwright install --with-deps chromium
+      - run: pnpm --filter @qian/tenancy-ui contracts:check && pnpm --filter @qian/tenancy-ui typecheck && pnpm --filter @qian/tenancy-ui build
+      - run: pnpm --filter @qian/tenancy-ui e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tenant-ui-acceptance
+          path: TestResults/tenant-ui/
+          if-no-files-found: error
