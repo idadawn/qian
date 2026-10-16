@@ -1,0 +1,15 @@
+import { mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const app = path.join(root, 'apps/yue-playground');
+const version = JSON.parse(readFileSync(path.join(app, 'node_modules/@playwright/test/package.json'), 'utf8')).version;
+if (version !== '1.64.0') throw new Error('更新 Playwright 时须同步视觉镜像版本并重新审阅基线。');
+if (!existsSync(path.join(app, 'dist/core.html'))) throw new Error('请先运行 pnpm --filter yue-playground build。');
+const snapshots = path.join(app, 'visual/__snapshots__');
+const results = path.join(app, '.visual-results');
+mkdirSync(snapshots, { recursive: true }); mkdirSync(results, { recursive: true });
+const result = spawnSync('docker', ['run', '--rm', '--init', '--ipc=host', '--user', `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`, '-e', 'CI=1', '-e', 'PLAYWRIGHT_BROWSERS_PATH=/ms-playwright', '-v', `${root}:/workspace:ro`, '-v', `${snapshots}:/workspace/apps/yue-playground/visual/__snapshots__:rw`, '-v', `${results}:/workspace/apps/yue-playground/.visual-results:rw`, '-w', '/workspace/apps/yue-playground', 'mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f', 'node', 'node_modules/@playwright/test/cli.js', 'test', '--config', 'visual.config.ts', ...process.argv.slice(2)], { stdio: 'inherit' });
+if (result.error) throw result.error;
+process.exitCode = result.status ?? 1;

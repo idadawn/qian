@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { AlertDialog, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, Button, Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, ToastList, ToastProvider, useToast } from '@idadawn/yue-core';
+import { OverlayFormContext } from './overlay-form-context';
 import type { PlatformI18n } from '@idadawn/yue-sdk';
 
 export interface OverlayOptions { title: string; description?: string; content: ReactNode; onClose?: () => void }
@@ -7,6 +8,8 @@ export interface OverlayApi { open(options: OverlayOptions): void; close(): void
 
 /** 三种 API 共享状态与生命周期，焦点、键盘及 ARIA 由 core 原语负责。 */
 function useOverlay(kind: 'modal' | 'drawer' | 'popup', i18n: PlatformI18n, trigger?: ReactElement<Record<string, unknown>>, defaultOptions?: OverlayOptions): OverlayApi {
+  const [forms, setForms] = useState(0);
+  const register = useCallback(() => { setForms(count => count + 1); return () => setForms(count => Math.max(0, count - 1)); }, []);
   const [options, setOptions] = useState<OverlayOptions | null>(null);
   const activeOptions = useRef<OverlayOptions | null>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
@@ -22,8 +25,8 @@ function useOverlay(kind: 'modal' | 'drawer' | 'popup', i18n: PlatformI18n, trig
     {options && <Content data-slot={`form-${kind}`} testId={`yue-form-${kind}`}>
       <Title>{options.title}</Title>
       {options.description && <Description>{options.description}</Description>}
-      <div className="my-4">{options.content}</div>
-      <Close>{i18n.t('common.close')}</Close>
+      <OverlayFormContext value={{ cancel: <Close render={<Button variant="outline" type="button" />}>{i18n.t('common.cancel')}</Close>, register }}><div className="my-4">{options.content}</div></OverlayFormContext>
+      {forms === 0 && <div className="flex justify-end gap-2"><Close render={<Button variant="outline" />}>{i18n.t('common.close')}</Close></div>}
     </Content>}
   </Root> };
 }
@@ -56,7 +59,7 @@ function FeedbackContent({ i18n, children }: { i18n: PlatformI18n; children: Rea
     <AlertDialog open={!!confirmation} onOpenChange={(open) => { if (!open) finish(false); }}>
       {confirmation && <AlertDialogContent testId="yue-form-confirm"><AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
         {confirmation.description && <AlertDialogDescription>{confirmation.description}</AlertDialogDescription>}
-        <div className="mt-4 flex justify-end gap-2"><AlertDialogClose>{i18n.t('common.cancel')}</AlertDialogClose><Button onClick={() => finish(true)}>{i18n.t('common.confirm')}</Button></div>
+        <div className="mt-4 flex justify-end gap-2"><AlertDialogClose render={<Button variant="outline" />}>{i18n.t('common.cancel')}</AlertDialogClose><Button onClick={() => finish(true)}>{i18n.t('common.confirm')}</Button></div>
       </AlertDialogContent>}
     </AlertDialog>
   </FeedbackContext.Provider>;

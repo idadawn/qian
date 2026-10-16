@@ -79,6 +79,22 @@ Props 从真实 TypeScript checker 提取；相同的 DOM/ARIA/事件声明按�
 
 组件级测试覆盖 SSR、键盘与 ARIA、模态焦点约束、移除与翻页、消息关闭、验证码移焦、密码显隐和缩放把手。页面级 Select 检查只排除 Base UI 的内部 Tab 焦点哨兵（data-base-ui-focus-guard + aria-hidden + data-type），保留 aria-hidden-focus 规则；另有真实 Tab/Shift+Tab 焦点测试及故意隐藏按钮的负例，确保排除不掩盖真实可访问性错误。未修改 Base UI 源码。
 
+## 视觉配方与回归（S1-YUE-011）
+
+基础配方以官方 shadcn CLI 4.21.5 的 `base-nova` / `neutral` / `cssVariables: true` 为来源；[逐组件对应与来源摘要](docs/visual-reference.json) 覆盖全部 51 个入口。复合入口使用对应基础组件组合，保留 yue 公开 API、标识、国际化与受控协议。品牌蓝、系统字体、Button 的 32 / 36 / 40px 尺寸，以及优先满足 4.5:1 / 3:1 的颜色是已说明的差异。
+
+宿主导入 `@idadawn/yue-tokens/theme.css`。颜色使用 `bg-primary`、`text-muted-foreground`、`border-input` 等语义工具类，透明度使用 `/90`、`/50`；尺寸与位置变量用 Tailwind v4 的括号语法。门禁拒绝变量颜色任意值和 `brightness-*` 配方。弹层以 Base UI 的 `data-starting-style` / `data-ending-style` 过渡，尊重 reduced-motion；无障碍测试等待有限动画和焦点安排完成后检查完整规则。
+
+Dialog / AlertDialog / Sheet / Drawer / Popover 的 Trigger 由宿主决定视觉：
+
+```tsx
+<DialogTrigger render={<Button variant="outline" />}>打开对话框</DialogTrigger>
+```
+
+组合后仍保留 Trigger 的 `data-slot`、默认或自定义 `data-testid`，不会产生嵌套按钮。直接传 `data-slot` 给 Button 仍不能改写组件身份。
+
+视觉基线位于 `apps/yue-playground/visual/__snapshots__/`，覆盖全部入口、DataTable / SchemaForm 以及状态清单在明暗两态的截图，弹层拍摄打开态。基线使用固定 Playwright Linux 镜像和系统字体环境，本机需要 Docker；不引入 webfont。`pnpm yue:visual` 校验现有基线，`pnpm yue:visual --update-snapshots` 仅在确认预期样式变化后更新。样式 PR 应提交变化的基线并列出变化页面；CI 的「视觉回归」检查上传实际图、期望图、差异图和追踪。
+
 ## 已知限制与延期项
 
 - 元数据驱动表单、控件注册、Field Type 配对、业务远程选项与条件构建器分别由 form/data/sdk/widgets 任务交付。

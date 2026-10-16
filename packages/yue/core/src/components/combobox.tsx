@@ -10,7 +10,7 @@ import type {
 } from '@base-ui/react/combobox';
 import type { ComponentProps } from 'react';
 import { cn } from '../lib/cn';
-import { control } from '../lib/styles';
+import { control, surface, menuItem } from '../lib/styles';
 import type { YueProps } from '../lib/test-id';
 
 // 可输入筛选的下拉（Base UI Combobox）。验证门项：输入过滤、方向键高亮、Enter 选中、Escape 关闭、空态、ARIA combobox / listbox。
@@ -26,7 +26,7 @@ export function ComboboxInput({ className, testId, ...props }: YueProps<Combobox
       data-slot="combobox-input"
       data-testid={testId ?? 'yue-combobox-input'}
       className={cn(
-        'h-9 min-w-40 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]',
+        control, 'h-9 w-full min-w-40 px-3 text-sm',
         className,
       )}
     />
@@ -45,7 +45,7 @@ export function ComboboxContent({ className, side, align, sideOffset = 4, testId
         <BaseCombobox.Popup {...props}
           data-slot="combobox-content"
           data-testid={testId ?? 'yue-combobox-content'}
-          className={cn('min-w-40 rounded-md border border-[var(--border)] bg-[var(--background)] p-1 text-sm text-[var(--foreground)] shadow-md outline-none', className)}
+          className={cn(surface, 'min-w-40 max-h-(--available-height) w-(--anchor-width) overflow-y-auto p-1', className)}
         />
       </BaseCombobox.Positioner>
     </BaseCombobox.Portal>
@@ -61,7 +61,7 @@ export function ComboboxEmpty({ className, testId, ...props }: YueProps<Combobox
     <BaseCombobox.Empty {...props}
       data-slot="combobox-empty"
       data-testid={testId ?? 'yue-combobox-empty'}
-      className={cn('px-2 py-1.5 text-[var(--muted-foreground)] empty:hidden', className)}
+      className={cn('px-2 py-1.5 text-muted-foreground empty:hidden', className)}
     />
   );
 }
@@ -72,7 +72,7 @@ export function ComboboxItem({ className, testId, ...props }: YueProps<ComboboxI
       data-slot="combobox-item"
       data-testid={testId ?? 'yue-combobox-item'}
       className={cn(
-        'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-[var(--accent)] data-[selected]:font-medium data-[disabled]:opacity-50',
+        menuItem, 'data-[selected]:font-medium',
         className,
       )}
     />

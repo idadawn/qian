@@ -1,5 +1,6 @@
 /* 由 registry.json 生成；运行 tokens:generate。 */
 @import './index.css';
+@import 'tw-animate-css';
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 @theme inline {
   --color-background: var(--background);

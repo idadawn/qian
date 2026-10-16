@@ -1,3 +1,4 @@
+import { settleVisuals } from './settle';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import catalog from '../../../packages/yue/core/src/manifest-catalog.json' with { type: 'json' };
@@ -22,6 +23,7 @@ for (const name of Object.keys(catalog)) {
     if (name === 'Notification') await expect(page.getByText('任务已完成', { exact: true })).toBeVisible();
     for (const theme of ['light', 'dark']) {
       await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+      await settleVisuals(page);
       const violations = (await new AxeBuilder({ page }).analyze()).violations.filter(item => ['critical', 'serious'].includes(item.impact ?? ''));
       expect(violations.map(item => `${item.id}: ${item.nodes.map(node => node.target).join(',')}`), `${name} ${theme}`).toEqual([]);
     }

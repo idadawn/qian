@@ -1,3 +1,4 @@
+import { settleVisuals } from './settle';
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -19,6 +20,7 @@ test('DataTable 对 SDK mock 完成服务端分页、排序、筛选、列显隐
   await page.getByText('显示列', { exact: true }).click();
   await page.getByRole('checkbox', { name: '名称', exact: true }).uncheck();
   await expect(page.getByRole('cell', { name: '客户 23', exact: true })).not.toBeVisible();
+  await settleVisuals(page);
   const result = await new AxeBuilder({ page }).analyze();
   expect(result.violations.filter((v) => ['critical', 'serious'].includes(v.impact ?? ''))).toEqual([]);
 });
@@ -28,6 +30,23 @@ test('Upload 从真实文件输入完成分片与进度，页面可访问', asyn
   await page.getByLabel('上传文件').setInputFiles({ name: 'sample.txt', mimeType: 'text/plain', buffer: Buffer.from('abcdefgh') });
   await expect(page.getByText('file-demo', { exact: true })).toBeVisible();
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '8');
+  await settleVisuals(page);
   const result = await new AxeBuilder({ page }).analyze();
   expect(result.violations.filter((v) => ['critical', 'serious'].includes(v.impact ?? ''))).toEqual([]);
+});
+
+
+test('页长切换与紧凑密度使用同一表格协议，选择态有一致样式', async ({ page }) => {
+  await page.goto('/data.html');
+  await expect(page.getByTestId('yue-data-table-row')).toHaveCount(5);
+  const normal = await page.getByTestId('yue-data-table-row').first().evaluate(row => row.getBoundingClientRect().height);
+  await page.getByLabel('每页条数').selectOption('10');
+  await expect(page.getByTestId('yue-data-table-row')).toHaveCount(10);
+  await expect(page.getByText('第 1 页', { exact: true })).toBeVisible();
+  await page.getByRole('checkbox', { name: '选择第 1 行' }).check();
+  await expect(page.getByTestId('yue-data-table-row').first()).toHaveAttribute('data-state', 'selected');
+  await page.goto('/data.html?state=Compact');
+  await expect(page.getByTestId('yue-data-table-row')).toHaveCount(5);
+  const compact = await page.getByTestId('yue-data-table-row').first().evaluate(row => row.getBoundingClientRect().height);
+  expect(normal).toBe(40); expect(compact).toBe(32);
 });

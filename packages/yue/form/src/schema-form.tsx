@@ -1,8 +1,9 @@
-import { useEffect, useId, useImperativeHandle, useMemo, useRef, type BaseSyntheticEvent, type ReactNode, type Ref } from 'react';
+import { useContext, useEffect, useId, useImperativeHandle, useMemo, useRef, type BaseSyntheticEvent, type ReactNode, type Ref } from 'react';
 import { Controller, useForm, useWatch, type FieldErrors, type Resolver } from 'react-hook-form';
 import { Button, Checkbox, Field as CoreField, FieldDescription, FieldLabel, Input, Select, SelectContent, SelectItem, SelectTrigger, Textarea } from '@idadawn/yue-core';
 import { PlatformError, pointerSegments, type ErrorDetail, type PlatformI18n } from '@idadawn/yue-sdk';
 import type { FormSchema, UiNode } from '@idadawn/yue-contracts';
+import { OverlayFormContext } from './overlay-form-context';
 import { assertFormSchema, effectiveSchema, getValue, maskValue, validateValues, type DataSchema, type FormValues } from './schema';
 
 export interface FormApi {
@@ -61,6 +62,10 @@ function defaults(schema: DataSchema): FormValues {
 export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmit, onError, apiRef, className, testId = 'yue-schema-form', submitLabel, children }: SchemaFormProps) {
   useMemo(() => assertFormSchema(schema), [schema]);
   const id = useId();
+  const overlay = useContext(OverlayFormContext);
+  const register = overlay?.register;
+  const hasActions = mode === 'edit' && !!onSubmit;
+  useEffect(() => { if (hasActions) return register?.(); }, [register, hasActions]);
   const resolver: Resolver<FormValues> = (values) => {
     const errors: FieldErrors<FormValues> = Object.create(null) as FieldErrors<FormValues>;
     for (const error of validateValues(schema, values)) {
@@ -133,9 +138,9 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       const description = ui.descriptionKey ? i18n.t(ui.descriptionKey) : undefined;
       const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : ''].filter(Boolean).join(' ') || undefined;
       return <CoreField key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
-        <FieldLabel htmlFor={fieldId}>{label}{required ? <span aria-hidden> *</span> : null}</FieldLabel>
+        <FieldLabel htmlFor={fieldId}>{label}{required ? <span aria-hidden className="text-destructive"> *</span> : null}</FieldLabel>
         <Controller name={path} control={form.control} render={({ field }) => {
-          if (readonly) return <output id={fieldId} data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
+          if (readonly) return <output id={fieldId} className="min-h-9 rounded-md bg-muted/40 px-3 py-2 text-sm text-foreground" data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
           const common = { id: fieldId, name: field.name, ref: field.ref, onBlur: field.onBlur, disabled: state?.disabled || isSubmitting, 'aria-required': required, 'aria-invalid': !!error, 'aria-describedby': describedBy };
           if (fieldSchema.type === 'boolean') return <Checkbox {...common} checked={!!field.value} onCheckedChange={field.onChange} aria-label={label} />;
           if (fieldSchema.enum) return <Select value={field.value ?? null} onValueChange={field.onChange} items={fieldSchema.enum.map((value) => ({ value, label: String(value) }))} disabled={common.disabled}>
@@ -156,11 +161,10 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
           }} />;
         }} />
         {description && <FieldDescription id={`${fieldId}-description`}>{description}</FieldDescription>}
-        {error?.message && <p id={`${fieldId}-error`} role="alert" data-slot="schema-field-error" data-testid={`${testId}-error-${path}`} className="text-sm text-[var(--destructive)]">{error.message}</p>}
+        {error?.message && <p id={`${fieldId}-error`} role="alert" data-slot="schema-field-error" data-testid={`${testId}-error-${path}`} className="text-sm text-destructive">{error.message}</p>}
       </CoreField>;
     })}
-    {errors.root?.message && <p role="alert" data-slot="schema-form-error">{String(errors.root.message)}</p>}
-    {children}
-    {mode === 'edit' && onSubmit && <Button type="submit" disabled={isSubmitting} testId={`${testId}-submit`}>{submitLabel ?? i18n.t('common.save')}</Button>}
+    {errors.root?.message && <p role="alert" className="text-sm text-destructive" data-slot="schema-form-error">{String(errors.root.message)}</p>}
+    {hasActions ? <div data-slot="schema-form-actions" className="flex justify-end gap-2 border-t border-border pt-4">{overlay?.cancel}{children}<Button type="submit" disabled={isSubmitting} testId={`${testId}-submit`}>{submitLabel ?? i18n.t('common.save')}</Button></div> : children}
   </form>;
 }

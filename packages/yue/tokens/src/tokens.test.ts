@@ -32,6 +32,9 @@ describe('三层令牌契约', () => {
     delete registry.semantics.find(token => token.name === '--yue-input')!.contrast;
     expect(validateTokenRegistry(registry)).toContain('缺少对比度分类：--yue-input');
     expect(() => tokenContrasts(registry)).toThrow('缺少对比度分类');
+    const inherited = JSON.parse(JSON.stringify(TOKEN_REGISTRY).replace('"contrast":"boundary"', '"contrast":"toString"')) as TokenRegistry;
+    expect(validateTokenRegistry(inherited).some(error => error.includes('缺少对比度分类'))).toBe(true);
+    expect(() => tokenContrasts(inherited)).toThrow('缺少对比度分类');
     expect(contrastRatio([1, 0, 0], [0, 0, 0], 0.1)).toBeCloseTo(1.2005, 3);
     expect(contrastRatio([1, 0, 0], [0.145, 0, 0], 0)).toBeCloseTo(1, 6);
     expect(() => contrastRatio([1, 0, 0], [0, 0, 0], -0.1)).toThrow();

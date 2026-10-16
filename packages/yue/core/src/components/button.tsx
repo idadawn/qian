@@ -1,6 +1,7 @@
 import { Button as BaseButton } from '@base-ui/react/button';
-import type { ComponentProps } from 'react';
+import { useContext, type ComponentProps } from 'react';
 import { cn } from '../lib/cn';
+import { ButtonIdentityContext } from '../lib/button-identity';
 import { button } from '../lib/styles';
 import type { YueProps } from '../lib/test-id';
 import { Icon } from './icon';
@@ -14,17 +15,18 @@ export type ButtonProps = YueProps<ComponentProps<typeof BaseButton>> & {
   loading?: boolean;
 };
 const variants = {
-  primary: 'bg-[var(--primary)] text-[var(--primary-foreground)] hover:brightness-95',
-  secondary: 'bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:brightness-95',
-  outline: 'border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:bg-[var(--accent)]',
-  ghost: 'bg-transparent text-[var(--foreground)] hover:bg-[var(--accent)]',
-  destructive: 'bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:brightness-95',
+  primary: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90',
+  secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
+  outline: 'border-border bg-background text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground',
+  ghost: 'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
+  destructive: 'bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90',
 };
 function ButtonView({ slot, variant = 'primary', size = 'md', loading = false, disabled, children, className, testId, ...props }: ButtonProps & { slot: string }) {
-  return <BaseButton {...props} disabled={disabled || loading} aria-busy={loading || undefined} data-slot={slot} data-testid={testId ?? `yue-${slot}`} className={cn(button, variants[variant], { 'h-7 px-2 text-xs': size === 'sm', 'h-11 px-5': size === 'lg', 'size-9 p-0': size === 'icon' }, className)}>{loading && <Icon name="spinner" className="animate-spin motion-reduce:animate-none" />}{children}</BaseButton>;
+  const identity = useContext(ButtonIdentityContext);
+  return <BaseButton {...props} disabled={disabled || loading} aria-busy={loading || undefined} data-slot={identity?.slot ?? slot} data-testid={identity?.testId ?? testId ?? `yue-${slot}`} className={cn(button, variants[variant], { 'h-8 px-2.5': size === 'sm', 'h-10 px-4': size === 'lg', 'size-9 p-0': size === 'icon' }, className)}>{loading && <Icon name="spinner" className="animate-spin motion-reduce:animate-none" />}{children}</BaseButton>;
 }
 export function Button(props: ButtonProps) { return <ButtonView {...props} slot="button" />; }
 export type IconButtonProps = ButtonProps & { label: string };
 export function IconButton({ label, ...props }: IconButtonProps) { return <ButtonView {...props} size="icon" aria-label={label} slot="icon-button" />; }
 export type ButtonGroupProps = YueProps<ComponentProps<'div'>>;
-export function ButtonGroup({ className, testId, ...props }: ButtonGroupProps) { return <div {...props} role="group" data-slot="button-group" data-testid={testId ?? 'yue-button-group'} className={cn('inline-flex gap-1', className)} />; }
+export function ButtonGroup({ className, testId, ...props }: ButtonGroupProps) { return <div {...props} role="group" data-slot="button-group" data-testid={testId ?? 'yue-button-group'} className={cn('inline-flex w-fit items-stretch [&>button]:rounded-none [&>button:first-child]:rounded-l-md [&>button:last-child]:rounded-r-md [&>button+button]:-ml-px [&>button:focus-visible]:z-10', className)} />; }

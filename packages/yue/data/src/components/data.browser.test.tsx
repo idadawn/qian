@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
-import axe from 'axe-core';
+import { runAxe } from '../test/axe';
 import { afterEach, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { DataTable, type DataTableQuery } from './data-table';
@@ -54,6 +54,7 @@ it('TreeSelect 与 Cascader 一万节点复用同一虚拟化树，选择值可�
   expect(screen.getAllByRole('treeitem').length).toBeLessThan(40);
   await userEvent.click(screen.getByRole('treeitem', { name: '节点 2' }));
   expect(select).toHaveBeenCalledWith('2');
+  await vi.waitFor(() => expect(screen.queryByTestId('yue-tree-select-popup')).toBeNull());
   await userEvent.click(screen.getByRole('button', { name: '层级' }));
   await userEvent.click(screen.getByRole('treeitem', { name: '总部' }));
   expect(screen.getAllByRole('treeitem').length).toBeLessThan(45);
@@ -82,7 +83,7 @@ it('表格分页和排序只改变查询，不在客户端切掉服务端当前�
   await userEvent.click(screen.getByText('显示列'));
   await userEvent.click(screen.getByRole('checkbox', { name: '名称' }));
   expect(screen.queryByRole('columnheader', { name: /名称/ })).toBeNull();
-  const result = await axe.run(document.body);
+  const result = await runAxe(document.body);
   expect(result.violations.filter((v) => ['critical', 'serious'].includes(v.impact ?? ''))).toEqual([]);
 });
 

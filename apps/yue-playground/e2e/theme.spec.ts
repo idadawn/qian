@@ -1,3 +1,4 @@
+import { settleVisuals } from './settle';
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -49,6 +50,7 @@ test('拒绝存储时首帧仍按系统渲染，服务端品牌不被覆盖', as
 
 for (const mode of ['light', 'dark'] as const) test(`令牌页 ${mode} 状态无严重无障碍问题`, async ({ page }) => {
   await firstFrame(page, mode); await page.goto('/tokens.html'); await expect(page.getByTestId('yue-token-lab')).toBeVisible();
+  await settleVisuals(page);
   const result = await new AxeBuilder({ page }).analyze();
   expect(result.violations.filter(issue => issue.impact === 'critical' || issue.impact === 'serious')).toEqual([]);
 });
