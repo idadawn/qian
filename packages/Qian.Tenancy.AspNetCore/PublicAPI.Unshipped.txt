@@ -13,3 +13,5 @@ override Qian.Tenancy.AspNetCore.TenantList.ToString() -> string!
 static Qian.Tenancy.AspNetCore.TenancyEndpoints.MapQianTenancy(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Qian.Tenancy.AspNetCore.TenantList.operator !=(Qian.Tenancy.AspNetCore.TenantList? left, Qian.Tenancy.AspNetCore.TenantList? right) -> bool
 static Qian.Tenancy.AspNetCore.TenantList.operator ==(Qian.Tenancy.AspNetCore.TenantList? left, Qian.Tenancy.AspNetCore.TenantList? right) -> bool
+Qian.Tenancy.AspNetCore.TenantList.Total.get -> int
+Qian.Tenancy.AspNetCore.TenantList.Total.init -> void

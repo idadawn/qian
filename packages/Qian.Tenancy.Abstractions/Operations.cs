@@ -13,6 +13,8 @@ public interface ITenantOperations
 {
     /// <summary>按租户号排序的分页主档投影。</summary>
     ValueTask<IReadOnlyList<TenantDescriptor>> ListAsync(int skip, int take, CancellationToken cancellationToken = default);
+    /// <summary>按状态和租户号/名称关键字筛选，返回同一快照下的当前页与总数，按租户号和 ID 稳定排序。</summary>
+    ValueTask<(IReadOnlyList<TenantDescriptor> Items, int Total)> QueryAsync(int skip, int take, TenantStatus? status = null, string? keyword = null, CancellationToken cancellationToken = default);
     /// <summary>目标租户仅由控制面路径给出；复用 UpdateTenant 与 xmin 乐观并发。</summary>
     ValueTask<TenantDescriptor> UpdateAsync(Guid id, UpdateTenant request, CancellationToken cancellationToken = default);
 }

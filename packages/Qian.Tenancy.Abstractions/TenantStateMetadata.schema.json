@@ -1,0 +1,145 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "states": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "pending",
+          "trial",
+          "active",
+          "grace",
+          "suspended"
+        ]
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "oneOf": [
+              {
+                "enum": [
+                  "pending",
+                  "trial",
+                  "active",
+                  "grace",
+                  "suspended",
+                  "any-s1",
+                  "previous"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "pending",
+                    "trial",
+                    "active",
+                    "grace",
+                    "suspended"
+                  ]
+                }
+              }
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "to": {
+            "oneOf": [
+              {
+                "enum": [
+                  "pending",
+                  "trial",
+                  "active",
+                  "grace",
+                  "suspended",
+                  "any-s1",
+                  "previous"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "pending",
+                    "trial",
+                    "active",
+                    "grace",
+                    "suspended"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "action",
+          "to"
+        ]
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sideEffect": {
+            "enum": [
+              "read",
+              "write",
+              "destructive"
+            ]
+          },
+          "agent": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "expose": {
+                "type": "boolean"
+              },
+              "requiresConfirmation": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "expose",
+              "requiresConfirmation"
+            ]
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "idempotent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "sideEffect",
+          "agent"
+        ]
+      }
+    }
+  },
+  "required": [
+    "states",
+    "transitions",
+    "actions"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "租户状态机元数据"
+}

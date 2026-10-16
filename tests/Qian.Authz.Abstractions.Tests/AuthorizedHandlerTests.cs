@@ -41,6 +41,29 @@ internal sealed partial class AuthzTestJson : JsonSerializerContext;
 
 public sealed class AuthorizedHandlerTests
 {
+    [Fact]
+    public void 初始化注册拒绝非Kun权限行为的最后描述符()
+    {
+        var services = new ReplacingServices();
+        var builder = new KunMediatorBuilder(services);
+        var method = typeof(AuthorizedHandlerRegistration).GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+            .Single(value => value.Name == "AddAuthorizedHandler" && value.GetParameters().Length == 6)
+            .MakeGenericMethod(typeof(ProtectedCommand), typeof(int), typeof(Handler));
+        var invocation = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(null,
+            [builder, (Func<Kun.Core.Results.Error, int>)(_ => -1), "qian.sample.crm/export", AuthzTestJson.Default.ProtectedCommand, AuthzTestJson.Default.Int32, true]));
+        Assert.Equal("Kun 权限行为登记类型与预期不一致。", Assert.IsType<InvalidOperationException>(invocation.InnerException).Message);
+        Assert.True(services.Replaced);
+    }
+    private sealed class ReplacingServices : System.Collections.ObjectModel.Collection<ServiceDescriptor>, IServiceCollection
+    {
+        internal bool Replaced { get; private set; }
+        protected override void InsertItem(int index, ServiceDescriptor item)
+        {
+            if (item.ServiceType.IsConstructedGenericType && item.ServiceType.GetGenericTypeDefinition().FullName == "Kun.Mediator.Behaviors.PermissionBehavior`2")
+            { item = ServiceDescriptor.Scoped<object>(_ => new object()); Replaced = true; }
+            base.InsertItem(index, item);
+        }
+    }
     [Theory]
     [InlineData(null, true, false)]
     [InlineData(false, true, false)]

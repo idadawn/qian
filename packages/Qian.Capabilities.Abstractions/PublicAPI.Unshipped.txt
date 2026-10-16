@@ -140,3 +140,11 @@ override Qian.Capabilities.PlatformHttpContract.GetHashCode() -> int
 override Qian.Capabilities.PlatformHttpContract.ToString() -> string!
 static Qian.Capabilities.PlatformHttpContract.operator !=(Qian.Capabilities.PlatformHttpContract? left, Qian.Capabilities.PlatformHttpContract? right) -> bool
 static Qian.Capabilities.PlatformHttpContract.operator ==(Qian.Capabilities.PlatformHttpContract? left, Qian.Capabilities.PlatformHttpContract? right) -> bool
+Qian.Capabilities.HttpResponseSchema
+Qian.Capabilities.HttpResponseSchema.HttpResponseSchema(int statusCode, System.Text.Json.JsonElement schema, string! mediaType = "application/json") -> void
+Qian.Capabilities.HttpResponseSchema.StatusCode.get -> int
+Qian.Capabilities.HttpResponseSchema.Schema.get -> System.Text.Json.JsonElement
+Qian.Capabilities.HttpResponseSchema.MediaType.get -> string!
+Qian.Capabilities.TenantInputContract
+static Qian.Capabilities.TenantInputContract.FindFields(System.Text.Json.JsonElement schema, System.Text.Json.JsonElement? document = null) -> System.Collections.Generic.IReadOnlyList<string![]!>!
+static Qian.Capabilities.TenantInputContract.IsTenantName(string! name) -> bool

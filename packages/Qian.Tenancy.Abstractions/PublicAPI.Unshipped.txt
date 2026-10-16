@@ -332,3 +332,5 @@ static readonly Qian.Tenancy.TenantSettings.Key -> Qian.Runtime.ServiceKey
 static readonly Qian.Tenancy.TenantSettings.OperationsKey -> Qian.Runtime.ServiceKey
 static readonly Qian.Tenancy.TenantSettings.QuotaKey -> Qian.Runtime.ServiceKey
 static readonly Qian.Tenancy.TenantSettings.UserCounterKey -> Qian.Runtime.ServiceKey
+Qian.Tenancy.ITenantOperations.QueryAsync(int skip, int take, Qian.Tenancy.TenantStatus? status = null, string? keyword = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantDescriptor!>! Items, int Total)>
+static Qian.Tenancy.TenantStateMetadata.Schema.get -> System.Text.Json.JsonElement

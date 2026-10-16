@@ -15,3 +15,23 @@ public interface IHttpContractSource
 
 /// <summary>平台运营端点的契约归属；只用于构建完整 OpenAPI，不开放租户业务挂载或授权旁路。</summary>
 public sealed record PlatformHttpContract(string PluginId);
+
+/// <summary>动态 JSON 响应的声明式 Schema；配合实际 Produces 元数据导出，不改变授权或运行时行为。</summary>
+public sealed class HttpResponseSchema
+{
+    /// <summary>声明指定状态码与媒体类型的响应 Schema，保留独立文档副本。</summary>
+    public HttpResponseSchema(int statusCode, JsonElement schema, string mediaType = "application/json")
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(statusCode, 100);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(statusCode, 599);
+        ArgumentException.ThrowIfNullOrWhiteSpace(mediaType);
+        if (schema.ValueKind != JsonValueKind.Object) throw new ArgumentException("响应 Schema 必须是 JSON 对象。", nameof(schema));
+        StatusCode = statusCode; Schema = schema.Clone(); MediaType = mediaType;
+    }
+    /// <summary>响应状态码。</summary>
+    public int StatusCode { get; }
+    /// <summary>声明式 JSON Schema。</summary>
+    public JsonElement Schema { get; }
+    /// <summary>响应媒体类型。</summary>
+    public string MediaType { get; }
+}

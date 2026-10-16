@@ -63,8 +63,9 @@ public sealed partial class CustomerCommandTests
         await AssertHttp(await Request(HttpMethod.Post, path, root, new CreateTenant("bad", "Bad", TenantIsolation.Schema)
             { Administrator = new(Guid.NewGuid(), "owner") }), HttpStatusCode.BadRequest, "INPUT_INVALID");
         Assert.Equal(0, await AuditCount()); // 400/401/403 均未得到成功旁路，不应写放行审计。
-        Assert.Equal(3, logs.Entries.Count);
-        Assert.All(logs.Entries, entry => { Assert.Equal("not_superadmin", entry["Reason"]); Assert.Equal("intruder", entry["Subject"]); });
+        Assert.Equal(6, logs.Entries.Count);
+        Assert.Equal(3, logs.Entries.Count(entry => Equals(entry["Reason"], "tenant_principal") && Equals(entry["Subject"], "root")));
+        Assert.Equal(3, logs.Entries.Count(entry => Equals(entry["Reason"], "not_superadmin") && Equals(entry["Subject"], "intruder")));
         var create = new CreateTenant("c", "C") { Administrator = new TenantAdministrator(Guid.CreateVersion7(), "owner-c") };
         using var response = await Request(HttpMethod.Post, path, root, create);
         Assert.True(response.StatusCode == HttpStatusCode.Created, await response.Content.ReadAsStringAsync(Ct));
@@ -212,7 +213,7 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task<WebApplication> ManagementHost(RunningApp business, LifecyclePlatform platform, OperationsLog? logs = null)
+    private static async Task<WebApplication> ManagementHost(RunningApp business, LifecyclePlatform platform, OperationsLog? logs = null, Func<IPluginContext>? context = null)
     {
         var loader = business.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var permissions = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy/metadata/permissions.json")));
@@ -234,7 +235,7 @@ public sealed partial class CustomerCommandTests
             var crm = await lifecycle.InstallAsync(platform.Artifacts["1.0.0"], "root", Ct);
             await lifecycle.ActivateAsync(crm.PluginId, crm.Revision, "root", Ct);
         }
-        var app = TenantOperationsHost.Build(() => loader.GetContext("tenancy", ScopeKey.Global),
+        var app = TenantOperationsHost.Build(() => context?.Invoke() ?? loader.GetContext("tenancy", ScopeKey.Global),
             new TokenValidationParameters { ValidateIssuer = true, ValidIssuer = Issuer, ValidateAudience = true, ValidAudience = Audience,
                 ValidateLifetime = true, ValidateIssuerSigningKey = true, IssuerSigningKey = business.ManagementSigningKey,
                 ValidAlgorithms = [SecurityAlgorithms.RsaSha256], ClockSkew = TimeSpan.Zero }, builder =>

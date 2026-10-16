@@ -4,7 +4,24 @@ namespace Qian.Sample.Crm.Tests;
 
 public sealed class TenantContractSchemaTests
 {
-    private static readonly HashSet<string> TenantNames = new(StringComparer.OrdinalIgnoreCase) { "tenant", "tenantId", "tenant_id", "tenant-id" };
+    [Theory]
+    [InlineData("tenantId", "query")]
+    [InlineData("tenant_id", "path")]
+    [InlineData("Tenant-ID", "query")]
+    public void 参数名称和嵌套Schema同样拒绝租户输入(string field, string location)
+    {
+        var document = JsonNode.Parse("""{"paths":{"/probe":{"get":{"parameters":[]}}},"components":{"schemas":{"Admin":{"type":"object","properties":{}}}}}""")!;
+        var parameters = document["paths"]!["/probe"]!["get"]!["parameters"]!.AsArray();
+        parameters.Add(new JsonObject { ["name"] = field, ["in"] = location, ["schema"] = new JsonObject { ["type"] = "string" } });
+        Assert.Contains(TenantFields(document), value => value.EndsWith("/" + field, StringComparison.Ordinal));
+        parameters[0]!["name"] = "administrator";
+        parameters[0]!["schema"] = new JsonObject { ["$ref"] = "#/components/schemas/Admin" };
+        document["components"]!["schemas"]!["Admin"]!["properties"]![field] = new JsonObject { ["type"] = "string" };
+        Assert.Contains(TenantFields(document), value => value.EndsWith("/properties/" + field, StringComparison.Ordinal));
+        document["components"]!["schemas"]!["Admin"]!["properties"]!.AsObject().Remove(field);
+        document["components"]!["schemas"]!["Admin"]!["examples"] = new JsonArray(new JsonObject { ["properties"] = new JsonObject { [field] = "literal" } });
+        Assert.Empty(TenantFields(document));
+    }
     [Theory]
     [InlineData("tenantId")]
     [InlineData("tenant_id")]
@@ -25,6 +42,9 @@ public sealed class TenantContractSchemaTests
                     var schema = Resolve(candidate, candidate["paths"]![path.Key]![operation.Key]!["requestBody"]!["content"]!["application/json"]!["schema"]!);
                     schema["properties"]![field] = new JsonObject { ["type"] = "string" };
                     Assert.Contains(TenantFields(candidate), pointer => pointer.EndsWith("/" + field, StringComparison.Ordinal));
+                    schema["properties"]!.AsObject().Remove(field);
+                    schema["properties"]!["nested"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject { [field] = new JsonObject { ["type"] = "string" } } };
+                    Assert.Contains(TenantFields(candidate), pointer => pointer.EndsWith("/nested/properties/" + field, StringComparison.Ordinal));
                     tested++;
                 }
         Assert.Equal(4, tested); // 创建、PUT 编辑、激活、PUT 设置。
@@ -33,26 +53,25 @@ public sealed class TenantContractSchemaTests
     internal static IReadOnlyList<string> TenantFields(JsonNode document)
     {
         var found = new List<string>();
+        var root = System.Text.Json.JsonSerializer.SerializeToElement(document);
         foreach (var path in document["paths"]!.AsObject())
             foreach (var operation in path.Value!.AsObject())
-                if (operation.Value?["requestBody"] is { } body)
-                    Visit(body, path.Key + "/" + operation.Key + "/requestBody", []);
-        return found;
-        void Visit(JsonNode? node, string pointer, HashSet<string> seen)
-        {
-            if (node is JsonArray array)
-                for (var index = 0; index < array.Count; index++) Visit(array[index], pointer + "/" + index, seen);
-            if (node is not JsonObject obj) return;
-            if (obj["$ref"] is { } reference)
             {
-                var id = reference.GetValue<string>();
-                if (seen.Add(id)) Visit(Resolve(document, obj), id, seen);
+                if (operation.Value?["requestBody"] is { } body) Scan(body, path.Key + "/" + operation.Key + "/requestBody");
+                if (operation.Value?["parameters"] is JsonArray parameters)
+                    foreach (var parameter in parameters)
+                    {
+                        var resolved = Resolve(document, parameter!);
+                        var name = resolved["name"]!.GetValue<string>();
+                        if (Qian.Capabilities.TenantInputContract.IsTenantName(name)) found.Add(path.Key + "/" + operation.Key + "/parameters/" + name);
+                        if (resolved["schema"] is { } schema) Scan(schema, path.Key + "/" + operation.Key + "/parameters/" + name);
+                    }
             }
-            if (obj["properties"] is JsonObject properties)
-                foreach (var field in properties)
-                    if (TenantNames.Contains(field.Key)) found.Add(pointer + "/properties/" + field.Key);
-            foreach (var item in obj)
-                if (item.Key is not ("$ref" or "example" or "examples" or "default")) Visit(item.Value, pointer + "/" + item.Key, seen);
+        return found;
+        void Scan(JsonNode node, string prefix)
+        {
+            foreach (var field in Qian.Capabilities.TenantInputContract.FindFields(System.Text.Json.JsonSerializer.SerializeToElement(node), root))
+                found.Add(prefix + "/" + string.Join('/', field));
         }
     }
 
