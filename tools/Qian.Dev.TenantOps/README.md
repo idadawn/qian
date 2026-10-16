@@ -76,6 +76,24 @@ export TOKEN=$(scripts/dev-tenant-ops.sh token)
 - `--kind service`：服务主体；
 - `--ttl 60`：有效期，单位分钟。
 
+## CI 冒烟
+
+`dev-tenant-ops` 工作流（S1-QA-013）在 ubuntu-latest 上执行与本机相同的命令：
+
+```bash
+scripts/dev-tenant-ops.sh smoke
+```
+
+它的步骤：
+
+1. 在后台起环境，等运营宿主就绪，最多 600 秒；
+2. 跑一遍 `walkthrough --yes`，激活后 5 秒就到期，整轮约半分钟，不含首次构建；
+3. 停宿主。
+
+退出码就是走查结果。失败时打印宿主日志，CI 还会把它上传为产物 `dev-tenant-ops-up-log`。
+
+只改文档与任务文件的 PR 不触发这道冒烟；改了 `packages`、`samples`、`plugins`、`schemas`、`contracts`、本工程与脚本、分析器、构建配置或工作流本身才运行。本机跑 `smoke` 前先停掉正在运行的 `up`；结束后容器保留，用 `down` 删除。`status` 在运营宿主运行时退出码为 0，否则为 1，脚本里可以直接拿来判断。
+
 ## 接口一览
 
 运营契约 [http-v1.openapi.json](../../plugins/qian.tenancy/contracts/http-v1.openapi.json) 的 8 个路径、11 个操作都在走查里，另有两条开发路由：
@@ -144,5 +162,7 @@ CRM 命令宿主只充当运行时容器，监听随机本机端口，手测流�
 | `QIAN_DEV_PG_CONTAINER` | `qian-dev-tenant-ops-pg` | 容器名 |
 | `QIAN_DEV_PG_IMAGE` | `postgres:16-alpine`，未设时沿用 `QIAN_TEST_IMAGE_POSTGRES` | PostgreSQL 镜像 |
 | `QIAN_DEV_STATE` | `.qian-dev/tenant-ops` | 本机状态目录（私钥、口令） |
-| `QIAN_DEV_VALID_SECONDS` | `30` | 走查里激活后多少秒到期 |
+| `QIAN_DEV_VALID_SECONDS` | `30`（`smoke` 里为 `5`） | 走查里激活后多少秒到期 |
 | `QIAN_OASDIFF_PATH` | 未设 | 设了就接入契约检查器；它只在组件升级准入时调用，手测流程用不到 |
+| `QIAN_DEV_SMOKE_TIMEOUT` | `600` | `smoke` 等运营宿主就绪的最长秒数 |
+| `QIAN_DEV_SMOKE_LOG` | `.qian-dev/tenant-ops/smoke-up.log` | `smoke` 的宿主日志位置 |
