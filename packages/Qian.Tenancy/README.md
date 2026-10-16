@@ -87,3 +87,15 @@ GET/PUT /api/tenancy/tenants/{id}/settings/{plugin} 使用同一平台超管授�
 按 R105，九个单例服务键为 `TenancyProvisioning`、`TenancyMembershipProvisioner`、`TenancyProvisionedNotifier`、`TenancyOperations`、`TenancyLifecycle`、`TenancySettings`、`TenancySettingsOperations`、`TenancyQuota`、`TenancyUserCounter`。消费者使用 Definition 的现有静态字段，字段签名没有改变；未发布旧键不保留别名。`Authz.TenantRoleGrant` 的改名仍归 S1-RT-033。
 
 standalone 组合包移除从未被运行时消费的 `resolver.mode: single-tenant` 占位配置；独立宿主仍显式选择自己的 `ITenantContext` / SingleTenant 实现，不能以配置字符串切换可信租户边界。各 profile 的现有 Tenancy 配置均经实际 Apply 回归。
+
+## 运营 HTTP 契约与宿主（S1-TEN-008）
+
+`POST /api/tenancy/tenants` 的 Location 指向同一平台授权路径下的 `GET /api/tenancy/tenants/{id}`；未知目标统一404。创建请求的 administrator 必填且不可为null，isolation本期只接受row；列表skip≥0，take为1..100（默认50）。实际端点发布上述约束及400/401/403/404/409的ErrorDetail响应，快照使用缩进JSON。
+
+运营入口的组装样例是 [TenantOperationsHost](../../samples/Qian.Sample.Crm/TenantOperationsHost.cs)，由真实Kestrel/JwtBearer托管，复用已经装配的Runtime、Data、Authz和Audit。它与CRM业务入口是独立宿主，不装TenantRequestBoundary；平台主体没有tenant_id，不能经过业务边界再回退成平台。JwtBearer设置MapInboundClaims=false，ICurrentUser只从验签后的SecurityToken建立快照，使用Kun的PrincipalClaims读取并比对sub、tenant_id和principal_kind；请求体、请求头和令牌角色不能授予平台权限。
+
+S1-GW-001探针应接入这个运营宿主的监听地址和平台issuer/audience/签名公钥，使用真实平台超管令牌；不能把只开放机器业务请求的CrmCommandApplication地址当作运营入口。生产启动方提供每次解析global qian.tenancy的source函数和完整TokenValidationParameters，装齐Registry/Lifecycle的实际制品、Authz权限目录/专用平台登录及Audit平台链后，再运行TenantOperationsHost.Build(...).RunAsync()。集成测试直接启动同一Host工厂；本任务不声称Identity签发或集群部署已交付。
+
+匿名、租户主体、非超管及请求绑定/创建必填项/隔离值/分页校验的400/401/403不写成功旁路审计；成功授权的每次调用恰有一条bypass=superadmin，payload.permission为本次权限点。按R97，授权后的业务校验仍可失败（例如设置configSchema不合格），已发生的授权审计保留，不能删除审计链记录或伪装为业务写入成功。运营旁路拒绝原因只进入结构化日志（Reason、Subject、Permission），响应仍是统一AUTHZ_DENIED。
+
+OpenAPI请求租户字段门禁放在契约测试：解析全部本地$ref并遍历所有请求schema（含PUT），按RT-020的tenant-field词表拒绝任意层级tenant/tenantId/tenant_id/tenant-id；变异用例对4个请求体分别注入字段，保证不是只检查引用文本。真实oasdiff/OpenApiContractPlugin对删除PUT、改响应字段类型分别拒绝且Pointer指向该契约。PlatformHttpContract端点不进入租户GetDocumentAsync，即使额外携带业务绑定也先排除。x-qian-permission仍按R105等S1-AZ-004的生成器交付。

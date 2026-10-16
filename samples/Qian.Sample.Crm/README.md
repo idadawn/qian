@@ -89,3 +89,9 @@ T23 的具体宿主装配在测试工程的 `ProfileModeAssembly`，复用真实
 - `CrmCommandRuntime.Source()` 优先取本租户 scope 的 `crm` 条目；没有时回到全局条目的 scope 视图。由 Lifecycle 装进租户 scope 的版本因此由各租户自己的条目处理。
 
 真实验收在测试工程的 `LifecycleAcceptanceTests`。宿主只预装参考应用 1.0.0 / 1.0.1 / 1.1.0 三个版本、不挂全局条目，由 Lifecycle 完成开通、挂载、升级、回切与契约准入。证据与边界见 [Qian.Lifecycle](../../packages/Qian.Lifecycle/README.md#测试证据)。这不代表参考应用已经以正式包安装，正式安装验收仍归 S1-RT-011。
+
+## 平台租户运营宿主
+
+[TenantOperationsHost](TenantOperationsHost.cs) 提供可独立启动的真实Kestrel/JwtBearer宿主，复用调用方已装配的Runtime/Data/Authz/Audit，并实际映射MapQianTenancy。启动方调用Build，传入每次重新解析global qian.tenancy的函数、可信平台issuer/audience/RS256签名校验参数及监听地址配置，然后RunAsync。它要求签名、过期时间、issuer/audience/lifetime/signature完整验证；不经过业务TenantRequestBoundary。ICurrentUser从已验证的原始令牌捕获，并经PrincipalClaims核对，MapInboundClaims=false。
+
+这与只接受机器业务请求的CrmCommandApplication是两个监听宿主；S1-GW-001探针应使用运营宿主的地址、真实平台超管令牌及已就绪的Registry/Lifecycle/Authz/Audit，不能把CRM业务端口当作运营端口。TenantManagementTests与六步用例直接调用同一Build工厂；测试密钥不替代正式Identity签发，部署由相应任务完成。具体HTTP契约与前置见[Tenancy主文档](../../packages/Qian.Tenancy/README.md#运营-http-契约与宿主s1-ten-008)。

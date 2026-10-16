@@ -21,4 +21,8 @@
   </ItemGroup>
   <ItemGroup><InternalsVisibleTo Include="Qian.Sample.Crm.Tests" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../../packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Tenancy.AspNetCore/Qian.Tenancy.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
+  </ItemGroup>
 </Project>
