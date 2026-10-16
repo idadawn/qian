@@ -20,7 +20,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./index.css": "./src/index.css",
-    "./theme-init.js": "./src/theme-init.js"
+    "./theme-init.js": "./src/theme-init.js",
+    "./theme.css": "./src/theme.css"
   },
   "publishConfig": {
     "access": "restricted",
@@ -31,7 +32,8 @@
         "default": "./dist/index.js"
       },
       "./index.css": "./dist/index.css",
-      "./theme-init.js": "./dist/theme-init.js"
+      "./theme-init.js": "./dist/theme-init.js",
+      "./theme.css": "./dist/theme.css"
     }
   },
   "scripts": {

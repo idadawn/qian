@@ -26,7 +26,7 @@ export function ComboboxInput({ className, testId, ...props }: YueProps<Combobox
       data-slot="combobox-input"
       data-testid={testId ?? 'yue-combobox-input'}
       className={cn(
-        'h-9 min-w-40 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]',
+        'h-9 min-w-40 rounded-md border border-[var(--input)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]',
         className,
       )}
     />

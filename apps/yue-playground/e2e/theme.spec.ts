@@ -52,3 +52,30 @@ for (const mode of ['light', 'dark'] as const) test(`令牌页 ${mode} 状态无
   const result = await new AxeBuilder({ page }).analyze();
   expect(result.violations.filter(issue => issue.impact === 'critical' || issue.impact === 'serious')).toEqual([]);
 });
+
+for (const mode of ['light', 'dark'] as const) test(`浏览器 ${mode} 实际合成后的输入边界与系统字体契约`, async ({ page }) => {
+  await firstFrame(page, mode); await page.goto('/tokens.html');
+  await expect(page.getByTestId('yue-theme-select')).toBeVisible();
+  const result = await page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    const body = getComputedStyle(document.body);
+    const input = getComputedStyle(document.querySelector('#theme')!).borderColor;
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d')!;
+    const luminance = (rgb: Uint8ClampedArray): number => {
+      const linear = [...rgb].slice(0, 3).map(channel => { const value = channel / 255; return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4; });
+      return linear[0]! * 0.2126 + linear[1]! * 0.7152 + linear[2]! * 0.0722;
+    };
+    const ratios = ['background', 'card', 'popover', 'muted', 'sidebar'].map(name => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = root.getPropertyValue(`--${name}`); context.fillRect(0, 0, 1, 1);
+      const back = luminance(context.getImageData(0, 0, 1, 1).data);
+      context.fillStyle = input; context.fillRect(0, 0, 1, 1);
+      const front = luminance(context.getImageData(0, 0, 1, 1).data);
+      return { name, ratio: (Math.max(front, back) + 0.05) / (Math.min(front, back) + 0.05) };
+    });
+    return { font: body.fontFamily, fontSize: body.fontSize, ratios };
+  });
+  expect(result.font).toContain('ui-sans-serif'); expect(result.font).toContain('PingFang SC'); expect(result.fontSize).toBe('14px');
+  for (const { name, ratio } of result.ratios) expect(ratio, `${mode}/${name}`).toBeGreaterThanOrEqual(3);
+});

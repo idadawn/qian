@@ -21,7 +21,7 @@ export function SelectTrigger({ className, children, placeholder, testId, ...pro
       data-slot="select-trigger"
       data-testid={testId ?? 'yue-select-trigger'}
       className={cn(
-        'inline-flex h-9 min-w-40 items-center justify-between gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] data-[placeholder]:text-[var(--muted-foreground)]',
+        'inline-flex h-9 min-w-40 items-center justify-between gap-2 rounded-md border border-[var(--input)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] data-[placeholder]:text-[var(--muted-foreground)]',
         className,
       )}
     >

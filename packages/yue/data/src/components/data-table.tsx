@@ -73,7 +73,7 @@ export function DataTable<T extends object>({ columns, data, total, query, onQue
             {column.getCanFilter() && <Input aria-label={i18n.t('data.filter', { column: i18n.t(String(column.columnDef.header)) })} value={String(column.getFilterValue() ?? '')} onChange={(event) => column.setFilterValue(event.target.value)} />}
           </th>)}
         </tr></thead>
-        <tbody>{state === 'ready' ? table.getRowModel().rows.map((row) => <tr key={row.id} data-slot="data-table-row" data-testid={`${testId}-row`} className="border-t border-[var(--border)]">
+        <tbody>{state === 'ready' ? table.getRowModel().rows.map((row) => <tr key={row.id} data-slot="data-table-row" data-testid={`${testId}-row`} className="h-(--yue-table-row-height) border-t border-[var(--border)]">
           {selectable && <td className="p-3"><Checkbox aria-label={i18n.t('data.selectRow', { row: row.index + 1 })} checked={row.getIsSelected()} onCheckedChange={(checked) => row.toggleSelected(!!checked)} /></td>}
           {visible.map((column) => { const definition = columns.find((item) => item.field === column.id)!; const value = row.getValue(column.id); return <td key={column.id} className="p-3" style={pinned(column.id)}>{definition.render ? definition.render(row.original) : value === null || value === undefined ? '' : String(value)}</td>; })}
         </tr>) : <tr><td colSpan={Math.max(1, visible.length + (selectable ? 1 : 0))} className="p-8 text-center"><div role={state === 'error' ? 'alert' : 'status'} data-slot={`data-table-${state}`} data-testid={`${testId}-${state}`}>{state === 'error' ? error : i18n.t(`data.${state}`)}{state === 'error' && onRetry && <Button onClick={onRetry}>{i18n.t('common.retry')}</Button>}</div></td></tr>}</tbody>
