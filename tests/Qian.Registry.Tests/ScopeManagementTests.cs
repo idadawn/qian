@@ -43,6 +43,7 @@ public sealed partial class PatchPersistenceTests
     private static readonly string[] ManagementErrorFields = ["type", "title", "status", "code", "message", "pointer"];
     // 令牌声称 Owner 也不授予任何权限：放行只来自数据库里的角色授予。
     private static readonly string[] ClaimedRoles = ["tenant.owner"];
+    private static readonly string[] PlatformClaimedRoles = ["platform.superadmin"];
 
     [Fact]
     public async Task 管理面scope视图_A挂载B未挂载_持权限者得403原因码与pointer_无权限者与不存在同为404_别名同结果并带弃用头()
@@ -200,7 +201,7 @@ public sealed partial class PatchPersistenceTests
         return active;
     }
 
-    private static async Task<ManagementHost> StartManagementHost(RunningRegistry running, AsyncLocalTenantContext tenant)
+    private static async Task<ManagementHost> StartManagementHost(RunningRegistry running, AsyncLocalTenantContext tenant, string? platformTargetTenant = null)
     {
         var signing = RSA.Create(2048); using var publicOnly = RSA.Create(); publicOnly.ImportParameters(signing.ExportParameters(false));
         var key = new RsaSecurityKey(signing) { KeyId = "registry-http" };
@@ -223,12 +224,18 @@ public sealed partial class PatchPersistenceTests
             {
                 if (previous is not null) await previous(context);
                 if (context.Result is not null && !context.Result.Succeeded) return;
-                VerifiedServiceUser.Capture(context);
+                VerifiedServiceUser.Capture(context, platformTargetTenant is not null);
             };
         });
         var app = builder.Build();
         app.UseQianErrors(); app.UseRouting(); app.UseAuthentication();
-        app.Use((context, next) => context.RequestServices.GetRequiredService<TenantRequestBoundary>().InvokeAsync(context, next));
+        app.Use(async (context, next) =>
+        {
+            // 平台运营宿主预先选择的可信目标，不从 path/header/body 推导；普通租户请求仍走原边界。
+            if (platformTargetTenant is not null && context.RequestServices.GetRequiredService<ICurrentUser>().Principal is { Kind: PrincipalKind.User, TenantId: null })
+            { using var scope = tenant.BeginScope(platformTargetTenant); await next(context); return; }
+            await context.RequestServices.GetRequiredService<TenantRequestBoundary>().InvokeAsync(context, next);
+        });
         app.UseAuthorization();
         app.MapQianRegistry(_ => running.Root);
         try
@@ -261,6 +268,15 @@ public sealed partial class PatchPersistenceTests
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", new JsonWebTokenHandler().CreateToken(payload, new SigningCredentials(key, SecurityAlgorithms.RsaSha256)));
             return await client.SendAsync(request, Ct);
         }
+        internal async Task<HttpResponseMessage> GetPlatform(string path, string subject)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, path); request.Headers.Add("X-Tenant-Id", HttpTenantB);
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var payload = JsonSerializer.Serialize(new { iss = "registry-http-test", aud = HttpAudiences, sub = subject, principal_kind = "user", tenant_id = (string?)null,
+                identity_revision = 0, roles = PlatformClaimedRoles, scope = "registry.read", session_id = Guid.CreateVersion7(), jti = Guid.CreateVersion7(), iat = now, nbf = now, exp = now + 60 });
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", new JsonWebTokenHandler().CreateToken(payload, new SigningCredentials(key, SecurityAlgorithms.RsaSha256)));
+            return await client.SendAsync(request, Ct);
+        }
         public async ValueTask DisposeAsync() { client.Dispose(); await app.StopAsync(Ct); await app.DisposeAsync(); signing.Dispose(); }
     }
 
@@ -273,12 +289,12 @@ public sealed partial class PatchPersistenceTests
         public IReadOnlyList<string> Roles => Principal?.Roles ?? [];
         public bool IsAuthenticated => accessor.HttpContext?.User.Identity?.IsAuthenticated == true && Principal is not null;
 
-        internal static void Capture(TokenValidatedContext context)
+        internal static void Capture(TokenValidatedContext context, bool acceptPlatformUser = false)
         {
-            if (context.SecurityToken is not JsonWebToken token || !PrincipalClaims.TryRead(context.Principal, out var subject, out var tenant, out var kind) || kind != "service")
+            if (context.SecurityToken is not JsonWebToken token || !PrincipalClaims.TryRead(context.Principal, out var subject, out var tenant, out var kind) || kind != "service" && !(acceptPlatformUser && kind == "user" && tenant is null))
             { context.Fail("无效机器身份。"); return; }
             var principal = JsonSerializer.Deserialize(Base64UrlEncoder.DecodeBytes(token.EncodedPayload), IdentityJson.PrincipalTypeInfo);
-            if (principal is null || principal.Kind != PrincipalKind.Service || principal.Subject != subject || principal.TenantId != tenant || principal.Actor is not null)
+            if (principal is null || (principal.Kind != PrincipalKind.Service && !(acceptPlatformUser && principal.Kind == PrincipalKind.User && principal.TenantId is null)) || principal.Subject != subject || principal.TenantId != tenant || principal.Actor is not null)
             { context.Fail("身份快照不一致。"); return; }
             context.HttpContext.Items[Key] = principal;
         }
