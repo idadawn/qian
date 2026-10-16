@@ -33,7 +33,7 @@ export function tokenContrasts(registry: TokenRegistry = TOKEN_REGISTRY): TokenC
   const result: TokenContrast[] = [];
   for (const theme of ['light', 'dark'] as const) for (const brand of registry.brands) for (const token of registry.semantics) {
     if (token.kind !== 'color' || !token.contrastWith) continue;
-    if (!token.contrast || !(token.contrast in CONTRAST_MINIMUM)) throw new Error(`缺少对比度分类：${token.name}`);
+    if (!token.contrast || !(Object.hasOwn(CONTRAST_MINIMUM, token.contrast))) throw new Error(`缺少对比度分类：${token.name}`);
     result.push({ theme, brand: brand.id, token: token.name, against: token.contrastWith, contrast: token.contrast, minimum: CONTRAST_MINIMUM[token.contrast], ratio: contrastRatio(tokenValue(token.name, theme, brand.id, registry), tokenValue(token.contrastWith, theme, brand.id, registry), token[`${theme}Alpha`] ?? 1) });
   }
   return result;
@@ -50,7 +50,7 @@ export function validateTokenRegistry(registry: TokenRegistry = TOKEN_REGISTRY):
     add(token.name, token.meaning);
     if (!token.light || !token.dark || !primitives.has(token.light) || !primitives.has(token.dark)) errors.push(`semantic 引用未登记：${token.name}`);
     if (token.kind === 'color' && (!token.contrastWith || !semantics.has(token.contrastWith))) errors.push(`缺少语义对比色：${token.name}`);
-    if (token.kind === 'color' && (!token.contrast || !(token.contrast in CONTRAST_MINIMUM))) errors.push(`缺少对比度分类：${token.name}`);
+    if (token.kind === 'color' && (!token.contrast || !(Object.hasOwn(CONTRAST_MINIMUM, token.contrast)))) errors.push(`缺少对比度分类：${token.name}`);
     for (const alpha of [token.lightAlpha, token.darkAlpha]) if (alpha !== undefined && (!Number.isFinite(alpha) || alpha < 0 || alpha > 1)) errors.push(`透明度无效：${token.name}`);
   }
   for (const token of registry.components) { add(token.name, token.meaning); for (const match of token.value?.matchAll(/var\((--[a-z0-9-]+)\)/g) ?? []) if (!primitives.has(match[1]!) && !semantics.has(match[1]!)) errors.push(`component 只能引用下层：${token.name}`); }
@@ -90,8 +90,9 @@ export function generateTokenCss(registry: TokenRegistry = TOKEN_REGISTRY): stri
 
 /** Tailwind v4 消费入口与色彩目录同源，支持 bg-primary/90 等透明度配方。 */
 export function generateThemeCss(registry: TokenRegistry = TOKEN_REGISTRY): string {
-  const lines = ['/* 由 registry.json 生成；运行 tokens:generate。 */', "@import './index.css';", '@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));', '@theme inline {'];
+  const lines = ['/* 由 registry.json 生成；运行 tokens:generate。 */', "@import './index.css';", "@import 'tw-animate-css';", '@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));', '@theme inline {'];
   for (const alias of registry.aliases) if (registry.semantics.find(token => token.name === alias.target)?.kind === 'color') lines.push(`  --color-${alias.name.slice(2)}: var(${alias.name});`);
+  lines.push('  --color-table-header: var(--yue-table-header-background);');
   lines.push('  --font-sans: var(--yue-p-font-sans);', '  --font-mono: var(--yue-p-font-mono);', '  --radius-sm: calc(var(--radius) - 4px);', '  --radius-md: calc(var(--radius) - 2px);', '  --radius-lg: var(--radius);', '  --radius-xl: calc(var(--radius) + 4px);');
   for (const size of ['xs', 'sm', 'md', 'lg', 'xl']) lines.push(`  --shadow-${size}: var(--yue-p-shadow-${size});`);
   for (const speed of ['fast', 'normal', 'slow']) lines.push(`  --transition-duration-${speed}: var(--yue-p-duration-${speed});`);

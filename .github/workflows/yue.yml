@@ -8,6 +8,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "scripts/yue-visual.mjs"
       - "packages/yue/**"
       - "tools/openapi-codegen/**"
       - "apps/**"
@@ -23,6 +24,7 @@ on:
       - ".github/workflows/yue.yml"
   pull_request:
     paths:
+      - "scripts/yue-visual.mjs"
       - "packages/yue/**"
       - "tools/openapi-codegen/**"
       - "apps/**"
@@ -118,4 +120,26 @@ jobs:
             apps/yue-playground/playwright-report
             apps/yue-playground/test-results
             apps/yue-playground/.lighthouseci
+          if-no-files-found: ignore
+
+  visual:
+    name: 视觉回归
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter yue-playground build
+      - name: 在统一 Linux 浏览器与系统字体环境校验基线
+        run: pnpm yue:visual
+      - name: 上传视觉差异与追踪
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yue-visual-report
+          path: apps/yue-playground/.visual-results/results
           if-no-files-found: ignore

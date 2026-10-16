@@ -18,7 +18,7 @@ const query = new URLSearchParams(location.search);
 const name = query.get('component') ?? 'Button';
 const initialState = query.get('state') ?? (name === 'Tokens' ? 'Light' : 'Default');
 const themes = ['light', 'dark'] as const;
-const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空' };
+const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空', Compact: '紧凑' };
 const modules: Record<string, unknown> = { react: React, '@idadawn/yue-core': Core, '@idadawn/yue-form': Form, '@idadawn/yue-data': Data, '@idadawn/yue-sdk': Sdk, '@idadawn/yue-tokens': { TOKEN_REGISTRY } };
 const states = [...scenarios, ...formScenarios, ...dataScenarios].filter(s => s.component === name);
 let editorPromise: Promise<void> | undefined;

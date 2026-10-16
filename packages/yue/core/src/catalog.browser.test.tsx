@@ -37,6 +37,27 @@ describe('全组件部件与无障碍', () => {
 });
 
 describe('基础交互', () => {
+  it('关闭图标使用宿主标签，showCloseButton=false 可隐藏且兼容既有调用', () => {
+    const view = render(<C.Dialog defaultOpen><C.DialogContent closeLabel="关闭资料"><C.DialogTitle>资料</C.DialogTitle></C.DialogContent></C.Dialog>);
+    expect(screen.getByTestId('yue-dialog-close-button').getAttribute('aria-label')).toBe('关闭资料');
+    view.rerender(<C.Dialog defaultOpen><C.DialogContent closeLabel="关闭资料" showCloseButton={false}><C.DialogTitle>资料</C.DialogTitle></C.DialogContent></C.Dialog>);
+    expect(screen.queryByTestId('yue-dialog-close-button')).toBeNull();
+    view.rerender(<C.Dialog defaultOpen><C.DialogContent><C.DialogTitle>资料</C.DialogTitle></C.DialogContent></C.Dialog>);
+    expect(screen.queryByTestId('yue-dialog-close-button')).toBeNull();
+  });
+
+  it('render Button 保留 Trigger 与 Close 身份，仍拒绝直接改写 Button 身份', async () => {
+    render(<C.Dialog><C.DialogTrigger render={<C.Button variant="outline" />} testId="open-profile">打开</C.DialogTrigger><C.DialogContent><C.DialogTitle>资料</C.DialogTitle><C.DialogClose render={<C.Button variant="outline" />} testId="close-profile">关闭</C.DialogClose></C.DialogContent></C.Dialog>);
+    const trigger = screen.getByTestId('open-profile');
+    expect(trigger.getAttribute('data-slot')).toBe('dialog-trigger');
+    expect(trigger.tagName).toBe('BUTTON');
+    await userEvent.click(trigger);
+    expect(screen.getByTestId('close-profile').getAttribute('data-slot')).toBe('dialog-close');
+    expect(document.querySelector('button button')).toBeNull();
+    await userEvent.click(screen.getByTestId('close-profile'));
+    await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
   it('testId 可以覆盖默认标识，data-slot 保持组件身份', () => {
     render(<><C.Button data-slot="injected" data-testid="injected" testId="save-button">保存</C.Button><C.Select items={[{ value: 'a', label: 'A' }]}><C.SelectTrigger aria-label="选择" data-slot="injected" testId="select-control" /></C.Select></>);
     expect(screen.getByTestId('save-button').getAttribute('data-slot')).toBe('button');

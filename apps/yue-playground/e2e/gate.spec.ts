@@ -1,3 +1,4 @@
+import { settleVisuals } from './settle';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
@@ -7,6 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 // Base UI 的 Tab 哨兵立即转移焦点；只排除这四类内部哨兵，保留 aria-hidden-focus 规则。
 const focusGuards = '[data-base-ui-focus-guard][aria-hidden="true"][data-type]';
 async function expectNoBlocking(page: Page, step: string) {
+  await settleVisuals(page);
   const results = await new AxeBuilder({ page }).exclude(focusGuards).analyze();
   const blocking = results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious');
   expect(blocking.map((v) => `${v.impact} ${v.id}: ${v.help} → ${v.nodes.map((n) => n.target.join(' ')).join('; ')}`), step).toEqual([]);
@@ -131,6 +133,7 @@ test('哨兵排除不掩盖真实 aria-hidden 可聚焦内容', async ({ page })
     hidden.append(button);
     document.body.append(hidden);
   });
+  await settleVisuals(page);
   const result = await new AxeBuilder({ page }).exclude(focusGuards).analyze();
   expect(result.violations.some(item => item.id === 'aria-hidden-focus')).toBe(true);
 });

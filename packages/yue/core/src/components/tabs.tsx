@@ -16,11 +16,11 @@ export function TabsList({ className, children, activateOnFocus = true, testId, 
       activateOnFocus={activateOnFocus}
       data-slot="tabs-list"
       data-testid={testId ?? 'yue-tabs-list'}
-      className={cn('relative flex gap-1 border-b border-[var(--border)] data-[orientation=vertical]:flex-col data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:border-r', className)}
+      className={cn('relative inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1 text-muted-foreground data-[orientation=vertical]:flex-col', className)}
       {...props}
     >
       {children}
-      <BaseTabs.Indicator data-slot="tabs-indicator" data-testid="yue-tabs-indicator" className="absolute bottom-0 left-[var(--active-tab-left)] h-0.5 w-[var(--active-tab-width)] bg-[var(--primary)] transition-all" />
+      <BaseTabs.Indicator data-slot="tabs-indicator" data-testid="yue-tabs-indicator" className="pointer-events-none absolute inset-0 rounded-lg opacity-0" />
     </BaseTabs.List>
   );
 }
@@ -31,7 +31,7 @@ export function TabsTab({ className, testId, ...props }: YueProps<TabsTabProps>)
       data-slot="tabs-tab"
       data-testid={testId ?? 'yue-tabs-tab'}
       className={cn(
-        'px-3 py-2 text-sm text-[var(--muted-foreground)] outline-none hover:text-[var(--foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] data-[active]:text-[var(--foreground)] data-[disabled]:opacity-50',
+        'inline-flex h-8 items-center justify-center rounded-md border border-transparent px-3 text-sm font-medium text-muted-foreground outline-none transition-all duration-normal hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[active]:bg-background data-[active]:text-foreground data-[active]:shadow-xs data-[disabled]:pointer-events-none data-[disabled]:opacity-50 motion-reduce:transition-none',
         className,
       )}
     />
@@ -39,5 +39,5 @@ export function TabsTab({ className, testId, ...props }: YueProps<TabsTabProps>)
 }
 
 export function TabsPanel({ className, testId, ...props }: YueProps<TabsPanelProps>) {
-  return <BaseTabs.Panel {...props} data-slot="tabs-panel" data-testid={testId ?? 'yue-tabs-panel'} className={cn('p-2 text-sm outline-none', className)} />;
+  return <BaseTabs.Panel {...props} data-slot="tabs-panel" data-testid={testId ?? 'yue-tabs-panel'} className={cn('flex-1 text-sm outline-none', className)} />;
 }

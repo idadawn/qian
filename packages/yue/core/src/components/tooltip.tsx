@@ -2,6 +2,7 @@ import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
 import type { TooltipPopupProps, TooltipPositionerProps, TooltipProviderProps, TooltipRootProps, TooltipTriggerProps } from '@base-ui/react/tooltip';
 import { createContext, useContext, useId, useState } from 'react';
 import { cn } from '../lib/cn';
+import { button, surface } from '../lib/styles';
 import type { YueProps } from '../lib/test-id';
 
 // 工具提示（Base UI Tooltip）。验证门项：聚焦即显示（键盘可达）、Escape 关闭、role=tooltip 与 aria-describedby 关联。
@@ -47,7 +48,7 @@ export function TooltipTrigger({ className, testId, ...props }: YueProps<Tooltip
       data-slot="tooltip-trigger"
       data-testid={testId ?? 'yue-tooltip-trigger'}
       aria-describedby={link?.open ? link.id : undefined}
-      className={cn('inline-flex h-9 items-center rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]', className)}
+      className={cn(button, 'border-border bg-background shadow-xs', className)}
     />
   );
 }
@@ -67,7 +68,7 @@ export function TooltipContent({ className, side, align, sideOffset = 6, testId,
           role="tooltip"
           data-slot="tooltip-content"
           data-testid={testId ?? 'yue-tooltip-content'}
-          className={cn('rounded-md bg-[var(--primary)] px-2 py-1 text-xs text-[var(--primary-foreground)] shadow-md', className)}
+          className={cn(surface, 'px-3 py-1.5 text-xs', className)}
           {...props}
         />
       </BaseTooltip.Positioner>

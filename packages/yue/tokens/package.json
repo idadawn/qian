@@ -55,5 +55,8 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "tw-animate-css": "catalog:"
   }
 }

@@ -40,7 +40,7 @@ tests/gates/yue/           门禁自测：分层边界、循环依赖样例、�
 | publint | `pnpm yue:publint` | publint（`pnpm pack` 后检查） | 发布形状：exports / types / files |
 | circular | `pnpm yue:circular` | dependency-cruiser | 循环依赖、不可解析 import |
 
-一把全跑：`pnpm yue:gates`。首次需要 `pnpm --filter yue-playground exec playwright install chromium`；Lighthouse 需要本机有 Chrome。CI 工作流 `yue` 把八项各作一个检查在 PR 上显示。
+一把全跑：`pnpm yue:gates`（含文档站与视觉回归）。首次需要 `pnpm --filter yue-playground exec playwright install chromium`；Lighthouse 需要本机有 Chrome。CI 工作流 `yue` 把八项各作一个检查在 PR 上显示。
 
 ## 4 约定
 
@@ -70,6 +70,6 @@ tests/gates/yue/           门禁自测：分层边界、循环依赖样例、�
 
 ## 7 已知限制与延期项
 
-- tokens 的品牌、明暗与语义色验证页已在靶场 `/tokens.html` 建立；Rspress 组件页与站内交互编辑器由 S1-YUE-005 提供，执行 `pnpm yue:docs` 验证生成、真实交互、离线编辑及静态构建；sdk / shell / data / form / biz 的组件文案门禁已随 SDK 接入 lint，资源包、示例与测试除外，core 继续由宿主传 label；视觉回归 S1 可选。
+- tokens 的品牌、明暗与语义色验证页已在靶场 `/tokens.html` 建立；Rspress 组件页与站内交互编辑器由 S1-YUE-005 提供，执行 `pnpm yue:docs` 验证生成、真实交互、离线编辑及静态构建；sdk / shell / data / form / biz 的组件文案门禁已随 SDK 接入 lint，资源包、示例与测试除外，core 继续由宿主传 label；视觉回归已随 S1-YUE-011 接入 `pnpm yue:visual`，采用固定 Linux 镜像，本机需 Docker。
 - tokens 已实现三层令牌和首帧主题控制；sdk 已交付类型化客户端、注册表与三语言 i18n；form 已交付 SchemaForm 与统一弹层；data 已交付 S1 基础组件，真实上传 E2E 仍归 S1-FILE-003；shell / biz 仍是骨架；版本 0.1.0 未发布。
 - Lighthouse 现在对靶场测；`@idadawn/yue-shell` 建立后改为对外壳首屏测，预算值在 PRD §14 维护。

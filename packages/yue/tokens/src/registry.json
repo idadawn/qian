@@ -785,6 +785,11 @@
       "name": "--yue-table-row-height-compact",
       "value": "var(--yue-p-space-8)",
       "meaning": "表格紧凑行高"
+    },
+    {
+      "name": "--yue-table-header-background",
+      "value": "color-mix(in srgb, oklch(var(--yue-muted)) 50%, oklch(var(--yue-background)))",
+      "meaning": "表头背景：预合成的不透明 muted 半色，固定列与普通列共用"
     }
   ],
   "brands": [

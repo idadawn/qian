@@ -15,11 +15,11 @@ export function Notification({ className, testId, ...props }: ToastProps) { retu
 export type ToastTitleProps = YueProps<ComponentProps<typeof BaseToast.Title>>;
 export function ToastTitle({ className, testId, ...props }: ToastTitleProps) { return <BaseToast.Title {...props} data-slot="toast-title" data-testid={testId ?? 'yue-toast-title'} className={cn('pr-6 font-medium', className)} />; }
 export type ToastDescriptionProps = YueProps<ComponentProps<typeof BaseToast.Description>>;
-export function ToastDescription({ className, testId, ...props }: ToastDescriptionProps) { return <BaseToast.Description {...props} data-slot="toast-description" data-testid={testId ?? 'yue-toast-description'} className={cn('mt-1 text-sm text-[var(--muted-foreground)]', className)} />; }
+export function ToastDescription({ className, testId, ...props }: ToastDescriptionProps) { return <BaseToast.Description {...props} data-slot="toast-description" data-testid={testId ?? 'yue-toast-description'} className={cn('mt-1 text-sm text-muted-foreground', className)} />; }
 export type ToastCloseProps = YueProps<ComponentProps<typeof BaseToast.Close>> & { label: string };
 export function ToastClose({ label, className, testId, ...props }: ToastCloseProps) { return <BaseToast.Close {...props} aria-label={label} data-slot="toast-close" data-testid={testId ?? 'yue-toast-close'} className={cn(button, 'absolute right-2 top-2 size-6 p-0', className)}><Icon name="close" /></BaseToast.Close>; }
 export type ToastActionProps = YueProps<ComponentProps<typeof BaseToast.Action>>;
-export function ToastAction({ className, testId, ...props }: ToastActionProps) { return <BaseToast.Action {...props} data-slot="toast-action" data-testid={testId ?? 'yue-toast-action'} className={cn(button, 'mt-2 bg-[var(--secondary)] text-[var(--secondary-foreground)]', className)} />; }
+export function ToastAction({ className, testId, ...props }: ToastActionProps) { return <BaseToast.Action {...props} data-slot="toast-action" data-testid={testId ?? 'yue-toast-action'} className={cn(button, 'mt-2 bg-secondary text-secondary-foreground', className)} />; }
 export type ToastViewportProps = YueProps<ComponentProps<typeof BaseToast.Viewport>>;
 export function ToastViewport({ className, testId, ...props }: ToastViewportProps) { return <BaseToast.Portal><BaseToast.Viewport {...props} data-slot="toast-viewport" data-testid={testId ?? 'yue-toast-viewport'} className={cn('fixed bottom-4 right-4 z-50 flex flex-col gap-2 outline-none', className)} /></BaseToast.Portal>; }
 export interface ToastListProps { closeLabel: string }

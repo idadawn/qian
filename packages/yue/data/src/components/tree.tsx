@@ -175,7 +175,7 @@ export function Tree({
       aria-multiselectable={checkedIds ? true : undefined}
       data-slot="tree"
       data-testid={testId ?? 'yue-tree'}
-      className={cn('m-0 list-none p-0 text-[var(--foreground)]', className)}
+      className={cn('m-0 list-none p-0 text-foreground', className)}
       style={virtualized ? { height, overflow: 'auto', position: 'relative' } : undefined}
     >
       {virtualized && <li role="presentation" aria-hidden style={{ height: virtualizer.getTotalSize(), padding: 0, pointerEvents: 'none' }} />}
@@ -203,8 +203,8 @@ export function Tree({
             data-node-id={node.id}
             data-level={level}
             className={cn(
-              'flex cursor-default select-none items-center gap-1 rounded-sm py-1 pe-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]',
-              selected === node.id && 'bg-[var(--accent)] font-medium',
+              'flex cursor-default select-none items-center gap-1 rounded-sm py-1 pe-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              selected === node.id && 'bg-accent font-medium',
               node.disabled && 'opacity-50',
             )}
             style={{ paddingInlineStart: `${(level - 1) * 16 + 8}px`, ...(virtualized ? { height: rowHeight, position: 'absolute', left: 0, right: 0, top: 0, transform: `translateY(${start}px)` } : {}) }}
@@ -216,7 +216,7 @@ export function Tree({
               moveFocus(node.id);
             }}
           >
-            <span data-slot="tree-item-toggle" aria-hidden className="inline-block w-4 text-[var(--muted-foreground)]">
+            <span data-slot="tree-item-toggle" aria-hidden className="inline-block w-4 text-muted-foreground">
               {hasChildren ? (isOpen ? '▾' : '▸') : ''}
             </span>
             {checkedIds && <span aria-hidden>{checkState === true ? '☑' : checkState === 'mixed' ? '▣' : '☐'}</span>}

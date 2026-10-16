@@ -1,5 +1,6 @@
 import { Popover as Base } from '@base-ui/react/popover';
 import type { ComponentProps } from 'react';
+import { ButtonIdentity } from '../lib/button-identity';
 import { cn } from '../lib/cn';
 import type { YueProps } from '../lib/test-id';
 import { button, surface } from '../lib/styles';
@@ -9,22 +10,22 @@ export function Popover(props: PopoverProps) { return <Base.Root {...props} />; 
 
 export type PopoverTriggerProps = YueProps<ComponentProps<typeof Base.Trigger>>;
 export function PopoverTrigger({ className, testId, ...props }: PopoverTriggerProps) {
-  return <Base.Trigger {...props} data-slot="popover-trigger" data-testid={testId ?? 'yue-popover-trigger'} className={cn(button, className)} />;
+  return <ButtonIdentity slot="popover-trigger" testId={testId ?? 'yue-popover-trigger'}><Base.Trigger {...props} data-slot="popover-trigger" data-testid={testId ?? 'yue-popover-trigger'} className={className} /></ButtonIdentity>;
 }
 
 export type PopoverTitleProps = YueProps<ComponentProps<typeof Base.Title>>;
 export function PopoverTitle({ className, testId, ...props }: PopoverTitleProps) {
-  return <Base.Title {...props} data-slot="popover-title" data-testid={testId ?? 'yue-popover-title'} className={cn('text-lg font-semibold', className)} />;
+  return <Base.Title {...props} data-slot="popover-title" data-testid={testId ?? 'yue-popover-title'} className={cn('text-base font-semibold leading-none', className)} />;
 }
 
 export type PopoverDescriptionProps = YueProps<ComponentProps<typeof Base.Description>>;
 export function PopoverDescription({ className, testId, ...props }: PopoverDescriptionProps) {
-  return <Base.Description {...props} data-slot="popover-description" data-testid={testId ?? 'yue-popover-description'} className={cn('text-sm text-[var(--muted-foreground)]', className)} />;
+  return <Base.Description {...props} data-slot="popover-description" data-testid={testId ?? 'yue-popover-description'} className={cn('text-sm text-muted-foreground', className)} />;
 }
 
 export type PopoverCloseProps = YueProps<ComponentProps<typeof Base.Close>>;
 export function PopoverClose({ className, testId, ...props }: PopoverCloseProps) {
-  return <Base.Close {...props} data-slot="popover-close" data-testid={testId ?? 'yue-popover-close'} className={cn(button, className)} />;
+  return <ButtonIdentity slot="popover-close" testId={testId ?? 'yue-popover-close'}><Base.Close {...props} data-slot="popover-close" data-testid={testId ?? 'yue-popover-close'} className={cn(button, className)} /></ButtonIdentity>;
 }
 
 export type PopoverContentProps = YueProps<ComponentProps<typeof Base.Popup>> & { side?: "top" | "right" | "bottom" | "left"; align?: "start" | "center" | "end"; sideOffset?: number };

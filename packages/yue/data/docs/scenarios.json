@@ -218,5 +218,15 @@
     "props": {
       "kind": "ImagePreview"
     }
+  },
+  {
+    "id": "DataTable/Compact",
+    "component": "DataTable",
+    "state": "Compact",
+    "theme": "light",
+    "props": {
+      "kind": "DataTable",
+      "compact": true
+    }
   }
 ]
