@@ -1,0 +1,24 @@
+# 构建上下文白名单（S1-DEP-003）：只送镜像构建需要的 .NET 源码、Schema 与 profile 内容，
+# 不送 .git、node_modules、构建产物与前端工作区。新增宿主项目时在这里放行它的目录。
+*
+!global.json
+!NuGet.config
+!Directory.Build.props
+!Directory.Build.targets
+!Directory.Packages.props
+!BannedSymbols.txt
+!.editorconfig
+!packages/Common/**
+!packages/Qian.*/**
+!tools/Qian.Build.Analyzers/**
+!tools/Qian.Image.SelfCheck/**
+!tools/Qian.Image.SelfCheck.Aot/**
+!schemas/**
+!contracts/v0/**
+!profiles/**
+!plugins/**
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/TestResults
