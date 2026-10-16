@@ -1,0 +1,1559 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "\u7EC4\u4EF6 HTTP \u63A5\u53E3",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/tenancy/tenants": {
+      "get": {
+        "operationId": "Hf958b36220b04fdafafd4ce1bf1cc7bb286010b9174b9603f521db51c2838ed4",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/H98ee36e693dce8c0534fa5498aa174271884d6e3c95afffed9488a0902088eff",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/H98ee36e693dce8c0534fa5498aa174271884d6e3c95afffed9488a0902088eff",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53",
+              "enum": [
+                "pending",
+                "trial",
+                "active",
+                "grace",
+                "suspended"
+              ]
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53",
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H1ce4c270da9a9fe630df13cec9a88447a330bf39b1633e580ad9f963176ac679"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Hd23762d7d3c9ec88577858c45d6a88fd7f574569381c9fd4921a6fedd762932c"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "HTTP 201",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}": {
+      "get": {
+        "operationId": "H7282d39a5a69d6f1f24ed30a899bdd068a7ebf21ccdbff30f76bf9f0c76338a4",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "H0c94440aa57ef71f7214584848f8d938319335c6bc11651d69daea25551ccefb",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/He002567801fc664e5a652b25459121b07dda574e55a097298d87bb2bba392801"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}:activate": {
+      "post": {
+        "operationId": "Hfb5635e6cfff70e8a4c5e59b16dd6743501530f0b6c26b47a6b08fa844dc414b",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H95536bbad0a04b0614958ee97f65d39079194641141ae8407dc9eb82466a8088"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}:suspend": {
+      "post": {
+        "operationId": "Hd9c36e685d5005ed061faf9b8c30a0874c23b55e72d1465dc922c2f84fc8d7c4",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}:resume": {
+      "post": {
+        "operationId": "H4a21ef0f599db0f5482691b331fb045074833c31fe972f1e6d5a222803e665f5",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/meta/state-machine": {
+      "get": {
+        "operationId": "H0baeea7de8416226f77a77b251f92c9889405ba0e854f1a75fbf5aaa3d605c95",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H591ab0ca13d5f0bee30459b9d177be3b8ada88c3bfb037965f829113e19a8b4d"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}/settings/{plugin}": {
+      "get": {
+        "operationId": "H6e4552e1952535ae2b6d11e52db4e4104a4f85170191ae9715d76c2577f5474a",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          },
+          {
+            "name": "plugin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hbfacefa4e5e49e3d17f03c7035114384bdd3214d6937f92ddbe1b7ef3b8a571d"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "H14c3651c8980a91cd510dc051dcc0866c8a3a316587cbc581ccecbb0e34f56f8",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H12431d9d68dd1bacb508db57db17e615b1c4cb8afee0e1a391f951695dd0755c"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          },
+          {
+            "name": "plugin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hbfacefa4e5e49e3d17f03c7035114384bdd3214d6937f92ddbe1b7ef3b8a571d"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}/quota": {
+      "get": {
+        "operationId": "Hb102428e0a5eb1cef582378078f5c7bc09c86bfa196cb477a9d4478538804837",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H4cd901bfb0521795c9c95a0d6d1e44a70978c701384f39df22e57d9008245923"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "H98ee36e693dce8c0534fa5498aa174271884d6e3c95afffed9488a0902088eff": {
+        "type": [
+          "string",
+          "integer"
+        ],
+        "pattern": "^-?(?:0|[1-9]\\d*)$"
+      },
+      "H0c00afa8f99e817a162168bc2e67eff70c84db8ee09bc5766b13db3c85247d53": {
+        "type": "string"
+      },
+      "Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "instance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "trace_id": {
+            "type": "string"
+          },
+          "pointer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "allowed": {
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "errors": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "pointer": {
+                  "type": "string"
+                },
+                "allowed": {
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "code",
+                "message",
+                "pointer"
+              ]
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "message",
+          "trace_id"
+        ]
+      },
+      "H1ce4c270da9a9fe630df13cec9a88447a330bf39b1633e580ad9f963176ac679": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "isolation": {
+                  "enum": [
+                    "row",
+                    "schema",
+                    "database"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "pending",
+                    "trial",
+                    "active",
+                    "grace",
+                    "suspended"
+                  ]
+                },
+                "revision": {
+                  "type": [
+                    "string",
+                    "integer"
+                  ],
+                  "pattern": "^-?(?:0|[1-9]\\d*)$"
+                }
+              },
+              "required": [
+                "id",
+                "code",
+                "name",
+                "isolation",
+                "status"
+              ]
+            }
+          },
+          "total": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "Hd23762d7d3c9ec88577858c45d6a88fd7f574569381c9fd4921a6fedd762932c": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9]\u002B$(?![\\s\\S])"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?=[\\s\\S]*[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000])[^\\u0000-\\u001F\\u007F-\\u009F]*$(?![\\s\\S])"
+          },
+          "isolation": {
+            "enum": [
+              "row"
+            ],
+            "default": "row"
+          },
+          "administrator": {
+            "type": "object",
+            "properties": {
+              "membershipId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "subjectId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "membershipId",
+              "subjectId"
+            ],
+            "additionalProperties": false
+          },
+          "quotas": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "users": {
+                "type": [
+                  "string",
+                  "integer",
+                  "null"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "default": null
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "administrator"
+        ],
+        "additionalProperties": false
+      },
+      "H2f6788f1a524f1bc69a07f9acbc97b230a1814abe957a183a21da0331fa4f549": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isolation": {
+            "enum": [
+              "row",
+              "schema",
+              "database"
+            ]
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "trial",
+              "active",
+              "grace",
+              "suspended"
+            ]
+          },
+          "revision": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "isolation",
+          "status"
+        ]
+      },
+      "H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "He002567801fc664e5a652b25459121b07dda574e55a097298d87bb2bba392801": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?=[\\s\\S]*[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000])[^\\u0000-\\u001F\\u007F-\\u009F]*$(?![\\s\\S])"
+          },
+          "expectedRevision": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "quotas": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "users": {
+                "type": [
+                  "string",
+                  "integer",
+                  "null"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "default": null
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "expectedRevision"
+        ],
+        "additionalProperties": false
+      },
+      "H95536bbad0a04b0614958ee97f65d39079194641141ae8407dc9eb82466a8088": {
+        "type": "object",
+        "properties": {
+          "trial": {
+            "type": "boolean",
+            "default": false
+          },
+          "validUntil": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "default": null
+          }
+        },
+        "additionalProperties": false
+      },
+      "H591ab0ca13d5f0bee30459b9d177be3b8ada88c3bfb037965f829113e19a8b4d": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "states": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "pending",
+                "trial",
+                "active",
+                "grace",
+                "suspended"
+              ]
+            }
+          },
+          "transitions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "from": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "pending",
+                        "trial",
+                        "active",
+                        "grace",
+                        "suspended",
+                        "any-s1",
+                        "previous"
+                      ]
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "pending",
+                          "trial",
+                          "active",
+                          "grace",
+                          "suspended"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "action": {
+                  "type": "string"
+                },
+                "to": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "pending",
+                        "trial",
+                        "active",
+                        "grace",
+                        "suspended",
+                        "any-s1",
+                        "previous"
+                      ]
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "pending",
+                          "trial",
+                          "active",
+                          "grace",
+                          "suspended"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "from",
+                "action",
+                "to"
+              ]
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "sideEffect": {
+                  "enum": [
+                    "read",
+                    "write",
+                    "destructive"
+                  ]
+                },
+                "agent": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "expose": {
+                      "type": "boolean"
+                    },
+                    "requiresConfirmation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "expose",
+                    "requiresConfirmation"
+                  ]
+                },
+                "available": {
+                  "type": "boolean"
+                },
+                "stage": {
+                  "type": "string"
+                },
+                "idempotent": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "name",
+                "sideEffect",
+                "agent"
+              ]
+            }
+          }
+        },
+        "required": [
+          "states",
+          "transitions",
+          "actions"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "\u79DF\u6237\u72B6\u6001\u673A\u5143\u6570\u636E"
+      },
+      "Hbfacefa4e5e49e3d17f03c7035114384bdd3214d6937f92ddbe1b7ef3b8a571d": {
+        "type": "object",
+        "properties": {
+          "pluginId": {
+            "type": "string"
+          },
+          "entryId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "config": {}
+        },
+        "required": [
+          "pluginId",
+          "entryId",
+          "revision",
+          "config"
+        ]
+      },
+      "H12431d9d68dd1bacb508db57db17e615b1c4cb8afee0e1a391f951695dd0755c": {
+        "type": "object",
+        "properties": {
+          "config": {},
+          "expectedRevision": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "config",
+          "expectedRevision"
+        ],
+        "additionalProperties": false
+      },
+      "H4cd901bfb0521795c9c95a0d6d1e44a70978c701384f39df22e57d9008245923": {
+        "type": "object",
+        "properties": {
+          "limits": {
+            "type": "object",
+            "properties": {
+              "users": {
+                "type": [
+                  "string",
+                  "integer",
+                  "null"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "default": null
+              }
+            },
+            "additionalProperties": false
+          },
+          "usersUsed": {
+            "type": [
+              "string",
+              "integer",
+              "null"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "usageAvailable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "limits",
+          "usersUsed",
+          "usageAvailable"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

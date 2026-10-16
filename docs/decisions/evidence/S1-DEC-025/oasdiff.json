@@ -1,0 +1,101 @@
+[
+  {
+    "id": "request-property-max-length-set",
+    "text": "the `code` request property's maxLength was set to `64`",
+    "comment": "Setting a bound rejects values the previous contract accepted. If your clients are known to stay within the new limit, lower this check with --severity-levels.",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e",
+    "path": "/api/tenancy/tenants",
+    "section": "paths",
+    "fingerprint": "f8bf4297e227"
+  },
+  {
+    "id": "request-property-max-length-set",
+    "text": "the `name` request property's maxLength was set to `200`",
+    "comment": "Setting a bound rejects values the previous contract accepted. If your clients are known to stay within the new limit, lower this check with --severity-levels.",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e",
+    "path": "/api/tenancy/tenants",
+    "section": "paths",
+    "fingerprint": "3a8b2852ebac"
+  },
+  {
+    "id": "request-property-min-length-set",
+    "text": "the `code` request property's minLength was set to `1`",
+    "comment": "Setting a bound rejects values the previous contract accepted. If your clients are known to stay within the new limit, lower this check with --severity-levels.",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e",
+    "path": "/api/tenancy/tenants",
+    "section": "paths",
+    "fingerprint": "830991625de8"
+  },
+  {
+    "id": "request-property-min-length-set",
+    "text": "the `name` request property's minLength was set to `1`",
+    "comment": "Setting a bound rejects values the previous contract accepted. If your clients are known to stay within the new limit, lower this check with --severity-levels.",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e",
+    "path": "/api/tenancy/tenants",
+    "section": "paths",
+    "fingerprint": "501cebe42f20"
+  },
+  {
+    "id": "request-property-pattern-added",
+    "text": "added the pattern `^(?=[\\s\\S]*[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000])[^\\u0000-\\u001F\\u007F-\\u009F]*$(?![\\s\\S])` to the request property `name`",
+    "comment": "This is a breaking change because adding a pattern restriction to a previously unrestricted parameter will reject values that were previously accepted, breaking existing clients",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e",
+    "path": "/api/tenancy/tenants",
+    "section": "paths",
+    "fingerprint": "ac54be17fa42"
+  },
+  {
+    "id": "request-property-pattern-added",
+    "text": "added the pattern `^[a-z0-9]+$(?![\\s\\S])` to the request property `code`",
+    "comment": "This is a breaking change because adding a pattern restriction to a previously unrestricted parameter will reject values that were previously accepted, breaking existing clients",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "H32e213ade311e9ee4ad412d3b841e07f7eb4e5e83c4a8b4f27b75763a085a00e",
+    "path": "/api/tenancy/tenants",
+    "section": "paths",
+    "fingerprint": "bd0b696f71a6"
+  },
+  {
+    "id": "request-property-max-length-set",
+    "text": "the `name` request property's maxLength was set to `200`",
+    "comment": "Setting a bound rejects values the previous contract accepted. If your clients are known to stay within the new limit, lower this check with --severity-levels.",
+    "level": 3,
+    "operation": "PUT",
+    "operationId": "H0c94440aa57ef71f7214584848f8d938319335c6bc11651d69daea25551ccefb",
+    "path": "/api/tenancy/tenants/{id}",
+    "section": "paths",
+    "fingerprint": "1d0db75655a3"
+  },
+  {
+    "id": "request-property-min-length-set",
+    "text": "the `name` request property's minLength was set to `1`",
+    "comment": "Setting a bound rejects values the previous contract accepted. If your clients are known to stay within the new limit, lower this check with --severity-levels.",
+    "level": 3,
+    "operation": "PUT",
+    "operationId": "H0c94440aa57ef71f7214584848f8d938319335c6bc11651d69daea25551ccefb",
+    "path": "/api/tenancy/tenants/{id}",
+    "section": "paths",
+    "fingerprint": "d59b83492f5d"
+  },
+  {
+    "id": "request-property-pattern-added",
+    "text": "added the pattern `^(?=[\\s\\S]*[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000])[^\\u0000-\\u001F\\u007F-\\u009F]*$(?![\\s\\S])` to the request property `name`",
+    "comment": "This is a breaking change because adding a pattern restriction to a previously unrestricted parameter will reject values that were previously accepted, breaking existing clients",
+    "level": 3,
+    "operation": "PUT",
+    "operationId": "H0c94440aa57ef71f7214584848f8d938319335c6bc11651d69daea25551ccefb",
+    "path": "/api/tenancy/tenants/{id}",
+    "section": "paths",
+    "fingerprint": "6ba5d28c568f"
+  }
+]

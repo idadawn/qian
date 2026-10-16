@@ -1,0 +1,23 @@
+{
+  "observedUtc": "2026-10-16T17:19:15Z",
+  "serverRevisionBefore": "159bedf99a88c10d70dbc3b61f414712a7961eaa",
+  "testsBeforeCorrection": "024323a0f61fd2976db429011c3f96f1904613d0",
+  "oasdiffVersion": "1.33.0",
+  "breakingCount": 9,
+  "beforeSha256": "b40206dac7b1bd0b3606bfed66aa1acb639ec4003a76d35339f2689c3885db7d",
+  "afterSha256": "d8132eac845614e901d0d47443cc7eade855f5527f93038892becef1c9cbb528",
+  "platformPublication": {
+    "qianProdUserTables": 0,
+    "qianStagingUserTables": 0,
+    "qianPlatformWorkloads": 0,
+    "qianPlatformArgoApplications": 0,
+    "rt013": "todo; CLI has no publish implementation",
+    "dep005": "todo; no release-chain workflow",
+    "nugetRelease": "https://github.com/idadawn/qian/actions/runs/38646939291"
+  },
+  "oldValidationTests": {
+    "total": 4,
+    "failed": 0,
+    "skipped": 0
+  }
+}
