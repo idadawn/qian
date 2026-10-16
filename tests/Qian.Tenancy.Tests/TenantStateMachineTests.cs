@@ -21,7 +21,7 @@ public sealed class TenantStateMachineTests
         Assert.Equal("TENANCY_STATE_CONFLICT", Assert.Throws<QianErrorException>(() => TenantStateMachine.Next(TenantStatus.Active, "purge", null, null)).Error.Code.Code);
     }
     [Fact]
-    public void 冻结清除标destructive与humanOnly_扫描非humanOnly()
+    public void 冻结清除标destructive与humanOnly_扫描不对模型暴露()
     {
         var actions = TenantStateMetadata.Document.GetProperty("actions").EnumerateArray().ToArray();
         foreach (var name in new[] { "suspend", "purge" })
@@ -29,6 +29,6 @@ public sealed class TenantStateMachineTests
             var action = actions.Single(action => action.GetProperty("name").GetString() == name);
             Assert.Equal("destructive", action.GetProperty("sideEffect").GetString()); Assert.False(action.GetProperty("agent").GetProperty("expose").GetBoolean());
         }
-        Assert.True(actions.Single(action => action.GetProperty("name").GetString() == "scan-expired").GetProperty("agent").GetProperty("expose").GetBoolean());
+        Assert.False(actions.Single(action => action.GetProperty("name").GetString() == "scan-expired").GetProperty("agent").GetProperty("expose").GetBoolean());
     }
 }
