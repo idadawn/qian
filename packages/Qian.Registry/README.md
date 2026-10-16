@@ -129,3 +129,7 @@ GetInstalledComponents 仍是可信安装声明集合：预装未挂载、或已
 该快照让 Capabilities 从完整版本制品读取契约基线，避免拿当前用户过滤后的接口文档、可变工作目录或 Submitted 候选记录替代基线。摘要与静态校验仍不代表签名验证、发布、权益或安装授权已经完成。
 
 S1-TEN-004（R97）增加 GetConfigurationViewAsync：可信平台组件在当前租户上下文中读取同一合成器的 Ready 视图，外部调用仍走 GetScopeViewAsync 的主体授权。RegistryEntryView.Config 为实际合成配置，与 ITenantSettings 共用；默认 ToString 不输出配置。MountAsync 成功提交后以真实 qian.registry 上下文派发 registry/entry-mounted，载荷仅 entryId/revision，不广播 config/note；Tenancy 用它失效缓存。该补充不代表 RT-032 其它停用、卸载或宿主接线已经交付。
+
+### 平台主体的 HTTP 复核（S1-AZ-008）
+
+平台超管 scope 视图经真实 Kestrel、JWT、Registry/Authz/Audit 与受限 PostgreSQL 角色验证。宿主先建立可信目标租户上下文；scope 路径、请求头与令牌中的角色不能改变该上下文或授予权限。通过超管旁路的请求在目标租户链恰留一条审计；非超管平台主体、目标 scope 不匹配、普通租户越界与未配置 platformRole 都返回同口径 404，并且不增加审计。测试宿主使用服务端固定的已验证目标，不把路径或 X-Tenant-Id 作为租户来源；生产适配器接口与授权语义未改变。

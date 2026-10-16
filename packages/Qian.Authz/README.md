@@ -110,3 +110,9 @@ GET /api/authz/meta 与 me/permissions 共用 MapQianAuthz 的认证入口；返
 DataScopeComposition.ForResource 只建立逻辑计划：同角色 AND（重复角色输入仍属于同一分支）、不同角色 OR，任何明确 allData 只覆盖该资源的数据范围，缺少规则/空角色默认拒绝。每条规则先经同源 Schema 结构校验，计划克隆 JSON 片段，保留各 Filter AST 内部逻辑，避免展平时改变括号含义或指数展开。allData=true 与 filter 不可同时存在；false 时 filter 必填。
 
 这些类型不开放行级访问。S1 的 DataPermissions/Fields 端口保持原先拒绝实现；字段语义、变量解析、SQL/表达式编译及 RLS 叠加由 S2 执行。元数据可供前端/模型解释规则，不作为工具授予权限。
+
+## 基础接线与拒绝路径复核（S1-AZ-008）
+
+经真实 PluginLoader 装载 AuthzPlugin、从宿主注入 IKunCache 的测试覆盖 memory、Redis 与未装缓存三种情况：第二次判定命中缓存，授予/撤销提交后的下一次判定立即反映变化。该验证经过组件构造路径，不只测试直接创建的 checker。
+
+真实数据库触发器让超管旁路的审计追加抛错时，结果为 audit_failed 且不放行，审计记录与链头都回滚；恢复写入后同一请求放行、链从序号 1 连续建立。完整解释用例按数据库实际 grant ID 核对命中链路，区分命中角色与主体全部角色，Check/Explain 同时核对 Allow 与 Reason，并以租户 B 的同名主体验证 RLS 后结果不泄露 A 的授权。
