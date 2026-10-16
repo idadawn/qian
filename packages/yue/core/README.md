@@ -95,7 +95,11 @@ Dialog / AlertDialog / Sheet / Drawer / Popover 的 Trigger 由宿主决定视�
 
 组合后仍保留 Trigger 的 `data-slot`、默认或自定义 `data-testid`，不会产生嵌套按钮。直接传 `data-slot` 给 Button 仍不能改写组件身份。
 
-视觉基线位于 `apps/yue-playground/visual/__snapshots__/`，覆盖全部入口、DataTable / SchemaForm 以及状态清单在明暗两态的截图，弹层拍摄打开态。基线使用固定 Playwright Linux 镜像和系统字体环境，本机需要 Docker；不引入 webfont。`pnpm yue:visual` 校验现有基线，`pnpm yue:visual --update-snapshots` 仅在确认预期样式变化后更新。样式 PR 应提交变化的基线并列出变化页面；CI 的「视觉回归」检查上传实际图、期望图、差异图和追踪。
+视觉基线位于 `apps/yue-playground/visual/__snapshots__/`，覆盖全部入口、DataTable / SchemaForm 以及状态清单在明暗两态的截图，弹层拍摄打开态。基线使用固定 Playwright Linux 镜像和系统字体环境，本机需要 Docker；不引入 webfont。
+
+`pnpm yue:visual` 校验现有基线，`pnpm yue:visual --update-snapshots=all` 仅在确认预期样式变化后更新。默认 `updateSnapshots: none`，校验时基线目录只读；拒绝含义不完整的裸更新参数。`maxDiffPixels: 0` 与 `maxDiffPixelRatio: 0.001` 同时设置，按更严格的上限判断，不能让全页面积稀释图标差异；单像素颜色比较阈值保持 Playwright 默认值。
+
+Dialog / AlertDialog / Sheet 明暗六个反例先证明隐藏关闭 X 会落在旧预算内，再证明实际门禁拒绝该变化；刷新模式跳过这些故意破坏页面的反例。样式 PR 应提交变化的基线并列出变化页面；CI 的「视觉回归」检查上传实际图、期望图、差异图和追踪。
 
 ## 已知限制与延期项
 
