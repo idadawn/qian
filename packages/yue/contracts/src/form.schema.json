@@ -1,0 +1,220 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "https://schema.qian.dev/form/v1"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "type",
+        "properties",
+        "additionalProperties"
+      ],
+      "properties": {
+        "type": {
+          "const": "object"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "additionalProperties": {
+          "const": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layout": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UiNode"
+          }
+        },
+        "device": {
+          "type": "object",
+          "properties": {
+            "h5": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "overrides": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "type": "string"
+                      },
+                      "value": {}
+                    },
+                    "required": [
+                      "path",
+                      "value"
+                    ]
+                  }
+                }
+              },
+              "required": []
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "layout"
+      ]
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "equals": {},
+              "target": {
+                "type": "string"
+              },
+              "effect": {
+                "enum": [
+                  "required",
+                  "disabled",
+                  "visible",
+                  "value"
+                ]
+              },
+              "value": {}
+            },
+            "required": [
+              "source",
+              "equals",
+              "target",
+              "effect",
+              "value"
+            ]
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "expressions": {
+          "type": "object"
+        },
+        "serverHooks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": []
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entity": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "systemColumns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": []
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "read",
+                "write"
+              ]
+            }
+          }
+        }
+      },
+      "required": []
+    }
+  },
+  "required": [
+    "$schema",
+    "version",
+    "id",
+    "data",
+    "ui",
+    "rules",
+    "binding",
+    "auth"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.qian.dev/form/v1",
+  "title": "FormSchema",
+  "$defs": {
+    "UiNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "widget": {
+          "type": "string"
+        },
+        "labelKey": {
+          "type": "string"
+        },
+        "descriptionKey": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UiNode"
+          }
+        }
+      },
+      "required": []
+    }
+  }
+}

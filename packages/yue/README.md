@@ -71,5 +71,5 @@ tests/gates/yue/           门禁自测：分层边界、循环依赖样例、�
 ## 7 已知限制与延期项
 
 - tokens 的品牌、明暗与语义色验证页已在靶场 `/tokens.html` 建立；Rspress 组件页与站内交互编辑器由 S1-YUE-005 提供，执行 `pnpm yue:docs` 验证生成、真实交互、离线编辑及静态构建；sdk / shell / data / form / biz 的组件文案门禁已随 SDK 接入 lint，资源包、示例与测试除外，core 继续由宿主传 label；视觉回归 S1 可选。
-- tokens 已实现三层令牌和首帧主题控制；sdk 已交付类型化客户端、注册表与三语言 i18n；shell / form / biz 仍是骨架，data 的其余组件由 S1-YUE-008 交付；版本 0.1.0 未发布。
+- tokens 已实现三层令牌和首帧主题控制；sdk 已交付类型化客户端、注册表与三语言 i18n；form 已交付 SchemaForm 与统一弹层；shell / biz 仍是骨架，data 的其余组件由 S1-YUE-008 交付；版本 0.1.0 未发布。
 - Lighthouse 现在对靶场测；`@idadawn/yue-shell` 建立后改为对外壳首屏测，预算值在 PRD §14 维护。

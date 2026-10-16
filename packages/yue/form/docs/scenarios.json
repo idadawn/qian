@@ -1,0 +1,6 @@
+[
+  { "id": "SchemaForm.Default", "component": "SchemaForm", "state": "Default", "theme": "light", "props": {} },
+  { "id": "SchemaForm.Dark", "component": "SchemaForm", "state": "Dark", "theme": "dark", "props": {} },
+  { "id": "SchemaForm.Error", "component": "SchemaForm", "state": "Error", "theme": "light", "props": { "invalid": true } },
+  { "id": "SchemaForm.Readonly", "component": "SchemaForm", "state": "Readonly", "theme": "light", "props": { "readonly": true } }
+]

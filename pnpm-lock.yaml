@@ -246,6 +246,9 @@ catalogs:
     ajv:
       specifier: 8.20.0
       version: 8.20.0
+    ajv-formats:
+      specifier: 3.0.1
+      version: 3.0.1
     axe-core:
       specifier: ^4.11.0
       version: 4.14.0
@@ -282,6 +285,9 @@ catalogs:
     react-dom:
       specifier: 19.3.0
       version: 19.3.0
+    react-hook-form:
+      specifier: 7.90.0
+      version: 7.90.0
     react-resizable-panels:
       specifier: 4.14.5
       version: 4.14.5
@@ -362,6 +368,12 @@ importers:
       '@idadawn/yue-data':
         specifier: workspace:^
         version: link:../../packages/yue/data
+      '@idadawn/yue-form':
+        specifier: workspace:*
+        version: link:../../packages/yue/form
+      '@idadawn/yue-sdk':
+        specifier: workspace:*
+        version: link:../../packages/yue/sdk
       '@idadawn/yue-tokens':
         specifier: workspace:^
         version: link:../../packages/yue/tokens
@@ -699,16 +711,52 @@ importers:
       '@idadawn/yue-sdk':
         specifier: workspace:^
         version: link:../sdk
+      ajv:
+        specifier: 'catalog:'
+        version: 8.20.0
+      ajv-formats:
+        specifier: 'catalog:'
+        version: 3.0.1(ajv@8.20.0)
+      react-hook-form:
+        specifier: 'catalog:'
+        version: 7.90.0(@types/react@19.3.0)(react@19.3.0)
     devDependencies:
+      '@idadawn/yue-tokens':
+        specifier: workspace:^
+        version: link:../tokens
       '@rslib/core':
         specifier: 'catalog:'
         version: 1.0.3(@microsoft/api-extractor@7.59.4(@types/node@24.19.1))(typescript@6.0.3)
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.3(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@testing-library/dom':
+        specifier: 'catalog:'
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@types/react':
         specifier: 'catalog:'
         version: 19.3.0
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.1.2(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@vitest/browser':
+        specifier: 'catalog:'
+        version: 5.0.3(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.3)
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 5.0.3(playwright@1.64.0)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.3)
+      axe-core:
+        specifier: 'catalog:'
+        version: 4.14.0
+      playwright:
+        specifier: 'catalog:'
+        version: 1.64.0
       publint:
         specifier: 'catalog:'
         version: 0.3.25
@@ -718,9 +766,15 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.0(react@19.3.0)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@types/node@24.19.1)(@vitest/browser-playwright@5.0.3)(@vitest/ui@5.0.3)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/yue/sdk:
     dependencies:
@@ -825,6 +879,12 @@ importers:
       '@idadawn/yue-core':
         specifier: workspace:*
         version: link:../packages/yue/core
+      '@idadawn/yue-form':
+        specifier: workspace:*
+        version: link:../packages/yue/form
+      '@idadawn/yue-sdk':
+        specifier: workspace:*
+        version: link:../packages/yue/sdk
       '@idadawn/yue-tokens':
         specifier: workspace:*
         version: link:../packages/yue/tokens
@@ -4618,6 +4678,16 @@ packages:
     resolution: {integrity: sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q==}
     peerDependencies:
       react: ^19.3.0
+
+  react-hook-form@7.90.0:
+    resolution: {integrity: sha512-+NdG0FLzCPhFOp2NNxaUYLF9fyZhNjx9FTBBSYWF71/l6BBlmIc/j6xlp3DbaHWLJbIG7Zd8oznA19xJClU97w==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.8.0 || ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -9791,6 +9861,12 @@ snapshots:
     dependencies:
       react: 19.3.0
       scheduler: 0.28.0
+
+  react-hook-form@7.90.0(@types/react@19.3.0)(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+    optionalDependencies:
+      '@types/react': 19.3.0
 
   react-is@17.0.2: {}
 

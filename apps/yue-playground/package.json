@@ -17,7 +17,9 @@
     "@idadawn/yue-data": "workspace:^",
     "@idadawn/yue-tokens": "workspace:^",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "@idadawn/yue-form": "workspace:*",
+    "@idadawn/yue-sdk": "workspace:*"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",

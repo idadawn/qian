@@ -1,3 +1,5 @@
+import type { WidgetMeta } from '@idadawn/yue-contracts';
+export type { WidgetMeta } from '@idadawn/yue-contracts';
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type JsonSchema = Record<string, JsonValue>;
 export interface RegistrationMeta {
@@ -39,23 +41,6 @@ export class Registry<M = RegistrationMeta, T = unknown> {
 
 export type Device = 'pc' | 'h5' | 'miniapp';
 export type Presentation = 'edit' | 'readonly' | 'cell';
-export interface WidgetMeta {
-  type: string;
-  version: string;
-  name: string;
-  category: 'basic' | 'advanced' | 'system' | 'layout' | 'biz' | 'ocr';
-  props: JsonSchema;
-  valueType: 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'time' | 'array' | 'object' | 'file' | 'ref' | 'none';
-  events: string[];
-  devices: Device[];
-  capabilities: { bindsField: boolean; canBeColumn: boolean; canBeSearch: boolean; canBeGroup: boolean; canBeInSubtable: boolean; supportsReadonly: boolean; participatesInLinkage: boolean };
-  defaultOperators: string[];
-  authAware: boolean;
-  sensitivityHint?: 'public' | 'internal' | 'pii' | 'finance' | 'secret';
-  i18nKeys: string[];
-  a11y: { role: string; labelledBy: 'label' | 'aria-label' };
-  tokens: string[];
-}
 export interface WidgetDefinition<T = unknown> { meta: WidgetMeta; Runtime: T; Designer?: unknown }
 export interface ClientActionMeta extends RegistrationMeta { parameters: JsonSchema; permission: string; description: string }
 

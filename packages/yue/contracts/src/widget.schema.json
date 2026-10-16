@@ -1,0 +1,166 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "category": {
+      "enum": [
+        "basic",
+        "advanced",
+        "system",
+        "layout",
+        "biz",
+        "ocr"
+      ]
+    },
+    "props": {
+      "type": "object"
+    },
+    "valueType": {
+      "enum": [
+        "string",
+        "number",
+        "boolean",
+        "date",
+        "datetime",
+        "time",
+        "array",
+        "object",
+        "file",
+        "ref",
+        "none"
+      ]
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "devices": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "pc",
+          "h5",
+          "miniapp"
+        ]
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bindsField": {
+          "type": "boolean"
+        },
+        "canBeColumn": {
+          "type": "boolean"
+        },
+        "canBeSearch": {
+          "type": "boolean"
+        },
+        "canBeGroup": {
+          "type": "boolean"
+        },
+        "canBeInSubtable": {
+          "type": "boolean"
+        },
+        "supportsReadonly": {
+          "type": "boolean"
+        },
+        "participatesInLinkage": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "bindsField",
+        "canBeColumn",
+        "canBeSearch",
+        "canBeGroup",
+        "canBeInSubtable",
+        "supportsReadonly",
+        "participatesInLinkage"
+      ]
+    },
+    "defaultOperators": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "authAware": {
+      "type": "boolean"
+    },
+    "sensitivityHint": {
+      "enum": [
+        "public",
+        "internal",
+        "pii",
+        "finance",
+        "secret"
+      ]
+    },
+    "i18nKeys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "a11y": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "labelledBy": {
+          "enum": [
+            "label",
+            "aria-label"
+          ]
+        }
+      },
+      "required": [
+        "role",
+        "labelledBy"
+      ]
+    },
+    "tokens": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "type",
+    "version",
+    "name",
+    "category",
+    "props",
+    "valueType",
+    "events",
+    "devices",
+    "capabilities",
+    "defaultOperators",
+    "authAware",
+    "i18nKeys",
+    "a11y",
+    "tokens"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.qian.dev/widget/v1",
+  "title": "WidgetMeta"
+}

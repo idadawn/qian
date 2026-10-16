@@ -37,7 +37,10 @@
   "dependencies": {
     "@idadawn/yue-contracts": "workspace:^",
     "@idadawn/yue-core": "workspace:^",
-    "@idadawn/yue-sdk": "workspace:^"
+    "@idadawn/yue-sdk": "workspace:^",
+    "react-hook-form": "catalog:",
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -50,6 +53,17 @@
     "publint": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "axe-core": "catalog:",
+    "playwright": "catalog:",
+    "vitest": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "tailwindcss": "catalog:",
+    "@idadawn/yue-tokens": "workspace:^"
   }
 }
