@@ -10,11 +10,14 @@ ARG ASSEMBLY
 ARG TARGETARCH
 WORKDIR /src
 COPY . .
+# 项目必须在 csproj 里声明 PublishAot：命令行传 -p:PublishAot=true 会作为全局属性波及被引用的分析器项目
+# （netstandard2.0），报 NETSDK1207。发布后若还有同名托管程序集，说明没走 NativeAOT，直接失败。
 RUN --mount=type=cache,id=qian-nuget,target=/root/.nuget/packages \
     test -n "$PROJECT" && test -n "$ASSEMBLY" \
  && case "$TARGETARCH" in amd64) rid=linux-x64 ;; arm64) rid=linux-arm64 ;; *) echo "不支持的目标架构：$TARGETARCH" >&2; exit 1 ;; esac \
- && dotnet publish "$PROJECT" -c Release -r "$rid" -o /out -p:PublishAot=true -p:StripSymbols=true \
- && rm -f /out/*.dbg /out/*.pdb \
+ && dotnet publish "$PROJECT" -c Release -r "$rid" -o /out -p:StripSymbols=true \
+ && if [ -e "/out/$ASSEMBLY.dll" ]; then echo "$PROJECT 没有按 NativeAOT 发布：csproj 需声明 PublishAot" >&2; exit 1; fi \
+ && rm -f /out/*.dbg /out/*.pdb "/out/$ASSEMBLY.xml" \
  && test -x "/out/$ASSEMBLY" \
  && ln -s "$ASSEMBLY" /out/entrypoint \
  && mkdir /probe

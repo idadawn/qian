@@ -289,6 +289,8 @@ class Cosign:
         return run([self.binary, *args], env=self.env, check=check, log=self.log)
 
     def _signing(self):
+        # 只带叶证书，不传 --certificate-chain：v0.3 bundle 里写入证书链后，cosign 3 默认拒验
+        # （需 --allow-certificate-chain）；叶证书由 trusted root 里的 CA 补链，与 Fulcio 签发的形态一致。
         return ["--yes", "--key", self.directory / "signer.key", "--certificate", self.directory / "leaf.pem",
                 "--signing-config", self.directory / "signing_config.json",
                 "--trusted-root", self.directory / "trusted_root.json", "--allow-http-registry"]
