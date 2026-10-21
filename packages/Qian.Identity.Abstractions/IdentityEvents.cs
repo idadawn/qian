@@ -55,13 +55,53 @@ public sealed record IdentitySessionRevokedEvent(Guid PersonId, long IdentityRev
     : IdentityIntegrationEvent(PersonId, IdentityRevision);
 
 /// <summary>统一登录流水线输入；临时证明不进入日志或事件。</summary>
+/// <remarks>密码、短信、TOTP 用 <c>FactorId</c> + <c>Identifier</c> + <c>Proof</c>；连接器登录用 <c>ConnectorId</c>，主体由 Provider 校验断言后解析。</remarks>
 public sealed record LoginInput(string ClientId, Guid? TenantId, string? ConnectorId, string? FactorId, AuthenticationProof? Proof)
 {
+    /// <summary>账号标识：手机、邮箱或用户名；不是凭据，但审计与日志只记录掩码。</summary>
+    public string? Identifier { get; init; }
+    /// <summary>图形验证码应答；登录策略要求验证码时必填。</summary>
+    public CaptchaAnswer? Captcha { get; init; }
     /// <inheritdoc />
     public override string ToString() => "LoginInput(redacted)";
 }
-/// <summary>登录流水线结果；选择令牌与真正签发由 Provider 定义。</summary>
-public sealed record SignInResult(bool Succeeded, Principal? Principal, QianError? Error);
+/// <summary>图形验证码的应答：挑战 ID 与用户输入。</summary>
+public sealed record CaptchaAnswer(string ChallengeId, string Answer)
+{
+    /// <inheritdoc />
+    public override string ToString() => "CaptchaAnswer(redacted)";
+}
+/// <summary>
+/// 登录流水线结果。Succeeded 表示已建立账号会话（<see cref="SignInStatus.Authenticated"/>）；
+/// 需要选择租户或修改初始密码时 Succeeded 为 false，Status 与 Ticket 指明下一步。
+/// 访问令牌由协议端点据账号会话签发，Principal 在此不填。
+/// </summary>
+public sealed record SignInResult(bool Succeeded, Principal? Principal, QianError? Error)
+{
+    /// <summary>流水线下一步。</summary>
+    public SignInStatus Status { get; init; } = Succeeded ? SignInStatus.Authenticated : SignInStatus.Failed;
+    /// <summary>Authenticated 时的账号会话。</summary>
+    public AccountSession? Session { get; init; }
+    /// <summary>SelectionRequired 或 PasswordChangeRequired 时的一次性票据。</summary>
+    public LoginTicket? Ticket { get; init; }
+    /// <summary>SelectionRequired 时的可选身份。</summary>
+    public IReadOnlyList<TenantChoice> Choices { get; init; } = [];
+    /// <summary>被锁定或延时拒绝时，建议等待多久后重试；宿主据此写 Retry-After 头。</summary>
+    public TimeSpan? RetryAfter { get; init; }
+    /// <summary>失败结果。</summary>
+    public static SignInResult Failure(QianError error, TimeSpan? retryAfter = null) =>
+        new(false, null, error ?? throw new ArgumentNullException(nameof(error))) { RetryAfter = retryAfter };
+    /// <summary>已建立会话。</summary>
+    public static SignInResult Authenticated(AccountSession session) => new(true, null, null) { Session = session ?? throw new ArgumentNullException(nameof(session)) };
+    /// <summary>需要选择租户。</summary>
+    public static SignInResult SelectionRequired(LoginTicket ticket, IReadOnlyList<TenantChoice> choices) =>
+        new(false, null, null) { Status = SignInStatus.SelectionRequired, Ticket = ticket ?? throw new ArgumentNullException(nameof(ticket)), Choices = choices ?? throw new ArgumentNullException(nameof(choices)) };
+    /// <summary>需要先修改初始密码。</summary>
+    public static SignInResult PasswordChangeRequired(LoginTicket ticket) =>
+        new(false, null, null) { Status = SignInStatus.PasswordChangeRequired, Ticket = ticket ?? throw new ArgumentNullException(nameof(ticket)) };
+    /// <inheritdoc />
+    public override string ToString() => "SignInResult(redacted)";
+}
 /// <summary>成员失效通知。</summary>
 public sealed record MembershipChanged(Guid MembershipId, Guid TenantId, long IdentityRevision);
 /// <summary>进程内扩展事件，与上述 Outbox 事件分别建模。</summary>
