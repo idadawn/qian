@@ -2,7 +2,7 @@
 
 Authz seam 的 Provider，Definition 为 Qian.Authz.Abstractions。组件表面为 metadata/permissions.json、metadata/roles.json；平台来源为 Registry 的宿主预装声明，独立模式来源为 PermissionAttribute 或随包 metadata。通过 qian.authz 装入 platform，也支持 standalone；qian add authz 的完整安装、正式发布仍按各项门禁验收。
 
-本包已实现：声明编译与目录持久化、租户角色与默认授权、活动权限登记、真实 RBAC 判定（Check / BatchCheck / ListPermissions / ListAllowedActions / Explain）与主体快照缓存、平台超管显式旁路与审计、组件入口 `AuthzPlugin`（目录登记、命令 PEP、`tenant/provisioned` 时实例化默认角色）、当前主体的有效权限（HTTP 端点 `GET /api/authz/me/permissions` 在 Qian.Authz.AspNetCore），以及 S1-AZ-004 的三处强制执行点（HTTP 端点、gRPC 拦截器、命令管道共用的执行端口）、决策审计、identity_revision 服务端比对、授权变更事件与两条授予守卫（见「强制执行点与决策审计」）。组织 / 岗位 / 组继承（S1-AZ-005，依赖 S1-IDP-009 组织目录）、管理 API 与角色 CRUD（S1-AZ-005）、数据与字段权限编译（S2）、真实开户编排派发 `tenant/provisioned`（S1-TEN-003）以及 `qian add authz` 的可安装组件仍未完成，不能以声明解析代替授权成功。各项工作与验收记录在 S1-AZ-002 / S1-AZ-003 任务文件中。
+本包已实现：声明编译与目录持久化、租户角色与默认授权、活动权限登记、真实 RBAC 判定（Check / BatchCheck / ListPermissions / ListAllowedActions / Explain）与主体快照缓存、平台超管显式旁路与审计、组件入口 `AuthzPlugin`（目录登记、命令 PEP、`tenant/provisioned` 时实例化默认角色）、当前主体的有效权限（HTTP 端点 `GET /api/authz/me/permissions` 在 Qian.Authz.AspNetCore），以及 S1-AZ-004 的三处强制执行点（HTTP 端点、gRPC 拦截器、命令管道共用的执行端口）、决策审计、identity_revision 服务端比对、授权变更事件与两条授予守卫（见「强制执行点与决策审计」），和 S1-AZ-009 的「授权变更 → 身份修订递增」（同进程宿主，见同名小节）。组织 / 岗位 / 组继承（S1-AZ-005，依赖 S1-IDP-009 组织目录）、管理 API 与角色 CRUD（S1-AZ-005）、数据与字段权限编译（S2）、真实开户编排派发 `tenant/provisioned`（S1-TEN-003）以及 `qian add authz` 的可安装组件仍未完成，不能以声明解析代替授权成功。各项工作与验收记录在 S1-AZ-002 / S1-AZ-003 任务文件中。
 
 ## 声明编译
 
@@ -131,7 +131,24 @@ DataScopeComposition.ForResource 只建立逻辑计划：同角色 AND（重复�
 
 ### identity_revision 服务端比对
 
-令牌只携带 `identity_revision`（`Principal.IdentityRevision`）。本组件按（租户，主体种类，主体）在表 `subject_identity_revisions` 记住见过的最高修订：携带更低修订的令牌即旧令牌，以 `identity_revision_stale` 拒绝并记录；未携带修订的令牌（S2S）不比对；负数拒绝。下限每次判定读库（主键查找、按租户 RLS），不进 Kun.Caching：内存后端不跨实例，靠 TTL 失效会让旧令牌在别的实例上多活 10 分钟，违反 R7 的 3 秒口径。判定快照键的第四段并入 identity_revision（R103）。身份组件在 `authz.grant.changed.v1` 上递增 identity_revision 并推送客户端换发令牌（PRD 7.4 / 7.13）属 Identity；本组件保证的是：新修订一经出现，旧令牌在任一宿主立即失效；角色撤销经租户授权修订立即使旧快照失效（实测毫秒级，验收上限 3 秒）。
+令牌只携带 `identity_revision`（`Principal.IdentityRevision`）。本组件按（租户，主体种类，主体）在表 `subject_identity_revisions` 记住修订下限：携带更低修订的令牌即旧令牌，以 `identity_revision_stale`（`AuthzEnforcement.StaleIdentityRevision`）拒绝并记录，三处入口都映射为 401 `UNAUTHENTICATED`（gRPC `Unauthenticated`），客户端据此换令牌（S1-DEC-027）；未携带修订的令牌（S2S）不比对；负数拒绝。下限有两个来源，都只增不减：判定时见到更高修订的已验证令牌（懒抬高）；同进程宿主里授予变更提交后身份端口返回的新修订（见下一小节）。下限每次判定读库（主键查找、按租户 RLS），不进 Kun.Caching：内存后端不跨实例，靠 TTL 失效会让旧令牌在别的实例上多活 10 分钟，违反 R7 的 3 秒口径。判定快照键的第四段并入 identity_revision（R103）。本组件保证的是：新修订一经出现（令牌或身份端口），旧令牌在任一宿主立即失效；角色撤销经租户授权修订立即使旧快照失效（实测毫秒级，验收上限 3 秒）。
+
+### 授权变更 → 身份修订递增（S1-AZ-009）
+
+口径见 S1-DEC-027 与 [决策说明](../../docs/decisions/authz-identity-revision-wiring.md)。`AuthzPlugin.RoleStore` 组装的角色存储在授予的增、改、撤（`authz.grant.changed.v1` 的 assigned / updated / revoked）提交并释放数据会话之后，在同一调用内对每个受影响的 user 主体：
+
+1. 经 `ctx` 解析的 `IIdentityAccounts.BumpIdentityRevisionAsync(personId, "authz.grant.<change>")` 在当前租户递增修订：身份侧随即在 userinfo / 会话校验拒绝旧令牌，refresh 换到新修订；
+2. 用返回的新修订抬高本组件的下限（`IdentityRevisionGuard.RaiseAsync`：条件更新或插入，并发首写时重试，返回时下限一定不低于该值）。
+
+跳过、不重试的情形：
+
+- 主体不是 user（组织 / 岗位 / 用户组的扇出归 S1-AZ-005，service、agent 没有 Person）；
+- user 主体不是 GUID，或该租户没有它的成员身份（`NOT_FOUND`）；
+- 身份组件不在本进程（`TryInject` 取不到账号端口）。
+
+`authz.role.changed.v1`（建角色、组件默认授权安装）不扇出，判定经租户授权修订即时生效。授权变更已提交，所以这一步不回滚、不向调用方抛错：瞬时故障按 50 → 400 毫秒退避重试，总预算 3 秒，用尽即记警告。计量 `Qian.Authz` / `qian.authz.identity_revision.propagations` 的 tag 为 `outcome`（bumped / skipped / failed）与 `reason`（跳过或失败的稳定原因，不含主体标识）。
+
+宿主除把身份组件装进同一个 PluginLoader 外不需要额外接线。拆分部署（platform / identity 两个 Pod）里账号端口不在本进程，这一步一律跳过，由身份侧订阅 `authz.grant.changed.v1` 闭环（S1-IDP-012，随 S1-EVT-002）；同进程宿主不要再登记那个订阅，否则一次变更递增两次。
 
 ### 授权变更事件
 
@@ -144,8 +161,18 @@ DataScopeComposition.ForResource 只建立逻辑计划：同角色 AND（重复�
 
 ### HTTP 与 gRPC 适配（Qian.Authz.AspNetCore）
 
-`AddQianAuthzEnforcement(http => ctx, options)` 登记授权处理器与结果处理器（`ctx` 通常是 authz 组件按请求租户收窄的上下文）。端点以 `RequireQianPermission("<plugin>:<resource>:<action>")` 声明权限点（可多次，全部须放行；同时加 `RequiresPermissionAttribute` 元数据，OpenAPI 写出 `x-qian-permission`，并声明 401 / 403 的 ErrorDetail 响应）。`UseQianAuthzEnforcement()` 放在 `UseAuthorization` 之后：带 `PluginEndpointBinding` 却未声明权限点的端点在生产模式（`options.Production ?? IHostEnvironment.IsProduction()`）缺省拒绝（403 并记决策日志 `permission_not_declared`），开发模式记警告放行；`[AllowAnonymous]` 与显式标记 `PermissionEnforcedInHandlerAttribute(reason)`（能力目录、菜单、执行入口这类按调用者可见性在处理器内判定的平台表面）不在范围内，标记必须写明理由。gRPC：`AddGrpc(o => o.AddQianAuthzInterceptor())`，四种调用形态在进入 handler 或读取首帧前对方法上的 `[RequiresPermission]` 逐个判定，未声明按同样规则缺省拒绝；拒绝为 `PermissionDenied`（401 → `Unauthenticated`，404 → `NotFound`），trailer `qian-error-bin` 携带 ErrorDetail。主体只取自 `ICurrentUser.Principal`（须与 JWT 的 sub / tenant_id / principal_kind 一致，否则 401），租户由已认证宿主建立；目标为 `METHOD 路由模板` 或 gRPC 方法全名；拒绝响应带 `Cache-Control: private, no-store`。tenancy 运营端点（`PlatformHttpContract`）沿用 S1-TEN-006 的处理器内旁路 PEP，本任务未改接。
+`AddQianAuthzEnforcement(http => ctx, options)` 登记授权处理器与结果处理器（`ctx` 通常是 authz 组件按请求租户收窄的上下文）。端点以 `RequireQianPermission("<plugin>:<resource>:<action>")` 声明权限点（可多次，全部须放行；同时加 `RequiresPermissionAttribute` 元数据，OpenAPI 写出 `x-qian-permission`，并声明 401 / 403 的 ErrorDetail 响应）。`UseQianAuthzEnforcement()` 放在 `UseAuthorization` 之后：带 `PluginEndpointBinding` 却未声明权限点的端点在生产模式（`options.Production ?? IHostEnvironment.IsProduction()`）缺省拒绝（403 并记决策日志 `permission_not_declared`），开发模式记警告放行；`[AllowAnonymous]` 与显式标记 `PermissionEnforcedInHandlerAttribute(reason)`（能力目录、菜单、执行入口这类按调用者可见性在处理器内判定的平台表面）不在范围内，标记必须写明理由。gRPC：`AddGrpc(o => o.AddQianAuthzInterceptor())`，四种调用形态在进入 handler 或读取首帧前对方法上的 `[RequiresPermission]` 逐个判定，未声明按同样规则缺省拒绝；拒绝为 `PermissionDenied`（401 → `Unauthenticated`，404 → `NotFound`），trailer `qian-error-bin` 携带 ErrorDetail。陈旧令牌（`identity_revision_stale`）在 HTTP 回 401 `UNAUTHENTICATED`、gRPC 回 `Unauthenticated`、命令管道抛 `UNAUTHENTICATED`，审计不可用回 404，其余拒绝 403。主体只取自 `ICurrentUser.Principal`（须与 JWT 的 sub / tenant_id / principal_kind 一致，否则 401），租户由已认证宿主建立；目标为 `METHOD 路由模板` 或 gRPC 方法全名；拒绝响应带 `Cache-Control: private, no-store`。tenancy 运营端点（`PlatformHttpContract`）沿用 S1-TEN-006 的处理器内旁路 PEP，本任务未改接。
 
 ### 验收记录
 
-Qian.Authz.Tests/EnforcementTests.cs（真实 PG、真实 Audit 链、真实 PluginLoader）：放行与拒绝各写一条决策日志且与 `ExplainDetailedAsync` 同源，七种边界一律拒绝并记录，无租户上下文抛错，采样 0 只省放行，卸载 Audit 后放行变 `audit_unavailable`；两宿主各自内存缓存下修订 2 出现后修订 1 的令牌在任一宿主立即拒绝、快照键带修订、撤销角色后 3 秒内 `no_matching_grant`；授权变更按修订号发出事件信封，漏装处理器时写入回滚；两条守卫经组件端口返回结构化错误且不落库；卸载 authz 时 `command/dispatching` 监听器、执行端口与错误码按登记逆序撤销、无残留、重装后只有一个监听器。Qian.Sample.Crm.Tests/AuthzEnforcementTests.cs（参考宿主，生产模式）：同一权限点 HTTP 200 / 403 与 gRPC 一元、服务端流 OK / PermissionDenied 一致，未声明的组件端点与 gRPC 方法缺省 403，每次判定进租户链；更高 identity_revision 出现后旧令牌 403，移除角色后持最新修订的令牌 3 秒内 403，`authz.grant.changed.v1` 进 Outbox；OpenAPI 中每个组件端点带 `x-qian-permission` 与 401 / 403 响应。
+Qian.Authz.Tests/EnforcementTests.cs（真实 PG、真实 Audit 链、真实 PluginLoader）：放行与拒绝各写一条决策日志且与 `ExplainDetailedAsync` 同源，七种边界一律拒绝并记录，无租户上下文抛错，采样 0 只省放行，卸载 Audit 后放行变 `audit_unavailable`；两宿主各自内存缓存下修订 2 出现后修订 1 的令牌在任一宿主立即拒绝、快照键带修订、撤销角色后 3 秒内 `no_matching_grant`；授权变更按修订号发出事件信封，漏装处理器时写入回滚；两条守卫经组件端口返回结构化错误且不落库；卸载 authz 时 `command/dispatching` 监听器、执行端口与错误码按登记逆序撤销、无残留、重装后只有一个监听器。Qian.Sample.Crm.Tests/AuthzEnforcementTests.cs（参考宿主，生产模式）：同一权限点 HTTP 200 / 403 与 gRPC 一元、服务端流 OK / PermissionDenied 一致，未声明的组件端点与 gRPC 方法缺省 403，每次判定进租户链；更高 identity_revision 出现后旧令牌 HTTP 401 `UNAUTHENTICATED`、gRPC `Unauthenticated`，移除角色后持最新修订的令牌 3 秒内 403，`authz.grant.changed.v1` 进 Outbox；OpenAPI 中每个组件端点带 `x-qian-permission` 与 401 / 403 响应。
+
+S1-AZ-009：
+
+- Qian.Authz.Tests/IdentityRevisionPropagationTests.cs（真实 PG 与 PluginLoader，身份端口是只实现递增的替身组件）：
+  - 授予、改期、撤销各递增一次，下限随之抬高，旧修订即刻 `identity_revision_stale`；重复授予与角色级变更不递增。
+  - 非 user、非 GUID 主体不调端口；`NOT_FOUND` 调一次即跳过；瞬时故障重试后成功。
+  - 下限只增不减；持续失败在预算内放弃、授予已提交；身份组件卸载后跳过。
+- Qian.Sample.Crm.Tests/CustomerCommandTests.IdentityRevision.cs（参考宿主同进程挂真实身份组件）：
+  - 经生产授予端口授予后修订递增；撤销后 3 秒内旧令牌在 userinfo（401）与 PEP 执行端口（`identity_revision_stale`）都被拒。
+  - refresh 拿到新修订、两侧放行；非 user、非 Person、无成员身份的主体不递增。

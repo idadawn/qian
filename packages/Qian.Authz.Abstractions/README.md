@@ -24,7 +24,13 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 
 编译门禁 QIAN0005 禁止对受保护请求直接调用或引用 Kun `AddRequestHandler` 的两个重载，也拦截请求类型未知的泛型包装器；只有本包的桥接实现可调用底层入口。普通未受保护命令和无关同名方法不受影响。门禁覆盖测试、生成代码及关闭 TreatWarningsAsErrors 的项目。它检查显式注册代码，不把反射或未纳入此构建的外部程序集宣称为已审计。
 
-这里不实现 `qian.authz` 的完整入口 PEP、生命周期和决策审计；HTTP、gRPC、命令事件及授权变更事件与 identity_revision 的失效传播仍由 S1-AZ-004 完成（租户授权修订驱动的判定缓存失效已由 S1-AZ-003 实现，R103）。
+这里不实现 `qian.authz` 的完整入口 PEP、生命周期和决策审计。下列能力都在 Provider `Qian.Authz` 实现：
+
+- HTTP、gRPC、命令事件的强制执行点，以及授权变更事件：S1-AZ-004；
+- 授权变更后递增 identity_revision 并同步抬高修订下限：S1-AZ-009，同进程宿主；
+- 租户授权修订驱动的判定缓存失效：S1-AZ-003，R103。
+
+本包只登记契约，包括陈旧令牌的拒绝原因 `AuthzEnforcement.StaleIdentityRevision`：三处入口都把它映射为 401。
 
 ## 错误目录
 
