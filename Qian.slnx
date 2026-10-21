@@ -18,6 +18,7 @@
     <Project Path="packages/Qian.Docs/Qian.Docs.csproj" />
     <Project Path="packages/Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
     <Project Path="packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <Project Path="packages/Qian.Config.AspNetCore/Qian.Config.AspNetCore.csproj" />
     <Project Path="packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
     <Project Path="packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
