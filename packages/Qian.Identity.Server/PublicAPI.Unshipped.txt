@@ -39,3 +39,94 @@ override Qian.Identity.Server.IdentityServerOptions.ToString() -> string!
 static Qian.Identity.Server.IdentityProtocolEndpoints.MapQianIdentityServer(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Qian.Identity.Server.IdentityServerHosting.AddQianIdentityServer(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Qian.Identity.Server.IdentityServerOptions! options, Microsoft.Extensions.Hosting.IHostEnvironment! environment) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Qian.Identity.Server.IdentityServerHosting.UseQianIdentityServer(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+Qian.Identity.Server.CaptchaMode.Off = 0 -> Qian.Identity.Server.CaptchaMode
+Qian.Identity.Server.SessionPolicy
+Qian.Identity.Server.Argon2idOptions
+Qian.Identity.Server.SessionPolicy.SessionPolicy() -> void
+Qian.Identity.Server.Argon2idOptions.Argon2idOptions() -> void
+Qian.Identity.Server.LockoutMode
+Qian.Identity.Server.PasswordPolicy
+Qian.Identity.Server.PasswordPolicy.PasswordPolicy() -> void
+Qian.Identity.Server.LoginPolicy
+Qian.Identity.Server.LoginPolicy.LoginPolicy() -> void
+Qian.Identity.Server.CaptchaMode
+Qian.Identity.Server.LockoutMode.Delay = 1 -> Qian.Identity.Server.LockoutMode
+Qian.Identity.Server.LockoutMode.Lock = 0 -> Qian.Identity.Server.LockoutMode
+Qian.Identity.Server.CaptchaMode.AfterFailures = 2 -> Qian.Identity.Server.CaptchaMode
+Qian.Identity.Server.CaptchaMode.Always = 1 -> Qian.Identity.Server.CaptchaMode
+Qian.Identity.Server.IdentityEventHandlers
+Qian.Identity.Server.IdentityAccountOptions
+Qian.Identity.Server.IdentityAccountOptions.IdentityAccountOptions() -> void
+Qian.Identity.Server.IdentityAccountEndpoints
+Qian.Identity.Server.IdentityAccountOptions.Hashing.init -> void
+Qian.Identity.Server.PasswordPolicy.MinLength.get -> int
+Qian.Identity.Server.Argon2idOptions.MemoryKiB.get -> int
+Qian.Identity.Server.PasswordPolicy.MinLength.init -> void
+Qian.Identity.Server.IdentityAccountOptions.Hashing.get -> Qian.Identity.Server.Argon2idOptions!
+Qian.Identity.Server.Argon2idOptions.MemoryKiB.init -> void
+Qian.Identity.Server.IdentityAccountOptions.Password.get -> Qian.Identity.Server.PasswordPolicy!
+Qian.Identity.Server.Argon2idOptions.Iterations.get -> int
+Qian.Identity.Server.PasswordPolicy.MaxLength.get -> int
+Qian.Identity.Server.PasswordPolicy.MaxLength.init -> void
+Qian.Identity.Server.PasswordPolicy.HistorySize.get -> int
+Qian.Identity.Server.Argon2idOptions.Iterations.init -> void
+Qian.Identity.Server.Argon2idOptions.Parallelism.get -> int
+Qian.Identity.Server.IdentityAccountOptions.Login.init -> void
+Qian.Identity.Server.SessionPolicy.AbsoluteLifetime.get -> System.TimeSpan
+Qian.Identity.Server.PasswordPolicy.HistorySize.init -> void
+Qian.Identity.Server.IdentityAccountOptions.Login.get -> Qian.Identity.Server.LoginPolicy!
+Qian.Identity.Server.LoginPolicy.MaxFailedAttempts.get -> int
+Qian.Identity.Server.Argon2idOptions.Parallelism.init -> void
+Qian.Identity.Server.Argon2idOptions.SaltBytes.get -> int
+Qian.Identity.Server.LoginPolicy.MaxFailedAttempts.init -> void
+Qian.Identity.Server.IdentityAccountOptions.Session.get -> Qian.Identity.Server.SessionPolicy!
+Qian.Identity.Server.SessionPolicy.AbsoluteLifetime.init -> void
+Qian.Identity.Server.Argon2idOptions.SaltBytes.init -> void
+Qian.Identity.Server.IdentityAccountOptions.Session.init -> void
+Qian.Identity.Server.IdentityAccountOptions.DefaultPhoneCountryCode.get -> string!
+Qian.Identity.Server.LoginPolicy.Mode.get -> Qian.Identity.Server.LockoutMode
+Qian.Identity.Server.Argon2idOptions.HashBytes.get -> int
+Qian.Identity.Server.IdentityAccountOptions.DefaultPhoneCountryCode.init -> void
+Qian.Identity.Server.LoginPolicy.Mode.init -> void
+Qian.Identity.Server.Argon2idOptions.HashBytes.init -> void
+Qian.Identity.Server.LoginPolicy.LockoutDuration.get -> System.TimeSpan
+Qian.Identity.Server.LoginPolicy.LockoutDuration.init -> void
+Qian.Identity.Server.LoginPolicy.DelayBase.init -> void
+Qian.Identity.Server.LoginPolicy.DelayBase.get -> System.TimeSpan
+Qian.Identity.Server.LoginPolicy.MaxDelay.get -> System.TimeSpan
+override Qian.Identity.Server.IdentityAccountOptions.ToString() -> string!
+Qian.Identity.Server.LoginPolicy.MaxDelay.init -> void
+Qian.Identity.Server.LoginPolicy.FailureWindow.init -> void
+Qian.Identity.Server.LoginPolicy.FailureWindow.get -> System.TimeSpan
+Qian.Identity.Server.LoginPolicy.Captcha.get -> Qian.Identity.Server.CaptchaMode
+Qian.Identity.Server.LoginPolicy.Captcha.init -> void
+Qian.Identity.Server.LoginPolicy.CaptchaAfterFailures.get -> int
+Qian.Identity.Server.LoginPolicy.CaptchaAfterFailures.init -> void
+Qian.Identity.Server.LoginPolicy.SelectionLifetime.get -> System.TimeSpan
+Qian.Identity.Server.LoginPolicy.SelectionLifetime.init -> void
+Qian.Identity.Server.LoginPolicy.ChangeTicketLifetime.get -> System.TimeSpan
+Qian.Identity.Server.LoginPolicy.ChangeTicketLifetime.init -> void
+Qian.Identity.Server.LoginPolicy.LockoutFor(int failed) -> System.TimeSpan?
+static Qian.Identity.Server.IdentityAccountEndpoints.MapQianIdentityAccounts(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+Qian.Identity.Server.IdentityAccountOptions.Password.init -> void
+static Qian.Identity.Server.IdentityEventHandlers.AddQianIdentityEvents(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!
+Qian.Identity.Server.IdentityServerPlugin.IdentityServerPlugin() -> void
+Qian.Identity.Server.IdentityServerOptions.Accounts.get -> Qian.Identity.Server.IdentityAccountOptions!
+Qian.Identity.Server.IdentityServerOptions.Accounts.init -> void
+Qian.Identity.Server.IdentityClientRegistration.DeviceType.get -> string!
+Qian.Identity.Server.IdentityClientRegistration.DeviceType.init -> void
+Qian.Identity.Server.SessionPolicy.MaxConcurrentSessions.get -> int
+Qian.Identity.Server.SessionPolicy.MaxConcurrentSessions.init -> void
+Qian.Identity.Server.SessionPolicy.SingleSessionPerDeviceType.get -> bool
+Qian.Identity.Server.SessionPolicy.SingleSessionPerDeviceType.init -> void
+Qian.Identity.Server.SessionPolicy.ReconcileInterval.get -> System.TimeSpan
+Qian.Identity.Server.SessionPolicy.ReconcileInterval.init -> void
+Qian.Identity.Server.SessionPolicy.OnlineWindow.get -> System.TimeSpan
+Qian.Identity.Server.SessionPolicy.OnlineWindow.init -> void
+Qian.Identity.Server.TenantSuspendedSessionHandler
+Qian.Identity.Server.TenantSuspendedSessionHandler.TenantSuspendedSessionHandler(System.IServiceProvider! services) -> void
+Qian.Identity.Server.TenantSuspendedSessionHandler.HandleAsync(Qian.Tenancy.TenantSuspended! event, Kun.EventBus.MessageContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Server.TenantExpiredSessionHandler
+Qian.Identity.Server.TenantExpiredSessionHandler.TenantExpiredSessionHandler(System.IServiceProvider! services) -> void
+Qian.Identity.Server.TenantExpiredSessionHandler.HandleAsync(Qian.Tenancy.TenantExpired! event, Kun.EventBus.MessageContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Qian.Identity.Server.IdentityEventHandlers.AddQianIdentitySessionHandlers(this Kun.EventBus.DependencyInjection.KunEventBusBuilder! builder) -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!

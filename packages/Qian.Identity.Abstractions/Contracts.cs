@@ -11,8 +11,20 @@ public static class IdentityDefinition
 {
     /// <summary>可替换的身份服务键。</summary>
     public static readonly ServiceKey Key = new("Identity");
+    /// <summary>账号管理端口（<see cref="IIdentityAccounts"/>）的服务键，与 <see cref="Key"/> 同由身份 Provider 提供。</summary>
+    public static readonly ServiceKey AccountsKey = new("IdentityAccounts");
+    /// <summary>统一登录流水线（<see cref="ISignInPipeline"/>）的服务键。</summary>
+    public static readonly ServiceKey SignInKey = new("IdentitySignIn");
+    /// <summary>认证因子注册表（<see cref="IAuthenticatorFactorRegistry"/>）的服务键。</summary>
+    public static readonly ServiceKey FactorsKey = new("IdentityFactors");
     /// <summary>在当前 scope 中解析身份 Provider。</summary>
     public static IIdentityService Identity(this IPluginContext context) => context.Inject<IIdentityService>(Key);
+    /// <summary>在当前 scope 中解析账号管理端口。</summary>
+    public static IIdentityAccounts IdentityAccounts(this IPluginContext context) => context.Inject<IIdentityAccounts>(AccountsKey);
+    /// <summary>在当前 scope 中解析统一登录流水线。</summary>
+    public static ISignInPipeline IdentitySignIn(this IPluginContext context) => context.Inject<ISignInPipeline>(SignInKey);
+    /// <summary>在当前 scope 中解析认证因子注册表。</summary>
+    public static IAuthenticatorFactorRegistry IdentityFactors(this IPluginContext context) => context.Inject<IAuthenticatorFactorRegistry>(FactorsKey);
 }
 /// <summary>基于 Kun 当前用户端口，补充平台身份快照；匿名时相关属性为空。</summary>
 public interface ICurrentUser : Kun.Core.Security.ICurrentUser
@@ -62,10 +74,24 @@ public interface IIdentityConnectorRegistry
     /// <summary>列出当前 scope 可见的描述。</summary>
     IReadOnlyList<ConnectorDescriptor> List();
 }
-/// <summary>自然人投影，不包含凭据或历史密码哈希。</summary>
-public sealed record Person(Guid Id, string DisplayName, string? UserName, string? Email, string? Phone, long IdentityRevision);
+/// <summary>自然人投影，不包含凭据或历史密码哈希。Email 与 Phone 是掩码值（如 <c>138****5678</c>、<c>a***@example.com</c>），原值不出身份组件。</summary>
+public sealed record Person(Guid Id, string DisplayName, string? UserName, string? Email, string? Phone, long IdentityRevision)
+{
+    /// <summary>账号状态，见 <see cref="AccountStatuses"/>。</summary>
+    public string Status { get; init; } = AccountStatuses.Active;
+    /// <summary>是否具备平台控制台访问资格。</summary>
+    public bool PlatformAccess { get; init; }
+    /// <summary>全部有效标识的掩码视图。</summary>
+    public IReadOnlyList<IdentifierView> Identifiers { get; init; } = [];
+}
 /// <summary>租户成员投影。</summary>
-public sealed record Membership(Guid Id, Guid PersonId, Guid TenantId, string DisplayName, string Status, bool IsTenantAdministrator);
+public sealed record Membership(Guid Id, Guid PersonId, Guid TenantId, string DisplayName, string Status, bool IsTenantAdministrator)
+{
+    /// <summary>租户内账号，租户内唯一、不可改。</summary>
+    public string Account { get; init; } = "";
+    /// <summary>成员的身份修订；令牌的 identity_revision 是 Person 修订与成员修订之和。</summary>
+    public long IdentityRevision { get; init; }
+}
 /// <summary>会话投影；日志不得打印原始 ID。</summary>
 public sealed record Session(Guid Id, Guid PersonId, Guid? MembershipId, string ClientId, string DeviceType, DateTimeOffset ExpiresAt, long IdentityRevision)
 {
@@ -144,6 +170,19 @@ public sealed class AuthenticationProof : IDisposable
     public override string ToString() => "AuthenticationProof(redacted)";
     /// <summary>清零敏感缓冲，释放后不可再读取。</summary>
     public void Dispose() { if (_data is not null) { CryptographicOperations.ZeroMemory(_data); _data = null; } }
+}
+/// <summary>
+/// 认证因子注册表：与连接器注册表同一模式——同名独占、可撤销。内置的 <c>password</c> 因子由身份 Provider 占用；
+/// 短信 OTP、TOTP 等因子由各自组件在 Apply 时注册，句柄交给 <c>ctx.Effect</c>，卸载即撤销。
+/// </summary>
+public interface IAuthenticatorFactorRegistry
+{
+    /// <summary>注册因子，标识取自 <see cref="FactorDescriptor.Id"/>；已被占用时抛 REGISTRATION_CONFLICT。</summary>
+    IDisposable Register(IAuthenticatorFactor factor);
+    /// <summary>按标识查找当前可见的因子。</summary>
+    IAuthenticatorFactor? Find(string id);
+    /// <summary>列出当前可见因子的描述。</summary>
+    IReadOnlyList<FactorDescriptor> List();
 }
 /// <summary>可插拔认证因子，不绑定密码、短信或 TOTP 的实现。</summary>
 public interface IAuthenticatorFactor

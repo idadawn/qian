@@ -22,6 +22,8 @@ public sealed class IdentityServerOptions
     public IReadOnlyList<IdentityClientRegistration> Clients { get; init; } = [];
     /// <summary>只允许 Development 环境且 issuer 为 loopback 时关闭传输要求。</summary>
     public bool AllowLoopbackHttp { get; init; }
+    /// <summary>账号模型与统一登录流水线的参数；宿主自带账号服务（<c>new IdentityServerPlugin(accounts)</c>）时不使用。</summary>
+    public IdentityAccountOptions Accounts { get; init; } = new();
     /// <inheritdoc />
     public override string ToString() => "IdentityServerOptions(redacted)";
 }
@@ -38,6 +40,8 @@ public sealed class IdentityClientRegistration
     public Guid? TenantId { get; init; }
     /// <summary>机器主体的组件标识；来自受信客户端注册表。</summary>
     public string? PluginId { get; init; }
+    /// <summary>登录端类型（如 pc、mobile），用于会话的单端策略与审计；字母开头、最长 16 位小写字母数字或 _-，缺省 pc。</summary>
+    public string DeviceType { get; init; } = "pc";
     /// <summary>已登记的后通道登出端点；只有精确的此地址可被服务端调用。</summary>
     public Uri? BackchannelLogoutUri { get; init; }
     /// <inheritdoc />
