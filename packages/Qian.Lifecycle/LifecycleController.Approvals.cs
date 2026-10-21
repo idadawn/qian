@@ -81,6 +81,8 @@ internal sealed partial class LifecycleController
         if (!user.IsAuthenticated || user.Principal is not { } principal || user.UserId != principal.Subject) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
         try { CheckTenant(tenantId); CheckPlugin(pluginId); CheckVersion(version, "#/version"); }
         catch (QianErrorException) { throw NotFound(); }
+        // 批准人取主体：与 Authz 对主体的约束一致（不超过 200 字符、不含控制字符），宿主换用别的判定端口时也不会写出超长的批准人。
+        if (principal.Subject.Length > 200 || principal.Subject.Any(char.IsControl)) throw NotFound();
     }
 
     private static string ApprovalResource(string tenantId, string pluginId, string version) => "lifecycle/install:" + tenantId + "/" + pluginId + "@" + version;

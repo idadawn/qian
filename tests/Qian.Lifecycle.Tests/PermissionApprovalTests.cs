@@ -100,13 +100,15 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
     [Fact]
     public async Task 批准管理面_无权限跨租户委托与Agent与不存在同为404_内容只在判定之后校验且只能批准声明过的项_失败不写记录()
     {
-        await using var host = await Start(new Permissions(("approver", TenantA), ("approver", TenantB)));
+        // 判定替身也放行一个超长主体：它仍须被挡下（批准人与 Authz 同样不超过 200 字符），不能变成数据库错误。
+        var overlong = new string('a', 201);
+        await using var host = await Start(new Permissions(("approver", TenantA), ("approver", TenantB), (overlong, TenantA)));
         await Install(host, "1.0.0", Policy(FullPermissions, FullEgress));
         var full = Grants(["tenant:read"], [], [], [], []);
         using (host.Tenant.BeginScope(TenantA))
         {
             await AssertCode(PlatformErrors.Unauthenticated, () => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", full, new TestUser("approver", TenantA, authenticated: false), Ct).AsTask());
-            // 无权限的租户主体、跨租户、委托、Agent、格式不合格的标识与未安装的版本都是同一个 404；无权限者的坏请求体也只得到 404。
+            // 无权限的租户主体、跨租户、委托、Agent、超长主体、格式不合格的标识与未安装的版本都是同一个 404；无权限者的坏请求体也只得到 404。
             foreach (var attempt in new Func<Task>[]
             {
                 () => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", full, new TestUser("reader", TenantA), Ct).AsTask(),
@@ -118,6 +120,7 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
                 () => host.Lifecycle.ApprovePermissionsAsync("not-a-tenant", Plugin, "1.0.0", full, new TestUser("approver", TenantA), Ct).AsTask(),
                 () => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "9.9.9", full, new TestUser("approver", TenantA), Ct).AsTask(),
                 () => host.Lifecycle.GetPermissionApprovalAsync(TenantA, Plugin, "1.0.0", new TestUser("reader", TenantA), Ct).AsTask(),
+                () => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", full, new TestUser(overlong, TenantA), Ct).AsTask(),
                 // 平台主体只经超管旁路：宿主没有装配旁路端口时同样 404。
                 () => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", full, new TestUser("root", null), Ct).AsTask(),
             })
