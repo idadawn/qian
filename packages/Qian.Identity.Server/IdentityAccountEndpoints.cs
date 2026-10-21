@@ -25,7 +25,7 @@ public static class IdentityAccountEndpoints
 {
     internal const string Prefix = "/api/identity";
     private const int MaxBodyBytes = 16 * 1024;
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+    internal static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 
     /// <summary>映射账号接口；组件卸载后返回 404。须与 <c>MapQianIdentityServer</c> 一起使用。</summary>
     public static IEndpointRouteBuilder MapQianIdentityAccounts(this IEndpointRouteBuilder endpoints)
@@ -39,6 +39,7 @@ public static class IdentityAccountEndpoints
         endpoints.MapPost(Prefix + "/session/switch", (Delegate)Switch);
         endpoints.MapGet(Prefix + "/me", (Delegate)Me);
         endpoints.MapPost(Prefix + "/me/password", (Delegate)ChangeOwnPassword);
+        IdentitySessionEndpoints.Map(endpoints);
         return endpoints;
     }
 
@@ -76,7 +77,7 @@ public static class IdentityAccountEndpoints
 
     // ---- 端点 ----
 
-    private static IdentityAccountService Service(HttpContext http) => http.RequestServices.GetRequiredService<IdentityAccountGate>().Service!;
+    internal static IdentityAccountService Service(HttpContext http) => http.RequestServices.GetRequiredService<IdentityAccountGate>().Service!;
 
     private static IResult Csrf(HttpContext http)
     {
@@ -140,7 +141,7 @@ public static class IdentityAccountEndpoints
         {
             person_id = current.PersonId, tenant_id = validation.TenantId, membership_id = validation.MembershipId, identity_revision = validation.IdentityRevision,
             amr = current.Amr, acr = current.Acr, client_id = current.ClientId, device_type = current.DeviceType, expires_at = current.ExpiresAt
-        }, Json);
+        }, JsonOptions);
     }
 
     private static async Task<IResult> ChangeOwnPassword(HttpContext http)
@@ -175,9 +176,16 @@ public static class IdentityAccountEndpoints
         return null;
     }
 
+    // 无请求体的写接口（如吊销会话）：只要求防伪令牌，不要求 JSON 请求体。
+    internal static async Task<IResult?> GuardAction(HttpContext http)
+    {
+        if (!await http.RequestServices.GetRequiredService<IAntiforgery>().IsRequestValidAsync(http).ConfigureAwait(false)) return QianResults.Error(new QianError(PlatformErrors.InputInvalid));
+        return null;
+    }
+
     private static async Task<T?> Read<T>(HttpContext http) where T : class
     {
-        try { return await JsonSerializer.DeserializeAsync<T>(http.Request.Body, Json, http.RequestAborted).ConfigureAwait(false); }
+        try { return await JsonSerializer.DeserializeAsync<T>(http.Request.Body, JsonOptions, http.RequestAborted).ConfigureAwait(false); }
         catch (JsonException) { return null; }
         catch (BadHttpRequestException) { return null; }
     }
@@ -194,12 +202,12 @@ public static class IdentityAccountEndpoints
                 var session = result.Session!;
                 var options = http.RequestServices.GetRequiredService<IdentityServerOptions>();
                 await http.SignInAsync(options.SignInScheme, CookiePrincipal(session), new AuthenticationProperties { IsPersistent = false, ExpiresUtc = session.ExpiresAt }).ConfigureAwait(false);
-                return Results.Json(new SignInView("authenticated", TenantId: session.TenantId, MembershipId: session.MembershipId, Platform: session.TenantId is null), Json);
+                return Results.Json(new SignInView("authenticated", TenantId: session.TenantId, MembershipId: session.MembershipId, Platform: session.TenantId is null), JsonOptions);
             case SignInStatus.SelectionRequired:
                 return Results.Json(new SignInView("selection_required", result.Ticket!.Token, result.Ticket.ExpiresAt,
-                    [.. result.Choices.Select(c => new ChoiceView(c.MembershipId, c.TenantId, c.TenantCode, c.TenantName, c.DisplayName, c.IsPlatform, c.IsTenantAdministrator))]), Json);
+                    [.. result.Choices.Select(c => new ChoiceView(c.MembershipId, c.TenantId, c.TenantCode, c.TenantName, c.DisplayName, c.IsPlatform, c.IsTenantAdministrator))]), JsonOptions);
             case SignInStatus.PasswordChangeRequired:
-                return Results.Json(new SignInView("password_change_required", result.Ticket!.Token, result.Ticket.ExpiresAt), Json);
+                return Results.Json(new SignInView("password_change_required", result.Ticket!.Token, result.Ticket.ExpiresAt), JsonOptions);
             default:
                 if (result.RetryAfter is { } wait) http.Response.Headers.RetryAfter = Math.Max(1, (int)Math.Ceiling(wait.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
                 return QianResults.Error(result.Error!);
@@ -208,7 +216,7 @@ public static class IdentityAccountEndpoints
 
     // ---- 账号 Cookie ----
 
-    private static async Task<AccountSession?> CurrentSession(HttpContext http)
+    internal static async Task<AccountSession?> CurrentSession(HttpContext http)
     {
         var options = http.RequestServices.GetRequiredService<IdentityServerOptions>();
         var authentication = await http.AuthenticateAsync(options.SignInScheme).ConfigureAwait(false);

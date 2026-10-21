@@ -1,13 +1,13 @@
 # Qian.Identity.Server
 
-身份 seam 的 Provider：基于 OpenIddict 7.7.2 的协议面（S1-IDP-002）加内置的 Person / Membership 账号模型与统一登录流水线（S1-IDP-003）。可嵌入独立 ASP.NET Core 宿主，拥有 discovery、JWKS、授权码、token、userinfo、revocation、introspection 和 end_session 协议面，以及账号、凭据、会话与登录审计的持久存储。OpenIddict 是唯一的令牌发行者；Kun 只提供 OIDC 依赖方与 Cookie 原语，不持有业务用户与租户。
+身份 seam 的 Provider：基于 OpenIddict 7.7.2 的协议面（S1-IDP-002）加内置的 Person / Membership 账号模型与统一登录流水线（S1-IDP-003）、会话中心（S1-IDP-004）。可嵌入独立 ASP.NET Core 宿主，拥有 discovery、JWKS、授权码、token、userinfo、revocation、introspection 和 end_session 协议面，以及账号、凭据、会话与登录审计的持久存储。OpenIddict 是唯一的令牌发行者；Kun 只提供 OIDC 依赖方与 Cookie 原语，不持有业务用户与租户。
 
 ## 两种装配方式
 
 - **内置账号模型（默认）**：`new IdentityServerPlugin()`，需要 Data 与 Tenancy 两个组件。身份组件自己提供 `IIdentityAccounts`（账号管理）、`ISignInPipeline`（统一登录流水线）、`IAuthenticatorFactorRegistry`（认证因子注册表），并向 Tenancy 提供 `ITenantMembershipProvisioner`（开通编排第 5 步）与 `ITenantUserCounter`（配额用量）。
 - **宿主自带账号服务**：`new IdentityServerPlugin(accounts)`，本组件只承担协议面，账号流水线由宿主负责；此时不提供上面几个端口。
 
-两种方式都只允许 global scope、每环境唯一 issuer；`plugins/qian.identity.server` 仍保留明确标记的配置骨架，`qian add identity` 的完整产品入口待外壳与会话中心接入后再发布。
+两种方式都只允许 global scope、每环境唯一 issuer；`plugins/qian.identity.server` 仍保留明确标记的配置骨架，`qian add identity` 的完整产品入口待外壳接入后再发布。
 
 ## 宿主装配顺序（内置账号模型）
 
@@ -16,6 +16,7 @@
 3. 建立受信账号 Cookie scheme（默认名 `qian.identity.signin`）和 DataProtection；多副本须共享受保护的密钥。调用 `AddQianIdentityServer(options, environment)`。`options` 里的证书私钥与客户端密钥由宿主从密钥引用加载，不进 profile、日志或仓库。账号策略放在 `options.Accounts`（见下）。
 4. 构建应用后先 `UseQianIdentityServer()`，再 `UseAuthentication()`，最后 `MapQianIdentityServer()` 与 `MapQianIdentityAccounts()`。前者含 Qian 错误映射、安全响应头（no-store / nosniff / frame-ancestors none）与组件挂载门禁，卸载后账号接口与协议路径都是 404。
 5. 经 `PluginLoader` 依次挂载 Data、Tenancy，再挂载 `IdentityServerPlugin`；identity 条目的 config 只接收 `issuer`，必须与 `options` 的规范 issuer 一致。
+6. 可选：注册 StackExchange.Redis 的 `IConnectionMultiplexer`，会话中心就启用 Redis 索引与吊销墓碑；不注册则完全由 PostgreSQL 承担，行为一致（见「会话中心」）。事件总线配置里再调用 `events.AddQianIdentitySessionHandlers()`，登记 `tenant.suspended.v1` / `tenant.expired.v1` 的处理器。
 
 **与业务宿主同机混合部署**：账号接口在 `/api/identity` 下，协议面在 `/connect`、`/.well-known` 下，登录前没有租户上下文。业务宿主若对 `/api/*` 统一施加「必须已选租户」的边界（Kun 多租户中间件、生产模式拒绝回退租户），须把这三组路由排除在外（单独分支或独立宿主）；CRM 联调测试用 `MapWhen` 分支演示了做法。
 
@@ -46,6 +47,21 @@
 
 令牌 claim：`sub / tenant_id / membership_id / scope / identity_revision / sid / amr / acr`（后两者按需），不含权限；`principal_kind` 为 `user`。授权码与 refresh token 的序列化会把平台身份的 JSON null `tenant_id` 退化成空串，兑换时由协议端点恢复。
 
+## 会话中心
+
+会话的唯一事实来源是 PostgreSQL 的 `sessions` 表；Redis 索引只是派生数据，任何时候都不据它放行。
+
+- **吊销分两段**：① 即时生效——改密、停用、锁定、成员停用、租户冻结、强制下线、登出、并发挤下线，都与引起它的变更同事务写 `sessions.revoked_at / revoke_reason / revoked_by`；此后账号 Cookie、授权码、换码、refresh 与 userinfo 的校验都读库，立刻拒绝。② 旁路——后台处理器 `IdentitySessionProcessor` 对每个「已吊销、未处理」的会话收尾（进程内的吊销写入后经信号立即唤醒，另有 1 秒轮询兜底）：吊销协议授权族与令牌（与登出端点共用 `IdentityProtocolSessions`）、为登记了后通道登出地址且确实持有该会话授权的客户端登记投递、清除 Redis 索引并写墓碑，最后在会话所属租户的作用域内把集成事件与 `revocation_processed_at` 标记写进同一事务。旁路每一步幂等，失败按指数退避重试且不挡住后面的会话；多副本用 `FOR UPDATE SKIP LOCKED` 分担，同一会话的事件恰好一条——登出是 `identity.logout.v1`，其余是 `identity.session_revoked.v1`，信封的行为主体是动手的人或服务（后台触发的是 `service:qian.identity`），租户是会话所属租户。
+- **吊销的来源与原因**：改密（`password_changed`，含运营重置 `password_reset`）、Person 停用 / 管理员锁定（`disabled` / `locked`）、成员停用 / 锁定（`member_disabled` / `member_locked`，只吊销该成员身份下的会话）、租户冻结 / 到期 / 目录里消失（`tenant_*`）、强制下线（`admin_revoke`、`admin_revoke_all`、本人 `user_revoke`、`user_revoke_all`）、登出（`logout`）、切换租户（`switch`）、并发上限与单端（`concurrency_limit`、`single_device`）。登录限流产生的临时锁定**不**吊销已有会话——否则任何人故意输错密码就能把受害者踢下线。权限变更不吊销会话，而是递增身份修订（见「身份修订」）。
+- **后通道登出（双向）**：身份服务 → 依赖方（RP）：任何吊销来源（不只是登出）都向「登记了后通道登出地址、且持有该会话授权」的客户端投递 `logout_token`（持久队列、逐步退避重试、接收方按 issuer / client / sid 幂等）；依赖方 → 身份服务：RP 经 `end_session` 登出，身份服务吊销该会话后向其余持有授权的 RP 扇出。RP 侧的接收与验签用 Kun 的 `ValidateLogoutTokenAsync`（测试里用的就是已发布的 Kun 客户端），外壳 RP 的接入属于 IDP-005。
+- **Redis 索引（可选）**：`qian:identity:sessions:{person}` 是有序集合（成员为 `N` 格式的会话标识，分值为绝对到期的 Unix 秒）；`qian:identity:revoked:{sid}` 是吊销墓碑，只在 PG 已提交吊销之后才写、TTL 到会话自然到期，所以「有墓碑 ⇒ 已吊销」恒成立，校验先看墓碑可省一次查询，没有墓碑不代表有效。会话列表读 PG，并顺带以 PG 为准修复索引（补缺、去多）。Redis 的任何故障都吞掉并退回 PG，同时熔断 5 秒，只记一条不含标识的降级告警。
+- **并发上限与单端模式**：`SessionPolicy.MaxConcurrentSessions`（缺省 5，跨租户跨端合计）；新登录在建会话的同一事务里（已锁定 Person 行，同一人的并发登录因此串行，上限不会被击穿）踢掉最早建立的会话，原因 `concurrency_limit`。开启 `SingleSessionPerDeviceType` 后，同一端类型（客户端登记的 `DeviceType`，如 pc、mobile）后登录的会话踢掉先登录的，原因 `single_device`，不影响其他端；并发上限仍然适用。
+- **租户冻结 / 到期（R95）**：每次会话校验都读租户目录，租户不再是 Active / Trial，会话立即失效（账号接口 401，refresh 返回 `invalid_grant`）。失效的持久化与事件有两条路径：事件处理器 `TenantSuspendedSessionHandler` / `TenantExpiredSessionHandler`（订阅 `tenant.suspended.v1` / `tenant.expired.v1`，到达即吊销该租户的全部会话，原因 `tenant_suspended` / `tenant_expired`）；以及后台对账（每 `ReconcileInterval` 一次，缺省且至多 30 秒：核对仍有有效会话的租户在目录里的状态，非 Active / Trial 或目录里已不存在的租户，其会话一律吊销，原因 `tenant_<状态>` / `tenant_missing`）。事件投递由消费端（S1-EVT-002）接线；即使事件丢失、迟到或尚未接线，对账也保证会话在一个对账间隔加旁路时间内失效，远小于 60 秒。租户恢复后已吊销的会话不会复活，用户重新登录即可。
+- **身份修订**：`IIdentityAccounts.BumpIdentityRevisionAsync(personId, reason)` 递增该 Person 在**当前租户**的成员修订（行级安全把更新限在当前租户，同一 Person 在别的租户的成员身份不变），返回新的 `identity_revision`（Person 修订 + 成员修订）；该租户没有这个成员返回 `NOT_FOUND`。授权引擎在 `authz.grant.changed.v1` 之后调用它（接线属于授权任务）。旧令牌随即被服务端拒绝：userinfo 与会话校验比较令牌里的 `identity_revision` 与库里的当前值，更低就是 `invalid_token`；会话本身不吊销，refresh 换到的新令牌带新修订。网关须把 `identity_revision` 放进 `ForwardedClaimTypes` 白名单，供 7.5 的 PEP 比对缓存的权限快照。
+- **管理面**（见下表）：本人管自己的会话；平台身份（平台资格 + 平台会话，租户身份下不继承）管任何人，可按租户缩小；租户管理员只管本租户内的会话（传别的租户的参数也越不了权）。无权限时单个会话按不存在（404）处理，不泄露它是否存在，列表类 403。这是授权引擎的权限点（`qian.identity:session:*`）接入 PEP 之前的内置判定，接入后改为权限点加数据范围。
+- **在线用户**：窗口内（`OnlineWindow`，缺省 15 分钟，即访问令牌寿命）有活动的有效会话，按 Person × 租户聚合；平台视角含平台身份会话。活动指会话校验（授权、换码、刷新、userinfo、账号接口），`last_seen_at` 最多每分钟刷新一次。
+- **组件卸载**：后台工作（旁路、对账）互斥运行，卸载时先排空再放行 Data 释放会话；`ctx.Effect` 按登记的逆序执行，所以服务先于 Data 关闭，不会让正在执行的命令撞上被释放的连接。
+
 ## HTTP 接口
 
 `MapQianIdentityAccounts()` 映射（均在 `/api/identity` 下，响应一律 no-store）：
@@ -60,12 +76,16 @@
 | `POST /session/switch` | 已登录用户发起租户切换 → `selection_required` |
 | `GET /me` | 当前会话的身份投影（按数据库校验，失效为 401） |
 | `POST /me/password` | `current_password`、`new_password`；成功后该 Person 的全部会话失效，Cookie 清除，204 |
+| `GET /sessions?person=&tenant_id=` | 会话列表，缺省本人，当前会话带 `current`；平台可看任何人并按租户缩小，租户管理员只看本租户内的会话 |
+| `POST /sessions/{sid}:revoke` | 吊销一个会话，返回 `{revoked}`；无权限或不存在一律 404；吊销的是当前会话时同时清除 Cookie |
+| `POST /persons/{id}:revoke-all` | 吊销某人的全部会话（平台可加 `tenant_id` 缩小范围，租户管理员固定在本租户）；本人吊销连当前会话一并吊销并清除 Cookie |
+| `GET /online-users?tenant_id=&limit=&offset=` | 在线用户（平台视角可按租户过滤，租户管理员固定在本租户，普通成员 403）；`limit` 1–200，缺省 50 |
 
-写接口要求 JSON、防伪令牌、16 KB 体积上限（声明长度超限直接 `Connection: close` 返回 413，不读取请求体）、未知字段拒绝。成功登录写入服务端账号 Cookie（只来自流水线，从不接受请求体里的主体），随后 `/connect/authorize` 据此签发授权码。错误是 `ErrorDetail`；`423 ACCOUNT_LOCKED` 带 `Retry-After`。
+写接口要求 JSON、防伪令牌、16 KB 体积上限（声明长度超限直接 `Connection: close` 返回 413，不读取请求体）、未知字段拒绝；两个吊销接口没有请求体，只要求防伪令牌。成功登录写入服务端账号 Cookie（只来自流水线，从不接受请求体里的主体），随后 `/connect/authorize` 据此签发授权码。错误是 `ErrorDetail`；`423 ACCOUNT_LOCKED` 带 `Retry-After`。
 
 ## 登录策略与参数
 
-`IdentityServerOptions.Accounts`（`IdentityAccountOptions`）：Argon2id 成本（缺省 19 MiB、2 次迭代、1 并行度）、密码策略（最小长度 ≥ 8、历史条数 1–24）、登录策略（失败阈值 ≥ 3、锁定时长、延时起点与上限、失败计数窗口、验证码模式、选择令牌寿命 ≤ 5 分钟、改密令牌寿命）、会话策略（绝对寿命，缺省 30 天）。选项校验拒绝放宽这些安全底线。租户级覆盖（登录策略与密码策略 Schema，经 `ITenantSettings`）由 IDP-006 接入，在此之前全平台共用这里的取值。
+`IdentityServerOptions.Accounts`（`IdentityAccountOptions`）：Argon2id 成本（缺省 19 MiB、2 次迭代、1 并行度）、密码策略（最小长度 ≥ 8、历史条数 1–24）、登录策略（失败阈值 ≥ 3、锁定时长、延时起点与上限、失败计数窗口、验证码模式、选择令牌寿命 ≤ 5 分钟、改密令牌寿命）、会话策略（绝对寿命缺省 30 天；并发上限 1–1000，缺省 5；单端模式缺省关闭；租户对账间隔 1–30 秒，缺省 30 秒；在线窗口 1 分钟–1 天，缺省 15 分钟）。选项校验拒绝放宽这些安全底线。租户级覆盖（登录策略与密码策略 Schema，经 `ITenantSettings`）由 IDP-006 接入，在此之前全平台共用这里的取值。
 
 ## 协议与客户端边界
 
@@ -78,11 +98,11 @@
 
 ## 登出、密钥与日志
 
-GET /connect/logout 只展示确认表单；POST 必须通过 antiforgery 检查。会话对应的授权族吊销、账号会话行吊销（原因 `logout`）与后通道待投递记录在同一数据库事务提交，再撤销浏览器 Cookie。后台投递使用 FOR UPDATE SKIP LOCKED 协调副本，每秒检查，HTTP 最长 5 秒，失败逐步退避至 60 秒后继续重试。接收方按 issuer/client/sid 幂等吊销；重试会重新签发短期 logout_token。已从可信配置移除的客户端不会继续发送到旧地址。后通道只向登记的精确 HTTPS 地址发送，禁止自动重定向；Development 的 loopback 接收器仅用于本机验收。Redis 会话索引、个人强制下线与权限修订传播由 IDP-004 接入，不能把协议族吊销当成该任务已经完成。
+GET /connect/logout 只展示确认表单；POST 必须通过 antiforgery 检查。会话对应的授权族吊销、账号会话行吊销（原因 `logout`）与后通道待投递记录在同一数据库事务提交，再撤销浏览器 Cookie。后台投递使用 FOR UPDATE SKIP LOCKED 协调副本，每秒检查，HTTP 最长 5 秒，失败逐步退避至 60 秒后继续重试。接收方按 issuer/client/sid 幂等吊销；重试会重新签发短期 logout_token。已从可信配置移除的客户端不会继续发送到旧地址。后通道只向登记的精确 HTTPS 地址发送，禁止自动重定向；Development 的 loopback 接收器仅用于本机验收。登出与会话中心的旁路共用同一处协议收尾（`IdentityProtocolSessions`），登出发的是 `identity.logout.v1`；Redis 索引、强制下线、并发控制与修订见上文「会话中心」。
 
 签名与加密均使用 RSA 证书，允许同时配置多张证书。轮换时先向所有副本配置新旧密钥的重叠集合，再启用新密钥；旧解密密钥须保留到相关授权码、refresh 等材料到期，旧公钥保留到依赖方缓存与令牌有效期结束。证书变更通过配置及进程重启生效，不宣称文件监听或自动轮换已交付。
 
-OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌或 id_token_hint，因此宿主装配将这两个类别限制为 Warning 及以上；不要用更具体的类别设置放开它们。账号服务的日志与审计不含密码、验证码、票据、原始标识与原始 sid。
+OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌或 id_token_hint，因此宿主装配将这两个类别限制为 Warning 及以上；不要用更具体的类别设置放开它们。账号服务的日志与审计不含密码、验证码、票据、原始标识与原始 sid：全部日志点都是 `[LoggerMessage]`，参数与模板里没有会话标识（测试用源码扫描加反射把关），登录审计只留 sid 的哈希。`POST /sessions/{sid}:revoke` 的路径含会话标识：宿主的 ASP.NET 请求日志已限制在 Warning，但网关与入口控制器的访问日志不在本组件控制范围，部署须对该路径脱敏。
 
 ## 错误码
 
@@ -93,13 +113,16 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - **S1-TEN-003**：`ITenantMembershipProvisioner`（服务键 `TenantProvisioning.MembershipKey`）按 (成员 ID, Person) 幂等建立租户管理员 Membership；`TenantAdministrator.SubjectId` 即 Person 的 `sub`，必须是已存在的 Person，也是开通第 7 步授予 `tenant.owner` 的主体。组件就位后第 5 步由 `skipped` 变为 `succeeded`。
 - **S1-TEN-004**：成员创建经 `ITenantQuota.EnsureCanAddUserAsync(currentUsers, kind)`，在同一事务内持租户级计数锁；租户管理员计入，具备平台资格的 Person 不计；`ITenantUserCounter`（`TenantSettings.UserCounterKey`）给出真实人数。
 - **S1-TEN-010**（R110）：`IIdentityAccounts.ResetPasswordAsync` 是运营重置密码的端口——旧凭据立即失效、默认下次登录强制改密、使既有会话失效、发布不含密码的改密事件。
-- **S1-IDP-004**：`sessions` 表、`SessionRevocation` 的 PG 层吊销与 `identity_revision` 已就位；Redis 索引、强制下线事件、后通道扩展由 IDP-004 接入。
+- **S1-IDP-004**（本任务）：会话中心已就位，见上文「会话中心」。对其他任务登记的接口见下面三条。
+- **授权任务（S1-AZ-004 起）**：订阅 `authz.grant.changed.v1` 后，对受影响主体在其租户作用域内调用 `IIdentityAccounts.BumpIdentityRevisionAsync`；PEP 比对令牌 `identity_revision` 与缓存快照由授权侧负责。
+- **S1-EVT-002（事件消费端）**：宿主在事件总线配置里调用 `AddQianIdentitySessionHandlers()`；订阅投递由消费端接线，在此之前租户冻结 / 到期靠后台对账兜底。
+- **S1-GW-001（网关）**：`ForwardedClaimTypes` 白名单须包含 `identity_revision`。
 - **S1-IDP-006**：`IAuthenticatorFactorRegistry` 与 `MFA_UNAVAILABLE` 的不降级行为；租户级登录策略覆盖。
 - **S1-IDP-007**：连接器登录复用同一 `LoginInput`；在此之前 `ConnectorId` 非空明确拒绝（`#/connector_id`），不会悄悄降级。
 
 ## 验收
 
-真实 PostgreSQL（受限应用角色、强制 RLS）、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404。
+真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
 
 ## 模型体验
 
@@ -108,7 +131,8 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 ## 已知限制与延期项
 
 - MFA 的登记、挑战与校验（TOTP、短信）属于 IDP-006；此前已登记第二因子的账号一律拒绝登录，没有降级路径。
-- Redis 会话索引、并发上限、单端踢出、强制下线事件、身份修订的跨服务传播与历史清理属于 IDP-004；本组件只做 PG 层会话与吊销。
+- 已吊销 / 已过期会话行的历史清理（保留期与归档）不在本任务内；订阅投递的接线（S1-EVT-002）与授权变更触发修订递增（授权任务）各自交付，接线前租户冻结靠对账兜底，授权变更需由调用方显式调用 `BumpIdentityRevisionAsync`。
+- 管理面的权限判定是内置规则（本人 / 平台身份 / 租户管理员），待授权引擎的 PEP 接入后改为权限点加数据范围。
 - 连接器登录、JIT 建号与合并属于 IDP-007；RP/外壳接入属于 IDP-005 与 yue 任务。
 - 登录失败的 IP 维度限流与设备指纹不在本任务内（账号维度的限流、锁定与验证码已交付）。
 - identity profile 的完整宿主组装与 `qian add` 产品入口仍待上述组件接入；本任务没有发布 NuGet 制品或部署到集群。

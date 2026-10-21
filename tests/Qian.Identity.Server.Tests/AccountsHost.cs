@@ -14,6 +14,7 @@ using Kun.Mediator.DependencyInjection;
 using Kun.MultiTenancy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,7 @@ using Qian.Identity.Abstractions;
 using Qian.Runtime;
 using Qian.Tenancy;
 using Qian.Testing.Containers;
+using StackExchange.Redis;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Qian.Identity.Server.Tests;
@@ -41,7 +43,7 @@ internal static class AccountsHost
     internal const string Resource = "https://api.qian.test";
     internal static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    internal static async Task<Running> Start(PostgresFixture postgres, IdentityAccountOptions? accounts = null, string flavor = "default")
+    internal static async Task<Running> Start(PostgresFixture postgres, IdentityAccountOptions? accounts = null, string flavor = "default", string? redis = null, LogLevel logLevel = LogLevel.Warning)
     {
         using var socket = new TcpListener(IPAddress.Loopback, 0); socket.Start(); var port = ((IPEndPoint)socket.LocalEndpoint).Port; socket.Stop();
         var issuer = $"http://127.0.0.1:{port}/";
@@ -50,7 +52,7 @@ internal static class AccountsHost
             .CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(1));
         var secret = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
-        builder.WebHost.UseUrls(issuer); builder.Logging.ClearProviders(); builder.Logging.SetMinimumLevel(LogLevel.Warning);
+        builder.WebHost.UseUrls(issuer); builder.Logging.ClearProviders(); builder.Logging.SetMinimumLevel(logLevel);
         var logs = new CapturedLogs(); builder.Logging.AddProvider(logs);
         builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
         builder.Services.AddKunEventBus(events => events.RegisterIdentityEvents());
@@ -60,6 +62,10 @@ internal static class AccountsHost
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
         builder.Services.AddAuthentication("qian.identity.signin").AddCookie("qian.identity.signin");
         builder.Services.AddHttpClient();
+        // 会话中心的 Redis 索引是可选的：传了连接串才装配（短超时，宕机时不拖慢登录）。
+        if (redis is not null)
+            builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(new ConfigurationOptions
+                { EndPoints = { redis }, AbortOnConnectFail = false, ConnectTimeout = 2000, SyncTimeout = 2000, AsyncTimeout = 2000, ConnectRetry = 1 }));
         var web = new OpenIddictApplicationDescriptor { ClientId = "web", ClientSecret = secret, ClientType = ClientTypes.Confidential, ConsentType = ConsentTypes.Implicit };
         web.RedirectUris.Add(new Uri(issuer + "callback")); web.PostLogoutRedirectUris.Add(new Uri(issuer + "signed-out"));
         web.Permissions.UnionWith([Permissions.Endpoints.Authorization, Permissions.Endpoints.Token, Permissions.Endpoints.EndSession, Permissions.Endpoints.Revocation,
@@ -71,9 +77,16 @@ internal static class AccountsHost
         builder.Services.AddQianIdentityServer(new IdentityServerOptions
         {
             Issuer = new Uri(issuer), AllowLoopbackHttp = true, SigningCertificates = [cert], EncryptionCertificates = [cert], Accounts = accounts ?? new IdentityAccountOptions(),
-            Clients = [new() { Application = web, Resources = [Resource] }, new() { Application = mobile, Resources = [Resource], DeviceType = "mobile" }, new() { Application = machine, Resources = [Resource] }]
+            Clients = [new() { Application = web, Resources = [Resource], BackchannelLogoutUri = new Uri(issuer + "_test/backchannel") }, new() { Application = mobile, Resources = [Resource], DeviceType = "mobile" }, new() { Application = machine, Resources = [Resource] }]
         }, builder.Environment);
         var app = builder.Build(); app.UseQianIdentityServer(); app.UseAuthentication(); app.MapQianIdentityServer(); app.MapQianIdentityAccounts();
+        // 依赖方（RP）的后通道登出接收端：只收集身份服务发来的 logout_token。
+        var logoutTokens = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        app.MapPost("/_test/backchannel", async (HttpContext http) =>
+        {
+            var form = await http.Request.ReadFormAsync(http.RequestAborted); logoutTokens.Enqueue(form["logout_token"].ToString());
+            return Results.Ok();
+        });
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var sql = scope.ServiceProvider.GetRequiredService<IdentityDbContext>().GetService<IMigrator>().GenerateScript();
@@ -95,11 +108,11 @@ internal static class AccountsHost
         var clock = new ManualClock(new DateTimeOffset(DateTimeOffset.UtcNow.UtcTicks / TimeSpan.TicksPerSecond * TimeSpan.TicksPerSecond, TimeSpan.Zero));
         var service = app.Services.GetRequiredService<IdentityAccountGate>().Service!;
         service.Clock = clock;
-        return new Running(app, loader, issuer, secret, cert, tenancy, clock, service, postgres, logs);
+        return new Running(app, loader, issuer, secret, cert, tenancy, clock, service, postgres, logs, logoutTokens);
     }
 
     internal sealed class Running(WebApplication app, PluginLoader loader, string issuer, string secret, X509Certificate2 certificate, FakeTenancy tenancy, ManualClock clock,
-        IdentityAccountService service, PostgresFixture postgres, CapturedLogs logs) : IAsyncDisposable
+        IdentityAccountService service, PostgresFixture postgres, CapturedLogs logs, System.Collections.Concurrent.ConcurrentQueue<string> logoutTokens) : IAsyncDisposable
     {
         private readonly List<HttpClient> _browsers = [];
         internal string Issuer => issuer;
@@ -108,6 +121,10 @@ internal static class AccountsHost
         internal ManualClock Clock => clock;
         internal IdentityAccountService Service => service;
         internal CapturedLogs Logs => logs;
+        /// <summary>RP 后通道登出接收端收到的 logout_token。</summary>
+        internal System.Collections.Concurrent.ConcurrentQueue<string> LogoutTokens => logoutTokens;
+        /// <summary>宿主登记的 Redis 连接（启动时没传连接串则为 null）。</summary>
+        internal IConnectionMultiplexer? Redis => app.Services.GetService<IConnectionMultiplexer>();
         internal IServiceProvider Services => app.Services;
         internal IIdentityAccounts Accounts => loader.GetContext("identity", ScopeKey.Global).IdentityAccounts();
         internal ISignInPipeline SignIn => loader.GetContext("identity", ScopeKey.Global).IdentitySignIn();
@@ -223,13 +240,20 @@ internal static class AccountsHost
     internal sealed class CapturedLogs : ILoggerProvider
     {
         internal System.Collections.Concurrent.ConcurrentQueue<string> Messages { get; } = new();
-        public ILogger CreateLogger(string categoryName) => new Sink(Messages);
+        /// <summary>带类别的日志条目，用来区分本组件与第三方库的输出。</summary>
+        internal System.Collections.Concurrent.ConcurrentQueue<(string Category, LogLevel Level, string Message)> Entries { get; } = new();
+        public ILogger CreateLogger(string categoryName) => new Sink(categoryName, Messages, Entries);
         public void Dispose() { }
-        private sealed class Sink(System.Collections.Concurrent.ConcurrentQueue<string> messages) : ILogger
+        private sealed class Sink(string category, System.Collections.Concurrent.ConcurrentQueue<string> messages,
+            System.Collections.Concurrent.ConcurrentQueue<(string Category, LogLevel Level, string Message)> entries) : ILogger
         {
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
             public bool IsEnabled(LogLevel logLevel) => true;
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) => messages.Enqueue(formatter(state, exception));
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            {
+                var message = formatter(state, exception);
+                messages.Enqueue(message); entries.Enqueue((category, logLevel, message));
+            }
         }
     }
 
@@ -254,6 +278,9 @@ internal static class AccountsHost
         }
 
         internal void SetStatus(Guid id, TenantStatus status) => _tenants.AddOrUpdate(id, _ => throw new KeyNotFoundException(), (_, current) => (current.Descriptor with { Status = status }, current.Limit));
+
+        /// <summary>把租户从目录里移除（模拟租户被彻底清除）。</summary>
+        internal void Remove(Guid id) => _tenants.TryRemove(id, out _);
 
         public ValueTask<TenantDescriptor?> GetAsync(string code, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(_tenants.Values.Select(item => item.Descriptor).FirstOrDefault(item => item.Code == code));

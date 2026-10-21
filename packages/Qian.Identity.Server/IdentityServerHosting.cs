@@ -12,6 +12,7 @@ using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Runtime.Errors.AspNetCore;
 using Qian.Tenancy;
+using StackExchange.Redis;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -28,6 +29,11 @@ public static class IdentityServerHosting
         Validate(options, environment);
         services.AddSingleton(options); services.AddSingleton<IdentityProtocolGate>(); services.AddSingleton<IdentityAccountGate>();
         services.AddHostedService<IdentityBackchannelWorker>();
+        // 会话中心：Redis 索引可选——宿主登记了 IConnectionMultiplexer 才启用，否则完全由 PostgreSQL 承担；后台处理器负责吊销旁路与租户状态对账。
+        services.AddSingleton<SessionSignal>();
+        services.AddSingleton<ISessionIndex>(sp => sp.GetService<IConnectionMultiplexer>() is { } redis
+            ? new RedisSessionIndex(redis, sp.GetRequiredService<ILoggerFactory>().CreateLogger("Qian.Identity.SessionIndex")) : NoSessionIndex.Instance);
+        services.AddHostedService<IdentitySessionProcessor>();
         services.AddHttpClient("Qian.Identity.Backchannel", client => client.Timeout = TimeSpan.FromSeconds(5))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
         services.AddAntiforgery(); services.AddQianErrors();
@@ -170,6 +176,8 @@ public sealed class IdentityServerPlugin : IQianPlugin
             ctx.Provide<ITenantMembershipProvisioner>(TenantProvisioning.MembershipKey, built);
             ctx.Provide<ITenantUserCounter>(TenantSettings.UserCounterKey, built);
             accountGate.Service = built; ctx.Effect(() => { accountGate.Service = null; });
+            // 卸载按登记的逆序执行：先排空后台工作（吊销旁路、租户对账），再释放服务；Data 的会话随后才会被释放。
+            ctx.Effect(built); ctx.Effect(built.CloseAsync);
         }
         else service = _accounts;
         ctx.Provide(IdentityDefinition.Key, service);

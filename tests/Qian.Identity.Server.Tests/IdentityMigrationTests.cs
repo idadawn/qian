@@ -10,7 +10,7 @@ public sealed class IdentityMigrationTests
     public void 协议持久表和后通道队列有完整迁移且模型无漂移()
     {
         using var context = new IdentityDesignTimeFactory().CreateDbContext([]);
-        Assert.False(context.Database.HasPendingModelChanges()); Assert.Equal(2, context.Database.GetMigrations().Count());
+        Assert.False(context.Database.HasPendingModelChanges()); Assert.Equal(3, context.Database.GetMigrations().Count());
         var script = context.GetService<IMigrator>().GenerateScript();
         Assert.Contains("plugin_qian_identity", script, StringComparison.Ordinal);
         Assert.Contains("logout_deliveries", script, StringComparison.Ordinal);

@@ -28,7 +28,7 @@ public sealed class IdentityAccountOptions
             Login.MaxDelay < Login.DelayBase || Login.FailureWindow <= TimeSpan.Zero || Login.CaptchaAfterFailures < 1 ||
             Login.SelectionLifetime <= TimeSpan.Zero || Login.SelectionLifetime > TimeSpan.FromMinutes(5) || Login.ChangeTicketLifetime <= TimeSpan.Zero)
             throw new ArgumentException("登录策略无效：阈值至少 3 次，选择令牌寿命不得超过 5 分钟。", nameof(Login));
-        if (Session.AbsoluteLifetime <= TimeSpan.Zero) throw new ArgumentException("会话策略无效。", nameof(Session));
+        Session.Validate();
         if (DefaultPhoneCountryCode.Length is < 1 or > 3 || DefaultPhoneCountryCode.Any(c => c is < '0' or > '9'))
             throw new ArgumentException("默认国家码无效。", nameof(DefaultPhoneCountryCode));
     }
@@ -121,9 +121,37 @@ public sealed class LoginPolicy
     }
 }
 
-/// <summary>会话策略；并发上限与单端踢出由会话中心（S1-IDP-004）接入。</summary>
+/// <summary>会话策略：绝对寿命、并发上限、单端模式，以及会话中心后台处理的节奏。</summary>
 public sealed class SessionPolicy
 {
     /// <summary>会话绝对寿命，超过后必须重新登录，与 refresh 轮换无关。</summary>
     public TimeSpan AbsoluteLifetime { get; init; } = TimeSpan.FromDays(30);
+
+    /// <summary>同一 Person 同时有效的会话数上限（跨租户、跨端合计）；超过时新登录踢掉最早建立的会话。缺省 5。</summary>
+    public int MaxConcurrentSessions { get; init; } = 5;
+
+    /// <summary>
+    /// 单端模式：同一 Person 在同一端类型（如 pc、mobile，取自客户端登记的 <c>DeviceType</c>）上只保留最新登录的一个会话，
+    /// 后登录的会话踢掉同端的先登录会话，不影响其他端。缺省关闭；开启后并发上限仍然适用。
+    /// </summary>
+    public bool SingleSessionPerDeviceType { get; init; }
+
+    /// <summary>
+    /// 租户状态对账的间隔：后台核对仍有会话的租户在目录里的状态，不再是 Active / Trial 的租户其会话一律吊销。
+    /// 这是 <c>tenant.suspended.v1</c> / <c>tenant.expired.v1</c> 订阅之外的兜底，使「租户冻结 / 到期后会话 ≤ 60 秒失效」不依赖消息投递。
+    /// 不得超过 30 秒，缺省 30 秒。
+    /// </summary>
+    public TimeSpan ReconcileInterval { get; init; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>在线用户的判定窗口：最近一次活动（授权、换票、刷新）落在窗口内的有效会话才算在线。缺省 15 分钟，即访问令牌寿命。</summary>
+    public TimeSpan OnlineWindow { get; init; } = TimeSpan.FromMinutes(15);
+
+    internal void Validate()
+    {
+        if (AbsoluteLifetime <= TimeSpan.Zero) throw new ArgumentException("会话策略无效：绝对寿命必须为正。", nameof(SessionPolicy));
+        if (MaxConcurrentSessions is < 1 or > 1000) throw new ArgumentException("会话策略无效：并发上限取 1–1000。", nameof(SessionPolicy));
+        if (ReconcileInterval < TimeSpan.FromSeconds(1) || ReconcileInterval > TimeSpan.FromSeconds(30))
+            throw new ArgumentException("会话策略无效：租户对账间隔取 1–30 秒（租户冻结后会话须在 60 秒内失效）。", nameof(SessionPolicy));
+        if (OnlineWindow < TimeSpan.FromMinutes(1) || OnlineWindow > TimeSpan.FromDays(1)) throw new ArgumentException("会话策略无效：在线窗口取 1 分钟–1 天。", nameof(SessionPolicy));
+    }
 }

@@ -111,7 +111,7 @@ internal sealed class ClientRow
     public DateTimeOffset UpdatedAt { get; set; }
 }
 
-/// <summary>账号会话（SSO 会话）。Id 即令牌的 sid：内部失效关联字段，日志只记其哈希。</summary>
+/// <summary>账号会话（SSO 会话）。Id 即令牌的 sid：内部失效关联字段，日志只记其哈希。吊销先写 RevokedAt（即时生效），旁路处理随后由会话中心完成。</summary>
 internal sealed class SessionRow
 {
     public Guid Id { get; set; }
@@ -131,6 +131,10 @@ internal sealed class SessionRow
     public DateTimeOffset AbsoluteExpiresAt { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
     public string? RevokeReason { get; set; }
+    // 谁吊销的：「user:person_id」或「service:组件 id」，事件信封的 actor 由它还原。
+    public string? RevokedBy { get; set; }
+    // 吊销后的旁路处理（协议授权族、后通道登出、Redis 索引、集成事件）完成的时刻；吊销本身已即时生效，null 表示旁路尚待处理。
+    public DateTimeOffset? RevocationProcessedAt { get; set; }
 }
 
 /// <summary>登录审计：每次登录请求恰好一条；标识只存类型与掩码，不存凭据、验证码或原始 sid。</summary>

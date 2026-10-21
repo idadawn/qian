@@ -90,6 +90,8 @@ public sealed partial class CustomerCommandTests
         builder.Services.AddQianIdentityServer(new IdentityServerOptions
         {
             Issuer = new Uri(parts.Issuer), AllowLoopbackHttp = true, SigningCertificates = [parts.Certificate], EncryptionCertificates = [parts.Certificate],
+            // 租户状态对账缩到 1 秒，联调测试不必等满默认的 30 秒（生产的上限就是 30 秒）。
+            Accounts = new IdentityAccountOptions { Session = new SessionPolicy { ReconcileInterval = TimeSpan.FromSeconds(1) } },
             Clients = [new() { Application = web, Resources = [IdentityResource] }]
         }, new DevelopmentEnvironment());
     }

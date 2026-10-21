@@ -137,6 +137,16 @@ public static class IdentityProtocolEndpoints
     {
         var ticket = await http.AuthenticateAsync(Server).ConfigureAwait(false);
         if (!ticket.Succeeded || ticket.Principal is not { } principal || principal.GetClaim("principal_kind") != "user" || !principal.HasScope(Scopes.OpenId)) return Reject(Errors.InvalidToken);
+        if (http.RequestServices.GetRequiredService<IdentityAccountGate>().Service is { } accounts)
+        {
+            // 访问令牌是自包含的 JWT，到期前签名一直有效；内置账号模式下 userinfo 额外对照数据库：会话被吊销、账号 / 成员 / 租户失效，
+            // 或令牌里的 identity_revision 已落后于当前修订（授权变更、改密、停用），都按失效令牌拒绝，不再给出身份投影。
+            if (!Guid.TryParseExact(principal.GetClaim("sub"), "D", out var person) || !Guid.TryParseExact(principal.GetClaim("sid"), "D", out var sid)) return Reject(Errors.InvalidToken);
+            Guid? membership = Guid.TryParseExact(principal.GetClaim("membership_id"), "D", out var member) ? member : null;
+            var validation = await accounts.ValidateAsync(sid, person, membership, http.RequestAborted).ConfigureAwait(false);
+            if (validation is null || !long.TryParse(principal.GetClaim("identity_revision"), NumberStyles.None, CultureInfo.InvariantCulture, out var revision) || revision < validation.IdentityRevision)
+                return Reject(Errors.InvalidToken);
+        }
         // 只发布身份投影，永不把其他 Cookie、角色或权限声明带入协议响应。
         var claims = UserClaims.Where(name => name is not "sid" && principal.HasClaim(claim => claim.Type == name))
             .ToDictionary(name => name, name => name == "amr" ? (object?)principal.GetClaims(name).ToArray() :
@@ -165,35 +175,8 @@ public static class IdentityProtocolEndpoints
         {
             if (http.RequestServices.GetRequiredService<IdentityAccountGate>().Service is { } accounts && Guid.TryParseExact(subject, "D", out var person) && Guid.TryParseExact(sid, "D", out var sessionId))
                 await accounts.RevokeSessionsAsync(new SessionRevocation(person, sessionId, "logout", "logout:" + sid), http.RequestAborted).ConfigureAwait(false);
-            var authorizations = http.RequestServices.GetRequiredService<IOpenIddictAuthorizationManager>();
-            var applications = http.RequestServices.GetRequiredService<IOpenIddictApplicationManager>();
-            var tokens = http.RequestServices.GetRequiredService<IOpenIddictTokenManager>();
-            var db = http.RequestServices.GetRequiredService<IdentityDbContext>();
-            await using var transaction = await db.Database.BeginTransactionAsync(http.RequestAborted).ConfigureAwait(false);
-            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({"qian.identity:logout:" + subject + ":" + sid}, 0))", http.RequestAborted).ConfigureAwait(false);
-            foreach (var client in options.Clients)
-            {
-                var application = await applications.FindByClientIdAsync(client.Application.ClientId!, http.RequestAborted).ConfigureAwait(false);
-                if (application is null) continue;
-                var applicationId = await applications.GetIdAsync(application, http.RequestAborted).ConfigureAwait(false);
-                var revoked = false;
-                var matching = new List<object>();
-                await foreach (var authorization in authorizations.FindAsync(subject, applicationId, Statuses.Valid, AuthorizationTypes.AdHoc, null, http.RequestAborted).ConfigureAwait(false)) matching.Add(authorization);
-                foreach (var authorization in matching)
-                {
-                    var properties = await authorizations.GetPropertiesAsync(authorization, http.RequestAborted).ConfigureAwait(false);
-                    if (!properties.TryGetValue("sid", out var value) || value.GetString() != sid) continue;
-                    var id = await authorizations.GetIdAsync(authorization, http.RequestAborted).ConfigureAwait(false);
-                    await authorizations.TryRevokeAsync(authorization, http.RequestAborted).ConfigureAwait(false);
-                    await tokens.RevokeByAuthorizationIdAsync(id!, http.RequestAborted).ConfigureAwait(false);
-                    revoked = true;
-                }
-                if (revoked && client.BackchannelLogoutUri is not null &&
-                    !await db.LogoutDeliveries.AnyAsync(row => row.ClientId == client.Application.ClientId && row.SessionId == sid, http.RequestAborted).ConfigureAwait(false))
-                    db.LogoutDeliveries.Add(new LogoutDelivery { ClientId = client.Application.ClientId!, Subject = subject, SessionId = sid });
-            }
-            await db.SaveChangesAsync(http.RequestAborted).ConfigureAwait(false);
-            await transaction.CommitAsync(http.RequestAborted).ConfigureAwait(false);
+            // 协议侧收尾与会话中心的旁路处理共用同一段：授权族、令牌与后通道登出投递，幂等。这里同步做完，登出响应返回时 RP 的 refresh 已经失效。
+            await IdentityProtocolSessions.RevokeAsync(http.RequestServices, options, subject, sid, http.RequestAborted).ConfigureAwait(false);
         }
         await http.SignOutAsync(options.SignInScheme).ConfigureAwait(false);
         return Results.SignOut(authenticationSchemes: [Server]);

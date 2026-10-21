@@ -1117,6 +1117,10 @@ namespace Qian.Identity.Server.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("remote_address");
 
+                    b.Property<DateTimeOffset?>("RevocationProcessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revocation_processed_at");
+
                     b.Property<string>("RevokeReason")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)")
@@ -1125,6 +1129,11 @@ namespace Qian.Identity.Server.Migrations
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("revoked_at");
+
+                    b.Property<string>("RevokedBy")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("revoked_by");
 
                     b.Property<string>("TenantId")
                         .HasMaxLength(36)
@@ -1142,6 +1151,10 @@ namespace Qian.Identity.Server.Migrations
                     b.HasIndex("PersonId")
                         .HasDatabaseName("ix_sessions_person_id")
                         .HasFilter("revoked_at IS NULL");
+
+                    b.HasIndex("RevokedAt")
+                        .HasDatabaseName("ix_sessions_pending_revocation")
+                        .HasFilter("revoked_at IS NOT NULL AND revocation_processed_at IS NULL");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("ix_sessions_tenant_id")
