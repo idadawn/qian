@@ -50,8 +50,9 @@ public interface IPluginLifecycleController
     /// <summary>
     /// 开通当前 Active 修订：Entitled → Provisioning → 执行 tenant-provision 钩子 → Installed。钩子以 (tenant, plugin, hook, toVersion) 为幂等键记入
     /// lifecycle_runs，成功后不再执行；已 Installed 时直接返回、无副作用（换版本用 <see cref="UpgradeAsync"/>）；钩子失败时停在 Provisioning，
-    /// 重试沿用原目标版本。开通不挂载，挂载用 <see cref="MountAsync"/>。权益之后还有第二道门：修订声明了反向权限（policy.permissions / policy.egress）
-    /// 且不是 policy.required 的平台组件时，每一项都须已由 <see cref="ApprovePermissionsAsync"/> 批准，否则 LIFECYCLE_PERMISSIONS_UNAPPROVED 且不写任何记录。
+    /// 重试沿用原目标版本。开通不挂载，挂载用 <see cref="MountAsync(ScopeKey, JsonElement, string, CancellationToken)"/>。权益之后还有第二道门：
+    /// 修订声明了反向权限（policy.permissions / policy.egress）且不是 policy.required 的平台组件时，每一项都须已由 <see cref="ApprovePermissionsAsync"/> 批准，
+    /// 否则 LIFECYCLE_PERMISSIONS_UNAPPROVED 且不写任何记录。
     /// </summary>
     ValueTask<TenantPluginInstallView> ProvisionAsync(string tenantId, string pluginId, string actor, CancellationToken cancellationToken = default);
     /// <summary>
@@ -76,8 +77,12 @@ public interface IPluginLifecycleController
     /// 原因码持久记入诊断（<see cref="GetDiagnosticsAsync"/>），同一条目之后挂载成功或卸载时清除。
     /// </summary>
     ValueTask<MountResult> MountAsync(ScopeKey scope, JsonElement entry, string actor, CancellationToken cancellationToken = default);
+    /// <summary>管理面条件挂载；expectedRevision 必须等于当前 patch 修订，创建为 0；不自行替换为最新修订。</summary>
+    ValueTask<MountResult> MountAtRevisionAsync(ScopeKey scope, JsonElement entry, int expectedRevision, string actor, CancellationToken cancellationToken);
     /// <summary>卸载：经 Registry 写禁用 patch 或撤销本 scope 引入的 patch（同事务发 registry.scope.unmounted.v1）并立即合入；不改安装状态，不改数据库开关。</summary>
     ValueTask<MountResult> UnmountAsync(ScopeKey scope, string entryId, string actor, CancellationToken cancellationToken = default);
+    /// <summary>管理面条件卸载；expectedRevision 必须等于当前修订，已禁用且修订相同则幂等返回。</summary>
+    ValueTask<MountResult> UnmountAtRevisionAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken cancellationToken);
     /// <summary>
     /// 管理面装配诊断：调用者须是该租户已验证的用户或服务主体（无委托），并经宿主权限判定端口持有 <see cref="LifecycleDefinition.DiagnosticsReadPermission"/>；
     /// 否则与不存在同为 NOT_FOUND。返回 Registry 合入该 scope 时的当前失败，以及经 Lifecycle 挂载或升级失败、已撤回的条目（组件修订与原因码）。

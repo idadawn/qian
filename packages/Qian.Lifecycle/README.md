@@ -224,3 +224,5 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - 挂载失败时恢复挂载前的 patch，不让失败条目阻断整个 scope；失败原因经诊断端点给出。
 - 反向权限批准只有 API：管理 UI 归 S2。租户管理员的批准只记在 `permission_approvals`（批准人、渠道、时间），尚未写租户审计链，也不发集成事件；超管代批由 Authz 旁路记审计。
 - 批准记录还没有消费方：秘密解析、出站 egress 与外壳 CSP `connect-src` 仍按宿主配置生效，按批准记录收紧归后续接线。撤销只能整份替换为更小的内容，不影响已开通的租户，只影响之后的开通与升级。
+
+S1-RT-029 的 Registry 管理写入通过 `MountAtRevisionAsync` / `UnmountAtRevisionAsync` 复用 Mount / Unmount 核心，显式携带调用方修订，不用服务端读取的新版本覆盖预期值。重复卸载的禁用 patch 与墓碑在当前修订下幂等，旧修订仍拒绝；授权统一在 Registry 管理入口，内部受信任生命周期接口不直接暴露为匿名 HTTP。

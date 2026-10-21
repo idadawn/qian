@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>通用 OIDC 上游连接器：授权码 + PKCE，校验 id_token 签名、iss、aud 与 nonce；只依赖身份 Definition，不依赖身份服务实现。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <!-- 配置 Schema 的唯一来源是组件文件夹；清单（ConnectorDescriptor.ConfigSchema）直接嵌入它，不另抄一份。 -->
+    <EmbeddedResource Include="../../plugins/qian.identity.connector.oidc/schemas/config.schema.json" LogicalName="qian.identity.connector.oidc/config.schema.json" />
+    <InternalsVisibleTo Include="Qian.Identity.Connector.Oidc.Tests" />
+  </ItemGroup>
+</Project>

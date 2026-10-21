@@ -413,3 +413,5 @@ static Qian.Lifecycle.SecretGrant.operator ==(Qian.Lifecycle.SecretGrant? left, 
 static Qian.Lifecycle.UiGrants.operator !=(Qian.Lifecycle.UiGrants? left, Qian.Lifecycle.UiGrants? right) -> bool
 static Qian.Lifecycle.UiGrants.operator ==(Qian.Lifecycle.UiGrants? left, Qian.Lifecycle.UiGrants? right) -> bool
 static readonly Qian.Lifecycle.LifecycleErrors.PermissionsUnapproved -> Qian.Runtime.Errors.ErrorCode!
+Qian.Lifecycle.IPluginLifecycleController.MountAtRevisionAsync(Qian.Runtime.ScopeKey scope, System.Text.Json.JsonElement entry, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.MountResult!>
+Qian.Lifecycle.IPluginLifecycleController.UnmountAtRevisionAsync(Qian.Runtime.ScopeKey scope, string! entryId, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.MountResult!>

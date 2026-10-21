@@ -14,7 +14,13 @@ namespace Qian.Lifecycle;
 // Mount / Unmount 写租户 scope patch（取代数据库开关）并立即合入；装配失败整体撤回，原因持久记入诊断（R76）。
 internal sealed partial class LifecycleController
 {
-    public async ValueTask<MountResult> MountAsync(ScopeKey scope, JsonElement entry, string actor, CancellationToken cancellationToken = default)
+    public ValueTask<MountResult> MountAsync(ScopeKey scope, JsonElement entry, string actor, CancellationToken cancellationToken = default)
+        => MountCoreAsync(scope, entry, null, actor, cancellationToken);
+
+    public ValueTask<MountResult> MountAtRevisionAsync(ScopeKey scope, JsonElement entry, int expectedRevision, string actor, CancellationToken cancellationToken)
+        => MountCoreAsync(scope, entry, expectedRevision, actor, cancellationToken);
+
+    private async ValueTask<MountResult> MountCoreAsync(ScopeKey scope, JsonElement entry, int? expectedRevision, string actor, CancellationToken cancellationToken)
     {
         var tenantId = TenantScope(scope); CheckActor(actor);
         if (entry.ValueKind != JsonValueKind.Object || !entry.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.String || id.GetString() is not { Length: > 0 } entryId)
@@ -30,7 +36,7 @@ internal sealed partial class LifecycleController
             await RequireInstalled(registry, pluginId, version, cancellationToken).ConfigureAwait(false);
         }
         var previous = await registry.GetScopePatchAsync(scope, entryId, cancellationToken).ConfigureAwait(false);
-        var saved = await registry.MountAsync(scope, entry, previous?.Revision ?? 0, actor, cancellationToken).ConfigureAwait(false);
+        var saved = await registry.MountAsync(scope, entry, expectedRevision ?? previous?.Revision ?? 0, actor, cancellationToken).ConfigureAwait(false);
         var failure = await Synchronize(registry, scope, cancellationToken).ConfigureAwait(false);
         if (failure is null)
         {
@@ -44,7 +50,13 @@ internal sealed partial class LifecycleController
         return new MountResult(Name(scope), entryId, saved.Revision, MountStates.Failed, failure.ReasonCode);
     }
 
-    public async ValueTask<MountResult> UnmountAsync(ScopeKey scope, string entryId, string actor, CancellationToken cancellationToken = default)
+    public ValueTask<MountResult> UnmountAsync(ScopeKey scope, string entryId, string actor, CancellationToken cancellationToken = default)
+        => UnmountCoreAsync(scope, entryId, null, actor, cancellationToken);
+
+    public ValueTask<MountResult> UnmountAtRevisionAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken cancellationToken)
+        => UnmountCoreAsync(scope, entryId, expectedRevision, actor, cancellationToken);
+
+    private async ValueTask<MountResult> UnmountCoreAsync(ScopeKey scope, string entryId, int? expectedRevision, string actor, CancellationToken cancellationToken)
     {
         var tenantId = TenantScope(scope); CheckActor(actor);
         ArgumentException.ThrowIfNullOrWhiteSpace(entryId);
@@ -52,7 +64,12 @@ internal sealed partial class LifecycleController
         using var origin = Origin();
         var registry = context.Registry();
         var patch = await registry.GetScopePatchAsync(scope, entryId, cancellationToken).ConfigureAwait(false);
-        var revision = await registry.UnmountAsync(scope, entryId, patch?.Revision ?? 0, actor, cancellationToken).ConfigureAwait(false);
+        if (expectedRevision is { } expected && patch?.Patch.TryGetProperty("disabled", out var disabled) == true && disabled.ValueKind == JsonValueKind.True)
+        {
+            if (expected != patch.Revision) throw new QianErrorException(new QianError(RegistryErrors.RevisionConflict));
+            return new MountResult(Name(scope), entryId, patch.Revision, MountStates.Unmounted, null);
+        }
+        var revision = await registry.UnmountAsync(scope, entryId, expectedRevision ?? patch?.Revision ?? 0, actor, cancellationToken).ConfigureAwait(false);
         // 卸载已提交；合入失败只可能来自其它条目，原因由诊断给出，不改变卸载结论。
         await Synchronize(registry, scope, cancellationToken).ConfigureAwait(false);
         await ClearFailures(scope, [entryId], cancellationToken).ConfigureAwait(false);

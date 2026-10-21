@@ -12,7 +12,7 @@ using Qian.Surfaces.Abstractions;
 
 namespace Qian.Registry;
 
-internal sealed class RegistryService : IRegistryService
+internal sealed partial class RegistryService : IRegistryService
 {
     private readonly RegistryRuntimeOptions _options;
     private readonly IDataService _data;
@@ -175,7 +175,12 @@ internal sealed class RegistryService : IRegistryService
             var patch = JsonSerializer.SerializeToElement(new Dictionary<string, object> { ["id"] = entryId, ["disabled"] = true });
             return (await _writer.PutAsync(scope, entryId, patch, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false)).Revision;
         }
-        if (current is null) throw NotFound();
+        if (current is null)
+        {
+            if (await _patches.DeletedRevisionAsync(scope, entryId, cancellationToken).ConfigureAwait(false) is not { } removed) throw NotFound();
+            if (removed != expectedRevision) throw new QianErrorException(new QianError(RegistryErrors.RevisionConflict));
+            return removed;
+        }
         return await _writer.RemoveAsync(scope, entryId, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
     }
 
@@ -284,8 +289,8 @@ internal sealed class RegistryService : IRegistryService
     private static QianErrorException Invalid(string pointer, string reason) => new(new QianError(PlatformErrors.InputInvalid)
     { Errors = [new QianFieldError(RegistryErrors.Invalid, "registry/scope-patches.json" + pointer, new Dictionary<string, string> { ["reason"] = reason })] });
 
-    private ValueTask<string> AuthorizeAsync(ScopeKey scope, ICurrentUser user, CancellationToken ct) =>
-        AuthorizeAsync(scope, user, RegistryDefinition.ScopeReadPermission, "registry/scope:" + scope.Kind + ":" + scope.Id, ct);
+    private ValueTask<string> AuthorizeAsync(ScopeKey scope, ICurrentUser user, CancellationToken ct, string permission = RegistryDefinition.ScopeReadPermission) =>
+        AuthorizeAsync(scope, user, permission, "registry/scope:" + scope.Kind + ":" + scope.Id, ct);
 
     // 管理面只认宿主已验证的主体与租户上下文；委托、Agent、跨租户、缺判定端口或无权限一律与不存在同为 NOT_FOUND（R32）。
     // resource 只写入平台超管旁路的审计记录。
