@@ -887,3 +887,4 @@ Qian.Identity.Abstractions.IAuthenticatorFactorRegistry.List() -> System.Collect
 Qian.Identity.Abstractions.SignInResult.RetryAfter.get -> System.TimeSpan?
 static Qian.Identity.Abstractions.SignInResult.Failure(Qian.Runtime.Errors.QianError! error, System.TimeSpan? retryAfter = null) -> Qian.Identity.Abstractions.SignInResult!
 Qian.Identity.Abstractions.SignInResult.RetryAfter.init -> void
+Qian.Identity.Abstractions.IIdentityAccounts.BumpIdentityRevisionAsync(System.Guid personId, string! reason, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<long>

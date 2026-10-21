@@ -104,4 +104,11 @@ public interface IIdentityAccounts
     ValueTask LinkExternalIdentityAsync(ExternalIdentityLink link, CancellationToken cancellationToken = default);
     /// <summary>解绑外部身份（软删除）；若这是 Person 仅剩的登录方式则拒绝。</summary>
     ValueTask UnlinkExternalIdentityAsync(Guid membershipId, string connectorId, string subject, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 授权或组织归属变化后，递增当前租户内该 Person 的成员修订（<c>identity_revision</c>），使此前签发的令牌失效：
+    /// 旧令牌的修订落后于当前修订，userinfo 等服务端校验据此拒绝，持有者经 refresh 换到带新修订的令牌。
+    /// 租户只取自当前已验证的租户上下文；该 Person 在本租户没有成员身份返回 NOT_FOUND。<paramref name="reason"/> 是不超过 64 字符的变更原因。
+    /// 返回新的令牌修订（Person 修订 + 成员修订）。授权引擎在 <c>authz.grant.changed.v1</c> 之后调用（PRD 7.5）。
+    /// </summary>
+    ValueTask<long> BumpIdentityRevisionAsync(Guid personId, string reason, CancellationToken cancellationToken = default);
 }

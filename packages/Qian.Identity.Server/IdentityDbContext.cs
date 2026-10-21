@@ -117,8 +117,11 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
             entity.Property(row => row.Acr).HasMaxLength(16);
             entity.Property(row => row.RemoteAddress).HasMaxLength(64); entity.Property(row => row.UserAgent).HasMaxLength(256);
             entity.Property(row => row.RevokeReason).HasMaxLength(32);
+            entity.Property(row => row.RevokedBy).HasMaxLength(300);
             entity.HasIndex(row => row.PersonId).HasFilter("revoked_at IS NULL");
             entity.HasIndex(row => row.TenantId).HasFilter("revoked_at IS NULL");
+            // 待处理的吊销旁路：处理器按吊销时间顺序领取，处理完成后不再出现在索引里。
+            entity.HasIndex(row => row.RevokedAt).HasFilter("revoked_at IS NOT NULL AND revocation_processed_at IS NULL").HasDatabaseName("ix_sessions_pending_revocation");
             entity.HasOne<PersonRow>().WithMany().HasForeignKey(row => row.PersonId).OnDelete(DeleteBehavior.Restrict);
         });
         modelBuilder.Entity<LoginAuditRow>(entity =>

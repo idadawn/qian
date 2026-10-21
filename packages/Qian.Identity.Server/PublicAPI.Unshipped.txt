@@ -115,3 +115,18 @@ Qian.Identity.Server.IdentityServerOptions.Accounts.get -> Qian.Identity.Server.
 Qian.Identity.Server.IdentityServerOptions.Accounts.init -> void
 Qian.Identity.Server.IdentityClientRegistration.DeviceType.get -> string!
 Qian.Identity.Server.IdentityClientRegistration.DeviceType.init -> void
+Qian.Identity.Server.SessionPolicy.MaxConcurrentSessions.get -> int
+Qian.Identity.Server.SessionPolicy.MaxConcurrentSessions.init -> void
+Qian.Identity.Server.SessionPolicy.SingleSessionPerDeviceType.get -> bool
+Qian.Identity.Server.SessionPolicy.SingleSessionPerDeviceType.init -> void
+Qian.Identity.Server.SessionPolicy.ReconcileInterval.get -> System.TimeSpan
+Qian.Identity.Server.SessionPolicy.ReconcileInterval.init -> void
+Qian.Identity.Server.SessionPolicy.OnlineWindow.get -> System.TimeSpan
+Qian.Identity.Server.SessionPolicy.OnlineWindow.init -> void
+Qian.Identity.Server.TenantSuspendedSessionHandler
+Qian.Identity.Server.TenantSuspendedSessionHandler.TenantSuspendedSessionHandler(System.IServiceProvider! services) -> void
+Qian.Identity.Server.TenantSuspendedSessionHandler.HandleAsync(Qian.Tenancy.TenantSuspended! event, Kun.EventBus.MessageContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Server.TenantExpiredSessionHandler
+Qian.Identity.Server.TenantExpiredSessionHandler.TenantExpiredSessionHandler(System.IServiceProvider! services) -> void
+Qian.Identity.Server.TenantExpiredSessionHandler.HandleAsync(Qian.Tenancy.TenantExpired! event, Kun.EventBus.MessageContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Qian.Identity.Server.IdentityEventHandlers.AddQianIdentitySessionHandlers(this Kun.EventBus.DependencyInjection.KunEventBusBuilder! builder) -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!

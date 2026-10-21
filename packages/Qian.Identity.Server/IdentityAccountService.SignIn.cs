@@ -458,9 +458,14 @@ internal sealed partial class IdentityAccountService
             });
             person.LastLoginAt = now;
             if (replaceSession is { } old) await RevokeSessionRowsAsync(db, person.Id, old, null, "switch", now, ct).ConfigureAwait(false);
+            // 并发上限与单端模式：踢人和建会话在同一事务里，Person 行已锁，同一人的并发登录串行，上限不会被击穿。
+            var evicted = await EvictForNewSessionAsync(db, person.Id, state.DeviceType, now, ct).ConfigureAwait(false);
             db.LoginAudits.Add(NewAudit(subject, "success", reason, now, person.Id, member?.Id, pick.Tenant, sid));
             await SaveAsync(session, person, new IdentityLoginEvent(person.Id, revision, sid, state.ClientId, [.. state.Amr], member?.Id), ct).ConfigureAwait(false);
             await transaction.CommitAsync(ct).ConfigureAwait(false);
+            // 提交之后才登记索引并唤醒旁路处理（被踢与被切换的会话）；索引不可用不影响登录。
+            await _index.TrackAsync(person.Id, sid, expires, ct).ConfigureAwait(false);
+            if (evicted > 0 || replaceSession is not null) _signal.Notify();
             return SignInResult.Authenticated(new AccountSession(person.Id, pick.Tenant, member?.Id, sid, revision, [.. state.Amr], state.Acr, state.AuthenticatedAt, expires, state.ClientId, state.DeviceType));
         }
         catch (QianErrorException failure)
@@ -511,8 +516,13 @@ internal sealed partial class IdentityAccountService
 
     // ---- 会话有效性（IAccountSessionValidator） ----
 
+    // 最近活动时间的写入粒度：窗口内的重复校验不再写库（在线用户判定以它为准，粒度远小于在线窗口）。
+    private static readonly TimeSpan SeenGranularity = TimeSpan.FromMinutes(1);
+
     public async Task<AccountValidation?> ValidateAsync(Guid sessionId, Guid personId, Guid? membershipId, CancellationToken ct)
     {
+        // Redis 里的吊销墓碑只在数据库已提交吊销之后才写，命中即失效，省一次库查询；没有墓碑不说明有效，仍以数据库为准。
+        if (await _index.IsRevokedAsync(sessionId, ct).ConfigureAwait(false)) return null;
         var now = Now;
         SessionRow? stored; PersonRow? person;
         {
@@ -520,6 +530,9 @@ internal sealed partial class IdentityAccountService
             await using var session = await OpenAsync(ct).ConfigureAwait(false);
             stored = await session.Context.Sessions.AsNoTracking().SingleOrDefaultAsync(s => s.Id == sessionId && s.PersonId == personId && s.RevokedAt == null && s.AbsoluteExpiresAt > now, ct).ConfigureAwait(false);
             person = stored is null ? null : await session.Context.Persons.AsNoTracking().SingleOrDefaultAsync(p => p.Id == personId, ct).ConfigureAwait(false);
+            if (stored is not null && person is { Status: AccountStatuses.Active } && stored.LastSeenAt < now - SeenGranularity)
+                await IdentitySql.ExecuteAsync(session.Context, $"UPDATE {IdentitySql.Sessions} SET last_seen_at = @now WHERE id = @id AND last_seen_at < @threshold", ct,
+                    ("now", now), ("id", sessionId), ("threshold", now - SeenGranularity)).ConfigureAwait(false);
         }
         if (stored is null || person is not { Status: AccountStatuses.Active } || stored.MembershipId != membershipId) return null;
         if (stored.MembershipId is not { } storedMembership)

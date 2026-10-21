@@ -12,6 +12,7 @@ internal static class IdentitySql
     internal const string Persons = $"{IdentityDbContext.Schema}.persons";
     internal const string PasswordHistory = $"{IdentityDbContext.Schema}.password_history";
     internal const string Sessions = $"{IdentityDbContext.Schema}.sessions";
+    internal const string Memberships = $"{IdentityDbContext.Schema}.memberships";
     internal const string Tickets = $"{IdentityDbContext.Schema}.login_tickets";
     internal const string Captchas = $"{IdentityDbContext.Schema}.login_captchas";
 

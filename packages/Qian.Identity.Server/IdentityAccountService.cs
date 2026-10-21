@@ -16,7 +16,7 @@ namespace Qian.Identity.Server;
 /// 每个操作在自己的数据会话和事务里完成；Person 级操作在无租户作用域，Membership 级操作在目标租户作用域，
 /// 所以租户表始终受 RLS 约束，从不绕过。
 /// </summary>
-internal sealed partial class IdentityAccountService : IIdentityService, IIdentityAccounts, ISignInPipeline, ITenantMembershipProvisioner, ITenantUserCounter, IAccountSessionValidator
+internal sealed partial class IdentityAccountService : IIdentityService, IIdentityAccounts, ISignInPipeline, ITenantMembershipProvisioner, ITenantUserCounter, IAccountSessionValidator, IDisposable
 {
     private readonly IPluginContext _ctx;
     private readonly IdentityServerOptions _options;
@@ -24,6 +24,8 @@ internal sealed partial class IdentityAccountService : IIdentityService, IIdenti
     private readonly Argon2idPasswordHasher _hasher;
     private readonly ITenantContext _tenant;
     private readonly ILogger _logger;
+    private readonly ISessionIndex _index;
+    private readonly SessionSignal _signal;
     private readonly ConnectorRegistry _connectors = new();
 
     internal IdentityAccountService(IPluginContext ctx, IdentityServerOptions options)
@@ -33,6 +35,8 @@ internal sealed partial class IdentityAccountService : IIdentityService, IIdenti
         _tenant = ctx.Services.GetRequiredService<ITenantContext>();
         Clock = ctx.Services.GetService<TimeProvider>() ?? TimeProvider.System;
         _logger = ctx.Logger;
+        _index = ctx.Services.GetRequiredService<ISessionIndex>();
+        _signal = ctx.Services.GetRequiredService<SessionSignal>();
         _factors.Seed(new PasswordFactor(this));
     }
 
@@ -88,29 +92,28 @@ internal sealed partial class IdentityAccountService : IIdentityService, IIdenti
 
     public async Task<IReadOnlyList<Abstractions.Session>> ListSessionsAsync(Guid personId, CancellationToken cancellationToken = default)
     {
-        using var neutral = TenantScope(null);
-        await using var session = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        var now = Now;
-        var rows = await session.Context.Sessions.AsNoTracking()
-            .Where(s => s.PersonId == personId && s.RevokedAt == null && s.AbsoluteExpiresAt > now).OrderBy(s => s.CreatedAt).ToListAsync(cancellationToken).ConfigureAwait(false);
+        var rows = await LiveSessionsAsync(personId, null, cancellationToken).ConfigureAwait(false);
         return rows.Select(s => new Abstractions.Session(s.Id, s.PersonId, s.MembershipId, s.ClientId, s.DeviceType, s.AbsoluteExpiresAt, s.IdentityRevision)).ToArray();
     }
 
-    // 本任务只做 PG 层吊销（账号 Cookie 与 refresh 的有效性校验读取它）；事件、Redis 索引、协议族吊销与后通道登出由 S1-IDP-004 接入。
+    // 吊销即时生效（写 revoked_at）：此后账号 Cookie、授权码与 refresh 的校验都读库，立刻拒绝。
+    // 协议授权族、后通道登出、Redis 索引与集成事件是旁路，由会话中心的后台处理器随后完成，见 IdentityAccountService.Sessions.cs。
     public async Task RevokeSessionsAsync(SessionRevocation request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (string.IsNullOrWhiteSpace(request.Reason) || request.Reason.Length > 32) throw Error(PlatformErrors.InputInvalid);
         using var neutral = TenantScope(null);
         await using var session = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        await RevokeSessionRowsAsync(session.Context, request.PersonId, request.SessionId, null, request.Reason, Now, cancellationToken).ConfigureAwait(false);
+        var revoked = await RevokeSessionRowsAsync(session.Context, request.PersonId, request.SessionId, null, request.Reason, Now, cancellationToken).ConfigureAwait(false);
+        if (revoked > 0) _signal.Notify();
     }
 
-    private static Task<int> RevokeSessionRowsAsync(IdentityDbContext db, Guid personId, Guid? sessionId, Guid? membershipId, string reason, DateTimeOffset now, CancellationToken ct) =>
+    private static Task<int> RevokeSessionRowsAsync(IdentityDbContext db, Guid personId, Guid? sessionId, Guid? membershipId, string reason, DateTimeOffset now, CancellationToken ct, Guid? tenantId = null) =>
         IdentitySql.ExecuteAsync(db, $"""
-            UPDATE {IdentitySql.Sessions} SET revoked_at = @now, revoke_reason = @reason
+            UPDATE {IdentitySql.Sessions} SET revoked_at = @now, revoke_reason = @reason, revoked_by = @by
             WHERE person_id = @person AND revoked_at IS NULL AND (@sid::uuid IS NULL OR id = @sid) AND (@membership::uuid IS NULL OR membership_id = @membership)
-            """, ct, ("now", now), ("reason", reason), ("person", personId), ("sid", sessionId), ("membership", membershipId));
+              AND (@tenant::text IS NULL OR tenant_id = @tenant)
+            """, ct, ("now", now), ("reason", reason), ("by", RevokedByActor()), ("person", personId), ("sid", sessionId), ("membership", membershipId), ("tenant", tenantId?.ToString("D")));
 
     // ---- ITenantUserCounter ----
 
