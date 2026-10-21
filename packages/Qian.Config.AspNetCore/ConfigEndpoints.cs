@@ -144,7 +144,7 @@ public static partial class ConfigEndpoints
     private static partial void LogDenied(ILogger logger, string reason, string subject, string permission);
 }
 
-/// <summary>一个组件在平台配置节 qian.plugin.&lt;组件 id&gt; 下的当前值；条目按键序数排序，敏感键只给键名。</summary>
+/// <summary>一个组件在平台配置节 qian.plugin.&lt;组件 id&gt; 下的当前值；条目按键排序（不区分大小写，与配置键一致），敏感键只给键名。</summary>
 public sealed record ConfigValueList(string Plugin, string Section, IReadOnlyList<ConfigValueItem> Items)
 {
     /// <inheritdoc />
