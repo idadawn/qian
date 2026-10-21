@@ -1,6 +1,19 @@
 # 授权变更 → 身份修订递增的接线口径
 
-状态：待产品负责人拍板（[S1-DEC-027](../../pm/tasks/S1-DEC-027.md)）。实现任务 [S1-AZ-009](../../pm/tasks/S1-AZ-009.md) 在拍板前标 blocked，不按任何一个选项先行实现。
+状态：已拍板。2026-10-22 产品负责人回复「按推荐，开始实现」，Q1–Q6 全部按推荐（[S1-DEC-027](../../pm/tasks/S1-DEC-027.md)），由 claude 代录。结论写入 [ADR-006](../adr/ADR-006-authorization-model.md) D6.7 与 PRD 7.5；同进程宿主部分由 [S1-AZ-009](../../pm/tasks/S1-AZ-009.md) 实现，拆分部署部分登记为 [S1-IDP-012](../../pm/tasks/S1-IDP-012.md)（随 S1-EVT-002）。
+
+拍板结论：
+
+| # | 结论 |
+|---|---|
+| Q1 | C：本任务做授权侧进程内调用；拆分部署的身份侧订阅随 S1-EVT-002 交付（S1-IDP-012），同进程宿主不登记该订阅 |
+| Q2 | B：提交后在同一调用内完成，瞬时故障退避重试、总时长不超过 3 秒，仍失败记警告与计数，不回滚授权变更 |
+| Q3 | `authz.grant.changed.v1` 的授予、改期、撤销都递增；`authz.role.changed.v1` 不扇出 |
+| Q4 | 只处理 user 主体（非 GUID、该租户无成员身份时跳过）；组织 / 岗位 / 用户组的扇出登记给 S1-AZ-005；service、agent 跳过 |
+| Q5 | B：递增后用端口返回的新修订同步抬高 PEP 下限（只增不减）；拆分部署下的同步方式由 S1-IDP-012 定 |
+| Q6 | B：陈旧令牌 HTTP 回 401 `UNAUTHENTICATED`、gRPC 回 Unauthenticated，决策日志原因仍为 `identity_revision_stale` |
+
+下文保留拍板前的事实与选项，供追溯。
 
 ## 1 要闭环的是什么
 
