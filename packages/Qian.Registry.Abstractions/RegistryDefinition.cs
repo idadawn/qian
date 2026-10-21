@@ -38,6 +38,17 @@ public interface IRegistryService : IAsyncDisposable
     /// </summary>
     ValueTask<RegistryEntryView> GetScopeEntryAsync(ScopeKey scope, string entryId, ICurrentUser user, CancellationToken cancellationToken = default);
     /// <summary>
+    /// 管理面读取某组件版本的反向权限声明（policy.permissions 与 policy.egress，供安装时列出并批准）：只读 Lifecycle 已回写安装结论的制品
+    /// （Installed / Progressing / Healthy），候选（Submitted）与未知版本一律 NOT_FOUND。调用者判定同 <see cref="GetScopeViewAsync"/>，scope 取当前已验证租户：
+    /// 该租户的用户或服务主体（无委托）持 <see cref="RegistryDefinition.ScopeReadPermission"/>，平台主体只经 Authz 的超管显式旁路并审计；否则与不存在同为 NOT_FOUND。
+    /// </summary>
+    ValueTask<RegistryArtifactPermissions> GetPluginPermissionsAsync(string pluginId, string version, ICurrentUser user, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 按制品摘要读取已登记清单快照中的反向权限声明，不论该制品处于哪个状态；摘要未登记时返回 null，摘要格式无效时 INPUT_INVALID。
+    /// 供 Lifecycle 等可信平台插件在开通、升级与批准时判定所需批准的内容，调用方负责权限。
+    /// </summary>
+    ValueTask<RegistryArtifactPermissions?> GetArtifactPermissionsAsync(string digest, CancellationToken cancellationToken = default);
+    /// <summary>
     /// 候选制品登记：核验完整字节的 D4 摘要后按 platform / server 做共用静态校验，inject 须由预装组件的 provides 满足，
     /// 通过后幂等保存为 Submitted；不合格时抛 INPUT_INVALID，字段错误带指向制品文件的 JSON Pointer，不写入任何记录。
     /// 供 Lifecycle 等可信平台插件调用，调用方负责权限；登记不等于验签、发布或任何租户已挂载。

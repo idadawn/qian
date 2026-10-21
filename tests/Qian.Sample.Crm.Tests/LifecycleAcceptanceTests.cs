@@ -460,14 +460,14 @@ public sealed partial class CustomerCommandTests
         return "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(inventory)));
     }
 
-    // 生命周期的管理面权限照仓库 metadata 编译登记：两租户安装角色模板，A 的调用者是 Owner（持诊断读取权限），B 的调用者只是使用者。
+    // 生命周期的管理面权限照仓库 metadata 编译登记：两租户安装角色模板，A 的调用者是 Owner（持诊断读取与反向权限批准），B 的调用者只是使用者。
     private static async Task GrantDiagnostics(WebApplication app)
     {
         var root = RepositoryRoot();
         using var permissions = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "plugins/qian.lifecycle/metadata/permissions.json")));
         using var roles = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "plugins/qian.lifecycle/metadata/roles.json")));
         var catalog = new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata("qian.lifecycle", "1.0.0", permissions.RootElement, roles.RootElement);
-        Assert.Equal([LifecycleDefinition.DiagnosticsReadPermission], catalog.Permissions.Select(permission => permission.Code));
+        Assert.Equal([LifecycleDefinition.DiagnosticsReadPermission, LifecycleDefinition.InstallApprovePermission], catalog.Permissions.Select(permission => permission.Code));
         var data = app.Services.GetRequiredService<IDataService>(); var tenant = app.Services.GetRequiredService<ITenantContext>();
         await new PostgresPermissionCatalogStore(data).PutAsync(catalog, Ct);
         var active = app.Services.GetRequiredService<IPermissionRegistry>().Register("1.0.0", catalog.Permissions);

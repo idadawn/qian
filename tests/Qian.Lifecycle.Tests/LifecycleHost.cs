@@ -56,8 +56,9 @@ internal sealed class LifecycleHost : IAsyncDisposable
     private static readonly string[] Scopes = ["global", "tenant"];
     private static readonly string[] TrustFields = ["PublicKey", "NotBefore", "NotAfter"];
 
+    // services 供用例登记宿主端口的替身（如权限判定端口）；不替换平台插件树。
     internal static async Task<LifecycleHost> StartAsync(PostgresFixture postgres, object? lifecycleConfig = null,
-        Func<string, string, IPluginLifecycleHooks?>? hooks = null, CancellationToken ct = default)
+        Func<string, string, IPluginLifecycleHooks?>? hooks = null, Action<IServiceCollection>? services = null, CancellationToken ct = default)
     {
         var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "qian-lifecycle-" + Guid.NewGuid().ToString("N"))).FullName;
         var tenant = new AsyncLocalTenantContext();
@@ -93,6 +94,7 @@ internal sealed class LifecycleHost : IAsyncDisposable
             Policies = [new SecretAccessPolicy("qian.lifecycle", [new("trust/*", "platform"), new("lifecycle/*", "platform")], [new("trust/*", "platform"), new("lifecycle/*", "platform")])]
         });
         builder.Services.AddQianConfiguration(configuration);
+        services?.Invoke(builder.Services);
         Directory.CreateDirectory(Path.Combine(directory, "secrets"));
         var host = builder.Build();
         try
@@ -148,7 +150,7 @@ internal sealed class LifecycleHost : IAsyncDisposable
         await Admin(postgres, "DROP SCHEMA IF EXISTS plugin_qian_registry CASCADE; DROP SCHEMA IF EXISTS plugin_qian_lifecycle CASCADE;\n" + registry +
             "\nGRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;", ct);
         var reports = await host.Services.GetRequiredService<IDataMigrator>().MigrateAsync(ct);
-        Assert.Equal(["20261015081937_LifecycleStateMachines"], Assert.Single(reports, report => report.ContextType == typeof(LifecycleDbContext)).Applied);
+        Assert.Equal(["20261015081937_LifecycleStateMachines", "20261021194607_PermissionApprovals"], Assert.Single(reports, report => report.ContextType == typeof(LifecycleDbContext)).Applied);
         await Admin(postgres, "GRANT USAGE ON SCHEMA plugin_qian_lifecycle TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_lifecycle TO qian_app;", ct);
     }
 

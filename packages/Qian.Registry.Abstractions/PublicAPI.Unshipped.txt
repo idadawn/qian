@@ -198,3 +198,57 @@ const Qian.Registry.RegistryArtifactStates.Submitted = "Submitted" -> string!
 Qian.Registry.IRegistryService.GetConfigurationViewAsync(Qian.Runtime.ScopeKey scope, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryEntryView!>!>
 Qian.Registry.RegistryEntryView.Config.get -> System.Text.Json.JsonElement?
 Qian.Registry.RegistryEntryView.Config.init -> void
+Qian.Registry.IRegistryService.GetArtifactPermissionsAsync(string! digest, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Registry.RegistryArtifactPermissions?>
+Qian.Registry.IRegistryService.GetPluginPermissionsAsync(string! pluginId, string! version, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Registry.RegistryArtifactPermissions!>
+Qian.Registry.RegistryArtifactPermissions
+Qian.Registry.RegistryArtifactPermissions.<Clone>$() -> Qian.Registry.RegistryArtifactPermissions!
+Qian.Registry.RegistryArtifactPermissions.ArtifactDigest.get -> string!
+Qian.Registry.RegistryArtifactPermissions.ArtifactDigest.init -> void
+Qian.Registry.RegistryArtifactPermissions.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Registry.RegistryArtifactPermissions.Data.init -> void
+Qian.Registry.RegistryArtifactPermissions.Deconstruct(out string! PluginId, out string! Version, out string! ArtifactDigest, out System.Collections.Generic.IReadOnlyList<string!>! Platform, out System.Collections.Generic.IReadOnlyList<string!>! Data, out System.Collections.Generic.IReadOnlyList<string!>! Egress, out System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistrySecretAccess!>! Secrets, out Qian.Registry.RegistryUiPermissions! Ui) -> void
+Qian.Registry.RegistryArtifactPermissions.Egress.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Registry.RegistryArtifactPermissions.Egress.init -> void
+Qian.Registry.RegistryArtifactPermissions.Equals(Qian.Registry.RegistryArtifactPermissions? other) -> bool
+Qian.Registry.RegistryArtifactPermissions.Platform.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Registry.RegistryArtifactPermissions.Platform.init -> void
+Qian.Registry.RegistryArtifactPermissions.PluginId.get -> string!
+Qian.Registry.RegistryArtifactPermissions.PluginId.init -> void
+Qian.Registry.RegistryArtifactPermissions.RegistryArtifactPermissions(string! PluginId, string! Version, string! ArtifactDigest, System.Collections.Generic.IReadOnlyList<string!>! Platform, System.Collections.Generic.IReadOnlyList<string!>! Data, System.Collections.Generic.IReadOnlyList<string!>! Egress, System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistrySecretAccess!>! Secrets, Qian.Registry.RegistryUiPermissions! Ui) -> void
+Qian.Registry.RegistryArtifactPermissions.Secrets.get -> System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistrySecretAccess!>!
+Qian.Registry.RegistryArtifactPermissions.Secrets.init -> void
+Qian.Registry.RegistryArtifactPermissions.Ui.get -> Qian.Registry.RegistryUiPermissions!
+Qian.Registry.RegistryArtifactPermissions.Ui.init -> void
+Qian.Registry.RegistryArtifactPermissions.Version.get -> string!
+Qian.Registry.RegistryArtifactPermissions.Version.init -> void
+Qian.Registry.RegistrySecretAccess
+Qian.Registry.RegistrySecretAccess.<Clone>$() -> Qian.Registry.RegistrySecretAccess!
+Qian.Registry.RegistrySecretAccess.Deconstruct(out string! Name, out string! Scope) -> void
+Qian.Registry.RegistrySecretAccess.Equals(Qian.Registry.RegistrySecretAccess? other) -> bool
+Qian.Registry.RegistrySecretAccess.Name.get -> string!
+Qian.Registry.RegistrySecretAccess.Name.init -> void
+Qian.Registry.RegistrySecretAccess.RegistrySecretAccess(string! Name, string! Scope) -> void
+Qian.Registry.RegistrySecretAccess.Scope.get -> string!
+Qian.Registry.RegistrySecretAccess.Scope.init -> void
+Qian.Registry.RegistryUiPermissions
+Qian.Registry.RegistryUiPermissions.<Clone>$() -> Qian.Registry.RegistryUiPermissions!
+Qian.Registry.RegistryUiPermissions.ConnectSrc.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Registry.RegistryUiPermissions.ConnectSrc.init -> void
+Qian.Registry.RegistryUiPermissions.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! ConnectSrc) -> void
+Qian.Registry.RegistryUiPermissions.Equals(Qian.Registry.RegistryUiPermissions? other) -> bool
+Qian.Registry.RegistryUiPermissions.RegistryUiPermissions(System.Collections.Generic.IReadOnlyList<string!>! ConnectSrc) -> void
+override Qian.Registry.RegistryArtifactPermissions.Equals(object? obj) -> bool
+override Qian.Registry.RegistryArtifactPermissions.GetHashCode() -> int
+override Qian.Registry.RegistryArtifactPermissions.ToString() -> string!
+override Qian.Registry.RegistrySecretAccess.Equals(object? obj) -> bool
+override Qian.Registry.RegistrySecretAccess.GetHashCode() -> int
+override Qian.Registry.RegistrySecretAccess.ToString() -> string!
+override Qian.Registry.RegistryUiPermissions.Equals(object? obj) -> bool
+override Qian.Registry.RegistryUiPermissions.GetHashCode() -> int
+override Qian.Registry.RegistryUiPermissions.ToString() -> string!
+static Qian.Registry.RegistryArtifactPermissions.operator !=(Qian.Registry.RegistryArtifactPermissions? left, Qian.Registry.RegistryArtifactPermissions? right) -> bool
+static Qian.Registry.RegistryArtifactPermissions.operator ==(Qian.Registry.RegistryArtifactPermissions? left, Qian.Registry.RegistryArtifactPermissions? right) -> bool
+static Qian.Registry.RegistrySecretAccess.operator !=(Qian.Registry.RegistrySecretAccess? left, Qian.Registry.RegistrySecretAccess? right) -> bool
+static Qian.Registry.RegistrySecretAccess.operator ==(Qian.Registry.RegistrySecretAccess? left, Qian.Registry.RegistrySecretAccess? right) -> bool
+static Qian.Registry.RegistryUiPermissions.operator !=(Qian.Registry.RegistryUiPermissions? left, Qian.Registry.RegistryUiPermissions? right) -> bool
+static Qian.Registry.RegistryUiPermissions.operator ==(Qian.Registry.RegistryUiPermissions? left, Qian.Registry.RegistryUiPermissions? right) -> bool
