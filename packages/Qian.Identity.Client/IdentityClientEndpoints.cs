@@ -58,7 +58,7 @@ internal static partial class IdentityClientEndpoints
         var transaction = await services.GetRequiredService<ChallengeHelper>().ConsumeAsync(http, Single(query, "state") ?? "", ct).ConfigureAwait(false);
         if (transaction is null || transaction.Client != IdentityClientDefaults.ProviderName || transaction.RedirectUri != options.RedirectUri!.AbsoluteUri)
         {
-            await Reject(http, "state", IdentityErrors.OidcStateInvalid).ConfigureAwait(false);
+            await Reject(http, "state", IdentityErrors.ConnectorStateInvalid).ConfigureAwait(false);
             return;
         }
         var runtime = services.GetRequiredService<IdentityClientRuntime>();
@@ -81,12 +81,12 @@ internal static partial class IdentityClientEndpoints
             var code = Single(query, "error") is { } value && ProviderErrors.Contains(value) ? value : "server_error";
             var logger = Logger(http);
             Log.ProviderRejected(logger, code);
-            await Error(http, IdentityErrors.OidcProviderError, new Dictionary<string, string> { ["error"] = code }).ConfigureAwait(false);
+            await Error(http, IdentityErrors.ConnectorDenied).ConfigureAwait(false);
             return;
         }
         if (Single(query, "code") is not { Length: > 0 and <= 2048 } authorizationCode)
         {
-            await Reject(http, "code", IdentityErrors.OidcStateInvalid).ConfigureAwait(false);
+            await Reject(http, "code", IdentityErrors.ConnectorStateInvalid).ConfigureAwait(false);
             return;
         }
         OidcTokenResponse tokens;
