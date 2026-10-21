@@ -36,6 +36,7 @@
     <PackageVersion Include="Kun.EventBus" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Validation" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Identity" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Identity.AspNetCore" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Security" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Gateway" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Infrastructure" Version="[$(KunVersion)]" />

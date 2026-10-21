@@ -4,7 +4,7 @@
 
 ## 装配位置
 
-所有 profile 都可引用 Definition。`IdentityDefinition.Key` 拥有 `Identity` 服务键，`ctx.Identity()` 按当前 scope 注入 `IIdentityService`；协议 Provider 与内置的 Person / Membership 账号模型、统一登录流水线已由 [Qian.Identity.Server](../Qian.Identity.Server/README.md) 提供（S1-IDP-002 / 003 / 004，含会话中心）；RP Provider `.Client` 仍由后续任务提供。连接器通过 `IIdentityConnectorRegistry.Register` 挂载，释放句柄交给 `ctx.Effect`，同名独占与 scope 遮蔽由 Provider 遵守。
+所有 profile 都可引用 Definition。`IdentityDefinition.Key` 拥有 `Identity` 服务键，`ctx.Identity()` 按当前 scope 注入 `IIdentityService`；协议 Provider 与内置的 Person / Membership 账号模型、统一登录流水线已由 [Qian.Identity.Server](../Qian.Identity.Server/README.md) 提供（S1-IDP-002 / 003 / 004，含会话中心）；依赖方（RP）Provider 由 [Qian.Identity.Client](../Qian.Identity.Client/README.md) 提供（S1-IDP-005：服务端换码与 `qian.sid` 会话、刷新、下游 S2S 校验），它只回答当前主体，管理操作返回 `IDENTITY_OPERATION_UNSUPPORTED`。连接器通过 `IIdentityConnectorRegistry.Register` 挂载，释放句柄交给 `ctx.Effect`，同名独占与 scope 遮蔽由 Provider 遵守。
 
 `qian add identity` 安装的是组件与所选 Provider，本包不自行创建身份服务。扩展只需依赖 Definition 即可调用当前主体、Person/Membership 投影、会话与连接器目录。
 
@@ -43,7 +43,7 @@
 
 ## 已知限制与延期项
 
-本包仅契约；协议服务与账号模型的实现与验收见 Qian.Identity.Server 主文档。它不代表外壳 SSO、连接器或第二因子（TOTP / 短信）已实现／上线；这些业务按 IDP-005 至 IDP-007 继续交付。会话中心（Redis 索引、强制下线、身份修订递增）由 Qian.Identity.Server 交付。
+本包仅契约；协议服务与账号模型的实现与验收见 Qian.Identity.Server 主文档，依赖方见 Qian.Identity.Client 主文档。它不代表外壳 SSO、连接器或第二因子（TOTP / 短信）已实现／上线；外壳接线随 D5 / YUE-002，连接器与因子按 IDP-006、IDP-007 继续交付。会话中心（Redis 索引、强制下线、身份修订递增）由 Qian.Identity.Server 交付。
 
 
 ## 授权主体类型透传

@@ -21,6 +21,9 @@ public static class ContainerImages
     /// <summary>运行 Apollo 协议替身的 Python 镜像，覆盖变量 <c>QIAN_TEST_IMAGE_APOLLO_MOCK</c>。</summary>
     public static string ApolloMock => FromEnvironment("QIAN_TEST_IMAGE_APOLLO_MOCK", "python:3.13-alpine");
 
+    /// <summary>外部 OIDC 发行方 Dex 的镜像，覆盖变量 <c>QIAN_TEST_IMAGE_DEX</c>。</summary>
+    public static string Dex => FromEnvironment("QIAN_TEST_IMAGE_DEX", "ghcr.io/dexidp/dex:v2.41.1");
+
     private static string FromEnvironment(string variable, string fallback)
     {
         var value = Environment.GetEnvironmentVariable(variable);

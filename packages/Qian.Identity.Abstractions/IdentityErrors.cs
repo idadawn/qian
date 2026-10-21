@@ -44,6 +44,26 @@ public static class IdentityErrors
     public static readonly ErrorCode MfaUnavailable = Protocol("MFA_UNAVAILABLE", 503,
         "二次验证不可用", "该账号需要二次验证，当前服务暂不可用，请稍后重试。",
         "Second factor unavailable", "The account requires a second factor, which is currently unavailable; retry later.");
+    /// <summary>依赖方登录回调的 state 缺失、不匹配、已过期或已被使用（含重放），登录事务作废。</summary>
+    public static readonly ErrorCode OidcStateInvalid = Protocol("OIDC_STATE_INVALID", 400,
+        "登录请求已失效", "登录请求无效、已过期或已被使用，请重新登录。",
+        "Sign-in request invalid", "The sign-in request is invalid, expired or already used; sign in again.");
+    /// <summary>授权响应的 iss 与依赖方配置的发行方不一致，或要求携带 iss 而缺失（RFC 9207）。</summary>
+    public static readonly ErrorCode OidcIssuerMismatch = Protocol("OIDC_ISSUER_MISMATCH", 400,
+        "发行方不一致", "登录回调不是来自已配置的身份发行方，已拒绝。",
+        "Issuer mismatch", "The sign-in callback did not come from the configured identity provider and was rejected.");
+    /// <summary>发行方以 OAuth 错误结束授权请求（用户取消、需要交互等）；error 只取协议定义的错误码，其余记为 server_error。</summary>
+    public static readonly ErrorCode OidcProviderError = Protocol("OIDC_PROVIDER_ERROR", 400,
+        "发行方未完成登录", "身份发行方未完成登录（{error}），请重新登录。",
+        "Sign-in not completed", "The identity provider did not complete sign-in ({error}); sign in again.");
+    /// <summary>授权码换取失败，或令牌的签名、发行方、受众、寿命、nonce 与身份声明校验未通过。</summary>
+    public static readonly ErrorCode OidcTokenInvalid = Protocol("OIDC_TOKEN_INVALID", 401,
+        "登录令牌无效", "未能验证身份发行方签发的令牌，请重新登录。",
+        "Sign-in token invalid", "The tokens issued by the identity provider could not be validated; sign in again.");
+    /// <summary>当前身份 Provider 不提供该操作，例如依赖方 Provider 上的人员、成员与会话管理。</summary>
+    public static readonly ErrorCode OperationUnsupported = Protocol("IDENTITY_OPERATION_UNSUPPORTED", 501,
+        "身份操作不受支持", "当前身份组件不提供此操作，请改为调用身份服务。",
+        "Identity operation unsupported", "The current identity component does not provide this operation; call the identity service instead.");
 
     /// <summary>新密码不符合密码策略，rule 给出违反的规则。</summary>
     public static readonly ErrorCode PasswordPolicyViolation = Business("PASSWORD_POLICY_VIOLATION", 422,
@@ -78,6 +98,7 @@ public static class IdentityErrors
     public static IReadOnlyList<ErrorCode> All { get; } = Array.AsReadOnly(new[]
     {
         InvalidCredentials, AccountLocked, AccountDisabled, LoginTicketInvalid, TenantNotActive, NoAvailableTenant, CaptchaRequired, CaptchaInvalid, MfaUnavailable,
+        OidcStateInvalid, OidcIssuerMismatch, OidcProviderError, OidcTokenInvalid, OperationUnsupported,
         PasswordPolicyViolation, PasswordReused, CurrentPasswordInvalid, IdentifierInUse, LastVerifiedIdentifier, LastLoginMethod, AccountInUse
     });
 

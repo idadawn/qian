@@ -17,3 +17,6 @@ T:Kun.Security.S2SJwt.S2SJwtVerifier;请使用 Kun.Security 服务认证入口�
 T:Kun.Security.S2SJwt.KunSecurityS2SJwtServiceCollectionExtensions;请使用 Kun.Security 服务认证与网关签发入口。
 T:Kun.Security.S2SJwt.JwksEndpointMiddleware;请使用网关共享密钥环的 JWKS 端点。
 T:Kun.Security.S2SJwt.JwksEndpointExtensions;请使用网关共享密钥环的 JWKS 端点。
+# S1-IDP-005：S2S 令牌按跳签发、aud 只绑定一个下游，禁止把入站 Authorization 原样转发给下一跳。
+T:Kun.Security.Http.PropagateS2sTokenHandler;禁止透传上一跳令牌；调用下游须使用为该受众签发的 S2S 令牌。
+M:Kun.Security.Extensions.HttpClientBuilderExtensions.AddKunServiceAuth(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder);禁止透传上一跳令牌；调用下游须使用为该受众签发的 S2S 令牌。
