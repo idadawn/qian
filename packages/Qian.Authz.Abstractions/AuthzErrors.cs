@@ -19,12 +19,20 @@ public static class AuthzErrors
     public static readonly ErrorCode PartialSuccess = Business("PARTIAL_SUCCESS", 409,
         "部分操作完成", "部分操作已完成；请检查逐项结果后再处理剩余项。",
         "Partially completed", "Some operations completed; inspect the item results before processing the remaining items.");
+    /// <summary>租户专属权限点或角色绑定不能落到租户之下的子作用域（应用、Agent 会话）；S1 的全部权限点都是租户专属。</summary>
+    public static readonly ErrorCode ScopeMismatch = Business("AUTHZ_SCOPE_MISMATCH", 422,
+        "绑定作用域不匹配", "租户专属权限点只能绑定到租户本身，不能绑定到子作用域 {scope}。",
+        "Binding scope mismatch", "Tenant-exclusive permissions can only be bound to the tenant itself, not to the sub-scope {scope}.");
+    /// <summary>租户最后一个持有成员管理权限的主体不可被移除或降级，否则租户自锁。</summary>
+    public static readonly ErrorCode LastAdministratorLockout = Business("AUTHZ_LAST_ADMIN_LOCKOUT", 409,
+        "不能移除最后一个管理员", "{role} 是租户最后一个持有成员管理权限的绑定，移除或降级会使租户无人可管理。",
+        "Last administrator lockout", "{role} is the tenant's last binding that holds member-management permissions; removing or downgrading it would lock the tenant out.");
     /// <summary>权限声明字段无效，放在 INPUT_INVALID 的 errors 中。</summary>
     public static readonly ErrorCode MetadataInvalid = ErrorCode.Field("AUTHZ_METADATA_INVALID", "qian.authz",
         new Dictionary<string, string> { ["zh-CN"] = "权限元数据无效", ["en"] = "Invalid authorization metadata" },
         new Dictionary<string, string> { ["zh-CN"] = "{reason}", ["en"] = "{reason}" });
     /// <summary>可登记和导出的完整错误词汇。</summary>
-    public static IReadOnlyList<ErrorCode> All { get; } = Array.AsReadOnly(new[] { Denied, ConstraintMutex, CardinalityUserLimit, PartialSuccess, MetadataInvalid });
+    public static IReadOnlyList<ErrorCode> All { get; } = Array.AsReadOnly(new[] { Denied, ConstraintMutex, CardinalityUserLimit, PartialSuccess, ScopeMismatch, LastAdministratorLockout, MetadataInvalid });
 
     /// <summary>成组登记本组件错误码；失败撤销已登记项，返回可交给 ctx.Effect 的幂等释放句柄。</summary>
     public static IDisposable Register(ErrorCatalog catalog)

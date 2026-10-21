@@ -13,6 +13,7 @@
     <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
     <PackageReference Include="BouncyCastle.Cryptography" />
+    <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>

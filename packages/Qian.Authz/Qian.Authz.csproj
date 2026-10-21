@@ -6,6 +6,7 @@
     <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Audit.Abstractions/Qian.Audit.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Events.Abstractions/Qian.Events.Abstractions.csproj" />
     <PackageReference Include="JsonSchema.Net" />
     <PackageReference Include="Kun.Caching" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />

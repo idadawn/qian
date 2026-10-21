@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using Qian.Audit;
 using Qian.Authz;
+using Qian.Authz.AspNetCore;
 using Qian.Data;
 using Qian.Plugin.Sdk;
 using Qian.Runtime;
@@ -254,7 +256,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
 
     private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
-        LifecyclePlatform? lifecycle = null, bool contractExclusion = false)
+        LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool grpc = false, Action<WebApplication>? map = null, double decisionLogSampling = 0)
     {
         if (lifecycle is { Management: true }) await PreparePlatformLogins(lifecycle);
         var platform = capabilities || lifecycle is not null || runtimeProfile == "platform";
@@ -273,7 +275,18 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         var evidence = new FailureEvidence(); var barrier = new ConcurrentSaveBarrier();
         var app = CrmCommandApplication.Build([], builder =>
         {
-            builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
+            builder.Logging.ClearProviders();
+            // gRPC 验收：Kestrel 的明文 HTTP/2（h2c）须独占监听端点，所以 HTTP/1.1 与 gRPC 各开一个回环端口；授权 PEP 拦截器与 HTTP 端点共用执行端口。
+            if (grpc)
+            {
+                builder.WebHost.ConfigureKestrel(options =>
+                {
+                    options.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http1);
+                    options.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http2);
+                });
+                builder.Services.AddGrpc(options => options.AddQianAuthzInterceptor());
+            }
+            else builder.WebHost.UseUrls("http://127.0.0.1:0");
             if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
             if (lifecycle is not null) ConfigureLifecycle(builder, connection, lifecycle);
             if (humanOnlyProbe is not null) PreviewAgentAuthorization(builder);
@@ -286,7 +299,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 ["ConnectionStrings:Crm"] = connection, ["ConnectionStrings:Authz"] = postgres.AppConnectionString,
                 ["ConnectionStrings:Tenancy"] = postgres.AppConnectionString, ["ConnectionStrings:Audit"] = postgres.AppConnectionString,
                 ["S2S:Issuer"] = Issuer, ["S2S:Audience"] = Audience, ["S2S:PublicJwks"] = publicJwks,
-                ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events
+                ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events,
+                // 决策审计采样：早于 S1-AZ-004 的用例按命令审计数断言链长，缺省不记放行判定（拒绝仍必记）；PEP 验收显式传 1。
+                ["Authz:DecisionLogSampling"] = decisionLogSampling.ToString(System.Globalization.CultureInfo.InvariantCulture)
             });
         }, lifecycle is null ? null : registrar => registrar.RegisterRegistryEvents().RegisterLifecycleEvents(),
             lifecycle is null ? null : mediator => mediator.AddQianRegistryEvents().AddQianLifecycleEvents());
@@ -336,6 +351,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             if (lifecycle is not null) MapLifecycle(app);
             if (lifecycle is { Management: true }) MapSettingsRegistry(app);
             if (hooks) MapHookEntry(app);
+            map?.Invoke(app);
             await app.StartAsync(Ct);
             if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);
             if (lifecycle is not null) await AttachLifecycle(app, lifecycle);
@@ -345,8 +361,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 var decision = await app.Services.GetRequiredService<Kun.Authorization.IPermissionChecker>().CheckAsync(new Kun.Authorization.PermissionRequest(new Kun.Authorization.AuthorizationSubject(Writer, A, "service"), "qian.sample.crm:customer:write"), Ct);
                 Assert.True(decision.Allow, decision.Reason);
             }
-            var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
-            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role, connection, migrations);
+            var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.ToArray();
+            Assert.Equal(grpc ? 2 : 1, addresses.Length);
+            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(addresses[0]) }, evidence, role, connection, migrations, grpc ? addresses[1] : null);
         }
         catch { await app.DisposeAsync(); signing.Dispose(); throw; }
     }
@@ -388,9 +405,12 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
     }
 
-    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection, string migrations) : IAsyncDisposable
+    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection, string migrations,
+        string? grpcAddress = null) : IAsyncDisposable
     {
         internal WebApplication App => app;
+        // 只在 Start(grpc: true) 时存在：独立的 h2c 监听地址。
+        internal string GrpcAddress => grpcAddress ?? throw new InvalidOperationException("宿主未按 grpc: true 启动。");
         internal RsaSecurityKey ManagementSigningKey => key;
         internal string BusinessRole => role;
         // 受限业务登录（NOSUPERUSER / NOBYPASSRLS），用来从数据库侧核对 RLS 的实际效果。
@@ -409,12 +429,13 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token(tenant, "crm.read"));
             return Send(message);
         }
-        internal string Token(string? tenant, string scope, string? subject = null, string kind = "service", object? actor = null)
+        internal string Token(string? tenant, string scope, string? subject = null, string kind = "service", object? actor = null, long? identityRevision = null)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var id = Guid.CreateVersion7().ToString();
             var payload = new Dictionary<string, object?> { ["iss"] = Issuer, ["aud"] = new[] { Audience }, ["sub"] = subject ?? Writer, ["principal_kind"] = kind,
                 ["tenant_id"] = tenant, ["roles"] = DeclaredTokenRoles, ["scope"] = scope, ["session_id"] = id, ["jti"] = id, ["iat"] = now, ["nbf"] = now, ["exp"] = now + 60 };
             if (actor is not null) payload["act"] = actor;
+            if (identityRevision is not null) payload["identity_revision"] = identityRevision;
             return new JsonWebTokenHandler().CreateToken(JsonSerializer.Serialize(payload), new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
         }
         internal async Task<HttpResponseMessage> Send(HttpRequestMessage message)

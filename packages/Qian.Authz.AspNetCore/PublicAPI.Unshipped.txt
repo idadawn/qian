@@ -39,3 +39,20 @@ static Qian.Authz.AspNetCore.AuthzPermissionList.operator !=(Qian.Authz.AspNetCo
 static Qian.Authz.AspNetCore.AuthzPermissionList.operator ==(Qian.Authz.AspNetCore.AuthzPermissionList? left, Qian.Authz.AspNetCore.AuthzPermissionList? right) -> bool
 static Qian.Authz.AspNetCore.AuthzPermissionView.operator !=(Qian.Authz.AspNetCore.AuthzPermissionView? left, Qian.Authz.AspNetCore.AuthzPermissionView? right) -> bool
 static Qian.Authz.AspNetCore.AuthzPermissionView.operator ==(Qian.Authz.AspNetCore.AuthzPermissionView? left, Qian.Authz.AspNetCore.AuthzPermissionView? right) -> bool
+Qian.Authz.AspNetCore.AuthzEnforcementExtensions
+Qian.Authz.AspNetCore.AuthzEnforcementOptions
+Qian.Authz.AspNetCore.AuthzEnforcementOptions.AuthzEnforcementOptions() -> void
+Qian.Authz.AspNetCore.AuthzEnforcementOptions.Production.get -> bool?
+Qian.Authz.AspNetCore.AuthzEnforcementOptions.Production.set -> void
+Qian.Authz.AspNetCore.AuthzEnforcementSource
+Qian.Authz.AspNetCore.AuthzGrpcServerInterceptor
+Qian.Authz.AspNetCore.AuthzGrpcServerInterceptor.AuthzGrpcServerInterceptor(Qian.Authz.AspNetCore.AuthzEnforcementSource! source, Microsoft.Extensions.Logging.ILogger<Qian.Authz.AspNetCore.AuthzGrpcServerInterceptor!>! logger) -> void
+const Qian.Authz.AspNetCore.AuthzGrpcServerInterceptor.ErrorDetailTrailer = "qian-error-bin" -> string!
+override Qian.Authz.AspNetCore.AuthzGrpcServerInterceptor.ClientStreamingServerHandler<TRequest, TResponse>(Grpc.Core.IAsyncStreamReader<TRequest!>! requestStream, Grpc.Core.ServerCallContext! context, Grpc.Core.ClientStreamingServerMethod<TRequest!, TResponse!>! continuation) -> System.Threading.Tasks.Task<TResponse!>!
+override Qian.Authz.AspNetCore.AuthzGrpcServerInterceptor.DuplexStreamingServerHandler<TRequest, TResponse>(Grpc.Core.IAsyncStreamReader<TRequest!>! requestStream, Grpc.Core.IServerStreamWriter<TResponse!>! responseStream, Grpc.Core.ServerCallContext! context, Grpc.Core.DuplexStreamingServerMethod<TRequest!, TResponse!>! continuation) -> System.Threading.Tasks.Task!
+override Qian.Authz.AspNetCore.AuthzGrpcServerInterceptor.ServerStreamingServerHandler<TRequest, TResponse>(TRequest! request, Grpc.Core.IServerStreamWriter<TResponse!>! responseStream, Grpc.Core.ServerCallContext! context, Grpc.Core.ServerStreamingServerMethod<TRequest!, TResponse!>! continuation) -> System.Threading.Tasks.Task!
+override Qian.Authz.AspNetCore.AuthzGrpcServerInterceptor.UnaryServerHandler<TRequest, TResponse>(TRequest! request, Grpc.Core.ServerCallContext! context, Grpc.Core.UnaryServerMethod<TRequest!, TResponse!>! continuation) -> System.Threading.Tasks.Task<TResponse!>!
+static Qian.Authz.AspNetCore.AuthzEnforcementExtensions.AddQianAuthzEnforcement(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source, System.Action<Qian.Authz.AspNetCore.AuthzEnforcementOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Authz.AspNetCore.AuthzEnforcementExtensions.AddQianAuthzInterceptor(this Grpc.AspNetCore.Server.GrpcServiceOptions! options) -> Grpc.AspNetCore.Server.GrpcServiceOptions!
+static Qian.Authz.AspNetCore.AuthzEnforcementExtensions.RequireQianPermission<TBuilder>(this TBuilder builder, string! permission) -> TBuilder
+static Qian.Authz.AspNetCore.AuthzEnforcementExtensions.UseQianAuthzEnforcement(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!

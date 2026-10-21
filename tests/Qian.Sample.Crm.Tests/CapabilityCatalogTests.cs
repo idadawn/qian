@@ -166,7 +166,7 @@ public sealed partial class CustomerCommandTests
         var reference = operation.GetProperty("requestBody").GetProperty("content").GetProperty("application/json").GetProperty("schema").GetProperty("$ref").GetString()!;
         var input = api.GetProperty("components").GetProperty("schemas").GetProperty(reference.Split('/')[^1]);
         using var accepted = await Invoke(host, A);
-        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+        Assert.True(accepted.StatusCode == HttpStatusCode.OK, host.FailureEvidence);
         var actualRequest = JsonSerializer.SerializeToElement(new CreateCustomerCommand(Guid.CreateVersion7(), "schema proof"), CrmCommandJson.Default.CreateCustomerCommand);
         Assert.True(JsonSchema.FromText(input.GetRawText()).Evaluate(actualRequest).IsValid);
         var outputReference = operation.GetProperty("responses").GetProperty("200").GetProperty("content").GetProperty("application/json").GetProperty("schema").GetProperty("$ref").GetString()!;

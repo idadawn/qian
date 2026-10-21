@@ -157,7 +157,11 @@ public sealed partial class CustomerCommandTests
                 Assert.Equal("NOT_FOUND", (await missingRegistry.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("code").GetString());
                 using var current = tenant.BeginScope(A); await using var unchanged = await data.OpenAsync<CrmDbContext>(Ct);
                 Assert.Equal(customers, await unchanged.Context.Customers.CountAsync(Ct));
-                Assert.Equal(auditA, (await loader.GetContext("audit", ScopeKey.Global).Audit().VerifyAsync(Ct)).CheckedEntries);
+                // 命令管道没有执行，链上没有新的命令审计；只多出 HTTP PEP 的放行决策日志（S1-AZ-004，判定在注册表缺失被发现之前完成）。
+                var audit = loader.GetContext("audit", ScopeKey.Global).Audit();
+                var extra = (await audit.ReadAsync(auditA, 10, cancellationToken: Ct)).Select(entry => entry.Record).ToArray();
+                Assert.All(extra, record => Assert.Equal((Qian.Authz.Abstractions.AuthzEnforcement.DecisionCapabilityId, "allowed"), (record.CapabilityId, record.Result)));
+                Assert.Equal(auditA + extra.Length, (await audit.VerifyAsync(Ct)).CheckedEntries);
             }
             await host.App.StopAsync(Ct); Assert.Empty(loader.DumpConfig());
             reports[profile + "/" + client.GetString()] = JsonSerializer.SerializeToElement(new { observations, customers, outbox, auditA, auditB, clean = loader.DumpConfig().Count == 0 });

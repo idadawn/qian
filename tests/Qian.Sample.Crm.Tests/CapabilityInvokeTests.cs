@@ -518,7 +518,8 @@ public sealed partial class CustomerCommandTests
             using var invoke = await AgentRequest(host, HttpMethod.Post, "/api/capabilities/" + ListId + "/invoke", "{}", kind, actor);
             await ErrorDetail(invoke, HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
         }
-        await AssertWrites(host, A, customers: 0, audit: 0);
+        // 没有业务写入；链上只有命令 PEP 对 Agent 主体的拒绝决策（S1-AZ-004：拒绝必记），没有放行或命令审计。
+        await AssertWrites(host, A, customers: 0, audit: 0, decisions: [("agent", AgentId, "denied")]);
     }
 
     [Fact]
@@ -629,7 +630,8 @@ public sealed partial class CustomerCommandTests
         return rows;
     }
 
-    private static async Task AssertWrites(RunningApp host, string tenantId, int customers, int audit)
+    // audit 为业务 / 命令审计条目数；decisions 为链上允许出现的决策日志（actorType, actorId, result），每条决策日志都必须匹配其中一项。
+    private static async Task AssertWrites(RunningApp host, string tenantId, int customers, int audit, (string Kind, string Id, string Result)[]? decisions = null)
     {
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenantId))
         {
@@ -637,7 +639,12 @@ public sealed partial class CustomerCommandTests
             Assert.Equal(customers, await session.Context.Customers.CountAsync(Ct));
             Assert.Equal(customers, await session.Context.OutboxMessages.CountAsync(Ct));
             var trail = host.App.Services.GetRequiredService<CrmCommandRuntime>().Source().Audit();
-            Assert.Equal(new AuditChainVerification(true, audit, null, null), await trail.VerifyAsync(Ct));
+            var records = (await trail.ReadAsync(0, 100, cancellationToken: Ct)).Select(entry => entry.Record).ToArray();
+            var logged = records.Where(record => record.CapabilityId == Qian.Authz.Abstractions.AuthzEnforcement.DecisionCapabilityId).ToArray();
+            Assert.Equal(audit, records.Length - logged.Length);
+            Assert.All(logged, record => Assert.Contains((record.ActorType, record.ActorId, record.Result), decisions ?? []));
+            if (decisions is null) Assert.Empty(logged);
+            Assert.Equal(new AuditChainVerification(true, records.Length, null, null), await trail.VerifyAsync(Ct));
         }
     }
 

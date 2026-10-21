@@ -10,8 +10,8 @@ using Qian.Data;
 
 namespace Qian.Authz;
 
-// 真正从角色/授权表求值，不是从 token roles/permissions 推导。主体的角色与授权读成快照，按 (租户, 主体, 租户授权修订) 缓存；
-// 有效期、活动权限登记与 step-up / 终端约束仍在每次判定时求值。组织/岗位/组继承与 identity_revision 失效分属 S1-AZ-005 / S1-AZ-004。
+// 真正从角色/授权表求值，不是从 token roles/permissions 推导。主体的角色与授权读成快照，按 (租户, 主体, 令牌 identity_revision, 租户授权修订) 缓存；
+// 有效期、活动权限登记与 step-up / 终端约束仍在每次判定时求值。组织/岗位/组继承属 S1-AZ-005；identity_revision 由 PEP 从已验证令牌传入（S1-AZ-004）。
 internal sealed class PostgresRbacEvaluator(IDataService data, ITenantContext tenant, IPermissionRegistry registry, IAuthzExecutionConstraints? constraints,
     IKunCache? cache = null)
 {
@@ -19,13 +19,17 @@ internal sealed class PostgresRbacEvaluator(IDataService data, ITenantContext te
     internal static readonly TimeSpan SnapshotTtl = TimeSpan.FromMinutes(10);
     private const string KeyPrefix = "qian.authz/rbac/v1:";
 
-    internal async ValueTask<AuthorizationExplanation> EvaluateAsync(PermissionRequest request, CancellationToken ct)
+    internal ValueTask<AuthorizationExplanation> EvaluateAsync(PermissionRequest request, CancellationToken ct) => EvaluateAsync(request, null, ct);
+
+    // identityRevision 来自 PEP 已验证的令牌：并入快照键（PRD 7.5 的 (tenant, membership, identity_revision)），令牌换代即读新键；
+    // 租户授权修订仍每次判定读一次（一条主键查询，S1-AZ-003 实测 10–15 ms 内含），直接主体的授予 / 撤销不依赖身份侧递增也立即失效。
+    internal async ValueTask<AuthorizationExplanation> EvaluateAsync(PermissionRequest request, long? identityRevision, CancellationToken ct)
     {
         var invalid = Validate(request.Subject);
         if (invalid is not null) return Deny(invalid, request.Permission);
         if (!PermissionCode.IsValid(request.Permission)) return Deny("invalid_permission", request.Permission);
         var owner = tenant.TenantId!;
-        var snapshot = await LoadAsync(owner, request.Subject, ct).ConfigureAwait(false);
+        var snapshot = await LoadAsync(owner, request.Subject, identityRevision, ct).ConfigureAwait(false);
         if (tenant.TenantId != owner) return Deny("tenant_context_changed", request.Permission);
         return await EvaluateAsync(snapshot, owner, request, ct).ConfigureAwait(false);
     }
@@ -34,7 +38,7 @@ internal sealed class PostgresRbacEvaluator(IDataService data, ITenantContext te
     {
         if (Validate(subject) is not null) return [];
         var owner = tenant.TenantId!;
-        var snapshot = await LoadAsync(owner, subject, ct).ConfigureAwait(false);
+        var snapshot = await LoadAsync(owner, subject, null, ct).ConfigureAwait(false);
         var candidates = snapshot.Installs.SelectMany(install => registry.List(install.PluginId, install.Version)).Select(permission => permission.Code)
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         var allowed = new List<string>();
@@ -48,7 +52,7 @@ internal sealed class PostgresRbacEvaluator(IDataService data, ITenantContext te
     {
         if (Validate(subject) is not null) return [];
         var owner = tenant.TenantId!;
-        var snapshot = await LoadAsync(owner, subject, ct).ConfigureAwait(false);
+        var snapshot = await LoadAsync(owner, subject, null, ct).ConfigureAwait(false);
         var result = new List<EffectiveGrant>();
         foreach (var install in snapshot.Installs.OrderBy(row => row.PluginId, StringComparer.Ordinal))
             foreach (var definition in registry.List(install.PluginId, install.Version))
@@ -90,12 +94,12 @@ internal sealed class PostgresRbacEvaluator(IDataService data, ITenantContext te
     }
 
     // 先读修订号再读数据：读到旧修订配新数据只会让旧键多一份更新的快照，读到新修订必然对应提交后的数据。
-    private async ValueTask<RbacSnapshot> LoadAsync(string owner, AuthorizationSubject subject, CancellationToken ct)
+    private async ValueTask<RbacSnapshot> LoadAsync(string owner, AuthorizationSubject subject, long? identityRevision, CancellationToken ct)
     {
         await using var session = await data.OpenAsync<AuthzDbContext>(ct).ConfigureAwait(false);
         var db = session.Context;
         var revision = await db.Revisions.AsNoTracking().Where(row => row.TenantId == owner).Select(row => (long?)row.Revision).SingleOrDefaultAsync(ct).ConfigureAwait(false) ?? 0;
-        var key = cache is null ? null : Key(owner, subject, revision);
+        var key = cache is null ? null : Key(owner, subject, identityRevision, revision);
         if (key is not null && await cache!.GetBytesAsync(key, ct).ConfigureAwait(false) is { Length: > 0 } bytes && Read(bytes) is { } cached &&
             cached.Tenant == owner && cached.Kind == subject.Kind && cached.Subject == subject.Id && cached.Revision == revision)
             return cached;
@@ -118,8 +122,10 @@ internal sealed class PostgresRbacEvaluator(IDataService data, ITenantContext te
     }
 
     // 键用 JSON 数组编码各段，主体或租户标识里的分隔符不会拼出另一个主体的键；读取时再比对快照内的身份与修订。
-    internal static string Key(string owner, AuthorizationSubject subject, long revision) => KeyPrefix +
-        JsonSerializer.Serialize(new[] { owner, subject.Kind, subject.Id, revision.ToString(CultureInfo.InvariantCulture) }, AuthzJson.Default.StringArray);
+    // 第四段是令牌 identity_revision（未携带为空串）：身份修订递增后新令牌读新键，旧键只等 TTL 回收。
+    internal static string Key(string owner, AuthorizationSubject subject, long? identityRevision, long revision) => KeyPrefix +
+        JsonSerializer.Serialize(new[] { owner, subject.Kind, subject.Id, identityRevision?.ToString(CultureInfo.InvariantCulture) ?? "",
+            revision.ToString(CultureInfo.InvariantCulture) }, AuthzJson.Default.StringArray);
 
     private static RbacSnapshot? Read(byte[] bytes)
     {
@@ -146,7 +152,13 @@ internal sealed record SnapshotInstall(string PluginId, string Version);
 internal sealed record SnapshotRole(Guid Id, string Code, DateTimeOffset? ValidFrom, DateTimeOffset? ValidTo);
 internal sealed record SnapshotGrant(Guid Id, Guid RoleId, string PluginId, string Version, string Permission);
 
+// 决策审计记录的 payload：与 AuthorizationExplanation 同源，不含输入原文。
+internal sealed record DecisionLogPayload(string? Permission, string EntryPoint, string Target, string? Resource, string Decision, string Reason,
+    IReadOnlyList<string> MatchedRoles, IReadOnlyList<string> MatchedGrants, IReadOnlyList<string> Missing, IReadOnlyList<string> MatchedPolicies,
+    long? IdentityRevision, bool Bypass);
+
 [JsonSerializable(typeof(RbacSnapshot))]
+[JsonSerializable(typeof(DecisionLogPayload))]
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]

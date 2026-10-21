@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Kun.AspNetCore.Authorization;
 using Qian.Plugin.Sdk.AspNetCore;
 using Kun.Authorization;
 using Kun.Core.MultiTenancy;
@@ -65,7 +64,7 @@ public static class CrmCommandApplication
                 .RequireAssertion(context => (context.User.FindFirstValue("scope") ?? "").Split(' ').Contains("crm.read", StringComparer.Ordinal)));
             builder.Services.AddKunEventBus(registrar =>
             {
-                registrar.RegisterCrmEvents().RegisterTenancyEvents();
+                registrar.RegisterCrmEvents().RegisterTenancyEvents().RegisterAuthzEvents();
                 events?.Invoke(registrar);
             });
             // Outbox 行即 v1 信封；配置了 broker 才投递到 RabbitMQ，未配置时只写 Outbox（本地无 MQ 的开发与测试）。
@@ -80,9 +79,12 @@ public static class CrmCommandApplication
                 sp.GetRequiredService<ITenantContext>(), sp.GetRequiredService<IPermissionRegistry>()));
             builder.Services.AddSingleton<CrmCommandRuntime>();
             builder.Services.AddHostedService(sp => sp.GetRequiredService<CrmCommandRuntime>());
+            // HTTP PEP（S1-AZ-004）：端点以 RequireQianPermission 声明权限点，判定、identity_revision 比对与决策审计都经 authz 组件按请求租户收窄的上下文；
+            // 参考宿主按生产模式运行，未声明权限点的组件端点缺省拒绝。
+            builder.Services.AddQianAuthzEnforcement(http => http.RequestServices.GetRequiredService<CrmCommandRuntime>().AuthzSource(), options => options.Production = true);
             builder.Services.AddKunMediator(registry =>
             {
-                registry.AddQianTenancyEvents();
+                registry.AddQianTenancyEvents().AddQianAuthzEvents();
                 registry.AddQianCapability<CreateCustomerCommand, CustomerItem, CreateCustomerHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 registry.AddQianCapability<ListCustomersQuery, CustomerPage, ListCustomersHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 registry.AddQianCapability<GetCustomerQuery, CustomerItem, GetCustomerHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
@@ -90,6 +92,7 @@ public static class CrmCommandApplication
             });
             string Connection(string name) => builder.Configuration.GetConnectionString(name) ?? throw new InvalidOperationException("缺少连接引用：" + name);
         }, mapReadEndpoints: false);
+        app.UseQianAuthzEnforcement();
         app.Use(async (context, next) =>
         {
             if (context.Request.Path.StartsWithSegments("/api/customers") && context.User.Identity?.IsAuthenticated == true)
@@ -101,15 +104,15 @@ public static class CrmCommandApplication
             var source = runtime.Source(); var commands = source.Inject<ICrmCommands>(CrmDefinition.Key);
             var result = await commands.CreateAsync(command, ct).ConfigureAwait(false);
             return Results.Created("/api/customers/" + result.Id, result);
-        }).RequireAuthorization("crm-data-writer").RequireKunPermission("qian.sample.crm:customer:write")
+        }).RequireAuthorization("crm-data-writer").RequireQianPermission("qian.sample.crm:customer:write")
             .WithMetadata(new PluginEndpointBinding("crm", "qian.sample.crm", CapabilityBindingRegistration.Key, "qian.sample.crm/customer.create")).Produces<CustomerItem>(StatusCodes.Status201Created);
         app.MapGet("/api/customers", async (int? skip, int? take, CrmCommandRuntime runtime, CancellationToken ct) =>
             Results.Ok(await runtime.Source().Inject<ICrmCommands>(CrmDefinition.Key).ListAsync(new ListCustomersQuery(skip ?? 0, take ?? 100), ct).ConfigureAwait(false)))
-            .RequireAuthorization("crm-command-reader").RequireKunPermission("qian.sample.crm:customer:read")
+            .RequireAuthorization("crm-command-reader").RequireQianPermission("qian.sample.crm:customer:read")
             .WithMetadata(new PluginEndpointBinding("crm", "qian.sample.crm", CapabilityBindingRegistration.Key, "qian.sample.crm/customer.list")).Produces<CustomerPage>();
         app.MapGet("/api/customers/{id:guid}", async (Guid id, CrmCommandRuntime runtime, CancellationToken ct) =>
             Results.Ok(await runtime.Source().Inject<ICrmCommands>(CrmDefinition.Key).GetAsync(new GetCustomerQuery(id), ct).ConfigureAwait(false)))
-            .RequireAuthorization("crm-command-reader").RequireKunPermission("qian.sample.crm:customer:read")
+            .RequireAuthorization("crm-command-reader").RequireQianPermission("qian.sample.crm:customer:read")
             .WithMetadata(new PluginEndpointBinding("crm", "qian.sample.crm", CapabilityBindingRegistration.Key, "qian.sample.crm/customer.get")).Produces<CustomerItem>();
         // 当前主体在本租户的有效权限（含风险、step-up 与终端元数据）；主体与租户只取自已验证令牌。
         app.MapQianAuthz(http => http.RequestServices.GetRequiredService<CrmCommandRuntime>().AuthzSource());
