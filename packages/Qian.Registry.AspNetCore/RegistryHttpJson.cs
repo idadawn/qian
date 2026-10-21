@@ -8,4 +8,6 @@ namespace Qian.Registry.AspNetCore;
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
 [JsonSerializable(typeof(RegistryEntryList))]
 [JsonSerializable(typeof(RegistryEntryView))]
+[JsonSerializable(typeof(RegistryScopePatchRequest))]
+[JsonSerializable(typeof(RegistryScopePatchResult))]
 internal sealed partial class RegistryHttpJson : JsonSerializerContext;

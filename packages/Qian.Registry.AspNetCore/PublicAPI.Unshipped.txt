@@ -13,3 +13,4 @@ Qian.Registry.AspNetCore.RegistryEntryList.<Clone>$() -> Qian.Registry.AspNetCor
 Qian.Registry.AspNetCore.RegistryEntryList.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryEntryView!>! Items) -> void
 static Qian.Registry.AspNetCore.RegistryEndpoints.MapQianRegistry(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 Qian.Registry.AspNetCore.RegistryEntryList.RegistryEntryList(System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryEntryView!>! Items) -> void
+static Qian.Registry.AspNetCore.RegistryEndpoints.UseQianRegistryAliases(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!

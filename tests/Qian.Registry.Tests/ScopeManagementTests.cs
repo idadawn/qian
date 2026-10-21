@@ -159,9 +159,10 @@ public sealed partial class PatchPersistenceTests
     {
         static JsonElement Read(string name) => JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins", "qian.registry", "metadata", name)));
         var catalog = new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata("qian.registry", "1.0.0", Read("permissions.json"), Read("roles.json"));
-        Assert.Equal([RegistryDefinition.ScopeReadPermission], catalog.Permissions.Select(permission => permission.Code));
+        Assert.Equal([RegistryDefinition.ScopeReadPermission, RegistryDefinition.ScopeWritePermission], catalog.Permissions.Select(permission => permission.Code));
         Assert.Equal(["tenant.admin", "tenant.owner"], catalog.Roles.Select(role => role.Role).Order(StringComparer.Ordinal));
-        Assert.All(catalog.Roles, role => Assert.Equal([RegistryDefinition.ScopeReadPermission], role.Grants));
+        Assert.Equal([RegistryDefinition.ScopeReadPermission, RegistryDefinition.ScopeWritePermission], catalog.Roles.Single(role => role.Role == "tenant.owner").Grants);
+        Assert.Equal([RegistryDefinition.ScopeReadPermission], catalog.Roles.Single(role => role.Role == "tenant.admin").Grants);
     }
 
     private void AddAuthz(IServiceCollection services, bool checker)
@@ -228,7 +229,7 @@ public sealed partial class PatchPersistenceTests
             };
         });
         var app = builder.Build();
-        app.UseQianErrors(); app.UseRouting(); app.UseAuthentication();
+        app.UseQianErrors(); app.UseRouting(); app.UseQianRegistryAliases(); app.UseAuthentication();
         app.Use(async (context, next) =>
         {
             // 平台运营宿主预先选择的可信目标，不从 path/header/body 推导；普通租户请求仍走原边界。
@@ -258,6 +259,21 @@ public sealed partial class PatchPersistenceTests
 
     private sealed class ManagementHost(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client) : IAsyncDisposable
     {
+        internal string Address => client.BaseAddress!.ToString();
+        internal string Token(string? tenant, string subject)
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var payload = JsonSerializer.Serialize(new { iss = "registry-http-test", aud = HttpAudiences, sub = subject, principal_kind = tenant is null ? "user" : "service", tenant_id = tenant,
+                identity_revision = 0, roles = PlatformClaimedRoles, scope = "registry.write", session_id = Guid.CreateVersion7(), jti = Guid.CreateVersion7(), iat = now, nbf = now, exp = now + 300 });
+            return new JsonWebTokenHandler().CreateToken(payload, new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
+        }
+        internal async Task<HttpResponseMessage> Put(string path, object body, string? tenant, string? subject = "root")
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Put, path) { Content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json") };
+            request.Headers.Add("X-Tenant-Id", HttpTenantB);
+            if (subject is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token(tenant, subject));
+            return await client.SendAsync(request, Ct);
+        }
         // 请求头里的 X-Tenant-Id 指向另一个租户，证明管理面只认令牌里的租户。
         internal async Task<HttpResponseMessage> Get(string path, string tenant, string subject)
         {

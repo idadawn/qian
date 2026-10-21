@@ -1070,7 +1070,7 @@ CREATE TABLE plugin_qian_registry.scope_patches (
 -- RLS：tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')（Kun RLS 拦截器装配，ADR-004）
 ```
 
-`qian.registry` 在租户上下文建立时把该租户的行叠为运行中的最后一层，并发出 `registry/entry-mounted` / `registry/entry-disabled`。**租户挂载状态只存这张表**，不再有 v1 的 Enabled / Disabled 状态机（R34）；「买没买、能不能」留在 `qian.entitlement`：写入前调用 `ctx.Entitlement().CheckAsync(tenant, plugin)`，未授权返回 `NOT_ENTITLED`；`policy.required: true` 的组件拒绝写入 `disabled: true`。写入路径：管理面 `PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`（幂等，带 `revision`，§9.5）与 CLI `qian add --scope tenant:<id>`，两者由 S1-RT-029 交付（R86）。管理面 403 的 `pointer` 以逻辑文档 `registry/scope-patches.json` 为前缀：`#/n` 是该 scope patch 行按条目标识排序后的序号，无该行时指向文档根 `#`，被 profile 某层禁用时指向该层文件位置（R87）。注册表是运行态的真相源，组件文件夹是分发形态，二者共用校验器（R35）。
+`qian.registry` 在租户上下文建立时把该租户的行叠为运行中的最后一层，并发出 `registry/entry-mounted` / `registry/entry-disabled`。**租户挂载状态只存这张表**，不再有 v1 的 Enabled / Disabled 状态机（R34）；「买没买、能不能」留在 `qian.entitlement`：写入前调用 `ctx.Entitlement().CheckAsync(tenant, plugin)`，未授权返回 `NOT_ENTITLED`；`policy.required: true` 的组件拒绝写入 `disabled: true`。写入路径：管理面 `PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`（幂等，带 `revision`，§9.5）与 CLI `qian add --scope tenant:<id>`，两者已由 S1-RT-029 接入单条写入（R86）：正文为 `{revision, patch}`，目标租户只取路径；平台主体经超管旁路审计，租户需 `qian.registry:scope:write`（默认 Owner）且权益端口缺席时 fail-closed；CLI 每次只操作一个条目，过期修订 409 `CONFLICT` 不自动重试。管理面 403 的 `pointer` 以逻辑文档 `registry/scope-patches.json` 为前缀：`#/n` 是该 scope patch 行按条目标识排序后的序号，无该行时指向文档根 `#`，被 profile 某层禁用时指向该层文件位置（R87）。注册表是运行态的真相源，组件文件夹是分发形态，二者共用校验器（R35）。
 
 ### 7.7 S1 五个 profile 的组合包清单（R31 落位表）
 
@@ -1255,7 +1255,7 @@ npx qian@latest [--skill <name>]… [--agent <name>]… [--command <name>]… [-
 
 | 前缀 | 提供者 | 内容 |
 |---|---|---|
-| `/api/registry/*` | `qian.registry` | scope 视图 `GET /api/registry/scopes/{scopeKey}/entries[/{entryId}]`（R86；全树视图由 CLI `qian dump-config` 承担，S1 不设 HTTP 全树端点）、scope patch 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`，S1-RT-029）、lock 与来源；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 原因码（`PLUGIN_NOT_MOUNTED` 等四个，R32 / R48），其他调用者 404 |
+| `/api/registry/*` | `qian.registry` | scope 视图 `GET /api/registry/scopes/{scopeKey}/entries[/{entryId}]`（R86；全树视图由 CLI `qian dump-config` 承担，S1 不设 HTTP 全树端点）、scope patch 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`，已交付单条 `{revision, patch}` 条件写入、过期修订 409 `CONFLICT`，S1-RT-029）、lock 与来源；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 原因码（`PLUGIN_NOT_MOUNTED` 等四个，R32 / R48），其他调用者 404 |
 | `/api/lifecycle/*` | `qian.lifecycle` | `mount` / `unmount` / `reload`（声明式表面）、滚动重启请求、`/api/lifecycle/diagnostics`（Pending / Failed / 环路） |
 | `/api/capabilities/*` | `qian.capabilities` | 能力目录（工具、事件、实体），鉴权后按 scope 与权限过滤，响应为信封 `contracts/v0/capability-catalog`（`items`、`ttlMs`、`cacheScope: private`）；`/api/capabilities/openapi.json` 聚合 |
 | `POST /api/capabilities/{plugin}/{name}/invoke` | `qian.capabilities` | 通用执行入口（R75）：每次重做与目录同款的判定，不可见与不存在一样 404；请求体先按条目 `inputSchema`（JSON Schema 2020-12）校验，不符返回 400 `INPUT_INVALID`，`errors[]` 带输入 JSON Pointer；请求体读不成确定的 JSON 值（成员重名、孤立的 UTF-16 代理项、绝对值超过 decimal 范围约 7.9e28 的数）返回 400 `BAD_REQUEST`；写类能力可带 `Idempotency-Key`（UUID），同一主体、同一能力、同一键 24 小时内不再执行：回执保存了响应体时返回首次成功响应（`Idempotent-Replayed: true`），按回执策略（见表下）没有保存时返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；键相同而输入不同、或同键请求仍在执行，返回 409 `CONFLICT`，失败不留回执，只读能力（`sideEffect: read`）忽略该键；Agent 主体只见 `agent.expose: true` 的能力，S1 不开放 Agent 执行与 Actor 委托；ApiExplorer 不列此通用模板，`openapi.json` 为每个可见能力列出具体路径与 Schema |
