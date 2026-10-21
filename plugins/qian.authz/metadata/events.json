@@ -1,0 +1,16 @@
+[
+  {
+    "name": "authz/checking",
+    "mode": "waterfall",
+    "payload": "Qian.Authz.Abstractions.EnforcementRequest",
+    "result": "Qian.Authz.Abstractions.AuthorizationExplanation",
+    "source": "Qian.Authz.Abstractions.AuthzRuntimeEvents.Checking"
+  },
+  {
+    "name": "authz/decided",
+    "mode": "emit",
+    "payload": "Qian.Authz.Abstractions.AuthorizationDecision",
+    "result": "System.Object",
+    "source": "Qian.Authz.Abstractions.AuthzRuntimeEvents.Decided"
+  }
+]

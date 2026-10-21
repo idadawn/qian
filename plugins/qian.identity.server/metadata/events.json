@@ -1,0 +1,30 @@
+[
+  {
+    "name": "identity/member-disabled",
+    "mode": "parallel",
+    "payload": "Qian.Identity.Abstractions.MembershipChanged",
+    "result": "System.Collections.Generic.IReadOnlyList`1[[System.Object, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+    "source": "Qian.Identity.Abstractions.IdentityRuntimeEvents.MemberDisabled"
+  },
+  {
+    "name": "identity/signed-in",
+    "mode": "emit",
+    "payload": "Qian.Identity.Abstractions.Principal",
+    "result": "System.Object",
+    "source": "Qian.Identity.Abstractions.IdentityRuntimeEvents.SignedIn"
+  },
+  {
+    "name": "identity/signed-out",
+    "mode": "emit",
+    "payload": "Qian.Identity.Abstractions.SessionRevocation",
+    "result": "System.Object",
+    "source": "Qian.Identity.Abstractions.IdentityRuntimeEvents.SignedOut"
+  },
+  {
+    "name": "identity/signing-in",
+    "mode": "waterfall",
+    "payload": "Qian.Identity.Abstractions.LoginInput",
+    "result": "Qian.Identity.Abstractions.SignInResult",
+    "source": "Qian.Identity.Abstractions.IdentityRuntimeEvents.SigningIn"
+  }
+]

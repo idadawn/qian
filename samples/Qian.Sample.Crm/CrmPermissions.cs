@@ -5,6 +5,9 @@ using Qian.Surfaces;
 
 namespace Qian.Sample.Crm;
 
+[Permission("customer", "read")]
+[Permission("customer", "write")]
+[Permission("customer", "export", Risk = PermissionRisk.High, RequiresStepUp = true, Terminals = ["web"])]
 public static class CrmPermissions
 {
     public static PermissionCatalog Compile()

@@ -1,0 +1,59 @@
+{
+  "name": "tenant.scan-expired",
+  "description": "扫描到期租户并幂等进入宽限，供调度器 callback 调用。",
+  "sideEffect": "write",
+  "policyHint": "allow",
+  "idempotent": true,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "internal",
+  "costTier": "low",
+  "contractVersion": "v1",
+  "audit": true,
+  "agent": {
+    "expose": false,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.tenancy/tenant.scan-expired"
+  },
+  "requiredPermission": "qian.tenancy:tenant:scan",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "idempotencyKey": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "limit": {
+        "type": "integer",
+        "default": 100
+      }
+    },
+    "required": [
+      "idempotencyKey"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "expired": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "expired"
+    ],
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "4b65ab448d4cbb1412cb2e0ae7949bceb738bfce9445eb4d999b063359e5b04c",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.tenancy"
+  }
+}

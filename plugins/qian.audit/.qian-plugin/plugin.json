@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.audit",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.audit",
+  "description": "提供 qian.audit 的实际代码入口与配置契约；安装状态按组件验收门管理。",
   "author": {
     "name": "Qian"
   },
@@ -11,8 +11,13 @@
     "displayName": "audit",
     "category": "platform"
   },
-  "inject": [],
-  "provides": [],
+  "inject": [
+    "Data"
+  ],
+  "provides": [
+    "Audit",
+    "CommandAudit"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -23,5 +28,32 @@
     "global",
     "tenant"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Audit.AuditComponent, Qian.Audit",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.audit",
+        "source": "Qian.Audit.AuditComponent, Qian.Audit",
+        "sha256": "0edafc766c33850433e8d18c470aacc21575905f7c6cec48818f1c2825e8a28e",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
 }

@@ -1,4 +1,5 @@
 using Qian.Config;
+using Qian.Runtime;
 
 namespace Qian.Data;
 
@@ -9,6 +10,8 @@ public static class DataDialectContract
     public const string ExtensionPoint = "qian.data.dialect/v1";
     /// <summary>Data seam 的方言注册表子服务；具名注册写作 <c>Data.Dialects:&lt;name&gt;</c>（R38）。</summary>
     public const string Registry = "Data.Dialects";
+    /// <summary>方言组件向运行时具名提供的服务键；消费者遵循当前 scope 的可见性。</summary>
+    public static readonly ServiceKey Key = new(Registry);
 }
 
 /// <summary>连通测试的目标；不含凭据。由平台交给方言时，Host 已是通过出网检查的 IP 地址，方言不得再解析档案里的主机名。</summary>

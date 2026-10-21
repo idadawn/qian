@@ -1,4 +1,8 @@
 using System.Text.Json;
+using System.Reflection;
+using Microsoft.Extensions.Configuration;
+using Qian.Config.Apollo;
+using Qian.Plugin.Sdk;
 using Microsoft.Extensions.DependencyInjection;
 using Qian.Config;
 using Qian.Identity.Abstractions;
@@ -91,7 +95,12 @@ public sealed class OidcComponentTests
         Assert.Equal(["pc", "mobile"], descriptor.Terminals);
         Assert.Equal(ConnectorManifest.CallbackTemplate, descriptor.CallbackTemplate);
         using var file = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "plugins/qian.identity.connector.oidc/schemas/config.schema.json")));
-        Assert.True(JsonElement.DeepEquals(file.RootElement, descriptor.ConfigSchema));
+        var distributed = System.Text.Json.Nodes.JsonNode.Parse(file.RootElement.GetRawText())!.AsObject();
+        Assert.Equal("oidc", distributed["properties"]!["name"]!["const"]!.GetValue<string>());
+        distributed["properties"]!["name"]!.AsObject().Remove("const");
+        distributed.Remove("x-qian-generated");
+        using var adapter = JsonDocument.Parse(distributed.ToJsonString());
+        Assert.True(JsonElement.DeepEquals(adapter.RootElement, descriptor.ConfigSchema));
         var secret = descriptor.ConfigSchema.GetProperty("properties").GetProperty("clientSecret");
         Assert.True(secret.GetProperty(ConnectorManifest.SensitiveKeyword).GetBoolean());
         // 清单只描述配置结构，任何配置值（issuer、客户端标识、secretRef、密钥）都不进入描述。
@@ -103,7 +112,12 @@ public sealed class OidcComponentTests
     [Fact]
     public async Task 组件按scope注册_租户项遮蔽全局项_卸载即撤销()
     {
-        await using var services = new ServiceCollection().BuildServiceProvider();
+        await using var services = new ServiceCollection().AddQianConfiguration(new ConfigurationBuilder().Build()).BuildServiceProvider();
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "plugins/qian.identity.connector.oidc/.qian-plugin/plugin.json")));
+        var code = ((IComponentCodeMetadataFactory)Activator.CreateInstance(typeof(OidcConnectorComponent).Assembly.GetCustomAttribute<QianCodeMetadataAttribute>()!.FactoryType)!).Create();
+        var entry = Type.GetType(manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString()!, throwOnError: true)!;
+        Assert.Equal(code.Provides, manifest.RootElement.GetProperty("provides").EnumerateArray().Select(item => item.GetString()!));
+        Assert.Equal(code.RuntimeEntry, manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString());
         await using var runtime = new PluginLoader(services);
         using var op = new FakeOpenIdProvider(TimeProvider.System);
         var secrets = new FakeSecrets();
@@ -111,11 +125,12 @@ public sealed class OidcComponentTests
         Assert.Equal([IdentityDefinition.Key, ConfigDefinition.Key], new OidcConnectorPlugin().Inject);
         Assert.Equal([IdentityDefinition.Key], new OidcConnectorPlugin(secrets).Inject);
         await runtime.MountAsync([
+            new(new PluginEntry("config", "qian.config", "1.0.0", ScopeKey.Global, 0, Config(new { })), new ConfigurationPlugin(), [ConfigDefinition.Key]),
             new(new PluginEntry("identity", "qian.identity.server", "1.0.0", ScopeKey.Global, 0, Config(new { })), new StubIdentity(), [IdentityDefinition.Key]),
-            new(new PluginEntry("oidc", "qian.identity.connector.oidc", "1.0.0", ScopeKey.Global, 1, Config(Valid())), new OidcConnectorPlugin(secrets, op),
-                [new ServiceKey("Identity.Connectors:oidc")]),
-            new(new PluginEntry("oidc", "qian.identity.connector.oidc", "1.0.0", tenant, 1, Config(Valid(displayName: "租户自己的 IdP"))), new OidcConnectorPlugin(secrets, op),
-                [new ServiceKey("Identity.Connectors:oidc")]),
+            new(new PluginEntry("oidc", "qian.identity.connector.oidc", "1.0.0", ScopeKey.Global, 1, Config(Valid())), (IQianPlugin)Activator.CreateInstance(entry)!,
+                code.Provides.Select(name => new ServiceKey(name)).ToArray()),
+            new(new PluginEntry("oidc", "qian.identity.connector.oidc", "1.0.0", tenant, 1, Config(Valid(displayName: "租户自己的 IdP"))), (IQianPlugin)Activator.CreateInstance(entry)!,
+                code.Provides.Select(name => new ServiceKey(name)).ToArray()),
             new(new PluginEntry("bad", "qian.identity.connector.oidc", "1.0.0", ScopeKey.Global, 1, Config(Valid("plain-text-secret", name: "bad"))), new OidcConnectorPlugin(secrets, op),
                 [new ServiceKey("Identity.Connectors:bad")])], Ct);
         await runtime.WhenIdleAsync(Ct);
@@ -132,6 +147,11 @@ public sealed class OidcComponentTests
         await runtime.UnmountAsync("oidc", ScopeKey.Global, Ct);
         Assert.Null(global.IdentityConnectors().Find("oidc"));
         Assert.Empty(global.Scoped(tenant).IdentityConnectors().List());
+        await runtime.MountAsync([new(new PluginEntry("renamed", "qian.identity.connector.oidc", "1.0.0", ScopeKey.Global, 1, Config(Valid(name: "corporate"))),
+            (IQianPlugin)Activator.CreateInstance(entry)!, code.Provides.Select(name => new ServiceKey(name)).ToArray())], Ct);
+        Assert.Equal(PluginState.Failed, runtime.GetState("renamed", ScopeKey.Global));
+        Assert.Contains(Assert.IsType<QianErrorException>(runtime.GetFailure("renamed", ScopeKey.Global)).Error.Errors!, error => error.Pointer == "#/name");
+        Assert.Empty(global.IdentityConnectors().List());
     }
 
     private sealed class StubIdentity : IQianPlugin, IIdentityService

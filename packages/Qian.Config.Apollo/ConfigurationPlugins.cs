@@ -9,6 +9,7 @@ namespace Qian.Config.Apollo;
 
 /// <summary>标准配置适配器，借用宿主配置根；只撤销本组件拥有的服务登记。</summary>
 [QianPlugin("qian.config")]
+[QianConfigSchema(ComponentConfiguration.Schema)]
 public sealed class ConfigurationPlugin : IQianPlugin
 {
     /// <inheritdoc />
@@ -19,22 +20,17 @@ public sealed class ConfigurationPlugin : IQianPlugin
         ct.ThrowIfCancellationRequested();
         if (ctx.Scope != ScopeKey.Global || config.ValueKind != JsonValueKind.Object || config.EnumerateObject().Any())
             throw QianConfigurationExtensions.Invalid("qian.config");
-        // 与 Register 相同的三步直接写在 Apply 里：源生成器只从 Apply 本体派生 provides，上下文传给辅助方法即 QIANSDK002。
+        // 两个组件各自直接声明同一 Config 服务，生成器分别派生，不执行插件来猜测。
         var root = ctx.Services.GetRequiredService<IConfiguration>();
         ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
         ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
         return ValueTask.CompletedTask;
     }
-    // Apollo 适配器校验引导后复用同一注册；两处须保持一致。
-    internal static void Register(IPluginContext ctx)
-    {
-        var root = ctx.Services.GetRequiredService<IConfiguration>();
-        ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
-        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
-    }
 }
 
 /// <summary>Apollo 配置适配器；要求宿主已安装真实配置源，声明与引导不一致即拒绝挂载。</summary>
+[QianPlugin("qian.config.apollo")]
+[QianConfigSchema(ComponentConfiguration.ApolloSchema)]
 public sealed class ApolloConfigurationPlugin : IQianPlugin
 {
     /// <inheritdoc />
@@ -65,7 +61,9 @@ public sealed class ApolloConfigurationPlugin : IQianPlugin
             };
             if (!matches) throw QianConfigurationExtensions.Invalid("Apollo.config." + property.Name);
         }
-        ConfigurationPlugin.Register(ctx);
+        var root = ctx.Services.GetRequiredService<IConfiguration>();
+        ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
+        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
         return ValueTask.CompletedTask;
     }
 

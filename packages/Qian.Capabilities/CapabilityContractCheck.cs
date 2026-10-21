@@ -8,7 +8,7 @@ using Qian.Surfaces.Abstractions;
 namespace Qian.Capabilities;
 
 // 登记期与目录共用的能力契约检查：生成目录条目并预编译输入校验器，结果按契约实例缓存。登记期（SDK ProvideCapability）不合格即抛出；
-// 宿主未登记检查时，目录在这里才发现不合格的契约，只排除该能力并记一次告警，不让一个坏契约拖垮整个目录。
+// 目录读取仍对动态绑定做防御性检查：不合格项被排除并记一次告警；platform 宿主缺少登记期检查时已由组件入口拒绝挂载。
 internal sealed partial class CapabilityContractCheck(ISurfaceReader schemas, IToolContractHasher hasher, ILogger? logger = null) : ICapabilityContractCheck
 {
     private readonly ConditionalWeakTable<CapabilityContract, Outcome> _outcomes = new();

@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Reflection;
+using Qian.Plugin.Sdk;
 using Kun.Authorization;
 using Kun.Caching.Abstractions;
 using Kun.Caching.DependencyInjection;
@@ -201,10 +203,20 @@ public sealed partial class SuperadminBypassTests(PostgresFixture postgres, Redi
         var data = host.Services.GetRequiredService<IDataService>(); var catalog = Catalog(); await new PostgresPermissionCatalogStore(data).PutAsync(catalog, Ct);
         var registry = host.Services.GetRequiredService<IPermissionRegistry>(); using var lease = registry.Register(catalog.Version, catalog.Permissions);
         await using var runtime = new PluginLoader(host.Services); var consumer = new Consumer();
-        await runtime.MountAsync([Define("data", new DataPlugin(), [DataDefinition.Key]), Define("authz", new AuthzPlugin(), AuthzKeys, new { advancedMode = false }),
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(root!.FullName, "plugins/qian.authz/.qian-plugin/plugin.json")));
+        var code = ((IComponentCodeMetadataFactory)Activator.CreateInstance(typeof(AuthzComponent).Assembly.GetCustomAttribute<QianCodeMetadataAttribute>()!.FactoryType)!).Create();
+        var entryType = Type.GetType(manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString()!, throwOnError: true)!;
+        var component = (IQianPlugin)Activator.CreateInstance(entryType)!;
+        Assert.Equal(code.RuntimeEntry, manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString());
+        Assert.Equal(code.Provides, manifest.RootElement.GetProperty("provides").EnumerateArray().Select(item => item.GetString()!));
+        Assert.Equal(code.Inject, component.Inject.Select(key => key.Name));
+        await runtime.MountAsync([Define("data", new DataPlugin(), [DataDefinition.Key]), Define("authz", component, code.Provides.Select(name => new ServiceKey(name)).ToArray(), new { advancedMode = false }),
             Define("consumer", consumer, [])], Ct);
         Assert.Equal(PluginState.Ready, runtime.GetState("authz", ScopeKey.Global));
         var ctx = consumer.Context!;
+        foreach (var key in code.Provides) Assert.NotNull(ctx.TryInject<object>(new ServiceKey(key)));
         Assert.Same(registry, ctx.Inject<IPermissionRegistry>(AuthzDefinition.PermissionsKey)); Assert.Same(registry, ctx.Inject<IResourceTypeRegistry>(AuthzDefinition.ResourceTypesKey));
         using (tenant.BeginScope(A))
         {
@@ -223,6 +235,7 @@ public sealed partial class SuperadminBypassTests(PostgresFixture postgres, Redi
             Assert.Empty(fields.Readable); Assert.Empty(fields.Writable); Assert.Empty(fields.Masked);
         }
         await runtime.UnmountAsync("authz", ScopeKey.Global, Ct);
+        foreach (var key in code.Provides) Assert.Null(runtime.GetContext("data", ScopeKey.Global).TryInject<object>(new ServiceKey(key)));
         foreach (var (id, scope, config) in new (string, ScopeKey, object)[]
         {
             ("advanced", ScopeKey.Global, new { advancedMode = true }), ("bad-role", ScopeKey.Global, new { platformRole = "Bad-Role" }),

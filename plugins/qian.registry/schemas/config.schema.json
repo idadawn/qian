@@ -2,7 +2,8 @@
   "type": "object",
   "properties": {
     "store": {
-      "type": "string"
+      "type": "string",
+      "const": "pg"
     }
   },
   "additionalProperties": false,

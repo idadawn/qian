@@ -4,4 +4,7 @@
 
 清单的代码字段（inject、provides、runtime.form / entry）由 Qian.Plugin.Tool 从实际程序集同步，CI 检查两者不漂移；`runtime.nuget` 钉到私有源已发布的 `Qian.Config.Apollo` 版本与摘要。S1-RT-011 的 E2E 已用 `qian add config` 从私有源安装并运行该 Provider。
 
-本文件夹仍标记 x-skeleton（S1-RT-002 建立的配置骨架）：该任务的验收只移除 qian.data 的标记，本组件标记的去留记在 S1-RT-011 日志的建议裁决里。
+
+该组件已通过既有真实安装门，清单不再带 `x-skeleton`。
+
+配置 Schema 的真相源为 Provider 的 `ComponentConfiguration.Schema`，清单的 `runtime.configSchema` 与文件由工具同步，`check` 同时检查配置声明漂移。

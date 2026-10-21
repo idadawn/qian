@@ -35,3 +35,7 @@ Qian.Capabilities.GrpcContractPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx
 Qian.Capabilities.BufProtoCompatibilityProbe.CompareRuntimeDescriptorsAsync(System.ReadOnlyMemory<byte> baseline, System.ReadOnlyMemory<byte> candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ContractCompatibility!>
 Qian.Capabilities.QianCapabilitiesExtensions
 static Qian.Capabilities.QianCapabilitiesExtensions.AddQianCapabilities(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Qian.Capabilities.CapabilitiesComponent
+Qian.Capabilities.CapabilitiesComponent.CapabilitiesComponent() -> void
+Qian.Capabilities.CapabilitiesComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Capabilities.CapabilitiesComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
