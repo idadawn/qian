@@ -9,6 +9,8 @@ public static class ConfigDefinition
 {
     /// <summary>当前 scope 可见的配置服务键。</summary>
     public static readonly ServiceKey Key = new("Config");
+    /// <summary>读取平台配置当前值的权限点（PRD 7.8）；Schema 对已认证调用者可读，值须经授权执行端口判定，敏感键只回引用名。</summary>
+    public const string ValuesReadPermission = "qian.config:values:read";
     /// <summary>解析当前已挂载的配置 Provider。</summary>
     public static IConfigService Config(this IPluginContext context) => context.Inject<IConfigService>(Key);
     /// <summary>按当前插件的声明、审批与租户上下文解析，已解析值不能进入模型消息。</summary>
@@ -42,21 +44,30 @@ public static class ConfigErrors
         new Dictionary<string, string> { ["zh-CN"] = "缺少必要配置", ["en"] = "Required configuration missing" },
         new Dictionary<string, string> { ["zh-CN"] = "缺少必要配置项 {key}。", ["en"] = "Required setting {key} is missing." });
 
+    /// <summary>候选配置未通过校验：强类型配置重载或 Apollo 合并快照的自定义校验被拒绝，已保留上一份有效值。</summary>
+    public static readonly ErrorCode ReloadRejected = ErrorCode.Protocol("CONFIG_RELOAD_REJECTED", 500, "qian.config",
+        new Dictionary<string, string> { ["zh-CN"] = "配置候选值未通过校验", ["en"] = "Configuration candidate rejected" },
+        new Dictionary<string, string> { ["zh-CN"] = "配置节 {section} 的候选值未通过校验，已保留上一份有效值。", ["en"] = "Candidate values for section {section} were rejected; the last valid values are kept." });
+
     /// <summary>登记错误词汇；释放时只撤销本次登记。</summary>
     public static IDisposable Register(ErrorCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        var first = catalog.Register(BootstrapInvalid);
-        try { return new Registration(first, catalog.Register(RequiredMissing)); }
-        catch { first.Dispose(); throw; }
+        var handles = new List<IDisposable>();
+        try
+        {
+            foreach (var code in new[] { BootstrapInvalid, RequiredMissing, ReloadRejected }) handles.Add(catalog.Register(code));
+            return new Registration(handles);
+        }
+        catch { foreach (var handle in handles.AsEnumerable().Reverse()) handle.Dispose(); throw; }
     }
-    private sealed class Registration(IDisposable first, IDisposable second) : IDisposable
+    private sealed class Registration(List<IDisposable> handles) : IDisposable
     {
         private int _disposed;
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-            second.Dispose(); first.Dispose();
+            foreach (var handle in handles.AsEnumerable().Reverse()) handle.Dispose();
         }
     }
 }
