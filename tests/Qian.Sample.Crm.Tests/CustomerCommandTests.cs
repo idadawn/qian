@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using Qian.Audit;
 using Qian.Authz;
+using Qian.Authz.AspNetCore;
 using Qian.Data;
 using Qian.Plugin.Sdk;
 using Qian.Runtime;
@@ -254,8 +256,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
 
     private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
-        LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool identity = false)
+        LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool identity = false, bool grpc = false, Action<WebApplication>? map = null, double decisionLogSampling = 0)
     {
+        if (grpc && identity) throw new ArgumentException("gRPC 验收宿主不挂身份组件：身份签发者占用固定监听地址，h2c 需要独占端点。", nameof(grpc));
         if (lifecycle is { Management: true }) await PreparePlatformLogins(lifecycle);
         // 内置账号模型与协议面挂进同一个宿主：租户目录、配额与开通编排用的都是宿主里真实的 Tenancy。
         var identityParts = identity ? NewIdentityParts() : null;
@@ -275,7 +278,18 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         var evidence = new FailureEvidence(); var barrier = new ConcurrentSaveBarrier();
         var app = CrmCommandApplication.Build([], builder =>
         {
-            builder.WebHost.UseUrls(identityParts?.Issuer ?? "http://127.0.0.1:0"); builder.Logging.ClearProviders();
+            builder.Logging.ClearProviders();
+            // gRPC 验收：Kestrel 的明文 HTTP/2（h2c）须独占监听端点，所以 HTTP/1.1 与 gRPC 各开一个回环端口；授权 PEP 拦截器与 HTTP 端点共用执行端口。
+            if (grpc)
+            {
+                builder.WebHost.ConfigureKestrel(options =>
+                {
+                    options.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http1);
+                    options.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http2);
+                });
+                builder.Services.AddGrpc(options => options.AddQianAuthzInterceptor());
+            }
+            else builder.WebHost.UseUrls(identityParts?.Issuer ?? "http://127.0.0.1:0");
             if (identityParts is not null) ConfigureIdentity(builder, identityParts);
             if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
             if (lifecycle is not null) ConfigureLifecycle(builder, connection, lifecycle);
@@ -289,7 +303,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 ["ConnectionStrings:Crm"] = connection, ["ConnectionStrings:Authz"] = postgres.AppConnectionString,
                 ["ConnectionStrings:Tenancy"] = postgres.AppConnectionString, ["ConnectionStrings:Audit"] = postgres.AppConnectionString,
                 ["S2S:Issuer"] = Issuer, ["S2S:Audience"] = Audience, ["S2S:PublicJwks"] = publicJwks,
-                ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events
+                ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events,
+                // 决策审计采样：早于 S1-AZ-004 的用例按命令审计数断言链长，缺省不记放行判定（拒绝仍必记）；PEP 验收显式传 1。
+                ["Authz:DecisionLogSampling"] = decisionLogSampling.ToString(System.Globalization.CultureInfo.InvariantCulture)
             });
         }, lifecycle is null && !identity ? null : registrar =>
         {
@@ -349,6 +365,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             if (lifecycle is { Management: true }) MapSettingsRegistry(app);
             if (hooks) MapHookEntry(app);
             if (identityParts is not null) MapIdentity(app, identityParts);
+            map?.Invoke(app);
             await app.StartAsync(Ct);
             if (identityParts is not null) await MountIdentity(app, identityParts);
             if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);
@@ -359,8 +376,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 var decision = await app.Services.GetRequiredService<Kun.Authorization.IPermissionChecker>().CheckAsync(new Kun.Authorization.PermissionRequest(new Kun.Authorization.AuthorizationSubject(Writer, A, "service"), "qian.sample.crm:customer:write"), Ct);
                 Assert.True(decision.Allow, decision.Reason);
             }
-            var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
-            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role, connection, migrations, identityParts);
+            var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.ToArray();
+            Assert.Equal(grpc ? 2 : 1, addresses.Length);
+            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(addresses[0]) }, evidence, role, connection, migrations, grpc ? addresses[1] : null, identityParts);
         }
         catch { await app.DisposeAsync(); signing.Dispose(); identityParts?.Dispose(); throw; }
     }
@@ -403,9 +421,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
     }
 
     private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection, string migrations,
-        IdentityParts? identity = null) : IAsyncDisposable
+        string? grpcAddress = null, IdentityParts? identity = null) : IAsyncDisposable
     {
         internal WebApplication App => app;
+        // 只在 Start(grpc: true) 时存在：独立的 h2c 监听地址。
+        internal string GrpcAddress => grpcAddress ?? throw new InvalidOperationException("宿主未按 grpc: true 启动。");
         /// <summary>挂载了内置账号模型时的身份侧句柄；未挂载为 null。</summary>
         internal IdentityParts Identity => identity ?? throw new InvalidOperationException("该宿主没有挂载身份组件，Start 时传 identity: true。");
         internal RsaSecurityKey ManagementSigningKey => key;
@@ -426,12 +446,13 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token(tenant, "crm.read"));
             return Send(message);
         }
-        internal string Token(string? tenant, string scope, string? subject = null, string kind = "service", object? actor = null)
+        internal string Token(string? tenant, string scope, string? subject = null, string kind = "service", object? actor = null, long? identityRevision = null)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var id = Guid.CreateVersion7().ToString();
             var payload = new Dictionary<string, object?> { ["iss"] = Issuer, ["aud"] = new[] { Audience }, ["sub"] = subject ?? Writer, ["principal_kind"] = kind,
                 ["tenant_id"] = tenant, ["roles"] = DeclaredTokenRoles, ["scope"] = scope, ["session_id"] = id, ["jti"] = id, ["iat"] = now, ["nbf"] = now, ["exp"] = now + 60 };
             if (actor is not null) payload["act"] = actor;
+            if (identityRevision is not null) payload["identity_revision"] = identityRevision;
             return new JsonWebTokenHandler().CreateToken(JsonSerializer.Serialize(payload), new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
         }
         internal async Task<HttpResponseMessage> Send(HttpRequestMessage message)

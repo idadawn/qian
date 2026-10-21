@@ -27,5 +27,5 @@
     {"op":"request","id":"read-original","tenant":"a","method":"GET","path":"/api/customers/{one}","status":200,"same":"one","name":"Alpha"},
     {"op":"request","id":"final-list","tenant":"a","method":"GET","path":"/api/customers","status":200,"names":["Alpha","Beta","Gamma"]}
   ],
-  "final":{"customers":3,"outbox":3,"auditA":5,"auditB":0}
+  "final":{"customers":3,"outbox":3,"auditA":23,"auditB":4}
 }

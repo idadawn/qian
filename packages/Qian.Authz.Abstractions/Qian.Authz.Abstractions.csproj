@@ -6,6 +6,7 @@
   <ItemGroup>
     <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
     <PackageReference Include="Kun.Authorization" />
+    <PackageReference Include="Kun.EventBus.Abstractions" />
   </ItemGroup>
   <ItemGroup><InternalsVisibleTo Include="Qian.Plugin.Sdk" /><InternalsVisibleTo Include="Qian.Tenancy" /><InternalsVisibleTo Include="Qian.Authz" /></ItemGroup>
   <ItemGroup>

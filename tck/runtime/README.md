@@ -65,9 +65,9 @@ S1-RT-003 已合并并完成 `@idadawn/qian-runtime@0.1.0` 私有发布与逻辑
 
 ### T23 的真实 profile 宿主对照
 
-[profile-equivalence.json](profile-equivalence.json) 由 .NET 场景驱动和 [Node HTTP 消费者](profile-equivalence-client.mjs) 直接读取。两种客户端分别使用全新宿主和数据库状态，完成 minimal/dotnet、minimal/node、platform/dotnet、platform/node 四次执行。每次 16 个 HTTP 观测覆盖创建、幂等重放、冲突、列表、跨租户 404、权限/scope/非法租户输入拒绝、匿名拒绝、冻结/恢复，以及卸载 Authz 后的级联失效和重新挂载恢复。响应只归一化服务端生成的实体 ID 与请求 trace/instance，其余字段逐项相同；每次真库都留下 3 个客户/回执、3 条服务级 Outbox、5 条 A 租户审计、0 条 B 租户审计。
+[profile-equivalence.json](profile-equivalence.json) 由 .NET 场景驱动和 [Node HTTP 消费者](profile-equivalence-client.mjs) 直接读取。两种客户端分别使用全新宿主和数据库状态，完成 minimal/dotnet、minimal/node、platform/dotnet、platform/node 四次执行。每次 16 个 HTTP 观测覆盖创建、幂等重放、冲突、列表、跨租户 404、权限/scope/非法租户输入拒绝、匿名拒绝、冻结/恢复，以及卸载 Authz 后的级联失效和重新挂载恢复。响应只归一化服务端生成的实体 ID 与请求 trace/instance，其余字段逐项相同；每次真库都留下 3 个客户/回执、3 条服务级 Outbox、23 条 A 租户审计（5 条命令审计，其余为 HTTP 与命令 PEP 的决策日志，S1-AZ-004 起每次判定入链）、4 条 B 租户审计（全部为决策日志，含权限拒绝）。
 
-`ProfileModeAssembly` 在首次 Mount 之前调用实际 ProfileLoader。minimal 复用仓库交付的空组合包，经 profile patch 装入 Data、Events、Tenancy、RbacCommandPolicy、Audit、Crm 六个生产 Provider；platform 用 TCK 的实际组合包装入同样六个 Provider，另加真正 Registry/Capabilities，并启动数据库通知监听及 SDK 插件入口中间件。清单指向真实模块类型，inject/provides 与实际实现核对，所有叶节点须 Ready，拒绝 x-skeleton。两种模式的业务 Provider 类型必须完全相同，业务 handler 不含模式分支。平台额外验证 Registry 卸载后，虽然 Crm 仍 Ready，写入口仍返回 NOT_FOUND，数据库和审计不变；停止后整棵运行时树清空。
+`ProfileModeAssembly` 在首次 Mount 之前调用实际 ProfileLoader。minimal 复用仓库交付的空组合包，经 profile patch 装入 Data、Events、Tenancy、RbacCommandPolicy、Audit、Crm 六个生产 Provider；platform 用 TCK 的实际组合包装入同样六个 Provider，另加真正 Registry/Capabilities，并启动数据库通知监听及 SDK 插件入口中间件。清单指向真实模块类型，inject/provides 与实际实现核对，所有叶节点须 Ready，拒绝 x-skeleton。两种模式的业务 Provider 类型必须完全相同，业务 handler 不含模式分支。平台额外验证 Registry 卸载后，虽然 Crm 仍 Ready，写入口仍返回 NOT_FOUND，数据库不变、审计链上只多出 HTTP PEP 的放行决策日志（命令管道未执行，没有命令审计）；停止后整棵运行时树清空。
 
 这是 runtime TCK 所需的宿主组合，不是默认 platform 中全部 S1 产品模块或正式部署的验收。Node 在此是同场景 HTTP 消费者，业务 Provider 运行于 .NET；.NET/TS 运行时自身的注入、scope、事件、效果与表面语义由其余共用 TCK 独立验证。设置 `QIAN_PROFILE_EQUIVALENCE_REPORT` 可导出实际 Provider 类型及四份响应/数据库报告，dotnet CI 保存该文件。独立安装包、文件上传、真实交互式登录和完整平台产品交付仍按各自任务验收。
 

@@ -10,6 +10,7 @@ using Qian.Identity.Abstractions;
 using Qian.Lifecycle;
 using Qian.Registry;
 using Qian.Tenancy;
+using Qian.Authz.Abstractions;
 
 namespace Qian.Sample.Crm.Tests;
 
@@ -36,7 +37,7 @@ public sealed class IntegrationEventCatalogTests
         Assert.Same(typeof(LifecyclePluginActivated), declared[LifecycleEvents.PluginActivated]);
         Assert.Same(typeof(LifecycleTenantPluginUpgraded), declared[LifecycleEvents.TenantPluginUpgraded]);
         var services = new ServiceCollection();
-        services.AddKunEventBus(events => events.RegisterIdentityEvents().RegisterRecordEvents().RegisterCrmEvents().RegisterRegistryEvents().RegisterLifecycleEvents().RegisterTenancyEvents());
+        services.AddKunEventBus(events => events.RegisterIdentityEvents().RegisterRecordEvents().RegisterCrmEvents().RegisterRegistryEvents().RegisterLifecycleEvents().RegisterTenancyEvents().RegisterAuthzEvents());
         var catalog = IntegrationEventSchemas.Describe(services.BuildServiceProvider().GetRequiredService<IEventTypeRegistry>());
         Assert.Equal(declared.Keys, catalog.Select(item => item.Type));
         foreach (var item in catalog)

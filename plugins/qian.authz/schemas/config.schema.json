@@ -14,6 +14,13 @@
       "not": {
         "pattern": "[^a-z0-9_]"
       }
+    },
+    "decisionLogSampling": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1,
+      "description": "放行判定写入决策审计（decision_logs）的采样比例，0–1，缺省 1 全记；拒绝不受采样影响、必记（PRD 7.5）。"
     }
   },
   "additionalProperties": false,

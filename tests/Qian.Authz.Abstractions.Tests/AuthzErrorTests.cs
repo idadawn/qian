@@ -17,9 +17,9 @@ public sealed class AuthzErrorTests
         var catalog = ErrorCatalog.CreateDefault();
         var originalCount = catalog.Codes.Count;
         using var registration = AuthzErrors.Register(catalog);
-        Assert.Equal(originalCount + 4, catalog.Codes.Count);
+        Assert.Equal(originalCount + 6, catalog.Codes.Count);
         Assert.Same(PlatformErrors.AuthzDenied, AuthzErrors.Denied);
-        Assert.Equal(5, AuthzErrors.All.Select(e => e.Code).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(7, AuthzErrors.All.Select(e => e.Code).Distinct(StringComparer.Ordinal).Count());
         using var exported = JsonDocument.Parse(catalog.ExportJson());
         Assert.True(catalogSchema.Evaluate(exported.RootElement).IsValid);
         foreach (var code in AuthzErrors.All)

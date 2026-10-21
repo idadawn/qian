@@ -41,3 +41,5 @@ Qian.Authz.RbacPermissionChecker.ListEffectivePermissionsAsync(Kun.Authorization
 static Qian.Authz.AuthzPlugin.FromInstalledComponents() -> Qian.Authz.AuthzPlugin!
 Qian.Authz.DataScopeComposition
 static Qian.Authz.DataScopeComposition.ForResource(string! resource, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.RoleDataScope!>! roles) -> Qian.Authz.Abstractions.DataScopePlan!
+Qian.Authz.AuthzEventHandlers
+static Qian.Authz.AuthzEventHandlers.AddQianAuthzEvents(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!

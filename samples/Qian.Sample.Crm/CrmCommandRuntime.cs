@@ -30,7 +30,7 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
             Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey], TenancyConfiguration(services.GetRequiredService<IConfiguration>())),
             // 完整 Authz Provider：持久化并登记本应用 metadata 编译出的权限目录、注册命令 PEP、提供 ctx.Authz，并监听 tenant/provisioned 实例化默认角色。
             // 声明的 provides 只列 plugin.schema.json 服务键模式接受的两个键；Authz.Permissions 等其余端口由 Provider 额外提供，不进清单。
-            Define("authz", "qian.authz", new AuthzPlugin([catalog]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key]),
+            Define("authz", "qian.authz", new AuthzPlugin([catalog]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key], AuthzConfiguration(services.GetRequiredService<IConfiguration>())),
             Define("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]),
             Define("crm", "qian.sample.crm", new CrmPlugin(), [CrmDefinition.Key])];
         var assembly = services.GetService<ICrmRuntimeAssembly>();
@@ -68,6 +68,11 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
     {
         await _loader.DisposeAsync().ConfigureAwait(false); Interlocked.Exchange(ref _permissions, null)?.Dispose();
     }
+    // 决策审计采样（S1-AZ-004）：放行判定写入审计链的比例，缺省 1 全记；拒绝必记，不受此项影响。
+    internal static JsonElement AuthzConfiguration(IConfiguration configuration) => JsonSerializer.SerializeToElement(new
+    {
+        decisionLogSampling = configuration.GetValue<double?>("Authz:DecisionLogSampling") ?? 1d
+    });
     internal static JsonElement TenancyConfiguration(IConfiguration configuration) => JsonSerializer.SerializeToElement(new
     {
         resolver = new { mode = configuration["Tenancy:Resolver:Mode"] ?? "production", allowHeaderFallback = configuration.GetValue<bool>("Tenancy:Resolver:AllowHeaderFallback") },

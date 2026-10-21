@@ -190,3 +190,157 @@ static Qian.Authz.Abstractions.DataScopeRule.operator !=(Qian.Authz.Abstractions
 static Qian.Authz.Abstractions.DataScopeRule.operator ==(Qian.Authz.Abstractions.DataScopeRule? left, Qian.Authz.Abstractions.DataScopeRule? right) -> bool
 static Qian.Authz.Abstractions.RoleDataScope.operator !=(Qian.Authz.Abstractions.RoleDataScope? left, Qian.Authz.Abstractions.RoleDataScope? right) -> bool
 static Qian.Authz.Abstractions.RoleDataScope.operator ==(Qian.Authz.Abstractions.RoleDataScope? left, Qian.Authz.Abstractions.RoleDataScope? right) -> bool
+Qian.Authz.Abstractions.AuthorizationDecision
+Qian.Authz.Abstractions.AuthorizationDecision.Allow.get -> bool
+Qian.Authz.Abstractions.AuthorizationDecision.AuthorizationDecision(System.Guid id, Qian.Authz.Abstractions.EnforcementRequest! request, Qian.Authz.Abstractions.AuthorizationExplanation! explanation, bool bypass, bool logged, System.DateTimeOffset decidedAt) -> void
+Qian.Authz.Abstractions.AuthorizationDecision.Bypass.get -> bool
+Qian.Authz.Abstractions.AuthorizationDecision.DecidedAt.get -> System.DateTimeOffset
+Qian.Authz.Abstractions.AuthorizationDecision.Explanation.get -> Qian.Authz.Abstractions.AuthorizationExplanation!
+Qian.Authz.Abstractions.AuthorizationDecision.Id.get -> System.Guid
+Qian.Authz.Abstractions.AuthorizationDecision.Logged.get -> bool
+Qian.Authz.Abstractions.AuthorizationDecision.Reason.get -> string!
+Qian.Authz.Abstractions.AuthorizationDecision.Request.get -> Qian.Authz.Abstractions.EnforcementRequest!
+Qian.Authz.Abstractions.AuthzEnforcement
+Qian.Authz.Abstractions.AuthzEventIds
+Qian.Authz.Abstractions.AuthzEventRegistration
+Qian.Authz.Abstractions.AuthzGrantChangedEvent
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.AuthzGrantChangedEvent(long AuthzRevision, string! SubjectType, string! SubjectId, string! RoleCode, string! Change) -> void
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.Change.get -> string!
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.Change.init -> void
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.Deconstruct(out long AuthzRevision, out string! SubjectType, out string! SubjectId, out string! RoleCode, out string! Change) -> void
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.Equals(Qian.Authz.Abstractions.AuthzGrantChangedEvent? other) -> bool
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.RoleCode.get -> string!
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.RoleCode.init -> void
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.SubjectId.get -> string!
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.SubjectId.init -> void
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.SubjectType.get -> string!
+Qian.Authz.Abstractions.AuthzGrantChangedEvent.SubjectType.init -> void
+Qian.Authz.Abstractions.AuthzIntegrationEvent
+Qian.Authz.Abstractions.AuthzIntegrationEvent.AuthzIntegrationEvent(Qian.Authz.Abstractions.AuthzIntegrationEvent! original) -> void
+Qian.Authz.Abstractions.AuthzIntegrationEvent.AuthzIntegrationEvent(long AuthzRevision) -> void
+Qian.Authz.Abstractions.AuthzIntegrationEvent.AuthzRevision.get -> long
+Qian.Authz.Abstractions.AuthzIntegrationEvent.AuthzRevision.init -> void
+Qian.Authz.Abstractions.AuthzIntegrationEvent.Deconstruct(out long AuthzRevision) -> void
+Qian.Authz.Abstractions.AuthzRoleChangedEvent
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.AuthzRoleChangedEvent(long AuthzRevision, string! RoleCode, string! Change, string? PluginId, string? PluginVersion) -> void
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.Change.get -> string!
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.Change.init -> void
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.Deconstruct(out long AuthzRevision, out string! RoleCode, out string! Change, out string? PluginId, out string? PluginVersion) -> void
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.Equals(Qian.Authz.Abstractions.AuthzRoleChangedEvent? other) -> bool
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.PluginId.get -> string?
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.PluginId.init -> void
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.PluginVersion.get -> string?
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.PluginVersion.init -> void
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.RoleCode.get -> string!
+Qian.Authz.Abstractions.AuthzRoleChangedEvent.RoleCode.init -> void
+Qian.Authz.Abstractions.AuthzRuntimeEvents
+Qian.Authz.Abstractions.EnforcementRequest
+Qian.Authz.Abstractions.EnforcementRequest.<Clone>$() -> Qian.Authz.Abstractions.EnforcementRequest!
+Qian.Authz.Abstractions.EnforcementRequest.Channel.get -> string!
+Qian.Authz.Abstractions.EnforcementRequest.Channel.init -> void
+Qian.Authz.Abstractions.EnforcementRequest.EntryPoint.get -> string!
+Qian.Authz.Abstractions.EnforcementRequest.EntryPoint.init -> void
+Qian.Authz.Abstractions.EnforcementRequest.Equals(Qian.Authz.Abstractions.EnforcementRequest? other) -> bool
+Qian.Authz.Abstractions.EnforcementRequest.Permission.get -> string?
+Qian.Authz.Abstractions.EnforcementRequest.Permission.init -> void
+Qian.Authz.Abstractions.EnforcementRequest.Resource.get -> string?
+Qian.Authz.Abstractions.EnforcementRequest.Resource.init -> void
+Qian.Authz.Abstractions.EnforcementRequest.Subject.get -> Qian.Authz.Abstractions.EnforcementSubject!
+Qian.Authz.Abstractions.EnforcementRequest.Subject.init -> void
+Qian.Authz.Abstractions.EnforcementRequest.Target.get -> string!
+Qian.Authz.Abstractions.EnforcementRequest.Target.init -> void
+Qian.Authz.Abstractions.EnforcementSubject
+Qian.Authz.Abstractions.EnforcementSubject.<Clone>$() -> Qian.Authz.Abstractions.EnforcementSubject!
+Qian.Authz.Abstractions.EnforcementSubject.Deconstruct(out string! Id, out string? TenantId, out string! Kind, out long? IdentityRevision, out bool Delegated) -> void
+Qian.Authz.Abstractions.EnforcementSubject.Delegated.get -> bool
+Qian.Authz.Abstractions.EnforcementSubject.Delegated.init -> void
+Qian.Authz.Abstractions.EnforcementSubject.EnforcementSubject(string! Id, string? TenantId, string! Kind, long? IdentityRevision = null, bool Delegated = false) -> void
+Qian.Authz.Abstractions.EnforcementSubject.Equals(Qian.Authz.Abstractions.EnforcementSubject? other) -> bool
+Qian.Authz.Abstractions.EnforcementSubject.Id.get -> string!
+Qian.Authz.Abstractions.EnforcementSubject.Id.init -> void
+Qian.Authz.Abstractions.EnforcementSubject.IdentityRevision.get -> long?
+Qian.Authz.Abstractions.EnforcementSubject.IdentityRevision.init -> void
+Qian.Authz.Abstractions.EnforcementSubject.Kind.get -> string!
+Qian.Authz.Abstractions.EnforcementSubject.Kind.init -> void
+Qian.Authz.Abstractions.EnforcementSubject.TenantId.get -> string?
+Qian.Authz.Abstractions.EnforcementSubject.TenantId.init -> void
+Qian.Authz.Abstractions.IAuthzEnforcement
+Qian.Authz.Abstractions.IAuthzEnforcement.EnforceAsync(Qian.Authz.Abstractions.EnforcementRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Authz.Abstractions.AuthorizationDecision!>
+Qian.Authz.Abstractions.RoleBinding
+Qian.Authz.Abstractions.RoleBinding.<Clone>$() -> Qian.Authz.Abstractions.RoleBinding!
+Qian.Authz.Abstractions.RoleBinding.Actor.get -> string!
+Qian.Authz.Abstractions.RoleBinding.Actor.init -> void
+Qian.Authz.Abstractions.RoleBinding.Deconstruct(out string! RoleCode, out string! SubjectType, out string! SubjectId, out string! Actor, out Qian.Runtime.ScopeKey? Scope, out System.DateTimeOffset? ValidFrom, out System.DateTimeOffset? ValidTo) -> void
+Qian.Authz.Abstractions.RoleBinding.Equals(Qian.Authz.Abstractions.RoleBinding? other) -> bool
+Qian.Authz.Abstractions.RoleBinding.RoleBinding(string! RoleCode, string! SubjectType, string! SubjectId, string! Actor, Qian.Runtime.ScopeKey? Scope = null, System.DateTimeOffset? ValidFrom = null, System.DateTimeOffset? ValidTo = null) -> void
+Qian.Authz.Abstractions.RoleBinding.RoleCode.get -> string!
+Qian.Authz.Abstractions.RoleBinding.RoleCode.init -> void
+Qian.Authz.Abstractions.RoleBinding.Scope.get -> Qian.Runtime.ScopeKey?
+Qian.Authz.Abstractions.RoleBinding.Scope.init -> void
+Qian.Authz.Abstractions.RoleBinding.SubjectId.get -> string!
+Qian.Authz.Abstractions.RoleBinding.SubjectId.init -> void
+Qian.Authz.Abstractions.RoleBinding.SubjectType.get -> string!
+Qian.Authz.Abstractions.RoleBinding.SubjectType.init -> void
+Qian.Authz.Abstractions.RoleBinding.ValidFrom.get -> System.DateTimeOffset?
+Qian.Authz.Abstractions.RoleBinding.ValidFrom.init -> void
+Qian.Authz.Abstractions.RoleBinding.ValidTo.get -> System.DateTimeOffset?
+Qian.Authz.Abstractions.RoleBinding.ValidTo.init -> void
+abstract Qian.Authz.Abstractions.AuthzIntegrationEvent.<Clone>$() -> Qian.Authz.Abstractions.AuthzIntegrationEvent!
+const Qian.Authz.Abstractions.AuthzEnforcement.CommandEntryPoint = "command" -> string!
+const Qian.Authz.Abstractions.AuthzEnforcement.DecisionCapabilityId = "qian.authz/decision" -> string!
+const Qian.Authz.Abstractions.AuthzEnforcement.GrpcEntryPoint = "grpc" -> string!
+const Qian.Authz.Abstractions.AuthzEnforcement.HttpEntryPoint = "http" -> string!
+const Qian.Authz.Abstractions.AuthzEventIds.GrantChanged = "authz.grant.changed.v1" -> string!
+const Qian.Authz.Abstractions.AuthzEventIds.RoleChanged = "authz.role.changed.v1" -> string!
+override Qian.Authz.Abstractions.AuthzGrantChangedEvent.<Clone>$() -> Qian.Authz.Abstractions.AuthzGrantChangedEvent!
+override Qian.Authz.Abstractions.AuthzGrantChangedEvent.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.AuthzGrantChangedEvent.GetHashCode() -> int
+override Qian.Authz.Abstractions.AuthzIntegrationEvent.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.AuthzIntegrationEvent.GetHashCode() -> int
+override Qian.Authz.Abstractions.AuthzRoleChangedEvent.<Clone>$() -> Qian.Authz.Abstractions.AuthzRoleChangedEvent!
+override Qian.Authz.Abstractions.AuthzRoleChangedEvent.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.AuthzRoleChangedEvent.GetHashCode() -> int
+override Qian.Authz.Abstractions.EnforcementRequest.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.EnforcementRequest.GetHashCode() -> int
+override Qian.Authz.Abstractions.EnforcementRequest.ToString() -> string!
+override Qian.Authz.Abstractions.EnforcementSubject.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.EnforcementSubject.GetHashCode() -> int
+override Qian.Authz.Abstractions.EnforcementSubject.ToString() -> string!
+override Qian.Authz.Abstractions.RoleBinding.Equals(object? obj) -> bool
+override Qian.Authz.Abstractions.RoleBinding.GetHashCode() -> int
+override Qian.Authz.Abstractions.RoleBinding.ToString() -> string!
+override sealed Qian.Authz.Abstractions.AuthzGrantChangedEvent.Equals(Qian.Authz.Abstractions.AuthzIntegrationEvent? other) -> bool
+override sealed Qian.Authz.Abstractions.AuthzIntegrationEvent.ToString() -> string!
+override sealed Qian.Authz.Abstractions.AuthzRoleChangedEvent.Equals(Qian.Authz.Abstractions.AuthzIntegrationEvent? other) -> bool
+static Qian.Authz.Abstractions.AuthzEnforcement.Enforcement(this Qian.Runtime.IPluginContext! context) -> Qian.Authz.Abstractions.IAuthzEnforcement!
+static Qian.Authz.Abstractions.AuthzEventIds.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static Qian.Authz.Abstractions.AuthzEventRegistration.RegisterAuthzEvents(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
+static Qian.Authz.Abstractions.AuthzGrantChangedEvent.operator !=(Qian.Authz.Abstractions.AuthzGrantChangedEvent? left, Qian.Authz.Abstractions.AuthzGrantChangedEvent? right) -> bool
+static Qian.Authz.Abstractions.AuthzGrantChangedEvent.operator ==(Qian.Authz.Abstractions.AuthzGrantChangedEvent? left, Qian.Authz.Abstractions.AuthzGrantChangedEvent? right) -> bool
+static Qian.Authz.Abstractions.AuthzIntegrationEvent.operator !=(Qian.Authz.Abstractions.AuthzIntegrationEvent? left, Qian.Authz.Abstractions.AuthzIntegrationEvent? right) -> bool
+static Qian.Authz.Abstractions.AuthzIntegrationEvent.operator ==(Qian.Authz.Abstractions.AuthzIntegrationEvent? left, Qian.Authz.Abstractions.AuthzIntegrationEvent? right) -> bool
+static Qian.Authz.Abstractions.AuthzRoleChangedEvent.operator !=(Qian.Authz.Abstractions.AuthzRoleChangedEvent? left, Qian.Authz.Abstractions.AuthzRoleChangedEvent? right) -> bool
+static Qian.Authz.Abstractions.AuthzRoleChangedEvent.operator ==(Qian.Authz.Abstractions.AuthzRoleChangedEvent? left, Qian.Authz.Abstractions.AuthzRoleChangedEvent? right) -> bool
+static Qian.Authz.Abstractions.EnforcementRequest.operator !=(Qian.Authz.Abstractions.EnforcementRequest? left, Qian.Authz.Abstractions.EnforcementRequest? right) -> bool
+static Qian.Authz.Abstractions.EnforcementRequest.operator ==(Qian.Authz.Abstractions.EnforcementRequest? left, Qian.Authz.Abstractions.EnforcementRequest? right) -> bool
+static Qian.Authz.Abstractions.EnforcementSubject.operator !=(Qian.Authz.Abstractions.EnforcementSubject? left, Qian.Authz.Abstractions.EnforcementSubject? right) -> bool
+static Qian.Authz.Abstractions.EnforcementSubject.operator ==(Qian.Authz.Abstractions.EnforcementSubject? left, Qian.Authz.Abstractions.EnforcementSubject? right) -> bool
+static Qian.Authz.Abstractions.RoleBinding.operator !=(Qian.Authz.Abstractions.RoleBinding? left, Qian.Authz.Abstractions.RoleBinding? right) -> bool
+static Qian.Authz.Abstractions.RoleBinding.operator ==(Qian.Authz.Abstractions.RoleBinding? left, Qian.Authz.Abstractions.RoleBinding? right) -> bool
+static readonly Qian.Authz.Abstractions.AuthzEnforcement.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Authz.Abstractions.AuthzErrors.LastAdministratorLockout -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Authz.Abstractions.AuthzErrors.ScopeMismatch -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Authz.Abstractions.AuthzRuntimeEvents.Checking -> Qian.Runtime.QianEvent<Qian.Authz.Abstractions.EnforcementRequest!, Qian.Authz.Abstractions.AuthorizationExplanation!>!
+static readonly Qian.Authz.Abstractions.AuthzRuntimeEvents.Decided -> Qian.Runtime.QianEvent<Qian.Authz.Abstractions.AuthorizationDecision!, object?>!
+virtual Qian.Authz.Abstractions.AuthzIntegrationEvent.EqualityContract.get -> System.Type!
+virtual Qian.Authz.Abstractions.AuthzIntegrationEvent.Equals(Qian.Authz.Abstractions.AuthzIntegrationEvent? other) -> bool
+virtual Qian.Authz.Abstractions.AuthzIntegrationEvent.PrintMembers(System.Text.StringBuilder! builder) -> bool
+Qian.Authz.Abstractions.ITenantRoleGrant.BindAsync(Qian.Authz.Abstractions.RoleBinding! binding, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Authz.Abstractions.PermissionEnforcedInHandlerAttribute
+Qian.Authz.Abstractions.PermissionEnforcedInHandlerAttribute.PermissionEnforcedInHandlerAttribute(string! reason) -> void
+Qian.Authz.Abstractions.PermissionEnforcedInHandlerAttribute.Reason.get -> string!
+Qian.Authz.Abstractions.EnforcementRequest.Deconstruct(out Qian.Authz.Abstractions.EnforcementSubject! Subject, out string? Permission, out string? Resource, out string! Channel, out string! EntryPoint, out string! Target, out System.Data.Common.DbTransaction? Transaction) -> void
+Qian.Authz.Abstractions.EnforcementRequest.EnforcementRequest(Qian.Authz.Abstractions.EnforcementSubject! Subject, string? Permission, string? Resource, string! Channel, string! EntryPoint, string! Target, System.Data.Common.DbTransaction? Transaction = null) -> void
+Qian.Authz.Abstractions.EnforcementRequest.Transaction.get -> System.Data.Common.DbTransaction?
+Qian.Authz.Abstractions.EnforcementRequest.Transaction.init -> void
+const Qian.Authz.Abstractions.AuthzEnforcement.AuditUnavailable = "audit_unavailable" -> string!

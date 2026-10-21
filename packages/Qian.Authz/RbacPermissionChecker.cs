@@ -56,4 +56,9 @@ public sealed class RbacPermissionChecker(IDataService data, ITenantContext tena
     {
         ArgumentNullException.ThrowIfNull(request); return _evaluator.EvaluateAsync(request, cancellationToken);
     }
+    // PEP 从已验证令牌传入 identity_revision：同一求值路径，只把它并入快照键。
+    internal ValueTask<AuthorizationExplanation> ExplainDetailedAsync(PermissionRequest request, long? identityRevision, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request); return _evaluator.EvaluateAsync(request, identityRevision, cancellationToken);
+    }
 }

@@ -10,3 +10,7 @@
 - 任何改变角色、绑定、授权或策略安装的写入都必须走 `PostgresTenantRoleStore.Write`，与变更同事务递增租户授权修订；绕开它会让各宿主继续命中旧快照。快照只缓存角色与授权，有效期、活动登记与 step-up / 终端约束必须留在每次判定时求值。
 - `tenant/provisioned` 监听只接受 qian.tenancy 在目标租户 scope 派发、主体即该租户的通知；开通只建内置角色与尚未安装组件的默认策略，不绑定主体，也不升级已装组件（升级归 Lifecycle）。
 - 有效权限列表（me/permissions）必须与 Check 走同一求值路径，不另写判定；step-up / 终端受限的权限点照样列出并给出拒绝原因。
+- 三处 PEP（HTTP、gRPC、命令管道）只经 `IAuthzEnforcement` 执行；不要在适配器或命令策略里另写判定，也不要绕过决策审计：拒绝必记、放行按 `decisionLogSampling` 采样，审计不可用或写不成一律拒绝。平台主体只走显式旁路；主体带租户而上下文为空是装配错误（抛错），不是拒绝。
+- identity_revision 下限（`subject_identity_revisions`）每次判定读库，不要把它放进 Kun.Caching；未携带修订的令牌不比对。判定快照键的第四段是令牌修订。
+- 任何授权写入都经 `Write` 并登记 `AuthzChange`：新的变更类型要同时进 `AuthzChangeHandler` 与 `Qian.Authz.Abstractions` 的事件记录；宿主缺 `RegisterAuthzEvents` 装载失败、缺 `AddQianAuthzEvents` 写入回滚，不要为了绕过而静默吞掉。
+- 两条守卫不可放宽：绑定 Scope 只能是租户本身（子作用域 / 别的租户 → `AUTHZ_SCOPE_MISMATCH`）；最后一个有效的 `tenant.owner` / `tenant.admin` 绑定不可撤销或加有效期上限（→ `AUTHZ_LAST_ADMIN_LOCKOUT`）。
