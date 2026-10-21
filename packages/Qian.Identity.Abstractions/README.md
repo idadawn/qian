@@ -4,13 +4,23 @@
 
 ## 装配位置
 
-所有 profile 都可引用 Definition。`IdentityDefinition.Key` 拥有 `Identity` 服务键，`ctx.Identity()` 按当前 scope 注入 `IIdentityService`；协议 Provider 已由 [Qian.Identity.Server](../Qian.Identity.Server/README.md) 提供，账号与会话业务继续由 IDP-003/004 接入；RP Provider `.Client` 仍由后续任务提供。连接器通过 `IIdentityConnectorRegistry.Register` 挂载，释放句柄交给 `ctx.Effect`，同名独占与 scope 遮蔽由 Provider 遵守。
+所有 profile 都可引用 Definition。`IdentityDefinition.Key` 拥有 `Identity` 服务键，`ctx.Identity()` 按当前 scope 注入 `IIdentityService`；协议 Provider 与内置的 Person / Membership 账号模型、统一登录流水线已由 [Qian.Identity.Server](../Qian.Identity.Server/README.md) 提供（S1-IDP-002 / 003），会话中心由 IDP-004 接入；RP Provider `.Client` 仍由后续任务提供。连接器通过 `IIdentityConnectorRegistry.Register` 挂载，释放句柄交给 `ctx.Effect`，同名独占与 scope 遮蔽由 Provider 遵守。
 
 `qian add identity` 安装的是组件与所选 Provider，本包不自行创建身份服务。扩展只需依赖 Definition 即可调用当前主体、Person/Membership 投影、会话与连接器目录。
 
 ## 框架依赖
 
 直接依赖 `Qian.Runtime` 与 `Kun.EventBus.Abstractions`，复用原命名空间下的稳定 `[IntegrationEventId]`、事件注册端口与源生成 `JsonTypeInfo` 重载。该框架包只依赖零外部依赖的 Kun.Core，身份契约不再经事件入口传递引入 Redis、broker 或后台发布器。全部 Kun 包版本仍统一取根目录 KunVersion。
+
+## 账号与登录端口
+
+内置 Provider 额外提供三个端口，服务键在 `IdentityDefinition` 上，`ctx.IdentityAccounts()` / `ctx.IdentitySignIn()` / `ctx.IdentityFactors()` 按当前 scope 注入：
+
+- `IIdentityAccounts`：创建 Person（多标识，初始密码，可选平台资格）、按标识查找、在当前租户建立成员（经租户配额判定，幂等）、绑定 / 解绑 / 换绑标识、自助改密、运营重置密码、状态变更、外部身份绑定。`sub`（Person.Id）创建后永不改写；解绑最后一个已验证标识返回结构化的 `LAST_VERIFIED_IDENTIFIER`。返回值只含掩码后的标识。
+- `ISignInPipeline`：`SignInAsync(LoginInput, LoginContext)`、`SelectAsync`（用 5 分钟选择令牌换具体 Membership 或平台身份，切换租户同样走这里）、`ChangeInitialPasswordAsync`、`BeginSwitchAsync`。结果 `SignInResult` 的 `Status` 为 `Authenticated`（带 `AccountSession`）/ `SelectionRequired`（带票据与可选身份）/ `PasswordChangeRequired` / `Failed`（带 `QianError`，锁定时带 `RetryAfter`）。所有登录方式构造同一个 `LoginInput`，临时证明（`AuthenticationProof`）使用后由调用方释放。
+- `IAuthenticatorFactorRegistry`：认证因子注册表，同名独占、可撤销；内置的 `password` 由身份 Provider 占用，短信 OTP、TOTP 由各自组件注册。
+
+`IdentityErrors` 是身份领域稳定错误码的唯一定义处，由 Provider 在挂载时登记到 `ErrorCatalog`。
 
 ## claim 边界
 
@@ -33,7 +43,7 @@
 
 ## 已知限制与延期项
 
-本包仅契约；OpenIddict 协议服务的实现与验收见 Qian.Identity.Server 主文档。它不代表账号密码、多租户选择、外壳 SSO、连接器、三因子认证或完整会话失效链路已实现／上线；这些业务按后续 IDP 任务继续交付。
+本包仅契约；协议服务与账号模型的实现与验收见 Qian.Identity.Server 主文档。它不代表外壳 SSO、连接器、第二因子（TOTP / 短信）或完整会话失效链路（Redis 索引、强制下线）已实现／上线；这些业务按 IDP-004 至 IDP-007 继续交付。
 
 
 ## 授权主体类型透传

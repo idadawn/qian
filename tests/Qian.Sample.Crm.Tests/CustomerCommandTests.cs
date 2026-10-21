@@ -254,9 +254,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
 
     private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
-        LifecyclePlatform? lifecycle = null, bool contractExclusion = false)
+        LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool identity = false)
     {
         if (lifecycle is { Management: true }) await PreparePlatformLogins(lifecycle);
+        // 内置账号模型与协议面挂进同一个宿主：租户目录、配额与开通编排用的都是宿主里真实的 Tenancy。
+        var identityParts = identity ? NewIdentityParts() : null;
         var platform = capabilities || lifecycle is not null || runtimeProfile == "platform";
         var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
         var migrator = "qian_cap_owner_" + suffix;
@@ -273,7 +275,8 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         var evidence = new FailureEvidence(); var barrier = new ConcurrentSaveBarrier();
         var app = CrmCommandApplication.Build([], builder =>
         {
-            builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
+            builder.WebHost.UseUrls(identityParts?.Issuer ?? "http://127.0.0.1:0"); builder.Logging.ClearProviders();
+            if (identityParts is not null) ConfigureIdentity(builder, identityParts);
             if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
             if (lifecycle is not null) ConfigureLifecycle(builder, connection, lifecycle);
             if (humanOnlyProbe is not null) PreviewAgentAuthorization(builder);
@@ -288,14 +291,22 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 ["S2S:Issuer"] = Issuer, ["S2S:Audience"] = Audience, ["S2S:PublicJwks"] = publicJwks,
                 ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events
             });
-        }, lifecycle is null ? null : registrar => registrar.RegisterRegistryEvents().RegisterLifecycleEvents(),
-            lifecycle is null ? null : mediator => mediator.AddQianRegistryEvents().AddQianLifecycleEvents());
+        }, lifecycle is null && !identity ? null : registrar =>
+        {
+            if (lifecycle is not null) registrar.RegisterRegistryEvents().RegisterLifecycleEvents();
+            if (identity) Qian.Identity.Abstractions.IdentityEventRegistration.RegisterIdentityEvents(registrar);
+        }, lifecycle is null && !identity ? null : mediator =>
+        {
+            if (lifecycle is not null) mediator.AddQianRegistryEvents().AddQianLifecycleEvents();
+            if (identity) Qian.Identity.Server.IdentityEventHandlers.AddQianIdentityEvents(mediator);
+        });
         try
         {
             using (var scope = app.Services.CreateScope())
             {
                 var schemas = new[] { CrmDbContext.Schema, AuthzDbContext.Schema, TenancyDbContext.Schema, AuditDbContext.Schema };
                 if (platform) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema, Qian.Capabilities.CapabilitiesDbContext.Schema, Qian.Lifecycle.LifecycleDbContext.Schema];
+                if (identity) schemas = [.. schemas, Qian.Identity.Server.IdentityDbContext.Schema];
                 var sql = string.Join('\n', schemas.Select(schema => "DROP SCHEMA IF EXISTS " + schema + " CASCADE;"));
                 sql += scope.ServiceProvider.GetRequiredService<CrmDbContext>().Database.GenerateCreateScript();
                 sql += scope.ServiceProvider.GetRequiredService<AuthzDbContext>().Database.GenerateCreateScript();
@@ -303,6 +314,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 sql += scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.GenerateCreateScript();
                 // 能力上下文随包提供迁移，下面经迁移器建表，不用 GenerateCreateScript。
                 if (platform) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript();
+                if (identity) sql += IdentitySchemaSql(scope.ServiceProvider);
                 await Admin(sql);
                 if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                 await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
@@ -336,7 +348,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             if (lifecycle is not null) MapLifecycle(app);
             if (lifecycle is { Management: true }) MapSettingsRegistry(app);
             if (hooks) MapHookEntry(app);
+            if (identityParts is not null) MapIdentity(app, identityParts);
             await app.StartAsync(Ct);
+            if (identityParts is not null) await MountIdentity(app, identityParts);
             if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);
             if (lifecycle is not null) await AttachLifecycle(app, lifecycle);
             if (hooks) await AttachHooks(app);
@@ -346,9 +360,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                 Assert.True(decision.Allow, decision.Reason);
             }
             var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
-            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role, connection, migrations);
+            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(address) }, evidence, role, connection, migrations, identityParts);
         }
-        catch { await app.DisposeAsync(); signing.Dispose(); throw; }
+        catch { await app.DisposeAsync(); signing.Dispose(); identityParts?.Dispose(); throw; }
     }
     // 以管理员连接执行，返回受影响的行数。
     private async Task<int> Admin(string sql)
@@ -388,9 +402,12 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
     }
 
-    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection, string migrations) : IAsyncDisposable
+    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection, string migrations,
+        IdentityParts? identity = null) : IAsyncDisposable
     {
         internal WebApplication App => app;
+        /// <summary>挂载了内置账号模型时的身份侧句柄；未挂载为 null。</summary>
+        internal IdentityParts Identity => identity ?? throw new InvalidOperationException("该宿主没有挂载身份组件，Start 时传 identity: true。");
         internal RsaSecurityKey ManagementSigningKey => key;
         internal string BusinessRole => role;
         // 受限业务登录（NOSUPERUSER / NOBYPASSRLS），用来从数据库侧核对 RLS 的实际效果。
@@ -421,7 +438,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         { using (message) return await client.SendAsync(message, Ct); }
         public async ValueTask DisposeAsync()
         {
-            client.Dispose(); await app.StopAsync(Ct); await app.DisposeAsync(); signing.Dispose();
+            client.Dispose(); await app.StopAsync(Ct); await app.DisposeAsync(); signing.Dispose(); identity?.Dispose();
             // 每次宿主创建独立受限登录，池不能积压到 PostgreSQL 默认连接上限；只清理本宿主的池。
             using var business = new NpgsqlConnection(connection); NpgsqlConnection.ClearPool(business);
             using var migration = new NpgsqlConnection(migrations); NpgsqlConnection.ClearPool(migration);
