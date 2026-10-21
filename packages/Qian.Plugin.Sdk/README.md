@@ -4,7 +4,7 @@
 
 ## 代码契约
 
-QianPluginAttribute 标注程序集内唯一、顶层非泛型的 IQianPlugin 实现。ComponentMetadataGenerator 用 Roslyn 语义模型读取 Inject 集合和 ApplyAsync 中直接作用于当前上下文的 Provide 调用，生成运行时入口与服务键。支持公开静态只读 ServiceKey 字段及常量构造；条件注册、延迟注册、上下文逃逸到辅助方法或局部别名、动态 Inject 及具名 seam 暂时明确报 QIANSDK002，不能静默生成空提供项。迁移到这些尚未支持的表达式前需扩展分析与对应回归。
+QianPluginAttribute 标注程序集内唯一、顶层非泛型的 IQianPlugin 实现。ComponentMetadataGenerator 用 Roslyn 语义模型读取 Inject 集合和 ApplyAsync 中直接作用于当前上下文的 Provide 调用，生成运行时入口与服务键。支持公开静态只读 ServiceKey 字段及常量构造；条件注册、延迟注册、上下文逃逸到辅助方法或局部别名、动态 Inject 及具名 seam 暂时明确报 QIANSDK002，不能静默生成空提供项。上下文只有一个例外：可以交给 Config 定义包的 `ConfigDefinition.ResolveSecretAsync`，按插件身份解析 secretRef。这个入口只读取，不注册服务；其他程序集里的同名方法不享有这个例外（S1-IDP-014）。迁移到这些尚未支持的表达式前需扩展分析与对应回归。
 
 CapabilityAttribute 标注顶层非泛型 partial 请求，并指定响应类型和 System.Text.Json 源生成上下文。上下文必须显式登记请求与响应。生成器校验短名、描述、冻结词汇、scope、权限点和幂等声明，生成该请求的 QianCapability 属性。它使用正式 Kun CapabilityDescriptor 从 JsonTypeInfo 导出输入/输出 Schema；不会用反射序列化请求，也不执行业务 handler。序列化设置属于真实契约：例如 UnmappedMemberHandling.Disallow 和必填构造参数必须与公开输入 Schema 一致。
 

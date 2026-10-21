@@ -25,6 +25,21 @@ public sealed class ComponentGeneratorTests
             private static void Register(IPluginContext ctx) => ctx.Provide(new ServiceKey("Hidden"), new object());
         }
         """;
+    [Fact]
+    public void 经Config按插件身份解析密钥不算上下文逃逸()
+    {
+        var result = Generate("using Qian.Config;\n" + Source.Replace("ArgumentNullException.ThrowIfNull(ctx);",
+            "ArgumentNullException.ThrowIfNull(ctx); Func<CancellationToken, ValueTask<SecretValue>> resolve = token => ctx.ResolveSecretAsync(\"secretRef://platform/identity/client-secret\", token);", StringComparison.Ordinal));
+        Assert.Empty(result.Diagnostics); Assert.Single(result.GeneratedTrees);
+    }
+    [Fact]
+    public void 同名而不在Config定义包里的密钥入口仍算上下文逃逸()
+    {
+        const string impostor = "\nnamespace Qian.Config { public static class ConfigDefinition { public static ValueTask<int> ResolveSecretAsync(IPluginContext context, string reference, CancellationToken ct) => default; } }";
+        var result = Generate(Source.Replace("ArgumentNullException.ThrowIfNull(ctx);",
+            "ArgumentNullException.ThrowIfNull(ctx); _ = Qian.Config.ConfigDefinition.ResolveSecretAsync(ctx, \"secretRef://platform/identity/client-secret\", ct);", StringComparison.Ordinal) + impostor);
+        Assert.Equal("QIANSDK002", Assert.Single(result.Diagnostics).Id); Assert.Empty(result.GeneratedTrees);
+    }
     [Theory]
     [InlineData("ctx.Provide(new ServiceKey(\"Visible\"), new object());", "Register(ctx);")]
     [InlineData("ctx.Provide(new ServiceKey(\"Visible\"), new object());", "var alias = ctx; Register(alias);")]

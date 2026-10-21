@@ -61,6 +61,9 @@ public sealed class ComponentMetadataGenerator : IIncrementalGenerator
             if (use.Parent is IArgumentOperation argument && argument.Parent is IInvocationOperation guard && guard.TargetMethod.ContainingType.ToDisplayString() == "System.ArgumentNullException" && guard.TargetMethod.Name == "ThrowIfNull") continue;
             if (use.Parent is IArgumentOperation capabilityArgument && capabilityArgument.Parent is IInvocationOperation capability &&
                 capability.TargetMethod.ContainingAssembly.Name == "Qian.Plugin.Sdk" && capability.TargetMethod.ContainingType.ToDisplayString() == "Qian.Plugin.Sdk.CapabilityBindingRegistration" && capability.TargetMethod.Name == "ProvideCapability") continue;
+            // 按插件身份解析 secretRef 只经 Config 读取，不注册服务；仅放行 Config 定义包里的这一个入口。
+            if (use.Parent is IArgumentOperation secretArgument && secretArgument.Parent is IInvocationOperation secret &&
+                secret.TargetMethod.ContainingAssembly.Name == "Qian.Config.Abstractions" && secret.TargetMethod.ContainingType.ToDisplayString() == "Qian.Config.ConfigDefinition" && secret.TargetMethod.Name == "ResolveSecretAsync") continue;
             Report(output, type, "Apply 上下文不能逃逸到辅助方法或局部别名；否则无法证明提供的服务与代码一致。"); return;
         }
         foreach (var syntax in apply.DescendantNodes().OfType<InvocationExpressionSyntax>())
