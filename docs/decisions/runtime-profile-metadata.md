@@ -16,6 +16,8 @@ RT-033 已从真实代码生成 14 个组件清单，并显式分类 18 个实�
 
 已有 [S1-DEP-008](../../pm/tasks/S1-DEP-008.md) 明确要求真实 gateway 镜像为 AOT distroless，并以真实业务宿主和完整镜像证据验收；该任务与 [S1-GW-001](../../pm/tasks/S1-GW-001.md) 仍是 todo。供应链自检中的 AOT 镜像只证明工具链，不证明 Apollo、Audit 或真实 gateway 的兼容性。
 
+2026-10-22 的最终整合结果：全仓 Release 构建零警告、零错误；42 个包的依赖门、57 项 SDK/工具测试、14 个组件与 18 个实现构件的清单检查均通过。全仓 1131 项测试中 1127 通过、4 项失败、零跳过，失败全部是上表三种 profile 的装配检查及 Tenancy 对相同 profile 的断言；Python 92 项门禁唯一失败也来自相同 profile 检查。网站 73 项单测、161 项浏览器验收和构建产物检查通过。这些证据支持将问题收敛到本决策，但不构成 gateway AOT 已验证的证明。
+
 ## 方案 A（推荐）：当前开发模板如实用 JIT，保留最终 AOT 必过门
 
 1. 仅把当前 `profiles/gateway/qian.profile.yml` 的 `build.aot` 改为 `false`，并在 profile 描述、ADR-020 与组件规格 §7.7 说明当前开发装配为 JIT，尚未交付 gateway NativeAOT。
