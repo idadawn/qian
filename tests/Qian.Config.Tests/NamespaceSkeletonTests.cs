@@ -102,6 +102,33 @@ public sealed class NamespaceSkeletonTests(ApolloFixture apollo) : IClassFixture
     }
 
     [Fact]
+    public async Task 导出的JSON与ConfigService同口径比对_形状不合法时退出码为2()
+    {
+        using var repo = new FixtureRepo("qian-skeleton-export", ["application", Namespace]);
+        repo.Schema(Sample());
+        var export = Path.Combine(repo.Root, "export.json");
+        await File.WriteAllTextAsync(export, JsonSerializer.Serialize(new Dictionary<string, Dictionary<string, string>>
+        {
+            [Namespace] = new() { [Namespace + ":pageSize"] = "20", [Namespace + ":storage:kind"] = "local", [Namespace + ":obsolete"] = Title },
+            ["application"] = new() { ["Other:Key"] = Title }
+        }), Ct);
+        var run = await RunAsync(repo, "--compare", export);
+        Assert.Equal([("extra", Namespace + ":obsolete", "#")], Findings(run));
+        Assert.DoesNotContain(Title, run.Output + run.Error, StringComparison.Ordinal);
+
+        // 文件里没有该 namespace 等同线上不存在：宿主已订阅即缺键。
+        await File.WriteAllTextAsync(export, """{"application":{}}""", Ct);
+        Assert.Equal([("missing", Namespace, "#")], Findings(await RunAsync(repo, "--compare", export)));
+        foreach (var invalid in new[] { "[]", """{"qian.plugin.test.sample":{"k":{"nested":true}}}""" })
+        {
+            await File.WriteAllTextAsync(export, invalid, Ct);
+            var rejected = await RunAsync(repo, "--compare", export);
+            Assert.Equal(2, rejected.Exit);
+            Assert.Contains("导出的 JSON", rejected.Error, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public async Task 参数不合法时退出码为2()
     {
         string[][] cases = [[], [".", "--app-id", "x"], [".", "--compare", "ftp://example.test/"], [".", "--compare", "http://user:pass@example.test/"], [".", "--unknown"], [".", "--out"]];

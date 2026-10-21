@@ -15,7 +15,8 @@ namespace Qian.Config.Tool;
 internal static class ConfigTool
 {
     internal const string Usage = "用法：Qian.Config.Tool <仓库根> [--profile <名称>]... [--out <目录>]\n" +
-        "      Qian.Config.Tool <仓库根> --compare <ConfigService 地址> [--profile <名称>]... [--app-id <AppId>] [--cluster <集群>] [--access-key-env <环境变量名>]";
+        "      Qian.Config.Tool <仓库根> --compare <ConfigService 地址> [--profile <名称>]... [--app-id <AppId>] [--cluster <集群>] [--access-key-env <环境变量名>]\n" +
+        "      Qian.Config.Tool <仓库根> --compare <导出的 JSON 文件> --profile <名称>";
     internal const string NamespacePrefix = "qian.plugin.";
     // ApolloConfigDB：AppNamespace.Name / Namespace.NamespaceName 为 varchar(32)，Item.Key 为 varchar(128)。
     internal const int NamespaceLimit = 32;
@@ -28,11 +29,18 @@ internal static class ConfigTool
         try
         {
             var (profiles, diagnostics) = Plan(options);
-            if (options.AppId is not null && profiles.Count(profile => profile.AppId is not null) > 1)
-            { await error.WriteLineAsync("--app-id 只能与单个启用 Apollo 的 profile 一起使用。").ConfigureAwait(false); return 2; }
+            if ((options.AppId is not null || options.CompareFile is not null) && profiles.Count(profile => profile.AppId is not null) > 1)
+            { await error.WriteLineAsync("--app-id 与导出的 JSON 只能与单个启用 Apollo 的 profile 一起使用。").ConfigureAwait(false); return 2; }
             if (options.Output is { } directory) Write(directory, profiles);
             var findings = new List<KeyFinding>();
             var online = new Dictionary<(string, string), string>();
+            if (options.CompareFile is { } file)
+            {
+                var exported = ReadExport(file);
+                foreach (var profile in profiles.Where(profile => profile.AppId is not null))
+                    foreach (var plan in profile.Namespaces.Where(plan => plan.Skeleton.Name.Length <= NamespaceLimit))
+                        Collect(profile, plan, exported.GetValueOrDefault(plan.Skeleton.Name));
+            }
             if (options.Compare is { } server)
             {
                 var secret = options.AccessKeyVariable is { } variable ? Environment.GetEnvironmentVariable(variable) : null;
@@ -41,17 +49,7 @@ internal static class ConfigTool
                 using var client = new HttpClient { BaseAddress = new Uri(server.AbsoluteUri.TrimEnd('/') + "/"), Timeout = TimeSpan.FromSeconds(30) };
                 foreach (var profile in profiles.Where(profile => profile.AppId is not null))
                     foreach (var plan in profile.Namespaces.Where(plan => plan.Skeleton.Name.Length <= NamespaceLimit))
-                    {
-                        var keys = await FetchAsync(client, options.AppId ?? profile.AppId!, options.Cluster, plan.Skeleton.Name, secret, ct).ConfigureAwait(false);
-                        online[(profile.Name, plan.Skeleton.Name)] = keys is null ? "absent" : "present";
-                        // 线上没有、宿主也没订阅的 namespace 不参与比对；宿主已订阅却不存在即缺键。
-                        if (keys is null)
-                        {
-                            if (plan.Subscribed) findings.Add(new KeyFinding("missing", profile.Name, plan.Skeleton.Name, plan.Skeleton.Name, "#"));
-                            continue;
-                        }
-                        findings.AddRange(plan.Skeleton.Compare(profile.Name, keys));
-                    }
+                        Collect(profile, plan, await FetchAsync(client, options.AppId ?? profile.AppId!, options.Cluster, plan.Skeleton.Name, secret, ct).ConfigureAwait(false));
             }
             var report = new ToolReport(profiles.Select(profile => new ProfileReport(profile.Name, options.AppId ?? profile.AppId,
                     profile.Namespaces.Select(plan => new NamespaceReport(plan.Skeleton.Name, plan.Entry, plan.Plugin, plan.Schema,
@@ -60,6 +58,14 @@ internal static class ConfigTool
                 diagnostics, findings);
             await output.WriteLineAsync(JsonSerializer.Serialize(report, JsonSerializerOptions.Web)).ConfigureAwait(false);
             return findings.Count != 0 || diagnostics.Any(item => item.Level == "error") ? 1 : 0;
+
+            // 线上没有、宿主也没订阅的 namespace 不参与比对；宿主已订阅却不存在即缺键。
+            void Collect(ProfilePlan profile, NamespacePlan plan, IReadOnlyList<string>? keys)
+            {
+                online[(profile.Name, plan.Skeleton.Name)] = keys is null ? "absent" : "present";
+                if (keys is not null) findings.AddRange(plan.Skeleton.Compare(profile.Name, keys));
+                else if (plan.Subscribed) findings.Add(new KeyFinding("missing", profile.Name, plan.Skeleton.Name, plan.Skeleton.Name, "#"));
+            }
         }
         catch (Exception failure) when (failure is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or ArgumentException or
             InvalidOperationException or HttpRequestException or TaskCanceledException or ToolException)
@@ -138,6 +144,21 @@ internal static class ConfigTool
         config.ValueKind == JsonValueKind.Object && config.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
             ? value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!).ToList() : null;
 
+    // 导出格式 { "<namespace>": { "<键>": "<值>" } }，值只用于确认形状，不读取内容。
+    private static Dictionary<string, IReadOnlyList<string>> ReadExport(string file)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(file));
+        if (document.RootElement.ValueKind != JsonValueKind.Object) throw new ToolException("导出的 JSON 必须是 namespace 到扁平字符串对象的映射。");
+        var result = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var item in document.RootElement.EnumerateObject())
+        {
+            if (item.Value.ValueKind != JsonValueKind.Object || item.Value.EnumerateObject().Any(pair => pair.Value.ValueKind is not (JsonValueKind.String or JsonValueKind.Null)))
+                throw new ToolException("导出的 JSON 必须是 namespace 到扁平字符串对象的映射。");
+            result[item.Name] = item.Value.EnumerateObject().Select(pair => pair.Name).ToArray();
+        }
+        return result;
+    }
+
     private static async Task<IReadOnlyList<string>?> FetchAsync(HttpClient client, string appId, string cluster, string name, string? secret, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"configs/{Uri.EscapeDataString(appId)}/{Uri.EscapeDataString(cluster)}/{Uri.EscapeDataString(name)}");
@@ -197,11 +218,11 @@ internal static class ConfigTool
     }
 }
 
-internal sealed record ToolOptions(string Root, IReadOnlyList<string> Profiles, string? Output, Uri? Compare, string? AppId, string Cluster, string? AccessKeyVariable)
+internal sealed record ToolOptions(string Root, IReadOnlyList<string> Profiles, string? Output, Uri? Compare, string? CompareFile, string? AppId, string Cluster, string? AccessKeyVariable)
 {
     internal static ToolOptions? Parse(string[] args)
     {
-        string? root = null, output = null, appId = null, cluster = null, variable = null; Uri? compare = null;
+        string? root = null, output = null, appId = null, cluster = null, variable = null, file = null; Uri? compare = null;
         var profiles = new List<string>();
         for (var i = 0; i < args.Length; i++)
         {
@@ -213,15 +234,21 @@ internal sealed record ToolOptions(string Root, IReadOnlyList<string> Profiles, 
                 case "--app-id" when value is not null && appId is null: appId = value; i++; break;
                 case "--cluster" when value is not null && cluster is null: cluster = value; i++; break;
                 case "--access-key-env" when value is not null && variable is null: variable = value; i++; break;
-                case "--compare" when value is not null && compare is null:
-                    if (!Uri.TryCreate(value, UriKind.Absolute, out compare) || compare.Scheme is not ("http" or "https") || compare.UserInfo.Length != 0) return null;
+                // http(s) 地址是 ConfigService，其余按导出的 JSON 文件；地址不得内嵌凭据。
+                case "--compare" when value is not null && compare is null && file is null:
+                    if (value.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!Uri.TryCreate(value, UriKind.Absolute, out compare) || compare.UserInfo.Length != 0) return null;
+                    }
+                    else if (Uri.TryCreate(value, UriKind.Absolute, out var other) && !other.IsFile) return null;
+                    else file = value;
                     i++; break;
                 case var positional when !positional.StartsWith("--", StringComparison.Ordinal) && root is null: root = positional; break;
                 default: return null;
             }
         }
         if (root is null || compare is null && (appId is not null || cluster is not null || variable is not null)) return null;
-        return new ToolOptions(root, profiles, output, compare, appId, cluster ?? "default", variable);
+        return new ToolOptions(root, profiles, output, compare, file, appId, cluster ?? "default", variable);
     }
 }
 

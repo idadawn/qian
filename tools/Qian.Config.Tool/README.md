@@ -29,6 +29,8 @@ dotnet tools/Qian.Config.Tool/bin/Release/net10.0/Qian.Config.Tool.dll . --profi
 - 缺键：已出现的对象里（根对象总是出现），Schema `required` 的属性没有任何键；宿主已订阅的 namespace 在线上不存在也算缺键。未订阅且不存在的 namespace 不参与比对。
 - 多键：不带本 namespace 前缀的键；`additionalProperties: false` 的对象里没有的属性；标量下的子键；对象或数组本身被赋值；数组下标不是非负整数。`patternProperties`、`if/then/else` 与 `dependentSchemas` 让该层视为开放。
 
+`--compare` 也接受导出的 JSON 文件（不是 http(s) 地址即按文件读取），形状为 `{ "<namespace>": { "<键>": "<值>" } }`，只能与单个启用 Apollo 的 profile 一起用；文件里没有的 namespace 等同线上不存在。值只用于确认形状，不读取内容。
+
 AppId 默认取 profile 的 Apollo 条目，`--app-id` 只能与单个启用 Apollo 的 profile 一起用。开启 AccessKey 的 AppId 用 `--access-key-env` 指定存放密钥的环境变量名（不接受命令行明文），签名与运行期 `Qian.Config.Apollo` 相同。
 
 返回 0 表示通过；1 表示有缺键 / 多键或 profile 装配失败；2 表示参数错误、仓库不可读、ConfigService 不可达或拒绝访问。

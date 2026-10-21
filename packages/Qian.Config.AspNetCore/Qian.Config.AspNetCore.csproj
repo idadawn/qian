@@ -5,7 +5,6 @@
     <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Registry.Abstractions/Qian.Registry.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
-    <ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Capabilities.Abstractions/Qian.Capabilities.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
   </ItemGroup>
