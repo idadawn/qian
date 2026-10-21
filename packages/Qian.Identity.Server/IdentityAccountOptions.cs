@@ -14,6 +14,8 @@ public sealed class IdentityAccountOptions
     public LoginPolicy Login { get; init; } = new();
     /// <summary>会话策略。</summary>
     public SessionPolicy Session { get; init; } = new();
+    /// <summary>上游连接器登录与外部身份绑定的流程参数。</summary>
+    public ConnectorPolicy Connectors { get; init; } = new();
     /// <summary>手机号未带国家码时补的国家码，缺省中国大陆。</summary>
     public string DefaultPhoneCountryCode { get; init; } = "86";
     /// <inheritdoc />
@@ -29,6 +31,7 @@ public sealed class IdentityAccountOptions
             Login.SelectionLifetime <= TimeSpan.Zero || Login.SelectionLifetime > TimeSpan.FromMinutes(5) || Login.ChangeTicketLifetime <= TimeSpan.Zero)
             throw new ArgumentException("登录策略无效：阈值至少 3 次，选择令牌寿命不得超过 5 分钟。", nameof(Login));
         Session.Validate();
+        Connectors.Validate();
         if (DefaultPhoneCountryCode.Length is < 1 or > 3 || DefaultPhoneCountryCode.Any(c => c is < '0' or > '9'))
             throw new ArgumentException("默认国家码无效。", nameof(DefaultPhoneCountryCode));
     }
@@ -153,5 +156,34 @@ public sealed class SessionPolicy
         if (ReconcileInterval < TimeSpan.FromSeconds(1) || ReconcileInterval > TimeSpan.FromSeconds(30))
             throw new ArgumentException("会话策略无效：租户对账间隔取 1–30 秒（租户冻结后会话须在 60 秒内失效）。", nameof(SessionPolicy));
         if (OnlineWindow < TimeSpan.FromMinutes(1) || OnlineWindow > TimeSpan.FromDays(1)) throw new ArgumentException("会话策略无效：在线窗口取 1 分钟–1 天。", nameof(SessionPolicy));
+    }
+}
+
+/// <summary>
+/// 连接器登录流程（PRD 7.4.2、ADR-005 D5.11）：浏览器在上游完成认证的时限、确认绑定票据的寿命、绑定前「新鲜认证」的窗口，
+/// 以及回调处理后 302 回到的界面落点。JIT 建号是否允许不在这里：它是租户策略，缺省关闭。
+/// </summary>
+public sealed class ConnectorPolicy
+{
+    /// <summary>从发起到上游回调的时限；过期的 state 按无效处理。缺省 10 分钟。</summary>
+    public TimeSpan FlowLifetime { get; init; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>确认绑定的票据寿命，从回调起算；过期返回 AUTH_BINDING_EXPIRED。缺省 10 分钟。</summary>
+    public TimeSpan BindingLifetime { get; init; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>确认绑定前登录已有账号（新鲜一因子认证）的有效窗口；超过需重新登录该账号。缺省 5 分钟。</summary>
+    public TimeSpan ReauthenticationWindow { get; init; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>回调处理后 302 回到的界面落点（同源路径，含 <c>{connectorId}</c>），流程标识以 <c>?flow=</c> 附上。</summary>
+    public string LandingPath { get; init; } = "/login/connector/{connectorId}";
+
+    internal void Validate()
+    {
+        static bool Bad(TimeSpan value) => value < TimeSpan.FromMinutes(1) || value > TimeSpan.FromHours(1);
+        if (Bad(FlowLifetime) || Bad(BindingLifetime) || Bad(ReauthenticationWindow) || ReauthenticationWindow > BindingLifetime)
+            throw new ArgumentException("连接器流程策略无效：各时限取 1 分钟–1 小时，且新鲜认证窗口不长于绑定票据寿命。", nameof(ConnectorPolicy));
+        if (string.IsNullOrEmpty(LandingPath) || !LandingPath.StartsWith('/') || LandingPath.StartsWith("//", StringComparison.Ordinal) || LandingPath.Contains('\\', StringComparison.Ordinal) ||
+            LandingPath.Contains('?', StringComparison.Ordinal) || LandingPath.Contains('#', StringComparison.Ordinal) || !LandingPath.Contains("{connectorId}", StringComparison.Ordinal))
+            throw new ArgumentException("连接器流程策略无效：界面落点必须是含 {connectorId} 的同源路径。", nameof(ConnectorPolicy));
     }
 }

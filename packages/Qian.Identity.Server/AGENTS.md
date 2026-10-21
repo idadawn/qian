@@ -1,6 +1,7 @@
 # Identity Provider（协议面 + 账号模型）
 
-- ADR-005、PRD 7.4.1、S1-IDP-002 / 003 / 004 是边界；MFA 因子、连接器登录仍由后续任务交付，在此之前不得降级或伪造。
+- ADR-005、PRD 7.4.1 / 7.4.2、S1-IDP-002 / 003 / 004 / 007 是边界；MFA 因子仍由后续任务交付，在此之前不得降级或伪造。
+- 连接器登录（`IdentityAccountService.Connectors.cs`）：state、nonce、PKCE verifier 只由本组件生成，`connector_flows` 只存哈希，verifier 由浏览器密钥派生、不落库；回调幂等靠条件更新抢占（pending → processing），改动回调或绑定的顺序必须配并发测试。上游 `error_description` 是不可信数据，不进文案。绑定必须「新鲜认证 + 显式确认」，冲突不透露对方账号；JIT 缺省关闭、读不到租户策略即视为关闭。会话只经统一流水线与一次性连接器票据签发，不在别处建会话。`connector_flows` 是全局表（回调时租户未知），不要给它加非空 `tenant_id`。
 - OpenIddict 保持持久令牌记录、PKCE、非对称签名与 HTTPS 校验，不使用 degraded 模式；它是唯一的令牌发行者。
 - 在线存储继承 QianDbContext，不用超级用户；Membership、ExternalIdentity 是租户表，只能在目标租户作用域内读写，不得为登录绕过 RLS（登录前靠 `persons.tenant_ids` 索引逐租户进入作用域）。
 - 凭据只存 Argon2id；不记录、不返回密码、验证码、票据、原始标识与原始 sid（日志与审计只留类型 + 掩码 / sid 哈希）。对外投影只含掩码。
