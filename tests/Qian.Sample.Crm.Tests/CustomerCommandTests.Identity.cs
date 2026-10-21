@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -66,9 +65,9 @@ public sealed partial class CustomerCommandTests
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 
-    private static IdentityParts NewIdentityParts()
+    // 发行方即宿主的监听地址，端口由 Start 经 LoopbackPort 取得（被占时换端口重建宿主，S1-QA-014）。
+    private static IdentityParts NewIdentityParts(int port)
     {
-        using var socket = new TcpListener(IPAddress.Loopback, 0); socket.Start(); var port = ((IPEndPoint)socket.LocalEndpoint).Port; socket.Stop();
         var key = RSA.Create(2048);
         var certificate = new CertificateRequest("CN=Qian crm identity", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
             .CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(1));

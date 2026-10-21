@@ -20,7 +20,7 @@
   <ItemGroup><ProjectReference Include="../../packages/Qian.Surfaces.Hosting/Qian.Surfaces.Hosting.csproj" /></ItemGroup>
 <ItemGroup><ProjectReference Include="../../packages/Qian.Tenancy.AspNetCore/Qian.Tenancy.AspNetCore.csproj" /></ItemGroup>
 <ItemGroup><ProjectReference Include="../../packages/Qian.Registry.AspNetCore/Qian.Registry.AspNetCore.csproj" /></ItemGroup>
-  <ItemGroup><Compile Include="../Shared/IdentityProtocolHost.cs" Link="IdentityProtocolHost.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../Shared/IdentityProtocolHost.cs" Link="IdentityProtocolHost.cs" /><Compile Include="../Shared/LoopbackPort.cs" Link="LoopbackPort.cs" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
     <PackageReference Include="Kun.Identity" />

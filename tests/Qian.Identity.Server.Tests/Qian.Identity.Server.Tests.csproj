@@ -11,5 +11,5 @@
     <PackageReference Include="Kun.Mediator" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
   </ItemGroup>
-  <ItemGroup><Compile Include="../Shared/IdentityProtocolHost.cs" Link="IdentityProtocolHost.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../Shared/IdentityProtocolHost.cs" Link="IdentityProtocolHost.cs" /><Compile Include="../Shared/LoopbackPort.cs" Link="LoopbackPort.cs" /></ItemGroup>
 </Project>
