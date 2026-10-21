@@ -12,7 +12,7 @@ using Qian.Surfaces.Abstractions;
 
 namespace Qian.Registry;
 
-internal sealed class RegistryService : IRegistryService
+internal sealed partial class RegistryService : IRegistryService
 {
     private readonly RegistryRuntimeOptions _options;
     private readonly IDataService _data;
@@ -175,7 +175,12 @@ internal sealed class RegistryService : IRegistryService
             var patch = JsonSerializer.SerializeToElement(new Dictionary<string, object> { ["id"] = entryId, ["disabled"] = true });
             return (await _writer.PutAsync(scope, entryId, patch, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false)).Revision;
         }
-        if (current is null) throw NotFound();
+        if (current is null)
+        {
+            if (await _patches.DeletedRevisionAsync(scope, entryId, cancellationToken).ConfigureAwait(false) is not { } removed) throw NotFound();
+            if (removed != expectedRevision) throw new QianErrorException(new QianError(RegistryErrors.RevisionConflict));
+            return removed;
+        }
         return await _writer.RemoveAsync(scope, entryId, expectedRevision, actor, true, cancellationToken).ConfigureAwait(false);
     }
 
@@ -254,7 +259,7 @@ internal sealed class RegistryService : IRegistryService
     { Errors = [new QianFieldError(RegistryErrors.Invalid, "registry/scope-patches.json" + pointer, new Dictionary<string, string> { ["reason"] = reason })] });
 
     // 管理面只认宿主已验证的主体与租户上下文；委托、Agent、跨租户、缺判定端口或无权限一律与不存在同为 NOT_FOUND（R32）。
-    private async ValueTask<string> AuthorizeAsync(ScopeKey scope, ICurrentUser user, CancellationToken ct)
+    private async ValueTask<string> AuthorizeAsync(ScopeKey scope, ICurrentUser user, CancellationToken ct, string permission = RegistryDefinition.ScopeReadPermission)
     {
         if (_disposed || _lifetime.IsCancellationRequested || _listener is null) throw new ServiceNotReadyException();
         ArgumentNullException.ThrowIfNull(user);
@@ -263,13 +268,13 @@ internal sealed class RegistryService : IRegistryService
             throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
         var tenantId = _tenant.TenantId;
         if (principal.Actor is null && principal.Kind == PrincipalKind.User && principal.TenantId is null && scope.Kind == "tenant" && scope.Id == tenantId)
-            return await BypassAsync(scope, user, principal, tenantId, ct).ConfigureAwait(false);
+            return await BypassAsync(scope, user, principal, tenantId, permission, ct).ConfigureAwait(false);
         if (principal.Actor is not null || principal.Kind is not (PrincipalKind.User or PrincipalKind.Service) || principal.TenantId != tenantId ||
             scope.Kind != "tenant" || scope.Id != tenantId) throw NotFound();
         // 判定端口由宿主的 Authz Provider 装配；缺失时 fail-closed，不回退到令牌角色。
         if (_context.Services.GetService<IPermissionChecker>() is not { } checker) throw NotFound();
         var subject = new AuthorizationSubject(principal.Subject, tenantId, principal.Kind == PrincipalKind.User ? "user" : "service");
-        var decision = await checker.CheckAsync(new PermissionRequest(subject, RegistryDefinition.ScopeReadPermission), ct).ConfigureAwait(false);
+        var decision = await checker.CheckAsync(new PermissionRequest(subject, permission), ct).ConfigureAwait(false);
         // 判定之后再确认请求主体与租户上下文没有变化。
         if (!decision.Allow || !user.IsAuthenticated || user.UserId != principal.Subject || user.Principal?.TenantId != tenantId ||
             user.Principal?.Kind != principal.Kind || user.Principal?.Actor is not null || _tenant.TenantId != tenantId) throw NotFound();
@@ -278,11 +283,11 @@ internal sealed class RegistryService : IRegistryService
 
     // 平台主体（无租户）读取目标租户的 scope 视图：调用方已把租户上下文切到目标租户，判定只走 Authz 的超管显式旁路（ADR-006 D6.3），
     // 由旁路写入目标租户审计链（bypass = superadmin）。旁路端口未装配、非超管或审计失败时与不存在同为 404。
-    private async ValueTask<string> BypassAsync(ScopeKey scope, ICurrentUser user, Principal principal, string tenantId, CancellationToken ct)
+    private async ValueTask<string> BypassAsync(ScopeKey scope, ICurrentUser user, Principal principal, string tenantId, string permission, CancellationToken ct)
     {
         if (_context.TryInject<ISuperadminBypass>(AuthzDefinition.SuperadminBypassKey) is not { } bypass) throw NotFound();
         var decision = await bypass.AuthorizeAsync(new SuperadminAccess(new AuthorizationSubject(principal.Subject, null, "user"),
-            RegistryDefinition.ScopeReadPermission, tenantId, "registry/scope:" + scope.Kind + ":" + scope.Id, "api"), ct).ConfigureAwait(false);
+            permission, tenantId, "registry/scope:" + scope.Kind + ":" + scope.Id, "api"), ct).ConfigureAwait(false);
         if (!decision.Allow || !user.IsAuthenticated || user.UserId != principal.Subject || user.Principal?.TenantId is not null ||
             user.Principal?.Kind != PrincipalKind.User || user.Principal?.Actor is not null || _tenant.TenantId != tenantId) throw NotFound();
         return tenantId;
