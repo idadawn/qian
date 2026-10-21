@@ -381,6 +381,12 @@
 
 ---
 
+### 3.7 代码入口与程序集的组件归属（S1-DEC-028）
+
+一个组件 ID 对应一个文件夹、一份 `.qian-plugin/plugin.json` 与一个 `runtime.entry`。一个程序集可以包含多个标注不同 ID 的 `[QianPlugin]` 入口；源生成器分别派生元数据，`qian-plugin check|sync` 按目标清单的 ID 选择。重复 ID、没有匹配入口与跨组件能力归属均须明确失败，不能默认取第一个或把所有组件的 `Inject` / `Provide` 混在一起。
+
+`IQianPlugin` 还被契约包装器、运行时快照适配器及宿主组合子插件使用，这些实现构件不等同于独立可安装组件，不强制生成另一份清单。必须在 SDK 文档与 CI 分类清单中记录其归属，新增实现不得静默漏检。确需多个实现共同构成一个组件时，使用承担依赖与生命周期的单一组合入口；构建期不得执行组件代码推测派生结果。真实入口的 `scopes` 和派生字段仍必须与代码一致，补齐元数据不等于通过真实 `qian add` 验收，`x-skeleton` 的去留继续遵循 S1-DEC-018。
+
 ## 4. 声明式表面的文件格式
 
 通用规则：Markdown 表面 = YAML front matter + 正文（front matter 按各自 Schema 校验，正文原样交给消费者）；JSON 表面按 JSON Schema 2020-12 校验、`additionalProperties: false`、接受 `^x-`。表面内的名字在组件内唯一，全局形式由注册表拼接为 `<component-id>/<name>`（如 `qian.files/upload`），模型看到的是全局形式经 scope 过滤后的集合。所有注册带条目的 `scope`，scope 内同名遮蔽全局（§5.5）。密钥只以 `secretRef://…` 出现（§11.3）。
