@@ -3,6 +3,8 @@
   <ItemGroup><Using Include="Xunit" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
     <PackageReference Include="Kun.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
