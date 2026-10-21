@@ -94,7 +94,7 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 | `GET {PathPrefix}/csrf` | 已认证时返回 `{ headerName, token }`。 |
 | `POST {PathPrefix}/backchannel-logout` | OIDC 后通道登出：验签 `logout_token` 后按 issuer + sid 吊销本地会话（发行方须登记该地址）。 |
 
-回调的拒绝都是 ErrorDetail：`OIDC_STATE_INVALID`（400，state 缺失 / 不匹配 / 过期 / 重放，或缺 code）、`OIDC_ISSUER_MISMATCH`（400）、`OIDC_PROVIDER_ERROR`（400，`error` 只取协议定义的错误码，其余记为 `server_error`）、`OIDC_TOKEN_INVALID`（401，换码失败或令牌校验未过，含 nonce 不符）、`BAD_GATEWAY`（502，发行方不可达）。日志只记拒绝类别、错误类型与 sid 的 SHA-256，不记令牌、授权码、state、口令或原始会话标识；回调地址的查询串会被 ASP.NET Core 的请求日志打印，所以本包把 `Microsoft.AspNetCore.Hosting.Diagnostics` 限到 Warning（与身份服务一致）。
+回调的拒绝都是 ErrorDetail：`AUTH_CONNECTOR_STATE_INVALID`（422，state 缺失 / 不匹配 / 过期 / 重放，或缺 code）、`OIDC_ISSUER_MISMATCH`（400）、`AUTH_CONNECTOR_DENIED`（422，发行方以 OAuth 错误结束授权；`error` 只记进日志，协议定义之外的值记为 `server_error`，不进文案）、`OIDC_TOKEN_INVALID`（401，换码失败或令牌校验未过，含 nonce 不符）、`BAD_GATEWAY`（502，发行方不可达）。state 失效与发行方拒绝和身份服务的连接器回调（S1-IDP-007）共用同一组 `AUTH_CONNECTOR_*` 码，外壳回调页只需识别一套。日志只记拒绝类别、错误类型与 sid 的 SHA-256，不记令牌、授权码、state、口令或原始会话标识；回调地址的查询串会被 ASP.NET Core 的请求日志打印，所以本包把 `Microsoft.AspNetCore.Hosting.Diagnostics` 限到 Warning（与身份服务一致）。
 
 外壳 SPA 直接换码、令牌留在前端内存的方案（`TokenProvider.getAccessToken / refreshAccessToken` 一类的外壳令牌端点）是 auth-pages 规格 D5 的待定选项，本包**不提供**，等 D5 裁定（提案、待 D5）。
 

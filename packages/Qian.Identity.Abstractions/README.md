@@ -39,7 +39,7 @@
 - **清单（connector.manifest）** 即 `ConnectorDescriptor`：`Id`（小写字母开头，小写字母、数字或连字符，最长 64，也是回调路径段）、`DisplayName`（1–64 字，无控制字符）、`Protocol`（小写短名，如 `oidc`）、`Terminals`（非空、不重复，取自 `ConnectorTerminals`：`pc` / `mobile` / `workbench`）、`ConfigSchema` 与 `CallbackTemplate`（固定为 `/connect/callback/{connectorId}`，回调由身份 Provider 统一接收）。`ConnectorManifest.Check` 逐项返回带 pointer 的字段错误，`Validate` 抛 INPUT_INVALID；注册时校验，TCK 用同一个校验器。
 - **配置 Schema 规则**：根与每个嵌套 object 都是 `"type": "object"` 且 `additionalProperties: false`；名字像密钥的属性（secret、password、token、credential、private key、api key）必须带 `x-qian-sensitive: true`；敏感属性必须是 string，且 `pattern` 以 `^secretRef://` 开头，即只能填 secretRef。描述本身不含任何配置值。
 - **上下文与失败**：`ConnectorContext` 带身份 Provider 生成的 state、nonce、PKCE `CodeVerifier` 与回调地址，连接器原样使用、不自己保存。协议失败抛 `QianErrorException`：nonce 不符用 `AUTH_CONNECTOR_STATE_INVALID`，上游响应无效或签名不符用 `BAD_GATEWAY`，上游超时用 `GATEWAY_TIMEOUT`；上游的 `error` 回调由 Provider 先行处理，不会传给连接器。`ExternalAssertion.Profile` 只放展示用资料，`ToString` 不打印内容。
-- **错误码**：`IdentityErrors` 增加连接器登录的四个业务码 `AUTH_CONNECTOR_STATE_INVALID`（422）、`AUTH_CONNECTOR_DENIED`（422）、`AUTH_BINDING_CONFLICT`（409，不透露对方账号）、`AUTH_BINDING_EXPIRED`（422）；归属 `qian.identity`，随身份 Provider 挂载登记，不进平台内置目录。
+- **错误码**：`IdentityErrors` 增加连接器登录的四个业务码 `AUTH_CONNECTOR_STATE_INVALID`（422）、`AUTH_CONNECTOR_DENIED`（422）、`AUTH_BINDING_CONFLICT`（409，不透露对方账号）、`AUTH_BINDING_EXPIRED`（422）；归属 `qian.identity`，随身份 Provider 挂载登记，不进平台内置目录。依赖方 Qian.Identity.Client 的登录回调复用前两个码（state 失效、发行方拒绝），外壳只需识别一套。
 
 通用 OIDC 连接器见 [Qian.Identity.Connector.Oidc](../Qian.Identity.Connector.Oidc/README.md)。
 
