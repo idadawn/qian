@@ -41,5 +41,77 @@
       "version": "v0",
       "codes": []
     }
+  },
+  {
+    "name": "身份组件登记的连接器业务错误码（owner qian.identity，S1-IDP-007；与 IdentityErrors 的导出逐项一致）",
+    "data": {
+      "version": "v0",
+      "codes": [
+        {
+          "code": "AUTH_BINDING_CONFLICT",
+          "kind": "business",
+          "status": 409,
+          "type": "https://qian.dev/problems/business/AUTH_BINDING_CONFLICT",
+          "owner": "qian.identity",
+          "retryable": false,
+          "title": {
+            "en": "External identity already linked",
+            "zh-CN": "外部身份已被关联"
+          },
+          "message": {
+            "en": "This enterprise identity is already linked to another account in this tenant.",
+            "zh-CN": "该企业身份已在本租户关联到其他账号。"
+          }
+        },
+        {
+          "code": "AUTH_BINDING_EXPIRED",
+          "kind": "business",
+          "status": 422,
+          "type": "https://qian.dev/problems/business/AUTH_BINDING_EXPIRED",
+          "owner": "qian.identity",
+          "retryable": false,
+          "title": {
+            "en": "Linking request expired",
+            "zh-CN": "关联请求已超时"
+          },
+          "message": {
+            "en": "The linking request has expired; sign in again.",
+            "zh-CN": "关联请求已超时，请重新登录。"
+          }
+        },
+        {
+          "code": "AUTH_CONNECTOR_DENIED",
+          "kind": "business",
+          "status": 422,
+          "type": "https://qian.dev/problems/business/AUTH_CONNECTOR_DENIED",
+          "owner": "qian.identity",
+          "retryable": false,
+          "title": {
+            "en": "External sign-in not completed",
+            "zh-CN": "外部登录未完成"
+          },
+          "message": {
+            "en": "The identity provider denied or cancelled the sign-in; go back and retry or use another method.",
+            "zh-CN": "身份源拒绝或取消了本次登录，请返回重试或改用其他方式登录。"
+          }
+        },
+        {
+          "code": "AUTH_CONNECTOR_STATE_INVALID",
+          "kind": "business",
+          "status": 422,
+          "type": "https://qian.dev/problems/business/AUTH_CONNECTOR_STATE_INVALID",
+          "owner": "qian.identity",
+          "retryable": false,
+          "title": {
+            "en": "Sign-in request invalid",
+            "zh-CN": "登录请求已失效"
+          },
+          "message": {
+            "en": "The sign-in request has expired or been tampered with; start again.",
+            "zh-CN": "登录请求已失效或被篡改，请重新开始。"
+          }
+        }
+      ]
+    }
   }
 ]

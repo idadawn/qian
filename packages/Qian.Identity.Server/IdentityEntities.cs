@@ -158,7 +158,7 @@ internal sealed class LoginAuditRow
     public string? TraceId { get; set; }
 }
 
-/// <summary>一次性登录票据（选择令牌、强制改密令牌）。令牌是随机不透明串，库里只存 SHA-256。</summary>
+/// <summary>一次性登录票据（选择令牌、强制改密令牌、连接器登录令牌）。令牌是随机不透明串，库里只存 SHA-256。</summary>
 internal sealed class LoginTicketRow
 {
     public byte[] TokenHash { get; set; } = [];
@@ -175,11 +175,54 @@ internal sealed class LoginTicketRow
     public string[] Amr { get; set; } = [];
     public string? Acr { get; set; }
     public DateTimeOffset AuthenticatedAt { get; set; }
+    // 兑换成功时写进登录审计的原因（如连接器登录的「已绑定」「刚确认绑定」「JIT 建号」）。
+    public string? Reason { get; set; }
     public string? RemoteAddress { get; set; }
     public string? UserAgent { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset? ConsumedAt { get; set; }
+}
+
+/// <summary>
+/// 一次上游连接器登录流程（PRD 7.4.2）。state 只存 SHA-256；流程与发起它的浏览器绑定（库里只存浏览器密钥的 SHA-256，
+/// PKCE verifier 由该密钥派生、不入库），所以回调只能在同一浏览器完成。外部断言只留绑定键与掩码后的展示资料。
+/// 全局表：回调到达时还没有租户上下文，租户只是流程的属性，绑定写入时才进入该租户的作用域。
+/// </summary>
+internal sealed class ConnectorFlowRow
+{
+    public Guid Id { get; set; }
+    public byte[] StateHash { get; set; } = [];
+    public byte[] BrowserHash { get; set; } = [];
+    public string ConnectorId { get; set; } = "";
+    // 流程所属租户，发起时必填。本表不是租户表（回调按 state 找流程时租户尚未确定），列可空、不受 RLS，与 sessions / login_tickets 相同。
+    public string? TenantId { get; set; }
+    public string ClientId { get; set; } = "";
+    public string DeviceType { get; set; } = "pc";
+    public string? ReturnUrl { get; set; }
+    public string Nonce { get; set; } = "";
+    // pending → processing → bind | completed | failed；bind → completed | failed | cancelled。
+    public string Status { get; set; } = "pending";
+    public string? ErrorCode { get; set; }
+    // 上游 error_description：不可信数据，去掉控制字符并截断到 200 字后只作技术详情展示。
+    public string? ErrorDetail { get; set; }
+    public string? ExternalIssuer { get; set; }
+    public string? ExternalSubject { get; set; }
+    public string? ExternalUnionId { get; set; }
+    // 掩码后的展示资料（显示名、掩码邮箱、用户名），JSON；不存原始断言。
+    public string? ExternalProfile { get; set; }
+    // 确认绑定前登录的已有账号（新鲜一因子认证）。
+    public Guid? PersonId { get; set; }
+    public Guid? MembershipId { get; set; }
+    public DateTimeOffset? VerifiedAt { get; set; }
+    public string[] VerifiedAmr { get; set; } = [];
+    public string? RemoteAddress { get; set; }
+    public string? UserAgent { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public DateTimeOffset? CallbackAt { get; set; }
+    public DateTimeOffset? BindingExpiresAt { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
 }
 
 /// <summary>图形验证码挑战：答案只存加盐哈希，单次有效、短寿命；放数据库是为了多副本部署时任一实例都能校验。</summary>

@@ -40,13 +40,14 @@ public static class IdentityAccountEndpoints
         endpoints.MapGet(Prefix + "/me", (Delegate)Me);
         endpoints.MapPost(Prefix + "/me/password", (Delegate)ChangeOwnPassword);
         IdentitySessionEndpoints.Map(endpoints);
+        IdentityConnectorEndpoints.Map(endpoints);
         return endpoints;
     }
 
     // ---- 请求与响应 ----
 
     [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-    private sealed record CaptchaBody([property: JsonPropertyName("id")] string Id, [property: JsonPropertyName("answer")] string Answer);
+    internal sealed record CaptchaBody([property: JsonPropertyName("id")] string Id, [property: JsonPropertyName("answer")] string Answer);
 
     [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
     private sealed record LoginBody(
@@ -162,7 +163,7 @@ public static class IdentityAccountEndpoints
     // ---- 公共 ----
 
     // 写接口：JSON、体积上限与防伪令牌。登录会写会话 Cookie，缺少防伪令牌就是登录型 CSRF（把受害者登进攻击者的账号）。
-    private static async Task<IResult?> Guard(HttpContext http)
+    internal static async Task<IResult?> Guard(HttpContext http)
     {
         if (!http.Request.HasJsonContentType()) return QianResults.Error(new QianError(PlatformErrors.UnsupportedMediaType));
         if (http.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = MaxBodyBytes;
@@ -183,16 +184,16 @@ public static class IdentityAccountEndpoints
         return null;
     }
 
-    private static async Task<T?> Read<T>(HttpContext http) where T : class
+    internal static async Task<T?> Read<T>(HttpContext http) where T : class
     {
         try { return await JsonSerializer.DeserializeAsync<T>(http.Request.Body, JsonOptions, http.RequestAborted).ConfigureAwait(false); }
         catch (JsonException) { return null; }
         catch (BadHttpRequestException) { return null; }
     }
 
-    private static QianErrorResult BadInput() => QianResults.Error(new QianError(PlatformErrors.BadRequest));
+    internal static QianErrorResult BadInput() => QianResults.Error(new QianError(PlatformErrors.BadRequest));
 
-    private static LoginContext ContextOf(HttpContext http) => new(http.Connection.RemoteIpAddress?.ToString(), http.Request.Headers.UserAgent.ToString());
+    internal static LoginContext ContextOf(HttpContext http) => new(http.Connection.RemoteIpAddress?.ToString(), http.Request.Headers.UserAgent.ToString());
 
     private static async Task<IResult> Complete(HttpContext http, SignInResult result)
     {

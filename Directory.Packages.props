@@ -53,6 +53,8 @@
   <ItemGroup Label="Data">
     <PackageVersion Include="OpenIddict.Server.AspNetCore" Version="7.7.2" />
     <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.7.2" />
+    <!-- 与 OpenIddict 7.7.2 传递引入的版本一致，通用 OIDC 连接器用它验 id_token。 -->
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.19.2" />
     <PackageVersion Include="Grpc.AspNetCore.Server" Version="2.67.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.67.0" />
     <PackageVersion Include="Grpc.Reflection" Version="2.67.0" />

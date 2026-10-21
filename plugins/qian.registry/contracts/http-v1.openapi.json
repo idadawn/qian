@@ -1,0 +1,385 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "\u7EC4\u4EF6 HTTP \u63A5\u53E3",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/registry/tenants/{tenant}/patches/{scope}/{entry}": {
+      "put": {
+        "operationId": "H6dc84dca07d29da7e513f1eccc30232fe22bd8d216701ef3500070a032d36970",
+        "x-qian-plugin": "qian.registry",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-qian-permission": "qian.registry:scope:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H40f47ccb360075ee6e6bd5ada3f46b0225a9b857d2560ed3cbea5d27532959ec"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tenant",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H4e62a6834768b423f628c8bdf19176bf2bb9113683153726845ac6c6167c39ed"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H4e62a6834768b423f628c8bdf19176bf2bb9113683153726845ac6c6167c39ed"
+            }
+          },
+          {
+            "name": "entry",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H4e62a6834768b423f628c8bdf19176bf2bb9113683153726845ac6c6167c39ed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H995089e06d0dc9ecc99fec50e07e34f3fad23b4396e6e89766d371cebdfb8ead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kernel/tenants/{tenant}/patches/{scope}/{entry}": {
+      "put": {
+        "operationId": "He3230073164da504dbf0eba1e3d225e24e57b6bfd105ad9bdbc15d847542d8ca",
+        "x-qian-plugin": "qian.registry",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-qian-permission": "qian.registry:scope:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H40f47ccb360075ee6e6bd5ada3f46b0225a9b857d2560ed3cbea5d27532959ec"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tenant",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H4e62a6834768b423f628c8bdf19176bf2bb9113683153726845ac6c6167c39ed"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H4e62a6834768b423f628c8bdf19176bf2bb9113683153726845ac6c6167c39ed"
+            }
+          },
+          {
+            "name": "entry",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H4e62a6834768b423f628c8bdf19176bf2bb9113683153726845ac6c6167c39ed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H995089e06d0dc9ecc99fec50e07e34f3fad23b4396e6e89766d371cebdfb8ead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "H4e62a6834768b423f628c8bdf19176bf2bb9113683153726845ac6c6167c39ed": {
+        "type": "string"
+      },
+      "H40f47ccb360075ee6e6bd5ada3f46b0225a9b857d2560ed3cbea5d27532959ec": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "patch": {}
+        },
+        "required": [
+          "revision",
+          "patch"
+        ],
+        "additionalProperties": false
+      },
+      "H995089e06d0dc9ecc99fec50e07e34f3fad23b4396e6e89766d371cebdfb8ead": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string"
+          },
+          "entryId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "state": {
+            "type": "string"
+          },
+          "reasonCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "scope",
+          "entryId",
+          "revision",
+          "state",
+          "reasonCode"
+        ]
+      },
+      "He9ba8075399bbfabfd3a34ec47d96a80e0018085a175798b28508e5d87a9082f": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "instance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "trace_id": {
+            "type": "string"
+          },
+          "pointer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "allowed": {
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "errors": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "pointer": {
+                  "type": "string"
+                },
+                "allowed": {
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "code",
+                "message",
+                "pointer"
+              ]
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "message",
+          "trace_id"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

@@ -335,3 +335,5 @@ static readonly Qian.Lifecycle.LifecycleErrors.RevisionNotDeployed -> Qian.Runti
 static readonly Qian.Lifecycle.LifecycleErrors.SignatureInvalid -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.StateConflict -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.Invalid -> Qian.Runtime.Errors.ErrorCode!
+Qian.Lifecycle.IPluginLifecycleController.MountAtRevisionAsync(Qian.Runtime.ScopeKey scope, System.Text.Json.JsonElement entry, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.MountResult!>
+Qian.Lifecycle.IPluginLifecycleController.UnmountAtRevisionAsync(Qian.Runtime.ScopeKey scope, string! entryId, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.MountResult!>

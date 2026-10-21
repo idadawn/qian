@@ -893,3 +893,25 @@ static readonly Qian.Identity.Abstractions.IdentityErrors.OidcIssuerMismatch -> 
 static readonly Qian.Identity.Abstractions.IdentityErrors.OidcProviderError -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Identity.Abstractions.IdentityErrors.OidcTokenInvalid -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Identity.Abstractions.IdentityErrors.OperationUnsupported -> Qian.Runtime.Errors.ErrorCode!
+Qian.Identity.Abstractions.ConnectorContext.CodeVerifier.get -> string?
+Qian.Identity.Abstractions.ConnectorContext.CodeVerifier.init -> void
+Qian.Identity.Abstractions.ConnectorDescriptor.CallbackTemplate.get -> string!
+Qian.Identity.Abstractions.ConnectorDescriptor.CallbackTemplate.init -> void
+Qian.Identity.Abstractions.ConnectorManifest
+Qian.Identity.Abstractions.ConnectorTerminals
+const Qian.Identity.Abstractions.ConnectorManifest.CallbackTemplate = "/connect/callback/{connectorId}" -> string!
+const Qian.Identity.Abstractions.ConnectorManifest.SensitiveKeyword = "x-qian-sensitive" -> string!
+const Qian.Identity.Abstractions.ConnectorTerminals.Mobile = "mobile" -> string!
+const Qian.Identity.Abstractions.ConnectorTerminals.Pc = "pc" -> string!
+const Qian.Identity.Abstractions.ConnectorTerminals.Workbench = "workbench" -> string!
+static Qian.Identity.Abstractions.ConnectorManifest.CallbackPath(string! connectorId) -> string!
+static Qian.Identity.Abstractions.ConnectorManifest.Check(Qian.Identity.Abstractions.ConnectorDescriptor! descriptor) -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.QianFieldError!>!
+static Qian.Identity.Abstractions.ConnectorManifest.IsValidId(string? id) -> bool
+static Qian.Identity.Abstractions.ConnectorManifest.Validate(Qian.Identity.Abstractions.ConnectorDescriptor! descriptor) -> void
+static Qian.Identity.Abstractions.ConnectorTerminals.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static Qian.Identity.Abstractions.IdentityDefinition.IdentityConnectors(this Qian.Runtime.IPluginContext! context) -> Qian.Identity.Abstractions.IIdentityConnectorRegistry!
+static readonly Qian.Identity.Abstractions.IdentityDefinition.ConnectorsKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Identity.Abstractions.IdentityErrors.BindingConflict -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.BindingExpired -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.ConnectorDenied -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.ConnectorStateInvalid -> Qian.Runtime.Errors.ErrorCode!

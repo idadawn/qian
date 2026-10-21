@@ -3,6 +3,7 @@
   <ItemGroup><Using Include="Xunit" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Connector.Oidc/Qian.Identity.Connector.Oidc.csproj" />
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
     <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />

@@ -451,6 +451,155 @@ namespace Qian.Identity.Server.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Qian.Identity.Server.ConnectorFlowRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("BindingExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("binding_expires_at");
+
+                    b.Property<byte[]>("BrowserHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("browser_hash");
+
+                    b.Property<DateTimeOffset?>("CallbackAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("callback_at");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("client_id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<string>("ConnectorId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("connector_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DeviceType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("device_type");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("error_code");
+
+                    b.Property<string>("ErrorDetail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("error_detail");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("ExternalIssuer")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("external_issuer");
+
+                    b.Property<string>("ExternalProfile")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("external_profile");
+
+                    b.Property<string>("ExternalSubject")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("external_subject");
+
+                    b.Property<string>("ExternalUnionId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("external_union_id");
+
+                    b.Property<Guid?>("MembershipId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("membership_id");
+
+                    b.Property<string>("Nonce")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("nonce");
+
+                    b.Property<Guid?>("PersonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("person_id");
+
+                    b.Property<string>("RemoteAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("remote_address");
+
+                    b.Property<string>("ReturnUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("return_url");
+
+                    b.Property<byte[]>("StateHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("state_hash");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(36)
+                        .HasColumnType("character varying(36)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("user_agent");
+
+                    b.PrimitiveCollection<string[]>("VerifiedAmr")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("verified_amr");
+
+                    b.Property<DateTimeOffset?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verified_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_connector_flows");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_connector_flows_expires_at");
+
+                    b.HasIndex("StateHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_connector_flows_state_hash");
+
+                    b.ToTable("connector_flows", "plugin_qian_identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_connector_flows_status", "status IN ('pending', 'processing', 'bind', 'completed', 'failed', 'cancelled')");
+                        });
+                });
+
             modelBuilder.Entity("Qian.Identity.Server.ExternalIdentityRow", b =>
                 {
                     b.Property<Guid>("Id")
@@ -685,6 +834,11 @@ namespace Qian.Identity.Server.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("purpose");
 
+                    b.Property<string>("Reason")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("reason");
+
                     b.Property<string>("RemoteAddress")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
@@ -708,7 +862,7 @@ namespace Qian.Identity.Server.Migrations
 
                     b.ToTable("login_tickets", "plugin_qian_identity", t =>
                         {
-                            t.HasCheckConstraint("ck_login_tickets_purpose", "purpose IN ('selection', 'password_change')");
+                            t.HasCheckConstraint("ck_login_tickets_purpose", "purpose IN ('selection', 'password_change', 'connector')");
                         });
                 });
 
