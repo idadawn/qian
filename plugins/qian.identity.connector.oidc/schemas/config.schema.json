@@ -1,6 +1,74 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "properties": {},
-  "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "description": "通用 OIDC 上游连接器（企业 IdP / Authentik）。issuer、clientId、clientSecret 在挂载时必填；clientSecret 只接受 secretRef。",
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$",
+      "default": "oidc",
+      "description": "注册名：连接器标识与回调路径段 /connect/callback/{name}。"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "default": "企业身份源",
+      "description": "登录页按钮上的身份源名称。"
+    },
+    "issuer": {
+      "type": "string",
+      "maxLength": 512,
+      "description": "上游 issuer，须与其发现文档里的 issuer 逐字一致；生产必须是 https。"
+    },
+    "clientId": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "在上游登记的客户端标识。"
+    },
+    "clientSecret": {
+      "type": "string",
+      "pattern": "^secretRef://(platform|tenant|dev)/[^\\s?#]+$",
+      "x-qian-sensitive": true,
+      "description": "客户端密钥，只接受 secretRef://…，不接受明文。"
+    },
+    "scopes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "maxItems": 32,
+      "default": [
+        "openid",
+        "profile",
+        "email"
+      ],
+      "description": "请求的 scope，必须含 openid。"
+    },
+    "terminals": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "pc",
+          "mobile",
+          "workbench"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "default": [
+        "pc",
+        "mobile"
+      ],
+      "description": "支持的终端。"
+    },
+    "requireHttps": {
+      "type": "boolean",
+      "default": true,
+      "description": "只允许在本机开发或测试中对回环地址的 issuer 关闭。"
+    }
+  },
+  "additionalProperties": false
 }

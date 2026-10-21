@@ -20,6 +20,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     internal DbSet<LoginAuditRow> LoginAudits => Set<LoginAuditRow>();
     internal DbSet<LoginTicketRow> LoginTickets => Set<LoginTicketRow>();
     internal DbSet<CaptchaRow> Captchas => Set<CaptchaRow>();
+    internal DbSet<ConnectorFlowRow> ConnectorFlows => Set<ConnectorFlowRow>();
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -139,7 +140,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
         });
         modelBuilder.Entity<LoginTicketRow>(entity =>
         {
-            entity.ToTable("login_tickets", table => table.HasCheckConstraint("ck_login_tickets_purpose", "purpose IN ('selection', 'password_change')"));
+            entity.ToTable("login_tickets", table => table.HasCheckConstraint("ck_login_tickets_purpose", "purpose IN ('selection', 'password_change', 'connector')"));
             entity.HasKey(row => row.TokenHash);
             entity.Property(row => row.Purpose).HasMaxLength(16).IsRequired();
             entity.Property(row => row.ClientId).HasMaxLength(100).IsRequired();
@@ -147,6 +148,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
             entity.Property(row => row.TenantId).HasMaxLength(36).IsRequired(false);
             entity.Property(row => row.Choices).HasColumnType("text[]");
             entity.Property(row => row.Acr).HasMaxLength(16);
+            entity.Property(row => row.Reason).HasMaxLength(64);
             entity.Property(row => row.RemoteAddress).HasMaxLength(64); entity.Property(row => row.UserAgent).HasMaxLength(256);
             entity.HasIndex(row => row.ExpiresAt);
         });
@@ -154,6 +156,26 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
         {
             entity.ToTable("login_captchas"); entity.HasKey(row => row.Id);
             entity.Property(row => row.Id).ValueGeneratedNever();
+            entity.HasIndex(row => row.ExpiresAt);
+        });
+        modelBuilder.Entity<ConnectorFlowRow>(entity =>
+        {
+            entity.ToTable("connector_flows", table => table.HasCheckConstraint("ck_connector_flows_status",
+                "status IN ('pending', 'processing', 'bind', 'completed', 'failed', 'cancelled')"));
+            entity.HasKey(row => row.Id);
+            entity.Property(row => row.Id).ValueGeneratedNever();
+            entity.Property(row => row.ConnectorId).HasMaxLength(64).IsRequired();
+            entity.Property(row => row.TenantId).HasMaxLength(36);
+            entity.Property(row => row.ClientId).HasMaxLength(100).IsRequired();
+            entity.Property(row => row.DeviceType).HasMaxLength(16).IsRequired();
+            entity.Property(row => row.ReturnUrl).HasMaxLength(2048);
+            entity.Property(row => row.Nonce).HasMaxLength(64).IsRequired();
+            entity.Property(row => row.Status).HasMaxLength(16).IsRequired();
+            entity.Property(row => row.ErrorCode).HasMaxLength(64); entity.Property(row => row.ErrorDetail).HasMaxLength(200);
+            entity.Property(row => row.ExternalIssuer).HasMaxLength(512); entity.Property(row => row.ExternalSubject).HasMaxLength(256);
+            entity.Property(row => row.ExternalUnionId).HasMaxLength(256); entity.Property(row => row.ExternalProfile).HasColumnType("jsonb");
+            entity.Property(row => row.RemoteAddress).HasMaxLength(64); entity.Property(row => row.UserAgent).HasMaxLength(256);
+            entity.HasIndex(row => row.StateHash).IsUnique();
             entity.HasIndex(row => row.ExpiresAt);
         });
     }

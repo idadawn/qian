@@ -1,3 +1,3 @@
 [
-  { "resource": "scope", "actions": ["read"] }
+  { "resource": "scope", "actions": ["read", "write"] }
 ]

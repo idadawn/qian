@@ -257,18 +257,32 @@ internal static class AccountsHost
         }
     }
 
-    /// <summary>可控的租户目录与配额：状态与人数上限由测试设定；配额判定与生产同一规则（达到上限即拒绝，平台超管不计）。</summary>
-    internal sealed class FakeTenancy(ITenantContext tenant) : IQianPlugin, ITenantDirectory, ITenantQuota
+    /// <summary>可控的租户目录、配额与租户设置：状态、人数上限与设置项由测试设定；配额判定与生产同一规则（达到上限即拒绝，平台超管不计）。</summary>
+    internal sealed class FakeTenancy(ITenantContext tenant) : IQianPlugin, ITenantDirectory, ITenantQuota, ITenantSettings
     {
         private readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, (TenantDescriptor Descriptor, int? Limit)> _tenants = new();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<(Guid Tenant, string Plugin, string Key), object> _settings = new();
         public IReadOnlyList<ServiceKey> Inject => [];
 
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
         {
             ctx.Provide<ITenantDirectory>(TenancyDefinition.Key, this);
             ctx.Provide<ITenantQuota>(TenantSettings.QuotaKey, this);
+            ctx.Provide<ITenantSettings>(TenantSettings.Key, this);
+            // 与真实 Tenancy 组件一样登记配额错误码，经 HTTP 返回时才不会落成 INTERNAL。
+            ctx.Effect(ctx.Services.GetRequiredService<Qian.Runtime.Errors.ErrorCatalog>().Register(TenancyErrors.UserLimit));
             return ValueTask.CompletedTask;
         }
+
+        /// <summary>设定（value 为 null 时清除）某租户下某组件的设置项。</summary>
+        internal void Set(Guid id, string plugin, string key, object? value)
+        {
+            if (value is null) _settings.TryRemove((id, plugin, key), out _); else _settings[(id, plugin, key)] = value;
+        }
+
+        // 与真实实现一样按当前租户上下文读取。
+        public ValueTask<T?> Get<T>(string pluginId, string key, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(Guid.TryParseExact(tenant.TenantId, "D", out var id) && _settings.TryGetValue((id, pluginId, key), out var value) ? (T?)value : default);
 
         internal TenantDescriptor Add(string code, TenantStatus status = TenantStatus.Active, int? limit = null)
         {

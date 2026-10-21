@@ -49,9 +49,9 @@ internal sealed partial class IdentityAccountService
     }
 
     // 失败也写且仅写一条审计；返回给调用方的错误不区分账号不存在与密码错误。
-    private async ValueTask<SignInResult> RejectAsync(AuditSubject subject, QianError error, string reason, Guid? personId, CancellationToken ct, TimeSpan? retryAfter = null)
+    private async ValueTask<SignInResult> RejectAsync(AuditSubject subject, QianError error, string reason, Guid? personId, CancellationToken ct, TimeSpan? retryAfter = null, Guid? tenantId = null)
     {
-        await WriteAuditAsync(NewAudit(subject, "failure", reason, Now, personId), ct).ConfigureAwait(false);
+        await WriteAuditAsync(NewAudit(subject, "failure", reason, Now, personId, tenantId: tenantId), ct).ConfigureAwait(false);
         return SignInResult.Failure(error, retryAfter);
     }
 
@@ -63,32 +63,47 @@ internal sealed partial class IdentityAccountService
     {
         ArgumentNullException.ThrowIfNull(input);
         context ??= new LoginContext();
+        // 连接器登录：外部断言已由统一回调校验并确认了绑定，这里只兑换服务端发出的一次性连接器票据（S1-IDP-007）。
+        if (input.ConnectorId is not null) return await SignInWithConnectorAsync(input, context, cancellationToken).ConfigureAwait(false);
         var (kind, masked) = IdentifierRules.MaskInput(input.Identifier, _account.DefaultPhoneCountryCode);
-        var subject = new AuditSubject("authenticate", input.ClientId, input.ConnectorId is null ? input.FactorId ?? PasswordFactorId : "connector:" + Truncate(input.ConnectorId, 48), kind, masked, context);
-        // 连接器登录由 S1-IDP-007 接入同一条路径；在此之前明确拒绝，而不是悄悄降级成别的方式。
-        if (input.ConnectorId is not null)
-            return await RejectAsync(subject, Field(PlatformErrors.ValueNotAllowed, "#/connector_id"), "method_unsupported", null, cancellationToken).ConfigureAwait(false);
+        var subject = new AuditSubject("authenticate", input.ClientId, input.FactorId ?? PasswordFactorId, kind, masked, context);
+        var first = await AuthenticateFirstFactorAsync(input, subject, cancellationToken).ConfigureAwait(false);
+        if (first.Failure is { } failure) return failure;
+        var (person, client, verified) = (first.Person!, first.Client!, first.Verified!);
+        var amr = verified.Amr.Count == 0 ? [PasswordAmr] : verified.Amr.ToArray();
+        var state = new AuthState(person.Id, client.Application.ClientId!, DeviceTypeOf(client, context), amr, verified.Acr, Now);
+        if (person.MustChangePassword)
+            return await IssueAsync(subject, state, PasswordChangePurpose, input.TenantId, [], null, null, cancellationToken).ConfigureAwait(false);
+        return await ContinueAsync(subject, state, input.TenantId, null, null, false, cancellationToken).ConfigureAwait(false);
+    }
+
+    private sealed record FirstFactor(SignInResult? Failure, PersonRow? Person = null, IdentityClientRegistration? Client = null, AuthenticationResult? Verified = null);
+
+    // 第一因子：客户端、验证码、账号查找、限流（占位在先、验证在后）、凭据、账号状态与第二因子登记。失败各写一条审计；成功不写，由调用方在
+    // 本次调用的最终结果上写（登录建立会话或签发票据，确认绑定记一条「已验证」）。
+    private async Task<FirstFactor> AuthenticateFirstFactorAsync(LoginInput input, AuditSubject subject, CancellationToken cancellationToken)
+    {
         var factor = _factors.Find(input.FactorId ?? PasswordFactorId);
         if (factor is null)
-            return await RejectAsync(subject, Field(PlatformErrors.ValueNotAllowed, "#/factor_id"), "method_unsupported", null, cancellationToken).ConfigureAwait(false);
+            return new(await RejectAsync(subject, Field(PlatformErrors.ValueNotAllowed, "#/factor_id"), "method_unsupported", null, cancellationToken).ConfigureAwait(false));
         if (FindClient(input.ClientId) is not { } client)
-            return await RejectAsync(subject, Field(PlatformErrors.ValueNotAllowed, "#/client_id"), "client_unknown", null, cancellationToken).ConfigureAwait(false);
+            return new(await RejectAsync(subject, Field(PlatformErrors.ValueNotAllowed, "#/client_id"), "client_unknown", null, cancellationToken).ConfigureAwait(false));
         if (input.Proof is null)
-            return await RejectAsync(subject, Field(PlatformErrors.Required, "#/proof"), "invalid_request", null, cancellationToken).ConfigureAwait(false);
+            return new(await RejectAsync(subject, Field(PlatformErrors.Required, "#/proof"), "invalid_request", null, cancellationToken).ConfigureAwait(false));
         var login = _account.Login;
         // 「每次都要求」的验证码对存在与不存在的账号一视同仁，先于账号查找校验。
-        if (login.Captcha == CaptchaMode.Always && await CheckCaptchaAsync(input, subject, null, cancellationToken).ConfigureAwait(false) is { } captchaFailure) return captchaFailure;
+        if (login.Captcha == CaptchaMode.Always && await CheckCaptchaAsync(input, subject, null, cancellationToken).ConfigureAwait(false) is { } captchaFailure) return new(captchaFailure);
         var classified = IdentifierRules.Classify(input.Identifier, _account.DefaultPhoneCountryCode);
         var person = classified is null ? null : await FindForLoginAsync(classified.Value.Kind, classified.Value.Value, cancellationToken).ConfigureAwait(false);
         if (person is null)
         {
             // 账号不存在也做一次等价成本的哈希，响应时间不泄露账号是否存在。
             if (factor.Descriptor.Id == PasswordFactorId) { using var secret = PasswordSecret.From(input.Proof); _hasher.BurnDummy(secret.Bytes); }
-            return await RejectAsync(subject, new QianError(IdentityErrors.InvalidCredentials), "unknown_account", null, cancellationToken).ConfigureAwait(false);
+            return new(await RejectAsync(subject, new QianError(IdentityErrors.InvalidCredentials), "unknown_account", null, cancellationToken).ConfigureAwait(false));
         }
         var now = Now;
         if (login.Captcha == CaptchaMode.AfterFailures && RecentFailures(person, now) >= login.CaptchaAfterFailures &&
-            await CheckCaptchaAsync(input, subject, person.Id, cancellationToken).ConfigureAwait(false) is { } afterFailures) return afterFailures;
+            await CheckCaptchaAsync(input, subject, person.Id, cancellationToken).ConfigureAwait(false) is { } afterFailures) return new(afterFailures);
         // 先占用一次尝试再验证：并发猜测不会在计数落库前各自验证一遍。
         var correlation = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N");
         var outcome = await VerifyWithThrottleAsync(person.Id, async token =>
@@ -97,20 +112,16 @@ internal sealed partial class IdentityAccountService
             return await factor.VerifyAsync(input.Proof, factorContext, token).ConfigureAwait(false);
         }, cancellationToken).ConfigureAwait(false);
         if (outcome.Locked)
-            return await RejectAsync(subject, new QianError(IdentityErrors.AccountLocked), outcome.JustLocked ? "locked_now" : "locked", person.Id, cancellationToken, outcome.RetryAfter).ConfigureAwait(false);
+            return new(await RejectAsync(subject, new QianError(IdentityErrors.AccountLocked), outcome.JustLocked ? "locked_now" : "locked", person.Id, cancellationToken, outcome.RetryAfter).ConfigureAwait(false));
         if (outcome.Result is not { Succeeded: true } verified)
-            return await RejectAsync(subject, outcome.Result?.Error ?? new QianError(IdentityErrors.InvalidCredentials), "bad_credentials", person.Id, cancellationToken).ConfigureAwait(false);
+            return new(await RejectAsync(subject, outcome.Result?.Error ?? new QianError(IdentityErrors.InvalidCredentials), "bad_credentials", person.Id, cancellationToken).ConfigureAwait(false));
         // 凭据正确之后才暴露账号状态。
         if (person.Status != AccountStatuses.Active)
-            return await RejectAsync(subject, new QianError(IdentityErrors.AccountDisabled), "account_" + person.Status, person.Id, cancellationToken).ConfigureAwait(false);
+            return new(await RejectAsync(subject, new QianError(IdentityErrors.AccountDisabled), "account_" + person.Status, person.Id, cancellationToken).ConfigureAwait(false));
         // 已登记第二因子的账号一律拒绝：第二因子的挑战与校验步骤由认证因子任务（S1-IDP-006）接入流水线，在此之前绝不降级成单因子。
         if (HasEnrolledFactors(person))
-            return await RejectAsync(subject, new QianError(IdentityErrors.MfaUnavailable), "mfa_unavailable", person.Id, cancellationToken).ConfigureAwait(false);
-        var amr = verified.Amr.Count == 0 ? [PasswordAmr] : verified.Amr.ToArray();
-        var state = new AuthState(person.Id, client.Application.ClientId!, DeviceTypeOf(client, context), amr, verified.Acr, now);
-        if (person.MustChangePassword)
-            return await IssueAsync(subject, state, PasswordChangePurpose, input.TenantId, [], null, null, cancellationToken).ConfigureAwait(false);
-        return await ContinueAsync(subject, state, input.TenantId, null, null, false, cancellationToken).ConfigureAwait(false);
+            return new(await RejectAsync(subject, new QianError(IdentityErrors.MfaUnavailable), "mfa_unavailable", person.Id, cancellationToken).ConfigureAwait(false));
+        return new(null, person, client, verified);
     }
 
     public async ValueTask<SignInResult> SelectAsync(TenantSelection selection, LoginContext context, CancellationToken cancellationToken = default)
@@ -479,7 +490,7 @@ internal sealed partial class IdentityAccountService
     // ---- 票据 ----
 
     private sealed record TicketState(string ClientId, string DeviceType, Guid PersonId, Guid? TenantFilter, IReadOnlyList<(Guid? Membership, Guid? Tenant)> Choices,
-        Guid? FromSession, IReadOnlyList<string> Amr, string? Acr, DateTimeOffset AuthenticatedAt);
+        Guid? FromSession, IReadOnlyList<string> Amr, string? Acr, DateTimeOffset AuthenticatedAt, string? Reason = null);
 
     private static string Base64Url(byte[] value) => Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
@@ -507,7 +518,7 @@ internal sealed partial class IdentityAccountService
             if (parts.Length == 3 && parts[0] == "m" && Guid.TryParseExact(parts[1], "D", out var membership) && Guid.TryParseExact(parts[2], "D", out var tenant)) choices.Add((membership, tenant));
         }
         return new TicketState(row.ClientId, row.DeviceType, row.PersonId, Guid.TryParseExact(row.TenantId, "D", out var filter) ? filter : null, choices, row.FromSessionId,
-            row.Amr, row.Acr, row.AuthenticatedAt);
+            row.Amr, row.Acr, row.AuthenticatedAt, row.Reason);
     }
 
     private static async Task<bool> ConsumeTicketAsync(IdentityDbContext db, byte[] hash, string purpose, DateTimeOffset now, CancellationToken ct) =>
