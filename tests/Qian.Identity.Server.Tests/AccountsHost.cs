@@ -121,9 +121,10 @@ internal static class AccountsHost
         /// <summary>带 Cookie 的浏览器；每个实例各有自己的会话。</summary>
         internal Browser NewBrowser()
         {
-            var http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = true, CookieContainer = new() }) { BaseAddress = new Uri(issuer) };
+            var cookies = new CookieContainer();
+            var http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = true, CookieContainer = cookies }) { BaseAddress = new Uri(issuer) };
             _browsers.Add(http);
-            return new Browser(http, this);
+            return new Browser(http, this, cookies);
         }
 
         /// <summary>以超级用户执行 SQL 并返回第一列文本，用于断言库内事实（绕过 RLS，所以仅用于验证）。</summary>
@@ -151,17 +152,26 @@ internal static class AccountsHost
     }
 
     /// <summary>模拟用户的浏览器：先取防伪令牌，再以 JSON 调账号接口，并沿用 Cookie 走授权码流程。</summary>
-    internal sealed class Browser(HttpClient http, Running host)
+    internal sealed class Browser(HttpClient http, Running host, CookieContainer cookies)
     {
-        private (string Header, string Token)? _csrf;
         internal HttpClient Http => http;
 
+        /// <summary>浏览器此刻是否持有账号会话 Cookie（防伪 Cookie 不算）。</summary>
+        internal bool HasAccountCookie => cookies.GetCookies(new Uri(host.Issuer)).Any(cookie => cookie.Name.Contains("qian.identity.signin", StringComparison.Ordinal));
+
+        /// <summary>以客户端身份向令牌端点提交表单；confidential 客户端带 secret，public 不带。</summary>
+        internal Task<HttpResponseMessage> Grant(string client, Dictionary<string, string> form)
+        {
+            form["client_id"] = client; if (client == "web") form["client_secret"] = host.Secret;
+            return http.PostAsync("connect/token", new FormUrlEncodedContent(form), Ct);
+        }
+
+        // 防伪令牌绑定当前登录身份：登录、切换、改密之后原来的令牌即告失效，所以每次写请求前都取一枚新的，和前端在登录后重新获取一致。
         internal async Task<(string Header, string Token)> Csrf()
         {
-            if (_csrf is { } known) return known;
             using var response = await http.GetAsync("api/identity/csrf", Ct); response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
-            return (_csrf = (json.GetProperty("header").GetString()!, json.GetProperty("token").GetString()!)).Value;
+            return (json.GetProperty("header").GetString()!, json.GetProperty("token").GetString()!);
         }
 
         internal async Task<HttpResponseMessage> Post(string path, object body, bool csrf = true)

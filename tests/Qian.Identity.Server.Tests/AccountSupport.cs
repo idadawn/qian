@@ -1,11 +1,19 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using Qian.Identity.Abstractions;
 using Qian.Tenancy;
+using Qian.Testing.Containers;
 
 namespace Qian.Identity.Server.Tests;
 
+// 同一个人在 alpha、beta 两个租户各有一个成员身份的真实宿主。
+internal sealed record World(AccountsHost.Running Host, TenantDescriptor A, TenantDescriptor B, Person Person, string Phone, Membership InA, Membership InB) : IAsyncDisposable
+{
+    public ValueTask DisposeAsync() => Host.DisposeAsync();
+}
+
 // 账号相关集成测试共用的造数与断言辅助。
-internal static class AccountSupport
+internal static partial class AccountSupport
 {
     internal const string Password = "Correct-Horse-9";
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -37,6 +45,31 @@ internal static class AccountSupport
         using var scope = host.Tenant.BeginScope(tenant.Id.ToString("D"));
         return await host.Accounts.CreateMembershipAsync(new CreateMembership(person, name) { IsTenantAdministrator = admin, Account = account, MembershipId = id }, Ct);
     }
+
+    internal static async Task<World> TwoTenants(PostgresFixture postgres, IdentityAccountOptions? options = null)
+    {
+        var host = await AccountsHost.Start(postgres, options);
+        var a = host.Tenants.Add("alpha"); var b = host.Tenants.Add("beta");
+        var (person, phone) = await CreatePerson(host);
+        return new World(host, a, b, person, phone, await Join(host, a, person.Id, "甲方成员"), await Join(host, b, person.Id, "乙方成员"));
+    }
+
+    /// <summary>登录策略的简写：只改关心的几项，其余取缺省。</summary>
+    internal static IdentityAccountOptions Policy(int max = 5, LockoutMode mode = LockoutMode.Lock, TimeSpan? delayBase = null, TimeSpan? maxDelay = null, TimeSpan? window = null,
+        CaptchaMode captcha = CaptchaMode.Off, int captchaAfter = 3) => new()
+    {
+        Login = new LoginPolicy
+        {
+            MaxFailedAttempts = max, Mode = mode, DelayBase = delayBase ?? TimeSpan.FromSeconds(5), MaxDelay = maxDelay ?? TimeSpan.FromMinutes(15),
+            FailureWindow = window ?? TimeSpan.FromMinutes(15), Captcha = captcha, CaptchaAfterFailures = captchaAfter
+        }
+    };
+
+    /// <summary>从验证码 SVG 里按出现顺序取出答案字符：图形噪声只挡脚本，测试用它当「人眼」。</summary>
+    internal static string Solve(string svg) => string.Concat(CaptchaText().Matches(svg).Select(match => match.Groups[1].Value));
+
+    [GeneratedRegex("<text [^>]*>([A-Z0-9])</text>", RegexOptions.CultureInvariant)]
+    private static partial Regex CaptchaText();
 
     internal static async Task<T> Throws<T>(Func<Task> action) where T : Exception => await Assert.ThrowsAsync<T>(action);
 

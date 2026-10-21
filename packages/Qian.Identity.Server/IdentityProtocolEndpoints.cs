@@ -121,6 +121,7 @@ public static class IdentityProtocolEndpoints
                 var validation = await accounts.ValidateAsync(sid, person, membership, http.RequestAborted).ConfigureAwait(false);
                 if (validation is null) return Reject(Errors.InvalidGrant);
                 ReplaceRevision(principal, validation.IdentityRevision);
+                RestorePlatformTenant(principal);
             }
             var requested = request.GetResources();
             var resources = requested.IsEmpty ? principal.GetResources().ToArray() : requested.ToArray();
@@ -222,6 +223,20 @@ public static class IdentityProtocolEndpoints
         principal.SetDestinations(claim => claim.Type == "tenant_id" && claim.ValueType == JsonClaimValueTypes.JsonNull
             ? new[] { Destinations.AccessToken } : new[] { Destinations.AccessToken, Destinations.IdentityToken });
         return principal;
+    }
+
+    // 授权码与 refresh token 是序列化的 JWT：平台身份的 JSON null tenant_id 经 IdentityModel 会退化成空字符串。
+    // 兑换时把它恢复成带 JSON_NULL 类型的 claim，访问令牌里才是真正的 null 而不是空串（空串不是任何租户，也绝不能被当成租户 ID 使用）。
+    private static void RestorePlatformTenant(ClaimsPrincipal principal)
+    {
+        foreach (var identity in principal.Identities)
+            foreach (var empty in identity.FindAll("tenant_id").Where(claim => claim.Value.Length == 0 && claim.ValueType != JsonClaimValueTypes.JsonNull).ToArray())
+            {
+                identity.RemoveClaim(empty);
+                var restored = new Claim("tenant_id", "", JsonClaimValueTypes.JsonNull);
+                restored.SetDestinations(Destinations.AccessToken);
+                identity.AddClaim(restored);
+            }
     }
 
     private static void ReplaceRevision(ClaimsPrincipal principal, long revision)

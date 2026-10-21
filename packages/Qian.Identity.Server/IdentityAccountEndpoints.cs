@@ -165,7 +165,12 @@ public static class IdentityAccountEndpoints
     {
         if (!http.Request.HasJsonContentType()) return QianResults.Error(new QianError(PlatformErrors.UnsupportedMediaType));
         if (http.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = MaxBodyBytes;
-        if (http.Request.ContentLength is > MaxBodyBytes) return QianResults.Error(new QianError(PlatformErrors.PayloadTooLarge));
+        if (http.Request.ContentLength is > MaxBodyBytes)
+        {
+            // 超限的请求体不读取也不排空：响应后直接关闭连接，否则服务器在收尾时才发现超限，会把已写好的 413 连同连接一起丢掉。
+            http.Response.Headers.Connection = "close";
+            return QianResults.Error(new QianError(PlatformErrors.PayloadTooLarge));
+        }
         if (!await http.RequestServices.GetRequiredService<IAntiforgery>().IsRequestValidAsync(http).ConfigureAwait(false)) return QianResults.Error(new QianError(PlatformErrors.InputInvalid));
         return null;
     }

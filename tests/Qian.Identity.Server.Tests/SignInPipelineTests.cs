@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using Qian.Events;
 using Qian.Identity.Abstractions;
 using Qian.Runtime.Errors;
@@ -12,20 +11,10 @@ namespace Qian.Identity.Server.Tests;
 
 // 统一登录流水线：真实 PostgreSQL（受限应用角色 + 强制 RLS）、真实服务实现。
 // 时间由可调时钟给出，锁定到期、票据过期、会话寿命都靠推进时钟验证，不靠睡眠。
-public sealed partial class SignInPipelineTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
+public sealed class SignInPipelineTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
     private static readonly LoginContext Net = new("203.0.113.9", "UT-Agent/1.0");
-
-    private static IdentityAccountOptions Policy(int max = 5, LockoutMode mode = LockoutMode.Lock, TimeSpan? delayBase = null, TimeSpan? maxDelay = null, TimeSpan? window = null,
-        CaptchaMode captcha = CaptchaMode.Off, int captchaAfter = 3) => new()
-    {
-        Login = new LoginPolicy
-        {
-            MaxFailedAttempts = max, Mode = mode, DelayBase = delayBase ?? TimeSpan.FromSeconds(5), MaxDelay = maxDelay ?? TimeSpan.FromMinutes(15),
-            FailureWindow = window ?? TimeSpan.FromMinutes(15), Captcha = captcha, CaptchaAfterFailures = captchaAfter
-        }
-    };
 
     private static Task<SignInResult> Wrong(AccountsHost.Running host, string phone) => host.SignIn.SignInAsync(Input(phone, "Wrong-Pass-1"), Net, Ct).AsTask();
 
@@ -45,20 +34,6 @@ public sealed partial class SignInPipelineTests(PostgresFixture postgres) : ICla
     {
         var joined = await host.Text("SELECT coalesce(string_agg(payload, E'\\n' ORDER BY occurred_at, id), '') FROM plugin_qian_identity.outbox_messages WHERE event_type_id = @t", ("t", type));
         return joined.Length == 0 ? [] : [.. joined.Split('\n').Select(QianEventEnvelope.Parse)];
-    }
-
-    // 同一个人在 alpha、beta 两个租户各有一个成员身份。
-    private sealed record World(AccountsHost.Running Host, TenantDescriptor A, TenantDescriptor B, Person Person, string Phone, Membership InA, Membership InB) : IAsyncDisposable
-    {
-        public ValueTask DisposeAsync() => Host.DisposeAsync();
-    }
-
-    private static async Task<World> TwoTenants(PostgresFixture postgres, IdentityAccountOptions? options = null)
-    {
-        var host = await AccountsHost.Start(postgres, options);
-        var a = host.Tenants.Add("alpha"); var b = host.Tenants.Add("beta");
-        var (person, phone) = await CreatePerson(host);
-        return new World(host, a, b, person, phone, await Join(host, a, person.Id, "甲方成员"), await Join(host, b, person.Id, "乙方成员"));
     }
 
     [Fact]
@@ -680,12 +655,6 @@ public sealed partial class SignInPipelineTests(PostgresFixture postgres) : ICla
         Assert.Equal("machine", await host.Text("SELECT type FROM plugin_qian_identity.clients WHERE client_id = 'machine'"));
         Assert.Equal("confidential", await host.Text("SELECT type FROM plugin_qian_identity.clients WHERE client_id = 'web'"));
     }
-
-    // 从 SVG 里按出现顺序取出答案字符：验证码的图形噪声只挡脚本，测试用它当「人眼」。
-    private static string Solve(string svg) => string.Concat(TextNodes().Matches(svg).Select(match => match.Groups[1].Value));
-
-    [GeneratedRegex("<text [^>]*>([A-Z0-9])</text>", RegexOptions.CultureInvariant)]
-    private static partial Regex TextNodes();
 
     // 一个固定验证码的第二因子：用来证明其他认证方式走的是同一条流水线。
     private sealed class CodeFactor(string id, string code) : IAuthenticatorFactor
