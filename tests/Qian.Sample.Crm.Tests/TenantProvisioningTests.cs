@@ -1,7 +1,9 @@
+using System.Text;
 using System.Text.Json;
 using System.Net;
 using Qian.Audit;
 using Qian.Authz.Abstractions;
+using Qian.Identity.Abstractions;
 using Qian.Plugin.Sdk;
 using Microsoft.AspNetCore.Builder;
 using Kun.Core.MultiTenancy;
@@ -79,14 +81,17 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
-    public async Task 真实开通第三步失败后续跑_A和B生命周期幂等_角色与管理员写入_缺席成员与通知明确跳过()
+    public async Task 真实开通第三步失败后续跑_A和B生命周期幂等_角色与管理员写入_身份组件建立管理员成员_缺席的通知明确跳过()
     {
         using var platform = new LifecyclePlatform();
-        await using var host = await Start(lifecycle: platform);
+        // 内置账号模型挂进同一宿主：开通编排第 5 步经身份组件的成员开户端口建立管理员的 Membership（S1-IDP-003）。
+        await using var host = await Start(lifecycle: platform, identity: true);
         var loader = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var source = loader.GetContext("tenancy", ScopeKey.Global);
         var provisioning = source.Inject<ITenantProvisioning>(TenantProvisioning.Key);
-        var firstAdmin = new TenantAdministrator(Guid.CreateVersion7(), "owner-c");
+        // 管理员必须是已存在的 Person：SubjectId 即 Person 的 sub，也是第 7 步授予 tenant.owner 的主体。
+        var (ownerC, phoneC) = await NewPerson(host, "owner-c"); var (ownerD, _) = await NewPerson(host, "owner-d");
+        var firstAdmin = new TenantAdministrator(Guid.CreateVersion7(), ownerC.Id.ToString("D"));
         // 尚无激活制品，真实 Lifecycle 在第 3 步拒绝，不用替身冒充上游。
         await Assert.ThrowsAsync<QianErrorException>(() => provisioning.ProvisionAsync(new("c", "C"), firstAdmin, "operator", Ct).AsTask());
         var first = (await source.Tenancy().GetAsync("c", Ct))!;
@@ -94,7 +99,7 @@ public sealed partial class CustomerCommandTests
         Assert.Equal([("01:directory", "succeeded", 1), ("02:isolation", "succeeded", 1)], failed.Take(2).Select(s => (s.Step, s.Status, s.Attempts)));
         Assert.Contains(failed, step => step.Step == "03:components" && step.Status == "failed" && step.Attempts == 1);
         Assert.Contains(failed, step => step.Step == "03:component:qian.audit" && step.Status == "failed" && step.Attempts == 1);
-        var secondAdmin = new TenantAdministrator(Guid.CreateVersion7(), "owner-d");
+        var secondAdmin = new TenantAdministrator(Guid.CreateVersion7(), ownerD.Id.ToString("D"));
         await Assert.ThrowsAsync<QianErrorException>(() => provisioning.ProvisionAsync(new("d", "D"), secondAdmin, "operator", Ct).AsTask());
         var second = (await source.Tenancy().GetAsync("d", Ct))!;
 
@@ -122,15 +127,19 @@ public sealed partial class CustomerCommandTests
             Assert.Equal(1, before.Single(step => step.Step == "02:isolation").Attempts);
             Assert.Equal(2, before.Single(step => step.Step == "03:components").Attempts);
             Assert.Equal(2, before.Single(step => step.Step == "03:component:qian.audit").Attempts);
-            Assert.Equal("identity_unavailable", before.Single(step => step.Step == "05:membership").Reason);
+            var membershipStep = before.Single(step => step.Step == "05:membership");
+            Assert.Equal(("succeeded", null, 1), (membershipStep.Status, membershipStep.Reason, membershipStep.Attempts));
             Assert.Equal("notify_unavailable", before.Single(step => step.Step == "08:notification").Reason);
-            Assert.Equal(2, before.Count(step => step.Status == "skipped"));
+            Assert.Equal(1, before.Count(step => step.Status == "skipped"));
+            // 管理员 Membership 真的建立了：ID 与开通输入一致、是租户管理员、属于该 Person 与该租户。
+            Assert.Equal($"true|{admin.SubjectId}", await Text($"SELECT is_tenant_administrator::text || '|' || person_id::text FROM plugin_qian_identity.memberships WHERE id = '{admin.MembershipId}' AND tenant_id = '{descriptor.Id}'"));
             Assert.DoesNotContain(before, step => step.Status is "failed" or "running");
             Assert.Equal("4", await Text($"SELECT count(*)::text FROM plugin_qian_authz.roles WHERE tenant_id='{descriptor.Id}'"));
             Assert.Equal(admin.MembershipId.ToString(), await Text($"SELECT membership_id::text FROM plugin_qian_tenancy.tenant_admins WHERE tenant_id='{descriptor.Id}'"));
             Assert.Equal(admin.SubjectId, await Text($"SELECT a.subject_id FROM plugin_qian_authz.role_assignments a JOIN plugin_qian_authz.roles r ON a.role_id=r.id WHERE a.tenant_id='{descriptor.Id}' AND r.code='tenant.owner'"));
             await provisioning.RetryAsync(descriptor.Id, "operator", Ct);
             Assert.Equal(before.Where(s => s.Status == "succeeded"), (await provisioning.GetStepsAsync(descriptor.Id, Ct)).Where(s => s.Status == "succeeded"));
+            Assert.Equal("1", await Text($"SELECT count(*)::text FROM plugin_qian_identity.memberships WHERE tenant_id = '{descriptor.Id}'")); // 重试不重复建立成员
             foreach (var plugin in platform.SystemArtifacts.Keys)
                 Assert.Equal(1, Assert.Single(await lifecycle.GetRunsAsync(descriptor.Id.ToString(), plugin, Ct)).Attempts);
         }
@@ -138,6 +147,16 @@ public sealed partial class CustomerCommandTests
         await AssertCode(PlatformErrors.Conflict, () => provisioning.ProvisionAsync(new("c", "different"), firstAdmin, "operator", Ct).AsTask());
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(first.Id.ToString()))
             await AssertCode(PlatformErrors.AuthzDenied, () => provisioning.RetryAsync(second.Id, "operator", Ct).AsTask());
+        // R95（真实租户目录）：租户仍是 pending，管理员凭据正确也不能登录；激活后经同一条登录流水线登录，会话指向本租户与刚建立的成员。
+        async Task<SignInResult> SignInAs(string phone)
+        {
+            using var proof = new AuthenticationProof(Encoding.UTF8.GetBytes(IdentityPassword));
+            return await host.Identity.SignIn.SignInAsync(new LoginInput("web", null, null, null, proof) { Identifier = phone }, new LoginContext(), Ct);
+        }
+        Assert.Equal("TENANT_NOT_ACTIVE", (await SignInAs(phoneC)).Error!.Code.Code);
+        await Admin($"UPDATE plugin_qian_tenancy.tenants SET status = 'active' WHERE id = '{first.Id}'::uuid;");
+        var signedIn = await SignInAs(phoneC);
+        Assert.Equal((first.Id, firstAdmin.MembershipId), (signedIn.Session!.TenantId, signedIn.Session.MembershipId));
 
         async Task PrepareCrm(Guid id)
         {
