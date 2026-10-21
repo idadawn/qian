@@ -12,7 +12,7 @@ using Qian.Runtime;
 namespace Qian.Identity.Client;
 
 /// <summary>
-/// 组件挂载状态。挂载只记录插件上下文与 secretRef；Kun 的 OIDC 客户端在第一次需要时才创建并解析密钥，
+/// 组件挂载状态。挂载只记录按本组件身份解析 secretRef 的委托；Kun 的 OIDC 客户端在第一次需要时才创建并解析密钥，
 /// 所以不要求 Config 先于本组件挂载，也让「只装 Client」的公开客户端宿主完全不经 Config。卸载即释放客户端与元数据缓存。
 /// </summary>
 internal sealed partial class IdentityClientRuntime(IdentityClientOptions options, IHttpClientFactory http, TimeProvider clock, ILogger<IdentityClientRuntime> logger) : IDisposable
@@ -22,13 +22,13 @@ internal sealed partial class IdentityClientRuntime(IdentityClientOptions option
     internal IdentityClientOptions Options => options;
     internal bool Active => Volatile.Read(ref _mount) is not null;
 
-    internal void Activate(IPluginContext context, string? secretReference)
+    internal void Activate(Func<CancellationToken, ValueTask<SecretValue>>? resolveSecret)
     {
         var retriever = new HttpDocumentRetriever(http.CreateClient(IdentityClientDefaults.HttpClientName)) { RequireHttps = options.RequireHttpsMetadata };
         // 自动刷新取 discovery 缓存时间；遇到未知 kid 时 RequestRefresh，两次强制刷新至少间隔 30 秒，免得伪造 kid 打满发行方。
         var metadata = new ConfigurationManager<OpenIdConnectConfiguration>(options.Issuer + "/.well-known/openid-configuration", new OpenIdConnectConfigurationRetriever(), retriever)
             { AutomaticRefreshInterval = options.DiscoveryRefreshInterval, RefreshInterval = TimeSpan.FromSeconds(30) };
-        var mount = new Mount(context, secretReference, metadata);
+        var mount = new Mount(resolveSecret, metadata);
         if (Interlocked.CompareExchange(ref _mount, mount, null) is not null) { mount.Dispose(); throw new InvalidOperationException("同一宿主只允许一个 Identity Client。"); }
     }
 
@@ -45,10 +45,10 @@ internal sealed partial class IdentityClientRuntime(IdentityClientOptions option
         {
             if (mount.Client is { } existing) return existing;
             var secret = "";
-            if (mount.SecretReference is { } reference)
+            if (mount.ResolveSecret is { } resolve)
             {
                 // 每个挂载只解析一次：Kun 的客户端在自身生命周期内持有密钥；轮换密钥 = 重新挂载组件。
-                using var value = await mount.Context.ResolveSecretAsync(reference, ct).ConfigureAwait(false);
+                using var value = await resolve(ct).ConfigureAwait(false);
                 secret = value.RevealUtf8();
             }
             var client = new KunOidcClient(new KunOidcClientOptions
@@ -84,11 +84,10 @@ internal sealed partial class IdentityClientRuntime(IdentityClientOptions option
 
     private Mount Current => Volatile.Read(ref _mount) ?? throw new ServiceNotReadyException();
 
-    private sealed class Mount(IPluginContext context, string? secretReference, ConfigurationManager<OpenIdConnectConfiguration> metadata) : IDisposable
+    private sealed class Mount(Func<CancellationToken, ValueTask<SecretValue>>? resolveSecret, ConfigurationManager<OpenIdConnectConfiguration> metadata) : IDisposable
     {
         internal KunOidcClient? Client;
-        internal IPluginContext Context => context;
-        internal string? SecretReference => secretReference;
+        internal Func<CancellationToken, ValueTask<SecretValue>>? ResolveSecret => resolveSecret;
         internal ConfigurationManager<OpenIdConnectConfiguration> Metadata => metadata;
         internal SemaphoreSlim Gate { get; } = new(1, 1);
         public void Dispose() { Interlocked.Exchange(ref Client, null)?.Dispose(); }

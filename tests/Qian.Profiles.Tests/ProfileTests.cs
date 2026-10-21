@@ -70,6 +70,35 @@ public sealed class ProfileTests
     }
 
     [Fact]
+    public void Gateway_identity_is_an_aot_declared_code_component_and_the_same_component_without_x_aot_is_refused()
+    {
+        // S1-IDP-014：x-aot 由 NativeAOT 冒烟背书；同一组件去掉 x-aot（以更高版本出现，被无版本引用选中）时 AOT profile 拒绝装配。
+        var shipped = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false });
+        Assert.True(shipped.IsValid, JsonSerializer.Serialize(shipped, Json));
+        var identity = Assert.Single(shipped.Snapshot!.Entries, e => e.Id == "identity");
+        Assert.StartsWith("qian.identity.client@", identity.Plugin, StringComparison.Ordinal);
+        Assert.Equal("module", identity.Manifest.GetProperty("runtime").GetProperty("form").GetString());
+        Assert.True(identity.Manifest.GetProperty("x-aot").GetBoolean());
+        var copy = Path.Combine(Path.GetTempPath(), "qian-identity-without-aot-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            foreach (var source in Directory.EnumerateFiles(identity.ComponentDirectory, "*", SearchOption.AllDirectories))
+            {
+                var target = Path.Combine(copy, Path.GetRelativePath(identity.ComponentDirectory, source));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(source, target);
+            }
+            var file = Path.Combine(copy, ".qian-plugin/plugin.json");
+            var manifest = JsonNode.Parse(File.ReadAllText(file))!.AsObject();
+            manifest.Remove("x-aot"); manifest["version"] = "1.0.1";
+            File.WriteAllText(file, manifest.ToJsonString());
+            var refused = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false, ComponentDirectories = [copy] });
+            Assert.False(refused.IsValid);
+            Assert.Contains(refused.Diagnostics, d => d.Error.Errors?.Any(e => e.Message == "AOT profile 含未声明 AOT 兼容的代码组件。") == true);
+        }
+        finally { Directory.Delete(copy, true); }
+    }
+
+    [Fact]
     public async Task Shipped_minimal_profile_starts_the_real_runtime_and_mounts_a_declarative_overlay()
     {
         using var item = JsonDocument.Parse("""{"files":{},"patches":[],"home":false}""");

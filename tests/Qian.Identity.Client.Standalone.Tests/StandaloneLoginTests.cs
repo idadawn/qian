@@ -24,11 +24,13 @@ public sealed partial class StandaloneLoginTests(DexFixture dex) : IClassFixture
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    // 被测宿主的依赖闭包里只允许出现 Client 本身及其 Runtime / Abstractions 依赖；Qian.Testing.Containers 是夹具。
+    // 被测宿主的依赖闭包里只允许出现 Client 本身及其 Runtime / SDK / Abstractions 依赖（不含任何 Provider 与身份服务）；
+    // Plugin.Sdk 及其引用的四个 Abstractions 随组件元数据生成进入闭包（S1-IDP-014）；Qian.Testing.Containers 是夹具。
     private static readonly string[] AllowedQianAssemblies =
     [
         "Qian.Identity.Client", "Qian.Identity.Abstractions", "Qian.Config.Abstractions", "Qian.Runtime", "Qian.Runtime.Errors",
-        "Qian.Runtime.Errors.AspNetCore", "Qian.Testing.Containers"
+        "Qian.Runtime.Errors.AspNetCore", "Qian.Plugin.Sdk", "Qian.Data.Abstractions", "Qian.Authz.Abstractions", "Qian.Events.Abstractions",
+        "Qian.Surfaces.Abstractions", "Qian.Testing.Containers"
     ];
 
     [Fact]
@@ -100,7 +102,7 @@ public sealed partial class StandaloneLoginTests(DexFixture dex) : IClassFixture
     }
 
     [Fact]
-    public void 宿主的依赖闭包只有Client及其Runtime与Abstractions()
+    public void 宿主的依赖闭包只有Client及其Runtime_SDK与Abstractions()
     {
         using var deps = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Qian.Identity.Client.Standalone.Tests.deps.json")));
         var qian = deps.RootElement.GetProperty("libraries").EnumerateObject().Select(library => library.Name.Split('/')[0])

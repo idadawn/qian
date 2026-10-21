@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Qian.Config;
 using Qian.Identity.Abstractions;
+using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Runtime.Errors.AspNetCore;
@@ -167,6 +168,7 @@ public static class IdentityClientHosting
 /// <see cref="IdentityClientOptions"/> 一致；clientSecret 只接受 platform / dev 的 secretRef，第一次换码时经 Config 的密钥策略解析，
 /// 公开客户端省略它即可不依赖 Config。卸载后浏览器端点返回 404，Cookie 会话不再生效。
 /// </summary>
+[QianPlugin("qian.identity.client")]
 public sealed class IdentityClientPlugin : IQianPlugin
 {
     /// <inheritdoc />
@@ -198,7 +200,8 @@ public sealed class IdentityClientPlugin : IQianPlugin
             catch (FormatException) { throw Invalid(); }
         }
         ctx.Effect(IdentityErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
-        runtime.Activate(ctx, secret);
+        // 上下文只经 Config 的密钥入口交给运行时，生成器据此仍能证明提供项与代码一致（QIANSDK002）。
+        runtime.Activate(secret is null ? null : token => ctx.ResolveSecretAsync(secret, token));
         ctx.Effect(runtime.Deactivate);
         ctx.Provide<IIdentityService>(IdentityDefinition.Key, new IdentityClientService(ctx.Services.GetRequiredService<IHttpContextAccessor>(), ctx.Services));
         return ValueTask.CompletedTask;

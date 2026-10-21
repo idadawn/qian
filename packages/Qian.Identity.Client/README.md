@@ -9,6 +9,8 @@
 
 同一个包进 `platform`、`gateway` 与独立宿主（ADR-019）：独立宿主只装本包即可对接任意 OIDC 发行方，不部署 Qian 平台、不需要 Config 组件（公开客户端）。
 
+本包声明 `IsAotCompatible`，裁剪与 AOT 分析器 0 警告。`gateway` profile 是 AOT 树（`build.aot: true`），组件清单的 `x-aot` 以 CI 的 NativeAOT 冒烟为据：[tools/Qian.Identity.Client.AotSmoke](../../tools/Qian.Identity.Client.AotSmoke/Program.cs) 按网关的用法装配会话与 S2S 校验，以 ILC 警告即失败发布 linux-x64，原生二进制挂载组件后逐个请求端点。判断兼容性看 ILC 结果，不看 Kun 包的元数据：Kun 2026.10.14 的包缺 IsTrimmable 等元数据，成因见 [S1-KUN-015](../../pm/tasks/S1-KUN-015.md)。
+
 ## 安装与装配
 
 ```bash
@@ -105,8 +107,9 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 - 不做 RP 发起的发行方登出（end_session），也不调用撤销端点：本地登出只结束本地会话，发行方的 SSO 会话仍在；发行方侧的吊销经后通道登出同步到本地。
 - 本地登出与正在进行的刷新并发时，刷新的结果只续写仍存活的会话，已登出的会话不会复活；但刷新已经换到的令牌族要等发行方侧过期。
 - `prompt`、`login_hint`、租户提示等授权参数尚未透传（外壳接线随 D5 / YUE-002）。
-- 清单仍是配置骨架（不声明 `runtime`）：`gateway` profile 开了 AOT，而依赖的 Kun 发布包未带 AOT 兼容标记，见组件文件夹的说明。
+- 组件清单的 `runtime` 已由代码派生，并声明了 `x-aot`，但仍带配置骨架标记：`qian add identity` 还差私有源发布与 `runtime.nuget` 钉版，发版只能从 main 触发（S1-IDP-014），见组件文件夹的说明。
+- 组件元数据生成需要引用 `Qian.Plugin.Sdk`，它经 `Qian.Data.Abstractions` 把 EF Core 带进依赖闭包。NativeAOT 发布时这部分不可达，会被裁掉；JIT 宿主的输出目录里会多出这些程序集。
 
 ## 测试
 
-`tests/Qian.Identity.Client.Tests`：真实 qian-identity（内置账号模型、强制 PKCE）上的服务端换码、篡改 nonce / iss / state 重放、刷新单飞与轮换、登出防伪、卸载、后通道登出，以及会话主体经 Kun 网关签发器铸 S2S 后下游接受、透传被拒；S2S 契约逐条违约。`tests/Qian.Identity.Client.Standalone.Tests`：只引用本包的独立宿主对接 Dex（独立实现的 CNCF OIDC 发行方，见 [tests/README.md](../../tests/README.md) 的 `DexFixture`）完成登录与登出，并断言依赖闭包里没有其他 Qian 组件。选 Dex 而不是第二个 qian-identity，是因为后者证明不了「任意 OIDC 发行方」。
+`tests/Qian.Identity.Client.Tests`：真实 qian-identity（内置账号模型、强制 PKCE）上的服务端换码、篡改 nonce / iss / state 重放、刷新单飞与轮换、登出防伪、卸载、后通道登出，以及会话主体经 Kun 网关签发器铸 S2S 后下游接受、透传被拒；S2S 契约逐条违约。`tests/Qian.Identity.Client.Standalone.Tests`：只引用本包的独立宿主对接 Dex（独立实现的 CNCF OIDC 发行方，见 [tests/README.md](../../tests/README.md) 的 `DexFixture`）完成登录与登出，并断言依赖闭包里只有本包及其 Runtime / SDK / Abstractions，没有任何 Provider 或身份服务。`ClientManifestTests` 核对组件清单的代码字段与生成元数据一致，并确认声明了 `x-aot`；NativeAOT 冒烟见上文。选 Dex 而不是第二个 qian-identity，是因为后者证明不了「任意 OIDC 发行方」。

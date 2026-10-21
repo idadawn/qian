@@ -6,6 +6,7 @@
 
 | 服务键 | Provider 条目 | Consumer 条目 |
 |---|---|---|
+| ` Identity ` | ` global/identity ` |  |
 | ` Data ` | ` global/data ` |  |
 | ` Events ` | ` global/events ` |  |
 
@@ -32,9 +33,11 @@ flowchart LR
   n18["global/realtime"]
   n19["global/entitlement"]
   n20["global/shell"]
-  s0(("Data"))
-  n7 --> s0
-  s1(("Events"))
-  n10 --> s1
+  s0(("Identity"))
+  n5 --> s0
+  s1(("Data"))
+  n7 --> s1
+  s2(("Events"))
+  n10 --> s2
 ```
 

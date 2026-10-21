@@ -12,7 +12,9 @@
     "category": "platform"
   },
   "inject": [],
-  "provides": [],
+  "provides": [
+    "Identity"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -37,5 +39,20 @@
   "engines": {
     "kun": ">=2026.10.14"
   },
-  "x-skeleton": true
+  "x-skeleton": true,
+  "x-aot": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Identity.Client.IdentityClientPlugin, Qian.Identity.Client"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry"
+    ],
+    "tools": []
+  }
 }
