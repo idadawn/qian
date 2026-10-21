@@ -91,7 +91,8 @@ internal static class AccountsHost
                 [IdentityDefinition.Key, IdentityDefinition.AccountsKey, IdentityDefinition.SignInKey, IdentityDefinition.FactorsKey])], Ct);
         Assert.True(loader.GetState("identity", ScopeKey.Global) == PluginState.Ready, loader.GetFailure("identity", ScopeKey.Global)?.ToString());
         await app.StartAsync(Ct);
-        var clock = new ManualClock(DateTimeOffset.UtcNow);
+        // 起点取整秒：时间戳列只有微秒精度，100 纳秒刻度会让「写入再读回」的时刻与内存里的差几个刻度，影响精确断言。
+        var clock = new ManualClock(new DateTimeOffset(DateTimeOffset.UtcNow.UtcTicks / TimeSpan.TicksPerSecond * TimeSpan.TicksPerSecond, TimeSpan.Zero));
         var service = app.Services.GetRequiredService<IdentityAccountGate>().Service!;
         service.Clock = clock;
         return new Running(app, loader, issuer, secret, cert, tenancy, clock, service, postgres, logs);

@@ -103,8 +103,8 @@ internal sealed partial class IdentityAccountService
         // 凭据正确之后才暴露账号状态。
         if (person.Status != AccountStatuses.Active)
             return await RejectAsync(subject, new QianError(IdentityErrors.AccountDisabled), "account_" + person.Status, person.Id, cancellationToken).ConfigureAwait(false);
-        // 已登记第二因子而本实例没有可用的验证实现时一律拒绝，绝不降级成单因子。
-        if (HasEnrolledFactors(person) && !_factors.HasSecondFactors)
+        // 已登记第二因子的账号一律拒绝：第二因子的挑战与校验步骤由认证因子任务（S1-IDP-006）接入流水线，在此之前绝不降级成单因子。
+        if (HasEnrolledFactors(person))
             return await RejectAsync(subject, new QianError(IdentityErrors.MfaUnavailable), "mfa_unavailable", person.Id, cancellationToken).ConfigureAwait(false);
         var amr = verified.Amr.Count == 0 ? [PasswordAmr] : verified.Amr.ToArray();
         var state = new AuthState(person.Id, client.Application.ClientId!, DeviceTypeOf(client, context), amr, verified.Acr, now);
@@ -197,10 +197,12 @@ internal sealed partial class IdentityAccountService
             await ClearFailuresAsync(personId, ct).ConfigureAwait(false);
             return new Throttle(false, false, null, result);
         }
+        // 锁定事件等验证确认失败之后才发：阈值那次尝试若输对了，账号并没有被锁，不能通知出去。
+        if (gate.Crossed) await PublishLockedAsync(personId, ct).ConfigureAwait(false);
         return gate.JustLocked ? new Throttle(true, true, gate.RetryAfter, result) : new Throttle(false, false, null, result);
     }
 
-    private sealed record Gate(bool Blocked, bool JustLocked, TimeSpan? RetryAfter);
+    private sealed record Gate(bool Blocked, bool JustLocked, TimeSpan? RetryAfter, bool Crossed = false);
 
     private async Task<Gate> ReserveAttemptAsync(Guid personId, CancellationToken ct)
     {
@@ -217,11 +219,23 @@ internal sealed partial class IdentityAccountService
         row.FailedAttempts = failed; row.LastFailedAt = now;
         var span = policy.LockoutFor(failed);
         row.LockoutUntil = span is { } lockFor ? now + lockFor : null;
-        // 只在越过阈值的那一次发锁定事件，后续的延时累加不重复通知。
-        var crossed = span is not null && failed == policy.MaxFailedAttempts;
-        await SaveAsync(session, row, crossed ? new IdentityLockedEvent(row.Id, row.IdentityRevision, "too_many_attempts", row.LockoutUntil) : null, ct).ConfigureAwait(false);
+        await SaveAsync(session, row, null, ct).ConfigureAwait(false);
         await transaction.CommitAsync(ct).ConfigureAwait(false);
-        return new Gate(false, span is not null, span);
+        // 只在越过阈值的那一次通知，后续的延时累加不重复；是否真的锁住要等验证结果，所以事件由调用方稍后发。
+        return new Gate(false, span is not null, span, span is not null && failed == policy.MaxFailedAttempts);
+    }
+
+    // 阈值那次尝试验证失败后补发锁定事件。重新加锁读取：期间若已被管理员解锁、或锁定已被清除，就不再通知。
+    private async Task PublishLockedAsync(Guid personId, CancellationToken ct)
+    {
+        using var neutral = TenantScope(null); using var origin = OpenOrigin();
+        await using var session = await OpenAsync(ct).ConfigureAwait(false);
+        var db = session.Context;
+        await using var transaction = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        var row = await LockPersonAsync(db, personId, ct).ConfigureAwait(false);
+        if (row.LockoutUntil is not { } until || until <= Now) return;
+        await SaveAsync(session, row, new IdentityLockedEvent(row.Id, row.IdentityRevision, "too_many_attempts", until), ct).ConfigureAwait(false);
+        await transaction.CommitAsync(ct).ConfigureAwait(false);
     }
 
     private async Task ClearFailuresAsync(Guid personId, CancellationToken ct)
@@ -280,9 +294,6 @@ internal sealed partial class IdentityAccountService
     {
         private readonly Lock _gate = new();
         private readonly Dictionary<string, IAuthenticatorFactor> _items = new(StringComparer.Ordinal);
-
-        // 注册第一个非密码因子之前，已登记第二因子的账号一律拒绝登录（fail-closed）。
-        internal bool HasSecondFactors { get { lock (_gate) return _items.Keys.Any(id => id != PasswordFactorId); } }
 
         internal void Seed(IAuthenticatorFactor factor) { lock (_gate) _items[factor.Descriptor.Id] = factor; }
 
