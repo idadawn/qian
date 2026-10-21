@@ -125,6 +125,15 @@ class RuleTests(unittest.TestCase):
         [v] = violations("Qian.Reports", assets)
         self.assertEqual(["Qian.Reports", "Qian.Notify.Abstractions", "Qian.Lifecycle"], v.path)
 
+    def test_connector_depending_on_identity_server_is_reported(self):
+        # S1-IDP-007：连接器只依赖身份 Definition；经任何路径带进 Qian.Identity.Server 实现包都是违规。
+        assets = make_assets(["Qian.Identity.Abstractions", "Helper"], {
+            "Qian.Identity.Abstractions": ["Qian.Runtime"], "Qian.Runtime": [], "Helper": ["Qian.Identity.Server"], "Qian.Identity.Server": []},
+            projects={"Qian.Identity.Abstractions", "Qian.Runtime", "Helper", "Qian.Identity.Server"})
+        [violation] = violations("Qian.Identity.Connector.Oidc", assets)
+        self.assertEqual(("Qian.Identity.Server", "provider"), (violation.dependency, violation.role))
+        self.assertEqual(["Qian.Identity.Connector.Oidc", "Helper", "Qian.Identity.Server"], violation.path)
+
     def test_package_ids_are_case_insensitive(self):
         assets = make_assets(direct=["qian.capabilities"], edges={"qian.capabilities": []})
         [v] = violations("Qian.Files", assets)
@@ -270,6 +279,29 @@ class RealSdkClosureTests(unittest.TestCase):
                 if package_id != "Qian.Plugin.Sdk.Generators":
                     # 读到的是真实依赖图而不是空图：运行时包确实在闭包里。
                     self.assertIn("Qian.Runtime", closure)
+
+
+@NEEDS_DOTNET
+class RealConnectorClosureTests(unittest.TestCase):
+    """S1-IDP-007 验收：通用 OIDC 连接器包的完整传递依赖里没有 Qian.Identity.Server（也没有任何别的 Provider），只经身份 Definition 接入。
+
+    与 SDK 包族同样读已还原的 project.assets.json；包被移出解决方案或改名时本测试失败，门禁不会静默跳过它。
+    """
+
+    def test_oidc_connector_does_not_depend_on_identity_server(self):
+        project = (ROOT / "packages/Qian.Identity.Connector.Oidc/Qian.Identity.Connector.Oidc.csproj").resolve()
+        self.assertIn(project, set(check_deps.solution_projects(ROOT / "Qian.slnx")), "连接器包必须在 Qian.slnx 里，CI 的依赖图门禁才会检查它")
+        props = check_deps._properties(project)
+        self.assertEqual(("true", "Qian.Identity.Connector.Oidc"), (props.get("QianIsPackage"), props.get("QianPackageId")))
+        assets_file = Path(props["ProjectAssetsFile"])
+        self.assertTrue(assets_file.exists(), f"缺少 {assets_file}：先 dotnet restore Qian.slnx")
+        assets = check_deps._load(assets_file)
+        closure = {key.split("/", 1)[0] for framework, entries in assets["targets"].items() if "/" not in framework for key in entries}
+        self.assertNotIn("qian.identity.server", {name.lower() for name in closure})
+        self.assertEqual([], sorted(name for name in closure if check_deps.role_of(name) not in check_deps.ALLOWED_ROLES))
+        self.assertEqual([], check_deps.evaluate([check_deps.Package("Qian.Identity.Connector.Oidc", project, assets_file)], check_deps._load))
+        # 读到的是真实依赖图：身份 Definition 与运行时确实在闭包里。
+        self.assertTrue({"Qian.Identity.Abstractions", "Qian.Runtime"} <= closure)
 
 
 if __name__ == "__main__":

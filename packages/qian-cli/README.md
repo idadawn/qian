@@ -6,7 +6,7 @@ S1-RT-011 已于 2026-10-16 验收（收口项见 [S1-RT-035](../../pm/tasks/S1-
 
 移除只处理所选 profile 的条目，默认保留 disabled 配置，`--purge` 删除条目；其它 profile 或组件仍引用的包不会删除，宿主原有依赖只借用。卸载记录只保留定位信息，允许随后按原安装名清理保留配置；被复用或改写的条目不会被删除。完成日志保留最近 20 次。
 
-测试使用正式 `Kun.Core` 包编译消费者、实际 npm 包验证导入/移除；另把仓库真实 Config Provider 制成临时 NuGet 包，经签名市场批量安装、消费者运行、重装和移除，并验证实际依赖安装失败时没有半批残留。临时包测试不等于私有包族发布，私有源上的真实安装见下一段。identity / authz / files 的完整组合归 S1-QA-005（R84）；租户 scope patch 需要的平台写入端点尚不存在；组合层复杂边界、一键简写参数、引擎版本兼容校验（目前只要求 NuGet 组件声明 `engines.kun`）和受控中断恢复仍待完成。
+测试使用正式 `Kun.Core` 包编译消费者、实际 npm 包验证导入/移除；另把仓库真实 Config Provider 制成临时 NuGet 包，经签名市场批量安装、消费者运行、重装和移除，并验证实际依赖安装失败时没有半批残留。临时包测试不等于私有包族发布，私有源上的真实安装见下一段。identity / authz / files 的完整组合归 S1-QA-005（R84）；租户 scope patch 已通过单条平台注册表端点接入（见下文）；组合层复杂边界、一键简写参数、引擎版本兼容校验（目前只要求 NuGet 组件声明 `engines.kun`）和受控中断恢复仍待完成。
 
 私有源 E2E（`test/private-feed.e2e.mjs`，`pnpm --filter qian test:feed`，需要读包令牌 `QIAN_FEED_TOKEN`）：空白 ASP.NET Core 项目经 CLI 支持的签名本地市场执行 `qian add data events config --yes`，市场条目指向仓库里的真实组件文件夹。`Qian.Data`、`Qian.Events`、`Qian.Config.Apollo` 只从正式私有源（GitHub Packages）还原，宿主 csproj 写入精确版本区间（如 `[0.1.0]`），归档摘要等于清单 `runtime.nuget[].digest`，`.qian/lock.json` 记录来源市场、组件摘要与包归档摘要。宿主按 `dump-config` 解析出的条目和清单 `runtime.entry` 挂载三个 Provider，全部就绪；`qian list` 列出来源市场；`qian remove config events data --purge` 逆序撤销后，项目文件、profile patch 与文件集合回到安装前。保留的只有 `.qian/` 工作区本身、`.gitignore` 里两条 `.qian` 忽略规则，以及已不锁任何包的 `packages.lock.json`（与包管理器惯例一致）。令牌只经环境变量传给 NuGet.Config 的 `%QIAN_FEED_TOKEN%`，不写文件、不回显。CI 的 surfaces 工作流以带 `packages: read` 的 `GITHUB_TOKEN` 运行此用例；发布新版本后要同步各组件清单的 `runtime.nuget` 版本与摘要。
 
@@ -52,7 +52,7 @@ overlay 示例（不会修改 base 组合包）：
 
 `--resolve`、`--redact` 表示本切片始终采用的行为：始终解析并验证依赖，始终保留 secretRef，不读取密钥。合法配置退出 0；非法参数或配置退出 1、标准输出为空、标准错误输出带 ErrorDetail 的 diagnostics。业务骨架 warning 会出现在成功输出中，不能用作 Provider 就绪证明。
 
-此工作区包尚未发布。当前支持范围和剩余项（含远程平台 scope patch）见本页开头。五个默认 profile 均可静态解析；minimal 仅 Runtime 与表面装载器，默认输出空条目和空诊断。
+此工作区包尚未发布。当前支持范围和剩余项见本页开头。五个默认 profile 均可静态解析；minimal 仅 Runtime 与表面装载器，默认输出空条目和空诊断。
 
 ## 运行态表面诊断
 
@@ -101,4 +101,18 @@ url 的 source.digest 校验原始归档字节；local/git 的目录 digest 按�
 
 add 会显示文件、反向权限与 secretRef 需求；confirm 需 --yes，restricted 被拒绝，ON_USE 仅提示登记，不写安装锁或激活。整组静态预检后复制表面、还原依赖、写 global profile 条目并再次复核，记录 `.qian/lock.json` 的来源、文件、条目和包归属。相同版本/来源/文件与实际依赖重跑保持不变；升级保留配置，不兼容则拒绝并保持原状。已移除组件的 disabled 配置可在重装时复用。包安装成功不等于 Provider 已在业务宿主运行。
 
-`qian list --json` 输出本地已安装来源，不读取配置值；`qian remove <ref> --json` 执行本地移除，`--purge` 删除所选 profile 条目。手工改写的文件或条目、required 组件以及包版本冲突会被拒绝。进程中断后的恢复入口与租户操作仍待完整验收。
+`qian list --json` 输出本地已安装来源，不读取配置值；`qian remove <ref> --json` 执行本地移除，`--purge` 删除所选 profile 条目。手工改写的文件或条目、required 组件以及包版本冲突会被拒绝。进程中断后的恢复入口仍待完整验收；租户操作已交付单条运营写入。
+
+## 租户 scope 运营入口
+
+S1 只提供运营 CLI：平台已经安装、且租户已经开通的精确版本，经 Registry 写 scope patch。连接通过 `--url` 或 `QIAN_PLATFORM_URL` 提供，令牌只从 `QIAN_ACCESS_TOKEN` 环境变量读取；需平台超管，服务端在目标租户审计。普通租户即使持 scope:write，也因 Entitlement 未交付而拒绝。
+
+```bash
+qian add acme.notes@1.0.0 --entry notes --scope tenant:01900000-0000-7000-8000-000000000001 --url https://platform.example --json
+qian add --patch ./notes.patch.yml --scope tenant:01900000-0000-7000-8000-000000000001 --url https://platform.example --json
+qian remove notes --scope tenant:01900000-0000-7000-8000-000000000001 --url https://platform.example --json
+```
+
+`--patch` 接受一条 patch/v2（或只含一条的数组），可只改已有平台条目的 config。每次只允许一个条目，多条在任何请求之前拒绝；单条 remove 委托 Lifecycle，由 Runtime 按注册逆序释放贡献。不提供远端批量事务，不执行本地包安装或 purge。`--dry-run` 只读取授权视图并输出条目标识、修订与操作，不显示配置或令牌。
+
+CLI 先读取 scope 视图的当前修订，再条件写入；创建用 0，冲突不重试、不自动覆盖。`--revision <n>` 可显式传入已核对的修订（例如重新启用已禁用条目）；连续 remove 不可见条目且未传 revision 时返回 `Unchanged`，不发 PUT，显式旧修订仍由服务端按 409 拒绝。失败输出 `diagnostics[].error` 的 ErrorDetail 并退出 1，保留服务器错误类型、代码和 trace；HTTP 只允许本机回环，不跟随重定向，不把凭据写进命令参数、文件或输出。网络错误可能发生在提交之后，应先核对远端状态再决定重试。

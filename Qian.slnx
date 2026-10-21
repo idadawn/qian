@@ -34,6 +34,7 @@
     <Project Path="packages/Qian.Registry/Qian.Registry.csproj" />
     <Project Path="packages/Qian.Registry.AspNetCore/Qian.Registry.AspNetCore.csproj" />
     <Project Path="packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
+    <Project Path="packages/Qian.Identity.Connector.Oidc/Qian.Identity.Connector.Oidc.csproj" />
     <Project Path="packages/Qian.Lifecycle.Abstractions/Qian.Lifecycle.Abstractions.csproj" />
     <Project Path="packages/Qian.Lifecycle/Qian.Lifecycle.csproj" />
     <Project Path="packages/Qian.Lifecycle.AspNetCore/Qian.Lifecycle.AspNetCore.csproj" />
@@ -65,6 +66,7 @@
     <Project Path="tests/Qian.Identity.Abstractions.Tests/Qian.Identity.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Registry.Tests/Qian.Registry.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Server.Tests/Qian.Identity.Server.Tests.csproj" />
+    <Project Path="tests/Qian.Identity.Connector.Oidc.Tests/Qian.Identity.Connector.Oidc.Tests.csproj" />
     <Project Path="tests/Qian.Lifecycle.Tests/Qian.Lifecycle.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Errors.Tests/Qian.Runtime.Errors.Tests.csproj" />
     <Project Path="tests/Qian.Sample.Crm.Tests/Qian.Sample.Crm.Tests.csproj" />

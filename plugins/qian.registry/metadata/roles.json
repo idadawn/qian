@@ -1,4 +1,4 @@
 [
-  { "role": "tenant.owner", "grant": ["qian.registry:scope:read"] },
+  { "role": "tenant.owner", "grant": ["qian.registry:scope:read", "qian.registry:scope:write"] },
   { "role": "tenant.admin", "grant": ["qian.registry:scope:read"] }
 ]
