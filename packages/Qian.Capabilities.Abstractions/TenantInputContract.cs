@@ -9,7 +9,7 @@ public static class TenantInputContract
     /// <summary>按 contracts/v0 的 TenantFieldName 判断参数或属性名：tenant、tenantId、tenant_id、tenant-id，整体匹配、ASCII 大小写不敏感。</summary>
     public static bool IsTenantName(string name) => TenantFieldRule.IsName(name);
     /// <summary>
-    /// 返回全部点名租户字段的位置段：properties、dependentSchemas、dependentRequired 的名称，required 等数组项，以及能匹配租户名或无法判定的 patternProperties 模式
+    /// 返回全部点名租户字段的位置段：properties、dependentSchemas、dependentRequired 的名称，required 等数组项，propertyNames 用 const / enum 列出的名称，以及能匹配租户名或无法判定的 patternProperties 模式
     /// （与表面校验器同一规则，见 packages/Common/TenantFieldRule.cs）。解析文档内引用，跳过示例、默认值与常量实例。
     /// </summary>
     public static IReadOnlyList<string[]> FindFields(JsonElement schema, JsonElement? document = null)

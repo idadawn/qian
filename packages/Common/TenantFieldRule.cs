@@ -8,9 +8,11 @@ namespace Qian.Common;
 // 输入 Schema 不得点名租户字段（PRD 7.18：租户只来自令牌；S1-AGT-004）。以内部源文件编译进 Qian.Surfaces（工具语义校验）与
 // Qian.Capabilities.Abstractions（TenantInputContract），须同时链接 SchemaPattern.cs；@qian/surfaces 的 tenantFields 逐条对应，改动须三处同步。
 // 名称按 contracts/v0 的 TenantFieldName 整体匹配：tenant、tenantId、tenant_id、tenant-id 的 ASCII 大小写变体。点名的写法有 properties、dependentSchemas、
-// dependentRequired 与旧式 dependencies 的名称，required 与 dependentRequired / dependencies 的数组项，以及 patternProperties 的模式：
-// 按 SchemaPattern 的可移植子集能匹配任一租户名即违规，超出子集无法判定，同样违规。
+// dependentRequired 与旧式 dependencies 的名称，required 与 dependentRequired / dependencies 的数组项，patternProperties 的模式
+// （按 SchemaPattern 的可移植子集能匹配任一租户名即违规，超出子集无法判定，同样违规），以及 propertyNames 在肯定位置用 const / enum 列出的名称。
+// propertyNames 的 pattern 只收紧键名格式，not 之下是排除、if 之下是条件，都不算点名；经 $ref 间接列出的名称不检查。
 // 遍历沿用「未知成员照常往下查」：示例、默认值、常量与枚举是实例数据，不当 Schema 检查；名称表（properties、$defs 等）的条目是名称，叫 default、enum 也照常往下查。
+// 开放的 object（没有 additionalProperties: false 的映射或自由 JSON）不点名任何字段，不检查：隔离由令牌派生的租户上下文与 RLS 保证（S1-AGT-004 裁决）。
 internal static class TenantFieldRule
 {
     internal const string NameMessage = "输入 Schema 不允许租户字段。";
@@ -70,6 +72,7 @@ internal static class TenantFieldRule
                     case "patternProperties" when value.ValueKind == JsonValueKind.Object: Entries(value, at, active, Pattern); break;
                     case "$defs" or "definitions" when value.ValueKind == JsonValueKind.Object: Entries(value, at, active, _ => null); break;
                     case "required" when value.ValueKind == JsonValueKind.Array: Items(value, at); break;
+                    case "propertyNames": Listed(value, at); Walk(value, at, active); break;
                     case "dependentRequired" or "dependencies" when value.ValueKind == JsonValueKind.Object:
                         foreach (var entry in value.EnumerateObject())
                         {
@@ -90,6 +93,26 @@ internal static class TenantFieldRule
             foreach (var entry in map.EnumerateObject())
                 if (check(entry.Name) is { } message) found.Add(new([.. at, entry.Name], message));
             foreach (var entry in map.EnumerateObject()) Walk(entry.Value, [.. at, entry.Name], active);
+        }
+
+        // propertyNames 的子 Schema 作用于键名本身：肯定位置（根与 allOf / anyOf / oneOf / then / else 之下）的 const / enum 列出的就是允许的键名。
+        void Listed(JsonElement node, string[] at)
+        {
+            if (node.ValueKind != JsonValueKind.Object) return;
+            foreach (var member in node.EnumerateObject())
+            {
+                string[] child = [.. at, member.Name];
+                switch (member.Name)
+                {
+                    case "const" when member.Value.ValueKind == JsonValueKind.String && IsName(member.Value.GetString()!): found.Add(new(child, NameMessage)); break;
+                    case "enum" when member.Value.ValueKind == JsonValueKind.Array: Items(member.Value, child); break;
+                    case "allOf" or "anyOf" or "oneOf" when member.Value.ValueKind == JsonValueKind.Array:
+                        var index = 0;
+                        foreach (var item in member.Value.EnumerateArray()) Listed(item, [.. child, Index(index++)]);
+                        break;
+                    case "then" or "else": Listed(member.Value, child); break;
+                }
+            }
         }
 
         void Items(JsonElement items, string[] at)

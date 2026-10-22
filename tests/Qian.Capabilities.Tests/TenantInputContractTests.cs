@@ -32,6 +32,18 @@ public sealed class TenantInputContractTests
         Assert.Equal(["content", "application/json", "schema", "properties", "enum", "required", "0"], found);
     }
 
+    [Fact]
+    public void propertyNames用const或enum列出租户名算点名_not之下的排除与开放映射不算()
+    {
+        using var schema = JsonDocument.Parse("""
+            {"type": "object", "properties": {
+              "labels": {"type": "object", "propertyNames": {"enum": ["region", "tenantId"]}, "additionalProperties": {"type": "string"}},
+              "tags": {"type": "object", "propertyNames": {"pattern": "^[a-z]+$", "not": {"enum": ["tenant"]}}, "additionalProperties": {"type": "string"}},
+              "metadata": {"type": "object", "additionalProperties": {"type": "string"}}}}
+            """);
+        Assert.Equal(["properties/labels/propertyNames/enum/1"], TenantInputContract.FindFields(schema.RootElement).Select(path => string.Join('/', path)));
+    }
+
     [Theory]
     [InlineData("Tenant-ID", true)]
     [InlineData("tenantid", true)]

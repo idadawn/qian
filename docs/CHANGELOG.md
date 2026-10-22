@@ -4,7 +4,7 @@
 
 ## 2026-10-22 输入 Schema 的租户字段检查覆盖 properties 之外的写法（S1-AGT-004）
 
-工具文件与能力契约的输入 Schema 不再只看属性名：`required`、`dependentRequired`、`dependentSchemas` 里出现租户名，或 `patternProperties` 的模式能匹配租户名（含 `^[a-z_]+$` 这类通配；超出 ECMA-262 可移植子集、无法判定的模式也算），都会被拒绝，顶层同样适用。此前能通过的组件可能因此装载失败，按错误里的 pointer 修改即可。规则见 [packages/Common](../packages/Common/README.md#tenantfieldrule-的判定规则)。
+工具文件与能力契约的输入 Schema 不再只看属性名：`required`、`dependentRequired`、`dependentSchemas` 里出现租户名、`propertyNames` 用 `const` / `enum` 列出租户名，或 `patternProperties` 的模式能匹配租户名（含 `^[a-z_]+$` 这类通配；超出 ECMA-262 可移植子集、无法判定的模式也算），都会被拒绝，顶层同样适用。开放的映射（没有关闭的嵌套 object）不点名字段，照常通过。此前能通过的组件可能因此装载失败，按错误里的 pointer 修改即可。规则见 [packages/Common](../packages/Common/README.md#tenantfieldrule-的判定规则)。
 
 ## 2026-10-16 租户域 RBAC 判定、完整 Explain 与平台超管旁路（S1-AZ-003）
 

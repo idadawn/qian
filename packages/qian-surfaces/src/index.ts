@@ -434,8 +434,9 @@ const isSchema = (data: JsonValue): boolean => {
 };
 const ordinal = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
 // 输入 Schema 点名租户字段的写法（S1-AGT-004），与 packages/Common/TenantFieldRule.cs 逐条对应（.NET 表面校验与能力契约共用那一份）：
-// 名称按 contracts/v0 的 TenantFieldName 整体匹配；patternProperties 的模式按 SchemaPattern 的可移植子集能匹配任一租户名、或超出子集无法判定，即违规。
-// 未知成员照常往下查，示例、默认值、常量与枚举是实例数据，不检查；名称表的条目是名称，叫 default、enum 也照常往下查。
+// 名称按 contracts/v0 的 TenantFieldName 整体匹配；patternProperties 的模式按 SchemaPattern 的可移植子集能匹配任一租户名、或超出子集无法判定，即违规；
+// propertyNames 只在肯定位置用 const / enum 列出租户名时算点名。未知成员照常往下查，示例、默认值、常量与枚举是实例数据，不检查；
+// 名称表的条目是名称，叫 default、enum 也照常往下查。开放的 object 不点名任何字段，不检查（S1-AGT-004 裁决）。
 const tenantMessage = '输入 Schema 不允许租户字段。';
 const tenantName = (name: string): boolean => /^tenant(?:[_-]?id)?$/i.test(name);
 // 四个名称的全部 ASCII 大小写写法（832 个），模式逐个试配。
@@ -456,6 +457,17 @@ function tenantFields(value: JsonValue | undefined, pointer: string, found: [str
     for (const name of Object.keys(map)) { const message = check(name); if (message) found.push([at + '/' + token(name), message]); }
     for (const [name, child] of Object.entries(map)) tenantFields(child, at + '/' + token(name), found);
   };
+  // propertyNames 的子 Schema 作用于键名本身：肯定位置（根与 allOf / anyOf / oneOf / then / else 之下）的 const / enum 列出的就是允许的键名。
+  const listed = (node: JsonValue | undefined, at: string): void => {
+    if (!isObject(node)) return;
+    for (const [key, child] of Object.entries(node)) {
+      const next = at + '/' + token(key);
+      if (key === 'const') { if (typeof child === 'string' && tenantName(child)) found.push([next, tenantMessage]); }
+      else if (key === 'enum') { if (Array.isArray(child)) items(child, next); }
+      else if ((key === 'allOf' || key === 'anyOf' || key === 'oneOf') && Array.isArray(child)) child.forEach((item, index) => listed(item, next + '/' + index));
+      else if (key === 'then' || key === 'else') listed(child, next);
+    }
+  };
   if (Array.isArray(value)) { value.forEach((item, index) => tenantFields(item, pointer + '/' + index, found)); return found; }
   if (!isObject(value)) return found;
   for (const [key, child] of Object.entries(value)) {
@@ -465,6 +477,7 @@ function tenantFields(value: JsonValue | undefined, pointer: string, found: [str
     else if (key === 'patternProperties' && isObject(child)) entries(child, at, tenantPattern);
     else if ((key === '$defs' || key === 'definitions') && isObject(child)) entries(child, at, () => null);
     else if (key === 'required' && Array.isArray(child)) items(child, at);
+    else if (key === 'propertyNames') { listed(child, at); tenantFields(child, at, found); }
     else if ((key === 'dependentRequired' || key === 'dependencies') && isObject(child)) {
       for (const [name, list] of Object.entries(child)) { if (tenantName(name)) found.push([at + '/' + token(name), tenantMessage]); if (Array.isArray(list)) items(list, at + '/' + token(name)); }
       // 旧式 dependencies 的值也可以是 Schema。

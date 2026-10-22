@@ -56,7 +56,10 @@ pnpm --filter @qian/surfaces build && pnpm --filter @qian/surfaces test && pnpm 
 租户只来自令牌（PRD 7.18），所以输入 Schema 不得点名租户字段（S1-AGT-004）。工具文件的语义校验（`Qian.Surfaces` 与 @qian/surfaces，`SURFACE_POLICY_DENIED`）与能力输入契约（`TenantInputContract`，能力编译为 `tenant-field`）按同一规则报告：
 
 - 租户名按 contracts/v0 的 `TenantFieldName` 整体匹配：`tenant`、`tenantId`、`tenant_id`、`tenant-id` 的 ASCII 大小写变体。不用 `ToLowerInvariant` 加 `$`：.NET 的 `$` 会放过末尾换行，把 `tenant` 后接换行也算成租户名。
-- 点名的写法：`properties`、`dependentSchemas`、`dependentRequired` 与旧式 `dependencies` 的名称；`required` 与 `dependentRequired` / `dependencies` 的数组项；`patternProperties` 的模式。模式按 `SchemaPattern` 的可移植子集解释，与 JSON Schema 一样不隐式加锚点，能匹配租户名的任一 ASCII 大小写写法即违规；超出子集无法判定，同样违规。试配用全部 832 种写法而不用折叠，结果不随宿主 ICU 变化。
+- 点名的写法：`properties`、`dependentSchemas`、`dependentRequired` 与旧式 `dependencies` 的名称；`required` 与 `dependentRequired` / `dependencies` 的数组项；`patternProperties` 的模式；`propertyNames` 在肯定位置（根与 `allOf` / `anyOf` / `oneOf` / `then` / `else` 之下）用 `const` / `enum` 列出的名称。模式按 `SchemaPattern` 的可移植子集解释，与 JSON Schema 一样不隐式加锚点，能匹配租户名的任一 ASCII 大小写写法即违规；超出子集无法判定，同样违规。试配用全部 832 种写法而不用折叠，结果不随宿主 ICU 变化。
 - 遍历：未知成员照常往下查；`example`、`examples`、`default`、`const`、`enum` 是实例数据，不当 Schema 检查。名称表（`properties`、`patternProperties`、`dependentSchemas`、`$defs`、`definitions`）的条目是名称，叫 `default`、`enum` 也照常往下查。按成员出现顺序报告，名称表先查全部名称、再逐条往下，两端校验器的诊断顺序因此一致。
 - 能力契约另按文档内 `$ref` 在引用处继续检查（HTTP 契约要从请求体跟到 `components`），表面校验器不解析引用，`$defs` 照常遍历。
-- 是否要求嵌套 object 关闭（`additionalProperties: false`）、`propertyNames` 怎样才算排除了租户名，待人拍板（S1-AGT-004 的建议裁决），本规则不检查。
+- 本规则是点名检查，不是封闭性检查（S1-AGT-004 的裁决，2026-10-22 用户认可）：
+  - 嵌套 object 不要求关闭。开放的映射与自由 JSON（`additionalProperties` 为 Schema 或缺省）不点名任何字段，不检查；租户隔离由令牌派生的租户上下文、RLS，以及平台 API 对显式租户参数的核对保证，与 Schema 是否封闭无关。
+  - `propertyNames` 只在上述肯定位置列出租户名时算点名：`pattern` 只收紧键名格式，`not` 之下是排除，`if` 之下是条件，都不算；经 `$ref` 间接列出的名称不检查。
+  - 超出可移植子集的模式按无法判定拒绝；实例数据不检查；旧式 `dependencies` 照常检查（Ajv 2020 仍执行它）。

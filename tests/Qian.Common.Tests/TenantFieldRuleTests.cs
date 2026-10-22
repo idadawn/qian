@@ -78,6 +78,24 @@ public sealed class TenantFieldRuleTests
     }
 
     [Fact]
+    public void propertyNames只在肯定位置用const或enum列出租户名时算点名_pattern与not和if之下不算_开放映射不查()
+    {
+        using var schema = JsonDocument.Parse("""
+            {"type": "object", "properties": {
+              "a": {"type": "object", "propertyNames": {"enum": ["region", "Tenant"], "const": "tenant_id"}, "additionalProperties": {"type": "string"}},
+              "b": {"type": "object", "propertyNames": {"anyOf": [{"const": "x"}, {"allOf": [{"enum": ["tenant-id"]}]}], "oneOf": [{"then": {"const": "TENANT"}, "else": {"enum": ["tenantId"]}}]}},
+              "c": {"type": "object", "propertyNames": {"pattern": "^[a-z]+$", "not": {"enum": ["tenant", "tenantId"]}, "if": {"const": "tenant"}, "then": {"maxLength": 20}}},
+              "d": {"type": "object", "additionalProperties": {"type": "string"}},
+              "e": {"type": "object", "propertyNames": {"$ref": "#/$defs/keys"}}
+            }, "$defs": {"keys": {"enum": ["tenant"]}}}
+            """);
+        Assert.Equal([
+            "properties/a/propertyNames/enum/1", "properties/a/propertyNames/const",
+            "properties/b/propertyNames/anyOf/1/allOf/0/enum/0", "properties/b/propertyNames/oneOf/0/then/const", "properties/b/propertyNames/oneOf/0/else/enum/0",
+        ], TenantFieldRule.Find(schema.RootElement).Select(item => string.Join('/', item.Path)));
+    }
+
+    [Fact]
     public void 给出解析时在引用处继续检查_位置记在引用处之下_循环引用只走一遍()
     {
         using var schema = JsonDocument.Parse("""
