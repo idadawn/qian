@@ -42,11 +42,12 @@ using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()), Ti
 var failures = 0;
 await Expect("挂载前登录端点关闭", HttpMethod.Get, "/auth/login", HttpStatusCode.NotFound);
 
-// 与 profile 条目相同的形状：组件 ID、global scope 与 JSON 配置；配置直接解析 JSON，不序列化匿名类型。
+// 挂载清单 runtime.entry 指向的 IdentityClientComponent，形状与 profile 条目相同：组件 ID、global scope 与 JSON 配置；
+// 配置直接解析 JSON，不序列化匿名类型。
 var loader = new PluginLoader(app.Services);
 using (var config = JsonDocument.Parse("""{"issuer":"https://127.0.0.1:9/","clientId":"qian-gateway"}"""))
     await loader.MountAsync([new PluginDefinition(new PluginEntry("identity", "qian.identity.client", "1.0.0", ScopeKey.Global, 0, config.RootElement.Clone()),
-        new IdentityClientPlugin(), [IdentityDefinition.Key])]);
+        new IdentityClientComponent(), [IdentityDefinition.Key])]);
 if (loader.GetState("identity", ScopeKey.Global) != PluginState.Ready)
 {
     Console.Error.WriteLine("组件未就绪：" + loader.GetFailure("identity", ScopeKey.Global)?.GetType().Name);
