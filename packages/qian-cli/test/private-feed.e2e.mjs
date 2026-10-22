@@ -179,10 +179,12 @@ test('空白 ASP.NET Core 项目经签名市场把私有源已发布的 data / f
   // 预置的存储配置原样沿用，其余键补 configSchema 缺省值（平台默认配额 10 GiB）。
   assert.deepEqual(entries.find(entry=>entry.id==='files').config,{storage,quota:{perTenantBytes:10*1024**3}});
 
-  // 宿主装配只补 files 需要、但组件包不传递带来的 Kun.EventBus 实现（与仓库同一 Kun 版本，取自 nuget.org）；跑完恢复项目文件，不计入安装结果。
-  const kun=readFileSync(path.join(repo,'Directory.Packages.props'),'utf8').match(/<KunVersion>([^<]+)<\/KunVersion>/)[1],installedProject=readFileSync(projectFile,'utf8');
-  const added=dotnet(project,'add','package','Kun.EventBus','--version',kun,'--no-restore');assert.equal(added.status,0,added.stdout+added.stderr);
-  const restored=dotnet(project,'restore');assert.equal(restored.status,0,restored.stdout+restored.stderr);
+  // 已发布组件已经传递带来 EventBus 实现；消费其实际还原的同批契约，不从源码 KunVersion 注入另一版本。
+  const libraries=JSON.parse(readFileSync(path.join(project,'obj/project.assets.json'),'utf8')).libraries;
+  const restoredVersions=id=>Object.entries(libraries).filter(([name,library])=>library.type==='package'&&name.startsWith(id+'/')).map(([name])=>name.slice(id.length+1));
+  const contracts=restoredVersions('Kun.EventBus.Abstractions');
+  assert.equal(contracts.length,1,'已发布组件必须还原单一 Kun.EventBus.Abstractions 版本');
+  assert.deepEqual(restoredVersions('Kun.EventBus'),contracts,'已还原的 EventBus 实现与契约必须属于同一发布批次');
   const resolved=qian(project,'dump-config');assert.equal(resolved.status,0,resolved.stderr);
   const programFile=path.join(project,'Program.cs'),original=readFileSync(programFile,'utf8');
   write(root,'resolved.json',resolved.stdout);writeFileSync(programFile,filesHost);
@@ -192,7 +194,7 @@ test('空白 ASP.NET Core 项目经签名市场把私有源已发布的 data / f
   assert.ok(line,started.stdout);assert.deepEqual(line.slice('installed-providers-ready:'.length).split(',').sort(),ready(selected));
   // local 后端按沿用的存储配置建好了对象根目录。
   assert.ok(existsSync(objects));
-  writeFileSync(programFile,original);writeFileSync(projectFile,installedProject);
+  writeFileSync(programFile,original);
 
   const listed=qian(project,'list');assert.equal(listed.status,0,listed.stderr);
   assert.deepEqual(JSON.parse(listed.stdout).plugins.map(plugin=>[plugin.id,[...plugin.packages.nuget].sort().join(',')]).sort(),
