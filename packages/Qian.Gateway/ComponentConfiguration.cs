@@ -1,0 +1,23 @@
+namespace Qian.Gateway;
+
+internal static class ComponentConfiguration
+{
+    internal const string Schema = """
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identityIssuer", "identityAudience", "issuer", "signingKeyPath", "publicKeyPath", "trustedProxyNetworks", "routes", "clusters"],
+      "properties": {
+        "identityIssuer": {"type":"string","minLength":1,"description":"唯一受信任身份发行方的规范 issuer。"},
+        "identityAudience": {"type":"string","minLength":1,"maxLength":255},
+        "issuer": {"type":"string","minLength":1,"description":"本环境 S2S 的规范 issuer。"},
+        "signingKeyPath": {"type":"string","minLength":1,"description":"宿主 Secret 投射的 RSA 私钥绝对路径，不是密钥值。"},
+        "publicKeyPath": {"type":"string","minLength":1,"description":"Kun 兼容公钥文件路径；公开 JWKS 使用热轮换环。"},
+        "trustedProxyNetworks": {"type":"array","uniqueItems":true,"items":{"type":"string"},"description":"仅部署环境实际 Traefik CIDR，空数组不信任任何转发头。"},
+        "routes": {"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["id","path","cluster"],"properties":{"id":{"type":"string","minLength":1},"path":{"type":"string","pattern":"^/"},"cluster":{"type":"string","minLength":1}}}},
+        "clusters": {"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["id","address"],"properties":{"id":{"type":"string","minLength":1,"maxLength":255},"address":{"type":"string","minLength":1}}}}
+      }
+    }
+    """;
+}

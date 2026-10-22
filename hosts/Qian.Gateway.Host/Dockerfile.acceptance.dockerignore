@@ -1,0 +1,10 @@
+.git
+**/bin
+**/obj
+**/node_modules
+**/.turbo
+TestResults
+website
+.qian-dev
+pm
+.visual-results

@@ -11,14 +11,14 @@
 |---|---|---|---|
 | qian-platform | JIT，包含 shell 与 model-gateway 组合包 | 现有 profile 是静态装配基线；RP、外壳静态制品和完整业务装配尚未交付 | S1-IDP-005、S1-YUE-001 及 profile 的业务组件任务 |
 | qian-identity | JIT | Qian.Identity.Server 与可启动的唯一 issuer 宿主尚未交付 | S1-IDP-002 |
-| qian-gateway | NativeAOT、distroless | Qian.Gateway 的认证、换签与路由宿主尚未交付 | S1-GW-001；依赖 S1-IDP-005 |
+| qian-gateway | NativeAOT、distroless | `hosts/Qian.Gateway.Host` 已完成严格 Linux 原生发布与真实依赖运行；仍需接入产品镜像、供应链及只读非 root 验收 | S1-DEP-008；宿主证据见 S1-GW-001 |
 
 证据来源是仓库现状：[profile 装配基线](../../profiles/README.md) 明确其它 profile 的业务叶节点仍为 `x-skeleton`，只有 minimal 的真实 Runtime 启动已验收；`apps/` 当前仅有前端验证应用，相关身份、网关与外壳任务仍未完成。上述表格表示交付缺口。基线探针、minimal、Storybook 页面和 DEP-003 的自检镜像，都不能替代三个业务镜像。
 
 ## 可以固定的构建与验收约定
 
 1. 构建入口、运行镜像模板与门禁由 S1-DEP-003 先行交付，用自检镜像验证；三个宿主与组件闭包就绪后，在 S1-DEP-008 接入各自的发布入口。依赖与构建版本锁定，源码 SHA、KunVersion 和 profile 修订均写入构建证据。
-2. 多阶段构建；platform/identity 使用 JIT，gateway 必须完成 Linux NativeAOT 发布并使用 distroless 运行镜像。 S1-DEC-029 仅允许当前 gateway 开发模板暂用 JIT，不能以该结果关闭真实业务镜像的 AOT 门；S1-GW-001 / S1-DEP-008 须验证完整依赖后恢复默认 AOT。以非 root UID 启动，以只读根文件系统运行，只为明确需要写入的目录提供临时卷。
+2. 多阶段构建；platform/identity 使用 JIT，gateway 使用 Linux NativeAOT 与 distroless 运行镜像。S1-GW-001 已在实际生产宿主上完成完整依赖原生运行并恢复默认 AOT；S1-DEP-008 仍须在最终产品镜像上复验。以非 root UID 启动，以只读根文件系统运行，只为明确需要写入的目录提供临时卷。
 3. profile、组合包、组件清单与对应 patch 随镜像发布；环境 overlay 以 ConfigMap 挂载。分别在源码树与镜像内执行同一 dump-config 合成，比较解析后的结构与来源层，阻止配置漂移。
 4. 镜像构建成功后按不可变 digest 生成 Syft SBOM，执行漏洞扫描，生成 Cosign 签名和 SBOM 关联证明。验签必须约束 CI 发布者身份/issuer，不能只确认某处存在一个签名文件。
 5. 每个镜像保留 digest、构建 SHA、SBOM、扫描报告、签名验证结果、非 root/只读运行证据和配置比对结果。shell 的实际静态制品必须存在于 platform 镜像，并在真实 gateway 路由下可读取。

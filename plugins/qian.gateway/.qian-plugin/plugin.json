@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.gateway",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.gateway",
+  "description": "网关组件：强制认证、Cookie 换短时 S2S、逐 cluster 受众、可信代理与签名密钥热轮换；已完成生产宿主 Linux NativeAOT 发布与真实依赖运行验收。",
   "author": {
     "name": "Qian"
   },
@@ -11,8 +11,13 @@
     "displayName": "gateway",
     "category": "platform"
   },
-  "inject": [],
-  "provides": [],
+  "inject": [
+    "Config",
+    "Identity"
+  ],
+  "provides": [
+    "Gateway"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -20,8 +25,35 @@
     "required": false
   },
   "scopes": [
-    "global",
-    "tenant"
+    "global"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "x-aot": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Gateway.GatewayComponent, Qian.Gateway",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.gateway",
+        "source": "Qian.Gateway.GatewayComponent, Qian.Gateway",
+        "sha256": "17c01d1ac6864b336c533baa65ee37c8220725cd44a2a740c4805a67a57e8dcb",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
 }

@@ -213,7 +213,8 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task<WebApplication> ManagementHost(RunningApp business, LifecyclePlatform platform, OperationsLog? logs = null, Func<IPluginContext>? context = null)
+    private static async Task<WebApplication> ManagementHost(RunningApp business, LifecyclePlatform platform, OperationsLog? logs = null, Func<IPluginContext>? context = null,
+        string? expectedIssuer = null, string? expectedAudience = null, Action<WebApplication>? configurePipeline = null)
     {
         var loader = business.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var permissions = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy/metadata/permissions.json")));
@@ -236,7 +237,7 @@ public sealed partial class CustomerCommandTests
             await lifecycle.ActivateAsync(crm.PluginId, crm.Revision, "root", Ct);
         }
         var app = TenantOperationsHost.Build(() => context?.Invoke() ?? loader.GetContext("tenancy", ScopeKey.Global),
-            new TokenValidationParameters { ValidateIssuer = true, ValidIssuer = Issuer, ValidateAudience = true, ValidAudience = Audience,
+            new TokenValidationParameters { ValidateIssuer = true, ValidIssuer = expectedIssuer ?? Issuer, ValidateAudience = true, ValidAudience = expectedAudience ?? Audience,
                 ValidateLifetime = true, ValidateIssuerSigningKey = true, IssuerSigningKey = business.ManagementSigningKey,
                 ValidAlgorithms = [SecurityAlgorithms.RsaSha256], ClockSkew = TimeSpan.Zero }, builder =>
             {
@@ -251,6 +252,7 @@ public sealed partial class CustomerCommandTests
             using var tenant = business.App.Services.GetRequiredService<ITenantContext>().BeginScope(scoped.Scope.Id!);
             return Results.Json(await http.RequestServices.GetRequiredService<IHttpContractSource>().GetDocumentAsync(scoped, user, http.RequestAborted));
         }).RequireAuthorization();
+        configurePipeline?.Invoke(app);
         await app.StartAsync(Ct); return app;
     }
 

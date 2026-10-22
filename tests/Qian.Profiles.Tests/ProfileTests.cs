@@ -56,7 +56,7 @@ public sealed class ProfileTests
     [Theory]
     // 警告只来自仍带骨架标记的条目；qian.data / qian.events / qian.config / qian.files 经真实安装后不再是骨架。
     [InlineData("platform", 21, 18)]
-    [InlineData("gateway", 6, 5)]
+    [InlineData("gateway", 6, 6)]
     [InlineData("identity", 8, 6)]
     [InlineData("standalone", 3, 1)]
     [InlineData("minimal", 0, 0)]
@@ -70,15 +70,39 @@ public sealed class ProfileTests
     }
 
     [Fact]
-    public void Gateway_identity_resolves_to_the_code_component_that_declares_x_aot()
+    public void Gateway原生profile仅装配声明兼容的代码组件()
     {
-        // S1-IDP-014：x-aot 以 NativeAOT 冒烟为据。按 S1-DEC-029 开发期 gateway 用 JIT；AOT profile 拒绝未声明组件的规则见 TCK 的 aot-code-rejected。
+        var file = Path.Combine(Root, "profiles/gateway/qian.profile.yml");
+        var definition = new SurfaceValidator().Parse(file, File.ReadAllText(file));
+        Assert.True(definition.Syntax!.Data.GetProperty("build").GetProperty("aot").GetBoolean());
         var shipped = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false });
         Assert.True(shipped.IsValid, JsonSerializer.Serialize(shipped, Json));
+        Assert.All(shipped.Snapshot!.Entries.Where(entry => entry.Manifest.TryGetProperty("runtime", out _)),
+            entry => Assert.True(entry.Manifest.GetProperty("x-aot").GetBoolean()));
         var identity = Assert.Single(shipped.Snapshot!.Entries, e => e.Id == "identity");
         Assert.StartsWith("qian.identity.client@", identity.Plugin, StringComparison.Ordinal);
         Assert.Equal("module", identity.Manifest.GetProperty("runtime").GetProperty("form").GetString());
         Assert.True(identity.Manifest.GetProperty("x-aot").GetBoolean());
+    }
+
+    [Fact]
+    public void Gateway原生数据库绑定与生产宿主默认角色一致()
+    {
+        var result = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false });
+        Assert.True(result.IsValid, JsonSerializer.Serialize(result, Json));
+        var data = Assert.Single(result.Snapshot!.Entries, entry => entry.Id == "data");
+        var audit = Assert.Single(result.Snapshot.Entries, entry => entry.Id == "audit");
+        Assert.StartsWith("qian.data.native@", data.Plugin, StringComparison.Ordinal);
+        Assert.StartsWith("qian.audit.native@", audit.Plugin, StringComparison.Ordinal);
+        var bindings = data.Config.GetProperty("connections").EnumerateArray().Select(value => value.GetString()).ToArray();
+        Assert.Contains(audit.Config.GetProperty("tenantBinding").GetString(), bindings);
+        Assert.Contains(audit.Config.GetProperty("platformBinding").GetString(), bindings);
+        using var host = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "hosts/Qian.Gateway.Host/appsettings.json")));
+        foreach (var field in new[] { "TenantRole", "PlatformRole", "FunctionOwner" })
+            Assert.Equal(host.RootElement.GetProperty("Audit").GetProperty(field).GetString(),
+                audit.Config.GetProperty(char.ToLowerInvariant(field[0]) + field[1..]).GetString());
+        Assert.Contains(data.Manifest.GetProperty("provides").EnumerateArray(), value => value.GetString() == "NativeData");
+        Assert.DoesNotContain(data.Manifest.GetProperty("provides").EnumerateArray(), value => value.GetString() == "Data");
     }
 
     [Fact]

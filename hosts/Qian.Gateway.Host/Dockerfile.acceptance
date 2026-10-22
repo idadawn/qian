@@ -1,0 +1,11 @@
+# GW-001 的完整生产宿主验收环境；业务 distroless/签名/部署属于 DEP-008。
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:747cbade5bfd918a175ac32f8f1d931edec2c7d0d5397a3de72eaef1ac1f66d2
+RUN apt-get update && apt-get install --no-install-recommends -y clang zlib1g-dev && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY . .
+ARG TARGETARCH
+RUN case "$TARGETARCH" in arm64) gateway_rid=linux-arm64 ;; amd64) gateway_rid=linux-x64 ;; *) exit 2 ;; esac && \
+    dotnet publish hosts/Qian.Gateway.Host -c Release -r "$gateway_rid" -p:IlcTreatWarningsAsErrors=true -p:TrimmerSingleWarn=false -o /gateway && \
+    test -x /gateway/Qian.Gateway.Host && test ! -e /gateway/Qian.Gateway.Host.dll
+RUN dotnet build tests/Qian.Gateway.Host.AotTests -c Release
+ENTRYPOINT ["/gateway/Qian.Gateway.Host"]

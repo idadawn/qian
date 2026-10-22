@@ -23,7 +23,14 @@
   <ItemGroup><Compile Include="../Shared/IdentityProtocolHost.cs" Link="IdentityProtocolHost.cs" /><Compile Include="../Shared/LoopbackPort.cs" Link="LoopbackPort.cs" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
+    <ProjectReference Include="../../packages/Qian.Gateway/Qian.Gateway.csproj" />
+    <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="Kun.Identity" />
     <PackageReference Include="Kun.Gateway" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/GatewayTestHost.cs" Link="GatewayTestHost.cs" />
+    <Compile Include="../Qian.Identity.Client.Tests/IdentityServerHost.cs" Link="IdentityAccountHost.cs" />
   </ItemGroup>
 </Project>

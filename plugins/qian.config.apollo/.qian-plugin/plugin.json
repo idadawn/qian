@@ -25,6 +25,7 @@
     "global"
   ],
   "x-skeleton": true,
+  "x-aot": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Config.Apollo.ApolloConfigurationPlugin, Qian.Config.Apollo",

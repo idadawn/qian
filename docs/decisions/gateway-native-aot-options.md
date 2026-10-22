@@ -1,6 +1,6 @@
 # 网关完整依赖的 NativeAOT 实施路径
 
-状态：产品负责人于 2026-10-23 在 [S1-DEC-030](../../pm/tasks/S1-DEC-030.md) 确认采用路径 A：新增原生 PostgreSQL 数据与审计 Provider，完成完整 AOT。本文记录失败证据与实施边界；S1-DEC-029 的 JIT 开发期安排及 GW-001 / DEP-008 的最终验收继续有效。
+状态：产品负责人于 2026-10-23 在 [S1-DEC-030](../../pm/tasks/S1-DEC-030.md) 确认采用路径 A。原生 Data/Audit 与正式 Kun 修复现已接入实际生产网关，并完成严格 Linux NativeAOT 发布和真实依赖运行；默认 profile 已恢复 AOT。本文保留原始失败、备选路线与实施边界，DEP-008 的业务镜像门继续独立验收。
 
 ## 已确认的实施边界
 
@@ -10,13 +10,19 @@
 - 原生 Data 与原生 Audit 分别建任务、分支和 PR，按 Data → Audit → gateway 完整组合顺序集成。网关安全宿主与前端外壳、调度器可继续独立推进；需要的 Kun 修复仅在实际闭包探针发现后建档，并在 Kun 仓库交付。
 - 迁移使用独立迁移流程，在线宿主只验证必需 Schema 和安全装配。只有完整 gateway 在 Linux NativeAOT 中完成 Apollo、Redis、受限 PostgreSQL、审计追加/查询/验链和网关安全路径的真实运行，才恢复默认 AOT 与兼容声明。不能以 JIT 或编译产物存在代替运行验收。
 
-## 已复现的证据
+## 路径 A 的执行结果
+
+2026-10-23，源码 `e9cef6a70d` 消费正式 Kun `2026.10.23`，以固定 SDK 镜像发布实际 [Qian.Gateway.Host](../../hosts/Qian.Gateway.Host/README.md)，linux-arm64 严格 ILC 零诊断。产物满足 ELF 文件头、无同名托管 DLL，运行时动态代码能力关闭；同一 [完整 driver](../../tests/Qian.Gateway.Host.AotTests/README.md) 连接真实 Apollo 2.5.2、Redis、受限 PostgreSQL 和 Identity，完成 Cookie/Bearer 换签、平台审计和 SIGTERM 正常停机，3/3 用例通过。
+
+原生生产进程实际追加了密钥解析和 Apollo 发布的 3 条平台审计，独立真实 NativeAudit 组合读回并验链；NativeAudit 自身的读写/验链原生执行由 AUD-008 单独门同步证明。平台和 Scheduler 的 EF 安全路径没有被替换。`gateway-host-aot` CI 持续执行实际宿主严格发布与相同真实依赖 driver；组件私有源安装和业务镜像供应链不由此代替。
+
+## 原始 EF 路径失败证据
 
 - 基线：`88c5f3c33d`，仅增加 [完整依赖探针](../../tools/Qian.Gateway.AotProbe/Program.cs)，没有修改 Data、Audit、Kun 的实现或安全检查。
 - 普通 Release 构建：`dotnet build tools/Qian.Gateway.AotProbe -c Release`，零警告、零错误。
 - Linux 环境：本机 Docker `linux/aarch64`；SDK 镜像 `mcr.microsoft.com/dotnet/sdk:10.0` 固定到摘要 `sha256:747cbade5bfd918a175ac32f8f1d931edec2c7d0d5397a3de72eaef1ac1f66d2`。
 - 可复现命令：`docker build --progress=plain -f tools/Qian.Gateway.AotProbe/Dockerfile -t qian-gateway-aot-probe:gw001 .`。Dockerfile 安装 clang / zlib 后执行严格的 `dotnet publish -c Release -r linux-arm64 -p:IlcTreatWarningsAsErrors=true -p:TrimmerSingleWarn=false`。
-- 结果：ILC 报错，发布命令退出 1（末尾 `MSB3077`）。**没有成功发布产物，没有原生运行证据。** 不能恢复 `build.aot: true` 或为这些组件填写 `x-aot: true`。
+- 该原始 EF 探针结果：ILC 报错，发布命令退出 1（末尾 `MSB3077`），没有成功发布产物或原生运行证据。当时不能恢复 AOT；上节记录的是实施路径 A 后的不同依赖组合和实际生产宿主结果。
 - 原始本地日志：`TestResults/gateway-aot-probe/linux-arm64-publish.log`。该目录是忽略的测试产物，不提交原始大日志；下表保留定位信息。BuildKit 会重复末尾诊断，不用原始行数判断工作量。
 
 探针真实登记 Apollo 配置源、Identity.Client 与 Redis 会话、`AddQianData<AuditDbContext>`、`AuditComponent`、Kun 网关及签名轮换环；通过真实 `PluginLoader` 挂载，并包含审计追加、读取、验链的运行入口。它不包含假 Data、不禁用 RLS、不在在线启动中迁移，也没有关闭裁剪或任何 IL 警告。
@@ -55,9 +61,9 @@ EF 10 随包文档还明确列出运行时错误：`Model building is not suppor
 
 主要代价：改动现有持久化安全装配与上游模块，影响面包含 scheduler、identity、tenancy 等消费者；可行性与工作量均高于普通网关包装。
 
-## 路径 C：先交付网关安全宿主，保持最终 AOT 的阻塞状态
+## 历史交付顺序 C：先交付网关安全宿主，保留最终 AOT 门
 
-这是交付顺序，不是取消 AOT 的替代方案，可与 A 或 B 组合。
+这是最终原生闭包尚未交付时采用的顺序，不是取消 AOT 的替代方案。以下保留当时约束；当前已完成路径 A 的原生运行，状态见执行结果。
 
 - GW-001 的强制认证、真实 Cookie 换 S2S、契约校验、双钥轮换和伪造转发头验收继续实施。
 - 在当前任务定义下，AOT 项仍未通过，GW-001 不能标为 done。若负责人决定拆分任务，需明确新任务、依赖与验收的迁移记录，不能把未通过项直接勾选。

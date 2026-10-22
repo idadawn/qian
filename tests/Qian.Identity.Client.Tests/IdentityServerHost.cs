@@ -61,13 +61,14 @@ internal sealed class IdentityServerHost : IAsyncDisposable
     internal Guid Person { get; private set; }
     internal Guid Tenant { get; private set; }
     internal Guid Membership { get; private set; }
+    internal bool Platform { get; private set; }
 
     // backchannel 给出时登记 RP 的后通道登出地址（与回调同源的 /auth/backchannel-logout），身份服务的投递客户端只信这张 RP 证书。
     // 发行方带端口，构建宿主前就要确定：端口在建表、挂载期间被占时换端口从头启动（S1-QA-016，同 S1-QA-014）。
-    internal static Task<IdentityServerHost> Start(PostgresFixture postgres, Uri callback, X509Certificate2? backchannel = null) =>
-        LoopbackPort.StartAsync(port => StartOn(port, postgres, callback, backchannel));
+    internal static Task<IdentityServerHost> Start(PostgresFixture postgres, Uri callback, X509Certificate2? backchannel = null, bool platform = false) =>
+        LoopbackPort.StartAsync(port => StartOn(port, postgres, callback, backchannel, platform));
 
-    private static async Task<IdentityServerHost> StartOn(int port, PostgresFixture postgres, Uri callback, X509Certificate2? backchannel)
+    private static async Task<IdentityServerHost> StartOn(int port, PostgresFixture postgres, Uri callback, X509Certificate2? backchannel, bool platform)
     {
         var issuer = $"http://127.0.0.1:{port}/";
         using var rsa = RSA.Create(2048);
@@ -120,14 +121,15 @@ internal sealed class IdentityServerHost : IAsyncDisposable
         // 启动失败（含端口被占）先释放这次建的宿主，LoopbackPort 才能换端口重来。
         try { await app.StartAsync(Ct); }
         catch { await loader.DisposeAsync(); await app.DisposeAsync(); certificate.Dispose(); throw; }
-        var host = new IdentityServerHost(app, loader, issuer, secret, certificate);
+        var host = new IdentityServerHost(app, loader, issuer, secret, certificate) { Platform = platform };
         // 一个租户、一个带已验证手机号与初始密码的 Person、它在该租户的成员身份：登录走生产的账号接口与统一登录流水线。
         var accounts = loader.GetContext("identity", ScopeKey.Global).IdentityAccounts();
         host.Tenant = tenancy.Add("acme");
         using (var proof = new AuthenticationProof(Encoding.UTF8.GetBytes(Password)))
-            host.Person = (await accounts.CreatePersonAsync(new CreatePerson("张三", [new(IdentifierKind.Phone, Phone, true)]) { InitialPassword = proof, RequirePasswordChange = false }, Ct)).Id;
-        using (app.Services.GetRequiredService<ITenantContext>().BeginScope(host.Tenant.ToString("D")))
-            host.Membership = (await accounts.CreateMembershipAsync(new CreateMembership(host.Person, "张三"), Ct)).Id;
+            host.Person = (await accounts.CreatePersonAsync(new CreatePerson("张三", [new(IdentifierKind.Phone, Phone, true)]) { InitialPassword = proof, RequirePasswordChange = false, PlatformAccess = platform }, Ct)).Id;
+        if (!platform)
+            using (app.Services.GetRequiredService<ITenantContext>().BeginScope(host.Tenant.ToString("D")))
+                host.Membership = (await accounts.CreateMembershipAsync(new CreateMembership(host.Person, "张三"), Ct)).Id;
         return host;
     }
 
@@ -138,7 +140,7 @@ internal sealed class IdentityServerHost : IAsyncDisposable
         csrf.EnsureSuccessStatusCode();
         var token = await csrf.Content.ReadFromJsonAsync<JsonElement>(Ct);
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new Uri(Issuer), "api/identity/login"))
-            { Content = JsonContent.Create(new { client_id = ClientId, identifier = Phone, password = Password, tenant_id = Tenant }) };
+            { Content = JsonContent.Create(new { client_id = ClientId, identifier = Phone, password = Password, tenant_id = Platform ? (Guid?)null : Tenant }) };
         request.Headers.Add(token.GetProperty("header").GetString()!, token.GetProperty("token").GetString());
         using var response = await browser.SendAsync(request, Ct);
         var body = await response.Content.ReadAsStringAsync(Ct);
