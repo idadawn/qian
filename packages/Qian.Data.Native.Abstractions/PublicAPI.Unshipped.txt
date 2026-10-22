@@ -1,0 +1,18 @@
+#nullable enable
+Qian.Data.Native.INativeDataService
+Qian.Data.Native.INativeDataService.OpenPlatformAsync(string! binding, Qian.Runtime.IPluginContext! caller, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Data.Native.INativeDataSession!>
+Qian.Data.Native.INativeDataService.OpenTenantAsync(string! binding, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Data.Native.INativeDataSession!>
+Qian.Data.Native.INativeDataService.ValidateTenantTransactionAsync(string! binding, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Data.Native.INativeDataSession
+Qian.Data.Native.INativeDataSession.BeginTransactionAsync(System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.ReadCommitted, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.Common.DbTransaction!>
+Qian.Data.Native.INativeDataSession.CommitAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Data.Native.INativeDataSession.Connection.get -> System.Data.Common.DbConnection!
+Qian.Data.Native.INativeDataSession.RollbackAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Data.Native.INativeDataSession.TenantId.get -> string?
+Qian.Data.Native.INativeDataSession.Transaction.get -> System.Data.Common.DbTransaction?
+Qian.Data.Native.INativeDataSession.ValidateAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Data.Native.NativeDataDefinition
+Qian.Data.Native.NativeDataErrors
+static Qian.Data.Native.NativeDataDefinition.NativeData(this Qian.Runtime.IPluginContext! context) -> Qian.Data.Native.INativeDataService!
+static readonly Qian.Data.Native.NativeDataDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Data.Native.NativeDataErrors.Misconfigured -> Qian.Runtime.Errors.ErrorCode!
