@@ -1,7 +1,7 @@
 ---
 id: S1-FILE-004
 title: qian.files 去骨架：包发布与 qian add files 真实安装、组合包 storage.endpoint、租户配额 IT 与上传策略清单汇总
-status: review
+status: done
 stage: S1
 area: FILE
 wave: 2
@@ -46,3 +46,6 @@ S1-FILE-001 建议裁决 6、7（用户 2026-10-22 回复「处理掉」，按�
 - 2026-10-23 claude：验收 4、5：Files 测试宿主加平台模式（`FilesPlatform`）——真实 Registry（pg）按制品字节绑定组件（qian.files 用仓库里已去骨架的文件夹，完整目录校验须给出六个能力 ID），TEN-004 运营端点挂在独立宿主，平台超管经 authz 的平台登录角色授予（Qian.Authz 对 Qian.Files.Tests 开 InternalsVisibleTo）。新用例：平台运营 GET 设置 → 只改 quota → PUT `/api/tenancy/tenants/{A}/settings/qian.files`（整体替换，revision 0 → 1）；Registry 在 A 的 scope 挂 qian.files 实例并接管 A 的请求，A 配额 1 MiB，上传 768 KiB 后再申请 512 KiB 返回 422 `QUOTA_EXCEEDED`（剩余 262144 字节），B 仍按组件配置的 10 MiB。声明策略用例改为替身快照与真实 Registry 两种预装快照各跑一遍。租户 scope 实例与 global 实例可以并存；TEN-004 整体替换，写入的配置要带全 storage 与 policies（已写进 README）
 - 2026-10-23 claude：第二个 PR 本机门禁（基于 a85b85230b，推送前同步 main）：dotnet build Qian.slnx -c Release 0 警告 0 错误；check_deps --no-restore 47 包通过；tests/gates 94 项通过；`scripts/check_plugin_manifests.py` 16 个组件一致；`qian docs generate` 后 docs/generated 无漂移；check_docs 322 个文件、pm validate / build 211 个任务通过；qian-cli 单元测试 95/95（含新增离线校验用例与 profiles 计数）；私有源 E2E 两个场景 2/2（55 秒）；全量 dotnet test（QIAN_REQUIRE_DOCKER=1，带 QIAN_OASDIFF_PATH / QIAN_BUF_PATH，--max-parallel-test-modules 4）1334/1334，其中 Qian.Files.Tests 45 例（新增 TEN-004 写入 IT 与声明策略的真实 Registry 变体）
 - 2026-10-23 claude：验收 1–5 均有证据（0.2.0 发布、钉版去骨架、私有源 E2E、TEN-004 写入 IT、真实 Registry 声明策略）；CLI 离线校验 command 工具的建议裁决待用户确认
+- 2026-10-23 claude：用户在本任务会话直接回复「认可建议裁决，转绿后合并」：CLI 离线校验把组件自身命名空间的 command 工具视为已登记能力的做法定案
+- 2026-10-23 claude：合并前 main 前进到 c75486a858（#224、#226–#229，与本 PR 无文件重叠），本地同步后在合并树（与 GitHub 合并结果同为 ad15b253）上重跑门禁：dotnet build -c Release 0 警告 0 错误；全量 dotnet test 1389/1389；qian-cli 95/95、@qian/surfaces 17/17；私有源 E2E 2/2；tests/gates 94 项、清单门禁、check_docs、pm validate、check_deps 通过，docs/generated 无漂移。PR 上 docs-site「构建与检查」两次都在 15 分钟上限被取消：第一次卡在 `playwright install --with-deps` 装系统依赖，第二次装依赖花了近 10 分钟，组件 e2e 跑到 66/161 条（全部通过）时超时；建站与断链检查通过，与本 PR 改动无关
+- 2026-10-23 claude：用户 2026-10-23 在本任务会话确认置 done（「合并，然后置 done」）
