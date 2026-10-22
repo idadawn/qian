@@ -18,6 +18,7 @@
     <Project Path="packages/Qian.Docs/Qian.Docs.csproj" />
     <Project Path="packages/Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
     <Project Path="packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <Project Path="packages/Qian.Config.AspNetCore/Qian.Config.AspNetCore.csproj" />
     <Project Path="packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
     <Project Path="packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
@@ -33,6 +34,7 @@
     <Project Path="packages/Qian.Registry/Qian.Registry.csproj" />
     <Project Path="packages/Qian.Registry.AspNetCore/Qian.Registry.AspNetCore.csproj" />
     <Project Path="packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
+    <Project Path="packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
     <Project Path="packages/Qian.Identity.Connector.Oidc/Qian.Identity.Connector.Oidc.csproj" />
     <Project Path="packages/Qian.Lifecycle.Abstractions/Qian.Lifecycle.Abstractions.csproj" />
     <Project Path="packages/Qian.Lifecycle/Qian.Lifecycle.csproj" />
@@ -65,6 +67,8 @@
     <Project Path="tests/Qian.Identity.Abstractions.Tests/Qian.Identity.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Registry.Tests/Qian.Registry.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Server.Tests/Qian.Identity.Server.Tests.csproj" />
+    <Project Path="tests/Qian.Identity.Client.Tests/Qian.Identity.Client.Tests.csproj" />
+    <Project Path="tests/Qian.Identity.Client.Standalone.Tests/Qian.Identity.Client.Standalone.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Connector.Oidc.Tests/Qian.Identity.Connector.Oidc.Tests.csproj" />
     <Project Path="tests/Qian.Lifecycle.Tests/Qian.Lifecycle.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Errors.Tests/Qian.Runtime.Errors.Tests.csproj" />
@@ -77,6 +81,7 @@
   <Folder Name="/tools/">
     <Project Path="tools/Qian.Plugin.Tool/Qian.Plugin.Tool.csproj" />
     <Project Path="tools/Qian.Secrets.Tool/Qian.Secrets.Tool.csproj" />
+    <Project Path="tools/Qian.Config.Tool/Qian.Config.Tool.csproj" />
     <Project Path="tools/Qian.Docs.Tool/Qian.Docs.Tool.csproj" />
     <Project Path="tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj" />
     <Project Path="tools/Qian.Image.SelfCheck/Qian.Image.SelfCheck.csproj" />

@@ -31,3 +31,7 @@ override Qian.Tenancy.TenantGrpcServerInterceptor.UnaryServerHandler<TRequest, T
 const Qian.Tenancy.TenantGrpcServerInterceptor.ErrorDetailTrailer = "qian-error-bin" -> string!
 Qian.Tenancy.TenancyEventHandlers
 static Qian.Tenancy.TenancyEventHandlers.AddQianTenancyEvents(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!
+Qian.Tenancy.TenancyComponent
+Qian.Tenancy.TenancyComponent.TenancyComponent() -> void
+Qian.Tenancy.TenancyComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Tenancy.TenancyComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

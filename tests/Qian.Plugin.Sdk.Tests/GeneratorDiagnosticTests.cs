@@ -39,7 +39,7 @@ public sealed class GeneratorDiagnosticTests
     [InlineData("partial record Request", "record Request", "partial")]
     [InlineData("Description = \"创建当前租户的一条客户记录。\"", "Description = \"短\"", "描述")]
     [InlineData("[JsonSerializable(typeof(Request))]", "", "显式登记")]
-    [InlineData("[QianPlugin(\"qian.example\")]", "", "一个 QianPlugin")]
+    [InlineData("[QianPlugin(\"qian.example\")]", "", "唯一归属")]
     public void 错误声明产生明确编译诊断(string before, string after, string expected)
     {
         var result = Generate(Source.Replace(before, after, StringComparison.Ordinal));
@@ -73,6 +73,34 @@ public sealed class GeneratorDiagnosticTests
     {
         var source = Source.Replace("public sealed partial record Request(Guid IdempotencyKey, string Name);", "public sealed partial record Request(Guid IdempotencyKey, [property: Sensitive] SecretChild Child); public sealed record SecretChild([property: Sensitive] string Secret);", StringComparison.Ordinal);
         var result = Generate(source); Assert.Empty(result.Diagnostics); Assert.Single(result.GeneratedTrees);
+    }
+
+    [Theory]
+    [InlineData("qian.example", "qian.example", true)]
+    [InlineData("qian.example", "qian.missing", false)]
+    [InlineData("INVALID", "INVALID", false)]
+    public void 能力归属必须指向合法且唯一的入口(string entryId, string owner, bool valid)
+    {
+        var source = Source.Replace("[QianPlugin(\"qian.example\")]", "[QianPlugin(\"" + entryId + "\")]", StringComparison.Ordinal)
+            .Replace("Description =", "ComponentId = \"" + owner + "\", Description =", StringComparison.Ordinal);
+        var result = Generate(source);
+        if (valid) Assert.Empty(result.Diagnostics); else Assert.Contains(result.Diagnostics, d => d.Id == "QIANSDK001");
+    }
+
+    [Fact]
+    public void 多组件的能力必须明确归属_不凭类型所在程序集猜测()
+    {
+        var source = Source + """
+            [QianPlugin("qian.second")] public sealed class Second : IQianPlugin {
+                public IReadOnlyList<ServiceKey> Inject => [];
+                public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => ValueTask.CompletedTask;
+            }
+            """;
+        Assert.Equal("QIANSDK001", Assert.Single(Generate(source).Diagnostics).Id);
+        var explicitOwner = Generate(source.Replace("Description =", "ComponentId = \"qian.example\", Description =", StringComparison.Ordinal));
+        Assert.Empty(explicitOwner.Diagnostics); Assert.Single(explicitOwner.GeneratedTrees);
+        var duplicateId = source.Replace("qian.second", "qian.example", StringComparison.Ordinal);
+        Assert.Equal("QIANSDK001", Assert.Single(Generate(duplicateId).Diagnostics).Id);
     }
 
     private static GeneratorDriverRunResult Generate(string source)

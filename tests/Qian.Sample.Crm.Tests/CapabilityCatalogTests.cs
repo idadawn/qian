@@ -20,7 +20,6 @@ using Qian.Capabilities;
 using Qian.Capabilities.AspNetCore;
 using Qian.Data;
 using Qian.Plugin.Sdk;
-using Qian.Plugin.Sdk.AspNetCore;
 using Qian.Profiles;
 using Qian.Profiles.Abstractions;
 using Qian.Registry;
@@ -337,7 +336,7 @@ public sealed partial class CustomerCommandTests
     {
         builder.Services.AddKunSecurity();
         builder.Services.AddQianHttpContracts();
-        builder.Services.AddQianPluginEndpoints(sp => sp.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("registry", ScopeKey.Global));
+        builder.Configuration["Qian:Profile"] = "platform"; // 业务端点的可见性门由参考宿主自身装配。
         builder.Services.AddQianData<CapabilitiesDbContext>((_, options) => options.UseNpgsql(navigationConnection).UseKunSchema(CapabilitiesDbContext.Schema));
         // 只有能力上下文随包带迁移；迁移连接用属主角色，在线连接仍是受限业务角色。
         builder.Services.AddQianDataMigrations(options => options.ResolveConnection = (_, type) =>
@@ -367,7 +366,6 @@ public sealed partial class CustomerCommandTests
                 throw;
             }
         });
-        app.UseQianPluginEndpoints();
         app.MapQianCapabilities(CapabilitySource);
         // 仅测试宿主的入口胶水；目录、提示与执行全部调用同一个生产 Provider。
         app.MapGet("/api/acceptance/prompt", async (HttpContext http) =>

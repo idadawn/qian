@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>集成测试共用的 Testcontainers fixture：PostgreSQL 16（含 NOBYPASSRLS 应用角色）、Redis 7、RabbitMQ、Apollo 协议替身、K3s 单节点集群。</Description>
+    <Description>集成测试共用的 Testcontainers fixture：PostgreSQL 16（含 NOBYPASSRLS 应用角色）、Redis 7、RabbitMQ、Apollo 协议替身、K3s 单节点集群、外部 OIDC 发行方 Dex。</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Dex 的本地密码库只收 bcrypt 哈希。 -->
+    <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="Testcontainers.PostgreSql" />

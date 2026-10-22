@@ -23,5 +23,5 @@ public sealed record RoleBinding(string RoleCode, string SubjectType, string Sub
 public static class TenantRoleGrant
 {
     /// <summary>AuthzPlugin 提供；租户组件只依赖此 Definition。</summary>
-    public static readonly ServiceKey Key = new("Authz.TenantRoleGrant");
+    public static readonly ServiceKey Key = new("AuthzTenantRoleGrant");
 }

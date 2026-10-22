@@ -46,16 +46,28 @@ public sealed class ManifestPlanTests
         using var fixture = new ComponentDirectory(); var code = new ContractPluginQianCodeMetadata().Create();
         Directory.CreateDirectory(System.IO.Path.Combine(fixture.Path, "tools"));
         var file = System.IO.Path.Combine(fixture.Path, "tools/customer.create.json"); File.WriteAllText(file, "{\"manual\":true}");
-        Assert.Throws<InvalidDataException>(() => ManifestPlan.Create(fixture.Path, code)); Assert.Equal("{\"manual\":true}", File.ReadAllText(file));
+        Assert.Equal(ManifestErrors.HandwrittenConflict, Assert.Throws<ManifestException>(() => ManifestPlan.Create(fixture.Path, code)).Code); Assert.Equal("{\"manual\":true}", File.ReadAllText(file));
         File.Delete(file);
         var manifestFile = System.IO.Path.Combine(fixture.Path, ManifestPlan.ManifestFile); var original = File.ReadAllText(manifestFile);
         var manifest = JsonNode.Parse(original)!; manifest["surfaces"] = new JsonObject { ["tools"] = "./../escape" }; File.WriteAllText(manifestFile, manifest.ToJsonString());
-        Assert.Throws<InvalidDataException>(() => ManifestPlan.Create(fixture.Path, code)); File.WriteAllText(manifestFile, original);
+        Assert.Equal(ManifestErrors.PathEscape, Assert.Throws<ManifestException>(() => ManifestPlan.Create(fixture.Path, code)).Code); File.WriteAllText(manifestFile, original);
         Directory.Delete(System.IO.Path.Combine(fixture.Path, "tools"));
         using var outside = new ComponentDirectory(); Directory.CreateSymbolicLink(System.IO.Path.Combine(fixture.Path, "tools"), outside.Path);
-        Assert.Throws<InvalidDataException>(() => ManifestPlan.Create(fixture.Path, code)); Directory.Delete(System.IO.Path.Combine(fixture.Path, "tools"));
+        Assert.Equal(ManifestErrors.PathEscape, Assert.Throws<ManifestException>(() => ManifestPlan.Create(fixture.Path, code)).Code); Directory.Delete(System.IO.Path.Combine(fixture.Path, "tools"));
         File.WriteAllText(manifestFile, original.Replace("\"id\":\"qian.sdk-tests\"", "\"id\":\"qian.sdk-tests\",\"id\":\"qian.sdk-tests\"", StringComparison.Ordinal));
         Assert.Throws<InvalidDataException>(() => ManifestPlan.Create(fixture.Path, code));
+    }
+
+    [Fact]
+    public void 权限元数据不能用风险映射扩大到未声明动作()
+    {
+        using var fixture = new ComponentDirectory();
+        var original = new ContractPluginQianCodeMetadata().Create();
+        var metadata = new ComponentCodeMetadata(original.ComponentId, original.RuntimeEntry, original.Inject.Select(name => new ServiceKey(name)).ToArray(),
+            original.Provides, original.Capabilities, """[{"resource":"notes","actions":["read"],"risk":{"admin":"high"}}]""", "[]", null);
+        var error = Assert.Throws<ManifestException>(() => ManifestPlan.Create(fixture.Path, metadata));
+        Assert.Equal(ManifestErrors.MetadataInvalid, error.Code); Assert.Equal("metadata/permissions.json#/0/risk", error.Pointer);
+        Assert.False(File.Exists(System.IO.Path.Combine(fixture.Path, "metadata/permissions.json")));
     }
 
     private sealed class ComponentDirectory : IDisposable
