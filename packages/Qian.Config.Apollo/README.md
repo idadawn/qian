@@ -44,9 +44,47 @@ AccessKey 每次签名前解析；解析为空或服务返回 401/403 时，不�
 
 ConfigurationPlugin 对应 qian.config，借用宿主标准配置根。ApolloConfigurationPlugin 对应 qian.config.apollo，要求根中确有本包安装的 Apollo 源，并核对 appId、env、meta 和 namespaces 声明；不匹配直接失败。两者只挂载于 global，提供 Config 服务键，经 ctx.Config() 读取。插件卸载撤销自己登记的服务和错误码，宿主配置根继续由宿主管理，不破坏独立消费者。
 
-`ConfigurationPlugin` 与 `ApolloConfigurationPlugin` 分别带 `[QianPlugin]`，对应 `qian.config` 与 `qian.config.apollo`。同一程序集生成两份按 ID 隔离的元数据，分别同步各自唯一清单的 inject、provides、runtime 和 configSchema；两个 Apply 均直接登记 Config 服务，CI 检查漂移。程序集引用 Qian.Plugin.Sdk，生成器只参与编译。S1-RT-011 已从私有源 `qian add config` 安装并运行标准入口；Apollo 的清单已派生，完整安装门仍待验收。
+`ConfigurationPlugin` 与 `ApolloConfigurationPlugin` 分别带 `[QianPlugin]`，对应 `qian.config` 与 `qian.config.apollo`。同一程序集生成两份按 ID 隔离的元数据，分别同步各自唯一清单的 inject、provides、runtime 和 configSchema；标准入口直接登记 Config 服务；Apollo 公开入口通过 DelegatePlugin 显式委托内部实现，包含同一 Config 登记、重载通知与发布审计。CI 检查两个入口的清单漂移。程序集引用 Qian.Plugin.Sdk，生成器只参与编译。S1-RT-011 已从私有源 `qian add config` 安装并运行标准入口；Apollo 的清单已派生，完整安装门仍待验收。
 
-只读配置端口面向受信任代码，不自动生成模型工具。涉及秘密解析权限、脱敏导出、Schema 治理与发布审计的接口仍由后续 CFG 任务实现。
+只读配置端口面向受信任代码，不自动生成模型工具；秘密解析仍经 Config 的权限策略，配置值 HTTP 接口按下文执行授权与脱敏。
+
+## 强类型配置：先校验、失败保留旧值
+
+```csharp
+services.AddQianOptions<SampleOptions>("Sample", (section, options) =>
+{
+    if (section["PageSize"] is { } value) options.PageSize = int.Parse(value, CultureInfo.InvariantCulture);
+}, plugin: "qian.sample", schema: SampleJson.Default.SampleOptions);
+services.AddSingleton<IValidateOptions<SampleOptions>, SampleOptionsValidator>(); // [OptionsValidator] 源生成的 DataAnnotations 校验器
+```
+
+`AddQianOptions<T>` 把 `ValidatedOptionsMonitor<T>` 登记为 `IOptionsMonitor<T>`：配置根变更后先构造并校验候选值（`IValidateOptions<T>`，以及绑定委托抛出的格式、溢出与操作异常），通过才替换并通知监听者。失败时保留上一份有效值、不通知监听者，计数 `qian.config.reload.failed`（Meter `Qian.Config`，Prometheus 导出名 `qian_config_reload_failed_total`，标签 `options.type`、`options.name`、`plugin`），记 Warning 日志（EventId 2101，不含值），并在配置组件挂载期间发进程内事件 `config/reload-failed`；修正后的下一次变更照常生效。`critical` 默认 true，经 `ValidateOnStart` 在启动时校验；设为 false 时首次读取才校验，首次读取失败直接抛出。同一类型只能登记一次。绑定由调用方委托完成，不走反射绑定，配合源生成校验器接受 AOT 分析；本包打开 `IsAotCompatible` 只表示启用兼容性分析，不代表实际 NativeAOT 发布及运行证据。开发期 gateway 按 S1-DEC-029 使用 JIT，最终 AOT 门仍由 GW-001 / DEP-008 验收。传入 `schema`（`JsonTypeInfo<T>`）时同时登记 `QianOptionsSchema`，`Export()` 输出不含配置值的 JSON Schema 2020-12。
+
+Kun 的 `AddKunOptions` 三个重载都要求动态代码，`LastGoodOptionsMonitor` 是 internal 且没有失败钩子，所以本包自带等价监视器（S1-CFG-003 路线 b）；Kun 补上 AOT 入口与失败钩子后可以改回复用。
+
+告警事件 `ConfigRuntimeEvents.ReloadFailed`（Emit）的载荷是 `ConfigReloadFailed`：options 类型与名称、配置节、失败条数、错误码 `CONFIG_RELOAD_REJECTED` 与可选组件 ID，不含配置值，监听者用 `ctx.On(ConfigRuntimeEvents.ReloadFailed, ...)`。两个 Provider 都会转发，所以 standalone 同样可用；事件 Definition 由 qian.config 唯一拥有，qian.config.apollo 以 SharedEvents 显式引用，两个 metadata/events.json 的 name、mode、payload、source 与 definitionComponent 同源。此共享只覆盖事件契约，不共享权限声明；配置组件未挂载时只有指标与日志。跨进程集成事件名 `config.reload.failed.v1`（`ConfigEvents.ReloadFailedType`）先保留：Kun 的集成事件总线只能在 DbContext 工作单元里暂存，配置重载不在业务事务中，跨进程投递等 S1-EVT-003 发布 Outbox 写入契约后接上。
+
+## Apollo 发布进平台审计链
+
+ApolloConfigurationPlugin 把每个 namespace 快照的接受与拒绝写进平台审计链（PRD 7.8 / 7.11）：能力 ID `qian.config/release.applied` 与 `qian.config/release.rejected`，主体为 `service` + AppId，通道 `event`，资源 `apollo://<AppId>/<Env>/<Cluster>/<namespace>`，result 为 applied / rejected；`inputHash` 是脱敏后规范化快照的 SHA-256（敏感键以 `[REDACTED]` 参与），补充数据只有 namespace、变更键数与拒绝原因码。拒绝在 Kun 客户端的 namespace 与合并快照校验处记录，接受在重载回调或从缓存启动时确认；同一 namespace 的同一快照、同一结果只记一次，客户端每 5 秒重拉被拒候选不会重复入链。
+
+审计组件可以缺席：记录暂存在有界队列（256 条，满时丢弃最旧的），`qian.audit` 就绪后按序补写；审计组件卸载后等新的服务就绪再继续。写入失败（例如平台链未显式启用 `chain.platformRole`）首次记 Warning（EventId 2112），之后记 Debug，记录丢弃，不阻断配置生效。已知不覆盖：namespace 内容变了但合并结果不变的发布会立即确认；Apollo 的 releaseKey 在 Kun 客户端内部，记录里没有。
+
+## 配置 Schema 与配置值接口
+
+`Qian.Config.AspNetCore` 只依赖 Definition 与 Runtime：
+
+```csharp
+app.MapQianConfig(http => configContext); // global 配置组件上下文，须能注入 Registry、Config 与 AuthzEnforcement
+```
+
+- `GET /api/config/schemas/{plugin}`：对已认证调用方返回组件 config.schema 原文（`application/schema+json`），不含配置值。Schema 只取 Registry 预装集合中由 `RegistryComponentBinding.FromArtifact` 捕获的制品文件；未预装、只有静态绑定（没有文件快照）或没有 Schema 的组件为 404。
+- `GET /api/config/values/{plugin}`：只对平台主体开放，租户主体在判定前 403。处理器内经 `IAuthzEnforcement` 判定 `qian.config:values:read`（拒绝 403、审计不可用 404，都写决策审计），放行后返回配置节 `qian.plugin.<组件 id>` 的 `{ key, sensitive, value }`；Schema 标 `x-qian-sensitive`、疑似密钥键名或值的键 `sensitive: true` 且不给值，也不给引用。先判定再查存在，未授权调用方看不出哪些组件已预装。
+- 两个端点归属 `PlatformHttpContract("qian.config")`，响应带 `Cache-Control: private, no-store`，错误为 ErrorDetail；值端点带 `RequiresPermission` 元数据，OpenAPI 写出 `x-qian-permission`。宿主不要再给它加 `RequireQianPermission`，否则会重复判定。权限点声明在 `plugins/qian.config/metadata/permissions.json`；qian.config 已通过既有真实安装门并移除骨架标记，其权限声明随制品预装后由 Authz 的正常路径读取；声明不等于授予。qian.config.apollo 保留骨架标记，等待自己的真实安装验收。
+
+## Apollo namespace 骨架
+
+组件私有 namespace 为 `qian.plugin.<组件 id>`，键名约定 `qian.plugin.<组件 id>:<属性路径>`（带 namespace 名，合并进 `IConfiguration` 后不与其它组件或 application 撞键，组件以 `ReadSection("qian.plugin.<组件 id>")` 读取）。[Qian.Config.Tool](../../tools/Qian.Config.Tool/README.md) 由组件 config.schema 推导每个宿主的 namespace 骨架并比对线上键，缺键、多键即非零退出。
 
 ## 运维边界
 
@@ -54,9 +92,9 @@ L0–L4 降级矩阵、排查顺序与证据见 [配置运维手册](../../docs/
 
 ## 验证与边界
 
-快速测试复用 ApolloFixture 协议替身，覆盖五层顺序、namespace 顺序、环境引导、访问密钥引用和插件生命周期。最终验收使用 RealApolloFixture：真实 Apollo 2.5.2 ConfigService/AdminService 与 MySQL 8.0.43，通过 AdminService 编辑并发布，验证同一个 IOptionsMonitor 在 60 秒内更新、停服务后缓存可启动、无缓存失败。
+快速测试复用 ApolloFixture 协议替身，覆盖五层顺序、namespace 顺序、环境引导、访问密钥引用和插件生命周期；S1-CFG-003 的热更新校验（OptionsReloadTests）、发布审计（ReleaseAuditTests）、namespace 骨架比对（NamespaceSkeletonTests）同样以它为线上。最终验收使用 RealApolloFixture：真实 Apollo 2.5.2 ConfigService/AdminService 与 MySQL 8.0.43，通过 AdminService 编辑并发布，验证同一个 IOptionsMonitor 在 60 秒内更新、停服务后缓存可启动、无缓存失败，以及一次发布在真实 PostgreSQL 平台审计链上多一条记录、链校验通过、持久化行不含配置键值（RealApolloReleaseAuditTests）。配置 Schema 与配置值接口由 ConfigEndpointsTests 在真实 Kestrel + JWT 上验证。
 
-这证明本机/CI 的真实服务链路。生产 Apollo 的高可用部署、Portal OIDC、配置审计及托管 MySQL 仍按部署与后续任务验收。
+这证明本机/CI 的真实服务链路。生产 Apollo 的高可用部署、Portal OIDC 登录与 Portal 侧操作审计及托管 MySQL 仍按部署任务（S1-DEP-002）验收。
 
 ## 同程序集的两个组件
 

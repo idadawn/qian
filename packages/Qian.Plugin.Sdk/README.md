@@ -59,7 +59,7 @@ sync 合并唯一清单的派生字段与既有表面；数组与入口不改变
 | 组件身份、版本与发布 | id、version、author、license、interface、runtime 的包/镜像信息、policy、scopes、依赖与路径仍手写；身份必须匹配代码 |
 | 尚未有代码声明的权限、角色、其他表面 | 保持手写；未声明的文件不会被自动接管或删除 |
 
-Definition 包的事件/权限可通过 QianPlugin.MetadataTypes 显式纳入组件；同一类型不能被两个组件争用。多组件程序集的本地声明用 ComponentOwner 指定归属。CapabilitySource 只引用与真实绑定共用的静态契约，不能构造业务插件或 handler；同样经过跨组件归属、重名与工具 Schema 校验。SDK 内部 ExecutableCapabilities 注册按完整 capability ID 走能力与 tools 协议，不伪装成普通 serviceKeys 中的贡献短名。
+Definition 包的事件/权限可通过 QianPlugin.MetadataTypes 显式纳入组件；同一类型只有一个拥有者。同程序集的其它 Provider 可以用 `[SharedEvents(typeof(Events), "拥有者组件ID")]` 显式引用该组件已纳入的事件类型：生成器要求唯一且实际存在的拥有者，类型必须有 QianEvent，不能带 Permission。两个事件文件保存同一 name / mode / payload / source 及 definitionComponent；这只共享事件契约，不改变权限、服务或组件归属。跨程序集拥有者尚不可静态确认时明确诊断。多组件程序集的本地声明用 ComponentOwner 指定归属。CapabilitySource 只引用与真实绑定共用的静态契约，不能构造业务插件或 handler；同样经过跨组件归属、重名与工具 Schema 校验。SDK 内部 ExecutableCapabilities 注册按完整 capability ID 走能力与 tools 协议，不伪装成普通 serviceKeys 中的贡献短名。
 
 check 只读，并以文件路径及 JSON Pointer 报告漂移，发现差异返回非零。删除代码能力后，旧工具仍存在也会失败；sync 只有同时具备清单索引与文件所属标记才删除过期工具，不覆盖同名手写工具。孤立派生文件、重复键、越界路径、符号链接及第二份清单被拒绝。元数据的删除与覆盖还须核对允许的表面路径、所属组件与原内容哈希；被手改后拒绝覆盖且保留文件，恢复原派生内容后再修改代码并同步。删除配置代码声明时同步撤下所属 Schema 文件和 runtime.configSchema 指针。先在临时快照验证完整组件，再改目标文件；单次写入用临时文件替换，同步中抛错会恢复已改文件。预检最多 4096 个文件、64 MiB，不复制构建输出、依赖目录或 Git 数据。
 

@@ -1,0 +1,10 @@
+[
+  {
+    "name": "config/reload-failed",
+    "mode": "emit",
+    "payload": "Qian.Config.ConfigReloadFailed",
+    "result": "System.Object",
+    "source": "Qian.Config.ConfigRuntimeEvents.ReloadFailed",
+    "definitionComponent": "qian.config"
+  }
+]

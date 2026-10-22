@@ -97,3 +97,33 @@ Qian.Config.SecretDiagnostic.Location.init -> void
 static Qian.Config.SecretSafety.Scan(System.Text.Json.JsonElement value, System.Text.Json.JsonElement? schema = null) -> System.Collections.Generic.IReadOnlyList<Qian.Config.SecretDiagnostic!>!
 Qian.Config.SecretDiagnostic.SecretDiagnostic(string! Code, string! Location, string! Reason) -> void
 static Qian.Config.SecretSafety.ScanConfiguration(System.Collections.Generic.IReadOnlyDictionary<string!, string?>! values, System.Text.Json.JsonElement? schema = null) -> System.Collections.Generic.IReadOnlyList<Qian.Config.SecretDiagnostic!>!
+Qian.Config.ConfigEvents
+Qian.Config.ConfigReloadFailed
+Qian.Config.ConfigReloadFailed.<Clone>$() -> Qian.Config.ConfigReloadFailed!
+Qian.Config.ConfigReloadFailed.Code.get -> string!
+Qian.Config.ConfigReloadFailed.Code.init -> void
+Qian.Config.ConfigReloadFailed.ConfigReloadFailed(string! OptionsType, string! OptionsName, string! Section, int Failures, string! Code) -> void
+Qian.Config.ConfigReloadFailed.Deconstruct(out string! OptionsType, out string! OptionsName, out string! Section, out int Failures, out string! Code) -> void
+Qian.Config.ConfigReloadFailed.Equals(Qian.Config.ConfigReloadFailed? other) -> bool
+Qian.Config.ConfigReloadFailed.Failures.get -> int
+Qian.Config.ConfigReloadFailed.Failures.init -> void
+Qian.Config.ConfigReloadFailed.OptionsName.get -> string!
+Qian.Config.ConfigReloadFailed.OptionsName.init -> void
+Qian.Config.ConfigReloadFailed.OptionsType.get -> string!
+Qian.Config.ConfigReloadFailed.OptionsType.init -> void
+Qian.Config.ConfigReloadFailed.Plugin.get -> string?
+Qian.Config.ConfigReloadFailed.Plugin.init -> void
+Qian.Config.ConfigReloadFailed.Section.get -> string!
+Qian.Config.ConfigReloadFailed.Section.init -> void
+Qian.Config.ConfigRuntimeEvents
+const Qian.Config.ConfigDefinition.ValuesReadPermission = "qian.config:values:read" -> string!
+const Qian.Config.ConfigEvents.ReleaseAppliedCapabilityId = "qian.config/release.applied" -> string!
+const Qian.Config.ConfigEvents.ReleaseRejectedCapabilityId = "qian.config/release.rejected" -> string!
+const Qian.Config.ConfigEvents.ReloadFailedType = "config.reload.failed.v1" -> string!
+override Qian.Config.ConfigReloadFailed.Equals(object? obj) -> bool
+override Qian.Config.ConfigReloadFailed.GetHashCode() -> int
+override Qian.Config.ConfigReloadFailed.ToString() -> string!
+static Qian.Config.ConfigReloadFailed.operator !=(Qian.Config.ConfigReloadFailed? left, Qian.Config.ConfigReloadFailed? right) -> bool
+static Qian.Config.ConfigReloadFailed.operator ==(Qian.Config.ConfigReloadFailed? left, Qian.Config.ConfigReloadFailed? right) -> bool
+static readonly Qian.Config.ConfigErrors.ReloadRejected -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Config.ConfigRuntimeEvents.ReloadFailed -> Qian.Runtime.QianEvent<Qian.Config.ConfigReloadFailed!, object?>!

@@ -116,6 +116,49 @@ public sealed class ComponentGeneratorTests
         var result = Generate(source); Assert.Equal(2, result.Diagnostics.Count(d => d.Id == "QIANSDK002")); Assert.Empty(result.GeneratedTrees);
     }
 
+    [Theory]
+    [InlineData("valid", true)]
+    [InlineData("missing-owner", false)]
+    [InlineData("wrong-owner", false)]
+    [InlineData("duplicate-owner", false)]
+    [InlineData("permissions", false)]
+    [InlineData("empty", false)]
+    public void 共享事件要求唯一拥有者_不能借此共享权限或吞掉空声明(string scenario, bool valid)
+    {
+        var source = """
+            using System; using System.Collections.Generic; using System.Text.Json; using System.Threading; using System.Threading.Tasks; using Qian.Runtime; using Qian.Plugin.Sdk;
+            [QianPlugin("qian.owner", MetadataTypes = [typeof(Events)])]
+            public sealed class Owner : IQianPlugin {
+                public IReadOnlyList<ServiceKey> Inject => [];
+                public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => ValueTask.CompletedTask;
+            }
+            [QianPlugin("qian.consumer")][SharedEvents(typeof(Events), "qian.owner")]
+            public sealed class Consumer : IQianPlugin {
+                public IReadOnlyList<ServiceKey> Inject => [];
+                public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => ValueTask.CompletedTask;
+            }
+            public static class Events {
+                [QianEvent(Mode = DispatchMode.Emit)] public static readonly QianEvent<string, object> Reloaded = QianEvent.Define<string, object>("shared/reloaded", DispatchMode.Emit);
+            }
+            """;
+        source = scenario switch
+        {
+            "missing-owner" => source.Replace("MetadataTypes = [typeof(Events)]", "MetadataTypes = []", StringComparison.Ordinal),
+            "wrong-owner" => source.Replace("SharedEvents(typeof(Events), \"qian.owner\")", "SharedEvents(typeof(Events), \"qian.missing\")", StringComparison.Ordinal),
+            "duplicate-owner" => source.Replace("QianPlugin(\"qian.consumer\")", "QianPlugin(\"qian.consumer\", MetadataTypes = [typeof(Events)])", StringComparison.Ordinal),
+            "permissions" => source.Replace("public static class Events", "[Qian.Authz.Abstractions.Permission(\"notes\", \"read\")] public static class Events", StringComparison.Ordinal),
+            "empty" => source.Replace("[QianEvent(Mode = DispatchMode.Emit)]", "", StringComparison.Ordinal),
+            _ => source
+        };
+        var result = Generate(source);
+        if (valid)
+        {
+            Assert.Empty(result.Diagnostics); Assert.Equal(2, result.GeneratedTrees.Length);
+            Assert.All(result.GeneratedTrees, tree => Assert.Contains("global::Events.Reloaded, (global::Qian.Runtime.DispatchMode)0, \"Events.Reloaded\", \"qian.owner\"", tree.ToString(), StringComparison.Ordinal));
+        }
+        else Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Id == "QIANSDK002");
+    }
+
     private static GeneratorDriverRunResult Generate(string source)
     {
         var parse = new CSharpParseOptions(LanguageVersion.Preview);

@@ -53,7 +53,7 @@
         "$generated": true,
         "component": "qian.authz",
         "source": "Qian.Authz.AuthzComponent, Qian.Authz",
-        "sha256": "cb5c271a24fdbf32862ea1f879c650b5f4e59600d21ecb67470cdcc4d7267dae",
+        "sha256": "0d0e19694bbee6b473d716fd286bff65e75d01771c9cb667e93c8c1dd82dca29",
         "fields": [
           ""
         ]

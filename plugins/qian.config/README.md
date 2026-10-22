@@ -8,3 +8,8 @@
 该组件已通过既有真实安装门，清单不再带 `x-skeleton`。
 
 配置 Schema 的真相源为 Provider 的 `ComponentConfiguration.Schema`，清单的 `runtime.configSchema` 与文件由工具同步，`check` 同时检查配置声明漂移。
+
+
+`metadata/permissions.json` 声明 `qian.config:values:read`，供配置值读取接口（`GET /api/config/values/{plugin}`，见 Provider README）判定；`metadata/roles.json` 为空，不给租户角色模板授予这个平台权限。制品预装后由 Authz 的正常路径读取，声明本身不授予权限。
+
+`metadata/events.json` 从 ConfigRuntimeEvents 派生，事件契约的 definitionComponent 为 qian.config；Apollo Provider 显式引用同一事件契约，不另定义或共享本组件权限。

@@ -18,6 +18,7 @@
     <Project Path="packages/Qian.Docs/Qian.Docs.csproj" />
     <Project Path="packages/Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
     <Project Path="packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <Project Path="packages/Qian.Config.AspNetCore/Qian.Config.AspNetCore.csproj" />
     <Project Path="packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
     <Project Path="packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
@@ -80,6 +81,7 @@
   <Folder Name="/tools/">
     <Project Path="tools/Qian.Plugin.Tool/Qian.Plugin.Tool.csproj" />
     <Project Path="tools/Qian.Secrets.Tool/Qian.Secrets.Tool.csproj" />
+    <Project Path="tools/Qian.Config.Tool/Qian.Config.Tool.csproj" />
     <Project Path="tools/Qian.Docs.Tool/Qian.Docs.Tool.csproj" />
     <Project Path="tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj" />
     <Project Path="tools/Qian.Image.SelfCheck/Qian.Image.SelfCheck.csproj" />

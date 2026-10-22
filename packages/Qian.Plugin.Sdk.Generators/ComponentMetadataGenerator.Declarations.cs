@@ -18,16 +18,28 @@ public sealed partial class ComponentMetadataGenerator
             }
         }
         Visit(compilation.Assembly.GlobalNamespace);
-        var declaration = plugin.GetAttributes().Single(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.QianPluginAttribute");
-        var included = declaration.NamedArguments.FirstOrDefault(p => p.Key == "MetadataTypes").Value;
-        var explicitTypes = included.IsNull || included.Kind != TypedConstantKind.Array ? [] : included.Values.Select(v => v.Value).OfType<INamedTypeSymbol>().ToArray();
+        var explicitTypes = MetadataTypes(plugin);
+        var sharedTypes = new Dictionary<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
         foreach (var type in explicitTypes)
         {
-            if (plugins.Where(p => !SymbolEqualityComparer.Default.Equals(p, plugin)).Any(p => p.GetAttributes()
-                .Single(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.QianPluginAttribute").NamedArguments
-                .Any(pair => pair.Key == "MetadataTypes" && pair.Value.Values.Any(value => SymbolEqualityComparer.Default.Equals(value.Value as INamedTypeSymbol, type)))))
+            if (plugins.Count(p => MetadataTypes(p).Any(candidate => SymbolEqualityComparer.Default.Equals(candidate, type))) != 1)
             { Report(output, type, "同一 MetadataTypes 声明不能归属多个组件。"); return null; }
             symbols.Add(type); symbols.AddRange(type.GetMembers());
+        }
+        foreach (var shared in plugin.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.SharedEventsAttribute"))
+        {
+            var type = shared.ConstructorArguments[0].Value as INamedTypeSymbol;
+            var definitionComponent = shared.ConstructorArguments[1].Value as string;
+            if (type is null || definitionComponent is null || sharedTypes.ContainsKey(type) || explicitTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, type)))
+            { Report(output, plugin, "SharedEvents 必须引用一个非重复的事件 Definition 类型，不能同时声明为自身 MetadataTypes。"); return null; }
+            var owners = plugins.Where(p => MetadataTypes(p).Any(t => SymbolEqualityComparer.Default.Equals(t, type))).ToArray();
+            if (owners.Length != 1 || Id(owners[0]) != definitionComponent || definitionComponent == Id(plugin) || plugins.Count(p => Id(p) == definitionComponent) != 1)
+            { Report(output, plugin, "SharedEvents 须引用同程序集内由一个其它组件通过 MetadataTypes 唯一拥有的事件契约。"); return null; }
+            var members = new ISymbol[] { type }.Concat(type.GetMembers()).ToArray();
+            if (members.Any(m => m.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == "Qian.Authz.Abstractions.PermissionAttribute")) ||
+                !members.Any(m => m.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == "Qian.Runtime.QianEventAttribute")))
+            { Report(output, plugin, "SharedEvents 只共享非空的事件声明类型，不能携带 Permission 权限声明。"); return null; }
+            sharedTypes.Add(type, definitionComponent); symbols.AddRange(members);
         }
         var permissions = new List<string>(); var events = new List<string>(); var permissionNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var symbol in symbols.Distinct(SymbolEqualityComparer.Default).OrderBy(s => s.ToDisplayString(), StringComparer.Ordinal))
@@ -36,10 +48,15 @@ public sealed partial class ComponentMetadataGenerator
             {
                 var explicitOwner = symbol.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.ComponentOwnerAttribute")?.ConstructorArguments[0].Value as string
                     ?? symbol.ContainingType?.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.ComponentOwnerAttribute")?.ConstructorArguments[0].Value as string;
-                var imported = explicitTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, symbol) || SymbolEqualityComparer.Default.Equals(t, symbol.ContainingType));
-                var owner = explicitOwner ?? (imported ? Id(plugin) : plugins.Length == 1 ? Id(plugins[0]) : null);
+                bool Contains(INamedTypeSymbol type) => SymbolEqualityComparer.Default.Equals(type, symbol) || SymbolEqualityComparer.Default.Equals(type, symbol.ContainingType);
+                var imported = explicitTypes.Any(Contains);
+                var owners = plugins.Where(p => MetadataTypes(p).Any(Contains)).ToArray();
+                if (owners.Length > 1) { Report(output, symbol, "同一声明的 MetadataTypes 拥有者不唯一。"); return null; }
+                var shared = sharedTypes.Where(pair => Contains(pair.Key)).Select(pair => pair.Value).SingleOrDefault();
+                var owner = explicitOwner ?? (owners.Length == 1 ? Id(owners[0]) : plugins.Length == 1 ? Id(plugins[0]) : null);
                 if (owner is null || !plugins.Any(p => Id(p) == owner)) { Report(output, symbol, "权限或事件声明必须唯一归属当前程序集的组件；多组件程序集使用 ComponentOwner 或 MetadataTypes。"); return null; }
-                if (owner != Id(plugin)) { if (imported) { Report(output, symbol, "MetadataTypes 不能引用归属其它组件的声明。"); return null; } continue; }
+                if (shared is not null && shared != owner) { Report(output, symbol, "SharedEvents 引用的拥有者与实际声明归属不符。"); return null; }
+                if (owner != Id(plugin) && shared is null) { if (imported) { Report(output, symbol, "MetadataTypes 不能引用归属其它组件的声明。"); return null; } continue; }
                 if (attribute.AttributeClass!.Name == "PermissionAttribute")
                 {
                     var resource = attribute.ConstructorArguments[0].Value as string; var action = attribute.ConstructorArguments[1].Value as string;
@@ -61,12 +78,18 @@ public sealed partial class ComponentMetadataGenerator
                     { Report(output, symbol, "QianEvent 声明须为公开静态只读的强类型事件字段。"); return null; }
                     var reference = field.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + "." + field.Name;
                     var mode = attribute.NamedArguments.FirstOrDefault(p => p.Key == "Mode").Value.Value is int value ? value : 0;
-                    events.Add("global::Qian.Plugin.Sdk.ComponentMetadataDeclarations.Event(" + reference + ", (global::Qian.Runtime.DispatchMode)" + mode + ", " + Literal(symbol.ToDisplayString()) + ")");
+                    events.Add("global::Qian.Plugin.Sdk.ComponentMetadataDeclarations.Event(" + reference + ", (global::Qian.Runtime.DispatchMode)" + mode + ", " + Literal(symbol.ToDisplayString()) + ", " + Literal(owner) + ")");
                 }
             }
         }
         var config = plugin.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.QianConfigSchemaAttribute")?.ConstructorArguments[0].Value as string;
         return (Literal("[" + string.Join(",", permissions) + "]"), "new global::System.Text.Json.Nodes.JsonArray(" + string.Join(", ", events) + ").ToJsonString()", config is null ? "null" : Literal(config));
+    }
+    private static INamedTypeSymbol[] MetadataTypes(INamedTypeSymbol plugin)
+    {
+        var included = plugin.GetAttributes().Single(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.QianPluginAttribute")
+            .NamedArguments.FirstOrDefault(p => p.Key == "MetadataTypes").Value;
+        return included.IsNull || included.Kind != TypedConstantKind.Array ? [] : included.Values.Select(v => v.Value).OfType<INamedTypeSymbol>().ToArray();
     }
     private static string Json(string value) => "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t") + "\"";
 }

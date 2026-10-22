@@ -152,3 +152,8 @@ Qian.Plugin.Sdk.CapabilitySourceAttribute
 Qian.Plugin.Sdk.CapabilitySourceAttribute.CapabilitySourceAttribute(System.Type! owner, string! member) -> void
 Qian.Plugin.Sdk.CapabilitySourceAttribute.Member.get -> string!
 Qian.Plugin.Sdk.CapabilitySourceAttribute.Owner.get -> System.Type!
+Qian.Plugin.Sdk.SharedEventsAttribute
+Qian.Plugin.Sdk.SharedEventsAttribute.Declarations.get -> System.Type!
+Qian.Plugin.Sdk.SharedEventsAttribute.DefinitionComponent.get -> string!
+Qian.Plugin.Sdk.SharedEventsAttribute.SharedEventsAttribute(System.Type! declarations, string! definitionComponent) -> void
+static Qian.Plugin.Sdk.ComponentMetadataDeclarations.Event<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! value, Qian.Runtime.DispatchMode mode, string! source, string! definitionComponent) -> System.Text.Json.Nodes.JsonObject!

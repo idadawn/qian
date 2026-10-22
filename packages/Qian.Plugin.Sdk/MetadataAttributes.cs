@@ -1,5 +1,15 @@
 namespace Qian.Plugin.Sdk;
 
+/// <summary>引用另一个组件拥有的共享事件契约；不共享权限或其它元数据。</summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public sealed class SharedEventsAttribute(Type declarations, string definitionComponent) : Attribute
+{
+    /// <summary>含公开静态只读 QianEvent 字段的 Definition 类型。</summary>
+    public Type Declarations { get; } = declarations;
+    /// <summary>同程序集内通过 MetadataTypes 唯一拥有此类型的组件 ID。</summary>
+    public string DefinitionComponent { get; } = definitionComponent;
+}
+
 /// <summary>引用与真实执行绑定共用的静态能力契约；不得通过实例化插件或处理器取得。</summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 public sealed class CapabilitySourceAttribute(Type owner, string member) : Attribute

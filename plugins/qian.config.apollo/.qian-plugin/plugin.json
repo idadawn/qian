@@ -41,6 +41,15 @@
     ],
     "tools": [],
     "metadata": {
+      "metadata/events.json": {
+        "$generated": true,
+        "component": "qian.config.apollo",
+        "source": "Qian.Config.Apollo.ApolloConfigurationPlugin, Qian.Config.Apollo",
+        "sha256": "29e18d84ad191d035566d3f4535b4dc74fc3359787351a7358d8cb9396bafe58",
+        "fields": [
+          ""
+        ]
+      },
       "schemas/config.schema.json": {
         "$generated": true,
         "component": "qian.config.apollo",

@@ -53,7 +53,7 @@
         "$generated": true,
         "component": "qian.identity.server",
         "source": "Qian.Identity.Server.IdentityServerComponent, Qian.Identity.Server",
-        "sha256": "2a3b823ed1f0ba59e082ed59c1769949443619762bf088236317e1849cd3b063",
+        "sha256": "2806f0cf862d4794fe14c481922bf726c1a3574f527e64ad355cb0fae4142924",
         "fields": [
           ""
         ]
