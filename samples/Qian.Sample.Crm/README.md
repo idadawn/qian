@@ -13,6 +13,7 @@
 - S2S__ReaderClientId：允许读取客户的内部服务主体。
 - S2S__PublicJwks：仅含 RSA/EC 公钥的 JWKS JSON，不放私钥。
 - ConnectionStrings__Events：可选，RabbitMQ 的 AMQP 地址。设置后宿主启动 Outbox 投递；未设置时只写 Outbox，适合没有 MQ 的本地开发。
+- ConnectionStrings__Redis：可选，StackExchange.Redis 连接串，只在同时设置了 Events 时生效。设置后宿主还启动消费端，幂等记录写 Redis；未设置时只投递、不消费。
 - ConnectionStrings__Migrations：可选，迁移属主角色的连接（同样不能是超级用户或 BYPASSRLS），只在 `--migrate-only` 时使用。
 
 ```bash
@@ -64,6 +65,19 @@ POST /api/customers 接收 idempotencyKey（UUID）和 name；租户来自验证
 
 - 创建客户后 outbox_messages 恰好多一行，其 payload 通过 contracts/v0 的信封 Schema；
 - 后台投递确认后，订阅 `crm.customer.created` 的 quorum 队列恰好收到一条，消息体与 Outbox 行逐字节相同。
+
+同时配置了 Events 与 Redis 时，宿主经 `AddQianEventsSubscriber("qian.sample.crm", …)` 装上消费端（S1-EVT-002），用竞争订阅 `customer-created` 消费自己的 `crm.customer.created.v1`。
+
+- [CustomerCreatedHandler](CrmEventHandlers.cs) 在事件所属租户的数据上下文里查询这位客户。查不到就抛 InvalidOperationException，按确定性失败直接进死信队列。查到后把回执记进进程内的 `CustomerCreatedReceipts`（上限 1000 条），供验收读取。
+- 租户经宿主登记的 `TenantContextPropagator`，按已校验信封的 tenant_id 回灌。
+- 重试、死信、幂等与失败分类都按 [Qian.Events 的消费端](../../packages/Qian.Events/README.md#消费)。
+
+handler 只做读和记录，不在 handler 里再发布集成事件。
+
+消费端的真实验收在 `CustomerCommandTests.EventsConsumer.cs`，使用 Kestrel、PostgreSQL 应用角色、RabbitMQ 与 Redis 容器：
+
+- 两个租户并发经 HTTP 建档后，handler 内的租户就是事件的租户。EF 生成的 SQL 带 tenant_id 过滤，也只读到本租户的行；
+- 信封缺 tenant_id、AMQP 头缺失或不一致、信封里 tenant_id 重复、平台级事件都 fail-closed：不进 handler、不记幂等、不重投，直接进死信队列。
 
 IntegrationEventCatalogTests 扫描测试输出里全部 Qian 程序集的 `[IntegrationEventId]`，要求每一个都经组件登记入口带上 JsonTypeInfo，并能导出 payload Schema。
 

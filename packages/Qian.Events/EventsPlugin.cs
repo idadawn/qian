@@ -36,6 +36,7 @@ public sealed class EventsPlugin : IQianPlugin
         {
             ctx.Effect(catalog.Register(EventsErrors.Misconfigured));
             ctx.Effect(catalog.Register(EventsErrors.PublishRejected));
+            ctx.Effect(catalog.Register(EventsErrors.ConsumeRejected));
         }
         ctx.Provide<IEventsService>(EventsDefinition.Key, ctx.Services.GetRequiredService<IEventsService>());
         return ValueTask.CompletedTask;

@@ -26,7 +26,23 @@ Qian.Events.QianEventsOptions.RelayInstance.get -> string!
 Qian.Events.QianEventsOptions.RelayInstance.set -> void
 Qian.Events.QianEventsOptions.RetryBaseDelay.get -> System.TimeSpan
 Qian.Events.QianEventsOptions.RetryBaseDelay.set -> void
+Qian.Events.QianEventsSubscriberBuilder
+Qian.Events.QianEventsSubscriberBuilder.Service.get -> string!
+Qian.Events.QianEventsSubscriberBuilder.Subscribe<TEvent, THandler>(string! subscription, Qian.Events.EventSubscriptionMode mode = Qian.Events.EventSubscriptionMode.Competing, bool acceptPlatformEvents = false) -> Qian.Events.QianEventsSubscriberBuilder!
+Qian.Events.QianEventsSubscriberOptions
+Qian.Events.QianEventsSubscriberOptions.IdempotencyTtl.get -> System.TimeSpan
+Qian.Events.QianEventsSubscriberOptions.IdempotencyTtl.set -> void
+Qian.Events.QianEventsSubscriberOptions.Instance.get -> string!
+Qian.Events.QianEventsSubscriberOptions.Instance.set -> void
+Qian.Events.QianEventsSubscriberOptions.MaxRetries.get -> int
+Qian.Events.QianEventsSubscriberOptions.MaxRetries.set -> void
+Qian.Events.QianEventsSubscriberOptions.PrefetchCount.get -> ushort
+Qian.Events.QianEventsSubscriberOptions.PrefetchCount.set -> void
+Qian.Events.QianEventsSubscriberOptions.QianEventsSubscriberOptions() -> void
+Qian.Events.QianEventsSubscriberOptions.RetryBaseDelay.get -> System.TimeSpan
+Qian.Events.QianEventsSubscriberOptions.RetryBaseDelay.set -> void
 static Qian.Events.IntegrationEventSchemas.Describe(Kun.EventBus.IEventTypeRegistry! registry) -> System.Collections.Generic.IReadOnlyList<Qian.Events.IntegrationEventDescriptor!>!
 static Qian.Events.IntegrationEventSchemas.Export(System.Text.Json.Serialization.Metadata.JsonTypeInfo! typeInfo) -> System.Text.Json.JsonElement
 static Qian.Events.QianEventsExtensions.AddQianEvents(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Qian.Events.QianEventsOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Qian.Events.QianEventsExtensions.AddQianEventsBroker(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<System.IServiceProvider!, string!>! resolveAmqpUri, string? brokerReference = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Events.QianEventsExtensions.AddQianEventsSubscriber(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! service, System.Action<Qian.Events.QianEventsSubscriberBuilder!>! subscribe, System.Action<Qian.Events.QianEventsSubscriberOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

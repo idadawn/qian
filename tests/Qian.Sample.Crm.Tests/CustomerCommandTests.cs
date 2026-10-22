@@ -257,7 +257,8 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
 
     private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
-        LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool identity = false, bool grpc = false, Action<WebApplication>? map = null, double decisionLogSampling = 0)
+        LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool identity = false, bool grpc = false, Action<WebApplication>? map = null, double decisionLogSampling = 0,
+        Action<WebApplicationBuilder>? configure = null)
     {
         if (grpc && identity) throw new ArgumentException("gRPC 验收宿主不挂身份组件：身份签发者占用固定监听地址，h2c 需要独占端点。", nameof(grpc));
         if (lifecycle is { Management: true }) await PreparePlatformLogins(lifecycle);
@@ -312,6 +313,8 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                     // 决策审计采样：早于 S1-AZ-004 的用例按命令审计数断言链长，缺省不记放行判定（拒绝仍必记）；PEP 验收显式传 1。
                     ["Authz:DecisionLogSampling"] = decisionLogSampling.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 });
+                // 用例自己的配置与登记：先于参考宿主的装配执行，后加的配置源覆盖上面的同名键。
+                configure?.Invoke(builder);
             }, lifecycle is null && !identity ? null : registrar =>
             {
                 if (lifecycle is not null) registrar.RegisterRegistryEvents().RegisterLifecycleEvents();
