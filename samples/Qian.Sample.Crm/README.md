@@ -76,7 +76,7 @@ handler 只做读和记录，不在 handler 里再发布集成事件。
 
 消费端的真实验收在 `CustomerCommandTests.EventsConsumer.cs`，使用 Kestrel、PostgreSQL 应用角色、RabbitMQ 与 Redis 容器：
 
-- 两个租户并发经 HTTP 建档后，handler 内的租户就是事件的租户。EF 生成的 SQL 带 tenant_id 过滤，也只读到本租户的行；
+- 两个租户并发经 HTTP 建档后，handler 内的租户就是事件的租户。EF 生成的 SQL 的 WHERE 带 tenant_id 过滤、参数值就是该租户，也只读到本租户的行。同一订阅内的消息依次处理，用例在两个探针订阅之间设屏障，让两个租户的事件在消费侧真正重叠；
 - 信封缺 tenant_id、AMQP 头缺失或不一致、信封里 tenant_id 重复、平台级事件都 fail-closed：不进 handler、不记幂等、不重投，直接进死信队列。
 
 IntegrationEventCatalogTests 扫描测试输出里全部 Qian 程序集的 `[IntegrationEventId]`，要求每一个都经组件登记入口带上 JsonTypeInfo，并能导出 payload Schema。
