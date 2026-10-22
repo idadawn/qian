@@ -42,7 +42,7 @@ public sealed partial class SubscriberTests
     }
 
     [Fact]
-    public async Task 死信转发持续失败_原地重发3次后nack不放回_handler只执行一次_消息按队列死信参数滞留源队列不丢失()
+    public async Task 死信转发持续失败_原地重发3次后nack不放回_handler只执行一次_消息按队列死信参数滞留源队列不丢失_不计rejected与dead_lettered()
     {
         var service = Service();
         var probe = new Probe(_ => new InvalidOperationException("确定性失败"));
@@ -53,18 +53,24 @@ public sealed partial class SubscriberTests
         var deadLetter = QianEventTopology.DeadLetterQueue(service, "work");
         // 运行中删掉死信队列：消费端的死信副本（mandatory）无处可路由，broker 退回，转发失败。
         await DeleteQueueAsync(deadLetter);
+        // 两条走死信的消息：一条由 handler 确定性失败（handler_rejected），一条在 handler 之前因 AMQP 头与信封租户不一致被拒（tenant_mismatch）。
         var envelope = await PublishAsync(TenantA, sequence: 50);
+        var forged = Envelope(TenantA, sequence: 52);
+        await RawPublishAsync(forged, forged.ToJson(), tenantHeader: TenantB);
 
-        // 结束态：forward_failed 已计数，原消息已 nack 不放回；broker 按 at-least-once 死信参数转发同样无处可去，消息滞留源队列（messages 0、messages_dlx 1），
+        // 结束态：两条都计 forward_failed，原消息已 nack 不放回；broker 按 at-least-once 死信参数转发同样无处可去，消息滞留源队列（messages 0、messages_dlx 2），
         // 不会再投给消费者。旧实现在这里把原消息放回、handler 立刻再次执行，永远到不了这个状态。
-        await Until(async () => metrics.Count("forward_failed") == 1 && await DeadLetterPendingAsync(queue) == (0, 1), "转发持续失败后原消息没有交给 broker 死信");
+        await Until(async () => metrics.Count("forward_failed") == 2 && await DeadLetterPendingAsync(queue) == (0, 2), "转发持续失败后原消息没有交给 broker 死信");
         Assert.Single(probe.Calls);
-        Assert.Equal(QianEventSubscriber.ForwardAttempts, probe.Logs.Entries.Count(entry => entry.EventId == 28 && entry.Message.Contains(deadLetter, StringComparison.Ordinal)));
-        var abandoned = Assert.Single(probe.Logs.Entries, entry => entry.EventId == 36);
-        Assert.Equal(LogLevel.Error, abandoned.Level);
-        Assert.Contains(envelope.EventId.ToString(), abandoned.Message, StringComparison.Ordinal);
-        Assert.Contains("handler_rejected", abandoned.Message, StringComparison.Ordinal);
-        Assert.Equal((0, 0, 0), (metrics.Count("dead_lettered"), metrics.Count("retried"), metrics.Count("processed")));
+        Assert.Equal(2 * QianEventSubscriber.ForwardAttempts, probe.Logs.Entries.Count(entry => entry.EventId == 28 && entry.Message.Contains(deadLetter, StringComparison.Ordinal)));
+        var abandoned = probe.Logs.Entries.Where(entry => entry.EventId == 36).ToArray();
+        Assert.Equal(2, abandoned.Length);
+        Assert.All(abandoned, entry => Assert.Equal(LogLevel.Error, entry.Level));
+        Assert.Contains(abandoned, entry => entry.Message.Contains(envelope.EventId.ToString(), StringComparison.Ordinal) && entry.Message.Contains("handler_rejected", StringComparison.Ordinal));
+        Assert.Contains(abandoned, entry => entry.Message.Contains(forged.EventId.ToString(), StringComparison.Ordinal) && entry.Message.Contains("tenant_mismatch", StringComparison.Ordinal));
+        // 每次投递恰落入一个结果：转发没成功的不计 dead_lettered，也不计 rejected。
+        Assert.Equal((0, 0, 0, 0), (metrics.Count("dead_lettered"), metrics.Count("rejected"), metrics.Count("retried"), metrics.Count("processed")));
+        Assert.DoesNotContain(probe.Logs.Entries, entry => entry.EventId is 25 or 26);
         Assert.Empty(await IdempotencyKeysAsync(service + ".work"));
         await host.StopAsync(Ct);
     }

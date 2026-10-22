@@ -62,7 +62,7 @@ public sealed partial class CustomerCommandTests
             Assert.Equal((tenant, tenant, Guid.Parse(tenant)), (seen.Tenant, seen.ContextTenant, seen.EnvelopeTenant));
             // EF 全局过滤器按回灌的租户生成条件：WHERE 里有 tenant_id 与参数的比较，参数值就是该租户。去掉全局过滤器时 SQL 没有这条谓词，
             // 而行级安全照样只返回本租户的行，所以结果断言区分不了，必须看 SQL。
-            Assert.Equal(tenant, FilterTenant(seen.Sql));
+            Assert.True(FilterTenant(seen.Sql) == tenant, "WHERE 里没有以本租户为参数值的 tenant_id 谓词：\n" + seen.Sql);
             Assert.All(seen.Rows, row => Assert.Equal(tenant, row.TenantId));
             Assert.Contains(seen.Rows, row => row.Id == seen.CustomerId);
             Assert.DoesNotContain(seen.Rows, row => owners.TryGetValue(row.Id, out var owner) && owner != tenant);

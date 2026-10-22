@@ -41,7 +41,8 @@ public sealed partial class SubscriberTests(RabbitMqFixture rabbit, RedisFixture
         await StartAsync(host);
         var envelope = await PublishAsync(TenantA, sequence: 1);
 
-        // 等到结束态再断言投递次数：processed 在确认原消息之后计数，主队列与两个重试队列的 messages（含未确认）都为 0，消息已没有任何副本，不会再有投递。
+        // 等到结束态再断言投递次数：processed 在第三次投递确认之后才计数；每次失败恰产生一份重试副本，前两份此时都已回流并被消费，
+        // 主队列与两个重试队列的 messages（含未确认）也都为 0，消息已没有任何副本，不会再有投递。
         var retries = new[] { QianEventTopology.RetryQueue(service, "work", 1, TimeSpan.FromMilliseconds(200)), QianEventTopology.RetryQueue(service, "work", 2, TimeSpan.FromMilliseconds(400)) };
         await Until(async () => metrics.Count("processed") == 1 && await SettledAsync([QianEventTopology.SubscriptionQueue(service, "work"), .. retries]), "第三次投递没有处理完");
         var calls = probe.Calls.ToArray();
