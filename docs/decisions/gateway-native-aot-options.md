@@ -1,6 +1,14 @@
-# 网关完整依赖的 NativeAOT 阻塞与可选实施路径
+# 网关完整依赖的 NativeAOT 实施路径
 
-状态：待负责人在 [S1-DEC-030](../../pm/tasks/S1-DEC-030.md) 确认实施路径。本文记录 S1-GW-001 的实际技术探针，不改变 S1-DEC-029，不修改 GW-001 或 DEP-008 的验收。
+状态：产品负责人于 2026-10-23 在 [S1-DEC-030](../../pm/tasks/S1-DEC-030.md) 确认采用路径 A：新增原生 PostgreSQL 数据与审计 Provider，完成完整 AOT。本文记录失败证据与实施边界；S1-DEC-029 的 JIT 开发期安排及 GW-001 / DEP-008 的最终验收继续有效。
+
+## 已确认的实施边界
+
+- 数据端口以 `Qian.Data.Native.Abstractions` 定义，服务键 `NativeData`；`Qian.Data.Native.Postgres` 实现组件 `qian.data.native`，提供受限角色、租户连接与事务能力，可经 `qian add qian.data.native` 安装。它不实现 EF 的 `IDataService`，不把不兼容对象注册到 `Data` 服务键。
+- `Qian.Audit.Native` 实现组件 `qian.audit.native`，消费 `NativeData`，沿用 `Qian.Audit.Abstractions` 的 `IAuditService` 与 `Audit` 服务键，可经 `qian add qian.audit.native` 安装。哈希与规范化协议提取到共享契约层复用，保留现有公开入口的兼容性；不复制一套不同的审计算法。
+- 两个组件各自具有真实清单、配置 Schema、README 与独立模式测试；默认只替换 gateway 组合中的 Data / Audit 条目。platform 与 scheduler 继续使用原来的 `qian.data` / `qian.audit`，EF 模型安全校验与 FORCE RLS 均保持原约束。
+- 原生 Data 与原生 Audit 分别建任务、分支和 PR，按 Data → Audit → gateway 完整组合顺序集成。网关安全宿主与前端外壳、调度器可继续独立推进；需要的 Kun 修复仅在实际闭包探针发现后建档，并在 Kun 仓库交付。
+- 迁移使用独立迁移流程，在线宿主只验证必需 Schema 和安全装配。只有完整 gateway 在 Linux NativeAOT 中完成 Apollo、Redis、受限 PostgreSQL、审计追加/查询/验链和网关安全路径的真实运行，才恢复默认 AOT 与兼容声明。不能以 JIT 或编译产物存在代替运行验收。
 
 ## 已复现的证据
 
@@ -27,7 +35,7 @@ EF 10 随包文档还明确列出运行时错误：`Model building is not suppor
 
 ## 路径 A：增加专供边缘宿主的原生 PostgreSQL 数据与审计 Provider
 
-推荐作为最终 AOT 的优先方案，但涉及 Provider 边界与默认组合调整，须先确认，不由 GW-001 擅自实施。
+已由产品负责人确认，作为最终 AOT 的实施路径。
 
 1. **独立 Data 工作**：保留现有 `IDataService.OpenAsync<TContext>` 与 EF Provider；新增明确命名的连接/事务 Definition 与原生 PostgreSQL Provider。原生端口拥有受限登录角色校验、租户上下文、连接与事务两处 RLS 上下文设置/清理、事务释放与回滚；不返回 DbContext，不把现有 EF 端口实现成抛异常的占位。发布新的服务键及真实组件清单，避免以同一个键提供不兼容类型。
 2. **独立 Audit 工作**：新增依赖上述原生端口的审计 Provider，继续实现现有 `IAuditService`。链头与记录必须原子提交，保留幂等 ID、并发重试、平台专用角色、租户隔离、相同规范化哈希、`AppendEnlistedAsync`、读取和验链。复用同一规范化算法与 Schema；不创造第二套审计协议。数据库迁移由独立迁移 Job 执行，在线原生宿主只校验。
