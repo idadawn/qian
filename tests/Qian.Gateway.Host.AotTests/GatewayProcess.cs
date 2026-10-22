@@ -53,13 +53,16 @@ internal sealed class GatewayProcess : IAsyncDisposable
         var deadline = DateTime.UtcNow.AddSeconds(90);
         while (DateTime.UtcNow < deadline)
         {
-            Assert.False(_process.HasExited, "生产宿主启动提前退出：" + SafeOutput);
+            if (_process.HasExited)
+            {
+                await Task.WhenAll(_stdout, _stderr);
+                Assert.Fail("生产宿主启动提前退出：" + SafeOutput);
+            }
             try
             {
                 using var ready = await client.GetAsync(new Uri(address, "readyz"), ct);
-                if (ready.IsSuccessStatusCode)
+                if (ready.IsSuccessStatusCode && Output.Contains(Native ? "runtime=NativeAOT" : "runtime=JIT", StringComparison.Ordinal))
                 {
-                    Assert.Contains(Native ? "runtime=NativeAOT" : "runtime=JIT", Output, StringComparison.Ordinal);
                     return;
                 }
             }

@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../Shared/LoopbackPort.cs" Link="LoopbackPort.cs" />
+    <Compile Include="../Shared/NativeAuditDatabase.cs" Link="NativeAuditDatabase.cs" />
     <Compile Include="../Qian.Identity.Client.Tests/IdentityServerHost.cs" Link="IdentityServerHost.cs" />
   </ItemGroup>
 </Project>

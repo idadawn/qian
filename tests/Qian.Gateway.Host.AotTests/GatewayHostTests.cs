@@ -12,12 +12,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using Qian.Audit;
 using Qian.Config;
 using Qian.Identity.Client;
 using Qian.Identity.Client.Tests;
 using Qian.Testing;
 using Qian.Testing.Containers;
+using Qian.Testing.NativeAudit;
 using StackExchange.Redis;
 
 namespace Qian.Gateway.Host.AotTests;
@@ -33,7 +35,8 @@ public sealed class GatewayHostTests(PostgresFixture postgres, RedisFixture redi
         var directory = Directory.CreateTempSubdirectory("qian-gateway-host-").FullName;
         try
         {
-            var database = await AuditDatabase.Create(postgres, Ct);
+            var database = await NativeAuditDatabase.Create(postgres, Ct);
+            string[] databaseSecrets = [new NpgsqlConnectionStringBuilder(database.TenantConnection).Password!, new NpgsqlConnectionStringBuilder(database.PlatformConnection).Password!];
             using var tls = GatewayProcess.Certificate(); using var signing = RSA.Create(2048); using var reservation = LoopbackPort.Reserve();
             var address = new Uri($"https://localhost:{reservation.Port}/");
             await using var identity = await IdentityServerHost.Start(postgres, new Uri(address, "auth/callback"));
@@ -72,7 +75,7 @@ public sealed class GatewayHostTests(PostgresFixture postgres, RedisFixture redi
             };
             await File.WriteAllTextAsync(Path.Combine(directory, "appsettings.json"), JsonSerializer.Serialize(configuration), Ct);
             reservation.Dispose();
-            await using var gateway = GatewayProcess.Start(directory, [.. database.Secrets, identity.Secret, database.TenantConnection, database.PlatformConnection, redis.ConnectionString]);
+            await using var gateway = GatewayProcess.Start(directory, [.. databaseSecrets, identity.Secret, database.TenantConnection, database.PlatformConnection, redis.ConnectionString]);
             await gateway.WaitReady(browser, address, Ct);
             using (var anonymous = await browser.GetAsync(new Uri(address, "api/native-acceptance"), Ct))
                 Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
@@ -127,7 +130,7 @@ public sealed class GatewayHostTests(PostgresFixture postgres, RedisFixture redi
             Assert.True((await audit.Verify(Ct)).Valid);
             Assert.All(final, entry => Assert.Null(entry.Record.TenantId));
             var persisted = JsonSerializer.Serialize(final);
-            foreach (var secret in database.Secrets.Append(identity.Secret))
+            foreach (var secret in databaseSecrets.Append(identity.Secret))
             {
                 Assert.False(persisted.Contains(secret, StringComparison.Ordinal), "审计链不能含凭据。");
                 Assert.False(gateway.Output.Contains(secret, StringComparison.Ordinal), "生产宿主日志不能含凭据。");
@@ -167,7 +170,7 @@ public sealed class GatewayHostTests(PostgresFixture postgres, RedisFixture redi
         {
             var builder = WebApplication.CreateSlimBuilder(); builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
             var app = builder.Build(); var host = new Downstream(app, jwks, client);
-            app.MapGet("/api/native-acceptance", host.Handle); await app.StartAsync(Ct); return host;
+            app.MapGet("/api/native-acceptance", (Func<HttpContext, Task<IResult>>)host.Handle); await app.StartAsync(Ct); return host;
         }
         private async Task<IResult> Handle(HttpContext http)
         {

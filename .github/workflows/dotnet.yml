@@ -149,6 +149,35 @@ jobs:
           name: native-data-aot-results
           path: TestResults/native-data-aot/
 
+  gateway-host-aot:
+    name: 生产网关完整 NativeAOT 与真实依赖验收
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: NativeAOT 工具链
+        run: |
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+          fi
+      - name: 严格发布实际生产宿主
+        run: dotnet publish hosts/Qian.Gateway.Host -c Release -r linux-x64 -p:IlcTreatWarningsAsErrors=true -p:TrimmerSingleWarn=false -o "$RUNNER_TEMP/gateway-host"
+      - name: 核验实际原生产物
+        run: test -x "$RUNNER_TEMP/gateway-host/Qian.Gateway.Host" && test ! -e "$RUNNER_TEMP/gateway-host/Qian.Gateway.Host.dll"
+      - name: 原生网关运行真实 Apollo、受限 PG、Redis 与身份登录换签
+        env:
+          QIAN_REQUIRE_DOCKER: '1'
+          QIAN_GATEWAY_HOST_EXECUTABLE: ${{ runner.temp }}/gateway-host/Qian.Gateway.Host
+        run: dotnet test --project tests/Qian.Gateway.Host.AotTests -c Release --report-xunit-trx --results-directory TestResults/gateway-host-aot
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gateway-host-aot-results
+          path: TestResults/gateway-host-aot/
+
   native-audit-aot:
     name: 原生审计严格发布与真实 PostgreSQL 验收
     runs-on: ubuntu-latest

@@ -104,7 +104,7 @@ await loader.MountAsync([
 foreach (var id in new[] { "data", "config", "audit", "identity", "gateway" })
     if (loader.GetState(id, ScopeKey.Global) != PluginState.Ready)
         throw new InvalidOperationException("gateway 依赖未就绪：" + id, loader.GetFailure(id, ScopeKey.Global));
-app.Logger.LogInformation("qian.gateway 全部业务组件已就绪；runtime={Runtime}", RuntimeFeature.IsDynamicCodeSupported ? "JIT" : "NativeAOT");
+HostLog.Ready(app.Logger, RuntimeFeature.IsDynamicCodeSupported ? "JIT" : "NativeAOT");
 await app.RunAsync();
 
 string Required(string key) => builder.Configuration[key] is { Length: > 0 } value ? value : throw new InvalidOperationException("缺少网关宿主配置：" + key);
@@ -120,6 +120,12 @@ static PluginDefinition Definition(string id, string plugin, IQianPlugin impleme
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(GatewayConfiguration))]
 internal sealed partial class HostJson : JsonSerializerContext;
+
+internal static partial class HostLog
+{
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "qian.gateway 全部业务组件已就绪；runtime={Runtime}")]
+    internal static partial void Ready(ILogger logger, string runtime);
+}
 
 internal sealed class GatewaySecretAudit : ISecretAccessObserver
 {
