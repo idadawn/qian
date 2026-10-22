@@ -19,10 +19,14 @@ public sealed class ConfigurationPlugin : IQianPlugin
         ct.ThrowIfCancellationRequested();
         if (ctx.Scope != ScopeKey.Global || config.ValueKind != JsonValueKind.Object || config.EnumerateObject().Any())
             throw QianConfigurationExtensions.Invalid("qian.config");
-        // 与 Register 相同的三步直接写在 Apply 里：源生成器只从 Apply 本体派生 provides，上下文传给辅助方法即 QIANSDK002。
+        // 与 Register 相同的步骤直接写在 Apply 里：源生成器只从 Apply 本体派生 provides，上下文传给辅助方法即 QIANSDK002。
         var root = ctx.Services.GetRequiredService<IConfiguration>();
         ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
         ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
+        // 宿主用 AddQianOptions 登记过强类型配置时，挂载期间把重载失败作为进程内事件发出。
+        // 生成器按参数序号识别 Apply 上下文，处理器的首个参数只作成员访问的接收者，避免被误判为上下文逃逸。
+        if (ctx.Services.GetService<ConfigReloadNotifier>() is { } notifier)
+            ctx.Effect(notifier.Subscribe(async notice => await ctx.DispatchAsync(ConfigRuntimeEvents.ReloadFailed, notice.Payload, CancellationToken.None).ConfigureAwait(false)));
         return ValueTask.CompletedTask;
     }
     // Apollo 适配器校验引导后复用同一注册；两处须保持一致。
@@ -31,6 +35,8 @@ public sealed class ConfigurationPlugin : IQianPlugin
         var root = ctx.Services.GetRequiredService<IConfiguration>();
         ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
         ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
+        if (ctx.Services.GetService<ConfigReloadNotifier>() is { } notifier)
+            ctx.Effect(notifier.Subscribe(async notice => await ctx.DispatchAsync(ConfigRuntimeEvents.ReloadFailed, notice.Payload, CancellationToken.None).ConfigureAwait(false)));
     }
 }
 
@@ -66,6 +72,7 @@ public sealed class ApolloConfigurationPlugin : IQianPlugin
             if (!matches) throw QianConfigurationExtensions.Invalid("Apollo.config." + property.Name);
         }
         ConfigurationPlugin.Register(ctx);
+        ApolloReleaseAudit.Attach(ctx, source.Releases);
         return ValueTask.CompletedTask;
     }
 

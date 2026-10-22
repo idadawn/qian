@@ -110,7 +110,12 @@
 
 - 每环境一个规范 issuer；生产只接受 HTTPS。`AllowLoopbackHttp` 只有 Development 且 loopback issuer 时有效，不能用于生产反向代理。代理须正确恢复原始 HTTPS scheme。
 - 授权码一律 PKCE S256；openid 请求必须有 nonce。access token 为 15 分钟，授权码为 5 分钟，refresh 为 14 天并逐次轮换。复用旧 refresh 会吊销同授权族。关闭实体缓存，跨副本从数据库读取当前吊销状态。
-- 客户端从宿主可信注册配置持久化，注册过程用数据库锁协调副本。S1 只接受官方受信的 implicit-consent 客户端；grant、scope 与 redirect URI 仍由 OpenIddict 检查。resource 必须命中该客户端的精确白名单，刷新不能扩大原授权受众。服务主体 sub=client_id，tenant 与 plugin 来自注册配置。
+- 客户端从宿主可信注册配置持久化，注册过程用数据库锁协调副本。S1 只接受官方受信的 implicit-consent 客户端；grant、scope 与 redirect URI 仍由 OpenIddict 检查。服务主体 sub=client_id，tenant 与 plugin 来自注册配置。
+- `resource`（RFC 8707）按客户端登记的 `Resources` 收窄访问令牌受众，有两层检查：
+  - 第一层：请求里的每一项都须逐字命中该客户端的白名单，否则整个请求 `invalid_target`，含别的客户端登记的资源；令牌端点先认证客户端再查这一层。OpenIddict 自带的同名检查按规范化 URI 比较，只有主机的标识（如 `https://api.example`）永远对不上，所以用 `DisableResourceValidation` 关掉，由本组件在同一位置接管；资源标识照配置原文使用，不补结尾斜杠。
+  - 第二层：OpenIddict 的客户端 `rsrc:` 权限，由 `Resources` 推导、随客户端镜像写入，宿主不要另写；写了白名单之外的 `rsrc:` 权限，启动校验失败。
+  - 不带 `resource` 时，单资源客户端按登记缺省；多资源客户端必须指定，否则 `invalid_target`，免得一张令牌带上全部受众、在资源服务器之间重放。显式请求多个资源时令牌带多个受众。
+  - 换码与 refresh 可以用 `resource` 在原授权内收窄，不能扩大；收窄后的集合也是新 refresh token 的上限。被拒的 refresh 请求不消耗 refresh token。
 - client_credentials 签发身份 access token，内部调用仍经 Kun.Gateway 的 S2sTokenIssuer 换成冻结的短期 S2S 契约；不把 15 分钟外部令牌直接当作 S2S。令牌不携带权限码；业务授权仍由 Authz 判断。
 - 默认交互和 prompt=none 受支持。明确要求重新认证、选择账号或同意时返回 interaction_required，不能静默复用旧 Cookie。max_age 缺少可信 auth_time 或已过期时拒绝。
 - OAuth/OIDC 协议错误由 OpenIddict 按协议输出；宿主自己的 CSRF 等错误使用 ErrorDetail。
@@ -144,7 +149,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 
 ## 验收
 
-真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）；连接器登录（`ConnectorFlowTests`：假连接器 TCK 的清单校验、state 篡改拒绝、回调幂等含并发，确认绑定、冲突不泄露、过期与重新认证窗口、取消、JIT 与配额、租户 scope 过滤与遮蔽、详情不回传密钥；`AuthentikConnectorTests`：容器里的真实 Authentik 经通用 OIDC 连接器走完首次绑定、再次登录与同租户重复绑定被拒）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
+真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签；RFC 8707 resource 的白名单、两层检查、多资源客户端必须指定与收窄见 `ResourceIndicatorTests`）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）；连接器登录（`ConnectorFlowTests`：假连接器 TCK 的清单校验、state 篡改拒绝、回调幂等含并发，确认绑定、冲突不泄露、过期与重新认证窗口、取消、JIT 与配额、租户 scope 过滤与遮蔽、详情不回传密钥；`AuthentikConnectorTests`：容器里的真实 Authentik 经通用 OIDC 连接器走完首次绑定、再次登录与同租户重复绑定被拒）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
 
 ## 模型体验
 
