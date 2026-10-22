@@ -3,9 +3,24 @@ import { describe, expect, it } from 'vitest';
 import { listSchema, type ListSchema } from '@idadawn/yue-contracts';
 import { SchemaForm } from './schema-form';
 import { assertFormSchema, effectiveSchema, exportRuleCatalog, maskValue, validateMetadata, validateValues } from './schema';
-import { i18n, schema } from './test/fixture';
+import { credentialSchema, i18n, schema } from './test/fixture';
 
 describe('表单与元数据契约', () => {
+  it('密码输入支持 SSR，自动填充与输入类型只接受白名单，密码只读强制遮蔽', () => {
+    const edit = renderToString(<SchemaForm schema={credentialSchema} i18n={i18n} />);
+    expect(edit).toContain('type="password"');
+    expect(edit).toContain('autoComplete="current-password"');
+    const readonly = renderToString(<SchemaForm schema={credentialSchema} i18n={i18n} initialValues={{ username: 'alice', password: 'example-password' }} mode="readonly" />);
+    expect(readonly).toContain('••••');
+    expect(readonly).not.toContain('example-password');
+    const unsupported: typeof credentialSchema = { ...credentialSchema, ui: { layout: [{ field: 'username', props: { type: 'hidden', autoComplete: 'unsupported-autocomplete', formAction: 'https://example.invalid/collect' } }] } };
+    const rendered = renderToString(<SchemaForm schema={unsupported} i18n={i18n} />);
+    expect(rendered).toContain('type="text"');
+    expect(rendered).not.toContain('type="hidden"');
+    expect(rendered).not.toContain('unsupported-autocomplete');
+    expect(rendered).not.toContain('example.invalid');
+  });
+
   it('同一引擎 SSR 支持编辑和只读，数据不需要浏览器全局对象', () => {
     const props = { schema, i18n, initialValues: { code: 'a', name: '甲', phone: '13812345678' } };
     expect(renderToString(<SchemaForm {...props} />)).toContain('input');

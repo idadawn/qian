@@ -6,6 +6,8 @@
 
 `SchemaForm` 接收 `schema`、`i18n`、`initialValues` 和 `onSubmit`；从 JSON Schema 2020-12 提取字段类型与约束，以 react-hook-form 管理状态，控件复用 core。字段标签用 `ui.layout[].labelKey` 或数据 Schema 的 title key。原始 Schema 不被联动修改。
 
+账号密码表单继续使用同一引擎：普通字符串字段设置 `ui.layout[].props.type: "password"` 后输出密码输入，校验与提交仍由原 Schema 驱动。`props.autoComplete` 支持 `on`、`off`、`username`、`current-password`、`new-password`；其它 DOM 属性和输入类型不会从元数据透传。密码字段在只读模式强制完整遮蔽，`readonlyMask: "none"` 不能将它恢复为明文。
+
 `mode="readonly"` 与编辑共用字段目录与状态，`auth.fields` 只做体验裁剪；脱敏支持 none、full、last4，不能替代服务端授权与脱敏。`apiRef` 提供 getValues / setValue / reset / validate / submit / setErrors / clearErrors。切换记录用新的 React key 或 reset，避免覆盖正在编辑的数据。
 
 提交回调可以直接调用 `PlatformClient.api<paths>()`；它抛出的 `PlatformError` 按 RFC 6901 pointer 映射到字段，提交结束后聚焦第一处错误。其他异常显示 i18n 错误文案；onError 可进一步处理 409 刷新提示等页面行为。日期时间输入按本地时间展示，提交使用带时区的 ISO 字符串。
