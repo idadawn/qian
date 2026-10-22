@@ -55,6 +55,27 @@ public sealed class LoopbackPortTests
         Assert.Equal(1, attempts);
     }
 
+    // S1-QA-016：地址先登记到别的宿主、本宿主稍后才绑定时，端口一直占到绑定前一刻。
+    [Fact]
+    public async Task 占住的端口释放前别人绑不上_IPv6回环同号也占住_释放后立刻能绑定()
+    {
+        int port;
+        using (var reservation = LoopbackPort.Reserve())
+        {
+            port = reservation.Port;
+            var error = await Assert.ThrowsAsync<IOException>(() => Host(port));
+            Assert.IsType<AddressInUseException>(error.InnerException);
+            // 本机没有 IPv6 回环时这里绑定本身不可用，同样不会绑上。
+            using var v6 = new TcpListener(IPAddress.IPv6Loopback, port);
+            var refused = Assert.Throws<SocketException>(v6.Start);
+            Assert.Contains(refused.SocketErrorCode, new[] { SocketError.AddressAlreadyInUse, SocketError.AddressFamilyNotSupported, SocketError.AddressNotAvailable });
+        }
+        await using var app = await Host(port);
+        using var http = new HttpClient();
+        using var response = await http.GetAsync(new Uri($"http://127.0.0.1:{port}/ping"), Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private static TcpListener Occupy(int port)
     {
         var listener = new TcpListener(IPAddress.Loopback, port);

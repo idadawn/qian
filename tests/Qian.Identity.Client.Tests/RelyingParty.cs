@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Security;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Kun.Core.MultiTenancy;
@@ -18,6 +17,7 @@ using Qian.Config.Apollo;
 using Qian.Config.Secrets;
 using Qian.Identity.Abstractions;
 using Qian.Runtime;
+using Qian.Testing;
 using StackExchange.Redis;
 
 namespace Qian.Identity.Client.Tests;
@@ -44,11 +44,23 @@ internal sealed class RelyingParty : IAsyncDisposable
     internal IServiceProvider Services => _app.Services;
     internal Uri Callback => new(Address, "auth/callback");
 
-    /// <summary>选一个空闲端口作为 RP 地址；发行方登记回调时要先知道它。</summary>
+    // ReserveAddress 占住的端口（键为端口号），Start 绑定前一刻才释放；没走到 Start 的占位随测试进程退出释放。
+    private static readonly ConcurrentDictionary<int, LoopbackPort.Reservation> s_reserved = new();
+
+    /// <summary>
+    /// 选一个空闲端口作为 RP 地址并占住它：发行方登记回调时要先知道它，RP 却要等发行方起来才启动，
+    /// 回调已登记，绑定失败也没法换端口，所以一直占到 <see cref="Start"/> 绑定前一刻（S1-QA-016）。
+    /// </summary>
     internal static Uri ReserveAddress()
     {
-        using var socket = new TcpListener(IPAddress.Loopback, 0); socket.Start(); var port = ((IPEndPoint)socket.LocalEndpoint).Port; socket.Stop();
-        return new Uri($"https://localhost:{port}/");
+        var reservation = LoopbackPort.Reserve();
+        s_reserved[reservation.Port] = reservation;
+        return new Uri($"https://localhost:{reservation.Port}/");
+    }
+
+    private static void Release(Uri address)
+    {
+        if (s_reserved.TryRemove(address.Port, out var reservation)) reservation.Dispose();
     }
 
     internal static async Task<RelyingParty> Start(IdentityServerHost identity, string redis, Uri address, X509Certificate2 tls, TimeProvider? clock = null,
@@ -101,9 +113,10 @@ internal sealed class RelyingParty : IAsyncDisposable
                 new(new PluginEntry("identity", "qian.identity.client", "1.0.0", ScopeKey.Global, 0,
                     System.Text.Json.JsonSerializer.SerializeToElement(config ?? new { issuer = identity.Issuer, clientId = IdentityServerHost.ClientId, clientSecret = SecretReference })),
                     new IdentityClientPlugin(), [IdentityDefinition.Key])], Ct);
+            Release(address);
             await app.StartAsync(Ct);
         }
-        catch { await loader.DisposeAsync(); await app.DisposeAsync(); Directory.Delete(secrets, true); throw; }
+        catch { Release(address); await loader.DisposeAsync(); await app.DisposeAsync(); Directory.Delete(secrets, true); throw; }
         return new RelyingParty(app, loader, address, secrets, logs);
     }
 
