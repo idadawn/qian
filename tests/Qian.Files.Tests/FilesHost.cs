@@ -80,10 +80,14 @@ internal sealed class FilesHost : IAsyncDisposable
     internal PluginLoader Loader => _runtime.Loader;
     // 受限业务登录（NOSUPERUSER / NOBYPASSRLS），用来从数据库侧核对 RLS 的实际效果。
     internal string BusinessConnection => _business;
+    // 平台模式下的真实 Registry 与 TEN-004 运营宿主；默认宿主为 null。
+    internal FilesPlatform? Platform { get; private init; }
 
-    // installed 不为 null 时另挂只提供预装快照的 Registry 替身，模拟平台宿主里各组件 metadata/upload-policies.json 的声明。
+    // installed 不为 null 时另挂只提供预装快照的 Registry 替身，模拟平台宿主里各组件 metadata/upload-policies.json 的声明；
+    // platform 为 true 时改挂真实 Registry 并起 TEN-004 运营宿主（FilesPlatform），contributors 是只带上传策略声明的预装贡献方组件。
     internal static async Task<FilesHost> StartAsync(PostgresFixture postgres, object? policies = null, long quota = Quota,
-        IReadOnlyList<InstalledComponentMetadata>? installed = null, CancellationToken ct = default)
+        IReadOnlyList<InstalledComponentMetadata>? installed = null, bool platform = false, IReadOnlyDictionary<string, object>? contributors = null,
+        CancellationToken ct = default)
     {
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var role = "qian_files_app_" + suffix; var owner = "qian_audit_fn_" + suffix; var migrator = "qian_files_owner_" + suffix;
@@ -94,6 +98,8 @@ internal sealed class FilesHost : IAsyncDisposable
             CREATE ROLE "{migrator}" LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}';
             GRANT CONNECT, CREATE ON DATABASE {PostgresFixture.DatabaseName} TO "{migrator}";
             """, ct);
+        var operations = platform ? new FilesPlatform(postgres.AppConnectionString, contributors) : null;
+        if (operations is not null) await Admin(postgres.ConnectionString, operations.LoginSql, ct);
         var business = new NpgsqlConnectionStringBuilder(postgres.AppConnectionString) { Username = role, Password = password }.ConnectionString;
         var migrations = new NpgsqlConnectionStringBuilder(postgres.AppConnectionString) { Username = migrator, Password = password }.ConnectionString;
         var storage = Directory.CreateTempSubdirectory("qian-files-").FullName;
@@ -127,12 +133,17 @@ internal sealed class FilesHost : IAsyncDisposable
                 FilesCurrentUser.Capture(context);
             };
         });
-        builder.Services.AddKunEventBus(registrar => registrar.RegisterFilesEvents().RegisterTenancyEvents().RegisterAuthzEvents());
+        builder.Services.AddKunEventBus(registrar =>
+        {
+            registrar.RegisterFilesEvents().RegisterTenancyEvents().RegisterAuthzEvents();
+            if (operations is not null) registrar.RegisterRegistryEvents();
+        });
         builder.Services.AddQianEvents();
         builder.Services.AddQianData<FilesDbContext>((_, options) => options.UseNpgsql(business).UseKunSchema(FilesDbContext.Schema));
         builder.Services.AddQianData<AuthzDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuthzDbContext.Schema));
         builder.Services.AddQianData<TenancyDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(TenancyDbContext.Schema));
         builder.Services.AddQianData<AuditDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuditDbContext.Schema));
+        operations?.Configure(builder, postgres.AppConnectionString);
         // 与 --migrate-only 迁移任务同一入口：包内迁移由属主角色在 advisory lock 内执行，没有迁移的上下文照常跳过。
         builder.Services.AddQianDataMigrations(options => options.ResolveConnection = (_, _) => migrations);
         // 能力契约的登记期检查：ProvideCapability 时生成目录条目并预编译输入校验器，不合格的契约挂载即失败。
@@ -149,6 +160,7 @@ internal sealed class FilesHost : IAsyncDisposable
         builder.Services.AddKunMediator(registry =>
         {
             registry.AddQianTenancyEvents().AddQianAuthzEvents();
+            if (operations is not null) registry.AddQianRegistryEvents();
             registry.AddQianFiles(sp => sp.GetRequiredService<FilesHostRuntime>().Source(), options =>
             {
                 options.Clock = clock; options.LocalSigningKey = RandomNumberGenerator.GetBytes(32);
@@ -176,6 +188,11 @@ internal sealed class FilesHost : IAsyncDisposable
                 await Admin(postgres.ConnectionString, "GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; " +
                     "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;", ct);
                 await Admin(postgres.ConnectionString, "BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;", ct);
+                if (operations is not null)
+                {
+                    await Admin(postgres.ConnectionString, FilesPlatform.SchemaSql(scope.ServiceProvider), ct);
+                    await Admin(postgres.ConnectionString, operations.AccessSql, ct);
+                }
             }
             var reports = await app.Services.GetRequiredService<IDataMigrator>().MigrateAsync(ct);
             Assert.NotEmpty(Assert.Single(reports, report => report.ContextType == typeof(FilesDbContext)).Applied);
@@ -186,14 +203,16 @@ internal sealed class FilesHost : IAsyncDisposable
                     $"VALUES ('{id}'::uuid, '{code}', 'files tenant', 'row', 'active', now());", ct);
             await app.StartAsync(ct);
             var address = Assert.Single(app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses);
-            await runtime.MountAsync(Configuration(storage, address + "/files/blobs/", quota, policies), installed, ct);
+            await runtime.MountAsync(Configuration(storage, address + "/files/blobs/", quota, policies), installed, operations, ct);
+            if (operations is not null) await operations.StartAsync(app.Services, runtime.Loader, key, Issuer, Audience, ct);
             await runtime.ProvisionAsync(A, "tenant.owner", Subject, ct);
             await runtime.ProvisionAsync(B, "tenant.user", Subject, ct);
             return new FilesHost(app, runtime, signing, key, new HttpClient { BaseAddress = new Uri(address) }, clock, storage,
-                postgres.ConnectionString, business, migrations);
+                postgres.ConnectionString, business, migrations) { Platform = operations };
         }
         catch
         {
+            if (operations is not null) await operations.DisposeAsync();
             await app.DisposeAsync(); signing.Dispose(); Directory.Delete(storage, recursive: true);
             throw;
         }
@@ -219,6 +238,18 @@ internal sealed class FilesHost : IAsyncDisposable
         {
             ["iss"] = Issuer, ["aud"] = new[] { Audience }, ["sub"] = subject ?? Subject, ["principal_kind"] = "service", ["tenant_id"] = tenant,
             ["roles"] = TokenRoles, ["scope"] = "files", ["session_id"] = id, ["jti"] = id, ["iat"] = now, ["nbf"] = now, ["exp"] = now + 60
+        };
+        return new JsonWebTokenHandler().CreateToken(JsonSerializer.Serialize(payload), new SigningCredentials(_key, SecurityAlgorithms.RsaSha256));
+    }
+
+    // 平台用户令牌（无租户的 user 主体），只给平台模式的运营宿主用。
+    internal string PlatformToken(string subject = FilesPlatform.Operator)
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var id = Guid.CreateVersion7().ToString();
+        var payload = new Dictionary<string, object?>
+        {
+            ["iss"] = Issuer, ["aud"] = new[] { Audience }, ["sub"] = subject, ["principal_kind"] = "user", ["tenant_id"] = null,
+            ["roles"] = Array.Empty<string>(), ["scope"] = "", ["session_id"] = id, ["jti"] = id, ["iat"] = now, ["nbf"] = now, ["exp"] = now + 60
         };
         return new JsonWebTokenHandler().CreateToken(JsonSerializer.Serialize(payload), new SigningCredentials(_key, SecurityAlgorithms.RsaSha256));
     }
@@ -311,6 +342,7 @@ internal sealed class FilesHost : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         Client.Dispose();
+        if (Platform is not null) await Platform.DisposeAsync();
         await _app.StopAsync(TestContext.Current.CancellationToken); await _runtime.DisposeAsync(); await _app.DisposeAsync(); _signing.Dispose();
         // 每个宿主都有独立受限登录，池不能积压到 PostgreSQL 的连接上限；只清理本宿主的池。
         using (var business = new NpgsqlConnection(_business)) NpgsqlConnection.ClearPool(business);
@@ -325,7 +357,7 @@ internal sealed class FilesHostRuntime(IServiceProvider services, ITenantContext
     private readonly PluginLoader _loader = new(services);
     internal PluginLoader Loader => _loader;
 
-    internal async Task MountAsync(JsonElement files, IReadOnlyList<InstalledComponentMetadata>? installed, CancellationToken ct)
+    internal async Task MountAsync(JsonElement files, IReadOnlyList<InstalledComponentMetadata>? installed, FilesPlatform? platform, CancellationToken ct)
     {
         IReadOnlyList<PluginDefinition> registry = installed is null ? [] : [Define("registry", "qian.registry", new InstalledSnapshotPlugin(installed), [RegistryDefinition.Key])];
         IReadOnlyList<PluginDefinition> providers = [.. registry,
@@ -334,10 +366,15 @@ internal sealed class FilesHostRuntime(IServiceProvider services, ITenantContext
             Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey],
                 new { resolver = new { mode = "production", allowHeaderFallback = false }, initializationCapabilities = Array.Empty<string>() }),
             // 授权组件持久化并登记 qian.files 的权限目录（plugins/qian.files/metadata），监听 tenant/provisioned 实例化内置角色与组件缺省策略。
-            Define("authz", "qian.authz", new AuthzPlugin([FilesMetadata.Catalog()]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key], new { decisionLogSampling = 0d }),
-            Define("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]),
+            // 平台模式下 authz / audit 另配平台登录角色：前者提供超管显式旁路，后者承接平台审计。
+            Define("authz", "qian.authz", new AuthzPlugin(platform is null ? [FilesMetadata.Catalog()] : [FilesMetadata.Catalog(), .. FilesPlatform.Catalogs()]),
+                [CommandPolicies.AuthorizationKey, AuthzDefinition.Key],
+                platform is null ? new { decisionLogSampling = 0d } : (object)new { decisionLogSampling = 0d, platformRole = platform.AuthzRole }),
+            Define("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey],
+                platform is null ? null : new { chain = new { platformRole = platform.AuditRole } }),
             // provides 取自仓库清单（含 [Contributes] 派生的 Files.Backends:local）：装载器在 Apply 后核对每个声明的服务键都已提供。
             Define("files", "qian.files", new FilesPlugin(), FilesMetadata.Provides(), files)];
+        if (platform is not null) providers = [.. providers, platform.Registry(_loader, providers)];
         await _loader.MountAsync(providers, ct);
         foreach (var definition in providers)
             if (_loader.GetState(definition.Entry.Id, definition.Entry.Scope) != PluginState.Ready)

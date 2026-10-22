@@ -44,7 +44,7 @@ builder.Services.AddKunMediator(registry => registry.AddQianFiles(sp => /* 按�
 
 ## 配额
 
-上限先取租户配置覆盖（`ITenantSettings` 的 `qian.files` / `quota.perTenantBytes`，由 S1-TEN-004 的租户配置写入 Registry 合成配置），宿主没有 Registry 或 Registry 里没有 qian.files 条目时回退组件配置。在用量按声明大小统计：`available`、`quarantined`，以及上传地址到期后 10 分钟完成时限内的 `uploading` 预占；软删立即释放。隔离文件计入配额，因为它的暂存字节作为证据仍占存储，删除后释放。配额与 `maxCount` 的判定和插入在同一个可串行化事务里，并发冲突整笔按同一幂等键重发（最多 5 次，用尽返回 `CONFLICT`）。
+上限先取租户配置覆盖（`ITenantSettings` 的 `qian.files` / `quota.perTenantBytes`），宿主没有 Registry 或 Registry 里没有 qian.files 条目时回退组件配置。租户覆盖由平台运营经 S1-TEN-004 写入（`PUT /api/tenancy/tenants/{id}/settings/qian.files`）：写入是整体替换，Registry 随即按新配置在该租户 scope 挂一个 qian.files 实例，此后该租户的请求由它处理，所以写入的配置要带全 `storage` 与 `policies`，通常在读到的配置上只改 `quota`。在用量按声明大小统计：`available`、`quarantined`，以及上传地址到期后 10 分钟完成时限内的 `uploading` 预占；软删立即释放。隔离文件计入配额，因为它的暂存字节作为证据仍占存储，删除后释放。配额与 `maxCount` 的判定和插入在同一个可串行化事务里，并发冲突整笔按同一幂等键重发（最多 5 次，用尽返回 `CONFLICT`）。
 
 ## 审计与事件
 
@@ -56,7 +56,7 @@ builder.Services.AddKunMediator(registry => registry.AddQianFiles(sp => /* 按�
 
 ## 验证
 
-`tests/Qian.Files.Tests`：真实宿主（S2S 令牌、生产模式租户解析与 HTTP PEP、Tenancy / Authz / Audit / Events 组件、包内迁移由受限属主角色执行、业务连接为 NOSUPERUSER / NOBYPASSRLS 登录）上逐条验收租户隔离与存储键前缀、HTML 附件下载、10 MiB 配额与软删释放、直传过期与哈希不符隔离、审计与事件；另有直传网关篡改、嗅探隔离、幂等与策略校验、配置读取、配额来源顺序、清单与代码一致等用例。
+`tests/Qian.Files.Tests`：真实宿主（S2S 令牌、生产模式租户解析与 HTTP PEP、Tenancy / Authz / Audit / Events 组件、包内迁移由受限属主角色执行、业务连接为 NOSUPERUSER / NOBYPASSRLS 登录）上逐条验收租户隔离与存储键前缀、HTML 附件下载、10 MiB 配额与软删释放、直传过期与哈希不符隔离、审计与事件；平台模式（真实 Registry 按制品字节绑定组件、TEN-004 运营端点与平台超管旁路）另验经设置端点写入的租户配额覆盖，以及真实预装快照里贡献方组件的上传策略声明；另有直传网关篡改、嗅探隔离、幂等与策略校验、配置读取、配额来源顺序、清单与代码一致等用例。
 
 ## 模型体验
 
@@ -68,7 +68,7 @@ builder.Services.AddKunMediator(registry => registry.AddQianFiles(sp => /* 按�
 - 不支持分片上传、秒传；暂存残留、软删对象与隔离证据的保留期物理清理归 S1-FILE-003。完成上传在能力事务内同步复制整个文件，单文件大小应由用途策略的 `maxSize` 控制在合理范围，大文件走分片后再改。
 - 不做病毒扫描与预览：`scanStatus` 恒为 `unscanned`，预览归 S2。
 - 软删后的文件对全局查询过滤器不可见，重复删除返回 404 而不是原回执（QIAN0004 不允许绕过过滤器），不会重复产生副作用。
-- 清单仍带 `x-skeleton`：按 S1-DEC-018 口径，锁步发布并经 `qian add data files` 从私有源真实安装后去标（S1-FILE-004）。基础组合包（`qian.bundle.base`、`qian.bundle.identity-server`）的 files 补丁已带 `storage.endpoint`（示例域名，部署时按实际公开基址覆盖）；`runtime.nuget` 的版本与摘要在发布后人工同步，发布链自动给出待同步清单归 S1-RT-034。
-- 租户配额覆盖依赖 Registry 里有 qian.files 条目，清单去骨架前无法经 S1-TEN-004 写入；集成测试用组件配置的 10 MiB 上限验收，覆盖优先级由单元测试锁定，经 TEN-004 写入的集成测试随 S1-FILE-004 去标后补。
+- `qian add files` 只按 configSchema 缺省值合成条目配置，`storage` 必填却没有缺省值：安装前要在 profile patch 里放一条 `disabled: true` 的 files 条目写好存储配置（安装时沿用）；安装时直接给配置的入口不在本包范围。基础组合包（`qian.bundle.base`、`qian.bundle.identity-server`）的 files 补丁已带 `storage.endpoint`（示例域名，部署时按实际公开基址覆盖）；`runtime.nuget` 的版本与摘要在发布后人工同步，发布链自动给出待同步清单归 S1-RT-034。
+- 宿主装配要自带 `Kun.EventBus` 实现包（组件包只传递带来其抽象），并 `AddKunEventBus(registrar => registrar.RegisterFilesEvents())`、在 `AddKunMediator` 里 `AddQianFiles`；还要显式选择 `ITenantContext`（例如 Kun 的 `AsyncLocalTenantContext`，随包传递带来），缺了挂载即失败；文件能力的命令管道另需当前主体（`ICurrentUser`）与 `AddQianData<FilesDbContext>` 数据会话，缺了处理器无法构造；独立模式的完整上传与下载样例归 S1-QA-005。
 - 组件声明的上传策略（`metadata/upload-policies.json`）只在平台宿主经 Registry 预装快照汇总，同组件预装多个版本时取最高版本的声明；不按租户实际挂载的组件过滤。声明不合法时，Registry 已就绪则挂载失败，否则在第一次用到策略时报 `INPUT_INVALID`（指针形如 `acme.crm/metadata/upload-policies.json#/0/purpose`）。
 - 独立模式（不装 Tenancy / Authz / Audit）没有命令策略，能力一律拒绝；最小独立组合与样例归 S1-QA-005。

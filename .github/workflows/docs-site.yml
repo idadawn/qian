@@ -134,8 +134,24 @@ jobs:
 
       - name: Chromium 与真实组件交互验收
         run: |
-          pnpm --filter website exec playwright install --with-deps chromium
-          pnpm --filter website e2e
+          node -e "if (require('./website/node_modules/@playwright/test/package.json').version !== '1.64.0') throw new Error('更新 Playwright 时须同步文档浏览器镜像版本。')"
+          mkdir -p website/.browser-results
+          docker run --rm --init --ipc=host --user "$(id -u):$(id -g)" \
+            -e CI=1 -e DOCS_BASE -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+            -e PLAYWRIGHT_HTML_OUTPUT_DIR=/workspace/website/.browser-results/playwright-report \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -v "$GITHUB_WORKSPACE/website/.browser-results:/workspace/website/.browser-results:rw" \
+            -w /workspace/website \
+            mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f \
+            node node_modules/@playwright/test/cli.js test --output .browser-results/test-results
+
+      - name: 上传浏览器失败报告
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-browser-report
+          path: website/.browser-results
+          if-no-files-found: ignore
 
       - uses: actions/upload-artifact@v4
         with:

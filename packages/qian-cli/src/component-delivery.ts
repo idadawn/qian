@@ -1,7 +1,8 @@
 import {mkdtempSync,realpathSync,rmSync} from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {validateComponent,type ParsedComponent,type JsonValue,type SurfaceDiagnostic} from '@qian/surfaces';
+import {type ParsedComponent,type JsonValue,type SurfaceDiagnostic} from '@qian/surfaces';
+import {validateOfflineComponent} from './component-validation.js';
 import {materialize,safePath,type FileRecord} from './marketplace-files.js';
 import {MarketplaceFailure,type ResolvedMarketplacePlugin} from './marketplaces.js';
 import {installObject,installFailure,type InstallObject} from './installed-components.js';
@@ -18,12 +19,12 @@ export function prepareComponentDelivery(resolved:ResolvedMarketplacePlugin,prof
  const temporary=mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-delivery-'));
  try{
   materialize(resolved.content,temporary);
-  const checked=validateComponent(temporary,{profile});if(!checked.isValid||!checked.component)throw new MarketplaceFailure([...checked.diagnostics]);
+  const checked=validateOfflineComponent(temporary,{profile});if(!checked.isValid||!checked.component)throw new MarketplaceFailure([...checked.diagnostics]);
   const components:DeliveredComponent[]=[{directory:'',component:checked.component,manifest:installObject(checked.component.manifest)}],diagnostics:SurfaceDiagnostic[]=[...checked.diagnostics];
   const folders=[...resolved.content.files.keys()].filter(name=>name.startsWith('components/')&&name.endsWith('/.qian-plugin/plugin.json'))
    .map(name=>name.slice(0,-'/.qian-plugin/plugin.json'.length)).sort();
   for(const directory of folders){
-   const result=validateComponent(path.join(temporary,directory),{profile});diagnostics.push(...result.diagnostics);
+   const result=validateOfflineComponent(path.join(temporary,directory),{profile});diagnostics.push(...result.diagnostics);
    if(!result.isValid||!result.component)throw new MarketplaceFailure([...result.diagnostics]);
    components.push({directory,component:result.component,manifest:installObject(result.component.manifest)});
   }

@@ -40,7 +40,6 @@
   "engines": {
     "kun": ">=2026.10.14"
   },
-  "x-skeleton": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Files.FilesPlugin, Qian.Files",
@@ -49,11 +48,13 @@
     "nuget": [
       {
         "id": "Qian.Files.Abstractions",
-        "version": "0.1.0"
+        "version": "0.2.0",
+        "digest": "sha256:de38902b0146e87d27b73930f272a862a4c40a4bb55c1b9f2273e7fd479e8ae6"
       },
       {
         "id": "Qian.Files",
-        "version": "0.1.0"
+        "version": "0.2.0",
+        "digest": "sha256:e9fcbdd57c5c5c3929ec81a9b604cd4b3e195ef1d4fe355ec923597b995a8261"
       }
     ]
   },
