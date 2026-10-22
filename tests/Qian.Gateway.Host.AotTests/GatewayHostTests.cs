@@ -24,6 +24,7 @@ using StackExchange.Redis;
 
 namespace Qian.Gateway.Host.AotTests;
 
+[Collection(GatewayHostGroup.Name)]
 public sealed class GatewayHostTests(PostgresFixture postgres, RedisFixture redis, RealApolloFixture apollo)
     : IClassFixture<PostgresFixture>, IClassFixture<RedisFixture>, IClassFixture<RealApolloFixture>
 {
@@ -91,12 +92,12 @@ public sealed class GatewayHostTests(PostgresFixture postgres, RedisFixture redi
             }
             var sessionCookie = cookies.GetCookies(address)[IdentityClientDefaults.SessionCookieName]; Assert.NotNull(sessionCookie);
             using (var response = await browser.GetAsync(new Uri(address, "api/native-acceptance"), Ct)) Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.True(downstream.Requests.TryDequeue(out var first)); Assert.Empty(first.Cookie);
+            Assert.True(downstream.Requests.TryDequeue(out var first)); Assert.True(first.Cookie.Length == 0, "下游不能收到 Cookie。");
             var jwt = new JsonWebToken(first.Token); Assert.Equal(S2sIssuer, jwt.Issuer);
             Assert.Equal(identity.Tenant.ToString("D"), jwt.GetClaim("tenant_id").Value);
             Assert.Equal(identity.Person.ToString("D"), jwt.Subject);
             Assert.Equal("qian-platform", Assert.Single(jwt.Audiences)); Assert.Equal(60, (jwt.ValidTo - jwt.ValidFrom).TotalSeconds);
-            Assert.NotEqual(sessionCookie.Value, jwt.GetClaim("session_id").Value);
+            Assert.False(string.Equals(sessionCookie.Value, jwt.GetClaim("session_id").Value, StringComparison.Ordinal), "S2S 不能泄漏不透明会话 Cookie。");
             using (var payload = JsonDocument.Parse(Base64UrlEncoder.DecodeBytes(jwt.EncodedPayload)))
             {
                 var schema = JsonSchema.FromText(await File.ReadAllTextAsync(Path.Combine(Root(), "contracts/v0/s2s-claims.schema.json"), Ct), new BuildOptions { SchemaRegistry = new SchemaRegistry() });
@@ -112,7 +113,8 @@ public sealed class GatewayHostTests(PostgresFixture postgres, RedisFixture redi
                 request.Headers.TryAddWithoutValidation("X-Forwarded-For", "198.51.100.99");
                 using var response = await bearer.SendAsync(request, Ct); Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             }
-            Assert.True(downstream.Requests.TryDequeue(out var second)); Assert.Empty(second.Cookie); Assert.NotEqual(session.AccessToken, second.Token);
+            Assert.True(downstream.Requests.TryDequeue(out var second)); Assert.True(second.Cookie.Length == 0, "下游不能收到 Cookie。");
+            Assert.False(string.Equals(session.AccessToken, second.Token, StringComparison.Ordinal), "禁止透传入站访问令牌。");
             Assert.Equal(jwt.GetClaim("session_id").Value, new JsonWebToken(second.Token).GetClaim("session_id").Value);
             Assert.True(IPAddress.TryParse(second.ForwardedFor, out var peer) && IPAddress.IsLoopback(peer));
             using (var invalid = new HttpRequestMessage(HttpMethod.Get, new Uri(address, "api/native-acceptance")))

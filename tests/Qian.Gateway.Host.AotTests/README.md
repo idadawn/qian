@@ -1,6 +1,6 @@
 # 生产网关完整原生运行验收
 
-driver 启动实际 `hosts/Qian.Gateway.Host` 进程，不创建替代网关，不在生产增加测试端点。默认必须提供 `QIAN_GATEWAY_HOST_EXECUTABLE` 指向严格发布的 Linux 原生二进制，缺失或托管 DLL 均失败；生产启动日志同时证明运行时没有动态代码。
+driver 启动实际 `hosts/Qian.Gateway.Host` 进程，不创建替代网关，不在生产增加测试端点。默认必须提供 `QIAN_GATEWAY_HOST_EXECUTABLE` 指向严格发布的 Linux 原生二进制，缺失、非 ELF 文件头或仍含同名托管 DLL 均失败；生产启动日志另检查动态代码能力关闭。普通托管构建的 runtimeconfig 也可能关闭该能力，因此它不能单独证明 NativeAOT，必须与严格发布、产物形态及实际运行一起判定。
 
 真实依赖由共享 fixture 编排：PostgreSQL 16、Redis 7、Apollo 2.5.2 ConfigService / AdminService 与 MySQL 8。数据库由离线 `NativeAuditStorage` 迁移，在线进程只有独立租户/平台受限登录；角色与凭据随机生成。身份侧复用真实 Qian Identity 内置账号、密码登录、防伪、PKCE、授权码与令牌流程，租户目录沿已有身份测试的可控 fixture。回调为测试证书保护的 HTTPS；生产程序只在明确 Development 环境接受回环 HTTP 身份发行方。
 
@@ -21,3 +21,5 @@ docker run --rm --entrypoint dotnet -v /var/run/docker.sock:/var/run/docker.sock
 ```
 
 上游发布等待期间可显式设 `QIAN_GATEWAY_HOST_DLL` 做同一生产入口的 JIT 接线预检，不能同时设置原生变量。该结果会标为 JIT，不能用于恢复 profile AOT、组件兼容声明或关闭 GW-001。
+
+引导专项另复用共享 Apollo 协议 fixture 验证 AccessKey 签名：文件路径仅由 `QIAN_ConnectionFiles__ApolloAccessKey` 或 CLI 传入时，首次配置加载已能签名；`QIAN_Secrets__Directory` / CLI 目录覆盖生效，冻结路径后的密钥文件轮换也能再次加载。它与使用真实 Apollo 服务的生产宿主完整联调分开记录。

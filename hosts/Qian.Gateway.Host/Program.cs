@@ -16,6 +16,7 @@ using Qian.Config.Secrets;
 using Qian.Data.Native;
 using Qian.Data.Native.Postgres;
 using Qian.Gateway;
+using Qian.Gateway.Host;
 using Qian.Identity.Abstractions;
 using Qian.Identity.Client;
 using Qian.Plugin.Sdk;
@@ -24,15 +25,9 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 builder.WebHost.UseKestrelHttpsConfiguration();
-var secretDirectory = builder.Configuration["Secrets:Directory"];
+var configurationOptions = GatewayBootstrap.CreateOptions(builder.Environment.ContentRootPath, builder.Environment.EnvironmentName, args);
 builder.Configuration.Sources.Clear();
-builder.Configuration.AddQianConfigurationSources(new QianConfigurationOptions
-{
-    BasePath = builder.Environment.ContentRootPath, EnvironmentName = builder.Environment.EnvironmentName,
-    SecretDirectory = secretDirectory, EnvironmentPrefix = "QIAN_", Arguments = args,
-    ResolveAccessKey = reference => reference == "secretRef://platform/apollo/access-key"
-        ? ReadCredential(Required("ConnectionFiles:ApolloAccessKey")) : throw new InvalidOperationException("Apollo 引导密钥引用未登记。")
-});
+builder.Configuration.AddQianConfigurationSources(configurationOptions);
 var gateway = new GatewayConfiguration(Required("Gateway:IdentityIssuer"), Required("Gateway:IdentityAudience"), Required("Gateway:Issuer"),
     Required("Gateway:SigningKeyPath"), Required("Gateway:PublicKeyPath"),
     builder.Configuration.GetSection("Gateway:TrustedProxyNetworks").GetChildren().Select(item => item.Value ?? "").ToArray(),
@@ -104,16 +99,14 @@ await loader.MountAsync([
 foreach (var id in new[] { "data", "config", "audit", "identity", "gateway" })
     if (loader.GetState(id, ScopeKey.Global) != PluginState.Ready)
         throw new InvalidOperationException("gateway 依赖未就绪：" + id, loader.GetFailure(id, ScopeKey.Global));
-HostLog.Ready(app.Logger, RuntimeFeature.IsDynamicCodeSupported ? "JIT" : "NativeAOT");
-await app.RunAsync();
+HostLog.Ready(app.Logger, RuntimeFeature.IsDynamicCodeSupported);
+// 先停止 HTTP，再按声明逆序释放 Runtime；DI 容器在最外层 finally 最后释放。
+// RunAsync 会自行 Dispose 宿主，不能先于仍拥有数据库会话和配置审计泵的 loader。
+await app.StartAsync();
+await app.WaitForShutdownAsync();
 
 string Required(string key) => builder.Configuration[key] is { Length: > 0 } value ? value : throw new InvalidOperationException("缺少网关宿主配置：" + key);
-static string ReadCredential(string path)
-{
-    if (!Path.IsPathFullyQualified(path)) throw new InvalidOperationException("引导凭据必须来自指定的 Secret 文件。");
-    var value = File.ReadAllText(path).Trim();
-    return value.Length > 0 ? value : throw new InvalidOperationException("引导凭据文件为空。");
-}
+static string ReadCredential(string path) => GatewayBootstrap.ReadCredential(path);
 static PluginDefinition Definition(string id, string plugin, IQianPlugin implementation, JsonElement config, params ServiceKey[] provides) =>
     new(new PluginEntry(id, plugin, "1.0.0", ScopeKey.Global, 0, config.Clone()), implementation, provides);
 
@@ -123,8 +116,8 @@ internal sealed partial class HostJson : JsonSerializerContext;
 
 internal static partial class HostLog
 {
-    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "qian.gateway 全部业务组件已就绪；runtime={Runtime}")]
-    internal static partial void Ready(ILogger logger, string runtime);
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "qian.gateway 全部业务组件已就绪；dynamic-code={DynamicCode}")]
+    internal static partial void Ready(ILogger logger, bool dynamicCode);
 }
 
 internal sealed class GatewaySecretAudit : ISecretAccessObserver

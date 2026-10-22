@@ -35,6 +35,10 @@ internal sealed class GatewayProcess : IAsyncDisposable
             Assert.True(OperatingSystem.IsLinux(), "原生验收必须在 Linux 上运行。");
             Assert.True(File.Exists(executable), "缺少原生生产宿主，不能跳过验收。");
             Assert.False(File.Exists(executable + ".dll"), "不能把托管 DLL 当作原生发布产物。");
+            using var artifact = File.OpenRead(executable);
+            Span<byte> header = stackalloc byte[4];
+            artifact.ReadExactly(header);
+            Assert.True(header.SequenceEqual("\u007fELF"u8), "生产宿主必须是 Linux ELF 原生发布产物。");
         }
         var start = new ProcessStartInfo(executable ?? "dotnet")
         {
@@ -61,8 +65,9 @@ internal sealed class GatewayProcess : IAsyncDisposable
             try
             {
                 using var ready = await client.GetAsync(new Uri(address, "readyz"), ct);
-                if (ready.IsSuccessStatusCode && Output.Contains(Native ? "runtime=NativeAOT" : "runtime=JIT", StringComparison.Ordinal))
+                if (ready.IsSuccessStatusCode && Output.Contains("qian.gateway 全部业务组件已就绪", StringComparison.Ordinal))
                 {
+                    if (Native) Assert.True(Output.Contains("dynamic-code=False", StringComparison.Ordinal), "原生产物不应支持动态代码。");
                     return;
                 }
             }
@@ -110,7 +115,7 @@ internal sealed class GatewayProcess : IAsyncDisposable
         var names = new SubjectAlternativeNameBuilder(); names.AddDnsName("localhost"); names.AddIpAddress(IPAddress.Loopback);
         request.CertificateExtensions.Add(names.Build());
         using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(1));
-        return X509CertificateLoader.LoadPkcs12(certificate.Export(X509ContentType.Pkcs12), null);
+        return X509CertificateLoader.LoadPkcs12(certificate.Export(X509ContentType.Pkcs12), null, X509KeyStorageFlags.Exportable);
     }
     internal static (HttpClient Client, CookieContainer Cookies) Browser(X509Certificate2 certificate)
     {
