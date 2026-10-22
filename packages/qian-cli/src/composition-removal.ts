@@ -13,7 +13,7 @@ export interface CompositionRemoval {definition:InstallObject;patch:JsonValue[];
 
 /** 组合层撤销后只保留失去来源的配置；其它组合层和显式独立条目仍有优先权。 */
 export function planCompositionRemoval(root:string,profile:string,definition:InstallObject,patch:JsonValue[],mount:InstallObject,reference:string,purge:boolean,removedReferences:readonly string[]=[reference],removedContributionKeys:readonly string[]=[]):CompositionRemoval {
- if(!Array.isArray(definition.bundles)||!definition.bundles.includes(reference))installFailure('qian.profile.yml','组合包引用已被手动改写。');
+ if(!Array.isArray(definition.bundles)||!definition.bundles.includes(reference))installFailure('qian.profile.yml','组合包引用已被手动改写。','SURFACE_LOCAL_MODIFIED');
  if(!Array.isArray(mount.contributions))installFailure('.qian/lock.json','组合层缺少可核对的条目记录。');
  const contributions=mount.contributions.map(installObject),keys=new Set(contributions.map(key));
  const before=loadProfile({workingDirectory:root,profile,includeHomePatch:false});if(!before.isValid)throw new MarketplaceFailure([...before.diagnostics]);

@@ -2,7 +2,7 @@ import {rmSync} from 'node:fs';
 import path from 'node:path';
 import {stringify} from 'yaml';
 import type {JsonValue} from '@qian/surfaces';
-import {readInstalledState,readInstallFile,writeInstallFile,installObject,installFailure,installedPackageSets,removedInstallationEntries,verifyInstalledComponent,acquireInstallationLease,type InstallObject} from './installed-components.js';
+import {readInstalledState,readInstallFile,writeInstallFile,installObject,installFailure,installedPackageSets,removedInstallationEntries,verifyInstalledComponent,acquireInstallationLease,runWithInstallationLease,type InstallObject} from './installed-components.js';
 import {within,assertNoLinks} from './marketplace-files.js';
 import {collectPackageReferences} from './package-references.js';
 import {inspectPackageWorkspace,packageMutationTargets,applyPackageChanges,type PackageWorkspace} from './package-manager.js';
@@ -18,7 +18,8 @@ export interface RemoveOptions {workingDirectory:string;profile?:string;purge?:b
 export async function removeMarketplacePlugins(references:readonly string[],options:RemoveOptions):Promise<{status:'planned'|'removed'|'unchanged';ids:string[]}> {
  const root=path.resolve(options.workingDirectory),profile=options.profile??'minimal';
  if(!/^[a-z][a-z0-9-]*$/.test(profile)||!references.length)installFailure('argv','移除需要组件引用和合法 profile。');
- const lease=options.dryRun?undefined:acquireInstallationLease(root);let transaction:WorkspaceTransaction|undefined;
+ const lease=acquireInstallationLease(root);let transaction:WorkspaceTransaction|undefined;
+ return await runWithInstallationLease(lease,async()=>{
  try{
   const state=readInstalledState(root),selected=new Map<string,InstallObject>(),history=removedInstallationEntries(state.lock),selectedHistory:InstallObject[]=[];
   for(const reference of references){
@@ -43,11 +44,11 @@ export async function removeMarketplacePlugins(references:readonly string[],opti
    if(entry.kind==='bundle'){
     if(!Array.isArray(entry.retainedEntries))installFailure(state.file,'组合层保留条目记录无效。');
     for(const value of entry.retainedEntries){const child=installObject(value),index=patch.findIndex(row=>installObject(row).id===child.id&&(installObject(row).scope??'global')===child.scope);
-     if(index>=0){const row=installObject(patch[index]);if(row.disabled!==true||row.plugin!==child.plugin)installFailure(patchFile,'组合层保留配置已被复用，拒绝清除。');patch=patch.filter((_,position)=>position!==index);}}
+     if(index>=0){const row=installObject(patch[index]);if(row.disabled!==true||row.plugin!==child.plugin)installFailure(patchFile,'组合层保留配置已被复用，拒绝清除。','SURFACE_LOCAL_MODIFIED');patch=patch.filter((_,position)=>position!==index);}}
     if(!removed.includes(String(entry.id)))removed.push(String(entry.id));continue;
    }
    const index=patch.findIndex(value=>installObject(value).id===entry.entryId&&(installObject(value).scope??'global')===entry.scope);
-   if(index>=0){const value=installObject(patch[index]);if(value.disabled!==true||value.plugin!==String(entry.id)+'@'+String(entry.version))installFailure(patchFile,'保留配置已被重用或改写，拒绝清除。');
+   if(index>=0){const value=installObject(patch[index]);if(value.disabled!==true||value.plugin!==String(entry.id)+'@'+String(entry.version))installFailure(patchFile,'保留配置已被重用或改写，拒绝清除。','SURFACE_LOCAL_MODIFIED');
     patch=patch.filter((_,position)=>position!==index);}
    if(!removed.includes(String(entry.id)))removed.push(String(entry.id));
   }
@@ -78,9 +79,9 @@ export async function removeMarketplacePlugins(references:readonly string[],opti
      continue;
     }
     const index=patch.findIndex(value=>installObject(value).id===entry.id&&(installObject(value).scope??'global')==='global');
-    if(index<0)installFailure(patchFile,'安装锁中的条目已被手动移除，请先核对宿主状态。');
+    if(index<0)installFailure(patchFile,'安装锁中的条目已被手动移除，请先核对宿主状态。','SURFACE_LOCAL_MODIFIED');
     const value=installObject(patch[index]);
-    if(value.plugin!==String(plugin.id)+'@'+String(plugin.version))installFailure(patchFile,'条目已被替换为其它组件或版本，拒绝改写。');
+    if(value.plugin!==String(plugin.id)+'@'+String(plugin.version))installFailure(patchFile,'条目已被替换为其它组件或版本，拒绝改写。','SURFACE_LOCAL_MODIFIED');
     patch=options.purge?patch.filter((_,position)=>position!==index):patch.map((item,position)=>position===index?{...value,disabled:true}:item);
     tombstones=tombstones.filter(old=>old.id!==plugin.id||old.profile!==profile||old.scope!==entry.scope||old.entryId!==entry.id);
     if(!options.purge)tombstones.push({id:plugin.id,version:plugin.version,name:plugin.name??'',market:plugin.market??'',profile,scope:entry.scope,entryId:entry.id});
@@ -114,4 +115,5 @@ export async function removeMarketplacePlugins(references:readonly string[],opti
   });
  }catch(error){if(!transaction&&error instanceof PackageCommandFailure&&!error.terminationConfirmed)lease?.preserveProcess(error);throw error;}
  finally{lease?.release();}
+ });
 }

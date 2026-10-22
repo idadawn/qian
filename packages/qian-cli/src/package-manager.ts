@@ -16,10 +16,10 @@ function invalid(file:string,message:string):never {
  throw new MarketplaceFailure([marketDiagnostic(file,'',message)]);
 }
 function unavailable(tool:string):never {
- const diagnostic=marketDiagnostic('package-manager','','包管理器未完成操作；检查工具、包源与宿主配置。','UNAVAILABLE');
+ const diagnostic=marketDiagnostic('package-manager','','包管理器未完成操作；检查工具、包源与宿主配置。','SURFACE_PACKAGE_UNAVAILABLE');
  const message='依赖的包管理器不可用或操作失败。';
  diagnostic.error={...diagnostic.error,type:'https://qian.dev/problems/protocol/UNAVAILABLE',code:'UNAVAILABLE',
-  title:'服务暂不可用',status:503,message,detail:message,errors:[{code:'UNAVAILABLE',message:tool+' 未完成操作。',pointer:'package-manager#'}]};
+  title:'服务暂不可用',status:503,message,detail:message,errors:[{code:'SURFACE_PACKAGE_UNAVAILABLE',message:tool+' 未完成操作。',pointer:'package-manager#'}]};
  throw new MarketplaceFailure([diagnostic]);
 }
 
@@ -121,7 +121,8 @@ export async function applyPackageChanges(workspace:PackageWorkspace,changes:Pac
   const state=workspace.nuget!;
   for(const reference of [...nugetRemove].reverse())await command('dotnet',['remove',state.project,'package',reference.name],workspace.root,'dotnet');
   for(const reference of nugetAdd)await command('dotnet',['add',state.project,'package',reference.name,'--version','['+reference.version+']','--no-restore'],workspace.root,'dotnet');
-  await command('dotnet',['restore',state.project,'--use-lock-file','--force-evaluate','-p:NuGetLockFilePath='+state.lockFile],workspace.root,'dotnet');
+  // 尊重宿主已有锁文件模式；CLI 以 assets 和实际归档核验，不主动开启锁文件模式。
+  await command('dotnet',['restore',state.project,'--force-evaluate','-p:NuGetLockFilePath='+state.lockFile],workspace.root,'dotnet');
   const assets=path.join(state.intermediateDirectory,'project.assets.json');assertNoLinks(assets);
   const libraries=json(assets).libraries;
   if(!libraries||typeof libraries!=='object'||Array.isArray(libraries))unavailable('dotnet');

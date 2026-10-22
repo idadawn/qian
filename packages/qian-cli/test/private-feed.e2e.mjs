@@ -126,10 +126,9 @@ test('空白 ASP.NET Core 项目经签名市场安装私有源已发布的 data 
   for(const item of components)assert.equal(existsSync(path.join(project,'.qian/plugins',item.id)),false);
   assert.deepEqual(JSON.parse(qian(project,'list').stdout).plugins,[]);
   const remaining=files(project).filter(name=>!name.startsWith('obj/')&&!name.startsWith('bin/')&&!name.startsWith('.qian/'));
-  // 工作区状态不随组件撤销：首次安装写入的 .qian 忽略规则保留（.qian/ 本身仍在）；NuGet 锁文件与包管理器惯例一致保留，但已不锁任何包。
-  assert.deepEqual(remaining,[...before.files.filter(name=>!name.startsWith('.qian/')),'.gitignore','packages.lock.json'].sort());
+  // 工作区状态不随组件撤销：首次安装写入的 .qian 忽略规则保留（.qian/ 本身仍在）；CLI 不创建 NuGet 锁文件。
+  assert.deepEqual(remaining,[...before.files.filter(name=>!name.startsWith('.qian/')),'.gitignore'].sort());
   assert.equal(readFileSync(path.join(project,'.gitignore'),'utf8'),'.qian/journal/\n.qian/.staging/\n');
-  const groups=Object.values(JSON.parse(readFileSync(path.join(project,'packages.lock.json'),'utf8')).dependencies);
-  assert.ok(groups.length>0&&groups.every(group=>Object.keys(group).length===0),JSON.stringify(groups));
+  assert.equal(existsSync(path.join(project,'packages.lock.json')),false);
  }finally{rmSync(root,{recursive:true,force:true});}
 });

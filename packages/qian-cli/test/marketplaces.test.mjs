@@ -69,9 +69,9 @@ test('未通过校验器或验签的组件经真实 CLI add 失败，--json 输�
   write(location,'plugins/test.guide/skills/guide/SKILL.md','不是合法技能\n');rejected('skills/guide/SKILL.md','SURFACE_SYNTAX_INVALID','skills/guide/SKILL.md#',/语法/);
   // 验签：市场签名不是受信任公钥签出的。
   component(path.join(location,'plugins/test.guide'),'test.guide');write(location,'.qian/marketplace.json.sig',Buffer.alloc(64));
-  rejected('.qian/marketplace.json','SURFACE_POLICY_DENIED','.qian/marketplace.json#',/验签/);
+  rejected('.qian/marketplace.json','SURFACE_SIGNATURE_INVALID','.qian/marketplace.json#',/验签/);
   // 签名有效，但条目 digest 与组件目录内容不符。
-  created.data.plugins[0].source.digest='sha256:'+'0'.repeat(64);created.persist();rejected('.qian/marketplace.json','SURFACE_POLICY_DENIED','.qian/marketplace.json#/plugins',/digest 不匹配/);
+  created.data.plugins[0].source.digest='sha256:'+'0'.repeat(64);created.persist();rejected('.qian/marketplace.json','SURFACE_DIGEST_MISMATCH','.qian/marketplace.json#/plugins',/digest 不匹配/);
   // 修好后同一命令成功，证明失败来自上述校验而不是夹具。
   delete created.data.plugins[0].source.digest;created.persist();
   const installed=run(f.project,'--no-home','add','guide','--no-code','--yes');assert.equal(installed.status,0,installed.stderr);assert.equal(JSON.parse(installed.stdout).status,'installed');
@@ -193,10 +193,10 @@ test('真实 Config Provider 制成临时 NuGet 包后经签名市场安装，�
   const installed=run(f.project,'--no-home','add','consumer','guide','--yes');assert.equal(installed.status,0,installed.stderr);
   const result=JSON.parse(installed.stdout).plugins.find(item=>item.id==='qian.config');assert.equal(result.status,'installed');assert.deepEqual(result.packages.nuget,['Qian.Config.Apollo@'+version]);
   const lockFile=path.join(f.project,'.qian/lock.json'),projectFile=path.join(f.project,'Host.csproj');
-  const locked=readFileSync(lockFile,'utf8'),project=readFileSync(projectFile,'utf8'),packageLock=readFileSync(path.join(f.project,'packages.lock.json'),'utf8');
+  const locked=readFileSync(lockFile,'utf8'),project=readFileSync(projectFile,'utf8');
   assert.equal(JSON.parse(locked).packageState[0].managed,true);
   const repeated=run(f.project,'--no-home','add','guide','--yes');assert.equal(repeated.status,0,repeated.stderr);assert.equal(JSON.parse(repeated.stdout).status,'unchanged');
-  assert.equal(readFileSync(lockFile,'utf8'),locked);assert.equal(readFileSync(projectFile,'utf8'),project);assert.equal(readFileSync(path.join(f.project,'packages.lock.json'),'utf8'),packageLock);
+  assert.equal(readFileSync(lockFile,'utf8'),locked);assert.equal(readFileSync(projectFile,'utf8'),project);assert.equal(existsSync(path.join(f.project,'packages.lock.json')),false);
   write(f.project,'Program.cs',`using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

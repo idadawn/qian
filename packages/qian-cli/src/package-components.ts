@@ -6,15 +6,16 @@ import {collectPackageReferences,type PackageReference} from './package-referenc
 import {assertNoLinks,within,unpack,snapshot,type ContentSnapshot} from './marketplace-files.js';
 import {installFailure,installObject} from './installed-components.js';
 import {archiveEvidence,type PackageArtifactEvidence} from './package-integrity.js';
+import {engineEvidenceFromAssets,type EngineEvidence} from './engine-compatibility.js';
 
 export interface PackageComponent {reference:PackageReference;component:ContentSnapshot;artifactDigest:string}
-export interface PackageComponentFetch {components:PackageComponent[];artifacts:PackageArtifactEvidence[];dispose():void}
+export interface PackageComponentFetch {components:PackageComponent[];artifacts:PackageArtifactEvidence[];engineEvidence:EngineEvidence[];dispose():void}
 const xml=(value:string):string=>value.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
 
 /** 只在隔离目录还原或取归档；不改宿主依赖、不复制凭据配置、不执行组件入口。 */
 export async function fetchPackageComponents(rootDirectory:string,packages:{nuget:readonly string[];npm:readonly string[]},metadataOnly=false):Promise<PackageComponentFetch> {
- const root=realpathSync(rootDirectory),references=collectPackageReferences([{id:'qian.package-plan',packages}]),components:PackageComponent[]=[],artifacts:PackageArtifactEvidence[]=[];
- if(!references.length)return{components,artifacts,dispose(){}};
+ const root=realpathSync(rootDirectory),references=collectPackageReferences([{id:'qian.package-plan',packages}]),components:PackageComponent[]=[],artifacts:PackageArtifactEvidence[]=[],engineEvidence:EngineEvidence[]=[];
+ if(!references.length)return{components,artifacts,engineEvidence,dispose(){}};
  const parent=path.join(root,'.qian/.staging');assertNoLinks(parent);mkdirSync(parent,{recursive:true,mode:0o700});
  const ignore=path.join(parent,'.gitignore');assertNoLinks(ignore);if(!existsSync(ignore))writeFileSync(ignore,'*\n',{flag:'wx',mode:0o600});
  const directory=mkdtempSync(path.join(parent,'packages-'));let retain=false;
@@ -33,6 +34,7 @@ export async function fetchPackageComponents(rootDirectory:string,packages:{nuge
     '-p:ImportDirectoryBuildProps=false','-p:ImportDirectoryBuildTargets=false','-p:ImportDirectoryPackagesProps=false','-p:ManagePackageVersionsCentrally=false'],folder,'dotnet');
    const assetsFile=path.join(folder,'obj/project.assets.json');assertNoLinks(assetsFile);
    const assets=JSON.parse(readFileSync(assetsFile,'utf8')) as {libraries:Record<string,{type?:string;path?:string;files?:string[]}>;packageFolders:Record<string,unknown>};
+   engineEvidence.push(...engineEvidenceFromAssets(assets,'package-preflight/project.assets.json'));
    const requested=new Set(nuget.map(reference=>(reference.name+'/'+reference.version).toLowerCase()));
    for(const[key,library]of Object.entries(assets.libraries??{})){
     if(!requested.has(key.toLowerCase())||library.type!=='package'||!library.path)continue;
@@ -77,6 +79,6 @@ export async function fetchPackageComponents(rootDirectory:string,packages:{nuge
    if(!component.files.has('.qian-plugin/plugin.json'))installFailure('package.json','qian.component 指向的清单不存在。');
    components.push({reference,component,artifactDigest:evidence.digest});
   }
-  return{components,artifacts,dispose:cleanup};
+  return{components,artifacts,engineEvidence,dispose:cleanup};
  }catch(error){if(error instanceof PackageCommandFailure&&!error.terminationConfirmed)retain=true;cleanup();throw error;}
 }

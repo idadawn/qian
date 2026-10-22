@@ -7,6 +7,7 @@ import {promisify} from 'node:util';
 import {gunzipSync} from 'node:zlib';
 import {unzipSync} from 'fflate';
 import {extract} from 'tar-stream';
+import {isSafeMarketplaceUrl} from '@qian/surfaces';
 
 const execute=promisify(execFile);
 export const MAX_BYTES=64*1024*1024;
@@ -106,7 +107,7 @@ export async function unpack(bytes:Buffer,kind:'zip'|'tgz'|'tar'):Promise<Conten
  return snapshot(files);
 }
 export async function download(url:string,fetcher:typeof fetch=fetch):Promise<Buffer>{
- const address=new URL(url);if(address.protocol!=='https:'||address.username||address.password||address.hash)throw new Error('下载地址必须为无凭据片段的 HTTPS。');
+ const address=new URL(url);if(!isSafeMarketplaceUrl(address.toString()))throw new Error('下载地址必须为无凭据片段的 HTTPS。');
  const response=await fetcher(address,{redirect:'error',signal:AbortSignal.timeout(30000)});
  if(!response.ok||!response.body)throw new Error('来源下载失败。');
  const length=Number(response.headers.get('content-length')??0);if(length>MAX_BYTES)throw new Error('下载超过限制。');
@@ -117,7 +118,7 @@ export async function download(url:string,fetcher:typeof fetch=fetch):Promise<Bu
 export interface GitSnapshot {content:ContentSnapshot;commit:string;refKind:'tag'|'branch'|'commit';resolvedRef:string}
 /** 裸仓库获取后用 archive 读取；不 checkout、不运行 hooks/过滤器/组件脚本。 */
 export async function readGit(repo:string,reference:string,subdirectory='.',localMirror?:string):Promise<GitSnapshot>{
- const address=new URL(repo);if(address.protocol!=='https:'||address.username||address.password||address.hash)throw new Error('Git 来源必须为无凭据片段的 HTTPS。');
+ const address=new URL(repo);if(!isSafeMarketplaceUrl(address.toString()))throw new Error('Git 来源必须为无凭据片段的 HTTPS。');
  if(!reference||reference.startsWith('-')||/[\x00-\x20\x7f]/.test(reference))throw new Error('Git 引用无效。');
  const directory=mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-git-'));
  const source=localMirror?path.resolve(localMirror):repo;

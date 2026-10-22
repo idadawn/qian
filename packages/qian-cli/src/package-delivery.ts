@@ -8,8 +8,10 @@ import {packageIdentity} from './package-references.js';
 import {installObject,installFailure,type InstallObject} from './installed-components.js';
 import {verifyDeclaredPackageDigests,type PackageArtifactEvidence} from './package-integrity.js';
 
+import {mergeEngineEvidence,type EngineEvidence} from './engine-compatibility.js';
+
 export type {PackageArtifactEvidence} from './package-integrity.js';
-export interface PackageDelivery {resolved:ResolvedMarketplacePlugin;delivery:ComponentDelivery;artifacts:PackageArtifactEvidence[]}
+export interface PackageDelivery {resolved:ResolvedMarketplacePlugin;delivery:ComponentDelivery;artifacts:PackageArtifactEvidence[];engineEvidence:EngineEvidence[]}
 function manifest(content:ContentSnapshot):InstallObject {
  const bytes=content.files.get('.qian-plugin/plugin.json');if(!bytes)installFailure('package-manager','包内组件清单缺失。');
  const parsed=parseSurface('.qian-plugin/plugin.json',bytes.toString('utf8'));
@@ -38,15 +40,16 @@ function addComponent(files:Map<string,Buffer>,content:ContentSnapshot,rootId:st
 
 /** 从声明引用的真实包补齐组件内容，再走同一个组件树验证器。 */
 export async function resolvePackageDelivery(root:string,source:ResolvedMarketplacePlugin,profile:string,forceProfile=false,metadataOnly=false):Promise<PackageDelivery> {
- let resolved=source,delivery=prepareComponentDelivery(source,profile,forceProfile);const seen=new Set<string>(),artifacts:PackageArtifactEvidence[]=[];
+ let resolved=source,delivery=prepareComponentDelivery(source,profile,forceProfile);const seen=new Set<string>(),artifacts:PackageArtifactEvidence[]=[];let engineEvidence:EngineEvidence[]=[];
  for(let round=0;round<32;round++){
   verifyDeclaredPackageDigests(delivery.references,artifacts);
   const requested=delivery.references.filter(reference=>!seen.has(packageIdentity(reference)+'@'+reference.version));
-  if(!requested.length){verifyDeclaredPackageDigests(delivery.references,artifacts,true);return{resolved:{...resolved,packages:delivery.packages},delivery,artifacts};}
+  if(!requested.length){verifyDeclaredPackageDigests(delivery.references,artifacts,true);return{resolved:{...resolved,packages:delivery.packages},delivery,artifacts,engineEvidence};}
   if(seen.size+requested.length>256)installFailure('package-manager','组件包引用超过 256 个，拒绝继续递归获取。');
   for(const reference of requested)seen.add(packageIdentity(reference)+'@'+reference.version);
   const fetched=await fetchPackageComponents(root,{nuget:requested.filter(item=>item.kind==='nuget').map(item=>item.specification),npm:requested.filter(item=>item.kind==='npm').map(item=>item.specification)},metadataOnly);
   try{
+   engineEvidence=mergeEngineEvidence(engineEvidence,fetched.engineEvidence);
    artifacts.push(...fetched.artifacts);verifyDeclaredPackageDigests(delivery.references,artifacts);
    const files=new Map(resolved.content.files);
    for(const item of fetched.components){
