@@ -2,6 +2,7 @@
 @import '@idadawn/yue-tokens/theme.css';
 @source '../../packages/yue/core';
 @source '../../packages/yue/form';
+@source '../../packages/yue/shell';
 @source '../../packages/yue/data';
 @source '../../packages/yue/tokens';
 @source './main.tsx';

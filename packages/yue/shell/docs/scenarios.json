@@ -1,0 +1,14 @@
+[
+  { "id": "AppShell.Default", "component": "AppShell", "state": "Default", "theme": "light", "props": { "kind": "AppShell", "authenticated": true } },
+  { "id": "AppShell.Dark", "component": "AppShell", "state": "Dark", "theme": "dark", "props": { "kind": "AppShell", "authenticated": true } },
+  { "id": "AppShell.Managed", "component": "AppShell", "state": "Managed", "theme": "light", "props": { "kind": "AppShell", "authenticated": true, "managed": true } },
+  { "id": "AppShell.Offline", "component": "AppShell", "state": "Offline", "theme": "light", "props": { "kind": "AppShell", "authenticated": true, "offline": true } },
+  { "id": "Authentication.Default", "component": "Authentication", "state": "Default", "theme": "light", "props": { "kind": "Authentication" } },
+  { "id": "Authentication.Dark", "component": "Authentication", "state": "Dark", "theme": "dark", "props": { "kind": "Authentication" } },
+  { "id": "Authentication.MultiTenant", "component": "Authentication", "state": "MultiTenant", "theme": "light", "props": { "kind": "Authentication", "multiTenant": true } },
+  { "id": "Authentication.CallbackFailure", "component": "Authentication", "state": "CallbackFailure", "theme": "light", "props": { "kind": "Authentication", "callbackFailure": true } },
+  { "id": "FallbackPage.Forbidden", "component": "FallbackPage", "state": "Forbidden", "theme": "light", "props": { "kind": "FallbackPage", "status": 403 } },
+  { "id": "FallbackPage.NotFound", "component": "FallbackPage", "state": "NotFound", "theme": "light", "props": { "kind": "FallbackPage", "status": 404 } },
+  { "id": "FallbackPage.ServerError", "component": "FallbackPage", "state": "ServerError", "theme": "light", "props": { "kind": "FallbackPage", "status": 500 } },
+  { "id": "FallbackPage.Offline", "component": "FallbackPage", "state": "Offline", "theme": "light", "props": { "kind": "FallbackPage", "status": "offline" } }
+]

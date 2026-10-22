@@ -3,8 +3,9 @@ import path from 'node:path';
 import os from 'node:os';
 import {createPublicKey,verify,randomBytes,type KeyObject} from 'node:crypto';
 import {valid as semverValid} from 'semver';
-import {parseSurface,validateMarketplace,validateComponent,isSafeMarketplaceUrl,type JsonValue,type SurfaceDiagnostic,type ParsedComponent} from '@qian/surfaces';
+import {parseSurface,validateMarketplace,isSafeMarketplaceUrl,type JsonValue,type SurfaceDiagnostic,type ParsedComponent} from '@qian/surfaces';
 import {readDirectory,readGit,download,unpack,materialize,within,assertNoLinks,sha256,snapshot,type ContentSnapshot,type FileRecord} from './marketplace-files.js';
+import {validateOfflineComponent} from './component-validation.js';
 
 type Obj={[key:string]:JsonValue};
 const obj=(value:unknown):Obj=>value!==null&&typeof value==='object'&&!Array.isArray(value)?value as Obj:{};
@@ -160,7 +161,7 @@ export async function resolveMarketplacePlugin(reference:string,options:Marketpl
   const temporary=mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-component-'));
   try{
    materialize(content,temporary);
-   const validated=validateComponent(temporary,{profile:options.profile??'minimal'});
+   const validated=validateOfflineComponent(temporary,{profile:options.profile??'minimal'});
    diagnostics.push(...validated.diagnostics);if(!validated.isValid||!validated.component)throw new MarketplaceFailure(diagnostics);
    const component=validated.component,manifest=obj(component.manifest),runtime=obj(manifest.runtime),policy=obj(manifest.policy),version=str(manifest.version);
    if(parsed.version&&version!==parsed.version)throw new Error('请求版本与组件清单版本不一致。');

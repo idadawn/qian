@@ -1,0 +1,100 @@
+---
+title: 外壳、页面与认证
+description: 单侧栏布局、可扩展菜单、Preferences、注入式认证、多租户选择与错误兜底。
+part: components
+project: yue
+audience: [developer]
+updated: 2026-10-23
+component: '@idadawn/yue-shell'
+---
+
+import { ComponentDemo } from '@theme';
+
+# 外壳、页面与认证
+
+`@idadawn/yue-shell` 是独立 React 库。以下示例与靶场共用源码，请求均经 SDK 的 mock transport。认证 provider 可替换为真实宿主实现；当前示例不代表真实身份服务已接通。Authentication 仅在显示密码登录时懒加载 SchemaForm，不把表单引擎放进 AppShell 首屏；需要同步表单 SSR 时直接使用 PasswordLogin。
+
+## AppShell 与页面族
+
+<ComponentDemo name="AppShell" />
+
+单一侧栏提供当前菜单、折叠按钮、跳到内容链接和用户菜单。可以切换租户、读取受保护数据验证请求上下文、模拟会话过期、模拟渲染失败。预览工具栏可切换默认、暗色、平台代管与离线状态。平台代管横幅常驻；主题与语言偏好由宿主注入。
+
+`Page` 使用 `section`，`AppShell` 拥有唯一 `main`。`PageHeader` 提供标题、说明、面包屑和操作区；`ColPage` 提供左右列；`LeftTree` 是左栏容器，实际树由消费方插入现有 data Tree，不复制树引擎。
+
+### 安装与用法
+
+在项目中安装 `@idadawn/yue-shell` 与 React 19，加载 tokens 的主题 CSS，并让 Tailwind 扫描 yue 源码。私有包源配置沿用 yue 工作区约定。
+
+```tsx
+import { createI18n } from '@idadawn/yue-sdk';
+import { AppShell, Page, PageHeader, PreferencesProvider, initPreferences, installShellLanguagePacks } from '@idadawn/yue-shell';
+
+const i18n = createI18n();
+installShellLanguagePacks(i18n);
+const preferences = initPreferences({ namespace: 'my-app' });
+
+export default function Workspace() {
+  return <PreferencesProvider store={preferences}>
+    <AppShell i18n={i18n} brand="工作台" menu={[]}>
+      <Page header={<PageHeader title="概览" />}>页面内容</Page>
+    </AppShell>
+  </PreferencesProvider>;
+}
+```
+
+### 布局 API
+
+| 入口 | 属性与约定 |
+|---|---|
+| AppShell | 必填 i18n、brand、menu；可选 activePath、registry、onNavigate、toolbar、userName、onSignOut、userMenu、managed、managedLabel、children、className、testId |
+| Page | header、children、className、testId；默认不增加 main 地标 |
+| PageHeader | 必填 title；可选 description、actions、breadcrumb、children、className、testId |
+| ColPage | 必填 aside；可选 children、className、testId；窄屏上下排列 |
+| LeftTree | 必填 label；可选 children、className、testId；只负责容器 |
+| PreferenceControls | 必填 i18n；可选 className、testId；消费 PreferencesProvider |
+
+### 菜单与 Preferences
+
+`createMenuTypeRegistry()` 复用 SDK Registry，内置 page 与 external。`register(meta, resolver)` 返回注销函数，`resolve(item)` 解析路由，`toJSON()` 导出可索引元数据。menu 条目包含 id、labelKey、type、target 与可选 children。宿主可注入隔离的 registry，默认使用导出的 `menuTypeRegistry`。外链仅允许 HTTP(S)，带 noopener/noreferrer；页面必须是站内绝对路径。插件自定义 resolver 的输出同样校验，URL 凭据与令牌参数被拒绝。权限筛选由宿主提供的菜单决定，前端路由不构成授权边界。
+
+`initPreferences({ namespace, overrides, storage })` 返回 getSnapshot、getServerSnapshot、subscribe、update、reset。namespace 隔离应用；overrides 优先于存储。只保存 theme（light/dark/system）、locale（zh-CN/zh-TW/en-US）和 sidebarCollapsed，未知字段永不写入存储。storage 可注入或设 null；损坏、受限存储回退到当前会话。SSR 使用稳定初始快照；宿主用 tokens 的首帧脚本与 initializeTheme 应用主题，按需监听 store 更新。PreferencesProvider 注入 store，usePreferences 返回 preferences 与 updatePreferences。
+
+## 认证页族
+
+<ComponentDemo name="Authentication" />
+
+演示账号为 `demo`，密码为 `demo-password`。默认/暗色场景可完成密码登录或点击企业单点登录；SSO 实际跳转到本地回调地址，只有 code/state。多租户场景登录后出现二次选择；回调失败场景显示错误态并可返回登录。密码登录使用同一 SchemaForm，密码字段掩码、必填验证、提交状态和错误均复用 form。
+
+### 认证 API
+
+| 入口 | 属性与约定 |
+|---|---|
+| AuthProvider | signIn(credentials, signal)、selectTenant(id, signal)、switchTenant(id, signal)；可选 beginSso(signal)、completeSso(callback, signal) |
+| AuthResult | kind 为 authenticated 时携带 session；kind 为 select-tenant 时携带 tenants；不包含令牌 |
+| AuthSession | subjectId、displayName、tenantId、tenants；tenant 条目为 id/name |
+| AuthCallback | code、state、error；真实 code/PKCE/state 校验由 provider 完成 |
+| Authentication | 必填 provider、i18n、onAuthenticated、onRedirect；可选 callback、onCallbackConsumed、className、testId |
+| PasswordLogin | 必填 i18n、onSubmit；可选 onSso、busy、error、className、testId；提交后清空密码 |
+| SsoCallback | 必填 i18n、provider、callback、onResult、onBack；可选 className、testId；不输出原始异常 |
+| TenantSelection | 必填 i18n、tenants、onSelect、onBack；可选 busy、error、className、testId |
+| TenantSwitcher | 必填 i18n、provider、session、onChanged；可选 className、testId；失败保留当前租户 |
+| SessionExpiredDialog | 必填 open、i18n、onSignIn；可选 testId；显式重新登录后由宿主关闭 |
+
+AuthProvider 内部持有访问令牌与租户选择凭据；UI 不写 localStorage、URL 或 iframe。宿主把 SDK `onSessionExpired` 接到弹窗 open；SDK 负责刷新合并，UI 不再实现刷新队列。认证视图卸载或替换操作会中止旧请求，忽略迟到结果。令牌刷新使用 HttpOnly cookie 的真实接线、OIDC code + PKCE、selection_token、令牌重签与 MF2 宿主由后续外壳任务负责。
+
+## 403、404、500 与离线兜底
+
+<ComponentDemo name="FallbackPage" />
+
+预览工具栏包含四种独立场景，均提供可操作的重试/返回出口；暗色主题也可切换。`FallbackPage` 的 status 为 403、404、500 或 offline；i18n 必填，onRetry/onHome、children、className、testId 可选。错误页不输出堆栈。
+
+`OfflineBanner` 默认监听浏览器 online/offline 事件，宿主也可注入 offline，保留当前页面内容；可选 onRetry。`UpdateBanner` 接收 available 与 onReload。两者都接收 i18n、className、testId。`ShellErrorBoundary` 接收 i18n、children，可选 resetKey、onError、onReset；resetKey 变化或重试可恢复，原始异常只交给宿主 onError。
+
+## 键盘与无障碍
+
+所有控件保留稳定 data-slot/data-testid，并接受字符串 className。侧栏用普通导航链接与 aria-current；折叠按钮有 aria-expanded、aria-controls。Tab 可到跳过链接、租户/偏好选择器与用户菜单；选择器和弹窗复用 core 的键盘与焦点语义。登录验证定位第一个错误字段，多租户选择可用 Tab/Enter；会话过期使用有标题与描述的 alertdialog。场景与靶场都执行真实浏览器交互和 axe critical/serious 零违规检查。
+
+## 适用边界
+
+库本身不提供平台业务页面，不直接接网关或身份服务器，不部署 profile；qian.shell 消费此库。验证码登录、忘记密码与 Captcha 留待对应可选范围，七种布局与偏好抽屉不在 S1。

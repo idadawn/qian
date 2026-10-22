@@ -8,11 +8,13 @@
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
-  <!-- 集成测试宿主：真实 Data / Events / Tenancy / Authz（含 HTTP PEP）/ Audit 组件与 ErrorDetail、HTTP 契约导出；测试工程不受依赖图门禁约束。 -->
+  <!-- 集成测试宿主：真实 Data / Events / Tenancy / Authz（含 HTTP PEP）/ Audit 组件与 ErrorDetail、HTTP 契约导出；平台模式另有真实 Registry 与 TEN-004 运营端点。测试工程不受依赖图门禁约束。 -->
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
     <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />
     <ProjectReference Include="../../packages/Qian.Tenancy/Qian.Tenancy.csproj" />
+    <ProjectReference Include="../../packages/Qian.Tenancy.AspNetCore/Qian.Tenancy.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Registry/Qian.Registry.csproj" />
     <ProjectReference Include="../../packages/Qian.Authz/Qian.Authz.csproj" />
     <ProjectReference Include="../../packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />

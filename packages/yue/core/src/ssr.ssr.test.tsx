@@ -37,7 +37,7 @@ describe('SSR', () => {
         </Menu>
         <Select items={[{ label: '苹果', value: 'apple' }]} defaultValue="apple">
           <SelectTrigger aria-label="水果" />
-          <SelectContent>
+          <SelectContent listLabel="可选水果">
             <SelectItem value="apple">苹果</SelectItem>
           </SelectContent>
         </Select>
