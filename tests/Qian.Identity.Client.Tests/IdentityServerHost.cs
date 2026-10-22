@@ -34,10 +34,12 @@ namespace Qian.Identity.Client.Tests;
 /// <summary>
 /// 真实的 qian-identity：内置账号模型（PostgreSQL 受限应用角色 + 强制 RLS）、OpenIddict 协议面（强制 PKCE S256、openid 必带 nonce、
 /// 授权响应带 iss）与账号 HTTP 接口。登记一个机密 RP 客户端，回调指向测试里的 Client 宿主；租户目录是可控替身，其余都是生产代码。
+/// 该客户端登记了两个资源，RP 只要 <see cref="Resource"/>：多资源客户端不带 resource 会被拒，访问令牌的受众因此能证明 RP 带了 resource。
 /// </summary>
 internal sealed class IdentityServerHost : IAsyncDisposable
 {
     internal const string Resource = "https://api.qian.test";
+    internal const string OtherResource = "https://files.qian.test";
     internal const string ClientId = "qian-web";
     internal const string Password = "Correct-Horse-9";
     internal const string Phone = "13900000001";
@@ -86,7 +88,7 @@ internal sealed class IdentityServerHost : IAsyncDisposable
         builder.Services.AddQianIdentityServer(new IdentityServerOptions
         {
             Issuer = new Uri(issuer), AllowLoopbackHttp = true, SigningCertificates = [certificate], EncryptionCertificates = [certificate],
-            Clients = [new() { Application = web, Resources = [Resource], BackchannelLogoutUri = backchannel is null ? null : new Uri(callback, "/auth/backchannel-logout") }]
+            Clients = [new() { Application = web, Resources = [Resource, OtherResource], BackchannelLogoutUri = backchannel is null ? null : new Uri(callback, "/auth/backchannel-logout") }]
         }, builder.Environment);
         // 身份服务登记的投递客户端之后再覆盖主处理器（后登记者生效）：只信测试 RP 的自签名证书，其余与生产一致。
         if (backchannel is not null)

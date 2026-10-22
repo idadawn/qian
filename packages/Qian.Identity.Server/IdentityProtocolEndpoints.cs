@@ -123,9 +123,11 @@ public static class IdentityProtocolEndpoints
                 ReplaceRevision(principal, validation.IdentityRevision);
                 RestorePlatformTenant(principal);
             }
+            // 换码与 refresh 只能在原授权的受众内收窄（RFC 8707），不带 resource 时沿用原授权；收窄后的集合同时是新 refresh token 的上限。
+            var granted = principal.GetResources();
             var requested = request.GetResources();
-            var resources = requested.IsEmpty ? principal.GetResources().ToArray() : requested.ToArray();
-            if (ResourcesFor(client, resources) is null || resources.Except(principal.GetResources(), StringComparer.Ordinal).Any())
+            var resources = requested.IsEmpty ? granted.ToArray() : requested.Distinct(StringComparer.Ordinal).ToArray();
+            if (resources.Length == 0 || ResourcesFor(client, resources) is null || resources.Except(granted, StringComparer.Ordinal).Any())
                 return Reject(Errors.InvalidTarget);
             principal.SetResources(resources);
         }
@@ -231,10 +233,13 @@ public static class IdentityProtocolEndpoints
         identity.AddClaim(claim);
     }
     private static IdentityClientRegistration? Client(IdentityServerOptions options, string? id) => options.Clients.SingleOrDefault(client => client.Application.ClientId == id);
+    // 协议管道已按白名单逐字比较、查过客户端的 rsrc: 权限；这里再按白名单兜底一次，并决定不带 resource 时的受众：
+    // 只有单资源客户端按登记缺省；多资源客户端必须指定，否则一张令牌带上全部受众，可在资源服务器之间重放。
     private static string[]? ResourcesFor(IdentityClientRegistration client, IEnumerable<string> requested)
     {
-        var values = requested.ToArray(); if (values.Length == 0) values = client.Resources.ToArray();
-        return values.Length == 0 || values.Except(client.Resources, StringComparer.Ordinal).Any() ? null : values;
+        var values = requested.Distinct(StringComparer.Ordinal).ToArray();
+        if (values.Length == 0) return client.Resources.Count == 1 ? [client.Resources[0]] : null;
+        return values.Except(client.Resources, StringComparer.Ordinal).Any() ? null : values;
     }
     private static IResult Reject(string error) => Results.Forbid(new AuthenticationProperties(new Dictionary<string, string?>
         { [OpenIddictServerAspNetCoreConstants.Properties.Error] = error }), [Server]);

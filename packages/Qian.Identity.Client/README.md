@@ -61,7 +61,7 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 | `Authority` | 必填 | 发行方 issuer；discovery 的 issuer 必须与之一致。`RequireHttpsMetadata` 为 true 时必须是 HTTPS。 |
 | `ClientId` | 必填 | 客户端标识。 |
 | `Scopes` | `["openid"]` | 必须含 `openid`；需要刷新时加 `offline_access`。 |
-| `Resource` | 空 | 访问令牌的预期受众（须是发行方为该客户端登记的资源）。配置后会话主体取自访问令牌的规范身份（见下）；授权请求不带 `resource`，由发行方按登记签发。 |
+| `Resource` | 空 | 访问令牌的受众（RFC 8707，须是发行方为该客户端登记的资源，照登记原文写）。配置后授权请求带 `resource`，发行方把访问令牌的受众收窄到它，会话主体取自访问令牌的规范身份（见下）；不配置时授权请求不带 `resource`。qian-identity 要求登记了多个资源的客户端必须带。 |
 | `RedirectUri` | 空 | 在发行方登记的回调；只来自可信配置，不按请求 Host 推导。为空时不启用浏览器会话（只做 S2S 或只校验令牌的宿主）。 |
 | `PathPrefix` | `/auth` | 登录、登出、防伪令牌与后通道登出端点的前缀。 |
 | `DefaultReturnPath` / `AllowedReturnPaths` | `/` / 空 | `returnTo` 只接受同源相对路径（解码后不含 `.`、`..` 段，不含反斜杠与控制字符），白名单按路径段前缀匹配；不合法时回缺省落点。 |
@@ -86,7 +86,7 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 
 | 端点 | 说明 |
 |---|---|
-| `GET {PathPrefix}/login?returnTo=` | 生成 PKCE verifier、state、nonce（存在 Data Protection 保护的一次性 Cookie 里，5 分钟），302 到授权端点。 |
+| `GET {PathPrefix}/login?returnTo=` | 生成 PKCE verifier、state、nonce（存在 Data Protection 保护的一次性 Cookie 里，5 分钟），302 到授权端点；规范模式另带 `resource`。 |
 | `GET {RedirectUri 的路径}` | 先消费登录事务（无论成败事务 Cookie 都删除、state 登记为已用），再查 `iss`、`error`，然后带原始 verifier 与 nonce 换码；规范模式下会话建立前先确认访问令牌可投影；成功则建立新会话（旧会话作废），302 回 `returnTo`。 |
 | `POST {PathPrefix}/logout` | 删除本地会话与 Cookie，204。有会话时必须带防伪请求头 `X-CSRF-TOKEN`，否则 400。 |
 | `GET {PathPrefix}/csrf` | 已认证时返回 `{ headerName, token }`。 |
@@ -104,6 +104,7 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 
 - 不做 RP 发起的发行方登出（end_session），也不调用撤销端点：本地登出只结束本地会话，发行方的 SSO 会话仍在；发行方侧的吊销经后通道登出同步到本地。
 - 本地登出与正在进行的刷新并发时，刷新的结果只续写仍存活的会话，已登出的会话不会复活；但刷新已经换到的令牌族要等发行方侧过期。
+- `resource` 只在授权请求里带：Kun 的 `OidcCodeExchange` 与刷新都不能追加参数，所以换码与刷新请求不带。qian-identity 的授权码与 refresh token 已绑定授权时请求的资源，换码、刷新沿用，受众不变。对接要求令牌请求也带 `resource` 的发行方（MCP 授权规范对客户端的要求），要等 Kun 支持追加参数。
 - `prompt`、`login_hint`、租户提示等授权参数尚未透传（外壳接线随 D5 / YUE-002）。
 - 清单仍是配置骨架（不声明 `runtime`）：`gateway` profile 开了 AOT，而依赖的 Kun 发布包未带 AOT 兼容标记，见组件文件夹的说明。
 

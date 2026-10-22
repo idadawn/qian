@@ -71,6 +71,8 @@ public sealed partial class StandaloneLoginTests(DexFixture dex) : IClassFixture
         var authorize = login.Headers.Location!;
         Assert.StartsWith(dex.Issuer.ToString(), authorize.ToString(), StringComparison.Ordinal);
         Assert.Contains("code_challenge_method=S256", authorize.Query, StringComparison.Ordinal);
+        // 任意发行方模式（不配 Resource）不带 RFC 8707 的 resource，由发行方按自己的规则签发。
+        Assert.DoesNotContain("resource=", authorize.Query, StringComparison.Ordinal);
         var callback = await SignInAtDex(browser, authorize);
         using (var completed = await browser.GetAsync(callback, Ct))
         {
