@@ -56,6 +56,9 @@ export class HotReloadSurfacePlugin<TContext extends SurfaceContext = SurfaceCon
 }
 
 // @public
+export function isSafeMarketplaceUrl(value: string): boolean;
+
+// @public
 export function isStable(name: string): boolean;
 
 // @public
@@ -158,6 +161,26 @@ export interface SurfaceDocument {
     // (undocumented)
     name: string;
 }
+
+// @public
+export const surfaceErrorCodes: {
+    readonly syntax: "SURFACE_SYNTAX_INVALID";
+    readonly schema: "SURFACE_SCHEMA_INVALID";
+    readonly name: "SURFACE_NAME_MISMATCH";
+    readonly reference: "SURFACE_REFERENCE_UNKNOWN";
+    readonly path: "SURFACE_PATH_INVALID";
+    readonly policy: "SURFACE_POLICY_DENIED";
+    readonly secret: "SURFACE_SECRET_LITERAL";
+    readonly hash: "SURFACE_HASH_MISMATCH";
+    readonly signature: "SURFACE_SIGNATURE_INVALID";
+    readonly digest: "SURFACE_DIGEST_MISMATCH";
+    readonly installationBusy: "SURFACE_INSTALLATION_BUSY";
+    readonly modified: "SURFACE_LOCAL_MODIFIED";
+    readonly profile: "SURFACE_PROFILE_DENIED";
+    readonly recovery: "SURFACE_RECOVERY_REQUIRED";
+    readonly packageUnavailable: "SURFACE_PACKAGE_UNAVAILABLE";
+    readonly engine: "SURFACE_ENGINE_INCOMPATIBLE";
+};
 
 // @public (undocumented)
 export interface SurfaceParseResult {

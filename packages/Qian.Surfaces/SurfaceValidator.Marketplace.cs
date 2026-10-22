@@ -28,7 +28,7 @@ public sealed partial class SurfaceValidator
             foreach (var field in new[] { "url", "repo" })
             {
                 if (!source.TryGetProperty(field, out var location)) continue;
-                if (!Uri.TryCreate(location.GetString(), UriKind.Absolute, out var uri) || uri.Scheme != "https" || !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Fragment) || uri.Query.TrimStart('?').Split('&').Select(pair => Uri.UnescapeDataString(pair.Split('=')[0])).Any(key => Regex.IsMatch(key, "token|secret|password|credential|signature|api[-_]?key|authorization", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100))))
+                if (!Uri.TryCreate(location.GetString(), UriKind.Absolute, out var uri) || uri.Scheme != "https" || !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Fragment) || uri.Query.TrimStart('?').Split('&').Select(pair => Uri.UnescapeDataString(pair.Split('=')[0])).Any(key => Regex.IsMatch(key, "token|secret|password|credential|signature|api[-_]?key|authorization|access[-_]?key|(?:^|[-_])sig(?:$|[-_])|^(?:se|sp|sr|sv|st|ss|srt|spr|sip|si|skoid|sktid|skt|ske|sks|skv|saoid|suoid|scid|ses|key)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100))))
                     Error(pointer + "/source/" + field, SurfaceErrors.Policy, "远程来源必须使用无凭据片段的 HTTPS 地址。");
             }
         }

@@ -1,6 +1,12 @@
 import {randomBytes} from 'node:crypto';
-import {validateSurfaceSchema, type SurfaceDiagnostic, type JsonValue, type SurfaceRuntimeReport} from '@qian/surfaces';
+import path from 'node:path';
+import {validateSurfaceSchema,validateComponent, type SurfaceDiagnostic, type JsonValue, type SurfaceRuntimeReport} from '@qian/surfaces';
 import {loadProfile, type ProfileOptions} from './profiles.js';
+import {readInstalledState,verifyInstalledComponent,installObject,readInstallFile} from './installed-components.js';
+import {within} from './marketplace-files.js';
+import {readHostEngineVersions,verifyComponentEngines} from './engine-compatibility.js';
+import {MarketplaceFailure,marketDiagnostic} from './marketplaces.js';
+import type {PackageWorkspace} from './package-manager.js';
 
 export class DoctorFailure extends Error {
  constructor(readonly diagnostics:SurfaceDiagnostic[]){super('诊断读取失败。');}
@@ -45,4 +51,24 @@ export async function doctor(options:ProfileOptions,address?:string){
   ...(item.invalidSurface?[{entryId:item.entryId,plugin:item.plugin,scope:item.scope,code:'SURFACE_UPDATE_REJECTED',message:'修正无效表面后重试；当前继续使用上次有效注册。',files:[]}]:[])
  ])??[];
  return {checks:runtime?['profile','live-surfaces']:['profile'],profile:options.profile??'platform',isValid:profile.isValid,runtimeVerified:runtime!==null,runtime,diagnostics:profile.diagnostics,actions,healthy:profile.isValid&&actions.length===0};
+}
+
+/** 安装收尾与显式组件诊断共用；只检查受影响安装记录和表面，不执行组件或解析 secretRef。 */
+export function doctorInstalledComponents(root:string,ids:readonly string[],profile:string,workspace?:PackageWorkspace){
+ const plugins=readInstalledState(root).plugins,evidence=readHostEngineVersions(root,workspace),diagnostics:SurfaceDiagnostic[]=[];
+ for(const id of [...new Set(ids)]){
+  const installed=plugins.find(item=>item.id===id);
+  if(!installed){diagnostics.push(marketDiagnostic('.qian/lock.json','/plugins','受影响组件未写入安装锁。','SURFACE_REFERENCE_UNKNOWN'));continue;}
+  try{
+   verifyInstalledComponent(root,installed);
+   const files=(installed.files as JsonValue[]).map(installObject);
+   for(const item of files){
+    if(typeof item.path!=='string'||item.path!=='.qian-plugin/plugin.json'&&!item.path.endsWith('/.qian-plugin/plugin.json'))continue;
+    const relative='.qian/plugins/'+id+'/'+item.path,file=within(root,relative),folder=path.dirname(path.dirname(file));
+    const validated=validateComponent(folder,{profile});diagnostics.push(...validated.diagnostics);
+    verifyComponentEngines(installObject(readInstallFile(file)),evidence,relative);
+   }
+  }catch(error){if(error instanceof MarketplaceFailure)diagnostics.push(...error.diagnostics);else diagnostics.push(marketDiagnostic('.qian/plugins/'+id,'','受影响组件的文件或清单无法安全读取。','SURFACE_PATH_INVALID'));}
+ }
+ return{checks:['installed-files','component-surfaces','engines'],components:[...new Set(ids)],profile,runtimeVerified:false,healthy:!diagnostics.some(item=>item.severity==='error'),diagnostics,engines:evidence};
 }

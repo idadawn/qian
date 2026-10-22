@@ -25,7 +25,17 @@ export interface SurfaceValidationOptions {
   tools?: readonly string[]; skills?: readonly string[]; events?: readonly string[]; capabilities?: readonly string[];
   catalogComplete?: boolean; traceId?: string; serviceKeys?: readonly string[];
 }
-const codes = { syntax: 'SURFACE_SYNTAX_INVALID', schema: 'SURFACE_SCHEMA_INVALID', name: 'SURFACE_NAME_MISMATCH', reference: 'SURFACE_REFERENCE_UNKNOWN', path: 'SURFACE_PATH_INVALID', policy: 'SURFACE_POLICY_DENIED', secret: 'SURFACE_SECRET_LITERAL', hash: 'SURFACE_HASH_MISMATCH' };
+/** 与 Qian.Surfaces.Abstractions.SurfaceErrors 同源语义的字段错误目录。 */
+export const surfaceErrorCodes = { syntax: 'SURFACE_SYNTAX_INVALID', schema: 'SURFACE_SCHEMA_INVALID', name: 'SURFACE_NAME_MISMATCH', reference: 'SURFACE_REFERENCE_UNKNOWN', path: 'SURFACE_PATH_INVALID', policy: 'SURFACE_POLICY_DENIED', secret: 'SURFACE_SECRET_LITERAL', hash: 'SURFACE_HASH_MISMATCH', signature: 'SURFACE_SIGNATURE_INVALID', digest: 'SURFACE_DIGEST_MISMATCH', installationBusy: 'SURFACE_INSTALLATION_BUSY', modified: 'SURFACE_LOCAL_MODIFIED', profile: 'SURFACE_PROFILE_DENIED', recovery: 'SURFACE_RECOVERY_REQUIRED', packageUnavailable: 'SURFACE_PACKAGE_UNAVAILABLE', engine: 'SURFACE_ENGINE_INCOMPATIBLE' } as const;
+const codes = surfaceErrorCodes;
+/** 市场登记与条目共用的无凭据 HTTPS 规则；Git 登记的引用片段由调用方移除后校验。 */
+export function isSafeMarketplaceUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password && !url.hash &&
+      ![...url.searchParams.keys()].some(key => /token|secret|password|credential|signature|api[-_]?key|authorization|access[-_]?key|(?:^|[-_])sig(?:$|[-_])|^(?:se|sp|sr|sv|st|ss|srt|spr|sip|si|skoid|sktid|skt|ske|sks|skv|saoid|suoid|scid|ses|key)$/i.test(key));
+  } catch { return false; }
+}
 type Obj = { [key: string]: JsonValue };
 const obj = (value: JsonValue | undefined): Obj => value !== null && typeof value === 'object' && !Array.isArray(value) ? value : {};
 const str = (value: JsonValue | undefined): string => typeof value === 'string' ? value : '';
@@ -764,8 +774,7 @@ export function validateMarketplace(file: string, content: string, traceId = tra
     if(categories&&!categories.has(str(entry.category)))error(pointer+'/category',codes.reference,'分类未在市场 categories 中声明。');
     if(source.path!==undefined&&!safe(str(source.path)))error(pointer+'/source/path',codes.path,'来源路径必须留在仓库内。');
     for(const field of ['url','repo'])if(source[field]!==undefined){
-      try{const url=new URL(str(source[field]));if(url.protocol!=='https:'||url.username||url.password||url.hash||[...url.searchParams.keys()].some(key=>/token|secret|password|credential|signature|api[-_]?key|authorization/i.test(key)))throw new Error();}
-      catch{error(pointer+'/source/'+field,codes.policy,'远程来源必须使用无凭据片段的 HTTPS 地址。');}
+      if(!isSafeMarketplaceUrl(str(source[field])))error(pointer+'/source/'+field,codes.policy,'远程来源必须使用无凭据片段的 HTTPS 地址。');
     }
   });
   strings(obj(market.owner).publicKeys).forEach((value,index)=>{

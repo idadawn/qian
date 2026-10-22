@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,realpathSync,writeFileSync,readFileSync,rmSync,existsSync} from 'node:fs';
+import {mkdtempSync,realpathSync,writeFileSync,readFileSync,rmSync,existsSync,mkdirSync} from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {spawnSync} from 'node:child_process';
@@ -8,6 +8,7 @@ import {inspectPackageWorkspace,packageMutationTargets,applyPackageChanges,works
 import {parsePackageReference} from '../dist/package-references.js';
 import {fetchPackageComponents} from '../dist/package-components.js';
 import {verifyInstalledPackageArtifacts} from '../dist/package-integrity.js';
+import {WorkspaceTransaction} from '../dist/workspace-transaction.js';
 
 function root(){return mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-package-host-'));}
 const reference=(kind,value)=>parsePackageReference(kind,value);
@@ -24,6 +25,7 @@ test('实际 NuGet 精确安装可供 C# 编译使用，移除后恢复无依赖
   assert.ok(targets.some(item=>item.path===path.join(directory,'Host.csproj')));
   assert.ok(targets.some(item=>item.path===path.join(directory,'obj')&&item.kind==='directory'));
   await applyPackageChanges(state,{add:[pkg],remove:[]});
+  assert.equal(existsSync(path.join(directory,'packages.lock.json')),false);
   assert.ok(readFileSync(path.join(directory,'Host.csproj'),'utf8').includes('[2026.10.12]'));
   const installed=await inspectPackageWorkspace(directory,['nuget']);
   assert.equal(workspaceDependency(installed,pkg).version,'2026.10.12');
@@ -33,8 +35,40 @@ test('实际 NuGet 精确安装可供 C# 编译使用，移除后恢复无依赖
   const build=spawnSync('dotnet',['build','Host.csproj','-c','Release','--no-restore','--disable-build-servers','-m:1'],{cwd:directory,encoding:'utf8',timeout:120000});
   assert.equal(build.status,0,build.stdout+build.stderr);
   await applyPackageChanges(installed,{add:[],remove:[pkg]});
+  assert.equal(existsSync(path.join(directory,'packages.lock.json')),false);
   assert.equal(workspaceDependency(await inspectPackageWorkspace(directory,['nuget']),pkg),undefined);
   assert.ok(!Object.keys(JSON.parse(readFileSync(path.join(directory,'obj/project.assets.json'),'utf8')).libraries).some(name=>name.startsWith('Kun.Core/')));
+ }finally{rmSync(directory,{recursive:true,force:true});}
+});
+
+test('自定义锁路径不隐式开启锁模式；用户原有锁文件与失败前字节均保留',async()=>{
+ for(const enabled of [false,true]){
+  const directory=root();try{
+   const project=path.join(directory,'Host.csproj'),lock=path.join(directory,'locks/dependencies.json');mkdirSync(path.dirname(lock));
+   writeFileSync(project,'<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework><NuGetLockFilePath>locks/dependencies.json</NuGetLockFilePath>'+ (enabled?'<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>':'')+'</PropertyGroup></Project>');
+   const pkg=reference('nuget','Kun.Core@2026.10.12');let state=await inspectPackageWorkspace(directory,['nuget']);
+   const add={add:[pkg],remove:[]};await WorkspaceTransaction.begin(directory,packageMutationTargets(state,add),'test add').run(()=>applyPackageChanges(state,add));
+   assert.equal(existsSync(path.join(directory,'packages.lock.json')),false);assert.equal(existsSync(lock),enabled);
+   if(enabled){
+    const before=readFileSync(lock),beforeProject=readFileSync(project);state=await inspectPackageWorkspace(directory,['nuget']);const remove={add:[],remove:[pkg]};
+    await assert.rejects(WorkspaceTransaction.begin(directory,packageMutationTargets(state,remove),'test interrupted remove').run(async()=>{await applyPackageChanges(state,remove);throw new Error('fail after restore');}));
+    assert.deepEqual(readFileSync(lock),before);assert.deepEqual(readFileSync(project),beforeProject);
+   }
+   state=await inspectPackageWorkspace(directory,['nuget']);const remove={add:[],remove:[pkg]};await WorkspaceTransaction.begin(directory,packageMutationTargets(state,remove),'test remove').run(()=>applyPackageChanges(state,remove));
+   assert.equal(existsSync(lock),enabled);assert.equal(existsSync(path.join(directory,'packages.lock.json')),false);
+   if(enabled)assert.ok(Object.values(JSON.parse(readFileSync(lock,'utf8')).dependencies).every(group=>Object.keys(group).length===0));
+  }finally{rmSync(directory,{recursive:true,force:true});}
+ }
+});
+
+test('宿主已有默认 NuGet 锁文件时继续更新自己的锁，不由 CLI 删除',async()=>{
+ const directory=root();try{
+  writeFileSync(path.join(directory,'Host.csproj'),'<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>');
+  writeFileSync(path.join(directory,'packages.lock.json'),JSON.stringify({version:1,dependencies:{'net10.0':{}}}));
+  const pkg=reference('nuget','Kun.Core@2026.10.12');await applyPackageChanges(await inspectPackageWorkspace(directory,['nuget']),{add:[pkg],remove:[]});
+  assert.ok(JSON.parse(readFileSync(path.join(directory,'packages.lock.json'),'utf8')).dependencies['net10.0']['Kun.Core']);
+  await applyPackageChanges(await inspectPackageWorkspace(directory,['nuget']),{add:[],remove:[pkg]});
+  assert.equal(existsSync(path.join(directory,'packages.lock.json')),true);
  }finally{rmSync(directory,{recursive:true,force:true});}
 });
 

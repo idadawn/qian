@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {createPublicKey,verify,randomBytes,type KeyObject} from 'node:crypto';
 import {valid as semverValid} from 'semver';
-import {parseSurface,validateMarketplace,validateComponent,type JsonValue,type SurfaceDiagnostic,type ParsedComponent} from '@qian/surfaces';
+import {parseSurface,validateMarketplace,validateComponent,isSafeMarketplaceUrl,type JsonValue,type SurfaceDiagnostic,type ParsedComponent} from '@qian/surfaces';
 import {readDirectory,readGit,download,unpack,materialize,within,assertNoLinks,sha256,snapshot,type ContentSnapshot,type FileRecord} from './marketplace-files.js';
 
 type Obj={[key:string]:JsonValue};
@@ -20,7 +20,19 @@ export interface ResolvedMarketplacePlugin {
  packages:{nuget:string[];npm:string[]};policy:MarketEntry['policy'];trust:'verified'|'unverified';diagnostics:SurfaceDiagnostic[];
 }
 export class MarketplaceFailure extends Error {constructor(readonly diagnostics:SurfaceDiagnostic[]){super('市场操作未通过验证。');}}
+/** 诊断只保留工作区内可定位的路径，绝不返回本机绝对路径。 */
+export function diagnosticFile(file:string):string {
+ if(!path.isAbsolute(file))return file.replaceAll('\\','/');
+ const normalized=file.split(path.sep).join('/');
+ for(const segment of ['/.qian/','/profiles/','/plugins/']){const index=normalized.lastIndexOf(segment);if(index>=0)return normalized.slice(index+1);}
+ return path.basename(file);
+}
+function safeRegistrationSource(source:string):boolean {
+ if(!source.includes('://'))return true;
+ try{const address=new URL(source.startsWith('git+')?source.slice(4):source);if(source.startsWith('git+'))address.hash='';return isSafeMarketplaceUrl(address.toString());}catch{return false;}
+}
 export function marketDiagnostic(file:string,pointer:string,message:string,code='SURFACE_POLICY_DENIED',severity:'error'|'warning'='error'):SurfaceDiagnostic {
+ file=diagnosticFile(file);
  const location=file.replaceAll('\\','/').split('/').map(encodeURIComponent).join('/')+'#'+pointer,detail='输入不符合该能力的输入 Schema，逐项错误见 errors。';
  return{file,line:1,severity,error:{type:'https://qian.dev/problems/protocol/INPUT_INVALID',title:'输入不符合契约',status:400,code:'INPUT_INVALID',message:detail,detail,trace_id:randomBytes(16).toString('hex'),pointer:location,errors:[{code,message,pointer:location}]}};
 }
@@ -28,7 +40,7 @@ function fail(file:string,pointer:string,message:string,code?:string):never{thro
 function readConfig(file:string):Obj {
  if(!existsSync(file))return{};assertNoLinks(file);
  if(lstatSync(file).size>1_048_576)fail(file,'','配置超过大小限制。');
- const parsed=parseSurface(file,readFileSync(file,'utf8'));
+ const parsed=parseSurface(diagnosticFile(file),readFileSync(file,'utf8'));
  if(!parsed.syntax||parsed.diagnostics.some(item=>item.severity==='error'))throw new MarketplaceFailure([...parsed.diagnostics]);
  return obj(parsed.syntax.data);
 }
@@ -45,7 +57,7 @@ export function marketplaceRegistrations(options:MarketplaceOptions):{markets:Ma
   for(const[index,value]of (Array.isArray(list)?list:[]).entries()){
    const entry=obj(value),name=str(entry.name),source=str(entry.source),priority=entry.priority??100;
    if(!/^[a-z][a-z0-9-]*$/.test(name)||!source||typeof priority!=='number'||!Number.isSafeInteger(priority)||priority<0||entry.trust!==undefined&&entry.trust!=='unverified'||names.has(name))fail(layer.file,'/marketplaces/'+index,'市场登记的名称、来源、优先级或信任标记无效。','SURFACE_SCHEMA_INVALID');
-   if(source.includes('://')){try{const address=new URL(source.startsWith('git+')?source.slice(4):source);if(address.username||address.password||[...address.searchParams.keys()].some(key=>/token|secret|password|credential|signature|api[-_]?key|authorization/i.test(key)))throw new Error();}catch{fail(layer.file,'/marketplaces/'+index+'/source','来源地址不能包含凭据或非法 URL。');}}
+   if(!safeRegistrationSource(source))fail(layer.file,'/marketplaces/'+index+'/source','来源地址不能包含凭据或非法 URL。');
    names.add(name);markets.set(name,{name,source,priority,trust:entry.trust as 'unverified'|undefined,origin:layer.origin,baseDirectory:layer.base});
   }
   const trust=obj(config.trust).keys;
@@ -59,6 +71,7 @@ export function registerMarketplace(options:MarketplaceOptions,registration:Mark
  const home=path.resolve(options.workingDirectory,options.homeDirectory??process.env.QIAN_HOME??path.join(os.homedir(),'.qian')),file=path.join(home,'marketplaces.json');
  assertNoLinks(file);const config=readConfig(file),entries=Array.isArray(config.marketplaces)?config.marketplaces:[];
  if(!/^[a-z][a-z0-9-]*$/.test(registration.name)||!registration.source||!Number.isSafeInteger(registration.priority)||registration.priority<0)fail(file,'/marketplaces','市场登记无效。');
+ if(!safeRegistrationSource(registration.source))fail(file,'/marketplaces','来源地址不能包含凭据或非法 URL。');
  config.marketplaces=[...entries.filter(entry=>obj(entry).name!==registration.name),{name:registration.name,source:registration.source,priority:registration.priority,...registration.trust?{trust:registration.trust}:{}}];
  mkdirSync(home,{recursive:true});const temporary=file+'.'+randomBytes(6).toString('hex')+'.tmp';writeFileSync(temporary,JSON.stringify(config,null,2)+'\n',{flag:'wx',mode:0o600});renameSync(temporary,file);return file;
 }
@@ -99,7 +112,7 @@ async function catalog(registration:MarketRegistration,options:MarketplaceOption
    }
   }
   const trusted=registration.trust!=='unverified'&&fingerprint!==null;
-  if(!trusted&&!options.allowUnverified)throw new Error('市场未通过受信任公钥验签；需显式 --allow-unverified，且仅允许 community 无代码组件。');
+  if(!trusted&&!options.allowUnverified)fail('.qian/marketplace.json','','市场未通过受信任公钥验签；需显式 --allow-unverified，且仅允许 community 无代码组件。','SURFACE_SIGNATURE_INVALID');
   return{registration,data,entries:data.plugins as unknown as MarketEntry[],trusted,fingerprint,root,content,commit};
  }catch(error){if(error instanceof MarketplaceFailure)throw error;fail('.qian/marketplace.json','',error instanceof Error?error.message:'市场无法读取。');}
 }
@@ -108,6 +121,7 @@ async function catalogs(options:MarketplaceOptions):Promise<{catalogs:Catalog[];
  for(const item of configured.keys){try{const parsed=publicKey(item.value.startsWith('-----BEGIN')?item.value:readSmall(path.resolve(item.base,item.value)).toString('utf8'));roots.set(parsed.fingerprint,parsed.key);}catch{fail('.qian/config.yml','/trust/keys','信任根必须为可读取的 Ed25519 公钥。');}}
  const output:Catalog[]=[];
  for(const registration of configured.markets){
+  if(options.from&&registration.name!==options.from)continue;
   if(registration.trust==='unverified'&&!options.allowUnverified){diagnostics.push(marketDiagnostic('.qian/config.yml','/marketplaces','未验证市场未参与解析：'+registration.name,'SURFACE_POLICY_DENIED','warning'));continue;}
   output.push(await catalog(registration,options,roots));
  }
@@ -125,7 +139,7 @@ export async function listRemoteMarketplaces(options:MarketplaceOptions):Promise
 export async function resolveMarketplacePlugin(reference:string,options:MarketplaceOptions):Promise<ResolvedMarketplacePlugin>{
  const parsed=parseMarketplaceReference(reference),requestedMarket=options.from??parsed.market;
  if(options.from&&parsed.market&&options.from!==parsed.market)fail('argv','','--from 与显式市场前缀不一致。');
- const loaded=await catalogs(options),matches=loaded.catalogs.flatMap(market=>market.entries.filter(entry=>entry.name===parsed.name&&(!requestedMarket||market.registration.name===requestedMarket)).map(entry=>({market,entry})));
+ const loaded=await catalogs({...options,from:requestedMarket}),matches=loaded.catalogs.flatMap(market=>market.entries.filter(entry=>entry.name===parsed.name&&(!requestedMarket||market.registration.name===requestedMarket)).map(entry=>({market,entry})));
  if(!matches.length)fail('.qian/config.yml','/marketplaces','已登记且可用的市场中未找到组件。','SURFACE_REFERENCE_UNKNOWN');
  const {market,entry}=matches[0],source={...entry.source},diagnostics=[...loaded.diagnostics];
  if(matches.length>1)diagnostics.push(marketDiagnostic('.qian/marketplace.json','/plugins','同名组件采用优先级最靠前的市场；来源会记录到 lock。','SURFACE_NAME_MISMATCH','warning'));
@@ -135,14 +149,14 @@ export async function resolveMarketplacePlugin(reference:string,options:Marketpl
    if(market.content){const prefix=source.path==='.'||source.path==='./'?'':source.path!.replace(/^\.\//,'').replace(/\/$/,'')+'/';content=snapshot(new Map([...market.content.files].filter(([name])=>name.startsWith(prefix)).map(([name,bytes])=>[name.slice(prefix.length),bytes])));}
    else content=readDirectory(within(market.root,source.path!));
   }else if(source.type==='url'){
-   const bytes=await download(source.url!,options.fetcher);if('sha256:'+sha256(bytes)!==source.digest)throw new Error('归档 digest 不匹配。');
+   const bytes=await download(source.url!,options.fetcher);if('sha256:'+sha256(bytes)!==source.digest)fail('.qian/marketplace.json','/plugins','归档 digest 不匹配。','SURFACE_DIGEST_MISMATCH');
    content=await unpack(bytes,bytes[0]===0x50&&bytes[1]===0x4b?'zip':'tgz');
   }else{
    const fetched=await readGit(source.repo!,parsed.gitTag??source.ref!,source.path!,options.gitMirrors?.[source.repo!]);content=fetched.content;commit=fetched.commit;refKind=fetched.refKind;resolvedRef=fetched.resolvedRef;
    if(refKind==='branch'&&!source.digest)throw new Error('分支引用必须声明内容 digest。');
    source.ref=parsed.gitTag??source.ref;
   }
-  if(source.type!=='url'&&source.digest&&source.digest!==content.digest)throw new Error('组件目录 digest 不匹配。');
+  if(source.type!=='url'&&source.digest&&source.digest!==content.digest)fail('.qian/marketplace.json','/plugins','组件目录 digest 不匹配。','SURFACE_DIGEST_MISMATCH');
   const temporary=mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-component-'));
   try{
    materialize(content,temporary);

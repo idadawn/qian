@@ -21,8 +21,24 @@ public static class SurfaceErrors
     public static readonly ErrorCode Secret = Define("SURFACE_SECRET_LITERAL");
     /// <summary>工具描述哈希不一致。</summary>
     public static readonly ErrorCode Hash = Define("SURFACE_HASH_MISMATCH");
+    /// <summary>市场签名未通过受信任公钥验证。</summary>
+    public static readonly ErrorCode Signature = Define("SURFACE_SIGNATURE_INVALID");
+    /// <summary>来源或包归档摘要不一致。</summary>
+    public static readonly ErrorCode Digest = Define("SURFACE_DIGEST_MISMATCH");
+    /// <summary>工作区有活动安装或残留安装锁。</summary>
+    public static readonly ErrorCode InstallationBusy = Define("SURFACE_INSTALLATION_BUSY");
+    /// <summary>本地受管理文件或条目已被手工改写。</summary>
+    public static readonly ErrorCode Modified = Define("SURFACE_LOCAL_MODIFIED");
+    /// <summary>组件或市场不允许所选 profile。</summary>
+    public static readonly ErrorCode Profile = Define("SURFACE_PROFILE_DENIED");
+    /// <summary>事务证据不完整或写入者未确认停止，不能安全恢复。</summary>
+    public static readonly ErrorCode Recovery = Define("SURFACE_RECOVERY_REQUIRED");
+    /// <summary>包管理器不可用或操作未完成。</summary>
+    public static readonly ErrorCode PackageUnavailable = Define("SURFACE_PACKAGE_UNAVAILABLE");
+    /// <summary>组件 engines 与实际宿主运行时不兼容或缺少版本证据。</summary>
+    public static readonly ErrorCode Engine = Define("SURFACE_ENGINE_INCOMPATIBLE");
     /// <summary>本组件全部错误码。</summary>
-    public static IReadOnlyList<ErrorCode> All { get; } = [Syntax, Schema, Name, Reference, Path, Policy, Secret, Hash];
+    public static IReadOnlyList<ErrorCode> All { get; } = [Syntax, Schema, Name, Reference, Path, Policy, Secret, Hash, Signature, Digest, InstallationBusy, Modified, Profile, Recovery, PackageUnavailable, Engine];
     private static ErrorCode Define(string code) => ErrorCode.Field(code, "qian.surfaces",
         new Dictionary<string, string> { ["zh-CN"] = "声明式表面校验", ["en"] = "Surface validation" },
         new Dictionary<string, string> { ["zh-CN"] = "{reason}", ["en"] = "{reason}" });

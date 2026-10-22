@@ -88,5 +88,145 @@
     "name": "url-query-credential",
     "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://plugins.example.test/file.zip?token=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
     "valid": false
+  },
+  {
+    "name": "credential-url-sig",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?sig=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-sig",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?sig=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-SIG",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?SIG=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-SIG",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?SIG=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-%73ig",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?%73ig=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-%73ig",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?%73ig=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-se",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?se=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-se",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?se=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-sp",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?sp=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-sp",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?sp=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-sv",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?sv=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-sv",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?sv=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-skoid",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?skoid=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-skoid",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?skoid=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-sktid",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?sktid=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-sktid",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?sktid=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-sks",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?sks=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-sks",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?sks=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-skv",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?skv=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-skv",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?skv=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-AWSAccessKeyId",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?AWSAccessKeyId=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-AWSAccessKeyId",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?AWSAccessKeyId=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-X-Amz-Signature",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?X-Amz-Signature=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-X-Amz-Signature",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?X-Amz-Signature=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-X-Goog-Credential",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?X-Goog-Credential=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-X-Goog-Credential",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?X-Goog-Credential=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-url-api_key",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"url\",\n        \"url\": \"https://source.example.test/plugin.zip?api_key=DO-NOT-LEAK\",\n        \"digest\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
+  },
+  {
+    "name": "credential-repo-api_key",
+    "content": "{\n  \"$schema\": \"https://qian.dev/schemas/marketplace/v2\",\n  \"name\": \"tenant-private\",\n  \"version\": \"2026.10.11\",\n  \"interface\": {\n    \"displayName\": \"租户私有目录\"\n  },\n  \"owner\": {\n    \"name\": \"测试发布方\",\n    \"publicKeys\": [\n      \"./keys/owner.pub\"\n    ]\n  },\n  \"categories\": [\n    \"operations\"\n  ],\n  \"plugins\": [\n    {\n      \"name\": \"guide\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"repo\": \"https://source.example.test/plugins.git?api_key=DO-NOT-LEAK\",\n        \"ref\": \"main\",\n        \"path\": \"plugins/guide\"\n      },\n      \"policy\": {\n        \"installation\": \"confirm\",\n        \"authentication\": \"ON_INSTALL\",\n        \"profiles\": [\n          \"minimal\"\n        ]\n      },\n      \"category\": \"operations\",\n      \"interface\": {\n        \"displayName\": \"只读指引\"\n      }\n    }\n  ]\n}\n",
+    "valid": false
   }
 ]
