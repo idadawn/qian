@@ -261,7 +261,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         Action<WebApplicationBuilder>? configure = null)
     {
         if (grpc && identity) throw new ArgumentException("gRPC 验收宿主不挂身份组件：身份签发者占用固定监听地址，h2c 需要独占端点。", nameof(grpc));
-        if (lifecycle is { Management: true }) await PreparePlatformLogins(lifecycle);
+        if (lifecycle is not null) await PreparePlatformLogins(lifecycle);
         // 内置账号模型与协议面挂进同一个宿主：租户目录、配额与开通编排用的都是宿主里真实的 Tenancy。
         // 发行方即宿主的监听地址，要在构建宿主前确定：绑定前端口被占就换端口、从头建宿主（S1-QA-014）；不挂身份的宿主监听端口 0，没有这个竞争。
         return identity ? await LoopbackPort.StartAsync(port => Attempt(NewIdentityParts(port))) : await Attempt(null);
@@ -343,8 +343,9 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                     if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                     await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
                     await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
-                    if (lifecycle is { Management: true })
-                        await Admin("BEGIN;" + AuthzPlatformAccess.CreateMigrationSql(lifecycle.AuthzRole) + AuditPlatformAccess.CreateMigrationSql(lifecycle.AuditRole) + "COMMIT;");
+                    // 平台审计链有生命周期的宿主都要（平台级生命周期操作在提交前入平台链，S1-RT-037）；Authz 的平台角色只有管理面宿主要。
+                    if (lifecycle is not null)
+                        await Admin("BEGIN;" + (lifecycle.Management ? AuthzPlatformAccess.CreateMigrationSql(lifecycle.AuthzRole) : "") + AuditPlatformAccess.CreateMigrationSql(lifecycle.AuditRole) + "COMMIT;");
                 }
                 if (platform)
                 {

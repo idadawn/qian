@@ -65,8 +65,11 @@ public sealed partial class CustomerCommandTests
             Assert.Equal(1, Assert.Single(await LifecyclePlatform.Lifecycle(business).GetRunsAsync(tenant.Id.ToString(), "qian.sample.crm", Ct)).Attempts);
             using (business.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenant.Id.ToString()))
             {
-                Assert.Equal("root", Assert.Single(await source.Audit().ReadAsync(0, 20, cancellationToken: Ct)).Record.ActorId);
-                Assert.Equal("hook", Assert.Single(await source.Audit().ReadAsync(0, 20, cancellationToken: Ct)).Record.Channel);
+                // 租户链：开户 hook 一条（root、hook 通道），其余是 Tenancy 第 03 步为每个 system 组件调用开通时 Lifecycle 记的开通条目（S1-RT-037）。
+                var entries = await source.Audit().ReadAsync(0, 50, cancellationToken: Ct);
+                Assert.Equal("root", Assert.Single(entries, entry => entry.Record.Channel == "hook").Record.ActorId);
+                Assert.Equal(steps.Count(step => step.Step.StartsWith("03:component:", StringComparison.Ordinal)), entries.Count - 1);
+                Assert.Equal(entries.Count - 1, entries.Count(entry => entry.Record.CapabilityId == "qian.lifecycle/tenant-plugin.provision"));
                 await source.Inject<ITenantRoleGrant>(TenantRoleGrant.Key).AssignAsync("tenant.owner", "service", Writer, "root", Ct);
             }
         }

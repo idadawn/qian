@@ -39,7 +39,9 @@ public sealed partial class CustomerCommandTests
         using var client = new HttpClient { BaseAddress = new Uri(management.Urls.Single()) };
         var path = "/api/tenancy/tenants";
         var source = business.App.Services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("tenancy", ScopeKey.Global);
-        async Task<int> AuditCount() => (await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct)).Count;
+        // 放行审计的条数：平台链上引导时安装、激活 system 组件的生命周期条目（S1-RT-037）不算。
+        async Task<int> AuditCount() => (await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct))
+            .Count(entry => !entry.Record.CapabilityId.StartsWith("qian.lifecycle/plugin-revision.", StringComparison.Ordinal));
         foreach (var token in new[] { (string?)null, business.Token(A, "", "root", "user"), business.Token(null, "", "intruder", "user") })
         {
             var status = token is null ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
@@ -92,7 +94,9 @@ public sealed partial class CustomerCommandTests
             Assert.Equal(HttpStatusCode.OK, visible.StatusCode);
             Assert.Empty((await visible.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").EnumerateObject());
         }
-        var records = await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct);
+        // 放行审计：平台链上引导时安装、激活 system 组件的生命周期条目（S1-RT-037）另算。
+        var records = (await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct))
+            .Where(entry => !entry.Record.CapabilityId.StartsWith("qian.lifecycle/plugin-revision.", StringComparison.Ordinal)).ToList();
         Assert.Equal(7, records.Count);
         Assert.Equal("create,read,read,edit,edit,edit,read", string.Join(",", records.Select(entry => entry.Record.Payload.GetProperty("permission").GetString()!.Split(':')[^1])));
         Assert.All(records, entry => Assert.Equal("superadmin", entry.Record.Payload.GetProperty("bypass").GetString()));
@@ -176,7 +180,8 @@ public sealed partial class CustomerCommandTests
         await Authz(true, true); await loader.UnmountAsync("audit", ScopeKey.Global, Ct); await Denied("audit_unavailable");
         await loader.MountAsync([new PluginDefinition(audit, new AuditPlugin(), [AuditDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.AuditKey])], Ct);
         Assert.Equal(PluginState.Ready, loader.GetState("audit", ScopeKey.Global));
-        Assert.Empty(await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct));
+        // 平台链上只有引导时安装、激活 system 组件的生命周期条目（S1-RT-037），没有放行审计。
+        Assert.All(await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct), entry => Assert.StartsWith("qian.lifecycle/plugin-revision.", entry.Record.CapabilityId, StringComparison.Ordinal));
         Assert.Equal(3, logs.Entries.Count);
 
         async Task Authz(bool role, bool declared)
@@ -202,9 +207,10 @@ public sealed partial class CustomerCommandTests
 
     private async Task PreparePlatformLogins(LifecyclePlatform platform)
     {
-        platform.AuthzRole = "ten_auth_" + Guid.NewGuid().ToString("N")[..10];
-        platform.AuditRole = "ten_audit_" + Guid.NewGuid().ToString("N")[..10];
-        platform.AuthzConnection = await Login(platform.AuthzRole); platform.AuditConnection = await Login(platform.AuditRole);
+        // 平台审计登录：所有带生命周期的宿主（平台级操作入平台链）；Authz 平台登录只有管理面宿主。
+        platform.AuditRole = "ten_audit_" + Guid.NewGuid().ToString("N")[..10]; platform.AuditConnection = await Login(platform.AuditRole);
+        if (!platform.Management) return;
+        platform.AuthzRole = "ten_auth_" + Guid.NewGuid().ToString("N")[..10]; platform.AuthzConnection = await Login(platform.AuthzRole);
         async Task<string> Login(string role)
         {
             var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));

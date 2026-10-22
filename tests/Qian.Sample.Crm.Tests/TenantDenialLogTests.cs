@@ -28,6 +28,7 @@ public sealed partial class CustomerCommandTests
         }
         Assert.Equal(2, logs.Entries.Count);
         var source = loader.GetContext("tenancy", ScopeKey.Global);
-        Assert.Empty(await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct));
+        // 平台链上只有引导时安装、激活 system 组件的生命周期条目（S1-RT-037），没有放行审计。
+        Assert.All(await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct), entry => Assert.StartsWith("qian.lifecycle/plugin-revision.", entry.Record.CapabilityId, StringComparison.Ordinal));
     }
 }

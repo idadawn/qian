@@ -145,7 +145,7 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
                 Grants(["tenant:read", "tenant:write"], [], ["other.example.test"], [new SecretGrant("oss/*", "tenant")], []), approver, Ct).AsTask())));
         }
         Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_lifecycle.permission_approvals", Ct));
-        Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
+        Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries WHERE tenant_id IS NOT NULL", Ct));
     }
 
     [Fact]
@@ -283,7 +283,7 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
         await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
         await AssertCode(PlatformErrors.NotFound, () => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", narrower, approver, Ct).AsTask());
         Assert.Equal((approved.ApprovedAt, "approver"), Pick((await host.Lifecycle.GetPermissionApprovalAsync(TenantA, Plugin, "1.0.0", approver, Ct))!));
-        Assert.Equal(1, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
+        Assert.Equal(1, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries WHERE tenant_id IS NOT NULL", Ct));
     }
 
     [Fact]

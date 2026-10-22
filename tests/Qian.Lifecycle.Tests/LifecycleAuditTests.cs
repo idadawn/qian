@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -10,7 +11,6 @@ using Npgsql;
 using Qian.Audit;
 using Qian.Events;
 using Qian.Identity.Abstractions;
-using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Testing.Containers;
@@ -19,7 +19,8 @@ namespace Qian.Lifecycle.Tests;
 
 // S1-RT-037 验收 1、3：租户级生命周期操作（开通、升级、卸载、清除）入该租户审计链（ADR-009 D9.8），与完成的状态迁移同一可串行化事务，审计写不进去或
 // 提交失败时两者都不留；钩子重试、续跑、幂等返回不重复记；同租户链冲突换新会话重做；宿主没有审计时 fail-closed 并记宿主级告警。
-// 真实 PostgreSQL、Registry、Audit 与 Lifecycle（LifecycleHost）。平台级操作（安装、激活、回切）的口径见 Qian.Lifecycle README。
+// 平台级操作（安装、激活、回切、弃用、退役）入平台链：状态变更提交前经审计端口的平台链入口（独立事务、专用平台登录）追加，审计写不进去则状态不提交，
+// 提交失败可能多留一条；平台链未配置或宿主撤下审计时同样 fail-closed。真实 PostgreSQL、Registry、Audit 与 Lifecycle（LifecycleHost）。
 public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private const string TenantA = "01900000-0000-7000-8000-00000000000a";
@@ -76,7 +77,7 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         // 授权本身不入链；B 的链上没有 A 的操作。
         await host.Lifecycle.EntitleAsync(TenantB, Plugin, "operator", Ct);
         Assert.Empty(await Chain(host, TenantB));
-        Assert.Equal(4, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
+        Assert.Equal(4, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries WHERE tenant_id IS NOT NULL", Ct));
     }
 
     [Fact]
@@ -93,7 +94,7 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         await LifecycleHost.Admin(postgres, "DROP TRIGGER reject_lifecycle ON plugin_qian_audit.audit_entries; DROP FUNCTION plugin_qian_audit.reject_lifecycle();", Ct);
         Assert.Equal((TenantInstallStates.Provisioning, (string?)null, (string?)"1.0.0"), Pick3((await host.Lifecycle.GetInstallAsync(TenantA, Plugin, Ct))!));
         Assert.Equal((LifecycleRunStates.Succeeded, 1), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct))));
-        Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
+        Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries WHERE tenant_id IS NOT NULL", Ct));
         // 审计已追加、迁移在提交时失败：条目随同一事务回滚，链上不留孤儿；安装行仍停在 Provisioning。
         await LifecycleHost.Admin(postgres, "CREATE FUNCTION plugin_qian_lifecycle.reject_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced commit failure'; END $$; " +
             "CREATE CONSTRAINT TRIGGER reject_commit AFTER UPDATE ON plugin_qian_lifecycle.tenant_plugin_installs DEFERRABLE INITIALLY DEFERRED FOR EACH ROW " +
@@ -122,8 +123,7 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         Assert.Equal(2, logs.AuditUnavailable.Count);
         Assert.Contains("permissions.approve", logs.AuditUnavailable.Last().Message, StringComparison.Ordinal);
         // 重新装上审计后卸载完成并入链。
-        await host.Runtime.MountAsync([new PluginDefinition(new PluginEntry("audit", "qian.audit", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })),
-            new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey])], Ct);
+        await host.Runtime.MountAsync([host.AuditEntry()], Ct);
         Assert.Equal(TenantInstallStates.Uninstalled, (await host.Lifecycle.UninstallAsync(TenantA, Plugin, "operator", Ct)).State);
         Assert.Equal([LifecycleController.ProvisionAuditCapability, LifecycleController.UninstallAuditCapability], (await Chain(host, TenantA)).Select(entry => entry.Record.CapabilityId));
         Assert.Equal(2, logs.AuditUnavailable.Count);
@@ -152,6 +152,95 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         Assert.Equal(3, entries.Length);
         Assert.Equal(["acme.first@1.0.0", "acme.second@1.0.0", "acme.widget@1.0.0"], entries.Select(entry => entry.Record.Resource!.Split('/')[^1]).Order(StringComparer.Ordinal));
         Assert.All(entries, entry => Assert.Equal(LifecycleController.ProvisionAuditCapability, entry.Record.CapabilityId));
+    }
+
+    [Fact]
+    public async Task 安装激活回切弃用退役各写一条平台审计链条目_主体同租户条目口径_重复安装与幂等返回不记_租户链不受影响()
+    {
+        await using var host = await Start();
+        PluginRevisionView first;
+        using (EventEnvelopeScope.Begin(Operator))
+        {
+            first = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.0"), Key), "operator", Ct);
+            // 同一摘要重复安装返回已有修订、已激活再激活直接返回：都不记。
+            Assert.Equal(first.Revision, (await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.0"), Key), "operator", Ct)).Revision);
+            first = await host.Lifecycle.ActivateAsync(Plugin, first.Revision, "operator", Ct);
+            await host.Lifecycle.ActivateAsync(Plugin, first.Revision, "operator", Ct);
+        }
+        var second = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.1"), Key), "ops-cli", Ct);
+        second = await host.Lifecycle.ActivateAsync(Plugin, second.Revision, "ops-cli", Ct);
+        var rolledBack = await host.Lifecycle.RollbackAsync(Plugin, first.Revision, "ops-cli", Ct);
+        Assert.Equal(PluginRevisionStates.Deprecated, (await host.Lifecycle.DeprecateAsync(Plugin, second.Revision, "ops-cli", Ct)).State);
+        await host.Lifecycle.DeprecateAsync(Plugin, second.Revision, "ops-cli", Ct);
+        Assert.Equal(PluginRevisionStates.Retired, (await host.Lifecycle.RetireAsync(Plugin, second.Revision, "ops-cli", Ct)).State);
+        var entries = await PlatformChain(host);
+        Assert.Equal(7, entries.Length);
+        Assert.Equal(Enumerable.Range(1, 7), entries.Select(entry => (int)entry.Sequence));
+        AssertPlatform(entries[0], LifecycleController.InstallAuditCapability, "user", "platform-operator", 1, first.InstalledAt,
+            new { pluginId = Plugin, @operator = "operator", revision = 1, version = "1.0.0", artifactDigest = first.ArtifactDigest, form = first.Form, signedBy = first.SignedBy }, "1.0.0");
+        AssertPlatform(entries[1], LifecycleController.ActivateAuditCapability, "user", "platform-operator", 1, first.ActivatedAt!.Value,
+            new { pluginId = Plugin, @operator = "operator", revision = 1, version = "1.0.0", previousRevision = (int?)null }, "1.0.0");
+        // 调用方没有打开事件作用域：主体是本组件服务主体，操作者仍在载荷里。
+        AssertPlatform(entries[2], LifecycleController.InstallAuditCapability, "service", "qian.lifecycle", 2, second.InstalledAt,
+            new { pluginId = Plugin, @operator = "ops-cli", revision = 2, version = "1.0.1", artifactDigest = second.ArtifactDigest, form = second.Form, signedBy = second.SignedBy }, "1.0.1");
+        AssertPlatform(entries[3], LifecycleController.ActivateAuditCapability, "service", "qian.lifecycle", 2, second.ActivatedAt!.Value,
+            new { pluginId = Plugin, @operator = "ops-cli", revision = 2, version = "1.0.1", previousRevision = 1 }, "1.0.1");
+        AssertPlatform(entries[4], LifecycleController.RollbackAuditCapability, "service", "qian.lifecycle", 1, rolledBack.ActivatedAt!.Value,
+            new { pluginId = Plugin, @operator = "ops-cli", revision = 1, version = "1.0.0", previousRevision = 2 }, "1.0.0");
+        var now = new DateTimeOffset(host.Time.Now.Ticks - host.Time.Now.Ticks % 10, TimeSpan.Zero);
+        AssertPlatform(entries[5], LifecycleController.DeprecateAuditCapability, "service", "qian.lifecycle", 2, now,
+            new { pluginId = Plugin, @operator = "ops-cli", revision = 2, version = "1.0.1", fromState = PluginRevisionStates.Installed, toState = PluginRevisionStates.Deprecated }, "1.0.1");
+        AssertPlatform(entries[6], LifecycleController.RetireAuditCapability, "service", "qian.lifecycle", 2, now,
+            new { pluginId = Plugin, @operator = "ops-cli", revision = 2, version = "1.0.1", fromState = PluginRevisionStates.Deprecated, toState = PluginRevisionStates.Retired }, "1.0.1");
+        // 平台条目不落在任何租户链上。
+        Assert.Empty(await Chain(host, TenantA));
+        Assert.Equal(7, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries WHERE tenant_id IS NULL", Ct));
+        Assert.Equal(7, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
+    }
+
+    [Fact]
+    public async Task 平台链写不进去时状态不提交_状态提交失败时平台链多留一条_平台链未配置或宿主撤下审计时以503拒绝不改状态并记告警()
+    {
+        var logs = new WarningLogs();
+        await using var host = await Start(services: services => services.AddSingleton<ILoggerProvider>(logs));
+        var revision = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.0"), Key), "operator", Ct);
+        // 平台条目写不进去：激活不提交，修订仍是 Installed，链上只有安装那条。
+        await LifecycleHost.Admin(postgres, "CREATE FUNCTION plugin_qian_audit.reject_platform() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.tenant_id IS NULL THEN RAISE EXCEPTION 'forced platform audit failure'; END IF; RETURN NEW; END $$; " +
+            "CREATE TRIGGER reject_platform BEFORE INSERT ON plugin_qian_audit.audit_entries FOR EACH ROW EXECUTE FUNCTION plugin_qian_audit.reject_platform();", Ct);
+        Assert.Equal("forced platform audit failure", Failure(await Assert.ThrowsAnyAsync<Exception>(() => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask())).MessageText);
+        await LifecycleHost.Admin(postgres, "DROP TRIGGER reject_platform ON plugin_qian_audit.audit_entries; DROP FUNCTION plugin_qian_audit.reject_platform();", Ct);
+        Assert.Equal(PluginRevisionStates.Installed, Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).State);
+        Assert.Equal([LifecycleController.InstallAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
+        // 平台条目已在审计端口自己的事务里提交、状态变更在提交时失败：修订仍是 Installed，链上多一条激活条目（崩溃窗口取「宁多不漏」，README 写明）。
+        await LifecycleHost.Admin(postgres, "CREATE FUNCTION plugin_qian_lifecycle.reject_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced commit failure'; END $$; " +
+            "CREATE CONSTRAINT TRIGGER reject_commit AFTER UPDATE ON plugin_qian_lifecycle.plugin_revisions DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION plugin_qian_lifecycle.reject_commit();", Ct);
+        Assert.Equal("forced commit failure", Failure(await Assert.ThrowsAnyAsync<Exception>(() => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask())).MessageText);
+        await LifecycleHost.Admin(postgres, "DROP TRIGGER reject_commit ON plugin_qian_lifecycle.plugin_revisions; DROP FUNCTION plugin_qian_lifecycle.reject_commit();", Ct);
+        Assert.Equal(PluginRevisionStates.Installed, Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).State);
+        Assert.Equal([LifecycleController.InstallAuditCapability, LifecycleController.ActivateAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
+        // 宿主没配置平台链（审计条目没有 chain.platformRole）：激活以 503 拒绝、状态不变，告警说明是平台链；租户链的告警不受影响。
+        await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
+        await host.Runtime.MountAsync([host.AuditEntry(platformChain: false)], Ct);
+        Assert.Empty(logs.PlatformAuditUnavailable);
+        var rejected = await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask());
+        Assert.Equal((503, "plugin-revision.activate"), (LifecycleErrors.AuditUnavailable.Status, rejected.Args["operation"]));
+        Assert.Equal(PluginRevisionStates.Installed, Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).State);
+        var warning = Assert.Single(logs.PlatformAuditUnavailable);
+        Assert.Equal(LogLevel.Warning, warning.Level);
+        Assert.Contains("plugin-revision.activate", warning.Message, StringComparison.Ordinal); Assert.Contains("chain.platformRole", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(Plugin, warning.Message, StringComparison.Ordinal);
+        // 宿主撤下审计：安装在提交候选制品之前就拒绝，不登记修订。
+        await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
+        rejected = await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.1"), Key), "operator", Ct).AsTask());
+        Assert.Equal("plugin-revision.install", rejected.Args["operation"]);
+        Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct));
+        Assert.Equal(2, logs.PlatformAuditUnavailable.Count);
+        // 重新装上带平台链的审计后激活完成并入链。
+        await host.Runtime.MountAsync([host.AuditEntry()], Ct);
+        Assert.Equal(PluginRevisionStates.Active, (await host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct)).State);
+        Assert.Equal([LifecycleController.InstallAuditCapability, LifecycleController.ActivateAuditCapability, LifecycleController.ActivateAuditCapability],
+            (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
+        Assert.Equal(2, logs.PlatformAuditUnavailable.Count); Assert.Empty(logs.AuditUnavailable);
     }
 
     private async Task<LifecycleHost> Start(IPluginLifecycleHooks? hooks = null, Action<IServiceCollection>? services = null)
@@ -185,6 +274,26 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         Assert.Equal((TenantA, actorType, actor, (string?)null, capability, "v1", "api", (string?)("lifecycle/install:" + TenantA + "/" + Plugin + "@" + version), "success", occurredAt),
             (record.TenantId, record.ActorType, record.ActorId, record.OnBehalfOf, record.CapabilityId, record.ContractVersion, record.Channel, record.Resource, record.Result, record.OccurredAt));
         Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new[] { TenantA, Plugin, capability }.Concat(versions))))), record.InputHash);
+        Assert.True(JsonElement.DeepEquals(JsonSerializer.SerializeToElement(payload), record.Payload), record.Payload.GetRawText());
+    }
+
+    // 平台链上的全部条目：以本组件的 global 上下文为生产方读取，读之前先验整条链；须在无租户上下文时调用。
+    private static async Task<AuditChainEntry[]> PlatformChain(LifecycleHost host)
+    {
+        var producer = host.Runtime.GetContext("lifecycle", ScopeKey.Global);
+        var audit = producer.Audit();
+        Assert.True((await audit.VerifyPlatformAsync(producer, Ct)).Valid);
+        return [.. await audit.ReadPlatformAsync(producer, 0, 100, cancellationToken: Ct)];
+    }
+
+    // 平台条目：无租户、主体与类型、无委托、能力 ID、契约 v1、通道 api、资源 lifecycle/revision:{plugin}/{revision}、结果 success、发生时间即修订行上的时间戳；
+    // 输入哈希是 [组件, 能力, 修订号, 版本…] 的 SHA-256；载荷带组件、操作者、修订号（数字）与各操作自己的字段。
+    private static void AssertPlatform(AuditChainEntry entry, string capability, string actorType, string actor, int revision, DateTimeOffset occurredAt, object payload, params string[] versions)
+    {
+        var record = entry.Record;
+        Assert.Equal(((string?)null, actorType, actor, (string?)null, capability, "v1", "api", (string?)("lifecycle/revision:" + Plugin + "/" + revision), "success", occurredAt),
+            (record.TenantId, record.ActorType, record.ActorId, record.OnBehalfOf, record.CapabilityId, record.ContractVersion, record.Channel, record.Resource, record.Result, record.OccurredAt));
+        Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new[] { Plugin, capability, revision.ToString(CultureInfo.InvariantCulture) }.Concat(versions))))), record.InputHash);
         Assert.True(JsonElement.DeepEquals(JsonSerializer.SerializeToElement(payload), record.Payload), record.Payload.GetRawText());
     }
 
@@ -236,19 +345,22 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         }
     }
 
-    // 只收 LifecycleLog 的「审计服务不可用」告警（EventId 7）。
+    // 只收 LifecycleLog 的「审计服务不可用」（EventId 7，租户链）与「平台审计链不可用」（EventId 8）告警。
     private sealed class WarningLogs : ILoggerProvider
     {
         internal ConcurrentQueue<(LogLevel Level, string Message)> AuditUnavailable { get; } = new();
-        public ILogger CreateLogger(string categoryName) => new Sink(AuditUnavailable);
+        internal ConcurrentQueue<(LogLevel Level, string Message)> PlatformAuditUnavailable { get; } = new();
+        public ILogger CreateLogger(string categoryName) => new Sink(this);
         public void Dispose() { }
-        private sealed class Sink(ConcurrentQueue<(LogLevel Level, string Message)> entries) : ILogger
+        private sealed class Sink(WarningLogs owner) : ILogger
         {
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
             public bool IsEnabled(LogLevel logLevel) => true;
             public void Log<TState>(LogLevel level, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
             {
-                if (eventId.Id == 7 && formatter(state, exception).StartsWith("审计服务不可用", StringComparison.Ordinal)) entries.Enqueue((level, formatter(state, exception)));
+                var message = formatter(state, exception);
+                if (eventId.Id == 7 && message.StartsWith("审计服务不可用", StringComparison.Ordinal)) owner.AuditUnavailable.Enqueue((level, message));
+                if (eventId.Id == 8 && message.StartsWith("平台审计链不可用", StringComparison.Ordinal)) owner.PlatformAuditUnavailable.Enqueue((level, message));
             }
         }
     }
