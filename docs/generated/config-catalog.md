@@ -460,8 +460,6 @@
 
 组件：` qian.files@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
 
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
-
 ### 生效配置
 
 ```json
@@ -899,7 +897,10 @@
 
 ```json
 {
-  "store": "pg"
+  "store": "pg",
+  "workerRole": "qian_scheduler_worker",
+  "leaseSeconds": 30,
+  "maxParallel": 16
 }
 ```
 
@@ -909,14 +910,32 @@
 
 ```json
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "store": {
-      "type": "string"
+      "const": "pg",
+      "default": "pg"
+    },
+    "workerRole": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,62}$",
+      "default": "qian_scheduler_worker"
+    },
+    "leaseSeconds": {
+      "type": "integer",
+      "minimum": 3,
+      "maximum": 3600,
+      "default": 30
+    },
+    "maxParallel": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 16
     }
-  },
-  "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  }
 }
 ```
 

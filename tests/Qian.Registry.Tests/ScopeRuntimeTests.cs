@@ -75,7 +75,9 @@ public sealed partial class PatchPersistenceTests
         Assert.Same(original, running.Runtime.GetContext("shared", TenantA));
         // 模拟管理面之外的坏数据；正式写入入口已在事务内拒绝此配置。
         await repository.PutAsync(TenantA, "shared", Patch("""{"id":"shared","config":{"label":42}}"""), 1, "operator-a", Ct);
-        await WithinFiveSeconds(() => running.Commands(TenantA).Length == 0);
+        // 先收紧可见性，再异步撤下条目；同一个五秒预算同时等待两个验收条件。
+        await WithinFiveSeconds(() => running.Commands(TenantA).Length == 0 &&
+            !running.Runtime.DumpConfig().Any(entry => entry.Scope == TenantA));
         Assert.Equal(["test.shared/hello"], running.Commands(TenantB));
         Assert.DoesNotContain(running.Runtime.DumpConfig(), entry => entry.Scope == TenantA);
         await repository.PutAsync(TenantA, "shared", Patch("""{"id":"shared","config":{"label":"recovered"}}"""), 2, "operator-a", Ct);

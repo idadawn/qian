@@ -40,6 +40,7 @@ ADR-002 / ADR-003 把 Qian 的一切能力组织为插件，S1 的 18 个系统�
   - [ ] 任何 `Qian.<Component>` 包的依赖图中不出现 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities`（CI 用 `dotnet list package --include-transitive` 断言）。
   - [ ] 嵌入 `Qian.Identity.Server` 的独立宿主能通过 OpenIddict 一致性测试。
 - **D19.9 明确不做**：不提供「拆单个库出来替代 Qian 平台」的支持承诺（独立模式是能力，不是另一个产品）；不为独立模式做低代码运行时（S2 的 metadata / dynamic-data / forms 库可以装，但设计器与运行时需要内核）；非 .NET 消费者沿用 OIDC + HTTP API。
+- **D19.10 原生数据与审计 Provider**（S1-DEC-030，2026-10-23）：`Qian.Data.Native.Abstractions` 定义独立的 `NativeData` 服务键，`Qian.Data.Native.Postgres` 实现受治理的 PostgreSQL 连接/事务端口；不能把无 DbContext 的原生实现伪装为现有 `IDataService`。`Qian.Audit.Native` 通过共享 `Qian.Audit.Abstractions` 继续提供 `Audit`，与 EF Provider 共用审计协议。两项仍遵守 D19.5 的依赖方向、独立安装及租户隔离要求；默认 gateway 组合调整，其他 profile 的 EF 装配不变，详见 [实施路径](../decisions/gateway-native-aot-options.md)。
 
 ## 3 理由（Rationale）
 

@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.scheduler",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.scheduler",
+  "description": "PostgreSQL 持久化 local 作业调度：安全领取、租约接管、业务键取消与代码派生目录；正式源安装门仍待包族发布。",
   "author": {
     "name": "Qian"
   },
@@ -11,17 +11,53 @@
     "displayName": "scheduler",
     "category": "platform"
   },
-  "inject": [],
-  "provides": [],
+  "inject": [
+    "Data",
+    "Tenancy"
+  ],
+  "provides": [
+    "Scheduler"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
     "authentication": "ON_INSTALL",
-    "required": false
+    "required": false,
+    "profiles": [
+      "platform",
+      "standalone"
+    ]
   },
   "scopes": [
-    "global",
-    "tenant"
+    "global"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "runtime": {
+    "dbSchema": "plugin_qian_scheduler",
+    "form": "module",
+    "entry": "Qian.Scheduler.SchedulerComponent, Qian.Scheduler",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.scheduler",
+        "source": "Qian.Scheduler.SchedulerComponent, Qian.Scheduler",
+        "sha256": "8dccb2a6534de160a0e66e4517c83005cb3c6aa221f3c4be191dfc54ef37668d",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
 }

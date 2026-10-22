@@ -6,6 +6,7 @@ module.exports = {
   ci: {
     collect: {
       staticDistDir: './dist',
+      maxAutodiscoverUrls: 0, // 包括 shell 首屏和既有 tokens 页，不受默认五页截断。
       numberOfRuns: 1,
       settings: { preset: 'desktop', chromeFlags: '--no-sandbox --headless=new' },
     },

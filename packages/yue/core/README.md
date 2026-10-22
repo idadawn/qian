@@ -39,6 +39,8 @@ import { Field, FieldLabel, FieldDescription, Input, Button } from '@idadawn/yue
 
 core 不反向依赖 sdk。label、关闭/翻页/密码显隐文案、PinInput 的 getSlotLabel、Pagination 的 getPageLabel 均由宿主在本地化后传入；上层可以使用 sdk 的 i18n。图标没有 label 时视为装饰，有 label 时提供独立名称。可移除 Tag 必须提供 removeLabel，InputNumber 必须提供增减按钮名称，PinInput 的 label 标记整个验证码组及首位输入。
 
+Select 的触发器通过 `SelectTrigger` 的 `aria-label` 或关联标签命名；展开后的选项列表通过 `SelectContent.listLabel` 单独命名，例如 `<SelectContent listLabel={t('city.options')}>`。列表名称直接传给内部 listbox，外层弹出容器的 `aria-label` 不能代替它。
+
 可搜索选择器推荐把输入框放在弹层内部：
 
 ```tsx
