@@ -30,6 +30,7 @@ using Qian.Runtime;
 using Qian.Lifecycle;
 using Qian.Registry;
 using Qian.Tenancy;
+using Qian.Testing;
 using Qian.Testing.Containers;
 
 namespace Qian.Sample.Crm.Tests;
@@ -261,126 +262,131 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         if (grpc && identity) throw new ArgumentException("gRPC 验收宿主不挂身份组件：身份签发者占用固定监听地址，h2c 需要独占端点。", nameof(grpc));
         if (lifecycle is { Management: true }) await PreparePlatformLogins(lifecycle);
         // 内置账号模型与协议面挂进同一个宿主：租户目录、配额与开通编排用的都是宿主里真实的 Tenancy。
-        var identityParts = identity ? NewIdentityParts() : null;
-        var platform = capabilities || lifecycle is not null || runtimeProfile == "platform";
-        var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
-        var migrator = "qian_cap_owner_" + suffix;
-        var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
-        await Admin($"CREATE ROLE \"{role}\" LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}'; CREATE ROLE \"{owner}\" NOLOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;");
-        // 能力上下文的迁移属主：与生产迁移任务一样是受限角色（NOSUPERUSER / NOBYPASSRLS），只多一项建 schema 的权限。
-        if (platform) await Admin($"CREATE ROLE \"{migrator}\" LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}'; GRANT CONNECT, CREATE ON DATABASE {PostgresFixture.DatabaseName} TO \"{migrator}\";");
-        var connection = new NpgsqlConnectionStringBuilder(postgres.AppConnectionString) { Username = role, Password = password }.ConnectionString;
-        var migrations = new NpgsqlConnectionStringBuilder(postgres.AppConnectionString) { Username = migrator, Password = password }.ConnectionString;
-        var signing = RSA.Create(2048); using var publicKey = RSA.Create(); publicKey.ImportParameters(signing.ExportParameters(false));
-        var key = new RsaSecurityKey(signing) { KeyId = "crm-command-key" };
-        var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(new RsaSecurityKey(publicKey) { KeyId = key.KeyId });
-        var publicJwks = JsonSerializer.Serialize(new { keys = new[] { new { kty = jwk.Kty, kid = jwk.Kid, n = jwk.N, e = jwk.E } } });
-        var evidence = new FailureEvidence(); var barrier = new ConcurrentSaveBarrier();
-        var app = CrmCommandApplication.Build([], builder =>
+        // 发行方即宿主的监听地址，要在构建宿主前确定：绑定前端口被占就换端口、从头建宿主（S1-QA-014）；不挂身份的宿主监听端口 0，没有这个竞争。
+        return identity ? await LoopbackPort.StartAsync(port => Attempt(NewIdentityParts(port))) : await Attempt(null);
+
+        async Task<RunningApp> Attempt(IdentityParts? identityParts)
         {
-            builder.Logging.ClearProviders();
-            // gRPC 验收：Kestrel 的明文 HTTP/2（h2c）须独占监听端点，所以 HTTP/1.1 与 gRPC 各开一个回环端口；授权 PEP 拦截器与 HTTP 端点共用执行端口。
-            if (grpc)
+            var platform = capabilities || lifecycle is not null || runtimeProfile == "platform";
+            var suffix = Guid.NewGuid().ToString("N")[..8]; var role = "qian_crm_cmd_" + suffix; var owner = "qian_audit_fn_" + suffix;
+            var migrator = "qian_cap_owner_" + suffix;
+            var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
+            await Admin($"CREATE ROLE \"{role}\" LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}'; CREATE ROLE \"{owner}\" NOLOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;");
+            // 能力上下文的迁移属主：与生产迁移任务一样是受限角色（NOSUPERUSER / NOBYPASSRLS），只多一项建 schema 的权限。
+            if (platform) await Admin($"CREATE ROLE \"{migrator}\" LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}'; GRANT CONNECT, CREATE ON DATABASE {PostgresFixture.DatabaseName} TO \"{migrator}\";");
+            var connection = new NpgsqlConnectionStringBuilder(postgres.AppConnectionString) { Username = role, Password = password }.ConnectionString;
+            var migrations = new NpgsqlConnectionStringBuilder(postgres.AppConnectionString) { Username = migrator, Password = password }.ConnectionString;
+            var signing = RSA.Create(2048); using var publicKey = RSA.Create(); publicKey.ImportParameters(signing.ExportParameters(false));
+            var key = new RsaSecurityKey(signing) { KeyId = "crm-command-key" };
+            var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(new RsaSecurityKey(publicKey) { KeyId = key.KeyId });
+            var publicJwks = JsonSerializer.Serialize(new { keys = new[] { new { kty = jwk.Kty, kid = jwk.Kid, n = jwk.N, e = jwk.E } } });
+            var evidence = new FailureEvidence(); var barrier = new ConcurrentSaveBarrier();
+            var app = CrmCommandApplication.Build([], builder =>
             {
-                builder.WebHost.ConfigureKestrel(options =>
+                builder.Logging.ClearProviders();
+                // gRPC 验收：Kestrel 的明文 HTTP/2（h2c）须独占监听端点，所以 HTTP/1.1 与 gRPC 各开一个回环端口；授权 PEP 拦截器与 HTTP 端点共用执行端口。
+                if (grpc)
                 {
-                    options.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http1);
-                    options.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http2);
-                });
-                builder.Services.AddGrpc(options => options.AddQianAuthzInterceptor());
-            }
-            else builder.WebHost.UseUrls(identityParts?.Issuer ?? "http://127.0.0.1:0");
-            if (identityParts is not null) ConfigureIdentity(builder, identityParts);
-            if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
-            if (lifecycle is not null) ConfigureLifecycle(builder, connection, lifecycle);
-            if (humanOnlyProbe is not null) PreviewAgentAuthorization(builder);
-            if (pathBase is not null) builder.Services.AddSingleton<IStartupFilter>(new PathBaseFilter(pathBase));
-            if (runtimeProfile is not null) builder.Services.AddSingleton<ICrmRuntimeAssembly>(_ => new ProfileModeAssembly(runtimeProfile, RepositoryRoot()));
-            builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
-            if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
-            builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:Crm"] = connection, ["ConnectionStrings:Authz"] = postgres.AppConnectionString,
-                ["ConnectionStrings:Tenancy"] = postgres.AppConnectionString, ["ConnectionStrings:Audit"] = postgres.AppConnectionString,
-                ["S2S:Issuer"] = Issuer, ["S2S:Audience"] = Audience, ["S2S:PublicJwks"] = publicJwks,
-                ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events,
-                // 决策审计采样：早于 S1-AZ-004 的用例按命令审计数断言链长，缺省不记放行判定（拒绝仍必记）；PEP 验收显式传 1。
-                ["Authz:DecisionLogSampling"] = decisionLogSampling.ToString(System.Globalization.CultureInfo.InvariantCulture)
-            });
-        }, lifecycle is null && !identity ? null : registrar =>
-        {
-            if (lifecycle is not null) registrar.RegisterRegistryEvents().RegisterLifecycleEvents();
-            if (identity) Qian.Identity.Abstractions.IdentityEventRegistration.RegisterIdentityEvents(registrar);
-        }, lifecycle is null && !identity ? null : mediator =>
-        {
-            if (lifecycle is not null) mediator.AddQianRegistryEvents().AddQianLifecycleEvents();
-            if (identity) Qian.Identity.Server.IdentityEventHandlers.AddQianIdentityEvents(mediator);
-        });
-        try
-        {
-            using (var scope = app.Services.CreateScope())
-            {
-                var schemas = new[] { CrmDbContext.Schema, AuthzDbContext.Schema, TenancyDbContext.Schema, AuditDbContext.Schema };
-                if (platform) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema, Qian.Capabilities.CapabilitiesDbContext.Schema, Qian.Lifecycle.LifecycleDbContext.Schema];
-                if (identity) schemas = [.. schemas, Qian.Identity.Server.IdentityDbContext.Schema];
-                var sql = string.Join('\n', schemas.Select(schema => "DROP SCHEMA IF EXISTS " + schema + " CASCADE;"));
-                sql += scope.ServiceProvider.GetRequiredService<CrmDbContext>().Database.GenerateCreateScript();
-                sql += scope.ServiceProvider.GetRequiredService<AuthzDbContext>().Database.GenerateCreateScript();
-                sql += scope.ServiceProvider.GetRequiredService<TenancyDbContext>().Database.GenerateCreateScript();
-                sql += scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.GenerateCreateScript();
-                // 能力上下文随包提供迁移，下面经迁移器建表，不用 GenerateCreateScript。
-                if (platform) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript();
-                if (identity) sql += IdentitySchemaSql(scope.ServiceProvider);
-                await Admin(sql);
-                if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
-                await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
-                await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
-                if (lifecycle is { Management: true })
-                    await Admin("BEGIN;" + AuthzPlatformAccess.CreateMigrationSql(lifecycle.AuthzRole) + AuditPlatformAccess.CreateMigrationSql(lifecycle.AuditRole) + "COMMIT;");
-            }
-            if (platform)
-            {
-                // 与 --migrate-only 迁移任务同一入口：属主角色在 advisory lock 内执行包内迁移；没有迁移的上下文照常跳过。
-                var reports = await app.Services.GetRequiredService<IDataMigrator>().MigrateAsync(Ct);
-                Assert.NotEmpty(Assert.Single(reports, report => report.ContextType == typeof(Qian.Capabilities.CapabilitiesDbContext)).Applied);
-                await Admin($"GRANT USAGE ON SCHEMA plugin_qian_capabilities TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_capabilities TO \"{role}\";");
-                if (lifecycle is not null)
-                {
-                    Assert.NotEmpty(Assert.Single(reports, report => report.ContextType == typeof(Qian.Lifecycle.LifecycleDbContext)).Applied);
-                    await Admin($"GRANT USAGE ON SCHEMA plugin_qian_lifecycle TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_lifecycle TO \"{role}\";");
+                    builder.WebHost.ConfigureKestrel(options =>
+                    {
+                        options.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http1);
+                        options.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http2);
+                    });
+                    builder.Services.AddGrpc(options => options.AddQianAuthzInterceptor());
                 }
-            }
-            var data = app.Services.GetRequiredService<IDataService>(); var tenant = app.Services.GetRequiredService<ITenantContext>();
-            await new PostgresPermissionCatalogStore(data).PutAsync(CrmPermissions.Compile(), Ct);
-            foreach (var id in new[] { A, B })
+                else builder.WebHost.UseUrls(identityParts?.Issuer ?? "http://127.0.0.1:0");
+                if (identityParts is not null) ConfigureIdentity(builder, identityParts);
+                if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
+                if (lifecycle is not null) ConfigureLifecycle(builder, connection, lifecycle);
+                if (humanOnlyProbe is not null) PreviewAgentAuthorization(builder);
+                if (pathBase is not null) builder.Services.AddSingleton<IStartupFilter>(new PathBaseFilter(pathBase));
+                if (runtimeProfile is not null) builder.Services.AddSingleton<ICrmRuntimeAssembly>(_ => new ProfileModeAssembly(runtimeProfile, RepositoryRoot()));
+                builder.Services.AddSingleton(evidence); builder.Services.AddExceptionHandler<FailureRecorder>();
+                if (concurrentWrites) builder.Services.ConfigureDbContext<CrmDbContext>((_, options) => options.AddInterceptors(barrier));
+                builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:Crm"] = connection, ["ConnectionStrings:Authz"] = postgres.AppConnectionString,
+                    ["ConnectionStrings:Tenancy"] = postgres.AppConnectionString, ["ConnectionStrings:Audit"] = postgres.AppConnectionString,
+                    ["S2S:Issuer"] = Issuer, ["S2S:Audience"] = Audience, ["S2S:PublicJwks"] = publicJwks,
+                    ["S2S:ReaderClientId"] = "crm-command-reader", ["S2S:WriterClientId"] = Writer, ["ConnectionStrings:Events"] = events,
+                    // 决策审计采样：早于 S1-AZ-004 的用例按命令审计数断言链长，缺省不记放行判定（拒绝仍必记）；PEP 验收显式传 1。
+                    ["Authz:DecisionLogSampling"] = decisionLogSampling.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                });
+            }, lifecycle is null && !identity ? null : registrar =>
             {
-                await Admin($"INSERT INTO plugin_qian_tenancy.tenants(id, code, name, isolation, status, created_at) VALUES ('{id}'::uuid, '{(id == A ? "a" : "b")}', 'command tenant', 'row', 'active', now());");
-                using var context = tenant.BeginScope(id); var roles = new PostgresTenantRoleStore(data, tenant);
-                await roles.EnsureBuiltinsAsync("test-bootstrap", Ct); await roles.InstallDefaultsAsync("qian.sample.crm", "1.0.0", null, "test-bootstrap", Ct);
-                await roles.AssignAsync(id == A ? "tenant.owner" : "tenant.user", "service", Writer, "test-bootstrap", Ct);
-            }
-            if (platform) MapCapabilities(app);
-            if (contractExclusion) MapContractExclusion(app);
-            if (lifecycle is not null) MapLifecycle(app);
-            if (lifecycle is { Management: true }) MapSettingsRegistry(app);
-            if (hooks) MapHookEntry(app);
-            if (identityParts is not null) MapIdentity(app, identityParts);
-            map?.Invoke(app);
-            await app.StartAsync(Ct);
-            if (identityParts is not null) await MountIdentity(app, identityParts);
-            if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);
-            if (lifecycle is not null) await AttachLifecycle(app, lifecycle);
-            if (hooks) await AttachHooks(app);
-            using (tenant.BeginScope(A))
+                if (lifecycle is not null) registrar.RegisterRegistryEvents().RegisterLifecycleEvents();
+                if (identity) Qian.Identity.Abstractions.IdentityEventRegistration.RegisterIdentityEvents(registrar);
+            }, lifecycle is null && !identity ? null : mediator =>
             {
-                var decision = await app.Services.GetRequiredService<Kun.Authorization.IPermissionChecker>().CheckAsync(new Kun.Authorization.PermissionRequest(new Kun.Authorization.AuthorizationSubject(Writer, A, "service"), "qian.sample.crm:customer:write"), Ct);
-                Assert.True(decision.Allow, decision.Reason);
+                if (lifecycle is not null) mediator.AddQianRegistryEvents().AddQianLifecycleEvents();
+                if (identity) Qian.Identity.Server.IdentityEventHandlers.AddQianIdentityEvents(mediator);
+            });
+            try
+            {
+                using (var scope = app.Services.CreateScope())
+                {
+                    var schemas = new[] { CrmDbContext.Schema, AuthzDbContext.Schema, TenancyDbContext.Schema, AuditDbContext.Schema };
+                    if (platform) schemas = [.. schemas, Qian.Registry.RegistryDbContext.Schema, Qian.Capabilities.CapabilitiesDbContext.Schema, Qian.Lifecycle.LifecycleDbContext.Schema];
+                    if (identity) schemas = [.. schemas, Qian.Identity.Server.IdentityDbContext.Schema];
+                    var sql = string.Join('\n', schemas.Select(schema => "DROP SCHEMA IF EXISTS " + schema + " CASCADE;"));
+                    sql += scope.ServiceProvider.GetRequiredService<CrmDbContext>().Database.GenerateCreateScript();
+                    sql += scope.ServiceProvider.GetRequiredService<AuthzDbContext>().Database.GenerateCreateScript();
+                    sql += scope.ServiceProvider.GetRequiredService<TenancyDbContext>().Database.GenerateCreateScript();
+                    sql += scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.GenerateCreateScript();
+                    // 能力上下文随包提供迁移，下面经迁移器建表，不用 GenerateCreateScript。
+                    if (platform) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript();
+                    if (identity) sql += IdentitySchemaSql(scope.ServiceProvider);
+                    await Admin(sql);
+                    if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
+                    await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
+                    await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
+                    if (lifecycle is { Management: true })
+                        await Admin("BEGIN;" + AuthzPlatformAccess.CreateMigrationSql(lifecycle.AuthzRole) + AuditPlatformAccess.CreateMigrationSql(lifecycle.AuditRole) + "COMMIT;");
+                }
+                if (platform)
+                {
+                    // 与 --migrate-only 迁移任务同一入口：属主角色在 advisory lock 内执行包内迁移；没有迁移的上下文照常跳过。
+                    var reports = await app.Services.GetRequiredService<IDataMigrator>().MigrateAsync(Ct);
+                    Assert.NotEmpty(Assert.Single(reports, report => report.ContextType == typeof(Qian.Capabilities.CapabilitiesDbContext)).Applied);
+                    await Admin($"GRANT USAGE ON SCHEMA plugin_qian_capabilities TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_capabilities TO \"{role}\";");
+                    if (lifecycle is not null)
+                    {
+                        Assert.NotEmpty(Assert.Single(reports, report => report.ContextType == typeof(Qian.Lifecycle.LifecycleDbContext)).Applied);
+                        await Admin($"GRANT USAGE ON SCHEMA plugin_qian_lifecycle TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_lifecycle TO \"{role}\";");
+                    }
+                }
+                var data = app.Services.GetRequiredService<IDataService>(); var tenant = app.Services.GetRequiredService<ITenantContext>();
+                await new PostgresPermissionCatalogStore(data).PutAsync(CrmPermissions.Compile(), Ct);
+                foreach (var id in new[] { A, B })
+                {
+                    await Admin($"INSERT INTO plugin_qian_tenancy.tenants(id, code, name, isolation, status, created_at) VALUES ('{id}'::uuid, '{(id == A ? "a" : "b")}', 'command tenant', 'row', 'active', now());");
+                    using var context = tenant.BeginScope(id); var roles = new PostgresTenantRoleStore(data, tenant);
+                    await roles.EnsureBuiltinsAsync("test-bootstrap", Ct); await roles.InstallDefaultsAsync("qian.sample.crm", "1.0.0", null, "test-bootstrap", Ct);
+                    await roles.AssignAsync(id == A ? "tenant.owner" : "tenant.user", "service", Writer, "test-bootstrap", Ct);
+                }
+                if (platform) MapCapabilities(app);
+                if (contractExclusion) MapContractExclusion(app);
+                if (lifecycle is not null) MapLifecycle(app);
+                if (lifecycle is { Management: true }) MapSettingsRegistry(app);
+                if (hooks) MapHookEntry(app);
+                if (identityParts is not null) MapIdentity(app, identityParts);
+                map?.Invoke(app);
+                await app.StartAsync(Ct);
+                if (identityParts is not null) await MountIdentity(app, identityParts);
+                if (capabilities) await AttachCapabilities(app, [.. humanOnlyProbe is null ? [] : new IExecutableCapability[] { humanOnlyProbe }, .. probes ?? []], capabilitiesConfig);
+                if (lifecycle is not null) await AttachLifecycle(app, lifecycle);
+                if (hooks) await AttachHooks(app);
+                using (tenant.BeginScope(A))
+                {
+                    var decision = await app.Services.GetRequiredService<Kun.Authorization.IPermissionChecker>().CheckAsync(new Kun.Authorization.PermissionRequest(new Kun.Authorization.AuthorizationSubject(Writer, A, "service"), "qian.sample.crm:customer:write"), Ct);
+                    Assert.True(decision.Allow, decision.Reason);
+                }
+                var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.ToArray();
+                Assert.Equal(grpc ? 2 : 1, addresses.Length);
+                return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(addresses[0]) }, evidence, role, connection, migrations, grpc ? addresses[1] : null, identityParts);
             }
-            var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.ToArray();
-            Assert.Equal(grpc ? 2 : 1, addresses.Length);
-            return new RunningApp(app, signing, key, new HttpClient { BaseAddress = new Uri(addresses[0]) }, evidence, role, connection, migrations, grpc ? addresses[1] : null, identityParts);
+            catch { await app.DisposeAsync(); signing.Dispose(); identityParts?.Dispose(); throw; }
         }
-        catch { await app.DisposeAsync(); signing.Dispose(); identityParts?.Dispose(); throw; }
     }
     // 以管理员连接执行，返回受影响的行数。
     private async Task<int> Admin(string sql)

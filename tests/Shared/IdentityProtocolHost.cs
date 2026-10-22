@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Net;
-using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -39,10 +38,14 @@ namespace Qian.Testing.Identity;
 internal static class IdentityProtocolHost
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
-    internal static async Task<Running> Start(PostgresFixture postgres, Running? primary = null, Guid? serviceTenant = null, string serviceClient = "machine", string serviceScope = "qian.api", bool rotateSigningKey = false, bool reuseAddress = false)
+    // 新地址的端口要在构建宿主前确定：建表、挂载期间被占时换端口从头启动（S1-QA-014）。沿用已停主节点的地址时端口是给定的，不换。
+    internal static Task<Running> Start(PostgresFixture postgres, Running? primary = null, Guid? serviceTenant = null, string serviceClient = "machine", string serviceScope = "qian.api", bool rotateSigningKey = false, bool reuseAddress = false) =>
+        reuseAddress ? StartOn(primary!.Issuer, postgres, primary, serviceTenant, serviceClient, serviceScope, rotateSigningKey)
+            : LoopbackPort.StartAsync(port => StartOn($"http://127.0.0.1:{port}/", postgres, primary, serviceTenant, serviceClient, serviceScope, rotateSigningKey));
+
+    private static async Task<Running> StartOn(string address, PostgresFixture postgres, Running? primary, Guid? serviceTenant, string serviceClient, string serviceScope, bool rotateSigningKey)
     {
-        using var socket = new TcpListener(IPAddress.Loopback, 0); socket.Start(); var port = ((IPEndPoint)socket.LocalEndpoint).Port; socket.Stop();
-        var address = reuseAddress ? primary!.Issuer : $"http://127.0.0.1:{port}/"; var issuer = primary?.Issuer ?? address;
+        var issuer = primary?.Issuer ?? address;
         using var rsa = RSA.Create(2048); var cert = new CertificateRequest("CN=Qian integration", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
             .CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(1));
         var secret = primary?.Secret ?? Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
@@ -104,7 +107,9 @@ internal static class IdentityProtocolHost
             new(new PluginEntry("data", "qian.data", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), new DataPlugin(), [DataDefinition.Key]),
             new(new PluginEntry("identity", "qian.identity.server", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { issuer })), new IdentityServerPlugin(new AccountFixture()), [IdentityDefinition.Key])], Ct);
         Assert.True(loader.GetState("identity", ScopeKey.Global) == PluginState.Ready, loader.GetFailure("identity", ScopeKey.Global)?.ToString());
-        await app.StartAsync(Ct);
+        // 启动失败（含端口被占）先释放这次建的宿主，LoopbackPort 才能换端口重来。
+        try { await app.StartAsync(Ct); }
+        catch { await loader.DisposeAsync(); await app.DisposeAsync(); cert.Dispose(); retired?.Dispose(); throw; }
         var browser = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(address) };
         using var login = await browser.PostAsync("_test/authenticated-account", null, Ct); Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         return new(app, loader, browser, cert, issuer, secret, person, tenant, sid, logoutTokens, logs, backchannel, retired);
