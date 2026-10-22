@@ -55,34 +55,53 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
     {
         await fixture.Reset(); await using var producer = await ProbeHost.CreateAsync(fixture.Config, false, Ct);
         await using var a = await WorkerProcess.Start(fixture.Config); await using var b = await WorkerProcess.Start(fixture.Config); await using var c = await WorkerProcess.Start(fixture.Config);
-        using (producer.Tenant.BeginScope(TenantA))
+        var phases = new Dictionary<string, DateTimeOffset> { ["workersReady"] = DateTimeOffset.UtcNow };
+        JsonElement? claimBeforeKill = null;
+        try
         {
-            var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantA));
-            await caller.Scheduler().ScheduleOnce(caller, "crash", DateTimeOffset.UtcNow.AddSeconds(1), Target, JsonSerializer.SerializeToElement(new { mode, delayMs = 0 }), new JobOptions { Timeout = TimeSpan.FromMinutes(3), Misfire = MisfirePolicy.CatchUp }, Ct);
+            using (producer.Tenant.BeginScope(TenantA))
+            {
+                var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantA));
+                await caller.Scheduler().ScheduleOnce(caller, "crash", DateTimeOffset.UtcNow.AddSeconds(1), Target, JsonSerializer.SerializeToElement(new { mode, delayMs = 0 }), new JobOptions { Timeout = TimeSpan.FromMinutes(3), Misfire = MisfirePolicy.CatchUp }, Ct);
+            }
+            phases["scheduled"] = DateTimeOffset.UtcNow;
+            await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts") == 1, TimeSpan.FromSeconds(10));
+            phases["firstHandlerObserved"] = DateTimeOffset.UtcNow;
+            await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == effectsBeforeKill, TimeSpan.FromSeconds(3));
+            var pid = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts LIMIT 1");
+            var run = await fixture.Scalar<Guid>("SELECT run_id FROM public.sch_probe_attempts LIMIT 1");
+            using var claim = JsonDocument.Parse(await fixture.Scalar<string>("SELECT to_json(t)::text FROM (SELECT lease_owner,lease_until,generation,active_run_id FROM plugin_qian_scheduler.job_triggers LIMIT 1) t"));
+            claimBeforeKill = claim.RootElement.Clone();
+            var leaseUntil = claim.RootElement.GetProperty("lease_until").GetDateTime().ToUniversalTime();
+            phases["leaseObservedExpiresAt"] = new DateTimeOffset(leaseUntil);
+            phases["beforeKill"] = DateTimeOffset.UtcNow;
+            await new[] { a, b, c }.Single(worker => worker.Id == pid).Kill();
+            phases["afterKill"] = DateTimeOffset.UtcNow;
+            var before = leaseUntil - DateTime.UtcNow - TimeSpan.FromMilliseconds(300);
+            if (before > TimeSpan.Zero) await Task.Delay(before, Ct);
+            Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
+            phases["beforeRecoveryWait"] = DateTimeOffset.UtcNow;
+            await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs WHERE status='succeeded'") == 1, TimeSpan.FromSeconds(15));
+            Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
+            Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects"));
+            Assert.Equal(run, await fixture.Scalar<Guid>("SELECT id FROM plugin_qian_scheduler.job_runs"));
+            Assert.Equal(2, await fixture.Scalar<int>("SELECT attempts FROM plugin_qian_scheduler.job_runs"));
+            Assert.NotEqual(pid, await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"));
+            SchedulerFixture.Evidence(mode, new
+            {
+                killedProcess = pid, recoveredProcess = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"),
+                runId = run, leaseExpiresAtUtc = leaseUntil, phases, claimBeforeKill,
+                attempts = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"),
+                effects = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects"),
+                runRows = await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs")
+            });
         }
-        await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts") == 1, TimeSpan.FromSeconds(10));
-        await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == effectsBeforeKill, TimeSpan.FromSeconds(3));
-        var pid = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts LIMIT 1");
-        var run = await fixture.Scalar<Guid>("SELECT run_id FROM public.sch_probe_attempts LIMIT 1");
-        var leaseUntil = await fixture.Scalar<DateTime>("SELECT lease_until FROM plugin_qian_scheduler.job_triggers LIMIT 1");
-        await new[] { a, b, c }.Single(worker => worker.Id == pid).Kill();
-        var before = leaseUntil - DateTime.UtcNow - TimeSpan.FromMilliseconds(300);
-        if (before > TimeSpan.Zero) await Task.Delay(before, Ct);
-        Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
-        await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs WHERE status='succeeded'") == 1, TimeSpan.FromSeconds(15));
-        Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
-        Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects"));
-        Assert.Equal(run, await fixture.Scalar<Guid>("SELECT id FROM plugin_qian_scheduler.job_runs"));
-        Assert.Equal(2, await fixture.Scalar<int>("SELECT attempts FROM plugin_qian_scheduler.job_runs"));
-        Assert.NotEqual(pid, await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"));
-        SchedulerFixture.Evidence(mode, new
+        catch
         {
-            killedProcess = pid, recoveredProcess = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"),
-            runId = run, leaseExpiresAtUtc = leaseUntil,
-            attempts = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"),
-            effects = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects"),
-            runRows = await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs")
-        });
+            phases["failed"] = DateTimeOffset.UtcNow;
+            await fixture.CaptureFailure(mode, phases, claimBeforeKill, [a, b, c]);
+            throw;
+        }
     }
 
     [Fact]
