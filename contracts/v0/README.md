@@ -25,7 +25,7 @@ fixture 文件形状统一为 `[{ "name": "<这条样例说明什么>", "data": 
 
 - 全部 Schema 为 JSON Schema 2020-12，`$id` 前缀 `https://qian.dev/contracts/v0/`（标识符，不要求可解引用）。跨文件引用：`error-catalog` → `error-detail`，`event-envelope` → `s2s-claims`，`capability-entry` → 2020-12 元 Schema，`capability-catalog` → `capability-entry`。
 - 声明了 `properties` 的 object 一律 `additionalProperties: false`。开放容器只有三处，都由别处的 Schema 约束内容：事件 `payload`（事件目录中该 `type` 的 Schema）、能力的 `inputSchema` / `outputSchema`（它们本身是 Schema 文档）、多语言文案（语言标签 → 文本）。
-- 状态 `x-status: draft`：允许破坏性修订，但改 Schema 必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。第 8 节的默认裁决已于 2026-10-08 裁决（[S1-DEC-010](../../pm/tasks/S1-DEC-010.md)，R45–R53）；`draft` 保留到 S1 第 1 波消费方（registry、identity、authz、events、gateway）全部进入 review，届时由 S1-AGT-002 一个 PR 统一改写为 `x-status: frozen`（R53；冻结表示法见 R80），此后只做向后兼容的增量；破坏性变更开 `contracts/v1/`，不改 v0。
+- 状态 `x-status: draft`：允许破坏性修订，但改 Schema 必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。第 8 节的默认裁决已于 2026-10-08 裁决（[S1-DEC-010](../../pm/tasks/S1-DEC-010.md)，R45–R53）；`draft` 保留到 S1 第 1 波消费方（registry、identity、authz、events、gateway）全部进入 review，届时由 S1-AGT-005（R119，原为 S1-AGT-002）一个 PR 统一改写为 `x-status: frozen`（R53；冻结表示法见 R80），此后只做向后兼容的增量；破坏性变更开 `contracts/v1/`，不改 v0。
 - 线上成员名：错误体、S2S claim、事件信封用 snake_case（与 iClaw 同形）；能力条目用 camelCase（与 `plugin.json` 和 tool/v2 一致）。
 - 契约格式（7.18）：HTTP 接口 OpenAPI 3.1 + `operationId`；数据 JSON Schema 2020-12 + `additionalProperties: false`。
 
@@ -182,7 +182,7 @@ S1-RT-001 引入 Kun 2026.9.13 正式包（从 nuget.org 还原）：`Qian.Runti
 
 `tests/Qian.Runtime.Errors.Tests`（随 `dotnet test --solution Qian.slnx` 运行）：
 
-- 每份 Schema 通过 2020-12 元 Schema 校验，带 `$id`、`title`、`description`、`x-status: draft`（R80：S1-AGT-002 去 draft 时改写为 `x-status: frozen`，本轮断言不变）；声明了 `properties` 的 object 全部关闭。
+- 每份 Schema 通过 2020-12 元 Schema 校验，带 `$id`、`title`、`description`、`x-status: draft`（R80：S1-AGT-005 去 draft 时改写为 `x-status: frozen`，本轮断言不变；R119 由 S1-AGT-002 移交）；声明了 `properties` 的 object 全部关闭。
 - 每条 fixture：正例过 Schema 与语义规则，反例被 Schema 拒绝，语义反例过 Schema 但违反语义规则。
 - `error-codes.json` 与 `PlatformErrors` 的导出逐字节一致；改了内置错误码后以 `QIAN_UPDATE_CONTRACTS=1` 运行该测试重新生成。
 - 内存宿主（TestServer）中的真实响应：业务错误（抛出与返回）、输入校验、未认证、无权、404、405、415、请求体无法解析、未处理异常（不泄露异常信息）、第三方 ProblemDetails，全部符合 `error-detail.schema.json` 与语义规则，协议 / 业务按 `type` 与状态码区分，文案随 `Accept-Language`，`trace_id` 为请求的 W3C trace-id。
@@ -201,4 +201,4 @@ S1-RT-001 引入 Kun 2026.9.13 正式包（从 nuget.org 还原）：`Qian.Runti
 6. **已裁决（R50）确认**：字段级错误码同为大写下划线并配 `pointer`；ADR-011 D11.5 的 `{aggregate}.{field}.{constraint}` 在 S2 落地时映射为「`pointer` 表达字段 + `code` 表达约束」，不另起一套写法。
 7. **已裁决（R51）确认**：`schemaSha256` 采用 RFC 8785 JCS 规范化（第 6 节）；iClaw 侧的确认进入 ADR-016 的协议对齐计划，确认前 iClaw 运行授权快照不以此值做等值比较。
 8. **已裁决（R52）**：`humanOnly` 不另设字段，它就是能力条目 `agent.expose: false` 的含义：不派生为模型可见工具，且服务端拒绝 `principal_kind = agent` 的调用（错误码 `ACTION_HUMAN_ONLY`，S4 启用、S1 只落库）；`expose: true` 加 `requiresConfirmation: true` 表示「需人工确认」。Schema 的字段描述与 PRD §11 词表已按此改。
-9. **已裁决（R53）**：`x-status: draft` 暂不去掉。去掉的条件是 S1 第 1 波的消费方全部进入 review（S1-RT-004 registry、S1-IDP-001 identity、S1-AZ-001 authz、S1-EVT-001 events、S1-GW-001 gateway），届时由 S1-AGT-002 一个 PR 统一改写为 `x-status: frozen` 并转 additive-only（R80）；在此之前允许破坏性修订，但每次修订必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。
+9. **已裁决（R53）**：`x-status: draft` 暂不去掉。去掉的条件是 S1 第 1 波的消费方全部进入 review（S1-RT-004 registry、S1-IDP-001 identity、S1-AZ-001 authz、S1-EVT-001 events、S1-GW-001 gateway），届时由 S1-AGT-005（R119，原为 S1-AGT-002）一个 PR 统一改写为 `x-status: frozen` 并转 additive-only（R80）；在此之前允许破坏性修订，但每次修订必须同时改 fixture、`Qian.Runtime.Errors` 与已知消费方，并在 PR 中写明。
