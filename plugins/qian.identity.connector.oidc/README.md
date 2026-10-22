@@ -4,4 +4,4 @@
 
 清单保留 `x-skeleton`，补齐代码元数据不代表真实 `qian add` 安装验收已完成。
 
-稳定入口只提供 `Identity.Connectors:oidc`；程序化自定义注册名见主文档。`policy.egress` 由部署方按实际 IdP 主机登记，密钥只接受 secretRef。
+稳定入口只提供 `Identity.Connectors:oidc`；程序化自定义注册名见主文档。当前开发组合包使用 `https://idp.example.internal/` 和 `secretRef://platform/identity/oidc/client-secret` 示例，清单的出网目标和秘密声明与之对应。部署方须按实际 IdP 同步替换 issuer、`policy.egress` 与密钥引用；声明不等于已批准访问，密钥只接受 secretRef。

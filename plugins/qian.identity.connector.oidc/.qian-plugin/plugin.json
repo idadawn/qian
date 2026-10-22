@@ -22,7 +22,18 @@
     "tier": "system",
     "sandbox": "none",
     "authentication": "ON_INSTALL",
-    "required": false
+    "required": false,
+    "egress": [
+      "idp.example.internal:443"
+    ],
+    "permissions": {
+      "secrets": [
+        {
+          "name": "identity/oidc/client-secret",
+          "scope": "platform"
+        }
+      ]
+    }
   },
   "scopes": [
     "global",
