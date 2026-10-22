@@ -1,6 +1,19 @@
 - id: gateway
   plugin: qian.gateway
-  config: {}
+  config:
+    identityIssuer: https://id.example.internal/
+    identityAudience: https://gateway.example.internal
+    issuer: https://gateway.example.internal/s2s
+    signingKeyPath: /var/run/secrets/qian/gateway/private.pem
+    publicKeyPath: /var/run/secrets/qian/gateway/public.pem
+    trustedProxyNetworks: []
+    routes:
+    - id: platform
+      path: /api/{**rest}
+      cluster: qian-platform
+    clusters:
+    - id: qian-platform
+      address: http://qian-platform:8080/
 - id: identity
   plugin: qian.identity.client
   config:

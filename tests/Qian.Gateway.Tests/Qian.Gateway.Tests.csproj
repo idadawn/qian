@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Gateway/Qian.Gateway.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />
+    <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <ProjectReference Include="../../packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
+    <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="JsonSchema.Net" />
+    <PackageReference Include="StackExchange.Redis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/LoopbackPort.cs" Link="LoopbackPort.cs" />
+    <Compile Include="../Shared/IdentityProtocolHost.cs" Link="IdentityProtocolHost.cs" />
+    <Compile Include="../Shared/GatewayTestHost.cs" Link="GatewayTestHost.cs" />
+    <Compile Include="../Qian.Identity.Client.Tests/IdentityServerHost.cs" Link="IdentityAccountHost.cs" />
+  </ItemGroup>
+</Project>

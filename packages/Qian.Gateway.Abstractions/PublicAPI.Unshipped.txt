@@ -1,0 +1,63 @@
+#nullable enable
+Qian.Gateway.GatewayCluster
+Qian.Gateway.GatewayCluster.<Clone>$() -> Qian.Gateway.GatewayCluster!
+Qian.Gateway.GatewayCluster.Address.get -> string!
+Qian.Gateway.GatewayCluster.Address.init -> void
+Qian.Gateway.GatewayCluster.Deconstruct(out string! Id, out string! Address) -> void
+Qian.Gateway.GatewayCluster.Equals(Qian.Gateway.GatewayCluster? other) -> bool
+Qian.Gateway.GatewayCluster.GatewayCluster(string! Id, string! Address) -> void
+Qian.Gateway.GatewayCluster.Id.get -> string!
+Qian.Gateway.GatewayCluster.Id.init -> void
+Qian.Gateway.GatewayConfiguration
+Qian.Gateway.GatewayConfiguration.<Clone>$() -> Qian.Gateway.GatewayConfiguration!
+Qian.Gateway.GatewayConfiguration.Clusters.get -> System.Collections.Generic.IReadOnlyList<Qian.Gateway.GatewayCluster!>!
+Qian.Gateway.GatewayConfiguration.Clusters.init -> void
+Qian.Gateway.GatewayConfiguration.Deconstruct(out string! IdentityIssuer, out string! IdentityAudience, out string! Issuer, out string! SigningKeyPath, out string! PublicKeyPath, out System.Collections.Generic.IReadOnlyList<string!>! TrustedProxyNetworks, out System.Collections.Generic.IReadOnlyList<Qian.Gateway.GatewayRoute!>! Routes, out System.Collections.Generic.IReadOnlyList<Qian.Gateway.GatewayCluster!>! Clusters) -> void
+Qian.Gateway.GatewayConfiguration.Equals(Qian.Gateway.GatewayConfiguration? other) -> bool
+Qian.Gateway.GatewayConfiguration.GatewayConfiguration(string! IdentityIssuer, string! IdentityAudience, string! Issuer, string! SigningKeyPath, string! PublicKeyPath, System.Collections.Generic.IReadOnlyList<string!>! TrustedProxyNetworks, System.Collections.Generic.IReadOnlyList<Qian.Gateway.GatewayRoute!>! Routes, System.Collections.Generic.IReadOnlyList<Qian.Gateway.GatewayCluster!>! Clusters) -> void
+Qian.Gateway.GatewayConfiguration.IdentityAudience.get -> string!
+Qian.Gateway.GatewayConfiguration.IdentityAudience.init -> void
+Qian.Gateway.GatewayConfiguration.IdentityIssuer.get -> string!
+Qian.Gateway.GatewayConfiguration.IdentityIssuer.init -> void
+Qian.Gateway.GatewayConfiguration.Issuer.get -> string!
+Qian.Gateway.GatewayConfiguration.Issuer.init -> void
+Qian.Gateway.GatewayConfiguration.PublicKeyPath.get -> string!
+Qian.Gateway.GatewayConfiguration.PublicKeyPath.init -> void
+Qian.Gateway.GatewayConfiguration.Routes.get -> System.Collections.Generic.IReadOnlyList<Qian.Gateway.GatewayRoute!>!
+Qian.Gateway.GatewayConfiguration.Routes.init -> void
+Qian.Gateway.GatewayConfiguration.SigningKeyPath.get -> string!
+Qian.Gateway.GatewayConfiguration.SigningKeyPath.init -> void
+Qian.Gateway.GatewayConfiguration.TrustedProxyNetworks.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Gateway.GatewayConfiguration.TrustedProxyNetworks.init -> void
+Qian.Gateway.GatewayDefinition
+Qian.Gateway.GatewayRoute
+Qian.Gateway.GatewayRoute.<Clone>$() -> Qian.Gateway.GatewayRoute!
+Qian.Gateway.GatewayRoute.Cluster.get -> string!
+Qian.Gateway.GatewayRoute.Cluster.init -> void
+Qian.Gateway.GatewayRoute.Deconstruct(out string! Id, out string! Path, out string! Cluster) -> void
+Qian.Gateway.GatewayRoute.Equals(Qian.Gateway.GatewayRoute? other) -> bool
+Qian.Gateway.GatewayRoute.GatewayRoute(string! Id, string! Path, string! Cluster) -> void
+Qian.Gateway.GatewayRoute.Id.get -> string!
+Qian.Gateway.GatewayRoute.Id.init -> void
+Qian.Gateway.GatewayRoute.Path.get -> string!
+Qian.Gateway.GatewayRoute.Path.init -> void
+Qian.Gateway.IGatewayService
+Qian.Gateway.IGatewayService.AudienceFor(string! clusterId) -> string!
+Qian.Gateway.IGatewayService.IsReady.get -> bool
+override Qian.Gateway.GatewayCluster.Equals(object? obj) -> bool
+override Qian.Gateway.GatewayCluster.GetHashCode() -> int
+override Qian.Gateway.GatewayCluster.ToString() -> string!
+override Qian.Gateway.GatewayConfiguration.Equals(object? obj) -> bool
+override Qian.Gateway.GatewayConfiguration.GetHashCode() -> int
+override Qian.Gateway.GatewayConfiguration.ToString() -> string!
+override Qian.Gateway.GatewayRoute.Equals(object? obj) -> bool
+override Qian.Gateway.GatewayRoute.GetHashCode() -> int
+override Qian.Gateway.GatewayRoute.ToString() -> string!
+static Qian.Gateway.GatewayCluster.operator !=(Qian.Gateway.GatewayCluster? left, Qian.Gateway.GatewayCluster? right) -> bool
+static Qian.Gateway.GatewayCluster.operator ==(Qian.Gateway.GatewayCluster? left, Qian.Gateway.GatewayCluster? right) -> bool
+static Qian.Gateway.GatewayConfiguration.operator !=(Qian.Gateway.GatewayConfiguration? left, Qian.Gateway.GatewayConfiguration? right) -> bool
+static Qian.Gateway.GatewayConfiguration.operator ==(Qian.Gateway.GatewayConfiguration? left, Qian.Gateway.GatewayConfiguration? right) -> bool
+static Qian.Gateway.GatewayDefinition.Gateway(this Qian.Runtime.IPluginContext! context) -> Qian.Gateway.IGatewayService!
+static Qian.Gateway.GatewayRoute.operator !=(Qian.Gateway.GatewayRoute? left, Qian.Gateway.GatewayRoute? right) -> bool
+static Qian.Gateway.GatewayRoute.operator ==(Qian.Gateway.GatewayRoute? left, Qian.Gateway.GatewayRoute? right) -> bool
+static readonly Qian.Gateway.GatewayDefinition.Key -> Qian.Runtime.ServiceKey

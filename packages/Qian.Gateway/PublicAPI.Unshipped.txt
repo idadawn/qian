@@ -1,0 +1,10 @@
+#nullable enable
+Qian.Gateway.GatewayComponent
+Qian.Gateway.GatewayComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Gateway.GatewayComponent.GatewayComponent() -> void
+Qian.Gateway.GatewayComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Gateway.GatewayHosting
+static Qian.Gateway.GatewayHosting.AddQianGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Qian.Gateway.GatewayConfiguration! configuration, string! sessionAuthenticationScheme = "qian.session") -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Gateway.GatewayHosting.MapQianGateway(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Gateway.GatewayHosting.ReadConfiguration(System.Text.Json.JsonElement configuration) -> Qian.Gateway.GatewayConfiguration!
+static Qian.Gateway.GatewayHosting.UseQianGateway(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!

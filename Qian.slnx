@@ -29,6 +29,8 @@
     <Project Path="packages/Qian.Files.AspNetCore/Qian.Files.AspNetCore.csproj" />
     <Project Path="packages/Qian.Events.Abstractions/Qian.Events.Abstractions.csproj" />
     <Project Path="packages/Qian.Events/Qian.Events.csproj" />
+    <Project Path="packages/Qian.Gateway.Abstractions/Qian.Gateway.Abstractions.csproj" />
+    <Project Path="packages/Qian.Gateway/Qian.Gateway.csproj" />
     <Project Path="packages/Qian.Runtime/Qian.Runtime.csproj" />
     <Project Path="packages/Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
     <Project Path="packages/Qian.Profiles.Abstractions/Qian.Profiles.Abstractions.csproj" />
@@ -51,6 +53,9 @@
   <Folder Name="/samples/">
     <Project Path="samples/Qian.Sample.Crm/Qian.Sample.Crm.csproj" />
   </Folder>
+  <Folder Name="/hosts/">
+    <Project Path="hosts/Qian.Gateway.Host/Qian.Gateway.Host.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Qian.Plugin.Sdk.Tests/Qian.Plugin.Sdk.Tests.csproj" />
     <Project Path="tests/Qian.Audit.Tests/Qian.Audit.Tests.csproj" />
@@ -66,6 +71,7 @@
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Data.AspNetCore.Tests/Qian.Data.AspNetCore.Tests.csproj" />
     <Project Path="tests/Qian.Events.Tests/Qian.Events.Tests.csproj" />
+    <Project Path="tests/Qian.Gateway.Tests/Qian.Gateway.Tests.csproj" />
     <Project Path="tests/Qian.Files.Tests/Qian.Files.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Abstractions.Tests/Qian.Identity.Abstractions.Tests.csproj" />

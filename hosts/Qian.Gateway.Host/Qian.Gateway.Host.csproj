@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- 完整依赖尚未通过 NativeAOT，按 DEC-029 如实使用 JIT；不能在本项目抑制 IL 警告假称 AOT。 -->
+  <PropertyGroup><OutputType>Exe</OutputType><Description>gateway profile 的真实业务宿主。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Gateway/Qian.Gateway.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
+    <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <ProjectReference Include="../../packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
+    <PackageReference Include="StackExchange.Redis" />
+  </ItemGroup>
+</Project>
