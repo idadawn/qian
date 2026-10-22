@@ -106,6 +106,7 @@ public static class CrmCommandApplication
                 registry.AddQianCapability<CreateCustomerCommand, CustomerItem, CreateCustomerHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 registry.AddQianCapability<ListCustomersQuery, CustomerPage, ListCustomersHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 registry.AddQianCapability<GetCustomerQuery, CustomerItem, GetCustomerHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
+                registry.AddQianCapability<PurgeCustomersCommand, CustomerPurgeResult, PurgeCustomersHandler, CrmDbContext>(sp => sp.GetRequiredService<CrmCommandRuntime>().Source());
                 mediator?.Invoke(registry);
             });
             string Connection(string name) => builder.Configuration.GetConnectionString(name) ?? throw new InvalidOperationException("缺少连接引用：" + name);

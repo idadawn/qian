@@ -44,6 +44,23 @@ public sealed partial record ListCustomersQuery(int Skip = 0, int Take = 100);
     RequiredPermission = "qian.sample.crm:customer:read", RequiredScopes = ["crm.read"], ContractVersion = "crm-v1", AgentExpose = true)]
 public sealed partial record GetCustomerQuery(Guid Id);
 
+// Agent 字段探针（S1-AGT-006、R112）：每个 Agent 字段都取与上面三条不同的值，policyHint 取 destructive 的非缺省值 deny（缺省为 confirm），
+// 目录读取时按其它字段派生或写死任一字段都会与声明和提交的工具文件不符。只在 crm.admin scope 下可见；S1 没有异步任务的执行器（Operation 资源，R8），
+// 调用一律 503 UNAVAILABLE，不删除任何数据。
+[Capability("customer.purge", typeof(CustomerPurgeResult), typeof(CrmCommandJson), Description = "清除当前租户的全部客户且不可恢复；只供租户管理员人工确认后发起，S1 只登记契约、不执行。",
+    SideEffect = "destructive", PolicyHint = "deny", Idempotent = true, Async = "task", RequiredSecrets = ["crm-archive-key"], DataClassification = "internal", CostTier = "high",
+    RequiredPermission = "qian.sample.crm:customer:write", RequiredScopes = ["crm.admin"], ContractVersion = "crm-admin-v1", AgentExpose = false, RequiresConfirmation = true)]
+public sealed partial record PurgeCustomersCommand(Guid IdempotencyKey);
+
+/// <summary>清除完成后的结果：async 为 task 时输出 Schema 描述 Operation 完成后的 result。</summary>
+public sealed record CustomerPurgeResult(int Purged);
+
+internal sealed class PurgeCustomersHandler : IRequestHandler<PurgeCustomersCommand, CustomerPurgeResult>
+{
+    public ValueTask<CustomerPurgeResult> Handle(PurgeCustomersCommand request, CancellationToken cancellationToken) =>
+        throw new QianErrorException(new QianError(PlatformErrors.Unavailable));
+}
+
 internal sealed class ListCustomersHandler(CommandDataSession<CrmDbContext> work) : IRequestHandler<ListCustomersQuery, CustomerPage>
 {
     public async ValueTask<CustomerPage> Handle(ListCustomersQuery request, CancellationToken cancellationToken)
@@ -83,6 +100,8 @@ internal sealed record CrmCustomerCreated(Guid CustomerId);
 [JsonSerializable(typeof(CreateCustomerCommand))]
 [JsonSerializable(typeof(ListCustomersQuery))]
 [JsonSerializable(typeof(GetCustomerQuery))]
+[JsonSerializable(typeof(PurgeCustomersCommand))]
+[JsonSerializable(typeof(CustomerPurgeResult))]
 [JsonSerializable(typeof(CustomerPage))]
 [JsonSerializable(typeof(CustomerItem))]
 [JsonSerializable(typeof(CrmCustomerCreated))]
