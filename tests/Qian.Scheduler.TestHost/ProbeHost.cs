@@ -22,7 +22,7 @@ using Qian.Tenancy;
 
 namespace Qian.Scheduler.TestHost;
 
-public sealed record HostConfig(string Application, string Worker, string WorkerRole, int LeaseSeconds = 6);
+public sealed record HostConfig(string Application, string Worker, string WorkerRole, int LeaseSeconds = 6, IReadOnlyList<string>? WarmupTenants = null);
 
 public sealed class ProbeHost : IAsyncDisposable
 {
@@ -49,7 +49,22 @@ public sealed class ProbeHost : IAsyncDisposable
         await runtime.MountAsync([
             Define("data", "qian.data", new DataPlugin(), [DataDefinition.Key]),
             Define("tenancy", "qian.tenancy", new DirectoryPlugin(config), [TenancyDefinition.Key]),
-            Define("probe", "qian.scheduler.probe", new ProbePlugin(), []),
+            Define("probe", "qian.scheduler.probe", new ProbePlugin(), [])], ct);
+        if (worker)
+        {
+            // READY 表示真实租户 EF 模型、安全检查和查询已可用。预热发生在领取循环之前，
+            // 不让进程首次建模占用故障测试的 6 秒租约；不造作业、不改持久状态、不隐藏重试。
+            // Kun 模型缓存按 tenant 分区，必须预热真实被测租户，随机虚构租户不能替代。
+            foreach (var tenantId in config.WarmupTenants ?? [])
+            {
+                using var warmupTenant = tenant.BeginScope(tenantId);
+                await using var session = await runtime.GetContext("data", ScopeKey.Global).Data().OpenAsync<SchedulerDbContext>(ct);
+                _ = await session.Context.Definitions.AsNoTracking().AnyAsync(ct);
+                _ = await session.Context.Triggers.AsNoTracking().AnyAsync(ct);
+                _ = await session.Context.Runs.AsNoTracking().AnyAsync(ct);
+            }
+        }
+        await runtime.MountAsync([
             Define("scheduler", "qian.scheduler", worker ? new SchedulerComponent() : new ProducerPlugin(), [SchedulerDefinition.Key],
                 new { workerRole = config.WorkerRole, leaseSeconds = config.LeaseSeconds, maxParallel = 16 })], ct);
         if (runtime.GetState("scheduler", ScopeKey.Global) != PluginState.Ready) throw new InvalidOperationException("调度宿主未就绪", runtime.GetFailure("scheduler", ScopeKey.Global));
