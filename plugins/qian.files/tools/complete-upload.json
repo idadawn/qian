@@ -1,0 +1,124 @@
+{
+  "name": "complete-upload",
+  "description": "完成上传：服务端自算大小与 SHA-256 并嗅探类型，相符则文件可用，不符则隔离；重复完成返回同一结果。",
+  "sideEffect": "write",
+  "policyHint": "allow",
+  "idempotent": true,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "internal",
+  "costTier": "low",
+  "contractVersion": "v1",
+  "audit": true,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.files/complete-upload"
+  },
+  "requiredPermission": "qian.files:file:write",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "idempotencyKey": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "fileId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "idempotencyKey",
+      "fileId"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "tenantId": {
+        "type": "string"
+      },
+      "pluginId": {
+        "type": "string"
+      },
+      "purpose": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "size": {
+        "type": "integer"
+      },
+      "contentType": {
+        "type": "string"
+      },
+      "sha256": {
+        "type": "string"
+      },
+      "storageKey": {
+        "type": "string"
+      },
+      "provider": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      },
+      "scanStatus": {
+        "type": "string"
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "quarantineReason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "deletedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "tenantId",
+      "pluginId",
+      "purpose",
+      "name",
+      "size",
+      "contentType",
+      "sha256",
+      "storageKey",
+      "provider",
+      "status",
+      "scanStatus",
+      "createdAt"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "450e7ca00fb388df04d4e0e4e788cf68135acc482fa3afdf8fce1b187452f453",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.files"
+  }
+}

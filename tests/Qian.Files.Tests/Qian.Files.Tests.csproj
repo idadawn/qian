@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Files/Qian.Files.csproj" />
+    <ProjectReference Include="../../packages/Qian.Files.AspNetCore/Qian.Files.AspNetCore.csproj" />
+    <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+  <!-- 集成测试宿主：真实 Data / Events / Tenancy / Authz（含 HTTP PEP）/ Audit 组件与 ErrorDetail、HTTP 契约导出；测试工程不受依赖图门禁约束。 -->
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />
+    <ProjectReference Include="../../packages/Qian.Tenancy/Qian.Tenancy.csproj" />
+    <ProjectReference Include="../../packages/Qian.Authz/Qian.Authz.csproj" />
+    <ProjectReference Include="../../packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
+    <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities/Qian.Capabilities.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
+    <PackageReference Include="Kun.Security" />
+    <PackageReference Include="Kun.MultiTenancy" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <PackageReference Include="JsonSchema.Net" />
+  </ItemGroup>
+  <!-- dotnet ef 设计时入口（FilesDesignTimeFactory）：经 AddQianData 取上下文，迁移模型与运行时一致。 -->
+  <ItemGroup>
+    <PackageReference Include="Kun.EventBus" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

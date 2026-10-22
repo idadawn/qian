@@ -5,6 +5,9 @@
 ```ts
 
 // @public
+export function compilePattern(pattern: string, foldCase?: boolean): KeyPattern;
+
+// @public
 export function computeToolHash(tool: JsonValue): string;
 
 // @public
@@ -56,9 +59,22 @@ export class HotReloadSurfacePlugin<TContext extends SurfaceContext = SurfaceCon
 export function isSafeMarketplaceUrl(value: string): boolean;
 
 // @public
+export function isStable(name: string): boolean;
+
+// @public
 export type JsonValue = null | boolean | number | string | JsonValue[] | {
     [key: string]: JsonValue;
 };
+
+// @public
+export class KeyPattern {
+    constructor(source: string);
+    // (undocumented)
+    readonly source: string;
+    test(text: string): boolean;
+    // (undocumented)
+    toString(): string;
+}
 
 // @public
 export interface MarketplaceValidationResult {
@@ -87,6 +103,9 @@ export function parseSurface(file: string, content: string, markdown?: boolean, 
 
 // @public
 export function readSurfaceRuntimeDiagnostics(context: SurfaceDiagnosticContext): SurfaceRuntimeReport;
+
+// @public
+export function sameKey(left: string, right: string): boolean;
 
 // @public
 export interface SurfaceContext {
@@ -277,6 +296,10 @@ export class SurfaceValidator {
     validateComponent(directory: string, options?: SurfaceValidationOptions): SurfaceValidationResult;
     // (undocumented)
     validateSchema(schema: string, file: string, data: JsonValue, traceId?: string): SurfaceDiagnostic[];
+}
+
+// @public
+export class UnsupportedPattern extends Error {
 }
 
 // @public

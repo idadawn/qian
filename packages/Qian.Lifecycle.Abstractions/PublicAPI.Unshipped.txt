@@ -335,5 +335,83 @@ static readonly Qian.Lifecycle.LifecycleErrors.RevisionNotDeployed -> Qian.Runti
 static readonly Qian.Lifecycle.LifecycleErrors.SignatureInvalid -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.StateConflict -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.Invalid -> Qian.Runtime.Errors.ErrorCode!
+Qian.Lifecycle.IPluginLifecycleController.ApprovePermissionsAsync(string! tenantId, string! pluginId, string! version, Qian.Lifecycle.PermissionGrants? grants, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PermissionApprovalView!>
+Qian.Lifecycle.IPluginLifecycleController.GetApprovedPermissionsAsync(string! tenantId, string! pluginId, string! version, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PermissionApprovalView?>
+Qian.Lifecycle.IPluginLifecycleController.GetPermissionApprovalAsync(string! tenantId, string! pluginId, string! version, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.PermissionApprovalView?>
+Qian.Lifecycle.PermissionApprovalChannels
+Qian.Lifecycle.PermissionApprovalView
+Qian.Lifecycle.PermissionApprovalView.<Clone>$() -> Qian.Lifecycle.PermissionApprovalView!
+Qian.Lifecycle.PermissionApprovalView.Approved.get -> Qian.Lifecycle.PermissionGrants!
+Qian.Lifecycle.PermissionApprovalView.Approved.init -> void
+Qian.Lifecycle.PermissionApprovalView.ApprovedAt.get -> System.DateTimeOffset
+Qian.Lifecycle.PermissionApprovalView.ApprovedAt.init -> void
+Qian.Lifecycle.PermissionApprovalView.ApprovedBy.get -> string!
+Qian.Lifecycle.PermissionApprovalView.ApprovedBy.init -> void
+Qian.Lifecycle.PermissionApprovalView.ApprovedVia.get -> string!
+Qian.Lifecycle.PermissionApprovalView.ApprovedVia.init -> void
+Qian.Lifecycle.PermissionApprovalView.Deconstruct(out string! TenantId, out string! PluginId, out string! Version, out Qian.Lifecycle.PermissionGrants! Approved, out string! ApprovedBy, out string! ApprovedVia, out System.DateTimeOffset ApprovedAt) -> void
+Qian.Lifecycle.PermissionApprovalView.Equals(Qian.Lifecycle.PermissionApprovalView? other) -> bool
+Qian.Lifecycle.PermissionApprovalView.PermissionApprovalView(string! TenantId, string! PluginId, string! Version, Qian.Lifecycle.PermissionGrants! Approved, string! ApprovedBy, string! ApprovedVia, System.DateTimeOffset ApprovedAt) -> void
+Qian.Lifecycle.PermissionApprovalView.PluginId.get -> string!
+Qian.Lifecycle.PermissionApprovalView.PluginId.init -> void
+Qian.Lifecycle.PermissionApprovalView.TenantId.get -> string!
+Qian.Lifecycle.PermissionApprovalView.TenantId.init -> void
+Qian.Lifecycle.PermissionApprovalView.Version.get -> string!
+Qian.Lifecycle.PermissionApprovalView.Version.init -> void
+Qian.Lifecycle.PermissionGrants
+Qian.Lifecycle.PermissionGrants.<Clone>$() -> Qian.Lifecycle.PermissionGrants!
+Qian.Lifecycle.PermissionGrants.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Lifecycle.PermissionGrants.Data.init -> void
+Qian.Lifecycle.PermissionGrants.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! Platform, out System.Collections.Generic.IReadOnlyList<string!>! Data, out System.Collections.Generic.IReadOnlyList<string!>! Egress, out System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.SecretGrant!>! Secrets, out Qian.Lifecycle.UiGrants! Ui) -> void
+Qian.Lifecycle.PermissionGrants.Egress.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Lifecycle.PermissionGrants.Egress.init -> void
+Qian.Lifecycle.PermissionGrants.Equals(Qian.Lifecycle.PermissionGrants? other) -> bool
+Qian.Lifecycle.PermissionGrants.PermissionGrants(System.Collections.Generic.IReadOnlyList<string!>! Platform, System.Collections.Generic.IReadOnlyList<string!>! Data, System.Collections.Generic.IReadOnlyList<string!>! Egress, System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.SecretGrant!>! Secrets, Qian.Lifecycle.UiGrants! Ui) -> void
+Qian.Lifecycle.PermissionGrants.Platform.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Lifecycle.PermissionGrants.Platform.init -> void
+Qian.Lifecycle.PermissionGrants.Secrets.get -> System.Collections.Generic.IReadOnlyList<Qian.Lifecycle.SecretGrant!>!
+Qian.Lifecycle.PermissionGrants.Secrets.init -> void
+Qian.Lifecycle.PermissionGrants.Ui.get -> Qian.Lifecycle.UiGrants!
+Qian.Lifecycle.PermissionGrants.Ui.init -> void
+Qian.Lifecycle.SecretGrant
+Qian.Lifecycle.SecretGrant.<Clone>$() -> Qian.Lifecycle.SecretGrant!
+Qian.Lifecycle.SecretGrant.Deconstruct(out string! Name, out string! Scope) -> void
+Qian.Lifecycle.SecretGrant.Equals(Qian.Lifecycle.SecretGrant? other) -> bool
+Qian.Lifecycle.SecretGrant.Name.get -> string!
+Qian.Lifecycle.SecretGrant.Name.init -> void
+Qian.Lifecycle.SecretGrant.Scope.get -> string!
+Qian.Lifecycle.SecretGrant.Scope.init -> void
+Qian.Lifecycle.SecretGrant.SecretGrant(string! Name, string! Scope) -> void
+Qian.Lifecycle.UiGrants
+Qian.Lifecycle.UiGrants.<Clone>$() -> Qian.Lifecycle.UiGrants!
+Qian.Lifecycle.UiGrants.ConnectSrc.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Lifecycle.UiGrants.ConnectSrc.init -> void
+Qian.Lifecycle.UiGrants.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! ConnectSrc) -> void
+Qian.Lifecycle.UiGrants.Equals(Qian.Lifecycle.UiGrants? other) -> bool
+Qian.Lifecycle.UiGrants.UiGrants(System.Collections.Generic.IReadOnlyList<string!>! ConnectSrc) -> void
+const Qian.Lifecycle.LifecycleDefinition.InstallApprovePermission = "qian.lifecycle:install:approve" -> string!
+const Qian.Lifecycle.PermissionApprovalChannels.Superadmin = "superadmin" -> string!
+const Qian.Lifecycle.PermissionApprovalChannels.Tenant = "tenant" -> string!
+override Qian.Lifecycle.PermissionApprovalView.Equals(object? obj) -> bool
+override Qian.Lifecycle.PermissionApprovalView.GetHashCode() -> int
+override Qian.Lifecycle.PermissionApprovalView.ToString() -> string!
+override Qian.Lifecycle.PermissionGrants.Equals(object? obj) -> bool
+override Qian.Lifecycle.PermissionGrants.GetHashCode() -> int
+override Qian.Lifecycle.PermissionGrants.ToString() -> string!
+override Qian.Lifecycle.SecretGrant.Equals(object? obj) -> bool
+override Qian.Lifecycle.SecretGrant.GetHashCode() -> int
+override Qian.Lifecycle.SecretGrant.ToString() -> string!
+override Qian.Lifecycle.UiGrants.Equals(object? obj) -> bool
+override Qian.Lifecycle.UiGrants.GetHashCode() -> int
+override Qian.Lifecycle.UiGrants.ToString() -> string!
+static Qian.Lifecycle.PermissionApprovalView.operator !=(Qian.Lifecycle.PermissionApprovalView? left, Qian.Lifecycle.PermissionApprovalView? right) -> bool
+static Qian.Lifecycle.PermissionApprovalView.operator ==(Qian.Lifecycle.PermissionApprovalView? left, Qian.Lifecycle.PermissionApprovalView? right) -> bool
+static Qian.Lifecycle.PermissionGrants.operator !=(Qian.Lifecycle.PermissionGrants? left, Qian.Lifecycle.PermissionGrants? right) -> bool
+static Qian.Lifecycle.PermissionGrants.operator ==(Qian.Lifecycle.PermissionGrants? left, Qian.Lifecycle.PermissionGrants? right) -> bool
+static Qian.Lifecycle.SecretGrant.operator !=(Qian.Lifecycle.SecretGrant? left, Qian.Lifecycle.SecretGrant? right) -> bool
+static Qian.Lifecycle.SecretGrant.operator ==(Qian.Lifecycle.SecretGrant? left, Qian.Lifecycle.SecretGrant? right) -> bool
+static Qian.Lifecycle.UiGrants.operator !=(Qian.Lifecycle.UiGrants? left, Qian.Lifecycle.UiGrants? right) -> bool
+static Qian.Lifecycle.UiGrants.operator ==(Qian.Lifecycle.UiGrants? left, Qian.Lifecycle.UiGrants? right) -> bool
+static readonly Qian.Lifecycle.LifecycleErrors.PermissionsUnapproved -> Qian.Runtime.Errors.ErrorCode!
 Qian.Lifecycle.IPluginLifecycleController.MountAtRevisionAsync(Qian.Runtime.ScopeKey scope, System.Text.Json.JsonElement entry, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.MountResult!>
 Qian.Lifecycle.IPluginLifecycleController.UnmountAtRevisionAsync(Qian.Runtime.ScopeKey scope, string! entryId, int expectedRevision, string! actor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Qian.Lifecycle.MountResult!>

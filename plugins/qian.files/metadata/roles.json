@@ -1,0 +1,6 @@
+[
+  { "role": "tenant.owner", "grant": ["qian.files:file:*"] },
+  { "role": "tenant.admin", "grant": ["qian.files:file:*"] },
+  { "role": "tenant.developer", "grant": ["qian.files:file:read", "qian.files:file:write"] },
+  { "role": "tenant.user", "grant": ["qian.files:file:read", "qian.files:file:write"] }
+]

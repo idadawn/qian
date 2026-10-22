@@ -28,7 +28,9 @@
 | ` AuthzSuperadminBypass ` | ` global/authz ` |  |
 | ` AuthzTenantRoleGrant ` | ` global/authz ` |  |
 | ` CommandAuthorization ` | ` global/authz ` | ` global/capabilities ` |
-| ` Data ` | ` global/data ` | ` global/registry `、` global/lifecycle `、` global/capabilities `、` global/tenancy `、` global/authz `、` global/audit ` |
+| ` Data ` | ` global/data ` | ` global/registry `、` global/lifecycle `、` global/capabilities `、` global/tenancy `、` global/authz `、` global/files `、` global/audit ` |
+| ` Files ` | ` global/files ` |  |
+| ` Files.Backends:local ` | ` global/files ` |  |
 | ` Config ` | ` global/config ` | ` global/lifecycle ` |
 | ` Events ` | ` global/events ` |  |
 | ` Audit ` | ` global/audit ` | ` global/capabilities ` |
@@ -103,20 +105,24 @@ flowchart LR
   n6 --> s21
   s22(("Data"))
   n7 --> s22
-  s23(("Config"))
-  n9 --> s23
-  s24(("Events"))
-  n10 --> s24
-  s25(("Audit"))
-  n11 --> s25
-  s26(("CommandAudit"))
-  n11 --> s26
+  s23(("Files"))
+  n8 --> s23
+  s24(("Files.Backends:local"))
+  n8 --> s24
+  s25(("Config"))
+  n9 --> s25
+  s26(("Events"))
+  n10 --> s26
+  s27(("Audit"))
+  n11 --> s27
+  s28(("CommandAudit"))
+  n11 --> s28
   s22 --> n0
-  s23 --> n1
+  s25 --> n1
   s22 --> n1
   s0 --> n1
-  s25 --> n2
-  s26 --> n2
+  s27 --> n2
+  s28 --> n2
   s21 --> n2
   s6 --> n2
   s22 --> n2
@@ -124,6 +130,7 @@ flowchart LR
   s7 --> n2
   s22 --> n4
   s22 --> n6
+  s22 --> n8
   s22 --> n11
 ```
 

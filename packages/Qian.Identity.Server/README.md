@@ -58,7 +58,7 @@
 - **Redis 索引（可选）**：`qian:identity:sessions:{person}` 是有序集合（成员为 `N` 格式的会话标识，分值为绝对到期的 Unix 秒）；`qian:identity:revoked:{sid}` 是吊销墓碑，只在 PG 已提交吊销之后才写、TTL 到会话自然到期，所以「有墓碑 ⇒ 已吊销」恒成立，校验先看墓碑可省一次查询，没有墓碑不代表有效。会话列表读 PG，并顺带以 PG 为准修复索引（补缺、去多）。Redis 的任何故障都吞掉并退回 PG，同时熔断 5 秒，只记一条不含标识的降级告警。
 - **并发上限与单端模式**：`SessionPolicy.MaxConcurrentSessions`（缺省 5，跨租户跨端合计）；新登录在建会话的同一事务里（已锁定 Person 行，同一人的并发登录因此串行，上限不会被击穿）踢掉最早建立的会话，原因 `concurrency_limit`。开启 `SingleSessionPerDeviceType` 后，同一端类型（客户端登记的 `DeviceType`，如 pc、mobile）后登录的会话踢掉先登录的，原因 `single_device`，不影响其他端；并发上限仍然适用。
 - **租户冻结 / 到期（R95）**：每次会话校验都读租户目录，租户不再是 Active / Trial，会话立即失效（账号接口 401，refresh 返回 `invalid_grant`）。失效的持久化与事件有两条路径：事件处理器 `TenantSuspendedSessionHandler` / `TenantExpiredSessionHandler`（订阅 `tenant.suspended.v1` / `tenant.expired.v1`，到达即吊销该租户的全部会话，原因 `tenant_suspended` / `tenant_expired`）；以及后台对账（每 `ReconcileInterval` 一次，缺省且至多 30 秒：核对仍有有效会话的租户在目录里的状态，非 Active / Trial 或目录里已不存在的租户，其会话一律吊销，原因 `tenant_<状态>` / `tenant_missing`）。事件投递由消费端（S1-EVT-002）接线；即使事件丢失、迟到或尚未接线，对账也保证会话在一个对账间隔加旁路时间内失效，远小于 60 秒。租户恢复后已吊销的会话不会复活，用户重新登录即可。
-- **身份修订**：`IIdentityAccounts.BumpIdentityRevisionAsync(personId, reason)` 递增该 Person 在**当前租户**的成员修订（行级安全把更新限在当前租户，同一 Person 在别的租户的成员身份不变），返回新的 `identity_revision`（Person 修订 + 成员修订）；该租户没有这个成员返回 `NOT_FOUND`。授权引擎在 `authz.grant.changed.v1` 之后调用它（接线属于授权任务）。旧令牌随即被服务端拒绝：userinfo 与会话校验比较令牌里的 `identity_revision` 与库里的当前值，更低就是 `invalid_token`；会话本身不吊销，refresh 换到的新令牌带新修订。网关须把 `identity_revision` 放进 `ForwardedClaimTypes` 白名单，供 7.5 的 PEP 比对缓存的权限快照。
+- **身份修订**：`IIdentityAccounts.BumpIdentityRevisionAsync(personId, reason)` 递增该 Person 在**当前租户**的成员修订（行级安全把更新限在当前租户，同一 Person 在别的租户的成员身份不变），返回新的 `identity_revision`（Person 修订 + 成员修订）；该租户没有这个成员返回 `NOT_FOUND`。同进程宿主里，授权组件在授予的增、改、撤提交后直接调用它，并用返回值抬高 PEP 的修订下限（S1-AZ-009，S1-DEC-027）；拆分部署（platform / identity 两个 Pod）由本组件订阅 `authz.grant.changed.v1` 后调用，随 S1-EVT-002 交付（S1-IDP-012）。旧令牌随即被服务端拒绝：userinfo 与会话校验比较令牌里的 `identity_revision` 与库里的当前值，更低就是 `invalid_token`；会话本身不吊销，refresh 换到的新令牌带新修订。网关须把 `identity_revision` 放进 `ForwardedClaimTypes` 白名单，供 7.5 的 PEP 比对缓存的权限快照。
 - **管理面**（见下表）：本人管自己的会话；平台身份（平台资格 + 平台会话，租户身份下不继承）管任何人，可按租户缩小；租户管理员只管本租户内的会话（传别的租户的参数也越不了权）。无权限时单个会话按不存在（404）处理，不泄露它是否存在，列表类 403。这是授权引擎的权限点（`qian.identity:session:*`）接入 PEP 之前的内置判定，接入后改为权限点加数据范围。
 - **在线用户**：窗口内（`OnlineWindow`，缺省 15 分钟，即访问令牌寿命）有活动的有效会话，按 Person × 租户聚合；平台视角含平台身份会话。活动指会话校验（授权、换码、刷新、userinfo、账号接口），`last_seen_at` 最多每分钟刷新一次。
 - **组件卸载**：后台工作（旁路、对账）互斥运行，卸载时先排空再放行 Data 释放会话；`ctx.Effect` 按登记的逆序执行，所以服务先于 Data 关闭，不会让正在执行的命令撞上被释放的连接。
@@ -138,7 +138,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - **S1-TEN-004**：成员创建经 `ITenantQuota.EnsureCanAddUserAsync(currentUsers, kind)`，在同一事务内持租户级计数锁；租户管理员计入，具备平台资格的 Person 不计；`ITenantUserCounter`（`TenantSettings.UserCounterKey`）给出真实人数。
 - **S1-TEN-010**（R110）：`IIdentityAccounts.ResetPasswordAsync` 是运营重置密码的端口——旧凭据立即失效、默认下次登录强制改密、使既有会话失效、发布不含密码的改密事件。
 - **S1-IDP-004**（本任务）：会话中心已就位，见上文「会话中心」。对其他任务登记的接口见下面三条。
-- **授权任务（S1-AZ-004 起）**：订阅 `authz.grant.changed.v1` 后，对受影响主体在其租户作用域内调用 `IIdentityAccounts.BumpIdentityRevisionAsync`；PEP 比对令牌 `identity_revision` 与缓存快照由授权侧负责。
+- **授权任务（S1-AZ-004 / S1-AZ-009）**：同进程宿主里，`qian.authz` 在授予变更提交后，对受影响的 user 主体在其租户作用域内调用 `IIdentityAccounts.BumpIdentityRevisionAsync`。主体不是 GUID 或返回 `NOT_FOUND` 时跳过。之后用返回值抬高 PEP 的修订下限。PEP 比对令牌 `identity_revision` 与缓存快照由授权侧负责，陈旧令牌回 401。拆分部署下，本组件对 `authz.grant.changed.v1` 的订阅处理器由 S1-IDP-012 交付；同进程宿主不登记它。
 - **S1-EVT-002（事件消费端）**：宿主在事件总线配置里调用 `AddQianIdentitySessionHandlers()`；订阅投递由消费端接线，在此之前租户冻结 / 到期靠后台对账兜底。
 - **S1-GW-001（网关）**：`ForwardedClaimTypes` 白名单须包含 `identity_revision`。
 - **S1-IDP-006**：`IAuthenticatorFactorRegistry` 与 `MFA_UNAVAILABLE` 的不降级行为；租户级登录策略覆盖。
@@ -158,7 +158,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 ## 已知限制与延期项
 
 - MFA 的登记、挑战与校验（TOTP、短信）属于 IDP-006；此前已登记第二因子的账号一律拒绝登录，没有降级路径。
-- 已吊销 / 已过期会话行的历史清理（保留期与归档）不在本任务内；订阅投递的接线（S1-EVT-002）与授权变更触发修订递增（授权任务）各自交付，接线前租户冻结靠对账兜底，授权变更需由调用方显式调用 `BumpIdentityRevisionAsync`。
+- 已吊销 / 已过期会话行的历史清理（保留期与归档）不在本任务内；订阅投递的接线（S1-EVT-002）未交付，接线前租户冻结靠对账兜底；授权变更触发修订递增在同进程宿主已由 `qian.authz` 直接调用（S1-AZ-009），拆分部署的订阅处理器归 S1-IDP-012。
 - 管理面的权限判定是内置规则（本人 / 平台身份 / 租户管理员），待授权引擎的 PEP 接入后改为权限点加数据范围。
 - 账号合并不在 S1。JIT 建号是先建 Person、再建成员并绑定的几步操作（Person 与成员分属全局与租户作用域）；配额已预先检查，但若建成员时并发撞上配额或数据库出错，会留下一个只带上游邮箱标识的 Person，需要运营清理。一个成员在同一连接器下可以绑定多个外部身份，是否限制为一个待产品裁决。RP/外壳接入属于 IDP-005 与 yue 任务。
 - 连接器流程表的过期行在每次发起时顺带清理（结束超过一天的），没有独立的后台清理任务。

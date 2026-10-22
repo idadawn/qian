@@ -1,0 +1,16 @@
+#nullable enable
+const Qian.Files.FilesDbContext.Schema = "plugin_qian_files" -> string!
+Qian.Files.FilesDbContext
+Qian.Files.FilesDbContext.FilesDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Files.FilesDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Files.FilesPlugin
+Qian.Files.FilesPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Files.FilesPlugin.FilesPlugin() -> void
+Qian.Files.FilesPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Files.QianFilesExtensions
+Qian.Files.QianFilesOptions
+Qian.Files.QianFilesOptions.Clock.get -> System.TimeProvider!
+Qian.Files.QianFilesOptions.Clock.set -> void
+Qian.Files.QianFilesOptions.LocalSigningKey.get -> System.ReadOnlyMemory<byte>
+Qian.Files.QianFilesOptions.LocalSigningKey.set -> void
+Qian.Files.QianFilesOptions.QianFilesOptions() -> void
+static Qian.Files.QianFilesExtensions.AddQianFiles(this Kun.Mediator.KunMediatorBuilder! builder, System.Func<System.IServiceProvider!, Qian.Runtime.IPluginContext!>! source, System.Action<Qian.Files.QianFilesOptions!>? configure = null, string! channel = "api") -> Kun.Mediator.KunMediatorBuilder!

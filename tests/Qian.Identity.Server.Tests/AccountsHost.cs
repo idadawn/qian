@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -30,6 +29,7 @@ using Qian.Events;
 using Qian.Identity.Abstractions;
 using Qian.Runtime;
 using Qian.Tenancy;
+using Qian.Testing;
 using Qian.Testing.Containers;
 using StackExchange.Redis;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -43,9 +43,12 @@ internal static class AccountsHost
     internal const string Resource = "https://api.qian.test";
     internal static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    internal static async Task<Running> Start(PostgresFixture postgres, IdentityAccountOptions? accounts = null, string flavor = "default", string? redis = null, LogLevel logLevel = LogLevel.Warning)
+    // 发行方带端口，构建宿主前就要确定：端口在建表、挂载期间被占时换端口从头启动（S1-QA-014）。
+    internal static Task<Running> Start(PostgresFixture postgres, IdentityAccountOptions? accounts = null, string flavor = "default", string? redis = null, LogLevel logLevel = LogLevel.Warning) =>
+        LoopbackPort.StartAsync(port => StartOn(port, postgres, accounts, redis, logLevel));
+
+    private static async Task<Running> StartOn(int port, PostgresFixture postgres, IdentityAccountOptions? accounts, string? redis, LogLevel logLevel)
     {
-        using var socket = new TcpListener(IPAddress.Loopback, 0); socket.Start(); var port = ((IPEndPoint)socket.LocalEndpoint).Port; socket.Stop();
         var issuer = $"http://127.0.0.1:{port}/";
         using var rsa = RSA.Create(2048);
         var cert = new CertificateRequest("CN=Qian accounts", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
@@ -103,7 +106,9 @@ internal static class AccountsHost
             new(new PluginEntry("identity", "qian.identity.server", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { issuer })), new IdentityServerPlugin(),
                 [IdentityDefinition.Key, IdentityDefinition.AccountsKey, IdentityDefinition.SignInKey, IdentityDefinition.FactorsKey])], Ct);
         Assert.True(loader.GetState("identity", ScopeKey.Global) == PluginState.Ready, loader.GetFailure("identity", ScopeKey.Global)?.ToString());
-        await app.StartAsync(Ct);
+        // 启动失败（含端口被占）先释放这次建的宿主，LoopbackPort 才能换端口重来。
+        try { await app.StartAsync(Ct); }
+        catch { await loader.DisposeAsync(); await app.DisposeAsync(); cert.Dispose(); throw; }
         // 起点取整秒：时间戳列只有微秒精度，100 纳秒刻度会让「写入再读回」的时刻与内存里的差几个刻度，影响精确断言。
         var clock = new ManualClock(new DateTimeOffset(DateTimeOffset.UtcNow.UtcTicks / TimeSpan.TicksPerSecond * TimeSpan.TicksPerSecond, TimeSpan.Zero));
         var service = app.Services.GetRequiredService<IdentityAccountGate>().Service!;

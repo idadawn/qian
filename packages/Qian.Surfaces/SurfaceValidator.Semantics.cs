@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Qian.Common;
 using Qian.Surfaces.Abstractions;
 
 namespace Qian.Surfaces;
@@ -136,7 +137,9 @@ public sealed partial class SurfaceValidator
         {
             if (Path.GetFileNameWithoutExtension(doc.File) != doc.Name) Error(doc.File, "/name", SurfaceErrors.Name, "工具名称必须与文件名一致。");
             var input = doc.Data.GetProperty("inputSchema");
-            TenantFields(input, "/inputSchema");
+            // 点名租户字段的写法与能力契约共用 packages/Common/TenantFieldRule.cs（S1-AGT-004），TS 侧逐条对应。
+            foreach (var violation in TenantFieldRule.Find(input))
+                Error(doc.File, "/inputSchema" + string.Concat(violation.Path.Select(segment => "/" + Diagnostics.Token(segment))), SurfaceErrors.Policy, violation.Message);
             if (!validator._schemas.IsSchema(input)) Error(doc.File, "/inputSchema", SurfaceErrors.Schema, "输入 JSON Schema 无效。");
             try
             {
@@ -156,22 +159,6 @@ public sealed partial class SurfaceValidator
                         !options.Capabilities.Contains(key + "." + Text(binding, "method"), StringComparer.Ordinal))
                         Error(doc.File, "/binding", SurfaceErrors.Reference, "服务键或方法未在目录中登记。");
                     break;
-            }
-            void TenantFields(JsonElement element, string pointer)
-            {
-                if (element.ValueKind == JsonValueKind.Object)
-                {
-                    foreach (var property in element.EnumerateObject())
-                    {
-                        var child = pointer + "/" + Diagnostics.Token(property.Name);
-                        if (property.Name == "properties" && property.Value.ValueKind == JsonValueKind.Object)
-                            foreach (var field in property.Value.EnumerateObject())
-                                if (Match(field.Name.ToLowerInvariant(), "^tenant([_-]?id)?$")) Error(doc.File, child + "/" + Diagnostics.Token(field.Name), SurfaceErrors.Policy, "输入 Schema 不允许租户字段。");
-                        TenantFields(property.Value, child);
-                    }
-                }
-                else if (element.ValueKind == JsonValueKind.Array)
-                { var index = 0; foreach (var child in element.EnumerateArray()) TenantFields(child, pointer + "/" + index++); }
             }
         }
 

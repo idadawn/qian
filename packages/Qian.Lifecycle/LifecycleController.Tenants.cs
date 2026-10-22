@@ -54,6 +54,8 @@ internal sealed partial class LifecycleController
                     install = new TenantInstallRow { TenantId = tenantId, PluginId = pluginId };
                     db.Installs.Add(install);
                 }
+                // 第二道门：权益（买没买）之后核对反向权限批准（同不同意）；未批准时不写安装行、不认领执行记录。
+                await RequireApproval(db, active, cancellationToken).ConfigureAwait(false);
                 // 清除后重新开通：旧执行记录随组件数据一起作废，钩子重新执行。
                 if (install.State == TenantInstallStates.Purged) db.Runs.RemoveRange(await db.Runs.Where(run => run.PluginId == pluginId).ToListAsync(cancellationToken).ConfigureAwait(false));
                 version = active.Version;
@@ -92,6 +94,8 @@ internal sealed partial class LifecycleController
             if (!resuming && !(install is { State: TenantInstallStates.Installed } && install.Version == fromVersion)) throw Conflict("租户当前不是该版本的已开通状态。");
             if (target.State == PluginRevisionStates.Retired) throw Conflict("目标修订已退役。");
             if (target.Form == "service" && target.Health != DeploymentHealthStates.Healthy) throw Conflict("目标 service 修订尚未健康。");
+            // 升级新增的反向权限须重批（D7）；未批准时停在 Installed(from)，不认领执行记录。
+            await RequireApproval(db, target, cancellationToken).ConfigureAwait(false);
             install!.State = TenantInstallStates.Upgrading; install.TargetVersion = toVersion; Touch(install, actor);
             var claim = await Claim(db, tenantId, pluginId, LifecycleHooks.TenantUpgrade, fromVersion, toVersion, cancellationToken).ConfigureAwait(false);
             await Save(session, null, cancellationToken).ConfigureAwait(false);

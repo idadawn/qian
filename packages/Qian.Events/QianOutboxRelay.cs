@@ -124,7 +124,10 @@ internal sealed partial class QianOutboxRelay(IServiceScopeFactory scopes, IData
     }
 }
 
-/// <summary>Outbox 投递指标；confirmed 只在 broker 确认后计数，是「发布次数 = Outbox 行数」的依据。</summary>
+/// <summary>
+/// 事件组件指标。Outbox 侧 confirmed 只在 broker 确认后计数，是「发布次数 = Outbox 行数」的依据；
+/// 消费侧每条消息恰落入一个结果计数，dead_lettered 加一即告警（告警规则归 S1-DEP-006）。
+/// </summary>
 internal static class EventsMetrics
 {
     public const string MeterName = "Qian.Events";
@@ -132,4 +135,9 @@ internal static class EventsMetrics
     public static readonly Counter<long> Confirmed = Meter.CreateCounter<long>("qian.events.outbox.confirmed", description: "broker 已确认的集成事件条数");
     public static readonly Counter<long> Retried = Meter.CreateCounter<long>("qian.events.outbox.retried", description: "发布失败并安排重试的条数");
     public static readonly Counter<long> Failed = Meter.CreateCounter<long>("qian.events.outbox.failed", description: "发布失败并标记为失败的条数");
+    public static readonly Counter<long> ConsumerProcessed = Meter.CreateCounter<long>("qian.events.consumer.processed", description: "handler 成功、已写幂等记录并确认的消息条数");
+    public static readonly Counter<long> ConsumerRetried = Meter.CreateCounter<long>("qian.events.consumer.retried", description: "瞬时失败并转入重试队列退避的条数");
+    public static readonly Counter<long> ConsumerDeadLettered = Meter.CreateCounter<long>("qian.events.consumer.dead_lettered", description: "重试用尽或 handler 确定性失败、已转入死信队列的条数");
+    public static readonly Counter<long> ConsumerDuplicate = Meter.CreateCounter<long>("qian.events.consumer.duplicate", description: "幂等记录命中、未再执行 handler 的条数");
+    public static readonly Counter<long> ConsumerRejected = Meter.CreateCounter<long>("qian.events.consumer.rejected", description: "信封、租户、类型或载荷不满足消费契约、直接拒绝的条数");
 }

@@ -8,4 +8,5 @@
     <EmbeddedResource Include="../../schemas/v2/*.schema.json" LogicalName="schemas/%(Filename)%(Extension)" />
     <EmbeddedResource Include="../../contracts/v0/capability-entry.schema.json" LogicalName="schemas/capability-entry.schema.json" />
   </ItemGroup>
+  <ItemGroup><Compile Include="../Common/SchemaPattern.cs" Link="Common/SchemaPattern.cs" /><Compile Include="../Common/TenantFieldRule.cs" Link="Common/TenantFieldRule.cs" /></ItemGroup>
 </Project>

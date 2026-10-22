@@ -12,7 +12,8 @@ namespace Qian.Authz;
 // 供已授权的租户开通/角色管理流程使用；不对 HTTP 直接暴露，也不读取令牌中的权限集合。
 // 每次写入与租户授权修订同事务递增，并以修订行为聚合根发出领域事件，由宿主登记的 AddQianAuthzEvents 处理器把
 // authz.grant.changed.v1 / authz.role.changed.v1 写进同一工作单元的 Outbox（提交即可见；漏装处理器则写入回滚）。
-internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext tenant)
+// identities 非空时（组件入口的装配），授予变更提交后再递增受影响 user 主体的 identity_revision（S1-DEC-027）。
+internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext tenant, IdentityRevisionPropagation? identities = null)
 {
     private static readonly string[] Builtins = ["tenant.owner", "tenant.admin", "tenant.developer", "tenant.user"];
     // S1 持有成员管理权限的内置角色：租户最后一个有效绑定不可被移除或降级（防自锁）。S1-AZ-005 交付管理权限点后把「持有 qian.authz 管理权限点的角色」并入判据。
@@ -184,6 +185,13 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
 
     private async Task Write(string actor, Func<AuthzDbContext, string, Changes, Task> update, CancellationToken ct)
     {
+        var (owner, changes) = await CommitAsync(actor, update, ct).ConfigureAwait(false);
+        // 提交并释放数据会话之后才递增身份修订：授权变更不因它回滚（判定已按租户授权修订生效），这一步只让旧令牌及时失效。
+        if (identities is not null) await identities.PropagateAsync(owner, changes.Users()).ConfigureAwait(false);
+    }
+
+    private async Task<(string Owner, Changes Changes)> CommitAsync(string actor, Func<AuthzDbContext, string, Changes, Task> update, CancellationToken ct)
+    {
         Identifier(actor); var owner = Owner();
         await using var session = await data.OpenAsync<AuthzDbContext>(ct).ConfigureAwait(false);
         await using var transaction = await session.Context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
@@ -207,6 +215,7 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
         else await session.SaveChangesAsync(ct).ConfigureAwait(false);
         CheckOwner(owner);
         await transaction.CommitAsync(ct).ConfigureAwait(false);
+        return (owner, changes);
     }
     private string Owner()
     {
@@ -232,6 +241,10 @@ internal sealed class PostgresTenantRoleStore(IDataService data, ITenantContext 
         {
             if (_pending.Any(change => !change.Published)) throw new InvalidOperationException("授权事件未进入 Outbox：宿主须登记 AddQianAuthzEvents。");
         }
+        // 已随本次提交进入 Outbox 的授予变更涉及的 user 主体，同一主体只递增一次；角色级变更不扇出（S1-DEC-027 Q3）。
+        internal (string SubjectId, string Change)[] Users() =>
+            _pending.Where(change => change.Published && change.Subject == "grant" && change.SubjectType == "user")
+                .DistinctBy(change => change.SubjectId, StringComparer.Ordinal).Select(change => (change.SubjectId!, change.Change)).ToArray();
     }
 }
 

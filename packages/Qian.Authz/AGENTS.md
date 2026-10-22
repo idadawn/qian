@@ -11,6 +11,11 @@
 - `tenant/provisioned` 监听只接受 qian.tenancy 在目标租户 scope 派发、主体即该租户的通知；开通只建内置角色与尚未安装组件的默认策略，不绑定主体，也不升级已装组件（升级归 Lifecycle）。
 - 有效权限列表（me/permissions）必须与 Check 走同一求值路径，不另写判定；step-up / 终端受限的权限点照样列出并给出拒绝原因。
 - 三处 PEP（HTTP、gRPC、命令管道）只经 `IAuthzEnforcement` 执行；不要在适配器或命令策略里另写判定，也不要绕过决策审计：拒绝必记、放行按 `decisionLogSampling` 采样，审计不可用或写不成一律拒绝。平台主体只走显式旁路；主体带租户而上下文为空是装配错误（抛错），不是拒绝。
-- identity_revision 下限（`subject_identity_revisions`）每次判定读库，不要把它放进 Kun.Caching；未携带修订的令牌不比对。判定快照键的第四段是令牌修订。
+- identity_revision 下限（`subject_identity_revisions`）每次判定读库，不要把它放进 Kun.Caching；未携带修订的令牌不比对。判定快照键的第四段是令牌修订。下限只增不减：懒抬高靠并发令牌，同步抬高只经 `IdentityRevisionGuard.RaiseAsync`；陈旧令牌三处入口一律 401（`AuthzEnforcement.StaleIdentityRevision`），不要改回 403，客户端只在 401 时换令牌。
+- 授予变更后的身份修订递增只经 `AuthzPlugin.RoleStore` 组装的 `IdentityRevisionPropagation`（S1-DEC-027），规则如下：
+  - 时机：提交并释放数据会话之后执行；不回滚授权变更、不向调用方抛错；预算 3 秒。
+  - 范围：只处理 user 主体；`authz.role.changed.v1` 不扇出；身份组件不在本进程即跳过。
+  - 重复递增：同进程宿主不要再登记身份侧对 `authz.grant.changed.v1` 的订阅（S1-IDP-012），否则一次变更递增两次。
+  - 新的授予写入路径：必须经 `Write`，才会进入这一步。
 - 任何授权写入都经 `Write` 并登记 `AuthzChange`：新的变更类型要同时进 `AuthzChangeHandler` 与 `Qian.Authz.Abstractions` 的事件记录；宿主缺 `RegisterAuthzEvents` 装载失败、缺 `AddQianAuthzEvents` 写入回滚，不要为了绕过而静默吞掉。
 - 两条守卫不可放宽：绑定 Scope 只能是租户本身（子作用域 / 别的租户 → `AUTHZ_SCOPE_MISMATCH`）；最后一个有效的 `tenant.owner` / `tenant.admin` 绑定不可撤销或加有效期上限（→ `AUTHZ_LAST_ADMIN_LOCKOUT`）。

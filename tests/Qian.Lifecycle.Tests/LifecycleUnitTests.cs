@@ -10,13 +10,13 @@ namespace Qian.Lifecycle.Tests;
 public sealed class LifecycleUnitTests
 {
     [Fact]
-    public void 设计时入口经AddQianData建上下文_模型没有待生成的迁移_租户表带强制RLS_平台修订表与Outbox不带()
+    public void 设计时入口经AddQianData建上下文_模型没有待生成的迁移_租户表含批准记录都带强制RLS_平台修订表与Outbox不带()
     {
         using var context = new LifecycleDesignTimeFactory().CreateDbContext([]);
         Assert.False(context.Database.HasPendingModelChanges());
-        Assert.Equal(["20261015081937_LifecycleStateMachines"], context.Database.GetMigrations());
+        Assert.Equal(["20261015081937_LifecycleStateMachines", "20261021194607_PermissionApprovals"], context.Database.GetMigrations());
         var script = context.GetService<IMigrator>().GenerateScript();
-        foreach (var table in new[] { "tenant_plugin_installs", "lifecycle_runs", "mount_failures" })
+        foreach (var table in new[] { "tenant_plugin_installs", "lifecycle_runs", "mount_failures", "permission_approvals" })
         {
             var name = LifecycleDbContext.Schema + "." + table;
             Assert.Contains("ALTER TABLE " + name + " FORCE ROW LEVEL SECURITY;", script, StringComparison.Ordinal);

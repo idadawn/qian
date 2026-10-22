@@ -5,7 +5,7 @@ using Qian.Data;
 
 namespace Qian.Lifecycle;
 
-/// <summary>生命周期上下文：平台修订（平台级目录）、租户安装、钩子执行记录与挂载失败诊断（租户表，强制 RLS）；表结构随包内迁移交付。</summary>
+/// <summary>生命周期上下文：平台修订（平台级目录）、租户安装、钩子执行记录、挂载失败诊断与反向权限批准（租户表，强制 RLS）；表结构随包内迁移交付。</summary>
 public sealed class LifecycleDbContext(DbContextOptions<LifecycleDbContext> options, ITenantContext tenant) : QianDbContext(options, tenant)
 {
     /// <summary>组件规格 §7.6 的唯一数据库 schema。</summary>
@@ -14,6 +14,7 @@ public sealed class LifecycleDbContext(DbContextOptions<LifecycleDbContext> opti
     internal DbSet<TenantInstallRow> Installs => Set<TenantInstallRow>();
     internal DbSet<LifecycleRunRow> Runs => Set<LifecycleRunRow>();
     internal DbSet<MountFailureRow> MountFailures => Set<MountFailureRow>();
+    internal DbSet<PermissionApprovalRow> PermissionApprovals => Set<PermissionApprovalRow>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -87,6 +88,20 @@ public sealed class LifecycleDbContext(DbContextOptions<LifecycleDbContext> opti
             entity.Property(row => row.Plugin).HasMaxLength(330);
             entity.Property(row => row.ReasonCode).HasMaxLength(64).IsRequired();
             entity.Property(row => row.OccurredAt).HasColumnType("timestamp with time zone");
+        });
+        // 租户对组件版本的反向权限批准（D7 逐项批准、升级新增即重批）：一个版本一行，整份替换；与权益（Entitled）是两道门，不合并。
+        modelBuilder.Entity<PermissionApprovalRow>(entity =>
+        {
+            entity.ToTable("permission_approvals");
+            entity.HasKey(row => new { row.TenantId, row.PluginId, row.Version });
+            entity.Property(row => row.TenantId).HasMaxLength(200);
+            entity.Property(row => row.PluginId).HasMaxLength(128);
+            entity.Property(row => row.Version).HasMaxLength(200);
+            entity.Property(row => row.Approved).HasColumnType("jsonb").IsRequired();
+            entity.Property(row => row.ApprovedBy).HasMaxLength(200).IsRequired();
+            entity.Property(row => row.ApprovedVia).HasMaxLength(16).IsRequired();
+            entity.Property(row => row.ApprovedAt).HasColumnType("timestamp with time zone");
+            entity.Property(row => row.RowVersion).IsConcurrencyToken();
         });
     }
 }
@@ -163,4 +178,17 @@ internal sealed class MountFailureRow : IMultiTenant
     public string ReasonCode { get; set; } = "";
     public DateTimeOffset OccurredAt { get; set; }
     internal LifecycleDiagnosticView View() => new(Scope, EntryId, Plugin, Revision, ReasonCode, OccurredAt);
+}
+
+internal sealed class PermissionApprovalRow : IMultiTenant
+{
+    public string TenantId { get; set; } = "";
+    public string PluginId { get; set; } = "";
+    public string Version { get; set; } = "";
+    public string Approved { get; set; } = "";
+    public string ApprovedBy { get; set; } = "";
+    public string ApprovedVia { get; set; } = "";
+    public DateTimeOffset ApprovedAt { get; set; }
+    public int RowVersion { get; set; }
+    internal PermissionApprovalView View() => new(TenantId, PluginId, Version, PermissionSet.Parse(Approved).ToGrants(), ApprovedBy, ApprovedVia, ApprovedAt);
 }

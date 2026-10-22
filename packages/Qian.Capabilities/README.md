@@ -68,7 +68,7 @@ ApiExplorer 不列这条通用模板：它只能描述静态、与调用者无�
 
 | 规则 | 含义 |
 |---|---|
-| `tenant-field` | 输入 Schema 任何层级含租户字段（`tenant`、`tenantId`、`tenant_id`、`tenant-id`，不分大小写）；租户只来自令牌 |
+| `tenant-field` | 输入 Schema 任何层级点名租户字段（`tenant`、`tenantId`、`tenant_id`、`tenant-id`，ASCII 不分大小写）：属性名，`required`、`dependentRequired`、`dependentSchemas` 的名称，`propertyNames` 用 `const` / `enum` 列出的名称，或能匹配租户名、无法判定的 `patternProperties` 模式；开放的映射不检查；租户只来自令牌 |
 | `tool-invalid` / `entry-invalid` | 声明或生成的条目不符合 tool/v2 或 `contracts/v0/capability-entry`，位置指向条目内出错的字段 |
 | `unsupported-key` | `patternProperties` / `dependentSchemas` 的键含 `/` 或 `~` |
 | `unsupported-number` | `enum` / `const` 的取值（含嵌套的对象与数组）里有绝对值超过 decimal 范围的数；JsonSchema.Net 9.4 按 decimal 比较取值，遇到这类数，任何数值输入都会让求值抛异常 |
@@ -177,7 +177,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 
 TEN-011 收口：原生 HTTP 导出同时读取字符串 MinLength/MaxLength/RegularExpression，查询取值来自 AllowedValues；与 CLR int 类型边界相同的 Range 上限不重复写成业务 maximum。DisallowNull/IsSetNullable 的去空变换仅适用于请求体，输入与输出 Schema 分开缓存，避免同一 DTO 的写入限制污染响应。动态 JsonElement 响应由 Definition 的 HttpResponseSchema 元数据提供完整 Schema；它只描述响应，不授予权限或改变执行。
 
-TenantInputContract 是能力 inputSchema 与 HTTP 契约检查共用的租户字段规则，解析本地引用并跳过实例注解，HTTP 调用方另外按同一词表检查参数名。平台排除用例同时提供正常绑定与双标记端点；删除生产排除分支时用例必须失败（R112）。本次没有放宽 oasdiff、准入探针或失败等级。
+TenantInputContract 是能力 inputSchema 与 HTTP 契约检查共用的租户字段规则，解析本地引用并跳过实例注解，HTTP 调用方另外按同一词表检查参数名。规则本身与表面校验器共用 `packages/Common/TenantFieldRule.cs`（S1-AGT-004）：properties 之外的 `required`、`dependentRequired`、`dependentSchemas`、`patternProperties` 与 `propertyNames` 列出的名称同样拒绝；名称表里叫 `default`、`enum` 的属性照常往下查，此前会被当成实例数据跳过。平台排除用例同时提供正常绑定与双标记端点；删除生产排除分支时用例必须失败（R112）。本次没有放宽 oasdiff、准入探针或失败等级。
 
 ## 清单入口与代码派生
 

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Kun.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Qian.Authz.Abstractions;
 using Qian.Data;
 using Qian.Identity.Abstractions;
 using Qian.Registry;
@@ -154,15 +155,39 @@ internal sealed partial class LifecycleController
         if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject || !tenant.IsMultiTenant || string.IsNullOrWhiteSpace(tenant.TenantId))
             throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
         var tenantId = tenant.TenantId;
-        if (principal.Actor is not null || principal.Kind is not (PrincipalKind.User or PrincipalKind.Service) || principal.TenantId != tenantId ||
-            scope.Kind != "tenant" || scope.Id != tenantId) throw NotFound();
-        // 判定端口由宿主的 Authz Provider 装配；缺失时 fail-closed，不回退到令牌角色。
-        if (context.Services.GetService<IPermissionChecker>() is not { } checker) throw NotFound();
-        var subject = new AuthorizationSubject(principal.Subject, tenantId, principal.Kind == PrincipalKind.User ? "user" : "service");
-        var decision = await checker.CheckAsync(new PermissionRequest(subject, LifecycleDefinition.DiagnosticsReadPermission), ct).ConfigureAwait(false);
-        // 判定之后再确认请求主体与租户上下文没有变化。
-        if (!decision.Allow || !user.IsAuthenticated || user.UserId != principal.Subject || user.Principal?.TenantId != tenantId ||
-            user.Principal?.Kind != principal.Kind || user.Principal?.Actor is not null || tenant.TenantId != tenantId) throw NotFound();
+        if (scope.Kind != "tenant" || scope.Id != tenantId) throw NotFound();
+        await AuthorizeAsync(tenantId, user, LifecycleDefinition.DiagnosticsReadPermission, "lifecycle/diagnostics:" + scope.Kind + ":" + scope.Id, ct).ConfigureAwait(false);
         return tenantId;
+    }
+
+    // 当前租户上下文即目标租户。租户主体须属于该租户（用户或服务主体、无委托），并经宿主的权限判定端口持 permission；平台主体（无租户、无委托的用户）
+    // 只经 Authz 的超管显式旁路（ADR-006 D6.3），由旁路写入该租户审计链（bypass = superadmin）。判定端口或旁路缺席、无权限一律 NOT_FOUND。
+    // 返回放行的来源（PermissionApprovalChannels）；resource 只写入旁路审计。
+    private async ValueTask<string> AuthorizeAsync(string tenantId, ICurrentUser user, string permission, string resource, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        var principal = user.Principal;
+        if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
+        if (tenant.TenantId != tenantId || principal.Actor is not null) throw NotFound();
+        PermissionDecision decision; string via;
+        if (principal.Kind == PrincipalKind.User && principal.TenantId is null)
+        {
+            if (context.TryInject<ISuperadminBypass>(AuthzDefinition.SuperadminBypassKey) is not { } bypass) throw NotFound();
+            decision = await bypass.AuthorizeAsync(new SuperadminAccess(new AuthorizationSubject(principal.Subject, null, "user"), permission, tenantId, resource, "api"), ct).ConfigureAwait(false);
+            via = PermissionApprovalChannels.Superadmin;
+        }
+        else
+        {
+            if (principal.Kind is not (PrincipalKind.User or PrincipalKind.Service) || principal.TenantId != tenantId) throw NotFound();
+            // 判定端口由宿主的 Authz Provider 装配；缺失时 fail-closed，不回退到令牌角色。
+            if (context.Services.GetService<IPermissionChecker>() is not { } checker) throw NotFound();
+            var subject = new AuthorizationSubject(principal.Subject, tenantId, principal.Kind == PrincipalKind.User ? "user" : "service");
+            decision = await checker.CheckAsync(new PermissionRequest(subject, permission), ct).ConfigureAwait(false);
+            via = PermissionApprovalChannels.Tenant;
+        }
+        // 判定之后再确认请求主体与租户上下文没有变化。
+        if (!decision.Allow || !user.IsAuthenticated || user.UserId != principal.Subject || user.Principal?.TenantId != principal.TenantId ||
+            user.Principal?.Kind != principal.Kind || user.Principal?.Actor is not null || tenant.TenantId != tenantId) throw NotFound();
+        return via;
     }
 }

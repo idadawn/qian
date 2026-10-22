@@ -9,6 +9,8 @@
 
 同一个包进 `platform`、`gateway` 与独立宿主（ADR-019）：独立宿主只装本包即可对接任意 OIDC 发行方，不部署 Qian 平台、不需要 Config 组件（公开客户端）。
 
+本包声明 `IsAotCompatible`，裁剪与 AOT 分析器 0 警告。组件清单的 `x-aot` 以 CI 的 NativeAOT 冒烟为据（S1-IDP-014）。按 S1-DEC-029，开发期 `gateway` 暂用 JIT，网关整体的 NativeAOT 验收归 GW-001 / DEP-008。冒烟的做法是：[tools/Qian.Identity.Client.AotSmoke](../../tools/Qian.Identity.Client.AotSmoke/Program.cs) 按网关的用法装配会话与 S2S 校验，以 ILC 警告即失败发布 linux-x64，原生二进制挂载组件后逐个请求端点。判断兼容性看 ILC 结果，不看 Kun 包的元数据：Kun 2026.10.14 的包缺 IsTrimmable 等元数据，成因见 [S1-KUN-015](../../pm/tasks/S1-KUN-015.md)。
+
 ## 安装与装配
 
 ```bash
@@ -112,8 +114,9 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 - 本地登出与正在进行的刷新并发时，刷新的结果只续写仍存活的会话，已登出的会话不会复活；但刷新已经换到的令牌族要等发行方侧过期。
 - `resource` 只在授权请求里带：Kun 的 `OidcCodeExchange` 与刷新都不能追加参数，所以换码与刷新请求不带。qian-identity 的授权码与 refresh token 已绑定授权时请求的资源，换码、刷新沿用，受众不变。对接要求令牌请求也带 `resource` 的发行方（MCP 授权规范对客户端的要求），要等 Kun 支持追加参数。
 - `prompt`、`login_hint`、租户提示等授权参数尚未透传（外壳接线随 D5 / YUE-002）。
-- 清单已由 SDK 派生稳定入口与 configSchema，仍保留 `x-skeleton`，等待包族发布和真实 `qian add` 安装验收。按 S1-DEC-029，开发期 gateway 使用 JIT，最终 NativeAOT 门仍由 GW-001 / DEP-008 验收；本组件未取得 AOT 证据，不声明 `x-aot`。
+- 清单已由 SDK 派生稳定入口与 configSchema，并声明了 `x-aot`（依据见上文的 NativeAOT 冒烟），但仍保留 `x-skeleton`：还要等包族发布、`runtime.nuget` 钉版和真实 `qian add` 安装验收（S1-IDP-015）。发版只能从 main 触发。按 S1-DEC-029，开发期 gateway 使用 JIT，gateway 整体的 NativeAOT 门仍由 GW-001 / DEP-008 验收。
+- `Qian.Plugin.Sdk` 经 `Qian.Data.Abstractions` 把 EF Core 带进依赖闭包。NativeAOT 发布时这部分不可达，会被裁掉；JIT 宿主的输出目录里会多出这些程序集。
 
 ## 测试
 
-`tests/Qian.Identity.Client.Tests`：真实 qian-identity（内置账号模型、强制 PKCE）上的服务端换码、篡改 nonce / iss / state 重放、刷新单飞与轮换、登出防伪、卸载、后通道登出，以及会话主体经 Kun 网关签发器铸 S2S 后下游接受、透传被拒；S2S 契约逐条违约。`tests/Qian.Identity.Client.Standalone.Tests`：只引用本包的独立宿主对接 Dex（独立实现的 CNCF OIDC 发行方，见 [tests/README.md](../../tests/README.md) 的 `DexFixture`）完成登录与登出，并断言依赖闭包里没有其他 Qian 组件。选 Dex 而不是第二个 qian-identity，是因为后者证明不了「任意 OIDC 发行方」。
+`tests/Qian.Identity.Client.Tests`：真实 qian-identity（内置账号模型、强制 PKCE）上的服务端换码、篡改 nonce / iss / state 重放、刷新单飞与轮换、登出防伪、卸载、后通道登出，以及会话主体经 Kun 网关签发器铸 S2S 后下游接受、透传被拒；S2S 契约逐条违约。`tests/Qian.Identity.Client.Standalone.Tests`：只引用本包的独立宿主对接 Dex（独立实现的 CNCF OIDC 发行方，见 [tests/README.md](../../tests/README.md) 的 `DexFixture`）完成登录与登出，并断言依赖闭包里没有其他 Qian 组件。`ClientManifestTests` 核对清单与生成元数据、配置 Schema 一致，公开客户端能挂载和卸载，并确认清单声明了 `x-aot`；NativeAOT 冒烟见上文。选 Dex 而不是第二个 qian-identity，是因为后者证明不了「任意 OIDC 发行方」。

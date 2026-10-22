@@ -10,6 +10,7 @@ using Kun.Mediator.DependencyInjection;
 using Kun.Security.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Qian.Audit;
 using Qian.Authz;
 using Qian.Authz.Abstractions;
@@ -19,6 +20,7 @@ using Qian.Events;
 using Qian.Plugin.Sdk;
 using Qian.Tenancy;
 using Qian.Runtime;
+using StackExchange.Redis;
 
 namespace Qian.Sample.Crm;
 
@@ -75,7 +77,18 @@ public static class CrmCommandApplication
             // Outbox 行即 v1 信封；配置了 broker 才投递到 RabbitMQ，未配置时只写 Outbox（本地无 MQ 的开发与测试）。
             builder.Services.AddQianEvents();
             if (builder.Configuration.GetConnectionString("Events") is { Length: > 0 })
+            {
                 builder.Services.AddQianEventsBroker(_ => Connection("Events"));
+                // 消费端（S1-EVT-002）：再配置了 Redis 才装订阅器，幂等记录写 Redis；租户经传播器按信封 tenant_id 回灌，参考宿主自己订阅客户建档事件。
+                if (builder.Configuration.GetConnectionString("Redis") is { Length: > 0 })
+                {
+                    builder.Services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+                        ConnectionMultiplexer.Connect(ConfigurationOptions.Parse(Connection("Redis")).Apply(options => options.AbortOnConnectFail = false)));
+                    builder.Services.TryAddSingleton<ITenantContextPropagator>(sp => new TenantContextPropagator(sp.GetRequiredService<ITenantContext>()));
+                    builder.Services.TryAddSingleton<CustomerCreatedReceipts>();
+                    builder.Services.AddQianEventsSubscriber("qian.sample.crm", subscriber => subscriber.Subscribe<CrmCustomerCreated, CustomerCreatedHandler>("customer-created"));
+                }
+            }
             builder.Services.AddSingleton<IPermissionRegistry, PermissionRegistry>();
             builder.Services.AddQianData<AuthzDbContext>((_, options) => options.UseNpgsql(Connection("Authz")).UseKunSchema(AuthzDbContext.Schema));
             builder.Services.AddQianData<TenancyDbContext>((_, options) => options.UseNpgsql(Connection("Tenancy")).UseKunSchema(TenancyDbContext.Schema));
