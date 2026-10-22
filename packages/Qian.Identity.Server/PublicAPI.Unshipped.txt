@@ -130,3 +130,15 @@ Qian.Identity.Server.TenantExpiredSessionHandler
 Qian.Identity.Server.TenantExpiredSessionHandler.TenantExpiredSessionHandler(System.IServiceProvider! services) -> void
 Qian.Identity.Server.TenantExpiredSessionHandler.HandleAsync(Qian.Tenancy.TenantExpired! event, Kun.EventBus.MessageContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 static Qian.Identity.Server.IdentityEventHandlers.AddQianIdentitySessionHandlers(this Kun.EventBus.DependencyInjection.KunEventBusBuilder! builder) -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
+Qian.Identity.Server.ConnectorPolicy
+Qian.Identity.Server.ConnectorPolicy.BindingLifetime.get -> System.TimeSpan
+Qian.Identity.Server.ConnectorPolicy.BindingLifetime.init -> void
+Qian.Identity.Server.ConnectorPolicy.ConnectorPolicy() -> void
+Qian.Identity.Server.ConnectorPolicy.FlowLifetime.get -> System.TimeSpan
+Qian.Identity.Server.ConnectorPolicy.FlowLifetime.init -> void
+Qian.Identity.Server.ConnectorPolicy.LandingPath.get -> string!
+Qian.Identity.Server.ConnectorPolicy.LandingPath.init -> void
+Qian.Identity.Server.ConnectorPolicy.ReauthenticationWindow.get -> System.TimeSpan
+Qian.Identity.Server.ConnectorPolicy.ReauthenticationWindow.init -> void
+Qian.Identity.Server.IdentityAccountOptions.Connectors.get -> Qian.Identity.Server.ConnectorPolicy!
+Qian.Identity.Server.IdentityAccountOptions.Connectors.init -> void

@@ -381,6 +381,12 @@
 
 ---
 
+### 3.7 代码入口与程序集的组件归属（S1-DEC-028）
+
+一个组件 ID 对应一个文件夹、一份 `.qian-plugin/plugin.json` 与一个 `runtime.entry`。一个程序集可以包含多个标注不同 ID 的 `[QianPlugin]` 入口；源生成器分别派生元数据，`qian-plugin check|sync` 按目标清单的 ID 选择。重复 ID、没有匹配入口与跨组件能力归属均须明确失败，不能默认取第一个或把所有组件的 `Inject` / `Provide` 混在一起。
+
+`IQianPlugin` 还被契约包装器、运行时快照适配器及宿主组合子插件使用，这些实现构件不等同于独立可安装组件，不强制生成另一份清单。必须在 SDK 文档与 CI 分类清单中记录其归属，新增实现不得静默漏检。确需多个实现共同构成一个组件时，使用承担依赖与生命周期的单一组合入口；构建期不得执行组件代码推测派生结果。真实入口的 `scopes` 和派生字段仍必须与代码一致，补齐元数据不等于通过真实 `qian add` 验收，`x-skeleton` 的去留继续遵循 S1-DEC-018。
+
 ## 4. 声明式表面的文件格式
 
 通用规则：Markdown 表面 = YAML front matter + 正文（front matter 按各自 Schema 校验，正文原样交给消费者）；JSON 表面按 JSON Schema 2020-12 校验、`additionalProperties: false`、接受 `^x-`。表面内的名字在组件内唯一，全局形式由注册表拼接为 `<component-id>/<name>`（如 `qian.files/upload`），模型看到的是全局形式经 scope 过滤后的集合。所有注册带条目的 `scope`，scope 内同名遮蔽全局（§5.5）。密钥只以 `secretRef://…` 出现（§11.3）。
@@ -832,8 +838,8 @@ S1-KUN-010 对 Definition 的 Kun 直接依赖设置门禁；因既有公开契�
 
 - **seam 分两种风格**（已裁决 R38）：
   - (a) **单例 seam**：同 scope 内同键只能有一个 `Provide`，第二个即挂载失败；多实现靠 patch 替换条目或租户 scope 遮蔽。S1：`Tenancy`、`Identity`、`Authz`、`Files`、`Config`、`Events`、`Audit`、`Notify`、`Scheduler`…
-  - (b) **注册表 seam**：Definition 本身（或其子服务）是一个注册表 `IRegistry<T> { IDisposable Register(string name, T impl); T? Get(string name); IReadOnlyList<Registration> List(); }`；Provider 按名称独占注册（同名第二个失败），消费者按名称或策略选用；清单 `provides` 写 `<Key>.<Registry>:<name>`。S1 的注册表子服务：`Identity.Connectors`（`ctx.Identity().Connectors`）、`Notify.Channels`、`Files.Backends`、`Scheduler.JobTypes`。注册表注册同样带 scope：租户 scope 内注册同名项遮蔽全局项。
-  - **连接器一律走 (b)**：身份连接器注册到 `ctx.Identity.Connectors`，通知渠道注册到 `ctx.Notify.Channels`，存储后端注册到 `ctx.Files.Backends`。
+  - (b) **注册表 seam**：Definition 本身（或其子服务）是一个注册表 `IRegistry<T> { IDisposable Register(string name, T impl); T? Get(string name); IReadOnlyList<Registration> List(); }`；Provider 按名称独占注册（同名第二个失败），消费者按名称或策略选用；清单 `provides` 写 `<Key>.<Registry>:<name>`。S1 的注册表子服务：`Identity.Connectors`（连接器组件经 `ctx.IdentityConnectors()` 注册，注册落在自己的上下文与 scope；消费方经 `ctx.Identity().Connectors` 按当前租户上下文解析，S1-IDP-007）、`Notify.Channels`、`Files.Backends`、`Scheduler.JobTypes`。注册表注册同样带 scope：租户 scope 内注册同名项遮蔽全局项。
+  - **连接器一律走 (b)**：身份连接器经 `ctx.IdentityConnectors()` 注册到 `Identity.Connectors`，通知渠道注册到 `ctx.Notify.Channels`，存储后端注册到 `ctx.Files.Backends`。
 - 组件 id 与包名映射：Provider 组件 id = 去掉 `Qian.` 前缀、小写、加 `qian.`（`Qian.Files` → `qian.files`、`Qian.Identity.Server` → `qian.identity.server`、`Qian.Data.Dialect.Pg` → `qian.data.dialect.pg`）；不同名处在 `runtime.nuget[]` 显式列出即可，CLI 不要求同名（ADR-019 §7 的映射遗留项由此消解）。
 - `AddQian<X>()` 保留在 Provider 包内，只是 `Apply` 内部的装配细节（D20.10）；独立模式（ADR-019 D19.4）= `minimal` / `standalone` profile 上的同一份代码。
 - CI（§10.3 G3）用 `dotnet list package --include-transitive` 与 npm lockfile 断言上表的禁止项。
@@ -851,7 +857,7 @@ S1-KUN-010 对 Definition 的 Kun 直接依赖设置门禁；因既有公开契�
 | 角色 | 包 / 组件 | 内容 |
 |---|---|---|
 | Definition | `Qian.Identity.Abstractions` / `@qian/identity-abstractions` | 键 `Identity`（TS `identity`）→ `IIdentityService { CurrentPrincipal, GetPersonAsync, GetMembershipAsync, ListSessionsAsync, RevokeSessionsAsync, Connectors }`；`Connectors` 为注册表子服务（R38）：`Register(name, IIdentityConnector)` 返回释放函数、同名独占，`IIdentityConnector { BeginSignInAsync, CompleteSignInAsync, SyncDirectoryAsync? }`；DTO `Principal`（S2S claim 形状，ADR-016 D16.3）、`Person`、`Membership`、`Session`；事件 `identity/signing-in`（waterfall）、`identity/signed-in`（emit）、`identity/signed-out`（emit）、`identity/member-disabled`（parallel） |
-| S1 Provider | `Qian.Identity.Server` → `qian.identity.server`（`identity` profile：嵌入式 OpenIddict 唯一 issuer、Person / Membership、会话中心、组织目录最小集）；`Qian.Identity.Client` → `qian.identity.client`（`platform` / `standalone` / `gateway` profile：RP 接入、Cookie 会话、S2S 校验，远程访问 Server）；**连接器组件**（R28 / R38）`Qian.Identity.Connector.Oidc` → `qian.identity.connector.oidc`（`inject: ["Identity"]`，`provides: ["Identity.Connectors:oidc"]`，`policy.egress: ["<idp-host>:443"]`）与 `Qian.Identity.Connector.WeCom` → `qian.identity.connector.wecom`（`provides: ["Identity.Connectors:wecom"]`，`policy.egress: ["qyapi.weixin.qq.com:443"]`），在 `Apply` 中 `ctx.Identity().Connectors.Register("oidc" \| "wecom", …)`，`runtime.form: module` | `Identity` 的两个 Provider 分别在不同 profile 的树里；`qian.identity.server` 的登录页按 `Connectors.List()` 渲染可用连接器；S3 租户自助 IdP = 在租户 scope 注册同名 `oidc` 连接器遮蔽全局项 |
+| S1 Provider | `Qian.Identity.Server` → `qian.identity.server`（`identity` profile：嵌入式 OpenIddict 唯一 issuer、Person / Membership、会话中心、组织目录最小集）；`Qian.Identity.Client` → `qian.identity.client`（`platform` / `standalone` / `gateway` profile：RP 接入、Cookie 会话、S2S 校验，远程访问 Server）；**连接器组件**（R28 / R38）`Qian.Identity.Connector.Oidc` → `qian.identity.connector.oidc`（`inject: ["Identity"]`，`provides: ["Identity.Connectors:oidc"]`，`policy.egress: ["<idp-host>:443"]`）与 `Qian.Identity.Connector.WeCom` → `qian.identity.connector.wecom`（`provides: ["Identity.Connectors:wecom"]`，`policy.egress: ["qyapi.weixin.qq.com:443"]`），在 `Apply` 中 `ctx.IdentityConnectors().Register("oidc" \| "wecom", …)`，`runtime.form: module` | `Identity` 的两个 Provider 分别在不同 profile 的树里；`qian.identity.server` 的登录页按 `Connectors.List()` 渲染可用连接器；S3 租户自助 IdP = 在租户 scope 注册同名 `oidc` 连接器遮蔽全局项 |
 | S1 Consumer | `qian.authz`（主体）、`qian.gateway`（Cookie 换 S2S）、`qian.audit`（actor）、`qian.shell` 认证页族、连接器组件、工具 `qian.identity/list-connectors` 等 | 把 `Qian.Identity.Server` 换成外部 IdP 连接器方案时登录页与会话中心不变（D20.4 例） |
 
 ### 6.4 Authz seam
@@ -1064,7 +1070,7 @@ CREATE TABLE plugin_qian_registry.scope_patches (
 -- RLS：tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')（Kun RLS 拦截器装配，ADR-004）
 ```
 
-`qian.registry` 在租户上下文建立时把该租户的行叠为运行中的最后一层，并发出 `registry/entry-mounted` / `registry/entry-disabled`。**租户挂载状态只存这张表**，不再有 v1 的 Enabled / Disabled 状态机（R34）；「买没买、能不能」留在 `qian.entitlement`：写入前调用 `ctx.Entitlement().CheckAsync(tenant, plugin)`，未授权返回 `NOT_ENTITLED`；`policy.required: true` 的组件拒绝写入 `disabled: true`。写入路径：管理面 `PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`（幂等，带 `revision`，§9.5）与 CLI `qian add --scope tenant:<id>`，两者由 S1-RT-029 交付（R86）。管理面 403 的 `pointer` 以逻辑文档 `registry/scope-patches.json` 为前缀：`#/n` 是该 scope patch 行按条目标识排序后的序号，无该行时指向文档根 `#`，被 profile 某层禁用时指向该层文件位置（R87）。注册表是运行态的真相源，组件文件夹是分发形态，二者共用校验器（R35）。
+`qian.registry` 在租户上下文建立时把该租户的行叠为运行中的最后一层，并发出 `registry/entry-mounted` / `registry/entry-disabled`。**租户挂载状态只存这张表**，不再有 v1 的 Enabled / Disabled 状态机（R34）；「买没买、能不能」留在 `qian.entitlement`：写入前调用 `ctx.Entitlement().CheckAsync(tenant, plugin)`，未授权返回 `NOT_ENTITLED`；`policy.required: true` 的组件拒绝写入 `disabled: true`。写入路径：管理面 `PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`（幂等，带 `revision`，§9.5）与 CLI `qian add --scope tenant:<id>`，两者已由 S1-RT-029 接入单条写入（R86）：正文为 `{revision, patch}`，目标租户只取路径；平台主体经超管旁路审计，租户需 `qian.registry:scope:write`（默认 Owner）且权益端口缺席时 fail-closed；CLI 每次只操作一个条目，过期修订 409 `CONFLICT` 不自动重试。管理面 403 的 `pointer` 以逻辑文档 `registry/scope-patches.json` 为前缀：`#/n` 是该 scope patch 行按条目标识排序后的序号，无该行时指向文档根 `#`，被 profile 某层禁用时指向该层文件位置（R87）。注册表是运行态的真相源，组件文件夹是分发形态，二者共用校验器（R35）。
 
 ### 7.7 S1 五个 profile 的组合包清单（R31 落位表）
 
@@ -1074,7 +1080,7 @@ CREATE TABLE plugin_qian_registry.scope_patches (
 |---|---|---|---|
 | `platform` | `qian.bundle.base` + `qian.bundle.shell` + 可选 `qian.bundle.model-gateway` | base：原 18 个平台插件按 seam 拆包——`registry`、`lifecycle`、`capabilities`、`hooks`、`tenancy`、`identity → qian.identity.client`、`authz`、`data`、`files`、`config → qian.config.apollo`、`events`、`audit`、`observability`、`notify` + 三个渠道、`scheduler`、`realtime`、`entitlement`（§7.3），并携带平台运维技能 / 命令 / 钩子表面；shell：`shell → qian.shell`（yue 外壳静态制品与外壳 API）；model-gateway：`model-gateway → qian.model-gateway`（P1，默认 `disabled: true`） | 不承诺 AOT |
 | `gateway` | `qian.bundle.gateway` | `gateway → qian.gateway`、`identity → qian.identity.client`（Cookie 换 S2S、JWKS）、`config → qian.config.apollo`、`observability`、`audit` | 可 AOT：`build.aot: true` |
-| `identity` | `qian.bundle.identity-server` | `identity → qian.identity.server`（可嵌入 OpenIddict，唯一 issuer）、`identity.connector.oidc`、`identity.connector.wecom`（连接器组件，向 `ctx.Identity.Connectors` 注册 `oidc` / `wecom`，R28 / R38）、`tenancy`、`data`、`config → qian.config.apollo`、`events`、`audit`、`files`（头像，可选） | 独立安全边界 |
+| `identity` | `qian.bundle.identity-server` | `identity → qian.identity.server`（可嵌入 OpenIddict，唯一 issuer）、`identity.connector.oidc`、`identity.connector.wecom`（连接器组件，经 `ctx.IdentityConnectors()` 注册 `oidc` / `wecom`，R28 / R38）、`tenancy`、`data`、`config → qian.config.apollo`、`events`、`audit`、`files`（头像，可选） | 独立安全边界 |
 | `standalone` | `qian.bundle.standalone` | 供消费者宿主安装的最小组合包：`Qian.Runtime` + `config → qian.config`（标准 `IConfiguration`）、`tenancy`（条目配置只含空 `initializationCapabilities`；是否单租户由宿主显式提供 `ITenantContext` / `SingleTenant` 决定，不经配置字符串切换，ADR-019 D19.4，S1-TEN-007 复核对齐）+ 所选 seam 的 Definition / Provider（由 `qian add identity authz files …` 带入） | ADR-019 D19.8 的 30 分钟验收宿主；`qian init --template dotnet-webapi` 默认 |
 | `minimal` | `qian.bundle.minimal` | 测试与 SDK 基准宿主，仅 `Qian.Runtime` 与声明式表面装载器；组合包初始 patch 为空，无默认业务组件（S1-DEC-012，2026-10-09 确认） | TCK 宿主、CLI 自身运行时 |
 
@@ -1249,7 +1255,7 @@ npx qian@latest [--skill <name>]… [--agent <name>]… [--command <name>]… [-
 
 | 前缀 | 提供者 | 内容 |
 |---|---|---|
-| `/api/registry/*` | `qian.registry` | scope 视图 `GET /api/registry/scopes/{scopeKey}/entries[/{entryId}]`（R86；全树视图由 CLI `qian dump-config` 承担，S1 不设 HTTP 全树端点）、scope patch 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`，S1-RT-029）、lock 与来源；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 原因码（`PLUGIN_NOT_MOUNTED` 等四个，R32 / R48），其他调用者 404 |
+| `/api/registry/*` | `qian.registry` | scope 视图 `GET /api/registry/scopes/{scopeKey}/entries[/{entryId}]`（R86；全树视图由 CLI `qian dump-config` 承担，S1 不设 HTTP 全树端点）、scope patch 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`，已交付单条 `{revision, patch}` 条件写入、过期修订 409 `CONFLICT`，S1-RT-029）、lock 与来源；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 原因码（`PLUGIN_NOT_MOUNTED` 等四个，R32 / R48），其他调用者 404 |
 | `/api/lifecycle/*` | `qian.lifecycle` | `mount` / `unmount` / `reload`（声明式表面）、滚动重启请求、`/api/lifecycle/diagnostics`（Pending / Failed / 环路） |
 | `/api/capabilities/*` | `qian.capabilities` | 能力目录（工具、事件、实体），鉴权后按 scope 与权限过滤，响应为信封 `contracts/v0/capability-catalog`（`items`、`ttlMs`、`cacheScope: private`）；`/api/capabilities/openapi.json` 聚合 |
 | `POST /api/capabilities/{plugin}/{name}/invoke` | `qian.capabilities` | 通用执行入口（R75）：每次重做与目录同款的判定，不可见与不存在一样 404；请求体先按条目 `inputSchema`（JSON Schema 2020-12）校验，不符返回 400 `INPUT_INVALID`，`errors[]` 带输入 JSON Pointer；请求体读不成确定的 JSON 值（成员重名、孤立的 UTF-16 代理项、绝对值超过 decimal 范围约 7.9e28 的数）返回 400 `BAD_REQUEST`；写类能力可带 `Idempotency-Key`（UUID），同一主体、同一能力、同一键 24 小时内不再执行：回执保存了响应体时返回首次成功响应（`Idempotent-Replayed: true`），按回执策略（见表下）没有保存时返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；键相同而输入不同、或同键请求仍在执行，返回 409 `CONFLICT`，失败不留回执，只读能力（`sideEffect: read`）忽略该键；Agent 主体只见 `agent.expose: true` 的能力，S1 不开放 Agent 执行与 Actor 委托；ApiExplorer 不列此通用模板，`openapi.json` 为每个可见能力列出具体路径与 Schema |

@@ -193,3 +193,5 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - `Retire` 不检查是否仍有租户停在该版本：租户安装行受 RLS 约束，平台操作不跨租户查询，平台超管旁路归 S1-AZ-003。
 - `Mount` 只接受当前租户的 tenant scope；app / agent-session 的归属证明尚未实现，保持拒绝。
 - 挂载失败时恢复挂载前的 patch，不让失败条目阻断整个 scope；失败原因经诊断端点给出。
+
+S1-RT-029 的 Registry 管理写入通过 `MountAtRevisionAsync` / `UnmountAtRevisionAsync` 复用 Mount / Unmount 核心，显式携带调用方修订，不用服务端读取的新版本覆盖预期值。重复卸载的禁用 patch 与墓碑在当前修订下幂等，旧修订仍拒绝；授权统一在 Registry 管理入口，内部受信任生命周期接口不直接暴露为匿名 HTTP。

@@ -44,6 +44,18 @@ public static class IdentityErrors
     public static readonly ErrorCode MfaUnavailable = Protocol("MFA_UNAVAILABLE", 503,
         "二次验证不可用", "该账号需要二次验证，当前服务暂不可用，请稍后重试。",
         "Second factor unavailable", "The account requires a second factor, which is currently unavailable; retry later.");
+    /// <summary>授权响应的 iss 与依赖方配置的发行方不一致，或要求携带 iss 而缺失（RFC 9207）。</summary>
+    public static readonly ErrorCode OidcIssuerMismatch = Protocol("OIDC_ISSUER_MISMATCH", 400,
+        "发行方不一致", "登录回调不是来自已配置的身份发行方，已拒绝。",
+        "Issuer mismatch", "The sign-in callback did not come from the configured identity provider and was rejected.");
+    /// <summary>授权码换取失败，或令牌的签名、发行方、受众、寿命、nonce 与身份声明校验未通过。</summary>
+    public static readonly ErrorCode OidcTokenInvalid = Protocol("OIDC_TOKEN_INVALID", 401,
+        "登录令牌无效", "未能验证身份发行方签发的令牌，请重新登录。",
+        "Sign-in token invalid", "The tokens issued by the identity provider could not be validated; sign in again.");
+    /// <summary>当前身份 Provider 不提供该操作，例如依赖方 Provider 上的人员、成员与会话管理。</summary>
+    public static readonly ErrorCode OperationUnsupported = Protocol("IDENTITY_OPERATION_UNSUPPORTED", 501,
+        "身份操作不受支持", "当前身份组件不提供此操作，请改为调用身份服务。",
+        "Identity operation unsupported", "The current identity component does not provide this operation; call the identity service instead.");
 
     /// <summary>新密码不符合密码策略，rule 给出违反的规则。</summary>
     public static readonly ErrorCode PasswordPolicyViolation = Business("PASSWORD_POLICY_VIOLATION", 422,
@@ -73,12 +85,33 @@ public static class IdentityErrors
     public static readonly ErrorCode AccountInUse = Business("ACCOUNT_IN_USE", 409,
         "账号名已被占用", "该租户内账号名已被其他成员使用。",
         "Account name in use", "The account name is already used by another member of this tenant.");
+    /// <summary>
+    /// 外部登录请求的 state 未知、已过期、已被使用或不属于当前浏览器（连接器流程里上游返回的 nonce 与本次请求不符也归此码）。
+    /// 身份服务的连接器回调与依赖方 Qian.Identity.Client 的回调共用此码，依赖方回调缺少授权码同样归此码。
+    /// </summary>
+    public static readonly ErrorCode ConnectorStateInvalid = Business("AUTH_CONNECTOR_STATE_INVALID", 422,
+        "登录请求已失效", "登录请求已失效或被篡改，请重新开始。",
+        "Sign-in request invalid", "The sign-in request has expired or been tampered with; start again.");
+    /// <summary>上游身份源拒绝或用户在上游取消了登录（回调带 error）；连接器回调与依赖方 Qian.Identity.Client 的回调共用此码，上游的 error 与 error_description 都不作为文案。</summary>
+    public static readonly ErrorCode ConnectorDenied = Business("AUTH_CONNECTOR_DENIED", 422,
+        "外部登录未完成", "身份源拒绝或取消了本次登录，请返回重试或改用其他方式登录。",
+        "External sign-in not completed", "The identity provider denied or cancelled the sign-in; go back and retry or use another method.");
+    /// <summary>外部身份在本租户已关联到其他账号（键 tenant × connector × subject）；不透露对方账号。</summary>
+    public static readonly ErrorCode BindingConflict = Business("AUTH_BINDING_CONFLICT", 409,
+        "外部身份已被关联", "该企业身份已在本租户关联到其他账号。",
+        "External identity already linked", "This enterprise identity is already linked to another account in this tenant.");
+    /// <summary>确认绑定的票据已过期（自回调起 10 分钟）。</summary>
+    public static readonly ErrorCode BindingExpired = Business("AUTH_BINDING_EXPIRED", 422,
+        "关联请求已超时", "关联请求已超时，请重新登录。",
+        "Linking request expired", "The linking request has expired; sign in again.");
 
     /// <summary>可登记和导出的完整错误词汇。</summary>
     public static IReadOnlyList<ErrorCode> All { get; } = Array.AsReadOnly(new[]
     {
         InvalidCredentials, AccountLocked, AccountDisabled, LoginTicketInvalid, TenantNotActive, NoAvailableTenant, CaptchaRequired, CaptchaInvalid, MfaUnavailable,
-        PasswordPolicyViolation, PasswordReused, CurrentPasswordInvalid, IdentifierInUse, LastVerifiedIdentifier, LastLoginMethod, AccountInUse
+        OidcIssuerMismatch, OidcTokenInvalid, OperationUnsupported,
+        PasswordPolicyViolation, PasswordReused, CurrentPasswordInvalid, IdentifierInUse, LastVerifiedIdentifier, LastLoginMethod, AccountInUse,
+        ConnectorStateInvalid, ConnectorDenied, BindingConflict, BindingExpired
     });
 
     /// <summary>成组登记本组件错误码；失败撤销已登记项，返回可交给 ctx.Effect 的幂等释放句柄。</summary>

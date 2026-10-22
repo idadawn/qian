@@ -2,6 +2,9 @@
   <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
   <ItemGroup><Using Include="Xunit" /></ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Lifecycle/Qian.Lifecycle.csproj" />
+    <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Registry/Qian.Registry.csproj" />
     <ProjectReference Include="../../packages/Qian.Profiles/Qian.Profiles.csproj" />
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />

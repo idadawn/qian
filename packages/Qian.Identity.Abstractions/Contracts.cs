@@ -17,6 +17,8 @@ public static class IdentityDefinition
     public static readonly ServiceKey SignInKey = new("IdentitySignIn");
     /// <summary>认证因子注册表（<see cref="IAuthenticatorFactorRegistry"/>）的服务键。</summary>
     public static readonly ServiceKey FactorsKey = new("IdentityFactors");
+    /// <summary>连接器注册表子服务（R38 注册表 seam）：具名注册写作 <c>Identity.Connectors:&lt;name&gt;</c>，可出现在清单 provides / inject 中。</summary>
+    public static readonly ServiceKey ConnectorsKey = new("Identity.Connectors");
     /// <summary>在当前 scope 中解析身份 Provider。</summary>
     public static IIdentityService Identity(this IPluginContext context) => context.Inject<IIdentityService>(Key);
     /// <summary>在当前 scope 中解析账号管理端口。</summary>
@@ -25,6 +27,12 @@ public static class IdentityDefinition
     public static ISignInPipeline IdentitySignIn(this IPluginContext context) => context.Inject<ISignInPipeline>(SignInKey);
     /// <summary>在当前 scope 中解析认证因子注册表。</summary>
     public static IAuthenticatorFactorRegistry IdentityFactors(this IPluginContext context) => context.Inject<IAuthenticatorFactorRegistry>(FactorsKey);
+    /// <summary>
+    /// 绑定当前上下文的连接器注册表：连接器组件在 Apply 中 <c>ctx.IdentityConnectors().Register("oidc", connector)</c>，
+    /// 注册落在本条目的 scope 与效果栈里（卸载即撤销），租户 scope 的同名注册遮蔽全局项；查找与列表按当前 scope 的可见性返回。
+    /// </summary>
+    public static IIdentityConnectorRegistry IdentityConnectors(this IPluginContext context) =>
+        new PluginConnectorRegistry(context ?? throw new ArgumentNullException(nameof(context)));
 }
 /// <summary>基于 Kun 当前用户端口，补充平台身份快照；匿名时相关属性为空。</summary>
 public interface ICurrentUser : Kun.Core.Security.ICurrentUser
@@ -53,7 +61,7 @@ public interface IIdentityService
 {
     /// <summary>当前有效主体；匿名为 null。</summary>
     Principal? CurrentPrincipal { get; }
-    /// <summary>连接器注册表子服务。</summary>
+    /// <summary>连接器注册表子服务：按当前租户上下文的 scope 解析（未挂载与不存在同样查不到）。连接器组件注册请用 <c>ctx.IdentityConnectors()</c>。</summary>
     IIdentityConnectorRegistry Connectors { get; }
     /// <summary>读取 person 公共投影。</summary>
     Task<Person?> GetPersonAsync(Guid personId, CancellationToken cancellationToken = default);
@@ -67,7 +75,7 @@ public interface IIdentityService
 /// <summary>连接器注册表；实现必须使用同名独占、scope 遮蔽与可撤销注册。</summary>
 public interface IIdentityConnectorRegistry
 {
-    /// <summary>注册连接器，返回卸载句柄；调用方交给 ctx.Effect。</summary>
+    /// <summary>注册连接器，返回卸载句柄；名称必须等于描述的 Id，清单不合法（见 <see cref="ConnectorManifest"/>）时抛 INPUT_INVALID。</summary>
     IDisposable Register(string name, IIdentityConnector connector);
     /// <summary>查找当前 scope 可见的连接器。</summary>
     IIdentityConnector? Find(string name);
@@ -106,11 +114,20 @@ public sealed record SessionRevocation(Guid PersonId, Guid? SessionId, string Re
     /// <inheritdoc />
     public override string ToString() => "SessionRevocation(redacted)";
 }
-/// <summary>连接器机器可读描述，敏感配置必须是 secretRef。</summary>
-public sealed record ConnectorDescriptor(string Id, string DisplayName, string Protocol, IReadOnlyList<string> Terminals, JsonElement ConfigSchema);
+/// <summary>
+/// 连接器机器可读描述，即连接器清单（connector.manifest）：协议、支持终端（<see cref="ConnectorTerminals"/>）、配置 JSON Schema 与回调模板。
+/// 配置里的敏感字段在 Schema 中标 <c>x-qian-sensitive</c>，取值只能是 secretRef；描述本身不含任何配置值。校验规则见 <see cref="ConnectorManifest"/>。
+/// </summary>
+public sealed record ConnectorDescriptor(string Id, string DisplayName, string Protocol, IReadOnlyList<string> Terminals, JsonElement ConfigSchema)
+{
+    /// <summary>回调路由模板，固定为 <see cref="ConnectorManifest.CallbackTemplate"/>：回调由身份 Provider 统一接收。</summary>
+    public string CallbackTemplate { get; init; } = ConnectorManifest.CallbackTemplate;
+}
 /// <summary>身份服务创建并校验 state/nonce，连接器只处理外部协议。</summary>
 public sealed record ConnectorContext(string ClientId, Guid? TenantId, Uri CallbackUri, string State, string Nonce)
 {
+    /// <summary>本次挑战的 PKCE code_verifier（RFC 7636，43–128 位）；由身份服务按流程生成并在回调时原样交回，不支持 PKCE 的协议忽略即可。</summary>
+    public string? CodeVerifier { get; init; }
     /// <inheritdoc />
     public override string ToString() => "ConnectorContext(redacted)";
 }
@@ -126,16 +143,28 @@ public sealed record ConnectorCallback(ConnectorContext Context, IReadOnlyDictio
     /// <inheritdoc />
     public override string ToString() => "ConnectorCallback(redacted)";
 }
-/// <summary>标准化的外部断言；绑定、建号、合并属于身份 Provider，不属于连接器。</summary>
-public sealed record ExternalAssertion(string Issuer, string Subject, string? UnionId, JsonElement Profile, IReadOnlyList<string> Amr);
-/// <summary>上游连接器 SPI；方法名按组件模型 §6.3。</summary>
+/// <summary>
+/// 标准化的外部断言；绑定、建号、合并属于身份 Provider，不属于连接器。<c>Profile</c> 只放展示用的资料（name、email 等），
+/// 身份服务对外只给掩码后的值。
+/// </summary>
+public sealed record ExternalAssertion(string Issuer, string Subject, string? UnionId, JsonElement Profile, IReadOnlyList<string> Amr)
+{
+    /// <inheritdoc />
+    public override string ToString() => "ExternalAssertion(redacted)";
+}
+/// <summary>
+/// 上游连接器 SPI；方法名按组件模型 §6.3，与 PRD 7.4.2 的 <c>BeginChallengeAsync</c> / <c>HandleCallbackAsync</c> 一一对应，
+/// 免登（<c>ExchangeImplicitAsync</c>）与目录同步拆为可选扩展接口。连接器无状态：state、nonce、PKCE verifier 由身份服务生成、保存并校验，
+/// 回调只在关联状态核对通过后才交给连接器。协议失败抛 <see cref="QianErrorException"/>：nonce 不符用
+/// <see cref="IdentityErrors.ConnectorStateInvalid"/>，上游响应无效或签名不符用 BAD_GATEWAY，上游超时用 GATEWAY_TIMEOUT。
+/// </summary>
 public interface IIdentityConnector
 {
-    /// <summary>连接器能力与配置契约。</summary>
+    /// <summary>连接器能力与配置契约（清单）。</summary>
     ConnectorDescriptor Descriptor { get; }
-    /// <summary>开始外部登录挑战。</summary>
+    /// <summary>开始外部登录挑战（PRD 的 BeginChallengeAsync）：返回带 state / nonce / PKCE challenge 的上游跳转地址。</summary>
     Task<ChallengeResult> BeginSignInAsync(ConnectorContext context, CancellationToken cancellationToken = default);
-    /// <summary>完成协议回调并返回断言，不直接签发平台令牌。</summary>
+    /// <summary>完成协议回调并返回断言（PRD 的 HandleCallbackAsync），不直接签发平台令牌；上游的 error 回调由身份服务先行处理，不会传到这里。</summary>
     Task<ExternalAssertion> CompleteSignInAsync(ConnectorCallback callback, CancellationToken cancellationToken = default);
 }
 /// <summary>支持工作台免登的可选连接器端口。</summary>
