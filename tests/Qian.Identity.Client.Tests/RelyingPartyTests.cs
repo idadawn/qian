@@ -63,7 +63,7 @@ public sealed class RelyingPartyTests(PostgresFixture postgres, RedisFixture red
             Assert.NotEqual(session.Value, json.GetProperty("session").GetString());
         }
         // 同一回调再来一次：事务已消费（Cookie 已删、state 已登记使用），按失效的登录请求拒绝，不建立新会话。
-        using (var replay = await browser.GetAsync(callback, Ct)) await AssertError(replay, HttpStatusCode.BadRequest, "OIDC_STATE_INVALID");
+        using (var replay = await browser.GetAsync(callback, Ct)) await AssertError(replay, HttpStatusCode.UnprocessableEntity, "AUTH_CONNECTOR_STATE_INVALID");
         // 日志不含会话标识、授权码或令牌。
         var code = QueryHelpers.ParseQuery(callback.Query)["code"].ToString();
         var leaked = rp.Logs.Messages.Where(message => message.Contains(session.Value, StringComparison.Ordinal) || message.Contains(code, StringComparison.Ordinal)).ToArray();
@@ -115,15 +115,16 @@ public sealed class RelyingPartyTests(PostgresFixture postgres, RedisFixture red
         query["iss"] = "https://attacker.example/";
         using (var mixed = await browser.GetAsync(QueryHelpers.AddQueryString(new Uri(address, "auth/callback").ToString(), query), Ct))
             await AssertError(mixed, HttpStatusCode.BadRequest, "OIDC_ISSUER_MISMATCH");
-        // 发行方以 OAuth 错误结束：只回协议错误码，任意文本记为 server_error。
+        // 发行方以 OAuth 错误结束：与连接器回调同一个 AUTH_CONNECTOR_DENIED；上游 error 只进日志（任意文本记为 server_error），不进文案。
         var (denied, _) = await Authorize(browser, address, "/me");
         var state = QueryHelpers.ParseQuery(denied.Query)["state"].ToString();
         using (var cancelled = await browser.GetAsync(QueryHelpers.AddQueryString(new Uri(address, "auth/callback").ToString(),
             new Dictionary<string, string?> { ["error"] = "access_denied", ["state"] = state, ["iss"] = identity.Issuer }), Ct))
         {
-            var problem = await AssertError(cancelled, HttpStatusCode.BadRequest, "OIDC_PROVIDER_ERROR");
-            Assert.Contains("access_denied", problem.GetProperty("detail").GetString(), StringComparison.Ordinal);
+            var problem = await AssertError(cancelled, HttpStatusCode.UnprocessableEntity, "AUTH_CONNECTOR_DENIED");
+            Assert.DoesNotContain("access_denied", problem.GetProperty("detail").GetString(), StringComparison.Ordinal);
         }
+        Assert.Contains(rp.Logs.Messages, message => message.Contains("error=access_denied", StringComparison.Ordinal));
         Assert.Null(cookies.GetCookies(address)[IdentityClientDefaults.SessionCookieName]);
         // 正常的回调仍然成功：拒绝不影响后续登录。
         var (good, _) = await Authorize(browser, address, "/me");
