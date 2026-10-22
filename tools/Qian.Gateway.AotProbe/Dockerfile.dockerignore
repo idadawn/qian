@@ -1,0 +1,9 @@
+.git
+**/bin
+**/obj
+**/node_modules
+**/.git
+TestResults
+.pnpm-store
+website
+docs/generated
