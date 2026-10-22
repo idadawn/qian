@@ -24,11 +24,12 @@ public sealed partial class StandaloneLoginTests(DexFixture dex) : IClassFixture
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    // 被测宿主的依赖闭包里只允许出现 Client 本身及其 Runtime / Abstractions 依赖；Qian.Testing.Containers 是夹具。
+    // 被测宿主的依赖闭包里只允许出现 Client 本身及其 Runtime / SDK / Abstractions 依赖；Qian.Testing.Containers 是夹具。
     private static readonly string[] AllowedQianAssemblies =
     [
         "Qian.Identity.Client", "Qian.Identity.Abstractions", "Qian.Config.Abstractions", "Qian.Runtime", "Qian.Runtime.Errors",
-        "Qian.Runtime.Errors.AspNetCore", "Qian.Testing.Containers"
+        "Qian.Runtime.Errors.AspNetCore", "Qian.Testing.Containers", "Qian.Plugin.Sdk", "Qian.Data.Abstractions",
+        "Qian.Authz.Abstractions", "Qian.Events.Abstractions", "Qian.Surfaces.Abstractions"
     ];
 
     [Fact]
@@ -54,7 +55,7 @@ public sealed partial class StandaloneLoginTests(DexFixture dex) : IClassFixture
         })).RequireAuthorization();
         await using var loader = new PluginLoader(app.Services);
         await loader.MountAsync([new(new PluginEntry("identity", "qian.identity.client", "1.0.0", ScopeKey.Global, 0,
-            JsonSerializer.SerializeToElement(new { issuer = dex.Issuer.ToString(), clientId = DexFixture.ClientId })), new IdentityClientPlugin(), [IdentityDefinition.Key])], Ct);
+            JsonSerializer.SerializeToElement(new { issuer = dex.Issuer.ToString(), clientId = DexFixture.ClientId })), new IdentityClientComponent(), [IdentityDefinition.Key])], Ct);
         Assert.Equal(PluginState.Ready, loader.GetState("identity", ScopeKey.Global));
         await app.StartAsync(Ct);
         var site = new Uri($"https://localhost:{dex.RedirectUri.Port}/");
@@ -100,14 +101,26 @@ public sealed partial class StandaloneLoginTests(DexFixture dex) : IClassFixture
     }
 
     [Fact]
-    public void 宿主的依赖闭包只有Client及其Runtime与Abstractions()
+    public void 宿主的依赖闭包只有Client及其Runtime与SDK和Definition()
     {
         using var deps = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Qian.Identity.Client.Standalone.Tests.deps.json")));
         var qian = deps.RootElement.GetProperty("libraries").EnumerateObject().Select(library => library.Name.Split('/')[0])
             .Where(name => name.StartsWith("Qian.", StringComparison.Ordinal) && name != "Qian.Identity.Client.Standalone.Tests").Distinct().Order().ToArray();
         Assert.Contains("Qian.Identity.Client", qian);
-        Assert.All(qian, name => Assert.Contains(name, AllowedQianAssemblies));
+        Assert.Empty(UnexpectedDependencies(qian));
     }
+
+    [Theory]
+    [InlineData("Qian.Data")]
+    [InlineData("Qian.Config.Apollo")]
+    [InlineData("Qian.Identity.Server")]
+    [InlineData("Qian.Registry")]
+    [InlineData("Qian.Authz")]
+    public void SDK元数据接入仍硬拒绝任何其它Provider(string provider) =>
+        Assert.Equal(provider, Assert.Single(UnexpectedDependencies([.. AllowedQianAssemblies, provider])));
+
+    private static string[] UnexpectedDependencies(IEnumerable<string> dependencies) =>
+        dependencies.Where(name => !AllowedQianAssemblies.Contains(name, StringComparer.Ordinal)).ToArray();
 
     // 在 Dex 的本地密码库登录：跟随 Dex 内部的跳转到登录表单，提交口令，再跟随到依赖方回调为止；返回回调地址（不由测试请求它）。
     private async Task<Uri> SignInAtDex(HttpClient browser, Uri start)

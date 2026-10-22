@@ -20,6 +20,7 @@
 | ` TenancyQuota ` | ` global/tenancy ` |  |
 | ` TenancySettings ` | ` global/tenancy ` |  |
 | ` TenancySettingsOperations ` | ` global/tenancy ` |  |
+| ` Identity ` | ` global/identity ` |  |
 | ` Authz ` | ` global/authz ` |  |
 | ` AuthzEnforcement ` | ` global/authz ` |  |
 | ` AuthzPermissions ` | ` global/authz ` |  |
@@ -84,43 +85,45 @@ flowchart LR
   n4 --> s12
   s13(("TenancySettingsOperations"))
   n4 --> s13
-  s14(("Authz"))
-  n6 --> s14
-  s15(("AuthzEnforcement"))
+  s14(("Identity"))
+  n5 --> s14
+  s15(("Authz"))
   n6 --> s15
-  s16(("AuthzPermissions"))
+  s16(("AuthzEnforcement"))
   n6 --> s16
-  s17(("AuthzResourceTypes"))
+  s17(("AuthzPermissions"))
   n6 --> s17
-  s18(("AuthzSuperadminBypass"))
+  s18(("AuthzResourceTypes"))
   n6 --> s18
-  s19(("AuthzTenantRoleGrant"))
+  s19(("AuthzSuperadminBypass"))
   n6 --> s19
-  s20(("CommandAuthorization"))
+  s20(("AuthzTenantRoleGrant"))
   n6 --> s20
-  s21(("Data"))
-  n7 --> s21
-  s22(("Config"))
-  n9 --> s22
-  s23(("Events"))
-  n10 --> s23
-  s24(("Audit"))
-  n11 --> s24
-  s25(("CommandAudit"))
+  s21(("CommandAuthorization"))
+  n6 --> s21
+  s22(("Data"))
+  n7 --> s22
+  s23(("Config"))
+  n9 --> s23
+  s24(("Events"))
+  n10 --> s24
+  s25(("Audit"))
   n11 --> s25
-  s21 --> n0
+  s26(("CommandAudit"))
+  n11 --> s26
+  s22 --> n0
+  s23 --> n1
   s22 --> n1
-  s21 --> n1
   s0 --> n1
-  s24 --> n2
   s25 --> n2
-  s20 --> n2
-  s6 --> n2
+  s26 --> n2
   s21 --> n2
+  s6 --> n2
+  s22 --> n2
   s0 --> n2
   s7 --> n2
-  s21 --> n4
-  s21 --> n6
-  s21 --> n11
+  s22 --> n4
+  s22 --> n6
+  s22 --> n11
 ```
 

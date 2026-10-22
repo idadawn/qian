@@ -16,5 +16,6 @@
   "Qian.Identity.Connector.Oidc:Qian.Identity.Connector.Oidc.OidcConnectorPlugin": {"owner":"qian.identity.connector.oidc","reason":"OidcConnectorComponent 固定 oidc 注册名；原实现支持宿主自定义连接器与密钥解析。"},
   "Qian.Surfaces:Qian.Surfaces.DeclarativeSurfacePlugin": {"owner":"组件快照","reason":"已校验声明式表面快照的适配器，ID 与依赖来自输入组件。"},
   "Qian.Surfaces:Qian.Surfaces.HotReloadSurfacePlugin": {"owner":"组件快照","reason":"组件快照热重载适配器，可包装代码实现；不新增组件 ID。"},
-  "Qian.Surfaces.Hosting:Qian.Surfaces.Hosting.HookBridgePlugin": {"owner":"组件快照","reason":"已校验 hook 表面到真实能力绑定的包装器，归属被包装组件。"}
+  "Qian.Surfaces.Hosting:Qian.Surfaces.Hosting.HookBridgePlugin": {"owner":"组件快照","reason":"已校验 hook 表面到真实能力绑定的包装器，归属被包装组件。"},
+  "Qian.Identity.Client:Qian.Identity.Client.IdentityClientPlugin": {"owner":"qian.identity.client","reason":"IdentityClientComponent 的身份依赖方实现，保留公开客户端与机密客户端的原有程序化装配。"}
 }
