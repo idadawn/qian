@@ -72,6 +72,25 @@ internal sealed class PostgresArtifactCatalog(IDataService data)
         return Snapshot(row);
     }
 
+    // 反向权限读取只要清单快照：按摘要不论状态（供可信平台插件），按组件版本只认 Lifecycle 已回写安装结论的制品，Submitted 候选不作依据。
+    // Lifecycle 保证同一组件版本至多安装一个制品；若出现第二个，Single 抛出而不是任选其一。
+    internal async Task<(string Digest, string PluginId, string Version, JsonElement Manifest)?> ManifestAsync(string digest, CancellationToken ct)
+    {
+        if (!RegistryArtifactContent.ValidDigest(digest)) throw RegistryArtifactContent.Invalid("artifact.json#/digest", "制品摘要无效。");
+        await using var session = await data.OpenAsync<RegistryDbContext>(ct).ConfigureAwait(false);
+        var row = await session.Context.PluginArtifacts.AsNoTracking().Where(row => row.Digest == digest)
+            .Select(row => new { row.Digest, row.PluginId, row.Version, row.Manifest }).SingleOrDefaultAsync(ct).ConfigureAwait(false);
+        return row is null ? null : (row.Digest, row.PluginId, row.Version, JsonSerializer.Deserialize<JsonElement>(row.Manifest));
+    }
+
+    internal async Task<(string Digest, string PluginId, string Version, JsonElement Manifest)?> InstalledManifestAsync(string pluginId, string version, CancellationToken ct)
+    {
+        await using var session = await data.OpenAsync<RegistryDbContext>(ct).ConfigureAwait(false);
+        var row = await session.Context.PluginArtifacts.AsNoTracking().Where(row => row.PluginId == pluginId && row.Version == version && row.State != RegistryArtifactStates.Submitted)
+            .Select(row => new { row.Digest, row.PluginId, row.Version, row.Manifest }).SingleOrDefaultAsync(ct).ConfigureAwait(false);
+        return row is null ? null : (row.Digest, row.PluginId, row.Version, JsonSerializer.Deserialize<JsonElement>(row.Manifest));
+    }
+
     private static RegistryArtifactSnapshot Snapshot(PluginArtifactRow row) => new()
     {
         Digest = row.Digest, State = row.State,

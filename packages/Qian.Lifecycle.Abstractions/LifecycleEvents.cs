@@ -50,6 +50,9 @@ public static class LifecycleErrors
     /// <summary>租户未获授权。</summary>
     public static readonly ErrorCode NotEntitled = Rule("LIFECYCLE_NOT_ENTITLED", "租户未获授权", "Tenant not entitled",
         "租户尚未获得该组件的授权。", "The tenant is not entitled to this component.");
+    /// <summary>组件声明的反向权限尚未全部批准（开通或升级的第二道门，在权益之后）；missing 列出缺少批准的项。</summary>
+    public static readonly ErrorCode PermissionsUnapproved = Rule("LIFECYCLE_PERMISSIONS_UNAPPROVED", "反向权限未批准", "Permissions not approved",
+        "组件声明的反向权限尚未经租户管理员批准：{missing}。", "The permissions requested by the component are not approved by the tenant administrator: {missing}.");
     /// <summary>部署执行器不可用或部署失败。</summary>
     public static readonly ErrorCode DeploymentUnavailable = Rule("LIFECYCLE_DEPLOYMENT_UNAVAILABLE", "部署不可用", "Deployment unavailable",
         "{reason}", "{reason}");
@@ -80,7 +83,7 @@ public static class LifecycleErrors
         var registrations = new List<IDisposable>();
         try
         {
-            foreach (var code in new[] { ArtifactUnsigned, SignatureInvalid, RevisionNotDeployed, NotEntitled, DeploymentUnavailable, HookFailed, MountFailed, StateConflict, Invalid, InProgress })
+            foreach (var code in new[] { ArtifactUnsigned, SignatureInvalid, RevisionNotDeployed, NotEntitled, PermissionsUnapproved, DeploymentUnavailable, HookFailed, MountFailed, StateConflict, Invalid, InProgress })
                 registrations.Add(catalog.Register(code));
             return new Registration(registrations);
         }

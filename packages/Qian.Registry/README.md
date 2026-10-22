@@ -85,7 +85,17 @@ S1 不产生另外两个原因码：profile 没有 restriction 声明来源，`P
 
 `SubmitArtifactAsync` 供 Lifecycle 等可信平台插件登记候选制品，调用方负责权限：先核验 D4 摘要，再以 platform / server 做共用静态校验，`SurfaceValidationOptions.ServiceKeys` 取预装组件的 provides，inject 无 Provider 即被拒；通过后幂等写入 `Submitted`。不合格时抛 `INPUT_INVALID`，`errors[]` 为 `REGISTRY_INPUT_INVALID`，pointer 是指向制品文件的 JSON Pointer，候选目录不留记录。
 
-`tck/surfaces/cases.json` 中清单准入的五类反例——缺任一 S1 必填字段（按 Schema 的 required 逐个覆盖）、OCI 引用用 tag、`scopes[]` 含非法种类、工具顶层输入含租户字段、`inject[]` 无 Provider——在 .NET 与 TS 校验器上逐项一致，并经本入口全部拒绝、pointer 与 fixture 相同；digest 引用与 inject 有 Provider 的对照正例登记为 `Submitted`（`ManifestIntakeTests`）。登记不等于验签、发布、安装或任何租户已挂载。
+`tck/surfaces/cases.json` 中清单准入的五类反例——缺任一 S1 必填字段（按 Schema 的 required 逐个覆盖）、OCI 引用用 tag、`scopes[]` 含非法种类、工具顶层输入含租户字段、`inject[]` 无 Provider——在 .NET 与 TS 校验器上逐项一致，并经本入口全部拒绝、pointer 与 fixture 相同；digest 引用与 inject 有 Provider 的对照正例登记为 `Submitted`（`ManifestIntakeTests`）。工具输入的租户字段（顶层、嵌套、`$defs`、数组项与组合子句，四种名称写法）另经 Lifecycle 的 `InstallAsync` 验证同一拒绝（`tests/Qian.Lifecycle.Tests/TenantFieldInstallTests.cs`）。登记不等于验签、发布、安装或任何租户已挂载。
+
+## 组件反向权限声明（S1-AGT-002）
+
+清单 `policy.permissions`（`platform`、`data`、`secrets[{name, scope}]`、`ui.connectSrc`）与 `policy.egress` 五类随制品快照保存在 `plugin_artifacts.manifest`，已过 plugin/v2 与 permissions/v2 Schema。读出时按清单中的顺序，缺省的类别为空数组，`x-` 扩展字段不计入；这只是声明，不代表任何租户已批准（批准见 [Qian.Lifecycle](../Qian.Lifecycle/README.md) 的「反向权限批准」）。
+
+- `GetArtifactPermissionsAsync(digest)`：受信端口，按摘要读取，不论制品状态；未登记为 null，摘要格式无效为 `INPUT_INVALID`。Lifecycle 在开通、升级与批准时用它判定所需批准的内容。
+- `GetPluginPermissionsAsync(plugin, version, user)`：管理面读取，供安装时列出待批准的内容。只读 Lifecycle 已回写安装结论的制品（Installed / Progressing / Healthy），候选（Submitted）与未知版本都是 404。判定与 scope 视图同一入口，scope 取当前已验证租户，权限点同为 `qian.registry:scope:read`；平台主体经超管旁路，资源记为 `registry/artifact:<plugin>@<version>`。
+- HTTP：`GET /api/registry/plugins/{pluginId}/versions/{version}/permissions`，v1 别名 `/api/kernel/plugins/...` 同一结果并带 `Deprecation` 与 `Link`；响应带 `Cache-Control: private, no-store`。
+
+声明属于组件版本（平台级目录），任何租户持权限者读到的是同一份。真实测试 `ArtifactPermissionsTests` 用受限 PG、真实 RBAC、Kestrel + JWT 覆盖：五类落库与受信端口读取、持权限者按版本读出、无权限与候选及未知版本同为 404、别名同结果、无声明组件为空数组，以及超管旁路在目标租户审计链记下组件版本资源。
 
 ## 公开挂载 / 卸载与集成事件（S1-RT-005）
 

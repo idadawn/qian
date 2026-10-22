@@ -95,6 +95,17 @@ case('manifest-oci-digest',manifest(base(),runtime={'form':'service','image':ima
 bad('manifest-scope-kind',manifest(base(),scopes=['global','tenant','org']),'.qian-plugin/plugin.json','/scopes/2','SCHEMA_INVALID')
 top=tool(inputSchema={'type':'object','additionalProperties':False,'properties':{'tenantId':{'type':'string'}}})
 bad('tool-top-level-tenant',base({tf:js(top)}),tf,'/inputSchema/properties/tenantId','SCHEMA_INVALID')
+# 工具输入的租户字段（S1-AGT-002）：顶层由 tool.schema.json 的 propertyNames（v0 TenantFieldName）拒绝，嵌套、$defs、数组项与组合子句由语义检查拒绝；
+# 两处各自实现同一条名称规则（tenant、tenantId、tenant_id、tenant-id，大小写不敏感），所以每种写法两层都有一例。名称整体匹配，只是含有 tenant 的名称照常通过。
+def schema(properties,**extra): return {'type':'object','additionalProperties':False,'properties':properties,**extra}
+for suffix,field in [('bare','tenant'),('snake','tenant_id'),('kebab','tenant-id'),('upper','TENANT_ID')]:
+ bad('tool-top-level-tenant-'+suffix,base({tf:js(tool(inputSchema=schema({field:{'type':'string'}})))}),tf,'/inputSchema/properties/'+field,'SCHEMA_INVALID')
+for suffix,field in [('bare','tenant'),('snake','tenant_id'),('kebab','tenant-id'),('pascal','TenantId')]:
+ bad('tool-nested-tenant-'+suffix,base({tf:js(tool(inputSchema=schema({'nested':{'type':'object','properties':{field:{'type':'string'}}}})))}),tf,'/inputSchema/properties/nested/properties/'+field,'POLICY_DENIED')
+bad('tool-defs-tenant',base({tf:js(tool(inputSchema=schema({'scope':{'$ref':'#/$defs/scope'}},**{'$defs':{'scope':{'type':'object','properties':{'tenant_id':{'type':'string'}}}}})))}),tf,'/inputSchema/$defs/scope/properties/tenant_id','POLICY_DENIED')
+bad('tool-array-items-tenant',base({tf:js(tool(inputSchema=schema({'rows':{'type':'array','items':{'type':'object','properties':{'TenantId':{'type':'string'}}}}})))}),tf,'/inputSchema/properties/rows/items/properties/TenantId','POLICY_DENIED')
+bad('tool-any-of-tenant',base({tf:js(tool(inputSchema=schema({'filter':{'anyOf':[{'type':'object','properties':{'tenant':{'type':'string'}}},{'type':'string'}]}})))}),tf,'/inputSchema/properties/filter/anyOf/0/properties/tenant','POLICY_DENIED')
+case('tool-tenant-lookalike',base({tf:js(tool(inputSchema=schema({'lieutenant':{'type':'string'},'lieutenant_id':{'type':'string'},'nested':{'type':'object','properties':{'tenants':{'type':'string'}}}})))}))
 # propertyNames 不合格时两侧都指向出错的属性名本身。
 bad('mcp-invalid-server-name',base({mf:js({'mcpServers':{'Bad_Name':{'type':'http','url':'https://api.example.test/mcp'}}})}),mf,'/mcpServers/Bad_Name','SCHEMA_INVALID')
 keys={'serviceKeys':['Data','Registry']}
