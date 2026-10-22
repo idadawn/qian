@@ -24,12 +24,12 @@ public static class CommandPolicies
     /// <summary>审计强制监听器的存活键。</summary>
     public static readonly ServiceKey AuditKey = new("CommandAudit");
 
-    /// <summary>由 qian.tenancy、qian.authz 或 qian.audit 在 Apply 中登记并随 Effect 撤销。</summary>
+    /// <summary>由 qian.tenancy、qian.authz、qian.audit 或其原生审计 Provider 在 Apply 中登记并随 Effect 撤销。</summary>
     public static void Register(IPluginContext context, CommandPolicyKind kind, Func<CommandInvocation, Func<ValueTask<object?>>, ValueTask<object?>> handler)
     {
         ArgumentNullException.ThrowIfNull(context); ArgumentNullException.ThrowIfNull(handler);
         var (owner, key, priority) = Definition(kind);
-        if (context.Entry.Plugin != owner) throw Denied();
+        if (context.Entry.Plugin != owner && !(kind == CommandPolicyKind.Audit && context.Entry.Plugin == "qian.audit.native")) throw Denied();
         var lease = new PolicyLease(); context.Effect(lease.Dispose);
         context.On(CommandEvents.Dispatching, DispatchMode.Waterfall,
             (Func<CommandInvocation, Func<ValueTask<object?>>, ValueTask<object?>>)(async (invocation, next) =>

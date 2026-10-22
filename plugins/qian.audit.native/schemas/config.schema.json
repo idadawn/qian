@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tenantBinding",
+    "tenantRole",
+    "functionOwner"
+  ],
+  "description": "global挂载须显式提供独立platformBinding/platformRole用于只读启动校验；tenant挂载须有真实可信租户，可只声明已有platformRole而不绑定其凭据。",
+  "properties": {
+    "tenantBinding": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "platformBinding": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "tenantRole": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,62}$"
+    },
+    "functionOwner": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,62}$"
+    },
+    "platformRole": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-z][a-z0-9_]{0,62}$"
+    },
+    "maxAttempts": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 6
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "platformBinding"
+        ],
+        "properties": {
+          "platformBinding": {
+            "type": "string"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "platformRole"
+        ],
+        "properties": {
+          "platformRole": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

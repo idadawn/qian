@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/packages/">
+    <Project Path="packages/Qian.Audit.Native/Qian.Audit.Native.csproj" />
     <Project Path="packages/Qian.Capabilities.Abstractions/Qian.Capabilities.Abstractions.csproj" />
     <Project Path="packages/Qian.Capabilities/Qian.Capabilities.csproj" />
     <Project Path="packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
@@ -59,6 +60,7 @@
     <Project Path="hosts/Qian.Gateway.Host/Qian.Gateway.Host.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Qian.Audit.Native.Tests/Qian.Audit.Native.Tests.csproj" />
     <Project Path="tests/Qian.Plugin.Sdk.Tests/Qian.Plugin.Sdk.Tests.csproj" />
     <Project Path="tests/Qian.Audit.Tests/Qian.Audit.Tests.csproj" />
     <Project Path="tests/Qian.Tenancy.Tests/Qian.Tenancy.Tests.csproj" />
@@ -92,6 +94,7 @@
     <Project Path="tests/Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Qian.Audit.Native.Probe/Qian.Audit.Native.Probe.csproj" />
     <Project Path="tools/Qian.Plugin.Tool/Qian.Plugin.Tool.csproj" />
     <Project Path="tools/Qian.Data.Native.Probe/Qian.Data.Native.Probe.csproj" />
     <Project Path="tools/Qian.Secrets.Tool/Qian.Secrets.Tool.csproj" />

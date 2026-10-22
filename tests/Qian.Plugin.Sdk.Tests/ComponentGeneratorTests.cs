@@ -68,6 +68,9 @@ public sealed class ComponentGeneratorTests
 
     [Theory]
     [InlineData("qian.audit", "Audit", true)]
+    [InlineData("qian.audit.native", "Audit", true)]
+    [InlineData("qian.audit.native", "Authorization", false)]
+    [InlineData("qian.audit.native.forged", "Audit", false)]
     [InlineData("qian.authz", "Authorization", true)]
     [InlineData("qian.tenancy", "Tenancy", true)]
     [InlineData("qian.example", "Audit", false)]
