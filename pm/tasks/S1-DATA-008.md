@@ -38,3 +38,4 @@ updated: 2026-10-23
 - 2026-10-23 cody：既有 EF DataSafetyTests 与 CrossHostTenantModelTests 13/13 通过（TestResults/native-data-ef-regression.xml）。最后一条验收仍未勾选：当前分支基线不含 Scheduler 实现，需父代理在串行整合树完成 Scheduler EF 路径回归及远端 CI 后收口，不能用原生单组件证据替代完整组合。
 - 2026-10-23 cody：Provider 与严格原生运行证据已提交供 Audit 接入；前四项完成，等待串行整合树 Scheduler EF 回归与远端 CI 后最终收口
 - 2026-10-23 cody：父代理整合最新主线与SCH-001实现后，Scheduler完整真库15/15通过、零跳过（198.073秒），含真实三进程两分钟/正常停止/真Kill与隔离；结合已过EF安全13项，最后复合验收已满足。严格NativeData原生CI将按当前集成提交再确认后合并
+- 2026-10-23 cody：远端原生数据Linux x64发布/真库门通过；常规1429测试有1次Scheduler hold-first接管等待15秒超时，其余1428通过，NativeData本身专项通过。a2634ba995仅增加失败现场与脱敏worker日志，租约/时限/断言不变；本机精确13.372秒1/1未复现，原原因未确定，带诊断重新验证完整CI。
