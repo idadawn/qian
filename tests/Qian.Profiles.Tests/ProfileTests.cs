@@ -70,6 +70,18 @@ public sealed class ProfileTests
     }
 
     [Fact]
+    public void Gateway_identity_resolves_to_the_code_component_that_declares_x_aot()
+    {
+        // S1-IDP-014：x-aot 以 NativeAOT 冒烟为据。按 S1-DEC-029 开发期 gateway 用 JIT；AOT profile 拒绝未声明组件的规则见 TCK 的 aot-code-rejected。
+        var shipped = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false });
+        Assert.True(shipped.IsValid, JsonSerializer.Serialize(shipped, Json));
+        var identity = Assert.Single(shipped.Snapshot!.Entries, e => e.Id == "identity");
+        Assert.StartsWith("qian.identity.client@", identity.Plugin, StringComparison.Ordinal);
+        Assert.Equal("module", identity.Manifest.GetProperty("runtime").GetProperty("form").GetString());
+        Assert.True(identity.Manifest.GetProperty("x-aot").GetBoolean());
+    }
+
+    [Fact]
     public async Task Shipped_minimal_profile_starts_the_real_runtime_and_mounts_a_declarative_overlay()
     {
         using var item = JsonDocument.Parse("""{"files":{},"patches":[],"home":false}""");

@@ -22,6 +22,8 @@ public sealed class ClientManifestTests
         Assert.Equal(metadata.RuntimeEntry, manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString());
         Assert.Equal("global", Assert.Single(manifest.RootElement.GetProperty("scopes").EnumerateArray()).GetString());
         Assert.True(manifest.RootElement.GetProperty("x-skeleton").GetBoolean());
+        // x-aot 以 tools/Qian.Identity.Client.AotSmoke 的 CI NativeAOT 冒烟为据（S1-IDP-014）。
+        Assert.True(manifest.RootElement.GetProperty("x-aot").GetBoolean());
         var schemaPath = manifest.RootElement.GetProperty("runtime").GetProperty("configSchema").GetString()![2..];
         using var schema = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "plugins/qian.identity.client", schemaPath)));
         Assert.True(JsonElement.DeepEquals(metadata.ConfigSchema!.Value, schema.RootElement));

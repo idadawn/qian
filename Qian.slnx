@@ -86,6 +86,7 @@
     <Project Path="tools/Qian.Build.Analyzers/Qian.Build.Analyzers.csproj" />
     <Project Path="tools/Qian.Image.SelfCheck/Qian.Image.SelfCheck.csproj" />
     <Project Path="tools/Qian.Image.SelfCheck.Aot/Qian.Image.SelfCheck.Aot.csproj" />
+    <Project Path="tools/Qian.Identity.Client.AotSmoke/Qian.Identity.Client.AotSmoke.csproj" />
     <Project Path="tools/Qian.Dev.TenantOps/Qian.Dev.TenantOps.csproj" />
   </Folder>
 </Solution>

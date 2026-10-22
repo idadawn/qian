@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    Identity.Client 组件的 NativeAOT 冒烟宿主（S1-IDP-014）：plugins/qian.identity.client 的 x-aot 以它为依据，只在 CI 内发布运行。
+    ILC 的任何 IL 警告都算失败，并逐条列出（不按程序集合并成一条 IL2104）；PublishAot 必须写在这里，命令行传会波及分析器项目（NETSDK1207）。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <IlcTreatWarningsAsErrors>true</IlcTreatWarningsAsErrors>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
+  </ItemGroup>
+</Project>
