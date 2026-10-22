@@ -119,3 +119,32 @@ jobs:
 
       - name: 运行原生二进制：挂载组件并做启动与端点冒烟
         run: '"$RUNNER_TEMP/identity-aot/Qian.Identity.Client.AotSmoke"'
+
+  native-data-aot:
+    name: 原生数据严格发布与真实 PostgreSQL 验收
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: NativeAOT 工具链
+        run: |
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+          fi
+      - name: 严格发布 Linux 原生探针
+        run: dotnet publish tools/Qian.Data.Native.Probe -c Release -r linux-x64 -p:IlcTreatWarningsAsErrors=true -p:TrimmerSingleWarn=false -o "$RUNNER_TEMP/native-data"
+      - name: 核验产物形态
+        run: test -x "$RUNNER_TEMP/native-data/Qian.Data.Native.Probe" && test ! -e "$RUNNER_TEMP/native-data/Qian.Data.Native.Probe.dll"
+      - name: 原生进程执行真实受限 PostgreSQL 事务与隔离
+        env:
+          QIAN_REQUIRE_DOCKER: '1'
+          QIAN_NATIVE_DATA_EXECUTABLE: ${{ runner.temp }}/native-data/Qian.Data.Native.Probe
+        run: dotnet test --project tests/Qian.Data.Native.Postgres.AotTests -c Release --report-xunit-trx --results-directory TestResults/native-data-aot
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-data-aot-results
+          path: TestResults/native-data-aot/

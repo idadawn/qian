@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><IsAotCompatible>true</IsAotCompatible><Description>NativeData 的 PostgreSQL 受限连接、租户隔离与事务 Provider。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Data.Native.Abstractions/Qian.Data.Native.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Kun.Core" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <InternalsVisibleTo Include="Qian.Data.Native.Postgres.Tests" />
+  </ItemGroup>
+</Project>

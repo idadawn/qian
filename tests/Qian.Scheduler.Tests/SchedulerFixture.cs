@@ -51,6 +51,56 @@ public sealed class SchedulerFixture : IAsyncLifetime
     { await using var db = new NpgsqlConnection(Postgres.ConnectionString); await db.OpenAsync(TestContext.Current.CancellationToken); await using var command = new NpgsqlCommand(sql, db); await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken); }
     public async Task<T> Scalar<T>(string sql)
     { await using var db = new NpgsqlConnection(Postgres.ConnectionString); await db.OpenAsync(TestContext.Current.CancellationToken); await using var command = new NpgsqlCommand(sql, db); return (T)(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken))!; }
+    internal async Task<JsonElement> LeaseSnapshot(Guid run)
+    {
+        // 计数和数据库时间来自同一快照，不用客户端“还差几百毫秒”的定时推断未接管。
+        using var document = JsonDocument.Parse(await Scalar<string>($"""
+            SELECT coalesce((SELECT to_json(s) FROM (
+              SELECT t.state,t.run_count,t.lease_owner,t.lease_until,t.generation,t.active_run_id,
+                clock_timestamp() AS observed_at,r.status,r.attempts,r.generation AS run_generation,
+                (SELECT count(*) FROM public.sch_probe_attempts a WHERE a.run_id=r.id) AS handler_attempts
+              FROM plugin_qian_scheduler.job_triggers t JOIN plugin_qian_scheduler.job_runs r ON r.id=t.active_run_id
+              WHERE r.id='{run:D}') s),'null'::json)::text
+            """));
+        return document.RootElement.Clone();
+    }
+    internal async Task<JsonElement> RenewedLease(Guid run)
+    {
+        var first = await LeaseSnapshot(run);
+        Assert.Equal(JsonValueKind.Object, first.ValueKind);
+        Assert.Equal(1, first.GetProperty("generation").GetInt64());
+        var originalOwner = first.GetProperty("lease_owner").GetString();
+        var firstLease = first.GetProperty("lease_until").GetDateTimeOffset();
+        JsonElement renewed = default;
+        await WaitUntil(async () =>
+        {
+            var row = await LeaseSnapshot(run);
+            if (row.ValueKind == JsonValueKind.Null || row.GetProperty("lease_owner").GetString() != originalOwner ||
+                row.GetProperty("generation").GetInt64() != 1 || row.GetProperty("run_generation").GetInt64() != 1 ||
+                row.GetProperty("status").GetString() != "running" || row.GetProperty("attempts").GetInt32() != 1 || row.GetProperty("handler_attempts").GetInt64() != 1) return false;
+            var until = row.GetProperty("lease_until").GetDateTimeOffset();
+            if (until <= firstLease || until - row.GetProperty("observed_at").GetDateTimeOffset() < TimeSpan.FromSeconds(3)) return false;
+            renewed = row; return true;
+        }, TimeSpan.FromSeconds(10));
+        AssertLiveFirstLease(renewed, run, originalOwner);
+        return renewed;
+    }
+    internal static DateTimeOffset AssertLiveFirstLease(JsonElement row, Guid run, string? owner)
+    {
+        Assert.Equal(JsonValueKind.Object, row.ValueKind);
+        Assert.Equal(run, row.GetProperty("active_run_id").GetGuid());
+        Assert.Equal(owner, row.GetProperty("lease_owner").GetString());
+        Assert.Equal(1, row.GetProperty("generation").GetInt64());
+        Assert.Equal(1, row.GetProperty("run_generation").GetInt64());
+        Assert.Equal("ready", row.GetProperty("state").GetString());
+        Assert.Equal("running", row.GetProperty("status").GetString());
+        Assert.Equal(0, row.GetProperty("run_count").GetInt64());
+        Assert.Equal(1, row.GetProperty("attempts").GetInt32());
+        Assert.Equal(1, row.GetProperty("handler_attempts").GetInt64());
+        var until = row.GetProperty("lease_until").GetDateTimeOffset();
+        Assert.True(row.GetProperty("observed_at").GetDateTimeOffset() < until, "尚未接管断言必须发生在数据库租约到期之前。");
+        return until;
+    }
     public static async Task WaitUntil(Func<Task<bool>> condition, TimeSpan timeout)
     {
         var watch = Stopwatch.StartNew();
@@ -138,7 +188,7 @@ internal sealed class WorkerProcess : IAsyncDisposable
         var exited = _process.HasExited;
         lock (_logGate) return new { processId = Id, hasExited = exited, exitCode = exited ? (int?)_process.ExitCode : null, stderr = _errorLog.ToString(), stderrTruncated = _logTruncated };
     }
-    public static async Task<WorkerProcess> Start(HostConfig config)
+    public static async Task<WorkerProcess> Start(HostConfig config, params string[] warmupTenants)
     {
         var root = new DirectoryInfo(AppContext.BaseDirectory);
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
@@ -146,7 +196,7 @@ internal sealed class WorkerProcess : IAsyncDisposable
         var start = new ProcessStartInfo("dotnet") { RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
         start.ArgumentList.Add(executable); start.ArgumentList.Add("--worker");
         var child = new WorkerProcess(Process.Start(start)!, config);
-        await child._process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(config)); await child._process.StandardInput.FlushAsync();
+        await child._process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(config with { WarmupTenants = warmupTenants })); await child._process.StandardInput.FlushAsync();
         var line = await child._process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
         if (line is null || !line.StartsWith("READY ", StringComparison.Ordinal))
         { await child.DisposeAsync(); throw new InvalidOperationException("worker 未就绪：" + child.ErrorOutput); }

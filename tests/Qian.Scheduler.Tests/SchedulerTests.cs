@@ -20,7 +20,7 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
     public async Task 三独立进程_两租户100分钟cron_连续两轮各恰100次且真实处理器没有重复()
     {
         await fixture.Reset(); await using var producer = await ProbeHost.CreateAsync(fixture.Config, false, Ct);
-        await using var a = await WorkerProcess.Start(fixture.Config); await using var b = await WorkerProcess.Start(fixture.Config); await using var c = await WorkerProcess.Start(fixture.Config);
+        await using var a = await WorkerProcess.Start(fixture.Config, TenantA, TenantB); await using var b = await WorkerProcess.Start(fixture.Config, TenantA, TenantB); await using var c = await WorkerProcess.Start(fixture.Config, TenantA, TenantB);
         Assert.Equal(3, new[] { a.Id, b.Id, c.Id }.Distinct().Count());
         // 避免造数跨过分钟边界；保留真实分钟与默认一秒领取语义。
         if (DateTimeOffset.UtcNow.Second > 40) await Task.Delay(TimeSpan.FromSeconds(61 - DateTimeOffset.UtcNow.Second), Ct);
@@ -54,7 +54,7 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
     public async Task 真杀执行副本_到期后另一副本用同run接管_副作用幂等与执行尝试分别计数(string mode, long effectsBeforeKill)
     {
         await fixture.Reset(); await using var producer = await ProbeHost.CreateAsync(fixture.Config, false, Ct);
-        await using var a = await WorkerProcess.Start(fixture.Config); await using var b = await WorkerProcess.Start(fixture.Config); await using var c = await WorkerProcess.Start(fixture.Config);
+        await using var a = await WorkerProcess.Start(fixture.Config, TenantA); await using var b = await WorkerProcess.Start(fixture.Config, TenantA); await using var c = await WorkerProcess.Start(fixture.Config, TenantA);
         var phases = new Dictionary<string, DateTimeOffset> { ["workersReady"] = DateTimeOffset.UtcNow };
         JsonElement? claimBeforeKill = null;
         try
@@ -70,16 +70,16 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
             await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == effectsBeforeKill, TimeSpan.FromSeconds(3));
             var pid = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts LIMIT 1");
             var run = await fixture.Scalar<Guid>("SELECT run_id FROM public.sch_probe_attempts LIMIT 1");
-            using var claim = JsonDocument.Parse(await fixture.Scalar<string>("SELECT to_json(t)::text FROM (SELECT lease_owner,lease_until,generation,active_run_id FROM plugin_qian_scheduler.job_triggers LIMIT 1) t"));
-            claimBeforeKill = claim.RootElement.Clone();
-            var leaseUntil = claim.RootElement.GetProperty("lease_until").GetDateTime().ToUniversalTime();
-            phases["leaseObservedExpiresAt"] = new DateTimeOffset(leaseUntil);
+            claimBeforeKill = await fixture.RenewedLease(run);
+            var originalOwner = claimBeforeKill.Value.GetProperty("lease_owner").GetString();
+            phases["liveRenewedLeaseObserved"] = DateTimeOffset.UtcNow;
             phases["beforeKill"] = DateTimeOffset.UtcNow;
             await new[] { a, b, c }.Single(worker => worker.Id == pid).Kill();
             phases["afterKill"] = DateTimeOffset.UtcNow;
-            var before = leaseUntil - DateTime.UtcNow - TimeSpan.FromMilliseconds(300);
-            if (before > TimeSpan.Zero) await Task.Delay(before, Ct);
-            Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
+            // 原 owner 已退出，续租不再变化；立即从同一数据库快照证明还未接管并冻结实际到期点。
+            var frozenLease = await fixture.LeaseSnapshot(run);
+            var leaseUntil = SchedulerFixture.AssertLiveFirstLease(frozenLease, run, originalOwner).UtcDateTime;
+            phases["leaseObservedExpiresAt"] = new DateTimeOffset(leaseUntil);
             phases["beforeRecoveryWait"] = DateTimeOffset.UtcNow;
             await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs WHERE status='succeeded'") == 1, TimeSpan.FromSeconds(15));
             Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
@@ -87,10 +87,12 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
             Assert.Equal(run, await fixture.Scalar<Guid>("SELECT id FROM plugin_qian_scheduler.job_runs"));
             Assert.Equal(2, await fixture.Scalar<int>("SELECT attempts FROM plugin_qian_scheduler.job_runs"));
             Assert.NotEqual(pid, await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"));
+            var recoveredStartedAt = await fixture.Scalar<DateTime>("SELECT started_at FROM plugin_qian_scheduler.job_runs");
+            Assert.True(recoveredStartedAt >= leaseUntil, "接管的持久 StartedAt 不得早于冻结的租约到期点。");
             SchedulerFixture.Evidence(mode, new
             {
                 killedProcess = pid, recoveredProcess = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"),
-                runId = run, leaseExpiresAtUtc = leaseUntil, phases, claimBeforeKill,
+                runId = run, leaseExpiresAtUtc = leaseUntil, recoveredStartedAt, phases, claimBeforeKill, frozenLease,
                 attempts = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"),
                 effects = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects"),
                 runRows = await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs")
@@ -126,7 +128,7 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
         {
             var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantB)); await caller.Scheduler().ScheduleOnce(caller, "same", due, Target, Parameters, cancellationToken: Ct);
         }
-        await using var worker = await WorkerProcess.Start(fixture.Config);
+        await using var worker = await WorkerProcess.Start(fixture.Config, TenantA, TenantB);
         await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == 1, TimeSpan.FromSeconds(15));
         Assert.Equal(TenantB, await fixture.Scalar<string>("SELECT tenant_id FROM public.sch_probe_effects"));
         Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_definitions"));
