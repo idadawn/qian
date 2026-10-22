@@ -58,7 +58,11 @@ pnpm --filter @qian/surfaces build && pnpm --filter @qian/surfaces test && pnpm 
 - 租户名按 contracts/v0 的 `TenantFieldName` 整体匹配：`tenant`、`tenantId`、`tenant_id`、`tenant-id` 的 ASCII 大小写变体。不用 `ToLowerInvariant` 加 `$`：.NET 的 `$` 会放过末尾换行，把 `tenant` 后接换行也算成租户名。
 - 点名的写法：`properties`、`dependentSchemas`、`dependentRequired` 与旧式 `dependencies` 的名称；`required` 与 `dependentRequired` / `dependencies` 的数组项；`patternProperties` 的模式；`propertyNames` 在肯定位置（根与 `allOf` / `anyOf` / `oneOf` / `then` / `else` 之下）用 `const` / `enum` 列出的名称。模式按 `SchemaPattern` 的可移植子集解释，与 JSON Schema 一样不隐式加锚点，能匹配租户名的任一 ASCII 大小写写法即违规；超出子集无法判定，同样违规。试配用全部 832 种写法而不用折叠，结果不随宿主 ICU 变化。
 - 遍历：未知成员照常往下查；`example`、`examples`、`default`、`const`、`enum` 是实例数据，不当 Schema 检查。名称表（`properties`、`patternProperties`、`dependentSchemas`、`$defs`、`definitions`）的条目是名称，叫 `default`、`enum` 也照常往下查。按成员出现顺序报告，名称表先查全部名称、再逐条往下，两端校验器的诊断顺序因此一致。
-- 能力契约另按文档内 `$ref` 在引用处继续检查（HTTP 契约要从请求体跟到 `components`），表面校验器不解析引用，`$defs` 照常遍历。
+- 引用（S1-AGT-007 的裁决，2026-10-23 用户认可）：执行侧（JsonSchema.Net 与 Ajv，实测）按原始 JSON 导航片段为 JSON Pointer 的引用，指到哪里就把那里的数据当 Schema 执行。所以 `$ref` / `$dynamicRef` 的片段按遍历的口径逐段判定位置，途经实例数据，或停在名称表（上列五个之外再加 `dependentRequired`、`dependencies`）本身上（表里的名称会被当关键字），即违规，失败关闭，报在引用本身：
+  - 片段从某个资源的根开始，资源根一定是 Schema 位置，所以判定与引用的是哪个资源无关，`$id` 内嵌资源里的同名路径也拦得住；
+  - 只还原 ASCII 范围的百分号编码（关键字都是 ASCII）；编码的斜杠 `%2F` 在各实现里先解码还是先分段不一致，按无法判定；`~0` / `~1` 不影响判定；
+  - 锚点与不带片段的引用指向资源根或 Schema 位置上的锚点，不在此列。锚点或 `$id` 声明在实例数据里（Ajv 会登记 `example` 里的），本规则不查：Qian 能力执行侧登记期找不到这类锚点，按 `unresolved-reference` 拒绝。
+- 能力契约另按文档内 `$ref` 在引用处继续检查（HTTP 契约要从请求体跟到 `components`），越出 Schema 位置的引用不跟进去；表面校验器不解析引用，`$defs` 照常遍历。
 - 本规则是点名检查，不是封闭性检查（S1-AGT-004 的裁决，2026-10-22 用户认可）：
   - 嵌套 object 不要求关闭。开放的映射与自由 JSON（`additionalProperties` 为 Schema 或缺省）不点名任何字段，不检查；租户隔离由令牌派生的租户上下文、RLS，以及平台 API 对显式租户参数的核对保证，与 Schema 是否封闭无关。
   - `propertyNames` 只在上述肯定位置列出租户名时算点名：`pattern` 只收紧键名格式，`not` 之下是排除，`if` 之下是条件，都不算；经 `$ref` 间接列出的名称不检查。

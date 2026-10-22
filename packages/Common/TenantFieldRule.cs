@@ -12,16 +12,21 @@ namespace Qian.Common;
 // （按 SchemaPattern 的可移植子集能匹配任一租户名即违规，超出子集无法判定，同样违规），以及 propertyNames 在肯定位置用 const / enum 列出的名称。
 // propertyNames 的 pattern 只收紧键名格式，not 之下是排除、if 之下是条件，都不算点名；经 $ref 间接列出的名称不检查。
 // 遍历沿用「未知成员照常往下查」：示例、默认值、常量与枚举是实例数据，不当 Schema 检查；名称表（properties、$defs 等）的条目是名称，叫 default、enum 也照常往下查。
+// 片段为 JSON Pointer 的 $ref / $dynamicRef 途经实例数据或停在名称表本身上，同样违规：执行侧按原始 JSON 导航，引用到的数据会被当 Schema 执行，遍历却没有按 Schema 查过（S1-AGT-007 裁决）。
 // 开放的 object（没有 additionalProperties: false 的映射或自由 JSON）不点名任何字段，不检查：隔离由令牌派生的租户上下文与 RLS 保证（S1-AGT-004 裁决）。
 internal static class TenantFieldRule
 {
     internal const string NameMessage = "输入 Schema 不允许租户字段。";
     internal const string PatternMessage = "patternProperties 的模式能匹配租户字段名。";
     internal const string UnsupportedMessage = "patternProperties 的模式超出可移植子集，无法判定是否匹配租户字段名。";
+    internal const string ReferenceMessage = "引用指向实例数据或名称表本身，无法判定是否点名租户字段。";
     private static readonly string[] Names = ["tenant", "tenantid", "tenant_id", "tenant-id"];
     // 四个名称的全部 ASCII 大小写写法（832 个），模式逐个试配：与 TenantFieldName 的定义逐字对应，不依赖宿主的大小写折叠表。
     private static readonly Lazy<string[]> Spellings = new(() => [.. Names.SelectMany(Variants)]);
     private static readonly HashSet<string> Instances = new(StringComparer.Ordinal) { "example", "examples", "default", "const", "enum" };
+    // 取值是「名称 → 子 Schema（或名称数组）」的成员：下一段是名称，不是关键字。
+    private static readonly HashSet<string> NameTables = new(StringComparer.Ordinal)
+    { "properties", "patternProperties", "dependentSchemas", "dependentRequired", "dependencies", "$defs", "definitions" };
 
     // 违规位置（相对传入 Schema 的段）与原因。
     internal readonly record struct Violation(string[] Path, string Message);
@@ -39,7 +44,37 @@ internal static class TenantFieldRule
         catch (Exception error) when (error is NotSupportedException or ArgumentException or RegexMatchTimeoutException) { return UnsupportedMessage; }
     }
 
-    // 按成员出现顺序报告；名称表先查全部名称，再逐条往下。resolve 不为空时解析 $ref，在引用处继续检查（同一条引用链里重复的引用跳过）。
+    // 引用的片段是 JSON Pointer 时按遍历的口径逐段判定位置：途经实例数据或停在名称表本身上即越出 Schema 位置。片段从某个资源的根开始，资源根一定是 Schema 位置，
+    // 所以与引用的是哪个资源（$id）无关。只还原 ASCII 范围的百分号编码：关键字都是 ASCII，其余编码还原后不可能等于关键字；编码的斜杠在各实现里先解码还是先分段
+    // 不一致（片段开头的也是），按无法判定。~0 / ~1 还原出的 ~ 与 / 不在任何关键字里，不影响判定。锚点与不带片段的引用指向资源根或 Schema 位置上的锚点，不在此列。
+    internal static bool OutsideSchema(string reference)
+    {
+        var hash = reference.IndexOf('#', StringComparison.Ordinal);
+        if (hash < 0) return false;
+        var pointer = new StringBuilder();
+        for (var i = hash + 1; i < reference.Length; i++)
+        {
+            if (reference[i] == '%' && i + 2 < reference.Length && char.IsAsciiHexDigit(reference[i + 1]) && char.IsAsciiHexDigit(reference[i + 2]) &&
+                int.Parse(reference.AsSpan(i + 1, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture) is var code and < 0x80)
+            {
+                if (code == '/') return true;
+                pointer.Append((char)code); i += 2;
+            }
+            else pointer.Append(reference[i]);
+        }
+        if (pointer.Length == 0 || pointer[0] != '/') return false;
+        var name = false;
+        foreach (var segment in pointer.ToString()[1..].Split('/'))
+        {
+            if (name) { name = false; continue; }
+            if (Instances.Contains(segment)) return true;
+            name = NameTables.Contains(segment);
+        }
+        return name;
+    }
+
+    // 按成员出现顺序报告；名称表先查全部名称，再逐条往下。越出 Schema 位置的引用报在引用本身，不跟进去；resolve 不为空时解析其余 $ref，
+    // 在引用处继续检查（同一条引用链里重复的引用跳过）。
     internal static List<Violation> Find(JsonElement schema, Func<string, JsonElement>? resolve = null)
     {
         var found = new List<Violation>();
@@ -59,6 +94,10 @@ internal static class TenantFieldRule
             {
                 if (Instances.Contains(member.Name)) continue;
                 var value = member.Value;
+                if (member.Name is "$ref" or "$dynamicRef" && value.ValueKind == JsonValueKind.String && OutsideSchema(value.GetString()!))
+                {
+                    found.Add(new([.. path, member.Name], ReferenceMessage)); continue;
+                }
                 if (member.Name == "$ref" && resolve is not null && value.ValueKind == JsonValueKind.String)
                 {
                     var reference = value.GetString()!;
