@@ -1,6 +1,7 @@
 import {randomBytes} from 'node:crypto';
 import path from 'node:path';
-import {validateSurfaceSchema,validateComponent, type SurfaceDiagnostic, type JsonValue, type SurfaceRuntimeReport} from '@qian/surfaces';
+import {validateSurfaceSchema, type SurfaceDiagnostic, type JsonValue, type SurfaceRuntimeReport} from '@qian/surfaces';
+import {validateOfflineComponent} from './component-validation.js';
 import {loadProfile, type ProfileOptions} from './profiles.js';
 import {readInstalledState,verifyInstalledComponent,installObject,readInstallFile} from './installed-components.js';
 import {within} from './marketplace-files.js';
@@ -65,7 +66,7 @@ export function doctorInstalledComponents(root:string,ids:readonly string[],prof
    for(const item of files){
     if(typeof item.path!=='string'||item.path!=='.qian-plugin/plugin.json'&&!item.path.endsWith('/.qian-plugin/plugin.json'))continue;
     const relative='.qian/plugins/'+id+'/'+item.path,file=within(root,relative),folder=path.dirname(path.dirname(file));
-    const validated=validateComponent(folder,{profile});diagnostics.push(...validated.diagnostics);
+    const validated=validateOfflineComponent(folder,{profile});diagnostics.push(...validated.diagnostics);
     verifyComponentEngines(installObject(readInstallFile(file)),evidence,relative);
    }
   }catch(error){if(error instanceof MarketplaceFailure)diagnostics.push(...error.diagnostics);else diagnostics.push(marketDiagnostic('.qian/plugins/'+id,'','受影响组件的文件或清单无法安全读取。','SURFACE_PATH_INVALID'));}

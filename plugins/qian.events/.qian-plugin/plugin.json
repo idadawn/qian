@@ -34,8 +34,8 @@
     "nuget": [
       {
         "id": "Qian.Events",
-        "version": "0.1.0",
-        "digest": "sha256:b21efe86a3c3cf070359c272cde2d63b5177dcbd57d82726248bd4f67130100a"
+        "version": "0.2.0",
+        "digest": "sha256:4f240d801a199f669966406f92099f62095cc98de8b0274a25c23fb246c62c65"
       }
     ],
     "configSchema": "./schemas/config.schema.json"

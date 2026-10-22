@@ -5,9 +5,35 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { PlatformError } from '@idadawn/yue-sdk';
 import { SchemaForm, type FormApi } from './schema-form';
-import { i18n, schema } from './test/fixture';
+import { credentialSchema, i18n, schema } from './test/fixture';
 
 afterEach(cleanup);
+it('密码字段沿用 Schema 校验与提交，浏览器语义可访问且只读不暴露密码', async () => {
+  const submit = vi.fn();
+  const view = render(<SchemaForm schema={credentialSchema} i18n={i18n} onSubmit={submit} />);
+  const username = screen.getByLabelText('账号 *');
+  const password = screen.getByLabelText('密码 *');
+  expect(username.getAttribute('autocomplete')).toBe('username');
+  expect(password.getAttribute('type')).toBe('password');
+  expect(password.getAttribute('autocomplete')).toBe('current-password');
+  await userEvent.fill(username, 'alice');
+  await userEvent.tab();
+  expect(document.activeElement).toBe(password);
+  await userEvent.fill(password, 'short');
+  await userEvent.click(screen.getByRole('button', { name: '保存' }));
+  expect(submit).not.toHaveBeenCalled();
+  expect(password.getAttribute('aria-invalid')).toBe('true');
+  await userEvent.fill(password, 'example-password');
+  await userEvent.click(screen.getByRole('button', { name: '保存' }));
+  expect(submit).toHaveBeenCalledTimes(1);
+  expect(submit.mock.calls[0]?.[0]).toEqual({ username: 'alice', password: 'example-password' });
+  const result = await axe.run(document.body);
+  expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+  view.rerender(<SchemaForm schema={credentialSchema} i18n={i18n} mode="readonly" />);
+  expect(screen.getByTestId('yue-schema-form-readonly-password').textContent).toBe('••••');
+  expect(document.body.textContent).not.toContain('example-password');
+});
+
 it('校验定位首个字段，合法数据才提交；键盘和 ARIA 无严重问题', async () => {
   const submit = vi.fn();
   render(<SchemaForm schema={schema} i18n={i18n} onSubmit={submit} />);

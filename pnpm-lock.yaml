@@ -390,6 +390,9 @@ importers:
       '@idadawn/yue-sdk':
         specifier: workspace:*
         version: link:../../packages/yue/sdk
+      '@idadawn/yue-shell':
+        specifier: workspace:^
+        version: link:../../packages/yue/shell
       '@idadawn/yue-tokens':
         specifier: workspace:^
         version: link:../../packages/yue/tokens
@@ -923,15 +926,42 @@ importers:
         specifier: workspace:^
         version: link:../sdk
     devDependencies:
+      '@idadawn/yue-tokens':
+        specifier: workspace:^
+        version: link:../tokens
       '@rslib/core':
         specifier: 'catalog:'
         version: 1.0.3(@microsoft/api-extractor@7.59.4(@types/node@24.19.1))(typescript@6.0.3)
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.3(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@testing-library/dom':
+        specifier: 'catalog:'
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@types/react':
         specifier: 'catalog:'
         version: 19.3.0
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.1.2(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@vitest/browser':
+        specifier: 'catalog:'
+        version: 5.0.3(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.3)
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 5.0.3(playwright@1.64.0)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.3)
+      axe-core:
+        specifier: 'catalog:'
+        version: 4.14.0
+      playwright:
+        specifier: 'catalog:'
+        version: 1.64.0
       publint:
         specifier: 'catalog:'
         version: 0.3.25
@@ -941,9 +971,15 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.0(react@19.3.0)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@types/node@24.19.1)(@vitest/browser-playwright@5.0.3)(@vitest/ui@5.0.3)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/yue/tokens:
     dependencies:
@@ -996,6 +1032,9 @@ importers:
       '@idadawn/yue-sdk':
         specifier: workspace:*
         version: link:../packages/yue/sdk
+      '@idadawn/yue-shell':
+        specifier: workspace:^
+        version: link:../packages/yue/shell
       '@idadawn/yue-tokens':
         specifier: workspace:*
         version: link:../packages/yue/tokens

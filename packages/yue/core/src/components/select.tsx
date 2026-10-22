@@ -37,11 +37,13 @@ export function SelectTrigger({ className, children, placeholder, testId, ...pro
 }
 
 export interface SelectContentProps extends YueProps<SelectPopupProps> {
+  /** 选项列表的可访问名称，由宿主本地化后传入。 */
+  listLabel?: string;
   side?: SelectPositionerProps['side'];
   align?: SelectPositionerProps['align'];
   sideOffset?: number;
 }
-export function SelectContent({ className, children, side, align, sideOffset = 4, testId, ...props }: SelectContentProps) {
+export function SelectContent({ className, children, listLabel, side, align, sideOffset = 4, testId, ...props }: SelectContentProps) {
   return (
     <BaseSelect.Portal>
       <BaseSelect.Positioner side={side} align={align} sideOffset={sideOffset} className="z-50 outline-none">
@@ -50,7 +52,7 @@ export function SelectContent({ className, children, side, align, sideOffset = 4
           data-testid={testId ?? 'yue-select-content'}
           className={cn(surface, 'min-w-40 max-h-(--available-height) w-(--anchor-width) overflow-y-auto p-1', className)}
         >
-          <BaseSelect.List data-slot="select-list" data-testid="yue-select-list">{children}</BaseSelect.List>
+          <BaseSelect.List aria-label={listLabel} data-slot="select-list" data-testid="yue-select-list">{children}</BaseSelect.List>
         </BaseSelect.Popup>
       </BaseSelect.Positioner>
     </BaseSelect.Portal>
