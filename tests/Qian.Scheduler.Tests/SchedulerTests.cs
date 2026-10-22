@@ -20,7 +20,7 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
     public async Task 三独立进程_两租户100分钟cron_连续两轮各恰100次且真实处理器没有重复()
     {
         await fixture.Reset(); await using var producer = await ProbeHost.CreateAsync(fixture.Config, false, Ct);
-        await using var a = await WorkerProcess.Start(fixture.Config); await using var b = await WorkerProcess.Start(fixture.Config); await using var c = await WorkerProcess.Start(fixture.Config);
+        await using var a = await WorkerProcess.Start(fixture.Config, TenantA, TenantB); await using var b = await WorkerProcess.Start(fixture.Config, TenantA, TenantB); await using var c = await WorkerProcess.Start(fixture.Config, TenantA, TenantB);
         Assert.Equal(3, new[] { a.Id, b.Id, c.Id }.Distinct().Count());
         // 避免造数跨过分钟边界；保留真实分钟与默认一秒领取语义。
         if (DateTimeOffset.UtcNow.Second > 40) await Task.Delay(TimeSpan.FromSeconds(61 - DateTimeOffset.UtcNow.Second), Ct);
@@ -54,7 +54,7 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
     public async Task 真杀执行副本_到期后另一副本用同run接管_副作用幂等与执行尝试分别计数(string mode, long effectsBeforeKill)
     {
         await fixture.Reset(); await using var producer = await ProbeHost.CreateAsync(fixture.Config, false, Ct);
-        await using var a = await WorkerProcess.Start(fixture.Config); await using var b = await WorkerProcess.Start(fixture.Config); await using var c = await WorkerProcess.Start(fixture.Config);
+        await using var a = await WorkerProcess.Start(fixture.Config, TenantA); await using var b = await WorkerProcess.Start(fixture.Config, TenantA); await using var c = await WorkerProcess.Start(fixture.Config, TenantA);
         var phases = new Dictionary<string, DateTimeOffset> { ["workersReady"] = DateTimeOffset.UtcNow };
         JsonElement? claimBeforeKill = null;
         try
@@ -72,7 +72,29 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
             var run = await fixture.Scalar<Guid>("SELECT run_id FROM public.sch_probe_attempts LIMIT 1");
             using var claim = JsonDocument.Parse(await fixture.Scalar<string>("SELECT to_json(t)::text FROM (SELECT lease_owner,lease_until,generation,active_run_id FROM plugin_qian_scheduler.job_triggers LIMIT 1) t"));
             claimBeforeKill = claim.RootElement.Clone();
-            var leaseUntil = claim.RootElement.GetProperty("lease_until").GetDateTime().ToUniversalTime();
+            var firstLease = claim.RootElement.GetProperty("lease_until").GetDateTimeOffset();
+            var originalOwner = claim.RootElement.GetProperty("lease_owner").GetString();
+            Assert.Equal(1, claim.RootElement.GetProperty("generation").GetInt64());
+            // 仅观察到 handler 的 INSERT 不足以证明仍持有租约。要求同一首次执行已真正续约，
+            // 且数据库时钟下仍有活租约，才允许注入 Kill；已经自然恢复的 run 不能冒充被测故障。
+            await SchedulerFixture.WaitUntil(async () =>
+            {
+                using var current = JsonDocument.Parse(await fixture.Scalar<string>("""
+                    SELECT coalesce((SELECT to_json(s) FROM (
+                      SELECT t.lease_owner,t.lease_until,t.generation,t.active_run_id,clock_timestamp() AS observed_at,r.status,r.attempts
+                      FROM plugin_qian_scheduler.job_triggers t JOIN plugin_qian_scheduler.job_runs r ON r.id=t.active_run_id
+                      LIMIT 1) s),'null'::json)::text
+                    """));
+                var row = current.RootElement;
+                if (row.ValueKind == JsonValueKind.Null) return false;
+                if (row.GetProperty("active_run_id").GetGuid() != run || row.GetProperty("lease_owner").GetString() != originalOwner ||
+                    row.GetProperty("generation").GetInt64() != 1 || row.GetProperty("status").GetString() != "running" || row.GetProperty("attempts").GetInt32() != 1) return false;
+                var until = row.GetProperty("lease_until").GetDateTimeOffset();
+                if (until <= firstLease || until - row.GetProperty("observed_at").GetDateTimeOffset() < TimeSpan.FromSeconds(3)) return false;
+                claimBeforeKill = row.Clone(); return true;
+            }, TimeSpan.FromSeconds(10));
+            phases["liveRenewedLeaseObserved"] = DateTimeOffset.UtcNow;
+            var leaseUntil = claimBeforeKill.Value.GetProperty("lease_until").GetDateTimeOffset().UtcDateTime;
             phases["leaseObservedExpiresAt"] = new DateTimeOffset(leaseUntil);
             phases["beforeKill"] = DateTimeOffset.UtcNow;
             await new[] { a, b, c }.Single(worker => worker.Id == pid).Kill();
@@ -126,7 +148,7 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
         {
             var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantB)); await caller.Scheduler().ScheduleOnce(caller, "same", due, Target, Parameters, cancellationToken: Ct);
         }
-        await using var worker = await WorkerProcess.Start(fixture.Config);
+        await using var worker = await WorkerProcess.Start(fixture.Config, TenantA, TenantB);
         await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == 1, TimeSpan.FromSeconds(15));
         Assert.Equal(TenantB, await fixture.Scalar<string>("SELECT tenant_id FROM public.sch_probe_effects"));
         Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_definitions"));

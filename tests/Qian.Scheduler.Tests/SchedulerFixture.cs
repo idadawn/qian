@@ -138,7 +138,7 @@ internal sealed class WorkerProcess : IAsyncDisposable
         var exited = _process.HasExited;
         lock (_logGate) return new { processId = Id, hasExited = exited, exitCode = exited ? (int?)_process.ExitCode : null, stderr = _errorLog.ToString(), stderrTruncated = _logTruncated };
     }
-    public static async Task<WorkerProcess> Start(HostConfig config)
+    public static async Task<WorkerProcess> Start(HostConfig config, params string[] warmupTenants)
     {
         var root = new DirectoryInfo(AppContext.BaseDirectory);
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
@@ -146,7 +146,7 @@ internal sealed class WorkerProcess : IAsyncDisposable
         var start = new ProcessStartInfo("dotnet") { RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
         start.ArgumentList.Add(executable); start.ArgumentList.Add("--worker");
         var child = new WorkerProcess(Process.Start(start)!, config);
-        await child._process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(config)); await child._process.StandardInput.FlushAsync();
+        await child._process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(config with { WarmupTenants = warmupTenants })); await child._process.StandardInput.FlushAsync();
         var line = await child._process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
         if (line is null || !line.StartsWith("READY ", StringComparison.Ordinal))
         { await child.DisposeAsync(); throw new InvalidOperationException("worker 未就绪：" + child.ErrorOutput); }
