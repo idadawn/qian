@@ -16,7 +16,7 @@
 | ` global/data ` | ` qian.data@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/files ` | ` qian.files@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/config ` | ` qian.config.apollo@1.0.0 ` | 0（bundle） | 配置骨架 |
-| ` global/events ` | ` qian.events@1.0.0 ` | 0（bundle） | 配置骨架 |
+| ` global/events ` | ` qian.events@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/audit ` | ` qian.audit@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/observability ` | ` qian.observability@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/notify ` | ` qian.notify@1.0.0 ` | 0（bundle） | 配置骨架 |
@@ -28,7 +28,7 @@
 | ` global/entitlement ` | ` qian.entitlement@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/shell ` | ` qian.shell@1.0.0 ` | 1（bundle） | 配置骨架 |
 
-挂载顺序：` global/registry ` → ` global/lifecycle ` → ` global/capabilities ` → ` global/hooks ` → ` global/tenancy ` → ` global/identity ` → ` global/authz ` → ` global/data ` → ` global/files ` → ` global/config ` → ` global/events ` → ` global/audit ` → ` global/observability ` → ` global/notify ` → ` global/notify.inbox ` → ` global/notify.email ` → ` global/notify.sms ` → ` global/scheduler ` → ` global/realtime ` → ` global/entitlement ` → ` global/shell `
+挂载顺序：` global/data ` → ` global/registry ` → ` global/config ` → ` global/lifecycle ` → ` global/audit ` → ` global/authz ` → ` global/tenancy ` → ` global/capabilities ` → ` global/hooks ` → ` global/identity ` → ` global/files ` → ` global/events ` → ` global/observability ` → ` global/notify ` → ` global/notify.inbox ` → ` global/notify.email ` → ` global/notify.sms ` → ` global/scheduler ` → ` global/realtime ` → ` global/entitlement ` → ` global/shell `
 
 ```mermaid
 flowchart LR
@@ -53,6 +53,19 @@ flowchart LR
   n18["global/realtime"]
   n19["global/entitlement"]
   n20["global/shell"]
-  n7 -->|"Data"| n8
+  n7 -->|"Data"| n0
+  n9 -->|"Config"| n1
+  n7 -->|"Data"| n1
+  n0 -->|"Registry"| n1
+  n11 -->|"Audit"| n2
+  n11 -->|"CommandAudit"| n2
+  n6 -->|"CommandAuthorization"| n2
+  n4 -->|"CommandTenancy"| n2
+  n7 -->|"Data"| n2
+  n0 -->|"Registry"| n2
+  n4 -->|"Tenancy"| n2
+  n7 -->|"Data"| n4
+  n7 -->|"Data"| n6
+  n7 -->|"Data"| n11
 ```
 

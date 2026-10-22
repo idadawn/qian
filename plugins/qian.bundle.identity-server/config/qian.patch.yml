@@ -1,9 +1,14 @@
 - id: identity
   plugin: qian.identity.server
-  config: {}
+  config:
+    issuer: https://id.example.internal/
 - id: identity.connector.oidc
   plugin: qian.identity.connector.oidc
-  config: {}
+  config:
+    name: oidc
+    issuer: https://idp.example.internal/
+    clientId: qian-identity
+    clientSecret: secretRef://platform/identity/oidc/client-secret
 - id: identity.connector.wecom
   plugin: qian.identity.connector.wecom
   config: {}

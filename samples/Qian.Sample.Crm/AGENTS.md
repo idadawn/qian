@@ -4,3 +4,4 @@
 - 租户只来自验证后的 S2S 身份；保持错误返回为 ErrorDetail。
 - 索引证据必须来自真实 HTTP 列表发出的 SQL；每租户正好 1000 行，不关闭顺序扫描。
 - 这是 S1-DATA-001 的数据入口基础，完整 CRM 仍由 S1-QA-007 验收，不提前标记其任务完成。
+- 唯一清单在 `.qian-plugin/plugin.json`；权限与工具从真实代码声明派生，配置仅空对象。platform 的三个业务端点必须 RequireQianPlugin 且由参考宿主自身装配可见性中间件，测试不能额外补线掩盖遗漏。standalone 明确不带 Registry 可见性门。

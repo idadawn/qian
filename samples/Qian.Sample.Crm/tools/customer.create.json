@@ -1,0 +1,72 @@
+{
+  "name": "customer.create",
+  "description": "为当前租户创建客户；重复提交同一幂等键会返回原创建结果。",
+  "sideEffect": "write",
+  "policyHint": "allow",
+  "idempotent": true,
+  "async": "none",
+  "requiredScopes": [
+    "crm.write"
+  ],
+  "requiredSecrets": [],
+  "dataClassification": "pii",
+  "costTier": "low",
+  "contractVersion": "crm-v1",
+  "audit": true,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.sample.crm/customer.create"
+  },
+  "requiredPermission": "qian.sample.crm:customer:write",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "idempotencyKey": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "name": {
+        "type": "string",
+        "sensitive": true
+      }
+    },
+    "required": [
+      "idempotencyKey",
+      "name"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "tenantId": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "tenantId",
+      "name"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "cf5520251e8a80c49b3c5b7104ea02401d7fd3fe6cd8d5187a420e9498e421dc",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.sample.crm"
+  }
+}

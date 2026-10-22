@@ -12,7 +12,8 @@ namespace Qian.Tenancy;
 internal sealed class TenantExpiryCapability(IPluginContext owner, ITenantLifecycle lifecycle) : IExecutableCapability, IDisposable
 {
     private int _disposed;
-    public CapabilityContract Contract { get; } = new("qian.tenancy", """{"name":"tenant.scan-expired","description":"扫描到期租户并幂等进入宽限，供调度器 callback 调用。","sideEffect":"write","policyHint":"allow","idempotent":true,"async":"none","requiredScopes":[],"requiredSecrets":[],"dataClassification":"internal","costTier":"low","contractVersion":"v1","audit":true,"agent":{"expose":false,"requiresConfirmation":false},"binding":{"kind":"command","id":"qian.tenancy/tenant.scan-expired"},"requiredPermission":"qian.tenancy:tenant:scan"}""",
+    public CapabilityContract Contract => Definition;
+    internal static CapabilityContract Definition { get; } = new("qian.tenancy", """{"name":"tenant.scan-expired","description":"扫描到期租户并幂等进入宽限，供调度器 callback 调用。","sideEffect":"write","policyHint":"allow","idempotent":true,"async":"none","requiredScopes":[],"requiredSecrets":[],"dataClassification":"internal","costTier":"low","contractVersion":"v1","audit":true,"agent":{"expose":false,"requiresConfirmation":false},"binding":{"kind":"command","id":"qian.tenancy/tenant.scan-expired"},"requiredPermission":"qian.tenancy:tenant:scan"}""",
         TenantScanJson.Default.ExpiryScanInput, TenantScanJson.Default.ExpiryScanResult);
     public async ValueTask<JsonElement> InvokeAsync(IPluginContext caller, JsonElement input, CancellationToken cancellationToken = default)
     {

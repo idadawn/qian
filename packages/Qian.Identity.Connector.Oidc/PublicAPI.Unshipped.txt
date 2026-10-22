@@ -33,3 +33,7 @@ Qian.Identity.Connector.Oidc.OidcIdentityConnector.OidcIdentityConnector(Qian.Id
 override Qian.Identity.Connector.Oidc.OidcConnectorOptions.ToString() -> string!
 override Qian.Identity.Connector.Oidc.OidcIdentityConnector.ToString() -> string!
 static Qian.Identity.Connector.Oidc.OidcConnectorOptions.FromConfig(System.Text.Json.JsonElement config) -> Qian.Identity.Connector.Oidc.OidcConnectorOptions!
+Qian.Identity.Connector.Oidc.OidcConnectorComponent
+Qian.Identity.Connector.Oidc.OidcConnectorComponent.OidcConnectorComponent() -> void
+Qian.Identity.Connector.Oidc.OidcConnectorComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Identity.Connector.Oidc.OidcConnectorComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

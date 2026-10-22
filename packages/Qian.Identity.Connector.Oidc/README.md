@@ -4,7 +4,7 @@
 
 ## 装配位置
 
-identity profile 的连接器组件（`qian.identity.connector.oidc`）。宿主经 `PluginLoader` 在身份 Provider 之后挂载 `OidcConnectorPlugin`：
+identity profile 的连接器组件（`qian.identity.connector.oidc`）。稳定分发入口为 `OidcConnectorComponent`：按清单在身份与 Config Provider 之后挂载，只注册固定的 `Identity.Connectors:oidc`。程序化宿主仍可使用 `OidcConnectorPlugin`：
 
 - 无参构造：`Inject` 为 `Identity` 与 `Config`，客户端密钥经 `ctx.ResolveSecretAsync` 按本组件的声明、审批与当前租户解析。
 - `new OidcConnectorPlugin(secretResolver, handler?)`：不装 Config 的独立宿主自带 `ISecretResolver`；出站处理器可选，传入时归宿主所有。
@@ -13,14 +13,14 @@ Apply 按配置构造 `OidcIdentityConnector`，以配置的 `name`（缺省 `oi
 
 ## 配置
 
-与组件文件夹的 [schemas/config.schema.json](../../plugins/qian.identity.connector.oidc/schemas/config.schema.json) 同一份（嵌入程序集，即清单的 `ConfigSchema`）：
+配置声明来自代码 `ComponentConfiguration.Schema`，派生为组件文件夹的 [schemas/config.schema.json](../../plugins/qian.identity.connector.oidc/schemas/config.schema.json)。动态适配器从同一声明仅移除 name 的固定值约束，其他字段规则共用：
 
 | 成员 | 说明 |
 | --- | --- |
 | `issuer` | 必填。上游 issuer，须与其发现文档里的 `issuer` 逐字一致 |
 | `clientId` | 必填。在上游登记的客户端标识 |
 | `clientSecret` | 必填，只接受 `secretRef://platform/…`、`secretRef://tenant/…`（或开发用 `dev`），明文与其他格式一律拒绝（INPUT_INVALID，pointer `#/clientSecret`，错误里不回显输入） |
-| `name` | 注册名与回调路径段，缺省 `oidc`；改名时组件条目的 `provides` 要写 `Identity.Connectors:<name>` |
+| `name` | 分发入口只接受 `oidc`；程序化 `OidcConnectorPlugin` 可选其它有效名称，并由宿主同步声明 `Identity.Connectors:<name>` |
 | `displayName` | 登录页按钮上的名称，缺省「企业身份源」 |
 | `scopes` | 缺省 `openid profile email`，必须含 `openid` |
 | `terminals` | 缺省 `pc`、`mobile` |
@@ -51,6 +51,8 @@ Apply 按配置构造 `OidcIdentityConnector`，以配置的 `name`（缺省 `oi
 
 ## 已知限制与延期项
 
-- 组件文件夹 `plugins/qian.identity.connector.oidc` 的清单仍是配置骨架：`inject`（Identity、Config）与 `provides`（`Identity.Connectors:oidc`）要等身份 Provider 的清单去骨架后才能写进去（否则 identity profile 找不到 `Identity` 的 Provider），SDK 生成器也还不支持具名 seam（QIANSDK002）；`policy.egress` 取决于部署接的是哪个 IdP，由部署方在出口白名单里登记上游主机。
+- 组件文件夹的代码字段已派生：稳定入口依赖 `Identity` 与 `Config`，提供 `Identity.Connectors:oidc`；`x-skeleton` 因尚未通过真实安装门而保留。`policy.egress` 由部署方按实际 IdP 主机登记。
 - 发现文档里的端点来自上游，连接器只校验传输要求，不限制主机；出网目标的约束靠部署的出口策略。
 - 不调用 userinfo，资料只取 id_token 里的声明；不支持 `private_key_jwt` 等非对称客户端认证、PAR、JARM 与前通道 / 后通道登出。
+
+稳定入口允许 global / tenant scope，配置与固定具名输出由代码派生；`x-skeleton` 继续保留，元数据同步不代表真实安装已验收。

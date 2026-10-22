@@ -6,9 +6,33 @@
 
 | 服务键 | Provider 条目 | Consumer 条目 |
 |---|---|---|
-| ` Data ` | ` global/data ` | ` global/files ` |
-| ` Files ` | ` global/files ` |  |
+| ` Registry ` | ` global/registry ` | ` global/lifecycle `、` global/capabilities ` |
+| ` Lifecycle ` | ` global/lifecycle ` |  |
+| ` Capabilities ` | ` global/capabilities ` |  |
+| ` ContractAdmission ` | ` global/capabilities ` |  |
+| ` Contracts ` | ` global/capabilities ` |  |
+| ` Navigation ` | ` global/capabilities ` |  |
+| ` CommandTenancy ` | ` global/tenancy ` | ` global/capabilities ` |
+| ` Tenancy ` | ` global/tenancy ` | ` global/capabilities ` |
+| ` TenancyLifecycle ` | ` global/tenancy ` |  |
+| ` TenancyOperations ` | ` global/tenancy ` |  |
+| ` TenancyProvisioning ` | ` global/tenancy ` |  |
+| ` TenancyQuota ` | ` global/tenancy ` |  |
+| ` TenancySettings ` | ` global/tenancy ` |  |
+| ` TenancySettingsOperations ` | ` global/tenancy ` |  |
+| ` Identity ` | ` global/identity ` |  |
+| ` Authz ` | ` global/authz ` |  |
+| ` AuthzEnforcement ` | ` global/authz ` |  |
+| ` AuthzPermissions ` | ` global/authz ` |  |
+| ` AuthzResourceTypes ` | ` global/authz ` |  |
+| ` AuthzSuperadminBypass ` | ` global/authz ` |  |
+| ` AuthzTenantRoleGrant ` | ` global/authz ` |  |
+| ` CommandAuthorization ` | ` global/authz ` | ` global/capabilities ` |
+| ` Data ` | ` global/data ` | ` global/registry `、` global/lifecycle `、` global/capabilities `、` global/tenancy `、` global/authz `、` global/audit ` |
+| ` Config ` | ` global/config ` | ` global/lifecycle ` |
 | ` Events ` | ` global/events ` |  |
+| ` Audit ` | ` global/audit ` | ` global/capabilities ` |
+| ` CommandAudit ` | ` global/audit ` | ` global/capabilities ` |
 
 ```mermaid
 flowchart LR
@@ -33,12 +57,73 @@ flowchart LR
   n18["global/realtime"]
   n19["global/entitlement"]
   n20["global/shell"]
-  s0(("Data"))
-  n7 --> s0
-  s1(("Files"))
-  n8 --> s1
-  s2(("Events"))
-  n10 --> s2
-  s0 --> n8
+  s0(("Registry"))
+  n0 --> s0
+  s1(("Lifecycle"))
+  n1 --> s1
+  s2(("Capabilities"))
+  n2 --> s2
+  s3(("ContractAdmission"))
+  n2 --> s3
+  s4(("Contracts"))
+  n2 --> s4
+  s5(("Navigation"))
+  n2 --> s5
+  s6(("CommandTenancy"))
+  n4 --> s6
+  s7(("Tenancy"))
+  n4 --> s7
+  s8(("TenancyLifecycle"))
+  n4 --> s8
+  s9(("TenancyOperations"))
+  n4 --> s9
+  s10(("TenancyProvisioning"))
+  n4 --> s10
+  s11(("TenancyQuota"))
+  n4 --> s11
+  s12(("TenancySettings"))
+  n4 --> s12
+  s13(("TenancySettingsOperations"))
+  n4 --> s13
+  s14(("Identity"))
+  n5 --> s14
+  s15(("Authz"))
+  n6 --> s15
+  s16(("AuthzEnforcement"))
+  n6 --> s16
+  s17(("AuthzPermissions"))
+  n6 --> s17
+  s18(("AuthzResourceTypes"))
+  n6 --> s18
+  s19(("AuthzSuperadminBypass"))
+  n6 --> s19
+  s20(("AuthzTenantRoleGrant"))
+  n6 --> s20
+  s21(("CommandAuthorization"))
+  n6 --> s21
+  s22(("Data"))
+  n7 --> s22
+  s23(("Config"))
+  n9 --> s23
+  s24(("Events"))
+  n10 --> s24
+  s25(("Audit"))
+  n11 --> s25
+  s26(("CommandAudit"))
+  n11 --> s26
+  s22 --> n0
+  s23 --> n1
+  s22 --> n1
+  s0 --> n1
+  s25 --> n2
+  s26 --> n2
+  s21 --> n2
+  s6 --> n2
+  s22 --> n2
+  s0 --> n2
+  s7 --> n2
+  s22 --> n4
+  s22 --> n6
+  s22 --> n11
 ```
 

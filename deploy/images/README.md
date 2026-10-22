@@ -18,7 +18,7 @@
 ## 可以固定的构建与验收约定
 
 1. 构建入口、运行镜像模板与门禁由 S1-DEP-003 先行交付，用自检镜像验证；三个宿主与组件闭包就绪后，在 S1-DEP-008 接入各自的发布入口。依赖与构建版本锁定，源码 SHA、KunVersion 和 profile 修订均写入构建证据。
-2. 多阶段构建；platform/identity 使用 JIT，gateway 必须完成 Linux NativeAOT 发布并使用 distroless 运行镜像。以非 root UID 启动，以只读根文件系统运行，只为明确需要写入的目录提供临时卷。
+2. 多阶段构建；platform/identity 使用 JIT，gateway 必须完成 Linux NativeAOT 发布并使用 distroless 运行镜像。 S1-DEC-029 仅允许当前 gateway 开发模板暂用 JIT，不能以该结果关闭真实业务镜像的 AOT 门；S1-GW-001 / S1-DEP-008 须验证完整依赖后恢复默认 AOT。以非 root UID 启动，以只读根文件系统运行，只为明确需要写入的目录提供临时卷。
 3. profile、组合包、组件清单与对应 patch 随镜像发布；环境 overlay 以 ConfigMap 挂载。分别在源码树与镜像内执行同一 dump-config 合成，比较解析后的结构与来源层，阻止配置漂移。
 4. 镜像构建成功后按不可变 digest 生成 Syft SBOM，执行漏洞扫描，生成 Cosign 签名和 SBOM 关联证明。验签必须约束 CI 发布者身份/issuer，不能只确认某处存在一个签名文件。
 5. 每个镜像保留 digest、构建 SHA、SBOM、扫描报告、签名验证结果、非 root/只读运行证据和配置比对结果。shell 的实际静态制品必须存在于 platform 镜像，并在真实 gateway 路由下可读取。

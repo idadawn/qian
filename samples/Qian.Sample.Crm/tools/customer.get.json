@@ -1,0 +1,67 @@
+{
+  "name": "customer.get",
+  "description": "查看当前租户一个客户的详情，并记录这次详情访问。",
+  "sideEffect": "read",
+  "policyHint": "allow",
+  "idempotent": false,
+  "async": "none",
+  "requiredScopes": [
+    "crm.read"
+  ],
+  "requiredSecrets": [],
+  "dataClassification": "pii",
+  "costTier": "low",
+  "contractVersion": "crm-v1",
+  "audit": true,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.sample.crm/customer.get"
+  },
+  "requiredPermission": "qian.sample.crm:customer:read",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "tenantId": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "tenantId",
+      "name"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "125cffa5d422c04a5da69fdcd99ed7ff5452424c4a946d9041183b698918ca5f",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.sample.crm"
+  }
+}
