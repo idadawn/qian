@@ -1,19 +1,19 @@
 ---
 id: S1-FILE-004
 title: qian.files 去骨架：包发布与 qian add files 真实安装、组合包 storage.endpoint、租户配额 IT 与上传策略清单汇总
-status: todo
+status: doing
 stage: S1
 area: FILE
 wave: 2
 priority: P0
 type: feature
-owner: ""
+owner: "claude"
 estimate: 3d
 depends: [S1-FILE-001, S1-RT-011, S1-TEN-004]
 refs:
   - docs/prd/07-s1-foundation.md#7.7
   - docs/prd/specs/component-model.md#6.2
-updated: 2026-10-22
+updated: 2026-10-23
 ---
 
 ## 背景
@@ -32,3 +32,4 @@ S1-FILE-001 建议裁决 6、7（用户 2026-10-22 回复「处理掉」，按�
 
 - 2026-10-22 claude：创建任务
 - 2026-10-22 claude：来源：S1-FILE-001 建议裁决 6、7，用户 2026-10-22 回复「处理掉」按建议执行（经主会话转达）；编号前查过 main、全部远端与本地分支及其他工作区，S1-FILE-004 未被占用。验收 2 与 S1-QA-005 验收 2 是同一场景：本任务先交付真实安装门，QA-005 在 30 分钟样例层回验
+- 2026-10-23 claude：开始
