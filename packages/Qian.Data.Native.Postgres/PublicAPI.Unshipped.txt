@@ -1,0 +1,50 @@
+#nullable enable
+Qian.Data.Native.Postgres.NativeDataAccess
+Qian.Data.Native.Postgres.NativeDataAccess.Platform = 1 -> Qian.Data.Native.Postgres.NativeDataAccess
+Qian.Data.Native.Postgres.NativeDataAccess.Tenant = 0 -> Qian.Data.Native.Postgres.NativeDataAccess
+Qian.Data.Native.Postgres.NativeDataBinding
+Qian.Data.Native.Postgres.NativeDataBinding.<Clone>$() -> Qian.Data.Native.Postgres.NativeDataBinding!
+Qian.Data.Native.Postgres.NativeDataBinding.Access.get -> Qian.Data.Native.Postgres.NativeDataAccess
+Qian.Data.Native.Postgres.NativeDataBinding.Access.init -> void
+Qian.Data.Native.Postgres.NativeDataBinding.ConnectionString.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<string!>>!
+Qian.Data.Native.Postgres.NativeDataBinding.ConnectionString.init -> void
+Qian.Data.Native.Postgres.NativeDataBinding.Deconstruct(out string! Name, out string! Role, out Qian.Data.Native.Postgres.NativeDataAccess Access, out System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<string!>>! ConnectionString, out System.Collections.Generic.IReadOnlyList<Qian.Data.Native.Postgres.NativeDataTable!>! Tables) -> void
+Qian.Data.Native.Postgres.NativeDataBinding.Equals(Qian.Data.Native.Postgres.NativeDataBinding? other) -> bool
+Qian.Data.Native.Postgres.NativeDataBinding.Name.get -> string!
+Qian.Data.Native.Postgres.NativeDataBinding.Name.init -> void
+Qian.Data.Native.Postgres.NativeDataBinding.NativeDataBinding(string! Name, string! Role, Qian.Data.Native.Postgres.NativeDataAccess Access, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<string!>>! ConnectionString, System.Collections.Generic.IReadOnlyList<Qian.Data.Native.Postgres.NativeDataTable!>! Tables) -> void
+Qian.Data.Native.Postgres.NativeDataBinding.Role.get -> string!
+Qian.Data.Native.Postgres.NativeDataBinding.Role.init -> void
+Qian.Data.Native.Postgres.NativeDataBinding.Tables.get -> System.Collections.Generic.IReadOnlyList<Qian.Data.Native.Postgres.NativeDataTable!>!
+Qian.Data.Native.Postgres.NativeDataBinding.Tables.init -> void
+Qian.Data.Native.Postgres.NativeDataComponent
+Qian.Data.Native.Postgres.NativeDataComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Data.Native.Postgres.NativeDataComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Data.Native.Postgres.NativeDataComponent.NativeDataComponent() -> void
+Qian.Data.Native.Postgres.NativeDataHosting
+Qian.Data.Native.Postgres.NativeDataTable
+Qian.Data.Native.Postgres.NativeDataTable.<Clone>$() -> Qian.Data.Native.Postgres.NativeDataTable!
+Qian.Data.Native.Postgres.NativeDataTable.Deconstruct(out string! Schema, out string! Name, out string! GuardPolicy, out string! ExpectedUsing, out string! ExpectedCheck) -> void
+Qian.Data.Native.Postgres.NativeDataTable.Equals(Qian.Data.Native.Postgres.NativeDataTable? other) -> bool
+Qian.Data.Native.Postgres.NativeDataTable.ExpectedCheck.get -> string!
+Qian.Data.Native.Postgres.NativeDataTable.ExpectedCheck.init -> void
+Qian.Data.Native.Postgres.NativeDataTable.ExpectedUsing.get -> string!
+Qian.Data.Native.Postgres.NativeDataTable.ExpectedUsing.init -> void
+Qian.Data.Native.Postgres.NativeDataTable.GuardPolicy.get -> string!
+Qian.Data.Native.Postgres.NativeDataTable.GuardPolicy.init -> void
+Qian.Data.Native.Postgres.NativeDataTable.Name.get -> string!
+Qian.Data.Native.Postgres.NativeDataTable.Name.init -> void
+Qian.Data.Native.Postgres.NativeDataTable.NativeDataTable(string! Schema, string! Name, string! GuardPolicy, string! ExpectedUsing, string! ExpectedCheck) -> void
+Qian.Data.Native.Postgres.NativeDataTable.Schema.get -> string!
+Qian.Data.Native.Postgres.NativeDataTable.Schema.init -> void
+override Qian.Data.Native.Postgres.NativeDataBinding.Equals(object? obj) -> bool
+override Qian.Data.Native.Postgres.NativeDataBinding.GetHashCode() -> int
+override Qian.Data.Native.Postgres.NativeDataBinding.ToString() -> string!
+override Qian.Data.Native.Postgres.NativeDataTable.Equals(object? obj) -> bool
+override Qian.Data.Native.Postgres.NativeDataTable.GetHashCode() -> int
+override Qian.Data.Native.Postgres.NativeDataTable.ToString() -> string!
+static Qian.Data.Native.Postgres.NativeDataBinding.operator !=(Qian.Data.Native.Postgres.NativeDataBinding? left, Qian.Data.Native.Postgres.NativeDataBinding? right) -> bool
+static Qian.Data.Native.Postgres.NativeDataBinding.operator ==(Qian.Data.Native.Postgres.NativeDataBinding? left, Qian.Data.Native.Postgres.NativeDataBinding? right) -> bool
+static Qian.Data.Native.Postgres.NativeDataHosting.AddQianNativeData(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Qian.Data.Native.Postgres.NativeDataBinding! binding) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Data.Native.Postgres.NativeDataTable.operator !=(Qian.Data.Native.Postgres.NativeDataTable? left, Qian.Data.Native.Postgres.NativeDataTable? right) -> bool
+static Qian.Data.Native.Postgres.NativeDataTable.operator ==(Qian.Data.Native.Postgres.NativeDataTable? left, Qian.Data.Native.Postgres.NativeDataTable? right) -> bool

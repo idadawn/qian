@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><IsAotCompatible>true</IsAotCompatible><Description>原生数据库连接与事务的 NativeData Definition，不依赖 EF。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
+    <ProjectReference Include="../Qian.Runtime.Errors/Qian.Runtime.Errors.csproj" />
+  </ItemGroup>
+</Project>

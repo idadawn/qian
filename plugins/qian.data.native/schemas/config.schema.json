@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "connections"
+  ],
+  "properties": {
+    "connections": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]{0,62}$"
+      },
+      "description": "受信任宿主登记的连接绑定名，不是连接串。"
+    }
+  }
+}
