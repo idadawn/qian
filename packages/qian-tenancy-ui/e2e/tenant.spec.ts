@@ -7,6 +7,9 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   const calls: { method: string; path: string; status: number }[] = [];
   page.on('request', (request) => { if (new URL(request.url()).pathname.startsWith('/api/tenancy')) expect(Boolean(request.headers().authorization)).toBe(false); });
   page.on('response', (response) => { const url = new URL(response.url()); if (url.pathname.startsWith('/api/tenancy')) calls.push({ method: response.request().method(), path: url.pathname, status: response.status() }); });
+  // 列表请求的完整查询串：翻页与筛选须以 skip / take / keyword / status 交给宿主，不能在前端过滤。
+  const lists: Record<string, string>[] = [];
+  page.on('request', (request) => { const url = new URL(request.url()); if (request.method() === 'GET' && url.pathname === '/api/tenancy/tenants') lists.push(Object.fromEntries(url.searchParams)); });
   // 控制请求到达时间以观察 loading，响应仍由真实宿主产生。
   let release!: () => void;
   const gate = new Promise<void>((ok) => { release = ok; });
@@ -50,6 +53,7 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   expect(listed.total).toBe(2);
   const a = listed.items.find((item: { code: string }) => item.code === 'tenanta');
   await page.getByLabel('搜索租户号或名称').fill('tenantb');
+  await expect.poll(() => lists.at(-1)).toEqual({ skip: '0', take: '10', keyword: 'tenantb' });
   await expect(rowB).toBeVisible(); await expect(rowA).toHaveCount(0);
   await page.getByLabel('搜索租户号或名称').fill('');
   await expect(rowA).toBeVisible();
@@ -80,10 +84,28 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   await expect(rowA.getByText('正常', { exact: true })).toBeVisible();
   await page.getByRole('combobox', { name: '状态', exact: true }).click();
   await page.getByRole('option', { name: '待激活', exact: true }).click();
+  await expect.poll(() => lists.at(-1)).toEqual({ skip: '0', take: '10', status: 'pending' });
   await expect(rowA).toHaveCount(0); await expect(rowB).toBeVisible();
   await page.getByRole('combobox', { name: '状态', exact: true }).click();
   await page.getByRole('option', { name: '全部状态', exact: true }).click();
   await expect(rowA).toBeVisible();
+
+  // 第 3 步「服务端拒绝时显示结构化错误」：另一处先激活再冻结 B，页面仍按待激活给出「激活」，提交得到真实 409。
+  const b = listed.items.find((item: { code: string }) => item.code === 'tenantb');
+  expect((await context.request.post(baseURL + '/api/tenancy/tenants/' + b.id + ':activate', { data: { trial: false } })).status()).toBe(200);
+  expect((await context.request.post(baseURL + '/api/tenancy/tenants/' + b.id + ':suspend')).status()).toBe(200);
+  await rowB.getByRole('button', { name: '激活', exact: true }).click();
+  const rejected = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/tenancy/tenants/' + b.id + ':activate');
+  await dialog.getByRole('button', { name: '保存', exact: true }).click();
+  expect(await (await rejected).json()).toMatchObject({ status: 409, code: 'TENANCY_STATE_CONFLICT', message: '当前租户状态不允许该操作。' });
+  // 状态冲突显示服务端原文，只出现一处：没有编辑冲突文案，也没有页面级提示。
+  await expect(dialog.getByText('当前租户状态不允许该操作。', { exact: true })).toBeVisible();
+  await expect(dialog.getByText(/当前修改未覆盖他人的更新/)).toHaveCount(0);
+  await expect(page.locator('main [role="alert"]')).toHaveCount(0);
+  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.getByRole('button', { name: '刷新', exact: true }).click();
+  await expect(rowB.getByText('已冻结', { exact: true })).toBeVisible();
 
   await rowA.getByRole('button', { name: '编辑', exact: true }).click();
   await dialog.getByLabel('租户名称').fill('租户 A 已编辑');
@@ -106,6 +128,23 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   await expect(dialog.getByText('25', { exact: true })).toBeVisible();
   // 只读抽屉没有表单，底部另有一个「关闭」按钮；与上面几处一样点表头关闭按钮。
   await dialog.getByTestId('yue-form-drawer-close').click();
+
+  // 第 1 步服务端分页：再建 13 个（租户号排在 tenanta / tenantb 之后），共 15 个。
+  // 总数取自响应而不是本页行数；第 2 页与每页条数都以 skip / take 交给宿主。
+  for (let index = 1; index <= 13; index++) {
+    const code = 'zpage' + String(index).padStart(2, '0');
+    const created = await context.request.post(baseURL + '/api/tenancy/tenants', { data: { code, name: '分页租户 ' + code, isolation: 'row', administrator: { membershipId: '01900000-0000-7000-8000-000000000101', subjectId: 'tenant-ui-owner-' + code } } });
+    expect(created.status()).toBe(201);
+  }
+  await page.getByRole('button', { name: '刷新', exact: true }).click();
+  await expect(page.getByText('共 15 条', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '第 2 页', exact: true }).click();
+  await expect.poll(() => lists.at(-1)).toEqual({ skip: '10', take: '10' });
+  await expect(page.getByRole('row').filter({ hasText: 'zpage13' })).toBeVisible(); await expect(rowA).toHaveCount(0);
+  await page.getByRole('combobox', { name: '每页条数', exact: true }).click();
+  await page.getByRole('option', { name: '20', exact: true }).click();
+  await expect.poll(() => lists.at(-1)).toEqual({ skip: '0', take: '20' });
+  await expect(page.getByRole('row').filter({ hasText: 'zpage13' })).toBeVisible(); await expect(rowA).toBeVisible();
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations.filter((item) => ['critical', 'serious'].includes(item.impact ?? ''))).toEqual([]);
