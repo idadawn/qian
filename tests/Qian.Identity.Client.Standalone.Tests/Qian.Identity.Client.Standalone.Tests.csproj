@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <!-- 独立宿主 E2E：被测代码只引用 Qian.Identity.Client；容器夹具只提供外部发行方 Dex，不引入其它 Qian Provider。 -->
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
+    <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+</Project>

@@ -54,11 +54,11 @@ public sealed class ProfileTests
     }
 
     [Theory]
-    // 警告只来自仍带骨架标记的条目；qian.data 经 S1-RT-011 真实安装后不再是骨架（platform / identity 各少一条）。
-    [InlineData("platform", 21, 20)]
-    [InlineData("gateway", 5, 5)]
-    [InlineData("identity", 8, 7)]
-    [InlineData("standalone", 2, 2)]
+    // 警告只来自仍带骨架标记的条目；qian.data / qian.events / qian.config 经真实安装后不再是骨架。
+    [InlineData("platform", 21, 19)]
+    [InlineData("gateway", 6, 5)]
+    [InlineData("identity", 8, 6)]
+    [InlineData("standalone", 3, 1)]
     [InlineData("minimal", 0, 0)]
     public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count, int skeletons)
     {

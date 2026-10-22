@@ -191,4 +191,6 @@ meter `Qian.Events` 的消费侧计数，每条消息恰落入其中一个：`qi
 - 消费端 baggage（`tenant.id` 等）由 S1-AUD-003 在订阅器的 Activity 上补齐，本包只恢复 trace_parent；死信告警规则归 S1-DEP-006。
 - S1-DEC-013 列为可选项的 PG `processed_messages` 兜底表没有做，幂等记录只在 Redis。
 - broker 侧投递上限触发的死信（崩溃循环）不经过消费端的计数与日志。
-- `plugins/qian.events` 仍保留骨架标记：SDK 发布（S1-RT-014）与私有源 `qian add events` 安装（S1-RT-011 的 E2E）均已验证，但该任务的验收只移除 qian.data 的标记，本组件标记的去留记在 S1-RT-011 日志的建议裁决里。
+- `plugins/qian.events` 已通过 SDK 发布与私有源 `qian add events` 两门，S1-RT-033 按 R100 移除骨架标记，并补齐配置 Schema 的代码派生。
+
+`qian.events` 的 `runtime.configSchema` 和 Schema 文件由入口的 `QianConfigSchema` 引用 `ComponentConfiguration.Schema` 派生；修改配置时先更新实现和代码声明，再同步唯一清单。该组件已通过既有真实安装门，清单不再带骨架标记。

@@ -10,6 +10,7 @@ using Qian.Testing.Containers;
 
 namespace Qian.Config.Tests;
 
+[Collection(RealApolloGroup.Name)]
 public sealed class RealApolloTests(RealApolloFixture apollo) : IClassFixture<RealApolloFixture>
 {
     [Fact]

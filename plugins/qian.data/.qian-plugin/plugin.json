@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.data",
   "version": "1.0.0",
-  "description": "数据组件：租户数据会话默认带租户填充、过滤与 RLS 双拦截器，另有同上下文 Outbox、角色检查、RLS 迁移与软删审计",
+  "description": "提供 qian.data 的实际代码入口与配置契约；安装状态按组件验收门管理。",
   "author": {
     "name": "Qian"
   },
@@ -45,7 +45,8 @@
         "version": "0.1.0",
         "digest": "sha256:bf5df2eef9836e342721567e66c3cdf5d6e0aacc0e5d15731f6acb79d5c13e83"
       }
-    ]
+    ],
+    "configSchema": "./schemas/config.schema.json"
   },
   "x-qian-generated": {
     "$generated": true,
@@ -53,8 +54,20 @@
       "/inject",
       "/provides",
       "/runtime/form",
-      "/runtime/entry"
+      "/runtime/entry",
+      "/runtime/configSchema"
     ],
-    "tools": []
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.data",
+        "source": "Qian.Data.DataPlugin, Qian.Data",
+        "sha256": "0339669f195115415707bf18043ce222ee9d299046f53d0824c5873210f2ea98",
+        "fields": [
+          ""
+        ]
+      }
+    }
   }
 }
