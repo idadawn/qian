@@ -75,6 +75,7 @@ builder.Services.AddQianEventsBroker(sp => sp.GetRequiredService<IConfiguration>
 
 ```csharp
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redis));
+// 组合包含 qian.tenancy 的宿主登记传播器（见「租户回灌」）。
 builder.Services.AddSingleton<ITenantContextPropagator>(sp => new TenantContextPropagator(sp.GetRequiredService<ITenantContext>()));
 builder.Services.AddQianEventsSubscriber("qian.identity", subscriber => subscriber
     .Subscribe<TenantSuspended, TenantSuspendedSessionHandler>("session-revocation")
@@ -104,18 +105,29 @@ builder.Services.AddQianEventsSubscriber("qian.identity", subscriber => subscrib
 5. 载荷从信封 payload 按登记的 JsonTypeInfo 反序列化，从不把整封信封当载荷；
 6. 调用 handler，成功后写幂等记录（保留 IdempotencyTtl，默认 7 天），然后才确认。
 
-消费者名：竞争订阅为 `<service>.<subscription>`，广播订阅为 `<service>.<subscription>@<instance>`（每个实例各记各的）。幂等记录写入失败按瞬时失败处理，handler 会在重试时再次执行；写类 handler 必须业务幂等（ADR-008 D8.4）。
+消费者名：竞争订阅为 `<service>.<subscription>`，广播订阅为 `<service>.<subscription>@<instance>`（每个实例各记各的）。写类 handler 必须业务幂等（ADR-008 D8.4），幂等记录兜不住两种情况：
+
+- 幂等记录写入失败：按瞬时失败处理，handler 会在重试时再次执行；
+- 并发重复投递：同一事件的两份副本同时被两个实例取走，都在对方写记录之前查过记录，两边都执行 handler。后写记录的一方发现记录已存在，记一条 Warning 日志（EventId 35）并计 `duplicate_executed`，消息照常确认、计 processed。记录是「先查、执行、后写」，不是先占位，所以这种情况只能发现，不能防止。
 
 ### 失败分类
 
 | 分类 | 情形 | 处置 | 计数 |
 |---|---|---|---|
-| 契约不满足（handler 之前） | 信封解析或校验失败（含缺少 tenant_id）、与 AMQP 属性不一致、本队列没有订阅这个事件 ID、平台级事件而订阅不接受、租户进入被拒（传播器判定或非法租户 id）、载荷反序列化失败 | 不重投、不记幂等，原样转入订阅的死信队列 | rejected |
-| handler 确定性失败 | `InvalidOperationException`（含 `QianEventsException` 与 `RecordChangedEvent.FromEnvelope` 的派生失败）、`ArgumentException`、`JsonException`、`NotSupportedException`、错误码不可重试的 `QianErrorException` | 不重投、不记幂等，转入死信队列 | dead_lettered |
-| handler 瞬时失败 | 其余异常 | 退避后重投；用尽后转入死信队列 | retried，用尽时 dead_lettered |
+| 契约不满足（handler 之前） | 信封解析或校验失败（含缺少 tenant_id）、与 AMQP 属性不一致、本队列没有订阅这个事件 ID、平台级事件而订阅不接受、租户进入被拒（传播器判定、非法租户 id，或进入后当前租户不等于信封租户）、载荷反序列化失败 | 不重投、不记幂等，原样转入订阅的死信队列 | rejected |
+| handler 确定性失败 | `QianEventsException`；`InvalidOperationException` 本身（`RecordChangedEvent.FromEnvelope` 等派生失败抛的就是它；包着内层异常时按内层判定）；`ArgumentException`、`JsonException`、`NotSupportedException`；错误码不可重试的 `QianErrorException` | 不重投、不记幂等，转入死信队列 | dead_lettered |
+| handler 瞬时失败 | 其余异常，包括 `InvalidOperationException` 的其他子类（如 `ObjectDisposedException`）和包着瞬时故障的 `InvalidOperationException` | 退避后重投；用尽后转入死信队列 | retried，用尽时 dead_lettered |
+| 转发失败 | 重试或死信副本连续 3 次发不出去（broker 退回、确认超时、声明失败） | 原消息 nack 不放回，交 broker 按队列的死信参数处理，见「重试与死信」 | forward_failed |
 | 宿主停机 | 停机令牌触发后 handler 抛出的任何异常 | 放回队列，不计一次尝试 | 无 |
 
-handler 想明确表示「重试也不会成功」时，抛携带 EVENTS_CONSUME_REJECTED 的 `QianEventsException`。广播队列里连事件 ID 都无法归属订阅的消息（信封无法解析、没有订阅这个事件）没有死信队列可去，记 rejected 与 Error 日志后丢弃。
+`InvalidOperationException` 不整类判为确定性失败，原因有两个：
+
+- Npgsql 的 EF 执行策略会把可重试的数据库故障（连接断开、服务端重启）包成 `InvalidOperationException` 抛出，整类判定会让一次瞬时故障直接进死信；
+- `ObjectDisposedException` 也是它的子类，表示对象生命周期问题，换一次投递可能就好。
+
+所以只认 `InvalidOperationException` 本身：没有内层异常时视为契约错误；有内层异常时按内层异常判定。其子类里只有 `QianEventsException` 判为确定性失败，其余子类一律按瞬时失败处理。
+
+handler 想明确表示「重试也不会成功」时，抛携带 EVENTS_CONSUME_REJECTED 的 `QianEventsException`。广播队列里连事件 ID 都无法归属订阅的消息（信封无法解析、没有订阅这个事件）没有死信队列可去，确认后丢弃，记 rejected 与 Error 日志。
 
 ### 重试与死信
 
@@ -126,7 +138,12 @@ handler 想明确表示「重试也不会成功」时，抛携带 EVENTS_CONSUME
 - 死信消息体与原消息逐字节相同，保留 MessageId、Type、AppId 与发布端写出的头（traceparent、tracestate、tenant_id），去掉 broker 生成的 x-death 等记录，另加 `x-qian-attempts`、`x-qian-reason`、`x-qian-consumer`、`x-qian-subscription`、`x-qian-instance`、`x-qian-subject`，以及有异常时的 `x-qian-error`（异常类型全名，不含异常消息）。
 - `x-qian-reason` 取值：exhausted、handler_rejected、invalid_envelope、property_mismatch、tenant_mismatch、routing_mismatch、unsubscribed_type、platform_event、tenant_rejected、invalid_payload。
 - 告警：每进一条死信，dead_lettered 计数加一并记一条 Error 日志（event_id、type、消费者、第几次投递与原因，不含载荷）；Alertmanager 规则归 S1-DEP-006。
-- broker 侧还有一道投递上限：竞争队列声明 `x-delivery-limit=6`。RabbitMQ 4 的 quorum 队列只对「消费者消失」（连接或通道断开时消息未确认）计次，basic.nack 放回不计，所以本订阅器的重试与停机放回都不会触到它；只有崩溃循环（处理中途进程退出）会在第 7 次投递后由 broker 按死信队列名转入死信队列。这类死信不经过上面的计数与日志，由死信队列深度告警兜底。
+- broker 侧还有一道投递上限：竞争队列声明 `x-delivery-limit=6`。RabbitMQ 4 的 quorum 队列只对「消费者消失」（连接或通道断开时消息未确认）计次，basic.nack 放回不计（`DeadLetterTopologyTests` 实测：放回投递上限的三倍次数后消息仍在源队列）。所以本订阅器的停机放回不会触到它，它也兜不住「转发失败 → 放回 → handler 再执行」的循环。只有崩溃循环（处理中途进程退出）会在第 7 次投递后由 broker 按死信队列名转入死信队列。这类死信不经过上面的计数与日志，由死信队列深度告警兜底。
+- 转发失败的上界：重试或死信副本发不出去（broker 退回、确认超时、重试队列声明失败）时，原地按 `RetryBaseDelay × 2^(n-1)` 退避重发，不放回原消息，handler 不会因此重跑。连续 3 次失败后的处置：
+  - 计 forward_failed（`qian.events.reason` 为死信原因，重试转发为 `retry`），记 Error 日志（EventId 36），然后 nack 不放回；
+  - 竞争队列由 broker 按队列的死信参数转入本订阅的死信队列。这类死信没有 `x-qian-*` 头，原因在 broker 写的 `x-first-death-reason`（rejected）。死信队列也不可达时按 at-least-once 滞留在源队列，计入 messages_dlx，不再投给消费者；
+  - 广播队列没有死信参数，消息丢弃。
+  - 停机时仍放回原消息，不计失败。
 - 竞争队列用 at-least-once 死信策略：死信目标不可达时消息滞留在源队列（不计入 messages，计入 messages_dlx）而不是丢失，所以死信队列先于主队列声明。
 
 ### 两种订阅
@@ -137,11 +154,19 @@ handler 想明确表示「重试也不会成功」时，抛携带 EVENTS_CONSUME
 
 ### 租户回灌
 
-租户只取已校验信封的 tenant_id（contracts/v0 §5 第 3 条），不读载荷（S1-DEC-020）；每条消息在全新作用域里进入，消费循环运行在空执行上下文里，宿主启动时的租户或事件作用域不会带进消息。
+租户只取已校验信封的 tenant_id（contracts/v0 §5 第 3 条），不读载荷（S1-DEC-020）；每条消息在全新作用域里进入，消费循环运行在空执行上下文里，宿主启动时的租户或事件作用域不会带进消息。口径是 R122：
 
-- 宿主登记了 `ITenantContextPropagator` 时经它进入：carrier 是消息体（信封原文），authorizedTenantId 是解析、校验后且与 AMQP 头 tenant_id 核对一致的信封租户。传播器在这里提供缺失、重复、不一致与租户冲突的 fail-closed 判定；消费端没有独立于消息的令牌，AMQP 头由发布端从同一信封写出，只能近似满足传播器「authorizedTenantId 不能取自同一输入」的契约（S1-EVT-002 日志的建议裁决）。
-- 没有登记传播器时退回 Kun `ITenantContext.BeginScope`，先按同样规则核对原文里恰有一个与授权租户一致的 tenant_id，并在启动时记一条日志。
-- 平台级事件（tenant_id 为 null）默认拒绝；订阅显式 `acceptPlatformEvents: true` 时派发，不开租户作用域。宿主的租户上下文不是多租户时不回灌。
+- 宿主登记了 `ITenantContextPropagator` 时经它进入。carrier 是消息体（信封原文），authorizedTenantId 是解析、校验后且与 AMQP 头 tenant_id 核对一致的信封租户。消费端没有独立于消息的令牌，AMQP 头由发布端从同一信封写出，所以只能近似满足传播器「authorizedTenantId 不能取自同一输入」的契约。传播器在这里提供缺失、重复、不一致与租户冲突的 fail-closed 判定，不提供独立授权。
+- 没有登记传播器时退回 Kun `ITenantContext.BeginScope`，先按同样规则核对原文里恰有一个与授权租户一致的 tenant_id，并在启动时记一条 Information 日志。
+- 两条路径进入后都核对当前租户等于信封租户。传播器或宿主上下文没有进入作用域、进入了别的租户，都按 tenant_rejected 拒绝，已进入的作用域先释放。
+- 信任根是 broker 的连接认证与发布端 Outbox 写入端。发布端的 tenant_id 由信封写入端 `QianEnvelopeOutboxWriter` 取自 Kun `ITenantContext`，不经传播器 `Write`。残余风险是持有 broker 发布凭据的服务能伪造任意租户的事件，是否签名信封另行决定。
+- 平台级事件（tenant_id 为 null）与租户事件同走 `qian.events`、同一订阅队列，不另设通道：exchange 或队列不是信任边界。订阅默认拒绝；显式 `acceptPlatformEvents: true` 时派发，不开租户作用域，handler 内 `ITenantContext` 为空。
+- 宿主的租户上下文不是多租户时不回灌。
+
+哪些宿主登记传播器（S1-EVT-004，产品负责人 2026-10-23 确认）：
+
+- 组合包含 qian.tenancy 的 profile 宿主接订阅器时登记 `TenantContextPropagator`，与参考宿主一致，生产宿主与 gRPC、作业共用 Qian.Tenancy 的同一份判定。目前装 qian.events 的 platform、identity 都属于这一类。
+- 不装 qian.tenancy 的订阅宿主走回退分支，判定相同。
 
 ### handler 拿到什么
 
@@ -151,7 +176,11 @@ handler 想明确表示「重试也不会成功」时，抛携带 EVENTS_CONSUME
 
 ### 指标与选项
 
-meter `Qian.Events` 的消费侧计数，每条消息恰落入其中一个：`qian.events.consumer.processed`、`duplicate`、`retried`、`dead_lettered`、`rejected`。标签为 `qian.events.consumer`（消费者名）、`qian.events.type`（已归属订阅时）与 `qian.events.reason`（rejected、dead_lettered）。
+meter `Qian.Events` 的消费侧计数，每次投递恰落入其中一个结果：`qian.events.consumer.processed`、`duplicate`、`retried`、`dead_lettered`、`rejected`、`forward_failed`，都在原消息确认或 nack 之后计数。宿主停机放回的投递不计。
+
+`qian.events.consumer.duplicate_executed` 不是结果，是伴随 processed 的信号：幂等记录已由同一事件的另一次投递写入，handler 至少执行了两次。
+
+标签为 `qian.events.consumer`（消费者名）、`qian.events.type`（已归属订阅时）与 `qian.events.reason`（rejected、dead_lettered、forward_failed）。
 
 | 选项 | 默认 | 说明 |
 |---|---|---|
@@ -190,7 +219,8 @@ meter `Qian.Events` 的消费侧计数，每条消息恰落入其中一个：`qi
 - 死信队列的重放工具（ADR-008 D8.9）没有做；死信消息保留原文与原属性，重放时去掉 `x-qian-*` 头再发回 `qian.events`。
 - 消费端 baggage（`tenant.id` 等）由 S1-AUD-003 在订阅器的 Activity 上补齐，本包只恢复 trace_parent；死信告警规则归 S1-DEP-006。
 - S1-DEC-013 列为可选项的 PG `processed_messages` 兜底表没有做，幂等记录只在 Redis。
-- broker 侧投递上限触发的死信（崩溃循环）不经过消费端的计数与日志。
+- broker 侧投递上限触发的死信（崩溃循环）不经过消费端的计数与日志；转发失败后交 broker 的死信计 forward_failed，但死信消息本身没有 `x-qian-*` 头。
+- 并发重复投递只能发现（duplicate_executed），不能防止：幂等记录是「先查、执行、后写」，不先占位。
 - `plugins/qian.events` 已通过 SDK 发布与私有源 `qian add events` 两门，S1-RT-033 按 R100 移除骨架标记，并补齐配置 Schema 的代码派生。
 
 `qian.events` 的 `runtime.configSchema` 和 Schema 文件由入口的 `QianConfigSchema` 引用 `ComponentConfiguration.Schema` 派生；修改配置时先更新实现和代码声明，再同步唯一清单。该组件已通过既有真实安装门，清单不再带骨架标记。
