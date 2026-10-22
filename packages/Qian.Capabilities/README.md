@@ -78,7 +78,7 @@ ApiExplorer 不列这条通用模板：它只能描述静态、与调用者无�
 
 SDK 生成的契约由 System.Text.Json 导出 Schema，不会出现后四类问题，这几条是兜底。
 
-**platform profile 宿主必须调用 `AddQianCapabilities()`**，[运维手册](../../docs/ops/configuration-runbook.md)的部署步骤同样要求。漏掉时宿主照常启动，但检查退化为首次读目录或调用时才生成条目、编译校验器：不合格的契约不会让组件挂载失败，目录读到时只排除该能力并记一次告警（不影响其他能力），执行入口对它返回 404。独立宿主没有通用执行入口，不需要调用。TCK 平台组合包宿主（R68）断言容器里解析到的 `ICapabilityContractCheck` 是宿主单例，且不合格的契约在该宿主下于登记期被拒。
+**platform profile 宿主必须调用 `AddQianCapabilities()`**，[运维手册](../../docs/ops/configuration-runbook.md)的部署步骤同样要求。漏掉时 `CapabilitiesComponent` / `CapabilitiesPlugin` 在挂载阶段拒绝，异常明确指出缺失的装配；不再退化为首次请求才检查。独立宿主没有通用执行入口时不需要调用。TCK 平台组合包宿主断言容器里的 `ICapabilityContractCheck` 是宿主单例，不合格契约在登记期被拒。
 
 ## 验收与保留项
 
@@ -178,3 +178,9 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 TEN-011 收口：原生 HTTP 导出同时读取字符串 MinLength/MaxLength/RegularExpression，查询取值来自 AllowedValues；与 CLR int 类型边界相同的 Range 上限不重复写成业务 maximum。DisallowNull/IsSetNullable 的去空变换仅适用于请求体，输入与输出 Schema 分开缓存，避免同一 DTO 的写入限制污染响应。动态 JsonElement 响应由 Definition 的 HttpResponseSchema 元数据提供完整 Schema；它只描述响应，不授予权限或改变执行。
 
 TenantInputContract 是能力 inputSchema 与 HTTP 契约检查共用的租户字段规则，解析本地引用并跳过实例注解，HTTP 调用方另外按同一词表检查参数名。规则本身与表面校验器共用 `packages/Common/TenantFieldRule.cs`（S1-AGT-004）：properties 之外的 `required`、`dependentRequired`、`dependentSchemas`、`patternProperties` 与 `propertyNames` 列出的名称同样拒绝；名称表里叫 `default`、`enum` 的属性照常往下查，此前会被当成实例数据跳过。平台排除用例同时提供正常绑定与双标记端点；删除生产排除分支时用例必须失败（R112）。本次没有放宽 oasdiff、准入探针或失败等级。
+
+## 清单入口与代码派生
+
+`plugins/qian.capabilities/.qian-plugin/plugin.json` 的稳定入口是 `CapabilitiesComponent`，允许 global scope，依赖 `Data`、`Audit`、`Registry`、`Tenancy` 及三种命令策略键，提供 能力目录、契约仓库、契约准入与导航的四个 Definition 服务键。固定委托无参 `CapabilitiesPlugin`，宿主必须先调用 `AddQianCapabilities()`。OpenAPI / gRPC / 导航包装器和准入失败占位是实现构件，不是独立组件。
+
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

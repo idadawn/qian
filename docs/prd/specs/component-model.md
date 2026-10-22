@@ -902,7 +902,7 @@ hmr:
   surfaces: true                           # 声明式表面运行中重载（S1 支持）
   code: false                              # 代码热装卸（S2 可选；S1 校验器拒绝 true）
 build:
-  aot: false                               # gateway profile 为 true（D20.10）；为 true 时树中不得出现 hmr.code、function 形态与非 AOT 组件
+  aot: false                               # 当前 gateway 开发模板也为 false（S1-DEC-029）；为 true 时拒绝未验证的代码组件
 hooks:
   allowCommand: true                       # hooks.json 的 command 类型是否执行（默认 false，§11.4）
 health:
@@ -1079,10 +1079,12 @@ CREATE TABLE plugin_qian_registry.scope_patches (
 | profile | 组合包 | 组合包内容（条目 → 组件） | 备注 |
 |---|---|---|---|
 | `platform` | `qian.bundle.base` + `qian.bundle.shell` + 可选 `qian.bundle.model-gateway` | base：原 18 个平台插件按 seam 拆包——`registry`、`lifecycle`、`capabilities`、`hooks`、`tenancy`、`identity → qian.identity.client`、`authz`、`data`、`files`、`config → qian.config.apollo`、`events`、`audit`、`observability`、`notify` + 三个渠道、`scheduler`、`realtime`、`entitlement`（§7.3），并携带平台运维技能 / 命令 / 钩子表面；shell：`shell → qian.shell`（yue 外壳静态制品与外壳 API）；model-gateway：`model-gateway → qian.model-gateway`（P1，默认 `disabled: true`） | 不承诺 AOT |
-| `gateway` | `qian.bundle.gateway` | `gateway → qian.gateway`、`identity → qian.identity.client`（Cookie 换 S2S、JWKS）、`config → qian.config.apollo`、`observability`、`audit` | 可 AOT：`build.aot: true` |
+| `gateway` | `qian.bundle.gateway` | `gateway → qian.gateway`、`identity → qian.identity.client`（Cookie 换 S2S、JWKS）、`config → qian.config.apollo`、`observability`、`audit`、`data`（Audit 的实际依赖） | 当前开发模板 JIT（`build.aot: false`，S1-DEC-029）；GW-001 / DEP-008 完成真实 NativeAOT 验收后恢复 true |
 | `identity` | `qian.bundle.identity-server` | `identity → qian.identity.server`（可嵌入 OpenIddict，唯一 issuer）、`identity.connector.oidc`、`identity.connector.wecom`（连接器组件，经 `ctx.IdentityConnectors()` 注册 `oidc` / `wecom`，R28 / R38）、`tenancy`、`data`、`config → qian.config.apollo`、`events`、`audit`、`files`（头像，可选） | 独立安全边界 |
-| `standalone` | `qian.bundle.standalone` | 供消费者宿主安装的最小组合包：`Qian.Runtime` + `config → qian.config`（标准 `IConfiguration`）、`tenancy`（条目配置只含空 `initializationCapabilities`；是否单租户由宿主显式提供 `ITenantContext` / `SingleTenant` 决定，不经配置字符串切换，ADR-019 D19.4，S1-TEN-007 复核对齐）+ 所选 seam 的 Definition / Provider（由 `qian add identity authz files …` 带入） | ADR-019 D19.8 的 30 分钟验收宿主；`qian init --template dotnet-webapi` 默认 |
+| `standalone` | `qian.bundle.standalone` | 供消费者宿主安装的最小组合包：`Qian.Runtime` + `config → qian.config`（标准 `IConfiguration`）、`data`（使用宿主连接，S1-DEC-029）、`tenancy`（条目配置只含空 `initializationCapabilities`；是否单租户由宿主显式提供 `ITenantContext` / `SingleTenant` 决定，不经配置字符串切换，ADR-019 D19.4，S1-TEN-007 复核对齐）+ 所选 seam 的 Definition / Provider（由 `qian add identity authz files …` 带入） | ADR-019 D19.8 的 30 分钟验收宿主；`qian init --template dotnet-webapi` 默认 |
 | `minimal` | `qian.bundle.minimal` | 测试与 SDK 基准宿主，仅 `Qian.Runtime` 与声明式表面装载器；组合包初始 patch 为空，无默认业务组件（S1-DEC-012，2026-10-09 确认） | TCK 宿主、CLI 自身运行时 |
+
+S1-DEC-029 已确认当前开发模板分期：gateway 与 standalone 补齐真实 Data 依赖，identity 采用合法 issuer / OIDC 客户端 / secretRef 示例。gateway 当前使用 JIT，最终 AOT distroless 的真实业务镜像验收仍由 S1-GW-001 / S1-DEP-008 承担；完整依赖经 Linux NativeAOT 发布和运行验证前，不声明 `x-aot: true`。
 
 `minimal` 的 `config`、`observability`、`hooks`、`docs` 均为按需添加的组件，不进入默认组合包；表面装载器不因解析 hook 声明而依赖业务 hook Provider。该口径与 PRD §7.0.4 及 S1-RT-002 验收一致，裁决记录见 [ADR-020 §7.1](../../adr/ADR-020-component-model-v2.md#71-minimal-默认清单澄清2026-10-09)。
 

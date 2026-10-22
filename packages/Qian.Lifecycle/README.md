@@ -1,6 +1,6 @@
 # Qian.Lifecycle
 
-平台生命周期控制器是 `Lifecycle` seam 的 Provider（服务键 `ctx.Lifecycle`），只进入 `platform` profile 的 base 组合包。Definition 在 `Qian.Lifecycle.Abstractions`，管理面 HTTP 适配器在 `Qian.Lifecycle.AspNetCore`。分发表面 `plugins/qian.lifecycle` 已带完整的配置 Schema 与诊断、批准两个权限声明，清单仍保留 `x-skeleton`，代码字段随 SDK 的组件文件夹生成补齐。设计依据：PRD 7.2.1 / 7.17、ADR-020 §2、组件规格 §7.6，任务 S1-RT-005。
+平台生命周期控制器是 `Lifecycle` seam 的 Provider（服务键 `ctx.Lifecycle`），只进入 `platform` profile 的 base 组合包。Definition 在 `Qian.Lifecycle.Abstractions`，管理面 HTTP 适配器在 `Qian.Lifecycle.AspNetCore`。分发表面 `plugins/qian.lifecycle` 已带完整的配置 Schema 与诊断、批准两个权限声明，代码字段与配置 Schema 已由稳定入口派生；尚未通过完整安装门，清单继续保留 `x-skeleton`。设计依据：PRD 7.2.1 / 7.17、ADR-020 §2、组件规格 §7.6，任务 S1-RT-005。
 
 控制器管三件事：
 
@@ -129,6 +129,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - 内容只在判定之后校验。请求体读不成（含未知成员，例如租户字段）为 `INPUT_INVALID`，pointer 为 `#`；形状不对或不是该版本声明过的项也是 `INPUT_INVALID`，pointer 指向请求体中的那一项。
 - 批准人取已验证主体，不由调用方指定。响应带 `Cache-Control: private, no-store`。
 - 可信平台插件（例如秘密解析的审批来源）经 `GetApprovedPermissionsAsync` 读取批准记录，调用方负责权限。
+- 批准与诊断两个权限点都在 `plugins/qian.lifecycle/metadata/permissions.json` 声明，`metadata/roles.json` 默认授予租户 Owner 与 Admin；Authz 从注册表的预装快照编译。
 
 ## 挂载、契约准入与诊断
 
@@ -226,3 +227,9 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - 批准记录还没有消费方：秘密解析、出站 egress 与外壳 CSP `connect-src` 仍按宿主配置生效，按批准记录收紧归后续接线。撤销只能整份替换为更小的内容，不影响已开通的租户，只影响之后的开通与升级。
 
 S1-RT-029 的 Registry 管理写入通过 `MountAtRevisionAsync` / `UnmountAtRevisionAsync` 复用 Mount / Unmount 核心，显式携带调用方修订，不用服务端读取的新版本覆盖预期值。重复卸载的禁用 patch 与墓碑在当前修订下幂等，旧修订仍拒绝；授权统一在 Registry 管理入口，内部受信任生命周期接口不直接暴露为匿名 HTTP。
+
+## 清单入口与代码派生
+
+`plugins/qian.lifecycle/.qian-plugin/plugin.json` 的稳定入口是 `LifecycleComponent`，允许 global scope，依赖 `Data`、`Registry` 与 `Config`，提供 `Lifecycle`。使用宿主登记的 `LifecycleRuntimeOptions`，未登记时采用空钩子解析器，再委托 `LifecyclePlugin`。
+
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

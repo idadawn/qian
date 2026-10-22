@@ -1,0 +1,69 @@
+#nullable enable
+Qian.Identity.Client.IdentityClientDefaults
+Qian.Identity.Client.IdentityClientHosting
+Qian.Identity.Client.IdentityClientOptions
+Qian.Identity.Client.IdentityClientOptions.AllowedReturnPaths.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Client.IdentityClientOptions.AllowedReturnPaths.init -> void
+Qian.Identity.Client.IdentityClientOptions.Authority.get -> System.Uri!
+Qian.Identity.Client.IdentityClientOptions.Authority.init -> void
+Qian.Identity.Client.IdentityClientOptions.ClientId.get -> string!
+Qian.Identity.Client.IdentityClientOptions.ClientId.init -> void
+Qian.Identity.Client.IdentityClientOptions.DefaultReturnPath.get -> string!
+Qian.Identity.Client.IdentityClientOptions.DefaultReturnPath.init -> void
+Qian.Identity.Client.IdentityClientOptions.DiscoveryRefreshInterval.get -> System.TimeSpan
+Qian.Identity.Client.IdentityClientOptions.DiscoveryRefreshInterval.init -> void
+Qian.Identity.Client.IdentityClientOptions.IdentityClientOptions() -> void
+Qian.Identity.Client.IdentityClientOptions.PathPrefix.get -> string!
+Qian.Identity.Client.IdentityClientOptions.PathPrefix.init -> void
+Qian.Identity.Client.IdentityClientOptions.RedirectUri.get -> System.Uri?
+Qian.Identity.Client.IdentityClientOptions.RedirectUri.init -> void
+Qian.Identity.Client.IdentityClientOptions.RefreshBeforeExpiry.get -> System.TimeSpan
+Qian.Identity.Client.IdentityClientOptions.RefreshBeforeExpiry.init -> void
+Qian.Identity.Client.IdentityClientOptions.RequireHttpsMetadata.get -> bool
+Qian.Identity.Client.IdentityClientOptions.RequireHttpsMetadata.init -> void
+Qian.Identity.Client.IdentityClientOptions.RequireIssuerParameter.get -> bool
+Qian.Identity.Client.IdentityClientOptions.RequireIssuerParameter.init -> void
+Qian.Identity.Client.IdentityClientOptions.RequireSecureCookies.get -> bool
+Qian.Identity.Client.IdentityClientOptions.RequireSecureCookies.init -> void
+Qian.Identity.Client.IdentityClientOptions.Resource.get -> string?
+Qian.Identity.Client.IdentityClientOptions.Resource.init -> void
+Qian.Identity.Client.IdentityClientOptions.Scopes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Client.IdentityClientOptions.Scopes.init -> void
+Qian.Identity.Client.IdentityClientOptions.SessionKeyPrefix.get -> string!
+Qian.Identity.Client.IdentityClientOptions.SessionKeyPrefix.init -> void
+Qian.Identity.Client.IdentityClientOptions.SessionLifetime.get -> System.TimeSpan
+Qian.Identity.Client.IdentityClientOptions.SessionLifetime.init -> void
+Qian.Identity.Client.IdentityClientOptions.UseInMemorySessionStore.get -> bool
+Qian.Identity.Client.IdentityClientOptions.UseInMemorySessionStore.init -> void
+Qian.Identity.Client.IdentityClientPlugin
+Qian.Identity.Client.IdentityClientPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Client.IdentityClientPlugin.IdentityClientPlugin() -> void
+Qian.Identity.Client.IdentityClientPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Identity.Client.IdentityS2sOptions
+Qian.Identity.Client.IdentityS2sOptions.Audience.get -> string!
+Qian.Identity.Client.IdentityS2sOptions.Audience.init -> void
+Qian.Identity.Client.IdentityS2sOptions.IdentityS2sOptions() -> void
+Qian.Identity.Client.IdentityS2sOptions.Issuer.get -> string!
+Qian.Identity.Client.IdentityS2sOptions.Issuer.init -> void
+Qian.Identity.Client.IdentityS2sOptions.JwksUri.get -> System.Uri?
+Qian.Identity.Client.IdentityS2sOptions.JwksUri.init -> void
+Qian.Identity.Client.IdentityS2sOptions.SigningKeys.get -> Microsoft.IdentityModel.Tokens.JsonWebKeySet?
+Qian.Identity.Client.IdentityS2sOptions.SigningKeys.init -> void
+Qian.Identity.Client.IdentitySessionTokens
+Qian.Identity.Client.IdentitySessionTokens.GetAccessTokenAsync(Microsoft.AspNetCore.Http.HttpContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<string?>
+const Qian.Identity.Client.IdentityClientDefaults.AntiforgeryHeader = "X-CSRF-TOKEN" -> string!
+const Qian.Identity.Client.IdentityClientDefaults.HttpClientName = "Qian.Identity.Client" -> string!
+const Qian.Identity.Client.IdentityClientDefaults.ProviderName = "qian" -> string!
+const Qian.Identity.Client.IdentityClientDefaults.S2sScheme = "Bearer" -> string!
+const Qian.Identity.Client.IdentityClientDefaults.SessionCookieName = "qian.sid" -> string!
+const Qian.Identity.Client.IdentityClientDefaults.SessionScheme = "qian.session" -> string!
+override Qian.Identity.Client.IdentityClientOptions.ToString() -> string!
+override Qian.Identity.Client.IdentityS2sOptions.ToString() -> string!
+static Qian.Identity.Client.IdentityClientHosting.AddQianIdentityClient(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Qian.Identity.Client.IdentityClientOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Identity.Client.IdentityClientHosting.AddQianIdentityS2s(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Qian.Identity.Client.IdentityS2sOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qian.Identity.Client.IdentityClientHosting.MapQianIdentityClient(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Identity.Client.IdentityClientHosting.UseQianIdentityClient(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+Qian.Identity.Client.IdentityClientComponent
+Qian.Identity.Client.IdentityClientComponent.IdentityClientComponent() -> void
+Qian.Identity.Client.IdentityClientComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Identity.Client.IdentityClientComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

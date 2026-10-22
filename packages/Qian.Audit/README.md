@@ -71,3 +71,9 @@ AppendPlatformAsync、ReadPlatformAsync、VerifyPlatformAsync 是显式入口，
 尚未完成：实体审计与跨进程审计事件、完整默认组合包和 qian add 安装（包已随 0.1.0 发到 GitHub Packages，R93）。未引入事后不同事务的旧审计拦截器。
 
 RT-009 的已授权 hook 调用使用 hook 审计通道；SDK 可信适配器与同事务 SQL 校验同步支持该通道。普通请求不会继承上次 hook 标记，hook 查询按事件执行要求强制审计。
+
+## 清单入口与代码派生
+
+`plugins/qian.audit/.qian-plugin/plugin.json` 的稳定入口是 `AuditComponent`，允许 global / tenant scope，依赖 `Data`，提供 `Audit` 与 `CommandAudit`。固定委托无参 `AuditPlugin`；宿主仍准备受限数据上下文与可选的平台审计登录。
+
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

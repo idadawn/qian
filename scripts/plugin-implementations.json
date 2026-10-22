@@ -1,0 +1,22 @@
+{
+  "Qian.Audit:Qian.Audit.AuditPlugin": {"owner":"qian.audit","reason":"AuditComponent 的可编程实现，独立宿主可直接组合。"},
+  "Qian.Authz:Qian.Authz.AuthzPlugin": {"owner":"qian.authz","reason":"AuthzComponent 固定默认模式；FromInstalledComponents 是平台宿主的安装目录适配模式。"},
+  "Qian.Authz:Qian.Authz.RbacCommandPolicyPlugin": {"owner":"qian.authz","reason":"宿主只组合命令 PEP 的子插件，不是独立组件。"},
+  "Qian.Capabilities:Qian.Capabilities.CapabilitiesPlugin": {"owner":"qian.capabilities","reason":"CapabilitiesComponent 的平台能力目录实现。"},
+  "Qian.Capabilities:Qian.Capabilities.OpenApiContractPlugin": {"owner":"qian.capabilities","reason":"接收其它组件的 OpenAPI 契约包装器，保留被包装组件的 ID 与生命周期。"},
+  "Qian.Capabilities:Qian.Capabilities.GrpcContractPlugin": {"owner":"qian.capabilities","reason":"接收其它组件的 gRPC 契约包装器。"},
+  "Qian.Capabilities:Qian.Capabilities.NavigationManifestPlugin": {"owner":"qian.capabilities","reason":"按已安装组件元数据装配导航的包装器，归属被包装组件。"},
+  "Qian.Capabilities:Qian.Capabilities.ContractAdmission+UnavailablePeerPlugin": {"owner":"qian.capabilities","reason":"契约准入失败的运行时占位实现，不是可发布组件。"},
+  "Qian.Lifecycle:Qian.Lifecycle.LifecyclePlugin": {"owner":"qian.lifecycle","reason":"LifecycleComponent 的宿主组合实现，接收固定运行选项。"},
+  "Qian.Registry:Qian.Registry.RegistryPlugin": {"owner":"qian.registry","reason":"RegistryComponent 的宿主组合实现，接收已验证 profile。"},
+  "Qian.Registry:Qian.Registry.RegistryScopeReconciler+AdmissionUnavailablePlugin": {"owner":"qian.registry","reason":"scope 重放中的准入失败占位，归属被包装组件。"},
+  "Qian.Registry:Qian.Registry.RegistryScopeReconciler+ScopedPlugin": {"owner":"qian.registry","reason":"scope 重放适配器，归属被包装组件。"},
+  "Qian.Tenancy:Qian.Tenancy.TenancyPlugin": {"owner":"qian.tenancy","reason":"TenancyComponent 的租户目录与开户编排实现。"},
+  "Qian.Identity.Server:Qian.Identity.Server.IdentityServerPlugin": {"owner":"qian.identity.server","reason":"IdentityServerComponent 固定内置账户模式；传入账户服务的构造器只用于程序化组合。"},
+  "Qian.Identity.Connector.Oidc:Qian.Identity.Connector.Oidc.OidcConnectorPlugin": {"owner":"qian.identity.connector.oidc","reason":"OidcConnectorComponent 固定 oidc 注册名；原实现支持宿主自定义连接器与密钥解析。"},
+  "Qian.Surfaces:Qian.Surfaces.DeclarativeSurfacePlugin": {"owner":"组件快照","reason":"已校验声明式表面快照的适配器，ID 与依赖来自输入组件。"},
+  "Qian.Surfaces:Qian.Surfaces.HotReloadSurfacePlugin": {"owner":"组件快照","reason":"组件快照热重载适配器，可包装代码实现；不新增组件 ID。"},
+  "Qian.Surfaces.Hosting:Qian.Surfaces.Hosting.HookBridgePlugin": {"owner":"组件快照","reason":"已校验 hook 表面到真实能力绑定的包装器，归属被包装组件。"},
+  "Qian.Identity.Client:Qian.Identity.Client.IdentityClientPlugin": {"owner":"qian.identity.client","reason":"IdentityClientComponent 的身份依赖方实现，保留公开客户端与机密客户端的原有程序化装配。"},
+  "Qian.Config.Apollo:Qian.Config.Apollo.ApolloConfigurationImplementation": {"owner":"qian.config.apollo","reason":"保留ApolloConfigurationPlugin公开入口的委托实现，负责引导校验、重载通知与Apollo发布审计。"}
+}

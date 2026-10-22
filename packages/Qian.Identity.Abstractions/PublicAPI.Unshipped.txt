@@ -888,6 +888,9 @@ Qian.Identity.Abstractions.SignInResult.RetryAfter.get -> System.TimeSpan?
 static Qian.Identity.Abstractions.SignInResult.Failure(Qian.Runtime.Errors.QianError! error, System.TimeSpan? retryAfter = null) -> Qian.Identity.Abstractions.SignInResult!
 Qian.Identity.Abstractions.SignInResult.RetryAfter.init -> void
 Qian.Identity.Abstractions.IIdentityAccounts.BumpIdentityRevisionAsync(System.Guid personId, string! reason, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<long>
+static readonly Qian.Identity.Abstractions.IdentityErrors.OidcIssuerMismatch -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.OidcTokenInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.OperationUnsupported -> Qian.Runtime.Errors.ErrorCode!
 Qian.Identity.Abstractions.ConnectorContext.CodeVerifier.get -> string?
 Qian.Identity.Abstractions.ConnectorContext.CodeVerifier.init -> void
 Qian.Identity.Abstractions.ConnectorDescriptor.CallbackTemplate.get -> string!

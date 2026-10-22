@@ -630,3 +630,4 @@ static readonly Qian.Data.DataErrors.TypeNotFound -> Qian.Runtime.Errors.ErrorCo
 static readonly Qian.Data.DataErrors.TypeProtected -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Data.DataErrors.ConnectionCredentialInvalid -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Data.DataErrors.ConnectionTargetDenied -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Data.DataDialectContract.Key -> Qian.Runtime.ServiceKey

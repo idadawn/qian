@@ -14,7 +14,10 @@
         "lock": {
           "type": "string",
           "description": "Outbox 领取的互斥方式：skip-locked 为各副本以 FOR UPDATE SKIP LOCKED 加租约分摊；redis 在此之外按表取 Redis 租约，同一时刻一个副本投递。须与宿主装配一致。",
-          "enum": ["skip-locked", "redis"],
+          "enum": [
+            "skip-locked",
+            "redis"
+          ],
           "default": "skip-locked"
         }
       },

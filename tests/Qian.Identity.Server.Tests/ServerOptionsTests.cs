@@ -35,4 +35,29 @@ public sealed class ServerOptionsTests
         Assert.DoesNotContain(nameof(IdentityServerOptions.SigningCertificates), json, StringComparison.Ordinal);
         Assert.Equal("IdentityServerOptions(redacted)", options.ToString());
     }
+
+    [Fact]
+    public void 客户端的rsrc权限由Resources推导_宿主另写白名单外的资源权限被拒()
+    {
+        using var rsa = RSA.Create(2048);
+        using var cert = new CertificateRequest("CN=options-test", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
+            .CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(1));
+        IdentityServerOptions Options(params string[] permissions)
+        {
+            var application = new OpenIddictApplicationDescriptor
+            { ClientId = "test", ClientType = OpenIddictConstants.ClientTypes.Confidential, ClientSecret = "secret", ConsentType = OpenIddictConstants.ConsentTypes.Implicit };
+            application.Permissions.UnionWith(permissions);
+            return new IdentityServerOptions
+            {
+                Issuer = new Uri("https://identity.example/"), SigningCertificates = [cert], EncryptionCertificates = [cert],
+                Clients = [new() { Application = application, Resources = ["https://api.example", "https://files.example"] }]
+            };
+        }
+        var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Production" });
+        var accepted = Options(OpenIddictConstants.Permissions.Prefixes.Resource + "https://api.example");
+        builder.Services.AddQianIdentityServer(accepted, builder.Environment);
+        Assert.Equal(["rsrc:https://api.example", "rsrc:https://files.example"],
+            accepted.Clients[0].Application.Permissions.Where(permission => permission.StartsWith("rsrc:", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
+        Assert.Throws<ArgumentException>(() => builder.Services.AddQianIdentityServer(Options(OpenIddictConstants.Permissions.Prefixes.Resource + "https://other.example"), builder.Environment));
+    }
 }

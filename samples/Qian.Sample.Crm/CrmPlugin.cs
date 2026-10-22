@@ -22,11 +22,15 @@ public interface ICrmCommands
 }
 
 [QianPlugin("qian.sample.crm")]
+[QianConfigSchema("""{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","additionalProperties":false}""")]
 public sealed class CrmPlugin : IQianPlugin, IPluginLifecycleHooks
 {
     public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key, CommandPolicies.TenancyKey, CommandPolicies.AuthorizationKey, CommandPolicies.AuditKey];
     public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
+        if (config.ValueKind != JsonValueKind.Object || config.EnumerateObject().Any())
+            throw new QianErrorException(new QianError(PlatformErrors.InputInvalid));
         ctx.Provide<ICrmCommands>(CrmDefinition.Key, new CrmCommands(ctx.Services.GetRequiredService<ISender>()));
         ctx.ProvideCapability<CreateCustomerCommand, CustomerItem>();
         ctx.ProvideCapability<ListCustomersQuery, CustomerPage>();
