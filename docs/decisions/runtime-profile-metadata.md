@@ -14,6 +14,11 @@ RT-033 已从真实代码生成 14 个组件清单，并显式分类 18 个实�
 
 现有 AOT profile 门禁会拒绝没有兼容声明的代码组件，这是正确行为。不能为通过测试给组件虚标 `x-aot: true`，也不能删除依赖或忽略已派生的配置 Schema。
 
+补注（2026-10-22，用户确认，见 [S1-IDP-014](../../pm/tasks/S1-IDP-014.md)）：
+
+- 组件凭自身在 CI 里的 Linux NativeAOT 发布与运行冒烟，可以声明 `x-aot: true`，这不算虚标。例如 `qian.identity.client`，依据是 `dotnet.yml` 的 `identity-aot` 作业：以 ILC 警告即失败的方式发布 linux-x64，再让原生二进制挂载组件并做端点冒烟。
+- 方案 A 第 4 步只约束 gateway 的 Config / Audit / Data 组合：S1-GW-001 / S1-DEP-008 证明这一组合之后，再恢复默认模板的 `build.aot: true`。其他组件不必等 GW-001 才声明。
+
 已有 [S1-DEP-008](../../pm/tasks/S1-DEP-008.md) 明确要求真实 gateway 镜像为 AOT distroless，并以真实业务宿主和完整镜像证据验收；该任务与 [S1-GW-001](../../pm/tasks/S1-GW-001.md) 仍是 todo。供应链自检中的 AOT 镜像只证明工具链，不证明 Apollo、Audit 或真实 gateway 的兼容性。
 
 2026-10-22 确认前的整合结果：全仓 Release 构建零警告、零错误；42 个包的依赖门、57 项 SDK/工具测试、14 个组件与 18 个实现构件的清单检查均通过。全仓 1131 项测试中 1127 通过、4 项失败、零跳过，失败全部是上表三种 profile 的装配检查及 Tenancy 对相同 profile 的断言；Python 92 项门禁唯一失败也来自相同 profile 检查。网站 73 项单测、161 项浏览器验收和构建产物检查通过。这些证据支持将问题收敛到本决策，但不构成 gateway AOT 已验证的证明。
