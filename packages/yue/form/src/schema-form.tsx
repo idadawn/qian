@@ -135,7 +135,7 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       const access = schema.auth.fields?.[path];
       if (state?.visible === false || (access && !access.includes('read'))) return null;
       const readonly = mode === 'readonly' || (access && !access.includes('write'));
-      const horizontal = fieldSchema.type === 'boolean' && !readonly;
+      const horizontal = hasType(fieldSchema, 'boolean') && !readonly;
       const fieldId = `${id}-${path}`;
       const error = getValue(errors, path) as { message?: string } | undefined;
       const label = i18n.t(ui.labelKey ?? fieldSchema.title ?? path);

@@ -78,3 +78,12 @@ it('OpenAPI 可空嵌套对象与数字联合类型沿用同一字段引擎', as
   view.rerender(<SchemaForm schema={nullable} i18n={i18n} initialValues={{ quotas: { users: 25 } }} mode="readonly" />);
   expect(screen.getByText('25').tagName).toBe('OUTPUT');
 });
+
+it('可空布尔字段与布尔字段同样横排', () => {
+  const nullable: typeof schema = { ...schema, data: { type: 'object', additionalProperties: false, properties: { enabled: { type: ['boolean', 'null'] } } }, ui: { layout: [{ field: 'enabled', labelKey: 'test.enabled' }] }, rules: {} };
+  render(<SchemaForm schema={nullable} i18n={i18n} testId="nullable" />);
+  render(<SchemaForm schema={schema} i18n={i18n} testId="plain" />);
+  const field = screen.getByTestId('nullable-field-enabled');
+  expect(field.className).toContain('grid-cols-');
+  expect(field.className).toBe(screen.getByTestId('plain-field-enabled').className);
+});
