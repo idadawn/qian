@@ -1,0 +1,18 @@
+#nullable enable
+Qian.Scheduler.SchedulerWorkerDbContext
+Qian.Scheduler.SchedulerPlugin
+Qian.Scheduler.SchedulerPlugin.SchedulerPlugin() -> void
+Qian.Scheduler.SchedulerWorkerAccess
+Qian.Scheduler.SchedulerComponent
+Qian.Scheduler.SchedulerDbContext
+Qian.Scheduler.SchedulerComponent.SchedulerComponent() -> void
+const Qian.Scheduler.SchedulerDbContext.Schema = "plugin_qian_scheduler" -> string!
+Qian.Scheduler.SchedulerDbContext.SchedulerDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Scheduler.SchedulerDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Scheduler.SchedulerWorkerDbContext.SchedulerWorkerDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Scheduler.SchedulerWorkerDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Scheduler.SchedulerComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Scheduler.SchedulerPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Scheduler.SchedulerDbContext.SchedulerDbContext(Microsoft.EntityFrameworkCore.DbContextOptions! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Scheduler.SchedulerComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+static Qian.Scheduler.SchedulerWorkerAccess.CreateMigrationSql(string! workerRole) -> string!
+Qian.Scheduler.SchedulerPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+override Qian.Scheduler.SchedulerDbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> void

@@ -174,6 +174,10 @@ public sealed partial class ComponentMetadataGenerator : IIncrementalGenerator
             if (capabilityExpressions.Contains(capabilityExpression)) { Report(output, type, "同一能力来源不能重复登记。"); return; }
             capabilityExpressions.Add(capabilityExpression);
         }
+        var jobRequests = requests.Where(r => CapabilityOwner(r, plugins) == id && r.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.QianJobAttribute")).ToArray();
+        var jobCodes = jobRequests.Select(r => r.GetAttributes().Single(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.QianJobAttribute").ConstructorArguments[0].Value as string).ToArray();
+        if (jobCodes.Distinct(StringComparer.Ordinal).Count() != jobCodes.Length) { Report(output, type, "组件内 QianJob code 重复。"); return; }
+        var jobs = jobRequests.Select(r => "new global::Qian.Plugin.Sdk.JobContract(" + Literal(r.GetAttributes().Single(a => a.AttributeClass?.ToDisplayString() == "Qian.Plugin.Sdk.QianJobAttribute").ConstructorArguments[0].Value as string ?? "") + ", " + r.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ".QianCapability)");
         var ns = type.ContainingNamespace.IsGlobalNamespace ? "" : type.ContainingNamespace.ToDisplayString();
         var factory = type.Name + "QianCodeMetadata";
         if (type.ContainingNamespace.GetTypeMembers(factory).Length != 0) { Report(output, type, "生成元数据工厂名称已被占用。"); return; }
@@ -185,7 +189,7 @@ public sealed partial class ComponentMetadataGenerator : IIncrementalGenerator
             "    public global::Qian.Plugin.Sdk.ComponentCodeMetadata Create() => new(\n" +
             "        " + Literal(id ?? "") + ", " + Literal(entry) + ",\n" +
             "        [" + string.Join(", ", inject) + "],\n        [" + string.Join(", ", provides.Distinct(StringComparer.Ordinal)) + "],\n" +
-            "        [" + string.Join(", ", capabilityExpressions) + "],\n        " + declarations.Value.Permissions + ",\n        " + declarations.Value.Events + ",\n        " + declarations.Value.Config + ");\n}\n";
+            "        [" + string.Join(", ", capabilityExpressions) + "],\n        " + declarations.Value.Permissions + ",\n        " + declarations.Value.Events + ",\n        " + declarations.Value.Config + ", [" + string.Join(", ", jobs) + "]);\n}\n";
         output.AddSource(type.ToDisplayString().Replace('.', '_') + ".g.cs", SourceText.From(source, Encoding.UTF8));
     }
     private static IOperation? Unwrap(IOperation? value) { while (value is IConversionOperation conversion) value = conversion.Operand; return value; }
@@ -211,7 +215,7 @@ public sealed partial class ComponentMetadataGenerator : IIncrementalGenerator
         if (identifier.Parent is not MemberAccessExpressionSyntax member || member.Expression != identifier || member.Parent is not InvocationExpressionSyntax call) return false;
         var info = model.GetSymbolInfo(call);
         var method = info.Symbol as IMethodSymbol ?? (info.CandidateSymbols.Length == 1 ? info.CandidateSymbols[0] as IMethodSymbol : null);
-        return method?.ContainingAssembly.Name == "Qian.Plugin.Sdk" && method.ContainingType.ToDisplayString() == "Qian.Plugin.Sdk.CapabilityBindingRegistration" && method.Name == "ProvideCapability" || method?.ContainingAssembly.Name == "Qian.Plugin.Sdk" && method.ContainingType.ToDisplayString() == "Qian.Plugin.Sdk.HookCapabilityRegistration" && method.Name == "ExposeCapabilityHook";
+        return method?.ContainingAssembly.Name == "Qian.Plugin.Sdk" && method.ContainingType.ToDisplayString() == "Qian.Plugin.Sdk.JobBindingRegistration" && method.Name == "ProvideJob" || method?.ContainingAssembly.Name == "Qian.Plugin.Sdk" && method.ContainingType.ToDisplayString() == "Qian.Plugin.Sdk.CapabilityBindingRegistration" && method.Name == "ProvideCapability" || method?.ContainingAssembly.Name == "Qian.Plugin.Sdk" && method.ContainingType.ToDisplayString() == "Qian.Plugin.Sdk.HookCapabilityRegistration" && method.Name == "ExposeCapabilityHook";
     }
 
     private static string? Key(IOperation? operation)

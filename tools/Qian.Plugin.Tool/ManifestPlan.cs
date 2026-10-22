@@ -69,7 +69,7 @@ internal sealed class ManifestPlan(string root, IReadOnlyList<PlannedFile> files
         if (!metadataPointer.StartsWith("./", StringComparison.Ordinal)) throw new ManifestException(ManifestErrors.PathEscape, "metadata 必须是组件内目录。", ManifestFile + "#/surfaces/metadata");
         var metadataDirectory = metadataPointer[2..].TrimEnd('/'); _ = Safe(root, metadataDirectory);
         var oldMetadataPointer = original["surfaces"]?["metadata"]?.GetValue<string>() ?? "./metadata";
-        var allowedOld = new HashSet<string>(StringComparer.Ordinal) { oldMetadataPointer[2..].TrimEnd('/') + "/permissions.json", oldMetadataPointer[2..].TrimEnd('/') + "/events.json" };
+        var allowedOld = new HashSet<string>(StringComparer.Ordinal) { oldMetadataPointer[2..].TrimEnd('/') + "/permissions.json", oldMetadataPointer[2..].TrimEnd('/') + "/events.json", oldMetadataPointer[2..].TrimEnd('/') + "/jobs.json" };
         if (original["runtime"]?["configSchema"]?.GetValue<string>() is { } oldSchema && oldSchema.StartsWith("./", StringComparison.Ordinal)) allowedOld.Add(oldSchema[2..]);
         foreach (var item in oldMetadata)
         {
@@ -92,6 +92,12 @@ internal sealed class ManifestPlan(string root, IReadOnlyList<PlannedFile> files
         }
         if (code.Permissions.GetArrayLength() != 0) Surface(metadataDirectory + "/permissions.json", JsonNode.Parse(code.Permissions.GetRawText())!, "authz-permissions");
         if (code.Events.GetArrayLength() != 0) Surface(metadataDirectory + "/events.json", JsonNode.Parse(code.Events.GetRawText())!);
+        if (code.Jobs.Count != 0)
+        {
+            var jobs = new JsonArray(code.Jobs.Select(job => (JsonNode)new JsonObject { ["code"] = job.Code, ["type"] = "local", ["target"] = job.Capability.Id,
+                ["inputSchema"] = job.Capability.InputSchema, ["outputSchema"] = job.Capability.OutputSchema }).ToArray());
+            Surface(metadataDirectory + "/jobs.json", jobs, "scheduler-jobs");
+        }
         if (code.ConfigSchema is { } configSchema)
         {
             var configPointer = runtime["configSchema"]?.GetValue<string>() ?? "./schemas/config.schema.json";
@@ -198,6 +204,14 @@ internal sealed class ManifestPlan(string root, IReadOnlyList<PlannedFile> files
     }
     private static void EnsureSchema(SurfaceValidator validator, string schema, string file, JsonNode content)
     {
+        if (schema == "scheduler-jobs")
+        {
+            using var jobsStream = typeof(SurfaceValidator).Assembly.GetManifestResourceStream("schemas/scheduler-jobs.schema.json")!;
+            using var jobsReader = new StreamReader(jobsStream);
+            var jobsSchema = JsonSchema.FromText(jobsReader.ReadToEnd(), new BuildOptions { SchemaRegistry = new SchemaRegistry { Fetch = (_, _) => null } });
+            if (!jobsSchema.Evaluate(Element(content)).IsValid) throw new ManifestException(ManifestErrors.MetadataInvalid, "作业目录不符合 scheduler-jobs 契约。", file + "#");
+            return;
+        }
         if (schema == "authz-permissions")
         {
             using var stream = typeof(SurfaceValidator).Assembly.GetManifestResourceStream("schemas/authz-permissions.schema.json")!;

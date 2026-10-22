@@ -116,7 +116,7 @@ python3 scripts/dotnet_release.py verify-consumer --version 0.1.0-local.1 --sour
 
 SDK 自身的依赖边界由 CI 的依赖图门禁守住：`Qian.Plugin.Sdk`、`.AspNetCore`、`.Generators` 的完整传递依赖里不能出现任何 Provider 包与 `Qian.Registry` / `Qian.Lifecycle` / `Qian.Capabilities`，门禁自测另断言这三个包在 `Qian.slnx` 的检查范围内（见 [tests/README.md](../../tests/README.md) 4.3）。
 
-真实 CRM 已验证创建、同事务 Outbox/审计、错误回滚、幂等、并发租户与锁等待时卸载取消；列表与详情也通过同一真实管道，分别覆盖默认不审计和显式审计。查询会拒绝已跟踪的业务变更，且不开放 Outbox 写入端口。按 R94 推迟到 S2 的是 IQianPlugin 基类、客户端门面、生命周期钩子基类与 DI 注册代码生成；S1 以接口和 ctx.Inject 为准。QianJob 仍归 S1-SCH-001，由调度器任务交付，不在 RT-033 中实现。UI/低代码与 Wasm 表面按各自 S2 规划，代码热装卸尚未承诺；动态注册不会自动变成清单模板。具名 seam 已由 Contributes 的独立声明覆盖，权限与事件已派生到各自 metadata 文件。应用/会话执行边界与完整平台验收继续按各自任务推进；这些局部验收不代替 QA-002。
+真实 CRM 已验证创建、同事务 Outbox/审计、错误回滚、幂等、并发租户与锁等待时卸载取消；列表与详情也通过同一真实管道，分别覆盖默认不审计和显式审计。查询会拒绝已跟踪的业务变更，且不开放 Outbox 写入端口。按 R94 推迟到 S2 的是 IQianPlugin 基类、客户端门面、生命周期钩子基类与 DI 注册代码生成；S1 以接口和 ctx.Inject 为准。QianJob 已随 S1-SCH-001 交付：在已有 Capability 的 partial 请求上标注 QianJob("code")，Apply 用 ProvideJob 同时登记真实能力与 local 作业目录；生成 metadata/jobs.json，目录同步、归属与手改保护沿用同一工具。调度及取消语义见 [Scheduler 主文档](../Qian.Scheduler/README.md)。UI/低代码与 Wasm 表面按各自 S2 规划，代码热装卸尚未承诺；动态注册不会自动变成清单模板。具名 seam 已由 Contributes 的独立声明覆盖，权限与事件已派生到各自 metadata 文件。应用/会话执行边界与完整平台验收继续按各自任务推进；这些局部验收不代替 QA-002。
 
 ## 可执行能力绑定
 
