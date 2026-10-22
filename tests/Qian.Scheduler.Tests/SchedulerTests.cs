@@ -70,38 +70,16 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
             await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == effectsBeforeKill, TimeSpan.FromSeconds(3));
             var pid = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts LIMIT 1");
             var run = await fixture.Scalar<Guid>("SELECT run_id FROM public.sch_probe_attempts LIMIT 1");
-            using var claim = JsonDocument.Parse(await fixture.Scalar<string>("SELECT to_json(t)::text FROM (SELECT lease_owner,lease_until,generation,active_run_id FROM plugin_qian_scheduler.job_triggers LIMIT 1) t"));
-            claimBeforeKill = claim.RootElement.Clone();
-            var firstLease = claim.RootElement.GetProperty("lease_until").GetDateTimeOffset();
-            var originalOwner = claim.RootElement.GetProperty("lease_owner").GetString();
-            Assert.Equal(1, claim.RootElement.GetProperty("generation").GetInt64());
-            // 仅观察到 handler 的 INSERT 不足以证明仍持有租约。要求同一首次执行已真正续约，
-            // 且数据库时钟下仍有活租约，才允许注入 Kill；已经自然恢复的 run 不能冒充被测故障。
-            await SchedulerFixture.WaitUntil(async () =>
-            {
-                using var current = JsonDocument.Parse(await fixture.Scalar<string>("""
-                    SELECT coalesce((SELECT to_json(s) FROM (
-                      SELECT t.lease_owner,t.lease_until,t.generation,t.active_run_id,clock_timestamp() AS observed_at,r.status,r.attempts
-                      FROM plugin_qian_scheduler.job_triggers t JOIN plugin_qian_scheduler.job_runs r ON r.id=t.active_run_id
-                      LIMIT 1) s),'null'::json)::text
-                    """));
-                var row = current.RootElement;
-                if (row.ValueKind == JsonValueKind.Null) return false;
-                if (row.GetProperty("active_run_id").GetGuid() != run || row.GetProperty("lease_owner").GetString() != originalOwner ||
-                    row.GetProperty("generation").GetInt64() != 1 || row.GetProperty("status").GetString() != "running" || row.GetProperty("attempts").GetInt32() != 1) return false;
-                var until = row.GetProperty("lease_until").GetDateTimeOffset();
-                if (until <= firstLease || until - row.GetProperty("observed_at").GetDateTimeOffset() < TimeSpan.FromSeconds(3)) return false;
-                claimBeforeKill = row.Clone(); return true;
-            }, TimeSpan.FromSeconds(10));
+            claimBeforeKill = await fixture.RenewedLease(run);
+            var originalOwner = claimBeforeKill.Value.GetProperty("lease_owner").GetString();
             phases["liveRenewedLeaseObserved"] = DateTimeOffset.UtcNow;
-            var leaseUntil = claimBeforeKill.Value.GetProperty("lease_until").GetDateTimeOffset().UtcDateTime;
-            phases["leaseObservedExpiresAt"] = new DateTimeOffset(leaseUntil);
             phases["beforeKill"] = DateTimeOffset.UtcNow;
             await new[] { a, b, c }.Single(worker => worker.Id == pid).Kill();
             phases["afterKill"] = DateTimeOffset.UtcNow;
-            var before = leaseUntil - DateTime.UtcNow - TimeSpan.FromMilliseconds(300);
-            if (before > TimeSpan.Zero) await Task.Delay(before, Ct);
-            Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
+            // 原 owner 已退出，续租不再变化；立即从同一数据库快照证明还未接管并冻结实际到期点。
+            var frozenLease = await fixture.LeaseSnapshot(run);
+            var leaseUntil = SchedulerFixture.AssertLiveFirstLease(frozenLease, run, originalOwner).UtcDateTime;
+            phases["leaseObservedExpiresAt"] = new DateTimeOffset(leaseUntil);
             phases["beforeRecoveryWait"] = DateTimeOffset.UtcNow;
             await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs WHERE status='succeeded'") == 1, TimeSpan.FromSeconds(15));
             Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
@@ -109,10 +87,12 @@ public sealed partial class SchedulerTests(SchedulerFixture fixture) : IClassFix
             Assert.Equal(run, await fixture.Scalar<Guid>("SELECT id FROM plugin_qian_scheduler.job_runs"));
             Assert.Equal(2, await fixture.Scalar<int>("SELECT attempts FROM plugin_qian_scheduler.job_runs"));
             Assert.NotEqual(pid, await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"));
+            var recoveredStartedAt = await fixture.Scalar<DateTime>("SELECT started_at FROM plugin_qian_scheduler.job_runs");
+            Assert.True(recoveredStartedAt >= leaseUntil, "接管的持久 StartedAt 不得早于冻结的租约到期点。");
             SchedulerFixture.Evidence(mode, new
             {
                 killedProcess = pid, recoveredProcess = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"),
-                runId = run, leaseExpiresAtUtc = leaseUntil, phases, claimBeforeKill,
+                runId = run, leaseExpiresAtUtc = leaseUntil, recoveredStartedAt, phases, claimBeforeKill, frozenLease,
                 attempts = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"),
                 effects = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects"),
                 runRows = await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs")

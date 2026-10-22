@@ -115,30 +115,25 @@ public sealed partial class SchedulerTests
         await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts") == 1, TimeSpan.FromSeconds(10));
         await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == effectsBeforeStop, TimeSpan.FromSeconds(3));
         var run = await fixture.Scalar<Guid>("SELECT active_run_id FROM plugin_qian_scheduler.job_triggers");
-        var owner = await fixture.Scalar<string>("SELECT lease_owner FROM plugin_qian_scheduler.job_triggers");
-        var generation = await fixture.Scalar<long>("SELECT generation FROM plugin_qian_scheduler.job_triggers");
+        // 第二副本先完成真实预热，不能把它的启动时间算进“到期前尚未接管”观测。
+        await using var second = await WorkerProcess.Start(fixture.Config, TenantA);
+        var beforeStop = await fixture.RenewedLease(run);
+        var owner = beforeStop.GetProperty("lease_owner").GetString();
         var stoppedProcess = first.Id;
         var errors = await first.Stop();
         Assert.DoesNotContain("ObjectDisposedException", errors, StringComparison.Ordinal);
         Assert.DoesNotContain("收尾失败", errors, StringComparison.Ordinal);
-        Assert.Equal("ready", await fixture.Scalar<string>("SELECT state FROM plugin_qian_scheduler.job_triggers"));
-        Assert.Equal(run, await fixture.Scalar<Guid>("SELECT active_run_id FROM plugin_qian_scheduler.job_triggers"));
-        Assert.Equal(owner, await fixture.Scalar<string>("SELECT lease_owner FROM plugin_qian_scheduler.job_triggers"));
-        Assert.Equal(generation, await fixture.Scalar<long>("SELECT generation FROM plugin_qian_scheduler.job_triggers"));
-        Assert.Equal(0, await fixture.Scalar<long>("SELECT run_count FROM plugin_qian_scheduler.job_triggers"));
-        Assert.Equal("running", await fixture.Scalar<string>("SELECT status FROM plugin_qian_scheduler.job_runs"));
-        var leaseUntil = await fixture.Scalar<DateTime>("SELECT lease_until FROM plugin_qian_scheduler.job_triggers");
-        await using var second = await WorkerProcess.Start(fixture.Config, TenantA);
-        var beforeExpiry = leaseUntil - DateTime.UtcNow - TimeSpan.FromMilliseconds(300);
-        if (beforeExpiry > TimeSpan.Zero) await Task.Delay(beforeExpiry, Ct);
-        Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
+        var frozenLease = await fixture.LeaseSnapshot(run);
+        var leaseUntil = SchedulerFixture.AssertLiveFirstLease(frozenLease, run, owner).UtcDateTime;
         await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs WHERE status='succeeded'") == 1, TimeSpan.FromSeconds(15));
         Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
         Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects"));
         Assert.Equal(run, await fixture.Scalar<Guid>("SELECT id FROM plugin_qian_scheduler.job_runs"));
         Assert.Equal(2, await fixture.Scalar<int>("SELECT attempts FROM plugin_qian_scheduler.job_runs"));
         Assert.Equal(second.Id, await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"));
-        SchedulerFixture.Evidence("normal-stop-" + mode, new { stoppedProcess, recoveredProcess = second.Id, runId = run, leaseExpiresAtUtc = leaseUntil, attempts = 2, effects = 1, shutdownErrors = errors });
+        var recoveredStartedAt = await fixture.Scalar<DateTime>("SELECT started_at FROM plugin_qian_scheduler.job_runs");
+        Assert.True(recoveredStartedAt >= leaseUntil, "接管的持久 StartedAt 不得早于冻结的租约到期点。");
+        SchedulerFixture.Evidence("normal-stop-" + mode, new { stoppedProcess, recoveredProcess = second.Id, runId = run, leaseExpiresAtUtc = leaseUntil, recoveredStartedAt, beforeStop, frozenLease, attempts = 2, effects = 1, shutdownErrors = errors });
     }
 
     [Fact]
