@@ -75,6 +75,17 @@ public static class LifecycleErrors
         new Dictionary<string, string> { ["zh-CN"] = "操作进行中", ["en"] = "Operation in progress" },
         new Dictionary<string, string> { ["zh-CN"] = "同一组件的另一个生命周期操作正在进行，请稍后重试。", ["en"] = "Another lifecycle operation for this component is in progress. Retry later." },
         retryable: true);
+    /// <summary>
+    /// 该租户 scope 看不到审计服务（宿主没有装配 qian.audit）：生命周期操作必须入审计链（ADR-009 D9.8），按 fail-closed 拒绝且不改状态，宿主日志另有告警；
+    /// operation 为被拒绝的操作名。管理面批准 API 缺审计时仍与不存在同为 404（R32），只记告警。
+    /// </summary>
+    public static readonly ErrorCode AuditUnavailable = ErrorCode.Protocol("LIFECYCLE_AUDIT_UNAVAILABLE", 503, "qian.lifecycle",
+        new Dictionary<string, string> { ["zh-CN"] = "审计服务不可用", ["en"] = "Audit service unavailable" },
+        new Dictionary<string, string>
+        {
+            ["zh-CN"] = "生命周期操作 {operation} 必须写入租户审计链，但宿主没有为该租户装配审计服务；操作已拒绝、状态未改，请检查宿主装配。",
+            ["en"] = "Lifecycle operation {operation} must be written to the tenant audit chain, but the host has no audit service for this tenant; the operation was rejected without changing state. Check the host assembly."
+        });
 
     /// <summary>登记全部组件错误，释放时逆序撤销。</summary>
     public static IDisposable Register(ErrorCatalog catalog)
@@ -83,7 +94,7 @@ public static class LifecycleErrors
         var registrations = new List<IDisposable>();
         try
         {
-            foreach (var code in new[] { ArtifactUnsigned, SignatureInvalid, RevisionNotDeployed, NotEntitled, PermissionsUnapproved, DeploymentUnavailable, HookFailed, MountFailed, StateConflict, Invalid, InProgress })
+            foreach (var code in new[] { ArtifactUnsigned, SignatureInvalid, RevisionNotDeployed, NotEntitled, PermissionsUnapproved, DeploymentUnavailable, HookFailed, MountFailed, StateConflict, Invalid, InProgress, AuditUnavailable })
                 registrations.Add(catalog.Register(code));
             return new Registration(registrations);
         }

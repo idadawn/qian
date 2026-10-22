@@ -17,6 +17,8 @@ public sealed class LifecycleComponent : IQianPlugin
 {
     /// <inheritdoc />
     public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key, RegistryDefinition.Key, ConfigDefinition.Key];
+    /// <summary>可选依赖（清单 optionalInject）：Audit 与 AuthzSuperadminBypass，含义见 <see cref="LifecyclePlugin.OptionalInject"/>。</summary>
+    public static IReadOnlyList<ServiceKey> OptionalInject => LifecyclePlugin.OptionalInject;
     /// <inheritdoc />
     public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {

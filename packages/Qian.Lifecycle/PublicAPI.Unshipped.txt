@@ -5,6 +5,7 @@ Qian.Lifecycle.LifecycleEventHandlers
 Qian.Lifecycle.LifecyclePlugin
 Qian.Lifecycle.LifecyclePlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Qian.Lifecycle.LifecyclePlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+static Qian.Lifecycle.LifecyclePlugin.OptionalInject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
 Qian.Lifecycle.LifecyclePlugin.LifecyclePlugin(Qian.Lifecycle.LifecycleRuntimeOptions! options) -> void
 Qian.Lifecycle.LifecycleRuntimeOptions
 Qian.Lifecycle.LifecycleRuntimeOptions.Hooks.get -> System.Func<string!, string!, Qian.Lifecycle.IPluginLifecycleHooks?>!
@@ -15,4 +16,5 @@ static Qian.Lifecycle.LifecycleEventHandlers.AddQianLifecycleEvents(this Kun.Med
 Qian.Lifecycle.LifecycleComponent
 Qian.Lifecycle.LifecycleComponent.LifecycleComponent() -> void
 Qian.Lifecycle.LifecycleComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+static Qian.Lifecycle.LifecycleComponent.OptionalInject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
 Qian.Lifecycle.LifecycleComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

@@ -40,7 +40,7 @@ public sealed record DisabledProfileEntry(string Id, string Scope, string Plugin
 public sealed record ProfileLayer(int Index, string Kind, string Path, [property: JsonPropertyName("ref")] string? Reference, bool Present);
 /// <summary>整棵插件树的一条可复制 patch 记录；诊断辅助成员不输出。</summary>
 public sealed record ResolvedProfileEntry(string Id, string Scope, string Plugin, JsonElement Config, int Layer,
-    IReadOnlyList<string> Inject, IReadOnlyList<string> Provides, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note)
+    IReadOnlyList<string> Inject, IReadOnlyList<string> OptionalInject, IReadOnlyList<string> Provides, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note)
 {
     /// <summary>组件内容目录，供宿主解析静态表面。</summary>
     [JsonIgnore] public string ComponentDirectory { get; init; } = "";

@@ -36,6 +36,8 @@ public sealed class ProfileTests
                 if (item.TryGetProperty("noObsolete", out _)) Assert.False(settings!.Config.TryGetProperty("obsolete", out _));
                 if (item.TryGetProperty("version", out var version)) Assert.Equal("test.settings@" + version.GetString(), settings!.Plugin);
                 if (entries.Any(e => e.Id == "consumer")) Assert.True(result.Snapshot.MountOrder.ToList().IndexOf("global/settings") < result.Snapshot.MountOrder.ToList().IndexOf("global/consumer"));
+                // optionalInject 的 Provider 在树里时先于消费方装载；缺席时消费方照常装载。
+                if (entries.Any(e => e.Id == "observer")) Assert.True(result.Snapshot.MountOrder.ToList().IndexOf("global/settings") < result.Snapshot.MountOrder.ToList().IndexOf("global/observer"), name);
             }
             if (item.TryGetProperty("warnings", out var warnings)) Assert.Equal(warnings.GetInt32(), result.Diagnostics.Count(d => d.Severity == "warning"));
             Assert.DoesNotContain("DO-NOT-LEAK", JsonSerializer.Serialize(result, Json), StringComparison.Ordinal);

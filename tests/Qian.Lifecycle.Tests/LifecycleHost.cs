@@ -105,7 +105,8 @@ internal sealed class LifecycleHost : IAsyncDisposable
             // 数据组件的启动检查拒绝带未应用迁移的库：先迁移，再启动宿主。
             await Prepare(host, postgres, ct);
             await host.StartAsync(ct);
-            var runtime = new PluginLoader(host.Services);
+            // 装载器的日志器来自宿主：组件记的宿主级告警（如缺审计）才能被用例观察到。
+            var runtime = new PluginLoader(host.Services, host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Qian.Runtime.PluginLoader"));
             await MountAsync(runtime, directory, lifecycleConfig, hooks ?? ((_, _) => null), ct);
             return new LifecycleHost(directory, host, runtime, tenant, time, settings, secrets);
         }

@@ -61,7 +61,9 @@ Qian.Profiles.Abstractions.ResolvedProfileEntry.Layer.get -> int
 Qian.Profiles.Abstractions.ResolvedProfileEntry.Equals(Qian.Profiles.Abstractions.ResolvedProfileEntry? other) -> bool
 Qian.Profiles.Abstractions.ResolvedProfileEntry.Layer.init -> void
 Qian.Profiles.Abstractions.ResolvedProfileEntry.<Clone>$() -> Qian.Profiles.Abstractions.ResolvedProfileEntry!
-Qian.Profiles.Abstractions.ResolvedProfileEntry.Deconstruct(out string! Id, out string! Scope, out string! Plugin, out System.Text.Json.JsonElement Config, out int Layer, out System.Collections.Generic.IReadOnlyList<string!>! Inject, out System.Collections.Generic.IReadOnlyList<string!>! Provides, out string? Note) -> void
+Qian.Profiles.Abstractions.ResolvedProfileEntry.Deconstruct(out string! Id, out string! Scope, out string! Plugin, out System.Text.Json.JsonElement Config, out int Layer, out System.Collections.Generic.IReadOnlyList<string!>! Inject, out System.Collections.Generic.IReadOnlyList<string!>! OptionalInject, out System.Collections.Generic.IReadOnlyList<string!>! Provides, out string? Note) -> void
+Qian.Profiles.Abstractions.ResolvedProfileEntry.OptionalInject.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Profiles.Abstractions.ResolvedProfileEntry.OptionalInject.init -> void
 Qian.Profiles.Abstractions.ResolvedProfileEntry.Inject.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Qian.Profiles.Abstractions.ResolvedProfileEntry.Inject.init -> void
 Qian.Profiles.Abstractions.ResolvedProfileEntry.Provides.get -> System.Collections.Generic.IReadOnlyList<string!>!
@@ -83,7 +85,7 @@ Qian.Profiles.Abstractions.ProfileLayer.ProfileLayer(int Index, string! Kind, st
 Qian.Profiles.Abstractions.ResolvedProfileEntry.Scope.init -> void
 Qian.Profiles.Abstractions.ProfileLoadOptions.WorkingDirectory.get -> string!
 Qian.Profiles.Abstractions.IProfileLoader.Load(Qian.Profiles.Abstractions.ProfileLoadOptions! options) -> Qian.Profiles.Abstractions.ProfileLoadResult!
-Qian.Profiles.Abstractions.ResolvedProfileEntry.ResolvedProfileEntry(string! Id, string! Scope, string! Plugin, System.Text.Json.JsonElement Config, int Layer, System.Collections.Generic.IReadOnlyList<string!>! Inject, System.Collections.Generic.IReadOnlyList<string!>! Provides, string? Note) -> void
+Qian.Profiles.Abstractions.ResolvedProfileEntry.ResolvedProfileEntry(string! Id, string! Scope, string! Plugin, System.Text.Json.JsonElement Config, int Layer, System.Collections.Generic.IReadOnlyList<string!>! Inject, System.Collections.Generic.IReadOnlyList<string!>! OptionalInject, System.Collections.Generic.IReadOnlyList<string!>! Provides, string? Note) -> void
 Qian.Profiles.Abstractions.ProfileLoadOptions.WorkingDirectory.init -> void
 Qian.Profiles.Abstractions.ProfileLoadOptions.Profile.get -> string!
 Qian.Profiles.Abstractions.ProfileLoadOptions.Profile.init -> void

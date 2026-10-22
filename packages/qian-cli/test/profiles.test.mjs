@@ -28,6 +28,8 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
     if(item.noObsolete)assert.ok(!Object.hasOwn(settings.config,'obsolete'));
     if(item.version)assert.equal(settings.plugin,'test.settings@'+item.version);
     if(entries.some(e=>e.id==='consumer'))assert.ok(result.snapshot.mountOrder.indexOf('global/settings')<result.snapshot.mountOrder.indexOf('global/consumer'));
+    // optionalInject 的 Provider 在树里时先于消费方装载；缺席时消费方照常装载。
+    if(entries.some(e=>e.id==='observer'))assert.ok(result.snapshot.mountOrder.indexOf('global/settings')<result.snapshot.mountOrder.indexOf('global/observer'),item.name);
    }
    if(item.warnings!==undefined)assert.equal(result.diagnostics.filter(d=>d.severity==='warning').length,item.warnings);
    assert.ok(!JSON.stringify(result).includes('DO-NOT-LEAK'));

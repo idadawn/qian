@@ -88,12 +88,13 @@ public sealed class DocumentGenerator(IProfileLoader profiles) : IDocumentGenera
     private static string SeamGraph(ProfileSnapshot snapshot)
     {
         var output = new StringBuilder(Header("seam 图", snapshot.Name));
-        output.AppendLine("由清单 inject/provides 派生；同 scope 优先，其次 global。骨架的空键集合不代表未来没有依赖。\n");
+        output.AppendLine("由清单 inject/optionalInject/provides 派生；同 scope 优先，其次 global。optionalInject 的消费方标注「（可选）」并以虚线连接：Provider 缺席时仍装载，在树里时先于消费方装载。骨架的空键集合不代表未来没有依赖。\n");
         output.AppendLine("| 服务键 | Provider 条目 | Consumer 条目 |\n|---|---|---|");
         foreach (var provider in snapshot.Entries) foreach (var key in provider.Provides)
         {
-            var consumers = snapshot.Entries.Where(c => c.Inject.Contains(key, StringComparer.Ordinal) && Provider(snapshot, c, key) == provider);
-            output.AppendLine(CultureInfo.InvariantCulture, $"| {Code(key)} | {Code(provider.Scope + "/" + provider.Id)} | {string.Join("、", consumers.Select(c => Code(c.Scope + "/" + c.Id)))} |");
+            var consumers = snapshot.Entries.Where(c => c.Inject.Contains(key, StringComparer.Ordinal) && Provider(snapshot, c, key) == provider).Select(c => Code(c.Scope + "/" + c.Id))
+                .Concat(snapshot.Entries.Where(c => c.OptionalInject.Contains(key, StringComparer.Ordinal) && Provider(snapshot, c, key) == provider).Select(c => Code(c.Scope + "/" + c.Id) + "（可选）"));
+            output.AppendLine(CultureInfo.InvariantCulture, $"| {Code(key)} | {Code(provider.Scope + "/" + provider.Id)} | {string.Join("、", consumers)} |");
         }
         output.AppendLine("\n" + Graph(snapshot, seam: true));
         return output.ToString();
@@ -121,6 +122,14 @@ public sealed class DocumentGenerator(IProfileLoader profiles) : IDocumentGenera
             if (provider is null) continue;
             if (!seam) output.AppendLine(CultureInfo.InvariantCulture, $"  {ids[provider]} -->|\"{Label(key)}\"| {ids[consumer]}");
             else output.AppendLine(CultureInfo.InvariantCulture, $"  {keys[provider.Scope + "/" + key]} --> {ids[consumer]}");
+        }
+        // 可选依赖画虚线：只画树里有 Provider 的键。
+        foreach (var consumer in snapshot.Entries) foreach (var key in consumer.OptionalInject)
+        {
+            var provider = Provider(snapshot, consumer, key);
+            if (provider is null) continue;
+            if (!seam) output.AppendLine(CultureInfo.InvariantCulture, $"  {ids[provider]} -.->|\"{Label(key)}\"| {ids[consumer]}");
+            else output.AppendLine(CultureInfo.InvariantCulture, $"  {keys[provider.Scope + "/" + key]} -.-> {ids[consumer]}");
         }
         return output.AppendLine("```").ToString();
     }

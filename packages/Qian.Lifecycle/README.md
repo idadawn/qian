@@ -12,13 +12,14 @@
 
 ## 宿主装配
 
-`LifecyclePlugin` 只接受 global scope，必需服务键是 `Data`、`Registry`、`Config`。宿主还需要准备：
+`LifecyclePlugin` 只接受 global scope，必需服务键是 `Data`、`Registry`、`Config`；可选服务键（清单 `optionalInject`，与 `LifecyclePlugin.OptionalInject` 同一份）是 `Audit` 与 `AuthzSuperadminBypass`：缺席时仍装载，按调用解析，缺席的后果见下文「缺审计时的口径」。宿主还需要准备：
 
 - 数据上下文 `LifecycleDbContext`，迁移随包交付，在宿主启动前执行。
 - Registry 与 Lifecycle 的集成事件类型和领域事件处理器。
 - 信任根所在的配置节与秘密解析策略。
 - 可选的进程内钩子解析器 `LifecycleRuntimeOptions.Hooks`：按组件 ID 与精确版本返回 `IPluginLifecycleHooks`，组件没有钩子时返回 null。本包不从数据库或制品内容加载程序集。
-- 管理面端点（诊断与反向权限批准）需要宿主装配的权限判定端口（Kun `IPermissionChecker`），平台主体另需 Authz 的超管旁路；批准另需该租户 scope 可见的审计服务（`ctx.Audit()`），且 Lifecycle 的数据库登录须获审计同事务函数的执行权（`AuditTransactionAccess.CreateMigrationSql` 的生产方角色）。缺哪一个都 fail-closed 为 404。
+- 管理面端点（诊断与反向权限批准）需要宿主装配的权限判定端口（Kun `IPermissionChecker`），平台主体另需 Authz 的超管旁路；批准与租户级生命周期操作（开通、升级、卸载、清除）另需该租户 scope 可见的审计服务（`ctx.Audit()`），且 Lifecycle 的数据库登录须获审计同事务函数的执行权（`AuditTransactionAccess.CreateMigrationSql` 的生产方角色）。
+- 缺审计时的口径（S1-RT-037）：管理面批准缺判定端口、缺旁路或缺审计都与不存在同为 404（R32），对外不区分；租户级生命周期操作缺审计时以 503 `LIFECYCLE_AUDIT_UNAVAILABLE`（`operation` 为操作名）拒绝，不认领执行记录、不改状态。两处都先经装载器的日志器记一条 Warning（`Qian.Lifecycle` 事件 7「审计服务不可用」，只有操作名与租户，不含载荷），宿主装配错误由日志与无权限、状态冲突区分。
 
 ```csharp
 builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(LifecycleDbContext.Schema));
@@ -136,6 +137,15 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - 可信平台插件（例如秘密解析的审批来源）经 `GetApprovedPermissionsAsync` 读取批准记录，调用方负责权限。
 - 批准与诊断两个权限点都在 `plugins/qian.lifecycle/metadata/permissions.json` 声明，`metadata/roles.json` 默认授予租户 Owner 与 Admin；Authz 从注册表的预装快照编译。
 
+## 生命周期操作入审计链（ADR-009 D9.8，S1-RT-037）
+
+租户级操作完成的状态迁移与该租户审计链的条目在同一个可串行化事务里提交（`AppendEnlistedAsync`，与批准同一做法）：审计写不进去或事务提交失败时，状态迁移与条目都不留；同租户审计链的可串行化冲突或死锁由控制器换新会话重做整个最终迁移（最多 5 次），仍冲突返回 409 `CONFLICT`。
+
+- 记录点只在最终迁移处，各一条：开通 `Provisioning → Installed`（能力 `qian.lifecycle/tenant-plugin.provision`）、升级成功 `Upgrading → Installed(to)`（`tenant-plugin.upgrade`，与 upgraded 事件同一事务）、卸载 `Installed → Uninstalled`（`tenant-plugin.uninstall`）、清除 `Uninstalled → Purged`（`tenant-plugin.purge`）。所以钩子失败后的重试、续跑与幂等返回（已开通再开通、已卸载再卸载）都不重复记；钩子失败、升级失败回到 `Installed(from)` 不入链（ADR-009「业务失败即无审计」），原因在 `lifecycle_runs` 与诊断。
+- 记录：契约版本 `v1`、通道 `api`、结果 `success`，资源同批准的判定资源 `lifecycle/install:{tenantId}/{pluginId}@{version}`（升级指向目标版本），发生时间即安装行的更新时间。主体取调用方打开的事件作用域（与集成事件同一口径：`EventEnvelopeScope` 的 actor，含 `on_behalf_of`），没有作用域时记本组件服务主体 `qian.lifecycle`；`actor` 参数作为 `operator` 写进载荷。输入哈希是 `[租户, 组件, 能力, 版本…]` 的 SHA-256。载荷：`{ pluginId, operator, version }`，升级为 `{ pluginId, operator, fromVersion, toVersion }`。
+- 授权（`EntitleAsync`）、挂载与卸载条目（`Mount / Unmount`，经 Registry 同事务发 mounted / unmounted 事件）不在本节范围。
+- 平台级操作（安装、激活、回切、弃用、退役）没有租户，审计端口没有平台链的同事务入口（Audit README「平台链不支持此入口」）；记平台链还是不记、是否同事务，是 S1-RT-037 的建议裁决，拍板后在此补写口径。本版本平台级操作尚未入链。
+
 ## 挂载、契约准入与诊断
 
 `MountAsync(scope, entry)` 经 Registry 的公开挂载写入 patch/v2 条目：同一事务写 `scope_patches` 与 `registry.scope.mounted.v1`，随后立即合入该 scope。带 `plugin` 的条目要求组件已开通、且版本与安装记录一致；预装的 `policy.required` 平台组件除外。
@@ -208,7 +218,9 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
   - `GitOpsExecutorTests`：本机裸仓库 + 真实 K3s，片段经 `kubectl apply -k` 收敛后双条件回写，工作负载缩到 0 后回到 Progressing。
   - `LocalExecutorTests`：等价的开发态执行器。
   - `LifecycleUnitTests`：迁移与 RLS、片段生成、配置解析、幂等键。
-  - `PermissionApprovalTests`：五类声明随制品快照落库并经注册表端口读出；未批准的开通被拒且不写记录，逐项批准后开通，重复批准不改记录；无权限、跨租户、委托、Agent、未安装版本同为 404，内容校验只在判定之后；超管代批经旁路并记下目标租户与资源；`policy.required` 与无声明的组件免批；升级只在新增项时须重批。
+  - `PermissionApprovalTests`：五类声明随制品快照落库并经注册表端口读出；未批准的开通被拒且不写记录，逐项批准后开通，重复批准不改记录；无权限、跨租户、委托、Agent、未安装版本同为 404，内容校验只在判定之后；超管代批经旁路并记下目标租户与资源；`policy.required` 与无声明的组件免批；升级只在新增项时须重批；批准与整份替换入租户审计链、与批准同一事务、超限退为哈希、链冲突换会话重做；开通续跑按原目标版本（而不是两次尝试之间激活的新 Active 修订）重新核对批准。
+  - `LifecycleAuditTests`：开通、升级、卸载、清除各写一条租户审计链条目（主体取事件作用域，否则为本组件服务主体），重复操作、续跑与钩子重试不重复记；审计写入失败或提交失败时状态迁移与条目都不留且可续跑；宿主撤下审计后操作以 503 `LIFECYCLE_AUDIT_UNAVAILABLE` 拒绝、状态不变并记宿主级告警，批准 API 仍 404 且同样记告警；同租户两个组件并发完成开通时链冲突的一方换新会话重做。
+  - `LifecycleUnitTests` 另核对清单的 `optionalInject` 与 `LifecyclePlugin.OptionalInject` 一致。
   - `TenantFieldInstallTests`：`tck/surfaces/cases.json` 中工具输入点名租户字段的 42 个反例（含 properties 之外的写法与越出 Schema 位置的引用，S1-AGT-004 / S1-AGT-007）经 `InstallAsync` 全部失败（`INPUT_INVALID` / `REGISTRY_INPUT_INVALID`，pointer 与 fixture 相同），不登记修订、不留候选制品；只是含有 tenant 的名称照常安装。
 - `tests/Qian.Sample.Crm.Tests` 的 `LifecycleAcceptanceTests`：参考应用 1.0.0 / 1.0.1 / 1.1.0 三个预装修订，在真实 PostgreSQL、Kestrel 与 JWT 下覆盖：
   - A、B 开通与挂载，重复开通无副作用，卸载后 5 秒内 SDK 入口恢复 404。
@@ -228,13 +240,14 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - `Retire` 不检查是否仍有租户停在该版本：租户安装行受 RLS 约束，平台操作不跨租户查询，平台超管旁路归 S1-AZ-003。
 - `Mount` 只接受当前租户的 tenant scope；app / agent-session 的归属证明尚未实现，保持拒绝。
 - 挂载失败时恢复挂载前的 patch，不让失败条目阻断整个 scope；失败原因经诊断端点给出。
-- 反向权限批准只有 API：管理 UI 归 S2。租户管理员的批准只记在 `permission_approvals`（批准人、渠道、时间），尚未写租户审计链，也不发集成事件；超管代批由 Authz 旁路记审计。
+- 反向权限批准只有 API：管理 UI 归 S2。批准入租户审计链但不发集成事件；超管代批除批准条目外另由 Authz 旁路记自己的判定审计。
+- 平台级生命周期操作（安装、激活、回切、弃用、退役）尚未入审计链，口径待 S1-RT-037 的建议裁决拍板。
 - 批准记录还没有消费方：秘密解析、出站 egress 与外壳 CSP `connect-src` 仍按宿主配置生效，按批准记录收紧归后续接线。撤销只能整份替换为更小的内容，不影响已开通的租户，只影响之后的开通与升级。
 
 S1-RT-029 的 Registry 管理写入通过 `MountAtRevisionAsync` / `UnmountAtRevisionAsync` 复用 Mount / Unmount 核心，显式携带调用方修订，不用服务端读取的新版本覆盖预期值。重复卸载的禁用 patch 与墓碑在当前修订下幂等，旧修订仍拒绝；授权统一在 Registry 管理入口，内部受信任生命周期接口不直接暴露为匿名 HTTP。
 
 ## 清单入口与代码派生
 
-`plugins/qian.lifecycle/.qian-plugin/plugin.json` 的稳定入口是 `LifecycleComponent`，允许 global scope，依赖 `Data`、`Registry` 与 `Config`，提供 `Lifecycle`。使用宿主登记的 `LifecycleRuntimeOptions`，未登记时采用空钩子解析器，再委托 `LifecyclePlugin`。
+`plugins/qian.lifecycle/.qian-plugin/plugin.json` 的稳定入口是 `LifecycleComponent`，允许 global scope，依赖 `Data`、`Registry` 与 `Config`，可选依赖 `Audit` 与 `AuthzSuperadminBypass`（`optionalInject`），提供 `Lifecycle`。使用宿主登记的 `LifecycleRuntimeOptions`，未登记时采用空钩子解析器，再委托 `LifecyclePlugin`。
 
-入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。`optionalInject` 不由生成器派生，手写在清单里，与 `LifecyclePlugin.OptionalInject` 的一致性由 `LifecycleUnitTests` 守住；seam 图把它画成虚线并标「（可选）」，profile 装配在 Provider 在树里时把它排在本组件之前。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
