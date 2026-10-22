@@ -33,8 +33,8 @@
     "nuget": [
       {
         "id": "Qian.Config.Apollo",
-        "version": "0.1.0",
-        "digest": "sha256:48a312c7fa3b371f38dfab5ccbccdd55ed1b57dc3b4b19657c22fde7d48202bb"
+        "version": "0.2.0",
+        "digest": "sha256:f33c5ddd54e540605fb4943ab24075fb9b5008a8e285b3804c4ab95622e58aab"
       }
     ],
     "configSchema": "./schemas/config.schema.json"
