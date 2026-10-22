@@ -10,6 +10,7 @@ on:
     paths:
       - "scripts/yue-visual.mjs"
       - "packages/yue/**"
+      - "packages/qian-tenancy-ui/**"
       - "tools/openapi-codegen/**"
       - "apps/**"
       - "tests/gates/yue/**"
@@ -26,6 +27,7 @@ on:
     paths:
       - "scripts/yue-visual.mjs"
       - "packages/yue/**"
+      - "packages/qian-tenancy-ui/**"
       - "tools/openapi-codegen/**"
       - "apps/**"
       - "tests/gates/yue/**"

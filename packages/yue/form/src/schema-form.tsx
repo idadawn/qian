@@ -37,6 +37,9 @@ function addError(errors: FieldErrors<FormValues>, segments: string[], message: 
   }
   target[segments.at(-1) ?? 'root'] = { type: 'schema', message };
 }
+function hasType(schema: DataSchema, type: string): boolean {
+  return Array.isArray(schema.type) ? schema.type.includes(type) : schema.type === type;
+}
 function fields(data: DataSchema, nodes: UiNode[], prefix = ''): { path: string; schema: DataSchema; ui: UiNode; required: boolean }[] {
   const flatten = (items: UiNode[]): UiNode[] => items.flatMap((node) => node.field ? [node] : flatten(node.children ?? []));
   const layout = flatten(nodes);
@@ -46,14 +49,14 @@ function fields(data: DataSchema, nodes: UiNode[], prefix = ''): { path: string;
     const schema = definitions[key];
     if (!schema) throw new Error('form.error.field');
     const path = prefix ? `${prefix}.${key}` : key;
-    if (schema.type === 'object') return fields(schema, ui.children ?? [], path);
+    if (hasType(schema, 'object')) return fields(schema, ui.children ?? [], path);
     return [{ path, schema, ui, required: data.required?.includes(key) ?? false }];
   });
 }
 function defaults(schema: DataSchema): FormValues {
   return Object.fromEntries(Object.entries(schema.properties ?? {}).flatMap(([key, field]) => {
     if (field.default !== undefined) return [[key, field.default]];
-    if (field.type === 'object') return [[key, defaults(field)]];
+    if (hasType(field, 'object')) return [[key, defaults(field)]];
     return [];
   }));
 }
@@ -132,7 +135,7 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       const access = schema.auth.fields?.[path];
       if (state?.visible === false || (access && !access.includes('read'))) return null;
       const readonly = mode === 'readonly' || (access && !access.includes('write'));
-      const horizontal = fieldSchema.type === 'boolean' && !readonly;
+      const horizontal = hasType(fieldSchema, 'boolean') && !readonly;
       const fieldId = `${id}-${path}`;
       const error = getValue(errors, path) as { message?: string } | undefined;
       const label = i18n.t(ui.labelKey ?? fieldSchema.title ?? path);
@@ -143,12 +146,12 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
         <Controller name={path} control={form.control} render={({ field }) => {
           if (readonly) return <output id={fieldId} className="min-h-9 rounded-md bg-muted/40 px-3 py-2 text-sm text-foreground" data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
           const common = { id: fieldId, name: field.name, ref: field.ref, onBlur: field.onBlur, disabled: state?.disabled || isSubmitting, 'aria-required': required, 'aria-invalid': !!error, 'aria-describedby': describedBy };
-          if (fieldSchema.type === 'boolean') return <Checkbox {...common} className="col-start-1 row-start-1" checked={!!field.value} onCheckedChange={field.onChange} aria-label={label} />;
+          if (hasType(fieldSchema, 'boolean')) return <Checkbox {...common} className="col-start-1 row-start-1" checked={!!field.value} onCheckedChange={field.onChange} aria-label={label} />;
           if (fieldSchema.enum) return <Select value={field.value ?? null} onValueChange={field.onChange} items={fieldSchema.enum.map((value) => ({ value, label: String(value) }))} disabled={common.disabled}>
             <SelectTrigger {...common} aria-label={label} /><SelectContent>{fieldSchema.enum.map((value) => <SelectItem key={String(value)} value={value}>{String(value)}</SelectItem>)}</SelectContent>
           </Select>;
           if (ui.widget === 'qian.textarea') return <Textarea {...common} value={String(field.value ?? '')} onChange={field.onChange} />;
-          const numeric = fieldSchema.type === 'number' || fieldSchema.type === 'integer';
+          const numeric = hasType(fieldSchema, 'number') || hasType(fieldSchema, 'integer');
           const dateTime = fieldSchema.format === 'date-time';
           const type = numeric ? 'number' : dateTime ? 'datetime-local' : fieldSchema.format === 'date' ? 'date' : 'text';
           let display = typeof field.value === 'number' || typeof field.value === 'string' ? field.value : '';

@@ -63,3 +63,27 @@ it('FormApi 支持赋值、校验、重置和命令式提交', async () => {
   apiRef.current!.setValue('name', '丙');
   expect(apiRef.current!.getValues().name).toBe('丙');
 });
+
+it('OpenAPI 可空嵌套对象与数字联合类型沿用同一字段引擎', async () => {
+  const submit = vi.fn();
+  const nullable: typeof schema = { ...schema, data: { type: 'object', additionalProperties: false, properties: { quotas: { type: ['object', 'null'], properties: { users: { type: ['string', 'integer', 'null'], minimum: 0 } } } } }, ui: { layout: [{ field: 'quotas', children: [{ field: 'users', labelKey: 'test.name' }] }] }, rules: {} };
+  const view = render(<SchemaForm schema={nullable} i18n={i18n} initialValues={{ quotas: { users: null } }} onSubmit={submit} />);
+  const input = screen.getByLabelText('名称');
+  expect(input.getAttribute('type')).toBe('number');
+  await userEvent.fill(input, '-1'); await userEvent.click(screen.getByRole('button', { name: '保存' }));
+  expect(submit).not.toHaveBeenCalled();
+  expect(input.getAttribute('aria-invalid')).toBe('true');
+  await userEvent.fill(input, '25'); await userEvent.click(screen.getByRole('button', { name: '保存' }));
+  expect(submit.mock.calls[0]?.[0]).toEqual({ quotas: { users: 25 } });
+  view.rerender(<SchemaForm schema={nullable} i18n={i18n} initialValues={{ quotas: { users: 25 } }} mode="readonly" />);
+  expect(screen.getByText('25').tagName).toBe('OUTPUT');
+});
+
+it('可空布尔字段与布尔字段同样横排', () => {
+  const nullable: typeof schema = { ...schema, data: { type: 'object', additionalProperties: false, properties: { enabled: { type: ['boolean', 'null'] } } }, ui: { layout: [{ field: 'enabled', labelKey: 'test.enabled' }] }, rules: {} };
+  render(<SchemaForm schema={nullable} i18n={i18n} testId="nullable" />);
+  render(<SchemaForm schema={schema} i18n={i18n} testId="plain" />);
+  const field = screen.getByTestId('nullable-field-enabled');
+  expect(field.className).toContain('grid-cols-');
+  expect(field.className).toBe(screen.getByTestId('plain-field-enabled').className);
+});

@@ -515,6 +515,64 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/qian-tenancy-ui:
+    dependencies:
+      '@idadawn/yue-contracts':
+        specifier: workspace:^
+        version: link:../yue/contracts
+      '@idadawn/yue-core':
+        specifier: workspace:^
+        version: link:../yue/core
+      '@idadawn/yue-data':
+        specifier: workspace:^
+        version: link:../yue/data
+      '@idadawn/yue-form':
+        specifier: workspace:^
+        version: link:../yue/form
+      '@idadawn/yue-sdk':
+        specifier: workspace:^
+        version: link:../yue/sdk
+      '@idadawn/yue-tokens':
+        specifier: workspace:^
+        version: link:../yue/tokens
+    devDependencies:
+      '@axe-core/playwright':
+        specifier: 'catalog:'
+        version: 4.13.0(playwright-core@1.64.0)
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.64.0
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.3(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.1
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.1.2(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+
   packages/yue/biz:
     dependencies:
       '@idadawn/yue-core':

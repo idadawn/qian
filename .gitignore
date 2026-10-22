@@ -44,5 +44,7 @@ pm/STATUS.md
 # 本机租户运营手测环境（S1-QA-012）：开发密钥、PostgreSQL 管理员口令等本机状态，不进 git
 .qian-dev/
 
+# 租户运营页面构建产物
+packages/qian-tenancy-ui/dist/
 # 固定浏览器环境的视觉差异报告
 .visual-results/

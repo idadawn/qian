@@ -14,7 +14,7 @@ function useOverlay(kind: 'modal' | 'drawer' | 'popup', i18n: PlatformI18n, trig
   const activeOptions = useRef<OverlayOptions | null>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
   const close = () => { const current = activeOptions.current; activeOptions.current = null; setOptions(null); current?.onClose?.(); lastFocus.current?.focus(); };
-  const open = (next: OverlayOptions) => { lastFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; activeOptions.current = next; setOptions(next); };
+  const open = (next: OverlayOptions) => { if (!activeOptions.current) lastFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; activeOptions.current = next; setOptions(next); };
   const Root = kind === 'drawer' ? Sheet : kind === 'popup' ? Popover : Dialog;
   const Content = kind === 'drawer' ? SheetContent : kind === 'popup' ? PopoverContent : DialogContent;
   const Title = kind === 'drawer' ? SheetTitle : kind === 'popup' ? PopoverTitle : DialogTitle;

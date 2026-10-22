@@ -65,18 +65,19 @@ const policies = [
 /** 只含边界规则的 ESLint 配置片段（根 eslint.config.mjs 与 eslint.boundaries.config.mjs 共用）。 */
 export const yueBoundariesConfig = [
   {
-    files: ['packages/yue/**/*.{ts,tsx,mts,mjs}', 'apps/**/*.{ts,tsx,mts,mjs}'],
+    files: ['packages/yue/**/*.{ts,tsx,mts,mjs}', 'apps/**/*.{ts,tsx,mts,mjs}', 'packages/qian-tenancy-ui/**/*.{ts,tsx,mts,mjs}'],
     languageOptions: { parser: tseslint.parser, ecmaVersion: 'latest', sourceType: 'module' },
     plugins: { boundaries },
     settings: {
       'boundaries/elements': [
         { type: 'yue', pattern: 'packages/yue/*', capture: ['pkg'] },
         { type: 'app', pattern: 'apps/*', capture: ['app'] },
+        { type: 'app', pattern: 'packages/qian-tenancy-ui' },
       ],
       'boundaries/dependency-nodes': ['import', 'dynamic-import', 'export'],
       'boundaries/ignore': ['**/node_modules/**', '**/dist/**'],
       'import/resolver': {
-        typescript: { project: ['packages/yue/*/tsconfig.json', 'apps/*/tsconfig.json'] },
+        typescript: { project: ['packages/yue/*/tsconfig.json', 'apps/*/tsconfig.json', 'packages/qian-tenancy-ui/tsconfig.json'] },
       },
     },
     rules: {
