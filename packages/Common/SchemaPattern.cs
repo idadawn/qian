@@ -11,14 +11,14 @@ namespace Qian.Common;
 // 模式按 ECMA-262 不带标志的语义解释（JSON Schema 2020-12 核心规范 §6.4），逐 UTF-16 码元匹配：. 不匹配 \n \r U+2028 U+2029，
 // \s 为 ECMA-262 空白，\d \w 只认 ASCII，^ 与 $ 只在开头与末尾成立。
 // 只接受各方言写法含义相同的子集，逐个记号翻译成 .NET 表达式交给 NonBacktracking；词边界、内联选项、Unicode 属性、命名组、环视、反向引用、代理项等一律拒绝。
-// 接受与拒绝全在翻译时按确定的规则判定（含分组配对、量词边界与规模上限），翻译结果必然能被 .NET 构造；CLI 的 TS 移植据此逐例一致。
+// 接受与拒绝全在翻译时按确定的规则判定（含分组配对、量词边界与规模上限），翻译结果必然能被 .NET 构造；TS 移植据此逐例一致。
 internal static class SchemaPattern
 {
     // 模式只来自可信契约，进程内条目有限；超过上限整表清空重建，内存有界，已取出的实例不受影响。
     internal const int CacheSize = 128;
     internal static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(1);
     // 展开量词后字符、类、. 与锚点的总数上限，量词的每个边界也不能超过它。NonBacktracking 按展开后的规模估算自动机，含锚点时约为该数的 5 倍，
-    // 超过 10000 即拒绝构造；先按这条确定的规则拒绝，接受与否不再取决于 .NET 的估算，CLI 的移植（packages/qian-cli/src/schema-pattern.ts）才能逐例一致。
+    // 超过 10000 即拒绝构造；先按这条确定的规则拒绝，接受与否不再取决于 .NET 的估算，TS 移植（packages/qian-surfaces/src/schema-pattern.ts）才能逐例一致。
     internal const int MaxSize = 1000;
     private const int Universe = char.MaxValue + 1;
     private static readonly ConcurrentDictionary<(string Pattern, bool FoldCase), Regex> Cache = new();

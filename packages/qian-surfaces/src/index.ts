@@ -5,6 +5,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
 import { createScanner, parseTree, SyntaxKind, type Node as JsonTree, type ParseError } from 'jsonc-parser';
 import { parseAllDocuments, isAlias, isMap, isPair, isSeq, isScalar, type CST, type Scalar } from 'yaml';
+import { compilePattern, UnsupportedPattern } from './schema-pattern.js';
 
 /** JSON 数据；校验器不执行任何表面内容。 */
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -432,6 +433,47 @@ const isSchema = (data: JsonValue): boolean => {
   return (!declared || declared === 'https://json-schema.org/draft/2020-12/schema') && !!ajv.getSchema('https://json-schema.org/draft/2020-12/schema')?.(data);
 };
 const ordinal = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
+// 输入 Schema 点名租户字段的写法（S1-AGT-004），与 packages/Common/TenantFieldRule.cs 逐条对应（.NET 表面校验与能力契约共用那一份）：
+// 名称按 contracts/v0 的 TenantFieldName 整体匹配；patternProperties 的模式按 SchemaPattern 的可移植子集能匹配任一租户名、或超出子集无法判定，即违规。
+// 未知成员照常往下查，示例、默认值、常量与枚举是实例数据，不检查；名称表的条目是名称，叫 default、enum 也照常往下查。
+const tenantMessage = '输入 Schema 不允许租户字段。';
+const tenantName = (name: string): boolean => /^tenant(?:[_-]?id)?$/i.test(name);
+// 四个名称的全部 ASCII 大小写写法（832 个），模式逐个试配。
+const tenantSpellings = ['tenant', 'tenantid', 'tenant_id', 'tenant-id'].flatMap(name => {
+  const letters = [...name].filter(c => c >= 'a' && c <= 'z').length;
+  return Array.from({ length: 1 << letters }, (_, mask) => { let bit = 0; return [...name].map(c => c >= 'a' && c <= 'z' && (mask >> bit++ & 1) ? c.toUpperCase() : c).join(''); });
+});
+const instanceKeywords = new Set(['example', 'examples', 'default', 'const', 'enum']);
+function tenantPattern(pattern: string): string | null {
+  try { const compiled = compilePattern(pattern); return tenantSpellings.some(name => compiled.test(name)) ? 'patternProperties 的模式能匹配租户字段名。' : null; }
+  catch (error) { if (error instanceof UnsupportedPattern) return 'patternProperties 的模式超出可移植子集，无法判定是否匹配租户字段名。'; throw error; }
+}
+// 按成员出现顺序返回 [pointer, 原因]；名称表先查全部名称，再逐条往下。
+function tenantFields(value: JsonValue | undefined, pointer: string, found: [string, string][] = []): [string, string][] {
+  const isObject = (item: JsonValue | undefined): item is Obj => item !== null && typeof item === 'object' && !Array.isArray(item);
+  const items = (list: JsonValue[], at: string): void => list.forEach((item, index) => { if (typeof item === 'string' && tenantName(item)) found.push([at + '/' + index, tenantMessage]); });
+  const entries = (map: Obj, at: string, check: (name: string) => string | null): void => {
+    for (const name of Object.keys(map)) { const message = check(name); if (message) found.push([at + '/' + token(name), message]); }
+    for (const [name, child] of Object.entries(map)) tenantFields(child, at + '/' + token(name), found);
+  };
+  if (Array.isArray(value)) { value.forEach((item, index) => tenantFields(item, pointer + '/' + index, found)); return found; }
+  if (!isObject(value)) return found;
+  for (const [key, child] of Object.entries(value)) {
+    if (instanceKeywords.has(key)) continue;
+    const at = pointer + '/' + token(key);
+    if ((key === 'properties' || key === 'dependentSchemas') && isObject(child)) entries(child, at, name => tenantName(name) ? tenantMessage : null);
+    else if (key === 'patternProperties' && isObject(child)) entries(child, at, tenantPattern);
+    else if ((key === '$defs' || key === 'definitions') && isObject(child)) entries(child, at, () => null);
+    else if (key === 'required' && Array.isArray(child)) items(child, at);
+    else if ((key === 'dependentRequired' || key === 'dependencies') && isObject(child)) {
+      for (const [name, list] of Object.entries(child)) { if (tenantName(name)) found.push([at + '/' + token(name), tenantMessage]); if (Array.isArray(list)) items(list, at + '/' + token(name)); }
+      // 旧式 dependencies 的值也可以是 Schema。
+      for (const [name, list] of Object.entries(child)) if (!Array.isArray(list)) tenantFields(list, at + '/' + token(name), found);
+    }
+    else tenantFields(child, at, found);
+  }
+  return found;
+}
 /** RFC 8785 工具描述哈希，与冻结 capability-entry 契约一致。 */
 export function computeToolHash(tool: JsonValue): string {
   const data = obj(tool);
@@ -627,15 +669,7 @@ class ValidationContext {
   private tool(doc: SurfaceDocument): void {
     const data = obj(doc.data);
     if (path.basename(doc.file, '.json') !== doc.name) this.error(doc.file, '/name', codes.name, '工具名称必须与文件名一致。');
-    const visit = (value: JsonValue, pointer: string): void => {
-      if (Array.isArray(value)) value.forEach((child, index) => visit(child, pointer + '/' + index));
-      else for (const [key, child] of Object.entries(obj(value))) {
-        const location = pointer + '/' + token(key);
-        if (key === 'properties') for (const name of Object.keys(obj(child))) if (/^tenant([_-]?id)?$/i.test(name)) this.error(doc.file, location + '/' + token(name), codes.policy, '输入 Schema 不允许租户字段。');
-        visit(child, location);
-      }
-    };
-    visit(data.inputSchema, '/inputSchema');
+    for (const [pointer, message] of tenantFields(data.inputSchema, '/inputSchema')) this.error(doc.file, pointer, codes.policy, message);
     if (!isSchema(data.inputSchema)) this.error(doc.file, '/inputSchema', codes.schema, '输入 JSON Schema 无效。');
     try { if (computeToolHash(data) !== data.schemaSha256) this.error(doc.file, '/schemaSha256', codes.hash, '工具描述哈希与 JCS 内容不一致。'); }
     catch { this.error(doc.file, '/inputSchema', codes.schema, '工具内容不符合 JCS 数值或 Unicode 约束。'); }
@@ -729,4 +763,6 @@ export function validateMarketplace(file: string, content: string, traceId = tra
   return result(data);
 }
 export {SurfaceRegistrationSession, HotReloadSurfacePlugin, readSurfaceRuntimeDiagnostics} from './runtime.js';
+// JSON Schema 正则的可移植子集解释（packages/Common/SchemaPattern.cs 的 TS 移植），本地 CLI 的 profile 装配也用它。
+export {compilePattern, isStable, sameKey, KeyPattern, UnsupportedPattern} from './schema-pattern.js';
 export type {SurfaceContext, SurfaceRegistrationHandle, SurfaceReloadStatus, SurfaceRuntimeEntry, SurfaceRuntimeReport, SurfaceDiagnosticContext} from './runtime.js';

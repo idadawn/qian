@@ -1124,10 +1124,186 @@
     ]
   },
   {
+    "name": "tool-required-tenant",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"filter\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"name\",\n          \"tenantId\"\n        ]\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"f653a7634a2415c4e7bd95d5385edff9ca2b3d9acb2e1bece7a4c6ce9a18439a\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/filter/required/1",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-top-level-required-tenant",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"message\": {\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"tenant_id\"\n    ]\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"4888866b55999492eff4071c53ba9581f51de3f2786766d002693f1e6c3c777a\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/required/0",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-dependent-required-tenant",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"filter\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          }\n        },\n        \"dependentRequired\": {\n          \"name\": [\n            \"tenant-id\"\n          ]\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"42ea1d2ba0c07dad4b439c93fef98780bbdeda74b645812785c4e1fd7362f700\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/filter/dependentRequired/name/0",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-dependent-required-key-tenant",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"filter\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          }\n        },\n        \"dependentRequired\": {\n          \"Tenant\": [\n            \"name\"\n          ]\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"656be93f0cf62990f561232a0eba05947169346342f60ee3a32189f37f8df5b0\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/filter/dependentRequired/Tenant",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-dependent-schemas-tenant",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"filter\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          }\n        },\n        \"dependentSchemas\": {\n          \"TENANT_ID\": {\n            \"required\": [\n              \"name\"\n            ]\n          }\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"07ed05eefce65951395649f3ca7bd35eaf87bd29f8c1bd223465bcfa34383ff5\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/filter/dependentSchemas/TENANT_ID",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-pattern-properties-tenant-prefix",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"filter\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          }\n        },\n        \"patternProperties\": {\n          \"^tenant\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"2756543146dfc3150171e6ebfad592a3d7c5431f503ccf9135c781d427b7c0d0\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/filter/patternProperties/^tenant",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-pattern-properties-tenant-case",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"filter\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          }\n        },\n        \"patternProperties\": {\n          \"^Tenant(Id)?$\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"80c3af06ff9b5833fbbe03d0a53864bda0087e354c61087528c46ed6d57ca2c8\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/filter/patternProperties/^Tenant(Id)?$",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-pattern-properties-tenant-wildcard",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"filter\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          }\n        },\n        \"patternProperties\": {\n          \"^[a-z_]+$\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"543890174e6406540dc033fcf7ecf70bcf80e05dc4f9c639eedf350b2f6e0bbf\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/filter/patternProperties/^[a-z_]+$",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-pattern-properties-tenant-unsupported",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"filter\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          }\n        },\n        \"patternProperties\": {\n          \"\\\\bmeta\\\\b\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"8244a1e687700f948e978948eeacdf7a0a4f467e605462883d3e3121922555cb\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/filter/patternProperties/\\bmeta\\b",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-top-level-pattern-properties-tenant",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"message\": {\n        \"type\": \"string\"\n      }\n    },\n    \"patternProperties\": {\n      \"tenant\": {\n        \"type\": \"string\"\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"d0dde3e49855a8fb0e398dd8c96f99bb87c93337fb4ffd4be83f3d46a92ea87c\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/patternProperties/tenant",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
+    "name": "tool-nested-tenant-keyword-name",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"default\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"tenant_id\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"3a561d90796901aa11d3ebbc501514a383229445aed03f1dd98d80f9a7f5ec9b\"\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "tools/read.json",
+        "pointer": "tools/read.json#/inputSchema/properties/default/properties/tenant_id",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ]
+  },
+  {
     "name": "tool-tenant-lookalike",
     "files": {
       ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
-      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"lieutenant\": {\n        \"type\": \"string\"\n      },\n      \"lieutenant_id\": {\n        \"type\": \"string\"\n      },\n      \"nested\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"tenants\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"e358b47eff11574f2f63f5fa62f94c8430297b7bc7f8129e8db2ef8ac57681a7\"\n}\n"
+      "tools/read.json": "{\n  \"name\": \"read\",\n  \"description\": \"当用户需要只读检查当前组件配置并获得核对说明时使用，不用于任何数据写入操作。\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"lieutenant\": {\n        \"type\": \"string\"\n      },\n      \"lieutenant_id\": {\n        \"type\": \"string\"\n      },\n      \"nested\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"tenants\": {\n            \"type\": \"string\"\n          },\n          \"tenant\\n\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"tenants\"\n        ],\n        \"patternProperties\": {\n          \"^x-\": {},\n          \"^tenants$\": {},\n          \"^lieutenant\": {}\n        },\n        \"dependentRequired\": {\n          \"tenants\": [\n            \"tenant\\n\"\n          ]\n        }\n      },\n      \"notes\": {\n        \"type\": \"object\",\n        \"default\": {\n          \"tenantId\": \"x\"\n        },\n        \"examples\": [\n          {\n            \"properties\": {\n              \"tenant\": {}\n            },\n            \"required\": [\n              \"tenant\"\n            ]\n          }\n        ]\n      }\n    }\n  },\n  \"outputSchema\": {\n    \"type\": \"object\"\n  },\n  \"sideEffect\": \"read\",\n  \"policyHint\": \"allow\",\n  \"idempotent\": true,\n  \"async\": \"none\",\n  \"requiredScopes\": [],\n  \"requiredSecrets\": [],\n  \"dataClassification\": \"internal\",\n  \"contractVersion\": \"fixture-v1\",\n  \"agent\": {\n    \"expose\": true,\n    \"requiresConfirmation\": false\n  },\n  \"binding\": {\n    \"kind\": \"http\",\n    \"url\": \"https://api.example.test/read\",\n    \"method\": \"GET\"\n  },\n  \"schemaSha256\": \"cb01314aabc1779f420dc615333ba082d977c3b19448349cf00b5ef1eb8bd18a\"\n}\n"
     },
     "options": {},
     "valid": true,

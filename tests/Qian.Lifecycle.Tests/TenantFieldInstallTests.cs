@@ -10,10 +10,15 @@ namespace Qian.Lifecycle.Tests;
 public sealed class TenantFieldInstallTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
-    // 顶层（tool Schema 的 propertyNames）与嵌套（语义检查）各一组名称写法，外加 $defs、数组项、组合子句与对照正例。
+    // 顶层（tool Schema 的 propertyNames）与嵌套（语义检查）各一组名称写法，外加 $defs、数组项、组合子句；properties 之外的写法（S1-AGT-004）：
+    // required、dependentRequired 的名称与数组项、dependentSchemas、patternProperties 的模式（含无法判定的写法）、顶层的 required 与 patternProperties、
+    // 名称表里叫 default 的属性；以及对照正例。
     private static readonly string[] TenantCases = ["tool-top-level-tenant", "tool-top-level-tenant-bare", "tool-top-level-tenant-snake", "tool-top-level-tenant-kebab",
         "tool-top-level-tenant-upper", "tool-nested-tenant", "tool-nested-tenant-bare", "tool-nested-tenant-snake", "tool-nested-tenant-kebab", "tool-nested-tenant-pascal",
-        "tool-defs-tenant", "tool-array-items-tenant", "tool-any-of-tenant", "tool-tenant-lookalike"];
+        "tool-defs-tenant", "tool-array-items-tenant", "tool-any-of-tenant", "tool-required-tenant", "tool-top-level-required-tenant", "tool-dependent-required-tenant",
+        "tool-dependent-required-key-tenant", "tool-dependent-schemas-tenant", "tool-pattern-properties-tenant-prefix", "tool-pattern-properties-tenant-case",
+        "tool-pattern-properties-tenant-wildcard", "tool-pattern-properties-tenant-unsupported", "tool-top-level-pattern-properties-tenant", "tool-nested-tenant-keyword-name",
+        "tool-tenant-lookalike"];
 
     [Fact]
     public async Task 工具输入含租户字段的制品经InstallAsync安装失败_INPUT_INVALID带fixture的JSONPointer_不登记修订也不留候选制品()
