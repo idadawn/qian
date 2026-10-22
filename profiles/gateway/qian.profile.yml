@@ -1,5 +1,5 @@
 name: gateway
-description: gateway 的 JIT 开发装配基线；真实 NativeAOT 发布与运行仍须通过 S1-GW-001 / S1-DEP-008。
+description: gateway 原生业务装配；完整生产宿主经严格 Linux NativeAOT 与真实依赖运行验收，业务镜像交付归 S1-DEP-008。
 bundles:
 - qian.bundle.gateway@^1
 patch: ./qian.patch.yml
@@ -7,7 +7,7 @@ hmr:
   surfaces: true
   code: false
 build:
-  aot: false
+  aot: true
 hooks:
   allowCommand: false
 health:

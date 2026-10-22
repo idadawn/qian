@@ -70,11 +70,15 @@ public sealed class ProfileTests
     }
 
     [Fact]
-    public void Gateway_identity_resolves_to_the_code_component_that_declares_x_aot()
+    public void Gateway原生profile仅装配声明兼容的代码组件()
     {
-        // S1-IDP-014：x-aot 以 NativeAOT 冒烟为据。按 S1-DEC-029 开发期 gateway 用 JIT；AOT profile 拒绝未声明组件的规则见 TCK 的 aot-code-rejected。
+        var file = Path.Combine(Root, "profiles/gateway/qian.profile.yml");
+        var definition = new SurfaceValidator().Parse(file, File.ReadAllText(file));
+        Assert.True(definition.Syntax!.Data.GetProperty("build").GetProperty("aot").GetBoolean());
         var shipped = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false });
         Assert.True(shipped.IsValid, JsonSerializer.Serialize(shipped, Json));
+        Assert.All(shipped.Snapshot!.Entries.Where(entry => entry.Manifest.TryGetProperty("runtime", out _)),
+            entry => Assert.True(entry.Manifest.GetProperty("x-aot").GetBoolean()));
         var identity = Assert.Single(shipped.Snapshot!.Entries, e => e.Id == "identity");
         Assert.StartsWith("qian.identity.client@", identity.Plugin, StringComparison.Ordinal);
         Assert.Equal("module", identity.Manifest.GetProperty("runtime").GetProperty("form").GetString());

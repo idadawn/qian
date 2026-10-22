@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.gateway",
   "version": "1.0.0",
-  "description": "真实网关组件入口：强制认证、Cookie 换短时 S2S、逐 cluster 受众、可信代理与签名密钥热轮换；完整 AOT 与私有源安装验收尚未完成。",
+  "description": "网关组件：强制认证、Cookie 换短时 S2S、逐 cluster 受众、可信代理与签名密钥热轮换；已完成生产宿主 Linux NativeAOT 发布与真实依赖运行验收。",
   "author": {
     "name": "Qian"
   },
@@ -28,6 +28,7 @@
     "global"
   ],
   "x-skeleton": true,
+  "x-aot": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Gateway.GatewayComponent, Qian.Gateway",

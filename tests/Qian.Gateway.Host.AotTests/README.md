@@ -20,6 +20,8 @@ docker build -f hosts/Qian.Gateway.Host/Dockerfile.acceptance -t qian-gateway-ho
 docker run --rm --entrypoint dotnet -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal -e QIAN_REQUIRE_DOCKER=1 -e QIAN_GATEWAY_HOST_EXECUTABLE=/gateway/Qian.Gateway.Host qian-gateway-host-acceptance:local test --project tests/Qian.Gateway.Host.AotTests -c Release --no-build --report-xunit-trx
 ```
 
-上游发布等待期间可显式设 `QIAN_GATEWAY_HOST_DLL` 做同一生产入口的 JIT 接线预检，不能同时设置原生变量。该结果会标为 JIT，不能用于恢复 profile AOT、组件兼容声明或关闭 GW-001。
+开发时可显式设 `QIAN_GATEWAY_HOST_DLL` 做同一生产入口的 JIT 接线预检，不能同时设置原生变量。该结果会标为 JIT，不能替代严格原生发布与运行。
 
 引导专项另复用共享 Apollo 协议 fixture 验证 AccessKey 签名：文件路径仅由 `QIAN_ConnectionFiles__ApolloAccessKey` 或 CLI 传入时，首次配置加载已能签名；`QIAN_Secrets__Directory` / CLI 目录覆盖生效，冻结路径后的密钥文件轮换也能再次加载。它与使用真实 Apollo 服务的生产宿主完整联调分开记录。
+
+2026-10-23 验收使用源码 `e9cef6a70d`、正式 Kun `2026.10.23` 与 Dockerfile 固定 SDK 摘要：linux-arm64 严格发布无 IL 诊断；原生生产宿主和两个签名引导用例共 3/3 通过。生产原生进程因密钥解析与 Apollo 发布写入 3 条平台审计，第二个真实 NativeAudit 组合读回并验链；NativeAudit 读取/验链自身的原生执行另由 AUD-008 专项覆盖。验收镜像摘要为 `sha256:ae6872db3e43387d95ce3d1afce1e69ed1eee5e3c7e6f6a1ff18bdc6db123f76`。发布日志与 TRX 保存在本地/CI 的 `TestResults/gateway-host-native-*`；镜像仅用于验收，不代表 DEP-008 业务镜像已发布。

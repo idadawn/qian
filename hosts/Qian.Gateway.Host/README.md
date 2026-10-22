@@ -25,6 +25,6 @@ dotnet run --project hosts/Qian.Gateway.Host -c Release -- --urls http://0.0.0.0
 
 宿主的 Release 编译与共享生产 Gateway / Identity.Client 的安全专项分别验收。完整原生门是 [生产宿主 driver](../../tests/Qian.Gateway.Host.AotTests/README.md)：直接运行本项目发布产物，连接真实 Apollo、受限 PostgreSQL、Redis 与身份服务，并读回实际生产进程写入的审计链。`Dockerfile.acceptance` 保留测试编排所需 SDK，只用于固定 Linux 验收环境。
 
-当前已启用严格 NativeAOT 发布目标，不抑制 IL 诊断；完整发布与运行成功前，默认 profile 仍按 DEC-029 保留 `build.aot: false`。Kun 的普通包 JWKS 原生兼容修复由 S1-KUN-016 交付并正式发布后消费，不能在 Qian 复制或替换其 JWKS 端点。
+2026-10-23 使用正式 Kun `2026.10.23` 完成固定 Linux arm64 严格发布，零 IL 诊断；同一生产二进制通过 ELF/noDLL 与完整 driver，实际 Cookie/Bearer 换签、3 条平台审计的回读验链及 SIGTERM 正常停机均通过。默认 profile 据此恢复 `build.aot: true`。Kun JWKS 修复在上游交付并正式发包，Qian 只通过 KunVersion 消费。Linux x64 的相同持续门由 `gateway-host-aot` CI 执行。
 
 `plugins/qian.bundle.gateway/config/qian.patch.yml` 声明与本宿主一致的 NativeData / NativeAudit 绑定及网关默认值。CLI 当前负责 profile 合成/校验，不提供通用进程启动命令；启动本宿主的命令如上，发布入口为 `dotnet publish hosts/Qian.Gateway.Host`，实际运行文件为 `Qian.Gateway.Host`。业务镜像、签名、非 root / 只读根文件系统、distroless 与部署证据属于 DEP-008。

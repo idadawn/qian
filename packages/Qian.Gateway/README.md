@@ -47,12 +47,14 @@ app.MapQianGateway();
 
 `tests/Qian.Sample.Crm.Tests/GatewayAcceptanceTests.cs` 连接真实 `TenantOperationsHost` 的 `/api/tenancy/tenants`，通过真实账号 PKCE 登录获取 Cookie、真实平台超管角色放行；验证 `aud = qian-platform`、平台 `tenant_id = null` 与 60 秒寿命。租户 UUID 由另一个真实 Cookie 路径单独验证，不把平台运营端点误当作租户业务接口。
 
+`tests/Qian.Gateway.Host.AotTests` 启动实际生产宿主的 Linux 原生二进制，验证真实 Apollo 2.5.2、受限 PostgreSQL、Redis、身份账号与 Cookie/Bearer 换签、平台审计及正常停机。2026-10-23 已在固定 Linux SDK 环境通过严格发布（零 IL 诊断）与运行，Kun 使用正式 `2026.10.23`；`gateway-host-aot` CI 作业持续执行同一发布和 driver。普通托管构建也可能关闭动态代码能力，因此原生证明同时要求严格发布、ELF 文件头、无同名 DLL 和实际业务运行。
+
 ## 模型体验
 
 网关没有模型可调用工具。错误返回遵循 Runtime ErrorDetail；令牌、Cookie、授权码、密钥和配置值不写入诊断。能力目录、权限过滤和 Agent 表面按原任务分工接续。
 
 ## 已知限制与延期项
 
-本包开启 AOT 静态分析，**未声明完整 gateway NativeAOT 已通过**。现有完整 Config / Identity / Data / Audit 探针在 Linux 原生发布阶段失败，见 [AOT 证据与实施路径](../../docs/decisions/gateway-native-aot-options.md)。DEC-030 的原生 Data / Audit Provider 接入与最终完整运行证明另行整合，在此之前默认 profile 仍是 JIT，不填虚假的 `x-aot`。
+DEC-030 的原生 Data / Audit 已接入完整生产宿主，默认 profile 恢复 `build.aot: true`，Gateway / Apollo 清单登记实际验证后的 `x-aot`。原 EF 探针失败与后续执行证据保留在 [AOT 实施路径](../../docs/decisions/gateway-native-aot-options.md)。平台与 Scheduler 继续使用 EF；distroless、供应链签名、只读非 root 与业务镜像发布继续由 DEP-008 验收。
 
 三策略/共享计数归 GW-002，路由生成、可用性过滤、聚合端点、完整就绪聚合与 gRPC-Web 归 GW-003，平台观测组件归 AUD-003。当前不宣称这些能力已交付。
