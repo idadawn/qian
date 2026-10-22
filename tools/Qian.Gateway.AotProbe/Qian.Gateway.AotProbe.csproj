@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- GW-001 的完整依赖技术探针；失败不能通过关闭裁剪或 IL 警告门绕过。 -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <IlcTreatWarningsAsErrors>true</IlcTreatWarningsAsErrors>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
+    <PackageReference Include="Kun.Gateway" />
+  </ItemGroup>
+</Project>

@@ -35,4 +35,11 @@ describe('collectComponents（S1-DOCS-002 之前的占位目录）', () => {
       PLATFORM_COMPONENTS.pop();
     }
   });
+
+  it('外壳页来自包目录且在索引、侧栏与三个共用示例中可发现', () => {
+    const shell = byPath.get('yue/shell.mdx') ?? '';
+    for (const name of ['AppShell', 'Authentication', 'FallbackPage']) assert.ok(shell.includes(`name="${name}"`));
+    assert.ok(byPath.get('yue/index.md')?.includes('/components/yue/shell'));
+    assert.ok(JSON.parse(byPath.get('yue/_meta.json') ?? '[]').includes('shell'));
+  });
 });

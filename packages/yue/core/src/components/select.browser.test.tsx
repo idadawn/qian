@@ -12,7 +12,7 @@ function Demo(props: { value?: string | null; defaultValue?: string | null; onVa
   return (
     <Select items={FRUITS.map((f) => ({ label: f, value: f }))} {...props}>
       <SelectTrigger placeholder="选一种水果" aria-label="水果" />
-      <SelectContent>
+      <SelectContent listLabel="可选水果">
         {FRUITS.map((f) => (
           <SelectItem key={f} value={f}>
             {f}
@@ -34,7 +34,9 @@ describe('Select（Base UI 验证门）', () => {
     expect(trigger().textContent).toContain('选一种水果');
     trigger().focus();
     await userEvent.keyboard('{ArrowDown}');
-    const listbox = await screen.findByRole('listbox');
+    const listbox = await screen.findByRole('listbox', { name: '可选水果' });
+    expect(trigger().getAttribute('aria-label')).toBe('水果');
+    expect(screen.getByTestId('yue-select-content').hasAttribute('listlabel')).toBe(false);
     expect(within(listbox).getAllByRole('option').map((o) => o.textContent)).toEqual(['苹果', '香蕉', '樱桃']);
     await userEvent.keyboard('{ArrowDown}');
     await vi.waitFor(() => expect(highlighted()).toBeDefined());

@@ -44,6 +44,17 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@idadawn/yue-tokens": "workspace:^",
+    "@vitejs/plugin-react": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@vitest/browser": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "axe-core": "catalog:",
+    "playwright": "catalog:",
+    "tailwindcss": "catalog:",
+    "vitest": "catalog:",
     "@rslib/core": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
