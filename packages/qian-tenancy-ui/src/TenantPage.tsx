@@ -53,14 +53,14 @@ function TenantContent({ client }: { client: PlatformClient }) {
     drawer.close(); setNotice({ message: i18n.t(key), error: false });
     refresh(); refreshButton.current?.focus();
   }
-  // 抽屉里的 409 由 TenantForm 就地提示，不会到这里；页面级 409 只来自行内动作。
-  function formError(error: unknown) {
+  // 页面级错误提示只来自行内的冻结、恢复；抽屉里的错误由 TenantForm 与 SchemaForm 在抽屉内提示。
+  function actionError(error: unknown) {
     if (error instanceof PlatformError && error.status === 409) setNotice({ message: conflict(error), error: true, status: 409 });
-    else if (!(error instanceof PlatformError && (error.detail.pointer || error.detail.errors))) setNotice({ ...issue(error), error: true });
+    else setNotice({ ...issue(error), error: true });
   }
   function create() {
     setNotice(null);
-    drawer.open({ title: i18n.t('tenant.create'), content: <TenantForm creating refresh={() => { drawer.close(); setNotice(null); refresh(); }} schema={createSchema} i18n={i18n} initialValues={{ isolation: 'row' }} testId="tenant-create-form" onError={formError} onSubmit={async (values) => {
+    drawer.open({ title: i18n.t('tenant.create'), content: <TenantForm creating refresh={() => { drawer.close(); setNotice(null); refresh(); }} schema={createSchema} i18n={i18n} initialValues={{ isolation: 'row' }} testId="tenant-create-form" onSubmit={async (values) => {
       await api.POST('/api/tenancy/tenants', { body: values as CreateRequest });
       completed('tenant.created');
     }} /> });
@@ -71,7 +71,7 @@ function TenantContent({ client }: { client: PlatformClient }) {
     drawer.open({ title, content: <Spinner label={i18n.t('common.loading')} /> });
     try {
       const quota = data(await api.GET('/api/tenancy/tenants/{id}/quota', { params: { path: { id: row.id } } }));
-      drawer.open({ title, content: <TenantForm refresh={() => { drawer.close(); setNotice(null); refresh(); }} key={row.id} schema={editSchema} i18n={i18n} initialValues={{ name: row.name, expectedRevision: row.revision, quotas: quota.limits }} testId="tenant-edit-form" onError={formError} onSubmit={async (values) => {
+      drawer.open({ title, content: <TenantForm refresh={() => { drawer.close(); setNotice(null); refresh(); }} key={row.id} schema={editSchema} i18n={i18n} initialValues={{ name: row.name, expectedRevision: row.revision, quotas: quota.limits }} testId="tenant-edit-form" onSubmit={async (values) => {
         await api.PUT('/api/tenancy/tenants/{id}', { params: { path: { id: row.id } }, body: values as UpdateRequest });
         completed('tenant.updated');
       }} /> });
@@ -94,7 +94,7 @@ function TenantContent({ client }: { client: PlatformClient }) {
   async function transition(row: Tenant, action: TenantAction) {
     setNotice(null);
     if (action === 'activate') {
-      drawer.open({ title: i18n.t('tenant.activateTitle'), content: <TenantForm refresh={() => { drawer.close(); setNotice(null); refresh(); }} schema={activateSchema} i18n={i18n} initialValues={{ trial: false }} onError={formError} onSubmit={async (values) => {
+      drawer.open({ title: i18n.t('tenant.activateTitle'), content: <TenantForm refresh={() => { drawer.close(); setNotice(null); refresh(); }} schema={activateSchema} i18n={i18n} initialValues={{ trial: false }} onSubmit={async (values) => {
         await api.POST('/api/tenancy/tenants/{id}:activate', { params: { path: { id: row.id } }, body: values as ActivateRequest });
         completed('tenant.changed');
       }} /> });
@@ -107,7 +107,7 @@ function TenantContent({ client }: { client: PlatformClient }) {
       if (action === 'suspend') await api.POST('/api/tenancy/tenants/{id}:suspend', { params: { path: { id: row.id } } });
       else await api.POST('/api/tenancy/tenants/{id}:resume', { params: { path: { id: row.id } } });
       setNotice({ message: i18n.t('tenant.changed'), error: false }); refresh(); refreshButton.current?.focus();
-    } catch (error) { formError(error); }
+    } catch (error) { actionError(error); }
     finally { setBusy(false); }
   }
   const columns: DataColumn<Tenant>[] = [
@@ -138,16 +138,21 @@ function TenantContent({ client }: { client: PlatformClient }) {
   </div>;
 }
 
-// 409 在抽屉里只提示一处：拦在 SchemaForm 之前，不再同时出现表单根错误与页面级提示。
+// 抽屉里的错误只在抽屉内提示一处，不报页面级提示：字段错误与其他 ErrorDetail 交给 SchemaForm；
+// 409 与连接失败拦在 SchemaForm 之前，换成页面文案或服务端原文，免得再叠一条表单根错误。
 function TenantForm({ creating = false, refresh, onSubmit, ...props }: ComponentProps<typeof SchemaForm> & { creating?: boolean; refresh(): void }) {
-  const [conflicted, setConflicted] = useState<string>();
+  const [failure, setFailure] = useState<{ message: string; conflict: boolean }>();
   return <div className="grid gap-4"><SchemaForm {...props} onSubmit={async (values, api) => {
-    setConflicted(undefined);
+    setFailure(undefined);
     try { await onSubmit?.(values, api); }
-    catch (error) { if (error instanceof PlatformError && error.status === 409) setConflicted(conflict(error, creating)); else throw error; }
+    catch (error) {
+      if (!(error instanceof PlatformError)) setFailure({ message: issue(error).message, conflict: false });
+      else if (error.status === 409) setFailure({ message: conflict(error, creating), conflict: true });
+      else throw error;
+    }
   }} />
-    {conflicted && <Alert tone="error" role="alert"><span>{conflicted}</span>
-      <Button variant="outline" className="mt-3" onClick={refresh}>{i18n.t('tenant.refresh')}</Button></Alert>}
+    {failure && <Alert tone="error" role="alert"><span>{failure.message}</span>
+      {failure.conflict && <Button variant="outline" className="mt-3" onClick={refresh}>{i18n.t('tenant.refresh')}</Button>}</Alert>}
   </div>;
 }
 
