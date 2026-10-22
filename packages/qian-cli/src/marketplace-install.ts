@@ -15,16 +15,16 @@ import {readInstalledState,readInstallFile,writeInstallFile,installObject,instal
 import {prepareComponentDelivery,type ComponentDelivery} from './component-delivery.js';
 import {resolvePackageDelivery,type PackageArtifactEvidence} from './package-delivery.js';
 import {installedPackageArtifacts,verifyInstalledPackageArtifacts} from './package-integrity.js';
-import {readHostEngineVersions,verifyComponentEngines,mergeEngineEvidence,type EngineEvidence} from './engine-compatibility.js';
+import {readHostEngineVersions,verifyComponentEngines,planEngineVerification,affectedEngineInstallations,type EnginePlan} from './engine-compatibility.js';
 import {doctorInstalledComponents} from './doctor.js';
 import {selectComponentSurfaces,surfaceName,type SurfaceName,type SurfaceSelection} from './surface-selection.js';
 
 export interface DeclarativeInstallOptions extends MarketplaceOptions {yes?:boolean;dryRun?:boolean;noCode?:boolean;surfaces?:readonly SurfaceName[];force?:boolean;resetConfig?:boolean;forceProfile?:boolean}
 export interface ComponentInstallRequest {reference:string;selection?:SurfaceSelection}
 export interface DeclarativeInstallResult {status:'planned'|'installed'|'unchanged'|'on-use';id:string;version:string;market:string;trust:'verified'|'unverified';files:FileRecord[];packages:{nuget:string[];npm:string[]};diagnostics:SurfaceDiagnostic[];lock?:InstallObject;note?:string;permissions?:JsonValue;secretReferences?:string[];defaultPrompt?:string[];nextSteps?:{kind:'secretRef'|'profile';reference?:string;profile?:string;message:string}[]}
-export interface BatchInstallResult {status:'planned'|'installed'|'unchanged'|'on-use';plugins:DeclarativeInstallResult[];diagnostics?:SurfaceDiagnostic[];verification?:ReturnType<typeof doctorInstalledComponents>[]}
+export interface BatchInstallResult {status:'planned'|'installed'|'unchanged'|'on-use';plugins:DeclarativeInstallResult[];diagnostics?:SurfaceDiagnostic[];verification?:ReturnType<typeof doctorInstalledComponents>[];enginePlan?:EnginePlan}
 interface PatchPlan {profile:string;definitionFile:string;definition:InstallObject;definitionChanged?:boolean;file:string;entries:JsonValue[];touched:Set<string>}
-interface Candidate {resolved:ResolvedMarketplacePlugin;manifest:InstallObject;delivery:ComponentDelivery;artifacts:PackageArtifactEvidence[];selection:SurfaceSelection;sourceArtifacts:PackageArtifactEvidence[];engineEvidence:EngineEvidence[];result:DeclarativeInstallResult;previous?:InstallObject;record?:InstallObject;replaceFiles:boolean;needsApproval:boolean}
+interface Candidate {resolved:ResolvedMarketplacePlugin;manifest:InstallObject;delivery:ComponentDelivery;artifacts:PackageArtifactEvidence[];selection:SurfaceSelection;sourceArtifacts:PackageArtifactEvidence[];result:DeclarativeInstallResult;previous?:InstallObject;record?:InstallObject;replaceFiles:boolean;needsApproval:boolean}
 
 function uniqueDiagnostics(values:readonly SurfaceDiagnostic[]):SurfaceDiagnostic[] {
  const seen=new Set<string>();return values.filter(value=>{const key=JSON.stringify([value.file,value.severity,value.error.errors]);if(seen.has(key))return false;seen.add(key);return true;});
@@ -114,7 +114,7 @@ export async function installMarketplacePlugins(references:readonly (string|Comp
    if(allowed?.length&&!allowed.includes(profile)&&!options.forceProfile)installFailure('argv','所选 profile 不在市场允许列表；核对计划后可显式 --force-profile。','SURFACE_PROFILE_DENIED');
   }
   collectPackageReferences([{id,packages:resolved.packages}]);
-  candidates.push({resolved,manifest,delivery,artifacts:[],selection,sourceArtifacts:[],engineEvidence:[],result,replaceFiles:false,needsApproval:resolved.policy.installation==='confirm'});
+  candidates.push({resolved,manifest,delivery,artifacts:[],selection,sourceArtifacts:[],result,replaceFiles:false,needsApproval:resolved.policy.installation==='confirm'});
  }
  const active=candidates.filter(candidate=>candidate.result.status!=='on-use');
  if(!active.length)return{status:'on-use',plugins:candidates.map(candidate=>candidate.result)};
@@ -125,7 +125,7 @@ export async function installMarketplacePlugins(references:readonly (string|Comp
   for(const candidate of active){
    if((candidate.resolved.packages.nuget.length||candidate.resolved.packages.npm.length)&&(!candidate.selection.noCode||candidate.delivery.composition)){
     const prepared=await resolvePackageDelivery(root,candidate.resolved,profile,options.forceProfile,!!candidate.selection.noCode);
-    candidate.resolved=prepared.resolved;candidate.delivery=prepared.delivery;candidate.engineEvidence=prepared.engineEvidence;
+    candidate.resolved=prepared.resolved;candidate.delivery=prepared.delivery;
     if(candidate.selection.noCode)candidate.sourceArtifacts=prepared.artifacts;else candidate.artifacts=prepared.artifacts;
    }
    const projected=selectComponentSurfaces(candidate.resolved,candidate.delivery,candidate.selection,profile,options.forceProfile);
@@ -252,12 +252,14 @@ export async function installMarketplacePlugins(references:readonly (string|Comp
    if(!changed.length){verifyInstalledPackages(workspace,afterReferences);verifyInstalledPackageArtifacts(workspace,afterArtifacts);}
   }
   const currentEngines=readHostEngineVersions(root,workspace);
+  const enginePlan=planEngineVerification(currentEngines,workspace,changed.length?packagePlan?.changes:undefined);
+  const pendingEngines=new Set<EnginePlan['pending'][number]>();
   for(const candidate of active){
-   const evidence=mergeEngineEvidence(currentEngines,candidate.engineEvidence);
-   for(const component of candidate.delivery.components)verifyComponentEngines(component.manifest,evidence,
+   for(const component of candidate.delivery.components)for(const engine of verifyComponentEngines(component.manifest,enginePlan.evidence,
     '.qian/plugins/'+candidate.result.id+'/'+(component.directory?component.directory+'/':'')+'.qian-plugin/plugin.json',
-    candidate.result.packages.npm.length>0&&changed.length>0);
+    enginePlan.pending))pendingEngines.add(engine);
   }
+  enginePlan.pending=[...pendingEngines];
   if(!changed.length){
    const verification=[doctorInstalledComponents(root,active.map(item=>item.result.id),profile,workspace)];
    const rejected=verification.flatMap(result=>result.diagnostics).filter(item=>item.severity==='error');if(rejected.length)throw new MarketplaceFailure(rejected);
@@ -285,7 +287,7 @@ export async function installMarketplacePlugins(references:readonly (string|Comp
    });
   }
   const profileDiagnostics=uniqueDiagnostics(diagnostics);
-  if(options.dryRun)return{status:'planned',plugins:candidates.map(candidate=>candidate.result),diagnostics:profileDiagnostics};
+  if(options.dryRun)return{status:'planned',plugins:candidates.map(candidate=>candidate.result),diagnostics:profileDiagnostics,enginePlan};
   if(changed.some(candidate=>candidate.needsApproval)&&!options.yes)installFailure('.qian/marketplace.json','安装或新增反向权限需要确认；先 --dry-run 查看计划，再显式 --yes。');
 
   const targets=new Map<string,Buffer>();
@@ -323,11 +325,16 @@ export async function installMarketplacePlugins(references:readonly (string|Comp
    for(const plan of patches.values())if(plan.touched.size){
     const checked=loadProfile({workingDirectory:root,profile:plan.profile,includeHomePatch:false});if(!checked.isValid)throw new MarketplaceFailure([...checked.diagnostics]);
    }
-   const verification=[...patches.values()].filter(plan=>plan.touched.size).map(plan=>doctorInstalledComponents(root,
-    changed.filter(candidate=>(candidate.record!.entries as JsonValue[]).some(entry=>installObject(entry).profile===plan.profile)).map(candidate=>candidate.result.id),plan.profile,workspace));
+   const affected=affectedEngineInstallations(root,afterPlugins,currentEngines,readHostEngineVersions(root,workspace));
+   for(const plan of patches.values())if(plan.touched.size){
+    const ids=affected.get(plan.profile)??new Set<string>();
+    for(const candidate of changed)if((candidate.record!.entries as JsonValue[]).some(entry=>installObject(entry).profile===plan.profile))ids.add(candidate.result.id);
+    affected.set(plan.profile,ids);
+   }
+   const verification=[...affected].map(([profile,ids])=>doctorInstalledComponents(root,[...ids],profile,workspace));
    const rejected=verification.flatMap(result=>result.diagnostics).filter(item=>item.severity==='error');if(rejected.length)throw new MarketplaceFailure(rejected);
    for(const candidate of changed)candidate.result.status='installed';
-   return{status:'installed' as const,plugins:candidates.map(candidate=>candidate.result),diagnostics:profileDiagnostics,verification};
+   return{status:'installed' as const,plugins:candidates.map(candidate=>candidate.result),diagnostics:profileDiagnostics,verification,enginePlan};
   });
  }catch(error){if(!transaction&&error instanceof PackageCommandFailure&&!error.terminationConfirmed)lease?.preserveProcess(error);throw error;}
  finally{if(preview&&!transaction?.hasPendingProcess&&!lease.hasPendingProcess)rmSync(preview,{recursive:true,force:true});lease.release();}

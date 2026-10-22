@@ -107,7 +107,7 @@ try{
     }else if(command==='remove')result=await removeMarketplacePlugins(references,{workingDirectory:cwd,profile:profile??'minimal',purge,dryRun});
     else{
       const installed=await installMarketplacePlugins(references,{...options,yes,dryRun,noCode,surfaces,force,resetConfig,forceProfile});
-      result=references.length===1?{...installed.plugins[0],diagnostics:[...installed.plugins[0].diagnostics,...installed.diagnostics??[]],...installed.verification?{verification:installed.verification}:{}}:installed;
+      result=references.length===1?{...installed.plugins[0],diagnostics:[...installed.plugins[0].diagnostics,...installed.diagnostics??[]],...installed.verification?{verification:installed.verification}:{},...installed.enginePlan?{enginePlan:installed.enginePlan}:{}}:installed;
     }
     process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':stringify(result,{lineWidth:0}));
     }

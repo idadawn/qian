@@ -28,11 +28,11 @@ S1-RT-011 已于 2026-10-16 验收（收口项见 [S1-RT-035](../../pm/tasks/S1-
 
 ## 安装收尾与版本核对
 
-安装在提交事务前对受影响组件执行 doctor 子集：比对锁定文件清单、重新校验组件表面与 engines。任一错误都回滚整批，幂等重跑也不能把末检失败报成成功。返回的 `verification` 明确列出检查、组件及 profile，`runtimeVerified: false` 表示没有执行或探测 Provider。profile 级诊断只出现在批次的 `diagnostics`，不复制到每个组件；单组件 CLI 输出把两层诊断合并一次。
+安装在提交事务前对受影响组件执行 doctor 子集：比对锁定文件清单、重新校验组件表面与 engines。若实际 Runtime 版本变化，还按安装锁中的清单和挂载记录纳入声明该引擎的既有组件及相关 profile，不扫描工作区其它目录。任一错误都回滚整批，幂等重跑也不能把末检失败报成成功。返回的 `verification` 明确列出检查、组件及 profile，`runtimeVerified: false` 表示没有执行或探测 Provider。profile 级诊断只出现在批次的 `diagnostics`，不复制到每个组件；单组件 CLI 输出把两层诊断合并一次。
 
 每个结果提供 `defaultPrompt` 和 `nextSteps`：列出仍需在宿主密钥提供者配置的 `secretRef://` 引用，以及清单/市场推荐的 profile。CLI 不解析密钥引用、不读取私钥、不执行组件入口，下一步提示不代表密钥已配置或服务已就绪。
 
-`engines.qian` 来自实际 `Qian.Runtime` / `@idadawn/qian-runtime`（兼容 `@qian/runtime`）包，`engines.kun` 来自 `Kun.Core`，`engines.yue` 来自 `@idadawn/yue-core`（兼容 `@yue/core`）。版本证据读取宿主 `project.assets.json` 与实际 npm 包；NuGet 计划还使用隔离预检的真实还原记录，提交前再以宿主最终版本核验。缺少证据时拒绝成功，npm 安装计划尚未得到的版本留待实际安装末检；CLI 自身版本不能作为宿主版本。范围遵循标准 SemVer，未显式许可的预发布版本不会被放行。`--no-code` 投影不再要求已移除的 Kun/UI 代码运行时，但保留的 qian 范围仍约束承载表面的 Runtime。
+`engines.qian` 来自实际 `Qian.Runtime` / `@idadawn/qian-runtime`（兼容 `@qian/runtime`）包，`engines.kun` 来自 `Kun.Core`，`engines.yue` 来自 `@idadawn/yue-core`（兼容 `@yue/core`）。版本证据读取宿主 `project.assets.json` 与实际 npm 包；预检按整批包计划判断：拟新增或升级的 Runtime 直接引用采用计划精确版本，未改变且精确钉定的宿主直接引用采用实际版本。候选包的隔离还原图不能覆盖宿主引用；可能随本次还原变化的传递 Runtime 在 `enginePlan.pending` 中列出，提交前必须以宿主最终还原结果核验。已确定版本仍在写入前检查；不兼容或末检缺少证据都会失败回滚。CLI 自身版本不能作为宿主版本。范围遵循标准 SemVer，未显式许可的预发布版本不会被放行。`--no-code` 投影不再要求已移除的 Kun/UI 代码运行时，但保留的 qian 范围仍约束承载表面的 Runtime。
 
 ```bash
 qian list --outdated
