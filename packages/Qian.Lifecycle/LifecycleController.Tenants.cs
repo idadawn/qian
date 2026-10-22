@@ -41,7 +41,14 @@ internal sealed partial class LifecycleController
             if (install is { State: TenantInstallStates.Installed }) return Plan.Done(install.View());
             if (install is { State: TenantInstallStates.Upgrading }) throw new QianErrorException(new QianError(LifecycleErrors.InProgress));
             string version;
-            if (install is { State: TenantInstallStates.Provisioning, TargetVersion: { } target }) version = target;
+            if (install is { State: TenantInstallStates.Provisioning, TargetVersion: { } target })
+            {
+                // 续跑沿用原目标版本，同样先过第二道门：两次尝试之间批准可能已被整份替换为更小的内容。未批准时停在 Provisioning，不认领执行记录。
+                var resumed = await db.Revisions.AsNoTracking().SingleOrDefaultAsync(row => row.PluginId == pluginId && row.Version == target, cancellationToken).ConfigureAwait(false)
+                    ?? throw Conflict("续跑的目标版本没有已安装的修订。");
+                await RequireApproval(db, resumed, cancellationToken).ConfigureAwait(false);
+                version = target;
+            }
             else
             {
                 var active = await db.Revisions.AsNoTracking().SingleOrDefaultAsync(row => row.PluginId == pluginId && row.State == PluginRevisionStates.Active, cancellationToken).ConfigureAwait(false)

@@ -8,6 +8,7 @@
     <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
     <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />

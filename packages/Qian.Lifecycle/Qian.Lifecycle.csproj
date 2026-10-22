@@ -7,6 +7,7 @@
     <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Events.Abstractions/Qian.Events.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Authz.Abstractions/Qian.Authz.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Audit.Abstractions/Qian.Audit.Abstractions.csproj" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Kun.EventBus" />
     <PackageReference Include="Kun.Mediator" />
