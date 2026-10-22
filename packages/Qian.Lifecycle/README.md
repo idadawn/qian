@@ -18,7 +18,7 @@
 - Registry 与 Lifecycle 的集成事件类型和领域事件处理器。
 - 信任根所在的配置节与秘密解析策略。
 - 可选的进程内钩子解析器 `LifecycleRuntimeOptions.Hooks`：按组件 ID 与精确版本返回 `IPluginLifecycleHooks`，组件没有钩子时返回 null。本包不从数据库或制品内容加载程序集。
-- 管理面端点（诊断与反向权限批准）需要宿主装配的权限判定端口（Kun `IPermissionChecker`），平台主体另需 Authz 的超管旁路；缺哪一个都 fail-closed 为 404。
+- 管理面端点（诊断与反向权限批准）需要宿主装配的权限判定端口（Kun `IPermissionChecker`），平台主体另需 Authz 的超管旁路；批准另需该租户 scope 可见的审计服务（`ctx.Audit()`），且 Lifecycle 的数据库登录须获审计同事务函数的执行权（`AuditTransactionAccess.CreateMigrationSql` 的生产方角色）。缺哪一个都 fail-closed 为 404。
 
 ```csharp
 builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(LifecycleDbContext.Schema));
@@ -85,7 +85,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - `EntitleAsync` 记录授权，由 `qian.entitlement`（S1-ENT-001）的授予调用。`policy.required` 的平台组件恒视为已授权。
 - `ProvisionAsync` 开通当前 Active 修订，执行 `tenant-provision` 钩子。权益之后还要核对反向权限批准，见下一节。
   - 已 Installed 时直接返回，不认领执行记录、不调钩子、不写记录。
-  - 钩子失败时停在 Provisioning，重试沿用原目标版本。
+  - 钩子失败时停在 Provisioning，重试沿用原目标版本；重试同样先核对反向权限批准（两次尝试之间批准可能已被收窄），未批准时仍停在 Provisioning，不认领执行记录。
   - Purged 之后重新开通会作废旧执行记录。
   - 开通不挂载。
 - `UpgradeAsync(from, to)` 用于升级，也用于租户级回切：
@@ -128,6 +128,11 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - 判定：路径里的租户须等于宿主已建立的租户上下文，路径只用来核对、不用来选择租户。调用者须是该租户已验证的用户或服务主体（无委托），并经宿主的权限判定端口持 `qian.lifecycle:install:approve`（默认授予租户 Owner 与 Admin）。平台主体只经 Authz 的超管显式旁路（运营代批，`approvedVia = superadmin`），由运营宿主先选定已验证的目标租户，旁路把 `bypass = superadmin` 记入该租户审计链。无权限、跨租户、委托、Agent、缺判定端口、未安装的版本都与不存在同为 404（R32）。
 - 内容只在判定之后校验。请求体读不成（含未知成员，例如租户字段）为 `INPUT_INVALID`，pointer 为 `#`；形状不对或不是该版本声明过的项也是 `INPUT_INVALID`，pointer 指向请求体中的那一项。
 - 批准人取已验证主体，不由调用方指定。响应带 `Cache-Control: private, no-store`。
+- 批准入审计链（ADR-009 D9.8）：每次写入（首次批准或整份替换）在同一个可串行化事务里向该租户审计链追加一条记录，审计写不进去或事务提交失败时两者都不留；内容不变的重复批准不写记录，也不记审计。
+  - 记录：能力 ID `qian.lifecycle/permissions.approve`、契约版本 `v1`、通道 `api`，主体即批准人（`user` 或 `service`），资源同判定资源 `lifecycle/install:{tenantId}/{pluginId}@{version}`，结果 `success`，发生时间即批准时间。
+  - 输入哈希是规范化本次内容（每类去重并按序数排序）的 SHA-256；载荷为 `{ pluginId, version, via, approved, previous }`，`via` 为渠道（`tenant` / `superadmin`），`previous` 是被替换的上一份内容，首次批准为 null。两份内容合起来超过审计载荷上限（64 KiB）时，`approved` / `previous` 只记 `{ sha256 }`。
+  - 运营代批同样写这条记录；超管旁路自己的判定审计由 Authz 另写。
+  - 同一租户并发写审计链时，可串行化冲突的一方换新会话重做整个批准（最多 5 次），仍冲突返回 409 `CONFLICT`。
 - 可信平台插件（例如秘密解析的审批来源）经 `GetApprovedPermissionsAsync` 读取批准记录，调用方负责权限。
 - 批准与诊断两个权限点都在 `plugins/qian.lifecycle/metadata/permissions.json` 声明，`metadata/roles.json` 默认授予租户 Owner 与 Admin；Authz 从注册表的预装快照编译。
 

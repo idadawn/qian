@@ -55,7 +55,7 @@ POST /api/customers 接收 idempotencyKey（UUID）和 name；租户来自验证
 
 这些是本机真实协议与数据库验收，未证明正式包安装、K3s 应用发布、真实 Qian Identity 管理员登录或完整 platform 已完成。
 
-能力目录联调中，三个参考请求显式声明 agent.expose 元数据，用于验证提示词和目录过滤。命令宿主的身份适配器接受服务与 Agent 两类机器主体：Agent 只用来验证目录、提示词与通用执行入口的过滤，REST 端点仍只收服务主体，S1 的 RBAC 与命令策略也不授予 Agent 权限；带 `act` 的委托令牌一律在认证阶段拒绝。这不开放 S1 Agent 身份签发或执行。平台目录/Registry 依赖仅加入验收宿主，独立客户应用不因此引用这些平台 Provider。
+能力目录联调中，三个参考请求显式声明 agent.expose 元数据，用于验证提示词和目录过滤。第四个能力 `customer.purge` 是 Agent 字段探针（S1-AGT-006）：每个 Agent 字段都取与前三个不同的非缺省值（destructive + deny、async task、requiredSecrets 非空、costTier high、requiresConfirmation true、expose false 等），只在 `crm.admin` scope 下可见，用来验证目录条目原样落库、不在读取时派生；S1 没有异步任务的执行器，调用一律 503 `UNAVAILABLE`，不删除任何数据。命令宿主的身份适配器接受服务与 Agent 两类机器主体：Agent 只用来验证目录、提示词与通用执行入口的过滤，REST 端点仍只收服务主体，S1 的 RBAC 与命令策略也不授予 Agent 权限；带 `act` 的委托令牌一律在认证阶段拒绝。这不开放 S1 Agent 身份签发或执行。平台目录/Registry 依赖仅加入验收宿主，独立客户应用不因此引用这些平台 Provider。
 
 ## 集成事件
 
@@ -116,7 +116,7 @@ T23 的具体宿主装配在测试工程的 `ProfileModeAssembly`，复用真实
 
 ## 唯一清单与平台可见性门
 
-本目录的 `.qian-plugin/plugin.json` 对应 `CrmPlugin`，允许 global / tenant，配置仅为空对象。`tools/*.json` 来自三个真实 `[Capability]` 请求；权限文件来自 `CrmPermissions`，角色模板仍是手写表面。代码字段、工具、权限与配置 Schema 经 `qian-plugin sync` 生成，CI 自动发现入口并检查漂移。
+本目录的 `.qian-plugin/plugin.json` 对应 `CrmPlugin`，允许 global / tenant，配置仅为空对象。`tools/*.json` 来自四个真实 `[Capability]` 请求（含上述探针）；权限文件来自 `CrmPermissions`，角色模板仍是手写表面。代码字段、工具、权限与配置 Schema 经 `qian-plugin sync` 生成，CI 自动发现入口并检查漂移。
 
 设置 `Qian:Profile=platform`，或由平台组合根显式登记 `PluginEndpointOptions` 后，参考宿主自己装配 `AddQianPluginEndpoints` / `UseQianPluginEndpoints`，创建、列表、详情三个端点都使用 `RequireQianPlugin`。Registry 的 scope 视图没有当前绑定、被 restrict 过滤或卸载后均返回 404；filter 还会拒绝遗漏中间件的接线。平台宿主仍须装配真实 Registry 及其上下文，不能用配置值冒充可见性。
 

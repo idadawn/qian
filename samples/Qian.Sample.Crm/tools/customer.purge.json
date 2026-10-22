@@ -1,0 +1,60 @@
+{
+  "name": "customer.purge",
+  "description": "清除当前租户的全部客户且不可恢复；只供租户管理员人工确认后发起，S1 只登记契约、不执行。",
+  "sideEffect": "destructive",
+  "policyHint": "deny",
+  "idempotent": true,
+  "async": "task",
+  "requiredScopes": [
+    "crm.admin"
+  ],
+  "requiredSecrets": [
+    "crm-archive-key"
+  ],
+  "dataClassification": "internal",
+  "costTier": "high",
+  "contractVersion": "crm-admin-v1",
+  "audit": true,
+  "agent": {
+    "expose": false,
+    "requiresConfirmation": true
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.sample.crm/customer.purge"
+  },
+  "requiredPermission": "qian.sample.crm:customer:write",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "idempotencyKey": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "idempotencyKey"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "purged": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "purged"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "6cfa7fcf811ff76f7eb0d54943ebf5e663afad3cb6b25c4a811601968176b00a",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.sample.crm"
+  }
+}

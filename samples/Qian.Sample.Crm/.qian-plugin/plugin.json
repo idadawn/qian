@@ -50,7 +50,8 @@
     "tools": [
       "tools/customer.create.json",
       "tools/customer.get.json",
-      "tools/customer.list.json"
+      "tools/customer.list.json",
+      "tools/customer.purge.json"
     ],
     "metadata": {
       "metadata/permissions.json": {

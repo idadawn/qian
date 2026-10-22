@@ -137,7 +137,7 @@
   "policy": {
     "tier": "system", "sandbox": "none", "authentication": "ON_INSTALL", "profiles": ["platform", "standalone"],
     "egress": ["oss-cn-hangzhou.example.internal:443"],
-    "permissions": { "platform": ["tenant:read", "audit:write"], "data": [{ "entity": "identity.member", "access": "r" }],
+    "permissions": { "platform": ["tenant:read", "audit:write"], "data": ["qian.identity.server:member"],
                      "secrets": [{ "name": "oss/*", "scope": "platform" }], "ui": { "connectSrc": [] } }
   },
   "scopes": ["global", "tenant"]
@@ -277,7 +277,7 @@
 | `profiles[]` | `string[]` | 否 | 推荐 / 允许的 profile；不在列表的 profile 安装需 `--force-profile` | S1 |
 | `required` | `boolean`，默认 `false` | 否 | `true` = 该组件的条目不可被任何 scope patch 禁用或遮蔽，`qian remove` 拒绝卸载（取代 v1 `alwaysEnabled`，R34）；只允许 `tier: system` | S1 |
 | `egress[]` | `string[]`，每项 `<host>[:<port>]`（host 可含 `*.` 前缀） | 否；连接器组件必填 | 允许的出网目标（R28）；为空 = 默认拒绝出网（NetworkPolicy / 出口代理）；`hooks.json`、`.mcp.json` 的 `url` 域名必须在其中 | S1 |
-| `permissions` | `{ platform[], data[], secrets[], ui{ connectSrc[] } }` | 否 | 反向权限，沿 v1 `permissions.*` 保留（含义见 `plugin-manifest.md` §3.2；v1 `permissions.egress` 升为 `policy.egress`）；安装时列出并批准，升级新增即重批。落点已裁决（R37） | S1 |
+| `permissions` | `{ platform[], data[], secrets[], ui{ connectSrc[] } }` | 否 | 反向权限，沿 v1 `permissions.*` 保留（含义见 `plugin-manifest.md` §3.2；v1 `permissions.egress` 升为 `policy.egress`）；形状以 permissions/v2 Schema 为准：`platform`、`data`、`ui.connectSrc` 为字符串数组（v1 的 `data` 对象形状 `{ entity, access }` 不再使用），`secrets` 项为 `{ name, scope: platform \| tenant \| dev }`（R120 ⑥）；开通时列出并批准，升级新增即重批（S1 口径见 §9.5）。落点已裁决（R37） | S1 |
 
 根对象 `additionalProperties: false`，接受 `^x-` 自定义字段。
 
@@ -1257,8 +1257,8 @@ npx qian@latest [--skill <name>]… [--agent <name>]… [--command <name>]… [-
 
 | 前缀 | 提供者 | 内容 |
 |---|---|---|
-| `/api/registry/*` | `qian.registry` | scope 视图 `GET /api/registry/scopes/{scopeKey}/entries[/{entryId}]`（R86；全树视图由 CLI `qian dump-config` 承担，S1 不设 HTTP 全树端点）、scope patch 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`，已交付单条 `{revision, patch}` 条件写入、过期修订 409 `CONFLICT`，S1-RT-029）、lock 与来源；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 原因码（`PLUGIN_NOT_MOUNTED` 等四个，R32 / R48），其他调用者 404 |
-| `/api/lifecycle/*` | `qian.lifecycle` | `mount` / `unmount` / `reload`（声明式表面）、滚动重启请求、`/api/lifecycle/diagnostics`（Pending / Failed / 环路） |
+| `/api/registry/*` | `qian.registry` | scope 视图 `GET /api/registry/scopes/{scopeKey}/entries[/{entryId}]`（R86；全树视图由 CLI `qian dump-config` 承担，S1 不设 HTTP 全树端点）、scope patch 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`，已交付单条 `{revision, patch}` 条件写入、过期修订 409 `CONFLICT`，S1-RT-029）、lock 与来源、组件版本的反向权限声明 `GET /api/registry/plugins/{pluginId}/versions/{version}/permissions`（五类取自已校验的制品清单快照，只认已过准入的制品；权限点复用 `qian.registry:scope:read`，注册表权限拆分时再单列，R120 ①）；对未挂载 / 被过滤的组件，持有 `qian.registry:scope:read` 的调用者得到 403 原因码（`PLUGIN_NOT_MOUNTED` 等四个，R32 / R48），其他调用者 404 |
+| `/api/lifecycle/*` | `qian.lifecycle` | `mount` / `unmount` / `reload`（声明式表面）、滚动重启请求、`/api/lifecycle/diagnostics`（Pending / Failed / 环路）；反向权限批准 `PUT / GET /api/lifecycle/tenants/{tenantId}/plugins/{pluginId}/versions/{version}/permissions`（R120）：请求体为五类批准内容、整份替换，只能批准该版本声明过的项；租户管理员持 `qian.lifecycle:install:approve`（默认授予 tenant.owner / tenant.admin），平台运营经 Authz 超管旁路代批，两类主体都要求路径租户等于宿主已建立的租户上下文，其余一律 404；批准记录在 Lifecycle 的租户表 `permission_approvals`（与权益是两道门，`qian.entitlement` 只管授予），每次写入与该租户审计链同事务（ADR-009 D9.8）；开通与升级在权益之后核对批准，目标版本没有自己的批准记录时沿用该租户对该组件最近一次的批准，升级只有新增项须重批（D7 的 S1 口径） |
 | `/api/capabilities/*` | `qian.capabilities` | 能力目录（工具、事件、实体），鉴权后按 scope 与权限过滤，响应为信封 `contracts/v0/capability-catalog`（`items`、`ttlMs`、`cacheScope: private`）；`/api/capabilities/openapi.json` 聚合 |
 | `POST /api/capabilities/{plugin}/{name}/invoke` | `qian.capabilities` | 通用执行入口（R75）：每次重做与目录同款的判定，不可见与不存在一样 404；请求体先按条目 `inputSchema`（JSON Schema 2020-12）校验，不符返回 400 `INPUT_INVALID`，`errors[]` 带输入 JSON Pointer；请求体读不成确定的 JSON 值（成员重名、孤立的 UTF-16 代理项、绝对值超过 decimal 范围约 7.9e28 的数）返回 400 `BAD_REQUEST`；写类能力可带 `Idempotency-Key`（UUID），同一主体、同一能力、同一键 24 小时内不再执行：回执保存了响应体时返回首次成功响应（`Idempotent-Replayed: true`），按回执策略（见表下）没有保存时返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`；键相同而输入不同、或同键请求仍在执行，返回 409 `CONFLICT`，失败不留回执，只读能力（`sideEffect: read`）忽略该键；Agent 主体只见 `agent.expose: true` 的能力，S1 不开放 Agent 执行与 Actor 委托；ApiExplorer 不列此通用模板，`openapi.json` 为每个可见能力列出具体路径与 Schema |
 | `/api/kernel/*` | 别名 | v1 路径在 S1 内保留为别名，响应带 `Deprecation` 头与 `Link: rel="successor-version"`，S2 移除 |

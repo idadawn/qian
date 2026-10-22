@@ -16,11 +16,13 @@ using Npgsql;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Security;
+using Qian.Audit;
 using Qian.Config;
 using Qian.Config.Apollo;
 using Qian.Config.Secrets;
 using Qian.Data;
 using Qian.Events;
+using Qian.Plugin.Sdk;
 using Qian.Profiles;
 using Qian.Profiles.Abstractions;
 using Qian.Registry;
@@ -32,7 +34,7 @@ using Qian.Testing.Containers;
 
 namespace Qian.Lifecycle.Tests;
 
-// 真实平台插件树：Data + Config（宿主配置根 + K8s Secret 挂载解析）+ Registry（PostgreSQL）+ Lifecycle（包内迁移建表）。
+// 真实平台插件树：Data + Config（宿主配置根 + K8s Secret 挂载解析）+ Registry（PostgreSQL）+ Audit（反向权限批准与它同事务入链）+ Lifecycle（包内迁移建表）。
 // 信任根与执行器配置走宿主配置根，测试可在运行中改写（模拟 Apollo 发布）；时间由可调的 TimeProvider 给出。
 internal sealed class LifecycleHost : IAsyncDisposable
 {
@@ -74,6 +76,7 @@ internal sealed class LifecycleHost : IAsyncDisposable
         builder.Services.AddSingleton(ErrorCatalog.CreateDefault());
         builder.Services.AddQianData<RegistryDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(RegistryDbContext.Schema));
         builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(LifecycleDbContext.Schema));
+        builder.Services.AddQianData<AuditDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuditDbContext.Schema));
         // 生命周期上下文随包带迁移：与 --migrate-only 迁移任务同一入口。迁移属主与生产迁移任务一样是受限角色（NOSUPERUSER / NOBYPASSRLS），
         // 只多一项建 schema 的权限；在线连接是受 RLS 约束的应用角色。
         var owner = "qian_lifecycle_owner_" + Guid.NewGuid().ToString("N")[..8];
@@ -145,10 +148,19 @@ internal sealed class LifecycleHost : IAsyncDisposable
 
     private static async Task Prepare(IHost host, PostgresFixture postgres, CancellationToken ct)
     {
-        string registry;
-        using (var scope = host.Services.CreateScope()) registry = scope.ServiceProvider.GetRequiredService<RegistryDbContext>().Database.GenerateCreateScript();
-        await Admin(postgres, "DROP SCHEMA IF EXISTS plugin_qian_registry CASCADE; DROP SCHEMA IF EXISTS plugin_qian_lifecycle CASCADE;\n" + registry +
-            "\nGRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;", ct);
+        string registry, audit;
+        using (var scope = host.Services.CreateScope())
+        {
+            registry = scope.ServiceProvider.GetRequiredService<RegistryDbContext>().Database.GenerateCreateScript();
+            audit = scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.GenerateCreateScript();
+        }
+        await Admin(postgres, "DROP SCHEMA IF EXISTS plugin_qian_registry CASCADE; DROP SCHEMA IF EXISTS plugin_qian_lifecycle CASCADE; DROP SCHEMA IF EXISTS plugin_qian_audit CASCADE;\n" +
+            registry + audit + "\nGRANT USAGE ON SCHEMA plugin_qian_registry, plugin_qian_audit TO qian_app; " +
+            "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry, plugin_qian_audit TO qian_app;", ct);
+        // 审计的同事务入口：函数属主是独立受限的 NOLOGIN 角色，在线应用角色只获函数执行权（与生产迁移同一份 SQL）。
+        var writer = "qian_audit_owner_" + Guid.NewGuid().ToString("N")[..8];
+        await Admin(postgres, $"CREATE ROLE \"{writer}\" NOLOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;", ct);
+        await Admin(postgres, "BEGIN;" + AuditTransactionAccess.CreateMigrationSql(writer, PostgresFixture.AppRoleName) + "COMMIT;", ct);
         var reports = await host.Services.GetRequiredService<IDataMigrator>().MigrateAsync(ct);
         Assert.Equal(["20261015081937_LifecycleStateMachines", "20261021194607_PermissionApprovals"], Assert.Single(reports, report => report.ContextType == typeof(LifecycleDbContext)).Applied);
         await Admin(postgres, "GRANT USAGE ON SCHEMA plugin_qian_lifecycle TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_lifecycle TO qian_app;", ct);
@@ -174,6 +186,7 @@ internal sealed class LifecycleHost : IAsyncDisposable
             Resolve = entry => definitions[entry.Id] with { Entry = new PluginEntry(entry.Id, entry.Plugin.Split('@')[0], entry.Plugin.Split('@')[1], ScopeKey.Global, entry.Layer, entry.Config) }
         });
         Add("registry", "qian.registry", registry, [RegistryDefinition.Key], new { store = "pg" });
+        Add("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]);
         Add("lifecycle", "qian.lifecycle", new LifecyclePlugin(new LifecycleRuntimeOptions { Hooks = hooks }), [LifecycleDefinition.Key], lifecycleConfig);
         // 组件配置按仓库交付的 config.schema.json 校验。
         foreach (var id in new[] { "registry", "lifecycle" })

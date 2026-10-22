@@ -1,6 +1,12 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Kun.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
+using Qian.Audit;
 using Qian.Authz.Abstractions;
 using Qian.Identity.Abstractions;
 using Qian.Runtime;
@@ -10,8 +16,8 @@ using Qian.Testing.Containers;
 namespace Qian.Lifecycle.Tests;
 
 // S1-AGT-002 验收 3（UT）：清单 policy.permissions 与 policy.egress 五类随制品快照落库，经注册表端口按摘要读出；租户管理员批准 API（S1 只有 API），
-// 以及开通、升级在权益之后的第二道门。真实 PostgreSQL、Registry 与 Lifecycle；宿主的权限判定端口与 Authz 超管旁路是替身，
-// 真实 RBAC、JWT 与 HTTP 见 Qian.Sample.Crm.Tests 的 PermissionApprovalHttpTests。
+// 以及开通、升级在权益之后的第二道门。真实 PostgreSQL、Registry、Audit 与 Lifecycle；宿主的权限判定端口与 Authz 超管旁路是替身，
+// 真实 RBAC、JWT 与 HTTP 见 Qian.Sample.Crm.Tests 的 PermissionApprovalHttpTests。S1-AGT-006 补：批准入租户审计链（ADR-009 D9.8）、开通续跑核对批准。
 public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private const string TenantA = "01900000-0000-7000-8000-00000000000a";
@@ -27,6 +33,11 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
     private static readonly string[] TenantRead = ["tenant:read"];
     private static readonly string[] TenantReadNotify = ["tenant:read", "notify:send"];
     private static readonly string[] TenantScope = ["tenant"];
+    // 规范化的批准内容（每类去重并按序数排序，秘密按名称再按 scope），即审计载荷里的 approved / previous 与输入哈希的原文。
+    private const string PartialCanonical = """{"platform":["tenant:read"],"data":[],"egress":["*.files.example.test:443","api.example.test"],"secrets":[],"ui":{"connectSrc":[]}}""";
+    private const string FullCanonical = """{"platform":["notify:send","tenant:read"],"data":["qian.sample.crm:customer"],"egress":["*.files.example.test:443","api.example.test"]""" +
+        ""","secrets":[{"name":"db/token","scope":"tenant"},{"name":"oss/*","scope":"platform"}],"ui":{"connectSrc":["https://api.example.test"]}}""";
+    private const string ApprovalAuditCapability = "qian.lifecycle/permissions.approve";
 
     [Fact]
     public async Task 五类反向权限随制品快照落库并可读_未批准的开通被拒且不写记录_逐项批准后开通_重复批准不改记录()
@@ -134,6 +145,7 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
                 Grants(["tenant:read", "tenant:write"], [], ["other.example.test"], [new SecretGrant("oss/*", "tenant")], []), approver, Ct).AsTask())));
         }
         Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_lifecycle.permission_approvals", Ct));
+        Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
     }
 
     [Fact]
@@ -152,6 +164,9 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
         using (host.Tenant.BeginScope(TenantA))
             approval = await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", grants, new TestUser("root", null), Ct);
         Assert.Equal((PermissionApprovalChannels.Superadmin, "root"), (approval.ApprovedVia, approval.ApprovedBy));
+        // 代批同样以批准条目入该租户审计链：主体是平台运营，渠道 superadmin（旁路自己的判定审计由 Authz 另写，替身不写）。
+        using (host.Tenant.BeginScope(TenantA))
+            AssertApproval(Assert.Single(await ApprovalAudit(host)), "user", "root", approval.ApprovedAt, PermissionApprovalChannels.Superadmin, FullCanonical, null);
         var access = Assert.Single(bypass.Accesses);
         Assert.Equal(("root", (string?)null, LifecycleDefinition.InstallApprovePermission, TenantA, "lifecycle/install:" + TenantA + "/" + Plugin + "@1.0.0", "api", TenantA),
             (access.Access.Subject.Id, access.Access.Subject.TenantId, access.Access.Permission, access.Access.TenantId, access.Access.Resource, access.Access.Channel, access.Context));
@@ -212,12 +227,157 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
         Assert.Equal("1.1.0", (await host.Lifecycle.UpgradeAsync(TenantA, Plugin, "1.0.2", "1.1.0", "operator", Ct)).Version);
         // 租户级回切到 1.0.0：它有自己的批准记录，照常回切。
         Assert.Equal("1.0.0", (await host.Lifecycle.UpgradeAsync(TenantA, Plugin, "1.1.0", "1.0.0", "operator", Ct)).Version);
-        static (string, string?, string?) Pick3(TenantPluginInstallView view) => (view.State, view.Version, view.TargetVersion);
     }
 
-    private async Task<LifecycleHost> Start(Permissions permissions)
+    [Fact]
+    public async Task 批准与整份替换写入租户审计链_记批准人主体类型渠道与本次上一次内容_同一内容重复批准不再记()
     {
-        var host = await LifecycleHost.StartAsync(postgres, services: services => services.AddSingleton<IPermissionChecker>(permissions), ct: Ct);
+        await using var host = await Start(new Permissions(("approver", TenantA), ("service-admin", TenantA), ("other-admin", TenantA)));
+        await Install(host, "1.0.0", Policy(FullPermissions, FullEgress));
+        using var scope = host.Tenant.BeginScope(TenantA);
+        // 首次批准：上一次为 null；批准人是已验证的用户主体，渠道为租户管理员。
+        var partial = await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", Grants(platform: ["tenant:read"], egress: FullEgress), new TestUser("approver", TenantA), Ct);
+        AssertApproval(Assert.Single(await ApprovalAudit(host)), "user", "approver", partial.ApprovedAt, PermissionApprovalChannels.Tenant, PartialCanonical, null);
+        // 整份替换（服务主体批准）：新条目接在链上，上一次是被替换的那一份。
+        host.Time.Now = host.Time.Now.AddMinutes(1);
+        var full = await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", FullGrants(), new TestUser("service-admin", TenantA, PrincipalKind.Service), Ct);
+        var entries = await ApprovalAudit(host);
+        Assert.Equal(2, entries.Length);
+        Assert.Equal(entries[0].Sequence + 1, entries[1].Sequence);
+        AssertApproval(entries[1], "service", "service-admin", full.ApprovedAt, PermissionApprovalChannels.Tenant, FullCanonical, PartialCanonical);
+        // 同一内容（顺序不同）由另一位管理员重复批准：记录不变，也不再记审计。
+        host.Time.Now = host.Time.Now.AddMinutes(1);
+        await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", Grants([.. FullPermissionsPlatform.Reverse()], ["qian.sample.crm:customer"], FullEgress,
+            [new SecretGrant("oss/*", "platform"), new SecretGrant("db/token", "tenant")], ["https://api.example.test"]), new TestUser("other-admin", TenantA), Ct);
+        Assert.Equal(2, (await ApprovalAudit(host)).Length);
+        Assert.Equal((full.ApprovedAt, "service-admin"), Pick((await host.Lifecycle.GetPermissionApprovalAsync(TenantA, Plugin, "1.0.0", new TestUser("approver", TenantA), Ct))!));
+    }
+
+    [Fact]
+    public async Task 批准与审计同一事务_审计写入失败或提交失败时两者都不留_宿主没有审计时与不存在同为404()
+    {
+        await using var host = await Start(new Permissions(("approver", TenantA)));
+        await Install(host, "1.0.0", Policy(FullPermissions, FullEgress));
+        var approver = new TestUser("approver", TenantA);
+        var narrower = Grants(platform: ["tenant:read"], egress: FullEgress);
+        using var scope = host.Tenant.BeginScope(TenantA);
+        var approved = await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", FullGrants(), approver, Ct);
+        host.Time.Now = host.Time.Now.AddMinutes(1);
+        // 审计条目写不进去：批准随同一事务回滚，记录仍是上一份。
+        await LifecycleHost.Admin(postgres, "CREATE FUNCTION plugin_qian_audit.reject_approval() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced audit failure'; END $$; " +
+            "CREATE TRIGGER reject_approval BEFORE INSERT ON plugin_qian_audit.audit_entries FOR EACH ROW EXECUTE FUNCTION plugin_qian_audit.reject_approval();", Ct);
+        Assert.Equal("forced audit failure", Failure(await Assert.ThrowsAnyAsync<Exception>(() =>
+            host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", narrower, approver, Ct).AsTask())).MessageText);
+        await LifecycleHost.Admin(postgres, "DROP TRIGGER reject_approval ON plugin_qian_audit.audit_entries; DROP FUNCTION plugin_qian_audit.reject_approval();", Ct);
+        Assert.Equal((approved.ApprovedAt, "approver"), Pick((await host.Lifecycle.GetPermissionApprovalAsync(TenantA, Plugin, "1.0.0", approver, Ct))!));
+        // 审计已追加、批准在提交时失败：审计条目随同一事务回滚，链上不留孤儿条目。
+        await LifecycleHost.Admin(postgres, "CREATE FUNCTION plugin_qian_lifecycle.reject_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced commit failure'; END $$; " +
+            "CREATE CONSTRAINT TRIGGER reject_commit AFTER INSERT OR UPDATE ON plugin_qian_lifecycle.permission_approvals DEFERRABLE INITIALLY DEFERRED FOR EACH ROW " +
+            "EXECUTE FUNCTION plugin_qian_lifecycle.reject_commit();", Ct);
+        Assert.Equal("forced commit failure", Failure(await Assert.ThrowsAnyAsync<Exception>(() =>
+            host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", narrower, approver, Ct).AsTask())).MessageText);
+        await LifecycleHost.Admin(postgres, "DROP TRIGGER reject_commit ON plugin_qian_lifecycle.permission_approvals; DROP FUNCTION plugin_qian_lifecycle.reject_commit();", Ct);
+        Assert.Equal((approved.ApprovedAt, "approver"), Pick((await host.Lifecycle.GetPermissionApprovalAsync(TenantA, Plugin, "1.0.0", approver, Ct))!));
+        AssertApproval(Assert.Single(await ApprovalAudit(host)), "user", "approver", approved.ApprovedAt, PermissionApprovalChannels.Tenant, FullCanonical, null);
+        // 宿主撤下审计：批准与缺判定端口一样 fail-closed 为 404，不写记录。
+        await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
+        await AssertCode(PlatformErrors.NotFound, () => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", narrower, approver, Ct).AsTask());
+        Assert.Equal((approved.ApprovedAt, "approver"), Pick((await host.Lifecycle.GetPermissionApprovalAsync(TenantA, Plugin, "1.0.0", approver, Ct))!));
+        Assert.Equal(1, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
+    }
+
+    [Fact]
+    public async Task 两份批准内容合起来超出审计载荷上限时只记各自的SHA256_批准照常生效()
+    {
+        await using var host = await Start(new Permissions(("approver", TenantA)));
+        // 160 项、每项 483 字符：单是本次内容就超过 64 KiB。
+        var platform = Enumerable.Range(0, 160).Select(index => "platform:" + index.ToString("D3", System.Globalization.CultureInfo.InvariantCulture) + ":" + new string('x', 470)).ToArray();
+        await Install(host, "1.0.0", Policy(new { platform }, null));
+        var approver = new TestUser("approver", TenantA);
+        using var scope = host.Tenant.BeginScope(TenantA);
+        var everything = await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", Grants(platform: platform), approver, Ct);
+        Assert.Equal(platform, everything.Approved.Platform);
+        var large = "{\"platform\":[" + string.Join(",", platform.Select(item => "\"" + item + "\"")) + "],\"data\":[],\"egress\":[],\"secrets\":[],\"ui\":{\"connectSrc\":[]}}";
+        AssertDigests(Assert.Single(await ApprovalAudit(host)), large, null);
+        // 收窄到一项：本次内容很小，但带上被替换的上一份仍超限，两份都只记哈希。
+        host.Time.Now = host.Time.Now.AddMinutes(1);
+        await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", Grants(platform: [platform[0]]), approver, Ct);
+        var narrowed = "{\"platform\":[\"" + platform[0] + "\"],\"data\":[],\"egress\":[],\"secrets\":[],\"ui\":{\"connectSrc\":[]}}";
+        AssertDigests((await ApprovalAudit(host))[1], narrowed, large);
+
+        static void AssertDigests(AuditChainEntry entry, string approved, string? previous)
+        {
+            Assert.Equal(Sha256(approved), entry.Record.InputHash);
+            var expected = JsonSerializer.SerializeToElement(new
+            {
+                pluginId = Plugin, version = "1.0.0", via = PermissionApprovalChannels.Tenant, approved = new { sha256 = Sha256(approved) },
+                previous = previous is null ? null : new { sha256 = Sha256(previous) }
+            });
+            Assert.True(JsonElement.DeepEquals(expected, entry.Record.Payload), entry.Record.Payload.GetRawText());
+        }
+    }
+
+    [Fact]
+    public async Task 同一租户的两次批准同时提交_审计链冲突的一方换新会话重做_两份批准与对应审计都在()
+    {
+        var barrier = new SaveBarrier();
+        await using var host = await Start(new Permissions(("approver", TenantA)),
+            services: services => services.ConfigureDbContext<LifecycleDbContext>((_, options) => options.AddInterceptors(barrier)));
+        await Install(host, "1.0.0", Policy(new { platform = TenantRead }, null));
+        await Install(host, "1.0.0", Policy(new { platform = TenantRead }, null), "acme.second");
+        var approver = new TestUser("approver", TenantA);
+        using var scope = host.Tenant.BeginScope(TenantA);
+        // 链上先有一条：两次并发追加要推进同一个已存在的链头。
+        await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", Grants(platform: ["tenant:read"]), approver, Ct);
+        // 两次批准（不同组件，安装锁不同）各自取得快照后在保存处会合：先提交的一方推进链头，另一方追加时撞上可串行化冲突，只能从新会话重做。
+        barrier.Armed = true;
+        var views = await Task.WhenAll(
+            Task.Run(() => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", Grants(), approver, Ct).AsTask(), Ct),
+            Task.Run(() => host.Lifecycle.ApprovePermissionsAsync(TenantA, "acme.second", "1.0.0", Grants(platform: ["tenant:read"]), approver, Ct).AsTask(), Ct));
+        Assert.True(barrier.Arrivals >= 3, "没有发生重做：" + barrier.Arrivals);
+        Assert.Empty(views[0].Approved.Platform); Assert.Equal(TenantRead, views[1].Approved.Platform);
+        var entries = await ApprovalAudit(host);
+        Assert.Equal(3, entries.Length);
+        Assert.Equal(["acme.connector@1.0.0", "acme.connector@1.0.0", "acme.second@1.0.0"],
+            entries.Select(entry => entry.Record.Resource!.Split('/')[^1]).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task 开通续跑先重新核对批准_两次尝试之间收窄批准后续跑被拒且不认领执行记录_重批后续跑完成开通()
+    {
+        var hooks = new FlakyProvision();
+        await using var host = await Start(new Permissions(("approver", TenantA)), (plugin, _) => plugin == Plugin ? hooks : null);
+        await Install(host, "1.0.0", Policy(FullPermissions, FullEgress));
+        await host.Lifecycle.EntitleAsync(TenantA, Plugin, "operator", Ct);
+        var approver = new TestUser("approver", TenantA);
+        using (host.Tenant.BeginScope(TenantA)) await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", FullGrants(), approver, Ct);
+        // 第一次开通：钩子失败，停在 Provisioning(1.0.0)，执行记录失败、已尝试一次。
+        await AssertCode(LifecycleErrors.HookFailed, () => host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct).AsTask());
+        Assert.Equal((TenantInstallStates.Provisioning, (string?)null, (string?)"1.0.0"), Pick3((await host.Lifecycle.GetInstallAsync(TenantA, Plugin, Ct))!));
+        Assert.Equal((LifecycleRunStates.Failed, 1), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct))));
+        // 两次尝试之间，批准被整份替换为更小的内容。
+        using (host.Tenant.BeginScope(TenantA))
+            await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", Grants(platform: ["tenant:read"], egress: FullEgress), approver, Ct);
+        // 续跑先过第二道门：缺失项写进错误，仍停在 Provisioning，执行记录不被认领，钩子没有再执行。
+        var denied = await AssertCode(LifecycleErrors.PermissionsUnapproved, () => host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct).AsTask());
+        Assert.Equal("platform notify:send; data qian.sample.crm:customer; secrets tenant:db/token, platform:oss/*; ui.connectSrc https://api.example.test", denied.Args["missing"]);
+        Assert.Equal((TenantInstallStates.Provisioning, (string?)null, (string?)"1.0.0"), Pick3((await host.Lifecycle.GetInstallAsync(TenantA, Plugin, Ct))!));
+        Assert.Equal((LifecycleRunStates.Failed, 1), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct))));
+        Assert.Equal(1, hooks.Calls);
+        // 重新批准后续跑沿用原目标版本：钩子第二次执行成功，开通完成。
+        using (host.Tenant.BeginScope(TenantA)) await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", FullGrants(), approver, Ct);
+        Assert.Equal((TenantInstallStates.Installed, (string?)"1.0.0", (string?)null), Pick3(await host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct)));
+        Assert.Equal((LifecycleRunStates.Succeeded, 2), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct))));
+        Assert.Equal(2, hooks.Calls);
+    }
+
+    private async Task<LifecycleHost> Start(Permissions permissions, Func<string, string, IPluginLifecycleHooks?>? hooks = null, Action<IServiceCollection>? services = null)
+    {
+        var host = await LifecycleHost.StartAsync(postgres, hooks: hooks, services: collection =>
+        {
+            collection.AddSingleton<IPermissionChecker>(permissions);
+            services?.Invoke(collection);
+        }, ct: Ct);
         host.Trust(0, "k1", Key, host.Time.Now.AddDays(-1));
         return host;
     }
@@ -250,14 +410,82 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
     private static PermissionGrants Grants(string[]? platform = null, string[]? data = null, string[]? egress = null, SecretGrant[]? secrets = null, string[]? connectSrc = null) =>
         new(platform ?? [], data ?? [], egress ?? [], secrets ?? [], new UiGrants(connectSrc ?? []));
 
+    private static readonly string[] FullPermissionsPlatform = ["tenant:read", "notify:send"];
+    private static PermissionGrants FullGrants() => Grants(FullPermissionsPlatform, ["qian.sample.crm:customer"], FullEgress,
+        [new SecretGrant("db/token", "tenant"), new SecretGrant("oss/*", "platform")], ["https://api.example.test"]);
+
+    // 当前租户链上的批准条目（调用方已进入租户上下文）；读之前先验整条链。
+    private static async Task<AuditChainEntry[]> ApprovalAudit(LifecycleHost host)
+    {
+        var audit = host.Runtime.GetContext("audit", ScopeKey.Global).Audit();
+        Assert.True((await audit.VerifyAsync(Ct)).Valid);
+        return [.. (await audit.ReadAsync(0, 100, cancellationToken: Ct)).Where(entry => entry.Record.CapabilityId == ApprovalAuditCapability)];
+    }
+
+    // 批准条目：租户链、主体即批准人、资源同判定资源、通道 api；输入哈希是规范化本次内容的 SHA-256，载荷带组件、版本、渠道与本次、上一次的内容。
+    private static void AssertApproval(AuditChainEntry entry, string actorType, string actor, DateTimeOffset approvedAt, string via, string approved, string? previous)
+    {
+        var record = entry.Record;
+        Assert.Equal((TenantA, actorType, actor, (string?)null, ApprovalAuditCapability, "v1", "api", (string?)("lifecycle/install:" + TenantA + "/" + Plugin + "@1.0.0"), "success", approvedAt),
+            (record.TenantId, record.ActorType, record.ActorId, record.OnBehalfOf, record.CapabilityId, record.ContractVersion, record.Channel, record.Resource, record.Result, record.OccurredAt));
+        Assert.Equal(Sha256(approved), record.InputHash);
+        using var current = JsonDocument.Parse(approved);
+        using var before = previous is null ? null : JsonDocument.Parse(previous);
+        var expected = JsonSerializer.SerializeToElement(new { pluginId = Plugin, version = "1.0.0", via, approved = current.RootElement, previous = before?.RootElement });
+        Assert.True(JsonElement.DeepEquals(expected, record.Payload), record.Payload.GetRawText());
+    }
+
+    private static string Sha256(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
+
+    private static PostgresException Failure(Exception error)
+    {
+        for (var current = (Exception?)error; current is not null; current = current.InnerException)
+            if (current is PostgresException postgres) return postgres;
+        Assert.Fail("期望数据库异常：" + error);
+        return null!;
+    }
+
     private static string[] Pointers(QianError error) => [.. error.Errors!.Select(field => field.Pointer)];
     private static (string, string?) Pick(TenantPluginInstallView view) => (view.State, view.Version);
+    private static (DateTimeOffset, string) Pick(PermissionApprovalView view) => (view.ApprovedAt, view.ApprovedBy);
+    private static (string, string?, string?) Pick3(TenantPluginInstallView view) => (view.State, view.Version, view.TargetVersion);
+    private static (string, int) PickRun(LifecycleRunView run) => (run.Status, run.Attempts);
 
     private static async Task<QianError> AssertCode(ErrorCode code, Func<Task> action)
     {
         var error = await Assert.ThrowsAsync<QianErrorException>(action);
         Assert.Equal(code.Code, error.Error.Code.Code);
         return error.Error;
+    }
+
+    // 第一次开通钩子失败，之后成功；记下开通钩子的调用次数。
+    private sealed class FlakyProvision : IPluginLifecycleHooks
+    {
+        private int _calls;
+        internal int Calls => Volatile.Read(ref _calls);
+        public ValueTask<JsonElement?> InvokeAsync(LifecycleHookContext context, CancellationToken cancellationToken)
+        {
+            if (context.Hook == LifecycleHooks.TenantProvision && Interlocked.Increment(ref _calls) == 1) throw new QianErrorException(new QianError(PlatformErrors.Unavailable));
+            return ValueTask.FromResult<JsonElement?>(null);
+        }
+    }
+
+    // 武装后，前两次带批准记录的保存互相等待（两个事务都已取得快照），之后的保存直接通过；Arrivals 计入全部这类保存。
+    private sealed class SaveBarrier : SaveChangesInterceptor
+    {
+        private int _arrivals;
+        private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal bool Armed { get; set; }
+        internal int Arrivals => Volatile.Read(ref _arrivals);
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (Armed && eventData.Context?.ChangeTracker.Entries<PermissionApprovalRow>().Any() == true && Interlocked.Increment(ref _arrivals) <= 2)
+            {
+                if (Volatile.Read(ref _arrivals) == 2) _ready.TrySetResult();
+                await _ready.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            }
+            return result;
+        }
     }
 
     // 已由身份层校验的主体快照；tenant 为 null 表示平台主体。

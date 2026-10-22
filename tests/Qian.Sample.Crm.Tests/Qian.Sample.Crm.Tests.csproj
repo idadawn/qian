@@ -12,8 +12,6 @@
     <ProjectReference Include="../../packages/Qian.Lifecycle.AspNetCore/Qian.Lifecycle.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
-    <!-- S1-AGT-002：CI 同一个 qian-plugin 工具进程对实际程序集 sync，取打包时的工具描述哈希。 -->
-    <ProjectReference Include="../../tools/Qian.Plugin.Tool/Qian.Plugin.Tool.csproj" />
     <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="xunit.v3" />

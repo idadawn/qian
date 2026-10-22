@@ -344,7 +344,7 @@ audit:
 | `components.service` | `IDeploymentExecutor`、`qian-gateway` | Kustomize/Helm 片段、Deployment 资源与探针、YARP 路由与集群、契约一致性探测 | S1 |
 | `components.ui` | `qian.shell` | `loadRemote` 目标、`engines.yue` 校验、沙箱模式 | S1 |
 | `components.packages / functions / connector` | `qian.metadata`、`qian.wasm-runtime`、`qian.connector-runtime` | 元数据实例化计划、Wasm 限额、连接器映射 | S2 / S2 / S3 |
-| `permissions.platform / data` | `qian.authz`、`qian.entitlement`（批准记录） | 反向权限审批、跨插件数据访问白名单 | S1 |
+| `permissions.platform / data` | `qian.authz`、`qian.lifecycle`（批准记录，租户表 `permission_approvals`；`qian.entitlement` 只管授予，R120 ②） | 反向权限审批、跨插件数据访问白名单 | S1 |
 | `permissions.egress / ui.connectSrc` | `IDeploymentExecutor`、`qian.shell` | NetworkPolicy / 出口代理规则；CSP | S1 |
 | `permissions.secrets` | `qian.config` `ISecretResolver` | 允许解析的 secretRef 范围 | S1 |
 | `tenancy` | `qian.kernel`、`qian.tenancy`、`qian.data` | 租户级状态机是否启用、隔离策略装配 | S1 |
@@ -373,7 +373,7 @@ audit:
 | T2 | `requiredScopes` 的命名：`<plugin id>:<read\|write\|admin>` 三档还是按资源细分 | 三档起步，S3 市场按需细分 | 影响 OAuth scope 目录规模与同意页 |
 | T3 | `module` 修订与宿主镜像的对应关系：一个宿主镜像携带全部 system/official module 的同一修订号，还是允许各 module 独立修订号 | 宿主镜像为发布单元、各 module 保留独立 SemVer 仅作元数据；回切以宿主镜像为粒度 | 决定 7.2.1「回切」的实际粒度 |
 | T4 | `function` ABI：Extism 还是 WIT 组件 | S2 中期拍板（ADR-002 遗留） | `components.functions[].limits` 字段形状 |
-| T5 | 反向权限批准在 S1 的形态：运营代批 API 还是直接要求租户管理员 UI | 运营代批 + 审计记录 | S2 升级同意规则的起点 |
+| T5 | 反向权限批准在 S1 的形态：运营代批 API 还是直接要求租户管理员 UI | 已裁决（R120 ⑤）：租户管理员 API（RBAC，`qian.lifecycle:install:approve` 默认授予 tenant.owner / tenant.admin）与运营代批（Authz 超管旁路）并存，两类主体都要求路径租户等于宿主已建立的租户上下文；每次批准写入该租户审计链（S1-AGT-006）；UI 在 S2 | S2 升级同意规则的起点 |
 | T6 | 保留修订数 N 与 `dataRetentionDays` 默认值 | N = 3，30 天 | 存储成本 |
 | T7 | 清单是否允许 `dependencies` 指向 `tier: private` 插件 | 不允许（S3 再议） | 市场可组合性 |
 
