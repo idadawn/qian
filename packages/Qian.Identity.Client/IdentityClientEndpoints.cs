@@ -47,6 +47,9 @@ internal static partial class IdentityClientEndpoints
             await Error(http, PlatformErrors.BadGateway).ConfigureAwait(false);
             return;
         }
+        // RFC 8707：规范模式在授权请求里带 resource，发行方据此把访问令牌受众收窄到 Resource；任意发行方模式不带。
+        // Kun 的换码请求（OidcCodeExchange）与刷新不能追加参数，两者沿用授权码已绑定的资源。
+        if (options.Resource is { } resource) url += "&resource=" + Uri.EscapeDataString(resource);
         http.Response.Redirect(url);
     }
 

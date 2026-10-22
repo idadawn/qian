@@ -29,8 +29,8 @@ public sealed class IdentityClientOptions
     /// <summary>授权请求的 scope，必须含 openid；需要刷新时加 offline_access。</summary>
     public IReadOnlyList<string> Scopes { get; init; } = ["openid"];
     /// <summary>
-    /// 访问令牌的预期受众（须是发行方为该客户端登记的资源之一；授权请求不带 resource 参数，由发行方按登记签发）。配置后访问令牌按此受众验签，
-    /// Cookie 会话的主体取自访问令牌的规范身份声明（对接 qian-identity，网关可直接据此铸 S2S）。不配置时会话主体只取自 id_token，可对接任意 OIDC 发行方。
+    /// 访问令牌的受众（RFC 8707 resource，须是发行方为该客户端登记的资源之一）。配置后授权请求带 resource，发行方据此把访问令牌受众收窄到它；访问令牌按此受众验签，
+    /// Cookie 会话的主体取自访问令牌的规范身份声明（对接 qian-identity，网关可直接据此铸 S2S）。不配置时授权请求不带 resource，会话主体只取自 id_token，可对接任意 OIDC 发行方。
     /// </summary>
     public string? Resource { get; init; }
     /// <summary>在发行方登记的公开回调地址，只来自可信配置、不按请求 Host 推导；回调端点按其路径映射。为空时不启用浏览器会话。</summary>
