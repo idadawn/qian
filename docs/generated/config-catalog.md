@@ -899,7 +899,10 @@
 
 ```json
 {
-  "store": "pg"
+  "store": "pg",
+  "workerRole": "qian_scheduler_worker",
+  "leaseSeconds": 30,
+  "maxParallel": 16
 }
 ```
 
@@ -909,14 +912,32 @@
 
 ```json
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "store": {
-      "type": "string"
+      "const": "pg",
+      "default": "pg"
+    },
+    "workerRole": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,62}$",
+      "default": "qian_scheduler_worker"
+    },
+    "leaseSeconds": {
+      "type": "integer",
+      "minimum": 3,
+      "maximum": 3600,
+      "default": 30
+    },
+    "maxParallel": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 16
     }
-  },
-  "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  }
 }
 ```
 
