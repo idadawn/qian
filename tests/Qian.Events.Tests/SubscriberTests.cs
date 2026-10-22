@@ -152,6 +152,8 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         var envelope = await PublishAsync(TenantA, sequence: 4, times: 2);
 
         await Until(() => metrics.Count("processed") + metrics.Count("duplicate") == 2, "两次投递没有都处理完");
+        // 消费计数先于重复日志写入；计数到齐不表示日志已经可见，须等待本次信封的日志。
+        await Until(() => probe.Logs.Entries.Any(entry => entry.EventId == 23 && entry.Message.Contains(envelope.EventId.ToString(), StringComparison.Ordinal)), "重复投递日志尚未写入");
         Assert.Single(probe.Calls);
         Assert.Equal(1, metrics.Count("processed"));
         Assert.Equal(1, metrics.Count("duplicate"));
