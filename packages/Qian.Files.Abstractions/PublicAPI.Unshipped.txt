@@ -1,0 +1,348 @@
+#nullable enable
+const Qian.Files.FileQuarantineReason.ChecksumMismatch = "checksum_mismatch" -> string!
+const Qian.Files.FileQuarantineReason.SizeMismatch = "size_mismatch" -> string!
+const Qian.Files.FileQuarantineReason.TypeNotAllowed = "type_not_allowed" -> string!
+const Qian.Files.FilesCapabilities.CompleteUpload = "qian.files/complete-upload" -> string!
+const Qian.Files.FilesCapabilities.Delete = "qian.files/delete" -> string!
+const Qian.Files.FilesCapabilities.DownloadUrl = "qian.files/download-url" -> string!
+const Qian.Files.FilesCapabilities.Get = "qian.files/get" -> string!
+const Qian.Files.FilesCapabilities.PresignUpload = "qian.files/presign-upload" -> string!
+const Qian.Files.FilesCapabilities.Quota = "qian.files/quota" -> string!
+const Qian.Files.FilesEventIds.ObjectCreated = "files.object.created.v1" -> string!
+const Qian.Files.FilesEventIds.ObjectDeleted = "files.object.deleted.v1" -> string!
+const Qian.Files.FilesPermissions.Delete = "qian.files:file:delete" -> string!
+const Qian.Files.FilesPermissions.Read = "qian.files:file:read" -> string!
+const Qian.Files.FilesPermissions.Write = "qian.files:file:write" -> string!
+const Qian.Files.FileStatus.Available = "available" -> string!
+const Qian.Files.FileStatus.Deleted = "deleted" -> string!
+const Qian.Files.FileStatus.Quarantined = "quarantined" -> string!
+const Qian.Files.FileStatus.Uploading = "uploading" -> string!
+override Qian.Files.CompleteUploadRequest.Equals(object? obj) -> bool
+override Qian.Files.CompleteUploadRequest.GetHashCode() -> int
+override Qian.Files.CompleteUploadRequest.ToString() -> string!
+override Qian.Files.DeleteFileRequest.Equals(object? obj) -> bool
+override Qian.Files.DeleteFileRequest.GetHashCode() -> int
+override Qian.Files.DeleteFileRequest.ToString() -> string!
+override Qian.Files.DownloadTicket.Equals(object? obj) -> bool
+override Qian.Files.DownloadTicket.GetHashCode() -> int
+override Qian.Files.DownloadTicket.ToString() -> string!
+override Qian.Files.FileBackendContext.Equals(object? obj) -> bool
+override Qian.Files.FileBackendContext.GetHashCode() -> int
+override Qian.Files.FileBackendContext.ToString() -> string!
+override Qian.Files.FileDescriptor.Equals(object? obj) -> bool
+override Qian.Files.FileDescriptor.GetHashCode() -> int
+override Qian.Files.FileDescriptor.ToString() -> string!
+override Qian.Files.FileObjectCreatedEvent.Equals(object? obj) -> bool
+override Qian.Files.FileObjectCreatedEvent.GetHashCode() -> int
+override Qian.Files.FileObjectCreatedEvent.ToString() -> string!
+override Qian.Files.FileObjectDeletedEvent.Equals(object? obj) -> bool
+override Qian.Files.FileObjectDeletedEvent.GetHashCode() -> int
+override Qian.Files.FileObjectDeletedEvent.ToString() -> string!
+override Qian.Files.FileQuota.Equals(object? obj) -> bool
+override Qian.Files.FileQuota.GetHashCode() -> int
+override Qian.Files.FileQuota.ToString() -> string!
+override Qian.Files.FileTransferDownload.Equals(object? obj) -> bool
+override Qian.Files.FileTransferDownload.GetHashCode() -> int
+override Qian.Files.FileTransferDownload.ToString() -> string!
+override Qian.Files.FileTransferRequest.Equals(object? obj) -> bool
+override Qian.Files.FileTransferRequest.GetHashCode() -> int
+override Qian.Files.FileTransferRequest.ToString() -> string!
+override Qian.Files.PresignedTransfer.Equals(object? obj) -> bool
+override Qian.Files.PresignedTransfer.GetHashCode() -> int
+override Qian.Files.PresignedTransfer.ToString() -> string!
+override Qian.Files.PresignedUpload.Equals(object? obj) -> bool
+override Qian.Files.PresignedUpload.GetHashCode() -> int
+override Qian.Files.PresignedUpload.ToString() -> string!
+override Qian.Files.PresignUploadRequest.Equals(object? obj) -> bool
+override Qian.Files.PresignUploadRequest.GetHashCode() -> int
+override Qian.Files.PresignUploadRequest.ToString() -> string!
+override Qian.Files.UploadPolicy.Equals(object? obj) -> bool
+override Qian.Files.UploadPolicy.GetHashCode() -> int
+override Qian.Files.UploadPolicy.ToString() -> string!
+Qian.Files.CompleteUploadRequest
+Qian.Files.CompleteUploadRequest.<Clone>$() -> Qian.Files.CompleteUploadRequest!
+Qian.Files.CompleteUploadRequest.CompleteUploadRequest(System.Guid IdempotencyKey, System.Guid FileId) -> void
+Qian.Files.CompleteUploadRequest.Deconstruct(out System.Guid IdempotencyKey, out System.Guid FileId) -> void
+Qian.Files.CompleteUploadRequest.Equals(Qian.Files.CompleteUploadRequest? other) -> bool
+Qian.Files.CompleteUploadRequest.FileId.get -> System.Guid
+Qian.Files.CompleteUploadRequest.FileId.init -> void
+Qian.Files.CompleteUploadRequest.IdempotencyKey.get -> System.Guid
+Qian.Files.CompleteUploadRequest.IdempotencyKey.init -> void
+Qian.Files.DeleteFileRequest
+Qian.Files.DeleteFileRequest.<Clone>$() -> Qian.Files.DeleteFileRequest!
+Qian.Files.DeleteFileRequest.Deconstruct(out System.Guid IdempotencyKey, out System.Guid FileId) -> void
+Qian.Files.DeleteFileRequest.DeleteFileRequest(System.Guid IdempotencyKey, System.Guid FileId) -> void
+Qian.Files.DeleteFileRequest.Equals(Qian.Files.DeleteFileRequest? other) -> bool
+Qian.Files.DeleteFileRequest.FileId.get -> System.Guid
+Qian.Files.DeleteFileRequest.FileId.init -> void
+Qian.Files.DeleteFileRequest.IdempotencyKey.get -> System.Guid
+Qian.Files.DeleteFileRequest.IdempotencyKey.init -> void
+Qian.Files.DownloadTicket
+Qian.Files.DownloadTicket.<Clone>$() -> Qian.Files.DownloadTicket!
+Qian.Files.DownloadTicket.Deconstruct(out System.Uri! Url, out System.DateTimeOffset ExpiresAt) -> void
+Qian.Files.DownloadTicket.DownloadTicket(System.Uri! Url, System.DateTimeOffset ExpiresAt) -> void
+Qian.Files.DownloadTicket.Equals(Qian.Files.DownloadTicket? other) -> bool
+Qian.Files.DownloadTicket.ExpiresAt.get -> System.DateTimeOffset
+Qian.Files.DownloadTicket.ExpiresAt.init -> void
+Qian.Files.DownloadTicket.Url.get -> System.Uri!
+Qian.Files.DownloadTicket.Url.init -> void
+Qian.Files.FileBackendContext
+Qian.Files.FileBackendContext.<Clone>$() -> Qian.Files.FileBackendContext!
+Qian.Files.FileBackendContext.Clock.get -> System.TimeProvider!
+Qian.Files.FileBackendContext.Clock.init -> void
+Qian.Files.FileBackendContext.Deconstruct(out System.Text.Json.JsonElement Storage, out System.TimeProvider! Clock, out System.IServiceProvider! Services) -> void
+Qian.Files.FileBackendContext.Equals(Qian.Files.FileBackendContext? other) -> bool
+Qian.Files.FileBackendContext.FileBackendContext(System.Text.Json.JsonElement Storage, System.TimeProvider! Clock, System.IServiceProvider! Services) -> void
+Qian.Files.FileBackendContext.Services.get -> System.IServiceProvider!
+Qian.Files.FileBackendContext.Services.init -> void
+Qian.Files.FileBackendContext.Storage.get -> System.Text.Json.JsonElement
+Qian.Files.FileBackendContext.Storage.init -> void
+Qian.Files.FileDescriptor
+Qian.Files.FileDescriptor.<Clone>$() -> Qian.Files.FileDescriptor!
+Qian.Files.FileDescriptor.ContentType.get -> string!
+Qian.Files.FileDescriptor.ContentType.init -> void
+Qian.Files.FileDescriptor.CreatedAt.get -> System.DateTimeOffset
+Qian.Files.FileDescriptor.CreatedAt.init -> void
+Qian.Files.FileDescriptor.Deconstruct(out System.Guid Id, out string! TenantId, out string! PluginId, out string! Purpose, out string! Name, out long Size, out string! ContentType, out string! Sha256, out string! StorageKey, out string! Provider, out string! Status, out string! ScanStatus, out System.DateTimeOffset CreatedAt) -> void
+Qian.Files.FileDescriptor.DeletedAt.get -> System.DateTimeOffset?
+Qian.Files.FileDescriptor.DeletedAt.init -> void
+Qian.Files.FileDescriptor.Equals(Qian.Files.FileDescriptor? other) -> bool
+Qian.Files.FileDescriptor.FileDescriptor(System.Guid Id, string! TenantId, string! PluginId, string! Purpose, string! Name, long Size, string! ContentType, string! Sha256, string! StorageKey, string! Provider, string! Status, string! ScanStatus, System.DateTimeOffset CreatedAt) -> void
+Qian.Files.FileDescriptor.Id.get -> System.Guid
+Qian.Files.FileDescriptor.Id.init -> void
+Qian.Files.FileDescriptor.Name.get -> string!
+Qian.Files.FileDescriptor.Name.init -> void
+Qian.Files.FileDescriptor.PluginId.get -> string!
+Qian.Files.FileDescriptor.PluginId.init -> void
+Qian.Files.FileDescriptor.Provider.get -> string!
+Qian.Files.FileDescriptor.Provider.init -> void
+Qian.Files.FileDescriptor.Purpose.get -> string!
+Qian.Files.FileDescriptor.Purpose.init -> void
+Qian.Files.FileDescriptor.QuarantineReason.get -> string?
+Qian.Files.FileDescriptor.QuarantineReason.init -> void
+Qian.Files.FileDescriptor.ScanStatus.get -> string!
+Qian.Files.FileDescriptor.ScanStatus.init -> void
+Qian.Files.FileDescriptor.Sha256.get -> string!
+Qian.Files.FileDescriptor.Sha256.init -> void
+Qian.Files.FileDescriptor.Size.get -> long
+Qian.Files.FileDescriptor.Size.init -> void
+Qian.Files.FileDescriptor.Status.get -> string!
+Qian.Files.FileDescriptor.Status.init -> void
+Qian.Files.FileDescriptor.StorageKey.get -> string!
+Qian.Files.FileDescriptor.StorageKey.init -> void
+Qian.Files.FileDescriptor.TenantId.get -> string!
+Qian.Files.FileDescriptor.TenantId.init -> void
+Qian.Files.FileObjectCreatedEvent
+Qian.Files.FileObjectCreatedEvent.<Clone>$() -> Qian.Files.FileObjectCreatedEvent!
+Qian.Files.FileObjectCreatedEvent.ContentType.get -> string!
+Qian.Files.FileObjectCreatedEvent.ContentType.init -> void
+Qian.Files.FileObjectCreatedEvent.Deconstruct(out System.Guid FileId, out string! PluginId, out string! Purpose, out long Size, out string! ContentType, out string! Sha256) -> void
+Qian.Files.FileObjectCreatedEvent.Equals(Qian.Files.FileObjectCreatedEvent? other) -> bool
+Qian.Files.FileObjectCreatedEvent.FileId.get -> System.Guid
+Qian.Files.FileObjectCreatedEvent.FileId.init -> void
+Qian.Files.FileObjectCreatedEvent.FileObjectCreatedEvent(System.Guid FileId, string! PluginId, string! Purpose, long Size, string! ContentType, string! Sha256) -> void
+Qian.Files.FileObjectCreatedEvent.PluginId.get -> string!
+Qian.Files.FileObjectCreatedEvent.PluginId.init -> void
+Qian.Files.FileObjectCreatedEvent.Purpose.get -> string!
+Qian.Files.FileObjectCreatedEvent.Purpose.init -> void
+Qian.Files.FileObjectCreatedEvent.Sha256.get -> string!
+Qian.Files.FileObjectCreatedEvent.Sha256.init -> void
+Qian.Files.FileObjectCreatedEvent.Size.get -> long
+Qian.Files.FileObjectCreatedEvent.Size.init -> void
+Qian.Files.FileObjectDeletedEvent
+Qian.Files.FileObjectDeletedEvent.<Clone>$() -> Qian.Files.FileObjectDeletedEvent!
+Qian.Files.FileObjectDeletedEvent.Deconstruct(out System.Guid FileId, out string! PluginId, out string! Purpose) -> void
+Qian.Files.FileObjectDeletedEvent.Equals(Qian.Files.FileObjectDeletedEvent? other) -> bool
+Qian.Files.FileObjectDeletedEvent.FileId.get -> System.Guid
+Qian.Files.FileObjectDeletedEvent.FileId.init -> void
+Qian.Files.FileObjectDeletedEvent.FileObjectDeletedEvent(System.Guid FileId, string! PluginId, string! Purpose) -> void
+Qian.Files.FileObjectDeletedEvent.PluginId.get -> string!
+Qian.Files.FileObjectDeletedEvent.PluginId.init -> void
+Qian.Files.FileObjectDeletedEvent.Purpose.get -> string!
+Qian.Files.FileObjectDeletedEvent.Purpose.init -> void
+Qian.Files.FileQuarantineReason
+Qian.Files.FileQuota
+Qian.Files.FileQuota.<Clone>$() -> Qian.Files.FileQuota!
+Qian.Files.FileQuota.Deconstruct(out long LimitBytes, out long UsedBytes, out long FileCount) -> void
+Qian.Files.FileQuota.Equals(Qian.Files.FileQuota? other) -> bool
+Qian.Files.FileQuota.FileCount.get -> long
+Qian.Files.FileQuota.FileCount.init -> void
+Qian.Files.FileQuota.FileQuota(long LimitBytes, long UsedBytes, long FileCount) -> void
+Qian.Files.FileQuota.LimitBytes.get -> long
+Qian.Files.FileQuota.LimitBytes.init -> void
+Qian.Files.FileQuota.UsedBytes.get -> long
+Qian.Files.FileQuota.UsedBytes.init -> void
+Qian.Files.FilesCapabilities
+Qian.Files.FilesContractJson
+Qian.Files.FilesDefinition
+Qian.Files.FilesErrors
+Qian.Files.FilesEventIds
+Qian.Files.FilesEventRegistration
+Qian.Files.FilesPermissions
+Qian.Files.FileStatus
+Qian.Files.FileTransferDownload
+Qian.Files.FileTransferDownload.<Clone>$() -> Qian.Files.FileTransferDownload!
+Qian.Files.FileTransferDownload.Content.get -> System.IO.Stream!
+Qian.Files.FileTransferDownload.Content.init -> void
+Qian.Files.FileTransferDownload.ContentDisposition.get -> string!
+Qian.Files.FileTransferDownload.ContentDisposition.init -> void
+Qian.Files.FileTransferDownload.ContentType.get -> string!
+Qian.Files.FileTransferDownload.ContentType.init -> void
+Qian.Files.FileTransferDownload.Deconstruct(out System.IO.Stream! Content, out long Length, out string! ContentType, out string! ContentDisposition) -> void
+Qian.Files.FileTransferDownload.Equals(Qian.Files.FileTransferDownload? other) -> bool
+Qian.Files.FileTransferDownload.FileTransferDownload(System.IO.Stream! Content, long Length, string! ContentType, string! ContentDisposition) -> void
+Qian.Files.FileTransferDownload.Length.get -> long
+Qian.Files.FileTransferDownload.Length.init -> void
+Qian.Files.FileTransferRequest
+Qian.Files.FileTransferRequest.<Clone>$() -> Qian.Files.FileTransferRequest!
+Qian.Files.FileTransferRequest.Deconstruct(out string! ObjectKey, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Query, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers) -> void
+Qian.Files.FileTransferRequest.Equals(Qian.Files.FileTransferRequest? other) -> bool
+Qian.Files.FileTransferRequest.FileTransferRequest(string! ObjectKey, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Query, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers) -> void
+Qian.Files.FileTransferRequest.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Files.FileTransferRequest.Headers.init -> void
+Qian.Files.FileTransferRequest.ObjectKey.get -> string!
+Qian.Files.FileTransferRequest.ObjectKey.init -> void
+Qian.Files.FileTransferRequest.Query.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Files.FileTransferRequest.Query.init -> void
+Qian.Files.FileTransferResult
+Qian.Files.FileTransferResult.Conflict = 2 -> Qian.Files.FileTransferResult
+Qian.Files.FileTransferResult.Rejected = 1 -> Qian.Files.FileTransferResult
+Qian.Files.FileTransferResult.Stored = 0 -> Qian.Files.FileTransferResult
+Qian.Files.FileTransferResult.TooLarge = 3 -> Qian.Files.FileTransferResult
+Qian.Files.IFileBackend
+Qian.Files.IFileBackend.CreateDownloadAsync(string! objectKey, string! fileName, System.TimeSpan lifetime, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.PresignedTransfer!>
+Qian.Files.IFileBackend.CreateUploadAsync(string! objectKey, string! contentType, long maxBytes, System.TimeSpan lifetime, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.PresignedTransfer!>
+Qian.Files.IFileBackend.DeleteAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Qian.Files.IFileBackend.Name.get -> string!
+Qian.Files.IFileBackend.OpenReadAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.IO.Stream!>
+Qian.Files.IFileBackend.Transfer.get -> Qian.Files.IFileTransferGateway?
+Qian.Files.IFileBackend.WriteAsync(string! objectKey, System.IO.Stream! content, string! contentType, long maxBytes, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Files.IFileBackendFactory
+Qian.Files.IFileBackendFactory.Create(Qian.Files.FileBackendContext! context) -> Qian.Files.IFileBackend!
+Qian.Files.IFileBackendRegistry
+Qian.Files.IFileBackendRegistry.Find(string! name) -> Qian.Files.IFileBackendFactory?
+Qian.Files.IFileBackendRegistry.List() -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Files.IFileBackendRegistry.Register(string! name, Qian.Files.IFileBackendFactory! factory) -> System.IDisposable!
+Qian.Files.IFileService
+Qian.Files.IFileService.Backends.get -> Qian.Files.IFileBackendRegistry!
+Qian.Files.IFileService.CompleteAsync(Qian.Files.CompleteUploadRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.FileDescriptor!>
+Qian.Files.IFileService.DeleteAsync(Qian.Files.DeleteFileRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.FileDescriptor!>
+Qian.Files.IFileService.GetAsync(System.Guid fileId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.FileDescriptor!>
+Qian.Files.IFileService.GetDownloadUrlAsync(System.Guid fileId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.DownloadTicket!>
+Qian.Files.IFileService.GetQuotaAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.FileQuota!>
+Qian.Files.IFileService.Policies.get -> Qian.Files.IUploadPolicyRegistry!
+Qian.Files.IFileService.PresignUploadAsync(Qian.Files.PresignUploadRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.PresignedUpload!>
+Qian.Files.IFileService.Transfer.get -> Qian.Files.IFileTransferGateway?
+Qian.Files.IFileTransferGateway
+Qian.Files.IFileTransferGateway.OpenAsync(Qian.Files.FileTransferRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.FileTransferDownload?>
+Qian.Files.IFileTransferGateway.ReceiveAsync(Qian.Files.FileTransferRequest! request, System.IO.Stream! content, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Files.FileTransferResult>
+Qian.Files.IUploadPolicyRegistry
+Qian.Files.IUploadPolicyRegistry.Find(string! purpose) -> Qian.Files.UploadPolicy?
+Qian.Files.IUploadPolicyRegistry.List() -> System.Collections.Generic.IReadOnlyList<Qian.Files.UploadPolicy!>!
+Qian.Files.IUploadPolicyRegistry.Register(string! purpose, Qian.Files.UploadPolicy! policy) -> System.IDisposable!
+Qian.Files.PresignedTransfer
+Qian.Files.PresignedTransfer.<Clone>$() -> Qian.Files.PresignedTransfer!
+Qian.Files.PresignedTransfer.Deconstruct(out System.Uri! Url, out string! Method, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, out System.DateTimeOffset ExpiresAt) -> void
+Qian.Files.PresignedTransfer.Equals(Qian.Files.PresignedTransfer? other) -> bool
+Qian.Files.PresignedTransfer.ExpiresAt.get -> System.DateTimeOffset
+Qian.Files.PresignedTransfer.ExpiresAt.init -> void
+Qian.Files.PresignedTransfer.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Files.PresignedTransfer.Headers.init -> void
+Qian.Files.PresignedTransfer.Method.get -> string!
+Qian.Files.PresignedTransfer.Method.init -> void
+Qian.Files.PresignedTransfer.PresignedTransfer(System.Uri! Url, string! Method, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, System.DateTimeOffset ExpiresAt) -> void
+Qian.Files.PresignedTransfer.Url.get -> System.Uri!
+Qian.Files.PresignedTransfer.Url.init -> void
+Qian.Files.PresignedUpload
+Qian.Files.PresignedUpload.<Clone>$() -> Qian.Files.PresignedUpload!
+Qian.Files.PresignedUpload.Deconstruct(out System.Guid FileId, out System.Uri! Url, out string! Method, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RequiredHeaders, out System.DateTimeOffset ExpiresAt) -> void
+Qian.Files.PresignedUpload.Equals(Qian.Files.PresignedUpload? other) -> bool
+Qian.Files.PresignedUpload.ExpiresAt.get -> System.DateTimeOffset
+Qian.Files.PresignedUpload.ExpiresAt.init -> void
+Qian.Files.PresignedUpload.FileId.get -> System.Guid
+Qian.Files.PresignedUpload.FileId.init -> void
+Qian.Files.PresignedUpload.Method.get -> string!
+Qian.Files.PresignedUpload.Method.init -> void
+Qian.Files.PresignedUpload.PresignedUpload(System.Guid FileId, System.Uri! Url, string! Method, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RequiredHeaders, System.DateTimeOffset ExpiresAt) -> void
+Qian.Files.PresignedUpload.RequiredHeaders.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Files.PresignedUpload.RequiredHeaders.init -> void
+Qian.Files.PresignedUpload.Url.get -> System.Uri!
+Qian.Files.PresignedUpload.Url.init -> void
+Qian.Files.PresignUploadRequest
+Qian.Files.PresignUploadRequest.<Clone>$() -> Qian.Files.PresignUploadRequest!
+Qian.Files.PresignUploadRequest.ContentType.get -> string!
+Qian.Files.PresignUploadRequest.ContentType.init -> void
+Qian.Files.PresignUploadRequest.Deconstruct(out System.Guid IdempotencyKey, out string! Purpose, out string! Name, out long Size, out string! ContentType, out string! Sha256) -> void
+Qian.Files.PresignUploadRequest.Equals(Qian.Files.PresignUploadRequest? other) -> bool
+Qian.Files.PresignUploadRequest.IdempotencyKey.get -> System.Guid
+Qian.Files.PresignUploadRequest.IdempotencyKey.init -> void
+Qian.Files.PresignUploadRequest.Name.get -> string!
+Qian.Files.PresignUploadRequest.Name.init -> void
+Qian.Files.PresignUploadRequest.PresignUploadRequest(System.Guid IdempotencyKey, string! Purpose, string! Name, long Size, string! ContentType, string! Sha256) -> void
+Qian.Files.PresignUploadRequest.Purpose.get -> string!
+Qian.Files.PresignUploadRequest.Purpose.init -> void
+Qian.Files.PresignUploadRequest.Sha256.get -> string!
+Qian.Files.PresignUploadRequest.Sha256.init -> void
+Qian.Files.PresignUploadRequest.Size.get -> long
+Qian.Files.PresignUploadRequest.Size.init -> void
+Qian.Files.UploadPolicy
+Qian.Files.UploadPolicy.<Clone>$() -> Qian.Files.UploadPolicy!
+Qian.Files.UploadPolicy.AllowedTypes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Files.UploadPolicy.AllowedTypes.init -> void
+Qian.Files.UploadPolicy.Deconstruct(out string! Purpose, out System.Collections.Generic.IReadOnlyList<string!>! AllowedTypes, out long MaxSize, out int? MaxCount) -> void
+Qian.Files.UploadPolicy.Equals(Qian.Files.UploadPolicy? other) -> bool
+Qian.Files.UploadPolicy.MaxCount.get -> int?
+Qian.Files.UploadPolicy.MaxCount.init -> void
+Qian.Files.UploadPolicy.MaxSize.get -> long
+Qian.Files.UploadPolicy.MaxSize.init -> void
+Qian.Files.UploadPolicy.Purpose.get -> string!
+Qian.Files.UploadPolicy.Purpose.init -> void
+Qian.Files.UploadPolicy.UploadPolicy(string! Purpose, System.Collections.Generic.IReadOnlyList<string!>! AllowedTypes, long MaxSize, int? MaxCount = null) -> void
+static Qian.Files.CompleteUploadRequest.operator !=(Qian.Files.CompleteUploadRequest? left, Qian.Files.CompleteUploadRequest? right) -> bool
+static Qian.Files.CompleteUploadRequest.operator ==(Qian.Files.CompleteUploadRequest? left, Qian.Files.CompleteUploadRequest? right) -> bool
+static Qian.Files.DeleteFileRequest.operator !=(Qian.Files.DeleteFileRequest? left, Qian.Files.DeleteFileRequest? right) -> bool
+static Qian.Files.DeleteFileRequest.operator ==(Qian.Files.DeleteFileRequest? left, Qian.Files.DeleteFileRequest? right) -> bool
+static Qian.Files.DownloadTicket.operator !=(Qian.Files.DownloadTicket? left, Qian.Files.DownloadTicket? right) -> bool
+static Qian.Files.DownloadTicket.operator ==(Qian.Files.DownloadTicket? left, Qian.Files.DownloadTicket? right) -> bool
+static Qian.Files.FileBackendContext.operator !=(Qian.Files.FileBackendContext? left, Qian.Files.FileBackendContext? right) -> bool
+static Qian.Files.FileBackendContext.operator ==(Qian.Files.FileBackendContext? left, Qian.Files.FileBackendContext? right) -> bool
+static Qian.Files.FileDescriptor.operator !=(Qian.Files.FileDescriptor? left, Qian.Files.FileDescriptor? right) -> bool
+static Qian.Files.FileDescriptor.operator ==(Qian.Files.FileDescriptor? left, Qian.Files.FileDescriptor? right) -> bool
+static Qian.Files.FileObjectCreatedEvent.operator !=(Qian.Files.FileObjectCreatedEvent? left, Qian.Files.FileObjectCreatedEvent? right) -> bool
+static Qian.Files.FileObjectCreatedEvent.operator ==(Qian.Files.FileObjectCreatedEvent? left, Qian.Files.FileObjectCreatedEvent? right) -> bool
+static Qian.Files.FileObjectDeletedEvent.operator !=(Qian.Files.FileObjectDeletedEvent? left, Qian.Files.FileObjectDeletedEvent? right) -> bool
+static Qian.Files.FileObjectDeletedEvent.operator ==(Qian.Files.FileObjectDeletedEvent? left, Qian.Files.FileObjectDeletedEvent? right) -> bool
+static Qian.Files.FileQuota.operator !=(Qian.Files.FileQuota? left, Qian.Files.FileQuota? right) -> bool
+static Qian.Files.FileQuota.operator ==(Qian.Files.FileQuota? left, Qian.Files.FileQuota? right) -> bool
+static Qian.Files.FilesContractJson.DownloadTicketTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Files.DownloadTicket!>!
+static Qian.Files.FilesContractJson.FileDescriptorTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Files.FileDescriptor!>!
+static Qian.Files.FilesContractJson.FileQuotaTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Files.FileQuota!>!
+static Qian.Files.FilesContractJson.PresignedUploadTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Files.PresignedUpload!>!
+static Qian.Files.FilesContractJson.PresignUploadRequestTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Files.PresignUploadRequest!>!
+static Qian.Files.FilesContractJson.UploadPolicyTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<Qian.Files.UploadPolicy!>!
+static Qian.Files.FilesDefinition.Files(this Qian.Runtime.IPluginContext! context) -> Qian.Files.IFileService!
+static Qian.Files.FilesErrors.All.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.ErrorCode!>!
+static Qian.Files.FilesErrors.Register(Qian.Runtime.Errors.ErrorCatalog! catalog) -> System.IDisposable!
+static Qian.Files.FilesEventIds.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static Qian.Files.FilesEventRegistration.RegisterFilesEvents(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
+static Qian.Files.FileTransferDownload.operator !=(Qian.Files.FileTransferDownload? left, Qian.Files.FileTransferDownload? right) -> bool
+static Qian.Files.FileTransferDownload.operator ==(Qian.Files.FileTransferDownload? left, Qian.Files.FileTransferDownload? right) -> bool
+static Qian.Files.FileTransferRequest.operator !=(Qian.Files.FileTransferRequest? left, Qian.Files.FileTransferRequest? right) -> bool
+static Qian.Files.FileTransferRequest.operator ==(Qian.Files.FileTransferRequest? left, Qian.Files.FileTransferRequest? right) -> bool
+static Qian.Files.PresignedTransfer.operator !=(Qian.Files.PresignedTransfer? left, Qian.Files.PresignedTransfer? right) -> bool
+static Qian.Files.PresignedTransfer.operator ==(Qian.Files.PresignedTransfer? left, Qian.Files.PresignedTransfer? right) -> bool
+static Qian.Files.PresignedUpload.operator !=(Qian.Files.PresignedUpload? left, Qian.Files.PresignedUpload? right) -> bool
+static Qian.Files.PresignedUpload.operator ==(Qian.Files.PresignedUpload? left, Qian.Files.PresignedUpload? right) -> bool
+static Qian.Files.PresignUploadRequest.operator !=(Qian.Files.PresignUploadRequest? left, Qian.Files.PresignUploadRequest? right) -> bool
+static Qian.Files.PresignUploadRequest.operator ==(Qian.Files.PresignUploadRequest? left, Qian.Files.PresignUploadRequest? right) -> bool
+static Qian.Files.UploadPolicy.operator !=(Qian.Files.UploadPolicy? left, Qian.Files.UploadPolicy? right) -> bool
+static Qian.Files.UploadPolicy.operator ==(Qian.Files.UploadPolicy? left, Qian.Files.UploadPolicy? right) -> bool
+static readonly Qian.Files.FilesDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Files.FilesErrors.ChecksumMismatch -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Files.FilesErrors.CountExceeded -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Files.FilesErrors.NotAvailable -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Files.FilesErrors.QuotaExceeded -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Files.FilesErrors.TooLarge -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Files.FilesErrors.TypeNotAllowed -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Files.FilesErrors.UploadExpired -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Files.FilesErrors.UploadIncomplete -> Qian.Runtime.Errors.ErrorCode!

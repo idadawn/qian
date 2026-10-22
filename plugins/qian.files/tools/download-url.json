@@ -1,0 +1,62 @@
+{
+  "name": "download-url",
+  "description": "为当前租户一个可用文件签发下载地址（不超过 5 分钟，恒定以附件下载），每次签发都记审计。",
+  "sideEffect": "read",
+  "policyHint": "allow",
+  "idempotent": false,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "internal",
+  "costTier": "low",
+  "contractVersion": "v1",
+  "audit": true,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.files/download-url"
+  },
+  "requiredPermission": "qian.files:file:read",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "fileId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "fileId"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "format": "uri"
+      },
+      "expiresAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "url",
+      "expiresAt"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "70be162adade65168d4c6c101248cc6dacfed48259a64f406f819135ac41e0ad",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.files"
+  }
+}

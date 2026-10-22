@@ -1,0 +1,13 @@
+#nullable enable
+Qian.Files.AspNetCore.FilesEndpointOptions
+Qian.Files.AspNetCore.FilesEndpointOptions.EntryId.get -> string!
+Qian.Files.AspNetCore.FilesEndpointOptions.EntryId.init -> void
+Qian.Files.AspNetCore.FilesEndpointOptions.FilesEndpointOptions() -> void
+Qian.Files.AspNetCore.FilesEndpointOptions.RequirePlugin.get -> bool
+Qian.Files.AspNetCore.FilesEndpointOptions.RequirePlugin.init -> void
+Qian.Files.AspNetCore.FilesEndpointOptions.TransferPath.get -> string!
+Qian.Files.AspNetCore.FilesEndpointOptions.TransferPath.init -> void
+Qian.Files.AspNetCore.FilesEndpointOptions.TransferSource.get -> System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>?
+Qian.Files.AspNetCore.FilesEndpointOptions.TransferSource.init -> void
+Qian.Files.AspNetCore.FilesEndpoints
+static Qian.Files.AspNetCore.FilesEndpoints.MapQianFiles(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source, System.Action<Microsoft.AspNetCore.Builder.RouteHandlerBuilder!, string!>! requirePermission, Qian.Files.AspNetCore.FilesEndpointOptions? options = null) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!

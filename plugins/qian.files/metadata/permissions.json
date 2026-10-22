@@ -1,0 +1,7 @@
+[
+  {
+    "resource": "file",
+    "actions": ["read", "write", "delete"],
+    "risk": { "write": "medium", "delete": "high" }
+  }
+]

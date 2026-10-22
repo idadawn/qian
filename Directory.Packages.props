@@ -41,6 +41,8 @@
     <PackageVersion Include="Kun.Infrastructure" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Storage" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Storage.Abstractions" Version="[$(KunVersion)]" />
+    <!-- qian.files 的 local 后端（S1-FILE-001）；s3 / oss 后端归 S1-FILE-002。 -->
+    <PackageVersion Include="Kun.Storage.Local" Version="[$(KunVersion)]" />
     <!-- 授权快照缓存（qian.authz，PRD 7.5「Redis，TTL 10 分钟」）：内存与 Redis 两种后端。 -->
     <PackageVersion Include="Kun.Caching" Version="[$(KunVersion)]" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
