@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -26,6 +25,7 @@ using Qian.Identity.Abstractions;
 using Qian.Identity.Server;
 using Qian.Runtime;
 using Qian.Tenancy;
+using Qian.Testing;
 using Qian.Testing.Containers;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -63,9 +63,12 @@ internal sealed class IdentityServerHost : IAsyncDisposable
     internal Guid Membership { get; private set; }
 
     // backchannel 给出时登记 RP 的后通道登出地址（与回调同源的 /auth/backchannel-logout），身份服务的投递客户端只信这张 RP 证书。
-    internal static async Task<IdentityServerHost> Start(PostgresFixture postgres, Uri callback, X509Certificate2? backchannel = null)
+    // 发行方带端口，构建宿主前就要确定：端口在建表、挂载期间被占时换端口从头启动（S1-QA-016，同 S1-QA-014）。
+    internal static Task<IdentityServerHost> Start(PostgresFixture postgres, Uri callback, X509Certificate2? backchannel = null) =>
+        LoopbackPort.StartAsync(port => StartOn(port, postgres, callback, backchannel));
+
+    private static async Task<IdentityServerHost> StartOn(int port, PostgresFixture postgres, Uri callback, X509Certificate2? backchannel)
     {
-        using var socket = new TcpListener(IPAddress.Loopback, 0); socket.Start(); var port = ((IPEndPoint)socket.LocalEndpoint).Port; socket.Stop();
         var issuer = $"http://127.0.0.1:{port}/";
         using var rsa = RSA.Create(2048);
         var certificate = new CertificateRequest("CN=Qian identity client tests", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
@@ -114,7 +117,9 @@ internal sealed class IdentityServerHost : IAsyncDisposable
             new(new PluginEntry("identity", "qian.identity.server", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { issuer })), new IdentityServerPlugin(),
                 [IdentityDefinition.Key, IdentityDefinition.AccountsKey, IdentityDefinition.SignInKey, IdentityDefinition.FactorsKey])], Ct);
         Assert.True(loader.GetState("identity", ScopeKey.Global) == PluginState.Ready, loader.GetFailure("identity", ScopeKey.Global)?.ToString());
-        await app.StartAsync(Ct);
+        // 启动失败（含端口被占）先释放这次建的宿主，LoopbackPort 才能换端口重来。
+        try { await app.StartAsync(Ct); }
+        catch { await loader.DisposeAsync(); await app.DisposeAsync(); certificate.Dispose(); throw; }
         var host = new IdentityServerHost(app, loader, issuer, secret, certificate);
         // 一个租户、一个带已验证手机号与初始密码的 Person、它在该租户的成员身份：登录走生产的账号接口与统一登录流水线。
         var accounts = loader.GetContext("identity", ScopeKey.Global).IdentityAccounts();

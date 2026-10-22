@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -235,10 +234,9 @@ internal sealed class Downstream : IAsyncDisposable
 
     internal static async Task<Downstream> Start(GatewayKeys gateway, string audience)
     {
-        using var socket = new TcpListener(IPAddress.Loopback, 0); socket.Start(); var port = ((IPEndPoint)socket.LocalEndpoint).Port; socket.Stop();
-        var address = new Uri($"http://127.0.0.1:{port}/");
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Production" });
-        builder.WebHost.UseUrls(address.ToString()); builder.Logging.ClearProviders();
+        // 构建前用不到地址：监听端口 0 由 Kestrel 原子分配，启动后再读实际地址，没有「先取端口再绑定」的空档（S1-QA-016）。
+        builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
         builder.Services.AddQianIdentityS2s(new IdentityS2sOptions { Issuer = GatewayKeys.IssuerName, Audience = audience, SigningKeys = gateway.Jwks });
         builder.Services.AddAuthorization(); builder.Services.AddHttpClient();
         var app = builder.Build();
@@ -255,7 +253,7 @@ internal sealed class Downstream : IAsyncDisposable
             return Results.Json(new { status = (int)response.StatusCode });
         }).RequireAuthorization();
         await app.StartAsync(Ct);
-        return new Downstream(app, address);
+        return new Downstream(app, new Uri(app.Urls.Single() + "/"));
     }
 
     internal async Task<JsonElement> WhoAmI(string token)

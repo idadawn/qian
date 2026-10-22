@@ -16,4 +16,5 @@
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
+  <ItemGroup><Compile Include="../Shared/LoopbackPort.cs" Link="LoopbackPort.cs" /></ItemGroup>
 </Project>
