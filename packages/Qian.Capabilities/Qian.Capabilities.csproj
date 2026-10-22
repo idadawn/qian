@@ -17,4 +17,7 @@
     <ProjectReference Include="../Qian.Audit.Abstractions/Qian.Audit.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup><InternalsVisibleTo Include="Qian.Capabilities.Tests" /><InternalsVisibleTo Include="Qian.Sample.Crm.Tests" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

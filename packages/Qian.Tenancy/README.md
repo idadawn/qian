@@ -84,7 +84,7 @@ GET/PUT /api/tenancy/tenants/{id}/settings/{plugin} 使用同一平台超管授�
 
 一次派发中每个初始化能力只能被消费一次；若两组 hooks 引用同一能力，第二次会返回 `AUTHZ_DENIED`，步骤停在 `04:provisioned`。排查时检查该事件的所有 matcher 命中组及 handler 到能力的映射，合并重复引用后再重试；反复重试不会改变一次性语义。并发消费、嵌套 Begin/Enter、重复 Claim、作用域关闭后的逃逸执行均拒绝。
 
-按 R105，九个单例服务键为 `TenancyProvisioning`、`TenancyMembershipProvisioner`、`TenancyProvisionedNotifier`、`TenancyOperations`、`TenancyLifecycle`、`TenancySettings`、`TenancySettingsOperations`、`TenancyQuota`、`TenancyUserCounter`。消费者使用 Definition 的现有静态字段，字段签名没有改变；未发布旧键不保留别名。`Authz.TenantRoleGrant` 的改名仍归 S1-RT-033。
+按 R105，九个单例服务键为 `TenancyProvisioning`、`TenancyMembershipProvisioner`、`TenancyProvisionedNotifier`、`TenancyOperations`、`TenancyLifecycle`、`TenancySettings`、`TenancySettingsOperations`、`TenancyQuota`、`TenancyUserCounter`。消费者使用 Definition 的现有静态字段，字段签名没有改变；未发布旧键不保留别名。`AuthzTenantRoleGrant` 也已按 S1-RT-033 改为单段键，开户编排继续通过 `TenantRoleGrant.Key` 解析。
 
 standalone 组合包移除从未被运行时消费的 `resolver.mode: single-tenant` 占位配置；独立宿主仍显式选择自己的 `ITenantContext` / SingleTenant 实现，不能以配置字符串切换可信租户边界。各 profile 的现有 Tenancy 配置均经实际 Apply 回归。
 
@@ -111,3 +111,9 @@ R113 的处理顺序固定为：认证及平台主体检查 → 请求绑定与�
 开户失败先通过 ITenantProvisioning.GetStepsAsync 或步骤表查看 04:provisioned 的 Reason，再核对配置清单与实际能力元数据。二次 Enter、能力不在 initializationCapabilities、destructive/external 三种拒绝对外都是 AUTHZ_DENIED，分别核对本次已消费能力、清单的精确能力 ID、sideEffect。高风险能力在消费一次性槽位之前被拒；改为合法元数据后同一派发仍只能成功消费一次。
 
 契约发布前必须带齐已有服务端校验约束并通过真实端点与快照一致性测试。S1-DEC-025 只允许在 qian.tenancy 从未进入平台契约仓库时纠偏一次；后续 v1 收窄必须走 v2，并提供 R33 的别名、Deprecation 和 successor-version Link。TEN-005 消费 TEN-011 统一快照，不再另改同一 v1 基线。
+
+## 清单入口与代码派生
+
+`plugins/qian.tenancy/.qian-plugin/plugin.json` 的稳定入口是 `TenancyComponent`，允许 global scope，依赖 `Data`，提供 租户目录、设置、运营、配额、状态机、开户与 `CommandTenancy`。固定委托无参 `TenancyPlugin`。扫描到期租户的工具由实现共用的静态 `TenantExpiryCapability.Definition` 派生；可执行绑定属于 SDK 能力协议，不伪装成普通服务键。
+
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

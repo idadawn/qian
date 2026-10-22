@@ -12,6 +12,9 @@
       "items": {
         "type": "string"
       }
+    },
+    "env": {
+      "type": "string"
     }
   },
   "additionalProperties": false,

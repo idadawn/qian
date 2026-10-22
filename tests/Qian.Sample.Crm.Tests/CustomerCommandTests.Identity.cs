@@ -6,6 +6,8 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Reflection;
+using Qian.Plugin.Sdk;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.Identity.Abstractions;
@@ -138,9 +140,15 @@ public sealed partial class CustomerCommandTests
     private static async Task MountIdentity(WebApplication app, IdentityParts parts)
     {
         var loader = app.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.identity.server/.qian-plugin/plugin.json")));
+        var code = ((IComponentCodeMetadataFactory)Activator.CreateInstance(typeof(IdentityServerComponent).Assembly.GetCustomAttribute<QianCodeMetadataAttribute>()!.FactoryType)!).Create();
+        var type = Type.GetType(manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString()!, throwOnError: true)!;
+        Assert.Equal(code.RuntimeEntry, manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString());
+        Assert.Equal(code.Provides, manifest.RootElement.GetProperty("provides").EnumerateArray().Select(item => item.GetString()!));
         await loader.MountAsync([new PluginDefinition(new PluginEntry("identity", "qian.identity.server", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { issuer = parts.Issuer })),
-            new IdentityServerPlugin(), [IdentityDefinition.Key, IdentityDefinition.AccountsKey, IdentityDefinition.SignInKey, IdentityDefinition.FactorsKey])], Ct);
+            (IQianPlugin)Activator.CreateInstance(type)!, code.Provides.Select(name => new ServiceKey(name)).ToArray())], Ct);
         Assert.True(loader.GetState("identity", ScopeKey.Global) == PluginState.Ready, loader.GetFailure("identity", ScopeKey.Global)?.ToString());
+        foreach (var key in code.Provides) Assert.NotNull(loader.GetContext("identity", ScopeKey.Global).TryInject<object>(new ServiceKey(key)));
         parts.Loader = loader;
     }
 

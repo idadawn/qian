@@ -10,7 +10,11 @@ services.AddQianDataTypes();          // 只要类型目录
 services.AddQianDataConnections(...); // 或连同数据连接档案
 ```
 
-`AddQianPgDialect` 把 `PgDialect` 作为 `IDataDialect` 登记，注册表以描述数据的代码 `pg` 注册（`Data.Dialects:pg`）。
+上面的方式保留给独立宿主：`AddQianPgDialect` 把 `PgDialect` 作为 `IDataDialect` 登记，注册表以描述数据的代码 `pg` 注册。
+
+组件模式使用 `PgDialectPlugin`，清单在 `plugins/qian.data.dialect.pg/.qian-plugin/plugin.json`。它只允许 global scope，依赖 `Data`，配置仅接受空对象；宿主调用 `AddQianDataTypes()`，由插件在挂载时向运行时提供 `Data.Dialects:pg`，同时把同一个实例登记到数据目录。两份登记均随卸载撤销，目录与连接探测不会继续使用已卸载的方言。数据映射在登记前按系统基准类型校验。
+
+同一宿主选择其中一种方式：已通过 `AddQianPgDialect()` 常驻注册 pg 后再挂 `PgDialectPlugin`，按同名独占规则返回 `REGISTRATION_CONFLICT`；失败挂载撤销自己的运行时贡献，保留原宿主登记。当前数据目录是全局宿主服务，因此插件明确拒绝 tenant / app / agent-session scope，不把租户方言写进全局目录。
 
 ## 方言数据
 
@@ -55,4 +59,4 @@ decimal 的精度上限取 28 位，是 .NET decimal 能无损往返的位数；
 
 ## 已知限制
 
-不提供 DDL 与分页方言（S2 数据接口与建模交付），SSL 模式取 Npgsql 缺省值。组件形态（作为插件向 `ctx.Data().Dialects` 注册、清单派生 `provides`）要等装载器支持注册表键；MySQL 与国产库方言本期不做。
+不提供 DDL 与分页方言（S2 数据接口与建模交付），SSL 模式取 Npgsql 缺省值。清单、具名贡献与撤销由 S1-RT-033 补齐；真实 `qian add` 门尚未通过，组件仍保留 `x-skeleton`。S1-DATA-006 的平台元数据端点专项验收仍由该任务完成；MySQL 与国产库方言本期不做。

@@ -63,3 +63,7 @@ static Qian.Identity.Client.IdentityClientHosting.AddQianIdentityClient(this Mic
 static Qian.Identity.Client.IdentityClientHosting.AddQianIdentityS2s(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Qian.Identity.Client.IdentityS2sOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Qian.Identity.Client.IdentityClientHosting.MapQianIdentityClient(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Qian.Identity.Client.IdentityClientHosting.UseQianIdentityClient(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+Qian.Identity.Client.IdentityClientComponent
+Qian.Identity.Client.IdentityClientComponent.IdentityClientComponent() -> void
+Qian.Identity.Client.IdentityClientComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Identity.Client.IdentityClientComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

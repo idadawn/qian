@@ -35,7 +35,7 @@ public sealed class RelyingPartyTests(PostgresFixture postgres, RedisFixture red
         using (var anonymous = await browser.GetAsync(new Uri(address, "me"), Ct)) Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
         await identity.SignInAsync(browser);
         var (callback, authorize) = await Authorize(browser, address, "/me?tab=1");
-        // 授权请求：PKCE 只用 S256，state / nonce 都是随机值；verifier 不出 RP。受众由发行方按客户端登记签发，RP 只校验。
+        // 授权请求：PKCE 只用 S256，state / nonce 都是随机值；verifier 不出 RP。受众经 resource 指定（见下一个用例），RP 再按 Resource 校验。
         Assert.Equal("S256", authorize["code_challenge_method"]); Assert.Equal(43, authorize["code_challenge"].ToString().Length);
         Assert.False(string.IsNullOrEmpty(authorize["state"])); Assert.False(string.IsNullOrEmpty(authorize["nonce"]));
         Assert.Equal(IdentityServerHost.ClientId, authorize["client_id"]); Assert.False(authorize.ContainsKey("code_verifier"));
@@ -68,6 +68,27 @@ public sealed class RelyingPartyTests(PostgresFixture postgres, RedisFixture red
         var code = QueryHelpers.ParseQuery(callback.Query)["code"].ToString();
         var leaked = rp.Logs.Messages.Where(message => message.Contains(session.Value, StringComparison.Ordinal) || message.Contains(code, StringComparison.Ordinal)).ToArray();
         Assert.True(leaked.Length == 0, string.Join("\n", leaked));
+    }
+
+    [Fact]
+    public async Task 授权请求带resource_客户端登记两个资源时访问令牌只有Resource一个受众()
+    {
+        var address = RelyingParty.ReserveAddress();
+        await using var identity = await IdentityServerHost.Start(postgres, new Uri(address, "auth/callback"));
+        await using var rp = await RelyingParty.Start(identity, redis.ConnectionString, address, _tls);
+        var (browser, cookies) = RelyingParty.Browser(_tls);
+        using var _ = browser;
+        await identity.SignInAsync(browser);
+        var (callback, authorize) = await Authorize(browser, address, "/me");
+        // RFC 8707：规范模式的授权请求恰好带一个 resource，就是配置的 Resource（发行方对多资源客户端不带 resource 的请求一律拒绝）。
+        Assert.Equal(IdentityServerHost.Resource, Assert.Single(authorize["resource"]));
+        using (var completed = await browser.GetAsync(callback, Ct))
+            Assert.True(completed.StatusCode == HttpStatusCode.Redirect, await completed.Content.ReadAsStringAsync(Ct));
+        // 发行方为该客户端登记了两个资源，访问令牌只带 RP 要的那一个，拿到另一个资源服务器不会被接受。
+        var id = cookies.GetCookies(address)[IdentityClientDefaults.SessionCookieName]!.Value;
+        var stored = (await rp.Services.GetRequiredService<ISessionStore>().GetAsync(id, Ct))!;
+        Assert.Equal([IdentityServerHost.Resource], new JsonWebToken(stored.AccessToken).Audiences);
+        Assert.DoesNotContain(IdentityServerHost.OtherResource, new JsonWebToken(stored.AccessToken).Audiences);
     }
 
     [Fact]
