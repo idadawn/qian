@@ -186,7 +186,7 @@ meter `Qian.Events` 的消费侧计数，每条消息恰落入其中一个：`qi
 ## 已知限制与延期项
 
 - 事件目录 HTTP 接口（含「订阅者」一列，数据来自 `IEventsService.Subscriptions`）、AsyncAPI 导出、主题 ACL（订阅侧的 `provides.events.subscribe` 钩子）与面向 `NpgsqlTransaction` 的写入端由 [S1-EVT-003](../../pm/tasks/S1-EVT-003.md) 交付。
-- 拆分部署下身份侧订阅 `authz.grant.changed.v1` → `BumpIdentityRevisionAsync` 由 S1-IDP-012（随 S1-DEC-027 建档）用本订阅器接线；同进程宿主不登记该订阅。
+- 拆分部署下身份侧订阅 `authz.grant.changed.v1` → `BumpIdentityRevisionAsync` 由 [S1-IDP-012](../../pm/tasks/S1-IDP-012.md)（随 S1-DEC-027 建档）用本订阅器接线；同进程宿主不登记该订阅。
 - 死信队列的重放工具（ADR-008 D8.9）没有做；死信消息保留原文与原属性，重放时去掉 `x-qian-*` 头再发回 `qian.events`。
 - 消费端 baggage（`tenant.id` 等）由 S1-AUD-003 在订阅器的 Activity 上补齐，本包只恢复 trace_parent；死信告警规则归 S1-DEP-006。
 - S1-DEC-013 列为可选项的 PG `processed_messages` 兜底表没有做，幂等记录只在 Redis。
