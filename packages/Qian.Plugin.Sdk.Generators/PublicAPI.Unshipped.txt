@@ -5,3 +5,6 @@ Qian.Plugin.Sdk.Generators.CapabilityGenerator.Initialize(Microsoft.CodeAnalysis
 Qian.Plugin.Sdk.Generators.ComponentMetadataGenerator
 Qian.Plugin.Sdk.Generators.ComponentMetadataGenerator.ComponentMetadataGenerator() -> void
 Qian.Plugin.Sdk.Generators.ComponentMetadataGenerator.Initialize(Microsoft.CodeAnalysis.IncrementalGeneratorInitializationContext context) -> void
+Qian.Plugin.Sdk.Generators.JobGenerator.Initialize(Microsoft.CodeAnalysis.IncrementalGeneratorInitializationContext context) -> void
+Qian.Plugin.Sdk.Generators.JobGenerator
+Qian.Plugin.Sdk.Generators.JobGenerator.JobGenerator() -> void

@@ -42,8 +42,8 @@
     "nuget": [
       {
         "id": "Qian.Data",
-        "version": "0.1.0",
-        "digest": "sha256:bf5df2eef9836e342721567e66c3cdf5d6e0aacc0e5d15731f6acb79d5c13e83"
+        "version": "0.2.0",
+        "digest": "sha256:fcfd40d9c749ce25fcde1d0905eb7e76ba496efa7a2bb52bc33afcdd0a329cf0"
       }
     ],
     "configSchema": "./schemas/config.schema.json"

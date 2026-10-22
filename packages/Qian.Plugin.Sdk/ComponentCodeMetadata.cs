@@ -27,9 +27,18 @@ public sealed class ComponentCodeMetadata
     /// <summary>复制完整代码声明；权限与事件使用既有 metadata 表面，配置使用独立 Schema。</summary>
     public ComponentCodeMetadata(string componentId, string runtimeEntry, IReadOnlyList<ServiceKey> inject, IReadOnlyList<string> provides,
         IReadOnlyList<CapabilityContract> capabilities, string permissionsJson, string eventsJson, string? configSchemaJson)
+        : this(componentId, runtimeEntry, inject, provides, capabilities, permissionsJson, eventsJson, configSchemaJson, []) { }
+
+    /// <summary>复制完整声明与可调度能力；既有构造入口保持兼容。</summary>
+    public ComponentCodeMetadata(string componentId, string runtimeEntry, IReadOnlyList<ServiceKey> inject, IReadOnlyList<string> provides,
+        IReadOnlyList<CapabilityContract> capabilities, string permissionsJson, string eventsJson, string? configSchemaJson, IReadOnlyList<JobContract> jobs)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(componentId); ArgumentException.ThrowIfNullOrWhiteSpace(runtimeEntry);
         ArgumentNullException.ThrowIfNull(inject); ArgumentNullException.ThrowIfNull(provides); ArgumentNullException.ThrowIfNull(capabilities);
+        ArgumentNullException.ThrowIfNull(jobs);
+        if (jobs.Any(job => job.Capability.ComponentId != componentId || !capabilities.Contains(job.Capability)) || jobs.Select(job => job.Code).Distinct(StringComparer.Ordinal).Count() != jobs.Count)
+            throw new ArgumentException("作业声明存在重复代码或跨组件能力。");
+        Jobs = Array.AsReadOnly(jobs.OrderBy(job => job.Code, StringComparer.Ordinal).ToArray());
         ComponentId = componentId; RuntimeEntry = runtimeEntry;
         Inject = Array.AsReadOnly(inject.Select(key => key.Name).Order(StringComparer.Ordinal).ToArray());
         Provides = Array.AsReadOnly(provides.Order(StringComparer.Ordinal).ToArray());
@@ -60,6 +69,9 @@ public sealed class ComponentCodeMetadata
     public System.Text.Json.JsonElement Events { get; }
     /// <summary>代码声明的配置 Schema；null 表示尚未声明。</summary>
     public System.Text.Json.JsonElement? ConfigSchema { get; }
+
+    /// <summary>代码派生的 local 作业声明。</summary>
+    public IReadOnlyList<JobContract> Jobs { get; }
 
     private static System.Text.Json.JsonElement Parse(string json, System.Text.Json.JsonValueKind kind)
     {

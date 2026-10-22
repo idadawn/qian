@@ -4,11 +4,14 @@ import * as Core from '@idadawn/yue-core';
 import * as Form from '@idadawn/yue-form';
 import * as Sdk from '@idadawn/yue-sdk';
 import * as Data from '@idadawn/yue-data';
+import * as Shell from '@idadawn/yue-shell';
+import { SHELL_DEMOS } from '../../packages/yue/shell/docs/examples/shell-demo';
+import shellScenarios from '../../packages/yue/shell/docs/scenarios.json';
 import { DATA_DEMOS } from '../../packages/yue/data/docs/examples/data-demo';
 import dataScenarios from '../../packages/yue/data/docs/scenarios.json';
 import SchemaFormDemo from '../../packages/yue/form/docs/examples/schema-form-demo';
 import formScenarios from '../../packages/yue/form/docs/scenarios.json';
-import { TOKEN_REGISTRY } from '@idadawn/yue-tokens';
+import { TOKEN_REGISTRY, initializeTheme } from '@idadawn/yue-tokens';
 import { DEMOS, type DemoProps } from '../../packages/yue/core/docs/examples/catalog';
 import scenarios from '../../packages/yue/core/docs/scenarios.json';
 import sources from 'yue-demo-sources';
@@ -16,11 +19,11 @@ import './index.css';
 
 const query = new URLSearchParams(location.search);
 const name = query.get('component') ?? 'Button';
-const initialState = query.get('state') ?? (name === 'Tokens' ? 'Light' : 'Default');
+const initialState = query.get('state') ?? (name === 'Tokens' ? 'Light' : name === 'FallbackPage' ? 'Forbidden' : 'Default');
 const themes = ['light', 'dark'] as const;
-const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空', Compact: '紧凑' };
-const modules: Record<string, unknown> = { react: React, '@idadawn/yue-core': Core, '@idadawn/yue-form': Form, '@idadawn/yue-data': Data, '@idadawn/yue-sdk': Sdk, '@idadawn/yue-tokens': { TOKEN_REGISTRY } };
-const states = [...scenarios, ...formScenarios, ...dataScenarios].filter(s => s.component === name);
+const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空', Compact: '紧凑', Managed: '平台代管', Offline: '离线', MultiTenant: '多租户', CallbackFailure: '回调失败', Forbidden: '403 无权限', NotFound: '404 不存在', ServerError: '500 错误' };
+const modules: Record<string, unknown> = { react: React, '@idadawn/yue-core': Core, '@idadawn/yue-form': Form, '@idadawn/yue-data': Data, '@idadawn/yue-sdk': Sdk, '@idadawn/yue-shell': Shell, '@idadawn/yue-tokens': { TOKEN_REGISTRY, initializeTheme } };
+const states = [...scenarios, ...formScenarios, ...dataScenarios, ...shellScenarios].filter(s => s.component === name);
 let editorPromise: Promise<void> | undefined;
 function script(url: string) {
   return new Promise<void>((resolve, reject) => {
@@ -55,7 +58,7 @@ function App() {
   const [edited, setEdited] = React.useState<React.ComponentType<DemoProps> | null>(null);
   const editorHost = React.useRef<HTMLDivElement>(null);
   const editor = React.useRef<ReturnType<Window['monaco']['editor']['create']> | null>(null);
-  const original = name === 'Tokens' ? Tokens : name === 'SchemaForm' ? SchemaFormDemo : DATA_DEMOS[name] ?? DEMOS[name as keyof typeof DEMOS];
+  const original = name === 'Tokens' ? Tokens : name === 'SchemaForm' ? SchemaFormDemo : SHELL_DEMOS[name as keyof typeof SHELL_DEMOS] ?? DATA_DEMOS[name] ?? DEMOS[name as keyof typeof DEMOS];
   const Demo = edited ?? original;
   const scenario = states.find(s => s.state === state) ?? states[0];
   React.useEffect(() => {
@@ -104,7 +107,8 @@ function App() {
       setEdited(() => output.exports.default!); setError(''); setRevision(v => v + 1);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }
+  const Stage = name in SHELL_DEMOS ? 'div' : 'main';
   if (!Demo) return <p role="alert">找不到组件示例。</p>;
-  return <><nav className="demo-toolbar" aria-label="演示设置"><label>状态 <select aria-label="示例状态" value={state} onChange={e => { setState(e.target.value); if (e.target.value === 'Dark') setTheme('dark'); setRevision(v => v + 1); }}>{states.map(s => <option key={s.id} value={s.state}>{labels[s.state]}</option>)}</select></label><label>主题 <select aria-label="示例主题" value={theme} onChange={e => setTheme(e.target.value)}>{themes.map(t => <option key={t} value={t}>{t === 'dark' ? '暗色' : '明亮'}</option>)}</select></label><button onClick={() => { setEdited(null); setRevision(v => v + 1); editor.current?.setValue(sources[name] ?? ''); setError(''); }}>重置</button>{name !== 'Tokens' && <button aria-expanded={editing} onClick={() => setEditing(v => !v)}>{editing ? '收起编辑器' : '编辑代码'}</button>}{editing && <><button disabled={loading} onClick={run}>运行</button><button disabled={loading} onClick={() => void copyCode()}>{copied ? "已复制" : "复制代码"}</button></>}</nav>{editing && <><div ref={editorHost} className="demo-editor" />{loading && <p role="status">正在加载本地编辑器…</p>}</>}{error && <p role="alert" className="demo-error">{error}</p>}<main className="demo-stage" aria-label={`${name} 交互预览`}><Boundary key={`${state}-${revision}`}><Demo {...scenario?.props} /></Boundary></main></>;
+  return <><nav className="demo-toolbar" aria-label="演示设置"><label>状态 <select aria-label="示例状态" value={state} onChange={e => { setState(e.target.value); if (e.target.value === 'Dark') setTheme('dark'); setRevision(v => v + 1); }}>{states.map(s => <option key={s.id} value={s.state}>{labels[s.state]}</option>)}</select></label><label>主题 <select aria-label="示例主题" value={theme} onChange={e => setTheme(e.target.value)}>{themes.map(t => <option key={t} value={t}>{t === 'dark' ? '暗色' : '明亮'}</option>)}</select></label><button onClick={() => { setEdited(null); setRevision(v => v + 1); editor.current?.setValue(sources[name] ?? ''); setError(''); }}>重置</button>{name !== 'Tokens' && <button aria-expanded={editing} onClick={() => setEditing(v => !v)}>{editing ? '收起编辑器' : '编辑代码'}</button>}{editing && <><button disabled={loading} onClick={run}>运行</button><button disabled={loading} onClick={() => void copyCode()}>{copied ? "已复制" : "复制代码"}</button></>}</nav>{editing && <><div ref={editorHost} className="demo-editor" />{loading && <p role="status">正在加载本地编辑器…</p>}</>}{error && <p role="alert" className="demo-error">{error}</p>}<Stage className="demo-stage" aria-label={`${name} 交互预览`}><Boundary key={`${state}-${revision}`}><Demo {...scenario?.props} /></Boundary></Stage></>;
 }
 createRoot(document.getElementById('root')!).render(<App />);

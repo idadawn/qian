@@ -12,10 +12,12 @@ const cache = path.join(WEBSITE_ROOT, '.cache/yue');
 fs.mkdirSync(cache, { recursive: true });
 const data = readYueDocs();
 const dataSource = fs.readFileSync(path.join(WEBSITE_ROOT, '../packages/yue/data/docs/examples/data-demo.tsx'), 'utf8');
+const shellSource = fs.readFileSync(path.join(WEBSITE_ROOT, '../packages/yue/shell/docs/examples/shell-demo.tsx'), 'utf8');
 const dataComponents = ['DataTable', 'Tree', 'TreeSelect', 'Cascader', 'DatePicker', 'DateRange', 'TimePicker', 'TimeRange', 'Upload', 'ImagePreview'];
 fs.writeFileSync(path.join(cache, 'sources.json'), JSON.stringify({
   ...Object.fromEntries(data.docs.map(d => [d.name, d.source])),
   ...Object.fromEntries(dataComponents.map(name => [name, dataSource])),
+  ...Object.fromEntries(['AppShell', 'Authentication', 'FallbackPage'].map(name => [name, shellSource])),
   SchemaForm: fs.readFileSync(path.join(WEBSITE_ROOT, '../packages/yue/form/docs/examples/schema-form-demo.tsx'), 'utf8'),
 }));
 const vendor = path.join(WEBSITE_ROOT, 'docs/public/yue-vendor');

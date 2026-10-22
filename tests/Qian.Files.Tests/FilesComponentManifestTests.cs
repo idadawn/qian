@@ -6,13 +6,13 @@ using Qian.Plugin.Sdk;
 namespace Qian.Files.Tests;
 
 // 仓库里 qian.files 的唯一清单：代码字段由源生成器派生，每个能力一个工具文件且与生成契约一致（CI 另由 scripts/check_plugin_manifests.py 跑 Plugin.Tool check）。
-// x-skeleton 保留到从私有源真实安装并运行 Provider 之后（S1-QA-003）再移除；权限与角色声明能被授权组件编译成目录。
+// 已过锁步发布与私有源真实安装两门（S1-FILE-004，R100 口径），清单不再带 x-skeleton，NuGet 条目钉同一锁步版本并带归档摘要；权限与角色声明能被授权组件编译成目录。
 public sealed class FilesComponentManifestTests
 {
     private static readonly string Root = FilesMetadata.RepositoryRoot();
 
     [Fact]
-    public void 清单代码字段与生成元数据一致_工具文件与六个能力契约一一对应_骨架标记保留_NuGet条目为对象且不带摘要()
+    public void 清单代码字段与生成元数据一致_工具文件与六个能力契约一一对应_骨架标记已移除_NuGet条目钉锁步版本并带摘要()
     {
         using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "plugins/qian.files/.qian-plugin/plugin.json")));
         var json = manifest.RootElement;
@@ -28,14 +28,18 @@ public sealed class FilesComponentManifestTests
         Assert.Equal(code.Inject, Strings(json.GetProperty("inject")));
         Assert.Equal(code.Provides, Strings(json.GetProperty("provides")));
         Assert.Equal((FilesDbContext.Schema, "./schemas/config.schema.json"), (runtime.GetProperty("dbSchema").GetString(), runtime.GetProperty("configSchema").GetString()));
-        Assert.Equal(["Qian.Files.Abstractions", "Qian.Files"], runtime.GetProperty("nuget").EnumerateArray().Select(item =>
+        var packages = runtime.GetProperty("nuget").EnumerateArray().ToArray();
+        Assert.Equal(["Qian.Files.Abstractions", "Qian.Files"], packages.Select(item =>
         {
-            Assert.Equal(["id", "version"], item.EnumerateObject().Select(property => property.Name));
+            Assert.Equal(["id", "version", "digest"], item.EnumerateObject().Select(property => property.Name));
+            Assert.Matches("^sha256:[0-9a-f]{64}$", item.GetProperty("digest").GetString());
             return item.GetProperty("id").GetString()!;
         }));
+        // 包族锁步发布：同一组件的包钉同一版本。
+        Assert.Single(packages.Select(item => item.GetProperty("version").GetString()).Distinct());
         Assert.Equal(["platform", "standalone"], Strings(json.GetProperty("policy").GetProperty("profiles")));
         Assert.Equal(["global", "tenant"], Strings(json.GetProperty("scopes")));
-        Assert.True(json.GetProperty("x-skeleton").GetBoolean());
+        Assert.False(json.TryGetProperty("x-skeleton", out _));
 
         var generated = json.GetProperty("x-qian-generated");
         Assert.True(generated.GetProperty("$generated").GetBoolean());
