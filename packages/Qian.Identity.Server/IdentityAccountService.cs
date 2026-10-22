@@ -26,7 +26,6 @@ internal sealed partial class IdentityAccountService : IIdentityService, IIdenti
     private readonly ILogger _logger;
     private readonly ISessionIndex _index;
     private readonly SessionSignal _signal;
-    private readonly ConnectorRegistry _connectors = new();
 
     internal IdentityAccountService(IPluginContext ctx, IdentityServerOptions options)
     {
@@ -72,7 +71,8 @@ internal sealed partial class IdentityAccountService : IIdentityService, IIdenti
 
     public Principal? CurrentPrincipal => null;
 
-    public IIdentityConnectorRegistry Connectors => _connectors;
+    // 连接器注册在运行时的 Identity.Connectors 注册表（R38），按当前租户上下文的 scope 解析，见 IdentityAccountService.Connectors.cs。
+    public IIdentityConnectorRegistry Connectors => new TenantConnectorView(this);
 
     public async Task<Person?> GetPersonAsync(Guid personId, CancellationToken cancellationToken = default)
     {
@@ -155,39 +155,6 @@ internal sealed partial class IdentityAccountService : IIdentityService, IIdenti
     private static Membership ToMembership(MembershipRow row) =>
         new(row.Id, row.PersonId, Guid.ParseExact(row.TenantId, "D"), row.DisplayName, row.Status, row.IsTenantAdministrator)
         { Account = row.Account, IdentityRevision = row.IdentityRevision };
-
-    // ---- 连接器注册表：同名独占、可撤销；scope 遮蔽随连接器任务（S1-IDP-007）接入 ----
-
-    private sealed class ConnectorRegistry : IIdentityConnectorRegistry
-    {
-        private readonly Lock _gate = new();
-        private readonly Dictionary<string, IIdentityConnector> _items = new(StringComparer.Ordinal);
-
-        public IDisposable Register(string name, IIdentityConnector connector)
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(name); ArgumentNullException.ThrowIfNull(connector);
-            lock (_gate)
-            {
-                if (!_items.TryAdd(name, connector))
-                    throw Error(PlatformErrors.RegistrationConflict, new Dictionary<string, string> { ["key"] = name, ["owner"] = "qian.identity" });
-            }
-            return new Handle(this, name, connector);
-        }
-
-        public IIdentityConnector? Find(string name) { lock (_gate) return _items.GetValueOrDefault(name); }
-
-        public IReadOnlyList<ConnectorDescriptor> List() { lock (_gate) return _items.Values.Select(c => c.Descriptor).OrderBy(d => d.Id, StringComparer.Ordinal).ToArray(); }
-
-        private sealed class Handle(ConnectorRegistry owner, string name, IIdentityConnector connector) : IDisposable
-        {
-            private int _disposed;
-            public void Dispose()
-            {
-                if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-                lock (owner._gate) { if (owner._items.TryGetValue(name, out var current) && ReferenceEquals(current, connector)) owner._items.Remove(name); }
-            }
-        }
-    }
 }
 
 /// <summary>账号会话有效性：账号 Cookie 与 refresh 授权前由协议端点调用，宿主自带账号服务时不装配。</summary>

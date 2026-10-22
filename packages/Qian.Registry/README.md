@@ -1,6 +1,6 @@
 # Qian.Registry
 
-注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，当前仍是配置骨架，消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面 scope 视图（只读，HTTP 适配器为 `Qian.Registry.AspNetCore`）、候选制品的清单准入、供可信平台插件调用的公开挂载 / 卸载与契约准入已接入，安装链由 [Qian.Lifecycle](../Qian.Lifecycle/README.md) 编排（S1-RT-005）。scope patch 的 HTTP 写入仍未开放，不能以本地装载宣称组件已可从正式源安装。
+注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，当前仍是配置骨架，消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面 scope 视图与条件写入（HTTP 适配器为 `Qian.Registry.AspNetCore`）、候选制品的清单准入、供可信平台插件调用的公开挂载 / 卸载与契约准入已接入，安装链由 [Qian.Lifecycle](../Qian.Lifecycle/README.md) 编排（S1-RT-005）。scope patch 的 HTTP 与运营 CLI 已接入；挂载只作用于平台已安装、租户已开通的组件，不代表从正式源安装。
 
 ## 已实现的持久化基础
 
@@ -112,9 +112,21 @@ scope Reconciler 解析条目时，对在 `metadata/contracts.json` 声明契约
 
 装配失败沿用原有的收紧规则：已提交的禁用不回退，该 scope 被阻断，其他 scope 不受影响。本副本最近一次失败记为诊断：条目 Apply 失败带条目、组件修订与原因码，其余为 scope 级失败；下一次合入成功即清空。`GetScopeDiagnosticsAsync` 在与装载相同的锁内先合入数据库 scope，再返回这些诊断，供 Lifecycle 的管理面使用，调用方负责权限。Lifecycle 的挂载失败会恢复挂载前的 patch，并把原因另行持久化，见 [Qian.Lifecycle](../Qian.Lifecycle/README.md)。
 
+## 管理面条件写入（S1-RT-029）
+
+`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}` 与 v1 `/api/kernel/tenants/...` 接收 `{ "revision": 0, "patch": { "id": "notes", "plugin": "acme.notes@1.0.0", "config": {} } }`。`tenant` 是小写规范 UUID，`scope` 必须为 `tenant:<同一 UUID>`，`patch.id` 与路径条目一致；请求体拒绝租户字段和未知字段。创建用 revision 0，更新用当前修订；相同当前修订与内容不增加版本，过期修订返回 409 `CONFLICT`，客户端不得自动读新修订后覆盖。
+
+授权在 `IRegistryService.PutScopePatchAsync` 中完成。平台用户经真实 `ISuperadminBypass` 显式旁路并先写目标租户审计链（`bypass = superadmin`）；非超管、缺旁路或审计不可用一律 404。租户主体先检查 `qian.registry:scope:write`（默认仅 tenant.owner）；权益端口尚未交付，权限通过仍拒绝写入。只有同时有 scope:read 才返回 403 `PLUGIN_NOT_ENTITLED`，否则 404；未认证返回 401。目标租户仅取路径，普通租户的路径还必须匹配可信主体与租户上下文，正文和请求头不能切换租户。
+
+成功授权后经 Lifecycle 的 `MountAtRevisionAsync` / `UnmountAtRevisionAsync` 复用既有 Mount / Unmount 编排与数据库条件写入。`disabled: true` 走卸载，平台条目写禁用 patch，纯租户条目撤销为墓碑；带当前修订重复卸载不再发事件，删除后重建沿用递增修订。required 条目不能禁用。patch 与 `registry.scope.*.v1` 信封同事务入 Outbox，Lifecycle 即时同步并沿用通知和补偿读取，装配失败恢复原 patch 并返回 `state: Failed` 与原因码。平台安装、开通和全局配置均不被此端点修改。
+
+宿主使用 `UseQianErrors()` → `UseRouting()` → `UseQianRegistryAliases()` → 身份与租户边界 → `UseAuthorization()`，再 `MapQianRegistry(...)`；平台运营 PUT 必须允许无租户平台身份到达注册表，由服务在授权时进入路径目标租户。别名中间件在路由后捕获后继路径，认证 401、绑定 400 和业务错误也带 `Deprecation` / `Link`。写端点声明 `PlatformHttpContract`，由真实 ApiExplorer 导出 [OpenAPI](../../plugins/qian.registry/contracts/http-v1.openapi.json)，不进入业务能力聚合；发布时经 RT-006 的 OpenAPI 兼容准入，移除 PUT 会被拒绝。
+
+运营 CLI 的连接、单条操作与失败语义见 [CLI](../qian-cli/README.md#租户-scope-运营入口)。真实集成测试覆盖 JWT、PG 受限角色、Authz、Audit、Lifecycle、Outbox、五秒内生效、其他租户与全局隔离、CLI add/remove、过期修订和别名错误响应。
+
 ## 剩余工作
 
-scope patch 的 HTTP 写入（`PUT /api/registry/tenants/{tenant}/patches/{scope}/{entry}`）尚未开放，归 S1-RT-029（R86）。App / 会话归属与权益（S1-ENT-001）在各自任务中接入；平台超管旁路已接入（S1-AZ-003，见上文管理面一节）。`plugins/qian.registry` 的骨架标记保留，组件目录清单的合并生成与骨架移除归 S1-RT-033（R94）。
+scope patch 单条 HTTP 写入与运营 CLI 已交付（S1-RT-029）。App / 会话归属与真实权益查询（S1-ENT-001）仍在各自任务中接入；租户写入在 `RegistryService.Writes.cs` 的权益边界统一 fail-closed，后续只在该位置接真实 Entitlement 端口，不能以 Installed、令牌角色或布尔标志替代。跨条目远端批量事务尚无契约，CLI 在发送请求前拒绝多条。`plugins/qian.registry` 的骨架标记保留，组件目录清单的合并生成与骨架移除归 S1-RT-033（R94）。
 
 ## 面向业务入口的 scope 视图
 

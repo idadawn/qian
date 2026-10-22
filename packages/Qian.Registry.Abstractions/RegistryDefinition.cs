@@ -10,6 +10,8 @@ public static class RegistryDefinition
     public static readonly ServiceKey Key = new("Registry");
     /// <summary>管理面读取 scope 视图的权限点（R32）：持有者对未挂载条目得到 403 原因码，其他调用者与不存在同为 404。</summary>
     public const string ScopeReadPermission = "qian.registry:scope:read";
+    /// <summary>写入租户 scope patch 的权限点；默认只授予租户 Owner，权益端口缺席时仍拒绝租户写入。</summary>
+    public const string ScopeWritePermission = "qian.registry:scope:write";
     /// <summary>取得已挂载的平台注册表。</summary>
     public static IRegistryService Registry(this IPluginContext context) => context.Inject<IRegistryService>(Key);
 }
@@ -37,6 +39,8 @@ public interface IRegistryService : IAsyncDisposable
     /// message 说明哪一层导致、pointer 指向 patch 条目；未知条目以及权限、租户不符的调用者一律 NOT_FOUND。
     /// </summary>
     ValueTask<RegistryEntryView> GetScopeEntryAsync(ScopeKey scope, string entryId, ICurrentUser user, CancellationToken cancellationToken = default);
+    /// <summary>管理面条件写入：目标租户仅取路径，授权后经 Lifecycle 挂载或卸载；平台主体须经超管审计旁路，租户主体须同时满足权限与权益。</summary>
+    ValueTask<RegistryScopePatchResult> PutScopePatchAsync(string tenantId, ScopeKey scope, string entryId, RegistryScopePatchRequest request, ICurrentUser user, CancellationToken cancellationToken = default);
     /// <summary>
     /// 候选制品登记：核验完整字节的 D4 摘要后按 platform / server 做共用静态校验，inject 须由预装组件的 provides 满足，
     /// 通过后幂等保存为 Submitted；不合格时抛 INPUT_INVALID，字段错误带指向制品文件的 JSON Pointer，不写入任何记录。

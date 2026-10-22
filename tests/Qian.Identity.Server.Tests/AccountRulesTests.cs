@@ -159,6 +159,55 @@ public sealed partial class AccountRulesTests
         new IdentityAccountOptions { Login = new LoginPolicy { SelectionLifetime = TimeSpan.FromMinutes(5), MaxFailedAttempts = 3 } }.Validate();
     }
 
+    [Theory]
+    [InlineData(10, 10, 5, "/login/connector/{connectorId}", true)]
+    [InlineData(1, 60, 60, "/sso/{connectorId}/done", true)]
+    [InlineData(0, 10, 5, "/login/connector/{connectorId}", false)]
+    [InlineData(10, 61, 5, "/login/connector/{connectorId}", false)]
+    [InlineData(10, 10, 11, "/login/connector/{connectorId}", false)]
+    [InlineData(10, 10, 5, "https://evil.example/{connectorId}", false)]
+    [InlineData(10, 10, 5, "//evil.example/{connectorId}", false)]
+    [InlineData(10, 10, 5, "/\\evil.example/{connectorId}", false)]
+    [InlineData(10, 10, 5, "/login/connector/{connectorId}?next=/x", false)]
+    [InlineData(10, 10, 5, "/login/connector", false)]
+    public void 连接器流程策略_时限有界_落点只能是含连接器占位的站内路径(int flow, int binding, int reauth, string landing, bool valid)
+    {
+        var options = new IdentityAccountOptions
+        {
+            Connectors = new ConnectorPolicy
+            {
+                FlowLifetime = TimeSpan.FromMinutes(flow), BindingLifetime = TimeSpan.FromMinutes(binding), ReauthenticationWindow = TimeSpan.FromMinutes(reauth), LandingPath = landing
+            }
+        };
+        if (valid) options.Validate();
+        else Assert.Throws<ArgumentException>(options.Validate);
+    }
+
+    [Fact]
+    public async Task JIT租户策略_只有显式开启才放行_未装租户设置_未配置与读失败一律关闭()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Assert.False(await IdentityAccountService.JitEnabledAsync(null, "qian.identity.server", ct));
+        Assert.True(await IdentityAccountService.JitEnabledAsync(new JitSetting(() => true), "qian.identity.server", ct));
+        foreach (var value in new Func<bool?>[] { () => null, () => false, () => throw new Qian.Runtime.Errors.QianErrorException(new Qian.Runtime.Errors.QianError(Qian.Runtime.Errors.PlatformErrors.Unavailable)),
+            () => throw new System.Text.Json.JsonException() })
+            Assert.False(await IdentityAccountService.JitEnabledAsync(new JitSetting(value), "qian.identity.server", ct));
+        var asked = new JitSetting(() => true);
+        await IdentityAccountService.JitEnabledAsync(asked, "qian.identity.server", ct);
+        Assert.Equal(("qian.identity.server", "connectors:jitProvisioning"), asked.Asked);
+    }
+
+    private sealed class JitSetting(Func<bool?> value) : Qian.Tenancy.ITenantSettings
+    {
+        internal (string Plugin, string Key)? Asked { get; private set; }
+
+        public ValueTask<T?> Get<T>(string pluginId, string key, CancellationToken cancellationToken = default)
+        {
+            Asked = (pluginId, key);
+            return ValueTask.FromResult((T?)(object?)value());
+        }
+    }
+
     [Fact]
     public void 敏感类型的字符串化不泄露内容()
     {

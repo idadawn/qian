@@ -36,13 +36,13 @@ public sealed partial class PatchPersistenceTests
         Assert.Equal([DataDefinition.Key, RegistryDefinition.Key], AuthzPlugin.FromInstalledComponents().Inject);
 
         // 带 permissions.json 的预装组件逐个登记（缺 roles.json 视为没有默认角色）；没有声明的 qian.data 不登记。
-        Assert.Equal([RegistryDefinition.ScopeReadPermission], Codes("qian.registry"));
+        Assert.Equal([RegistryDefinition.ScopeReadPermission, RegistryDefinition.ScopeWritePermission], Codes("qian.registry"));
         Assert.Equal(["test.shared:record:read"], Codes("test.shared")); Assert.Equal(["test.private:record:read"], Codes("test.private"));
         Assert.Empty(Codes("qian.data"));
         var expected = new PermissionCatalogCompiler(new SurfaceValidator()).FromInstalled(Assert.Single(running.Registry.GetInstalledComponents(), component => component.PluginId == "qian.registry"));
         var stored = await new PostgresPermissionCatalogStore(data).GetAsync("qian.registry", "1.0.0", Ct);
         Assert.NotNull(stored);
-        Assert.Equal(Roles(expected), Roles(stored)); Assert.Equal(["tenant.admin=qian.registry:scope:read", "tenant.owner=qian.registry:scope:read"], Roles(stored));
+        Assert.Equal(Roles(expected), Roles(stored)); Assert.Equal(["tenant.admin=qian.registry:scope:read", "tenant.owner=qian.registry:scope:read", "tenant.owner=qian.registry:scope:write"], Roles(stored));
 
         var source = running.Runtime.GetContext("tenancy", ScopeKey.Global).Scoped(new ScopeKey("tenant", HttpTenantA));
         await source.DispatchAsync(SurfaceHookEvents.TenantProvisioned,

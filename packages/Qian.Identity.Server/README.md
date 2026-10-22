@@ -1,6 +1,6 @@
 # Qian.Identity.Server
 
-身份 seam 的 Provider：基于 OpenIddict 7.7.2 的协议面（S1-IDP-002）加内置的 Person / Membership 账号模型与统一登录流水线（S1-IDP-003）、会话中心（S1-IDP-004）。可嵌入独立 ASP.NET Core 宿主，拥有 discovery、JWKS、授权码、token、userinfo、revocation、introspection 和 end_session 协议面，以及账号、凭据、会话与登录审计的持久存储。OpenIddict 是唯一的令牌发行者；Kun 只提供 OIDC 依赖方与 Cookie 原语，不持有业务用户与租户。
+身份 seam 的 Provider：基于 OpenIddict 7.7.2 的协议面（S1-IDP-002）加内置的 Person / Membership 账号模型与统一登录流水线（S1-IDP-003）、会话中心（S1-IDP-004）与连接器登录（S1-IDP-007：统一回调、确认绑定、JIT）。可嵌入独立 ASP.NET Core 宿主，拥有 discovery、JWKS、授权码、token、userinfo、revocation、introspection 和 end_session 协议面，以及账号、凭据、会话与登录审计的持久存储。OpenIddict 是唯一的令牌发行者；Kun 只提供 OIDC 依赖方与 Cookie 原语，不持有业务用户与租户。
 
 ## 两种装配方式
 
@@ -17,19 +17,20 @@
 4. 构建应用后先 `UseQianIdentityServer()`，再 `UseAuthentication()`，最后 `MapQianIdentityServer()` 与 `MapQianIdentityAccounts()`。前者含 Qian 错误映射、安全响应头（no-store / nosniff / frame-ancestors none）与组件挂载门禁，卸载后账号接口与协议路径都是 404。
 5. 经 `PluginLoader` 依次挂载 Data、Tenancy，再挂载 `IdentityServerPlugin`；identity 条目的 config 只接收 `issuer`，必须与 `options` 的规范 issuer 一致。
 6. 可选：注册 StackExchange.Redis 的 `IConnectionMultiplexer`，会话中心就启用 Redis 索引与吊销墓碑；不注册则完全由 PostgreSQL 承担，行为一致（见「会话中心」）。事件总线配置里再调用 `events.AddQianIdentitySessionHandlers()`，登记 `tenant.suspended.v1` / `tenant.expired.v1` 的处理器。
+7. 可选：在 identity 之后挂载连接器组件（如 [Qian.Identity.Connector.Oidc](../Qian.Identity.Connector.Oidc/README.md) 的 `OidcConnectorPlugin`），全局或某个租户的 scope 都可以；它们在自己的上下文里登记到 `Identity.Connectors`，见「连接器登录」。
 
 **与业务宿主同机混合部署**：账号接口在 `/api/identity` 下，协议面在 `/connect`、`/.well-known` 下，登录前没有租户上下文。业务宿主若对 `/api/*` 统一施加「必须已选租户」的边界（Kun 多租户中间件、生产模式拒绝回退租户），须把这三组路由排除在外（单独分支或独立宿主）；CRM 联调测试用 `MapWhen` 分支演示了做法。
 
 ## 账号模型
 
-全局表（无租户列，不适用 RLS）：`persons`、`person_identifiers`、`password_history`、`clients`、`sessions`、`login_audits`、`login_tickets`、`login_captchas`。租户表（`tenant_id` 列，强制 RLS，只能在对应租户上下文中读写）：`memberships`、`external_identities`。
+全局表（不适用 RLS；其中 `sessions`、`login_audits`、`login_tickets`、`connector_flows` 只带可空的 `tenant_id` 作记录）：`persons`、`person_identifiers`、`password_history`、`clients`、`sessions`、`login_audits`、`login_tickets`、`login_captchas`、`connector_flows`。租户表（`tenant_id` 列，强制 RLS，只能在对应租户上下文中读写）：`memberships`、`external_identities`。
 
 - **Person** 是全局自然人，`Id` 即令牌的 `sub`，创建后永不改写；换绑标识不改 `sub`。`sub` 用 UUID v7 生成，主键冲突时换号重试，绝不覆盖既有账号；并发创建同一标识只有一个成功。
 - **标识**：手机（规范化为 E.164，缺省国家码取 `DefaultPhoneCountryCode`）、邮箱（小写）、用户名（字母开头 3–32 位，不会形似手机或邮箱，所以按语法即可判定类型，无需用户选择）。同一标识同一时刻只属于一个有效 Person（唯一索引加软删除，解绑后释放）。
 - **绑定守卫**：解绑最后一个已验证标识、或让账号没有任何标识，返回结构化的 `LAST_VERIFIED_IDENTIFIER`（422）；解绑外部身份若这是账号仅剩的登录方式，返回 `LAST_LOGIN_METHOD`。对外投影只含掩码，手机、邮箱原值不出身份组件。
 - **凭据**只存 Argon2id（纯托管实现，PHC 串，成本可调）；密码先 NFKC 规范化，比较常量时间，参数越界或格式残缺的哈希一律视为不匹配；历史保留最近 N 条哈希（含当前），新密码不得与其中任何一条相同；成本参数调高后旧哈希在下一次成功登录时顺带升级。
 - **Membership**（person × tenant）：显示名、`is_tenant_administrator`、状态、`profile` 预留（S1 不启用）、成员级修订；租户内账号唯一且创建后不可改。`persons.tenant_ids` 是登录前用的租户索引（登录时无租户上下文，靠它逐租户进入作用域读取），只由建立成员的同一事务维护，不是授权依据。
-- **ExternalIdentity** 绑定：同租户 connector × subject 唯一，须显式确认，软删除；连接器登录本身由 IDP-007 接入。
+- **ExternalIdentity** 绑定：同租户 connector × subject 唯一，须显式确认，软删除；连接器登录与确认绑定见下文「连接器登录」。
 - **Client** 是宿主可信注册配置的镜像（类型 confidential / public / machine、端类型 `DeviceType`），OpenIddict 应用仍是协议侧事实来源。
 - **身份修订**：令牌里的 `identity_revision` = Person 修订 + 成员修订，二者只增不减；改密、停用、锁定、标识变更、成员状态变更都会递增，使旧令牌与旧会话失效。
 
@@ -62,6 +63,18 @@
 - **在线用户**：窗口内（`OnlineWindow`，缺省 15 分钟，即访问令牌寿命）有活动的有效会话，按 Person × 租户聚合；平台视角含平台身份会话。活动指会话校验（授权、换码、刷新、userinfo、账号接口），`last_seen_at` 最多每分钟刷新一次。
 - **组件卸载**：后台工作（旁路、对账）互斥运行，卸载时先排空再放行 Data 释放会话；`ctx.Effect` 按登记的逆序执行，所以服务先于 Data 关闭，不会让正在执行的命令撞上被释放的连接。
 
+## 连接器登录
+
+上游身份源（企业 IdP、Authentik、企业微信……）以连接器组件接入：连接器在自己的 Apply 里 `ctx.IdentityConnectors().Register(name, connector)`，登记成运行时注册表的具名服务键 `Identity.Connectors:<name>`（R38），卸载即撤销。连接器只做「跳转 → 拿回外部断言」，其余都在这里（PRD 7.4.2、ADR-005 D5.6 / D5.11）。
+
+- **可见性按租户 scope**：发起时必须给租户号（绑定键是 tenant × connector × subject），一律在该租户的 scope 里解析连接器：租户 scope 的同名注册遮蔽全局项，restriction 过滤掉的、没挂载的与不存在的同样是 404，响应不可区分；列表接口按同一规则只列可见的。
+- **发起**：建一条 `connector_flows` 流程（10 分钟），库里只存 state 与浏览器密钥的 SHA-256。浏览器密钥放在 `qian.identity.browser` Cookie（HttpOnly、SameSite=Lax，同一浏览器的流程共用）；PKCE `code_verifier` 由浏览器密钥与流程号 HMAC 派生，库里没有，偷到授权码也换不出令牌。连接器拿到 `ConnectorContext`（state、nonce、verifier、回调地址），回调地址取自受信的 issuer，不取请求的 Host 头。连接器调用在流程租户的上下文里执行（租户 scope 挂载的连接器解析 `secretRef://tenant/…` 时按它核对），限时 30 秒，与请求是否断开无关。
+- **统一回调 `/connect/callback/{connectorId}`**：state 未知、属于别的连接器、或不是发起它的浏览器（含同名参数重复出现）一律 422 `AUTH_CONNECTOR_STATE_INVALID`，流程不受影响；发起之后连接器被卸载或过滤则 404。回调幂等：只有 pending 且未过期的流程会被条件更新抢占为 processing 并交给连接器，重放与并发的同一回调只回到落点，连接器只被调用一次，不签第二个会话。上游带 `error` 时记 `AUTH_CONNECTOR_DENIED`；`error_description` 是不可信数据，去掉控制字符、截断到 200 字，只作技术详情，文案一律取错误码目录。连接器校验断言失败时：nonce 不符 `AUTH_CONNECTOR_STATE_INVALID`，上游响应无效或签名不符 `BAD_GATEWAY`，超时 `GATEWAY_TIMEOUT`。处理完 302 到界面落点 `LandingPath?flow=<流程号>`（缺省 `/login/connector/{connectorId}`），界面按流程的 `next`（`wait` / `bind` / `done` / `error` / `restart`）驱动下一步；处理中的流程过了时限再一分钟仍未结束（进程中途退出），读取时按 `GATEWAY_TIMEOUT` 失败呈现，界面不会一直等待。每次回调恰好一条登录审计（stage `connector`）。
+- **已绑定**直接签发会话；**未绑定**进入确认绑定（绑定票据 10 分钟，过期后任何一步都是 `AUTH_BINDING_EXPIRED`）。界面只拿到上游资料的掩码（名称、邮箱、用户名），原值只在服务端。第一步在流程的租户里登录已有账号：新鲜的一因子认证，与密码登录同一条验证码、限流与审计，且必须是该租户的 active 成员。第二步显式确认：`link` 须在认证后 5 分钟内（否则 401 `UNAUTHENTICATED`，重新认证即可），在同一事务里写入 ExternalIdentity；该外部身份在本租户已绑到别的账号时返回 409 `AUTH_BINDING_CONFLICT`，不透露对方是谁。`create` 是 JIT 建号，`cancel` 作废流程。流程先被抢占再落库，重复确认不会签出第二个会话。
+- **JIT 建号缺省关闭**：只有本组件在该租户的设置 `connectors:jitProvisioning` 为 true 时才允许（经 `ITenantSettings` 读取；没装租户设置、未配置或读取失败一律视为关闭）。先过租户用户配额（满额 `CARDINALITY_USER_LIMIT`），再以上游邮箱（未验证）为标识建 Person；没有邮箱就用由绑定键派生的用户名 `ext-<20 位十六进制>`，不设密码；然后建成员并绑定。
+- **会话签发走统一流水线**：绑定已存在或刚确认后，服务端发一张 1 分钟、一次性的连接器票据（`login_tickets.purpose = connector`），再以 `ConnectorId` + 票据构造同一个 `LoginInput` 走 `SignInAsync`，审计、单端与并发策略、登录事件与密码登录完全一致；外部拿不到这张票据，伪造的一律 `LOGIN_TICKET_INVALID`。会话 `amr` 含 `fed`（确认绑定时前面还有那次认证用的因子，如 `pwd`）。连接器登录不要求修改初始密码；已登记第二因子的账号与密码登录一样 `MFA_UNAVAILABLE`，不降级。
+- **参数** `IdentityAccountOptions.Connectors`（`ConnectorPolicy`）：流程寿命与绑定票据寿命（缺省都是 10 分钟，取值 1 分钟–1 小时）、重新认证窗口（缺省 5 分钟，不超过绑定票据寿命）、界面落点（站内路径，须含 `{connectorId}`）。
+
 ## HTTP 接口
 
 `MapQianIdentityAccounts()` 映射（均在 `/api/identity` 下，响应一律 no-store）：
@@ -80,8 +93,14 @@
 | `POST /sessions/{sid}:revoke` | 吊销一个会话，返回 `{revoked}`；无权限或不存在一律 404；吊销的是当前会话时同时清除 Cookie |
 | `POST /persons/{id}:revoke-all` | 吊销某人的全部会话（平台可加 `tenant_id` 缩小范围，租户管理员固定在本租户）；本人吊销连当前会话一并吊销并清除 Cookie |
 | `GET /online-users?tenant_id=&limit=&offset=` | 在线用户（平台视角可按租户过滤，租户管理员固定在本租户，普通成员 403）；`limit` 1–200，缺省 50 |
+| `GET /connectors?tenant=` | 该租户可见的连接器 `{items: [{id, display_name, protocol, terminals}]}`；租户号未知或缺省时列全局项 |
+| `GET /connectors/{id}?tenant=` | 连接器详情即清单：`protocol`、`terminals`、`config_schema`、`callback_template` 与本环境的 `callback_uri`（供在上游登记）；不含任何配置值，密钥与 secretRef 都不回传 |
+| `POST /connectors/{id}/begin` | `client_id`、`tenant`、`return_url?`（只接受站内路径）→ `{flow, redirect_uri, expires_at}`，浏览器随后跳往 `redirect_uri` |
+| `GET /connector-flows/{flow}` | 界面落点读取流程：`status`、`next`、连接器与租户、`binding`（上游资料掩码、`allow_jit`、`verified` 与已认证的账号）、`error`（ErrorDetail）、`upstream_error_description`、完成后的 `return_url`；只认发起它的浏览器，否则 404 |
+| `POST /connector-flows/{flow}/signin` | 确认绑定第一步：`identifier`、`password`、`captcha?` → 更新后的流程，不建立会话 |
+| `POST /connector-flows/{flow}/bind` | 确认绑定第二步：`mode` 为 `link` / `create` / `cancel` → `authenticated`（写账号 Cookie，带 `return_url`）或 204 |
 
-写接口要求 JSON、防伪令牌、16 KB 体积上限（声明长度超限直接 `Connection: close` 返回 413，不读取请求体）、未知字段拒绝；两个吊销接口没有请求体，只要求防伪令牌。成功登录写入服务端账号 Cookie（只来自流水线，从不接受请求体里的主体），随后 `/connect/authorize` 据此签发授权码。错误是 `ErrorDetail`；`423 ACCOUNT_LOCKED` 带 `Retry-After`。
+统一回调 `GET /connect/callback/{connectorId}` 不在 `/api/identity` 下（处理后 302，见上文「连接器登录」）。写接口要求 JSON、防伪令牌、16 KB 体积上限（声明长度超限直接 `Connection: close` 返回 413，不读取请求体）、未知字段拒绝；两个吊销接口没有请求体，只要求防伪令牌。成功登录写入服务端账号 Cookie（只来自流水线，从不接受请求体里的主体），随后 `/connect/authorize` 据此签发授权码。错误是 `ErrorDetail`；`423 ACCOUNT_LOCKED` 带 `Retry-After`。
 
 ## 登录策略与参数
 
@@ -106,7 +125,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 
 ## 错误码
 
-`IdentityErrors` 在挂载时登记到 `ErrorCatalog`，卸载即撤销：`INVALID_CREDENTIALS` 401、`ACCOUNT_LOCKED` 423（可重试）、`ACCOUNT_DISABLED` 403、`LOGIN_TICKET_INVALID` 401、`TENANT_NOT_ACTIVE` 403、`NO_AVAILABLE_TENANT` 403、`CAPTCHA_REQUIRED` 428、`CAPTCHA_INVALID` 400、`MFA_UNAVAILABLE` 503；业务类 `PASSWORD_POLICY_VIOLATION`（参数 `rule`）、`PASSWORD_REUSED`（参数 `count`）、`CURRENT_PASSWORD_INVALID`、`IDENTIFIER_IN_USE` 409、`LAST_VERIFIED_IDENTIFIER` 422、`LAST_LOGIN_METHOD` 422、`ACCOUNT_IN_USE` 409；配额满额复用 Tenancy 的 `CARDINALITY_USER_LIMIT`（422，参数 `limit`）。
+`IdentityErrors` 在挂载时登记到 `ErrorCatalog`，卸载即撤销：`INVALID_CREDENTIALS` 401、`ACCOUNT_LOCKED` 423（可重试）、`ACCOUNT_DISABLED` 403、`LOGIN_TICKET_INVALID` 401、`TENANT_NOT_ACTIVE` 403、`NO_AVAILABLE_TENANT` 403、`CAPTCHA_REQUIRED` 428、`CAPTCHA_INVALID` 400、`MFA_UNAVAILABLE` 503；业务类 `PASSWORD_POLICY_VIOLATION`（参数 `rule`）、`PASSWORD_REUSED`（参数 `count`）、`CURRENT_PASSWORD_INVALID`、`IDENTIFIER_IN_USE` 409、`LAST_VERIFIED_IDENTIFIER` 422、`LAST_LOGIN_METHOD` 422、`ACCOUNT_IN_USE` 409；连接器登录（业务类）`AUTH_CONNECTOR_STATE_INVALID` 422、`AUTH_CONNECTOR_DENIED` 422、`AUTH_BINDING_CONFLICT` 409、`AUTH_BINDING_EXPIRED` 422，这四个码沿用认证页族规格的 `AUTH_` 前缀，与上面不带前缀的登录码命名不同；配额满额复用 Tenancy 的 `CARDINALITY_USER_LIMIT`（422，参数 `limit`）。这些码都归本组件（owner `qian.identity`），不进平台内置目录 `contracts/v0/error-codes.json`；连接器四个码的导出样例在 `contracts/v0/fixtures/error-catalog.valid.json`，测试比对防漂移。
 
 ## 对其他任务登记的接口
 
@@ -118,11 +137,14 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - **S1-EVT-002（事件消费端）**：宿主在事件总线配置里调用 `AddQianIdentitySessionHandlers()`；订阅投递由消费端接线，在此之前租户冻结 / 到期靠后台对账兜底。
 - **S1-GW-001（网关）**：`ForwardedClaimTypes` 白名单须包含 `identity_revision`。
 - **S1-IDP-006**：`IAuthenticatorFactorRegistry` 与 `MFA_UNAVAILABLE` 的不降级行为；租户级登录策略覆盖。
-- **S1-IDP-007**：连接器登录复用同一 `LoginInput`；在此之前 `ConnectorId` 非空明确拒绝（`#/connector_id`），不会悄悄降级。
+- **S1-IDP-007**（本任务）：连接器登录已就位，见上文「连接器登录」。`LoginInput.ConnectorId` 只接受服务端自己签发的连接器票据；该租户看不见的连接器仍是 `#/connector_id`。
+- **S1-IDP-008（企业微信）**：实现 `IIdentityConnector`（工作台免登另实现 `IImplicitIdentityConnector`），在自己的 Apply 里 `ctx.IdentityConnectors().Register("wecom", …)`；回调、绑定与会话签发都复用这里，不另起回调路由。
+- **yue / 外壳（S1-YUE-002 等）**：登录页按 `GET /connectors?tenant=` 渲染连接器按钮；界面落点路由 `/login/connector/{connectorId}?flow=` 读流程并按 `next` 驱动确认绑定页。
+- **S1-IDP-006**：JIT 的租户策略目前读本组件在租户设置里的 `connectors:jitProvisioning`；租户级设置 Schema 与运营界面随 IDP-006 一起接入。
 
 ## 验收
 
-真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
+真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）；连接器登录（`ConnectorFlowTests`：假连接器 TCK 的清单校验、state 篡改拒绝、回调幂等含并发，确认绑定、冲突不泄露、过期与重新认证窗口、取消、JIT 与配额、租户 scope 过滤与遮蔽、详情不回传密钥；`AuthentikConnectorTests`：容器里的真实 Authentik 经通用 OIDC 连接器走完首次绑定、再次登录与同租户重复绑定被拒）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
 
 ## 模型体验
 
@@ -133,6 +155,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - MFA 的登记、挑战与校验（TOTP、短信）属于 IDP-006；此前已登记第二因子的账号一律拒绝登录，没有降级路径。
 - 已吊销 / 已过期会话行的历史清理（保留期与归档）不在本任务内；订阅投递的接线（S1-EVT-002）未交付，接线前租户冻结靠对账兜底；授权变更触发修订递增在同进程宿主已由 `qian.authz` 直接调用（S1-AZ-009），拆分部署的订阅处理器归 S1-IDP-012。
 - 管理面的权限判定是内置规则（本人 / 平台身份 / 租户管理员），待授权引擎的 PEP 接入后改为权限点加数据范围。
-- 连接器登录、JIT 建号与合并属于 IDP-007；RP/外壳接入属于 IDP-005 与 yue 任务。
+- 账号合并不在 S1。JIT 建号是先建 Person、再建成员并绑定的几步操作（Person 与成员分属全局与租户作用域）；配额已预先检查，但若建成员时并发撞上配额或数据库出错，会留下一个只带上游邮箱标识的 Person，需要运营清理。一个成员在同一连接器下可以绑定多个外部身份，是否限制为一个待产品裁决。RP/外壳接入属于 IDP-005 与 yue 任务。
+- 连接器流程表的过期行在每次发起时顺带清理（结束超过一天的），没有独立的后台清理任务。
 - 登录失败的 IP 维度限流与设备指纹不在本任务内（账号维度的限流、锁定与验证码已交付）。
 - identity profile 的完整宿主组装与 `qian add` 产品入口仍待上述组件接入；本任务没有发布 NuGet 制品或部署到集群。
