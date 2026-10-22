@@ -108,6 +108,9 @@ internal sealed partial class SchedulerWorker(IPluginContext context, ITenantCon
             }
             catch (Exception error) when (error is not OutOfMemoryException)
             { status = "failed"; errorClass = error is OperationCanceledException ? "cancelled" : error.GetType().Name; }
+            // 宿主停机不是业务 Cancel：保留同一 run 与发生点，由租约到期后的 worker 接管。
+            // Runtime 卸载时会先关闭上下文，这里不依赖 Complete 抛 ObjectDisposed 来避免推进。
+            if (_stop.IsCancellationRequested) return;
             // 仍持续续租直到受所有权保护的完成事务提交。
             await CompleteAsync(claim, definition.Schedule, options, status, errorClass, CancellationToken.None).ConfigureAwait(false);
             await heartbeatStop.CancelAsync().ConfigureAwait(false);

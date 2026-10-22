@@ -35,6 +35,7 @@ public sealed class ProbeHost : IAsyncDisposable
     public static async Task<ProbeHost> CreateAsync(HostConfig config, bool worker, CancellationToken ct = default)
     {
         var builder = Host.CreateApplicationBuilder(); builder.Logging.ClearProviders();
+        builder.Logging.SetMinimumLevel(LogLevel.Error).AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Error);
         var tenant = new AsyncLocalTenantContext(); builder.Services.AddSingleton<ITenantContext>(tenant);
         builder.Services.AddSingleton(config); builder.Services.AddSingleton<ICurrentUser>(new ServiceUser());
         builder.Services.AddSingleton<IPermissionChecker>(new ProbePermissions());
@@ -43,7 +44,7 @@ public sealed class ProbeHost : IAsyncDisposable
         builder.Services.AddQianData<SchedulerWorkerDbContext>((_, options) => options.UseNpgsql(config.Worker).UseKunSchema(SchedulerDbContext.Schema));
         builder.Services.AddKunMediator(registry => registry.AddAuthorizedHandler<ProbeRequest, ProbeResponse, ProbeHandler>(_ => throw new QianErrorException(new QianError(PlatformErrors.AuthzDenied))));
         var host = builder.Build(); await host.StartAsync(ct);
-        var runtime = new PluginLoader(host.Services);
+        var runtime = new PluginLoader(host.Services, host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("SchedulerProbe"));
         var result = new ProbeHost(host, runtime, tenant);
         await runtime.MountAsync([
             Define("data", "qian.data", new DataPlugin(), [DataDefinition.Key]),

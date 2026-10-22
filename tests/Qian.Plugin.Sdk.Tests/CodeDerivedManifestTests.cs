@@ -316,7 +316,7 @@ public sealed partial class CodeDerivedManifestTests
             GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 ImmutableArray.Create(new CapabilityGenerator().AsSourceGenerator(), new ComponentMetadataGenerator().AsSourceGenerator(), new JobGenerator().AsSourceGenerator(), JsonGenerator.Value), parseOptions: parse);
             driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics, Ct);
-            Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+            Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error || d.Id == "CS8785"));
             var directory = Path.Combine(_root, version); Directory.CreateDirectory(directory);
             var path = Path.Combine(directory, "Qian.SdkManifestFixture.dll");
             var emitted = output.Emit(path, cancellationToken: Ct);

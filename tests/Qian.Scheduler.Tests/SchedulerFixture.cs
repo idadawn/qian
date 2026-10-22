@@ -91,6 +91,18 @@ internal sealed class WorkerProcess : IAsyncDisposable
     }
     public async Task Kill()
     { if (!_process.HasExited) { _process.Kill(entireProcessTree: true); await _process.WaitForExitAsync(); } }
+    public async Task<string> Stop()
+    {
+        if (!_process.HasExited)
+        {
+            await _process.StandardInput.WriteLineAsync("stop"); await _process.StandardInput.FlushAsync();
+            // 此入口不允许用 Kill 兜底；回归必须证明子进程正常 Dispose 并退出。
+            await _process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        var errors = await _errors;
+        Assert.Equal(0, _process.ExitCode);
+        return errors;
+    }
     public async ValueTask DisposeAsync()
     {
         if (!_process.HasExited)

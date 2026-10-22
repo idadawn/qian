@@ -13,6 +13,21 @@ public sealed partial class CodeDerivedManifestTests
     private static string WithJob => Source.Replace("[Capability(\"note.create\"", "[QianJob(\"create-note\")]\n[Capability(\"note.create\"", StringComparison.Ordinal);
 
     [Fact]
+    public async Task QianJob关键字标识符的能力与作业生成均能真实编译和同步清单()
+    {
+        using var work = new WorkDirectory();
+        var source = WithJob.Replace("CreateNote", "@event", StringComparison.Ordinal)
+            .Replace("JsonSerializable(typeof(@event))", "JsonSerializable(typeof(@event), TypeInfoPropertyName = \"EventRequest\")", StringComparison.Ordinal);
+        var assembly = work.Compile("keyword-job", source); var component = work.Component();
+        var sync = await Tool("sync", assembly, component); Assert.True(sync.ExitCode == 0, sync.Error);
+        using var jobs = JsonDocument.Parse(File.ReadAllText(Path.Combine(component, "metadata/jobs.json")));
+        var job = Assert.Single(jobs.RootElement.EnumerateArray());
+        Assert.Equal("create-note", job.GetProperty("code").GetString());
+        Assert.Equal("qian.sdk-manifest/note.create", job.GetProperty("target").GetString());
+        Assert.Equal(0, (await Tool("check", assembly, component)).ExitCode);
+    }
+
+    [Fact]
     public async Task QianJob真实编译派生jobs表面_check幂等_拒绝手改_删除最后声明只移除受管文件()
     {
         using var work = new WorkDirectory(); var assembly = work.Compile("job", WithJob); var component = work.Component();
