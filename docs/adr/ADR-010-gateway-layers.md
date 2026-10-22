@@ -27,6 +27,7 @@ supersedes: none
 - **D10.9 gRPC 流式拦截器补齐**（server / client / duplex streaming），`service` 型插件用流式 RPC 前必须完成。
 - **D10.10 Higress 只管模型与 MCP 流量**，对租户无感；不在 S1 把 SSO / S2S 交给 Higress；网关策略类插件直接用 Higress `WasmPlugin` CRD，不自造。
 - **D10.11 不做**：接口体 AES 加密中间件（下沉网关 TLS）；网关解析 JSON 体做鉴权（MCP 按 `Mcp-Method / Mcp-Name` 头路由，敏感参数不入头）。
+- **D10.12 gateway 的原生持久化组合**（S1-DEC-030，2026-10-23 负责人确认 A）：完整 Linux NativeAOT 探针已暴露现有 EF Data/Audit 的动态模型与查询阻塞。新增 `NativeData` 连接/事务 Definition 与 `qian.data.native` PostgreSQL Provider，并以 `qian.audit.native` 实现现有 `Audit` 契约；gateway 采用这组原生 Provider，platform / scheduler 保持原 EF/RLS 路径。审计 Schema、规范化哈希、幂等、平台专用角色与事务语义保持一致，在线宿主不执行迁移。完整 Apollo、Redis、受限 PostgreSQL 和网关安全路径通过 Linux 原生运行前，开发模板继续 JIT，GW-001 / DEP-008 的 AOT 门不关闭。证据及拆分边界见 [实施路径](../decisions/gateway-native-aot-options.md)。
 
 ## 3 理由（Rationale）
 
