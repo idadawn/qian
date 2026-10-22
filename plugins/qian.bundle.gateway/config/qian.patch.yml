@@ -33,10 +33,17 @@
   config:
     otlp: http://otel-collector.observability:4317
 - id: audit
-  plugin: qian.audit
+  plugin: qian.audit.native
   config:
-    chain:
-      store: pg
+    tenantBinding: audit_tenant
+    platformBinding: audit_platform
+    tenantRole: qian_gateway_audit_tenant
+    platformRole: qian_gateway_audit_platform
+    functionOwner: qian_gateway_audit_writer
+    maxAttempts: 6
 - id: data
-  plugin: qian.data
-  config: {}
+  plugin: qian.data.native
+  config:
+    connections:
+    - audit_tenant
+    - audit_platform

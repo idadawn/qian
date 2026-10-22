@@ -1,13 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <!-- 完整依赖尚未通过 NativeAOT，按 DEC-029 如实使用 JIT；不能在本项目抑制 IL 警告假称 AOT。 -->
-  <PropertyGroup><OutputType>Exe</OutputType><Description>gateway profile 的真实业务宿主。</Description></PropertyGroup>
+  <!-- 启用严格发布目标不代表验收完成；默认 profile 的 AOT 标记须等完整原生运行通过后恢复。 -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><Description>gateway profile 的真实业务宿主。</Description>
+    <PublishAot>true</PublishAot><IlcTreatWarningsAsErrors>true</IlcTreatWarningsAsErrors>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn><InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Gateway/Qian.Gateway.csproj" />
     <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
-    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
-    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data.Native.Postgres/Qian.Data.Native.Postgres.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit.Native/Qian.Audit.Native.csproj" />
     <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
 </Project>

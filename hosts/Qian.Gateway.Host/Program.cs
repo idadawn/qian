@@ -1,20 +1,20 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Kun.Core.MultiTenancy;
-using Kun.EntityFrameworkCore.Extensions;
-using Kun.EventBus.DependencyInjection;
 using Kun.MultiTenancy;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.EntityFrameworkCore;
 using Qian.Audit;
+using Qian.Audit.Native;
 using Qian.Config;
 using Qian.Config.Apollo;
 using Qian.Config.Secrets;
-using Qian.Data;
+using Qian.Data.Native;
+using Qian.Data.Native.Postgres;
 using Qian.Gateway;
 using Qian.Identity.Abstractions;
 using Qian.Identity.Client;
@@ -22,7 +22,8 @@ using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using StackExchange.Redis;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateSlimBuilder(args);
+builder.WebHost.UseKestrelHttpsConfiguration();
 var secretDirectory = builder.Configuration["Secrets:Directory"];
 builder.Configuration.Sources.Clear();
 builder.Configuration.AddQianConfigurationSources(new QianConfigurationOptions
@@ -40,10 +41,17 @@ var gateway = new GatewayConfiguration(Required("Gateway:IdentityIssuer"), Requi
 var gatewayJson = JsonSerializer.SerializeToElement(gateway, HostJson.Default.GatewayConfiguration);
 gateway = GatewayHosting.ReadConfiguration(gatewayJson);
 builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
-builder.Services.AddKunEventBus();
 builder.Services.AddQianConfiguration(builder.Configuration);
-builder.Services.AddQianData<AuditDbContext>((_, options) => options.UseNpgsql(ReadCredential(Required("ConnectionFiles:Audit"))).UseKunSchema(AuditDbContext.Schema));
-builder.Services.AddQianData<PlatformAuditDbContext>((_, options) => options.UseNpgsql(ReadCredential(Required("ConnectionFiles:PlatformAudit"))).UseKunSchema(AuditDbContext.Schema));
+var auditRoles = new NativeAuditRoles(Required("Audit:TenantRole"), Required("Audit:FunctionOwner"), Required("Audit:PlatformRole"));
+var auditGuard = NativeAuditStorage.ExpectedGuard(auditRoles);
+NativeDataTable[] auditTables = [
+    new(NativeAuditStorage.Schema, "audit_entries", NativeAuditStorage.GuardPolicy, auditGuard, auditGuard),
+    new(NativeAuditStorage.Schema, "audit_chain_state", NativeAuditStorage.GuardPolicy, auditGuard, auditGuard)
+];
+builder.Services.AddQianNativeData(new("audit_tenant", auditRoles.TenantLogin, NativeDataAccess.Tenant,
+    _ => ValueTask.FromResult(ReadCredential(Required("ConnectionFiles:Audit"))), auditTables));
+builder.Services.AddQianNativeData(new("audit_platform", auditRoles.PlatformLogin!, NativeDataAccess.Platform,
+    _ => ValueTask.FromResult(ReadCredential(Required("ConnectionFiles:PlatformAudit"))), auditTables));
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(ReadCredential(Required("ConnectionFiles:Redis"))));
 builder.Services.AddDataProtection().SetApplicationName("qian.gateway")
     .PersistKeysToFileSystem(new DirectoryInfo(Required("Identity:DataProtectionKeysDirectory")));
@@ -69,14 +77,16 @@ app.UseForwardedHeaders(); app.UseRouting(); app.UseQianIdentityClient(); app.Us
 app.MapQianIdentityClient(); app.MapQianGateway();
 await using var loader = new PluginLoader(app.Services);
 observer.Source = () => loader.GetContext("config", ScopeKey.Global);
-using var empty = JsonDocument.Parse("{}");
+using var dataConfig = JsonDocument.Parse("""{"connections":["audit_tenant","audit_platform"]}""");
 using var identityConfig = JsonDocument.Parse(new JsonObject
 {
     ["issuer"] = gateway.IdentityIssuer, ["clientId"] = Required("Identity:ClientId"), ["clientSecret"] = identitySecret
 }.ToJsonString());
 using var auditConfig = JsonDocument.Parse(new JsonObject
 {
-    ["chain"] = new JsonObject { ["store"] = "pg", ["platformRole"] = Required("Audit:PlatformRole") }
+    ["tenantBinding"] = "audit_tenant", ["platformBinding"] = "audit_platform",
+    ["tenantRole"] = auditRoles.TenantLogin, ["functionOwner"] = auditRoles.FunctionOwner,
+    ["platformRole"] = auditRoles.PlatformLogin, ["maxAttempts"] = 6
 }.ToJsonString());
 using var apolloConfig = JsonDocument.Parse(new JsonObject
 {
@@ -85,15 +95,16 @@ using var apolloConfig = JsonDocument.Parse(new JsonObject
     ["namespaces"] = new JsonArray(builder.Configuration.GetSection("Apollo:Namespaces").GetChildren().Select(item => (JsonNode?)JsonValue.Create(item.Value)).ToArray())
 }.ToJsonString());
 await loader.MountAsync([
-    Definition("data", "qian.data", new DataPlugin(), empty.RootElement, DataDefinition.Key),
+    Definition("data", "qian.data.native", new NativeDataComponent(), dataConfig.RootElement, NativeDataDefinition.Key),
     Definition("config", "qian.config.apollo", new ApolloConfigurationPlugin(), apolloConfig.RootElement, ConfigDefinition.Key),
-    Definition("audit", "qian.audit", new AuditComponent(), auditConfig.RootElement, AuditDefinition.Key, CommandPolicies.AuditKey),
+    Definition("audit", "qian.audit.native", new NativeAuditComponent(), auditConfig.RootElement, AuditDefinition.Key, CommandPolicies.AuditKey),
     Definition("identity", "qian.identity.client", new IdentityClientComponent(), identityConfig.RootElement, IdentityDefinition.Key),
     Definition("gateway", "qian.gateway", new GatewayComponent(), gatewayJson, GatewayDefinition.Key)
 ]);
 foreach (var id in new[] { "data", "config", "audit", "identity", "gateway" })
     if (loader.GetState(id, ScopeKey.Global) != PluginState.Ready)
         throw new InvalidOperationException("gateway 依赖未就绪：" + id, loader.GetFailure(id, ScopeKey.Global));
+app.Logger.LogInformation("qian.gateway 全部业务组件已就绪；runtime={Runtime}", RuntimeFeature.IsDynamicCodeSupported ? "JIT" : "NativeAOT");
 await app.RunAsync();
 
 string Required(string key) => builder.Configuration[key] is { Length: > 0 } value ? value : throw new InvalidOperationException("缺少网关宿主配置：" + key);
