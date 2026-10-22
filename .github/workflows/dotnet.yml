@@ -148,3 +148,32 @@ jobs:
         with:
           name: native-data-aot-results
           path: TestResults/native-data-aot/
+
+  native-audit-aot:
+    name: 原生审计严格发布与真实 PostgreSQL 验收
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: NativeAOT 工具链
+        run: |
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+          fi
+      - name: 严格发布 Linux 原生探针
+        run: dotnet publish tools/Qian.Audit.Native.Probe -c Release -r linux-x64 -p:IlcTreatWarningsAsErrors=true -p:TrimmerSingleWarn=false -o "$RUNNER_TEMP/native-audit"
+      - name: 核验产物形态
+        run: test -x "$RUNNER_TEMP/native-audit/Qian.Audit.Native.Probe" && test ! -e "$RUNNER_TEMP/native-audit/Qian.Audit.Native.Probe.dll"
+      - name: 原生进程执行真实受限 PostgreSQL 审计链与业务事务
+        env:
+          QIAN_REQUIRE_DOCKER: '1'
+          QIAN_NATIVE_AUDIT_EXECUTABLE: ${{ runner.temp }}/native-audit/Qian.Audit.Native.Probe
+        run: dotnet test --project tests/Qian.Audit.Native.AotTests -c Release --report-xunit-trx --results-directory TestResults/native-audit-aot
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-audit-aot-results
+          path: TestResults/native-audit-aot/

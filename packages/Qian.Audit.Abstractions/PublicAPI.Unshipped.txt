@@ -68,3 +68,16 @@ Qian.Audit.IAuditReader.ReadPlatformAsync(Qian.Runtime.IPluginContext! producer,
 Qian.Audit.IAuditReader.VerifyPlatformAsync(Qian.Runtime.IPluginContext! producer, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Audit.AuditChainVerification!>!
 Qian.Audit.IAuditWriter.AppendPlatformAsync(Qian.Runtime.IPluginContext! producer, Qian.Audit.AuditRecord! record, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Audit.AuditChainEntry!>!
 Qian.Audit.IAuditWriter.AppendEnlistedAsync(Qian.Audit.AuditRecord! record, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Audit.AuditChainEntry!>!
+Qian.Audit.AuditInputProjection
+Qian.Audit.AuditProtocol
+const Qian.Audit.AuditInputProjection.Redacted = "[REDACTED]" -> string!
+static Qian.Audit.AuditProtocol.Hash(Qian.Audit.AuditRecord! record, long sequence, string? previousHash) -> string!
+Qian.Audit.AuditInputProjection.AuditInputProjection(System.Text.Json.JsonElement schema, bool isCommand, bool? audit = null) -> void
+Qian.Audit.AuditInputProjection.ShouldRecord.get -> bool
+Qian.Audit.AuditInputProjection.InputHash(System.Text.Json.JsonElement input) -> string?
+Qian.Audit.AuditInputProjection.Redact(System.Text.Json.JsonElement input) -> System.Text.Json.JsonElement
+static Qian.Audit.AuditProtocol.Content(Qian.Audit.AuditRecord! record, long sequence) -> string!
+static Qian.Audit.AuditProtocol.Canonicalize(System.Text.Json.JsonElement value) -> string!
+static readonly Qian.Audit.NativeAuditErrors.Misconfigured -> Qian.Runtime.Errors.ErrorCode!
+Qian.Audit.NativeAuditErrors
+static Qian.Audit.AuditProtocol.ReadEntry(System.Text.Json.JsonElement row) -> Qian.Audit.AuditChainEntry!

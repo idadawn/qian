@@ -58,12 +58,7 @@ internal static class AuditTransactionWriter
     private static AuditChainEntry ReadEntry(string json)
     {
         using var document = JsonDocument.Parse(json); var row = document.RootElement;
-        string? Nullable(string name) => row.GetProperty(name).ValueKind == JsonValueKind.Null ? null : row.GetProperty(name).GetString();
-        return new AuditChainEntry(row.GetProperty("seq").GetInt64(), Nullable("prev_hash"), row.GetProperty("content_hash").GetString()!,
-            new AuditRecord(row.GetProperty("id").GetGuid(), Nullable("tenant_id"), row.GetProperty("actor_type").GetString()!, row.GetProperty("actor_id").GetString()!,
-                Nullable("on_behalf_of"), row.GetProperty("capability_id").GetString()!, row.GetProperty("contract_version").GetString()!, row.GetProperty("input_hash").GetString()!,
-                row.GetProperty("channel").GetString()!, Nullable("resource"), row.GetProperty("result").GetString()!, row.GetProperty("trace_id").GetString()!,
-                row.GetProperty("occurred_at").GetDateTimeOffset(), row.GetProperty("payload")));
+        return AuditProtocol.ReadEntry(row);
     }
     private static QianErrorException Error(ErrorCode code) => new(new QianError(code));
 }

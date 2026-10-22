@@ -134,7 +134,7 @@ public sealed partial class ComponentMetadataGenerator : IIncrementalGenerator
                 if (delegateType is not null || Conditional(syntax, apply) || invocation.Arguments[1].Value.ConstantValue.Value is not int kind || kind < 0 || kind > 2)
                 { Report(output, type, "CommandPolicies.Register 必须使用直接、无条件的固定策略种类。"); return; }
                 var owner = new[] { "qian.tenancy", "qian.authz", "qian.audit" }[kind];
-                if (id != owner) { Report(output, type, "命令策略只能属于对应的平台组件。"); return; }
+                if (id != owner && !(kind == 2 && id == "qian.audit.native")) { Report(output, type, "命令策略只能属于对应的平台组件。"); return; }
                 provided = "global::Qian.Plugin.Sdk.CommandPolicies." + new[] { "TenancyKey", "AuthorizationKey", "AuditKey" }[kind] + ".Name";
             }
             else if (method.Name == "Register" && invocation.Arguments.Length >= 2 && invocation.Arguments[0].Parameter?.Type.SpecialType == SpecialType.System_String)
