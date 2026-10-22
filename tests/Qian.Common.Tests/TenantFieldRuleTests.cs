@@ -60,7 +60,8 @@ public sealed class TenantFieldRuleTests
               "dependencies": {"tenant": {"required": ["tenant"]}, "name": ["tenantid"]},
               "$defs": {"const": {"properties": {"tenant": {}}}},
               "examples": [{"properties": {"tenant": {}}, "required": ["tenant"]}],
-              "default": {"tenantId": "x"}, "const": {"required": ["tenant"]}, "enum": [{"properties": {"tenant": {}}}],
+              "default": {"properties": {"tenantId": {}}}, "const": {"required": ["tenant"]}, "enum": [{"properties": {"tenant": {}}}],
+              "example": {"required": ["tenant"]},
               "x-note": {"required": ["tenant"]}
             }
             """);
@@ -108,5 +109,54 @@ public sealed class TenantFieldRuleTests
             TenantFieldRule.Find(root, Resolve).Select(item => string.Join('/', item.Path)));
         // 不解析时只在定义处报告。
         Assert.Equal(["$defs/scope/required/0"], TenantFieldRule.Find(root).Select(item => string.Join('/', item.Path)));
+    }
+
+    [Theory]
+    [InlineData("#/$defs/x/default", true)]
+    [InlineData("#/$defs/x/examples/0", true)]
+    [InlineData("#/properties/a/example", true)]
+    [InlineData("#/enum/0", true)]
+    [InlineData("#/const", true)]
+    [InlineData("scope.json#/$defs/x/default", true)]
+    [InlineData("#/$defs/x/%64efault", true)]
+    [InlineData("#/$defs/x/%63%6F%6e%73%74", true)]
+    [InlineData("#/$defs/x/properties", true)]
+    [InlineData("#/$defs", true)]
+    [InlineData("#/properties/a/dependencies", true)]
+    [InlineData("#/$defs/x%2Fproperties/default", true)]
+    [InlineData("#%2F$defs%2Fx", true)]
+    [InlineData("#/$defs/x%2fy", true)]
+    [InlineData("#/$defs/default", false)]
+    [InlineData("#/properties/default/properties/enum", false)]
+    [InlineData("#/$defs/x", false)]
+    [InlineData("#/components/schemas/Body", false)]
+    [InlineData("#/$defs/%E5%AE%A2%E6%88%B7", false)]
+    [InlineData("#/$defs/x/%6", false)]
+    [InlineData("#/$defs/x/de~0fault", false)]
+    [InlineData("#keyed", false)]
+    [InlineData("#", false)]
+    [InlineData("scope.json", false)]
+    public void 引用片段按遍历口径逐段判定_途经实例数据或停在名称表本身即越出Schema位置_编码的斜杠按无法判定(string reference, bool expected) =>
+        Assert.Equal(expected, TenantFieldRule.OutsideSchema(reference));
+
+    [Fact]
+    public void 越出Schema位置的引用报在引用本身_给出解析时也不跟进去_内嵌资源里的同名路径同样拦住()
+    {
+        // 执行侧按 $id 把 d 里的引用解析到 d.json 自己的 $defs，按根解析会落到无害的 $defs/x/default 上（S1-AGT-007 之前能力契约就这样漏过）。
+        using var schema = JsonDocument.Parse("""
+            {"type": "object", "properties": {
+              "a": {"$ref": "#/$defs/x/default"},
+              "b": {"$dynamicRef": "#/$defs/x/default"},
+              "c": {"$ref": "#/$defs/x"},
+              "d": {"$id": "d.json", "$defs": {"x": {"default": {"required": ["tenant"]}}}, "properties": {"v": {"$ref": "#/$defs/x/default"}}}
+            }, "$defs": {"x": {"type": "object", "default": {"required": ["tenantId"]}}}}
+            """);
+        var root = schema.RootElement;
+        JsonElement Resolve(string reference) => reference[2..].Split('/').Aggregate(root, (node, segment) => node.GetProperty(segment));
+        foreach (var found in new[] { TenantFieldRule.Find(root), TenantFieldRule.Find(root, Resolve) })
+        {
+            Assert.Equal(["properties/a/$ref", "properties/b/$dynamicRef", "properties/d/properties/v/$ref"], found.Select(item => string.Join('/', item.Path)));
+            Assert.All(found, item => Assert.Equal(TenantFieldRule.ReferenceMessage, item.Message));
+        }
     }
 }

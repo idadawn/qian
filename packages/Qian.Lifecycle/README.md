@@ -204,7 +204,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
   - `LocalExecutorTests`：等价的开发态执行器。
   - `LifecycleUnitTests`：迁移与 RLS、片段生成、配置解析、幂等键。
   - `PermissionApprovalTests`：五类声明随制品快照落库并经注册表端口读出；未批准的开通被拒且不写记录，逐项批准后开通，重复批准不改记录；无权限、跨租户、委托、Agent、未安装版本同为 404，内容校验只在判定之后；超管代批经旁路并记下目标租户与资源；`policy.required` 与无声明的组件免批；升级只在新增项时须重批。
-  - `TenantFieldInstallTests`：`tck/surfaces/cases.json` 中工具输入点名租户字段的 26 个反例（含 properties 之外的写法，S1-AGT-004）经 `InstallAsync` 全部失败（`INPUT_INVALID` / `REGISTRY_INPUT_INVALID`，pointer 与 fixture 相同），不登记修订、不留候选制品；只是含有 tenant 的名称照常安装。
+  - `TenantFieldInstallTests`：`tck/surfaces/cases.json` 中工具输入点名租户字段的 42 个反例（含 properties 之外的写法与越出 Schema 位置的引用，S1-AGT-004 / S1-AGT-007）经 `InstallAsync` 全部失败（`INPUT_INVALID` / `REGISTRY_INPUT_INVALID`，pointer 与 fixture 相同），不登记修订、不留候选制品；只是含有 tenant 的名称照常安装。
 - `tests/Qian.Sample.Crm.Tests` 的 `LifecycleAcceptanceTests`：参考应用 1.0.0 / 1.0.1 / 1.1.0 三个预装修订，在真实 PostgreSQL、Kestrel 与 JWT 下覆盖：
   - A、B 开通与挂载，重复开通无副作用，卸载后 5 秒内 SDK 入口恢复 404。
   - 激活 n+1 后 A 升级、B 保持 n，平台级与租户级回切后 A 由 n 处理且升级期间写入的数据可读。
