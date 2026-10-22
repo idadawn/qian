@@ -78,6 +78,9 @@ internal sealed partial class SchedulerWorker(IPluginContext context, ITenantCon
             var started = await BeginAsync(claim, lifetime.Token).ConfigureAwait(false);
             if (started is null) return;
             var (definition, options, attempts, now) = started.Value;
+            // Begin 的建模/数据库准备可能已消耗大半初始租约。先确认仍持有有效租约并续足，
+            // 再进入处理器；失败或已失去所有权时保留 run，不能复活过期租约或推进发生点。
+            if (!await RenewAsync(claim, lifetime.Token).ConfigureAwait(false)) return;
             using var heartbeatStop = new CancellationTokenSource();
             heartbeat = RenewLoopAsync(claim, lifetime, heartbeatStop.Token);
             string status = "succeeded"; string? errorClass = null;
@@ -152,15 +155,19 @@ internal sealed partial class SchedulerWorker(IPluginContext context, ITenantCon
             while (!linked.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(settings.LeaseSeconds / 3.0), linked.Token).ConfigureAwait(false);
-                await using var session = await context.Data().OpenAsync<SchedulerDbContext>(linked.Token).ConfigureAwait(false);
-                await using var transaction = await session.Context.Database.BeginTransactionAsync(linked.Token).ConfigureAwait(false);
-                var changed = await session.Context.Database.ExecuteSqlInterpolatedAsync($"UPDATE plugin_qian_scheduler.job_triggers SET lease_until=now()+{TimeSpan.FromSeconds(settings.LeaseSeconds)} WHERE tenant_id={claim.TenantId} AND id={claim.Id} AND lease_owner={claim.Worker} AND generation={claim.Generation} AND lease_until>now() AND state='ready'", linked.Token).ConfigureAwait(false);
-                await transaction.CommitAsync(linked.Token).ConfigureAwait(false);
-                if (changed != 1) { await execution.CancelAsync().ConfigureAwait(false); break; }
+                if (!await RenewAsync(claim, linked.Token).ConfigureAwait(false)) { await execution.CancelAsync().ConfigureAwait(false); break; }
             }
         }
         catch (OperationCanceledException) when (linked.IsCancellationRequested) { }
         catch (Exception error) { Log.Renewal(context.Logger, error, claim.RunId); await execution.CancelAsync().ConfigureAwait(false); }
+    }
+    private async Task<bool> RenewAsync(JobClaim claim, CancellationToken ct)
+    {
+        await using var session = await context.Data().OpenAsync<SchedulerDbContext>(ct).ConfigureAwait(false);
+        await using var transaction = await session.Context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        var changed = await session.Context.Database.ExecuteSqlInterpolatedAsync($"UPDATE plugin_qian_scheduler.job_triggers SET lease_until=now()+{TimeSpan.FromSeconds(settings.LeaseSeconds)} WHERE tenant_id={claim.TenantId} AND id={claim.Id} AND lease_owner={claim.Worker} AND generation={claim.Generation} AND lease_until>now() AND state='ready'", ct).ConfigureAwait(false);
+        await transaction.CommitAsync(ct).ConfigureAwait(false);
+        return changed == 1;
     }
     internal async Task<bool> CompleteAsync(JobClaim claim, string schedule, JobOptions options, string status, string? error, CancellationToken ct)
     {
