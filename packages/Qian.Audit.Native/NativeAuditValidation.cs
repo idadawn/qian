@@ -120,7 +120,7 @@ internal static class NativeAuditValidation
             SELECT c.relname,pg_catalog.array_to_string(ARRAY(SELECT a.attname FROM pg_catalog.unnest(i.indkey) WITH ORDINALITY k(num,pos)
                 JOIN pg_catalog.pg_attribute a ON a.attrelid=c.oid AND a.attnum=k.num ORDER BY k.pos),','),i.indnullsnotdistinct
             FROM pg_catalog.pg_index i JOIN pg_catalog.pg_class c ON c.oid=i.indrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
-            WHERE n.nspname='plugin_qian_audit' AND c.relname IN ('audit_entries','audit_chain_state') AND i.indisunique AND i.indisvalid AND i.indisready AND i.indpred IS NULL
+            WHERE n.nspname='plugin_qian_audit' AND c.relname IN ('audit_entries','audit_chain_state') AND i.indisunique AND i.indisvalid AND i.indisready AND i.indpred IS NULL AND i.indexprs IS NULL
             """))
         {
             await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);

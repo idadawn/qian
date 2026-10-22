@@ -125,6 +125,7 @@ public sealed partial class NativeAuditStoreTests(PostgresFixture postgres) : IC
 
     [Theory]
     [InlineData("membership")]
+    [InlineData("membership-nologin")]
     [InlineData("extra-update")]
     [InlineData("owner-create")]
     [InlineData("public-execute")]
@@ -138,6 +139,7 @@ public sealed partial class NativeAuditStoreTests(PostgresFixture postgres) : IC
         var sql = violation switch
         {
             "membership" => $"GRANT {db.Roles.PlatformLogin} TO qian_app",
+            "membership-nologin" => $"CREATE ROLE {db.Roles.FunctionOwner}_member NOLOGIN NOINHERIT; GRANT {db.Roles.PlatformLogin} TO {db.Roles.FunctionOwner}_member; GRANT {db.Roles.FunctionOwner}_member TO qian_app",
             "extra-update" => $"GRANT UPDATE(tenant_id) ON plugin_qian_audit.audit_entries TO {db.Roles.TenantLogin}",
             "owner-create" => $"GRANT CREATE ON SCHEMA plugin_qian_audit TO {db.Roles.FunctionOwner}",
             "public-execute" => "GRANT EXECUTE ON FUNCTION plugin_qian_audit.native_append(text,text,text) TO PUBLIC",
@@ -151,7 +153,7 @@ public sealed partial class NativeAuditStoreTests(PostgresFixture postgres) : IC
         using (host.Tenant.BeginScope(A)) await Assert.ThrowsAsync<QianErrorException>(() => host.Audit.AppendAsync(Record(), Ct));
         await host.Loader.UnmountAsync("audit", ScopeKey.Global, Ct); await host.MountAudit(Ct);
         Assert.Equal(PluginState.Failed, host.Loader.GetState("audit", ScopeKey.Global));
-        if (violation == "membership")
+        if (violation is "membership" or "membership-nologin")
         {
             await using var app = new NpgsqlConnection(postgres.AppConnectionString); await app.OpenAsync(Ct);
             await Execute(app, $"SET ROLE {db.Roles.PlatformLogin}");
@@ -159,6 +161,15 @@ public sealed partial class NativeAuditStoreTests(PostgresFixture postgres) : IC
             await using var tx = await app.BeginTransactionAsync(IsolationLevel.Serializable, Ct);
             Assert.Equal("42501", (await Assert.ThrowsAsync<PostgresException>(() => Execute(app, "SELECT * FROM plugin_qian_audit.native_tip(gen_random_uuid())"))).SqlState);
         }
+    }
+
+    [Fact]
+    public async Task 表达式扩展的唯一索引不能冒充链序列唯一约束()
+    {
+        var db = await NativeAuditDatabase.Create(postgres, Ct); await using var host = await NativeAuditTestHost.Create(db, Ct);
+        await Admin("DROP INDEX plugin_qian_audit.ix_audit_entries_chain_key_seq; CREATE UNIQUE INDEX ix_audit_entries_chain_key_seq ON plugin_qian_audit.audit_entries(chain_key,seq,(id::text))");
+        await host.Loader.UnmountAsync("audit", ScopeKey.Global, Ct); await host.MountAudit(Ct);
+        Assert.Equal(PluginState.Failed, host.Loader.GetState("audit", ScopeKey.Global));
     }
 
     [Fact]

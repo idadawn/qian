@@ -17,6 +17,14 @@ var stage = "平台检查";
 try
 {
     if (RuntimeFeature.IsDynamicCodeSupported || !OperatingSystem.IsLinux()) throw new InvalidOperationException("需要 Linux NativeAOT。");
+    stage = "共享输入脱敏";
+    using (var schema = JsonDocument.Parse("""{"type":"object","properties":{"name":{"type":"string"},"password":{"type":"string","sensitive":true}}}"""))
+    using (var sample = JsonDocument.Parse("""{"name":"probe","password":"aot-private-sentinel"}"""))
+    {
+        var projection = new AuditInputProjection(schema.RootElement, true);
+        Ensure(projection.Redact(sample.RootElement).GetProperty("password").GetString() == AuditInputProjection.Redacted &&
+            projection.InputHash(sample.RootElement) is { Length: 64 }, "共享 Schema 脱敏与输入哈希");
+    }
     using var input = JsonDocument.Parse(await File.ReadAllTextAsync(args.Length == 1 ? args[0] : "/run/qian-native-audit.json"));
     var root = input.RootElement;
     string Get(string name) => root.GetProperty(name).GetString() ?? throw new InvalidOperationException("缺少探针配置。");

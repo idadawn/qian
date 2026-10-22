@@ -19,3 +19,5 @@ QIAN_REQUIRE_DOCKER=1 QIAN_NATIVE_AUDIT_EXECUTABLE=/tmp/qian-native-audit/Qian.A
 ```
 
 临时配置文件只对当前用户开放读写，运行后删除；Docker 路径将配置复制到短期验收容器。随机凭据不进入命令行或输出。CI 入口为 `.github/workflows/dotnet.yml` 的 `native-audit-aot`，严格发布和真库运行都通过才算验收，不以普通构建或跳过代替。
+
+2026-10-23 本机 Linux arm64 严格发布通过，IL 警告为 0，产物为原生可执行文件；镜像真库 driver 1/1 与 Linux 容器内直接启动原生进程的 CI 同款 driver 1/1 均通过，TRX 保留 13 条实际断言输出。清单据此登记 `x-aot`；linux-x64 的持续验证由上述远端 CI 执行，本机结果不代替该 CI 状态。正式 feed 安装门仍保留 `x-skeleton`。

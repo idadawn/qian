@@ -52,6 +52,6 @@ global 挂载必须没有 ambient tenant，并显式提供独立平台绑定，�
 
 ## 验证
 
-`tests/Qian.Audit.Native.Tests` 的真实 PostgreSQL 专项覆盖两个独立 IHost、160 条并发、跨 128 条分页验链、同 ID 冲突、精确历史篡改、有界 40001 重试、CRM EF 业务提交/回滚、旧 EF 模型/权限及双向读写、平台/租户/成员冒充、权限和函数漂移，以及卸载真实锁等待。共享协议历史 fixture 与旧 Provider 回归分别在 `tests/Qian.Audit.Tests`，SDK 的原生 owner 授权与 listener 真撤销在 `tests/Qian.Plugin.Sdk.Tests`。
+`tests/Qian.Audit.Native.Tests` 的真实 PostgreSQL 专项覆盖两个独立 IHost、160 条并发、跨 128 条分页验链、同 ID 冲突、精确历史篡改、有界 40001 重试、CRM EF 业务提交/回滚、旧 EF 模型/权限及双向读写、平台/租户/NOLOGIN 中间成员冒充、权限和函数漂移、表达式唯一索引伪装，以及卸载真实锁等待。2026-10-23 当前代码的存储专项 18/18、配置与角色正反例 14/14、旧 EF 存储回归 17/17 通过。共享协议历史 fixture 与旧 Provider 回归分别在 `tests/Qian.Audit.Tests`，SDK 的原生 owner 授权与 listener 真撤销在 `tests/Qian.Plugin.Sdk.Tests`。
 
 严格 Linux 原生发布与真库探针见 [验收说明](../../tools/Qian.Audit.Native.Probe/README.md)。该门独立于普通解决方案测试；gateway 的完整 Config/Identity/Redis 组合仍由 S1-GW-001 验收。
