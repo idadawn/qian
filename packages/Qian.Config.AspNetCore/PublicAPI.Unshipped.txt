@@ -1,0 +1,36 @@
+#nullable enable
+Qian.Config.AspNetCore.ConfigEndpoints
+Qian.Config.AspNetCore.ConfigValueItem
+Qian.Config.AspNetCore.ConfigValueItem.<Clone>$() -> Qian.Config.AspNetCore.ConfigValueItem!
+Qian.Config.AspNetCore.ConfigValueItem.ConfigValueItem(string! Key, bool Sensitive, string? Value) -> void
+Qian.Config.AspNetCore.ConfigValueItem.Deconstruct(out string! Key, out bool Sensitive, out string? Value) -> void
+Qian.Config.AspNetCore.ConfigValueItem.Equals(Qian.Config.AspNetCore.ConfigValueItem? other) -> bool
+Qian.Config.AspNetCore.ConfigValueItem.Key.get -> string!
+Qian.Config.AspNetCore.ConfigValueItem.Key.init -> void
+Qian.Config.AspNetCore.ConfigValueItem.Sensitive.get -> bool
+Qian.Config.AspNetCore.ConfigValueItem.Sensitive.init -> void
+Qian.Config.AspNetCore.ConfigValueItem.Value.get -> string?
+Qian.Config.AspNetCore.ConfigValueItem.Value.init -> void
+Qian.Config.AspNetCore.ConfigValueList
+Qian.Config.AspNetCore.ConfigValueList.<Clone>$() -> Qian.Config.AspNetCore.ConfigValueList!
+Qian.Config.AspNetCore.ConfigValueList.ConfigValueList(string! Plugin, string! Section, System.Collections.Generic.IReadOnlyList<Qian.Config.AspNetCore.ConfigValueItem!>! Items) -> void
+Qian.Config.AspNetCore.ConfigValueList.Deconstruct(out string! Plugin, out string! Section, out System.Collections.Generic.IReadOnlyList<Qian.Config.AspNetCore.ConfigValueItem!>! Items) -> void
+Qian.Config.AspNetCore.ConfigValueList.Equals(Qian.Config.AspNetCore.ConfigValueList? other) -> bool
+Qian.Config.AspNetCore.ConfigValueList.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Config.AspNetCore.ConfigValueItem!>!
+Qian.Config.AspNetCore.ConfigValueList.Items.init -> void
+Qian.Config.AspNetCore.ConfigValueList.Plugin.get -> string!
+Qian.Config.AspNetCore.ConfigValueList.Plugin.init -> void
+Qian.Config.AspNetCore.ConfigValueList.Section.get -> string!
+Qian.Config.AspNetCore.ConfigValueList.Section.init -> void
+const Qian.Config.AspNetCore.ConfigEndpoints.SchemaMediaType = "application/schema+json" -> string!
+override Qian.Config.AspNetCore.ConfigValueItem.Equals(object? obj) -> bool
+override Qian.Config.AspNetCore.ConfigValueItem.GetHashCode() -> int
+override Qian.Config.AspNetCore.ConfigValueItem.ToString() -> string!
+override Qian.Config.AspNetCore.ConfigValueList.Equals(object? obj) -> bool
+override Qian.Config.AspNetCore.ConfigValueList.GetHashCode() -> int
+override Qian.Config.AspNetCore.ConfigValueList.ToString() -> string!
+static Qian.Config.AspNetCore.ConfigEndpoints.MapQianConfig(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Config.AspNetCore.ConfigValueItem.operator !=(Qian.Config.AspNetCore.ConfigValueItem? left, Qian.Config.AspNetCore.ConfigValueItem? right) -> bool
+static Qian.Config.AspNetCore.ConfigValueItem.operator ==(Qian.Config.AspNetCore.ConfigValueItem? left, Qian.Config.AspNetCore.ConfigValueItem? right) -> bool
+static Qian.Config.AspNetCore.ConfigValueList.operator !=(Qian.Config.AspNetCore.ConfigValueList? left, Qian.Config.AspNetCore.ConfigValueList? right) -> bool
+static Qian.Config.AspNetCore.ConfigValueList.operator ==(Qian.Config.AspNetCore.ConfigValueList? left, Qian.Config.AspNetCore.ConfigValueList? right) -> bool

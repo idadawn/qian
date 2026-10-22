@@ -34,3 +34,9 @@ static Qian.Config.Apollo.QianConfigurationExtensions.AddQianConfiguration(this 
 Qian.Config.Apollo.ApolloConfigurationPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Qian.Config.Apollo.QianConfigurationOptions.ApolloConfigurationSchema.init -> void
 Qian.Config.Apollo.QianConfigurationOptions.ApolloConfigurationSchema.get -> System.Text.Json.JsonElement?
+Qian.Config.Apollo.QianOptionsExtensions
+Qian.Config.Apollo.QianOptionsSchema
+Qian.Config.Apollo.QianOptionsSchema.Export() -> System.Text.Json.Nodes.JsonObject!
+Qian.Config.Apollo.QianOptionsSchema.OptionsType.get -> string!
+Qian.Config.Apollo.QianOptionsSchema.Section.get -> string!
+static Qian.Config.Apollo.QianOptionsExtensions.AddQianOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! section, System.Action<Microsoft.Extensions.Configuration.IConfiguration!, T!>! bind, bool critical = true, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T!>? schema = null, string? plugin = null) -> Microsoft.Extensions.Options.OptionsBuilder<T!>!
