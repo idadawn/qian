@@ -19,5 +19,6 @@
   "Qian.Surfaces:Qian.Surfaces.HotReloadSurfacePlugin": {"owner":"组件快照","reason":"组件快照热重载适配器，可包装代码实现；不新增组件 ID。"},
   "Qian.Surfaces.Hosting:Qian.Surfaces.Hosting.HookBridgePlugin": {"owner":"组件快照","reason":"已校验 hook 表面到真实能力绑定的包装器，归属被包装组件。"},
   "Qian.Identity.Client:Qian.Identity.Client.IdentityClientPlugin": {"owner":"qian.identity.client","reason":"IdentityClientComponent 的身份依赖方实现，保留公开客户端与机密客户端的原有程序化装配。"},
-  "Qian.Config.Apollo:Qian.Config.Apollo.ApolloConfigurationImplementation": {"owner":"qian.config.apollo","reason":"保留ApolloConfigurationPlugin公开入口的委托实现，负责引导校验、重载通知与Apollo发布审计。"}
+  "Qian.Config.Apollo:Qian.Config.Apollo.ApolloConfigurationImplementation": {"owner":"qian.config.apollo","reason":"保留ApolloConfigurationPlugin公开入口的委托实现，负责引导校验、重载通知与Apollo发布审计。"},
+  "Qian.Scheduler:Qian.Scheduler.SchedulerPlugin": {"owner":"qian.scheduler","reason":"程序化实现，由唯一 SchedulerComponent 入口承担依赖与清单派生。"}
 }

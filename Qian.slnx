@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/packages/">
     <Project Path="packages/Qian.Audit.Native/Qian.Audit.Native.csproj" />
+    <Project Path="packages/Qian.Scheduler.Abstractions/Qian.Scheduler.Abstractions.csproj" />
+    <Project Path="packages/Qian.Scheduler/Qian.Scheduler.csproj" />
     <Project Path="packages/Qian.Capabilities.Abstractions/Qian.Capabilities.Abstractions.csproj" />
     <Project Path="packages/Qian.Capabilities/Qian.Capabilities.csproj" />
     <Project Path="packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
@@ -61,6 +63,8 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Qian.Audit.Native.Tests/Qian.Audit.Native.Tests.csproj" />
+    <Project Path="tests/Qian.Scheduler.Tests/Qian.Scheduler.Tests.csproj" />
+    <Project Path="tests/Qian.Scheduler.TestHost/Qian.Scheduler.TestHost.csproj" />
     <Project Path="tests/Qian.Plugin.Sdk.Tests/Qian.Plugin.Sdk.Tests.csproj" />
     <Project Path="tests/Qian.Audit.Tests/Qian.Audit.Tests.csproj" />
     <Project Path="tests/Qian.Tenancy.Tests/Qian.Tenancy.Tests.csproj" />

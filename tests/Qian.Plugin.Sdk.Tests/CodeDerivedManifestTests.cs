@@ -17,7 +17,7 @@ namespace Qian.Plugin.Sdk.Tests;
 
 // S1-RT-014 验收 2、3：组件源码经真实编译器、SDK 的两个源生成器与 System.Text.Json 源生成器编译成程序集，
 // 再用 CI 里同一个 Qian.Plugin.Tool 进程（check / sync）比对唯一 plugin.json 与它声明的 tools 表面。
-public sealed class CodeDerivedManifestTests
+public sealed partial class CodeDerivedManifestTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
     private const string Component = "qian.sdk-manifest";
@@ -314,9 +314,9 @@ public sealed class CodeDerivedManifestTests
             var compilation = CSharpCompilation.Create("Qian.SdkManifestFixture", [CSharpSyntaxTree.ParseText(source, parse)], References,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
             GeneratorDriver driver = CSharpGeneratorDriver.Create(
-                ImmutableArray.Create(new CapabilityGenerator().AsSourceGenerator(), new ComponentMetadataGenerator().AsSourceGenerator(), JsonGenerator.Value), parseOptions: parse);
+                ImmutableArray.Create(new CapabilityGenerator().AsSourceGenerator(), new ComponentMetadataGenerator().AsSourceGenerator(), new JobGenerator().AsSourceGenerator(), JsonGenerator.Value), parseOptions: parse);
             driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics, Ct);
-            Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+            Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error || d.Id == "CS8785"));
             var directory = Path.Combine(_root, version); Directory.CreateDirectory(directory);
             var path = Path.Combine(directory, "Qian.SdkManifestFixture.dll");
             var emitted = output.Emit(path, cancellationToken: Ct);

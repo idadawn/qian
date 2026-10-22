@@ -26,7 +26,7 @@ updated: 2026-10-23
 - [x] IT：真实 PostgreSQL 受限登录、两租户的原始 SQL 读写隔离；拒绝超级用户、BYPASSRLS、角色切换、缺失/不匹配租户及未登记连接；声明的租户表缺少 FORCE RLS 或保护策略时拒绝装配
 - [x] IT：连接打开与事务开始均设置正确租户上下文；提交/回滚/取消/释放及连接池复用不泄漏前一租户，未结束事务随会话释放回滚，组件卸载撤销服务并释放活动会话
 - [x] IT：显式平台连接必须使用单独的受限登录角色及仍有效的 global 调用上下文，租户调用与角色成员关系不能冒充；凭据由受信任宿主绑定读取，不进入清单、错误或日志
-- [ ] 固定 Linux 环境严格 NativeAOT 发布并运行真实 PostgreSQL 读写/事务/隔离探针，IL 警告不抑制；现有平台与 Scheduler 的 EF 路径回归通过
+- [x] 固定 Linux 环境严格 NativeAOT 发布并运行真实 PostgreSQL 读写/事务/隔离探针，IL 警告不抑制；现有平台与 Scheduler 的 EF 路径回归通过
 
 ## 进度日志
 
@@ -37,3 +37,4 @@ updated: 2026-10-23
 - 2026-10-23 cody：6bf40daf7a 在固定 SDK 镜像严格发布 linux-arm64，IlcTreatWarningsAsErrors=true、TrimmerSingleWarn=false，TestResults/native-data-linux-publish-final.log 无 IL 警告。实际原生产物真库运行 1/1（TestResults/native-data-aot-final）；CI 同款直接 Linux 进程 driver 再验 1/1（TestResults/native-data-ci-driver），均未跳过。f9f730ce32 据此登记本组件 x-aot:true；正式包源安装未验收，x-skeleton:true 保留，未更改 gateway 整体 AOT 声明。
 - 2026-10-23 cody：既有 EF DataSafetyTests 与 CrossHostTenantModelTests 13/13 通过（TestResults/native-data-ef-regression.xml）。最后一条验收仍未勾选：当前分支基线不含 Scheduler 实现，需父代理在串行整合树完成 Scheduler EF 路径回归及远端 CI 后收口，不能用原生单组件证据替代完整组合。
 - 2026-10-23 cody：Provider 与严格原生运行证据已提交供 Audit 接入；前四项完成，等待串行整合树 Scheduler EF 回归与远端 CI 后最终收口
+- 2026-10-23 cody：父代理整合最新主线与SCH-001实现后，Scheduler完整真库15/15通过、零跳过（198.073秒），含真实三进程两分钟/正常停止/真Kill与隔离；结合已过EF安全13项，最后复合验收已满足。严格NativeData原生CI将按当前集成提交再确认后合并

@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Runtime">
+    <PackageVersion Include="Quartz" Version="4.6.0" />
     <PackageVersion Include="Kun.Configuration" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Configuration.Apollo" Version="[$(KunVersion)]" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
