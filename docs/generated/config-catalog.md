@@ -27,7 +27,8 @@
   "type": "object",
   "properties": {
     "store": {
-      "type": "string"
+      "type": "string",
+      "const": "pg"
     }
   },
   "additionalProperties": false,
@@ -576,6 +577,9 @@
       "items": {
         "type": "string"
       }
+    },
+    "env": {
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -586,8 +590,6 @@
 ## global/events
 
 组件：` qian.events@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
-
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
 
 ### 生效配置
 

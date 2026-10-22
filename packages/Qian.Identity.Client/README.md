@@ -9,7 +9,7 @@
 
 同一个包进 `platform`、`gateway` 与独立宿主（ADR-019）：独立宿主只装本包即可对接任意 OIDC 发行方，不部署 Qian 平台、不需要 Config 组件（公开客户端）。
 
-本包声明 `IsAotCompatible`，裁剪与 AOT 分析器 0 警告。`gateway` profile 是 AOT 树（`build.aot: true`），组件清单的 `x-aot` 以 CI 的 NativeAOT 冒烟为据：[tools/Qian.Identity.Client.AotSmoke](../../tools/Qian.Identity.Client.AotSmoke/Program.cs) 按网关的用法装配会话与 S2S 校验，以 ILC 警告即失败发布 linux-x64，原生二进制挂载组件后逐个请求端点。判断兼容性看 ILC 结果，不看 Kun 包的元数据：Kun 2026.10.14 的包缺 IsTrimmable 等元数据，成因见 [S1-KUN-015](../../pm/tasks/S1-KUN-015.md)。
+本包声明 `IsAotCompatible`，裁剪与 AOT 分析器 0 警告。组件清单的 `x-aot` 以 CI 的 NativeAOT 冒烟为据（S1-IDP-014）。按 S1-DEC-029，开发期 `gateway` 暂用 JIT，网关整体的 NativeAOT 验收归 GW-001 / DEP-008。冒烟的做法是：[tools/Qian.Identity.Client.AotSmoke](../../tools/Qian.Identity.Client.AotSmoke/Program.cs) 按网关的用法装配会话与 S2S 校验，以 ILC 警告即失败发布 linux-x64，原生二进制挂载组件后逐个请求端点。判断兼容性看 ILC 结果，不看 Kun 包的元数据：Kun 2026.10.14 的包缺 IsTrimmable 等元数据，成因见 [S1-KUN-015](../../pm/tasks/S1-KUN-015.md)。
 
 ## 安装与装配
 
@@ -39,7 +39,7 @@ app.UseAuthorization();
 app.MapQianIdentityClient();   // /auth/login、回调、/auth/logout、/auth/csrf、/auth/backchannel-logout
 
 // 经 PluginLoader 挂载组件；浏览器流程在挂载后才生效，卸载后端点返回 404、Cookie 会话不再被认可。
-await loader.MountAsync([new(new PluginEntry("identity", "qian.identity.client", "1.0.0", ScopeKey.Global, 0, config), new IdentityClientPlugin(), [IdentityDefinition.Key])], ct);
+await loader.MountAsync([new(new PluginEntry("identity", "qian.identity.client", "1.0.0", ScopeKey.Global, 0, config), new IdentityClientComponent(), [IdentityDefinition.Key])], ct);
 ```
 
 组件配置（[plugins/qian.identity.client](../../plugins/qian.identity.client/README.md)）：`issuer`、`clientId` 必须与宿主选项一致；`clientSecret` 只接受 `secretRef://platform/…` 或 `secretRef://dev/…`，第一次换码时经 Config 组件的密钥策略解析（清单声明 `identity/*`，宿主审批），密钥不经代码、选项或配置明文传入。公开客户端省略 `clientSecret`，此时不依赖 Config。轮换密钥 = 重新挂载组件。
@@ -63,7 +63,7 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 | `Authority` | 必填 | 发行方 issuer；discovery 的 issuer 必须与之一致。`RequireHttpsMetadata` 为 true 时必须是 HTTPS。 |
 | `ClientId` | 必填 | 客户端标识。 |
 | `Scopes` | `["openid"]` | 必须含 `openid`；需要刷新时加 `offline_access`。 |
-| `Resource` | 空 | 访问令牌的预期受众（须是发行方为该客户端登记的资源）。配置后会话主体取自访问令牌的规范身份（见下）；授权请求不带 `resource`，由发行方按登记签发。 |
+| `Resource` | 空 | 访问令牌的受众（RFC 8707，须是发行方为该客户端登记的资源，照登记原文写）。配置后授权请求带 `resource`，发行方把访问令牌的受众收窄到它，会话主体取自访问令牌的规范身份（见下）；不配置时授权请求不带 `resource`。qian-identity 要求登记了多个资源的客户端必须带。 |
 | `RedirectUri` | 空 | 在发行方登记的回调；只来自可信配置，不按请求 Host 推导。为空时不启用浏览器会话（只做 S2S 或只校验令牌的宿主）。 |
 | `PathPrefix` | `/auth` | 登录、登出、防伪令牌与后通道登出端点的前缀。 |
 | `DefaultReturnPath` / `AllowedReturnPaths` | `/` / 空 | `returnTo` 只接受同源相对路径（解码后不含 `.`、`..` 段，不含反斜杠与控制字符），白名单按路径段前缀匹配；不合法时回缺省落点。 |
@@ -88,7 +88,7 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 
 | 端点 | 说明 |
 |---|---|
-| `GET {PathPrefix}/login?returnTo=` | 生成 PKCE verifier、state、nonce（存在 Data Protection 保护的一次性 Cookie 里，5 分钟），302 到授权端点。 |
+| `GET {PathPrefix}/login?returnTo=` | 生成 PKCE verifier、state、nonce（存在 Data Protection 保护的一次性 Cookie 里，5 分钟），302 到授权端点；规范模式另带 `resource`。 |
 | `GET {RedirectUri 的路径}` | 先消费登录事务（无论成败事务 Cookie 都删除、state 登记为已用），再查 `iss`、`error`，然后带原始 verifier 与 nonce 换码；规范模式下会话建立前先确认访问令牌可投影；成功则建立新会话（旧会话作废），302 回 `returnTo`。 |
 | `POST {PathPrefix}/logout` | 删除本地会话与 Cookie，204。有会话时必须带防伪请求头 `X-CSRF-TOKEN`，否则 400。 |
 | `GET {PathPrefix}/csrf` | 已认证时返回 `{ headerName, token }`。 |
@@ -100,16 +100,23 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 
 ## Identity seam
 
-`IdentityClientPlugin` 以 `IdentityDefinition.Key` 提供依赖方的 `IIdentityService`：`CurrentPrincipal` 是当前请求已验证的规范快照；人员、成员、会话管理与连接器注册属于身份服务，调用一律返回 `IDENTITY_OPERATION_UNSUPPORTED`（501），不伪造空结果。只允许 global scope，同一宿主只允许一个 Client。
+清单入口 `IdentityClientComponent` 委托现有 `IdentityClientPlugin`，以 `IdentityDefinition.Key` 提供依赖方的 `IIdentityService`：`CurrentPrincipal` 是当前请求已验证的规范快照；人员、成员、会话管理与连接器注册属于身份服务，调用一律返回 `IDENTITY_OPERATION_UNSUPPORTED`（501），不伪造空结果。只允许 global scope，同一宿主只允许一个 Client。
+
+## 清单与依赖闭包
+
+`[QianPlugin]` 的稳定入口、空 `inject` 和 `Identity` 提供项经 SDK 生成，配置 Schema 以 `ComponentConfiguration.Schema` 为代码真相源，由 `qian-plugin sync` 更新组件文件夹。构造模式、密钥延迟解析和卸载语义保持在现有实现中；公开客户端不需要 Config 或 Data Provider。
+
+`Qian.Plugin.Sdk` 是实际运行依赖，其 Data / Authz / Events / Surfaces Definition 包随闭包进入；它们只提供契约，不安装或启动对应 Provider。`Qian.Plugin.Sdk.Generators` 只作为构建期分析器。独立宿主测试维护 Runtime / SDK / Definition 的精确程序集白名单，并用其它 Provider 的反例验证拒绝；外部 Dex 登录验证宿主仍只需安装 Client。
 
 ## 已知限制
 
 - 不做 RP 发起的发行方登出（end_session），也不调用撤销端点：本地登出只结束本地会话，发行方的 SSO 会话仍在；发行方侧的吊销经后通道登出同步到本地。
 - 本地登出与正在进行的刷新并发时，刷新的结果只续写仍存活的会话，已登出的会话不会复活；但刷新已经换到的令牌族要等发行方侧过期。
+- `resource` 只在授权请求里带：Kun 的 `OidcCodeExchange` 与刷新都不能追加参数，所以换码与刷新请求不带。qian-identity 的授权码与 refresh token 已绑定授权时请求的资源，换码、刷新沿用，受众不变。对接要求令牌请求也带 `resource` 的发行方（MCP 授权规范对客户端的要求），要等 Kun 支持追加参数。
 - `prompt`、`login_hint`、租户提示等授权参数尚未透传（外壳接线随 D5 / YUE-002）。
-- 组件清单的 `runtime` 已由代码派生，并声明了 `x-aot`，但仍带配置骨架标记：`qian add identity` 还差私有源发布与 `runtime.nuget` 钉版，发版只能从 main 触发（S1-IDP-014），见组件文件夹的说明。
-- 组件元数据生成需要引用 `Qian.Plugin.Sdk`，它经 `Qian.Data.Abstractions` 把 EF Core 带进依赖闭包。NativeAOT 发布时这部分不可达，会被裁掉；JIT 宿主的输出目录里会多出这些程序集。
+- 清单已由 SDK 派生稳定入口与 configSchema，并声明了 `x-aot`（依据见上文的 NativeAOT 冒烟），但仍保留 `x-skeleton`：还要等包族发布、`runtime.nuget` 钉版和真实 `qian add` 安装验收（S1-IDP-015）。发版只能从 main 触发。按 S1-DEC-029，开发期 gateway 使用 JIT，gateway 整体的 NativeAOT 门仍由 GW-001 / DEP-008 验收。
+- `Qian.Plugin.Sdk` 经 `Qian.Data.Abstractions` 把 EF Core 带进依赖闭包。NativeAOT 发布时这部分不可达，会被裁掉；JIT 宿主的输出目录里会多出这些程序集。
 
 ## 测试
 
-`tests/Qian.Identity.Client.Tests`：真实 qian-identity（内置账号模型、强制 PKCE）上的服务端换码、篡改 nonce / iss / state 重放、刷新单飞与轮换、登出防伪、卸载、后通道登出，以及会话主体经 Kun 网关签发器铸 S2S 后下游接受、透传被拒；S2S 契约逐条违约。`tests/Qian.Identity.Client.Standalone.Tests`：只引用本包的独立宿主对接 Dex（独立实现的 CNCF OIDC 发行方，见 [tests/README.md](../../tests/README.md) 的 `DexFixture`）完成登录与登出，并断言依赖闭包里只有本包及其 Runtime / SDK / Abstractions，没有任何 Provider 或身份服务。`ClientManifestTests` 核对组件清单的代码字段与生成元数据一致，并确认声明了 `x-aot`；NativeAOT 冒烟见上文。选 Dex 而不是第二个 qian-identity，是因为后者证明不了「任意 OIDC 发行方」。
+`tests/Qian.Identity.Client.Tests`：真实 qian-identity（内置账号模型、强制 PKCE）上的服务端换码、篡改 nonce / iss / state 重放、刷新单飞与轮换、登出防伪、卸载、后通道登出，以及会话主体经 Kun 网关签发器铸 S2S 后下游接受、透传被拒；S2S 契约逐条违约。`tests/Qian.Identity.Client.Standalone.Tests`：只引用本包的独立宿主对接 Dex（独立实现的 CNCF OIDC 发行方，见 [tests/README.md](../../tests/README.md) 的 `DexFixture`）完成登录与登出，并断言依赖闭包里没有其他 Qian 组件。`ClientManifestTests` 核对清单与生成元数据、配置 Schema 一致，公开客户端能挂载和卸载，并确认清单声明了 `x-aot`；NativeAOT 冒烟见上文。选 Dex 而不是第二个 qian-identity，是因为后者证明不了「任意 OIDC 发行方」。

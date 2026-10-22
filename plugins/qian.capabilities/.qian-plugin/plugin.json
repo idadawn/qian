@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.capabilities",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.capabilities",
+  "description": "提供 qian.capabilities 的实际代码入口与配置契约；安装状态按组件验收门管理。",
   "author": {
     "name": "Qian"
   },
@@ -11,8 +11,21 @@
     "displayName": "capabilities",
     "category": "platform"
   },
-  "inject": [],
-  "provides": [],
+  "inject": [
+    "Audit",
+    "CommandAudit",
+    "CommandAuthorization",
+    "CommandTenancy",
+    "Data",
+    "Registry",
+    "Tenancy"
+  ],
+  "provides": [
+    "Capabilities",
+    "ContractAdmission",
+    "Contracts",
+    "Navigation"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -20,8 +33,34 @@
     "required": true
   },
   "scopes": [
-    "global",
-    "tenant"
+    "global"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Capabilities.CapabilitiesComponent, Qian.Capabilities",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.capabilities",
+        "source": "Qian.Capabilities.CapabilitiesComponent, Qian.Capabilities",
+        "sha256": "6669ff696656d6795767840ddc15abde1bdac4ab27d5884ff4ff07bee71242fd",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
 }

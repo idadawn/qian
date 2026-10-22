@@ -4,8 +4,10 @@
     <ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
-    <!-- 配置 Schema 的唯一来源是组件文件夹；清单（ConnectorDescriptor.ConfigSchema）直接嵌入它，不另抄一份。 -->
-    <EmbeddedResource Include="../../plugins/qian.identity.connector.oidc/schemas/config.schema.json" LogicalName="qian.identity.connector.oidc/config.schema.json" />
     <InternalsVisibleTo Include="Qian.Identity.Connector.Oidc.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>

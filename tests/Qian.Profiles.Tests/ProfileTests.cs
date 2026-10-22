@@ -54,11 +54,11 @@ public sealed class ProfileTests
     }
 
     [Theory]
-    // 警告只来自仍带骨架标记的条目；qian.data 经 S1-RT-011 真实安装后不再是骨架（platform / identity 各少一条）。
-    [InlineData("platform", 21, 20)]
-    [InlineData("gateway", 5, 5)]
-    [InlineData("identity", 8, 7)]
-    [InlineData("standalone", 2, 2)]
+    // 警告只来自仍带骨架标记的条目；qian.data / qian.events / qian.config 经真实安装后不再是骨架。
+    [InlineData("platform", 21, 19)]
+    [InlineData("gateway", 6, 5)]
+    [InlineData("identity", 8, 6)]
+    [InlineData("standalone", 3, 1)]
     [InlineData("minimal", 0, 0)]
     public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count, int skeletons)
     {
@@ -70,32 +70,15 @@ public sealed class ProfileTests
     }
 
     [Fact]
-    public void Gateway_identity_is_an_aot_declared_code_component_and_the_same_component_without_x_aot_is_refused()
+    public void Gateway_identity_resolves_to_the_code_component_that_declares_x_aot()
     {
-        // S1-IDP-014：x-aot 由 NativeAOT 冒烟背书；同一组件去掉 x-aot（以更高版本出现，被无版本引用选中）时 AOT profile 拒绝装配。
+        // S1-IDP-014：x-aot 以 NativeAOT 冒烟为据。按 S1-DEC-029 开发期 gateway 用 JIT；AOT profile 拒绝未声明组件的规则见 TCK 的 aot-code-rejected。
         var shipped = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false });
         Assert.True(shipped.IsValid, JsonSerializer.Serialize(shipped, Json));
         var identity = Assert.Single(shipped.Snapshot!.Entries, e => e.Id == "identity");
         Assert.StartsWith("qian.identity.client@", identity.Plugin, StringComparison.Ordinal);
         Assert.Equal("module", identity.Manifest.GetProperty("runtime").GetProperty("form").GetString());
         Assert.True(identity.Manifest.GetProperty("x-aot").GetBoolean());
-        var copy = Path.Combine(Path.GetTempPath(), "qian-identity-without-aot-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            foreach (var source in Directory.EnumerateFiles(identity.ComponentDirectory, "*", SearchOption.AllDirectories))
-            {
-                var target = Path.Combine(copy, Path.GetRelativePath(identity.ComponentDirectory, source));
-                Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(source, target);
-            }
-            var file = Path.Combine(copy, ".qian-plugin/plugin.json");
-            var manifest = JsonNode.Parse(File.ReadAllText(file))!.AsObject();
-            manifest.Remove("x-aot"); manifest["version"] = "1.0.1";
-            File.WriteAllText(file, manifest.ToJsonString());
-            var refused = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false, ComponentDirectories = [copy] });
-            Assert.False(refused.IsValid);
-            Assert.Contains(refused.Diagnostics, d => d.Error.Errors?.Any(e => e.Message == "AOT profile 含未声明 AOT 兼容的代码组件。") == true);
-        }
-        finally { Directory.Delete(copy, true); }
     }
 
     [Fact]

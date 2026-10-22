@@ -43,7 +43,8 @@
   "x-aot": true,
   "runtime": {
     "form": "module",
-    "entry": "Qian.Identity.Client.IdentityClientPlugin, Qian.Identity.Client"
+    "entry": "Qian.Identity.Client.IdentityClientComponent, Qian.Identity.Client",
+    "configSchema": "./schemas/config.schema.json"
   },
   "x-qian-generated": {
     "$generated": true,
@@ -51,8 +52,20 @@
       "/inject",
       "/provides",
       "/runtime/form",
-      "/runtime/entry"
+      "/runtime/entry",
+      "/runtime/configSchema"
     ],
-    "tools": []
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.identity.client",
+        "source": "Qian.Identity.Client.IdentityClientComponent, Qian.Identity.Client",
+        "sha256": "762a4badbf0a3e0a1e0ac69716d9c1fa93bb560bf3e34bfbdc9f89472f66ebb8",
+        "fields": [
+          ""
+        ]
+      }
+    }
   }
 }

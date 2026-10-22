@@ -14,5 +14,6 @@
     <PackageReference Include="Kun.Gateway" />
     <PackageReference Include="Kun.Mediator" />
     <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
 </Project>

@@ -1,32 +1,64 @@
-using System.Reflection;
 using System.Text.Json;
-using Qian.Plugin.Sdk;
+using Json.Schema;
+using Microsoft.Extensions.DependencyInjection;
+using Qian.Identity.Abstractions;
+using Qian.Runtime;
 
 namespace Qian.Identity.Client.Tests;
 
-// S1-IDP-014：仓库里 qian.identity.client 唯一清单的代码字段由源生成器派生（CI 另跑 Qian.Plugin.Tool check）；
-// x-aot 由 tools/Qian.Identity.Client.AotSmoke 的 NativeAOT 冒烟背书，gateway profile 据此接纳本组件。
 public sealed class ClientManifestTests
 {
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
     [Fact]
-    public void 仓库清单的代码字段与生成元数据一致_入口解析到IdentityClientPlugin_声明AOT兼容()
+    public async Task 唯一清单从稳定入口派生_公开客户端实际挂载与卸载不需要Config或DataProvider()
     {
-        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.identity.client/.qian-plugin/plugin.json")));
-        var root = manifest.RootElement;
-        var factory = typeof(IdentityClientPlugin).Assembly.GetCustomAttribute<QianCodeMetadataAttribute>()!.FactoryType;
-        var code = ((IComponentCodeMetadataFactory)Activator.CreateInstance(factory)!).Create();
-        var entry = root.GetProperty("runtime").GetProperty("entry").GetString()!;
-        Assert.Equal(("qian.identity.client", "qian.identity.client"), (code.ComponentId, root.GetProperty("id").GetString()));
-        Assert.Equal((code.RuntimeEntry, "module"), (entry, root.GetProperty("runtime").GetProperty("form").GetString()));
-        Assert.Empty(code.Inject);
-        Assert.Empty(root.GetProperty("inject").EnumerateArray());
-        Assert.Equal(["Identity"], code.Provides);
-        Assert.Equal(code.Provides, root.GetProperty("provides").EnumerateArray().Select(item => item.GetString()!));
-        var generated = root.GetProperty("x-qian-generated");
-        Assert.True(generated.GetProperty("$generated").GetBoolean());
-        Assert.Equal(["/inject", "/provides", "/runtime/form", "/runtime/entry"], generated.GetProperty("fields").EnumerateArray().Select(item => item.GetString()!));
-        Assert.True(root.GetProperty("x-aot").GetBoolean());
-        Assert.Same(typeof(IdentityClientPlugin), Type.GetType(entry, throwOnError: true));
+        var metadata = new IdentityClientComponentQianCodeMetadata().Create();
+        var root = RepositoryRoot();
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "plugins/qian.identity.client/.qian-plugin/plugin.json")));
+        Assert.Equal("qian.identity.client", metadata.ComponentId);
+        Assert.Empty(metadata.Inject);
+        Assert.Equal(IdentityDefinition.Key.Name, Assert.Single(metadata.Provides));
+        Assert.Equal(metadata.RuntimeEntry, manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString());
+        Assert.Equal("global", Assert.Single(manifest.RootElement.GetProperty("scopes").EnumerateArray()).GetString());
+        Assert.True(manifest.RootElement.GetProperty("x-skeleton").GetBoolean());
+        // x-aot 以 tools/Qian.Identity.Client.AotSmoke 的 CI NativeAOT 冒烟为据（S1-IDP-014）。
+        Assert.True(manifest.RootElement.GetProperty("x-aot").GetBoolean());
+        var schemaPath = manifest.RootElement.GetProperty("runtime").GetProperty("configSchema").GetString()![2..];
+        using var schema = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "plugins/qian.identity.client", schemaPath)));
+        Assert.True(JsonElement.DeepEquals(metadata.ConfigSchema!.Value, schema.RootElement));
+        Assert.Empty(metadata.Capabilities);
+
+        await using var services = new ServiceCollection().AddLogging().AddQianIdentityClient(new IdentityClientOptions
+        {
+            Authority = new Uri("https://id.qian.test/"), ClientId = "qian-public", UseInMemorySessionStore = true
+        }).BuildServiceProvider();
+        await using var loader = new PluginLoader(services);
+        var entryType = Type.GetType(metadata.RuntimeEntry, throwOnError: true)!;
+        var plugin = Assert.IsAssignableFrom<IQianPlugin>(Activator.CreateInstance(entryType));
+        Assert.Empty(plugin.Inject);
+        await loader.MountAsync([new(new PluginEntry("identity", metadata.ComponentId, "1.0.0", ScopeKey.Global, 0,
+            JsonSerializer.SerializeToElement(new { issuer = "https://id.qian.test/", clientId = "qian-public" })), plugin,
+            metadata.Provides.Select(name => new ServiceKey(name)).ToArray())], Ct);
+        Assert.Equal(PluginState.Ready, loader.GetState("identity", ScopeKey.Global));
+        Assert.NotNull(loader.GetContext("identity", ScopeKey.Global).Inject<IIdentityService>(IdentityDefinition.Key));
+        Assert.True(services.GetRequiredService<IdentityClientRuntime>().Active);
+        await loader.UnmountAsync("identity", ScopeKey.Global, Ct);
+        Assert.False(services.GetRequiredService<IdentityClientRuntime>().Active);
+    }
+
+    [Theory]
+    [InlineData("secretRef://platform/identity/client-secret", true)]
+    [InlineData("secretRef://dev/identity/password", true)]
+    [InlineData("secretRef://platform/identity/client secret", false)]
+    [InlineData("secretRef://tenant/identity/client-secret", false)]
+    [InlineData("plaintext", false)]
+    public void 代码配置Schema保留secretRef边界_合法路径的字母s不被误当作空白(string reference, bool valid)
+    {
+        var metadata = new IdentityClientComponentQianCodeMetadata().Create();
+        var schema = JsonSchema.FromText(metadata.ConfigSchema!.Value.GetRawText());
+        var configuration = JsonSerializer.SerializeToElement(new { issuer = "https://id.qian.test/", clientId = "qian-web", clientSecret = reference });
+        Assert.Equal(valid, schema.Evaluate(configuration).IsValid);
     }
 
     private static string RepositoryRoot()

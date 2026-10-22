@@ -53,6 +53,19 @@ public static class IdentityServerHosting
                 server.RegisterScopes(options.Clients.SelectMany(client => client.Application.Permissions)
                     .Where(permission => permission.StartsWith(Permissions.Prefixes.Scope, StringComparison.Ordinal))
                     .Select(permission => permission[Permissions.Prefixes.Scope.Length..]).Distinct(StringComparer.Ordinal).ToArray());
+                // RFC 8707 resource 的两层检查。OpenIddict 自带的第一层拿请求原文去比 RegisterResources 登记项的 AbsoluteUri：只有主机的标识
+                // （如 https://api.qian.test，也是 MCP 推荐的不带结尾斜杠写法）规范化后多一个 /，永远对不上（ID2190）。所以关掉它、不再登记，
+                // 由 Qian 在同一位置按该客户端的白名单逐字比较，越界报 invalid_target。第二层仍是 OpenIddict 的客户端 rsrc: 权限（ID2192），
+                // 只由各自的 Resources 推导，随描述符镜像进 OpenIddict 应用。
+                server.DisableResourceValidation();
+                foreach (var client in options.Clients) client.Application.Permissions.UnionWith(client.Resources.Select(resource => Permissions.Prefixes.Resource + resource));
+                server.AddEventHandler<OpenIddictServerEvents.ValidateAuthorizationRequestContext>(handler => handler
+                    .SetOrder(OpenIddictServerHandlers.Authentication.ValidateResources.Descriptor.Order)
+                    .UseInlineHandler(context => RejectForeignResources(context, context.Request, options)));
+                // 令牌端点排在客户端认证之后：未认证的调用方不能借它试探某个客户端登记了哪些资源。
+                server.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(handler => handler
+                    .SetOrder(OpenIddictServerHandlers.Exchange.ValidateAuthentication.Descriptor.Order + 500)
+                    .UseInlineHandler(context => RejectForeignResources(context, context.Request, options)));
                 foreach (var certificate in options.SigningCertificates) server.AddSigningCertificate(certificate);
                 foreach (var certificate in options.EncryptionCertificates) server.AddEncryptionCertificate(certificate);
                 // access token 可由 RP 使用 JWKS 验签；授权码与 refresh token 继续强制加密。
@@ -96,6 +109,17 @@ public static class IdentityServerHosting
         });
     }
 
+    // resource 的第一层：请求里的每一项都须逐字命中该客户端的白名单（不做 URI 规范化），否则整个请求 invalid_target。
+    private static ValueTask RejectForeignResources(OpenIddictServerEvents.BaseValidatingContext context, OpenIddictRequest request, IdentityServerOptions options)
+    {
+        var resources = request.GetResources();
+        if (resources.IsEmpty) return ValueTask.CompletedTask;
+        var client = options.Clients.SingleOrDefault(candidate => candidate.Application.ClientId == request.ClientId);
+        if (client is null || resources.Any(resource => !client.Resources.Contains(resource, StringComparer.Ordinal)))
+            context.Reject(Errors.InvalidTarget, "One of the specified 'resource' parameters is not allowed for this client.");
+        return ValueTask.CompletedTask;
+    }
+
     private static readonly Regex DeviceTypePattern = new(@"\A[a-z][a-z0-9_-]{0,15}\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 
     private static void Validate(IdentityServerOptions options, IHostEnvironment environment)
@@ -115,6 +139,8 @@ public static class IdentityServerHosting
                 descriptor.ClientType == ClientTypes.Confidential && string.IsNullOrWhiteSpace(descriptor.ClientSecret) ||
                 descriptor.Permissions.Contains(Permissions.GrantTypes.ClientCredentials) && descriptor.ClientType != ClientTypes.Confidential ||
                 !DeviceTypePattern.IsMatch(client.DeviceType ?? "") || client.TenantId == Guid.Empty || client.Resources.Count == 0 || client.Resources.Any(resource => !Uri.TryCreate(resource, UriKind.Absolute, out var uri) || uri.Fragment.Length != 0) ||
+                descriptor.Permissions.Any(permission => permission.StartsWith(Permissions.Prefixes.Resource, StringComparison.Ordinal) &&
+                    !client.Resources.Contains(permission[Permissions.Prefixes.Resource.Length..], StringComparer.Ordinal)) ||
                 client.BackchannelLogoutUri is { } callback && (!callback.IsAbsoluteUri || callback.UserInfo.Length != 0 || callback.Fragment.Length != 0 || callback.Query.Length != 0 ||
                     callback.Scheme != "https" && !(insecure && callback.IsLoopback && callback.Scheme == "http")))
                 throw new ArgumentException("客户端必须具有受信类型、精确受众及安全后通道地址。", nameof(options));

@@ -109,3 +109,51 @@ Qian.Plugin.Sdk.CapabilityContractException.Name.get -> string!
 Qian.Plugin.Sdk.CapabilityContractException.Location.get -> string!
 Qian.Plugin.Sdk.CapabilityContractException.Rule.get -> string!
 Qian.Plugin.Sdk.CapabilityContractException.ReasonCode.get -> string!
+Qian.Plugin.Sdk.CapabilityAttribute.ComponentId.get -> string?
+Qian.Plugin.Sdk.CapabilityAttribute.ComponentId.set -> void
+Qian.Plugin.Sdk.ComponentCodeMetadata.ComponentCodeMetadata(string! componentId, string! runtimeEntry, System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>! inject, System.Collections.Generic.IReadOnlyList<string!>! provides, System.Collections.Generic.IReadOnlyList<Qian.Plugin.Sdk.CapabilityContract!>! capabilities, string! permissionsJson, string! eventsJson, string? configSchemaJson) -> void
+Qian.Plugin.Sdk.ComponentCodeMetadata.ConfigSchema.get -> System.Text.Json.JsonElement?
+Qian.Plugin.Sdk.ComponentCodeMetadata.Events.get -> System.Text.Json.JsonElement
+Qian.Plugin.Sdk.ComponentCodeMetadata.Permissions.get -> System.Text.Json.JsonElement
+Qian.Plugin.Sdk.ComponentMetadataDeclarations
+Qian.Plugin.Sdk.ComponentOwnerAttribute
+Qian.Plugin.Sdk.ComponentOwnerAttribute.ComponentId.get -> string!
+Qian.Plugin.Sdk.ComponentOwnerAttribute.ComponentOwnerAttribute(string! componentId) -> void
+Qian.Plugin.Sdk.ContributesAttribute
+Qian.Plugin.Sdk.ContributesAttribute.ContributesAttribute(System.Type! keyOwner, string! keyMember, string! name) -> void
+Qian.Plugin.Sdk.ContributesAttribute.KeyMember.get -> string!
+Qian.Plugin.Sdk.ContributesAttribute.KeyOwner.get -> System.Type!
+Qian.Plugin.Sdk.ContributesAttribute.Name.get -> string!
+Qian.Plugin.Sdk.DelegatePluginAttribute
+Qian.Plugin.Sdk.DelegatePluginAttribute.DelegatePluginAttribute(System.Type! implementation) -> void
+Qian.Plugin.Sdk.DelegatePluginAttribute.Implementation.get -> System.Type!
+Qian.Plugin.Sdk.ManifestErrors
+Qian.Plugin.Sdk.ProvidesAttribute
+Qian.Plugin.Sdk.ProvidesAttribute.KeyMember.get -> string!
+Qian.Plugin.Sdk.ProvidesAttribute.KeyOwner.get -> System.Type!
+Qian.Plugin.Sdk.ProvidesAttribute.ProvidesAttribute(System.Type! keyOwner, string! keyMember) -> void
+Qian.Plugin.Sdk.QianConfigSchemaAttribute
+Qian.Plugin.Sdk.QianConfigSchemaAttribute.Json.get -> string!
+Qian.Plugin.Sdk.QianConfigSchemaAttribute.QianConfigSchemaAttribute(string! json) -> void
+Qian.Plugin.Sdk.QianPluginAttribute.MetadataTypes.get -> System.Type![]!
+Qian.Plugin.Sdk.QianPluginAttribute.MetadataTypes.set -> void
+static Qian.Plugin.Sdk.ComponentMetadataDeclarations.Event<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! value, Qian.Runtime.DispatchMode mode, string! source) -> System.Text.Json.Nodes.JsonObject!
+static readonly Qian.Plugin.Sdk.ManifestErrors.ComponentMismatch -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Plugin.Sdk.ManifestErrors.Field -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Plugin.Sdk.ManifestErrors.HandwrittenConflict -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Plugin.Sdk.ManifestErrors.ManifestDuplicate -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Plugin.Sdk.ManifestErrors.ManifestInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Plugin.Sdk.ManifestErrors.MetadataInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Plugin.Sdk.ManifestErrors.MetadataMissing -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Plugin.Sdk.ManifestErrors.PathEscape -> Qian.Runtime.Errors.ErrorCode!
+Qian.Plugin.Sdk.ContributesAttribute.RegistryType.get -> System.Type?
+Qian.Plugin.Sdk.ContributesAttribute.RegistryType.set -> void
+Qian.Plugin.Sdk.CapabilitySourceAttribute
+Qian.Plugin.Sdk.CapabilitySourceAttribute.CapabilitySourceAttribute(System.Type! owner, string! member) -> void
+Qian.Plugin.Sdk.CapabilitySourceAttribute.Member.get -> string!
+Qian.Plugin.Sdk.CapabilitySourceAttribute.Owner.get -> System.Type!
+Qian.Plugin.Sdk.SharedEventsAttribute
+Qian.Plugin.Sdk.SharedEventsAttribute.Declarations.get -> System.Type!
+Qian.Plugin.Sdk.SharedEventsAttribute.DefinitionComponent.get -> string!
+Qian.Plugin.Sdk.SharedEventsAttribute.SharedEventsAttribute(System.Type! declarations, string! definitionComponent) -> void
+static Qian.Plugin.Sdk.ComponentMetadataDeclarations.Event<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! value, Qian.Runtime.DispatchMode mode, string! source, string! definitionComponent) -> System.Text.Json.Nodes.JsonObject!
