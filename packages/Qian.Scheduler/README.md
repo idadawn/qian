@@ -39,13 +39,13 @@ IScheduler 提供 ScheduleOnce、ScheduleCron、ScheduleInterval、Cancel。call
 - JobConcurrency：Queue 串行处理发生点，按 misfire 处理积压；Skip 在完成后跳过执行期间的重叠发生点。两者都不并行执行同一定义；不同定义可并行。
 - 默认超时1分钟（100毫秒至1天）、最多3次尝试（1至100）、重试间隔5秒（0至1天）。超时给处理器发送取消。处理器若不响应，仍续租并占用串行位置，不虚报已强制终止。停机最多等5秒；未合作的处理器需由进程生命周期最终终止。
 - Cancel 持久归档 trigger、递增 generation 并将活动 run 标为 cancelled；返回后不再领取。已有处理器在下一次续租检查时收到取消；取消不是回滚已完成业务效果。旧执行者收尾不能改写 cancelled。
-- 正常停止 worker 时，取消正在执行的处理器并停止续租，不执行完成/推进事务；同一 active_run_id 和发生点保留，由另一 worker 在租约到期后接管。Runtime 公共卸载原有的关闭上下文围栏同样保护持久状态，调度器现在显式处理停机，不再依赖关闭上下文的异常路径。
+- 正常停止 worker、续租异常或失去租约时，只取消本地执行并停止续租，不执行完成/推进事务；同一 active_run_id 和发生点保留，由租约到期后的 worker 接管。续租暂态错误不能当作业务 Cancel 归档一次性作业；显式 Cancel 仍由独立事务写 cancelled 并提升 generation。Runtime 公共卸载原有的关闭上下文围栏同样保护持久状态，调度器不依赖关闭上下文的异常路径。
 
 无故障分钟验收同时验证逻辑 run 与真实处理器调用次数。故障恢复语义是至少一次尝试：业务副作用完成后、run 完成回写前崩溃，会以同一 run id 再次调用。job_runs 唯一键不证明任意外部副作用恰好一次，写处理器必须在业务事务或外部系统用 idempotencyKey 去重。测试刻意在此窗口杀进程，分别断言两次 attempt 与一次幂等 effect。
 
 ## 验证
 
-专项复用 Qian.Testing.Containers.PostgresFixture，不重复创建容器框架。正常调度运行3个独立进程、两个租户、100个真实每分钟触发器，连续两个分钟各100次；实际杀进程检查租约到期接管。另覆盖业务键并发与取消、超时/重试、misfire、RLS原始SQL、组合外键、SET ROLE与成员关系、过量列权限、过期租约/旧owner、租户等待期冻结和目录过滤。SDK/ManifestTool 用真实 Roslyn 与子进程验证生成、同步、漂移、手改保护、多组件归属和删除。
+专项复用 Qian.Testing.Containers.PostgresFixture，不重复创建容器框架。正常调度运行3个独立进程、两个租户、100个真实每分钟触发器，连续两个分钟各100次；实际杀进程检查租约到期接管。另覆盖业务键并发与取消、超时/重试、misfire、RLS原始SQL、组合外键、SET ROLE与成员关系、过量列权限、过期租约/旧owner、租户等待期冻结和目录过滤。仅让真实续租抛一次 PostgreSQL 暂态错误的反例，验证原进程继续运行和更换进程两种路径都保留同一 run，第二次尝试仅产生一个幂等效果；不与普通 CI 超时作未经证明的因果归并。SDK/ManifestTool 用真实 Roslyn 与子进程验证生成、同步、漂移、手改保护、多组件归属和删除。
 
 ```bash
 QIAN_REQUIRE_DOCKER=1 dotnet run --project tests/Qian.Scheduler.Tests -c Release
