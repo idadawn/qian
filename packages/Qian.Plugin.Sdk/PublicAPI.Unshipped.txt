@@ -157,3 +157,17 @@ Qian.Plugin.Sdk.SharedEventsAttribute.Declarations.get -> System.Type!
 Qian.Plugin.Sdk.SharedEventsAttribute.DefinitionComponent.get -> string!
 Qian.Plugin.Sdk.SharedEventsAttribute.SharedEventsAttribute(System.Type! declarations, string! definitionComponent) -> void
 static Qian.Plugin.Sdk.ComponentMetadataDeclarations.Event<TPayload, TResult>(Qian.Runtime.QianEvent<TPayload, TResult>! value, Qian.Runtime.DispatchMode mode, string! source, string! definitionComponent) -> System.Text.Json.Nodes.JsonObject!
+Qian.Plugin.Sdk.ComponentCodeMetadata.ComponentCodeMetadata(string! componentId, string! runtimeEntry, System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>! inject, System.Collections.Generic.IReadOnlyList<string!>! provides, System.Collections.Generic.IReadOnlyList<Qian.Plugin.Sdk.CapabilityContract!>! capabilities, string! permissionsJson, string! eventsJson, string? configSchemaJson, System.Collections.Generic.IReadOnlyList<Qian.Plugin.Sdk.JobContract!>! jobs) -> void
+Qian.Plugin.Sdk.ComponentCodeMetadata.Jobs.get -> System.Collections.Generic.IReadOnlyList<Qian.Plugin.Sdk.JobContract!>!
+Qian.Plugin.Sdk.IJobRequest<TResponse>
+Qian.Plugin.Sdk.IJobRequest<TResponse>.QianJobCode.get -> string!
+Qian.Plugin.Sdk.JobBindingRegistration
+Qian.Plugin.Sdk.JobContract
+Qian.Plugin.Sdk.JobContract.Capability.get -> Qian.Plugin.Sdk.CapabilityContract!
+Qian.Plugin.Sdk.JobContract.Code.get -> string!
+Qian.Plugin.Sdk.JobContract.JobContract(string! code, Qian.Plugin.Sdk.CapabilityContract! capability) -> void
+Qian.Plugin.Sdk.QianJobAttribute
+Qian.Plugin.Sdk.QianJobAttribute.Code.get -> string!
+Qian.Plugin.Sdk.QianJobAttribute.QianJobAttribute(string! code) -> void
+static Qian.Plugin.Sdk.JobBindingRegistration.ProvideJob<TRequest, TResponse>(this Qian.Runtime.IPluginContext! context) -> System.IDisposable!
+static readonly Qian.Plugin.Sdk.JobBindingRegistration.Key -> Qian.Runtime.ServiceKey

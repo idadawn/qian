@@ -110,7 +110,7 @@ public sealed class CapabilityGenerator : IIncrementalGenerator
             "        " + Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(metadata, true) + ",\n" +
             "        " + contextName + ".Default.GetTypeInfo(typeof(" + requestName + "))!,\n" +
             "        " + contextName + ".Default.GetTypeInfo(typeof(" + responseName + "))!, [" + string.Join(", ", sensitiveNames) + "]);\n}\n";
-        output.AddSource(request.ToDisplayString().Replace('.', '_') + ".QianCapability.g.cs", SourceText.From(source, Encoding.UTF8));
+        output.AddSource(request.ToDisplayString().Replace("@", "").Replace('.', '_') + ".QianCapability.g.cs", SourceText.From(source, Encoding.UTF8));
     }
 
     private static List<IPropertySymbol>? SensitiveProperties(INamedTypeSymbol request)

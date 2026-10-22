@@ -1,0 +1,53 @@
+#nullable enable
+Qian.Scheduler.IScheduler
+Qian.Scheduler.IScheduler.Cancel(Qian.Runtime.IPluginContext! caller, string! businessKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Qian.Scheduler.IScheduler.ScheduleCron(Qian.Runtime.IPluginContext! caller, string! businessKey, string! cron, string! target, System.Text.Json.JsonElement parameters, Qian.Scheduler.JobOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Scheduler.ScheduledJob!>
+Qian.Scheduler.IScheduler.ScheduleInterval(Qian.Runtime.IPluginContext! caller, string! businessKey, System.DateTimeOffset firstRunAt, System.TimeSpan interval, string! target, System.Text.Json.JsonElement parameters, Qian.Scheduler.JobOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Scheduler.ScheduledJob!>
+Qian.Scheduler.IScheduler.ScheduleOnce(Qian.Runtime.IPluginContext! caller, string! businessKey, System.DateTimeOffset runAt, string! target, System.Text.Json.JsonElement parameters, Qian.Scheduler.JobOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Scheduler.ScheduledJob!>
+Qian.Scheduler.JobConcurrency
+Qian.Scheduler.JobConcurrency.Queue = 0 -> Qian.Scheduler.JobConcurrency
+Qian.Scheduler.JobConcurrency.Skip = 1 -> Qian.Scheduler.JobConcurrency
+Qian.Scheduler.JobOptions
+Qian.Scheduler.JobOptions.<Clone>$() -> Qian.Scheduler.JobOptions!
+Qian.Scheduler.JobOptions.Concurrency.get -> Qian.Scheduler.JobConcurrency
+Qian.Scheduler.JobOptions.Concurrency.init -> void
+Qian.Scheduler.JobOptions.Equals(Qian.Scheduler.JobOptions? other) -> bool
+Qian.Scheduler.JobOptions.JobOptions() -> void
+Qian.Scheduler.JobOptions.MaxAttempts.get -> int
+Qian.Scheduler.JobOptions.MaxAttempts.init -> void
+Qian.Scheduler.JobOptions.Misfire.get -> Qian.Scheduler.MisfirePolicy
+Qian.Scheduler.JobOptions.Misfire.init -> void
+Qian.Scheduler.JobOptions.MisfireGrace.get -> System.TimeSpan
+Qian.Scheduler.JobOptions.MisfireGrace.init -> void
+Qian.Scheduler.JobOptions.RetryDelay.get -> System.TimeSpan
+Qian.Scheduler.JobOptions.RetryDelay.init -> void
+Qian.Scheduler.JobOptions.Timeout.get -> System.TimeSpan
+Qian.Scheduler.JobOptions.Timeout.init -> void
+Qian.Scheduler.MisfirePolicy
+Qian.Scheduler.MisfirePolicy.CatchUp = 2 -> Qian.Scheduler.MisfirePolicy
+Qian.Scheduler.MisfirePolicy.FireOnce = 1 -> Qian.Scheduler.MisfirePolicy
+Qian.Scheduler.MisfirePolicy.Skip = 0 -> Qian.Scheduler.MisfirePolicy
+Qian.Scheduler.ScheduledJob
+Qian.Scheduler.ScheduledJob.<Clone>$() -> Qian.Scheduler.ScheduledJob!
+Qian.Scheduler.ScheduledJob.BusinessKey.get -> string!
+Qian.Scheduler.ScheduledJob.BusinessKey.init -> void
+Qian.Scheduler.ScheduledJob.Deconstruct(out System.Guid Id, out string! BusinessKey) -> void
+Qian.Scheduler.ScheduledJob.Equals(Qian.Scheduler.ScheduledJob? other) -> bool
+Qian.Scheduler.ScheduledJob.Id.get -> System.Guid
+Qian.Scheduler.ScheduledJob.Id.init -> void
+Qian.Scheduler.ScheduledJob.ScheduledJob(System.Guid Id, string! BusinessKey) -> void
+Qian.Scheduler.SchedulerDefinition
+Qian.Scheduler.SchedulerErrors
+override Qian.Scheduler.JobOptions.Equals(object? obj) -> bool
+override Qian.Scheduler.JobOptions.GetHashCode() -> int
+override Qian.Scheduler.JobOptions.ToString() -> string!
+override Qian.Scheduler.ScheduledJob.Equals(object? obj) -> bool
+override Qian.Scheduler.ScheduledJob.GetHashCode() -> int
+override Qian.Scheduler.ScheduledJob.ToString() -> string!
+static Qian.Scheduler.JobOptions.operator !=(Qian.Scheduler.JobOptions? left, Qian.Scheduler.JobOptions? right) -> bool
+static Qian.Scheduler.JobOptions.operator ==(Qian.Scheduler.JobOptions? left, Qian.Scheduler.JobOptions? right) -> bool
+static Qian.Scheduler.ScheduledJob.operator !=(Qian.Scheduler.ScheduledJob? left, Qian.Scheduler.ScheduledJob? right) -> bool
+static Qian.Scheduler.ScheduledJob.operator ==(Qian.Scheduler.ScheduledJob? left, Qian.Scheduler.ScheduledJob? right) -> bool
+static Qian.Scheduler.SchedulerDefinition.Scheduler(this Qian.Runtime.IPluginContext! context) -> Qian.Scheduler.IScheduler!
+static readonly Qian.Scheduler.SchedulerDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Scheduler.SchedulerErrors.Misconfigured -> Qian.Runtime.Errors.ErrorCode!
