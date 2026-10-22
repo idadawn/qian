@@ -1,10 +1,11 @@
 name: tenant-ui
+# 页面七步跑在 dev-tenant-ops.sh 装配的真实宿主上：宿主编译与装配用到的共享后端、插件元数据和构建基线改动后也要重跑（S1-TEN-012）。
 on:
   push:
     branches: [main]
-    paths: ['packages/qian-tenancy-ui/**', 'packages/yue/**', 'packages/Qian.Tenancy*/**', 'packages/Qian.Capabilities*/**', 'samples/Qian.Sample.Crm/**', 'plugins/qian.tenancy/**', 'tools/Qian.Dev.TenantOps/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
+    paths: ['packages/qian-tenancy-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
   pull_request:
-    paths: ['packages/qian-tenancy-ui/**', 'packages/yue/**', 'packages/Qian.Tenancy*/**', 'packages/Qian.Capabilities*/**', 'samples/Qian.Sample.Crm/**', 'plugins/qian.tenancy/**', 'tools/Qian.Dev.TenantOps/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
+    paths: ['packages/qian-tenancy-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
   workflow_dispatch:
 permissions:
   contents: read

@@ -3,12 +3,19 @@ import { resolve } from 'node:path';
 import { statSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 
 const root = resolve(import.meta.dirname, '../..');
+const loopback = (host: unknown) => typeof host === 'string' && ['127.0.0.1', 'localhost', '::1', '[::1]'].includes(host);
 const target = process.env.QIAN_DEV_OPS_URL ?? 'http://127.0.0.1:5080';
 const targetUrl = new URL(target);
-if (!['127.0.0.1', 'localhost', '[::1]'].includes(targetUrl.hostname)) throw new Error('开发代理仅允许本机运营宿主');
+if (!loopback(targetUrl.hostname)) throw new Error('开发代理仅允许本机运营宿主');
+// 代理默认以平台超管身份转发。命令行 --host 会覆盖下面的 server.host，所以按最终解析出的监听地址再拦一次；
+// vite preview 继承 server.proxy，同样拦住。
+function loopbackOnly(): Plugin {
+  const check = (host: unknown) => { if (!loopback(host)) throw new Error(`开发代理以平台超管身份转发，只允许监听回环地址（127.0.0.1、localhost、::1），当前为 ${String(host)}`); };
+  return { name: 'qian-dev-loopback-only', configureServer: (server) => check(server.config.server.host), configurePreviewServer: (server) => check(server.config.preview.host) };
+}
 const state = process.env.QIAN_DEV_STATE ?? resolve(root, '.qian-dev/tenant-ops');
 const tokens = new Map<string, { value: string; expires: number; stamp: number }>();
 function token(mode: string, tenant: string): string | undefined {
@@ -27,7 +34,7 @@ function token(mode: string, tenant: string): string | undefined {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), loopbackOnly()],
   server: {
     host: '127.0.0.1', port: Number(process.env.QIAN_DEV_UI_PORT ?? 5177), strictPort: true,
     proxy: { '/api': { target, changeOrigin: true, configure(proxy) {

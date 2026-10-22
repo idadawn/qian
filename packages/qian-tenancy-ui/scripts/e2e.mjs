@@ -29,9 +29,20 @@ function stopHost() {
     await writeFile(env.QIAN_UI_STOPPED_FILE, 'stopped\n');
   })();
 }
+// 开发代理守卫自测：代理默认以平台超管身份转发，命令行把监听地址改成非回环时，dev 与 preview 都必须拒绝启动。
+async function refusesNonLoopback(args) {
+  const vite = spawn('pnpm', ['exec', 'vite', ...args, '--host', '0.0.0.0', '--port', String(await port()), '--strictPort'], { cwd: resolve(root, 'packages/qian-tenancy-ui'), env, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  let output = '';
+  for (const stream of [vite.stdout, vite.stderr]) stream.on('data', (chunk) => { output += chunk; });
+  const code = await Promise.race([new Promise((ok) => vite.once('exit', ok)), delay(30_000)]);
+  if (code === undefined) process.kill(-vite.pid, 'SIGKILL');
+  if (code === undefined || code === 0 || !output.includes('只允许监听回环地址')) throw new Error(`开发代理守卫失效：vite ${[...args, '--host', '0.0.0.0'].join(' ')} 没有拒绝启动\n${output.slice(-2000)}`);
+}
 let watch;
 let succeeded = false;
 try {
+  for (const args of [[], ['preview']]) await refusesNonLoopback(args);
+  console.log('开发代理守卫自测通过：dev 与 preview 均拒绝非回环监听地址');
   console.log('启动独立真实宿主：', env.QIAN_DEV_OPS_URL);
   let ready = false;
   for (let i = 0; i < 300; i++) {
