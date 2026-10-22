@@ -104,7 +104,8 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   await rowA.getByRole('button', { name: '租户 A 他人更新', exact: true }).click();
   await expect(dialog.getByText('用量不可用', { exact: true })).toBeVisible();
   await expect(dialog.getByText('25', { exact: true })).toBeVisible();
-  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
+  // 只读抽屉没有表单，底部另有一个「关闭」按钮；与上面几处一样点表头关闭按钮。
+  await dialog.getByTestId('yue-form-drawer-close').click();
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations.filter((item) => ['critical', 'serious'].includes(item.impact ?? ''))).toEqual([]);
