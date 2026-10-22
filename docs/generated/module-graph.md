@@ -53,5 +53,6 @@ flowchart LR
   n18["global/realtime"]
   n19["global/entitlement"]
   n20["global/shell"]
+  n7 -->|"Data"| n8
 ```
 

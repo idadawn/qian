@@ -6,7 +6,8 @@
 
 | 服务键 | Provider 条目 | Consumer 条目 |
 |---|---|---|
-| ` Data ` | ` global/data ` |  |
+| ` Data ` | ` global/data ` | ` global/files ` |
+| ` Files ` | ` global/files ` |  |
 | ` Events ` | ` global/events ` |  |
 
 ```mermaid
@@ -34,7 +35,10 @@ flowchart LR
   n20["global/shell"]
   s0(("Data"))
   n7 --> s0
-  s1(("Events"))
-  n10 --> s1
+  s1(("Files"))
+  n8 --> s1
+  s2(("Events"))
+  n10 --> s2
+  s0 --> n8
 ```
 
