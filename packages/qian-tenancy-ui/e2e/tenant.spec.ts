@@ -162,6 +162,14 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   await expect(page.locator('main [role="alert"]')).toHaveCount(0);
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
+  // 行内动作没有抽屉可承载，出错报页面级提示：身份仍是租户主体，冻结 A 得到真实 403。提示显示状态码与服务端原文，A 仍为正常。
+  await rowA.getByRole('button', { name: '冻结', exact: true }).click();
+  const refused = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/tenancy/tenants/' + a.id + ':suspend');
+  await page.getByRole('alertdialog').getByRole('button', { name: '确认', exact: true }).click();
+  const refusal = await (await refused).json();
+  expect(refusal).toMatchObject({ status: 403, code: 'AUTHZ_DENIED' });
+  await expect(page.locator('main [role="alert"]')).toHaveText('403' + refusal.message);
+  await expect(rowA.getByText('正常', { exact: true })).toBeVisible();
   await context.setExtraHTTPHeaders({ 'x-qian-dev-principal': 'tenant', 'x-qian-dev-tenant': a.id });
   await page.reload(); await expect(page.getByText('无权限访问租户管理', { exact: true })).toBeVisible();
   await expect(page.getByText('403 AUTHZ_DENIED', { exact: true })).toBeVisible();
