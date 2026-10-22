@@ -23,6 +23,7 @@
     <Project Path="packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
     <Project Path="packages/Qian.Data.Native.Abstractions/Qian.Data.Native.Abstractions.csproj" />
+    <Project Path="packages/Qian.Data.Native.Postgres/Qian.Data.Native.Postgres.csproj" />
     <Project Path="packages/Qian.Data.AspNetCore/Qian.Data.AspNetCore.csproj" />
     <Project Path="packages/Qian.Data.Dialect.Pg/Qian.Data.Dialect.Pg.csproj" />
     <Project Path="packages/Qian.Files.Abstractions/Qian.Files.Abstractions.csproj" />
@@ -65,6 +66,7 @@
     <Project Path="tests/Qian.Config.Tests/Qian.Config.Tests.csproj" />
     <Project Path="tests/Qian.Data.Abstractions.Tests/Qian.Data.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
+    <Project Path="tests/Qian.Data.Native.Postgres.Tests/Qian.Data.Native.Postgres.Tests.csproj" />
     <Project Path="tests/Qian.Data.AspNetCore.Tests/Qian.Data.AspNetCore.Tests.csproj" />
     <Project Path="tests/Qian.Events.Tests/Qian.Events.Tests.csproj" />
     <Project Path="tests/Qian.Files.Tests/Qian.Files.Tests.csproj" />
@@ -85,6 +87,7 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Qian.Plugin.Tool/Qian.Plugin.Tool.csproj" />
+    <Project Path="tools/Qian.Data.Native.Probe/Qian.Data.Native.Probe.csproj" />
     <Project Path="tools/Qian.Secrets.Tool/Qian.Secrets.Tool.csproj" />
     <Project Path="tools/Qian.Config.Tool/Qian.Config.Tool.csproj" />
     <Project Path="tools/Qian.Docs.Tool/Qian.Docs.Tool.csproj" />
