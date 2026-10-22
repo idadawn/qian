@@ -158,6 +158,7 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   const denial = await (await forbidden).json();
   expect(denial).toMatchObject({ status: 403, code: 'AUTHZ_DENIED' });
   await expect(dialog.getByText(denial.message, { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('alert')).toHaveCount(1);
   await expect(page.locator('main [role="alert"]')).toHaveCount(0);
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
@@ -177,6 +178,7 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   await expect.poll(async () => { try { await access(process.env.QIAN_UI_STOPPED_FILE!); return true; } catch { return false; } }).toBe(true);
   await dialog.getByRole('button', { name: '保存', exact: true }).click();
   await expect(dialog.getByText('暂时无法连接服务，请稍后重试。', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('alert')).toHaveCount(1);
   await expect(page.locator('main [role="alert"]')).toHaveCount(0);
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '刷新', exact: true }).click();
