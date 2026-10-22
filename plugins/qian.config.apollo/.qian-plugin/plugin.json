@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.config.apollo",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.config.apollo",
+  "description": "提供 qian.config.apollo 的实际代码入口与配置契约；安装状态按组件验收门管理。",
   "author": {
     "name": "Qian"
   },
@@ -12,7 +12,9 @@
     "category": "platform"
   },
   "inject": [],
-  "provides": [],
+  "provides": [
+    "Config"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -20,8 +22,43 @@
     "required": false
   },
   "scopes": [
-    "global",
-    "tenant"
+    "global"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Config.Apollo.ApolloConfigurationPlugin, Qian.Config.Apollo",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "metadata/events.json": {
+        "$generated": true,
+        "component": "qian.config.apollo",
+        "source": "Qian.Config.Apollo.ApolloConfigurationPlugin, Qian.Config.Apollo",
+        "sha256": "29e18d84ad191d035566d3f4535b4dc74fc3359787351a7358d8cb9396bafe58",
+        "fields": [
+          ""
+        ]
+      },
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.config.apollo",
+        "source": "Qian.Config.Apollo.ApolloConfigurationPlugin, Qian.Config.Apollo",
+        "sha256": "189fc207387664c362e112482fc38d8c87e2f725d04caf37346ace6dab0aa513",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
 }

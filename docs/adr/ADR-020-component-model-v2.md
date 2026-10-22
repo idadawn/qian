@@ -121,6 +121,12 @@ supersedes: ADR-002 §D2.1/D2.9/D2.10（形态轴与两层生命周期）、ADR-
 
 产品负责人在 [S1-DEC-028](../../pm/tasks/S1-DEC-028.md) 确认方案 A：一个组件 ID 对应一份清单、一个 `runtime.entry`；同一程序集可声明多个不同 ID 的组件，工具按目标清单 ID 选择其派生元数据，重复 ID 或跨组件归属失败。契约包装器、运行时快照适配器和宿主组合子插件是实现构件，不因为实现 `IQianPlugin` 就各自新增组件清单；其归属必须显式记录并被 CI 分类检查。真正需要多个实现协作的组件使用明确的单一组合入口，不把程序集内全部依赖和提供项合并成一个虚假入口。详见[决策记录](../decisions/component-entry-metadata.md)与组件规格 §3.7，实现由 S1-RT-033 交付。
 
+### 7.3 真实组件依赖与 gateway 开发模板分期（2026-10-22）
+
+产品负责人在 [S1-DEC-029](../../pm/tasks/S1-DEC-029.md) 确认：当前 gateway 开发模板使用 JIT（`build.aot: false`），不把尚无 NativeAOT 发布运行证据的 Apollo、Audit 等组件标为兼容。gateway 与 standalone 的组合包补齐真实入口必需的 Data，连接仍由宿主提供；identity 模板补齐 issuer、OIDC 客户端和 secretRef 示例，minimal 保持空组合包。详见[决策与证据](../decisions/runtime-profile-metadata.md)。
+
+D20.10 的边缘 AOT 目标与 S1-DEP-008 的 gateway AOT distroless 验收继续有效。S1-GW-001 / S1-DEP-008 必须对完整 Config / Audit / Data 等依赖组合完成 Linux NativeAOT 发布与运行验证，再恢复默认 `build.aot: true` 和相应兼容声明；开发模板的 JIT 校验、工具链自检镜像都不能替代这道门。AOT profile 拒绝未验证代码组件的通用规则保持不变。
+
 ## 8 参考
 
 - 对标项目的公开仓库与文档（组件目录与 CLI 一键安装；插件清单 `plugin.json` 与 `marketplace.json`；「一切皆插件」运行时、能力 seam、作用域、profile 与 patch 分层、文档生成与 CI 门禁）。

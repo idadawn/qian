@@ -31,7 +31,7 @@ roles、role_assignments、grants 保留可空 tenant_id 的平台角色存储�
 
 ## 活动权限与资源的可逆注册
 
-`PermissionRegistry` 实现 Definition 中的 `IPermissionRegistry` / `IResourceTypeRegistry`，服务键分别为 `Authz.Permissions` 与既有扩展点名 `qian.authz.resource-type/v1`。声明按组件版本读取，避免两个版本的风险或终端配置相互覆盖。持久目录、活动注册、主体授权是三个独立状态：有目录记录不等于当前已挂载，有活动声明也不等于用户已获得授权。
+`PermissionRegistry` 实现 Definition 中的 `IPermissionRegistry` / `IResourceTypeRegistry`，服务键分别为 `AuthzPermissions` 与 `AuthzResourceTypes`（`qian.authz.resource-type/v1` 保留为扩展点契约名）。声明按组件版本读取，避免两个版本的风险或终端配置相互覆盖。持久目录、活动注册、主体授权是三个独立状态：有目录记录不等于当前已挂载，有活动声明也不等于用户已获得授权。
 
 `Register` 与 `RegisterResources` 返回可交给 `ctx.Effect` 的释放句柄。整批先检查冲突再登记；相同声明可以有多个独立持有者，最后一个释放时才消失。旧句柄重复释放不会误删后来重新登记的条目。显式资源描述撤销后，可回退为仍由权限点派生的资源身份；仅有资源描述不会凭空产生权限。
 
@@ -57,17 +57,17 @@ roles、role_assignments、grants 保留可空 tenant_id 的平台角色存储�
 
 ## 组件入口（AuthzPlugin）
 
-`AuthzPlugin` 装在 global scope，提供六个服务键：`Authz`（`IAuthzService`，五个判定方法、有效权限列表与完整解释委托真实 RBAC，宿主装配 Kun.Caching 时缓存主体快照）、`Authz.Permissions` 与 `qian.authz.resource-type/v1`（活动权限登记表；宿主 DI 已有 `IPermissionRegistry` 时共用同一实例，供宿主端点的判定器与注册表管理面读取）、`Authz.SuperadminBypass`（平台超管显式旁路），`Authz.TenantRoleGrant`（`ITenantRoleGrant`，开户编排为主体绑定内置租户角色的最小授予端口，S1-TEN-003），以及 `AuthzEnforcement`（`IAuthzEnforcement`，三处 PEP 共用的执行端口，S1-AZ-004）；另经 `CommandPolicies.Register` 提供命令 PEP（`CommandAuthorization`）。错误码随 Apply 登记、卸载时撤销。
+`AuthzPlugin` 装在 global scope，提供六个服务键：`Authz`（`IAuthzService`，五个判定方法、有效权限列表与完整解释委托真实 RBAC，宿主装配 Kun.Caching 时缓存主体快照）、`AuthzPermissions` 与 `AuthzResourceTypes`（活动权限登记表；宿主 DI 已有 `IPermissionRegistry` 时共用同一实例，供宿主端点的判定器与注册表管理面读取）、`AuthzSuperadminBypass`（平台超管显式旁路），`AuthzTenantRoleGrant`（`ITenantRoleGrant`，开户编排为主体绑定内置租户角色的最小授予端口，S1-TEN-003），以及 `AuthzEnforcement`（`IAuthzEnforcement`，三处 PEP 共用的执行端口，S1-AZ-004）；另经 `CommandPolicies.Register` 提供命令 PEP（`CommandAuthorization`）。错误码随 Apply 登记、卸载时撤销。
 
-权限目录有三种来源，对应三个构造方式：`new AuthzPlugin()` 不预置目录，组件经 `Authz.Permissions` 自行登记；`new AuthzPlugin(catalogs)` 用于独立宿主，目录由宿主从 PermissionAttribute 或随包 metadata 编译后传入（每个组件一份），依赖 Data；`AuthzPlugin.FromInstalledComponents()` 用于平台宿主，Apply 时从 `ctx.Registry()` 的预装组件读取 metadata/permissions.json 与 roles.json（缺 roles.json 视为没有默认角色），依赖 Data 与 Registry，宿主须登记 `ISurfaceReader`。Apply 对每份目录先持久化（同版本同内容幂等，内容不同 CONFLICT 使 Apply 失败），再登记活动声明并交给 Effect。平台模式只读 Apply 时的预装快照；运行期新安装组件的目录登记不在本组件内。
+权限目录有三种来源，对应三个构造方式：`new AuthzPlugin()` 不预置目录，组件经 `AuthzPermissions` 自行登记；`new AuthzPlugin(catalogs)` 用于独立宿主，目录由宿主从 PermissionAttribute 或随包 metadata 编译后传入（每个组件一份），依赖 Data；`AuthzPlugin.FromInstalledComponents()` 用于平台宿主，Apply 时从 `ctx.Registry()` 的预装组件读取 metadata/permissions.json 与 roles.json（缺 roles.json 视为没有默认角色），依赖 Data 与 Registry，宿主须登记 `ISurfaceReader`。Apply 对每份目录先持久化（同版本同内容幂等，内容不同 CONFLICT 使 Apply 失败），再登记活动声明并交给 Effect。平台模式只读 Apply 时的预装快照；运行期新安装组件的目录登记不在本组件内。
 
-清单声明的 provides 受 plugin.schema.json 服务键模式约束（`Name` 或 `Name.Port:variant`），`Authz.Permissions`、`Authz.SuperadminBypass`、`Authz.TenantRoleGrant` 与扩展点名 `qian.authz.resource-type/v1` 不符合该模式。参考应用与 T23 宿主的清单只声明 `CommandAuthorization` 与 `Authz`；其余四个键由 Provider 额外提供（装载器只要求声明的键都已提供，不禁止额外提供），运行期可按服务键取用（注册表管理面用 `TryInject` 取旁路端口，开户编排用 `Inject` 取授予端口），但其它组件不能把它们写进 inject：装载器按 provides 声明校验依赖并排定挂载顺序，找不到声明时报 DEPENDENCY_MISSING。键名按 R101 统一：服务键改为单段键，`qian.authz.resource-type/v1` 只作扩展点契约名，由 S1-RT-033 落地；`Authz.TenantRoleGrant` 由 S1-TEN-003 新增、晚于 R101，按同一通则处理。
+服务键按 R101 统一为单段名称：`AuthzPermissions`、`AuthzSuperadminBypass`、`AuthzResourceTypes` 与 `AuthzTenantRoleGrant`，现已进入代码派生的 provides；消费者可以将对应 Definition 键写入 inject。扩展点契约 ID `qian.authz.resource-type/v1` 保持不变。租户开户编排始终通过 `TenantRoleGrant.Key` 取用，不保留旧两段式键的隐式别名。
 
 配置只接受三个字段：`advancedMode` 只能为 false（S1 没有高级模式，数据 / 字段权限编译属 S2）；可选的 `platformRole` 是专用平台授权登录角色名，配置后旁路才可能放行，未配置时旁路端口仍在但一律拒绝（`platform_role_not_configured`），因为清单的 provides 是静态的，缺配置不等于放行；可选的 `decisionLogSampling`（0–1，缺省 1）是放行判定写入决策审计的采样比例。宿主还须登记授权变更事件类型（`AddKunEventBus(r => r.RegisterAuthzEvents())`，Apply 时校验）与处理器（`AddKunMediator(m => m.AddQianAuthzEvents())`）。tenant scope 装载、未知字段、非法角色名都使 Apply 失败；`platformRole` 指向的连接若是普通应用凭据（可继承、能读租户授权表），Apply 以 `QianDataMisconfiguredException` 失败。
 
 数据与字段端口在 S2 编译器交付前恒拒绝：`GetExpressionAsync` 返回恒假表达式，`GetPredicateAsync` 抛 AUTHZ_DENIED（谓词 AST 还没有「恒假」的约定词汇，返回任何谓词都可能被编译器当作放宽），`IFieldPolicy` 不给任何可读、可写字段。
 
-`plugins/qian.authz` 的组件目录仍是骨架（清单 `x-skeleton: true`、provides 为空），`qian add authz` 的安装、发布与 Ready 承诺另有验收；配置 Schema 已按上述两个字段更新。
+`plugins/qian.authz` 的代码字段与配置 Schema 已派生，provides 包含上述七个服务键；`x-skeleton: true` 仅表示 `qian add authz` 的完整安装与 Ready 承诺仍待独立验收。配置 Schema 对应 advancedMode、decisionLogSampling 与 platformRole 三个实际解析字段。
 
 ## 租户开通（tenant/provisioned）
 
@@ -176,3 +176,9 @@ S1-AZ-009：
 - Qian.Sample.Crm.Tests/CustomerCommandTests.IdentityRevision.cs（参考宿主同进程挂真实身份组件）：
   - 经生产授予端口授予后修订递增；撤销后 3 秒内旧令牌在 userinfo（401）与 PEP 执行端口（`identity_revision_stale`）都被拒。
   - refresh 拿到新修订、两侧放行；非 user、非 Person、无成员身份的主体不递增。
+
+## 清单入口与代码派生
+
+`plugins/qian.authz/.qian-plugin/plugin.json` 的稳定入口是 `AuthzComponent`，允许 global scope，依赖 `Data`，提供 `Authz`、`AuthzPermissions`、`AuthzResourceTypes`、`AuthzSuperadminBypass`、`AuthzEnforcement`、`AuthzTenantRoleGrant` 与 `CommandAuthorization`。固定委托无参 `AuthzPlugin`，不预置权限目录；宿主可单独登记活动目录。`AuthzPlugin(catalogs)` 与 `FromInstalledComponents()` 保留为程序化装配构件，后者的额外 `Registry` 依赖不合并进此入口。
+
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

@@ -24,3 +24,6 @@
   config:
     chain:
       store: pg
+- id: data
+  plugin: qian.data
+  config: {}

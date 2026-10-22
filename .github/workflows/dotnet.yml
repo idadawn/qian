@@ -51,17 +51,14 @@ jobs:
       - name: 构建（PublicAPI 门禁：Qian 包未登记的公共 API 即编译失败）
         run: dotnet build Qian.slnx -c Release --no-restore
 
-      - name: 真实 Data 代码与唯一清单不得漂移
-        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Data/bin/Release/net10.0/Qian.Data.dll plugins/qian.data
-
-      - name: 真实 Events 代码与唯一清单不得漂移
-        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Events/bin/Release/net10.0/Qian.Events.dll plugins/qian.events
-
-      - name: 真实 Config 代码与唯一清单不得漂移
-        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Config.Apollo/bin/Release/net10.0/Qian.Config.Apollo.dll plugins/qian.config
+      - name: 动态发现全部代码入口并校验唯一清单与实现构件分类
+        run: python3 scripts/check_plugin_manifests.py
 
       - name: 仓库 profile 生效配置的明文密钥扫描（S1-CFG-002）
         run: dotnet tools/Qian.Secrets.Tool/bin/Release/net10.0/Qian.Secrets.Tool.dll --profiles .
+
+      - name: 由组件 config.schema 推导各 profile 的 Apollo namespace 骨架（S1-CFG-003，随测试结果上传）
+        run: dotnet tools/Qian.Config.Tool/bin/Release/net10.0/Qian.Config.Tool.dll . --out TestResults/evidence/apollo-namespaces
 
       - name: 依赖图门禁
         run: python3 scripts/check_deps.py --solution Qian.slnx --no-restore

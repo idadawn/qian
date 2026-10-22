@@ -47,7 +47,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 | profile（可部署单元） | 形态 | 承载内容（组合包） | 优先级 |
 |---|---|---|---|
 | `platform`（镜像 `qian-platform`，原 `qian-platform` 单元） | 独立 Pod（JIT，不承诺 AOT） | base 组合包：7.2.1 `qian.registry` / `qian.lifecycle` / `qian.capabilities` + 7.3 / 7.5 / 7.6 / 7.7 / 7.8 / 7.10 / 7.11 / 7.12 / 7.13 / 7.14 的平台插件（下表全部 `platform` 行）；`shell` 组合包（7.15 yue 外壳的静态前端制品，经 `gateway` 提供）；`model-gateway` 组合包（7.16，默认挂此处） | P0 |
-| `gateway`（镜像 `qian-gateway`，原 `qian-gateway` 单元） | 独立 Pod，可 AOT（Kun.Gateway 以库方式引用并加固） | 7.9 网关；Cookie 会话换 S2S；OpenAPI 聚合与能力目录端点代理；`Qian.Identity.Client`；对外提供 `shell` 组合包的静态制品 | P0 |
+| `gateway`（镜像 `qian-gateway`，原 `qian-gateway` 单元） | 独立 Pod，最终 AOT 目标保留；当前开发模板 JIT（S1-DEC-029，Kun.Gateway 以库方式引用并加固） | 7.9 网关；Cookie 会话换 S2S；OpenAPI 聚合与能力目录端点代理；`Qian.Identity.Client`；对外提供 `shell` 组合包的静态制品 | P0 |
 | `identity`（镜像 `qian-identity`，原 `qian-identity` 单元） | 独立 Pod（独立安全边界） | 7.4 身份与 SSO（`Qian.Identity.Server`，OpenIddict 唯一 issuer）、连接器组件、组织目录最小集 | P0 |
 | `standalone` | 消费者自己的 ASP.NET Core 宿主，不出镜像 | 装最小组合包：`Qian.Runtime` + `qian add <x>` 按需装入的组件，不装 `qian.registry` / `qian.lifecycle` / `qian.capabilities`，租户上下文由宿主提供或显式 `SingleTenant`（ADR-019 D19.4 独立模式） | P0（退出标准第 3 条的载体） |
 | `minimal` | 测试与 SDK 用最小树，不出镜像 | 只装 `Qian.Runtime` 与声明式表面装载器，`qian.bundle.minimal` 初始 patch 为空，无默认业务组件（S1-DEC-012，2026-10-09 确认）；TCK 运行时语义套件、校验器与 `dump-config` 的基准宿主 | P0 |

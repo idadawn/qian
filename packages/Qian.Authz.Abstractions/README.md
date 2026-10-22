@@ -6,7 +6,7 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 
 所有 profile 均可引用 Definition；真正提供 `Authz` 的组件是 `Qian.Authz` / `qian.authz`。`ctx.Authz()` 按当前 scope 解析 `IAuthzService`，缺 Provider 或上下文已卸载时拒绝解析。Provider 必须在 Apply 中提供服务，并将错误码登记句柄交给 `ctx.Effect`。
 
-`qian add authz` 安装组件及其 Provider，本 Definition 包不自行启动服务，也不把平台能力绑定到宿主 DI。当前组件目录仍是骨架；Provider `Qian.Authz` 的 `AuthzPlugin` 已提供 `Authz`、`Authz.Permissions`、`qian.authz.resource-type/v1`、`Authz.SuperadminBypass` 与 `Authz.TenantRoleGrant` 五个服务键及命令 PEP，并在 `tenant/provisioned` 时实例化默认角色（S1-AZ-002 / S1-AZ-003 / S1-TEN-003），细节见 Qian.Authz 主文档。
+`qian add authz` 安装组件及其 Provider，本 Definition 包不自行启动服务，也不把平台能力绑定到宿主 DI。当前组件目录仍是骨架；Provider `Qian.Authz` 的 `AuthzPlugin` 已提供 `Authz`、`AuthzPermissions`、`AuthzResourceTypes`、`AuthzSuperadminBypass` 与 `AuthzTenantRoleGrant` 五个服务键及命令 PEP，并在 `tenant/provisioned` 时实例化默认角色（S1-AZ-002 / S1-AZ-003 / S1-TEN-003），细节见 Qian.Authz 主文档。
 
 ## 平台超管显式旁路
 

@@ -30,7 +30,7 @@ public sealed class AuthzPlugin : IQianPlugin
     private readonly IReadOnlyList<PermissionCatalog> _catalogs;
     private readonly bool _installed;
 
-    /// <summary>不预置目录：组件经 <c>Authz.Permissions</c> 自行登记活动声明。</summary>
+    /// <summary>不预置目录：组件经 <c>AuthzPermissions</c> 自行登记活动声明。</summary>
     public AuthzPlugin() : this([], false) { }
     /// <summary>独立宿主：目录由宿主从 PermissionAttribute 或随包 metadata 编译后传入（ADR-019 D19.4）。</summary>
     public AuthzPlugin(IReadOnlyList<PermissionCatalog> catalogs) : this(catalogs, false) { }

@@ -17,6 +17,8 @@ public sealed class AuthentikFixture : ContainerFixture<IContainer>
 {
     private const ushort Port = 9000;
     private static readonly string[] GrantTypes = ["authorization_code", "refresh_token"];
+    private static readonly string[] RequiredFlows = ["default-provider-authorization-implicit-consent", "default-provider-invalidation-flow", "default-authentication-flow"];
+    private static readonly string[] RequiredScopes = ["openid", "email", "profile"];
     private const string Database = "authentik";
     private INetwork? _network;
     private PostgreSqlContainer? _postgres;
@@ -82,18 +84,22 @@ public sealed class AuthentikFixture : ContainerFixture<IContainer>
         _api = new HttpClient(new HttpClientHandler { UseProxy = false }) { BaseAddress = BaseUri, Timeout = TimeSpan.FromSeconds(30) };
         _api.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _token);
         _api.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        // server 就绪不代表蓝图已应用：等到引导令牌可用、授权与失效流程都已存在。
+        // server 就绪不代表蓝图已应用：等到引导令牌可用、授权与失效流程和 OAuth2 scope 映射都已存在。
+        // 流程来自 default/flow-*.yaml，scope 映射来自 system/providers-oauth2.yaml，worker 分别应用、先后不定，只等流程会在慢机器上先放行（S1-QA-015）。
         var deadline = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(3);
+        var missing = "";
         while (true)
         {
             try
             {
                 var flows = await FlowsAsync(cancellationToken).ConfigureAwait(false);
-                if (flows.ContainsKey("default-provider-authorization-implicit-consent") && flows.ContainsKey("default-provider-invalidation-flow") &&
-                    flows.ContainsKey("default-authentication-flow")) return;
+                var scopes = await ScopeMappingsAsync(cancellationToken).ConfigureAwait(false);
+                missing = string.Join("、", RequiredFlows.Where(slug => !flows.ContainsKey(slug))
+                    .Concat(RequiredScopes.Where(scope => !scopes.ContainsKey(scope)).Select(scope => "scope " + scope)));
+                if (missing.Length == 0) return;
             }
-            catch (HttpRequestException) { }
-            if (DateTimeOffset.UtcNow > deadline) throw new InvalidOperationException("Authentik 的内置蓝图在 3 分钟内没有就绪。");
+            catch (HttpRequestException error) { missing = error.Message; }
+            if (DateTimeOffset.UtcNow > deadline) throw new InvalidOperationException("Authentik 的内置蓝图在 3 分钟内没有就绪，仍缺：" + missing);
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
         }
     }
@@ -103,8 +109,7 @@ public sealed class AuthentikFixture : ContainerFixture<IContainer>
     {
         var flows = await FlowsAsync(cancellationToken).ConfigureAwait(false);
         var key = (await GetAsync("api/v3/crypto/certificatekeypairs/?has_key=true", cancellationToken).ConfigureAwait(false)).GetProperty("results")[0].GetProperty("pk").GetString();
-        var mappings = (await GetAsync("api/v3/propertymappings/provider/scope/?page_size=100", cancellationToken).ConfigureAwait(false)).GetProperty("results").EnumerateArray()
-            .ToDictionary(m => m.GetProperty("scope_name").GetString()!, m => m.GetProperty("pk").GetString()!, StringComparer.Ordinal);
+        var mappings = await ScopeMappingsAsync(cancellationToken).ConfigureAwait(false);
         var suffix = NewSecret()[..8];
         var (slug, clientId, secret) = ("qian-" + suffix, "qian-" + suffix, NewSecret() + NewSecret());
         var provider = await PostAsync("api/v3/providers/oauth2/", new
@@ -112,7 +117,7 @@ public sealed class AuthentikFixture : ContainerFixture<IContainer>
             name = slug, authorization_flow = flows["default-provider-authorization-implicit-consent"], invalidation_flow = flows["default-provider-invalidation-flow"],
             client_type = "confidential", client_id = clientId, client_secret = secret, grant_types = GrantTypes,
             redirect_uris = new[] { new { matching_mode = "strict", url = redirectUri.AbsoluteUri } }, signing_key = key,
-            property_mappings = new[] { mappings["openid"], mappings["email"], mappings["profile"] }, sub_mode = "hashed_user_id"
+            property_mappings = RequiredScopes.Select(scope => mappings[scope]).ToArray(), sub_mode = "hashed_user_id"
         }, cancellationToken).ConfigureAwait(false);
         await PostAsync("api/v3/core/applications/", new { name = "Qian " + suffix, slug, provider = provider.GetProperty("pk").GetInt32() }, cancellationToken).ConfigureAwait(false);
         return new OAuthClient(new Uri(BaseUri, $"application/o/{slug}/").AbsoluteUri, clientId, secret);
@@ -213,6 +218,10 @@ public sealed class AuthentikFixture : ContainerFixture<IContainer>
     private async Task<Dictionary<string, string>> FlowsAsync(CancellationToken ct) =>
         (await GetAsync("api/v3/flows/instances/?page_size=100", ct).ConfigureAwait(false)).GetProperty("results").EnumerateArray()
             .ToDictionary(f => f.GetProperty("slug").GetString()!, f => f.GetProperty("pk").GetString()!, StringComparer.Ordinal);
+
+    private async Task<Dictionary<string, string>> ScopeMappingsAsync(CancellationToken ct) =>
+        (await GetAsync("api/v3/propertymappings/provider/scope/?page_size=100", ct).ConfigureAwait(false)).GetProperty("results").EnumerateArray()
+            .ToDictionary(m => m.GetProperty("scope_name").GetString()!, m => m.GetProperty("pk").GetString()!, StringComparer.Ordinal);
 
     private async Task<JsonElement> GetAsync(string path, CancellationToken ct)
     {

@@ -11,4 +11,6 @@ S1-DATA-003 增加两项声明：
 - `metadata/permissions.json` 与 `metadata/roles.json`：数据端点的权限点（基准类型 read / delete，数据连接 read / write / test）与租户默认角色模板。删除基准类型不授予任何租户角色。
 - `policy.permissions.secrets`：数据连接的口令只解析租户作用域的 `data/*` 引用。
 
-PostgreSQL 方言是独立组件 `qian.data.dialect.pg`，代码在 [Qian.Data.Dialect.Pg](../../packages/Qian.Data.Dialect.Pg/README.md)；它的组件文件夹要等装载器支持注册表键（`Data.Dialects:pg`）后补齐。
+PostgreSQL 方言是独立组件 `qian.data.dialect.pg`，代码在 [Qian.Data.Dialect.Pg](../../packages/Qian.Data.Dialect.Pg/README.md)；其组件文件夹与真实 `PgDialectPlugin` 入口现已补齐，提供 `Data.Dialects:pg` 并在卸载时撤销目录登记，安装门仍单独验收。
+
+配置 Schema 的真相源为 Provider 的 `ComponentConfiguration.Schema`，清单的 `runtime.configSchema` 与文件由工具同步，`check` 同时检查配置声明漂移。

@@ -142,3 +142,7 @@ Qian.Identity.Server.ConnectorPolicy.ReauthenticationWindow.get -> System.TimeSp
 Qian.Identity.Server.ConnectorPolicy.ReauthenticationWindow.init -> void
 Qian.Identity.Server.IdentityAccountOptions.Connectors.get -> Qian.Identity.Server.ConnectorPolicy!
 Qian.Identity.Server.IdentityAccountOptions.Connectors.init -> void
+Qian.Identity.Server.IdentityServerComponent
+Qian.Identity.Server.IdentityServerComponent.IdentityServerComponent() -> void
+Qian.Identity.Server.IdentityServerComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Identity.Server.IdentityServerComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

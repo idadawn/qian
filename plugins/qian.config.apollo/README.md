@@ -1,3 +1,5 @@
 # qian.config.apollo
 
-此目录为 S1-RT-002 的配置骨架（`x-skeleton: true`），提供清单与配置结构校验，不含 Provider 代码、服务键注册或就绪承诺。后续组件任务用真实实现替换骨架，并补充自己的完整配置契约。
+组件清单位于 `.qian-plugin/plugin.json`；代码字段与配置 Schema 由 Provider 入口派生。完整能力边界、宿主装配、验证和安装限制统一维护在 [Qian.Config.Apollo](../../packages/Qian.Config.Apollo/README.md)。
+
+清单保留 `x-skeleton`，补齐代码元数据不代表真实 `qian add` 安装验收已完成。

@@ -29,8 +29,8 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
             Define("events", "qian.events", new EventsPlugin(), [EventsDefinition.Key]),
             Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey], TenancyConfiguration(services.GetRequiredService<IConfiguration>())),
             // 完整 Authz Provider：持久化并登记本应用 metadata 编译出的权限目录、注册命令 PEP、提供 ctx.Authz，并监听 tenant/provisioned 实例化默认角色。
-            // 声明的 provides 只列 plugin.schema.json 服务键模式接受的两个键；Authz.Permissions 等其余端口由 Provider 额外提供，不进清单。
-            Define("authz", "qian.authz", new AuthzPlugin([catalog]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key], AuthzConfiguration(services.GetRequiredService<IConfiguration>())),
+            // 与分发入口使用同一组服务输出；这个程序化适配器额外接受本应用的权限目录。
+            Define("authz", "qian.authz", new AuthzPlugin([catalog]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key, AuthzDefinition.PermissionsKey, AuthzDefinition.ResourceTypesKey, AuthzDefinition.SuperadminBypassKey, AuthzEnforcement.Key, TenantRoleGrant.Key], AuthzConfiguration(services.GetRequiredService<IConfiguration>())),
             Define("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]),
             Define("crm", "qian.sample.crm", new CrmPlugin(), [CrmDefinition.Key])];
         var assembly = services.GetService<ICrmRuntimeAssembly>();
