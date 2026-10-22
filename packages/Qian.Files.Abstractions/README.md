@@ -20,8 +20,8 @@
 
 ## 注册表 seam（R38）
 
-- `IFileService.Policies`（`IUploadPolicyRegistry`）：上传用途的策略表。`Register(purpose, policy)` 返回释放句柄，组件在 `Apply` 里交给 `ctx.Effect`，卸载即撤销；同名用途独占，重复登记报 `REGISTRATION_CONFLICT`（`key` 为 `Files.Policies:<用途>`）。
-- `IFileService.Backends`（`IFileBackendRegistry`）：存储后端工厂表，`local` 由 Provider 自带；S1-FILE-002 的 s3 / oss 以同一方式登记（`Files.Backends:<名称>`）。
+- `IFileService.Policies`（`IUploadPolicyRegistry`，`FilesDefinition.PoliciesKey`）：上传用途的策略表。`Register(policy)` 按策略里的用途登记并返回释放句柄，组件在 `Apply` 里交给 `ctx.Effect`，卸载即撤销；同名用途独占，重复登记报 `REGISTRATION_CONFLICT`（`key` 为 `Files.Policies:<用途>`）。策略是数据而不是具名服务，不进清单 `provides`。
+- `IFileService.Backends`（`IFileBackendRegistry`，`FilesDefinition.BackendsKey`）：存储后端工厂表，`local` 由 Provider 自带。登记后端的组件在入口上写 `[Contributes(typeof(FilesDefinition), nameof(FilesDefinition.BackendsKey), "<名称>", RegistryType = …)]`，生成器据此把 `Files.Backends:<名称>` 派生进 `provides`；S1-FILE-002 的 s3 / oss 以同一方式登记。
 
 用途形如 `<组件 ID>/<名称>`（例如 `acme.crm/attachment`），组件 ID 段进入存储键。`UploadPolicy` 的 `AllowedTypes` 为精确 MIME 或 `type/*`，`MaxSize` 为单文件上限，`MaxCount` 非空时限制每个租户该用途的在用文件数。
 
@@ -61,7 +61,6 @@
 
 ## 已知限制与延期项
 
-- 清单尚不能声明具名 seam：`provides` 只有 `Files`，`Files.Policies`、`Files.Backends:local` 等具名贡献要等生成器支持（S1-RT-033）。
-- 上传策略暂由组件配置与 `Policies.Register` 提供；按清单 `contributes: qian.files.upload-policy/v1` 声明、由 Registry 汇总的方式随 S1-RT-033 的 `[Contributes]` 派生落地。
+- 上传策略暂由组件配置与 `Policies.Register` 提供；PRD 7.7 的清单声明方式（`contributes: qian.files.upload-policy/v1`，由 Registry 汇总已安装组件的策略）尚未接，用途名含 `/` 与 `.`，也不适合作 `[Contributes]` 的具名贡献。
 - 门面名为 `IFileService`（与 `IAuditService`、`IAuthzService` 同一命名），不是任务背景里写的 `IQianFileService`。
 - 分片上传、秒传与物理删除（S1-FILE-003）、预览（S2）不在本包契约内，届时以新增成员扩展，不改现有记录。

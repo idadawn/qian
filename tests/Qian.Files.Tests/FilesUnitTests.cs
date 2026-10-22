@@ -118,14 +118,14 @@ public sealed class FilesUnitTests
     {
         var policies = new UploadPolicyRegistry();
         var policy = new UploadPolicy("acme.crm/attachment", ["text/plain"], 10);
-        var lease = policies.Register(policy.Purpose, policy);
-        var conflict = Assert.Throws<QianErrorException>(() => policies.Register(policy.Purpose, policy with { MaxSize = 20 }));
+        var lease = policies.Register(policy);
+        var conflict = Assert.Throws<QianErrorException>(() => policies.Register(policy with { MaxSize = 20 }));
         Assert.Equal(PlatformErrors.RegistrationConflict, conflict.Error.Code);
         Assert.Equal(new Dictionary<string, string> { ["key"] = "Files.Policies:acme.crm/attachment", ["owner"] = "qian.files" }, conflict.Error.Args);
-        Assert.Equal("#/purpose", Assert.Throws<QianErrorException>(() => policies.Register("acme.crm/other", policy)).Error.Pointer);
+        Assert.Equal("#/purpose", Assert.Throws<QianErrorException>(() => policies.Register(policy with { Purpose = "acme/other" })).Error.Pointer);
         lease.Dispose(); lease.Dispose();
         Assert.Null(policies.Find(policy.Purpose));
-        using (policies.Register(policy.Purpose, policy with { MaxSize = 20 })) Assert.Equal(20, policies.Find(policy.Purpose)!.MaxSize);
+        using (policies.Register(policy with { MaxSize = 20 })) Assert.Equal(20, policies.Find(policy.Purpose)!.MaxSize);
 
         var backends = new FileBackendRegistry();
         using var local = backends.Register("local", new LocalFileBackendFactory(default));

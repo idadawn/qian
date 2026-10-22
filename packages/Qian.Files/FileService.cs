@@ -134,20 +134,20 @@ internal sealed class UploadPolicyRegistry : IUploadPolicyRegistry
     private readonly Dictionary<string, UploadPolicy> _items = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
 
-    public IDisposable Register(string purpose, UploadPolicy policy)
+    public IDisposable Register(UploadPolicy policy)
     {
         ArgumentNullException.ThrowIfNull(policy);
-        var invalid = policy.Purpose != purpose ? "purpose" : FilesConfiguration.ValidatePolicy(policy);
-        if (invalid is not null) throw new QianErrorException(new QianError(PlatformErrors.InputInvalid) { Pointer = "#/" + invalid });
+        if (FilesConfiguration.ValidatePolicy(policy) is { } invalid) throw new QianErrorException(new QianError(PlatformErrors.InputInvalid) { Pointer = "#/" + invalid });
         var copy = policy with { AllowedTypes = Array.AsReadOnly(policy.AllowedTypes.ToArray()) };
+        var purpose = copy.Purpose;
         lock (_gate)
-            if (!_items.TryAdd(purpose, copy)) throw new QianErrorException(new QianError(PlatformErrors.RegistrationConflict, Conflict("Files.Policies", purpose)));
+            if (!_items.TryAdd(purpose, copy)) throw new QianErrorException(new QianError(PlatformErrors.RegistrationConflict, Conflict(FilesDefinition.PoliciesKey, purpose)));
         return new Release(() => { lock (_gate) if (_items.TryGetValue(purpose, out var current) && ReferenceEquals(current, copy)) _items.Remove(purpose); });
     }
     public UploadPolicy? Find(string purpose) { lock (_gate) return _items.GetValueOrDefault(purpose); }
     public IReadOnlyList<UploadPolicy> List() { lock (_gate) return Array.AsReadOnly(_items.Values.OrderBy(item => item.Purpose, StringComparer.Ordinal).ToArray()); }
 
-    internal static Dictionary<string, string> Conflict(string key, string name) => new() { ["key"] = key + ":" + name, ["owner"] = "qian.files" };
+    internal static Dictionary<string, string> Conflict(ServiceKey key, string name) => new() { ["key"] = key.Name + ":" + name, ["owner"] = "qian.files" };
 }
 
 internal sealed class FileBackendRegistry : IFileBackendRegistry
@@ -161,7 +161,7 @@ internal sealed class FileBackendRegistry : IFileBackendRegistry
         if (string.IsNullOrEmpty(name) || name.Length > 32 || !name.All(c => char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c == '-') || !char.IsAsciiLetterLower(name[0]))
             throw new QianErrorException(new QianError(PlatformErrors.InputInvalid) { Pointer = "#/name" });
         lock (_gate)
-            if (!_items.TryAdd(name, factory)) throw new QianErrorException(new QianError(PlatformErrors.RegistrationConflict, UploadPolicyRegistry.Conflict("Files.Backends", name)));
+            if (!_items.TryAdd(name, factory)) throw new QianErrorException(new QianError(PlatformErrors.RegistrationConflict, UploadPolicyRegistry.Conflict(FilesDefinition.BackendsKey, name)));
         return new Release(() => { lock (_gate) if (_items.TryGetValue(name, out var current) && ReferenceEquals(current, factory)) _items.Remove(name); });
     }
     public IFileBackendFactory? Find(string name) { lock (_gate) return _items.GetValueOrDefault(name); }

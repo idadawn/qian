@@ -239,7 +239,7 @@ Qian.Files.IFileTransferGateway.ReceiveAsync(Qian.Files.FileTransferRequest! req
 Qian.Files.IUploadPolicyRegistry
 Qian.Files.IUploadPolicyRegistry.Find(string! purpose) -> Qian.Files.UploadPolicy?
 Qian.Files.IUploadPolicyRegistry.List() -> System.Collections.Generic.IReadOnlyList<Qian.Files.UploadPolicy!>!
-Qian.Files.IUploadPolicyRegistry.Register(string! purpose, Qian.Files.UploadPolicy! policy) -> System.IDisposable!
+Qian.Files.IUploadPolicyRegistry.Register(Qian.Files.UploadPolicy! policy) -> System.IDisposable!
 Qian.Files.PresignedTransfer
 Qian.Files.PresignedTransfer.<Clone>$() -> Qian.Files.PresignedTransfer!
 Qian.Files.PresignedTransfer.Deconstruct(out System.Uri! Url, out string! Method, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, out System.DateTimeOffset ExpiresAt) -> void
@@ -337,7 +337,9 @@ static Qian.Files.PresignUploadRequest.operator !=(Qian.Files.PresignUploadReque
 static Qian.Files.PresignUploadRequest.operator ==(Qian.Files.PresignUploadRequest? left, Qian.Files.PresignUploadRequest? right) -> bool
 static Qian.Files.UploadPolicy.operator !=(Qian.Files.UploadPolicy? left, Qian.Files.UploadPolicy? right) -> bool
 static Qian.Files.UploadPolicy.operator ==(Qian.Files.UploadPolicy? left, Qian.Files.UploadPolicy? right) -> bool
+static readonly Qian.Files.FilesDefinition.BackendsKey -> Qian.Runtime.ServiceKey
 static readonly Qian.Files.FilesDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Files.FilesDefinition.PoliciesKey -> Qian.Runtime.ServiceKey
 static readonly Qian.Files.FilesErrors.ChecksumMismatch -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Files.FilesErrors.CountExceeded -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Files.FilesErrors.NotAvailable -> Qian.Runtime.Errors.ErrorCode!

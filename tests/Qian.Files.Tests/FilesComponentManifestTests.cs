@@ -5,7 +5,7 @@ using Qian.Plugin.Sdk;
 
 namespace Qian.Files.Tests;
 
-// 仓库里 qian.files 的唯一清单：代码字段由源生成器派生，每个能力一个工具文件且与生成契约一致（Plugin.Tool check 之外的进程内守卫）。
+// 仓库里 qian.files 的唯一清单：代码字段由源生成器派生，每个能力一个工具文件且与生成契约一致（CI 另由 scripts/check_plugin_manifests.py 跑 Plugin.Tool check）。
 // x-skeleton 保留到从私有源真实安装并运行 Provider 之后（S1-QA-003）再移除；权限与角色声明能被授权组件编译成目录。
 public sealed class FilesComponentManifestTests
 {
@@ -23,7 +23,8 @@ public sealed class FilesComponentManifestTests
         Assert.Equal((code.RuntimeEntry, "module"), (runtime.GetProperty("entry").GetString(), runtime.GetProperty("form").GetString()));
         Assert.Same(typeof(FilesPlugin), Type.GetType(code.RuntimeEntry, throwOnError: true));
         Assert.Equal(["Data"], code.Inject);
-        Assert.Equal(["Files"], code.Provides);
+        // local 后端经 [Contributes] 声明为 Files.Backends 的具名贡献（R38），由生成器派生进 provides。
+        Assert.Equal(["Files", "Files.Backends:local"], code.Provides);
         Assert.Equal(code.Inject, Strings(json.GetProperty("inject")));
         Assert.Equal(code.Provides, Strings(json.GetProperty("provides")));
         Assert.Equal((FilesDbContext.Schema, "./schemas/config.schema.json"), (runtime.GetProperty("dbSchema").GetString(), runtime.GetProperty("configSchema").GetString()));
@@ -39,6 +40,8 @@ public sealed class FilesComponentManifestTests
         var generated = json.GetProperty("x-qian-generated");
         Assert.True(generated.GetProperty("$generated").GetBoolean());
         Assert.Equal(["/inject", "/provides", "/runtime/form", "/runtime/entry"], Strings(generated.GetProperty("fields")));
+        // 权限与角色声明仍为手写 metadata，没有代码派生的表面。
+        Assert.Empty(generated.GetProperty("metadata").EnumerateObject());
         Assert.Equal(code.Capabilities.Select(contract => "tools/" + contract.Name + ".json"), Strings(generated.GetProperty("tools")));
         Assert.Equal(code.Capabilities.Select(contract => contract.Name + ".json"),
             Directory.EnumerateFiles(Path.Combine(Root, "plugins/qian.files/tools")).Select(Path.GetFileName).Order(StringComparer.Ordinal));

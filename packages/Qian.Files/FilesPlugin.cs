@@ -17,6 +17,7 @@ namespace Qian.Files;
 /// 宿主须先 AddQianData&lt;FilesDbContext&gt;、在 AddKunEventBus 中 RegisterFilesEvents、在 AddKunMediator 中 AddQianFiles，否则 Apply 失败。
 /// </summary>
 [QianPlugin("qian.files")]
+[Contributes(typeof(FilesDefinition), nameof(FilesDefinition.BackendsKey), LocalFileBackendFactory.Name, RegistryType = typeof(FileBackendRegistry))]
 public sealed class FilesPlugin : IQianPlugin
 {
     /// <inheritdoc />
@@ -43,7 +44,7 @@ public sealed class FilesPlugin : IQianPlugin
         var options = services.GetService<IOptions<QianFilesOptions>>()?.Value ?? new QianFilesOptions();
         var backends = new FileBackendRegistry(); var policies = new UploadPolicyRegistry();
         ctx.Effect(backends.Register(LocalFileBackendFactory.Name, new LocalFileBackendFactory(options.LocalSigningKey)));
-        foreach (var policy in settings.Policies) ctx.Effect(policies.Register(policy.Purpose, policy));
+        foreach (var policy in settings.Policies) ctx.Effect(policies.Register(policy));
         var runtime = new FilesRuntime(options.Clock, backends, policies, settings.QuotaPerTenantBytes, () => ctx.TryInject<ITenantSettings>(TenantSettings.Key));
         // S1 只有 local；s3 / oss 由 S1-FILE-002 作为后端登记，未登记的名称启动即拒绝。
         var factory = backends.Find(settings.Kind)

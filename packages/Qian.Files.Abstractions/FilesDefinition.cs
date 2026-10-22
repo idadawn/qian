@@ -8,6 +8,10 @@ public static class FilesDefinition
 {
     /// <summary>当前 scope 可见的文件服务（单例 seam，组件模型 §6.2）。</summary>
     public static readonly ServiceKey Key = new("Files");
+    /// <summary>存储后端注册表（R38 具名 seam）：后端以 <c>Files.Backends:&lt;名称&gt;</c> 登记，组件用 <c>[Contributes]</c> 声明。</summary>
+    public static readonly ServiceKey BackendsKey = new("Files.Backends");
+    /// <summary>上传策略注册表：策略是数据而不是具名服务，冲突时以 <c>Files.Policies:&lt;用途&gt;</c> 报告。</summary>
+    public static readonly ServiceKey PoliciesKey = new("Files.Policies");
 
     /// <summary>
     /// 解析已挂载的文件服务。带 <c>[QianPlugin]</c> 的组件在 ApplyAsync 里不要用它（上下文作参数会被 QIANSDK002 判为逃逸），
@@ -49,8 +53,8 @@ public interface IFileService
 /// <summary>按用途登记的上传策略；同一用途独占，第二次登记失败。</summary>
 public interface IUploadPolicyRegistry
 {
-    /// <summary>登记用途 <paramref name="purpose"/> 的策略（须与 <see cref="UploadPolicy.Purpose"/> 一致），返回可重复释放的撤销句柄。</summary>
-    IDisposable Register(string purpose, UploadPolicy policy);
+    /// <summary>按 <see cref="UploadPolicy.Purpose"/> 登记策略，返回可重复释放的撤销句柄。</summary>
+    IDisposable Register(UploadPolicy policy);
     /// <summary>读取用途的当前策略；未登记返回 null。</summary>
     UploadPolicy? Find(string purpose);
     /// <summary>按用途排序的已登记策略快照。</summary>

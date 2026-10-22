@@ -20,7 +20,8 @@
     "Data"
   ],
   "provides": [
-    "Files"
+    "Files",
+    "Files.Backends:local"
   ],
   "policy": {
     "tier": "system",
@@ -71,6 +72,7 @@
       "tools/get.json",
       "tools/presign-upload.json",
       "tools/quota.json"
-    ]
+    ],
+    "metadata": {}
   }
 }
