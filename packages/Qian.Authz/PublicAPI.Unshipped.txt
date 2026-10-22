@@ -39,3 +39,11 @@ static Qian.Authz.AuthzPlatformAccess.CreateMigrationSql(string! platformRole) -
 Qian.Authz.AuthzPlugin.AuthzPlugin(System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.PermissionCatalog!>! catalogs) -> void
 Qian.Authz.RbacPermissionChecker.ListEffectivePermissionsAsync(Kun.Authorization.AuthorizationSubject! subject, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.EffectiveGrant!>!>
 static Qian.Authz.AuthzPlugin.FromInstalledComponents() -> Qian.Authz.AuthzPlugin!
+Qian.Authz.DataScopeComposition
+static Qian.Authz.DataScopeComposition.ForResource(string! resource, System.Collections.Generic.IReadOnlyList<Qian.Authz.Abstractions.RoleDataScope!>! roles) -> Qian.Authz.Abstractions.DataScopePlan!
+Qian.Authz.AuthzEventHandlers
+static Qian.Authz.AuthzEventHandlers.AddQianAuthzEvents(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!
+Qian.Authz.AuthzComponent
+Qian.Authz.AuthzComponent.AuthzComponent() -> void
+Qian.Authz.AuthzComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Authz.AuthzComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

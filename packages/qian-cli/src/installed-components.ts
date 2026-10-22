@@ -1,19 +1,18 @@
-import {existsSync,readFileSync,writeFileSync,mkdirSync,renameSync,unlinkSync,openSync,closeSync} from 'node:fs';
+import {existsSync,readFileSync,writeFileSync,mkdirSync,renameSync,unlinkSync} from 'node:fs';
 import path from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {valid} from 'semver';
 import {parseSurface,type JsonValue} from '@qian/surfaces';
 import {assertNoLinks,within,readDirectory} from './marketplace-files.js';
-import {MarketplaceFailure,marketDiagnostic} from './marketplaces.js';
+import {MarketplaceFailure,marketDiagnostic,diagnosticFile} from './marketplaces.js';
 import type {ComponentPackages} from './package-references.js';
 import {collectPackageReferences} from './package-references.js';
-import type {PackageCommandFailure} from './package-process.js';
 
 export type InstallObject={[key:string]:JsonValue};
 export const installObject=(value:unknown):InstallObject=>value!==null&&typeof value==='object'&&!Array.isArray(value)?value as InstallObject:{};
-export function installFailure(file:string,message:string):never {throw new MarketplaceFailure([marketDiagnostic(file,'',message)]);}
+export function installFailure(file:string,message:string,code='SURFACE_POLICY_DENIED'):never {throw new MarketplaceFailure([marketDiagnostic(file,'',message,code)]);}
 export function readInstallFile(file:string):JsonValue {
- assertNoLinks(file);const result=parseSurface(file,readFileSync(file,'utf8'));
+ assertNoLinks(file);const result=parseSurface(diagnosticFile(file),readFileSync(file,'utf8'));
  if(!result.syntax||result.diagnostics.some(item=>item.severity==='error'))throw new MarketplaceFailure([...result.diagnostics]);
  return result.syntax.data;
 }
@@ -58,25 +57,13 @@ export function verifyInstalledComponent(root:string,plugin:InstallObject):Insta
  if(!Array.isArray(plugin.files))installFailure('.qian/lock.json','组件文件记录无效。');
  const expected=plugin.files.map(value=>{const file=installObject(value);return[file.path,file.bytes,file.sha256];});
  const actual=snapshot.records.map(file=>[file.path,file.bytes,file.sha256]);
- if(JSON.stringify(expected)!==JSON.stringify(actual))installFailure(directory,'已安装文件被修改、缺失或增加，拒绝丢弃本地内容。');
+ if(JSON.stringify(expected)!==JSON.stringify(actual))installFailure(directory,'已安装文件被修改、缺失或增加，拒绝丢弃本地内容。','SURFACE_LOCAL_MODIFIED');
  const bytes=snapshot.files.get('.qian-plugin/plugin.json');if(!bytes)installFailure(directory,'组件清单缺失。');
  const parsed=parseSurface('.qian-plugin/plugin.json',bytes.toString('utf8'));
  if(!parsed.syntax||parsed.diagnostics.some(item=>item.severity==='error'))throw new MarketplaceFailure([...parsed.diagnostics]);
  return installObject(parsed.syntax.data);
 }
-export interface InstallationLease {owner:string;release():void;preserveProcess(error:PackageCommandFailure):void}
-export function acquireInstallationLease(root:string):InstallationLease {
- const file=path.join(root,'.qian/.install.lock'),owner=randomBytes(16).toString('hex');assertNoLinks(file);mkdirSync(path.dirname(file),{recursive:true});
- try{const descriptor=openSync(file,'wx',0o600);try{writeFileSync(descriptor,JSON.stringify({pid:process.pid,id:owner}));}finally{closeSync(descriptor);}}
- catch{installFailure(file,'已有安装事务或残留锁，检查日志后再继续。');}
- const owned=():InstallObject|undefined=>{try{assertNoLinks(file);if(!existsSync(file))return;const value=JSON.parse(readFileSync(file,'utf8'));if(value.id===owner&&value.pid===process.pid)return value;}catch{}return undefined;};
- return{owner,release(){const value=owned();if(!value||value.pendingProcess)return;
-   if(typeof value.journal==='string'){
-    try{const journal=installObject(readInstallFile(within(root,value.journal)));if(!['committed','rolled-back'].includes(String(journal.state)))return;}catch{return;}
-   }
-   unlinkSync(file);
-  },preserveProcess(error){const value=owned();if(value)writeInstallFile(file,Buffer.from(JSON.stringify({...value,pendingProcess:{pid:error.pid??null,tool:error.tool}})));}};
-}
+export {acquireInstallationLease,runWithInstallationLease,type InstallationLease} from './installation-lease.js';
 
 function displayedSource(value:JsonValue|undefined):InstallObject {
  const source=installObject(value),result:InstallObject={};

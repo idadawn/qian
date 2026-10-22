@@ -6,6 +6,9 @@
     <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Audit.Abstractions/Qian.Audit.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Events.Abstractions/Qian.Events.Abstractions.csproj" />
+    <!-- 授权变更后经身份端口递增 identity_revision（S1-DEC-027）：只用 Definition 里的 IIdentityAccounts 与服务键。 -->
+    <ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
     <PackageReference Include="JsonSchema.Net" />
     <PackageReference Include="Kun.Caching" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
@@ -17,4 +20,7 @@
   <ItemGroup><InternalsVisibleTo Include="Qian.Registry.Tests" /></ItemGroup>
   <!-- 本机租户运营手测宿主（S1-QA-012）引导平台超管：与测试一样经内部平台角色存储，S1-AZ-005 的管理 API 交付后改用它。 -->
   <ItemGroup><InternalsVisibleTo Include="Qian.Dev.TenantOps" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

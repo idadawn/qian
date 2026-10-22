@@ -1,3 +1,4 @@
+import { settleVisuals } from './settle';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import catalog from '../../../packages/yue/core/src/manifest-catalog.json' with { type: 'json' };
@@ -22,8 +23,23 @@ for (const name of Object.keys(catalog)) {
     if (name === 'Notification') await expect(page.getByText('任务已完成', { exact: true })).toBeVisible();
     for (const theme of ['light', 'dark']) {
       await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+      await settleVisuals(page);
       const violations = (await new AxeBuilder({ page }).analyze()).violations.filter(item => ['critical', 'serious'].includes(item.impact ?? ''));
       expect(violations.map(item => `${item.id}: ${item.nodes.map(node => node.target).join(',')}`), `${name} ${theme}`).toEqual([]);
     }
   });
 }
+
+
+for (const [name, slot, triggerName] of [['Dialog', 'dialog', '打开对话框'], ['AlertDialog', 'alert-dialog', '打开确认框'], ['Sheet', 'sheet', '打开侧栏']]) test(`${name} 右上角关闭按钮可键盘到达且恢复焦点`, async ({ page }) => {
+  await page.goto(`/core.html?component=${name}`);
+  const trigger = page.getByRole('button', { name: triggerName, exact: true });
+  await trigger.click();
+  const close = page.getByTestId(`yue-${slot}-close-button`);
+  const content = await page.getByTestId(`yue-${slot}-content`).boundingBox();
+  const button = await close.boundingBox();
+  expect(button!.x).toBeGreaterThan(content!.x + content!.width / 2);
+  expect(button!.y - content!.y).toBeLessThan(24);
+  await close.focus(); await close.press('Enter');
+  await expect(page.getByTestId(`yue-${slot}-content`)).not.toBeVisible(); await expect(trigger).toBeFocused();
+});

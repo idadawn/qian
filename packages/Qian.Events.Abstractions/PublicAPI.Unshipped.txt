@@ -28,11 +28,36 @@ Qian.Events.EventOrigin.Producer.init -> void
 Qian.Events.EventOrigin.TraceParent.get -> string?
 Qian.Events.EventOrigin.TraceParent.init -> void
 Qian.Events.EventOrigin.Validate() -> void
+Qian.Events.EventSubscriptionDescriptor
+Qian.Events.EventSubscriptionDescriptor.<Clone>$() -> Qian.Events.EventSubscriptionDescriptor!
+Qian.Events.EventSubscriptionDescriptor.AcceptPlatformEvents.get -> bool
+Qian.Events.EventSubscriptionDescriptor.AcceptPlatformEvents.init -> void
+Qian.Events.EventSubscriptionDescriptor.Deconstruct(out string! Service, out string! Subscription, out Qian.Events.EventSubscriptionMode Mode, out string! Type, out string! Subject, out int Version, out string! Handler, out bool AcceptPlatformEvents) -> void
+Qian.Events.EventSubscriptionDescriptor.Equals(Qian.Events.EventSubscriptionDescriptor? other) -> bool
+Qian.Events.EventSubscriptionDescriptor.EventSubscriptionDescriptor(string! Service, string! Subscription, Qian.Events.EventSubscriptionMode Mode, string! Type, string! Subject, int Version, string! Handler, bool AcceptPlatformEvents) -> void
+Qian.Events.EventSubscriptionDescriptor.Handler.get -> string!
+Qian.Events.EventSubscriptionDescriptor.Handler.init -> void
+Qian.Events.EventSubscriptionDescriptor.Mode.get -> Qian.Events.EventSubscriptionMode
+Qian.Events.EventSubscriptionDescriptor.Mode.init -> void
+Qian.Events.EventSubscriptionDescriptor.Service.get -> string!
+Qian.Events.EventSubscriptionDescriptor.Service.init -> void
+Qian.Events.EventSubscriptionDescriptor.Subject.get -> string!
+Qian.Events.EventSubscriptionDescriptor.Subject.init -> void
+Qian.Events.EventSubscriptionDescriptor.Subscription.get -> string!
+Qian.Events.EventSubscriptionDescriptor.Subscription.init -> void
+Qian.Events.EventSubscriptionDescriptor.Type.get -> string!
+Qian.Events.EventSubscriptionDescriptor.Type.init -> void
+Qian.Events.EventSubscriptionDescriptor.Version.get -> int
+Qian.Events.EventSubscriptionDescriptor.Version.init -> void
+Qian.Events.EventSubscriptionMode
+Qian.Events.EventSubscriptionMode.Broadcast = 1 -> Qian.Events.EventSubscriptionMode
+Qian.Events.EventSubscriptionMode.Competing = 0 -> Qian.Events.EventSubscriptionMode
 Qian.Events.EventsDefinition
 Qian.Events.EventsErrors
 Qian.Events.IEventsService
 Qian.Events.IEventsService.Catalog.get -> System.Collections.Generic.IReadOnlyList<Qian.Events.IntegrationEventDescriptor!>!
 Qian.Events.IEventsService.Find(string! type) -> Qian.Events.IntegrationEventDescriptor?
+Qian.Events.IEventsService.Subscriptions.get -> System.Collections.Generic.IReadOnlyList<Qian.Events.EventSubscriptionDescriptor!>!
 Qian.Events.IntegrationEventDescriptor
 Qian.Events.IntegrationEventDescriptor.<Clone>$() -> Qian.Events.IntegrationEventDescriptor!
 Qian.Events.IntegrationEventDescriptor.Deconstruct(out string! Type, out string! Subject, out int Version, out System.Text.Json.JsonElement PayloadSchema) -> void
@@ -47,6 +72,20 @@ Qian.Events.IntegrationEventDescriptor.Type.init -> void
 Qian.Events.IntegrationEventDescriptor.Version.get -> int
 Qian.Events.IntegrationEventDescriptor.Version.init -> void
 Qian.Events.IntegrationEventTypes
+Qian.Events.QianEventDelivery
+Qian.Events.QianEventDelivery.Attempt.get -> int
+Qian.Events.QianEventDelivery.Attempt.init -> void
+Qian.Events.QianEventDelivery.Consumer.get -> string!
+Qian.Events.QianEventDelivery.Consumer.init -> void
+Qian.Events.QianEventDelivery.Envelope.get -> Qian.Events.QianEventEnvelope!
+Qian.Events.QianEventDelivery.Envelope.init -> void
+Qian.Events.QianEventDelivery.Mode.get -> Qian.Events.EventSubscriptionMode
+Qian.Events.QianEventDelivery.Mode.init -> void
+Qian.Events.QianEventDelivery.QianEventDelivery() -> void
+Qian.Events.QianEventDelivery.Service.get -> string!
+Qian.Events.QianEventDelivery.Service.init -> void
+Qian.Events.QianEventDelivery.Subscription.get -> string!
+Qian.Events.QianEventDelivery.Subscription.init -> void
 Qian.Events.QianEventEnvelope
 Qian.Events.QianEventEnvelope.Actor.get -> Qian.Events.EventActor!
 Qian.Events.QianEventEnvelope.Actor.init -> void
@@ -88,9 +127,13 @@ override Qian.Events.EventActor.ToString() -> string!
 override Qian.Events.EventOrigin.Equals(object? obj) -> bool
 override Qian.Events.EventOrigin.GetHashCode() -> int
 override Qian.Events.EventOrigin.ToString() -> string!
+override Qian.Events.EventSubscriptionDescriptor.Equals(object? obj) -> bool
+override Qian.Events.EventSubscriptionDescriptor.GetHashCode() -> int
+override Qian.Events.EventSubscriptionDescriptor.ToString() -> string!
 override Qian.Events.IntegrationEventDescriptor.Equals(object? obj) -> bool
 override Qian.Events.IntegrationEventDescriptor.GetHashCode() -> int
 override Qian.Events.IntegrationEventDescriptor.ToString() -> string!
+override Qian.Events.QianEventDelivery.ToString() -> string!
 static Qian.Events.EventActor.Agent(string! clientId, string? onBehalfOf = null) -> Qian.Events.EventActor!
 static Qian.Events.EventActor.Service(string! clientId, string? onBehalfOf = null) -> Qian.Events.EventActor!
 static Qian.Events.EventActor.User(string! personId) -> Qian.Events.EventActor!
@@ -98,6 +141,8 @@ static Qian.Events.EventEnvelopeScope.Begin(Qian.Events.EventOrigin! origin) -> 
 static Qian.Events.EventEnvelopeScope.Current.get -> Qian.Events.EventOrigin?
 static Qian.Events.EventOrigin.operator !=(Qian.Events.EventOrigin? left, Qian.Events.EventOrigin? right) -> bool
 static Qian.Events.EventOrigin.operator ==(Qian.Events.EventOrigin? left, Qian.Events.EventOrigin? right) -> bool
+static Qian.Events.EventSubscriptionDescriptor.operator !=(Qian.Events.EventSubscriptionDescriptor? left, Qian.Events.EventSubscriptionDescriptor? right) -> bool
+static Qian.Events.EventSubscriptionDescriptor.operator ==(Qian.Events.EventSubscriptionDescriptor? left, Qian.Events.EventSubscriptionDescriptor? right) -> bool
 static Qian.Events.EventsDefinition.Events(this Qian.Runtime.IPluginContext! context) -> Qian.Events.IEventsService!
 static Qian.Events.IntegrationEventDescriptor.operator !=(Qian.Events.IntegrationEventDescriptor? left, Qian.Events.IntegrationEventDescriptor? right) -> bool
 static Qian.Events.IntegrationEventDescriptor.operator ==(Qian.Events.IntegrationEventDescriptor? left, Qian.Events.IntegrationEventDescriptor? right) -> bool
@@ -108,8 +153,11 @@ static Qian.Events.QianEventEnvelope.IsComponentId(string? value) -> bool
 static Qian.Events.QianEventEnvelope.IsTraceParent(string? value) -> bool
 static Qian.Events.QianEventEnvelope.Parse(string! json) -> Qian.Events.QianEventEnvelope!
 static Qian.Events.QianEventTopology.BroadcastQueue(string! service, string! instance) -> string!
+static Qian.Events.QianEventTopology.DeadLetterQueue(string! service, string! subscription) -> string!
+static Qian.Events.QianEventTopology.RetryQueue(string! service, string! name, int attempt, System.TimeSpan delay) -> string!
 static Qian.Events.QianEventTopology.RoutingKey(string! type) -> string!
 static Qian.Events.QianEventTopology.SubscriptionQueue(string! service, string! subscription) -> string!
 static readonly Qian.Events.EventsDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Events.EventsErrors.ConsumeRejected -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Events.EventsErrors.Misconfigured -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Events.EventsErrors.PublishRejected -> Qian.Runtime.Errors.ErrorCode!

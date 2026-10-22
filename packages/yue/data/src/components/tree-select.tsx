@@ -25,10 +25,10 @@ export function TreeSelect({ nodes, value, onChange, label, i18n, disabled, clas
   const [open, setOpen] = useState(false);
   const path = value ? findTreePath(nodes, value) : [];
   return <Popover open={open} onOpenChange={setOpen}>
-    <PopoverTrigger className={className} testId={testId} aria-label={label} disabled={disabled}>{path.at(-1)?.label ?? i18n.t('data.select')}</PopoverTrigger>
+    <PopoverTrigger render={<Button variant="outline" className="border-input" />} className={className} testId={testId} aria-label={label} disabled={disabled}>{path.at(-1)?.label ?? i18n.t('data.select')}</PopoverTrigger>
     <PopoverContent aria-label={label} testId={`${testId}-popup`}>
       <Tree nodes={nodes} selectedId={value ?? null} defaultExpandedIds={path.slice(0, -1).map((node) => node.id)} onSelectedChange={(id) => { onChange?.(id); setOpen(false); }} aria-label={label} />
-      <Button onClick={() => { onChange?.(null); setOpen(false); }}>{i18n.t('data.clear')}</Button>
+      <Button variant="ghost" size="sm" className="mt-3" onClick={() => { onChange?.(null); setOpen(false); }}>{i18n.t('data.clear')}</Button>
     </PopoverContent>
   </Popover>;
 }
@@ -45,14 +45,14 @@ export function Cascader({ nodes, value = [], onChange, label, i18n, disabled, c
   for (const id of trail) { const found = children.find((node) => node.id === id); if (!found?.children?.length) break; children = found.children; levels.push(children); }
   const selected = value.length ? findTreePath(nodes, value.at(-1)!) : [];
   return <Popover open={open} onOpenChange={(next) => { if (next) setTrail(value); setOpen(next); }}>
-    <PopoverTrigger className={className} testId={testId} aria-label={label} disabled={disabled}>{selected.map((node) => node.label).join(' / ') || i18n.t('data.select')}</PopoverTrigger>
+    <PopoverTrigger render={<Button variant="outline" className="border-input" />} className={className} testId={testId} aria-label={label} disabled={disabled}>{selected.map((node) => node.label).join(' / ') || i18n.t('data.select')}</PopoverTrigger>
     <PopoverContent aria-label={label} className="max-w-[90vw]" testId={`${testId}-popup`}>
       <div className="flex gap-3">{levels.map((level, index) => <Tree key={index} nodes={level.map(({ children: _children, ...node }) => node)} selectedId={trail[index] ?? null} aria-label={`${label} ${index + 1}`} className="min-w-40" onSelectedChange={(id) => {
         if (!id) return;
         const next = [...trail.slice(0, index), id]; setTrail(next);
         if (!level.find((node) => node.id === id)?.children?.length) { onChange?.(next); setOpen(false); }
       }} />)}</div>
-      <Button onClick={() => { onChange?.([]); setTrail([]); setOpen(false); }}>{i18n.t('data.clear')}</Button>
+      <Button variant="ghost" size="sm" className="mt-3" onClick={() => { onChange?.([]); setTrail([]); setOpen(false); }}>{i18n.t('data.clear')}</Button>
     </PopoverContent>
   </Popover>;
 }

@@ -53,6 +53,20 @@ public sealed class ToolContractHashTests
         }
     }
 
+    [Fact]
+    public void 冻结契约正例条目的schemaSha256_生产实现逐条复算一致()
+    {
+        // S1-AGT-002：contracts/v0 正例条目写死的 schemaSha256（与 Python 按整数 JCS 子集独立复算的结果相同），含组件模型规格 §4.6 的 upload 示例。
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
+        using var fixture = JsonDocument.Parse(File.ReadAllText(Path.Combine(root!.FullName, "contracts/v0/fixtures/capability-entry.valid.json")));
+        var entries = fixture.RootElement.EnumerateArray().Select(item => item.GetProperty("data")).ToArray();
+        Assert.Equal(3, entries.Length);
+        Assert.Equal("523ed88312c5cbd2368cf7f243098548c4629c6b729cae82a427f35f0183ada8",
+            Assert.Single(entries, entry => entry.GetProperty("id").GetString() == "qian.files/upload").GetProperty("schemaSha256").GetString());
+        Assert.All(entries, entry => Assert.Equal(entry.GetProperty("schemaSha256").GetString(), ToolContractHash.Compute(entry)));
+    }
+
     // 反斜杠与 u 分开写：JSON 文本里的 \uXXXX 转义由这里拼出。
     private static string U(string hex) => "\\" + "u" + hex;
 

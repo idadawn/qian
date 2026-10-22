@@ -3,12 +3,15 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Reflection;
+using Qian.Plugin.Sdk;
 using Kun.Authorization;
 using Kun.Caching.Abstractions;
 using Kun.Caching.DependencyInjection;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus.DependencyInjection;
+using Kun.Mediator.DependencyInjection;
 using Kun.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -20,6 +23,7 @@ using Npgsql;
 using Qian.Audit;
 using Qian.Authz.Abstractions;
 using Qian.Data;
+using Qian.Events;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Surfaces;
@@ -29,7 +33,7 @@ namespace Qian.Authz.Tests;
 
 // S1-AZ-003：平台超管显式旁路与审计、直接主体授予 / 撤销的失效传播、经 ctx.Authz() 的完整解释。真实 PostgreSQL（受限应用角色 + 专用平台登录）、真实 Audit 插件与审计链、
 // 真实 Redis；没有替身判定器、替身审计或测试快照。
-public sealed class SuperadminBypassTests(PostgresFixture postgres, RedisFixture redis) : IClassFixture<PostgresFixture>, IClassFixture<RedisFixture>
+public sealed partial class SuperadminBypassTests(PostgresFixture postgres, RedisFixture redis) : IClassFixture<PostgresFixture>, IClassFixture<RedisFixture>
 {
     private const string A = "7a1c0e52-3b6d-4f1e-9c2a-00000000000a";
     private const string B = "7a1c0e52-3b6d-4f1e-9c2a-00000000000b";
@@ -199,10 +203,20 @@ public sealed class SuperadminBypassTests(PostgresFixture postgres, RedisFixture
         var data = host.Services.GetRequiredService<IDataService>(); var catalog = Catalog(); await new PostgresPermissionCatalogStore(data).PutAsync(catalog, Ct);
         var registry = host.Services.GetRequiredService<IPermissionRegistry>(); using var lease = registry.Register(catalog.Version, catalog.Permissions);
         await using var runtime = new PluginLoader(host.Services); var consumer = new Consumer();
-        await runtime.MountAsync([Define("data", new DataPlugin(), [DataDefinition.Key]), Define("authz", new AuthzPlugin(), AuthzKeys, new { advancedMode = false }),
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(root!.FullName, "plugins/qian.authz/.qian-plugin/plugin.json")));
+        var code = ((IComponentCodeMetadataFactory)Activator.CreateInstance(typeof(AuthzComponent).Assembly.GetCustomAttribute<QianCodeMetadataAttribute>()!.FactoryType)!).Create();
+        var entryType = Type.GetType(manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString()!, throwOnError: true)!;
+        var component = (IQianPlugin)Activator.CreateInstance(entryType)!;
+        Assert.Equal(code.RuntimeEntry, manifest.RootElement.GetProperty("runtime").GetProperty("entry").GetString());
+        Assert.Equal(code.Provides, manifest.RootElement.GetProperty("provides").EnumerateArray().Select(item => item.GetString()!));
+        Assert.Equal(code.Inject, component.Inject.Select(key => key.Name));
+        await runtime.MountAsync([Define("data", new DataPlugin(), [DataDefinition.Key]), Define("authz", component, code.Provides.Select(name => new ServiceKey(name)).ToArray(), new { advancedMode = false }),
             Define("consumer", consumer, [])], Ct);
         Assert.Equal(PluginState.Ready, runtime.GetState("authz", ScopeKey.Global));
         var ctx = consumer.Context!;
+        foreach (var key in code.Provides) Assert.NotNull(ctx.TryInject<object>(new ServiceKey(key)));
         Assert.Same(registry, ctx.Inject<IPermissionRegistry>(AuthzDefinition.PermissionsKey)); Assert.Same(registry, ctx.Inject<IResourceTypeRegistry>(AuthzDefinition.ResourceTypesKey));
         using (tenant.BeginScope(A))
         {
@@ -221,6 +235,7 @@ public sealed class SuperadminBypassTests(PostgresFixture postgres, RedisFixture
             Assert.Empty(fields.Readable); Assert.Empty(fields.Writable); Assert.Empty(fields.Masked);
         }
         await runtime.UnmountAsync("authz", ScopeKey.Global, Ct);
+        foreach (var key in code.Provides) Assert.Null(runtime.GetContext("data", ScopeKey.Global).TryInject<object>(new ServiceKey(key)));
         foreach (var (id, scope, config) in new (string, ScopeKey, object)[]
         {
             ("advanced", ScopeKey.Global, new { advancedMode = true }), ("bad-role", ScopeKey.Global, new { platformRole = "Bad-Role" }),
@@ -242,7 +257,10 @@ public sealed class SuperadminBypassTests(PostgresFixture postgres, RedisFixture
     {
         // 消费方只依赖 Qian.Authz.Abstractions：完整解释必须经组件端口拿到，不能靠 Provider 的 RbacPermissionChecker。
         var tenant = new AsyncLocalTenantContext(); using var host = Host(tenant); await host.StartAsync(Ct); await Prepare(host);
-        var data = host.Services.GetRequiredService<IDataService>(); var catalog = Catalog(); await new PostgresPermissionCatalogStore(data).PutAsync(catalog, Ct);
+        var data = host.Services.GetRequiredService<IDataService>(); var catalog = new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata("qian.sample.crm", "1.0.0",
+            JsonSerializer.Deserialize<JsonElement>("""[{"resource":"customer","actions":["read","write","export","review"],"stepUp":["export"],"risk":{"export":"high"}}]"""),
+            JsonSerializer.Deserialize<JsonElement>("""[{"role":"tenant.owner","grant":["qian.sample.crm:customer:read","qian.sample.crm:customer:write","qian.sample.crm:customer:export"]},{"role":"tenant.user","grant":["qian.sample.crm:customer:read"]}]"""));
+        await new PostgresPermissionCatalogStore(data).PutAsync(catalog, Ct);
         var registry = host.Services.GetRequiredService<IPermissionRegistry>(); using var lease = registry.Register(catalog.Version, catalog.Permissions);
         await using var runtime = new PluginLoader(host.Services); var consumer = new Consumer();
         await runtime.MountAsync([Define("data", new DataPlugin(), [DataDefinition.Key]), Define("authz", new AuthzPlugin(), AuthzKeys, new { advancedMode = false }),
@@ -255,10 +273,20 @@ public sealed class SuperadminBypassTests(PostgresFixture postgres, RedisFixture
         {
             var roles = new PostgresTenantRoleStore(data, tenant);
             await roles.EnsureBuiltinsAsync("operator", Ct); await roles.AssignAsync("tenant.owner", "user", "owner-a", "operator", Ct);
+            await roles.AssignAsync("tenant.user", "user", "owner-a", "operator", Ct);
             await roles.AssignAsync("tenant.user", "user", "reader-a", "operator", Ct); await roles.InstallDefaultsAsync(catalog.PluginId, catalog.Version, null, "operator", Ct);
             var allowed = await authz.ExplainDetailedAsync(new PermissionRequest(owner, Write), Ct);
             Assert.True(allowed.Decision.Allow); Assert.Equal("role_grant", allowed.Decision.Reason); Assert.Equal(["tenant.owner"], allowed.MatchedRoles);
-            Assert.Single(allowed.MatchedGrants); Assert.StartsWith("grant:", allowed.MatchedGrants[0], StringComparison.Ordinal); Assert.Empty(allowed.Missing);
+            await using (var session = await data.OpenAsync<AuthzDbContext>(Ct))
+            {
+                var ids = await session.Context.Grants.AsNoTracking().Where(grant => grant.PermissionCode == Write).Select(grant => grant.Id).ToArrayAsync(Ct);
+                Assert.Equal(ids.Select(id => "grant:" + id.ToString("D")).Order(StringComparer.Ordinal), allowed.MatchedGrants);
+            }
+            Assert.Single(allowed.MatchedGrants); Assert.Empty(allowed.Missing);
+            const string Review = "qian.sample.crm:customer:review";
+            var noGrant = await authz.ExplainDetailedAsync(new PermissionRequest(owner, Review), Ct);
+            Assert.False(noGrant.Decision.Allow); Assert.Equal("no_matching_grant", noGrant.Decision.Reason);
+            Assert.Equal(["tenant.owner", "tenant.user"], noGrant.MatchedRoles); Assert.Empty(noGrant.MatchedGrants); Assert.Equal([Review], noGrant.Missing);
             var denied = await authz.ExplainDetailedAsync(new PermissionRequest(reader, Write), Ct);
             Assert.False(denied.Decision.Allow); Assert.Equal("no_matching_grant", denied.Decision.Reason);
             Assert.Equal(["tenant.user"], denied.MatchedRoles); Assert.Empty(denied.MatchedGrants); Assert.Equal([Write], denied.Missing);
@@ -267,26 +295,32 @@ public sealed class SuperadminBypassTests(PostgresFixture postgres, RedisFixture
             Assert.False(stepUp.Decision.Allow); Assert.Equal("step_up_required", stepUp.Decision.Reason); Assert.Equal(["tenant.owner"], stepUp.MatchedRoles);
             Assert.Single(stepUp.MatchedGrants); Assert.Empty(stepUp.Missing);
             // 继承自 Kun 的 ExplainAsync 只给判定，与 Check 和完整解释的结论一致。
-            foreach (var (subject, permission, explanation) in new[] { (owner, Write, allowed), (reader, Write, denied), (owner, Export, stepUp) })
+            foreach (var (subject, permission, explanation) in new[] { (owner, Write, allowed), (reader, Write, denied), (owner, Export, stepUp), (owner, Review, noGrant) })
             {
                 var decision = await authz.ExplainAsync(new PermissionRequest(subject, permission), Ct);
                 Assert.Equal((explanation.Decision.Allow, explanation.Decision.Reason), (decision.Allow, decision.Reason));
-                Assert.Equal(explanation.Decision.Allow, (await authz.CheckAsync(new PermissionRequest(subject, permission), Ct)).Allow);
+                var checkedDecision = await authz.CheckAsync(new PermissionRequest(subject, permission), Ct);
+                Assert.Equal((explanation.Decision.Allow, explanation.Decision.Reason), (checkedDecision.Allow, checkedDecision.Reason));
             }
         }
         using (tenant.BeginScope(B))
         {
-            var foreign = await authz.ExplainDetailedAsync(new PermissionRequest(owner, Write), Ct);
-            Assert.False(foreign.Decision.Allow); Assert.Equal("subject_tenant_mismatch", foreign.Decision.Reason);
-            Assert.Empty(foreign.MatchedRoles); Assert.Empty(foreign.MatchedGrants);
+            var roles = new PostgresTenantRoleStore(data, tenant);
+            await roles.EnsureBuiltinsAsync("operator", Ct); await roles.InstallDefaultsAsync(catalog.PluginId, catalog.Version, null, "operator", Ct);
+            var foreign = await authz.ExplainDetailedAsync(new PermissionRequest(new AuthorizationSubject(owner.Id, B, "user"), Write), Ct);
+            Assert.False(foreign.Decision.Allow); Assert.Equal("no_matching_grant", foreign.Decision.Reason);
+            Assert.Empty(foreign.MatchedRoles); Assert.Empty(foreign.MatchedGrants); Assert.Equal([Write], foreign.Missing);
         }
     }
 
-    private IHost Host(AsyncLocalTenantContext tenant, string? authzPlatform = null, string? auditPlatform = null)
+    private IHost Host(AsyncLocalTenantContext tenant, string? authzPlatform = null, string? auditPlatform = null, IKunCache? cache = null, bool authzEvents = true)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
-        builder.Services.AddSingleton<ITenantContext>(tenant); builder.Services.AddKunEventBus();
+        builder.Services.AddSingleton<ITenantContext>(tenant); builder.Services.AddKunEventBus(registrar => registrar.RegisterAuthzEvents());
+        // 与生产宿主相同：授权变更的领域事件处理器 + 写 v1 信封的 Outbox 端口；authzEvents=false 复现漏装处理器的宿主。
+        builder.Services.AddKunMediator(mediator => { if (authzEvents) mediator.AddQianAuthzEvents(); }); builder.Services.AddQianEvents();
         builder.Services.AddSingleton<IPermissionRegistry, PermissionRegistry>();
+        if (cache is not null) builder.Services.AddSingleton(cache);
         builder.Services.AddQianData<AuthzDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuthzDbContext.Schema));
         builder.Services.AddQianData<AuditDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuditDbContext.Schema));
         if (authzPlatform is not null)

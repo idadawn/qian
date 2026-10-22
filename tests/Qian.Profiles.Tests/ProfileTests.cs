@@ -54,11 +54,11 @@ public sealed class ProfileTests
     }
 
     [Theory]
-    // 警告只来自仍带骨架标记的条目；qian.data 经 S1-RT-011 真实安装后不再是骨架（platform / identity 各少一条）。
-    [InlineData("platform", 21, 20)]
-    [InlineData("gateway", 5, 5)]
-    [InlineData("identity", 8, 7)]
-    [InlineData("standalone", 2, 2)]
+    // 警告只来自仍带骨架标记的条目；qian.data / qian.events / qian.config 经真实安装后不再是骨架。
+    [InlineData("platform", 21, 19)]
+    [InlineData("gateway", 6, 5)]
+    [InlineData("identity", 8, 6)]
+    [InlineData("standalone", 3, 1)]
     [InlineData("minimal", 0, 0)]
     public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count, int skeletons)
     {
@@ -67,6 +67,18 @@ public sealed class ProfileTests
         Assert.Equal(count, result.Snapshot!.Entries.Count);
         Assert.Equal(skeletons, result.Diagnostics.Count(d => d.Severity == "warning"));
         if (profile != "platform") Assert.DoesNotContain(result.Snapshot.Entries, e => e.Plugin.StartsWith("qian.registry@", StringComparison.Ordinal) || e.Plugin.StartsWith("qian.lifecycle@", StringComparison.Ordinal) || e.Plugin.StartsWith("qian.capabilities@", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Gateway_identity_resolves_to_the_code_component_that_declares_x_aot()
+    {
+        // S1-IDP-014：x-aot 以 NativeAOT 冒烟为据。按 S1-DEC-029 开发期 gateway 用 JIT；AOT profile 拒绝未声明组件的规则见 TCK 的 aot-code-rejected。
+        var shipped = new ProfileLoader(new SurfaceValidator()).Load(new ProfileLoadOptions { WorkingDirectory = Root, Profile = "gateway", IncludeHomePatch = false });
+        Assert.True(shipped.IsValid, JsonSerializer.Serialize(shipped, Json));
+        var identity = Assert.Single(shipped.Snapshot!.Entries, e => e.Id == "identity");
+        Assert.StartsWith("qian.identity.client@", identity.Plugin, StringComparison.Ordinal);
+        Assert.Equal("module", identity.Manifest.GetProperty("runtime").GetProperty("form").GetString());
+        Assert.True(identity.Manifest.GetProperty("x-aot").GetBoolean());
     }
 
     [Fact]

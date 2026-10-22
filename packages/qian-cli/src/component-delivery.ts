@@ -35,7 +35,7 @@ export function prepareComponentDelivery(resolved:ResolvedMarketplacePlugin,prof
    if(resolved.trust==='unverified'&&(entry.manifest.runtime!==undefined||policy.tier!=='community'))
     installFailure(prefix+'.qian-plugin/plugin.json','未验证来源的全部子组件都必须是 community 无代码组件。');
    if(Array.isArray(policy.profiles)&&policy.profiles.length&&!policy.profiles.includes(profile)&&!forceProfile)
-    installFailure(prefix+'.qian-plugin/plugin.json','组件树包含不允许装入所选 profile 的组件，需显式 --force-profile。');
+    installFailure(prefix+'.qian-plugin/plugin.json','组件树包含不允许装入所选 profile 的组件，需显式 --force-profile。','SURFACE_PROFILE_DENIED');
    if(runtime.form!==undefined&&!['module','ui','service'].includes(String(runtime.form)))installFailure(prefix+'.qian-plugin/plugin.json','组件树包含 S1 尚不支持的代码形态。');
    requirements[entry.component.id]={permissions:policy.permissions??{},egress:policy.egress??[]};
    names.add(prefix+'.qian-plugin/plugin.json');

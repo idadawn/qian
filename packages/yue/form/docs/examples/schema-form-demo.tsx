@@ -11,12 +11,12 @@ const schema: FormSchema = {
     contactEnabled: { type: 'boolean', default: false },
     phone: { type: 'string', minLength: 1, pattern: '^[0-9]*$' },
   } },
-  ui: { layout: [{ field: 'code', labelKey: 'demo.code' }, { field: 'name', labelKey: 'demo.name' }, { field: 'contactEnabled', labelKey: 'demo.contact' }, { field: 'phone', labelKey: 'demo.phone', props: { readonlyMask: 'last4' } }], device: { h5: { overrides: [] } } },
+  ui: { layout: [{ field: 'code', labelKey: 'demo.code' }, { field: 'name', labelKey: 'demo.name' }, { field: 'contactEnabled', labelKey: 'demo.contact', descriptionKey: 'demo.contactHelp' }, { field: 'phone', labelKey: 'demo.phone', props: { readonlyMask: 'last4' } }], device: { h5: { overrides: [] } } },
   rules: { dependencies: [{ source: 'contactEnabled', equals: true, target: 'phone', effect: 'required', value: true }] }, binding: {}, auth: {},
 };
 interface Paths { '/customers': { post: { requestBody: { content: { 'application/json': FormValues } }; responses: { 200: { content: { 'application/json': FormValues } } } } } }
 const i18n = createI18n();
-i18n.addLanguagePack('zh-CN', { 'demo.code': '客户号', 'demo.name': '客户名称', 'demo.contact': '填写联系方式', 'demo.phone': '手机号码', 'demo.saved': '保存成功' });
+i18n.addLanguagePack('zh-CN', { 'demo.code': '客户号', 'demo.name': '客户名称', 'demo.contact': '填写联系方式', 'demo.contactHelp': '勾选后，手机号码为必填项。', 'demo.phone': '手机号码', 'demo.saved': '保存成功' });
 
 function DemoContent({ readonly = false, invalid = false }: { readonly?: boolean; invalid?: boolean }) {
   const [record, setRecord] = useState<FormValues>({ code: 'sample', name: '示例客户', phone: '13812345678' });

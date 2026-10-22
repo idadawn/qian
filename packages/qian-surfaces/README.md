@@ -12,11 +12,11 @@ const result = validateComponent(componentDirectory, {
 
 ## 装配位置
 
-适用于 CLI、CI 与静态注册阶段的所有 profile，无平台后端依赖。组件的声明式表面由文件夹分发；`qian add` 安装流程在 CLI 任务中实现。公开声明由 API Extractor 跟踪在 `api/`，Schema 从仓库单点复制到发行目录，不另维护一套。
+适用于 CLI、CI 与静态注册阶段的所有 profile，无平台后端依赖。组件的声明式表面由文件夹分发；`qian add` 安装流程在 CLI 任务中实现。公开声明由 API Extractor 跟踪在 `api/`，其中 `compilePattern`、`isStable`、`sameKey` 等是 JSON Schema 正则可移植子集的 TS 移植（与 `packages/Common/SchemaPattern.cs` 逐条一致），本地 CLI 的 profile 装配也从这里引入；Schema 从仓库单点复制到发行目录，不另维护一套。
 
 ## 模型体验
 
-返回 ErrorDetail 外加文件、行号和级别。调用方可按 pointer 修复源文件；跨组件引用在不完整目录下告警，完整目录下拒绝未知项；给出 `serviceKeys` 时 `inject[]` 引用目录外的服务键为 error。任何文件内容都不会被执行。
+返回 ErrorDetail 外加文件、行号和级别。工具输入点名租户字段的检查与 .NET 共用一条规则，见 [packages/Common](../Common/README.md#tenantfieldrule-的判定规则)。调用方可按 pointer 修复源文件；跨组件引用在不完整目录下告警，完整目录下拒绝未知项；给出 `serviceKeys` 时 `inject[]` 引用目录外的服务键为 error。任何文件内容都不会被执行。
 
 ## 已知限制与延期项
 

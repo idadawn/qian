@@ -6,7 +6,7 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 
 所有 profile 均可引用 Definition；真正提供 `Authz` 的组件是 `Qian.Authz` / `qian.authz`。`ctx.Authz()` 按当前 scope 解析 `IAuthzService`，缺 Provider 或上下文已卸载时拒绝解析。Provider 必须在 Apply 中提供服务，并将错误码登记句柄交给 `ctx.Effect`。
 
-`qian add authz` 安装组件及其 Provider，本 Definition 包不自行启动服务，也不把平台能力绑定到宿主 DI。当前组件目录仍是骨架；Provider `Qian.Authz` 的 `AuthzPlugin` 已提供 `Authz`、`Authz.Permissions`、`qian.authz.resource-type/v1`、`Authz.SuperadminBypass` 与 `Authz.TenantRoleGrant` 五个服务键及命令 PEP，并在 `tenant/provisioned` 时实例化默认角色（S1-AZ-002 / S1-AZ-003 / S1-TEN-003），细节见 Qian.Authz 主文档。
+`qian add authz` 安装组件及其 Provider，本 Definition 包不自行启动服务，也不把平台能力绑定到宿主 DI。当前组件目录仍是骨架；Provider `Qian.Authz` 的 `AuthzPlugin` 已提供 `Authz`、`AuthzPermissions`、`AuthzResourceTypes`、`AuthzSuperadminBypass` 与 `AuthzTenantRoleGrant` 五个服务键及命令 PEP，并在 `tenant/provisioned` 时实例化默认角色（S1-AZ-002 / S1-AZ-003 / S1-TEN-003），细节见 Qian.Authz 主文档。
 
 ## 平台超管显式旁路
 
@@ -24,7 +24,13 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 
 编译门禁 QIAN0005 禁止对受保护请求直接调用或引用 Kun `AddRequestHandler` 的两个重载，也拦截请求类型未知的泛型包装器；只有本包的桥接实现可调用底层入口。普通未受保护命令和无关同名方法不受影响。门禁覆盖测试、生成代码及关闭 TreatWarningsAsErrors 的项目。它检查显式注册代码，不把反射或未纳入此构建的外部程序集宣称为已审计。
 
-这里不实现 `qian.authz` 的完整入口 PEP、生命周期和决策审计；HTTP、gRPC、命令事件及授权变更事件与 identity_revision 的失效传播仍由 S1-AZ-004 完成（租户授权修订驱动的判定缓存失效已由 S1-AZ-003 实现，R103）。
+这里不实现 `qian.authz` 的完整入口 PEP、生命周期和决策审计。下列能力都在 Provider `Qian.Authz` 实现：
+
+- HTTP、gRPC、命令事件的强制执行点，以及授权变更事件：S1-AZ-004；
+- 授权变更后递增 identity_revision 并同步抬高修订下限：S1-AZ-009，同进程宿主；
+- 租户授权修订驱动的判定缓存失效：S1-AZ-003，R103。
+
+本包只登记契约，包括陈旧令牌的拒绝原因 `AuthzEnforcement.StaleIdentityRevision`：三处入口都把它映射为 401。
 
 ## 错误目录
 
@@ -56,3 +62,7 @@ Authz seam 的 Definition，承接 ADR-006、ADR-019 与 S1-AZ-001。文件夹�
 `ITenantRoleGrant.AssignAsync(roleCode, subjectType, subjectId, actor)` 经 `TenantRoleGrant.Key` 解析。AuthzPlugin 提供实现，只接受四个内置 tenant 角色，在当前租户内调用既有 Write 事务与授权修订失效机制。它不创建角色，不替代上层授权，缺失角色或租户上下文会拒绝。开户调用须在 tenant/provisioned 之后；授权管理 API（S1-AZ-005）可复用该端口。
 
 DEC-023 的内部开户凭据不对组件公开：发布程序集的 InternalsVisibleTo 仅包含 Qian.Tenancy、Qian.Plugin.Sdk、Qian.Authz 三个受信程序集，不包含测试程序集；测试通过反射验证同一发布程序集的内部边界。SDK 注册重载保留 Kun 的原始 PermissionBehavior，初始化适配器只对凭据绑定的主体、租户与权限点放行，此分支不查普通 RBAC；普通请求完整委托原判定器。
+
+## 数据权限契约（S1-AZ-006）
+
+DataScopeRule、RoleDataScope 与 DataScopePlan 是纯词汇；Filter 使用 JSON 形状，权威 AST/矩阵/系统变量仍是 contracts/data/v1，Definition 不额外依赖数据库库。DataScopeContracts 提供同源嵌入 Schema、元数据和源生成 JSON 类型信息；它不执行授权。合并计划与 HTTP 行为统一见 [Qian.Authz 主文档](../Qian.Authz/README.md#数据范围契约与元数据s1-az-006)。现有 IDataPermissionFilter/IFieldPolicy 继续复用 Kun 原端口，不再定义同名接口。

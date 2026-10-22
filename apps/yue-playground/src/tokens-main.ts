@@ -15,7 +15,8 @@ for (const tone of TONES) {
 }
 for (const token of TOKEN_REGISTRY.semantics.filter(item => item.kind === 'color' && !item.name.endsWith('-foreground') && !item.name.endsWith('-bg'))) {
   const swatch = document.createElement('div'); swatch.className = 'token-swatch';
-  swatch.style.backgroundColor = tokenColor(token.name); swatch.style.color = tokenColor(token.contrastWith!);
+  if (token.contrast === 'text') { swatch.style.backgroundColor = tokenColor(token.name); swatch.style.color = tokenColor(token.contrastWith!); }
+  else { swatch.style.backgroundColor = 'var(--background)'; swatch.style.color = 'var(--foreground)'; swatch.style.borderColor = tokenColor(token.name); swatch.style.borderWidth = '3px'; }
   const label = document.createElement('span'); label.textContent = token.meaning; swatch.append(label); document.querySelector('#palette')!.append(swatch);
 }
 window.addEventListener('pagehide', () => controller.dispose(), { once: true });

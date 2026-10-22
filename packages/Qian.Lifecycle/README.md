@@ -1,6 +1,6 @@
 # Qian.Lifecycle
 
-平台生命周期控制器是 `Lifecycle` seam 的 Provider（服务键 `ctx.Lifecycle`），只进入 `platform` profile 的 base 组合包。Definition 在 `Qian.Lifecycle.Abstractions`，管理面 HTTP 适配器在 `Qian.Lifecycle.AspNetCore`。分发表面 `plugins/qian.lifecycle` 已带完整的配置 Schema 与诊断权限声明，清单仍保留 `x-skeleton`，代码字段随 SDK 的组件文件夹生成补齐。设计依据：PRD 7.2.1 / 7.17、ADR-020 §2、组件规格 §7.6，任务 S1-RT-005。
+平台生命周期控制器是 `Lifecycle` seam 的 Provider（服务键 `ctx.Lifecycle`），只进入 `platform` profile 的 base 组合包。Definition 在 `Qian.Lifecycle.Abstractions`，管理面 HTTP 适配器在 `Qian.Lifecycle.AspNetCore`。分发表面 `plugins/qian.lifecycle` 已带完整的配置 Schema 与诊断、批准两个权限声明，代码字段与配置 Schema 已由稳定入口派生；尚未通过完整安装门，清单继续保留 `x-skeleton`。设计依据：PRD 7.2.1 / 7.17、ADR-020 §2、组件规格 §7.6，任务 S1-RT-005。
 
 控制器管三件事：
 
@@ -8,7 +8,7 @@
 - 租户级安装状态机：`Entitle / Provision / Upgrade / Uninstall / Purge`，钩子按幂等键记入 `lifecycle_runs`。
 - 经 Registry 写租户 scope patch 的 `Mount / Unmount`，取代 v1 的 `Enable / Disable`（R34）。
 
-它不提供面向业务用户的写端点。写操作都是平台管理动作，由运营工具或宿主管理面在自己完成鉴权后调用；`actor` 只写进记录的操作者字段。
+它不提供面向业务用户的写端点。写操作都是平台管理动作，由运营工具或宿主管理面在自己完成鉴权后调用；`actor` 只写进记录的操作者字段。唯一的例外是租户管理员批准组件反向权限的管理面 API，判定在控制器内完成，见「反向权限批准」。
 
 ## 宿主装配
 
@@ -18,6 +18,7 @@
 - Registry 与 Lifecycle 的集成事件类型和领域事件处理器。
 - 信任根所在的配置节与秘密解析策略。
 - 可选的进程内钩子解析器 `LifecycleRuntimeOptions.Hooks`：按组件 ID 与精确版本返回 `IPluginLifecycleHooks`，组件没有钩子时返回 null。本包不从数据库或制品内容加载程序集。
+- 管理面端点（诊断与反向权限批准）需要宿主装配的权限判定端口（Kun `IPermissionChecker`），平台主体另需 Authz 的超管旁路；缺哪一个都 fail-closed 为 404。
 
 ```csharp
 builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(LifecycleDbContext.Schema));
@@ -82,7 +83,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 租户安装状态为 `Entitled → Provisioning → Installed ⇄ Upgrading → Uninstalled → Purged`，没有 Enabled / Disabled：挂载与否只在 Registry 的 `scope_patches`（R34）。租户级方法由控制器自己进入目标租户的数据上下文，`tenant_plugin_installs`、`lifecycle_runs`、`mount_failures` 都是强制 RLS 的租户表。
 
 - `EntitleAsync` 记录授权，由 `qian.entitlement`（S1-ENT-001）的授予调用。`policy.required` 的平台组件恒视为已授权。
-- `ProvisionAsync` 开通当前 Active 修订，执行 `tenant-provision` 钩子。
+- `ProvisionAsync` 开通当前 Active 修订，执行 `tenant-provision` 钩子。权益之后还要核对反向权限批准，见下一节。
   - 已 Installed 时直接返回，不认领执行记录、不调钩子、不写记录。
   - 钩子失败时停在 Provisioning，重试沿用原目标版本。
   - Purged 之后重新开通会作废旧执行记录。
@@ -104,6 +105,32 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - 钩子返回值记入执行结果，上限 64 KiB，不得包含秘密或个人信息。
 - 钩子上下文已进入目标租户的 scope，可解析该 scope 可见的服务（如数据组件），不要求组件已挂载。
 
+## 反向权限批准（S1-AGT-002）
+
+组件版本在清单 `policy.permissions`（`platform`、`data`、`secrets`、`ui.connectSrc`）与 `policy.egress` 里声明要向平台申请的五类反向权限。声明随制品快照保存在 Registry 的 `plugin_artifacts.manifest`；Lifecycle 经注册表的受信端口按修订摘要读取，不在 `plugin_revisions` 另存一份。
+
+批准与权益是两道门，不合并：
+
+- 权益（`Entitled`）回答「买没买」，由 `EntitleAsync` 记录。
+- 批准回答「同不同意」，由租户管理员经 `ApprovePermissionsAsync` 写入本组件的租户表 `permission_approvals`（键为租户、组件、版本）。
+
+`ProvisionAsync` 与 `UpgradeAsync` 在权益之后、置 Provisioning / Upgrading 之前核对批准，与安装行用同一把锁：
+
+- `policy.required` 的平台组件、没有声明反向权限（或五类都为空）的组件不经批准。
+- 否则目标版本声明的每一项都须已批准。缺任一项为 422 `LIFECYCLE_PERMISSIONS_UNAPPROVED`，`missing` 按类别列出缺失项；不写任何记录，也不认领执行记录。
+- 目标版本没有自己的批准记录时，沿用该租户对该组件最近一次的批准。所以升级只有新增项才须重批，连续升级不会因中间版本没有记录而受阻。
+- `authentication: ON_USE` 在 S1 同样在开通与升级时核对（fail-closed）。
+
+批准 API（S1 只有 API，S2 才有 UI），由 `Qian.Lifecycle.AspNetCore` 的 `MapQianLifecycle` 映射：
+
+- `PUT /api/lifecycle/tenants/{tenantId}/plugins/{pluginId}/versions/{version}/permissions`：请求体是五类批准内容 `{ platform, data, egress, secrets: [{ name, scope }], ui: { connectSrc } }`，缺省的类别视为空。整份替换该版本的批准记录；内容不变时不写入，批准时间、批准人与行版本都不变。
+- `GET` 同一路径读取批准记录，没有记录为 404。
+- 判定：路径里的租户须等于宿主已建立的租户上下文，路径只用来核对、不用来选择租户。调用者须是该租户已验证的用户或服务主体（无委托），并经宿主的权限判定端口持 `qian.lifecycle:install:approve`（默认授予租户 Owner 与 Admin）。平台主体只经 Authz 的超管显式旁路（运营代批，`approvedVia = superadmin`），由运营宿主先选定已验证的目标租户，旁路把 `bypass = superadmin` 记入该租户审计链。无权限、跨租户、委托、Agent、缺判定端口、未安装的版本都与不存在同为 404（R32）。
+- 内容只在判定之后校验。请求体读不成（含未知成员，例如租户字段）为 `INPUT_INVALID`，pointer 为 `#`；形状不对或不是该版本声明过的项也是 `INPUT_INVALID`，pointer 指向请求体中的那一项。
+- 批准人取已验证主体，不由调用方指定。响应带 `Cache-Control: private, no-store`。
+- 可信平台插件（例如秘密解析的审批来源）经 `GetApprovedPermissionsAsync` 读取批准记录，调用方负责权限。
+- 批准与诊断两个权限点都在 `plugins/qian.lifecycle/metadata/permissions.json` 声明，`metadata/roles.json` 默认授予租户 Owner 与 Admin；Authz 从注册表的预装快照编译。
+
 ## 挂载、契约准入与诊断
 
 `MountAsync(scope, entry)` 经 Registry 的公开挂载写入 patch/v2 条目：同一事务写 `scope_patches` 与 `registry.scope.mounted.v1`，随后立即合入该 scope。带 `plugin` 的条目要求组件已开通、且版本与安装记录一致；预装的 `policy.required` 平台组件除外。
@@ -123,7 +150,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 
 `GET /api/lifecycle/diagnostics?scope=` 返回该 scope 的诊断，缺省是当前租户：
 
-- 判定：调用者须是该租户已验证的用户或服务主体（无委托），并经宿主装配的权限判定端口持有 `qian.lifecycle:diagnostics:read`（默认授予租户 Owner 与 Admin）。无权限、跨租户、缺判定端口都与不存在同为 404（R32）。
+- 判定：调用者须是该租户已验证的用户或服务主体（无委托），并经宿主装配的权限判定端口持有 `qian.lifecycle:diagnostics:read`（默认授予租户 Owner 与 Admin）。平台主体与批准 API 一样只经 Authz 的超管显式旁路（资源记为 `lifecycle/diagnostics:tenant:<id>`）。无权限、跨租户、缺判定端口都与不存在同为 404（R32）。
 - 内容：Registry 合入时的当前失败，以及经 Lifecycle 挂载或升级失败、已撤回的条目（组件修订与原因码）。
 - 响应带 `Cache-Control: private, no-store`。
 - 端点不挂插件门禁：scope 合入失败会收紧本 scope 的全部注册，诊断仍须可达。
@@ -148,10 +175,10 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 
 ## 数据与迁移
 
-上下文使用 schema `plugin_qian_lifecycle`，包含四张表：
+上下文使用 schema `plugin_qian_lifecycle`，包含五张表：
 
 - `plugin_revisions`：平台级目录，不带租户。
-- `tenant_plugin_installs`、`lifecycle_runs`、`mount_failures`：租户表，迁移复用 Data 的 SQL 生成器自动加 FORCE RLS 与两条策略。
+- `tenant_plugin_installs`、`lifecycle_runs`、`mount_failures`、`permission_approvals`：租户表，迁移复用 Data 的 SQL 生成器自动加 FORCE RLS 与两条策略。`permission_approvals` 由迁移 `PermissionApprovals` 新建，批准内容为规范化（每类去重、按序数排序）的 jsonb。
 
 迁移随包交付（`Migrations/`）。宿主必须在启动前以受限的迁移角色执行，因为 Data 的启动检查拒绝带着待执行迁移启动；应用连接使用非超级用户、无 BYPASSRLS 的角色。
 
@@ -176,10 +203,13 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
   - `GitOpsExecutorTests`：本机裸仓库 + 真实 K3s，片段经 `kubectl apply -k` 收敛后双条件回写，工作负载缩到 0 后回到 Progressing。
   - `LocalExecutorTests`：等价的开发态执行器。
   - `LifecycleUnitTests`：迁移与 RLS、片段生成、配置解析、幂等键。
+  - `PermissionApprovalTests`：五类声明随制品快照落库并经注册表端口读出；未批准的开通被拒且不写记录，逐项批准后开通，重复批准不改记录；无权限、跨租户、委托、Agent、未安装版本同为 404，内容校验只在判定之后；超管代批经旁路并记下目标租户与资源；`policy.required` 与无声明的组件免批；升级只在新增项时须重批。
+  - `TenantFieldInstallTests`：`tck/surfaces/cases.json` 中工具输入点名租户字段的 26 个反例（含 properties 之外的写法，S1-AGT-004）经 `InstallAsync` 全部失败（`INPUT_INVALID` / `REGISTRY_INPUT_INVALID`，pointer 与 fixture 相同），不登记修订、不留候选制品；只是含有 tenant 的名称照常安装。
 - `tests/Qian.Sample.Crm.Tests` 的 `LifecycleAcceptanceTests`：参考应用 1.0.0 / 1.0.1 / 1.1.0 三个预装修订，在真实 PostgreSQL、Kestrel 与 JWT 下覆盖：
   - A、B 开通与挂载，重复开通无副作用，卸载后 5 秒内 SDK 入口恢复 404。
   - 激活 n+1 后 A 升级、B 保持 n，平台级与租户级回切后 A 由 n 处理且升级期间写入的数据可读。
   - 破坏性 OpenAPI 契约在挂载、Reconciler 与升级三条路径上为 Failed，原因进入诊断端点。
+  - `PermissionApprovalHttpTests`：批准 API 经真实 JWT 与 RBAC，A 的 Owner 批准后才能开通，B 的使用者、跨租户与未安装版本同为 404，带租户字段的请求体为 `INPUT_INVALID`。
 - `tests/Qian.Capabilities.Tests` 的 `GrpcReflectionTests`：契约准入对 proto 契约套用 `GrpcContractPlugin`，没有反射对端时 `PRECONDITION_FAILED`，有对端时兼容版本 Ready。
 - `tests/Qian.Registry.Tests` 的 `ScopeMountTests`：公开挂载 / 卸载的 patch、Outbox 信封与 5 秒内 SDK 拦截恢复。
 
@@ -193,3 +223,13 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - `Retire` 不检查是否仍有租户停在该版本：租户安装行受 RLS 约束，平台操作不跨租户查询，平台超管旁路归 S1-AZ-003。
 - `Mount` 只接受当前租户的 tenant scope；app / agent-session 的归属证明尚未实现，保持拒绝。
 - 挂载失败时恢复挂载前的 patch，不让失败条目阻断整个 scope；失败原因经诊断端点给出。
+- 反向权限批准只有 API：管理 UI 归 S2。租户管理员的批准只记在 `permission_approvals`（批准人、渠道、时间），尚未写租户审计链，也不发集成事件；超管代批由 Authz 旁路记审计。
+- 批准记录还没有消费方：秘密解析、出站 egress 与外壳 CSP `connect-src` 仍按宿主配置生效，按批准记录收紧归后续接线。撤销只能整份替换为更小的内容，不影响已开通的租户，只影响之后的开通与升级。
+
+S1-RT-029 的 Registry 管理写入通过 `MountAtRevisionAsync` / `UnmountAtRevisionAsync` 复用 Mount / Unmount 核心，显式携带调用方修订，不用服务端读取的新版本覆盖预期值。重复卸载的禁用 patch 与墓碑在当前修订下幂等，旧修订仍拒绝；授权统一在 Registry 管理入口，内部受信任生命周期接口不直接暴露为匿名 HTTP。
+
+## 清单入口与代码派生
+
+`plugins/qian.lifecycle/.qian-plugin/plugin.json` 的稳定入口是 `LifecycleComponent`，允许 global scope，依赖 `Data`、`Registry` 与 `Config`，提供 `Lifecycle`。使用宿主登记的 `LifecycleRuntimeOptions`，未登记时采用空钩子解析器，再委托 `LifecyclePlugin`。
+
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

@@ -11,7 +11,7 @@ using Qian.Lifecycle;
 namespace Qian.Lifecycle.Migrations
 {
     [DbContext(typeof(LifecycleDbContext))]
-    internal partial class LifecycleDbContextModelSnapshot : ModelSnapshot
+    partial class LifecycleDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -202,6 +202,60 @@ namespace Qian.Lifecycle.Migrations
                         .HasDatabaseName("ix_mount_failures_tenant_id");
 
                     b.ToTable("mount_failures", "plugin_qian_lifecycle");
+
+                    b.HasAnnotation("Qian:MultiTenant", true);
+                });
+
+            modelBuilder.Entity("Qian.Lifecycle.PermissionApprovalRow", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("PluginId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("plugin_id");
+
+                    b.Property<string>("Version")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("version");
+
+                    b.Property<string>("Approved")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("approved");
+
+                    b.Property<DateTimeOffset>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at");
+
+                    b.Property<string>("ApprovedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("approved_by");
+
+                    b.Property<string>("ApprovedVia")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("approved_via");
+
+                    b.Property<int>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("row_version");
+
+                    b.HasKey("TenantId", "PluginId", "Version")
+                        .HasName("pk_permission_approvals");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_permission_approvals_tenant_id");
+
+                    b.ToTable("permission_approvals", "plugin_qian_lifecycle");
 
                     b.HasAnnotation("Qian:MultiTenant", true);
                 });

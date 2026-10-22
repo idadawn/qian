@@ -5,6 +5,9 @@
 ```ts
 
 // @public
+export function compilePattern(pattern: string, foldCase?: boolean): KeyPattern;
+
+// @public
 export function computeToolHash(tool: JsonValue): string;
 
 // @public
@@ -53,9 +56,25 @@ export class HotReloadSurfacePlugin<TContext extends SurfaceContext = SurfaceCon
 }
 
 // @public
+export function isSafeMarketplaceUrl(value: string): boolean;
+
+// @public
+export function isStable(name: string): boolean;
+
+// @public
 export type JsonValue = null | boolean | number | string | JsonValue[] | {
     [key: string]: JsonValue;
 };
+
+// @public
+export class KeyPattern {
+    constructor(source: string);
+    // (undocumented)
+    readonly source: string;
+    test(text: string): boolean;
+    // (undocumented)
+    toString(): string;
+}
 
 // @public
 export interface MarketplaceValidationResult {
@@ -84,6 +103,9 @@ export function parseSurface(file: string, content: string, markdown?: boolean, 
 
 // @public
 export function readSurfaceRuntimeDiagnostics(context: SurfaceDiagnosticContext): SurfaceRuntimeReport;
+
+// @public
+export function sameKey(left: string, right: string): boolean;
 
 // @public
 export interface SurfaceContext {
@@ -139,6 +161,26 @@ export interface SurfaceDocument {
     // (undocumented)
     name: string;
 }
+
+// @public
+export const surfaceErrorCodes: {
+    readonly syntax: "SURFACE_SYNTAX_INVALID";
+    readonly schema: "SURFACE_SCHEMA_INVALID";
+    readonly name: "SURFACE_NAME_MISMATCH";
+    readonly reference: "SURFACE_REFERENCE_UNKNOWN";
+    readonly path: "SURFACE_PATH_INVALID";
+    readonly policy: "SURFACE_POLICY_DENIED";
+    readonly secret: "SURFACE_SECRET_LITERAL";
+    readonly hash: "SURFACE_HASH_MISMATCH";
+    readonly signature: "SURFACE_SIGNATURE_INVALID";
+    readonly digest: "SURFACE_DIGEST_MISMATCH";
+    readonly installationBusy: "SURFACE_INSTALLATION_BUSY";
+    readonly modified: "SURFACE_LOCAL_MODIFIED";
+    readonly profile: "SURFACE_PROFILE_DENIED";
+    readonly recovery: "SURFACE_RECOVERY_REQUIRED";
+    readonly packageUnavailable: "SURFACE_PACKAGE_UNAVAILABLE";
+    readonly engine: "SURFACE_ENGINE_INCOMPATIBLE";
+};
 
 // @public (undocumented)
 export interface SurfaceParseResult {
@@ -254,6 +296,10 @@ export class SurfaceValidator {
     validateComponent(directory: string, options?: SurfaceValidationOptions): SurfaceValidationResult;
     // (undocumented)
     validateSchema(schema: string, file: string, data: JsonValue, traceId?: string): SurfaceDiagnostic[];
+}
+
+// @public
+export class UnsupportedPattern extends Error {
 }
 
 // @public

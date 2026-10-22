@@ -33,7 +33,7 @@ public static class QianEventsExtensions
         // AddQianData 以 TryAdd 登记 Kun 累加器；这里替换，两个端口解析到同一个 scoped 信封写入端。
         services.Replace(ServiceDescriptor.Scoped<IIntegrationEventBus>(sp => sp.GetRequiredService<QianEnvelopeOutboxWriter>()));
         services.Replace(ServiceDescriptor.Scoped<IOutboxWriter>(sp => sp.GetRequiredService<QianEnvelopeOutboxWriter>()));
-        services.TryAddSingleton<IEventsService>(sp => new EventsService(sp.GetRequiredService<IEventTypeRegistry>()));
+        services.TryAddSingleton<IEventsService>(sp => new EventsService(sp.GetRequiredService<IEventTypeRegistry>(), sp.GetService<EventSubscriptionRegistry>()));
         services.AddHostedService<EventsStartupCheck>();
         return services;
     }
@@ -51,19 +51,68 @@ public static class QianEventsExtensions
             throw new QianEventsException(EventsErrors.Misconfigured, "同一宿主只能登记一个事件 broker。");
         services.AddQianEvents();
         services.AddSingleton(new EventsBrokerBinding(brokerReference));
-        services.AddSingleton(sp => new RabbitMqBroker(() => resolveAmqpUri(sp) is { Length: > 0 } uri ? uri
-            : throw new QianEventsException(EventsErrors.Misconfigured, "broker 引用未解析出 AMQP 地址。"), sp.GetRequiredService<ILogger<RabbitMqBroker>>()));
+        var address = new EventsBrokerAddress(resolveAmqpUri);
+        services.AddSingleton(address);
+        services.AddSingleton(sp => new RabbitMqBroker(() => address.Resolve(sp), sp.GetRequiredService<ILogger<RabbitMqBroker>>()));
         services.Replace(ServiceDescriptor.Singleton<IIntegrationEventPublisher>(sp => new QianEnvelopePublisher(sp.GetRequiredService<RabbitMqBroker>())));
-        services.AddHostedService(sp => new QianOutboxRelay(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetRequiredService<IDataContextCatalog>(),
+        // 只订阅、不持有业务上下文的宿主（如网关）也经这里登记 broker：没有 AddQianData 时投递服务没有可领取的 Outbox。
+        services.AddHostedService(sp => new QianOutboxRelay(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<IDataContextCatalog>() ?? NoDataContexts.Instance,
             sp.GetRequiredService<IIntegrationEventPublisher>(), sp.GetRequiredService<IOptions<QianEventsOptions>>(), sp.GetRequiredService<TimeProvider>(),
             sp.GetRequiredService<ILogger<QianOutboxRelay>>(), sp));
+        return services;
+    }
+
+    /// <summary>
+    /// 登记消费端（S1-EVT-002）：<paramref name="service"/> 是订阅方服务名，<paramref name="subscribe"/> 里逐个 <c>Subscribe&lt;TEvent, THandler&gt;()</c>。
+    /// 消费连接与发布端分开（ClientProvidedName 为 qian.events.subscriber），AMQP 地址复用 <see cref="AddQianEventsBroker"/> 登记的引用；
+    /// 幂等记录默认写 Redis（宿主登记 IConnectionMultiplexer，或以 Kun 的 UseRedisIdempotency 登记 IProcessedMessageStore）。
+    /// 可以多次调用以追加订阅，服务名必须相同；缺少 broker、幂等存储或事件登记时宿主拒绝启动。
+    /// </summary>
+    public static IServiceCollection AddQianEventsSubscriber(this IServiceCollection services, string service, Action<QianEventsSubscriberBuilder> subscribe,
+        Action<QianEventsSubscriberOptions>? configure = null)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(subscribe);
+        try { _ = QianEventTopology.SubscriptionQueue(service, "s"); }
+        catch (ArgumentException error) { throw new QianEventsException(EventsErrors.Misconfigured, "订阅方服务名不合法：" + error.Message); }
+        services.AddQianEvents();
+        var options = services.AddOptions<QianEventsSubscriberOptions>();
+        if (configure is not null) options.Configure(configure);
+        var registry = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(EventSubscriptionRegistry))?.ImplementationInstance as EventSubscriptionRegistry;
+        if (registry is null)
+        {
+            registry = new EventSubscriptionRegistry(service);
+            services.AddSingleton(registry);
+            services.TryAddScoped<EventDeliverySlot>();
+            services.TryAddScoped(sp => sp.GetRequiredService<EventDeliverySlot>().Current
+                ?? throw new QianEventsException(EventsErrors.Misconfigured, "QianEventDelivery 只能在订阅器派发的消息作用域内解析。"));
+            services.AddHostedService(sp => new QianEventSubscriber(sp, sp.GetRequiredService<EventSubscriptionRegistry>(),
+                sp.GetRequiredService<IOptions<QianEventsSubscriberOptions>>(), sp.GetRequiredService<ILogger<QianEventSubscriber>>()));
+        }
+        else if (registry.Service != service)
+            throw new QianEventsException(EventsErrors.Misconfigured, "同一宿主的订阅方服务名必须一致：已登记 " + registry.Service + "。");
+        subscribe(new QianEventsSubscriberBuilder(services, registry));
         return services;
     }
 }
 
 internal sealed class EventsHostMarker;
 
+internal sealed class NoDataContexts : IDataContextCatalog
+{
+    public static readonly NoDataContexts Instance = new();
+
+    public IReadOnlyList<Type> ContextTypes => [];
+}
+
 internal sealed record EventsBrokerBinding(string? Reference);
+
+/// <summary>宿主登记的 AMQP 地址解析；发布端与消费端在首次连接时读取，值不进入组件清单。</summary>
+internal sealed class EventsBrokerAddress(Func<IServiceProvider, string> resolve)
+{
+    public string Resolve(IServiceProvider services) => resolve(services) is { Length: > 0 } uri ? uri
+        : throw new QianEventsException(EventsErrors.Misconfigured, "broker 引用未解析出 AMQP 地址。");
+}
 
 /// <summary>启动时校验装配并登记错误码；事件目录在这里构建一次，不合规的登记让宿主拒绝启动。</summary>
 internal sealed class EventsStartupCheck(IServiceProvider services, ErrorCatalog catalog, IOptions<QianEventsOptions> options) : IHostedService, IDisposable
@@ -77,6 +126,7 @@ internal sealed class EventsStartupCheck(IServiceProvider services, ErrorCatalog
         {
             _registrations.Add(catalog.Register(EventsErrors.Misconfigured));
             _registrations.Add(catalog.Register(EventsErrors.PublishRejected));
+            _registrations.Add(catalog.Register(EventsErrors.ConsumeRejected));
         }
         options.Value.Validate();
         if (options.Value.OutboxLock == OutboxLockMode.Redis && services.GetService<StackExchange.Redis.IConnectionMultiplexer>() is null)
@@ -104,11 +154,14 @@ internal sealed class EventsStartupCheck(IServiceProvider services, ErrorCatalog
     }
 }
 
-internal sealed class EventsService(IEventTypeRegistry registry) : IEventsService
+internal sealed class EventsService(IEventTypeRegistry registry, EventSubscriptionRegistry? subscriptions) : IEventsService
 {
     private readonly Lazy<IReadOnlyList<IntegrationEventDescriptor>> _catalog = new(() => IntegrationEventSchemas.Describe(registry));
+    private readonly Lazy<IReadOnlyList<EventSubscriptionDescriptor>> _subscriptions = new(() => subscriptions?.Describe(registry) ?? []);
 
     public IReadOnlyList<IntegrationEventDescriptor> Catalog => _catalog.Value;
+
+    public IReadOnlyList<EventSubscriptionDescriptor> Subscriptions => _subscriptions.Value;
 
     public IntegrationEventDescriptor? Find(string type) => Catalog.FirstOrDefault(item => string.Equals(item.Type, type, StringComparison.Ordinal));
 }

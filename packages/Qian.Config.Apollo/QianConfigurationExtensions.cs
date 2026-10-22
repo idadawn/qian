@@ -27,7 +27,7 @@ public static class QianConfigurationExtensions
             var bootstrap = bootstrapBuilder.Build();
             using var owner = (IDisposable)bootstrap;
             var settings = ReadApollo(bootstrap, options, basePath);
-            builder.Add(new QianApolloSource(settings.Options, settings.Environment, options));
+            builder.Add(new QianApolloSource(settings.Create, settings.Environment, settings.Cluster, settings.AppId, options));
         }
         AddOverrides(builder, options, reload: true);
         return builder;
@@ -63,7 +63,9 @@ public static class QianConfigurationExtensions
         builder.AddCommandLine(options.Arguments.ToArray());
     }
 
-    private static (ApolloOptions Options, string Environment) ReadApollo(IConfiguration bootstrap, QianConfigurationOptions options, string basePath)
+    // 校验委托绑定到每个 provider 自己的发布记录器：扫描与追加校验的结论原样返回给 Kun，同时记成「接受 / 拒绝」。
+    private static (Func<ApolloReleaseTracker, ApolloOptions> Create, string Environment, string Cluster, string AppId) ReadApollo(
+        IConfiguration bootstrap, QianConfigurationOptions options, string basePath)
     {
         var appId = Required(bootstrap, "Apollo:AppId");
         var environment = Required(bootstrap, "Apollo:Env").ToUpperInvariant();
@@ -85,25 +87,29 @@ public static class QianConfigurationExtensions
             SecretReference.Parse(accessKeyReference).Scope is not ("platform" or "dev") ||
             options.ResolveAccessKey is null)) throw Invalid("Apollo:AccessKey");
         var cache = bootstrap["Apollo:CacheDir"];
+        var cluster = bootstrap["Apollo:Cluster"] ?? "default";
+        if (string.IsNullOrWhiteSpace(cluster)) throw Invalid("Apollo:Cluster");
+        // 引导根在返回前释放，工厂里只用已读出的值。
+        var label = bootstrap["Apollo:Label"];
         var schema = options.ApolloConfigurationSchema?.Clone();
-        var apollo = new ApolloOptions
+        return (tracker => new ApolloOptions
         {
-            AppId = appId, ConfigServers = servers,
-            Cluster = bootstrap["Apollo:Cluster"] ?? "default",
-            Label = bootstrap["Apollo:Label"], Namespaces = namespaces,
+            AppId = appId, ConfigServers = servers, Cluster = cluster,
+            Label = label, Namespaces = namespaces,
             CacheDirectory = cache is null ? null : Path.Combine(Path.GetFullPath(cache, basePath), environment),
-            Validate = snapshot => SecretSafety.ScanConfiguration(snapshot, schema).Count == 0 &&
-                (options.ValidateApolloSnapshot?.Invoke(snapshot) ?? true),
-            ValidateNamespace = (_, snapshot) => SecretSafety.ScanConfiguration(snapshot, schema).Count == 0,
+            Validate = snapshot =>
+            {
+                var diagnostics = SecretSafety.ScanConfiguration(snapshot, schema);
+                return tracker.Merged(snapshot, diagnostics, diagnostics.Count == 0 && (options.ValidateApolloSnapshot?.Invoke(snapshot) ?? true));
+            },
+            ValidateNamespace = (name, snapshot) => tracker.Namespace(name, snapshot, SecretSafety.ScanConfiguration(snapshot, schema)),
             ResolveAccessKey = accessKeyReference is null ? null : () =>
             {
                 var value = options.ResolveAccessKey!(accessKeyReference);
                 return string.IsNullOrWhiteSpace(value)
                     ? throw new UnauthorizedAccessException("Apollo AccessKey 引用未解析，拒绝发送未签名请求。") : value;
             }
-        };
-        if (string.IsNullOrWhiteSpace(apollo.Cluster)) throw Invalid("Apollo:Cluster");
-        return (apollo, environment);
+        }, environment, cluster, appId);
     }
 
     private static int NamespaceOrder(string name)

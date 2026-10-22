@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus.DependencyInjection;
+using Kun.Mediator.DependencyInjection;
 using Kun.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -28,7 +29,8 @@ public sealed partial class PermissionCatalogPersistenceTests(PostgresFixture po
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
         var directory = Path.Combine(root!.FullName, "samples/Qian.Sample.Crm/metadata");
         var permissions = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(directory, "permissions.json")))!;
-        permissions[0]!["risk"]!["export"] = risk;
+        var export = permissions.AsArray().Single(resource => resource!["actions"]!.AsArray().Any(action => action!.GetValue<string>() == "export"))!;
+        export["risk"]!["export"] = risk;
         return new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata("qian.sample.crm", version,
             Json(permissions.ToJsonString()), Json(File.ReadAllText(Path.Combine(directory, "roles.json"))));
     }
@@ -99,7 +101,8 @@ public sealed partial class PermissionCatalogPersistenceTests(PostgresFixture po
     private IHost Host(Kun.Core.MultiTenancy.ITenantContext? tenant = null)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
-        builder.Services.AddSingleton<Kun.Core.MultiTenancy.ITenantContext>(tenant ?? new AsyncLocalTenantContext()); builder.Services.AddKunEventBus();
+        builder.Services.AddSingleton<Kun.Core.MultiTenancy.ITenantContext>(tenant ?? new AsyncLocalTenantContext()); builder.Services.AddKunEventBus(registrar => registrar.RegisterAuthzEvents());
+        builder.Services.AddKunMediator(mediator => mediator.AddQianAuthzEvents());
         builder.Services.AddQianData<AuthzDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuthzDbContext.Schema));
         return builder.Build();
     }

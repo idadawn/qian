@@ -1,0 +1,217 @@
+{
+  "cli": "4.21.5",
+  "style": "base-nova",
+  "baseColor": "neutral",
+  "cssVariables": true,
+  "registry": "https://ui.shadcn.com/r/styles/base-nova/{component}.json",
+  "components": {
+    "Button": [
+      "button"
+    ],
+    "IconButton": [
+      "button"
+    ],
+    "ButtonGroup": [
+      "button-group"
+    ],
+    "Input": [
+      "input"
+    ],
+    "Textarea": [
+      "textarea"
+    ],
+    "InputNumber": [
+      "input-group",
+      "button"
+    ],
+    "InputPassword": [
+      "input-group",
+      "button"
+    ],
+    "PinInput": [
+      "input-otp"
+    ],
+    "Checkbox": [
+      "checkbox"
+    ],
+    "Radio": [
+      "radio-group"
+    ],
+    "RadioGroup": [
+      "radio-group"
+    ],
+    "Switch": [
+      "switch"
+    ],
+    "Toggle": [
+      "toggle"
+    ],
+    "Segmented": [
+      "tabs",
+      "toggle-group"
+    ],
+    "Select": [
+      "select"
+    ],
+    "Combobox": [
+      "combobox"
+    ],
+    "Label": [
+      "label"
+    ],
+    "Field": [
+      "field"
+    ],
+    "Dialog": [
+      "dialog"
+    ],
+    "AlertDialog": [
+      "alert-dialog"
+    ],
+    "Sheet": [
+      "sheet"
+    ],
+    "Drawer": [
+      "drawer"
+    ],
+    "Popover": [
+      "popover"
+    ],
+    "Tooltip": [
+      "tooltip"
+    ],
+    "HoverCard": [
+      "hover-card"
+    ],
+    "Menu": [
+      "dropdown-menu"
+    ],
+    "DropdownMenu": [
+      "dropdown-menu"
+    ],
+    "ContextMenu": [
+      "context-menu"
+    ],
+    "Tabs": [
+      "tabs"
+    ],
+    "Accordion": [
+      "accordion"
+    ],
+    "Card": [
+      "card"
+    ],
+    "Separator": [
+      "separator"
+    ],
+    "ScrollArea": [
+      "scroll-area"
+    ],
+    "Resizable": [
+      "resizable"
+    ],
+    "Badge": [
+      "badge"
+    ],
+    "Tag": [
+      "badge"
+    ],
+    "Avatar": [
+      "avatar"
+    ],
+    "Skeleton": [
+      "skeleton"
+    ],
+    "Spinner": [
+      "spinner"
+    ],
+    "Progress": [
+      "progress"
+    ],
+    "Alert": [
+      "alert"
+    ],
+    "Toast": [
+      "toast"
+    ],
+    "Notification": [
+      "toast"
+    ],
+    "Empty": [
+      "empty"
+    ],
+    "Result": [
+      "empty",
+      "alert"
+    ],
+    "Breadcrumb": [
+      "breadcrumb"
+    ],
+    "Pagination": [
+      "pagination"
+    ],
+    "BackTop": [
+      "button"
+    ],
+    "FullScreen": [
+      "button"
+    ],
+    "Icon": [
+      "button"
+    ],
+    "Descriptions": [
+      "field"
+    ]
+  },
+  "sources": {
+    "accordion": "1ec19686c56b2df3c1ab4f7cf8c3aae03dbbf959dce207c7c12a9dcd1e1d3bb2",
+    "alert": "f253568242c1c69b343f12474002fdbe229f603158171c59e21c491ab79f2e6e",
+    "alert-dialog": "f679acf47722af0435957a886e2f70bfbdd1e9e8438f08e4285e8c53f2237997",
+    "avatar": "782659d874d45f3c886a7243353f8635f6a87991988947a1e37fe9a0f3483b42",
+    "badge": "d9fb280e266119c4b62a4c518e63152de27b094c68d3e5f8929d05bfb0c1bc6c",
+    "breadcrumb": "cbd2b85e7a0097438855ff1bba8ac0cc3d1229e4c94bda3d52176fd22ea2ac62",
+    "button": "313353436d0fcc8e44ab470adb614b9fd013d28626f624328ea0d66d41a6c81b",
+    "button-group": "8c091198a9a4fe7fa3359834087727addfd5ac4c1259689632220389215b33c1",
+    "card": "8ad3a18d36bda0598dc0e9aa96ea22854944d5443ee4946f1d173815e115375f",
+    "checkbox": "d1b341a2b439da009e42388cde8a829adcf55ecb0d447449271aacad752e73ba",
+    "combobox": "ccc44c4aa4afca181f04a174359689b1cd55989f511271ac738c79c881e90010",
+    "context-menu": "e21f114b58310cb4d14e24932d228923ad2dfaea39587659236728d59a8fe548",
+    "dialog": "7e96b921d921ee9fb7c53e9372b17e775d087be9788ce1d51cbcdbab2b0d4ba5",
+    "drawer": "40ebfe5567a498da849addbfb1e966fd147c0b7503523fb1c3ebad9df077a02d",
+    "dropdown-menu": "38eb2d79c390295e7038ed4c016543afdd5441611e9692f10c85f78434752a3f",
+    "empty": "1280f9207787f9e7c219f7181459387b5e103606b6d91872de33a7a9752ee7a7",
+    "field": "d7c372e8df76de0b4714c02497fefba29299e6baefb7c12fba289a2a374362bb",
+    "hover-card": "dbac09bf55d501e4f22e52dffe298f009b8cce8f1539902b3104a5c029163d0c",
+    "input": "dab990dfefa0ba78854ab6602ad074270dba9d7d1262184d9bfbb62bd990903b",
+    "input-group": "7e768d41f247b1a4a3b0d214453dbeb1c2150aba500f5c0037b0285dfbe6a899",
+    "input-otp": "e31fcd48744ea3c072d0046eb900b8635b9f01e978e9ff44b1e614b779ad0dde",
+    "label": "b3b7b21d2877838fc73713df48a47248392de04a3b3fafa8961369f33ab14530",
+    "pagination": "cc9f341b4c2599fe9b2b0a3dea86630b3fcfe3e1647185fd7d8d5a7a96da3c50",
+    "popover": "5fecff622f4eecc06e8be32bface11c59d529be5c0a1484c78c9e40530b2b7d0",
+    "progress": "2c104695a495968e9ee426039e291abc4fb2ff32f36b5faa4e8b450c2a4cc14c",
+    "radio-group": "62a1fa46c54ebbb71c84f09ebc5941dec41b0c75be3699b969eb5aae5820616d",
+    "resizable": "c45c4e1a32aefb83d60406366e2368b9d8a6e772406f8b964154e7202d6304f7",
+    "scroll-area": "6befabe60becf093bb0740e172e50447c2ae70d757abb08fa2d479b4f2a511ff",
+    "select": "4ba225fb838887a2493a8908774f1294ffbc2030af1e372425c6de76f598f0eb",
+    "separator": "8a1d9397433ccf70631104f377b0e778754582a74c93a57cf13a2f2dcba778bf",
+    "sheet": "db422e2934b79774850defd2ea12bf2d469a77f7237bf93ce0416bde87d8a610",
+    "sidebar": "146860c1f88e07170830573bdb62e202de87d12942c3fabb751ebe606ce56344",
+    "skeleton": "4c2af7fa9c645358a0fb188779deab6f0b981733b62befc25e18aaebea1350dc",
+    "spinner": "6916679a40ad1c7624520de5eaa7b337635e81f9a76413201267f8619844646f",
+    "switch": "d232e2ffcfa122c59099872bcb8395eaad36d42fa9d2e0e40382ad19994065e2",
+    "table": "300dc171ff0e09543dce0787f43a3ceb0d168fa800eaecb98b6c5630f3c6d7e9",
+    "tabs": "958b817b256cffae986d046168b70dd0153d542b4c521ee8bbdda349010011ef",
+    "textarea": "82601c91ffc6c727d924162c78d7cb853114bcced4e2eb922a68ca12d4239c0f",
+    "toast": "55d80cff3e6734c679f106ca3eaf2899711a7e49222af10a9f1dcd393d383dcc",
+    "toggle": "039be815aed401e7e652271040fad53286ffa734743381a65f84ac61cb2ea4db",
+    "toggle-group": "3bfc0381e148d26807d68d74774d594403ea6fead2f0b7c11d4c928d9d1dc495",
+    "tooltip": "f83d5f511812573f4ac98b866d397a46fda0f27eeb0af0ea89af01969eefbc5a"
+  },
+  "differences": [
+    "primary 与 ring 保留品牌蓝；控件边界 3:1、文字 4.5:1 优先于基准颜色。",
+    "使用系统字体；不下载字体。",
+    "Button 维持既有 API，尺寸按任务要求为 32 / 36 / 40px。",
+    "复合组件沿用 yue API、data-slot、testId、i18n 与 Base UI 1.8；采用对应基础组件的样式配方。",
+    "弹层用 Base UI starting-style / ending-style 过渡；reduced-motion 可关闭动效。"
+  ]
+}

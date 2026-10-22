@@ -19,7 +19,7 @@ namespace Qian.Sample.Crm.Tests;
 public sealed partial class CustomerCommandTests
 {
     // R68 的 TCK 平台组合包宿主装配了登记期契约检查（AddQianCapabilities）：容器里只有一个检查实例，组件上下文经宿主服务拿到同一个；
-    // 不合格的契约在该宿主下于登记期被拒，组件挂载失败。宿主漏掉装配时 SDK 不做检查，同样的组件会挂载成功。
+    // 不合格的契约在该宿主下于登记期被拒，组件挂载失败。platform 宿主漏掉装配时 Capabilities 组件拒绝挂载，不能退化为首次请求才检查。
     [Fact]
     public async Task TCK平台组合包宿主_容器里的契约检查是宿主单例且组件上下文共用_不合格契约在登记期被拒()
     {
@@ -157,7 +157,11 @@ public sealed partial class CustomerCommandTests
                 Assert.Equal("NOT_FOUND", (await missingRegistry.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("code").GetString());
                 using var current = tenant.BeginScope(A); await using var unchanged = await data.OpenAsync<CrmDbContext>(Ct);
                 Assert.Equal(customers, await unchanged.Context.Customers.CountAsync(Ct));
-                Assert.Equal(auditA, (await loader.GetContext("audit", ScopeKey.Global).Audit().VerifyAsync(Ct)).CheckedEntries);
+                // 命令管道没有执行，链上没有新的命令审计；只多出 HTTP PEP 的放行决策日志（S1-AZ-004，判定在注册表缺失被发现之前完成）。
+                var audit = loader.GetContext("audit", ScopeKey.Global).Audit();
+                var extra = (await audit.ReadAsync(auditA, 10, cancellationToken: Ct)).Select(entry => entry.Record).ToArray();
+                Assert.All(extra, record => Assert.Equal((Qian.Authz.Abstractions.AuthzEnforcement.DecisionCapabilityId, "allowed"), (record.CapabilityId, record.Result)));
+                Assert.Equal(auditA + extra.Length, (await audit.VerifyAsync(Ct)).CheckedEntries);
             }
             await host.App.StopAsync(Ct); Assert.Empty(loader.DumpConfig());
             reports[profile + "/" + client.GetString()] = JsonSerializer.SerializeToElement(new { observations, customers, outbox, auditA, auditB, clean = loader.DumpConfig().Count == 0 });

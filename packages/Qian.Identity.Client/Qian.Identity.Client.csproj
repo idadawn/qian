@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 组件清单的 x-aot 由 tools/Qian.Identity.Client.AotSmoke 的 NativeAOT 冒烟背书（S1-IDP-014）；gateway 整体的 NativeAOT 验收归 S1-GW-001 / S1-DEP-008（S1-DEC-029）。 -->
+  <PropertyGroup><IsPackable>true</IsPackable><IsAotCompatible>true</IsAotCompatible><Description>依赖方（RP）接入：服务端授权码 + PKCE 换取、qian.sid Cookie 会话、刷新与 discovery 定期刷新，以及下游 S2S 令牌校验；可对接任意 OIDC 发行方。</Description></PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
+    <ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <PackageReference Include="Kun.Identity" />
+    <PackageReference Include="Kun.Identity.AspNetCore" />
+    <PackageReference Include="Kun.Security" />
+    <InternalsVisibleTo Include="Qian.Identity.Client.Tests" />
+  </ItemGroup>
+</Project>

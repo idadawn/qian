@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Qian 文件组件的服务键、能力门面、上传策略与存储后端注册表、DTO、错误码与集成事件。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
+    <PackageReference Include="Kun.EventBus.Abstractions" />
+  </ItemGroup>
+</Project>

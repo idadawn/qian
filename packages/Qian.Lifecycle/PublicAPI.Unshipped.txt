@@ -12,3 +12,7 @@ Qian.Lifecycle.LifecycleRuntimeOptions.Hooks.init -> void
 Qian.Lifecycle.LifecycleRuntimeOptions.LifecycleRuntimeOptions() -> void
 const Qian.Lifecycle.LifecycleDbContext.Schema = "plugin_qian_lifecycle" -> string!
 static Qian.Lifecycle.LifecycleEventHandlers.AddQianLifecycleEvents(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!
+Qian.Lifecycle.LifecycleComponent
+Qian.Lifecycle.LifecycleComponent.LifecycleComponent() -> void
+Qian.Lifecycle.LifecycleComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Lifecycle.LifecycleComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

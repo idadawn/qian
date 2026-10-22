@@ -46,11 +46,11 @@ public sealed partial class PermissionCatalogPersistenceTests
         var http = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([
             new Claim("sub", "shared-id"), new Claim("tenant_id", "tenant-a"), new Claim("principal_kind", kind)], "validated")) };
         builder.Services.AddSingleton<ICurrentUser>(new JwtCurrentUser(new KindBoundaryAccessor(http)));
-        builder.Services.AddSingleton<ITenantContext>(tenant); builder.Services.AddSingleton(registry); builder.Services.AddKunEventBus();
+        builder.Services.AddSingleton<ITenantContext>(tenant); builder.Services.AddSingleton(registry); builder.Services.AddKunEventBus(registrar => registrar.RegisterAuthzEvents());
         builder.Services.AddQianData<AuthzDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuthzDbContext.Schema));
         builder.Services.AddSingleton<IPermissionChecker>(sp => new RbacPermissionChecker(sp.GetRequiredService<IDataService>(), tenant, registry));
         builder.Services.AddSingleton<KindBoundaryCounter>();
-        builder.Services.AddKunMediator(builder => builder.AddAuthorizedHandler<KindBoundaryCommand, Result<int>, KindBoundaryHandler>(Result<int>.Fail));
+        builder.Services.AddKunMediator(builder => builder.AddQianAuthzEvents().AddAuthorizedHandler<KindBoundaryCommand, Result<int>, KindBoundaryHandler>(Result<int>.Fail));
         return builder.Build();
     }
     private sealed class KindBoundaryAccessor(HttpContext context) : IHttpContextAccessor { public HttpContext? HttpContext { get; set; } = context; }

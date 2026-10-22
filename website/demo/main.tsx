@@ -18,7 +18,7 @@ const query = new URLSearchParams(location.search);
 const name = query.get('component') ?? 'Button';
 const initialState = query.get('state') ?? (name === 'Tokens' ? 'Light' : 'Default');
 const themes = ['light', 'dark'] as const;
-const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空' };
+const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空', Compact: '紧凑' };
 const modules: Record<string, unknown> = { react: React, '@idadawn/yue-core': Core, '@idadawn/yue-form': Form, '@idadawn/yue-data': Data, '@idadawn/yue-sdk': Sdk, '@idadawn/yue-tokens': { TOKEN_REGISTRY } };
 const states = [...scenarios, ...formScenarios, ...dataScenarios].filter(s => s.component === name);
 let editorPromise: Promise<void> | undefined;
@@ -37,7 +37,7 @@ async function loadEditor() {
   return editorPromise;
 }
 function Tokens() {
-  return <div><h1 className="mb-4 text-xl font-semibold">yue 设计令牌</h1><div className="grid grid-cols-2 gap-3">{TOKEN_REGISTRY.semantics.filter(token => token.kind === 'color').map(token => <div key={token.name} className="rounded-lg p-4" style={{ background: `oklch(var(${token.contrastWith}))`, color: `oklch(var(${token.name}))` }}><strong className="break-all text-sm">{token.name}</strong><p className="mt-2 text-xs">{token.meaning}</p></div>)}</div><h2 className="mt-6 font-semibold">组件令牌</h2><dl>{TOKEN_REGISTRY.components.map(token => <div key={token.name}><dt>{token.name}</dt><dd>{token.meaning}：{token.value}</dd></div>)}</dl></div>;
+  return <div><h1 className="mb-4 text-xl font-semibold">yue 设计令牌</h1><div className="grid grid-cols-2 gap-3">{TOKEN_REGISTRY.semantics.filter(token => token.kind === 'color').map(token => <div key={token.name} className="rounded-lg p-4" style={token.contrast === 'text' ? { background: `oklch(var(${token.contrastWith}))`, color: `oklch(var(${token.name}))` } : { background: 'var(--background)', color: 'var(--foreground)', border: `3px solid oklch(var(${token.name}))` }}><strong className="break-all text-sm">{token.name}</strong><p className="mt-2 text-xs">{token.meaning}</p></div>)}</div><h2 className="mt-6 font-semibold">组件令牌</h2><dl>{TOKEN_REGISTRY.components.map(token => <div key={token.name}><dt>{token.name}</dt><dd>{token.meaning}：{token.value}</dd></div>)}</dl></div>;
 }
 class Boundary extends React.Component<{ children: React.ReactNode }, { error: string }> {
   state = { error: '' };

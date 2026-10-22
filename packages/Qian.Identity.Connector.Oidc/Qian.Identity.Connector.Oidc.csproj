@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable><Description>通用 OIDC 上游连接器：授权码 + PKCE，校验 id_token 签名、iss、aud 与 nonce；只依赖身份 Definition，不依赖身份服务实现。</Description></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
+    <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <InternalsVisibleTo Include="Qian.Identity.Connector.Oidc.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
+    <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

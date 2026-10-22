@@ -36,11 +36,14 @@
     <PackageVersion Include="Kun.EventBus" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Validation" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Identity" Version="[$(KunVersion)]" />
+    <PackageVersion Include="Kun.Identity.AspNetCore" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Security" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Gateway" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Infrastructure" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Storage" Version="[$(KunVersion)]" />
     <PackageVersion Include="Kun.Storage.Abstractions" Version="[$(KunVersion)]" />
+    <!-- qian.files 的 local 后端（S1-FILE-001）；s3 / oss 后端归 S1-FILE-002。 -->
+    <PackageVersion Include="Kun.Storage.Local" Version="[$(KunVersion)]" />
     <!-- 授权快照缓存（qian.authz，PRD 7.5「Redis，TTL 10 分钟」）：内存与 Redis 两种后端。 -->
     <PackageVersion Include="Kun.Caching" Version="[$(KunVersion)]" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
@@ -52,6 +55,8 @@
   <ItemGroup Label="Data">
     <PackageVersion Include="OpenIddict.Server.AspNetCore" Version="7.7.2" />
     <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.7.2" />
+    <!-- 与 OpenIddict 7.7.2 传递引入的版本一致，通用 OIDC 连接器用它验 id_token。 -->
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.19.2" />
     <PackageVersion Include="Grpc.AspNetCore.Server" Version="2.67.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.67.0" />
     <PackageVersion Include="Grpc.Reflection" Version="2.67.0" />

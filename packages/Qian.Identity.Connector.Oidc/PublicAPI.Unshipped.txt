@@ -1,0 +1,39 @@
+#nullable enable
+Qian.Identity.Connector.Oidc.OidcConnectorOptions
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Check() -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.QianFieldError!>!
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.ClientId.get -> string!
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.ClientId.init -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.ClientSecret.get -> string!
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.ClientSecret.init -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.DisplayName.get -> string!
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.DisplayName.init -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Issuer.get -> string!
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Issuer.init -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Name.get -> string!
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Name.init -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.OidcConnectorOptions() -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.RequireHttps.get -> bool
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.RequireHttps.init -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Scopes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Scopes.init -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Terminals.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Terminals.init -> void
+Qian.Identity.Connector.Oidc.OidcConnectorOptions.Validate() -> void
+Qian.Identity.Connector.Oidc.OidcConnectorPlugin
+Qian.Identity.Connector.Oidc.OidcConnectorPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Connector.Oidc.OidcConnectorPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Identity.Connector.Oidc.OidcConnectorPlugin.OidcConnectorPlugin() -> void
+Qian.Identity.Connector.Oidc.OidcConnectorPlugin.OidcConnectorPlugin(Qian.Config.ISecretResolver! secrets, System.Net.Http.HttpMessageHandler? handler = null) -> void
+Qian.Identity.Connector.Oidc.OidcIdentityConnector
+Qian.Identity.Connector.Oidc.OidcIdentityConnector.BeginSignInAsync(Qian.Identity.Abstractions.ConnectorContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.ChallengeResult!>!
+Qian.Identity.Connector.Oidc.OidcIdentityConnector.CompleteSignInAsync(Qian.Identity.Abstractions.ConnectorCallback! callback, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Qian.Identity.Abstractions.ExternalAssertion!>!
+Qian.Identity.Connector.Oidc.OidcIdentityConnector.Descriptor.get -> Qian.Identity.Abstractions.ConnectorDescriptor!
+Qian.Identity.Connector.Oidc.OidcIdentityConnector.Dispose() -> void
+Qian.Identity.Connector.Oidc.OidcIdentityConnector.OidcIdentityConnector(Qian.Identity.Connector.Oidc.OidcConnectorOptions! options, Qian.Config.ISecretResolver! secrets, System.Net.Http.HttpMessageHandler! handler, System.TimeProvider? clock = null) -> void
+override Qian.Identity.Connector.Oidc.OidcConnectorOptions.ToString() -> string!
+override Qian.Identity.Connector.Oidc.OidcIdentityConnector.ToString() -> string!
+static Qian.Identity.Connector.Oidc.OidcConnectorOptions.FromConfig(System.Text.Json.JsonElement config) -> Qian.Identity.Connector.Oidc.OidcConnectorOptions!
+Qian.Identity.Connector.Oidc.OidcConnectorComponent
+Qian.Identity.Connector.Oidc.OidcConnectorComponent.OidcConnectorComponent() -> void
+Qian.Identity.Connector.Oidc.OidcConnectorComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Identity.Connector.Oidc.OidcConnectorComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

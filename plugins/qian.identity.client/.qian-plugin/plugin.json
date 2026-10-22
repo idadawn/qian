@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.identity.client",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.identity.client",
+  "description": "身份依赖方组件：服务端授权码 + PKCE 换取、qian.sid Cookie 会话与刷新，下游 S2S 令牌按受众校验；可对接任意 OIDC 发行方",
   "author": {
     "name": "Qian"
   },
@@ -12,16 +12,60 @@
     "category": "platform"
   },
   "inject": [],
-  "provides": [],
+  "provides": [
+    "Identity"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
     "authentication": "ON_INSTALL",
-    "required": false
+    "required": false,
+    "permissions": {
+      "secrets": [
+        {
+          "name": "identity/*",
+          "scope": "platform"
+        },
+        {
+          "name": "identity/*",
+          "scope": "dev"
+        }
+      ]
+    }
   },
   "scopes": [
-    "global",
-    "tenant"
+    "global"
   ],
-  "x-skeleton": true
+  "engines": {
+    "kun": ">=2026.10.14"
+  },
+  "x-skeleton": true,
+  "x-aot": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Identity.Client.IdentityClientComponent, Qian.Identity.Client",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.identity.client",
+        "source": "Qian.Identity.Client.IdentityClientComponent, Qian.Identity.Client",
+        "sha256": "762a4badbf0a3e0a1e0ac69716d9c1fa93bb560bf3e34bfbdc9f89472f66ebb8",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
 }

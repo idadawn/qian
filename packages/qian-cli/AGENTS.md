@@ -5,7 +5,7 @@
 - 参数错误也输出统一 ErrorDetail，不拼 { error: ... }。
 
 - 市场来源必须先验 Ed25519 签名与 digest，再复用组件校验器；不 checkout 或执行来源内容。未验证市场只允许显式选择的 community 无代码组件。
-- `add` 已接入真实包管理器、声明 digest、实际还原归档复核和 `--surfaces` / `--no-code` 投影；私有源已发布组件的真实安装、运行与逆序卸载由 test/private-feed.e2e.mjs 验证（需 QIAN_FEED_TOKEN，不随 `pnpm test` 运行）。组合层复杂边界、一键简写、引擎版本兼容、包原生签名/provenance、租户 scope 与中断恢复仍未完成。不能用通用包或临时包测试替代真实命名 Provider、私有包族发布或平台权限验收。
+- `add` 已接入真实包管理器、声明 digest、实际还原归档复核和 `--surfaces` / `--no-code` 投影；私有源已发布组件的真实安装、运行与逆序卸载由 test/private-feed.e2e.mjs 验证（需 QIAN_FEED_TOKEN，不随 `pnpm test` 运行）。已支持实际宿主 engines 比对、安装末检与有证据的中断恢复；组合层复杂边界、一键简写与包原生签名/provenance（S1-RT-036）仍未完成；租户 scope 已提供单条运营 HTTP 写入，拒绝多条远端操作。不能用通用包或临时包测试替代真实命名 Provider、私有包族发布或平台权限验收。
 - 读包令牌只经环境变量与 NuGet.Config 的 %VAR% 引用传递，不写文件、不出现在输出里。
 - 包管理器停止状态不明确时，保留安装锁、日志和备份，不能一边有进程写文件一边回滚。市场校验不得因代码安装而放宽；反向权限、版本和来源均保留在可审阅计划中。
 - 包管理器命令一律经 runPackageCommand 运行，超时取 packageCommandTimeout()（QIAN_PACKAGE_TIMEOUT，缺省 600 秒），不在调用处写死；只有真正超时的诊断提示加长超时。预检还原不加 --disable-parallel。

@@ -27,7 +27,8 @@
   "type": "object",
   "properties": {
     "store": {
-      "type": "string"
+      "type": "string",
+      "const": "pg"
     }
   },
   "additionalProperties": false,
@@ -323,21 +324,31 @@
 
 ```json
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "issuer": {
-      "type": "string"
+      "type": "string",
+      "description": "发行方的规范 issuer，必须与宿主 IdentityClientOptions.Authority 一致（末尾斜杠不计）；只用于核对，不从配置推导发行方地址。"
     },
     "clientId": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "在发行方登记的客户端标识，必须与宿主 IdentityClientOptions.ClientId 一致。"
     },
     "clientSecret": {
       "type": "string",
+      "description": "机密客户端的密钥引用（secretRef，platform 或 dev），第一次换码时经 Config 的密钥策略解析，不写进组件配置；公开客户端省略。",
+      "pattern": "^secretRef://(platform|dev)/[^\\s?#]\u002B$",
       "x-qian-sensitive": true
     }
   },
-  "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "required": [
+    "issuer",
+    "clientId"
+  ],
+  "additionalProperties": false
 }
 ```
 
@@ -351,7 +362,8 @@
 
 ```json
 {
-  "advancedMode": false
+  "advancedMode": false,
+  "decisionLogSampling": 1
 }
 ```
 
@@ -376,6 +388,13 @@
       "not": {
         "pattern": "[^a-z0-9_]"
       }
+    },
+    "decisionLogSampling": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1,
+      "description": "放行判定写入决策审计（decision_logs）的采样比例，0–1，缺省 1 全记；拒绝不受采样影响、必记（PRD 7.5）。"
     }
   },
   "additionalProperties": false,
@@ -476,16 +495,19 @@
             "local",
             "oss",
             "s3"
-          ]
+          ],
+          "description": "按名称选用 Files.Backends 中登记的存储后端。S1 只登记 local；oss / s3 由 S1-FILE-002 接入，选用未登记的后端在挂载时报 INPUT_INVALID。"
         },
         "root": {
-          "type": "string"
+          "type": "string",
+          "description": "local 必填：对象根目录（绝对路径）。"
         },
         "bucket": {
           "type": "string"
         },
         "endpoint": {
-          "type": "string"
+          "type": "string",
+          "description": "local 必填：宿主映射直传 / 直下端点的公开基址（绝对 http(s) 地址，路径与 MapQianFiles 的 TransferPath 一致）；oss / s3：对象存储服务端点。"
         },
         "accessKey": {
           "type": "string",
@@ -503,12 +525,51 @@
       "properties": {
         "perTenantBytes": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "租户字节配额的平台默认值；租户覆盖经租户配置（ITenantSettings）写入，优先于此值。"
         }
       },
       "additionalProperties": false,
       "default": {
         "perTenantBytes": 10737418240
+      }
+    },
+    "policies": {
+      "type": "array",
+      "description": "平台默认上传策略；组件也可在 Apply 中经 IFileService.Policies 登记自己的用途。用途形如 \u003C组件 ID\u003E/\u003C名称\u003E，组件 ID 进入存储键。",
+      "items": {
+        "type": "object",
+        "required": [
+          "purpose",
+          "allowedTypes",
+          "maxSize"
+        ],
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)\u002B/[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$"
+          },
+          "allowedTypes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1099511627776
+          },
+          "maxCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          }
+        },
+        "additionalProperties": false
       }
     }
   },
@@ -558,6 +619,9 @@
       "items": {
         "type": "string"
       }
+    },
+    "env": {
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -568,8 +632,6 @@
 ## global/events
 
 组件：` qian.events@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
-
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
 
 ### 生效配置
 

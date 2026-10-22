@@ -103,5 +103,44 @@
       "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
       "pointer": "#/metadata/a~1b/c~0d/%E5%90%8D"
     }
+  },
+  {
+    "name": "连接器绑定冲突 409：外部身份已绑到同租户的其他账号，不透露对方",
+    "data": {
+      "type": "https://qian.dev/problems/business/AUTH_BINDING_CONFLICT",
+      "title": "外部身份已被关联",
+      "status": 409,
+      "detail": "该企业身份已在本租户关联到其他账号。",
+      "instance": "/api/identity/connector-flows/0199f2a4-5c1e-7d3a-9b2f-3c4d5e6f7a8b/bind",
+      "code": "AUTH_BINDING_CONFLICT",
+      "message": "该企业身份已在本租户关联到其他账号。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+    }
+  },
+  {
+    "name": "连接器绑定票据过期 422",
+    "data": {
+      "type": "https://qian.dev/problems/business/AUTH_BINDING_EXPIRED",
+      "title": "关联请求已超时",
+      "status": 422,
+      "detail": "关联请求已超时，请重新登录。",
+      "instance": "/api/identity/connector-flows/0199f2a4-5c1e-7d3a-9b2f-3c4d5e6f7a8b/bind",
+      "code": "AUTH_BINDING_EXPIRED",
+      "message": "关联请求已超时，请重新登录。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+    }
+  },
+  {
+    "name": "统一回调的 state 被篡改或不属于当前浏览器 422",
+    "data": {
+      "type": "https://qian.dev/problems/business/AUTH_CONNECTOR_STATE_INVALID",
+      "title": "登录请求已失效",
+      "status": 422,
+      "detail": "登录请求已失效或被篡改，请重新开始。",
+      "instance": "/connect/callback/oidc",
+      "code": "AUTH_CONNECTOR_STATE_INVALID",
+      "message": "登录请求已失效或被篡改，请重新开始。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+    }
   }
 ]

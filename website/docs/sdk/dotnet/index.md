@@ -4,7 +4,7 @@ description: Qian.Runtime 的编程模型：插件、共享上下文 ctx、服�
 part: sdk
 project: qian
 audience: [developer]
-updated: 2026-10-15
+updated: 2026-10-22
 ---
 
 # 后端 SDK（.NET）
@@ -65,7 +65,7 @@ public interface IPluginContext
 }
 ```
 
-实现类用 `[QianPlugin("<component-id>")]` 标注，`Qian.Plugin.Sdk` 的源生成器据此派生清单里的 `runtime.entry`、`inject[]` 与 `provides[]`。`Provide` 底层是 .NET DI keyed services 的可撤销封装；跨进程的集成事件由 [qian.events](/components/platform/qian.events) 桥接到 Kun 的 Mediator + Outbox。
+组件入口用 `[QianPlugin("<component-id>")]` 标注，源生成器派生 `runtime.entry`、`inject[]`、`provides[]` 以及配置、权限、事件和工具表面。同程序集支持多个不同组件 ID，每个组件保持唯一清单；工具按清单 ID 选择对应元数据。已派生、手写字段和 S2 边界见[能力与唯一清单](/sdk/dotnet/capabilities)。`Provide` 的登记归属当前插件的 scope 与可撤销生命周期；跨进程集成事件由 [qian.events](/components/platform/qian.events) 桥接到 Kun 的 Mediator + Outbox。
 
 ## 示例
 

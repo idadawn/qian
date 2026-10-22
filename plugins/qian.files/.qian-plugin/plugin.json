@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.files",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.files",
+  "description": "多租户文件组件：服务端生成租户前缀存储键，按租户配额与用途上传策略签发短时直传与附件下载地址，完成时服务端校验大小、SHA-256 与类型；S1 只接 local 后端",
   "author": {
     "name": "Qian"
   },
@@ -11,17 +11,68 @@
     "displayName": "files",
     "category": "platform"
   },
-  "inject": [],
-  "provides": [],
+  "surfaces": {
+    "tools": "./tools",
+    "metadata": "./metadata",
+    "schemas": "./schemas"
+  },
+  "inject": [
+    "Data"
+  ],
+  "provides": [
+    "Files",
+    "Files.Backends:local"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
     "authentication": "ON_INSTALL",
-    "required": false
+    "required": false,
+    "profiles": [
+      "platform",
+      "standalone"
+    ]
   },
   "scopes": [
     "global",
     "tenant"
   ],
-  "x-skeleton": true
+  "engines": {
+    "kun": ">=2026.10.14"
+  },
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Files.FilesPlugin, Qian.Files",
+    "configSchema": "./schemas/config.schema.json",
+    "dbSchema": "plugin_qian_files",
+    "nuget": [
+      {
+        "id": "Qian.Files.Abstractions",
+        "version": "0.1.0"
+      },
+      {
+        "id": "Qian.Files",
+        "version": "0.1.0"
+      }
+    ]
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry"
+    ],
+    "tools": [
+      "tools/complete-upload.json",
+      "tools/delete.json",
+      "tools/download-url.json",
+      "tools/get.json",
+      "tools/presign-upload.json",
+      "tools/quota.json"
+    ],
+    "metadata": {}
+  }
 }

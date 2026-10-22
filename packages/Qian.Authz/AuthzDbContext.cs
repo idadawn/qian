@@ -24,6 +24,7 @@ public class AuthzDbContext : QianDbContext
     internal DbSet<RoleGrantRow> Grants => Set<RoleGrantRow>();
     internal DbSet<TenantPolicyInstallRow> PolicyInstalls => Set<TenantPolicyInstallRow>();
     internal DbSet<TenantAuthzRevisionRow> Revisions => Set<TenantAuthzRevisionRow>();
+    internal DbSet<SubjectIdentityRevisionRow> SubjectRevisions => Set<SubjectIdentityRevisionRow>();
     // 查询过滤器读取当前 DbContext 成员，不捕获首次建模时的访问器。
     private string? ScopeTenant => TenantIdForModelCacheKey;
 
@@ -76,6 +77,13 @@ public class AuthzDbContext : QianDbContext
             // 租户内任一角色、绑定、授权或策略安装变更都在同一事务里递增；判定快照缓存以它为键，跨宿主立即失效。
             entity.ToTable("tenant_authz_revisions"); entity.HasKey(row => row.TenantId);
             entity.Property(row => row.TenantId).HasMaxLength(200); entity.Property(row => row.UpdatedBy).HasMaxLength(200).IsRequired();
+        });
+        modelBuilder.Entity<SubjectIdentityRevisionRow>(entity =>
+        {
+            // 服务端见过的该主体最高 identity_revision（来自已验证令牌）：身份组件递增修订、客户端刷新令牌后，旧令牌低于此值即拒绝（PRD 7.4 失效传播）。
+            entity.ToTable("subject_identity_revisions"); entity.HasKey(row => new { row.TenantId, row.SubjectType, row.SubjectId });
+            entity.Property(row => row.TenantId).HasMaxLength(200); entity.Property(row => row.SubjectType).HasMaxLength(32); entity.Property(row => row.SubjectId).HasMaxLength(200);
+            entity.Property(row => row.IdentityRevision).IsConcurrencyToken();
         });
         modelBuilder.Entity<PermissionCatalogRow>(entity =>
         {
@@ -181,11 +189,24 @@ internal sealed class TenantPolicyInstallRow : Kun.Core.Domain.IMultiTenant
     public int Revision { get; set; }
     public string UpdatedBy { get; set; } = "";
 }
-internal sealed class TenantAuthzRevisionRow : Kun.Core.Domain.IMultiTenant
+// 租户授权修订行同时是授权事件的聚合根：每次写入递增修订并在同一工作单元发出 authz.grant.changed.v1 / authz.role.changed.v1。
+internal sealed class TenantAuthzRevisionRow : Kun.Core.Domain.IMultiTenant, Kun.Core.Domain.IAggregateRoot
 {
     public string TenantId { get; set; } = "";
     public long Revision { get; set; }
     public string UpdatedBy { get; set; } = "";
+    private readonly List<Kun.Core.Domain.IDomainEvent> _events = [];
+    public IReadOnlyCollection<Kun.Core.Domain.IDomainEvent> DomainEvents => _events;
+    public void ClearDomainEvents() => _events.Clear();
+    internal void Raise(AuthzChange change) => _events.Add(change);
+}
+internal sealed class SubjectIdentityRevisionRow : Kun.Core.Domain.IMultiTenant
+{
+    public string TenantId { get; set; } = "";
+    public string SubjectType { get; set; } = "";
+    public string SubjectId { get; set; } = "";
+    public long IdentityRevision { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 }
 
 /// <summary>仅绑定专用平台授权登录角色的上下文：只看平台行（tenant_id 为 null）；普通租户上下文不会自动切换到本类型。</summary>

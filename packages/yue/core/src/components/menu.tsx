@@ -12,6 +12,7 @@ import type {
 } from '@base-ui/react/menu';
 import type { ComponentProps } from 'react';
 import { cn } from '../lib/cn';
+import { button, surface, menuItem } from '../lib/styles';
 import type { YueProps } from '../lib/test-id';
 
 // 下拉菜单（Base UI Menu）。验证门项：键盘导航、焦点管理、ARIA、子菜单（docs/prd/specs/yue.md §4.4）。
@@ -28,7 +29,7 @@ export function MenuTrigger({ className, testId, ...props }: MenuTriggerType) {
       data-slot="menu-trigger"
       data-testid={testId ?? 'yue-menu-trigger'}
       className={cn(
-        'inline-flex h-9 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none hover:bg-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] data-[popup-open]:bg-[var(--accent)]',
+        button, 'border-border bg-background text-foreground shadow-xs hover:bg-accent data-[popup-open]:bg-accent',
         className,
       )}
     />
@@ -50,7 +51,7 @@ export function MenuContent({ className, side, align, sideOffset = 4, alignOffse
           data-slot="menu-content"
           data-testid={testId ?? 'yue-menu-content'}
           className={cn(
-            'min-w-40 rounded-md border border-[var(--border)] bg-[var(--background)] p-1 text-sm text-[var(--foreground)] shadow-md outline-none',
+            surface, 'min-w-40 max-h-(--available-height) w-(--anchor-width) overflow-y-auto p-1',
             className,
           )}
         />
@@ -66,7 +67,7 @@ export function MenuItem({ className, testId, ...props }: MenuItemType) {
       data-slot="menu-item"
       data-testid={testId ?? 'yue-menu-item'}
       className={cn(
-        'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-[var(--accent)] data-[disabled]:opacity-50',
+        menuItem,
         className,
       )}
     />
@@ -79,7 +80,7 @@ export function MenuSeparator({ className, testId, ...props }: MenuSeparatorProp
     <BaseMenu.Separator {...props}
       data-slot="menu-separator"
       data-testid={testId ?? 'yue-menu-separator'}
-      className={cn('my-1 h-px bg-[var(--border)]', className)}
+      className={cn('my-1 h-px bg-border', className)}
     />
   );
 }
@@ -93,7 +94,7 @@ export function MenuGroupLabel({ className, testId, ...props }: YueProps<MenuGro
     <BaseMenu.GroupLabel {...props}
       data-slot="menu-group-label"
       data-testid={testId ?? 'yue-menu-group-label'}
-      className={cn('px-2 py-1.5 text-xs text-[var(--muted-foreground)]', className)}
+      className={cn('px-2 py-1.5 text-xs text-muted-foreground', className)}
     />
   );
 }
@@ -109,7 +110,7 @@ export function MenuSubTrigger({ className, testId, ...props }: YueProps<MenuSub
       data-slot="menu-sub-trigger"
       data-testid={testId ?? 'yue-menu-sub-trigger'}
       className={cn(
-        'flex cursor-default select-none items-center justify-between rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-[var(--accent)] data-[popup-open]:bg-[var(--accent)]',
+        menuItem, 'justify-between data-[popup-open]:bg-accent',
         className,
       )}
     />

@@ -1,3 +1,4 @@
+import { settleVisuals } from '../../apps/yue-playground/e2e/settle';
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import scenarios from '../../packages/yue/data/docs/scenarios.json' with { type: 'json' };
@@ -17,6 +18,7 @@ for (const scenario of scenarios) test(`${scenario.component}/${scenario.state} 
     if (scenario.state === 'Error') { await expect(page.getByRole('alert')).toBeVisible(); await page.getByRole('button', { name: '继续上传' }).click(); }
     await expect(page.getByText('file-demo', { exact: true })).toBeVisible();
   }
+  await settleVisuals(page);
   const result = await new AxeBuilder({ page }).analyze();
   expect(result.violations.filter((v) => ['critical', 'serious'].includes(v.impact ?? ''))).toEqual([]);
 });

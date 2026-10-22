@@ -2082,7 +2082,8 @@
     },
     "slots": [
       "dialog-trigger",
-      "dialog-content"
+      "dialog-content",
+      "dialog-close-button"
     ],
     "events": [
       "onOpenChange"
@@ -2138,7 +2139,8 @@
     },
     "slots": [
       "alert-dialog-trigger",
-      "alert-dialog-content"
+      "alert-dialog-content",
+      "alert-dialog-close-button"
     ],
     "events": [
       "onOpenChange"
@@ -2194,7 +2196,8 @@
     },
     "slots": [
       "sheet-trigger",
-      "sheet-content"
+      "sheet-content",
+      "sheet-close-button"
     ],
     "events": [
       "onOpenChange"

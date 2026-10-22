@@ -6,6 +6,13 @@
   <ItemGroup>
     <ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" />
     <PackageReference Include="Kun.Authorization" />
+    <PackageReference Include="Kun.EventBus.Abstractions" />
   </ItemGroup>
   <ItemGroup><InternalsVisibleTo Include="Qian.Plugin.Sdk" /><InternalsVisibleTo Include="Qian.Tenancy" /><InternalsVisibleTo Include="Qian.Authz" /></ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../../contracts/data/v1/filter-ast.schema.json;../../contracts/data/v1/filter-operators.json;../../contracts/data/v1/system-variables.json" LogicalName="authz/%(Filename)%(Extension)" />
+    <None Include="../../contracts/data/v1/filter-ast.schema.json;../../contracts/data/v1/filter-operators.json;../../contracts/data/v1/system-variables.json" Pack="true" PackagePath="contracts/data/v1/" />
+    <EmbeddedResource Include="../../contracts/authz/v1/*.schema.json" LogicalName="authz/%(Filename)%(Extension)" />
+    <None Include="../../contracts/authz/v1/*.schema.json" Pack="true" PackagePath="contracts/authz/v1/" />
+  </ItemGroup>
 </Project>

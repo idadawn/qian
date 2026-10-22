@@ -3,7 +3,7 @@
     {
       "name": "neutral",
       "hue": 260,
-      "chroma": 0.006
+      "chroma": 0
     },
     {
       "name": "blue",
@@ -43,9 +43,19 @@
       "chromaFactor": 0.1
     },
     {
+      "step": 75,
+      "lightness": 0.97,
+      "chromaFactor": 0.15
+    },
+    {
       "step": 100,
       "lightness": 0.96,
       "chromaFactor": 0.2
+    },
+    {
+      "step": 175,
+      "lightness": 0.922,
+      "chromaFactor": 0.35
     },
     {
       "step": 200,
@@ -63,8 +73,28 @@
       "chromaFactor": 0.9
     },
     {
+      "step": 415,
+      "lightness": 0.708,
+      "chromaFactor": 0.9
+    },
+    {
+      "step": 450,
+      "lightness": 0.646,
+      "chromaFactor": 0.95
+    },
+    {
       "step": 500,
       "lightness": 0.62,
+      "chromaFactor": 1
+    },
+    {
+      "step": 565,
+      "lightness": 0.556,
+      "chromaFactor": 1
+    },
+    {
+      "step": 575,
+      "lightness": 0.546,
       "chromaFactor": 1
     },
     {
@@ -83,14 +113,29 @@
       "chromaFactor": 0.6
     },
     {
+      "step": 890,
+      "lightness": 0.269,
+      "chromaFactor": 0.45
+    },
+    {
       "step": 900,
       "lightness": 0.26,
       "chromaFactor": 0.45
     },
     {
+      "step": 925,
+      "lightness": 0.205,
+      "chromaFactor": 0.35
+    },
+    {
       "step": 950,
       "lightness": 0.18,
       "chromaFactor": 0.3
+    },
+    {
+      "step": 975,
+      "lightness": 0.145,
+      "chromaFactor": 0.2
     }
   ],
   "primitives": [
@@ -216,12 +261,12 @@
     },
     {
       "name": "--yue-p-shadow-sm",
-      "value": "0 1px 2px oklch(0 0 0 / 0.12)",
+      "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
       "meaning": "轻投影"
     },
     {
       "name": "--yue-p-shadow-md",
-      "value": "0 4px 12px oklch(0 0 0 / 0.16)",
+      "value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
       "meaning": "浮层投影"
     },
     {
@@ -283,120 +328,169 @@
       "name": "--yue-p-breakpoint-xl",
       "value": "80rem",
       "meaning": "宽屏断点"
+    },
+    {
+      "name": "--yue-p-font-sans",
+      "value": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", \"Helvetica Neue\", Arial, sans-serif",
+      "meaning": "系统无衬线字体栈"
+    },
+    {
+      "name": "--yue-p-font-mono",
+      "value": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      "meaning": "系统等宽字体栈"
+    },
+    {
+      "name": "--yue-p-radius-base",
+      "value": "0.625rem",
+      "meaning": "语义圆角基准"
+    },
+    {
+      "name": "--yue-p-space-9",
+      "value": "2.25rem",
+      "meaning": "间距 9 级"
+    },
+    {
+      "name": "--yue-p-shadow-xs",
+      "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+      "meaning": "控件轻投影"
+    },
+    {
+      "name": "--yue-p-shadow-lg",
+      "value": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+      "meaning": "弹层投影"
+    },
+    {
+      "name": "--yue-p-shadow-xl",
+      "value": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+      "meaning": "模态投影"
     }
   ],
   "semantics": [
     {
       "name": "--yue-background",
       "kind": "color",
-      "light": "--yue-p-neutral-50",
-      "dark": "--yue-p-neutral-950",
+      "light": "--yue-p-white",
+      "dark": "--yue-p-neutral-975",
       "meaning": "页面背景",
-      "contrastWith": "--yue-foreground"
+      "contrastWith": "--yue-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-foreground",
       "kind": "color",
-      "light": "--yue-p-neutral-950",
+      "light": "--yue-p-neutral-975",
       "dark": "--yue-p-neutral-50",
       "meaning": "页面文字",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "text"
     },
     {
       "name": "--yue-card",
       "kind": "color",
-      "light": "--yue-p-neutral-50",
-      "dark": "--yue-p-neutral-900",
+      "light": "--yue-p-white",
+      "dark": "--yue-p-neutral-925",
       "meaning": "卡片背景",
-      "contrastWith": "--yue-card-foreground"
+      "contrastWith": "--yue-card-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-card-foreground",
       "kind": "color",
-      "light": "--yue-p-neutral-950",
+      "light": "--yue-p-neutral-975",
       "dark": "--yue-p-neutral-50",
       "meaning": "卡片文字",
-      "contrastWith": "--yue-card"
+      "contrastWith": "--yue-card",
+      "contrast": "text"
     },
     {
       "name": "--yue-popover",
       "kind": "color",
-      "light": "--yue-p-neutral-50",
-      "dark": "--yue-p-neutral-900",
+      "light": "--yue-p-white",
+      "dark": "--yue-p-neutral-925",
       "meaning": "浮层背景",
-      "contrastWith": "--yue-popover-foreground"
+      "contrastWith": "--yue-popover-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-popover-foreground",
       "kind": "color",
-      "light": "--yue-p-neutral-950",
+      "light": "--yue-p-neutral-975",
       "dark": "--yue-p-neutral-50",
       "meaning": "浮层文字",
-      "contrastWith": "--yue-popover"
+      "contrastWith": "--yue-popover",
+      "contrast": "text"
     },
     {
       "name": "--yue-primary",
       "kind": "color",
-      "light": "--yue-p-brand-700",
-      "dark": "--yue-p-brand-300",
+      "light": "--yue-p-brand-600",
+      "dark": "--yue-p-brand-400",
       "meaning": "主要操作背景",
-      "contrastWith": "--yue-primary-foreground"
+      "contrastWith": "--yue-primary-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-primary-foreground",
       "kind": "color",
       "light": "--yue-p-white",
-      "dark": "--yue-p-neutral-950",
+      "dark": "--yue-p-neutral-975",
       "meaning": "主要操作文字",
-      "contrastWith": "--yue-primary"
+      "contrastWith": "--yue-primary",
+      "contrast": "text"
     },
     {
       "name": "--yue-secondary",
       "kind": "color",
-      "light": "--yue-p-neutral-100",
-      "dark": "--yue-p-neutral-800",
+      "light": "--yue-p-neutral-75",
+      "dark": "--yue-p-neutral-890",
       "meaning": "次要操作背景",
-      "contrastWith": "--yue-secondary-foreground"
+      "contrastWith": "--yue-secondary-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-secondary-foreground",
       "kind": "color",
-      "light": "--yue-p-neutral-950",
+      "light": "--yue-p-neutral-925",
       "dark": "--yue-p-neutral-50",
       "meaning": "次要操作文字",
-      "contrastWith": "--yue-secondary"
+      "contrastWith": "--yue-secondary",
+      "contrast": "text"
     },
     {
       "name": "--yue-muted",
       "kind": "color",
-      "light": "--yue-p-neutral-100",
-      "dark": "--yue-p-neutral-800",
+      "light": "--yue-p-neutral-75",
+      "dark": "--yue-p-neutral-890",
       "meaning": "弱化区域背景",
-      "contrastWith": "--yue-muted-foreground"
+      "contrastWith": "--yue-muted-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-muted-foreground",
       "kind": "color",
-      "light": "--yue-p-neutral-600",
-      "dark": "--yue-p-neutral-200",
+      "light": "--yue-p-neutral-575",
+      "dark": "--yue-p-neutral-415",
       "meaning": "弱化区域文字",
-      "contrastWith": "--yue-muted"
+      "contrastWith": "--yue-muted",
+      "contrast": "text"
     },
     {
       "name": "--yue-accent",
       "kind": "color",
-      "light": "--yue-p-neutral-200",
-      "dark": "--yue-p-neutral-800",
+      "light": "--yue-p-neutral-75",
+      "dark": "--yue-p-neutral-890",
       "meaning": "低强调交互背景",
-      "contrastWith": "--yue-accent-foreground"
+      "contrastWith": "--yue-accent-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-accent-foreground",
       "kind": "color",
-      "light": "--yue-p-neutral-950",
+      "light": "--yue-p-neutral-925",
       "dark": "--yue-p-neutral-50",
       "meaning": "低强调交互文字",
-      "contrastWith": "--yue-accent"
+      "contrastWith": "--yue-accent",
+      "contrast": "text"
     },
     {
       "name": "--yue-destructive",
@@ -404,7 +498,8 @@
       "light": "--yue-p-red-700",
       "dark": "--yue-p-red-300",
       "meaning": "破坏性操作背景",
-      "contrastWith": "--yue-destructive-foreground"
+      "contrastWith": "--yue-destructive-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-destructive-foreground",
@@ -412,95 +507,110 @@
       "light": "--yue-p-white",
       "dark": "--yue-p-neutral-950",
       "meaning": "破坏性操作文字",
-      "contrastWith": "--yue-destructive"
+      "contrastWith": "--yue-destructive",
+      "contrast": "text"
     },
     {
       "name": "--yue-border",
       "kind": "color",
-      "light": "--yue-p-neutral-600",
-      "dark": "--yue-p-neutral-300",
+      "light": "--yue-p-neutral-175",
+      "dark": "--yue-p-white",
       "meaning": "边界线",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "decorative",
+      "darkAlpha": 0.1
     },
     {
       "name": "--yue-input",
       "kind": "color",
-      "light": "--yue-p-neutral-600",
-      "dark": "--yue-p-neutral-300",
+      "light": "--yue-p-neutral-450",
+      "dark": "--yue-p-white",
       "meaning": "输入边界",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "boundary",
+      "darkAlpha": 0.34
     },
     {
       "name": "--yue-ring",
       "kind": "color",
       "light": "--yue-p-brand-600",
-      "dark": "--yue-p-brand-300",
+      "dark": "--yue-p-brand-400",
       "meaning": "焦点环",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
     },
     {
       "name": "--yue-sidebar",
       "kind": "color",
-      "light": "--yue-p-neutral-100",
-      "dark": "--yue-p-neutral-900",
+      "light": "--yue-p-neutral-50",
+      "dark": "--yue-p-neutral-925",
       "meaning": "侧栏背景",
-      "contrastWith": "--yue-sidebar-foreground"
+      "contrastWith": "--yue-sidebar-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-sidebar-foreground",
       "kind": "color",
-      "light": "--yue-p-neutral-950",
+      "light": "--yue-p-neutral-975",
       "dark": "--yue-p-neutral-50",
       "meaning": "侧栏文字",
-      "contrastWith": "--yue-sidebar"
+      "contrastWith": "--yue-sidebar",
+      "contrast": "text"
     },
     {
       "name": "--yue-sidebar-primary",
       "kind": "color",
-      "light": "--yue-p-brand-700",
-      "dark": "--yue-p-brand-300",
+      "light": "--yue-p-brand-600",
+      "dark": "--yue-p-brand-400",
       "meaning": "侧栏主要操作背景",
-      "contrastWith": "--yue-sidebar-primary-foreground"
+      "contrastWith": "--yue-sidebar-primary-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-sidebar-primary-foreground",
       "kind": "color",
       "light": "--yue-p-white",
-      "dark": "--yue-p-neutral-950",
+      "dark": "--yue-p-neutral-975",
       "meaning": "侧栏主要操作文字",
-      "contrastWith": "--yue-sidebar-primary"
+      "contrastWith": "--yue-sidebar-primary",
+      "contrast": "text"
     },
     {
       "name": "--yue-sidebar-accent",
       "kind": "color",
-      "light": "--yue-p-neutral-200",
-      "dark": "--yue-p-neutral-800",
+      "light": "--yue-p-neutral-75",
+      "dark": "--yue-p-neutral-890",
       "meaning": "侧栏低强调交互背景",
-      "contrastWith": "--yue-sidebar-accent-foreground"
+      "contrastWith": "--yue-sidebar-accent-foreground",
+      "contrast": "text"
     },
     {
       "name": "--yue-sidebar-accent-foreground",
       "kind": "color",
-      "light": "--yue-p-neutral-950",
+      "light": "--yue-p-neutral-925",
       "dark": "--yue-p-neutral-50",
       "meaning": "侧栏低强调交互文字",
-      "contrastWith": "--yue-sidebar-accent"
+      "contrastWith": "--yue-sidebar-accent",
+      "contrast": "text"
     },
     {
       "name": "--yue-sidebar-border",
       "kind": "color",
-      "light": "--yue-p-neutral-600",
-      "dark": "--yue-p-neutral-300",
+      "light": "--yue-p-neutral-175",
+      "dark": "--yue-p-white",
       "meaning": "侧栏边界",
-      "contrastWith": "--yue-sidebar"
+      "contrastWith": "--yue-sidebar",
+      "contrast": "decorative",
+      "darkAlpha": 0.1
     },
     {
       "name": "--yue-sidebar-ring",
       "kind": "color",
       "light": "--yue-p-brand-600",
-      "dark": "--yue-p-brand-300",
+      "dark": "--yue-p-brand-400",
       "meaning": "侧栏焦点环",
-      "contrastWith": "--yue-sidebar"
+      "contrastWith": "--yue-sidebar",
+      "contrast": "boundary"
     },
     {
       "name": "--yue-chart-1",
@@ -508,7 +618,8 @@
       "light": "--yue-p-brand-700",
       "dark": "--yue-p-brand-300",
       "meaning": "图形系列 1",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
     },
     {
       "name": "--yue-chart-2",
@@ -516,7 +627,8 @@
       "light": "--yue-p-teal-700",
       "dark": "--yue-p-teal-300",
       "meaning": "图形系列 2",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
     },
     {
       "name": "--yue-chart-3",
@@ -524,7 +636,8 @@
       "light": "--yue-p-amber-700",
       "dark": "--yue-p-amber-300",
       "meaning": "图形系列 3",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
     },
     {
       "name": "--yue-chart-4",
@@ -532,7 +645,8 @@
       "light": "--yue-p-violet-700",
       "dark": "--yue-p-violet-300",
       "meaning": "图形系列 4",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
     },
     {
       "name": "--yue-chart-5",
@@ -540,7 +654,8 @@
       "light": "--yue-p-green-700",
       "dark": "--yue-p-green-300",
       "meaning": "图形系列 5",
-      "contrastWith": "--yue-background"
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
     },
     {
       "name": "--yue-ok",
@@ -548,7 +663,8 @@
       "light": "--yue-p-green-800",
       "dark": "--yue-p-green-200",
       "meaning": "ok 状态文字",
-      "contrastWith": "--yue-ok-bg"
+      "contrastWith": "--yue-ok-bg",
+      "contrast": "text"
     },
     {
       "name": "--yue-ok-bg",
@@ -556,7 +672,8 @@
       "light": "--yue-p-green-50",
       "dark": "--yue-p-green-950",
       "meaning": "ok 状态背景",
-      "contrastWith": "--yue-ok"
+      "contrastWith": "--yue-ok",
+      "contrast": "text"
     },
     {
       "name": "--yue-warn",
@@ -564,7 +681,8 @@
       "light": "--yue-p-amber-800",
       "dark": "--yue-p-amber-200",
       "meaning": "warn 状态文字",
-      "contrastWith": "--yue-warn-bg"
+      "contrastWith": "--yue-warn-bg",
+      "contrast": "text"
     },
     {
       "name": "--yue-warn-bg",
@@ -572,7 +690,8 @@
       "light": "--yue-p-amber-50",
       "dark": "--yue-p-amber-950",
       "meaning": "warn 状态背景",
-      "contrastWith": "--yue-warn"
+      "contrastWith": "--yue-warn",
+      "contrast": "text"
     },
     {
       "name": "--yue-error",
@@ -580,7 +699,8 @@
       "light": "--yue-p-red-800",
       "dark": "--yue-p-red-200",
       "meaning": "error 状态文字",
-      "contrastWith": "--yue-error-bg"
+      "contrastWith": "--yue-error-bg",
+      "contrast": "text"
     },
     {
       "name": "--yue-error-bg",
@@ -588,7 +708,8 @@
       "light": "--yue-p-red-50",
       "dark": "--yue-p-red-950",
       "meaning": "error 状态背景",
-      "contrastWith": "--yue-error"
+      "contrastWith": "--yue-error",
+      "contrast": "text"
     },
     {
       "name": "--yue-info",
@@ -596,7 +717,8 @@
       "light": "--yue-p-blue-800",
       "dark": "--yue-p-blue-200",
       "meaning": "info 状态文字",
-      "contrastWith": "--yue-info-bg"
+      "contrastWith": "--yue-info-bg",
+      "contrast": "text"
     },
     {
       "name": "--yue-info-bg",
@@ -604,7 +726,8 @@
       "light": "--yue-p-blue-50",
       "dark": "--yue-p-blue-950",
       "meaning": "info 状态背景",
-      "contrastWith": "--yue-info"
+      "contrastWith": "--yue-info",
+      "contrast": "text"
     },
     {
       "name": "--yue-neutral",
@@ -612,7 +735,8 @@
       "light": "--yue-p-neutral-800",
       "dark": "--yue-p-neutral-200",
       "meaning": "neutral 状态文字",
-      "contrastWith": "--yue-neutral-bg"
+      "contrastWith": "--yue-neutral-bg",
+      "contrast": "text"
     },
     {
       "name": "--yue-neutral-bg",
@@ -620,41 +744,52 @@
       "light": "--yue-p-neutral-50",
       "dark": "--yue-p-neutral-950",
       "meaning": "neutral 状态背景",
-      "contrastWith": "--yue-neutral"
+      "contrastWith": "--yue-neutral",
+      "contrast": "text"
     },
     {
       "name": "--yue-radius",
       "kind": "dimension",
-      "light": "--yue-p-radius-md",
-      "dark": "--yue-p-radius-md",
+      "light": "--yue-p-radius-base",
+      "dark": "--yue-p-radius-base",
       "meaning": "组件默认圆角"
     }
   ],
   "components": [
     {
       "name": "--yue-button-radius",
-      "value": "var(--yue-radius)",
+      "value": "calc(var(--yue-radius) - 2px)",
       "meaning": "按钮圆角"
     },
     {
       "name": "--yue-button-height",
-      "value": "var(--yue-p-space-10)",
+      "value": "var(--yue-p-space-9)",
       "meaning": "按钮标准高度"
     },
     {
       "name": "--yue-input-radius",
-      "value": "var(--yue-radius)",
+      "value": "calc(var(--yue-radius) - 2px)",
       "meaning": "输入框圆角"
     },
     {
       "name": "--yue-table-row-height",
-      "value": "var(--yue-p-space-12)",
+      "value": "var(--yue-p-space-10)",
       "meaning": "表格标准行高"
     },
     {
       "name": "--yue-popover-shadow",
-      "value": "var(--yue-p-shadow-md)",
+      "value": "var(--yue-p-shadow-lg)",
       "meaning": "浮层阴影"
+    },
+    {
+      "name": "--yue-table-row-height-compact",
+      "value": "var(--yue-p-space-8)",
+      "meaning": "表格紧凑行高"
+    },
+    {
+      "name": "--yue-table-header-background",
+      "value": "color-mix(in srgb, oklch(var(--yue-muted)) 50%, oklch(var(--yue-background)))",
+      "meaning": "表头背景：预合成的不透明 muted 半色，固定列与普通列共用"
     }
   ],
   "brands": [

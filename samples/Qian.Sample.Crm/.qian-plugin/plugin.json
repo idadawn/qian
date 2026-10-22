@@ -1,0 +1,76 @@
+{
+  "$schema": "https://qian.dev/schemas/plugin/v2",
+  "id": "qian.sample.crm",
+  "version": "1.0.0",
+  "description": "客户创建、列表与详情的真实数据、权限、审计和事务参考组件。",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "Apache-2.0",
+  "interface": {
+    "displayName": "客户参考应用",
+    "category": "application"
+  },
+  "inject": [
+    "CommandAudit",
+    "CommandAuthorization",
+    "CommandTenancy",
+    "Data"
+  ],
+  "provides": [
+    "Crm"
+  ],
+  "policy": {
+    "tier": "official",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false
+  },
+  "scopes": [
+    "global",
+    "tenant"
+  ],
+  "surfaces": {
+    "metadata": "./metadata"
+  },
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Sample.Crm.CrmPlugin, Qian.Sample.Crm",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [
+      "tools/customer.create.json",
+      "tools/customer.get.json",
+      "tools/customer.list.json"
+    ],
+    "metadata": {
+      "metadata/permissions.json": {
+        "$generated": true,
+        "component": "qian.sample.crm",
+        "source": "Qian.Sample.Crm.CrmPlugin, Qian.Sample.Crm",
+        "sha256": "c2c25568be6176459a831b87d6acb9679490c0e1b47c40b43cb71aebe8b1974d",
+        "fields": [
+          ""
+        ]
+      },
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.sample.crm",
+        "source": "Qian.Sample.Crm.CrmPlugin, Qian.Sample.Crm",
+        "sha256": "24dc3e25230eda824a1af2819b7fc263a39cc3d19c735bab027064acb585ccec",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
+}

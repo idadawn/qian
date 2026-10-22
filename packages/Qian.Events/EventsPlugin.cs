@@ -9,6 +9,7 @@ namespace Qian.Events;
 
 /// <summary>qian.events 的真实 Provider：挂载时核对组件配置与宿主装配一致，提供 Events 服务键；卸载撤销服务与错误码。</summary>
 [QianPlugin("qian.events")]
+[QianConfigSchema(ComponentConfiguration.Schema)]
 public sealed class EventsPlugin : IQianPlugin
 {
     /// <inheritdoc />
@@ -35,6 +36,7 @@ public sealed class EventsPlugin : IQianPlugin
         {
             ctx.Effect(catalog.Register(EventsErrors.Misconfigured));
             ctx.Effect(catalog.Register(EventsErrors.PublishRejected));
+            ctx.Effect(catalog.Register(EventsErrors.ConsumeRejected));
         }
         ctx.Provide<IEventsService>(EventsDefinition.Key, ctx.Services.GetRequiredService<IEventsService>());
         return ValueTask.CompletedTask;

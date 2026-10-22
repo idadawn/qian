@@ -11,6 +11,11 @@ public static class LifecycleDefinition
     public static readonly ServiceKey Key = new("Lifecycle");
     /// <summary>管理面读取装配诊断的权限点：GET /api/lifecycle/diagnostics；无该权限者与不存在同为 404（R32）。</summary>
     public const string DiagnosticsReadPermission = "qian.lifecycle:diagnostics:read";
+    /// <summary>
+    /// 管理面批准与读取组件反向权限的权限点：PUT / GET /api/lifecycle/tenants/{tenant}/plugins/{plugin}/versions/{version}/permissions；
+    /// 无该权限者与不存在同为 404（R32）。平台运营代批经 Authz 的超管显式旁路并审计（S1 的批准形态，plugin-manifest T5）。
+    /// </summary>
+    public const string InstallApprovePermission = "qian.lifecycle:install:approve";
     /// <summary>取得已挂载的生命周期控制器。</summary>
     public static IPluginLifecycleController Lifecycle(this IPluginContext context) => context.Inject<IPluginLifecycleController>(Key);
 }
@@ -45,13 +50,16 @@ public interface IPluginLifecycleController
     /// <summary>
     /// 开通当前 Active 修订：Entitled → Provisioning → 执行 tenant-provision 钩子 → Installed。钩子以 (tenant, plugin, hook, toVersion) 为幂等键记入
     /// lifecycle_runs，成功后不再执行；已 Installed 时直接返回、无副作用（换版本用 <see cref="UpgradeAsync"/>）；钩子失败时停在 Provisioning，
-    /// 重试沿用原目标版本。开通不挂载，挂载用 <see cref="MountAsync"/>。
+    /// 重试沿用原目标版本。开通不挂载，挂载用 <see cref="MountAsync(ScopeKey, JsonElement, string, CancellationToken)"/>。权益之后还有第二道门：
+    /// 修订声明了反向权限（policy.permissions / policy.egress）且不是 policy.required 的平台组件时，每一项都须已由 <see cref="ApprovePermissionsAsync"/> 批准，
+    /// 否则 LIFECYCLE_PERMISSIONS_UNAPPROVED 且不写任何记录。
     /// </summary>
     ValueTask<TenantPluginInstallView> ProvisionAsync(string tenantId, string pluginId, string actor, CancellationToken cancellationToken = default);
     /// <summary>
     /// 升级或租户级回切：Installed(from) → Upgrading → tenant-upgrade 钩子（由目标版本实现）→ 把本租户 scope 中引用 from 的条目改写为 to 并合入 → Installed(to)。
     /// 钩子失败或新版本挂载失败时条目改回 from、状态回到 Installed(from) 并报告原因（挂载失败的原因同时进入诊断）；成功发出
     /// lifecycle.tenant-plugin.upgraded.v1。目标修订不能已退役，service 修订须健康；数据迁移须前向兼容（扩展 → 迁移 → 收缩）。
+    /// 反向权限同开通的第二道门：目标版本没有自己的批准记录时沿用该租户对该组件最近一次的批准，新增任一项即须重批（D7「升级新增即重批」），缺失项写进错误。
     /// </summary>
     ValueTask<TenantPluginInstallView> UpgradeAsync(string tenantId, string pluginId, string fromVersion, string toVersion, string actor, CancellationToken cancellationToken = default);
     /// <summary>卸载：tenant-uninstall 钩子 → 撤下本租户 scope 中引用该组件的条目 → Uninstalled；业务数据保留。</summary>
@@ -69,11 +77,29 @@ public interface IPluginLifecycleController
     /// 原因码持久记入诊断（<see cref="GetDiagnosticsAsync"/>），同一条目之后挂载成功或卸载时清除。
     /// </summary>
     ValueTask<MountResult> MountAsync(ScopeKey scope, JsonElement entry, string actor, CancellationToken cancellationToken = default);
+    /// <summary>管理面条件挂载；expectedRevision 必须等于当前 patch 修订，创建为 0；不自行替换为最新修订。</summary>
+    ValueTask<MountResult> MountAtRevisionAsync(ScopeKey scope, JsonElement entry, int expectedRevision, string actor, CancellationToken cancellationToken);
     /// <summary>卸载：经 Registry 写禁用 patch 或撤销本 scope 引入的 patch（同事务发 registry.scope.unmounted.v1）并立即合入；不改安装状态，不改数据库开关。</summary>
     ValueTask<MountResult> UnmountAsync(ScopeKey scope, string entryId, string actor, CancellationToken cancellationToken = default);
+    /// <summary>管理面条件卸载；expectedRevision 必须等于当前修订，已禁用且修订相同则幂等返回。</summary>
+    ValueTask<MountResult> UnmountAtRevisionAsync(ScopeKey scope, string entryId, int expectedRevision, string actor, CancellationToken cancellationToken);
     /// <summary>
     /// 管理面装配诊断：调用者须是该租户已验证的用户或服务主体（无委托），并经宿主权限判定端口持有 <see cref="LifecycleDefinition.DiagnosticsReadPermission"/>；
     /// 否则与不存在同为 NOT_FOUND。返回 Registry 合入该 scope 时的当前失败，以及经 Lifecycle 挂载或升级失败、已撤回的条目（组件修订与原因码）。
     /// </summary>
     ValueTask<IReadOnlyList<LifecycleDiagnosticView>> GetDiagnosticsAsync(ScopeKey scope, ICurrentUser user, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 管理面批准某组件版本的反向权限（S1 只有 API，S2 才有 UI）：调用者须是该租户已验证的用户或服务主体（无委托）并持
+    /// <see cref="LifecycleDefinition.InstallApprovePermission"/>，或是经 Authz 超管显式旁路并审计的平台主体（运营代批）；否则与不存在同为 NOT_FOUND。
+    /// 参数里的目标租户须等于宿主已建立的租户上下文（平台运营宿主先选定已验证的目标租户），否则 NOT_FOUND。grants 逐项列出所批准的内容，
+    /// 只能是该版本清单声明过的项（否则 INPUT_INVALID，pointer 指向该项）；
+    /// 未安装的版本为 NOT_FOUND；grants 为 null（请求体缺失或读不成）同样在判定之后以 INPUT_INVALID 拒绝。整份替换该版本的批准记录，内容不变时不写入（幂等）；
+    /// 批准人取已验证主体，不由调用方指定。
+    /// </summary>
+    ValueTask<PermissionApprovalView> ApprovePermissionsAsync(string tenantId, string pluginId, string version, PermissionGrants? grants, ICurrentUser user, CancellationToken cancellationToken = default);
+    /// <summary>管理面读取某组件版本的批准记录；判定同 <see cref="ApprovePermissionsAsync"/>，没有记录时返回 null。</summary>
+    ValueTask<PermissionApprovalView?> GetPermissionApprovalAsync(string tenantId, string pluginId, string version, ICurrentUser user, CancellationToken cancellationToken = default);
+    /// <summary>租户对某组件版本的批准记录（permission_approvals）；没有时返回 null。供可信平台插件（如秘密解析的审批来源）调用，调用方负责权限。</summary>
+    ValueTask<PermissionApprovalView?> GetApprovedPermissionsAsync(string tenantId, string pluginId, string version, CancellationToken cancellationToken = default);
 }

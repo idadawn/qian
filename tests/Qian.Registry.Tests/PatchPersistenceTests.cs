@@ -15,6 +15,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
+using Qian.Authz;
+using Qian.Authz.Abstractions;
 using Qian.Capabilities;
 using Qian.Data;
 using Qian.Events;
@@ -392,7 +394,7 @@ public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IC
     private IHost Host(ITenantContext tenant, IInterceptor? interceptor = null, bool capabilityChecks = false, Action<IServiceCollection>? services = null, bool events = false)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
-        builder.Services.AddSingleton(tenant); builder.Services.AddKunEventBus(registry => registry.RegisterRegistryEvents());
+        builder.Services.AddSingleton(tenant); builder.Services.AddKunEventBus(registry => registry.RegisterRegistryEvents().RegisterAuthzEvents());
         builder.Services.AddSingleton(ErrorCatalog.CreateDefault());
         if (capabilityChecks)
         {
@@ -406,7 +408,9 @@ public sealed partial class PatchPersistenceTests(PostgresFixture postgres) : IC
             if (interceptor is not null) options.AddInterceptors(interceptor);
         });
         // 公开挂载 / 卸载的平台接线：领域事件处理器 + 写信封的 Outbox 端口（替换 AddQianData 登记的 Kun 累加器）。
-        if (events) { builder.Services.AddKunMediator(mediator => mediator.AddQianRegistryEvents()); builder.Services.AddQianEvents(); }
+        // qian.authz 的授权变更事件处理器始终登记：装载 qian.authz 与写入角色授予都要求它在场（S1-AZ-004）。
+        builder.Services.AddKunMediator(mediator => { mediator.AddQianAuthzEvents(); if (events) mediator.AddQianRegistryEvents(); });
+        if (events) builder.Services.AddQianEvents();
         services?.Invoke(builder.Services);
         return builder.Build();
     }

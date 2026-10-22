@@ -1,0 +1,84 @@
+{
+  "name": "customer.list",
+  "description": "分页查看当前租户的客户列表，默认不产生查询审计。",
+  "sideEffect": "read",
+  "policyHint": "allow",
+  "idempotent": false,
+  "async": "none",
+  "requiredScopes": [
+    "crm.read"
+  ],
+  "requiredSecrets": [],
+  "dataClassification": "pii",
+  "costTier": "low",
+  "contractVersion": "crm-v1",
+  "audit": false,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.sample.crm/customer.list"
+  },
+  "requiredPermission": "qian.sample.crm:customer:read",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "skip": {
+        "type": "integer",
+        "default": 0
+      },
+      "take": {
+        "type": "integer",
+        "default": 100
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "total": {
+        "type": "integer"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "tenantId": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "tenantId",
+            "name"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "total",
+      "items"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "8ed631438e3b37ace16ae4066bf2b9e4e113605c9a520b336f16c95787102a1b",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.sample.crm"
+  }
+}

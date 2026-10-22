@@ -1,0 +1,57 @@
+{
+  "$schema": "https://qian.dev/schemas/plugin/v2",
+  "id": "qian.data.dialect.pg",
+  "version": "1.0.0",
+  "description": "提供 PostgreSQL 类型映射与连接探测；具名方言贡献随组件挂载和卸载生效。",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "Apache-2.0",
+  "interface": {
+    "displayName": "PostgreSQL 方言",
+    "category": "data"
+  },
+  "inject": [
+    "Data"
+  ],
+  "provides": [
+    "Data.Dialects:pg"
+  ],
+  "policy": {
+    "tier": "official",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false
+  },
+  "scopes": [
+    "global"
+  ],
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Data.Dialect.Pg.PgDialectPlugin, Qian.Data.Dialect.Pg",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.data.dialect.pg",
+        "source": "Qian.Data.Dialect.Pg.PgDialectPlugin, Qian.Data.Dialect.Pg",
+        "sha256": "24dc3e25230eda824a1af2819b7fc263a39cc3d19c735bab027064acb585ccec",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
+}

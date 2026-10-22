@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Qian.Audit;
+using Qian.Authz;
 using Qian.Authz.Abstractions;
 using Qian.Data;
 using Qian.Events;
@@ -153,8 +154,8 @@ public sealed partial class CustomerCommandTests
     {
         var builder = Host.CreateApplicationBuilder(); builder.Logging.ClearProviders();
         builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
-        builder.Services.AddKunEventBus(registrar => registrar.RegisterTenancyEvents().RegisterRegistryEvents());
-        builder.Services.AddKunMediator(mediator => mediator.AddQianTenancyEvents().AddQianRegistryEvents()); builder.Services.AddQianEvents();
+        builder.Services.AddKunEventBus(registrar => registrar.RegisterTenancyEvents().RegisterRegistryEvents().RegisterAuthzEvents());
+        builder.Services.AddKunMediator(mediator => mediator.AddQianTenancyEvents().AddQianRegistryEvents().AddQianAuthzEvents()); builder.Services.AddQianEvents();
         builder.Services.AddQianData<TenancyDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(TenancyDbContext.Schema));
         builder.Services.AddQianData<RegistryDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(RegistryDbContext.Schema));
         builder.Services.AddQianData<AuditDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(AuditDbContext.Schema));

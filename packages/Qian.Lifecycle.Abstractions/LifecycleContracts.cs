@@ -110,3 +110,29 @@ public sealed record MountResult(string Scope, string EntryId, int Revision, str
 
 /// <summary>管理面装配诊断：EntryId 为空表示整个 scope 无法装配；Plugin 形如 组件@版本；ReasonCode 为错误码（契约不兼容为 PRECONDITION_FAILED）。</summary>
 public sealed record LifecycleDiagnosticView(string Scope, string? EntryId, string? Plugin, int? Revision, string ReasonCode, DateTimeOffset OccurredAt);
+
+/// <summary>
+/// 反向权限五类（组件规格 §3.4）：policy.permissions 的 platform / data / secrets / ui.connectSrc 与 policy.egress。租户管理员批准时逐项列出所批准的内容，
+/// 只能是该组件版本清单声明过的项；缺省的类别视为空。批准记录保存去重并按序数排序后的内容。
+/// </summary>
+public sealed record PermissionGrants(IReadOnlyList<string> Platform, IReadOnlyList<string> Data, IReadOnlyList<string> Egress,
+    IReadOnlyList<SecretGrant> Secrets, UiGrants Ui);
+
+/// <summary>批准的一项秘密访问：Name 为精确路径或末尾 /* 前缀，Scope 为 platform、tenant 或 dev；与清单 policy.permissions.secrets 的项逐字相同。</summary>
+public sealed record SecretGrant(string Name, string Scope);
+
+/// <summary>批准的前端 CSP connect-src 目标（policy.permissions.ui.connectSrc）。</summary>
+public sealed record UiGrants(IReadOnlyList<string> ConnectSrc);
+
+/// <summary>批准记录的来源：租户管理员自己批准，或平台运营经超管旁路代批（S1 的批准形态）。</summary>
+public static class PermissionApprovalChannels
+{
+    /// <summary>该租户已验证的用户或服务主体持批准权限点。</summary>
+    public const string Tenant = "tenant";
+    /// <summary>平台主体经 Authz 超管显式旁路代批，旁路已写入该租户审计链。</summary>
+    public const string Superadmin = "superadmin";
+}
+
+/// <summary>租户对某组件版本的反向权限批准记录（permission_approvals）；ApprovedBy 为已验证主体，ApprovedVia 见 <see cref="PermissionApprovalChannels"/>。</summary>
+public sealed record PermissionApprovalView(string TenantId, string PluginId, string Version, PermissionGrants Approved, string ApprovedBy, string ApprovedVia,
+    DateTimeOffset ApprovedAt);

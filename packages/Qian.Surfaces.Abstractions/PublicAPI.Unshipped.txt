@@ -179,3 +179,11 @@ static Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.Read(Qian.Runtime.IP
 static Qian.Surfaces.Abstractions.SurfaceRuntimeDiagnostics.ScopeName(Qian.Runtime.ScopeKey scope) -> string!
 Qian.Surfaces.Abstractions.SurfaceValidationOptions.ServiceKeys.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Qian.Surfaces.Abstractions.SurfaceValidationOptions.ServiceKeys.init -> void
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Signature -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Digest -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.InstallationBusy -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Modified -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Profile -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Recovery -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.PackageUnavailable -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Surfaces.Abstractions.SurfaceErrors.Engine -> Qian.Runtime.Errors.ErrorCode!

@@ -21,7 +21,7 @@ export function verifyDeclaredPackageDigests(references:readonly DeclaredPackage
  for(const reference of references){
   const artifact=artifacts.find(item=>packageIdentity(item)===packageIdentity(reference)&&item.version===reference.version);
   if(!artifact){if(complete)installFailure('package-manager','声明的代码包缺少归档摘要。');continue;}
-  if(reference.digest&&reference.digest!==artifact.digest)installFailure('.qian-plugin/plugin.json','代码包实际归档与 runtime 声明的 digest 不一致。');
+  if(reference.digest&&reference.digest!==artifact.digest)installFailure('.qian-plugin/plugin.json','代码包实际归档与 runtime 声明的 digest 不一致。','SURFACE_DIGEST_MISMATCH');
  }
 }
 
@@ -71,7 +71,7 @@ export function verifyInstalledPackageArtifacts(workspace:PackageWorkspace,artif
     if(!existsSync(directory))continue;
     const archive=within(directory,artifact.name.toLowerCase()+'.'+artifact.version.toLowerCase()+'.nupkg');
     if(!existsSync(archive))installFailure('package-manager','实际 NuGet 包目录缺少归档，不能借用其它缓存的摘要。');
-    if(archiveEvidence('nuget',artifact.name,artifact.version,readFileSync(archive)).digest!==artifact.digest)installFailure('package-manager','实际 NuGet 归档与预检或安装锁中的摘要不一致。');
+    if(archiveEvidence('nuget',artifact.name,artifact.version,readFileSync(archive)).digest!==artifact.digest)installFailure('package-manager','实际 NuGet 归档与预检或安装锁中的摘要不一致。','SURFACE_DIGEST_MISMATCH');
     verified=true;break;
    }
    if(!verified)installFailure('package-manager','实际 NuGet 归档缺失，无法复核摘要。');
@@ -80,7 +80,7 @@ export function verifyInstalledPackageArtifacts(workspace:PackageWorkspace,artif
    const shrinkwrap=path.join(workspace.root,'npm-shrinkwrap.json'),lockFile=existsSync(shrinkwrap)?shrinkwrap:path.join(workspace.root,'package-lock.json');
    const lock=readObject(lockFile),entry=installObject(installObject(lock.packages)['node_modules/'+artifact.name]);
    if(entry.link===true||entry.version!==artifact.version||entry.integrity!==artifact.integrity)
-    installFailure('package-manager','实际 npm 锁定归档与预检或安装锁中的摘要不一致。');
+    installFailure('package-manager','实际 npm 锁定归档与预检或安装锁中的摘要不一致。','SURFACE_DIGEST_MISMATCH');
    // npm 的隐藏锁描述本次 node_modules 还原；不能只相信宿主顶层锁。
    const actual=readObject(path.join(workspace.root,'node_modules/.package-lock.json')),installed=installObject(installObject(actual.packages)['node_modules/'+artifact.name]);
    if(installed.link===true||installed.version!==artifact.version||installed.integrity!==artifact.integrity)

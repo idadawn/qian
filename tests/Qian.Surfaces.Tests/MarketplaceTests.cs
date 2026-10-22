@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Qian.Runtime.Errors;
+using Qian.Surfaces.Abstractions;
 
 namespace Qian.Surfaces.Tests;
 
@@ -13,6 +15,20 @@ public sealed class MarketplaceTests
         Assert.NotNull(root);
         using var vectors = JsonDocument.Parse(File.ReadAllText(Path.Combine(root.FullName, "tck/marketplaces/cases.json")));
         var validator = new SurfaceValidator(); var report = new JsonObject();
+        var expected = JsonSerializer.Deserialize<string[]>(File.ReadAllText(Path.Combine(root.FullName, "tck/marketplaces/field-codes.json")))!;
+        var fields = SurfaceErrors.All.Select(code => code.Code).Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal(expected, fields);
+        Assert.Equal(fields.Length, fields.Distinct(StringComparer.Ordinal).Count());
+        var catalog = ErrorCatalog.CreateDefault();
+        foreach (var code in SurfaceErrors.All)
+        {
+            Assert.Equal(ErrorKind.Field, code.Kind);
+            Assert.Equal("qian.surfaces", code.Owner);
+            Assert.False(catalog.Contains(code));
+            catalog.Register(code);
+            Assert.True(catalog.Contains(code));
+        }
+        report["field-codes"] = JsonSerializer.SerializeToNode(fields);
         foreach (var vector in vectors.RootElement.EnumerateArray())
         {
             var name = vector.GetProperty("name").GetString()!;

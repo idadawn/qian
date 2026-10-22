@@ -1,6 +1,7 @@
 name: dotnet
 
-# .NET 构建、门禁与测试（S1-QA-001）：PublicAPI 门禁、依赖图门禁、门禁自测、单元与 Testcontainers 集成测试。
+# .NET 构建、门禁与测试（S1-QA-001）：PublicAPI 门禁、依赖图门禁、门禁自测、单元与 Testcontainers 集成测试；
+# 另有并行的身份依赖方组件 NativeAOT 冒烟（S1-IDP-014）。
 # PRD §14.2.1 要求 PR 级门禁 ≤ 20 分钟。仓库暂无自托管 runner，先用 GitHub 托管的 ubuntu-latest（自带 Docker）。
 
 on:
@@ -51,17 +52,14 @@ jobs:
       - name: 构建（PublicAPI 门禁：Qian 包未登记的公共 API 即编译失败）
         run: dotnet build Qian.slnx -c Release --no-restore
 
-      - name: 真实 Data 代码与唯一清单不得漂移
-        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Data/bin/Release/net10.0/Qian.Data.dll plugins/qian.data
-
-      - name: 真实 Events 代码与唯一清单不得漂移
-        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Events/bin/Release/net10.0/Qian.Events.dll plugins/qian.events
-
-      - name: 真实 Config 代码与唯一清单不得漂移
-        run: dotnet run --project tools/Qian.Plugin.Tool -c Release --no-build -- check packages/Qian.Config.Apollo/bin/Release/net10.0/Qian.Config.Apollo.dll plugins/qian.config
+      - name: 动态发现全部代码入口并校验唯一清单与实现构件分类
+        run: python3 scripts/check_plugin_manifests.py
 
       - name: 仓库 profile 生效配置的明文密钥扫描（S1-CFG-002）
         run: dotnet tools/Qian.Secrets.Tool/bin/Release/net10.0/Qian.Secrets.Tool.dll --profiles .
+
+      - name: 由组件 config.schema 推导各 profile 的 Apollo namespace 骨架（S1-CFG-003，随测试结果上传）
+        run: dotnet tools/Qian.Config.Tool/bin/Release/net10.0/Qian.Config.Tool.dll . --out TestResults/evidence/apollo-namespaces
 
       - name: 依赖图门禁
         run: python3 scripts/check_deps.py --solution Qian.slnx --no-restore
@@ -88,3 +86,36 @@ jobs:
           name: test-results
           path: TestResults/
           if-no-files-found: ignore
+
+  # plugins/qian.identity.client 的 x-aot 以此作业为依据（S1-IDP-014）：判断兼容性只看 ILC 结果，不看 Kun 包元数据（S1-KUN-015）。
+  # 发布路径同镜像流水线的 NativeAOT 模板（deploy/images/aot.Dockerfile），另加 ILC 警告即失败、逐条列出；与构建测试作业并行。
+  identity-aot:
+    name: 身份依赖方组件 NativeAOT 冒烟
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: NativeAOT 工具链（ubuntu-latest 自带 clang 与 zlib，缺失时才安装）
+        run: |
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+          fi
+
+      - name: 发布 linux-x64 NativeAOT（ILC 有任何 IL 警告即失败）
+        run: dotnet publish tools/Qian.Identity.Client.AotSmoke -c Release -r linux-x64 -p:IlcTreatWarningsAsErrors=true -p:TrimmerSingleWarn=false -o "$RUNNER_TEMP/identity-aot"
+
+      - name: 产物是原生可执行文件
+        run: |
+          test -x "$RUNNER_TEMP/identity-aot/Qian.Identity.Client.AotSmoke"
+          if [ -e "$RUNNER_TEMP/identity-aot/Qian.Identity.Client.AotSmoke.dll" ]; then
+            echo "没有按 NativeAOT 发布：csproj 需声明 PublishAot" >&2
+            exit 1
+          fi
+
+      - name: 运行原生二进制：挂载组件并做启动与端点冒烟
+        run: '"$RUNNER_TEMP/identity-aot/Qian.Identity.Client.AotSmoke"'

@@ -95,6 +95,14 @@ public sealed class CapabilityContractCheckTests
     }
 
     [Fact]
+    public void 名称表里叫default的属性照常往下查_其中的租户字段同样拒绝()
+    {
+        // S1-AGT-004 之前能力契约跳过所有叫 default、enum 的成员，连属性名也跳过，这里的租户字段会漏到目录里；表面校验器一直会拒绝。
+        var error = Assert.Throws<CapabilityContractException>(() => new CapabilityContractCheck(new SurfaceValidator(), new ToolContractHasher()).Check(Contract("probe.keyword", ProbeJson.Default.KeywordProbe)));
+        Assert.Equal(("qian.test/probe.keyword#/inputSchema/properties/default/properties/tenant", "tenant-field"), (error.Location, error.Rule));
+    }
+
+    [Fact]
     public void 条目输入Schema不合格时_位置以能力ID为文件指向条目内的出错处_超长时退到合法上级()
     {
         var check = new CapabilityContractCheck(new SurfaceValidator(), new ToolContractHasher());
@@ -305,12 +313,14 @@ public sealed class CapabilityContractCheckTests
 internal sealed record TenantProbe(string TenantId, int Take);
 internal sealed record NestedProbe(ProbeFilter Filter);
 internal sealed record ProbeFilter(string Tenant);
+internal sealed record KeywordProbe(ProbeFilter Default);
 internal sealed record PlainProbe(string Name, int Take);
 internal sealed record ProbeResult(int Total);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow, RespectRequiredConstructorParameters = true)]
 [JsonSerializable(typeof(TenantProbe))]
 [JsonSerializable(typeof(NestedProbe))]
+[JsonSerializable(typeof(KeywordProbe))]
 [JsonSerializable(typeof(PlainProbe))]
 [JsonSerializable(typeof(ProbeResult))]
 internal sealed partial class ProbeJson : JsonSerializerContext;

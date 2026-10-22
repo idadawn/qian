@@ -6,11 +6,15 @@ using OpenIddict.Server;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.Extensions.Hosting;
 using OpenIddict.Abstractions;
+using Qian.Data;
 using Qian.Identity.Abstractions;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Runtime.Errors.AspNetCore;
+using Qian.Tenancy;
+using StackExchange.Redis;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Qian.Identity.Server;
@@ -23,8 +27,13 @@ public static class IdentityServerHosting
     {
         ArgumentNullException.ThrowIfNull(services); ArgumentNullException.ThrowIfNull(options); ArgumentNullException.ThrowIfNull(environment);
         Validate(options, environment);
-        services.AddSingleton(options); services.AddSingleton<IdentityProtocolGate>();
+        services.AddSingleton(options); services.AddSingleton<IdentityProtocolGate>(); services.AddSingleton<IdentityAccountGate>();
         services.AddHostedService<IdentityBackchannelWorker>();
+        // 会话中心：Redis 索引可选——宿主登记了 IConnectionMultiplexer 才启用，否则完全由 PostgreSQL 承担；后台处理器负责吊销旁路与租户状态对账。
+        services.AddSingleton<SessionSignal>();
+        services.AddSingleton<ISessionIndex>(sp => sp.GetService<IConnectionMultiplexer>() is { } redis
+            ? new RedisSessionIndex(redis, sp.GetRequiredService<ILoggerFactory>().CreateLogger("Qian.Identity.SessionIndex")) : NoSessionIndex.Instance);
+        services.AddHostedService<IdentitySessionProcessor>();
         services.AddHttpClient("Qian.Identity.Backchannel", client => client.Timeout = TimeSpan.FromSeconds(5))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
         services.AddAntiforgery(); services.AddQianErrors();
@@ -44,6 +53,19 @@ public static class IdentityServerHosting
                 server.RegisterScopes(options.Clients.SelectMany(client => client.Application.Permissions)
                     .Where(permission => permission.StartsWith(Permissions.Prefixes.Scope, StringComparison.Ordinal))
                     .Select(permission => permission[Permissions.Prefixes.Scope.Length..]).Distinct(StringComparer.Ordinal).ToArray());
+                // RFC 8707 resource 的两层检查。OpenIddict 自带的第一层拿请求原文去比 RegisterResources 登记项的 AbsoluteUri：只有主机的标识
+                // （如 https://api.qian.test，也是 MCP 推荐的不带结尾斜杠写法）规范化后多一个 /，永远对不上（ID2190）。所以关掉它、不再登记，
+                // 由 Qian 在同一位置按该客户端的白名单逐字比较，越界报 invalid_target。第二层仍是 OpenIddict 的客户端 rsrc: 权限（ID2192），
+                // 只由各自的 Resources 推导，随描述符镜像进 OpenIddict 应用。
+                server.DisableResourceValidation();
+                foreach (var client in options.Clients) client.Application.Permissions.UnionWith(client.Resources.Select(resource => Permissions.Prefixes.Resource + resource));
+                server.AddEventHandler<OpenIddictServerEvents.ValidateAuthorizationRequestContext>(handler => handler
+                    .SetOrder(OpenIddictServerHandlers.Authentication.ValidateResources.Descriptor.Order)
+                    .UseInlineHandler(context => RejectForeignResources(context, context.Request, options)));
+                // 令牌端点排在客户端认证之后：未认证的调用方不能借它试探某个客户端登记了哪些资源。
+                server.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(handler => handler
+                    .SetOrder(OpenIddictServerHandlers.Exchange.ValidateAuthentication.Descriptor.Order + 500)
+                    .UseInlineHandler(context => RejectForeignResources(context, context.Request, options)));
                 foreach (var certificate in options.SigningCertificates) server.AddSigningCertificate(certificate);
                 foreach (var certificate in options.EncryptionCertificates) server.AddEncryptionCertificate(certificate);
                 // access token 可由 RP 使用 JWKS 验签；授权码与 refresh token 继续强制加密。
@@ -74,16 +96,31 @@ public static class IdentityServerHosting
         app.UseQianErrors();
         return app.Use(async (http, next) =>
         {
-            if (http.Request.Path.StartsWithSegments("/connect") || http.Request.Path.StartsWithSegments("/.well-known"))
+            var accountApi = http.Request.Path.StartsWithSegments(IdentityAccountEndpoints.Prefix);
+            if (accountApi || http.Request.Path.StartsWithSegments("/connect") || http.Request.Path.StartsWithSegments("/.well-known"))
             {
                 http.Response.Headers.CacheControl = "no-store"; http.Response.Headers.Pragma = "no-cache";
                 http.Response.Headers.XContentTypeOptions = "nosniff"; http.Response.Headers.ContentSecurityPolicy = "default-src 'none'; form-action 'self'; frame-ancestors 'none'";
                 http.Response.Headers["Referrer-Policy"] = "no-referrer";
-                if (!http.RequestServices.GetRequiredService<IdentityProtocolGate>().Active) { http.Response.StatusCode = 404; return; }
+                if (!http.RequestServices.GetRequiredService<IdentityProtocolGate>().Active ||
+                    accountApi && http.RequestServices.GetRequiredService<IdentityAccountGate>().Service is null) { http.Response.StatusCode = 404; return; }
             }
             await next(http).ConfigureAwait(false);
         });
     }
+
+    // resource 的第一层：请求里的每一项都须逐字命中该客户端的白名单（不做 URI 规范化），否则整个请求 invalid_target。
+    private static ValueTask RejectForeignResources(OpenIddictServerEvents.BaseValidatingContext context, OpenIddictRequest request, IdentityServerOptions options)
+    {
+        var resources = request.GetResources();
+        if (resources.IsEmpty) return ValueTask.CompletedTask;
+        var client = options.Clients.SingleOrDefault(candidate => candidate.Application.ClientId == request.ClientId);
+        if (client is null || resources.Any(resource => !client.Resources.Contains(resource, StringComparer.Ordinal)))
+            context.Reject(Errors.InvalidTarget, "One of the specified 'resource' parameters is not allowed for this client.");
+        return ValueTask.CompletedTask;
+    }
+
+    private static readonly Regex DeviceTypePattern = new(@"\A[a-z][a-z0-9_-]{0,15}\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 
     private static void Validate(IdentityServerOptions options, IHostEnvironment environment)
     {
@@ -94,13 +131,16 @@ public static class IdentityServerHosting
             options.SigningCertificates.Concat(options.EncryptionCertificates).Any(certificate => !certificate.HasPrivateKey || certificate.PublicKey.Oid.Value != "1.2.840.113549.1.1.1") ||
             options.Clients.Select(client => client.Application.ClientId).Distinct(StringComparer.Ordinal).Count() != options.Clients.Count)
             throw new ArgumentException("身份服务的 issuer、密钥或客户端配置无效。", nameof(options));
+        options.Accounts.Validate();
         foreach (var client in options.Clients)
         {
             var descriptor = client.Application;
             if (string.IsNullOrWhiteSpace(descriptor.ClientId) || descriptor.ClientType is not (ClientTypes.Public or ClientTypes.Confidential) || descriptor.ConsentType != ConsentTypes.Implicit ||
                 descriptor.ClientType == ClientTypes.Confidential && string.IsNullOrWhiteSpace(descriptor.ClientSecret) ||
                 descriptor.Permissions.Contains(Permissions.GrantTypes.ClientCredentials) && descriptor.ClientType != ClientTypes.Confidential ||
-                client.TenantId == Guid.Empty || client.Resources.Count == 0 || client.Resources.Any(resource => !Uri.TryCreate(resource, UriKind.Absolute, out var uri) || uri.Fragment.Length != 0) ||
+                !DeviceTypePattern.IsMatch(client.DeviceType ?? "") || client.TenantId == Guid.Empty || client.Resources.Count == 0 || client.Resources.Any(resource => !Uri.TryCreate(resource, UriKind.Absolute, out var uri) || uri.Fragment.Length != 0) ||
+                descriptor.Permissions.Any(permission => permission.StartsWith(Permissions.Prefixes.Resource, StringComparison.Ordinal) &&
+                    !client.Resources.Contains(permission[Permissions.Prefixes.Resource.Length..], StringComparer.Ordinal)) ||
                 client.BackchannelLogoutUri is { } callback && (!callback.IsAbsoluteUri || callback.UserInfo.Length != 0 || callback.Fragment.Length != 0 || callback.Query.Length != 0 ||
                     callback.Scheme != "https" && !(insecure && callback.IsLoopback && callback.Scheme == "http")))
                 throw new ArgumentException("客户端必须具有受信类型、精确受众及安全后通道地址。", nameof(options));
@@ -108,15 +148,27 @@ public static class IdentityServerHosting
     }
 }
 
-/// <summary>Identity Provider 的可撤销挂载；账号服务可由独立宿主提供，平台账号实现由 IDP-003 承接。</summary>
-public sealed class IdentityServerPlugin(IIdentityService accounts) : IQianPlugin
+/// <summary>
+/// Identity Provider 的可撤销挂载。无参构造使用内置的 Person / Membership 账号模型与统一登录流水线（需要 Data 与 Tenancy）；
+/// 传入 <see cref="IIdentityService"/> 则由宿主自带账号服务，本组件只承担协议面。
+/// </summary>
+public sealed class IdentityServerPlugin : IQianPlugin
 {
+    private readonly IIdentityService? _accounts;
+
+    /// <summary>内置账号模型：账号表、统一登录流水线、成员开户与用户计数端口一并提供。</summary>
+    public IdentityServerPlugin() { }
+
+    /// <summary>宿主自带账号服务；账号流水线由 IDP-003 之外的实现承担。</summary>
+    public IdentityServerPlugin(IIdentityService accounts) => _accounts = accounts ?? throw new ArgumentNullException(nameof(accounts));
+
     /// <inheritdoc />
-    public IReadOnlyList<ServiceKey> Inject => [Qian.Data.DataDefinition.Key];
+    public IReadOnlyList<ServiceKey> Inject => _accounts is null ? [DataDefinition.Key, TenancyDefinition.Key] : [DataDefinition.Key];
+
     /// <inheritdoc />
     public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {
-        ArgumentNullException.ThrowIfNull(accounts);
+        ArgumentNullException.ThrowIfNull(ctx);
         var options = ctx.Services.GetRequiredService<IdentityServerOptions>();
         if (ctx.Scope != ScopeKey.Global || config.ValueKind != JsonValueKind.Object || config.EnumerateObject().Count() != 1 ||
             !config.TryGetProperty("issuer", out var issuer) || issuer.ValueKind != JsonValueKind.String || issuer.GetString() != options.Issuer.AbsoluteUri)
@@ -134,13 +186,58 @@ public sealed class IdentityServerPlugin(IIdentityService accounts) : IQianPlugi
             if (existing is null) await applications.CreateAsync(client.Application, ct).ConfigureAwait(false);
             else await applications.UpdateAsync(existing, client.Application, ct).ConfigureAwait(false);
         }
+        await MirrorClientsAsync(database, options, ct).ConfigureAwait(false);
         await transaction.CommitAsync(ct).ConfigureAwait(false);
-        ctx.Provide(IdentityDefinition.Key, accounts);
+        IIdentityService service;
+        var accountGate = ctx.Services.GetRequiredService<IdentityAccountGate>();
+        if (_accounts is null)
+        {
+            if (accountGate.Service is not null) throw new InvalidOperationException("同一宿主只允许一个 Identity Server。");
+            var built = new IdentityAccountService(ctx, options);
+            service = built;
+            ctx.Effect(IdentityErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
+            ctx.Provide<IIdentityAccounts>(IdentityDefinition.AccountsKey, built);
+            ctx.Provide<ISignInPipeline>(IdentityDefinition.SignInKey, built);
+            ctx.Provide<IAuthenticatorFactorRegistry>(IdentityDefinition.FactorsKey, built.Factors);
+            ctx.Provide<ITenantMembershipProvisioner>(TenantProvisioning.MembershipKey, built);
+            ctx.Provide<ITenantUserCounter>(TenantSettings.UserCounterKey, built);
+            accountGate.Service = built; ctx.Effect(() => { accountGate.Service = null; });
+            // 卸载按登记的逆序执行：先排空后台工作（吊销旁路、租户对账），再释放服务；Data 的会话随后才会被释放。
+            ctx.Effect(built); ctx.Effect(built.CloseAsync);
+        }
+        else service = _accounts;
+        ctx.Provide(IdentityDefinition.Key, service);
         gate.Active = true; ctx.Effect(() => { gate.Active = false; });
+    }
+
+    // Client 实体是可信配置的镜像，另记 Qian 的类型、端类型与归属；OpenIddict 应用仍是协议侧的事实来源。
+    private static async Task MirrorClientsAsync(IdentityDbContext database, IdentityServerOptions options, CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+        foreach (var client in options.Clients)
+        {
+            var application = client.Application; var id = application.ClientId!;
+            var machine = application.Permissions.Contains(Permissions.GrantTypes.ClientCredentials) && !application.Permissions.Contains(Permissions.GrantTypes.AuthorizationCode);
+            var type = machine ? "machine" : application.ClientType == ClientTypes.Public ? "public" : "confidential";
+            var scopes = application.Permissions.Where(p => p.StartsWith(Permissions.Prefixes.Scope, StringComparison.Ordinal)).Select(p => p[Permissions.Prefixes.Scope.Length..]).Order(StringComparer.Ordinal).ToArray();
+            var row = await database.Clients.SingleOrDefaultAsync(c => c.ClientId == id, ct).ConfigureAwait(false);
+            if (row is null) database.Clients.Add(row = new ClientRow { ClientId = id, CreatedAt = now });
+            row.Type = type; row.DeviceType = client.DeviceType; row.TenantId = client.TenantId?.ToString("D"); row.PluginId = client.PluginId; row.Status = "active"; row.UpdatedAt = now;
+            row.RedirectUris = JsonSerializer.Serialize(application.RedirectUris.Select(uri => uri.OriginalString).Order(StringComparer.Ordinal).ToArray());
+            row.Scopes = JsonSerializer.Serialize(scopes); row.Resources = JsonSerializer.Serialize(client.Resources.Order(StringComparer.Ordinal).ToArray());
+        }
+        await database.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 }
 internal sealed class IdentityProtocolGate
 {
     private int _active;
     internal bool Active { get => Volatile.Read(ref _active) == 1; set => Volatile.Write(ref _active, value ? 1 : 0); }
+}
+
+/// <summary>内置账号服务的可撤销句柄；卸载组件后账号接口返回 404，协议端点也不再做会话校验。</summary>
+internal sealed class IdentityAccountGate
+{
+    private IdentityAccountService? _service;
+    internal IdentityAccountService? Service { get => Volatile.Read(ref _service); set => Volatile.Write(ref _service, value); }
 }

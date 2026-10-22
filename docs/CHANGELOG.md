@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-22 输入 Schema 的租户字段检查覆盖 properties 之外的写法（S1-AGT-004）
+
+工具文件与能力契约的输入 Schema 不再只看属性名：`required`、`dependentRequired`、`dependentSchemas` 里出现租户名、`propertyNames` 用 `const` / `enum` 列出租户名，或 `patternProperties` 的模式能匹配租户名（含 `^[a-z_]+$` 这类通配；超出 ECMA-262 可移植子集、无法判定的模式也算），都会被拒绝，顶层同样适用。开放的映射（没有关闭的嵌套 object）不点名字段，照常通过。此前能通过的组件可能因此装载失败，按错误里的 pointer 修改即可。规则见 [packages/Common](../packages/Common/README.md#tenantfieldrule-的判定规则)。
+
 ## 2026-10-16 租户域 RBAC 判定、完整 Explain 与平台超管旁路（S1-AZ-003）
 
 `qian.authz` 按租户的真实角色、授权与当前策略版本判定权限，缺省拒绝：缺租户上下文、主体跨租户、未登记权限点或无匹配授权都拒绝，BatchCheck 与逐条 Check 结果一致。判定快照按租户授权修订缓存，授予或撤销后下一次判定即生效（R103）。组件经 `ctx.Authz()` 调 `ExplainDetailedAsync`，得到命中角色、授权定位与缺少的权限点。平台超管只能经显式旁路访问租户资源：放行前写入目标租户审计链（`bypass = superadmin`），审计写不进就拒绝。详见 [Qian.Authz](../packages/Qian.Authz/README.md)。

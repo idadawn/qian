@@ -28,20 +28,25 @@ public sealed class CapabilityGenerator : IIncrementalGenerator
     private static void Generate(SourceProductionContext output, ImmutableArray<INamedTypeSymbol> plugins, ImmutableArray<INamedTypeSymbol> capabilities)
     {
         if (capabilities.Length == 0) return;
-        if (plugins.Length != 1)
+        var owners = plugins.GroupBy(p => Attribute(p, "QianPluginAttribute").ConstructorArguments[0].Value as string ?? "", StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+        var resolved = new List<(INamedTypeSymbol Type, string Component)>();
+        foreach (var capability in capabilities)
         {
-            foreach (var capability in capabilities) Report(output, capability, "每个能力程序集必须具有一个 QianPlugin 实现。");
-            return;
+            var attribute = Attribute(capability, "CapabilityAttribute");
+            var owner = attribute.NamedArguments.FirstOrDefault(pair => pair.Key == "ComponentId").Value.Value as string;
+            owner ??= plugins.Length == 1 ? owners.Keys.Single() : null;
+            if (owner is null || !owners.TryGetValue(owner, out var matches) || matches.Length != 1)
+            { Report(output, capability, "能力须唯一归属本程序集的 QianPlugin；多组件程序集必须声明 ComponentId。"); continue; }
+            var plugin = matches[0];
+            if (!Matches(owner, @"^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$") || owner.Length > 128 || plugin.IsAbstract || plugin.IsGenericType || plugin.ContainingType is not null || !plugin.AllInterfaces.Any(i => i.ToDisplayString() == "Qian.Runtime.IQianPlugin"))
+            { Report(output, capability, "QianPlugin 必须具有合法组件 ID，并实现 IQianPlugin。"); continue; }
+            resolved.Add((capability, owner));
         }
-        var plugin = plugins[0]; var component = Attribute(plugin, "QianPluginAttribute").ConstructorArguments[0].Value as string ?? "";
-        if (!Matches(component, @"^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$") || component.Length > 128 ||
-            !plugin.AllInterfaces.Any(i => i.ToDisplayString() == "Qian.Runtime.IQianPlugin"))
-        { Report(output, plugin, "QianPlugin 必须具有合法组件 ID，并实现 IQianPlugin。"); return; }
-        var names = capabilities.GroupBy(c => Attribute(c, "CapabilityAttribute").ConstructorArguments[0].Value as string, StringComparer.Ordinal);
-        foreach (var group in names)
+        foreach (var group in resolved.GroupBy(item => item.Component + "/" + Attribute(item.Type, "CapabilityAttribute").ConstructorArguments[0].Value, StringComparer.Ordinal))
         {
-            if (group.Count() > 1) { foreach (var type in group) Report(output, type, "组件内能力短名重复。"); continue; }
-            GenerateCapability(output, component, group.Single());
+            if (group.Count() > 1) { foreach (var duplicate in group) Report(output, duplicate.Type, "组件内能力短名重复。"); continue; }
+            var item = group.Single(); GenerateCapability(output, item.Component, item.Type);
         }
     }
 

@@ -41,6 +41,17 @@ internal sealed partial class PostgresPatchRepository(IDataService data, ITenant
     internal Task<ScopePatchSnapshot> PutAsync(ScopeKey scope, string entryId, JsonElement patch, int expectedRevision, string actor, CancellationToken ct)
         => PutCore(scope, entryId, patch, expectedRevision, actor, null, false, ct);
 
+    // 墓碑只暴露并发控制修订，供已授权卸载幂等确认；重建后 IsDeleted=false，旧修订不能命中。
+    internal async Task<int?> DeletedRevisionAsync(ScopeKey scope, string entryId, CancellationToken ct)
+    {
+        var owner = Owner(scope); CheckEntry(entryId);
+        await using var session = await data.OpenAsync<RegistryDbContext>(ct).ConfigureAwait(false);
+        var name = ScopeName(scope);
+        var revision = await session.Context.ScopePatches.AsNoTracking().Where(row => row.Scope == name && row.EntryId == entryId && row.IsDeleted)
+            .Select(row => (int?)row.Revision).SingleOrDefaultAsync(ct).ConfigureAwait(false);
+        CheckOwner(owner); return revision;
+    }
+
     // publish：公开挂载 / 卸载写入，随行登记领域事件，集成事件经处理器进入同一事务的 Outbox。
     internal Task<ScopePatchSnapshot> PutValidatedAsync(ScopeKey scope, string entryId, JsonElement patch, int expectedRevision, string actor,
         Func<IReadOnlyList<ScopePatchSnapshot>, CancellationToken, ValueTask> validate, bool publish, CancellationToken ct)
