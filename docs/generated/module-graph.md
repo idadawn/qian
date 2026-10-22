@@ -68,5 +68,7 @@ flowchart LR
   n7 -->|"Data"| n6
   n7 -->|"Data"| n8
   n7 -->|"Data"| n11
+  n7 -->|"Data"| n17
+  n4 -->|"Tenancy"| n17
 ```
 

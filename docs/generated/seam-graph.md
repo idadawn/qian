@@ -13,7 +13,7 @@
 | ` Contracts ` | ` global/capabilities ` |  |
 | ` Navigation ` | ` global/capabilities ` |  |
 | ` CommandTenancy ` | ` global/tenancy ` | ` global/capabilities ` |
-| ` Tenancy ` | ` global/tenancy ` | ` global/capabilities ` |
+| ` Tenancy ` | ` global/tenancy ` | ` global/capabilities `、` global/scheduler ` |
 | ` TenancyLifecycle ` | ` global/tenancy ` |  |
 | ` TenancyOperations ` | ` global/tenancy ` |  |
 | ` TenancyProvisioning ` | ` global/tenancy ` |  |
@@ -28,13 +28,14 @@
 | ` AuthzSuperadminBypass ` | ` global/authz ` |  |
 | ` AuthzTenantRoleGrant ` | ` global/authz ` |  |
 | ` CommandAuthorization ` | ` global/authz ` | ` global/capabilities ` |
-| ` Data ` | ` global/data ` | ` global/registry `、` global/lifecycle `、` global/capabilities `、` global/tenancy `、` global/authz `、` global/files `、` global/audit ` |
+| ` Data ` | ` global/data ` | ` global/registry `、` global/lifecycle `、` global/capabilities `、` global/tenancy `、` global/authz `、` global/files `、` global/audit `、` global/scheduler ` |
 | ` Files ` | ` global/files ` |  |
 | ` Files.Backends:local ` | ` global/files ` |  |
 | ` Config ` | ` global/config ` | ` global/lifecycle ` |
 | ` Events ` | ` global/events ` |  |
 | ` Audit ` | ` global/audit ` | ` global/capabilities ` |
 | ` CommandAudit ` | ` global/audit ` | ` global/capabilities ` |
+| ` Scheduler ` | ` global/scheduler ` |  |
 
 ```mermaid
 flowchart LR
@@ -117,6 +118,8 @@ flowchart LR
   n11 --> s27
   s28(("CommandAudit"))
   n11 --> s28
+  s29(("Scheduler"))
+  n17 --> s29
   s22 --> n0
   s25 --> n1
   s22 --> n1
@@ -132,5 +135,7 @@ flowchart LR
   s22 --> n6
   s22 --> n8
   s22 --> n11
+  s22 --> n17
+  s7 --> n17
 ```
 
