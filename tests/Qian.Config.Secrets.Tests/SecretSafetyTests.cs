@@ -36,6 +36,18 @@ public sealed class SecretSafetyTests
         Assert.Empty(SecretSafety.ScanConfiguration(new Dictionary<string, string?> { [key] = value }));
 
     [Fact]
+    public void 扁平值中的空值和转义字符不改变扫描语义()
+    {
+        Assert.Empty(SecretSafety.ScanConfiguration(new Dictionary<string, string?>
+        {
+            ["message"] = "带引号\"、换行\n和路径\\的普通文案",
+            ["optional"] = null
+        }));
+        var rejected = Assert.Single(SecretSafety.ScanConfiguration(new Dictionary<string, string?> { ["password"] = null }));
+        Assert.Equal(("CONFIG_SECRET_EXPOSED", "#/password", "sensitive-key"), (rejected.Code, rejected.Location, rejected.Reason));
+    }
+
+    [Fact]
     public void Schema引用_组合_数组_扁平键_敏感父级都不能绕过()
     {
         using var schema = JsonDocument.Parse("""

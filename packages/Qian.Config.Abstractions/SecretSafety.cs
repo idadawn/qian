@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Qian.Common;
@@ -36,7 +37,10 @@ public static partial class SecretSafety
                     .Any(IsSensitive)) result.Add(new("CONFIG_SECRET_EXPOSED", "#/" + Token(pair.Key), "sensitive-parent"));
                 candidates = Children(candidates, segment, schema, result, "#", 0);
             }
-            using var json = JsonDocument.Parse(JsonSerializer.Serialize(pair.Value));
+            // IConfiguration 值只有 string/null；直接编码，避免原生发布要求反射序列化元数据。
+            var buffer = new ArrayBufferWriter<byte>();
+            using (var writer = new Utf8JsonWriter(buffer)) writer.WriteStringValue(pair.Value);
+            using var json = JsonDocument.Parse(buffer.WrittenMemory);
             Visit(json.RootElement, path[^1], "#/" + Token(pair.Key), candidates, schema, result, 0);
         }
         return result.Distinct().ToArray();
