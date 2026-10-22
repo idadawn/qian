@@ -20,7 +20,13 @@
 
 TenantRequestBoundary 在宿主完成令牌认证后使用 Kun 的 Production 解析器，只接受已认证身份中唯一的 tenant_id。Qian 再按冻结契约校验非空 UUID；缺失、重复、非法值、与现有范围冲突均返回 UNAUTHENTICATED，X-Tenant-Id 不参与解析。调用结束或异常时释放范围。平台运营主体没有租户，必须走独立的运营授权入口，不能由本边界回退为 default 租户。
 
-TenantContextPropagator 从当前上下文写入 JSON 信封/作业参数或文本元数据。消费端显式传入从认证令牌或受保护调度记录获得的 authorizedTenantId，传播字段必须与之相同，且不得覆盖当前不同租户范围。该参数绝不能取自同一未受信消息。传播器本身不认证消息来源，不代替完整事件信封校验，也不允许缺失/null 平台消息进入租户业务入口；平台事件走独立通道。重复 tenant_id 保留并拒绝，不能先转字典而丢掉重复项。
+TenantContextPropagator 从当前上下文写入 JSON 信封/作业参数或文本元数据。消费端显式传入从认证令牌或受保护调度记录获得的 authorizedTenantId，传播字段必须与之相同，且不得覆盖当前不同租户范围。该参数不能取自同一未受信消息，集成事件消费端是唯一的例外（见下文）。传播器本身不认证消息来源，不代替完整事件信封校验，也不允许缺失/null 平台消息进入租户业务入口。重复 tenant_id 保留并拒绝，不能先转字典而丢掉重复项。
+
+集成事件消费端的例外（R122）：消费端没有独立于消息的令牌，S1 也不签名信封。Qian.Events 订阅器传入的 carrier 是信封原文，authorizedTenantId 是解析、校验后且与 AMQP 头 tenant_id 核对一致的信封租户，只能近似满足「不能取自同一输入」。传播器在这里提供缺失、重复、不一致与租户冲突的 fail-closed 判定，不提供独立授权；订阅器在它返回后再核对当前租户等于信封租户，不等即拒绝。信任根是 broker 的连接认证与发布端 Outbox 写入端：发布端的 tenant_id 由 Qian.Events 的信封写入端取自 Kun ITenantContext，不经传播器 Write。残余风险是持有 broker 发布凭据的服务能伪造任意租户的事件，是否签名信封另行决定。
+
+平台级事件（信封 tenant_id 为 null，如 lifecycle.plugin.activated.v1）不经传播器，也不另设通道。它们与租户事件同走 qian.events，按 subject 进各订阅队列。订阅默认拒绝，转入死信（原因 platform_event）；只有显式 acceptPlatformEvents 的订阅派发，派发时不开租户作用域，handler 内 ITenantContext 为空。不另建平台 exchange 的理由：exchange 或队列不是信任边界，持有 broker 发布凭据的服务能发往任何 exchange，真正的闸门是订阅级显式放行与不开租户作用域。这一口径由 S1-EVT-004 定，产品负责人 2026-10-23 确认。
+
+profile 宿主是否登记传播器（S1-EVT-004，产品负责人 2026-10-23 确认）：组合包含 qian.tenancy 的 profile 宿主接事件订阅器时登记 ITenantContextPropagator（本包的 TenantContextPropagator），与参考宿主一致，生产宿主与 gRPC、作业共用同一份判定。目前装 qian.events 的只有 platform 与 identity，两者都含 qian.tenancy。不装 qian.tenancy 的订阅宿主走订阅器的 Kun ITenantContext.BeginScope 回退分支，判定与传播器相同，见 [Qian.Events「租户回灌」](../Qian.Events/README.md#租户回灌)。
 
 TenantGrpcClientInterceptor 从当前上下文为四类 RPC 写入 tenant_id，不覆盖调用方已有的冲突或重复字段，也不修改可复用的原始 Metadata。TenantGrpcServerInterceptor 在宿主 JWT 验签后比较 claim 与元数据，再进入业务处理器；unary、服务端流、客户端流和双向流都使用同一边界。拒绝时返回 gRPC Unauthenticated，并在 qian-error-bin 二进制 trailer 中附带由 ErrorCatalog 生成的冻结 ErrorDetail JSON。宿主仍须配置认证和标准 HTTP 错误管道，适配器不自行签发令牌。
 
@@ -28,7 +34,7 @@ TenantGrpcClientInterceptor 从当前上下文为四类 RPC 写入 tenant_id，�
 
 ## 验证与剩余验收
 
-使用共用 PostgreSQL 16 fixture 和受限应用角色验证真实目录写入、两宿主同号竞争、编辑冲突、租户过滤与原生 SQL RLS；通过真实 Data/Runtime/Tenancy 插件装载验证目录生命周期。HTTP 边界单元测试使用已认证 ClaimsPrincipal 测试宿主管道；另有真实 Kestrel、JwtBearer 验签与受 RLS 约束的应用角色集成测试：A 的令牌请求 B 的记录 id 与不存在的 id 一样返回 404，X-Tenant-Id 不能切换租户，无令牌、缺 tenant_id 或签名被篡改的请求在处理器之前被拒。两类测试都不代表真实 Qian Identity 的签发或管理员登录。JSON/元数据序列化往返验证通用传播逻辑；另外已用真实 Kestrel HTTP/2 与 gRPC 客户端验证四种 RPC、双租户并发、24 组非法入口和错误详情。测试令牌由临时 RSA 密钥签发并经 JwtBearer 完整验签，这是传输适配器集成测试，不代表已完成真实 Qian Identity 的签发/管理员登录验收。事件消费者和作业执行器尚未接通。
+使用共用 PostgreSQL 16 fixture 和受限应用角色验证真实目录写入、两宿主同号竞争、编辑冲突、租户过滤与原生 SQL RLS；通过真实 Data/Runtime/Tenancy 插件装载验证目录生命周期。HTTP 边界单元测试使用已认证 ClaimsPrincipal 测试宿主管道；另有真实 Kestrel、JwtBearer 验签与受 RLS 约束的应用角色集成测试：A 的令牌请求 B 的记录 id 与不存在的 id 一样返回 404，X-Tenant-Id 不能切换租户，无令牌、缺 tenant_id 或签名被篡改的请求在处理器之前被拒。两类测试都不代表真实 Qian Identity 的签发或管理员登录。JSON/元数据序列化往返验证通用传播逻辑；另外已用真实 Kestrel HTTP/2 与 gRPC 客户端验证四种 RPC、双租户并发、24 组非法入口和错误详情。测试令牌由临时 RSA 密钥签发并经 JwtBearer 完整验签，这是传输适配器集成测试，不代表已完成真实 Qian Identity 的签发/管理员登录验收。事件消费端已由 Qian.Events 订阅器接通（S1-EVT-002，口径见上文 R122）；作业执行器尚未接通。
 
 按裁决 R81，TEN-001 的验收收口为上述 HTTP 租户边界、gRPC 对端传播与「目标租户不经请求体」：运营后台页面归 TEN-005，管理员登录归 IDP-003，事件消费端回灌归 EVT-002，作业执行器归 SCH-002。HTTP 运营接口已由 S1-TEN-006 发布：Qian.Tenancy.AspNetCore.MapQianTenancy(source) 提供 GET/POST /api/tenancy/tenants、PUT /api/tenancy/tenants/{id}，source 返回 global qian.tenancy 的实际上下文；宿主须排除这组路由的 TenantRequestBoundary，并配置 JwtBearer、ICurrentUser 与 ErrorDetail 管道。平台主体经 ISuperadminBypass 放行后写平台审计链 bypass=superadmin；租户主体 403，无凭据 401。状态迁移、开户编排、租户设置分别归 TEN-002/003/004；不以目录基础实现关闭这些任务。
 

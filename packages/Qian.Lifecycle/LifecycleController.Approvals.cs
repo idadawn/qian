@@ -1,7 +1,17 @@
+using System.Data;
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
+using Qian.Audit;
 using Qian.Data;
 using Qian.Identity.Abstractions;
 using Qian.Registry;
+using Qian.Runtime;
 using Qian.Runtime.Errors;
 
 namespace Qian.Lifecycle;
@@ -14,22 +24,63 @@ internal sealed partial class LifecycleController
         CancellationToken cancellationToken = default)
     {
         CheckManagement(tenantId, pluginId, version, user);
+        // 批准必须入该租户审计链（ADR-009 D9.8）：宿主没有装配审计时与缺判定端口一样 fail-closed，不写记录。
+        if (context.Scoped(new ScopeKey("tenant", tenantId)).TryInject<IAuditService>(AuditDefinition.Key) is not { } audit) throw NotFound();
         var via = await AuthorizeAsync(tenantId, user, LifecycleDefinition.InstallApprovePermission, ApprovalResource(tenantId, pluginId, version), cancellationToken).ConfigureAwait(false);
         // 判定之后才校验内容与目标版本：无权限者得到的永远是同一个 404。
         var approved = PermissionSet.Read(grants);
         var revision = await Revision(row => row.PluginId == pluginId && row.Version == version, cancellationToken).ConfigureAwait(false) ?? throw NotFound();
         PermissionSet.RequireDeclared(grants, await Declared(revision, cancellationToken).ConfigureAwait(false));
-        var approver = user.Principal!.Subject;
-        return await Locked(["install", tenantId, pluginId], async session =>
+        var approver = user.Principal!;
+        for (var attempt = 0; ; attempt++)
         {
-            var row = await session.Context.PermissionApprovals.SingleOrDefaultAsync(item => item.PluginId == pluginId && item.Version == version, cancellationToken).ConfigureAwait(false);
-            // 同一内容重复批准不改记录（幂等）；内容不同则整份替换并记下这一次的批准人。
-            if (row is not null && PermissionSet.Parse(row.Approved).SetEquals(approved)) return row.View();
-            if (row is null) session.Context.PermissionApprovals.Add(row = new PermissionApprovalRow { TenantId = tenantId, PluginId = pluginId, Version = version });
-            row.Approved = approved.Serialize(); row.ApprovedBy = approver; row.ApprovedVia = via; row.ApprovedAt = Now(); row.RowVersion++;
-            await Save(session, null, cancellationToken).ConfigureAwait(false);
-            return row.View();
-        }, cancellationToken).ConfigureAwait(false);
+            try { return await Approve(audit, tenantId, pluginId, version, approved, approver, via, cancellationToken).ConfigureAwait(false); }
+            catch (Exception error) when (attempt < 5 && Retryable(error))
+            { await Task.Delay(10 * (attempt + 1), cancellationToken).ConfigureAwait(false); }
+            catch (Exception error) when (Retryable(error)) { throw new QianErrorException(new QianError(PlatformErrors.Conflict)); }
+        }
+    }
+
+    // 批准记录与审计条目在同一可串行化事务里提交：审计写不进去，批准也不生效。
+    private Task<PermissionApprovalView> Approve(IAuditWriter audit, string tenantId, string pluginId, string version, PermissionSet approved, Principal approver, string via,
+        CancellationToken ct) => Locked(["install", tenantId, pluginId], IsolationLevel.Serializable, async session =>
+    {
+        var row = await session.Context.PermissionApprovals.SingleOrDefaultAsync(item => item.PluginId == pluginId && item.Version == version, ct).ConfigureAwait(false);
+        // 同一内容重复批准不改记录、不记审计（幂等）；内容不同则整份替换并记下这一次的批准人。
+        if (row is not null && PermissionSet.Parse(row.Approved).SetEquals(approved)) return row.View();
+        // 读回的 jsonb 文本由 PostgreSQL 重排键序、加空格；上一份内容按规范形重新序列化，哈希才与当时写入的一致。
+        var previous = row is null ? null : PermissionSet.Parse(row.Approved).Serialize();
+        if (row is null) session.Context.PermissionApprovals.Add(row = new PermissionApprovalRow { TenantId = tenantId, PluginId = pluginId, Version = version });
+        row.Approved = approved.Serialize(); row.ApprovedBy = approver.Subject; row.ApprovedVia = via; row.ApprovedAt = Now(); row.RowVersion++;
+        await Save(session, null, ct).ConfigureAwait(false);
+        await audit.AppendEnlistedAsync(ApprovalRecord(row, previous, approver), session.Context.Database.CurrentTransaction!.GetDbTransaction(), ct).ConfigureAwait(false);
+        return row.View();
+    }, ct);
+
+    // 租户链上的批准条目：主体即批准人，资源同判定资源，输入哈希取规范化的本次内容；载荷带渠道与本次、上一次的批准内容（首次批准时上一次为 null）。
+    // 两份内容合起来超出审计载荷上限时只记各自的 SHA-256，完整内容在批准记录与上一条批准审计里。
+    private static AuditRecord ApprovalRecord(PermissionApprovalRow row, string? previous, Principal approver)
+    {
+        var payload = ApprovalPayload(row, JsonNode.Parse(row.Approved), previous is null ? null : JsonNode.Parse(previous));
+        if (payload.GetRawText().Length > AuditPayloadLimit) payload = ApprovalPayload(row, Digest(row.Approved), previous is null ? null : Digest(previous));
+        var trace = Activity.Current?.TraceId is { } id && id != default ? id.ToHexString() : ActivityTraceId.CreateRandom().ToHexString();
+        return new AuditRecord(Guid.CreateVersion7(), row.TenantId, approver.Kind == PrincipalKind.User ? "user" : "service", approver.Subject, null, ApprovalAuditCapability, "v1",
+            Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(row.Approved))), "api", ApprovalResource(row.TenantId, row.PluginId, row.Version), "success", trace,
+            row.ApprovedAt, payload);
+        static JsonObject Digest(string content) => new() { ["sha256"] = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(content))) };
+    }
+
+    private static JsonElement ApprovalPayload(PermissionApprovalRow row, JsonNode? approved, JsonNode? previous) => JsonSerializer.SerializeToElement(new JsonObject
+    {
+        ["pluginId"] = row.PluginId, ["version"] = row.Version, ["via"] = row.ApprovedVia, ["approved"] = approved, ["previous"] = previous
+    });
+
+    // 可串行化冲突或死锁：放弃整个会话，从新会话重做读取、写入与审计（审计端口的约定）。
+    private static bool Retryable(Exception error)
+    {
+        var current = error;
+        while (current is DbUpdateException or InvalidOperationException && current.InnerException is { } inner) current = inner;
+        return current is PostgresException { SqlState: PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected };
     }
 
     public async ValueTask<PermissionApprovalView?> GetPermissionApprovalAsync(string tenantId, string pluginId, string version, ICurrentUser user, CancellationToken cancellationToken = default)
@@ -86,4 +137,8 @@ internal sealed partial class LifecycleController
     }
 
     private static string ApprovalResource(string tenantId, string pluginId, string version) => "lifecycle/install:" + tenantId + "/" + pluginId + "@" + version;
+
+    // 批准条目的稳定能力 ID（R23 component/name）与审计载荷上限（AuditRecord 拒绝超过 64 KiB 的载荷）。
+    internal const string ApprovalAuditCapability = "qian.lifecycle/permissions.approve";
+    private const int AuditPayloadLimit = 65536;
 }

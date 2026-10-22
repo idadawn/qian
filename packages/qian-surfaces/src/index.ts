@@ -446,7 +446,8 @@ const ordinal = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
 // 输入 Schema 点名租户字段的写法（S1-AGT-004），与 packages/Common/TenantFieldRule.cs 逐条对应（.NET 表面校验与能力契约共用那一份）：
 // 名称按 contracts/v0 的 TenantFieldName 整体匹配；patternProperties 的模式按 SchemaPattern 的可移植子集能匹配任一租户名、或超出子集无法判定，即违规；
 // propertyNames 只在肯定位置用 const / enum 列出租户名时算点名。未知成员照常往下查，示例、默认值、常量与枚举是实例数据，不检查；
-// 名称表的条目是名称，叫 default、enum 也照常往下查。开放的 object 不点名任何字段，不检查（S1-AGT-004 裁决）。
+// 名称表的条目是名称，叫 default、enum 也照常往下查。片段为 JSON Pointer 的 $ref / $dynamicRef 途经实例数据或停在名称表本身上，同样违规（S1-AGT-007 裁决）。
+// 开放的 object 不点名任何字段，不检查（S1-AGT-004 裁决）。
 const tenantMessage = '输入 Schema 不允许租户字段。';
 const tenantName = (name: string): boolean => /^tenant(?:[_-]?id)?$/i.test(name);
 // 四个名称的全部 ASCII 大小写写法（832 个），模式逐个试配。
@@ -455,11 +456,33 @@ const tenantSpellings = ['tenant', 'tenantid', 'tenant_id', 'tenant-id'].flatMap
   return Array.from({ length: 1 << letters }, (_, mask) => { let bit = 0; return [...name].map(c => c >= 'a' && c <= 'z' && (mask >> bit++ & 1) ? c.toUpperCase() : c).join(''); });
 });
 const instanceKeywords = new Set(['example', 'examples', 'default', 'const', 'enum']);
+// 取值是「名称 → 子 Schema（或名称数组）」的成员：下一段是名称，不是关键字。
+const nameTables = new Set(['properties', 'patternProperties', 'dependentSchemas', 'dependentRequired', 'dependencies', '$defs', 'definitions']);
+// 引用的片段是 JSON Pointer 时按遍历的口径逐段判定位置：途经实例数据或停在名称表本身上即越出 Schema 位置，与引用的是哪个资源无关。
+// 只还原 ASCII 范围的百分号编码，编码的斜杠（片段开头的也是）按无法判定；锚点与不带片段的引用不在此列。
+function outsideSchema(reference: string): boolean {
+  const hash = reference.indexOf('#');
+  if (hash < 0) return false;
+  let pointer = '';
+  for (let i = hash + 1; i < reference.length; i++) {
+    const hex = reference.slice(i + 1, i + 3), code = parseInt(hex, 16);
+    if (reference[i] === '%' && /^[0-9A-Fa-f]{2}$/.test(hex) && code < 0x80) { if (code === 0x2f) return true; pointer += String.fromCharCode(code); i += 2; }
+    else pointer += reference[i];
+  }
+  if (!pointer.startsWith('/')) return false;
+  let name = false;
+  for (const segment of pointer.slice(1).split('/')) {
+    if (name) { name = false; continue; }
+    if (instanceKeywords.has(segment)) return true;
+    name = nameTables.has(segment);
+  }
+  return name;
+}
 function tenantPattern(pattern: string): string | null {
   try { const compiled = compilePattern(pattern); return tenantSpellings.some(name => compiled.test(name)) ? 'patternProperties 的模式能匹配租户字段名。' : null; }
   catch (error) { if (error instanceof UnsupportedPattern) return 'patternProperties 的模式超出可移植子集，无法判定是否匹配租户字段名。'; throw error; }
 }
-// 按成员出现顺序返回 [pointer, 原因]；名称表先查全部名称，再逐条往下。
+// 按成员出现顺序返回 [pointer, 原因]；名称表先查全部名称，再逐条往下。表面校验不解析引用，越出 Schema 位置的引用报在引用本身。
 function tenantFields(value: JsonValue | undefined, pointer: string, found: [string, string][] = []): [string, string][] {
   const isObject = (item: JsonValue | undefined): item is Obj => item !== null && typeof item === 'object' && !Array.isArray(item);
   const items = (list: JsonValue[], at: string): void => list.forEach((item, index) => { if (typeof item === 'string' && tenantName(item)) found.push([at + '/' + index, tenantMessage]); });
@@ -483,7 +506,8 @@ function tenantFields(value: JsonValue | undefined, pointer: string, found: [str
   for (const [key, child] of Object.entries(value)) {
     if (instanceKeywords.has(key)) continue;
     const at = pointer + '/' + token(key);
-    if ((key === 'properties' || key === 'dependentSchemas') && isObject(child)) entries(child, at, name => tenantName(name) ? tenantMessage : null);
+    if ((key === '$ref' || key === '$dynamicRef') && typeof child === 'string' && outsideSchema(child)) found.push([at, '引用指向实例数据或名称表本身，无法判定是否点名租户字段。']);
+    else if ((key === 'properties' || key === 'dependentSchemas') && isObject(child)) entries(child, at, name => tenantName(name) ? tenantMessage : null);
     else if (key === 'patternProperties' && isObject(child)) entries(child, at, tenantPattern);
     else if ((key === '$defs' || key === 'definitions') && isObject(child)) entries(child, at, () => null);
     else if (key === 'required' && Array.isArray(child)) items(child, at);

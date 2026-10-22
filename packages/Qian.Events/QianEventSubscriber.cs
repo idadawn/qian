@@ -19,6 +19,7 @@ namespace Qian.Events;
 /// 消费端后台服务（PRD 7.10、ADR-008 D8.3 / D8.4 / D8.6 / D8.9 / D8.12）：按 <see cref="QianEventTopology"/> 声明队列，手动确认。
 /// 每条消息先解析 v1 信封并与 AMQP 属性核对，再查幂等记录、在信封租户的作用域里执行 handler，成功并写入幂等记录后才确认。
 /// 瞬时失败经重试队列按 <c>RetryBaseDelay × 2^(n-1)</c> 退避，用尽后与确定性失败一样转入订阅的死信队列；
+/// 重试或死信副本转发失败时原地退避重发，连续失败后交 broker 按队列的死信参数处理，不放回原消息；
 /// 宿主停机打断的消息放回队列，不计一次尝试。
 /// </summary>
 internal sealed partial class QianEventSubscriber(IServiceProvider services, EventSubscriptionRegistry registrations,
@@ -32,6 +33,9 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
     private static readonly TimeSpan StableSession = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan DrainTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan SettleTimeout = TimeSpan.FromSeconds(10);
+
+    /// <summary>同一条消息的重试或死信副本最多转发几次；连续失败到这个次数即不再放回原消息（见 <see cref="Settlement"/>）。</summary>
+    internal const int ForwardAttempts = 3;
 
     private readonly QianEventsSubscriberOptions _options = settings.Value;
     private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -215,7 +219,7 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
     private async Task ProcessAsync(ConsumerQueue queue, IChannel channel, SettlePublisher publisher, BasicDeliverEventArgs delivery, CancellationToken stoppingToken)
     {
         var attempt = ReadAttempts(delivery) + 1;
-        var settle = new Settlement(this, queue, channel, publisher, delivery, attempt);
+        var settle = new Settlement(this, queue, channel, publisher, delivery, attempt, stoppingToken);
         QianEventEnvelope envelope;
         try { envelope = QianEventEnvelope.Parse(Encoding.UTF8.GetString(delivery.Body.Span)); }
         catch (QianEventsException error)
@@ -294,33 +298,47 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
             }
         }
         // handler 已经成功：停机令牌不再打断写记录，否则重启后同一事件会再执行一次。
-        await _store.TryMarkProcessedAsync(target.Consumer, envelope.EventId, _options.IdempotencyTtl, CancellationToken.None).ConfigureAwait(false);
+        // 写入返回 false 说明先查后写之间同一事件的另一次投递已写入记录：并发重复投递，handler 至少执行了两次，靠 handler 的业务幂等兜底（ADR-008 D8.4）。
+        if (!await _store.TryMarkProcessedAsync(target.Consumer, envelope.EventId, _options.IdempotencyTtl, CancellationToken.None).ConfigureAwait(false))
+        {
+            EventsMetrics.ConsumerDuplicateExecuted.Add(1, Tags(target));
+            Log.DuplicateExecuted(logger, envelope.EventId, envelope.Type, target.Consumer);
+        }
         return false;
     }
 
     /// <summary>
     /// 租户只取已校验信封的 tenant_id（contracts/v0 §5 第 3 条），每条消息在全新作用域里进入。宿主登记了 <see cref="ITenantContextPropagator"/> 时经它进入：
-    /// carrier 为信封原文，authorizedTenantId 为已与 AMQP 头核对一致的信封租户；消费端没有独立令牌，这里只能近似满足传播器契约（见 S1-EVT-002 日志的建议裁决），
-    /// 它提供的是缺失、重复、不一致与租户冲突的 fail-closed 判定。未登记时退回 Kun ITenantContext，按同样规则先核对原文里恰有一个一致的 tenant_id。
+    /// carrier 为信封原文，authorizedTenantId 为已与 AMQP 头核对一致的信封租户。消费端没有独立于消息的令牌，只能近似满足传播器契约（R122）：
+    /// 它提供的是缺失、重复、不一致与租户冲突的 fail-closed 判定，信任根是 broker 的连接认证与发布端 Outbox 写入端。
+    /// 未登记时退回 Kun ITenantContext，按同样规则先核对原文里恰有一个一致的 tenant_id。两条路径进入后都核对当前租户等于信封租户，
+    /// 传播器或宿主上下文没有进入作用域、进入了别的租户，都按 tenant_rejected 拒绝。
     /// </summary>
     private IDisposable? EnterTenant(QianEventEnvelope envelope, ReadOnlyMemory<byte> body)
     {
         if (_tenant is not { IsMultiTenant: true } tenant) return null;
         if (tenant.TenantId is not null) throw new DeliveryRejectedException("tenant_rejected", Misconfigured("消费流里残留了租户上下文。"));
         if (envelope.TenantId is not { } id) return null;
+        IDisposable scope;
         try
         {
             using var document = JsonDocument.Parse(body);
-            if (_propagator is not null) return _propagator.BeginScope(document.RootElement, id);
-            var fields = document.RootElement.EnumerateObject().Where(field => field.NameEquals("tenant_id")).ToArray();
-            if (fields.Length != 1 || fields[0].Value.ValueKind != JsonValueKind.String || fields[0].Value.GetString() != id.ToString("D"))
-                throw new QianEventsException(EventsErrors.ConsumeRejected, "信封原文必须恰有一个与授权租户一致的 tenant_id。");
-            return tenant.BeginScope(id.ToString("D"));
+            if (_propagator is not null) scope = _propagator.BeginScope(document.RootElement, id);
+            else
+            {
+                var fields = document.RootElement.EnumerateObject().Where(field => field.NameEquals("tenant_id")).ToArray();
+                if (fields.Length != 1 || fields[0].Value.ValueKind != JsonValueKind.String || fields[0].Value.GetString() != id.ToString("D"))
+                    throw new QianEventsException(EventsErrors.ConsumeRejected, "信封原文必须恰有一个与授权租户一致的 tenant_id。");
+                scope = tenant.BeginScope(id.ToString("D"));
+            }
         }
         catch (Exception error) when (error is QianErrorException or QianEventsException or ArgumentException or JsonException)
         {
             throw new DeliveryRejectedException("tenant_rejected", error);
         }
+        if (Guid.TryParseExact(tenant.TenantId, "D", out var current) && current == id) return scope;
+        scope?.Dispose();
+        throw new DeliveryRejectedException("tenant_rejected", new QianEventsException(EventsErrors.ConsumeRejected, "进入租户作用域后当前租户与信封租户不一致。"));
     }
 
     private static Activity? StartActivity(ConsumerQueue queue, Target target, QianEventEnvelope envelope, string? traceState)
@@ -354,10 +372,19 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
     private static string? ReadHeader(IDictionary<string, object?>? headers, string key) =>
         headers is not null && headers.TryGetValue(key, out var value) ? value switch { byte[] bytes => Encoding.UTF8.GetString(bytes), string text => text, _ => value?.ToString() } : null;
 
-    // 重试也不会成功的失败：契约错误（QianEventsException、RecordChangedEvent.FromEnvelope 等派生失败）、参数非法（含非法租户 id）、载荷不合法，
-    // 以及错误码声明不可重试的统一错误。其余异常按瞬时失败退避重试。
-    private static bool IsDeterministic(Exception error) => error is InvalidOperationException or ArgumentException or JsonException or NotSupportedException ||
-        error is QianErrorException { Error.Code.Retryable: false };
+    // 重试也不会成功的失败：契约错误（QianEventsException；RecordChangedEvent.FromEnvelope 等派生失败抛的 InvalidOperationException 本身）、参数非法（含非法租户 id）、
+    // 载荷不合法、不支持的操作，以及错误码声明不可重试的统一错误。其余异常按瞬时失败退避重试，其中包括：
+    // InvalidOperationException 的其他子类（ObjectDisposedException 等，对象生命周期问题，换一次投递可能就好）；
+    // 包着内层异常的 InvalidOperationException 按内层判定（Npgsql 的执行策略把瞬时数据库故障包成 InvalidOperationException 抛出）。
+    internal static bool IsDeterministic(Exception error) => error switch
+    {
+        QianEventsException => true,
+        QianErrorException { Error.Code.Retryable: var retryable } => !retryable,
+        InvalidOperationException when error.GetType() == typeof(InvalidOperationException) => error.InnerException is null || IsDeterministic(error.InnerException),
+        InvalidOperationException => false,
+        ArgumentException or JsonException or NotSupportedException => true,
+        _ => false,
+    };
 
     private async Task AckAsync(IChannel channel, ulong deliveryTag)
     {
@@ -368,6 +395,13 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
     private async Task RequeueAsync(IChannel channel, ulong deliveryTag)
     {
         try { if (channel.IsOpen) await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: true, CancellationToken.None).ConfigureAwait(false); }
+        catch (Exception error) when (error is not OutOfMemoryException) { Log.SettleFailed(logger, error); }
+    }
+
+    // nack 不放回：竞争队列由 broker 按队列的死信参数（qian.dlx、本订阅的死信队列名、at-least-once）转入死信队列，广播队列没有死信参数，消息丢弃。
+    private async Task DiscardAsync(IChannel channel, ulong deliveryTag)
+    {
+        try { if (channel.IsOpen) await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: false, CancellationToken.None).ConfigureAwait(false); }
         catch (Exception error) when (error is not OutOfMemoryException) { Log.SettleFailed(logger, error); }
     }
 
@@ -385,8 +419,13 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
 
     private string Service => registrations.Service;
 
-    /// <summary>一条消息的收尾：转发副本（重试或死信）得到 broker 确认后才确认原消息；转发失败则放回原消息，不丢失。</summary>
-    private sealed class Settlement(QianEventSubscriber owner, ConsumerQueue queue, IChannel channel, SettlePublisher publisher, BasicDeliverEventArgs delivery, int attempt)
+    /// <summary>
+    /// 一条消息的收尾：转发副本（重试或死信）得到 broker 确认后才确认原消息，结果计数与日志都在确认之后，每次投递恰落入一个结果。
+    /// 转发失败时原地退避重发，不放回原消息：quorum 队列的 nack 放回不计入 x-delivery-limit，放回会让 handler 无上限地反复执行。
+    /// 连续 <see cref="ForwardAttempts"/> 次失败后计 forward_failed 并 nack 不放回，交 broker 按队列的死信参数处理；停机时仍放回原消息，不计失败。
+    /// </summary>
+    private sealed class Settlement(QianEventSubscriber owner, ConsumerQueue queue, IChannel channel, SettlePublisher publisher, BasicDeliverEventArgs delivery, int attempt,
+        CancellationToken stoppingToken)
     {
         private string Service => owner.Service;
 
@@ -395,21 +434,19 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
         {
             var deadLetter = target?.DeadLetterQueue ?? queue.DeadLetter;
             var consumer = target?.Consumer ?? (queue.Mode == EventSubscriptionMode.Competing ? Service + "." + queue.RetryName : Service + "@" + queue.RetryName);
+            var type = envelope?.Type ?? delivery.BasicProperties.Type;
+            if (deadLetter is null) await owner.AckAsync(channel, delivery.DeliveryTag).ConfigureAwait(false);
+            else if (!await ForwardAsync(QianEventTopology.DeadLetterExchange, deadLetter, null, DeadLetterHeaders(envelope, target, consumer, reason, error),
+                target, envelope?.EventId, type, consumer, reason).ConfigureAwait(false)) return;
             EventsMetrics.ConsumerRejected.Add(1, Tags(target, reason: reason, consumer: consumer));
-            Log.Rejected(owner.Logger, error, envelope?.EventId, envelope?.Type ?? delivery.BasicProperties.Type, consumer, attempt, reason);
-            if (deadLetter is null)
-            {
-                await owner.AckAsync(channel, delivery.DeliveryTag).ConfigureAwait(false);
-                return;
-            }
-            await ForwardAsync(QianEventTopology.DeadLetterExchange, deadLetter, null, DeadLetterHeaders(envelope, target, consumer, reason, error)).ConfigureAwait(false);
+            Log.Rejected(owner.Logger, error, envelope?.EventId, type, consumer, attempt, reason);
         }
 
         /// <summary>重试用尽或 handler 确定性失败：进订阅的死信队列并告警（计数加一、Error 日志，不含载荷）。</summary>
         public async Task DeadLetterAsync(QianEventEnvelope envelope, Target target, string reason, Exception? error)
         {
             if (await ForwardAsync(QianEventTopology.DeadLetterExchange, target.DeadLetterQueue, null,
-                DeadLetterHeaders(envelope, target, target.Consumer, reason, error)).ConfigureAwait(false))
+                DeadLetterHeaders(envelope, target, target.Consumer, reason, error), target, envelope.EventId, envelope.Type, target.Consumer, reason).ConfigureAwait(false))
             {
                 EventsMetrics.ConsumerDeadLettered.Add(1, Tags(target, reason: reason));
                 Log.DeadLettered(owner.Logger, error, envelope.EventId, envelope.Type, target.Consumer, attempt, reason);
@@ -424,7 +461,7 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
             var headers = CopyHeaders();
             headers[AttemptsHeader] = attempt;
             if (await ForwardAsync("", retry, (ch, ct) => RabbitTopology.DeclareRetryQueueAsync(ch, retry, queue.Name, delay, queue.Mode == EventSubscriptionMode.Broadcast, ct),
-                headers).ConfigureAwait(false))
+                headers, target, envelope.EventId, envelope.Type, target.Consumer, "retry").ConfigureAwait(false))
             {
                 EventsMetrics.ConsumerRetried.Add(1, Tags(target));
                 Log.Retrying(owner.Logger, error, envelope.EventId, envelope.Type, target.Consumer, attempt, delay.TotalMilliseconds);
@@ -455,19 +492,43 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
             return headers;
         }
 
-        private async Task<bool> ForwardAsync(string exchange, string routingKey, Func<IChannel, CancellationToken, Task>? declare, Dictionary<string, object?> headers)
+        // 返回 true 表示副本已被 broker 确认、原消息已确认；false 表示原消息已放回（停机）或已 nack 不放回（连续转发失败）。
+        // eventId、type、reason 只用于 forward_failed 的计数与日志：reason 在死信转发时为死信原因，重试转发时为 retry。
+        private async Task<bool> ForwardAsync(string exchange, string routingKey, Func<IChannel, CancellationToken, Task>? declare, Dictionary<string, object?> headers,
+            Target? target, Guid? eventId, string? type, string consumer, string reason)
         {
             var properties = new BasicProperties(delivery.BasicProperties) { Headers = headers, DeliveryMode = DeliveryModes.Persistent };
-            try
+            for (var failures = 1; ; failures++)
             {
-                using var timeout = new CancellationTokenSource(SettleTimeout);
-                await publisher.PublishAsync(exchange, routingKey, properties, delivery.Body, declare, timeout.Token).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is not OutOfMemoryException)
-            {
-                Log.ForwardFailed(owner.Logger, error, routingKey);
-                await owner.RequeueAsync(channel, delivery.DeliveryTag).ConfigureAwait(false);
-                return false;
+                try
+                {
+                    using var timeout = new CancellationTokenSource(SettleTimeout);
+                    await publisher.PublishAsync(exchange, routingKey, properties, delivery.Body, declare, timeout.Token).ConfigureAwait(false);
+                    break;
+                }
+                catch (Exception error) when (error is not OutOfMemoryException)
+                {
+                    Log.ForwardFailed(owner.Logger, error, routingKey, failures);
+                }
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    await owner.RequeueAsync(channel, delivery.DeliveryTag).ConfigureAwait(false);
+                    return false;
+                }
+                if (failures >= ForwardAttempts)
+                {
+                    // 与 rejected 一样，没有归属订阅时不带类型标签：类型取自未受信的消息属性，不能进指标维度。
+                    EventsMetrics.ConsumerForwardFailed.Add(1, Tags(target, reason: reason, consumer: consumer));
+                    Log.ForwardAbandoned(owner.Logger, eventId, type, consumer, attempt, routingKey, failures, reason);
+                    await owner.DiscardAsync(channel, delivery.DeliveryTag).ConfigureAwait(false);
+                    return false;
+                }
+                try { await Task.Delay(owner._options.RetryDelay(failures), stoppingToken).ConfigureAwait(false); }
+                catch (OperationCanceledException)
+                {
+                    await owner.RequeueAsync(channel, delivery.DeliveryTag).ConfigureAwait(false);
+                    return false;
+                }
             }
             await owner.AckAsync(channel, delivery.DeliveryTag).ConfigureAwait(false);
             return true;
@@ -571,8 +632,8 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
         [LoggerMessage(EventId = 27, Level = LogLevel.Information, Message = "宿主停机，集成事件 {EventId}（{Type}）放回 {Consumer} 的队列，不计失败次数。")]
         public static partial void Requeued(ILogger logger, Guid eventId, string type, string consumer);
 
-        [LoggerMessage(EventId = 28, Level = LogLevel.Warning, Message = "转发到 {RoutingKey} 失败，原消息放回队列。")]
-        public static partial void ForwardFailed(ILogger logger, Exception error, string routingKey);
+        [LoggerMessage(EventId = 28, Level = LogLevel.Warning, Message = "转发到 {RoutingKey} 失败（连续第 {Failures} 次）。")]
+        public static partial void ForwardFailed(ILogger logger, Exception error, string routingKey, int failures);
 
         [LoggerMessage(EventId = 29, Level = LogLevel.Warning, Message = "确认或放回消息失败；通道已断开时 broker 会重投未确认的消息。")]
         public static partial void SettleFailed(ILogger logger, Exception error);
@@ -591,6 +652,13 @@ internal sealed partial class QianEventSubscriber(IServiceProvider services, Eve
 
         [LoggerMessage(EventId = 34, Level = LogLevel.Information, Message = "宿主的租户上下文不是多租户，服务 {Service} 的消费端不回灌租户。")]
         public static partial void SingleTenantHost(ILogger logger, string service);
+
+        [LoggerMessage(EventId = 35, Level = LogLevel.Warning, Message = "集成事件 {EventId}（{Type}）的幂等记录已由另一次投递写入：{Consumer} 的 handler 至少执行了两次（并发重复投递）。")]
+        public static partial void DuplicateExecuted(ILogger logger, Guid eventId, string type, string consumer);
+
+        [LoggerMessage(EventId = 36, Level = LogLevel.Error,
+            Message = "集成事件 {EventId}（{Type}）在 {Consumer} 第 {Attempt} 次投递后转发到 {RoutingKey} 连续失败 {Failures} 次（{Reason}），原消息不再放回，交 broker 按队列的死信参数处理。")]
+        public static partial void ForwardAbandoned(ILogger logger, Guid? eventId, string? type, string consumer, int attempt, string routingKey, int failures, string reason);
     }
 }
 

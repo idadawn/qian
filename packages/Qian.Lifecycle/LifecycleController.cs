@@ -1,3 +1,4 @@
+using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -185,10 +186,14 @@ internal sealed partial class LifecycleController(
     }
 
     // 一次事务 + 事务级 advisory lock；锁键与租户、组件绑定，多副本同样串行。
-    private async Task<T> Locked<T>(string[] key, Func<IDataSession<LifecycleDbContext>, Task<T>> work, CancellationToken ct)
+    private Task<T> Locked<T>(string[] key, Func<IDataSession<LifecycleDbContext>, Task<T>> work, CancellationToken ct) =>
+        Locked(key, IsolationLevel.Unspecified, work, ct);
+
+    // 与审计同事务写入的步骤取可串行化隔离（审计端口只接受这种事务）；冲突由调用方换新会话重做整个步骤。
+    private async Task<T> Locked<T>(string[] key, IsolationLevel isolation, Func<IDataSession<LifecycleDbContext>, Task<T>> work, CancellationToken ct)
     {
         await using var session = await context.Data().OpenAsync<LifecycleDbContext>(ct).ConfigureAwait(false);
-        await using var transaction = await session.Context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        await using var transaction = await session.Context.Database.BeginTransactionAsync(isolation, ct).ConfigureAwait(false);
         var identity = JsonSerializer.Serialize(key.Prepend("qian.lifecycle"));
         await session.Context.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({identity}, 0))", ct).ConfigureAwait(false);
         var result = await work(session).ConfigureAwait(false);

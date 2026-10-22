@@ -11,7 +11,7 @@ namespace Qian.Sample.Crm.Tests;
 
 public sealed partial class CustomerCommandTests
 {
-    private static readonly string[] ExecutableNames = ["qian.sample.crm/customer.create", "qian.sample.crm/customer.get", "qian.sample.crm/customer.list"];
+    private static readonly string[] ExecutableNames = ["qian.sample.crm/customer.create", "qian.sample.crm/customer.get", "qian.sample.crm/customer.list", "qian.sample.crm/customer.purge"];
     [Fact]
     public async Task 真实客户插件登记生成的执行绑定_隐藏与卸载后旧引用不能调用()
     {
@@ -19,7 +19,7 @@ public sealed partial class CustomerCommandTests
         var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>();
         var tenant = host.App.Services.GetRequiredService<ITenantContext>();
         using var scope = tenant.BeginScope(A); var caller = runtime.Source();
-        var registrations = caller.List(CapabilityBindingRegistration.Key).Where(item => item.Name.StartsWith("qian.sample.crm/", StringComparison.Ordinal)).ToArray(); Assert.Equal(3, registrations.Length);
+        var registrations = caller.List(CapabilityBindingRegistration.Key).Where(item => item.Name.StartsWith("qian.sample.crm/", StringComparison.Ordinal)).ToArray(); Assert.Equal(4, registrations.Length);
         Assert.Equal(ExecutableNames, registrations.Select(item => item.Name).Order(StringComparer.Ordinal));
         var binding = caller.Inject<IExecutableCapability>(CapabilityBindingRegistration.Key, "qian.sample.crm/customer.create");
         Assert.Same(CreateCustomerCommand.QianCapability, binding.Contract);

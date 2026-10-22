@@ -257,14 +257,14 @@ plugin_id（服务主体为插件时）
 
 ### 13.6.2 反向权限审批
 
-清单 `policy.permissions` 段（原 `permissions`，R37）声明插件向平台申请什么，租户管理员挂载时逐项批准，升级新增即重新批准：
+清单 `policy.permissions` 段（原 `permissions`，R37）声明插件向平台申请什么，租户管理员开通时逐项批准，升级新增即重新批准（S1 的批准形态与口径见 R120：租户管理员 API 与运营代批并存，批准记录入该租户审计链）。各段形状以 permissions/v2 Schema 为准：
 
 | 段 | 内容 | 运行时强制点 |
 |---|---|---|
 | `platform[]` | 如 `tenant:read`、`user:read`、`file:write`、`notify:send` | 服务 PEP 以插件主体身份判定 |
-| `data[]` | `{ entity, access: r / rw }` | 数据引擎唯一入口；每插件独立 PG schema 与数据库角色，不得直连他人表 |
-| `policy.egress[]`（原 `permissions.egress`，R28 升为 `policy` 顶层字段；seam Provider 组件必填） | 允许出网目标 `<host>[:<port>]`；为空 = 默认拒绝出网 | 生成 NetworkPolicy / 出口网关规则；私网与云元数据地址默认阻断；`hooks.json`、`.mcp.json` 的 `url` 域名必须在其中 |
-| `secrets[]` | `{ name, scope }` 只有名字 | `ISecretResolver` 在使用点解析，永不回传明文 |
+| `data[]` | 字符串数组，每项是一个跨组件数据访问目标，如 `qian.sample.crm:customer`（R120 ⑥；v1 的 `{ entity, access }` 对象形状不再使用） | 数据引擎唯一入口；每插件独立 PG schema 与数据库角色，不得直连他人表 |
+| `policy.egress[]`（原 `permissions.egress`，R28 升为 `policy` 顶层字段；seam Provider 组件必填） | 允许出网目标 `<host>[:<port>]`（小写，host 可带 `*.` 前缀匹配子域）；为空 = 默认拒绝出网 | 生成 NetworkPolicy / 出口网关规则；私网与云元数据地址默认阻断；`hooks.json`、`.mcp.json` 的 `url` 域名必须在其中 |
+| `secrets[]` | `{ name, scope }` 只有名字；`name` 为精确路径或末尾 `/*` 前缀，`scope` 为 `platform` / `tenant` / `dev` | `ISecretResolver` 在使用点解析，永不回传明文 |
 | `ui.connectSrc[]` | 前端允许连接的源 | 生成 CSP `connect-src`；MF2 远程只能从白名单加载 |
 
 与之相对，`metadata/permissions.json`（原 `provides.permissions`，R37）是插件定义的、可被授予他人的权限点；两者都由 `qian.authz` 登记。
