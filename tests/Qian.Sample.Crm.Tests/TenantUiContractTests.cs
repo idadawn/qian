@@ -88,4 +88,67 @@ public sealed partial class CustomerCommandTests
             return await result.Content.ReadFromJsonAsync<JsonElement>(Ct);
         }
     }
+
+    [Fact]
+    public async Task TenantUi_查询与写入非法输入在HTTP层返回400带pointer_关键字百分号与反斜杠按字面匹配()
+    {
+        using var platform = new LifecyclePlatform { Management = true };
+        await using var business = await Start(lifecycle: platform);
+        await using var management = await ManagementHost(business, platform);
+        using var client = new HttpClient { BaseAddress = new Uri(management.Urls.Single()) };
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", business.Token(null, "", "root", "user"));
+        const string path = "/api/tenancy/tenants";
+
+        // 查询参数：非法状态与超过 200 字符的关键字在 HTTP 层拒绝；恰好 200 字符仍可查询。
+        await Invalid(await client.GetAsync(path + "?status=archived", Ct), "#/status");
+        await Invalid(await client.GetAsync(path + "?keyword=" + new string('k', 201), Ct), "#/keyword");
+        using (var boundary = await client.GetAsync(path + "?keyword=" + new string('k', 200), Ct)) Assert.Equal(HttpStatusCode.OK, boundary.StatusCode);
+
+        // 每组一条字面命中、一条只在通配解释下命中：% 不转义会多出一行，\ 不转义会换成另一行。
+        var percent = await Create("uiescpercent", "转义甲%乙");
+        await Create("uiescpercentwild", "转义甲丙乙");
+        var backslash = await Create("uiescbackslash", @"转义丁\戊");
+        await Create("uiescbackslashwild", "转义丁戊");
+        Assert.Equal([percent], await Search("甲%乙"));
+        Assert.Equal([backslash], await Search(@"丁\戊"));
+
+        // 写入：空租户号、空名称与编辑名称超长在 HTTP 层返回 400 与 pointer，且不落库。
+        await Invalid(await client.PostAsJsonAsync(path, new CreateTenant("", "空租户号用例") { Administrator = new(Guid.NewGuid(), "ui-owner") }, Ct), "#/code");
+        await Invalid(await client.PostAsJsonAsync(path, new CreateTenant("uiemptyname", "") { Administrator = new(Guid.NewGuid(), "ui-owner") }, Ct), "#/name");
+        Assert.Empty(await Search("空租户号用例"));
+        Assert.Empty(await Search("uiemptyname"));
+        var revision = (await Get(path + "/" + percent)).GetProperty("revision").GetUInt32();
+        await Invalid(await client.PutAsJsonAsync(path + "/" + percent, new UpdateTenant(new string('名', 201), revision), Ct), "#/name");
+        Assert.Equal("转义甲%乙", (await Get(path + "/" + percent)).GetProperty("name").GetString());
+
+        static async Task Invalid(HttpResponseMessage response, string pointer)
+        {
+            using (response)
+            {
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var error = await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
+                Assert.Equal("INPUT_INVALID", error.GetProperty("code").GetString());
+                Assert.Equal(pointer, error.GetProperty("pointer").GetString());
+            }
+        }
+        async Task<Guid> Create(string code, string name)
+        {
+            using var result = await client.PostAsJsonAsync(path, new CreateTenant(code, name) { Administrator = new(Guid.NewGuid(), "ui-owner-" + code) }, Ct);
+            Assert.Equal(HttpStatusCode.Created, result.StatusCode);
+            return (await result.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("id").GetGuid();
+        }
+        async Task<JsonElement> Get(string url)
+        {
+            using var result = await client.GetAsync(url, Ct);
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            return await result.Content.ReadFromJsonAsync<JsonElement>(Ct);
+        }
+        async Task<Guid[]> Search(string keyword)
+        {
+            var page = await Get(path + "?keyword=" + Uri.EscapeDataString(keyword));
+            var ids = page.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetGuid()).ToArray();
+            Assert.Equal(ids.Length, page.GetProperty("total").GetInt32());
+            return ids;
+        }
+    }
 }
