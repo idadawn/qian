@@ -1,7 +1,7 @@
 ---
 id: S1-FILE-001
 title: Qian.Files 核心：租户前缀键、配额、上传策略与预签名 API
-status: review
+status: done
 stage: S1
 area: FILE
 wave: 2
@@ -27,7 +27,7 @@ updated: 2026-10-22
 - [x] IT：上传 `text/html` 文件后下载响应头为 `Content-Disposition: attachment`，且无配置项可改变
 - [x] IT：配额 10 MB 时第 11 MB 上传返回 `QUOTA_EXCEEDED`；软删后配额释放
 - [x] IT：预签名 URL 过期后 PUT 失败；`complete` 时 sha256 不符返回错误并标记 `quarantined`
-- [ ] IT：`files.presign-upload` 调用产生审计与 `files.object.created.v1` 事件；`files.delete` 标 `destructive` + `confirm`
+- [x] IT：`files.presign-upload` 调用产生审计与 `files.object.created.v1` 事件；`files.delete` 标 `destructive` + `confirm`
 
 ## 进度日志
 
@@ -46,3 +46,5 @@ updated: 2026-10-22
 - 2026-10-22 claude：回链：去骨架（建议裁决 6：qian.bundle.base 与 qian.bundle.identity-server 的 files 补丁须补 `storage.endpoint`，否则 local 挂载报 INPUT_INVALID `#/storage/endpoint`；TEN-004 写入路径的 IT）；S1-FILE-002（s3 / oss 与 patch 切换）；S1-FILE-003（分片、秒传、暂存残留 / 软删对象 / 隔离证据的保留期物理清理）；S1-QA-005（独立模式没有命令策略时能力一律拒绝，最小独立组合）；S2（预览、病毒扫描，scanStatus 恒为 unscanned）
 - 2026-10-22 claude：本机门禁（二次同步 main 833f754226、含 #207 S1-RT-033 后的最终树）：dotnet build Qian.slnx -c Release 0 警告 0 错误；check_deps --no-restore 47 包通过（含 Qian.Files 三包）；tests/gates 94 项通过；`scripts/check_plugin_manifests.py` 16 个组件代码与清单一致（含 qian.files）；`dotnet ef migrations has-pending-model-changes`（FilesDbContext）无待生成变更；按合并后的 main 重跑 `qian docs generate`，module-graph / seam-graph 的合并冲突以重生成结果为准并已提交，docs/generated 无差异；check_docs 308 个文件、pm validate 198 个任务、pm build 通过；qian-cli profiles.test.mjs 3/3（骨架计数未变）。全量 dotnet test（QIAN_REQUIRE_DOCKER=1，带 QIAN_OASDIFF_PATH / QIAN_BUF_PATH，--max-parallel-test-modules 4）1245/1245 通过，其中 Qian.Files.Tests 28 例；首次同步 945ace6668 后的全量 1192/1192 亦通过
 - 2026-10-22 claude：提交评审：验收 1–4 已勾选，验收 5 待建议裁决 1
+- 2026-10-22 claude：用户回复「处理掉」（经主会话转达），建议裁决 1–7 按建议执行：1）`files.object.created.v1` 在完成上传、文件存在且通过校验时随能力事务写入 Outbox，presign 只建 uploading 行并记审计，验收 5 按此勾选；2）验收 3 以组件配置的 10 MiB 上限验收、维持勾选，经 S1-TEN-004 写入租户覆盖的 IT 归 S1-FILE-004；3）隔离文件计入配额，删除后释放；4）租户级文件数上限并入 S1-FILE-003（新增一条验收）；5）门面名定为 `IFileService`；6）qian.files 去骨架由新建的 S1-FILE-004 承接，含发布 Qian.Files 包、`qian add files` 真实安装与 PRD 7.7 独立模式 E2E、两个基础组合包的 files 补丁补 `storage.endpoint`、TEN-004 写入路径的 IT；7）上传策略的清单声明改由 Registry 汇总，并入 S1-FILE-004
+- 2026-10-22 claude：状态 → done（用户在本任务会话直接确认「按裁决收尾，把 S1-FILE-001 置为 done」）
