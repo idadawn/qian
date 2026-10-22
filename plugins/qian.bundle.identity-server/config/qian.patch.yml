@@ -50,6 +50,7 @@
     storage:
       kind: local
       root: /var/lib/qian/files
+      endpoint: https://id.example.internal/files/blobs/
     quota:
       perTenantBytes: 10737418240
   disabled: true

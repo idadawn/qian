@@ -41,6 +41,7 @@
     storage:
       kind: local
       root: /var/lib/qian/files
+      endpoint: https://platform.example.internal/files/blobs/
     quota:
       perTenantBytes: 10737418240
 - id: config

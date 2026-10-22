@@ -32,6 +32,7 @@ using Qian.Events;
 using Qian.Files.AspNetCore;
 using Qian.Identity.Abstractions;
 using Qian.Plugin.Sdk;
+using Qian.Registry;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Runtime.Errors.AspNetCore;
@@ -80,7 +81,9 @@ internal sealed class FilesHost : IAsyncDisposable
     // 受限业务登录（NOSUPERUSER / NOBYPASSRLS），用来从数据库侧核对 RLS 的实际效果。
     internal string BusinessConnection => _business;
 
-    internal static async Task<FilesHost> StartAsync(PostgresFixture postgres, object? policies = null, long quota = Quota, CancellationToken ct = default)
+    // installed 不为 null 时另挂只提供预装快照的 Registry 替身，模拟平台宿主里各组件 metadata/upload-policies.json 的声明。
+    internal static async Task<FilesHost> StartAsync(PostgresFixture postgres, object? policies = null, long quota = Quota,
+        IReadOnlyList<InstalledComponentMetadata>? installed = null, CancellationToken ct = default)
     {
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var role = "qian_files_app_" + suffix; var owner = "qian_audit_fn_" + suffix; var migrator = "qian_files_owner_" + suffix;
@@ -183,7 +186,7 @@ internal sealed class FilesHost : IAsyncDisposable
                     $"VALUES ('{id}'::uuid, '{code}', 'files tenant', 'row', 'active', now());", ct);
             await app.StartAsync(ct);
             var address = Assert.Single(app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses);
-            await runtime.MountAsync(Configuration(storage, address + "/files/blobs/", quota, policies), ct);
+            await runtime.MountAsync(Configuration(storage, address + "/files/blobs/", quota, policies), installed, ct);
             await runtime.ProvisionAsync(A, "tenant.owner", Subject, ct);
             await runtime.ProvisionAsync(B, "tenant.user", Subject, ct);
             return new FilesHost(app, runtime, signing, key, new HttpClient { BaseAddress = new Uri(address) }, clock, storage,
@@ -322,9 +325,10 @@ internal sealed class FilesHostRuntime(IServiceProvider services, ITenantContext
     private readonly PluginLoader _loader = new(services);
     internal PluginLoader Loader => _loader;
 
-    internal async Task MountAsync(JsonElement files, CancellationToken ct)
+    internal async Task MountAsync(JsonElement files, IReadOnlyList<InstalledComponentMetadata>? installed, CancellationToken ct)
     {
-        IReadOnlyList<PluginDefinition> providers = [
+        IReadOnlyList<PluginDefinition> registry = installed is null ? [] : [Define("registry", "qian.registry", new InstalledSnapshotPlugin(installed), [RegistryDefinition.Key])];
+        IReadOnlyList<PluginDefinition> providers = [.. registry,
             Define("data", "qian.data", new DataPlugin(), [DataDefinition.Key]),
             Define("events", "qian.events", new EventsPlugin(), [EventsDefinition.Key]),
             Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey],
@@ -332,7 +336,8 @@ internal sealed class FilesHostRuntime(IServiceProvider services, ITenantContext
             // 授权组件持久化并登记 qian.files 的权限目录（plugins/qian.files/metadata），监听 tenant/provisioned 实例化内置角色与组件缺省策略。
             Define("authz", "qian.authz", new AuthzPlugin([FilesMetadata.Catalog()]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key], new { decisionLogSampling = 0d }),
             Define("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]),
-            Define("files", "qian.files", new FilesPlugin(), [FilesDefinition.Key], files)];
+            // provides 取自仓库清单（含 [Contributes] 派生的 Files.Backends:local）：装载器在 Apply 后核对每个声明的服务键都已提供。
+            Define("files", "qian.files", new FilesPlugin(), FilesMetadata.Provides(), files)];
         await _loader.MountAsync(providers, ct);
         foreach (var definition in providers)
             if (_loader.GetState(definition.Entry.Id, definition.Entry.Scope) != PluginState.Ready)
@@ -390,6 +395,13 @@ internal static class FilesMetadata
         using var permissions = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "permissions.json")));
         using var roles = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "roles.json")));
         return new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata("qian.files", "1.0.0", permissions.RootElement, roles.RootElement);
+    }
+
+    // 清单的 provides（具名项形如 Files.Backends:local，与 ctx.Provide(key, name, …) 提供的服务键同名）。
+    internal static IReadOnlyList<ServiceKey> Provides()
+    {
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins", "qian.files", ".qian-plugin", "plugin.json")));
+        return [.. manifest.RootElement.GetProperty("provides").EnumerateArray().Select(item => new ServiceKey(item.GetString()!))];
     }
 
     internal static string RepositoryRoot()

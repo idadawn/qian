@@ -468,7 +468,8 @@
 {
   "storage": {
     "kind": "local",
-    "root": "/var/lib/qian/files"
+    "root": "/var/lib/qian/files",
+    "endpoint": "https://platform.example.internal/files/blobs/"
   },
   "quota": {
     "perTenantBytes": 10737418240
@@ -536,7 +537,7 @@
     },
     "policies": {
       "type": "array",
-      "description": "平台默认上传策略；组件也可在 Apply 中经 IFileService.Policies 登记自己的用途。用途形如 \u003C组件 ID\u003E/\u003C名称\u003E，组件 ID 进入存储键。",
+      "description": "平台默认上传策略；组件也可在 Apply 中经 IFileService.Policies 登记，或在自己的 metadata/upload-policies.json 声明本组件的用途（平台宿主经 Registry 汇总，同用途以这里为准）。用途形如 \u003C组件 ID\u003E/\u003C名称\u003E，组件 ID 进入存储键。",
       "items": {
         "type": "object",
         "required": [
