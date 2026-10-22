@@ -129,7 +129,8 @@ internal sealed class FileService(ISender sender, FilesRuntime runtime) : IFileS
 }
 
 // R38 注册表 seam 的进程内实现：同名独占，释放句柄可重复调用。
-internal sealed class UploadPolicyRegistry : IUploadPolicyRegistry
+// 查找时已登记的策略（组件配置 policies[] 与消费组件在 Apply 里的登记）优先于组件 metadata 的声明：配置属于部署层，同用途以它为准，不报冲突。
+internal sealed class UploadPolicyRegistry(DeclaredUploadPolicies? declared = null) : IUploadPolicyRegistry
 {
     private readonly Dictionary<string, UploadPolicy> _items = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
@@ -144,8 +145,18 @@ internal sealed class UploadPolicyRegistry : IUploadPolicyRegistry
             if (!_items.TryAdd(purpose, copy)) throw new QianErrorException(new QianError(PlatformErrors.RegistrationConflict, Conflict(FilesDefinition.PoliciesKey, purpose)));
         return new Release(() => { lock (_gate) if (_items.TryGetValue(purpose, out var current) && ReferenceEquals(current, copy)) _items.Remove(purpose); });
     }
-    public UploadPolicy? Find(string purpose) { lock (_gate) return _items.GetValueOrDefault(purpose); }
-    public IReadOnlyList<UploadPolicy> List() { lock (_gate) return Array.AsReadOnly(_items.Values.OrderBy(item => item.Purpose, StringComparer.Ordinal).ToArray()); }
+    public UploadPolicy? Find(string purpose)
+    {
+        lock (_gate) if (_items.TryGetValue(purpose, out var registered)) return registered;
+        return declared?.Policies.GetValueOrDefault(purpose);
+    }
+    public IReadOnlyList<UploadPolicy> List()
+    {
+        UploadPolicy[] registered;
+        lock (_gate) registered = [.. _items.Values];
+        var visible = (declared?.Policies.Values ?? []).Where(item => !registered.Any(existing => existing.Purpose == item.Purpose)).Concat(registered);
+        return Array.AsReadOnly(visible.OrderBy(item => item.Purpose, StringComparer.Ordinal).ToArray());
+    }
 
     internal static Dictionary<string, string> Conflict(ServiceKey key, string name) => new() { ["key"] = key.Name + ":" + name, ["owner"] = "qian.files" };
 }

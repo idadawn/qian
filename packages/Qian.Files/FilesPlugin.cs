@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Qian.Data;
 using Qian.Plugin.Sdk;
+using Qian.Registry;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Tenancy;
@@ -12,7 +13,8 @@ using Qian.Tenancy;
 namespace Qian.Files;
 
 /// <summary>
-/// qian.files 的真实 Provider（global 或 tenant scope）：登记 local 存储后端与组件配置里的默认上传策略，按 storage.kind 选用后端，
+/// qian.files 的真实 Provider（global 或 tenant scope）：登记 local 存储后端与组件配置里的默认上传策略，
+/// 平台宿主另从 Registry 预装快照汇总各组件 metadata/upload-policies.json 的声明（同用途以配置为准），按 storage.kind 选用后端，
 /// 提供 Files 服务键（<see cref="IFileService"/>，能力门面）与六个能力的执行绑定；卸载撤销服务、能力、策略与错误码。
 /// 宿主须先 AddQianData&lt;FilesDbContext&gt;、在 AddKunEventBus 中 RegisterFilesEvents、在 AddKunMediator 中 AddQianFiles，否则 Apply 失败。
 /// </summary>
@@ -42,9 +44,16 @@ public sealed class FilesPlugin : IQianPlugin
         if (services.GetService<IDataContextCatalog>() is { } contexts && !contexts.ContextTypes.Contains(typeof(FilesDbContext)))
             throw new InvalidOperationException("宿主须以 AddQianData<FilesDbContext> 装配文件元数据上下文。");
         var options = services.GetService<IOptions<QianFilesOptions>>()?.Value ?? new QianFilesOptions();
-        var backends = new FileBackendRegistry(); var policies = new UploadPolicyRegistry();
-        ctx.Effect(backends.Register(LocalFileBackendFactory.Name, new LocalFileBackendFactory(options.LocalSigningKey)));
+        // 组件 metadata/upload-policies.json 的声明只在有 Registry 的平台宿主可见；Registry 不进 Inject（standalone 与 qian add 没有它，R34），经 TryInject 读取预装快照。
+        var declared = new DeclaredUploadPolicies(() => ctx.TryInject<IRegistryService>(RegistryDefinition.Key));
+        var backends = new FileBackendRegistry(); var policies = new UploadPolicyRegistry(declared);
+        var local = new LocalFileBackendFactory(options.LocalSigningKey);
+        ctx.Effect(backends.Register(LocalFileBackendFactory.Name, local));
+        // 清单 provides 的 Files.Backends:local 由上面的 [Contributes] 派生，装载器在 Apply 后核对它确实已提供。
+        ctx.Provide<IFileBackendFactory>(FilesDefinition.BackendsKey, LocalFileBackendFactory.Name, local);
         foreach (var policy in settings.Policies) ctx.Effect(policies.Register(policy));
+        // Registry 已就绪时在挂载期就编译声明：坏的声明让 Apply 失败，而不是拖到第一次上传才报错。
+        _ = declared.Policies;
         var runtime = new FilesRuntime(options.Clock, backends, policies, settings.QuotaPerTenantBytes, () => ctx.TryInject<ITenantSettings>(TenantSettings.Key));
         // S1 只有 local；s3 / oss 由 S1-FILE-002 作为后端登记，未登记的名称启动即拒绝。
         var factory = backends.Find(settings.Kind)

@@ -29,7 +29,7 @@ builder.Services.AddKunMediator(registry => registry.AddQianFiles(sp => /* 按�
 | `storage.root` | local 必填：对象根目录（绝对路径） |
 | `storage.endpoint` | local 必填：宿主映射直传 / 直下端点的公开基址（绝对 http(s) 地址，路径与 `MapQianFiles` 的 `TransferPath` 一致，缺省 `/files/blobs`） |
 | `quota.perTenantBytes` | 租户字节配额的平台默认值，缺省 10 GiB |
-| `policies[]` | 平台默认上传策略：`purpose`、`allowedTypes`、`maxSize`、可选 `maxCount` |
+| `policies[]` | 平台默认上传策略：`purpose`、`allowedTypes`、`maxSize`、可选 `maxCount`；与组件 `metadata/upload-policies.json` 的声明同用途时以这里为准 |
 
 宿主选项 `QianFilesOptions` 只有时钟与 local 签名密钥；没有任何配置项或选项能改变下载处置方式。
 
@@ -68,7 +68,7 @@ builder.Services.AddKunMediator(registry => registry.AddQianFiles(sp => /* 按�
 - 不支持分片上传、秒传；暂存残留、软删对象与隔离证据的保留期物理清理归 S1-FILE-003。完成上传在能力事务内同步复制整个文件，单文件大小应由用途策略的 `maxSize` 控制在合理范围，大文件走分片后再改。
 - 不做病毒扫描与预览：`scanStatus` 恒为 `unscanned`，预览归 S2。
 - 软删后的文件对全局查询过滤器不可见，重复删除返回 404 而不是原回执（QIAN0004 不允许绕过过滤器），不会重复产生副作用。
-- 清单仍带 `x-skeleton`：按 S1-DEC-018 口径，发布并经 `qian add files` 真实安装后才去标（尚无任务承接，见任务日志的建议裁决）；去标时基础组合包（`qian.bundle.base`、`qian.bundle.identity-server`）的 files 补丁须补 `storage.endpoint`，否则挂载报 `INPUT_INVALID`（`#/storage/endpoint`）。
-- 租户配额覆盖依赖 Registry 里有 qian.files 条目，清单去骨架前无法经 S1-TEN-004 写入；集成测试用组件配置的 10 MiB 上限验收，覆盖优先级由单元测试锁定。
-- 用途策略来自组件配置与 `Policies.Register`；清单 `contributes: qian.files.upload-policy/v1` 的汇总尚未接。
+- 清单仍带 `x-skeleton`：按 S1-DEC-018 口径，锁步发布并经 `qian add data files` 从私有源真实安装后去标（S1-FILE-004）。基础组合包（`qian.bundle.base`、`qian.bundle.identity-server`）的 files 补丁已带 `storage.endpoint`（示例域名，部署时按实际公开基址覆盖）；`runtime.nuget` 的版本与摘要在发布后人工同步，发布链自动给出待同步清单归 S1-RT-034。
+- 租户配额覆盖依赖 Registry 里有 qian.files 条目，清单去骨架前无法经 S1-TEN-004 写入；集成测试用组件配置的 10 MiB 上限验收，覆盖优先级由单元测试锁定，经 TEN-004 写入的集成测试随 S1-FILE-004 去标后补。
+- 组件声明的上传策略（`metadata/upload-policies.json`）只在平台宿主经 Registry 预装快照汇总，同组件预装多个版本时取最高版本的声明；不按租户实际挂载的组件过滤。声明不合法时，Registry 已就绪则挂载失败，否则在第一次用到策略时报 `INPUT_INVALID`（指针形如 `acme.crm/metadata/upload-policies.json#/0/purpose`）。
 - 独立模式（不装 Tenancy / Authz / Audit）没有命令策略，能力一律拒绝；最小独立组合与样例归 S1-QA-005。
