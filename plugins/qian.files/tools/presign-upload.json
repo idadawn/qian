@@ -1,0 +1,98 @@
+{
+  "name": "presign-upload",
+  "description": "按上传策略与租户配额申请一个文件的直传地址（不超过 15 分钟）；存储键由服务端生成，重复提交同一幂等键返回同一文件。",
+  "sideEffect": "write",
+  "policyHint": "allow",
+  "idempotent": true,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "internal",
+  "costTier": "low",
+  "contractVersion": "v1",
+  "audit": true,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.files/presign-upload"
+  },
+  "requiredPermission": "qian.files:file:write",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "idempotencyKey": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "purpose": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "size": {
+        "type": "integer"
+      },
+      "contentType": {
+        "type": "string"
+      },
+      "sha256": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "idempotencyKey",
+      "purpose",
+      "name",
+      "size",
+      "contentType",
+      "sha256"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "fileId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "url": {
+        "type": "string",
+        "format": "uri"
+      },
+      "method": {
+        "type": "string"
+      },
+      "requiredHeaders": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "expiresAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "fileId",
+      "url",
+      "method",
+      "requiredHeaders",
+      "expiresAt"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "ee4b4d67124f9ce62a600869b6ad278215da17a25982885559757f8bee8b74c2",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.files"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "name": "quota",
+  "description": "查看当前租户的文件配额上限、已用字节与文件数。",
+  "sideEffect": "read",
+  "policyHint": "allow",
+  "idempotent": false,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "internal",
+  "costTier": "low",
+  "contractVersion": "v1",
+  "audit": false,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.files/quota"
+  },
+  "requiredPermission": "qian.files:file:read",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "limitBytes": {
+        "type": "integer"
+      },
+      "usedBytes": {
+        "type": "integer"
+      },
+      "fileCount": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "limitBytes",
+      "usedBytes",
+      "fileCount"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "e50fb96d3b64747b10efe27fda9cc84e0a553f3e7fb61a3504b5df303a220db3",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.files"
+  }
+}

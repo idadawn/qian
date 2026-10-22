@@ -24,6 +24,9 @@
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
     <Project Path="packages/Qian.Data.AspNetCore/Qian.Data.AspNetCore.csproj" />
     <Project Path="packages/Qian.Data.Dialect.Pg/Qian.Data.Dialect.Pg.csproj" />
+    <Project Path="packages/Qian.Files.Abstractions/Qian.Files.Abstractions.csproj" />
+    <Project Path="packages/Qian.Files/Qian.Files.csproj" />
+    <Project Path="packages/Qian.Files.AspNetCore/Qian.Files.AspNetCore.csproj" />
     <Project Path="packages/Qian.Events.Abstractions/Qian.Events.Abstractions.csproj" />
     <Project Path="packages/Qian.Events/Qian.Events.csproj" />
     <Project Path="packages/Qian.Runtime/Qian.Runtime.csproj" />
@@ -63,6 +66,7 @@
     <Project Path="tests/Qian.Data.Tests/Qian.Data.Tests.csproj" />
     <Project Path="tests/Qian.Data.AspNetCore.Tests/Qian.Data.AspNetCore.Tests.csproj" />
     <Project Path="tests/Qian.Events.Tests/Qian.Events.Tests.csproj" />
+    <Project Path="tests/Qian.Files.Tests/Qian.Files.Tests.csproj" />
     <Project Path="tests/Qian.Runtime.Tests/Qian.Runtime.Tests.csproj" />
     <Project Path="tests/Qian.Identity.Abstractions.Tests/Qian.Identity.Abstractions.Tests.csproj" />
     <Project Path="tests/Qian.Registry.Tests/Qian.Registry.Tests.csproj" />

@@ -1,0 +1,119 @@
+{
+  "name": "get",
+  "description": "查看当前租户一个文件的元数据与状态。",
+  "sideEffect": "read",
+  "policyHint": "allow",
+  "idempotent": false,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "internal",
+  "costTier": "low",
+  "contractVersion": "v1",
+  "audit": false,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": false
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.files/get"
+  },
+  "requiredPermission": "qian.files:file:read",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "fileId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "fileId"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "tenantId": {
+        "type": "string"
+      },
+      "pluginId": {
+        "type": "string"
+      },
+      "purpose": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "size": {
+        "type": "integer"
+      },
+      "contentType": {
+        "type": "string"
+      },
+      "sha256": {
+        "type": "string"
+      },
+      "storageKey": {
+        "type": "string"
+      },
+      "provider": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      },
+      "scanStatus": {
+        "type": "string"
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "quarantineReason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "deletedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "tenantId",
+      "pluginId",
+      "purpose",
+      "name",
+      "size",
+      "contentType",
+      "sha256",
+      "storageKey",
+      "provider",
+      "status",
+      "scanStatus",
+      "createdAt"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "febaa3905724c05dd31465a23a46ab91086665e3d7f62af6a1f560dd623d8311",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.files"
+  }
+}
