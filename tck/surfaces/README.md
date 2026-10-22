@@ -1,6 +1,6 @@
 # 声明式表面共同验收
 
-`cases.json` 由 `scripts/generate_surface_fixtures.py` 生成，包含 100 个独立组件场景（81 个反例）。fixture 保存完整文件内容与宿主目录选项，两端都写入临时组件目录后运行真实文件解析器。`jcs-vectors.json` 另提供独立文字规范值，覆盖浮点、负零、最小非零浮点、Unicode 和 UTF-16 属性顺序。
+`cases.json` 由 `scripts/generate_surface_fixtures.py` 生成，包含 113 个独立组件场景（94 个反例）。fixture 保存完整文件内容与宿主目录选项，两端都写入临时组件目录后运行真实文件解析器。`jcs-vectors.json` 另提供独立文字规范值，覆盖浮点、负零、最小非零浮点、Unicode 和 UTF-16 属性顺序。
 
 ```bash
 python3 scripts/generate_surface_fixtures.py
@@ -16,7 +16,7 @@ node packages/qian-surfaces/scripts/compare-fixtures.mjs /tmp/surfaces-dotnet.js
 
 清单准入场景（S1-RT-004）覆盖缺任一 S1 必填字段（按 plugin Schema 的 required 逐个生成）、OCI 引用用 tag（digest 为对照正例）、`scopes[]` 含非法种类、工具顶层输入含租户字段，以及 `inject[]` 引用无 Provider 的服务键：宿主经 `serviceKeys` / `ServiceKeys` 给出目标装配的服务键目录时视为完整目录，目录外的 inject 为 error，省略时不检查。`propertyNames` 不合格时两侧都指向出错的属性名本身。注册表的候选制品登记入口用同一批 fixture 验证「登记失败并带 JSON Pointer」（`tests/Qian.Registry.Tests/ManifestIntakeTests.cs`）。
 
-工具输入的租户字段（S1-AGT-002）：顶层由 tool Schema 的 `propertyNames`（v0 `TenantFieldName`）拒绝，为 `SURFACE_SCHEMA_INVALID`；嵌套属性、`$defs`、数组项与组合子句由语义检查拒绝，为 `SURFACE_POLICY_DENIED`。两处各自实现同一条名称规则（`tenant`、`tenantId`、`tenant_id`、`tenant-id`，大小写不敏感），所以每种写法两层各有一例；名称整体匹配，`lieutenant`、`tenants` 这类只是含有 tenant 的名称照常通过。生命周期的安装入口用这批 fixture 验证「安装失败、INPUT_INVALID 带 JSON Pointer、不登记修订」（`tests/Qian.Lifecycle.Tests/TenantFieldInstallTests.cs`）。
+工具输入的租户字段（S1-AGT-002）：顶层由 tool Schema 的 `propertyNames`（v0 `TenantFieldName`）拒绝，为 `SURFACE_SCHEMA_INVALID`；嵌套属性、`$defs`、数组项与组合子句由语义检查拒绝，为 `SURFACE_POLICY_DENIED`。两处各自实现同一条名称规则（`tenant`、`tenantId`、`tenant_id`、`tenant-id`，大小写不敏感），所以每种写法两层各有一例；名称整体匹配，`lieutenant`、`tenants` 这类只是含有 tenant 的名称照常通过。properties 之外点名租户字段的写法（S1-AGT-004）同样由语义检查拒绝：`required`、`dependentRequired` 的名称与数组项、`dependentSchemas` 的名称、能匹配租户名任一大小写写法的 `patternProperties` 模式（不加锚点；超出可移植子集无法判定的也拒绝），`propertyNames` 在肯定位置用 `enum` / `const` 列出的租户名各有一例（`const` 一例在 `anyOf` 之下）；顶层的 `required` 与 `patternProperties` 不受 tool Schema 的 `propertyNames` 约束，各有一例；名称表里叫 `default` 的属性照常往下查。对照正例另含 `tenant` 后接换行的属性名（`TenantFieldName` 整体匹配，.NET 不再按 `$` 放过末尾换行）、不能匹配租户名的模式、`default` / `examples` 里的租户字样（实例数据不当 Schema 检查），以及开放的映射、`propertyNames` 只收紧格式的 `pattern` 与 `not` 之下的排除（点名检查不是封闭性检查）。规则与能力输入契约共用，见 [packages/Common](../../packages/Common/README.md#tenantfieldrule-的判定规则)。生命周期的安装入口用这批 fixture 验证「安装失败、INPUT_INVALID 带 JSON Pointer、不登记修订」（`tests/Qian.Lifecycle.Tests/TenantFieldInstallTests.cs`）。
 
 未成对代理项场景（S1-RT-022）覆盖 JSON 元数据的字符串值与键名、YAML 补丁与 Markdown front matter 的双引号标量，以及与重复键、alias 同时出现时的先后，YamlDotNet 会抛非语法异常的连续高代理项与未闭合流式集合，照常接受的转义代理对。`parse-vectors.json` 另有转义代理对的三种 YAML 写法；直接传入的字符串含字面量的未成对代理项时，两端单测按同一断言覆盖。
 

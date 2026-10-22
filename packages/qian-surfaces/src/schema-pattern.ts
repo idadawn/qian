@@ -34,10 +34,10 @@ export function compilePattern(pattern:string,foldCase=false):KeyPattern{
 export const cachedPatterns=():number=>cache.size;
 
 /**
- * 执行翻译结果的匹配器，用于键名与 Schema 验证器的字符串值。翻译结果只含码元转义、字符类、非捕获组、| ^ \z 与量词，
+ * 执行翻译结果的匹配器，用于键名与 Schema 验证器的字符串值。翻译结果只含码元转义、字符类、非捕获组、`|` `^` `\z` 与量词，
  * 这里按 Thompson 构造成自动机逐码元模拟：与 .NET NonBacktracking 一样线性时间、不回溯。不交给 JS 正则：折叠会让原本互斥的分支重叠，
  * 例如 ^(?:[a-z]|[A-Z])+$ 折叠后两个分支相同，回溯引擎遇到以 ! 结尾的长键名会指数级变慢；未折叠的模式同样可能写出这种分支。
- * ^ 只在开头、\z 只在末尾成立。toString 返回翻译结果：Ajv 按它在同一 Schema 内复用实例，翻译结果相同的模式匹配也相同。
+ * `^` 只在开头、`\z` 只在末尾成立。toString 返回翻译结果：Ajv 按它在同一 Schema 内复用实例，翻译结果相同的模式匹配也相同。
  */
 export class KeyPattern{
  // 每个状态：consume 为要消耗的码元集合（ε 状态为 undefined），condition 为 ε 状态的条件（0 无、1 开头、2 末尾），targets 为后继。

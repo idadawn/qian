@@ -7,8 +7,7 @@ import {Ajv2020, Name, _, type CodeKeywordDefinition, type ErrorObject} from 'aj
 import {not} from 'ajv/dist/compile/codegen/index.js';
 import {resetErrorsCount} from 'ajv/dist/compile/errors.js';
 import {alwaysValidSchema} from 'ajv/dist/compile/util.js';
-import {parseSurface, validateSurfaceSchema, type JsonValue, type SurfaceDiagnostic, type SurfaceSyntax} from '@qian/surfaces';
-import {compilePattern,isStable,sameKey,UnsupportedPattern,type KeyPattern} from './schema-pattern.js';
+import {parseSurface, validateSurfaceSchema, compilePattern, isStable, sameKey, UnsupportedPattern, type JsonValue, type KeyPattern, type SurfaceDiagnostic, type SurfaceSyntax} from '@qian/surfaces';
 
 type Obj = {[key: string]: JsonValue};
 const obj = (value: JsonValue | undefined): Obj => typeof value === 'object' && value !== null && !Array.isArray(value) ? value : {};
@@ -196,7 +195,7 @@ class Composition {
         const at=pointer+'/'+escape(key),properties=obj(rule.properties),patterns=obj(rule.patternProperties);let exact=false;
         for(const name of Object.keys(properties).sort())if(sameKey(name,key)){sensitive(child,properties[name],at,depth+1);exact=name===key||exact;}
         if(Object.keys(patterns).length){
-          // 动态键按 ECMA-262 判定（见 schema-pattern.ts）。方言判断不同的键名不做匹配，值必须是 secretRef；模式仍逐个编译，不受支持的写法照常失败。
+          // 动态键按 ECMA-262 判定（见 @qian/surfaces 的 schema-pattern.ts）。方言判断不同的键名不做匹配，值必须是 secretRef；模式仍逐个编译，不受支持的写法照常失败。
           const stable=isStable(key);
           for(const source of Object.keys(patterns).sort()){
             const shape=patterns[source];

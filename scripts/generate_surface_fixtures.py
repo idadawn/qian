@@ -105,7 +105,29 @@ for suffix,field in [('bare','tenant'),('snake','tenant_id'),('kebab','tenant-id
 bad('tool-defs-tenant',base({tf:js(tool(inputSchema=schema({'scope':{'$ref':'#/$defs/scope'}},**{'$defs':{'scope':{'type':'object','properties':{'tenant_id':{'type':'string'}}}}})))}),tf,'/inputSchema/$defs/scope/properties/tenant_id','POLICY_DENIED')
 bad('tool-array-items-tenant',base({tf:js(tool(inputSchema=schema({'rows':{'type':'array','items':{'type':'object','properties':{'TenantId':{'type':'string'}}}}})))}),tf,'/inputSchema/properties/rows/items/properties/TenantId','POLICY_DENIED')
 bad('tool-any-of-tenant',base({tf:js(tool(inputSchema=schema({'filter':{'anyOf':[{'type':'object','properties':{'tenant':{'type':'string'}}},{'type':'string'}]}})))}),tf,'/inputSchema/properties/filter/anyOf/0/properties/tenant','POLICY_DENIED')
-case('tool-tenant-lookalike',base({tf:js(tool(inputSchema=schema({'lieutenant':{'type':'string'},'lieutenant_id':{'type':'string'},'nested':{'type':'object','properties':{'tenants':{'type':'string'}}}})))}))
+# properties 之外点名租户字段的写法（S1-AGT-004）：两端与能力契约共用同一规则（packages/Common/TenantFieldRule.cs），都由语义检查拒绝。
+# 顶层的 required 与 patternProperties 不受 tool Schema 的 propertyNames 约束；模式不加锚点，能匹配任一租户名的任一大小写写法、或超出可移植子集无法判定，都拒绝。
+def nested(**extra): return schema({'filter':{'type':'object','properties':{'name':{'type':'string'}},**extra}})
+bad('tool-required-tenant',base({tf:js(tool(inputSchema=nested(required=['name','tenantId'])))}),tf,'/inputSchema/properties/filter/required/1','POLICY_DENIED')
+bad('tool-top-level-required-tenant',base({tf:js(tool(inputSchema=schema({'message':{'type':'string'}},required=['tenant_id'])))}),tf,'/inputSchema/required/0','POLICY_DENIED')
+bad('tool-dependent-required-tenant',base({tf:js(tool(inputSchema=nested(dependentRequired={'name':['tenant-id']})))}),tf,'/inputSchema/properties/filter/dependentRequired/name/0','POLICY_DENIED')
+bad('tool-dependent-required-key-tenant',base({tf:js(tool(inputSchema=nested(dependentRequired={'Tenant':['name']})))}),tf,'/inputSchema/properties/filter/dependentRequired/Tenant','POLICY_DENIED')
+bad('tool-dependent-schemas-tenant',base({tf:js(tool(inputSchema=nested(dependentSchemas={'TENANT_ID':{'required':['name']}})))}),tf,'/inputSchema/properties/filter/dependentSchemas/TENANT_ID','POLICY_DENIED')
+for suffix,pattern in [('prefix','^tenant'),('case','^Tenant(Id)?$'),('wildcard','^[a-z_]+$'),('unsupported',r'\bmeta\b')]:
+ bad('tool-pattern-properties-tenant-'+suffix,base({tf:js(tool(inputSchema=nested(patternProperties={pattern:{'type':'string'}})))}),tf,'/inputSchema/properties/filter/patternProperties/'+pattern,'POLICY_DENIED')
+bad('tool-top-level-pattern-properties-tenant',base({tf:js(tool(inputSchema=schema({'message':{'type':'string'}},patternProperties={'tenant':{'type':'string'}})))}),tf,'/inputSchema/patternProperties/tenant','POLICY_DENIED')
+# 名称表里叫 default 的属性是名称，照常往下查；示例、默认值等实例数据不当 Schema 检查（见对照正例的 notes）。
+bad('tool-nested-tenant-keyword-name',base({tf:js(tool(inputSchema=schema({'default':{'type':'object','properties':{'tenant_id':{'type':'string'}}}})))}),tf,'/inputSchema/properties/default/properties/tenant_id','POLICY_DENIED')
+# propertyNames 在肯定位置（根与 allOf / anyOf / oneOf / then / else 之下）用 const / enum 列出租户名才算点名（S1-AGT-004 裁决 ②）。
+def keyed(names): return schema({'labels':{'type':'object','propertyNames':names,'additionalProperties':{'type':'string'}}})
+bad('tool-property-names-tenant-enum',base({tf:js(tool(inputSchema=keyed({'enum':['region','tenant_id']})))}),tf,'/inputSchema/properties/labels/propertyNames/enum/1','POLICY_DENIED')
+bad('tool-property-names-tenant-const',base({tf:js(tool(inputSchema=keyed({'anyOf':[{'const':'TenantId'},{'pattern':'^x-'}]})))}),tf,'/inputSchema/properties/labels/propertyNames/anyOf/0/const','POLICY_DENIED')
+# 对照正例：只是含有 tenant 的名称、tenant 后接换行（TenantFieldName 整体匹配）、不能匹配租户名的模式、实例数据里的租户字样，
+# 以及开放的映射（裁决 ①）、propertyNames 只收紧格式的 pattern 与 not 之下的排除（裁决 ②），都照常通过。
+lookalike={'type':'object','properties':{'tenants':{'type':'string'},'tenant\n':{'type':'string'}},'required':['tenants'],'patternProperties':{'^x-':{},'^tenants$':{},'^lieutenant':{}},'dependentRequired':{'tenants':['tenant\n']}}
+notes={'type':'object','default':{'tenantId':'x'},'examples':[{'properties':{'tenant':{}},'required':['tenant']}]}
+labels={'type':'object','propertyNames':{'pattern':'^[a-z]+$','not':{'enum':['tenant','tenantId','tenant_id','tenant-id']}},'additionalProperties':{'type':'string'}}
+case('tool-tenant-lookalike',base({tf:js(tool(inputSchema=schema({'lieutenant':{'type':'string'},'lieutenant_id':{'type':'string'},'nested':lookalike,'notes':notes,'labels':labels,'metadata':{'type':'object','additionalProperties':{'type':'string'}}})))}))
 # propertyNames 不合格时两侧都指向出错的属性名本身。
 bad('mcp-invalid-server-name',base({mf:js({'mcpServers':{'Bad_Name':{'type':'http','url':'https://api.example.test/mcp'}}})}),mf,'/mcpServers/Bad_Name','SCHEMA_INVALID')
 keys={'serviceKeys':['Data','Registry']}
