@@ -36,7 +36,7 @@ if (result.IsValid)
 
 工具／技能引用从本组件与调用方目录解析；离线时未知的跨组件引用为 warning，`CatalogComplete=true` 时为 error。`inject[]` 只在宿主给出 `ServiceKeys`（目标装配中已有 Provider 的服务键，含具名注册）时检查：给出即视为完整目录，目录外的键为 error，`optionalInject` 不检查；注册表的候选登记总会带上预装组件的 provides。Qian 事件来自共同事件矩阵或宿主目录；未知大驼峰 Agent 事件告警并透传。hook handler、命令能力和服务方法需由宿主提供已解析目录，不会靠试运行代码推测。
 
-结构校验使用 JSON Schema 2020-12，工具词汇引用冻结 capability-entry 的 `$defs`。工具输入不能点名租户字段：嵌套属性，以及任何层级的 `required`、`dependentRequired`、`dependentSchemas`、能匹配租户名的 `patternProperties` 与 `propertyNames` 用 `const` / `enum` 列出的名称；开放的映射不点名字段，不检查（规则与能力输入契约共用，见 [packages/Common](../Common/README.md#tenantfieldrule-的判定规则)）；有副作用时要求幂等键；描述哈希按 RFC 8785 的 IEEE-754 数值域与 UTF-16 字段顺序计算。`ToolContractHash.Compute` 只返回哈希，不擅自改写组件文件。
+结构校验使用 JSON Schema 2020-12，工具词汇引用冻结 capability-entry 的 `$defs`。工具输入不能点名租户字段：嵌套属性，以及任何层级的 `required`、`dependentRequired`、`dependentSchemas`、能匹配租户名的 `patternProperties` 与 `propertyNames` 用 `const` / `enum` 列出的名称，以及片段途经实例数据或停在名称表本身上的 `$ref` / `$dynamicRef`（S1-AGT-007）；开放的映射不点名字段，不检查（规则与能力输入契约共用，见 [packages/Common](../Common/README.md#tenantfieldrule-的判定规则)）；有副作用时要求幂等键；描述哈希按 RFC 8785 的 IEEE-754 数值域与 UTF-16 字段顺序计算。`ToolContractHash.Compute` 只返回哈希，不擅自改写组件文件。
 
 出网 URL 必须命中 `policy.egress`；敏感字段只接受 secretRef。内联 shell 仅允许受信任组件的人类 CLI 且需匹配显式 argv 前缀；服务端拒绝内联 shell，受限 argv hook 还需宿主明确开启。解析器不提供执行器。
 
