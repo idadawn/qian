@@ -22,6 +22,11 @@ public static class AuthzEnforcement
     public const string CommandEntryPoint = "command";
     /// <summary>审计组件未装配时的拒绝原因：入口与不存在同为 404（S1-AUD-001 口径），适配器据此映射状态码。</summary>
     public const string AuditUnavailable = "audit_unavailable";
+    /// <summary>
+    /// 令牌 identity_revision 低于服务端下限（旧令牌）的拒绝原因：三处入口都映射为 401 UNAUTHENTICATED（gRPC Unauthenticated），
+    /// 客户端据此换令牌后重发（S1-DEC-027）；决策日志照常记这一原因。
+    /// </summary>
+    public const string StaleIdentityRevision = "identity_revision_stale";
     /// <summary>解析当前 scope 的执行端口；没有 Provider 时沿用运行时的缺失服务错误。</summary>
     public static IAuthzEnforcement Enforcement(this IPluginContext context)
     {

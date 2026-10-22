@@ -351,7 +351,11 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 - 表：`permission_definitions`（code、resource_type、action、risk、step_up、plugin_id、terminals）、`resource_types`、`roles`（tenant_id 可空 = 平台角色、code、builtin、source_pack）、`role_assignments`（role × subjectType × subjectId × 有效期）、`grants`（subject × permission/resourceRef × 来源 × 授予人）、`policy_packs`（插件默认角色模板）、`decision_logs`（可配采样，拒绝必记）。
 - 权限点命名规范（R9）：`<plugin-id>:<resource>:<action>`，例如 `qian.workflow:flow:launch`、`qian.crm:customer:read`；`plugin-id` 为清单 `id`，`resource` 为该插件注册的资源类型编码，`action` 为动作。`metadata/permissions.json` 里的 `resource` 不带插件前缀（R37），由 `qian.authz` 登记时拼接成全名并写入 `permission_definitions.code`；PEP 注解、`defaultRoles[].grant`、`x-qian-permission` 与 scope 目录一律使用全名。
-- 求值：有效角色 = 直接授予 ∪ 经组织/岗位/组获得；权限点 = 角色授权并集；`Check(principal, action, resource)` 缺省拒绝；结果缓存键 `(tenant, membership, identity_revision)`，Redis，TTL 10 分钟，revision 变即失效（S1 过渡口径：identity_revision 与组织归属接入前以 `(tenant, 主体种类, 主体, 租户授权修订)` 为键、每次判定读当前修订，R103）；授权变更 → 发 `authz.grant.changed.v1` → 7.4 递增受影响主体的 `identity_revision` → 7.13 推送刷新。
+- 求值：有效角色 = 直接授予 ∪ 经组织/岗位/组获得；权限点 = 角色授权并集；`Check(principal, action, resource)` 缺省拒绝；结果缓存键 `(tenant, membership, identity_revision)`，Redis，TTL 10 分钟，revision 变即失效（S1 过渡口径：identity_revision 与组织归属接入前以 `(tenant, 主体种类, 主体, 租户授权修订)` 为键、每次判定读当前修订，R103）；授权变更 → 发 `authz.grant.changed.v1` → 7.4 递增受影响主体的 `identity_revision` → 7.13 推送刷新（S1-DEC-027）：
+  - 同进程宿主：`qian.authz` 在授予的增、改、撤提交后，经身份端口在同一调用内递增 user 主体的修订，并把 PEP 修订下限同步抬到新值。
+  - 拆分部署：由身份侧订阅该事件，随 S1-EVT-002 交付（S1-IDP-012）。
+  - 陈旧令牌：PEP 回 401，客户端据此换令牌。
+  - `authz.role.changed.v1` 不扇出。
 - PEP：ASP.NET Core `[RequirePermission("qian.sample.crm:customer:read")]`；Mediator `AuthorizationBehavior` 读 `[Capability(RequiredPermission=...)]`；gRPC 拦截器同一入口；S2 的动态数据引擎在唯一入口做「资源 + 动作 + 行级」三段式。
 - `Explain(principal, action, resource)` 返回 `{ decision, matchedRoles[], matchedGrants[], missing[], reason }`；错误码目录（`AUTHZ_DENIED`、`CONSTRAINT_MUTEX`、`CARDINALITY_USER_LIMIT`、`PARTIAL_SUCCESS` 等）与多语言文案导出为 JSON。
 - 数据权限契约（S1 定、S2 实现；Filter AST 与系统变量唯一规格见 [数据契约](specs/data-contracts.md)）：`DataScopeRule { resource, filter: FilterAST, allData: bool }`；系统变量枚举 `currentUser / currentUserAndSubordinates / currentUserAndAllSubordinates / currentOrg / currentOrgAndChildren / currentOrgAndDescendants / currentPosition / currentPositionAndChildren / currentPositionAndDescendants / currentManagedOrgs / formId / keyword / flowId / taskId / launchUserId`，每个带自然语言描述；合并语义固定「同角色 AND / 跨角色 OR / 任一全部数据则放开」（补充裁决 Q19）。
