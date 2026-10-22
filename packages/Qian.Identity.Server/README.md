@@ -7,7 +7,7 @@
 - **内置账号模型（默认）**：`new IdentityServerPlugin()`，需要 Data 与 Tenancy 两个组件。身份组件自己提供 `IIdentityAccounts`（账号管理）、`ISignInPipeline`（统一登录流水线）、`IAuthenticatorFactorRegistry`（认证因子注册表），并向 Tenancy 提供 `ITenantMembershipProvisioner`（开通编排第 5 步）与 `ITenantUserCounter`（配额用量）。
 - **宿主自带账号服务**：`new IdentityServerPlugin(accounts)`，本组件只承担协议面，账号流水线由宿主负责；此时不提供上面几个端口。
 
-两种方式都只允许 global scope、每环境唯一 issuer；`plugins/qian.identity.server` 仍保留明确标记的配置骨架，`qian add identity` 的完整产品入口待外壳接入后再发布。
+两种方式都只允许 global scope、每环境唯一 issuer；`plugins/qian.identity.server` 的代码字段与配置 Schema 已派生，但因完整安装尚未验收而保留 `x-skeleton`，`qian add identity` 的完整产品入口待外壳接入后再发布。
 
 ## 宿主装配顺序（内置账号模型）
 
@@ -164,3 +164,9 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - 连接器流程表的过期行在每次发起时顺带清理（结束超过一天的），没有独立的后台清理任务。
 - 登录失败的 IP 维度限流与设备指纹不在本任务内（账号维度的限流、锁定与验证码已交付）。
 - identity profile 的完整宿主组装与 `qian add` 产品入口仍待上述组件接入；本任务没有发布 NuGet 制品或部署到集群。
+
+## 清单入口与代码派生
+
+`plugins/qian.identity.server/.qian-plugin/plugin.json` 的稳定入口是 `IdentityServerComponent`，允许 global scope，依赖 `Data` 与 `Tenancy`，提供 身份服务、账号、登录流水线、因子、成员开户与用户计数六个 Definition 服务键。固定使用内置账号模型 `new IdentityServerPlugin()`；接收外部账号实现的构造器仍是宿主适配构件，其不同依赖与输出不混入此清单。
+
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

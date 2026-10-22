@@ -27,8 +27,8 @@ public sealed class CapabilitiesPlugin : IQianPlugin
         ctx.Effect(CapabilitiesErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
         var loggers = ctx.Services.GetService<ILoggerFactory>();
         // 宿主经 AddQianCapabilities 登记了登记期检查时复用同一实例：组件登记时已生成的条目与预编译的校验器直接进入目录与执行入口。
-        var checks = ctx.Services.GetService<CapabilityContractCheck>() ?? new CapabilityContractCheck(ctx.Services.GetRequiredService<ISurfaceReader>(),
-            ctx.Services.GetRequiredService<IToolContractHasher>(), loggers?.CreateLogger<CapabilityContractCheck>());
+        var checks = ctx.Services.GetService<CapabilityContractCheck>()
+            ?? throw new InvalidOperationException("platform 宿主必须先调用 AddQianCapabilities()，不能在首次访问时补做能力契约检查。");
         var service = new CapabilityService(ctx.Registry(), ctx.Services.GetRequiredService<IPermissionChecker>(), checks, ctx.Data(), options,
             ctx.Services.GetService<IHttpContractSource>(), loggers?.CreateLogger<CapabilityService>());
         ctx.Effect(service.Dispose);

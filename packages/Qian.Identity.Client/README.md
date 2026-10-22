@@ -37,7 +37,7 @@ app.UseAuthorization();
 app.MapQianIdentityClient();   // /auth/login、回调、/auth/logout、/auth/csrf、/auth/backchannel-logout
 
 // 经 PluginLoader 挂载组件；浏览器流程在挂载后才生效，卸载后端点返回 404、Cookie 会话不再被认可。
-await loader.MountAsync([new(new PluginEntry("identity", "qian.identity.client", "1.0.0", ScopeKey.Global, 0, config), new IdentityClientPlugin(), [IdentityDefinition.Key])], ct);
+await loader.MountAsync([new(new PluginEntry("identity", "qian.identity.client", "1.0.0", ScopeKey.Global, 0, config), new IdentityClientComponent(), [IdentityDefinition.Key])], ct);
 ```
 
 组件配置（[plugins/qian.identity.client](../../plugins/qian.identity.client/README.md)）：`issuer`、`clientId` 必须与宿主选项一致；`clientSecret` 只接受 `secretRef://platform/…` 或 `secretRef://dev/…`，第一次换码时经 Config 组件的密钥策略解析（清单声明 `identity/*`，宿主审批），密钥不经代码、选项或配置明文传入。公开客户端省略 `clientSecret`，此时不依赖 Config。轮换密钥 = 重新挂载组件。
@@ -98,7 +98,13 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 
 ## Identity seam
 
-`IdentityClientPlugin` 以 `IdentityDefinition.Key` 提供依赖方的 `IIdentityService`：`CurrentPrincipal` 是当前请求已验证的规范快照；人员、成员、会话管理与连接器注册属于身份服务，调用一律返回 `IDENTITY_OPERATION_UNSUPPORTED`（501），不伪造空结果。只允许 global scope，同一宿主只允许一个 Client。
+清单入口 `IdentityClientComponent` 委托现有 `IdentityClientPlugin`，以 `IdentityDefinition.Key` 提供依赖方的 `IIdentityService`：`CurrentPrincipal` 是当前请求已验证的规范快照；人员、成员、会话管理与连接器注册属于身份服务，调用一律返回 `IDENTITY_OPERATION_UNSUPPORTED`（501），不伪造空结果。只允许 global scope，同一宿主只允许一个 Client。
+
+## 清单与依赖闭包
+
+`[QianPlugin]` 的稳定入口、空 `inject` 和 `Identity` 提供项经 SDK 生成，配置 Schema 以 `ComponentConfiguration.Schema` 为代码真相源，由 `qian-plugin sync` 更新组件文件夹。构造模式、密钥延迟解析和卸载语义保持在现有实现中；公开客户端不需要 Config 或 Data Provider。
+
+`Qian.Plugin.Sdk` 是实际运行依赖，其 Data / Authz / Events / Surfaces Definition 包随闭包进入；它们只提供契约，不安装或启动对应 Provider。`Qian.Plugin.Sdk.Generators` 只作为构建期分析器。独立宿主测试维护 Runtime / SDK / Definition 的精确程序集白名单，并用其它 Provider 的反例验证拒绝；外部 Dex 登录验证宿主仍只需安装 Client。
 
 ## 已知限制
 
@@ -106,7 +112,7 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 - 本地登出与正在进行的刷新并发时，刷新的结果只续写仍存活的会话，已登出的会话不会复活；但刷新已经换到的令牌族要等发行方侧过期。
 - `resource` 只在授权请求里带：Kun 的 `OidcCodeExchange` 与刷新都不能追加参数，所以换码与刷新请求不带。qian-identity 的授权码与 refresh token 已绑定授权时请求的资源，换码、刷新沿用，受众不变。对接要求令牌请求也带 `resource` 的发行方（MCP 授权规范对客户端的要求），要等 Kun 支持追加参数。
 - `prompt`、`login_hint`、租户提示等授权参数尚未透传（外壳接线随 D5 / YUE-002）。
-- 清单仍是配置骨架（不声明 `runtime`）：`gateway` profile 开了 AOT，而依赖的 Kun 发布包未带 AOT 兼容标记，见组件文件夹的说明。
+- 清单已由 SDK 派生稳定入口与 configSchema，仍保留 `x-skeleton`，等待包族发布和真实 `qian add` 安装验收。按 S1-DEC-029，开发期 gateway 使用 JIT，最终 NativeAOT 门仍由 GW-001 / DEP-008 验收；本组件未取得 AOT 证据，不声明 `x-aot`。
 
 ## 测试
 

@@ -5,3 +5,6 @@
   plugin: qian.tenancy
   config:
     initializationCapabilities: []
+- id: data
+  plugin: qian.data
+  config: {}

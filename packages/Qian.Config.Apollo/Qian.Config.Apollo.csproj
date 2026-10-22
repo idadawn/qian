@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><IsPackable>true</IsPackable><Description>Qian 的 Apollo/标准配置 Provider、固定配置源顺序、热更新校验与发布审计。</Description>
-    <!-- gateway profile 是 AOT 且挂 qian.config.apollo：本包不经反射绑定，裁剪与 AOT 分析器在构建期把关（S1-CFG-003）。 -->
+    <!-- 启用裁剪与 AOT 静态分析（S1-CFG-003）；不等于已取得 NativeAOT 发布/运行证据。开发 gateway 按 DEC-029 使用 JIT。 -->
     <IsAotCompatible>true</IsAotCompatible></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Qian.Config.Abstractions/Qian.Config.Abstractions.csproj" />

@@ -1,6 +1,6 @@
 # Qian.Registry
 
-注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，当前仍是配置骨架，消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面 scope 视图与条件写入（HTTP 适配器为 `Qian.Registry.AspNetCore`）、候选制品的清单准入、供可信平台插件调用的公开挂载 / 卸载与契约准入已接入，安装链由 [Qian.Lifecycle](../Qian.Lifecycle/README.md) 编排（S1-RT-005）。scope patch 的 HTTP 与运营 CLI 已接入；挂载只作用于平台已安装、租户已开通的组件，不代表从正式源安装。
+注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，代码字段与配置 Schema 已派生，清单因尚未通过完整安装门而保留 `x-skeleton`，消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面 scope 视图与条件写入（HTTP 适配器为 `Qian.Registry.AspNetCore`）、候选制品的清单准入、供可信平台插件调用的公开挂载 / 卸载与契约准入已接入，安装链由 [Qian.Lifecycle](../Qian.Lifecycle/README.md) 编排（S1-RT-005）。scope patch 的 HTTP 与运营 CLI 已接入；挂载只作用于平台已安装、租户已开通的组件，不代表从正式源安装。
 
 ## 已实现的持久化基础
 
@@ -126,7 +126,7 @@ scope Reconciler 解析条目时，对在 `metadata/contracts.json` 声明契约
 
 ## 剩余工作
 
-scope patch 单条 HTTP 写入与运营 CLI 已交付（S1-RT-029）。App / 会话归属与真实权益查询（S1-ENT-001）仍在各自任务中接入；租户写入在 `RegistryService.Writes.cs` 的权益边界统一 fail-closed，后续只在该位置接真实 Entitlement 端口，不能以 Installed、令牌角色或布尔标志替代。跨条目远端批量事务尚无契约，CLI 在发送请求前拒绝多条。`plugins/qian.registry` 的骨架标记保留，组件目录清单的合并生成与骨架移除归 S1-RT-033（R94）。
+scope patch 单条 HTTP 写入与运营 CLI 已交付（S1-RT-029）。App / 会话归属与真实权益查询（S1-ENT-001）仍在各自任务中接入；租户写入在 `RegistryService.Writes.cs` 的权益边界统一 fail-closed，后续只在该位置接真实 Entitlement 端口，不能以 Installed、令牌角色或布尔标志替代。跨条目远端批量事务尚无契约，CLI 在发送请求前拒绝多条。`plugins/qian.registry` 的清单合并生成由 S1-RT-033 补齐；`x-skeleton` 只因尚未通过后续完整安装门而保留，不再表示代码字段待生成。
 
 ## 面向业务入口的 scope 视图
 
@@ -145,3 +145,9 @@ S1-TEN-004（R97）增加 GetConfigurationViewAsync：可信平台组件在当�
 ### 平台主体的 HTTP 复核（S1-AZ-008）
 
 平台超管 scope 视图经真实 Kestrel、JWT、Registry/Authz/Audit 与受限 PostgreSQL 角色验证。宿主先建立可信目标租户上下文；scope 路径、请求头与令牌中的角色不能改变该上下文或授予权限。通过超管旁路的请求在目标租户链恰留一条审计；非超管平台主体、目标 scope 不匹配、普通租户越界与未配置 platformRole 都返回同口径 404，并且不增加审计。测试宿主使用服务端固定的已验证目标，不把路径或 X-Tenant-Id 作为租户来源；生产适配器接口与授权语义未改变。
+
+## 清单入口与代码派生
+
+`plugins/qian.registry/.qian-plugin/plugin.json` 的稳定入口是 `RegistryComponent`，允许 global scope，依赖 `Data`，提供 `Registry`。从宿主读取必需的 `RegistryRuntimeOptions`，再委托 `RegistryPlugin`；选定 platform profile、运行时工厂和已安装组件目录仍由宿主装配。
+
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

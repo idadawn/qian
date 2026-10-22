@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.identity.server",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.identity.server",
+  "description": "提供 qian.identity.server 的实际代码入口与配置契约；安装状态按组件验收门管理。",
   "author": {
     "name": "Qian"
   },
@@ -11,8 +11,18 @@
     "displayName": "identity.server",
     "category": "platform"
   },
-  "inject": [],
-  "provides": [],
+  "inject": [
+    "Data",
+    "Tenancy"
+  ],
+  "provides": [
+    "Identity",
+    "IdentityAccounts",
+    "IdentityFactors",
+    "IdentitySignIn",
+    "TenancyMembershipProvisioner",
+    "TenancyUserCounter"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -22,5 +32,41 @@
   "scopes": [
     "global"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Identity.Server.IdentityServerComponent, Qian.Identity.Server",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "metadata/events.json": {
+        "$generated": true,
+        "component": "qian.identity.server",
+        "source": "Qian.Identity.Server.IdentityServerComponent, Qian.Identity.Server",
+        "sha256": "2806f0cf862d4794fe14c481922bf726c1a3574f527e64ad355cb0fae4142924",
+        "fields": [
+          ""
+        ]
+      },
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.identity.server",
+        "source": "Qian.Identity.Server.IdentityServerComponent, Qian.Identity.Server",
+        "sha256": "aa4ca218693dc341bd9014deabc827d3135900fc4c043014ded5db198d6ae150",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
 }

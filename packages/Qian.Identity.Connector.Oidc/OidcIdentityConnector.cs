@@ -53,12 +53,12 @@ public sealed class OidcIdentityConnector : IIdentityConnector, IDisposable
         Descriptor = new ConnectorDescriptor(options.Name, options.DisplayName, "oidc", [.. options.Terminals], ConfigSchema.Value);
     }
 
-    /// <summary>嵌入的配置 Schema，与组件文件夹 <c>plugins/qian.identity.connector.oidc/schemas/config.schema.json</c> 是同一份文件。</summary>
+    /// <summary>程序化适配器与稳定分发入口共用配置声明；适配器允许宿主选择自己的注册名。</summary>
     internal static readonly Lazy<JsonElement> ConfigSchema = new(() =>
     {
-        using var stream = typeof(OidcIdentityConnector).Assembly.GetManifestResourceStream("qian.identity.connector.oidc/config.schema.json")
-            ?? throw new InvalidOperationException("缺少嵌入的配置 Schema。");
-        using var document = JsonDocument.Parse(stream);
+        var schema = System.Text.Json.Nodes.JsonNode.Parse(ComponentConfiguration.Schema)!.AsObject();
+        schema["properties"]!["name"]!.AsObject().Remove("const");
+        using var document = JsonDocument.Parse(schema.ToJsonString());
         return document.RootElement.Clone();
     });
 

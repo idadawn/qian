@@ -27,7 +27,7 @@ public sealed partial class DataSessionTests
         Assert.Equal(code.Provides, root.GetProperty("provides").EnumerateArray().Select(item => item.GetString()!));
         var generated = root.GetProperty("x-qian-generated");
         Assert.True(generated.GetProperty("$generated").GetBoolean());
-        Assert.Equal(["/inject", "/provides", "/runtime/form", "/runtime/entry"], generated.GetProperty("fields").EnumerateArray().Select(item => item.GetString()!));
+        Assert.Equal(["/inject", "/provides", "/runtime/form", "/runtime/entry", "/runtime/configSchema"], generated.GetProperty("fields").EnumerateArray().Select(item => item.GetString()!));
         // S1-DEC-018：S1-RT-011 已从私有源真实安装 qian.data 并运行 Provider（private-feed.e2e.mjs），清单不再带骨架标记。
         Assert.False(root.TryGetProperty("x-skeleton", out _));
 
