@@ -1,0 +1,55 @@
+{
+  "$schema": "https://qian.dev/schemas/plugin/v2",
+  "id": "qian.data.native",
+  "version": "1.0.0",
+  "description": "原生 PostgreSQL 连接与事务 Provider：受限角色、租户隔离、明确的平台入口及可撤销会话生命周期。",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "Apache-2.0",
+  "interface": {
+    "displayName": "原生数据",
+    "category": "platform"
+  },
+  "inject": [],
+  "provides": [
+    "NativeData"
+  ],
+  "policy": {
+    "tier": "system",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false
+  },
+  "scopes": [
+    "global"
+  ],
+  "x-skeleton": true,
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Data.Native.Postgres.NativeDataComponent, Qian.Data.Native.Postgres",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.data.native",
+        "source": "Qian.Data.Native.Postgres.NativeDataComponent, Qian.Data.Native.Postgres",
+        "sha256": "4c1c0673098b3d13f65d0a7e7be5477185b37781a6a8524d821f74c9b52796a1",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
+}
