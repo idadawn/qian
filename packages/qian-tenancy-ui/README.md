@@ -6,7 +6,7 @@
 
 先按 [真实运营宿主说明](../../tools/Qian.Dev.TenantOps/README.md) 运行 `scripts/dev-tenant-ops.sh up`，再运行 `pnpm --filter @qian/tenancy-ui dev`，打开 <http://127.0.0.1:5177/>。默认代理指向本机 5080；自定义宿主时给前后端相同的 QIAN_DEV_STATE，并用 QIAN_DEV_OPS_URL 指定已运行的本机宿主。
 
-开发代理只监听回环地址，复用宿主本地密钥签发平台测试身份；Bearer 仅在 Vite 服务端内存中，不进入浏览器、localStorage、sessionStorage、URL、iframe 或构建产物。代理默认身份是平台超管，所以 vite.config.ts 按最终解析出的监听地址把关：不是 127.0.0.1、localhost 或 ::1 就拒绝启动，命令行 `--host 0.0.0.0` 也会被拦。`vite preview` 继承同一份 `server.proxy`，同样以平台超管身份转发，同样只允许回环地址。e2e 入口启动前先自测这道守卫。代理仅是本机验收接线；正式外壳须注入已配置认证的 PlatformClient，登录、刷新和会话选择属于 IDP-003/YUE-002。创建表单当前按契约填写管理员 membershipId/subjectId，Identity 成员与管理员登录尚未在本页交付。
+开发代理只监听回环地址，复用宿主本地密钥签发平台测试身份；Bearer 仅在 Vite 服务端内存中，不进入浏览器、localStorage、sessionStorage、URL、iframe 或构建产物。代理默认身份是平台超管，所以 vite.config.ts 按最终解析出的监听地址把关：不是 127.0.0.1、localhost 或 ::1 就拒绝启动，命令行 `--host 0.0.0.0` 也会被拦。`vite preview` 继承同一份 `server.proxy`，同样以平台超管身份转发，同样只允许回环地址。e2e 入口在运行 Playwright 之前先自测这道守卫。代理仅是本机验收接线；正式外壳须注入已配置认证的 PlatformClient，登录、刷新和会话选择属于 IDP-003/YUE-002。创建表单当前按契约填写管理员 membershipId/subjectId，Identity 成员与管理员登录尚未在本页交付。
 
 ## 行为与验证
 

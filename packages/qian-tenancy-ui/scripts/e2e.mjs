@@ -36,7 +36,7 @@ async function refusesNonLoopback(args) {
   for (const stream of [vite.stdout, vite.stderr]) stream.on('data', (chunk) => { output += chunk; });
   const code = await Promise.race([new Promise((ok) => vite.once('exit', ok)), delay(30_000)]);
   if (code === undefined) process.kill(-vite.pid, 'SIGKILL');
-  if (code === undefined || code === 0 || !output.includes('只允许监听回环地址')) throw new Error(`开发代理守卫失效：vite ${[...args, '--host', '0.0.0.0'].join(' ')} 没有拒绝启动`);
+  if (code === undefined || code === 0 || !output.includes('只允许监听回环地址')) throw new Error(`开发代理守卫失效：vite ${[...args, '--host', '0.0.0.0'].join(' ')} 没有拒绝启动\n${output.slice(-2000)}`);
 }
 let watch;
 let succeeded = false;
