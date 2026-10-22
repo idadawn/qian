@@ -23,7 +23,7 @@ namespace Qian.Events.Tests;
 /// 真实 RabbitMQ 与 Redis：消费端至少一次（手动确认、退避重试、死信、Redis 幂等）、竞争与广播两种订阅、按信封租户回灌。
 /// 发布走生产发布器（QianEnvelopePublisher），多副本用同一套容器起多个宿主（PRD 14.2.1）。
 /// </summary>
-public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) : IClassFixture<RabbitMqFixture>, IClassFixture<RedisFixture>, IAsyncDisposable
+public sealed partial class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) : IClassFixture<RabbitMqFixture>, IClassFixture<RedisFixture>, IAsyncDisposable
 {
     private ConnectionMultiplexer? _redis;
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -41,9 +41,9 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         await StartAsync(host);
         var envelope = await PublishAsync(TenantA, sequence: 1);
 
-        await Until(() => probe.Succeeded == 1, "第三次投递没有成功");
-        await Until(() => metrics.Count("processed") == 1, "处理成功后没有计数");
-        await Task.Delay(TimeSpan.FromSeconds(1), Ct);
+        // 等到结束态再断言投递次数：processed 在确认原消息之后计数，主队列与两个重试队列的 messages（含未确认）都为 0，消息已没有任何副本，不会再有投递。
+        var retries = new[] { QianEventTopology.RetryQueue(service, "work", 1, TimeSpan.FromMilliseconds(200)), QianEventTopology.RetryQueue(service, "work", 2, TimeSpan.FromMilliseconds(400)) };
+        await Until(async () => metrics.Count("processed") == 1 && await SettledAsync([QianEventTopology.SubscriptionQueue(service, "work"), .. retries]), "第三次投递没有处理完");
         var calls = probe.Calls.ToArray();
         Assert.Equal([1, 2, 3], calls.Select(call => call.Attempt));
         Assert.All(calls, call => Assert.Equal(envelope.EventId, call.EventId));
@@ -61,8 +61,7 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         var queues = await QueuesAsync();
         Assert.Equal(0, queues[QianEventTopology.SubscriptionQueue(service, "work")]);
         Assert.Equal(0, queues[QianEventTopology.DeadLetterQueue(service, "work")]);
-        Assert.Equal(0, queues[QianEventTopology.RetryQueue(service, "work", 1, TimeSpan.FromMilliseconds(200))]);
-        Assert.Equal(0, queues[QianEventTopology.RetryQueue(service, "work", 2, TimeSpan.FromMilliseconds(400))]);
+        Assert.All(retries, retry => Assert.Equal(0, queues[retry]));
 
         // handler 拿到的是由信封填充的 Kun MessageContext 与完整信封；Activity 从信封 trace_parent 恢复。
         var last = calls[^1];
@@ -86,8 +85,10 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         var envelope = await PublishAsync(TenantA, sequence: 2, note: "payload-marker");
         var deadLetter = QianEventTopology.DeadLetterQueue(service, "work");
 
-        await Until(async () => (await QueuesAsync()).GetValueOrDefault(deadLetter) == 1, "第 6 次失败后没有进死信队列");
-        await Task.Delay(TimeSpan.FromSeconds(1), Ct);
+        // 结束态：dead_lettered 与告警日志都已写出（计数先于日志，须分别等待），死信队列恰有一条，主队列与 5 个重试队列都已清空，之后不会再有投递。
+        var retries = Enumerable.Range(1, 5).Select(attempt => QianEventTopology.RetryQueue(service, "work", attempt, TimeSpan.FromMilliseconds(100 << (attempt - 1)))).ToArray();
+        await Until(async () => metrics.Count("dead_lettered") == 1 && probe.Logs.Entries.Any(entry => entry.EventId == 25)
+            && (await QueuesAsync()).GetValueOrDefault(deadLetter) == 1 && await SettledAsync([QianEventTopology.SubscriptionQueue(service, "work"), .. retries]), "第 6 次失败后没有进死信队列");
         Assert.Equal([1, 2, 3, 4, 5, 6], probe.Calls.Select(call => call.Attempt));
         Assert.Equal(0, probe.Succeeded);
         Assert.Equal(5, metrics.Count("retried"));
@@ -127,8 +128,9 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         var envelope = await PublishAsync(TenantA, sequence: 3);
         var deadLetter = QianEventTopology.DeadLetterQueue(service, "work");
 
-        await Until(async () => (await QueuesAsync()).GetValueOrDefault(deadLetter) == 1, "确定性失败没有直接进死信队列");
-        await Task.Delay(TimeSpan.FromMilliseconds(500), Ct);
+        // 结束态：dead_lettered 已计数（确认原消息之后），死信队列恰有一条、主队列已清空，之后不会再有投递。
+        await Until(async () => metrics.Count("dead_lettered") == 1 && (await QueuesAsync()).GetValueOrDefault(deadLetter) == 1
+            && await SettledAsync([QianEventTopology.SubscriptionQueue(service, "work")]), "确定性失败没有直接进死信队列");
         Assert.Equal([1], probe.Calls.Select(call => call.Attempt));
         Assert.Equal(0, metrics.Count("retried"));
         Assert.Equal(1, metrics.Count("dead_lettered"));
@@ -170,6 +172,9 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         var service = Service();
         var a = new Probe(_ => null, delay: TimeSpan.FromMilliseconds(20));
         var b = new Probe(_ => null, delay: TimeSpan.FromMilliseconds(20));
+        using var workCounts = new ConsumerMetrics(service + ".work");
+        using var noticeCountsA = new ConsumerMetrics(service + ".notice@node-a");
+        using var noticeCountsB = new ConsumerMetrics(service + ".notice@node-b");
         void Subscribe(QianEventsSubscriberBuilder subscriber) => subscriber
             .Subscribe<PingSent, ProbeHandler>("work")
             .Subscribe<PingSent, NoticeHandler>("notice", EventSubscriptionMode.Broadcast);
@@ -179,8 +184,11 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         var published = new List<Guid>();
         for (var index = 0; index < total; index++) published.Add((await PublishAsync(TenantA, sequence: 100 + index)).EventId);
 
-        await Until(() => a.Work.Count + b.Work.Count == total && a.Notices.Count == total && b.Notices.Count == total, "两个实例没有处理完");
-        await Task.Delay(TimeSpan.FromMilliseconds(500), Ct);
+        // 结束态：三个消费者名的 processed 都到齐（确认之后计数），竞争队列与两个广播队列的 messages（含未确认）都为 0，之后不会再有投递；
+        // 「没有一条被两边都处理」因此可以在这一刻断言。
+        await Until(async () => workCounts.Count("processed") == total && noticeCountsA.Count("processed") == total && noticeCountsB.Count("processed") == total
+            && await SettledAsync([QianEventTopology.SubscriptionQueue(service, "work"), QianEventTopology.BroadcastQueue(service, "node-a"), QianEventTopology.BroadcastQueue(service, "node-b")]),
+            "两个实例没有处理完");
         // 竞争：两个实例合起来恰好每条一次，没有一条被两边都处理；两边都分到了消息。
         Assert.Equal(published.Order(), a.Work.Concat(b.Work).Order());
         Assert.Empty(a.Work.Intersect(b.Work));
@@ -237,9 +245,10 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         await RawPublishAsync(duplicated, DuplicateTenant(duplicated.ToJson(), TenantA), tenantHeader: TenantA);
         await RawPublishAsync(mismatched, mismatched.ToJson(), tenantHeader: TenantB);
         var deadLetter = QianEventTopology.DeadLetterQueue(service, "work");
-        await Until(async () => (await QueuesAsync()).GetValueOrDefault(deadLetter) == 3, "三条反例没有全部进死信队列");
-        await Until(() => probe.Notices.Count == 3, "接受平台级事件的订阅没有收到平台级事件");
-        await Task.Delay(TimeSpan.FromMilliseconds(500), Ct);
+        // 结束态：两个订阅的 rejected 与 processed 都到齐（确认之后计数），死信队列恰有三条，两个主队列都已清空，之后不会再有投递。
+        await Until(async () => tenantMetrics.Count("rejected") == 3 && platformMetrics.Count("rejected") == 2 && platformMetrics.Count("processed") == 3
+            && (await QueuesAsync()).GetValueOrDefault(deadLetter) == 3
+            && await SettledAsync([QianEventTopology.SubscriptionQueue(service, "work"), QianEventTopology.SubscriptionQueue(service, "platform")]), "三条反例没有全部进死信队列");
 
         Assert.Equal(2, probe.Calls.Count);
         Assert.Equal(3, tenantMetrics.Count("rejected"));
@@ -253,7 +262,8 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         await host.StopAsync(Ct);
     }
 
-    private IHost Host(string service, Probe probe, Action<QianEventsSubscriberBuilder> subscribe, TimeSpan? retryBaseDelay = null, string? instance = null, ushort prefetch = 16)
+    private IHost Host(string service, Probe probe, Action<QianEventsSubscriberBuilder> subscribe, TimeSpan? retryBaseDelay = null, string? instance = null, ushort prefetch = 16,
+        Action<IServiceCollection>? services = null)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
         builder.Logging.ClearProviders();
@@ -271,6 +281,7 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
             if (instance is not null) options.Instance = instance;
         });
         builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromSeconds(20));
+        services?.Invoke(builder.Services);
         return builder.Build();
     }
 
@@ -357,6 +368,13 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
             .ToDictionary(cells => cells[0], cells => long.Parse(cells[1], System.Globalization.CultureInfo.InvariantCulture));
     }
 
+    // 队列都已声明且 messages（就绪加未确认）为 0：消息在这些队列里没有任何副本，不会再有投递。
+    private async Task<bool> SettledAsync(IEnumerable<string> queues)
+    {
+        var listing = await QueuesAsync();
+        return queues.All(queue => listing.TryGetValue(queue, out var count) && count == 0);
+    }
+
     private async Task<Dictionary<string, (string Type, string AutoDelete)>> QueueTypesAsync()
     {
         var listing = await rabbit.Container.ExecAsync(["rabbitmqctl", "list_queues", "-q", "name", "type", "auto_delete"], Ct);
@@ -400,7 +418,7 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         string? TraceId, ActivityKind? ActivityKind);
 
     /// <summary>每个宿主一份：记录 handler 看到的投递与租户，按第几次投递决定是否抛出。</summary>
-    internal sealed class Probe(Func<int, Exception?> failure, TimeSpan delay = default)
+    internal sealed class Probe(Func<int, Exception?> failure, TimeSpan delay = default, Func<Task>? gate = null)
     {
         private int _succeeded;
         public ConcurrentQueue<Call> Calls { get; } = new();
@@ -411,6 +429,7 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
         public int Succeeded => Volatile.Read(ref _succeeded);
         public Func<int, Exception?> Failure => failure;
         public TimeSpan Delay => delay;
+        public Func<Task>? Gate => gate;
         public void Success() => Interlocked.Increment(ref _succeeded);
     }
 
@@ -422,6 +441,7 @@ public sealed class SubscriberTests(RabbitMqFixture rabbit, RedisFixture redis) 
             probe.Calls.Enqueue(new Call(context.MessageId, @event.Sequence, delivery.Attempt, DateTimeOffset.UtcNow, tenant.TenantId, context, delivery,
                 activity?.TraceId.ToHexString(), activity?.Kind));
             if (probe.Delay > TimeSpan.Zero) await Task.Delay(probe.Delay, cancellationToken);
+            if (probe.Gate is { } gate) await gate();
             if (probe.Failure(delivery.Attempt) is { } error) throw error;
             probe.Work.Add(context.MessageId);
             probe.Success();

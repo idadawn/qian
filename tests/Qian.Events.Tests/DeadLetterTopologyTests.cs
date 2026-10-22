@@ -40,6 +40,41 @@ public sealed class DeadLetterTopologyTests(RabbitMqFixture rabbit) : IClassFixt
     }
 
     [Fact]
+    public async Task 竞争队列的nack放回不计入投递上限_放回投递上限三倍次数后消息仍在源队列_死信队列为空()
+    {
+        // 这是消费端要自己给「转发失败 → 放回」加上界的依据（S1-EVT-004）：broker 的 x-delivery-limit 兜不住 nack 放回的循环。
+        var service = "qian.events-tests.n" + Guid.NewGuid().ToString("N")[..8];
+        await using var connection = await new ConnectionFactory { Uri = new Uri(rabbit.ConnectionString) }.CreateConnectionAsync(Ct);
+        await using var channel = await connection.CreateChannelAsync(new CreateChannelOptions(true, true), Ct);
+        var queue = await RabbitTopology.DeclareSubscriptionAsync(channel, service, "requeue", ["tests.ping.sent"], Ct);
+        await channel.BasicPublishAsync(QianEventTopology.Exchange, "tests.ping.sent", mandatory: true, new BasicProperties { MessageId = "requeue-loop" },
+            Encoding.UTF8.GetBytes("{}"), Ct);
+
+        var rounds = RabbitTopology.DeliveryLimit * 3;
+        for (var round = 0; round < rounds; round++)
+        {
+            // 放回由 quorum 队列异步处理，取不到时稍等再取；deadline 防止消息真被死信后无限等待。
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
+            BasicGetResult? message;
+            while ((message = await channel.BasicGetAsync(queue, autoAck: false, Ct)) is null)
+            {
+                Assert.True(DateTimeOffset.UtcNow < deadline, "第 " + (round + 1) + " 次没有取到被放回的消息");
+                await Task.Delay(20, Ct);
+            }
+            Assert.Equal("requeue-loop", message.BasicProperties.MessageId);
+            await channel.BasicNackAsync(message.DeliveryTag, multiple: false, requeue: true, Ct);
+        }
+        // 最后一次放回同样是异步的：等它回到就绪状态。消息在源队列里就不可能同时在死信队列里，此后死信队列为空才有意义。
+        var settled = DateTimeOffset.UtcNow.AddSeconds(30);
+        while (await CountAsync(channel, queue) != 1)
+        {
+            Assert.True(DateTimeOffset.UtcNow < settled, "最后一次放回的消息没有回到源队列");
+            await Task.Delay(20, Ct);
+        }
+        Assert.Equal(0, await CountAsync(channel, QianEventTopology.DeadLetterQueue(service, "requeue")));
+    }
+
+    [Fact]
     public async Task at_least_once死信目标没有绑定队列时_消息滞留在源队列而不是丢失_所以死信队列先于主队列声明()
     {
         var service = "qian.events-tests.o" + Guid.NewGuid().ToString("N")[..8];
