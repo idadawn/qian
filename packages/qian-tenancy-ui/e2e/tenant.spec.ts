@@ -149,6 +149,18 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations.filter((item) => ['critical', 'serious'].includes(item.impact ?? ''))).toEqual([]);
   await page.screenshot({ path: resolve('../../TestResults/tenant-ui/tenants.png'), fullPage: true });
+  // 第 6 步的抽屉部分：编辑途中身份换成租户主体，保存得到真实 403。非 409 错误同样只在抽屉内显示服务端原文，不报页面级提示。
+  await rowA.getByRole('button', { name: '编辑', exact: true }).click();
+  await expect(dialog.getByLabel('租户名称')).toBeVisible();
+  await context.setExtraHTTPHeaders({ 'x-qian-dev-principal': 'tenant', 'x-qian-dev-tenant': a.id });
+  const forbidden = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/tenancy/tenants/' + a.id);
+  await dialog.getByRole('button', { name: '保存', exact: true }).click();
+  const denial = await (await forbidden).json();
+  expect(denial).toMatchObject({ status: 403, code: 'AUTHZ_DENIED' });
+  await expect(dialog.getByText(denial.message, { exact: true })).toBeVisible();
+  await expect(page.locator('main [role="alert"]')).toHaveCount(0);
+  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   await context.setExtraHTTPHeaders({ 'x-qian-dev-principal': 'tenant', 'x-qian-dev-tenant': a.id });
   await page.reload(); await expect(page.getByText('无权限访问租户管理', { exact: true })).toBeVisible();
   await expect(page.getByText('403 AUTHZ_DENIED', { exact: true })).toBeVisible();
@@ -158,8 +170,15 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   expect(await page.evaluate(() => ({ local: Object.keys(localStorage), session: Object.keys(sessionStorage), frames: document.querySelectorAll('iframe').length }))).toEqual({ local: [], session: [], frames: 0 });
   expect(page.url()).not.toMatch(/token|jwt|bearer/i);
   if (!process.env.QIAN_UI_STOP_FILE || !process.env.QIAN_UI_STOPPED_FILE) throw new Error('请经 e2e.mjs 启动独立宿主');
+  // 先打开编辑抽屉再停宿主：抽屉里的保存走真实断线，只在抽屉内显示连接失败文案，不报页面级提示。
+  await rowA.getByRole('button', { name: '编辑', exact: true }).click();
+  await expect(dialog.getByLabel('租户名称')).toBeVisible();
   await writeFile(process.env.QIAN_UI_STOP_FILE, 'stop');
   await expect.poll(async () => { try { await access(process.env.QIAN_UI_STOPPED_FILE!); return true; } catch { return false; } }).toBe(true);
+  await dialog.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(dialog.getByText('暂时无法连接服务，请稍后重试。', { exact: true })).toBeVisible();
+  await expect(page.locator('main [role="alert"]')).toHaveCount(0);
+  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '刷新', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('暂时无法连接服务，请稍后重试。');
   await expect(page.getByRole('button', { name: '重试', exact: true })).toBeVisible();
