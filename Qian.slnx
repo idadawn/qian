@@ -22,6 +22,7 @@
     <Project Path="packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
     <Project Path="packages/Qian.Data.Abstractions/Qian.Data.Abstractions.csproj" />
     <Project Path="packages/Qian.Data/Qian.Data.csproj" />
+    <Project Path="packages/Qian.Data.Native.Abstractions/Qian.Data.Native.Abstractions.csproj" />
     <Project Path="packages/Qian.Data.AspNetCore/Qian.Data.AspNetCore.csproj" />
     <Project Path="packages/Qian.Data.Dialect.Pg/Qian.Data.Dialect.Pg.csproj" />
     <Project Path="packages/Qian.Files.Abstractions/Qian.Files.Abstractions.csproj" />
