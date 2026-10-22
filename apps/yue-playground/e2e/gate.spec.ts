@@ -76,7 +76,7 @@ test('Tabs：方向键漫游并激活，RTL 反向', async ({ page }) => {
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: '高级' })).toBeFocused();
   await expect(page.getByRole('tab', { name: '高级' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel')).toHaveText('高级设置内容');
+  await expect(page.getByRole('tabpanel', { name: '高级' })).toHaveText('高级设置内容');
   await page.getByTestId('gate-rtl').check();
   await expect(page.locator('main')).toHaveAttribute('dir', 'rtl');
   await page.getByRole('tab', { name: '高级' }).focus();

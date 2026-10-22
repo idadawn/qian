@@ -135,6 +135,8 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       const access = schema.auth.fields?.[path];
       if (state?.visible === false || (access && !access.includes('read'))) return null;
       const readonly = mode === 'readonly' || (access && !access.includes('write'));
+      const password = hasType(fieldSchema, 'string') && !hasType(fieldSchema, 'number') && !hasType(fieldSchema, 'integer')
+        && !['date', 'date-time'].includes(String(fieldSchema.format)) && ui.props?.type === 'password';
       const horizontal = hasType(fieldSchema, 'boolean') && !readonly;
       const fieldId = `${id}-${path}`;
       const error = getValue(errors, path) as { message?: string } | undefined;
@@ -144,7 +146,7 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       return <CoreField className={horizontal ? 'grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2' : undefined} key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
         <FieldLabel className={horizontal ? 'col-start-2 row-start-1 leading-5' : undefined} htmlFor={fieldId}>{label}{required ? <span aria-hidden className="text-destructive"> *</span> : null}</FieldLabel>
         <Controller name={path} control={form.control} render={({ field }) => {
-          if (readonly) return <output id={fieldId} className="min-h-9 rounded-md bg-muted/40 px-3 py-2 text-sm text-foreground" data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
+          if (readonly) return <output id={fieldId} className="min-h-9 rounded-md bg-muted/40 px-3 py-2 text-sm text-foreground" data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, password ? 'full' : typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
           const common = { id: fieldId, name: field.name, ref: field.ref, onBlur: field.onBlur, disabled: state?.disabled || isSubmitting, 'aria-required': required, 'aria-invalid': !!error, 'aria-describedby': describedBy };
           if (hasType(fieldSchema, 'boolean')) return <Checkbox {...common} className="col-start-1 row-start-1" checked={!!field.value} onCheckedChange={field.onChange} aria-label={label} />;
           if (fieldSchema.enum) return <Select value={field.value ?? null} onValueChange={field.onChange} items={fieldSchema.enum.map((value) => ({ value, label: String(value) }))} disabled={common.disabled}>
@@ -153,13 +155,16 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
           if (ui.widget === 'qian.textarea') return <Textarea {...common} value={String(field.value ?? '')} onChange={field.onChange} />;
           const numeric = hasType(fieldSchema, 'number') || hasType(fieldSchema, 'integer');
           const dateTime = fieldSchema.format === 'date-time';
-          const type = numeric ? 'number' : dateTime ? 'datetime-local' : fieldSchema.format === 'date' ? 'date' : 'text';
+          const type = numeric ? 'number' : dateTime ? 'datetime-local' : fieldSchema.format === 'date' ? 'date' : password ? 'password' : 'text';
+          // UI 元数据不透传任意 DOM 属性；这里只开放认证表单需要的浏览器自动填充语义。
+          const autoComplete = (type === 'text' || type === 'password') && typeof ui.props?.autoComplete === 'string'
+            && ['on', 'off', 'username', 'current-password', 'new-password'].includes(ui.props.autoComplete) ? ui.props.autoComplete : undefined;
           let display = typeof field.value === 'number' || typeof field.value === 'string' ? field.value : '';
           if (dateTime && typeof display === 'string' && display) {
             const date = new Date(display);
             if (!Number.isNaN(date.getTime())) display = new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
           }
-          return <Input {...common} type={type} value={display} onChange={(event) => {
+          return <Input {...common} type={type} autoComplete={autoComplete} value={display} onChange={(event) => {
             const value = event.target.value;
             field.onChange(numeric ? value === '' ? undefined : Number(value) : dateTime ? value ? new Date(value).toISOString() : undefined : value);
           }} />;
