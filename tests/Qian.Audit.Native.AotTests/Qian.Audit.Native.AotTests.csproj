@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Audit.Native/Qian.Audit.Native.csproj" />
+    <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />
+    <PackageReference Include="xunit.v3" /><PackageReference Include="Npgsql" />
+  </ItemGroup>
+  <ItemGroup><Compile Include="../Shared/NativeAuditDatabase.cs" Link="NativeAuditDatabase.cs" /></ItemGroup>
+</Project>

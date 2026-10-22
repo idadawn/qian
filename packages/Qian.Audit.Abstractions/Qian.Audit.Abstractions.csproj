@@ -1,4 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 <PropertyGroup><IsPackable>true</IsPackable><Description>审计记录、链校验与错误契约。</Description></PropertyGroup>
 <ItemGroup><ProjectReference Include="../Qian.Runtime/Qian.Runtime.csproj" /></ItemGroup>
+<ItemGroup><PackageReference Include="JsonSchema.Net" /><Compile Include="../Common/SchemaPattern.cs" Link="Common/SchemaPattern.cs" /></ItemGroup>
+<ItemGroup><InternalsVisibleTo Include="Qian.Audit" /><InternalsVisibleTo Include="Qian.Audit.Tests" /></ItemGroup>
 </Project>

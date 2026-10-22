@@ -1,0 +1,20 @@
+#nullable enable
+Qian.Audit.Native.NativeAuditRoles.PlatformLogin.get -> string?
+const Qian.Audit.Native.NativeAuditStorage.Schema = "plugin_qian_audit" -> string!
+Qian.Audit.Native.NativeAuditRoles.TenantLogin.get -> string!
+static Qian.Audit.Native.NativeAuditStorage.ExpectedGuard(Qian.Audit.Native.NativeAuditRoles! roles) -> string!
+const Qian.Audit.Native.NativeAuditStorage.GuardPolicy = "qian_audit_native_guard" -> string!
+static Qian.Audit.Native.NativeAuditStorage.MigrateAsync(System.Data.Common.DbConnection! migrationConnection, Qian.Audit.Native.NativeAuditRoles! roles, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Qian.Audit.Native.NativeAuditRoles
+Qian.Audit.Native.NativeAuditRoles.FunctionOwner.get -> string!
+static Qian.Audit.Native.NativeAuditStorage.CreateMigrationSql(Qian.Audit.Native.NativeAuditRoles! roles) -> string!
+Qian.Audit.Native.NativeAuditStorage
+Qian.Audit.Native.NativeAuditRoles.NativeAuditRoles(string! tenantLogin, string! functionOwner, string? platformLogin = null) -> void
+Qian.Audit.Native.NativeAuditPlugin
+Qian.Audit.Native.NativeAuditPlugin.NativeAuditPlugin() -> void
+Qian.Audit.Native.NativeAuditComponent
+Qian.Audit.Native.NativeAuditComponent.NativeAuditComponent() -> void
+Qian.Audit.Native.NativeAuditComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Audit.Native.NativeAuditPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Audit.Native.NativeAuditComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Audit.Native.NativeAuditPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

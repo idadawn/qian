@@ -1,0 +1,59 @@
+{
+  "$schema": "https://qian.dev/schemas/plugin/v2",
+  "id": "qian.audit.native",
+  "version": "1.0.0",
+  "description": "原生 PostgreSQL 审计 Provider：共享哈希链、受限追加函数与真实同事务业务审计。",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "Apache-2.0",
+  "interface": {
+    "displayName": "原生审计",
+    "category": "platform"
+  },
+  "policy": {
+    "tier": "system",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false
+  },
+  "scopes": [
+    "global",
+    "tenant"
+  ],
+  "x-skeleton": true,
+  "inject": [
+    "NativeData"
+  ],
+  "provides": [
+    "Audit",
+    "CommandAudit"
+  ],
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Audit.Native.NativeAuditComponent, Qian.Audit.Native",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.audit.native",
+        "source": "Qian.Audit.Native.NativeAuditComponent, Qian.Audit.Native",
+        "sha256": "05b224fa83740c021078cfb721355b36d07a2423c1226e6603bbb4aa1b2a9926",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
+}
