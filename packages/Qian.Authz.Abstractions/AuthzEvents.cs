@@ -22,8 +22,8 @@ public abstract record AuthzIntegrationEvent(long AuthzRevision)
 }
 
 /// <summary>
-/// 主体的角色绑定变化：Change 为 assigned / revoked / updated。身份组件据此递增受影响主体的 identity_revision（PRD 7.4），
-/// 实时推送据此刷新客户端；载荷不含权限集合。
+/// 主体的角色绑定变化：Change 为 assigned / revoked / updated。受影响 user 主体的 identity_revision 随之递增（PRD 7.4 / 7.5，S1-DEC-027）：
+/// 同进程宿主由授权组件提交后直接调身份端口，拆分部署由身份组件订阅本事件（S1-IDP-012）；实时推送据此刷新客户端。载荷不含权限集合。
 /// </summary>
 [IntegrationEventId(AuthzEventIds.GrantChanged)]
 public sealed record AuthzGrantChangedEvent(long AuthzRevision, string SubjectType, string SubjectId, string RoleCode, string Change)

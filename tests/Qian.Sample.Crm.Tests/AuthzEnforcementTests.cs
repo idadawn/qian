@@ -86,15 +86,16 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
-    public async Task 更高identity_revision出现后旧令牌被服务端拒绝_移除角色后授权修订递增旧快照三秒内失效_authz_grant_changed进Outbox()
+    public async Task 更高identity_revision出现后旧令牌被服务端拒绝_HTTP回401且gRPC回Unauthenticated_移除角色后授权修订递增旧快照三秒内失效_authz_grant_changed进Outbox()
     {
-        await using var host = await Start(decisionLogSampling: 1);
+        await using var host = await Start(grpc: true, decisionLogSampling: 1, map: app => app.MapGrpcService<AcceptanceEcho>().RequireAuthorization("crm-command-reader"));
         var data = host.App.Services.GetRequiredService<IDataService>(); var tenant = host.App.Services.GetRequiredService<ITenantContext>();
         Task<HttpResponseMessage> List(long? revision) => host.Send(Get("/api/customers", host.Token(A, "crm.read", identityRevision: revision)));
         using (var first = await List(1)) Assert.True(first.StatusCode == HttpStatusCode.OK, host.FailureEvidence);
         using (var newer = await List(2)) Assert.Equal(HttpStatusCode.OK, newer.StatusCode);
-        // 身份修订递增后（身份组件换发新令牌），仍持旧修订的令牌在服务端比对下限时被拒绝；没带修订的 S2S 令牌不比对。
-        using (var stale = await List(1)) { Assert.Equal(HttpStatusCode.Forbidden, stale.StatusCode); Assert.Equal("AUTHZ_DENIED", await Code(stale)); }
+        // 身份修订递增后（身份组件换发新令牌），仍持旧修订的令牌在服务端比对下限时被拒绝：401 UNAUTHENTICATED，客户端据此换令牌（S1-DEC-027）；
+        // 没带修订的 S2S 令牌不比对。
+        using (var stale = await List(1)) { Assert.Equal(HttpStatusCode.Unauthorized, stale.StatusCode); Assert.Equal("UNAUTHENTICATED", await Code(stale)); }
         using (var bare = await List(null)) Assert.Equal(HttpStatusCode.OK, bare.StatusCode);
         using (tenant.BeginScope(A))
         {
@@ -125,6 +126,10 @@ public sealed partial class CustomerCommandTests
             Assert.Contains(("revoked", "service", Writer, revision), events);
             Assert.Contains(("assigned", "user", "admin-a", revision - 1), events);
         }
+        // gRPC 与 HTTP 同一映射：旧令牌回 Unauthenticated，ErrorDetail 为 401 UNAUTHENTICATED（S1-DEC-027）。
+        using var channel = GrpcChannel.ForAddress(host.GrpcAddress, new GrpcChannelOptions { HttpHandler = new SocketsHttpHandler { UseProxy = false }, DisposeHttpClient = true });
+        AssertDenied(await Assert.ThrowsAsync<RpcException>(() => channel.CreateCallInvoker().AsyncUnaryCall(AcceptanceBindings.Read, null, Call(host.Token(A, "crm.read", identityRevision: 1)), "ping").ResponseAsync),
+            "UNAUTHENTICATED", 401, StatusCode.Unauthenticated);
     }
 
     [Fact]
@@ -155,9 +160,9 @@ public sealed partial class CustomerCommandTests
         return message;
     }
     private static CallOptions Call(string token) => new(new Metadata { { "authorization", "Bearer " + token } }, cancellationToken: Ct);
-    private static void AssertDenied(RpcException error, string code, int status)
+    private static void AssertDenied(RpcException error, string code, int status, StatusCode grpc = StatusCode.PermissionDenied)
     {
-        Assert.Equal(StatusCode.PermissionDenied, error.StatusCode); Assert.Equal(code, error.Status.Detail);
+        Assert.Equal(grpc, error.StatusCode); Assert.Equal(code, error.Status.Detail);
         var trailer = Assert.Single(error.Trailers, entry => entry.Key == AuthzGrpcServerInterceptor.ErrorDetailTrailer);
         var detail = ErrorDetailJson.Deserialize(Encoding.UTF8.GetString(trailer.ValueBytes)); Assert.NotNull(detail);
         Assert.Equal((code, status), (detail.Code, detail.Status));

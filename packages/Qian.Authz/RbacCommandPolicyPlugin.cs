@@ -47,7 +47,13 @@ internal sealed class RbacCommandPolicy(IAuthzEnforcement enforcement)
         var subject = new EnforcementSubject(principal.Subject, principal.TenantId, principal.Kind == PrincipalKind.User ? "user" : "service", principal.IdentityRevision, principal.Actor is not null);
         var decision = await enforcement.EnforceAsync(new EnforcementRequest(subject, required.GetString()!, null, invocation.Channel, AuthzEnforcement.CommandEntryPoint, invocation.Contract.Id,
             invocation.Transaction), invocation.CancellationToken).ConfigureAwait(false);
-        if (!decision.Allow) throw Error(decision.Reason == AuthzEnforcement.AuditUnavailable ? PlatformErrors.NotFound : PlatformErrors.AuthzDenied);
+        // 与 HTTP / gRPC 入口同一映射：审计不可用 404，旧令牌 401（客户端据此换令牌，S1-DEC-027），其余 403。
+        if (!decision.Allow) throw Error(decision.Reason switch
+        {
+            AuthzEnforcement.AuditUnavailable => PlatformErrors.NotFound,
+            AuthzEnforcement.StaleIdentityRevision => PlatformErrors.Unauthenticated,
+            _ => PlatformErrors.AuthzDenied
+        });
         return await next().ConfigureAwait(false);
     }
     private static QianErrorException Error(ErrorCode code) => new(new QianError(code));

@@ -60,8 +60,14 @@ internal sealed class QianPermissionHandler(AuthzEnforcementSource source) : Aut
         }
         catch (QianErrorException error) { Deny(context, http, error.Error, error.Error.Code.Code); }
     }
-    // 审计组件已卸载时整个入口不可用，与不存在同为 404（S1-AUD-001）；其余拒绝 403。
-    internal static ErrorCode Denial(AuthorizationDecision decision) => decision.Reason == AuthzEnforcement.AuditUnavailable ? PlatformErrors.NotFound : PlatformErrors.AuthzDenied;
+    // 审计组件已卸载时整个入口不可用，与不存在同为 404（S1-AUD-001）；旧令牌（identity_revision 低于下限）401，客户端据此换令牌（S1-DEC-027）；
+    // 其余拒绝 403。gRPC 拦截器按同一映射给出 NotFound / Unauthenticated / PermissionDenied。
+    internal static ErrorCode Denial(AuthorizationDecision decision) => decision.Reason switch
+    {
+        AuthzEnforcement.AuditUnavailable => PlatformErrors.NotFound,
+        AuthzEnforcement.StaleIdentityRevision => PlatformErrors.Unauthenticated,
+        _ => PlatformErrors.AuthzDenied
+    };
     private static void Deny(AuthorizationHandlerContext context, HttpContext http, QianError error, string reason)
     {
         HttpEnforcement.Fail(http, error);

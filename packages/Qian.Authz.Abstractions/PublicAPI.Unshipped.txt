@@ -344,3 +344,4 @@ Qian.Authz.Abstractions.EnforcementRequest.EnforcementRequest(Qian.Authz.Abstrac
 Qian.Authz.Abstractions.EnforcementRequest.Transaction.get -> System.Data.Common.DbTransaction?
 Qian.Authz.Abstractions.EnforcementRequest.Transaction.init -> void
 const Qian.Authz.Abstractions.AuthzEnforcement.AuditUnavailable = "audit_unavailable" -> string!
+const Qian.Authz.Abstractions.AuthzEnforcement.StaleIdentityRevision = "identity_revision_stale" -> string!

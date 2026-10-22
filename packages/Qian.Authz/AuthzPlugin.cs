@@ -91,7 +91,7 @@ public sealed class AuthzPlugin : IQianPlugin
             await store.PutAsync(catalog, ct).ConfigureAwait(false);
             ctx.Effect(registry.Register(catalog.Version, catalog.Permissions));
         }
-        var roles = new PostgresTenantRoleStore(ctx.Data(), tenant);
+        var roles = RoleStore(ctx, tenant);
         ctx.Provide<ITenantRoleGrant>(TenantRoleGrant.Key, new TenantRoleGrantService(roles));
         var components = Array.AsReadOnly(catalogs.Select(catalog => (catalog.PluginId, catalog.Version)).ToArray());
         ctx.On(SurfaceHookEvents.TenantProvisioned, DispatchMode.Serial, (Func<HookNotification, ValueTask<JsonElement>>)(notification => ProvisionAsync(notification)), priority: 1000);
@@ -115,6 +115,11 @@ public sealed class AuthzPlugin : IQianPlugin
             return Nothing;
         }
     }
+
+    // 角色存储与授权变更后的身份修订传播（S1-DEC-027）只在这里组装：组件入口与验收用例取同一个组合。
+    // 身份组件与本组件同进程时，授予变更提交后经 ctx 解析的 IIdentityAccounts 递增修订；不在本进程即跳过。
+    internal static PostgresTenantRoleStore RoleStore(IPluginContext ctx, ITenantContext tenant) =>
+        new(ctx.Data(), tenant, new IdentityRevisionPropagation(ctx, ctx.Data()));
 
     private static PermissionCatalog[] Installed(IPluginContext ctx)
     {
