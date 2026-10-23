@@ -2,6 +2,6 @@
 import { yueBoundariesConfig } from './packages/yue/boundaries.config.mjs';
 
 export default [
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/dist-*/**', 'website/**', 'tests/**'] },
+  { ignores: ['**/node_modules/**', '**/dist/**', 'website/**', 'tests/**'] },
   ...yueBoundariesConfig,
 ];

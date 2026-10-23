@@ -59,8 +59,7 @@ jobs:
           path: |
             apps/qian-shell/playwright-report
             apps/qian-shell/test-results
-            apps/qian-shell/acceptance-results/*.jsonl
             apps/qian-shell/acceptance-results/audit-chain.json
             apps/qian-shell/acceptance-results/*.png
-            apps/qian-shell/acceptance-results/*budget*.json
+            apps/qian-shell/acceptance-results/first-screen.json
           if-no-files-found: ignore

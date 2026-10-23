@@ -9,7 +9,7 @@ import { noHardcodedText } from './packages/yue/sdk/eslint-i18n.mjs';
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/dist-*/**', 'website/**', '**/.turbo/**', '**/playwright-report/**', '**/test-results/**', '**/.lighthouseci/**', 'tests/gates/yue/fixtures/**'],
+    ignores: ['**/node_modules/**', '**/dist/**', 'website/**', '**/.turbo/**', '**/playwright-report/**', '**/test-results/**', '**/.lighthouseci/**', 'tests/gates/yue/fixtures/**'],
   },
   {
     files: ['packages/yue/**/*.{ts,tsx,mts}', 'apps/**/*.{ts,tsx,mts}', 'packages/qian-tenancy-ui/**/*.{ts,tsx,mts}', 'packages/qian-plugin-sdk/**/*.{ts,tsx,mts}'],
