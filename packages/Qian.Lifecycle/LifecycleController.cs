@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Kun.Core.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
+using Qian.Audit;
 using Qian.Data;
 using Qian.Events;
 using Qian.Registry;
@@ -13,7 +14,7 @@ using Qian.Runtime.Errors;
 namespace Qian.Lifecycle;
 
 // 平台级修订状态机：Install / Activate / Rollback / Deprecate / Retire 与 service 修订的部署健康。所有写入在 PostgreSQL 事务内持
-// 组件级 advisory lock，多副本同样串行；租户级与挂载操作见同名分部文件。
+// 组件级 advisory lock，多副本同样串行；每次状态变更在提交前追加一条平台审计链条目（见 Audit 分部）。租户级与挂载操作见同名分部文件。
 internal sealed partial class LifecycleController(
     IPluginContext context, ITenantContext tenant, LifecycleRuntimeOptions options, LifecycleSettings settings, TrustRoots trust,
     IDeploymentExecutor? executor, TimeProvider time) : IPluginLifecycleController
@@ -35,12 +36,14 @@ internal sealed partial class LifecycleController(
             throw new QianErrorException(new QianError(LifecycleErrors.RevisionNotDeployed));
         if (content.Form is "function" or "package") throw Unavailable("runtime.form 为 function / package 的组件待 S2 的执行器。");
         if (content.Form == "service" && executor is null) throw Unavailable("宿主没有配置部署执行器，不能安装 service 组件。");
+        // 登记修订须入平台审计链（ADR-009 D9.8）：宿主没有装配审计时在提交候选制品之前就拒绝。
+        var audit = RequirePlatformAudit("plugin-revision.install");
         await registry.SubmitArtifactAsync(artifact.Files, content.Digest, actor, cancellationToken).ConfigureAwait(false);
-        var saved = existing ?? await Locked(["revision", content.PluginId], async session =>
+        var saved = existing ?? await PlatformAudited(["revision", content.PluginId], "plugin-revision.install", audit, async session =>
         {
             var db = session.Context;
             var rows = await db.Revisions.Where(row => row.PluginId == content.PluginId).ToListAsync(cancellationToken).ConfigureAwait(false);
-            if (rows.SingleOrDefault(row => row.ArtifactDigest == content.Digest) is { } raced) return raced;
+            if (rows.SingleOrDefault(row => row.ArtifactDigest == content.Digest) is { } raced) return (raced, (AuditRecord?)null);
             if (rows.Any(row => row.Version == content.Version)) throw Conflict("同一版本已安装为另一个制品。");
             var row = new PluginRevisionRow
             {
@@ -50,7 +53,8 @@ internal sealed partial class LifecycleController(
             };
             db.Revisions.Add(row);
             await Save(session, null, cancellationToken).ConfigureAwait(false);
-            return row;
+            return (row, PlatformRecord(InstallAuditCapability, content.PluginId, row.Revision, row.InstalledAt, LifecyclePayload(content.PluginId, actor,
+                ("revision", row.Revision), ("version", content.Version), ("artifactDigest", content.Digest), ("form", content.Form), ("signedBy", signedBy)), content.Version));
         }, cancellationToken).ConfigureAwait(false);
         if (saved.Form != "service")
         {
@@ -66,14 +70,15 @@ internal sealed partial class LifecycleController(
     {
         CheckPlugin(pluginId); CheckActor(actor);
         using var platform = tenant.BeginScope(null);
+        var audit = RequirePlatformAudit("plugin-revision.activate");
         await RefreshIfService(pluginId, revision, cancellationToken).ConfigureAwait(false);
         using var origin = Origin();
-        return await Locked(["revision", pluginId], async session =>
+        return await PlatformAudited(["revision", pluginId], "plugin-revision.activate", audit, async session =>
         {
             var target = await session.Context.Revisions.SingleOrDefaultAsync(row => row.PluginId == pluginId && row.Revision == revision, cancellationToken).ConfigureAwait(false)
                 ?? throw NotFound();
-            if (target.State == PluginRevisionStates.Active) return target.View();
-            return await Promote(session, target, cancellationToken).ConfigureAwait(false);
+            if (target.State == PluginRevisionStates.Active) return (target.View(), (AuditRecord?)null);
+            return await Promote(session, target, ActivateAuditCapability, actor, cancellationToken).ConfigureAwait(false);
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -81,23 +86,24 @@ internal sealed partial class LifecycleController(
     {
         CheckPlugin(pluginId); CheckActor(actor);
         using var platform = tenant.BeginScope(null);
+        var audit = RequirePlatformAudit("plugin-revision.rollback");
         await RefreshIfService(pluginId, toRevision, cancellationToken).ConfigureAwait(false);
         using var origin = Origin();
-        return await Locked(["revision", pluginId], async session =>
+        return await PlatformAudited(["revision", pluginId], "plugin-revision.rollback", audit, async session =>
         {
             var rows = await session.Context.Revisions.Where(row => row.PluginId == pluginId).ToListAsync(cancellationToken).ConfigureAwait(false);
             var target = rows.SingleOrDefault(row => row.Revision == toRevision) ?? throw NotFound();
             var active = rows.SingleOrDefault(row => row.State == PluginRevisionStates.Active) ?? throw Conflict("组件没有激活的修订，不能回切。");
             if (toRevision >= active.Revision) throw Conflict("回切目标必须早于当前激活的修订。");
-            return await Promote(session, target, cancellationToken).ConfigureAwait(false);
+            return await Promote(session, target, RollbackAuditCapability, actor, cancellationToken).ConfigureAwait(false);
         }, cancellationToken).ConfigureAwait(false);
     }
 
     public ValueTask<PluginRevisionView> DeprecateAsync(string pluginId, int revision, string actor, CancellationToken cancellationToken = default) =>
-        Transition(pluginId, revision, actor, PluginRevisionStates.Deprecated, cancellationToken);
+        Transition(pluginId, revision, actor, PluginRevisionStates.Deprecated, "plugin-revision.deprecate", DeprecateAuditCapability, cancellationToken);
 
     public ValueTask<PluginRevisionView> RetireAsync(string pluginId, int revision, string actor, CancellationToken cancellationToken = default) =>
-        Transition(pluginId, revision, actor, PluginRevisionStates.Retired, cancellationToken);
+        Transition(pluginId, revision, actor, PluginRevisionStates.Retired, "plugin-revision.retire", RetireAuditCapability, cancellationToken);
 
     public async ValueTask<PluginRevisionView> RefreshDeploymentAsync(string pluginId, int revision, CancellationToken cancellationToken = default)
     {
@@ -120,8 +126,9 @@ internal sealed partial class LifecycleController(
         return rows.Select(row => row.View()).ToArray();
     }
 
-    // 激活与回切共用：原 Active 先降回 Installed 并单独保存（部分唯一索引逐条检查），再提升目标并随同一事务发出 activated 事件。
-    private async Task<PluginRevisionView> Promote(IDataSession<LifecycleDbContext> session, PluginRevisionRow target, CancellationToken ct)
+    // 激活与回切共用：原 Active 先降回 Installed 并单独保存（部分唯一索引逐条检查），再提升目标并随同一事务发出 activated 事件；
+    // 返回的平台链记录由调用方在提交前追加（激活与回切能力不同，载荷都带此前的 Active 修订）。
+    private async Task<(PluginRevisionView View, AuditRecord? Record)> Promote(IDataSession<LifecycleDbContext> session, PluginRevisionRow target, string capability, string actor, CancellationToken ct)
     {
         if (target.State == PluginRevisionStates.Retired) throw Conflict("修订已退役，不能激活或回切。");
         if (target.Form == "service" && target.Health != DeploymentHealthStates.Healthy) throw Conflict("service 修订尚未健康（工作负载状态与 /health 未同时满足）。");
@@ -131,26 +138,31 @@ internal sealed partial class LifecycleController(
             previous.State = PluginRevisionStates.Installed; previous.RowVersion++;
             await Save(session, null, ct).ConfigureAwait(false);
         }
-        target.State = PluginRevisionStates.Active; target.ActivatedAt = Now(); target.RowVersion++;
+        var now = Now();
+        target.State = PluginRevisionStates.Active; target.ActivatedAt = now; target.RowVersion++;
         var change = new RevisionActivated(target.PluginId, target.Revision, target.Version, previous?.Revision);
         target.Raise(change);
         await Save(session, change, ct).ConfigureAwait(false);
-        return target.View();
+        return (target.View(), PlatformRecord(capability, target.PluginId, target.Revision, now, LifecyclePayload(target.PluginId, actor,
+            ("revision", target.Revision), ("version", target.Version), ("previousRevision", previous?.Revision)), target.Version));
     }
 
-    private async ValueTask<PluginRevisionView> Transition(string pluginId, int revision, string actor, string state, CancellationToken ct)
+    private async ValueTask<PluginRevisionView> Transition(string pluginId, int revision, string actor, string state, string operation, string capability, CancellationToken ct)
     {
         CheckPlugin(pluginId); CheckActor(actor);
         using var platform = tenant.BeginScope(null);
-        return await Locked(["revision", pluginId], async session =>
+        var audit = RequirePlatformAudit(operation);
+        return await PlatformAudited(["revision", pluginId], operation, audit, async session =>
         {
             var row = await session.Context.Revisions.SingleOrDefaultAsync(item => item.PluginId == pluginId && item.Revision == revision, ct).ConfigureAwait(false) ?? throw NotFound();
-            if (row.State == state) return row.View();
+            if (row.State == state) return (row.View(), (AuditRecord?)null);
             if (row.State == PluginRevisionStates.Active) throw Conflict("Active 修订不能弃用或退役，请先激活另一个修订。");
             if (row.State == PluginRevisionStates.Retired) throw Conflict("修订已退役。");
+            var from = row.State;
             row.State = state; row.RowVersion++;
             await Save(session, null, ct).ConfigureAwait(false);
-            return row.View();
+            return (row.View(), PlatformRecord(capability, pluginId, revision, Now(), LifecyclePayload(pluginId, actor,
+                ("revision", revision), ("version", row.Version), ("fromState", from), ("toState", state)), row.Version));
         }, ct).ConfigureAwait(false);
     }
 

@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Kun.Core.MultiTenancy;
 using Microsoft.Extensions.DependencyInjection;
+using Qian.Audit;
+using Qian.Authz.Abstractions;
 using Qian.Config;
 using Qian.Data;
 using Qian.Registry;
@@ -21,6 +23,11 @@ public sealed class LifecyclePlugin(LifecycleRuntimeOptions options) : IQianPlug
 {
     /// <inheritdoc />
     public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key, RegistryDefinition.Key, ConfigDefinition.Key];
+    /// <summary>
+    /// 可选依赖，与清单的 optionalInject 同一份：审计服务（生命周期操作与反向权限批准入审计链）与 Authz 超管旁路（平台主体的管理面判定）。
+    /// 缺席时仍装载，按调用解析；缺审计时生命周期操作与批准 fail-closed 并记宿主级日志，缺旁路时平台主体的管理面调用为 404。
+    /// </summary>
+    public static IReadOnlyList<ServiceKey> OptionalInject => [AuditDefinition.Key, AuthzDefinition.SuperadminBypassKey];
     /// <inheritdoc />
     public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {

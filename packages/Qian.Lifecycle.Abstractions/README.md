@@ -11,6 +11,6 @@
   - module 形态组件的进程内钩子 `IPluginLifecycleHooks`，含四个租户级钩子名与 `LifecycleHookContext`。
   - 部署执行器 `IDeploymentExecutor`，含 `DeploymentRequest`、`DeploymentHandle`、`DeploymentHealth`。
 - 集成事件 `lifecycle.plugin.activated.v1`、`lifecycle.tenant-plugin.upgraded.v1` 及其登记方法 `RegisterLifecycleEvents`。
-- 生命周期错误码 `LifecycleErrors`，含开通与升级缺少批准时的 `LIFECYCLE_PERMISSIONS_UNAPPROVED`。
+- 生命周期错误码 `LifecycleErrors`，含开通与升级缺少批准时的 `LIFECYCLE_PERMISSIONS_UNAPPROVED`，以及宿主没有装配可用审计链（租户级操作缺该租户 scope 的审计服务，平台级操作缺 global 审计服务或平台链 `chain.platformRole`）时 fail-closed 的 `LIFECYCLE_AUDIT_UNAVAILABLE`（503）。
 
 本包只依赖 `Qian.Runtime`（含其错误协议 `Qian.Runtime.Errors`）、`Qian.Identity.Abstractions` 与 `Kun.EventBus.Abstractions`，不实现数据库访问、验签或部署。状态机语义、宿主装配、执行器与验收边界统一见 [Qian.Lifecycle](../Qian.Lifecycle/README.md)。

@@ -329,6 +329,7 @@ static readonly Qian.Lifecycle.LifecycleErrors.ArtifactUnsigned -> Qian.Runtime.
 static readonly Qian.Lifecycle.LifecycleErrors.DeploymentUnavailable -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.HookFailed -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.InProgress -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Lifecycle.LifecycleErrors.AuditUnavailable -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.MountFailed -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.NotEntitled -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Lifecycle.LifecycleErrors.RevisionNotDeployed -> Qian.Runtime.Errors.ErrorCode!

@@ -232,7 +232,7 @@ public sealed partial class PatchPersistenceTests
         {
             var directory = Path.Combine(_directory, "plugins/private");
             var component = validator.ValidateComponent(directory, ArtifactOptions).Component!;
-            return new ResolvedProfileEntry("private", "global", "test.private@1.0.0", Patch("{}"), 0, [], [], null)
+            return new ResolvedProfileEntry("private", "global", "test.private@1.0.0", Patch("{}"), 0, [], [], [], null)
                 { ComponentDirectory = directory, Manifest = component.Manifest };
         }
         internal void ChangePrivateMetadata() => Write("plugins/private/metadata/permissions.json", "[]");

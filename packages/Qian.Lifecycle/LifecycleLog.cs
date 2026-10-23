@@ -22,4 +22,13 @@ internal static partial class LifecycleLog
 
     [LoggerMessage(EventId = 6, Level = LogLevel.Warning, Message = "生命周期钩子 {Hook} 执行失败：{PluginId}@{Version}")]
     internal static partial void HookFailed(ILogger logger, Exception error, string hook, string pluginId, string version);
+
+    // 宿主装配错误与无权限 / 状态冲突可区分：该租户 scope 看不到审计服务时记这一条（只有操作名与租户，不含载荷），操作按 fail-closed 拒绝。
+    [LoggerMessage(EventId = 7, Level = LogLevel.Warning, Message = "审计服务不可用：{Operation}（租户 {TenantId}）无法写入租户审计链，已拒绝；请检查宿主是否装配 qian.audit 且该租户 scope 可见。")]
+    internal static partial void AuditUnavailable(ILogger logger, string operation, string tenantId);
+
+    // 平台级操作（安装、激活、回切、弃用、退役）须入平台审计链：global 上下文看不到审计服务，或审计端口拒绝本组件为平台生产方（平台链未配置
+    // chain.platformRole、平台审计登录不可用）时记这一条，操作按 fail-closed 拒绝、状态未改。
+    [LoggerMessage(EventId = 8, Level = LogLevel.Warning, Message = "平台审计链不可用：{Operation} 无法写入平台审计链，已拒绝（{Reason}）；请检查宿主是否装配 qian.audit 并配置 chain.platformRole 与平台审计登录。")]
+    internal static partial void PlatformAuditUnavailable(ILogger logger, string operation, string reason);
 }

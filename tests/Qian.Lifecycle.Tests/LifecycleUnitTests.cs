@@ -65,6 +65,21 @@ public sealed class LifecycleUnitTests
     }
 
     [Fact]
+    public void 清单的optionalInject与入口代码一致_Audit与Authz超管旁路都是可选依赖_不与必需依赖和提供项相交()
+    {
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(LifecycleHost.RepositoryRoot(), "plugins/qian.lifecycle/.qian-plugin/plugin.json")));
+        var optional = manifest.RootElement.GetProperty("optionalInject").EnumerateArray().Select(key => key.GetString()!).ToArray();
+        var inject = manifest.RootElement.GetProperty("inject").EnumerateArray().Select(key => key.GetString()!).ToArray();
+        var provides = manifest.RootElement.GetProperty("provides").EnumerateArray().Select(key => key.GetString()!).ToArray();
+        Assert.Equal(["Audit", "AuthzSuperadminBypass"], optional);
+        Assert.Equal(optional, LifecycleComponent.OptionalInject.Select(key => key.Name));
+        Assert.Equal(optional, LifecyclePlugin.OptionalInject.Select(key => key.Name));
+        Assert.Equal(["Config", "Data", "Registry"], inject);
+        Assert.Equal(inject, new LifecycleComponent().Inject.Select(key => key.Name).Order(StringComparer.Ordinal));
+        Assert.Empty(optional.Intersect(inject, StringComparer.Ordinal)); Assert.Empty(optional.Intersect(provides, StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void 空配置不带执行器_钩子幂等键由租户组件钩子与目标版本确定且是第8版UUID()
     {
         Assert.Null(LifecycleSettings.Parse(JsonSerializer.Deserialize<JsonElement>("{}")).Executor);

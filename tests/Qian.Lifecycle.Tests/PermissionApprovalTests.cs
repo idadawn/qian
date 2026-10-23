@@ -145,7 +145,7 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
                 Grants(["tenant:read", "tenant:write"], [], ["other.example.test"], [new SecretGrant("oss/*", "tenant")], []), approver, Ct).AsTask())));
         }
         Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_lifecycle.permission_approvals", Ct));
-        Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
+        Assert.Equal(0, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries WHERE tenant_id IS NOT NULL", Ct));
     }
 
     [Fact]
@@ -283,7 +283,7 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
         await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
         await AssertCode(PlatformErrors.NotFound, () => host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", narrower, approver, Ct).AsTask());
         Assert.Equal((approved.ApprovedAt, "approver"), Pick((await host.Lifecycle.GetPermissionApprovalAsync(TenantA, Plugin, "1.0.0", approver, Ct))!));
-        Assert.Equal(1, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries", Ct));
+        Assert.Equal(1, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries WHERE tenant_id IS NOT NULL", Ct));
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
     }
 
     [Fact]
-    public async Task 开通续跑先重新核对批准_两次尝试之间收窄批准后续跑被拒且不认领执行记录_重批后续跑完成开通()
+    public async Task 开通续跑按原目标版本重新核对批准_两次尝试之间激活声明更多权限的新版本并收窄批准后续跑被拒且不认领执行记录_重批后续跑仍开通原目标版本()
     {
         var hooks = new FlakyProvision();
         await using var host = await Start(new Permissions(("approver", TenantA)), (plugin, _) => plugin == Plugin ? hooks : null);
@@ -355,20 +355,29 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
         await AssertCode(LifecycleErrors.HookFailed, () => host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct).AsTask());
         Assert.Equal((TenantInstallStates.Provisioning, (string?)null, (string?)"1.0.0"), Pick3((await host.Lifecycle.GetInstallAsync(TenantA, Plugin, Ct))!));
         Assert.Equal((LifecycleRunStates.Failed, 1), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct))));
-        // 两次尝试之间，批准被整份替换为更小的内容。
+        // 两次尝试之间：平台激活了声明更多反向权限的 1.0.1（Active 修订换了），租户的批准又被整份替换为更小的内容。
+        // 续跑核对的是原目标版本 1.0.0 的声明，不是 Active 修订（1.0.1）的：按 Active 核对会把 1.0.1 新增的 platform tenant:write 也列为缺失。
+        var wider = new
+        {
+            platform = new[] { "tenant:read", "notify:send", "tenant:write" }, data = new[] { "qian.sample.crm:customer" },
+            secrets = new[] { new { name = "oss/*", scope = "platform" }, new { name = "db/token", scope = "tenant" } }, ui = new { connectSrc = new[] { "https://api.example.test" } }
+        };
+        Assert.Equal((PluginRevisionStates.Active, "1.0.1"), ((await Install(host, "1.0.1", Policy(wider, FullEgress))).State, "1.0.1"));
+        Assert.Equal(PluginRevisionStates.Installed, (await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).Single(revision => revision.Version == "1.0.0").State);
         using (host.Tenant.BeginScope(TenantA))
             await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", Grants(platform: ["tenant:read"], egress: FullEgress), approver, Ct);
-        // 续跑先过第二道门：缺失项写进错误，仍停在 Provisioning，执行记录不被认领，钩子没有再执行。
+        // 续跑先过第二道门：缺失项只有 1.0.0 声明过的四项，仍停在 Provisioning(1.0.0)，执行记录不被认领，钩子没有再执行。
         var denied = await AssertCode(LifecycleErrors.PermissionsUnapproved, () => host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct).AsTask());
         Assert.Equal("platform notify:send; data qian.sample.crm:customer; secrets tenant:db/token, platform:oss/*; ui.connectSrc https://api.example.test", denied.Args["missing"]);
         Assert.Equal((TenantInstallStates.Provisioning, (string?)null, (string?)"1.0.0"), Pick3((await host.Lifecycle.GetInstallAsync(TenantA, Plugin, Ct))!));
         Assert.Equal((LifecycleRunStates.Failed, 1), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct))));
         Assert.Equal(1, hooks.Calls);
-        // 重新批准后续跑沿用原目标版本：钩子第二次执行成功，开通完成。
+        // 重新批准 1.0.0（不含 1.0.1 新增的项）后续跑沿用原目标版本：钩子第二次以 1.0.0 执行成功，开通完成在 1.0.0 而不是 Active 的 1.0.1。
         using (host.Tenant.BeginScope(TenantA)) await host.Lifecycle.ApprovePermissionsAsync(TenantA, Plugin, "1.0.0", FullGrants(), approver, Ct);
         Assert.Equal((TenantInstallStates.Installed, (string?)"1.0.0", (string?)null), Pick3(await host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct)));
-        Assert.Equal((LifecycleRunStates.Succeeded, 2), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct))));
-        Assert.Equal(2, hooks.Calls);
+        var run = Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct));
+        Assert.Equal((LifecycleRunStates.Succeeded, 2, "1.0.0"), (run.Status, run.Attempts, run.ToVersion));
+        Assert.Equal(["1.0.0", "1.0.0"], hooks.Versions);
     }
 
     private async Task<LifecycleHost> Start(Permissions permissions, Func<string, string, IPluginLifecycleHooks?>? hooks = null, Action<IServiceCollection>? services = null)
@@ -458,14 +467,17 @@ public sealed class PermissionApprovalTests(PostgresFixture postgres) : IClassFi
         return error.Error;
     }
 
-    // 第一次开通钩子失败，之后成功；记下开通钩子的调用次数。
+    // 第一次开通钩子失败，之后成功；记下开通钩子的调用次数与每次的目标版本。
     private sealed class FlakyProvision : IPluginLifecycleHooks
     {
         private int _calls;
         internal int Calls => Volatile.Read(ref _calls);
+        internal List<string> Versions { get; } = [];
         public ValueTask<JsonElement?> InvokeAsync(LifecycleHookContext context, CancellationToken cancellationToken)
         {
-            if (context.Hook == LifecycleHooks.TenantProvision && Interlocked.Increment(ref _calls) == 1) throw new QianErrorException(new QianError(PlatformErrors.Unavailable));
+            if (context.Hook != LifecycleHooks.TenantProvision) return ValueTask.FromResult<JsonElement?>(null);
+            lock (Versions) Versions.Add(context.ToVersion);
+            if (Interlocked.Increment(ref _calls) == 1) throw new QianErrorException(new QianError(PlatformErrors.Unavailable));
             return ValueTask.FromResult<JsonElement?>(null);
         }
     }

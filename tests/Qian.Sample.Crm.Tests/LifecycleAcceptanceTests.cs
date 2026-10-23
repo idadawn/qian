@@ -307,11 +307,9 @@ public sealed partial class CustomerCommandTests
     {
         builder.Configuration.AddInMemoryCollection(platform.InitializationCapabilities.Select((id, index) =>
             new KeyValuePair<string, string?>("Tenancy:InitializationCapabilities:" + index, id)));
-        if (platform.Management)
-        {
-            builder.Services.AddQianData<PlatformAuthzDbContext>((_, options) => options.UseNpgsql(platform.AuthzConnection).UseKunSchema(AuthzDbContext.Schema));
-            builder.Services.AddQianData<PlatformAuditDbContext>((_, options) => options.UseNpgsql(platform.AuditConnection).UseKunSchema(AuditDbContext.Schema));
-        }
+        if (platform.Management) builder.Services.AddQianData<PlatformAuthzDbContext>((_, options) => options.UseNpgsql(platform.AuthzConnection).UseKunSchema(AuthzDbContext.Schema));
+        // 平台审计链的专用登录：平台级生命周期操作（安装、激活、回切、弃用、退役）在提交前入平台链（S1-RT-037），有生命周期的宿主都绑定它。
+        builder.Services.AddQianData<PlatformAuditDbContext>((_, options) => options.UseNpgsql(platform.AuditConnection).UseKunSchema(AuditDbContext.Schema));
         builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(LifecycleDbContext.Schema));
         builder.Services.AddSingleton<ISecretAccessObserver>(platform);
         builder.Services.AddQianSecrets(new SecretResolverOptions
@@ -342,7 +340,7 @@ public sealed partial class CustomerCommandTests
         Add("data", "qian.data", new DataPlugin(), [DataDefinition.Key]);
         Add("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey], CrmCommandRuntime.TenancyConfiguration(app.Configuration));
         Add("authz", "qian.authz", new AuthzPlugin([CrmPermissions.Compile()]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key]);
-        Add("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]);
+        Add("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey], new { chain = new { platformRole = platform.AuditRole } });
         Add("config", "qian.config", new ConfigurationPlugin(), [ConfigDefinition.Key]);
         var registryOptions = new RegistryRuntimeOptions
         {
@@ -406,8 +404,10 @@ public sealed partial class CustomerCommandTests
             platform.Artifacts[version] = new PluginArtifact(files, digest, platform.Sign(digest));
         }
         await loader.UnmountAsync("crm", ScopeKey.Global, Ct);
-        await loader.MountAsync([definitions["config"], definitions["registry"], definitions["capabilities"], definitions["lifecycle"]], Ct);
-        foreach (var id in new[] { "config", "registry", "capabilities", "lifecycle" })
+        // 业务宿主启动时挂的 audit 条目没有平台链：换成带 chain.platformRole 的条目，平台级生命周期操作才能入平台链（S1-RT-037）；管理面宿主之后再换一次带 Authz 平台角色的组合。
+        await loader.UnmountAsync("audit", ScopeKey.Global, Ct);
+        await loader.MountAsync([definitions["audit"], definitions["config"], definitions["registry"], definitions["capabilities"], definitions["lifecycle"]], Ct);
+        foreach (var id in new[] { "audit", "config", "registry", "capabilities", "lifecycle" })
             Assert.True(loader.GetState(id, ScopeKey.Global) == PluginState.Ready, id + ": " + loader.GetFailure(id, ScopeKey.Global));
         await loader.GetContext("registry", ScopeKey.Global).Registry().StartAsync(Ct);
         await GrantDiagnostics(app);

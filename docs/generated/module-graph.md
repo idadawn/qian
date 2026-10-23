@@ -28,7 +28,7 @@
 | ` global/entitlement ` | ` qian.entitlement@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/shell ` | ` qian.shell@1.0.0 ` | 1（bundle） | 配置骨架 |
 
-挂载顺序：` global/data ` → ` global/registry ` → ` global/config ` → ` global/lifecycle ` → ` global/audit ` → ` global/authz ` → ` global/tenancy ` → ` global/capabilities ` → ` global/hooks ` → ` global/identity ` → ` global/files ` → ` global/events ` → ` global/observability ` → ` global/notify ` → ` global/notify.inbox ` → ` global/notify.email ` → ` global/notify.sms ` → ` global/scheduler ` → ` global/realtime ` → ` global/entitlement ` → ` global/shell `
+挂载顺序：` global/data ` → ` global/registry ` → ` global/config ` → ` global/audit ` → ` global/authz ` → ` global/lifecycle ` → ` global/tenancy ` → ` global/capabilities ` → ` global/hooks ` → ` global/identity ` → ` global/files ` → ` global/events ` → ` global/observability ` → ` global/notify ` → ` global/notify.inbox ` → ` global/notify.email ` → ` global/notify.sms ` → ` global/scheduler ` → ` global/realtime ` → ` global/entitlement ` → ` global/shell `
 
 ```mermaid
 flowchart LR
@@ -70,5 +70,7 @@ flowchart LR
   n7 -->|"Data"| n11
   n7 -->|"Data"| n17
   n4 -->|"Tenancy"| n17
+  n11 -.->|"Audit"| n1
+  n6 -.->|"AuthzSuperadminBypass"| n1
 ```
 

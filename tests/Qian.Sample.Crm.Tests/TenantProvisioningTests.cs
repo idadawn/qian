@@ -59,14 +59,18 @@ public sealed partial class CustomerCommandTests
             var scoped = source.Scoped(new ScopeKey("tenant", descriptor.Id.ToString()));
             await AssertCode(PlatformErrors.AuthzDenied, () => scoped.DispatchAsync(Qian.Surfaces.Abstractions.SurfaceHookEvents.TenantProvisioned,
                 new Qian.Surfaces.Abstractions.HookNotification(scoped, descriptor.Id.ToString(), JsonSerializer.SerializeToElement(new { }), Ct), Ct).AsTask());
-            Assert.Empty(await source.Audit().ReadAsync(0, 20, cancellationToken: Ct));
+            // 租户链上只有 Tenancy 第 03 步为 system 组件开通时 Lifecycle 记的开通条目（S1-RT-037），被拒的派发没有留下记录。
+            Assert.All(await source.Audit().ReadAsync(0, 50, cancellationToken: Ct), entry => Assert.Equal("qian.lifecycle/tenant-plugin.provision", entry.Record.CapabilityId));
         }
         await provisioning.RetryAsync(descriptor.Id, "platform-operator", Ct);
         Assert.Equal("succeeded", (await provisioning.GetStepsAsync(descriptor.Id, Ct)).Single(step => step.Step == "04:provisioned").Status);
+        int chainLength;
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(descriptor.Id.ToString()))
         {
-            var audit = Assert.Single(await source.Audit().ReadAsync(0, 20, cancellationToken: Ct));
+            var entries = await source.Audit().ReadAsync(0, 50, cancellationToken: Ct);
+            var audit = Assert.Single(entries, entry => entry.Record.Channel == "hook");
             Assert.Equal(("hook", "platform-operator", "qian.sample.crm/customer.list"), (audit.Record.Channel, audit.Record.ActorId, audit.Record.CapabilityId));
+            chainLength = entries.Count;
             Assert.True((await source.Audit().VerifyAsync(Ct)).Valid);
             // 显式补一条测试主体的真实授权，让 HTTP 拒绝只剩 pending 租户策略。
             await source.Inject<ITenantRoleGrant>(TenantRoleGrant.Key).AssignAsync("tenant.owner", "service", Writer, "operator", Ct);
@@ -75,9 +79,13 @@ public sealed partial class CustomerCommandTests
                 JsonSerializer.SerializeToElement(new ListCustomersQuery(), ListCustomersQuery.QianCapability.RequestTypeInfo), Ct).AsTask());
         }
         using (var pending = await host.Get(descriptor.Id.ToString(), "/api/customers")) Assert.Equal(HttpStatusCode.Forbidden, pending.StatusCode);
+        // 续跑：hook 与各组件的开通都不重复记。
         await provisioning.RetryAsync(descriptor.Id, "platform-operator", Ct);
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(descriptor.Id.ToString()))
-            Assert.Single(await source.Audit().ReadAsync(0, 20, cancellationToken: Ct));
+        {
+            var entries = await source.Audit().ReadAsync(0, 50, cancellationToken: Ct);
+            Assert.Single(entries, entry => entry.Record.Channel == "hook"); Assert.Equal(chainLength, entries.Count);
+        }
     }
 
     [Fact]

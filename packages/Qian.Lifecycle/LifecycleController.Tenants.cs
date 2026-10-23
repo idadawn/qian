@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
+using Qian.Audit;
 using Qian.Data;
 using Qian.Registry;
 using Qian.Runtime;
@@ -33,6 +34,8 @@ internal sealed partial class LifecycleController
         CheckTenant(tenantId); CheckPlugin(pluginId); CheckActor(actor);
         using var scope = tenant.BeginScope(tenantId);
         using var origin = Origin();
+        // 开通完成须入该租户审计链（ADR-009 D9.8）：宿主没有装配审计时在认领执行记录之前就拒绝，不留下停在 Provisioning 的安装行。
+        var audit = RequireAudit(tenantId, "tenant-plugin.provision");
         var plan = await Locked(["install", tenantId, pluginId], async session =>
         {
             var db = session.Context;
@@ -74,13 +77,15 @@ internal sealed partial class LifecycleController
         }, cancellationToken).ConfigureAwait(false);
         if (plan.Finished) return plan.View;
         if (plan.Attempt is { } attempt) await Execute(tenantId, pluginId, LifecycleHooks.TenantProvision, null, plan.Version!, attempt, cancellationToken).ConfigureAwait(false);
-        return await Locked(["install", tenantId, pluginId], async session =>
+        // 最终迁移 Provisioning → Installed 与审计条目同一事务；钩子失败的尝试到不了这里，续跑只在这里记一条。
+        return await Audited(["install", tenantId, pluginId], audit, async session =>
         {
             var install = await session.Context.Installs.SingleAsync(item => item.PluginId == pluginId, cancellationToken).ConfigureAwait(false);
-            if (install.State != TenantInstallStates.Provisioning || install.TargetVersion != plan.Version) return install.View();
+            if (install.State != TenantInstallStates.Provisioning || install.TargetVersion != plan.Version) return (install.View(), (AuditRecord?)null);
             install.State = TenantInstallStates.Installed; install.Version = plan.Version; install.TargetVersion = null; Touch(install, actor);
             await Save(session, null, cancellationToken).ConfigureAwait(false);
-            return install.View();
+            return (install.View(), TenantRecord(ProvisionAuditCapability, tenantId, pluginId, plan.Version!, install.UpdatedAt,
+                LifecyclePayload(pluginId, actor, ("version", plan.Version)), plan.Version!));
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -90,6 +95,7 @@ internal sealed partial class LifecycleController
         if (fromVersion == toVersion) throw LifecycleArtifact.Invalid("#/toVersion", "目标版本与当前版本相同。");
         using var scope = tenant.BeginScope(tenantId);
         using var origin = Origin();
+        var audit = RequireAudit(tenantId, "tenant-plugin.upgrade");
         var plan = await Locked(["install", tenantId, pluginId], async session =>
         {
             var db = session.Context;
@@ -115,7 +121,7 @@ internal sealed partial class LifecycleController
         }
         catch (QianErrorException)
         {
-            await Settle(tenantId, pluginId, fromVersion, toVersion, actor, false, [], cancellationToken).ConfigureAwait(false);
+            await Settle(audit, tenantId, pluginId, fromVersion, toVersion, actor, false, [], cancellationToken).ConfigureAwait(false);
             throw;
         }
         // 改写本租户 scope 中引用 from 的条目并合入；任何条目装配失败都整体撤回，租户继续由 from 处理。
@@ -150,10 +156,10 @@ internal sealed partial class LifecycleController
             var entryId = failure.EntryId ?? current ?? pluginId;
             int? revision = failure.Revision ?? (rewritten.Any(item => item.EntryId == entryId) ? rewritten.First(item => item.EntryId == entryId).Revision : null);
             await RecordFailure(scopeKey, entryId, failure.Plugin ?? pluginId + "@" + toVersion, revision, failure.ReasonCode, cancellationToken).ConfigureAwait(false);
-            await Settle(tenantId, pluginId, fromVersion, toVersion, actor, false, [], cancellationToken).ConfigureAwait(false);
+            await Settle(audit, tenantId, pluginId, fromVersion, toVersion, actor, false, [], cancellationToken).ConfigureAwait(false);
             throw new QianErrorException(new QianError(LifecycleErrors.MountFailed, new Dictionary<string, string> { ["entryId"] = entryId, ["reasonCode"] = failure.ReasonCode }));
         }
-        return await Settle(tenantId, pluginId, fromVersion, toVersion, actor, true, rewritten.Select(item => item.EntryId).ToArray(), cancellationToken).ConfigureAwait(false);
+        return await Settle(audit, tenantId, pluginId, fromVersion, toVersion, actor, true, rewritten.Select(item => item.EntryId).ToArray(), cancellationToken).ConfigureAwait(false);
     }
 
     public async ValueTask<TenantPluginInstallView> UninstallAsync(string tenantId, string pluginId, string actor, CancellationToken cancellationToken = default)
@@ -161,6 +167,7 @@ internal sealed partial class LifecycleController
         CheckTenant(tenantId); CheckPlugin(pluginId); CheckActor(actor);
         using var scope = tenant.BeginScope(tenantId);
         using var origin = Origin();
+        var audit = RequireAudit(tenantId, "tenant-plugin.uninstall");
         var plan = await Locked(["install", tenantId, pluginId], async session =>
         {
             var install = await session.Context.Installs.SingleOrDefaultAsync(item => item.PluginId == pluginId, cancellationToken).ConfigureAwait(false) ?? throw NotFound();
@@ -184,13 +191,14 @@ internal sealed partial class LifecycleController
         }
         await Synchronize(registry, scopeKey, cancellationToken).ConfigureAwait(false);
         await ClearFailures(scopeKey, removed, cancellationToken).ConfigureAwait(false);
-        return await Locked(["install", tenantId, pluginId], async session =>
+        return await Audited(["install", tenantId, pluginId], audit, async session =>
         {
             var install = await session.Context.Installs.SingleAsync(item => item.PluginId == pluginId, cancellationToken).ConfigureAwait(false);
-            if (install.State != TenantInstallStates.Installed) return install.View();
+            if (install.State != TenantInstallStates.Installed) return (install.View(), (AuditRecord?)null);
             install.State = TenantInstallStates.Uninstalled; Touch(install, actor);
             await Save(session, null, cancellationToken).ConfigureAwait(false);
-            return install.View();
+            return (install.View(), TenantRecord(UninstallAuditCapability, tenantId, pluginId, install.Version!, install.UpdatedAt,
+                LifecyclePayload(pluginId, actor, ("version", install.Version)), install.Version!));
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -199,6 +207,7 @@ internal sealed partial class LifecycleController
         CheckTenant(tenantId); CheckPlugin(pluginId); CheckActor(actor);
         using var scope = tenant.BeginScope(tenantId);
         using var origin = Origin();
+        var audit = RequireAudit(tenantId, "tenant-plugin.purge");
         var plan = await Locked(["install", tenantId, pluginId], async session =>
         {
             var install = await session.Context.Installs.SingleOrDefaultAsync(item => item.PluginId == pluginId, cancellationToken).ConfigureAwait(false) ?? throw NotFound();
@@ -210,13 +219,14 @@ internal sealed partial class LifecycleController
         }, cancellationToken).ConfigureAwait(false);
         if (plan.Finished) return plan.View;
         if (plan.Attempt is { } attempt) await Execute(tenantId, pluginId, LifecycleHooks.TenantPurge, plan.Version, plan.Version!, attempt, cancellationToken).ConfigureAwait(false);
-        return await Locked(["install", tenantId, pluginId], async session =>
+        return await Audited(["install", tenantId, pluginId], audit, async session =>
         {
             var install = await session.Context.Installs.SingleAsync(item => item.PluginId == pluginId, cancellationToken).ConfigureAwait(false);
-            if (install.State != TenantInstallStates.Uninstalled) return install.View();
+            if (install.State != TenantInstallStates.Uninstalled) return (install.View(), (AuditRecord?)null);
             install.State = TenantInstallStates.Purged; Touch(install, actor);
             await Save(session, null, cancellationToken).ConfigureAwait(false);
-            return install.View();
+            return (install.View(), TenantRecord(PurgeAuditCapability, tenantId, pluginId, install.Version!, install.UpdatedAt,
+                LifecyclePayload(pluginId, actor, ("version", install.Version)), install.Version!));
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -237,23 +247,26 @@ internal sealed partial class LifecycleController
         return rows.OrderBy(run => run.StartedAt).ThenBy(run => run.Hook, StringComparer.Ordinal).Select(run => run.View()).ToArray();
     }
 
-    // 升级收尾：成功时 Installed(to) 并随事务发 upgraded 事件、清掉这些条目的旧诊断；失败时回到 Installed(from)。
-    private Task<TenantPluginInstallView> Settle(string tenantId, string pluginId, string fromVersion, string toVersion, string actor, bool succeeded,
-        IReadOnlyList<string> entries, CancellationToken ct) => Locked(["install", tenantId, pluginId], async session =>
+    // 升级收尾：成功时 Installed(to) 并随同一事务发 upgraded 事件、追加审计条目、清掉这些条目的旧诊断；失败时回到 Installed(from)，不入链
+    // （失败的尝试由 lifecycle_runs 与诊断记录原因，ADR-009「业务失败即无审计」）。
+    private Task<TenantPluginInstallView> Settle(IAuditWriter audit, string tenantId, string pluginId, string fromVersion, string toVersion, string actor, bool succeeded,
+        IReadOnlyList<string> entries, CancellationToken ct) => Audited(["install", tenantId, pluginId], audit, async session =>
     {
         var install = await session.Context.Installs.SingleAsync(item => item.PluginId == pluginId, ct).ConfigureAwait(false);
-        if (install.State != TenantInstallStates.Upgrading || install.Version != fromVersion || install.TargetVersion != toVersion) return install.View();
+        if (install.State != TenantInstallStates.Upgrading || install.Version != fromVersion || install.TargetVersion != toVersion) return (install.View(), (AuditRecord?)null);
         install.State = TenantInstallStates.Installed; install.TargetVersion = null; Touch(install, actor);
-        LifecycleChange? change = null;
+        LifecycleChange? change = null; AuditRecord? record = null;
         if (succeeded)
         {
             install.Version = toVersion;
             install.Raise(change = new TenantPluginUpgraded(pluginId, fromVersion, toVersion));
             var scope = Name(new ScopeKey("tenant", tenantId));
             session.Context.MountFailures.RemoveRange(await session.Context.MountFailures.Where(row => row.Scope == scope && entries.Contains(row.EntryId)).ToListAsync(ct).ConfigureAwait(false));
+            record = TenantRecord(UpgradeAuditCapability, tenantId, pluginId, toVersion, install.UpdatedAt,
+                LifecyclePayload(pluginId, actor, ("fromVersion", fromVersion), ("toVersion", toVersion)), fromVersion, toVersion);
         }
         await Save(session, change, ct).ConfigureAwait(false);
-        return install.View();
+        return (install.View(), record);
     }, ct);
 
     // 认领执行记录：已成功返回 null（不再执行）；他人持有未过期的租约时报告进行中；失败或租约过期的记录由本次接管。

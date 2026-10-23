@@ -24,8 +24,13 @@ internal sealed partial class LifecycleController
         CancellationToken cancellationToken = default)
     {
         CheckManagement(tenantId, pluginId, version, user);
-        // 批准必须入该租户审计链（ADR-009 D9.8）：宿主没有装配审计时与缺判定端口一样 fail-closed，不写记录。
-        if (context.Scoped(new ScopeKey("tenant", tenantId)).TryInject<IAuditService>(AuditDefinition.Key) is not { } audit) throw NotFound();
+        // 批准必须入该租户审计链（ADR-009 D9.8）：宿主没有装配审计时与缺判定端口一样 fail-closed，不写记录；对外仍是 404（R32），
+        // 但宿主装配错误须可诊断：先记一条不含载荷的宿主级告警（S1-RT-037）。
+        if (context.Scoped(new ScopeKey("tenant", tenantId)).TryInject<IAuditService>(AuditDefinition.Key) is not { } audit)
+        {
+            LifecycleLog.AuditUnavailable(context.Logger, "permissions.approve", tenantId);
+            throw NotFound();
+        }
         var via = await AuthorizeAsync(tenantId, user, LifecycleDefinition.InstallApprovePermission, ApprovalResource(tenantId, pluginId, version), cancellationToken).ConfigureAwait(false);
         // 判定之后才校验内容与目标版本：无权限者得到的永远是同一个 404。
         var approved = PermissionSet.Read(grants);

@@ -1718,5 +1718,40 @@
     "expect": false,
     "pointer": "ops.yml#",
     "reason": "YAML 语法无效或存在重复键。"
+  },
+  {
+    "name": "optional-inject-present",
+    "files": {
+      "plugins/observer/.qian-plugin/plugin.json": "{\n  \"id\": \"test.observer\",\n  \"version\": \"1.0.0\",\n  \"description\": \"供 profile 装配 TCK 使用的真实静态清单\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"MIT\",\n  \"interface\": {\n    \"displayName\": \"profile 测试\",\n    \"category\": \"test\"\n  },\n  \"inject\": [],\n  \"optionalInject\": [\n    \"Settings\"\n  ],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"private\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"required\": false\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\"\n  ]\n}\n",
+      "plugins/one/config/qian.patch.yml": "[\n  {\n    \"id\": \"observer\",\n    \"plugin\": \"test.observer\",\n    \"config\": {}\n  },\n  {\n    \"id\": \"consumer\",\n    \"plugin\": \"test.consumer\",\n    \"config\": {}\n  },\n  {\n    \"id\": \"settings\",\n    \"plugin\": \"test.settings@^1\",\n    \"config\": {\n      \"port\": 1,\n      \"marker\": \"bundle-one\",\n      \"obsolete\": \"remove\"\n    }\n  }\n]\n"
+    },
+    "patches": [],
+    "home": false,
+    "expect": true,
+    "count": 3
+  },
+  {
+    "name": "optional-inject-absent",
+    "files": {
+      "plugins/observer/.qian-plugin/plugin.json": "{\n  \"id\": \"test.observer\",\n  \"version\": \"1.0.0\",\n  \"description\": \"供 profile 装配 TCK 使用的真实静态清单\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"MIT\",\n  \"interface\": {\n    \"displayName\": \"profile 测试\",\n    \"category\": \"test\"\n  },\n  \"inject\": [],\n  \"optionalInject\": [\n    \"Missing\"\n  ],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"private\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"required\": false\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\"\n  ]\n}\n",
+      "ops.yml": "[\n  {\n    \"id\": \"observer\",\n    \"plugin\": \"test.observer\",\n    \"config\": {}\n  }\n]\n"
+    },
+    "patches": [
+      "ops.yml"
+    ],
+    "home": false,
+    "expect": true,
+    "count": 3
+  },
+  {
+    "name": "optional-inject-cycle-tolerated",
+    "files": {
+      "plugins/settings/.qian-plugin/plugin.json": "{\n  \"id\": \"test.settings\",\n  \"version\": \"1.0.0\",\n  \"description\": \"供 profile 装配 TCK 使用的真实静态清单\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"MIT\",\n  \"interface\": {\n    \"displayName\": \"profile 测试\",\n    \"category\": \"test\"\n  },\n  \"inject\": [],\n  \"optionalInject\": [\n    \"Consumer\"\n  ],\n  \"provides\": [\n    \"Settings\"\n  ],\n  \"policy\": {\n    \"tier\": \"private\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"required\": false\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\"\n  ]\n}\n",
+      "plugins/consumer/.qian-plugin/plugin.json": "{\n  \"id\": \"test.consumer\",\n  \"version\": \"1.0.0\",\n  \"description\": \"供 profile 装配 TCK 使用的真实静态清单\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"MIT\",\n  \"interface\": {\n    \"displayName\": \"profile 测试\",\n    \"category\": \"test\"\n  },\n  \"inject\": [\n    \"Settings\"\n  ],\n  \"provides\": [\n    \"Consumer\"\n  ],\n  \"policy\": {\n    \"tier\": \"private\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"required\": false\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\"\n  ]\n}\n"
+    },
+    "patches": [],
+    "home": false,
+    "expect": true,
+    "count": 2
   }
 ]

@@ -2,7 +2,7 @@
 
 由 `qian docs generate` 派生；profile：` platform `。请修改输入后重新生成。
 
-由清单 inject/provides 派生；同 scope 优先，其次 global。骨架的空键集合不代表未来没有依赖。
+由清单 inject/optionalInject/provides 派生；同 scope 优先，其次 global。optionalInject 的消费方标注「（可选）」并以虚线连接：Provider 缺席时仍装载，在树里时先于消费方装载。骨架的空键集合不代表未来没有依赖。
 
 | 服务键 | Provider 条目 | Consumer 条目 |
 |---|---|---|
@@ -25,7 +25,7 @@
 | ` AuthzEnforcement ` | ` global/authz ` |  |
 | ` AuthzPermissions ` | ` global/authz ` |  |
 | ` AuthzResourceTypes ` | ` global/authz ` |  |
-| ` AuthzSuperadminBypass ` | ` global/authz ` |  |
+| ` AuthzSuperadminBypass ` | ` global/authz ` | ` global/lifecycle `（可选） |
 | ` AuthzTenantRoleGrant ` | ` global/authz ` |  |
 | ` CommandAuthorization ` | ` global/authz ` | ` global/capabilities ` |
 | ` Data ` | ` global/data ` | ` global/registry `、` global/lifecycle `、` global/capabilities `、` global/tenancy `、` global/authz `、` global/files `、` global/audit `、` global/scheduler ` |
@@ -33,7 +33,7 @@
 | ` Files.Backends:local ` | ` global/files ` |  |
 | ` Config ` | ` global/config ` | ` global/lifecycle ` |
 | ` Events ` | ` global/events ` |  |
-| ` Audit ` | ` global/audit ` | ` global/capabilities ` |
+| ` Audit ` | ` global/audit ` | ` global/capabilities `、` global/lifecycle `（可选） |
 | ` CommandAudit ` | ` global/audit ` | ` global/capabilities ` |
 | ` Scheduler ` | ` global/scheduler ` |  |
 
@@ -137,5 +137,7 @@ flowchart LR
   s22 --> n11
   s22 --> n17
   s7 --> n17
+  s27 -.-> n1
+  s19 -.-> n1
 ```
 

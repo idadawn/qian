@@ -50,6 +50,11 @@ public sealed class DocumentTests
         Assert.Contains("overlay", result.Documents["config-catalog.md"], StringComparison.Ordinal);
         Assert.DoesNotContain("旧位置", result.Documents["config-catalog.md"], StringComparison.Ordinal);
         Assert.Contains("Settings", result.Documents["seam-graph.md"], StringComparison.Ordinal);
+        // optionalInject：seam 表里标「（可选）」、图里是虚线；必需依赖仍是实线，且 provider 先于 observer 装载。
+        Assert.Contains("| ` Settings ` | ` global/provider ` | ` global/consumer `、` global/observer `（可选） |", result.Documents["seam-graph.md"], StringComparison.Ordinal);
+        Assert.Contains("-.-> n", result.Documents["seam-graph.md"], StringComparison.Ordinal);
+        Assert.Contains("-.->|\"Settings\"|", result.Documents["module-graph.md"], StringComparison.Ordinal);
+        Assert.Contains("global/provider ` → ` global/observer `", result.Documents["module-graph.md"], StringComparison.Ordinal);
         Assert.Contains("global/provider", result.Documents["module-graph.md"], StringComparison.Ordinal);
         Assert.Contains("src/Calls.cs", result.Documents["event-graph.md"], StringComparison.Ordinal);
         Assert.DoesNotContain("SHOULD-NOT-BE-PUBLISHED", result.Documents["config-catalog.md"], StringComparison.Ordinal);
@@ -153,11 +158,18 @@ public sealed class DocumentTests
         internal Fixture()
         {
             Write("profiles/minimal/qian.profile.yml", "name: minimal\nbundles: []\npatch: ./qian.patch.yml\n");
-            Write("profiles/minimal/qian.patch.yml", "- {id: provider, plugin: test.provider, config: {location: 旧位置, token: 'secretRef://fixture/value'}}\n- {id: consumer, plugin: test.consumer, config: {}}\n");
+            // observer 先于 provider 写进 patch：它只以 optionalInject 依赖 Settings，装载顺序仍须把 provider 排在前面。
+            Write("profiles/minimal/qian.patch.yml", "- {id: observer, plugin: test.observer, config: {}}\n- {id: provider, plugin: test.provider, config: {location: 旧位置, token: 'secretRef://fixture/value'}}\n- {id: consumer, plugin: test.consumer, config: {}}\n");
             Write("override.yml", "- {id: provider, config: {location: 新位置, token: 'secretRef://fixture/value'}}\n");
-            foreach (var name in new[] { "provider", "consumer" })
+            foreach (var name in new[] { "provider", "consumer", "observer" })
             {
-                var manifest = new { id = "test." + name, version = "1.0.0", description = "用于文档生成器验收的静态组件", author = new { name = "Qian" }, license = "Apache-2.0", @interface = new { displayName = name, category = "test" }, inject = name == "consumer" ? new[] { "Settings" } : [], provides = name == "provider" ? new[] { "Settings" } : [], policy = new { tier = "private", sandbox = "none", authentication = "ON_INSTALL" }, scopes = new[] { "global" } };
+                var manifest = new Dictionary<string, object?>
+                {
+                    ["id"] = "test." + name, ["version"] = "1.0.0", ["description"] = "用于文档生成器验收的静态组件", ["author"] = new { name = "Qian" }, ["license"] = "Apache-2.0",
+                    ["interface"] = new { displayName = name, category = "test" }, ["inject"] = name == "consumer" ? new[] { "Settings" } : [],
+                    ["provides"] = name == "provider" ? new[] { "Settings" } : [], ["policy"] = new { tier = "private", sandbox = "none", authentication = "ON_INSTALL" }, ["scopes"] = new[] { "global" }
+                };
+                if (name == "observer") manifest["optionalInject"] = new[] { "Settings" };
                 Write("plugins/" + name + "/.qian-plugin/plugin.json", JsonSerializer.Serialize(manifest));
             }
             Write("plugins/provider/schemas/config.schema.json", """{"type":"object","properties":{"location":{"type":"string"},"token":{"type":"string","x-qian-sensitive":true,"default":"SHOULD-NOT-BE-PUBLISHED"}}} """);

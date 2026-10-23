@@ -236,7 +236,7 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
                 if (component.Manifest.TryGetProperty("x-skeleton", out var skeleton) && skeleton.ValueKind == JsonValueKind.True)
                     Error(entry.SourceFile, entry.SourcePointer + "/plugin", "配置骨架不代表业务 Provider 已实现；启动宿主仍需真实代码。", "warning");
                 result.Add(new ResolvedProfileEntry(entry.Id, entry.Scope, component.Id + "@" + component.Version, config, entry.Layer,
-                    Strings(component.Manifest, "inject"), Strings(component.Manifest, "provides"), entry.Note)
+                    Strings(component.Manifest, "inject"), Strings(component.Manifest, "optionalInject"), Strings(component.Manifest, "provides"), entry.Note)
                     { ComponentDirectory = component.Directory, Manifest = component.Manifest });
             }
             return result.ToArray();
@@ -606,21 +606,26 @@ public sealed class ProfileLoader(ISurfaceReader reader) : IProfileLoader
             foreach (var entry in entries) foreach (var key in entry.Provides)
                 if (!providers.TryAdd(entry.Scope + "/" + key, entry)) Fail(_profileFile, "/bundles", "同 scope 的服务键存在重复 Provider。");
             var state = new Dictionary<string, int>(); var order = new List<string>();
-            foreach (var entry in entries) Visit(entry);
+            foreach (var entry in entries) Visit(entry, false);
             return order;
-            void Visit(ResolvedProfileEntry entry)
+            // optionalInject 是软边：Provider 在树里时先于消费方装载，缺席不报错；经软边回到装载中的条目不算环路，只是不再提前（与 TS 装配器一致）。
+            bool Visit(ResolvedProfileEntry entry, bool soft)
             {
                 var id = entry.Scope + "/" + entry.Id;
-                if (state.GetValueOrDefault(id) == 2) return;
-                if (state.GetValueOrDefault(id) == 1) Fail(_profileFile, "/bundles", "插件依赖存在环路。");
+                var current = state.GetValueOrDefault(id);
+                if (current == 2) return true;
+                if (current == 1) { if (soft) return false; Fail(_profileFile, "/bundles", "插件依赖存在环路。"); }
                 state[id] = 1;
                 foreach (var key in entry.Inject)
                 {
                     if (!providers.TryGetValue(entry.Scope + "/" + key, out var provider) && !providers.TryGetValue("global/" + key, out provider))
                         Fail(_profileFile, "/bundles", "缺少 inject 所需的 Provider。");
-                    Visit(provider!);
+                    if (!Visit(provider!, soft)) { state[id] = 0; return false; }
                 }
+                foreach (var key in entry.OptionalInject)
+                    if (providers.TryGetValue(entry.Scope + "/" + key, out var provider) || providers.TryGetValue("global/" + key, out provider)) Visit(provider!, true);
                 state[id] = 2; order.Add(id);
+                return true;
             }
         }
         private void Error(string file, string pointer, string message, string severity)

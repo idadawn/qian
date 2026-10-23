@@ -17,7 +17,7 @@ const escape = (value: string): string => value.replaceAll('~','~0').replaceAll(
 const secretReference = (value: JsonValue): boolean => typeof value === 'string' && value.startsWith('secretRef://');
 export interface ProfileOptions { workingDirectory: string; profile?: string; patches?: readonly string[]; homeDirectory?: string; includeHomePatch?: boolean; componentDirectories?: readonly string[]; scopePatches?: readonly ScopePatchLayer[] }
 export interface ProfileLayer {index: number; kind: string; path: string; ref: string | null; present: boolean}
-export interface ProfileEntry {id: string; scope: string; plugin: string; config: JsonValue; layer: number; inject: string[]; provides: string[]; note?: string}
+export interface ProfileEntry {id: string; scope: string; plugin: string; config: JsonValue; layer: number; inject: string[]; optionalInject: string[]; provides: string[]; note?: string}
 export interface ScopePatchLayer {scope: {kind: string; id: string}; source: string; patches: JsonValue}
 export interface DisabledProfileEntry {id: string; scope: string; plugin: string; layer: number; sourceLocation: string}
 export interface ProfileSnapshot {disabledEntries: DisabledProfileEntry[];profile: string; layers: ProfileLayer[]; entries: ProfileEntry[]; mountOrder: string[]}
@@ -156,7 +156,7 @@ class Composition {
       if(obj(this.definition.build).aot===true&&component.manifest.runtime&&(obj(component.manifest.runtime).form==='function'||component.manifest['x-aot']!==true))this.fail(entry.sourceFile,entry.sourcePointer+'/plugin','AOT profile 含未声明 AOT 兼容的代码组件。');
       const config=this.config(component,entry);
       if(component.manifest['x-skeleton']===true)this.error(entry.sourceFile,entry.sourcePointer+'/plugin','配置骨架不代表业务 Provider 已实现；启动宿主仍需真实代码。','warning');
-      entries.push({id:entry.id,scope:entry.scope,plugin:component.id+'@'+component.version,config,layer:entry.layer,inject:strings(component.manifest.inject),provides:strings(component.manifest.provides),...(entry.note!==undefined?{note:entry.note}:{})});
+      entries.push({id:entry.id,scope:entry.scope,plugin:component.id+'@'+component.version,config,layer:entry.layer,inject:strings(component.manifest.inject),optionalInject:strings(component.manifest.optionalInject),provides:strings(component.manifest.provides),...(entry.note!==undefined?{note:entry.note}:{})});
     }
     return entries;
   }
@@ -290,11 +290,15 @@ class Composition {
     const providers=new Map<string,ProfileEntry>();
     for(const entry of entries)for(const key of entry.provides){const id=entry.scope+'/'+key;if(providers.has(id))this.fail(this.profileFile,'/bundles','同 scope 的服务键存在重复 Provider。');providers.set(id,entry);}
     const state=new Map<string,number>(),order:string[]=[];
-    const visit=(entry:ProfileEntry):void=>{
-      const id=entry.scope+'/'+entry.id;if(state.get(id)===2)return;if(state.get(id)===1)this.fail(this.profileFile,'/bundles','插件依赖存在环路。');state.set(id,1);
-      for(const key of entry.inject){const provider=providers.get(entry.scope+'/'+key)??providers.get('global/'+key);if(!provider)this.fail(this.profileFile,'/bundles','缺少 inject 所需的 Provider。');visit(provider);}
-      state.set(id,2);order.push(id);
-    };for(const entry of entries)visit(entry);return order;
+    // optionalInject 是软边：Provider 在树里时先于消费方装载，缺席不报错；经软边回到装载中的条目不算环路，只是不再提前（与 .NET 装配器一致）。
+    const visit=(entry:ProfileEntry,soft:boolean):boolean=>{
+      const id=entry.scope+'/'+entry.id,current=state.get(id)??0;if(current===2)return true;
+      if(current===1){if(soft)return false;this.fail(this.profileFile,'/bundles','插件依赖存在环路。');}
+      state.set(id,1);
+      for(const key of entry.inject){const provider=providers.get(entry.scope+'/'+key)??providers.get('global/'+key);if(!provider)this.fail(this.profileFile,'/bundles','缺少 inject 所需的 Provider。');if(!visit(provider,soft)){state.set(id,0);return false;}}
+      for(const key of entry.optionalInject){const provider=providers.get(entry.scope+'/'+key)??providers.get('global/'+key);if(provider)visit(provider,true);}
+      state.set(id,2);order.push(id);return true;
+    };for(const entry of entries)visit(entry,false);return order;
   }
   private error(file:string,pointer:string,message:string,severity:'error'|'warning'='error'):void{
     const display=this.display(file),prefix=display.split('/').map(encodeURIComponent).join('/'),full=prefix+'#'+pointer;

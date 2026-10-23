@@ -16,6 +16,10 @@
     "Data",
     "Registry"
   ],
+  "optionalInject": [
+    "Audit",
+    "AuthzSuperadminBypass"
+  ],
   "provides": [
     "Lifecycle"
   ],
