@@ -57,13 +57,15 @@ public sealed partial class CustomerCommandTests
         using (var retried = await Manage(HttpMethod.Post, "/api/tenancy/tenants", create))
             Assert.True(retried.StatusCode == HttpStatusCode.Created, business.FailureEvidence + await retried.Content.ReadAsStringAsync(Ct));
         steps = await provisioning.GetStepsAsync(tenant.Id, Ct);
-        Assert.Equal(("succeeded", 2), (Assert.Single(steps, step => step.Step == "03:component:qian.audit").Status, Assert.Single(steps, step => step.Step == "03:component:qian.audit").Attempts));
+        var auditStep = Assert.Single(steps, step => step.Step == "03:component:qian.audit");
+        Assert.Equal(("succeeded", 2), (auditStep.Status, auditStep.Attempts));
         Assert.Equal("succeeded", Assert.Single(steps, step => step.Step == "03:component:qian.sample.crm").Status);
         Assert.DoesNotContain(steps, step => step.Status is "failed" or "running");
         Assert.Equal((TenantInstallStates.Installed, (string?)"1.0.0"), Pick((await lifecycle.GetInstallAsync(tenant.Id.ToString(), "qian.sample.crm", Ct))!));
         using (business.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenant.Id.ToString()))
         {
-            var entries = await source.Audit().ReadAsync(0, 50, cancellationToken: Ct);
+            var entries = await source.Audit().ReadAsync(0, 500, cancellationToken: Ct);
+            Assert.True(entries.Count < 500, "租户链条目数到达读取上限：" + entries.Count);
             Assert.Contains(entries, entry => entry.Record.CapabilityId == LifecycleController.ProvisionAuditCapability && entry.Record.Resource == "lifecycle/install:" + tenant.Id + "/qian.sample.crm@1.0.0");
             Assert.Equal(steps.Count(step => step.Step.StartsWith("03:component:", StringComparison.Ordinal)), entries.Count(entry => entry.Record.CapabilityId == LifecycleController.ProvisionAuditCapability));
         }
