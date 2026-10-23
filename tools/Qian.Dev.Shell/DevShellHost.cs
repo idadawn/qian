@@ -1,15 +1,18 @@
 using System.Net;
+using Kun.Core.MultiTenancy;
 using Qian.Dev.TenantOps;
 using Qian.Identity.Abstractions;
 using Qian.Identity.Server;
+using Qian.Runtime;
 
 namespace Qian.Dev.Shell;
 
-/// <summary>启动参数：状态目录、管理员连接、身份 / 业务宿主地址（即 OIDC 发行方）与网关 BFF 地址。</summary>
-internal sealed record DevShellSettings(string State, string Admin, string Urls, string Gateway);
+/// <summary>启动参数：状态目录、管理员连接、身份 / 业务宿主地址（即 OIDC 发行方）、网关 BFF 地址，以及可选的上游 Dex（issuer 与客户端密钥文件）。</summary>
+internal sealed record DevShellSettings(string State, string Admin, string Urls, string Gateway, string? Dex = null, string? DexSecret = null);
 
 // 外壳认证联调环境（S1-YUE-002）。装配照搬租户运营手测宿主（S1-QA-012）与集成测试：
-//   1. 重建开发库，CRM 参考命令宿主充当运行时容器，并在同一宿主上挂真实 qian.identity（内置账号模型，账号 Cookie 的登录页指向同源静态认证页族 /login）；
+//   1. 重建开发库，CRM 参考命令宿主充当运行时容器，并在同一宿主上挂真实 qian.identity（内置账号模型，账号 Cookie 的登录页指向同源静态认证页族 /login），
+//      再挂通用 OIDC 连接器 dex 指向脚本拉起的 CNCF Dex（SSO 跳转回调的真实上游）；
 //   2. 平台插件树（Data / Tenancy / Authz / Audit / Config / Registry / Capabilities / Lifecycle）加参考应用制品，经超管安装激活；
 //   3. 按种子文件建自然人、经真实开通编排建租户（成员、tenant.owner 授权与参考应用进租户 scope 都由编排完成）、补第二租户的成员与 tenant.user 授权；
 //   4. 起 Identity.Client / Qian.Gateway BFF 宿主（HTTPS 自签名）：静态托管外壳、/app-conf.js 取自状态目录、/api 经 S2S 转发到业务宿主。
@@ -31,7 +34,8 @@ internal static class DevShellHost
         using var platform = new DevPlatform(repository) { IncludeReferenceApplication = true };
         var assembly = new DevRuntimeAssembly();
         using var keys = DevGatewayKeys.Create(settings.State);
-        using var identity = new DevIdentity(issuer, new Uri(gateway, "auth/callback"), identityDist, keys.ClientSecret);
+        var dex = settings.Dex is null ? null : new DevDexConnector(Loopback(settings.Dex, "--dex", https: false, allowPath: true), settings.DexSecret!);
+        using var identity = new DevIdentity(issuer, new Uri(gateway, "auth/callback"), identityDist, keys.ClientSecret, dex);
         await using var business = DevHost.Business(database, trust, assembly, new BusinessS2s(DevGateway.Issuer, DevGateway.Cluster, keys.PublicJwks), issuer.AbsoluteUri,
             builder => identity.Configure(builder, database), registrar => registrar.RegisterIdentityEvents(), mediator => mediator.AddQianIdentityEvents());
         // 身份库与生产同一套迁移，先于迁移器建表（迁移器只对 Capabilities / Lifecycle 用属主连接）；在线连接仍是受限应用登录。
@@ -42,8 +46,17 @@ internal static class DevShellHost
         await identity.MountAsync(assembly.Loader, ct).ConfigureAwait(false);
         await DevOperations.PrepareAsync(assembly.Loader, business.Services, platform, repository, ct).ConfigureAwait(false);
         var tenants = await DevSeed.ApplyAsync(seed, assembly.Loader, business.Services, ct).ConfigureAwait(false);
-        await using var platformApi = await DevPlatformApi.StartAsync(assembly.Loader, business.Services, DevGateway.Issuer, keys.PublicKey, ct).ConfigureAwait(false);
-        await using var bff = await DevGateway.StartAsync(gateway, keys, issuer, DevHost.Address(business), DevHost.Address(platformApi), shellDist, settings.State, ct).ConfigureAwait(false);
+        // 开发路由 /__dev/identity/bump 经真实身份端口递增当前成员的 identity_revision（授权变更后身份侧就是这样做的），平台表面宿主随即按下限拒绝旧修订的令牌。
+        var floor = new DevRevisionFloor();
+        var accounts = assembly.Loader.GetContext("identity", ScopeKey.Global).IdentityAccounts();
+        var tenantContext = business.Services.GetRequiredService<ITenantContext>();
+        async Task<long> Bump(Principal principal, CancellationToken token)
+        {
+            using var scope = tenantContext.BeginScope(principal.TenantId!);
+            return await accounts.BumpIdentityRevisionAsync(Guid.ParseExact(principal.Subject, "D"), "dev.identity.bump", token).ConfigureAwait(false);
+        }
+        await using var platformApi = await DevPlatformApi.StartAsync(assembly.Loader, business.Services, DevGateway.Issuer, keys.PublicKey, floor, ct).ConfigureAwait(false);
+        await using var bff = await DevGateway.StartAsync(gateway, keys, issuer, DevHost.Address(business), DevHost.Address(platformApi), shellDist, settings.State, floor, Bump, ct).ConfigureAwait(false);
         Console.WriteLine($"""
 
             外壳认证联调环境已就绪（本机开发环境，Ctrl+C 停止）
@@ -52,6 +65,7 @@ internal static class DevShellHost
               平台表面宿主      {DevHost.Address(platformApi)}（能力导航目录与有效权限，受众 {DevPlatformApi.Audience}；网关按前缀分簇转发）
               运行时配置        {Path.Combine(settings.State, "app-conf.js")}（改 apiBase 后刷新页面即生效，不重编译）
               种子账号          tools/Qian.Dev.Shell/seed/accounts.json（{string.Join("、", seed.Persons.Select(person => person.Username))}）
+              上游 Dex          {(dex is null ? "未配置（不登记连接器）" : dex.Issuer.AbsoluteUri + "（通用 OIDC 连接器 dex；用户见 seed/dex.json）")}
               租户              {string.Join("  ", tenants.Select(tenant => tenant.Code + "=" + tenant.Id.ToString("D")))}
             下一步：浏览器打开外壳地址，或 scripts/dev-shell.sh e2e
             """);
@@ -59,11 +73,11 @@ internal static class DevShellHost
         return 0;
     }
 
-    // 两个宿主都只接受回环地址：联调环境放行了明文 HTTP 发行方与开发路由，不得暴露到本机之外。
-    private static Uri Loopback(string value, string option, bool https)
+    // 两个宿主与上游 Dex 都只接受回环地址：联调环境放行了明文 HTTP 发行方与开发路由，不得暴露到本机之外。
+    private static Uri Loopback(string value, string option, bool https, bool allowPath = false)
     {
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != (https ? "https" : "http") || uri.PathAndQuery != "/" || uri.Fragment.Length != 0)
-            throw new ArgumentException($"{option} 必须是不含路径的 {(https ? "https" : "http")} 地址。");
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != (https ? "https" : "http") || (!allowPath && uri.PathAndQuery != "/") || uri.Query.Length != 0 || uri.Fragment.Length != 0)
+            throw new ArgumentException($"{option} 必须是{(allowPath ? "" : "不含路径的 ")}{(https ? "https" : "http")} 地址。");
         if (uri.Host != "localhost" && !(IPAddress.TryParse(uri.Host, out var address) && IPAddress.IsLoopback(address)))
             throw new ArgumentException($"{option} 只允许回环地址（localhost、127.0.0.1、::1）。");
         return uri;

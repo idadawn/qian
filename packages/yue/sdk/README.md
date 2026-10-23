@@ -24,7 +24,7 @@ const result = await api.GET('/api/tenancy/tenants');
 
 令牌仅从内存提供器读取；刷新由宿主以 HttpOnly cookie 完成并更新提供器。并发 401 合并刷新，旧请求晚到时复用新令牌，最多重试一次；失败通知 `onSessionExpired`。请求取消不取消共享刷新；刷新期间切换租户则拒绝重放旧写请求。跨源地址覆盖与重定向被拒绝。租户头只表达当前上下文，服务端仍以令牌为准。
 
-HttpOnly Cookie 会话的宿主改用 `sessionProvider: { refreshSession(): Promise<boolean> }`（与 `tokenProvider` 并列，同一单飞队列，两者同时给出时以 `tokenProvider` 为准）：浏览器不接触令牌，并发 401 合并成一次 `refreshSession()`；返回 true 时每个请求重放一次且不带 Authorization 头，false 或抛错时只通知一次 `onSessionExpired`，下一批 401 重新探测。`@idadawn/yue-shell` 的 `createBffSessionClient` 是对接 Identity.Client / 网关 BFF 的实现。
+HttpOnly Cookie 会话的宿主改用 `sessionProvider: { refreshSession(): Promise<boolean> }`（与 `tokenProvider` 并列，同一单飞队列，两者同时给出时以 `tokenProvider` 为准）：浏览器不接触令牌，并发 401 合并成一次 `refreshSession()`；返回 true 时每个请求重放一次且不带 Authorization 头，并通知一次 `onSessionRefreshed`（宿主据此重拉随身份变化的数据：菜单、权限、会话快照）；false 或抛错时只通知一次 `onSessionExpired`，下一批 401 重新探测。`@idadawn/yue-shell` 的 `createBffSessionClient` 是对接 Identity.Client / 网关 BFF 的实现。
 
 `PlatformError.detail` 保留冻结契约的 `code`、`trace_id`、`pointer` 与 `errors`；`pointerSegments` 解码 URI 片段。非标准响应抛 `HttpResponseError`，产品用 `sdk.error.http` 显示文案，不透出响应 HTML。int64 超出安全整数范围时转为原始十进制字符串；上传等非 JSON 响应保持原样。
 

@@ -7,8 +7,8 @@ import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 
-// 真实流程验收入口（S1-YUE-002）：独立临时状态目录、随机回环端口与自有 PostgreSQL 容器，用 scripts/dev-shell.sh up 拉起真实 qian.identity +
-// 网关 BFF，等就绪后跑 Playwright，最后停宿主、删容器。失败时保留状态目录（宿主日志）。CI 用同一入口。
+// 真实流程验收入口（S1-YUE-002）：独立临时状态目录、随机回环端口与自有 PostgreSQL / Dex 容器，用 scripts/dev-shell.sh up 拉起真实 qian.identity +
+// 上游 Dex + 网关 BFF，等就绪后跑 Playwright，最后停宿主、删容器。失败时保留状态目录（宿主日志）。CI 用同一入口。
 const root = resolve(import.meta.dirname, '../../..');
 const script = resolve(root, 'scripts/dev-shell.sh');
 const state = await mkdtemp(resolve(tmpdir(), 'qian-shell-auth-'));
@@ -19,9 +19,11 @@ async function port() {
   await new Promise(ok => server.close(ok));
   return port;
 }
-const [apiPort, gatewayPort, pgPort] = await Promise.all([port(), port(), port()]);
+const [apiPort, gatewayPort, pgPort, dexPort] = await Promise.all([port(), port(), port(), port()]);
+const runId = randomUUID().slice(0, 8);
 const env = {
-  ...process.env, QIAN_DEV_STATE: state, QIAN_DEV_PG_CONTAINER: 'qian-shell-auth-' + randomUUID().slice(0, 8), QIAN_DEV_PG_PORT: String(pgPort),
+  ...process.env, QIAN_DEV_STATE: state, QIAN_DEV_PG_CONTAINER: 'qian-shell-auth-' + runId, QIAN_DEV_PG_PORT: String(pgPort),
+  QIAN_DEV_DEX_CONTAINER: 'qian-shell-auth-dex-' + runId, QIAN_DEV_DEX_PORT: String(dexPort),
   QIAN_DEV_SHELL_API_URL: `http://127.0.0.1:${apiPort}`, QIAN_DEV_SHELL_URL: `https://localhost:${gatewayPort}`, QIAN_DEV_SHELL_SKIP_UI_BUILD: '1',
 };
 function run(command, args, options = {}) {
@@ -51,7 +53,7 @@ async function stopHost() {
 }
 let succeeded = false;
 try {
-  console.log('启动真实身份 / 业务宿主与网关 BFF：', env.QIAN_DEV_SHELL_API_URL, env.QIAN_DEV_SHELL_URL);
+  console.log('启动真实身份 / 业务宿主、上游 Dex 与网关 BFF：', env.QIAN_DEV_SHELL_API_URL, `http://127.0.0.1:${dexPort}/dex`, env.QIAN_DEV_SHELL_URL);
   let ready = false;
   for (let i = 0; i < 300 && !ready; i++) {
     if (ended) throw new Error(`宿主提前结束；日志：${state}/host.log`);
@@ -64,6 +66,14 @@ try {
   succeeded = true;
 } finally {
   await stopHost(); await log.close();
+  // down 会删容器、docker logs 随之不可见：失败时先把两个容器的日志留进状态目录（容器起不来时也可用 docker events 看 die 的退出码）。
+  if (!succeeded) {
+    for (const [name, file] of [[env.QIAN_DEV_PG_CONTAINER, 'postgres.log'], [env.QIAN_DEV_DEX_CONTAINER, 'dex.log']]) {
+      const out = await open(resolve(state, file), 'w', 0o600);
+      await new Promise(ok => spawn('docker', ['logs', name], { stdio: ['ignore', out.fd, out.fd] }).once('exit', ok).once('error', ok));
+      await out.close();
+    }
+  }
   await new Promise(ok => spawn('bash', [script, 'down'], { cwd: root, env, stdio: 'inherit' }).once('exit', ok));
   if (succeeded) await rm(state, { recursive: true, force: true });
   else console.error('失败日志保留在本机私有目录：', state);

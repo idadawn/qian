@@ -22,7 +22,7 @@ internal static class DevPlatformApi
 {
     internal const string Audience = "qian-platform";
 
-    internal static async Task<WebApplication> StartAsync(PluginLoader loader, IServiceProvider business, string issuer, RsaSecurityKey publicKey, CancellationToken ct)
+    internal static async Task<WebApplication> StartAsync(PluginLoader loader, IServiceProvider business, string issuer, RsaSecurityKey publicKey, DevRevisionFloor floor, CancellationToken ct)
     {
         var tenantContext = business.GetRequiredService<ITenantContext>();
         var builder = WebApplication.CreateBuilder();
@@ -50,6 +50,17 @@ internal static class DevPlatformApi
         });
         var app = builder.Build();
         app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization(); app.UseQianPluginEndpoints();
+        // 开发期的修订下限比对（照 PEP 的 IdentityRevisionGuard，见 DevRevisionFloor）：旧修订的令牌 401 UNAUTHENTICATED，客户端据此换令牌。
+        app.Use(async (http, next) =>
+        {
+            if (http.RequestServices.GetRequiredService<ICurrentUser>().Principal is { } principal && floor.IsStale(principal))
+            {
+                http.Response.Headers.CacheControl = "private, no-store";
+                await QianResults.Error(new QianError(PlatformErrors.Unauthenticated)).ExecuteAsync(http).ConfigureAwait(false);
+                return;
+            }
+            await next(http).ConfigureAwait(false);
+        });
         // 租户只取自已验证令牌：成员主体进入其租户 scope；平台身份（tenant_id 为 null）没有租户表面，按未认证拒绝。
         app.Use(async (http, next) =>
         {

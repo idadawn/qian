@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@idadawn/yue-core": "workspace:^",
@@ -29,6 +30,13 @@
     "vite": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "tailwindcss": "catalog:",
-    "@tailwindcss/vite": "catalog:"
+    "@tailwindcss/vite": "catalog:",
+    "vitest": "catalog:",
+    "@vitest/browser": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "axe-core": "catalog:",
+    "playwright": "catalog:"
   }
 }

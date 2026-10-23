@@ -29,6 +29,8 @@ export interface PlatformClientOptions {
   transport?: RequestTransport;
   middleware?: readonly RequestMiddleware[];
   onSessionExpired?: () => void;
+  /** Cookie 会话刷新成功（`refreshSession()` 回答 true）后通知一次：宿主据此重拉随身份变化的数据（菜单、权限、会话快照）。 */
+  onSessionRefreshed?: () => void;
 }
 
 export class PlatformError extends Error {
@@ -135,7 +137,7 @@ export class PlatformClient {
   private refreshSession(): Promise<boolean> {
     if (!this.refreshingSession) {
       this.refreshingSession = Promise.resolve().then(() => this.options.sessionProvider?.refreshSession() ?? false)
-        .then((alive) => { if (!alive) this.expire(); return alive; }, (error: unknown) => { this.expire(); throw error; })
+        .then((alive) => { if (alive) this.options.onSessionRefreshed?.(); else this.expire(); return alive; }, (error: unknown) => { this.expire(); throw error; })
         .finally(() => { this.refreshingSession = undefined; });
     }
     return this.refreshingSession;

@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.Json;
 using Kun.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -7,22 +9,37 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.FileProviders;
 using OpenIddict.Abstractions;
+using Qian.Config;
 using Qian.Data;
 using Qian.Dev.TenantOps;
 using Qian.Identity.Abstractions;
+using Qian.Identity.Connector.Oidc;
 using Qian.Identity.Server;
 using Qian.Runtime;
+using Qian.Runtime.Errors;
 using Qian.Tenancy;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Qian.Dev.Shell;
 
+/// <summary>脚本拉起的上游 Dex：issuer（回环 http）与机密客户端 qian-identity 的密钥文件（状态目录，仅本人可读）。</summary>
+internal sealed record DevDexConnector(Uri Issuer, string SecretFile);
+
 // 真实 qian.identity 挂进 CRM 参考宿主（照集成测试 CustomerCommandTests.Identity 的 ConfigureIdentity / MountIdentity）：
 // 内置账号模型 + OpenIddict 协议面 + 账号 HTTP 接口，身份请求走自己的分支，不经过业务管线；同一分支同源托管认证页族静态制品（/login）。
-internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, string clientSecret) : IDisposable
+// 给出上游 Dex 时再挂 S1-IDP-007 的通用 OIDC 连接器组件（注册名 dex），SSO 跳转回调走真实的发起 → 上游登录 → /connect/callback/dex → 落点流程。
+internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, string clientSecret, DevDexConnector? dex = null) : IDisposable
 {
     internal const string ClientId = "qian-shell";
+    /// <summary>通用 OIDC 连接器的注册名（登录页按钮、回调路径段与落点 /login/connector/dex）。</summary>
+    internal const string DexConnectorId = "dex";
+    internal const string DexDisplayName = "Dex 本机身份源";
+    /// <summary>在 Dex 登记的机密客户端标识（scripts/dev-shell.sh 渲染的 Dex 配置与此一致）。</summary>
+    internal const string DexClientId = "qian-identity";
+    private const string DexSecretReference = "secretRef://platform/identity/connector-dex/client-secret";
     private readonly X509Certificate2 _certificate = Certificate();
+    // 连接器出站到 Dex 的连接池：不跟随重定向、不走代理；归本宿主所有。
+    private readonly SocketsHttpHandler _handler = new() { AllowAutoRedirect = false, UseProxy = false, UseCookies = false };
 
     internal void Configure(WebApplicationBuilder builder, DevDatabase database)
     {
@@ -52,14 +69,31 @@ internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, strin
     }
 
     // 挂载身份组件：内置账号模型连同成员开户与用户计数端口一并提供（开通编排第 05 步经 MembershipKey 建管理员成员）。
+    // 之后挂通用 OIDC 连接器：issuer 是回环 http 所以显式关闭 https 要求；客户端密钥只经 secretRef 交给连接器，值在状态目录的文件里、换码时现取。
     internal async Task MountAsync(PluginLoader loader, CancellationToken ct)
     {
-        await loader.MountAsync([new PluginDefinition(new PluginEntry("identity", "qian.identity.server", "1.0.0", ScopeKey.Global, 0, System.Text.Json.JsonSerializer.SerializeToElement(new { issuer = issuer.AbsoluteUri })),
+        await loader.MountAsync([new PluginDefinition(new PluginEntry("identity", "qian.identity.server", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { issuer = issuer.AbsoluteUri })),
             new IdentityServerPlugin(), [IdentityDefinition.Key, IdentityDefinition.AccountsKey, IdentityDefinition.SignInKey, IdentityDefinition.FactorsKey, TenantProvisioning.MembershipKey, TenantSettings.UserCounterKey])], ct).ConfigureAwait(false);
         DevPlatform.EnsureReady(loader, "identity");
+        if (dex is null) return;
+        var config = JsonSerializer.SerializeToElement(new { name = DexConnectorId, displayName = DexDisplayName, issuer = dex.Issuer.AbsoluteUri, clientId = DexClientId, clientSecret = DexSecretReference, requireHttps = false });
+        await loader.MountAsync([new PluginDefinition(new PluginEntry("connector.dex", "qian.identity.connector.oidc", "1.0.0", ScopeKey.Global, 1, config),
+            new OidcConnectorPlugin(new FileSecret(DexSecretReference, dex.SecretFile), _handler), [new ServiceKey("Identity.Connectors:" + DexConnectorId)])], ct).ConfigureAwait(false);
+        DevPlatform.EnsureReady(loader, "connector.dex");
     }
 
-    public void Dispose() => _certificate.Dispose();
+    public void Dispose() { _certificate.Dispose(); _handler.Dispose(); }
+
+    // 只认一个 secretRef 的文件密钥：每次解析现读，文件内容即密钥（去掉首尾空白）。
+    private sealed class FileSecret(string reference, string path) : ISecretResolver
+    {
+        public async ValueTask<SecretValue> ResolveAsync(string requested, CancellationToken cancellationToken = default)
+        {
+            if (requested != reference) throw new QianErrorException(new QianError(SecretErrors.AccessDenied));
+            var text = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
+            return new SecretValue(Encoding.UTF8.GetBytes(text.Trim()));
+        }
+    }
 
     private static X509Certificate2 Certificate()
     {

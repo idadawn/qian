@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Spinner } from '@idadawn/yue-core';
+import { Alert, Button, Field, FieldError, FieldLabel, Input, Spinner } from '@idadawn/yue-core';
 import { HttpResponseError, PlatformError } from '@idadawn/yue-sdk';
 import { Authentication, createIdentityAuthProvider, PasswordLogin, safeNavigationUrl, TenantSelection, type AuthTenant, type ConnectorFlow, type IdentityAuthProvider, type IdentityConnector } from '@idadawn/yue-shell';
 import { authorizeEntry, loginUrl, type AuthorizeEntry } from './entry';
 import { i18n } from './i18n';
+import { browser } from './navigation';
 
 /** 页面只有三个落点：/login、/login/select-tenant、/login/connector/{connectorId}；其余路径按无效入口呈现。 */
 export function App() {
   const pathname = location.pathname.replace(/\/+$/, '') || '/';
   const connector = /^\/login\/connector\/([^/]+)$/.exec(pathname);
   return <main className="flex min-h-dvh items-start justify-center bg-background p-4 text-foreground sm:items-center">
-    {pathname === '/login' ? <LoginPage /> : pathname === '/login/select-tenant' ? <SelectTenantPage /> : connector ? <ConnectorPage connectorId={decodeURIComponent(connector[1]!)} /> : <InvalidEntry />}
+    {pathname === '/login' ? <LoginPage /> : pathname === '/login/select-tenant' ? <SelectTenantPage /> : connector ? <ConnectorPage connectorId={decodeURIComponent(connector[1]!)} flowId={new URLSearchParams(location.search).get('flow')} /> : <InvalidEntry />}
   </main>;
 }
 
@@ -24,27 +25,41 @@ function useProvider(entry: AuthorizeEntry | null): IdentityAuthProvider {
   return useMemo(() => createIdentityAuthProvider({ clientId: entry?.clientId ?? 'unknown', platformLabel: i18n.t('shell.platform') }), [entry?.clientId]);
 }
 
-function LoginPage() {
-  const entry = useMemo(() => authorizeEntry(location.search, location.origin), []);
-  const provider = useProvider(entry);
+/** 登录页；`entry` / `provider` 可注入（组件测试），缺省取自地址栏与同源账号接口。 */
+export function LoginPage({ entry: injectedEntry, provider: injectedProvider }: { entry?: AuthorizeEntry | null; provider?: IdentityAuthProvider } = {}) {
+  const entry = useMemo(() => injectedEntry === undefined ? authorizeEntry(location.search, location.origin) : injectedEntry, [injectedEntry]);
+  const created = useProvider(entry);
+  const provider = injectedProvider ?? created;
+  // 连接器登录的绑定键是 租户 × 连接器 × 上游主体，发起前必须知道租户：登录页由用户填写租户代码；目录按该租户 scope 过滤（租户项遮蔽全局同名项）。
+  const [tenant, setTenant] = useState('');
+  const [tenantMissing, setTenantMissing] = useState(false);
   const [connectors, setConnectors] = useState<IdentityConnector[]>([]);
   const [connectorError, setConnectorError] = useState(false);
+  const tenantCode = tenant.trim();
   useEffect(() => {
     if (!entry) return;
     const controller = new AbortController();
-    provider.listConnectors(controller.signal).then(items => { if (!controller.signal.aborted) setConnectors(items); }).catch(() => { /* 连接器目录不可用时只剩账号密码登录。 */ });
-    return () => controller.abort();
-  }, [provider, entry]);
+    const timer = setTimeout(() => {
+      provider.listConnectors(controller.signal, tenantCode || null).then(items => { if (!controller.signal.aborted) setConnectors(items); }).catch(() => { /* 连接器目录不可用时只剩账号密码登录。 */ });
+    }, tenantCode ? 300 : 0);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [provider, entry, tenantCode]);
   if (!entry) return <InvalidEntry />;
   const begin = (connectorId: string) => {
     setConnectorError(false);
-    provider.beginConnector(connectorId, new AbortController().signal, { returnUrl: entry.returnUrl }).then(url => location.assign(url)).catch(() => setConnectorError(true));
+    if (!tenantCode) { setTenantMissing(true); return; }
+    provider.beginConnector(connectorId, new AbortController().signal, { tenant: tenantCode, returnUrl: entry.returnUrl }).then(url => browser.assign(url)).catch(() => setConnectorError(true));
   };
   return <div className="w-full max-w-md space-y-4">
-    <Authentication provider={provider} i18n={i18n} onAuthenticated={() => location.assign(entry.returnUrl)} onRedirect={url => location.assign(url)} />
-    {connectors.length > 0 && <section aria-label={i18n.t('identity.connectors')} data-testid="identity-connectors" className="space-y-2 rounded-xl border border-border bg-card p-4">
+    <Authentication provider={provider} i18n={i18n} onAuthenticated={() => browser.assign(entry.returnUrl)} onRedirect={url => browser.assign(url)} />
+    {connectors.length > 0 && <section aria-label={i18n.t('identity.connectors')} data-testid="identity-connectors" className="space-y-3 rounded-xl border border-border bg-card p-4">
       <p className="text-sm text-muted-foreground">{i18n.t('identity.connectors')}</p>
       {connectorError && <Alert tone="error" role="alert">{i18n.t('identity.connectorError')}</Alert>}
+      <Field invalid={tenantMissing} testId="identity-connector-tenant">
+        <FieldLabel>{i18n.t('identity.tenantCode')}</FieldLabel>
+        <Input name="tenant" autoComplete="organization" value={tenant} onChange={event => { setTenant(event.currentTarget.value); if (event.currentTarget.value.trim()) setTenantMissing(false); }} aria-describedby={tenantMissing ? undefined : 'identity-connector-tenant-help'} />
+        {tenantMissing ? <FieldError match>{i18n.t('identity.tenantRequired')}</FieldError> : <p id="identity-connector-tenant-help" className="text-sm text-muted-foreground">{i18n.t('identity.tenantCodeHelp')}</p>}
+      </Field>
       <div className="flex flex-wrap gap-2">{connectors.map(item => <Button key={item.id} variant="outline" onClick={() => begin(item.id)}>{item.displayName}</Button>)}</div>
     </section>}
   </div>;
@@ -67,29 +82,42 @@ function SelectTenantPage() {
     provider.beginSwitch(controller.signal).then(items => { if (!controller.signal.aborted) setTenants(items); }).catch(failure => {
       if (controller.signal.aborted) return;
       // 账号 Cookie 已失效：回登录页，登录完成后同样回到授权请求。
-      if (unauthenticated(failure)) location.replace(loginUrl(entry.returnUrl)); else setError(true);
+      if (unauthenticated(failure)) browser.replace(loginUrl(entry.returnUrl)); else setError(true);
     });
     return () => controller.abort();
   }, [provider, entry]);
   if (!entry) return <InvalidEntry />;
   if (!tenants) return error
-    ? <section className="mx-auto w-full max-w-md space-y-3 rounded-xl border border-border bg-card p-6"><Alert tone="error" role="alert">{i18n.t('shell.switchError')}</Alert><Button variant="ghost" onClick={() => location.assign(loginUrl(entry.returnUrl))}>{i18n.t('shell.backLogin')}</Button></section>
+    ? <section className="mx-auto w-full max-w-md space-y-3 rounded-xl border border-border bg-card p-6"><Alert tone="error" role="alert">{i18n.t('shell.switchError')}</Alert><Button variant="ghost" onClick={() => browser.assign(loginUrl(entry.returnUrl))}>{i18n.t('shell.backLogin')}</Button></section>
     : <Spinner label={i18n.t('shell.switching')} />;
   return <div className="w-full max-w-md space-y-2">
-    <TenantSelection i18n={i18n} tenants={tenants} busy={busy} error={error} onBack={() => location.assign(loginUrl(entry.returnUrl))} onSelect={id => {
+    <TenantSelection i18n={i18n} tenants={tenants} busy={busy} error={error} onBack={() => browser.assign(loginUrl(entry.returnUrl))} onSelect={id => {
       if (busy || !tenants.some(tenant => tenant.id === id)) return;
       setBusy(true); setError(false);
-      provider.selectTenant(id, new AbortController().signal).then(() => location.assign(entry.returnUrl)).catch(() => { setBusy(false); setError(true); });
+      provider.selectTenant(id, new AbortController().signal).then(() => browser.assign(entry.returnUrl)).catch(() => { setBusy(false); setError(true); });
     }} />
     <p className="text-center text-xs text-muted-foreground">{i18n.t('identity.switchHelp')}</p>
   </div>;
 }
 
-/** 连接器统一回调的界面落点：按流程的 next 驱动等待、确认绑定、完成与错误。 */
-function ConnectorPage({ connectorId }: { connectorId: string }) {
-  const flowId = useMemo(() => new URLSearchParams(location.search).get('flow'), []);
-  const provider = useProvider(null);
-  // 没有 flow 参数就直接是错误态；有则先读一次，wait 时每 1.5 秒重读。
+export interface ConnectorPageProps {
+  connectorId: string;
+  /** 落点地址里的 `flow` 参数；没有就是错误态。 */
+  flowId: string | null;
+  /** 组件测试注入；缺省对接同源账号接口。 */
+  provider?: IdentityAuthProvider;
+  /** 等待态重读流程的间隔（毫秒），缺省 1.5 秒。 */
+  pollInterval?: number;
+}
+
+/**
+ * 连接器统一回调的界面落点：按流程的 next 驱动等待（轮询）、确认绑定（未验证先用账号密码验证，再绑定到已验证账号 / JIT 建号 / 放弃）、
+ * 完成（回流程里的 return_url，即授权请求地址）与错误（重新发起登录）。绑定成功的响应不带去处，所以再读一次流程拿到 return_url 后才离开。
+ */
+export function ConnectorPage({ connectorId, flowId, provider: injectedProvider, pollInterval = 1500 }: ConnectorPageProps) {
+  const created = useProvider(null);
+  const provider = injectedProvider ?? created;
+  // 没有 flow 参数就直接是错误态；有则先读一次，wait 时按间隔重读。
   const [flow, setFlow] = useState<ConnectorFlow | null | undefined>(flowId ? undefined : null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -100,24 +128,24 @@ function ConnectorPage({ connectorId }: { connectorId: string }) {
     const read = () => provider.readFlow(flowId, controller.signal).then(value => {
       if (controller.signal.aborted) return;
       setFlow(value);
-      if (value?.next === 'wait') timer = setTimeout(read, 1500);
+      if (value?.next === 'wait') timer = setTimeout(read, pollInterval);
     }).catch(() => { if (!controller.signal.aborted) setFlow(null); });
     void read();
     return () => { controller.abort(); if (timer) clearTimeout(timer); };
-  }, [provider, flowId]);
+  }, [provider, flowId, pollInterval]);
   const returnUrl = useMemo(() => { try { return flow?.returnUrl ? safeNavigationUrl(flow.returnUrl) : null; } catch { return null; } }, [flow]);
-  const next = flow?.next;
-  useEffect(() => { if (next === 'done') location.assign(returnUrl ?? '/login'); }, [next, returnUrl]);
+  const next = flow?.next; const matched = flow?.connector.id === connectorId;
+  useEffect(() => { if (next === 'done' && matched) browser.assign(returnUrl ?? '/login'); }, [next, matched, returnUrl]);
   if (flow === undefined) return <Spinner label={i18n.t('common.loading')} />;
-  const restart = <Button variant="ghost" onClick={() => location.assign(loginUrl(returnUrl))}>{i18n.t('identity.restart')}</Button>;
+  const restart = <Button variant="ghost" onClick={() => browser.assign(loginUrl(returnUrl))}>{i18n.t('identity.restart')}</Button>;
   if (flow === null || flow.connector.id !== connectorId || flow.next === 'error' || flow.next === 'restart') return <section className="mx-auto w-full max-w-md space-y-3 rounded-xl border border-border bg-card p-6" data-testid="identity-connector-error">
     <h1 className="text-xl font-semibold">{flow?.connector.displayName ?? connectorId}</h1><Alert tone="error" role="alert">{i18n.t(flow?.next === 'restart' ? 'shell.ssoError' : 'identity.flowError')}</Alert>{restart}
   </section>;
   if (flow.next === 'wait' || flow.next === 'done') return <section className="mx-auto w-full max-w-md space-y-3 rounded-xl border border-border bg-card p-6"><h1 className="text-xl font-semibold">{flow.connector.displayName ?? connectorId}</h1><Spinner label={i18n.t('identity.waiting')} /><p className="text-sm text-muted-foreground">{i18n.t('identity.waiting')}</p></section>;
   const binding = flow.binding;
+  // 绑定建立了账号会话（authenticated）或放弃了流程（null）之后都再读一次流程：完成态带 return_url，由上面的效果跳回授权请求；放弃即 restart。
   const finish = (next: Awaited<ReturnType<IdentityAuthProvider['flowBind']>>) => {
-    if (next?.kind === 'authenticated') location.assign(returnUrl ?? '/login');
-    else if (next === null) provider.readFlow(flow.flow, new AbortController().signal).then(setFlow).catch(() => setFailed(true));
+    if (next?.kind === 'authenticated' || next === null) provider.readFlow(flow.flow, new AbortController().signal).then(setFlow).catch(() => setFailed(true));
     else setFailed(true);
   };
   const bind = (mode: 'link' | 'create' | 'cancel') => {

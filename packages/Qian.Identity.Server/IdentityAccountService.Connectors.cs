@@ -351,12 +351,14 @@ internal sealed partial class IdentityAccountService
     }
 
     // JIT 是租户策略：经 ITenantSettings 读取本组件在当前租户的 connectors:jitProvisioning，读不到（未装租户设置、未配置、读失败）一律视为关闭。
+    // 读失败含租户设置服务自身的 InvalidOperationException：本组件直接挂载而没有已安装的组件记录时（开发宿主、独立宿主），它解析组件清单会这样抛。
     internal static async Task<bool> JitEnabledAsync(ITenantSettings? settings, string pluginId, CancellationToken ct)
     {
         if (settings is null) return false;
         try { return await settings.Get<bool?>(pluginId, "connectors:jitProvisioning", ct).ConfigureAwait(false) == true; }
         catch (QianErrorException) { return false; }
         catch (JsonException) { return false; }
+        catch (InvalidOperationException) { return false; }
     }
 
     // ---- 统一流水线：连接器票据 ----

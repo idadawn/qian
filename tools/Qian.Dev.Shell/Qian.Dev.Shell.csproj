@@ -4,6 +4,7 @@
   <ItemGroup>
     <ProjectReference Include="../Qian.Dev.TenantOps/Qian.Dev.TenantOps.csproj" />
     <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Connector.Oidc/Qian.Identity.Connector.Oidc.csproj" />
     <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
     <ProjectReference Include="../../packages/Qian.Gateway/Qian.Gateway.csproj" />
     <ProjectReference Include="../../packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
