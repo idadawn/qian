@@ -88,7 +88,8 @@ internal sealed class DevDatabase
             GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA {AuthzDbContext.Schema}, {TenancyDbContext.Schema}, {AuditDbContext.Schema}, {RegistryDbContext.Schema} TO {AppRole};
             """, ct).ConfigureAwait(false);
         await ExecuteAsync(_admin, "BEGIN;" + AuditTransactionAccess.CreateMigrationSql(AuditOwnerRole, BusinessRole) + "COMMIT;", ct).ConfigureAwait(false);
-        await ExecuteAsync(_admin, "BEGIN;" + AuthzPlatformAccess.CreateMigrationSql(AuthzPlatformRole) + AuditPlatformAccess.CreateMigrationSql(AuditPlatformRole) + "COMMIT;", ct).ConfigureAwait(false);
+        // 平台审计链：三参重载另建平台链的同事务函数（属主同上），Lifecycle 的业务登录只获执行权，平台级生命周期操作与状态变更同一事务入链（S1-AUD-009）。
+        await ExecuteAsync(_admin, "BEGIN;" + AuthzPlatformAccess.CreateMigrationSql(AuthzPlatformRole) + AuditPlatformAccess.CreateMigrationSql(AuditPlatformRole, AuditOwnerRole, BusinessRole) + "COMMIT;", ct).ConfigureAwait(false);
         var reports = await services.GetRequiredService<IDataMigrator>().MigrateAsync(ct).ConfigureAwait(false);
         foreach (var context in new[] { typeof(CapabilitiesDbContext), typeof(LifecycleDbContext) })
             if (!reports.Any(report => report.ContextType == context && report.Applied.Count > 0))

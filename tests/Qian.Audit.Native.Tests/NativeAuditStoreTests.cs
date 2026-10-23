@@ -90,6 +90,14 @@ public sealed partial class NativeAuditStoreTests(PostgresFixture postgres) : IC
         using (host.Tenant.BeginScope(B)) { Assert.Empty(await host.Audit.ReadAsync(0, 10, cancellationToken: Ct)); await host.Audit.AppendAsync(Record(B), Ct); }
         Assert.Single(await host.Audit.ReadPlatformAsync(host.Caller, 0, 10, cancellationToken: Ct));
         Assert.True((await host.Audit.VerifyPlatformAsync(host.Caller, Ct)).Valid);
+        // 原生存储不提供平台链的同事务入口（S1-AUD-009 裁决 ①）：明确拒绝，不静默退化为独立事务追加。
+        await using (var enlisted = new NpgsqlConnection(db.PlatformConnection))
+        {
+            await enlisted.OpenAsync(Ct); await using var tx = await enlisted.BeginTransactionAsync(IsolationLevel.Serializable, Ct);
+            await Assert.ThrowsAsync<NotSupportedException>(() => host.Audit.AppendPlatformEnlistedAsync(host.Caller, Record(null), tx, Ct));
+            await tx.RollbackAsync(Ct);
+        }
+        Assert.Single(await host.Audit.ReadPlatformAsync(host.Caller, 0, 10, cancellationToken: Ct));
         foreach (var connection in new[] { db.TenantConnection, db.PlatformConnection })
         {
             await using var sql = new NpgsqlConnection(connection); await sql.OpenAsync(Ct);

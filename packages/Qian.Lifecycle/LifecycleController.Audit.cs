@@ -1,4 +1,5 @@
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -16,8 +17,8 @@ namespace Qian.Lifecycle;
 // 生命周期操作入审计链（ADR-009 D9.8，S1-RT-037）。
 // 租户级操作（开通、升级、卸载、清除）：完成的状态迁移与该租户审计链的条目在同一个可串行化事务里提交，审计写不进去或提交失败时两者都不留；
 // 只在最终迁移处记一条，所以钩子重试、续跑与幂等返回不重复记。
-// 平台级操作（安装、激活、回切、弃用、退役）：没有租户，记平台链。审计端口的平台链入口是独立事务（专用平台登录，RLS 只放行该登录，不能挂进
-// 本组件的事务），所以在状态变更提交前追加：审计写不进去则状态不提交；之后的提交失败可能留下一条孤儿条目（ADR-009 §3 的崩溃窗口取「宁多不漏」）。
+// 平台级操作（安装、激活、回切、弃用、退役）：没有租户，记平台链。状态变更与平台链条目同样在一个可串行化事务里提交（审计端口的平台链同事务入口
+// AppendPlatformEnlistedAsync，S1-AUD-009）：审计写不进去或提交失败时两者都不留。
 internal sealed partial class LifecycleController
 {
     internal const string ProvisionAuditCapability = "qian.lifecycle/tenant-plugin.provision";
@@ -72,21 +73,32 @@ internal sealed partial class LifecycleController
         }
     }
 
-    // 平台级状态变更与平台链条目：work 先保存再返回记录（null 表示幂等返回，不追加），记录在本事务提交之前追加到平台链（审计端口自己的事务）；
-    // 追加失败则本事务不提交、状态未改。平台链自身的可串行化冲突由审计端口重做，仍冲突时以 409 CONFLICT 传出。
-    private Task<T> PlatformAudited<T>(string[] key, string operation, IAuditWriter audit, Func<IDataSession<LifecycleDbContext>, Task<(T Result, AuditRecord? Record)>> work, CancellationToken ct) =>
-        Locked(key, async session =>
-        {
-            var (result, record) = await work(session).ConfigureAwait(false);
-            if (record is not null) await AppendPlatformAsync(audit, operation, record, ct).ConfigureAwait(false);
-            return result;
-        }, ct);
-
-    // 平台链未配置（宿主没给 chain.platformRole）或本上下文不被接受为平台生产方时，审计端口返回 AUTHZ_DENIED：对调用方这是宿主装配错误而不是无权限，
-    // 记告警后以 503 LIFECYCLE_AUDIT_UNAVAILABLE 拒绝（本事务随之回滚）。其它失败（链冲突、数据库错误）原样传出，同样不提交。
-    private async Task AppendPlatformAsync(IAuditWriter audit, string operation, AuditRecord record, CancellationToken ct)
+    // 平台级状态变更与平台链条目同一可串行化事务：work 先保存再返回记录（null 表示幂等返回，不追加），记录经平台链的同事务入口挂进本事务（S1-AUD-009）；
+    // 追加失败或提交失败时状态变更与条目都不留。平台链与其它平台生产方共用，可串行化冲突或死锁时按 Audited 的约定丢弃整个会话重做。
+    private async Task<T> PlatformAudited<T>(string[] key, string operation, IAuditWriter audit, Func<IDataSession<LifecycleDbContext>, Task<(T Result, AuditRecord? Record)>> work, CancellationToken ct)
     {
-        try { await audit.AppendPlatformAsync(context, record, ct).ConfigureAwait(false); }
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await Locked(key, IsolationLevel.Serializable, async session =>
+                {
+                    var (result, record) = await work(session).ConfigureAwait(false);
+                    if (record is not null) await AppendPlatformAsync(audit, operation, record, session.Context.Database.CurrentTransaction!.GetDbTransaction(), ct).ConfigureAwait(false);
+                    return result;
+                }, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (attempt < 5 && Retryable(error))
+            { await Task.Delay(10 * (attempt + 1), ct).ConfigureAwait(false); }
+            catch (Exception error) when (Retryable(error)) { throw new QianErrorException(new QianError(PlatformErrors.Conflict)); }
+        }
+    }
+
+    // 平台链未配置（宿主没给 chain.platformRole）、本上下文不被接受为平台生产方，或本组件的数据库登录没有平台链同事务函数的执行权时，审计端口返回 AUTHZ_DENIED：
+    // 对调用方这是宿主装配错误而不是无权限，记告警后以 503 LIFECYCLE_AUDIT_UNAVAILABLE 拒绝（本事务随之回滚）。其它失败（链冲突、数据库错误）原样传出，同样不提交。
+    private async Task AppendPlatformAsync(IAuditWriter audit, string operation, AuditRecord record, DbTransaction transaction, CancellationToken ct)
+    {
+        try { await audit.AppendPlatformEnlistedAsync(context, record, transaction, ct).ConfigureAwait(false); }
         catch (QianErrorException error) when (error.Error.Code.Code == PlatformErrors.AuthzDenied.Code)
         {
             LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方：平台链未配置 chain.platformRole，或平台审计登录不可用");

@@ -108,6 +108,7 @@ public sealed class ReleaseAuditTests(ApolloFixture apollo) : IClassFixture<Apol
         }
         public Task<AuditChainEntry> AppendAsync(AuditRecord record, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AuditChainEntry> AppendEnlistedAsync(AuditRecord record, System.Data.Common.DbTransaction transaction, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AuditChainEntry> AppendPlatformEnlistedAsync(IPluginContext producer, AuditRecord record, System.Data.Common.DbTransaction transaction, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<AuditChainEntry>> ReadAsync(long afterSequence, int take, string? onBehalfOf = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<AuditChainEntry>> ReadPlatformAsync(IPluginContext producer, long afterSequence, int take, string? onBehalfOf = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AuditChainVerification> VerifyAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();

@@ -48,7 +48,7 @@ global 挂载必须没有 ambient tenant，并显式提供独立平台绑定，�
 
 独立追加先取得与旧 Provider 相同的会话 advisory 锁，再开始 SERIALIZABLE，防止等待锁时持有旧快照；同 ID、同内容重放返回原记录，不同内容报 CONFLICT。序列化冲突或死锁最多尝试 `maxAttempts` 次（默认 6，范围 1–10），每次新事务；唯一约束/损坏链头不能当作成功。读取每页 1–1000 条；验链使用 REPEATABLE READ 和 128 条分页。
 
-`AppendEnlistedAsync` 接受 NativeData 事务包装以及真实 Npgsql/EF `GetDbTransaction()`。必须是同绑定端点、数据库、受限租户登录、真实当前租户和 SERIALIZABLE；它不提交、不回滚、不释放、不局部重试调用方事务。业务使用该受限 Native LOGIN 连接即可共享真实 EF 事务，默认 INHERIT 的旧测试应用登录不满足绑定条件。业务外层须重试整笔事务。卸载先撤销策略/服务登记，再取消、排空在途调用，旧服务句柄失效。
+`AppendEnlistedAsync` 接受 NativeData 事务包装以及真实 Npgsql/EF `GetDbTransaction()`。必须是同绑定端点、数据库、受限租户登录、真实当前租户和 SERIALIZABLE；它不提交、不回滚、不释放、不局部重试调用方事务。业务使用该受限 Native LOGIN 连接即可共享真实 EF 事务，默认 INHERIT 的旧测试应用登录不满足绑定条件。业务外层须重试整笔事务。平台链没有同事务入口：`AppendPlatformEnlistedAsync`（EF Provider 在 S1-AUD-009 新增的平台链同事务入口）在这里抛 `NotSupportedException`，平台记录仍走 `AppendPlatformAsync` 的独立事务；gateway 的原生组合不装 Lifecycle，当前没有调用方，需要时另立任务（同步改 `native_tip` / `native_append`、固定 guard 模板与在线逐字校验）。卸载先撤销策略/服务登记，再取消、排空在途调用，旧服务句柄失效。
 
 ## 验证
 

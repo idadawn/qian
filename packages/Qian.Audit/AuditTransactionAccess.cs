@@ -11,19 +11,9 @@ public static class AuditTransactionAccess
         return $$"""
             DO $qian_audit$
             BEGIN
-              IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = '{{writerRole}}'
-                AND NOT r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolbypassrls AND NOT r.rolcreatedb
-                AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolinherit
-                AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.roleid = r.oid OR m.member = r.oid))
-              THEN RAISE EXCEPTION 'audit transaction owner must be a dedicated restricted nologin role'; END IF;
-              IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = '{{producerRole}}' AND NOT r.rolsuper AND NOT r.rolbypassrls)
-              THEN RAISE EXCEPTION 'audit producer must be a restricted role'; END IF;
+            {{RoleGuards(writerRole, producerRole)}}
             END $qian_audit$;
-            GRANT USAGE, CREATE ON SCHEMA plugin_qian_audit TO "{{writerRole}}";
-            GRANT SELECT, INSERT ON plugin_qian_audit.audit_entries TO "{{writerRole}}";
-            GRANT SELECT, INSERT, UPDATE ON plugin_qian_audit.audit_chain_state TO "{{writerRole}}";
-            REVOKE UPDATE, DELETE, TRUNCATE ON plugin_qian_audit.audit_entries FROM "{{writerRole}}";
-            REVOKE DELETE, TRUNCATE ON plugin_qian_audit.audit_chain_state FROM "{{writerRole}}";
+            {{WriterGrants(writerRole)}}
 
             CREATE OR REPLACE FUNCTION plugin_qian_audit.transaction_tip(p_id uuid)
             RETURNS TABLE(next_seq bigint, previous_hash text, existing_entry jsonb, tip_entry jsonb)
@@ -53,14 +43,7 @@ public static class AuditTransactionAccess
               b := p_body::jsonb; t := NULLIF(pg_catalog.current_setting('app.current_tenant_id', true), '');
               IF t IS NULL OR pg_catalog.current_setting('transaction_isolation') <> 'serializable' OR b->>'tenant_id' IS DISTINCT FROM t
               THEN RAISE EXCEPTION 'audit tenant boundary mismatch' USING ERRCODE = '42501'; END IF;
-              IF (pg_catalog.jsonb_typeof(b) = 'object' AND b->>'format_version' = 'v1'
-                AND b ?& ARRAY['id','tenant_id','actor_type','actor_id','on_behalf_of','capability_id','contract_version','input_hash','channel','resource','result','trace_id','occurred_at','payload','seq','format_version']
-                AND (SELECT count(*) FROM pg_catalog.jsonb_object_keys(b)) = 16
-                AND pg_catalog.jsonb_typeof(b->'payload') = 'object'
-                AND b->>'actor_type' IN ('user','service','agent')
-                AND b->>'channel' IN ('ui','api','mcp','a2a','job','event','hook')
-                AND b->>'input_hash' ~ '^[a-f0-9]{64}$' AND b->>'trace_id' ~ '^[a-f0-9]{32}$'
-                AND b->>'seq' ~ '^[1-9][0-9]*$' AND p_hash ~ '^[a-f0-9]{64}$') IS DISTINCT FROM TRUE
+              IF {{RecordShape}}
               THEN RAISE EXCEPTION 'invalid audit record' USING ERRCODE = '22023'; END IF;
               event_id := (b->>'id')::uuid; k := 'tenant:' || t;
               IF event_id = '00000000-0000-0000-0000-000000000000'::uuid
@@ -91,4 +74,37 @@ public static class AuditTransactionAccess
             GRANT EXECUTE ON FUNCTION plugin_qian_audit.transaction_append(text,text,text) TO "{{producerRole}}";
             """;
     }
+
+    // 函数所有者须是独立受限的 NOLOGIN、NOINHERIT 角色且无任何成员关系（谁都不能 SET ROLE 成它）；生产方须是受限角色（非 superuser / BYPASSRLS）。
+    // 租户链与平台链的同事务函数（AuditPlatformAccess）共用这段前置检查。
+    internal static string RoleGuards(string writerRole, string producerRole) => $"""
+          IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = '{writerRole}'
+            AND NOT r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolbypassrls AND NOT r.rolcreatedb
+            AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolinherit
+            AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.roleid = r.oid OR m.member = r.oid))
+          THEN RAISE EXCEPTION 'audit transaction owner must be a dedicated restricted nologin role'; END IF;
+          IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = '{producerRole}' AND NOT r.rolsuper AND NOT r.rolbypassrls)
+          THEN RAISE EXCEPTION 'audit producer must be a restricted role'; END IF;
+        """;
+
+    // 函数所有者只能追加记录与推进链头：表级只有 SELECT / INSERT（链头另有 UPDATE），不能更新、删除或清空历史。CREATE 只为改函数属主临时授予，末尾收回。
+    internal static string WriterGrants(string writerRole) => $"""
+        GRANT USAGE, CREATE ON SCHEMA plugin_qian_audit TO "{writerRole}";
+        GRANT SELECT, INSERT ON plugin_qian_audit.audit_entries TO "{writerRole}";
+        GRANT SELECT, INSERT, UPDATE ON plugin_qian_audit.audit_chain_state TO "{writerRole}";
+        REVOKE UPDATE, DELETE, TRUNCATE ON plugin_qian_audit.audit_entries FROM "{writerRole}";
+        REVOKE DELETE, TRUNCATE ON plugin_qian_audit.audit_chain_state FROM "{writerRole}";
+        """;
+
+    // v1 记录正文的形状检查（b 为 jsonb 正文，p_hash 为传入摘要），为真表示正文不合法；租户链与平台链的 append 函数共用。
+    internal const string RecordShape = """
+        (pg_catalog.jsonb_typeof(b) = 'object' AND b->>'format_version' = 'v1'
+            AND b ?& ARRAY['id','tenant_id','actor_type','actor_id','on_behalf_of','capability_id','contract_version','input_hash','channel','resource','result','trace_id','occurred_at','payload','seq','format_version']
+            AND (SELECT count(*) FROM pg_catalog.jsonb_object_keys(b)) = 16
+            AND pg_catalog.jsonb_typeof(b->'payload') = 'object'
+            AND b->>'actor_type' IN ('user','service','agent')
+            AND b->>'channel' IN ('ui','api','mcp','a2a','job','event','hook')
+            AND b->>'input_hash' ~ '^[a-f0-9]{64}$' AND b->>'trace_id' ~ '^[a-f0-9]{32}$'
+            AND b->>'seq' ~ '^[1-9][0-9]*$' AND p_hash ~ '^[a-f0-9]{64}$') IS DISTINCT FROM TRUE
+        """;
 }

@@ -14,7 +14,7 @@ using Qian.Runtime.Errors;
 namespace Qian.Lifecycle;
 
 // 平台级修订状态机：Install / Activate / Rollback / Deprecate / Retire 与 service 修订的部署健康。所有写入在 PostgreSQL 事务内持
-// 组件级 advisory lock，多副本同样串行；每次状态变更在提交前追加一条平台审计链条目（见 Audit 分部）。租户级与挂载操作见同名分部文件。
+// 组件级 advisory lock，多副本同样串行；每次状态变更与一条平台审计链条目在同一可串行化事务里提交（见 Audit 分部）。租户级与挂载操作见同名分部文件。
 internal sealed partial class LifecycleController(
     IPluginContext context, ITenantContext tenant, LifecycleRuntimeOptions options, LifecycleSettings settings, TrustRoots trust,
     IDeploymentExecutor? executor, TimeProvider time) : IPluginLifecycleController
@@ -127,7 +127,7 @@ internal sealed partial class LifecycleController(
     }
 
     // 激活与回切共用：原 Active 先降回 Installed 并单独保存（部分唯一索引逐条检查），再提升目标并随同一事务发出 activated 事件；
-    // 返回的平台链记录由调用方在提交前追加（激活与回切能力不同，载荷都带此前的 Active 修订）。
+    // 返回的平台链记录由调用方挂进同一事务追加（激活与回切能力不同，载荷都带此前的 Active 修订）。
     private async Task<(PluginRevisionView View, AuditRecord? Record)> Promote(IDataSession<LifecycleDbContext> session, PluginRevisionRow target, string capability, string actor, CancellationToken ct)
     {
         if (target.State == PluginRevisionStates.Retired) throw Conflict("修订已退役，不能激活或回切。");
