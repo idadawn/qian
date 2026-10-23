@@ -13,7 +13,8 @@ export interface TokenProvider {
 
 /**
  * BFF Cookie 会话（浏览器零令牌）：401 后由宿主向会话端点强制刷新一次服务端访问令牌。
- * 返回 true 表示会话仍在、请求重放一次；false 表示会话已结束，只通知一次 `onSessionExpired`。并发 401 合并为一次调用。
+ * 返回 true 表示会话仍在、请求重放一次；false 表示会话已结束，只通知一次 `onSessionExpired`。并发 401 合并为一次调用：
+ * 刷新尝试得出结论之后才到达的 401 沿用该结论（仍在就直接重放、已结束就不再探测），不再调用。
  */
 export interface SessionProvider {
   refreshSession(): Promise<boolean>;
@@ -28,7 +29,14 @@ export interface PlatformClientOptions {
   getTenantId?: () => string | null | undefined;
   transport?: RequestTransport;
   middleware?: readonly RequestMiddleware[];
+  /** 会话已结束（刷新失败或重放仍 401）时通知一次。对宿主而言会话结束是粘性的：收到之后不得再从 `onSessionRefreshed` 或排队的重拉发起新一轮请求。 */
   onSessionExpired?: () => void;
+  /**
+   * Cookie 会话刷新成功（`refreshSession()` 回答 true）后通知一次：宿主据此重拉随身份变化的数据（菜单、权限、会话快照）。
+   * 通知在重放之前同步发出——重放仍可能 401（例如平台表面仍拒绝新令牌），随后才通知 `onSessionExpired`；宿主据此发起的重拉要在会话结束后停下，
+   * 否则「刷新成功、重放仍 401」会无界循环（下一批 401 按约定重新探测，刷新仍成功，再通知……）。
+   */
+  onSessionRefreshed?: () => void;
 }
 
 export class PlatformError extends Error {
@@ -88,6 +96,11 @@ export function parsePlatformJson(text: string): unknown {
   return parse(text, undefined, parseNumber);
 }
 
+/** 宿主回调与 SDK 自身的状态机隔离（与 DOM 事件监听器一致）：同步抛错只异步上报，不改变等待中请求的结果，也不跳过过期通知。 */
+function notify(callback: () => void): void {
+  try { callback(); } catch (error) { queueMicrotask(() => { throw error; }); }
+}
+
 function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   signal.throwIfAborted();
   return new Promise((resolve, reject) => {
@@ -104,6 +117,9 @@ export class PlatformClient {
   private readonly send: RequestTransport;
   private refreshing: Promise<string | null> | undefined;
   private refreshingSession: Promise<boolean> | undefined;
+  /** 会话刷新纪元：每次刷新尝试得出结论（仍在 / 已结束）加一；请求记下发出时的值，401 回来时纪元已变就沿用最近结论，不再刷新。 */
+  private sessionEpoch = 0;
+  private sessionAlive = true;
   private sessionExpired = false;
 
   constructor(options: PlatformClientOptions) {
@@ -128,14 +144,14 @@ export class PlatformClient {
   private expire(): void {
     if (this.sessionExpired) return;
     this.sessionExpired = true;
-    this.options.onSessionExpired?.();
+    notify(() => this.options.onSessionExpired?.());
   }
 
   /** 会话刷新的单飞队列：同一时刻只有一次会话端点调用，所有等待的 401 共享其结果。 */
   private refreshSession(): Promise<boolean> {
     if (!this.refreshingSession) {
       this.refreshingSession = Promise.resolve().then(() => this.options.sessionProvider?.refreshSession() ?? false)
-        .then((alive) => { if (!alive) this.expire(); return alive; }, (error: unknown) => { this.expire(); throw error; })
+        .then((alive) => { this.sessionEpoch++; this.sessionAlive = alive; if (alive) notify(() => this.options.onSessionRefreshed?.()); else this.expire(); return alive; }, (error: unknown) => { this.expire(); throw error; })
         .finally(() => { this.refreshingSession = undefined; });
     }
     return this.refreshingSession;
@@ -166,6 +182,7 @@ export class PlatformClient {
       if (tenant) headers.set('X-Tenant-Id', tenant);
       return this.send(new Request(request.clone(), { headers, redirect: 'error' }));
     };
+    const epoch = this.sessionEpoch;
     let response = await run(token);
     if (response.status === 401 && provider?.refreshAccessToken) {
       const current = await provider.getAccessToken();
@@ -178,7 +195,8 @@ export class PlatformClient {
       }
     } else if (response.status === 401 && this.options.sessionProvider) {
       // Cookie 会话：并发 401 合并成一次会话刷新；会话仍在才重放一次，重放仍 401 或刷新失败都只通知一次过期。
-      const alive = await abortable(this.refreshSession(), request.signal);
+      // 本请求发出后已有刷新尝试得出结论（慢端点的 401 晚于刷新完成才到达）：沿用结论——仍在就直接重放、已结束就不再探测——合并与否不取决于响应到达的先后。
+      const alive = epoch !== this.sessionEpoch ? this.sessionAlive : await abortable(this.refreshSession(), request.signal);
       if (tenant !== this.options.getTenantId?.()) throw new Error('sdk.error.contextChanged');
       if (alive) {
         await response.body?.cancel();

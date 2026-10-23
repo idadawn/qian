@@ -30,8 +30,8 @@ internal sealed class DevGatewayHost(WebApplication app, PluginLoader loader) : 
 
 // 网关 BFF 宿主，照安全验收夹具 tests/Shared/GatewayTestHost：同一份 Gateway / Identity.Client / Config 生产入口。
 // 浏览器只持有 qian.sid（HttpOnly、Secure）；/api 经会话换 60 秒 S2S 转发到业务宿主，令牌只在服务端。
-// 额外只有三件开发期的事：静态托管外壳构建产物与 /app-conf.js（K8s ConfigMap 的本机替身）、/api-alt 第二个 API 前缀（验收 4 改 apiBase 后仍可用）、
-// /__dev/session/* 把当前会话的访问令牌改成已到期（验收 1 的刷新与过期对话框）。
+// 额外只有四件开发期的事：静态托管外壳构建产物与 /app-conf.js（K8s ConfigMap 的本机替身）、/api-alt 第二个 API 前缀（验收 4 改 apiBase 后仍可用）、
+// /__dev/session/* 把当前会话的访问令牌改成已到期（验收 1 的刷新与过期对话框）、/__dev/identity/bump 递增当前成员的身份修订（验收 1 的会话刷新后重拉）。
 internal static class DevGateway
 {
     internal const string Issuer = "https://gateway.qian.local/s2s";
@@ -40,7 +40,8 @@ internal static class DevGateway
     private const string SecretReference = "secretRef://platform/identity/client-secret";
     private const string DefaultConf = """window.__APP_CONF__ = { "apiBase": "/api", "authBase": "/auth", "brand": "Qian 乾" };""" + "\n";
 
-    internal static async Task<DevGatewayHost> StartAsync(Uri address, DevGatewayKeys keys, Uri identityIssuer, string businessAddress, string platformAddress, string shellDist, string state, CancellationToken ct)
+    internal static async Task<DevGatewayHost> StartAsync(Uri address, DevGatewayKeys keys, Uri identityIssuer, string businessAddress, string platformAddress, string shellDist, string state,
+        DevRevisionFloor floor, Func<Principal, CancellationToken, Task<long>> bump, CancellationToken ct)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
         builder.WebHost.ConfigureKestrel(kestrel =>
@@ -87,9 +88,15 @@ internal static class DevGateway
             await http.Response.SendFileAsync(conf, http.RequestAborted).ConfigureAwait(false);
         }).AllowAnonymous();
         // 开发路由（不是产品契约）：只对已认证的本会话生效，且仍要带防伪令牌。expire 让服务端访问令牌立刻到期（下次请求透明刷新，页面无感）；
-        // break 同时毁掉 refresh token（刷新必败 → 会话结束 → 401 → 外壳只发一次 POST /auth/session/refresh → 过期对话框）。
+        // break 同时毁掉 refresh token（刷新必败 → 会话结束 → 并发 401 被 SDK 合并成一次刷新尝试，会话已不在、取防伪令牌即 401 不再 POST → 过期对话框）；
+        // identity/bump 经真实身份端口递增当前成员的 identity_revision（授权变更后身份侧就是这样做的，S1-DEC-027）并抬高平台表面宿主的修订下限：
+        // 下一批请求带着旧修订 401 → SDK 合并成一次 POST /auth/session/refresh → 依赖方换到带新修订的令牌 → 重放 200 → 外壳重拉菜单、权限与会话快照。
+        // identity/stale 只抬平台表面的修订下限（当前令牌修订 + 1）、不递增身份修订：依赖方刷新仍成功，换到的令牌修订不变，平台表面持续 401 →
+        // SDK 只刷新一次、重放仍 401 → 只弹一个过期对话框，外壳不再发起新一轮（会话结束对外壳是粘性的）。
         app.MapPost("/__dev/session/expire", http => MutateSession(http, breakRefresh: false)).RequireAuthorization();
         app.MapPost("/__dev/session/break", http => MutateSession(http, breakRefresh: true)).RequireAuthorization();
+        app.MapPost("/__dev/identity/bump", http => BumpRevision(http, floor, bump)).RequireAuthorization();
+        app.MapPost("/__dev/identity/stale", http => StaleRevision(http, floor)).RequireAuthorization();
         app.MapFallbackToFile("index.html", shell).AllowAnonymous();
         var loader = new PluginLoader(app.Services);
         try
@@ -123,6 +130,27 @@ internal static class DevGateway
         var expired = data with { ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-1), RefreshToken = breakRefresh ? "qian-dev-broken-refresh-token" : data.RefreshToken };
         await store.SetAsync(id, expired, http.RequestServices.GetRequiredService<IdentityClientOptions>().SessionLifetime, http.RequestAborted).ConfigureAwait(false);
         http.Response.Headers.CacheControl = "no-store"; http.Response.StatusCode = StatusCodes.Status204NoContent;
+    }
+
+    // 只对租户成员身份有意义（平台身份没有成员修订，409）；返回新修订便于核对。
+    private static async Task BumpRevision(HttpContext http, DevRevisionFloor floor, Func<Principal, CancellationToken, Task<long>> bump)
+    {
+        if (http.RequestServices.GetRequiredService<ICurrentUser>().Principal is not { Kind: PrincipalKind.User, TenantId: { } tenant } principal || !Guid.TryParseExact(principal.Subject, "D", out _))
+        { http.Response.StatusCode = StatusCodes.Status409Conflict; return; }
+        var revision = await bump(principal, http.RequestAborted).ConfigureAwait(false);
+        floor.Raise(tenant, principal.Subject, revision);
+        http.Response.Headers.CacheControl = "no-store";
+        await http.Response.WriteAsJsonAsync(new { identityRevision = revision }, http.RequestAborted).ConfigureAwait(false);
+    }
+
+    // 同样只对租户成员身份有意义（409 同上）；返回当前修订与抬高后的下限便于核对。
+    private static async Task StaleRevision(HttpContext http, DevRevisionFloor floor)
+    {
+        if (http.RequestServices.GetRequiredService<ICurrentUser>().Principal is not { Kind: PrincipalKind.User, TenantId: { } tenant, IdentityRevision: { } revision } principal || !Guid.TryParseExact(principal.Subject, "D", out _))
+        { http.Response.StatusCode = StatusCodes.Status409Conflict; return; }
+        floor.Raise(tenant, principal.Subject, revision + 1);
+        http.Response.Headers.CacheControl = "no-store";
+        await http.Response.WriteAsJsonAsync(new { identityRevision = revision, floor = revision + 1 }, http.RequestAborted).ConfigureAwait(false);
     }
 
     private static void Headers(HttpResponse response, string cacheControl)

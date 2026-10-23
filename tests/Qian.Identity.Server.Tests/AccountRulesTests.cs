@@ -189,8 +189,9 @@ public sealed partial class AccountRulesTests
         var ct = TestContext.Current.CancellationToken;
         Assert.False(await IdentityAccountService.JitEnabledAsync(null, "qian.identity.server", ct));
         Assert.True(await IdentityAccountService.JitEnabledAsync(new JitSetting(() => true), "qian.identity.server", ct));
+        // 读失败也含租户设置服务解析组件清单时的 InvalidOperationException（本组件直接挂载、没有已安装组件记录的宿主）。
         foreach (var value in new Func<bool?>[] { () => null, () => false, () => throw new Qian.Runtime.Errors.QianErrorException(new Qian.Runtime.Errors.QianError(Qian.Runtime.Errors.PlatformErrors.Unavailable)),
-            () => throw new System.Text.Json.JsonException() })
+            () => throw new System.Text.Json.JsonException(), () => throw new InvalidOperationException("Sequence contains no matching element") })
             Assert.False(await IdentityAccountService.JitEnabledAsync(new JitSetting(value), "qian.identity.server", ct));
         var asked = new JitSetting(() => true);
         await IdentityAccountService.JitEnabledAsync(asked, "qian.identity.server", ct);

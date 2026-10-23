@@ -135,6 +135,93 @@ describe('PlatformClient', () => {
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
   });
 
+  it('Cookie 会话：刷新成功后只通知一次 onSessionRefreshed，等待的请求共享同一次通知；会话已结束或刷新出错不通知', async () => {
+    let alive = false;
+    const release = deferred<boolean>();
+    const refreshSession = vi.fn(async () => { alive = await release.promise; return alive; });
+    const onSessionRefreshed = vi.fn(); const onSessionExpired = vi.fn();
+    const transport = vi.fn(async () => alive ? Response.json({ value: 'ok' }) : Response.json(problem(401), { status: 401 }));
+    const api = new PlatformClient({ baseUrl: 'https://example.test', transport, onSessionExpired, onSessionRefreshed, sessionProvider: { refreshSession } }).api<Paths>();
+    const pending = Promise.all([api.GET('/items'), api.GET('/items'), api.GET('/items')]);
+    await vi.waitFor(() => expect(refreshSession).toHaveBeenCalledTimes(1));
+    expect(onSessionRefreshed).not.toHaveBeenCalled();
+    release.resolve(true);
+    expect((await pending).every((result) => result.data?.value === 'ok')).toBe(true);
+    expect(onSessionRefreshed).toHaveBeenCalledTimes(1);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+    // 会话已结束与刷新出错：只通知过期，不通知刷新成功。
+    const ended = vi.fn(); const endedExpired = vi.fn();
+    const dead = new PlatformClient({ baseUrl: 'https://example.test', onSessionExpired: endedExpired, onSessionRefreshed: ended, sessionProvider: { refreshSession: async () => false }, transport: async () => Response.json(problem(401), { status: 401 }) }).api<Paths>();
+    await expect(dead.GET('/items')).rejects.toBeInstanceOf(PlatformError);
+    const broken = new PlatformClient({ baseUrl: 'https://example.test', onSessionExpired: endedExpired, onSessionRefreshed: ended, sessionProvider: { refreshSession: async () => { throw new Error('network'); } }, transport: async () => Response.json(problem(401), { status: 401 }) }).api<Paths>();
+    await expect(broken.GET('/items')).rejects.toThrow('network');
+    expect(ended).not.toHaveBeenCalled();
+    expect(endedExpired).toHaveBeenCalledTimes(2);
+  });
+
+  it('Cookie 会话：刷新尝试结束后才到达的 401 沿用其结论——仍在就直接重放、已结束就不再探测，不再第二次刷新', async () => {
+    // 三路并发：前两路即时 401，第三路（慢端点）的 401 等刷新完成、前两路重放之后才到达；合并与否不取决于响应到达的先后。
+    let alive = false;
+    const release = deferred<boolean>();
+    const late = deferred<void>();
+    const refreshSession = vi.fn(async () => { alive = await release.promise; return alive; });
+    const onSessionRefreshed = vi.fn(); const onSessionExpired = vi.fn();
+    let sent = 0;
+    const transport = vi.fn(async () => {
+      if (++sent === 3) { await late.promise; return Response.json(problem(401), { status: 401 }); }
+      return alive ? Response.json({ value: 'ok' }) : Response.json(problem(401), { status: 401 });
+    });
+    const api = new PlatformClient({ baseUrl: 'https://example.test', transport, onSessionExpired, onSessionRefreshed, sessionProvider: { refreshSession } }).api<Paths>();
+    const pending = Promise.all([api.GET('/items'), api.GET('/items'), api.GET('/items')]);
+    await vi.waitFor(() => expect(refreshSession).toHaveBeenCalledTimes(1));
+    release.resolve(true);
+    await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(5));
+    expect(onSessionRefreshed).toHaveBeenCalledTimes(1);
+    late.resolve();
+    expect((await pending).every((result) => result.data?.value === 'ok')).toBe(true);
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(onSessionRefreshed).toHaveBeenCalledTimes(1);
+    expect(transport).toHaveBeenCalledTimes(6);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+    // 会话已结束：先到的 401 探测出已结束并通知一次过期；晚到的 401 不再探测，只按 401 失败。
+    const probe = vi.fn(async () => false);
+    const endedExpired = vi.fn();
+    const lateDead = deferred<void>();
+    let deadSent = 0;
+    const deadTransport = vi.fn(async () => { if (++deadSent === 2) await lateDead.promise; return Response.json(problem(401, 'UNAUTHENTICATED'), { status: 401 }); });
+    const dead = new PlatformClient({ baseUrl: 'https://example.test', transport: deadTransport, onSessionExpired: endedExpired, sessionProvider: { refreshSession: probe } }).api<Paths>();
+    const deadPending = Promise.allSettled([dead.GET('/items'), dead.GET('/items')]);
+    await vi.waitFor(() => expect(endedExpired).toHaveBeenCalledTimes(1));
+    lateDead.resolve();
+    expect((await deadPending).every((entry) => entry.status === 'rejected' && entry.reason instanceof PlatformError && entry.reason.status === 401)).toBe(true);
+    expect(probe).toHaveBeenCalledTimes(1);
+    expect(deadTransport).toHaveBeenCalledTimes(2);
+    expect(endedExpired).toHaveBeenCalledTimes(1);
+  });
+
+  it('宿主回调同步抛错不影响 SDK：刷新成功的通知抛错时请求照常重放成功，过期通知抛错时请求仍以 401 失败且只通知一次；宿主错误异步上报', async () => {
+    // 上报走 queueMicrotask 重新抛出：这里按原样排进微任务，只把抛出的错误截下来（undici 等内部微任务照常执行）。
+    const original = globalThis.queueMicrotask;
+    const reported: unknown[] = [];
+    vi.stubGlobal('queueMicrotask', (task: () => void) => original(() => { try { task(); } catch (error) { reported.push(error); } }));
+    try {
+      let alive = false;
+      const onSessionRefreshed = vi.fn(() => { throw new Error('host refreshed'); });
+      const transport = vi.fn(async () => alive ? Response.json({ value: 'ok' }) : Response.json(problem(401), { status: 401 }));
+      const api = new PlatformClient({ baseUrl: 'https://example.test', transport, onSessionRefreshed, sessionProvider: { refreshSession: async () => { alive = true; return true; } } }).api<Paths>();
+      const results = await Promise.all([api.GET('/items'), api.GET('/items')]);
+      expect(results.every((result) => result.data?.value === 'ok')).toBe(true);
+      expect(onSessionRefreshed).toHaveBeenCalledTimes(1);
+      const onSessionExpired = vi.fn(() => { throw new Error('host expired'); });
+      const dead = new PlatformClient({ baseUrl: 'https://example.test', onSessionExpired, sessionProvider: { refreshSession: async () => false }, transport: async () => Response.json(problem(401, 'UNAUTHENTICATED'), { status: 401 }) }).api<Paths>();
+      const settled = await Promise.allSettled([dead.GET('/items'), dead.GET('/items')]);
+      expect(settled.every((entry) => entry.status === 'rejected' && entry.reason instanceof PlatformError && entry.reason.status === 401)).toBe(true);
+      expect(onSessionExpired).toHaveBeenCalledTimes(1);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(reported.map((error) => (error as Error).message)).toEqual(['host refreshed', 'host expired']);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it('Cookie 会话：刷新调用本身出错也只通知一次，错误原样抛给等待的请求', async () => {
     const onSessionExpired = vi.fn();
     const api = new PlatformClient({ baseUrl: 'https://example.test', onSessionExpired, sessionProvider: { refreshSession: async () => { throw new Error('network'); } }, transport: async () => Response.json(problem(401), { status: 401 }) }).api<Paths>();
