@@ -13,6 +13,10 @@ public static class IdentityDefinition
     public static readonly ServiceKey Key = new("Identity");
     /// <summary>账号管理端口（<see cref="IIdentityAccounts"/>）的服务键，与 <see cref="Key"/> 同由身份 Provider 提供。</summary>
     public static readonly ServiceKey AccountsKey = new("IdentityAccounts");
+    /// <summary>组织目录子端口，只由 Identity Server 提供。</summary>
+    public static readonly ServiceKey DirectoryKey = new("IdentityDirectory");
+    /// <summary>在当前 scope 中解析组织目录。</summary>
+    public static IIdentityDirectory IdentityDirectory(this IPluginContext context) => context.Inject<IIdentityDirectory>(DirectoryKey);
     /// <summary>统一登录流水线（<see cref="ISignInPipeline"/>）的服务键。</summary>
     public static readonly ServiceKey SignInKey = new("IdentitySignIn");
     /// <summary>认证因子注册表（<see cref="IAuthenticatorFactorRegistry"/>）的服务键。</summary>

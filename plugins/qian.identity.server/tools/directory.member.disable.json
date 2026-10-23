@@ -1,0 +1,97 @@
+{
+  "name": "directory.member.disable",
+  "description": "批量禁用当前租户成员并吊销其本租户会话；租户管理员逐项拒绝，返回三态结果。",
+  "sideEffect": "write",
+  "policyHint": "confirm",
+  "idempotent": true,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "internal",
+  "costTier": "low",
+  "contractVersion": "directory-v1",
+  "audit": true,
+  "agent": {
+    "expose": true,
+    "requiresConfirmation": true
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.identity.server/directory.member.disable"
+  },
+  "requiredPermission": "qian.identity.server:member:disable",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "idempotencyKey": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "membershipIds": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "reason": {
+        "type": "string",
+        "sensitive": true
+      }
+    },
+    "required": [
+      "idempotencyKey",
+      "membershipIds",
+      "reason"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "membershipId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "succeeded": {
+              "type": "boolean"
+            },
+            "errorCode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "membershipId",
+            "succeeded",
+            "errorCode"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "status",
+      "items"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "7dd7e076379672b0e7e652991acf8ef92d30ccc867f0b03202110324ddc645cb",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.identity.server"
+  }
+}

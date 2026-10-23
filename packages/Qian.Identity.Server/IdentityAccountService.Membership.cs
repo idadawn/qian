@@ -64,7 +64,7 @@ internal sealed partial class IdentityAccountService
             if (existing is not null)
             {
                 // 同一 Person 重复建立：指针一致则幂等返回，必要时补上管理员标志与可用状态；指针不一致是冲突。
-                if (existing.Status == AccountStatuses.Purged || membershipId is { } wanted && wanted != existing.Id) throw Error(PlatformErrors.Conflict);
+                if (existing.Status == AccountStatuses.Purged || existing.DirectoryDeleted || membershipId is { } wanted && wanted != existing.Id) throw Error(PlatformErrors.Conflict);
                 if (administrator && !existing.IsTenantAdministrator || existing.Status != AccountStatuses.Active)
                 {
                     existing.IsTenantAdministrator |= administrator; existing.Status = AccountStatuses.Active; existing.IdentityRevision++;

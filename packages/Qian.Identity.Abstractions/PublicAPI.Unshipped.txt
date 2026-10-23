@@ -913,3 +913,293 @@ static readonly Qian.Identity.Abstractions.IdentityErrors.BindingConflict -> Qia
 static readonly Qian.Identity.Abstractions.IdentityErrors.BindingExpired -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Identity.Abstractions.IdentityErrors.ConnectorDenied -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Identity.Abstractions.IdentityErrors.ConnectorStateInvalid -> Qian.Runtime.Errors.ErrorCode!
+Qian.Identity.Abstractions.DirectoryBatchItem
+Qian.Identity.Abstractions.DirectoryBatchItem.<Clone>$() -> Qian.Identity.Abstractions.DirectoryBatchItem!
+Qian.Identity.Abstractions.DirectoryBatchItem.Deconstruct(out System.Guid MembershipId, out bool Succeeded, out string? ErrorCode) -> void
+Qian.Identity.Abstractions.DirectoryBatchItem.DirectoryBatchItem(System.Guid MembershipId, bool Succeeded, string? ErrorCode) -> void
+Qian.Identity.Abstractions.DirectoryBatchItem.Equals(Qian.Identity.Abstractions.DirectoryBatchItem? other) -> bool
+Qian.Identity.Abstractions.DirectoryBatchItem.ErrorCode.get -> string?
+Qian.Identity.Abstractions.DirectoryBatchItem.ErrorCode.init -> void
+Qian.Identity.Abstractions.DirectoryBatchItem.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryBatchItem.MembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryBatchItem.Succeeded.get -> bool
+Qian.Identity.Abstractions.DirectoryBatchItem.Succeeded.init -> void
+Qian.Identity.Abstractions.DirectoryBatchResult
+Qian.Identity.Abstractions.DirectoryBatchResult.<Clone>$() -> Qian.Identity.Abstractions.DirectoryBatchResult!
+Qian.Identity.Abstractions.DirectoryBatchResult.Deconstruct(out string! Status, out System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryBatchItem!>! Items) -> void
+Qian.Identity.Abstractions.DirectoryBatchResult.DirectoryBatchResult(string! Status, System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryBatchItem!>! Items) -> void
+Qian.Identity.Abstractions.DirectoryBatchResult.Equals(Qian.Identity.Abstractions.DirectoryBatchResult? other) -> bool
+Qian.Identity.Abstractions.DirectoryBatchResult.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryBatchItem!>!
+Qian.Identity.Abstractions.DirectoryBatchResult.Items.init -> void
+Qian.Identity.Abstractions.DirectoryBatchResult.Status.get -> string!
+Qian.Identity.Abstractions.DirectoryBatchResult.Status.init -> void
+Qian.Identity.Abstractions.DirectoryGroup
+Qian.Identity.Abstractions.DirectoryGroup.<Clone>$() -> Qian.Identity.Abstractions.DirectoryGroup!
+Qian.Identity.Abstractions.DirectoryGroup.Deconstruct(out System.Guid Id, out string! Name) -> void
+Qian.Identity.Abstractions.DirectoryGroup.DirectoryGroup(System.Guid Id, string! Name) -> void
+Qian.Identity.Abstractions.DirectoryGroup.Equals(Qian.Identity.Abstractions.DirectoryGroup? other) -> bool
+Qian.Identity.Abstractions.DirectoryGroup.Id.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryGroup.Id.init -> void
+Qian.Identity.Abstractions.DirectoryGroup.Name.get -> string!
+Qian.Identity.Abstractions.DirectoryGroup.Name.init -> void
+Qian.Identity.Abstractions.DirectoryMember
+Qian.Identity.Abstractions.DirectoryMember.<Clone>$() -> Qian.Identity.Abstractions.DirectoryMember!
+Qian.Identity.Abstractions.DirectoryMember.Deconstruct(out Qian.Identity.Abstractions.Membership! Membership, out bool Deleted) -> void
+Qian.Identity.Abstractions.DirectoryMember.Deleted.get -> bool
+Qian.Identity.Abstractions.DirectoryMember.Deleted.init -> void
+Qian.Identity.Abstractions.DirectoryMember.DirectoryMember(Qian.Identity.Abstractions.Membership! Membership, bool Deleted) -> void
+Qian.Identity.Abstractions.DirectoryMember.Equals(Qian.Identity.Abstractions.DirectoryMember? other) -> bool
+Qian.Identity.Abstractions.DirectoryMember.Membership.get -> Qian.Identity.Abstractions.Membership!
+Qian.Identity.Abstractions.DirectoryMember.Membership.init -> void
+Qian.Identity.Abstractions.DirectoryOperation
+Qian.Identity.Abstractions.DirectoryOperation.<Clone>$() -> Qian.Identity.Abstractions.DirectoryOperation!
+Qian.Identity.Abstractions.DirectoryOperation.AgentExpose.get -> bool
+Qian.Identity.Abstractions.DirectoryOperation.AgentExpose.init -> void
+Qian.Identity.Abstractions.DirectoryOperation.Deconstruct(out string! Name, out string! Description, out string! SideEffect, out string! PolicyHint, out bool AgentExpose, out bool RequiresConfirmation, out bool Executable, out string! Example) -> void
+Qian.Identity.Abstractions.DirectoryOperation.Description.get -> string!
+Qian.Identity.Abstractions.DirectoryOperation.Description.init -> void
+Qian.Identity.Abstractions.DirectoryOperation.DirectoryOperation(string! Name, string! Description, string! SideEffect, string! PolicyHint, bool AgentExpose, bool RequiresConfirmation, bool Executable, string! Example) -> void
+Qian.Identity.Abstractions.DirectoryOperation.Equals(Qian.Identity.Abstractions.DirectoryOperation? other) -> bool
+Qian.Identity.Abstractions.DirectoryOperation.Example.get -> string!
+Qian.Identity.Abstractions.DirectoryOperation.Example.init -> void
+Qian.Identity.Abstractions.DirectoryOperation.Executable.get -> bool
+Qian.Identity.Abstractions.DirectoryOperation.Executable.init -> void
+Qian.Identity.Abstractions.DirectoryOperation.Name.get -> string!
+Qian.Identity.Abstractions.DirectoryOperation.Name.init -> void
+Qian.Identity.Abstractions.DirectoryOperation.PolicyHint.get -> string!
+Qian.Identity.Abstractions.DirectoryOperation.PolicyHint.init -> void
+Qian.Identity.Abstractions.DirectoryOperation.RequiresConfirmation.get -> bool
+Qian.Identity.Abstractions.DirectoryOperation.RequiresConfirmation.init -> void
+Qian.Identity.Abstractions.DirectoryOperation.SideEffect.get -> string!
+Qian.Identity.Abstractions.DirectoryOperation.SideEffect.init -> void
+Qian.Identity.Abstractions.DirectoryOperations
+Qian.Identity.Abstractions.DirectoryPosition
+Qian.Identity.Abstractions.DirectoryPosition.<Clone>$() -> Qian.Identity.Abstractions.DirectoryPosition!
+Qian.Identity.Abstractions.DirectoryPosition.Deconstruct(out System.Guid Id, out string! Name, out System.Guid OrganizationId, out System.Guid? ParentId, out string! Path, out int Depth, out bool IsDefault, out bool IsResponsible, out System.Guid? ResponsibleMembershipId) -> void
+Qian.Identity.Abstractions.DirectoryPosition.Depth.get -> int
+Qian.Identity.Abstractions.DirectoryPosition.Depth.init -> void
+Qian.Identity.Abstractions.DirectoryPosition.DirectoryPosition(System.Guid Id, string! Name, System.Guid OrganizationId, System.Guid? ParentId, string! Path, int Depth, bool IsDefault, bool IsResponsible, System.Guid? ResponsibleMembershipId) -> void
+Qian.Identity.Abstractions.DirectoryPosition.Equals(Qian.Identity.Abstractions.DirectoryPosition? other) -> bool
+Qian.Identity.Abstractions.DirectoryPosition.Id.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPosition.Id.init -> void
+Qian.Identity.Abstractions.DirectoryPosition.IsDefault.get -> bool
+Qian.Identity.Abstractions.DirectoryPosition.IsDefault.init -> void
+Qian.Identity.Abstractions.DirectoryPosition.IsResponsible.get -> bool
+Qian.Identity.Abstractions.DirectoryPosition.IsResponsible.init -> void
+Qian.Identity.Abstractions.DirectoryPosition.Name.get -> string!
+Qian.Identity.Abstractions.DirectoryPosition.Name.init -> void
+Qian.Identity.Abstractions.DirectoryPosition.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPosition.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryPosition.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPosition.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryPosition.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryPosition.Path.init -> void
+Qian.Identity.Abstractions.DirectoryPosition.ResponsibleMembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPosition.ResponsibleMembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryRules
+Qian.Identity.Abstractions.IIdentityDirectory
+Qian.Identity.Abstractions.IIdentityDirectory.CreateGroupAsync(string! name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.DirectoryGroup!>
+Qian.Identity.Abstractions.IIdentityDirectory.CreateOrganizationAsync(Qian.Identity.Abstractions.OrganizationInput! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.Organization!>
+Qian.Identity.Abstractions.IIdentityDirectory.CreatePositionAsync(Qian.Identity.Abstractions.PositionInput! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.DirectoryPosition!>
+Qian.Identity.Abstractions.IIdentityDirectory.DeleteGroupAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Abstractions.IIdentityDirectory.DeleteMemberAsync(System.Guid membershipId, string! reason, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Abstractions.IIdentityDirectory.DeleteOrganizationAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Abstractions.IIdentityDirectory.DeleteOrganizationTypeAsync(string! code, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Abstractions.IIdentityDirectory.DeletePositionAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Abstractions.IIdentityDirectory.DisableMembersAsync(System.Collections.Generic.IReadOnlyList<System.Guid>! membershipIds, string! reason, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.DirectoryBatchResult!>
+Qian.Identity.Abstractions.IIdentityDirectory.GetOrganizationMembersAsync(System.Guid organizationId, bool descendants = false, int offset = 0, int limit = 50, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryMember!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.GetOrganizationTreeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.Organization!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.GetPositionHoldersAsync(System.Guid positionId, int offset = 0, int limit = 50, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryMember!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.GetProfileAsync(System.Guid membershipId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.UserProfile?>
+Qian.Identity.Abstractions.IIdentityDirectory.GetRelationsAsync(System.Guid membershipId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.ListGroupsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryGroup!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.ListMembersAsync(int offset = 0, int limit = 50, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryMember!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.ListOrganizationTypesAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.OrganizationType!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.ListPositionsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryPosition!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.SetDirectoryMemberStatusAsync(System.Guid membershipId, string! status, string! reason, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.Membership!>
+Qian.Identity.Abstractions.IIdentityDirectory.SetOrganizationTypeAsync(Qian.Identity.Abstractions.OrganizationType! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.OrganizationType!>
+Qian.Identity.Abstractions.IIdentityDirectory.SetProfileAsync(System.Guid membershipId, Qian.Identity.Abstractions.UserProfileInput! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.UserProfile!>
+Qian.Identity.Abstractions.IIdentityDirectory.SetRelationsAsync(System.Guid membershipId, System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>! relations, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.UpdateOrganizationAsync(System.Guid id, Qian.Identity.Abstractions.OrganizationInput! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.Organization!>
+Qian.Identity.Abstractions.IIdentityDirectory.UpdatePositionAsync(System.Guid id, Qian.Identity.Abstractions.PositionInput! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.DirectoryPosition!>
+Qian.Identity.Abstractions.MemberRelation
+Qian.Identity.Abstractions.MemberRelation.<Clone>$() -> Qian.Identity.Abstractions.MemberRelation!
+Qian.Identity.Abstractions.MemberRelation.Deconstruct(out string! TargetType, out System.Guid TargetId, out bool IsPrimary) -> void
+Qian.Identity.Abstractions.MemberRelation.Equals(Qian.Identity.Abstractions.MemberRelation? other) -> bool
+Qian.Identity.Abstractions.MemberRelation.IsPrimary.get -> bool
+Qian.Identity.Abstractions.MemberRelation.IsPrimary.init -> void
+Qian.Identity.Abstractions.MemberRelation.MemberRelation(string! TargetType, System.Guid TargetId, bool IsPrimary = false) -> void
+Qian.Identity.Abstractions.MemberRelation.TargetId.get -> System.Guid
+Qian.Identity.Abstractions.MemberRelation.TargetId.init -> void
+Qian.Identity.Abstractions.MemberRelation.TargetType.get -> string!
+Qian.Identity.Abstractions.MemberRelation.TargetType.init -> void
+Qian.Identity.Abstractions.Organization
+Qian.Identity.Abstractions.Organization.<Clone>$() -> Qian.Identity.Abstractions.Organization!
+Qian.Identity.Abstractions.Organization.Deconstruct(out System.Guid Id, out string! Name, out string! TypeCode, out System.Guid? ParentId, out string! Path, out int Depth, out System.Guid? ManagerMembershipId, out System.Guid? ResponsiblePositionId) -> void
+Qian.Identity.Abstractions.Organization.Depth.get -> int
+Qian.Identity.Abstractions.Organization.Depth.init -> void
+Qian.Identity.Abstractions.Organization.Equals(Qian.Identity.Abstractions.Organization? other) -> bool
+Qian.Identity.Abstractions.Organization.Id.get -> System.Guid
+Qian.Identity.Abstractions.Organization.Id.init -> void
+Qian.Identity.Abstractions.Organization.ManagerMembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.Organization.ManagerMembershipId.init -> void
+Qian.Identity.Abstractions.Organization.Name.get -> string!
+Qian.Identity.Abstractions.Organization.Name.init -> void
+Qian.Identity.Abstractions.Organization.Organization(System.Guid Id, string! Name, string! TypeCode, System.Guid? ParentId, string! Path, int Depth, System.Guid? ManagerMembershipId, System.Guid? ResponsiblePositionId) -> void
+Qian.Identity.Abstractions.Organization.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.Organization.ParentId.init -> void
+Qian.Identity.Abstractions.Organization.Path.get -> string!
+Qian.Identity.Abstractions.Organization.Path.init -> void
+Qian.Identity.Abstractions.Organization.ResponsiblePositionId.get -> System.Guid?
+Qian.Identity.Abstractions.Organization.ResponsiblePositionId.init -> void
+Qian.Identity.Abstractions.Organization.TypeCode.get -> string!
+Qian.Identity.Abstractions.Organization.TypeCode.init -> void
+Qian.Identity.Abstractions.OrganizationInput
+Qian.Identity.Abstractions.OrganizationInput.<Clone>$() -> Qian.Identity.Abstractions.OrganizationInput!
+Qian.Identity.Abstractions.OrganizationInput.Deconstruct(out string! Name, out string! TypeCode, out System.Guid? ParentId, out System.Guid? ManagerMembershipId, out System.Guid? ResponsiblePositionId) -> void
+Qian.Identity.Abstractions.OrganizationInput.Equals(Qian.Identity.Abstractions.OrganizationInput? other) -> bool
+Qian.Identity.Abstractions.OrganizationInput.ManagerMembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.OrganizationInput.ManagerMembershipId.init -> void
+Qian.Identity.Abstractions.OrganizationInput.Name.get -> string!
+Qian.Identity.Abstractions.OrganizationInput.Name.init -> void
+Qian.Identity.Abstractions.OrganizationInput.OrganizationInput(string! Name, string! TypeCode, System.Guid? ParentId = null, System.Guid? ManagerMembershipId = null, System.Guid? ResponsiblePositionId = null) -> void
+Qian.Identity.Abstractions.OrganizationInput.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.OrganizationInput.ParentId.init -> void
+Qian.Identity.Abstractions.OrganizationInput.ResponsiblePositionId.get -> System.Guid?
+Qian.Identity.Abstractions.OrganizationInput.ResponsiblePositionId.init -> void
+Qian.Identity.Abstractions.OrganizationInput.TypeCode.get -> string!
+Qian.Identity.Abstractions.OrganizationInput.TypeCode.init -> void
+Qian.Identity.Abstractions.OrganizationType
+Qian.Identity.Abstractions.OrganizationType.<Clone>$() -> Qian.Identity.Abstractions.OrganizationType!
+Qian.Identity.Abstractions.OrganizationType.Code.get -> string!
+Qian.Identity.Abstractions.OrganizationType.Code.init -> void
+Qian.Identity.Abstractions.OrganizationType.Deconstruct(out string! Code, out string! Name) -> void
+Qian.Identity.Abstractions.OrganizationType.Equals(Qian.Identity.Abstractions.OrganizationType? other) -> bool
+Qian.Identity.Abstractions.OrganizationType.Name.get -> string!
+Qian.Identity.Abstractions.OrganizationType.Name.init -> void
+Qian.Identity.Abstractions.OrganizationType.OrganizationType(string! Code, string! Name) -> void
+Qian.Identity.Abstractions.PositionInput
+Qian.Identity.Abstractions.PositionInput.<Clone>$() -> Qian.Identity.Abstractions.PositionInput!
+Qian.Identity.Abstractions.PositionInput.Deconstruct(out string! Name, out System.Guid OrganizationId, out System.Guid? ParentId, out bool IsDefault, out bool IsResponsible, out System.Guid? ResponsibleMembershipId) -> void
+Qian.Identity.Abstractions.PositionInput.Equals(Qian.Identity.Abstractions.PositionInput? other) -> bool
+Qian.Identity.Abstractions.PositionInput.IsDefault.get -> bool
+Qian.Identity.Abstractions.PositionInput.IsDefault.init -> void
+Qian.Identity.Abstractions.PositionInput.IsResponsible.get -> bool
+Qian.Identity.Abstractions.PositionInput.IsResponsible.init -> void
+Qian.Identity.Abstractions.PositionInput.Name.get -> string!
+Qian.Identity.Abstractions.PositionInput.Name.init -> void
+Qian.Identity.Abstractions.PositionInput.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.PositionInput.OrganizationId.init -> void
+Qian.Identity.Abstractions.PositionInput.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.PositionInput.ParentId.init -> void
+Qian.Identity.Abstractions.PositionInput.PositionInput(string! Name, System.Guid OrganizationId, System.Guid? ParentId = null, bool IsDefault = false, bool IsResponsible = false, System.Guid? ResponsibleMembershipId = null) -> void
+Qian.Identity.Abstractions.PositionInput.ResponsibleMembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.PositionInput.ResponsibleMembershipId.init -> void
+Qian.Identity.Abstractions.UserProfile
+Qian.Identity.Abstractions.UserProfile.<Clone>$() -> Qian.Identity.Abstractions.UserProfile!
+Qian.Identity.Abstractions.UserProfile.Deconstruct(out System.Guid MembershipId, out string! Name, out string? Pinyin, out string? Phone, out string? Email, out System.Text.Json.JsonElement Extensions) -> void
+Qian.Identity.Abstractions.UserProfile.Email.get -> string?
+Qian.Identity.Abstractions.UserProfile.Email.init -> void
+Qian.Identity.Abstractions.UserProfile.Equals(Qian.Identity.Abstractions.UserProfile? other) -> bool
+Qian.Identity.Abstractions.UserProfile.Extensions.get -> System.Text.Json.JsonElement
+Qian.Identity.Abstractions.UserProfile.Extensions.init -> void
+Qian.Identity.Abstractions.UserProfile.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.UserProfile.MembershipId.init -> void
+Qian.Identity.Abstractions.UserProfile.Name.get -> string!
+Qian.Identity.Abstractions.UserProfile.Name.init -> void
+Qian.Identity.Abstractions.UserProfile.Phone.get -> string?
+Qian.Identity.Abstractions.UserProfile.Phone.init -> void
+Qian.Identity.Abstractions.UserProfile.Pinyin.get -> string?
+Qian.Identity.Abstractions.UserProfile.Pinyin.init -> void
+Qian.Identity.Abstractions.UserProfile.UserProfile(System.Guid MembershipId, string! Name, string? Pinyin, string? Phone, string? Email, System.Text.Json.JsonElement Extensions) -> void
+Qian.Identity.Abstractions.UserProfileInput
+Qian.Identity.Abstractions.UserProfileInput.<Clone>$() -> Qian.Identity.Abstractions.UserProfileInput!
+Qian.Identity.Abstractions.UserProfileInput.Deconstruct(out string! Name, out string? Pinyin, out string? Phone, out string? Email, out System.Text.Json.JsonElement? Extensions) -> void
+Qian.Identity.Abstractions.UserProfileInput.Email.get -> string?
+Qian.Identity.Abstractions.UserProfileInput.Email.init -> void
+Qian.Identity.Abstractions.UserProfileInput.Equals(Qian.Identity.Abstractions.UserProfileInput? other) -> bool
+Qian.Identity.Abstractions.UserProfileInput.Extensions.get -> System.Text.Json.JsonElement?
+Qian.Identity.Abstractions.UserProfileInput.Extensions.init -> void
+Qian.Identity.Abstractions.UserProfileInput.Name.get -> string!
+Qian.Identity.Abstractions.UserProfileInput.Name.init -> void
+Qian.Identity.Abstractions.UserProfileInput.Phone.get -> string?
+Qian.Identity.Abstractions.UserProfileInput.Phone.init -> void
+Qian.Identity.Abstractions.UserProfileInput.Pinyin.get -> string?
+Qian.Identity.Abstractions.UserProfileInput.Pinyin.init -> void
+Qian.Identity.Abstractions.UserProfileInput.UserProfileInput(string! Name, string? Pinyin = null, string? Phone = null, string? Email = null, System.Text.Json.JsonElement? Extensions = null) -> void
+const Qian.Identity.Abstractions.DirectoryRules.MaximumDepth = 9 -> int
+override Qian.Identity.Abstractions.DirectoryBatchItem.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryBatchItem.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryBatchItem.ToString() -> string!
+override Qian.Identity.Abstractions.DirectoryBatchResult.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryBatchResult.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryBatchResult.ToString() -> string!
+override Qian.Identity.Abstractions.DirectoryGroup.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryGroup.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryGroup.ToString() -> string!
+override Qian.Identity.Abstractions.DirectoryMember.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryMember.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryMember.ToString() -> string!
+override Qian.Identity.Abstractions.DirectoryOperation.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryOperation.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryOperation.ToString() -> string!
+override Qian.Identity.Abstractions.DirectoryPosition.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryPosition.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryPosition.ToString() -> string!
+override Qian.Identity.Abstractions.MemberRelation.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.MemberRelation.GetHashCode() -> int
+override Qian.Identity.Abstractions.MemberRelation.ToString() -> string!
+override Qian.Identity.Abstractions.Organization.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.Organization.GetHashCode() -> int
+override Qian.Identity.Abstractions.Organization.ToString() -> string!
+override Qian.Identity.Abstractions.OrganizationInput.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.OrganizationInput.GetHashCode() -> int
+override Qian.Identity.Abstractions.OrganizationInput.ToString() -> string!
+override Qian.Identity.Abstractions.OrganizationType.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.OrganizationType.GetHashCode() -> int
+override Qian.Identity.Abstractions.OrganizationType.ToString() -> string!
+override Qian.Identity.Abstractions.PositionInput.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.PositionInput.GetHashCode() -> int
+override Qian.Identity.Abstractions.PositionInput.ToString() -> string!
+override Qian.Identity.Abstractions.UserProfile.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.UserProfile.GetHashCode() -> int
+override Qian.Identity.Abstractions.UserProfile.ToString() -> string!
+override Qian.Identity.Abstractions.UserProfileInput.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.UserProfileInput.GetHashCode() -> int
+override Qian.Identity.Abstractions.UserProfileInput.ToString() -> string!
+static Qian.Identity.Abstractions.DirectoryBatchItem.operator !=(Qian.Identity.Abstractions.DirectoryBatchItem? left, Qian.Identity.Abstractions.DirectoryBatchItem? right) -> bool
+static Qian.Identity.Abstractions.DirectoryBatchItem.operator ==(Qian.Identity.Abstractions.DirectoryBatchItem? left, Qian.Identity.Abstractions.DirectoryBatchItem? right) -> bool
+static Qian.Identity.Abstractions.DirectoryBatchResult.operator !=(Qian.Identity.Abstractions.DirectoryBatchResult? left, Qian.Identity.Abstractions.DirectoryBatchResult? right) -> bool
+static Qian.Identity.Abstractions.DirectoryBatchResult.operator ==(Qian.Identity.Abstractions.DirectoryBatchResult? left, Qian.Identity.Abstractions.DirectoryBatchResult? right) -> bool
+static Qian.Identity.Abstractions.DirectoryGroup.operator !=(Qian.Identity.Abstractions.DirectoryGroup? left, Qian.Identity.Abstractions.DirectoryGroup? right) -> bool
+static Qian.Identity.Abstractions.DirectoryGroup.operator ==(Qian.Identity.Abstractions.DirectoryGroup? left, Qian.Identity.Abstractions.DirectoryGroup? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMember.operator !=(Qian.Identity.Abstractions.DirectoryMember? left, Qian.Identity.Abstractions.DirectoryMember? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMember.operator ==(Qian.Identity.Abstractions.DirectoryMember? left, Qian.Identity.Abstractions.DirectoryMember? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOperation.operator !=(Qian.Identity.Abstractions.DirectoryOperation? left, Qian.Identity.Abstractions.DirectoryOperation? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOperation.operator ==(Qian.Identity.Abstractions.DirectoryOperation? left, Qian.Identity.Abstractions.DirectoryOperation? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOperations.All.get -> System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryOperation!>!
+static Qian.Identity.Abstractions.DirectoryPosition.operator !=(Qian.Identity.Abstractions.DirectoryPosition? left, Qian.Identity.Abstractions.DirectoryPosition? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPosition.operator ==(Qian.Identity.Abstractions.DirectoryPosition? left, Qian.Identity.Abstractions.DirectoryPosition? right) -> bool
+static Qian.Identity.Abstractions.DirectoryRules.CanTransition(string! from, string! to) -> bool
+static Qian.Identity.Abstractions.DirectoryRules.ValidateDepth(int parentDepth, int subtreeHeight) -> void
+static Qian.Identity.Abstractions.IdentityDefinition.IdentityDirectory(this Qian.Runtime.IPluginContext! context) -> Qian.Identity.Abstractions.IIdentityDirectory!
+static Qian.Identity.Abstractions.MemberRelation.operator !=(Qian.Identity.Abstractions.MemberRelation? left, Qian.Identity.Abstractions.MemberRelation? right) -> bool
+static Qian.Identity.Abstractions.MemberRelation.operator ==(Qian.Identity.Abstractions.MemberRelation? left, Qian.Identity.Abstractions.MemberRelation? right) -> bool
+static Qian.Identity.Abstractions.Organization.operator !=(Qian.Identity.Abstractions.Organization? left, Qian.Identity.Abstractions.Organization? right) -> bool
+static Qian.Identity.Abstractions.Organization.operator ==(Qian.Identity.Abstractions.Organization? left, Qian.Identity.Abstractions.Organization? right) -> bool
+static Qian.Identity.Abstractions.OrganizationInput.operator !=(Qian.Identity.Abstractions.OrganizationInput? left, Qian.Identity.Abstractions.OrganizationInput? right) -> bool
+static Qian.Identity.Abstractions.OrganizationInput.operator ==(Qian.Identity.Abstractions.OrganizationInput? left, Qian.Identity.Abstractions.OrganizationInput? right) -> bool
+static Qian.Identity.Abstractions.OrganizationType.operator !=(Qian.Identity.Abstractions.OrganizationType? left, Qian.Identity.Abstractions.OrganizationType? right) -> bool
+static Qian.Identity.Abstractions.OrganizationType.operator ==(Qian.Identity.Abstractions.OrganizationType? left, Qian.Identity.Abstractions.OrganizationType? right) -> bool
+static Qian.Identity.Abstractions.PositionInput.operator !=(Qian.Identity.Abstractions.PositionInput? left, Qian.Identity.Abstractions.PositionInput? right) -> bool
+static Qian.Identity.Abstractions.PositionInput.operator ==(Qian.Identity.Abstractions.PositionInput? left, Qian.Identity.Abstractions.PositionInput? right) -> bool
+static Qian.Identity.Abstractions.UserProfile.operator !=(Qian.Identity.Abstractions.UserProfile? left, Qian.Identity.Abstractions.UserProfile? right) -> bool
+static Qian.Identity.Abstractions.UserProfile.operator ==(Qian.Identity.Abstractions.UserProfile? left, Qian.Identity.Abstractions.UserProfile? right) -> bool
+static Qian.Identity.Abstractions.UserProfileInput.operator !=(Qian.Identity.Abstractions.UserProfileInput? left, Qian.Identity.Abstractions.UserProfileInput? right) -> bool
+static Qian.Identity.Abstractions.UserProfileInput.operator ==(Qian.Identity.Abstractions.UserProfileInput? left, Qian.Identity.Abstractions.UserProfileInput? right) -> bool
+static readonly Qian.Identity.Abstractions.IdentityDefinition.DirectoryKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryAdministratorProtected -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryCycle -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryDepthExceeded -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryHasMembers -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryTransitionInvalid -> Qian.Runtime.Errors.ErrorCode!
