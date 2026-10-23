@@ -11,7 +11,7 @@ pnpm --filter qian-shell build
 node apps/qian-shell/scripts/package-static.mjs
 ```
 
-结果在 `dist/artifact/`：外壳 `index.html / assets / app-config.js`、官方租户远程 `remotes/qian.tenancy/`、MF 清单与类型归档、文件摘要清单。DEP-008 将此目录装入 platform 镜像并经 gateway 提供；本任务不声称完成部署或供应链验收。
+Web 根在 `dist/artifact/`：外壳 `index.html / assets / app-config.js`、官方租户远程 `remotes/qian.tenancy/`、MF 清单与类型归档、文件摘要清单。同时生成 `dist/distribution/plugins/qian.shell/` 组件目录，包含原清单、配置 Schema 与真实 `ui/dist/index.html`；`runtime.entry` 指向组件内的实际文件。`dist/distribution/component-artifact.json` 记录每份组件文件摘要与 Web 根的逐文件同字节映射，明确 `installationVerified: false`，保留 `x-skeleton` 安装门。没有把 SDK npm 包假称为静态应用制品。DEP-008 将该 Web 根装入 platform 镜像并经 gateway 提供；本任务不声称完成部署或供应链验收。
 
 `public/app-config.js` 是可替换的运行时配置：`apiBase`、`bootstrapUrl`、`auditUrl`。三个 URL 只允许同源，不允许 URL 凭据。刷新页面重新读取，不需要重新编译；其中不能写令牌、用户身份、租户授权或插件授权列表。
 
