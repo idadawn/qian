@@ -151,8 +151,8 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、切换租户、�
   await page.getByTestId('shell-reload').click();
   await expect.poll(() => apiCalls.slice(afterForced).filter(call => call.path.startsWith('/api/') && call.status === 200).length).toBeGreaterThanOrEqual(3);
   // 6c. 会话刷新后重拉（裁决 ④）：经真实身份端口递增当前成员的 identity_revision（授权变更后身份侧就是这样做的）→ 平台表面按 PEP 同一语义拒绝旧修订的令牌
-  // （三路 401）→ SDK 合并成一次 POST /auth/session/refresh（先取防伪令牌，探测 200）→ 依赖方换到带新修订的令牌 → 重放 200 → 外壳随即再拉一轮菜单 / 权限 /
-  // 能力目录并刷新会话快照（身份修订 +1）；全程没有过期对话框。
+  // （三路 401）→ SDK 合并成一次 POST /auth/session/refresh（先取防伪令牌，探测 200；慢端点的 401 晚于刷新完成才到达时沿用结论直接重放，不再第二次刷新）
+  // → 依赖方换到带新修订的令牌 → 重放 200 → 外壳随即再拉一轮菜单 / 权限 / 能力目录并刷新会话快照（身份修订 +1）；全程没有过期对话框。
   const revision = Number(await sessionCard.locator('[data-field=identityRevision]').textContent());
   expect(revision).toBeGreaterThan(0);
   const bumped = await devPost(page, '/__dev/identity/bump');
