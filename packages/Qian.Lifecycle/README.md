@@ -19,7 +19,7 @@
 - 信任根所在的配置节与秘密解析策略。
 - 可选的进程内钩子解析器 `LifecycleRuntimeOptions.Hooks`：按组件 ID 与精确版本返回 `IPluginLifecycleHooks`，组件没有钩子时返回 null。本包不从数据库或制品内容加载程序集。
 - 管理面端点（诊断与反向权限批准）需要宿主装配的权限判定端口（Kun `IPermissionChecker`），平台主体另需 Authz 的超管旁路；批准与租户级生命周期操作（开通、升级、卸载、清除）另需该租户 scope 可见的审计服务（`ctx.Audit()`），且 Lifecycle 的数据库登录须获审计同事务函数的执行权（`AuditTransactionAccess.CreateMigrationSql` 的生产方角色）；平台级操作（安装、激活、回切、弃用、退役）另需 global 审计条目配置平台链：宿主单独创建受限的平台审计登录、迁移时在租户守卫之后应用 `AuditPlatformAccess.CreateMigrationSql(role)`、以 `AddQianData<PlatformAuditDbContext>` 绑定该登录，并在 `qian.audit` 的 global 条目写 `chain.platformRole`（Audit README「受控平台链」；参考宿主见 `tests/Qian.Lifecycle.Tests/LifecycleHost.cs`、CRM 验收宿主与 `tools/Qian.Dev.TenantOps`）。
-- 缺审计时的口径（S1-RT-037，建议裁决 ② 2026-10-23 拍板）：管理面批准缺判定端口、缺旁路或缺审计都与不存在同为 404（R32），对外不区分；租户级生命周期操作缺审计时以 503 `LIFECYCLE_AUDIT_UNAVAILABLE`（`operation` 为操作名）拒绝，不认领执行记录、不改状态；平台级操作在 global 上下文看不到审计服务、或审计端口拒绝本组件为平台生产方（没配 `chain.platformRole`、平台审计登录不可用）时同样 503 拒绝、状态不变（安装在提交候选制品之前就拒绝）。三处都先经装载器的日志器记一条 Warning（`Qian.Lifecycle` 事件 7「审计服务不可用」记租户链缺失、事件 8「平台审计链不可用」记平台链缺失，只有操作名、租户或原因，不含载荷），宿主装配错误由日志与无权限、状态冲突区分。
+- 缺审计时的口径（S1-RT-037，建议裁决 ② 2026-10-23 拍板）：管理面批准缺判定端口、缺旁路或缺审计都与不存在同为 404（R32），对外不区分；租户级生命周期操作缺审计时以 503 `LIFECYCLE_AUDIT_UNAVAILABLE`（`operation` 为操作名）拒绝，不认领执行记录、不改状态；平台级操作在 global 上下文看不到审计服务、或审计端口拒绝本组件为平台生产方（没配 `chain.platformRole`、平台审计登录不可用）时同样 503 拒绝、状态不变（global 看不到审计服务时安装在提交候选制品之前就拒绝；没配 `chain.platformRole` 只在追加时发现，此时候选制品已提交、不登记修订，重提幂等）。三处都先经装载器的日志器记一条 Warning（`Qian.Lifecycle` 事件 7「审计服务不可用」记租户链缺失、事件 8「平台审计链不可用」记平台链缺失，只有操作名、租户或原因，不含载荷），宿主装配错误由日志与无权限、状态冲突区分。
 
 ```csharp
 builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(LifecycleDbContext.Schema));
@@ -144,7 +144,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - 记录点只在最终迁移处，各一条：开通 `Provisioning → Installed`（能力 `qian.lifecycle/tenant-plugin.provision`）、升级成功 `Upgrading → Installed(to)`（`tenant-plugin.upgrade`，与 upgraded 事件同一事务）、卸载 `Installed → Uninstalled`（`tenant-plugin.uninstall`）、清除 `Uninstalled → Purged`（`tenant-plugin.purge`）。所以钩子失败后的重试、续跑与幂等返回（已开通再开通、已卸载再卸载）都不重复记；钩子失败、升级失败回到 `Installed(from)` 不入链（ADR-009「业务失败即无审计」），原因在 `lifecycle_runs` 与诊断。
 - 记录：契约版本 `v1`、通道 `api`、结果 `success`，资源同批准的判定资源 `lifecycle/install:{tenantId}/{pluginId}@{version}`（升级指向目标版本），发生时间即安装行的更新时间。主体取调用方打开的事件作用域（与集成事件同一口径：`EventEnvelopeScope` 的 actor，含 `on_behalf_of`），没有作用域时记本组件服务主体 `qian.lifecycle`；`actor` 参数作为 `operator` 写进载荷。输入哈希是 `[租户, 组件, 能力, 版本…]` 的 SHA-256。载荷：`{ pluginId, operator, version }`，升级为 `{ pluginId, operator, fromVersion, toVersion }`。
 - 授权（`EntitleAsync`）、挂载与卸载条目（`Mount / Unmount`，经 Registry 同事务发 mounted / unmounted 事件）不在本节范围。
-- 平台级操作（安装、激活、回切、弃用、退役）没有租户，记平台链（S1-RT-037 建议裁决 ①，2026-10-23 拍板为 A）。审计端口的平台链入口 `AppendPlatformAsync` 是独立事务（专用平台登录，RLS 只放行该登录），挂不进本组件的事务，所以在状态变更提交之前追加：追加失败（链冲突、数据库错误、平台链未配置）则本事务不提交、状态未改；追加成功后本事务提交失败时，平台链会多留一条没有对应状态变更的条目（ADR-009 §3 的两种崩溃窗口里取「宁多不漏」），重试成功后再记一条，复核时以修订行为准。
+- 平台级操作（安装、激活、回切、弃用、退役）没有租户，记平台链（S1-RT-037 建议裁决 ①，2026-10-23 拍板为 A）。审计端口的平台链入口 `AppendPlatformAsync` 是独立事务（专用平台登录，RLS 只放行该登录），挂不进本组件的事务，所以在状态变更提交之前追加：追加失败（链冲突、数据库错误、平台链未配置）则本事务不提交、状态未改；追加成功之后、本事务提交完成之前的任何失败（提交失败、取消、审计端口已提交而客户端收到异常）都可能在平台链多留一条没有对应状态变更的条目（ADR-009 §3 的崩溃窗口取「宁多不漏」），重试成功后再记一条，复核时以修订行为准。
 - 平台记录点各一条：安装登记修订（`qian.lifecycle/plugin-revision.install`；同一摘要重复安装返回已有修订不记，service 修订的部署观测与健康回写不入链）、激活 `Installed → Active`（`plugin-revision.activate`，与 activated 事件同一事务提交）、回切（`plugin-revision.rollback`，载荷同激活，`previousRevision` 为被降回的修订）、弃用与退役（`plugin-revision.deprecate / retire`，载荷带 `fromState / toState`）；已激活再激活、已弃用再弃用直接返回，不记。资源 `lifecycle/revision:{pluginId}/{revision}`，输入哈希是 `[组件, 能力, 修订号, 版本]` 的 SHA-256，发生时间取修订行的 `InstalledAt / ActivatedAt`（弃用、退役取操作时刻），主体、通道、契约版本与载荷里的 `pluginId / operator` 同租户条目，修订号在载荷里是数字；安装载荷另带 `artifactDigest / form / signedBy`。
 
 ## 挂载、契约准入与诊断
@@ -242,7 +242,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 - `Mount` 只接受当前租户的 tenant scope；app / agent-session 的归属证明尚未实现，保持拒绝。
 - 挂载失败时恢复挂载前的 patch，不让失败条目阻断整个 scope；失败原因经诊断端点给出。
 - 反向权限批准只有 API：管理 UI 归 S2。批准入租户审计链但不发集成事件；超管代批除批准条目外另由 Authz 旁路记自己的判定审计。
-- 平台级操作入平台链不是同事务（审计端口没有平台链的同事务入口）：状态变更提交失败时平台链可能多一条孤儿条目（宁多不漏）；补同事务端口要改 Audit 的 RLS 策略与 SECURITY DEFINER 函数，归 Audit 所有者另立任务。
+- 平台级操作入平台链不是同事务（审计端口没有平台链的同事务入口）：状态变更提交失败时平台链可能多一条孤儿条目（宁多不漏）；补同事务端口要改 Audit 的 RLS 策略与 SECURITY DEFINER 函数，归 Audit 所有者另立任务（S1-AUD-009）。
 - 批准记录还没有消费方：秘密解析、出站 egress 与外壳 CSP `connect-src` 仍按宿主配置生效，按批准记录收紧归后续接线。撤销只能整份替换为更小的内容，不影响已开通的租户，只影响之后的开通与升级。
 
 S1-RT-029 的 Registry 管理写入通过 `MountAtRevisionAsync` / `UnmountAtRevisionAsync` 复用 Mount / Unmount 核心，显式携带调用方修订，不用服务端读取的新版本覆盖预期值。重复卸载的禁用 patch 与墓碑在当前修订下幂等，旧修订仍拒绝；授权统一在 Registry 管理入口，内部受信任生命周期接口不直接暴露为匿名 HTTP。
