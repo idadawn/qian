@@ -73,7 +73,8 @@ internal sealed partial class LifecycleController
     }
 
     // 平台级状态变更与平台链条目：work 先保存再返回记录（null 表示幂等返回，不追加），记录在本事务提交之前追加到平台链（审计端口自己的事务）；
-    // 追加失败则本事务不提交、状态未改。平台链自身的可串行化冲突由审计端口重做，仍冲突时以 409 CONFLICT 传出。
+    // 追加失败则本事务不提交、状态未改。平台链自身的可串行化冲突或死锁由审计端口换新会话重做（5 次重做、共 6 次尝试），仍失败时原样抛出数据库异常
+    // （PostgresException / DbUpdateException），只有唯一键冲突才转 409 CONFLICT（见 PostgresAuditStore.AppendAsync）；两者都经这里原样传出，本事务同样不提交。
     private Task<T> PlatformAudited<T>(string[] key, string operation, IAuditWriter audit, Func<IDataSession<LifecycleDbContext>, Task<(T Result, AuditRecord? Record)>> work, CancellationToken ct) =>
         Locked(key, async session =>
         {
@@ -89,7 +90,7 @@ internal sealed partial class LifecycleController
         try { await audit.AppendPlatformAsync(context, record, ct).ConfigureAwait(false); }
         catch (QianErrorException error) when (error.Error.Code.Code == PlatformErrors.AuthzDenied.Code)
         {
-            LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方：平台链未配置 chain.platformRole，或平台审计登录不可用");
+            LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方（端口不区分原因）：平台链未配置 chain.platformRole，或审计重挂后本组件持有的是陈旧的审计句柄");
             throw AuditUnavailable(operation);
         }
     }

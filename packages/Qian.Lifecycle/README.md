@@ -19,7 +19,7 @@
 - 信任根所在的配置节与秘密解析策略。
 - 可选的进程内钩子解析器 `LifecycleRuntimeOptions.Hooks`：按组件 ID 与精确版本返回 `IPluginLifecycleHooks`，组件没有钩子时返回 null。本包不从数据库或制品内容加载程序集。
 - 管理面端点（诊断与反向权限批准）需要宿主装配的权限判定端口（Kun `IPermissionChecker`），平台主体另需 Authz 的超管旁路；批准与租户级生命周期操作（开通、升级、卸载、清除）另需该租户 scope 可见的审计服务（`ctx.Audit()`），且 Lifecycle 的数据库登录须获审计同事务函数的执行权（`AuditTransactionAccess.CreateMigrationSql` 的生产方角色）；平台级操作（安装、激活、回切、弃用、退役）另需 global 审计条目配置平台链：宿主单独创建受限的平台审计登录、迁移时在租户守卫之后应用 `AuditPlatformAccess.CreateMigrationSql(role)`、以 `AddQianData<PlatformAuditDbContext>` 绑定该登录，并在 `qian.audit` 的 global 条目写 `chain.platformRole`（Audit README「受控平台链」；参考宿主见 `tests/Qian.Lifecycle.Tests/LifecycleHost.cs`、CRM 验收宿主与 `tools/Qian.Dev.TenantOps`）。
-- 缺审计时的口径（S1-RT-037，建议裁决 ② 2026-10-23 拍板）：管理面批准缺判定端口、缺旁路或缺审计都与不存在同为 404（R32），对外不区分；租户级生命周期操作缺审计时以 503 `LIFECYCLE_AUDIT_UNAVAILABLE`（`operation` 为操作名）拒绝，不认领执行记录、不改状态；平台级操作在 global 上下文看不到审计服务、或审计端口拒绝本组件为平台生产方（没配 `chain.platformRole`、平台审计登录不可用）时同样 503 拒绝、状态不变（global 看不到审计服务时安装在提交候选制品之前就拒绝；没配 `chain.platformRole` 只在追加时发现，此时候选制品已提交、不登记修订，重提幂等）。三处都先经装载器的日志器记一条 Warning（`Qian.Lifecycle` 事件 7「审计服务不可用」记租户链缺失、事件 8「平台审计链不可用」记平台链缺失，只有操作名、租户或原因，不含载荷），宿主装配错误由日志与无权限、状态冲突区分。
+- 缺审计时的口径（S1-RT-037，建议裁决 ② 2026-10-23 拍板）：管理面批准缺判定端口、缺旁路或缺审计都与不存在同为 404（R32），对外不区分；租户级生命周期操作缺审计时以 503 `LIFECYCLE_AUDIT_UNAVAILABLE`（`operation` 为操作名）拒绝，不认领执行记录、不改状态；平台级操作在 global 上下文看不到审计服务、或审计端口拒绝本组件为平台生产方（没配 `chain.platformRole`，或审计重挂后本组件持有陈旧句柄；端口不区分原因）时同样 503 拒绝、状态不变（global 看不到审计服务时安装在提交候选制品之前就拒绝；没配 `chain.platformRole` 只在追加时发现，此时候选制品已提交、不登记修订，重提幂等）。三处都先经装载器的日志器记一条 Warning（`Qian.Lifecycle` 事件 7「审计服务不可用」记租户链缺失、事件 8「平台审计链不可用」记平台链缺失，只有操作名、租户或原因，不含载荷），宿主装配错误由日志与无权限、状态冲突区分。
 
 ```csharp
 builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(LifecycleDbContext.Schema));
@@ -139,7 +139,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 
 ## 生命周期操作入审计链（ADR-009 D9.8，S1-RT-037）
 
-租户级操作完成的状态迁移与该租户审计链的条目在同一个可串行化事务里提交（`AppendEnlistedAsync`，与批准同一做法）：审计写不进去或事务提交失败时，状态迁移与条目都不留；同租户审计链的可串行化冲突或死锁由控制器换新会话重做整个最终迁移（最多 5 次），仍冲突返回 409 `CONFLICT`。
+租户级操作完成的状态迁移与该租户审计链的条目在同一个可串行化事务里提交（`AppendEnlistedAsync`，与批准同一做法）：审计写不进去或事务提交失败时，状态迁移与条目都不留；同租户审计链的可串行化冲突或死锁由控制器换新会话重做整个最终迁移（`attempt < 5`：5 次重做、共 6 次尝试），仍冲突返回 409 `CONFLICT`。
 
 - 记录点只在最终迁移处，各一条：开通 `Provisioning → Installed`（能力 `qian.lifecycle/tenant-plugin.provision`）、升级成功 `Upgrading → Installed(to)`（`tenant-plugin.upgrade`，与 upgraded 事件同一事务）、卸载 `Installed → Uninstalled`（`tenant-plugin.uninstall`）、清除 `Uninstalled → Purged`（`tenant-plugin.purge`）。所以钩子失败后的重试、续跑与幂等返回（已开通再开通、已卸载再卸载）都不重复记；钩子失败、升级失败回到 `Installed(from)` 不入链（ADR-009「业务失败即无审计」），原因在 `lifecycle_runs` 与诊断。
 - 记录：契约版本 `v1`、通道 `api`、结果 `success`，资源同批准的判定资源 `lifecycle/install:{tenantId}/{pluginId}@{version}`（升级指向目标版本），发生时间即安装行的更新时间。主体取调用方打开的事件作用域（与集成事件同一口径：`EventEnvelopeScope` 的 actor，含 `on_behalf_of`），没有作用域时记本组件服务主体 `qian.lifecycle`；`actor` 参数作为 `operator` 写进载荷。输入哈希是 `[租户, 组件, 能力, 版本…]` 的 SHA-256。载荷：`{ pluginId, operator, version }`，升级为 `{ pluginId, operator, fromVersion, toVersion }`。
