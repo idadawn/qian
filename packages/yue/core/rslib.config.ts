@@ -4,7 +4,7 @@ import { defineConfig } from '@rslib/core';
 // 测试文件只在 tsconfig.json 里参与类型检查，不进 dist（tsconfig.build.json）。
 export default defineConfig({
   lib: [{ format: 'esm', syntax: 'es2022', dts: true }],
-  source: { entry: { index: './src/index.ts' }, tsconfigPath: './tsconfig.build.json' },
+  source: { entry: { index: './src/index.ts', shell: './src/shell.ts' }, tsconfigPath: './tsconfig.build.json' },
   // 发布的 ESM 显式导入 JSX runtime，不依赖消费方提供全局 React。
   tools: { swc: { jsc: { transform: { react: { runtime: 'automatic' } } } } },
   output: { target: 'web' },

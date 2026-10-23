@@ -1,0 +1,33 @@
+import { Button } from '@idadawn/yue-core/shell';
+import * as React from 'react';
+import type { createInstance } from '@module-federation/enhanced/runtime';
+import { PlatformClient, SDK_VERSION, type RemoteRegistration, type ShellContext, type ShellHost, type ShellScope } from '@idadawn/qian-plugin-sdk';
+
+/** 只在 --mode acceptance 产物中引用；生产构建通过断言确认没有此控制面。 */
+export async function installAcceptance(host: ShellHost, bootstrap: { context: ShellContext; remotes: RemoteRegistration[] }, instance: ReturnType<typeof createInstance>) {
+  const control = {
+    async identity() {
+      const remote = instance.options.remotes[0];
+      if (!remote) throw new Error('尚未加载远程');
+      const module = await instance.loadRemote<{ sharedIdentity: { Button: unknown; useState: unknown; createElement: unknown; PlatformClient: unknown; sdkVersion: string } }>(`${remote.name}/TenantPage`);
+      return { button: module?.sharedIdentity.Button === Button, react: module?.sharedIdentity.useState === React.useState && module.sharedIdentity.createElement === React.createElement,
+        client: module?.sharedIdentity.PlatformClient === PlatformClient, sdk: module?.sharedIdentity.sdkVersion === SDK_VERSION };
+    },
+    catalog: () => host.catalog('qian.shell.nav/v1'),
+    dump: () => host.dumpConfig(),
+    preload: () => host.preloadSlot('qian.shell.nav/v1'),
+    unload: (id: string, scope: ShellScope) => host.unloadRemote(id, scope),
+    register: (remote: RemoteRegistration) => host.registerRemote(remote),
+    setTenant: (id: string) => { bootstrap.context.tenant = { id, name: id }; host.refreshContext(); },
+    bridgeGuards() {
+      const item = host.list('qian.shell.nav/v1')[0]!;
+      let unknownRejected = false, scopeRejected = false;
+      try { host.bridge.getContext({ remoteId: item.remoteId, scope: item.scope }); } catch { unknownRejected = true; }
+      try { item.bridge.navigate('/not-declared'); } catch { scopeRejected = true; }
+      const context = item.bridge.getContext();
+      return { unknownRejected, scopeRejected, frozen: Object.isFrozen(context) && Object.isFrozen(context.tenant) && Object.isFrozen(context.membership?.permissions) };
+    },
+  };
+  Object.defineProperty(window, '__qianAcceptance', { configurable: true, value: control });
+}
+export type AcceptanceControl = Awaited<ReturnType<typeof installAcceptance>>;

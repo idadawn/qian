@@ -1,0 +1,57 @@
+{
+  "name": "@idadawn/qian-plugin-sdk",
+  "version": "0.1.0",
+  "description": "Qian 前端插件契约、作用域插槽、MF2 加载与桥接 API。",
+  "type": "module",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idadawn/qian.git",
+    "directory": "packages/qian-plugin-sdk"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "AGENTS.md"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./federation": "./src/federation.ts"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./federation": {
+        "types": "./dist/federation.d.ts",
+        "import": "./dist/federation.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/errors.mjs --check && rslib build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node scripts/errors.mjs --check && vitest run --config vitest.config.ts",
+    "publint": "publint --strict --pack pnpm"
+  },
+  "dependencies": {
+    "@idadawn/qian-runtime": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^",
+    "@module-federation/enhanced": "catalog:",
+    "ajv": "catalog:",
+    "semver": "catalog:"
+  },
+  "devDependencies": {
+    "@rslib/core": "catalog:",
+    "@types/node": "catalog:",
+    "@types/semver": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "publint": "catalog:"
+  }
+}
