@@ -142,6 +142,8 @@ yue 同时承担三种角色，三者缺一不可：
 
 规则：下层不得 import 上层；同层之间 shell / data / form / charts / code-editor 互不依赖（shell 对 form 的登录表单依赖是唯一例外，经 ADR 记录）；横切包不得依赖除 tokens / contracts 以外的任何包。
 
+平台前端 SDK `@qian/plugin-sdk`（物理包 `@idadawn/qian-plugin-sdk`）位于上述 yue 分层之外的上层：只消费 `@yue/sdk`、`tokens`、`contracts` 与 `@qian/runtime`，不得依赖 yue 控件或应用。`apps/*` 与官方租户 UI 可消费它；所有 yue 包不得反向依赖平台 SDK 或 Qian Runtime。该方向由同一 `boundaries.config.mjs` 校验，前端 SDK 纳入 lint、类型、单测、包形状和循环依赖门禁。
+
 **归层判定题**（新组件进哪一层，按顺序回答）：
 1. 它是否需要知道「平台」的存在（组织、用户、字典、数据接口）？是 → 至少是 `@yue/biz`；否 → 继续。
 2. 它是否由元数据（FormSchema / ListSchema）驱动渲染？是 → `@yue/widgets` 或 `@yue/runtime`；否 → 继续。

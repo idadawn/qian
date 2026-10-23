@@ -13,6 +13,13 @@ async function lint(file: string, code: string) {
 }
 
 describe('yue 分层边界（docs/prd/specs/yue.md §3.1）', () => {
+  it('Qian SDK只消费yue底层，yue不能反向依赖平台SDK，应用可以消费SDK', async () => {
+    expect(await lint('packages/qian-plugin-sdk/src/__ok__.ts', "export { PlatformClient } from '@idadawn/yue-sdk';\n")).toEqual([]);
+    expect(await lint('packages/qian-plugin-sdk/src/__violation__.ts', "export { Button } from '@idadawn/yue-core';\n")).toHaveLength(1);
+    expect(await lint('packages/yue/sdk/src/__violation__.ts', "export { ShellHost } from '@idadawn/qian-plugin-sdk';\n")).toHaveLength(1);
+    expect(await lint('packages/yue/sdk/src/__violation__.ts', "export { ShellHost } from '@qian/plugin-sdk';\n")).toHaveLength(1);
+    expect(await lint('apps/qian-shell/src/__ok__.ts', "export { ShellHost } from '@idadawn/qian-plugin-sdk';\n")).toEqual([]);
+  });
   it('@idadawn/yue-biz 引用 @idadawn/yue-designer 之类的向上依赖被拒绝', async () => {
     const messages = await lint('packages/yue/biz/src/__violation__.ts', "import { Designer } from '@idadawn/yue-designer';\nexport const x = Designer;\n");
     expect(messages).toHaveLength(1);

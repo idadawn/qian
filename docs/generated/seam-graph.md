@@ -36,6 +36,7 @@
 | ` Audit ` | ` global/audit ` | ` global/capabilities `、` global/lifecycle `（可选） |
 | ` CommandAudit ` | ` global/audit ` | ` global/capabilities ` |
 | ` Scheduler ` | ` global/scheduler ` |  |
+| ` Shell ` | ` global/shell ` |  |
 
 ```mermaid
 flowchart LR
@@ -120,6 +121,8 @@ flowchart LR
   n11 --> s28
   s29(("Scheduler"))
   n17 --> s29
+  s30(("Shell"))
+  n20 --> s30
   s22 --> n0
   s25 --> n1
   s22 --> n1

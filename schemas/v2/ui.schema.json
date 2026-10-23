@@ -1,0 +1,354 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/schemas/ui/v2",
+  "title": "Qian 组件 UI 表面",
+  "description": "静态 UI 描述；桥接授权为显式可选扩展，contributions 必须声明 bridge。浏览器运行时可进一步拒绝尚未实现的表面。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "federation",
+    "engines"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://qian.dev/schemas/ui/v2"
+    },
+    "federation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest",
+        "exposes"
+      ],
+      "properties": {
+        "manifest": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "exposes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/expose"
+          }
+        }
+      }
+    },
+    "engines": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "yue"
+      ],
+      "properties": {
+        "yue": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/page"
+      }
+    },
+    "widgets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/widget"
+      }
+    },
+    "settingsCards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/settingsCard"
+      }
+    },
+    "contributions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/contribution"
+      }
+    },
+    "bridge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slots",
+        "navigate",
+        "notify",
+        "capabilities"
+      ],
+      "properties": {
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slotId"
+          },
+          "uniqueItems": true
+        },
+        "navigate": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/route"
+          },
+          "uniqueItems": true
+        },
+        "notify": {
+          "type": "boolean"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bridgeCapability"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "contributions"
+        ],
+        "properties": {
+          "contributions": {}
+        }
+      },
+      "then": {
+        "required": [
+          "bridge"
+        ],
+        "properties": {
+          "bridge": {}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._/-]*|/(?!/)[A-Za-z0-9._/-]*)$"
+    },
+    "expose": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "route": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^/(?!/)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))[^\\\\?#\\u0000-\\u0020]*$"
+    },
+    "slotId": {
+      "enum": [
+        "qian.shell.nav/v1",
+        "qian.shell.settings/v1",
+        "qian.shell.user-menu/v1",
+        "qian.shell.command/v1",
+        "qian.shell.preview/v1",
+        "qian.shell.client-action/v1"
+      ]
+    },
+    "contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slot",
+        "id",
+        "title",
+        "description",
+        "permission",
+        "expose"
+      ],
+      "properties": {
+        "slot": {
+          "$ref": "#/$defs/slotId"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "permission": {
+          "$ref": "#/$defs/text"
+        },
+        "expose": {
+          "$ref": "#/$defs/expose"
+        },
+        "route": {
+          "$ref": "#/$defs/route"
+        },
+        "parameters": {
+          "type": "object",
+          "$ref": "https://json-schema.org/draft/2020-12/schema"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "slot": {
+                "const": "qian.shell.nav/v1"
+              }
+            },
+            "required": [
+              "slot"
+            ]
+          },
+          "then": {
+            "required": [
+              "route"
+            ],
+            "properties": {
+              "route": {}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "slot": {
+                "const": "qian.shell.client-action/v1"
+              }
+            },
+            "required": [
+              "slot"
+            ]
+          },
+          "then": {
+            "required": [
+              "parameters"
+            ],
+            "properties": {
+              "parameters": {}
+            }
+          }
+        }
+      ]
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route",
+        "expose",
+        "permission",
+        "nav"
+      ],
+      "properties": {
+        "route": {
+          "$ref": "#/$defs/route"
+        },
+        "expose": {
+          "$ref": "#/$defs/expose"
+        },
+        "permission": {
+          "$ref": "#/$defs/text"
+        },
+        "nav": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "title"
+          ],
+          "properties": {
+            "title": {
+              "$ref": "#/$defs/text"
+            },
+            "icon": {
+              "$ref": "#/$defs/text"
+            },
+            "order": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "expose"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/text"
+        },
+        "expose": {
+          "$ref": "#/$defs/expose"
+        }
+      }
+    },
+    "settingsCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expose",
+        "scope",
+        "permission"
+      ],
+      "properties": {
+        "expose": {
+          "$ref": "#/$defs/expose"
+        },
+        "scope": {
+          "enum": [
+            "global",
+            "tenant",
+            "app",
+            "agent-session"
+          ]
+        },
+        "permission": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "bridgeCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "permission",
+        "sideEffect"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z][a-z0-9.]+/[A-Za-z0-9._-]+$"
+        },
+        "permission": {
+          "$ref": "#/$defs/text"
+        },
+        "sideEffect": {
+          "enum": [
+            "read",
+            "write"
+          ]
+        }
+      }
+    }
+  }
+}

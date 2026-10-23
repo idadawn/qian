@@ -12,7 +12,7 @@ export default tseslint.config(
     ignores: ['**/node_modules/**', '**/dist/**', 'website/**', '**/.turbo/**', '**/playwright-report/**', '**/test-results/**', '**/.lighthouseci/**', 'tests/gates/yue/fixtures/**'],
   },
   {
-    files: ['packages/yue/**/*.{ts,tsx,mts}', 'apps/**/*.{ts,tsx,mts}', 'packages/qian-tenancy-ui/**/*.{ts,tsx,mts}'],
+    files: ['packages/yue/**/*.{ts,tsx,mts}', 'apps/**/*.{ts,tsx,mts}', 'packages/qian-tenancy-ui/**/*.{ts,tsx,mts}', 'packages/qian-plugin-sdk/**/*.{ts,tsx,mts}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended, reactHooks.configs.flat.recommended],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     rules: {
@@ -23,7 +23,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/yue/**/*.mjs', 'apps/**/*.mjs', 'packages/qian-tenancy-ui/**/*.mjs', '**/*.cjs'],
+    files: ['packages/yue/**/*.mjs', 'apps/**/*.mjs', 'packages/qian-tenancy-ui/**/*.mjs', 'packages/qian-plugin-sdk/**/*.mjs', '**/*.cjs'],
     extends: [js.configs.recommended],
     languageOptions: { globals: { ...globals.node } },
   },

@@ -17,7 +17,11 @@
     "README.md"
   ],
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./layout": "./src/layout.tsx",
+    "./preferences": "./src/preferences.tsx",
+    "./fallback": "./src/fallback.tsx",
+    "./locales": "./src/locales.ts"
   },
   "publishConfig": {
     "access": "restricted",
@@ -26,6 +30,22 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./layout": {
+        "types": "./dist/layout.d.ts",
+        "default": "./dist/layout.js"
+      },
+      "./preferences": {
+        "types": "./dist/preferences.d.ts",
+        "default": "./dist/preferences.js"
+      },
+      "./fallback": {
+        "types": "./dist/fallback.d.ts",
+        "default": "./dist/fallback.js"
+      },
+      "./locales": {
+        "types": "./dist/locales.d.ts",
+        "default": "./dist/locales.js"
       }
     }
   },

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://qian.dev/schemas/ui/v2",
+  "federation": { "manifest": "/remotes/qian.tenancy/mf-manifest.json", "exposes": ["TenantPage"] },
+  "engines": { "yue": "^0.1.0" },
+  "pages": [{ "route": "/tenants", "expose": "TenantPage", "permission": "qian.tenancy:tenant:read", "nav": { "title": "租户管理", "icon": "building", "order": 10 } }],
+  "bridge": { "slots": ["qian.shell.nav/v1"], "navigate": ["/tenants"], "notify": false, "capabilities": [] }
+}

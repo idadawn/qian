@@ -11,6 +11,7 @@ export default defineConfig({
       { test: { name: 'yue-gates', environment: 'node', include: ['tests/gates/yue/**/*.test.ts'], testTimeout: 120_000, hookTimeout: 120_000 } },
       { plugins: [react()], test: { name: 'yue-ssr', environment: 'node', include: ['packages/yue/*/src/**/*.ssr.test.tsx'] } },
       { test: { name: 'core-contracts', environment: 'node', include: ['packages/yue/core/src/**/*.manifest.test.ts'] } },
+      { test: { name: 'qian-plugin-sdk', environment: 'node', include: ['packages/qian-plugin-sdk/test/**/*.test.ts'] } },
       'packages/yue/*/vitest.config.ts',
     ],
   },

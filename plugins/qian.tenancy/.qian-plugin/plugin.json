@@ -62,5 +62,8 @@
         ]
       }
     }
+  },
+  "surfaces": {
+    "ui": "./ui/manifest.json"
   }
 }
