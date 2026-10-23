@@ -18,7 +18,20 @@ const tokenLike = /eyJ[A-Za-z0-9_-]{20,}|access_token|refresh_token|id_token|sel
 // Base UI 的 Tab 哨兵立即转移焦点；与靶场门禁一致，只排除这一类内部哨兵。
 const focusGuards = '[data-base-ui-focus-guard]';
 
+// 与 @yue/shell 浏览器测试的 axe 门一致：开场 / 退场属性清除后 opacity 过渡才开始，等真实动画结束再扫描，否则慢机器上会在半透明过渡中测出 color-contrast。
+async function settled(page: Page) {
+  await expect.poll(() => page.evaluate(() => document.querySelector('[data-starting-style], [data-ending-style]') === null)).toBe(true);
+  await page.evaluate(async () => {
+    let stableFrames = 0;
+    while (stableFrames < 2) {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      const finite = document.getAnimations().filter(animation => animation.playState !== 'finished' && Number.isFinite(Number(animation.effect?.getComputedTiming().endTime)));
+      if (finite.length) { await Promise.all(finite.map(animation => animation.finished.catch(() => undefined))); stableFrames = 0; } else stableFrames++;
+    }
+  });
+}
 async function accessible(page: Page, step: string) {
+  await settled(page);
   const results = await new AxeBuilder({ page }).exclude(focusGuards).analyze();
   expect(results.violations.filter(violation => violation.impact === 'critical' || violation.impact === 'serious').map(violation => `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join('; ')}`), step).toEqual([]);
 }
