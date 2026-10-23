@@ -1,7 +1,7 @@
 ---
 id: S1-DATA-008
 title: 原生 PostgreSQL 数据端口：受限角色、连接与事务租户隔离
-status: review
+status: done
 stage: S1
 area: DATA
 wave: 2
@@ -40,3 +40,4 @@ updated: 2026-10-23
 - 2026-10-23 cody：父代理整合最新主线与SCH-001实现后，Scheduler完整真库15/15通过、零跳过（198.073秒），含真实三进程两分钟/正常停止/真Kill与隔离；结合已过EF安全13项，最后复合验收已满足。严格NativeData原生CI将按当前集成提交再确认后合并
 - 2026-10-23 cody：远端原生数据Linux x64发布/真库门通过；常规1429测试有1次Scheduler hold-first接管等待15秒超时，其余1428通过，NativeData本身专项通过。a2634ba995仅增加失败现场与脱敏worker日志，租约/时限/断言不变；本机精确13.372秒1/1未复现，原原因未确定，带诊断重新验证完整CI。
 - 2026-10-23 cody：第二次整合CI的3个Scheduler失败已由新增现场定位：冷EF启动耗尽初始6秒租约，故障注入前同run已generation2成功恢复；没有本轮任务丢失。ee51bfe5c5/1971864887仅修测试就绪与观测：真实租户模型只读预热、实际续租后注入、数据库同快照与持久StartedAt核验；6秒租约/15秒等待不变。新注入旧guard红例仍检出归档缺陷，修复后续租/Kill4项与Kill/Stop4项分别通过；NativeData生产无改动，等待最终完整CI。
+- 2026-10-23 cody：完成：PR235在10项CI全部通过后合入f48b42109d7b8695833075966a76ecaa2312e4f7；独立NativeData端口、真实受限PG及严格Linux原生发布/运行已验收。任务远端/本地分支已删除，工作树已归档，验证记录独立保存。正式feed安装边界仍保留x-skeleton。
