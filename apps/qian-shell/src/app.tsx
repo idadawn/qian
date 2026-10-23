@@ -32,7 +32,7 @@ export function ShellApplication({ host, client }: { host: ShellHost; client: Pl
   const visiblePage = menu.some((item) => item.descriptor.route === path && item.scope === page?.scope && item.remoteId === page.remoteId) ? page : undefined;
   const RemotePage = visiblePage?.implementation;
   return <PreferencesProvider store={preferences}><AppShell i18n={i18n} brand="Qian 控制台" activePath={path} menu={menu.map(({ descriptor }) => ({ id: descriptor.id, labelKey: descriptor.id, type: 'page', target: descriptor.route! }))} onNavigate={navigate}>
-    <ShellErrorBoundary i18n={i18n}><Page header={<PageHeader title={visiblePage?.descriptor.title ?? '工作台'} />}>
+    <ShellErrorBoundary i18n={i18n}><Page header={visiblePage ? undefined : <PageHeader title="工作台" />}>
       {error ? <Alert tone="error" role="alert">插件未能加载，请联系管理员核对版本与权限。</Alert>
         : RemotePage && visiblePage ? <RemotePage key={`${visiblePage.scope}:${visiblePage.remoteId}`} client={client} bridge={visiblePage.bridge} />
           : <p role="status">请选择已授权的应用页面。</p>}
