@@ -434,6 +434,10 @@ test('验收 1（SSO 跳转回调）：连接器按钮 → Dex 上游登录 → 
   await noCredentials(page, 'SSO 首次登录后');
   // 2. 再次：清掉全部 Cookie（网关会话、账号 Cookie、浏览器流程密钥）后重走；绑定已存在，回调直接签发会话，落点读到完成态即回授权请求，不再确认绑定。
   // 落点一读到完成态就跳走，事后在外壳源上查不到它：途中记录主框架经过的地址，并在每个文档里观察是否出现过绑定卡片。
+  // 网关的每个响应都续写 qian.sid：外壳文档还有在途请求（工作台的 /api/capabilities）时清 Cookie，迟到的响应会把会话写回来，第二遍就直接进了工作台
+  // （CI 实测过一次）。先等工作台加载完，再离开外壳文档，之后才清。
+  await expect(page.getByTestId('shell-capabilities')).not.toHaveText('加载中');
+  await page.goto('about:blank');
   await page.context().clearCookies();
   const visited: string[] = [];
   page.on('framenavigated', frame => { if (frame === page.mainFrame()) visited.push(frame.url()); });
