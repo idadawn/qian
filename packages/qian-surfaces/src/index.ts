@@ -416,7 +416,7 @@ const resources = new URL('./schemas/', import.meta.url);
 const rules = JSON.parse(readFileSync(new URL('surface-rules.json', resources), 'utf8')) as { defaults: Record<string, string>; agentEvents: string[]; qianEvents: string[]; shells: string[] };
 const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
 const schemas = new Map<string, ValidateFunction>();
-for (const name of ['surface-diagnostics', 'capability-entry', 'permissions', 'plugin', 'skill', 'agent', 'command', 'hooks', 'mcp', 'tool', 'patch', 'profile', 'marketplace']) {
+for (const name of ['surface-diagnostics', 'capability-entry', 'permissions', 'plugin', 'skill', 'agent', 'command', 'hooks', 'mcp', 'tool', 'ui', 'patch', 'profile', 'marketplace']) {
   const schema = JSON.parse(readFileSync(new URL(name + '.schema.json', resources), 'utf8'));
   ajv.addSchema(schema); schemas.set(name, ajv.getSchema(schema.$id)!);
 }
@@ -677,6 +677,7 @@ class ValidationContext {
       if (identities.has(identity)) this.error(doc.file, '/name', codes.name, '表面名称重复。'); identities.add(identity);
       if (['skill', 'agent', 'command'].includes(doc.kind)) this.markdown(doc, tools, skills);
       if (doc.kind === 'tool') this.tool(doc);
+      if (doc.kind === 'ui') this.ui(doc);
       if (doc.kind === 'hooks') this.hooks(doc);
       if (doc.kind === 'mcp') this.mcp(doc);
       if (doc.kind === 'patch') {
@@ -687,6 +688,40 @@ class ValidationContext {
         });
       }
       this.secrets(doc.data, doc.file, '', '');
+    }
+  }
+  private ui(doc: SurfaceDocument): void {
+    const data = obj(doc.data), exposed = new Set(strings(obj(data.federation).exposes));
+    const slots = new Set<string>(), routes = new Set<string>(), hasBridge = Object.hasOwn(data, 'bridge');
+    const bridge = obj(data.bridge), allowedSlots = new Set(strings(bridge.slots));
+    const items = (name: string): [Obj, string][] => ((data[name] ?? []) as JsonValue[]).map((item, index) => [obj(item), '/' + name + '/' + index]);
+    const expose = (item: Obj, pointer: string) => { if (!exposed.has(str(item.expose))) this.error(doc.file, pointer + '/expose', codes.reference, 'UI 引用的 expose 未在 federation.exposes 声明。'); };
+    const route = (item: Obj, pointer: string) => { const value = str(item.route); if (routes.has(value)) this.error(doc.file, pointer + '/route', codes.name, 'UI 路由重复。'); routes.add(value); };
+    for (const [page, pointer] of items('pages')) {
+      expose(page, pointer); route(page, pointer); slots.add('qian.shell.nav/v1:' + str(page.route));
+      if (hasBridge && !allowedSlots.has('qian.shell.nav/v1')) this.error(doc.file, pointer, codes.policy, '桥接未允许页面导航插槽。');
+    }
+    const widgetTypes = new Set<string>();
+    for (const [widget, pointer] of items('widgets')) {
+      expose(widget, pointer); const type = str(widget.type);
+      if (widgetTypes.has(type)) this.error(doc.file, pointer + '/type', codes.name, 'UI 控件类型重复。'); widgetTypes.add(type);
+    }
+    const cards = new Set<string>();
+    for (const [card, pointer] of items('settingsCards')) {
+      expose(card, pointer); const id = str(card.scope) + ':' + str(card.expose);
+      if (cards.has(id)) this.error(doc.file, pointer + '/expose', codes.name, '同一 scope 的设置卡片重复。'); cards.add(id);
+    }
+    for (const [contribution, pointer] of items('contributions')) {
+      expose(contribution, pointer); const slot = str(contribution.slot), id = slot + ':' + str(contribution.id);
+      if (slots.has(id)) this.error(doc.file, pointer + '/id', codes.name, '同一插槽的 UI 贡献标识重复。'); slots.add(id);
+      if (!allowedSlots.has(slot)) this.error(doc.file, pointer + '/slot', codes.policy, '桥接未允许此插槽。');
+      if (slot === 'qian.shell.nav/v1') route(contribution, pointer);
+    }
+    if (hasBridge) {
+      const capabilities = new Set<string>();
+      (bridge.capabilities as JsonValue[]).forEach((item, index) => {
+        const id = str(obj(item).id); if (capabilities.has(id)) this.error(doc.file, '/bridge/capabilities/' + index + '/id', codes.name, '桥接能力标识重复。'); capabilities.add(id);
+      });
     }
   }
   private reference(file: string, pointer: string, reference: string, available: Set<string>): void {

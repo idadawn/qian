@@ -1,0 +1,39 @@
+{
+  "name": "qian-shell",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "e2e": "node scripts/e2e.mjs"
+  },
+  "dependencies": {
+    "@idadawn/qian-plugin-sdk": "workspace:^",
+    "@idadawn/yue-tokens": "workspace:^",
+    "@idadawn/yue-contracts": "workspace:^",
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^",
+    "@idadawn/yue-form": "workspace:^",
+    "@idadawn/yue-data": "workspace:^",
+    "@idadawn/yue-shell": "workspace:^",
+    "@idadawn/yue-biz": "workspace:^",
+    "@module-federation/enhanced": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@module-federation/vite": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/node": "catalog:",
+    "vite": "catalog:",
+    "@playwright/test": "catalog:",
+    "@axe-core/playwright": "catalog:"
+  }
+}

@@ -20,7 +20,7 @@ function conflict(error: PlatformError, creating = false): string {
 function data<T>(result: { data?: T }): T { if (result.data === undefined) throw new Error('tenant.contract.response'); return result.data; }
 const tone = { pending: 'neutral', trial: 'info', active: 'ok', grace: 'warn', suspended: 'error' } as const;
 
-function TenantContent({ client }: { client: PlatformClient }) {
+function TenantContent({ client, embedded = false }: { client: PlatformClient; embedded?: boolean }) {
   const api = useMemo(() => client.api<paths>(), [client]);
   const [query, setQuery] = useState<DataTableQuery>({ pageIndex: 0, pageSize: 10, sorting: [], filters: {} });
   const [revision, setRevision] = useState(0);
@@ -120,9 +120,10 @@ function TenantContent({ client }: { client: PlatformClient }) {
     </div> },
   ];
   const denied = view.error?.status === 401 || view.error?.status === 403;
-  return <div className="min-h-screen">
-    <header className="border-b border-[var(--border)] bg-[var(--background)]"><div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4"><span className="font-semibold tracking-wide">{i18n.t('tenant.brand')}</span><Badge>{i18n.t('tenant.context')}</Badge></div></header>
-    <main className="mx-auto max-w-7xl px-6 py-10">
+  const Content = embedded ? 'section' : 'main';
+  return <div className={embedded ? undefined : "min-h-screen"}>
+    {!embedded && <header className="border-b border-[var(--border)] bg-[var(--background)]"><div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4"><span className="font-semibold tracking-wide">{i18n.t('tenant.brand')}</span><Badge>{i18n.t('tenant.context')}</Badge></div></header>}
+    <Content className={embedded ? 'mx-auto max-w-7xl' : 'mx-auto max-w-7xl px-6 py-10'}>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-semibold tracking-tight">{i18n.t('tenant.title')}</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">{i18n.t('tenant.subtitle')}</p></div>
         {!denied && <Button onClick={create} disabled={!view.machine}>{i18n.t('tenant.create')}</Button>}</div>
       {notice && <Alert role={notice.error ? 'alert' : 'status'} tone={notice.error ? 'error' : 'ok'} className="mb-4">{notice.status && <span className="me-2 font-mono">{notice.status}</span>}{notice.message}{notice.status === 409 && <Button variant="ghost" size="sm" className="ms-3" onClick={() => { drawer.close(); setNotice(null); refresh(); }}>{i18n.t('tenant.refresh')}</Button>}</Alert>}
@@ -134,7 +135,7 @@ function TenantContent({ client }: { client: PlatformClient }) {
             <Button ref={refreshButton} variant="outline" onClick={refresh}>{i18n.t('tenant.refresh')}</Button>
           </div>} />
         </div>}
-    </main>{drawer.holder}
+    </Content>{drawer.holder}
   </div>;
 }
 
@@ -163,4 +164,4 @@ function QuotaDetails({ quota }: { quota: Quota }) {
   </dl></section>;
 }
 
-export function TenantPage({ client }: { client: PlatformClient }) { return <FeedbackProvider i18n={i18n}><TenantContent client={client} /></FeedbackProvider>; }
+export function TenantPage({ client, embedded = false }: { client: PlatformClient; embedded?: boolean }) { return <FeedbackProvider i18n={i18n}><TenantContent client={client} embedded={embedded} /></FeedbackProvider>; }

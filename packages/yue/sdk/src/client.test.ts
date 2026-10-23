@@ -97,6 +97,19 @@ describe('PlatformClient', () => {
     await expect(api.POST('/items', { body: { value: 'body' } })).rejects.toThrow('sdk.error.contextChanged');
   });
 
+  it('首次异步读取令牌期间切换租户，在发送请求前拒绝旧上下文写入', async () => {
+    let tenant = 'a';
+    const token = deferred<string>();
+    const getAccessToken = vi.fn(() => token.promise);
+    const transport = vi.fn(async () => Response.json({ value: 'ok' }));
+    const api = new PlatformClient({ baseUrl: 'https://example.test', getTenantId: () => tenant, tokenProvider: { getAccessToken }, transport }).api<Paths>();
+    const pending = api.POST('/items', { body: { value: '属于租户 A' } });
+    await vi.waitFor(() => expect(getAccessToken).toHaveBeenCalledOnce());
+    tenant = 'b'; token.resolve('fresh-b');
+    await expect(pending).rejects.toThrow('sdk.error.contextChanged');
+    expect(transport).not.toHaveBeenCalled();
+  });
+
   it.each([400, 409, 403])('保留 %i ErrorDetail 与字段 pointer', async (status) => {
     const api = new PlatformClient({ baseUrl: 'https://example.test', transport: async () => Response.json(problem(status), { status }) }).api<Paths>();
     const error = await api.GET('/items').catch((error: unknown) => error);

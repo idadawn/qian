@@ -57,6 +57,10 @@ catalog:
   "@rsbuild/plugin-tailwindcss": 2.0.3
   "@babel/standalone": 7.28.5
   monaco-editor: 0.52.2
+  "@module-federation/enhanced": 2.9.2
+  "@module-federation/vite": 1.23.5
+  semver: 7.8.5
+  "@types/semver": 7.8.0
 
 minimumReleaseAgeExclude:
   - "@playwright/test@1.64.0"

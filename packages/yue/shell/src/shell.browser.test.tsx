@@ -6,7 +6,59 @@ import { useState } from 'react';
 import { AppShell, Authentication, ColPage, FallbackPage, initPreferences, LeftTree, OfflineBanner, Page, PageHeader, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, SsoCallback, TenantSwitcher, UpdateBanner } from './index';
 import { makeI18n, makeProvider, session } from './test/fixture';
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-async function accessible() { await waitFor(() => expect(document.querySelector('[data-starting-style], [data-ending-style]')).toBeNull()); const result = await axe.run(document.body); expect(result.violations.filter(value => ['critical', 'serious'].includes(value.impact ?? ''))).toEqual([]); }
+async function accessible() {
+  await waitFor(() => expect(document.querySelector('[data-starting-style], [data-ending-style]')).toBeNull());
+  // 与 core/data 的 axe 门一致：开场属性移除后，opacity 过渡才开始，需等待真实动画结束。
+  let stableFrames = 0;
+  while (stableFrames < 2) {
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    const finite = document.getAnimations().filter(animation => animation.playState !== 'finished' && Number.isFinite(Number(animation.effect?.getComputedTiming().endTime)));
+    if (finite.length) { await Promise.all(finite.map(animation => animation.finished.catch(() => {}))); stableFrames = 0; }
+    else stableFrames++;
+  }
+  const result = await axe.run(document.body);
+  expect(result.violations.filter(value => ['critical', 'serious'].includes(value.impact ?? ''))).toEqual([]);
+}
+
+it('用户菜单清理开场属性后仍等待真实 opacity 过渡结束再运行 axe', async () => {
+  const store = initPreferences({ namespace: 'menu-timing', storage: null });
+  render(<PreferencesProvider store={store}><AppShell i18n={makeI18n()} brand="Qian" menu={[]} managed userName="用户" onSignOut={vi.fn()}>内容</AppShell></PreferencesProvider>);
+  const paused: Animation[] = [];
+  const observer = new MutationObserver(records => {
+    for (const { target } of records) {
+      if (!(target instanceof HTMLElement) || !target.matches('[data-slot="menu-content"]') || target.hasAttribute('data-starting-style')) continue;
+      for (const animation of target.getAnimations({ subtree: true })) {
+        const end = Number(animation.effect?.getComputedTiming().endTime);
+        if (animation.playState !== 'running' || !Number.isFinite(end) || end <= 0) continue;
+        animation.pause(); animation.currentTime = end * 0.4; paused.push(animation);
+      }
+    }
+  });
+  observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['data-starting-style'] });
+  let pending: Promise<void> | undefined;
+  try {
+    await userEvent.click(screen.getByRole('button', { name: '用户菜单' }));
+    await waitFor(() => expect(paused.length).toBeGreaterThan(0));
+    observer.disconnect();
+    const menu = screen.getByRole('menu');
+    expect(menu.hasAttribute('data-starting-style')).toBe(false);
+    expect(Number(getComputedStyle(menu).opacity)).toBeGreaterThan(0);
+    expect(Number(getComputedStyle(menu).opacity)).toBeLessThan(1);
+    const run = vi.spyOn(axe, 'run');
+    pending = accessible();
+    // 暂停真实动画而不改 CSS；属性已消失，但稳定打开态的验收仍必须等待。
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    expect(run).not.toHaveBeenCalled();
+    for (const animation of paused) animation.play();
+    await pending;
+    expect(getComputedStyle(menu).opacity).toBe('1');
+    expect(run).toHaveBeenCalledOnce();
+  } finally {
+    observer.disconnect();
+    for (const animation of paused) animation.play();
+    await pending?.catch(() => {});
+  }
+});
 
 it('密码表单复用 SchemaForm，必填焦点、密码掩码与一次提交', async () => {
   const provider = makeProvider(); const authenticated = vi.fn();

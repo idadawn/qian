@@ -65,6 +65,7 @@
     <Project Path="tests/Qian.Audit.Native.Tests/Qian.Audit.Native.Tests.csproj" />
     <Project Path="tests/Qian.Scheduler.Tests/Qian.Scheduler.Tests.csproj" />
     <Project Path="tests/Qian.Scheduler.TestHost/Qian.Scheduler.TestHost.csproj" />
+    <Project Path="tests/Qian.Shell.TestHost/Qian.Shell.TestHost.csproj" />
     <Project Path="tests/Qian.Plugin.Sdk.Tests/Qian.Plugin.Sdk.Tests.csproj" />
     <Project Path="tests/Qian.Audit.Tests/Qian.Audit.Tests.csproj" />
     <Project Path="tests/Qian.Tenancy.Tests/Qian.Tenancy.Tests.csproj" />

@@ -1993,5 +1993,485 @@
     "options": {},
     "valid": true,
     "expected": []
+  },
+  {
+    "name": "ui-legacy-pages",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": true,
+    "expected": [],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-spec-widgets-settings",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"widgets\": [\n    {\n      \"type\": \"qian.file\",\n      \"expose\": \"Widget\"\n    }\n  ],\n  \"settingsCards\": [\n    {\n      \"expose\": \"Settings\",\n      \"scope\": \"tenant\",\n      \"permission\": \"qian.example:settings:write\"\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": true,
+    "expected": [],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-bridge-contributions",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": true,
+    "expected": [],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": true
+  },
+  {
+    "name": "ui-declared-custom-path",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"surfaces\": {\n    \"ui\": \"./frontend/entry.json\"\n  }\n}\n",
+      "frontend/entry.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": true,
+    "expected": [],
+    "uiFile": "frontend/entry.json",
+    "uiRuntimeValid": true
+  },
+  {
+    "name": "ui-missing-engine",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {},\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/engines/yue",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unknown-field",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ],\n  \"hidden\": true\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/hidden",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unknown-nav-field",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1,\n        \"hidden\": true\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/pages/0/nav/hidden",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-bad-schema",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v99\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/$schema",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-empty-exposes",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": []\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/federation/exposes",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-duplicate-exposes",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\",\n      \"Page\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/federation/exposes",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unknown-page-expose",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Missing\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/pages/0/expose",
+        "code": "SURFACE_REFERENCE_UNKNOWN"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-duplicate-page-route",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    },\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/pages/1/route",
+        "code": "SURFACE_NAME_MISMATCH"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-parent-route",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/safe/../escape\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/pages/0/route",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-space-route",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/bad path\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/pages/0/route",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-missing-bridge",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/bridge",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unknown-slot",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.unknown/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/contributions/0/slot",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-missing-action-parameters",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\"\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/contributions/0/parameters",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-bad-action-schema",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": 99\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/contributions/0/parameters/type",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unknown-contribution-field",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      },\n      \"hidden\": true\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/contributions/0/hidden",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unallowed-slot",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/contributions/0/slot",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unallowed-page-nav",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/pages/0",
+        "code": "SURFACE_POLICY_DENIED"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-duplicate-contribution",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    },\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/contributions/1/id",
+        "code": "SURFACE_NAME_MISMATCH"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-duplicate-bridge-capability",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"bridge\": {\n    \"slots\": [\n      \"qian.shell.nav/v1\",\n      \"qian.shell.client-action/v1\"\n    ],\n    \"navigate\": [\n      \"/example\"\n    ],\n    \"notify\": false,\n    \"capabilities\": [\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      },\n      {\n        \"id\": \"qian.example/save\",\n        \"permission\": \"qian.example:item:write\",\n        \"sideEffect\": \"write\"\n      }\n    ]\n  },\n  \"contributions\": [\n    {\n      \"slot\": \"qian.shell.client-action/v1\",\n      \"id\": \"save\",\n      \"title\": \"保存\",\n      \"description\": \"保存当前内容\",\n      \"permission\": \"qian.example:item:write\",\n      \"expose\": \"Page\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {}\n      }\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/bridge/capabilities/1/id",
+        "code": "SURFACE_NAME_MISMATCH"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unknown-widget-field",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"widgets\": [\n    {\n      \"type\": \"qian.file\",\n      \"expose\": \"Widget\",\n      \"hidden\": true\n    }\n  ],\n  \"settingsCards\": [\n    {\n      \"expose\": \"Settings\",\n      \"scope\": \"tenant\",\n      \"permission\": \"qian.example:settings:write\"\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/widgets/0/hidden",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-unknown-widget-expose",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"widgets\": [\n    {\n      \"type\": \"qian.file\",\n      \"expose\": \"Missing\"\n    }\n  ],\n  \"settingsCards\": [\n    {\n      \"expose\": \"Settings\",\n      \"scope\": \"tenant\",\n      \"permission\": \"qian.example:settings:write\"\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/widgets/0/expose",
+        "code": "SURFACE_REFERENCE_UNKNOWN"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-duplicate-widget-type",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"widgets\": [\n    {\n      \"type\": \"qian.file\",\n      \"expose\": \"Widget\"\n    },\n    {\n      \"type\": \"qian.file\",\n      \"expose\": \"Widget\"\n    }\n  ],\n  \"settingsCards\": [\n    {\n      \"expose\": \"Settings\",\n      \"scope\": \"tenant\",\n      \"permission\": \"qian.example:settings:write\"\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/widgets/1/type",
+        "code": "SURFACE_NAME_MISMATCH"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-missing-settings-permission",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"widgets\": [\n    {\n      \"type\": \"qian.file\",\n      \"expose\": \"Widget\"\n    }\n  ],\n  \"settingsCards\": [\n    {\n      \"expose\": \"Settings\",\n      \"scope\": \"tenant\"\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/settingsCards/0/permission",
+        "code": "SURFACE_SCHEMA_INVALID"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
+  },
+  {
+    "name": "ui-duplicate-settings-card",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "ui/manifest.json": "{\n  \"$schema\": \"https://qian.dev/schemas/ui/v2\",\n  \"federation\": {\n    \"manifest\": \"/remotes/example/mf-manifest.json\",\n    \"exposes\": [\n      \"Page\",\n      \"Widget\",\n      \"Settings\"\n    ]\n  },\n  \"engines\": {\n    \"yue\": \"^0.1.0\"\n  },\n  \"pages\": [\n    {\n      \"route\": \"/example\",\n      \"expose\": \"Page\",\n      \"permission\": \"qian.example:item:read\",\n      \"nav\": {\n        \"title\": \"示例\",\n        \"icon\": \"folder\",\n        \"order\": 1\n      }\n    }\n  ],\n  \"widgets\": [\n    {\n      \"type\": \"qian.file\",\n      \"expose\": \"Widget\"\n    }\n  ],\n  \"settingsCards\": [\n    {\n      \"expose\": \"Settings\",\n      \"scope\": \"tenant\",\n      \"permission\": \"qian.example:settings:write\"\n    },\n    {\n      \"expose\": \"Settings\",\n      \"scope\": \"tenant\",\n      \"permission\": \"qian.example:settings:write\"\n    }\n  ]\n}\n"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "ui/manifest.json",
+        "pointer": "ui/manifest.json#/settingsCards/1/expose",
+        "code": "SURFACE_NAME_MISMATCH"
+      }
+    ],
+    "uiFile": "ui/manifest.json",
+    "uiRuntimeValid": false
   }
 ]
