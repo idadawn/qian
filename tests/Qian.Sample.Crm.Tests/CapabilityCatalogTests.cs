@@ -391,6 +391,29 @@ public sealed partial class CustomerCommandTests
         Add("authz", "qian.authz", new RbacCommandPolicyPlugin(), [CommandPolicies.AuthorizationKey]);
         Add("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]);
         Add("crm", "qian.sample.crm", new CrmPlugin(), [CrmDefinition.Key]);
+        // 目录能力验收同时挂 Identity 时，把真实入口、实际配置与已生成表面纳入 Registry；无 Identity 的既有场景完全不变。
+        var identity = loader.DumpConfig().SingleOrDefault(entry => entry.Plugin == "qian.identity.server");
+        if (identity is not null)
+        {
+            var component = new Qian.Identity.Server.IdentityServerComponent();
+            var metadata = ((IComponentCodeMetadataFactory)Activator.CreateInstance(typeof(Qian.Identity.Server.IdentityServerComponent).Assembly
+                .GetCustomAttributes(typeof(QianCodeMetadataAttribute), false).Cast<QianCodeMetadataAttribute>().Single().FactoryType)!).Create();
+            Add(identity.Id, identity.Plugin, component, metadata.Provides.Select(name => new ServiceKey(name)).ToArray(), identity.Config);
+            var artifact = Path.Combine(RepositoryRoot(), "plugins/qian.identity.server");
+            foreach (var file in Directory.EnumerateFiles(artifact, "*", SearchOption.AllDirectories))
+            {
+                var relative = Path.GetRelativePath(artifact, file).Replace(Path.DirectorySeparatorChar, '/');
+                if (relative != ".qian-plugin/plugin.json") Write("plugins/" + identity.Id + "/" + relative, File.ReadAllText(file));
+            }
+            // 与本宿主的其它 Provider 一样使用独立测试清单，真实代码字段和表面保持原样。
+            // 产品清单的 x-skeleton 继续保留：此运行态验收不声称正式 qian add/安装验收完成。
+            var testManifestPath = "plugins/" + identity.Id + "/.qian-plugin/plugin.json";
+            var testManifest = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(directory, testManifestPath)))!;
+            testManifest["runtime"] = new System.Text.Json.Nodes.JsonObject { ["form"] = "module", ["entry"] = metadata.RuntimeEntry, ["configSchema"] = "./schemas/config.schema.json" };
+            Write(testManifestPath, testManifest.ToJsonString());
+        }
+        var callable = loader.GetContext("data", ScopeKey.Global).List(CapabilityBindingRegistration.Key)
+            .Where(item => item.Value is IExecutableCapability binding && binding.Contract.Id == item.Name).Select(item => item.Name).ToArray();
         var registry = new RegistryPlugin(new RegistryRuntimeOptions
         {
             InstalledComponents = installed, Runtime = loader, Profiles = new ProfileLoader(validator), Profile = options, Surfaces = validator,
@@ -415,7 +438,7 @@ public sealed partial class CustomerCommandTests
         foreach (var definition in definitions.Values.ToArray())
         {
             var validation = validator.ValidateComponent(Path.Combine(directory, "plugins", definition.Entry.Id),
-                new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
+                new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true, Capabilities = callable });
             Assert.True(validation.IsValid, definition.Entry.Id + ": " + JsonSerializer.Serialize(validation.Diagnostics));
             var binding = BindArtifact(definition, Path.Combine(directory, "plugins", definition.Entry.Id));
             installed.Add(binding);
@@ -466,7 +489,7 @@ public sealed partial class CustomerCommandTests
             var inventory = string.Concat(files.OrderBy(file => file.Key, StringComparer.Ordinal).Select(file => file.Key + "\t" + file.Value.Length.ToString(CultureInfo.InvariantCulture) + "\t" + Convert.ToHexStringLower(SHA256.HashData(file.Value.Span)) + "\n"));
             var digest = "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(inventory)));
             return RegistryComponentBinding.FromArtifact(definition, files, digest, validator,
-                new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
+                new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true, Capabilities = callable });
         }
 
         void Add(string id, string component, IQianPlugin plugin, ServiceKey[] provides, object? config = null)

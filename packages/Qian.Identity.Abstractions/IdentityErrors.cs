@@ -105,13 +105,30 @@ public static class IdentityErrors
         "关联请求已超时", "关联请求已超时，请重新登录。",
         "Linking request expired", "The linking request has expired; sign in again.");
 
+    /// <summary>目录子树仍有成员，不能删除。</summary>
+    public static readonly ErrorCode DirectoryHasMembers = Business("DIRECTORY_HAS_MEMBERS", 409,
+        "目录子树仍有成员，不能删除", "目录子树仍有成员，不能删除。", "The directory subtree still has members.", "The directory subtree still has members.");
+    /// <summary>目录层级超过上限。</summary>
+    public static readonly ErrorCode DirectoryDepthExceeded = Business("DIRECTORY_DEPTH_EXCEEDED", 422,
+        "目录层级超过上限", "目录层级超过上限。", "Directory depth exceeds the limit.", "Directory depth exceeds the limit.");
+    /// <summary>目录移动会形成循环。</summary>
+    public static readonly ErrorCode DirectoryCycle = Business("DIRECTORY_CYCLE", 422,
+        "目录移动会形成循环", "目录移动会形成循环。", "The directory move would form a cycle.", "The directory move would form a cycle.");
+    /// <summary>目录操作不能停用或删除租户管理员。</summary>
+    public static readonly ErrorCode DirectoryAdministratorProtected = Business("DIRECTORY_ADMINISTRATOR_PROTECTED", 409,
+        "目录操作不能停用或删除租户管理员", "目录操作不能停用或删除租户管理员。", "Directory operations cannot disable or delete tenant administrators.", "Directory operations cannot disable or delete tenant administrators.");
+    /// <summary>不允许该成员状态迁移。</summary>
+    public static readonly ErrorCode DirectoryTransitionInvalid = Business("DIRECTORY_TRANSITION_INVALID", 409,
+        "不允许该成员状态迁移", "不允许该成员状态迁移。", "The member state transition is not allowed.", "The member state transition is not allowed.");
+
     /// <summary>可登记和导出的完整错误词汇。</summary>
     public static IReadOnlyList<ErrorCode> All { get; } = Array.AsReadOnly(new[]
     {
         InvalidCredentials, AccountLocked, AccountDisabled, LoginTicketInvalid, TenantNotActive, NoAvailableTenant, CaptchaRequired, CaptchaInvalid, MfaUnavailable,
         OidcIssuerMismatch, OidcTokenInvalid, OperationUnsupported,
         PasswordPolicyViolation, PasswordReused, CurrentPasswordInvalid, IdentifierInUse, LastVerifiedIdentifier, LastLoginMethod, AccountInUse,
-        ConnectorStateInvalid, ConnectorDenied, BindingConflict, BindingExpired
+        ConnectorStateInvalid, ConnectorDenied, BindingConflict, BindingExpired,
+        DirectoryHasMembers, DirectoryDepthExceeded, DirectoryCycle, DirectoryAdministratorProtected, DirectoryTransitionInvalid
     });
 
     /// <summary>成组登记本组件错误码；失败撤销已登记项，返回可交给 ctx.Effect 的幂等释放句柄。</summary>
