@@ -26,6 +26,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.UseOpenIddict();
+        DirectoryModel.Configure(modelBuilder);
         modelBuilder.Entity<LogoutDelivery>(entity =>
         {
             entity.ToTable("logout_deliveries"); entity.HasKey(row => row.Id);

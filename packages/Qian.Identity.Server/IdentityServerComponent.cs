@@ -13,6 +13,7 @@ namespace Qian.Identity.Server;
 [DelegatePlugin(typeof(IdentityServerPlugin))]
 [Provides(typeof(IdentityDefinition), nameof(IdentityDefinition.Key))]
 [Provides(typeof(IdentityDefinition), nameof(IdentityDefinition.AccountsKey))]
+[Provides(typeof(IdentityDefinition), nameof(IdentityDefinition.DirectoryKey))]
 [Provides(typeof(IdentityDefinition), nameof(IdentityDefinition.SignInKey))]
 [Provides(typeof(IdentityDefinition), nameof(IdentityDefinition.FactorsKey))]
 [Provides(typeof(TenantProvisioning), nameof(TenantProvisioning.MembershipKey))]

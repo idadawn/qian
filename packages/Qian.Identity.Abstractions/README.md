@@ -59,3 +59,9 @@
 ## 授权主体类型透传
 
 当前用户通过 Kun.Core.Security.ICurrentUser 被 Mediator 等入口消费时，PrincipalKind 从已验证的 Principal.Kind 派生。user/service/agent 保持原类型，不让服务身份落入旧适配器的 user 默认值；缺少身份快照返回空值并由鉴权入口拒绝。该契约不改变冻结 claim，也不因此开放 Agent 签发。
+
+## 组织目录子端口
+
+`IIdentityDirectory` 由 Identity Server 提供，服务键为 `IdentityDefinition.DirectoryKey`，经 `ctx.IdentityDirectory()` 解析。契约涵盖租户组织类型、单棵组织树、岗位树与责任人、用户组、多归属及主归属、1:1 用户档案、成员列表、状态和批量三态；租户从可信上下文读取，不接受输入 tenant_id。档案联系方式只返回掩码。运行时和 HTTP 安全边界、字段及真实验收见 [Identity Server 组织目录](../Qian.Identity.Server/README.md#组织目录)。
+
+`DirectoryOperations` 是操作描述契约，禁用为 write + confirm，物理清除为 destructive 且 AgentExpose=false（humanOnly）、Executable=false；不会为未实现的清除操作登记可执行能力。目录派生查询、SCIM 和 directory.* 事件留在 S1-IDP-010。
