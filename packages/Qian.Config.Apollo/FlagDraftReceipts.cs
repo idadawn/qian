@@ -10,12 +10,13 @@ namespace Qian.Config.Apollo;
 internal sealed class FlagDraftReceipts(IPluginContext owner, ApolloFlagManagementBinding binding)
 {
     private readonly string _target = Hash(string.Join('\n', binding.Portal.AbsoluteUri, binding.Environment, binding.AppId, binding.Cluster, "qian.common.flags"));
+    internal string TargetHash => _target;
     internal async ValueTask<bool> ClaimAsync(FeatureFlagDraft request, string actor, string ruleHash, CancellationToken ct)
     {
         await using var session = await owner.NativeData().OpenPlatformAsync(binding.ReceiptBinding, owner, ct).ConfigureAwait(false);
         await session.BeginTransactionAsync(cancellationToken: ct).ConfigureAwait(false);
         await ValidateSessionAsync(session, ct).ConfigureAwait(false);
-        var hash = Hash(request.Name + "\n" + ruleHash);
+        var hash = RequestHash(request.Name, ruleHash);
         await using var insert = Command(session, """
             INSERT INTO plugin_qian_config_flags.draft_receipts(target_hash,idempotency_key,actor,request_hash,flag_name,rule_hash,state)
             VALUES(@target,@key,@actor,@hash,@name,@rule,'started') ON CONFLICT DO NOTHING
@@ -88,6 +89,7 @@ internal sealed class FlagDraftReceipts(IPluginContext owner, ApolloFlagManageme
         foreach (var (name, value) in parameters) { var parameter = command.CreateParameter(); parameter.ParameterName = name; parameter.Value = value; command.Parameters.Add(parameter); }
         return command;
     }
+    internal static string RequestHash(string name, string ruleHash) => Hash(name + "\n" + ruleHash);
     private static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     private static QianErrorException Error(ErrorCode code) => new(new QianError(code));
 }

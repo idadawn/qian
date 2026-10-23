@@ -106,6 +106,19 @@ L0–L4 降级矩阵、排查顺序与证据见 [配置运维手册](../../docs/
 
 `IFeatureFlags` 是 Config seam 的只读子端口：组件通过 `ctx.Config().Flags.IsEnabled(name, tenantId)` 求值，独立宿主的 `AddQianConfiguration` 同时登记 `IFeatureFlags`。它不查询权益、不增删租户 scope，也不把灰度规则当作租户设置。规则源为公共 namespace `qian.common.flags` 的 `flag.<name>`；标准 IConfiguration 模式可提供同样的键。配置优先级沿既有源顺序，Apollo 原始 namespace 和合并快照都先校验，合法高优先级覆盖仍被允许。
 
+首次启用时先在 Apollo 建立并发布公共 namespace `qian.common.flags`；跨应用消费先关联该公共 namespace。随后在消费宿主的可信 `Apollo:Namespaces` 引导和该宿主 `qian.config.apollo` 条目的 `config.namespaces` 中同时加入它，两处必须与真实配置源匹配。用该宿主自己的配置或 patch 声明订阅；仓库默认 base / gateway / identity-server 仍保留原订阅列表，不因引入这个库自动请求新 namespace。没有订阅或没有该规则时默认 false；已声明但服务端不存在或尚未发布的 namespace 会按现有启动门拒绝，不能把 404 当作有效空配置。
+
+例如已有 `application`、`qian.common.trust` 的宿主，显式启用后组件条目为：
+
+```yaml
+- id: config
+  plugin: qian.config.apollo
+  config:
+    namespaces: [application, qian.common.trust, qian.common.flags]
+```
+
+宿主可信引导也应包含这三项；草稿管理组件不能替消费宿主修改订阅。
+
 规则值是 JSON 字符串，例如：
 
 ```json
@@ -126,6 +139,6 @@ L0–L4 降级矩阵、排查顺序与证据见 [配置运维手册](../../docs/
 
 回执存储使用独立 `plugin_qian_config_flags.draft_receipts`，由 `FeatureFlagDraftStorage.MigrateAsync` 在离线迁移连接上建立。在线连接是 NativeData 的专用 LOGIN/NOINHERIT 平台绑定，不能建库、建角色、BYPASSRLS、拥有表或 schema。表 FORCE RLS，tenant_id 只能为空；固定 restrictive guard 同时检查平台登录角色、空租户列和空租户 GUC。角色只有 SELECT、INSERT、UPDATE(state,completed_at)，没有删除、TRUNCATE、TRIGGER 或修改幂等输入字段权限。NativeData 的预期策略由 `FeatureFlagDraftStorage.ExpectedGuard(role)` 给出，不能从线上自动学习。管理组件挂载和每次回执事务还核对本表的真实主键、固定 guard 与列级权限；事务持有表锁，避免校验到执行之间的迁移漂移。
 
-回执按目标 Portal/应用/环境/集群/namespace 与幂等键唯一，保存主体、规范输入摘要、规则摘要和状态，不保存规则内容。先提交 `started` 再发送编辑请求；成功后持久化 `pending-publish` 再返回。相同键、相同主体与输入重放原回执，不再次写 Portal，也不会覆盖之后的新草稿；回执状态描述原操作，不查询或断言当前是否已经人工发布；同键不同主体或输入返回 CONFLICT。并发尚在执行、崩溃或外部结果不明的旧键失败关闭；保留 started/uncertain，不盲目重发，也不把未知报成成功。需操作员核对 Portal 后显式使用新键；新键表示新编辑请求，正常覆盖该名称当前草稿。补充审计失败不能逆转已持久成功回执，只记不含原值的告警。
+回执按目标 Portal/应用/环境/集群/namespace 与幂等键唯一，保存主体、规范输入摘要、规则摘要和状态，不保存规则内容。先提交 `started` 再发送编辑请求；成功后持久化 `pending-publish` 再返回。相同键、相同主体与输入重放原回执，不再次写 Portal，也不会覆盖之后的新草稿；回执状态描述原操作，不查询或断言当前是否已经人工发布；同键不同主体或输入返回 CONFLICT。并发尚在执行、崩溃或外部结果不明的旧键失败关闭；保留 started/uncertain，不盲目重发，也不把未知报成成功。需操作员核对 Portal 后显式使用新键；新键表示新编辑请求，正常覆盖该名称当前草稿。操作审计仅带尝试ID、幂等键、目标摘要和结果，可与持久回执对应，不带 Token 或规则明文。补充审计失败不能逆转已持久成功回执，只记不含原值的告警。
 
 真实 Apollo 公共 namespace 与 Runtime scope 挂载/卸载验收在 `RealApolloFeatureFlagsTests`；权益结果在本任务测试中明确为消费侧 fixture。真实权益、挂载与灰度的三处联合拦截由既有 S1-ENT-002 验收，不以本任务代替。Portal 权限分离、草稿不生效、独立发布后真实 ConfigService 生效，以及真实 PostgreSQL 回执与故障窗口由专属测试覆盖。

@@ -74,6 +74,9 @@ public sealed class FeatureFlagManagementTests(PostgresFixture postgres) : IClas
         await using var first = await FlagManagementTestHost.Create(postgres, portal.Uri, "trusted-app", "test-token", Ct);
         var request = Request();
         var original = await first.Drafts.SetAsync(request, Ct);
+        var audit = first.Audit.Records.Single(record => record.Result == "pending-publish");
+        Assert.Equal(request.IdempotencyKey, audit.Payload.GetProperty("idempotencyKey").GetGuid());
+        Assert.Equal(64, audit.Payload.GetProperty("targetHash").GetString()!.Length);
         var newer = Request(enabled: false);
         await first.Drafts.SetAsync(newer, Ct);
         await using var second = await FlagManagementTestHost.Create(postgres, portal.Uri, "trusted-app", "test-token", Ct,
@@ -87,6 +90,8 @@ public sealed class FeatureFlagManagementTests(PostgresFixture postgres) : IClas
         second.User.Value = FlagManagementTestHost.MutableUser.PlatformPrincipal(subject: "other-user");
         await Error("CONFLICT", () => second.Drafts.SetAsync(request, Ct));
         await using var restricted = new NpgsqlConnection(first.PlatformConnection); await restricted.OpenAsync(Ct);
+        await using (var receipt = new NpgsqlCommand("SELECT request_hash FROM plugin_qian_config_flags.draft_receipts WHERE idempotency_key=@key", restricted))
+        { receipt.Parameters.AddWithValue("key", request.IdempotencyKey); Assert.Equal(audit.InputHash, await receipt.ExecuteScalarAsync(Ct)); }
         await using (var command = new NpgsqlCommand("DELETE FROM plugin_qian_config_flags.draft_receipts", restricted))
             Assert.Equal("42501", (await Assert.ThrowsAsync<PostgresException>(() => command.ExecuteNonQueryAsync(Ct))).SqlState);
         await using (var command = new NpgsqlCommand("UPDATE plugin_qian_config_flags.draft_receipts SET request_hash=repeat('0',64)", restricted))

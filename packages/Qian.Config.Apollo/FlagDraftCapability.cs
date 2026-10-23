@@ -79,9 +79,9 @@ internal sealed partial class FlagDraftCapability : IExecutableCapability, IFeat
         Check();
         var audit = _owner.Audit();
         var logger = _owner.Services.GetService<ILoggerFactory>()?.CreateLogger("Qian.Config.Flags") ?? NullLogger.Instance;
+        var receipts = new FlagDraftReceipts(_owner, _binding);
         var attempt = Guid.CreateVersion7(); var trace = ActivityTraceId.CreateRandom().ToHexString();
         await audit.AppendPlatformAsync(_owner, Record("started"), linked.Token).ConfigureAwait(false);
-        var receipts = new FlagDraftReceipts(_owner, _binding);
         bool fresh;
         try { fresh = await receipts.ClaimAsync(request, principal.Subject, hash, linked.Token).ConfigureAwait(false); }
         catch (Exception error)
@@ -112,9 +112,9 @@ internal sealed partial class FlagDraftCapability : IExecutableCapability, IFeat
         await Complete("pending-publish").ConfigureAwait(false);
         return new FeatureFlagDraftResult { Name = request.Name, RuleHash = hash };
 
-        AuditRecord Record(string result) => new(Guid.CreateVersion7(), null, "user", principal.Subject, null, Contract.Id, "v1", hash,
+        AuditRecord Record(string result) => new(Guid.CreateVersion7(), null, "user", principal.Subject, null, Contract.Id, "v1", FlagDraftReceipts.RequestHash(request.Name, hash),
             "api", resource, result, trace, DateTimeOffset.UtcNow,
-            JsonSerializer.SerializeToElement(new FlagDraftAudit(attempt, result), FlagManagementJson.Default.FlagDraftAudit));
+            JsonSerializer.SerializeToElement(new FlagDraftAudit(attempt, request.IdempotencyKey, receipts.TargetHash, result), FlagManagementJson.Default.FlagDraftAudit));
         async ValueTask Complete(string result)
         {
             // Portal 是外部提交点；已成功的草稿不能因补充审计失败伪装成可重试的业务失败。
@@ -175,7 +175,7 @@ internal sealed partial class FlagDraftCapability : IExecutableCapability, IFeat
 }
 
 internal sealed record PortalDraft(string Key, string Value, string Comment, string DataChangeCreatedBy, string DataChangeLastModifiedBy);
-internal sealed record FlagDraftAudit(Guid Attempt, string Outcome);
+internal sealed record FlagDraftAudit(Guid Attempt, Guid IdempotencyKey, string TargetHash, string Outcome);
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     RespectRequiredConstructorParameters = true, RespectNullableAnnotations = true, AllowDuplicateProperties = false)]
 [JsonSerializable(typeof(FeatureFlagDraft))][JsonSerializable(typeof(FeatureFlagPolicy))][JsonSerializable(typeof(FeatureFlagDraftResult))]
