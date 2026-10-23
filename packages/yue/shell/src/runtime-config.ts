@@ -17,10 +17,6 @@ export interface AppConf {
   managed?: boolean;
 }
 
-declare global {
-  interface Window { __APP_CONF__?: unknown }
-}
-
 const LOCALES: readonly Locale[] = ['zh-CN', 'zh-TW', 'en-US'];
 
 /** 同源路径前缀：以单个 `/` 开头，不含查询串、片段、反斜杠、空白与控制字符，不以 `/` 结尾（根前缀写作空串由调用方拒绝）。 */
@@ -30,7 +26,7 @@ export function isPathPrefix(value: unknown): value is string {
 }
 
 /** 读取并校验运行时配置；缺省来源是 `window.__APP_CONF__`，缺失即全部缺省值，字段非法抛 `shell.error.config`。 */
-export function readAppConf(source: unknown = typeof window === 'undefined' ? undefined : window.__APP_CONF__): AppConf {
+export function readAppConf(source: unknown = typeof window === 'undefined' ? undefined : (window as Window & { __APP_CONF__?: unknown }).__APP_CONF__): AppConf {
   if (source === undefined || source === null) return { apiBase: '/api', authBase: '/auth' };
   if (typeof source !== 'object' || Array.isArray(source)) throw new TypeError('shell.error.config');
   const raw = source as Record<string, unknown>;
