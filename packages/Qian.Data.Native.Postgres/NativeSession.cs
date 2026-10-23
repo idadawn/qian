@@ -8,6 +8,7 @@ namespace Qian.Data.Native.Postgres;
 internal sealed class NativeSession : INativeDataSession
 {
     private readonly NpgsqlConnection _connection;
+    private readonly NativeConnectionLease _lease;
     private readonly IPluginContext? _caller;
     private readonly CancellationTokenSource _stop;
     private readonly SemaphoreSlim _mutex = new(1, 1);
@@ -16,11 +17,11 @@ internal sealed class NativeSession : INativeDataSession
     private NativeTransaction? _transaction;
     private int _disposed;
     private volatile bool _failed;
-    internal NativeSession(NativeDataService owner, OpenBinding binding, NpgsqlConnection connection, string? tenant,
+    internal NativeSession(NativeDataService owner, OpenBinding binding, NativeConnectionLease lease, string? tenant,
         IPluginContext? caller, CancellationToken lifetime)
     {
-        Owner = owner; Binding = binding; _connection = connection; TenantId = tenant; _caller = caller;
-        _stop = CancellationTokenSource.CreateLinkedTokenSource(lifetime); _view = new(this, connection);
+        Owner = owner; Binding = binding; _lease = lease; _connection = lease.Connection; TenantId = tenant; _caller = caller;
+        _stop = CancellationTokenSource.CreateLinkedTokenSource(lifetime); _view = new(this, _connection);
     }
     internal NativeDataService Owner { get; }
     internal OpenBinding Binding { get; }
@@ -123,7 +124,7 @@ internal sealed class NativeSession : INativeDataSession
                 else NpgsqlConnection.ClearPool(_connection);
             }
             catch { NpgsqlConnection.ClearPool(_connection); }
-            finally { await _connection.DisposeAsync().ConfigureAwait(false); }
+            finally { await _lease.DisposeAsync().ConfigureAwait(false); }
         }
         finally { Owner.Closed(this); _mutex.Release(); _stop.Dispose(); _closed.TrySetResult(); }
     }
