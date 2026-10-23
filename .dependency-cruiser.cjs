@@ -19,8 +19,8 @@ module.exports = {
     },
   ],
   options: {
-    includeOnly: '^(packages/yue|packages/qian-tenancy-ui|apps)/',
-    exclude: { path: ['node_modules', '/dist/', '\\.d\\.ts$'] },
+    includeOnly: '^(packages/yue|packages/qian-tenancy-ui|packages/qian-plugin-sdk|apps)/',
+    exclude: { path: ['node_modules', '/dist(?:-[^/]+)?/', '\\.d\\.ts$'] },
     doNotFollow: { path: ['node_modules'] },
     tsPreCompilationDeps: true,
     enhancedResolveOptions: {

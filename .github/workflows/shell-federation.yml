@@ -1,0 +1,66 @@
+name: shell-federation
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - "apps/qian-shell/**"
+      - "packages/qian-plugin-sdk/**"
+      - "packages/qian-runtime/**"
+      - "packages/qian-tenancy-ui/**"
+      - "packages/yue/**"
+      - "plugins/qian.shell/**"
+      - "plugins/qian.tenancy/ui/**"
+      - "tests/Qian.Shell.TestHost/**"
+      - "tests/Qian.Testing.Containers/**"
+      - "tests/Shared/NativeAuditDatabase.cs"
+      - "packages/Qian.Audit*/**"
+      - "packages/Qian.Data.Native*/**"
+      - "packages/Qian.Runtime*/**"
+      - "Directory.*"
+      - "global.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".github/workflows/shell-federation.yml"
+  pull_request:
+    paths: *paths
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: shell-federation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  acceptance:
+    name: MF2 真实制品与审计链
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: true
+      TURBO_TELEMETRY_DISABLED: 1
+      QIAN_REQUIRE_DOCKER: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter qian-shell exec playwright install --with-deps chromium
+      - run: pnpm yue:mf
+      - name: 保留浏览器与无凭据验收报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shell-federation-report
+          path: |
+            apps/qian-shell/playwright-report
+            apps/qian-shell/test-results
+            apps/qian-shell/acceptance-results/*.jsonl
+            apps/qian-shell/acceptance-results/audit-chain.json
+            apps/qian-shell/acceptance-results/*.png
+            apps/qian-shell/acceptance-results/*budget*.json
+          if-no-files-found: ignore
