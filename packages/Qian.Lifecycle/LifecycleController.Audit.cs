@@ -95,14 +95,16 @@ internal sealed partial class LifecycleController
         }
     }
 
-    // 平台链未配置（宿主没给 chain.platformRole）、本上下文不被接受为平台生产方，或本组件的数据库登录没有平台链同事务函数的执行权时，审计端口返回 AUTHZ_DENIED：
+    // 审计端口以 AUTHZ_DENIED 拒绝本组件为平台生产方时不区分原因，对 Lifecycle 可能的来源有三类：没配 chain.platformRole；审计重挂后本组件持有陈旧的审计句柄；
+    // 本组件的数据库连接不能调用平台链同事务函数（本组件的登录没有经 AuditPlatformAccess 三参迁移直接获得执行权，或连接是特权角色、做过 SET ROLE、就是平台登录、带租户 GUC）。
     // 对调用方这是宿主装配错误而不是无权限，记告警后以 503 LIFECYCLE_AUDIT_UNAVAILABLE 拒绝（本事务随之回滚）。其它失败（链冲突、数据库错误）原样传出，同样不提交。
     private async Task AppendPlatformAsync(IAuditWriter audit, string operation, AuditRecord record, DbTransaction transaction, CancellationToken ct)
     {
         try { await audit.AppendPlatformEnlistedAsync(context, record, transaction, ct).ConfigureAwait(false); }
         catch (QianErrorException error) when (error.Error.Code.Code == PlatformErrors.AuthzDenied.Code)
         {
-            LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方（端口不区分原因）：平台链未配置 chain.platformRole，或审计重挂后本组件持有的是陈旧的审计句柄");
+            LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方（端口不区分原因）：平台链未配置 chain.platformRole、审计重挂后本组件持有的是陈旧的审计句柄，" +
+                "或本组件的数据库连接不能调用平台链同事务函数（本组件的登录没有经 AuditPlatformAccess 三参迁移直接获得执行权，或连接不是未切换角色、无租户 GUC 的受限登录）");
             throw AuditUnavailable(operation);
         }
     }

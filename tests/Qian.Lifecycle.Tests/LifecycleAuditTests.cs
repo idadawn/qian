@@ -220,13 +220,13 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
     }
 
     [Fact]
-    public async Task 平台链未配置时激活以503拒绝_事件8的原因如实列出端口不区分的两种来源_与宿主没有装配审计时的原因不同()
+    public async Task 平台链未配置时激活以503拒绝_事件8的原因如实列出端口不区分的各种来源_与宿主没有装配审计时的原因不同()
     {
         var logs = new WarningLogs();
         await using var host = await Start(services: services => services.AddSingleton<ILoggerProvider>(logs));
         var revision = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.0"), Key), "operator", Ct);
-        // 审计条目没有 chain.platformRole：审计端口以 AUTHZ_DENIED 拒绝本组件为平台生产方，但不说明原因（没配平台链与审计重挂后的陈旧句柄同一个错误）。
-        // 事件 8 的原因如实列出两种来源、注明端口不区分，不写成「平台审计登录不可用」（那会是连接失败，不是 AUTHZ_DENIED）。
+        // 审计条目没有 chain.platformRole：审计端口以 AUTHZ_DENIED 拒绝本组件为平台生产方，但不说明原因（没配平台链、审计重挂后的陈旧句柄与本组件连接不能调用
+        // 平台链同事务函数是同一个错误，S1-AUD-009）。事件 8 的原因如实列出这几种来源、注明端口不区分，不写成「平台审计登录不可用」（那会是连接失败，不是 AUTHZ_DENIED）。
         await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
         await host.Runtime.MountAsync([host.AuditEntry(platformChain: false)], Ct);
         await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask());
@@ -389,7 +389,9 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         var rejected = await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask());
         Assert.Equal("plugin-revision.activate", rejected.Args["operation"]);
         Assert.Equal(PluginRevisionStates.Installed, Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).State);
-        Assert.Contains("plugin-revision.activate", Assert.Single(logs.PlatformAuditUnavailable).Message, StringComparison.Ordinal);
+        // 事件 8 的原因列出这一来源（本组件的数据库连接不能调用平台链同事务函数）。
+        var warning = Assert.Single(logs.PlatformAuditUnavailable).Message;
+        Assert.Contains("plugin-revision.activate", warning, StringComparison.Ordinal); Assert.Contains("不能调用平台链同事务函数", warning, StringComparison.Ordinal);
         Assert.Equal([LifecycleController.InstallAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
         await LifecycleHost.Admin(postgres, $"GRANT EXECUTE ON FUNCTION {functions} TO {PostgresFixture.AppRoleName};", Ct);
         Assert.Equal(PluginRevisionStates.Active, (await host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct)).State);

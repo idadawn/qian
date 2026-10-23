@@ -28,7 +28,7 @@ internal static partial class LifecycleLog
     internal static partial void AuditUnavailable(ILogger logger, string operation, string tenantId);
 
     // 平台级操作（安装、激活、回切、弃用、退役）须入平台审计链：global 上下文看不到审计服务，或审计端口拒绝本组件为平台生产方（没配
-    // chain.platformRole，或审计重挂后本组件持有陈旧句柄；端口不区分原因）时记这一条，操作按 fail-closed 拒绝、状态未改。
-    [LoggerMessage(EventId = 8, Level = LogLevel.Warning, Message = "平台审计链不可用：{Operation} 无法写入平台审计链，已拒绝（{Reason}）；请检查宿主是否装配 qian.audit 并配置 chain.platformRole 与平台审计登录。")]
+    // chain.platformRole、审计重挂后本组件持有陈旧句柄，或本组件的数据库连接不能调用平台链同事务函数；端口不区分原因）时记这一条，操作按 fail-closed 拒绝、状态未改。
+    [LoggerMessage(EventId = 8, Level = LogLevel.Warning, Message = "平台审计链不可用：{Operation} 无法写入平台审计链，已拒绝（{Reason}）；请检查宿主是否装配 qian.audit、配置 chain.platformRole 与平台审计登录，并对本组件的数据库登录应用 AuditPlatformAccess 三参迁移。")]
     internal static partial void PlatformAuditUnavailable(ILogger logger, string operation, string reason);
 }
