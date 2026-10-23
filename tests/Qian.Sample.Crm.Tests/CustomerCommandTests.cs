@@ -343,9 +343,10 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
                     if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                     await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");
                     await Admin("BEGIN;" + AuditTransactionAccess.CreateMigrationSql(owner, role) + "COMMIT;");
-                    // 平台审计链有生命周期的宿主都要（平台级生命周期操作在提交前入平台链，S1-RT-037）；Authz 的平台角色只有管理面宿主要。
+                    // 平台审计链有生命周期的宿主都要（平台级生命周期操作与状态变更同一事务入平台链，S1-RT-037 / S1-AUD-009）：三参重载另建平台链的同事务函数，
+                    // 属主与租户链函数相同，Lifecycle 的业务登录只获执行权；Authz 的平台角色只有管理面宿主要。
                     if (lifecycle is not null)
-                        await Admin("BEGIN;" + (lifecycle.Management ? AuthzPlatformAccess.CreateMigrationSql(lifecycle.AuthzRole) : "") + AuditPlatformAccess.CreateMigrationSql(lifecycle.AuditRole) + "COMMIT;");
+                        await Admin("BEGIN;" + (lifecycle.Management ? AuthzPlatformAccess.CreateMigrationSql(lifecycle.AuthzRole) : "") + AuditPlatformAccess.CreateMigrationSql(lifecycle.AuditRole, owner, role) + "COMMIT;");
                 }
                 if (platform)
                 {

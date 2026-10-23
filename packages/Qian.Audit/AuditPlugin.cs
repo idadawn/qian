@@ -69,6 +69,9 @@ internal sealed class AuditService(IDataService data, ITenantContext tenant, Sco
     public Task<AuditChainEntry> AppendEnlistedAsync(AuditRecord record, DbTransaction transaction, CancellationToken cancellationToken = default) =>
         Run(ct => AuditTransactionWriter.AppendAsync(record, transaction, tenant, ct), cancellationToken);
     public Task<AuditChainEntry> AppendPlatformAsync(IPluginContext producer, AuditRecord record, CancellationToken cancellationToken = default) => Run(ct => Platform(producer).AppendAsync(record, ct), cancellationToken);
+    // 平台链的同事务入口（S1-AUD-009）：生产方检查与 AppendPlatformAsync 同一份，记录经 platform_* 函数挂进调用方的可串行化事务，不走平台登录。
+    public Task<AuditChainEntry> AppendPlatformEnlistedAsync(IPluginContext producer, AuditRecord record, DbTransaction transaction, CancellationToken cancellationToken = default) =>
+        Run(ct => { _ = Platform(producer); return AuditTransactionWriter.AppendPlatformAsync(record, transaction, tenant, platformRole!, ct); }, cancellationToken);
     public Task<IReadOnlyList<AuditChainEntry>> ReadAsync(long afterSequence, int take, string? onBehalfOf = null, CancellationToken cancellationToken = default) => Run(ct => _tenants.ReadAsync(afterSequence, take, onBehalfOf, ct), cancellationToken);
     public Task<IReadOnlyList<AuditChainEntry>> ReadPlatformAsync(IPluginContext producer, long afterSequence, int take, string? onBehalfOf = null, CancellationToken cancellationToken = default) => Run(ct => Platform(producer).ReadAsync(afterSequence, take, onBehalfOf, ct), cancellationToken);
     public Task<AuditChainVerification> VerifyAsync(CancellationToken cancellationToken = default) => Run(_tenants.VerifyAsync, cancellationToken);

@@ -67,6 +67,9 @@ internal sealed class NativeAuditService(IPluginContext owner, ITenantContext te
     { CheckRecord(record); return _store.AppendEnlistedAsync(record, transaction, ct); }, cancellationToken);
     public Task<AuditChainEntry> AppendPlatformAsync(IPluginContext producer, AuditRecord record, CancellationToken cancellationToken = default) => Run(ct =>
     { Platform(producer); if (record.TenantId is not null) throw Denied(); return _store.AppendAsync(record, true, ct); }, cancellationToken);
+    // 原生存储尚未提供平台链的同事务入口（S1-AUD-009 裁决 ①：不在范围）；平台记录仍走 AppendPlatformAsync 的独立事务。
+    public Task<AuditChainEntry> AppendPlatformEnlistedAsync(IPluginContext producer, AuditRecord record, DbTransaction transaction, CancellationToken cancellationToken = default) =>
+        Task.FromException<AuditChainEntry>(new NotSupportedException("原生审计存储尚未提供平台链的同事务入口，平台记录请用 AppendPlatformAsync。"));
     public Task<IReadOnlyList<AuditChainEntry>> ReadAsync(long afterSequence, int take, string? onBehalfOf = null, CancellationToken cancellationToken = default)
         => Run(ct => _store.ReadAsync(false, afterSequence, take, onBehalfOf, ct), cancellationToken);
     public Task<IReadOnlyList<AuditChainEntry>> ReadPlatformAsync(IPluginContext producer, long afterSequence, int take, string? onBehalfOf = null, CancellationToken cancellationToken = default) => Run(ct =>

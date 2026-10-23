@@ -27,3 +27,4 @@ Qian.Audit.AuditComponent
 Qian.Audit.AuditComponent.AuditComponent() -> void
 Qian.Audit.AuditComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
 Qian.Audit.AuditComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+static Qian.Audit.AuditPlatformAccess.CreateMigrationSql(string! platformRole, string! writerRole, string! producerRole) -> string!

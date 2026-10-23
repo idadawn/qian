@@ -38,7 +38,7 @@ AuditDbContext 继承 QianDbContext，拥有 plugin_qian_audit schema。audit_en
 
 ## 加入业务事务
 
-AppendEnlistedAsync 接收调用方已有的 PostgreSQL SERIALIZABLE 事务，核验受限登录角色、当前租户与连接的 app.current_tenant_id 一致后，把记录和链头写入这笔事务；它不提交、不释放、不局部重试业务事务。返回节点在外层提交前尚未持久化。调用方遇到任何异常须回滚；序列化冲突需释放整个 Data 会话，从新会话重试包含业务写入的完整操作。平台链不支持此入口。
+AppendEnlistedAsync 接收调用方已有的 PostgreSQL SERIALIZABLE 事务，核验受限登录角色、当前租户与连接的 app.current_tenant_id 一致后，把记录和链头写入这笔事务；它不提交、不释放、不局部重试业务事务。返回节点在外层提交前尚未持久化。调用方遇到任何异常须回滚；序列化冲突需释放整个 Data 会话，从新会话重试包含业务写入的完整操作。平台链另有同一约束的同事务入口 AppendPlatformEnlistedAsync，见下文「受控平台链与生命周期」。
 
 迁移时先创建独立受限 NOLOGIN、NOINHERIT 函数所有者，再在同一迁移事务调用 AuditTransactionAccess.CreateMigrationSql(writerRole, producerRole)。Audit 自有的 SECURITY DEFINER 函数使用固定 search_path、完整限定表名及原有强制租户 RLS；业务登录只获函数执行权，不获审计表直接访问权限。函数所有者无角色成员关系、无平台旁路，仅能追加记录与推进链头，不能更新、删除或清空历史记录。业务 schema 的授权仍由业务组件负责。
 
@@ -60,13 +60,19 @@ AuditPlugin 在 SDK 的 command/dispatching Definition 上登记生产 waterfall
 
 宿主用 AddQianData 分别绑定 AuditDbContext 的租户凭据与 PlatformAuditDbContext 的平台凭据，再在 global AuditPlugin 配置 chain.platformRole。启动验证两条连接不共用登录身份；每次平台调用检查当前角色、登录角色、角色属性及必要权限。平台角色只能读取/追加平台记录与推进链头，无权更新、删除或清空历史记录。RLS 同时检查 current_user、session_user 和空租户 GUC，因此普通角色借 SET ROLE 不能冒充平台登录，平台角色设置租户 GUC 也不能读写租户数据。
 
-AppendPlatformAsync、ReadPlatformAsync、VerifyPlatformAsync 是显式入口，另外要求传入仍有效的 global 生产方 IPluginContext，且该上下文解析到当前同一个 Audit 服务。tenant 生产方即使重新 Scoped 到 global 也被拒绝；存在租户上下文时拒绝平台操作。此生产方许可只用于记录/读取审计，不能替代 Authz 对实际业务操作的授权。端口供可信组件使用，不提供客户端直接写审计的 HTTP 能力；面向用户的读取须另行鉴权并审计。
+AppendPlatformAsync、AppendPlatformEnlistedAsync、ReadPlatformAsync、VerifyPlatformAsync 是显式入口，另外要求传入仍有效的 global 生产方 IPluginContext，且该上下文解析到当前同一个 Audit 服务。tenant 生产方即使重新 Scoped 到 global 也被拒绝；存在租户上下文时拒绝平台操作。此生产方许可只用于记录/读取审计，不能替代 Authz 对实际业务操作的授权。端口供可信组件使用，不提供客户端直接写审计的 HTTP 能力；面向用户的读取须另行鉴权并审计。
+
+平台链的同事务入口（S1-AUD-009）：AppendPlatformEnlistedAsync(producer, record, transaction) 把平台记录挂进调用方已有的 PostgreSQL SERIALIZABLE 事务，与 AppendEnlistedAsync 同一约束——不提交、不释放、不局部重试，返回节点在外层提交后才持久化；调用方遇到任何异常须回滚，序列化冲突须释放整个 Data 会话、从新会话重试包含业务写入的完整操作。平台级状态变更（如 Lifecycle 的安装、激活）因此与平台链条目同一事务提交，业务失败即无审计，不再有独立追加之后、业务提交之前的孤儿条目窗口。生产方检查与 AppendPlatformAsync 相同（服务与生产方都是 global、同一个 Audit 实例、已配置 chain.platformRole），存在租户上下文或记录带租户时返回 AUTHZ_DENIED，非 Npgsql 或非 SERIALIZABLE 事务返回 INPUT_INVALID。写入器还先核对连接：受限登录（非 superuser / BYPASSRLS）、没有 SET ROLE、不是平台登录、没有租户 GUC，且两个平台函数的执行权直接授予该登录；不满足时同样返回 AUTHZ_DENIED，宿主漏了下述迁移时由此可诊断，而不是在函数调用处报数据库权限错误。
+
+启用这个入口时，迁移改用 AuditPlatformAccess.CreateMigrationSql(platformRole, writerRole, producerRole)，同样在租户守卫之后、同一迁移事务应用（两个重载改写的是同一条守卫策略，以后应用的为准，用到同事务入口的宿主只应用三参重载）：在一参重载的策略与授权之外，新建 SECURITY DEFINER 函数 platform_tip / platform_append，属主 writerRole 与租户链函数是同一个独立受限 NOLOGIN 角色，producerRole 只获执行权，多个生产方各执行一次。平台登录的 RLS 分支一字不改；新增的属主分支只在 tenant_id 为空、无租户 GUC、current_user 是属主、session_user 不是平台登录且属主没有任何成员关系时放行平台行。属主不能登录，非超管无法 SET ROLE 成它，成为它的唯一路径是它拥有的函数；属主一旦被授予成员关系，这条分支与两个函数都随之拒绝，迁移也拒绝重跑。函数自身再核对：事务为 SERIALIZABLE 且无租户 GUC；调用方是受限登录、不是平台登录，且执行权直接授予该登录本身，借成员关系继承执行权或 SET ROLE 成生产方的其它登录都被拒绝；正文不带租户；摘要、序号与前序接得上链头。platform_tip 只返回序号与哈希（下一个序号与链头哈希；同一事件 ID 已在链上时返回它的序号、前序与内容哈希，供写入器判断幂等），不把平台记录内容交给生产方；链头一致性由函数核对，不一致时写入器返回 CONFLICT，整条平台链的读取与验链仍只经平台登录。同事务入口与独立追加共用 qian.audit:platform 锁键与同一条平台链，持旧快照的后到者以可串行化失败交给调用方重做。
+
+因此原有保证都不变：应用角色直接读写平台记录仍被 RLS 拒绝；平台登录不能更新、删除或清空历史，设置租户 GUC 也读不到租户行；普通角色借 SET ROLE 既不能冒充平台登录，也不能冒充函数属主。平台审计登录仍然必需：配置 chain.platformRole 时挂载要校验它，平台链的读取与验链、Authz 超管旁路等其它平台生产方的独立追加都经它。原生 Provider（Qian.Audit.Native）暂不提供这个入口，调用时抛 NotSupportedException。
 
 服务卸载先拒绝新调用、取消并排空进行中的数据库调用，再撤销错误码。等待数据库锁的追加也会取消并释放连接；旧缓存句柄在卸载后失效，重装取得新服务。tenant scope 的服务额外检查调用上下文与其挂载租户一致。
 
 ## 验证与剩余任务
 
-真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。存储测试与参考应用执行测试分别验证其边界：AppendAsync 的独立事务只包含审计记录与链头；AppendEnlistedAsync 已覆盖真实 CRM 数据上下文回滚，已与实际命令执行和业务 Outbox 连接，跨进程审计事件发布及实体审计接线仍待完成，不能把独立追加成功当成业务回滚验证。
+真实 PostgreSQL 16、受限角色、两独立宿主验证千条并发追加、连续序号/前序、同事件幂等、委托主体分页查询、RLS 隔离、写入失败整笔回滚以及历史篡改定位。存储测试与参考应用执行测试分别验证其边界：AppendAsync 的独立事务只包含审计记录与链头；平台链同事务入口（AuditPlatformTransactionTests）覆盖与业务写入同提交同回滚、与独立追加共用一条链、幂等与冲突、损坏链头、生产方与连接检查、函数的调用方检查、RLS 对应用角色与借成员关系切换为属主的拒绝，以及持旧快照的可串行化失败；AppendEnlistedAsync 已覆盖真实 CRM 数据上下文回滚，已与实际命令执行和业务 Outbox 连接，跨进程审计事件发布及实体审计接线仍待完成，不能把独立追加成功当成业务回滚验证。
 
 尚未完成：实体审计与跨进程审计事件、完整默认组合包和 qian add 安装（包已随 0.1.0 发到 GitHub Packages，R93）。未引入事后不同事务的旧审计拦截器。
 

@@ -325,7 +325,8 @@ public sealed partial class CustomerCommandTests
         builder.Configuration.AddInMemoryCollection(platform.InitializationCapabilities.Select((id, index) =>
             new KeyValuePair<string, string?>("Tenancy:InitializationCapabilities:" + index, id)));
         if (platform.Management) builder.Services.AddQianData<PlatformAuthzDbContext>((_, options) => options.UseNpgsql(platform.AuthzConnection).UseKunSchema(AuthzDbContext.Schema));
-        // 平台审计链的专用登录：平台级生命周期操作（安装、激活、回切、弃用、退役）在提交前入平台链（S1-RT-037），有生命周期的宿主都绑定它。
+        // 平台审计链的专用登录：有生命周期的宿主都绑定它（审计组件配置 chain.platformRole 时以它校验、读取平台链）；平台级生命周期操作（安装、激活、回切、弃用、退役）
+        // 经同事务函数与状态变更一起入平台链（S1-RT-037 / S1-AUD-009）。
         builder.Services.AddQianData<PlatformAuditDbContext>((_, options) => options.UseNpgsql(platform.AuditConnection).UseKunSchema(AuditDbContext.Schema));
         builder.Services.AddQianData<LifecycleDbContext>((_, options) => options.UseNpgsql(connection).UseKunSchema(LifecycleDbContext.Schema));
         builder.Services.AddSingleton<ISecretAccessObserver>(platform);

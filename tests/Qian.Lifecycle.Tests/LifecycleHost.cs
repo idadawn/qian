@@ -34,7 +34,7 @@ using Qian.Testing.Containers;
 
 namespace Qian.Lifecycle.Tests;
 
-// 真实平台插件树：Data + Config（宿主配置根 + K8s Secret 挂载解析）+ Registry（PostgreSQL）+ Audit（租户链：批准与租户级操作同事务入链；平台链：平台级操作提交前入链）
+// 真实平台插件树：Data + Config（宿主配置根 + K8s Secret 挂载解析）+ Registry（PostgreSQL）+ Audit（租户链：批准与租户级操作同事务入链；平台链：平台级操作同事务入链）
 // + Lifecycle（包内迁移建表）。
 // 信任根与执行器配置走宿主配置根，测试可在运行中改写（模拟 Apollo 发布）；时间由可调的 TimeProvider 给出。
 internal sealed class LifecycleHost : IAsyncDisposable
@@ -51,7 +51,7 @@ internal sealed class LifecycleHost : IAsyncDisposable
     internal ManualTime Time { get; }
     internal MemoryConfigurationProvider Settings { get; }
     internal SecretObserver Secrets { get; }
-    // 平台审计链的专用登录角色（Audit README「受控平台链」）：平台级生命周期操作在提交前经它入平台链（S1-RT-037）。
+    // 平台审计链的专用登录角色（Audit README「受控平台链」）：审计组件以它读取、验证平台链；平台级生命周期操作经同事务函数入平台链，不用这个登录（S1-AUD-009）。
     internal string AuditRole { get; }
     internal IPluginLifecycleController Lifecycle => Runtime.GetContext("lifecycle", ScopeKey.Global).Lifecycle();
     internal IRegistryService Registry => Runtime.GetContext("registry", ScopeKey.Global).Registry();
@@ -176,8 +176,9 @@ internal sealed class LifecycleHost : IAsyncDisposable
         // 审计的同事务入口：函数属主是独立受限的 NOLOGIN 角色，在线应用角色只获函数执行权（与生产迁移同一份 SQL）。
         var writer = "qian_audit_owner_" + Guid.NewGuid().ToString("N")[..8];
         await Admin(postgres, $"CREATE ROLE \"{writer}\" NOLOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;", ct);
-        // 平台链的 RLS 与授权只在租户守卫之后、同一迁移事务里应用（Audit README「受控平台链」）。
-        await Admin(postgres, "BEGIN;" + AuditTransactionAccess.CreateMigrationSql(writer, PostgresFixture.AppRoleName) + AuditPlatformAccess.CreateMigrationSql(auditRole) + "COMMIT;", ct);
+        // 平台链的 RLS 与授权只在租户守卫之后、同一迁移事务里应用（Audit README「受控平台链」）；三参重载另建平台链的同事务函数（属主同上），
+        // Lifecycle 的在线登录（qian_app）只获执行权，平台级操作与状态变更同一事务入平台链（S1-AUD-009）。
+        await Admin(postgres, "BEGIN;" + AuditTransactionAccess.CreateMigrationSql(writer, PostgresFixture.AppRoleName) + AuditPlatformAccess.CreateMigrationSql(auditRole, writer, PostgresFixture.AppRoleName) + "COMMIT;", ct);
         var reports = await host.Services.GetRequiredService<IDataMigrator>().MigrateAsync(ct);
         Assert.Equal(["20261015081937_LifecycleStateMachines", "20261021194607_PermissionApprovals"], Assert.Single(reports, report => report.ContextType == typeof(LifecycleDbContext)).Applied);
         await Admin(postgres, "GRANT USAGE ON SCHEMA plugin_qian_lifecycle TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_lifecycle TO qian_app;", ct);

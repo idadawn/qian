@@ -1,4 +1,5 @@
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -16,8 +17,8 @@ namespace Qian.Lifecycle;
 // 生命周期操作入审计链（ADR-009 D9.8，S1-RT-037）。
 // 租户级操作（开通、升级、卸载、清除）：完成的状态迁移与该租户审计链的条目在同一个可串行化事务里提交，审计写不进去或提交失败时两者都不留；
 // 只在最终迁移处记一条，所以钩子重试、续跑与幂等返回不重复记。
-// 平台级操作（安装、激活、回切、弃用、退役）：没有租户，记平台链。审计端口的平台链入口是独立事务（专用平台登录，RLS 只放行该登录，不能挂进
-// 本组件的事务），所以在状态变更提交前追加：审计写不进去则状态不提交；之后的提交失败可能留下一条孤儿条目（ADR-009 §3 的崩溃窗口取「宁多不漏」）。
+// 平台级操作（安装、激活、回切、弃用、退役）：没有租户，记平台链。状态变更与平台链条目同样在一个可串行化事务里提交（审计端口的平台链同事务入口
+// AppendPlatformEnlistedAsync，S1-AUD-009）：审计写不进去或提交失败时两者都不留。
 internal sealed partial class LifecycleController
 {
     internal const string ProvisionAuditCapability = "qian.lifecycle/tenant-plugin.provision";
@@ -72,25 +73,38 @@ internal sealed partial class LifecycleController
         }
     }
 
-    // 平台级状态变更与平台链条目：work 先保存再返回记录（null 表示幂等返回，不追加），记录在本事务提交之前追加到平台链（审计端口自己的事务）；
-    // 追加失败则本事务不提交、状态未改。平台链自身的可串行化冲突或死锁由审计端口换新会话重做（5 次重做、共 6 次尝试），仍失败时原样抛出数据库异常
-    // （PostgresException / DbUpdateException），数据库异常里只有唯一键冲突转 409 CONFLICT（见 PostgresAuditStore.AppendAsync）；两者都经这里原样传出，本事务同样不提交。
-    private Task<T> PlatformAudited<T>(string[] key, string operation, IAuditWriter audit, Func<IDataSession<LifecycleDbContext>, Task<(T Result, AuditRecord? Record)>> work, CancellationToken ct) =>
-        Locked(key, async session =>
-        {
-            var (result, record) = await work(session).ConfigureAwait(false);
-            if (record is not null) await AppendPlatformAsync(audit, operation, record, ct).ConfigureAwait(false);
-            return result;
-        }, ct);
-
-    // 平台链未配置（宿主没给 chain.platformRole）或本上下文不被接受为平台生产方时，审计端口返回 AUTHZ_DENIED：对调用方这是宿主装配错误而不是无权限，
-    // 记告警后以 503 LIFECYCLE_AUDIT_UNAVAILABLE 拒绝（本事务随之回滚）。其它失败（链冲突、数据库错误）原样传出，同样不提交。
-    private async Task AppendPlatformAsync(IAuditWriter audit, string operation, AuditRecord record, CancellationToken ct)
+    // 平台级状态变更与平台链条目同一可串行化事务：work 先保存再返回记录（null 表示幂等返回，不追加），记录经平台链的同事务入口挂进本事务（S1-AUD-009）；
+    // 追加失败或提交失败时状态变更与条目都不留。平台链与其它平台生产方共用，可串行化冲突或死锁时按 Audited 的约定丢弃整个会话重做（attempt < 5：5 次重做、
+    // 共 6 次尝试），仍冲突返回 409 CONFLICT；其它失败（审计端口的 CONFLICT、数据库异常）原样传出，本事务同样不提交。
+    private async Task<T> PlatformAudited<T>(string[] key, string operation, IAuditWriter audit, Func<IDataSession<LifecycleDbContext>, Task<(T Result, AuditRecord? Record)>> work, CancellationToken ct)
     {
-        try { await audit.AppendPlatformAsync(context, record, ct).ConfigureAwait(false); }
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await Locked(key, IsolationLevel.Serializable, async session =>
+                {
+                    var (result, record) = await work(session).ConfigureAwait(false);
+                    if (record is not null) await AppendPlatformAsync(audit, operation, record, session.Context.Database.CurrentTransaction!.GetDbTransaction(), ct).ConfigureAwait(false);
+                    return result;
+                }, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (attempt < 5 && Retryable(error))
+            { await Task.Delay(10 * (attempt + 1), ct).ConfigureAwait(false); }
+            catch (Exception error) when (Retryable(error)) { throw new QianErrorException(new QianError(PlatformErrors.Conflict)); }
+        }
+    }
+
+    // 审计端口以 AUTHZ_DENIED 拒绝本组件为平台生产方时不区分原因，对 Lifecycle 可能的来源有三类：没配 chain.platformRole；审计重挂后本组件持有陈旧的审计句柄；
+    // 本组件的数据库连接不能调用平台链同事务函数（本组件的登录没有经 AuditPlatformAccess 三参迁移直接获得执行权，或连接是特权角色、做过 SET ROLE、就是平台登录、带租户 GUC）。
+    // 对调用方这是宿主装配错误而不是无权限，记告警后以 503 LIFECYCLE_AUDIT_UNAVAILABLE 拒绝（本事务随之回滚）。其它失败（链冲突、数据库错误）原样传出，同样不提交。
+    private async Task AppendPlatformAsync(IAuditWriter audit, string operation, AuditRecord record, DbTransaction transaction, CancellationToken ct)
+    {
+        try { await audit.AppendPlatformEnlistedAsync(context, record, transaction, ct).ConfigureAwait(false); }
         catch (QianErrorException error) when (error.Error.Code.Code == PlatformErrors.AuthzDenied.Code)
         {
-            LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方（端口不区分原因）：平台链未配置 chain.platformRole，或审计重挂后本组件持有的是陈旧的审计句柄");
+            LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方（端口不区分原因）：平台链未配置 chain.platformRole、审计重挂后本组件持有的是陈旧的审计句柄，" +
+                "或本组件的数据库连接不能调用平台链同事务函数（本组件的登录没有经 AuditPlatformAccess 三参迁移直接获得执行权，或连接不是未切换角色、无租户 GUC 的受限登录）");
             throw AuditUnavailable(operation);
         }
     }

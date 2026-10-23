@@ -19,8 +19,8 @@ namespace Qian.Lifecycle.Tests;
 
 // S1-RT-037 验收 1、3：租户级生命周期操作（开通、升级、卸载、清除）入该租户审计链（ADR-009 D9.8），与完成的状态迁移同一可串行化事务，审计写不进去或
 // 提交失败时两者都不留；钩子重试、续跑、幂等返回不重复记；同租户链冲突换新会话重做；宿主没有审计时 fail-closed 并记宿主级告警。
-// 平台级操作（安装、激活、回切、弃用、退役）入平台链：状态变更提交前经审计端口的平台链入口（独立事务、专用平台登录）追加，审计写不进去则状态不提交，
-// 提交失败可能多留一条；平台链未配置或宿主撤下审计时同样 fail-closed。真实 PostgreSQL、Registry、Audit 与 Lifecycle（LifecycleHost）。
+// 平台级操作（安装、激活、回切、弃用、退役）入平台链：经审计端口的平台链同事务入口与状态变更同一可串行化事务（S1-AUD-009），审计写不进去或提交失败时
+// 两者都不留，平台链冲突换新会话重做；平台链未配置、缺同事务函数执行权或宿主撤下审计时同样 fail-closed。真实 PostgreSQL、Registry、Audit 与 Lifecycle（LifecycleHost）。
 public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private const string TenantA = "01900000-0000-7000-8000-00000000000a";
@@ -220,13 +220,13 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
     }
 
     [Fact]
-    public async Task 平台链未配置时激活以503拒绝_事件8的原因如实列出端口不区分的两种来源_与宿主没有装配审计时的原因不同()
+    public async Task 平台链未配置时激活以503拒绝_事件8的原因如实列出端口不区分的各种来源_与宿主没有装配审计时的原因不同()
     {
         var logs = new WarningLogs();
         await using var host = await Start(services: services => services.AddSingleton<ILoggerProvider>(logs));
         var revision = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.0"), Key), "operator", Ct);
-        // 审计条目没有 chain.platformRole：审计端口以 AUTHZ_DENIED 拒绝本组件为平台生产方，但不说明原因（没配平台链与审计重挂后的陈旧句柄同一个错误）。
-        // 事件 8 的原因如实列出两种来源、注明端口不区分，不写成「平台审计登录不可用」（那会是连接失败，不是 AUTHZ_DENIED）。
+        // 审计条目没有 chain.platformRole：审计端口以 AUTHZ_DENIED 拒绝本组件为平台生产方，但不说明原因（没配平台链、审计重挂后的陈旧句柄与本组件连接不能调用
+        // 平台链同事务函数是同一个错误，S1-AUD-009）。事件 8 的原因如实列出这几种来源、注明端口不区分，不写成「平台审计登录不可用」（那会是连接失败，不是 AUTHZ_DENIED）。
         await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
         await host.Runtime.MountAsync([host.AuditEntry(platformChain: false)], Ct);
         await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask());
@@ -313,7 +313,7 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
     }
 
     [Fact]
-    public async Task 平台链写不进去时状态不提交_状态提交失败时平台链多留一条_平台链未配置或宿主撤下审计时以503拒绝不改状态并记告警()
+    public async Task 平台链写不进去时状态不提交_状态提交失败时平台条目与状态变更都不留_平台链未配置或宿主撤下审计时以503拒绝不改状态并记告警()
     {
         var logs = new WarningLogs();
         await using var host = await Start(services: services => services.AddSingleton<ILoggerProvider>(logs));
@@ -325,13 +325,13 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         await LifecycleHost.Admin(postgres, "DROP TRIGGER reject_platform ON plugin_qian_audit.audit_entries; DROP FUNCTION plugin_qian_audit.reject_platform();", Ct);
         Assert.Equal(PluginRevisionStates.Installed, Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).State);
         Assert.Equal([LifecycleController.InstallAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
-        // 平台条目已在审计端口自己的事务里提交、状态变更在提交时失败：修订仍是 Installed，链上多一条激活条目（崩溃窗口取「宁多不漏」，README 写明）。
+        // 平台条目已挂进本事务、状态变更在提交时失败：修订仍是 Installed，平台链上也没有激活条目（同事务入口，S1-AUD-009；独立事务入口时这里会多留一条）。
         await LifecycleHost.Admin(postgres, "CREATE FUNCTION plugin_qian_lifecycle.reject_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced commit failure'; END $$; " +
             "CREATE CONSTRAINT TRIGGER reject_commit AFTER UPDATE ON plugin_qian_lifecycle.plugin_revisions DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION plugin_qian_lifecycle.reject_commit();", Ct);
         Assert.Equal("forced commit failure", Failure(await Assert.ThrowsAnyAsync<Exception>(() => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask())).MessageText);
         await LifecycleHost.Admin(postgres, "DROP TRIGGER reject_commit ON plugin_qian_lifecycle.plugin_revisions; DROP FUNCTION plugin_qian_lifecycle.reject_commit();", Ct);
         Assert.Equal(PluginRevisionStates.Installed, Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).State);
-        Assert.Equal([LifecycleController.InstallAuditCapability, LifecycleController.ActivateAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
+        Assert.Equal([LifecycleController.InstallAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
         // 宿主没配置平台链（审计条目没有 chain.platformRole）：激活以 503 拒绝、状态不变，告警说明是平台链；租户链的告警不受影响。
         await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
         await host.Runtime.MountAsync([host.AuditEntry(platformChain: false)], Ct);
@@ -352,9 +352,51 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         // 重新装上带平台链的审计后激活完成并入链。
         await host.Runtime.MountAsync([host.AuditEntry()], Ct);
         Assert.Equal(PluginRevisionStates.Active, (await host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct)).State);
-        Assert.Equal([LifecycleController.InstallAuditCapability, LifecycleController.ActivateAuditCapability, LifecycleController.ActivateAuditCapability],
-            (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
+        Assert.Equal([LifecycleController.InstallAuditCapability, LifecycleController.ActivateAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
         Assert.Equal(2, logs.PlatformAuditUnavailable.Count); Assert.Empty(logs.AuditUnavailable);
+    }
+
+    [Fact]
+    public async Task 两个组件同时激活_平台链冲突的一方换新会话重做_两条激活条目与修订状态都在()
+    {
+        var barrier = new ActivationBarrier();
+        await using var host = await Start(services: services => services.ConfigureDbContext<LifecycleDbContext>((_, options) => options.AddInterceptors(barrier)));
+        var first = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative("acme.first", "1.0.0"), Key), "operator", Ct);
+        var second = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.0"), Key), "operator", Ct);
+        // 两次激活（不同组件，修订锁不同）各自取得快照后在提升修订的保存处会合：先提交的一方推进平台链头，另一方追加时撞上可串行化冲突，只能从新会话重做。
+        barrier.Armed = true;
+        var views = await Task.WhenAll(
+            Task.Run(() => host.Lifecycle.ActivateAsync("acme.first", first.Revision, "operator", Ct).AsTask(), Ct),
+            Task.Run(() => host.Lifecycle.ActivateAsync(Plugin, second.Revision, "operator", Ct).AsTask(), Ct));
+        Assert.True(barrier.Arrivals >= 3, "没有发生重做：" + barrier.Arrivals);
+        Assert.All(views, view => Assert.Equal(PluginRevisionStates.Active, view.State));
+        var entries = await PlatformChain(host);
+        Assert.Equal(Enumerable.Range(1, 4), entries.Select(entry => (int)entry.Sequence));
+        Assert.Equal([LifecycleController.InstallAuditCapability, LifecycleController.InstallAuditCapability], entries.Take(2).Select(entry => entry.Record.CapabilityId));
+        Assert.All(entries.Skip(2), entry => Assert.Equal(LifecycleController.ActivateAuditCapability, entry.Record.CapabilityId));
+        Assert.Equal(["lifecycle/revision:acme.first/1", "lifecycle/revision:acme.widget/1"], entries.Skip(2).Select(entry => entry.Record.Resource!).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task 本组件登录没有平台链同事务函数的执行权时激活以503拒绝不改状态并记告警_补上执行权后同事务入链()
+    {
+        var logs = new WarningLogs();
+        await using var host = await Start(services: services => services.AddSingleton<ILoggerProvider>(logs));
+        var revision = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.0"), Key), "operator", Ct);
+        // 宿主只应用了一参迁移（或漏授执行权）：审计端口在调用同事务函数之前以 AUTHZ_DENIED 拒绝，Lifecycle 记事件 8 后 503，而不是把数据库权限错误原样抛出。
+        const string functions = "plugin_qian_audit.platform_tip(uuid), plugin_qian_audit.platform_append(text,text,text)";
+        await LifecycleHost.Admin(postgres, $"REVOKE EXECUTE ON FUNCTION {functions} FROM {PostgresFixture.AppRoleName};", Ct);
+        var rejected = await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask());
+        Assert.Equal("plugin-revision.activate", rejected.Args["operation"]);
+        Assert.Equal(PluginRevisionStates.Installed, Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).State);
+        // 事件 8 的原因列出这一来源（本组件的数据库连接不能调用平台链同事务函数）。
+        var warning = Assert.Single(logs.PlatformAuditUnavailable).Message;
+        Assert.Contains("plugin-revision.activate", warning, StringComparison.Ordinal); Assert.Contains("不能调用平台链同事务函数", warning, StringComparison.Ordinal);
+        Assert.Equal([LifecycleController.InstallAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
+        await LifecycleHost.Admin(postgres, $"GRANT EXECUTE ON FUNCTION {functions} TO {PostgresFixture.AppRoleName};", Ct);
+        Assert.Equal(PluginRevisionStates.Active, (await host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct)).State);
+        Assert.Equal([LifecycleController.InstallAuditCapability, LifecycleController.ActivateAuditCapability], (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
+        Assert.Single(logs.PlatformAuditUnavailable); Assert.Empty(logs.AuditUnavailable);
     }
 
     private async Task<LifecycleHost> Start(IPluginLifecycleHooks? hooks = null, Action<IServiceCollection>? services = null)
@@ -466,6 +508,24 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
         {
             if (Armed && eventData.Context?.ChangeTracker.Entries<TenantInstallRow>().Any(entry => entry.Entity.State == TenantInstallStates.Installed) == true && Interlocked.Increment(ref _arrivals) <= 2)
+            {
+                if (Volatile.Read(ref _arrivals) == 2) _ready.TrySetResult();
+                await _ready.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            }
+            return result;
+        }
+    }
+
+    // 武装后，前两次把修订提升为 Active 的保存互相等待（两个事务都已取得快照），之后的保存直接通过；Arrivals 计入全部这类保存。
+    private sealed class ActivationBarrier : SaveChangesInterceptor
+    {
+        private int _arrivals;
+        private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal bool Armed { get; set; }
+        internal int Arrivals => Volatile.Read(ref _arrivals);
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (Armed && eventData.Context?.ChangeTracker.Entries<PluginRevisionRow>().Any(entry => entry.Entity.State == PluginRevisionStates.Active) == true && Interlocked.Increment(ref _arrivals) <= 2)
             {
                 if (Volatile.Read(ref _arrivals) == 2) _ready.TrySetResult();
                 await _ready.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);

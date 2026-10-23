@@ -20,6 +20,9 @@ public interface IAuditWriter
     Task<AuditChainEntry> AppendEnlistedAsync(AuditRecord record, DbTransaction transaction, CancellationToken cancellationToken = default);
     /// <summary>显式追加平台记录；需提供仍有效的 global 生产方上下文，并显式配置专用平台角色；租户调用拒绝。</summary>
     Task<AuditChainEntry> AppendPlatformAsync(IPluginContext producer, AuditRecord record, CancellationToken cancellationToken = default);
+    /// <summary>将平台记录加入现有 PostgreSQL 可串行化业务事务（S1-AUD-009）：生产方检查与 AppendPlatformAsync 相同（global 生产方、同一 Audit 实例、已配置平台链），存在租户上下文时拒绝；
+    /// 与 AppendEnlistedAsync 同一约束——不提交、不释放、不局部重试，返回节点只有在外层提交后才持久化，冲突须由调用方换会话重试整个业务事务。</summary>
+    Task<AuditChainEntry> AppendPlatformEnlistedAsync(IPluginContext producer, AuditRecord record, DbTransaction transaction, CancellationToken cancellationToken = default);
 }
 /// <summary>组件内读取端口；面向用户的查询必须由宿主另行鉴权并审计。</summary>
 public interface IAuditReader
