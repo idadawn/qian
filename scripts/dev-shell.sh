@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 外壳认证联调环境（S1-YUE-002）。说明见 tools/Qian.Dev.Shell/README.md。
-# 真实 qian.identity（与 CRM 参考运行时同宿主）+ 真实 Identity.Client / Qian.Gateway BFF（HTTPS 自签名，静态托管外壳）+ 上游 OIDC 发行方 CNCF Dex（SSO 跳转回调）；
+# 外壳认证联调环境（S1-YUE-002 / S1-YUE-012）。说明见 tools/Qian.Dev.Shell/README.md。
+# 真实 qian.identity（与 CRM 参考运行时同宿主）+ 平台表面参考宿主 + 真实 Identity.Client / Qian.Gateway BFF（HTTPS 自签名，静态托管外壳与参考应用远程制品）+ 上游 OIDC 发行方 CNCF Dex（SSO 跳转回调）；
 # 开发库、平台插件树与运营前置复用 tools/Qian.Dev.TenantOps。这是开发机上的联调环境：不替代 qian dev（S1-RT-013），也不替代 K3s 部署（S1-DEP-002）。
 # 兼容 macOS 自带的 bash 3.2：不用关联数组，也不在 set -u 下展开空数组。
 set -euo pipefail
@@ -29,9 +29,9 @@ usage() {
 用法：scripts/dev-shell.sh <命令>
 
   up          起 PostgreSQL 16 容器（只绑 127.0.0.1:${PG_PORT}）与上游 Dex 容器（${DEX_ISSUER}），构建前端与宿主，重建开发库，前台启动身份 / 业务宿主（${API_URL}）与网关 BFF（${SHELL_URL}）
-  build-ui    只构建两个前端制品：packages/qian-identity-ui（认证页族）与 apps/qian-shell-auth（外壳薄入口）
+  build-ui    只构建三个前端制品：packages/qian-identity-ui（认证页族）、samples/qian-sample-crm-ui（参考应用远程模块）与 apps/qian-shell（外壳）
   status      查看两个容器与两个宿主是否在运行；都在运行时退出码为 0，否则为 1
-  e2e         真实流程验收：独立状态目录与随机端口自起一套环境，跑 Playwright，结束后清理（等同 pnpm --filter qian-shell-auth e2e:auth）
+  e2e         真实流程验收：独立状态目录与随机端口自起一套环境，跑 Playwright，结束后清理（等同 pnpm --filter qian-shell e2e:auth）
   down [--purge]  删除 PostgreSQL 与 Dex 容器；--purge 同时删除本机状态目录（${STATE}：口令、网关密钥、Dex 客户端密钥与配置、运行时配置）
 
 环境变量：QIAN_DEV_STATE、QIAN_DEV_PG_CONTAINER、QIAN_DEV_PG_PORT、QIAN_DEV_PG_IMAGE、QIAN_DEV_DEX_CONTAINER、QIAN_DEV_DEX_PORT、QIAN_DEV_DEX_IMAGE、
@@ -49,9 +49,10 @@ build() {
 
 build_ui() {
   need pnpm "corepack enable 或按 package.json 的 packageManager 安装 pnpm"
-  echo "构建认证页族与外壳 ..."
+  echo "构建认证页族、参考应用远程模块与外壳 ..."
   pnpm --filter @qian/identity-ui build
-  pnpm --filter qian-shell-auth build
+  pnpm --filter @qian/sample-crm-ui build
+  pnpm --filter qian-shell build
 }
 
 container_state() {
@@ -181,6 +182,6 @@ case "$command" in
   build-ui) build_ui ;;
   down) cmd_down "$@" ;;
   status) cmd_status ;;
-  e2e) need pnpm "corepack enable 或按 package.json 的 packageManager 安装 pnpm"; exec pnpm --filter qian-shell-auth e2e:auth ;;
+  e2e) need pnpm "corepack enable 或按 package.json 的 packageManager 安装 pnpm"; exec pnpm --filter qian-shell e2e:auth ;;
   *) usage; [ -z "$command" ] || exit 2 ;;
 esac

@@ -111,6 +111,8 @@ internal sealed class FlagManagementTestHost : IAsyncDisposable
             return ValueTask.FromResult(new AuthorizationDecision(Guid.CreateVersion7(), request,
                 new AuthorizationExplanation(new PermissionDecision(Allow, Allow ? "allowed" : "denied", []), [], [], []), true, true, DateTimeOffset.UtcNow));
         }
+        // 修订下限不是本组用例的对象：替身不单独比对（声明了权限点的端点在 EnforceAsync 里判定）。
+        public ValueTask<AuthorizationDecision?> CheckIdentityRevisionAsync(EnforcementRequest request, CancellationToken cancellationToken = default) => ValueTask.FromResult<AuthorizationDecision?>(null);
     }
     internal sealed class RotatingSecrets(string token) : ISecretResolverFactory, ISecretResolver
     {

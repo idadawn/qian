@@ -59,6 +59,12 @@ public interface IAuthzEnforcement
     /// 缺少权限点声明、令牌 identity_revision 陈旧、委托主体、审计不可用都返回拒绝，不会放行。
     /// </summary>
     ValueTask<AuthorizationDecision> EnforceAsync(EnforcementRequest request, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 只比对令牌的 identity_revision、不做权限判定：给没有单一权限点的已认证入口（处理器内判定的能力目录、导航、外壳目录、只要求已认证的有效权限等）
+    /// 拒绝旧令牌，客户端据此换令牌后重发（S1-YUE-012）。旧令牌返回已记录的拒绝决策（原因 <see cref="AuthzEnforcement.StaleIdentityRevision"/>，
+    /// 审计不可用时为 <see cref="AuthzEnforcement.AuditUnavailable"/>）；通过、平台主体与不带修订的主体返回 null。主体带租户而当前租户上下文为空时抛出。
+    /// </summary>
+    ValueTask<AuthorizationDecision?> CheckIdentityRevisionAsync(EnforcementRequest request, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

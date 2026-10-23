@@ -117,7 +117,7 @@ yue 同时承担三种角色，三者缺一不可：
   │ @yue/core                                               基础组件层（S1）
   │ @yue/tokens                                             设计令牌层（S1）
   │
-  横切（只被上层消费）：@yue/sdk（注册表 API、PlatformClient、request、i18n、mock、运行时配置）
+  横切（只被上层消费）：@yue/sdk（注册表 API、PlatformClient、request、i18n、mock；配置由宿主注入）
                       @yue/contracts（无 UI 的 Schema 与 TS 类型）
                       @yue/agent（S4）  @yue/mobile（S2 可选 / S3）
 ```
@@ -127,8 +127,8 @@ yue 同时承担三种角色，三者缺一不可：
 | `@yue/tokens` | CSS 变量、TS `Tone` 类型、主题注入、DTCG 导出 | 无 | S1 |
 | `@yue/contracts` | FormSchema / ListSchema / PortalLayout / FlowNodes 的 JSON Schema 与生成的 TS 类型；控件 manifest Schema；SSE 事件 Schema；权限码目录格式；Filter AST 类型 | 无 | S1 草案 / S2 定稿 |
 | `@yue/core` | Base UI + shadcn 自有化的基础组件 | tokens、contracts（底层 Schema） | S1 |
-| `@yue/sdk` | 注册表（导航 / 设置 / 命令 / 快捷键 / 预览器 / 客户端动作 / 控件 / 菜单类型）、`PlatformClient`、request 拦截器链、i18n、mock、`window.__APP_CONF__` 注入 | tokens, contracts | S1 |
-| `@yue/shell` | AppShell、菜单 → 路由、MF2 宿主与插槽、租户切换器、认证页族、兜底页 | core, sdk, form（登录表单） | S1 |
+| `@yue/sdk` | 注册表（导航 / 设置 / 命令 / 快捷键 / 预览器 / 客户端动作 / 控件 / 菜单类型）、`PlatformClient`、request 拦截器链、i18n、mock；配置由宿主经构造参数注入（Qian 外壳的运行时配置是同源 `/app-config.json`，由私有包 `@qian/shell-kit` 读取与校验，S1-YUE-012） | tokens, contracts | S1 |
+| `@yue/shell` | AppShell、菜单 → 路由、MF2 宿主与插槽、租户切换器、认证页族、兜底页；Qian 专有接线（运行时配置、网关 BFF 会话、bootstrap、能力导航）在私有包 `@qian/shell-kit`（S1-YUE-012） | core, sdk, form（登录表单） | S1 |
 | `@yue/data` | DataTable、Tree 族、日期族、Upload、ImportWizard、ConditionBuilder | core, sdk | S1 / S2 |
 | `@yue/form` | Field、SchemaForm、FormApi、联动、校验与脱敏规则目录、弹层 API、消息出口 | core, sdk, contracts | S1 |
 | `@yue/charts` | ECharts 封装与令牌桥接 | core, tokens | S2 可选 |
@@ -445,7 +445,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 | 代码编辑器 | Monaco（桌面、ESM）+ CodeMirror 6（移动 / 轻量） | — | — | 锁定（CodeMirror 仓库迁出 GitHub，供应链审计换地址） |
 | 前端脚本沙箱 | quickjs-emscripten（表达式 / 联动脚本，内存上限、超时）；iframe sandbox 隔离第三方 UI | SES、near-membrane | `eval` / `new Function`、ShadowRealm（Stage 2.7） | 锁定（S2 可选兜底） |
 | 状态 / 服务端状态 | Zustand + TanStack Query | — | — | 锁定 |
-| 路由 / i18n | react-router 7 + i18next | — | — | 锁定 |
+| 路由 / i18n | react-router 7（S2 页面运行时引入；S1 外壳用 `@yue/shell` 最小历史路由，S1-YUE-012）+ i18next | — | — | 锁定 |
 | API client | 从 Kun OpenAPI 生成（orval / openapi-typescript）+ 契约快照 | — | 手写 fetch 封装 | 锁定 |
 | 富文本 / Markdown | **待调研**（Q39）：S2 前补一次 React 富文本编辑器选型 | — | TinyMCE 5 / Vditor（参考平台用法，非 React 生态） | 待决策 |
 | 文档站 | 现有 Rspress 2 统一组件与产品文档；Vitest / Playwright + axe 独立测试 | — | Storybook（重复文档体系，ADR-022） | 锁定 |

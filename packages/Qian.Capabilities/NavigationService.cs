@@ -78,7 +78,31 @@ internal sealed class NavigationService(IRegistryService registry, IPermissionCh
         Check(user, actor);
         await transaction.CommitAsync(linked.Token).ConfigureAwait(false);
     }
-    private async Task<(AuthorizationSubject Actor, IReadOnlyList<NavigationItem> Items)> Visible(IPluginContext caller, ICurrentUser user, CancellationToken ct)
+    public async ValueTask<ShellCatalog> GetShellAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default)
+    {
+        using var linked = Link(cancellationToken); var (actor, tenant) = await Subject(caller, user, linked.Token).ConfigureAwait(false);
+        var current = new ShellTenant(actor.TenantId!, tenant?.Name ?? actor.TenantId!);
+        if (tenant?.Status is not (TenantStatus.Active or TenantStatus.Trial)) { Check(user, actor); return new ShellCatalog(current, []); }
+        // 与菜单同一来源：Registry 的租户 scope 视图（已挂载、Ready、属于已安装制品，已按遮蔽与 restrict 合入）与 Runtime 里实际登记的贡献取交集。
+        var view = await registry.GetScopeEntriesAsync(caller.Scope, CapabilitiesDefinition.ShellRemotesKey, linked.Token).ConfigureAwait(false);
+        var result = new List<ShellRemote>();
+        foreach (var registration in caller.List(CapabilitiesDefinition.ShellRemotesKey))
+        {
+            if (registration.Value is not ShellRemoteContribution contribution || contribution.PluginId != registration.Name) continue;
+            var entry = view.FirstOrDefault(item => item.EntryId == registration.OwnerEntryId && item.Scope == registration.Scope && item.Name == registration.Name && item.PluginId == contribution.PluginId);
+            if (entry is null) continue;
+            try
+            {
+                if (!ReferenceEquals(caller.Inject<ShellRemoteContribution>(CapabilitiesDefinition.ShellRemotesKey, contribution.PluginId), contribution)) continue;
+            }
+            catch (Exception error) when (error is QianErrorException or ObjectDisposedException) { continue; }
+            result.Add(new ShellRemote(contribution.PluginId, entry.Version, ScopeText(registration.Scope), contribution.Manifest));
+        }
+        linked.Token.ThrowIfCancellationRequested(); Check(user, actor);
+        return new ShellCatalog(current, result.OrderBy(item => item.Id, StringComparer.Ordinal).ThenBy(item => item.Scope, StringComparer.Ordinal).ToArray());
+    }
+    private static string ScopeText(ScopeKey scope) => scope == ScopeKey.Global ? "global" : scope.Kind + ":" + scope.Id;
+    private async Task<(AuthorizationSubject Actor, TenantDescriptor? Tenant)> Subject(IPluginContext caller, ICurrentUser user, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(caller); ArgumentNullException.ThrowIfNull(user);
         var principal = user.Principal;
@@ -87,7 +111,11 @@ internal sealed class NavigationService(IRegistryService registry, IPermissionCh
             principal.TenantId != caller.Scope.Id || !Guid.TryParseExact(principal.TenantId, "D", out var tenantId) ||
             !ReferenceEquals(caller.TryInject<IRegistryService>(RegistryDefinition.Key), registry)) throw Error(PlatformErrors.NotFound);
         var actor = new AuthorizationSubject(principal.Subject, principal.TenantId, principal.Kind == PrincipalKind.User ? "user" : "service");
-        var tenant = await caller.Tenancy().GetByIdAsync(tenantId, ct).ConfigureAwait(false);
+        return (actor, await caller.Tenancy().GetByIdAsync(tenantId, ct).ConfigureAwait(false));
+    }
+    private async Task<(AuthorizationSubject Actor, IReadOnlyList<NavigationItem> Items)> Visible(IPluginContext caller, ICurrentUser user, CancellationToken ct)
+    {
+        var (actor, tenant) = await Subject(caller, user, ct).ConfigureAwait(false);
         if (tenant?.Status is not (TenantStatus.Active or TenantStatus.Trial)) return (actor, []);
         var view = await registry.GetScopeEntriesAsync(caller.Scope, CapabilitiesDefinition.NavigationItemsKey, ct).ConfigureAwait(false);
         var result = new List<NavigationItem>();

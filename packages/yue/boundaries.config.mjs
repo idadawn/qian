@@ -57,20 +57,22 @@ const policies = [
     };
   }),
   // 第三方库与 Node 内置模块对所有 yue 包放行（@idadawn/yue-* 不在此列，只走矩阵）。
-  { from: { element: { type: 'yue' } }, allow: { to: { module: { source: '!{@idadawn/yue-**,@idadawn/qian-plugin-sdk{,/**},@qian/plugin-sdk{,/**},@idadawn/qian-runtime{,/**},@qian/runtime{,/**}}' } } } },
+  // Qian 专有的外壳接线（@qian/shell-kit）同样在 yue 之上：yue 包不得反向引用。
+  { from: { element: { type: 'yue' } }, allow: { to: { module: { source: '!{@idadawn/yue-**,@idadawn/qian-plugin-sdk{,/**},@qian/plugin-sdk{,/**},@idadawn/qian-runtime{,/**},@qian/runtime{,/**},@qian/shell-kit{,/**}}' } } } },
   // Qian 的前端 SDK 在 yue 之上，只消费 sdk/底层契约与 TS Runtime，不能反向进入 UI 控件或应用。
   { from: { element: { type: 'qian-ui-sdk' } }, allow: { to: [{ element: { type: 'qian-ui-sdk' } }, { element: { type: 'qian-runtime' } },
     { element: { type: 'yue', captured: { pkg: ['sdk', 'tokens', 'contracts'] } } },
     { module: { source: ['@idadawn/yue-sdk{,/**}', '@idadawn/yue-tokens{,/**}', '@idadawn/yue-contracts{,/**}', '@idadawn/qian-runtime', '@qian/runtime'] } },
-    { module: { source: '!{@idadawn/yue-**,@idadawn/qian-plugin-sdk{,/**},@qian/plugin-sdk{,/**}}' } }] } },
-  // 应用面（apps/*）可以引任何 yue 包、自己与第三方库。
+    { module: { source: '!{@idadawn/yue-**,@idadawn/qian-plugin-sdk{,/**},@qian/plugin-sdk{,/**},@qian/shell-kit{,/**}}' } }] } },
+  // 应用面（apps/*、可部署的前端包、外壳接线 @qian/shell-kit 与参考应用的远程模块）可以引任何 yue 包、彼此与第三方库。
   { from: { element: { type: 'app' } }, allow: { to: [{ element: { type: 'yue' } }, { element: { type: 'app' } }, { element: { type: 'qian-ui-sdk' } }, { element: { type: 'qian-runtime' } }, { module: { source: ['!@idadawn/yue-**'] } }] } },
 ];
 
 /** 只含边界规则的 ESLint 配置片段（根 eslint.config.mjs 与 eslint.boundaries.config.mjs 共用）。 */
 export const yueBoundariesConfig = [
   {
-    files: ['packages/yue/**/*.{ts,tsx,mts,mjs}', 'apps/**/*.{ts,tsx,mts,mjs}', 'packages/qian-tenancy-ui/**/*.{ts,tsx,mts,mjs}', 'packages/qian-plugin-sdk/**/*.{ts,tsx,mts,mjs}', 'packages/qian-identity-ui/**/*.{ts,tsx,mts,mjs}'],
+    files: ['packages/yue/**/*.{ts,tsx,mts,mjs}', 'apps/**/*.{ts,tsx,mts,mjs}', 'packages/qian-tenancy-ui/**/*.{ts,tsx,mts,mjs}', 'packages/qian-plugin-sdk/**/*.{ts,tsx,mts,mjs}', 'packages/qian-identity-ui/**/*.{ts,tsx,mts,mjs}',
+      'packages/qian-shell-kit/**/*.{ts,tsx,mts,mjs}', 'samples/qian-sample-crm-ui/**/*.{ts,tsx,mts,mjs}'],
     languageOptions: { parser: tseslint.parser, ecmaVersion: 'latest', sourceType: 'module' },
     plugins: { boundaries },
     settings: {
@@ -79,13 +81,16 @@ export const yueBoundariesConfig = [
         { type: 'app', pattern: 'apps/*', capture: ['app'] },
         { type: 'app', pattern: 'packages/qian-tenancy-ui' },
         { type: 'app', pattern: 'packages/qian-identity-ui' },
+        { type: 'app', pattern: 'packages/qian-shell-kit' },
+        { type: 'app', pattern: 'samples/qian-sample-crm-ui' },
         { type: 'qian-ui-sdk', pattern: 'packages/qian-plugin-sdk' },
         { type: 'qian-runtime', pattern: 'packages/qian-runtime' },
       ],
       'boundaries/dependency-nodes': ['import', 'dynamic-import', 'export'],
       'boundaries/ignore': ['**/node_modules/**', '**/dist/**'],
       'import/resolver': {
-        typescript: { project: ['packages/yue/*/tsconfig.json', 'apps/*/tsconfig.json', 'packages/qian-tenancy-ui/tsconfig.json', 'packages/qian-plugin-sdk/tsconfig.json', 'packages/qian-identity-ui/tsconfig.json'] },
+        typescript: { project: ['packages/yue/*/tsconfig.json', 'apps/*/tsconfig.json', 'packages/qian-tenancy-ui/tsconfig.json', 'packages/qian-plugin-sdk/tsconfig.json', 'packages/qian-identity-ui/tsconfig.json',
+          'packages/qian-shell-kit/tsconfig.json', 'samples/qian-sample-crm-ui/tsconfig.json'] },
       },
     },
     rules: {

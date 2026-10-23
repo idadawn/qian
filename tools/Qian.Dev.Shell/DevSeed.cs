@@ -11,13 +11,15 @@ namespace Qian.Dev.Shell;
 
 internal sealed record SeedPerson(string Key, string DisplayName, string Username, string Password, bool Platform);
 internal sealed record SeedMember(string Person, string Role, string DisplayName);
-internal sealed record SeedTenant(string Code, string Name, string Administrator, IReadOnlyList<SeedMember> Members);
+/// <summary>种子租户；<paramref name="MountReference"/> 为 false 时开通后不把参考应用挂进租户 scope（验收 2 的「未挂载」形态）。</summary>
+internal sealed record SeedTenant(string Code, string Name, string Administrator, IReadOnlyList<SeedMember> Members, bool MountReference = true);
 internal sealed record SeedFile(IReadOnlyList<SeedPerson> Persons, IReadOnlyList<SeedTenant> Tenants);
 internal sealed record SeededTenant(string Code, string Name, Guid Id);
 
 // 种子：自然人经身份账号端口创建（用户名 + 初始密码，不要求首登改密）；租户经真实开通编排创建——第 03 步经 Lifecycle 为租户开通 system 组件（含参考应用），
 // 第 05 步经身份的成员开户端口建管理员成员，第 07 步授予 tenant.owner；随后激活。开通只登记安装并执行 tenant-provision 钩子、不挂载（与 Lifecycle 验收一致），
-// 所以种子再把参考应用条目挂进租户 scope（与运营「挂载组件」等价），能力目录与菜单才可见。第二租户的额外成员与角色由种子直接补齐（与真实运营「邀请成员」等价）。
+// 所以种子再把参考应用条目挂进租户 scope（与运营「挂载组件」等价），能力目录与菜单才可见；mountReference 为 false 的租户（丙方）不挂，外壳在那里不登记、
+// 也不请求参考应用的远程制品（S1-YUE-002 验收 2）。其余租户的额外成员与角色由种子直接补齐（与真实运营「邀请成员」等价）。
 internal static class DevSeed
 {
     private const string Actor = "dev-bootstrap";
@@ -58,8 +60,11 @@ internal static class DevSeed
             if (failed.Count > 0) throw new InvalidOperationException($"租户 {tenant.Code} 开通失败：" + string.Join("；", failed.Select(step => step.Step + " " + step.Reason)));
             await lifecycle.ActivateAsync(descriptor.Id, new ActivateTenant(), Actor, ct).ConfigureAwait(false);
             var id = descriptor.Id.ToString("D");
-            var mounted = await components.MountAsync(new ScopeKey("tenant", id), ReferenceEntry, Actor, ct).ConfigureAwait(false);
-            if (mounted.State != MountStates.Ready) throw new InvalidOperationException($"租户 {tenant.Code} 挂载参考应用失败：{mounted.ReasonCode}");
+            if (tenant.MountReference)
+            {
+                var mounted = await components.MountAsync(new ScopeKey("tenant", id), ReferenceEntry, Actor, ct).ConfigureAwait(false);
+                if (mounted.State != MountStates.Ready) throw new InvalidOperationException($"租户 {tenant.Code} 挂载参考应用失败：{mounted.ReasonCode}");
+            }
             using (tenantContext.BeginScope(id))
             {
                 var grants = tenancy.Scoped(new ScopeKey("tenant", id)).Inject<ITenantRoleGrant>(TenantRoleGrant.Key);

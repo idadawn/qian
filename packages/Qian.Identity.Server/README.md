@@ -14,7 +14,7 @@
 1. 注册 Kun 的 `ITenantContext`，`AddKunEventBus(r => r.RegisterIdentityEvents())`、`AddKunMediator(m => m.AddQianIdentityEvents())`、`AddQianEvents()`；登录、锁定、改密事件在账号写入的同一事务里入 Outbox，漏装时保存回滚，不会静默丢事件。
 2. 经 `AddQianData` 注册 `IdentityDbContext`（schema `plugin_qian_identity`）。在线角色必须 NOSUPERUSER / NOBYPASSRLS，仅获该 schema 的 DML 权限；迁移由部署迁移任务先运行，在线副本不建表。
 3. 建立受信账号 Cookie scheme（默认名 `qian.identity.signin`）和 DataProtection；多副本须共享受保护的密钥。调用 `AddQianIdentityServer(options, environment)`。`options` 里的证书私钥与客户端密钥由宿主从密钥引用加载，不进 profile、日志或仓库。账号策略放在 `options.Accounts`（见下）。
-4. 构建应用后先 `UseQianIdentityServer()`，再 `UseAuthentication()`，最后 `MapQianIdentityServer()` 与 `MapQianIdentityAccounts()`。前者含 Qian 错误映射、安全响应头（no-store / nosniff / frame-ancestors none）与组件挂载门禁，卸载后账号接口与协议路径都是 404。
+4. 构建应用后先 `UseQianIdentityServer()`，再 `UseAuthentication()`，最后 `MapQianIdentityServer()` 与 `MapQianIdentityAccounts()`。前者含 Qian 错误映射、安全响应头（no-store / nosniff / frame-ancestors none）与组件挂载门禁，卸载后账号接口与协议路径都是 404。托管认证页族时在 `UseQianIdentityServer()` 之后、`UseRouting()` 之前调用 `UseQianIdentityPages(dist)`（S1-YUE-012）：`/login` 下同源托管 `packages/qian-identity-ui` 的构建产物，不带扩展名的页面路由回落入口，HTML `no-store`、`/login/assets/` 带哈希长缓存，全部响应带 `frame-ancestors 'none'`、`Referrer-Policy: no-referrer` 与 `nosniff`；账号 Cookie scheme 的 `LoginPath` 指向 `IdentityPagesHosting.PagesPath`，`Accounts.SelectionPath` 不在 `/login` 下时启动即抛错。生产镜像的接线归 S1-DEP-008。
 5. 经 `PluginLoader` 依次挂载 Data、Tenancy，再挂载 `IdentityServerPlugin`；identity 条目的 config 只接收 `issuer`，必须与 `options` 的规范 issuer 一致。
 6. 可选：注册 StackExchange.Redis 的 `IConnectionMultiplexer`，会话中心就启用 Redis 索引与吊销墓碑；不注册则完全由 PostgreSQL 承担，行为一致（见「会话中心」）。事件总线配置里再调用 `events.AddQianIdentitySessionHandlers()`，登记 `tenant.suspended.v1` / `tenant.expired.v1` 的处理器。
 7. 可选：在 identity 之后挂载连接器组件（如 [Qian.Identity.Connector.Oidc](../Qian.Identity.Connector.Oidc/README.md) 的 `OidcConnectorPlugin`），全局或某个租户的 scope 都可以；它们在自己的上下文里登记到 `Identity.Connectors`，见「连接器登录」。
@@ -179,7 +179,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - **S1-IDP-006**：`IAuthenticatorFactorRegistry` 与 `MFA_UNAVAILABLE` 的不降级行为；租户级登录策略覆盖。
 - **S1-IDP-007**（本任务）：连接器登录已就位，见上文「连接器登录」。`LoginInput.ConnectorId` 只接受服务端自己签发的连接器票据；该租户看不见的连接器仍是 `#/connector_id`。
 - **S1-IDP-008（企业微信）**：实现 `IIdentityConnector`（工作台免登另实现 `IImplicitIdentityConnector`），在自己的 Apply 里 `ctx.IdentityConnectors().Register("wecom", …)`；回调、绑定与会话签发都复用这里，不另起回调路由。
-- **yue / 外壳（S1-YUE-002）**：认证页族作为本宿主同源的静态制品（工作区包 `packages/qian-identity-ui`，宿主把账号 Cookie scheme 的 `LoginPath` 指到 `/login`，选择页为 `Accounts.SelectionPath`）：登录页按 `GET /connectors?tenant=` 渲染连接器按钮；界面落点路由 `/login/connector/{connectorId}?flow=` 读流程并按 `next` 驱动确认绑定页；选择页 `/login/select-tenant?return_url=` 调 `POST /session/switch` → `/login/select` 后回到 return_url。外壳本身只经依赖方（Identity.Client / 网关 BFF）的 `/auth/login?prompt=select_account` 发起切换，浏览器零令牌。
+- **yue / 外壳（S1-YUE-002 / S1-YUE-012）**：认证页族作为本宿主同源的静态制品（工作区包 `packages/qian-identity-ui`，经 `UseQianIdentityPages` 托管，账号 Cookie scheme 的 `LoginPath` 指到 `/login`，选择页为 `Accounts.SelectionPath`）：登录页按 `GET /connectors?tenant=` 渲染连接器按钮；界面落点路由 `/login/connector/{connectorId}?flow=` 读流程并按 `next` 驱动确认绑定页；选择页 `/login/select-tenant?return_url=` 调 `POST /session/switch` → `/login/select` 后回到 return_url。外壳本身只经依赖方（Identity.Client / 网关 BFF）的 `/auth/login?prompt=select_account` 发起切换，浏览器零令牌。
 - **S1-IDP-006**：JIT 的租户策略目前读本组件在租户设置里的 `connectors:jitProvisioning`；租户级设置 Schema 与运营界面随 IDP-006 一起接入。
 
 ## 验收

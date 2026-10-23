@@ -20,6 +20,15 @@ describe('yue 分层边界（docs/prd/specs/yue.md §3.1）', () => {
     expect(await lint('packages/yue/sdk/src/__violation__.ts', "export { ShellHost } from '@qian/plugin-sdk';\n")).toHaveLength(1);
     expect(await lint('apps/qian-shell/src/__ok__.ts', "export { ShellHost } from '@idadawn/qian-plugin-sdk';\n")).toEqual([]);
   });
+  it('Qian 专有的外壳接线（@qian/shell-kit）在 yue 之上：yue 包与平台 SDK 不得反向引用，外壳、认证页族与参考远程可以引', async () => {
+    expect(await lint('packages/yue/shell/src/__violation__.ts', "export { loadAppConfig } from '@qian/shell-kit';\n")).toHaveLength(1);
+    expect(await lint('packages/yue/shell/src/__violation__.ts', "export { createIdentityAuthProvider } from '@qian/shell-kit/identity';\n")).toHaveLength(1);
+    expect(await lint('packages/qian-plugin-sdk/src/__violation__.ts', "export { loadAppConfig } from '@qian/shell-kit';\n")).toHaveLength(1);
+    expect(await lint('apps/qian-shell/src/__ok__.ts', "export { loadAppConfig } from '@qian/shell-kit';\n")).toEqual([]);
+    expect(await lint('packages/qian-identity-ui/src/__ok__.ts', "export { createIdentityAuthProvider } from '@qian/shell-kit/identity';\n")).toEqual([]);
+    expect(await lint('packages/qian-shell-kit/src/__ok__.ts', "export { safeNavigationUrl } from '@idadawn/yue-shell/menu';\nexport { ShellHost } from '@idadawn/qian-plugin-sdk';\n")).toEqual([]);
+    expect(await lint('samples/qian-sample-crm-ui/src/__ok__.tsx', "export { Button } from '@idadawn/yue-core';\n")).toEqual([]);
+  });
   it('@idadawn/yue-biz 引用 @idadawn/yue-designer 之类的向上依赖被拒绝', async () => {
     const messages = await lint('packages/yue/biz/src/__violation__.ts', "import { Designer } from '@idadawn/yue-designer';\nexport const x = Designer;\n");
     expect(messages).toHaveLength(1);

@@ -131,7 +131,7 @@ DataScopeComposition.ForResource 只建立逻辑计划：同角色 AND（重复�
 
 ### identity_revision 服务端比对
 
-令牌只携带 `identity_revision`（`Principal.IdentityRevision`）。本组件按（租户，主体种类，主体）在表 `subject_identity_revisions` 记住修订下限：携带更低修订的令牌即旧令牌，以 `identity_revision_stale`（`AuthzEnforcement.StaleIdentityRevision`）拒绝并记录，三处入口都映射为 401 `UNAUTHENTICATED`（gRPC `Unauthenticated`），客户端据此换令牌（S1-DEC-027）；未携带修订的令牌（S2S）不比对；负数拒绝。下限有两个来源，都只增不减：判定时见到更高修订的已验证令牌（懒抬高）；同进程宿主里授予变更提交后身份端口返回的新修订（见下一小节）。下限每次判定读库（主键查找、按租户 RLS），不进 Kun.Caching：内存后端不跨实例，靠 TTL 失效会让旧令牌在别的实例上多活 10 分钟，违反 R7 的 3 秒口径。判定快照键的第四段并入 identity_revision（R103）。本组件保证的是：新修订一经出现（令牌或身份端口），旧令牌在任一宿主立即失效；角色撤销经租户授权修订立即使旧快照失效（实测毫秒级，验收上限 3 秒）。
+令牌只携带 `identity_revision`（`Principal.IdentityRevision`）。本组件按（租户，主体种类，主体）在表 `subject_identity_revisions` 记住修订下限：携带更低修订的令牌即旧令牌，以 `identity_revision_stale`（`AuthzEnforcement.StaleIdentityRevision`）拒绝并记录，三处入口都映射为 401 `UNAUTHENTICATED`（gRPC `Unauthenticated`），客户端据此换令牌（S1-DEC-027）；未携带修订的令牌（S2S）不比对；负数拒绝。下限有两个来源，都只增不减：判定时见到更高修订的已验证令牌（懒抬高）；同进程宿主里授予变更提交后身份端口返回的新修订（见下一小节）。没有单一权限点的已认证入口（处理器内判定的能力目录、导航、外壳目录与执行入口，只要求已认证的有效权限 `me/permissions`）同样比对：`IAuthzEnforcement.CheckIdentityRevisionAsync` 只比对修订、不做权限判定，旧令牌返回与 `EnforceAsync` 同一原因、同一决策日志的拒绝，HTTP 适配映射为 401 `UNAUTHENTICATED`；平台主体与不带修订的令牌不比对（S1-YUE-012，菜单与权限在授权变更后也能随换令牌刷新）。下限每次判定读库（主键查找、按租户 RLS），不进 Kun.Caching：内存后端不跨实例，靠 TTL 失效会让旧令牌在别的实例上多活 10 分钟，违反 R7 的 3 秒口径。判定快照键的第四段并入 identity_revision（R103）。本组件保证的是：新修订一经出现（令牌或身份端口），旧令牌在任一宿主立即失效；角色撤销经租户授权修订立即使旧快照失效（实测毫秒级，验收上限 3 秒）。
 
 ### 授权变更 → 身份修订递增（S1-AZ-009）
 
@@ -161,7 +161,7 @@ DataScopeComposition.ForResource 只建立逻辑计划：同角色 AND（重复�
 
 ### HTTP 与 gRPC 适配（Qian.Authz.AspNetCore）
 
-`AddQianAuthzEnforcement(http => ctx, options)` 登记授权处理器与结果处理器（`ctx` 通常是 authz 组件按请求租户收窄的上下文）。端点以 `RequireQianPermission("<plugin>:<resource>:<action>")` 声明权限点（可多次，全部须放行；同时加 `RequiresPermissionAttribute` 元数据，OpenAPI 写出 `x-qian-permission`，并声明 401 / 403 的 ErrorDetail 响应）。`UseQianAuthzEnforcement()` 放在 `UseAuthorization` 之后：带 `PluginEndpointBinding` 却未声明权限点的端点在生产模式（`options.Production ?? IHostEnvironment.IsProduction()`）缺省拒绝（403 并记决策日志 `permission_not_declared`），开发模式记警告放行；`[AllowAnonymous]` 与显式标记 `PermissionEnforcedInHandlerAttribute(reason)`（能力目录、菜单、执行入口这类按调用者可见性在处理器内判定的平台表面）不在范围内，标记必须写明理由。gRPC：`AddGrpc(o => o.AddQianAuthzInterceptor())`，四种调用形态在进入 handler 或读取首帧前对方法上的 `[RequiresPermission]` 逐个判定，未声明按同样规则缺省拒绝；拒绝为 `PermissionDenied`（401 → `Unauthenticated`，404 → `NotFound`），trailer `qian-error-bin` 携带 ErrorDetail。陈旧令牌（`identity_revision_stale`）在 HTTP 回 401 `UNAUTHENTICATED`、gRPC 回 `Unauthenticated`、命令管道抛 `UNAUTHENTICATED`，审计不可用回 404，其余拒绝 403。主体只取自 `ICurrentUser.Principal`（须与 JWT 的 sub / tenant_id / principal_kind 一致，否则 401），租户由已认证宿主建立；目标为 `METHOD 路由模板` 或 gRPC 方法全名；拒绝响应带 `Cache-Control: private, no-store`。tenancy 运营端点（`PlatformHttpContract`）沿用 S1-TEN-006 的处理器内旁路 PEP，本任务未改接。
+`AddQianAuthzEnforcement(http => ctx, options)` 登记授权处理器与结果处理器（`ctx` 通常是 authz 组件按请求租户收窄的上下文）。端点以 `RequireQianPermission("<plugin>:<resource>:<action>")` 声明权限点（可多次，全部须放行；同时加 `RequiresPermissionAttribute` 元数据，OpenAPI 写出 `x-qian-permission`，并声明 401 / 403 的 ErrorDetail 响应）。`UseQianAuthzEnforcement()` 放在 `UseAuthorization` 之后：带 `PluginEndpointBinding` 却未声明权限点的端点在生产模式（`options.Production ?? IHostEnvironment.IsProduction()`）缺省拒绝（403 并记决策日志 `permission_not_declared`），开发模式记警告放行；`[AllowAnonymous]` 与显式标记 `PermissionEnforcedInHandlerAttribute(reason)`（能力目录、菜单、执行入口这类按调用者可见性在处理器内判定的平台表面）不在缺省拒绝范围内，标记必须写明理由；但未声明权限点的已认证端点（含这类标记端点）都先比对 identity_revision，旧令牌 401（S1-YUE-012）。gRPC：`AddGrpc(o => o.AddQianAuthzInterceptor())`，四种调用形态在进入 handler 或读取首帧前对方法上的 `[RequiresPermission]` 逐个判定，未声明按同样规则缺省拒绝；拒绝为 `PermissionDenied`（401 → `Unauthenticated`，404 → `NotFound`），trailer `qian-error-bin` 携带 ErrorDetail。陈旧令牌（`identity_revision_stale`）在 HTTP 回 401 `UNAUTHENTICATED`、gRPC 回 `Unauthenticated`、命令管道抛 `UNAUTHENTICATED`，审计不可用回 404，其余拒绝 403。主体只取自 `ICurrentUser.Principal`（须与 JWT 的 sub / tenant_id / principal_kind 一致，否则 401），租户由已认证宿主建立；目标为 `METHOD 路由模板` 或 gRPC 方法全名；拒绝响应带 `Cache-Control: private, no-store`。tenancy 运营端点（`PlatformHttpContract`）沿用 S1-TEN-006 的处理器内旁路 PEP，本任务未改接。
 
 ### 验收记录
 
@@ -176,6 +176,8 @@ S1-AZ-009：
 - Qian.Sample.Crm.Tests/CustomerCommandTests.IdentityRevision.cs（参考宿主同进程挂真实身份组件）：
   - 经生产授予端口授予后修订递增；撤销后 3 秒内旧令牌在 userinfo（401）与 PEP 执行端口（`identity_revision_stale`）都被拒。
   - refresh 拿到新修订、两侧放行；非 user、非 Person、无成员身份的主体不递增。
+
+S1-YUE-012：Qian.Sample.Crm.Tests/AuthzRevisionGuardTests.cs（参考宿主，生产模式，真实 PG 与审计链）：见到修订 3 的令牌后，`me/permissions`、`meta`、能力目录、导航与外壳目录对修订 2 的令牌一律 401 `UNAUTHENTICATED`（`private, no-store`）并各记一条 `identity_revision_stale` 拒绝决策，修订 3 与不带修订的令牌放行。
 
 ## 清单入口与代码派生
 

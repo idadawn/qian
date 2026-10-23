@@ -25,10 +25,13 @@ function pick(value: unknown): Partial<Preferences> {
 }
 function browserStorage(): PreferenceStorage | undefined { try { return typeof window === 'undefined' ? undefined : window.localStorage; } catch { return undefined; } }
 
-export function initPreferences({ namespace, overrides, storage = browserStorage() }: { namespace: string; overrides?: Partial<Preferences>; storage?: PreferenceStorage | null }): PreferencesStore {
+/**
+ * `overrides` 总是生效（高于已保存的偏好）；`defaults` 是部署缺省（例如运行时配置的语言）：低于已保存的偏好，也不写进存储，直到用户自己改了偏好。
+ */
+export function initPreferences({ namespace, overrides, defaults: deployment, storage = browserStorage() }: { namespace: string; overrides?: Partial<Preferences>; defaults?: Partial<Preferences>; storage?: PreferenceStorage | null }): PreferencesStore {
   if (!/^[a-zA-Z0-9._-]+$/.test(namespace)) throw new TypeError('shell.error.preferenceNamespace');
   const key = `yue.preferences.${namespace}`;
-  const initial = Object.freeze({ ...defaults, ...pick(overrides) });
+  const initial = Object.freeze({ ...defaults, ...pick(deployment), ...pick(overrides) });
   let saved: Partial<Preferences> = {};
   try { saved = pick(JSON.parse(storage?.getItem(key) ?? '{}')); } catch { /* 存储损坏或被禁用时仍可使用当前会话。 */ }
   let current = Object.freeze({ ...initial, ...saved, ...pick(overrides) });

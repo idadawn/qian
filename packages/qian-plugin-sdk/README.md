@@ -10,7 +10,7 @@
 npm install '@qian/plugin-sdk@npm:@idadawn/qian-plugin-sdk@0.1.0'
 ```
 
-依赖为实际发布的 `@idadawn/qian-runtime`、`@idadawn/yue-sdk`（传递 contracts 与 tokens）、官方 MF2 runtime、Ajv 与 SemVer。`pnpm pack` 会把 workspace 依赖写成固定版本范围，包内只交付 ESM、声明与文档；本地 pack 不代表私有源发布成功。正式发布与外部干净消费者验收由 `plugin-sdk-release` 工作流执行。
+依赖为实际发布的 `@idadawn/qian-runtime`、`@idadawn/yue-sdk`（传递 contracts 与 tokens）、官方 MF2 runtime 与 SemVer；Ajv 只在构建期使用（见下文「校验不在运行期生成代码」）。`pnpm pack` 会把 workspace 依赖写成固定版本范围，包内只交付 ESM、声明与文档；本地 pack 不代表私有源发布成功。正式发布与外部干净消费者验收由 `plugin-sdk-release` 工作流执行。
 
 ### 私有包初始化与正式发布
 
@@ -49,6 +49,8 @@ await host.loadSlot('qian.shell.nav/v1', menu[0]?.descriptor.id);
 
 `slotContracts` 导出六份带独立 `$id` 与 `/v1` 的输入 JSON Schema；`SlotOutputs` 定义各插槽输出，`listSlot()` 提供对应静态类型。`ui/manifest.json` 的 `pages[].nav` 转为导航贡献，其他表面通过 `contributions` 指定 `slot / id / title / description / permission / expose`；客户端动作另带 `parameters`。无效 Schema、未知字段、未声明 expose 与重复贡献拒绝登记。
 
+**校验不在运行期生成代码（S1-YUE-012）**：外壳的 meta CSP 只放行同源脚本与按哈希列出的内联脚本，所以 SDK 的启动路径不得用 `new Function` / `eval`。UI 清单与插槽贡献的校验器由 `scripts/ui-schema.mjs` 在构建期用 Ajv standalone 预编译成 `src/ui-validators.generated.ts`（`--check` 比对新鲜度）；客户端动作的 `parameters` 在登记时由 `compileParameters` 解释执行一个封闭的 JSON Schema 子集（`type`、`enum`、`const`、`properties`、`required`、`additionalProperties`、对象与数组的个数约束、`items`、`uniqueItems`、字符串长度（按码点）与 `pattern`、数值范围与 `multipleOf`，注释类关键字忽略），子集之外的关键字拒绝登记（`INPUT_INVALID`、`/parameters`），嵌套深度上限 32。`test/parameters.test.ts` 另有静态检查，确认这些模块里没有 Ajv 运行时导入与动态代码生成。
+
 每个加载的 expose 在真实 `PluginLoader` 中有自己的 Apply。贡献用 `ctx.provide(key, name, value)` 注册；相同槽位与名称的租户项遮蔽全局项。目录、读取、执行共用挂载/权益/权限过滤。`unloadRemote` 先撤销桥接访问，再逆序等待效果与注册释放；全局项随之重新可见。MF 已执行的 JavaScript 可能仍在浏览器模块缓存内，卸载承诺为逻辑贡献与生命周期撤销，不声称能清除 JavaScript 引擎代码缓存。
 
 `window.__qian.bridge` 只公开调用入口，不公开注册身份的入口。宿主通过对象身份的 WeakMap 绑定真实远程 ID 与 scope，再将 `RemoteBridge` 交给对应远程。其中只读 `bridge.caller` 是受信任加载时生成的原对象句柄：远程可以调用 `window.__qian.bridge.getContext(bridge.caller)`，也可直接使用闭包形式的 `bridge.getContext()`；两条路径共享授权与撤销检查。自行填写同名 ID/scope、展开或 JSON 复制句柄都无效。每次调用重新检查注册仍有效、当前租户、挂载与权益，写操作额外验证能力声明与权限。卸载后保留的原句柄也失效，不提供公开 `open` 或 Dispatcher。
@@ -67,4 +69,4 @@ await host.loadSlot('qian.shell.nav/v1', menu[0]?.descriptor.id);
 
 运行 `pnpm --filter @idadawn/qian-plugin-sdk test` 验证真实运行时遮蔽/卸载、深冻结、伪造身份、作用域与权限撤销、版本审计、网络等待时切租户、动作 Schema 和幂等请求；运行 `pnpm --filter qian-shell e2e` 验证真实 MF 制品、同实例 React/SDK/组件、预加载与类型归档、租户未挂载零请求和实际 PostgreSQL 审计链。
 
-MF2 只加载可信官方 UI，不能隔离同一页面中的恶意 JavaScript。S3 的 Worker/iframe 沙箱独立推进。真实认证和会话刷新接线仍归 YUE-002，权益服务接线归 ENT-002，静态制品的三 profile 镜像与部署归 DEP-008；这里交付明确的宿主注入端口、可部署静态目录及真实审计参考适配验收。
+MF2 只加载可信官方 UI，不能隔离同一页面中的恶意 JavaScript。S3 的 Worker/iframe 沙箱独立推进。真实认证与会话刷新已由 YUE-012 接进外壳（`apps/qian-shell`），权益服务接线归 ENT-002，静态制品的镜像与部署归 DEP-008；这里交付明确的宿主注入端口、可部署静态目录及真实审计参考适配验收。

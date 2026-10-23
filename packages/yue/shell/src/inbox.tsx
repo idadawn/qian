@@ -1,4 +1,4 @@
-import { Badge, cn, Icon, Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@idadawn/yue-core';
+import { Badge, cn, Icon, Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@idadawn/yue-core/shell';
 import type { PlatformI18n } from '@idadawn/yue-sdk';
 import { useShellLocale, type ShellPartProps } from './layout';
 

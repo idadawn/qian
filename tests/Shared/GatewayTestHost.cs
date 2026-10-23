@@ -36,7 +36,7 @@ internal sealed class GatewayTestHost(WebApplication app, PluginLoader loader, G
     internal static async Task<GatewayTestHost> Start(LoopbackPort.Reservation reservation, X509Certificate2 tls,
         string identityIssuer, string clientId, string identityAudience, string clientSecret, string redis,
         string issuer, IReadOnlyList<GatewayRoute> routes, IReadOnlyList<GatewayCluster> clusters, RSA signing,
-        IReadOnlyList<string>? trustedNetworks = null, TimeProvider? clock = null)
+        IReadOnlyList<string>? trustedNetworks = null, TimeProvider? clock = null, Action<WebApplication>? map = null)
     {
         var address = new Uri($"https://localhost:{reservation.Port}/");
         var directory = Directory.CreateTempSubdirectory("qian-gateway-").FullName;
@@ -76,7 +76,7 @@ internal sealed class GatewayTestHost(WebApplication app, PluginLoader loader, G
         builder.Services.AddQianGateway(configuration, IdentityClientDefaults.SessionScheme);
         var app = builder.Build();
         app.UseForwardedHeaders(); app.UseRouting(); app.UseQianIdentityClient(); app.UseQianGateway();
-        app.MapQianIdentityClient(); app.MapQianGateway();
+        app.MapQianIdentityClient(); app.MapQianGateway(); map?.Invoke(app);
         var loader = new PluginLoader(app.Services);
         try
         {

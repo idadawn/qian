@@ -36,6 +36,13 @@ public static class CapabilityEndpoints
             var caller = source(http);
             return Results.Json(new NavigationCatalog(await caller.Navigation().ListAsync(caller, http.RequestServices.GetRequiredService<ICurrentUser>(), http.RequestAborted).ConfigureAwait(false)));
         })).RequireAuthorization().RequireQianPlugin(binding).WithMetadata(InHandler).Produces<NavigationCatalog>();
+        // 外壳目录（S1-YUE-012）：当前租户与本租户 scope 实际挂载的 UI 远程，供网关的外壳 bootstrap 聚合；未挂载的组件不出现。
+        endpoints.MapGet("/api/capabilities/shell", (Func<HttpContext, Task<IResult>>)(async http =>
+        {
+            http.Response.Headers.CacheControl = "private, no-store";
+            var caller = source(http);
+            return Results.Json(await caller.Navigation().GetShellAsync(caller, http.RequestServices.GetRequiredService<ICurrentUser>(), http.RequestAborted).ConfigureAwait(false));
+        })).RequireAuthorization().RequireQianPlugin(binding).WithMetadata(InHandler).Produces<ShellCatalog>();
         endpoints.MapGet("/api/capabilities/navigation/item", async (HttpContext http, string resourceRef) =>
         {
             http.Response.Headers.CacheControl = "private, no-store";

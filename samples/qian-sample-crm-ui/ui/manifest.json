@@ -1,0 +1,18 @@
+{
+  "$schema": "https://qian.dev/schemas/ui/v2",
+  "federation": { "manifest": "/remotes/qian.sample.crm/mf-manifest.json", "exposes": ["CustomersPage", "CreateCustomerPage"] },
+  "engines": { "yue": "^0.1.0" },
+  "pages": [
+    { "route": "/customers", "expose": "CustomersPage", "permission": "qian.sample.crm:customer:read", "nav": { "title": "客户", "icon": "users", "order": 10 } },
+    { "route": "/customers/new", "expose": "CreateCustomerPage", "permission": "qian.sample.crm:customer:write", "nav": { "title": "新建客户", "order": 20 } }
+  ],
+  "bridge": {
+    "slots": ["qian.shell.nav/v1", "qian.shell.command/v1"],
+    "navigate": ["/customers", "/customers/new"],
+    "notify": true,
+    "capabilities": [
+      { "id": "qian.sample.crm/customer.list", "permission": "qian.sample.crm:customer:read", "sideEffect": "read" },
+      { "id": "qian.sample.crm/customer.create", "permission": "qian.sample.crm:customer:write", "sideEffect": "write" }
+    ]
+  }
+}

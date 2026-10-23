@@ -26,11 +26,16 @@ namespace Qian.Dev.Shell;
 internal sealed record DevDexConnector(Uri Issuer, string SecretFile);
 
 // 真实 qian.identity 挂进 CRM 参考宿主（照集成测试 CustomerCommandTests.Identity 的 ConfigureIdentity / MountIdentity）：
-// 内置账号模型 + OpenIddict 协议面 + 账号 HTTP 接口，身份请求走自己的分支，不经过业务管线；同一分支同源托管认证页族静态制品（/login）。
+// 内置账号模型 + OpenIddict 协议面 + 账号 HTTP 接口，身份请求走自己的分支，不经过业务管线；同一分支经产品扩展 UseQianIdentityPages 同源托管认证页族（/login，S1-YUE-012）。
 // 给出上游 Dex 时再挂 S1-IDP-007 的通用 OIDC 连接器组件（注册名 dex），SSO 跳转回调走真实的发起 → 上游登录 → /connect/callback/dex → 落点流程。
 internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, string clientSecret, DevDexConnector? dex = null) : IDisposable
 {
     internal const string ClientId = "qian-shell";
+    /// <summary>
+    /// 外壳经 bridge.invoke 调参考应用能力时令牌要带的 OAuth scope（能力声明的 requiredScopes：customer.list / get 要 crm.read，customer.create 要 crm.write）。
+    /// scope 只圈定客户端能请求什么，用户能不能做仍由 PEP 按权限判定（乙方的 tenant.user 带着 crm.write 也看不到 customer.create）。
+    /// </summary>
+    internal static readonly string[] ApplicationScopes = ["crm.read", "crm.write"];
     /// <summary>通用 OIDC 连接器的注册名（登录页按钮、回调路径段与落点 /login/connector/dex）。</summary>
     internal const string DexConnectorId = "dex";
     internal const string DexDisplayName = "Dex 本机身份源";
@@ -46,12 +51,13 @@ internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, strin
         builder.Services.AddQianData<IdentityDbContext>((_, options) => options.UseNpgsql(database.App).UseKunSchema(IdentityDbContext.Schema));
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
         // 账号 Cookie scheme：未登录的授权请求挑战到同源认证页族 /login?ReturnUrl=…（页面登录后回到授权请求签发授权码）。
-        builder.Services.AddAuthentication().AddCookie("qian.identity.signin", cookie => cookie.LoginPath = "/login");
+        builder.Services.AddAuthentication().AddCookie("qian.identity.signin", cookie => cookie.LoginPath = IdentityPagesHosting.PagesPath);
         builder.Services.AddHttpClient();
         var shell = new OpenIddictApplicationDescriptor { ClientId = ClientId, ClientSecret = clientSecret, ClientType = ClientTypes.Confidential, ConsentType = ConsentTypes.Implicit, DisplayName = "Qian 外壳（本机联调）" };
         shell.RedirectUris.Add(callback);
         shell.Permissions.UnionWith([Permissions.Endpoints.Authorization, Permissions.Endpoints.Token, Permissions.Endpoints.EndSession, Permissions.Endpoints.Revocation,
-            Permissions.GrantTypes.AuthorizationCode, Permissions.GrantTypes.RefreshToken, Permissions.ResponseTypes.Code, Permissions.Prefixes.Scope + "qian.api"]);
+            Permissions.GrantTypes.AuthorizationCode, Permissions.GrantTypes.RefreshToken, Permissions.ResponseTypes.Code, Permissions.Prefixes.Scope + "qian.api",
+            .. ApplicationScopes.Select(scope => Permissions.Prefixes.Scope + scope)]);
         builder.Services.AddSingleton<IStartupFilter>(new IdentityBranchFilter(uiDist));
         builder.Services.AddQianIdentityServer(new IdentityServerOptions
         {
@@ -112,42 +118,20 @@ internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, strin
     }
 
     // 同机混合部署：身份的账号接口在 /api 之下，而业务宿主对 /api 一律要求已认证的租户；身份请求与认证页族走自己的分支。
+    // 认证页族的托管与安全头是产品扩展（入口与深链接 no-store、/login/assets 长缓存、frame-ancestors 'none'、Referrer-Policy、nosniff），与生产镜像同一份代码。
     private sealed class IdentityBranchFilter(string uiDist) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
         {
             app.MapWhen(http => http.Request.Path.StartsWithSegments("/api/identity") || http.Request.Path.StartsWithSegments("/connect") ||
-                http.Request.Path.StartsWithSegments("/.well-known") || http.Request.Path.StartsWithSegments("/login"), branch =>
+                http.Request.Path.StartsWithSegments("/.well-known") || http.Request.Path.StartsWithSegments(IdentityPagesHosting.PagesPath), branch =>
             {
                 branch.UseQianIdentityServer();
-                var files = new PhysicalFileProvider(uiDist);
-                // 认证页族是 Vite 构建产物（base /login/）：带哈希的资源长缓存，入口页不缓存；页面只许同源嵌入自己（不许被 iframe）。
-                branch.UseStaticFiles(new StaticFileOptions
-                {
-                    RequestPath = "/login", FileProvider = files,
-                    OnPrepareResponse = context => Headers(context.Context.Response, context.File.Name.EndsWith(".html", StringComparison.OrdinalIgnoreCase) ? "no-store" : "public, max-age=31536000, immutable")
-                });
-                branch.Use(async (http, next) =>
-                {
-                    if (http.Request.Path.StartsWithSegments("/login", out var rest) && (HttpMethods.IsGet(http.Request.Method) || HttpMethods.IsHead(http.Request.Method)))
-                    {
-                        if (Path.HasExtension(rest.Value)) { http.Response.StatusCode = StatusCodes.Status404NotFound; return; }
-                        Headers(http.Response, "no-store"); http.Response.ContentType = "text/html; charset=utf-8";
-                        await http.Response.SendFileAsync(files.GetFileInfo("index.html"), http.RequestAborted).ConfigureAwait(false);
-                        return;
-                    }
-                    await next(http).ConfigureAwait(false);
-                });
+                branch.UseQianIdentityPages(uiDist);
                 branch.UseRouting(); branch.UseAuthentication();
                 branch.UseEndpoints(endpoints => { endpoints.MapQianIdentityServer(); endpoints.MapQianIdentityAccounts(); });
             });
             next(app);
         };
-
-        private static void Headers(HttpResponse response, string cacheControl)
-        {
-            response.Headers.CacheControl = cacheControl; response.Headers.XContentTypeOptions = "nosniff";
-            response.Headers["Referrer-Policy"] = "no-referrer"; response.Headers.ContentSecurityPolicy = "frame-ancestors 'none'";
-        }
     }
 }
