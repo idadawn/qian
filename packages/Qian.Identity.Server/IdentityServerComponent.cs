@@ -8,8 +8,9 @@ using System.Text.Json;
 namespace Qian.Identity.Server;
 
 /// <summary>清单分发的稳定入口；程序化适配模式由 IdentityServerPlugin 保留。</summary>
-[QianPlugin("qian.identity.server", MetadataTypes = [typeof(IdentityRuntimeEvents)])]
+[QianPlugin("qian.identity.server", MetadataTypes = [typeof(IdentityRuntimeEvents), typeof(DirectoryDisableCapability)])]
 [QianConfigSchema(ComponentConfiguration.Schema)]
+[CapabilitySource(typeof(DirectoryDisableCapability), nameof(DirectoryDisableCapability.Definition))]
 [DelegatePlugin(typeof(IdentityServerPlugin))]
 [Provides(typeof(IdentityDefinition), nameof(IdentityDefinition.Key))]
 [Provides(typeof(IdentityDefinition), nameof(IdentityDefinition.AccountsKey))]

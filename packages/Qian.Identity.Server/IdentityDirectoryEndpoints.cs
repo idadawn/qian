@@ -23,7 +23,6 @@ internal static class IdentityDirectoryEndpoints
 
     internal static void Map(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet(Prefix + "/operations", (Delegate)((HttpContext http) => Run(http, false, (_, _) => Task.FromResult<object>(new { items = DirectoryOperations.All }))));
         endpoints.MapGet(Prefix + "/org-types", (Delegate)((HttpContext http) => Run(http, false, async (directory, ct) => new { items = await directory.ListOrganizationTypesAsync(ct).ConfigureAwait(false) })));
         endpoints.MapPut(Prefix + "/org-types", (Delegate)((HttpContext http) => Write<OrganizationType>(http, async (directory, request, ct) => await directory.SetOrganizationTypeAsync(request, ct).ConfigureAwait(false))));
         endpoints.MapDelete(Prefix + "/org-types/{code}", (Delegate)((HttpContext http, string code) => Delete(http, (directory, ct) => directory.DeleteOrganizationTypeAsync(code, ct).AsTask())));

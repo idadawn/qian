@@ -51,16 +51,12 @@ public sealed record DirectoryBatchItem(Guid MembershipId, bool Succeeded, strin
 public sealed record DirectoryBatchResult(string Status, IReadOnlyList<DirectoryBatchItem> Items);
 /// <summary>目录操作的机器可读安全元数据；Executable 为 false 时只是预留契约，不存在执行入口。</summary>
 public sealed record DirectoryOperation(string Name, string Description, string SideEffect, string PolicyHint, bool AgentExpose, bool RequiresConfirmation, bool Executable, string Example);
-/// <summary>目录查询与写入的安全分类。</summary>
+/// <summary>目录未实现操作的安全边界，不是可执行能力目录。</summary>
 public static class DirectoryOperations
 {
-    /// <summary>S1 目录操作目录；物理清除只保留 humanOnly 契约，不提供执行入口。</summary>
+    /// <summary>尚未实现的高风险操作边界；真实能力使用 SDK 生成契约，不在此重复声明。</summary>
     public static IReadOnlyList<DirectoryOperation> All { get; } = Array.AsReadOnly(new[]
     {
-        new DirectoryOperation("directory.orgs.tree", "读取本租户组织树及主管与责任岗位。", "read", "allow", true, false, true, "GET /api/directory/orgs/tree"),
-        new DirectoryOperation("directory.position.holders", "读取指定岗位的本租户成员。", "read", "allow", true, false, true, "GET /api/directory/positions/{id}/holders"),
-        new DirectoryOperation("directory.member.disable", "禁用成员并即时吊销其本租户会话；批量操作保护租户管理员。", "write", "confirm", true, true, true, "POST /api/directory/members:disable"),
-        new DirectoryOperation("directory.member.delete", "禁用并标记目录成员，保留账号、归属和审计事实。", "write", "confirm", true, true, true, "DELETE /api/directory/members/{id}"),
         new DirectoryOperation("directory.member.purge", "物理清除需人工治理；S1 不提供执行入口。", "destructive", "deny", false, false, false, "无执行入口")
     });
 }

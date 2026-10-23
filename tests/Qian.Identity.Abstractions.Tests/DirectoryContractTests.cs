@@ -24,8 +24,6 @@ public sealed class DirectoryContractTests
         Assert.False(DirectoryRules.CanTransition(AccountStatuses.Active, AccountStatuses.Locked));
         Assert.False(DirectoryRules.CanTransition(AccountStatuses.Locked, AccountStatuses.Active));
         Assert.False(DirectoryRules.CanTransition(AccountStatuses.Purged, AccountStatuses.Purged));
-        var disable = Assert.Single(DirectoryOperations.All, row => row.Name == "directory.member.disable");
-        Assert.Equal(("write", "confirm", true, true), (disable.SideEffect, disable.PolicyHint, disable.RequiresConfirmation, disable.Executable));
         var purge = Assert.Single(DirectoryOperations.All, row => row.Name == "directory.member.purge");
         Assert.Equal(("destructive", false, false), (purge.SideEffect, purge.AgentExpose, purge.Executable));
         Assert.All(DirectoryOperations.All, row => { Assert.NotEmpty(row.Description); Assert.NotEmpty(row.Example); });

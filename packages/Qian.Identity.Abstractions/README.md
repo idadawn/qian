@@ -64,4 +64,4 @@
 
 `IIdentityDirectory` 由 Identity Server 提供，服务键为 `IdentityDefinition.DirectoryKey`，经 `ctx.IdentityDirectory()` 解析。契约涵盖租户组织类型、单棵组织树、岗位树与责任人、用户组、多归属及主归属、1:1 用户档案、成员列表、状态和批量三态；租户从可信上下文读取，不接受输入 tenant_id。档案联系方式只返回掩码。运行时和 HTTP 安全边界、字段及真实验收见 [Identity Server 组织目录](../Qian.Identity.Server/README.md#组织目录)。
 
-`DirectoryOperations` 是操作描述契约，禁用为 write + confirm，物理清除为 destructive 且 AgentExpose=false（humanOnly）、Executable=false；不会为未实现的清除操作登记可执行能力。目录派生查询、SCIM 和 directory.* 事件留在 S1-IDP-010。
+真实禁用能力 `qian.identity.server/directory.member.disable` 由 Server 的 SDK `CapabilitySource` 从实际绑定派生，write + confirm，带标准 idempotencyKey 及 Agent 确认字段。`DirectoryOperations` 仅保留尚未实现的物理清除安全边界：destructive 且 AgentExpose=false（humanOnly）、Executable=false；不重复维护禁用能力目录，也不为未实现的清除操作登记可执行能力。目录派生查询、SCIM 和 directory.* 事件留在 S1-IDP-010。

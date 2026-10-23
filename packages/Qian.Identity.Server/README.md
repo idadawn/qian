@@ -59,9 +59,14 @@
 | `GET /members/{id}/profile`、`PUT /members/{id}/profile` | 管理员读写档案 `{name,pinyin?,phone?,email?,extensions?}`，读取返回联系方式掩码 |
 | `POST /members/{id}/status`、`DELETE /members/{id}` | 按 `{status,reason}` 改状态；删除为禁用+标记，无物理清除路由 |
 | `POST /members:disable` | `{membership_ids:[...],reason}`，1–100 个不同成员；逐项独立事务，回 `{status,items[]}`，状态 SUCCESS/PARTIAL_SUCCESS/FAILED，单项带 membership_id/succeeded/error_code |
-| `GET /operations` | 操作描述与安全分类；`member.disable` 为 write/confirm/需确认，物理清除为 destructive、agent_expose=false 且 executable=false，仅保留安全契约 |
 
-物理清除描述不会注册到 `ExecutableCapabilities`，不会生成可调用工具，不提供清除实现。目录操作描述仅用于 S1 元数据，实际 HTTP 写入仍由管理员资格与防伪校验控制；S4 Agent 执行不在本任务中。
+**标准禁用能力**：`DirectoryDisableCapability` 的真实绑定与静态 `CapabilityContract` 经 `[CapabilitySource]` 派生 `tools/directory.member.disable.json`，权限点同时派生到 `metadata/permissions.json`。目录不会维护另一套可执行操作清单。标准契约为 `write`、`policyHint=confirm`、`idempotent=true`、`agent.expose=true`、`agent.requiresConfirmation=true`，输入 `{idempotencyKey,membershipIds,reason}`，reason 标敏感；输出为同一批量三态结果。`idempotencyKey` 是必填 UUID，主体/租户/会话不属于输入。
+
+通用入口通过既有 `ICapabilityService` 执行和持久回执：相同主体、能力与 Idempotency-Key 的成功响应保留 24 小时，同键同输入直接回放、改输入返回 409，不再次进入业务或写吊销事件。绑定还会重验运行态可见性、当前租户、宿主认证后的 `ICurrentUser`、实际服务端会话与身份修订、真实 `qian.identity.server:member:disable` 权限和租户管理员资格；只有权限而不是 Identity 管理员的用户仍被拒绝。S1 暂不执行 Agent/委托主体，Agent 字段为已冻结的后续调用安全契约。
+
+能力的 audit=true 由已有 Audit 定义端口落实：开始记录失败不执行，收尾有界写完成或失败记录，reason 在计算输入哈希前脱敏；通用入口重放发生在绑定之前，不重复记录审计。执行宿主须提供标准能力目录、受信当前用户、授权与租户审计端口，Identity 不引用这些 Provider。原 `/api/directory/members:disable` Cookie 接口仍由实时管理员校验与防伪保护，复用相同 `DisableMembersAsync` 业务规则，但不是通用回执入口，不宣称有 24 小时重放。
+
+物理清除仅在 Definition 的 `DirectoryOperations` 保留 `destructive`、AgentExpose=false（humanOnly）、Executable=false 的安全边界；没有对应 HTTP 操作目录、执行路由、`ExecutableCapabilities` 注册或可调用工具。
 
 ## 统一登录流水线
 
@@ -178,13 +183,13 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 
 ## 验收
 
-`DirectoryTests` 使用实际 PostgreSQL 16、受限角色、生产迁移与 Kestrel：覆盖组织/岗位移动、循环和深度拒绝、含成员拒删、租户类型字典、责任人、多归属/主归属、档案 1:1、直连 RLS 与跨租户复合外键、10 人含 2 管理员的批量三态、同租户会话吊销且其他租户不受影响、软删除不复活、平台超管不出现在成员列表、CSRF/未知字段/卸载 404、并发归属与删除及互相移动。`DirectoryContractTests` 覆盖深度与状态机及操作安全分类，迁移测试校验模型无漂移及八张租户表的 FORCE RLS。
+`DirectoryTests` 使用实际 PostgreSQL 16、受限角色、生产迁移与 Kestrel：覆盖组织/岗位移动、循环和深度拒绝、含成员拒删、租户类型字典、责任人、多归属/主归属、档案 1:1、直连 RLS 与跨租户复合外键、10 人含 2 管理员的批量三态、同租户会话吊销且其他租户不受影响、软删除不复活、平台超管不出现在成员列表、CSRF/未知字段/卸载 404、并发归属与删除及互相移动。`CustomerCommandTests.DirectoryCapability.cs` 在真实 Identity/Registry/Authz/Capabilities/PostgreSQL 装配下验证实际生成 tool 与冻结目录 Schema、同键回放/变更冲突、重新启用后重放不再次禁用、吊销事件与审计不重复、非管理员/跨 scope/已吊销会话/卸载拒绝；测试使用真实生成表面组装独立测试制品，产品 x-skeleton 不变。`DirectoryContractTests` 覆盖深度与状态机及物理清除安全边界，迁移测试校验模型无漂移及八张租户表的 FORCE RLS。
 
 真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签；RFC 8707 resource 的白名单、两层检查、多资源客户端必须指定与收窄见 `ResourceIndicatorTests`）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）；连接器登录（`ConnectorFlowTests`：假连接器 TCK 的清单校验、state 篡改拒绝、回调幂等含并发，确认绑定、冲突不泄露、过期与重新认证窗口、取消、JIT 与配额、租户 scope 过滤与遮蔽、详情不回传密钥；`AuthentikConnectorTests`：容器里的真实 Authentik 经通用 OIDC 连接器走完首次绑定、再次登录与同租户重复绑定被拒）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
 
 ## 模型体验
 
-协议与账号端点不是模型工具，不派生登录、刷新或密码相关 capability；模型不会由本组件获得签发、重置密码或登录能力。
+协议与账号端点不派生登录、刷新或密码相关 capability；模型不会由本组件获得签发、重置密码或登录能力。目录禁用是经 SDK 从实际绑定派生的标准写能力，带 confirm 和人工确认元数据，实际 S1 执行只接受已认证并仍有效的租户管理员。
 
 ## 已知限制与延期项
 
