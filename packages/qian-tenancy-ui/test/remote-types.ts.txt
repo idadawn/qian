@@ -1,0 +1,13 @@
+import type { PlatformClient, RemoteBridge } from '@idadawn/qian-plugin-sdk';
+import type TenantRemote from '../dist/remote/@mf-types/TenantPage';
+import type { TenantRemoteProps } from '../dist/remote/@mf-types/TenantPage';
+
+declare const client: PlatformClient;
+declare const bridge: RemoteBridge;
+const accepted: Parameters<typeof TenantRemote>[0] = { client, bridge };
+const advertised: TenantRemoteProps = accepted;
+// @ts-expect-error 实际生成的远程契约必须保留必需 bridge，不能退化为 any。
+const missingBridge: TenantRemoteProps = { client };
+// @ts-expect-error 实际生成的远程客户端必须保持 PlatformClient 类型。
+const wrongClient: TenantRemoteProps = { client: 'untyped', bridge };
+void [advertised, missingBridge, wrongClient];

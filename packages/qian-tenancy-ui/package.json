@@ -10,7 +10,7 @@
     "e2e": "node scripts/e2e.mjs",
     "contracts:generate": "pnpm --workspace-root openapi:generate --source plugins/qian.tenancy/contracts/http-v1.openapi.json --output packages/qian-tenancy-ui/src/api.generated.ts --schema-output packages/qian-tenancy-ui/src/http-contract.generated.json",
     "contracts:check": "pnpm --workspace-root openapi:generate --source plugins/qian.tenancy/contracts/http-v1.openapi.json --output packages/qian-tenancy-ui/src/api.generated.ts --schema-output packages/qian-tenancy-ui/src/http-contract.generated.json --check",
-    "build:remote": "vite build --config vite.remote.config.ts"
+    "build:remote": "vite build --config vite.remote.config.ts && node scripts/verify-remote-types.mjs"
   },
   "dependencies": {
     "@idadawn/yue-core": "workspace:^",
