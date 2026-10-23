@@ -146,7 +146,7 @@ public sealed partial class AuditStoreTests
     }
 
     [Fact]
-    public async Task 平台链函数只认被直接授予执行权的受限登录_平台登录成员登录与BYPASSRLS登录被拒_非可串行化带租户与租户正文均拒绝()
+    public async Task 平台链函数只认被直接授予执行权的受限登录_平台登录成员登录与BYPASSRLS登录被拒_非可串行化带租户与租户正文均拒绝_两个函数都先取平台链锁()
     {
         await using var platform = await StartPlatformTransaction();
         var suffix = Guid.NewGuid().ToString("N")[..8];
@@ -161,12 +161,38 @@ public sealed partial class AuditStoreTests
         var bypass = "qian_platform_bypass_" + suffix; var bypassConnection = await CreateLogin(bypass, "NOINHERIT NOSUPERUSER BYPASSRLS");
         await Admin($"GRANT USAGE ON SCHEMA plugin_qian_audit TO \"{bypass}\"; GRANT EXECUTE ON FUNCTION {PlatformFunctions} TO \"{bypass}\";");
         await DirectCall(bypassConnection, PlatformRecord(), PostgresErrorCodes.InsufficientPrivilege, PlatformCallerRefused);
-        // 生产方本身：非可串行化事务、带租户 GUC、正文带租户都拒绝；摘要不符与序号不接链头同租户链函数。
+        // 生产方本身：非可串行化事务、带租户 GUC、正文带租户都拒绝；摘要不符、序号或前序哈希不接链头同租户链函数。
         await DirectCall(platform.ProducerConnection, PlatformRecord(), PostgresErrorCodes.InsufficientPrivilege, PlatformContextRefused, IsolationLevel.ReadCommitted);
         await DirectCall(platform.ProducerConnection, PlatformRecord(), PostgresErrorCodes.InsufficientPrivilege, PlatformContextRefused, tenant: A);
         await DirectCall(platform.ProducerConnection, CanonicalizerTests.Record(), PostgresErrorCodes.InsufficientPrivilege, "audit tenant boundary mismatch");
         await DirectCall(platform.ProducerConnection, PlatformRecord(), PostgresErrorCodes.CheckViolation, "invalid audit digest", forgeHash: true);
         await DirectCall(platform.ProducerConnection, PlatformRecord(), PostgresErrorCodes.SerializationFailure, "audit chain changed", skipSequence: true);
+        await DirectCall(platform.ProducerConnection, PlatformRecord(), PostgresErrorCodes.SerializationFailure, "audit chain changed", forgePrevious: true);
+        // 两个函数都先取 qian.audit:platform 事务锁（独立追加的 session 锁用同一个键）、再读写链头行，与独立追加同一锁序，锁持有到事务结束：
+        // 单独调用 platform_tip 或 platform_append 之后，另一会话都取不到这把锁，回滚后即可取到。此时平台链为空，下一个序号是 1、没有前序。
+        await using (var connection = await OpenLogin(platform.ProducerConnection))
+        {
+            var record = PlatformRecord();
+            await using (var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, Ct))
+            {
+                await Scalar(connection, $"SELECT count(*) FROM plugin_qian_audit.platform_tip('{record.Id}')", transaction);
+                Assert.False(await PlatformLockFree());
+                await transaction.RollbackAsync(Ct);
+            }
+            Assert.True(await PlatformLockFree());
+            await using (var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, Ct))
+            {
+                await using (var append = new NpgsqlCommand("SELECT plugin_qian_audit.platform_append(@body, NULL, @hash)", connection, transaction))
+                {
+                    append.Parameters.AddWithValue("body", AuditCanonicalizer.Content(record, 1));
+                    append.Parameters.AddWithValue("hash", AuditCanonicalizer.Hash(record, 1, null));
+                    await append.ExecuteNonQueryAsync(Ct);
+                }
+                Assert.False(await PlatformLockFree());
+                await transaction.RollbackAsync(Ct);
+            }
+            Assert.True(await PlatformLockFree());
+        }
         // 函数属主被授予成员关系：函数拒绝所有调用方（属主分支同时关闭）。
         await Admin($"GRANT \"{platform.Writer}\" TO qian_app;");
         try { await DirectCall(platform.ProducerConnection, PlatformRecord(), PostgresErrorCodes.InsufficientPrivilege, PlatformCallerRefused); }
@@ -178,7 +204,7 @@ public sealed partial class AuditStoreTests
     }
 
     [Fact]
-    public async Task 应用角色不能直接读写平台记录_借成员关系切换为函数属主也不能_平台登录只读追加平台行_迁移拒绝角色复用()
+    public async Task 应用角色不能直接读写平台记录_借成员关系切换为函数属主也不能_属主分支只在无租户GUC且调用方不是平台登录时放行平台行_平台登录只读追加平台行_迁移拒绝角色复用()
     {
         await using var platform = await StartPlatformTransaction();
         var audit = platform.Producer.Audit();
@@ -189,6 +215,7 @@ public sealed partial class AuditStoreTests
             Assert.Equal(2, (await audit.AppendPlatformEnlistedAsync(platform.Producer, PlatformRecord(), transaction, Ct)).Sequence);
             await transaction.CommitAsync(Ct);
         }
+        using (platform.Tenant.BeginScope(A)) await audit.AppendAsync(CanonicalizerTests.Record(), Ct);
         // qian_app 持有审计表的 DML 授权（租户审计凭据），但 RLS 不放行平台行：读不到、插不进、改不了也删不掉。
         await using (var app = await OpenLogin(postgres.AppConnectionString))
         {
@@ -201,6 +228,19 @@ public sealed partial class AuditStoreTests
         // 生产方只有函数执行权，没有审计表权限。
         await using (var producer = await platform.OpenProducer())
             Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, (await Assert.ThrowsAsync<PostgresException>(() => Scalar(producer, "SELECT count(*) FROM plugin_qian_audit.audit_entries"))).SqlState);
+        // 属主分支逐条核对：另建一个属主拥有的 SECURITY DEFINER 探针，绕开平台函数自己的调用方检查，直接看属主身份下 RLS 放行哪些行。
+        // 生产方调用且无租户 GUC：只见平台行，见不到租户行；带租户 GUC：属主分支关闭，只剩租户分支放行的该租户行；平台登录调用（session_user 是平台登录）：一行都见不到。
+        await Admin("CREATE FUNCTION qian_platform_ops.owner_view(OUT platform_rows bigint, OUT tenant_rows bigint) LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog " +
+            "AS 'SELECT count(*) FILTER (WHERE tenant_id IS NULL), count(*) FILTER (WHERE tenant_id IS NOT NULL) FROM plugin_qian_audit.audit_entries'; " +
+            $"ALTER FUNCTION qian_platform_ops.owner_view() OWNER TO \"{platform.Writer}\"; REVOKE ALL ON FUNCTION qian_platform_ops.owner_view() FROM PUBLIC; " +
+            $"GRANT USAGE ON SCHEMA qian_platform_ops TO \"{platform.PlatformRole}\"; GRANT EXECUTE ON FUNCTION qian_platform_ops.owner_view() TO \"{platform.ProducerRole}\", \"{platform.PlatformRole}\";");
+        await using (var producer = await platform.OpenProducer())
+        {
+            Assert.Equal((2L, 0L), await OwnerView(producer));
+            await Execute(producer, $"SELECT set_config('app.current_tenant_id', '{A}', false)");
+            Assert.Equal((0L, 1L), await OwnerView(producer));
+        }
+        await using (var login = await OpenLogin(platform.PlatformConnection)) Assert.Equal((0L, 0L), await OwnerView(login));
         // 把函数属主授给 qian_app：SET ROLE 成属主后属主分支随之关闭，读不到、写不进、改不了平台行；属主有成员关系时迁移也拒绝重跑。
         await Admin($"GRANT \"{platform.Writer}\" TO qian_app;");
         try
@@ -213,7 +253,7 @@ public sealed partial class AuditStoreTests
             await Assert.ThrowsAsync<PostgresException>(() => Admin("BEGIN;" + AuditPlatformAccess.CreateMigrationSql(platform.PlatformRole, platform.Writer, platform.ProducerRole) + "COMMIT;"));
         }
         finally { await Admin($"REVOKE \"{platform.Writer}\" FROM qian_app;"); }
-        // 平台登录：读、验平台链照常，不能改写或删除历史，设置租户 GUC 后读不到平台行。
+        // 平台登录：读、验平台链照常（只见平台行，租户行不可见），不能改写或删除历史，设置租户 GUC 后读不到平台行。
         Assert.Equal(new AuditChainVerification(true, 2, null, null), await audit.VerifyPlatformAsync(platform.Producer, Ct));
         await using (var login = await OpenLogin(platform.PlatformConnection))
         {
@@ -296,10 +336,10 @@ public sealed partial class AuditStoreTests
         }
     }
 
-    // 绕过写入器直接调用平台链函数：先以 platform_tip 取下一个序号与链头，再以合法正文、前序与摘要调用 platform_append（可伪造摘要或跳号）；
+    // 绕过写入器直接调用平台链函数：先以 platform_tip 取下一个序号与链头，再以合法正文、前序与摘要调用 platform_append（可伪造摘要、跳号，或伪造前序哈希并据此算出自洽的摘要）；
     // expected 为 null 时须成功并提交，否则断言 SQLSTATE 与（非 null 时的）错误文本。
     private static async Task DirectCall(string login, AuditRecord record, string? state, string? message, IsolationLevel isolation = IsolationLevel.Serializable,
-        string? tenant = null, bool forgeHash = false, bool skipSequence = false)
+        string? tenant = null, bool forgeHash = false, bool skipSequence = false, bool forgePrevious = false)
     {
         await using var connection = await OpenLogin(login);
         await using var transaction = await connection.BeginTransactionAsync(isolation, Ct);
@@ -315,6 +355,7 @@ public sealed partial class AuditStoreTests
                 next = reader.GetInt64(0); previous = reader.IsDBNull(1) ? null : reader.GetString(1);
             }
             var sequence = skipSequence ? next + 1 : next;
+            if (forgePrevious) previous = new string('f', 64);
             await using var append = new NpgsqlCommand("SELECT plugin_qian_audit.platform_append(@body, @previous, @hash)", connection, transaction);
             append.Parameters.AddWithValue("body", AuditCanonicalizer.Content(record, sequence));
             append.Parameters.AddWithValue("previous", NpgsqlDbType.Text, (object?)previous ?? DBNull.Value);
@@ -326,6 +367,15 @@ public sealed partial class AuditStoreTests
         Assert.Equal(state, error.SqlState);
         if (message is not null) Assert.Equal(message, error.MessageText);
         await transaction.RollbackAsync(Ct);
+    }
+
+    // 测试专用探针：以平台函数的属主身份统计审计表里 RLS 放行的平台行与租户行（属主分支的 RLS 用例在 qian_platform_ops 里建，随该 schema 每例重建）。
+    private static async Task<(long Platform, long Tenant)> OwnerView(NpgsqlConnection connection)
+    {
+        await using var command = new NpgsqlCommand("SELECT platform_rows, tenant_rows FROM qian_platform_ops.owner_view()", connection);
+        await using var reader = await command.ExecuteReaderAsync(Ct);
+        Assert.True(await reader.ReadAsync(Ct));
+        return (reader.GetInt64(0), reader.GetInt64(1));
     }
 
     private const string ForgedPlatformEntry = """
@@ -376,6 +426,10 @@ public sealed partial class AuditStoreTests
         var ids = new List<Guid>(); while (await reader.ReadAsync(Ct)) ids.Add(reader.GetGuid(0));
         return [.. ids];
     }
+
+    // 另开管理会话试取 qian.audit:platform 锁键（独立追加的 session 锁用同一个键），取到即刻释放；返回是否取到。
+    private async Task<bool> PlatformLockFree() => await AdminScalar(
+        "SELECT CASE WHEN pg_try_advisory_lock(hashtextextended('qian.audit:platform', 0)) THEN pg_advisory_unlock(hashtextextended('qian.audit:platform', 0)) ELSE false END") is true;
 
     private async Task<object?> AdminScalar(string sql)
     {

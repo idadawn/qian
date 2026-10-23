@@ -88,7 +88,6 @@ internal static class AuditTransactionWriter
         }
         catch (PostgresException error) when (error.SqlState == PostgresErrorCodes.CheckViolation)
         { throw Error(PlatformErrors.Conflict); }
-        if (tenant.TenantId is not null) throw Error(PlatformErrors.AuthzDenied);
         var hash = AuditCanonicalizer.Hash(record, sequence, previous);
         await using var append = new NpgsqlCommand("SELECT plugin_qian_audit.platform_append(@body, @previous, @hash)", connection, pg);
         append.Parameters.AddWithValue("body", AuditCanonicalizer.Content(record, sequence));
