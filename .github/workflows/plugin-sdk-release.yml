@@ -2,10 +2,20 @@ name: plugin-sdk-release
 on:
   workflow_dispatch:
     inputs:
+      operation:
+        description: 正式发布；或仅初始化不含实现的包可见性
+        type: choice
+        options: [release, bootstrap-private]
+        default: release
+        required: true
       version:
         description: 已合入 main 的前端插件 SDK 固定版本
         type: string
         required: true
+      bootstrap_run_id:
+        description: 正式消费成功后清理的初始化运行 ID；留空不删除任何初始化版本
+        type: string
+        required: false
 permissions:
   contents: read
   packages: write
@@ -28,19 +38,42 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: '@idadawn'
       - uses: pnpm/action-setup@v4
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @qian/surfaces build && pnpm --filter qian build
-      - run: pnpm --filter @idadawn/qian-runtime build
-      - run: pnpm --filter @idadawn/qian-plugin-sdk test
+        if: inputs.operation == 'release'
+      - name: 发布边界与清理防误删测试
+        run: node --test packages/qian-plugin-sdk/scripts/private-publication.test.mjs
+      - name: 只初始化固定名称的空包，回读实际可见性
+        if: inputs.operation == 'bootstrap-private'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node packages/qian-plugin-sdk/scripts/release.mjs bootstrap-private
+      - if: inputs.operation == 'release'
+        run: pnpm install --frozen-lockfile
+      - if: inputs.operation == 'release'
+        run: pnpm --filter @qian/surfaces build && pnpm --filter qian build
+      - if: inputs.operation == 'release'
+        run: pnpm --filter @idadawn/qian-runtime build
+      - if: inputs.operation == 'release'
+        run: pnpm --filter @idadawn/qian-plugin-sdk test
       - name: 固定依赖组打包与仓库外消费
+        if: inputs.operation == 'release'
         run: |
           node packages/qian-plugin-sdk/scripts/release.mjs pack "$RUNNER_TEMP/qian-plugin-sdk"
           node packages/qian-plugin-sdk/scripts/verify-consumer.mjs archive "$RUNNER_TEMP/qian-plugin-sdk"
       - name: 私有发布、制品摘要与可见性验证
+        if: inputs.operation == 'release'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node packages/qian-plugin-sdk/scripts/release.mjs publish "$RUNNER_TEMP/qian-plugin-sdk"
       - name: 从私有源安装固定版本并执行公开 API 与类型验证
+        id: registry-consumer
+        if: inputs.operation == 'release'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node packages/qian-plugin-sdk/scripts/verify-consumer.mjs registry
+      - name: 只清理指定初始化运行的精确空版本
+        if: inputs.operation == 'release' && inputs.bootstrap_run_id != '' && steps.registry-consumer.outcome == 'success'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOOTSTRAP_RUN_ID: ${{ inputs.bootstrap_run_id }}
+          QIAN_REGISTRY_CONSUMER_VERIFIED: ${{ steps.registry-consumer.outcome == 'success' }}
+        run: node packages/qian-plugin-sdk/scripts/release.mjs cleanup "$RUNNER_TEMP/qian-plugin-sdk"
