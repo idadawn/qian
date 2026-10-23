@@ -34,13 +34,15 @@ export function LoginPage({ entry: injectedEntry, provider: injectedProvider }: 
   const [tenant, setTenant] = useState('');
   const [tenantMissing, setTenantMissing] = useState(false);
   const [connectors, setConnectors] = useState<IdentityConnector[]>([]);
+  // 最近一次目录结果对应的租户代码：填了租户、该租户的目录也已回来却为空时才提示「没有可用的单点登录方式」，防抖途中不提示。
+  const [listedFor, setListedFor] = useState<string | null>(null);
   const [connectorError, setConnectorError] = useState(false);
   const tenantCode = tenant.trim();
   useEffect(() => {
     if (!entry) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      provider.listConnectors(controller.signal, tenantCode || null).then(items => { if (!controller.signal.aborted) setConnectors(items); }).catch(() => { /* 连接器目录不可用时只剩账号密码登录。 */ });
+      provider.listConnectors(controller.signal, tenantCode || null).then(items => { if (!controller.signal.aborted) { setConnectors(items); setListedFor(tenantCode); } }).catch(() => { /* 连接器目录不可用时只剩账号密码登录。 */ });
     }, tenantCode ? 300 : 0);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [provider, entry, tenantCode]);
@@ -52,7 +54,8 @@ export function LoginPage({ entry: injectedEntry, provider: injectedProvider }: 
   };
   return <div className="w-full max-w-md space-y-4">
     <Authentication provider={provider} i18n={i18n} onAuthenticated={() => browser.assign(entry.returnUrl)} onRedirect={url => browser.assign(url)} />
-    {connectors.length > 0 && <section aria-label={i18n.t('identity.connectors')} data-testid="identity-connectors" className="space-y-3 rounded-xl border border-border bg-card p-4">
+    {/* 入口有效就始终渲染连接器区与租户代码：全局目录为空时，只挂了租户 scope 连接器的租户也要能填代码重列；目录被租户过滤为空时输入框不随之卸载。 */}
+    <section aria-label={i18n.t('identity.connectors')} data-testid="identity-connectors" className="space-y-3 rounded-xl border border-border bg-card p-4">
       <p className="text-sm text-muted-foreground">{i18n.t('identity.connectors')}</p>
       {connectorError && <Alert tone="error" role="alert">{i18n.t('identity.connectorError')}</Alert>}
       <Field invalid={tenantMissing} testId="identity-connector-tenant">
@@ -60,8 +63,10 @@ export function LoginPage({ entry: injectedEntry, provider: injectedProvider }: 
         <Input name="tenant" autoComplete="organization" value={tenant} onChange={event => { setTenant(event.currentTarget.value); if (event.currentTarget.value.trim()) setTenantMissing(false); }} aria-describedby={tenantMissing ? undefined : 'identity-connector-tenant-help'} />
         {tenantMissing ? <FieldError match>{i18n.t('identity.tenantRequired')}</FieldError> : <p id="identity-connector-tenant-help" className="text-sm text-muted-foreground">{i18n.t('identity.tenantCodeHelp')}</p>}
       </Field>
-      <div className="flex flex-wrap gap-2">{connectors.map(item => <Button key={item.id} variant="outline" onClick={() => begin(item.id)}>{item.displayName}</Button>)}</div>
-    </section>}
+      {connectors.length > 0
+        ? <div className="flex flex-wrap gap-2">{connectors.map(item => <Button key={item.id} variant="outline" onClick={() => begin(item.id)}>{item.displayName}</Button>)}</div>
+        : tenantCode !== '' && listedFor === tenantCode ? <p role="status" className="text-sm text-muted-foreground" data-testid="identity-connectors-none">{i18n.t('identity.connectorsNone')}</p> : null}
+    </section>
   </div>;
 }
 

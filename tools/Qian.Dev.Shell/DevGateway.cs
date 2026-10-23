@@ -91,9 +91,12 @@ internal static class DevGateway
         // break 同时毁掉 refresh token（刷新必败 → 会话结束 → 并发 401 被 SDK 合并成一次刷新尝试，会话已不在、取防伪令牌即 401 不再 POST → 过期对话框）；
         // identity/bump 经真实身份端口递增当前成员的 identity_revision（授权变更后身份侧就是这样做的，S1-DEC-027）并抬高平台表面宿主的修订下限：
         // 下一批请求带着旧修订 401 → SDK 合并成一次 POST /auth/session/refresh → 依赖方换到带新修订的令牌 → 重放 200 → 外壳重拉菜单、权限与会话快照。
+        // identity/stale 只抬平台表面的修订下限（当前令牌修订 + 1）、不递增身份修订：依赖方刷新仍成功，换到的令牌修订不变，平台表面持续 401 →
+        // SDK 只刷新一次、重放仍 401 → 只弹一个过期对话框，外壳不再发起新一轮（会话结束对外壳是粘性的）。
         app.MapPost("/__dev/session/expire", http => MutateSession(http, breakRefresh: false)).RequireAuthorization();
         app.MapPost("/__dev/session/break", http => MutateSession(http, breakRefresh: true)).RequireAuthorization();
         app.MapPost("/__dev/identity/bump", http => BumpRevision(http, floor, bump)).RequireAuthorization();
+        app.MapPost("/__dev/identity/stale", http => StaleRevision(http, floor)).RequireAuthorization();
         app.MapFallbackToFile("index.html", shell).AllowAnonymous();
         var loader = new PluginLoader(app.Services);
         try
@@ -138,6 +141,16 @@ internal static class DevGateway
         floor.Raise(tenant, principal.Subject, revision);
         http.Response.Headers.CacheControl = "no-store";
         await http.Response.WriteAsJsonAsync(new { identityRevision = revision }, http.RequestAborted).ConfigureAwait(false);
+    }
+
+    // 同样只对租户成员身份有意义（409 同上）；返回当前修订与抬高后的下限便于核对。
+    private static async Task StaleRevision(HttpContext http, DevRevisionFloor floor)
+    {
+        if (http.RequestServices.GetRequiredService<ICurrentUser>().Principal is not { Kind: PrincipalKind.User, TenantId: { } tenant, IdentityRevision: { } revision } principal || !Guid.TryParseExact(principal.Subject, "D", out _))
+        { http.Response.StatusCode = StatusCodes.Status409Conflict; return; }
+        floor.Raise(tenant, principal.Subject, revision + 1);
+        http.Response.Headers.CacheControl = "no-store";
+        await http.Response.WriteAsJsonAsync(new { identityRevision = revision, floor = revision + 1 }, http.RequestAborted).ConfigureAwait(false);
     }
 
     private static void Headers(HttpResponse response, string cacheControl)

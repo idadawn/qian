@@ -1,7 +1,9 @@
 name: shell-auth
 # 外壳认证真实流程验收（S1-YUE-002 验收 1 / 3 / 4）：在托管 runner 上原样执行 pnpm yue:auth ——
-# scripts/dev-shell.sh 拉起真实 qian.identity（Docker PostgreSQL 16、内置账号模型、真实 qian.tenancy 开通编排）与 Identity.Client / Qian.Gateway BFF，
-# Playwright 走完整浏览器流程（OIDC code + PKCE 登录、多租户选择、prompt=select_account 切换、刷新合并与过期对话框、零令牌检查、运行时配置）。
+# scripts/dev-shell.sh 拉起真实 qian.identity（Docker PostgreSQL 16、内置账号模型、真实 qian.tenancy 开通编排）、上游 CNCF Dex（通用 OIDC 连接器 dex）
+# 与 Identity.Client / Qian.Gateway BFF，Playwright 走完整浏览器流程（OIDC code + PKCE 登录、多租户选择、prompt=select_account 切换、刷新合并与过期对话框、
+# 刷新成功但平台表面持续 401、零令牌检查、运行时配置；平台身份 operator 不拉租户目录；SSO 跳转回调经 Dex 首次确认绑定、再次直接进入）。
+# 失败时宿主、PostgreSQL 与 Dex 的日志复制进 TestResults/shell-auth/logs，随 Playwright 产物一起上传。
 # 宿主装配跟随后端包与参考宿主，所以它们改动时也要重跑；只改文档与任务文件不运行。与 yue 门禁矩阵并行，不进 yue:gates。
 on:
   push:

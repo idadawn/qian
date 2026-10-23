@@ -113,3 +113,24 @@ it('登录页的连接器区：没填租户代码不发起；按填写的租户�
   await waitFor(() => expect(assign).toHaveBeenCalledWith('https://idp.example.test/auth?state=x'));
   expect(assign).toHaveBeenCalledTimes(1);
 });
+
+it('登录页的连接器区：全局目录为空也渲染租户代码；租户过滤为空时输入框不卸载并提示，填对租户后重列并可发起', async () => {
+  const assign = leave();
+  const corp = { id: 'corp', displayName: '甲方企业身份源', protocol: 'oidc', terminals: ['pc'] };
+  const listConnectors = vi.fn(async (_signal: AbortSignal, tenant: string | null) => tenant === 'acme' ? [corp] : []);
+  const beginConnector = vi.fn(async () => 'https://idp.example.test/auth?state=y');
+  render(<LoginPage entry={{ returnUrl, clientId: 'qian-shell' }} provider={provider({ listConnectors, beginConnector })} />);
+  await waitFor(() => expect(listConnectors).toHaveBeenCalledWith(expect.any(AbortSignal), null));
+  const input = await screen.findByLabelText('租户代码');
+  expect(screen.queryByTestId('identity-connectors-none')).toBeNull();
+  await userEvent.fill(input, 'nobody');
+  await waitFor(() => expect(listConnectors).toHaveBeenLastCalledWith(expect.any(AbortSignal), 'nobody'));
+  expect((await screen.findByTestId('identity-connectors-none')).textContent).toContain('该租户没有可用的单点登录方式');
+  expect(screen.getByLabelText('租户代码')).toBe(input);
+  await userEvent.fill(input, 'acme');
+  await userEvent.click(await screen.findByRole('button', { name: '甲方企业身份源' }));
+  expect(screen.queryByTestId('identity-connectors-none')).toBeNull();
+  await waitFor(() => expect(beginConnector).toHaveBeenCalledWith('corp', expect.any(AbortSignal), { tenant: 'acme', returnUrl }));
+  await waitFor(() => expect(assign).toHaveBeenCalledWith('https://idp.example.test/auth?state=y'));
+  await accessible();
+});

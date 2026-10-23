@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Card, MenuItem, Spinner } from '@idadawn/yue-core';
 import { createI18n, HttpResponseError, PlatformClient, PlatformError, type PlatformI18n } from '@idadawn/yue-sdk';
 import { initializeTheme } from '@idadawn/yue-tokens';
-import { AppShell, createBffSessionClient, createBrowserRouter, FallbackPage, fetchNavigation, fetchPermissions, InboxPopover, initPreferences, installShellLanguagePacks, matchMenuItem, OfflineBanner, Page, PageHeader, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, toMenu, usePreferences, useRoutePath, type AppConf, type BffSession, type NavigationCatalogItem, type PermissionGrant, type ShellMenuItem, type PreferenceStorage } from '@idadawn/yue-shell';
+import { AppShell, createBffSessionClient, createBrowserRouter, FallbackPage, fetchNavigation, fetchPermissions, InboxPopover, initPreferences, installShellLanguagePacks, matchMenuItem, OfflineBanner, Page, PageHeader, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, toMenu, usePreferences, useRoutePath, type AppConf, type BffSession, type BffSessionClient, type NavigationCatalogItem, type PermissionGrant, type ShellMenuItem, type PreferenceStorage } from '@idadawn/yue-shell';
 import { installAppLanguagePacks } from './locales';
 
 /** 能力目录（GET {apiBase}/capabilities）：首页只显示可见能力条数，作为第三路并发请求参与会话刷新合并。 */
@@ -11,21 +11,36 @@ interface CatalogPaths { '/capabilities': { get: { responses: { 200: { content: 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 403 | 500;
 interface Catalog { navigation: NavigationCatalogItem[]; permissions: PermissionGrant[]; capabilities: number }
 
+interface WorkspaceHandlers { onStatus(status: LoadStatus): void; onCatalog(catalog: Catalog): void; onSession(session: BffSession): void; onExpired(): void }
+
 /**
- * 租户目录加载器：菜单、权限与能力目录三路并发，一轮进行中再来一次就排队、结束后再完整拉一次（会话刷新成功的通知常到在一轮途中——这轮的 401 正是刷新的起因，
- * 重放只覆盖这轮里 401 的那几路，排队的整轮才保证三路都是新修订下的结果），不与重放并行。
+ * 租户表面的客户端与目录加载器。菜单、权限与能力目录三路并发，一轮进行中再来一次就排队、结束后再完整拉一次（会话刷新成功的通知常到在一轮途中——这轮的
+ * 401 正是刷新的起因，重放只覆盖这轮里 401 的那几路，排队的整轮才保证三路都是新修订下的结果），不与重放并行。
+ * 会话结束是粘性的：SDK 通知 onSessionExpired 之后，刷新通知与排队的整轮都不再发起请求、也不再重读会话快照。否则「依赖方刷新成功、平台表面仍 401」会无界
+ * 循环（刷新成功的通知在重放之前到达 → 排队整轮 → 重放 401、弹过期对话框 → 排队的整轮照常发出 → 三路 401 → SDK 按约定重新探测，刷新仍成功 → 再通知……）。
+ * 过期后只有整页重新登录（新文档、新客户端）才复位。
  */
-function createCatalogLoader(client: PlatformClient, onStatus: (status: LoadStatus) => void, onCatalog: (catalog: Catalog) => void): () => Promise<void> {
-  let inFlight = false; let queued = false;
+function createWorkspace(baseUrl: string, bff: BffSessionClient, handlers: WorkspaceHandlers): () => Promise<void> {
+  let ended = false; let inFlight = false; let queued = false;
+  const client = new PlatformClient({
+    baseUrl, sessionProvider: bff,
+    onSessionExpired: () => { ended = true; handlers.onExpired(); },
+    onSessionRefreshed: () => {
+      if (ended) return;
+      void bff.getSession().then(value => { if (value && !ended) handlers.onSession(value); }).catch(() => undefined);
+      void load();
+    },
+  });
   const load = async (): Promise<void> => {
+    if (ended) return;
     if (inFlight) { queued = true; return; }
-    inFlight = true; onStatus('loading');
+    inFlight = true; handlers.onStatus('loading');
     try {
       const [navigation, permissions, catalog] = await Promise.all([fetchNavigation(client), fetchPermissions(client), client.api<CatalogPaths>().GET('/capabilities')]);
-      onCatalog({ navigation, permissions, capabilities: catalog.data?.items.length ?? 0 }); onStatus('ready');
+      handlers.onCatalog({ navigation, permissions, capabilities: catalog.data?.items.length ?? 0 }); handlers.onStatus('ready');
     } catch (error) {
       const code = error instanceof PlatformError || error instanceof HttpResponseError ? error.status : 0;
-      onStatus(code === 403 ? 403 : code === 401 ? 'idle' : 500);
+      handlers.onStatus(code === 403 ? 403 : code === 401 ? 'idle' : 500);
     } finally {
       inFlight = false;
       if (queued) { queued = false; void load(); }
@@ -74,17 +89,11 @@ function Shell({ conf }: { conf: AppConf }) {
   const [status, setStatus] = useState<LoadStatus>('idle');
   // 浏览器零令牌：会话只是 HttpOnly Cookie；SDK 的 sessionProvider 把并发 401 合并成一次 POST {authBase}/session/refresh，失败只弹一次过期对话框；
   // 成功（令牌换新、身份修订可能已变）则重拉菜单、权限与能力目录并刷新会话快照（裁决 ④）。目录在登录、切换租户（回调后整页重载）、会话刷新成功后
-  // 与手动刷新时一起重拉；平台身份（tenantId 为空）没有租户表面，不拉。
+  // 与手动刷新时一起重拉；平台身份（tenantId 为空）没有租户表面，不拉。过期对话框弹出之后不再发起新一轮（见 createWorkspace）。
   const bff = useMemo(() => createBffSessionClient({ authBase: conf.authBase }), [conf.authBase]);
-  const load = useMemo(() => {
-    const client = new PlatformClient({ baseUrl: location.origin + conf.apiBase, sessionProvider: bff, onSessionExpired: () => setExpired(true), onSessionRefreshed: () => refreshed() });
-    const loader = createCatalogLoader(client, setStatus, setCatalog);
-    function refreshed() {
-      void bff.getSession().then(value => { if (value) setSession(value); }).catch(() => undefined);
-      void loader();
-    }
-    return loader;
-  }, [conf.apiBase, bff]);
+  const load = useMemo(() => createWorkspace(location.origin + conf.apiBase, bff, {
+    onStatus: setStatus, onCatalog: setCatalog, onSession: setSession, onExpired: () => setExpired(true),
+  }), [conf.apiBase, bff]);
   useEffect(() => {
     const controller = new AbortController();
     bff.getSession(controller.signal).then(value => {

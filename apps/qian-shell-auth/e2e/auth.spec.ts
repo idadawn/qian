@@ -8,11 +8,13 @@ import { expect, test, type Page } from '@playwright/test';
 // 透明刷新无感，会话仍在时 POST /auth/session/refresh 经真实身份服务换新令牌 → 身份修订递增后旧令牌 401：SDK 合并成一次刷新、换到新修订后重放，
 // 外壳随即重拉菜单、权限与会话快照（裁决 ④）→ refresh 失效时依赖方结束会话，并发 401 合并成一次刷新尝试（探测即 401、不再 POST）并只弹一次过期对话框
 // → 代码审查项的自动检查（存储、URL、iframe、响应体里都没有令牌，会话 Cookie 对脚本不可见）→ 改运行时配置 apiBase 后刷新页面即走新前缀，不重编译。
-// 另两条用例：平台身份（operator）只有代管横幅与会话卡片、不拉租户目录；SSO 跳转回调经真实上游 Dex（通用 OIDC 连接器）首次确认绑定、再次直接进入。
+// 另三条用例：平台身份（operator）只有代管横幅与会话卡片、不拉租户目录；刷新成功但平台表面持续 401 时只刷新一次、只弹一个过期对话框、之后不再请求；
+// SSO 跳转回调经真实上游 Dex（通用 OIDC 连接器）首次确认绑定、再次直接进入。
 const root = resolve(import.meta.dirname, '../../..');
 const seed = JSON.parse(readFileSync(resolve(root, 'tools/Qian.Dev.Shell/seed/accounts.json'), 'utf8')) as { persons: { key: string; username: string; password: string }[]; tenants: { code: string; name: string }[] };
 const owner = seed.persons.find(person => person.key === 'owner')!;
 const operator = seed.persons.find(person => person.key === 'operator')!;
+const second = seed.persons.find(person => person.key === 'second')!;
 // 上游 Dex 本地密码库里的用户（scripts/dev-shell.sh 用同一文件渲染 Dex 配置）。
 const dex = JSON.parse(readFileSync(resolve(root, 'tools/Qian.Dev.Shell/seed/dex.json'), 'utf8')) as { email: string; password: string };
 const acme = seed.tenants[0]!; const beta = seed.tenants[1]!;
@@ -254,6 +256,44 @@ test('平台身份（operator）：只有代管横幅与会话卡片，不拉菜
   await noCredentials(page, '平台身份');
 });
 
+test('刷新成功但平台表面持续 401：恰好一次刷新、一个过期对话框，之后外壳不再发起新一轮（会话结束是粘性的）', async ({ page, baseURL }) => {
+  const origin = baseURL!.replace(/\/$/, '');
+  const { refreshes, apiCalls, bodies } = observe(page, origin);
+  // 只看外壳经网关发往租户表面的请求；认证页族在身份服务同源的 /api/identity/* 与 BFF 的 /auth/* 不算。
+  const tenantCalls = () => apiCalls.filter(call => call.origin === origin && /^\/(api|api-alt)\//.test(call.path));
+  await page.goto('/');
+  await expect(page).toHaveURL(loginPage);
+  await fillLogin(page, second);
+  // second 只属于乙方：不经过选择页，回调后直接进工作台，首轮三路 200。
+  await expect(page).toHaveURL(origin + '/');
+  const sessionCard = page.getByTestId('shell-session');
+  await expect(sessionCard.locator('[data-field=kind]')).toHaveText('user');
+  await expect(page.getByTestId('shell-capabilities')).not.toHaveText('加载中');
+  await expect.poll(() => tenantCalls().filter(call => call.status === 200).length).toBeGreaterThanOrEqual(3);
+  const revision = Number(await sessionCard.locator('[data-field=identityRevision]').textContent());
+  expect(revision).toBeGreaterThan(0);
+  // 只抬平台表面的修订下限、不递增身份修订：依赖方刷新仍成功，换到的令牌修订不变，平台表面持续 401（下限高于身份侧已签发的修订）。
+  const stale = await devPost(page, '/__dev/identity/stale');
+  expect(stale.status).toBe(200);
+  expect(stale.body).toEqual({ identityRevision: revision, floor: revision + 1 });
+  const before = tenantCalls().length;
+  await page.getByTestId('shell-reload').click();
+  // 三路 401 → SDK 合并成一次刷新（成功）→ 刷新成功的通知先于重放到达（外壳排队一整轮并重读会话快照）→ 重放仍 401 → 只通知一次过期 →
+  // 会话结束对外壳是粘性的：排队的整轮不再发出，也不会因「下一批 401 重新探测」再刷新。静置 3 秒后请求数不变。
+  const dialog = page.getByRole('alertdialog', { name: '登录已过期' });
+  await expect(dialog).toHaveCount(1);
+  await expect.poll(() => tenantCalls().length - before).toBeGreaterThanOrEqual(6);
+  const settled = { calls: tenantCalls().length, refreshes: refreshes.length };
+  await page.waitForTimeout(3_000);
+  expect({ calls: tenantCalls().length, refreshes: refreshes.length }, '过期对话框之后静置 3 秒').toEqual(settled);
+  expect(refreshes).toHaveLength(1);
+  expect(tenantCalls().slice(before).map(call => call.status)).toEqual([401, 401, 401, 401, 401, 401]);
+  await expect(page.getByRole('alertdialog')).toHaveCount(1);
+  await expect(dialog).toBeVisible();
+  for (const body of bodies) expect(body).not.toMatch(tokenLike);
+  await noCredentials(page, '平台表面持续 401');
+});
+
 test('验收 1（SSO 跳转回调）：连接器按钮 → Dex 上游登录 → /login/connector/dex 落点确认绑定 → 回到授权请求签码 → 工作台；再次 SSO 直接进入', async ({ page, baseURL }) => {
   const origin = baseURL!.replace(/\/$/, '');
   const { apiCalls, bodies } = observe(page, origin);
@@ -293,11 +333,24 @@ test('验收 1（SSO 跳转回调）：连接器按钮 → Dex 上游登录 → 
   await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveText(['客户', '新建客户']);
   await noCredentials(page, 'SSO 首次登录后');
   // 2. 再次：清掉全部 Cookie（网关会话、账号 Cookie、浏览器流程密钥）后重走；绑定已存在，回调直接签发会话，落点读到完成态即回授权请求，不再确认绑定。
+  // 落点一读到完成态就跳走，事后在外壳源上查不到它：途中记录主框架经过的地址，并在每个文档里观察是否出现过绑定卡片。
   await page.context().clearCookies();
+  const visited: string[] = [];
+  page.on('framenavigated', frame => { if (frame === page.mainFrame()) visited.push(frame.url()); });
+  const bindSeen: string[] = [];
+  await page.exposeFunction('qianE2eBindSeen', (where: string) => { bindSeen.push(where); });
+  await page.addInitScript(() => {
+    let reported = false;
+    new MutationObserver(() => {
+      if (reported || !document.querySelector('[data-testid="identity-connector-bind"]')) return;
+      reported = true; (window as unknown as { qianE2eBindSeen(where: string): void }).qianE2eBindSeen(location.href);
+    }).observe(document, { childList: true, subtree: true });
+  });
   await throughDex();
   await expect(page).toHaveURL(origin + '/');
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('演示用户');
-  await expect(page.getByTestId('identity-connector-bind')).toHaveCount(0);
+  expect(visited.filter(url => landing.test(url)), '第二遍经过连接器落点').toHaveLength(1);
+  expect(bindSeen, '第二遍的落点不出现绑定卡片').toEqual([]);
   await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveText(['客户', '新建客户']);
   await expect.poll(() => apiCalls.filter(call => call.path === '/api/capabilities/navigation' && call.status === 200).length).toBeGreaterThanOrEqual(2);
   for (const body of bodies) expect(body).not.toMatch(tokenLike);

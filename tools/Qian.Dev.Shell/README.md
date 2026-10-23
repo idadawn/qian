@@ -13,7 +13,7 @@
 - **平台表面宿主**（随机回环端口）：照参考宿主的 TenantOperationsHost，复用同一运行时，只认网关 S2S（受众 `qian-platform`），接受用户主体并按令牌 `tenant_id` 进入租户 scope，提供能力目录 / 导航（`/api/capabilities/**`）与有效权限（`/api/authz/**`）。参考应用的命令宿主只认机器身份（service / agent），用户主体的这两类表面因此由平台宿主提供——与网关 S2S 的受众分簇一致。
 - **网关 BFF**（缺省 `https://localhost:5443`，自签名证书）：同一份 Identity.Client / Qian.Gateway 生产入口——`/auth/login` 发起 code + PKCE、服务端换码、`qian.sid` HttpOnly Cookie、refresh 单飞；`/api/**` 经会话换 60 秒 S2S 按前缀分簇转发（能力 / 授权表面 → 平台宿主，其余 → 业务宿主）；静态托管外壳 [apps/qian-shell-auth](../../apps/qian-shell-auth/README.md) 的构建产物；`/app-conf.js` 取自状态目录（K8s ConfigMap 的本机替身）。浏览器只持有 Cookie，不接触任何令牌。
 
-平台表面宿主的能力导航 / 有效权限端点没有权限点可声明、走不到 qian.authz 的 PEP，所以它自己按 PEP 的 `IdentityRevisionGuard` 同一语义比对修订下限（`DevRevisionFloor`：令牌 `identity_revision` 低于下限即 401 `UNAUTHENTICATED`）；下限只由开发路由 `/__dev/identity/bump` 在经真实身份端口递增修订之后抬高。修订递增、refresh 换到带新修订的令牌、S2S 转发修订都是真实链路，只有这一处比对是开发宿主代做。
+平台表面宿主的能力导航 / 有效权限端点没有权限点可声明、走不到 qian.authz 的 PEP，所以它自己按 PEP 的 `IdentityRevisionGuard` 同一语义比对修订下限（`DevRevisionFloor`：令牌 `identity_revision` 低于下限即 401 `UNAUTHENTICATED`）；下限只由开发路由抬高：`/__dev/identity/bump` 在经真实身份端口递增修订之后抬到新修订，`/__dev/identity/stale` 只抬到当前令牌修订 + 1、不递增修订。修订递增、refresh 换到带新修订的令牌、S2S 转发修订都是真实链路，只有这一处比对是开发宿主代做。
 
 它不是：`qian dev`（S1-RT-013）、staging / K3s 部署（S1-DEP-002 / 005）、产品契约（下文 `/__dev/` 路由只在本环境存在）。
 
@@ -50,13 +50,14 @@ scripts/dev-shell.sh e2e
 
 ## 开发路由
 
-产品契约里没有这三个端点，只对已认证的本会话生效，且仍要带防伪令牌（`GET /auth/csrf` 取头名与值）：
+产品契约里没有这四个端点，只对已认证的本会话生效，且仍要带防伪令牌（`GET /auth/csrf` 取头名与值）：
 
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | POST | `/__dev/session/expire` | 把当前会话的服务端访问令牌改成已到期：下一批请求由依赖方透明刷新（单飞），页面无感 |
 | POST | `/__dev/session/break` | 同时毁掉 refresh token：依赖方刷新必败 → 会话结束 → 并发 401 被 SDK 合并成一次刷新尝试（会话已不在，取防伪令牌即 401、不再 POST）→ 只弹一次过期对话框 |
 | POST | `/__dev/identity/bump` | 经真实身份端口递增当前成员的 `identity_revision`（授权变更后身份侧就是这样做的，S1-DEC-027）并抬高平台表面宿主的修订下限：下一批请求带着旧修订 401 → SDK 合并成一次 `POST /auth/session/refresh` → 依赖方换到带新修订的令牌 → 重放 200 → 外壳重拉菜单、权限并刷新会话快照。平台身份没有成员修订，409。响应 `{ "identityRevision": 新修订 }` |
+| POST | `/__dev/identity/stale` | 只抬高平台表面宿主的修订下限（当前令牌修订 + 1），不递增身份修订：依赖方刷新仍成功，换到的令牌修订不变，平台表面持续 401（模拟下限高于身份侧已签发修订）→ SDK 只刷新一次、重放仍 401 → 只弹一个过期对话框，外壳之后不再发起新一轮（会话结束对外壳是粘性的，只有整页重新登录才复位）。平台身份 409。响应 `{ "identityRevision": 当前修订, "floor": 下限 }` |
 
 ## up 做了什么
 

@@ -26,6 +26,12 @@ const result = await api.GET('/api/tenancy/tenants');
 
 HttpOnly Cookie 会话的宿主改用 `sessionProvider: { refreshSession(): Promise<boolean> }`（与 `tokenProvider` 并列，同一单飞队列，两者同时给出时以 `tokenProvider` 为准）：浏览器不接触令牌，并发 401 合并成一次 `refreshSession()`，合并与否不取决于响应到达的先后——刷新得出结论之后才到达的 401（慢端点）沿用该结论：仍在就直接重放、已结束就不再探测；返回 true 时每个请求重放一次且不带 Authorization 头，并通知一次 `onSessionRefreshed`（宿主据此重拉随身份变化的数据：菜单、权限、会话快照）；false 或抛错时只通知一次 `onSessionExpired`，下一批 401 重新探测。`@idadawn/yue-shell` 的 `createBffSessionClient` 是对接 Identity.Client / 网关 BFF 的实现。
 
+宿主契约（Cookie 会话）：
+
+- `onSessionRefreshed` 在重放之前同步通知。重放仍可能 401（例如平台表面仍拒绝换新的令牌），随后才通知 `onSessionExpired`。
+- 会话结束对宿主是粘性的：收到 `onSessionExpired` 之后，不得再从 `onSessionRefreshed` 或排队的重拉发起新一轮请求，直到整页重新登录。否则「刷新成功、重放仍 401」会无界循环：下一批 401 按约定重新探测，刷新仍成功，再通知，再重拉。`apps/qian-shell-auth` 的 `createWorkspace` 是参照实现。
+- 宿主回调同步抛错只经 `queueMicrotask` 异步上报（与 DOM 事件监听器一致），不改变等待中请求的结果，也不跳过过期通知。
+
 `PlatformError.detail` 保留冻结契约的 `code`、`trace_id`、`pointer` 与 `errors`；`pointerSegments` 解码 URI 片段。非标准响应抛 `HttpResponseError`，产品用 `sdk.error.http` 显示文案，不透出响应 HTML。int64 超出安全整数范围时转为原始十进制字符串；上传等非 JSON 响应保持原样。
 
 测试只替换 `transport: createMockTransport(routes)`，调用代码不变。处理器收到实际 Request，可检查头、查询与请求体；未匹配路径直接失败，绝不回退真实网络。`middleware` 按注册顺序进入、逆序返回。
@@ -40,7 +46,7 @@ HttpOnly Cookie 会话的宿主改用 `sessionProvider: { refreshSession(): Prom
 
 ## 验证
 
-`pnpm exec vitest run --project sdk` 覆盖并发刷新、失败释放、取消、晚到 401、租户切换、错误指针、大整数、mock、注册冲突与多语言。整体门禁运行 `pnpm yue:gates`。
+`pnpm exec vitest run --project sdk` 覆盖并发刷新、失败释放、取消、晚到 401（含刷新结论之后才到达的 401）、宿主回调抛错隔离、租户切换、错误指针、大整数、mock、注册冲突与多语言。整体门禁运行 `pnpm yue:gates`。
 
 ## 已知限制与延期项
 

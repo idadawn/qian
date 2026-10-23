@@ -1,14 +1,15 @@
 import { spawn } from 'node:child_process';
 import { request } from 'node:https';
 import { createServer } from 'node:net';
-import { mkdtemp, mkdir, open, rm } from 'node:fs/promises';
+import { copyFile, mkdtemp, mkdir, open, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 
 // 真实流程验收入口（S1-YUE-002）：独立临时状态目录、随机回环端口与自有 PostgreSQL / Dex 容器，用 scripts/dev-shell.sh up 拉起真实 qian.identity +
-// 上游 Dex + 网关 BFF，等就绪后跑 Playwright，最后停宿主、删容器。失败时保留状态目录（宿主日志）。CI 用同一入口。
+// 上游 Dex + 网关 BFF，等就绪后跑 Playwright，最后停宿主、删容器。失败时保留状态目录，并把宿主 / PostgreSQL / Dex 三份日志复制进
+// TestResults/shell-auth/logs（CI 只上传 TestResults/shell-auth；状态目录里的密钥、证书与 Dex 配置不复制）。CI 用同一入口。
 const root = resolve(import.meta.dirname, '../../..');
 const script = resolve(root, 'scripts/dev-shell.sh');
 const state = await mkdtemp(resolve(tmpdir(), 'qian-shell-auth-'));
@@ -76,5 +77,10 @@ try {
   }
   await new Promise(ok => spawn('bash', [script, 'down'], { cwd: root, env, stdio: 'inherit' }).once('exit', ok));
   if (succeeded) await rm(state, { recursive: true, force: true });
-  else console.error('失败日志保留在本机私有目录：', state);
+  else {
+    const kept = resolve(root, 'TestResults/shell-auth/logs');
+    await mkdir(kept, { recursive: true });
+    for (const file of ['host.log', 'postgres.log', 'dex.log']) await copyFile(resolve(state, file), resolve(kept, file)).catch(() => undefined);
+    console.error('失败日志保留在本机私有目录：', state, '；日志副本：', kept);
+  }
 }

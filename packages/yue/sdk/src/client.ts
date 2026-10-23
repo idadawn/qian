@@ -29,8 +29,13 @@ export interface PlatformClientOptions {
   getTenantId?: () => string | null | undefined;
   transport?: RequestTransport;
   middleware?: readonly RequestMiddleware[];
+  /** 会话已结束（刷新失败或重放仍 401）时通知一次。对宿主而言会话结束是粘性的：收到之后不得再从 `onSessionRefreshed` 或排队的重拉发起新一轮请求。 */
   onSessionExpired?: () => void;
-  /** Cookie 会话刷新成功（`refreshSession()` 回答 true）后通知一次：宿主据此重拉随身份变化的数据（菜单、权限、会话快照）。 */
+  /**
+   * Cookie 会话刷新成功（`refreshSession()` 回答 true）后通知一次：宿主据此重拉随身份变化的数据（菜单、权限、会话快照）。
+   * 通知在重放之前同步发出——重放仍可能 401（例如平台表面仍拒绝新令牌），随后才通知 `onSessionExpired`；宿主据此发起的重拉要在会话结束后停下，
+   * 否则「刷新成功、重放仍 401」会无界循环（下一批 401 按约定重新探测，刷新仍成功，再通知……）。
+   */
   onSessionRefreshed?: () => void;
 }
 
@@ -91,6 +96,11 @@ export function parsePlatformJson(text: string): unknown {
   return parse(text, undefined, parseNumber);
 }
 
+/** 宿主回调与 SDK 自身的状态机隔离（与 DOM 事件监听器一致）：同步抛错只异步上报，不改变等待中请求的结果，也不跳过过期通知。 */
+function notify(callback: () => void): void {
+  try { callback(); } catch (error) { queueMicrotask(() => { throw error; }); }
+}
+
 function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   signal.throwIfAborted();
   return new Promise((resolve, reject) => {
@@ -134,14 +144,14 @@ export class PlatformClient {
   private expire(): void {
     if (this.sessionExpired) return;
     this.sessionExpired = true;
-    this.options.onSessionExpired?.();
+    notify(() => this.options.onSessionExpired?.());
   }
 
   /** 会话刷新的单飞队列：同一时刻只有一次会话端点调用，所有等待的 401 共享其结果。 */
   private refreshSession(): Promise<boolean> {
     if (!this.refreshingSession) {
       this.refreshingSession = Promise.resolve().then(() => this.options.sessionProvider?.refreshSession() ?? false)
-        .then((alive) => { this.sessionEpoch++; this.sessionAlive = alive; if (alive) this.options.onSessionRefreshed?.(); else this.expire(); return alive; }, (error: unknown) => { this.expire(); throw error; })
+        .then((alive) => { this.sessionEpoch++; this.sessionAlive = alive; if (alive) notify(() => this.options.onSessionRefreshed?.()); else this.expire(); return alive; }, (error: unknown) => { this.expire(); throw error; })
         .finally(() => { this.refreshingSession = undefined; });
     }
     return this.refreshingSession;
