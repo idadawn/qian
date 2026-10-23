@@ -39,13 +39,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: 后台顺序预拉测试镜像（与还原、构建、门禁并行，记录在 RUNNER_TEMP/prefetch）
+        run: |
+          mkdir -p "$RUNNER_TEMP/prefetch"
+          setsid nohup python3 scripts/dotnet_ci.py prefetch --state "$RUNNER_TEMP/prefetch" \
+            > "$RUNNER_TEMP/prefetch/output.log" 2>&1 < /dev/null &
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
 
       - uses: actions/setup-node@v4
         with:
@@ -82,6 +88,9 @@ jobs:
 
       - name: 安装固定摘要的真实 OpenAPI 兼容检查器
         run: python3 scripts/prepare_contract_tools.py --destination "$RUNNER_TEMP/qian-contract-tools"
+
+      - name: 等待镜像预拉结束（至多 120 秒，超时照常测试，没拉完的由 Testcontainers 补拉）
+        run: python3 scripts/dotnet_ci.py wait-prefetch --state "$RUNNER_TEMP/prefetch" --timeout 120
 
       - name: 单元与集成测试（共享容器与真实 Apollo）
         env:
