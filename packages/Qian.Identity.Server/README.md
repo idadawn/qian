@@ -1,10 +1,10 @@
 # Qian.Identity.Server
 
-身份 seam 的 Provider：基于 OpenIddict 7.7.2 的协议面（S1-IDP-002）加内置的 Person / Membership 账号模型与统一登录流水线（S1-IDP-003）、会话中心（S1-IDP-004）与连接器登录（S1-IDP-007：统一回调、确认绑定、JIT）。可嵌入独立 ASP.NET Core 宿主，拥有 discovery、JWKS、授权码、token、userinfo、revocation、introspection 和 end_session 协议面，以及账号、凭据、会话与登录审计的持久存储。OpenIddict 是唯一的令牌发行者；Kun 只提供 OIDC 依赖方与 Cookie 原语，不持有业务用户与租户。
+身份 seam 的 Provider：基于 OpenIddict 7.7.2 的协议面（S1-IDP-002）加内置的 Person / Membership 账号模型与统一登录流水线（S1-IDP-003）、会话中心（S1-IDP-004）、连接器登录（S1-IDP-007：统一回调、确认绑定、JIT）与组织目录（S1-IDP-009）。可嵌入独立 ASP.NET Core 宿主，拥有 discovery、JWKS、授权码、token、userinfo、revocation、introspection 和 end_session 协议面，以及账号、凭据、会话与登录审计的持久存储。OpenIddict 是唯一的令牌发行者；Kun 只提供 OIDC 依赖方与 Cookie 原语，不持有业务用户与租户。
 
 ## 两种装配方式
 
-- **内置账号模型（默认）**：`new IdentityServerPlugin()`，需要 Data 与 Tenancy 两个组件。身份组件自己提供 `IIdentityAccounts`（账号管理）、`ISignInPipeline`（统一登录流水线）、`IAuthenticatorFactorRegistry`（认证因子注册表），并向 Tenancy 提供 `ITenantMembershipProvisioner`（开通编排第 5 步）与 `ITenantUserCounter`（配额用量）。
+- **内置账号模型（默认）**：`new IdentityServerPlugin()`，需要 Data 与 Tenancy 两个组件。身份组件自己提供 `IIdentityAccounts`（账号管理）、`IIdentityDirectory`（组织目录）、`ISignInPipeline`（统一登录流水线）、`IAuthenticatorFactorRegistry`（认证因子注册表），并向 Tenancy 提供 `ITenantMembershipProvisioner`（开通编排第 5 步）与 `ITenantUserCounter`（配额用量）。
 - **宿主自带账号服务**：`new IdentityServerPlugin(accounts)`，本组件只承担协议面，账号流水线由宿主负责；此时不提供上面几个端口。
 
 两种方式都只允许 global scope、每环境唯一 issuer；`plugins/qian.identity.server` 的代码字段与配置 Schema 已派生，但因完整安装尚未验收而保留 `x-skeleton`，`qian add identity` 的完整产品入口待外壳接入后再发布。
@@ -23,7 +23,7 @@
 
 ## 账号模型
 
-全局表（不适用 RLS；其中 `sessions`、`login_audits`、`login_tickets`、`connector_flows` 只带可空的 `tenant_id` 作记录）：`persons`、`person_identifiers`、`password_history`、`clients`、`sessions`、`login_audits`、`login_tickets`、`login_captchas`、`connector_flows`。租户表（`tenant_id` 列，强制 RLS，只能在对应租户上下文中读写）：`memberships`、`external_identities`。
+全局表（不适用 RLS；其中 `sessions`、`login_audits`、`login_tickets`、`connector_flows` 只带可空的 `tenant_id` 作记录）：`persons`、`person_identifiers`、`password_history`、`clients`、`sessions`、`login_audits`、`login_tickets`、`login_captchas`、`connector_flows`。租户表（`tenant_id` 列，强制 RLS，只能在对应租户上下文中读写）：`memberships`、`external_identities` 及目录的六张表（见下）。
 
 - **Person** 是全局自然人，`Id` 即令牌的 `sub`，创建后永不改写；换绑标识不改 `sub`。`sub` 用 UUID v7 生成，主键冲突时换号重试，绝不覆盖既有账号；并发创建同一标识只有一个成功。
 - **标识**：手机（规范化为 E.164，缺省国家码取 `DefaultPhoneCountryCode`）、邮箱（小写）、用户名（字母开头 3–32 位，不会形似手机或邮箱，所以按语法即可判定类型，无需用户选择）。同一标识同一时刻只属于一个有效 Person（唯一索引加软删除，解绑后释放）。
@@ -33,6 +33,40 @@
 - **ExternalIdentity** 绑定：同租户 connector × subject 唯一，须显式确认，软删除；连接器登录与确认绑定见下文「连接器登录」。
 - **Client** 是宿主可信注册配置的镜像（类型 confidential / public / machine、端类型 `DeviceType`），OpenIddict 应用仍是协议侧事实来源。
 - **身份修订**：令牌里的 `identity_revision` = Person 修订 + 成员修订，二者只增不减；改密、停用、锁定、标识变更、成员状态变更都会递增，使旧令牌与旧会话失效。
+
+## 组织目录
+
+目录作为本组件子模块进入 `identity` profile，无第二个 issuer 或独立插件；`ctx.IdentityDirectory()` 解析 Definition 的 `IdentityDirectory` 服务键。目录表、HTTP 面与操作描述随 Identity Server 同装同卸，`qian add identity` 的完整安装仍沿用文末验收门。
+
+- 表 `organizations`、`org_types`、`positions`、`groups`、`member_relations`、`user_profiles` 全部启用 FORCE RLS 与严格租户守卫。关联外键包含 `tenant_id`，受限应用角色即使知道其他租户的 UUID 也不能建立跨租户关联；迁移新增成员 `(tenant_id, id)` 唯一键，不改已有成员 ID。
+- **组织树**：每个租户至多一个根，根深度 1，最大深度 9；类型编码来自本租户字典，名称可修改，已被使用的类型不能删除。组织保存主管成员与责任岗位，责任岗位必须属于该组织并标为责任岗位。更新 `parent_id` 即移动，同一事务内更新整棵子树的 `path` 和深度；把节点放入其后代或导致任一后代超过深度上限时拒绝。
+- **岗位树**：同一租户内可维护跨组织父子岗位及责任人，每个组织至多一个默认岗位。移动维护完整岗位子树；更改一个岗位的组织不隐式改变其后代的组织，迁出责任岗位前须先解除原组织的责任岗位引用。删除组织时，若其岗位仍被其他组织的子岗位引用，要求先调整父链，不能级联误删其他组织的岗位。组织/岗位删除检查全部后代的组织归属、岗位归属及主管/责任人，有任何成员就返回 `DIRECTORY_HAS_MEMBERS`（409）。空子树按深度逆序删除，事务失败全部回滚。
+- **多归属**：一个成员可加入多个组织、岗位、用户组；每种目标类型至多一个 `is_primary`。`PUT /members/{id}/relations` 原子替换集合，先校验全部目标属于本租户，再替换，不会因其中一项错误丢失旧归属。每次变更递增成员修订。用户组是纯集合，只有空组可删除。所有目录写入使用同一把租户事务锁，删除与归属、互相移动并发时不能形成悬空引用或环。
+- **档案**：`user_profiles` 与 Membership 一对一，姓名同步成员显示名，拼音、联系方式、扩展 JSON 与 Person 凭据分开；更新联系方式不修改登录标识和验证状态。电话和邮箱对外仅返回掩码，扩展限 16 KiB JSON 对象，档案接口只向租户管理员开放；不得在扩展里存密码或令牌。普通成员列表只有现有 Membership 投影，不返回档案扩展。
+- **状态与删除**：目录入口允许 `active ⇄ disabled → locked`（同态幂等）；锁定后只能经受信任的账号管理端口先解除锁定。目录入口拒绝停用或删除租户管理员，逐项返回 `DIRECTORY_ADMINISTRATOR_PROTECTED`。删除是 `status=disabled` 加 `directory_deleted=true`，账号、档案和历史归属仍保留；普通列表不显示已标记成员，账号开户或状态入口也不能将其意外恢复。管理员仍可将已标记成员的归属替换为空，解除引用后才能删除空组织。
+- **会话与事件**：成员状态变更沿用账号服务的事务内吊销 `RevokeSessionRowsAsync`；只吊销该租户成员的会话，同一 Person 在其他租户的会话继续有效。现有会话中心负责在原租户作用域发布 `identity.session_revoked.v1`，HTTP 调用者写入事件 actor。组织/岗位/成员的 `directory.*.v1` 事件、SCIM、上级链及前端真实选择器仍由 S1-IDP-010 交付。
+
+`MapQianIdentityAccounts()` 同时映射 `/api/directory`。目录读接口要求数据库实时校验通过的本租户成员会话；写入和档案读取要求本租户管理员。平台 Cookie 没有租户 Membership，不能以 `tenant_id` 参数获得目录权限，也不会被合成为租户成员。请求中的租户字段拒绝；租户上下文只由当前会话恢复。写入沿用 JSON 类型、16 KiB 请求体上限和防伪校验；所有响应 no-store，组件卸载后 404。下表路径均相对于 `/api/directory`，字段使用 snake_case。
+
+| 方法与路径 | 作用 |
+| --- | --- |
+| `GET /org-types`、`PUT /org-types`、`DELETE /org-types/{code}` | 本租户组织类型字典；写入 `{code,name}` |
+| `GET /orgs/tree`、`POST /orgs`、`PUT /orgs/{id}`、`DELETE /orgs/{id}` | 组织树（`items[]` 含 parent_id/path/depth）及维护；写入 `{name,type_code,parent_id?,manager_membership_id?,responsible_position_id?}` |
+| `GET /positions`、`POST /positions`、`PUT /positions/{id}`、`DELETE /positions/{id}` | 岗位树及维护；写入 `{name,organization_id,parent_id?,is_default?,is_responsible?,responsible_membership_id?}` |
+| `GET /groups`、`POST /groups`、`DELETE /groups/{id}` | 纯成员集合；创建 `{name}` |
+| `GET /members`、`GET /orgs/{id}/members`、`GET /positions/{id}/holders` | 真实租户成员列表（`items[].membership`）；分页 offset 默认 0、limit 默认 50 且上限 200；组织成员支持 `descendants=true` |
+| `GET /members/{id}/relations`、`PUT /members/{id}/relations` | 读取/原子替换 `{items:[{target_type,target_id,is_primary}]}`，目标类型 organization/position/group，最多 100 项 |
+| `GET /members/{id}/profile`、`PUT /members/{id}/profile` | 管理员读写档案 `{name,pinyin?,phone?,email?,extensions?}`，读取返回联系方式掩码 |
+| `POST /members/{id}/status`、`DELETE /members/{id}` | 按 `{status,reason}` 改状态；删除为禁用+标记，无物理清除路由 |
+| `POST /members:disable` | `{membership_ids:[...],reason}`，1–100 个不同成员；逐项独立事务，回 `{status,items[]}`，状态 SUCCESS/PARTIAL_SUCCESS/FAILED，单项带 membership_id/succeeded/error_code |
+
+**标准禁用能力**：`DirectoryDisableCapability` 的真实绑定与静态 `CapabilityContract` 经 `[CapabilitySource]` 派生 `tools/directory.member.disable.json`，权限点同时派生到 `metadata/permissions.json`。目录不会维护另一套可执行操作清单。标准契约为 `write`、`policyHint=confirm`、`idempotent=true`、`agent.expose=true`、`agent.requiresConfirmation=true`，输入 `{idempotencyKey,membershipIds,reason}`，reason 标敏感；输出为同一批量三态结果。`idempotencyKey` 是必填 UUID，主体/租户/会话不属于输入。
+
+通用入口通过既有 `ICapabilityService` 执行和持久回执：相同主体、能力与 Idempotency-Key 的成功响应保留 24 小时，同键同输入直接回放、改输入返回 409，不再次进入业务或写吊销事件。绑定还会重验运行态可见性、当前租户、宿主认证后的 `ICurrentUser`、实际服务端会话与身份修订、真实 `qian.identity.server:member:disable` 权限和租户管理员资格；只有权限而不是 Identity 管理员的用户仍被拒绝。S1 暂不执行 Agent/委托主体，Agent 字段为已冻结的后续调用安全契约。
+
+能力的 audit=true 由已有 Audit 定义端口落实：开始记录失败不执行，收尾有界写完成或失败记录，reason 在计算输入哈希前脱敏；通用入口重放发生在绑定之前，不重复记录审计。执行宿主须提供标准能力目录、受信当前用户、授权与租户审计端口，Identity 不引用这些 Provider。原 `/api/directory/members:disable` Cookie 接口仍由实时管理员校验与防伪保护，复用相同 `DisableMembersAsync` 业务规则，但不是通用回执入口，不宣称有 24 小时重放。
+
+物理清除仅在 Definition 的 `DirectoryOperations` 保留 `destructive`、AgentExpose=false（humanOnly）、Executable=false 的安全边界；没有对应 HTTP 操作目录、执行路由、`ExecutableCapabilities` 注册或可调用工具。
 
 ## 统一登录流水线
 
@@ -149,11 +183,13 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 
 ## 验收
 
+`DirectoryTests` 使用实际 PostgreSQL 16、受限角色、生产迁移与 Kestrel：覆盖组织/岗位移动、循环和深度拒绝、含成员拒删、租户类型字典、责任人、多归属/主归属、档案 1:1、直连 RLS 与跨租户复合外键、10 人含 2 管理员的批量三态、同租户会话吊销且其他租户不受影响、软删除不复活、平台超管不出现在成员列表、CSRF/未知字段/卸载 404、并发归属与删除及互相移动。`CustomerCommandTests.DirectoryCapability.cs` 在真实 Identity/Registry/Authz/Capabilities/PostgreSQL 装配下验证实际生成 tool 与冻结目录 Schema、同键回放/变更冲突、重新启用后重放不再次禁用、吊销事件与审计不重复、非管理员/跨 scope/已吊销会话/卸载拒绝；测试使用真实生成表面组装独立测试制品，产品 x-skeleton 不变。`DirectoryContractTests` 覆盖深度与状态机及物理清除安全边界，迁移测试校验模型无漂移及八张租户表的 FORCE RLS。
+
 真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签；RFC 8707 resource 的白名单、两层检查、多资源客户端必须指定与收窄见 `ResourceIndicatorTests`）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）；连接器登录（`ConnectorFlowTests`：假连接器 TCK 的清单校验、state 篡改拒绝、回调幂等含并发，确认绑定、冲突不泄露、过期与重新认证窗口、取消、JIT 与配额、租户 scope 过滤与遮蔽、详情不回传密钥；`AuthentikConnectorTests`：容器里的真实 Authentik 经通用 OIDC 连接器走完首次绑定、再次登录与同租户重复绑定被拒）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
 
 ## 模型体验
 
-协议与账号端点不是模型工具，不派生登录、刷新或密码相关 capability；模型不会由本组件获得签发、重置密码或登录能力。
+协议与账号端点不派生登录、刷新或密码相关 capability；模型不会由本组件获得签发、重置密码或登录能力。目录禁用是经 SDK 从实际绑定派生的标准写能力，带 confirm 和人工确认元数据，实际 S1 执行只接受已认证并仍有效的租户管理员。
 
 ## 已知限制与延期项
 
@@ -167,6 +203,6 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 
 ## 清单入口与代码派生
 
-`plugins/qian.identity.server/.qian-plugin/plugin.json` 的稳定入口是 `IdentityServerComponent`，允许 global scope，依赖 `Data` 与 `Tenancy`，提供 身份服务、账号、登录流水线、因子、成员开户与用户计数六个 Definition 服务键。固定使用内置账号模型 `new IdentityServerPlugin()`；接收外部账号实现的构造器仍是宿主适配构件，其不同依赖与输出不混入此清单。
+`plugins/qian.identity.server/.qian-plugin/plugin.json` 的稳定入口是 `IdentityServerComponent`，允许 global scope，依赖 `Data` 与 `Tenancy`，提供 身份服务、账号、登录流水线、因子、成员开户与用户计数及组织目录七个 Definition 服务键。固定使用内置账号模型 `new IdentityServerPlugin()`；接收外部账号实现的构造器仍是宿主适配构件，其不同依赖与输出不混入此清单。
 
 入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

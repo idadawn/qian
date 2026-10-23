@@ -18,6 +18,7 @@
   "provides": [
     "Identity",
     "IdentityAccounts",
+    "IdentityDirectory",
     "IdentityFactors",
     "IdentitySignIn",
     "TenancyMembershipProvisioner",
@@ -47,8 +48,19 @@
       "/runtime/entry",
       "/runtime/configSchema"
     ],
-    "tools": [],
+    "tools": [
+      "tools/directory.member.disable.json"
+    ],
     "metadata": {
+      "metadata/permissions.json": {
+        "$generated": true,
+        "component": "qian.identity.server",
+        "source": "Qian.Identity.Server.IdentityServerComponent, Qian.Identity.Server",
+        "sha256": "c469af46938a6cda7f8b4a08e2b0eaee72ae5a059b4c4cb7c44a0cab3d225214",
+        "fields": [
+          ""
+        ]
+      },
       "metadata/events.json": {
         "$generated": true,
         "component": "qian.identity.server",

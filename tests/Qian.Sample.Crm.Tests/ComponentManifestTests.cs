@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
+using Qian.Identity.Abstractions;
 using Qian.Identity.Server;
 using Qian.Plugin.Sdk;
 using Qian.Runtime;
@@ -39,12 +40,14 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
-    public async Task 身份清单入口实际提供全部六个服务_卸载统一撤销()
+    public async Task 身份清单入口实际提供含组织目录的七个服务_卸载统一撤销()
     {
         await using var host = await Start(identity: true);
         var loader = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var identity = Metadata(typeof(IdentityServerComponent), "qian.identity.server");
-        Assert.Equal(6, identity.Provides.Count);
+        Assert.Equal(7, identity.Provides.Count);
+        Assert.Contains("IdentityDirectory", identity.Provides);
+        Assert.IsAssignableFrom<IIdentityDirectory>(loader.GetContext("data", ScopeKey.Global).TryInject<object>(IdentityDefinition.DirectoryKey));
         foreach (var key in identity.Provides) Assert.NotNull(loader.GetContext("data", ScopeKey.Global).TryInject<object>(new ServiceKey(key)));
         await loader.UnmountAsync("identity", ScopeKey.Global, Ct);
         foreach (var key in identity.Provides) Assert.Null(loader.GetContext("data", ScopeKey.Global).TryInject<object>(new ServiceKey(key)));

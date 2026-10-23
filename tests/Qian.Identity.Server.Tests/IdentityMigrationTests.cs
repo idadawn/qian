@@ -10,7 +10,7 @@ public sealed class IdentityMigrationTests
     public void 协议持久表和后通道队列有完整迁移且模型无漂移()
     {
         using var context = new IdentityDesignTimeFactory().CreateDbContext([]);
-        Assert.False(context.Database.HasPendingModelChanges()); Assert.Equal(4, context.Database.GetMigrations().Count());
+        Assert.False(context.Database.HasPendingModelChanges()); Assert.Equal(5, context.Database.GetMigrations().Count());
         var script = context.GetService<IMigrator>().GenerateScript();
         Assert.Contains("plugin_qian_identity", script, StringComparison.Ordinal);
         Assert.Contains("logout_deliveries", script, StringComparison.Ordinal);
@@ -25,12 +25,12 @@ public sealed class IdentityMigrationTests
         foreach (var table in new[] { "persons", "person_identifiers", "password_history", "memberships", "external_identities", "clients", "sessions", "login_audits", "login_tickets", "login_captchas" })
             Assert.Contains($"CREATE TABLE plugin_qian_identity.{table} (", script, StringComparison.Ordinal);
         // Membership 与外部身份是租户表：强制 RLS，且有宽松放行 + 严格租户守卫两条策略；Person 及其凭据、会话、审计是全局表，不启用 RLS。
-        foreach (var table in new[] { "memberships", "external_identities" })
+        foreach (var table in new[] { "memberships", "external_identities", "organizations", "positions", "org_types", "groups", "member_relations", "user_profiles" })
         {
             Assert.Contains($"ALTER TABLE plugin_qian_identity.{table} FORCE ROW LEVEL SECURITY;", script, StringComparison.Ordinal);
             Assert.Contains($"CREATE POLICY qian_tenant_guard ON plugin_qian_identity.{table} AS RESTRICTIVE", script, StringComparison.Ordinal);
         }
-        Assert.Equal(2, script.Split("FORCE ROW LEVEL SECURITY", StringSplitOptions.None).Length - 1);
+        Assert.Equal(8, script.Split("FORCE ROW LEVEL SECURITY", StringSplitOptions.None).Length - 1);
         // 手机、邮箱、用户名唯一且解绑（软删除）后释放；同一人在同一租户只有一个成员身份。
         Assert.Contains("ix_person_identifiers_kind_value", script, StringComparison.Ordinal);
         Assert.Contains("ix_memberships_tenant_id_person_id", script, StringComparison.Ordinal);
