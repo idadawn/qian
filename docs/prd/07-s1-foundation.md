@@ -451,6 +451,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - 热更新：`ValidatedOptionsMonitor<T>` 包装 `IOptionsMonitor<T>`，变更先跑校验器，失败保留上一份并计数 `qian_config_reload_failed_total`、发 `config.reload.failed.v1`。
 - Schema：`config.schema`（JSON Schema 2020-12，`sensitive: true` 字段只能是 secretRef）→ CI 生成 namespace 骨架并比对线上键；`GET /api/config/schemas/{plugin}` 对外可读（值不可读除非有权限且非敏感）。
 - 特性开关：namespace `qian.common.flags`，键 `flag.<name>` 值为规则 JSON（默认、租户白名单/百分比）；`IFeatureFlags.IsEnabled(name, tenantId)`；授权（7.14）与开关分开存（ADR-014）。`IFeatureFlags` 只管灰度（按租户百分比 / 白名单渐进放量）；「租户是否启用某组件」不再用开关表达，而是租户 scope 是否挂载该组件的配置条目（ADR-020 D20.5、7.2.1）。
+- S1-DEC-031 已确认 `flags.set` 仅保存待发布规则草稿，明确返回待发布状态，由有权限的操作人在 Apollo Portal 发布后生效。写端是可选平台管理组件 `qian.config.flags`，经 Portal OpenAPI 操作宿主可信绑定的 App / 环境 / Cluster / `qian.common.flags`，Token 使用 secretRef；调用方不能选择任意目标、Token 或发布人，不回退 AdminService，也不改变 Config seam 的只读定位。写入具备平台权限、确认元数据与脱敏审计；不安装写端时明确不可用。详见[写入与发布边界](../decisions/feature-flags-write-boundary.md)。
 - 分工表（写进开发手册）：部署级引导项 → Kustomize；平台/服务级非敏感 → Apollo；密钥 → K8s Secret（Infisical 待运行时注入接通）；租户级在线设置 → 7.3 `ITenantSettings`；前端运行时配置 → `window.__APP_CONF__` ConfigMap。
 
 初始过渡态（2026-10-06）：当时 Kun 无 Apollo 配置源，现网无 Apollo / MySQL；配置边界已由 ADR-007 裁决。S1-CFG-001 现复用已发布 Kun.Configuration.Apollo，补齐 Qian 源顺序、引导、只读 seam 与真实服务验收；[运维手册](../ops/configuration-runbook.md) 定义 L0–L4 降级与排查流程。首发 Apollo 仍遵循 2.5.x（≥2.5.2），生产部署另见 7.17。
