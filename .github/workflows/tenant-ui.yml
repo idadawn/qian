@@ -3,9 +3,9 @@ name: tenant-ui
 on:
   push:
     branches: [main]
-    paths: ['packages/qian-tenancy-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
+    paths: ['packages/qian-tenancy-ui/**', 'packages/qian-plugin-sdk/**', 'packages/qian-runtime/**', 'turbo.json', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
   pull_request:
-    paths: ['packages/qian-tenancy-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
+    paths: ['packages/qian-tenancy-ui/**', 'packages/qian-plugin-sdk/**', 'packages/qian-runtime/**', 'turbo.json', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/tenant-ui.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
           version: 12.9.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @qian/tenancy-ui exec playwright install --with-deps chromium
-      - run: pnpm --filter @qian/tenancy-ui contracts:check && pnpm --filter @qian/tenancy-ui typecheck && pnpm --filter @qian/tenancy-ui build
+      - run: pnpm --filter @qian/tenancy-ui contracts:check && pnpm exec turbo run typecheck build --filter=@qian/tenancy-ui
       - run: pnpm --filter @qian/tenancy-ui e2e
       - uses: actions/upload-artifact@v4
         if: always()
