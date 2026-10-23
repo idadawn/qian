@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
@@ -23,18 +25,29 @@ public sealed class ConfigurationPlugin : IQianPlugin
         // 标准入口保持直接登记，清单派生不会执行插件或辅助方法。
         var root = ctx.Services.GetRequiredService<IConfiguration>();
         ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
-        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
+        var flags = CreateFlags(ctx.Services, root);
+        ctx.Effect(flags);
+        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, flags, ctx.Services.GetService<ISecretResolverFactory>()));
         // 宿主用 AddQianOptions 登记过强类型配置时，挂载期间把重载失败作为进程内事件发出。
         if (ctx.Services.GetService<ConfigReloadNotifier>() is { } notifier)
             ctx.Effect(notifier.Subscribe(async notice => await ctx.DispatchAsync(ConfigRuntimeEvents.ReloadFailed, notice.Payload, CancellationToken.None).ConfigureAwait(false)));
         return ValueTask.CompletedTask;
     }
+    private static FeatureFlagsService CreateFlags(IServiceProvider services, IConfiguration root)
+    {
+        var flags = new FeatureFlagsService(root, services.GetService<ConfigReloadNotifier>() ?? new ConfigReloadNotifier(),
+            services.GetService<ILoggerFactory>()?.CreateLogger("Qian.Config.Flags") ?? NullLogger.Instance);
+        return flags;
+    }
+
     // Apollo 适配器校验引导后复用同一注册；两处须保持一致。
     internal static void Register(IPluginContext ctx)
     {
         var root = ctx.Services.GetRequiredService<IConfiguration>();
         ctx.Effect(ConfigErrors.Register(ctx.Services.GetRequiredService<ErrorCatalog>()));
-        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, ctx.Services.GetService<ISecretResolverFactory>()));
+        var flags = CreateFlags(ctx.Services, root);
+        ctx.Effect(flags);
+        ctx.Provide<IConfigService>(ConfigDefinition.Key, new ConfigurationService(root, flags, ctx.Services.GetService<ISecretResolverFactory>()));
         if (ctx.Services.GetService<ConfigReloadNotifier>() is { } notifier)
             ctx.Effect(notifier.Subscribe(async notice => await ctx.DispatchAsync(ConfigRuntimeEvents.ReloadFailed, notice.Payload, CancellationToken.None).ConfigureAwait(false)));
     }

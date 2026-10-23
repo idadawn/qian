@@ -40,3 +40,25 @@ Qian.Config.Apollo.QianOptionsSchema.Export() -> System.Text.Json.Nodes.JsonObje
 Qian.Config.Apollo.QianOptionsSchema.OptionsType.get -> string!
 Qian.Config.Apollo.QianOptionsSchema.Section.get -> string!
 static Qian.Config.Apollo.QianOptionsExtensions.AddQianOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! section, System.Action<Microsoft.Extensions.Configuration.IConfiguration!, T!>! bind, bool critical = true, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T!>? schema = null, string? plugin = null) -> Microsoft.Extensions.Options.OptionsBuilder<T!>!
+Qian.Config.Apollo.ApolloFlagManagementBinding
+Qian.Config.Apollo.ApolloFlagManagementBinding.ApolloFlagManagementBinding(System.Uri! portal, string! appId, string! environment, string! cluster, string! operatorName, string! tokenReference, string! receiptBinding) -> void
+Qian.Config.Apollo.ApolloFlagManagementBinding.AppId.get -> string!
+Qian.Config.Apollo.ApolloFlagManagementBinding.Cluster.get -> string!
+Qian.Config.Apollo.ApolloFlagManagementBinding.Environment.get -> string!
+Qian.Config.Apollo.ApolloFlagManagementBinding.OperatorName.get -> string!
+Qian.Config.Apollo.ApolloFlagManagementBinding.Portal.get -> System.Uri!
+Qian.Config.Apollo.ApolloFlagManagementBinding.TokenReference.get -> string!
+Qian.Config.Apollo.FeatureFlagManagementHosting
+Qian.Config.Apollo.FeatureFlagManagementPlugin
+Qian.Config.Apollo.FeatureFlagManagementPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Config.Apollo.FeatureFlagManagementPlugin.FeatureFlagManagementPlugin() -> void
+Qian.Config.Apollo.FeatureFlagManagementPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+static Qian.Config.Apollo.FeatureFlagManagementHosting.AddQianFeatureFlagManagement(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Collections.Generic.IReadOnlyDictionary<string!, Qian.Config.Apollo.ApolloFlagManagementBinding!>! bindings) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+
+Qian.Config.Apollo.ApolloFlagManagementBinding.ReceiptBinding.get -> string!
+Qian.Config.Apollo.FeatureFlagDraftStorage
+const Qian.Config.Apollo.FeatureFlagDraftStorage.GuardPolicy = "flags_platform_guard" -> string!
+const Qian.Config.Apollo.FeatureFlagDraftStorage.Schema = "plugin_qian_config_flags" -> string!
+const Qian.Config.Apollo.FeatureFlagDraftStorage.Table = "draft_receipts" -> string!
+static Qian.Config.Apollo.FeatureFlagDraftStorage.ExpectedGuard(string! platformRole) -> string!
+static Qian.Config.Apollo.FeatureFlagDraftStorage.MigrateAsync(System.Data.Common.DbConnection! connection, string! platformRole, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

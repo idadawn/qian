@@ -1,6 +1,9 @@
 using Kun.Configuration.Apollo;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Qian.Runtime.Errors;
 
 namespace Qian.Config.Apollo;
@@ -44,7 +47,10 @@ public static class QianConfigurationExtensions
         if (catalog is null) { catalog = ErrorCatalog.CreateDefault(); services.AddSingleton(catalog); }
         ConfigErrors.Register(catalog);
         services.AddSingleton(configuration);
-        services.AddSingleton<IConfigService>(sp => new ConfigurationService(configuration, sp.GetService<ISecretResolverFactory>()));
+        services.TryAddSingleton<ConfigReloadNotifier>();
+        services.AddSingleton<IFeatureFlags>(sp => new FeatureFlagsService(configuration, sp.GetRequiredService<ConfigReloadNotifier>(),
+            sp.GetService<ILoggerFactory>()?.CreateLogger("Qian.Config.Flags") ?? NullLogger.Instance));
+        services.AddSingleton<IConfigService>(sp => new ConfigurationService(configuration, sp.GetRequiredService<IFeatureFlags>(), sp.GetService<ISecretResolverFactory>()));
         return services;
     }
 
@@ -99,10 +105,10 @@ public static class QianConfigurationExtensions
             CacheDirectory = cache is null ? null : Path.Combine(Path.GetFullPath(cache, basePath), environment),
             Validate = snapshot =>
             {
-                var diagnostics = SecretSafety.ScanConfiguration(snapshot, schema);
+                var diagnostics = ScanSnapshot(snapshot, schema);
                 return tracker.Merged(snapshot, diagnostics, diagnostics.Count == 0 && (options.ValidateApolloSnapshot?.Invoke(snapshot) ?? true));
             },
-            ValidateNamespace = (name, snapshot) => tracker.Namespace(name, snapshot, SecretSafety.ScanConfiguration(snapshot, schema)),
+            ValidateNamespace = (name, snapshot) => tracker.Namespace(name, snapshot, ScanSnapshot(snapshot, schema)),
             ResolveAccessKey = accessKeyReference is null ? null : () =>
             {
                 var value = options.ResolveAccessKey!(accessKeyReference);
@@ -110,6 +116,13 @@ public static class QianConfigurationExtensions
                     ? throw new UnauthorizedAccessException("Apollo AccessKey 引用未解析，拒绝发送未签名请求。") : value;
             }
         }, environment, cluster, appId);
+    }
+
+    private static IReadOnlyList<SecretDiagnostic> ScanSnapshot(IReadOnlyDictionary<string, string?> snapshot, System.Text.Json.JsonElement? schema)
+    {
+        var diagnostics = SecretSafety.ScanConfiguration(snapshot, schema);
+        return FeatureFlagRules.Validate(snapshot) ? diagnostics :
+            [.. diagnostics, new SecretDiagnostic(ConfigErrors.ReloadRejected.Code, "#", "feature-flag-rule")];
     }
 
     private static int NamespaceOrder(string name)
