@@ -74,7 +74,8 @@ internal sealed partial class LifecycleController
     }
 
     // 平台级状态变更与平台链条目同一可串行化事务：work 先保存再返回记录（null 表示幂等返回，不追加），记录经平台链的同事务入口挂进本事务（S1-AUD-009）；
-    // 追加失败或提交失败时状态变更与条目都不留。平台链与其它平台生产方共用，可串行化冲突或死锁时按 Audited 的约定丢弃整个会话重做。
+    // 追加失败或提交失败时状态变更与条目都不留。平台链与其它平台生产方共用，可串行化冲突或死锁时按 Audited 的约定丢弃整个会话重做（attempt < 5：5 次重做、
+    // 共 6 次尝试），仍冲突返回 409 CONFLICT；其它失败（审计端口的 CONFLICT、数据库异常）原样传出，本事务同样不提交。
     private async Task<T> PlatformAudited<T>(string[] key, string operation, IAuditWriter audit, Func<IDataSession<LifecycleDbContext>, Task<(T Result, AuditRecord? Record)>> work, CancellationToken ct)
     {
         for (var attempt = 0; ; attempt++)
@@ -101,7 +102,7 @@ internal sealed partial class LifecycleController
         try { await audit.AppendPlatformEnlistedAsync(context, record, transaction, ct).ConfigureAwait(false); }
         catch (QianErrorException error) when (error.Error.Code.Code == PlatformErrors.AuthzDenied.Code)
         {
-            LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方：平台链未配置 chain.platformRole，或平台审计登录不可用");
+            LifecycleLog.PlatformAuditUnavailable(context.Logger, operation, "审计端口拒绝本组件为平台生产方（端口不区分原因）：平台链未配置 chain.platformRole，或审计重挂后本组件持有的是陈旧的审计句柄");
             throw AuditUnavailable(operation);
         }
     }
