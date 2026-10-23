@@ -12,7 +12,7 @@ internal sealed class SchemaLibrary
     private readonly BuildOptions _options = new() { SchemaRegistry = new SchemaRegistry { Fetch = (_, _) => null } };
     internal SchemaLibrary()
     {
-        foreach (var name in new[] { "surface-diagnostics", "capability-entry", "permissions", "plugin", "skill", "agent", "command", "hooks", "mcp", "tool", "patch", "profile", "marketplace" })
+        foreach (var name in new[] { "surface-diagnostics", "capability-entry", "permissions", "plugin", "skill", "agent", "command", "hooks", "mcp", "tool", "ui", "patch", "profile", "marketplace" })
         {
             using var stream = typeof(SchemaLibrary).Assembly.GetManifestResourceStream("schemas/" + name + ".schema.json")
                 ?? throw new InvalidOperationException("缺少内置 Schema：" + name);

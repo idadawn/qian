@@ -411,7 +411,7 @@ public sealed partial class CustomerCommandTests
         Write("plugins/crm/contracts/http-v1.openapi.json", fullContract.GetRawText());
         var nativeContract = await app.Services.GetRequiredService<IHttpContractSource>().CompileDocumentAsync("qian.sample.crm", Ct);
         Write("plugins/crm/contracts/rest-v1.openapi.json", nativeContract.GetRawText());
-        Write("plugins/crm/ui/manifest.json", """{"pages":[{"route":"/customers","expose":"CustomersPage","permission":"qian.sample.crm:customer:read","nav":{"title":"客户","icon":"users","order":10}},{"route":"/customers/new","expose":"CreateCustomerPage","permission":"qian.sample.crm:customer:write","nav":{"title":"新建客户","order":20}}]}""");
+        Write("plugins/crm/ui/manifest.json", """{"$schema":"https://qian.dev/schemas/ui/v2","federation":{"manifest":"/remotes/qian.sample.crm/mf-manifest.json","exposes":["CustomersPage","CreateCustomerPage"]},"engines":{"yue":"^0.1.0"},"pages":[{"route":"/customers","expose":"CustomersPage","permission":"qian.sample.crm:customer:read","nav":{"title":"客户","icon":"users","order":10}},{"route":"/customers/new","expose":"CreateCustomerPage","permission":"qian.sample.crm:customer:write","nav":{"title":"新建客户","order":20}}]}""");
         foreach (var definition in definitions.Values.ToArray())
         {
             var validation = validator.ValidateComponent(Path.Combine(directory, "plugins", definition.Entry.Id),

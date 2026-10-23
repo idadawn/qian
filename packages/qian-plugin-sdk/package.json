@@ -34,9 +34,9 @@
     }
   },
   "scripts": {
-    "build": "node scripts/errors.mjs --check && rslib build",
+    "build": "node scripts/errors.mjs --check && node scripts/ui-schema.mjs --check && rslib build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node scripts/errors.mjs --check && vitest run --config vitest.config.ts",
+    "test": "node scripts/errors.mjs --check && node scripts/ui-schema.mjs --check && vitest run --config vitest.config.ts",
     "publint": "publint --strict --pack pnpm"
   },
   "dependencies": {
