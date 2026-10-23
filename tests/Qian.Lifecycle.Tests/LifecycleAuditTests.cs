@@ -129,6 +129,120 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         Assert.Equal(2, logs.AuditUnavailable.Count);
     }
 
+    // S1-RT-038：缺审计时开通 / 升级在认领执行记录之前、安装在提交候选制品之前就拒绝；升级钩子失败回到原版本不入链；事件 8 的原因如实。
+    [Fact]
+    public async Task 宿主撤下审计后开通与升级在认领执行记录之前就被拒绝_安装行仍是授权后或已开通的状态_钩子不执行_重装审计后照常完成并入链()
+    {
+        var hooks = new ScriptedHooks();
+        var logs = new WarningLogs();
+        await using var host = await Start(hooks, services => services.AddSingleton<ILoggerProvider>(logs));
+        await Install(host, "1.0.0"); await Install(host, "1.0.1", activate: false);
+        await host.Lifecycle.EntitleAsync(TenantA, Plugin, "operator", Ct);
+        // 撤下审计后开通：在认领执行记录之前就拒绝（503，operation 为操作名）——安装行仍是授权后的 Entitled、没有执行记录、钩子没有执行，恰一条事件 7 告警。
+        await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
+        var rejected = await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct).AsTask());
+        Assert.Equal((503, "tenant-plugin.provision"), (LifecycleErrors.AuditUnavailable.Status, rejected.Args["operation"]));
+        Assert.Equal((TenantInstallStates.Entitled, (string?)null, (string?)null), Pick3((await host.Lifecycle.GetInstallAsync(TenantA, Plugin, Ct))!));
+        Assert.Empty(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct));
+        Assert.Equal(0, hooks.Calls);
+        Assert.Contains("tenant-plugin.provision", Assert.Single(logs.AuditUnavailable).Message, StringComparison.Ordinal);
+        // 重装审计后开通完成并入链，开通钩子恰执行一次。
+        await host.Runtime.MountAsync([host.AuditEntry()], Ct);
+        Assert.Equal((TenantInstallStates.Installed, (string?)"1.0.0", (string?)null), Pick3(await host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct)));
+        Assert.Equal((1, 0), (hooks.Count(LifecycleHooks.TenantProvision), hooks.Count(LifecycleHooks.TenantUpgrade)));
+        Assert.Equal([LifecycleController.ProvisionAuditCapability], (await Chain(host, TenantA)).Select(entry => entry.Record.CapabilityId));
+        // 再撤下审计后升级：同样在认领执行记录之前拒绝——安装行仍是 Installed(1.0.0)，没有升级的执行记录，升级钩子没有执行。
+        await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
+        rejected = await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.UpgradeAsync(TenantA, Plugin, "1.0.0", "1.0.1", "operator", Ct).AsTask());
+        Assert.Equal("tenant-plugin.upgrade", rejected.Args["operation"]);
+        Assert.Equal((TenantInstallStates.Installed, (string?)"1.0.0", (string?)null), Pick3((await host.Lifecycle.GetInstallAsync(TenantA, Plugin, Ct))!));
+        Assert.Equal([LifecycleHooks.TenantProvision], (await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct)).Select(run => run.Hook));
+        Assert.Equal(0, hooks.Count(LifecycleHooks.TenantUpgrade));
+        Assert.Equal(2, logs.AuditUnavailable.Count);
+        // 重装审计后升级完成并入链。
+        await host.Runtime.MountAsync([host.AuditEntry()], Ct);
+        Assert.Equal("1.0.1", (await host.Lifecycle.UpgradeAsync(TenantA, Plugin, "1.0.0", "1.0.1", "operator", Ct)).Version);
+        Assert.Equal([LifecycleController.ProvisionAuditCapability, LifecycleController.UpgradeAuditCapability], (await Chain(host, TenantA)).Select(entry => entry.Record.CapabilityId));
+        Assert.Equal((1, 1, 2), (hooks.Count(LifecycleHooks.TenantProvision), hooks.Count(LifecycleHooks.TenantUpgrade), logs.AuditUnavailable.Count));
+    }
+
+    [Fact]
+    public async Task 宿主撤下审计后安装在提交候选制品之前就被拒绝_注册表里没有该制品_重装审计后同一制品登记候选制品并入平台链()
+    {
+        await using var host = await Start();
+        await Install(host, "1.0.0");
+        var files = Artifacts.Declarative(Plugin, "1.0.1");
+        var artifact = Artifacts.Signed(files, Key);
+        var candidate = "SELECT count(*) FROM plugin_qian_registry.plugin_artifacts WHERE digest = '" + Artifacts.Digest(files) + "'";
+        const string all = "SELECT count(*) FROM plugin_qian_registry.plugin_artifacts";
+        Assert.Equal((0, 1), (await LifecycleHost.CountAsync(postgres, candidate, Ct), await LifecycleHost.CountAsync(postgres, all, Ct)));
+        // 撤下审计后安装：global 看不到审计服务时在提交候选制品之前就拒绝——不登记修订，注册表里也没有这份制品。
+        await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
+        var rejected = await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.InstallAsync(artifact, "operator", Ct).AsTask());
+        Assert.Equal((503, "plugin-revision.install"), (LifecycleErrors.AuditUnavailable.Status, rejected.Args["operation"]));
+        Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct));
+        Assert.Equal((0, 1), (await LifecycleHost.CountAsync(postgres, candidate, Ct), await LifecycleHost.CountAsync(postgres, all, Ct)));
+        // 重装审计后同一制品安装：候选制品登记、修订 2 登记并入平台链。
+        await host.Runtime.MountAsync([host.AuditEntry()], Ct);
+        var second = await host.Lifecycle.InstallAsync(artifact, "operator", Ct);
+        Assert.Equal((2, "1.0.1", PluginRevisionStates.Installed), (second.Revision, second.Version, second.State));
+        Assert.Equal((1, 2), (await LifecycleHost.CountAsync(postgres, candidate, Ct), await LifecycleHost.CountAsync(postgres, all, Ct)));
+        Assert.Equal([LifecycleController.InstallAuditCapability, LifecycleController.ActivateAuditCapability, LifecycleController.InstallAuditCapability],
+            (await PlatformChain(host)).Select(entry => entry.Record.CapabilityId));
+    }
+
+    [Fact]
+    public async Task 升级钩子失败回到原版本时不入链_执行记录记下失败_重试成功后恰多一条升级条目()
+    {
+        var hooks = new ScriptedHooks { FailUpgradeOnce = true };
+        await using var host = await Start(hooks);
+        await Install(host, "1.0.0"); await Install(host, "1.0.1", activate: false);
+        await host.Lifecycle.EntitleAsync(TenantA, Plugin, "operator", Ct);
+        Assert.Equal(TenantInstallStates.Installed, (await host.Lifecycle.ProvisionAsync(TenantA, Plugin, "operator", Ct)).State);
+        Assert.Single(await Chain(host, TenantA));
+        // 升级钩子失败：回到 Installed(1.0.0)，执行记录失败、已尝试一次，链上仍只有开通那条（ADR-009「业务失败即无审计」），带租户的条目恰 1 行。
+        var failed = await AssertCode(LifecycleErrors.HookFailed, () => host.Lifecycle.UpgradeAsync(TenantA, Plugin, "1.0.0", "1.0.1", "operator", Ct).AsTask());
+        Assert.Equal((LifecycleHooks.TenantUpgrade, PlatformErrors.Unavailable.Code), (failed.Args["hook"], failed.Args["reasonCode"]));
+        Assert.Equal((TenantInstallStates.Installed, (string?)"1.0.0", (string?)null), Pick3((await host.Lifecycle.GetInstallAsync(TenantA, Plugin, Ct))!));
+        Assert.Equal((LifecycleRunStates.Failed, 1), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct), run => run.Hook == LifecycleHooks.TenantUpgrade)));
+        Assert.Equal([LifecycleController.ProvisionAuditCapability], (await Chain(host, TenantA)).Select(entry => entry.Record.CapabilityId));
+        Assert.Equal(1, await LifecycleHost.CountAsync(postgres, "SELECT count(*) FROM plugin_qian_audit.audit_entries WHERE tenant_id IS NOT NULL", Ct));
+        // 重试：钩子成功，升级完成，链上恰多一条升级条目（序号接在开通之后），执行记录已尝试两次。
+        var upgraded = await host.Lifecycle.UpgradeAsync(TenantA, Plugin, "1.0.0", "1.0.1", "operator", Ct);
+        Assert.Equal((TenantInstallStates.Installed, (string?)"1.0.1", (string?)null), Pick3(upgraded));
+        Assert.Equal((LifecycleRunStates.Succeeded, 2), PickRun(Assert.Single(await host.Lifecycle.GetRunsAsync(TenantA, Plugin, Ct), run => run.Hook == LifecycleHooks.TenantUpgrade)));
+        var entries = await Chain(host, TenantA);
+        Assert.Equal([LifecycleController.ProvisionAuditCapability, LifecycleController.UpgradeAuditCapability], entries.Select(entry => entry.Record.CapabilityId));
+        Assert.Equal(entries[0].Sequence + 1, entries[1].Sequence);
+        AssertRecord(entries[1], LifecycleController.UpgradeAuditCapability, "service", "qian.lifecycle", "1.0.1", upgraded.UpdatedAt,
+            new { pluginId = Plugin, @operator = "operator", fromVersion = "1.0.0", toVersion = "1.0.1" }, "1.0.0", "1.0.1");
+        Assert.Equal(2, hooks.Count(LifecycleHooks.TenantUpgrade));
+    }
+
+    [Fact]
+    public async Task 平台链未配置时激活以503拒绝_事件8的原因如实列出端口不区分的两种来源_与宿主没有装配审计时的原因不同()
+    {
+        var logs = new WarningLogs();
+        await using var host = await Start(services: services => services.AddSingleton<ILoggerProvider>(logs));
+        var revision = await host.Lifecycle.InstallAsync(Artifacts.Signed(Artifacts.Declarative(Plugin, "1.0.0"), Key), "operator", Ct);
+        // 审计条目没有 chain.platformRole：审计端口以 AUTHZ_DENIED 拒绝本组件为平台生产方，但不说明原因（没配平台链与审计重挂后的陈旧句柄同一个错误）。
+        // 事件 8 的原因如实列出两种来源、注明端口不区分，不写成「平台审计登录不可用」（那会是连接失败，不是 AUTHZ_DENIED）。
+        await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
+        await host.Runtime.MountAsync([host.AuditEntry(platformChain: false)], Ct);
+        await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask());
+        var rejected = Assert.Single(logs.PlatformAuditUnavailable).Message;
+        Assert.Contains("审计端口拒绝本组件为平台生产方（端口不区分原因）", rejected, StringComparison.Ordinal);
+        Assert.Contains("陈旧", rejected, StringComparison.Ordinal); Assert.DoesNotContain("平台审计登录不可用", rejected, StringComparison.Ordinal);
+        // 撤下审计：global 上下文看不到审计服务，原因是宿主没有装配 qian.audit，与端口拒绝的原因不同。修订始终停在 Installed。
+        await host.Runtime.UnmountAsync("audit", ScopeKey.Global, Ct);
+        await AssertCode(LifecycleErrors.AuditUnavailable, () => host.Lifecycle.ActivateAsync(Plugin, revision.Revision, "operator", Ct).AsTask());
+        Assert.Equal(2, logs.PlatformAuditUnavailable.Count);
+        var missing = logs.PlatformAuditUnavailable.Last().Message;
+        Assert.Contains("宿主没有装配 qian.audit", missing, StringComparison.Ordinal); Assert.DoesNotContain("陈旧", missing, StringComparison.Ordinal);
+        Assert.Equal(PluginRevisionStates.Installed, Assert.Single(await host.Lifecycle.GetRevisionsAsync(Plugin, Ct)).State);
+        Assert.Empty(logs.AuditUnavailable);
+    }
+
     [Fact]
     public async Task 同一租户两个组件同时完成开通_审计链冲突的一方换新会话重做_两条开通记录与安装行都在()
     {
@@ -323,6 +437,21 @@ public sealed class LifecycleAuditTests(PostgresFixture postgres) : IClassFixtur
         public ValueTask<JsonElement?> InvokeAsync(LifecycleHookContext context, CancellationToken cancellationToken)
         {
             if (context.Hook == LifecycleHooks.TenantProvision && Interlocked.Increment(ref _provisions) == 1) throw new QianErrorException(new QianError(PlatformErrors.Unavailable));
+            return ValueTask.FromResult<JsonElement?>(null);
+        }
+    }
+
+    // 按钩子名计数；FailUpgradeOnce 时升级钩子第一次失败、之后成功，其它钩子无操作。
+    private sealed class ScriptedHooks : IPluginLifecycleHooks
+    {
+        private readonly ConcurrentDictionary<string, int> _calls = new(StringComparer.Ordinal);
+        internal bool FailUpgradeOnce { get; init; }
+        internal int Calls => _calls.Values.Sum();
+        internal int Count(string hook) => _calls.GetValueOrDefault(hook);
+        public ValueTask<JsonElement?> InvokeAsync(LifecycleHookContext context, CancellationToken cancellationToken)
+        {
+            var attempt = _calls.AddOrUpdate(context.Hook, 1, (_, previous) => previous + 1);
+            if (FailUpgradeOnce && context.Hook == LifecycleHooks.TenantUpgrade && attempt == 1) throw new QianErrorException(new QianError(PlatformErrors.Unavailable));
             return ValueTask.FromResult<JsonElement?>(null);
         }
     }

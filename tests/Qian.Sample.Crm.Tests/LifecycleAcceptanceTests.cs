@@ -199,11 +199,15 @@ public sealed partial class CustomerCommandTests
         Assert.Empty(await Diagnostics(host, A));
 
         // 升级路径：改写到 1.1.0 后装配失败，条目整体改回 1.0.0，租户留在原版本、请求不中断，原因进入诊断。
+        var chain = await TenantChain(host, A);
         using (EventEnvelopeScope.Begin(Operator))
         {
             var error = await Assert.ThrowsAsync<QianErrorException>(() => lifecycle.UpgradeAsync(A, "qian.sample.crm", "1.0.0", "1.1.0", "operator", Ct).AsTask());
             Assert.Equal((LifecycleErrors.MountFailed.Code, "crm", PlatformErrors.PreconditionFailed.Code), (error.Error.Code.Code, error.Error.Args["entryId"], error.Error.Args["reasonCode"]));
         }
+        // 挂载失败的升级回到 Installed(from) 不入链（ADR-009「业务失败即无审计」，S1-RT-038）：A 的链与失败之前一条不差，生命周期条目只有开通与那次成功的改版。
+        Assert.Equal(chain, await TenantChain(host, A));
+        Assert.Equal([LifecycleController.ProvisionAuditCapability, LifecycleController.UpgradeAuditCapability], chain.Where(id => id.StartsWith("qian.lifecycle/", StringComparison.Ordinal)));
         Assert.Equal((TenantInstallStates.Installed, "1.0.0"), Pick((await lifecycle.GetInstallAsync(A, "qian.sample.crm", Ct))!));
         Assert.Equal("1.0.0", await ServingVersion(host, A));
         using (var serving = await host.Get(A, "/api/customers")) Assert.Equal(HttpStatusCode.OK, serving.StatusCode);
@@ -216,6 +220,19 @@ public sealed partial class CustomerCommandTests
     private static JsonElement Entry(string version) => JsonSerializer.SerializeToElement(new { id = "crm", plugin = "qian.sample.crm@" + version, config = new { } });
     private static (string, string?) Pick(TenantPluginInstallView view) => (view.State, view.Version);
     private static (string, int) Pick(MountResult result) => (result.State, result.Revision);
+
+    // 该租户审计链上全部条目的能力 ID（经审计组件读取，读前先验整条链；条目数到读取上限即失败，不静默截断）。
+    private static async Task<string[]> TenantChain(RunningApp host, string tenantId)
+    {
+        var audit = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("audit", ScopeKey.Global).Audit();
+        using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenantId))
+        {
+            Assert.True((await audit.VerifyAsync(Ct)).Valid);
+            var entries = await audit.ReadAsync(0, 500, cancellationToken: Ct);
+            Assert.True(entries.Count < 500, "租户链条目数到达读取上限：" + entries.Count);
+            return [.. entries.Select(entry => entry.Record.CapabilityId)];
+        }
+    }
 
     private static async Task ProvisionAndMount(LifecyclePlatform platform, RunningApp host, params string[] tenants)
     {
