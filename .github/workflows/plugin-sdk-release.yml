@@ -30,6 +30,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @qian/surfaces build && pnpm --filter qian build
+      - run: pnpm --filter @idadawn/qian-runtime build
       - run: pnpm --filter @idadawn/qian-plugin-sdk test
       - name: 固定依赖组打包与仓库外消费
         run: |
