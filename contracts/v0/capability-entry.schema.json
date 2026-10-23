@@ -3,7 +3,7 @@
   "$id": "https://qian.dev/contracts/v0/capability-entry.schema.json",
   "title": "CapabilityEntry",
   "description": "能力目录（qian.capabilities，PRD 7.2.1）中一条可调用能力（命令 / 查询）的条目，含 S1 全部落库的 Agent 字段（PRD 7.18 技术落点）。GET /api/capabilities 的条目、plugin.json tools 表面（tool/v2）派生出的落库行都是这个形状；tool/v2 文件另有 binding、无 id / plugin。事件与实体条目不用本 Schema。",
-  "x-status": "draft",
+  "x-status": "frozen",
   "type": "object",
   "additionalProperties": false,
   "required": [

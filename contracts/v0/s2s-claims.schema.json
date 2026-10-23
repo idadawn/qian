@@ -3,7 +3,7 @@
   "$id": "https://qian.dev/contracts/v0/s2s-claims.schema.json",
   "title": "S2SClaims",
   "description": "服务间（S2S）JWT 的 payload：qian.gateway 换签后下行到各服务，与 iClaw s2s-jwt-claims 同形、各签各的（ADR-010 D10.4、ADR-016 D16.3/D16.5、PRD §13.3.1）。新能力授权 = 增加 scope 串，不新增 claim。JSON Schema 表达不了的规则（时间窗、session_id 取值）见 contracts/v0/README.md「S2S claim」。",
-  "x-status": "draft",
+  "x-status": "frozen",
   "type": "object",
   "additionalProperties": false,
   "required": ["iss", "aud", "sub", "principal_kind", "tenant_id", "roles", "scope", "session_id", "iat", "nbf", "exp", "jti"],

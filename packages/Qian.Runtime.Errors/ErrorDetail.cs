@@ -8,6 +8,7 @@ namespace Qian.Runtime.Errors;
 /// <summary>
 /// 错误响应体（contracts/v0/error-detail.schema.json）：RFC 9457 problem+json 的 Qian 配置文件。
 /// 由 <see cref="ErrorCatalog.CreateDetail"/> 生成；序列化用 <see cref="ErrorDetailJson"/>。
+/// v0 已冻结，只接受向后兼容增量；冻结标记是 Schema 元数据，不属于错误响应体。
 /// </summary>
 public sealed class ErrorDetail
 {
