@@ -1,6 +1,7 @@
 import { Registry, type RegistrationMeta } from '@idadawn/yue-sdk';
 
-export interface ShellMenuItem { id: string; labelKey: string; type: string; target: string; children?: readonly ShellMenuItem[] }
+/** `label` 是后端已本地化的显示文字（能力导航目录的页面标题），给出时优先于 `labelKey`。 */
+export interface ShellMenuItem { id: string; labelKey: string; label?: string; type: string; target: string; children?: readonly ShellMenuItem[] }
 export interface MenuDestination { href: string; external?: boolean }
 export type MenuTypeResolver = (item: ShellMenuItem) => MenuDestination;
 

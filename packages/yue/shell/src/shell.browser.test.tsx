@@ -3,9 +3,10 @@ import { userEvent } from 'vitest/browser';
 import axe from 'axe-core';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useState } from 'react';
-import { AppShell, Authentication, ColPage, FallbackPage, initPreferences, LeftTree, OfflineBanner, Page, PageHeader, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, SsoCallback, TenantSwitcher, UpdateBanner } from './index';
+import { AppShell, Authentication, ColPage, FallbackPage, InboxPopover, initPreferences, LeftTree, OfflineBanner, Page, PageHeader, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, SsoCallback, TenantSwitcher, UpdateBanner } from './index';
 import { makeI18n, makeProvider, session } from './test/fixture';
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+// Base UI 浮层的 Tab 哨兵（aria-hidden 且可聚焦，立即转移焦点）与靶场 a11y 门禁一样排除，aria-hidden-focus 规则本身保留。
 async function accessible() {
   await waitFor(() => expect(document.querySelector('[data-starting-style], [data-ending-style]')).toBeNull());
   // 与 core/data 的 axe 门一致：开场属性移除后，opacity 过渡才开始，需等待真实动画结束。
@@ -16,7 +17,7 @@ async function accessible() {
     if (finite.length) { await Promise.all(finite.map(animation => animation.finished.catch(() => {}))); stableFrames = 0; }
     else stableFrames++;
   }
-  const result = await axe.run(document.body);
+  const result = await axe.run({ include: [document.body], exclude: ['[data-base-ui-focus-guard]'] });
   expect(result.violations.filter(value => ['critical', 'serious'].includes(value.impact ?? ''))).toEqual([]);
 }
 
@@ -149,4 +150,38 @@ it('同一认证实例收到新 callback 时处理新回调，不被已消费状
   view.rerender(<Authentication i18n={i18n} provider={provider} callback={{ code: 'second', state: 'two' }} onAuthenticated={complete} onRedirect={vi.fn()} />);
   await waitFor(() => expect(complete).toHaveBeenCalledWith(session));
   expect(provider.completeSso).toHaveBeenNthCalledWith(2, { code: 'second', state: 'two' }, expect.any(AbortSignal));
+});
+
+it('强制改密：两次输入不一致只提示不提交；一致后经 provider 改密并继续同一登录流程，密码字段清空', async () => {
+  const provider = makeProvider(); const authenticated = vi.fn();
+  vi.mocked(provider.signIn).mockResolvedValue({ kind: 'change-password' });
+  const changePassword = vi.fn(async () => ({ kind: 'authenticated' as const, session }));
+  render(<Authentication i18n={makeI18n()} provider={{ ...provider, changePassword }} onAuthenticated={authenticated} onRedirect={vi.fn()} />); await screen.findByLabelText(/账号/);
+  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText(/密码/), 'initial'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
+  await screen.findByRole('heading', { name: '设置新密码' }); await accessible();
+  await userEvent.fill(screen.getByLabelText(/^新密码/), 'Longer-Pass-9'); await userEvent.fill(screen.getByLabelText(/确认新密码/), 'Different-1');
+  await userEvent.click(screen.getByRole('button', { name: '设置新密码' }));
+  await screen.findByRole('alert'); expect(changePassword).not.toHaveBeenCalled();
+  expect((screen.getByLabelText(/^新密码/) as HTMLInputElement).value).toBe('');
+  await userEvent.fill(screen.getByLabelText(/^新密码/), 'Longer-Pass-9'); await userEvent.fill(screen.getByLabelText(/确认新密码/), 'Longer-Pass-9');
+  await userEvent.click(screen.getByRole('button', { name: '设置新密码' }));
+  await waitFor(() => expect(authenticated).toHaveBeenCalledWith(session));
+  expect(changePassword).toHaveBeenCalledWith('Longer-Pass-9', expect.any(AbortSignal));
+  expect(document.body.textContent).not.toContain('Longer-Pass-9');
+});
+it('没有 changePassword 的 provider 收到改密要求时按登录失败提示', async () => {
+  const provider = makeProvider(); vi.mocked(provider.signIn).mockResolvedValue({ kind: 'change-password' });
+  render(<Authentication i18n={makeI18n()} provider={provider} onAuthenticated={vi.fn()} onRedirect={vi.fn()} />); await screen.findByLabelText(/账号/);
+  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText(/密码/), 'initial'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
+  await screen.findByRole('alert'); expect(screen.queryByRole('heading', { name: '设置新密码' })).toBeNull();
+});
+it('站内信弹窗：未读角标、空态与消息条目键盘可达，axe 通过', async () => {
+  const open = vi.fn(); const i18n = makeI18n();
+  const view = render(<InboxPopover i18n={i18n} messages={[{ id: '1', title: '审批提醒', body: '有 1 条待办', time: '09:00', unread: true }, { id: '2', title: '系统公告' }]} onOpen={open} />);
+  expect(screen.getByTestId('yue-inbox-unread').textContent).toBe('1');
+  await userEvent.click(screen.getByRole('button', { name: /站内信/ })); await screen.findByText('审批提醒'); await accessible();
+  await userEvent.click(screen.getByRole('button', { name: /审批提醒/ })); expect(open).toHaveBeenCalledWith(expect.objectContaining({ id: '1' }));
+  view.unmount(); render(<InboxPopover i18n={i18n} messages={[]} />);
+  expect(screen.queryByTestId('yue-inbox-unread')).toBeNull();
+  await userEvent.click(screen.getByRole('button', { name: '站内信' })); await screen.findByText('暂无消息');
 });

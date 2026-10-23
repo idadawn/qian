@@ -97,6 +97,52 @@ describe('PlatformClient', () => {
     await expect(api.POST('/items', { body: { value: 'body' } })).rejects.toThrow('sdk.error.contextChanged');
   });
 
+  it('Cookie 会话：并发 401 合并成一次会话刷新，会话仍在则全部重放一次且不带 Authorization', async () => {
+    let alive = false;
+    const release = deferred<boolean>();
+    const refreshSession = vi.fn(async () => { alive = await release.promise; return alive; });
+    const transport = vi.fn(async (request: Request) => {
+      expect(request.headers.has('Authorization')).toBe(false);
+      expect(request.credentials).toBe('same-origin');
+      return alive ? Response.json({ value: 'ok' }) : Response.json(problem(401), { status: 401 });
+    });
+    const onSessionExpired = vi.fn();
+    const api = new PlatformClient({ baseUrl: 'https://example.test', transport, onSessionExpired, sessionProvider: { refreshSession } }).api<Paths>();
+    const pending = Promise.all(Array.from({ length: 12 }, () => api.GET('/items')));
+    await vi.waitFor(() => expect(refreshSession).toHaveBeenCalledTimes(1));
+    release.resolve(true);
+    expect((await pending).every((result) => result.data?.value === 'ok')).toBe(true);
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(transport).toHaveBeenCalledTimes(24);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+  });
+
+  it('Cookie 会话：刷新回答会话已结束时不重放、全部按 401 失败且只通知一次过期；下一批可以再探测', async () => {
+    const release = deferred<boolean>();
+    const refreshSession = vi.fn(() => release.promise);
+    const onSessionExpired = vi.fn();
+    const transport = vi.fn(async () => Response.json(problem(401, 'UNAUTHENTICATED'), { status: 401 }));
+    const api = new PlatformClient({ baseUrl: 'https://example.test', transport, onSessionExpired, sessionProvider: { refreshSession } }).api<Paths>();
+    const pending = Promise.allSettled([api.GET('/items'), api.GET('/items'), api.POST('/items', { body: { value: 'x' } })]);
+    await vi.waitFor(() => expect(refreshSession).toHaveBeenCalledTimes(1));
+    release.resolve(false);
+    const settled = await pending;
+    expect(settled.every((entry) => entry.status === 'rejected' && entry.reason instanceof PlatformError && entry.reason.status === 401)).toBe(true);
+    expect(transport).toHaveBeenCalledTimes(3);
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
+    await expect(api.GET('/items')).rejects.toBeInstanceOf(PlatformError);
+    expect(refreshSession).toHaveBeenCalledTimes(2);
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
+  });
+
+  it('Cookie 会话：刷新调用本身出错也只通知一次，错误原样抛给等待的请求', async () => {
+    const onSessionExpired = vi.fn();
+    const api = new PlatformClient({ baseUrl: 'https://example.test', onSessionExpired, sessionProvider: { refreshSession: async () => { throw new Error('network'); } }, transport: async () => Response.json(problem(401), { status: 401 }) }).api<Paths>();
+    const results = await Promise.allSettled([api.GET('/items'), api.GET('/items')]);
+    expect(results.every((entry) => entry.status === 'rejected' && (entry.reason as Error).message === 'network')).toBe(true);
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
+  });
+
   it('首次异步读取令牌期间切换租户，在发送请求前拒绝旧上下文写入', async () => {
     let tenant = 'a';
     const token = deferred<string>();

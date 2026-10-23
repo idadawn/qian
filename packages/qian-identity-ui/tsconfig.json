@@ -1,0 +1,5 @@
+{
+  "extends": "../yue/tsconfig.base.json",
+  "compilerOptions": { "noEmit": true, "declaration": false, "types": ["vite/client", "node"] },
+  "include": ["src", "vite.config.ts"]
+}

@@ -17,7 +17,7 @@ namespace Qian.Dev.TenantOps;
 internal sealed class DevDatabase
 {
     internal const string Name = "qian_dev";
-    private const string AppRole = "qian_dev_app";
+    internal const string AppRole = "qian_dev_app";
     private const string BusinessRole = "qian_dev_crm";
     private const string AuditOwnerRole = "qian_dev_audit_fn";
     private const string MigratorRole = "qian_dev_migrator";
@@ -99,6 +99,9 @@ internal sealed class DevDatabase
             GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA {CapabilitiesDbContext.Schema}, {LifecycleDbContext.Schema} TO {BusinessRole};
             """, ct).ConfigureAwait(false);
     }
+
+    // 以管理员连接执行额外的 DDL 与授权（外壳联调环境为同宿主的身份库建表，S1-YUE-002）；只在建库阶段调用。
+    internal Task ExecuteAdminAsync(string sql, CancellationToken ct) => ExecuteAsync(_admin, sql, ct);
 
     private static async Task ExecuteAsync(string connectionString, string sql, CancellationToken ct)
     {

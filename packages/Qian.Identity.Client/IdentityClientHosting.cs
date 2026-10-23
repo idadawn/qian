@@ -140,7 +140,7 @@ public static class IdentityClientHosting
         });
     }
 
-    /// <summary>映射登录、回调（RedirectUri 的路径）、登出、防伪令牌与 OIDC 后通道登出端点；未配置 RedirectUri 时不映射。</summary>
+    /// <summary>映射登录、回调（RedirectUri 的路径）、登出、防伪令牌、会话快照（GET session）、强制刷新（POST session/refresh）与 OIDC 后通道登出端点；未配置 RedirectUri 时不映射。</summary>
     public static IEndpointRouteBuilder MapQianIdentityClient(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
@@ -150,6 +150,8 @@ public static class IdentityClientHosting
         endpoints.MapGet(options.RedirectUri.AbsolutePath, (RequestDelegate)IdentityClientEndpoints.CallbackAsync).AllowAnonymous();
         endpoints.MapPost(options.LogoutPath, (RequestDelegate)IdentityClientEndpoints.LogoutAsync).AllowAnonymous();
         endpoints.MapGet(options.CsrfPath, (RequestDelegate)IdentityClientEndpoints.CsrfAsync).AllowAnonymous();
+        endpoints.MapGet(options.SessionPath, (RequestDelegate)IdentityClientEndpoints.SessionAsync).AllowAnonymous();
+        endpoints.MapPost(options.SessionRefreshPath, (RequestDelegate)IdentityClientEndpoints.SessionRefreshAsync).AllowAnonymous();
         endpoints.MapKunBackChannelLogout(options.BackchannelPath, IdentityClientDefaults.ProviderName);
         return endpoints;
     }

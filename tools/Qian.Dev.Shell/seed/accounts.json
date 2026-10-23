@@ -1,0 +1,12 @@
+{
+  "$comment": "外壳认证联调环境的种子账号（S1-YUE-002）。只在本机开发库与 CI E2E 里存在，每次 up 重建；E2E 读同一文件取用户名与密码。",
+  "persons": [
+    { "key": "owner", "displayName": "演示用户", "username": "demo", "password": "Demo-Horse-2026", "platform": false },
+    { "key": "second", "displayName": "乙方管理员", "username": "second", "password": "Second-Horse-2026", "platform": false },
+    { "key": "operator", "displayName": "平台运营", "username": "operator", "password": "Operator-Horse-2026", "platform": true }
+  ],
+  "tenants": [
+    { "code": "acme", "name": "甲方科技", "administrator": "owner", "members": [] },
+    { "code": "beta", "name": "乙方贸易", "administrator": "second", "members": [ { "person": "owner", "role": "tenant.user", "displayName": "演示用户（乙方）" } ] }
+  ]
+}

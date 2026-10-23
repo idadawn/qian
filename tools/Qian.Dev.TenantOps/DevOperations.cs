@@ -25,6 +25,21 @@ internal static partial class DevOperations
     internal static async Task<WebApplication> StartAsync(PluginLoader loader, IServiceProvider services, DevPlatform platform, RsaSecurityKey key,
         string repository, string url, Action<ILoggingBuilder> logging, CancellationToken ct)
     {
+        await PrepareAsync(loader, services, platform, repository, ct).ConfigureAwait(false);
+        var app = TenantOperationsHost.Build(() => loader.GetContext("tenancy", ScopeKey.Global), new TokenValidationParameters
+        {
+            ValidateIssuer = true, ValidIssuer = DevKeys.Issuer, ValidateAudience = true, ValidAudience = DevKeys.OperationsAudience,
+            ValidateLifetime = true, ValidateIssuerSigningKey = true, IssuerSigningKey = DevKeys.PublicOnly(key),
+            ValidAlgorithms = [SecurityAlgorithms.RsaSha256], ClockSkew = TimeSpan.Zero
+        }, builder => { builder.WebHost.UseUrls(url); logging(builder.Logging); });
+        MapDevelopmentRoutes(app, () => loader.GetContext("tenancy", ScopeKey.Global));
+        await app.StartAsync(ct).ConfigureAwait(false);
+        return app;
+    }
+
+    // 运营前置（不含运营宿主）：外壳联调环境（S1-YUE-002）在同一前置之上播种账号与租户，而不起运营宿主。
+    internal static async Task PrepareAsync(PluginLoader loader, IServiceProvider services, DevPlatform platform, string repository, CancellationToken ct)
+    {
         var tenancy = Catalog(repository, "qian.tenancy", roles: false); var registry = Catalog(repository, "qian.registry", roles: true);
         await loader.UnmountAsync("authz", ScopeKey.Global, ct).ConfigureAwait(false); await loader.UnmountAsync("audit", ScopeKey.Global, ct).ConfigureAwait(false);
         await loader.MountAsync([
@@ -42,15 +57,6 @@ internal static partial class DevOperations
             var revision = await lifecycle.InstallAsync(artifact, DevKeys.Superadmin, ct).ConfigureAwait(false);
             await lifecycle.ActivateAsync(revision.PluginId, revision.Revision, DevKeys.Superadmin, ct).ConfigureAwait(false);
         }
-        var app = TenantOperationsHost.Build(() => loader.GetContext("tenancy", ScopeKey.Global), new TokenValidationParameters
-        {
-            ValidateIssuer = true, ValidIssuer = DevKeys.Issuer, ValidateAudience = true, ValidAudience = DevKeys.OperationsAudience,
-            ValidateLifetime = true, ValidateIssuerSigningKey = true, IssuerSigningKey = DevKeys.PublicOnly(key),
-            ValidAlgorithms = [SecurityAlgorithms.RsaSha256], ClockSkew = TimeSpan.Zero
-        }, builder => { builder.WebHost.UseUrls(url); logging(builder.Logging); });
-        MapDevelopmentRoutes(app, () => loader.GetContext("tenancy", ScopeKey.Global));
-        await app.StartAsync(ct).ConfigureAwait(false);
-        return app;
     }
 
     private static PermissionCatalog Catalog(string repository, string component, bool roles)

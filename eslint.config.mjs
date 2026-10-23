@@ -12,7 +12,7 @@ export default tseslint.config(
     ignores: ['**/node_modules/**', '**/dist/**', 'website/**', '**/.turbo/**', '**/playwright-report/**', '**/test-results/**', '**/.lighthouseci/**', 'tests/gates/yue/fixtures/**'],
   },
   {
-    files: ['packages/yue/**/*.{ts,tsx,mts}', 'apps/**/*.{ts,tsx,mts}', 'packages/qian-tenancy-ui/**/*.{ts,tsx,mts}', 'packages/qian-plugin-sdk/**/*.{ts,tsx,mts}'],
+    files: ['packages/yue/**/*.{ts,tsx,mts}', 'apps/**/*.{ts,tsx,mts}', 'packages/qian-tenancy-ui/**/*.{ts,tsx,mts}', 'packages/qian-plugin-sdk/**/*.{ts,tsx,mts}', 'packages/qian-identity-ui/**/*.{ts,tsx,mts}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended, reactHooks.configs.flat.recommended],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     rules: {
@@ -23,13 +23,13 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/yue/**/*.mjs', 'apps/**/*.mjs', 'packages/qian-tenancy-ui/**/*.mjs', 'packages/qian-plugin-sdk/**/*.mjs', '**/*.cjs'],
+    files: ['packages/yue/**/*.mjs', 'apps/**/*.mjs', 'packages/qian-tenancy-ui/**/*.mjs', 'packages/qian-plugin-sdk/**/*.mjs', 'packages/qian-identity-ui/**/*.mjs', '**/*.cjs'],
     extends: [js.configs.recommended],
     languageOptions: { globals: { ...globals.node } },
   },
   ...yueBoundariesConfig,
   {
-    files: ['packages/yue/{sdk,shell,data,form,biz}/src/**/*.{ts,tsx}', 'packages/qian-tenancy-ui/src/**/*.{ts,tsx}'],
+    files: ['packages/yue/{sdk,shell,data,form,biz}/src/**/*.{ts,tsx}', 'packages/qian-tenancy-ui/src/**/*.{ts,tsx}', 'packages/qian-identity-ui/src/**/*.{ts,tsx}'],
     ignores: ['**/*.test.ts', '**/*.test.tsx', '**/test/**', '**/*.generated.ts', '**/i18n.ts', '**/locales.ts'],
     plugins: { 'yue-i18n': { rules: { 'no-hardcoded-text': noHardcodedText } } },
     rules: { 'yue-i18n/no-hardcoded-text': 'error' },

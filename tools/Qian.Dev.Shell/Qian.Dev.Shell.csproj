@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- 外壳认证联调环境（S1-YUE-002）：只供开发机与 CI 的 E2E，不打包、不进任何 profile。复用租户运营手测宿主的开发库、平台插件树与运营前置。 -->
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Qian.Dev.TenantOps/Qian.Dev.TenantOps.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
+    <ProjectReference Include="../../packages/Qian.Gateway/Qian.Gateway.csproj" />
+    <ProjectReference Include="../../packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="seed/accounts.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -6,3 +6,4 @@
 - `/__dev/` 路由不是产品契约，授权不得弱于运营端点；对应产品端点交付后删除或替换。
 - 开发密钥、口令只在 `.qian-dev/`（git 忽略），不提交、不打印。
 - 改了本工程、脚本或走查，本机跑一遍 `scripts/dev-tenant-ops.sh smoke`；CI 的 dev-tenant-ops 工作流跑的是同一条命令（S1-QA-013），不要在工作流里另写一套步骤。
+- `tools/Qian.Dev.Shell`（S1-YUE-002）经 `InternalsVisibleTo` 复用本工程的 DevDatabase / DevHost.Business / DevPlatform / DevOperations.PrepareAsync；改这些内部成员的签名或语义时同步改它，并跑一遍 `scripts/dev-shell.sh e2e`。

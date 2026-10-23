@@ -151,7 +151,8 @@
   - 不带 `resource` 时，单资源客户端按登记缺省；多资源客户端必须指定，否则 `invalid_target`，免得一张令牌带上全部受众、在资源服务器之间重放。显式请求多个资源时令牌带多个受众。
   - 换码与 refresh 可以用 `resource` 在原授权内收窄，不能扩大；收窄后的集合也是新 refresh token 的上限。被拒的 refresh 请求不消耗 refresh token。
 - client_credentials 签发身份 access token，内部调用仍经 Kun.Gateway 的 S2sTokenIssuer 换成冻结的短期 S2S 契约；不把 15 分钟外部令牌直接当作 S2S。令牌不携带权限码；业务授权仍由 Authz 判断。
-- 默认交互和 prompt=none 受支持。明确要求重新认证、选择账号或同意时返回 interaction_required，不能静默复用旧 Cookie。max_age 缺少可信 auth_time 或已过期时拒绝。
+- 默认交互、prompt=none 与 prompt=select_account 受支持。`select_account`（外壳切换租户，S1-YUE-002）：账号 Cookie 仍有效时 302 到同源选择页 `Accounts.SelectionPath`（缺省 `/login/select-tenant`），附 `return_url` = 去掉 prompt 的授权请求原地址（同源相对路径，不是开放重定向）；页面经 `POST /api/identity/session/switch` 与 `/login/select` 换会话后回到 return_url 签新授权码。没有 Cookie 时仍是登录挑战，ReturnUrl 同样去掉 prompt，登录完成后不会再要求选一次；没有内置账号模型的宿主没有选择页，按 interaction_required 拒绝。`none` 不得与 `select_account` 并用（invalid_request）。明确要求重新认证（login）或同意（consent）时返回 interaction_required，不能静默复用旧 Cookie。max_age 缺少可信 auth_time 或已过期时拒绝。
+- id_token 带标准 `name` claim：成员显示名，平台身份取自然人显示名；换码与刷新时按账号会话校验的当下事实覆盖。访问令牌与用户信息端点不带 name，资源服务器不该依赖显示名。
 - OAuth/OIDC 协议错误由 OpenIddict 按协议输出；宿主自己的 CSRF 等错误使用 ErrorDetail。
 
 ## 登出、密钥与日志
@@ -178,7 +179,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - **S1-IDP-006**：`IAuthenticatorFactorRegistry` 与 `MFA_UNAVAILABLE` 的不降级行为；租户级登录策略覆盖。
 - **S1-IDP-007**（本任务）：连接器登录已就位，见上文「连接器登录」。`LoginInput.ConnectorId` 只接受服务端自己签发的连接器票据；该租户看不见的连接器仍是 `#/connector_id`。
 - **S1-IDP-008（企业微信）**：实现 `IIdentityConnector`（工作台免登另实现 `IImplicitIdentityConnector`），在自己的 Apply 里 `ctx.IdentityConnectors().Register("wecom", …)`；回调、绑定与会话签发都复用这里，不另起回调路由。
-- **yue / 外壳（S1-YUE-002 等）**：登录页按 `GET /connectors?tenant=` 渲染连接器按钮；界面落点路由 `/login/connector/{connectorId}?flow=` 读流程并按 `next` 驱动确认绑定页。
+- **yue / 外壳（S1-YUE-002）**：认证页族作为本宿主同源的静态制品（工作区包 `packages/qian-identity-ui`，宿主把账号 Cookie scheme 的 `LoginPath` 指到 `/login`，选择页为 `Accounts.SelectionPath`）：登录页按 `GET /connectors?tenant=` 渲染连接器按钮；界面落点路由 `/login/connector/{connectorId}?flow=` 读流程并按 `next` 驱动确认绑定页；选择页 `/login/select-tenant?return_url=` 调 `POST /session/switch` → `/login/select` 后回到 return_url。外壳本身只经依赖方（Identity.Client / 网关 BFF）的 `/auth/login?prompt=select_account` 发起切换，浏览器零令牌。
 - **S1-IDP-006**：JIT 的租户策略目前读本组件在租户设置里的 `connectors:jitProvisioning`；租户级设置 Schema 与运营界面随 IDP-006 一起接入。
 
 ## 验收
