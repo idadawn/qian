@@ -281,5 +281,20 @@
       "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
       "pointer": "#/sizeBytes"
     }
+  },
+  {
+    "name": "冻结状态是 Schema 元数据，不得出现在错误响应体",
+    "data": {
+      "type": "https://qian.dev/problems/business/QUOTA_EXCEEDED",
+      "title": "超出配额",
+      "status": 422,
+      "detail": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "instance": "/api/files",
+      "code": "QUOTA_EXCEEDED",
+      "message": "文件大小超出租户配额（剩余 1048576 字节）。",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "pointer": "#/sizeBytes",
+      "x-status": "frozen"
+    }
   }
 ]

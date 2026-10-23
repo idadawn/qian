@@ -298,7 +298,7 @@ S1 到 S3 期间必须提前做对、否则 S4 返工的设计（S1 起生效）
 
 ### contracts/v0 默认裁决 R45–R53（S1-DEC-010，2026-10-08）
 
-S1-AGT-001 写契约时的 8 条默认值由 Claude 在产品负责人授权下裁决：R45 错误码大写下划线、OAuth `error` 值仍小写；R46 业务错误只用 409 / 422，404 一律 `NOT_FOUND`，配额类为 422 业务错误；R47 `AUTHZ_DENIED` 平台内置；R48 R32 的 403 原因即错误码（`PLUGIN_NOT_ENTITLED` / `PLUGIN_NOT_MOUNTED` / `PLUGIN_RESTRICTED` / `PLUGIN_DEPENDENCY_PENDING`，`message` 带层级、`pointer` 指向 patch 条目，ErrorDetail 不加 `details`）；R49 `tenant_id` 可为 null，发往 iClaw 的不转发 null；R50 字段级码 + `pointer`，ADR-011 D11.5 在 S2 映射；R51 `schemaSha256` 用 RFC 8785 JCS；R52 `humanOnly` = `agent.expose: false` + 服务端 `ACTION_HUMAN_ONLY`；R53 `draft` 保留到 S1 第 1 波消费方全部 review，由 S1-AGT-002 统一去掉（R119：改由 S1-AGT-005 承接）；R80 补注：届时将 `x-status: draft` 改写为 `x-status: frozen`。原文见 contracts/v0/README.md 第 8 节。
+S1-AGT-001 写契约时的 8 条默认值由 Claude 在产品负责人授权下裁决：R45 错误码大写下划线、OAuth `error` 值仍小写；R46 业务错误只用 409 / 422，404 一律 `NOT_FOUND`，配额类为 422 业务错误；R47 `AUTHZ_DENIED` 平台内置；R48 R32 的 403 原因即错误码（`PLUGIN_NOT_ENTITLED` / `PLUGIN_NOT_MOUNTED` / `PLUGIN_RESTRICTED` / `PLUGIN_DEPENDENCY_PENDING`，`message` 带层级、`pointer` 指向 patch 条目，ErrorDetail 不加 `details`）；R49 `tenant_id` 可为 null，发往 iClaw 的不转发 null；R50 字段级码 + `pointer`，ADR-011 D11.5 在 S2 映射；R51 `schemaSha256` 用 RFC 8785 JCS；R52 `humanOnly` = `agent.expose: false` + 服务端 `ACTION_HUMAN_ONLY`；R53 `draft` 保留到 S1 第 1 波消费方全部 review，由 S1-AGT-002 统一去掉（R119：改由 S1-AGT-005 承接）；R80 补注：届时将 `x-status: draft` 改写为 `x-status: frozen`。原文见 contracts/v0/README.md 第 8 节。 执行补注（2026-10-24，S1-AGT-005）：上述五个消费方均已 done，六份 v0 Schema 统一改写为 frozen，开始执行 additive-only。
 
 ### 文档站 Kun 小节默认裁决 R54–R62（S1-DEC-011，2026-10-08）
 
@@ -450,7 +450,7 @@ S1-DOCS-005（PR #4）合并时留下的 9 个未决问题，由 Claude 在产�
 
 由 Claude 在产品负责人要求「验收 S1-QA-010」后作默认裁决，未经逐条确认；整改退回 `pm/tasks/S1-QA-010.md`，有异议时新建决策任务。
 
-- R80：契约目录的冻结状态统一显式写 `x-status: frozen`，不以「删除 `draft`」表示：contracts/v0 在 S1-AGT-002（R119：改由 S1-AGT-005 承接）去 draft 时改写为 `frozen`（v0 README §2、§7 与 R53 补注、`ContractSchemaTests` 届时改断言 `frozen`）；contracts/data/v1 已按此标记，README 写明批准依据为本条，并更正 `$id` 陈述（data-types / data-connection 两份的旧标识符前缀与目录不符，趁零消费方统一为 `contracts/data/v1/` 并在 PR 说明；S1-QA-010 已按此对齐）；data/v1 在零代码消费方时冻结是复核人在 S1-QA-010 验收里提出的要求（C# 契约 `Qian.Data.Abstractions` 已发布为消费边界），作为 R53「消费方全部进入 review 后才冻结」前提的例外记录；data/v1 冻结信封 `$ref` v0 草稿信封列为已知例外，v0 event-envelope 冻结时复核 data/v1 信封。（本条原文的旧前缀字面量由 #104 去除、语义不变，复核人 2026-10-15 认可）
+- R80：契约目录的冻结状态统一显式写 `x-status: frozen`，不以「删除 `draft`」表示：contracts/v0 在 S1-AGT-002（R119：改由 S1-AGT-005 承接）去 draft 时改写为 `frozen`（v0 README §2、§7 与 R53 补注、`ContractSchemaTests` 届时改断言 `frozen`）；contracts/data/v1 已按此标记，README 写明批准依据为本条，并更正 `$id` 陈述（data-types / data-connection 两份的旧标识符前缀与目录不符，趁零消费方统一为 `contracts/data/v1/` 并在 PR 说明；S1-QA-010 已按此对齐）；data/v1 在零代码消费方时冻结是复核人在 S1-QA-010 验收里提出的要求（C# 契约 `Qian.Data.Abstractions` 已发布为消费边界），作为 R53「消费方全部进入 review 后才冻结」前提的例外记录；data/v1 冻结信封 `$ref` v0 草稿信封列为已知例外，v0 event-envelope 冻结时复核 data/v1 信封。（本条原文的旧前缀字面量由 #104 去除、语义不变，复核人 2026-10-15 认可） 执行补注（2026-10-24，S1-AGT-005）：v0 已统一冻结；data/v1 两份记录事件 Schema、随包嵌入的 v0 引用与信封 fixture 同步复核，冻结文件引用草稿的例外解除。
 
 ### 阻塞任务排序裁决 R81–R84（S1-DEC-021，2026-10-15）
 

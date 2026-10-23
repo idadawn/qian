@@ -15,7 +15,7 @@ public sealed class ContractSchemaTests
 
     [Theory]
     [MemberData(nameof(SchemaNames))]
-    public void Schema_is_a_valid_2020_12_schema_with_draft_status(string name)
+    public void Schema_is_a_valid_2020_12_schema_with_frozen_status(string name)
     {
         using var doc = Contracts.ReadJson(Path.Combine(Contracts.V0, $"{name}.schema.json"));
         var root = doc.RootElement;
@@ -23,8 +23,8 @@ public sealed class ContractSchemaTests
         Assert.Empty(Contracts.Validate(Contracts.MetaSchema, root));
         Assert.Equal(Contracts.MetaSchemaUri, root.GetProperty("$schema").GetString());
         Assert.Equal($"https://qian.dev/contracts/v0/{name}.schema.json", root.GetProperty("$id").GetString());
-        // R80：本轮仍保持 draft；S1-AGT-002 满足 R53 前提时统一改写为 frozen，见 key-decisions-v0.md。
-        Assert.Equal("draft", root.GetProperty("x-status").GetString());
+        // R53 / R80 / R119：S1-AGT-005 已满足冻结前提，不得移除标记或退回 draft。
+        Assert.Equal("frozen", root.GetProperty("x-status").GetString());
         Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("title").GetString()));
         Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("description").GetString()));
     }
@@ -62,6 +62,14 @@ public sealed class ContractSchemaTests
         var data = Find(schema, "semantic-invalid", fixture);
         Assert.Empty(Contracts.Validate(schema, data));
         Assert.NotEmpty(Contracts.CheckSemantics(schema, data));
+    }
+
+    [Fact]
+    public void Schema_test_inventory_covers_every_v0_schema()
+    {
+        Assert.Equal(
+            Directory.GetFiles(Contracts.V0, "*.schema.json").Select(Path.GetFileName).Order(StringComparer.Ordinal),
+            Contracts.SchemaNames.Select(name => $"{name}.schema.json").Order(StringComparer.Ordinal));
     }
 
     [Fact]

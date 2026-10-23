@@ -3,7 +3,7 @@
   "$id": "https://qian.dev/contracts/v0/error-catalog.schema.json",
   "title": "ErrorCatalog",
   "description": "错误码目录的 JSON 导出格式：每个错误码的类别、状态码、归属组件与多语言文案。平台内置部分冻结在 contracts/v0/error-codes.json；各组件在 Definition 包登记自己的错误码，导出时合并为同一格式。",
-  "x-status": "draft",
+  "x-status": "frozen",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "codes"],

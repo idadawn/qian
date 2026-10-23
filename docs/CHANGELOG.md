@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-24 通用契约 v0 冻结（S1-AGT-005）
+
+[contracts/v0](../contracts/v0/README.md) 的六份 Schema 按 R53 / R80 / R119 统一标记为 `frozen`，后续只接受向后兼容增量，破坏性变更进入 v1。现有字段与约束保持不变；[data/v1](../contracts/data/v1/README.md) 引用草稿信封的例外随之解除。
+
 ## 2026-10-22 输入 Schema 的租户字段检查覆盖 properties 之外的写法（S1-AGT-004）
 
 工具文件与能力契约的输入 Schema 不再只看属性名：`required`、`dependentRequired`、`dependentSchemas` 里出现租户名、`propertyNames` 用 `const` / `enum` 列出租户名，或 `patternProperties` 的模式能匹配租户名（含 `^[a-z_]+$` 这类通配；超出 ECMA-262 可移植子集、无法判定的模式也算），都会被拒绝，顶层同样适用。开放的映射（没有关闭的嵌套 object）不点名字段，照常通过。此前能通过的组件可能因此装载失败，按错误里的 pointer 修改即可。规则见 [packages/Common](../packages/Common/README.md#tenantfieldrule-的判定规则)。
