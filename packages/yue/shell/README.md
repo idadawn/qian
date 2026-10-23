@@ -17,7 +17,7 @@ AuthProvider 由宿主注入，认证页族不持有令牌。登录表单使用 
 - `menuTypeRegistry` / `safeNavigationUrl`（子路径 `./menu`）：菜单类型注册表与 URL 安全边界（拒绝危险协议与带令牌参数的地址）。
 - `SessionExpiredDialog`（子路径 `./session-dialog`）：会话结束只弹一次、Esc 关不掉，确认后整页重新登录。
 - `InboxPopover`（子路径 `./inbox`）：顶栏站内信弹窗，消息源由宿主注入（S1 没有站内信接口）。
-- `initPreferences({ namespace, overrides, defaults })`：`defaults` 是部署缺省（例如运行时配置的语言），低于用户已保存的偏好，也不写进存储。
+- `initPreferences({ namespace, overrides, defaults })`：`defaults` 是部署缺省（例如运行时配置的语言），低于用户已保存的偏好，也不写进存储：存储只记用户自己改过的键（`update` 增量合并），`reset` 写空对象。
 
 子路径让外壳首屏只拉需要的部分（首屏 JS 预算 250 KiB gzip）。Qian 的可部署外壳是 [apps/qian-shell](../../../apps/qian-shell/README.md)，认证页族是 [packages/qian-identity-ui](../../qian-identity-ui/README.md)；真实流程验收 `pnpm yue:auth` 对 [tools/Qian.Dev.Shell](../../../tools/Qian.Dev.Shell/README.md) 拉起的真实 qian.identity、平台表面宿主与网关 BFF 运行。
 

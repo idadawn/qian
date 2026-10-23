@@ -1,7 +1,7 @@
 import { HttpResponseError, PlatformClient, PlatformError } from '@idadawn/yue-sdk';
 import { ShellHost, type RemoteRegistration, type ShellContext, type ShellScope } from '@idadawn/qian-plugin-sdk';
 import { createBrowserRouter, type ShellRouter } from '@idadawn/yue-shell/router';
-import { apiPrefixMiddleware, createBffSessionClient, csrfMiddleware, fetchBootstrap, type AppConfig, type BffSessionClient, type ShellBootstrap } from '@qian/shell-kit';
+import { apiPrefixMiddleware, createBffSessionClient, createSessionExpiryGuard, csrfMiddleware, fetchBootstrap, type AppConfig, type BffSessionClient, type ShellBootstrap } from '@qian/shell-kit';
 import { createHostFederation } from './shared';
 
 export type LoadStatus = 'loading' | 'ready' | 403 | 500;
@@ -28,11 +28,13 @@ const status = (error: unknown) => error instanceof PlatformError || error insta
  *
  * 会话结束对外壳是粘性的：SDK 通知 onSessionExpired 之后，刷新通知与排队的重拉都不再发起请求；只有整页重新登录（新文档、新运行时）才复位。
  * 否则「依赖方刷新成功、平台表面仍 401」会无界循环（刷新成功的通知在重放之前到达 → 排队重拉 → 重放 401、弹过期对话框 → 排队的重拉照常发出 → 再 401 → 再刷新……）。
- * 首次加载就没有会话（从未成功过）时不弹对话框，顶层跳到依赖方登录端点。
+ * 工作台从未就绪（首载、整页重载）时由会话过期守卫区分：依赖方说会话已结束才顶层跳登录端点；依赖方刷新成功、重放仍 401（平台表面拒绝）时
+ * 只弹过期对话框、不跳转——账号 Cookie 仍有效时登录端点会静默签码、回调重建会话，平台表面照样 401，跳转就成了整页级的无界循环。
  */
 export function createShellRuntime(config: AppConfig) {
   const router: ShellRouter = createBrowserRouter();
   const bff: BffSessionClient = createBffSessionClient({ authBase: config.authBase });
+  const guard = createSessionExpiryGuard(bff);
   const listeners = new Set<() => void>();
   let state: ShellState = { status: 'loading', bootstrap: null, capabilities: undefined, reloading: false, expired: false, signedOut: false };
   // 宿主（上下文、挂载 / 权益 / 权限判定、请求的租户头）看到的 bootstrap：先于 React 状态更新，远程按它登记完再一次性通知界面。
@@ -47,13 +49,13 @@ export function createShellRuntime(config: AppConfig) {
   };
 
   const client = new PlatformClient({
-    baseUrl: location.origin, sessionProvider: bff,
+    baseUrl: location.origin, sessionProvider: guard,
     middleware: [apiPrefixMiddleware(config.apiBase), csrfMiddleware(bff)],
     getTenantId: () => view?.context.tenant?.id,
     onSessionExpired: () => {
       ended = true;
-      if (!everReady) { location.assign(bff.loginUrl(router.getPath())); return; }
-      set({ expired: true });
+      if (everReady) { set({ expired: true }); return; }
+      void guard.onExpired().then(action => { if (action === 'login') location.assign(bff.loginUrl(router.getPath())); else set({ expired: true }); });
     },
     onSessionRefreshed: () => { if (!ended) void load(); },
   });

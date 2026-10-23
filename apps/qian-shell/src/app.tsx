@@ -67,7 +67,8 @@ function Shell({ runtime }: { runtime: ShellRuntime }) {
   if (state.signedOut) return <main className="flex min-h-dvh items-center justify-center p-4"><section className="w-full max-w-md space-y-4 rounded-xl border border-border bg-card p-6" data-testid="shell-signed-out">
     <p>{i18n.t('app.signedOut')}</p><Button onClick={() => runtime.signIn()}>{i18n.t('shell.login')}</Button>
   </section></main>;
-  if (!bootstrap) return <main className="p-6">{state.status === 'loading' ? <Spinner label={i18n.t('common.loading')} />
+  // 工作台从未就绪就结束了会话（例如平台表面持续 401）：只留过期对话框，背后不再转加载圈。
+  if (!bootstrap) return <main className="p-6">{state.expired ? null : state.status === 'loading' ? <Spinner label={i18n.t('common.loading')} />
     : <FallbackPage status={state.status === 403 ? 403 : 500} i18n={i18n} onRetry={() => location.reload()} />}{state.expired && <Expired runtime={runtime} i18n={i18n} />}</main>;
 
   const session = bootstrap.session;

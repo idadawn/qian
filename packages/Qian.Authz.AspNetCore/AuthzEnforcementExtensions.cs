@@ -17,7 +17,8 @@ namespace Qian.Authz.AspNetCore;
 /// <summary>
 /// HTTP / gRPC 强制执行点（PEP）的宿主装配：端点以 <see cref="RequireQianPermission{TBuilder}"/> 声明权限点（同时写进 OpenAPI 的 x-qian-permission），
 /// 判定、identity_revision 比对与决策审计都经 qian.authz 的执行端口（<see cref="IAuthzEnforcement"/>），与命令管道 PEP 同一结论。
-/// 未声明权限点的组件端点在生产模式缺省拒绝（403 并记录），开发模式放行并告警。
+/// 未声明权限点的组件端点在生产模式缺省拒绝（403 并记录），开发模式放行并告警；没有声明权限点的已认证请求也比对 identity_revision，旧令牌 401
+/// （S1-YUE-012，见 <see cref="UseQianAuthzEnforcement"/>）。
 /// </summary>
 public static class AuthzEnforcementExtensions
 {
@@ -59,8 +60,10 @@ public static class AuthzEnforcementExtensions
     }
 
     /// <summary>
-    /// 放在 UseAuthorization 之后：带组件端点绑定（<c>PluginEndpointBinding</c>）却没有声明权限点的端点，在生产模式缺省拒绝并记录决策审计；
-    /// 开发模式记一条警告后放行，便于本地调试。匿名端点（<c>AllowAnonymous</c>）不在范围内。
+    /// 放在 UseAuthorization 之后，管两件事，匿名端点（<c>AllowAnonymous</c>）都不在范围内：
+    /// 一是没有声明权限点的已认证请求先比对令牌的 identity_revision（带租户与修订的主体；处理器内判定、只要求已认证的入口都算），旧令牌 401 并记录拒绝决策，
+    /// 与声明了权限点的端点用同一张下限表（S1-YUE-012）；二是带组件端点绑定（<c>PluginEndpointBinding</c>）却没有声明权限点、也没有标记处理器内判定的端点，
+    /// 在生产模式缺省拒绝并记录决策审计，开发模式记一条警告后放行，便于本地调试。
     /// </summary>
     public static IApplicationBuilder UseQianAuthzEnforcement(this IApplicationBuilder app)
     {

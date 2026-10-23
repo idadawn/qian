@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -180,12 +181,18 @@ public static partial class GatewayShellHosting
                 Log.DownstreamFailed(logger, (int)shell.Status, (int)permissions.Status);
                 await Error(http, PlatformErrors.BadGateway).ConfigureAwait(false); return;
             }
-            if (shell.Status == HttpStatusCode.NotFound || permissions.Status == HttpStatusCode.NotFound) Log.SurfaceMissing(logger, (int)shell.Status, (int)permissions.Status);
-            if (!TryCatalog(shell.Body, tenantId, out var tenantName, out var remotes) || !TryPermissions(permissions.Body, out var allowed) || !TryNavigation(navigation.Body, out var items))
+            // 下游 404（组件未挂载或平台表面未部署）与网关没有对应路由都按空处理（产品负责人 2026-10-24 认可），记警告，运维据此补部署或路由。
+            if (shell.Status == HttpStatusCode.NotFound || navigation.Status == HttpStatusCode.NotFound || permissions.Status == HttpStatusCode.NotFound)
+            {
+                string shellState = Describe(shell), navigationState = Describe(navigation), permissionsState = Describe(permissions);
+                Log.SurfaceMissing(logger, shellState, navigationState, permissionsState);
+            }
+            if (!TryCatalog(shell.Body, tenantId, out var tenantName, out var remotes, out var foreign) || !TryPermissions(permissions.Body, out var allowed) || !TryNavigation(navigation.Body, out var items))
             {
                 Log.DownstreamInvalid(logger);
                 await Error(http, PlatformErrors.BadGateway).ConfigureAwait(false); return;
             }
+            if (foreign.Count > 0) Log.RemoteManifestNotLocal(logger, string.Join(",", foreign));
             var mounted = remotes.Select(remote => remote.Scope + "|" + remote.Id).ToArray();
             var context = new ShellContextView(new ShellTenantView(tenantId, tenantName ?? tenantId),
                 principal.MembershipId is { } membership ? new ShellMembershipView(membership, allowed) : null, null, Locale, Theme);
@@ -208,24 +215,30 @@ public static partial class GatewayShellHosting
         return best is null ? null : configuration.Clusters.SingleOrDefault(cluster => cluster.Id == best.Cluster);
     }
 
-    private static bool TryCatalog(JsonDocument? document, string tenantId, out string? name, out IReadOnlyList<ShellRemoteView> remotes)
+    private static string Describe(Downstream downstream) => downstream.Routed ? ((int)downstream.Status).ToString(CultureInfo.InvariantCulture) : "unrouted";
+
+    // 外壳只从网关同源加载远程（/remotes/{组件}/）：远程清单地址不是同源路径（绝对地址、协议相对、带查询或片段）的组件不交给外壳，记警告，
+    // 其余组件照常；浏览器端 ShellHost 没配可信源时只认同源，这里是服务端的同一道闸。
+    private static bool TryCatalog(JsonDocument? document, string tenantId, out string? name, out IReadOnlyList<ShellRemoteView> remotes, out IReadOnlyList<string> foreign)
     {
-        name = null; remotes = [];
+        name = null; remotes = []; foreign = [];
         if (document is null) return true;
         var root = document.RootElement;
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("tenant", out var tenant) || tenant.ValueKind != JsonValueKind.Object ||
             Text(tenant, "id") != tenantId || Text(tenant, "name") is not { Length: > 0 } tenantName || !root.TryGetProperty("remotes", out var items) || items.ValueKind != JsonValueKind.Array)
             return false;
-        var result = new List<ShellRemoteView>();
+        var result = new List<ShellRemoteView>(); var rejected = new List<string>();
         foreach (var item in items.EnumerateArray())
         {
             if (item.ValueKind != JsonValueKind.Object || Text(item, "id") is not { } id || !ComponentId().IsMatch(id) || Text(item, "version") is not { Length: > 0 and <= 64 } version ||
                 Text(item, "scope") is not { } scope || !item.TryGetProperty("manifest", out var manifest) || manifest.ValueKind != JsonValueKind.Object) return false;
             // 只收当前租户与全局 scope 的条目；别的租户的 scope 出现在这里说明下游有误，整体按无效处理。
             if (scope != "global" && scope != "tenant:" + tenantId) return false;
+            if (!manifest.TryGetProperty("federation", out var federation) || federation.ValueKind != JsonValueKind.Object || !IsLocalPath(Text(federation, "manifest")))
+            { rejected.Add(id); continue; }
             result.Add(new ShellRemoteView(id, version, scope, manifest.Clone()));
         }
-        name = tenantName; remotes = result.AsReadOnly();
+        name = tenantName; remotes = result.AsReadOnly(); foreign = rejected.AsReadOnly();
         return true;
     }
 
@@ -267,8 +280,10 @@ public static partial class GatewayShellHosting
         internal static partial void DownstreamFailed(ILogger logger, int shell, int permissions);
         [LoggerMessage(EventId = 61, Level = LogLevel.Warning, Message = "外壳 bootstrap 的平台表面返回了不符合契约的响应。")]
         internal static partial void DownstreamInvalid(ILogger logger);
-        [LoggerMessage(EventId = 62, Level = LogLevel.Information, Message = "外壳 bootstrap 的平台表面未挂载或未部署（404），按空处理；shell={Shell} permissions={Permissions}。")]
-        internal static partial void SurfaceMissing(ILogger logger, int shell, int permissions);
+        [LoggerMessage(EventId = 62, Level = LogLevel.Warning, Message = "外壳 bootstrap 的平台表面未部署或组件未挂载（下游 404），或网关没有对应路由（unrouted），按空处理；shell={Shell} navigation={Navigation} permissions={Permissions}。")]
+        internal static partial void SurfaceMissing(ILogger logger, string shell, string navigation, string permissions);
+        [LoggerMessage(EventId = 63, Level = LogLevel.Warning, Message = "外壳 bootstrap 跳过远程清单地址不是同源路径的组件（外壳只从网关同源加载远程）：{Components}。")]
+        internal static partial void RemoteManifestNotLocal(ILogger logger, string components);
     }
 }
 
@@ -283,9 +298,10 @@ public sealed class ShellStaticOptions
     public IReadOnlyDictionary<string, string> Remotes { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 }
 
-internal readonly record struct Downstream(HttpStatusCode Status, JsonDocument? Body)
+internal readonly record struct Downstream(HttpStatusCode Status, JsonDocument? Body, bool Routed = true)
 {
-    internal static readonly Downstream Unrouted = new(HttpStatusCode.NotFound, null);
+    /// <summary>网关路由表里没有对应路由：按下游 404 处理，日志里记为 unrouted。</summary>
+    internal static readonly Downstream Unrouted = new(HttpStatusCode.NotFound, null, Routed: false);
 }
 
 /// <summary>bootstrap 调平台表面的出站连接：不跟随重定向、不带 Cookie、不走代理，归网关宿主所有。</summary>

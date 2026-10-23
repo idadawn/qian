@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Kun.Core.MultiTenancy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -134,6 +135,73 @@ public sealed partial class CustomerCommandTests
         Assert.DoesNotContain("qian.sample.crm:customer:write", otherPermissions);
     }
 
+    // 外壳目录替身：一个同源远程与三个清单地址不合格的远程（绝对地址、协议相对、缺 federation）；租户与 scope 都合法，只有清单地址不合格。
+    private const string ShellCatalogWithForeignManifests = """
+        {"tenant":{"id":"TENANT-A","name":"甲方"},"remotes":[
+          {"id":"qian.sample.crm","version":"1.0.0","scope":"global","manifest":{"$schema":"https://qian.dev/schemas/ui/v2","federation":{"manifest":"/remotes/qian.sample.crm/mf-manifest.json","exposes":["CustomersPage"]}}},
+          {"id":"cdn.remote","version":"1.0.0","scope":"global","manifest":{"federation":{"manifest":"https://cdn.example/mf-manifest.json","exposes":["Page"]}}},
+          {"id":"relative.remote","version":"1.0.0","scope":"tenant:TENANT-A","manifest":{"federation":{"manifest":"//evil.example/mf-manifest.json","exposes":["Page"]}}},
+          {"id":"missing.federation","version":"1.0.0","scope":"global","manifest":{}}]}
+        """;
+
+    [Fact]
+    public async Task 外壳bootstrap下游404与缺路由按空处理_清单地址不是同源路径的远程不交给外壳_都记警告()
+    {
+        using var tls = GatewayTestHost.Certificate(); using var reservation = LoopbackPort.Reserve();
+        var address = new Uri($"https://localhost:{reservation.Port}/");
+        await using var business = await Start(identity: true, relyingParty: new Uri(address, "auth/callback"));
+        // 平台表面的替身：先对一切都回 404（平台表面未部署、组件未挂载）；切到目录模式后，外壳目录给出上面那份清单。
+        var catalog = false; var seen = new ConcurrentQueue<string>();
+        var stub = WebApplication.CreateSlimBuilder(); stub.WebHost.UseUrls("http://127.0.0.1:0"); stub.Logging.ClearProviders();
+        await using var surface = stub.Build();
+        surface.Run(async http =>
+        {
+            seen.Enqueue(http.Request.Path.Value ?? "");
+            if (!catalog || http.Request.Path != "/api/capabilities/shell") { http.Response.StatusCode = StatusCodes.Status404NotFound; return; }
+            http.Response.ContentType = "application/json";
+            await http.Response.WriteAsync(ShellCatalogWithForeignManifests.Replace("TENANT-A", A, StringComparison.Ordinal), http.RequestAborted);
+        });
+        await surface.StartAsync(Ct);
+        await using var redis = new RedisFixture(); await redis.InitializeAsync();
+        var logs = new ShellLogs();
+        // 路由表只有能力表面一条（外壳目录与能力导航经它到替身），有效权限没有路由。
+        await using var gateway = await GatewayTestHost.Start(reservation, tls, business.Identity.Issuer, GatewayClientId, IdentityResource, business.Identity.Secret,
+            redis.ConnectionString, ShellGatewayIssuer, [new("capabilities", "/api/capabilities/{**rest}", PlatformSurfaceHost.Audience)],
+            [new(PlatformSurfaceHost.Audience, surface.Urls.Single())], business.ManagementSigningKey.Rsa,
+            map: app => { app.Services.GetRequiredService<ILoggerFactory>().AddProvider(logs); app.MapQianShellBootstrap(); });
+        var (person, phone) = await NewPerson(business, "成员乙");
+        await Join(business, A, person.Id, "成员乙");
+        var (browser, cookies) = GatewayTestHost.Browser(tls); using var _ = browser;
+        await ShellSignIn(browser, business, phone, A); await gateway.CompleteLogin(browser);
+
+        // 一、外壳目录与能力导航下游 404，有效权限没有路由：会话照常，租户名退回租户 id，远程、挂载、权益与权限全空，导航为 null；不是 502。
+        var missing = await Bootstrap(browser, address, cookies);
+        Assert.Equal(await SessionSnapshot(browser, address), missing["session"]!.ToJsonString());
+        Assert.False((bool)missing["managed"]!);
+        Assert.Equal((A, A), ((string?)missing["context"]!["tenant"]!["id"], (string?)missing["context"]!["tenant"]!["name"]));
+        Assert.Equal((string?)missing["session"]!["membershipId"], (string?)missing["context"]!["membership"]!["id"]);
+        Assert.Empty(missing["context"]!["membership"]!["permissions"]!.AsArray());
+        foreach (var name in new[] { "remotes", "mounted", "entitled", "permissions" }) Assert.Empty(missing[name]!.AsArray());
+        Assert.Null(missing["navigation"]);
+        // 有路由的两条确实打到了下游；没有路由的有效权限不发出站请求。
+        Assert.Equal(["/api/capabilities/navigation", "/api/capabilities/shell"], seen.Order(StringComparer.Ordinal));
+        var surfaceMissing = Assert.Single(logs.Entries);
+        Assert.Equal((62, LogLevel.Warning), (surfaceMissing.EventId, surfaceMissing.Level));
+        Assert.Equal(("404", "404", "unrouted"), ((string?)surfaceMissing.Values["Shell"], (string?)surfaceMissing.Values["Navigation"], (string?)surfaceMissing.Values["Permissions"]));
+
+        // 二、外壳目录有一个同源远程与三个清单地址不合格的远程：只交出同源那个，其余跳过并记警告，不拖垮整页。
+        catalog = true; seen.Clear(); logs.Entries.Clear();
+        var (filtered, text) = await BootstrapText(browser, address, cookies);
+        Assert.Equal("甲方", (string?)filtered["context"]!["tenant"]!["name"]);
+        var kept = Assert.Single(filtered["remotes"]!.AsArray())!;
+        Assert.Equal(("qian.sample.crm", "/remotes/qian.sample.crm/mf-manifest.json"), ((string?)kept["id"], (string?)kept["manifest"]!["federation"]!["manifest"]));
+        Assert.Equal(["global|qian.sample.crm"], filtered["mounted"]!.AsArray().Select(item => (string)item!));
+        Assert.Equal(["global|qian.sample.crm"], filtered["entitled"]!.AsArray().Select(item => (string)item!));
+        foreach (var foreign in new[] { "cdn.example", "evil.example", "cdn.remote", "relative.remote", "missing.federation" }) Assert.DoesNotContain(foreign, text, StringComparison.Ordinal);
+        Assert.Equal(new[] { (62, LogLevel.Warning), (63, LogLevel.Warning) }, logs.Entries.Select(entry => (entry.EventId, entry.Level)).Order());
+        Assert.Equal("cdn.remote,relative.remote,missing.federation", (string?)logs.Entries.Single(entry => entry.EventId == 63).Values["Components"]);
+    }
+
     // 与浏览器直调同一路由、同一受众：session 与 GET /auth/session 逐字段相同；remotes 与外壳目录、navigation 与能力导航、permissions 与有效权限里放行的权限码一致。
     private static async Task<string[]> AssertConsistent(HttpClient browser, Uri address, JsonNode bootstrap, string tenantId, string displayName)
     {
@@ -210,6 +278,24 @@ public sealed partial class CustomerCommandTests
         var body = await response.Content.ReadAsStringAsync(Ct);
         Assert.True(response.StatusCode == HttpStatusCode.OK, body);
         Assert.Equal("authenticated", JsonDocument.Parse(body).RootElement.GetProperty("status").GetString());
+    }
+
+    // 网关外壳 bootstrap 的两条警告（事件 62 平台表面缺失、63 清单地址不是同源路径）：级别与结构化参数。
+    private sealed class ShellLogs : ILoggerProvider
+    {
+        internal ConcurrentQueue<(int EventId, LogLevel Level, IReadOnlyDictionary<string, object?> Values)> Entries { get; } = new();
+        public ILogger CreateLogger(string categoryName) => new Sink(categoryName, Entries);
+        public void Dispose() { }
+        private sealed class Sink(string category, ConcurrentQueue<(int EventId, LogLevel Level, IReadOnlyDictionary<string, object?> Values)> entries) : ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+            public bool IsEnabled(LogLevel logLevel) => true;
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            {
+                if (category == "Qian.Gateway" && eventId.Id is 62 or 63 && state is IEnumerable<KeyValuePair<string, object?>> values)
+                    entries.Enqueue((eventId.Id, logLevel, values.ToDictionary(pair => pair.Key, pair => pair.Value)));
+            }
+        }
     }
 
     // 平台表面宿主收到的每个请求（路径），证明匿名与平台身份的 bootstrap 不调下游。

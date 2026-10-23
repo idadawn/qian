@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 // （平台表面宿主的授权 PEP 按生产模式比对修订下限）：SDK 合并成一次刷新、换到新修订后重放，外壳随即重拉 bootstrap（裁决 ④）→ refresh 失效时依赖方
 // 结束会话，401 合并成一次刷新尝试（探测即 401、不再 POST）并只弹一次过期对话框 → 代码审查项的自动检查（存储、URL、iframe、响应体里都没有令牌，
 // 会话 Cookie 对脚本不可见，构建产物的 meta CSP 零违规）→ 改运行时配置 /app-config.json 的 apiBase 后刷新页面即走新前缀，不重编译。
-// 另几条用例：平台身份（operator）只有代管横幅与会话卡片、bootstrap 不调任何下游；刷新成功但平台表面持续 401 时只刷新一次、只弹一个过期对话框、之后不再请求；
+// 另几条用例：平台身份（operator）只有代管横幅与会话卡片、bootstrap 不调任何下游；刷新成功但平台表面持续 401 时只刷新一次、只弹一个过期对话框、之后不再请求，整页重载也不跳登录、点「重新登录」只跳一次；
 // SSO 跳转回调经真实上游 Dex（通用 OIDC 连接器）首次确认绑定、再次直接进入；验收 2：甲方已挂载参考应用时远程按需加载、丙方未挂载时 mf-manifest.json 从不请求；零令牌检测式自检不需要真实栈。
 const root = resolve(import.meta.dirname, '../../..');
 const seed = JSON.parse(readFileSync(resolve(root, 'tools/Qian.Dev.Shell/seed/accounts.json'), 'utf8')) as { persons: { key: string; username: string; password: string }[]; tenants: { code: string; name: string }[] };
@@ -87,11 +87,13 @@ async function fillLogin(page: Page, person = owner) {
 // 远程制品请求、全部同源 JSON 响应体；每个响应都断言请求不带 Authorization。上游 Dex 是别的源，不在其中。
 function observe(page: Page, origin: string) {
   const refreshes: string[] = []; const probes: number[] = []; const apiCalls: { origin: string; method: string; path: string; status: number }[] = []; const bodies: string[] = [];
-  const remotes: string[] = [];
+  const remotes: string[] = []; const logins: string[] = [];
   page.on('request', request => {
     const url = new URL(request.url());
     if (request.method() === 'POST' && url.pathname === '/auth/session/refresh') refreshes.push(url.pathname);
     if (url.pathname.startsWith('/remotes/')) remotes.push(url.pathname);
+    // 主框架顶层跳依赖方登录端点（首载无会话、切换租户、重新登录）：用来证明不存在整页级的跳转循环。
+    if (url.origin === origin && url.pathname === '/auth/login' && request.isNavigationRequest() && request.frame() === page.mainFrame()) logins.push(url.search);
   });
   page.on('response', async response => {
     const url = new URL(response.url());
@@ -101,7 +103,7 @@ function observe(page: Page, origin: string) {
     if ((response.headers()['content-type'] ?? '').includes('json')) { try { bodies.push(await response.text()); } catch { /* 跳转或已取消的响应没有可读的体。 */ } }
     expect(response.request().headers().authorization, url.pathname).toBeUndefined();
   });
-  return { refreshes, probes, apiCalls, bodies, remotes };
+  return { refreshes, probes, apiCalls, bodies, remotes, logins };
 }
 const loginPage = new RegExp(`^${identity.replaceAll('.', '\\.')}/login\\?ReturnUrl=`);
 
@@ -329,9 +331,9 @@ test('平台身份（operator）：只有代管横幅与会话卡片，bootstrap
   await noCredentials(page, '平台身份');
 });
 
-test('刷新成功但平台表面持续 401：恰好一次刷新、一个过期对话框，之后外壳不再发起新一轮（会话结束是粘性的）', async ({ page, baseURL }) => {
+test('刷新成功但平台表面持续 401：恰好一次刷新、一个过期对话框，之后外壳不再发起新一轮（会话结束是粘性的）；整页重载不跳登录，点「重新登录」只跳一次', async ({ page, baseURL }) => {
   const origin = baseURL!.replace(/\/$/, '');
-  const { refreshes, apiCalls, bodies } = observe(page, origin);
+  const { refreshes, apiCalls, bodies, logins } = observe(page, origin);
   // 只看外壳经网关发往租户表面的请求；认证页族在身份服务同源的 /api/identity/* 与 BFF 的 /auth/* 不算。
   const tenantCalls = () => apiCalls.filter(call => call.origin === origin && /^\/(api|api-alt)\//.test(call.path));
   await page.goto('/');
@@ -363,6 +365,31 @@ test('刷新成功但平台表面持续 401：恰好一次刷新、一个过期�
   expect(tenantCalls().slice(before).map(call => `${call.path} ${call.status}`)).toEqual(['/api/shell/bootstrap 401', '/api/shell/bootstrap 401']);
   await expect(page.getByRole('alertdialog')).toHaveCount(1);
   await expect(dialog).toBeVisible();
+  // 整页重载：工作台从未就绪，依赖方会话仍在、平台表面持续 401。刷新成功说明会话还在，外壳只弹过期对话框、不顶层跳登录——否则账号 Cookie
+  // 仍有效时登录端点静默签码、回调重建会话，bootstrap 照样 401，再跳，整页无界循环（第一轮验收复核实测重载后 10 秒跳了 42 次）。
+  const counts = () => ({ logins: logins.length, calls: tenantCalls().length, refreshes: refreshes.length });
+  const beforeReload = counts();
+  await page.reload();
+  await expect(dialog).toHaveCount(1);
+  await expect.poll(() => tenantCalls().length - beforeReload.calls).toBe(2);
+  const reloaded = counts();
+  await page.waitForTimeout(3_000);
+  expect(counts(), '重载后静置 3 秒').toEqual(reloaded);
+  expect(reloaded.logins - beforeReload.logins, '重载后顶层跳 /auth/login 的次数').toBe(0);
+  expect(reloaded.refreshes - beforeReload.refreshes).toBe(1);
+  expect(tenantCalls().slice(beforeReload.calls).map(call => `${call.path} ${call.status}`)).toEqual(['/api/shell/bootstrap 401', '/api/shell/bootstrap 401']);
+  await expect(page).toHaveURL(origin + '/');
+  // 对话框里点「重新登录」：恰好一次顶层跳转（账号 Cookie 仍有效，依赖方静默签码、回调回到工作台），平台表面仍 401 → 再弹对话框，之后整页稳定。
+  const beforeSignIn = counts();
+  await dialog.getByRole('button', { name: '重新登录' }).click();
+  await expect.poll(() => tenantCalls().length - beforeSignIn.calls).toBe(2);
+  await expect(dialog).toHaveCount(1);
+  const signedIn = counts();
+  await page.waitForTimeout(3_000);
+  expect(counts(), '重新登录后静置 3 秒').toEqual(signedIn);
+  expect(signedIn.logins - beforeSignIn.logins, '重新登录后顶层跳 /auth/login 的次数').toBe(1);
+  expect(signedIn.refreshes - beforeSignIn.refreshes).toBe(1);
+  await expect(page).toHaveURL(origin + '/');
   for (const body of bodies) expect(body).not.toMatch(tokenLike);
   await noCredentials(page, '平台表面持续 401');
 });

@@ -112,3 +112,33 @@ export function createBffSessionClient({ authBase = '/auth', fetch: fetchImpl }:
     },
   };
 }
+
+/** 会话结束时外壳的处置：`login` 顶层跳依赖方登录端点；`dialog` 弹过期对话框，不跳转。 */
+export type SessionExpiryAction = 'login' | 'dialog';
+
+/** 记着最近一次会话刷新结论的会话宿主：交给 SDK 作 `sessionProvider`，过期通知到达时由 {@link SessionExpiryGuard.onExpired} 给出处置。 */
+export interface SessionExpiryGuard extends SessionProvider {
+  onExpired(): Promise<SessionExpiryAction>;
+}
+
+/**
+ * 工作台从未就绪（首载、整页重载）时收到 `onSessionExpired`，要分清两种情形：
+ * - 依赖方说会话已结束（刷新回答 false）：顶层跳登录；
+ * - 依赖方刷新成功、重放仍 401（平台表面拒绝，例如身份修订下限高于身份侧已签发的修订）：弹过期对话框，不跳登录。账号 Cookie 仍有效时，
+ *   依赖方登录端点会静默签码、回调重建会话，平台表面照样 401，顶层跳转就成了整页级的无界循环。
+ * 刷新出错（网络或 5xx）时问一次会话快照：没有会话才跳登录；仍有会话、或问不到，都弹对话框。
+ */
+export function createSessionExpiryGuard(session: Pick<BffSessionClient, 'refreshSession' | 'getSession'>): SessionExpiryGuard {
+  let last: 'alive' | 'ended' | 'failed' | undefined;
+  return {
+    async refreshSession() {
+      try { const alive = await session.refreshSession(); last = alive ? 'alive' : 'ended'; return alive; }
+      catch (error) { last = 'failed'; throw error; }
+    },
+    async onExpired() {
+      if (last === 'alive') return 'dialog';
+      if (last === 'ended') return 'login';
+      try { return await session.getSession() ? 'dialog' : 'login'; } catch { return 'dialog'; }
+    },
+  };
+}

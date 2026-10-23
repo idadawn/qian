@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PlatformClient } from '@idadawn/yue-sdk';
-import { apiPrefixMiddleware, createBffSessionClient, csrfMiddleware, fetchBootstrap, isShellBootstrap, loadAppConfig, mapApiPath, parseAppConfig, toMenu, type NavigationCatalogItem } from './index';
+import { apiPrefixMiddleware, createBffSessionClient, createSessionExpiryGuard, csrfMiddleware, fetchBootstrap, isShellBootstrap, loadAppConfig, mapApiPath, parseAppConfig, toMenu, type BffSession, type NavigationCatalogItem } from './index';
 import { createIdentityAuthProvider, PLATFORM_TENANT } from './identity-provider';
 
 const problem = (status: number, code = 'UNAUTHENTICATED') => Response.json({ type: `https://qian.dev/problems/protocol/${code}`, title: code, status, code, message: '未认证', trace_id: 'a'.repeat(32) }, { status, headers: { 'content-type': 'application/problem+json' } });
@@ -198,5 +198,56 @@ describe('身份服务同源 AuthProvider', () => {
     const provider = createIdentityAuthProvider({ clientId: 'qian-web', fetch: fetchImpl });
     await expect(provider.signIn({ username: 'demo', password: 'bad' }, new AbortController().signal)).rejects.toMatchObject({ name: 'PlatformError', status: 401, detail: { code: 'INVALID_CREDENTIALS' } });
     await expect(provider.changePassword('x', new AbortController().signal)).rejects.toThrow('shell.error.ticket');
+  });
+});
+
+describe('首载会话过期：跳登录还是弹对话框（第一轮验收复核阻断项）', () => {
+  const snapshot: BffSession = { subject: 'p1', kind: 'user', tenantId: 't1', membershipId: 'm1', identityRevision: 3, displayName: null };
+  const guardWith = (refresh: () => Promise<boolean>, getSession: () => Promise<BffSession | null>) => {
+    const session = { refreshSession: vi.fn(refresh), getSession: vi.fn(getSession) };
+    return { guard: createSessionExpiryGuard(session), session };
+  };
+  type BootstrapPaths = { '/api/shell/bootstrap': { get: { responses: { 200: { content: { 'application/json': unknown } } } } } };
+
+  it('刷新成功、重放仍 401（平台表面拒绝）：弹对话框，不跳登录，也不再问会话快照', async () => {
+    const { guard, session } = guardWith(async () => true, async () => null);
+    expect(await guard.refreshSession()).toBe(true);
+    expect(await guard.onExpired()).toBe('dialog');
+    expect(session.getSession).not.toHaveBeenCalled();
+  });
+  it('依赖方说会话已结束（刷新回答 false）：跳登录，不再问会话快照', async () => {
+    const { guard, session } = guardWith(async () => false, async () => snapshot);
+    expect(await guard.refreshSession()).toBe(false);
+    expect(await guard.onExpired()).toBe('login');
+    expect(session.getSession).not.toHaveBeenCalled();
+  });
+  it('刷新出错：问一次会话快照，没有会话才跳登录；仍有会话或问不到都弹对话框', async () => {
+    const cases: [() => Promise<BffSession | null>, string][] = [[async () => snapshot, 'dialog'], [async () => null, 'login'], [async () => { throw new TypeError('network'); }, 'dialog']];
+    for (const [getSession, expected] of cases) {
+      const { guard, session } = guardWith(async () => { throw new TypeError('network'); }, getSession);
+      await expect(guard.refreshSession()).rejects.toThrow('network');
+      expect(await guard.onExpired()).toBe(expected);
+      expect(session.getSession).toHaveBeenCalledTimes(1);
+    }
+  });
+  it('按最近一次刷新的结论处置：先成功、后回答 false 时跳登录', async () => {
+    let alive = true;
+    const { guard } = guardWith(async () => alive, async () => snapshot);
+    await guard.refreshSession(); alive = false; await guard.refreshSession();
+    expect(await guard.onExpired()).toBe('login');
+  });
+  it('与 SDK 联动：守卫作 sessionProvider，过期通知到达时结论已就位（刷新成功给 dialog，回答 false 给 login）', async () => {
+    for (const [alive, expected] of [[true, 'dialog'], [false, 'login']] as const) {
+      const { guard, session } = guardWith(async () => alive, async () => null);
+      const requests: string[] = [];
+      const outcome = new Promise<string>(resolve => {
+        const client = new PlatformClient({ baseUrl: 'https://shell.test', sessionProvider: guard, onSessionExpired: () => { void guard.onExpired().then(resolve); },
+          transport: async request => { requests.push(new URL(request.url).pathname); return problem(401); } });
+        void client.api<BootstrapPaths>().GET('/api/shell/bootstrap').catch(() => undefined);
+      });
+      expect(await outcome).toBe(expected);
+      expect(session.refreshSession).toHaveBeenCalledTimes(1);
+      expect(requests).toEqual(alive ? ['/api/shell/bootstrap', '/api/shell/bootstrap'] : ['/api/shell/bootstrap']);
+    }
   });
 });

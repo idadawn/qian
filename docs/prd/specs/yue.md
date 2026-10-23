@@ -128,7 +128,7 @@ yue 同时承担三种角色，三者缺一不可：
 | `@yue/contracts` | FormSchema / ListSchema / PortalLayout / FlowNodes 的 JSON Schema 与生成的 TS 类型；控件 manifest Schema；SSE 事件 Schema；权限码目录格式；Filter AST 类型 | 无 | S1 草案 / S2 定稿 |
 | `@yue/core` | Base UI + shadcn 自有化的基础组件 | tokens、contracts（底层 Schema） | S1 |
 | `@yue/sdk` | 注册表（导航 / 设置 / 命令 / 快捷键 / 预览器 / 客户端动作 / 控件 / 菜单类型）、`PlatformClient`、request 拦截器链、i18n、mock；配置由宿主经构造参数注入（Qian 外壳的运行时配置是同源 `/app-config.json`，由私有包 `@qian/shell-kit` 读取与校验，S1-YUE-012） | tokens, contracts | S1 |
-| `@yue/shell` | AppShell、菜单 → 路由、MF2 宿主与插槽、租户切换器、认证页族、兜底页；Qian 专有接线（运行时配置、网关 BFF 会话、bootstrap、能力导航）在私有包 `@qian/shell-kit`（S1-YUE-012） | core, sdk, form（登录表单） | S1 |
+| `@yue/shell` | AppShell、菜单 → 路由（最小历史路由）、偏好、认证页族组件与契约（登录、租户选择与切换器、SSO 回调、改密）、会话过期对话框、站内信、兜底页；MF2 宿主与插槽在前端插件 SDK（`@idadawn/qian-plugin-sdk` 的 ShellHost），Qian 专有接线（运行时配置、网关 BFF 会话、bootstrap、能力导航）在私有包 `@qian/shell-kit`（S1-YUE-012） | core, sdk, form（登录表单） | S1 |
 | `@yue/data` | DataTable、Tree 族、日期族、Upload、ImportWizard、ConditionBuilder | core, sdk | S1 / S2 |
 | `@yue/form` | Field、SchemaForm、FormApi、联动、校验与脱敏规则目录、弹层 API、消息出口 | core, sdk, contracts | S1 |
 | `@yue/charts` | ECharts 封装与令牌桥接 | core, tokens | S2 可选 |

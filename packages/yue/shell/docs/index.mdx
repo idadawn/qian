@@ -58,7 +58,7 @@ export default function Workspace() {
 
 `createMenuTypeRegistry()` 复用 SDK Registry，内置 page 与 external。`register(meta, resolver)` 返回注销函数，`resolve(item)` 解析路由，`toJSON()` 导出可索引元数据。menu 条目包含 id、labelKey、type、target 与可选 children。宿主可注入隔离的 registry，默认使用导出的 `menuTypeRegistry`。外链仅允许 HTTP(S)，带 noopener/noreferrer；页面必须是站内绝对路径。插件自定义 resolver 的输出同样校验，URL 凭据与令牌参数被拒绝。权限筛选由宿主提供的菜单决定，前端路由不构成授权边界。
 
-`initPreferences({ namespace, overrides, storage })` 返回 getSnapshot、getServerSnapshot、subscribe、update、reset。namespace 隔离应用；overrides 优先于存储。只保存 theme（light/dark/system）、locale（zh-CN/zh-TW/en-US）和 sidebarCollapsed，未知字段永不写入存储。storage 可注入或设 null；损坏、受限存储回退到当前会话。SSR 使用稳定初始快照；宿主用 tokens 的首帧脚本与 initializeTheme 应用主题，按需监听 store 更新。PreferencesProvider 注入 store，usePreferences 返回 preferences 与 updatePreferences。
+`initPreferences({ namespace, overrides, defaults, storage })` 返回 getSnapshot、getServerSnapshot、subscribe、update、reset。namespace 隔离应用；overrides 优先于存储；defaults 是部署缺省（如运行时配置的语言），低于已保存的偏好。存储只记用户自己改过的键（update 增量合并，reset 写空对象），部署缺省与 overrides 都不写入。只保存 theme（light/dark/system）、locale（zh-CN/zh-TW/en-US）和 sidebarCollapsed，未知字段永不写入存储。storage 可注入或设 null；损坏、受限存储回退到当前会话。SSR 使用稳定初始快照；宿主用 tokens 的首帧脚本与 initializeTheme 应用主题，按需监听 store 更新。PreferencesProvider 注入 store，usePreferences 返回 preferences 与 updatePreferences。
 
 ## 认证页族
 
