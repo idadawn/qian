@@ -40,9 +40,9 @@ public static class DataContractJson
 /// <summary>嵌入 NuGet 的数据契约与目录，源文件位于 contracts/data/v1。</summary>
 public static class DataContractSchemas
 {
-    /// <summary>原样随包分发的 v0 信封 Schema（contracts/v0 草稿，<c>x-status: draft</c>；v0 冻结时复核引用它的 data/v1 信封），供离线解析引用。</summary>
+    /// <summary>原样随包分发的 v0 冻结信封 Schema（<c>x-status: frozen</c>），供 data/v1 离线解析引用。</summary>
     public static string EventEnvelopeV0 => Read("v0/event-envelope.schema.json");
-    /// <summary>v0 信封引用的 S2S UUID 定义所在 Schema（同为 v0 草稿），供离线解析引用。</summary>
+    /// <summary>v0 信封引用的 S2S UUID 定义所在冻结 Schema，供离线解析引用。</summary>
     public static string S2sClaimsV0 => Read("v0/s2s-claims.schema.json");
     /// <summary>Filter AST JSON Schema 2020-12。</summary>
     public static string Filter => Read("filter-ast.schema.json");

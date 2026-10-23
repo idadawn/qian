@@ -3,7 +3,7 @@
   "$id": "https://qian.dev/contracts/v0/error-detail.schema.json",
   "title": "ErrorDetail",
   "description": "Qian 的错误响应体：RFC 9457 problem+json 的 Qian 配置文件。媒体类型 application/problem+json。type 区分协议错误与业务错误；code 为错误码目录中登记的稳定错误码；字段错误给出 JSON Pointer。规则见 contracts/v0/README.md「ErrorDetail」。",
-  "x-status": "draft",
+  "x-status": "frozen",
   "type": "object",
   "additionalProperties": false,
   "required": ["type", "title", "status", "code", "message", "trace_id"],
