@@ -72,10 +72,36 @@ public sealed class RealApolloFixture : ContainerFixture<IContainer>
         response.EnsureSuccessStatusCode();
     }
 
-    /// <summary>编辑真实配置项并正式发布，触发 ReleaseMessage 与 ConfigService 长轮询。</summary>
-    public async Task PublishAsync(string appId, string key, string value, CancellationToken cancellationToken = default)
+    /// <summary>在真实 AdminService 创建 properties Namespace，可用公共 Namespace 验证跨应用读取。</summary>
+    public async Task CreateNamespaceAsync(string appId, string namespaceName, bool isPublic = false, CancellationToken cancellationToken = default)
     {
-        var root = $"apps/{Uri.EscapeDataString(appId)}/clusters/default/namespaces/application/";
+        using var response = await Control.PostAsJsonAsync($"apps/{Uri.EscapeDataString(appId)}/appnamespaces", new
+        {
+            appId, name = namespaceName, format = "properties", isPublic, comment = "Qian acceptance",
+            dataChangeCreatedBy = "qian-tests", dataChangeLastModifiedBy = "qian-tests"
+        }, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>让测试应用关联已存在的公共 Namespace。</summary>
+    public async Task AssociateNamespaceAsync(string appId, string namespaceName, CancellationToken cancellationToken = default)
+    {
+        using var response = await Control.PostAsJsonAsync($"apps/{Uri.EscapeDataString(appId)}/clusters/default/namespaces", new
+        {
+            appId, clusterName = "default", namespaceName,
+            dataChangeCreatedBy = "qian-tests", dataChangeLastModifiedBy = "qian-tests"
+        }, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>编辑 application 配置项并正式发布，触发 ReleaseMessage 与 ConfigService 长轮询。</summary>
+    public Task PublishAsync(string appId, string key, string value, CancellationToken cancellationToken = default) =>
+        PublishNamespaceAsync(appId, "application", key, value, cancellationToken);
+
+    /// <summary>编辑指定 Namespace 的真实配置项并正式发布；仅供隔离测试，不是生产管理写端。</summary>
+    public async Task PublishNamespaceAsync(string appId, string namespaceName, string key, string value, CancellationToken cancellationToken = default)
+    {
+        var root = $"apps/{Uri.EscapeDataString(appId)}/clusters/default/namespaces/{Uri.EscapeDataString(namespaceName)}/";
         using var namespaceResponse = await Control.GetAsync(root.TrimEnd('/'), cancellationToken).ConfigureAwait(false);
         namespaceResponse.EnsureSuccessStatusCode();
         var namespaceData = await namespaceResponse.Content.ReadFromJsonAsync<JsonElement>(cancellationToken).ConfigureAwait(false);
