@@ -27,7 +27,7 @@ function preferencesFor(conf: AppConf) {
       return { getItem: key => { const value = local.getItem(key); saved = value !== null; return value; }, setItem: (key, value) => local.setItem(key, value) };
     } catch { return null; }
   })();
-  const store = initPreferences({ namespace: 'qian-shell-auth', storage });
+  const store = initPreferences({ namespace: 'qian-shell', storage });
   if (!saved && conf.locale) store.update({ locale: conf.locale });
   return store;
 }
