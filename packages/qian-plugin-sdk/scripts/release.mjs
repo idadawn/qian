@@ -22,6 +22,8 @@ if (mode === 'pack') {
     execFileSync('pnpm', ['--filter', './' + source, 'pack', '--pack-destination', directory], { cwd: root, stdio: 'inherit' });
     const archive = path.join(directory, `${pkg.name.slice(1).replace('/', '-')}-${pkg.version}.tgz`);
     const manifest = JSON.parse(execFileSync('tar', ['-xOf', archive, 'package/package.json'], { encoding: 'utf8' }));
+    const files = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split('\n');
+    assert(!files.some((file) => /(?:^|\/)test(?:s)?\/|\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file.replace(/\.d\.ts$/, '.ts'))), '测试源码或声明不得进入发布制品');
     assert.equal(manifest.name, pkg.name); assert.equal(manifest.version, pkg.version);
     assert.equal(manifest.repository.directory, source);
     assert.match(manifest.repository.url, /github\.com[:/]idadawn\/qian(?:\.git)?$/);
