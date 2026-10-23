@@ -1,0 +1,82 @@
+{
+  "$schema": "https://qian.dev/schemas/plugin/v2",
+  "id": "qian.config.flags",
+  "version": "1.0.0",
+  "description": "可选平台特性开关管理组件；只编辑固定 Apollo namespace 草稿，需 Portal 人工发布。",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "Apache-2.0",
+  "interface": {
+    "displayName": "特性开关草稿",
+    "category": "platform"
+  },
+  "inject": [
+    "Audit",
+    "AuthzEnforcement",
+    "Config",
+    "NativeData"
+  ],
+  "provides": [
+    "FeatureFlagDrafts"
+  ],
+  "policy": {
+    "tier": "system",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false,
+    "profiles": [
+      "platform"
+    ],
+    "permissions": {
+      "secrets": [
+        {
+          "name": "apollo/flags/*",
+          "scope": "platform"
+        }
+      ]
+    }
+  },
+  "scopes": [
+    "global"
+  ],
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Config.Apollo.FeatureFlagManagementPlugin, Qian.Config.Apollo",
+    "nuget": [
+      {
+        "id": "Qian.Config.Apollo",
+        "version": "1.0.0"
+      }
+    ],
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-skeleton": true,
+  "engines": {
+    "kun": ">=2026.10.23"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [
+      "tools/flags.set.json"
+    ],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.config.flags",
+        "source": "Qian.Config.Apollo.FeatureFlagManagementPlugin, Qian.Config.Apollo",
+        "sha256": "833e1157f8e5c4ba6368761539c585b49a61441abf8d223e409a601b34cd54ad",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
+}

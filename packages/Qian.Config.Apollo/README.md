@@ -2,7 +2,7 @@
 
 Apollo 原始 namespace、合并快照和离线缓存强制经过 `SecretSafety` 扫描；`ApolloConfigurationSchema` 可传入敏感属性规则，`ValidateApolloSnapshot` 只能追加校验。秘密通过 Config seam 的 [密钥 Provider](../Qian.Config.Secrets/README.md) 使用时解析，不能以明文写入 Apollo。
 
-Config seam 的 Provider，复用当前 KunVersion 的 Kun.Configuration.Apollo 协议客户端。文件夹包含标准配置源装配、Apollo 引导解析、只读适配器与两个插件入口。标准模式只用 IConfiguration；Apollo 模式用于平台/服务配置，租户设置仍由 Tenancy 管理。
+Config seam 的 Provider，复用当前 KunVersion 的 Kun.Configuration.Apollo 协议客户端。文件夹包含标准配置源装配、Apollo 引导解析、只读适配器、两个只读插件入口与一个可选草稿管理入口。标准模式只用 IConfiguration；Apollo 模式用于平台/服务配置，租户设置仍由 Tenancy 管理。
 
 ## 独立使用与源顺序
 
@@ -101,3 +101,44 @@ L0–L4 降级矩阵、排查顺序与证据见 [配置运维手册](../../docs/
 `ConfigurationPlugin` 对应 `qian.config`，`ApolloConfigurationPlugin` 对应 `qian.config.apollo`；每个 ID 各有一个入口和一份清单。二者只允许 global，均提供 `Config`，不会把两个入口的服务声明合并为虚构组件。前者仅接受空对象并借用宿主配置；后者逐项校验 appId / env / meta / namespaces 与宿主已有 Apollo 配置源一致，配置 Schema 来自 `ComponentConfiguration`。
 
 `qian.config` 已通过既有真实安装门，移除骨架标记；Apollo 组件仍保留标记。新增代码元数据不改变配置源所有权或秘密解析边界。
+
+## 特性开关与草稿管理
+
+`IFeatureFlags` 是 Config seam 的只读子端口：组件通过 `ctx.Config().Flags.IsEnabled(name, tenantId)` 求值，独立宿主的 `AddQianConfiguration` 同时登记 `IFeatureFlags`。它不查询权益、不增删租户 scope，也不把灰度规则当作租户设置。规则源为公共 namespace `qian.common.flags` 的 `flag.<name>`；标准 IConfiguration 模式可提供同样的键。配置优先级沿既有源顺序，Apollo 原始 namespace 和合并快照都先校验，合法高优先级覆盖仍被允许。
+
+首次启用时先在 Apollo 建立并发布公共 namespace `qian.common.flags`；跨应用消费先关联该公共 namespace。随后在消费宿主的可信 `Apollo:Namespaces` 引导和该宿主 `qian.config.apollo` 条目的 `config.namespaces` 中同时加入它，两处必须与真实配置源匹配。用该宿主自己的配置或 patch 声明订阅；仓库默认 base / gateway / identity-server 仍保留原订阅列表，不因引入这个库自动请求新 namespace。没有订阅或没有该规则时默认 false；已声明但服务端不存在或尚未发布的 namespace 会按现有启动门拒绝，不能把 404 当作有效空配置。
+
+例如已有 `application`、`qian.common.trust` 的宿主，显式启用后组件条目为：
+
+```yaml
+- id: config
+  plugin: qian.config.apollo
+  config:
+    namespaces: [application, qian.common.trust, qian.common.flags]
+```
+
+宿主可信引导也应包含这三项；草稿管理组件不能替消费宿主修改订阅。
+
+规则值是 JSON 字符串，例如：
+
+```json
+{"default":false,"tenants":["00000000-0000-0000-0000-000000000001"],"percentage":10}
+```
+
+[规则 Schema](../../plugins/qian.config.apollo/schemas/feature-flag.rule.schema.json) 固定三个字段：必填布尔 `default`、可选且不重复的非空规范 UUID 白名单 `tenants`（最多 256 项）、可选整数 `percentage`（0–100）。拒绝未知或重复属性、空租户、非整数百分比、超界与超过 16 KiB 的规则，最多 1024 个开关。名称为 1–100 个小写 ASCII 字符，首字符为字母，其余可为字母、数字、点、下划线或连字符。名称区分大小写，不能借 IConfiguration 的不区分大小写行为建立别名。
+
+求值顺序为白名单命中 true → 百分比命中 true → default；没有该名称返回 false。稳定桶协议为 `SHA-256(UTF8(name + "\n" + tenantId.ToString("D")))` 前 8 字节的大端无符号整数模 10000，桶小于 `percentage × 100` 即命中。同一个规则名与租户跨进程相同；百分比增加时原来命中的集合保留。它与进程随机化的 GetHashCode 无关。
+
+首次规则无效时拒绝取得服务；热更新先建立完整候选快照，任何规则无效即保留整份旧快照。标准源触发已有 `qian.config.reload.failed` 指标与 `config/reload-failed` 事件，日志不含值；Apollo 候选在进入缓存之前被拒绝，并复用发布拒绝审计。卸载只释放本实例监听器，已取得的灰度端口失效，宿主配置根仍由宿主拥有。
+
+可选的 [`qian.config.flags`](../../plugins/qian.config.flags/README.md) 独立负责草稿写入。S1-DEC-031 选择只保存草稿、Portal 人工发布：固定 Portal OpenAPI `PUT` 编辑，禁止重定向，不调用 release；编辑 Token 只授予目标 namespace 的 ModifyNamespace，独立操作员持有 ReleaseNamespace。每次请求经 Config 的秘密解析器取得平台 `secretRef://platform/apollo/flags/...`，不缓存 Token、不把它放入工具输入。Apollo 响应正文不进入错误或日志。
+
+可信宿主通过 `AddQianFeatureFlagManagement` 登记 `bindingId → ApolloFlagManagementBinding`，包含 Portal 根地址、AppId、UAT/PRO、Cluster、Portal 已存在操作员、Token 引用及 NativeData 平台回执绑定名；组件 JSON 只写 `{"bindingId":"primary"}`。该入口在本组件挂载时才登记实际 `FeatureFlagDrafts` 与执行绑定，不是绕过组件模型的任意配置写接口。默认 profile 不安装它。需要 HTTP 的宿主显式调用 `MapQianFeatureFlags`，通过 `POST /api/config/flags` 调用同一执行端口；入口固定要求 Bearer scheme，不接受 Cookie 认证，响应 `private, no-store`。
+
+`flags.set` 元数据为 `write`、`confirm`、`requiresConfirmation:true`、`idempotent:true`，要求 `qian.config.flags:flag:set`。输入包括 `name`、`rule`、必填非空 UUID `idempotencyKey` 和 `confirmed:true`；确认字段只表达显式动作确认，不能代替身份、权限或未来 S3 审批票据。执行每次重读宿主已经认证的 ICurrentUser，拒绝租户、Agent 与委托主体，经 AuthzEnforcement 的平台旁路判定，再先写平台审计；任一前置失败都不请求 Portal。S1 不向 Agent 开放此平台工具。
+
+回执存储使用独立 `plugin_qian_config_flags.draft_receipts`，由 `FeatureFlagDraftStorage.MigrateAsync` 在离线迁移连接上建立。在线连接是 NativeData 的专用 LOGIN/NOINHERIT 平台绑定，不能建库、建角色、BYPASSRLS、拥有表或 schema。表 FORCE RLS，tenant_id 只能为空；固定 restrictive guard 同时检查平台登录角色、空租户列和空租户 GUC。角色只有 SELECT、INSERT、UPDATE(state,completed_at)，没有删除、TRUNCATE、TRIGGER 或修改幂等输入字段权限。NativeData 的预期策略由 `FeatureFlagDraftStorage.ExpectedGuard(role)` 给出，不能从线上自动学习。管理组件挂载和每次回执事务还核对本表的真实主键、固定 guard 与列级权限；事务持有表锁，避免校验到执行之间的迁移漂移。
+
+回执按目标 Portal/应用/环境/集群/namespace 与幂等键唯一，保存主体、规范输入摘要、规则摘要和状态，不保存规则内容。先提交 `started` 再发送编辑请求；成功后持久化 `pending-publish` 再返回。相同键、相同主体与输入重放原回执，不再次写 Portal，也不会覆盖之后的新草稿；回执状态描述原操作，不查询或断言当前是否已经人工发布；同键不同主体或输入返回 CONFLICT。并发尚在执行、崩溃或外部结果不明的旧键失败关闭；保留 started/uncertain，不盲目重发，也不把未知报成成功。需操作员核对 Portal 后显式使用新键；新键表示新编辑请求，正常覆盖该名称当前草稿。操作审计仅带尝试ID、幂等键、目标摘要和结果，可与持久回执对应，不带 Token 或规则明文。补充审计失败不能逆转已持久成功回执，只记不含原值的告警。
+
+真实 Apollo 公共 namespace 与 Runtime scope 挂载/卸载验收在 `RealApolloFeatureFlagsTests`；权益结果在本任务测试中明确为消费侧 fixture。真实权益、挂载与灰度的三处联合拦截由既有 S1-ENT-002 验收，不以本任务代替。Portal 权限分离、草稿不生效、独立发布后真实 ConfigService 生效，以及真实 PostgreSQL 回执与故障窗口由专属测试覆盖。

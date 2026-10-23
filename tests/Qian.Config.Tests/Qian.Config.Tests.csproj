@@ -4,6 +4,7 @@
   <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data.Native.Postgres/Qian.Data.Native.Postgres.csproj" />
     <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
     <ProjectReference Include="../Qian.Testing.Containers/Qian.Testing.Containers.csproj" />

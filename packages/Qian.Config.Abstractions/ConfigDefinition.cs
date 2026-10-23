@@ -21,6 +21,8 @@ public static class ConfigDefinition
 /// <summary>供受信任代码读取配置；不提供写入入口，也不自动公开为模型工具。</summary>
 public interface IConfigService
 {
+    /// <summary>平台规则的只读租户灰度求值端口；与授权及组件挂载无关。</summary>
+    IFeatureFlags Flags { get; }
     /// <summary>可选秘密解析能力；未装配时显式不可用，不退回读取明文配置。</summary>
     ISecretResolverFactory? Secrets { get; }
     /// <summary>按标准 IConfiguration 层次键读取值。</summary>
