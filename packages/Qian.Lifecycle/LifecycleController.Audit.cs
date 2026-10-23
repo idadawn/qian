@@ -53,7 +53,7 @@ internal sealed partial class LifecycleController
         new(new QianError(LifecycleErrors.AuditUnavailable, new Dictionary<string, string> { ["operation"] = operation }));
 
     // 状态迁移与审计条目同一可串行化事务（审计端口只接受这种事务）：work 先保存再返回记录，记录为 null 表示本次没有迁移（幂等返回），不追加。
-    // 同租户审计链的可串行化冲突或死锁时丢弃整个会话重做，最多 5 次，仍冲突返回 409 CONFLICT（审计端口的重做约定，与批准相同）。
+    // 同租户审计链的可串行化冲突或死锁时丢弃整个会话重做（attempt < 5：5 次重做、共 6 次尝试），仍冲突返回 409 CONFLICT（审计端口的重做约定，与批准相同）。
     private async Task<T> Audited<T>(string[] key, IAuditWriter audit, Func<IDataSession<LifecycleDbContext>, Task<(T Result, AuditRecord? Record)>> work, CancellationToken ct)
     {
         for (var attempt = 0; ; attempt++)
