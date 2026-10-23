@@ -133,7 +133,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
   - 记录：能力 ID `qian.lifecycle/permissions.approve`、契约版本 `v1`、通道 `api`，主体即批准人（`user` 或 `service`），资源同判定资源 `lifecycle/install:{tenantId}/{pluginId}@{version}`，结果 `success`，发生时间即批准时间。
   - 输入哈希是规范化本次内容（每类去重并按序数排序）的 SHA-256；载荷为 `{ pluginId, version, via, approved, previous }`，`via` 为渠道（`tenant` / `superadmin`），`previous` 是被替换的上一份内容，首次批准为 null。两份内容合起来超过审计载荷上限（64 KiB）时，`approved` / `previous` 只记 `{ sha256 }`。
   - 运营代批同样写这条记录；超管旁路自己的判定审计由 Authz 另写。
-  - 同一租户并发写审计链时，可串行化冲突的一方换新会话重做整个批准（最多 5 次），仍冲突返回 409 `CONFLICT`。
+  - 同一租户并发写审计链时，可串行化冲突的一方换新会话重做整个批准（`attempt < 5`：5 次重做、共 6 次尝试），仍冲突返回 409 `CONFLICT`。
 - 可信平台插件（例如秘密解析的审批来源）经 `GetApprovedPermissionsAsync` 读取批准记录，调用方负责权限。
 - 批准与诊断两个权限点都在 `plugins/qian.lifecycle/metadata/permissions.json` 声明，`metadata/roles.json` 默认授予租户 Owner 与 Admin；Authz 从注册表的预装快照编译。
 
@@ -220,14 +220,15 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
   - `LocalExecutorTests`：等价的开发态执行器。
   - `LifecycleUnitTests`：迁移与 RLS、片段生成、配置解析、幂等键。
   - `PermissionApprovalTests`：五类声明随制品快照落库并经注册表端口读出；未批准的开通被拒且不写记录，逐项批准后开通，重复批准不改记录；无权限、跨租户、委托、Agent、未安装版本同为 404，内容校验只在判定之后；超管代批经旁路并记下目标租户与资源；`policy.required` 与无声明的组件免批；升级只在新增项时须重批；批准与整份替换入租户审计链、与批准同一事务、超限退为哈希、链冲突换会话重做；开通续跑按原目标版本（而不是两次尝试之间激活的新 Active 修订）重新核对批准。
-  - `LifecycleAuditTests`：开通、升级、卸载、清除各写一条租户审计链条目（主体取事件作用域，否则为本组件服务主体），重复操作、续跑与钩子重试不重复记；审计写入失败或提交失败时状态迁移与条目都不留且可续跑；宿主撤下审计后操作以 503 `LIFECYCLE_AUDIT_UNAVAILABLE` 拒绝、状态不变并记宿主级告警，批准 API 仍 404 且同样记告警；同租户两个组件并发完成开通时链冲突的一方换新会话重做、三条记录都在。平台链：安装、激活、回切、弃用、退役各一条平台条目（序号连续，资源、输入哈希与载荷逐字段核对，租户链为空），重复安装与幂等返回不记；平台条目写不进去时激活不提交，状态变更提交失败时平台链多留一条，没配 `chain.platformRole` 或撤下审计时以 503 拒绝、状态不变并记事件 8 的告警。
+  - `LifecycleAuditTests`：开通、升级、卸载、清除各写一条租户审计链条目（主体取事件作用域，否则为本组件服务主体），重复操作、续跑与钩子重试不重复记；审计写入失败或提交失败时状态迁移与条目都不留且可续跑；宿主撤下审计后操作以 503 `LIFECYCLE_AUDIT_UNAVAILABLE` 拒绝、状态不变并记宿主级告警，批准 API 仍 404 且同样记告警；同租户两个组件并发完成开通时链冲突的一方换新会话重做、三条记录都在。缺审计时开通与升级在认领执行记录之前就拒绝（安装行仍是授权后或已开通的状态、没有执行记录、钩子不执行），安装在提交候选制品之前就拒绝（注册表 `plugin_artifacts` 里没有该制品）；升级钩子失败回到 `Installed(from)` 时链上一条不多，重试成功后恰多一条升级条目；事件 8 的原因如实（端口拒绝时注明不区分原因，与宿主没有装配审计时不同）（S1-RT-038）。平台链：安装、激活、回切、弃用、退役各一条平台条目（序号连续，资源、输入哈希与载荷逐字段核对，租户链为空），重复安装与幂等返回不记；平台条目写不进去时激活不提交，状态变更提交失败时平台链多留一条，没配 `chain.platformRole` 或撤下审计时以 503 拒绝、状态不变并记事件 8 的告警。
   - `LifecycleUnitTests` 另核对清单的 `optionalInject` 与 `LifecyclePlugin.OptionalInject` 一致。
   - `TenantFieldInstallTests`：`tck/surfaces/cases.json` 中工具输入点名租户字段的 42 个反例（含 properties 之外的写法与越出 Schema 位置的引用，S1-AGT-004 / S1-AGT-007）经 `InstallAsync` 全部失败（`INPUT_INVALID` / `REGISTRY_INPUT_INVALID`，pointer 与 fixture 相同），不登记修订、不留候选制品；只是含有 tenant 的名称照常安装。
 - `tests/Qian.Sample.Crm.Tests` 的 `LifecycleAcceptanceTests`：参考应用 1.0.0 / 1.0.1 / 1.1.0 三个预装修订，在真实 PostgreSQL、Kestrel 与 JWT 下覆盖：
   - A、B 开通与挂载，重复开通无副作用，卸载后 5 秒内 SDK 入口恢复 404。
   - 激活 n+1 后 A 升级、B 保持 n，平台级与租户级回切后 A 由 n 处理且升级期间写入的数据可读。
-  - 破坏性 OpenAPI 契约在挂载、Reconciler 与升级三条路径上为 Failed，原因进入诊断端点。
+  - 破坏性 OpenAPI 契约在挂载、Reconciler 与升级三条路径上为 Failed，原因进入诊断端点；挂载失败的升级回到原版本时租户审计链一条不多（S1-RT-038）。
   - `PermissionApprovalHttpTests`：批准 API 经真实 JWT 与 RBAC，A 的 Owner 批准后才能开通，B 的使用者、跨租户与未安装版本同为 404，带租户字段的请求体为 `INPUT_INVALID`。
+  - `LifecycleAuditHttpTests`：管理面开户（`POST /api/tenancy/tenants`）途中审计被撤下时，第 03 步的开通以 503 拒绝并经真实管理面宿主按 ErrorDetail 渲染（`application/problem+json`、`code` 为 `LIFECYCLE_AUDIT_UNAVAILABLE`、`message` 带操作名），步骤原因即该码、被拒的租户没有安装行与执行记录；重装审计后重发同一请求续跑完成（S1-RT-038）。
 - `tests/Qian.Capabilities.Tests` 的 `GrpcReflectionTests`：契约准入对 proto 契约套用 `GrpcContractPlugin`，没有反射对端时 `PRECONDITION_FAILED`，有对端时兼容版本 Ready。
 - `tests/Qian.Registry.Tests` 的 `ScopeMountTests`：公开挂载 / 卸载的 patch、Outbox 信封与 5 秒内 SDK 拦截恢复。
 
