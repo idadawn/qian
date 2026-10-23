@@ -8,6 +8,16 @@ on:
   push:
     branches: [main]
   pull_request:
+    # 只改任务文件、设计文档或根目录 Markdown 的 PR 不跑本工作流，合并时按「未触发」处理。
+    # docs/generated 由 Qian.Docs.Tests 比对；测试读取的其他文档也要在这里重新纳入（「触发过滤自检」一步核对）。
+    # push 到 main 不过滤：dotnet-release.yml 要求发布提交本身有通过的 push 运行。
+    paths:
+      - '**'
+      - '!pm/**'
+      - '!docs/**'
+      - '!*.md'
+      - 'docs/generated/**'
+      - 'docs/ops/configuration-runbook.md'
 
 permissions:
   contents: read
@@ -66,6 +76,9 @@ jobs:
 
       - name: 门禁自测（tests/gates 样例项目）
         run: python3 -m unittest discover -s tests/gates -v
+
+      - name: 触发过滤自检（.NET 源码读取的 docs/、pm/ 文件改动仍触发本工作流）
+        run: python3 scripts/dotnet_ci.py paths-check
 
       - name: 安装固定摘要的真实 OpenAPI 兼容检查器
         run: python3 scripts/prepare_contract_tools.py --destination "$RUNNER_TEMP/qian-contract-tools"
