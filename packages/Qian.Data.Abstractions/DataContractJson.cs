@@ -56,7 +56,7 @@ public static class DataContractSchemas
     public static string RulePolicy => Read("data-rule-policy.schema.json");
     /// <summary>记录变更载荷 Schema，即 qian.record.changed.v1 信封里 payload 的结构。</summary>
     public static string RecordChangedPayload => Read("qian.record.changed.v1.schema.json");
-    /// <summary>整条记录事件消息的 Schema：引用 v0 草稿信封，约束 Qian.Events 写入端生成的那一层信封与其中的载荷。</summary>
+    /// <summary>整条记录事件消息的 Schema：引用 v0 冻结信封，约束 Qian.Events 写入端生成的那一层信封与其中的载荷。</summary>
     public static string RecordChangedEnvelope => Read("record-changed-envelope.schema.json");
     /// <summary>基准类型目录、方言数据与字段定义的 JSON Schema。</summary>
     public static string DataTypes => Read("data-types.schema.json");
