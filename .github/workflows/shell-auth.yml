@@ -6,9 +6,9 @@ name: shell-auth
 on:
   push:
     branches: [main]
-    paths: ['apps/qian-shell/**', 'packages/qian-identity-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.Shell/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-shell.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/shell-auth.yml']
+    paths: ['apps/qian-shell-auth/**', 'packages/qian-identity-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.Shell/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-shell.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/shell-auth.yml']
   pull_request:
-    paths: ['apps/qian-shell/**', 'packages/qian-identity-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.Shell/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-shell.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/shell-auth.yml']
+    paths: ['apps/qian-shell-auth/**', 'packages/qian-identity-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.Shell/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-shell.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/shell-auth.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -36,8 +36,8 @@ jobs:
         with:
           version: 12.9.1
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter qian-shell exec playwright install --with-deps chromium
-      - run: pnpm --filter @qian/identity-ui typecheck && pnpm --filter qian-shell typecheck
+      - run: pnpm --filter qian-shell-auth exec playwright install --with-deps chromium
+      - run: pnpm --filter @qian/identity-ui typecheck && pnpm --filter qian-shell-auth typecheck
       - name: 真实流程验收（与本机 scripts/dev-shell.sh e2e 同一入口）
         run: pnpm yue:auth
       - uses: actions/upload-artifact@v4

@@ -1,0 +1,14 @@
+[
+  {
+    "role": "tenant.owner",
+    "grant": [
+      "qian.identity.server:member:disable"
+    ]
+  },
+  {
+    "role": "tenant.admin",
+    "grant": [
+      "qian.identity.server:member:disable"
+    ]
+  }
+]

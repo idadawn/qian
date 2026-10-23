@@ -40,6 +40,7 @@ public static class IdentityAccountEndpoints
         endpoints.MapGet(Prefix + "/me", (Delegate)Me);
         endpoints.MapPost(Prefix + "/me/password", (Delegate)ChangeOwnPassword);
         IdentitySessionEndpoints.Map(endpoints);
+        IdentityDirectoryEndpoints.Map(endpoints);
         IdentityConnectorEndpoints.Map(endpoints);
         return endpoints;
     }
@@ -184,9 +185,9 @@ public static class IdentityAccountEndpoints
         return null;
     }
 
-    internal static async Task<T?> Read<T>(HttpContext http) where T : class
+    internal static async Task<T?> Read<T>(HttpContext http, JsonSerializerOptions? json = null) where T : class
     {
-        try { return await JsonSerializer.DeserializeAsync<T>(http.Request.Body, JsonOptions, http.RequestAborted).ConfigureAwait(false); }
+        try { return await JsonSerializer.DeserializeAsync<T>(http.Request.Body, json ?? JsonOptions, http.RequestAborted).ConfigureAwait(false); }
         catch (JsonException) { return null; }
         catch (BadHttpRequestException) { return null; }
     }

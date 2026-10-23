@@ -19,7 +19,7 @@ AuthProvider 由宿主注入，认证页族不持有令牌。登录表单使用 
 - `createIdentityAuthProvider({ clientId })`：与 qian.identity 同源的认证页族用的 AuthProvider——`/api/identity/login`、`/login/select`、`/login/password`、`/session/switch`、`/me`、连接器目录与流程接口；票据只在闭包内存，密码只存在于本次请求。平台身份在租户列表里固定为 `PLATFORM_TENANT`。
 - `InboxPopover`：顶栏站内信弹窗（消息源由宿主注入，S1 没有站内信接口）。
 
-可部署组合见 [apps/qian-shell](../../../apps/qian-shell/README.md)（外壳薄入口）与 [packages/qian-identity-ui](../../qian-identity-ui/README.md)（认证页族）；真实流程验收 `pnpm yue:auth` 对 [tools/Qian.Dev.Shell](../../../tools/Qian.Dev.Shell/README.md) 拉起的真实 qian.identity + 网关 BFF 运行。
+可部署组合见 [apps/qian-shell-auth](../../../apps/qian-shell-auth/README.md)（外壳薄入口）与 [packages/qian-identity-ui](../../qian-identity-ui/README.md)（认证页族）；真实流程验收 `pnpm yue:auth` 对 [tools/Qian.Dev.Shell](../../../tools/Qian.Dev.Shell/README.md) 拉起的真实 qian.identity + 网关 BFF 运行。
 
 ## 模型体验
 

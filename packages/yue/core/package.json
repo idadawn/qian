@@ -18,7 +18,8 @@
   ],
   "exports": {
     ".": "./src/index.ts",
-    "./manifest.json": "./dist/yue-manifest.json"
+    "./manifest.json": "./dist/yue-manifest.json",
+    "./shell": "./src/shell.ts"
   },
   "publishConfig": {
     "access": "restricted",
@@ -28,7 +29,11 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       },
-      "./manifest.json": "./dist/yue-manifest.json"
+      "./manifest.json": "./dist/yue-manifest.json",
+      "./shell": {
+        "types": "./dist/shell.d.ts",
+        "default": "./dist/shell.js"
+      }
     }
   },
   "scripts": {

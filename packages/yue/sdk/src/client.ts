@@ -153,10 +153,12 @@ export class PlatformClient {
   private async dispatch(request: Request): Promise<Response> {
     if (new URL(request.url).origin !== new URL(this.baseUrl).origin) throw new TypeError('sdk.error.origin');
     const provider = this.options.tokenProvider;
-    const token = await provider?.getAccessToken();
     const tenant = this.options.getTenantId?.();
+    const token = await provider?.getAccessToken();
     const run = (accessToken: string | null | undefined) => {
       request.signal.throwIfAborted();
+      // 第一次取令牌也可能异步；不能把 A 租户创建的请求改写成 B 租户请求。
+      if (tenant !== this.options.getTenantId?.()) throw new Error('sdk.error.contextChanged');
       const headers = new Headers(request.headers);
       headers.delete('Authorization');
       headers.delete('X-Tenant-Id');

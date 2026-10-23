@@ -18,7 +18,7 @@ qian-identity 宿主同源托管的静态制品：登录（账号密码、连接
 
 ## 验证
 
-入口边界与完整登录 / 选择 / 切换流程在 [apps/qian-shell](../../apps/qian-shell/README.md) 的真实流程验收里覆盖（`pnpm yue:auth`）；控件级用例在 `packages/yue/shell`。lint、typecheck、分层、循环依赖与构建接入 yue 门禁。
+入口边界与完整登录 / 选择 / 切换流程在 [apps/qian-shell-auth](../../apps/qian-shell-auth/README.md) 的真实流程验收里覆盖（`pnpm yue:auth`）；控件级用例在 `packages/yue/shell`。lint、typecheck、分层、循环依赖与构建接入 yue 门禁。
 
 ## 已知限制
 

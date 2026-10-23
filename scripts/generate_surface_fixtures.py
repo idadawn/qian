@@ -186,6 +186,68 @@ case('metadata-json-depth-64',base({'metadata/roles.json':'['*64+']'*64+'\n'}))
 bad('metadata-json-depth-65',base({'metadata/roles.json':'['*65+']'*65+'\n'}),'metadata/roles.json','','SYNTAX_INVALID',line=1)
 bad('metadata-non-finite',base({'metadata/roles.json':'{\n  "limit": 1e999\n}\n'}),'metadata/roles.json','','SYNTAX_INVALID',line=1)
 case('metadata-json-bom',base({'metadata/roles.json':chr(0xfeff)+js([{'name':'reader'}])}))
+# UI v2（S1-YUE-001）：结构与静态语义同一组向量供 TS/.NET 读取；浏览器 SDK 也消费这些向量，
+# uiRuntimeValid 明确区分静态可索引描述与当前 MF2 加载支持的子集，不放宽任何表面校验。
+UI_BASE = {
+ '$schema':'https://qian.dev/schemas/ui/v2',
+ 'federation':{'manifest':'/remotes/example/mf-manifest.json','exposes':['Page','Widget','Settings']},
+ 'engines':{'yue':'^0.1.0'},
+ 'pages':[{'route':'/example','expose':'Page','permission':'qian.example:item:read','nav':{'title':'示例','icon':'folder','order':1}}]
+}
+UI_BRIDGE = {
+ 'slots':['qian.shell.nav/v1','qian.shell.client-action/v1'],'navigate':['/example'],'notify':False,
+ 'capabilities':[{'id':'qian.example/save','permission':'qian.example:item:write','sideEffect':'write'}]
+}
+UI_ACTION = {
+ 'slot':'qian.shell.client-action/v1','id':'save','title':'保存','description':'保存当前内容',
+ 'permission':'qian.example:item:write','expose':'Page',
+ 'parameters':{'type':'object','additionalProperties':False,'properties':{}}
+}
+UI_FULL = copy.deepcopy(UI_BASE)
+UI_FULL.update(bridge=UI_BRIDGE,contributions=[UI_ACTION])
+
+def ui_case(name, data, valid=True, pointer=None, code='SCHEMA_INVALID', runtime=None, file='ui/manifest.json', declared=False):
+ files=base({file:js(data)})
+ if declared: manifest(files,surfaces={'ui':'./'+file})
+ case('ui-'+name,files,valid,[] if pointer is None else [issue(file,pointer,code)])
+ CASES[-1].update(uiFile=file,uiRuntimeValid=valid if runtime is None else runtime)
+
+def ui_bad(name, edit, pointer, code='SCHEMA_INVALID', source=UI_FULL):
+ data=copy.deepcopy(source);edit(data)
+ ui_case(name,data,False,pointer,code)
+
+ui_case('legacy-pages',UI_BASE,runtime=False)
+UI_WIDGETS=copy.deepcopy(UI_BASE)
+UI_WIDGETS['widgets']=[{'type':'qian.file','expose':'Widget'}]
+UI_WIDGETS['settingsCards']=[{'expose':'Settings','scope':'tenant','permission':'qian.example:settings:write'}]
+ui_case('spec-widgets-settings',UI_WIDGETS,runtime=False)
+ui_case('bridge-contributions',UI_FULL)
+ui_case('declared-custom-path',UI_FULL,file='frontend/entry.json',declared=True)
+ui_bad('missing-engine',lambda d:d['engines'].pop('yue'),'/engines/yue')
+ui_bad('unknown-field',lambda d:d.update(hidden=True),'/hidden')
+ui_bad('unknown-nav-field',lambda d:d['pages'][0]['nav'].update(hidden=True),'/pages/0/nav/hidden')
+ui_bad('bad-schema',lambda d:d.update({'$schema':'https://qian.dev/schemas/ui/v99'}),'/$schema')
+ui_bad('empty-exposes',lambda d:d['federation'].update(exposes=[]),'/federation/exposes')
+ui_bad('duplicate-exposes',lambda d:d['federation']['exposes'].append('Page'),'/federation/exposes')
+ui_bad('unknown-page-expose',lambda d:d['pages'][0].update(expose='Missing'),'/pages/0/expose','REFERENCE_UNKNOWN')
+ui_bad('duplicate-page-route',lambda d:d['pages'].append(copy.deepcopy(d['pages'][0])),'/pages/1/route','NAME_MISMATCH')
+ui_bad('parent-route',lambda d:d['pages'][0].update(route='/safe/../escape'),'/pages/0/route')
+ui_bad('space-route',lambda d:d['pages'][0].update(route='/bad path'),'/pages/0/route')
+ui_bad('missing-bridge',lambda d:d.pop('bridge'),'/bridge')
+ui_bad('unknown-slot',lambda d:d['contributions'][0].update(slot='qian.shell.unknown/v1'),'/contributions/0/slot')
+ui_bad('missing-action-parameters',lambda d:d['contributions'][0].pop('parameters'),'/contributions/0/parameters')
+ui_bad('bad-action-schema',lambda d:d['contributions'][0].update(parameters={'type':99}),'/contributions/0/parameters/type')
+ui_bad('unknown-contribution-field',lambda d:d['contributions'][0].update(hidden=True),'/contributions/0/hidden')
+ui_bad('unallowed-slot',lambda d:d['bridge'].update(slots=['qian.shell.nav/v1']),'/contributions/0/slot','POLICY_DENIED')
+ui_bad('unallowed-page-nav',lambda d:d['bridge'].update(slots=['qian.shell.client-action/v1']),'/pages/0','POLICY_DENIED')
+ui_bad('duplicate-contribution',lambda d:d['contributions'].append(copy.deepcopy(d['contributions'][0])),'/contributions/1/id','NAME_MISMATCH')
+ui_bad('duplicate-bridge-capability',lambda d:d['bridge']['capabilities'].append(copy.deepcopy(d['bridge']['capabilities'][0])),'/bridge/capabilities/1/id','NAME_MISMATCH')
+ui_bad('unknown-widget-field',lambda d:d['widgets'][0].update(hidden=True),'/widgets/0/hidden',source=UI_WIDGETS)
+ui_bad('unknown-widget-expose',lambda d:d['widgets'][0].update(expose='Missing'),'/widgets/0/expose','REFERENCE_UNKNOWN',source=UI_WIDGETS)
+ui_bad('duplicate-widget-type',lambda d:d['widgets'].append(copy.deepcopy(d['widgets'][0])),'/widgets/1/type','NAME_MISMATCH',source=UI_WIDGETS)
+ui_bad('missing-settings-permission',lambda d:d['settingsCards'][0].pop('permission'),'/settingsCards/0/permission',source=UI_WIDGETS)
+ui_bad('duplicate-settings-card',lambda d:d['settingsCards'].append(copy.deepcopy(d['settingsCards'][0])),'/settingsCards/1/expose','NAME_MISMATCH',source=UI_WIDGETS)
+
 (ROOT/'tck/surfaces/cases.json').write_text(js(CASES).translate(INVISIBLE))
 # 文字规范值独立于生产实现，用于跨语言验证浮点、负零、Unicode 与 UTF-16 排序。
 vectors=[]

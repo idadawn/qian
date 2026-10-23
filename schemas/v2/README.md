@@ -7,6 +7,7 @@
 - `skill`、`agent`、`command`：Markdown front matter。
 - `hooks`、`mcp`：事件桥接与 MCP 声明。
 - `tool`：引用冻结 capability-entry 的词汇，增加 binding；不携带数据库 id/plugin/kind。
+- `ui`：组件 UI 清单（federation、engines.yue、pages、widgets、settingsCards，以及可选 bridge/contributions）；对象拒绝未知字段，contributions 必须显式提供 bridge。浏览器 SDK 的生成副本也来自此文件，不再手写第二份结构。
 - `profile`：具名 profile 的组合包与启动策略。
 - `marketplace`：市场名称、条目、来源、策略与分类；两端共用文档语义向量见 [市场 TCK](../../tck/marketplaces/README.md)。
 - `patch`：按 scope 与 id 定位的条目数组。

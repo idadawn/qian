@@ -14,4 +14,4 @@ S1-CFG-003 增加的契约：错误码 CONFIG_RELOAD_REJECTED（强类型配置�
 
 ## 已知限制与延期项
 
-这里不定义租户设置、不实现秘密存储、特性开关或发布审批；发布审计的写入在 Provider。配置源顺序、引导及降级矩阵见 Provider README。
+IFeatureFlags 经 IConfigService.Flags 提供只读灰度求值。可选 FeatureFlagDrafts 管理端口与 Config 读取分开，FeatureFlagDraft / FeatureFlagPolicy / FeatureFlagDraftResult 是固定草稿输入输出；不公开任意键、地址、Token 或发布操作。这里不实现租户设置、秘密存储、灰度算法或发布审批；实现与审计写入都在 Provider。配置源顺序、引导及降级矩阵见 Provider README。

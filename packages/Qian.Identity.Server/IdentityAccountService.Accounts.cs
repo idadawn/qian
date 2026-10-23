@@ -285,7 +285,10 @@ internal sealed partial class IdentityAccountService
         return (await LoadPersonAsync(db, personId, cancellationToken).ConfigureAwait(false))!;
     }
 
-    public async ValueTask<Membership> SetMembershipStatusAsync(Guid membershipId, string status, string reason, CancellationToken cancellationToken = default)
+    public ValueTask<Membership> SetMembershipStatusAsync(Guid membershipId, string status, string reason, CancellationToken cancellationToken = default) =>
+        SetMembershipStatusCoreAsync(membershipId, status, reason, false, false, cancellationToken);
+
+    private async ValueTask<Membership> SetMembershipStatusCoreAsync(Guid membershipId, string status, string reason, bool directoryRules, bool deleted, CancellationToken cancellationToken)
     {
         if (status is not (AccountStatuses.Active or AccountStatuses.Disabled or AccountStatuses.Locked))
             throw new QianErrorException(new QianError(PlatformErrors.InputInvalid) { Errors = [new QianFieldError(PlatformErrors.ValueNotAllowed, "#/status")] });
@@ -297,8 +300,14 @@ internal sealed partial class IdentityAccountService
             await using var session = await OpenAsync(cancellationToken).ConfigureAwait(false);
             var db = session.Context;
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-            var row = await db.Memberships.SingleOrDefaultAsync(m => m.Id == membershipId, cancellationToken).ConfigureAwait(false) ?? throw Error(PlatformErrors.NotFound);
-            if (row.Status == AccountStatuses.Purged) throw Error(PlatformErrors.NotFound);
+            await IdentitySql.LockAsync(db, "directory:" + tenantId.ToString("D"), cancellationToken).ConfigureAwait(false);
+            var locked = await IdentitySql.QueryAsync(db, $"SELECT id FROM {IdentitySql.Memberships} WHERE id = @id FOR UPDATE", reader => reader.GetGuid(0), cancellationToken, ("id", membershipId)).ConfigureAwait(false);
+            if (locked.Count == 0) throw Error(PlatformErrors.NotFound);
+            var row = await db.Memberships.SingleAsync(m => m.Id == membershipId, cancellationToken).ConfigureAwait(false);
+            if (row.Status == AccountStatuses.Purged || row.DirectoryDeleted && !deleted) throw Error(PlatformErrors.NotFound);
+            if (directoryRules && status != AccountStatuses.Active && row.IsTenantAdministrator) throw Error(IdentityErrors.DirectoryAdministratorProtected);
+            if (directoryRules && !DirectoryRules.CanTransition(row.Status, status)) throw Error(IdentityErrors.DirectoryTransitionInvalid);
+            if (deleted) row.DirectoryDeleted = true;
             if (row.Status != status)
             {
                 row.Status = status; row.IdentityRevision++;

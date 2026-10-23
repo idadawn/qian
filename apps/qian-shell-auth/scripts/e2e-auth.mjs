@@ -39,7 +39,7 @@ function probe(url) {
 }
 // 前端构建产物先于宿主：宿主启动时检查两个 dist 存在；构建只在这里做一次，up 不重复构建。
 await run('pnpm', ['--filter', '@qian/identity-ui', 'build']);
-await run('pnpm', ['--filter', 'qian-shell', 'build']);
+await run('pnpm', ['--filter', 'qian-shell-auth', 'build']);
 const log = await open(resolve(state, 'host.log'), 'w', 0o600);
 const host = spawn('bash', [script, 'up'], { cwd: root, env, stdio: ['ignore', log.fd, log.fd] });
 let ended = false;
@@ -60,7 +60,7 @@ try {
   }
   if (!ready) throw new Error('真实宿主未在 600 秒内就绪');
   await mkdir(resolve(root, 'TestResults/shell-auth'), { recursive: true });
-  await run('pnpm', ['exec', 'playwright', 'test'], { cwd: resolve(root, 'apps/qian-shell') });
+  await run('pnpm', ['exec', 'playwright', 'test'], { cwd: resolve(root, 'apps/qian-shell-auth') });
   succeeded = true;
 } finally {
   await stopHost(); await log.close();

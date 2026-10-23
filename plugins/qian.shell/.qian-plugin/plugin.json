@@ -2,7 +2,7 @@
   "$schema": "https://qian.dev/schemas/plugin/v2",
   "id": "qian.shell",
   "version": "1.0.0",
-  "description": "组件配置骨架，真实 Provider 由后续组件任务实现：qian.shell",
+  "description": "基于 TypeScript 插件树的 MF2 前端外壳，提供版本化插槽、受控桥接与官方远程按需加载。",
   "author": {
     "name": "Qian"
   },
@@ -12,7 +12,9 @@
     "category": "platform"
   },
   "inject": [],
-  "provides": [],
+  "provides": [
+    "Shell"
+  ],
   "policy": {
     "tier": "system",
     "sandbox": "none",
@@ -23,5 +25,10 @@
     "global",
     "tenant"
   ],
-  "x-skeleton": true
+  "x-skeleton": true,
+  "runtime": {
+    "form": "ui",
+    "entry": "./ui/dist/index.html",
+    "configSchema": "./schemas/config.schema.json"
+  }
 }

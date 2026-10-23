@@ -1,5 +1,5 @@
 import { Component, useSyncExternalStore, type ErrorInfo, type ReactNode } from 'react';
-import { Alert, Button, cn, Icon } from '@idadawn/yue-core';
+import { Alert, Button, cn, Icon } from '@idadawn/yue-core/shell';
 import type { PlatformI18n } from '@idadawn/yue-sdk';
 import { useShellLocale, type ShellPartProps } from './layout';
 

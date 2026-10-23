@@ -21,7 +21,7 @@ internal static class DevShellHost
         var repository = DevHost.RepositoryRoot();
         var issuer = Loopback(settings.Urls, "--urls", https: false);
         var gateway = Loopback(settings.Gateway, "--gateway", https: true);
-        var shellDist = Dist(repository, "apps/qian-shell", "qian-shell");
+        var shellDist = Dist(repository, "apps/qian-shell-auth", "qian-shell-auth");
         var identityDist = Dist(repository, "packages/qian-identity-ui", "@qian/identity-ui");
         var seed = DevSeed.Load(Path.Combine(repository, "tools", "Qian.Dev.Shell", "seed", "accounts.json"));
         Directory.CreateDirectory(settings.State);

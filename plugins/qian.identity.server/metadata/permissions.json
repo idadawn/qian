@@ -1,0 +1,15 @@
+[
+  {
+    "resource": "member",
+    "actions": [
+      "disable"
+    ],
+    "risk": {
+      "disable": "low"
+    },
+    "stepUp": [],
+    "terminals": {
+      "disable": []
+    }
+  }
+]

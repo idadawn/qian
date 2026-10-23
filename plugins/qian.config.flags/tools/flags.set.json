@@ -1,0 +1,97 @@
+{
+  "name": "flags.set",
+  "description": "确认后保存平台灰度规则草稿；不会发布，须由 Portal 操作员人工发布后才生效。",
+  "sideEffect": "write",
+  "policyHint": "confirm",
+  "idempotent": true,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "internal",
+  "costTier": "low",
+  "contractVersion": "v1",
+  "audit": true,
+  "agent": {
+    "expose": false,
+    "requiresConfirmation": true
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.config.flags/flags.set"
+  },
+  "requiredPermission": "qian.config.flags:flag:set",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "idempotencyKey": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "name": {
+        "type": "string"
+      },
+      "rule": {
+        "type": "object",
+        "properties": {
+          "default": {
+            "type": "boolean"
+          },
+          "tenants": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "percentage": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "default"
+        ],
+        "additionalProperties": false
+      },
+      "confirmed": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "idempotencyKey",
+      "name",
+      "rule",
+      "confirmed"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "status": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "ruleHash": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "ruleHash"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "87fc35734d37b5c3b318af8a906e8eb4bb34b12c54a97f1d7c9cf585d14485c8",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.config.flags"
+  }
+}

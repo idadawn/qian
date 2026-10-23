@@ -21,9 +21,9 @@ usage() {
 用法：scripts/dev-shell.sh <命令>
 
   up          起 PostgreSQL 16 容器（只绑 127.0.0.1:${PG_PORT}），构建前端与宿主，重建开发库，前台启动身份 / 业务宿主（${API_URL}）与网关 BFF（${SHELL_URL}）
-  build-ui    只构建两个前端制品：packages/qian-identity-ui（认证页族）与 apps/qian-shell（外壳薄入口）
+  build-ui    只构建两个前端制品：packages/qian-identity-ui（认证页族）与 apps/qian-shell-auth（外壳薄入口）
   status      查看容器与两个宿主是否在运行；都在运行时退出码为 0，否则为 1
-  e2e         真实流程验收：独立状态目录与随机端口自起一套环境，跑 Playwright，结束后清理（等同 pnpm --filter qian-shell e2e:auth）
+  e2e         真实流程验收：独立状态目录与随机端口自起一套环境，跑 Playwright，结束后清理（等同 pnpm --filter qian-shell-auth e2e:auth）
   down [--purge]  删除 PostgreSQL 容器；--purge 同时删除本机状态目录（${STATE}：口令、网关密钥、运行时配置）
 
 环境变量：QIAN_DEV_STATE、QIAN_DEV_PG_CONTAINER、QIAN_DEV_PG_PORT、QIAN_DEV_PG_IMAGE、QIAN_DEV_SHELL_API_URL、QIAN_DEV_SHELL_URL、QIAN_DEV_SHELL_SKIP_UI_BUILD=1
@@ -42,7 +42,7 @@ build_ui() {
   need pnpm "corepack enable 或按 package.json 的 packageManager 安装 pnpm"
   echo "构建认证页族与外壳 ..."
   pnpm --filter @qian/identity-ui build
-  pnpm --filter qian-shell build
+  pnpm --filter qian-shell-auth build
 }
 
 container_state() {
@@ -122,6 +122,6 @@ case "$command" in
   build-ui) build_ui ;;
   down) cmd_down "$@" ;;
   status) cmd_status ;;
-  e2e) need pnpm "corepack enable 或按 package.json 的 packageManager 安装 pnpm"; exec pnpm --filter qian-shell e2e:auth ;;
+  e2e) need pnpm "corepack enable 或按 package.json 的 packageManager 安装 pnpm"; exec pnpm --filter qian-shell-auth e2e:auth ;;
   *) usage; [ -z "$command" ] || exit 2 ;;
 esac

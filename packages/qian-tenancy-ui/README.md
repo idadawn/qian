@@ -15,3 +15,9 @@
 `pnpm --filter @qian/tenancy-ui e2e` 创建独立临时状态目录、随机回环端口和自有 PostgreSQL 容器，复用 up 启动真实 Kestrel/RS256/受限数据库与平台授权链，再执行 Playwright 七步验收，最后关闭自有宿主和容器。验收另外记录列表请求的完整查询串，断言翻页、每页条数和筛选都以 `skip` / `take` / `keyword` / `status` 交给服务端执行，而不是在前端过滤。无替身响应；非法字段测试仅改出站请求以验证真实 400。产物在 TestResults/tenant-ui，HTTP 证据仅含方法、路径、状态码，不记录令牌。CI 使用同一入口。
 
 修改服务端契约后运行 `pnpm --filter @qian/tenancy-ui contracts:generate`；contracts:check 同时校验类型和运行时 JSON 副本的新鲜度。分层、lint、类型、循环依赖和构建均接入 yue 门禁；本页真实宿主 E2E 独立于靶场。
+
+## 官方 MF2 远程（S1-YUE-001）
+
+`pnpm --filter @qian/tenancy-ui build:remote` 使用独立 `vite.remote.config.ts`，输出 `dist/remote/mf-manifest.json`、`remoteEntry.js` 与真实类型归档。`TenantPage` expose 复用本目录同一页面和后端生成契约，接收宿主的 PlatformClient 与受 scope 约束的 bridge；React、yue 和插件 SDK 仅消费宿主 singleton，不包含开发身份代理。清单在 [qian.tenancy/ui/manifest.json](../../plugins/qian.tenancy/ui/manifest.json)。原 `dev / build / e2e` 本机运营手测入口保持不变。
+
+外壳按需加载、租户未挂载零请求、共享实例、预加载与卸载由 [qian.shell 浏览器验收](../../apps/qian-shell/README.md) 覆盖；S1-TEN-005 原运营 API 测试仍单独执行，不能由 MF 页面加载冒充。

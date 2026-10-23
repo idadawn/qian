@@ -34,3 +34,6 @@ static Qian.Config.AspNetCore.ConfigValueItem.operator !=(Qian.Config.AspNetCore
 static Qian.Config.AspNetCore.ConfigValueItem.operator ==(Qian.Config.AspNetCore.ConfigValueItem? left, Qian.Config.AspNetCore.ConfigValueItem? right) -> bool
 static Qian.Config.AspNetCore.ConfigValueList.operator !=(Qian.Config.AspNetCore.ConfigValueList? left, Qian.Config.AspNetCore.ConfigValueList? right) -> bool
 static Qian.Config.AspNetCore.ConfigValueList.operator ==(Qian.Config.AspNetCore.ConfigValueList? left, Qian.Config.AspNetCore.ConfigValueList? right) -> bool
+
+Qian.Config.AspNetCore.FeatureFlagEndpoints
+static Qian.Config.AspNetCore.FeatureFlagEndpoints.MapQianFeatureFlags(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!

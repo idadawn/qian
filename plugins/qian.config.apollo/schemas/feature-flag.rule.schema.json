@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "平台租户灰度规则",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["default"],
+  "properties": {
+    "default": { "type": "boolean" },
+    "tenants": {
+      "type": "array", "maxItems": 256, "uniqueItems": true,
+      "items": { "type": "string", "format": "uuid", "not": { "const": "00000000-0000-0000-0000-000000000000" } }
+    },
+    "percentage": { "type": "integer", "minimum": 0, "maximum": 100 }
+  }
+}

@@ -16,7 +16,7 @@ namespace Qian.Identity.Server;
 /// 每个操作在自己的数据会话和事务里完成；Person 级操作在无租户作用域，Membership 级操作在目标租户作用域，
 /// 所以租户表始终受 RLS 约束，从不绕过。
 /// </summary>
-internal sealed partial class IdentityAccountService : IIdentityService, IIdentityAccounts, ISignInPipeline, ITenantMembershipProvisioner, ITenantUserCounter, IAccountSessionValidator, IDisposable
+internal sealed partial class IdentityAccountService : IIdentityService, IIdentityAccounts, IIdentityDirectory, ISignInPipeline, ITenantMembershipProvisioner, ITenantUserCounter, IAccountSessionValidator, IDisposable
 {
     private readonly IPluginContext _ctx;
     private readonly IdentityServerOptions _options;

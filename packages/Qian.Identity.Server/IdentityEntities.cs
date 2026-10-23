@@ -70,6 +70,8 @@ internal sealed class MembershipRow : IMultiTenant, IAuditedObject<string>
     public string Status { get; set; } = AccountStatuses.Active;
     public bool IsTenantAdministrator { get; set; }
     public long IdentityRevision { get; set; }
+    // 目录删除只作禁用与标记，保留成员、归属和账号事实。
+    public bool DirectoryDeleted { get; set; }
     // 身份切换（profile）的预留位，S1 不启用。
     public string? Profile { get; set; }
     public DateTime CreatedAt { get; set; }

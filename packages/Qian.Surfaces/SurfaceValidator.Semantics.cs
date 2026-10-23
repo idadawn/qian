@@ -71,6 +71,7 @@ public sealed partial class SurfaceValidator
             {
                 if (doc.Kind is "skill" or "agent" or "command") MarkdownRules(doc, tools, skills);
                 if (doc.Kind == "tool") ToolRules(doc);
+                if (doc.Kind == "ui") UiRules(doc);
                 if (doc.Kind == "hooks") HookRules(doc);
                 if (doc.Kind == "mcp") McpRules(doc);
                 if (doc.Kind == "patch")

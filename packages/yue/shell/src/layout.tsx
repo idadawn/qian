@@ -1,5 +1,5 @@
 import { useId, useSyncExternalStore, type ComponentProps, type ReactNode } from 'react';
-import { Alert, cn, Icon, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Select, SelectContent, SelectItem, SelectTrigger } from '@idadawn/yue-core';
+import { Alert, cn, Icon, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Select, SelectContent, SelectItem, SelectTrigger } from '@idadawn/yue-core/shell';
 import type { Locale, PlatformI18n } from '@idadawn/yue-sdk';
 import { menuTypeRegistry, type MenuTypeRegistry, type ShellMenuItem } from './menu';
 import { usePreferences, type Preferences } from './preferences';

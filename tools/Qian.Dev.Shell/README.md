@@ -1,6 +1,6 @@
 # 外壳认证联调环境
 
-一条命令在本机拉起真实的 qian-identity、业务运行时与网关 BFF，再用浏览器走完整的外壳认证流程：OIDC code + PKCE 登录、多租户选择、切换租户、令牌到期与刷新、运行时配置注入。任务见 [S1-YUE-002](../../pm/tasks/S1-YUE-002.md)；真实流程验收（Playwright）的入口在 [apps/qian-shell](../../apps/qian-shell/README.md)。
+一条命令在本机拉起真实的 qian-identity、业务运行时与网关 BFF，再用浏览器走完整的外壳认证流程：OIDC code + PKCE 登录、多租户选择、切换租户、令牌到期与刷新、运行时配置注入。任务见 [S1-YUE-002](../../pm/tasks/S1-YUE-002.md)；真实流程验收（Playwright）的入口在 [apps/qian-shell-auth](../../apps/qian-shell-auth/README.md)。
 
 ## 这是什么，不是什么
 
@@ -10,7 +10,7 @@
 - **平台插件树 + 参考应用**：Data / Tenancy / Authz / Audit / Config / Registry / Capabilities / Lifecycle 都是实际 Provider；参考应用（qian.sample.crm）作为 system / required 组件制品一起经 Lifecycle 签名安装、激活，租户开通第 03 步经 Lifecycle 为每个租户开通它（开通只登记安装并执行 tenant-provision 钩子，不挂载），种子随后把条目 `crm` 挂进租户 scope（与运营「挂载组件」等价），能力导航目录因此出现它 `ui/manifest.json` 声明的「客户」「新建客户」两页（分别要求 `customer:read` / `customer:write`）。
 - **种子**：按 [seed/accounts.json](seed/accounts.json) 建自然人（用户名 + 初始密码，不要求首登改密），经真实开通编排建租户（第 05 步经身份的成员开户端口建管理员成员，第 07 步授予 tenant.owner），随后激活并挂载参考应用；第二租户的额外成员与 tenant.user 授权由种子直接补齐。缺省：`demo` 是甲方科技（acme）的管理员、乙方贸易（beta）的普通成员，`second` 是乙方管理员，`operator` 是平台身份。
 - **平台表面宿主**（随机回环端口）：照参考宿主的 TenantOperationsHost，复用同一运行时，只认网关 S2S（受众 `qian-platform`），接受用户主体并按令牌 `tenant_id` 进入租户 scope，提供能力目录 / 导航（`/api/capabilities/**`）与有效权限（`/api/authz/**`）。参考应用的命令宿主只认机器身份（service / agent），用户主体的这两类表面因此由平台宿主提供——与网关 S2S 的受众分簇一致。
-- **网关 BFF**（缺省 `https://localhost:5443`，自签名证书）：同一份 Identity.Client / Qian.Gateway 生产入口——`/auth/login` 发起 code + PKCE、服务端换码、`qian.sid` HttpOnly Cookie、refresh 单飞；`/api/**` 经会话换 60 秒 S2S 按前缀分簇转发（能力 / 授权表面 → 平台宿主，其余 → 业务宿主）；静态托管外壳 [apps/qian-shell](../../apps/qian-shell/README.md) 的构建产物；`/app-conf.js` 取自状态目录（K8s ConfigMap 的本机替身）。浏览器只持有 Cookie，不接触任何令牌。
+- **网关 BFF**（缺省 `https://localhost:5443`，自签名证书）：同一份 Identity.Client / Qian.Gateway 生产入口——`/auth/login` 发起 code + PKCE、服务端换码、`qian.sid` HttpOnly Cookie、refresh 单飞；`/api/**` 经会话换 60 秒 S2S 按前缀分簇转发（能力 / 授权表面 → 平台宿主，其余 → 业务宿主）；静态托管外壳 [apps/qian-shell-auth](../../apps/qian-shell-auth/README.md) 的构建产物；`/app-conf.js` 取自状态目录（K8s ConfigMap 的本机替身）。浏览器只持有 Cookie，不接触任何令牌。
 
 它不是：`qian dev`（S1-RT-013）、staging / K3s 部署（S1-DEP-002 / 005）、产品契约（下文 `/__dev/` 路由只在本环境存在）。
 
@@ -57,7 +57,7 @@ scripts/dev-shell.sh e2e
 ## up 做了什么
 
 1. 起容器 `qian-dev-shell-pg`（`postgres:16-alpine`），只绑 `127.0.0.1`；管理员口令随机生成，存在 `.qian-dev/shell/pg-admin-password`，仅本人可读。
-2. 构建 `packages/qian-identity-ui` 与 `apps/qian-shell`（`QIAN_DEV_SHELL_SKIP_UI_BUILD=1` 跳过），构建本工程。
+2. 构建 `packages/qian-identity-ui` 与 `apps/qian-shell-auth`（`QIAN_DEV_SHELL_SKIP_UI_BUILD=1` 跳过），构建本工程。
 3. 重建开发库 `qian_dev` 与受限角色（同 Qian.Dev.TenantOps），用生产同一套迁移建身份库并授权给应用登录；Capabilities / Lifecycle 由迁移属主执行包内迁移。
 4. 启动身份 / 业务宿主，装平台插件树与参考应用制品，挂载身份组件，引导平台超管并经 Lifecycle 安装、激活全部 system 组件，按种子建账号与租户。
 5. 启动平台表面宿主；生成网关材料（S2S 签名钥、外壳客户端密钥、TLS 证书，都在 `.qian-dev/shell/gateway/`，仅本人可读）并启动网关 BFF。

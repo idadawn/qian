@@ -1,36 +1,36 @@
-# qian-shell（外壳薄入口）
+# qian.shell 静态宿主
 
-Qian 外壳的可部署入口：运行时配置注入、网关 BFF 会话、能力导航 → 路由、租户切换、站内信弹窗、主题 / 语言偏好与 403 / 404 / 500 / 离线兜底（S1-YUE-002）。全部能力以 [`@idadawn/yue-shell`](../../packages/yue/shell/README.md) 的库模块实现，本目录只做组合；MF2 宿主、插槽、`loadRemote` 与参考应用远程模块由 S1-YUE-001 在此之上接线（本任务验收 2 留待其合入后补验）。
+使用 `@idadawn/qian-runtime` 与 [前端插件 SDK](../../packages/qian-plugin-sdk/README.md) 构成真实 TS 插件树，复用 `@idadawn/yue-shell` 的 AppShell。属于 `platform` 的 shell 组合包，由 gateway 提供静态文件；不是独立 profile。
 
-## 接线
+## 构建与配置
 
-- **运行时配置**：`index.html` 在模块脚本之前加载同源 `/app-conf.js`（K8s ConfigMap 挂载），`readAppConf()` 校验 `window.__APP_CONF__`（`apiBase` 缺省 `/api`、`authBase` 缺省 `/auth`、可选 `brand` / `locale` / `managed`）；非法时只渲染配置错误页，不发请求。构建产物不含任何环境值。
-- **会话**：`createBffSessionClient({ authBase })` 对接依赖方（Identity.Client / 网关 BFF）的 `GET /auth/session`、`POST /auth/session/refresh`、`POST /auth/logout` 与 `/auth/login` 跳转地址；浏览器只持有 HttpOnly Cookie `qian.sid`。没有会话就顶层跳到 `/auth/login?returnTo=当前路径`。
-- **刷新合并**：`PlatformClient({ sessionProvider: bff })`——并发 401 合并成一次刷新尝试：先取防伪令牌再 `POST /auth/session/refresh`，成功重放一次；会话已被依赖方结束时取防伪令牌这一步即 401、不再 POST；失败只触发一次 `onSessionExpired`，弹 `SessionExpiredDialog`。服务端访问令牌到期前的刷新由依赖方单飞完成，页面无感。
-- **菜单与权限**：`GET {apiBase}/capabilities/navigation`（能力导航目录，服务端按调用者权限与租户 scope 过滤）经 `toMenu` + `menuTypeRegistry` 映射为页面路由；`GET {apiBase}/authz/me/permissions` 给出有效权限；`GET {apiBase}/capabilities` 作为第三路请求。登录、切换租户（整页回调）与手动刷新时一起重拉。
-- **切换租户**：用户菜单 →「切换租户」→ `/auth/login?returnTo=/&prompt=select_account`；身份服务在账号 Cookie 仍有效时 302 到同源选择页换会话，回到授权请求签新授权码，网关回调重建会话（旧会话删除），工作台整页回来后菜单与权限随之刷新。
-- **路由**：`createBrowserRouter` + `matchMenuItem`（精确 → 最长前缀）；命中的页面显示页头与远程模块占位，未命中走 404 兜底；渲染异常由 `ShellErrorBoundary` 兜成 500 页；离线横幅由浏览器事件驱动。
-- **代管横幅**：`managed` 缺省按会话判断——平台身份（`tenantId` 为空）即代管。
+```bash
+pnpm --filter @idadawn/qian-runtime build
+pnpm --filter @qian/tenancy-ui build:remote
+pnpm --filter qian-shell build
+node apps/qian-shell/scripts/package-static.mjs
+```
 
-## 本机运行
+Web 根在 `dist/artifact/`：外壳 `index.html / assets / app-config.js`、官方租户远程 `remotes/qian.tenancy/`、MF 清单与类型归档、文件摘要清单。同时生成 `dist/distribution/plugins/qian.shell/` 组件目录，包含原清单、配置 Schema 与真实 `ui/dist/index.html`；`runtime.entry` 指向组件内的实际文件。`dist/distribution/component-artifact.json` 记录每份组件文件摘要与 Web 根的逐文件同字节映射，明确 `installationVerified: false`，保留 `x-skeleton` 安装门。没有把 SDK npm 包假称为静态应用制品。DEP-008 将该 Web 根装入 platform 镜像并经 gateway 提供；本任务不声称完成部署或供应链验收。
 
-先按 [联调环境说明](../../tools/Qian.Dev.Shell/README.md) 运行 `scripts/dev-shell.sh up`（它会构建本目录并静态托管 `dist/`），浏览器打开 <https://localhost:5443/>。改前端代码后 `pnpm --filter qian-shell build`，刷新即可（宿主直接读 `dist/`）。`pnpm --filter qian-shell dev` 的开发服务器用缺省配置顶替 `/app-conf.js`，并把 `/api`、`/auth`、`/__dev` 代理到本机网关。
+`public/app-config.js` 是可替换的运行时配置：`apiBase`、`bootstrapUrl`、`auditUrl`。三个 URL 只允许同源，不允许 URL 凭据。刷新页面重新读取，不需要重新编译；其中不能写令牌、用户身份、租户授权或插件授权列表。
 
-## 验收
+bootstrap 由可信宿主返回：`context`（tenant、membership、app、locale、theme）、`remotes`（组件 ID、版本、scope、ui 清单）、`mounted / entitled`（`scope|id` 键）、`permissions`。生产宿主负责身份验证及从 registry/权益/权限目录生成这些输入；缺少端口时外壳显示会话不可用。S1-YUE-001 不提供伪造登录态绕过此契约。
 
-`pnpm --filter qian-shell e2e:auth`（根脚本 `pnpm yue:auth`，CI 工作流 `shell-auth`）：`scripts/e2e-auth.mjs` 用独立临时状态目录、随机回环端口与自有 PostgreSQL 容器拉起真实宿主，等就绪后跑 `e2e/auth.spec.ts`，最后停宿主、删容器；失败时保留状态目录里的宿主日志，Playwright 产物在 `TestResults/shell-auth/`。
+全局 `window.__qian.bridge` 只包含受控调用入口；应用实际渲染的远程收到宿主闭包绑定的 bridge。导航根据静态 ui 清单生成，访问页面才调用 `loadRemote`。租户运营远程由 [qian-tenancy-ui](../../packages/qian-tenancy-ui/README.md) 构建，原有独立开发入口保持可用。
 
-规格里的三项验收在同一条用例里按步骤落实：
+## 一键浏览器验收
 
-| 验收 | 步骤 |
-|---|---|
-| 1 真实流程 | 匿名 → 身份服务同源登录页 → 账号密码（OIDC code + PKCE，网关换码）→ 多租户选择 → 工作台（会话、菜单、权限来自真实接口）→ 菜单路由与 404 → `prompt=select_account` 切换到乙方 → 新授权码、回调重建会话、菜单 / 权限随之变化 → 服务端令牌到期透明刷新（0 次浏览器刷新、无对话框）→ 会话仍在时 `POST /auth/session/refresh` 经真实身份服务换新令牌、回快照不回令牌 → refresh 失效时依赖方结束会话，三路并发 401 合并成 1 次刷新尝试（1 次探测 401、0 次 POST）、只弹 1 个过期对话框、Esc 关不掉 → 重新登录回到乙方 |
-| 3 代码审查项 | 全程所有同源 JSON 响应体、`localStorage` / `sessionStorage`、URL、iframe 都不含令牌；`document.cookie` 看不到 `qian.sid`；请求不带 `Authorization` 头；顶栏切换侧栏 / 主题 / 语言即时生效，偏好只存 theme / locale / sidebarCollapsed |
-| 4 运行时配置 | 改状态目录 `app-conf.js` 的 `apiBase` 为 `/api-alt` → 刷新 → 品牌与菜单照常渲染，三路请求全部走 `/api-alt/**`，没有一条再走 `/api/**`；构建产物不变 |
+```bash
+pnpm --filter qian-shell e2e
+```
 
-另一条用例检查认证页族的入口边界：没有 ReturnUrl、跨源、非授权端点或带令牌参数的回跳都不渲染登录表单。
+需要 .NET 10、Docker 与 Playwright Chromium。脚本自动启动独立的 [Qian.Shell.TestHost](../../tests/Qian.Shell.TestHost/Qian.Shell.TestHost.csproj)，复用共享 PostgreSQL fixture 和正式 NativeData / NativeAudit Provider；随机临时 Bearer 凭据放在仓库外临时文件，只由 Node 服务端读取。静态验收服务器只监听 `127.0.0.1`，固定审计路径通过回环代理写入真实审计链，浏览器不接触凭据。脚本结束（包括失败）向宿主发送 SIGTERM、等待容器释放并删除临时状态。
 
-## 已知限制
+验收使用带明确权限的 fixture bootstrap 和租户数据响应；真实登录、租户权益与运营 API 端到端接线仍属于各自任务。版本拒绝的审计链是实际 PostgreSQL 写入并回读校验，不以浏览器事件或 JSONL 代替。
 
-- 页面内容是远程模块占位：MF2 宿主、插槽与 `loadRemote`（含租户 scope 未挂载时不请求 `mf-manifest.json`）归 S1-YUE-001；权益接线归 S1-ENT-002。
-- 站内信只有弹窗壳，消息源待后端接口；SSO 连接器按钮由认证页族渲染，本环境没有登记上游连接器。
+Playwright 检查：官方远程按页面请求；共享 React、PlatformClient、SDK 和 Button 引用一致；scope 遮蔽与卸载恢复；租户 B 未挂载时 manifest 请求为零；`engines.yue` 拒绝并在控制台和真实审计链留痕；`mf-manifest.json` 与 DTS 可下载；实际 MF 模块以宿主交付的 `caller` 通过 `window.__qian.bridge` 完成 getContext、navigate 和 invoke；伪造 ID、跨 scope 与卸载后的句柄被拒绝；上下文深冻结；axe critical/serious 为零；首次脚本 gzip 总量不超过 250 KiB。invoke 的前端传输验收使用独立 `qian.acceptance/ping` HTTP fixture 核对租户头与正文/头部幂等键，不冒充生产 tenancy 命令。`acceptance-results/` 保存截图、首屏资源记录与不含凭据的链回读证据。验收控制模块只由 `--mode acceptance` 引用，正式制品打包检查其不存在。
+
+## 模型体验与延期项
+
+静态导航与版本化插槽来自统一 SDK 目录；能力执行只走 PlatformClient，不另建后端工具目录。私有 SDK 发包归本任务的正式发布门；生产身份接线、权益源接线和镜像部署分别由 YUE-002、ENT-002、DEP-008 完成。
