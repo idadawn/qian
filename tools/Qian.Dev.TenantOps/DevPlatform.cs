@@ -34,12 +34,19 @@ internal sealed class DevPlatform(string repository) : IDisposable
     private static readonly string[] GlobalSettingsScopes = ["global"];
     private readonly DirectoryInfo _directory = Directory.CreateTempSubdirectory("qian-dev-tenant-ops-");
     internal Dictionary<string, PluginArtifact> SystemArtifacts { get; } = new(StringComparer.Ordinal);
+    /// <summary>
+    /// 把参考应用（qian.sample.crm）也作为 system / required 组件制品登记（照集成测试 LifecycleAcceptanceTests 的 ProvisionCrmByDefault）：
+    /// 超管安装激活后，租户开通第 03 步把它装进每个租户 scope，能力导航目录因此出现它 ui/manifest.json 声明的页面（外壳联调环境，S1-YUE-002）。
+    /// 租户运营手测不开通参考应用，缺省关闭。
+    /// </summary>
+    internal bool IncludeReferenceApplication { get; init; }
 
-    internal async Task AttachAsync(PluginLoader loader, IReadOnlyDictionary<string, PluginDefinition> business, DevTrustRoot trust, CancellationToken ct)
+    internal async Task AttachAsync(PluginLoader loader, IReadOnlyDictionary<string, PluginDefinition> business, DevTrustRoot trust, CancellationToken ct, IServiceProvider? services = null)
     {
         var validator = new SurfaceValidator(); var installed = new List<RegistryComponentBinding>();
         var options = new ProfileLoadOptions { WorkingDirectory = _directory.FullName, Profile = "platform", IncludeHomePatch = false };
         var definitions = new Dictionary<string, PluginDefinition>(StringComparer.Ordinal);
+        PluginDefinition? reference = null;
         Add("data", "qian.data", new DataPlugin(), [DataDefinition.Key]);
         // Tenancy 配置沿用业务宿主实际挂载的条目（resolver 与 initializationCapabilities），不另造一份。
         Add("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey], business["tenancy"].Entry.Config);
@@ -52,8 +59,10 @@ internal sealed class DevPlatform(string repository) : IDisposable
             Resolve = entry =>
             {
                 var scope = entry.Scope == "global" ? ScopeKey.Global : new ScopeKey(entry.Scope.Split(':', 2)[0], entry.Scope.Split(':', 2)[1]);
-                var reference = entry.Plugin.Split('@');
-                return definitions[entry.Id] with { Entry = new PluginEntry(entry.Id, reference[0], reference[1], scope, entry.Layer, entry.Config) };
+                var parts = entry.Plugin.Split('@');
+                // 参考应用只经 Lifecycle 进租户 scope，按组件名解析（菜单来自其 ui/manifest.json）；平台组件按条目 id 解析。
+                var definition = parts[0] == "qian.sample.crm" && reference is not null ? reference : definitions[entry.Id];
+                return definition with { Entry = new PluginEntry(entry.Id, parts[0], parts[1], scope, entry.Layer, entry.Config) };
             }
         });
         Add("registry", "qian.registry", registry, [RegistryDefinition.Key], new { store = "pg" });
@@ -75,7 +84,8 @@ internal sealed class DevPlatform(string repository) : IDisposable
             installed.Add(RegistryComponentBinding.FromArtifact(definition, files, digest, validator, surface));
             SystemArtifacts[definition.Entry.Plugin] = new PluginArtifact(files, digest, trust.Sign(digest));
         }
-        // 参考应用只经 Lifecycle 进租户 scope；手测不开通它，撤下 CRM 宿主启动时挂的全局条目。
+        if (IncludeReferenceApplication) reference = await ReferenceApplication(validator, installed, trust, services, ct).ConfigureAwait(false);
+        // 参考应用只经 Lifecycle 进租户 scope；撤下 CRM 宿主启动时挂的全局条目（手测不开通它；联调环境由开通编排装进租户）。
         await loader.UnmountAsync("crm", ScopeKey.Global, ct).ConfigureAwait(false);
         await loader.MountAsync([definitions["config"], definitions["registry"], definitions["capabilities"], definitions["lifecycle"]], ct).ConfigureAwait(false);
         foreach (var id in new[] { "config", "registry", "capabilities", "lifecycle" }) EnsureReady(loader, id);
@@ -93,6 +103,42 @@ internal sealed class DevPlatform(string repository) : IDisposable
                 runtime = new { form = "module", entry = plugin.GetType().FullName + ", " + plugin.GetType().Assembly.GetName().Name }
             }));
         }
+    }
+
+    // 参考应用的组件文件夹，照集成测试 LifecycleAcceptanceTests 的 AttachLifecycle：清单声明 module 形态（tier system、required），
+    // 契约索引两份 OpenAPI，ui/manifest.json 声明「客户」「新建客户」两页（权限分别为 customer:read / customer:write，供导航按权限过滤）。
+    private async Task<PluginDefinition> ReferenceApplication(SurfaceValidator validator, List<RegistryComponentBinding> installed, DevTrustRoot trust, IServiceProvider? services, CancellationToken ct)
+    {
+        var crm = new CrmPlugin();
+        Write("plugins/crm/.qian-plugin/plugin.json", JsonSerializer.Serialize(new
+        {
+            id = "qian.sample.crm", version = "1.0.0", description = "参考应用：客户管理，由生命周期装进租户 scope。", author = new { name = "Qian" }, license = "Apache-2.0",
+            @interface = new { displayName = "crm", category = "sample" }, inject = crm.Inject.Select(key => key.Name), provides = new[] { CrmDefinition.Key.Name },
+            policy = new { tier = "system", sandbox = "none", authentication = "ON_INSTALL", required = true }, scopes = CatalogScopes,
+            runtime = new { form = "module", entry = "Qian.Sample.Crm" }
+        }));
+        var contract = CapabilityContractCompiler.CreateOpenApi([CreateCustomerCommand.QianCapability, ListCustomersQuery.QianCapability, GetCustomerQuery.QianCapability], validator, new ToolContractHasher());
+        var contracts = new List<object> { new { id = "qian.sample.crm.api/v1", kind = "openapi", path = "./contracts/http-v1.openapi.json" } };
+        Write("plugins/crm/contracts/http-v1.openapi.json", contract.GetRawText());
+        if (services?.GetService(typeof(IHttpContractSource)) is IHttpContractSource source)
+        {
+            contracts.Add(new { id = "qian.sample.crm.http/v1", kind = "openapi", path = "./contracts/rest-v1.openapi.json" });
+            Write("plugins/crm/contracts/rest-v1.openapi.json", (await source.CompileDocumentAsync("qian.sample.crm", ct).ConfigureAwait(false)).GetRawText());
+        }
+        Write("plugins/crm/metadata/contracts.json", JsonSerializer.Serialize(contracts));
+        Write("plugins/crm/ui/manifest.json", """{"pages":[{"route":"/customers","expose":"CustomersPage","permission":"qian.sample.crm:customer:read","nav":{"title":"客户","icon":"users","order":10}},{"route":"/customers/new","expose":"CreateCustomerPage","permission":"qian.sample.crm:customer:write","nav":{"title":"新建客户","order":20}}]}""");
+        var folder = Path.Combine(_directory.FullName, "plugins", "crm");
+        var surface = new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true };
+        var validation = validator.ValidateComponent(folder, surface);
+        if (!validation.IsValid) throw new InvalidOperationException("参考应用组件文件夹不合格：" + JsonSerializer.Serialize(validation.Diagnostics));
+        var files = Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).ToDictionary(
+            file => Path.GetRelativePath(folder, file).Replace(Path.DirectorySeparatorChar, '/'), file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
+        var digest = ArtifactDigest(files);
+        var definition = new PluginDefinition(new PluginEntry("crm", "qian.sample.crm", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })), crm, [CrmDefinition.Key]);
+        var binding = RegistryComponentBinding.FromArtifact(definition, files, digest, validator, surface);
+        installed.Add(binding);
+        SystemArtifacts[definition.Entry.Plugin] = new PluginArtifact(files, digest, trust.Sign(digest));
+        return definition with { Plugin = new NavigationManifestPlugin(definition.Plugin, binding.Metadata, validator) };
     }
 
     internal static void EnsureReady(PluginLoader loader, string id)

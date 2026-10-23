@@ -138,6 +138,8 @@ scripts/dev-tenant-ops.sh smoke
 
 CRM 命令宿主只充当运行时容器，监听随机本机端口，手测流程不用它。
 
+外壳认证联调环境 [tools/Qian.Dev.Shell](../Qian.Dev.Shell/README.md)（S1-YUE-002）复用这里的开发库、平台插件树与运营前置（`InternalsVisibleTo`），另在同一业务宿主上挂真实身份服务、把参考应用作为 system 组件制品登记，并起网关 BFF；两套环境各用自己的容器、端口与状态目录，可同时运行。
+
 ## 数据与密钥
 
 - 每次 `up` 都从空库开始，数据不跨次保留；同一次 `up` 里可以反复跑走查，每次新建一个租户。

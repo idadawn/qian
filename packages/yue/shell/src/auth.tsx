@@ -7,11 +7,13 @@ import type { PasswordCredentials } from './password-login';
 export type { PasswordCredentials } from './password-login';
 
 const LazyPasswordLogin = lazy(() => import('./password-login').then(module => ({ default: module.PasswordLogin })));
+const LazyPasswordChange = lazy(() => import('./password-change').then(module => ({ default: module.PasswordChange })));
 
 export interface AuthTenant { id: string; name: string }
 /** UI 只消费会话展示数据；令牌、选择凭据与 PKCE verifier 始终由宿主 provider 保管。 */
 export interface AuthSession { subjectId: string; displayName: string; tenantId: string; tenants: readonly AuthTenant[] }
-export type AuthResult = { kind: 'authenticated'; session: AuthSession } | { kind: 'select-tenant'; tenants: readonly AuthTenant[] };
+/** `change-password`：初始密码或运营重置后必须先改密（票据由 provider 保管），改密成功才继续同一登录流程。 */
+export type AuthResult = { kind: 'authenticated'; session: AuthSession } | { kind: 'select-tenant'; tenants: readonly AuthTenant[] } | { kind: 'change-password' };
 export interface AuthCallback { code?: string; state?: string; error?: string }
 export interface AuthProvider {
   signIn(credentials: PasswordCredentials, signal: AbortSignal): Promise<AuthResult>;
@@ -19,6 +21,8 @@ export interface AuthProvider {
   switchTenant(tenantId: string, signal: AbortSignal): Promise<AuthSession>;
   beginSso?(signal: AbortSignal): Promise<string>;
   completeSso?(callback: AuthCallback, signal: AbortSignal): Promise<AuthResult>;
+  /** 强制改密；没有实现的 provider 收到 change-password 结果时认证页按失败处理。 */
+  changePassword?(newPassword: string, signal: AbortSignal): Promise<AuthResult>;
 }
 
 /** 请求竞态与卸载只取消当前视图；真正的身份校验由 provider / 服务端负责。 */
@@ -70,6 +74,7 @@ export function SsoCallback({ i18n, provider, callback, onResult, onBack, classN
 export interface AuthenticationProps extends ShellPartProps { provider: AuthProvider; i18n: PlatformI18n; callback?: AuthCallback; onAuthenticated: (session: AuthSession) => void; onRedirect: (url: string) => void; onCallbackConsumed?: () => void }
 export function Authentication({ provider, i18n, callback, onAuthenticated, onRedirect, onCallbackConsumed, className, testId = 'yue-authentication' }: AuthenticationProps) {
   const [selection, setSelection] = useState<readonly AuthTenant[] | null>(null);
+  const [changing, setChanging] = useState(false);
   const callbackKey = callback ? JSON.stringify([callback.code, callback.state, callback.error]) : null;
   const [consumedCallbackKey, setConsumedCallbackKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -78,13 +83,19 @@ export function Authentication({ provider, i18n, callback, onAuthenticated, onRe
   const run = useOperation(provider, callbackKey);
   const result = (value: AuthResult) => {
     setBusy(false); setError(false); setConsumedCallbackKey(callbackKey); onCallbackConsumed?.();
-    if (value.kind === 'authenticated') { setSelection(null); onAuthenticated(value.session); }
-    else setSelection(value.tenants);
+    if (value.kind === 'authenticated') { setSelection(null); setChanging(false); onAuthenticated(value.session); }
+    else if (value.kind === 'select-tenant') { setChanging(false); setSelection(value.tenants); }
+    else if (provider.changePassword) { setSelection(null); setChanging(true); }
+    else setError(true);
   };
   const fail = () => { setBusy(false); setError(true); };
-  const back = () => { setSelection(null); setError(false); setRedirecting(false); setConsumedCallbackKey(callbackKey); onCallbackConsumed?.(); };
+  const back = () => { setSelection(null); setChanging(false); setError(false); setRedirecting(false); setConsumedCallbackKey(callbackKey); onCallbackConsumed?.(); };
   return <div data-slot="authentication" data-testid={testId} className={className}>
-    {callback && callbackKey !== consumedCallbackKey ? <SsoCallback i18n={i18n} provider={provider} callback={callback} onResult={result} onBack={back} /> : selection ? <TenantSelection i18n={i18n} tenants={selection} busy={busy} error={error} onBack={back} onSelect={id => {
+    {callback && callbackKey !== consumedCallbackKey ? <SsoCallback i18n={i18n} provider={provider} callback={callback} onResult={result} onBack={back} /> : changing ? <Suspense fallback={<Spinner label={i18n.t('common.loading')} />}><LazyPasswordChange i18n={i18n} busy={busy} error={error} onSubmit={async newPassword => {
+      if (busy) return;
+      setBusy(true); setError(false);
+      await run(signal => provider.changePassword!(newPassword, signal), result, fail);
+    }} /></Suspense> : selection ? <TenantSelection i18n={i18n} tenants={selection} busy={busy} error={error} onBack={back} onSelect={id => {
       if (busy || !selection.some(tenant => tenant.id === id)) return;
       setBusy(true); setError(false);
       void run(signal => provider.selectTenant(id, signal), session => result({ kind: 'authenticated', session }), fail);

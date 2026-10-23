@@ -141,6 +141,8 @@ Qian.Identity.Server.ConnectorPolicy.LandingPath.init -> void
 Qian.Identity.Server.ConnectorPolicy.ReauthenticationWindow.get -> System.TimeSpan
 Qian.Identity.Server.ConnectorPolicy.ReauthenticationWindow.init -> void
 Qian.Identity.Server.IdentityAccountOptions.Connectors.get -> Qian.Identity.Server.ConnectorPolicy!
+Qian.Identity.Server.IdentityAccountOptions.SelectionPath.get -> string!
+Qian.Identity.Server.IdentityAccountOptions.SelectionPath.init -> void
 Qian.Identity.Server.IdentityAccountOptions.Connectors.init -> void
 Qian.Identity.Server.IdentityServerComponent
 Qian.Identity.Server.IdentityServerComponent.IdentityServerComponent() -> void

@@ -547,13 +547,13 @@ internal sealed partial class IdentityAccountService
         }
         if (stored is null || person is not { Status: AccountStatuses.Active } || stored.MembershipId != membershipId) return null;
         if (stored.MembershipId is not { } storedMembership)
-            return person.PlatformAccess ? new AccountValidation(person.IdentityRevision, null, null) : null;
+            return person.PlatformAccess ? new AccountValidation(person.IdentityRevision, null, null, person.DisplayName) : null;
         if (!Guid.TryParseExact(stored.TenantId, "D", out var tenantId)) return null;
         using var scope = TenantScope(tenantId);
         await using var tenantSession = await OpenAsync(ct).ConfigureAwait(false);
         var member = await tenantSession.Context.Memberships.AsNoTracking().SingleOrDefaultAsync(m => m.Id == storedMembership && m.PersonId == personId && m.Status == AccountStatuses.Active, ct).ConfigureAwait(false);
         if (member is null) return null;
         var tenant = await Directory.GetByIdAsync(tenantId, ct).ConfigureAwait(false);
-        return tenant is { Status: TenantStatus.Active or TenantStatus.Trial } ? new AccountValidation(person.IdentityRevision + member.IdentityRevision, tenantId, member.Id) : null;
+        return tenant is { Status: TenantStatus.Active or TenantStatus.Trial } ? new AccountValidation(person.IdentityRevision + member.IdentityRevision, tenantId, member.Id, member.DisplayName) : null;
     }
 }

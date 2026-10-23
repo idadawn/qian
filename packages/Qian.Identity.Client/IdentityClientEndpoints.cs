@@ -19,7 +19,7 @@ namespace Qian.Identity.Client;
 /// <summary>
 /// 浏览器登录事务（服务端换码，BFF）：login 生成 PKCE + state + nonce 并跳转发行方；回调先消费一次性事务（state 校验与重放拒绝，
 /// PKCE 材料随事务 Cookie 用后即删），再比对 RFC 9207 的 iss、读 error，然后带原始 verifier 与 nonce 换码，建立 <c>qian.sid</c> 会话。
-/// 外壳直接换码的令牌端点属于 D5 的待定方案，这里不提供。
+/// 外壳直接换码的令牌端点属于 D5 的待定方案，这里不提供。外壳只拿会话快照（GET session）与强制刷新（POST session/refresh），浏览器零令牌（S1-YUE-002）。
 /// </summary>
 internal static partial class IdentityClientEndpoints
 {
@@ -35,6 +35,8 @@ internal static partial class IdentityClientEndpoints
     {
         var services = http.RequestServices; var options = services.GetRequiredService<IdentityClientOptions>();
         var returnTo = ReturnPath(options, http.Request.Query["returnTo"]);
+        // prompt 只透传白名单里的 select_account（外壳切换租户：发行方跳同源选择页后签新授权码）；其余值不转发，也不让调用方借 none 把登录改成静默探测。
+        var prompt = http.Request.Query["prompt"] is { Count: 1 } prompts && prompts[0] == "select_account" ? "select_account" : null;
         string url;
         try
         {
@@ -50,8 +52,44 @@ internal static partial class IdentityClientEndpoints
         // RFC 8707：规范模式在授权请求里带 resource，发行方据此把访问令牌受众收窄到 Resource；任意发行方模式不带。
         // Kun 的换码请求（OidcCodeExchange）与刷新不能追加参数，两者沿用授权码已绑定的资源。
         if (options.Resource is { } resource) url += "&resource=" + Uri.EscapeDataString(resource);
+        if (prompt is not null) url += "&prompt=" + prompt;
         http.Response.Redirect(url);
     }
+
+    // 当前会话的规范身份快照与显示名（id_token 的 name，经 Kun 会话主体带出），不含任何令牌；没有会话或令牌校验失败即 401。
+    internal static async Task SessionAsync(HttpContext http)
+    {
+        if (http.User.Identity?.IsAuthenticated != true || http.Items[IdentityClientCurrentUser.PrincipalKey] is not Principal principal)
+        {
+            await Error(http, PlatformErrors.Unauthenticated).ConfigureAwait(false);
+            return;
+        }
+        await WriteSession(http, principal, http.User.FindFirst(ClaimTypes.Name)?.Value).ConfigureAwait(false);
+    }
+
+    // 强制单飞刷新服务端访问令牌（防伪校验由 Kun Cookie 中间件对已认证的非安全方法执行）：成功回新快照；刷新失败即会话结束，401 且 Cookie 已删。
+    internal static async Task SessionRefreshAsync(HttpContext http)
+    {
+        var services = http.RequestServices;
+        if (http.User.Identity?.IsAuthenticated != true)
+        {
+            await Error(http, PlatformErrors.Unauthenticated).ConfigureAwait(false);
+            return;
+        }
+        var refreshed = await services.GetRequiredService<IdentitySessionTokens>().RefreshNowAsync(http, http.RequestAborted).ConfigureAwait(false);
+        var identity = refreshed is null ? null : await services.GetRequiredService<IdentityAccessTokens>().ValidateAsync(refreshed.AccessToken, sessionOnly: true, http.RequestAborted).ConfigureAwait(false);
+        if (identity is null)
+        {
+            if (!http.Response.HasStarted) http.Response.Cookies.Delete(IdentityClientDefaults.SessionCookieName, new CookieOptions { Path = "/" });
+            await Error(http, PlatformErrors.Unauthenticated).ConfigureAwait(false);
+            return;
+        }
+        await WriteSession(http, identity.Snapshot, refreshed!.Name ?? http.User.FindFirst(ClaimTypes.Name)?.Value).ConfigureAwait(false);
+    }
+
+    private static Task WriteSession(HttpContext http, Principal principal, string? displayName) =>
+        http.Response.WriteAsJsonAsync(new SessionView(principal.Subject, principal.Kind == PrincipalKind.Service ? "service" : "user", principal.TenantId, principal.MembershipId,
+            principal.IdentityRevision, displayName), IdentityClientJsonContext.Default.SessionView, cancellationToken: http.RequestAborted);
 
     internal static async Task CallbackAsync(HttpContext http)
     {
@@ -184,6 +222,10 @@ internal static partial class IdentityClientEndpoints
 
 internal sealed record CsrfToken(string HeaderName, string Token);
 
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+/// <summary>GET {PathPrefix}/session 的响应：规范身份快照字段加显示名；不含令牌、会话标识或 Cookie 值。</summary>
+internal sealed record SessionView(string Subject, string Kind, string? TenantId, string? MembershipId, long? IdentityRevision, string? DisplayName);
+
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.Never)]
 [JsonSerializable(typeof(CsrfToken))]
+[JsonSerializable(typeof(SessionView))]
 internal sealed partial class IdentityClientJsonContext : JsonSerializerContext;

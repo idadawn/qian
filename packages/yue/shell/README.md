@@ -9,7 +9,17 @@ AppShell 单一侧栏布局、菜单 → 路由、MF2 宿主与插槽、租户�
 
 从包入口导入 AppShell、Page/PageHeader/ColPage/LeftTree、菜单注册表、Preferences 与认证页族。先用 SDK createI18n 建实例并调用 installShellLanguagePacks，再用 PreferencesProvider 注入 initPreferences 的结果。主题应用复用 tokens 的首帧脚本与 initializeTheme；不在库内复制主题或路由引擎。
 
-AuthProvider 由宿主注入，认证页族不持有令牌。登录表单使用 form SchemaForm，租户切换成功后由宿主更新 session 与 SDK 的 getTenantId；SDK onSessionExpired 驱动 SessionExpiredDialog。Preferences 只允许非敏感字段，菜单解析校验外链协议与令牌参数。
+AuthProvider 由宿主注入，认证页族不持有令牌。登录表单使用 form SchemaForm，租户切换成功后由宿主更新 session 与 SDK 的 getTenantId；SDK onSessionExpired 驱动 SessionExpiredDialog。Preferences 只允许非敏感字段，菜单解析校验外链协议与令牌参数。认证结果新增 `change-password`（初始密码或运营重置后强制改密，PasswordChange 表单按需加载），provider 没有实现 `changePassword` 时按失败处理。
+
+### 真实接线模块（S1-YUE-002）
+
+- `readAppConf()`：校验 `window.__APP_CONF__`（同源 `/app-conf.js`，K8s ConfigMap）的 `apiBase` / `authBase`（同源路径前缀）、`brand`、`locale`、`managed`；非法抛 `shell.error.config`。
+- `createBffSessionClient({ authBase })`：依赖方（Identity.Client / 网关 BFF）的会话快照 `GET /session`、强制刷新 `POST /session/refresh`（实现 SDK `SessionProvider`，供 `PlatformClient({ sessionProvider })` 合并并发 401）、登出与 `/login?returnTo=…[&prompt=select_account]` 跳转地址；浏览器零令牌。
+- `fetchNavigation` / `fetchPermissions` / `toMenu`：能力导航目录 → 菜单项（`label` 为后端已本地化标题，`labelKey` 退化为资源引用），有效权限列表；`createBrowserRouter` / `useRoutePath` / `matchMenuItem`：pushState 路由与精确 → 最长前缀匹配。
+- `createIdentityAuthProvider({ clientId })`：与 qian.identity 同源的认证页族用的 AuthProvider——`/api/identity/login`、`/login/select`、`/login/password`、`/session/switch`、`/me`、连接器目录与流程接口；票据只在闭包内存，密码只存在于本次请求。平台身份在租户列表里固定为 `PLATFORM_TENANT`。
+- `InboxPopover`：顶栏站内信弹窗（消息源由宿主注入，S1 没有站内信接口）。
+
+可部署组合见 [apps/qian-shell](../../../apps/qian-shell/README.md)（外壳薄入口）与 [packages/qian-identity-ui](../../qian-identity-ui/README.md)（认证页族）；真实流程验收 `pnpm yue:auth` 对 [tools/Qian.Dev.Shell](../../../tools/Qian.Dev.Shell/README.md) 拉起的真实 qian.identity + 网关 BFF 运行。
 
 ## 模型体验
 
@@ -23,5 +33,5 @@ menuTypeRegistry.toJSON 可导出菜单类型元数据，注册返回可撤销�
 
 ## 已知限制与延期项
 
-- 本任务是库交付；qian.shell 的 MF2 宿主、真实 OIDC code + PKCE、selection_token、Cookie 与令牌重签由 S1-YUE-001/002 接线。版本号沿用工作区 0.1.0，尚未发布。
+- 真实 OIDC code + PKCE、多租户选择、`prompt=select_account` 切换、Cookie 会话与令牌重签已由 S1-YUE-002 经网关 BFF 接线（浏览器零令牌，不再有 selection_token 进前端）；MF2 宿主、插槽与 `loadRemote` 归 S1-YUE-001。版本号沿用工作区 0.1.0，尚未发布。
 - 验证码登录与忘记密码为 P1，Captcha 为 P2，七种布局与偏好抽屉为后续范围。

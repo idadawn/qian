@@ -165,4 +165,5 @@ internal interface IAccountSessionValidator
 }
 
 /// <summary>校验通过时的最新事实，协议端点用它覆盖 Cookie 里的旧修订。</summary>
-internal sealed record AccountValidation(long IdentityRevision, Guid? TenantId, Guid? MembershipId);
+/// <summary>账号会话仍有效时的事实：当前修订、所属租户与成员，以及该身份的显示名（成员显示名；平台身份取自然人显示名），只进 id_token。</summary>
+internal sealed record AccountValidation(long IdentityRevision, Guid? TenantId, Guid? MembershipId, string? DisplayName = null);

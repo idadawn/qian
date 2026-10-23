@@ -57,6 +57,28 @@ public sealed partial class IdentitySessionTokens
         return null;
     }
 
+    /// <summary>
+    /// 不等到期、立刻用 refresh token 换新（外壳在 401 后探测、权限变更后换新修订时经 <c>POST {PathPrefix}/session/refresh</c> 调用）。
+    /// 与到期前刷新共用同一单飞队列；返回换新后的会话数据，没有会话或刷新失败（会话已结束、Cookie 已删）时返回 null。
+    /// </summary>
+    internal async ValueTask<SessionData?> RefreshNowAsync(HttpContext context, CancellationToken cancellationToken = default)
+    {
+        if (!_runtime.Active || _runtime.Options.RedirectUri is null) return null;
+        var id = context.Request.Cookies[IdentityClientDefaults.SessionCookieName];
+        if (string.IsNullOrEmpty(id)) return null;
+        var store = context.RequestServices.GetRequiredService<ISessionStore>();
+        var data = await store.GetAsync(id, cancellationToken).ConfigureAwait(false);
+        if (data is null) return null;
+        var key = Hash(id);
+        var lazy = _refreshing.AddOrUpdate(key, _ => Start(store, id, data), (_, existing) => existing.IsValueCreated && existing.Value.IsCompleted ? Start(store, id, data) : existing);
+        var refresh = lazy.Value;
+        SessionData? updated;
+        try { updated = await refresh.WaitAsync(cancellationToken).ConfigureAwait(false); }
+        finally { if (refresh.IsCompleted) _refreshing.TryRemove(KeyValuePair.Create(key, lazy)); }
+        if (updated is null && !context.Response.HasStarted) context.Response.Cookies.Delete(IdentityClientDefaults.SessionCookieName, new CookieOptions { Path = "/" });
+        return updated;
+    }
+
     private Lazy<Task<SessionData?>> Start(ISessionStore store, string id, SessionData data) => new(() => RefreshAsync(store, id, data));
 
     private async Task<SessionData?> RefreshAsync(ISessionStore store, string id, SessionData data)

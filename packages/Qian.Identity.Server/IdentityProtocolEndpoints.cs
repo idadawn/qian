@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -45,12 +47,18 @@ public static class IdentityProtocolEndpoints
         var client = Client(options, request.ClientId);
         if (client is null) return Reject(Errors.InvalidClient);
         if (request.HasScope(Scopes.OpenId) && string.IsNullOrWhiteSpace(request.Nonce)) return Reject(Errors.InvalidRequest);
-        // 交互式重新认证、同意和账号选择必须由后续账号流水线落实，不能静默忽略调用方的安全要求。
-        if (request.GetPromptValues().Any(prompt => prompt != PromptValues.None)) return Reject(Errors.InteractionRequired);
+        // 交互式重新认证与同意必须由后续账号流水线落实，不能静默忽略调用方的安全要求；账号选择（select_account）由同源选择页落实（S1-YUE-002）。
+        var prompts = request.GetPromptValues();
+        if (prompts.Any(prompt => prompt is not (PromptValues.None or PromptValues.SelectAccount))) return Reject(Errors.InteractionRequired);
+        var selectAccount = prompts.Contains(PromptValues.SelectAccount, StringComparer.Ordinal);
+        // OIDC Core 3.1.2.1：none 不得与其他值并用。
+        if (selectAccount && request.HasPromptValue(PromptValues.None)) return Reject(Errors.InvalidRequest);
+        // 去掉 prompt 的授权请求原地址：登录与选择页完成后回到这里签发，不再重复要求选择。
+        var resume = selectAccount ? WithoutPrompt(http, request) : http.Request.GetEncodedPathAndQuery();
         var authentication = await http.AuthenticateAsync(options.SignInScheme).ConfigureAwait(false);
         if (!authentication.Succeeded || authentication.Principal is not { } cookie)
             return request.HasPromptValue(PromptValues.None) ? Reject(Errors.LoginRequired) :
-                Results.Challenge(new AuthenticationProperties { RedirectUri = http.Request.GetEncodedPathAndQuery() }, [options.SignInScheme]);
+                Results.Challenge(new AuthenticationProperties { RedirectUri = resume }, [options.SignInScheme]);
         if (request.MaxAge is { } age && (!long.TryParse(cookie.GetClaim("auth_time"), NumberStyles.None, CultureInfo.InvariantCulture, out var authenticatedAt) ||
             authenticatedAt > DateTimeOffset.UtcNow.ToUnixTimeSeconds() || DateTimeOffset.UtcNow.ToUnixTimeSeconds() - authenticatedAt > age)) return Reject(Errors.LoginRequired);
         AccountValidation? validation = null;
@@ -63,9 +71,14 @@ public static class IdentityProtocolEndpoints
             {
                 await http.SignOutAsync(options.SignInScheme).ConfigureAwait(false);
                 return request.HasPromptValue(PromptValues.None) ? Reject(Errors.LoginRequired) :
-                    Results.Challenge(new AuthenticationProperties { RedirectUri = http.Request.GetEncodedPathAndQuery() }, [options.SignInScheme]);
+                    Results.Challenge(new AuthenticationProperties { RedirectUri = resume }, [options.SignInScheme]);
             }
         }
+        // 账号 Cookie 仍有效且调用方要求选择账号：302 到同源选择页，页面经 POST /api/identity/session/switch 与 /login/select 换会话后回到 return_url。
+        // return_url 固定为本服务的同源授权地址，不是开放重定向；没有内置账号模型的宿主没有选择页，按 interaction_required 拒绝。
+        if (selectAccount)
+            return validation is null ? Reject(Errors.InteractionRequired)
+                : Results.Redirect(options.Accounts.SelectionPath + "?return_url=" + Uri.EscapeDataString(resume));
         var principal = UserPrincipal(cookie, validation);
         if (principal is null) return Reject(Errors.LoginRequired);
         var resources = ResourcesFor(client, request.GetResources());
@@ -121,6 +134,7 @@ public static class IdentityProtocolEndpoints
                 var validation = await accounts.ValidateAsync(sid, person, membership, http.RequestAborted).ConfigureAwait(false);
                 if (validation is null) return Reject(Errors.InvalidGrant);
                 ReplaceRevision(principal, validation.IdentityRevision);
+                ReplaceName(principal, validation.DisplayName);
                 RestorePlatformTenant(principal);
             }
             // 换码与 refresh 只能在原授权的受众内收窄（RFC 8707），不带 resource 时沿用原授权；收窄后的集合同时是新 refresh token 的上限。
@@ -207,7 +221,32 @@ public static class IdentityProtocolEndpoints
         if (validation is not null) ReplaceRevision(principal, validation.IdentityRevision);
         principal.SetDestinations(claim => claim.Type == "tenant_id" && claim.ValueType == JsonClaimValueTypes.JsonNull
             ? new[] { Destinations.AccessToken } : new[] { Destinations.AccessToken, Destinations.IdentityToken });
+        // 标准 name claim 只进 id_token（外壳显示用）：访问令牌仍只含身份与会话类 claim，资源服务器拿不到也不该依赖显示名。
+        ReplaceName(principal, validation?.DisplayName);
         return principal;
+    }
+
+    // 显示名来自账号会话校验（成员显示名；平台身份取自然人显示名），换签与刷新时同样以当下的事实覆盖。
+    private static void ReplaceName(ClaimsPrincipal principal, string? name)
+    {
+        var identity = (ClaimsIdentity)principal.Identity!;
+        foreach (var old in identity.FindAll(Claims.Name).ToArray()) identity.RemoveClaim(old);
+        if (string.IsNullOrWhiteSpace(name)) return;
+        var claim = new Claim(Claims.Name, name);
+        claim.SetDestinations(Destinations.IdentityToken);
+        identity.AddClaim(claim);
+    }
+
+    // 授权请求去掉 prompt 后的同源地址（路径 + 查询串）；POST 提交的参数同样改写成 GET 查询串，OpenIddict 两种方法都接受。
+    private static string WithoutPrompt(HttpContext http, OpenIddictRequest request)
+    {
+        var pairs = new List<KeyValuePair<string, string?>>();
+        foreach (var parameter in request.GetParameters())
+        {
+            if (parameter.Key == Parameters.Prompt) continue;
+            foreach (var value in (StringValues)parameter.Value) if (value is not null) pairs.Add(new(parameter.Key, value));
+        }
+        return QueryHelpers.AddQueryString((http.Request.PathBase + http.Request.Path).ToString(), pairs);
     }
 
     // 授权码与 refresh token 是序列化的 JWT：平台身份的 JSON null tenant_id 经 IdentityModel 会退化成空字符串。

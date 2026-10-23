@@ -11,9 +11,20 @@ export interface TokenProvider {
   refreshAccessToken?(): Promise<string | null>;
 }
 
+/**
+ * BFF Cookie 会话（浏览器零令牌）：401 后由宿主向会话端点强制刷新一次服务端访问令牌。
+ * 返回 true 表示会话仍在、请求重放一次；false 表示会话已结束，只通知一次 `onSessionExpired`。并发 401 合并为一次调用。
+ */
+export interface SessionProvider {
+  refreshSession(): Promise<boolean>;
+}
+
 export interface PlatformClientOptions {
   baseUrl: string;
+  /** 浏览器持令牌的宿主（令牌只在内存）；与 sessionProvider 同时给出时以它为准。 */
   tokenProvider?: TokenProvider;
+  /** HttpOnly Cookie 会话的宿主；浏览器不接触令牌，401 后经它探测一次。 */
+  sessionProvider?: SessionProvider;
   getTenantId?: () => string | null | undefined;
   transport?: RequestTransport;
   middleware?: readonly RequestMiddleware[];
@@ -92,6 +103,7 @@ export class PlatformClient {
   private readonly options: PlatformClientOptions;
   private readonly send: RequestTransport;
   private refreshing: Promise<string | null> | undefined;
+  private refreshingSession: Promise<boolean> | undefined;
   private sessionExpired = false;
 
   constructor(options: PlatformClientOptions) {
@@ -117,6 +129,16 @@ export class PlatformClient {
     if (this.sessionExpired) return;
     this.sessionExpired = true;
     this.options.onSessionExpired?.();
+  }
+
+  /** 会话刷新的单飞队列：同一时刻只有一次会话端点调用，所有等待的 401 共享其结果。 */
+  private refreshSession(): Promise<boolean> {
+    if (!this.refreshingSession) {
+      this.refreshingSession = Promise.resolve().then(() => this.options.sessionProvider?.refreshSession() ?? false)
+        .then((alive) => { if (!alive) this.expire(); return alive; }, (error: unknown) => { this.expire(); throw error; })
+        .finally(() => { this.refreshingSession = undefined; });
+    }
+    return this.refreshingSession;
   }
 
   private refresh(): Promise<string | null> {
@@ -151,6 +173,14 @@ export class PlatformClient {
       if (fresh) {
         await response.body?.cancel();
         response = await run(fresh);
+      }
+    } else if (response.status === 401 && this.options.sessionProvider) {
+      // Cookie 会话：并发 401 合并成一次会话刷新；会话仍在才重放一次，重放仍 401 或刷新失败都只通知一次过期。
+      const alive = await abortable(this.refreshSession(), request.signal);
+      if (tenant !== this.options.getTenantId?.()) throw new Error('sdk.error.contextChanged');
+      if (alive) {
+        await response.body?.cancel();
+        response = await run(token);
       }
     }
     if (response.status === 401) this.expire();

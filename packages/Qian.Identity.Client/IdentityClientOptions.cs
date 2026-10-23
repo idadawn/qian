@@ -64,6 +64,8 @@ public sealed class IdentityClientOptions
     internal string LoginPath => PathPrefix + "/login";
     internal string LogoutPath => PathPrefix + "/logout";
     internal string CsrfPath => PathPrefix + "/csrf";
+    internal string SessionPath => PathPrefix + "/session";
+    internal string SessionRefreshPath => PathPrefix + "/session/refresh";
     internal string BackchannelPath => PathPrefix + "/backchannel-logout";
     internal string Scope => string.Join(' ', Scopes);
 

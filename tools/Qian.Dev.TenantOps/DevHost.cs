@@ -33,7 +33,7 @@ internal static class DevHost
         using var trust = new DevTrustRoot();
         using var platform = new DevPlatform(repository);
         var assembly = new DevRuntimeAssembly();
-        await using var business = Business(database, key, trust, assembly);
+        await using var business = Business(database, trust, assembly, new BusinessS2s(DevKeys.Issuer, DevKeys.BusinessAudience, DevKeys.PublicJwks(key)));
         await database.CreateSchemasAsync(business.Services, ct).ConfigureAwait(false);
         await business.StartAsync(ct).ConfigureAwait(false);
         await platform.AttachAsync(assembly.Loader, assembly.Providers, trust, ct).ConfigureAwait(false);
@@ -52,10 +52,12 @@ internal static class DevHost
     }
 
     // 业务宿主的装配照集成测试 Start(lifecycle: …) 的 ConfigureCapabilities + ConfigureLifecycle；连接全部是受限登录。
-    private static WebApplication Business(DevDatabase database, Microsoft.IdentityModel.Tokens.RsaSecurityKey key, DevTrustRoot trust, DevRuntimeAssembly assembly) =>
+    // 外壳联调环境（S1-YUE-002）复用同一装配：S2S 校验参数换成网关签发器、监听地址固定为身份发行方，并在其上追加身份服务。
+    internal static WebApplication Business(DevDatabase database, DevTrustRoot trust, DevRuntimeAssembly assembly, BusinessS2s s2s, string url = "http://127.0.0.1:0",
+        Action<WebApplicationBuilder>? configure = null, Action<Kun.EventBus.IEventTypeRegistrar>? events = null, Action<Kun.Mediator.KunMediatorBuilder>? mediator = null) =>
         CrmCommandApplication.Build([], builder =>
         {
-            builder.WebHost.UseUrls("http://127.0.0.1:0"); Logging(builder.Logging);
+            builder.WebHost.UseUrls(url); Logging(builder.Logging);
             builder.Services.AddSingleton<ICrmRuntimeAssembly>(assembly);
             builder.Services.AddKunSecurity();
             builder.Services.AddQianHttpContracts();
@@ -85,14 +87,16 @@ internal static class DevHost
                 ["Trust:PlatformKeys:0:PublicKey"] = "secretRef://platform/trust/platform", ["Trust:PlatformKeys:0:NotBefore"] = "2026-01-01T00:00:00Z",
                 ["ConnectionStrings:Crm"] = database.Business, ["ConnectionStrings:Authz"] = database.App,
                 ["ConnectionStrings:Tenancy"] = database.App, ["ConnectionStrings:Audit"] = database.App,
-                ["S2S:Issuer"] = DevKeys.Issuer, ["S2S:Audience"] = DevKeys.BusinessAudience, ["S2S:PublicJwks"] = DevKeys.PublicJwks(key),
+                ["S2S:Issuer"] = s2s.Issuer, ["S2S:Audience"] = s2s.Audience, ["S2S:PublicJwks"] = s2s.PublicJwks,
                 ["S2S:ReaderClientId"] = "crm-dev-reader", ["S2S:WriterClientId"] = "crm-dev-writer"
             });
-        }, registrar => registrar.RegisterRegistryEvents().RegisterLifecycleEvents(), mediator => mediator.AddQianRegistryEvents().AddQianLifecycleEvents());
+            configure?.Invoke(builder);
+        }, registrar => { registrar.RegisterRegistryEvents().RegisterLifecycleEvents(); events?.Invoke(registrar); },
+        registry => { registry.AddQianRegistryEvents().AddQianLifecycleEvents(); mediator?.Invoke(registry); });
 
     // 只显示警告以上；运营授权拒绝的原因按设计只进结构化日志（响应统一 AUTHZ_DENIED），这里能看到。
     // EF 的命令日志关掉：迁移器首次探测 __EFMigrationsHistory 必然失败一次，属预期；请求里的异常仍由异常处理中间件记录。
-    private static void Logging(ILoggingBuilder logging)
+    internal static void Logging(ILoggingBuilder logging)
     {
         logging.ClearProviders();
         logging.AddSimpleConsole(options => { options.SingleLine = true; options.TimestampFormat = "HH:mm:ss "; });
@@ -100,7 +104,7 @@ internal static class DevHost
         logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
     }
 
-    private static string Address(WebApplication app) =>
+    internal static string Address(WebApplication app) =>
         app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()?.Addresses.SingleOrDefault() ?? "（未知）";
 
     internal static string RepositoryRoot()
@@ -111,6 +115,9 @@ internal static class DevHost
         throw new InvalidOperationException("找不到仓库根目录（Qian.slnx）；请在仓库内运行。");
     }
 }
+
+// 业务宿主校验 S2S 令牌的参数：发行方、本宿主受众与只含公钥的 JWKS。
+internal sealed record BusinessS2s(string Issuer, string Audience, string PublicJwks);
 
 // 只借 CRM 宿主公开的装配入口拿到运行时：业务 Provider 原样挂载，不改条目、配置与顺序。
 internal sealed class DevRuntimeAssembly : ICrmRuntimeAssembly

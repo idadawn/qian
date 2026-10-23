@@ -14,6 +14,9 @@ export const shellLanguagePacks: Record<Locale, LanguagePack> = {
     'shell.notFound': '页面不存在', 'shell.notFoundHelp': '页面可能已移动，请返回工作台。', 'shell.serverError': '页面暂时无法使用',
     'shell.serverErrorHelp': '请稍后重试。', 'shell.offline': '网络连接已断开', 'shell.offlineHelp': '检查网络后重试，当前页面内容会保留。',
     'shell.home': '返回工作台', 'shell.update': '有新版本可用', 'shell.reload': '刷新页面',
+    'shell.inbox': '站内信', 'shell.inboxEmpty': '暂无消息', 'shell.changePassword': '设置新密码', 'shell.changePasswordHelp': '首次登录或密码已被重置，请先设置新密码再继续。',
+    'shell.newPassword': '新密码', 'shell.confirmPassword': '确认新密码', 'shell.passwordMismatch': '两次输入的密码不一致。', 'shell.changePasswordError': '新密码不符合策略或曾经使用过，请换一个。',
+    'shell.platform': '平台身份', 'shell.switching': '正在切换租户',
   },
   'zh-TW': {
     'shell.nav': '主要導覽', 'shell.skip': '跳到頁面內容', 'shell.collapse': '收起側欄', 'shell.expand': '展開側欄',
@@ -28,6 +31,9 @@ export const shellLanguagePacks: Record<Locale, LanguagePack> = {
     'shell.notFound': '頁面不存在', 'shell.notFoundHelp': '頁面可能已移動，請返回工作台。', 'shell.serverError': '頁面暫時無法使用',
     'shell.serverErrorHelp': '請稍後重試。', 'shell.offline': '網路連線已中斷', 'shell.offlineHelp': '檢查網路後重試，目前頁面內容會保留。',
     'shell.home': '返回工作台', 'shell.update': '有新版本可用', 'shell.reload': '重新整理頁面',
+    'shell.inbox': '站內信', 'shell.inboxEmpty': '暫無訊息', 'shell.changePassword': '設定新密碼', 'shell.changePasswordHelp': '首次登入或密碼已被重設，請先設定新密碼再繼續。',
+    'shell.newPassword': '新密碼', 'shell.confirmPassword': '確認新密碼', 'shell.passwordMismatch': '兩次輸入的密碼不一致。', 'shell.changePasswordError': '新密碼不符合策略或曾經使用過，請換一個。',
+    'shell.platform': '平台身分', 'shell.switching': '正在切換租戶',
   },
   'en-US': {
     'shell.nav': 'Main navigation', 'shell.skip': 'Skip to page content', 'shell.collapse': 'Collapse sidebar', 'shell.expand': 'Expand sidebar',
@@ -42,6 +48,9 @@ export const shellLanguagePacks: Record<Locale, LanguagePack> = {
     'shell.notFound': 'Page not found', 'shell.notFoundHelp': 'This page may have moved. Return to your workspace.', 'shell.serverError': 'This page is temporarily unavailable',
     'shell.serverErrorHelp': 'Please try again later.', 'shell.offline': 'You are offline', 'shell.offlineHelp': 'Check your connection and retry. Your page content is preserved.',
     'shell.home': 'Back to workspace', 'shell.update': 'An update is available', 'shell.reload': 'Reload page',
+    'shell.inbox': 'Inbox', 'shell.inboxEmpty': 'No messages', 'shell.changePassword': 'Set a new password', 'shell.changePasswordHelp': 'This is your first sign-in or your password was reset. Set a new password to continue.',
+    'shell.newPassword': 'New password', 'shell.confirmPassword': 'Confirm new password', 'shell.passwordMismatch': 'The two passwords do not match.', 'shell.changePasswordError': 'The new password violates the policy or was used before. Choose another one.',
+    'shell.platform': 'Platform identity', 'shell.switching': 'Switching tenant',
   },
 };
 

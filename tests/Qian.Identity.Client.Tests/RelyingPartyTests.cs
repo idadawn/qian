@@ -163,6 +163,97 @@ public sealed class RelyingPartyTests(PostgresFixture postgres, RedisFixture red
     }
 
     [Fact]
+    public async Task 会话快照不含令牌_强制刷新单飞且要求防伪_刷新失败即结束会话_prompt只透传select_account()
+    {
+        var address = RelyingParty.ReserveAddress();
+        await using var identity = await IdentityServerHost.Start(postgres, new Uri(address, "auth/callback"));
+        var counter = new RefreshCounter();
+        await using var rp = await RelyingParty.Start(identity, redis.ConnectionString, address, _tls,
+            configure: services => services.AddHttpClient(IdentityClientDefaults.HttpClientName).AddHttpMessageHandler(() => counter));
+        var (browser, cookies) = RelyingParty.Browser(_tls);
+        using var _ = browser;
+        using (var anonymous = await browser.GetAsync(new Uri(address, "auth/session"), Ct)) await AssertError(anonymous, HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        using (var anonymousRefresh = await browser.PostAsync(new Uri(address, "auth/session/refresh"), null, Ct)) Assert.Equal(HttpStatusCode.Unauthorized, anonymousRefresh.StatusCode);
+        await SignIn(identity, browser, address);
+        // 快照：规范身份字段 + id_token 的 name；没有令牌、会话标识或 Cookie 值。
+        using (var session = await browser.GetAsync(new Uri(address, "auth/session"), Ct))
+        {
+            var body = await session.Content.ReadAsStringAsync(Ct);
+            Assert.True(session.StatusCode == HttpStatusCode.OK, body);
+            Assert.True(session.Headers.CacheControl?.NoStore);
+            var json = JsonDocument.Parse(body).RootElement;
+            Assert.Equal(identity.Person.ToString("D"), json.GetProperty("subject").GetString());
+            Assert.Equal("user", json.GetProperty("kind").GetString());
+            Assert.Equal(identity.Tenant.ToString("D"), json.GetProperty("tenantId").GetString());
+            Assert.Equal(identity.Membership.ToString("D"), json.GetProperty("membershipId").GetString());
+            Assert.True(json.GetProperty("identityRevision").GetInt64() >= 0);
+            Assert.Equal("张三", json.GetProperty("displayName").GetString());
+            Assert.Equal(["subject", "kind", "tenantId", "membershipId", "identityRevision", "displayName"], json.EnumerateObject().Select(property => property.Name));
+            Assert.DoesNotContain("eyJ", body, StringComparison.Ordinal);
+            Assert.DoesNotContain(cookies.GetCookies(address)[IdentityClientDefaults.SessionCookieName]!.Value, body, StringComparison.Ordinal);
+        }
+        // 强制刷新：非安全方法要防伪令牌；成功后 refresh token 已轮换，且只向发行方发了一次 refresh。
+        using (var forged = await browser.PostAsync(new Uri(address, "auth/session/refresh"), null, Ct)) Assert.Equal(HttpStatusCode.BadRequest, forged.StatusCode);
+        Assert.Equal(0, counter.Count);
+        var store = rp.Services.GetRequiredService<ISessionStore>();
+        var id = cookies.GetCookies(address)[IdentityClientDefaults.SessionCookieName]!.Value;
+        var before = (await store.GetAsync(id, Ct))!;
+        using (var refreshed = await Post(browser, address, "auth/session/refresh"))
+        {
+            var body = await refreshed.Content.ReadAsStringAsync(Ct);
+            Assert.True(refreshed.StatusCode == HttpStatusCode.OK, body);
+            Assert.Equal("张三", JsonDocument.Parse(body).RootElement.GetProperty("displayName").GetString());
+        }
+        Assert.Equal(1, counter.Count);
+        var after = (await store.GetAsync(id, Ct))!;
+        Assert.NotEqual(before.RefreshToken, after.RefreshToken); Assert.NotEqual(before.AccessToken, after.AccessToken);
+        // prompt 透传：只放行 select_account；发行方对带有效 Cookie 的 select_account 跳同源选择页（return_url 为去掉 prompt 的授权地址）。其余值不转发。
+        using (var plain = await browser.GetAsync(new Uri(address, "auth/login?returnTo=%2Fme&prompt=login"), Ct))
+        {
+            Assert.Equal(HttpStatusCode.Redirect, plain.StatusCode);
+            Assert.DoesNotContain("prompt", plain.Headers.Location!.Query, StringComparison.Ordinal);
+        }
+        using (var select = await browser.GetAsync(new Uri(address, "auth/login?returnTo=%2Fme&prompt=select_account"), Ct))
+        {
+            Assert.Equal(HttpStatusCode.Redirect, select.StatusCode);
+            var authorize = select.Headers.Location!;
+            Assert.Contains("prompt=select_account", authorize.Query, StringComparison.Ordinal);
+            using var selection = await browser.GetAsync(authorize, Ct);
+            Assert.Equal(HttpStatusCode.Redirect, selection.StatusCode);
+            var location = selection.Headers.Location!.OriginalString;
+            Assert.StartsWith("/login/select-tenant?return_url=", location, StringComparison.Ordinal);
+            var resume = QueryHelpers.ParseQuery(location["/login/select-tenant".Length..])["return_url"].ToString();
+            Assert.StartsWith("/connect/authorize?", resume, StringComparison.Ordinal); Assert.DoesNotContain("prompt", resume, StringComparison.Ordinal);
+            // 选择页不换会话、直接回到授权地址：以当前身份签新码，RP 回调重建会话（旧会话删除）。
+            using var issued = await browser.GetAsync(new Uri(new Uri(identity.Issuer), resume), Ct);
+            Assert.Equal(HttpStatusCode.Redirect, issued.StatusCode);
+            using var completed = await browser.GetAsync(issued.Headers.Location!, Ct);
+            Assert.True(completed.StatusCode == HttpStatusCode.Redirect, await completed.Content.ReadAsStringAsync(Ct));
+            Assert.Equal("/me", completed.Headers.Location!.OriginalString);
+            Assert.NotEqual(id, cookies.GetCookies(address)[IdentityClientDefaults.SessionCookieName]!.Value);
+            Assert.Null(await store.GetAsync(id, Ct));
+        }
+        // 刷新失败（会话里的 refresh token 已不被发行方接受）：会话结束，401 且 Cookie 删除，后续请求匿名。
+        id = cookies.GetCookies(address)[IdentityClientDefaults.SessionCookieName]!.Value;
+        var current = (await store.GetAsync(id, Ct))!;
+        await store.SetAsync(id, current with { RefreshToken = "no-longer-valid" }, TimeSpan.FromHours(1), Ct);
+        using (var failed = await Post(browser, address, "auth/session/refresh")) await AssertError(failed, HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        Assert.Null(cookies.GetCookies(address)[IdentityClientDefaults.SessionCookieName]);
+        Assert.Null(await store.GetAsync(id, Ct));
+        using (var gone = await browser.GetAsync(new Uri(address, "auth/session"), Ct)) Assert.Equal(HttpStatusCode.Unauthorized, gone.StatusCode);
+    }
+
+    // 带防伪请求头的 POST（先取 /auth/csrf）。
+    private static async Task<HttpResponseMessage> Post(HttpClient browser, Uri address, string path)
+    {
+        using var csrf = await browser.GetAsync(new Uri(address, "auth/csrf"), Ct);
+        var token = await csrf.Content.ReadFromJsonAsync<JsonElement>(Ct);
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(address, path));
+        request.Headers.Add(token.GetProperty("headerName").GetString()!, token.GetProperty("token").GetString());
+        return await browser.SendAsync(request, Ct);
+    }
+
+    [Fact]
     public async Task 登出必须带防伪令牌_卸载组件后登录端点404且会话不再生效()
     {
         var address = RelyingParty.ReserveAddress();

@@ -24,6 +24,8 @@ const result = await api.GET('/api/tenancy/tenants');
 
 令牌仅从内存提供器读取；刷新由宿主以 HttpOnly cookie 完成并更新提供器。并发 401 合并刷新，旧请求晚到时复用新令牌，最多重试一次；失败通知 `onSessionExpired`。请求取消不取消共享刷新；刷新期间切换租户则拒绝重放旧写请求。跨源地址覆盖与重定向被拒绝。租户头只表达当前上下文，服务端仍以令牌为准。
 
+HttpOnly Cookie 会话的宿主改用 `sessionProvider: { refreshSession(): Promise<boolean> }`（与 `tokenProvider` 并列，同一单飞队列，两者同时给出时以 `tokenProvider` 为准）：浏览器不接触令牌，并发 401 合并成一次 `refreshSession()`；返回 true 时每个请求重放一次且不带 Authorization 头，false 或抛错时只通知一次 `onSessionExpired`，下一批 401 重新探测。`@idadawn/yue-shell` 的 `createBffSessionClient` 是对接 Identity.Client / 网关 BFF 的实现。
+
 `PlatformError.detail` 保留冻结契约的 `code`、`trace_id`、`pointer` 与 `errors`；`pointerSegments` 解码 URI 片段。非标准响应抛 `HttpResponseError`，产品用 `sdk.error.http` 显示文案，不透出响应 HTML。int64 超出安全整数范围时转为原始十进制字符串；上传等非 JSON 响应保持原样。
 
 测试只替换 `transport: createMockTransport(routes)`，调用代码不变。处理器收到实际 Request，可检查头、查询与请求体；未匹配路径直接失败，绝不回退真实网络。`middleware` 按注册顺序进入、逆序返回。
@@ -44,4 +46,4 @@ const result = await api.GET('/api/tenancy/tenants');
 
 - SDK 不提供登录页、OIDC 流程或 HTTP 刷新端点，分别由外壳与身份组件承接；组件消费方提供对应 OpenAPI 生成类型。
 - SSE 为 S1 草案，只提供 Schema 与类型；流连接、重连与 Agent 界面归后续任务。客户端动作参数须由执行方按注册表 Schema 校验，服务端权限判定不由前端替代。
-- 运行时外壳配置注入归 S1-YUE-002；本包当前由构造参数注入配置。版本 0.1.0 尚未发布。
+- 本包由构造参数注入配置；运行时配置（`window.__APP_CONF__`）的读取与校验在 `@idadawn/yue-shell` 的 `readAppConf`（S1-YUE-002），宿主据此构造 `PlatformClient`。版本 0.1.0 尚未发布。

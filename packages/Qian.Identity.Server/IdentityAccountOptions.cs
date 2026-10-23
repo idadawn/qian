@@ -18,8 +18,18 @@ public sealed class IdentityAccountOptions
     public ConnectorPolicy Connectors { get; init; } = new();
     /// <summary>手机号未带国家码时补的国家码，缺省中国大陆。</summary>
     public string DefaultPhoneCountryCode { get; init; } = "86";
+    /// <summary>
+    /// 同源的租户选择页路径。授权请求带 <c>prompt=select_account</c> 且账号 Cookie 仍有效时，<c>/connect/authorize</c> 302 到这里并附
+    /// <c>return_url</c>（去掉 prompt 的授权请求原地址，同源相对路径）；页面调 <c>POST /api/identity/session/switch</c> 与 <c>/login/select</c> 后回到 return_url 签新授权码。
+    /// 必须是同源相对路径；登录页路径由账号 Cookie scheme 的 LoginPath 决定（缺省应指向同一认证页族的 <c>/login</c>）。
+    /// </summary>
+    public string SelectionPath { get; init; } = "/login/select-tenant";
     /// <inheritdoc />
     public override string ToString() => "IdentityAccountOptions(redacted)";
+
+    // 同源相对路径：以单个 / 开头，不含反斜杠与控制字符（与 Identity.Client 对 returnTo 的判定一致）。
+    internal static bool IsLocalPath(string? path) => !string.IsNullOrEmpty(path) && path.Length <= 2048 && path[0] == '/' &&
+        (path.Length == 1 || path[1] != '/') && !path.Contains('\\', StringComparison.Ordinal) && !path.Any(char.IsControl);
 
     internal void Validate()
     {
@@ -34,6 +44,8 @@ public sealed class IdentityAccountOptions
         Connectors.Validate();
         if (DefaultPhoneCountryCode.Length is < 1 or > 3 || DefaultPhoneCountryCode.Any(c => c is < '0' or > '9'))
             throw new ArgumentException("默认国家码无效。", nameof(DefaultPhoneCountryCode));
+        if (!IsLocalPath(SelectionPath) || SelectionPath.IndexOfAny(['?', '#']) >= 0)
+            throw new ArgumentException("SelectionPath 必须是不含查询串与片段的同源相对路径。", nameof(SelectionPath));
     }
 }
 

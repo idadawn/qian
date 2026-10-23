@@ -1,0 +1,34 @@
+{
+  "name": "@qian/identity-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "qian.identity 同源的认证页族：登录、多租户选择、强制改密与连接器落点（S1-YUE-002）。构建产物以 /login/ 为基路径由身份宿主静态托管。",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^",
+    "@idadawn/yue-shell": "workspace:^",
+    "@idadawn/yue-tokens": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "@tailwindcss/vite": "catalog:"
+  }
+}

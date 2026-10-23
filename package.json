@@ -7,20 +7,21 @@
     "node": "^22.12.0 || >=24.0.0"
   },
   "scripts": {
-    "yue:lint": "pnpm --filter @idadawn/yue-tokens tokens:check && eslint packages/yue apps packages/qian-tenancy-ui",
-    "yue:typecheck": "turbo run typecheck --filter=./packages/yue/* --filter=./apps/* --filter=@qian/tenancy-ui && tsc -p tests/gates/yue/tsconfig.json",
+    "yue:lint": "pnpm --filter @idadawn/yue-tokens tokens:check && eslint packages/yue apps packages/qian-tenancy-ui packages/qian-identity-ui",
+    "yue:typecheck": "turbo run typecheck --filter=./packages/yue/* --filter=./apps/* --filter=@qian/tenancy-ui --filter=@qian/identity-ui && tsc -p tests/gates/yue/tsconfig.json",
     "yue:test": "pnpm --filter @idadawn/yue-data contracts:check && pnpm --filter @qian/tenancy-ui contracts:check && vitest run",
     "yue:a11y": "pnpm --filter yue-playground e2e",
     "yue:lighthouse": "pnpm --filter yue-playground lighthouse",
-    "yue:boundaries": "pnpm --filter @idadawn/yue-tokens build && eslint --config eslint.boundaries.config.mjs packages/yue apps packages/qian-tenancy-ui",
+    "yue:boundaries": "pnpm --filter @idadawn/yue-tokens build && eslint --config eslint.boundaries.config.mjs packages/yue apps packages/qian-tenancy-ui packages/qian-identity-ui",
     "yue:publint": "turbo run publint --filter=./packages/yue/*",
-    "yue:circular": "depcruise --config .dependency-cruiser.cjs packages/yue apps packages/qian-tenancy-ui",
-    "yue:build": "turbo run build --filter=./packages/yue/* --filter=./apps/* --filter=@qian/tenancy-ui",
+    "yue:circular": "depcruise --config .dependency-cruiser.cjs packages/yue apps packages/qian-tenancy-ui packages/qian-identity-ui",
+    "yue:build": "turbo run build --filter=./packages/yue/* --filter=./apps/* --filter=@qian/tenancy-ui --filter=@qian/identity-ui",
     "yue:gates": "pnpm yue:lint && pnpm yue:typecheck && pnpm yue:test && pnpm yue:boundaries && pnpm yue:circular && pnpm yue:build && pnpm yue:publint && pnpm yue:a11y && pnpm yue:lighthouse && pnpm yue:docs && pnpm yue:visual",
     "changeset": "changeset",
     "yue:docs": "pnpm --filter website typecheck && pnpm --filter website test && pnpm --filter website build && pnpm --filter website check && pnpm --filter website e2e",
     "openapi:generate": "node tools/openapi-codegen/generate.mjs",
-    "yue:visual": "node scripts/yue-visual.mjs"
+    "yue:visual": "node scripts/yue-visual.mjs",
+    "yue:auth": "pnpm --filter qian-shell e2e:auth"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
