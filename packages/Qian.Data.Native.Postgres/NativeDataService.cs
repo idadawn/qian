@@ -11,6 +11,8 @@ internal sealed class NativeDataService(ScopeKey ownerScope, ScopeKey ownerEntry
 {
     private readonly Dictionary<string, OpenBinding> _bindings = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<NativeSession, byte> _sessions = new();
+    private readonly ConcurrentDictionary<Task, byte> _openingCleanup = new();
+    private readonly ConcurrentQueue<Exception> _openingCleanupErrors = new();
     private readonly CancellationTokenSource _stop = new();
     private readonly TaskCompletionSource _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly object _lifecycle = new();
@@ -33,7 +35,8 @@ internal sealed class NativeDataService(ScopeKey ownerScope, ScopeKey ownerEntry
                     string.IsNullOrEmpty(settings.Database) || string.IsNullOrEmpty(settings.Host)) throw NativeErrors.Invalid();
                 settings.Enlist = false; // 原生会话只允许显式事务，不能被 TransactionScope 隐式接管。
                 var source = new NpgsqlSlimDataSourceBuilder(settings.ConnectionString).Build();
-                var open = new OpenBinding(binding, source, settings.Host, settings.Port, settings.Database);
+                var open = new OpenBinding(binding, source, settings.Host, settings.Port, settings.Database,
+                    settings.Pooling ? new NativePoolAdmission(settings.MaxPoolSize, settings.Timeout) : null);
                 _bindings.Add(binding.Name, open);
                 await using var connection = await source.OpenConnectionAsync(linked.Token).ConfigureAwait(false);
                 await Security.CheckAsync(connection, null, open, null, checkTenant: false, linked.Token).ConfigureAwait(false);
@@ -54,11 +57,13 @@ internal sealed class NativeDataService(ScopeKey ownerScope, ScopeKey ownerEntry
         var binding = Find(name, access); var id = access == NativeDataAccess.Tenant ? Tenant() : null;
         CheckContext(id, caller);
         var lifetime = Enter();
-        NpgsqlConnection? connection = null; NativeSession? session = null;
+        NativeConnectionLease? connection = null; NativeSession? session = null; Task? pendingCleanup = null;
         try
         {
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(ct, lifetime);
-            connection = await binding.Source.OpenConnectionAsync(cancellation.Token).ConfigureAwait(false);
+            connection = binding.Admission is { } admission
+                ? await admission.OpenAsync(binding.Source, cleanup => pendingCleanup = cleanup, cancellation.Token).ConfigureAwait(false)
+                : new NativeConnectionLease(await binding.Source.OpenConnectionAsync(cancellation.Token).ConfigureAwait(false), null);
             CheckContext(id, caller);
             session = new NativeSession(this, binding, connection, id, caller, lifetime);
             _sessions.TryAdd(session, 0);
@@ -71,7 +76,24 @@ internal sealed class NativeDataService(ScopeKey ownerScope, ScopeKey ownerEntry
             else if (connection is not null) await connection.DisposeAsync().ConfigureAwait(false);
             throw;
         }
-        finally { Exit(); }
+        finally
+        {
+            if (pendingCleanup is null) Exit();
+            else TrackOpeningCleanup(pendingCleanup);
+        }
+    }
+
+    private void TrackOpeningCleanup(Task cleanup)
+    {
+        _openingCleanup.TryAdd(cleanup, 0);
+        // 此任务接管当前 Enter 计数；卸载仍在 _opensDrained 上等待，不能在 API 早退时 Exit。
+        _ = cleanup.ContinueWith(completed =>
+        {
+            if (completed.Exception is { } error) _openingCleanupErrors.Enqueue(error);
+            else if (completed.IsCanceled) _openingCleanupErrors.Enqueue(new TaskCanceledException(completed));
+            _openingCleanup.TryRemove(completed, out _);
+            Exit();
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     public async ValueTask ValidateTenantTransactionAsync(string binding, DbTransaction transaction, CancellationToken cancellationToken = default)
@@ -141,10 +163,15 @@ internal sealed class NativeDataService(ScopeKey ownerScope, ScopeKey ownerEntry
             await _stop.CancelAsync().ConfigureAwait(false);
             await opening.ConfigureAwait(false);
             foreach (var session in _sessions.Keys) await session.DisposeAsync().ConfigureAwait(false);
-            foreach (var binding in _bindings.Values) await binding.Source.DisposeAsync().ConfigureAwait(false);
+            foreach (var binding in _bindings.Values)
+            {
+                try { await binding.Source.DisposeAsync().ConfigureAwait(false); }
+                finally { binding.Admission?.Dispose(); }
+            }
+            if (!_openingCleanupErrors.IsEmpty) throw new AggregateException("原生连接打开取消后的清理失败。", _openingCleanupErrors);
         }
         finally { _stop.Dispose(); _closed.TrySetResult(); }
     }
 }
 
-internal sealed record OpenBinding(NativeDataBinding Binding, NpgsqlDataSource Source, string Host, int Port, string Database);
+internal sealed record OpenBinding(NativeDataBinding Binding, NpgsqlDataSource Source, string Host, int Port, string Database, NativePoolAdmission? Admission);
