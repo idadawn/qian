@@ -100,6 +100,7 @@ jobs:
         if: matrix.gate == 'unit'
         run: |
           pnpm --filter @idadawn/yue-contracts contracts:check
+          node --test packages/qian-plugin-sdk/scripts/private-publication.test.mjs
           pnpm yue:test
       - name: a11y（Playwright + axe，critical / serious = 0）
         if: matrix.gate == 'a11y'

@@ -12,6 +12,18 @@ npm install '@qian/plugin-sdk@npm:@idadawn/qian-plugin-sdk@0.1.0'
 
 依赖为实际发布的 `@idadawn/qian-runtime`、`@idadawn/yue-sdk`（传递 contracts 与 tokens）、官方 MF2 runtime、Ajv 与 SemVer。`pnpm pack` 会把 workspace 依赖写成固定版本范围，包内只交付 ESM、声明与文档；本地 pack 不代表私有源发布成功。正式发布与外部干净消费者验收由 `plugin-sdk-release` 工作流执行。
 
+### 私有包初始化与正式发布
+
+`plugin-sdk-release` 仅接受 main、`idadawn/qian` 与清单中的固定 SDK 版本；所有远端写入使用本次 Actions 的 `GITHUB_TOKEN`，不使用本机 PAT 回退。固定依赖组只有 `yue-tokens / yue-contracts / yue-sdk / qian-plugin-sdk` 四个 `@idadawn` 包；既有 `qian-runtime` 只参与消费者验证，不重复发布。
+
+默认 `operation=release` 保留构建、测试、打包、仓库外归档消费、同版本摘要防覆盖和真实 registry 消费。**任何正式归档上传前，先 GET 核对完整四包均已存在且 visibility=private**；缺包、public 或 internal 会使整组失败，正式上传次数为零。每次上传前后再检查可见性，不能把 npm 的 `--access=restricted` 输出当作 GitHub 私有状态的证明。
+
+首次缺包时显式选择 `operation=bootstrap-private`，`version` 仍填写正式 SDK 目标版本。这个模式不安装工作区依赖、不构建或读取 `dist`；它为不存在的固定名称生成仅含 `package.json / README.md` 的 `0.0.0-private.0` 空版本，以 `private-bootstrap` 标签发布并关联本仓库。上传前检查真实归档只有两份文件，没有实现、依赖或安装脚本。已有名称不发布或修改。输出包含 `bootstrapRunId`、实际可见性和 `implementationPublished=false`；若有非 private 包，工作流以 `needs-admin` 失败结束，须管理员在包设置中调整为 private 并确认 Actions 访问权限。这是可见性初始化，不能当作正式 SDK 交付；空初始化版本可能先处于 public，但正式实现尚未上传。
+
+管理员配置完成后再次选择默认 `release`，仍发布完整 `0.1.0`（或输入的固定正式版本），并通过私有源真实安装验收。可选输入 `bootstrap_run_id` 必须填写**原初始化运行 ID**：仅在本次 registry 消费成功后，清理才会执行。清理再次确认四份正式版本和摘要，读取空版本归档，核对本仓库、本轮 runId、包名、目标版本、精确空版本及完整两文件内容；只调用该版本 ID 的删除接口。正式版本、其他运行的空版本、无标记或带未知文件的版本均保留；留空不执行删除。
+
+`node --test packages/qian-plugin-sdk/scripts/private-publication.test.mjs` 验证整组零上传拒绝、初始化归档无实现、既有包不变及清理防误删，不向真实 registry 发布或删除任何内容。
+
 ## 宿主与远程
 
 宿主创建 `ShellHost`，提供身份上下文、挂载、权益、权限、同一个 `PlatformClient`、导航/通知处理器以及必需的 `audit` 适配器。`start()` 挂载真实 `qian.shell` 根条目，`registerRemote()` 只登记可信清单，不发网络请求。`catalog(slot)` 由静态贡献生成导航；`loadSlot(slot, id)` 仅为当前页面需要的贡献调用 MF2 `registerRemotes / loadRemote`；`preloadSlot` 复用相同授权与版本检查。宿主可消费服务端已裁剪目录，但每次调用仍校验当前权限与 scope。
