@@ -3,13 +3,15 @@ name: dotnet
 # .NET 构建、门禁与测试（S1-QA-001）：PublicAPI 门禁、依赖图门禁、门禁自测、单元与 Testcontainers 集成测试；
 # 另有并行的身份依赖方组件 NativeAOT 冒烟（S1-IDP-014）。
 # PRD §14.2.1 要求 PR 级门禁 ≤ 20 分钟。仓库暂无自托管 runner，先用 GitHub 托管的 ubuntu-latest（自带 Docker）。
+# S1-QA-018 起拆成并行作业：构建与门禁一个作业；测试按 scripts/dotnet_ci.py 的分片清单分三个作业，各自构建后只跑本分片的模块，
+# 开头在后台预拉本分片用到的测试镜像；汇总作业核对每个测试项目恰好跑了一次，并把各分片的结果合并为 test-results 构件。
 
 on:
   push:
     branches: [main]
   pull_request:
     # 只改任务文件、设计文档或根目录 Markdown 的 PR 不跑本工作流，合并时按「未触发」处理。
-    # docs/generated 由 Qian.Docs.Tests 比对；测试读取的其他文档也要在这里重新纳入（「触发过滤自检」一步核对）。
+    # docs/generated 由 Qian.Docs.Tests 比对；测试读取的其他文档也要在这里重新纳入（构建与门禁作业的「触发过滤自检」核对）。
     # push 到 main 不过滤：dotnet-release.yml 要求发布提交本身有通过的 push 运行。
     paths:
       - '**'
@@ -32,35 +34,20 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
 jobs:
-  build-test:
-    name: 构建、门禁与测试
+  build-gates:
+    name: 构建与门禁
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: 后台顺序预拉测试镜像（与还原、构建、门禁并行，记录在 RUNNER_TEMP/prefetch）
-        run: |
-          mkdir -p "$RUNNER_TEMP/prefetch"
-          setsid nohup python3 scripts/dotnet_ci.py prefetch --state "$RUNNER_TEMP/prefetch" \
-            > "$RUNNER_TEMP/prefetch/output.log" 2>&1 < /dev/null &
-
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: '22'
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 12.9.1
-      - name: 构建真实 doctor 客户端供宿主验收
-        run: pnpm install --frozen-lockfile && pnpm --filter qian... build
+          python-version: "3.12"
 
       - name: 还原
         run: dotnet restore Qian.slnx
@@ -86,28 +73,114 @@ jobs:
       - name: 触发过滤自检（.NET 源码读取的 docs/、pm/ 文件改动仍触发本工作流）
         run: python3 scripts/dotnet_ci.py paths-check
 
+      - name: 上传 namespace 骨架
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-gates
+          path: TestResults/
+          if-no-files-found: ignore
+
+  test:
+    name: 单元与集成测试（分片 ${{ matrix.shard }}）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: a
+          - shard: b
+            doctor: true # Sample.Crm 与 Registry 的用例调真实 qian CLI
+          - shard: c
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 后台顺序预拉本分片用到的测试镜像（与还原、构建并行，记录在 RUNNER_TEMP/prefetch）
+        run: |
+          mkdir -p "$RUNNER_TEMP/prefetch"
+          setsid nohup python3 scripts/dotnet_ci.py prefetch ${{ matrix.shard }} --state "$RUNNER_TEMP/prefetch" \
+            > "$RUNNER_TEMP/prefetch/output.log" 2>&1 < /dev/null &
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        if: matrix.doctor
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        if: matrix.doctor
+        with:
+          version: 12.9.1
+      - name: 构建真实 doctor 客户端供宿主验收
+        if: matrix.doctor
+        run: pnpm install --frozen-lockfile && pnpm --filter qian... build
+
+      - name: 还原
+        run: dotnet restore Qian.slnx
+
+      - name: 构建
+        run: dotnet build Qian.slnx -c Release --no-restore
+
       - name: 安装固定摘要的真实 OpenAPI 兼容检查器
         run: python3 scripts/prepare_contract_tools.py --destination "$RUNNER_TEMP/qian-contract-tools"
 
       - name: 等待镜像预拉结束（至多 120 秒，超时照常测试，没拉完的由 Testcontainers 补拉）
         run: python3 scripts/dotnet_ci.py wait-prefetch --state "$RUNNER_TEMP/prefetch" --timeout 120
 
-      - name: 单元与集成测试（共享容器与真实 Apollo）
+      - name: 单元与集成测试（本分片的模块，共享容器与真实 Apollo）
         env:
           QIAN_BUF_PATH: ${{ runner.temp }}/qian-contract-tools/buf
           QIAN_OASDIFF_PATH: ${{ runner.temp }}/qian-contract-tools/oasdiff
           QIAN_TEST_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/evidence
           QIAN_PRODUCT_FILTER_REPORT: ${{ github.workspace }}/TestResults/evidence/product-capability-filter.json
           QIAN_PROFILE_EQUIVALENCE_REPORT: ${{ github.workspace }}/TestResults/evidence/profile-equivalence.json
-        run: dotnet test --solution Qian.slnx -c Release --no-build --results-directory TestResults --report-xunit-trx
+        run: |
+          python3 scripts/dotnet_ci.py shard ${{ matrix.shard }} --out "$RUNNER_TEMP/tests.slnf"
+          dotnet test --solution "$RUNNER_TEMP/tests.slnf" -c Release --no-build --results-directory TestResults --report-xunit-trx
 
       - name: 上传测试结果
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.shard }}
           path: TestResults/
           if-no-files-found: ignore
+
+  test-summary:
+    name: 测试分片汇总核对
+    needs: [build-gates, test]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 下载各分片的测试结果
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          path: ${{ runner.temp }}/test-results
+
+      - name: Qian.slnx 里每个测试项目恰好在所属分片跑过一次、没有失败（少一个模块即失败）
+        run: python3 scripts/dotnet_ci.py verify "$RUNNER_TEMP/test-results"
+
+      - name: 合并为 test-results 构件（各分片的 TRX 与证据、门禁作业的 namespace 骨架）
+        if: always()
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: test-results
+          pattern: test-results-*
 
   # plugins/qian.identity.client 的 x-aot 以此作业为依据（S1-IDP-014）：判断兼容性只看 ILC 结果，不看 Kun 包元数据（S1-KUN-015）。
   # 发布路径同镜像流水线的 NativeAOT 模板（deploy/images/aot.Dockerfile），另加 ILC 警告即失败、逐条列出；与构建测试作业并行。
