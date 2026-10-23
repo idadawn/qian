@@ -52,10 +52,11 @@ await host.start();host.registerRemote({id:'qian.consumer',version:'1.0.0',scope
  bridge:{slots:['qian.shell.nav/v1','qian.shell.command/v1'],navigate:['/page'],notify:false,capabilities:[{id:'qian.consumer/save',permission:'write',sideEffect:'write'}]}}});
 assert.equal(registered,0);await host.loadSlot('qian.shell.nav/v1');assert.equal(registered,1);
 const item=host.list('qian.shell.nav/v1')[0];assert.equal(item.remoteId,'qian.consumer');assert(Object.isFrozen(item.bridge.getContext().membership.permissions));
-item.bridge.navigate('/page');assert.equal(navigated,'/page');
-const key='11111111-1111-4111-8111-111111111111';assert.deepEqual(await item.bridge.invoke('qian.consumer/save',{value:1},{idempotencyKey:key}),{saved:true});
+assert.deepEqual(host.bridge.getContext(item.bridge.caller),item.bridge.getContext());assert.throws(()=>host.bridge.getContext({...item.bridge.caller}),/NOT_FOUND/);
+host.bridge.navigate(item.bridge.caller,'/page');assert.equal(navigated,'/page');
+const key='11111111-1111-4111-8111-111111111111';assert.deepEqual(await host.bridge.invoke(item.bridge.caller,'qian.consumer/save',{value:1},{idempotencyKey:key}),{saved:true});
 assert.equal(intercepted,1);assert.equal(requests[0].headers.get('Idempotency-Key'),key);assert.equal((await requests[0].json()).idempotencyKey,key);
-await host.dispose();assert.throws(()=>item.bridge.getContext(),/NOT_FOUND/);
+await host.dispose();assert.throws(()=>item.bridge.getContext(),/NOT_FOUND/);assert.throws(()=>host.bridge.getContext(item.bridge.caller),/NOT_FOUND/);
 `);
   writeFileSync(path.join(directory, 'smoke.mts'), `
 import {ShellHost,type ShellHostOptions,type RemoteRegistration,type PlatformClientOptions} from '@qian/plugin-sdk';
