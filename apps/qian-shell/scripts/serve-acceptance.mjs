@@ -31,16 +31,30 @@ const server = createServer(async (request, response) => {
     const selected = structuredClone(manifest);
     if (scenario === 'bad') selected.engines.yue = '^99.0.0';
     if (scenario === 'shadow') selected.pages[0].nav.title = '租户专属管理';
+    const permissions = ['qian.tenancy:tenant:read'];
+    if (scenario === 'bridge') {
+      selected.bridge.slots.push('qian.shell.command/v1');
+      selected.bridge.capabilities.push({ id: 'qian.acceptance/ping', permission: 'qian.acceptance:ping:write', sideEffect: 'write' });
+      permissions.push('qian.acceptance:ping:write');
+    }
     const registrations = [{ id: 'qian.tenancy', version: '1.0.0', scope, manifest: selected }];
     if (scenario === 'shadow') registrations.unshift({ id: 'qian.tenancy', version: '1.0.0', scope: 'global', manifest });
     response.setHeader('Content-Type', 'application/json');
-    response.end(JSON.stringify({ context: { tenant: { id: scenario === 'b' ? b : a, name: '验收租户' }, membership: { id: 'member-a', permissions: ['qian.tenancy:tenant:read'] }, app: null, locale: 'zh-CN', theme: 'light' },
-      remotes: registrations, mounted: registrations.map(({ scope, id }) => `${scope}|${id}`), entitled: registrations.map(({ scope, id }) => `${scope}|${id}`), permissions: ['qian.tenancy:tenant:read'] })); return;
+    response.end(JSON.stringify({ context: { tenant: { id: scenario === 'b' ? b : a, name: '验收租户' }, membership: { id: 'member-a', permissions }, app: null, locale: 'zh-CN', theme: 'light' },
+      remotes: registrations, mounted: registrations.map(({ scope, id }) => `${scope}|${id}`), entitled: registrations.map(({ scope, id }) => `${scope}|${id}`), permissions })); return;
   }
   if (url.pathname === '/api/shell/audit/remote-rejected' && request.method === 'POST') {
     await proxyAudit(request, response, '/api/shell/audit/remote-rejected', audit.writerToken); return;
   }
   if (url.pathname === '/__acceptance/audit' && request.method === 'GET') { await proxyAudit(request, response, '/__acceptance/audit', audit.readerToken); return; }
+  // 专用于桥接 HTTP 契约的验收能力，不是生产 tenancy 命令或身份授权替身。
+  if (url.pathname === '/api/capabilities/qian.acceptance/ping/invoke' && request.method === 'POST' && scenario === 'bridge') {
+    let text = ''; for await (const chunk of request) text += chunk;
+    const input = JSON.parse(text);
+    if (input.message !== 'window-bridge' || input.idempotencyKey !== request.headers['idempotency-key'] || request.headers['x-tenant-id'] !== '11111111-1111-4111-8111-111111111111') { response.writeHead(400).end(); return; }
+    response.setHeader('Content-Type', 'application/json');
+    response.end(JSON.stringify({ channel: 'window-bridge-http', idempotencyKey: input.idempotencyKey, tenant: request.headers['x-tenant-id'] })); return;
+  }
   if (url.pathname === '/api/tenancy/tenants') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ items: [], total: 0 })); return; }
   if (url.pathname === '/api/tenancy/meta/state-machine') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ transitions: [], actions: [], states: [] })); return; }
   const remoteRequest = url.pathname.startsWith('/remotes/qian.tenancy/');

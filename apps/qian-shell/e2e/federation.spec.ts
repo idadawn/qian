@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { writeFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
+import { settleVisuals } from '../../yue-playground/e2e/settle';
 
 interface Control {
   identity(): Promise<{ button: boolean; react: boolean; client: boolean; sdk: boolean }>;
@@ -9,6 +10,9 @@ interface Control {
   dump(): { plugin: string }[];
   unload(id: string, scope: 'global' | `tenant:${string}`): Promise<void>;
   preload(): Promise<void>;
+  windowCalls(): Promise<{ tenant: string; frozen: boolean; pathname: string; result: { channel: string; idempotencyKey: string; tenant: string } }>;
+  windowCallerRejected(): boolean;
+  setTenant(id: string): void;
 }
 declare global { interface Window { __qianAcceptance: Control } }
 
@@ -31,12 +35,28 @@ test('真实官方租户 MF 制品按页面加载，同一 React / SDK 实例与
   expect(await page.evaluate(() => window.__qianAcceptance.identity())).toEqual({ button: true, react: true, client: true, sdk: true });
   expect(await page.evaluate(() => window.__qianAcceptance.bridgeGuards())).toEqual({ unknownRejected: true, scopeRejected: true, frozen: true });
   expect((await page.evaluate(() => window.__qianAcceptance.dump())).map((entry) => entry.plugin)).toEqual(['qian.shell', 'qian.tenancy']);
+  await expect(page.getByRole('button', { name: '新建租户' })).toBeEnabled();
+  await settleVisuals(page);
   const violations = (await new AxeBuilder({ page }).analyze()).violations.filter((entry) => ['critical', 'serious'].includes(entry.impact ?? ''));
   expect(violations).toEqual([]);
   await page.screenshot({ path: new URL('../acceptance-results/official-tenant-remote.png', import.meta.url).pathname, fullPage: true });
   await page.evaluate(() => window.__qianAcceptance.unload('qian.tenancy', 'tenant:11111111-1111-4111-8111-111111111111'));
   await expect(page.getByTestId('qian-tenancy-remote')).toHaveCount(0);
   await expect(page.getByRole('link', { name: '租户管理' })).toHaveCount(0);
+});
+test('实际 MF 远程通过 window bridge 正向调用；跨 scope 与卸载后同一句柄被撤销', async ({ page, context }) => {
+  await context.addCookies([{ name: 'mf-scenario', value: 'bridge', url: 'http://127.0.0.1:5180' }]);
+  await page.goto('/tenants'); await expect(page.getByTestId('qian-tenancy-remote')).toBeVisible();
+  const invoked = page.waitForRequest((request) => request.url().endsWith('/api/capabilities/qian.acceptance/ping/invoke'));
+  const result = await page.evaluate(() => window.__qianAcceptance.windowCalls());
+  expect((await invoked).method()).toBe('POST');
+  expect(result).toEqual({ tenant: '11111111-1111-4111-8111-111111111111', frozen: true, pathname: '/tenants', result: { channel: 'window-bridge-http', idempotencyKey: '11111111-1111-4111-8111-111111111111', tenant: '11111111-1111-4111-8111-111111111111' } });
+  expect(await page.evaluate(() => window.__qianAcceptance.bridgeGuards())).toEqual({ unknownRejected: true, scopeRejected: true, frozen: true });
+  await page.evaluate(() => window.__qianAcceptance.setTenant('22222222-2222-4222-8222-222222222222'));
+  expect(await page.evaluate(() => window.__qianAcceptance.windowCallerRejected())).toBe(true);
+  await page.evaluate(() => window.__qianAcceptance.setTenant('11111111-1111-4111-8111-111111111111'));
+  await page.evaluate(() => window.__qianAcceptance.unload('qian.tenancy', 'tenant:11111111-1111-4111-8111-111111111111'));
+  expect(await page.evaluate(() => window.__qianAcceptance.windowCallerRejected())).toBe(true);
 });
 test('MF 预加载读取真实 manifest/types，运行时贡献仍等待页面需要', async ({ page, request }) => {
   await page.goto('/'); await expect(page.getByTestId('yue-app-shell')).toBeVisible();

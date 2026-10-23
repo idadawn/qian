@@ -52,7 +52,11 @@ export interface ClientActionDescriptor {
   permission: string;
   parameters: JsonSchema;
 }
+/** 只能使用受信任加载过程交付的原对象；同形对象、JSON 副本都没有 WeakMap 身份。 */
+export interface BridgeCaller { readonly remoteId: string; readonly scope: ShellScope }
 export interface RemoteBridge {
+  /** 提供给 window.__qian.bridge 的调用方句柄；卸载时立即撤销其身份。 */
+  readonly caller: BridgeCaller;
   getContext(): DeepReadonly<ShellContext>;
   navigate(target: string): void;
   notify(level: 'info' | 'success' | 'warning' | 'error', message: string): void;

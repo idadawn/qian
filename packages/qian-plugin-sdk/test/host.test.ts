@@ -106,6 +106,19 @@ describe('真实 Qian 插件树与 MF2 加载边界', () => {
   });
 });
 describe('桥接身份、scope、权限与客户端动作', () => {
+  it('受信任加载交付的caller能走公开入口，复制、跨scope与卸载后拒绝同一入口', async () => {
+    const t = await setup(); t.host.registerRemote(registration('tenant:a')); await t.host.loadSlot(nav.slot);
+    const caller = t.host.list(nav.slot)[0]!.bridge.caller;
+    expect(Object.isFrozen(caller)).toBe(true);
+    expect(t.host.bridge.getContext(caller).tenant?.id).toBe('a');
+    t.host.bridge.navigate(caller, '/tenants'); expect(t.navigate).toHaveBeenCalledWith('/tenants');
+    await expect(t.host.bridge.invoke(caller, 'qian.test/save', {})).resolves.toEqual({ saved: true });
+    expect(() => t.host.bridge.getContext({ ...caller })).toThrow('NOT_FOUND');
+    t.setContext({ ...t.context, tenant: { id: 'b', name: '乙' } });
+    expect(() => t.host.bridge.getContext(caller)).toThrow('NOT_FOUND');
+    t.setContext(t.context); await t.host.unloadRemote('qian.test', 'tenant:a');
+    expect(() => t.host.bridge.getContext(caller)).toThrow('NOT_FOUND'); await t.host.dispose();
+  });
   it('伪造注册远程 ID 的对象仍被拒绝；公开入口不暴露注册方法', async () => {
     const t = await setup(); t.host.registerRemote(registration()); await t.host.loadSlot(nav.slot);
     expect(() => t.host.bridge.getContext({ remoteId: 'qian.test', scope: 'global' })).toThrow('NOT_FOUND');

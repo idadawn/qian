@@ -1,11 +1,10 @@
 import { ShellError } from './errors';
 import { type Context, type Disposer } from '@idadawn/qian-runtime';
 import type { JsonValue } from '@idadawn/yue-sdk';
-import type { ClientActionDescriptor, DeepReadonly, RemoteBridge, RemoteRegistration, ShellContext, ShellHostOptions, SlotContribution, SlotId } from './contracts';
+import type { BridgeCaller, ClientActionDescriptor, DeepReadonly, RemoteBridge, RemoteRegistration, ShellContext, ShellHostOptions, SlotContribution, SlotId } from './contracts';
 import { compileParameters, immutable, pageContributions, validateSlot } from './validation';
 
-/** 仅由宿主创建的对象身份有效；自行填写 remoteId/scope 无法伪造调用方。 */
-export interface BridgeCaller { readonly remoteId: string; readonly scope: string }
+export type { BridgeCaller } from './contracts';
 interface Session { registration: RemoteRegistration; context: Context; active: boolean }
 interface InvokePaths {
   '/api/capabilities/{plugin}/{name}/invoke': { post: {
@@ -27,6 +26,7 @@ export class BridgeDispatcher {
     const session = { registration, context, active: true };
     this.#sessions.set(caller, session);
     const bridge: RemoteBridge = Object.freeze<RemoteBridge>({
+      caller,
       getContext: () => this.getContext(caller),
       navigate: (target) => this.navigate(caller, target),
       notify: (level, message) => this.notify(caller, level, message),
@@ -126,7 +126,7 @@ export class BridgeDispatcher {
     });
   }
   private openView(caller: BridgeCaller): RemoteBridge {
-    return Object.freeze<RemoteBridge>({ getContext: () => this.getContext(caller), navigate: (target) => this.navigate(caller, target), notify: (level, message) => this.notify(caller, level, message),
+    return Object.freeze<RemoteBridge>({ caller, getContext: () => this.getContext(caller), navigate: (target) => this.navigate(caller, target), notify: (level, message) => this.notify(caller, level, message),
       invoke: <T>(id: string, input: JsonValue, options?: { idempotencyKey?: string; signal?: AbortSignal }) => this.invoke<T>(caller, id, input, options),
       registerClientAction: (descriptor, execute) => this.registerClientAction(caller, descriptor, execute) });
   }

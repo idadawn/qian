@@ -39,7 +39,7 @@ await host.loadSlot('qian.shell.nav/v1', menu[0]?.descriptor.id);
 
 每个加载的 expose 在真实 `PluginLoader` 中有自己的 Apply。贡献用 `ctx.provide(key, name, value)` 注册；相同槽位与名称的租户项遮蔽全局项。目录、读取、执行共用挂载/权益/权限过滤。`unloadRemote` 先撤销桥接访问，再逆序等待效果与注册释放；全局项随之重新可见。MF 已执行的 JavaScript 可能仍在浏览器模块缓存内，卸载承诺为逻辑贡献与生命周期撤销，不声称能清除 JavaScript 引擎代码缓存。
 
-`window.__qian.bridge` 只公开调用入口，不公开注册身份的入口。宿主通过对象身份的 WeakMap 绑定真实远程 ID 与 scope，再将闭包形式的 `RemoteBridge` 交给对应远程；自行填写同名 ID 或 scope 的对象无效。每次调用重新检查注册仍有效、当前租户、挂载与权益，写操作额外验证能力声明与权限。
+`window.__qian.bridge` 只公开调用入口，不公开注册身份的入口。宿主通过对象身份的 WeakMap 绑定真实远程 ID 与 scope，再将 `RemoteBridge` 交给对应远程。其中只读 `bridge.caller` 是受信任加载时生成的原对象句柄：远程可以调用 `window.__qian.bridge.getContext(bridge.caller)`，也可直接使用闭包形式的 `bridge.getContext()`；两条路径共享授权与撤销检查。自行填写同名 ID/scope、展开或 JSON 复制句柄都无效。每次调用重新检查注册仍有效、当前租户、挂载与权益，写操作额外验证能力声明与权限。卸载后保留的原句柄也失效，不提供公开 `open` 或 Dispatcher。
 
 - `getContext()` 返回克隆且深冻结的 tenant、membership、app、locale、theme，不含令牌。
 - `navigate()` 只接受清单白名单路由；导航资源引用沿现有 `Qian.Capabilities` 格式 `qian:<tenant>:<plugin>:page:<百分号编码路由>`，校验租户和插件后解析为同一路由。

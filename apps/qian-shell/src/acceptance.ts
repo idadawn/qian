@@ -1,11 +1,22 @@
 import { Button } from '@idadawn/yue-core/shell';
 import * as React from 'react';
 import type { createInstance } from '@module-federation/enhanced/runtime';
-import { PlatformClient, SDK_VERSION, type RemoteRegistration, type ShellContext, type ShellHost, type ShellScope } from '@idadawn/qian-plugin-sdk';
+import { PlatformClient, SDK_VERSION, type BridgeCaller, type RemoteBridge, type RemoteRegistration, type ShellContext, type ShellHost, type ShellScope } from '@idadawn/qian-plugin-sdk';
 
 /** 只在 --mode acceptance 产物中引用；生产构建通过断言确认没有此控制面。 */
 export async function installAcceptance(host: ShellHost, bootstrap: { context: ShellContext; remotes: RemoteRegistration[] }, instance: ReturnType<typeof createInstance>) {
+  let retainedWindowBridge: Pick<RemoteBridge, 'getContext' | 'navigate' | 'invoke'> | undefined;
   const control = {
+    async windowCalls() {
+      const remote = instance.options.remotes[0]!;
+      const module = await instance.loadRemote<{ connectShell: (caller: BridgeCaller) => Pick<RemoteBridge, 'getContext' | 'navigate' | 'invoke'> }>(`${remote.name}/TenantPage`);
+      retainedWindowBridge = module!.connectShell(host.list('qian.shell.nav/v1')[0]!.bridge.caller);
+      const context = retainedWindowBridge.getContext();
+      retainedWindowBridge.navigate('/tenants');
+      const result = await retainedWindowBridge.invoke('qian.acceptance/ping', { message: 'window-bridge' }, { idempotencyKey: '11111111-1111-4111-8111-111111111111' });
+      return { tenant: context.tenant?.id, frozen: Object.isFrozen(context.membership?.permissions), pathname: location.pathname, result };
+    },
+    windowCallerRejected() { try { retainedWindowBridge!.getContext(); return false; } catch { return true; } },
     async identity() {
       const remote = instance.options.remotes[0];
       if (!remote) throw new Error('尚未加载远程');

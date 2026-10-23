@@ -29,7 +29,7 @@ pnpm --filter qian-shell e2e
 
 验收使用带明确权限的 fixture bootstrap 和租户数据响应；真实登录、租户权益与运营 API 端到端接线仍属于各自任务。版本拒绝的审计链是实际 PostgreSQL 写入并回读校验，不以浏览器事件或 JSONL 代替。
 
-Playwright 检查：官方远程按页面请求；共享 React、PlatformClient、SDK 和 Button 引用一致；scope 遮蔽与卸载恢复；租户 B 未挂载时 manifest 请求为零；`engines.yue` 拒绝并在控制台和真实审计链留痕；`mf-manifest.json` 与 DTS 可下载；桥接拒绝伪造 ID 与越权；上下文深冻结；axe critical/serious 为零；首次脚本 gzip 总量不超过 250 KiB。`acceptance-results/` 保存截图、首屏资源记录与不含凭据的链回读证据。验收控制模块只由 `--mode acceptance` 引用，正式制品打包检查其不存在。
+Playwright 检查：官方远程按页面请求；共享 React、PlatformClient、SDK 和 Button 引用一致；scope 遮蔽与卸载恢复；租户 B 未挂载时 manifest 请求为零；`engines.yue` 拒绝并在控制台和真实审计链留痕；`mf-manifest.json` 与 DTS 可下载；实际 MF 模块以宿主交付的 `caller` 通过 `window.__qian.bridge` 完成 getContext、navigate 和 invoke；伪造 ID、跨 scope 与卸载后的句柄被拒绝；上下文深冻结；axe critical/serious 为零；首次脚本 gzip 总量不超过 250 KiB。invoke 的前端传输验收使用独立 `qian.acceptance/ping` HTTP fixture 核对租户头与正文/头部幂等键，不冒充生产 tenancy 命令。`acceptance-results/` 保存截图、首屏资源记录与不含凭据的链回读证据。验收控制模块只由 `--mode acceptance` 引用，正式制品打包检查其不存在。
 
 ## 模型体验与延期项
 
