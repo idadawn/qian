@@ -127,3 +127,38 @@ static Qian.Config.ConfigReloadFailed.operator !=(Qian.Config.ConfigReloadFailed
 static Qian.Config.ConfigReloadFailed.operator ==(Qian.Config.ConfigReloadFailed? left, Qian.Config.ConfigReloadFailed? right) -> bool
 static readonly Qian.Config.ConfigErrors.ReloadRejected -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Config.ConfigRuntimeEvents.ReloadFailed -> Qian.Runtime.QianEvent<Qian.Config.ConfigReloadFailed!, object?>!
+
+Qian.Config.IFeatureFlags
+Qian.Config.IFeatureFlags.IsEnabled(string! name, System.Guid tenantId) -> bool
+Qian.Config.IConfigService.Flags.get -> Qian.Config.IFeatureFlags!
+Qian.Config.FeatureFlagDraft
+Qian.Config.FeatureFlagDraft.Confirmed.get -> bool
+Qian.Config.FeatureFlagDraft.Confirmed.init -> void
+Qian.Config.FeatureFlagDraft.FeatureFlagDraft() -> void
+Qian.Config.FeatureFlagDraft.Name.get -> string!
+Qian.Config.FeatureFlagDraft.Name.init -> void
+Qian.Config.FeatureFlagDraft.Rule.get -> Qian.Config.FeatureFlagPolicy!
+Qian.Config.FeatureFlagDraft.Rule.init -> void
+Qian.Config.FeatureFlagDraftResult
+Qian.Config.FeatureFlagDraftResult.FeatureFlagDraftResult() -> void
+Qian.Config.FeatureFlagDraftResult.Name.get -> string!
+Qian.Config.FeatureFlagDraftResult.Name.init -> void
+Qian.Config.FeatureFlagDraftResult.RuleHash.get -> string!
+Qian.Config.FeatureFlagDraftResult.RuleHash.init -> void
+Qian.Config.FeatureFlagDraftResult.Status.get -> string!
+Qian.Config.FeatureFlagManagement
+Qian.Config.FeatureFlagPolicy
+Qian.Config.FeatureFlagPolicy.Default.get -> bool
+Qian.Config.FeatureFlagPolicy.Default.init -> void
+Qian.Config.FeatureFlagPolicy.FeatureFlagPolicy() -> void
+Qian.Config.FeatureFlagPolicy.Percentage.get -> int
+Qian.Config.FeatureFlagPolicy.Percentage.set -> void
+Qian.Config.FeatureFlagPolicy.Tenants.get -> System.Collections.Generic.IReadOnlyList<System.Guid>!
+Qian.Config.FeatureFlagPolicy.Tenants.set -> void
+Qian.Config.IFeatureFlagDrafts
+Qian.Config.IFeatureFlagDrafts.SetAsync(Qian.Config.FeatureFlagDraft! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Config.FeatureFlagDraftResult!>
+const Qian.Config.FeatureFlagManagement.SetCapabilityId = "qian.config.flags/flags.set" -> string!
+const Qian.Config.FeatureFlagManagement.SetPermission = "qian.config.flags:flag:set" -> string!
+static readonly Qian.Config.FeatureFlagManagement.Key -> Qian.Runtime.ServiceKey
+Qian.Config.FeatureFlagDraft.IdempotencyKey.get -> System.Guid
+Qian.Config.FeatureFlagDraft.IdempotencyKey.init -> void

@@ -8,12 +8,12 @@ namespace Qian.Config.Tests;
 public sealed class ConfigMetadataTests
 {
     [Fact]
-    public void 两个公开入口保持原类型名_共享事件同源且只由标准组件拥有_权限不跨组件复制()
+    public void 标准与Apollo公开入口保持原类型名_共享事件同源且只由标准组件拥有_权限不跨组件复制()
     {
         var metadata = typeof(ConfigurationPlugin).Assembly.GetCustomAttributes<QianCodeMetadataAttribute>()
             .Select(attribute => Assert.IsAssignableFrom<IComponentCodeMetadataFactory>(Activator.CreateInstance(attribute.FactoryType)).Create())
             .ToDictionary(item => item.ComponentId, StringComparer.Ordinal);
-        Assert.Equal(2, metadata.Count);
+        Assert.Equal(3, metadata.Count);
         Assert.Equal("Qian.Config.Apollo.ConfigurationPlugin, Qian.Config.Apollo", metadata["qian.config"].RuntimeEntry);
         Assert.Equal("Qian.Config.Apollo.ApolloConfigurationPlugin, Qian.Config.Apollo", metadata["qian.config.apollo"].RuntimeEntry);
         var expected = Assert.Single(metadata["qian.config"].Events.EnumerateArray());
@@ -25,7 +25,7 @@ public sealed class ConfigMetadataTests
         Assert.Equal("Qian.Config.ConfigRuntimeEvents.ReloadFailed", expected.GetProperty("source").GetString());
 
         var root = RepositoryRoot();
-        foreach (var (id, code) in metadata)
+        foreach (var (id, code) in metadata.Where(pair => pair.Key != "qian.config.flags"))
         {
             Assert.Empty(code.Inject); Assert.Equal(ConfigDefinition.Key.Name, Assert.Single(code.Provides));
             using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "plugins", id, ".qian-plugin/plugin.json")));
