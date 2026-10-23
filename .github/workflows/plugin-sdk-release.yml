@@ -1,0 +1,45 @@
+name: plugin-sdk-release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 已合入 main 的前端插件 SDK 固定版本
+        type: string
+        required: true
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: plugin-sdk-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      TURBO_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: '@idadawn'
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @qian/surfaces build && pnpm --filter qian build
+      - run: pnpm --filter @idadawn/qian-plugin-sdk test
+      - name: 固定依赖组打包与仓库外消费
+        run: |
+          node packages/qian-plugin-sdk/scripts/release.mjs pack "$RUNNER_TEMP/qian-plugin-sdk"
+          node packages/qian-plugin-sdk/scripts/verify-consumer.mjs archive "$RUNNER_TEMP/qian-plugin-sdk"
+      - name: 私有发布、制品摘要与可见性验证
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node packages/qian-plugin-sdk/scripts/release.mjs publish "$RUNNER_TEMP/qian-plugin-sdk"
+      - name: 从私有源安装固定版本并执行公开 API 与类型验证
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node packages/qian-plugin-sdk/scripts/verify-consumer.mjs registry
