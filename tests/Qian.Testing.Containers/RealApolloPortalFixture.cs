@@ -25,8 +25,8 @@ public sealed class RealApolloPortalFixture : RealApolloFixture
         {
             var password = OpenBsdBCrypt.Generate(NewSecret().ToCharArray(), RandomNumberGenerator.GetBytes(16), 10);
             // 官方 RoleUtils + ConfigConsts.CLUSTER_NAMESPACE_SEPARATOR("+")，权限绑定到环境和 namespace。
+            // 服务发现走数据库（RealApolloFixture 的 database-discovery），不需要改写 Eureka 地址。
             return $$"""
-                UPDATE ApolloConfigDB.ServerConfig SET Value='http://apollo-config:8080/eureka/' WHERE `Key`='eureka.service.url';
                 UPDATE Users SET Password='{{password}}' WHERE Username='apollo';
                 UPDATE ServerConfig SET Value='UAT' WHERE `Key`='apollo.portal.envs';
                 UPDATE ServerConfig SET Value='{"UAT":"http://apollo-config:8080"}' WHERE `Key`='apollo.portal.meta.servers';

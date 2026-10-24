@@ -87,7 +87,7 @@ public sealed class OrderVisibilityTests(InfrastructureFixture infra)
 - 启动失败只在环境原因下重试（S1-QA-011）：
   - Ryuk 初始化失败：Testcontainers 在每个测试进程第一次启动容器时初始化 Ryuk（资源回收容器），等待连接确认的超时写死为 60 秒，宿主繁忙（如多个会话并发跑容器测试）时会耗尽，抛 `ResourceReaperException`。
   - Docker API 请求超时：Docker 守护进程在 Docker 客户端的请求超时内没有响应，抛 `TaskCanceledException`，内层为 `HttpRequestException`。本次启动自己的取消令牌触发的取消不算。
-  - 遇到上面两类，所有 fixture 都先释放这次启动拿到的资源（含 `OnStartingAsync` 准备的依赖容器与网络），退避后从头再来，最多三次；每次重试记一条诊断消息。
+  - 遇到上面两类，所有 fixture 都先释放这次启动拿到的资源（含 `OnStartingAsync` 准备的依赖容器与网络、`StartAlongsideAsync` 与主容器并行启动的同级容器），退避后从头再来，最多三次；每次重试记一条诊断消息。
   - 容器在就绪前自行退出：只在 fixture 声明了 `StartAttempts` 时重试，目前只有 K3s。
   - 其他错误、以及测试已取消时，不重试。
   - 这里只重试启动，不重试断言，与下一条「安全类用例不允许重试通过」不冲突。

@@ -45,7 +45,8 @@ public abstract class ContainerFixture<TContainer> : IAsyncLifetime
                 {
                     await OnStartingAsync(cancellationToken).ConfigureAwait(false);
                     _container = CreateContainer();
-                    await _container.StartAsync(cancellationToken).ConfigureAwait(false);
+                    // 两者都结束才判定成败：失败时不会有仍在启动的容器被释放，重试规则也一样。
+                    await Task.WhenAll(_container.StartAsync(cancellationToken), StartAlongsideAsync(cancellationToken).AsTask()).ConfigureAwait(false);
                     break;
                 }
                 // 瞬时启动失败：释放这次启动拿到的全部资源，退避后从头再来。只重试启动本身，不重试任何测试断言。
@@ -97,6 +98,12 @@ public abstract class ContainerFixture<TContainer> : IAsyncLifetime
 
     /// <summary>组合 fixture 可先准备受其拥有的依赖与网络；失败时统一清理，瞬时失败重试时会在清理后再次调用。</summary>
     protected virtual ValueTask OnStartingAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+    /// <summary>
+    /// 与主容器并行启动的同级依赖，例如与主容器一样只依赖 <see cref="OnStartingAsync"/> 所备数据库的另一个服务。
+    /// 与主容器一起等待，失败时一并释放、按同样的规则重试；缺省没有。
+    /// </summary>
+    protected virtual ValueTask StartAlongsideAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
     /// <summary>容器就绪后的初始化，例如读出连接串、建应用角色。</summary>
     protected virtual ValueTask OnStartedAsync(TContainer container, CancellationToken cancellationToken) => ValueTask.CompletedTask;
