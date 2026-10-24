@@ -10,6 +10,7 @@
 - RSA 私钥投射到 `Gateway:SigningKeyPath`，以原子文件替换完成轮换；不会在生产缺钥时自动生成密钥。
 - `ConnectionFiles:Audit`、`ConnectionFiles:PlatformAudit`、`ConnectionFiles:Redis` 指向宿主 Secret 文件。数据库使用独立的 NOINHERIT 受限登录，分别对应 `Audit:TenantRole` / `Audit:PlatformRole`；`Audit:FunctionOwner` 是离线迁移配置的专用 NOLOGIN 函数 owner。宿主登记 `audit_tenant` / `audit_platform` 两个 NativeData 绑定，表与精确保护策略来自 NativeAudit 的固定源码声明。
 - `Identity:SecretMountRoot` 下的 `qian/identity/client-secret` 通过固定 `secretRef://platform/identity/client-secret` 解析。生产接收端把这次解析记入真实平台审计链，写失败不会返回密钥，不使用空审计接收端。
+- 每条 `Gateway:Routes` 必填 `RateLimiterPolicy`（`kun-default` / `tenant` / `user`）；缺失时启动前拒绝。可用 `Gateway:RateLimits:KeyPrefix`、`WindowSeconds`、`IpPermitLimit`、`TenantPermitLimit`、`UserPermitLimit` 覆盖限额；配置含义与缺省值见 [Provider 主文档](../../packages/Qian.Gateway/README.md#路由限流s1-gw-002)。所有副本使用相同前缀与配置，共享现有 Redis 连接。
 - `Identity:DataProtectionKeysDirectory` 是各副本共享的持久密钥目录，Redis 会话使用稳定前缀。
 - Apollo 启用 AccessKey 时，配置值为 `secretRef://platform/apollo/access-key`，`ConnectionFiles:ApolloAccessKey` 指向引导 Secret 文件。宿主先按 JSON → Secret 文件 → `QIAN_` 环境变量 → CLI 构造独立引导快照，冻结路径；签名回调每次读取该文件以支持原子轮换，不反向读取尚在装配的 Apollo 配置根。`QIAN_Secrets__Directory` 与 CLI 的 `--Secrets:Directory` 均可指定挂载配置目录。
 

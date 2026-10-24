@@ -13,7 +13,9 @@ switch (args.FirstOrDefault())
         if (string.IsNullOrWhiteSpace(admin)) return Fail("缺少环境变量 QIAN_DEV_PG_ADMIN（开发 PostgreSQL 的管理员连接串）；请用 scripts/dev-shell.sh up 启动。");
         var dex = options.GetValueOrDefault("dex"); var dexSecret = options.GetValueOrDefault("dex-secret");
         if ((dex is null) != (dexSecret is null)) return Fail("--dex 与 --dex-secret 必须同时给出（上游 Dex 的 issuer 与客户端密钥文件）。");
-        var settings = new DevShellSettings(state, admin, options.GetValueOrDefault("urls") ?? "http://127.0.0.1:5090", options.GetValueOrDefault("gateway") ?? "https://localhost:5443", dex, dexSecret);
+        if (!int.TryParse(Environment.GetEnvironmentVariable("QIAN_DEV_REDIS_PORT") ?? "55434", out var redisPort) || redisPort is < 1 or > 65535)
+            return Fail("QIAN_DEV_REDIS_PORT 必须为 1–65535 的回环 Redis 端口。");
+        var settings = new DevShellSettings(state, admin, options.GetValueOrDefault("urls") ?? "http://127.0.0.1:5090", options.GetValueOrDefault("gateway") ?? "https://localhost:5443", dex, dexSecret, redisPort);
         return await DevShellHost.RunAsync(settings, CancellationToken.None);
     default:
         Console.Error.WriteLine("""

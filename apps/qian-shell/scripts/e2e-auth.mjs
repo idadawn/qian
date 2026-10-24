@@ -7,8 +7,8 @@ import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 
-// 真实流程验收入口（S1-YUE-002，S1-YUE-012 迁入 apps/qian-shell）：独立临时状态目录、随机回环端口与自有 PostgreSQL / Dex 容器，用 scripts/dev-shell.sh up
-// 拉起真实 qian.identity + 平台表面宿主 + 上游 Dex + 网关 BFF，等就绪后跑 Playwright（playwright.auth.config.ts），最后停宿主、删容器。失败时保留状态目录，并把宿主 / PostgreSQL / Dex 三份日志复制进
+// 真实流程验收入口（S1-YUE-002，S1-YUE-012 迁入 apps/qian-shell）：独立临时状态目录、随机回环端口与自有 PostgreSQL / Redis / Dex 容器，用 scripts/dev-shell.sh up
+// 拉起真实 qian.identity + 平台表面宿主 + 上游 Dex + 网关 BFF，等就绪后跑 Playwright（playwright.auth.config.ts），最后停宿主、删容器。失败时保留状态目录，并把宿主 / PostgreSQL / Redis / Dex 四份日志复制进
 // TestResults/shell-auth/logs（CI 只上传 TestResults/shell-auth；状态目录里的密钥、证书与 Dex 配置不复制）。CI 用同一入口。
 const root = resolve(import.meta.dirname, '../../..');
 const script = resolve(root, 'scripts/dev-shell.sh');
@@ -20,10 +20,10 @@ async function port() {
   await new Promise(ok => server.close(ok));
   return port;
 }
-const [apiPort, gatewayPort, pgPort, dexPort] = await Promise.all([port(), port(), port(), port()]);
+const [apiPort, gatewayPort, pgPort, dexPort, redisPort] = await Promise.all([port(), port(), port(), port(), port()]);
 const runId = randomUUID().slice(0, 8);
 const env = {
-  ...process.env, QIAN_DEV_STATE: state, QIAN_DEV_PG_CONTAINER: 'qian-shell-e2e-' + runId, QIAN_DEV_PG_PORT: String(pgPort),
+  ...process.env, QIAN_DEV_REDIS_CONTAINER: `qian-shell-e2e-redis-${runId}`, QIAN_DEV_REDIS_PORT: String(redisPort), QIAN_DEV_STATE: state, QIAN_DEV_PG_CONTAINER: 'qian-shell-e2e-' + runId, QIAN_DEV_PG_PORT: String(pgPort),
   QIAN_DEV_DEX_CONTAINER: 'qian-shell-e2e-dex-' + runId, QIAN_DEV_DEX_PORT: String(dexPort),
   QIAN_DEV_SHELL_API_URL: `http://127.0.0.1:${apiPort}`, QIAN_DEV_SHELL_URL: `https://localhost:${gatewayPort}`, QIAN_DEV_SHELL_SKIP_UI_BUILD: '1',
 };
@@ -68,9 +68,9 @@ try {
   succeeded = true;
 } finally {
   await stopHost(); await log.close();
-  // down 会删容器、docker logs 随之不可见：失败时先把两个容器的日志留进状态目录（容器起不来时也可用 docker events 看 die 的退出码）。
+  // down 会删容器、docker logs 随之不可见：失败时先把三个容器的日志留进状态目录（容器起不来时也可用 docker events 看 die 的退出码）。
   if (!succeeded) {
-    for (const [name, file] of [[env.QIAN_DEV_PG_CONTAINER, 'postgres.log'], [env.QIAN_DEV_DEX_CONTAINER, 'dex.log']]) {
+    for (const [name, file] of [[env.QIAN_DEV_PG_CONTAINER, 'postgres.log'], [env.QIAN_DEV_DEX_CONTAINER, 'dex.log'], [env.QIAN_DEV_REDIS_CONTAINER, 'redis.log']]) {
       const out = await open(resolve(state, file), 'w', 0o600);
       await new Promise(ok => spawn('docker', ['logs', name], { stdio: ['ignore', out.fd, out.fd] }).once('exit', ok).once('error', ok));
       await out.close();
@@ -81,7 +81,7 @@ try {
   else {
     const kept = resolve(root, 'TestResults/shell-auth/logs');
     await mkdir(kept, { recursive: true });
-    for (const file of ['host.log', 'postgres.log', 'dex.log']) await copyFile(resolve(state, file), resolve(kept, file)).catch(() => undefined);
+    for (const file of ['host.log', 'postgres.log', 'dex.log', 'redis.log']) await copyFile(resolve(state, file), resolve(kept, file)).catch(() => undefined);
     console.error('失败日志保留在本机私有目录：', state, '；日志副本：', kept);
   }
 }

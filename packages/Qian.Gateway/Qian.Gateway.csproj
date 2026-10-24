@@ -9,6 +9,7 @@
     <ProjectReference Include="../Qian.Plugin.Sdk/Qian.Plugin.Sdk.csproj" />
     <ProjectReference Include="../Qian.Plugin.Sdk.Generators/Qian.Plugin.Sdk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <PackageReference Include="Kun.Gateway" />
+    <PackageReference Include="StackExchange.Redis" />
     <InternalsVisibleTo Include="Qian.Gateway.Tests" />
   </ItemGroup>
 </Project>

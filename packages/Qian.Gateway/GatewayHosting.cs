@@ -51,7 +51,7 @@ public static class GatewayHosting
             snapshot.Routes.Select(route => new RouteConfig
             {
                 RouteId = route.Id, ClusterId = route.Cluster, Match = new RouteMatch { Path = route.Path },
-                AuthorizationPolicy = "Default", RateLimiterPolicy = "kun-default"
+                AuthorizationPolicy = "Default", RateLimiterPolicy = route.RateLimiterPolicy
             }).ToArray(),
             snapshot.Clusters.Select(cluster => new ClusterConfig
             {
@@ -68,6 +68,7 @@ public static class GatewayHosting
             // tenant_id/sub/roles 是签发器固定字段，不能误填进 Kun 的附加字段兼容选项。
             options.ForwardedClaimTypes = ["principal_kind", "membership_id", "identity_revision", "scope", "session_id", "project_id", "plugin_id"];
         });
+        GatewayRateLimiting.Add(services, snapshot);
         services.AddSingleton<ITransformProvider, AudienceTransformProvider>();
         services.AddAuthentication(options => { options.DefaultScheme = Scheme; options.DefaultChallengeScheme = Scheme; })
             .AddPolicyScheme(Scheme, Scheme, options => options.ForwardDefaultSelector = http =>
@@ -114,7 +115,7 @@ public static class GatewayHosting
             if (http.Request.Headers.ContainsKey("Authorization")) http.User = new ClaimsPrincipal(new ClaimsIdentity());
             await next(http).ConfigureAwait(false);
         });
-        app.UseAuthentication(); app.UseAuthorization(); app.UseRateLimiter();
+        app.UseAuthentication(); app.UseRateLimiter(); app.UseAuthorization();
         app.Use(async (http, next) =>
         {
             if (http.GetEndpoint()?.Metadata.GetMetadata<GatewayEndpoint>() is { } endpoint)
@@ -145,11 +146,13 @@ public static class GatewayHosting
                 : QianResults.Error(new QianError(PlatformErrors.Unavailable)).ExecuteAsync(http)
         }).AllowAnonymous();
         var runtime = endpoints.ServiceProvider.GetRequiredService<GatewayRuntime>();
-        endpoints.MapReverseProxy().Add(endpoint =>
+        var proxy = endpoints.MapReverseProxy();
+        proxy.Add(endpoint =>
         {
             var route = endpoint.Metadata.OfType<RouteModel>().Single();
             endpoint.Metadata.Add(new GatewayEndpoint(runtime.AudienceFor(route.Config.ClusterId!)));
         });
+        proxy.RequireRateLimiting(endpoints.ServiceProvider.GetRequiredService<GatewayRateLimitPolicy>());
         return endpoints;
     }
 

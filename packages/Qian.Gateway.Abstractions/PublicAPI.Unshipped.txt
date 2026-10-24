@@ -23,6 +23,8 @@ Qian.Gateway.GatewayConfiguration.Issuer.get -> string!
 Qian.Gateway.GatewayConfiguration.Issuer.init -> void
 Qian.Gateway.GatewayConfiguration.PublicKeyPath.get -> string!
 Qian.Gateway.GatewayConfiguration.PublicKeyPath.init -> void
+Qian.Gateway.GatewayConfiguration.RateLimits.get -> Qian.Gateway.GatewayRateLimits!
+Qian.Gateway.GatewayConfiguration.RateLimits.init -> void
 Qian.Gateway.GatewayConfiguration.Routes.get -> System.Collections.Generic.IReadOnlyList<Qian.Gateway.GatewayRoute!>!
 Qian.Gateway.GatewayConfiguration.Routes.init -> void
 Qian.Gateway.GatewayConfiguration.SigningKeyPath.get -> string!
@@ -30,6 +32,20 @@ Qian.Gateway.GatewayConfiguration.SigningKeyPath.init -> void
 Qian.Gateway.GatewayConfiguration.TrustedProxyNetworks.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Qian.Gateway.GatewayConfiguration.TrustedProxyNetworks.init -> void
 Qian.Gateway.GatewayDefinition
+Qian.Gateway.GatewayRateLimits
+Qian.Gateway.GatewayRateLimits.<Clone>$() -> Qian.Gateway.GatewayRateLimits!
+Qian.Gateway.GatewayRateLimits.Equals(Qian.Gateway.GatewayRateLimits? other) -> bool
+Qian.Gateway.GatewayRateLimits.GatewayRateLimits() -> void
+Qian.Gateway.GatewayRateLimits.IpPermitLimit.get -> int
+Qian.Gateway.GatewayRateLimits.IpPermitLimit.init -> void
+Qian.Gateway.GatewayRateLimits.KeyPrefix.get -> string!
+Qian.Gateway.GatewayRateLimits.KeyPrefix.init -> void
+Qian.Gateway.GatewayRateLimits.TenantPermitLimit.get -> int
+Qian.Gateway.GatewayRateLimits.TenantPermitLimit.init -> void
+Qian.Gateway.GatewayRateLimits.UserPermitLimit.get -> int
+Qian.Gateway.GatewayRateLimits.UserPermitLimit.init -> void
+Qian.Gateway.GatewayRateLimits.WindowSeconds.get -> int
+Qian.Gateway.GatewayRateLimits.WindowSeconds.init -> void
 Qian.Gateway.GatewayRoute
 Qian.Gateway.GatewayRoute.<Clone>$() -> Qian.Gateway.GatewayRoute!
 Qian.Gateway.GatewayRoute.Cluster.get -> string!
@@ -41,6 +57,8 @@ Qian.Gateway.GatewayRoute.Id.get -> string!
 Qian.Gateway.GatewayRoute.Id.init -> void
 Qian.Gateway.GatewayRoute.Path.get -> string!
 Qian.Gateway.GatewayRoute.Path.init -> void
+Qian.Gateway.GatewayRoute.RateLimiterPolicy.get -> string!
+Qian.Gateway.GatewayRoute.RateLimiterPolicy.init -> void
 Qian.Gateway.IGatewayService
 Qian.Gateway.IGatewayService.AudienceFor(string! clusterId) -> string!
 Qian.Gateway.IGatewayService.IsReady.get -> bool
@@ -50,6 +68,9 @@ override Qian.Gateway.GatewayCluster.ToString() -> string!
 override Qian.Gateway.GatewayConfiguration.Equals(object? obj) -> bool
 override Qian.Gateway.GatewayConfiguration.GetHashCode() -> int
 override Qian.Gateway.GatewayConfiguration.ToString() -> string!
+override Qian.Gateway.GatewayRateLimits.Equals(object? obj) -> bool
+override Qian.Gateway.GatewayRateLimits.GetHashCode() -> int
+override Qian.Gateway.GatewayRateLimits.ToString() -> string!
 override Qian.Gateway.GatewayRoute.Equals(object? obj) -> bool
 override Qian.Gateway.GatewayRoute.GetHashCode() -> int
 override Qian.Gateway.GatewayRoute.ToString() -> string!
@@ -58,6 +79,8 @@ static Qian.Gateway.GatewayCluster.operator ==(Qian.Gateway.GatewayCluster? left
 static Qian.Gateway.GatewayConfiguration.operator !=(Qian.Gateway.GatewayConfiguration? left, Qian.Gateway.GatewayConfiguration? right) -> bool
 static Qian.Gateway.GatewayConfiguration.operator ==(Qian.Gateway.GatewayConfiguration? left, Qian.Gateway.GatewayConfiguration? right) -> bool
 static Qian.Gateway.GatewayDefinition.Gateway(this Qian.Runtime.IPluginContext! context) -> Qian.Gateway.IGatewayService!
+static Qian.Gateway.GatewayRateLimits.operator !=(Qian.Gateway.GatewayRateLimits? left, Qian.Gateway.GatewayRateLimits? right) -> bool
+static Qian.Gateway.GatewayRateLimits.operator ==(Qian.Gateway.GatewayRateLimits? left, Qian.Gateway.GatewayRateLimits? right) -> bool
 static Qian.Gateway.GatewayRoute.operator !=(Qian.Gateway.GatewayRoute? left, Qian.Gateway.GatewayRoute? right) -> bool
 static Qian.Gateway.GatewayRoute.operator ==(Qian.Gateway.GatewayRoute? left, Qian.Gateway.GatewayRoute? right) -> bool
 static readonly Qian.Gateway.GatewayDefinition.Key -> Qian.Runtime.ServiceKey
