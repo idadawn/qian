@@ -1044,12 +1044,6 @@ importers:
       '@idadawn/yue-sdk':
         specifier: workspace:^
         version: link:../sdk
-      ajv:
-        specifier: 'catalog:'
-        version: 8.20.0
-      ajv-formats:
-        specifier: 'catalog:'
-        version: 3.0.1(ajv@8.20.0)
       react-hook-form:
         specifier: 'catalog:'
         version: 7.90.0(@types/react@19.3.0)(react@19.3.0)
@@ -1084,6 +1078,12 @@ importers:
       '@vitest/browser-playwright':
         specifier: 'catalog:'
         version: 5.0.3(playwright@1.64.0)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.3)
+      ajv:
+        specifier: 'catalog:'
+        version: 8.20.0
+      ajv-formats:
+        specifier: 'catalog:'
+        version: 3.0.1(ajv@8.20.0)
       axe-core:
         specifier: 'catalog:'
         version: 4.14.0

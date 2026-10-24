@@ -18,12 +18,11 @@ function firstFrame(): Plugin {
 
 /**
  * 构建期 meta CSP：只允许同源脚本与按哈希列出的内联脚本（首帧主题脚本）；连接、图片、字体都只许同源（data: 用于内联图标与字体）。
- * 'unsafe-eval' 是已登记的例外：@idadawn/yue-form 的 SchemaForm 在运行期用 Ajv 编译表单 Schema（低代码表单的 Schema 来自运行期，无法预编译），
- * 共享给远程页面（如租户运营）后在外壳源执行。外壳自身与插件 SDK 的启动路径已不在运行期生成代码（清单校验构建期预编译）；
- * yue-form 换成解释型校验后去掉这一项。它不让配置文件变成代码：运行时配置是 /app-config.json 数据，只解析、校验，从不求值。
+ * 不放行 'unsafe-eval'：外壳、插件 SDK 与共享给远程页面（如租户运营）在外壳源执行的 @idadawn/yue-form 都不在运行期生成代码——清单校验构建期预编译，
+ * 客户端动作参数与 SchemaForm 的表单 Schema 解释执行（S1-YUE-014 撤销了此前登记的这一例外）。运行时配置是 /app-config.json 数据，只解析、校验，从不求值。
  */
 const CSP_DIRECTIVES = (hashes: readonly string[]) => [
-  "default-src 'self'", `script-src 'self' 'unsafe-eval' ${hashes.join(' ')}`.trim(), "style-src 'self' 'unsafe-inline'", "img-src 'self' data:", "font-src 'self' data:",
+  "default-src 'self'", `script-src 'self' ${hashes.join(' ')}`.trim(), "style-src 'self' 'unsafe-inline'", "img-src 'self' data:", "font-src 'self' data:",
   "connect-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-src 'none'", "worker-src 'self'", "manifest-src 'self'",
 ];
 function contentSecurityPolicy(): Plugin {

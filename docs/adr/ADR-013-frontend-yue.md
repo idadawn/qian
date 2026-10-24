@@ -126,3 +126,7 @@ Select 的 Base UI 内部 Tab 哨兵在页面级 axe 中产生 aria-hidden-focus
 ### 2026-10-14 统一 Rspress（ADR-022）
 
 产品负责人要求统一使用 Rspress、不再保留 Storybook。能力评估、已发现的 Props 过滤与离线编辑器限制、测试替代和任务边界见 [ADR-022](ADR-022-rspress-unified-component-docs.md)。S1-YUE-005 重新打开，原完成记录保留为迁移前证据；本次修订不代表替换代码已完成。
+
+### 2026-10-24 SchemaForm 校验改为解释型子集，Ajv 退为差分对照（S1-YUE-014）
+
+D13.2 写的「`@yue/form` Field + SchemaForm 基于 react-hook-form + Ajv」原文不改，以此条为修订：外壳 meta CSP 不放行 `'unsafe-eval'`（R130 ② 登记的例外自 #266 起撤销，R131），而 Ajv 在运行期用 `new Function` 编译 Schema，所以 `@idadawn/yue-form` 的数据 Schema 与元数据 Schema 改由 `src/json-schema.ts` 解释执行。它只接受 SchemaForm 实际用到的 JSON Schema 2020-12 子集，子集内的判定、错误顺序与错误对象与此前的 Ajv 2020（allErrors、strict: false、ajv-formats full）逐条一致；子集外的断言类关键字、格式与未知关键字在渲染前拒绝，纯说明词只查参数类型（R131 ③，口径见规格 §3.3）。Ajv 从 yue-form 的运行时依赖退为开发依赖，只在差分测试里作对照；react-hook-form 不变。
