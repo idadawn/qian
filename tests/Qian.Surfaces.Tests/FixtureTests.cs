@@ -158,7 +158,8 @@ public sealed class FixtureTests
                 var target = Path.GetFullPath(Path.Combine(Directory, file.Name));
                 Assert.StartsWith(Directory + Path.DirectorySeparatorChar, target, StringComparison.Ordinal);
                 System.IO.Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                File.WriteAllText(target, file.Value.GetString());
+                if (file.Value.ValueKind == JsonValueKind.String) File.WriteAllText(target, file.Value.GetString());
+                else File.WriteAllBytes(target, Convert.FromBase64String(file.Value.GetProperty("base64").GetString()!));
             }
             if (entry.TryGetProperty("symlinks", out var links))
                 foreach (var link in links.EnumerateObject())

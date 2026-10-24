@@ -2473,5 +2473,1222 @@
     ],
     "uiFile": "ui/manifest.json",
     "uiRuntimeValid": false
+  },
+  {
+    "name": "encoding-manifest-utf8",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vVBBWUxPQUQiLAogICJhdXRob3IiOiB7CiAgICAibmFtZSI6ICJRaWFuIgogIH0sCiAgImxpY2Vuc2UiOiAiQXBhY2hlLTIuMCIsCiAgImludGVyZmFjZSI6IHsKICAgICJkaXNwbGF5TmFtZSI6ICLmoKHpqozmoLfkvosiLAogICAgImNhdGVnb3J5IjogInRlc3RpbmciCiAgfSwKICAiaW5qZWN0IjogW10sCiAgInByb3ZpZGVzIjogW10sCiAgInBvbGljeSI6IHsKICAgICJ0aWVyIjogIm9mZmljaWFsIiwKICAgICJzYW5kYm94IjogIm5vbmUiLAogICAgImF1dGhlbnRpY2F0aW9uIjogIk9OX0lOU1RBTEwiLAogICAgImVncmVzcyI6IFsKICAgICAgImFwaS5leGFtcGxlLnRlc3QiCiAgICBdCiAgfSwKICAic2NvcGVzIjogWwogICAgImdsb2JhbCIsCiAgICAidGVuYW50IiwKICAgICJhcHAiLAogICAgImFnZW50LXNlc3Npb24iCiAgXQp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "encoding-manifest-utf8-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "77u/ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vVBBWUxPQUQiLAogICJhdXRob3IiOiB7CiAgICAibmFtZSI6ICJRaWFuIgogIH0sCiAgImxpY2Vuc2UiOiAiQXBhY2hlLTIuMCIsCiAgImludGVyZmFjZSI6IHsKICAgICJkaXNwbGF5TmFtZSI6ICLmoKHpqozmoLfkvosiLAogICAgImNhdGVnb3J5IjogInRlc3RpbmciCiAgfSwKICAiaW5qZWN0IjogW10sCiAgInByb3ZpZGVzIjogW10sCiAgInBvbGljeSI6IHsKICAgICJ0aWVyIjogIm9mZmljaWFsIiwKICAgICJzYW5kYm94IjogIm5vbmUiLAogICAgImF1dGhlbnRpY2F0aW9uIjogIk9OX0lOU1RBTEwiLAogICAgImVncmVzcyI6IFsKICAgICAgImFwaS5leGFtcGxlLnRlc3QiCiAgICBdCiAgfSwKICAic2NvcGVzIjogWwogICAgImdsb2JhbCIsCiAgICAidGVuYW50IiwKICAgICJhcHAiLAogICAgImFnZW50LXNlc3Npb24iCiAgXQp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "encoding-manifest-utf-16-le-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "//57AAoAIAAgACIAaQBkACIAOgAgACIAcQBpAGEAbgAuAGYAaQB4AHQAdQByAGUAIgAsAAoAIAAgACIAdgBlAHIAcwBpAG8AbgAiADoAIAAiADEALgAwAC4AMAAiACwACgAgACAAIgBkAGUAcwBjAHIAaQBwAHQAaQBvAG4AIgA6ACAAIgAtTodlPdgA3v3/UABBAFkATABPAEEARAAiACwACgAgACAAIgBhAHUAdABoAG8AcgAiADoAIAB7AAoAIAAgACAAIAAiAG4AYQBtAGUAIgA6ACAAIgBRAGkAYQBuACIACgAgACAAfQAsAAoAIAAgACIAbABpAGMAZQBuAHMAZQAiADoAIAAiAEEAcABhAGMAaABlAC0AMgAuADAAIgAsAAoAIAAgACIAaQBuAHQAZQByAGYAYQBjAGUAIgA6ACAAewAKACAAIAAgACAAIgBkAGkAcwBwAGwAYQB5AE4AYQBtAGUAIgA6ACAAIgAhaIyaN2iLTyIALAAKACAAIAAgACAAIgBjAGEAdABlAGcAbwByAHkAIgA6ACAAIgB0AGUAcwB0AGkAbgBnACIACgAgACAAfQAsAAoAIAAgACIAaQBuAGoAZQBjAHQAIgA6ACAAWwBdACwACgAgACAAIgBwAHIAbwB2AGkAZABlAHMAIgA6ACAAWwBdACwACgAgACAAIgBwAG8AbABpAGMAeQAiADoAIAB7AAoAIAAgACAAIAAiAHQAaQBlAHIAIgA6ACAAIgBvAGYAZgBpAGMAaQBhAGwAIgAsAAoAIAAgACAAIAAiAHMAYQBuAGQAYgBvAHgAIgA6ACAAIgBuAG8AbgBlACIALAAKACAAIAAgACAAIgBhAHUAdABoAGUAbgB0AGkAYwBhAHQAaQBvAG4AIgA6ACAAIgBPAE4AXwBJAE4AUwBUAEEATABMACIALAAKACAAIAAgACAAIgBlAGcAcgBlAHMAcwAiADoAIABbAAoAIAAgACAAIAAgACAAIgBhAHAAaQAuAGUAeABhAG0AcABsAGUALgB0AGUAcwB0ACIACgAgACAAIAAgAF0ACgAgACAAfQAsAAoAIAAgACIAcwBjAG8AcABlAHMAIgA6ACAAWwAKACAAIAAgACAAIgBnAGwAbwBiAGEAbAAiACwACgAgACAAIAAgACIAdABlAG4AYQBuAHQAIgAsAAoAIAAgACAAIAAiAGEAcABwACIALAAKACAAIAAgACAAIgBhAGcAZQBuAHQALQBzAGUAcwBzAGkAbwBuACIACgAgACAAXQAKAH0ACgA="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-utf-16-le-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "ewAiAGkAZAAiADoAIAAiAHEAaQBhAG4ALgBmAGkAeAB0AHUAcgBlACIALAAgACIAdgBlAHIAcwBpAG8AbgAiADoAIAAiADEALgAwAC4AMAAiACwAIAAiAGQAZQBzAGMAcgBpAHAAdABpAG8AbgAiADoAIAAiAFwAdQA0AGUAMgBkAFwAdQA2ADUAOAA3AFwAdQBkADgAMwBkAFwAdQBkAGUAMAAwAFwAdQBmAGYAZgBkAFAAQQBZAEwATwBBAEQAIgAsACAAIgBhAHUAdABoAG8AcgAiADoAIAB7ACIAbgBhAG0AZQAiADoAIAAiAFEAaQBhAG4AIgB9ACwAIAAiAGwAaQBjAGUAbgBzAGUAIgA6ACAAIgBBAHAAYQBjAGgAZQAtADIALgAwACIALAAgACIAaQBuAHQAZQByAGYAYQBjAGUAIgA6ACAAewAiAGQAaQBzAHAAbABhAHkATgBhAG0AZQAiADoAIAAiAFwAdQA2ADgAMgAxAFwAdQA5AGEAOABjAFwAdQA2ADgAMwA3AFwAdQA0AGYAOABiACIALAAgACIAYwBhAHQAZQBnAG8AcgB5ACIAOgAgACIAdABlAHMAdABpAG4AZwAiAH0ALAAgACIAaQBuAGoAZQBjAHQAIgA6ACAAWwBdACwAIAAiAHAAcgBvAHYAaQBkAGUAcwAiADoAIABbAF0ALAAgACIAcABvAGwAaQBjAHkAIgA6ACAAewAiAHQAaQBlAHIAIgA6ACAAIgBvAGYAZgBpAGMAaQBhAGwAIgAsACAAIgBzAGEAbgBkAGIAbwB4ACIAOgAgACIAbgBvAG4AZQAiACwAIAAiAGEAdQB0AGgAZQBuAHQAaQBjAGEAdABpAG8AbgAiADoAIAAiAE8ATgBfAEkATgBTAFQAQQBMAEwAIgAsACAAIgBlAGcAcgBlAHMAcwAiADoAIABbACIAYQBwAGkALgBlAHgAYQBtAHAAbABlAC4AdABlAHMAdAAiAF0AfQAsACAAIgBzAGMAbwBwAGUAcwAiADoAIABbACIAZwBsAG8AYgBhAGwAIgAsACAAIgB0AGUAbgBhAG4AdAAiACwAIAAiAGEAcABwACIALAAgACIAYQBnAGUAbgB0AC0AcwBlAHMAcwBpAG8AbgAiAF0AfQA="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-utf-16-be-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "/v8AewAKACAAIAAiAGkAZAAiADoAIAAiAHEAaQBhAG4ALgBmAGkAeAB0AHUAcgBlACIALAAKACAAIAAiAHYAZQByAHMAaQBvAG4AIgA6ACAAIgAxAC4AMAAuADAAIgAsAAoAIAAgACIAZABlAHMAYwByAGkAcAB0AGkAbwBuACIAOgAgACJOLWWH2D3eAP/9AFAAQQBZAEwATwBBAEQAIgAsAAoAIAAgACIAYQB1AHQAaABvAHIAIgA6ACAAewAKACAAIAAgACAAIgBuAGEAbQBlACIAOgAgACIAUQBpAGEAbgAiAAoAIAAgAH0ALAAKACAAIAAiAGwAaQBjAGUAbgBzAGUAIgA6ACAAIgBBAHAAYQBjAGgAZQAtADIALgAwACIALAAKACAAIAAiAGkAbgB0AGUAcgBmAGEAYwBlACIAOgAgAHsACgAgACAAIAAgACIAZABpAHMAcABsAGEAeQBOAGEAbQBlACIAOgAgACJoIZqMaDdPiwAiACwACgAgACAAIAAgACIAYwBhAHQAZQBnAG8AcgB5ACIAOgAgACIAdABlAHMAdABpAG4AZwAiAAoAIAAgAH0ALAAKACAAIAAiAGkAbgBqAGUAYwB0ACIAOgAgAFsAXQAsAAoAIAAgACIAcAByAG8AdgBpAGQAZQBzACIAOgAgAFsAXQAsAAoAIAAgACIAcABvAGwAaQBjAHkAIgA6ACAAewAKACAAIAAgACAAIgB0AGkAZQByACIAOgAgACIAbwBmAGYAaQBjAGkAYQBsACIALAAKACAAIAAgACAAIgBzAGEAbgBkAGIAbwB4ACIAOgAgACIAbgBvAG4AZQAiACwACgAgACAAIAAgACIAYQB1AHQAaABlAG4AdABpAGMAYQB0AGkAbwBuACIAOgAgACIATwBOAF8ASQBOAFMAVABBAEwATAAiACwACgAgACAAIAAgACIAZQBnAHIAZQBzAHMAIgA6ACAAWwAKACAAIAAgACAAIAAgACIAYQBwAGkALgBlAHgAYQBtAHAAbABlAC4AdABlAHMAdAAiAAoAIAAgACAAIABdAAoAIAAgAH0ALAAKACAAIAAiAHMAYwBvAHAAZQBzACIAOgAgAFsACgAgACAAIAAgACIAZwBsAG8AYgBhAGwAIgAsAAoAIAAgACAAIAAiAHQAZQBuAGEAbgB0ACIALAAKACAAIAAgACAAIgBhAHAAcAAiACwACgAgACAAIAAgACIAYQBnAGUAbgB0AC0AcwBlAHMAcwBpAG8AbgAiAAoAIAAgAF0ACgB9AAo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-utf-16-be-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "AHsAIgBpAGQAIgA6ACAAIgBxAGkAYQBuAC4AZgBpAHgAdAB1AHIAZQAiACwAIAAiAHYAZQByAHMAaQBvAG4AIgA6ACAAIgAxAC4AMAAuADAAIgAsACAAIgBkAGUAcwBjAHIAaQBwAHQAaQBvAG4AIgA6ACAAIgBcAHUANABlADIAZABcAHUANgA1ADgANwBcAHUAZAA4ADMAZABcAHUAZABlADAAMABcAHUAZgBmAGYAZABQAEEAWQBMAE8AQQBEACIALAAgACIAYQB1AHQAaABvAHIAIgA6ACAAewAiAG4AYQBtAGUAIgA6ACAAIgBRAGkAYQBuACIAfQAsACAAIgBsAGkAYwBlAG4AcwBlACIAOgAgACIAQQBwAGEAYwBoAGUALQAyAC4AMAAiACwAIAAiAGkAbgB0AGUAcgBmAGEAYwBlACIAOgAgAHsAIgBkAGkAcwBwAGwAYQB5AE4AYQBtAGUAIgA6ACAAIgBcAHUANgA4ADIAMQBcAHUAOQBhADgAYwBcAHUANgA4ADMANwBcAHUANABmADgAYgAiACwAIAAiAGMAYQB0AGUAZwBvAHIAeQAiADoAIAAiAHQAZQBzAHQAaQBuAGcAIgB9ACwAIAAiAGkAbgBqAGUAYwB0ACIAOgAgAFsAXQAsACAAIgBwAHIAbwB2AGkAZABlAHMAIgA6ACAAWwBdACwAIAAiAHAAbwBsAGkAYwB5ACIAOgAgAHsAIgB0AGkAZQByACIAOgAgACIAbwBmAGYAaQBjAGkAYQBsACIALAAgACIAcwBhAG4AZABiAG8AeAAiADoAIAAiAG4AbwBuAGUAIgAsACAAIgBhAHUAdABoAGUAbgB0AGkAYwBhAHQAaQBvAG4AIgA6ACAAIgBPAE4AXwBJAE4AUwBUAEEATABMACIALAAgACIAZQBnAHIAZQBzAHMAIgA6ACAAWwAiAGEAcABpAC4AZQB4AGEAbQBwAGwAZQAuAHQAZQBzAHQAIgBdAH0ALAAgACIAcwBjAG8AcABlAHMAIgA6ACAAWwAiAGcAbABvAGIAYQBsACIALAAgACIAdABlAG4AYQBuAHQAIgAsACAAIgBhAHAAcAAiACwAIAAiAGEAZwBlAG4AdAAtAHMAZQBzAHMAaQBvAG4AIgBdAH0="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-utf-32-le-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "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"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-utf-32-le-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "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"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-utf-32-be-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "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"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-utf-32-be-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "AAAAewAAACIAAABpAAAAZAAAACIAAAA6AAAAIAAAACIAAABxAAAAaQAAAGEAAABuAAAALgAAAGYAAABpAAAAeAAAAHQAAAB1AAAAcgAAAGUAAAAiAAAALAAAACAAAAAiAAAAdgAAAGUAAAByAAAAcwAAAGkAAABvAAAAbgAAACIAAAA6AAAAIAAAACIAAAAxAAAALgAAADAAAAAuAAAAMAAAACIAAAAsAAAAIAAAACIAAABkAAAAZQAAAHMAAABjAAAAcgAAAGkAAABwAAAAdAAAAGkAAABvAAAAbgAAACIAAAA6AAAAIAAAACIAAABcAAAAdQAAADQAAABlAAAAMgAAAGQAAABcAAAAdQAAADYAAAA1AAAAOAAAADcAAABcAAAAdQAAAGQAAAA4AAAAMwAAAGQAAABcAAAAdQAAAGQAAABlAAAAMAAAADAAAABcAAAAdQAAAGYAAABmAAAAZgAAAGQAAABQAAAAQQAAAFkAAABMAAAATwAAAEEAAABEAAAAIgAAACwAAAAgAAAAIgAAAGEAAAB1AAAAdAAAAGgAAABvAAAAcgAAACIAAAA6AAAAIAAAAHsAAAAiAAAAbgAAAGEAAABtAAAAZQAAACIAAAA6AAAAIAAAACIAAABRAAAAaQAAAGEAAABuAAAAIgAAAH0AAAAsAAAAIAAAACIAAABsAAAAaQAAAGMAAABlAAAAbgAAAHMAAABlAAAAIgAAADoAAAAgAAAAIgAAAEEAAABwAAAAYQAAAGMAAABoAAAAZQAAAC0AAAAyAAAALgAAADAAAAAiAAAALAAAACAAAAAiAAAAaQAAAG4AAAB0AAAAZQAAAHIAAABmAAAAYQAAAGMAAABlAAAAIgAAADoAAAAgAAAAewAAACIAAABkAAAAaQAAAHMAAABwAAAAbAAAAGEAAAB5AAAATgAAAGEAAABtAAAAZQAAACIAAAA6AAAAIAAAACIAAABcAAAAdQAAADYAAAA4AAAAMgAAADEAAABcAAAAdQAAADkAAABhAAAAOAAAAGMAAABcAAAAdQAAADYAAAA4AAAAMwAAADcAAABcAAAAdQAAADQAAABmAAAAOAAAAGIAAAAiAAAALAAAACAAAAAiAAAAYwAAAGEAAAB0AAAAZQAAAGcAAABvAAAAcgAAAHkAAAAiAAAAOgAAACAAAAAiAAAAdAAAAGUAAABzAAAAdAAAAGkAAABuAAAAZwAAACIAAAB9AAAALAAAACAAAAAiAAAAaQAAAG4AAABqAAAAZQAAAGMAAAB0AAAAIgAAADoAAAAgAAAAWwAAAF0AAAAsAAAAIAAAACIAAABwAAAAcgAAAG8AAAB2AAAAaQAAAGQAAABlAAAAcwAAACIAAAA6AAAAIAAAAFsAAABdAAAALAAAACAAAAAiAAAAcAAAAG8AAABsAAAAaQAAAGMAAAB5AAAAIgAAADoAAAAgAAAAewAAACIAAAB0AAAAaQAAAGUAAAByAAAAIgAAADoAAAAgAAAAIgAAAG8AAABmAAAAZgAAAGkAAABjAAAAaQAAAGEAAABsAAAAIgAAACwAAAAgAAAAIgAAAHMAAABhAAAAbgAAAGQAAABiAAAAbwAAAHgAAAAiAAAAOgAAACAAAAAiAAAAbgAAAG8AAABuAAAAZQAAACIAAAAsAAAAIAAAACIAAABhAAAAdQAAAHQAAABoAAAAZQAAAG4AAAB0AAAAaQAAAGMAAABhAAAAdAAAAGkAAABvAAAAbgAAACIAAAA6AAAAIAAAACIAAABPAAAATgAAAF8AAABJAAAATgAAAFMAAABUAAAAQQAAAEwAAABMAAAAIgAAACwAAAAgAAAAIgAAAGUAAABnAAAAcgAAAGUAAABzAAAAcwAAACIAAAA6AAAAIAAAAFsAAAAiAAAAYQAAAHAAAABpAAAALgAAAGUAAAB4AAAAYQAAAG0AAABwAAAAbAAAAGUAAAAuAAAAdAAAAGUAAABzAAAAdAAAACIAAABdAAAAfQAAACwAAAAgAAAAIgAAAHMAAABjAAAAbwAAAHAAAABlAAAAcwAAACIAAAA6AAAAIAAAAFsAAAAiAAAAZwAAAGwAAABvAAAAYgAAAGEAAABsAAAAIgAAACwAAAAgAAAAIgAAAHQAAABlAAAAbgAAAGEAAABuAAAAdAAAACIAAAAsAAAAIAAAACIAAABhAAAAcAAAAHAAAAAiAAAALAAAACAAAAAiAAAAYQAAAGcAAABlAAAAbgAAAHQAAAAtAAAAcwAAAGUAAABzAAAAcwAAAGkAAABvAAAAbgAAACIAAABdAAAAfQ=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-invalid-lead",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vf8iLAogICJhdXRob3IiOiB7CiAgICAibmFtZSI6ICJRaWFuIgogIH0sCiAgImxpY2Vuc2UiOiAiQXBhY2hlLTIuMCIsCiAgImludGVyZmFjZSI6IHsKICAgICJkaXNwbGF5TmFtZSI6ICLmoKHpqozmoLfkvosiLAogICAgImNhdGVnb3J5IjogInRlc3RpbmciCiAgfSwKICAiaW5qZWN0IjogW10sCiAgInByb3ZpZGVzIjogW10sCiAgInBvbGljeSI6IHsKICAgICJ0aWVyIjogIm9mZmljaWFsIiwKICAgICJzYW5kYm94IjogIm5vbmUiLAogICAgImF1dGhlbnRpY2F0aW9uIjogIk9OX0lOU1RBTEwiLAogICAgImVncmVzcyI6IFsKICAgICAgImFwaS5leGFtcGxlLnRlc3QiCiAgICBdCiAgfSwKICAic2NvcGVzIjogWwogICAgImdsb2JhbCIsCiAgICAidGVuYW50IiwKICAgICJhcHAiLAogICAgImFnZW50LXNlc3Npb24iCiAgXQp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-lone-continuation",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vYAiLAogICJhdXRob3IiOiB7CiAgICAibmFtZSI6ICJRaWFuIgogIH0sCiAgImxpY2Vuc2UiOiAiQXBhY2hlLTIuMCIsCiAgImludGVyZmFjZSI6IHsKICAgICJkaXNwbGF5TmFtZSI6ICLmoKHpqozmoLfkvosiLAogICAgImNhdGVnb3J5IjogInRlc3RpbmciCiAgfSwKICAiaW5qZWN0IjogW10sCiAgInByb3ZpZGVzIjogW10sCiAgInBvbGljeSI6IHsKICAgICJ0aWVyIjogIm9mZmljaWFsIiwKICAgICJzYW5kYm94IjogIm5vbmUiLAogICAgImF1dGhlbnRpY2F0aW9uIjogIk9OX0lOU1RBTEwiLAogICAgImVncmVzcyI6IFsKICAgICAgImFwaS5leGFtcGxlLnRlc3QiCiAgICBdCiAgfSwKICAic2NvcGVzIjogWwogICAgImdsb2JhbCIsCiAgICAidGVuYW50IiwKICAgICJhcHAiLAogICAgImFnZW50LXNlc3Npb24iCiAgXQp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-truncated",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/veKCIiwKICAiYXV0aG9yIjogewogICAgIm5hbWUiOiAiUWlhbiIKICB9LAogICJsaWNlbnNlIjogIkFwYWNoZS0yLjAiLAogICJpbnRlcmZhY2UiOiB7CiAgICAiZGlzcGxheU5hbWUiOiAi5qCh6aqM5qC35L6LIiwKICAgICJjYXRlZ29yeSI6ICJ0ZXN0aW5nIgogIH0sCiAgImluamVjdCI6IFtdLAogICJwcm92aWRlcyI6IFtdLAogICJwb2xpY3kiOiB7CiAgICAidGllciI6ICJvZmZpY2lhbCIsCiAgICAic2FuZGJveCI6ICJub25lIiwKICAgICJhdXRoZW50aWNhdGlvbiI6ICJPTl9JTlNUQUxMIiwKICAgICJlZ3Jlc3MiOiBbCiAgICAgICJhcGkuZXhhbXBsZS50ZXN0IgogICAgXQogIH0sCiAgInNjb3BlcyI6IFsKICAgICJnbG9iYWwiLAogICAgInRlbmFudCIsCiAgICAiYXBwIiwKICAgICJhZ2VudC1zZXNzaW9uIgogIF0KfQo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-overlong",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vcCvIiwKICAiYXV0aG9yIjogewogICAgIm5hbWUiOiAiUWlhbiIKICB9LAogICJsaWNlbnNlIjogIkFwYWNoZS0yLjAiLAogICJpbnRlcmZhY2UiOiB7CiAgICAiZGlzcGxheU5hbWUiOiAi5qCh6aqM5qC35L6LIiwKICAgICJjYXRlZ29yeSI6ICJ0ZXN0aW5nIgogIH0sCiAgImluamVjdCI6IFtdLAogICJwcm92aWRlcyI6IFtdLAogICJwb2xpY3kiOiB7CiAgICAidGllciI6ICJvZmZpY2lhbCIsCiAgICAic2FuZGJveCI6ICJub25lIiwKICAgICJhdXRoZW50aWNhdGlvbiI6ICJPTl9JTlNUQUxMIiwKICAgICJlZ3Jlc3MiOiBbCiAgICAgICJhcGkuZXhhbXBsZS50ZXN0IgogICAgXQogIH0sCiAgInNjb3BlcyI6IFsKICAgICJnbG9iYWwiLAogICAgInRlbmFudCIsCiAgICAiYXBwIiwKICAgICJhZ2VudC1zZXNzaW9uIgogIF0KfQo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-surrogate",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/ve2ggCIsCiAgImF1dGhvciI6IHsKICAgICJuYW1lIjogIlFpYW4iCiAgfSwKICAibGljZW5zZSI6ICJBcGFjaGUtMi4wIiwKICAiaW50ZXJmYWNlIjogewogICAgImRpc3BsYXlOYW1lIjogIuagoemqjOagt+S+iyIsCiAgICAiY2F0ZWdvcnkiOiAidGVzdGluZyIKICB9LAogICJpbmplY3QiOiBbXSwKICAicHJvdmlkZXMiOiBbXSwKICAicG9saWN5IjogewogICAgInRpZXIiOiAib2ZmaWNpYWwiLAogICAgInNhbmRib3giOiAibm9uZSIsCiAgICAiYXV0aGVudGljYXRpb24iOiAiT05fSU5TVEFMTCIsCiAgICAiZWdyZXNzIjogWwogICAgICAiYXBpLmV4YW1wbGUudGVzdCIKICAgIF0KICB9LAogICJzY29wZXMiOiBbCiAgICAiZ2xvYmFsIiwKICAgICJ0ZW5hbnQiLAogICAgImFwcCIsCiAgICAiYWdlbnQtc2Vzc2lvbiIKICBdCn0K"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-out-of-range",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vfSQgIAiLAogICJhdXRob3IiOiB7CiAgICAibmFtZSI6ICJRaWFuIgogIH0sCiAgImxpY2Vuc2UiOiAiQXBhY2hlLTIuMCIsCiAgImludGVyZmFjZSI6IHsKICAgICJkaXNwbGF5TmFtZSI6ICLmoKHpqozmoLfkvosiLAogICAgImNhdGVnb3J5IjogInRlc3RpbmciCiAgfSwKICAiaW5qZWN0IjogW10sCiAgInByb3ZpZGVzIjogW10sCiAgInBvbGljeSI6IHsKICAgICJ0aWVyIjogIm9mZmljaWFsIiwKICAgICJzYW5kYm94IjogIm5vbmUiLAogICAgImF1dGhlbnRpY2F0aW9uIjogIk9OX0lOU1RBTEwiLAogICAgImVncmVzcyI6IFsKICAgICAgImFwaS5leGFtcGxlLnRlc3QiCiAgICBdCiAgfSwKICAic2NvcGVzIjogWwogICAgImdsb2JhbCIsCiAgICAidGVuYW50IiwKICAgICJhcHAiLAogICAgImFnZW50LXNlc3Npb24iCiAgXQp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-manifest-double-utf8-bom",
+    "files": {
+      ".qian-plugin/plugin.json": {
+        "base64": "77u/77u/ewogICJpZCI6ICJxaWFuLmZpeHR1cmUiLAogICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vVBBWUxPQUQiLAogICJhdXRob3IiOiB7CiAgICAibmFtZSI6ICJRaWFuIgogIH0sCiAgImxpY2Vuc2UiOiAiQXBhY2hlLTIuMCIsCiAgImludGVyZmFjZSI6IHsKICAgICJkaXNwbGF5TmFtZSI6ICLmoKHpqozmoLfkvosiLAogICAgImNhdGVnb3J5IjogInRlc3RpbmciCiAgfSwKICAiaW5qZWN0IjogW10sCiAgInByb3ZpZGVzIjogW10sCiAgInBvbGljeSI6IHsKICAgICJ0aWVyIjogIm9mZmljaWFsIiwKICAgICJzYW5kYm94IjogIm5vbmUiLAogICAgImF1dGhlbnRpY2F0aW9uIjogIk9OX0lOU1RBTEwiLAogICAgImVncmVzcyI6IFsKICAgICAgImFwaS5leGFtcGxlLnRlc3QiCiAgICBdCiAgfSwKICAic2NvcGVzIjogWwogICAgImdsb2JhbCIsCiAgICAidGVuYW50IiwKICAgICJhcHAiLAogICAgImFnZW50LXNlc3Npb24iCiAgXQp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": ".qian-plugin/plugin.json",
+        "pointer": ".qian-plugin/plugin.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-utf8",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+9UEFZTE9BRCIKfQo="
+      }
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "encoding-metadata-utf8-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "77u/ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+9UEFZTE9BRCIKfQo="
+      }
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "encoding-metadata-utf-16-le-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "//57AAoAIAAgACIAbABhAGIAZQBsACIAOgAgACIALU6HZT3YAN79/1AAQQBZAEwATwBBAEQAIgAKAH0ACgA="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-utf-16-le-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewAiAGwAYQBiAGUAbAAiADoAIAAiAFwAdQA0AGUAMgBkAFwAdQA2ADUAOAA3AFwAdQBkADgAMwBkAFwAdQBkAGUAMAAwAFwAdQBmAGYAZgBkAFAAQQBZAEwATwBBAEQAIgB9AA=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-utf-16-be-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "/v8AewAKACAAIAAiAGwAYQBiAGUAbAAiADoAIAAiTi1lh9g93gD//QBQAEEAWQBMAE8AQQBEACIACgB9AAo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-utf-16-be-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "AHsAIgBsAGEAYgBlAGwAIgA6ACAAIgBcAHUANABlADIAZABcAHUANgA1ADgANwBcAHUAZAA4ADMAZABcAHUAZABlADAAMABcAHUAZgBmAGYAZABQAEEAWQBMAE8AQQBEACIAfQ=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-utf-32-le-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "//4AAHsAAAAKAAAAIAAAACAAAAAiAAAAbAAAAGEAAABiAAAAZQAAAGwAAAAiAAAAOgAAACAAAAAiAAAALU4AAIdlAAAA9gEA/f8AAFAAAABBAAAAWQAAAEwAAABPAAAAQQAAAEQAAAAiAAAACgAAAH0AAAAKAAAA"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-utf-32-le-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewAAACIAAABsAAAAYQAAAGIAAABlAAAAbAAAACIAAAA6AAAAIAAAACIAAABcAAAAdQAAADQAAABlAAAAMgAAAGQAAABcAAAAdQAAADYAAAA1AAAAOAAAADcAAABcAAAAdQAAAGQAAAA4AAAAMwAAAGQAAABcAAAAdQAAAGQAAABlAAAAMAAAADAAAABcAAAAdQAAAGYAAABmAAAAZgAAAGQAAABQAAAAQQAAAFkAAABMAAAATwAAAEEAAABEAAAAIgAAAH0AAAA="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-utf-32-be-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "AAD+/wAAAHsAAAAKAAAAIAAAACAAAAAiAAAAbAAAAGEAAABiAAAAZQAAAGwAAAAiAAAAOgAAACAAAAAiAABOLQAAZYcAAfYAAAD//QAAAFAAAABBAAAAWQAAAEwAAABPAAAAQQAAAEQAAAAiAAAACgAAAH0AAAAK"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-utf-32-be-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "AAAAewAAACIAAABsAAAAYQAAAGIAAABlAAAAbAAAACIAAAA6AAAAIAAAACIAAABcAAAAdQAAADQAAABlAAAAMgAAAGQAAABcAAAAdQAAADYAAAA1AAAAOAAAADcAAABcAAAAdQAAAGQAAAA4AAAAMwAAAGQAAABcAAAAdQAAAGQAAABlAAAAMAAAADAAAABcAAAAdQAAAGYAAABmAAAAZgAAAGQAAABQAAAAQQAAAFkAAABMAAAATwAAAEEAAABEAAAAIgAAAH0="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-invalid-lead",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+9/yIKfQo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-lone-continuation",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+9gCIKfQo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-truncated",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+94oIiCn0K"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-overlong",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+9wK8iCn0K"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-surrogate",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+97aCAIgp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-out-of-range",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+99JCAgCIKfQo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-metadata-double-utf8-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "metadata/roles.json": {
+        "base64": "77u/77u/ewogICJsYWJlbCI6ICLkuK3mlofwn5iA77+9UEFZTE9BRCIKfQo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "metadata/roles.json",
+        "pointer": "metadata/roles.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-utf8",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LS0tCnsKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vVBBWUxPQUQiCn0KLS0tCgrkuK3mlofwn5iA77+9UEFZTE9BRAo="
+      }
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "encoding-markdown-utf8-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "77u/LS0tCnsKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vVBBWUxPQUQiCn0KLS0tCgrkuK3mlofwn5iA77+9UEFZTE9BRAo="
+      }
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "encoding-markdown-utf-16-le-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "//4tAC0ALQAKAHsACgAgACAAIgBkAGUAcwBjAHIAaQBwAHQAaQBvAG4AIgA6ACAAIgAtTodlPdgA3v3/UABBAFkATABPAEEARAAiAAoAfQAKAC0ALQAtAAoACgAtTodlPdgA3v3/UABBAFkATABPAEEARAAKAA=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-utf-16-le-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LQAtAC0ACgB7AAoAIAAgACIAZABlAHMAYwByAGkAcAB0AGkAbwBuACIAOgAgACIAUABBAFkATABPAEEARAAiAAoAfQAKAC0ALQAtAAoACgBQAEEAWQBMAE8AQQBEAAoA"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-utf-16-be-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "/v8ALQAtAC0ACgB7AAoAIAAgACIAZABlAHMAYwByAGkAcAB0AGkAbwBuACIAOgAgACJOLWWH2D3eAP/9AFAAQQBZAEwATwBBAEQAIgAKAH0ACgAtAC0ALQAKAApOLWWH2D3eAP/9AFAAQQBZAEwATwBBAEQACg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-utf-16-be-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "AC0ALQAtAAoAewAKACAAIAAiAGQAZQBzAGMAcgBpAHAAdABpAG8AbgAiADoAIAAiAFAAQQBZAEwATwBBAEQAIgAKAH0ACgAtAC0ALQAKAAoAUABBAFkATABPAEEARAAK"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-utf-32-le-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "//4AAC0AAAAtAAAALQAAAAoAAAB7AAAACgAAACAAAAAgAAAAIgAAAGQAAABlAAAAcwAAAGMAAAByAAAAaQAAAHAAAAB0AAAAaQAAAG8AAABuAAAAIgAAADoAAAAgAAAAIgAAAC1OAACHZQAAAPYBAP3/AABQAAAAQQAAAFkAAABMAAAATwAAAEEAAABEAAAAIgAAAAoAAAB9AAAACgAAAC0AAAAtAAAALQAAAAoAAAAKAAAALU4AAIdlAAAA9gEA/f8AAFAAAABBAAAAWQAAAEwAAABPAAAAQQAAAEQAAAAKAAAA"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-utf-32-le-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LQAAAC0AAAAtAAAACgAAAHsAAAAKAAAAIAAAACAAAAAiAAAAZAAAAGUAAABzAAAAYwAAAHIAAABpAAAAcAAAAHQAAABpAAAAbwAAAG4AAAAiAAAAOgAAACAAAAAiAAAAUAAAAEEAAABZAAAATAAAAE8AAABBAAAARAAAACIAAAAKAAAAfQAAAAoAAAAtAAAALQAAAC0AAAAKAAAACgAAAFAAAABBAAAAWQAAAEwAAABPAAAAQQAAAEQAAAAKAAAA"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-utf-32-be-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "AAD+/wAAAC0AAAAtAAAALQAAAAoAAAB7AAAACgAAACAAAAAgAAAAIgAAAGQAAABlAAAAcwAAAGMAAAByAAAAaQAAAHAAAAB0AAAAaQAAAG8AAABuAAAAIgAAADoAAAAgAAAAIgAATi0AAGWHAAH2AAAA//0AAABQAAAAQQAAAFkAAABMAAAATwAAAEEAAABEAAAAIgAAAAoAAAB9AAAACgAAAC0AAAAtAAAALQAAAAoAAAAKAABOLQAAZYcAAfYAAAD//QAAAFAAAABBAAAAWQAAAEwAAABPAAAAQQAAAEQAAAAK"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-utf-32-be-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "AAAALQAAAC0AAAAtAAAACgAAAHsAAAAKAAAAIAAAACAAAAAiAAAAZAAAAGUAAABzAAAAYwAAAHIAAABpAAAAcAAAAHQAAABpAAAAbwAAAG4AAAAiAAAAOgAAACAAAAAiAAAAUAAAAEEAAABZAAAATAAAAE8AAABBAAAARAAAACIAAAAKAAAAfQAAAAoAAAAtAAAALQAAAC0AAAAKAAAACgAAAFAAAABBAAAAWQAAAEwAAABPAAAAQQAAAEQAAAAK"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-invalid-lead",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LS0tCnsKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vf8iCn0KLS0tCgrkuK3mlofwn5iA77+9/wo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-lone-continuation",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LS0tCnsKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vYAiCn0KLS0tCgrkuK3mlofwn5iA77+9gAo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-truncated",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LS0tCnsKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/veKCIgp9Ci0tLQoK5Lit5paH8J+YgO+/veKCCg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-overlong",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LS0tCnsKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vcCvIgp9Ci0tLQoK5Lit5paH8J+YgO+/vcCvCg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-surrogate",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LS0tCnsKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/ve2ggCIKfQotLS0KCuS4reaWh/CfmIDvv73toIAK"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-markdown-out-of-range",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ]\n}\n",
+      "commands/check.md": {
+        "base64": "LS0tCnsKICAiZGVzY3JpcHRpb24iOiAi5Lit5paH8J+YgO+/vfSQgIAiCn0KLS0tCgrkuK3mlofwn5iA77+99JCAgAo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "commands/check.md",
+        "pointer": "commands/check.md#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-utf8",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv71QQVlMT0FEIgp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "encoding-config-schema-utf8-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "77u/ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv71QQVlMT0FEIgp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": true,
+    "expected": []
+  },
+  {
+    "name": "encoding-config-schema-utf-16-le-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "//57AAoAIAAgACIAdAB5AHAAZQAiADoAIAAiAG8AYgBqAGUAYwB0ACIALAAKACAAIAAiAGQAZQBzAGMAcgBpAHAAdABpAG8AbgAiADoAIAAiAC1Oh2U92ADe/f9QAEEAWQBMAE8AQQBEACIACgB9AAoA"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-utf-16-le-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewAiAHQAeQBwAGUAIgA6ACAAIgBvAGIAagBlAGMAdAAiACwAIAAiAGQAZQBzAGMAcgBpAHAAdABpAG8AbgAiADoAIAAiAFwAdQA0AGUAMgBkAFwAdQA2ADUAOAA3AFwAdQBkADgAMwBkAFwAdQBkAGUAMAAwAFwAdQBmAGYAZgBkAFAAQQBZAEwATwBBAEQAIgB9AA=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-utf-16-be-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "/v8AewAKACAAIAAiAHQAeQBwAGUAIgA6ACAAIgBvAGIAagBlAGMAdAAiACwACgAgACAAIgBkAGUAcwBjAHIAaQBwAHQAaQBvAG4AIgA6ACAAIk4tZYfYPd4A//0AUABBAFkATABPAEEARAAiAAoAfQAK"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-utf-16-be-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "AHsAIgB0AHkAcABlACIAOgAgACIAbwBiAGoAZQBjAHQAIgAsACAAIgBkAGUAcwBjAHIAaQBwAHQAaQBvAG4AIgA6ACAAIgBcAHUANABlADIAZABcAHUANgA1ADgANwBcAHUAZAA4ADMAZABcAHUAZABlADAAMABcAHUAZgBmAGYAZABQAEEAWQBMAE8AQQBEACIAfQ=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-utf-32-le-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "//4AAHsAAAAKAAAAIAAAACAAAAAiAAAAdAAAAHkAAABwAAAAZQAAACIAAAA6AAAAIAAAACIAAABvAAAAYgAAAGoAAABlAAAAYwAAAHQAAAAiAAAALAAAAAoAAAAgAAAAIAAAACIAAABkAAAAZQAAAHMAAABjAAAAcgAAAGkAAABwAAAAdAAAAGkAAABvAAAAbgAAACIAAAA6AAAAIAAAACIAAAAtTgAAh2UAAAD2AQD9/wAAUAAAAEEAAABZAAAATAAAAE8AAABBAAAARAAAACIAAAAKAAAAfQAAAAoAAAA="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-utf-32-le-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewAAACIAAAB0AAAAeQAAAHAAAABlAAAAIgAAADoAAAAgAAAAIgAAAG8AAABiAAAAagAAAGUAAABjAAAAdAAAACIAAAAsAAAAIAAAACIAAABkAAAAZQAAAHMAAABjAAAAcgAAAGkAAABwAAAAdAAAAGkAAABvAAAAbgAAACIAAAA6AAAAIAAAACIAAABcAAAAdQAAADQAAABlAAAAMgAAAGQAAABcAAAAdQAAADYAAAA1AAAAOAAAADcAAABcAAAAdQAAAGQAAAA4AAAAMwAAAGQAAABcAAAAdQAAAGQAAABlAAAAMAAAADAAAABcAAAAdQAAAGYAAABmAAAAZgAAAGQAAABQAAAAQQAAAFkAAABMAAAATwAAAEEAAABEAAAAIgAAAH0AAAA="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-utf-32-be-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "AAD+/wAAAHsAAAAKAAAAIAAAACAAAAAiAAAAdAAAAHkAAABwAAAAZQAAACIAAAA6AAAAIAAAACIAAABvAAAAYgAAAGoAAABlAAAAYwAAAHQAAAAiAAAALAAAAAoAAAAgAAAAIAAAACIAAABkAAAAZQAAAHMAAABjAAAAcgAAAGkAAABwAAAAdAAAAGkAAABvAAAAbgAAACIAAAA6AAAAIAAAACIAAE4tAABlhwAB9gAAAP/9AAAAUAAAAEEAAABZAAAATAAAAE8AAABBAAAARAAAACIAAAAKAAAAfQAAAAo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-utf-32-be-no-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "AAAAewAAACIAAAB0AAAAeQAAAHAAAABlAAAAIgAAADoAAAAgAAAAIgAAAG8AAABiAAAAagAAAGUAAABjAAAAdAAAACIAAAAsAAAAIAAAACIAAABkAAAAZQAAAHMAAABjAAAAcgAAAGkAAABwAAAAdAAAAGkAAABvAAAAbgAAACIAAAA6AAAAIAAAACIAAABcAAAAdQAAADQAAABlAAAAMgAAAGQAAABcAAAAdQAAADYAAAA1AAAAOAAAADcAAABcAAAAdQAAAGQAAAA4AAAAMwAAAGQAAABcAAAAdQAAAGQAAABlAAAAMAAAADAAAABcAAAAdQAAAGYAAABmAAAAZgAAAGQAAABQAAAAQQAAAFkAAABMAAAATwAAAEEAAABEAAAAIgAAAH0="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-invalid-lead",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv73/Igp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-lone-continuation",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv72AIgp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-truncated",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv73igiIKfQo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-overlong",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv73AryIKfQo="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-surrogate",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv73toIAiCn0K"
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-out-of-range",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv730kICAIgp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "encoding-config-schema-double-utf8-bom",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json": {
+        "base64": "77u/77u/ewogICJ0eXBlIjogIm9iamVjdCIsCiAgImRlc2NyaXB0aW9uIjogIuS4reaWh/CfmIDvv71QQVlMT0FEIgp9Cg=="
+      }
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_SYNTAX_INVALID",
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "config-schema-directory",
+    "files": {
+      ".qian-plugin/plugin.json": "{\n  \"id\": \"qian.fixture\",\n  \"version\": \"1.0.0\",\n  \"description\": \"声明式表面校验与作用域共享验收组件。\",\n  \"author\": {\n    \"name\": \"Qian\"\n  },\n  \"license\": \"Apache-2.0\",\n  \"interface\": {\n    \"displayName\": \"校验样例\",\n    \"category\": \"testing\"\n  },\n  \"inject\": [],\n  \"provides\": [],\n  \"policy\": {\n    \"tier\": \"official\",\n    \"sandbox\": \"none\",\n    \"authentication\": \"ON_INSTALL\",\n    \"egress\": [\n      \"api.example.test\"\n    ]\n  },\n  \"scopes\": [\n    \"global\",\n    \"tenant\",\n    \"app\",\n    \"agent-session\"\n  ],\n  \"runtime\": {\n    \"form\": \"module\",\n    \"entry\": \"Fixture.Plugin, Fixture\",\n    \"configSchema\": \"./schemas/config.schema.json\"\n  }\n}\n",
+      "schemas/config.schema.json/child.json": "{}"
+    },
+    "options": {},
+    "valid": false,
+    "expected": [
+      {
+        "file": "schemas/config.schema.json",
+        "pointer": "schemas/config.schema.json#",
+        "code": "SURFACE_PATH_INVALID",
+        "line": 1
+      }
+    ]
   }
 ]

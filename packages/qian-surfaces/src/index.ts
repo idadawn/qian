@@ -584,7 +584,8 @@ class ValidationContext {
     if (!full) return null;
     try {
       if (!statSync(full).isFile() || statSync(full).size > 1_048_576) throw new Error('file');
-      const content = new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(full));
+      // 保留 UTF-8 BOM，由 parseSurface 与 .NET 一样只处理文件开头的一次 BOM。
+      const content = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(readFileSync(full));
       const parsed = parseSurface(file, content, markdown, this.traceId);
       this.diagnostics.push(...parsed.diagnostics);
       if (!parsed.syntax || parsed.diagnostics.length) return null;
@@ -663,9 +664,8 @@ class ValidationContext {
     if (typeof runtime.configSchema === 'string') {
       const full = this.safe(runtime.configSchema, file, '/runtime/configSchema', true);
       if (full) {
-        const parsed = parseSurface(this.relative(full), readFileSync(full, 'utf8'), false, this.traceId);
-        this.diagnostics.push(...parsed.diagnostics);
-        if (parsed.syntax && !isSchema(parsed.syntax.data)) this.error(this.relative(full), '', codes.schema, '配置 Schema 无效。');
+        const syntax = this.read(this.relative(full), null, false, file, '/runtime/configSchema');
+        if (syntax && !isSchema(syntax.data)) this.error(this.relative(full), '', codes.schema, '配置 Schema 无效。');
       }
     }
   }

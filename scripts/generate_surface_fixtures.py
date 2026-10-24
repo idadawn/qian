@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """生成双侧共用样例；固定哈希由独立 Python 的整数 JCS 子集生成，浮点向量另有文字规范值。"""
 import copy
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -247,6 +248,34 @@ ui_bad('unknown-widget-expose',lambda d:d['widgets'][0].update(expose='Missing')
 ui_bad('duplicate-widget-type',lambda d:d['widgets'].append(copy.deepcopy(d['widgets'][0])),'/widgets/1/type','NAME_MISMATCH',source=UI_WIDGETS)
 ui_bad('missing-settings-permission',lambda d:d['settingsCards'][0].pop('permission'),'/settingsCards/0/permission',source=UI_WIDGETS)
 ui_bad('duplicate-settings-card',lambda d:d['settingsCards'].append(copy.deepcopy(d['settingsCards'][0])),'/settingsCards/1/expose','NAME_MISMATCH',source=UI_WIDGETS)
+
+# 文件解码（S1-RT-027）：base64 保存原始字节，两端必须写字节而不是重新编码文本。
+# U+FFFD 本身是合法字符；只有解码器替换非法输入才应拒绝。PAYLOAD 是插入非法字节的位置。
+encoding_text='中文😀�PAYLOAD'
+config_file='schemas/config.schema.json'
+config_runtime={'form':'module','entry':'Fixture.Plugin, Fixture','configSchema':'./'+config_file}
+def raw(data): return {'base64':base64.b64encode(data).decode('ascii')}
+def encoded_files(file,data):
+ files=base({file:raw(data)})
+ return manifest(files,runtime=config_runtime) if file==config_file else files
+for target,file,content in [
+ ('manifest','.qian-plugin/plugin.json',js({**MANIFEST,'description':encoding_text})),
+ ('metadata','metadata/roles.json',js({'label':encoding_text})),
+ ('markdown',cf,md({'description':encoding_text},encoding_text)),
+ ('config-schema',config_file,js({'type':'object','description':encoding_text}))]:
+ for suffix,prefix in [('utf8',b''),('utf8-bom',b'\xef\xbb\xbf')]:
+  case('encoding-'+target+'-'+suffix,encoded_files(file,prefix+content.encode('utf-8')))
+ for codec,bom in [('utf-16-le',b'\xff\xfe'),('utf-16-be',b'\xfe\xff'),('utf-32-le',b'\xff\xfe\x00\x00'),('utf-32-be',b'\x00\x00\xfe\xff')]:
+  bad('encoding-'+target+'-'+codec+'-bom',encoded_files(file,bom+content.encode(codec)),file,'','PATH_INVALID',line=1)
+  # 无 BOM 的 ASCII 文本编码为 UTF-16/32 后，字节本身可按 UTF-8 解码但含 NUL，必须由解析器拒绝。
+  ascii_content=json.dumps(json.loads(content),ensure_ascii=True) if file.endswith('.json') else content.replace(encoding_text,'PAYLOAD')
+  bad('encoding-'+target+'-'+codec+'-no-bom',encoded_files(file,ascii_content.encode(codec)),file,'','SYNTAX_INVALID',line=1)
+ for suffix,invalid in [('invalid-lead',b'\xff'),('lone-continuation',b'\x80'),('truncated',b'\xe2\x82'),
+                        ('overlong',b'\xc0\xaf'),('surrogate',b'\xed\xa0\x80'),('out-of-range',b'\xf4\x90\x80\x80')]:
+  bad('encoding-'+target+'-'+suffix,encoded_files(file,content.encode('utf-8').replace(b'PAYLOAD',invalid)),file,'','PATH_INVALID',line=1)
+ if file.endswith('.json'):
+  bad('encoding-'+target+'-double-utf8-bom',encoded_files(file,b'\xef\xbb\xbf'*2+content.encode('utf-8')),file,'','SYNTAX_INVALID',line=1)
+bad('config-schema-directory',manifest(base({config_file+'/child.json':'{}'}),runtime=config_runtime),config_file,'','PATH_INVALID',line=1)
 
 (ROOT/'tck/surfaces/cases.json').write_text(js(CASES).translate(INVISIBLE))
 # 文字规范值独立于生产实现，用于跨语言验证浮点、负零、Unicode 与 UTF-16 排序。

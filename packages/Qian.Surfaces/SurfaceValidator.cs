@@ -118,7 +118,9 @@ public sealed partial class SurfaceValidator : ISurfaceValidator
             try
             {
                 if (!File.Exists(full) || new FileInfo(full).Length > 1_048_576) throw new IOException();
-                var parsed = SurfaceReader.Parse(file, File.ReadAllText(full, new UTF8Encoding(false, true)), markdown, trace);
+                // 不经 StreamReader 的 BOM 自动探测：只按 UTF-8 解码，开头的 UTF-8 BOM 留给解析器统一处理。
+                var content = new UTF8Encoding(false, true).GetString(File.ReadAllBytes(full));
+                var parsed = SurfaceReader.Parse(file, content, markdown, trace);
                 _diagnostics.AddRange(parsed.Diagnostics);
                 if (parsed.Syntax is not { } syntax || parsed.Diagnostics.Count > 0) return null;
                 _sources[file] = syntax;

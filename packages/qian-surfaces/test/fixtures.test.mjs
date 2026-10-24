@@ -16,7 +16,7 @@ test('共享正反例与结构化错误', () => {
     const temporary = mkdtempSync(path.join(os.tmpdir(), 'qian-surface-')), root = path.join(temporary, 'component');
     mkdirSync(root);
     try {
-      for (const [file, content] of Object.entries(entry.files)) { const target = path.join(root, file); assert.ok(target.startsWith(root + path.sep)); mkdirSync(path.dirname(target), { recursive: true }); writeFileSync(target, content); }
+      for (const [file, content] of Object.entries(entry.files)) { const target = path.join(root, file); assert.ok(target.startsWith(root + path.sep)); mkdirSync(path.dirname(target), { recursive: true }); writeFileSync(target, typeof content === 'string' ? content : Buffer.from(content.base64, 'base64')); }
       for (const [link] of Object.entries(entry.symlinks ?? {})) { const outside = path.join(temporary, 'outside'); mkdirSync(outside); symlinkSync(outside, path.join(root, link), 'dir'); }
       const result = validateComponent(root, { ...entry.options, traceId: '0'.repeat(32) });
       assert.equal(result.isValid, entry.valid, entry.name + ': ' + JSON.stringify(normalize(result)));
