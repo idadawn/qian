@@ -115,13 +115,19 @@ public sealed class MetaTypesEndpointTests : IAsyncLifetime
         Assert.Equal(PlatformErrors.RegistrationConflict, conflict.Code);
         Assert.Equal("Data.Dialects:pg", conflict.Args["key"]);
         Assert.Throws<QianDataMisconfiguredException>(() => registry.Register("postgres", new PgDialect()));
-        var isolated = new ServiceCollection().AddQianDataTypes().BuildServiceProvider().GetRequiredService<IDataDialectRegistry>();
+        using var isolatedProvider = new ServiceCollection().AddQianDataTypes().BuildServiceProvider();
+        var isolated = isolatedProvider.GetRequiredService<IDataDialectRegistry>();
         Assert.Empty(isolated.List());
         var lease = isolated.Register("pg", new PgDialect());
         Assert.NotNull(isolated.Find("pg"));
         lease.Dispose();
         Assert.Null(isolated.Find("pg"));
-        isolated.Register("pg", new PgDialect()).Dispose();
+        var replacement = new PgDialect();
+        using var replacementLease = isolated.Register("pg", replacement);
+        lease.Dispose(); // 旧句柄重复释放不能删掉同名的新注册。
+        Assert.Same(replacement, isolated.Find("pg"));
+        replacementLease.Dispose();
+        Assert.Empty(isolated.List());
     }
 
     private static void AssertRejected(IDataTypeCatalog catalog, DataFieldDefinition field, string pointer)

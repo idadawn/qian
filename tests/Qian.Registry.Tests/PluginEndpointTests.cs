@@ -66,7 +66,8 @@ public sealed partial class PatchPersistenceTests
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct)); var root = json.RootElement;
         return string.Join('|', HttpErrorFields.Select(field => root.GetProperty(field).ToString()));
     }
-    private static async Task<EndpointHost> StartEndpointHost(RunningRegistry running, AsyncLocalTenantContext tenant, bool middleware, bool beforeRouting = false)
+    private static async Task<EndpointHost> StartEndpointHost(RunningRegistry running, AsyncLocalTenantContext tenant, bool middleware, bool beforeRouting = false,
+        Action<IServiceCollection>? configureServices = null, Action<WebApplication>? configureEndpoints = null)
     {
         var signing = RSA.Create(2048); using var publicOnly = RSA.Create(); publicOnly.ImportParameters(signing.ExportParameters(false));
         var key = new RsaSecurityKey(signing) { KeyId = "registry-http" };
@@ -79,12 +80,14 @@ public sealed partial class PatchPersistenceTests
         { options.Issuer = "registry-http-test"; options.Audience = "registry-http"; options.StaticKeySet = jwks; });
         builder.Services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options => options.MapInboundClaims = false);
         builder.Services.AddQianPluginEndpoints(_ => running.Root);
+        configureServices?.Invoke(builder.Services);
         var app = builder.Build(); var calls = 0;
         app.UseQianErrors();
         if (middleware && beforeRouting) app.UseQianPluginEndpoints();
         app.UseRouting(); app.UseAuthentication();
         app.Use((context, next) => context.RequestServices.GetRequiredService<TenantRequestBoundary>().InvokeAsync(context, next));
         if (middleware && !beforeRouting) app.UseQianPluginEndpoints();
+        configureEndpoints?.Invoke(app);
         app.MapGet("/surface", () =>
         {
             Interlocked.Increment(ref calls);
