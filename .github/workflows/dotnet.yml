@@ -141,9 +141,10 @@ jobs:
           QIAN_TEST_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/evidence
           QIAN_PRODUCT_FILTER_REPORT: ${{ github.workspace }}/TestResults/evidence/product-capability-filter.json
           QIAN_PROFILE_EQUIVALENCE_REPORT: ${{ github.workspace }}/TestResults/evidence/profile-equivalence.json
+        # 同时启动的模块按 xUnit 缺省的「用户_机器_时间戳」命名 TRX 会撞名、互相覆盖；QianTrxPerModule 让每个模块按项目名写（tests/Directory.Build.props，S1-QA-017）。
         run: |
           python3 scripts/dotnet_ci.py shard ${{ matrix.shard }} --out "$RUNNER_TEMP/tests.slnf"
-          dotnet test --solution "$RUNNER_TEMP/tests.slnf" -c Release --no-build --results-directory TestResults --report-xunit-trx
+          dotnet test --solution "$RUNNER_TEMP/tests.slnf" -c Release --no-build --results-directory TestResults --report-xunit-trx -p:QianTrxPerModule=true
 
       - name: 上传测试结果
         if: always()
