@@ -7,6 +7,7 @@ namespace Qian.Testing.Containers.IntegrationTests;
 /// 单元测试（假容器，不需要 Docker，不进 SharedInfrastructure collection）：启动失败的有界重试。
 /// Ryuk 初始化失败与 Docker API 请求超时对所有 fixture 重试，最多三次，每次重试前释放这次启动拿到的全部资源；
 /// 容器在就绪前退出只按 fixture 的 StartAttempts 重试；其他错误与已取消的启动不重试。
+/// 与主容器并行启动的同级依赖（StartAlongsideAsync）：两者都结束才判定成败并释放，同级的瞬时失败同样从头重启，两者都失败时按先出错的那个判定。
 /// </summary>
 public sealed class ContainerFixtureRetryTests
 {
@@ -112,7 +113,83 @@ public sealed class ContainerFixtureRetryTests
         Assert.Equal(1, declared.HeldDependencies);
     }
 
+    [Fact]
+    public async Task 同级依赖遇到Ryuk初始化失败时连同已就绪的主容器一起释放并从头重启()
+    {
+        await using var fixture = new AlongsideFixture(
+            (Task.CompletedTask, Task.FromException(RyukCancelled())),
+            (Task.CompletedTask, Task.CompletedTask));
+        await fixture.InitializeAsync(Ct);
+
+        Assert.Same(fixture.Containers[1].AsContainer(), fixture.Container);
+        Assert.Equal([true, false], fixture.Containers.Select(container => container.Disposed));
+        Assert.Equal(2, fixture.AlongsideStarts);
+        // 第一次启动的同级依赖与 OnStartingAsync 准备的依赖都已释放，只剩成功那次的。
+        Assert.Equal(1, fixture.HeldAlongside);
+        Assert.Equal(1, fixture.HeldDependencies);
+        Assert.Equal(1, fixture.Started);
+    }
+
+    [Fact]
+    public async Task 主容器启动失败时等同级依赖结束后再释放_然后从头重启()
+    {
+        var alongside = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var fixture = new AlongsideFixture(
+            (Task.FromException(RyukCancelled()), alongside.Task),
+            (Task.CompletedTask, Task.CompletedTask));
+
+        var start = fixture.InitializeAsync(Ct).AsTask();
+        // 主容器已失败、同级依赖仍在启动：既不释放，也不重试。
+        Assert.False(start.IsCompleted);
+        Assert.False(Assert.Single(fixture.Containers).Disposed);
+        Assert.Equal(1, fixture.HeldAlongside);
+
+        alongside.SetResult();
+        await start;
+        Assert.False(fixture.ReleasedWhileAlongsideRunning);
+        Assert.Equal([true, false], fixture.Containers.Select(container => container.Disposed));
+        Assert.Equal(1, fixture.HeldAlongside);
+        Assert.Equal(1, fixture.Started);
+    }
+
+    [Fact]
+    public async Task 主容器与同级依赖都失败时按先出错的那个判定是否重试()
+    {
+        // 同一对错误、两种先后：主容器是 Ryuk 初始化失败（重试），同级依赖是不重试的错误。
+        // Task.WhenAll 按完成先后收集异常，await 抛出先出错的那个。
+
+        // 主容器先出错：按瞬时失败从头重启，第二次启动成功。
+        var alongsideLater = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using (var mainFirst = new AlongsideFixture(
+            (Task.FromException(RyukCancelled()), alongsideLater.Task),
+            (Task.CompletedTask, Task.CompletedTask)))
+        {
+            var start = mainFirst.InitializeAsync(Ct).AsTask();
+            alongsideLater.SetException(AlongsideImageMissing());
+            await start;
+            Assert.Equal([true, false], mainFirst.Containers.Select(container => container.Disposed));
+            Assert.Equal(1, mainFirst.Started);
+        }
+
+        // 同级依赖先出错：不重试，抛出的也是它的错误，资源全部释放。
+        var rejected = AlongsideImageMissing();
+        var mainLater = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var alongsideFirst = new AlongsideFixture(
+            (mainLater.Task, Task.FromException(rejected)),
+            (Task.CompletedTask, Task.CompletedTask));
+        var failed = alongsideFirst.InitializeAsync(Ct).AsTask();
+        mainLater.SetException(RyukCancelled());
+
+        Assert.Same(rejected, await Assert.ThrowsAsync<InvalidOperationException>(() => failed));
+        Assert.True(Assert.Single(alongsideFirst.Containers).Disposed);
+        Assert.Equal(0, alongsideFirst.HeldAlongside);
+        Assert.Equal(0, alongsideFirst.HeldDependencies);
+        Assert.Equal(0, alongsideFirst.Started);
+    }
+
     private static ResourceReaperException RyukCancelled() => new("Initialization has been cancelled.");
+
+    private static InvalidOperationException AlongsideImageMissing() => new("simulated: alongside image not found");
 
     /// <summary>Docker 客户端请求超时时实际抛出的异常链（取自本机全量日志）。</summary>
     private static TaskCanceledException DockerRequestTimedOut() =>
@@ -179,12 +256,87 @@ public sealed class ContainerFixtureRetryTests
         }
     }
 
-    /// <summary>假容器：只实现 StartAsync 与 DisposeAsync，启动按给定结果成功或失败；调用其他成员即失败。</summary>
+    /// <summary>
+    /// 带同级依赖的 fixture：第 n 次启动的主容器与同级依赖分别在 attempts[n] 的两个任务结束时结束，任务可以由测试控制、尚未结束。
+    /// 与 RealApolloFixture 的 AdminService 一样，同级依赖由 fixture 自己在 OnDisposingAsync 里释放；OnStartingAsync 准备的依赖由 OnDisposedAsync 释放。
+    /// </summary>
+    private sealed class AlongsideFixture : ContainerFixture<IContainer>
+    {
+        private readonly Queue<(Task Main, Task Alongside)> _attempts;
+        private Task _alongside = Task.CompletedTask;
+
+        public AlongsideFixture(params (Task Main, Task Alongside)[] attempts)
+        {
+            _attempts = new(attempts);
+            RetryDelay = TimeSpan.Zero;
+        }
+
+        public List<FakeContainer> Containers { get; } = [];
+
+        /// <summary>StartAlongsideAsync 的调用次数。</summary>
+        public int AlongsideStarts { get; private set; }
+
+        /// <summary>已启动、尚未由 OnDisposingAsync 释放的同级依赖数。</summary>
+        public int HeldAlongside { get; private set; }
+
+        /// <summary>OnStartingAsync 准备、尚未由 OnDisposedAsync 释放的依赖数。</summary>
+        public int HeldDependencies { get; private set; }
+
+        /// <summary>OnStartedAsync 的调用次数。</summary>
+        public int Started { get; private set; }
+
+        /// <summary>是否有过同级依赖还在启动时就进入 OnDisposingAsync 的释放。</summary>
+        public bool ReleasedWhileAlongsideRunning { get; private set; }
+
+        protected override ValueTask OnStartingAsync(CancellationToken cancellationToken)
+        {
+            HeldDependencies++;
+            return ValueTask.CompletedTask;
+        }
+
+        protected override IContainer CreateContainer()
+        {
+            var (main, alongside) = _attempts.Dequeue();
+            _alongside = alongside;
+            var container = FakeContainer.Create(main);
+            Containers.Add(container);
+            return container.AsContainer();
+        }
+
+        protected override ValueTask StartAlongsideAsync(CancellationToken cancellationToken)
+        {
+            AlongsideStarts++;
+            HeldAlongside++;
+            return new(_alongside);
+        }
+
+        protected override ValueTask OnStartedAsync(IContainer container, CancellationToken cancellationToken)
+        {
+            Started++;
+            return ValueTask.CompletedTask;
+        }
+
+        protected override ValueTask OnDisposingAsync()
+        {
+            ReleasedWhileAlongsideRunning |= !_alongside.IsCompleted;
+            HeldAlongside = 0;
+            return ValueTask.CompletedTask;
+        }
+
+        protected override ValueTask OnDisposedAsync()
+        {
+            HeldDependencies = 0;
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    /// <summary>假容器：只实现 StartAsync 与 DisposeAsync，启动按给定结果成功或失败，或在给定任务结束时结束；调用其他成员即失败。</summary>
 #pragma warning disable CA1852 // DispatchProxy 在运行时派生本类型，不能密封。
     private class FakeContainer : DispatchProxy
 #pragma warning restore CA1852
     {
         private Exception? _failure;
+        private Task? _start;
 
         public bool Disposed { get; private set; }
 
@@ -195,6 +347,14 @@ public sealed class ContainerFixtureRetryTests
             return container;
         }
 
+        /// <summary>启动在给定任务结束时结束，任务可以由测试控制、尚未结束。</summary>
+        public static FakeContainer Create(Task start)
+        {
+            var container = (FakeContainer)(object)DispatchProxy.Create<IContainer, FakeContainer>();
+            container._start = start;
+            return container;
+        }
+
         public IContainer AsContainer() => (IContainer)this;
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
@@ -202,7 +362,7 @@ public sealed class ContainerFixtureRetryTests
             switch (targetMethod?.Name)
             {
                 case nameof(IContainer.StartAsync):
-                    return _failure is null ? Task.CompletedTask : Task.FromException(_failure);
+                    return _start ?? (_failure is null ? Task.CompletedTask : Task.FromException(_failure));
                 case nameof(IAsyncDisposable.DisposeAsync):
                     Disposed = true;
                     return ValueTask.CompletedTask;

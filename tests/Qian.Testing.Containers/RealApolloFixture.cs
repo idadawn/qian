@@ -6,7 +6,10 @@ using DotNet.Testcontainers.Networks;
 
 namespace Qian.Testing.Containers;
 
-/// <summary>真实 Apollo 2.5.2 ConfigService/AdminService + MySQL 8，供 CFG 的最终集成验收。</summary>
+/// <summary>
+/// 真实 Apollo 2.5.2 ConfigService/AdminService + MySQL 8。网关宿主 AOT 验收直接使用本类；
+/// CFG 的最终集成验收用加了 Portal 的子类 <see cref="RealApolloPortalFixture"/>，由 Config 测试的集合共用一套（S1-QA-017）。
+/// </summary>
 public class RealApolloFixture : ContainerFixture<IContainer>
 {
     private INetwork? _network;
@@ -14,7 +17,7 @@ public class RealApolloFixture : ContainerFixture<IContainer>
     private IContainer? _admin;
     private HttpClient? _control;
     private IContainer? _portal;
-    /// <summary>仅管理端验收子类启动 Portal，普通 Config fixture 保持三个容器。</summary>
+    /// <summary>只有 Portal 子类启动 Portal（四个容器）；不启动时是 MySQL + AdminService + ConfigService 三个容器，现只有网关宿主 AOT 验收这样用。</summary>
     protected virtual bool EnablePortal => false;
     /// <summary>隔离 PortalDB 的最小种子；不能包含可复用固定凭据。</summary>
     protected virtual string PortalSeed => "";
