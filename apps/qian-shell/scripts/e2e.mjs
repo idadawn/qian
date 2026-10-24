@@ -23,7 +23,9 @@ try {
   }
   const env = { ...process.env, QIAN_MF_AUDIT_STATE: state };
   await run('node', ['apps/qian-shell/scripts/audit-contract.mjs'], env);
-  for (const args of [['--filter', '@idadawn/qian-runtime', 'build'], ['--filter', '@qian/tenancy-ui', 'build:remote'], ['--filter', 'qian-shell', 'exec', 'vite', 'build', '--mode', 'acceptance', '--outDir', 'dist/acceptance'], ['--filter', 'qian-shell', 'exec', 'playwright', 'test']]) await run('pnpm', args, env);
+  // 验收构建与正式构建走同一份 vite 配置（同一条 meta CSP）；验收产物允许带控制面，其余静态断言（CSP 哈希、首屏预算）照常。
+  for (const args of [['--filter', '@idadawn/qian-runtime', 'build'], ['--filter', '@qian/tenancy-ui', 'build:remote'], ['--filter', 'qian-shell', 'build:acceptance'],
+    ['--filter', 'qian-shell', 'exec', 'node', 'scripts/verify-dist.mjs', 'dist/acceptance', '--acceptance'], ['--filter', 'qian-shell', 'exec', 'playwright', 'test']]) await run('pnpm', args, env);
 } catch (error) { console.error(error.message); process.exitCode = 1; }
 finally {
   if (host && host.exitCode === null) { host.kill('SIGTERM'); await new Promise((resolve) => host.once('exit', resolve)); }

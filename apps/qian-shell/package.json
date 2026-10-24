@@ -2,38 +2,42 @@
   "name": "qian-shell",
   "private": true,
   "version": "0.1.0",
+  "description": "Qian 外壳（S1-YUE-012）：同源 /app-config.json 运行时配置、网关 BFF Cookie 会话、bootstrap 聚合、能力导航 → 路由、MF2 宿主按需加载远程页面、租户切换、站内信、偏好与兜底；构建期 meta CSP。",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
+    "build": "vite build && node scripts/verify-dist.mjs dist/host",
+    "build:acceptance": "vite build --mode acceptance --outDir dist/acceptance",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "e2e": "node scripts/e2e.mjs"
+    "e2e": "node scripts/e2e.mjs",
+    "e2e:auth": "node scripts/e2e-auth.mjs"
   },
   "dependencies": {
     "@idadawn/qian-plugin-sdk": "workspace:^",
-    "@idadawn/yue-tokens": "workspace:^",
+    "@idadawn/yue-biz": "workspace:^",
     "@idadawn/yue-contracts": "workspace:^",
     "@idadawn/yue-core": "workspace:^",
-    "@idadawn/yue-sdk": "workspace:^",
-    "@idadawn/yue-form": "workspace:^",
     "@idadawn/yue-data": "workspace:^",
+    "@idadawn/yue-form": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^",
     "@idadawn/yue-shell": "workspace:^",
-    "@idadawn/yue-biz": "workspace:^",
+    "@idadawn/yue-tokens": "workspace:^",
     "@module-federation/enhanced": "catalog:",
+    "@qian/shell-kit": "workspace:^",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@module-federation/vite": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
+    "@playwright/test": "catalog:",
     "@tailwindcss/vite": "catalog:",
-    "tailwindcss": "catalog:",
-    "typescript": "catalog:",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@types/node": "catalog:",
-    "vite": "catalog:",
-    "@playwright/test": "catalog:",
-    "@axe-core/playwright": "catalog:"
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

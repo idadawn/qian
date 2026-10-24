@@ -17,6 +17,7 @@ public static class CapabilityEndpoints
 {
     // 目录、OpenAPI、菜单与执行入口没有单一权限点：可见集合与执行都按调用者权限在处理器内判定（S1-AZ-004 的 HTTP PEP 据此不缺省拒绝）。
     private static readonly PermissionEnforcedInHandlerAttribute InHandler = new("能力目录、菜单与执行入口按调用者可见能力过滤并逐能力判定，不对应单一权限点。");
+    private static readonly PermissionEnforcedInHandlerAttribute ShellInHandler = new("外壳目录只给带本租户上下文的用户或服务主体（无委托）列出本租户实际挂载且带 UI 清单的组件与其远程清单，不按 RBAC 过滤：不含能力、数据或权限码，菜单与页面的权限由能力导航与有效权限另行判定；主体与租户上下文不符时按不存在拒绝。");
 
     /// <summary>登记认证目录、菜单、偏好、旧别名和实际调用。宿主须先配置身份、租户和 ErrorDetail 中间件。</summary>
     public static IEndpointRouteBuilder MapQianCapabilities(this IEndpointRouteBuilder endpoints, Func<HttpContext, IPluginContext> source)
@@ -36,6 +37,13 @@ public static class CapabilityEndpoints
             var caller = source(http);
             return Results.Json(new NavigationCatalog(await caller.Navigation().ListAsync(caller, http.RequestServices.GetRequiredService<ICurrentUser>(), http.RequestAborted).ConfigureAwait(false)));
         })).RequireAuthorization().RequireQianPlugin(binding).WithMetadata(InHandler).Produces<NavigationCatalog>();
+        // 外壳目录（S1-YUE-012）：当前租户与本租户 scope 实际挂载的 UI 远程，供网关的外壳 bootstrap 聚合；未挂载的组件不出现。
+        endpoints.MapGet("/api/capabilities/shell", (Func<HttpContext, Task<IResult>>)(async http =>
+        {
+            http.Response.Headers.CacheControl = "private, no-store";
+            var caller = source(http);
+            return Results.Json(await caller.Navigation().GetShellAsync(caller, http.RequestServices.GetRequiredService<ICurrentUser>(), http.RequestAborted).ConfigureAwait(false));
+        })).RequireAuthorization().RequireQianPlugin(binding).WithMetadata(ShellInHandler).Produces<ShellCatalog>();
         endpoints.MapGet("/api/capabilities/navigation/item", async (HttpContext http, string resourceRef) =>
         {
             http.Response.Headers.CacheControl = "private, no-store";

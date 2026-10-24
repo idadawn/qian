@@ -37,6 +37,24 @@ describe('Preferences', () => {
     dispose(); a.update({ theme: 'dark' }); expect(listener).toHaveBeenCalledTimes(1);
     a.reset(); expect(a.getSnapshot().sidebarCollapsed).toBe(false);
   });
+  it('部署缺省（运行时配置的语言）低于已保存的偏好，也不写进存储：存储只记用户改过的键，reset 写空对象', () => {
+    const values = new Map<string, string>(); const writes: string[] = [];
+    const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { writes.push(key); values.set(key, value); } };
+    const fresh = initPreferences({ namespace: 'deploy', storage, defaults: { locale: 'en-US' } });
+    expect(fresh.getSnapshot().locale).toBe('en-US'); expect(writes).toEqual([]);
+    fresh.update({ theme: 'dark' });
+    expect(JSON.parse(values.get('yue.preferences.deploy')!)).toEqual({ theme: 'dark' });
+    // 部署缺省以后变了：用户没改过的语言跟着新缺省走，改过的主题保留。
+    expect(initPreferences({ namespace: 'deploy', storage, defaults: { locale: 'zh-TW' } }).getSnapshot()).toMatchObject({ theme: 'dark', locale: 'zh-TW' });
+    fresh.update({ sidebarCollapsed: true });
+    expect(JSON.parse(values.get('yue.preferences.deploy')!)).toEqual({ theme: 'dark', sidebarCollapsed: true });
+    fresh.reset();
+    expect(JSON.parse(values.get('yue.preferences.deploy')!)).toEqual({});
+    expect(fresh.getSnapshot()).toEqual({ theme: 'system', locale: 'en-US', sidebarCollapsed: false });
+    values.set('yue.preferences.deploy', JSON.stringify({ locale: 'zh-TW' }));
+    expect(initPreferences({ namespace: 'deploy', storage, defaults: { locale: 'en-US' } }).getSnapshot().locale).toBe('zh-TW');
+    expect(initPreferences({ namespace: 'other', storage: null, defaults: { locale: 'en-US' } }).getServerSnapshot().locale).toBe('en-US');
+  });
   it('拒绝非法 namespace，损坏或不可访问存储不阻断当前会话', () => {
     expect(() => initPreferences({ namespace: '../secret' })).toThrow();
     const store = initPreferences({ namespace: 'broken', storage: { getItem: () => '{bad', setItem: () => { throw new Error('disabled'); } } });

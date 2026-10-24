@@ -2,13 +2,14 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from 'vitest/browser';
 import axe from 'axe-core';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
-import type { AuthResult, ConnectorFlow, IdentityAuthProvider } from '@idadawn/yue-shell';
+import type { AuthResult } from '@idadawn/yue-shell';
+import type { ConnectorFlow, IdentityAuthProvider } from '@qian/shell-kit/identity';
 import { ConnectorPage, LoginPage } from './App';
 import { i18n } from './i18n';
 import { browser } from './navigation';
 
 // 连接器落点与登录页连接器区的组件测试：provider 是替身（流程视图按身份服务 README 的契约构造），顶层跳转经 navigation.ts 的出口记录。
-// 真实上游（Dex）、真实回调与真实绑定在 apps/qian-shell-auth/e2e/auth.spec.ts 里走通。
+// 真实上游（Dex）、真实回调与真实绑定在 apps/qian-shell/e2e-auth/auth.spec.ts 里走通。
 beforeAll(async () => { await i18n.changeLanguage('zh-CN'); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 

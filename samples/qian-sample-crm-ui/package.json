@@ -1,0 +1,34 @@
+{
+  "name": "@qian/sample-crm-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "参考应用 qian.sample.crm 的远程模块（S1-YUE-012）：MF2 暴露「客户」「新建客户」两页，经外壳 bridge.invoke 调 customer.list / customer.create；ui/manifest.json 是组件制品里的 UI 清单。",
+  "scripts": {
+    "build": "vite build --config vite.remote.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@idadawn/qian-plugin-sdk": "workspace:^",
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^",
+    "@idadawn/yue-tokens": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@module-federation/vite": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

@@ -46,6 +46,7 @@ public static class GatewayHosting
         services.AddQianErrors();
         services.AddSingleton<IS2sPrincipalResolver, GatewayPrincipalResolver>();
         services.AddSingleton<IRateLimitPartitionResolver, IpRateLimitPartitionResolver>();
+        services.AddSingleton<GatewayShellClient>();
         services.AddSingleton<IProxyConfigProvider>(new InMemoryConfigProvider(
             snapshot.Routes.Select(route => new RouteConfig
             {

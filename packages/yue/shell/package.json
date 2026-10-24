@@ -1,7 +1,7 @@
 {
   "name": "@idadawn/yue-shell",
   "version": "0.1.0",
-  "description": "AppShell 单一侧栏布局、菜单 → 路由、MF2 宿主与插槽、租户切换器、认证页族与兜底页。",
+  "description": "AppShell 单一侧栏布局、菜单 → 路由、偏好、认证页族组件与契约、会话过期对话框、站内信与兜底页（通用 UI；Qian 专有接线在 @qian/shell-kit）。",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -21,7 +21,11 @@
     "./layout": "./src/layout.tsx",
     "./preferences": "./src/preferences.tsx",
     "./fallback": "./src/fallback.tsx",
-    "./locales": "./src/locales.ts"
+    "./locales": "./src/locales.ts",
+    "./router": "./src/router.ts",
+    "./menu": "./src/menu.ts",
+    "./session-dialog": "./src/session-dialog.tsx",
+    "./inbox": "./src/inbox.tsx"
   },
   "publishConfig": {
     "access": "restricted",
@@ -46,6 +50,22 @@
       "./locales": {
         "types": "./dist/locales.d.ts",
         "default": "./dist/locales.js"
+      },
+      "./router": {
+        "types": "./dist/router.d.ts",
+        "default": "./dist/router.js"
+      },
+      "./menu": {
+        "types": "./dist/menu.d.ts",
+        "default": "./dist/menu.js"
+      },
+      "./session-dialog": {
+        "types": "./dist/session-dialog.d.ts",
+        "default": "./dist/session-dialog.js"
+      },
+      "./inbox": {
+        "types": "./dist/inbox.d.ts",
+        "default": "./dist/inbox.js"
       }
     }
   },

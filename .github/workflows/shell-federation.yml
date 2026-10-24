@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths: &paths
       - "apps/qian-shell/**"
+      - "packages/qian-shell-kit/**"
       - "packages/qian-plugin-sdk/**"
       - "packages/qian-runtime/**"
       - "packages/qian-tenancy-ui/**"

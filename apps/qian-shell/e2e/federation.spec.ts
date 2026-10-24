@@ -16,6 +16,17 @@ interface Control {
 }
 declare global { interface Window { __qianAcceptance: Control } }
 
+// 构建产物带 meta CSP（vite.config.ts）：每个文档都收集 securitypolicyviolation，用例结束时必须为零。
+const violations: string[] = [];
+test.beforeEach(async ({ page }) => {
+  violations.length = 0;
+  await page.exposeFunction('qianCspViolation', (detail: string) => { violations.push(detail); });
+  await page.addInitScript(() => document.addEventListener('securitypolicyviolation', (event) => {
+    (window as unknown as { qianCspViolation(detail: string): void }).qianCspViolation(`${event.violatedDirective} ${event.blockedURI} ${event.sourceFile}:${event.lineNumber}`);
+  }));
+});
+test.afterEach(() => { expect(violations, 'CSP 违规').toEqual([]); });
+
 test('真实官方租户 MF 制品按页面加载，同一 React / SDK 实例与桥接拒绝规则', async ({ page }) => {
   const requested: string[] = [];
   const scripts: Promise<{ url: string; gzip: number }>[] = [];
@@ -103,4 +114,12 @@ test('不匹配 yue 版本先拒绝，控制台与真实 PostgreSQL Audit 链留
   expect(record.payload).toMatchObject({ name: 'shell.remote.rejected', remoteId: 'qian.tenancy', scope: 'tenant:11111111-1111-4111-8111-111111111111', reason: 'engines.yue', requiredVersion: '^99.0.0', code: 'INPUT_INVALID' });
   expect(record.contentHash).toMatch(/^[0-9a-f]{64}$/);
   writeFileSync(new URL('../acceptance-results/audit-chain.json', import.meta.url), JSON.stringify({ before: before.checkedEntries, after }, null, 2));
+});
+test('运行时配置不合法（apiBase 指向别的源）：只渲染配置错误页，不建客户端、不发任何 API 请求', async ({ page, context }) => {
+  await context.addCookies([{ name: 'mf-scenario', value: 'config-bad', url: 'http://127.0.0.1:5180' }]);
+  const calls: string[] = []; page.on('request', (request) => { const path = new URL(request.url()).pathname; if (/^\/(api|auth|remotes)\//.test(path)) calls.push(path); });
+  await page.goto('/');
+  await expect(page.getByTestId('shell-config-error')).toBeVisible();
+  await expect(page.getByTestId('yue-app-shell')).toHaveCount(0);
+  expect(calls).toEqual([]);
 });

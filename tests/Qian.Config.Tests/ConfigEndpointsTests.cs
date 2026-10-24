@@ -272,6 +272,8 @@ public sealed class ConfigEndpointsTests
             return ValueTask.FromResult(new AuthorizationDecision(Guid.CreateVersion7(), request,
                 new AuthorizationExplanation(new PermissionDecision(allow, reason, []), [], [], allow ? [] : [request.Permission ?? ""]), false, true, DateTimeOffset.UtcNow));
         }
+        // 这些端点都声明了权限点，判定里已比对修订；替身不单独比对。
+        public ValueTask<AuthorizationDecision?> CheckIdentityRevisionAsync(EnforcementRequest request, CancellationToken cancellationToken = default) => ValueTask.FromResult<AuthorizationDecision?>(null);
     }
 
     // 只消费认证事件已验证的令牌快照；请求头与正文不是身份来源。

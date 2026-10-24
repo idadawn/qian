@@ -40,6 +40,15 @@ internal static class HttpEnforcement
         return await enforcement.EnforceAsync(new EnforcementRequest(subject, permission, null, "api", entryPoint, target), http.RequestAborted).ConfigureAwait(false);
     }
 
+    // 没有单一权限点的已认证入口只比对 identity_revision（S1-YUE-012）；执行端口取不到时与 EnforceAsync 同一映射（404）。
+    internal static async ValueTask<AuthorizationDecision?> CheckRevisionAsync(HttpContext http, AuthzEnforcementSource source, EnforcementSubject subject, string target)
+    {
+        IAuthzEnforcement enforcement;
+        try { enforcement = source.Source(http).Enforcement(); }
+        catch (Exception error) when (error is ServiceNotReadyException or ObjectDisposedException or KeyNotFoundException) { throw new QianErrorException(new QianError(PlatformErrors.NotFound)); }
+        return await enforcement.CheckIdentityRevisionAsync(new EnforcementRequest(subject, null, null, "api", AuthzEnforcement.HttpEntryPoint, target), http.RequestAborted).ConfigureAwait(false);
+    }
+
     internal static string Target(HttpContext http) => http.Request.Method + " " + ((http.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText ?? http.Request.Path.Value ?? "/");
     internal static string Kind(PrincipalKind kind) => kind switch { PrincipalKind.User => "user", PrincipalKind.Service => "service", _ => "agent" };
     internal static void Fail(HttpContext http, QianError error) => http.Items[FailureKey] = error;
@@ -89,14 +98,25 @@ internal sealed class QianAuthzResultHandler(AuthorizationMiddlewareResultHandle
     }
 }
 
-/// <summary>带组件端点绑定却未声明权限点的端点：生产模式缺省拒绝并记录，开发模式告警放行；显式标记 <see cref="PermissionEnforcedInHandlerAttribute"/> 的端点不在范围内。</summary>
+/// <summary>
+/// 没有声明权限点的已认证端点：先比对令牌 identity_revision，旧令牌 401（处理器内判定的平台表面与只要求已认证的端点，S1-YUE-012）；
+/// 其中带组件端点绑定的，生产模式缺省拒绝并记录，开发模式告警放行；显式标记 <see cref="PermissionEnforcedInHandlerAttribute"/> 的端点不在缺省拒绝范围内。
+/// 声明了权限点的端点在 <see cref="QianPermissionHandler"/> 的判定里已比对修订，匿名端点不比对。
+/// </summary>
 internal sealed partial class UndeclaredPermissionMiddleware(RequestDelegate next, AuthzEnforcementSource source, ILogger<UndeclaredPermissionMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
         var endpoint = context.GetEndpoint();
-        if (endpoint is null || endpoint.Metadata.GetMetadata<PluginEndpointBinding>() is null || endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null ||
-            endpoint.Metadata.GetMetadata<PermissionEnforcedInHandlerAttribute>() is not null || endpoint.Metadata.GetOrderedMetadata<Kun.Authorization.RequiresPermissionAttribute>().Count != 0)
+        if (endpoint is null || endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null || endpoint.Metadata.GetOrderedMetadata<Kun.Authorization.RequiresPermissionAttribute>().Count != 0)
+        { await next(context).ConfigureAwait(false); return; }
+        if (context.User.Identity?.IsAuthenticated == true && HttpEnforcement.ReadSubject(context, out var current) is null && current.TenantId is not null && current.IdentityRevision is not null &&
+            await HttpEnforcement.CheckRevisionAsync(context, source, current, HttpEnforcement.Target(context)).ConfigureAwait(false) is { } stale)
+        {
+            context.Response.Headers.CacheControl = "private, no-store";
+            throw new QianErrorException(new QianError(QianPermissionHandler.Denial(stale)));
+        }
+        if (endpoint.Metadata.GetMetadata<PluginEndpointBinding>() is null || endpoint.Metadata.GetMetadata<PermissionEnforcedInHandlerAttribute>() is not null)
         { await next(context).ConfigureAwait(false); return; }
         var target = HttpEnforcement.Target(context);
         if (!source.IsProduction(context.RequestServices)) { LogUndeclared(logger, target); await next(context).ConfigureAwait(false); return; }

@@ -48,6 +48,26 @@ internal sealed class AuthorizationEnforcer(IPluginContext owner, RbacPermission
         return await RecordAsync(request, explanation, bypass: false, cancellationToken).ConfigureAwait(false);
     }
 
+    // 没有单一权限点的已认证入口只比对 identity_revision（S1-YUE-012）：与 EnforceAsync 第 2 步同一张下限表、同一拒绝原因与决策日志；
+    // 主体租户与当前上下文不一致不在这里拒绝（处理器按租户边界自己拒绝），平台主体与不带修订的主体不比对。
+    public async ValueTask<AuthorizationDecision?> CheckIdentityRevisionAsync(EnforcementRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var subject = request.Subject ?? throw new ArgumentException("缺少主体。", nameof(request));
+        if (request.Channel is not ("ui" or "api" or "mcp" or "a2a" or "job" or "event" or "hook") ||
+            request.EntryPoint is not (AuthzEnforcement.HttpEntryPoint or AuthzEnforcement.GrpcEntryPoint or AuthzEnforcement.CommandEntryPoint) ||
+            !Identifier(request.Target, 384) || (request.Resource is not null && !Identifier(request.Resource, 512)))
+            throw new ArgumentException("强制执行请求的通道、入口、目标或资源无效。", nameof(request));
+        if (subject.TenantId is null || subject.IdentityRevision is null) return null;
+        var current = string.IsNullOrEmpty(tenant.TenantId) ? null : tenant.TenantId;
+        if (current is null)
+            throw new InvalidOperationException("已认证主体带租户，但宿主没有为本次调用建立租户上下文；PEP 必须放在可信租户边界之后。");
+        if (subject.TenantId != current || !Identifier(subject.Id, 200) || subject.Kind is not ("user" or "service" or "agent")) return null;
+        return await revisions.CheckAsync(subject, cancellationToken).ConfigureAwait(false) is { } stale
+            ? await DenyAsync(request, stale, cancellationToken).ConfigureAwait(false)
+            : null;
+    }
+
     // 平台主体：旁路服务自己先写审计再放行（拒绝不写），所以放行不再重复记录；拒绝按决策日志写进平台链（平台链未配置时只能记日志）。
     private async ValueTask<AuthorizationDecision> BypassAsync(EnforcementRequest request, CancellationToken ct)
     {

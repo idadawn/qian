@@ -1,7 +1,8 @@
 import { ShellError } from './errors';
 import { uiSchema } from './ui-schema.generated';
-import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
-import { SLOT_IDS, type SlotDescriptor, type UiManifest } from './contracts';
+import { validateContribution, validateUiManifest } from './ui-validators.generated';
+import { compileParameters, type ParameterValidator } from './parameters';
+import { SLOT_IDS, type SlotDescriptor, type SlotId, type UiManifest } from './contracts';
 
 export function immutable<T>(value: T): T {
   const cloned = structuredClone(value);
@@ -9,23 +10,20 @@ export function immutable<T>(value: T): T {
   freeze(cloned);
   return cloned;
 }
-const ajv = new Ajv2020({ strict: true, allErrors: true });
-
-/** 每个版本化插槽有独立 $id、输入 Schema 与 TS 输出；目录可直接供工具索引。 */
+/** 每个版本化插槽有独立 $id、输入 Schema 与 TS 输出；目录可直接供工具索引。运行时判定用预编译的贡献校验器加插槽词表，与逐插槽 Schema 同义。 */
 export const slotContracts = immutable(Object.fromEntries(SLOT_IDS.map((slot) => [slot, {
   $schema: 'https://json-schema.org/draft/2020-12/schema', $id: `https://qian.dev/schemas/${slot}`,
   ...uiSchema.$defs.contribution, $defs: uiSchema.$defs,
   properties: { ...uiSchema.$defs.contribution.properties, slot: { const: slot } },
 }])));
-const validators = new Map<string, ValidateFunction>(Object.entries(slotContracts).map(([key, schema]) => [key, ajv.compile(schema)]));
+const contribution = validateContribution as (value: unknown) => boolean;
+const manifestValidator = validateUiManifest as (value: unknown) => boolean;
 export function validateSlot(value: unknown): asserts value is SlotDescriptor {
   const slot = value && typeof value === 'object' ? Reflect.get(value, 'slot') : undefined;
-  const validate = typeof slot === 'string' && validators.get(slot);
-  if (!validate || !validate(value)) throw new ShellError('INPUT_INVALID', {}, '/contributions');
+  if (typeof slot !== 'string' || !SLOT_IDS.includes(slot as SlotId) || !contribution(value)) throw new ShellError('INPUT_INVALID', {}, '/contributions');
   if ((value as SlotDescriptor).route) validateRoute((value as SlotDescriptor).route!);
   if ((value as SlotDescriptor).parameters) compileParameters((value as SlotDescriptor).parameters!);
 }
-const manifestValidator = ajv.compile(uiSchema);
 export function validateManifest(value: unknown): asserts value is UiManifest {
   if (!manifestValidator(value)) throw new ShellError('INPUT_INVALID', {}, '/ui');
   // 公共 Schema 保留静态索引词表；当前 MF2 加载只实现显式 bridge、pages.nav 与六类版本插槽。
@@ -56,6 +54,4 @@ function validateRoute(route: string): void {
 export function pageContributions(manifest: UiManifest): SlotDescriptor[] {
   return (manifest.pages ?? []).map((page) => ({ slot: 'qian.shell.nav/v1', id: page.route, title: page.nav.title, description: page.nav.title, route: page.route, permission: page.permission, expose: page.expose }));
 }
-export function compileParameters(schema: object): ValidateFunction {
-  try { return ajv.compile(schema); } catch { throw new ShellError('INPUT_INVALID', {}, '/parameters'); }
-}
+export { compileParameters, type ParameterValidator };

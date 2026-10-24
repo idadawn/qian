@@ -1,16 +1,18 @@
 name: shell-auth
-# 外壳认证真实流程验收（S1-YUE-002 验收 1 / 3 / 4）：在托管 runner 上原样执行 pnpm yue:auth ——
-# scripts/dev-shell.sh 拉起真实 qian.identity（Docker PostgreSQL 16、内置账号模型、真实 qian.tenancy 开通编排）、上游 CNCF Dex（通用 OIDC 连接器 dex）
-# 与 Identity.Client / Qian.Gateway BFF，Playwright 走完整浏览器流程（OIDC code + PKCE 登录、多租户选择、prompt=select_account 切换、刷新合并与过期对话框、
-# 刷新成功但平台表面持续 401、零令牌检查、运行时配置；平台身份 operator 不拉租户目录；SSO 跳转回调经 Dex 首次确认绑定、再次直接进入）。
+# 外壳真实流程验收（S1-YUE-002 验收 1–4；S1-YUE-012 融合后对 apps/qian-shell 运行）：在托管 runner 上原样执行 pnpm yue:auth ——
+# scripts/dev-shell.sh 拉起真实 qian.identity（Docker PostgreSQL 16、内置账号模型、真实 qian.tenancy 开通编排）、平台表面参考宿主（真实授权 PEP）、
+# 上游 CNCF Dex（通用 OIDC 连接器 dex）与 Identity.Client / Qian.Gateway BFF（外壳与参考应用远程制品的静态托管、bootstrap 聚合端点），
+# Playwright 走完整浏览器流程（OIDC code + PKCE 登录、多租户选择、远程页面经 MF2 按需加载并真实渲染、prompt=select_account 切换、刷新合并与过期对话框、
+# 刷新成功但平台表面持续 401、零令牌与零 CSP 违规检查、运行时配置；平台身份 operator 只调一次 bootstrap；SSO 跳转回调经 Dex 首次确认绑定、再次直接进入；
+# 验收 2：甲方已挂载参考应用时远程按需加载，丙方未挂载时 mf-manifest.json 从不请求）。
 # 失败时宿主、PostgreSQL 与 Dex 的日志复制进 TestResults/shell-auth/logs，随 Playwright 产物一起上传。
 # 宿主装配跟随后端包与参考宿主，所以它们改动时也要重跑；只改文档与任务文件不运行。与 yue 门禁矩阵并行，不进 yue:gates。
 on:
   push:
     branches: [main]
-    paths: ['apps/qian-shell-auth/**', 'packages/qian-identity-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.Shell/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-shell.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/shell-auth.yml']
+    paths: ['apps/qian-shell/**', 'packages/qian-shell-kit/**', 'packages/qian-plugin-sdk/**', 'packages/qian-runtime/**', 'packages/qian-identity-ui/**', 'samples/qian-sample-crm-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.Shell/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-shell.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/shell-auth.yml']
   pull_request:
-    paths: ['apps/qian-shell-auth/**', 'packages/qian-identity-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.Shell/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-shell.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/shell-auth.yml']
+    paths: ['apps/qian-shell/**', 'packages/qian-shell-kit/**', 'packages/qian-plugin-sdk/**', 'packages/qian-runtime/**', 'packages/qian-identity-ui/**', 'samples/qian-sample-crm-ui/**', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.Shell/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'scripts/dev-shell.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.github/workflows/shell-auth.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -38,8 +40,8 @@ jobs:
         with:
           version: 12.9.1
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter qian-shell-auth exec playwright install --with-deps chromium
-      - run: pnpm --filter @qian/identity-ui typecheck && pnpm --filter qian-shell-auth typecheck
+      - run: pnpm --filter qian-shell exec playwright install --with-deps chromium
+      - run: pnpm exec turbo run typecheck --filter=@qian/identity-ui --filter=@qian/shell-kit --filter=@qian/sample-crm-ui --filter=qian-shell
       - name: 真实流程验收（与本机 scripts/dev-shell.sh e2e 同一入口）
         run: pnpm yue:auth
       - uses: actions/upload-artifact@v4

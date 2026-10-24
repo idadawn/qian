@@ -8,3 +8,16 @@ static Qian.Gateway.GatewayHosting.AddQianGateway(this Microsoft.Extensions.Depe
 static Qian.Gateway.GatewayHosting.MapQianGateway(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Qian.Gateway.GatewayHosting.ReadConfiguration(System.Text.Json.JsonElement configuration) -> Qian.Gateway.GatewayConfiguration!
 static Qian.Gateway.GatewayHosting.UseQianGateway(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+Qian.Gateway.GatewayShellHosting
+Qian.Gateway.ShellStaticOptions
+Qian.Gateway.ShellStaticOptions.ConfigFile.get -> string?
+Qian.Gateway.ShellStaticOptions.ConfigFile.init -> void
+Qian.Gateway.ShellStaticOptions.Remotes.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Qian.Gateway.ShellStaticOptions.Remotes.init -> void
+Qian.Gateway.ShellStaticOptions.Root.get -> string!
+Qian.Gateway.ShellStaticOptions.Root.init -> void
+Qian.Gateway.ShellStaticOptions.ShellStaticOptions() -> void
+const Qian.Gateway.GatewayShellHosting.BootstrapPath = "/api/shell/bootstrap" -> string!
+static Qian.Gateway.GatewayShellHosting.MapQianShell(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, Qian.Gateway.ShellStaticOptions! options) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Gateway.GatewayShellHosting.MapQianShellBootstrap(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! path = "/api/shell/bootstrap") -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Gateway.GatewayShellHosting.UseQianShell(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app, Qian.Gateway.ShellStaticOptions! options) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!

@@ -153,8 +153,9 @@ public sealed partial class CustomerCommandTests
         Assert.True(JsonElement.DeepEquals(api, await alias.Content.ReadFromJsonAsync<JsonElement>(Ct)));
         var parsed = Microsoft.OpenApi.OpenApiDocument.Parse(api.GetRawText(), "json");
         Assert.NotNull(parsed.Document); Assert.Empty(parsed.Diagnostic!.Errors);
-        var paths = api.GetProperty("paths"); Assert.Equal(12, paths.EnumerateObject().Count());
+        var paths = api.GetProperty("paths"); Assert.Equal(13, paths.EnumerateObject().Count());
         Assert.True(paths.GetProperty("/api/capabilities/navigation").TryGetProperty("get", out _));
+        Assert.True(paths.GetProperty("/api/capabilities/shell").TryGetProperty("get", out _));
         Assert.True(paths.GetProperty("/api/customers").TryGetProperty("post", out _));
         Assert.True(paths.GetProperty("/api/customers").TryGetProperty("get", out _));
         Assert.True(paths.GetProperty("/api/customers/{id}").TryGetProperty("get", out _));

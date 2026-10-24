@@ -66,7 +66,7 @@
 | 源码分发 | — | shadcn 私有 registry（面向 ISV / 插件作者）+ shadcn MCP Server（Agent 检索与安装 yue 区块） | S3·P1 / S4·P0（补充裁决 Q41） |
 | 主题与品牌 | iClaw web 两套令牌 `--accent` 同名异义；媒体查询换品牌色 | 令牌 JSON + `data-theme / data-brand` 注入点；服务端按租户下发；品牌默认值经 `overrides` 注入；禁止媒体查询换品牌色 | S1·P0（机制）/ S3·P1（租户开放） |
 | 国际化 | 参考平台硬编码占位；iClaw 硬编码中文 | 组件文案全部走 i18n key；内置 zh-CN / zh-TW / en-US；按域拆分懒加载；远程语言包；i18n key 表作为契约发布 | S1·P0 |
-| 运行时配置 | 参考平台 `_app.config.js` + `window.__APP_CONF__` 改配置不重编译 | **沿用**该模式，K3s ConfigMap 挂载 | S1·P0 |
+| 运行时配置 | 参考平台 `_app.config.js` + `window.__APP_CONF__` 改配置不重编译 | **沿用**改配置不重编译，但改成同源 JSON `/app-config.json`（K3s ConfigMap 挂载，外壳只解析与校验）并给外壳加 meta CSP：脚本形态下能写 ConfigMap 就能在外壳源执行任意脚本（S1-YUE-012） | S1·P0 |
 | 开发体验 | iClaw console mock 中间件 | mock 模式用 Vite 中间件 + 路由表，每个插件自带 `mock.ts`；多入口预览；联调代理可注租户头 | S1·P0 |
 | 代码规范 | 参考平台提交钩子全注释 | ESLint 9 flat、Stylelint、Prettier 校验入 CI、cspell、commitlint + 钩子启用 | S1·P0 |
 | 测试可寻址 | iClaw `data-testid` 约定 | `data-testid` 命名 `<app>-<page>-<element>`；组件 `data-slot`；也是 Agent 可寻址基础 | S1·P0 |
@@ -99,7 +99,7 @@
 | 代码编辑器 | Codemirror 与 Monaco 两套 | Monaco（桌面）+ CodeMirror 6（移动 / 轻量）统一接口 | — |
 | 富文本 / Markdown | TinyMCE 5 / Vditor | **未决**，S2 前补选型（Q39） | — |
 | 脚本沙箱 | `eval` / `new Function` | iframe sandbox（第三方 UI）+ quickjs-emscripten（表达式 / 联动脚本，内存上限、超时） | `eval`、ShadowRealm（阶段早） |
-| 状态 / 路由 / i18n | Pinia / vue-router / vue-i18n | Zustand + TanStack Query；react-router 7；i18next | — |
+| 状态 / 路由 / i18n | Pinia / vue-router / vue-i18n | Zustand + TanStack Query；路由 S1 用 `@yue/shell` 最小历史路由，S2 页面运行时引入 react-router 7；i18next | — |
 | API client | 手写封装 | 从 Kun OpenAPI 生成 + 契约测试 | 手写 fetch 封装 |
 | 外壳集成 | 单体前端 | Module Federation 2 运行时加载 + 带版本插槽注册表；共享依赖 singleton；不可信 UI 走 Worker 远程渲染或 iframe（S3） | 第三方不可信 UI 直接 MF 挂载（零隔离） |
 
