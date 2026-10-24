@@ -116,9 +116,11 @@ app.UseQianErrors(); app.UseAuthentication(); app.UseAuthorization();
 - 本地登出与正在进行的刷新并发时，刷新的结果只续写仍存活的会话，已登出的会话不会复活；但刷新已经换到的令牌族要等发行方侧过期。
 - `resource` 只在授权请求里带：Kun 的 `OidcCodeExchange` 与刷新都不能追加参数，所以换码与刷新请求不带。qian-identity 的授权码与 refresh token 已绑定授权时请求的资源，换码、刷新沿用，受众不变。对接要求令牌请求也带 `resource` 的发行方（MCP 授权规范对客户端的要求），要等 Kun 支持追加参数。
 - 授权参数只透传 `prompt=select_account`；`login_hint`、租户提示等尚未透传。
-- 清单已由 SDK 派生稳定入口与 configSchema，并声明了 `x-aot`（依据见上文的 NativeAOT 冒烟），但仍保留 `x-skeleton`：还要等包族发布、`runtime.nuget` 钉版和真实 `qian add` 安装验收（S1-IDP-015）。发版只能从 main 触发。按 S1-DEC-029，开发期 gateway 使用 JIT，gateway 整体的 NativeAOT 门仍由 GW-001 / DEP-008 验收。
+- 清单已由 SDK 派生稳定入口与 configSchema，并声明了 `x-aot`（依据见上文的 NativeAOT 冒烟）。S1-IDP-015 已完成包族 0.3.0 发布、`runtime.nuget` 精确版本与归档摘要钉定、真实 `qian add identity` 安装和移除验收，骨架标记已移除；安装准备与声明式配置见[组件 README](../../plugins/qian.identity.client/README.md#安装)。按 S1-DEC-029，开发期 gateway 使用 JIT，gateway 整体的 NativeAOT 门仍由 GW-001 / DEP-008 验收。
 - `Qian.Plugin.Sdk` 经 `Qian.Data.Abstractions` 把 EF Core 带进依赖闭包。NativeAOT 发布时这部分不可达，会被裁掉；JIT 宿主的输出目录里会多出这些程序集。
 
 ## 测试
 
 `tests/Qian.Identity.Client.Tests`：真实 qian-identity（内置账号模型、强制 PKCE）上的服务端换码、篡改 nonce / iss / state 重放、刷新单飞与轮换、登出防伪、卸载、后通道登出，以及会话主体经 Kun 网关签发器铸 S2S 后下游接受、透传被拒；S2S 契约逐条违约。`tests/Qian.Identity.Client.Standalone.Tests`：只引用本包的独立宿主对接 Dex（独立实现的 CNCF OIDC 发行方，见 [tests/README.md](../../tests/README.md) 的 `DexFixture`）完成登录与登出，并断言依赖闭包里没有其他 Qian 组件。`ClientManifestTests` 核对清单与生成元数据、配置 Schema 一致，公开客户端能挂载和卸载，并确认清单声明了 `x-aot`；NativeAOT 冒烟见上文。选 Dex 而不是第二个 qian-identity，是因为后者证明不了「任意 OIDC 发行方」。
+
+S1-IDP-015 的私有源安装门在 `packages/qian-cli/test/private-feed.e2e.mjs`：从干净 ASP.NET Core 项目执行 `qian add identity`，核对版本、实际包源与归档摘要，由清单入口挂载已发布的 Provider；匿名 `/auth/session` 返回 401，卸载后同端点返回 404，旧上下文无法再取得 Identity 服务。最后经 `qian remove identity --purge` 撤销包引用、组件文件与 patch。完整登录协议仍由上述身份客户端测试覆盖。
