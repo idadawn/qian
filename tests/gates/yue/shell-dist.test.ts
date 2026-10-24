@@ -30,9 +30,11 @@ afterAll(() => { for (const dist of dists) rmSync(dist, { recursive: true, force
 const rejected: [string, string, string[]][] = [
   ['unsafe-eval（已撤销的例外）', `script-src 'self' 'unsafe-eval' ${HASH}`, []],
   ['wasm-unsafe-eval', `script-src 'self' 'wasm-unsafe-eval' ${HASH}`, []],
-  ['两个例外', `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${HASH}`, []],
+  ['unsafe-eval 与 unsafe-inline 并列', `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${HASH}`, []],
   ['unsafe-hashes', `script-src 'self' 'unsafe-hashes' ${HASH}`, []],
   ['self 不在开头', `script-src ${HASH} 'self'`, []],
+  // 首位换成放宽源、其余全是哈希：只有「首位必须是 'self'」这条检查拦得住。
+  ['首位放宽源', `script-src 'unsafe-eval' ${HASH}`, []],
   ['外部源', `script-src 'self' https://cdn.example ${HASH}`, []],
   ['script-src-elem 放宽', `script-src 'self' ${HASH}`, ["script-src-elem 'self' https://evil.example"]],
   ['script-src-attr 放宽', `script-src 'self' ${HASH}`, ["script-src-attr 'unsafe-inline'"]],

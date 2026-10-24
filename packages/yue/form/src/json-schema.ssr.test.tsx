@@ -128,6 +128,25 @@ describe('解释型 JSON Schema 校验与 Ajv 逐条一致', () => {
     same({ $defs: { S: { type: 'string' } }, properties: { a: { $ref: '#/properties/b' }, b: { $ref: '#/$defs/S' } } }, [{ a: 1, b: 2 }]);
   });
 
+  it('$ref：别名定义带说明词（如 OpenAPI 的 description）照样沿引用解析，$comment 与规则关键字挡路（键在即算，取值 undefined 也算）', () => {
+    same({ type: 'object', $defs: { Money: { type: 'number', minimum: 0 }, Price: { $ref: '#/$defs/Money', description: '价格' } }, properties: { price: { $ref: '#/$defs/Price' } } }, [{ price: -1 }, { price: 'x' }, { price: 1 }]);
+    for (const extra of [{ title: 'A' }, { description: 'd' }, { default: 1 }, { examples: [1] }, { deprecated: false }, { readOnly: true }, { writeOnly: false }, { contentMediaType: 'text/plain' },
+      { contentEncoding: 'base64' }, { contentSchema: { type: 'string' } }, { 'x-ref': 'q' }, { $defs: { Z: { type: 'string' } } }, { title: 'A', description: 'd', default: 'x' }, { description: undefined },
+      { $comment: 'c' }, { $comment: 'c', title: 'A' }, { minLength: undefined }, { type: undefined }]) {
+      same({ $defs: { A: { $ref: '#/$defs/B', ...extra }, B: { type: 'string', minLength: 2 } }, properties: { a: { $ref: '#/$defs/A' } } }, [{ a: 1 }, { a: 'x' }, { a: 'xy' }]);
+      same({ $defs: { A: { $ref: '#/$defs/B', ...extra }, B: { type: 'string', minLength: 2 } }, $ref: '#/$defs/A' }, [5, 'x', 'xy']);
+    }
+  });
+
+  it('取值为 undefined 的成员一律按缺失处理（代码拼出的 Schema 常把可选字段留成 undefined）', () => {
+    for (const key of ['title', 'description', '$comment', 'default', 'examples', 'deprecated', 'readOnly', 'writeOnly', 'contentMediaType', 'contentEncoding', 'contentSchema', 'x-sensitivity', 'x-unknown',
+      '$schema', '$id', '$defs', '$ref', 'type', 'const', 'enum', 'oneOf', 'format', 'pattern', 'minLength', 'maxLength', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'items', 'minItems',
+      'maxItems', 'required', 'properties', 'additionalProperties', 'anyOf', 'uniqueItems', 'foo']) {
+      same({ type: 'object', properties: { a: { type: 'string', [key]: undefined } } }, [{ a: 1 }, { a: 'x' }, {}]);
+      same({ type: 'string', [key]: undefined }, [5, 'x']);
+    }
+  });
+
   it('oneOf：分支错误保留，恰好一个通过时清空；找到第二个通过的分支即停', () => {
     same({ oneOf: [{ type: 'string' }, {}, {}, { type: 'boolean' }] }, [5, 'x', true]);
     same({ oneOf: [{}, true, { type: 'number' }] }, [5, 'x']);
@@ -135,9 +154,10 @@ describe('解释型 JSON Schema 校验与 Ajv 逐条一致', () => {
     same({ oneOf: [false, false] }, [1]);
   });
 
-  it('说明关键字与本 spec 的 x- 扩展不参与判定', () => {
+  it('说明关键字（含 content 三词）与本 spec 的 x- 扩展不参与判定', () => {
     same({ $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://example.test/annotated', $comment: 'c', title: 't', description: 'd', default: 'x', examples: ['a'], deprecated: false, readOnly: true, writeOnly: false,
-      type: 'string', 'x-sensitivity': 'pii', 'x-ref': 'qian.test', 'x-widget-hint': 'qian.input' }, ['a', 5]);
+      contentMediaType: 'application/json', contentEncoding: 'base64', contentSchema: { type: 'number', minimum: 10 }, type: 'string', 'x-sensitivity': 'pii', 'x-ref': 'qian.test', 'x-widget-hint': 'qian.input' }, ['a', 5, '[1]']);
+    same({ properties: { a: { contentSchema: true }, b: { contentSchema: false, contentMediaType: 'text/plain' } } }, [{ a: 1, b: 'x' }]);
   });
 });
 
@@ -146,7 +166,7 @@ describe('子集外拒绝，而不是静默放过', () => {
   it('子集外的关键字、格式与引用：form.error.unsupportedKeyword', () => {
     for (const schema of [{ anyOf: [{}] }, { allOf: [{}] }, { not: {} }, { if: {}, then: {} }, { else: {} }, { patternProperties: {} }, { propertyNames: {} }, { prefixItems: [] }, { contains: {} }, { minContains: 1 },
       { uniqueItems: true }, { multipleOf: 2 }, { minProperties: 1 }, { maxProperties: 1 }, { dependentRequired: {} }, { dependentSchemas: {} }, { unevaluatedProperties: false }, { unevaluatedItems: false },
-      { type: 'string', nullable: true }, { definitions: {} }, { $dynamicRef: '#x' }, { $dynamicAnchor: 'x' }, { $anchor: 'x' }, { $vocabulary: {} }, { formatMinimum: '2020-01-01' }, { contentMediaType: 'text/plain' },
+      { type: 'string', nullable: true }, { definitions: {} }, { $dynamicRef: '#x' }, { $dynamicAnchor: 'x' }, { $anchor: 'x' }, { $vocabulary: {} }, { formatMinimum: '2020-01-01' },
       { format: 'email' }, { format: 'uri' }, { format: 'phone' }, { 'x-unknown': 1 }, { foo: 1 }, { $ref: 'https://example.test/s' }, { $ref: '#x' }, { $ref: 'other.json#/a' },
       { $schema: 'http://json-schema.org/draft-07/schema#' }, { properties: { a: { $id: 'https://example.test/a' } } }, { items: { $schema: 'https://json-schema.org/draft/2020-12/schema' } }]) rejected(schema, 'form.error.unsupportedKeyword');
     // 嵌套处、未被引用的 $defs 里的也拒绝；cause 指向出问题的位置。
@@ -159,7 +179,11 @@ describe('子集外拒绝，而不是静默放过', () => {
     for (const schema of ['object', null, 5, [], { type: 'date' }, { type: [] }, { type: ['string', 'string'] }, { type: 1 }, { enum: [] }, { enum: 'a' }, { oneOf: [] }, { oneOf: {} }, { required: ['a', 'a'] }, { required: [1] },
       { required: 'a' }, { minLength: -1 }, { maxLength: 1.5 }, { minItems: '1' }, { maxItems: Number.POSITIVE_INFINITY }, { pattern: '(' }, { pattern: 1 }, { format: 1 }, { minimum: 'x' }, { exclusiveMinimum: Number.NaN },
       { items: [] }, { items: 1 }, { properties: [] }, { properties: { a: 1 } }, { additionalProperties: 'x' }, { $ref: '#/$defs/missing' }, { $ref: 1 }, { $ref: '#/%E0%A4%A' }, { title: 5 }, { examples: 'x' },
-      { readOnly: 'yes' }, { $defs: [] }, { $id: 5 }, { $defs: { A: { $ref: '#/$defs/B' }, B: { $ref: '#/$defs/A' } }, $ref: '#/$defs/A' }]) rejected(schema, 'form.error.schema');
+      { readOnly: 'yes' }, { $defs: [] }, { $id: 5 }, { contentMediaType: 5 }, { contentEncoding: [] }, { contentSchema: 'x' }, { contentSchema: [] },
+      { $defs: { A: { $ref: '#/$defs/B' }, B: { $ref: '#/$defs/A' } }, $ref: '#/$defs/A' }, { $defs: { A: { $ref: '#/$defs/B' }, B: { $ref: '#/$defs/A', title: 'b' } }, $ref: '#/$defs/A' }]) rejected(schema, 'form.error.schema');
+    // 带说明词的自引用别名也是环：编译期拒绝，而不是提交时栈溢出。
+    rejected({ $ref: '#/$defs/B', $defs: { B: { $ref: '#/$defs/B', description: 'x' } } }, 'form.error.schema', '#/$defs/B/$ref');
+    rejected({ $ref: '#', description: 'x' }, 'form.error.schema', '#/$ref');
     let deep: unknown = { type: 'string' };
     for (let index = 0; index < 40; index++) deep = { type: 'object', properties: { next: deep } };
     rejected(deep, 'form.error.schema');
@@ -171,6 +195,7 @@ describe('子集外拒绝，而不是静默放过', () => {
     expect(() => assertFormSchema(withField({ type: 'string', format: 'email' }))).toThrow('form.error.unsupportedKeyword');
     expect(() => assertFormSchema(withField({ type: 'string', pattern: '(' }))).toThrow('form.error.schema');
     expect(() => assertFormSchema(schema)).not.toThrow();
+    expect(() => assertFormSchema(withField({ type: 'string', title: undefined, minLength: undefined, 'x-unknown': undefined }))).not.toThrow();
     expect(validateValues(schema, { code: undefined, name: '甲', enabled: true })).toEqual([
       { instancePath: '', schemaPath: '#/required', keyword: 'required', params: { missingProperty: 'code' }, message: "must have required property 'code'" },
       { instancePath: '', schemaPath: '#/required', keyword: 'required', params: { missingProperty: 'phone' }, message: "must have required property 'phone'" },

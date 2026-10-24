@@ -56,7 +56,7 @@
 | Base UI | MIT | 无样式原语 | 引入代码；首迭代验证门，不过则整体切 Radix（MIT），不混用 |
 | shadcn/ui | MIT | 源码自有化的组件起点 | 引入代码（拷贝进 `@yue/core` 后自有化维护） |
 | TanStack Table / Virtual / Query | MIT | 数据表格、虚拟滚动、数据获取 | 引入代码（DataTable 基础） |
-| react-hook-form + Ajv | MIT / MIT | 表单状态与 JSON Schema 校验 | 引入代码（SchemaForm 基础；校验器前后端共用） |
+| react-hook-form + Ajv | MIT / MIT | 表单状态与 JSON Schema 校验 | 引入代码（react-hook-form 是 SchemaForm 基础；S1-YUE-014 起 SchemaForm 校验解释执行，Ajv 对它只作差分对照；Ajv 运行期仍用于 qian-cli 与 qian-surfaces，构建期用于 plugin-sdk 预编译清单校验器） |
 | Zustand | MIT | 轻量状态 | 引入代码 |
 | react-router / i18next | MIT / MIT | 路由、国际化 | 引入代码 |
 | Module Federation 2 | MIT | 外壳运行时加载与共享依赖 | 引入代码 |

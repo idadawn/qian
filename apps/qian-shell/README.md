@@ -42,7 +42,7 @@ node apps/qian-shell/scripts/package-static.mjs
 
 | 门禁 | 入口 | 内容 |
 |---|---|---|
-| `pnpm yue:mf`（CI `shell-federation`） | `scripts/e2e.mjs` → `playwright.config.ts` + `e2e/` | 夹具 bootstrap（`scripts/serve-acceptance.mjs`）+ 真实审计宿主：官方租户远程按页面加载；共享 React、PlatformClient、SDK 与 Button 引用一致；scope 遮蔽与卸载恢复；租户 B 未挂载时 manifest 请求为零；`engines.yue` 拒绝并在控制台与真实 PostgreSQL 审计链留痕；window bridge 的 getContext / navigate / invoke 与撤销；运行时配置不合法时只有配置错误页、零请求；全程零 CSP 违规；首屏 JS gzip ≤ 250 KiB（`acceptance-results/first-screen.json`）。验收控制面只由 `--mode acceptance` 引用。 |
+| `pnpm yue:mf`（CI `shell-federation`） | `scripts/e2e.mjs` → `playwright.config.ts` + `e2e/` | 夹具 bootstrap（`scripts/serve-acceptance.mjs`）+ 真实审计宿主：官方租户远程按页面加载；共享 React、PlatformClient、SDK 与 Button 引用一致；scope 遮蔽与卸载恢复；租户 B 未挂载时 manifest 请求为零；`engines.yue` 拒绝并在控制台与真实 PostgreSQL 审计链留痕；window bridge 的 getContext / navigate / invoke 与撤销；运行时配置不合法时只有配置错误页、零请求；全程零 CSP 违规（含一次真实 SchemaForm 提交校验）；首屏 JS gzip ≤ 250 KiB（`acceptance-results/first-screen.json`）。验收控制面只由 `--mode acceptance` 引用。 |
 | `pnpm yue:auth`（CI `shell-auth`） | `scripts/e2e-auth.mjs` → `playwright.auth.config.ts` + `e2e-auth/` | 对 `tools/Qian.Dev.Shell` 拉起的真实 qian.identity + 平台表面宿主 + 上游 Dex + 网关 BFF 跑完整浏览器流程，见下表。失败时宿主、PostgreSQL 与 Dex 的日志在 `TestResults/shell-auth/logs`。 |
 
 真实流程（S1-YUE-002 验收 1–4）：
@@ -66,3 +66,4 @@ node apps/qian-shell/scripts/package-static.mjs
 - 外壳经 `bridge.invoke` 调应用能力时，令牌要带能力声明的 OAuth scope（参考应用是 `crm.read` / `crm.write`）；联调栈的外壳客户端登记并申请了它们，生产外壳客户端的 scope 清单随部署任务交付。
 - 用户主体经外壳执行应用能力（S1-YUE-015）只覆盖与平台表面同进程的 `module` 应用：参考栈里平台表面宿主把验证过的主体交给参考应用的身份适配器，能力以调用者本人执行，命令 PEP 按其角色判定；`service` 形态应用跨工作负载的执行不在 S1。审计链的来源通道沿用能力登记的 `api`，经外壳发起记 `ui` 另立 S1-AUD-011。
 - 站内信只有弹窗壳，消息源待后端接口。
+- `script-src` 不含 `'wasm-unsafe-eval'`，外壳页面内不能编译 WASM。引入 quickjs-emscripten 之类的 WASM 沙箱时三选一：重新登记例外、改用 asm.js 变体，或放进 Worker 执行（Worker 不受这条 meta CSP 约束）。iframe sandbox 早已被 `frame-src 'none'` 挡住，同样要先登记（规格 `docs/prd/specs/yue.md` §6）。

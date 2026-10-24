@@ -10,12 +10,17 @@ const META = 'https://json-schema.org/draft/2020-12/schema';
 const TYPES = new Set(['object', 'array', 'string', 'number', 'integer', 'boolean', 'null']);
 const isString = (value: unknown) => typeof value === 'string';
 const isBoolean = (value: unknown) => typeof value === 'boolean';
+const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const anything = () => true;
-// 只作说明、不参与判定的关键字及其参数类型；x- 扩展的白名单由 assertFormSchema 另行把关。
+// 只作说明、不参与判定的关键字，只查参数类型（contentSchema 只查是不是 Schema，不展开，与 Ajv 一样不拿它校验）；x- 扩展的白名单由 assertFormSchema 另行把关。
 const ANNOTATIONS: Record<string, (argument: unknown) => boolean> = {
   title: isString, description: isString, $comment: isString, default: anything, examples: Array.isArray, deprecated: isBoolean, readOnly: isBoolean, writeOnly: isBoolean,
+  contentMediaType: isString, contentEncoding: isString, contentSchema: (argument) => isBoolean(argument) || isObject(argument),
   'x-sensitivity': anything, 'x-ref': anything, 'x-widget-hint': anything,
 };
+// 链式引用里不挡路的关键字：Ajv 只让登记了规则的关键字挡住「只有 $ref」的目标继续解析，说明词、$defs 与 x- 扩展都不算，$comment 登记了规则、算。
+// 与 Ajv 一样按键是否存在判断，不看取值是不是 undefined。
+const transparent = (name: string) => name === '$ref' || name === '$defs' || name.startsWith('x-') || (name !== '$comment' && Object.hasOwn(ANNOTATIONS, name));
 // 求值顺序与 Ajv 一致：先是不分类型的关键字，再按 number → string → array → object 分组；组内按关键字登记顺序，而不是 Schema 里的书写顺序。
 const ANY = ['$ref', 'const', 'enum', 'oneOf'];
 const GROUPS: Record<Group, readonly string[]> = {
@@ -59,7 +64,6 @@ const FORMATS: Record<string, (text: string) => boolean> = {
 
 const unsupported = (at: string): never => { throw new Error('form.error.unsupportedKeyword', { cause: at }); };
 const invalid = (at: string): never => { throw new Error('form.error.schema', { cause: at }); };
-const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const pointer = (key: string) => key.replace(/~/g, '~0').replace(/\//g, '~1');
 const count = (value: unknown, at: string) => typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : invalid(at);
 const error = (instancePath: string, schemaPath: string, keyword: string, params: Record<string, unknown>, message: string): SchemaError => ({ instancePath, schemaPath, keyword, params, message });
@@ -89,9 +93,9 @@ function hasRef(value: unknown): boolean {
  * 只接受 JSON Schema 2020-12 的一个可解释子集，即 SchemaForm 的数据 Schema 与 form / list / widget 元数据 Schema 实际用到的关键字：
  * type、enum、const、$ref（本文档内的 JSON Pointer）、oneOf；properties、required、additionalProperties；items、minItems、maxItems；
  * minLength、maxLength（按码点）、pattern（Unicode 正则）、format（date、time、date-time、uuid）；minimum、maximum、exclusiveMinimum、exclusiveMaximum；
- * 外加 $schema / $id（只在根上）、$defs、只作说明的关键字与本 spec 的三个 x- 扩展。子集内的判定、错误顺序与错误对象与此前的 Ajv 2020
- * （allErrors、strict: false、ajv-formats full）逐条一致，由差分测试对照；子集外的关键字、格式与引用一律拒绝（form.error.unsupportedKeyword），
- * 参数不合法同样拒绝（form.error.schema），cause 是出问题的 Schema 位置，而不是静默放过。
+ * 外加 $schema / $id（只在根上）、$defs、只作说明的关键字（含 contentMediaType / contentEncoding / contentSchema）与本 spec 的三个 x- 扩展；取值为 undefined 的成员一律按缺失处理。
+ * 子集内的判定、错误顺序与错误对象与此前的 Ajv 2020（allErrors、strict: false、ajv-formats full）逐条一致，由差分测试对照；
+ * 子集外的关键字、格式与引用一律拒绝（form.error.unsupportedKeyword），参数不合法同样拒绝（form.error.schema），cause 是出问题的 Schema 位置，而不是静默放过。
  */
 export function compileSchema(schema: unknown): SchemaValidator {
   const context: Context = { root: schema, shared: new Map() };
@@ -109,6 +113,8 @@ function compile(schema: unknown, at: string, location: string, depth: number, c
   if (schema === false) return (_value, path, errors) => { errors.push(error(path, `${at}/false schema`, 'false schema', {}, 'boolean schema is false')); };
   if (!isObject(schema)) return invalid(location);
   for (const [name, argument] of Object.entries(schema)) {
+    // 与 Ajv 一致，取值为 undefined 的成员当作没写（代码拼出的 Schema 常把可选字段留成 undefined）。
+    if (argument === undefined) continue;
     const where = `${location}/${pointer(name)}`;
     if (Object.hasOwn(ANNOTATIONS, name)) { if (!ANNOTATIONS[name]!(argument)) invalid(where); } else if (name === '$schema' || name === '$id') {
       if (depth > 0) unsupported(where);
@@ -234,7 +240,7 @@ function compile(schema: unknown, at: string, location: string, depth: number, c
 }
 
 /**
- * $ref 只认本文档内的 JSON Pointer 片段（# 或 #/…），远程、锚点与基于 $id 的引用不在子集内。只有 $ref 的目标沿引用继续解析。
+ * $ref 只认本文档内的 JSON Pointer 片段（# 或 #/…），远程、锚点与基于 $id 的引用不在子集内。目标除 $ref 外只有不挡路的关键字（transparent）时沿引用继续解析，成环即拒绝。
  * schemaPath 与 Ajv 一致：目标里不再含引用时就地展开，路径接在 $ref 原文之后；目标自身含引用（递归定义）时共享一份校验函数，路径从 # 重新开始。
  */
 function reference(ref: unknown, at: string, depth: number, context: Context): Check {
@@ -255,7 +261,7 @@ function reference(ref: unknown, at: string, depth: number, context: Context): C
       target = target && typeof target === 'object' ? Reflect.get(target, token) : undefined;
       if (target === undefined) return invalid(at);
     }
-    if (!isObject(target) || typeof target.$ref !== 'string' || !Object.keys(target).every((name) => name === '$ref' || name.startsWith('x-'))) break;
+    if (!isObject(target) || typeof target.$ref !== 'string' || !Object.keys(target).every(transparent)) break;
     if (seen.has(key)) return invalid(at);
     seen.add(key);
     current = target.$ref;

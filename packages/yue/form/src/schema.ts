@@ -56,6 +56,8 @@ export function effectiveSchema(schema: FormSchema, values: FormValues): { data:
 function checkExtensions(value: unknown): void {
   if (!value || typeof value !== 'object') return;
   for (const [key, entry] of Object.entries(value)) {
+    // 取值为 undefined 的成员当作没写，与 compileSchema 同一口径。
+    if (entry === undefined) continue;
     if (key.startsWith('x-') && !['x-sensitivity', 'x-ref', 'x-widget-hint'].includes(key)) throw new Error('form.error.extension');
     checkExtensions(entry);
   }

@@ -267,6 +267,8 @@ export function listWidgets(filter?: { device?: Device; category?: string }): Wi
 
 **`x-` 扩展。** `x-sensitivity`（字段敏感度，供脱敏与导出审计）、`x-ref`（引用实体）、`x-widget-hint`（推荐控件）是本 spec 定义的扩展关键字，其余 `x-` 关键字一律由校验器拒绝，防止契约被私有字段侵蚀。
 
+**校验子集与口径（R131 ③）。** SchemaForm 的校验器只解释 JSON Schema 2020-12 的一个子集（清单见 `@idadawn/yue-form` README），口径是：子集外的断言类关键字（`anyOf` / `allOf` / `not` / `if`、`uniqueItems`、`multipleOf` 等）、子集外的 `format` 与未知关键字在渲染前（`assertFormSchema`）拒绝，不像 Ajv `strict: false` 那样忽略；纯说明词（`title`、`description`、`default`、`examples`、`deprecated`、`readOnly`、`writeOnly`、`$comment` 与 `contentMediaType` / `contentEncoding` / `contentSchema`）只查参数类型、不参与判定；取值为 `undefined` 的成员按缺失处理。设置页（`qian.config` 配置 Schema → SchemaForm）落地时若需要子集外的关键字，按 yue-form README 的做法扩充子集并补差分用例，而不是放宽为忽略。
+
 ### 3.4 ListSchema 契约草案（base + overrides）
 
 ```jsonc
@@ -410,7 +412,7 @@ yue 主版本可并存一个过渡窗口（MF2 共享依赖按主版本分组）
 
 ### 5.3 与设计器的关系
 
-设计器只消费 `@yue/contracts` 与控件注册表：左栏 = `listWidgets()`，属性面板 = `meta.props` 自动生成（手写面板只在声明化不足时补充），校验 = 与服务端共用的 Ajv 校验器（Agent 生成物走同一校验再落库），产出 = 带 `$schema` 与版本的 FormSchema / ListSchema / FlowNodes。
+设计器只消费 `@yue/contracts` 与控件注册表：左栏 = `listWidgets()`，属性面板 = `meta.props` 自动生成（手写面板只在声明化不足时补充），校验 = 前后端同一份 Schema（前端由 `@idadawn/yue-form` 解释执行、不在运行期生成代码，R130；Agent 生成物走同一校验再落库），产出 = 带 `$schema` 与版本的 FormSchema / ListSchema / FlowNodes。
 
 ### 5.4 与 Agent 的关系
 
@@ -450,6 +452,8 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 | 富文本 / Markdown | **待调研**（Q39）：S2 前补一次 React 富文本编辑器选型 | — | TinyMCE 5 / Vditor（参考平台用法，非 React 生态） | 待决策 |
 | 文档站 | 现有 Rspress 2 统一组件与产品文档；Vitest / Playwright + axe 独立测试 | — | Storybook（重复文档体系，ADR-022） | 锁定 |
 | 多标签 KeepAlive | 待评估方案（React 无原生 KeepAlive） | Activity / offscreen 方案 | iframe 多实例 | 待决策（S1 可选 / S2 必做） |
+
+**外壳 CSP 对前端脚本沙箱的约束（S1-YUE-014，R131 ④）。** 外壳 meta CSP 的 `script-src` 只有 `'self'` 与内联脚本哈希，不含 `'unsafe-eval'`，也不含 `'wasm-unsafe-eval'`，外壳页面内不能编译 WASM。引入 quickjs-emscripten 时三选一：重新登记 `'wasm-unsafe-eval'` 例外、改用它的 asm.js 变体，或放进 Worker 执行（Worker 不受这条 meta CSP 约束）。表中「iframe sandbox 隔离第三方 UI」同样早已被 `frame-src 'none'` 挡住，启用前要先登记例外。
 
 ---
 
