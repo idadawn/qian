@@ -39,7 +39,7 @@ public sealed partial class TenantOperationsTests
             business.App.Services.GetRequiredService<ITenantContext>(), platform.AuthzRole)
             .AssignSuperadminAsync(identity.Person.ToString("D"), "operator", Ct);
         await using var gateway = await GatewayTestHost.Start(reservation, tls, identity.Issuer, IdentityServerHost.ClientId, IdentityServerHost.Resource, identity.Secret,
-            redis.ConnectionString, gatewayIssuer, [new("tenancy", "/api/tenancy/{**rest}", "qian-platform")],
+            redis.ConnectionString, gatewayIssuer, [new("tenancy", "/api/tenancy/{**rest}", "qian-platform") { RateLimiterPolicy = "user" }],
             [new("qian-platform", management.Urls.Single())], business.ManagementSigningKey.Rsa);
         var (client, cookies) = GatewayTestHost.Browser(tls); using var browser = client;
         var target = new Uri(address, "api/tenancy/tenants");

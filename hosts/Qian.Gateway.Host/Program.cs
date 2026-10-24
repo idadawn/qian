@@ -31,8 +31,17 @@ builder.Configuration.AddQianConfigurationSources(configurationOptions);
 var gateway = new GatewayConfiguration(Required("Gateway:IdentityIssuer"), Required("Gateway:IdentityAudience"), Required("Gateway:Issuer"),
     Required("Gateway:SigningKeyPath"), Required("Gateway:PublicKeyPath"),
     builder.Configuration.GetSection("Gateway:TrustedProxyNetworks").GetChildren().Select(item => item.Value ?? "").ToArray(),
-    builder.Configuration.GetSection("Gateway:Routes").GetChildren().Select(item => new GatewayRoute(item["Id"] ?? "", item["Path"] ?? "", item["Cluster"] ?? "")).ToArray(),
-    builder.Configuration.GetSection("Gateway:Clusters").GetChildren().Select(item => new GatewayCluster(item["Id"] ?? "", item["Address"] ?? "")).ToArray());
+    builder.Configuration.GetSection("Gateway:Routes").GetChildren().Select(item => new GatewayRoute(item["Id"] ?? "", item["Path"] ?? "", item["Cluster"] ?? "")
+    { RateLimiterPolicy = item["RateLimiterPolicy"] ?? "" }).ToArray(),
+    builder.Configuration.GetSection("Gateway:Clusters").GetChildren().Select(item => new GatewayCluster(item["Id"] ?? "", item["Address"] ?? "")).ToArray())
+{
+    RateLimits = new GatewayRateLimits
+    {
+        KeyPrefix = builder.Configuration["Gateway:RateLimits:KeyPrefix"] ?? "qian:gateway:rate",
+        WindowSeconds = RateLimit("WindowSeconds", 60), IpPermitLimit = RateLimit("IpPermitLimit", 100),
+        TenantPermitLimit = RateLimit("TenantPermitLimit", 100), UserPermitLimit = RateLimit("UserPermitLimit", 100)
+    }
+};
 var gatewayJson = JsonSerializer.SerializeToElement(gateway, HostJson.Default.GatewayConfiguration);
 gateway = GatewayHosting.ReadConfiguration(gatewayJson);
 builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
@@ -104,6 +113,14 @@ HostLog.Ready(app.Logger, RuntimeFeature.IsDynamicCodeSupported);
 // RunAsync 会自行 Dispose 宿主，不能先于仍拥有数据库会话和配置审计泵的 loader。
 await app.StartAsync();
 await app.WaitForShutdownAsync();
+
+int RateLimit(string name, int fallback)
+{
+    var value = builder.Configuration["Gateway:RateLimits:" + name];
+    if (value is null) return fallback;
+    return int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+        ? parsed : throw new InvalidOperationException("网关限流配置必须是整数。");
+}
 
 string Required(string key) => builder.Configuration[key] is { Length: > 0 } value ? value : throw new InvalidOperationException("缺少网关宿主配置：" + key);
 static string ReadCredential(string path) => GatewayBootstrap.ReadCredential(path);

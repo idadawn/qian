@@ -57,7 +57,7 @@ public sealed partial class ShellSurfaceTests(PostgresFixture postgres) : Custom
         await using var redis = new RedisFixture(); await redis.InitializeAsync();
         await using var gateway = await GatewayTestHost.Start(reservation, tls, business.Identity.Issuer, GatewayClientId, IdentityResource, business.Identity.Secret,
             redis.ConnectionString, ShellGatewayIssuer,
-            [new("capabilities", "/api/capabilities/{**rest}", PlatformSurfaceHost.Audience), new("authz", "/api/authz/{**rest}", PlatformSurfaceHost.Audience)],
+            [new("capabilities", "/api/capabilities/{**rest}", PlatformSurfaceHost.Audience) { RateLimiterPolicy = "user" }, new("authz", "/api/authz/{**rest}", PlatformSurfaceHost.Audience) { RateLimiterPolicy = "user" }],
             [new(PlatformSurfaceHost.Audience, surface.Urls.Single())], business.ManagementSigningKey.Rsa, map: app => app.MapQianShellBootstrap());
         var tenant = business.App.Services.GetRequiredService<ITenantContext>();
 
@@ -160,7 +160,7 @@ public sealed partial class ShellSurfaceTests(PostgresFixture postgres) : Custom
         var logs = new ShellLogs();
         // 路由表只有能力表面一条（外壳目录与能力导航经它到替身），有效权限没有路由。
         await using var gateway = await GatewayTestHost.Start(reservation, tls, business.Identity.Issuer, GatewayClientId, IdentityResource, business.Identity.Secret,
-            redis.ConnectionString, ShellGatewayIssuer, [new("capabilities", "/api/capabilities/{**rest}", PlatformSurfaceHost.Audience)],
+            redis.ConnectionString, ShellGatewayIssuer, [new("capabilities", "/api/capabilities/{**rest}", PlatformSurfaceHost.Audience) { RateLimiterPolicy = "user" }],
             [new(PlatformSurfaceHost.Audience, surface.Urls.Single())], business.ManagementSigningKey.Rsa,
             map: app => { app.Services.GetRequiredService<ILoggerFactory>().AddProvider(logs); app.MapQianShellBootstrap(); });
         var (person, phone) = await NewPerson(business, "成员乙");

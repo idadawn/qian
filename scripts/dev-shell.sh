@@ -10,6 +10,9 @@ STATE="${QIAN_DEV_STATE:-$ROOT/.qian-dev/shell}"
 CONTAINER="${QIAN_DEV_PG_CONTAINER:-qian-dev-shell-pg}"
 PG_PORT="${QIAN_DEV_PG_PORT:-55433}"
 PG_IMAGE="${QIAN_DEV_PG_IMAGE:-${QIAN_TEST_IMAGE_POSTGRES:-postgres:16-alpine}}"
+REDIS_CONTAINER="${QIAN_DEV_REDIS_CONTAINER:-qian-dev-shell-redis}"
+REDIS_PORT="${QIAN_DEV_REDIS_PORT:-55434}"
+REDIS_IMAGE="${QIAN_DEV_REDIS_IMAGE:-${QIAN_TEST_IMAGE_REDIS:-redis:7-alpine}}"
 API_URL="${QIAN_DEV_SHELL_API_URL:-http://127.0.0.1:5090}"
 SHELL_URL="${QIAN_DEV_SHELL_URL:-https://localhost:5443}"
 PROJECT="$ROOT/tools/Qian.Dev.Shell"
@@ -28,13 +31,13 @@ usage() {
   cat <<USAGE
 用法：scripts/dev-shell.sh <命令>
 
-  up          起 PostgreSQL 16 容器（只绑 127.0.0.1:${PG_PORT}）与上游 Dex 容器（${DEX_ISSUER}），构建前端与宿主，重建开发库，前台启动身份 / 业务宿主（${API_URL}）与网关 BFF（${SHELL_URL}）
+  up          起 PostgreSQL 16 容器（只绑 127.0.0.1:${PG_PORT}）、Redis 7（127.0.0.1:${REDIS_PORT}）与上游 Dex 容器（${DEX_ISSUER}），构建前端与宿主，重建开发库，前台启动身份 / 业务宿主（${API_URL}）与网关 BFF（${SHELL_URL}）
   build-ui    只构建三个前端制品：packages/qian-identity-ui（认证页族）、samples/qian-sample-crm-ui（参考应用远程模块）与 apps/qian-shell（外壳）
-  status      查看两个容器与两个宿主是否在运行；都在运行时退出码为 0，否则为 1
+  status      查看三个容器与两个宿主是否在运行；都在运行时退出码为 0，否则为 1
   e2e         真实流程验收：独立状态目录与随机端口自起一套环境，跑 Playwright，结束后清理（等同 pnpm --filter qian-shell e2e:auth）
-  down [--purge]  删除 PostgreSQL 与 Dex 容器；--purge 同时删除本机状态目录（${STATE}：口令、网关密钥、Dex 客户端密钥与配置、运行时配置）
+  down [--purge]  删除 PostgreSQL、Redis 与 Dex 容器；--purge 同时删除本机状态目录（${STATE}：口令、网关密钥、Dex 客户端密钥与配置、运行时配置）
 
-环境变量：QIAN_DEV_STATE、QIAN_DEV_PG_CONTAINER、QIAN_DEV_PG_PORT、QIAN_DEV_PG_IMAGE、QIAN_DEV_DEX_CONTAINER、QIAN_DEV_DEX_PORT、QIAN_DEV_DEX_IMAGE、
+环境变量：QIAN_DEV_REDIS_CONTAINER、QIAN_DEV_REDIS_PORT、QIAN_DEV_REDIS_IMAGE、QIAN_DEV_STATE、QIAN_DEV_PG_CONTAINER、QIAN_DEV_PG_PORT、QIAN_DEV_PG_IMAGE、QIAN_DEV_DEX_CONTAINER、QIAN_DEV_DEX_PORT、QIAN_DEV_DEX_IMAGE、
           QIAN_DEV_SHELL_API_URL、QIAN_DEV_SHELL_URL、QIAN_DEV_SHELL_SKIP_UI_BUILD=1
 USAGE
 }
@@ -138,6 +141,29 @@ start_postgres() {
   echo "PostgreSQL 60 秒内没有就绪，查看：docker logs $CONTAINER" >&2; exit 1
 }
 
+redis_state() {
+  local status
+  if status="$(docker inspect -f '{{.State.Status}}' "$REDIS_CONTAINER" 2>/dev/null)"; then echo "$status"; else echo missing; fi
+}
+
+start_redis() {
+  need docker "启动 Docker Desktop 或 Docker Engine"
+  if [ "$(redis_state)" = missing ]; then
+    docker run -d --name "$REDIS_CONTAINER" -p "127.0.0.1:$REDIS_PORT:6379" "$REDIS_IMAGE" >/dev/null
+  elif [ "$(redis_state)" != running ]; then
+    docker start "$REDIS_CONTAINER" >/dev/null
+  fi
+  if [ "$(docker port "$REDIS_CONTAINER" 6379/tcp)" != "127.0.0.1:$REDIS_PORT" ]; then
+    echo "Redis 容器端口与配置不符；请核对容器名和 QIAN_DEV_REDIS_PORT。" >&2; exit 1
+  fi
+  local attempt=0
+  while [ "$attempt" -lt 60 ]; do
+    if [ "$(docker exec "$REDIS_CONTAINER" redis-cli ping 2>/dev/null || true)" = PONG ]; then return 0; fi
+    attempt=$((attempt + 1)); sleep 1
+  done
+  echo "Redis 60 秒内没有就绪，查看：docker logs $REDIS_CONTAINER" >&2; exit 1
+}
+
 cmd_up() {
   need python3 "macOS 自带 /usr/bin/python3"
   need curl "系统自带"
@@ -145,13 +171,15 @@ cmd_up() {
   if [ "$(shell_probe)" != 000 ]; then echo "$SHELL_URL 已有服务在监听；先停掉它（或设 QIAN_DEV_SHELL_URL 换端口）。" >&2; exit 1; fi
   if [ "${QIAN_DEV_SHELL_SKIP_UI_BUILD:-0}" != 1 ]; then build_ui; fi
   start_postgres
+  start_redis
   start_dex
   build
-  QIAN_DEV_PG_ADMIN="Host=127.0.0.1;Port=$PG_PORT;Username=qian;Password=$(cat "$PASSWORD_FILE");Database=postgres" \
+  QIAN_DEV_REDIS_PORT="$REDIS_PORT" QIAN_DEV_PG_ADMIN="Host=127.0.0.1;Port=$PG_PORT;Username=qian;Password=$(cat "$PASSWORD_FILE");Database=postgres" \
     exec dotnet "$DLL" serve --urls "$API_URL" --gateway "$SHELL_URL" --state "$STATE" --dex "$DEX_ISSUER" --dex-secret "$DEX_SECRET_FILE"
 }
 
 cmd_down() {
+  if [ "$(redis_state)" != missing ]; then docker rm -f "$REDIS_CONTAINER" >/dev/null; echo "已删除容器 $REDIS_CONTAINER"; fi
   if [ "$(container_state)" != missing ]; then docker rm -f "$CONTAINER" >/dev/null; echo "已删除容器 $CONTAINER"; fi
   if [ "$(dex_state)" != missing ]; then docker rm -f "$DEX_CONTAINER" >/dev/null; echo "已删除容器 $DEX_CONTAINER"; fi
   rm -f "$PASSWORD_FILE" "$DEX_SECRET_FILE" "$DEX_CONFIG"
@@ -162,6 +190,8 @@ cmd_status() {
   echo "PostgreSQL 容器 ${CONTAINER}：$(container_state)"
   echo "Dex 容器 ${DEX_CONTAINER}：$(dex_state)（探测 $(dex_probe)）"
   local api shell ok=0
+  echo "Redis 容器 ${REDIS_CONTAINER}：$(redis_state)"
+  if [ "$(redis_state)" != running ]; then ok=1; fi
   api="$(api_probe)"; shell="$(shell_probe)"
   case "$api" in
     200) echo "身份 / 业务宿主 ${API_URL}：运行中" ;;

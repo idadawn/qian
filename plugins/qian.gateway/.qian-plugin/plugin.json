@@ -49,7 +49,7 @@
         "$generated": true,
         "component": "qian.gateway",
         "source": "Qian.Gateway.GatewayComponent, Qian.Gateway",
-        "sha256": "17c01d1ac6864b336c533baa65ee37c8220725cd44a2a740c4805a67a57e8dcb",
+        "sha256": "c8972796fe97054944a8b91d6526a895ec3fbe1c576f3b567419b6c163d571c4",
         "fields": [
           ""
         ]

@@ -100,7 +100,9 @@ public abstract partial class CustomerCommandTests
         OpenIddictApplicationDescriptor Gateway(Uri callback)
         {
             var descriptor = new OpenIddictApplicationDescriptor { ClientId = GatewayClientId, ClientSecret = parts.Secret, ClientType = ClientTypes.Confidential, ConsentType = ConsentTypes.Implicit };
+            // 外壳客户端还可申请参考应用的两个 scope（经 bridge.invoke 执行能力，S1-YUE-015）；申请与否由网关的 Identity.Client 配置决定。
             descriptor.RedirectUris.Add(callback); descriptor.Permissions.UnionWith(web.Permissions);
+            descriptor.Permissions.UnionWith([Permissions.Prefixes.Scope + "crm.read", Permissions.Prefixes.Scope + "crm.write"]);
             return descriptor;
         }
     }
