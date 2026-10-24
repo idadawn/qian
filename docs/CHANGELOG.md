@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-24 身份客户端可从私有源安装（S1-IDP-015）
+
+[`qian.identity.client`](../plugins/qian.identity.client/README.md) 钉定已发布的 `Qian.Identity.Client` 0.3.0 及归档摘要，移除骨架标记。真实 `qian add identity` 安装门校验包源、版本、摘要、表面与 lock，再由宿主按清单挂载 Identity 服务并撤销；发行方与客户端标识由宿主显式配置。
+
 ## 2026-10-24 通用契约 v0 冻结（S1-AGT-005）
 
 [contracts/v0](../contracts/v0/README.md) 的六份 Schema 按 R53 / R80 / R119 统一标记为 `frozen`，后续只接受向后兼容增量，破坏性变更进入 v1。现有字段与约束保持不变；[data/v1](../contracts/data/v1/README.md) 引用草稿信封的例外随之解除。

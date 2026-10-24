@@ -24,7 +24,7 @@ function files(root,base=root){return readdirSync(root,{withFileTypes:true}).fla
 function manifest(id){return JSON.parse(readFileSync(path.join(repo,'plugins',id,'.qian-plugin/plugin.json'),'utf8'));}
 
 // 宿主程序：usings 与 services 是各组合的宿主装配，其余按 CLI 解析出的 profile 挂载已安装组件。
-const program=(usings,services)=>`using System.Text.Json;
+const program=(usings,services,checks='')=>`using System.Text.Json;
 ${usings}using Qian.Runtime;
 
 // 按 CLI 解析出的 profile 挂载已安装组件：代码入口取自 .qian/plugins 里的组件清单，配置取自 profile 条目。
@@ -51,6 +51,7 @@ foreach (var definition in definitions)
     if (runtime.GetState(definition.Entry.Id, ScopeKey.Global) != PluginState.Ready)
         throw new InvalidOperationException(definition.Entry.Plugin + " 未就绪", runtime.GetFailure(definition.Entry.Id, ScopeKey.Global));
 Console.WriteLine("installed-providers-ready:" + string.Join(',', definitions.Select(definition => definition.Entry.Plugin + "=" + definition.Plugin.GetType().Assembly.GetName().Version)));
+${checks}
 `;
 const host=program('using Kun.EventBus.DependencyInjection;\nusing Qian.Events;\n','builder.Services.AddKunEventBus();\nbuilder.Services.AddQianEvents();\n');
 // qian.files 的宿主装配照组件 README：显式选择租户上下文（Kun 的 AsyncLocalTenantContext，随包传递带来，挂载就要它），
@@ -60,6 +61,33 @@ const host=program('using Kun.EventBus.DependencyInjection;\nusing Qian.Events;\
 const filesHost=program('using Kun.Core.MultiTenancy;\nusing Kun.EventBus.DependencyInjection;\nusing Kun.Mediator.DependencyInjection;\nusing Kun.MultiTenancy;\nusing Qian.Files;\n',
  'builder.Host.UseDefaultServiceProvider(options => options.ValidateOnBuild = false);\nbuilder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());\n' +
  'builder.Services.AddKunEventBus(registrar => registrar.RegisterFilesEvents());\nbuilder.Services.AddKunMediator(registry => registry.AddQianFiles(_ => loader!.GetContext("files", ScopeKey.Global)));\n');
+// 公开客户端只需要 Identity.Client 的宿主装配；发行方和 clientId 与 profile 配置一致，不创建替身 Provider。
+const identityHost=program('using Qian.Identity.Abstractions;\nusing Qian.Identity.Client;\n',
+ 'builder.Services.AddQianIdentityClient(new IdentityClientOptions { Authority = new Uri("https://id.qian.test/"), ClientId = "qian-public", RedirectUri = new Uri("https://rp.qian.test/auth/callback"), UseInMemorySessionStore = true });\n',
+ `var context = runtime.GetContext("client", ScopeKey.Global);
+var identity = context.Inject<IIdentityService>(IdentityDefinition.Key);
+if (identity.CurrentPrincipal is not null) throw new InvalidOperationException("公开客户端的初始主体必须匿名");
+app.UseQianIdentityClient();
+app.MapQianIdentityClient();
+app.Urls.Clear();
+app.Urls.Add("http://127.0.0.1:0");
+await app.StartAsync();
+try
+{
+    using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+    using var active = await client.GetAsync("/auth/session");
+    if (active.StatusCode != System.Net.HttpStatusCode.Unauthorized) throw new InvalidOperationException("已挂载会话端点应以 401 拒绝匿名请求");
+    await runtime.UnmountAsync("client", ScopeKey.Global);
+    using var inactive = await client.GetAsync("/auth/session");
+    if (inactive.StatusCode != System.Net.HttpStatusCode.NotFound) throw new InvalidOperationException("卸载后会话端点必须不可见");
+}
+finally { await app.StopAsync(); }
+if (runtime.DumpConfig().Count != 0) throw new InvalidOperationException("身份组件卸载后仍在挂载树里");
+var revoked = false;
+try { _ = context.Inject<IIdentityService>(IdentityDefinition.Key); }
+catch (ObjectDisposedException) { revoked = true; }
+if (!revoked) throw new InvalidOperationException("身份服务旧上下文未撤销");
+Console.WriteLine("identity-service-revoked");`);
 // 组件 Provider 的程序集版本 = 清单钉的锁步版本（NuGet 包版本 x.y.z 对应程序集版本 x.y.z.0）。
 const ready=items=>items.map(item=>item.id+'='+manifest(item.id).runtime.nuget[0].version+'.0').sort();
 function nugetConfig(project,cache){
@@ -204,6 +232,50 @@ test('空白 ASP.NET Core 项目经签名市场把私有源已发布的 data / f
   const removed=qian(project,'remove','files','data','--purge');assert.equal(removed.status,0,removed.stderr);
   assert.equal(readFileSync(projectFile,'utf8'),before);assert.deepEqual(parseYaml(readFileSync(patchFile,'utf8')),[]);
   for(const item of selected)assert.equal(existsSync(path.join(project,'.qian/plugins',item.id)),false);
+  assert.deepEqual(JSON.parse(qian(project,'list').stdout).plugins,[]);
+ }finally{rmSync(root,{recursive:true,force:true});}
+});
+
+test('空白宿主从私有源安装 identity：精确版本与归档摘要、声明式配置沿用、真实 Identity seam 就绪并撤销，remove 清理组件与包引用',()=>{
+ assert.ok(process.env.QIAN_FEED_TOKEN,'需要 QIAN_FEED_TOKEN：私有 NuGet 源的读包令牌（CI 使用带 packages: read 的 GITHUB_TOKEN）。');
+ const selected=[{name:'identity',id:'qian.identity.client'}];
+ const root=mkdtempSync(path.join(realpathSync(os.tmpdir()),'qian-feed-identity-')),project=path.join(root,'shop'),catalog=path.join(root,'catalog'),cache=path.join(root,'nuget-packages');
+ try{
+  const created=dotnet(root,'new','web','--name','Shop','--output',project,'--framework','net10.0','--no-restore');
+  assert.equal(created.status,0,created.stdout+created.stderr);
+  nugetConfig(project,cache);
+  cpSync(path.join(repo,'profiles/minimal'),path.join(project,'profiles/minimal'),{recursive:true});
+  cpSync(path.join(repo,'plugins/qian.bundle.minimal'),path.join(project,'plugins/qian.bundle.minimal'),{recursive:true});
+  // 常规组件的默认条目 ID 取组件 ID 的最后一段（client），identity 是市场简写。
+  // issuer/clientId 没有缺省值，由宿主明确提供；add 只启用条目并沿用配置，不猜测 OIDC 发行方。
+  const configuration={issuer:'https://id.qian.test/',clientId:'qian-public'};
+  write(project,'profiles/minimal/qian.patch.yml',stringify([{id:'client',plugin:'qian.identity.client',disabled:true,config:configuration}]));
+  signedMarket(project,catalog,selected,'minimal');
+  const projectFile=path.join(project,'Shop.csproj'),patchFile=path.join(project,'profiles/minimal/qian.patch.yml');
+  const before=readFileSync(projectFile,'utf8');
+
+  const installed=qian(project,'add','identity','--yes');
+  assert.equal(installed.status,0,installed.stderr);
+  assert.ok(!(installed.stdout+installed.stderr).includes(process.env.QIAN_FEED_TOKEN),'安装输出不得包含读包令牌');
+  assertInstalled(project,cache,[JSON.parse(installed.stdout)],JSON.parse(readFileSync(path.join(project,'.qian/lock.json'),'utf8')),selected);
+  assert.deepEqual(parseYaml(readFileSync(patchFile,'utf8')),[{id:'client',scope:'global',plugin:'qian.identity.client@'+manifest('qian.identity.client').version,config:configuration,disabled:false}]);
+
+  const resolved=qian(project,'dump-config');assert.equal(resolved.status,0,resolved.stderr);
+  const programFile=path.join(project,'Program.cs'),original=readFileSync(programFile,'utf8');
+  write(root,'resolved.json',resolved.stdout);writeFileSync(programFile,identityHost);
+  const started=dotnet(project,'run','--no-restore','-p:UseSharedCompilation=false','--',path.join(root,'resolved.json'));
+  assert.equal(started.status,0,started.stdout+started.stderr);
+  const line=started.stdout.split('\n').find(text=>text.startsWith('installed-providers-ready:'));
+  assert.ok(line,started.stdout);assert.deepEqual(line.slice('installed-providers-ready:'.length).split(','),ready(selected));
+  assert.ok(started.stdout.split(/\r?\n/).includes('identity-service-revoked'),started.stdout);
+  writeFileSync(programFile,original);
+
+  const listed=qian(project,'list');assert.equal(listed.status,0,listed.stderr);
+  assert.deepEqual(JSON.parse(listed.stdout).plugins.map(plugin=>plugin.id),['qian.identity.client']);
+  const removed=qian(project,'remove','identity','--purge');assert.equal(removed.status,0,removed.stderr);
+  assert.equal(readFileSync(projectFile,'utf8'),before);assert.deepEqual(parseYaml(readFileSync(patchFile,'utf8')),[]);
+  assert.equal(existsSync(path.join(project,'.qian/plugins/qian.identity.client')),false);
+  assert.equal(existsSync(path.join(project,'packages.lock.json')),false);
   assert.deepEqual(JSON.parse(qian(project,'list').stdout).plugins,[]);
  }finally{rmSync(root,{recursive:true,force:true});}
 });
