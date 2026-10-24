@@ -39,12 +39,18 @@
   "engines": {
     "kun": ">=2026.10.14"
   },
-  "x-skeleton": true,
   "x-aot": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Identity.Client.IdentityClientComponent, Qian.Identity.Client",
-    "configSchema": "./schemas/config.schema.json"
+    "configSchema": "./schemas/config.schema.json",
+    "nuget": [
+      {
+        "id": "Qian.Identity.Client",
+        "version": "0.3.0",
+        "digest": "sha256:9357d1356c21e8cf352e8754142c12737db469bb4c7c61b255613f5faf82e391"
+      }
+    ]
   },
   "x-qian-generated": {
     "$generated": true,
