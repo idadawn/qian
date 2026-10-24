@@ -67,7 +67,7 @@ IMAGE_DEFAULT = re.compile(r'"(QIAN_TEST_IMAGE_[A-Z0-9_]+)"\s*,\s*"([^"]+)"')
 IMAGE_VARIABLE = re.compile(r'"(QIAN_TEST_IMAGE_[A-Z0-9_]+)"')
 IMAGE_PROPERTY = re.compile(r'\bstatic\s+string\s+(\w+)\s*=>\s*\w+\(\s*"(QIAN_TEST_IMAGE_[A-Z0-9_]+)"')
 IMAGE_USE = re.compile(r"\bContainerImages\.(\w+)")
-FIXTURE_DECLARATION = re.compile(r"\b(?:class|record)\s+([A-Z]\w*Fixture)\b")
+TOP_LEVEL_TYPE = re.compile(r"^(?:(?:public|internal|sealed|abstract|static|partial)\s+)*(?:class|record|struct)\s+([A-Z]\w*)", re.MULTILINE)
 XUNIT = re.compile(r'<PackageReference\b[^>]*\bInclude="xunit\.v3"')
 REPOSITORY_LITERAL = re.compile(r'"((?:docs|pm)/[^"{}\s]+)"')
 
@@ -164,10 +164,11 @@ class Fixtures:
             for variable, image in IMAGE_DEFAULT.findall(text):
                 self.defaults.setdefault(variable, image)
             self.properties.update(IMAGE_PROPERTY.findall(text))
-            # 夹具按命名约定以 Fixture 结尾；夹具里的嵌套类型（如 User）名字太泛，不单独算。
+            # 只认顶层类型（文件范围命名空间里顶格声明）：夹具里的嵌套类型（如 User）名字太泛，不单独算。
             # ContainerImages 的属性逐个按 ContainerImages.X 解析，不能整类算作「用了全部镜像」。
-            for name in FIXTURE_DECLARATION.findall(text):
-                texts[name] = texts.get(name, "") + text
+            for name in TOP_LEVEL_TYPE.findall(text):
+                if name != "ContainerImages":
+                    texts[name] = texts.get(name, "") + text
         if not self.defaults:
             raise ToolError(f"{CONTAINERS.relative_to(ROOT)} 里没有解析出 QIAN_TEST_IMAGE_* 缺省镜像。")
         self.direct = {name: self.variables(text) for name, text in texts.items()}
@@ -319,8 +320,8 @@ def read_trx(path: Path) -> Tuple[str, Counter, datetime, datetime]:
     return module, outcomes, timestamp(times.get("start") or ""), timestamp(times.get("finish") or "")
 
 
-def verify(results: Path) -> List[str]:
-    """返回作业摘要的 Markdown 行；不通过时抛 CheckFailed，列出全部问题。"""
+def verify(results: Path) -> Tuple[List[str], List[str]]:
+    """返回作业摘要的 Markdown 行与发现的问题；没有问题才算通过。"""
     expected = test_projects()
     owners = assignment()
     problems: List[str] = []
@@ -382,9 +383,7 @@ def verify(results: Path) -> List[str]:
     summary += ["", "</details>"]
     for warning in warnings:
         print("::warning::" + warning)
-    if problems:
-        raise CheckFailed("\n".join(problems))
-    return summary
+    return summary, problems
 
 
 # ---------- 触发过滤自检 ----------
@@ -502,11 +501,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         elif args.command == "wait-prefetch":
             wait_prefetch(args.state, args.timeout)
         elif args.command == "verify":
-            summary = verify(args.results)
+            summary, problems = verify(args.results)
             print("\n".join(summary))
-            if args.summary:
+            if args.summary:  # 不通过也写摘要，便于对照
                 with Path(args.summary).open("a", encoding="utf-8") as out:
                     out.write("\n".join(summary) + "\n")
+            if problems:
+                raise CheckFailed("\n".join(problems))
             print("汇总核对通过。")
         elif args.command == "paths-check":
             references = paths_check()
