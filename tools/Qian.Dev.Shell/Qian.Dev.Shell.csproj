@@ -10,6 +10,7 @@
     <ProjectReference Include="../../packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" />
     <None Include="seed/accounts.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 # Qian.Gateway
 
-网关组件以库方式组合 Kun.Gateway 的签发器、JWKS、热轮换、可信代理和限流原语，把外部访问令牌或 `qian.sid` 会话转换为目标服务的短时 S2S。真实宿主入口为 [Qian.Gateway.Host](../../hosts/Qian.Gateway.Host/README.md)。
+网关组件以库方式组合 Kun.Gateway 的签发器、JWKS、热轮换、可信代理与限流契约，把外部访问令牌或 `qian.sid` 会话转换为目标服务的短时 S2S。真实宿主入口为 [Qian.Gateway.Host](../../hosts/Qian.Gateway.Host/README.md)。
 
 ## 组件与装配
 
@@ -22,9 +22,35 @@
 
 Kun 的默认代理变换使用固定 audience，Qian 在代理前先为实际路由签发并校验目标令牌，最后一个请求变换覆盖为该令牌；两次都使用同一个 Kun 签发器与轮换环，没有另建签发实现。目前会产生一次额外签名，属于现有 Kun 装配 API 的性能限制，不影响每跳受众边界。
 
-默认不信任任何代理头。部署时 `trustedProxyNetworks` 仅填写实际 Traefik CIDR，拒绝 `/0`；只由 `UseForwardedHeaders` 更新连接地址，限流按更新后的 `RemoteIpAddress` 分区。转发下游时重新写入已归一的客户端 IP、协议和配置中的网关主机名，丢弃原始 `Forwarded`。
+默认不信任任何代理头。部署时 `trustedProxyNetworks` 仅填写实际 Traefik CIDR，拒绝 `/0`；只由 `UseForwardedHeaders` 更新连接地址，IP 限流仅使用更新后的 `RemoteIpAddress`；租户与用户策略仅使用已认证的规范 claim。转发下游时重新写入已归一的客户端 IP、协议和配置中的网关主机名，丢弃原始 `Forwarded`。
 
 签名密钥通过原子替换私钥文件热轮换，旧公钥固定重叠 10 分钟。重叠状态在进程内，副本之间与重启前后须协调发布；消费者必须刷新 JWKS 并验证令牌寿命。错误密钥替换由 Kun 保留上一把有效密钥。不要把移除 JWKS 项表述为瞬间撤销所有消费者的缓存。
+
+## 路由限流（S1-GW-002）
+
+每条 `routes[]` 必须显式填写 `rateLimiterPolicy`，值为 `kun-default`、`tenant` 或 `user`。组件 Schema、静态 profile/CLI 校验与宿主装配均拒绝缺失、空值、`disable` 或未知值。C# 属性标为 `required`，遗漏时编译器报 CS9035；既有 C# 宿主也须初始化 `GatewayRoute.RateLimiterPolicy`，例如 `new GatewayRoute("api", "/api/{**rest}", "qian-platform") { RateLimiterPolicy = "tenant" }`；仓库宿主与组合包已同步。
+
+| 策略 | 分区依据 |
+|---|---|
+| `kun-default` | 可信转发中间件处理后的连接 IP；IPv4 映射地址归一为 IPv4 |
+| `tenant` | 已认证主体的唯一、合法 `tenant_id`；同租户用户共用额度 |
+| `user` | 已认证主体的 `principal_kind`、租户及 `sub`；平台主体使用独立平台分区 |
+
+缺少规范身份的请求退回该路由的 IP 限额，不能用请求头或查询参数指定主体。限流在认证之后、授权和换签之前执行；无凭据请求仍会受 IP 限制。所有代理路由仍要求认证。
+
+计数键由规范 issuer、路由 ID、策略与分区值的摘要组成，Redis 不存明文主体或 IP。每条路由独立计数，同一逻辑网关的副本必须共用 Redis、issuer、路由 ID 和以下配置；重启实例不会重置额度。`rateLimits` 及其各字段可省略，缺省值如下：
+
+| 配置 | 缺省值 | 边界 |
+|---|---|---|
+| `keyPrefix` | `qian:gateway:rate` | 1–128 个 ASCII 字母、数字、冒号、下划线或连字符；同组副本保持一致 |
+| `windowSeconds` | 60 | 1–86400 秒，窗口从该桶首次请求开始 |
+| `ipPermitLimit` | 100 | 1–1000000，IP 策略及身份缺失时使用 |
+| `tenantPermitLimit` | 100 | 1–1000000 |
+| `userPermitLimit` | 100 | 1–1000000 |
+
+计数端口复用 Kun 的 `IRedisRateLimitStore`。默认适配器用单键 Lua 原子递增并设置 TTL，后续命中不续期，同时修复无 TTL 的遗留桶；每个请求只命中一次 Redis，不使用本机额度或本机排队。ASP.NET 的真实端点策略按 YARP 路由的声明执行，保留宿主对其它端点的限流装配。
+
+超限返回 429 / `RATE_LIMITED`，响应体为 ErrorDetail，`Retry-After` 按 Redis 剩余窗口向上取整且至少为 1 秒；被拒绝的请求不进入换签与下游。Redis 连接或超时故障返回 503 / `UNAVAILABLE`，不当作超限，也不放行。Redis 连接复用宿主登记的 `IConnectionMultiplexer`；完整 `/readyz` 依赖聚合仍由 GW-003 承接。
 
 ## 宿主调用顺序
 
@@ -56,7 +82,7 @@ app.MapQianShell(shell);          // 可选：/app-config.json 与外壳入口�
 
 ## 验证
 
-`tests/Qian.Gateway.Tests` 使用真实 Kestrel、Identity/OpenIddict、PostgreSQL、Redis 和 RSA，验证用户 Cookie 与机器令牌换签、逐服务受众、冻结 S2S Schema、原始凭据清除、错误 Bearer 不降级、10 分钟双钥轮换与在途请求、非可信 XFF 不改变 IP/分区、实际 429、卸载与就绪状态。时钟只推进轮换环，旧令牌仍处于真实寿命内，因此窗口后拒绝证明的是旧 kid 移除。
+`tests/Qian.Gateway.Tests` 使用真实 Kestrel、Identity/OpenIddict、PostgreSQL、Redis 和 RSA，验证用户 Cookie 与机器令牌换签、逐服务受众、冻结 S2S Schema、原始凭据清除、错误 Bearer 不降级、10 分钟双钥轮换与在途请求、非可信 XFF 不改变 IP/分区、实际 429、卸载与就绪状态。限流专项以真实账号完成 PKCE 后的访问令牌驱动两个独立网关，对每种策略按 200 RPS 发出 200 个请求；两次预热后，50 次共享额度仅余 48 次，断言 48 个成功、152 个 429、Retry-After 与 ErrorDetail、下游总计 50 次。另覆盖窗口过期、孤儿桶 TTL 修复、分区隔离及 Redis 故障关闭。时钟只推进轮换环，旧令牌仍处于真实寿命内，因此窗口后拒绝证明的是旧 kid 移除。
 
 `tests/Qian.Sample.Crm.Tests/GatewayAcceptanceTests.cs` 连接真实 `TenantOperationsHost` 的 `/api/tenancy/tenants`，通过真实账号 PKCE 登录获取 Cookie、真实平台超管角色放行；验证 `aud = qian-platform`、平台 `tenant_id = null` 与 60 秒寿命。租户 UUID 由另一个真实 Cookie 路径单独验证，不把平台运营端点误当作租户业务接口。
 
@@ -72,4 +98,4 @@ app.MapQianShell(shell);          // 可选：/app-config.json 与外壳入口�
 
 DEC-030 的原生 Data / Audit 已接入完整生产宿主，默认 profile 恢复 `build.aot: true`，Gateway / Apollo 清单登记实际验证后的 `x-aot`。原 EF 探针失败与后续执行证据保留在 [AOT 实施路径](../../docs/decisions/gateway-native-aot-options.md)。平台与 Scheduler 继续使用 EF；distroless、供应链签名、只读非 root 与业务镜像发布继续由 DEP-008 验收。
 
-三策略/共享计数归 GW-002，路由生成、可用性过滤、通用聚合端点、完整就绪聚合与 gRPC-Web 归 GW-003（外壳专用的 bootstrap 聚合已由 S1-YUE-012 交付），平台观测组件归 AUD-003。当前不宣称这些能力已交付。
+三策略与共享计数已由 GW-002 交付；从组件表面生成完整路由、可用性过滤、通用聚合端点、完整就绪聚合与 gRPC-Web 归 GW-003（外壳专用的 bootstrap 聚合已由 S1-YUE-012 交付），平台观测组件归 AUD-003。GW-003 与 AUD-003 的上述范围仍待交付。

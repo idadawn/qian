@@ -11,6 +11,7 @@
     - id: platform
       path: /api/{**rest}
       cluster: qian-platform
+      rateLimiterPolicy: tenant
     clusters:
     - id: qian-platform
       address: http://qian-platform:8080/

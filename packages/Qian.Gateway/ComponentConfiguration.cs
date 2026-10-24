@@ -15,7 +15,13 @@ internal static class ComponentConfiguration
         "signingKeyPath": {"type":"string","minLength":1,"description":"宿主 Secret 投射的 RSA 私钥绝对路径，不是密钥值。"},
         "publicKeyPath": {"type":"string","minLength":1,"description":"Kun 兼容公钥文件路径；公开 JWKS 使用热轮换环。"},
         "trustedProxyNetworks": {"type":"array","uniqueItems":true,"items":{"type":"string"},"description":"仅部署环境实际 Traefik CIDR，空数组不信任任何转发头。"},
-        "routes": {"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["id","path","cluster"],"properties":{"id":{"type":"string","minLength":1},"path":{"type":"string","pattern":"^/"},"cluster":{"type":"string","minLength":1}}}},
+        "routes": {"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["id","path","cluster","rateLimiterPolicy"],"properties":{"id":{"type":"string","minLength":1},"path":{"type":"string","pattern":"^/"},"cluster":{"type":"string","minLength":1},"rateLimiterPolicy":{"enum":["kun-default","tenant","user"]}}}},
+        "rateLimits": {"type":"object","additionalProperties":false,"properties":{
+          "keyPrefix":{"type":"string","minLength":1,"maxLength":128,"pattern":"^[A-Za-z0-9:_-]+$","default":"qian:gateway:rate"},
+          "windowSeconds":{"type":"integer","minimum":1,"maximum":86400,"default":60},
+          "ipPermitLimit":{"type":"integer","minimum":1,"maximum":1000000,"default":100},
+          "tenantPermitLimit":{"type":"integer","minimum":1,"maximum":1000000,"default":100},
+          "userPermitLimit":{"type":"integer","minimum":1,"maximum":1000000,"default":100}}},
         "clusters": {"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["id","address"],"properties":{"id":{"type":"string","minLength":1,"maxLength":255},"address":{"type":"string","minLength":1}}}}
       }
     }

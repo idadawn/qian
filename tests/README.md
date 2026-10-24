@@ -166,7 +166,15 @@ Data 的两项依赖保留现有实现与公开 API；本任务不通过删除�
 
 ## 5 CI
 
-[.github/workflows/dotnet.yml](../.github/workflows/dotnet.yml)：还原 → 构建（PublicAPI 门禁）→ 依赖图门禁 → 门禁自测 → 单元与集成测试，测试结果（TRX）作为构件上传，整体限时 20 分钟（PRD §14.2.1）。仓库暂无自托管 runner，先用 GitHub 托管的 ubuntu-latest（自带 Docker）；自托管 runner 就位后只需改 `runs-on`。
+[.github/workflows/dotnet.yml](../.github/workflows/dotnet.yml) 拆成并行的作业（S1-QA-018），每个作业限时 20 分钟（PRD §14.2.1）：
+
+- 构建与门禁：还原 → 构建（PublicAPI 门禁）→ 入口清单 → 明文密钥扫描 → namespace 骨架 → 依赖图门禁 → 门禁自测 → 触发过滤自检。
+- 单元与集成测试，分三个分片：各自还原、构建，再用 `scripts/dotnet_ci.py shard` 写出的解决方案筛选文件只跑本分片的模块。作业开头在后台预拉本分片用到的测试镜像，测试前有界等待。分片清单是脚本里的 `SHARDS`，新加的测试项目不用登记，自动落入其余分片。
+- 测试分片汇总核对：`Qian.slnx` 里每个测试项目恰好在所属分片跑过一次、没有失败；各分片的 TRX 与证据合并为 `test-results` 构件。
+
+只改 `pm/**`、`docs/**` 或根目录 Markdown 的 PR 不触发这个工作流。`docs/generated/**` 与测试读取的文档仍会触发：测试新读一个文档时，把它加进 `pull_request.paths`，门禁作业的触发过滤自检会核对。push 到 main 不过滤。
+
+本机照 CI 只跑一个分片：`python3 scripts/dotnet_ci.py shard a --out /tmp/a.slnf && dotnet test --solution /tmp/a.slnf -c Release --no-build`。仓库暂无自托管 runner，先用 GitHub 托管的 ubuntu-latest（自带 Docker）；自托管 runner 就位后只需改 `runs-on`。
 
 包族发布不在 PR 门禁里：[.github/workflows/dotnet-release.yml](../.github/workflows/dotnet-release.yml) 只从 main 手动触发，把全部 Qian 包以同一版本发到 GitHub Packages，核对包源里的版本、仓库关联与可见性，并在干净消费者项目里从该源真实还原、构建、运行（S1-RT-014，ADR-019 D19.7）；做法与失败处理见 [SDK 文档「包族发布」](../packages/Qian.Plugin.Sdk/README.md#包族发布)。
 

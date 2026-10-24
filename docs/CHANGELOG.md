@@ -2,6 +2,10 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-10-24 网关路由共享限流（S1-GW-002）
+
+[网关](../packages/Qian.Gateway/README.md#路由限流s1-gw-002) 支持 IP、租户和用户三策略及 Redis 共享固定窗口，超限返回带 `Retry-After` 的 429，Redis 故障返回 503。路由现在必须显式填写 `rateLimiterPolicy`；仓库配置已迁移，自定义宿主与 profile 需补充该字段。
+
 ## 2026-10-24 身份客户端可从私有源安装（S1-IDP-015）
 
 [`qian.identity.client`](../plugins/qian.identity.client/README.md) 钉定已发布的 `Qian.Identity.Client` 0.3.0 及归档摘要，移除骨架标记。真实 `qian add identity` 安装门校验包源、版本、摘要、表面与 lock，再由宿主按清单挂载 Identity 服务并撤销；发行方与客户端标识由宿主显式配置。

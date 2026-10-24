@@ -8,6 +8,7 @@ using Kun.EventBus.DependencyInjection;
 using Kun.Mediator;
 using Kun.Mediator.DependencyInjection;
 using Kun.Security.DependencyInjection;
+using Kun.Security.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -35,6 +36,9 @@ public static class CrmCommandApplication
         var platform = false;
         var app = CrmApplication.Build(args, builder =>
         {
+            // 框架当前主体端口（Kun 的 ICurrentUser）先登记为 JwtCurrentUser，再执行调用方的配置：调用方先登记数据组件（如同进程的身份库）时，
+            // 数据约定会以 TryAdd 把匿名兜底占进这个端口，命令管道的框架主体比对随之对一切能力执行判拒（S1-YUE-015 排查所得）。
+            builder.Services.TryAddScoped<Kun.Core.Security.ICurrentUser, JwtCurrentUser>();
             configure?.Invoke(builder);
             platform = builder.Configuration["Qian:Profile"] == "platform" || builder.Services.Any(service => service.ServiceType == typeof(PluginEndpointOptions));
             if (platform && !builder.Services.Any(service => service.ServiceType == typeof(PluginEndpointOptions)))

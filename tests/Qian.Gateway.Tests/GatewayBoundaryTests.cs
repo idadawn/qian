@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -36,7 +37,7 @@ public sealed class GatewayBoundaryTests(PostgresFixture postgres, RedisFixture 
         await using var identity = await IdentityServerHost.Start(postgres, new Uri(address, "auth/callback"));
         await using var downstream = await Downstream.Start();
         await using var gateway = await GatewayTestHost.Start(reservation, tls, identity.Issuer, IdentityServerHost.ClientId, IdentityServerHost.Resource, identity.Secret,
-            redis.ConnectionString, Issuer, [new("platform", "/api/{**rest}", "qian-platform")], [new("qian-platform", downstream.Address)], key);
+            redis.ConnectionString, Issuer, [new("platform", "/api/{**rest}", "qian-platform") { RateLimiterPolicy = "kun-default" }], [new("qian-platform", downstream.Address)], key);
         downstream.Jwks = new Uri(gateway.HttpAddress, ".well-known/jwks.json");
         var (client, cookies) = GatewayTestHost.Browser(tls); using var browser = client;
         await identity.SignInAsync(browser); await gateway.CompleteLogin(browser);
@@ -74,7 +75,7 @@ public sealed class GatewayBoundaryTests(PostgresFixture postgres, RedisFixture 
         using var reservation = LoopbackPort.Reserve();
         await using var downstream = await Downstream.Start();
         await using var gateway = await GatewayTestHost.Start(reservation, tls, identity.Issuer, "web", "https://api.qian.test", identity.Secret,
-            redis.ConnectionString, Issuer, [new("platform", "/api/{**rest}", "qian-platform"), new("other", "/other/{**rest}", "qian-other")],
+            redis.ConnectionString, Issuer, [new("platform", "/api/{**rest}", "qian-platform") { RateLimiterPolicy = "kun-default" }, new("other", "/other/{**rest}", "qian-other") { RateLimiterPolicy = "kun-default" }],
             [new("qian-platform", downstream.Address), new("qian-other", downstream.Address)], key);
         downstream.Jwks = new Uri(gateway.HttpAddress, ".well-known/jwks.json");
         var (client, _) = GatewayTestHost.Browser(tls); using var browser = client; browser.BaseAddress = gateway.Address;
@@ -126,7 +127,7 @@ public sealed class GatewayBoundaryTests(PostgresFixture postgres, RedisFixture 
         using var tls = GatewayTestHost.Certificate(); using var key = RSA.Create(2048); using var reservation = LoopbackPort.Reserve();
         await using var downstream = await Downstream.Start();
         await using var gateway = await GatewayTestHost.Start(reservation, tls, identity.Issuer, "web", "https://api.qian.test", identity.Secret,
-            redis.ConnectionString, Issuer, [new("platform", "/api/{**rest}", "qian-platform")], [new("qian-platform", downstream.Address)], key,
+            redis.ConnectionString, Issuer, [new("platform", "/api/{**rest}", "qian-platform") { RateLimiterPolicy = "kun-default" }], [new("qian-platform", downstream.Address)], key,
             ["192.0.2.0/24"]);
         downstream.Jwks = new Uri(gateway.HttpAddress, ".well-known/jwks.json");
         var (client, _) = GatewayTestHost.Browser(tls); using var browser = client; browser.BaseAddress = gateway.Address;
@@ -156,7 +157,7 @@ public sealed class GatewayBoundaryTests(PostgresFixture postgres, RedisFixture 
         using var reservation = LoopbackPort.Reserve(); var clock = new RingClock();
         await using var downstream = await Downstream.Start();
         await using var gateway = await GatewayTestHost.Start(reservation, tls, identity.Issuer, "web", "https://api.qian.test", identity.Secret,
-            redis.ConnectionString, Issuer, [new("platform", "/api/{**rest}", "qian-platform")], [new("qian-platform", downstream.Address)], oldKey, clock: clock);
+            redis.ConnectionString, Issuer, [new("platform", "/api/{**rest}", "qian-platform") { RateLimiterPolicy = "kun-default" }], [new("qian-platform", downstream.Address)], oldKey, clock: clock);
         downstream.Jwks = new Uri(gateway.HttpAddress, ".well-known/jwks.json");
         var (client, _) = GatewayTestHost.Browser(tls); using var browser = client; browser.BaseAddress = gateway.Address;
         using var machine = identity.Kun("machine"); var access = (await machine.ClientCredentialsAsync("qian.api", Ct)).AccessToken;
@@ -204,6 +205,72 @@ public sealed class GatewayBoundaryTests(PostgresFixture postgres, RedisFixture 
             ValidateIssuerSigningKey = true, IssuerSigningKeys = keys.GetSigningKeys(), ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
             ValidateLifetime = true, RequireExpirationTime = true, RequireSignedTokens = true, ClockSkew = TimeSpan.Zero
         })).IsValid;
+
+    [Theory]
+    [InlineData("kun-default")]
+    [InlineData("tenant")]
+    [InlineData("user")]
+    public async Task 两个真实网关在同租户200RPS负载下共享限额_429带重试头且不转发(string policy)
+    {
+        using var tls = GatewayTestHost.Certificate(); using var key = RSA.Create(2048);
+        using var firstPort = LoopbackPort.Reserve(); using var secondPort = LoopbackPort.Reserve();
+        var firstAddress = new Uri($"https://localhost:{firstPort.Port}/");
+        await using var identity = await IdentityServerHost.Start(postgres, new Uri(firstAddress, "auth/callback"));
+        await using var downstream = await Downstream.Start();
+        GatewayRoute[] routes = [new("platform", "/api/{**rest}", "qian-platform") { RateLimiterPolicy = policy }];
+        GatewayCluster[] clusters = [new("qian-platform", downstream.Address)];
+        var limits = new GatewayRateLimits
+        {
+            KeyPrefix = "qian:gw-shared:" + Guid.NewGuid().ToString("N"),
+            IpPermitLimit = 50, TenantPermitLimit = 50, UserPermitLimit = 50
+        };
+        await using var first = await GatewayTestHost.Start(firstPort, tls, identity.Issuer, IdentityServerHost.ClientId,
+            IdentityServerHost.Resource, identity.Secret, redis.ConnectionString, Issuer, routes, clusters, key, rateLimits: limits);
+        await using var second = await GatewayTestHost.Start(secondPort, tls, identity.Issuer, IdentityServerHost.ClientId,
+            IdentityServerHost.Resource, identity.Secret, redis.ConnectionString, Issuer, routes, clusters, key, rateLimits: limits);
+        Assert.NotSame(first.Services, second.Services);
+        Assert.NotSame(first.Services.GetRequiredService<IRedisRateLimitStore>(), second.Services.GetRequiredService<IRedisRateLimitStore>());
+        downstream.Jwks = new Uri(first.HttpAddress, ".well-known/jwks.json");
+        var (loginClient, cookies) = GatewayTestHost.Browser(tls); using var browser = loginClient;
+        await identity.SignInAsync(browser); await first.CompleteLogin(browser);
+        var cookie = cookies.GetCookies(first.Address)[IdentityClientDefaults.SessionCookieName]; Assert.NotNull(cookie);
+        var session = await first.Services.GetRequiredService<ISessionStore>().GetAsync(cookie.Value, Ct);
+        Assert.NotNull(session?.AccessToken);
+        var (trafficClient, _) = GatewayTestHost.Browser(tls); using var traffic = trafficClient;
+        var forwardedSequence = 0;
+        // 预热两份独立 JWT/JWKS 管线，各消耗一个许可；此后剩余许可应为共同的 48 个。
+        Assert.Equal(HttpStatusCode.OK, await Send(first)); Assert.Equal(HttpStatusCode.OK, await Send(second));
+        var timer = Stopwatch.StartNew();
+        var replies = await Task.WhenAll(Enumerable.Range(0, 200).Select(async index =>
+        {
+            var delay = TimeSpan.FromMilliseconds(index * 5) - timer.Elapsed;
+            if (delay > TimeSpan.Zero) await Task.Delay(delay, Ct);
+            return await Send(index % 2 == 0 ? first : second);
+        }));
+        Assert.Equal(48, replies.Count(status => status == HttpStatusCode.OK));
+        Assert.Equal(152, replies.Count(status => status == HttpStatusCode.TooManyRequests));
+        Assert.Equal(50, downstream.Requests.Count);
+        foreach (var request in downstream.Requests)
+            Assert.Equal(identity.Tenant.ToString("D"), new JsonWebToken(request.Token).GetClaim("tenant_id").Value);
+        TestContext.Current.SendDiagnosticMessage($"policy={policy}; offered_rps=200; requests=200; admitted=48; limited=152; elapsed_ms={timer.ElapsedMilliseconds}");
+
+        async Task<HttpStatusCode> Send(GatewayTestHost gateway)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(gateway.Address, "api/protected"));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+            request.Headers.TryAddWithoutValidation("X-Forwarded-For", $"198.51.100.{Interlocked.Increment(ref forwardedSequence) % 250 + 1}");
+            using var response = await traffic.SendAsync(request, Ct);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                Assert.NotNull(response.Headers.RetryAfter?.Delta);
+                Assert.InRange(response.Headers.RetryAfter.Delta.Value.TotalSeconds, 1, 60);
+                Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+                using var error = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+                Assert.Equal("RATE_LIMITED", error.RootElement.GetProperty("code").GetString());
+            }
+            return response.StatusCode;
+        }
+    }
 
     private static string Root()
     {
