@@ -33,18 +33,37 @@ using Qian.Tenancy;
 using Qian.Testing;
 using Qian.Testing.Containers;
 
+// 下面七个主题类都起完整宿主，大半时间在等数据库、容器与超时，按处理器数（CI 上是 4）限并发会让后排的主题干等；
+// 放宽到 8，七个主题同时开跑（S1-QA-017）。
+[assembly: Xunit.v3.Parallelization(MaxThreads = 8)]
+
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
+// CRM 参考宿主验收的公共基类：Start() 起完整宿主，另有各主题共用的辅助方法、常量与探针类型，本身不含用例。
+// xUnit 对同一个类的用例一律串行、不同类之间并行，所以用例按主题分在下面七个类里（S1-QA-017），各类耗时相近。
+// 每个主题类各自一个 PostgresFixture 容器，主题之间并行，主题内照旧串行：
+// - CommandTests：客户命令与 hook；
+// - CapabilityTests：能力执行、Agent 字段与契约；
+// - CatalogSurfaceTests：能力目录、组件清单、菜单与租户界面契约；
+// - TenantOperationsTests：租户运营，含开户、设置、状态与网关入口；
+// - EventTests：事件发布与消费；
+// - IdentityAuthzTests：身份、会话与鉴权；
+// - LifecycleProfileTests：生命周期、profile 等价与反向权限批准。
+public abstract partial class CustomerCommandTests(PostgresFixture postgres)
 {
-    private static CancellationToken Ct => TestContext.Current.CancellationToken;
-    private const string A = "01900000-0000-7000-8000-000000000001";
-    private const string B = "01900000-0000-7000-8000-000000000002";
-    private const string Writer = "crm-command-writer";
-    private const string Issuer = "crm-command-acceptance";
-    private const string Audience = "qian.sample.crm";
-    private static readonly string[] DeclaredTokenRoles = ["tenant.owner"];
+    private protected static CancellationToken Ct => TestContext.Current.CancellationToken;
+    // 主题类的主构造参数只转交基类；用例要直接用类夹具时经这里取，同一参数不在主题类里再捕获一份（CS9107）。
+    private protected PostgresFixture Postgres => postgres;
+    private protected const string A = "01900000-0000-7000-8000-000000000001";
+    private protected const string B = "01900000-0000-7000-8000-000000000002";
+    private protected const string Writer = "crm-command-writer";
+    private protected const string Issuer = "crm-command-acceptance";
+    private protected const string Audience = "qian.sample.crm";
+    private protected static readonly string[] DeclaredTokenRoles = ["tenant.owner"];
+}
 
+public sealed partial class CommandTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
+{
     [Fact]
     public async Task 真实HTTP创建经租户RBAC与审计监听_客户回执Outbox和审计同时提交_重复输入幂等()
     {
@@ -200,7 +219,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
     public async Task 真实HTTP等待审计链锁时卸载审计会取消执行并回滚业务()
     {
         await using var host = await Start();
-        await using var holder = new NpgsqlConnection(postgres.ConnectionString); await holder.OpenAsync(Ct);
+        await using var holder = new NpgsqlConnection(Postgres.ConnectionString); await holder.OpenAsync(Ct);
         await using (var acquire = new NpgsqlCommand("SELECT pg_advisory_lock(hashtextextended(@key, 0))", holder))
         { acquire.Parameters.AddWithValue("key", "qian.audit:tenant:" + A); await acquire.ExecuteNonQueryAsync(Ct); }
         var pending = host.Post(A, new CreateCustomerCommand(Guid.CreateVersion7(), "cancelled customer"));
@@ -254,8 +273,11 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         await Admin($"UPDATE plugin_qian_tenancy.tenants SET status = 'suspended' WHERE id = '{A}'::uuid;");
         using var suspended = await host.Get(A, "/api/customers"); Assert.Equal(HttpStatusCode.Forbidden, suspended.StatusCode);
     }
+}
 
-    private async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
+public abstract partial class CustomerCommandTests
+{
+    private protected async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
         LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool identity = false, bool grpc = false, Action<WebApplication>? map = null, double decisionLogSampling = 0,
         Action<WebApplicationBuilder>? configure = null)
@@ -394,12 +416,12 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
     }
     // 以管理员连接执行，返回受影响的行数。
-    private async Task<int> Admin(string sql)
+    private protected async Task<int> Admin(string sql)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
         await using var command = new NpgsqlCommand(sql, connection); return await command.ExecuteNonQueryAsync(Ct);
     }
-    private sealed class ConcurrentSaveBarrier : SaveChangesInterceptor
+    private protected sealed class ConcurrentSaveBarrier : SaveChangesInterceptor
     {
         private int _arrivals;
         private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -413,13 +435,13 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
             return result;
         }
     }
-    private sealed class FailureEvidence { internal ConcurrentQueue<string> Failures { get; } = new(); }
+    private protected sealed class FailureEvidence { internal ConcurrentQueue<string> Failures { get; } = new(); }
     // 宿主挂在子路径下（反向代理常见做法）：UsePathBase 先于路由执行，应用看到去掉前缀的路径，PathBase 进入生成的链接。
-    private sealed class PathBaseFilter(string pathBase) : IStartupFilter
+    private protected sealed class PathBaseFilter(string pathBase) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app => { app.UsePathBase(pathBase); next(app); };
     }
-    private sealed class FailureRecorder(FailureEvidence evidence) : IExceptionHandler
+    private protected sealed class FailureRecorder(FailureEvidence evidence) : IExceptionHandler
     {
         public ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)
         {
@@ -431,7 +453,7 @@ public sealed partial class CustomerCommandTests(PostgresFixture postgres) : ICl
         }
     }
 
-    private sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection, string migrations,
+    private protected sealed class RunningApp(WebApplication app, RSA signing, RsaSecurityKey key, HttpClient client, FailureEvidence evidence, string role, string connection, string migrations,
         string? grpcAddress = null, IdentityParts? identity = null) : IAsyncDisposable
     {
         internal WebApplication App => app;

@@ -17,10 +17,14 @@ using Qian.Surfaces.Hosting;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private static readonly string[] HookProvides = ["Crm"];
-    private static readonly string[] HookTargets = ["qian.sample.crm/seedCustomer", "qian.sample.crm/listCustomers"];
+    private protected static readonly string[] HookProvides = ["Crm"];
+    private protected static readonly string[] HookTargets = ["qian.sample.crm/seedCustomer", "qian.sample.crm/listCustomers"];
+}
+
+public sealed partial class CommandTests
+{
     [Fact]
     public async Task doctor读取实际签名认证宿主_代码变更提示滚动重启_过滤与卸载后无残留()
     {
@@ -147,10 +151,13 @@ public sealed partial class CustomerCommandTests
         var record = Assert.Single(await host.App.Services.GetRequiredService<CrmCommandRuntime>().Source().Audit().ReadAsync(0, 10, cancellationToken: Ct));
         Assert.Equal("hook", record.Record.Channel); Assert.Equal("qian.sample.crm/customer.list", record.Record.CapabilityId);
     }
+}
 
+public abstract partial class CustomerCommandTests
+{
     // hooks 文档在新旧快照中都存在：每次轮询都严格 Inject，热替换期间出现 NOT_FOUND 即是缺陷，直接失败而不重试。
     // 五秒内未生效时报出最后读取的声明与监视状态，不用取消异常掩盖原因。
-    private static async Task WaitForHooks(IPluginContext source, Func<JsonElement, bool> applied)
+    private protected static async Task WaitForHooks(IPluginContext source, Func<JsonElement, bool> applied)
     {
         var elapsed = Stopwatch.StartNew();
         while (true)
@@ -162,7 +169,7 @@ public sealed partial class CustomerCommandTests
             await Task.Delay(20, Ct);
         }
     }
-    private static void MapHookEntry(WebApplication app)
+    private protected static void MapHookEntry(WebApplication app)
     {
         app.MapQianSurfaceDiagnostics(http =>
             http.RequestServices.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("data", ScopeKey.Global)
@@ -176,7 +183,7 @@ public sealed partial class CustomerCommandTests
             return Results.Json(result);
         }).RequireAuthorization();
     }
-    private static async Task AttachHooks(WebApplication app)
+    private protected static async Task AttachHooks(WebApplication app)
     {
         var runtime = app.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var entry = runtime.DumpConfig().Single(item => item.Id == "crm");
@@ -191,7 +198,7 @@ public sealed partial class CustomerCommandTests
         await runtime.MountAsync([new PluginDefinition(entry, watching, [CrmDefinition.Key, .. watching.SurfaceProvides])], Ct);
         Assert.True(runtime.GetState("crm", ScopeKey.Global) == PluginState.Ready, runtime.GetFailure("crm", ScopeKey.Global)?.ToString());
     }
-    private static SurfaceValidationResult HookSnapshot(string handler, string? existingDirectory = null)
+    private protected static SurfaceValidationResult HookSnapshot(string handler, string? existingDirectory = null)
     {
         var directory = existingDirectory is null ? Directory.CreateTempSubdirectory("qian-hook-proof-") : new DirectoryInfo(existingDirectory);
         try
@@ -206,7 +213,7 @@ public sealed partial class CustomerCommandTests
         }
         finally { if (existingDirectory is null) directory.Delete(true); }
     }
-    private static Task<HttpResponseMessage> HookPost(RunningApp host, string tenant, CreateCustomerCommand input)
+    private protected static Task<HttpResponseMessage> HookPost(RunningApp host, string tenant, CreateCustomerCommand input)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/acceptance/tenant-provisioned") { Content = JsonContent.Create(input) };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenant, "crm.read crm.write")); return host.Send(request);

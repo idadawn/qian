@@ -22,12 +22,13 @@ using Qian.Runtime.Errors;
 using Qian.Surfaces;
 using Qian.Tenancy;
 using Qian.Tenancy.AspNetCore;
+using Qian.Testing.Containers;
 using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class TenantOperationsTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task 平台运营HTTP真实超管旁路与审计_创建编排_租户主体拒绝_目标仅路径_编辑并发_完整契约()
@@ -201,11 +202,14 @@ public sealed partial class CustomerCommandTests
             Assert.Equal("qian.tenancy:tenant:read", logged["Permission"]);
         }
     }
+}
 
-    private static readonly string[] ExpectedErrors = ["400", "401", "403", "404", "409"];
-    private static readonly JsonSerializerOptions ContractJson = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+public abstract partial class CustomerCommandTests
+{
+    private protected static readonly string[] ExpectedErrors = ["400", "401", "403", "404", "409"];
+    private protected static readonly JsonSerializerOptions ContractJson = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
-    private async Task PreparePlatformLogins(LifecyclePlatform platform)
+    private protected async Task PreparePlatformLogins(LifecyclePlatform platform)
     {
         // 平台审计登录：所有带生命周期的宿主（平台级操作入平台链）；Authz 平台登录只有管理面宿主。
         platform.AuditRole = "ten_audit_" + Guid.NewGuid().ToString("N")[..10]; platform.AuditConnection = await Login(platform.AuditRole);
@@ -219,7 +223,7 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task<WebApplication> ManagementHost(RunningApp business, LifecyclePlatform platform, OperationsLog? logs = null, Func<IPluginContext>? context = null,
+    private protected static async Task<WebApplication> ManagementHost(RunningApp business, LifecyclePlatform platform, OperationsLog? logs = null, Func<IPluginContext>? context = null,
         string? expectedIssuer = null, string? expectedAudience = null, Action<WebApplication>? configurePipeline = null)
     {
         var loader = business.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
@@ -262,7 +266,7 @@ public sealed partial class CustomerCommandTests
         await app.StartAsync(Ct); return app;
     }
 
-    private sealed class OperationsLog : ILoggerProvider
+    private protected sealed class OperationsLog : ILoggerProvider
     {
         internal ConcurrentQueue<IReadOnlyDictionary<string, object?>> Entries { get; } = new();
         public ILogger CreateLogger(string categoryName) => new Sink(categoryName, Entries);
@@ -279,7 +283,7 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task AssertHttp(HttpResponseMessage response, HttpStatusCode status, string code)
+    private protected static async Task AssertHttp(HttpResponseMessage response, HttpStatusCode status, string code)
     {
         using (response)
         { var body = await response.Content.ReadAsStringAsync(Ct); Assert.True(response.StatusCode == status, body); Assert.Equal(code, ErrorDetailJson.Deserialize(body)!.Code); }

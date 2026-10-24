@@ -15,7 +15,7 @@ using Qian.Tenancy;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class TenantOperationsTests
 {
     [Fact]
     public async Task 扫描对模型隐藏但调度服务可用_每次成功失败均有成对平台审计_拒绝调用不留记录()
@@ -127,13 +127,16 @@ public sealed partial class CustomerCommandTests
         }
         Assert.Single(logs.Entries);
     }
+}
 
-    private sealed class ScanSchedulerProbe : IQianPlugin
+public abstract partial class CustomerCommandTests
+{
+    private protected sealed class ScanSchedulerProbe : IQianPlugin
     {
         public IReadOnlyList<ServiceKey> Inject => [];
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) => ValueTask.CompletedTask;
     }
-    private sealed class CompletionLogs : ILoggerProvider
+    private protected sealed class CompletionLogs : ILoggerProvider
     {
         internal ConcurrentQueue<IReadOnlyDictionary<string, object?>> Entries { get; } = new();
         public ILogger CreateLogger(string categoryName) => new Sink(categoryName, Entries);

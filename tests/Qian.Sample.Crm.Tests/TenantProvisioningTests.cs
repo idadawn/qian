@@ -16,9 +16,13 @@ using Qian.Tenancy;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private static readonly string[] InitializationCapabilities = ["qian.sample.crm/customer.list"];
+    private protected static readonly string[] InitializationCapabilities = ["qian.sample.crm/customer.list"];
+}
+
+public sealed partial class TenantOperationsTests
+{
     [Fact]
     public async Task 真实开通事件接SDK业务hook时保留拒绝_不伪造租户身份或越过pending策略()
     {

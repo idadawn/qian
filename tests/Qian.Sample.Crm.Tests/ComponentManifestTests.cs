@@ -12,7 +12,7 @@ using Qian.Tenancy;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class CatalogSurfaceTests
 {
     [Fact]
     public async Task 唯一清单入口运行真实CRM_工具与实际绑定同源_客户卸载撤销服务()
@@ -52,11 +52,14 @@ public sealed partial class CustomerCommandTests
         await loader.UnmountAsync("identity", ScopeKey.Global, Ct);
         foreach (var key in identity.Provides) Assert.Null(loader.GetContext("data", ScopeKey.Global).TryInject<object>(new ServiceKey(key)));
     }
+}
 
-    private static ComponentCodeMetadata Metadata(Type component, string id) => component.Assembly.GetCustomAttributes<QianCodeMetadataAttribute>()
+public abstract partial class CustomerCommandTests
+{
+    private protected static ComponentCodeMetadata Metadata(Type component, string id) => component.Assembly.GetCustomAttributes<QianCodeMetadataAttribute>()
         .Select(attribute => ((IComponentCodeMetadataFactory)Activator.CreateInstance(attribute.FactoryType)!).Create()).Single(code => code.ComponentId == id);
 
-    private static void AssertTools(ComponentCodeMetadata code, IPluginContext context, string componentDirectory)
+    private protected static void AssertTools(ComponentCodeMetadata code, IPluginContext context, string componentDirectory)
     {
         Assert.NotEmpty(code.Capabilities);
         foreach (var contract in code.Capabilities)

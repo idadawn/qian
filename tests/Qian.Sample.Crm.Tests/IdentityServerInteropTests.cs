@@ -13,13 +13,13 @@ using Qian.Testing.Identity;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class IdentityAuthzTests
 {
     [Fact]
     public async Task 真实Identity机器令牌经Kun网关签发器换取S2S_调用真实CRM写能力并保留服务主体()
     {
         await using var business = await Start();
-        await using var identity = await IdentityProtocolHost.Start(postgres, serviceTenant: Guid.Parse(A), serviceClient: Writer, serviceScope: "crm.write");
+        await using var identity = await IdentityProtocolHost.Start(Postgres, serviceTenant: Guid.Parse(A), serviceClient: Writer, serviceScope: "crm.write");
         using var client = identity.Kun(Writer); var token = await client.ClientCredentialsAsync("crm.write", Ct);
         using var discovery = JsonDocument.Parse(await identity.Browser.GetStringAsync(".well-known/openid-configuration", Ct));
         var jwks = new JsonWebKeySet(await identity.Browser.GetStringAsync(discovery.RootElement.GetProperty("jwks_uri").GetString()!, Ct));

@@ -14,7 +14,7 @@ using RabbitMQ.Client;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class EventTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task 参考应用创建客户后Outbox加一条v1信封_RabbitMQ恰好收到一条()
@@ -81,10 +81,13 @@ public sealed partial class CustomerCommandTests
         Assert.Null(await channel.BasicGetAsync(queue, autoAck: true, Ct));
         Assert.Equal(1, await OutboxCount());
     }
+}
 
-    private async Task<long> OutboxCount() => await Scalar("SELECT count(*) FROM plugin_qian_sample_crm.outbox_messages");
+public abstract partial class CustomerCommandTests
+{
+    private protected async Task<long> OutboxCount() => await Scalar("SELECT count(*) FROM plugin_qian_sample_crm.outbox_messages");
 
-    private async Task<long> Scalar(string sql)
+    private protected async Task<long> Scalar(string sql)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
         await using var command = new NpgsqlCommand(sql, connection);

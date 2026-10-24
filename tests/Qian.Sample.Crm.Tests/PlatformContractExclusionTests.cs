@@ -10,9 +10,9 @@ using Qian.Plugin.Sdk.AspNetCore;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private static void MapContractExclusion(WebApplication app)
+    private protected static void MapContractExclusion(WebApplication app)
     {
         foreach (var platform in new[] { false, true })
         {
@@ -22,7 +22,10 @@ public sealed partial class CustomerCommandTests
             if (platform) endpoint.WithMetadata(new PlatformHttpContract("qian.sample.crm"));
         }
     }
+}
 
+public sealed partial class CapabilityTests
+{
     [Fact]
     public async Task 平台双标记端点从租户契约排除_同绑定普通端点保留_构建契约均保留()
     {

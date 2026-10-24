@@ -22,14 +22,17 @@ using StackExchange.Redis;
 
 namespace Qian.Sample.Crm.Tests;
 
-// 消费端联调（S1-EVT-002）：参考宿主（Kun 多租户生产模式、受限应用角色 + RLS）经真实 RabbitMQ 与 Redis 消费自己发布的客户建档事件。
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private static readonly string CustomerCreatedQueue = QianEventTopology.SubscriptionQueue("qian.sample.crm", "customer-created");
-    private static readonly string TenantProbeQueue = QianEventTopology.SubscriptionQueue("qian.sample.crm", "tenant-probe");
-    private static readonly string TenantPeerQueue = QianEventTopology.SubscriptionQueue("qian.sample.crm", "tenant-peer");
-    private static readonly string[] ProbedSubscriptions = ["tenant-probe", "tenant-peer", "customer-created"];
+    private protected static readonly string CustomerCreatedQueue = QianEventTopology.SubscriptionQueue("qian.sample.crm", "customer-created");
+    private protected static readonly string TenantProbeQueue = QianEventTopology.SubscriptionQueue("qian.sample.crm", "tenant-probe");
+    private protected static readonly string TenantPeerQueue = QianEventTopology.SubscriptionQueue("qian.sample.crm", "tenant-peer");
+    private protected static readonly string[] ProbedSubscriptions = ["tenant-probe", "tenant-peer", "customer-created"];
+}
 
+// 消费端联调（S1-EVT-002）：参考宿主（Kun 多租户生产模式、受限应用角色 + RLS）经真实 RabbitMQ 与 Redis 消费自己发布的客户建档事件。
+public sealed partial class EventTests
+{
     [Fact]
     public async Task 消费端handler内租户为事件租户_EF查询自动带tenant_id过滤且只读到本租户_两个租户并发互不串()
     {
@@ -141,9 +144,12 @@ public sealed partial class CustomerCommandTests
             Assert.False(await keys.GetDatabase().KeyExistsAsync("idemp:qian.sample.crm.customer-created:" + envelope.EventId));
         }
     }
+}
 
+public abstract partial class CustomerCommandTests
+{
     // 用例的探针订阅与计数传播器先于参考宿主自己的装配登记：同一服务名追加订阅，传播器以 TryAdd 让位给这里的包装。peer 再加一个对端订阅，与探针之间设屏障。
-    private static void ConsumeWithProbe(WebApplicationBuilder builder, RedisFixture redis, TenantProbe probe, bool peer = false)
+    private protected static void ConsumeWithProbe(WebApplicationBuilder builder, RedisFixture redis, TenantProbe probe, bool peer = false)
     {
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Redis"] = redis.ConnectionString });
         builder.Services.AddSingleton(probe);
@@ -156,7 +162,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // ToQueryString 把参数写成「-- @名字='值'」注释行；取 WHERE 里与 tenant_id 比较的参数，返回它的值，没有这条谓词时为 null。
-    private static string? FilterTenant(string sql)
+    private protected static string? FilterTenant(string sql)
     {
         var where = Regex.Match(sql, @"\bWHERE\b(?<predicate>[\s\S]*?)(?:\bORDER BY\b|$)");
         var comparison = Regex.Match(where.Success ? where.Groups["predicate"].Value : "", @"\btenant_id\b\s*=\s*(?<parameter>@\w+)");
@@ -165,14 +171,14 @@ public sealed partial class CustomerCommandTests
         return value.Success ? value.Groups["value"].Value : null;
     }
 
-    private static async Task<CustomerItem> CreateAsync(RunningApp host, string tenant, string name)
+    private protected static async Task<CustomerItem> CreateAsync(RunningApp host, string tenant, string name)
     {
         using var response = await host.Post(tenant, new CreateCustomerCommand(Guid.CreateVersion7(), name));
         Assert.True(response.StatusCode == HttpStatusCode.Created, await response.Content.ReadAsStringAsync(Ct) + "\n" + host.FailureEvidence);
         return (await response.Content.ReadFromJsonAsync<CustomerItem>(Ct))!;
     }
 
-    private static QianEventEnvelope Envelope(Guid customerId, string? tenant)
+    private protected static QianEventEnvelope Envelope(Guid customerId, string? tenant)
     {
         var occurredAt = DateTimeOffset.UtcNow;
         return new QianEventEnvelope
@@ -184,20 +190,20 @@ public sealed partial class CustomerCommandTests
         };
     }
 
-    private static string Without(string json, string field)
+    private protected static string Without(string json, string field)
     {
         var node = JsonNode.Parse(json)!.AsObject();
         node.Remove(field);
         return node.ToJsonString();
     }
 
-    private static string WithDuplicateTenant(string json, string tenant)
+    private protected static string WithDuplicateTenant(string json, string tenant)
     {
         var text = Without(json, "tenant_id");
         return text[..^1] + ",\"tenant_id\":\"" + tenant + "\",\"tenant_id\":\"" + tenant + "\"}";
     }
 
-    private static async Task RawPublishAsync(RabbitMqFixture rabbit, QianEventEnvelope envelope, string body, string? tenantHeader)
+    private protected static async Task RawPublishAsync(RabbitMqFixture rabbit, QianEventEnvelope envelope, string body, string? tenantHeader)
     {
         await using var connection = await new ConnectionFactory { Uri = new Uri(rabbit.ConnectionString) }.CreateConnectionAsync(Ct);
         await using var channel = await connection.CreateChannelAsync(new CreateChannelOptions(true, true), Ct);
@@ -211,7 +217,7 @@ public sealed partial class CustomerCommandTests
         await channel.BasicPublishAsync(QianEventTopology.Exchange, envelope.Subject, mandatory: true, properties, Encoding.UTF8.GetBytes(body), Ct);
     }
 
-    private static async Task ConsumingAsync(RabbitMqFixture rabbit, params string[] queues)
+    private protected static async Task ConsumingAsync(RabbitMqFixture rabbit, params string[] queues)
     {
         var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
         while (true)
@@ -224,19 +230,19 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task<long> MessagesAsync(RabbitMqFixture rabbit, string queue)
+    private protected static async Task<long> MessagesAsync(RabbitMqFixture rabbit, string queue)
     {
         var listing = await rabbit.Container.ExecAsync(["rabbitmqctl", "list_queues", "-q", "name", "messages"], Ct);
         return Rows(listing.Stdout).ToDictionary(row => row.Name, row => row.Count).GetValueOrDefault(queue);
     }
 
     // rabbitmqctl 4 即使带 -q 也输出表头行，按第二列能否解析为数字跳过它。
-    private static IEnumerable<(string Name, long Count)> Rows(string stdout) => stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    private protected static IEnumerable<(string Name, long Count)> Rows(string stdout) => stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .Select(line => line.Split('\t', StringSplitOptions.TrimEntries))
         .Where(cells => cells.Length == 2 && long.TryParse(cells[1], System.Globalization.CultureInfo.InvariantCulture, out _))
         .Select(cells => (cells[0], long.Parse(cells[1], System.Globalization.CultureInfo.InvariantCulture)));
 
-    private static async Task<List<BasicGetResult>> DrainAsync(RabbitMqFixture rabbit, string queue)
+    private protected static async Task<List<BasicGetResult>> DrainAsync(RabbitMqFixture rabbit, string queue)
     {
         await using var connection = await new ConnectionFactory { Uri = new Uri(rabbit.ConnectionString) }.CreateConnectionAsync(Ct);
         await using var channel = await connection.CreateChannelAsync(cancellationToken: Ct);
@@ -245,9 +251,9 @@ public sealed partial class CustomerCommandTests
         return messages;
     }
 
-    private static Task UntilAsync(Func<bool> condition, string because) => UntilAsync(() => Task.FromResult(condition()), because);
+    private protected static Task UntilAsync(Func<bool> condition, string because) => UntilAsync(() => Task.FromResult(condition()), because);
 
-    private static async Task UntilAsync(Func<Task<bool>> condition, string because)
+    private protected static async Task UntilAsync(Func<Task<bool>> condition, string because)
     {
         var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
         while (!await condition())
@@ -257,14 +263,14 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private sealed record ProbeRow(Guid Id, string? TenantId);
+    private protected sealed record ProbeRow(Guid Id, string? TenantId);
 
-    private sealed record TenantObservation(Guid EventId, Guid CustomerId, string? Tenant, string? ContextTenant, Guid? EnvelopeTenant, string Sql,
+    private protected sealed record TenantObservation(Guid EventId, Guid CustomerId, string? Tenant, string? ContextTenant, Guid? EnvelopeTenant, string Sql,
         IReadOnlyList<ProbeRow> Rows, string Producer, string Actor, bool DuringOverlap);
 
-    private sealed record ScopeEntry(Guid? EventId, Guid Authorized, string? Rejected);
+    private protected sealed record ScopeEntry(Guid? EventId, Guid Authorized, string? Rejected);
 
-    private sealed class TenantProbe
+    private protected sealed class TenantProbe
     {
         public ConcurrentQueue<TenantObservation> Seen { get; } = new();
         public ConcurrentQueue<TenantObservation> PeerSeen { get; } = new();
@@ -277,7 +283,7 @@ public sealed partial class CustomerCommandTests
     /// 免得对端把两条事件都处理完探针还没开始；重叠时两边各自观察，都观察完才一起离开，于是两次观察都发生在对方仍在另一个租户的 handler 里时。
     /// 等待超过 30 秒只记一条超时并放行，由用例断言失败，不让 handler 抛出触发重试。
     /// </summary>
-    private sealed class OverlapBarrier
+    private protected sealed class OverlapBarrier
     {
         private readonly Lock _gate = new();
         private readonly TaskCompletionSource _probeEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -343,7 +349,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 探针 handler：在订阅器回灌的租户里查客户表，记下租户上下文、EF 生成的 SQL 与结果；与对端之间经屏障制造跨租户重叠。
-    private sealed class TenantProbeHandler(IDataService data, ITenantContext tenant, QianEventDelivery delivery, TenantProbe probe) : IIntegrationEventHandler<CrmCustomerCreated>
+    private protected sealed class TenantProbeHandler(IDataService data, ITenantContext tenant, QianEventDelivery delivery, TenantProbe probe) : IIntegrationEventHandler<CrmCustomerCreated>
     {
         public async ValueTask HandleAsync(CrmCustomerCreated @event, MessageContext context, CancellationToken cancellationToken = default)
         {
@@ -354,7 +360,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 对端 handler：与探针相同的观察，记在 PeerSeen。
-    private sealed class TenantPeerHandler(IDataService data, ITenantContext tenant, QianEventDelivery delivery, TenantProbe probe) : IIntegrationEventHandler<CrmCustomerCreated>
+    private protected sealed class TenantPeerHandler(IDataService data, ITenantContext tenant, QianEventDelivery delivery, TenantProbe probe) : IIntegrationEventHandler<CrmCustomerCreated>
     {
         public async ValueTask HandleAsync(CrmCustomerCreated @event, MessageContext context, CancellationToken cancellationToken = default)
         {
@@ -364,7 +370,7 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task<TenantObservation> ObserveAsync(IDataService data, ITenantContext tenant, QianEventDelivery delivery, CrmCustomerCreated @event, MessageContext context,
+    private protected static async Task<TenantObservation> ObserveAsync(IDataService data, ITenantContext tenant, QianEventDelivery delivery, CrmCustomerCreated @event, MessageContext context,
         bool overlap, CancellationToken cancellationToken)
     {
         await using var session = await data.OpenAsync<CrmDbContext>(cancellationToken);
@@ -375,7 +381,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 包装真实的 TenantContextPropagator，只记录消费端每次进入的授权租户与结果，判定仍由真实实现做。
-    private sealed class RecordingPropagator(ITenantContextPropagator inner, TenantProbe probe) : ITenantContextPropagator
+    private protected sealed class RecordingPropagator(ITenantContextPropagator inner, TenantProbe probe) : ITenantContextPropagator
     {
         public JsonElement Write(JsonElement carrier) => inner.Write(carrier);
 

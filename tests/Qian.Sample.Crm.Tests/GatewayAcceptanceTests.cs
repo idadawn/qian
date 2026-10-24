@@ -15,7 +15,7 @@ using Qian.Testing.Gateway;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class TenantOperationsTests
 {
     [Fact]
     public async Task 真实外壳Cookie经网关换S2S访问平台租户运营路由_匿名401_平台主体与受众正确()
@@ -34,7 +34,7 @@ public sealed partial class CustomerCommandTests
         await using var redis = new RedisFixture(); await redis.InitializeAsync();
         using var tls = GatewayTestHost.Certificate(); using var reservation = LoopbackPort.Reserve();
         var address = new Uri($"https://localhost:{reservation.Port}/");
-        await using var identity = await IdentityServerHost.Start(postgres, new Uri(address, "auth/callback"), platform: true);
+        await using var identity = await IdentityServerHost.Start(Postgres, new Uri(address, "auth/callback"), platform: true);
         await new PostgresPlatformRoleStore(business.App.Services.GetRequiredService<IDataService>(),
             business.App.Services.GetRequiredService<ITenantContext>(), platform.AuthzRole)
             .AssignSuperadminAsync(identity.Person.ToString("D"), "operator", Ct);

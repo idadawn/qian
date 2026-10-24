@@ -14,19 +14,22 @@ using Qian.Surfaces.Abstractions;
 
 namespace Qian.Sample.Crm.Tests;
 
+public abstract partial class CustomerCommandTests
+{
+    private protected const string Provisioned = "01900000-0000-7000-8000-000000000003";
+    private protected const string ProvisionedOwner = "crm-provisioned-owner";
+    private protected const string ProvisionedReader = "crm-provisioned-reader";
+    private protected static readonly string[] CustomerPermissions = ["qian.sample.crm:customer:export", "qian.sample.crm:customer:read", "qian.sample.crm:customer:write"];
+    private protected static readonly string[] BuiltinRoles = ["tenant.admin", "tenant.developer", "tenant.owner", "tenant.user"];
+    private protected static readonly string[] DefaultGrants = ["tenant.owner=qian.sample.crm:customer:export", "tenant.owner=qian.sample.crm:customer:read",
+        "tenant.owner=qian.sample.crm:customer:write", "tenant.user=qian.sample.crm:customer:read"];
+}
+
 // 参考应用 metadata 声明的权限与默认角色模板经完整 Authz Provider 持久化并登记；新租户由真实 qian.tenancy 生产方上下文派发 tenant/provisioned 后，
 // qian.authz 在该租户实例化内置角色与默认策略：Owner 拥有 customer 的读、写、导出，使用者只有 read；me/permissions 读出风险、step-up 与终端元数据。
 // 真实开户编排（何时派发、谁写初始授权）不在这里；本测试以同一角色存储把两个服务主体绑定到角色，不提供开户 API。
-public sealed partial class CustomerCommandTests
+public sealed partial class IdentityAuthzTests
 {
-    private const string Provisioned = "01900000-0000-7000-8000-000000000003";
-    private const string ProvisionedOwner = "crm-provisioned-owner";
-    private const string ProvisionedReader = "crm-provisioned-reader";
-    private static readonly string[] CustomerPermissions = ["qian.sample.crm:customer:export", "qian.sample.crm:customer:read", "qian.sample.crm:customer:write"];
-    private static readonly string[] BuiltinRoles = ["tenant.admin", "tenant.developer", "tenant.owner", "tenant.user"];
-    private static readonly string[] DefaultGrants = ["tenant.owner=qian.sample.crm:customer:export", "tenant.owner=qian.sample.crm:customer:read",
-        "tenant.owner=qian.sample.crm:customer:write", "tenant.user=qian.sample.crm:customer:read"];
-
     [Fact]
     public async Task 参考应用清单经tenant_provisioned实例化默认角色_Owner拥有customer读写导出_使用者只有read_me_permissions读出风险与step_up()
     {
@@ -112,25 +115,28 @@ public sealed partial class CustomerCommandTests
             return ([.. roles.Order(StringComparer.Ordinal)], [.. grants.Order(StringComparer.Ordinal)], [.. installs.Order(StringComparer.Ordinal)], revision);
         }
     }
+}
 
-    private static async Task<IReadOnlyList<JsonElement>> Provision(IPluginContext source, string subject) =>
+public abstract partial class CustomerCommandTests
+{
+    private protected static async Task<IReadOnlyList<JsonElement>> Provision(IPluginContext source, string subject) =>
         await source.DispatchAsync(SurfaceHookEvents.TenantProvisioned,
             new HookNotification(source, subject, JsonSerializer.SerializeToElement(new { tenantId = subject, plan = "standard" }), Ct), Ct);
 
-    private static async Task AssertInvalid(IPluginContext source, string subject)
+    private protected static async Task AssertInvalid(IPluginContext source, string subject)
     {
         var error = await Assert.ThrowsAsync<QianErrorException>(async () => await Provision(source, subject));
         Assert.Equal(PlatformErrors.InputInvalid, error.Error.Code);
     }
 
     // 元组里的数组按值比较。
-    private static (string Roles, string Grants, string Installs, long Revision) Flatten((string[] Roles, string[] Grants, string[] Installs, long Revision) state) =>
+    private protected static (string Roles, string Grants, string Installs, long Revision) Flatten((string[] Roles, string[] Grants, string[] Installs, long Revision) state) =>
         (string.Join(',', state.Roles), string.Join(',', state.Grants), string.Join(',', state.Installs), state.Revision);
 
-    private static (string?, string?, string?, bool, bool, string?) View(JsonElement item) => (item.GetProperty("resource").GetString(), item.GetProperty("action").GetString(),
+    private protected static (string?, string?, string?, bool, bool, string?) View(JsonElement item) => (item.GetProperty("resource").GetString(), item.GetProperty("action").GetString(),
         item.GetProperty("risk").GetString(), item.GetProperty("stepUp").GetBoolean(), item.GetProperty("allowed").GetBoolean(), item.GetProperty("reason").GetString());
 
-    private static async Task<JsonElement[]> MePermissions(RunningApp host, string tenantId, string subject)
+    private protected static async Task<JsonElement[]> MePermissions(RunningApp host, string tenantId, string subject)
     {
         using var response = await Me(host, tenantId, subject);
         var body = await response.Content.ReadAsStringAsync(Ct);
@@ -140,14 +146,14 @@ public sealed partial class CustomerCommandTests
         return [.. document.RootElement.GetProperty("items").EnumerateArray().Select(item => item.Clone())];
     }
 
-    private static Task<HttpResponseMessage> Me(RunningApp host, string tenantId, string subject, string kind = "service")
+    private protected static Task<HttpResponseMessage> Me(RunningApp host, string tenantId, string subject, string kind = "service")
     {
         var message = new HttpRequestMessage(HttpMethod.Get, "/api/authz/me/permissions");
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenantId, "crm.read", subject, kind));
         return host.Send(message);
     }
 
-    private static async Task<string?> Code(HttpResponseMessage response)
+    private protected static async Task<string?> Code(HttpResponseMessage response)
     {
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
         return document.RootElement.GetProperty("code").GetString();

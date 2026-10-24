@@ -19,18 +19,22 @@ using Qian.Identity.Abstractions;
 using Qian.Plugin.Sdk;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
+using Qian.Testing.Containers;
 
 namespace Qian.Sample.Crm.Tests;
 
-// S1-RT-019 / S1-RT-020：目录信封与别名头（含 PathBase）、通用执行入口的输入校验 / 幂等重放与回执策略 / Agent 与 Actor 主体、能力上下文迁移。
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private const string ListId = "qian.sample.crm/customer.list";
-    private const string GetId = "qian.sample.crm/customer.get";
-    private const string AgentId = "crm-agent-preview";
-    private const string Deprecation = "@1791331200";
-    private static readonly Lazy<(JsonSchema Catalog, JsonSchema Error)> ContractSchemas = new(LoadContractSchemas);
+    private protected const string ListId = "qian.sample.crm/customer.list";
+    private protected const string GetId = "qian.sample.crm/customer.get";
+    private protected const string AgentId = "crm-agent-preview";
+    private protected const string Deprecation = "@1791331200";
+    private protected static readonly Lazy<(JsonSchema Catalog, JsonSchema Error)> ContractSchemas = new(LoadContractSchemas);
+}
 
+// S1-RT-019 / S1-RT-020：目录信封与别名头（含 PathBase）、通用执行入口的输入校验 / 幂等重放与回执策略 / Agent 与 Actor 主体、能力上下文迁移。
+public sealed partial class CapabilityTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
+{
     [Fact]
     public async Task 目录信封符合冻结契约_别名带Deprecation与successor链接_条目取值与摘要一致_非法参数与匿名请求返回ErrorDetail()
     {
@@ -592,8 +596,11 @@ public sealed partial class CustomerCommandTests
         var again = await host.App.Services.GetRequiredService<IDataMigrator>().MigrateAsync(Ct);
         Assert.Empty(Assert.Single(again, report => report.ContextType == typeof(CapabilitiesDbContext)).Applied);
     }
+}
 
-    private static void AssertEntry(JsonElement entry, string kind, string sideEffect, bool idempotent, string scope)
+public abstract partial class CustomerCommandTests
+{
+    private protected static void AssertEntry(JsonElement entry, string kind, string sideEffect, bool idempotent, string scope)
     {
         Assert.Equal(kind, entry.GetProperty("kind").GetString());
         Assert.Equal(sideEffect, entry.GetProperty("sideEffect").GetString());
@@ -607,7 +614,7 @@ public sealed partial class CustomerCommandTests
         Assert.False(entry.GetProperty("agent").GetProperty("requiresConfirmation").GetBoolean());
     }
 
-    private static async Task<long> BusinessCount(RunningApp host, string? tenant)
+    private protected static async Task<long> BusinessCount(RunningApp host, string? tenant)
     {
         // 独立连接池，会话变量不会回到应用的连接池。
         var probe = new NpgsqlConnectionStringBuilder(host.BusinessConnection) { ApplicationName = "qian-rls-probe", Pooling = false }.ConnectionString;
@@ -621,7 +628,7 @@ public sealed partial class CustomerCommandTests
         return (long)(await count.ExecuteScalarAsync(Ct))!;
     }
 
-    private async Task<List<object[]>> AdminRows(string sql)
+    private protected async Task<List<object[]>> AdminRows(string sql)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
         await using var command = new NpgsqlCommand(sql, connection); await using var reader = await command.ExecuteReaderAsync(Ct);
@@ -631,7 +638,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // audit 为业务 / 命令审计条目数；decisions 为链上允许出现的决策日志（actorType, actorId, result），每条决策日志都必须匹配其中一项。
-    private static async Task AssertWrites(RunningApp host, string tenantId, int customers, int audit, (string Kind, string Id, string Result)[]? decisions = null)
+    private protected static async Task AssertWrites(RunningApp host, string tenantId, int customers, int audit, (string Kind, string Id, string Result)[]? decisions = null)
     {
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenantId))
         {
@@ -648,7 +655,7 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task AssertAgentNotFound(RunningApp host, string id)
+    private protected static async Task AssertAgentNotFound(RunningApp host, string id)
     {
         using var hidden = await AgentRequest(host, HttpMethod.Post, "/api/capabilities/" + id + "/invoke", "{\"skip\":0,\"take\":10}");
         using var unknown = await AgentRequest(host, HttpMethod.Post, "/api/capabilities/qian.sample.crm/customer.unknown/invoke", "{\"skip\":0,\"take\":10}");
@@ -656,7 +663,7 @@ public sealed partial class CustomerCommandTests
         Assert.True(JsonNode.DeepEquals(Normalize(await hidden.Content.ReadAsStringAsync(Ct)), Normalize(await unknown.Content.ReadAsStringAsync(Ct))), id);
     }
 
-    private static Task<HttpResponseMessage> AgentRequest(RunningApp host, HttpMethod method, string path, string? body = null, string kind = "agent", object? actor = null)
+    private protected static Task<HttpResponseMessage> AgentRequest(RunningApp host, HttpMethod method, string path, string? body = null, string kind = "agent", object? actor = null)
     {
         var request = new HttpRequestMessage(method, path);
         if (body is not null) request.Content = new StringContent(body, Encoding.UTF8, "application/json");
@@ -664,21 +671,21 @@ public sealed partial class CustomerCommandTests
         return host.Send(request);
     }
 
-    private static Task<HttpResponseMessage> InvokeRaw(RunningApp host, string tenant, string id, string body)
+    private protected static Task<HttpResponseMessage> InvokeRaw(RunningApp host, string tenant, string id, string body)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/capabilities/" + id + "/invoke") { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenant, "crm.read crm.write"));
         return host.Send(request);
     }
 
-    private static Principal DirectPrincipal(DelegationActor? actor) => new()
+    private protected static Principal DirectPrincipal(DelegationActor? actor) => new()
     {
         Issuer = Issuer, Audience = [Audience], Subject = Writer, Kind = PrincipalKind.Service, TenantId = A, Roles = [], Scope = "crm.read crm.write",
         SessionId = Guid.CreateVersion7().ToString(), TokenId = Guid.CreateVersion7().ToString(), IssuedAt = 1, NotBefore = 1, ExpiresAt = long.MaxValue, Actor = actor
     };
 
     // 不经 HTTP 的已验证主体快照：直接交给 CapabilityService，观察端口自身的判定。
-    private sealed class DirectUser(Principal principal) : Qian.Identity.Abstractions.ICurrentUser
+    private protected sealed class DirectUser(Principal principal) : Qian.Identity.Abstractions.ICurrentUser
     {
         public Principal? Principal { get; } = principal;
         public string? UserId => Principal?.Subject;
@@ -686,9 +693,9 @@ public sealed partial class CustomerCommandTests
         public bool IsAuthenticated => true;
     }
 
-    private static Task<HttpResponseMessage> InvokeProbe(RunningApp host, string id, string body, Guid key) => InvokeProbe(host, id, body, key.ToString());
+    private protected static Task<HttpResponseMessage> InvokeProbe(RunningApp host, string id, string body, Guid key) => InvokeProbe(host, id, body, key.ToString());
 
-    private static Task<HttpResponseMessage> InvokeProbe(RunningApp host, string id, string body, string key)
+    private protected static Task<HttpResponseMessage> InvokeProbe(RunningApp host, string id, string body, string key)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/capabilities/" + id + "/invoke") { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(A, "crm.read crm.write"));
@@ -697,9 +704,9 @@ public sealed partial class CustomerCommandTests
     }
 
     // 回执探针的输入与 customer.create 同形；每次生成新的业务幂等键。
-    private static string ProbeInput(string name) => JsonSerializer.Serialize(new CreateCustomerCommand(Guid.CreateVersion7(), name), JsonSerializerOptions.Web);
+    private protected static string ProbeInput(string name) => JsonSerializer.Serialize(new CreateCustomerCommand(Guid.CreateVersion7(), name), JsonSerializerOptions.Web);
 
-    private static Task<HttpResponseMessage> InvokeKeyed(RunningApp host, string tenant, CreateCustomerCommand command, string key)
+    private protected static Task<HttpResponseMessage> InvokeKeyed(RunningApp host, string tenant, CreateCustomerCommand command, string key)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/capabilities/" + CreateId + "/invoke") { Content = JsonContent.Create(command) };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenant, "crm.read crm.write"));
@@ -707,13 +714,13 @@ public sealed partial class CustomerCommandTests
         return host.Send(request);
     }
 
-    private static async Task<JsonElement> Json(HttpResponseMessage response)
+    private protected static async Task<JsonElement> Json(HttpResponseMessage response)
     {
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct)); return document.RootElement.Clone();
     }
 
     // 错误体：problem+json、符合冻结的 error-detail Schema 与 contracts/v0 第 3.5 节的语义规则。
-    private static async Task<JsonElement> ErrorDetail(HttpResponseMessage response, HttpStatusCode status, string code)
+    private protected static async Task<JsonElement> ErrorDetail(HttpResponseMessage response, HttpStatusCode status, string code)
     {
         var text = await response.Content.ReadAsStringAsync(Ct);
         Assert.True(response.StatusCode == status, text);
@@ -727,16 +734,16 @@ public sealed partial class CustomerCommandTests
         return body;
     }
 
-    private static (string Code, string Pointer)[] Fields(JsonElement error) => error.GetProperty("errors").EnumerateArray()
+    private protected static (string Code, string Pointer)[] Fields(JsonElement error) => error.GetProperty("errors").EnumerateArray()
         .Select(item => (item.GetProperty("code").GetString()!, item.GetProperty("pointer").GetString()!)).ToArray();
 
-    private static void AssertValid(JsonSchema schema, JsonElement instance)
+    private protected static void AssertValid(JsonSchema schema, JsonElement instance)
     {
         var result = schema.Evaluate(instance, new EvaluationOptions { OutputFormat = OutputFormat.List });
         Assert.True(result.IsValid, JsonSerializer.Serialize(result));
     }
 
-    private static (JsonSchema, JsonSchema) LoadContractSchemas()
+    private protected static (JsonSchema, JsonSchema) LoadContractSchemas()
     {
         var options = new BuildOptions { SchemaRegistry = new SchemaRegistry() };
         string Read(string name) => File.ReadAllText(Path.Combine(RepositoryRoot(), "contracts/v0", name + ".schema.json"));
@@ -745,7 +752,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 测试宿主把 Agent 主体的 RBAC 求值换成同 ID 服务主体，模拟后续阶段开放 Agent 授权；默认关闭，关闭时与生产判定相同。
-    private static void PreviewAgentAuthorization(WebApplicationBuilder builder) =>
+    private protected static void PreviewAgentAuthorization(WebApplicationBuilder builder) =>
         builder.Host.ConfigureContainer<IServiceCollection>((_, services) =>
         {
             var original = services.Last(item => item.ServiceType == typeof(IPermissionChecker) && !item.IsKeyedService);
@@ -804,7 +811,7 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private sealed class ProbePlugin(IQianPlugin inner, IReadOnlyList<IExecutableCapability> probes) : IQianPlugin
+    private protected sealed class ProbePlugin(IQianPlugin inner, IReadOnlyList<IExecutableCapability> probes) : IQianPlugin
     {
         public IReadOnlyList<ServiceKey> Inject => inner.Inject;
         public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)

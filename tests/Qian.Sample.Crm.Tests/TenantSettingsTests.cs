@@ -28,7 +28,7 @@ using Qian.Tenancy;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class TenantOperationsTests
 {
     [Fact]
     public async Task 租户可用六步_真实开户hook状态事件_配置写入跨宿主与合成视图一致_配额缺席明确_双租户隔离()
@@ -149,11 +149,14 @@ public sealed partial class CustomerCommandTests
             if (input is not null) message.Content = JsonContent.Create(input, input.GetType()); return client.SendAsync(message, Ct);
         }
     }
+}
 
-    private static void MapSettingsRegistry(WebApplication app) => app.MapQianRegistry(http =>
+public abstract partial class CustomerCommandTests
+{
+    private protected static void MapSettingsRegistry(WebApplication app) => app.MapQianRegistry(http =>
         http.RequestServices.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("registry", ScopeKey.Global));
 
-    private async Task<SettingsReaderHost> SettingsReplica(LifecyclePlatform platform)
+    private protected async Task<SettingsReaderHost> SettingsReplica(LifecyclePlatform platform)
     {
         var builder = Host.CreateApplicationBuilder(); builder.Logging.ClearProviders();
         builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
@@ -175,7 +178,7 @@ public sealed partial class CustomerCommandTests
         static PluginDefinition Definition(string id, IQianPlugin plugin, ServiceKey[] keys) => new(new PluginEntry(id, "qian." + id, "1.0.0", ScopeKey.Global, 0,
             JsonSerializer.SerializeToElement(new { })), plugin, keys);
     }
-    private sealed class SettingsReaderHost(IHost host, PluginLoader loader) : IAsyncDisposable
+    private protected sealed class SettingsReaderHost(IHost host, PluginLoader loader) : IAsyncDisposable
     {
         internal ITenantContext Tenant => host.Services.GetRequiredService<ITenantContext>();
         internal ITenantSettings Settings => loader.GetContext("tenancy", ScopeKey.Global).Inject<ITenantSettings>(TenantSettings.Key);

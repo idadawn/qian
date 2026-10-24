@@ -16,7 +16,7 @@ using Qian.Surfaces;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class CapabilityTests
 {
     [Fact]
     public async Task 共用产品场景_真实scope遮蔽与restrict交集在目录提示执行一致_双客户端及真库副作用对照()
@@ -128,5 +128,9 @@ public sealed partial class CustomerCommandTests
             using var result = JsonDocument.Parse(stdout); return result.RootElement.Clone();
         }
     }
-    private static JsonObject Normalize(string json) { var value = JsonNode.Parse(json)!.AsObject(); value.Remove("trace_id"); value.Remove("instance"); return value; }
+}
+
+public abstract partial class CustomerCommandTests
+{
+    private protected static JsonObject Normalize(string json) { var value = JsonNode.Parse(json)!.AsObject(); value.Remove("trace_id"); value.Remove("instance"); return value; }
 }

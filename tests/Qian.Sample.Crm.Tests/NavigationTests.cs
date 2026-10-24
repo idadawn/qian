@@ -17,7 +17,7 @@ using Qian.Surfaces;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class CatalogSurfaceTests
 {
     [Fact]
     public async Task UI清单菜单经真实挂载权限与restrict过滤_未挂载资源同404()
@@ -119,8 +119,11 @@ public sealed partial class CustomerCommandTests
         var preference = Assert.Single(await session.Context.NavigationPreferences.ToListAsync(Ct)); Assert.True(preference.Order is 3 or 8);
         Assert.Equal(new AuditChainVerification(true, 2, null, null), await host.App.Services.GetRequiredService<CrmCommandRuntime>().Source().Audit().VerifyAsync(Ct));
     }
+}
 
-    private static async Task<NavigationItem[]> Menus(RunningApp host, string tenant)
+public abstract partial class CustomerCommandTests
+{
+    private protected static async Task<NavigationItem[]> Menus(RunningApp host, string tenant)
     {
         using var response = await CatalogRequest(host, tenant, "/api/capabilities/navigation");
         Assert.True(response.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await response.Content.ReadAsStringAsync(Ct));
@@ -128,9 +131,9 @@ public sealed partial class CustomerCommandTests
         Assert.Equal("private", value.GetProperty("cacheScope").GetString());
         return value.GetProperty("items").Deserialize<NavigationItem[]>(JsonSerializerOptions.Web)!;
     }
-    private static Task<HttpResponseMessage> MenuItem(RunningApp host, string tenant, string resource)
+    private protected static Task<HttpResponseMessage> MenuItem(RunningApp host, string tenant, string resource)
         => CatalogRequest(host, tenant, "/api/capabilities/navigation/item?resourceRef=" + Uri.EscapeDataString(resource));
-    private static Task<HttpResponseMessage> Preference(RunningApp host, string tenant, string resource, NavigationPreference preference)
+    private protected static Task<HttpResponseMessage> Preference(RunningApp host, string tenant, string resource, NavigationPreference preference)
     {
         var request = new HttpRequestMessage(HttpMethod.Put, "/api/capabilities/navigation/preference?resourceRef=" + Uri.EscapeDataString(resource)) { Content = JsonContent.Create(preference) };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenant, "crm.read crm.write"));

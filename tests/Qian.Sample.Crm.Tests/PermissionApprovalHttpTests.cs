@@ -15,22 +15,25 @@ using Qian.Runtime.Errors;
 
 namespace Qian.Sample.Crm.Tests;
 
+public abstract partial class CustomerCommandTests
+{
+    private protected const string Connector = "acme.connector";
+    private protected static readonly string[] ConnectorScopes = ["tenant"];
+    private protected static readonly string[] ConnectorPlatform = ["tenant:read", "notify:send"];
+    private protected static readonly string[] ConnectorPlatformSorted = ["notify:send", "tenant:read"];
+    private protected static readonly string[] ConnectorEgress = ["api.example.test"];
+    private protected static readonly object[] ConnectorSecrets = [new { name = "connector/token", scope = "tenant" }];
+    private protected static readonly object ConnectorGrants = new { platform = ConnectorPlatform, data = Array.Empty<string>(), egress = ConnectorEgress, secrets = ConnectorSecrets, ui = new { connectSrc = Array.Empty<string>() } };
+    private protected const string ConnectorApprovalPath = "/plugins/" + Connector + "/versions/1.0.0/permissions";
+    private protected const string ApprovalAdmin = "approval-admin";
+    private protected const string ApprovalMember = "approval-member";
+}
+
 // S1-AGT-002 验收 3：安装时由租户管理员批准反向权限的 HTTP API（S1 只有 API，S2 才有 UI），经参考宿主的真实 JWT、租户边界与 RBAC
 // （仓库 metadata 的角色模板：tenant.owner / tenant.admin 持 qian.lifecycle:install:approve）。A 的调用者是 Owner，B 的调用者只是使用者。
 // S1-AGT-006 补：批准经真实路径写入该租户审计链；tenant.admin 只凭仓库角色模板即可批准，同租户的普通使用者 404。
-public sealed partial class CustomerCommandTests
+public sealed partial class LifecycleProfileTests
 {
-    private const string Connector = "acme.connector";
-    private static readonly string[] ConnectorScopes = ["tenant"];
-    private static readonly string[] ConnectorPlatform = ["tenant:read", "notify:send"];
-    private static readonly string[] ConnectorPlatformSorted = ["notify:send", "tenant:read"];
-    private static readonly string[] ConnectorEgress = ["api.example.test"];
-    private static readonly object[] ConnectorSecrets = [new { name = "connector/token", scope = "tenant" }];
-    private static readonly object ConnectorGrants = new { platform = ConnectorPlatform, data = Array.Empty<string>(), egress = ConnectorEgress, secrets = ConnectorSecrets, ui = new { connectSrc = Array.Empty<string>() } };
-    private const string ConnectorApprovalPath = "/plugins/" + Connector + "/versions/1.0.0/permissions";
-    private const string ApprovalAdmin = "approval-admin";
-    private const string ApprovalMember = "approval-member";
-
     [Fact]
     public async Task 反向权限批准API经真实JWT与RBAC_A的Owner批准后才能开通_使用者跨租户与无记录同为404_请求体只接受五类()
     {
@@ -143,9 +146,12 @@ public sealed partial class CustomerCommandTests
         using (EventEnvelopeScope.Begin(Operator))
             Assert.Equal(TenantInstallStates.Installed, (await lifecycle.ProvisionAsync(A, Connector, "operator", Ct)).State);
     }
+}
 
+public abstract partial class CustomerCommandTests
+{
     // 声明反向权限的连接器组件：平台安装、激活，并授权给 A（权益已到位，只差批准）。
-    private static async Task<IPluginLifecycleController> InstallConnector(RunningApp host, LifecyclePlatform platform)
+    private protected static async Task<IPluginLifecycleController> InstallConnector(RunningApp host, LifecyclePlatform platform)
     {
         var lifecycle = LifecyclePlatform.Lifecycle(host);
         var files = new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.Ordinal)
@@ -172,7 +178,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 租户链上的批准条目（经审计组件读取，读前先验整条链）。
-    private static async Task<AuditChainEntry[]> ApprovalAudit(RunningApp host, string tenantId)
+    private protected static async Task<AuditChainEntry[]> ApprovalAudit(RunningApp host, string tenantId)
     {
         var audit = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("audit", ScopeKey.Global).Audit();
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenantId))
@@ -183,7 +189,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 连接器在 A 的首次批准：主体即批准人，资源同判定资源，载荷带渠道 tenant 与规范化的本次内容，上一次为 null。
-    private static void AssertApprovalAudit(AuditChainEntry entry, string actorType, string actor)
+    private protected static void AssertApprovalAudit(AuditChainEntry entry, string actorType, string actor)
     {
         var record = entry.Record;
         Assert.Equal((A, actorType, actor, "api", (string?)("lifecycle/install:" + A + "/" + Connector + "@1.0.0"), "success"),
@@ -196,7 +202,7 @@ public sealed partial class CustomerCommandTests
         Assert.True(JsonElement.DeepEquals(expected, record.Payload), record.Payload.GetRawText());
     }
 
-    private static Task<HttpResponseMessage> ApprovalRequest(RunningApp host, HttpMethod method, string tenant, string path, string? body = null, string? subject = null)
+    private protected static Task<HttpResponseMessage> ApprovalRequest(RunningApp host, HttpMethod method, string tenant, string path, string? body = null, string? subject = null)
     {
         var request = new HttpRequestMessage(method, path);
         if (body is not null) request.Content = new StringContent(body, Encoding.UTF8, "application/json");

@@ -34,19 +34,23 @@ using Qian.Runtime.Errors;
 using Qian.Surfaces;
 using Qian.Surfaces.Abstractions;
 using Qian.Tenancy;
+using Qian.Testing.Containers;
 using Qian.Audit;
 using Npgsql;
 
 namespace Qian.Sample.Crm.Tests;
 
+public abstract partial class CustomerCommandTests
+{
+    private protected static readonly string[] GlobalSettingsScopes = ["global"];
+    private protected static readonly EventOrigin Operator = new("qian.lifecycle", EventActor.User("platform-operator")) { CorrelationId = Guid.CreateVersion7() };
+}
+
 // S1-RT-005 验收 1、2、4、5 的端到端部分：参考应用 qian.sample.crm 不挂全局，只由 qian.lifecycle 经真实 HTTP 宿主装进租户 scope。
 // 平台宿主 = Data + Tenancy + Authz + Audit + Registry + Capabilities（契约准入）+ Config（信任根经 K8s Secret 挂载）+ Lifecycle；
 // 业务请求经 SDK 插件端点门禁与 CRM 命令处理器，管理面诊断经 GET /api/lifecycle/diagnostics。网关与外壳两处拦截归 S1-ENT-002。
-public sealed partial class CustomerCommandTests
+public sealed partial class LifecycleProfileTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
 {
-    private static readonly string[] GlobalSettingsScopes = ["global"];
-    private static readonly EventOrigin Operator = new("qian.lifecycle", EventActor.User("platform-operator")) { CorrelationId = Guid.CreateVersion7() };
-
     [Fact]
     public async Task 参考应用在A和B分别开通并挂载_各一条成功的开通记录_重复开通无副作用_卸载后五秒内拦截恢复且不改安装状态()
     {
@@ -216,13 +220,16 @@ public sealed partial class CustomerCommandTests
         Assert.Equal([LifecycleEvents.TenantPluginUpgraded], await EventTypes("plugin_qian_lifecycle", A));
         static (string?, string?, string) Single(IReadOnlyList<LifecycleDiagnosticView> items) { var item = Assert.Single(items); return (item.EntryId, item.Plugin, item.ReasonCode); }
     }
+}
 
-    private static JsonElement Entry(string version) => JsonSerializer.SerializeToElement(new { id = "crm", plugin = "qian.sample.crm@" + version, config = new { } });
-    private static (string, string?) Pick(TenantPluginInstallView view) => (view.State, view.Version);
-    private static (string, int) Pick(MountResult result) => (result.State, result.Revision);
+public abstract partial class CustomerCommandTests
+{
+    private protected static JsonElement Entry(string version) => JsonSerializer.SerializeToElement(new { id = "crm", plugin = "qian.sample.crm@" + version, config = new { } });
+    private protected static (string, string?) Pick(TenantPluginInstallView view) => (view.State, view.Version);
+    private protected static (string, int) Pick(MountResult result) => (result.State, result.Revision);
 
     // 该租户审计链上全部条目的能力 ID（经审计组件读取，读前先验整条链；条目数到读取上限即失败，不静默截断）。
-    private static async Task<string[]> TenantChain(RunningApp host, string tenantId)
+    private protected static async Task<string[]> TenantChain(RunningApp host, string tenantId)
     {
         var audit = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("audit", ScopeKey.Global).Audit();
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenantId))
@@ -234,7 +241,7 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task ProvisionAndMount(LifecyclePlatform platform, RunningApp host, params string[] tenants)
+    private protected static async Task ProvisionAndMount(LifecyclePlatform platform, RunningApp host, params string[] tenants)
     {
         var lifecycle = LifecyclePlatform.Lifecycle(host);
         using (EventEnvelopeScope.Begin(Operator))
@@ -252,7 +259,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 业务请求经 SDK 插件端点门禁：每 100ms 重试一次，5 秒内达到预期状态码。
-    private static async Task<CustomerPage?> WithinFiveSeconds(RunningApp host, string tenant, HttpStatusCode expected)
+    private protected static async Task<CustomerPage?> WithinFiveSeconds(RunningApp host, string tenant, HttpStatusCode expected)
     {
         var watch = Stopwatch.StartNew();
         while (true)
@@ -265,7 +272,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 处理该租户业务请求的组件版本：SDK 门禁与命令处理器读取的同一个 scope 视图（Registry 合入后的已挂载条目）。
-    private static async Task<string> ServingVersion(RunningApp host, string tenant)
+    private protected static async Task<string> ServingVersion(RunningApp host, string tenant)
     {
         var context = host.App.Services.GetRequiredService<ITenantContext>();
         var registry = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("registry", ScopeKey.Global).Registry();
@@ -274,7 +281,7 @@ public sealed partial class CustomerCommandTests
         return entries.Where(entry => entry.EntryId == "crm").Select(entry => entry.Version).Distinct().Single();
     }
 
-    private static async Task<IReadOnlyList<LifecycleDiagnosticView>> Diagnostics(RunningApp host, string tenant)
+    private protected static async Task<IReadOnlyList<LifecycleDiagnosticView>> Diagnostics(RunningApp host, string tenant)
     {
         using var response = await DiagnosticsRequest(host, tenant, null);
         Assert.True(response.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await response.Content.ReadAsStringAsync(Ct));
@@ -283,10 +290,10 @@ public sealed partial class CustomerCommandTests
         return body.GetProperty("items").Deserialize<LifecycleDiagnosticView[]>(JsonSerializerOptions.Web)!;
     }
 
-    private static Task<HttpResponseMessage> DiagnosticsRequest(RunningApp host, string tenant, string? scope) =>
+    private protected static Task<HttpResponseMessage> DiagnosticsRequest(RunningApp host, string tenant, string? scope) =>
         CatalogRequest(host, tenant, "/api/lifecycle/diagnostics" + (scope is null ? "" : "?scope=" + Uri.EscapeDataString(scope)));
 
-    private async Task<(string?, string?, string?, string?)> InstallRow(string tenant)
+    private protected async Task<(string?, string?, string?, string?)> InstallRow(string tenant)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
         await using var command = new NpgsqlCommand($"SELECT state, version, updated_by, updated_at::text FROM plugin_qian_lifecycle.tenant_plugin_installs WHERE tenant_id = '{tenant}'", connection);
@@ -295,14 +302,14 @@ public sealed partial class CustomerCommandTests
         return (reader.GetString(0), reader.IsDBNull(1) ? null : reader.GetString(1), reader.GetString(2), reader.GetString(3));
     }
 
-    private async Task<string?> Text(string sql)
+    private protected async Task<string?> Text(string sql)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
         await using var command = new NpgsqlCommand(sql, connection);
         return (await command.ExecuteScalarAsync(Ct))?.ToString();
     }
 
-    private async Task<string[]> EventTypes(string schema, string? tenant)
+    private protected async Task<string[]> EventTypes(string schema, string? tenant)
     {
         await using var connection = new NpgsqlConnection(postgres.ConnectionString); await connection.OpenAsync(Ct);
         await using var command = new NpgsqlCommand($"SELECT event_type_id FROM {schema}.outbox_messages WHERE tenant_id {(tenant is null ? "IS NULL" : "= '" + tenant + "'")} ORDER BY occurred_at", connection);
@@ -312,7 +319,7 @@ public sealed partial class CustomerCommandTests
         return [.. types];
     }
 
-    private static async Task AssertCode(Qian.Runtime.Errors.ErrorCode code, Func<Task> action)
+    private protected static async Task AssertCode(Qian.Runtime.Errors.ErrorCode code, Func<Task> action)
     {
         var error = await Assert.ThrowsAsync<QianErrorException>(action);
         Assert.Equal(code.Code, error.Error.Code.Code);
@@ -320,7 +327,7 @@ public sealed partial class CustomerCommandTests
 
     // 生命周期接线：上下文随包迁移；Registry / Lifecycle 的事件类型与领域事件处理器经参考宿主的合成入口并进同一次 Kun 登记（Start）；
     // 信任根照生产形状经配置节 Trust:PlatformKeys 引用 K8s Secret 挂载里的公钥。
-    private static void ConfigureLifecycle(WebApplicationBuilder builder, string connection, LifecyclePlatform platform)
+    private protected static void ConfigureLifecycle(WebApplicationBuilder builder, string connection, LifecyclePlatform platform)
     {
         builder.Configuration.AddInMemoryCollection(platform.InitializationCapabilities.Select((id, index) =>
             new KeyValuePair<string, string?>("Tenancy:InitializationCapabilities:" + index, id)));
@@ -342,11 +349,11 @@ public sealed partial class CustomerCommandTests
         });
     }
 
-    private static void MapLifecycle(WebApplication app) =>
+    private protected static void MapLifecycle(WebApplication app) =>
         app.MapQianLifecycle(http => http.RequestServices.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("lifecycle", ScopeKey.Global));
 
     // 平台插件树：CRM 撤下全局条目，只预装 1.0.0 / 1.0.1 / 1.1.0（module 制品随宿主镜像发布，摘要即安装时核对的摘要），由 Lifecycle 装进租户 scope。
-    private static async Task AttachLifecycle(WebApplication app, LifecyclePlatform platform)
+    private protected static async Task AttachLifecycle(WebApplication app, LifecyclePlatform platform)
     {
         var loader = app.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "qian-lifecycle-crm-" + Guid.NewGuid().ToString("N"))).FullName;
@@ -450,7 +457,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 同一份字节既是宿主预装绑定，也是交给 Lifecycle 安装、经平台签名的制品。
-    private static Dictionary<string, ReadOnlyMemory<byte>> CrmFiles(string source, string version)
+    private protected static Dictionary<string, ReadOnlyMemory<byte>> CrmFiles(string source, string version)
     {
         var files = Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories).ToDictionary(
             file => Path.GetRelativePath(source, file).Replace(Path.DirectorySeparatorChar, '/'), file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
@@ -471,7 +478,7 @@ public sealed partial class CustomerCommandTests
         return files;
     }
 
-    private static string LifecycleArtifactDigest(IReadOnlyDictionary<string, ReadOnlyMemory<byte>> files)
+    private protected static string LifecycleArtifactDigest(IReadOnlyDictionary<string, ReadOnlyMemory<byte>> files)
     {
         var inventory = string.Concat(files.OrderBy(file => file.Key, StringComparer.Ordinal).Select(file =>
             file.Key + "\t" + file.Value.Length.ToString(CultureInfo.InvariantCulture) + "\t" + Convert.ToHexStringLower(SHA256.HashData(file.Value.Span)) + "\n"));
@@ -479,7 +486,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 生命周期的管理面权限照仓库 metadata 编译登记：两租户安装角色模板，A 的调用者是 Owner（持诊断读取与反向权限批准），B 的调用者只是使用者。
-    private static async Task GrantDiagnostics(WebApplication app)
+    private protected static async Task GrantDiagnostics(WebApplication app)
     {
         var root = RepositoryRoot();
         using var permissions = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "plugins/qian.lifecycle/metadata/permissions.json")));
@@ -498,7 +505,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 平台签名钥与 K8s Secret 挂载目录；公钥 PEM 写在挂载里，信任根配置引用它。也是秘密访问的审计接收端。
-    private sealed class LifecyclePlatform : IDisposable, ISecretAccessObserver
+    private protected sealed class LifecyclePlatform : IDisposable, ISecretAccessObserver
     {
         private readonly Ed25519PrivateKeyParameters _private = new(new SecureRandom());
         internal LifecyclePlatform()

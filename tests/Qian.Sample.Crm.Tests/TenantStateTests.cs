@@ -11,7 +11,7 @@ using Qian.Tenancy;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class TenantOperationsTests
 {
     [Fact]
     public async Task 租户状态HTTP与Outbox同事务_冻结恢复和扫描幂等_业务入口立即拒绝_审批可否决()

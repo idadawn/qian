@@ -8,27 +8,30 @@ using Qian.Plugin.Sdk;
 
 namespace Qian.Sample.Crm.Tests;
 
-// S1-AGT-002 验收 1（IT），S1-AGT-006 补区分度（R112）：GET /api/capabilities 对同一插件（qian.sample.crm）返回的条目带全部 Agent 字段，取值与 [Capability] 声明一致
-// （缺省值也写进条目，不在读取时派生）；schemaSha256 与打包时的值一致。「打包时」取仓库提交的 samples/Qian.Sample.Crm/tools/<name>.json：它由 qian-plugin sync 生成，
-// CI 的清单门禁（scripts/check_plugin_manifests.py）对实际程序集重新计算并比对漂移，比对的两侧不是同一次计算。四条能力的每个 Agent 字段都至少有两种取值，
-// 其中 customer.purge 是为此而设的探针（policyHint 取 destructive 的非缺省值 deny），读取时按其它字段派生或写死任一字段，都会与声明或提交的工具文件不符。
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private static readonly string[] AgentFields = ["sideEffect", "policyHint", "idempotent", "async", "requiredScopes", "requiredSecrets", "dataClassification", "costTier",
+    private protected static readonly string[] AgentFields = ["sideEffect", "policyHint", "idempotent", "async", "requiredScopes", "requiredSecrets", "dataClassification", "costTier",
         "contractVersion", "schemaSha256", "audit", "agent"];
     // 探针只在 crm.admin scope 下可见；其余用例的令牌不带它，看到的仍是三条。
-    private const string AgentFieldScopes = "crm.read crm.write crm.admin";
-    private sealed record AgentFieldRow(Type Request, string Name, string SideEffect, string PolicyHint, bool Idempotent, string Async, string[] Scopes, string[] Secrets,
+    private protected const string AgentFieldScopes = "crm.read crm.write crm.admin";
+    private protected sealed record AgentFieldRow(Type Request, string Name, string SideEffect, string PolicyHint, bool Idempotent, string Async, string[] Scopes, string[] Secrets,
         string Classification, string CostTier, string ContractVersion, bool Audit, bool Expose, bool RequiresConfirmation);
     // 逐字段写明的期望值：create 写且幂等（audit 由写派生为 true）、get 显式 audit、list 只读不审计，三条其余取 [Capability] 的缺省；purge 每个字段都取非缺省值。
-    private static readonly AgentFieldRow[] AgentFieldTable =
+    private protected static readonly AgentFieldRow[] AgentFieldTable =
     [
         new(typeof(CreateCustomerCommand), "customer.create", "write", "allow", true, "none", ["crm.write"], [], "pii", "low", "crm-v1", true, true, false),
         new(typeof(GetCustomerQuery), "customer.get", "read", "allow", false, "none", ["crm.read"], [], "pii", "low", "crm-v1", true, true, false),
         new(typeof(ListCustomersQuery), "customer.list", "read", "allow", false, "none", ["crm.read"], [], "pii", "low", "crm-v1", false, true, false),
         new(typeof(PurgeCustomersCommand), "customer.purge", "destructive", "deny", true, "task", ["crm.admin"], ["crm-archive-key"], "internal", "high", "crm-admin-v1", true, false, true),
     ];
+}
 
+// S1-AGT-002 验收 1（IT），S1-AGT-006 补区分度（R112）：GET /api/capabilities 对同一插件（qian.sample.crm）返回的条目带全部 Agent 字段，取值与 [Capability] 声明一致
+// （缺省值也写进条目，不在读取时派生）；schemaSha256 与打包时的值一致。「打包时」取仓库提交的 samples/Qian.Sample.Crm/tools/<name>.json：它由 qian-plugin sync 生成，
+// CI 的清单门禁（scripts/check_plugin_manifests.py）对实际程序集重新计算并比对漂移，比对的两侧不是同一次计算。四条能力的每个 Agent 字段都至少有两种取值，
+// 其中 customer.purge 是为此而设的探针（policyHint 取 destructive 的非缺省值 deny），读取时按其它字段派生或写死任一字段，都会与声明或提交的工具文件不符。
+public sealed partial class CapabilityTests
+{
     [Fact]
     public async Task 能力目录对同一插件的条目带全部Agent字段_取值同Capability声明_与仓库提交的打包工具文件逐字段一致()
     {

@@ -15,7 +15,7 @@ namespace Qian.Sample.Crm.Tests;
 // S1-RT-038 验收 3：缺审计时租户级生命周期操作的 503 LIFECYCLE_AUDIT_UNAVAILABLE 经真实管理面宿主按 ErrorDetail 渲染（错误码目录里漏登记只会变成 500）。
 // 租户级操作没有自己的 HTTP 端点，仓库里经 HTTP 触发 ProvisionAsync 的只有管理面开户的第 03 步；开户先过平台超管旁路（旁路缺审计时自身 fail-closed），
 // 所以由第 02 步的宿主开户器（Kun ITenantProvisioner，CRM 宿主本来不登记）在旁路放行之后撤下审计，让第 03 步的开通以 503 拒绝（建议裁决 ③，2026-10-23 拍板为 A）。
-public sealed partial class CustomerCommandTests
+public sealed partial class TenantOperationsTests
 {
     [Fact]
     public async Task 管理面开户途中审计被撤下_第03步的开通以503拒绝并按ErrorDetail渲染_带错误码与操作名_重装审计后重发同一请求续跑完成()
@@ -78,9 +78,12 @@ public sealed partial class CustomerCommandTests
         }
         static (string, string?) Outcome(TenantProvisionStep step) => (step.Status, step.Reason);
     }
+}
 
+public abstract partial class CustomerCommandTests
+{
     // 第 02 步的宿主开户器（Kun ITenantProvisioner）：武装后第一次被调用时撤下 audit，之后无操作；用来在超管旁路放行之后、第 03 步之前拿掉审计。
-    private sealed class AuditWithdrawal : ITenantProvisioner
+    private protected sealed class AuditWithdrawal : ITenantProvisioner
     {
         private PluginLoader? _loader; private int _withdrawals;
         internal int Withdrawals => Volatile.Read(ref _withdrawals);

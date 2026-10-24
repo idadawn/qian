@@ -9,9 +9,13 @@ using Qian.Runtime.Errors;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private static readonly string[] ExecutableNames = ["qian.sample.crm/customer.create", "qian.sample.crm/customer.get", "qian.sample.crm/customer.list", "qian.sample.crm/customer.purge"];
+    private protected static readonly string[] ExecutableNames = ["qian.sample.crm/customer.create", "qian.sample.crm/customer.get", "qian.sample.crm/customer.list", "qian.sample.crm/customer.purge"];
+}
+
+public sealed partial class CapabilityTests
+{
     [Fact]
     public async Task 真实客户插件登记生成的执行绑定_隐藏与卸载后旧引用不能调用()
     {
