@@ -33,8 +33,8 @@ using Qian.Tenancy;
 using Qian.Testing;
 using Qian.Testing.Containers;
 
-// 下面八个主题类都起完整宿主，大半时间在等数据库、容器与超时，按处理器数（CI 上是 4）限并发会让后排的主题干等；
-// 放宽到 8，各主题同时开跑（S1-QA-017）。
+// 下面八个主题类都起完整宿主，CPU 有富余时大半时间在等数据库、容器与超时，按处理器数（CI 上是 4）限并发会让后排的主题干等；
+// 放宽到 8，各主题同时开跑（S1-QA-017）。CPU 已被同批模块占满时（CI 的分片 b）并行换不来多少时间，CPU 花在哪见 S1-QA-019。
 [assembly: Xunit.v3.Parallelization(MaxThreads = 8)]
 
 namespace Qian.Sample.Crm.Tests;
