@@ -1,0 +1,32 @@
+{
+  "name": "@qian/shell-kit",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Qian 外壳专有接线（S1-YUE-012）：运行时配置 /app-config.json、网关 BFF 会话、bootstrap 聚合、/api 前缀映射与防伪中间件、能力导航菜单，以及认证页族用的身份服务同源 AuthProvider。不发包。",
+  "exports": {
+    ".": "./src/index.ts",
+    "./identity": "./src/identity-provider.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@idadawn/qian-plugin-sdk": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^",
+    "@idadawn/yue-shell": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

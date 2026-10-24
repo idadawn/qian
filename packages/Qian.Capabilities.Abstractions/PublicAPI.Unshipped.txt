@@ -148,3 +148,52 @@ Qian.Capabilities.HttpResponseSchema.MediaType.get -> string!
 Qian.Capabilities.TenantInputContract
 static Qian.Capabilities.TenantInputContract.FindFields(System.Text.Json.JsonElement schema, System.Text.Json.JsonElement? document = null) -> System.Collections.Generic.IReadOnlyList<string![]!>!
 static Qian.Capabilities.TenantInputContract.IsTenantName(string! name) -> bool
+Qian.Capabilities.ShellCatalog
+Qian.Capabilities.ShellCatalog.<Clone>$() -> Qian.Capabilities.ShellCatalog!
+Qian.Capabilities.ShellCatalog.Deconstruct(out Qian.Capabilities.ShellTenant! Tenant, out System.Collections.Generic.IReadOnlyList<Qian.Capabilities.ShellRemote!>! Remotes) -> void
+Qian.Capabilities.ShellCatalog.Equals(Qian.Capabilities.ShellCatalog? other) -> bool
+Qian.Capabilities.ShellCatalog.Tenant.get -> Qian.Capabilities.ShellTenant!
+Qian.Capabilities.ShellCatalog.Tenant.init -> void
+Qian.Capabilities.ShellCatalog.Remotes.get -> System.Collections.Generic.IReadOnlyList<Qian.Capabilities.ShellRemote!>!
+Qian.Capabilities.ShellCatalog.Remotes.init -> void
+Qian.Capabilities.ShellCatalog.ShellCatalog(Qian.Capabilities.ShellTenant! Tenant, System.Collections.Generic.IReadOnlyList<Qian.Capabilities.ShellRemote!>! Remotes) -> void
+override Qian.Capabilities.ShellCatalog.Equals(object? obj) -> bool
+override Qian.Capabilities.ShellCatalog.GetHashCode() -> int
+override Qian.Capabilities.ShellCatalog.ToString() -> string!
+static Qian.Capabilities.ShellCatalog.operator !=(Qian.Capabilities.ShellCatalog? left, Qian.Capabilities.ShellCatalog? right) -> bool
+static Qian.Capabilities.ShellCatalog.operator ==(Qian.Capabilities.ShellCatalog? left, Qian.Capabilities.ShellCatalog? right) -> bool
+Qian.Capabilities.ShellCatalog.CacheScope.get -> string!
+Qian.Capabilities.ShellTenant
+Qian.Capabilities.ShellTenant.<Clone>$() -> Qian.Capabilities.ShellTenant!
+Qian.Capabilities.ShellTenant.Deconstruct(out string! Id, out string! Name) -> void
+Qian.Capabilities.ShellTenant.Equals(Qian.Capabilities.ShellTenant? other) -> bool
+Qian.Capabilities.ShellTenant.Id.get -> string!
+Qian.Capabilities.ShellTenant.Id.init -> void
+Qian.Capabilities.ShellTenant.Name.get -> string!
+Qian.Capabilities.ShellTenant.Name.init -> void
+Qian.Capabilities.ShellTenant.ShellTenant(string! Id, string! Name) -> void
+override Qian.Capabilities.ShellTenant.Equals(object? obj) -> bool
+override Qian.Capabilities.ShellTenant.GetHashCode() -> int
+override Qian.Capabilities.ShellTenant.ToString() -> string!
+static Qian.Capabilities.ShellTenant.operator !=(Qian.Capabilities.ShellTenant? left, Qian.Capabilities.ShellTenant? right) -> bool
+static Qian.Capabilities.ShellTenant.operator ==(Qian.Capabilities.ShellTenant? left, Qian.Capabilities.ShellTenant? right) -> bool
+Qian.Capabilities.ShellRemote
+Qian.Capabilities.ShellRemote.<Clone>$() -> Qian.Capabilities.ShellRemote!
+Qian.Capabilities.ShellRemote.Deconstruct(out string! Id, out string! Version, out string! Scope, out System.Text.Json.JsonElement Manifest) -> void
+Qian.Capabilities.ShellRemote.Equals(Qian.Capabilities.ShellRemote? other) -> bool
+Qian.Capabilities.ShellRemote.Id.get -> string!
+Qian.Capabilities.ShellRemote.Id.init -> void
+Qian.Capabilities.ShellRemote.Version.get -> string!
+Qian.Capabilities.ShellRemote.Version.init -> void
+Qian.Capabilities.ShellRemote.Scope.get -> string!
+Qian.Capabilities.ShellRemote.Scope.init -> void
+Qian.Capabilities.ShellRemote.Manifest.get -> System.Text.Json.JsonElement
+Qian.Capabilities.ShellRemote.Manifest.init -> void
+Qian.Capabilities.ShellRemote.ShellRemote(string! Id, string! Version, string! Scope, System.Text.Json.JsonElement Manifest) -> void
+override Qian.Capabilities.ShellRemote.Equals(object? obj) -> bool
+override Qian.Capabilities.ShellRemote.GetHashCode() -> int
+override Qian.Capabilities.ShellRemote.ToString() -> string!
+static Qian.Capabilities.ShellRemote.operator !=(Qian.Capabilities.ShellRemote? left, Qian.Capabilities.ShellRemote? right) -> bool
+static Qian.Capabilities.ShellRemote.operator ==(Qian.Capabilities.ShellRemote? left, Qian.Capabilities.ShellRemote? right) -> bool
+Qian.Capabilities.INavigationService.GetShellAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ShellCatalog!>
+static readonly Qian.Capabilities.CapabilitiesDefinition.ShellRemotesKey -> Qian.Runtime.ServiceKey

@@ -1,12 +1,15 @@
+using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Kun.Core.MultiTenancy;
+using Kun.Gateway;
 using Kun.Identity.Abstractions.Session;
 using Kun.MultiTenancy;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Qian.Config;
 using Qian.Config.Apollo;
@@ -16,6 +19,7 @@ using Qian.Gateway;
 using Qian.Identity.Abstractions;
 using Qian.Identity.Client;
 using Qian.Runtime;
+using Qian.Sample.Crm;
 using Yarp.ReverseProxy.Transforms;
 using Yarp.ReverseProxy.Transforms.Builder;
 
@@ -29,19 +33,21 @@ internal sealed class DevGatewayHost(WebApplication app, PluginLoader loader) : 
 }
 
 // 网关 BFF 宿主，照安全验收夹具 tests/Shared/GatewayTestHost：同一份 Gateway / Identity.Client / Config 生产入口。
-// 浏览器只持有 qian.sid（HttpOnly、Secure）；/api 经会话换 60 秒 S2S 转发到业务宿主，令牌只在服务端。
-// 额外只有四件开发期的事：静态托管外壳构建产物与 /app-conf.js（K8s ConfigMap 的本机替身）、/api-alt 第二个 API 前缀（验收 4 改 apiBase 后仍可用）、
-// /__dev/session/* 把当前会话的访问令牌改成已到期（验收 1 的刷新与过期对话框）、/__dev/identity/bump 递增当前成员的身份修订（验收 1 的会话刷新后重拉）。
+// 浏览器只持有 qian.sid（HttpOnly、Secure）；/api 经会话换 60 秒 S2S 转发到业务宿主，令牌只在服务端。外壳静态托管（入口、带哈希资源、/app-config.json、
+// 参考应用的远程制品）与 bootstrap 聚合端点都是产品扩展（S1-YUE-012），与生产网关同一份代码。
+// 额外只有三件开发期的事：/api-alt 第二个 API 前缀（验收 4 改 apiBase 后仍可用）、/__dev/session/* 把当前会话的访问令牌改成已到期（验收 1 的刷新与过期对话框）、
+// /__dev/identity/* 递增身份修订或只抬平台表面的修订下限（验收 1 的会话刷新后重拉与「刷新成功但平台表面持续 401」）。
 internal static class DevGateway
 {
     internal const string Issuer = "https://gateway.qian.local/s2s";
     internal const string Resource = "https://api.qian.local";
     internal const string Cluster = "qian.sample.crm";
     private const string SecretReference = "secretRef://platform/identity/client-secret";
-    private const string DefaultConf = """window.__APP_CONF__ = { "apiBase": "/api", "authBase": "/auth", "brand": "Qian 乾" };""" + "\n";
+    /// <summary>运行时配置的缺省内容（K8s ConfigMap 的本机替身）：四个地址取外壳缺省值，只给品牌。</summary>
+    internal const string DefaultAppConfig = """{ "brand": "Qian 乾" }""" + "\n";
 
-    internal static async Task<DevGatewayHost> StartAsync(Uri address, DevGatewayKeys keys, Uri identityIssuer, string businessAddress, string platformAddress, string shellDist, string state,
-        DevRevisionFloor floor, Func<Principal, CancellationToken, Task<long>> bump, CancellationToken ct)
+    internal static async Task<DevGatewayHost> StartAsync(Uri address, DevGatewayKeys keys, Uri identityIssuer, string businessAddress, string platformAddress, ShellStaticOptions shell,
+        Func<Principal, CancellationToken, Task<long>> bump, CancellationToken ct)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
         builder.WebHost.ConfigureKestrel(kestrel =>
@@ -64,40 +70,31 @@ internal static class DevGateway
         builder.Services.AddQianIdentityClient(new IdentityClientOptions
         {
             Authority = identityIssuer, ClientId = DevIdentity.ClientId, Resource = Resource, RedirectUri = new Uri(address, "auth/callback"),
-            Scopes = ["openid", "offline_access", "qian.api"], RequireHttpsMetadata = false, UseInMemorySessionStore = true, DefaultReturnPath = "/"
+            Scopes = ["openid", "offline_access", "qian.api", .. DevIdentity.ApplicationScopes], RequireHttpsMetadata = false, UseInMemorySessionStore = true, DefaultReturnPath = "/"
         });
-        // 受众分簇：面向用户的平台表面（能力目录 / 导航、有效权限）走平台宿主，其余 /api 走参考应用的命令宿主；/api-alt 是同一组路由的第二个前缀。
+        // 受众分簇：面向用户的平台表面（能力目录 / 导航 / 外壳目录、有效权限）走平台表面宿主，其余 /api 走参考应用的命令宿主；/api-alt 是同一组路由的第二个前缀。
         var configuration = new GatewayConfiguration(identityIssuer.AbsoluteUri, Resource, Issuer, keys.SigningKeyPath, keys.PublicKeyPath, [],
-            [.. Routes("api"), .. Routes("api-alt")], [new(Cluster, businessAddress), new(DevPlatformApi.Audience, platformAddress)]);
+            [.. Routes("api"), .. Routes("api-alt")], [new(Cluster, businessAddress), new(PlatformSurfaceHost.Audience, platformAddress)]);
         builder.Services.AddQianGateway(configuration, IdentityClientDefaults.SessionScheme);
         builder.Services.AddSingleton<ITransformProvider, AlternatePrefixTransform>();
         var app = builder.Build();
-        var shell = new StaticFileOptions
-        {
-            FileProvider = new PhysicalFileProvider(shellDist),
-            OnPrepareResponse = context => Headers(context.Context.Response, context.File.Name.EndsWith(".html", StringComparison.OrdinalIgnoreCase) ? "no-store" : "public, max-age=31536000, immutable")
-        };
-        app.UseForwardedHeaders(); app.UseStaticFiles(shell); app.UseRouting(); app.UseQianIdentityClient(); app.UseQianGateway();
+        app.UseForwardedHeaders(); app.UseQianShell(shell); app.UseRouting(); app.UseQianIdentityClient(); app.UseQianGateway();
         app.MapQianIdentityClient(); app.MapQianGateway();
-        // 运行时配置：K8s 里是 ConfigMap 挂成同源的 /app-conf.js；这里取状态目录里的文件，不缓存，改完刷新即生效。首次启动写缺省值，之后不覆盖。
-        var conf = Path.Combine(state, "app-conf.js");
-        if (!File.Exists(conf)) await File.WriteAllTextAsync(conf, DefaultConf, ct).ConfigureAwait(false);
-        app.MapGet("/app-conf.js", async http =>
-        {
-            Headers(http.Response, "no-store"); http.Response.ContentType = "text/javascript; charset=utf-8";
-            await http.Response.SendFileAsync(conf, http.RequestAborted).ConfigureAwait(false);
-        }).AllowAnonymous();
+        // bootstrap 聚合端点：规范路径 /api/shell/bootstrap，外壳把它随 apiBase 映射，所以 /api-alt 前缀下也挂一份（下游仍按网关路由表的 /api 路径选簇）。
+        app.MapQianShellBootstrap(); app.MapQianShellBootstrap("/api-alt/shell/bootstrap");
         // 开发路由（不是产品契约）：只对已认证的本会话生效，且仍要带防伪令牌。expire 让服务端访问令牌立刻到期（下次请求透明刷新，页面无感）；
         // break 同时毁掉 refresh token（刷新必败 → 会话结束 → 并发 401 被 SDK 合并成一次刷新尝试，会话已不在、取防伪令牌即 401 不再 POST → 过期对话框）；
-        // identity/bump 经真实身份端口递增当前成员的 identity_revision（授权变更后身份侧就是这样做的，S1-DEC-027）并抬高平台表面宿主的修订下限：
-        // 下一批请求带着旧修订 401 → SDK 合并成一次 POST /auth/session/refresh → 依赖方换到带新修订的令牌 → 重放 200 → 外壳重拉菜单、权限与会话快照。
-        // identity/stale 只抬平台表面的修订下限（当前令牌修订 + 1）、不递增身份修订：依赖方刷新仍成功，换到的令牌修订不变，平台表面持续 401 →
+        // identity/bump 经真实身份端口递增当前成员的 identity_revision，再把平台表面的修订下限抬到新修订（同进程宿主里授权变更后 IdentityRevisionPropagation 就是这样做的，S1-DEC-027）：
+        // 下一批请求带着旧修订 401 → SDK 合并成一次 POST /auth/session/refresh → 依赖方换到带新修订的令牌 → 重放 200 → 外壳重拉 bootstrap。
+        // identity/stale 只把下限抬到当前令牌修订 + 1、不递增身份修订：依赖方刷新仍成功，换到的令牌修订不变，平台表面持续 401 →
         // SDK 只刷新一次、重放仍 401 → 只弹一个过期对话框，外壳不再发起新一轮（会话结束对外壳是粘性的）。
+        // 抬下限走平台表面宿主的真实 PEP：网关用自己的 S2S 签发器为当前主体签一枚修订改过的令牌，调一次 GET /api/authz/me/permissions，
+        // PEP 的 IdentityRevisionGuard 见到已验证的更高修订即把下限抬上去（懒抬高，与生产同一代码路径；没有开发期的下限表）。
         app.MapPost("/__dev/session/expire", http => MutateSession(http, breakRefresh: false)).RequireAuthorization();
         app.MapPost("/__dev/session/break", http => MutateSession(http, breakRefresh: true)).RequireAuthorization();
-        app.MapPost("/__dev/identity/bump", http => BumpRevision(http, floor, bump)).RequireAuthorization();
-        app.MapPost("/__dev/identity/stale", http => StaleRevision(http, floor)).RequireAuthorization();
-        app.MapFallbackToFile("index.html", shell).AllowAnonymous();
+        app.MapPost("/__dev/identity/bump", http => BumpRevision(http, platformAddress, bump)).RequireAuthorization();
+        app.MapPost("/__dev/identity/stale", http => StaleRevision(http, platformAddress)).RequireAuthorization();
+        app.MapQianShell(shell);
         var loader = new PluginLoader(app.Services);
         try
         {
@@ -116,8 +113,8 @@ internal static class DevGateway
 
     private static GatewayRoute[] Routes(string prefix) =>
     [
-        new(prefix + "-capabilities", "/" + prefix + "/capabilities/{**rest}", DevPlatformApi.Audience),
-        new(prefix + "-authz", "/" + prefix + "/authz/{**rest}", DevPlatformApi.Audience),
+        new(prefix + "-capabilities", "/" + prefix + "/capabilities/{**rest}", PlatformSurfaceHost.Audience),
+        new(prefix + "-authz", "/" + prefix + "/authz/{**rest}", PlatformSurfaceHost.Audience),
         new(prefix, "/" + prefix + "/{**rest}", Cluster)
     ];
 
@@ -133,30 +130,45 @@ internal static class DevGateway
     }
 
     // 只对租户成员身份有意义（平台身份没有成员修订，409）；返回新修订便于核对。
-    private static async Task BumpRevision(HttpContext http, DevRevisionFloor floor, Func<Principal, CancellationToken, Task<long>> bump)
+    private static async Task BumpRevision(HttpContext http, string platformAddress, Func<Principal, CancellationToken, Task<long>> bump)
     {
-        if (http.RequestServices.GetRequiredService<ICurrentUser>().Principal is not { Kind: PrincipalKind.User, TenantId: { } tenant } principal || !Guid.TryParseExact(principal.Subject, "D", out _))
+        if (http.RequestServices.GetRequiredService<ICurrentUser>().Principal is not { Kind: PrincipalKind.User, TenantId: not null } principal || !Guid.TryParseExact(principal.Subject, "D", out _))
         { http.Response.StatusCode = StatusCodes.Status409Conflict; return; }
         var revision = await bump(principal, http.RequestAborted).ConfigureAwait(false);
-        floor.Raise(tenant, principal.Subject, revision);
+        if (!await RaiseFloor(http, platformAddress, revision).ConfigureAwait(false)) { http.Response.StatusCode = StatusCodes.Status502BadGateway; return; }
         http.Response.Headers.CacheControl = "no-store";
         await http.Response.WriteAsJsonAsync(new { identityRevision = revision }, http.RequestAborted).ConfigureAwait(false);
     }
 
     // 同样只对租户成员身份有意义（409 同上）；返回当前修订与抬高后的下限便于核对。
-    private static async Task StaleRevision(HttpContext http, DevRevisionFloor floor)
+    private static async Task StaleRevision(HttpContext http, string platformAddress)
     {
-        if (http.RequestServices.GetRequiredService<ICurrentUser>().Principal is not { Kind: PrincipalKind.User, TenantId: { } tenant, IdentityRevision: { } revision } principal || !Guid.TryParseExact(principal.Subject, "D", out _))
+        if (http.RequestServices.GetRequiredService<ICurrentUser>().Principal is not { Kind: PrincipalKind.User, TenantId: not null, IdentityRevision: { } revision } principal || !Guid.TryParseExact(principal.Subject, "D", out _))
         { http.Response.StatusCode = StatusCodes.Status409Conflict; return; }
-        floor.Raise(tenant, principal.Subject, revision + 1);
+        if (!await RaiseFloor(http, platformAddress, revision + 1).ConfigureAwait(false)) { http.Response.StatusCode = StatusCodes.Status502BadGateway; return; }
         http.Response.Headers.CacheControl = "no-store";
         await http.Response.WriteAsJsonAsync(new { identityRevision = revision, floor = revision + 1 }, http.RequestAborted).ConfigureAwait(false);
     }
 
-    private static void Headers(HttpResponse response, string cacheControl)
+    // 当前会话主体的副本只换 identity_revision（同一 claim 类型与值类型），由网关的 S2S 签发器按平台表面受众签发；PEP 放行即下限已 ≥ revision。
+    // 签发器只给「当前已认证请求的主体」签（GatewayPrincipalResolver 按引用比对 http.User），所以签发期间把本请求的 User 换成副本、签完即还原：
+    // 仍是同一会话、同一主体与租户，只在这条已认证 + 防伪的开发路由里发生。
+    private static async Task<bool> RaiseFloor(HttpContext http, string platformAddress, long revision)
     {
-        response.Headers.CacheControl = cacheControl; response.Headers.XContentTypeOptions = "nosniff";
-        response.Headers["Referrer-Policy"] = "no-referrer"; response.Headers.ContentSecurityPolicy = "frame-ancestors 'none'";
+        var principal = http.User.Clone();
+        var identity = principal.Identities.FirstOrDefault(item => item.HasClaim(claim => claim.Type == IdentityClaimNames.IdentityRevision));
+        if (identity is null) return false;
+        foreach (var claim in identity.FindAll(IdentityClaimNames.IdentityRevision).ToArray()) identity.RemoveClaim(claim);
+        identity.AddClaim(new Claim(IdentityClaimNames.IdentityRevision, revision.ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64));
+        var original = http.User; string token;
+        http.User = principal;
+        try { token = await http.RequestServices.GetRequiredService<S2sTokenIssuer>().IssueForAudienceAsync(principal, PlatformSurfaceHost.Audience, http.RequestAborted).ConfigureAwait(false); }
+        finally { http.User = original; }
+        using var client = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false, UseProxy = false, UseCookies = false });
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(new Uri(platformAddress), "/api/authz/me/permissions"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var response = await client.SendAsync(request, http.RequestAborted).ConfigureAwait(false);
+        return response.IsSuccessStatusCode;
     }
 
     private static PluginDefinition Definition(string id, string plugin, IQianPlugin implementation, JsonElement config, params ServiceKey[] provides) =>

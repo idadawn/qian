@@ -148,3 +148,6 @@ Qian.Identity.Server.IdentityServerComponent
 Qian.Identity.Server.IdentityServerComponent.IdentityServerComponent() -> void
 Qian.Identity.Server.IdentityServerComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
 Qian.Identity.Server.IdentityServerComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Identity.Server.IdentityPagesHosting
+const Qian.Identity.Server.IdentityPagesHosting.PagesPath = "/login" -> string!
+static Qian.Identity.Server.IdentityPagesHosting.UseQianIdentityPages(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app, string! root) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!

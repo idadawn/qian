@@ -14,7 +14,8 @@
     "@idadawn/yue-core": "workspace:^",
     "@idadawn/yue-sdk": "workspace:^",
     "@idadawn/yue-shell": "workspace:^",
-    "@idadawn/yue-tokens": "workspace:^"
+    "@idadawn/yue-tokens": "workspace:^",
+    "@qian/shell-kit": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",

@@ -1,1 +1,1 @@
-{"extends":"../../packages/yue/tsconfig.base.json","include":["src","*.ts","e2e"]}
+{"extends":"../../packages/yue/tsconfig.base.json","include":["src","*.ts","e2e","e2e-auth"]}

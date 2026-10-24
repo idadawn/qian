@@ -43,6 +43,7 @@ public sealed partial class CustomerCommandTests
 {
     private const string IdentityPassword = "Correct-Horse-9";
     private const string IdentityResource = "https://api.qian.test";
+    private const string GatewayClientId = "qian-web";
 
     /// <summary>身份侧的测试句柄：发行方、客户端密钥、签名证书，以及挂载后可用的账号端口。</summary>
     private sealed class IdentityParts : IDisposable
@@ -76,7 +77,8 @@ public sealed partial class CustomerCommandTests
         return new IdentityParts($"http://127.0.0.1:{port}/", Convert.ToHexString(RandomNumberGenerator.GetBytes(32)), certificate, key);
     }
 
-    private void ConfigureIdentity(WebApplicationBuilder builder, IdentityParts parts)
+    // relyingParty 给出时另登记一个机密客户端 qian-web（回调即该地址，与 web 同一密钥），供网关 BFF 走完整的授权码登录（外壳 bootstrap 验收）。
+    private void ConfigureIdentity(WebApplicationBuilder builder, IdentityParts parts, Uri? relyingParty = null)
     {
         builder.Services.AddQianData<IdentityDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(IdentityDbContext.Schema));
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
@@ -93,8 +95,15 @@ public sealed partial class CustomerCommandTests
             Issuer = new Uri(parts.Issuer), AllowLoopbackHttp = true, SigningCertificates = [parts.Certificate], EncryptionCertificates = [parts.Certificate],
             // 租户状态对账缩到 1 秒，联调测试不必等满默认的 30 秒（生产的上限就是 30 秒）。
             Accounts = new IdentityAccountOptions { Session = new SessionPolicy { ReconcileInterval = TimeSpan.FromSeconds(1) } },
-            Clients = [new() { Application = web, Resources = [IdentityResource] }]
+            Clients = [new() { Application = web, Resources = [IdentityResource] }, .. relyingParty is null ? [] : new[] { new IdentityClientRegistration { Application = Gateway(relyingParty), Resources = [IdentityResource] } }]
         }, new DevelopmentEnvironment());
+
+        OpenIddictApplicationDescriptor Gateway(Uri callback)
+        {
+            var descriptor = new OpenIddictApplicationDescriptor { ClientId = GatewayClientId, ClientSecret = parts.Secret, ClientType = ClientTypes.Confidential, ConsentType = ConsentTypes.Implicit };
+            descriptor.RedirectUris.Add(callback); descriptor.Permissions.UnionWith(web.Permissions);
+            return descriptor;
+        }
     }
 
     // 身份库的建表脚本（与生产同一套迁移）与应用角色授权。

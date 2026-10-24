@@ -44,6 +44,42 @@ public sealed partial class CustomerCommandTests
     }
 
     [Fact]
+    public async Task 外壳目录只列本租户实际挂载且带UI清单的组件_restrict与卸载后不出现_未挂载的远程地址不交出()
+    {
+        await using var host = await Start(capabilities: true);
+        using var anonymous = await host.Client.GetAsync("/api/capabilities/shell", Ct);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        var shell = await Shell(host, A);
+        Assert.Equal(A, shell.GetProperty("tenant").GetProperty("id").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(shell.GetProperty("tenant").GetProperty("name").GetString()));
+        var remote = Assert.Single(shell.GetProperty("remotes").EnumerateArray());
+        Assert.Equal("qian.sample.crm", remote.GetProperty("id").GetString());
+        Assert.Equal("1.0.0", remote.GetProperty("version").GetString());
+        Assert.Equal("global", remote.GetProperty("scope").GetString());
+        // 清单是制品快照里 ui/manifest.json 的原文：远程清单地址、两页的路由与权限与菜单同源。
+        var manifest = remote.GetProperty("manifest");
+        Assert.Equal("/remotes/qian.sample.crm/mf-manifest.json", manifest.GetProperty("federation").GetProperty("manifest").GetString());
+        Assert.Equal(["/customers", "/customers/new"], manifest.GetProperty("pages").EnumerateArray().Select(page => page.GetProperty("route").GetString()!).ToArray());
+        Assert.Equal(A, (await Shell(host, A)).GetProperty("tenant").GetProperty("id").GetString());
+        Assert.Equal(B, (await Shell(host, B)).GetProperty("tenant").GetProperty("id").GetString());
+        var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        using (runtime.GetContext("data", ScopeKey.Global).Restrict(new ScopeKey("tenant", A), registration => registration.Key != CapabilitiesDefinition.ShellRemotesKey))
+        {
+            Assert.Empty((await Shell(host, A)).GetProperty("remotes").EnumerateArray());
+            Assert.Single((await Shell(host, B)).GetProperty("remotes").EnumerateArray());
+        }
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        foreach (var tenant in new[] { A, B })
+        {
+            using var response = await CatalogRequest(host, tenant, "/api/capabilities/shell");
+            var text = await response.Content.ReadAsStringAsync(Ct);
+            Assert.True(response.StatusCode == HttpStatusCode.OK, host.FailureEvidence + text);
+            Assert.Empty(JsonDocument.Parse(text).RootElement.GetProperty("remotes").EnumerateArray());
+            Assert.DoesNotContain("mf-manifest.json", text, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public async Task 真库租户组件修订遮蔽全局菜单_另一租户不变_禁用后不回退()
     {
         await using var host = await Start(capabilities: true);
@@ -53,9 +89,17 @@ public sealed partial class CustomerCommandTests
             await repository.PutAsync(new ScopeKey("tenant", A), "crm", JsonSerializer.SerializeToElement(new { id = "crm", plugin = "qian.sample.crm@1.0.1", config = new { } }), 0, "acceptance", Ct);
         Assert.Equal("租户专属客户", Assert.Single(await Menus(host, A), item => item.Route == "/customers").Title);
         Assert.Equal("客户", Assert.Single(await Menus(host, B)).Title);
+        // 外壳目录同一视图：A 换成租户 scope 的 1.0.1 条目（清单随之换成租户专属），B 仍是全局的 1.0.0。
+        var scoped = Assert.Single((await Shell(host, A)).GetProperty("remotes").EnumerateArray());
+        Assert.Equal(("1.0.1", "tenant:" + A, "租户专属客户"), (scoped.GetProperty("version").GetString(), scoped.GetProperty("scope").GetString(),
+            scoped.GetProperty("manifest").GetProperty("pages")[0].GetProperty("nav").GetProperty("title").GetString()));
+        var global = Assert.Single((await Shell(host, B)).GetProperty("remotes").EnumerateArray());
+        Assert.Equal(("1.0.0", "global"), (global.GetProperty("version").GetString(), global.GetProperty("scope").GetString()));
         using (tenant.BeginScope(A))
             await repository.PutAsync(new ScopeKey("tenant", A), "crm", JsonSerializer.SerializeToElement(new { id = "crm", disabled = true }), 1, "acceptance", Ct);
         Assert.Empty(await Menus(host, A)); Assert.Single(await Menus(host, B));
+        Assert.Empty((await Shell(host, A)).GetProperty("remotes").EnumerateArray());
+        Assert.Single((await Shell(host, B)).GetProperty("remotes").EnumerateArray());
     }
 
     [Fact]
@@ -127,6 +171,15 @@ public sealed partial class CustomerCommandTests
         var value = await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
         Assert.Equal("private", value.GetProperty("cacheScope").GetString());
         return value.GetProperty("items").Deserialize<NavigationItem[]>(JsonSerializerOptions.Web)!;
+    }
+    private static async Task<JsonElement> Shell(RunningApp host, string tenant)
+    {
+        using var response = await CatalogRequest(host, tenant, "/api/capabilities/shell");
+        Assert.True(response.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await response.Content.ReadAsStringAsync(Ct));
+        Assert.True(response.Headers.CacheControl is { NoStore: true, Private: true });
+        var value = await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
+        Assert.Equal("private", value.GetProperty("cacheScope").GetString());
+        return value;
     }
     private static Task<HttpResponseMessage> MenuItem(RunningApp host, string tenant, string resource)
         => CatalogRequest(host, tenant, "/api/capabilities/navigation/item?resourceRef=" + Uri.EscapeDataString(resource));

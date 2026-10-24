@@ -1,10 +1,10 @@
 # 认证页族（qian.identity 同源）
 
-qian-identity 宿主同源托管的静态制品：登录（账号密码、连接器按钮）、多租户二次选择、强制改密、连接器落点，以及外壳切换租户用的选择页（S1-YUE-002；界面控件来自 [`@idadawn/yue-shell`](../yue/shell/README.md) 的认证页族）。凭据只与发行方同源：页面直接调同源 `/api/identity/*`（防伪令牌 cookie-to-header，账号 Cookie 由服务端写入、HttpOnly），不持有任何令牌，也没有环境值进入构建产物。
+qian-identity 宿主同源托管的静态制品：登录（账号密码、连接器按钮）、多租户二次选择、强制改密、连接器落点，以及外壳切换租户用的选择页（S1-YUE-002；界面控件来自 [`@idadawn/yue-shell`](../yue/shell/README.md) 的认证页族，身份服务同源 AuthProvider 来自私有包 [`@qian/shell-kit`](../qian-shell-kit/README.md) 的 `@qian/shell-kit/identity`）。凭据只与发行方同源：页面直接调同源 `/api/identity/*`（防伪令牌 cookie-to-header，账号 Cookie 由服务端写入、HttpOnly），不持有任何令牌，也没有环境值进入构建产物。
 
 ## 路由与入口
 
-构建以 `/login/` 为基路径，宿主把 `dist/` 静态托管在 `/login` 下并对无扩展名的子路径回落到 `index.html`：
+构建以 `/login/` 为基路径。身份宿主调用产品扩展 `UseQianIdentityPages(dist)`（[Qian.Identity.Server](../Qian.Identity.Server/README.md)，S1-YUE-012）把 `dist/` 托管在 `/login` 下：无扩展名的子路径回落到 `index.html`，HTML `no-store`，`/login/assets/` 带哈希长缓存，全部响应带 `frame-ancestors 'none'`、`Referrer-Policy: no-referrer` 与 `nosniff`；`Accounts.SelectionPath` 不在 `/login` 下时启动即抛错。生产镜像的接线与实测响应头归 S1-DEP-008。
 
 | 路径 | 用途 |
 |---|---|
@@ -18,7 +18,7 @@ qian-identity 宿主同源托管的静态制品：登录（账号密码、连接
 
 ## 验证
 
-入口边界与完整登录 / 选择 / 切换 / SSO（真实上游 Dex）流程在 [apps/qian-shell-auth](../../apps/qian-shell-auth/README.md) 的真实流程验收里覆盖（`pnpm yue:auth`）；本包的组件测试（`src/*.browser.test.tsx`，Vitest browser mode，项目 `identity-ui-browser`，随根 `pnpm yue:test` 运行）用替身 provider 覆盖连接器落点的等待 / 确认绑定 / 放弃 / 错误态与登录页连接器区的租户代码（含全局目录为空、租户过滤为空）；顶层跳转只经 `src/navigation.ts` 的出口。控件级用例在 `packages/yue/shell`。lint、typecheck、分层、循环依赖与构建接入 yue 门禁。
+入口边界与完整登录 / 选择 / 切换 / SSO（真实上游 Dex）流程在 [apps/qian-shell](../../apps/qian-shell/README.md) 的真实流程验收里覆盖（`pnpm yue:auth`）；本包的组件测试（`src/*.browser.test.tsx`，Vitest browser mode，项目 `identity-ui-browser`，随根 `pnpm yue:test` 运行）用替身 provider 覆盖连接器落点的等待 / 确认绑定 / 放弃 / 错误态与登录页连接器区的租户代码（含全局目录为空、租户过滤为空）；顶层跳转只经 `src/navigation.ts` 的出口。控件级用例在 `packages/yue/shell`。lint、typecheck、分层、循环依赖与构建接入 yue 门禁。
 
 ## 已知限制
 

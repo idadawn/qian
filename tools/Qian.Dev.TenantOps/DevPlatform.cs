@@ -106,7 +106,7 @@ internal sealed class DevPlatform(string repository) : IDisposable
     }
 
     // 参考应用的组件文件夹，照集成测试 LifecycleAcceptanceTests 的 AttachLifecycle：清单声明 module 形态（tier system、required），
-    // 契约索引两份 OpenAPI，ui/manifest.json 声明「客户」「新建客户」两页（权限分别为 customer:read / customer:write，供导航按权限过滤）。
+    // 契约索引两份 OpenAPI，ui/manifest.json 声明「客户」「新建客户」两页（权限分别为 customer:read / customer:write，供导航按权限过滤）与 bridge。
     private async Task<PluginDefinition> ReferenceApplication(SurfaceValidator validator, List<RegistryComponentBinding> installed, DevTrustRoot trust, IServiceProvider? services, CancellationToken ct)
     {
         var crm = new CrmPlugin();
@@ -126,8 +126,9 @@ internal sealed class DevPlatform(string repository) : IDisposable
             Write("plugins/crm/contracts/rest-v1.openapi.json", (await source.CompileDocumentAsync("qian.sample.crm", ct).ConfigureAwait(false)).GetRawText());
         }
         Write("plugins/crm/metadata/contracts.json", JsonSerializer.Serialize(contracts));
-        // UI v2 契约（schemas/v2/ui.schema.json，S1-YUE-001）：$schema / federation / engines 必填；远程清单地址只是声明，本环境不部署参考应用的远程模块。
-        Write("plugins/crm/ui/manifest.json", """{"$schema":"https://qian.dev/schemas/ui/v2","federation":{"manifest":"/remotes/qian.sample.crm/mf-manifest.json","exposes":["CustomersPage","CreateCustomerPage"]},"engines":{"yue":"^0.1.0"},"pages":[{"route":"/customers","expose":"CustomersPage","permission":"qian.sample.crm:customer:read","nav":{"title":"客户","icon":"users","order":10}},{"route":"/customers/new","expose":"CreateCustomerPage","permission":"qian.sample.crm:customer:write","nav":{"title":"新建客户","order":20}}]}""");
+        // UI v2 契约（schemas/v2/ui.schema.json）：与参考应用的远程模块同源维护（samples/qian-sample-crm-ui/ui/manifest.json，S1-YUE-012）——
+        // 远程清单地址、两页的路由与权限、bridge 声明（导航与 customer.list / customer.create 两个能力）都以它为准；外壳联调环境同时托管它的 MF 制品。
+        Write("plugins/crm/ui/manifest.json", File.ReadAllText(Path.Combine(repository, "samples", "qian-sample-crm-ui", "ui", "manifest.json")));
         var folder = Path.Combine(_directory.FullName, "plugins", "crm");
         var surface = new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true };
         var validation = validator.ValidateComponent(folder, surface);

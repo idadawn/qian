@@ -9,7 +9,7 @@
 
 | 镜像 | 既定形态 | 当前缺口 | 负责的前置任务 |
 |---|---|---|---|
-| qian-platform | JIT，包含 shell 与 model-gateway 组合包 | 现有 profile 是静态装配基线；RP、外壳静态制品和完整业务装配尚未交付 | S1-IDP-005、S1-YUE-001 及 profile 的业务组件任务 |
+| qian-platform | JIT，包含 shell 与 model-gateway 组合包 | 现有 profile 是静态装配基线；RP、用户主体的平台表面宿主与完整业务装配尚未交付（外壳静态制品已由 S1-YUE-012 交付） | S1-IDP-005、S1-DEP-009 及 profile 的业务组件任务 |
 | qian-identity | JIT | Qian.Identity.Server 与可启动的唯一 issuer 宿主尚未交付 | S1-IDP-002 |
 | qian-gateway | NativeAOT、distroless | `hosts/Qian.Gateway.Host` 已完成严格 Linux 原生发布与真实依赖运行；仍需接入产品镜像、供应链及只读非 root 验收 | S1-DEP-008；宿主证据见 S1-GW-001 |
 
@@ -21,7 +21,7 @@
 2. 多阶段构建；platform/identity 使用 JIT，gateway 使用 Linux NativeAOT 与 distroless 运行镜像。S1-GW-001 已在实际生产宿主上完成完整依赖原生运行并恢复默认 AOT；S1-DEP-008 仍须在最终产品镜像上复验。以非 root UID 启动，以只读根文件系统运行，只为明确需要写入的目录提供临时卷。
 3. profile、组合包、组件清单与对应 patch 随镜像发布；环境 overlay 以 ConfigMap 挂载。分别在源码树与镜像内执行同一 dump-config 合成，比较解析后的结构与来源层，阻止配置漂移。
 4. 镜像构建成功后按不可变 digest 生成 Syft SBOM，执行漏洞扫描，生成 Cosign 签名和 SBOM 关联证明。验签必须约束 CI 发布者身份/issuer，不能只确认某处存在一个签名文件。
-5. 每个镜像保留 digest、构建 SHA、SBOM、扫描报告、签名验证结果、非 root/只读运行证据和配置比对结果。shell 的实际静态制品必须存在于 platform 镜像，并在真实 gateway 路由下可读取。
+5. 每个镜像保留 digest、构建 SHA、SBOM、扫描报告、签名验证结果、非 root/只读运行证据和配置比对结果。shell 组合包的外壳与已部署组件的远程制品交给网关 Pod，由网关进程匿名静态托管（Qian.Gateway 的 `UseQianShell` / `MapQianShell`，运行时配置由 ConfigMap 挂成 `/app-config.json`）；认证页族随 qian-identity 镜像，由 `UseQianIdentityPages` 托管。两者都要在真实镜像上实测缓存与安全响应头（S1-YUE-012 裁决 ⑤）。
 6. S1-DEP-005 继续负责发布、迁移先行、Argo 收敛和真实平台 PG/Redis/RabbitMQ/Apollo 联调。DEP-003 与 DEP-008 的供应链验收都不替代该发布门。
 
 ## 构建与供应链流水线（S1-DEP-003）

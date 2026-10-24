@@ -21,10 +21,18 @@ async function proxyAudit(request, response, path, token) {
   response.end(Buffer.from(await upstream.arrayBuffer()));
 }
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.zip': 'application/zip', '.ts': 'text/plain' };
+// 外壳的写请求（审计上报、桥接写能力）先取防伪令牌再带头发出；夹具与网关 BFF 一样对缺头的写请求回 403。
+const CSRF = { headerName: 'X-CSRF-TOKEN', token: 'shell-acceptance-csrf' };
+const json = (response, value, status = 200) => { response.writeHead(status, { 'Content-Type': 'application/json' }); response.end(JSON.stringify(value)); };
 const server = createServer(async (request, response) => {
   const url = new URL(request.url, 'http://127.0.0.1');
   const scenario = (request.headers.cookie ?? '').match(/(?:^|; )mf-scenario=([^;]+)/)?.[1] ?? 'a';
   response.setHeader('Cache-Control', 'no-store');
+  // 同源运行时配置（K8s ConfigMap 的替身）：这里只给品牌，四个地址取缺省值（/api、/auth、/api/shell/bootstrap、/api/shell/audit/remote-rejected）。
+  if (url.pathname === '/app-config.json') { json(response, scenario === 'config-bad' ? { apiBase: 'https://evil.example/api' } : { brand: 'Qian 控制台' }); return; }
+  if (url.pathname === '/auth/csrf' && request.method === 'GET') { json(response, CSRF); return; }
+  if (request.method === 'POST' && url.pathname.startsWith('/api/') && request.headers[CSRF.headerName.toLowerCase()] !== CSRF.token) { response.writeHead(403).end(); return; }
+  if (url.pathname === '/api/capabilities' && request.method === 'GET') { json(response, { items: [] }); return; }
   if (url.pathname === '/api/shell/bootstrap') {
     const a = '11111111-1111-4111-8111-111111111111', b = '22222222-2222-4222-8222-222222222222';
     const scope = `tenant:${a}`;
@@ -39,9 +47,11 @@ const server = createServer(async (request, response) => {
     }
     const registrations = [{ id: 'qian.tenancy', version: '1.0.0', scope, manifest: selected }];
     if (scenario === 'shadow') registrations.unshift({ id: 'qian.tenancy', version: '1.0.0', scope: 'global', manifest });
-    response.setHeader('Content-Type', 'application/json');
-    response.end(JSON.stringify({ context: { tenant: { id: scenario === 'b' ? b : a, name: '验收租户' }, membership: { id: 'member-a', permissions }, app: null, locale: 'zh-CN', theme: 'light' },
-      remotes: registrations, mounted: registrations.map(({ scope, id }) => `${scope}|${id}`), entitled: registrations.map(({ scope, id }) => `${scope}|${id}`), permissions })); return;
+    // 与网关 bootstrap 同形：会话快照、上下文、远程、挂载 / 权益、权限；能力导航为 null 时外壳按已登记远程的清单算菜单（夹具没有能力目录）。
+    const tenant = scenario === 'b' ? b : a;
+    json(response, { session: { subject: 'shell-acceptance-user', kind: 'user', tenantId: tenant, membershipId: 'member-a', identityRevision: 1, displayName: '验收用户' },
+      context: { tenant: { id: tenant, name: '验收租户' }, membership: { id: 'member-a', permissions }, app: null, locale: 'zh-CN', theme: 'light' },
+      remotes: registrations, mounted: registrations.map(({ scope, id }) => `${scope}|${id}`), entitled: registrations.map(({ scope, id }) => `${scope}|${id}`), permissions, navigation: null, managed: false }); return;
   }
   if (url.pathname === '/api/shell/audit/remote-rejected' && request.method === 'POST') {
     await proxyAudit(request, response, '/api/shell/audit/remote-rejected', audit.writerToken); return;

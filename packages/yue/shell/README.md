@@ -1,6 +1,6 @@
 # @idadawn/yue-shell
 
-AppShell 单一侧栏布局、菜单 → 路由、MF2 宿主与插槽、租户切换器、认证页族与兜底页。
+AppShell 单一侧栏布局、菜单 → 路由、偏好、认证页族组件与契约、会话过期对话框、站内信与兜底页。本包只放通用 UI；对接 Qian 平台的接线（运行时配置、网关 BFF 会话、bootstrap、能力导航、身份服务 AuthProvider）在私有包 [`@qian/shell-kit`](../../qian-shell-kit/README.md)，MF2 宿主与插槽在 [前端插件 SDK](../../qian-plugin-sdk/README.md)。
 
 - 分层与允许依赖：[yue 专题规格 §3.1](../../../docs/prd/specs/yue.md#31-包结构与依赖方向)；依赖方向由 `packages/yue/boundaries.config.mjs` 与 CI 门禁强制。
 - 实现任务：S1-YUE-006；库 API、共用示例与认证边界见 [组件文档源](docs/index.mdx)。
@@ -11,15 +11,15 @@ AppShell 单一侧栏布局、菜单 → 路由、MF2 宿主与插槽、租户�
 
 AuthProvider 由宿主注入，认证页族不持有令牌。登录表单使用 form SchemaForm，租户切换成功后由宿主更新 session 与 SDK 的 getTenantId；SDK onSessionExpired 驱动 SessionExpiredDialog。Preferences 只允许非敏感字段，菜单解析校验外链协议与令牌参数。认证结果新增 `change-password`（初始密码或运营重置后强制改密，PasswordChange 表单按需加载），provider 没有实现 `changePassword` 时按失败处理。
 
-### 真实接线模块（S1-YUE-002）
+### 外壳部件（S1-YUE-002 / S1-YUE-012）
 
-- `readAppConf()`：校验 `window.__APP_CONF__`（同源 `/app-conf.js`，K8s ConfigMap）的 `apiBase` / `authBase`（同源路径前缀）、`brand`、`locale`、`managed`；非法抛 `shell.error.config`。
-- `createBffSessionClient({ authBase })`：依赖方（Identity.Client / 网关 BFF）的会话快照 `GET /session`、强制刷新 `POST /session/refresh`（实现 SDK `SessionProvider`，供 `PlatformClient({ sessionProvider })` 合并并发 401）、登出与 `/login?returnTo=…[&prompt=select_account]` 跳转地址；浏览器零令牌。
-- `fetchNavigation` / `fetchPermissions` / `toMenu`：能力导航目录 → 菜单项（`label` 为后端已本地化标题，`labelKey` 退化为资源引用），有效权限列表；`createBrowserRouter` / `useRoutePath` / `matchMenuItem`：pushState 路由与精确 → 最长前缀匹配。
-- `createIdentityAuthProvider({ clientId })`：与 qian.identity 同源的认证页族用的 AuthProvider——`/api/identity/login`、`/login/select`、`/login/password`、`/session/switch`、`/me`、连接器目录与流程接口；票据只在闭包内存，密码只存在于本次请求。平台身份在租户列表里固定为 `PLATFORM_TENANT`。
-- `InboxPopover`：顶栏站内信弹窗（消息源由宿主注入，S1 没有站内信接口）。
+- `createBrowserRouter` / `useRoutePath` / `matchMenuItem`（子路径 `./router`）：最小历史路由，pushState 加 popstate，按 pathname 精确匹配、再最长前缀；菜单驱动，不做嵌套路由与数据加载（PRD 7.15.1）。
+- `menuTypeRegistry` / `safeNavigationUrl`（子路径 `./menu`）：菜单类型注册表与 URL 安全边界（拒绝危险协议与带令牌参数的地址）。
+- `SessionExpiredDialog`（子路径 `./session-dialog`）：会话结束只弹一次、Esc 关不掉，确认后整页重新登录。
+- `InboxPopover`（子路径 `./inbox`）：顶栏站内信弹窗，消息源由宿主注入（S1 没有站内信接口）。
+- `initPreferences({ namespace, overrides, defaults })`：`defaults` 是部署缺省（例如运行时配置的语言），低于用户已保存的偏好，也不写进存储：存储只记用户自己改过的键（`update` 增量合并），`reset` 写空对象。
 
-可部署组合见 [apps/qian-shell-auth](../../../apps/qian-shell-auth/README.md)（外壳薄入口）与 [packages/qian-identity-ui](../../qian-identity-ui/README.md)（认证页族）；真实流程验收 `pnpm yue:auth` 对 [tools/Qian.Dev.Shell](../../../tools/Qian.Dev.Shell/README.md) 拉起的真实 qian.identity + 网关 BFF 运行。
+子路径让外壳首屏只拉需要的部分（首屏 JS 预算 250 KiB gzip）。Qian 的可部署外壳是 [apps/qian-shell](../../../apps/qian-shell/README.md)，认证页族是 [packages/qian-identity-ui](../../qian-identity-ui/README.md)；真实流程验收 `pnpm yue:auth` 对 [tools/Qian.Dev.Shell](../../../tools/Qian.Dev.Shell/README.md) 拉起的真实 qian.identity、平台表面宿主与网关 BFF 运行。
 
 ## 模型体验
 
@@ -33,5 +33,5 @@ menuTypeRegistry.toJSON 可导出菜单类型元数据，注册返回可撤销�
 
 ## 已知限制与延期项
 
-- 真实 OIDC code + PKCE、多租户选择、`prompt=select_account` 切换、Cookie 会话与令牌重签已由 S1-YUE-002 经网关 BFF 接线（浏览器零令牌，不再有 selection_token 进前端）；MF2 宿主、插槽与 `loadRemote` 归 S1-YUE-001。版本号沿用工作区 0.1.0，尚未发布。
+- 真实 OIDC code + PKCE、多租户选择、`prompt=select_account` 切换与 Cookie 会话由 S1-YUE-002 经网关 BFF 接线（浏览器零令牌，不再有 selection_token 进前端）；S1-YUE-012 把这些 Qian 专有接线移到 `@qian/shell-kit`，与 S1-YUE-001 的 MF2 宿主一起融合进 `apps/qian-shell`。版本号沿用工作区 0.1.0，尚未发布。
 - 验证码登录与忘记密码为 P1，Captcha 为 P2，七种布局与偏好抽屉为后续范围。
