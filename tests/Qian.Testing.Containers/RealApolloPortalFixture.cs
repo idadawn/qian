@@ -40,6 +40,10 @@ public sealed class RealApolloPortalFixture : RealApolloFixture
         }
     }
     /// <summary>建立真实目标应用和公共 namespace，AdminService 只用于隔离测试准备。</summary>
+    /// <remarks>
+    /// 每套共享栈只能调用一次：应用用固定的 <see cref="AppId"/>（Portal 的权限按它播种），第二次调用会因应用已存在而失败。
+    /// Config 测试的 real-apollo 集合共用一套栈，集合里只有 RealApolloPortalProtocolTests 调用。
+    /// </remarks>
     public async Task PrepareFlagsAsync(CancellationToken cancellationToken = default)
     {
         await CreateAppAsync(AppId, cancellationToken).ConfigureAwait(false);

@@ -87,7 +87,9 @@ public sealed class OrderVisibilityTests(InfrastructureFixture infra)
 - 启动失败只在环境原因下重试（S1-QA-011）：
   - Ryuk 初始化失败：Testcontainers 在每个测试进程第一次启动容器时初始化 Ryuk（资源回收容器），等待连接确认的超时写死为 60 秒，宿主繁忙（如多个会话并发跑容器测试）时会耗尽，抛 `ResourceReaperException`。
   - Docker API 请求超时：Docker 守护进程在 Docker 客户端的请求超时内没有响应，抛 `TaskCanceledException`，内层为 `HttpRequestException`。本次启动自己的取消令牌触发的取消不算。
-  - 遇到上面两类，所有 fixture 都先释放这次启动拿到的资源（含 `OnStartingAsync` 准备的依赖容器与网络、`StartAlongsideAsync` 与主容器并行启动的同级容器），退避后从头再来，最多三次；每次重试记一条诊断消息。
+  - 遇到上面两类，所有 fixture 都先释放这次启动拿到的资源，退避后从头再来，最多三次；每次重试记一条诊断消息。
+    - 基类只释放主容器：先调用 `OnDisposingAsync`，再释放主容器，最后调用 `OnDisposedAsync`。`OnStartingAsync` 准备的依赖容器与网络、`StartAlongsideAsync` 与主容器并行启动的同级容器，由 fixture 自己在这两个钩子里释放，例如 `RealApolloFixture` 在 `OnDisposingAsync` 里释放 AdminService 与 Portal、在 `OnDisposedAsync` 里释放 MySQL 与网络。新写 fixture 时两个钩子要能处理尚未启动完的状态。
+    - 主容器与同级容器都结束才判定成败，失败时不会释放仍在启动的容器；两者都失败时，按先出错的那个判定是否重试（S1-QA-020）。
   - 容器在就绪前自行退出：只在 fixture 声明了 `StartAttempts` 时重试，目前只有 K3s。
   - 其他错误、以及测试已取消时，不重试。
   - 这里只重试启动，不重试断言，与下一条「安全类用例不允许重试通过」不冲突。
@@ -106,6 +108,15 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 | 访问密钥 | `SetAccessKeyAsync` 之后，请求必须带 `Timestamp` 与 `Authorization: Apollo {appId}:{签名}` 头；签名 = Base64(HMAC-SHA1(密钥, 时间戳 + 换行 + 路径与查询串))，时间差超过 60 秒或签名不符返回 401 |
 
 不覆盖：灰度发布与 label 规则、Portal / Admin Service 接口、多实例 Meta Server、增量同步。自研 Apollo provider（S1-CFG-001）若要对真实服务端做契约测试，需另起 Apollo；官方 quick-start 镜像默认要配一个 MySQL 容器（只切换到 H2 配置组仍会去连 MySQL，已实测）。
+
+### CRM 参考宿主验收的用例写法
+
+`Qian.Sample.Crm.Tests` 的 `CustomerCommandTests` 是抽象的公共基类：`Start()` 起完整宿主，另有各主题共用的辅助方法、常量与探针类型，本身不含用例。用例分在八个 sealed 主题类里，各自一个 `PostgresFixture` 容器，主题之间并行、主题内串行（S1-QA-017）；主题类与各自的范围见 [CustomerCommandTests.cs](Qian.Sample.Crm.Tests/CustomerCommandTests.cs) 开头的注释。
+
+- 新用例写进对应的主题类，即文件里 `public sealed partial class <主题类>` 那一部分；配套的辅助方法、常量与探针类型照旧写进同一文件里基类的 `public abstract partial class CustomerCommandTests` 部分。
+- 基类不放 `[Fact]` / `[Theory]`：xUnit 按继承发现测试方法，写在基类的用例会在八个主题类各跑一遍。
+- 照拆类前的写法声明 `sealed partial class CustomerCommandTests` 会与抽象基类冲突，编译报 CS0418；漏写 `sealed` 的 `partial class CustomerCommandTests` 却能静默编译通过（`abstract` 写在其他部分上同样生效），里面的用例就进了基类。后一种由守卫用例 `CustomerCommandLayoutTests` 拦下，它断言基类不含测试方法（S1-QA-020）。
+- 新增主题类前先看耗时：程序集并发上限 `MaxThreads = 8`，xUnit 按集合分槽位（这里一个类一个集合），类多于 8 个时排在后面的类要等前面的类跑完；各类的耗时分布与重新平衡见 S1-QA-019。
 
 ## 4 门禁
 
