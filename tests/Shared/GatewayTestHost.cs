@@ -36,7 +36,7 @@ internal sealed class GatewayTestHost(WebApplication app, PluginLoader loader, G
     internal static async Task<GatewayTestHost> Start(LoopbackPort.Reservation reservation, X509Certificate2 tls,
         string identityIssuer, string clientId, string identityAudience, string clientSecret, string redis,
         string issuer, IReadOnlyList<GatewayRoute> routes, IReadOnlyList<GatewayCluster> clusters, RSA signing,
-        IReadOnlyList<string>? trustedNetworks = null, TimeProvider? clock = null, Action<WebApplication>? map = null)
+        IReadOnlyList<string>? trustedNetworks = null, TimeProvider? clock = null, Action<WebApplication>? map = null, IReadOnlyList<string>? scopes = null)
     {
         var address = new Uri($"https://localhost:{reservation.Port}/");
         var directory = Directory.CreateTempSubdirectory("qian-gateway-").FullName;
@@ -69,7 +69,8 @@ internal sealed class GatewayTestHost(WebApplication app, PluginLoader loader, G
         builder.Services.AddQianIdentityClient(new IdentityClientOptions
         {
             Authority = new Uri(identityIssuer), ClientId = clientId, Resource = identityAudience,
-            RedirectUri = new Uri(address, "auth/callback"), Scopes = ["openid", "offline_access", "qian.api"],
+            // scopes：外壳经 bridge.invoke 调应用能力时客户端另外申请的应用 scope（能力声明的 requiredScopes）。
+            RedirectUri = new Uri(address, "auth/callback"), Scopes = ["openid", "offline_access", "qian.api", .. scopes ?? []],
             RequireHttpsMetadata = false, AllowedReturnPaths = ["/app"], DefaultReturnPath = "/app",
             SessionKeyPrefix = "qian:gateway-tests:" + Guid.NewGuid().ToString("N") + ":"
         });

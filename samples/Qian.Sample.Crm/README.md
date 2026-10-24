@@ -55,7 +55,7 @@ POST /api/customers 接收 idempotencyKey（UUID）和 name；租户来自验证
 
 这些是本机真实协议与数据库验收，未证明正式包安装、K3s 应用发布、真实 Qian Identity 管理员登录或完整 platform 已完成。
 
-能力目录联调中，三个参考请求显式声明 agent.expose 元数据，用于验证提示词和目录过滤。第四个能力 `customer.purge` 是 Agent 字段探针（S1-AGT-006）：每个 Agent 字段都取与前三个不同的非缺省值（destructive + deny、async task、requiredSecrets 非空、costTier high、requiresConfirmation true、expose false 等），只在 `crm.admin` scope 下可见，用来验证目录条目原样落库、不在读取时派生；S1 没有异步任务的执行器，调用一律 503 `UNAVAILABLE`，不删除任何数据。命令宿主的身份适配器接受服务与 Agent 两类机器主体：Agent 只用来验证目录、提示词与通用执行入口的过滤，REST 端点仍只收服务主体，S1 的 RBAC 与命令策略也不授予 Agent 权限；带 `act` 的委托令牌一律在认证阶段拒绝。这不开放 S1 Agent 身份签发或执行。平台目录/Registry 依赖仅加入验收宿主，独立客户应用不因此引用这些平台 Provider。
+能力目录联调中，三个参考请求显式声明 agent.expose 元数据，用于验证提示词和目录过滤。第四个能力 `customer.purge` 是 Agent 字段探针（S1-AGT-006）：每个 Agent 字段都取与前三个不同的非缺省值（destructive + deny、async task、requiredSecrets 非空、costTier high、requiresConfirmation true、expose false 等），只在 `crm.admin` scope 下可见，用来验证目录条目原样落库、不在读取时派生；S1 没有异步任务的执行器，调用一律 503 `UNAVAILABLE`，不删除任何数据。命令宿主验签时，身份适配器只接受服务与 Agent 两类机器主体：Agent 只用来验证目录、提示词与通用执行入口的过滤，REST 端点仍只收服务主体，S1 的 RBAC 与命令策略也不授予 Agent 权限；带 `act` 的委托令牌一律在认证阶段拒绝。同进程平台表面宿主验证过的主体另经 `CrmCurrentUser.AcceptPlatformSurface` 交进来（含 user、不含 `act`，见下文「面向用户的平台表面参考宿主」）。这不开放 S1 Agent 身份签发或执行。平台目录/Registry 依赖仅加入验收宿主，独立客户应用不因此引用这些平台 Provider。
 
 ## 集成事件
 
@@ -120,7 +120,7 @@ T23 的具体宿主装配在测试工程的 `ProfileModeAssembly`，复用真实
 
 参考应用的命令宿主（`CrmCommandApplication`）只认机器身份，所以用户主体的这些表面单独成宿主，网关按受众分簇转发；外壳 bootstrap（Qian.Gateway 的 `MapQianShellBootstrap`）经它取外壳目录、导航与有效权限。`ShellBootstrapTests` 与外壳联调环境（[tools/Qian.Dev.Shell](../../tools/Qian.Dev.Shell/README.md)）都用它；生产里由 platform profile 的平台宿主提供同一表面，归 S1-DEP-009。参考应用的界面（UI 清单与 MF2 远程模块）在 [samples/qian-sample-crm-ui](../qian-sample-crm-ui/README.md)。
 
-已知限制：经平台表面执行参考应用能力时，命令仍由参考应用的命令运行时执行，它的当前主体只认机器身份，所以用户主体调 `customer.list` / `customer.create` 被拒绝（403 `AUTHZ_DENIED`）。用户主体执行应用能力不在 S1 范围内。
+用户主体经平台表面执行参考应用能力（S1-YUE-015 裁决 A1）：命令由参考应用的命令运行时执行，从参考宿主的 DI 取当前主体。平台表面宿主验签后，把同一份已验证快照（user / service / agent，不含 `act`）交给参考应用的身份适配器，能力因此以调用者本人执行：命令 PEP 按其角色判权限点与 scope 并记决策，审计链记 `actor_type = user`，通道沿用能力登记的 `api`（裁决 ③，`ui` 归因见 S1-AUD-011）。user 只认这一来源，参考应用自己的受众（`qian.sample.crm`）验签仍只收机器主体。调用方先登记数据组件的宿主（例如同进程挂身份库）里，Kun 数据约定的匿名兜底会抢先占住框架当前主体端口，命令管道随之对一切能力执行判拒，所以 `CrmCommandApplication` 在执行调用方配置前先登记 `JwtCurrentUser`。生产里 `module` 应用与平台表面同在 platform 宿主、解析同一个身份适配器（S1-DEP-009）。
 
 ## 唯一清单与平台可见性门
 

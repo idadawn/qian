@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 // 外壳真实流程验收（S1-YUE-002 验收 1–4；S1-YUE-012 把薄入口与 MF2 宿主融合进 apps/qian-shell 后迁入）：账号密码经 qian-identity 的 OIDC code + PKCE 登录
 // （网关 BFF 换码，浏览器零令牌）→ 多租户选择 → 网关 bootstrap 聚合端点一次给出会话、上下文、已挂载远程、权限与能力导航 → 菜单命中的页面由参考应用的
-// 远程模块（samples/qian-sample-crm-ui）经 MF2 按需加载并真实渲染、经 bridge.invoke 调参考应用能力 → prompt=select_account 切换租户 → 回调重建会话、
+// 远程模块（samples/qian-sample-crm-ui）经 MF2 按需加载并真实渲染、经 bridge.invoke 以本人执行参考应用的列表与新建（S1-YUE-015）→ prompt=select_account 切换租户 → 回调重建会话、
 // 菜单与权限随之刷新 → 服务端访问令牌到期：透明刷新无感，会话仍在时 POST /auth/session/refresh 经真实身份服务换新令牌 → 身份修订递增后旧令牌 401
 // （平台表面宿主的授权 PEP 按生产模式比对修订下限）：SDK 合并成一次刷新、换到新修订后重放，外壳随即重拉 bootstrap（裁决 ④）→ refresh 失效时依赖方
 // 结束会话，401 合并成一次刷新尝试（探测即 401、不再 POST）并只弹一次过期对话框 → 代码审查项的自动检查（存储、URL、iframe、响应体里都没有令牌，
@@ -121,7 +121,7 @@ test('零令牌检测式自检：JWS / JWE 在 JSON、URL、Bearer 头与百分�
   expect(antiforgery).not.toMatch(tokenLike);
 });
 
-test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真实渲染、切换租户、刷新合并与过期对话框、零令牌、运行时配置', async ({ page, baseURL }) => {
+test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真实渲染并以本人执行列表与新建、切换租户、刷新合并与过期对话框、零令牌、运行时配置', async ({ page, baseURL }) => {
   const origin = baseURL!.replace(/\/$/, '');
   const { refreshes, probes, apiCalls, bodies, remotes } = observe(page, origin);
   const bootstraps = (from: number, status = 200) => apiCalls.slice(from).filter(call => bootstrapPath.test(call.path) && call.status === status).length;
@@ -156,10 +156,14 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   expect(remotes).toEqual([]);
 
   // 4. 菜单 → 路由（pushState）：「客户」页由参考应用的远程模块真实渲染（MF2 manifest → remoteEntry → expose），远程拿到的上下文是当前租户；
-  //    列表经 bridge.invoke 调 customer.list：外壳先取防伪令牌、按规范路径经网关发到平台表面的通用执行入口（能力对该用户可见：scope crm.read + customer:read）。
-  //    参考应用的命令运行时只认机器主体（CrmCurrentUser，S1 既有边界），用户主体在处理器级 PEP 被拒（403），远程页面优雅降级为错误提示、外壳不受影响；
-  //    用户主体执行业务能力的身份透传另立任务（见 apps/qian-shell/README.md 已知限制）。「新建客户」页同样由远程渲染。
-  const listed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/capabilities/qian.sample.crm/customer.list/invoke');
+  //    列表经 bridge.invoke 调 customer.list：外壳先取防伪令牌、按规范路径经网关发到平台表面的通用执行入口（能力对该用户可见：scope crm.read + customer:read），
+  //    平台表面把验证过的用户主体交给参考应用的命令管道，能力以调用者本人执行（S1-YUE-015）：列表里有开通钩子为甲方种下的示例客户，条目都属于甲方。
+  //    「新建客户」页同样由远程渲染：经 customer.create 新建（外壳补幂等键，请求头与正文同值），成功后通知并回到列表，新客户就在其中。
+  //    联调栈可能被同一次 up 反复用来跑验收，列表只按「多了这一条」断言，不假定条数。
+  const invoked = (capability: string) => page.waitForResponse(response => new URL(response.url()).pathname === `/api/capabilities/qian.sample.crm/${capability}/invoke`);
+  const invocations = (capability: string) => apiCalls.filter(call => call.path === `/api/capabilities/qian.sample.crm/${capability}/invoke`).map(call => `${call.method} ${call.status}`);
+  type CustomerPage = { total: number; items: { id: string; tenantId: string; name: string }[] };
+  const listed = invoked('customer.list');
   await page.getByRole('link', { name: '客户', exact: true }).click();
   await expect(page).toHaveURL(origin + '/customers');
   const customers = page.getByTestId('qian-sample-crm-customers');
@@ -168,18 +172,42 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   await expect(page.getByRole('link', { name: '客户', exact: true })).toHaveAttribute('aria-current', 'page');
   expect(remotes).toContain('/remotes/qian.sample.crm/mf-manifest.json');
   expect(remotes).toContain('/remotes/qian.sample.crm/remoteEntry.js');
-  await expect(customers.getByRole('alert')).toHaveText('客户列表加载失败，请稍后重试。');
-  expect(apiCalls.filter(call => call.path === '/api/capabilities/qian.sample.crm/customer.list/invoke').map(call => `${call.method} ${call.status}`)).toEqual(['POST 403']);
-  const denied = await listed;
+  const list = await listed;
   // 写类调用之外的能力执行也是 POST：外壳的写请求中间件先取防伪令牌（Identity.Client 的 X-CSRF-TOKEN），通过网关的防伪校验后才到平台表面。
-  expect(denied.request().headers()['x-csrf-token']).toBeTruthy();
-  expect(await denied.json()).toMatchObject({ status: 403, code: 'AUTHZ_DENIED' });
-  await expect(page.getByTestId('yue-app-shell-sidebar')).toBeVisible();
+  expect(list.request().headers()['x-csrf-token']).toBeTruthy();
+  expect(list.status(), await list.text()).toBe(200);
+  const firstPage = await list.json() as CustomerPage;
+  expect(firstPage.items.map(item => item.name)).toContain('示例客户');
+  expect(firstPage.items.filter(item => item.tenantId !== tenantA)).toEqual([]);
+  const rows = customers.getByRole('list', { name: '客户列表' }).getByRole('listitem');
+  await expect(rows.filter({ hasText: '示例客户' })).toHaveCount(1);
+  const existing = await rows.count();
+  expect(existing).toBe(firstPage.items.length);
   await customers.getByRole('button', { name: '新建客户', exact: true }).click();
   await expect(page).toHaveURL(origin + '/customers/new');
-  await expect(page.getByTestId('qian-sample-crm-create').getByRole('heading', { name: '新建客户', exact: true })).toBeVisible();
+  const create = page.getByTestId('qian-sample-crm-create');
+  await expect(create.getByRole('heading', { name: '新建客户', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: '新建客户', exact: true })).toHaveAttribute('aria-current', 'page');
   await accessible(page, '远程页面');
+  const customerName = `外壳新建客户 ${Date.now()}`;
+  await create.getByLabel('客户名称').fill(customerName);
+  const notified = page.evaluate(() => new Promise(resolve => addEventListener('qian:notification', event => resolve((event as CustomEvent).detail), { once: true })));
+  const created = invoked('customer.create'); const relisted = invoked('customer.list');
+  await create.getByRole('button', { name: '创建', exact: true }).click();
+  const creation = await created;
+  expect(creation.status(), await creation.text()).toBe(200);
+  expect(creation.request().headers()['x-csrf-token']).toBeTruthy();
+  const sent = creation.request().postDataJSON() as { name: string; idempotencyKey: string };
+  expect(sent).toEqual({ name: customerName, idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/) });
+  expect(creation.request().headers()['idempotency-key']).toBe(sent.idempotencyKey);
+  expect(await creation.json()).toMatchObject({ tenantId: tenantA, name: customerName });
+  expect(await notified).toEqual({ level: 'success', message: '客户已创建' });
+  await expect(page).toHaveURL(origin + '/customers');
+  await expect(rows).toHaveCount(existing + 1);
+  await expect(rows.filter({ hasText: customerName })).toHaveCount(1);
+  expect((await (await relisted).json() as CustomerPage).items.filter(item => item.name === customerName && item.tenantId === tenantA)).toHaveLength(1);
+  expect(invocations('customer.list')).toEqual(['POST 200', 'POST 200']);
+  expect(invocations('customer.create')).toEqual(['POST 200']);
   await page.goto('/no-such-page');
   await expect(page.getByRole('heading', { name: '页面不存在', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回工作台', exact: true }).click();
@@ -202,6 +230,22 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   await expect(page.getByTestId('shell-permissions').locator('[data-permission="qian.sample.crm:customer:write"]')).toHaveCount(0);
   await expect(page.getByTestId('shell-permissions').locator('[data-permission="qian.sample.crm:customer:read"]')).toHaveAttribute('data-allowed', 'true');
   await noCredentials(page, '切换租户后');
+  // 乙方的「客户」页：列表以本人在乙方的成员身份执行，只有乙方开通时种下的示例客户、看不到甲方刚建的客户；只读成员没有「新建客户」入口。
+  const betaListed = invoked('customer.list');
+  await page.getByRole('link', { name: '客户', exact: true }).click();
+  await expect(page).toHaveURL(origin + '/customers');
+  await expect(customers).toHaveAttribute('data-tenant', tenantB!);
+  const betaList = await betaListed;
+  expect(betaList.status(), await betaList.text()).toBe(200);
+  const betaPage = await betaList.json() as CustomerPage;
+  expect(betaPage.items.map(item => item.name)).toContain('示例客户');
+  expect(betaPage.items.map(item => item.name)).not.toContain(customerName);
+  expect(betaPage.items.filter(item => item.tenantId !== tenantB)).toEqual([]);
+  await expect(rows.filter({ hasText: '示例客户' })).toHaveCount(1);
+  await expect(rows.filter({ hasText: customerName })).toHaveCount(0);
+  await expect(customers.getByRole('button', { name: '新建客户', exact: true })).toHaveCount(0);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
 
   // 6. 服务端访问令牌到期：下一批请求由依赖方透明刷新（单飞），页面无感，浏览器不发刷新请求、不探测，也没有对话框。
   //    一轮工作区 = bootstrap（聚合会话、上下文、远程、权限与导航）+ 能力目录条数（辅助接口）两条 GET。
