@@ -70,7 +70,7 @@ COMMIT;
 
 配置根由创建者释放，释放会停止文件监视和 Apollo 长轮询。配置插件借用宿主根，卸载时撤销自己的 Config 服务与错误码登记，不释放其它独立消费者共用的根。
 
-快速协议回归使用共享 ApolloFixture；真实验收使用共享 RealApolloFixture 的 Apollo 2.5.2 ConfigService/AdminService 与 MySQL 8.0.43。通过真实 AdminService 修改并发布，检查同一 IOptionsMonitor 在 60 秒内从 10 更新到 25，然后停止服务验证缓存启动和无缓存失败。CI 测试制品中的 evidence/apollo-real-reload.json 保存更新耗时。
+快速协议回归使用共享 ApolloFixture；真实验收的四个类共用一套 RealApolloPortalFixture：Apollo 2.5.2 Portal、ConfigService/AdminService 与 MySQL 8.0.43，整个集合只启动一次（S1-QA-017）。通过真实 AdminService 修改并发布，检查同一 IOptionsMonitor 在 60 秒内从 10 更新到 25，然后停止服务验证缓存启动和无缓存失败；停服务的用例由类排序器排在集合最后。CI 测试制品中的 evidence/apollo-real-reload.json 保存更新耗时。
 
 真实发布回归还覆盖敏感字段明文：拒绝候选后，内存仍保留原引用、缓存不包含被拒值；再发布有效引用，长轮询能恢复更新。证据文件同时保存 `sensitiveCandidateRejected`、`cacheContainsRejectedValue` 和 `recoveredAfterRejection`，不能仅凭服务健康状态推断这些行为成立。
 

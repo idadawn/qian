@@ -92,7 +92,7 @@ L0–L4 降级矩阵、排查顺序与证据见 [配置运维手册](../../docs/
 
 ## 验证与边界
 
-快速测试复用 ApolloFixture 协议替身，覆盖五层顺序、namespace 顺序、环境引导、访问密钥引用和插件生命周期；S1-CFG-003 的热更新校验（OptionsReloadTests）、发布审计（ReleaseAuditTests）、namespace 骨架比对（NamespaceSkeletonTests）同样以它为线上。最终验收使用 RealApolloFixture：真实 Apollo 2.5.2 ConfigService/AdminService 与 MySQL 8.0.43，通过 AdminService 编辑并发布，验证同一个 IOptionsMonitor 在 60 秒内更新、停服务后缓存可启动、无缓存失败，以及一次发布在真实 PostgreSQL 平台审计链上多一条记录、链校验通过、持久化行不含配置键值（RealApolloReleaseAuditTests）。配置 Schema 与配置值接口由 ConfigEndpointsTests 在真实 Kestrel + JWT 上验证。
+快速测试复用 ApolloFixture 协议替身，覆盖五层顺序、namespace 顺序、环境引导、访问密钥引用和插件生命周期；S1-CFG-003 的热更新校验（OptionsReloadTests）、发布审计（ReleaseAuditTests）、namespace 骨架比对（NamespaceSkeletonTests）同样以它为线上。最终验收的四个真实 Apollo 类同属一个集合，共用一套 RealApolloPortalFixture：真实 Apollo 2.5.2 Portal、ConfigService/AdminService 与 MySQL 8.0.43，整个集合只启动一次（S1-QA-017）。通过 AdminService 编辑并发布，验证同一个 IOptionsMonitor 在 60 秒内更新、停服务后缓存可启动、无缓存失败，以及一次发布在真实 PostgreSQL 平台审计链上多一条记录、链校验通过、持久化行不含配置键值（RealApolloReleaseAuditTests）。配置 Schema 与配置值接口由 ConfigEndpointsTests 在真实 Kestrel + JWT 上验证。
 
 这证明本机/CI 的真实服务链路。生产 Apollo 的高可用部署、Portal OIDC 登录与 Portal 侧操作审计及托管 MySQL 仍按部署任务（S1-DEP-002）验收。
 

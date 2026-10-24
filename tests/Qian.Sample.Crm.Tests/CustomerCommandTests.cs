@@ -33,14 +33,19 @@ using Qian.Tenancy;
 using Qian.Testing;
 using Qian.Testing.Containers;
 
-// 下面八个主题类都起完整宿主，CPU 有富余时大半时间在等数据库、容器与超时，按处理器数（CI 上是 4）限并发会让后排的主题干等；
-// 放宽到 8，各主题同时开跑（S1-QA-017）。CPU 已被同批模块占满时（CI 的分片 b）并行换不来多少时间，CPU 花在哪见 S1-QA-019。
+// 下面八个主题类都起完整宿主，CPU 有富余时大半时间在等数据库、容器与超时，按处理器数（CI 上是 4）限并发会让后排的主题干等，所以放宽到 8（S1-QA-017）。
+// 8 个槽位不够全部同时开跑：xUnit 按集合（这里一个类一个集合）分槽位，类跑完才让出，而程序集共 13 个类（八个主题类、四个独立类与基类守卫 CustomerCommandLayoutTests）。
+// 谁排在后面取决于程序集路径的哈希：CI 上是 ShellSurfaceTests，要等前面的类跑完才开始（S1-QA-017 验收复核：11 次运行都在开跑后 18–31 秒），
+// 但它不在最慢路径上；本机路径不同时可能换成别的类。
+// CI 的分片 b 上同批模块存在资源争用，壁钟与各类耗时见 S1-QA-019。
 [assembly: Xunit.v3.Parallelization(MaxThreads = 8)]
 
 namespace Qian.Sample.Crm.Tests;
 
 // CRM 参考宿主验收的公共基类：Start() 起完整宿主，另有各主题共用的辅助方法、常量与探针类型，本身不含用例。
-// xUnit 对同一个类的用例一律串行、不同类之间并行，所以用例按主题分在下面八个类里（S1-QA-017），按 CI 上的耗时分组，长短相近。
+// xUnit 对同一个类的用例一律串行、不同类之间并行，所以用例按主题分在下面八个类里（S1-QA-017）。各类长短并不相近：
+// CI 上每次都是 TenantOperationsTests 最后独跑 7.7–14.2 秒，重新平衡见 S1-QA-019。
+// 新用例写进对应的主题类；基类不放 [Fact] / [Theory]，xUnit 按继承发现测试方法，写在基类的用例会在八个主题类各跑一遍（守卫见 CustomerCommandLayoutTests）。
 // 每个主题类各自一个 PostgresFixture 容器，主题之间并行，主题内照旧串行：
 // - CommandTests：客户命令与 hook；
 // - CapabilityTests：能力执行、Agent 字段与契约；

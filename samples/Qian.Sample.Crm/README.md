@@ -120,7 +120,7 @@ T23 的具体宿主装配在测试工程的 `ProfileModeAssembly`，复用真实
 
 参考应用的命令宿主（`CrmCommandApplication`）只认机器身份，所以用户主体的这些表面单独成宿主，网关按受众分簇转发；外壳 bootstrap（Qian.Gateway 的 `MapQianShellBootstrap`）经它取外壳目录、导航与有效权限。`ShellBootstrapTests` 与外壳联调环境（[tools/Qian.Dev.Shell](../../tools/Qian.Dev.Shell/README.md)）都用它；生产里由 platform profile 的平台宿主提供同一表面，归 S1-DEP-009。参考应用的界面（UI 清单与 MF2 远程模块）在 [samples/qian-sample-crm-ui](../qian-sample-crm-ui/README.md)。
 
-用户主体经平台表面执行参考应用能力（S1-YUE-015 裁决 A1）：命令由参考应用的命令运行时执行，从参考宿主的 DI 取当前主体。平台表面宿主验签后，把同一份已验证快照（user / service / agent，不含 `act`）交给参考应用的身份适配器，能力因此以调用者本人执行：命令 PEP 按其角色判权限点与 scope 并记决策，审计链记 `actor_type = user`，通道沿用能力登记的 `api`（裁决 ③，`ui` 归因见 S1-AUD-011）。user 只认这一来源，参考应用自己的受众（`qian.sample.crm`）验签仍只收机器主体。调用方可以先登记数据组件（例如同进程挂身份库）：Kun 2026.10.25 起数据约定不再以匿名兜底占住框架当前主体端口（S1-KUN-017），`CrmCommandApplication` 不再抢先登记 `JwtCurrentUser`；端口若仍解析成匿名兜底，SDK 的启动检查让宿主启动即失败。生产里 `module` 应用与平台表面同在 platform 宿主、解析同一个身份适配器（S1-DEP-009）。
+用户主体经平台表面执行参考应用能力（S1-YUE-015 裁决 A1）：命令由参考应用的命令运行时执行，从参考宿主的 DI 取当前主体。平台表面宿主验签后，把同一份已验证快照（user / service / agent，不含 `act`）交给参考应用的身份适配器，能力因此以调用者本人执行：命令 PEP 按其角色判权限点与 scope 并记决策，审计链按主体种类记 `actor_type`（用户记 `user`；外部机器客户端带 Bearer 经网关时是服务主体，记 `service`，S1-YUE-016），通道沿用能力登记的 `api`（裁决 ③，`ui` 归因见 S1-AUD-011）。user 只认这一来源，参考应用自己的受众（`qian.sample.crm`）验签仍只收机器主体。调用方可以先登记数据组件（例如同进程挂身份库）：Kun 2026.10.25 起数据约定不再以匿名兜底占住框架当前主体端口（S1-KUN-017），`CrmCommandApplication` 不再抢先登记 `JwtCurrentUser`；端口若仍解析成匿名兜底，SDK 的启动检查让宿主启动即失败。生产里 `module` 应用与平台表面同在 platform 宿主、解析同一个身份适配器（S1-DEP-009）。
 
 ## 唯一清单与平台可见性门
 
