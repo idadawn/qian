@@ -42,7 +42,7 @@ public sealed partial class CustomerCommandTests
         await using var redis = new RedisFixture(); await redis.InitializeAsync();
         // 外壳客户端另申请参考应用的两个 scope（能力声明的 requiredScopes），与联调栈的外壳客户端一致。
         await using var gateway = await GatewayTestHost.Start(reservation, tls, business.Identity.Issuer, GatewayClientId, IdentityResource, business.Identity.Secret,
-            redis.ConnectionString, ShellGatewayIssuer, [new("capabilities", "/api/capabilities/{**rest}", PlatformSurfaceHost.Audience)],
+            redis.ConnectionString, ShellGatewayIssuer, [new("capabilities", "/api/capabilities/{**rest}", PlatformSurfaceHost.Audience) { RateLimiterPolicy = "user" }],
             [new(PlatformSurfaceHost.Audience, surface.Urls.Single())], business.ManagementSigningKey.Rsa, scopes: ["crm.read", "crm.write"]);
         var tenant = business.App.Services.GetRequiredService<ITenantContext>();
         var grants = loader.GetContext("authz", ScopeKey.Global).Inject<ITenantRoleGrant>(TenantRoleGrant.Key);

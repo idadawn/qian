@@ -20,6 +20,7 @@ using Qian.Identity.Abstractions;
 using Qian.Identity.Client;
 using Qian.Runtime;
 using Qian.Sample.Crm;
+using StackExchange.Redis;
 using Yarp.ReverseProxy.Transforms;
 using Yarp.ReverseProxy.Transforms.Builder;
 
@@ -47,7 +48,7 @@ internal static class DevGateway
     internal const string DefaultAppConfig = """{ "brand": "Qian 乾" }""" + "\n";
 
     internal static async Task<DevGatewayHost> StartAsync(Uri address, DevGatewayKeys keys, Uri identityIssuer, string businessAddress, string platformAddress, ShellStaticOptions shell,
-        Func<Principal, CancellationToken, Task<long>> bump, CancellationToken ct)
+        Func<Principal, CancellationToken, Task<long>> bump, int redisPort, CancellationToken ct)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
         builder.WebHost.ConfigureKestrel(kestrel =>
@@ -57,6 +58,7 @@ internal static class DevGateway
         });
         DevHost.Logging(builder.Logging);
         builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
+        builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect($"127.0.0.1:{redisPort}"));
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
         builder.Services.AddSingleton<ISecretAccessObserver>(new SecretObserver());
         builder.Services.AddQianSecrets(new SecretResolverOptions
@@ -113,9 +115,9 @@ internal static class DevGateway
 
     private static GatewayRoute[] Routes(string prefix) =>
     [
-        new(prefix + "-capabilities", "/" + prefix + "/capabilities/{**rest}", PlatformSurfaceHost.Audience),
-        new(prefix + "-authz", "/" + prefix + "/authz/{**rest}", PlatformSurfaceHost.Audience),
-        new(prefix, "/" + prefix + "/{**rest}", Cluster)
+        new(prefix + "-capabilities", "/" + prefix + "/capabilities/{**rest}", PlatformSurfaceHost.Audience) { RateLimiterPolicy = "user" },
+        new(prefix + "-authz", "/" + prefix + "/authz/{**rest}", PlatformSurfaceHost.Audience) { RateLimiterPolicy = "user" },
+        new(prefix, "/" + prefix + "/{**rest}", Cluster) { RateLimiterPolicy = "user" }
     ];
 
     private static async Task MutateSession(HttpContext http, bool breakRefresh)

@@ -11,7 +11,7 @@ using Qian.Sample.Crm;
 namespace Qian.Dev.Shell;
 
 /// <summary>启动参数：状态目录、管理员连接、身份 / 业务宿主地址（即 OIDC 发行方）、网关 BFF 地址，以及可选的上游 Dex（issuer 与客户端密钥文件）。</summary>
-internal sealed record DevShellSettings(string State, string Admin, string Urls, string Gateway, string? Dex = null, string? DexSecret = null);
+internal sealed record DevShellSettings(string State, string Admin, string Urls, string Gateway, string? Dex = null, string? DexSecret = null, int RedisPort = 55434);
 
 // 外壳认证联调环境（S1-YUE-002 / S1-YUE-012）。装配照搬租户运营手测宿主（S1-QA-012）与集成测试：
 //   1. 重建开发库，CRM 参考命令宿主充当运行时容器，并在同一宿主上挂真实 qian.identity（内置账号模型，账号 Cookie 的登录页指向同源静态认证页族 /login），
@@ -72,7 +72,7 @@ internal static class DevShellHost
         var appConfig = Path.Combine(settings.State, "app-config.json");
         if (!File.Exists(appConfig)) await File.WriteAllTextAsync(appConfig, DevGateway.DefaultAppConfig, ct).ConfigureAwait(false);
         var shell = new ShellStaticOptions { Root = shellDist, ConfigFile = appConfig, Remotes = new Dictionary<string, string>(StringComparer.Ordinal) { ["qian.sample.crm"] = crmRemote } };
-        await using var bff = await DevGateway.StartAsync(gateway, keys, issuer, DevHost.Address(business), DevHost.Address(platformApi), shell, Bump, ct).ConfigureAwait(false);
+        await using var bff = await DevGateway.StartAsync(gateway, keys, issuer, DevHost.Address(business), DevHost.Address(platformApi), shell, Bump, settings.RedisPort, ct).ConfigureAwait(false);
         Console.WriteLine($"""
 
             外壳认证联调环境已就绪（本机开发环境，Ctrl+C 停止）

@@ -36,7 +36,8 @@ internal sealed class GatewayTestHost(WebApplication app, PluginLoader loader, G
     internal static async Task<GatewayTestHost> Start(LoopbackPort.Reservation reservation, X509Certificate2 tls,
         string identityIssuer, string clientId, string identityAudience, string clientSecret, string redis,
         string issuer, IReadOnlyList<GatewayRoute> routes, IReadOnlyList<GatewayCluster> clusters, RSA signing,
-        IReadOnlyList<string>? trustedNetworks = null, TimeProvider? clock = null, Action<WebApplication>? map = null, IReadOnlyList<string>? scopes = null)
+        IReadOnlyList<string>? trustedNetworks = null, TimeProvider? clock = null, Action<WebApplication>? map = null,
+        IReadOnlyList<string>? scopes = null, GatewayRateLimits? rateLimits = null)
     {
         var address = new Uri($"https://localhost:{reservation.Port}/");
         var directory = Directory.CreateTempSubdirectory("qian-gateway-").FullName;
@@ -46,7 +47,8 @@ internal sealed class GatewayTestHost(WebApplication app, PluginLoader loader, G
         await WritePrivate(privatePath, signing.ExportRSAPrivateKeyPem());
         await WritePrivate(Path.Combine(directory, "qian", "identity", "client-secret"), clientSecret);
         var configuration = new GatewayConfiguration(identityIssuer, identityAudience, issuer,
-            privatePath, Path.Combine(directory, "public.pem"), trustedNetworks ?? [], routes, clusters);
+            privatePath, Path.Combine(directory, "public.pem"), trustedNetworks ?? [], routes, clusters)
+        { RateLimits = rateLimits ?? new GatewayRateLimits { KeyPrefix = "qian:gateway-tests:" + Guid.NewGuid().ToString("N") } };
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
         builder.WebHost.ConfigureKestrel(server =>
         {

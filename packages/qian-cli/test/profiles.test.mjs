@@ -62,3 +62,28 @@ test('真实 CLI dump-config、overlay 来源及非法配置退出',()=>{
   const badArg=run('--unknown');assert.equal(badArg.status,1);assert.equal(JSON.parse(badArg.stderr).diagnostics[0].error.code,'INPUT_INVALID');
  }finally{rmSync(directory,{recursive:true,force:true});}
 });
+
+test('网关构建前静态校验拒绝缺失、空值或未知限流策略，三种策略均能解析',()=>{
+ const directory=mkdtempSync(path.join(os.tmpdir(),'qian-gateway-policy-'));
+ const patch=path.join(directory,'gateway.yml');
+ const initial=loadProfile({workingDirectory:root,profile:'gateway',includeHomePatch:false});
+ assert.ok(initial.isValid,JSON.stringify(initial));
+ const original=initial.snapshot.entries.find(entry=>entry.id==='gateway').config;
+ const run=()=>spawnSync(process.execPath,[path.join(root,'packages/qian-cli/dist/main.js'),'--cwd',root,'--no-home','--profile','gateway','dump-config','--json','--patch',patch],{encoding:'utf8'});
+ try{
+  for(const policy of ['kun-default','tenant','user',undefined,null,'','disable','unknown']){
+   const config=structuredClone(original);
+   if(policy===undefined)delete config.routes[0].rateLimiterPolicy;else config.routes[0].rateLimiterPolicy=policy;
+   writeFileSync(patch,JSON.stringify([{id:'gateway',config}]));
+   const result=run();
+   if(['kun-default','tenant','user'].includes(policy)){
+    assert.equal(result.status,0,result.stderr);
+    assert.equal(JSON.parse(result.stdout).entries.find(entry=>entry.id==='gateway').config.routes[0].rateLimiterPolicy,policy);
+   }else{
+    assert.equal(result.status,1,result.stdout+result.stderr);assert.equal(result.stdout,'');
+    const errors=JSON.parse(result.stderr).diagnostics.filter(item=>item.severity==='error');
+    assert.ok(errors.some(item=>item.error.code==='INPUT_INVALID'&&item.error.pointer.includes('#/0/config/routes/0')),JSON.stringify(errors));
+   }
+  }
+ }finally{rmSync(directory,{recursive:true,force:true});}
+});

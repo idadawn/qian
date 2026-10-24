@@ -20,7 +20,7 @@
 ## 前置
 
 - Docker 引擎在运行；.NET 10 SDK（版本见 `global.json`）；Node 24 与 pnpm（`package.json` 的 `packageManager`）；curl 与 python3；
-- 本机端口：PostgreSQL `127.0.0.1:55433`，Dex `127.0.0.1:55556`，身份 / 业务宿主 `127.0.0.1:5090`，网关 `localhost:5443`，平台表面宿主取随机回环端口。被占用时用下文环境变量改。
+- 本机端口：PostgreSQL `127.0.0.1:55433`，Redis `127.0.0.1:55434`，Dex `127.0.0.1:55556`，身份 / 业务宿主 `127.0.0.1:5090`，网关 `localhost:5443`，平台表面宿主取随机回环端口。被占用时用下文环境变量改。
 
 ## 三步用起来
 
@@ -61,7 +61,7 @@ scripts/dev-shell.sh e2e
 
 ## up 做了什么
 
-1. 起容器 `qian-dev-shell-pg`（`postgres:16-alpine`），只绑 `127.0.0.1`；管理员口令随机生成，存在 `.qian-dev/shell/pg-admin-password`，仅本人可读。重建容器 `qian-dev-shell-dex`（`ghcr.io/dexidp/dex:v2.41.1`，只绑 `127.0.0.1`）：客户端密钥随机生成到 `dex-client-secret`，配置由种子文件渲染到 `dex.yaml` 并经 `docker cp` 放进容器，不挂载宿主目录。
+1. 起 Redis 容器 `qian-dev-shell-redis`（`redis:7-alpine`，仅绑定回环地址），供真实网关共享限流；起容器 `qian-dev-shell-pg`（`postgres:16-alpine`），只绑 `127.0.0.1`；管理员口令随机生成，存在 `.qian-dev/shell/pg-admin-password`，仅本人可读。重建容器 `qian-dev-shell-dex`（`ghcr.io/dexidp/dex:v2.41.1`，只绑 `127.0.0.1`）：客户端密钥随机生成到 `dex-client-secret`，配置由种子文件渲染到 `dex.yaml` 并经 `docker cp` 放进容器，不挂载宿主目录。
 2. 构建 `packages/qian-identity-ui`、`samples/qian-sample-crm-ui` 与 `apps/qian-shell`（`QIAN_DEV_SHELL_SKIP_UI_BUILD=1` 跳过），构建本工程。
 3. 重建开发库 `qian_dev` 与受限角色（同 Qian.Dev.TenantOps），用生产同一套迁移建身份库并授权给应用登录；Capabilities / Lifecycle 由迁移属主执行包内迁移。
 4. 启动身份 / 业务宿主，装平台插件树与参考应用制品，挂载身份组件与指向 Dex 的通用 OIDC 连接器，引导平台超管并经 Lifecycle 安装、激活全部 system 组件，按种子建账号与租户（丙方不挂参考应用）。
@@ -78,6 +78,9 @@ scripts/dev-shell.sh e2e
 | `QIAN_DEV_PG_PORT` | `55433` | PostgreSQL 映射到本机的端口 |
 | `QIAN_DEV_PG_CONTAINER` | `qian-dev-shell-pg` | 容器名 |
 | `QIAN_DEV_PG_IMAGE` | `postgres:16-alpine`，未设时沿用 `QIAN_TEST_IMAGE_POSTGRES` | PostgreSQL 镜像 |
+| `QIAN_DEV_REDIS_PORT` | `55434` | Redis 映射到本机回环地址的端口，仅用于开发限流 |
+| `QIAN_DEV_REDIS_CONTAINER` | `qian-dev-shell-redis` | Redis 容器名，down 时一并清理 |
+| `QIAN_DEV_REDIS_IMAGE` | `redis:7-alpine`，未设时沿用 `QIAN_TEST_IMAGE_REDIS` | Redis 镜像 |
 | `QIAN_DEV_DEX_PORT` | `55556` | Dex 映射到本机的端口（issuer `http://127.0.0.1:<端口>/dex`） |
 | `QIAN_DEV_DEX_CONTAINER` | `qian-dev-shell-dex` | Dex 容器名 |
 | `QIAN_DEV_DEX_IMAGE` | `ghcr.io/dexidp/dex:v2.41.1`，未设时沿用 `QIAN_TEST_IMAGE_DEX` | Dex 镜像 |
