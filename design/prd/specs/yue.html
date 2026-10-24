@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>专题 spec · yue 组件库 - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<link href="/static/css/styles.6fe70ee060.css" rel="stylesheet">
+<link rel="preload" href="/static/js/async/route-c9c63428d044.5ff771e59a.js" as="script">
+<script defer src="/static/js/styles.6c2e798d13.js"></script>
+<script defer src="/static/js/lib-react.3a03aaf12f.js"></script>
+<script defer src="/static/js/lib-router.80316d8e03.js"></script>
+<script defer src="/static/js/hq.1398cf1414.js"></script>
+<script defer src="/static/js/index.e3491f9f0d.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/design/prd/specs/yue.md">
+<link rel="describedby" href="/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="专题 spec · yue 组件库 - Qian 文档">
+<meta name="description" content="yue 同时承担三种角色，三者缺一不可：">
+<meta property="og:description" content="yue 同时承担三种角色，三者缺一不可："></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /llms.txt, the full documentation bundle is available at /llms-full.txt, and this page is available as Markdown at /design/prd/specs/yue.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item"><a href="/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item"><a href="/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><button type="button" class="rp-switch-appearance" aria-label="切换主题"><span aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 19 19" class="rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></span></button><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/design/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">文档索引</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/roadmap.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">路线图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/changelog.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">架构决策（ADR）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/adr/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-001-kun-relationship.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-001 Qian 与 Kun 的关系</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-002-plugin-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-002 插件模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-003-kernel-boundary-s1-services.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-003 内核边界与 S1 服务拆分</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-004-database-tenant-isolation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-004 数据库与租户隔离</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-005-identity-sso.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-005 身份与 SSO</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-006-authorization-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-006 鉴权模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-007-config-center-apollo.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-007 配置中心</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-008-events-messaging.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-008 事件与消息</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-009-audit.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-009 审计</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-010-gateway-layers.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-010 网关分层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-011-metadata-dynamic-data.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-011 元数据与动态数据层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-012-workflow-engine.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-012 流程引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-013-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-013 前端与 yue</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-014-marketplace.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-014 应用市场形态</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-015-model-gateway.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-015 模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-016-iclaw-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-016 与 iClaw 的边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-017-deployment.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-017 部署</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-018-stages-s1-scope.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-018 阶段切分与 S1 范围</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-019-library-first-packages.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-019 库优先（Library-first）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-020-component-model-v2.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-020 组件模型 v2</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-021-product-family-structure.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-021 产品族结构</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-022-rspress-unified-component-docs.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-022 统一 Rspress 组件文档与验收</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/design/prd/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">产品需求（PRD）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/prd/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/01-vision.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">1. 愿景与定位</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/02-principles.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">2. 设计原则</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/03-concepts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">3. 核心概念模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/04-market.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">4. 形态与目标市场</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/05-differentiators.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">5. 核心差异化</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/06-users-scenarios.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">6. 用户与场景</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/07-s1-foundation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§07 S1 技术底座功能规格</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/08-s2-lowcode.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§08 S2 低代码构建</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/09-s3-customer.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§09 S3 面向客户</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/10-s4-agent.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§10 S4 AI 原生 Agent 平台与模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/11-ux-glossary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">11. 体验原则与产品词表</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/12-boundaries.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§12 能力边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/13-security.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§13 权限与安全</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/14-quality.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§14 质量与评估</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/15-roadmap.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">15. 演进路线（指针）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/16-metrics.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">16. 成功指标</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/17-references.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">17. 借鉴声明</span></div><div class="rp-sidebar-item__right"></div></a><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">专题规格</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/prd/specs/component-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 组件模型 v2（清单 · 表面 · 运行时 · profile · 市场 · CLI）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/data-contracts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">数据过滤与记录扩展契约 v1</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/docs-site.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">文档站信息架构与规范（Rspress 2.0）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/plugin-manifest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 插件清单 v1（<code>qian-plugin.yaml</code>）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/yue.html" class="rp-sidebar-item rp-sidebar-item--active rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · yue 组件库</span></div><div class="rp-sidebar-item__right"></div></a></div></div></div></div><a href="/design/migration/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移方案</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/migration/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/01-tenant-identity-access.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 01 · 租户、组织、身份与 SSO、权限、系统管理、控制台与个人中心、消息入口、移动端</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/02-app-form-list.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 02 · 应用、表单设计、列表设计、视图、功能发布、运行时数据引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/03-workflow.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 03 · 流程与审批</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/04-data-integration-presentation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 04 · 数据中心、集成中心、消息与调度、门户、报表、打印、大屏、文件预览、AI 中心清单</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/05-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 05 · 参考平台前端组件与设计器全集 → yue 分层与阶段、工程化、移动端策略</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">决策清单</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/decisions/authz-identity-revision-wiring.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">授权变更 → 身份修订递增的接线口径</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/component-entry-metadata.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">组件清单入口与程序集内多个插件实现</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/feature-flags-write-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">特性开关写入与发布边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/gateway-native-aot-options.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">网关完整依赖的 NativeAOT 实施路径</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/key-decisions-v0.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 关键决策清单 v0（已全部拍板，作为历史记录保留）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/runtime-profile-metadata.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">真实组件清单启用后的开发 profile 与 AOT 验收</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/tenancy-http-v1-schema-correction.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">租户 HTTP v1 校验声明的首次发布基线纠偏</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">调研基线</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/research/baseline-digest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 调研基线要点汇编</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">generated</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/generated/config-catalog.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置目录</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/event-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">事件图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/module-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模块图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/seam-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">seam 图</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">ops</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/ops/configuration-runbook.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置开发、运行与故障处置（S1-CFG-001 / 002 / 003）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/ops/k3s-control-plane-recovery.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">K3s 控制面故障处置方案（S1-DEP-007）</span></div><div class="rp-sidebar-item__right"></div></a></div></div></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="专题-spec--yue-组件库"><a href="#专题-spec--yue-组件库" class="rp-header-anchor rp-link" aria-label="链接到 专题 spec · yue 组件库">#</a>专题 spec · yue 组件库<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><a class="rp-llms-button" href="/design/prd/specs/yue.md" aria-label="查看本页 Markdown">Markdown 链接</a></div>
+<blockquote>
+<p>本页由构建脚本镜像自仓库 <a href="https://github.com/idadawn/qian/blob/main/docs/prd/specs/yue.md" target="_blank" rel="noopener noreferrer" class="rp-link"><code>docs/prd/specs/yue.md</code></a>，请修改源文件，不要改本页。</p>
+</blockquote>
+<blockquote>
+<p>状态：Draft v1（2026-10-06）。依据：ADR-013（前端与 yue）为主，兼引 ADR-002（插件模型与 MF2）、ADR-010（网关与令牌）、ADR-014（市场与 registry）、ADR-018（阶段）及补充裁决 Q12 / Q13 / Q37 / Q38 / Q39 / Q41。本 spec 规定 yue 的范围、分层、契约、流程与验收；安全规则以 §13 为准，验收方法以 §14 为准。</p>
+<p>yue 是 Qian 全部前端面（平台控制台、应用运行时、设计器、移动 H5、S4 Agent 界面）共用的唯一组件库与运行时契约包。它不是「又一个 UI 库」，而是把参考平台「两套并存、三处呈现、控件无 Schema」的教训反过来写成约束。</p>
+</blockquote>
+<hr/>
+<h2 class="rp-toc-include" id="本版关键决策-d1d16"><a href="#本版关键决策-d1d16" class="rp-header-anchor rp-link" aria-label="链接到 本版关键决策 D1–D16">#</a>本版关键决策 D1–D16</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>#</th><th>决策</th><th>要点</th></tr></thead><tbody><tr><td>D1</td><td><strong>路线 A</strong>：React 19 + TypeScript + Vite + Tailwind v4 + Base UI 原语 + shadcn 源码自有化；数据密集组件在 TanStack 上自建</td><td>接受 S2 交付风险（Q12）；S1 首迭代设 Base UI 原语验证门（Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘与可访问性），不通过整体切 Radix，<strong>不混用</strong>；平台控制台域不临时引入 antd</td></tr><tr><td>D2</td><td><strong>六层分层，依赖方向用工具强制</strong></td><td>tokens → core → shell / data / form / charts / code-editor → biz → runtime / widgets → designer；横切 sdk / agent / mobile 只被上层消费；eslint-plugin-boundaries + dependency-cruiser 进 CI</td></tr><tr><td>D3</td><td><strong>一套表单 / 表格 / 弹层引擎</strong></td><td>SchemaForm、DataTable、弹层 API 各只有一套，贯穿 S1 后台 CRUD 与 S2 低代码运行时；业务组件只做叶子，不得新建引擎</td></tr><tr><td>D4</td><td><strong>Module Federation 2 外壳 + 版本化插槽注册表</strong></td><td><code>@yue/shell</code> 以 MF2 运行时加载官方插件 UI；共享依赖 singleton；插槽 / 契约 ID 带 <code>/vN</code>；不可信 UI 走 Worker 远程渲染或 iframe（S3）</td></tr><tr><td>D5</td><td><strong>令牌三层 + 明暗两态</strong></td><td>primitive → semantic → component；状态色成对 + <code>Tone</code> 类型；WCAG AA 对比度单测进 CI；运行时主题注入 <code>data-theme / data-brand</code>；DTCG 导出 S1 可选、S4 必做</td></tr><tr><td>D6</td><td><strong>机器可读组件目录</strong></td><td>每个组件 / 控件导出 manifest（props JSON Schema、slots、events、a11y 角色、令牌依赖、示例）；<code>registerWidget</code> 一份注册表同时作设计器左栏与 <code>GET /registry/widgets</code>；设计器、远程渲染白名单、S4 Agent 生成 UI 共用一份契约</td></tr><tr><td>D7</td><td><strong>安全硬线</strong></td><td>不 <code>eval</code> 执行租户脚本；令牌不进 URL / iframe；前端权限裁剪只是体验层；不在前端持有加密密钥；不持久化明文令牌（详见 §13.10）</td></tr><tr><td>D8</td><td><strong>一份 Schema + <code>device</code> 维度</strong></td><td>FormSchema / ListSchema 不维护两份端配置；端差异用 overrides 表达；控件 manifest 声明支持端并显式降级</td></tr><tr><td>D9</td><td><strong>统一一个壳，按「平台控制台 / 应用」上下文切换</strong>（Q37）</td><td>不采用三面新窗口；与插件外壳模型一致</td></tr><tr><td>D10</td><td><strong>S1 单一侧栏布局</strong>（Q38）</td><td>7 种布局模式与偏好抽屉 S3 可选</td></tr><tr><td>D11</td><td><strong>S2 只做 PC 响应式</strong>（Q13）</td><td><code>@yue/mobile</code> H5 渲染器 S2 可选 / S3；小程序原生渲染不纳入 S1–S3</td></tr><tr><td>D12</td><td><strong>审批设计器为纵向节点树（DOM 自绘）；不用 bpmn-js</strong></td><td>React Flow 自由画布 S3 可选；BPMN 只作导出器</td></tr><tr><td>D13</td><td><strong>联动三层</strong></td><td>声明式动作 → 可序列化表达式 DSL（JSONLogic 类）→ QuickJS 沙箱脚本（S2 可选兜底，白名单 API、超时、内存上限、不暴露令牌）；自由 JS 按钮不做</td></tr><tr><td>D14</td><td><strong>分发：私有 npm 为主</strong>（Q41）</td><td>GitHub Packages，scope <code>@idadawn</code>，包名 <code>@idadawn/yue-&lt;包&gt;</code>（2026-10-09 拍板，§3.1）；shadcn 私有 registry + MCP Server S3 可选、S4 必做</td></tr><tr><td>D15</td><td><strong>统一使用现有 Rspress 2 文档站，不再使用 Storybook</strong></td><td>组件文档与演示同源，Vitest + Playwright + axe 独立验收；见 ADR-022</td></tr><tr><td>D16</td><td><strong>控件包与后端 Field Type Provider 同名同版本发布</strong></td><td>控件 <code>type</code> 即字段类型编码；前后端同一 SemVer，CI 校验配对</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="0-定位与阅读方式"><a href="#0-定位与阅读方式" class="rp-header-anchor rp-link" aria-label="链接到 0. 定位与阅读方式">#</a>0. 定位与阅读方式</h2>
+<p>yue 同时承担三种角色，三者缺一不可：</p>
+<ol>
+<li><strong>组件库</strong>：平台控制台、应用运行时、设计器、移动 H5 共用的 React 组件，S1 先交付支撑技术组件界面的最小集合。</li>
+<li><strong>运行时契约包</strong>：FormSchema / ListSchema / 控件 manifest / SSE 事件等 JSON Schema 与由其生成的 TypeScript 类型。契约先于组件存在，后端、设计器、运行时、Agent 都对着同一份契约工作。</li>
+<li><strong>工程基线</strong>：分层边界、a11y、i18n、视觉回归、发包流程等门禁，由 §14 统一验收。</li>
+</ol>
+<p>本 spec 的写法：D1–D16 是本版已拍板的决策，阅读时先确认是否认同这些前提；§1–§2 划范围，§3 是契约（最需要评审的部分），§4–§5 说明怎么做与谁消费，§6 是选型，§7–§8 对接 §13 与 §14，§9 指向后续阶段。所有「参考平台」的引用都只作为反例或功能对照，不代表实现路径。</p>
+<p>与参考平台前端的核心差异可以压缩成一句话：参考平台用「两套并存」换取快速堆功能（弹窗、表单、表格、树各有两到三套实现，控件在编辑、只读、单元格三处各自维护，元数据没有 Schema），yue 用「一套引擎 + 一份契约 + 工具强制的分层」换取多团队长期共用的可维护性。这决定了 yue 在 S1 看起来比参考平台「少」，但每一项都带着 S2–S4 要复用的契约。</p>
+<h2 class="rp-toc-include" id="1-范围"><a href="#1-范围" class="rp-header-anchor rp-link" aria-label="链接到 1. 范围">#</a>1. 范围</h2>
+<p>范围划分遵守三条原则。第一，<strong>阶段克制</strong>：每阶段只做让该阶段退出标准跑通所必需的组件，S1 不做任何设计器、不做低代码控件、不做图表。第二，<strong>契约先行</strong>：凡是 S2 以后才有 UI 的能力（控件注册表、FormSchema、SSE 事件、客户端动作），其 Schema 与注册 API 在 S1 就定义并进 CI，避免 S2 把 S1 的后台表单重写一遍。第三，<strong>横切先行</strong>：令牌、SDK、注册表、分层 lint 在第一个组件之前就位，因为它们改起来的代价随组件数线性增长。</p>
+<h3 class="rp-toc-include" id="11-s1-交付支撑开发人员写出多租户应用的界面"><a href="#11-s1-交付支撑开发人员写出多租户应用的界面" class="rp-header-anchor rp-link" aria-label="链接到 1.1 S1 交付（支撑「开发人员写出多租户应用」的界面）">#</a>1.1 S1 交付（支撑「开发人员写出多租户应用」的界面）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>层</th><th>交付</th></tr></thead><tbody><tr><td><code>@yue/tokens</code></td><td>三层令牌、明暗两态、shadcn 语义变量映射、对比度单测、运行时主题注入点；DTCG 导出可选</td></tr><tr><td><code>@yue/core</code></td><td>51 个基础组件：Button 族、Input 族（Input / Textarea / InputNumber / InputPassword / PinInput）、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Label / Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon、Descriptions（提前）；每个组件暴露 <code>data-slot</code> 与稳定 <code>data-testid</code></td></tr><tr><td><code>@yue/shell</code></td><td>AppShell 单一侧栏布局；后端菜单 → 路由 + <code>menuTypeRegistry</code>（页面 / 外链两类）；Page / PageHeader / ColPage / LeftTree；Preferences 对象与 <code>initPreferences({ namespace, overrides })</code>；租户切换器 + 平台代管横幅；主题 / 语言切换、用户下拉；兜底页三件套（403 / 404 / 500 + ErrorBoundary / OfflineBanner / UpdateBanner）；运行时配置注入；MF2 远程加载与插槽注册表</td></tr><tr><td><code>@yue/data</code></td><td>DataTable 基础版（TanStack Table v9：列 schema、服务端分页 / 排序 / 筛选、行选择、列显隐、固定列、空 / 加载 / 错误态、工具栏）；Tree / TreeSelect / Cascader；DatePicker / DateRange / TimePicker / TimeRange；Upload（分片 + MD5 秒传 + 进度 + 断点 + 预览）；ImagePreview</td></tr><tr><td><code>@yue/form</code></td><td>Field 抽象 + react-hook-form 内核 + 解释型 JSON Schema 校验（不在运行期生成代码，R130）；SchemaForm 基础版 + <code>FormApi</code>；<code>dependencies</code> 基础联动；编辑 / 只读态引擎级能力；校验与脱敏规则目录；弹层 API <code>useModal / useDrawer / usePopup</code>；Message / Confirm / Notification 统一出口</td></tr><tr><td><code>@yue/biz</code></td><td>ApiSelect / <code>useRemoteOptions</code>、DictSelect、OrganizeSelect、UserSelect、RoleSelect、菜单 / 按钮授权树、IconPicker</td></tr><tr><td>认证页族</td><td>账号密码（含验证码策略）、SSO 跳转与回调、多租户二次选择、登录过期弹窗；可选：验证码登录、第三方登录按钮区、忘记密码、Captcha</td></tr><tr><td><code>@yue/sdk</code></td><td>注册表 API（导航 / 设置 / 命令 / 快捷键 / 预览器 / 客户端动作 / 控件）、<code>PlatformClient</code>、request 拦截器链（鉴权刷新队列、租户头、大数处理）、i18n、mock 中间件、<code>.d.ts</code> 契约</td></tr><tr><td>契约包</td><td>控件 manifest 格式、FormSchema / ListSchema 草案（含 <code>device</code>、<code>auth</code>）、SSE 事件 JSON Schema、权限码目录格式、Filter AST TS 类型（从后端 Schema 生成）</td></tr><tr><td>工程化</td><td>§4 的 21 项基线全部就位</td></tr></tbody></table></div>
+<p>不在 S1：多标签完整版（基础版可选）、Command Palette、7 种布局、偏好抽屉、Cron、富文本、Markdown、CodeEditor、子表、任何设计器、门户物料、图表。</p>
+<h3 class="rp-toc-include" id="12-s2-交付低代码构建"><a href="#12-s2-交付低代码构建" class="rp-header-anchor rp-link" aria-label="链接到 1.2 S2 交付（低代码构建）">#</a>1.2 S2 交付（低代码构建）</h3>
+<ul>
+<li><code>@yue/core</code> 补 Slider / Rate / ColorPicker / Steps / Timeline / Statistic / EllipsisText / JsonViewer；可选 Command Palette、Watermark、Carousel / QrCode / Barcode、Transfer。</li>
+<li><code>@yue/data</code> 进阶：树表、列权限 <code>auth</code>、行内编辑、复杂表头、列宽拖拽与列序、虚拟滚动；ImportWizard / ExportDialog、SuperQuery、ConditionBuilder（被列表 / 权限 / 流程复用）；可选个人视图、合计行。</li>
+<li><code>@yue/code-editor</code>：CodeEditor（Monaco 桌面懒加载 / CodeMirror 6 轻量）、Cron；富文本 / Markdown 待选型（Q39）。</li>
+<li><code>@yue/biz</code> 补 PosSelect / GroupSelect / UsersSelect、PopupSelect 族、RelationForm（Attr / Query 可选）、InterfaceSelect、授权树的列 / 字段 / 数据页签。</li>
+<li><code>@yue/widgets</code> S2 控件集：基础输入、选择、日期、上传、组织类、子表、下拉树与弹窗选择、关联表单、公式（数字 / 日期）、系统控件、六种布局容器；每控件 meta + Runtime（edit / readonly / cell）+ Designer 面板 + 端支持矩阵。</li>
+<li><code>@yue/runtime</code>：表单渲染器（三态由注册表提供）、子表、联动三层、列表渲染器（普通 / 左树右表 / 树形必做；分组 / 卡片 / 行内编辑可选）、动作执行器插件点、流程表单宿主（<code>formOperates</code> 字段权限、按钮矩阵由引擎返回）、审批中心基础（待办 / 已办 / 发起 + 时间线）、设计物生命周期 UI（发布 / 预览 / 生成菜单）。</li>
+<li><code>@yue/designer</code>（基础设施：dnd-kit 封装、画布容器、schema 驱动属性面板、大纲树、撤销重做、校验定位、预览）+ <code>@yue/designer-form</code> + <code>@yue/designer-list</code> + <code>@yue/designer-flow</code>（纵向节点树）。</li>
+<li><code>@yue/charts</code>：ECharts 6 封装（S2 可选，S3 门户 / 报表必做）。</li>
+<li>组件 manifest 全量导出；视觉回归进 CI；应用切换（同壳按上下文）。</li>
+<li><code>@yue/mobile</code> H5 表单渲染器：S2 可选，作为后段验证项。</li>
+</ul>
+<h3 class="rp-toc-include" id="13-s3-交付面向客户"><a href="#13-s3-交付面向客户" class="rp-header-anchor rp-link" aria-label="链接到 1.3 S3 交付（面向客户）">#</a>1.3 S3 交付（面向客户）</h3>
+<ul>
+<li>通知抽屉；门户设计器与运行时（Puck 模型或自研栅格）；不可信 UI 沙箱（Worker 远程渲染白名单 = yue manifest；iframe sandbox）。</li>
+<li>可选：多布局与偏好抽屉、主题预设、扫码登录 / 注册、申请 / 加入企业、自动化流设计器（React Flow）、打印（pdfme）/ 报表（Univer）/ 大屏设计器与运行时、透视表、外链运行时、工作台、移动 H5 审批与工作台、shadcn 私有 registry。</li>
+</ul>
+<h3 class="rp-toc-include" id="14-s4-预留本期只定契约"><a href="#14-s4-预留本期只定契约" class="rp-header-anchor rp-link" aria-label="链接到 1.4 S4 预留（本期只定契约）">#</a>1.4 S4 预留（本期只定契约）</h3>
+<p><code>@yue/agent</code>（ToolCallCard、ThinkingTimeline、AgentTrace、Composer、来源 / 记忆引用芯片；只消费 S1 定义的 SSE 事件契约）；shadcn MCP Server；MCP Apps 视图；AI 助手悬浮窗。</p>
+<hr/>
+<h2 class="rp-toc-include" id="2-非目标"><a href="#2-非目标" class="rp-header-anchor rp-link" aria-label="链接到 2. 非目标">#</a>2. 非目标</h2>
+<ol>
+<li>不混用两套设计体系：不在任何前端面并存 yue 与 antd / MUI / Element 之类的第二套组件库；Base UI 验证门不过则整体切 Radix。</li>
+<li>不做小程序原生渲染（S1–S3）、不做原生 App（本期）；移动端是同一 React 渲染器的端适配。</li>
+<li>不 <code>eval</code> / <code>new Function</code> 执行租户脚本；不做「自定义按钮任意 JS」。</li>
+<li>不维护两份端配置（PC / 移动各一份元数据）。</li>
+<li>不复刻参考平台全量：7 种布局模式、锁屏、内置 IM、三面新窗口切换、两套图标体系、双 Modal 实现等不做。</li>
+<li>不把 yue 做成「框架无关」口号：yue 只服务 React 19；分层靠工具强制，不靠约定。</li>
+<li>不在 yue 内实现业务规则：权限判定、数据过滤、脱敏以服务端为准，yue 只按元数据渲染。</li>
+<li>不自建 Agent 对话引擎：<code>@yue/agent</code> 只是事件流的展示组件。</li>
+<li>不用 bpmn-js、Formily、amis、lowcode-engine、hiprint、vxe-table 等自带体系或许可证受限的库。</li>
+<li>不把 Docusaurus（React 18）混入 yue 工作区。</li>
+</ol>
+<hr/>
+<h2 class="rp-toc-include" id="3-数据模型"><a href="#3-数据模型" class="rp-header-anchor rp-link" aria-label="链接到 3. 数据模型">#</a>3. 数据模型</h2>
+<p>组件文档与交互预览统一在 Rspress。每个 core 入口共用一份 React 示例，预览工具栏按 <code>packages/yue/core/docs/scenarios.json</code> 切换已登记状态；Dialog 等弹层通过默认 / 暗色示例里的触发器展示打开、关闭与焦点恢复，不宣称每个入口都另有 Disabled / Error 示例。Hover 需要指针实际移入目标，测试也执行真实 hover。</p>
+<h3 class="rp-toc-include" id="31-包结构与依赖方向"><a href="#31-包结构与依赖方向" class="rp-header-anchor rp-link" aria-label="链接到 3.1 包结构与依赖方向">#</a>3.1 包结构与依赖方向</h3>
+<div class="rp-codeblock language-txt"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="txt"><code><span class="line"><span>应用面（平台控制台 / 应用运行时 / 设计器 / 移动 H5 / Agent 界面）</span></span>
+<span class="line"><span>  ▲</span></span>
+<span class="line"><span>  │ @yue/designer, @yue/designer-form|list|flow|portal     设计器层（S2 / S3）</span></span>
+<span class="line"><span>  │ @yue/runtime  @yue/widgets                              低代码运行时层（S2）</span></span>
+<span class="line"><span>  │ @yue/biz                                                业务选择器层（S1 起；经 PlatformClient 取数）</span></span>
+<span class="line"><span>  │ @yue/shell  @yue/data  @yue/form  @yue/charts  @yue/code-editor   后台通用层（S1 / S2）</span></span>
+<span class="line"><span>  │ @yue/core                                               基础组件层（S1）</span></span>
+<span class="line"><span>  │ @yue/tokens                                             设计令牌层（S1）</span></span>
+<span class="line"><span>  │</span></span>
+<span class="line"><span>  横切（只被上层消费）：@yue/sdk（注册表 API、PlatformClient、request、i18n、mock；配置由宿主注入）</span></span>
+<span class="line"><span>                      @yue/contracts（无 UI 的 Schema 与 TS 类型）</span></span>
+<span class="line"><span>                      @yue/agent（S4）  @yue/mobile（S2 可选 / S3）</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>包</th><th>职责</th><th>允许依赖</th><th>阶段</th></tr></thead><tbody><tr><td><code>@yue/tokens</code></td><td>CSS 变量、TS <code>Tone</code> 类型、主题注入、DTCG 导出</td><td>无</td><td>S1</td></tr><tr><td><code>@yue/contracts</code></td><td>FormSchema / ListSchema / PortalLayout / FlowNodes 的 JSON Schema 与生成的 TS 类型；控件 manifest Schema；SSE 事件 Schema；权限码目录格式；Filter AST 类型</td><td>无</td><td>S1 草案 / S2 定稿</td></tr><tr><td><code>@yue/core</code></td><td>Base UI + shadcn 自有化的基础组件</td><td>tokens、contracts（底层 Schema）</td><td>S1</td></tr><tr><td><code>@yue/sdk</code></td><td>注册表（导航 / 设置 / 命令 / 快捷键 / 预览器 / 客户端动作 / 控件 / 菜单类型）、<code>PlatformClient</code>、request 拦截器链、i18n、mock；配置由宿主经构造参数注入（Qian 外壳的运行时配置是同源 <code>/app-config.json</code>，由私有包 <code>@qian/shell-kit</code> 读取与校验，S1-YUE-012）</td><td>tokens, contracts</td><td>S1</td></tr><tr><td><code>@yue/shell</code></td><td>AppShell、菜单 → 路由（最小历史路由）、偏好、认证页族组件与契约（登录、租户选择与切换器、SSO 回调、改密）、会话过期对话框、站内信、兜底页；MF2 宿主与插槽在前端插件 SDK（<code>@idadawn/qian-plugin-sdk</code> 的 ShellHost），Qian 专有接线（运行时配置、网关 BFF 会话、bootstrap、能力导航）在私有包 <code>@qian/shell-kit</code>（S1-YUE-012）</td><td>core, sdk, form（登录表单）</td><td>S1</td></tr><tr><td><code>@yue/data</code></td><td>DataTable、Tree 族、日期族、Upload、ImportWizard、ConditionBuilder</td><td>core, sdk</td><td>S1 / S2</td></tr><tr><td><code>@yue/form</code></td><td>Field、SchemaForm、FormApi、联动、校验与脱敏规则目录、弹层 API、消息出口</td><td>core, sdk, contracts</td><td>S1</td></tr><tr><td><code>@yue/charts</code></td><td>ECharts 封装与令牌桥接</td><td>core, tokens</td><td>S2 可选</td></tr><tr><td><code>@yue/code-editor</code></td><td>Monaco / CodeMirror 统一接口、Cron</td><td>core</td><td>S2</td></tr><tr><td><code>@yue/biz</code></td><td>组织 / 用户 / 角色 / 岗位 / 字典 / 远程选项 / 弹窗选择 / 关联表单 / 授权树 / IconPicker</td><td>core, data, form, sdk</td><td>S1 / S2</td></tr><tr><td><code>@yue/widgets</code></td><td>低代码控件：meta + Runtime(edit / readonly / cell) + Designer 面板</td><td>core, data, form, biz, sdk, contracts</td><td>S2</td></tr><tr><td><code>@yue/runtime</code></td><td>表单 / 列表 / 详情渲染器、动作执行器、流程表单宿主、审批中心基础</td><td>widgets 及以下</td><td>S2</td></tr><tr><td><code>@yue/designer*</code></td><td>设计器基础设施与三大设计器</td><td>runtime 及以下</td><td>S2 / S3</td></tr><tr><td><code>@yue/mobile</code></td><td>H5 渲染器端适配</td><td>runtime 及以下</td><td>S2 可选 / S3</td></tr><tr><td><code>@yue/agent</code></td><td>Agent 交互组件</td><td>core, sdk, contracts</td><td>S4</td></tr></tbody></table></div>
+<p>规则：下层不得 import 上层；同层之间 shell / data / form / charts / code-editor 互不依赖（shell 对 form 的登录表单依赖是唯一例外，经 ADR 记录）；横切包不得依赖除 tokens / contracts 以外的任何包。</p>
+<p>平台前端 SDK <code>@qian/plugin-sdk</code>（物理包 <code>@idadawn/qian-plugin-sdk</code>）位于上述 yue 分层之外的上层：只消费 <code>@yue/sdk</code>、<code>tokens</code>、<code>contracts</code> 与 <code>@qian/runtime</code>，不得依赖 yue 控件或应用。<code>apps/*</code> 与官方租户 UI 可消费它；所有 yue 包不得反向依赖平台 SDK 或 Qian Runtime。该方向由同一 <code>boundaries.config.mjs</code> 校验，前端 SDK 纳入 lint、类型、单测、包形状和循环依赖门禁。</p>
+<p><strong>归层判定题</strong>（新组件进哪一层，按顺序回答）：</p>
+<ol>
+<li>它是否需要知道「平台」的存在（组织、用户、字典、数据接口）？是 → 至少是 <code>@yue/biz</code>；否 → 继续。</li>
+<li>它是否由元数据（FormSchema / ListSchema）驱动渲染？是 → <code>@yue/widgets</code> 或 <code>@yue/runtime</code>；否 → 继续。</li>
+<li>它是否承载页面骨架、导航、上下文（租户 / 应用 / 身份）？是 → <code>@yue/shell</code>；否 → 继续。</li>
+<li>它是否是数据密集（表格、树、日期、上传）或表单体系（Field / SchemaForm / 弹层）？是 → <code>@yue/data</code> 或 <code>@yue/form</code>；否 → <code>@yue/core</code>。</li>
+<li>任何回答里出现「需要新建一套弹层 / 表单 / 表格引擎」→ 否决，改为复用现有引擎并只做叶子（D3）。</li>
+</ol>
+<p>分层违规在 CI 直接失败，不接受「临时引用、下个迭代修」；需要跨层的能力一律通过 <code>@yue/sdk</code> 的注册表或依赖注入（<code>PlatformClient</code>）解耦。</p>
+<p><strong>npm 包名</strong>（2026-10-09 产品负责人拍板）：文中 <code>@yue/&lt;包&gt;</code> 是简称；实际发布的包名是 <code>@idadawn/yue-&lt;包&gt;</code>（如 <code>@idadawn/yue-core</code>），发到 GitHub Packages——它要求 scope 与仓库所有者同名（ADR-021 D21.2 的「一个 GitHub Packages 命名空间」）。目录仍是 <code>packages/yue/&lt;包&gt;</code>，分层矩阵按目录名登记。</p>
+<h3 class="rp-toc-include" id="32-控件注册表契约-registerwidget"><a href="#32-控件注册表契约-registerwidget" class="rp-header-anchor rp-link" aria-label="链接到 3.2 控件注册表契约 registerWidget">#</a>3.2 控件注册表契约 <code>registerWidget</code></h3>
+<div class="rp-codeblock language-ts"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="ts"><code><span class="line"><span style="color:var(--shiki-token-comment)">// @yue/sdk</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">export</span><span style="color:var(--shiki-token-keyword)"> type</span><span style="color:var(--shiki-token-function)"> Device</span><span style="color:var(--shiki-token-keyword)"> =</span><span style="color:var(--shiki-token-string-expression)"> &#x27;pc&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;h5&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;miniapp&#x27;</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">export</span><span style="color:var(--shiki-token-keyword)"> type</span><span style="color:var(--shiki-token-function)"> Presentation</span><span style="color:var(--shiki-token-keyword)"> =</span><span style="color:var(--shiki-token-string-expression)"> &#x27;edit&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;readonly&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;cell&#x27;</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">export</span><span style="color:var(--shiki-token-keyword)"> interface</span><span style="color:var(--shiki-token-function)"> WidgetMeta</span><span style="color:var(--shiki-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  type</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-foreground)">;                 </span><span style="color:var(--shiki-token-comment)">// 稳定编码，发布后不可改；与后端 Field Type Provider 同名</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  version</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-foreground)">;              </span><span style="color:var(--shiki-token-comment)">// SemVer，与后端 Provider 同版本（D16）</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  name</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> I18nKey</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  category</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> &#x27;basic&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;advanced&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;system&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;layout&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;biz&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;ocr&#x27;</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  props</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> JSONSchema2020</span><span style="color:var(--shiki-foreground)">;        </span><span style="color:var(--shiki-token-comment)">// 设计器属性面板由此生成；Agent 生成 UI 由此校验</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  valueType</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> &#x27;string&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;number&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;boolean&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;date&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;datetime&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;time&#x27;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">           |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;array&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;object&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;file&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;ref&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;none&#x27;</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  events</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-foreground)">[];             </span><span style="color:var(--shiki-token-comment)">// 可绑定的事件名</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  devices</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> Device</span><span style="color:var(--shiki-foreground)">[];            </span><span style="color:var(--shiki-token-comment)">// 支持端；不支持的端显式降级为只读或提示</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  capabilities</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    bindsField</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> boolean</span><span style="color:var(--shiki-foreground)">;        </span><span style="color:var(--shiki-token-comment)">// 是否绑定数据字段（布局容器为 false）</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    canBeColumn</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> boolean</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    canBeSearch</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> boolean</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    canBeGroup</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> boolean</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    canBeInSubtable</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> boolean</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    supportsReadonly</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> boolean</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    participatesInLinkage</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> boolean</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  };</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  defaultOperators</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> FilterOperator</span><span style="color:var(--shiki-foreground)">[];   </span><span style="color:var(--shiki-token-comment)">// 与后端「运算符 × 字段类型」矩阵一致</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  authAware</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> boolean</span><span style="color:var(--shiki-foreground)">;           </span><span style="color:var(--shiki-token-comment)">// 是否参与字段权限（可见 / 可编辑 / 脱敏）</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  sensitivityHint</span><span style="color:var(--shiki-token-keyword)">?:</span><span style="color:var(--shiki-token-string-expression)"> &#x27;public&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;internal&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;pii&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;finance&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;secret&#x27;</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  i18nKeys</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-foreground)">[];</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  a11y</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-foreground)"> { role</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-foreground)">; labelledBy</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> &#x27;label&#x27;</span><span style="color:var(--shiki-token-keyword)"> |</span><span style="color:var(--shiki-token-string-expression)"> &#x27;aria-label&#x27;</span><span style="color:var(--shiki-foreground)"> };</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  tokens</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-foreground)">[];             </span><span style="color:var(--shiki-token-comment)">// 依赖的令牌名，供主题校验</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">export</span><span style="color:var(--shiki-token-keyword)"> interface</span><span style="color:var(--shiki-token-function)"> WidgetDefinition</span><span style="color:var(--shiki-foreground)">&lt;</span><span style="color:var(--shiki-token-function)">P</span><span style="color:var(--shiki-token-keyword)"> =</span><span style="color:var(--shiki-token-constant)"> unknown</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-function)"> V</span><span style="color:var(--shiki-token-keyword)"> =</span><span style="color:var(--shiki-token-constant)"> unknown</span><span style="color:var(--shiki-foreground)">&gt; {</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  meta</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> WidgetMeta</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  Runtime</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> React</span><span style="color:var(--shiki-foreground)">.</span><span style="color:var(--shiki-token-function)">ComponentType</span><span style="color:var(--shiki-foreground)">&lt;{ presentation</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> Presentation</span><span style="color:var(--shiki-foreground)">; props</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> P</span><span style="color:var(--shiki-foreground)">; value</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> V</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-token-function)">                                 onChange</span><span style="color:var(--shiki-token-keyword)">?:</span><span style="color:var(--shiki-foreground)"> (v</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> V</span><span style="color:var(--shiki-foreground)">) </span><span style="color:var(--shiki-token-keyword)">=&gt;</span><span style="color:var(--shiki-token-constant)"> void</span><span style="color:var(--shiki-foreground)">; formApi</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> FormApi</span><span style="color:var(--shiki-foreground)">; auth</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> FieldAuth</span><span style="color:var(--shiki-foreground)"> }&gt;;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  Designer</span><span style="color:var(--shiki-token-keyword)">?:</span><span style="color:var(--shiki-token-function)"> React</span><span style="color:var(--shiki-foreground)">.</span><span style="color:var(--shiki-token-function)">ComponentType</span><span style="color:var(--shiki-foreground)">&lt;</span><span style="color:var(--shiki-token-function)">DesignerPanelProps</span><span style="color:var(--shiki-foreground)">&lt;</span><span style="color:var(--shiki-token-function)">P</span><span style="color:var(--shiki-foreground)">&gt;&gt;;   </span><span style="color:var(--shiki-token-comment)">// 缺省由 meta.props 生成</span></span>
+<span class="line"><span style="color:var(--shiki-token-function)">  toSearchControl</span><span style="color:var(--shiki-token-keyword)">?:</span><span style="color:var(--shiki-foreground)"> (props</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> P</span><span style="color:var(--shiki-foreground)">) </span><span style="color:var(--shiki-token-keyword)">=&gt;</span><span style="color:var(--shiki-token-function)"> SearchControlSchema</span><span style="color:var(--shiki-foreground)">;      </span><span style="color:var(--shiki-token-comment)">// 查询表单派生</span></span>
+<span class="line"><span style="color:var(--shiki-token-function)">  toCellRenderer</span><span style="color:var(--shiki-token-keyword)">?:</span><span style="color:var(--shiki-foreground)"> (props</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> P</span><span style="color:var(--shiki-foreground)">) </span><span style="color:var(--shiki-token-keyword)">=&gt;</span><span style="color:var(--shiki-token-function)"> CellRenderer</span><span style="color:var(--shiki-foreground)">&lt;</span><span style="color:var(--shiki-token-function)">V</span><span style="color:var(--shiki-foreground)">&gt;;           </span><span style="color:var(--shiki-token-comment)">// 列表单元格派生</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">export</span><span style="color:var(--shiki-token-keyword)"> function</span><span style="color:var(--shiki-token-function)"> registerWidget</span><span style="color:var(--shiki-foreground)">(def</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> WidgetDefinition</span><span style="color:var(--shiki-foreground)">)</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> void</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">export</span><span style="color:var(--shiki-token-keyword)"> function</span><span style="color:var(--shiki-token-function)"> listWidgets</span><span style="color:var(--shiki-foreground)">(filter</span><span style="color:var(--shiki-token-keyword)">?:</span><span style="color:var(--shiki-foreground)"> { device</span><span style="color:var(--shiki-token-keyword)">?:</span><span style="color:var(--shiki-token-function)"> Device</span><span style="color:var(--shiki-foreground)">; category</span><span style="color:var(--shiki-token-keyword)">?:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-foreground)"> })</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-function)"> WidgetMeta</span><span style="color:var(--shiki-foreground)">[];</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<ul>
+<li>同一份注册表同时是设计器左栏数据源、运行时分派表与 <code>GET /registry/widgets</code> 的返回体（服务端只做权限过滤与缓存）。</li>
+<li><code>Runtime</code> 必须覆盖三种 <code>presentation</code>；不允许为只读态或单元格另写组件（参考平台 806 行详情渲染器是反例）。</li>
+<li><code>type</code> 命名：官方 <code>qian.&lt;name&gt;</code>，插件 <code>&lt;插件 id&gt;.&lt;name&gt;</code>；注册冲突即启动失败。</li>
+</ul>
+<p>注册表有三类消费者，对一致性的要求各不相同：<strong>设计器</strong>读 <code>meta</code> 生成左栏与属性面板，要求 <code>props</code> Schema 完整且带默认值与 <code>title / description</code>（多语言 key）；<strong>运行时</strong>按 <code>type</code> 分派 <code>Runtime</code> 并传入 <code>presentation</code>，要求三态行为一致（同一 <code>value</code> 在 edit / readonly / cell 下显示语义相同，只是交互不同）；<strong>服务端与 Agent</strong> 经 <code>GET /registry/widgets</code> 读 <code>meta</code>，要求 <code>type@version</code> 与后端 Field Type Catalog 配对、<code>defaultOperators</code> 与运算符矩阵一致、<code>devices</code> 与端支持矩阵一致。任何一处不一致都由 CI 的契约测试拦截，而不是等到设计器里拖出控件才发现。</p>
+<p>控件在不同端的行为必须<strong>显式</strong>：<code>devices</code> 不含当前端时，运行时渲染为只读文本或「此端不支持」提示，绝不静默丢弃字段（参考平台在某小程序端静默缺失 7 类控件是反例）。</p>
+<h3 class="rp-toc-include" id="33-formschema-四段契约草案"><a href="#33-formschema-四段契约草案" class="rp-header-anchor rp-link" aria-label="链接到 3.3 FormSchema 四段契约草案">#</a>3.3 FormSchema 四段契约草案</h3>
+<div class="rp-codeblock language-jsonc"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="jsonc"><code><span class="line"><span style="color:var(--shiki-foreground)">{</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;$schema&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;https://schema.qian.dev/form/v1&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;version&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;1.2.0&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-comment)">                      // 元数据版本（草稿 / 发布快照各自不可变）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;id&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.demo.order.form&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;data&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {                                </span><span style="color:var(--shiki-token-comment)">// 数据契约：JSON Schema 2020-12，additionalProperties:false</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;type&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;object&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;properties&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">      &quot;orderNo&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)">  { </span><span style="color:var(--shiki-token-keyword)">&quot;type&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;string&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;x-sensitivity&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;internal&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">      &quot;amount&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)">   { </span><span style="color:var(--shiki-token-keyword)">&quot;type&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;number&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;minimum&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> 0</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">      &quot;customer&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;type&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;string&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;x-ref&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.crm.customer&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">      &quot;items&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)">    { </span><span style="color:var(--shiki-token-keyword)">&quot;type&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;array&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;items&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;$ref&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;#/$defs/item&quot;</span><span style="color:var(--shiki-foreground)"> } }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;required&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;orderNo&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;customer&quot;</span><span style="color:var(--shiki-foreground)">]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;$defs&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;item&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;type&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;object&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;properties&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;sku&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;type&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;string&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;qty&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;type&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;integer&quot;</span><span style="color:var(--shiki-foreground)"> } } } }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;ui&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {                                  </span><span style="color:var(--shiki-token-comment)">// 布局与控件：自有 UI Schema</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;layout&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">      { </span><span style="color:var(--shiki-token-keyword)">&quot;widget&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.row&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;props&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;cols&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> 2</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;children&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">        { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;orderNo&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;widget&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.input&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;props&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;readonlyMask&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;none&quot;</span><span style="color:var(--shiki-foreground)"> } }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">        { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;amount&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)">  &quot;widget&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.number&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;props&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;precision&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> 2</span><span style="color:var(--shiki-foreground)"> } }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">      ]}</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">      { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;customer&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;widget&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.popupSelect&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;props&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;source&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;kind&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;entity&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;ref&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.crm.customer&quot;</span><span style="color:var(--shiki-foreground)"> } } }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">      { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;items&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;widget&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.subtable&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;props&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;columns&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;sku&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;qty&quot;</span><span style="color:var(--shiki-foreground)">]</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;summary&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;qty&quot;</span><span style="color:var(--shiki-foreground)">] } }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    ]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;device&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {                            </span><span style="color:var(--shiki-token-comment)">// 端覆盖，而非第二份元数据（D8）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">      &quot;h5&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;overrides&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [ { </span><span style="color:var(--shiki-token-keyword)">&quot;path&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;layout[0].props.cols&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;value&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> 1</span><span style="color:var(--shiki-foreground)"> } ] }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;rules&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {                               </span><span style="color:var(--shiki-token-comment)">// 联动与校验：三层中的前两层</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;actions&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">      { </span><span style="color:var(--shiki-token-keyword)">&quot;when&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;==&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [ { </span><span style="color:var(--shiki-token-keyword)">&quot;var&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;amount&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-constant)"> 0</span><span style="color:var(--shiki-foreground)"> ] }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;do&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;setRequired&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;customer&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> false</span><span style="color:var(--shiki-foreground)"> } } }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    ]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;expressions&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">      &quot;total&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;*&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [ { </span><span style="color:var(--shiki-token-keyword)">&quot;var&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;amount&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-constant)"> 1.13</span><span style="color:var(--shiki-foreground)"> ] }   </span><span style="color:var(--shiki-token-comment)">// 可序列化表达式 DSL（JSONLogic 类）</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;serverHooks&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;before-save&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;after-save&quot;</span><span style="color:var(--shiki-foreground)">]        </span><span style="color:var(--shiki-token-comment)">// 服务端 Hook 名，由后端注册</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;binding&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {                             </span><span style="color:var(--shiki-token-comment)">// 数据绑定：实体 / 字段 / 系统列约定</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;entity&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.demo.order&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;fields&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;orderNo&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;order_no&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;amount&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;amount&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;customer&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;customer_id&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;systemColumns&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;tenant_id&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;created_by&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;created_at&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;row_version&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;deleted_at&quot;</span><span style="color:var(--shiki-foreground)">]</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;auth&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {                                </span><span style="color:var(--shiki-token-comment)">// 体验层裁剪提示；服务端为准（§13.10）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;fields&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;amount&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;read&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;write&quot;</span><span style="color:var(--shiki-foreground)">]</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;customer&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;read&quot;</span><span style="color:var(--shiki-foreground)">] }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">}</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p><strong>四段为什么分开。</strong> <code>data</code> 是唯一允许被后端、OpenAPI、MCP 直接复用的部分，所以它必须是标准 JSON Schema 2020-12 且 <code>additionalProperties: false</code>；<code>ui</code> 承载布局与控件选择，是 yue 自有的 UI Schema，允许随版本演进；<code>rules</code> 只放可序列化的声明式动作与表达式 DSL，保证 Agent 能生成、服务端能校验、小程序端能执行；<code>binding</code> 把表单与实体字段、系统列约定绑定，是 Schema Migrator 与数据引擎读取的部分。四段分开的直接收益是：改布局不触发数据契约版本变化，改规则不触发迁移，Agent 生成表单时可以只生成 <code>data + ui</code> 而把 <code>binding</code> 交给平台填充。</p>
+<p><strong>版本与兼容。</strong> <code>version</code> 遵循 SemVer：<code>data</code> 的破坏性变化（删字段、改类型、收紧必填）升大版本并要求迁移计划；<code>ui / rules</code> 的变化升小版本；草稿与发布快照各自不可变，运行时只读当前生效快照。校验器（前后端同一份 Schema；前端由 <code>@idadawn/yue-form</code> 解释执行、不在运行期生成代码，判定与 Ajv 逐条对照，R130）必须拒绝未知 <code>$schema</code> 与超出版本范围的文档，而不是宽松通过。</p>
+<p><strong><code>x-</code> 扩展。</strong> <code>x-sensitivity</code>（字段敏感度，供脱敏与导出审计）、<code>x-ref</code>（引用实体）、<code>x-widget-hint</code>（推荐控件）是本 spec 定义的扩展关键字，其余 <code>x-</code> 关键字一律由校验器拒绝，防止契约被私有字段侵蚀。</p>
+<p><strong>校验子集与口径（R131 ③）。</strong> SchemaForm 的校验器只解释 JSON Schema 2020-12 的一个子集（清单见 <code>@idadawn/yue-form</code> README），口径是：子集外的断言类关键字（<code>anyOf</code> / <code>allOf</code> / <code>not</code> / <code>if</code>、<code>uniqueItems</code>、<code>multipleOf</code> 等）、子集外的 <code>format</code> 与未知关键字在渲染前（<code>assertFormSchema</code>）拒绝，不像 Ajv <code>strict: false</code> 那样忽略；纯说明词（<code>title</code>、<code>description</code>、<code>default</code>、<code>examples</code>、<code>deprecated</code>、<code>readOnly</code>、<code>writeOnly</code>、<code>$comment</code> 与 <code>contentMediaType</code> / <code>contentEncoding</code> / <code>contentSchema</code>）只查参数类型、不参与判定；取值为 <code>undefined</code> 的成员按缺失处理。设置页（<code>qian.config</code> 配置 Schema → SchemaForm）落地时若需要子集外的关键字，按 yue-form README 的做法扩充子集并补差分用例，而不是放宽为忽略。</p>
+<h3 class="rp-toc-include" id="34-listschema-契约草案base--overrides"><a href="#34-listschema-契约草案base--overrides" class="rp-header-anchor rp-link" aria-label="链接到 3.4 ListSchema 契约草案（base + overrides）">#</a>3.4 ListSchema 契约草案（base + overrides）</h3>
+<div class="rp-codeblock language-jsonc"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="jsonc"><code><span class="line"><span style="color:var(--shiki-foreground)">{</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;$schema&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;https://schema.qian.dev/list/v1&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;version&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;1.0.0&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;id&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.demo.order.list&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;base&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;dataSource&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;kind&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;entity&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;ref&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.demo.order&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;layout&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;table&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-comment)">                               // table | left-tree | tree-table | group | card | inline-edit</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;query&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [ { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;orderNo&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;widget&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.input&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;createdAt&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;widget&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.dateRange&quot;</span><span style="color:var(--shiki-foreground)"> } ]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;columns&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">      { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;orderNo&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;width&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> 160</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;fixed&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;left&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">      { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;amount&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;align&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;right&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;summary&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;sum&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">      { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;customer&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;resolver&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.crm.customer&quot;</span><span style="color:var(--shiki-foreground)"> }   </span><span style="color:var(--shiki-token-comment)">// 值翻译按需批量</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    ]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;actions&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">      &quot;toolbar&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [ { </span><span style="color:var(--shiki-token-keyword)">&quot;kind&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;builtin&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;id&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;add&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;kind&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;builtin&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;id&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;import&quot;</span><span style="color:var(--shiki-foreground)"> } ]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">      &quot;row&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)">     [ { </span><span style="color:var(--shiki-token-keyword)">&quot;kind&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;builtin&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;id&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;edit&quot;</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;kind&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;startFlow&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;flow&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;qian.demo.order.approval&quot;</span><span style="color:var(--shiki-foreground)"> } ]</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">    }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;filter&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;logic&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;and&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;groups&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [] }</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-comment)">      // Filter AST，与后端共用</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;sort&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [ { </span><span style="color:var(--shiki-token-keyword)">&quot;field&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;createdAt&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;dir&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;desc&quot;</span><span style="color:var(--shiki-foreground)"> } ]</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;overrides&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    &quot;h5&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;layout&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;card&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;columns&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;orderNo&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;amount&quot;</span><span style="color:var(--shiki-foreground)">] }</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;auth&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;buttons&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> true</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;columns&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> true</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;fields&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> true</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;dataScope&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-constant)"> true</span><span style="color:var(--shiki-foreground)"> }   </span><span style="color:var(--shiki-token-comment)">// 四开关产出可授权项</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">}</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p><strong>合并规则。</strong> 运行时按当前 <code>device</code> 取 <code>overrides[device]</code> 与 <code>base</code> 做浅合并：<code>layout</code> 整体覆盖；<code>columns</code> 若为字符串数组则表示「从 base 中按字段名挑选并排序」，若为对象数组则逐列合并；<code>query / actions</code> 按 <code>id / field</code> 对位合并；<code>filter / sort / dataSource / auth</code> 不允许被端覆盖（它们影响服务端语义）。合并结果再经同一份 ListSchema 校验器校验，保证任何端上看到的都是合法 Schema。</p>
+<p><strong>与权限的关系。</strong> <code>auth</code> 四开关只决定「发布时产出哪些可授权项」（按钮、列、字段、数据范围），不参与运行时判定；运行时的列裁剪、按钮显隐来自服务端返回的授权结果，列表组件据此渲染。两者分开是为了避免参考平台「设计器不勾选就不受管控」的双重门漏洞演变成「不勾选就不校验」。</p>
+<h3 class="rp-toc-include" id="35-令牌命名"><a href="#35-令牌命名" class="rp-header-anchor rp-link" aria-label="链接到 3.5 令牌命名">#</a>3.5 令牌命名</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>层</th><th>形式</th><th>示例</th><th>规则</th></tr></thead><tbody><tr><td>primitive</td><td><code>--yue-p-&lt;family&gt;-&lt;step&gt;</code></td><td><code>--yue-p-blue-500</code>、<code>--yue-p-space-4</code>、<code>--yue-p-radius-md</code>、<code>--yue-p-duration-fast</code></td><td>色阶 50–950；字号 / 行高阶梯；间距刻度；圆角；阴影；动效时长与曲线；z-index；断点</td></tr><tr><td>semantic</td><td><code>--yue-&lt;role&gt;[-foreground]</code></td><td><code>--yue-primary</code> / <code>--yue-primary-foreground</code>、<code>--yue-destructive</code>、<code>--yue-sidebar</code>、<code>--yue-ring</code></td><td>全部映射到 shadcn 语义变量（<code>--primary</code> 等）供 Base UI 组件消费；状态色成对 <code>--yue-ok</code> / <code>--yue-ok-bg</code>，TS <code>Tone = &#x27;ok&#x27; | &#x27;warn&#x27; | &#x27;error&#x27; | &#x27;info&#x27; | &#x27;neutral&#x27;</code></td></tr><tr><td>component</td><td><code>--yue-&lt;component&gt;-&lt;prop&gt;</code></td><td><code>--yue-button-radius</code>、<code>--yue-table-row-height</code></td><td>按组件按需，只能引用 semantic 或 primitive</td></tr></tbody></table></div>
+<p>规则：禁止同名异义（<code>--accent</code> 冲突为反例）；颜色以可加 alpha 的形式存放（oklch 分量，如 <code>.43 .144 260</code>），消费方写 <code>oklch(var(--yue-&lt;role&gt;))</code> 或 <code>oklch(var(--yue-&lt;role&gt;) / &lt;alpha&gt;)</code>，不要把语义令牌直接当颜色值使用；由一个主色派生完整色阶；明暗两态在 <code>html.dark, html[data-theme=&quot;dark&quot;]</code> 下重定义 semantic 层并设置 <code>color-scheme</code>（两种切换方式都认，文档站用前者，S1-DEC-019 R72）；<code>data-brand</code> 由服务端按租户下发；禁止媒体查询换品牌色。对比度门禁分三类（R116）：文字配对 ≥ 4.5:1，控件边界（<code>--yue-input</code>、<code>--yue-ring</code> 对 background）≥ 3:1，<code>--yue-border</code> / <code>--yue-sidebar-border</code> / 分隔线为装饰性豁免，registry 以 <code>contrast</code> 字段标注；字体栈 primitive <code>--yue-p-font-sans</code> / <code>--yue-p-font-mono</code> 用系统字体、不打包 webfont；<code>theme.css</code> 以 Tailwind v4 <code>@theme inline</code> 把语义令牌注册为工具类，组件只用语义工具类、不写 <code>*-[var(--x)]</code> 任意值（R117，S1-YUE-011）。</p>
+<h3 class="rp-toc-include" id="36-组件-manifest-格式"><a href="#36-组件-manifest-格式" class="rp-header-anchor rp-link" aria-label="链接到 3.6 组件 manifest 格式">#</a>3.6 组件 manifest 格式</h3>
+<div class="rp-codeblock language-jsonc"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="jsonc"><code><span class="line"><span style="color:var(--shiki-foreground)">{</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;name&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;Button&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;package&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;@yue/core&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;version&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;1.4.0&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;props&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-comment)">/* JSON Schema 2020-12 */</span><span style="color:var(--shiki-foreground)"> }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;slots&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;icon&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;default&quot;</span><span style="color:var(--shiki-foreground)">]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;events&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;onClick&quot;</span><span style="color:var(--shiki-foreground)">]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;a11y&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;role&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;button&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;keyboard&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;Enter&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;Space&quot;</span><span style="color:var(--shiki-foreground)">] }</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;tokens&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;--yue-primary&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> &quot;--yue-button-radius&quot;</span><span style="color:var(--shiki-foreground)">]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;examples&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> [{ </span><span style="color:var(--shiki-token-keyword)">&quot;title&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;主按钮&quot;</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> &quot;props&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-keyword)">&quot;variant&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;primary&quot;</span><span style="color:var(--shiki-foreground)"> } }]</span><span style="color:var(--shiki-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  &quot;status&quot;</span><span style="color:var(--shiki-token-punctuation)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;stable&quot;</span><span style="color:var(--shiki-foreground)"> | </span><span style="color:var(--shiki-token-string-expression)">&quot;beta&quot;</span><span style="color:var(--shiki-foreground)"> | </span><span style="color:var(--shiki-token-string-expression)">&quot;deprecated&quot;</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">}</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p>注册表导出 <code>yue-manifest.json</code>，是远程渲染白名单与 S4 Agent 生成 UI 的唯一词表。S1-YUE-005 已按本节在 <code>@idadawn/yue-contracts</code> 提供 Schema 与生成类型，并由 core 的单一目录导出 51 个组件入口；props Schema 描述可序列化属性，函数、ref 与 ReactNode 组合通过宿主和 slots/events 提供。使用与验证见 <a href="https://github.com/idadawn/qian/blob/main/packages/yue/core/README.md" target="_blank" rel="noopener noreferrer" class="rp-link">core 主文档</a>。</p>
+<h3 class="rp-toc-include" id="37-sse-事件契约s1-定义s4-消费"><a href="#37-sse-事件契约s1-定义s4-消费" class="rp-header-anchor rp-link" aria-label="链接到 3.7 SSE 事件契约（S1 定义，S4 消费）">#</a>3.7 SSE 事件契约（S1 定义，S4 消费）</h3>
+<p>以 JSON Schema 为唯一真相源生成 TS，事件枚举含 <code>text / recommend / toolCall / toolResult / artifact / clientAction / progress / end / error</code>；<code>clientAction</code> 的参数必须对应 <code>@yue/sdk</code> 客户端动作注册表中的一项（名称、参数 Schema、权限、人话描述）；事件不携带令牌或密钥。</p>
+<hr/>
+<h2 class="rp-toc-include" id="4-流程"><a href="#4-流程" class="rp-header-anchor rp-link" aria-label="链接到 4. 流程">#</a>4. 流程</h2>
+<h3 class="rp-toc-include" id="41-设计令牌--组件--文档站--视觉回归--发包"><a href="#41-设计令牌--组件--文档站--视觉回归--发包" class="rp-header-anchor rp-link" aria-label="链接到 4.1 设计令牌 → 组件 → 文档站 → 视觉回归 → 发包">#</a>4.1 设计令牌 → 组件 → 文档站 → 视觉回归 → 发包</h3>
+<ol>
+<li><strong>令牌</strong>：在 <code>@yue/tokens</code> 修改 → 对比度单测与冲突单测 → 生成 CSS 变量与 TS 类型 →（可选）DTCG 导出。</li>
+<li><strong>组件</strong>：shadcn CLI 生成源码进 <code>@yue/core</code> 后品牌化；每个组件必须带可供 Rspress 与测试共用的 React 示例（由 <code>docs/scenarios.json</code> 登记适用状态，在预览工具栏切换；交互在示例内实际操作）、manifest、<code>data-slot / data-testid</code>、i18n key。</li>
+<li><strong>文档站</strong>：统一接入现有 Rspress 2 的 <code>/components/yue/</code>，提供源码示例、活演示、完整 props 表与令牌页；示例源在组件目录，测试由独立 Vitest / Playwright + axe 执行。移除 Storybook 应用、CSF、依赖、脚本和 CI 作业；Props 完整性、离线编辑器与迁移验收见 <a href="/design/prd/specs/docs-site.html#31-yue-%E7%BB%84%E4%BB%B6%E6%96%87%E6%A1%A3%E4%B8%8E%E6%BC%94%E7%A4%BA" class="rp-link">文档站规范 §3.1</a>。</li>
+<li><strong>视觉回归</strong>：Playwright 截图比对，CI 固定字体与容器镜像，基线入库；自 S1-YUE-011 起为 PR 阻断门禁：<code>maxDiffPixels: 0</code>、刷新须显式 <code>--update-snapshots=all</code>、基线须与改动提交一致并有反例测试（R118）。</li>
+<li><strong>发包</strong>：Changesets；SemVer（0.x 每个 minor 可破坏；1.0 后只在大版本破坏，废弃至少保留一个 minor 并附 codemod）；tsdown / Rslib 输出 ESM + d.ts，CSS 单独导出；重型物料（Monaco、富文本、ECharts、地图）独立包懒加载；publint；私有 npm。</li>
+</ol>
+<h3 class="rp-toc-include" id="42-控件包与后端-field-type-provider-同名同版本发布d16"><a href="#42-控件包与后端-field-type-provider-同名同版本发布d16" class="rp-header-anchor rp-link" aria-label="链接到 4.2 控件包与后端 Field Type Provider 同名同版本发布（D16）">#</a>4.2 控件包与后端 Field Type Provider 同名同版本发布（D16）</h3>
+<ul>
+<li>一个低代码控件 = 前端 <code>@yue/widgets</code> 中的 <code>WidgetDefinition</code> + 后端 <code>qian.dynamic-data</code> 的 Field Type Provider（类型映射、校验、值翻译、运算符集）。</li>
+<li>两者共享 <code>type</code> 与 <code>version</code>；清单 <code>contributes.to: qian.form.field-type/v1</code> 同时声明两侧产物。</li>
+<li>CI 校验配对：前端 manifest 的 <code>type@version</code> 必须在后端 Field Type Catalog 中存在且 <code>defaultOperators</code> 与矩阵一致，否则发布阻断。</li>
+<li>升级：Provider 先发布（additive），控件后发布；破坏性变更开新 <code>type</code> 或新大版本并给迁移脚本。</li>
+</ul>
+<h3 class="rp-toc-include" id="43-主版本并存"><a href="#43-主版本并存" class="rp-header-anchor rp-link" aria-label="链接到 4.3 主版本并存">#</a>4.3 主版本并存</h3>
+<p>yue 主版本可并存一个过渡窗口（MF2 共享依赖按主版本分组）；外壳只允许一个 React 版本；插件声明 <code>engines.yue</code> 范围，不满足即不加载并给出结构化错误。</p>
+<h3 class="rp-toc-include" id="44-base-ui-验证门s1-首迭代"><a href="#44-base-ui-验证门s1-首迭代" class="rp-header-anchor rp-link" aria-label="链接到 4.4 Base UI 验证门（S1 首迭代）">#</a>4.4 Base UI 验证门（S1 首迭代）</h3>
+<p>验证项：Menu / Select / Combobox / Tabs / Tooltip / Tree 的键盘导航、焦点管理、ARIA、RTL、受控 / 非受控、SSR 兼容；通过标准：axe critical = 0、键盘路径用例全过、无需 patch 包。不通过 → 整体切 Radix 并重新生成 shadcn 源码；不混用。结论记入 ADR-013 的 Status History。</p>
+<p><strong>结论（2026-10-09，S1-YUE-003）</strong>：通过，锁定 <code>@base-ui/react</code> 1.8；组件级 21 个浏览器用例 + 页面级 7 个 axe 用例全过，critical + serious = 0，无需 patch 包。五项发现（Tooltip 的 ARIA 关联、Tabs 默认手动激活、Combobox 打开态 aria-hidden、无 Tree 原语、date-fns 可选 peer）与封装层处理见 <a href="/design/adr/adr-013-frontend-yue.html#9-%E7%8A%B6%E6%80%81%E5%8E%86%E5%8F%B2status-history" class="rp-link">ADR-013 §9</a>。</p>
+<hr/>
+<h3 class="rp-toc-include" id="45-组件状态与弃用流程"><a href="#45-组件状态与弃用流程" class="rp-header-anchor rp-link" aria-label="链接到 4.5 组件状态与弃用流程">#</a>4.5 组件状态与弃用流程</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>进入条件</th><th>承诺</th></tr></thead><tbody><tr><td><code>experimental</code></td><td>有 Rspress 共用示例与 manifest；未过 a11y 门</td><td>任意版本可破坏；不进 <code>yue-manifest.json</code> 稳定词表</td></tr><tr><td><code>beta</code></td><td>a11y critical = 0；视觉基线建立；至少一个真实消费方</td><td>minor 可破坏但附迁移说明</td></tr><tr><td><code>stable</code></td><td>两个 minor 无破坏性变更；文档完整；契约测试覆盖</td><td>只在大版本破坏；进入远程渲染白名单与 Agent 词表</td></tr><tr><td><code>deprecated</code></td><td>有替代组件；codemod 可用</td><td>至少保留一个 minor；控制台与 lint 给出警告与替代名</td></tr></tbody></table></div>
+<p>弃用必须同时做三件事：manifest 标 <code>deprecated</code> 并指向替代、lint 规则报告使用处、Changesets 条目说明迁移路径。没有 codemod 的弃用只允许在大版本。</p>
+<h3 class="rp-toc-include" id="46-插件作者贡献控件的流程"><a href="#46-插件作者贡献控件的流程" class="rp-header-anchor rp-link" aria-label="链接到 4.6 插件作者贡献控件的流程">#</a>4.6 插件作者贡献控件的流程</h3>
+<ol>
+<li>用 <code>qian</code> CLI 从模板生成控件骨架（<code>meta</code> + 三态 <code>Runtime</code> + 可选 <code>Designer</code> + 测试 + Rspress 文档与共用示例）。</li>
+<li>在本地以「开发者租户」加载：外壳按 <code>engines.yue</code> 校验版本后以 MF2 挂载。</li>
+<li>后端同名 Field Type Provider 先合入并发布 Catalog；CI 校验 <code>type@version</code> 配对、运算符矩阵一致、端矩阵一致。</li>
+<li>通过 TCK 的前端子集（manifest 校验、a11y、三态一致性、不读取令牌、不访问白名单外的 API）。</li>
+<li><code>partner</code> 以上进入人工审核；<code>private / community</code> 控件只能在 Worker 远程渲染或 iframe 中运行（S3），不进共享包。</li>
+</ol>
+<h2 class="rp-toc-include" id="5-职责映射"><a href="#5-职责映射" class="rp-header-anchor rp-link" aria-label="链接到 5. 职责映射">#</a>5. 职责映射</h2>
+<h3 class="rp-toc-include" id="51-插件--服务--yue-包"><a href="#51-插件--服务--yue-包" class="rp-header-anchor rp-link" aria-label="链接到 5.1 插件 / 服务 ↔ yue 包">#</a>5.1 插件 / 服务 ↔ yue 包</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>Qian 插件 / 服务</th><th>消费的 yue 部分</th><th>向 yue 注册的内容</th></tr></thead><tbody><tr><td><code>qian.shell</code>（前端外壳静态站）</td><td><code>@yue/shell</code>、<code>@yue/tokens</code>、<code>@yue/sdk</code></td><td>宿主：MF2 远程清单、插槽注册表、菜单类型注册表、运行时配置注入</td></tr><tr><td><code>qian.identity</code> + <code>connector.*</code></td><td>认证页族、<code>@yue/form</code></td><td>登录方式插件（<code>AuthProvider</code> 契约）、第三方登录按钮、多租户选择</td></tr><tr><td><code>qian.tenancy</code></td><td><code>@yue/shell</code> 租户切换器、<code>@yue/data</code> DataTable、<code>@yue/form</code></td><td>租户运营后台 CRUD 页、代管横幅</td></tr><tr><td><code>qian.authz</code></td><td><code>@yue/biz</code> 授权树、<code>@yue/data</code> ConditionBuilder（S2）</td><td>权限码目录、<code>Explain</code> UI 数据结构</td></tr><tr><td>组织与身份（Directory）</td><td><code>@yue/biz</code> OrganizeSelect / UserSelect / RoleSelect / PosSelect</td><td>组织树数据源、通讯录页</td></tr><tr><td><code>qian.files</code></td><td><code>@yue/data</code> Upload / ImagePreview</td><td>存储路径策略、预览票据契约</td></tr><tr><td><code>qian.config</code></td><td><code>@yue/form</code> SchemaForm（配置 Schema 自动渲染）</td><td>配置 Schema → 设置页</td></tr><tr><td>消息（通知中心）</td><td><code>@yue/shell</code> 通知抽屉（S3）、消息类型 → 落地深链</td><td>消息类型注册</td></tr><tr><td>低代码表单（S2）</td><td><code>@yue/widgets</code>、<code>@yue/runtime</code>、<code>@yue/designer-form</code></td><td>控件集、Field Type Provider 配对、服务端 Hook 名</td></tr><tr><td>列表与页面（S2）</td><td><code>@yue/runtime</code> 列表渲染器、<code>@yue/designer-list</code>、<code>@yue/data</code> 进阶</td><td>列表形态策略、动作执行器、菜单类型</td></tr><tr><td>审批内核（S2）</td><td><code>@yue/runtime</code> 流程表单宿主与审批中心、<code>@yue/designer-flow</code></td><td>节点类型（schema + 属性面板 + 执行器）、<code>actions</code> 契约</td></tr><tr><td>数据访问 / 数据接口（S2）</td><td><code>@yue/code-editor</code>、数据集配置 UI</td><td>Filter AST 类型、运算符矩阵</td></tr><tr><td>门户 / 报表 / 打印 / 大屏（S3）</td><td><code>@yue/charts</code>、<code>@yue/designer-portal</code>、Univer / pdfme 封装</td><td>门户物料注册表（单一注册表 + 端维度）</td></tr><tr><td>应用市场（S3）</td><td><code>@yue/shell</code> 应用中心、插件卡片视图模型</td><td>市场详情页权限清单展示</td></tr><tr><td>Agent 运行时（S4）</td><td><code>@yue/agent</code>、客户端动作注册表</td><td>SSE 事件流、客户端动作</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="52-与-qianshell-的关系"><a href="#52-与-qianshell-的关系" class="rp-header-anchor rp-link" aria-label="链接到 5.2 与 qian.shell 的关系">#</a>5.2 与 qian.shell 的关系</h3>
+<p><code>qian.shell</code> 是部署单元（静态站 + MF2 宿主），<code>@yue/shell</code> 是它使用的库。外壳只做：加载远程、按清单 <code>contributes</code> 注册插槽、按后端菜单生成路由、维护当前上下文（租户 / 应用 / 身份）并注入请求头、处理「未启用插件」的前端拦截。外壳不包含任何业务页面。</p>
+<h3 class="rp-toc-include" id="53-与设计器的关系"><a href="#53-与设计器的关系" class="rp-header-anchor rp-link" aria-label="链接到 5.3 与设计器的关系">#</a>5.3 与设计器的关系</h3>
+<p>设计器只消费 <code>@yue/contracts</code> 与控件注册表：左栏 = <code>listWidgets()</code>，属性面板 = <code>meta.props</code> 自动生成（手写面板只在声明化不足时补充），校验 = 前后端同一份 Schema（前端由 <code>@idadawn/yue-form</code> 解释执行、不在运行期生成代码，R130；Agent 生成物走同一校验再落库），产出 = 带 <code>$schema</code> 与版本的 FormSchema / ListSchema / FlowNodes。</p>
+<h3 class="rp-toc-include" id="54-与-agent-的关系"><a href="#54-与-agent-的关系" class="rp-header-anchor rp-link" aria-label="链接到 5.4 与 Agent 的关系">#</a>5.4 与 Agent 的关系</h3>
+<p>S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器、客户端动作 / 导航 / 命令注册表。S4 的 Agent 生成 UI = 生成符合 <code>yue-manifest.json</code> 词表与 FormSchema 的 JSON，经校验器后渲染；<code>@yue/agent</code> 只负责展示 SSE 事件流，不包含任何推理逻辑。</p>
+<hr/>
+<h3 class="rp-toc-include" id="55-多前端面共享与首屏预算"><a href="#55-多前端面共享与首屏预算" class="rp-header-anchor rp-link" aria-label="链接到 5.5 多前端面共享与首屏预算">#</a>5.5 多前端面共享与首屏预算</h3>
+<p>平台控制台、应用运行时、设计器三个前端面共享同一个 yue，收益是一致性，风险是「共享 = 首屏膨胀」。约束：<code>@yue/core + tokens + sdk</code> 是唯一允许进入外壳首屏的包；<code>data / form / biz</code> 按路由懒加载；<code>widgets / runtime / designer</code> 只在进入应用或设计器上下文时加载；重型第三方库（Monaco、ECharts、Univer、pdfme、富文本）各自独立包并由消费方显式引入。Lighthouse 对外壳首屏的 script 体积预算是 error 级门禁，预算值在 §14 维护。</p>
+<h2 class="rp-toc-include" id="6-选型与待决策项"><a href="#6-选型与待决策项" class="rp-header-anchor rp-link" aria-label="链接到 6. 选型与待决策项">#</a>6. 选型与待决策项</h2>
+<p>选型遵守五条原则：<strong>许可证先于功能</strong>（排除 AGPL、要求水印可见、禁止多租户 PaaS 的条款）；<strong>维护活跃度</strong>（一年以上无发版的库不进推荐）；<strong>React 生态原生</strong>（不接受 Vue 生态移植或 jQuery 封装）；<strong>可抽象隔离</strong>（拖拽、画布、物料注册表都包一层 yue 抽象，供应链变动时只改适配层）；<strong>一个场景一种原语</strong>（同一职责不并存两个库）。表中「状态」列为锁定 / 验证门 / 待决策三种。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>类别</th><th>推荐</th><th>备选</th><th>不建议（理由）</th><th>状态</th></tr></thead><tbody><tr><td>组件底座</td><td>Base UI + Tailwind v4 + shadcn 源码自有化</td><td>Radix（验证门不过时整体切换）</td><td>antd / MUI 混用（双轨反例）</td><td>锁定（验证门 2026-10-09 通过）</td></tr><tr><td>无样式原语</td><td><code>@base-ui/react</code> 1.x</td><td>Radix</td><td>—</td><td>锁定（验证门 2026-10-09 通过，ADR-013 §9）</td></tr><tr><td>表格</td><td>TanStack Table v9 + TanStack Virtual</td><td>VisActor VTable / AntV S2（透视、大数据，S3）；AG Grid Community</td><td>依赖 AG Grid Enterprise 却不采购；Vue 生态表格</td><td>锁定</td></tr><tr><td>表单</td><td>自有 Schema（数据部分 JSON Schema 2020-12 + 自有 UI Schema）+ react-hook-form + 解释型 JSON Schema 子集校验（R130；Ajv 只作差分测试的对照）</td><td>RJSF / JSON Forms 作参考实现</td><td>Formily（停滞）、amis（自带体系）；zod 只用于 TS 侧导出契约</td><td>锁定</td></tr><tr><td>拖拽</td><td>dnd-kit（yue 包一层抽象）</td><td>pragmatic-drag-and-drop；<code>@dnd-kit/react</code> 1.0 后迁移</td><td>react-beautiful-dnd（废弃）、react-dnd（停更）、SortableJS</td><td>锁定，抽象层隔离供应链风险</td></tr><tr><td>流程 / 逻辑画布</td><td>审批流：DOM 节点树自绘；自动化流：<code>@xyflow/react</code> 12（S3）</td><td>AntV X6、LogicFlow</td><td>bpmn-js（水印许可证）、Elsa Studio 嵌入</td><td>锁定</td></tr><tr><td>栅格布局</td><td>react-grid-layout 2.x</td><td>—</td><td>Vue 生态</td><td>锁定</td></tr><tr><td>页面 / 门户搭建</td><td>S2 自研（借鉴 Puck 的注册表 + 字段描述 + slot）；S3 门户可直接用 Puck</td><td>GrapesJS</td><td>lowcode-engine、craft.js（停滞）</td><td>待 S3</td></tr><tr><td>图表</td><td>ECharts 6（option 纯 JSON、运行时切主题）</td><td>AntV G2、VChart、Recharts</td><td>—</td><td>锁定</td></tr><tr><td>电子表格 / 报表</td><td>Univer 开源核心 + .NET 取数 / 展开 / 导出（xlsx 放后端避开 Pro）</td><td>采购 Univer Pro；FortuneSheet</td><td>Luckysheet、x-spreadsheet（停更）、Handsontable（商业）</td><td>待 S3</td></tr><tr><td>打印模板</td><td>pdfme 6.x</td><td>—</td><td>hiprint（jQuery）</td><td>待 S3</td></tr><tr><td>大屏</td><td>自研：自由画布 + react-grid-layout + ECharts</td><td>借鉴 GoView / DataEase 交互</td><td>参考平台大屏源码（许可证）、DataV React（停更）</td><td>待 S3</td></tr><tr><td>代码编辑器</td><td>Monaco（桌面、ESM）+ CodeMirror 6（移动 / 轻量）</td><td>—</td><td>—</td><td>锁定（CodeMirror 仓库迁出 GitHub，供应链审计换地址）</td></tr><tr><td>前端脚本沙箱</td><td>quickjs-emscripten（表达式 / 联动脚本，内存上限、超时）；iframe sandbox 隔离第三方 UI</td><td>SES、near-membrane</td><td><code>eval</code> / <code>new Function</code>、ShadowRealm（Stage 2.7）</td><td>锁定（S2 可选兜底）</td></tr><tr><td>状态 / 服务端状态</td><td>Zustand + TanStack Query</td><td>—</td><td>—</td><td>锁定</td></tr><tr><td>路由 / i18n</td><td>react-router 7（S2 页面运行时引入；S1 外壳用 <code>@yue/shell</code> 最小历史路由，S1-YUE-012）+ i18next</td><td>—</td><td>—</td><td>锁定</td></tr><tr><td>API client</td><td>从 Kun OpenAPI 生成（orval / openapi-typescript）+ 契约快照</td><td>—</td><td>手写 fetch 封装</td><td>锁定</td></tr><tr><td>富文本 / Markdown</td><td><strong>待调研</strong>（Q39）：S2 前补一次 React 富文本编辑器选型</td><td>—</td><td>TinyMCE 5 / Vditor（参考平台用法，非 React 生态）</td><td>待决策</td></tr><tr><td>文档站</td><td>现有 Rspress 2 统一组件与产品文档；Vitest / Playwright + axe 独立测试</td><td>—</td><td>Storybook（重复文档体系，ADR-022）</td><td>锁定</td></tr><tr><td>多标签 KeepAlive</td><td>待评估方案（React 无原生 KeepAlive）</td><td>Activity / offscreen 方案</td><td>iframe 多实例</td><td>待决策（S1 可选 / S2 必做）</td></tr></tbody></table></div>
+<p><strong>外壳 CSP 对前端脚本沙箱的约束（S1-YUE-014，R131 ④）。</strong> 外壳 meta CSP 的 <code>script-src</code> 只有 <code>&#x27;self&#x27;</code> 与内联脚本哈希，不含 <code>&#x27;unsafe-eval&#x27;</code>，也不含 <code>&#x27;wasm-unsafe-eval&#x27;</code>，外壳页面内不能编译 WASM。引入 quickjs-emscripten 时三选一：重新登记 <code>&#x27;wasm-unsafe-eval&#x27;</code> 例外、改用它的 asm.js 变体，或放进 Worker 执行（Worker 不受这条 meta CSP 约束）。表中「iframe sandbox 隔离第三方 UI」同样早已被 <code>frame-src &#x27;none&#x27;</code> 挡住，启用前要先登记例外。</p>
+<hr/>
+<h2 class="rp-toc-include" id="7-安全考量"><a href="#7-安全考量" class="rp-header-anchor rp-link" aria-label="链接到 7. 安全考量">#</a>7. 安全考量</h2>
+<p>以 §13.10 为准，本 spec 的落点：</p>
+<ol>
+<li><code>@yue/runtime</code> 的联动三层中，第三层 QuickJS 沙箱只暴露白名单 <code>formApi</code> 子集，不暴露 <code>window</code>、<code>fetch</code>、令牌与 <code>PlatformClient</code>；超时与内存上限来自配置 Schema。</li>
+<li><code>@yue/sdk</code> request 拦截器链：令牌只存内存 + HttpOnly refresh；刷新队列合并并发；租户头由当前上下文注入，服务端以令牌为准；大数（int64）按字符串处理。</li>
+<li>嵌入（iframe / 预览 / 大屏 / 外链）统一走 <code>usePostMessageHandshake</code> 或一次性预览票据；禁止把令牌拼进 URL；CSP 由插件清单 <code>permissions.ui</code> 生成，外壳在加载远程前校验来源白名单。</li>
+<li><code>auth</code> 字段只做体验裁剪：被隐藏的字段仍可能在服务端返回脱敏值，组件不得据此推断权限。</li>
+<li>不可信 UI（S3）：Worker 远程渲染只允许 <code>yue-manifest.json</code> 中 <code>status: stable</code> 的组件；iframe sandbox 不带 <code>allow-same-origin</code>。</li>
+<li>不在 localStorage 持久化 access token、锁屏密码或任何密钥；Preferences 只存非敏感偏好。</li>
+<li>依赖供应链：<code>catalog:</code> 统一版本、锁文件、publint、SBOM；重型第三方库独立包并懒加载，便于单独升级。</li>
+<li>可寻址属性 <code>data-testid / data-slot</code> 不含业务数据；错误边界不向用户展示堆栈。</li>
+</ol>
+<hr/>
+<h2 class="rp-toc-include" id="8-验收标准s1-最小集"><a href="#8-验收标准s1-最小集" class="rp-header-anchor rp-link" aria-label="链接到 8. 验收标准（S1 最小集）">#</a>8. 验收标准（S1 最小集）</h2>
+<p>对应 §14 的层级与门禁；证据按「PR、命令、环境、结果」四件事留存。</p>
+<p><strong>令牌与主题</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled="" checked=""/> <code>@yue/tokens</code> 三层令牌生成 CSS 变量与 TS 类型；明暗两态对比度单测 WCAG AA ≥ 4.5:1 全部通过（CI）——PR #32，<code>packages/yue/tokens/src/tokens.test.ts</code>，CI <code>yue</code> 的 unit 门禁</li>
+<li class="task-list-item"><input type="checkbox" disabled="" checked=""/> 令牌命名冲突单测通过；不存在同名异义——同上，另由 <code>packages/yue/tokens/scripts/check-tokens.mjs</code> 在 lint 门禁扫描工作区全部 CSS</li>
+<li class="task-list-item"><input type="checkbox" disabled="" checked=""/> <code>data-theme / data-brand</code> 运行时注入生效：切换后无需刷新且无首帧闪烁（Playwright 用例）——<code>apps/yue-playground/e2e/theme.spec.ts</code> 的首帧状态快照，CI <code>yue</code> 的 a11y 门禁</li>
+<li class="task-list-item"><input type="checkbox" disabled="" checked=""/> 对比度门禁按文字 / 控件边界 / 装饰三类取阈值（4.5:1 / 3:1 / 豁免），语义令牌明度对齐 shadcn neutral，<code>theme.css</code> 与系统字体栈到位（R116 / R117，S1-YUE-011）——PR #185，<code>packages/yue/tokens/src/registry.json</code> 的 <code>contrast</code> 字段与 <code>tokens.test.ts</code>，CI <code>yue</code> 的 unit / lint 门禁</li>
+</ul>
+<p><strong>基础组件</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> <code>@yue/core</code> S1 清单 51 个组件全部有 Rspress 共用示例（默认 / 暗色及 <code>docs/scenarios.json</code> 中登记的适用状态）与 manifest</li>
+<li class="task-list-item"><input type="checkbox" disabled="" checked=""/> 51 个组件 className 配方与 shadcn base-nova 生成物逐个一致，任意值 <code>*-[var(--x)]</code> 清零，弹层 Trigger 不带裸按钮基类（R117，S1-YUE-011）——PR #186，<code>packages/yue/core/docs/visual-reference.json</code> 对照 51 个组件，基线 <code>apps/yue-playground/visual/__snapshots__/</code></li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 全部组件 axe critical = 0；Menu / Select / Combobox / Tabs / Tooltip / Tree 键盘路径用例通过（验证门）</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 每个组件暴露 <code>data-slot</code> 与稳定 <code>data-testid</code></li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 组件文案 100% 走 i18n key；硬编码文案 lint 为零</li>
+</ul>
+<p><strong>外壳</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> AppShell 单一侧栏布局；后端菜单 → 路由；<code>menuTypeRegistry</code> 支持页面与外链两类并可由插件注册新类型</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> MF2 加载至少一个官方插件 UI；插槽注册表带 <code>/vN</code>；<code>engines.yue</code> 不满足时拒绝加载并返回结构化错误</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 租户切换器切换后请求头与上下文同步更新；代管横幅在平台代管模式下常驻</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 403 / 404 / 500 兜底页、ErrorBoundary、OfflineBanner、UpdateBanner 可触发</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 运行时配置经 ConfigMap 注入，改配置不重编译（staging 演示）</li>
+</ul>
+<p><strong>数据与表单</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> DataTable 基础版：服务端分页 / 排序 / 筛选、行选择、列显隐、固定列、三态（空 / 加载 / 错误）用例通过</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> Upload 分片 + MD5 秒传 + 断点续传在 staging 对 <code>qian.files</code> 通过</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> SchemaForm 由 FormSchema 草案渲染并提交；Schema 校验错误定位到字段；编辑 / 只读态切换无需第二套组件</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 校验规则目录与脱敏规则目录可枚举（带 id 与参数 Schema），前后端同一份</li>
+</ul>
+<p><strong>业务选择器与认证</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> OrganizeSelect / UserSelect / RoleSelect 经 <code>PlatformClient</code> 取数，不直连 URL</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 菜单 / 按钮授权树完成一次真实授权并在服务端生效（不是仅前端勾选）</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 账号密码 + SSO（通用 OIDC）+ 多租户选择 + 登录过期弹窗 E2E 通过；令牌不出现在 URL</li>
+</ul>
+<p><strong>契约与 SDK</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> FormSchema / ListSchema / 控件 manifest / SSE 事件的 JSON Schema 发布并带版本；TS 类型由 Schema 生成</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> <code>registerWidget</code> 契约可用：注册一个示例控件后同时出现在 <code>listWidgets()</code> 与 <code>GET /registry/widgets</code></li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> API client 从 Kun OpenAPI 生成；契约快照测试进 CI</li>
+</ul>
+<p><strong>工程化</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled="" checked=""/> 分层边界 lint（eslint-plugin-boundaries / dependency-cruiser）进 CI 且无违规（S1-YUE-003：<code>packages/yue/boundaries.config.mjs</code>，自测 <code>tests/gates/yue/</code>）</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> CI 门禁矩阵全部启用：lint、typecheck、unit、a11y、Lighthouse（script 体积 error 级）、边界检查、publint、循环依赖、i18n 硬编码（S1-YUE-003 已启用前八项，工作流 <code>yue</code>；i18n 硬编码 lint 待 <code>@yue/sdk</code> 的 i18n 落地后加入）</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> Changesets 发包到私有 npm 成功一次；<code>0.x</code> 版本策略写入 CONTRIBUTING（S1-YUE-003 已配置 Changesets 与 <code>0.x</code> 策略，见 <code>packages/yue/README.md</code>「版本策略」；发包渠道待定，见该节「发布」）</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 现有 Rspress 站点覆盖全部 core 组件、完整 props 表与令牌页，离线演示可用；Storybook 应用、依赖与 CI 入口清零</li>
+<li class="task-list-item"><input type="checkbox" disabled="" checked=""/> 视觉回归基线建立（S1-YUE-011 承担，不再可选：51 个组件页与 DataTable / SchemaForm 示例明暗两态截图基线进仓库并进 CI，样式变更须更新基线并列出变化页面）——PR #186 / #187，CI <code>yue</code> 的「视觉回归」作业，<code>apps/yue-playground/visual.config.ts</code> <code>maxDiffPixels: 0</code>，162 张基线与 6 个隐藏关闭图标反例（R118）</li>
+</ul>
+<hr/>
+<p><strong>S2 验收预告（不计入 S1 退出，供排期参考）</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> S2 控件集每个控件三态一致性测试通过；<code>type@version</code> 与后端 Field Type Catalog 100% 配对</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 表单渲染器以同一份 FormSchema 在 PC 与 <code>device: h5</code> 覆盖下渲染，不存在第二份元数据</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 联动三层各有用例：声明式动作、表达式 DSL、（如启用）QuickJS 沙箱在超时与内存上限下被终止且无令牌可达</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 三大设计器的产出物经共用校验器后落库；Agent 生成的样例 Schema 走同一校验</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 视觉回归成为 PR 阻断门禁；manifest 全量导出并被远程渲染白名单消费</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 列表渲染器三种必做形态的 E2E 通过；<code>auth</code> 四开关产出的可授权项在服务端生效</li>
+</ul>
+<h2 class="rp-toc-include" id="9-后续扩展"><a href="#9-后续扩展" class="rp-header-anchor rp-link" aria-label="链接到 9. 后续扩展">#</a>9. 后续扩展</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>阶段</th><th>扩展</th><th>前置</th></tr></thead><tbody><tr><td>S2</td><td><code>@yue/widgets</code> 控件集、<code>@yue/runtime</code>、三大设计器、DataTable 进阶、CodeEditor / Cron、<code>@yue/charts</code>、manifest 全量、视觉回归阻断；<code>@yue/mobile</code> H5 渲染器（可选）</td><td>S1 契约包与注册表</td></tr><tr><td>S3</td><td>不可信 UI 沙箱（Worker 远程渲染 + iframe）、门户设计器与运行时、通知抽屉、多布局与偏好抽屉、主题预设、打印 / 报表 / 大屏、外链运行时、shadcn 私有 registry（可选）</td><td>manifest 词表、CSP 生成、MF2 版本并存</td></tr><tr><td>S4</td><td><code>@yue/agent</code>（ToolCallCard、ThinkingTimeline、AgentTrace、Composer）、shadcn MCP Server（Agent 检索与安装 yue 区块）、MCP Apps 视图、AI 助手悬浮窗、Agent 生成 UI 经 manifest 与校验器落库</td><td>S1 定义的 SSE 事件契约、客户端动作注册表、机器可读 manifest</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="待确认"><a href="#待确认" class="rp-header-anchor rp-link" aria-label="链接到 待确认">#</a>待确认</h2>
+<ol>
+<li><code>@yue/contracts</code> 作为独立无 UI 包是本 spec 的拆分建议（基线把契约放在「yue 内核」），需 ADR-013 确认包边界。</li>
+<li><code>@yue/shell</code> 对 <code>@yue/form</code> 的同层依赖（登录表单）是分层规则的唯一例外，需 ADR-013 记录；否则认证页族应下沉为独立包。</li>
+<li>已裁决（R17）：D16「控件包与 Field Type Provider 同名同版本发布」保留；ADR-011 D11.9 已补 Field Type Catalog 版本策略（按 <code>type@version</code> 登记、SemVer 判兼容），与本 spec 一致。</li>
+<li>多标签 KeepAlive 等价能力的方案未定（S1 可选 / S2 必做），影响 <code>@yue/shell</code> 路由设计。</li>
+<li>富文本 / Markdown 编辑器选型（Q39）S2 前补调研，影响 <code>@yue/code-editor</code> 的包边界。</li>
+<li>ListSchema 的 <code>layout</code> 枚举含 <code>group / card / inline-edit</code>（S2 可选），与功能规格章的列表形态分级需一致。</li>
+<li><code>WidgetMeta.category</code> 预留 <code>ocr</code>，但 OCR 控件库本期不做（§12.8）；是否保留枚举值需产品确认。</li>
+</ol><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/design/prd/specs/plugin-manifest.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>专题 spec · 插件清单 v1（<code>qian-plugin.yaml</code>）</span></span></a><a href="/design/migration/index.html" class="rp-prev-next-page__item rp-prev-next-page__next rp-link"><span class="rp-prev-next-page__item__desc">下一页</span><span class="rp-prev-next-page__item__title"><span>迁移方案</span><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></span></a></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#本版关键决策-d1d16" class="rp-toc-item rp-link" title="本版关键决策 D1–D16" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">本版关键决策 D1–D16</span></a><a href="#0-定位与阅读方式" class="rp-toc-item rp-link" title="0. 定位与阅读方式" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">0. 定位与阅读方式</span></a><a href="#1-范围" class="rp-toc-item rp-link" title="1. 范围" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">1. 范围</span></a><a href="#11-s1-交付支撑开发人员写出多租户应用的界面" class="rp-toc-item rp-link" title="1.1 S1 交付（支撑「开发人员写出多租户应用」的界面）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">1.1 S1 交付（支撑「开发人员写出多租户应用」的界面）</span></a><a href="#12-s2-交付低代码构建" class="rp-toc-item rp-link" title="1.2 S2 交付（低代码构建）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">1.2 S2 交付（低代码构建）</span></a><a href="#13-s3-交付面向客户" class="rp-toc-item rp-link" title="1.3 S3 交付（面向客户）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">1.3 S3 交付（面向客户）</span></a><a href="#14-s4-预留本期只定契约" class="rp-toc-item rp-link" title="1.4 S4 预留（本期只定契约）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">1.4 S4 预留（本期只定契约）</span></a><a href="#2-非目标" class="rp-toc-item rp-link" title="2. 非目标" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">2. 非目标</span></a><a href="#3-数据模型" class="rp-toc-item rp-link" title="3. 数据模型" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">3. 数据模型</span></a><a href="#31-包结构与依赖方向" class="rp-toc-item rp-link" title="3.1 包结构与依赖方向" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.1 包结构与依赖方向</span></a><a href="#32-控件注册表契约-registerwidget" class="rp-toc-item rp-link" title="3.2 控件注册表契约 registerWidget" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.2 控件注册表契约 <code>registerWidget</code></span></a><a href="#33-formschema-四段契约草案" class="rp-toc-item rp-link" title="3.3 FormSchema 四段契约草案" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.3 FormSchema 四段契约草案</span></a><a href="#34-listschema-契约草案base--overrides" class="rp-toc-item rp-link" title="3.4 ListSchema 契约草案（base + overrides）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.4 ListSchema 契约草案（base + overrides）</span></a><a href="#35-令牌命名" class="rp-toc-item rp-link" title="3.5 令牌命名" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.5 令牌命名</span></a><a href="#36-组件-manifest-格式" class="rp-toc-item rp-link" title="3.6 组件 manifest 格式" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.6 组件 manifest 格式</span></a><a href="#37-sse-事件契约s1-定义s4-消费" class="rp-toc-item rp-link" title="3.7 SSE 事件契约（S1 定义，S4 消费）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.7 SSE 事件契约（S1 定义，S4 消费）</span></a><a href="#4-流程" class="rp-toc-item rp-link" title="4. 流程" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">4. 流程</span></a><a href="#41-设计令牌--组件--文档站--视觉回归--发包" class="rp-toc-item rp-link" title="4.1 设计令牌 → 组件 → 文档站 → 视觉回归 → 发包" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.1 设计令牌 → 组件 → 文档站 → 视觉回归 → 发包</span></a><a href="#42-控件包与后端-field-type-provider-同名同版本发布d16" class="rp-toc-item rp-link" title="4.2 控件包与后端 Field Type Provider 同名同版本发布（D16）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.2 控件包与后端 Field Type Provider 同名同版本发布（D16）</span></a><a href="#43-主版本并存" class="rp-toc-item rp-link" title="4.3 主版本并存" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.3 主版本并存</span></a><a href="#44-base-ui-验证门s1-首迭代" class="rp-toc-item rp-link" title="4.4 Base UI 验证门（S1 首迭代）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.4 Base UI 验证门（S1 首迭代）</span></a><a href="#45-组件状态与弃用流程" class="rp-toc-item rp-link" title="4.5 组件状态与弃用流程" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.5 组件状态与弃用流程</span></a><a href="#46-插件作者贡献控件的流程" class="rp-toc-item rp-link" title="4.6 插件作者贡献控件的流程" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.6 插件作者贡献控件的流程</span></a><a href="#5-职责映射" class="rp-toc-item rp-link" title="5. 职责映射" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">5. 职责映射</span></a><a href="#51-插件--服务--yue-包" class="rp-toc-item rp-link" title="5.1 插件 / 服务 ↔ yue 包" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">5.1 插件 / 服务 ↔ yue 包</span></a><a href="#52-与-qianshell-的关系" class="rp-toc-item rp-link" title="5.2 与 qian.shell 的关系" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">5.2 与 qian.shell 的关系</span></a><a href="#53-与设计器的关系" class="rp-toc-item rp-link" title="5.3 与设计器的关系" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">5.3 与设计器的关系</span></a><a href="#54-与-agent-的关系" class="rp-toc-item rp-link" title="5.4 与 Agent 的关系" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">5.4 与 Agent 的关系</span></a><a href="#55-多前端面共享与首屏预算" class="rp-toc-item rp-link" title="5.5 多前端面共享与首屏预算" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">5.5 多前端面共享与首屏预算</span></a><a href="#6-选型与待决策项" class="rp-toc-item rp-link" title="6. 选型与待决策项" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">6. 选型与待决策项</span></a><a href="#7-安全考量" class="rp-toc-item rp-link" title="7. 安全考量" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">7. 安全考量</span></a><a href="#8-验收标准s1-最小集" class="rp-toc-item rp-link" title="8. 验收标准（S1 最小集）" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">8. 验收标准（S1 最小集）</span></a><a href="#9-后续扩展" class="rp-toc-item rp-link" title="9. 后续扩展" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">9. 后续扩展</span></a><a href="#待确认" class="rp-toc-item rp-link" title="待确认" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">待确认</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>
