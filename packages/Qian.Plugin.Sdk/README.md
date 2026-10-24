@@ -31,7 +31,7 @@ Kun 每次 Send 建立新的 DI scope。SDK 在这个 scope 中通过 IDataServi
 
 CommandPolicies 只允许对应的 qian.tenancy、qian.authz、qian.audit 生产方登记监听器；服务键、监听器和取消资源归属同一 Effect 生命周期。执行前要求三种存活登记，进入链尾前要求三种监听器实际参与；重复调用 next 不能再次执行业务。卸载撤销后新请求拒绝，进行中的数据库操作可取消并回滚。租户策略读取真实主档，RBAC 策略读取真实授权并核对 OAuth scope，AuditPlugin 根据真实生成 Schema 写同事务审计。RBAC 策略由 Qian.Authz 的 `AuthzPlugin` 在 Apply 中登记（只含命令 PEP 的子插件为 `RbacCommandPolicyPlugin`）；完整 Authz 数据/字段策略与管理服务仍待完成。
 
-宿主须先装身份适配器，再装数据默认服务，防止匿名兜底先占用 Kun 当前用户端口。SDK 同时核验 Kun 与 Qian 身份一致，并复制主体快照；不通过替换成宽松策略修复装配错误。参考宿主的 S2S 验签与主体映射已经过真实 HTTP 回归，但不替代真实 Qian Identity 交互登录。
+身份适配器与数据组件的登记先后不影响结果：Kun 2026.10.25 起数据约定不再以匿名兜底占用 Kun 当前用户端口（S1-KUN-017）。`AddQianCapability` 另登记一个启动检查：宿主启动时这个端口解析为 `AnonymousCurrentUser` 就启动失败，错误里写明端口与改法，而不是等到执行时才对一切能力判拒（403 `AUTHZ_DENIED`，且到不了权限引擎、不写决策审计）。SDK 同时核验 Kun 与 Qian 身份一致，并复制主体快照；不通过替换成宽松策略修复装配错误。参考宿主的 S2S 验签与主体映射已经过真实 HTTP 回归，但不替代真实 Qian Identity 交互登录。
 
 SensitiveAttribute 把实际 JSON 属性标记为 sensitive。顶层字段及整个顶层容器可遮盖；发现尚未支持的嵌套敏感属性会编译失败，必须把其顶层容器整体标敏感，不能静默忽略。字段名沿实际 JsonPropertyName 或序列化命名策略派生，Audit 仍只存脱敏输入哈希。
 

@@ -182,7 +182,7 @@ services.AddQianSecrets(new SecretResolverOptions
 
 ## 删除审计
 
-QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.Delete 和 DbContext.Remove 都落为软删除，填充 deleted_at / deleted_by；后者保留已有业务字段并让 Kun 同时更新 updated_at / updated_by。DeletedBy 与 CreatedBy 使用一致的可空用户键类型，没有 CLR 属性时用 shadow property，字段名由 QianDataConventions.DeletedByPropertyName 提供。匿名操作的删除主体为 null，已有删除审计不因普通更新而改写。
+QianSoftDeleteInterceptor 在 Kun 审计拦截器之前运行。AggregateRoot.Delete 和 DbContext.Remove 都落为软删除，填充 deleted_at / deleted_by；后者保留已有业务字段并让 Kun 同时更新 updated_at / updated_by。DeletedBy 与 CreatedBy 使用一致的可空用户键类型，没有 CLR 属性时用 shadow property，字段名由 QianDataConventions.DeletedByPropertyName 提供。匿名操作的删除主体为 null，已有删除审计不因普通更新而改写。创建、修改与删除主体都取自上下文创建时解析到的 Kun `ICurrentUser`：`AddQianData` 不登记这个端口，身份适配器在数据组件之前或之后登记都生效，只装数据组件、没有身份适配器的宿主照常可用，主体写 null（S1-KUN-017）。
 
 ## 组件位置
 

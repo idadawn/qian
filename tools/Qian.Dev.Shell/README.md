@@ -93,7 +93,7 @@ scripts/dev-shell.sh e2e
 - **浏览器提示证书不受信任**：网关是自签名 HTTPS，接受即可；Playwright 以 `ignoreHTTPSErrors` 运行。
 - **启动报缺少前端构建产物**：先运行 `scripts/dev-shell.sh build-ui`，或去掉 `QIAN_DEV_SHELL_SKIP_UI_BUILD`。
 - **登录后菜单为空**：丙方本来就没有挂参考应用，这是预期；其它租户看平台表面宿主与业务宿主终端里的授权拒绝日志。平台身份（`operator`）没有租户，外壳显示代管横幅且不拉菜单。
-- **「客户」页显示列表加载失败**：用户主体经外壳以本人执行 customer.list（S1-YUE-015）。先看浏览器里那次 `POST /api/capabilities/qian.sample.crm/customer.list/invoke` 的状态与问题码：404 `NOT_FOUND` 是能力对该主体不可见（缺权限点、缺 scope 或组件未挂载），决策在审计链里查；403 `AUTHZ_DENIED` 是命令管道或命令 PEP 判拒（身份适配器没拿到平台表面交来的快照、框架当前主体端口被匿名兜底占住、角色在可见性判定后变化），管道层的判拒不写终端日志，看审计链的决策记录与宿主异常日志；其余看宿主日志。
+- **「客户」页显示列表加载失败**：用户主体经外壳以本人执行 customer.list（S1-YUE-015）。先看浏览器里那次 `POST /api/capabilities/qian.sample.crm/customer.list/invoke` 的状态与问题码：404 `NOT_FOUND` 是能力对该主体不可见（缺权限点、缺 scope 或组件未挂载），决策在审计链里查；403 `AUTHZ_DENIED` 是命令管道或命令 PEP 判拒（身份适配器没拿到平台表面交来的快照、角色在可见性判定后变化；框架当前主体端口被匿名兜底占住时宿主在启动时就已失败，见 Qian.Plugin.Sdk），管道层的判拒不写终端日志，看审计链的决策记录与宿主异常日志；其余看宿主日志。
 - **连接器按钮不见了 / SSO 发起失败**：`scripts/dev-shell.sh status` 看 Dex 容器是否在跑；连接器按钮要先填租户代码才能发起（绑定键是 租户 × 连接器 × 上游主体）。
 - **改了 `app-config.json` 没生效**：确认改的是 `QIAN_DEV_STATE` 指向的那个文件，再刷新；响应是 `no-store`，不会被缓存。内容不合法时外壳只显示配置错误页。
 - **端口被占用**：设 `QIAN_DEV_SHELL_API_URL` / `QIAN_DEV_SHELL_URL` / `QIAN_DEV_PG_PORT`；各个子命令要用同一组变量。

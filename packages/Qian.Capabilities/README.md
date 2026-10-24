@@ -23,7 +23,7 @@
 
 ## HTTP 装配
 
-宿主先安装经过验证的身份、租户与 ErrorDetail 中间件，再调用 `MapQianCapabilities`，提供从当前可信租户解析实际 Runtime 视图的函数。身份从请求服务的 `ICurrentUser` 获取，HTTP 输入不能指定主体或租户。注册身份适配器必须早于数据服务，防止匿名兜底占住框架身份端口。
+宿主先安装经过验证的身份、租户与 ErrorDetail 中间件，再调用 `MapQianCapabilities`，提供从当前可信租户解析实际 Runtime 视图的函数。身份从请求服务的 `ICurrentUser` 获取，HTTP 输入不能指定主体或租户。身份适配器在数据服务之前或之后登记都生效（Kun 2026.10.25 起数据约定不占框架身份端口，S1-KUN-017）；框架身份端口解析成匿名兜底的能力宿主启动即失败（见 [Qian.Plugin.Sdk](../Qian.Plugin.Sdk/README.md)）。
 
 - `GET /api/capabilities?kind=&q=`：返回 `{ items, ttlMs, cacheScope: "private" }`，同时设置私有且不存储的 HTTP 缓存指令。`kind` 只接受 `command` / `query` / `event` / `entity`，`q` 最长 200 字符；不符时返回 400 `INPUT_INVALID`，`errors[]` 分别为 `VALUE_NOT_ALLOWED #/kind`（带 `allowed`）与 `OUT_OF_RANGE #/q`。
 - `GET /api/capabilities/openapi.json`：按同一权限过滤生成 OpenAPI 3.1，仅包含当前实际可调用绑定的执行路径和输入/输出 Schema；递归 Schema 引用重定位到各自组件。

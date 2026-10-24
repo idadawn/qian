@@ -30,11 +30,35 @@ public abstract partial class CustomerCommandTests
     private protected const string AgentId = "crm-agent-preview";
     private protected const string Deprecation = "@1791331200";
     private protected static readonly Lazy<(JsonSchema Catalog, JsonSchema Error)> ContractSchemas = new(LoadContractSchemas);
+
+    // 登记次序前提（S1-KUN-017）：给定数据上下文先于 AddKunSecurity 登记（以只有它登记的 ITenantIdSource 为界），框架当前主体端口仍解析为 JwtCurrentUser 而不是匿名兜底。
+    private protected static void AssertDataComponentsFirst(RunningApp host, IServiceCollection services, Type context)
+    {
+        var registrations = services.ToList();
+        var data = registrations.FindIndex(service => service.ServiceType == context);
+        var security = registrations.FindIndex(service => service.ServiceType == typeof(Kun.MultiTenancy.Abstractions.ITenantIdSource));
+        Assert.True(data >= 0 && data < security, $"{context.Name} 应先于 AddKunSecurity 登记（{data} / {security}）。");
+        using var scope = host.App.Services.CreateScope();
+        Assert.IsType<Kun.Security.Security.JwtCurrentUser>(scope.ServiceProvider.GetRequiredService<Kun.Core.Security.ICurrentUser>());
+    }
 }
 
 // S1-RT-019 / S1-RT-020：目录信封与别名头（含 PathBase）、通用执行入口的输入校验 / 幂等重放与回执策略 / Agent 与 Actor 主体、能力上下文迁移。
 public sealed partial class CapabilityTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
 {
+    // 数据组件先于身份适配器登记（S1-KUN-017）：能力目录等数据上下文先登记、AddKunSecurity 在后，服务主体经执行入口照常执行并入链。
+    // 用户主体的同一前提见 ShellSurfaceTests 的外壳执行用例（身份库先登记）。
+    [Fact]
+    public async Task 数据组件先于AddKunSecurity登记时_框架当前主体仍是令牌主体_服务主体执行能力照常()
+    {
+        IServiceCollection? services = null;
+        await using var host = await Start(capabilities: true, configure: builder => services = builder.Services);
+        AssertDataComponentsFirst(host, services!, typeof(CapabilitiesDbContext));
+        using var created = await InvokeRaw(host, A, CreateId, CustomerInput(Guid.CreateVersion7(), "数据组件先登记"));
+        Assert.True(created.StatusCode == HttpStatusCode.OK, host.FailureEvidence + await created.Content.ReadAsStringAsync(Ct));
+        await AssertWrites(host, A, customers: 1, audit: 1);
+    }
+
     [Fact]
     public async Task 目录信封符合冻结契约_别名带Deprecation与successor链接_条目取值与摘要一致_非法参数与匿名请求返回ErrorDetail()
     {

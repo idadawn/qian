@@ -79,7 +79,7 @@ Kun 关键路径上有一组在「K3s 多副本 + 多租户」下必然触发的
 1. 上游 PR 优先：改动提到 kun 仓库，Kun 发版后改 `KunVersion` 升级，本小节随之更新。
 2. 每项设 1 个迭代的回合入期限；逾期未合入，由 Qian 维护 `Kun.<Module>.Patches` 补丁包（同名命名空间 + `[Obsolete]` 转发），并记录回合入日期。
 
-截至 2026-10-14 的状态：§07 7.1 的七个修复任务（S1-KUN-001–007）都已随 Kun 发布并由 Qian 升级消费；之后又有四项 7.1 之外的后续修复（S1-KUN-011–014）与事件总线抽象拆包（S1-KUN-010）。当前锁定 Kun 2026.10.14，已包含上述修复及 Definition 包依赖门禁。Qian 没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
+截至 2026-10-25 的状态：§07 7.1 的七个修复任务（S1-KUN-001–007）都已随 Kun 发布并由 Qian 升级消费；之后又有六项 7.1 之外的后续修复（S1-KUN-011–014、S1-KUN-016–017）与事件总线抽象拆包（S1-KUN-010）。当前锁定 Kun 2026.10.25，已包含上述修复及 Definition 包依赖门禁。Qian 没有任何补丁包。最新状态以任务看板为准（[pm/STATUS.md](https://github.com/idadawn/qian/blob/main/pm/STATUS.md)）。
 
 | 任务 | 修复项（§07 7.1） | 状态 | 补丁包 |
 |---|---|---|---|
@@ -95,6 +95,8 @@ Kun 关键路径上有一组在「K3s 多副本 + 多租户」下必然触发的
 | S1-KUN-012 | 7.1 之外：同日修复版的 NuGet 版本格式与发布校验 | 已完成：上游 [idadawn/kun#55](https://github.com/idadawn/kun/pull/55)，只改发布工具 | 无 |
 | S1-KUN-013 | 7.1 之外：鉴权保留主体类型 | 已完成：上游 [idadawn/kun#56](https://github.com/idadawn/kun/pull/56) 随 Kun 2026.10.12-hotfix.3 发布，Qian 已升级 | 无 |
 | S1-KUN-014 | 7.1 之外：受保护请求的运行期兜底 | 已完成：上游 [idadawn/kun#57](https://github.com/idadawn/kun/pull/57) 随 Kun 2026.10.13 发布，Qian 已升级（S1-DEC-019 复核发现） | 无 |
+| S1-KUN-016 | 7.1 之外：普通网关包的 JWKS NativeAOT 消费 | 已完成：上游 [idadawn/kun#60](https://github.com/idadawn/kun/pull/60) 随 Kun 2026.10.23 发布，Qian 已升级 | 无 |
+| S1-KUN-017 | 7.1 之外：数据约定与实体审计不再占当前主体 / 租户端口 | 已完成：上游 [idadawn/kun#61](https://github.com/idadawn/kun/pull/61) 随 Kun 2026.10.25 发布，Qian 已升级；身份适配器与数据组件的登记先后不再影响结果，框架当前主体端口解析为匿名兜底的能力宿主启动即失败（R132 ③） | 无 |
 
 ## 版本与升级
 

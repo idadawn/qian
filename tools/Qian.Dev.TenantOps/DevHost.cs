@@ -1,5 +1,4 @@
 using Kun.EntityFrameworkCore.Extensions;
-using Kun.Security.DependencyInjection;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.EntityFrameworkCore;
@@ -59,7 +58,6 @@ internal static class DevHost
         {
             builder.WebHost.UseUrls(url); Logging(builder.Logging);
             builder.Services.AddSingleton<ICrmRuntimeAssembly>(assembly);
-            builder.Services.AddKunSecurity();
             builder.Services.AddQianHttpContracts();
             builder.Services.AddQianPluginEndpoints(_ => assembly.Loader.GetContext("registry", ScopeKey.Global));
             builder.Services.AddQianData<CapabilitiesDbContext>((_, options) => options.UseNpgsql(database.Business).UseKunSchema(CapabilitiesDbContext.Schema));
