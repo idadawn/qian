@@ -1,18 +1,17 @@
-import { Ajv2020, type ErrorObject } from 'ajv/dist/2020';
-import addFormats from 'ajv-formats';
 import { formSchema, listSchema, widgetSchema, type FormSchema } from '@idadawn/yue-contracts';
+import { compileSchema, type SchemaError, type SchemaValidator } from './json-schema';
 
+export type { SchemaError } from './json-schema';
 export type FormValues = Record<string, unknown>;
 export interface DataSchema { type?: string | string[]; properties?: Record<string, DataSchema>; required?: string[]; title?: string; description?: string; enum?: unknown[]; default?: unknown; format?: string; [key: string]: unknown }
 export interface FieldState { required: boolean; disabled: boolean; visible: boolean }
-const ajv = new Ajv2020({ allErrors: true, strict: false });
-addFormats(ajv);
-const validators = { form: ajv.compile(formSchema), list: ajv.compile(listSchema), widget: ajv.compile(widgetSchema) };
+// 元数据 Schema 与表单数据 Schema 走同一个解释型校验器（json-schema.ts，不在运行期生成代码），元数据的校验器首次使用时编译。
+const metadata: Record<'form' | 'list' | 'widget', unknown> = { form: formSchema, list: listSchema, widget: widgetSchema };
+const validators: Partial<Record<keyof typeof metadata, SchemaValidator>> = {};
 
-export function validateMetadata(kind: keyof typeof validators, value: unknown): { valid: boolean; errors: ErrorObject[] } {
-  const validate = validators[kind];
-  const valid = !!validate(value);
-  return { valid, errors: [...(validate.errors ?? [])] };
+export function validateMetadata(kind: keyof typeof metadata, value: unknown): { valid: boolean; errors: SchemaError[] } {
+  const errors = (validators[kind] ??= compileSchema(metadata[kind]))(value);
+  return { valid: errors.length === 0, errors };
 }
 
 export function getValue(values: FormValues, path: string): unknown {
@@ -65,14 +64,14 @@ function checkExtensions(value: unknown): void {
 export function assertFormSchema(schema: FormSchema): void {
   if (!validateMetadata('form', schema).valid) throw new Error('form.error.schema');
   checkExtensions(schema.data);
+  // 数据 Schema 渲染前先编译一次：解释型子集外的关键字、格式与引用在这里显式拒绝，不等到提交时才暴露，也不静默放过。
+  compileSchema(schema.data);
   // 元数据可储存后续版本的声明，本期渲染时显式拒绝未实现的执行能力。
   if (schema.rules.actions?.length || Object.keys(schema.rules.expressions ?? {}).length) throw new Error('form.error.unsupportedRules');
 }
 
-export function validateValues(schema: FormSchema, values: FormValues): ErrorObject[] {
-  const validate = ajv.compile(effectiveSchema(schema, values).data);
-  validate(values);
-  return [...(validate.errors ?? [])];
+export function validateValues(schema: FormSchema, values: FormValues): SchemaError[] {
+  return compileSchema(effectiveSchema(schema, values).data)(values);
 }
 
 export const ruleCatalog = {

@@ -311,7 +311,7 @@ S2 结束时，以下两条必须在预发环境被第三方按脚本复现：
 
 #### 技术落点
 
-- 前端：`@yue/form`（react-hook-form + Ajv）为底座，`@qian/lowcode-runtime` 的表单渲染器只做叶子与容器编排，不新建引擎；设计器基于 dnd-kit 嵌套拖拽，撤销栈以 JSON Patch 记录。
+- 前端：`@yue/form`（react-hook-form + 解释型 JSON Schema 校验）为底座，`@qian/lowcode-runtime` 的表单渲染器只做叶子与容器编排，不新建引擎；设计器基于 dnd-kit 嵌套拖拽，撤销栈以 JSON Patch 记录。
 - 后端：`qian.forms` 在 `qian-lowcode` 提供校验器（与前端共用同一 Schema 包 `@qian/metadata-contracts` 生成 TS 与 C# 类型）、规则编译（声明式规则编译进 Compiled Model）、公式服务端复算、引用图维护、`generateFromTable`。
 - 服务端 Hook 与前端联动的边界：校验与计算以服务端为准，前端只做体验。
 

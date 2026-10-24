@@ -38,9 +38,7 @@
     "@idadawn/yue-contracts": "workspace:^",
     "@idadawn/yue-core": "workspace:^",
     "@idadawn/yue-sdk": "workspace:^",
-    "react-hook-form": "catalog:",
-    "ajv": "catalog:",
-    "ajv-formats": "catalog:"
+    "react-hook-form": "catalog:"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -48,6 +46,8 @@
   },
   "devDependencies": {
     "@rslib/core": "catalog:",
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "publint": "catalog:",

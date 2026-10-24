@@ -53,7 +53,7 @@ yue 同时承担三种角色，三者缺一不可：
 | `@yue/core` | 51 个基础组件：Button 族、Input 族（Input / Textarea / InputNumber / InputPassword / PinInput）、Checkbox / Radio / Switch / Toggle / Segmented、Select / Combobox、Label / Field、Dialog / AlertDialog / Sheet / Drawer / Popover / Tooltip / HoverCard / DropdownMenu / ContextMenu、Tabs / Accordion / Card / Separator / ScrollArea / Resizable、Badge / Tag / Avatar / Skeleton / Spinner / Progress / Alert / Toast / Notification / Empty / Result、Breadcrumb / Pagination / BackTop / FullScreen、Icon、Descriptions（提前）；每个组件暴露 `data-slot` 与稳定 `data-testid` |
 | `@yue/shell` | AppShell 单一侧栏布局；后端菜单 → 路由 + `menuTypeRegistry`（页面 / 外链两类）；Page / PageHeader / ColPage / LeftTree；Preferences 对象与 `initPreferences({ namespace, overrides })`；租户切换器 + 平台代管横幅；主题 / 语言切换、用户下拉；兜底页三件套（403 / 404 / 500 + ErrorBoundary / OfflineBanner / UpdateBanner）；运行时配置注入；MF2 远程加载与插槽注册表 |
 | `@yue/data` | DataTable 基础版（TanStack Table v9：列 schema、服务端分页 / 排序 / 筛选、行选择、列显隐、固定列、空 / 加载 / 错误态、工具栏）；Tree / TreeSelect / Cascader；DatePicker / DateRange / TimePicker / TimeRange；Upload（分片 + MD5 秒传 + 进度 + 断点 + 预览）；ImagePreview |
-| `@yue/form` | Field 抽象 + react-hook-form 内核 + Ajv 校验；SchemaForm 基础版 + `FormApi`；`dependencies` 基础联动；编辑 / 只读态引擎级能力；校验与脱敏规则目录；弹层 API `useModal / useDrawer / usePopup`；Message / Confirm / Notification 统一出口 |
+| `@yue/form` | Field 抽象 + react-hook-form 内核 + 解释型 JSON Schema 校验（不在运行期生成代码，R130）；SchemaForm 基础版 + `FormApi`；`dependencies` 基础联动；编辑 / 只读态引擎级能力；校验与脱敏规则目录；弹层 API `useModal / useDrawer / usePopup`；Message / Confirm / Notification 统一出口 |
 | `@yue/biz` | ApiSelect / `useRemoteOptions`、DictSelect、OrganizeSelect、UserSelect、RoleSelect、菜单 / 按钮授权树、IconPicker |
 | 认证页族 | 账号密码（含验证码策略）、SSO 跳转与回调、多租户二次选择、登录过期弹窗；可选：验证码登录、第三方登录按钮区、忘记密码、Captcha |
 | `@yue/sdk` | 注册表 API（导航 / 设置 / 命令 / 快捷键 / 预览器 / 客户端动作 / 控件）、`PlatformClient`、request 拦截器链（鉴权刷新队列、租户头、大数处理）、i18n、mock 中间件、`.d.ts` 契约 |
@@ -263,7 +263,7 @@ export function listWidgets(filter?: { device?: Device; category?: string }): Wi
 
 **四段为什么分开。** `data` 是唯一允许被后端、OpenAPI、MCP 直接复用的部分，所以它必须是标准 JSON Schema 2020-12 且 `additionalProperties: false`；`ui` 承载布局与控件选择，是 yue 自有的 UI Schema，允许随版本演进；`rules` 只放可序列化的声明式动作与表达式 DSL，保证 Agent 能生成、服务端能校验、小程序端能执行；`binding` 把表单与实体字段、系统列约定绑定，是 Schema Migrator 与数据引擎读取的部分。四段分开的直接收益是：改布局不触发数据契约版本变化，改规则不触发迁移，Agent 生成表单时可以只生成 `data + ui` 而把 `binding` 交给平台填充。
 
-**版本与兼容。** `version` 遵循 SemVer：`data` 的破坏性变化（删字段、改类型、收紧必填）升大版本并要求迁移计划；`ui / rules` 的变化升小版本；草稿与发布快照各自不可变，运行时只读当前生效快照。校验器（Ajv，前后端同一份编译产物）必须拒绝未知 `$schema` 与超出版本范围的文档，而不是宽松通过。
+**版本与兼容。** `version` 遵循 SemVer：`data` 的破坏性变化（删字段、改类型、收紧必填）升大版本并要求迁移计划；`ui / rules` 的变化升小版本；草稿与发布快照各自不可变，运行时只读当前生效快照。校验器（前后端同一份 Schema；前端由 `@idadawn/yue-form` 解释执行、不在运行期生成代码，判定与 Ajv 逐条对照，R130）必须拒绝未知 `$schema` 与超出版本范围的文档，而不是宽松通过。
 
 **`x-` 扩展。** `x-sensitivity`（字段敏感度，供脱敏与导出审计）、`x-ref`（引用实体）、`x-widget-hint`（推荐控件）是本 spec 定义的扩展关键字，其余 `x-` 关键字一律由校验器拒绝，防止契约被私有字段侵蚀。
 
@@ -433,7 +433,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 | 组件底座 | Base UI + Tailwind v4 + shadcn 源码自有化 | Radix（验证门不过时整体切换） | antd / MUI 混用（双轨反例） | 锁定（验证门 2026-10-09 通过） |
 | 无样式原语 | `@base-ui/react` 1.x | Radix | — | 锁定（验证门 2026-10-09 通过，ADR-013 §9） |
 | 表格 | TanStack Table v9 + TanStack Virtual | VisActor VTable / AntV S2（透视、大数据，S3）；AG Grid Community | 依赖 AG Grid Enterprise 却不采购；Vue 生态表格 | 锁定 |
-| 表单 | 自有 Schema（数据部分 JSON Schema 2020-12 + 自有 UI Schema）+ react-hook-form + Ajv | RJSF / JSON Forms 作参考实现 | Formily（停滞）、amis（自带体系）；zod 只用于 TS 侧导出契约 | 锁定 |
+| 表单 | 自有 Schema（数据部分 JSON Schema 2020-12 + 自有 UI Schema）+ react-hook-form + 解释型 JSON Schema 子集校验（R130；Ajv 只作差分测试的对照） | RJSF / JSON Forms 作参考实现 | Formily（停滞）、amis（自带体系）；zod 只用于 TS 侧导出契约 | 锁定 |
 | 拖拽 | dnd-kit（yue 包一层抽象） | pragmatic-drag-and-drop；`@dnd-kit/react` 1.0 后迁移 | react-beautiful-dnd（废弃）、react-dnd（停更）、SortableJS | 锁定，抽象层隔离供应链风险 |
 | 流程 / 逻辑画布 | 审批流：DOM 节点树自绘；自动化流：`@xyflow/react` 12（S3） | AntV X6、LogicFlow | bpmn-js（水印许可证）、Elsa Studio 嵌入 | 锁定 |
 | 栅格布局 | react-grid-layout 2.x | — | Vue 生态 | 锁定 |
@@ -495,7 +495,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 **数据与表单**
 - [ ] DataTable 基础版：服务端分页 / 排序 / 筛选、行选择、列显隐、固定列、三态（空 / 加载 / 错误）用例通过
 - [ ] Upload 分片 + MD5 秒传 + 断点续传在 staging 对 `qian.files` 通过
-- [ ] SchemaForm 由 FormSchema 草案渲染并提交；Ajv 校验错误定位到字段；编辑 / 只读态切换无需第二套组件
+- [ ] SchemaForm 由 FormSchema 草案渲染并提交；Schema 校验错误定位到字段；编辑 / 只读态切换无需第二套组件
 - [ ] 校验规则目录与脱敏规则目录可枚举（带 id 与参数 Schema），前后端同一份
 
 **业务选择器与认证**

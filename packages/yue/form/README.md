@@ -6,6 +6,8 @@
 
 `SchemaForm` 接收 `schema`、`i18n`、`initialValues` 和 `onSubmit`；从 JSON Schema 2020-12 提取字段类型与约束，以 react-hook-form 管理状态，控件复用 core。字段标签用 `ui.layout[].labelKey` 或数据 Schema 的 title key。原始 Schema 不被联动修改。
 
+校验不在运行期生成代码（S1-YUE-014）：数据 Schema 与 FormSchema / ListSchema / WidgetMeta 元数据 Schema 都由 `src/json-schema.ts` 解释执行，不调用 Function / eval，外壳 CSP 不放行 `'unsafe-eval'` 也能用。它只接受 SchemaForm 实际用到的 JSON Schema 2020-12 子集：`type`、`enum`、`const`、`$ref`（本文档内的 JSON Pointer）、`oneOf`；`properties`、`required`、`additionalProperties`；`items`、`minItems`、`maxItems`；`minLength`、`maxLength`（按码点）、`pattern`（Unicode 正则）、`format`（`date`、`time`、`date-time`、`uuid`）；`minimum`、`maximum`、`exclusiveMinimum`、`exclusiveMaximum`；外加根上的 `$schema` / `$id`、`$defs`、只作说明的关键字与本 spec 的三个 `x-` 扩展。子集内的判定、错误顺序与错误对象（`validateValues` / `validateMetadata` 返回的 instancePath、schemaPath、keyword、params、message）与此前的 Ajv 2020（allErrors、strict: false、ajv-formats full）逐条一致，由差分测试 `src/json-schema.ssr.test.tsx` 对照；属性存在与否同 Ajv，取值为 `undefined` 视为缺失。子集外的关键字、格式与引用在渲染前（`assertFormSchema`）拒绝，抛 `form.error.unsupportedKeyword`；参数不合法抛 `form.error.schema`；`Error.cause` 是出问题的 Schema 位置。
+
 账号密码表单继续使用同一引擎：普通字符串字段设置 `ui.layout[].props.type: "password"` 后输出密码输入，校验与提交仍由原 Schema 驱动。`props.autoComplete` 支持 `on`、`off`、`username`、`current-password`、`new-password`；其它 DOM 属性和输入类型不会从元数据透传。密码字段在只读模式强制完整遮蔽，`readonlyMask: "none"` 不能将它恢复为明文。
 
 `mode="readonly"` 与编辑共用字段目录与状态，`auth.fields` 只做体验裁剪；脱敏支持 none、full、last4，不能替代服务端授权与脱敏。`apiRef` 提供 getValues / setValue / reset / validate / submit / setErrors / clearErrors。切换记录用新的 React key 或 reset，避免覆盖正在编辑的数据。
@@ -30,7 +32,7 @@ FormSchema / ListSchema / WidgetMeta 的 Schema 和生成类型在 contracts 包
 
 ## 已知限制与延期项
 
-S1 支持字符串、数字、布尔、枚举、日期与嵌套对象；数组编辑器、复杂表达式、端布局覆盖执行和低代码设计器留给 S2。参考应用 CRUD 归 S1-QA-007；本任务的网络证据是 SDK mock，不代表真实后端验收。
+S1 支持字符串、数字、布尔、枚举、日期与嵌套对象；数组编辑器、复杂表达式、端布局覆盖执行和低代码设计器留给 S2。校验子集外的关键字（`anyOf` / `allOf` / `not` / `if`、`uniqueItems`、`multipleOf`、`patternProperties`、OpenAPI 3.0 的 `nullable` 等）与上列以外的 `format` 暂不支持：需要时扩充子集并补差分用例，而不是放宽为忽略。参考应用 CRUD 归 S1-QA-007；本任务的网络证据是 SDK mock，不代表真实后端验收。
 
 ## 字段与弹层页脚
 
