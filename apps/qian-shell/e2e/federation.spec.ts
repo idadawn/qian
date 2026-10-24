@@ -51,6 +51,19 @@ test('真实官方租户 MF 制品按页面加载，同一 React / SDK 实例与
   const violations = (await new AxeBuilder({ page }).analyze()).violations.filter((entry) => ['critical', 'serious'].includes(entry.impact ?? ''));
   expect(violations).toEqual([]);
   await page.screenshot({ path: new URL('../acceptance-results/official-tenant-remote.png', import.meta.url).pathname, fullPage: true });
+  // SchemaForm 的校验在外壳源里真实执行（script-src 不放行 'unsafe-eval'，S1-YUE-014）：空表单与非法租户号只出字段错误、不发写请求；CSP 违规由 afterEach 断言为零。
+  const writes: string[] = [];
+  page.on('request', (request) => { if (request.method() !== 'GET' && new URL(request.url()).pathname.startsWith('/api/tenancy/')) writes.push(request.url()); });
+  const dialog = page.getByRole('dialog');
+  await page.getByRole('button', { name: '新建租户' }).click();
+  await dialog.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(dialog.getByText('此项必填', { exact: true }).first()).toBeVisible();
+  await dialog.getByLabel('租户号').fill('UPPER');
+  await dialog.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(dialog.getByLabel('租户号')).toHaveAttribute('aria-invalid', 'true');
+  expect(writes).toEqual([]);
+  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
   await page.evaluate(() => window.__qianAcceptance.unload('qian.tenancy', 'tenant:11111111-1111-4111-8111-111111111111'));
   await expect(page.getByTestId('qian-tenancy-remote')).toHaveCount(0);
   await expect(page.getByRole('link', { name: '租户管理' })).toHaveCount(0);
