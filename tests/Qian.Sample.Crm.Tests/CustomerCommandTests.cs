@@ -45,7 +45,7 @@ namespace Qian.Sample.Crm.Tests;
 // - CommandTests：客户命令与 hook；
 // - CapabilityTests：能力执行、Agent 字段与契约；
 // - CatalogContractTests：能力目录、组件清单与租户界面契约；
-// - ShellSurfaceTests：外壳用的平台表面，含菜单、外壳目录与 bootstrap、identity_revision 下限；
+// - ShellSurfaceTests：外壳用的平台表面，含菜单、外壳目录与 bootstrap、identity_revision 下限、经外壳以本人执行应用能力；
 // - TenantOperationsTests：租户运营，含开户、设置、状态与网关入口；
 // - EventTests：事件发布与消费；
 // - IdentityAuthzTests：身份、会话与鉴权；
