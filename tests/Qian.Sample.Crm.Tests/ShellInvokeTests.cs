@@ -96,7 +96,8 @@ public sealed partial class CustomerCommandTests
             CustomerInput(Guid.CreateVersion7(), "委托客户")), Ct))
             await ErrorDetail(delegated, HttpStatusCode.NotFound, "NOT_FOUND");
 
-        // 五、参考应用自己的受众（qian.sample.crm）仍只收机器主体：同一用户的 S2S 直调它的 REST 与能力执行入口，都在认证阶段 401。
+        // 五、参考应用自己的受众（qian.sample.crm）仍只收机器主体：同一用户的 S2S 直调它的 REST 与能力执行入口都 401
+        // （本宿主验签不放行 user，身份适配器也只认平台表面交来的 user 快照，两道各自兜底，响应一样）。
         var revision = (long)session["identityRevision"]!;
         using (var rest = await business.Send(Get("/api/customers", business.Token(A, "crm.read crm.write", ownerId, "user", identityRevision: revision))))
             await ErrorDetail(rest, HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
