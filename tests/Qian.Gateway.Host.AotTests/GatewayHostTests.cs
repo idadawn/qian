@@ -66,7 +66,7 @@ public sealed class GatewayHostTests(PostgresFixture postgres, RedisFixture redi
                 {
                     IdentityIssuer = identity.Issuer, IdentityAudience = IdentityServerHost.Resource,
                     Issuer = "https://bootstrap.invalid/s2s", SigningKeyPath = signingFile, PublicKeyPath = Path.Combine(secretsRoot, "public.pem"),
-                    TrustedProxyNetworks = Array.Empty<string>(), Routes = new[] { new { Id = "platform", Path = "/api/{**rest}", Cluster = "qian-platform" } },
+                    TrustedProxyNetworks = Array.Empty<string>(), Routes = new[] { new { Id = "platform", Path = "/api/{**rest}", Cluster = "qian-platform", RateLimiterPolicy = "tenant" } },
                     Clusters = new[] { new { Id = "qian-platform", Address = downstream.Address } }
                 },
                 Identity = new { ClientId = IdentityServerHost.ClientId, RedirectUri = new Uri(address, "auth/callback").AbsoluteUri,
