@@ -8,6 +8,7 @@ using Kun.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Qian.Testing.Containers;
@@ -84,6 +85,52 @@ public sealed class DataConventionTests(PostgresFixture postgres) : IClassFixtur
         async Task<JsonElement> ReadAudit(Guid id)
         {
             var json = await db.Database.SqlQueryRaw<string>("SELECT to_jsonb(c)::text AS \"Value\" FROM plugin_deletion.customer_records c WHERE id = {0}", id).SingleAsync(ct);
+            using var parsed = JsonDocument.Parse(json);
+            return parsed.RootElement.Clone();
+        }
+    }
+
+    // 数据组件不占框架当前主体端口（S1-KUN-017）：身份适配器晚于 AddQianData 以 TryAdd 登记照样生效；只装数据组件、没有身份适配器的宿主照常建上下文，主体写 null。
+    [Fact]
+    public async Task 身份适配器晚于数据组件登记仍生效_没有适配器时上下文照常创建且主体写null()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var actor = new CurrentActor { UserId = Guid.NewGuid().ToString() };
+        var late = await RoundTrip(services => services.TryAddScoped<ICurrentUser>(_ => actor), "late");
+        Assert.Equal((actor.UserId, actor.UserId), (late.GetProperty("created_by").GetString(), late.GetProperty("deleted_by").GetString()));
+        var anonymous = await RoundTrip(services => Assert.DoesNotContain(services, service => service.ServiceType == typeof(ICurrentUser)), "anonymous");
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (anonymous.GetProperty("created_by").ValueKind, anonymous.GetProperty("deleted_by").ValueKind));
+        Assert.True(anonymous.GetProperty("is_deleted").GetBoolean());
+
+        async Task<JsonElement> RoundTrip(Action<IServiceCollection> afterData, string name)
+        {
+            var tenant = new AsyncLocalTenantContext();
+            var builder = Host.CreateApplicationBuilder();
+            builder.Services.AddSingleton<ITenantContext>(tenant);
+            builder.Services.AddQianData<ActorPortContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema("plugin_actor_port"));
+            afterData(builder.Services);
+            using var host = builder.Build();
+            await host.StartAsync(ct);
+            using var tenantScope = tenant.BeginScope("a");
+            await using var scope = host.Services.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<ActorPortContext>();
+            await using (var admin = new NpgsqlConnection(postgres.ConnectionString))
+            {
+                await admin.OpenAsync(ct);
+                await using var exists = new NpgsqlCommand("SELECT to_regclass('plugin_actor_port.customer_records') IS NOT NULL", admin);
+                if (!(bool)(await exists.ExecuteScalarAsync(ct))!)
+                {
+                    await using (var ddl = new NpgsqlCommand(db.Database.GenerateCreateScript(), admin)) await ddl.ExecuteNonQueryAsync(ct);
+                    await using var grant = new NpgsqlCommand("GRANT USAGE ON SCHEMA plugin_actor_port TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_actor_port TO qian_app;", admin);
+                    await grant.ExecuteNonQueryAsync(ct);
+                }
+            }
+            var customer = new Customer { DisplayName = name };
+            db.Add(customer);
+            await db.SaveChangesAsync(ct);
+            db.Remove(customer);
+            await db.SaveChangesAsync(ct);
+            var json = await db.Database.SqlQueryRaw<string>("SELECT to_jsonb(c)::text AS \"Value\" FROM plugin_actor_port.customer_records c WHERE id = {0}", customer.Id).SingleAsync(ct);
             using var parsed = JsonDocument.Parse(json);
             return parsed.RootElement.Clone();
         }
@@ -192,6 +239,11 @@ public sealed class DataConventionTests(PostgresFixture postgres) : IClassFixtur
     }
 
     public sealed class DeletionContext(DbContextOptions<DeletionContext> options, ITenantContext tenant) : QianDbContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.Entity<Customer>().ToTable("customer_records");
+    }
+
+    public sealed class ActorPortContext(DbContextOptions<ActorPortContext> options, ITenantContext tenant) : QianDbContext(options, tenant)
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.Entity<Customer>().ToTable("customer_records");
     }

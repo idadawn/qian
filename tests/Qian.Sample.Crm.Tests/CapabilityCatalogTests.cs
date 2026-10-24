@@ -9,7 +9,6 @@ using System.Security.Cryptography;
 using Json.Schema;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Extensions;
-using Kun.Security.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -342,7 +341,6 @@ public abstract partial class CustomerCommandTests
     }
     private protected static void ConfigureCapabilities(WebApplicationBuilder builder, string connection, string navigationConnection, string migrations)
     {
-        builder.Services.AddKunSecurity();
         builder.Services.AddQianHttpContracts();
         builder.Configuration["Qian:Profile"] = "platform"; // 业务端点的可见性门由参考宿主自身装配。
         builder.Services.AddQianData<CapabilitiesDbContext>((_, options) => options.UseNpgsql(navigationConnection).UseKunSchema(CapabilitiesDbContext.Schema));

@@ -33,8 +33,11 @@ public sealed partial class ShellSurfaceTests
     {
         using var tls = GatewayTestHost.Certificate(); using var reservation = LoopbackPort.Reserve();
         var address = new Uri($"https://localhost:{reservation.Port}/");
-        // 放行判定也入链（采样 1）：用来核对命令 PEP 判的是调用者本人。
-        await using var business = await Start(identity: true, capabilities: true, relyingParty: new Uri(address, "auth/callback"), decisionLogSampling: 1);
+        // 放行判定也入链（采样 1）：用来核对命令 PEP 判的是调用者本人。身份库先于 AddKunSecurity 登记（S1-KUN-017 的前提）。
+        IServiceCollection? services = null;
+        await using var business = await Start(identity: true, capabilities: true, relyingParty: new Uri(address, "auth/callback"), decisionLogSampling: 1,
+            configure: builder => services = builder.Services);
+        AssertDataComponentsFirst(business, services!, typeof(Qian.Identity.Server.IdentityDbContext));
         var loader = Runtime(business).Loader;
         await using var surface = PlatformSurfaceHost.Build(id => loader.GetContext(id, ScopeKey.Global), new TokenValidationParameters
         {

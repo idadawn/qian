@@ -8,7 +8,6 @@ using Kun.EventBus.DependencyInjection;
 using Kun.Mediator;
 using Kun.Mediator.DependencyInjection;
 using Kun.Security.DependencyInjection;
-using Kun.Security.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -36,16 +35,13 @@ public static class CrmCommandApplication
         var platform = false;
         var app = CrmApplication.Build(args, builder =>
         {
-            // 框架当前主体端口（Kun 的 ICurrentUser）先登记为 JwtCurrentUser，再执行调用方的配置：调用方先登记数据组件（如同进程的身份库）时，
-            // 数据约定会以 TryAdd 把匿名兜底占进这个端口，命令管道的框架主体比对随之对一切能力执行判拒（S1-YUE-015 排查所得）。
-            builder.Services.TryAddScoped<Kun.Core.Security.ICurrentUser, JwtCurrentUser>();
+            // 调用方可以先登记数据组件（如同进程的身份库）：Kun 数据约定不占框架当前主体端口（S1-KUN-017），下面的 AddKunSecurity 照样生效。
             configure?.Invoke(builder);
             platform = builder.Configuration["Qian:Profile"] == "platform" || builder.Services.Any(service => service.ServiceType == typeof(PluginEndpointOptions));
             if (platform && !builder.Services.Any(service => service.ServiceType == typeof(PluginEndpointOptions)))
                 builder.Services.AddQianPluginEndpoints(sp => sp.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("registry", ScopeKey.Global));
             var reader = builder.Configuration["S2S:ReaderClientId"] ?? throw new InvalidOperationException("缺少 S2S:ReaderClientId。");
             var writer = builder.Configuration["S2S:WriterClientId"] ?? throw new InvalidOperationException("缺少 S2S:WriterClientId。");
-            // 身份适配器先于数据约定登记，避免框架的匿名兜底占住当前主体端口。
             builder.Services.AddKunSecurity();
             builder.Services.AddHttpContextAccessor();
             builder.Services.ConfigureHttpJsonOptions(options =>

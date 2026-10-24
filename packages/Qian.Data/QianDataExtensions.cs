@@ -1,3 +1,4 @@
+using Kun.Core.Security;
 using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EntityFrameworkCore;
 using Kun.EventBus;
@@ -70,7 +71,9 @@ public static class QianDataExtensions
         services.TryAddScoped<IIntegrationEventBus>(sp => sp.GetRequiredService<IntegrationEventOutboxAccumulator>());
         services.TryAddScoped<IOutboxWriter>(sp => sp.GetRequiredService<IntegrationEventOutboxAccumulator>());
         services.AddKunTenantRls<TContext>();
-        services.TryAddScoped<QianSoftDeleteInterceptor>();
+        // 不占框架当前主体端口：上下文创建时才解析，没有身份适配器时删除主体按匿名写 null，适配器在数据组件之前或之后登记都生效。
+        services.TryAddScoped(sp => new QianSoftDeleteInterceptor(
+            sp.GetService<ICurrentUser>() ?? AnonymousCurrentUser.Instance, sp.GetRequiredService<TimeProvider>()));
         services.ConfigureDbContext<TContext>((sp, options) => options.AddInterceptors(sp.GetRequiredService<QianSoftDeleteInterceptor>()));
         services.AddKunDataConventions<TContext>();
         services.AddKunMultiTenancyEntityFrameworkCore();
