@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 
-// 外壳产物校验（apps/qian-shell/scripts/verify-dist.mjs）自测：真跑一遍脚本。CSP 的已登记例外是「至多一个」而不是必需项；
-// 名单外的放宽指令、重复声明（浏览器只认第一条）、未登记的例外与外部源一律拒绝。
+// 外壳产物校验（apps/qian-shell/scripts/verify-dist.mjs）自测：真跑一遍脚本。script-src 只许 'self' 与内联脚本的 sha256（S1-YUE-014 撤销了
+// 'unsafe-eval' 例外）；名单外的放宽指令、重复声明（浏览器只认第一条）、任何例外与外部源一律拒绝。
 const ROOT = path.resolve(__dirname, '../../..');
 const SCRIPT = path.join(ROOT, 'apps/qian-shell/scripts/verify-dist.mjs');
 const THEME = "document.documentElement.dataset.theme='light'";
@@ -28,8 +28,13 @@ function verify(script: string, extra: readonly string[] = []) {
 afterAll(() => { for (const dist of dists) rmSync(dist, { recursive: true, force: true }); });
 
 const rejected: [string, string, string[]][] = [
-  ['两个例外', `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${HASH}`, []],
-  ['未登记的例外', `script-src 'self' 'unsafe-hashes' ${HASH}`, []],
+  ['unsafe-eval（已撤销的例外）', `script-src 'self' 'unsafe-eval' ${HASH}`, []],
+  ['wasm-unsafe-eval', `script-src 'self' 'wasm-unsafe-eval' ${HASH}`, []],
+  ['unsafe-eval 与 unsafe-inline 并列', `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${HASH}`, []],
+  ['unsafe-hashes', `script-src 'self' 'unsafe-hashes' ${HASH}`, []],
+  ['self 不在开头', `script-src ${HASH} 'self'`, []],
+  // 首位换成放宽源、其余全是哈希：只有「首位必须是 'self'」这条检查拦得住。
+  ['首位放宽源', `script-src 'unsafe-eval' ${HASH}`, []],
   ['外部源', `script-src 'self' https://cdn.example ${HASH}`, []],
   ['script-src-elem 放宽', `script-src 'self' ${HASH}`, ["script-src-elem 'self' https://evil.example"]],
   ['script-src-attr 放宽', `script-src 'self' ${HASH}`, ["script-src-attr 'unsafe-inline'"]],
@@ -38,13 +43,10 @@ const rejected: [string, string, string[]][] = [
 ];
 
 describe('外壳产物校验（verify-dist.mjs）', () => {
-  it('没有例外的 CSP 通过：已登记例外不是必需项，撤销后照样通过', () => {
+  it('合规的 CSP 通过：script-src 只有 self 与内联脚本的 sha256', () => {
     const result = verify(`script-src 'self' ${HASH}`);
     expect(result.out).toContain('外壳产物校验通过');
     expect(result.status).toBe(0);
-  });
-  it('至多一个已登记例外（unsafe-eval）通过', () => {
-    expect(verify(`script-src 'self' 'unsafe-eval' ${HASH}`).status).toBe(0);
   });
   it.each(rejected)('拒绝：%s', (_name, script, extra) => {
     const result = verify(script, extra);

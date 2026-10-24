@@ -12,7 +12,7 @@ import { ComponentDemo } from '@theme';
 
 # SchemaForm 表单与弹层
 
-SchemaForm 使用 JSON Schema 2020-12 校验数据，react-hook-form 管理字段状态；编辑与只读共用字段目录。示例请求经 PlatformClient 的 mock 网络层。新建时留空或输入不合法的客户号可看到前置校验；名称填写「服务端错误」可观察 ErrorDetail 的 pointer 映射。
+SchemaForm 使用 JSON Schema 2020-12 校验数据（解释执行、不在运行期生成代码，只接受 SchemaForm 用到的关键字子集，子集外的关键字在渲染前拒绝），react-hook-form 管理字段状态；编辑与只读共用字段目录。示例请求经 PlatformClient 的 mock 网络层。新建时留空或输入不合法的客户号可看到前置校验；名称填写「服务端错误」可观察 ErrorDetail 的 pointer 映射。
 
 <ComponentDemo name="SchemaForm" />
 
