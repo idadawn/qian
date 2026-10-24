@@ -3,7 +3,7 @@
   "$id": "https://qian.dev/contracts/v0/capability-catalog.schema.json",
   "title": "CapabilityCatalog",
   "description": "能力目录 GET /api/capabilities（及 S1 别名 GET /api/kernel/capabilities）的响应信封（PRD 7.2.1、组件模型规格 §9.5）：按调用者身份、OAuth scope、RBAC 与当前租户 scope 过滤后的能力条目，以及客户端缓存提示。条目形状见 capability-entry。",
-  "x-status": "draft",
+  "x-status": "frozen",
   "type": "object",
   "additionalProperties": false,
   "required": ["items", "ttlMs", "cacheScope"],

@@ -8,12 +8,13 @@ using Qian.Surfaces.Abstractions;
 
 namespace Qian.Capabilities;
 
-/// <summary>从已捕获的 UI 清单贡献菜单，随实际业务插件一起装载、遮蔽与撤销。</summary>
+/// <summary>从已捕获的 UI 清单贡献菜单与外壳远程，随实际业务插件一起装载、遮蔽与撤销。</summary>
 public sealed class NavigationManifestPlugin : IQianPlugin
 {
     private readonly IQianPlugin _inner;
     private readonly InstalledComponentMetadata _component;
     private readonly IReadOnlyList<NavigationContribution> _items;
+    private readonly ShellRemoteContribution? _shell;
     /// <summary>只读取制品快照；菜单声明不代表前端远程模块已经部署或渲染。</summary>
     public NavigationManifestPlugin(IQianPlugin inner, InstalledComponentMetadata component, ISurfaceReader reader)
     {
@@ -28,6 +29,8 @@ public sealed class NavigationManifestPlugin : IQianPlugin
         if (component.ArtifactDigest is null || bytes.Length > 1_048_576) throw Invalid();
         var parsed = reader.Parse(path, new UTF8Encoding(false, true).GetString(bytes));
         if (parsed.Syntax is null || parsed.Diagnostics.Any(item => item.Severity == "error") || parsed.Syntax.Data.ValueKind != JsonValueKind.Object) throw Invalid();
+        // 外壳目录交出的是制品快照里的清单原文（只读副本）；远程地址、插槽与桥接声明由外壳宿主再校验一次。
+        _shell = new ShellRemoteContribution(component.PluginId, parsed.Syntax.Data.Clone());
         if (!parsed.Syntax.Data.TryGetProperty("pages", out var pages)) { _items = []; return; }
         if (pages.ValueKind != JsonValueKind.Array || pages.GetArrayLength() > 256) throw Invalid();
         var items = new List<NavigationContribution>(); var routes = new HashSet<string>(StringComparer.Ordinal);
@@ -60,10 +63,12 @@ public sealed class NavigationManifestPlugin : IQianPlugin
         await _inner.ApplyAsync(ctx, config, ct).ConfigureAwait(false);
         foreach (var item in _items)
         { ct.ThrowIfCancellationRequested(); ctx.Provide(CapabilitiesDefinition.NavigationItemsKey, item.Name, item); }
+        if (_shell is not null) ctx.Provide(CapabilitiesDefinition.ShellRemotesKey, _shell.PluginId, _shell);
     }
     private static string Text(JsonElement value, string name) => value.TryGetProperty(name, out var item) && item.ValueKind == JsonValueKind.String ? item.GetString()! : throw Invalid();
     private static QianErrorException Invalid() => new(new QianError(PlatformErrors.InputInvalid));
 }
+internal sealed record ShellRemoteContribution(string PluginId, JsonElement Manifest);
 internal sealed record NavigationContribution(string PluginId, string Route, string Title, string? Icon, int Order, string Permission)
 {
     internal string Name => PluginId + "/page" + Route;

@@ -25,24 +25,37 @@ function pick(value: unknown): Partial<Preferences> {
 }
 function browserStorage(): PreferenceStorage | undefined { try { return typeof window === 'undefined' ? undefined : window.localStorage; } catch { return undefined; } }
 
-export function initPreferences({ namespace, overrides, storage = browserStorage() }: { namespace: string; overrides?: Partial<Preferences>; storage?: PreferenceStorage | null }): PreferencesStore {
+/**
+ * `overrides` 总是生效（高于已保存的偏好）；`defaults` 是部署缺省（例如运行时配置的语言）：低于已保存的偏好，也不写进存储。
+ * 存储只记用户自己改过的键（`update` 增量合并），`reset` 写空对象。
+ */
+export function initPreferences({ namespace, overrides, defaults: deployment, storage = browserStorage() }: { namespace: string; overrides?: Partial<Preferences>; defaults?: Partial<Preferences>; storage?: PreferenceStorage | null }): PreferencesStore {
   if (!/^[a-zA-Z0-9._-]+$/.test(namespace)) throw new TypeError('shell.error.preferenceNamespace');
   const key = `yue.preferences.${namespace}`;
-  const initial = Object.freeze({ ...defaults, ...pick(overrides) });
+  const initial = Object.freeze({ ...defaults, ...pick(deployment), ...pick(overrides) });
   let saved: Partial<Preferences> = {};
   try { saved = pick(JSON.parse(storage?.getItem(key) ?? '{}')); } catch { /* 存储损坏或被禁用时仍可使用当前会话。 */ }
   let current = Object.freeze({ ...initial, ...saved, ...pick(overrides) });
   const listeners = new Set<() => void>();
+  // 存储只记用户自己写过的键（增量合并）：部署缺省与宿主覆盖不进存储，reset 写空对象。部署缺省以后变了，用户没改过的那几项跟着变。
+  const persist = (next: Partial<Preferences>) => {
+    saved = next;
+    try { storage?.setItem(key, JSON.stringify(saved)); } catch { /* 浏览器禁用存储时偏好保留在内存。 */ }
+  };
   const replace = (next: Preferences) => {
     if (JSON.stringify(next) === JSON.stringify(current)) return;
     current = Object.freeze(next);
-    try { storage?.setItem(key, JSON.stringify(current)); } catch { /* 浏览器禁用存储时偏好保留在内存。 */ }
     listeners.forEach(listener => listener());
   };
   return {
     namespace, getSnapshot: () => current, getServerSnapshot: () => initial,
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; },
-    update(patch) { replace({ ...current, ...pick(patch) }); }, reset() { replace({ ...initial }); },
+    update(patch) {
+      const written = pick(patch);
+      if (JSON.stringify({ ...saved, ...written }) !== JSON.stringify(saved)) persist({ ...saved, ...written });
+      replace({ ...current, ...written });
+    },
+    reset() { persist({}); replace({ ...initial }); },
   };
 }
 

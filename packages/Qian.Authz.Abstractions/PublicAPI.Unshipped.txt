@@ -345,3 +345,4 @@ Qian.Authz.Abstractions.EnforcementRequest.Transaction.get -> System.Data.Common
 Qian.Authz.Abstractions.EnforcementRequest.Transaction.init -> void
 const Qian.Authz.Abstractions.AuthzEnforcement.AuditUnavailable = "audit_unavailable" -> string!
 const Qian.Authz.Abstractions.AuthzEnforcement.StaleIdentityRevision = "identity_revision_stale" -> string!
+Qian.Authz.Abstractions.IAuthzEnforcement.CheckIdentityRevisionAsync(Qian.Authz.Abstractions.EnforcementRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Authz.Abstractions.AuthorizationDecision?>

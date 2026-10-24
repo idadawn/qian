@@ -17,7 +17,7 @@
 | `generated/` | `qian docs generate` 从实际 profile、配置 Schema 与 C# 事件代码派生的配置目录、模块图、事件图、seam 图，CI 重新生成并比对、漂移即失败；实现说明见 `../packages/Qian.Docs/README.md` | 生成物 |
 | `CHANGELOG.md` | 变更日志：对读者可见的变化（新文档与规格、新组件与命令、破坏性变更），按日期倒序；文档站首页「最新动态」取最近 4 条 | 持续更新 |
 | `ROADMAP.md` | 阶段路线唯一真相源：S1–S4 目标、退出标准、核心交付、里程碑占位、依赖与风险、跨阶段约束 | 草案 v1（S1 交付已按 ADR-020 更新） |
-| [`../contracts/v0/`](../contracts/v0/README.md) | 冻结契约 v0（仓库根目录，不在 docs 下）：ErrorDetail 与错误码目录、S2S claim、事件信封、能力条目四类 JSON Schema 2020-12 + fixture，及[与 iClaw 的差异说明](../contracts/v0/iclaw-alignment.md)；字段以此为准 | draft（默认裁决待 S1-DEC-010 确认） |
+| [`../contracts/v0/`](../contracts/v0/README.md) | 冻结契约 v0（仓库根目录，不在 docs 下）：ErrorDetail 与错误码目录、S2S claim、事件信封、能力条目四类 JSON Schema 2020-12 + fixture，及[与 iClaw 的差异说明](../contracts/v0/iclaw-alignment.md)；字段以此为准 | frozen（S1-AGT-005，2026-10-24；后续仅兼容增量） |
 | `migration/` | 从参考平台到 Qian 的迁移方案 | 草案 v1 |
 | [`ops/configuration-runbook.md`](ops/configuration-runbook.md) | 配置分工、secretRef、扫描门禁、L0–L4 降级矩阵及真实 Apollo 验收证据 | 随 S1-CFG-001 / 002 实现维护 |
 | [`ops/k3s-control-plane-recovery.md`](ops/k3s-control-plane-recovery.md) | K3s 控制面崩溃循环的证据、根因、方案选择（推荐 qd 单控制面 + 三个 agent）与分阶段执行、回退、验收（S1-DEP-007） | 待产品负责人批准方案后执行，随 S1-DEP-007 维护 |

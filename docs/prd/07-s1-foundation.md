@@ -452,7 +452,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - Schema：`config.schema`（JSON Schema 2020-12，`sensitive: true` 字段只能是 secretRef）→ CI 生成 namespace 骨架并比对线上键；`GET /api/config/schemas/{plugin}` 对外可读（值不可读除非有权限且非敏感）。
 - 特性开关：namespace `qian.common.flags`，键 `flag.<name>` 值为规则 JSON（默认、租户白名单/百分比）；`IFeatureFlags.IsEnabled(name, tenantId)`；授权（7.14）与开关分开存（ADR-014）。`IFeatureFlags` 只管灰度（按租户百分比 / 白名单渐进放量）；「租户是否启用某组件」不再用开关表达，而是租户 scope 是否挂载该组件的配置条目（ADR-020 D20.5、7.2.1）。
 - S1-DEC-031 已确认 `flags.set` 仅保存待发布规则草稿，明确返回待发布状态，由有权限的操作人在 Apollo Portal 发布后生效。写端是可选平台管理组件 `qian.config.flags`，经 Portal OpenAPI 操作宿主可信绑定的 App / 环境 / Cluster / `qian.common.flags`，Token 使用 secretRef；调用方不能选择任意目标、Token 或发布人，不回退 AdminService，也不改变 Config seam 的只读定位。写入具备平台权限、确认元数据与脱敏审计；不安装写端时明确不可用。详见[写入与发布边界](../decisions/feature-flags-write-boundary.md)。
-- 分工表（写进开发手册）：部署级引导项 → Kustomize；平台/服务级非敏感 → Apollo；密钥 → K8s Secret（Infisical 待运行时注入接通）；租户级在线设置 → 7.3 `ITenantSettings`；前端运行时配置 → `window.__APP_CONF__` ConfigMap。
+- 分工表（写进开发手册）：部署级引导项 → Kustomize；平台/服务级非敏感 → Apollo；密钥 → K8s Secret（Infisical 待运行时注入接通）；租户级在线设置 → 7.3 `ITenantSettings`；前端运行时配置 → 同源 `/app-config.json` ConfigMap（JSON，外壳只解析与校验，S1-YUE-012）。
 
 初始过渡态（2026-10-06）：当时 Kun 无 Apollo 配置源，现网无 Apollo / MySQL；配置边界已由 ADR-007 裁决。S1-CFG-001 现复用已发布 Kun.Configuration.Apollo，补齐 Qian 源顺序、引导、只读 seam 与真实服务验收；[运维手册](../ops/configuration-runbook.md) 定义 L0–L4 降级与排查流程。首发 Apollo 仍遵循 2.5.x（≥2.5.2），生产部署另见 7.17。
 
@@ -668,9 +668,9 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **设计理念**。外壳 + 带版本号的插槽注册表 + Module Federation 2 运行时加载（ADR-013，补充裁决「MF2 S1 必做」）：插件在清单 `contributes` 静态声明贡献，运行时只加载「本租户已启用 × 当前页面用得到」的远程；共享依赖 singleton；统一一个壳按「平台控制台 / 应用」上下文切换（补充裁决 Q37），S1 单一侧栏布局（Q38）。MF 零隔离只给可信插件，不可信 UI 走 Worker 远程渲染或 iframe（S3）。令牌不进 URL/iframe，前端权限裁剪只是体验层。
 
-**范围与边界**。✅ 做：MF2 宿主（`registerRemotes / loadRemote`，`mf-manifest.json` 类型提示与预加载）；共享 singleton `react / react-dom / @yue/* / @qian/plugin-sdk`，`engines.yue` 校验；插槽注册表（`qian.shell.nav/v1`、`qian.shell.settings/v1`、`qian.shell.user-menu/v1`、`qian.shell.command/v1`、`qian.shell.preview/v1`、`qian.shell.client-action/v1`，每个带输入数据 Schema 与输出类型）；桥接 API（作用域校验、来自插件 UI 的消息视为不可信输入）；认证流程（OIDC code + PKCE、`AuthProvider` 契约、刷新队列、多租户选择、过期弹窗）；后端菜单 → 路由（`menuTypeRegistry`：页面、外链两类）；租户切换器（令牌重签）+ 平台代管常驻横幅；主题/语言切换、用户下拉；兜底页 403/404/500/离线、ErrorBoundary；运行时配置注入 `window.__APP_CONF__`（K8s ConfigMap）；`Preferences` 对象与注入；站内信顶栏弹窗（轻）；偏好 KV 与 URN 资源引用的消费。❌ 不做：多标签完整版（S2，基础版 P2）；全局搜索命令面板（S2 可选，插槽 S1 定义）；通知抽屉完整版（S3）；7 种布局与偏好抽屉（S3 可选）；不可信 UI 沙箱（S3）；应用切换多面新窗口（不采用）；锁屏（不做，仅 UI 遮罩非安全措施）；内置 IM（不做）；MCP Apps / WebMCP（S4）。
+**范围与边界**。✅ 做：MF2 宿主（`registerRemotes / loadRemote`，`mf-manifest.json` 类型提示与预加载）；共享 singleton `react / react-dom / @yue/* / @qian/plugin-sdk`，`engines.yue` 校验；插槽注册表（`qian.shell.nav/v1`、`qian.shell.settings/v1`、`qian.shell.user-menu/v1`、`qian.shell.command/v1`、`qian.shell.preview/v1`、`qian.shell.client-action/v1`，每个带输入数据 Schema 与输出类型）；桥接 API（作用域校验、来自插件 UI 的消息视为不可信输入）；认证流程（OIDC code + PKCE、`AuthProvider` 契约、刷新队列、多租户选择、过期弹窗）；后端菜单 → 路由（`menuTypeRegistry`：页面、外链两类）；租户切换器（令牌重签）+ 平台代管常驻横幅；主题/语言切换、用户下拉；兜底页 403/404/500/离线、ErrorBoundary；运行时配置同源 `/app-config.json`（K8s ConfigMap，JSON 只解析与校验，构建产物带 meta CSP；S1-YUE-012）；`Preferences` 对象与注入；站内信顶栏弹窗（轻）；偏好 KV 与 URN 资源引用的消费。❌ 不做：多标签完整版（S2，基础版 P2）；全局搜索命令面板（S2 可选，插槽 S1 定义）；通知抽屉完整版（S3）；7 种布局与偏好抽屉（S3 可选）；不可信 UI 沙箱（S3）；应用切换多面新窗口（不采用）；锁屏（不做，仅 UI 遮罩非安全措施）；内置 IM（不做）；MCP Apps / WebMCP（S4）。
 
-**技术落点**。组件 `qian.shell`（`runtime.form: ui`）：外壳本身是 `@qian/runtime` 上的一棵 TypeScript 插件树（ADR-020 D20.2，与 .NET 侧语义相同），打包为 `platform` 的 `shell` 组合包（静态前端制品：Vite 构建产物 + 运行时配置 ConfigMap，随 `platform` 镜像发布、经 `gateway` 提供；不是 profile，原 `qian-shell` 单元不再单独出镜像，R31）；React 19 + TypeScript + Vite + Tailwind v4 + `@module-federation/enhanced`；react-router 7、Zustand + TanStack Query、i18next。桥接 API `window.__qian.bridge`：`getContext()`（tenant、membership、app、locale、theme，只读）、`navigate(urn | route)`、`notify(level, msg)`、`invoke(capabilityId, input)`（经 `PlatformClient`，带幂等键）、`registerClientAction(descriptor)`；所有调用校验调用方远程模块 ID 与声明的插槽作用域。加载规则：读 7.14 权益 ∧ 租户 scope 已挂载 + 路由需要的插槽 → `loadRemote`；未挂载组件的远程不请求。
+**技术落点**。组件 `qian.shell`（`runtime.form: ui`）：外壳本身是 `@qian/runtime` 上的一棵 TypeScript 插件树（ADR-020 D20.2，与 .NET 侧语义相同），打包为 `platform` 的 `shell` 组合包（静态前端制品：Vite 构建产物 + 运行时配置 ConfigMap，随 `platform` 镜像发布、经 `gateway` 提供；不是 profile，原 `qian-shell` 单元不再单独出镜像，R31）；React 19 + TypeScript + Vite + Tailwind v4 + `@module-federation/enhanced`；路由用 `@yue/shell` 的最小历史路由（路由完全来自菜单，按 pathname 精确匹配、再最长前缀；外壳首屏 JS 预算 250 KiB gzip），S2 页面运行时需要嵌套路由与数据加载时再引入 react-router 7（S1-YUE-012）；Zustand + TanStack Query、i18next。会话快照、上下文、已挂载远程、已放行权限码与能力导航由网关的 bootstrap 聚合端点 `GET /api/shell/bootstrap` 一次给出（S1-YUE-012），浏览器只持有网关 BFF 的 HttpOnly 会话 Cookie。桥接 API `window.__qian.bridge`：`getContext()`（tenant、membership、app、locale、theme，只读）、`navigate(urn | route)`、`notify(level, msg)`、`invoke(capabilityId, input)`（经 `PlatformClient`，带幂等键）、`registerClientAction(descriptor)`；所有调用校验调用方远程模块 ID 与声明的插槽作用域。加载规则：读 7.14 权益 ∧ 租户 scope 已挂载 + 路由需要的插槽 → `loadRemote`；未挂载组件的远程不请求。
 
 过渡态（2026-10）：无 Kun 对应；iClaw 的壳只用了 Base UI Dialog 一个原语、无组件库；参考平台前端「两套并存」是反面教材。
 
@@ -684,7 +684,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - [ ] E2E：登录 → 多租户选择 → 切换租户 → 令牌重签 → 菜单与权限随之刷新；令牌过期时刷新队列合并并发请求，失败弹过期对话框。
 - [ ] UT：桥接 API 拒绝来自未注册远程或超出声明作用域的调用；`getContext()` 返回对象不可写。
 - [ ] 代码审查：`localStorage` 中不存在 access/refresh token 明文；URL 与 iframe src 中不出现令牌。
-- [ ] E2E：改 ConfigMap 中 `__APP_CONF__.apiBase` 后刷新即生效，不重编译。
+- [ ] E2E：改 ConfigMap（同源 `/app-config.json`）中的 `apiBase` 后刷新即生效，不重编译。
 
 #### 7.15.2 yue S1 最小集（P0 · S1）
 
@@ -736,7 +736,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 **技术落点**。
 - 镜像：多阶段构建，非 root，只读根文件系统，`SBOM`（Syft）+ 漏洞扫描（Grype/Trivy）+ Cosign 签名；镜像与插件包都推 Harbor。
 - 发布链：不可变发布事件（40 位 SHA、CalVer、`dry_run`）→ 验签 → 固定检出 → 构建推送 → **迁移 Job 先行**（`qian-platform` 启动参数 `--migrate-only`，取 advisory lock）→ `kustomize edit set image` 按 digest 写回 → Argo 收敛 → smoke（`/readyz` + 参考应用登录）。`Qian.Runtime` 与 profile 随 CalVer 发布；组件独立灰度（Apollo Label 按实例、租户灰度靠租户 scope patch + 7.8 特性开关 + 7.14 权益）。
-- 生成的 Kustomize 片段：Deployment（资源、探针、`terminationGracePeriodSeconds ≥ 优雅停机 + 10s`、`automountServiceAccountToken: false`）、Service、NetworkPolicy（默认拒绝入出，放行同 ns 内网关 → 服务、服务 → PG/Redis/RabbitMQ/Apollo、`permissions.egress` 列出的外部域经出口代理）、ResourceQuota/LimitRange（命名空间级模板）、PDB、ConfigMap（`__APP_CONF__`、Apollo 引导项）、Secret 模板（只键名）。
+- 生成的 Kustomize 片段：Deployment（资源、探针、`terminationGracePeriodSeconds ≥ 优雅停机 + 10s`、`automountServiceAccountToken: false`）、Service、NetworkPolicy（默认拒绝入出，放行同 ns 内网关 → 服务、服务 → PG/Redis/RabbitMQ/Apollo、`permissions.egress` 列出的外部域经出口代理）、ResourceQuota/LimitRange（命名空间级模板）、PDB、ConfigMap（外壳 `app-config.json`、Apollo 引导项）、Secret 模板（只键名）。
 - 配置：Kustomize 只注入引导项（`Apollo__AppId/Env/Cluster/ConfigServer__0/Label/CacheDir`、Secret 文件）；Apollo 环境只建 UAT + PRO 与现网 staging/prod 对齐；基线定期导出进 git。
 - 数据层：每环境专属 PG 16（`qian` 库，schema-per-service，RLS 开启）、Redis 7（专属实例，不复用被 L1 跨 ns 共享的 Redis）、RabbitMQ vhost `qian`。
 - 可观测：OTel Collector → 现网 LGTM；Alertmanager 部署与 5 条基础告警（P2）。

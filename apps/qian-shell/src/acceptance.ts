@@ -1,10 +1,11 @@
 import { Button } from '@idadawn/yue-core/shell';
 import * as React from 'react';
-import type { createInstance } from '@module-federation/enhanced/runtime';
-import { PlatformClient, SDK_VERSION, type BridgeCaller, type RemoteBridge, type RemoteRegistration, type ShellContext, type ShellHost, type ShellScope } from '@idadawn/qian-plugin-sdk';
+import { PlatformClient, SDK_VERSION, type BridgeCaller, type RemoteBridge, type RemoteRegistration, type ShellScope } from '@idadawn/qian-plugin-sdk';
+import type { ShellRuntime } from './runtime';
 
-/** 只在 --mode acceptance 产物中引用；生产构建通过断言确认没有此控制面。 */
-export async function installAcceptance(host: ShellHost, bootstrap: { context: ShellContext; remotes: RemoteRegistration[] }, instance: ReturnType<typeof createInstance>) {
+/** 只在 --mode acceptance 产物中引用；生产构建经 scripts/verify-dist.mjs 断言没有此控制面。 */
+export function installAcceptance(runtime: ShellRuntime) {
+  const { host, federation: { instance } } = runtime;
   let retainedWindowBridge: Pick<RemoteBridge, 'getContext' | 'navigate' | 'invoke'> | undefined;
   const control = {
     async windowCalls() {
@@ -29,7 +30,7 @@ export async function installAcceptance(host: ShellHost, bootstrap: { context: S
     preload: () => host.preloadSlot('qian.shell.nav/v1'),
     unload: (id: string, scope: ShellScope) => host.unloadRemote(id, scope),
     register: (remote: RemoteRegistration) => host.registerRemote(remote),
-    setTenant: (id: string) => { bootstrap.context.tenant = { id, name: id }; host.refreshContext(); },
+    setTenant: (id: string) => { const bootstrap = runtime.getState().bootstrap; if (!bootstrap) throw new Error('尚未取得 bootstrap'); bootstrap.context.tenant = { id, name: id }; host.refreshContext(); },
     bridgeGuards() {
       const item = host.list('qian.shell.nav/v1')[0]!;
       let unknownRejected = false, scopeRejected = false;
@@ -41,4 +42,3 @@ export async function installAcceptance(host: ShellHost, bootstrap: { context: S
   };
   Object.defineProperty(window, '__qianAcceptance', { configurable: true, value: control });
 }
-export type AcceptanceControl = Awaited<ReturnType<typeof installAcceptance>>;

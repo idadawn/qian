@@ -3,7 +3,7 @@
   "$id": "https://qian.dev/contracts/v0/event-envelope.schema.json",
   "title": "EventEnvelope",
   "description": "跨进程集成事件（qian.events，PRD 7.10）的信封：与 iClaw events-schema.json 的 EventEnvelope 同形并加 Qian 字段。payload 由事件目录中该 type 的 JSON Schema 约束，信封不约束其内容。进程内运行时事件（emit / waterfall / parallel / serial / bail）不用本信封。",
-  "x-status": "draft",
+  "x-status": "frozen",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "event_id", "subject", "type", "occurred_at", "tenant_id", "producer", "actor", "trace_parent", "payload"],

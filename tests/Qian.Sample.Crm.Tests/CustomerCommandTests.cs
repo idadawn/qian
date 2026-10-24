@@ -33,18 +33,19 @@ using Qian.Tenancy;
 using Qian.Testing;
 using Qian.Testing.Containers;
 
-// 下面七个主题类都起完整宿主，大半时间在等数据库、容器与超时，按处理器数（CI 上是 4）限并发会让后排的主题干等；
-// 放宽到 8，七个主题同时开跑（S1-QA-017）。
+// 下面八个主题类都起完整宿主，大半时间在等数据库、容器与超时，按处理器数（CI 上是 4）限并发会让后排的主题干等；
+// 放宽到 8，各主题同时开跑（S1-QA-017）。
 [assembly: Xunit.v3.Parallelization(MaxThreads = 8)]
 
 namespace Qian.Sample.Crm.Tests;
 
 // CRM 参考宿主验收的公共基类：Start() 起完整宿主，另有各主题共用的辅助方法、常量与探针类型，本身不含用例。
-// xUnit 对同一个类的用例一律串行、不同类之间并行，所以用例按主题分在下面七个类里（S1-QA-017），各类耗时相近。
+// xUnit 对同一个类的用例一律串行、不同类之间并行，所以用例按主题分在下面八个类里（S1-QA-017），按 CI 上的耗时分组，长短相近。
 // 每个主题类各自一个 PostgresFixture 容器，主题之间并行，主题内照旧串行：
 // - CommandTests：客户命令与 hook；
 // - CapabilityTests：能力执行、Agent 字段与契约；
-// - CatalogSurfaceTests：能力目录、组件清单、菜单与租户界面契约；
+// - CatalogContractTests：能力目录、组件清单与租户界面契约；
+// - ShellSurfaceTests：外壳用的平台表面，含菜单、外壳目录与 bootstrap、identity_revision 下限；
 // - TenantOperationsTests：租户运营，含开户、设置、状态与网关入口；
 // - EventTests：事件发布与消费；
 // - IdentityAuthzTests：身份、会话与鉴权；
@@ -280,7 +281,7 @@ public abstract partial class CustomerCommandTests
     private protected async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
         LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool identity = false, bool grpc = false, Action<WebApplication>? map = null, double decisionLogSampling = 0,
-        Action<WebApplicationBuilder>? configure = null)
+        Action<WebApplicationBuilder>? configure = null, Uri? relyingParty = null)
     {
         if (grpc && identity) throw new ArgumentException("gRPC 验收宿主不挂身份组件：身份签发者占用固定监听地址，h2c 需要独占端点。", nameof(grpc));
         if (lifecycle is not null) await PreparePlatformLogins(lifecycle);
@@ -318,7 +319,7 @@ public abstract partial class CustomerCommandTests
                     builder.Services.AddGrpc(options => options.AddQianAuthzInterceptor());
                 }
                 else builder.WebHost.UseUrls(identityParts?.Issuer ?? "http://127.0.0.1:0");
-                if (identityParts is not null) ConfigureIdentity(builder, identityParts);
+                if (identityParts is not null) ConfigureIdentity(builder, identityParts, relyingParty);
                 if (platform) ConfigureCapabilities(builder, postgres.AppConnectionString, connection, migrations);
                 if (lifecycle is not null) ConfigureLifecycle(builder, connection, lifecycle);
                 if (humanOnlyProbe is not null) PreviewAgentAuthorization(builder);

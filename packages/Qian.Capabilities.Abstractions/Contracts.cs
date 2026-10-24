@@ -15,6 +15,8 @@ public static class CapabilitiesDefinition
     public static readonly ServiceKey NavigationKey = new("Navigation");
     /// <summary>可遮蔽、可过滤的菜单贡献集合。</summary>
     public static readonly ServiceKey NavigationItemsKey = new("NavigationItems");
+    /// <summary>可遮蔽的外壳远程集合：每个带 ui/manifest.json 的组件以组件 id 为名登记一份制品快照里的 UI 清单（外壳目录，S1-YUE-012）。</summary>
+    public static readonly ServiceKey ShellRemotesKey = new("ShellRemotes");
     /// <summary>平台挂载路径的契约准入服务键（R76）。</summary>
     public static readonly ServiceKey AdmissionKey = new("ContractAdmission");
     /// <summary>解析当前可见的菜单服务。</summary>

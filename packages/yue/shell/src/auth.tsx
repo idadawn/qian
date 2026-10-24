@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, Button, cn, Select, SelectContent, SelectItem, SelectTrigger, Spinner } from '@idadawn/yue-core';
+import { Alert, Button, cn, Select, SelectContent, SelectItem, SelectTrigger, Spinner } from '@idadawn/yue-core';
 import type { PlatformI18n } from '@idadawn/yue-sdk';
 import { safeNavigationUrl } from './menu';
 import { useShellLocale, type ShellPartProps } from './layout';
@@ -125,11 +125,4 @@ export function TenantSwitcher({ i18n, provider, session, onChanged, className, 
     setBusy(true); setFailed(false);
     void run(signal => provider.switchTenant(id, signal), next => { setBusy(false); onChanged(next); }, () => { setBusy(false); setFailed(true); });
   }}><SelectTrigger aria-label={i18n.t('shell.tenant')} testId={`${testId}-trigger`} /><SelectContent listLabel={i18n.t('shell.tenant')}>{session.tenants.map(tenant => <SelectItem key={tenant.id} value={tenant.id}>{tenant.name}</SelectItem>)}</SelectContent></Select>{failed && <p role="alert" className="text-sm text-destructive">{i18n.t('shell.switchError')}</p>}</div>;
-}
-
-export function SessionExpiredDialog({ open, i18n, onSignIn, testId = 'yue-session-expired' }: { open: boolean; i18n: PlatformI18n; onSignIn: () => void; testId?: string }) {
-  useShellLocale(i18n);
-  return <span data-slot="session-expired" data-testid={`${testId}-root`}><AlertDialog open={open}><AlertDialogContent showCloseButton={false} testId={testId}>
-    <AlertDialogTitle>{i18n.t('shell.expired')}</AlertDialogTitle><AlertDialogDescription>{i18n.t('shell.expiredHelp')}</AlertDialogDescription><Button onClick={onSignIn}>{i18n.t('shell.reauthenticate')}</Button>
-  </AlertDialogContent></AlertDialog></span>;
 }

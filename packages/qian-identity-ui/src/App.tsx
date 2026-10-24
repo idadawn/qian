@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Field, FieldError, FieldLabel, Input, Spinner } from '@idadawn/yue-core';
 import { HttpResponseError, PlatformError } from '@idadawn/yue-sdk';
-import { Authentication, createIdentityAuthProvider, PasswordLogin, safeNavigationUrl, TenantSelection, type AuthTenant, type ConnectorFlow, type IdentityAuthProvider, type IdentityConnector } from '@idadawn/yue-shell';
+import { Authentication, PasswordLogin, safeNavigationUrl, TenantSelection, type AuthTenant } from '@idadawn/yue-shell';
+import { createIdentityAuthProvider, type ConnectorFlow, type IdentityAuthProvider, type IdentityConnector } from '@qian/shell-kit/identity';
 import { authorizeEntry, loginUrl, type AuthorizeEntry } from './entry';
 import { i18n } from './i18n';
 import { browser } from './navigation';

@@ -1,9 +1,11 @@
-# pnpm 工作区：文档站 website/、Qian 的 Node 包 packages/qian-*、yue 前端包 packages/yue/*（@idadawn/yue-<目录名>，S1-YUE-003）、前端应用 apps/*。
+# pnpm 工作区：文档站 website/、Qian 的 Node 包 packages/qian-*、yue 前端包 packages/yue/*（@idadawn/yue-<目录名>，S1-YUE-003）、前端应用 apps/*、
+# 参考应用的远程模块 samples/qian-sample-crm-ui（S1-YUE-012）。
 packages:
   - website
   - packages/qian-*
   - packages/yue/*
   - apps/*
+  - samples/qian-sample-crm-ui
   - tools/openapi-codegen
 
 # 允许跑 postinstall 的依赖（pnpm 12 默认拒绝未审核的构建脚本）：unrs-resolver 只在预编译二进制缺失时才编译。

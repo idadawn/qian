@@ -1,5 +1,0 @@
-@import 'tailwindcss';
-@import '@idadawn/yue-tokens/theme.css';
-@source '../../../packages/yue';
-
-body { @apply font-sans text-sm antialiased bg-background text-foreground; margin: 0; }

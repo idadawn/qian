@@ -152,6 +152,20 @@ public sealed class DataContractTests
         Assert.Equal("frozen", root.GetProperty("x-status").GetString());
     }
 
+    [Theory]
+    [InlineData("s2s-claims.schema.json")]
+    [InlineData("event-envelope.schema.json")]
+    public void PublishedV0References_AreFrozenAndMatchSource(string file)
+    {
+        var embedded = file == "s2s-claims.schema.json"
+            ? DataContractSchemas.S2sClaimsV0
+            : DataContractSchemas.EventEnvelopeV0;
+        using var published = JsonDocument.Parse(embedded);
+        using var source = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "contracts/v0", file)));
+        Assert.Equal("frozen", published.RootElement.GetProperty("x-status").GetString());
+        Assert.Equal(source.RootElement.GetRawText(), published.RootElement.GetRawText());
+    }
+
     // 条件/组合片段只补充约束，不能独立关闭：否则会误拒绝外围 Schema 已声明的合法成员。
     private static readonly IReadOnlyDictionary<string, string> CompositionExceptions = new Dictionary<string, string>(StringComparer.Ordinal)
     {

@@ -19,7 +19,7 @@ module.exports = {
     },
   ],
   options: {
-    includeOnly: '^(packages/yue|packages/qian-tenancy-ui|packages/qian-identity-ui|packages/qian-plugin-sdk|apps)/',
+    includeOnly: '^(packages/yue|packages/qian-tenancy-ui|packages/qian-identity-ui|packages/qian-plugin-sdk|packages/qian-shell-kit|samples/qian-sample-crm-ui|apps)/',
     exclude: { path: ['node_modules', '/dist/', '\\.d\\.ts$'] },
     doNotFollow: { path: ['node_modules'] },
     tsPreCompilationDeps: true,

@@ -37,7 +37,7 @@ public abstract partial class CustomerCommandTests
     private protected static readonly string[] CatalogScopes = ["global", "tenant"];
 }
 
-public sealed partial class CatalogSurfaceTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
+public sealed partial class CatalogContractTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task 目录别名与真实调用共享授权_生成条目满足冻结契约_无权限与缺scope均无能力()
@@ -157,8 +157,9 @@ public sealed partial class CatalogSurfaceTests(PostgresFixture postgres) : Cust
         Assert.True(JsonElement.DeepEquals(api, await alias.Content.ReadFromJsonAsync<JsonElement>(Ct)));
         var parsed = Microsoft.OpenApi.OpenApiDocument.Parse(api.GetRawText(), "json");
         Assert.NotNull(parsed.Document); Assert.Empty(parsed.Diagnostic!.Errors);
-        var paths = api.GetProperty("paths"); Assert.Equal(12, paths.EnumerateObject().Count());
+        var paths = api.GetProperty("paths"); Assert.Equal(13, paths.EnumerateObject().Count());
         Assert.True(paths.GetProperty("/api/capabilities/navigation").TryGetProperty("get", out _));
+        Assert.True(paths.GetProperty("/api/capabilities/shell").TryGetProperty("get", out _));
         Assert.True(paths.GetProperty("/api/customers").TryGetProperty("post", out _));
         Assert.True(paths.GetProperty("/api/customers").TryGetProperty("get", out _));
         Assert.True(paths.GetProperty("/api/customers/{id}").TryGetProperty("get", out _));

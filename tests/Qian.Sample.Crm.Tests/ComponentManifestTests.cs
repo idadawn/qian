@@ -12,7 +12,7 @@ using Qian.Tenancy;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CatalogSurfaceTests
+public sealed partial class CatalogContractTests
 {
     [Fact]
     public async Task 唯一清单入口运行真实CRM_工具与实际绑定同源_客户卸载撤销服务()

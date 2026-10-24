@@ -114,6 +114,14 @@ T23 的具体宿主装配在测试工程的 `ProfileModeAssembly`，复用真实
 
 宿主读取 Tenancy:Resolver:Mode、Tenancy:Resolver:AllowHeaderFallback 和 Tenancy:InitializationCapabilities 配置节，并传入 tenancy 的同一 config。Resolver 仅接受 production/false，初始化清单须是完整能力 ID，不支持通配符；空清单不会授予开户 hook 例外。失败诊断先查 GetStepsAsync 的 04:provisioned Reason，再按 [Tenancy 主文档](../../packages/Qian.Tenancy/README.md) 区分重放、清单缺席和高风险能力拒绝。
 
+## 面向用户的平台表面参考宿主（S1-YUE-012）
+
+[PlatformSurfaceHost](PlatformSurfaceHost.cs) 与运营宿主同形：复用调用方已装配的 Runtime（Registry / Capabilities / Authz），只认网关签发的 S2S（要求 issuer、受众、有效期、签名完整校验且只接受 RS256，受众常量 `PlatformSurfaceHost.Audience` 即 `qian-platform`），接受 user / service / agent 主体，主体快照取自令牌，按其 `tenant_id` 进入租户 scope；平台身份没有租户表面，按未认证拒绝。它映射 `MapQianCapabilities`（能力目录、导航、外壳目录 `GET /api/capabilities/shell` 与执行入口）与 `MapQianAuthz`（有效权限），授权 PEP 按生产模式装配：处理器内判定的端点也比对 identity_revision，旧修订 401 `UNAUTHENTICATED`。
+
+参考应用的命令宿主（`CrmCommandApplication`）只认机器身份，所以用户主体的这些表面单独成宿主，网关按受众分簇转发；外壳 bootstrap（Qian.Gateway 的 `MapQianShellBootstrap`）经它取外壳目录、导航与有效权限。`ShellBootstrapTests` 与外壳联调环境（[tools/Qian.Dev.Shell](../../tools/Qian.Dev.Shell/README.md)）都用它；生产里由 platform profile 的平台宿主提供同一表面，归 S1-DEP-009。参考应用的界面（UI 清单与 MF2 远程模块）在 [samples/qian-sample-crm-ui](../qian-sample-crm-ui/README.md)。
+
+已知限制：经平台表面执行参考应用能力时，命令仍由参考应用的命令运行时执行，它的当前主体只认机器身份，所以用户主体调 `customer.list` / `customer.create` 被拒绝（403 `AUTHZ_DENIED`）。用户主体执行应用能力不在 S1 范围内。
+
 ## 唯一清单与平台可见性门
 
 本目录的 `.qian-plugin/plugin.json` 对应 `CrmPlugin`，允许 global / tenant，配置仅为空对象。`tools/*.json` 来自四个真实 `[Capability]` 请求（含上述探针）；权限文件来自 `CrmPermissions`，角色模板仍是手写表面。代码字段、工具、权限与配置 Schema 经 `qian-plugin sync` 生成，CI 自动发现入口并检查漂移。

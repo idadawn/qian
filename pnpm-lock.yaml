@@ -420,6 +420,9 @@ importers:
       '@module-federation/enhanced':
         specifier: 'catalog:'
         version: 2.9.2(@rspack/core@2.2.8(@module-federation/runtime-tools@2.9.2)(@swc/helpers@0.5.23))(typescript@6.0.3)
+      '@qian/shell-kit':
+        specifier: workspace:^
+        version: link:../../packages/qian-shell-kit
       react:
         specifier: 'catalog:'
         version: 19.3.0
@@ -433,58 +436,6 @@ importers:
       '@module-federation/vite':
         specifier: 'catalog:'
         version: 1.23.5(typescript@6.0.3)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
-      '@playwright/test':
-        specifier: 'catalog:'
-        version: 1.64.0
-      '@tailwindcss/vite':
-        specifier: 'catalog:'
-        version: 4.3.3(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.19.1
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 19.3.0(@types/react@19.3.0)
-      '@vitejs/plugin-react':
-        specifier: 'catalog:'
-        version: 6.1.2(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.3
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vite:
-        specifier: 'catalog:'
-        version: 8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
-
-  apps/qian-shell-auth:
-    dependencies:
-      '@idadawn/yue-core':
-        specifier: workspace:^
-        version: link:../../packages/yue/core
-      '@idadawn/yue-sdk':
-        specifier: workspace:^
-        version: link:../../packages/yue/sdk
-      '@idadawn/yue-shell':
-        specifier: workspace:^
-        version: link:../../packages/yue/shell
-      '@idadawn/yue-tokens':
-        specifier: workspace:^
-        version: link:../../packages/yue/tokens
-      react:
-        specifier: 'catalog:'
-        version: 19.3.0
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.3.0(react@19.3.0)
-    devDependencies:
-      '@axe-core/playwright':
-        specifier: 'catalog:'
-        version: 4.13.0(playwright-core@1.64.0)
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.64.0
@@ -619,6 +570,9 @@ importers:
       '@idadawn/yue-tokens':
         specifier: workspace:^
         version: link:../yue/tokens
+      '@qian/shell-kit':
+        specifier: workspace:^
+        version: link:../qian-shell-kit
     devDependencies:
       '@tailwindcss/vite':
         specifier: 'catalog:'
@@ -683,9 +637,6 @@ importers:
       '@module-federation/enhanced':
         specifier: 'catalog:'
         version: 2.9.2(@rspack/core@2.2.8(@module-federation/runtime-tools@2.9.2)(@swc/helpers@0.5.23))(typescript@6.0.3)
-      ajv:
-        specifier: 'catalog:'
-        version: 8.20.0
       semver:
         specifier: 'catalog:'
         version: 7.8.5
@@ -699,6 +650,9 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.8.0
+      ajv:
+        specifier: 'catalog:'
+        version: 8.20.0
       publint:
         specifier: 'catalog:'
         version: 0.3.25
@@ -736,6 +690,40 @@ importers:
       yaml:
         specifier: 2.9.1
         version: 2.9.1
+
+  packages/qian-shell-kit:
+    dependencies:
+      '@idadawn/qian-plugin-sdk':
+        specifier: workspace:^
+        version: link:../qian-plugin-sdk
+      '@idadawn/yue-sdk':
+        specifier: workspace:^
+        version: link:../yue/sdk
+      '@idadawn/yue-shell':
+        specifier: workspace:^
+        version: link:../yue/shell
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.1
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@types/node@24.19.1)(@vitest/browser-playwright@5.0.3)(@vitest/ui@5.0.3)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/qian-surfaces:
     dependencies:
@@ -1255,6 +1243,55 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+
+  samples/qian-sample-crm-ui:
+    dependencies:
+      '@idadawn/qian-plugin-sdk':
+        specifier: workspace:^
+        version: link:../../packages/qian-plugin-sdk
+      '@idadawn/yue-core':
+        specifier: workspace:^
+        version: link:../../packages/yue/core
+      '@idadawn/yue-sdk':
+        specifier: workspace:^
+        version: link:../../packages/yue/sdk
+      '@idadawn/yue-tokens':
+        specifier: workspace:^
+        version: link:../../packages/yue/tokens
+    devDependencies:
+      '@module-federation/vite':
+        specifier: 'catalog:'
+        version: 1.23.5(typescript@6.0.3)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.3(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.1
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.1.2(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
 
   tools/openapi-codegen:
     devDependencies:

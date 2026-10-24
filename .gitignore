@@ -47,5 +47,7 @@ pm/STATUS.md
 # 租户运营页面构建产物
 packages/qian-tenancy-ui/dist/
 packages/qian-identity-ui/dist/
+# 参考应用远程模块构建产物（S1-YUE-012）
+samples/qian-sample-crm-ui/dist/
 # 固定浏览器环境的视觉差异报告
 .visual-results/
