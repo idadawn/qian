@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Qian.Data;
 using Qian.Authz.Abstractions;
 using Qian.Runtime.Errors;
@@ -37,6 +38,7 @@ public static class QianCommandRegistration
         builder.Services.AddSingleton(new CommandRegistration<TRequest, TResponse>(source, channel));
         builder.Services.AddTransient<THandler>();
         builder.Services.TryAddScoped<Kun.Core.Security.ICurrentUser>(sp => sp.GetRequiredService<Qian.Identity.Abstractions.ICurrentUser>());
+        builder.Services.AddHostedService<FrameworkPrincipalPortCheck>();
         builder.Services.TryAddScoped<CommandDataSession<TContext>>();
         builder.Services.TryAddScoped(_ => new CommandState());
         builder.AddPipelineBehavior<TRequest, TResponse, CommandTransactionBehavior<TRequest, TResponse, TContext>>();
@@ -50,6 +52,22 @@ public static class QianCommandRegistration
 
 internal sealed record CommandRegistration<TRequest, TResponse>(Func<IServiceProvider, IPluginContext> Source, string Channel)
     where TRequest : ICapabilityRequest<TResponse>;
+
+// 命令管道要求框架当前主体（Kun 的 ICurrentUser）与 Qian 主体一致；它解析成匿名兜底时每次执行都在权限引擎之前被判拒（403、无决策审计），改为启动即失败。
+internal sealed class FrameworkPrincipalPortCheck(IServiceScopeFactory scopes) : IHostedService
+{
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        using var scope = scopes.CreateScope();
+        if (scope.ServiceProvider.GetService<Kun.Core.Security.ICurrentUser>() is Kun.Core.Security.AnonymousCurrentUser)
+            throw new InvalidOperationException("宿主登记了 Qian 能力，但框架当前主体端口（Kun.Core.Security.ICurrentUser）解析为匿名兜底 AnonymousCurrentUser：" +
+                "命令管道要求它与 Qian 主体一致，会对一切能力执行判拒（403 AUTHZ_DENIED）。请登记真实的身份适配器（如 AddKunSecurity、AddQianIdentityS2s），" +
+                "或去掉把这个端口绑定为匿名的登记。");
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
 internal sealed class CommandState
 {
     internal CommandInvocation? Invocation { get; set; }

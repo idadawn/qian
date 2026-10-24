@@ -6,6 +6,7 @@ using Kun.Mediator.DependencyInjection;
 using Kun.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Qian.Data;
 using Qian.Identity.Abstractions;
 using Qian.Runtime;
@@ -29,6 +30,29 @@ public sealed class CommandBoundaryTests
         var error = await Assert.ThrowsAsync<QianErrorException>(() => provider.GetRequiredService<ISender>().Send(new CreateRequest(Guid.CreateVersion7(), "never execute"), ct).AsTask());
         Assert.Equal("AUTHZ_DENIED", error.Error.Code.Code); Assert.Equal(0, provider.GetRequiredService<HandlerCounter>().Calls); Assert.Equal(0, provider.GetRequiredService<HandlerCounter>().Constructors);
         // 故意不登记数据 Provider；若管道提前打开业务连接，这里会得到不同的错误。
+    }
+
+    // 框架当前主体端口被匿名兜底占住时，命令管道会在权限引擎之前判拒一切执行（403、无决策审计）；能力宿主改为启动即失败（S1-KUN-017）。
+    [Fact]
+    public async Task 框架当前主体端口是匿名兜底时能力宿主启动即失败_端口由身份端口桥接时照常启动()
+    {
+        var ct = TestContext.Current.CancellationToken; var source = new SourcePlugin();
+        ServiceProvider Host(Action<IServiceCollection> port)
+        {
+            var services = new ServiceCollection(); services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext()); services.AddSingleton<ICurrentUser>(new VerifiedPort());
+            port(services);
+            services.AddKunMediator(builder => builder.AddQianCapability<CreateRequest, CustomerResponse, BoundaryHandler, BoundaryContext>(_ => source.Context!));
+            return services.BuildServiceProvider();
+        }
+        // Kun 2026.10.25 之前数据约定的形状：匿名兜底先登记，AddQianCapability 的桥接 TryAdd 随之落空。
+        using (var anonymous = Host(services => services.AddScoped<Kun.Core.Security.ICurrentUser>(_ => Kun.Core.Security.AnonymousCurrentUser.Instance)))
+        {
+            var check = Assert.Single(anonymous.GetServices<IHostedService>());
+            var error = await Assert.ThrowsAsync<InvalidOperationException>(() => check.StartAsync(ct));
+            Assert.Contains("Kun.Core.Security.ICurrentUser", error.Message, StringComparison.Ordinal);
+        }
+        using var bridged = Host(_ => { });
+        await Assert.Single(bridged.GetServices<IHostedService>()).StartAsync(ct);
     }
 
     [Fact]
