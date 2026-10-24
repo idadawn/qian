@@ -8,6 +8,8 @@
     <ProjectReference Include="../../packages/Qian.Registry/Qian.Registry.csproj" />
     <ProjectReference Include="../../packages/Qian.Profiles/Qian.Profiles.csproj" />
     <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data.AspNetCore/Qian.Data.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data.Dialect.Pg/Qian.Data.Dialect.Pg.csproj" />
     <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
     <ProjectReference Include="../../packages/Qian.Capabilities/Qian.Capabilities.csproj" />
     <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />

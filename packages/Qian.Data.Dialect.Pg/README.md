@@ -1,6 +1,6 @@
 # Qian.Data.Dialect.Pg
 
-PostgreSQL 方言组件（组件 id `qian.data.dialect.pg`），实现 Data seam 的方言 SPI qian.data.dialect/v1。契约在 [Qian.Data.Abstractions](../Qian.Data.Abstractions/README.md)，目录与连接档案在 [Qian.Data](../Qian.Data/README.md)，任务见 [S1-DATA-003](../../pm/tasks/S1-DATA-003.md)。
+PostgreSQL 方言组件（组件 id `qian.data.dialect.pg`），实现 Data seam 的方言 SPI qian.data.dialect/v1。契约在 [Qian.Data.Abstractions](../Qian.Data.Abstractions/README.md)，目录与连接档案在 [Qian.Data](../Qian.Data/README.md)，基础能力见 [S1-DATA-003](../../pm/tasks/S1-DATA-003.md)，组件挂卸验收见 [S1-DATA-006](../../pm/tasks/S1-DATA-006.md)。
 
 ## 宿主装配
 
@@ -15,6 +15,19 @@ services.AddQianDataConnections(...); // 或连同数据连接档案
 组件模式使用 `PgDialectPlugin`，清单在 `plugins/qian.data.dialect.pg/.qian-plugin/plugin.json`。它只允许 global scope，依赖 `Data`，配置仅接受空对象；宿主调用 `AddQianDataTypes()`，由插件在挂载时向运行时提供 `Data.Dialects:pg`，同时把同一个实例登记到数据目录。两份登记均随卸载撤销，目录与连接探测不会继续使用已卸载的方言。数据映射在登记前按系统基准类型校验。
 
 同一宿主选择其中一种方式：已通过 `AddQianPgDialect()` 常驻注册 pg 后再挂 `PgDialectPlugin`，按同名独占规则返回 `REGISTRATION_CONFLICT`；失败挂载撤销自己的运行时贡献，保留原宿主登记。当前数据目录是全局宿主服务，因此插件明确拒绝 tenant / app / agent-session scope，不把租户方言写进全局目录。
+
+## 组件表面与验收
+
+组件文件夹包含 `.qian-plugin/plugin.json` 与 `schemas/config.schema.json`；入口、依赖、具名贡献和配置 Schema 均从 Provider 代码派生，由 `Qian.Plugin.Tool check` 校验。它是 Data 注册表 seam 的 PG Provider，可在 `platform` 宿主的 global scope 挂载。HTTP 表面 `GET /api/data/meta/types` 属于 `qian.data`，方言组件不重复映射端点；该端点的方言列表随 PG 挂载、卸载与重新挂载即时变化，10 个系统基准类型保持不变。
+
+[平台端点集成测试](../../tests/Qian.Registry.Tests/PgDialectEndpointTests.cs) 复用真实 PostgreSQL 注册表、RBAC 权限判定和已签名的两租户主体，通过 `PluginEndpointBinding` 调用 Kestrel 端点：挂载前列表为空，挂载后出现 pg 与 10 条映射，卸载后列表为空且 pg 映射不可用，再挂载可恢复。匿名请求返回 401、无权限租户返回 403；仅对租户 A 隐藏 Data 后返回 404，租户 B 不受影响。
+
+[组件与宿主测试](../../tests/Qian.Data.AspNetCore.Tests/PgDialectComponentTests.cs) 比对仓库清单与源生成元数据、从清单入口装载，并验证 `AddQianPgDialect()` 无论先于还是后于目录装配、重复调用都只有一个常驻方言。[注册句柄测试](../../tests/Qian.Data.AspNetCore.Tests/MetaTypesEndpointTests.cs) 验证释放即注销，旧句柄重复释放不会删掉重新注册的方言。
+
+```bash
+dotnet run --project tests/Qian.Data.AspNetCore.Tests -c Release -- -class '*PgDialectComponentTests' -class '*MetaTypesEndpointTests'
+QIAN_REQUIRE_DOCKER=1 dotnet run --project tests/Qian.Registry.Tests -c Release -- -method '*平台类型端点随PG方言*'
+```
 
 ## 方言数据
 
@@ -59,4 +72,4 @@ decimal 的精度上限取 28 位，是 .NET decimal 能无损往返的位数；
 
 ## 已知限制
 
-不提供 DDL 与分页方言（S2 数据接口与建模交付），SSL 模式取 Npgsql 缺省值。清单、具名贡献与撤销由 S1-RT-033 补齐；真实 `qian add` 门尚未通过，组件仍保留 `x-skeleton`。S1-DATA-006 的平台元数据端点专项验收仍由该任务完成；MySQL 与国产库方言本期不做。
+不提供 DDL 与分页方言（S2 数据接口与建模交付），SSL 模式取 Npgsql 缺省值。清单、具名贡献与撤销由 S1-RT-033 补齐，S1-DATA-006 验证已装配代码在平台宿主的挂卸；真实 `qian add` 门尚未通过，组件仍保留 `x-skeleton`，不把挂卸验收当成分发安装验收。MySQL 与国产库方言本期不做。
