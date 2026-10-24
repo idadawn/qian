@@ -1,7 +1,7 @@
 ---
 id: S1-DATA-006
 title: PG 方言的组件形态：plugins/qian.data.dialect.pg 与 Data.Dialects:pg 派生
-status: doing
+status: review
 stage: S1
 area: DATA
 wave: 2
@@ -22,12 +22,13 @@ S1-DATA-003 以宿主装配交付 PG 方言（AddQianPgDialect）。规格要求
 
 ## 验收
 
-- [ ] 组件文件夹 `plugins/qian.data.dialect.pg`：清单的 `provides` 由源生成器从 `Apply` 里的注册派生为 `Data.Dialects:pg`，Plugin.Tool check 无漂移
-- [ ] IT：平台模式下挂载 / 卸载该组件，`GET /api/data/meta/types` 的方言列表随之出现 / 消失；注册句柄撤销即注销（R38）
-- [ ] UT：宿主装配 `AddQianPgDialect()` 的行为不变（库优先，ADR-019）
+- [x] 组件文件夹 `plugins/qian.data.dialect.pg`：清单的 `provides` 由源生成器从 `Apply` 里的注册派生为 `Data.Dialects:pg`，Plugin.Tool check 无漂移
+- [x] IT：平台模式下挂载 / 卸载该组件，`GET /api/data/meta/types` 的方言列表随之出现 / 消失；注册句柄撤销即注销（R38）
+- [x] UT：宿主装配 `AddQianPgDialect()` 的行为不变（库优先，ADR-019）
 
 ## 进度日志
 
 - 2026-10-15 claude：创建任务
 - 2026-10-16 claude：R94：具名 Provide 的 provides 派生未随 S1-RT-014 交付（生成器仍报 QIANSDK002），转 S1-RT-033，depends 补上
 - 2026-10-24 cody：开始：三个前置均已完成；核验 PG 方言的具名派生、组件挂卸与宿主装配兼容性。
+- 2026-10-24 cody：专项验收通过：清单与源生成元数据及 Plugin.Tool check 一致；真实 PG 注册表、RBAC 与双租户 Kestrel 端点验证挂载/卸载/重挂，包含 401/403/404 对照；8 项组件与宿主测试通过。Release 构建、依赖与文档门禁通过；全量回归和 CI 完成后合并。保留 x-skeleton，未宣称 qian add 安装验收。
