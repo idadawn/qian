@@ -18,7 +18,8 @@ namespace Qian.Sample.Crm;
 // 与 TenantOperationsHost 同形：复用已装配的 Runtime（Registry / Capabilities / Authz），只认网关签发的 S2S（RS256、issuer、受众、有效期），
 // 接受 user / service / agent 主体，主体快照取自令牌，按其 tenant_id 进入租户 scope；平台身份（tenant_id 为 null）没有租户表面，按未认证拒绝。
 // 授权 PEP 按生产模式装配：处理器内判定的端点也比对 identity_revision，旧修订的令牌 401 UNAUTHENTICATED（客户端据此换令牌）。
-// 参考应用的命令宿主只认机器身份，用户主体的平台表面因此单独成宿主，网关按受众分簇转发；生产宿主由 platform profile 的平台镜像提供。
+// 参考应用的命令宿主（受众 qian.sample.crm）验签只认机器身份，用户主体的平台表面因此单独成宿主，网关按受众分簇转发；本宿主借用它的运行时，
+// 验证过的主体同时交给参考应用的身份适配器，经通用执行入口调用的能力在应用命令管道里以调用者本人执行（S1-YUE-015）。生产宿主由 platform profile 的平台镜像提供（S1-DEP-009）。
 public static class PlatformSurfaceHost
 {
     /// <summary>网关为本宿主签发 S2S 时使用的受众（cluster id）。</summary>
@@ -103,6 +104,8 @@ public static class PlatformSurfaceHost
                 if (principal is null || principal.Subject != subject || principal.TenantId != tenant || principalKind != kind)
                 { context.Fail("主体快照不一致。"); return; }
                 context.HttpContext.Items[Snapshot] = principal;
+                // 能力绑定经参考命令宿主的 Mediator 执行、从它的 DI 取当前主体（CrmCurrentUser），所以把同一份已验证快照也交给它（S1-YUE-015 裁决 A1）。
+                CrmCurrentUser.AcceptPlatformSurface(context.HttpContext, principal);
             }
             catch (JsonException) { context.Fail("身份快照无效。"); }
         }
