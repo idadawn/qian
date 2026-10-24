@@ -28,7 +28,7 @@ Kun 的默认代理变换使用固定 audience，Qian 在代理前先为实际�
 
 ## 路由限流（S1-GW-002）
 
-每条 `routes[]` 必须显式填写 `rateLimiterPolicy`，值为 `kun-default`、`tenant` 或 `user`。组件 Schema、静态 profile/CLI 校验与宿主装配均拒绝缺失、空值、`disable` 或未知值。既有 C# 宿主也须初始化 `GatewayRoute.RateLimiterPolicy`，例如 `new GatewayRoute("api", "/api/{**rest}", "qian-platform") { RateLimiterPolicy = "tenant" }`；仓库宿主与组合包已同步。
+每条 `routes[]` 必须显式填写 `rateLimiterPolicy`，值为 `kun-default`、`tenant` 或 `user`。组件 Schema、静态 profile/CLI 校验与宿主装配均拒绝缺失、空值、`disable` 或未知值。C# 属性标为 `required`，遗漏时编译器报 CS9035；既有 C# 宿主也须初始化 `GatewayRoute.RateLimiterPolicy`，例如 `new GatewayRoute("api", "/api/{**rest}", "qian-platform") { RateLimiterPolicy = "tenant" }`；仓库宿主与组合包已同步。
 
 | 策略 | 分区依据 |
 |---|---|

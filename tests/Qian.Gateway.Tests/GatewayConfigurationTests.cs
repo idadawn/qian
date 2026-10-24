@@ -59,7 +59,7 @@ public sealed class GatewayConfigurationTests
         Assert.All(generated, item => Assert.Equal("Default", item.AuthorizationPolicy));
         var empty = new ServiceCollection();
         Assert.Throws<ArgumentException>(() => empty.AddQianGateway(configuration with
-        { Routes = [new GatewayRoute("missing", "/missing", "qian-platform")] }));
+        { Routes = [new GatewayRoute("missing", "/missing", "qian-platform") { RateLimiterPolicy = "" }] }));
         Assert.Empty(empty);
     }
 
@@ -76,7 +76,8 @@ public sealed class GatewayConfigurationTests
         using var value = JsonDocument.Parse(node.ToJsonString());
         var metadata = new GatewayComponentQianCodeMetadata().Create();
         Assert.False(JsonSchema.FromText(metadata.ConfigSchema!.Value.GetRawText()).Evaluate(value.RootElement).IsValid);
-        Assert.Throws<ArgumentException>(() => GatewayHosting.ReadConfiguration(value.RootElement));
+        if (policy is null) Assert.Throws<JsonException>(() => GatewayHosting.ReadConfiguration(value.RootElement));
+        else Assert.Throws<ArgumentException>(() => GatewayHosting.ReadConfiguration(value.RootElement));
     }
 
     [Theory]

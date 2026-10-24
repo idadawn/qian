@@ -24,7 +24,7 @@ public interface IGatewayService
 public sealed record GatewayRoute(string Id, string Path, string Cluster)
 {
     /// <summary>必填：kun-default（可信客户端 IP）、tenant 或 user；缺失时拒绝构建网关配置。</summary>
-    public string RateLimiterPolicy { get; init; } = "";
+    public required string RateLimiterPolicy { get; init; }
 }
 
 /// <summary>代理路由的 Redis 固定窗口限额；同一逻辑网关的副本必须使用相同配置。</summary>
