@@ -10,7 +10,7 @@ using Qian.Runtime.Errors;
 namespace Qian.Config.Tests;
 
 [Collection(RealApolloGroup.Name)]
-public sealed class RealApolloPortalProtocolTests(RealApolloPortalFixture apollo, PostgresFixture postgres) : IClassFixture<RealApolloPortalFixture>, IClassFixture<PostgresFixture>
+public sealed class RealApolloPortalProtocolTests(RealApolloPortalFixture apollo, PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task 真实Portal命名空间权限分离_草稿仅人工发布后进入ConfigService()

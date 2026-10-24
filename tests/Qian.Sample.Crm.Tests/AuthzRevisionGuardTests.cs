@@ -7,7 +7,7 @@ namespace Qian.Sample.Crm.Tests;
 
 // S1-YUE-012（⑥）：没有单一权限点的已认证端点——处理器内判定的平台表面（能力目录、导航、外壳目录、有效权限）与只要求已认证的端点——
 // 也按服务端 identity_revision 下限比对：旧修订 401 UNAUTHENTICATED（不做权限判定，客户端据此换令牌）并记拒绝决策；不带修订的令牌不比对。
-public sealed partial class CustomerCommandTests
+public sealed partial class ShellSurfaceTests
 {
     [Fact]
     public async Task 处理器内判定与只要求已认证的端点也比对identity_revision_旧令牌401且记拒绝决策_不带修订的令牌不比对()

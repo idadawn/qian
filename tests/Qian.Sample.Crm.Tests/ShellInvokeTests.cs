@@ -22,7 +22,7 @@ namespace Qian.Sample.Crm.Tests;
 
 // 用户主体经外壳执行应用能力（S1-YUE-015，裁决 A1）：真实身份 → 网关 BFF 会话 → 网关按路由表换 S2S（受众 qian-platform）→ 平台表面参考宿主的通用执行入口 →
 // 参考应用的命令管道以调用者本人执行：命令 PEP 按该用户的角色判定，审计链记 actor_type = user；参考应用自己的受众（qian.sample.crm）仍只收机器主体。
-public sealed partial class CustomerCommandTests
+public sealed partial class ShellSurfaceTests
 {
     [Fact]
     public async Task 用户主体经网关与平台表面通用执行入口以本人执行参考应用能力_命令PEP按其角色判定且审计记user_只读成员新建404_乙方看不到甲方客户_带act被拒_用户令牌直调参考应用仍401()
@@ -122,12 +122,15 @@ public sealed partial class CustomerCommandTests
         Assert.DoesNotContain(otherTrail, record => record.CapabilityId.StartsWith("qian.sample.crm/", StringComparison.Ordinal));
         Assert.Equal([(memberId, "allowed", AuthzEnforcement.CommandEntryPoint, ListId, "role_grant")], otherDecisions);
     }
+}
 
-    private const string ListInput = """{"skip":0,"take":100}""";
-    private static string CustomerInput(Guid key, string name) => JsonSerializer.Serialize(new CreateCustomerCommand(key, name), JsonSerializerOptions.Web);
+public abstract partial class CustomerCommandTests
+{
+    private protected const string ListInput = """{"skip":0,"take":100}""";
+    private protected static string CustomerInput(Guid key, string name) => JsonSerializer.Serialize(new CreateCustomerCommand(key, name), JsonSerializerOptions.Web);
 
     // 外壳 bridge.invoke 的形状：先取防伪令牌（非安全方法），经网关的规范路径发到平台表面的通用执行入口；写能力带 Idempotency-Key（与正文里的业务幂等键同值）。
-    private static async Task<HttpResponseMessage> ShellInvoke(HttpClient browser, Uri address, string capability, string body, Guid? idempotencyKey = null)
+    private protected static async Task<HttpResponseMessage> ShellInvoke(HttpClient browser, Uri address, string capability, string body, Guid? idempotencyKey = null)
     {
         var csrf = JsonNode.Parse(await Through(browser, address, "auth/csrf"))!;
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(address, "api/capabilities/" + capability + "/invoke")) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
@@ -136,7 +139,7 @@ public sealed partial class CustomerCommandTests
         return await browser.SendAsync(request, Ct);
     }
 
-    private static async Task<CustomerPage> ShellList(HttpClient browser, Uri address)
+    private protected static async Task<CustomerPage> ShellList(HttpClient browser, Uri address)
     {
         using var response = await ShellInvoke(browser, address, ListId, ListInput);
         var body = await response.Content.ReadAsStringAsync(Ct);
@@ -144,7 +147,7 @@ public sealed partial class CustomerCommandTests
         return JsonSerializer.Deserialize<CustomerPage>(body, JsonSerializerOptions.Web)!;
     }
 
-    private static HttpRequestMessage Bearer(HttpMethod method, string path, string token, string body)
+    private protected static HttpRequestMessage Bearer(HttpMethod method, string path, string token, string body)
     {
         var message = new HttpRequestMessage(method, path) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -152,7 +155,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 与网关签给平台表面的 S2S 同形（RS256、网关 issuer、受众 qian-platform、60 秒）；主体、租户、成员与身份修订取自会话快照，actor 给出时多一个 act。
-    private static string SurfaceToken(RunningApp host, JsonNode session, object? actor)
+    private protected static string SurfaceToken(RunningApp host, JsonNode session, object? actor)
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); var id = Guid.CreateVersion7().ToString();
         var payload = new Dictionary<string, object?>
@@ -166,7 +169,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 租户链上的全部记录与决策日志、本租户的 Outbox 事件信封（Outbox 表供投递器跨租户读取，按信封的 tenant_id 过滤）；顺带核对客户行数与整条链的哈希。
-    private static async Task<(AuditRecord[] Records, (string Actor, string Result, string EntryPoint, string Target, string Reason)[] Decisions, JsonElement[] Events)> TenantTrail(
+    private protected static async Task<(AuditRecord[] Records, (string Actor, string Result, string EntryPoint, string Target, string Reason)[] Decisions, JsonElement[] Events)> TenantTrail(
         RunningApp host, string tenantId, int customers)
     {
         using (host.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenantId))

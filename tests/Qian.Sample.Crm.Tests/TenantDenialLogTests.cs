@@ -6,7 +6,7 @@ using Qian.Runtime;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class TenantOperationsTests
 {
     [Fact]
     public async Task 平台入口租户主体与上下文不匹配均留拒绝日志且无放行审计()

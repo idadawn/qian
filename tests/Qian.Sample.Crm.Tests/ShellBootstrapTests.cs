@@ -24,14 +24,17 @@ using Qian.Testing.Gateway;
 
 namespace Qian.Sample.Crm.Tests;
 
+public abstract partial class CustomerCommandTests
+{
+    private protected const string ShellGatewayIssuer = "https://gateway.qian.test/s2s";
+    // JWT 的头与载荷段都以 base64url 编码的 "{" 开头；任何令牌样式串（访问令牌、S2S、id_token）都会命中。
+    private protected static readonly Regex TokenLike = new(@"eyJ[A-Za-z0-9_-]{2,}\.[A-Za-z0-9_-]{2,}", RegexOptions.CultureInvariant);
+}
+
 // 外壳 bootstrap 聚合端点（S1-YUE-012）：真实身份（内置账号模型，与业务运行时同进程）→ 网关 Identity.Client BFF 会话 → 网关按路由表换 S2S →
 // 平台表面参考宿主（真实 Registry / Capabilities / Authz，生产模式 PEP）。浏览器只持有 qian.sid，bootstrap 响应里不得出现任何令牌。
-public sealed partial class CustomerCommandTests
+public sealed partial class ShellSurfaceTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
 {
-    private const string ShellGatewayIssuer = "https://gateway.qian.test/s2s";
-    // JWT 的头与载荷段都以 base64url 编码的 "{" 开头；任何令牌样式串（访问令牌、S2S、id_token）都会命中。
-    private static readonly Regex TokenLike = new(@"eyJ[A-Za-z0-9_-]{2,}\.[A-Za-z0-9_-]{2,}", RegexOptions.CultureInvariant);
-
     [Fact]
     public async Task 外壳bootstrap经网关聚合会话目录导航与权限_匿名401_平台身份代管_切换租户后远程与权限随之变化_旧修订401刷新后恢复_不含令牌()
     {
@@ -135,15 +138,6 @@ public sealed partial class CustomerCommandTests
         Assert.DoesNotContain("qian.sample.crm:customer:write", otherPermissions);
     }
 
-    // 外壳目录替身：一个同源远程与三个清单地址不合格的远程（绝对地址、协议相对、缺 federation）；租户与 scope 都合法，只有清单地址不合格。
-    private const string ShellCatalogWithForeignManifests = """
-        {"tenant":{"id":"TENANT-A","name":"甲方"},"remotes":[
-          {"id":"qian.sample.crm","version":"1.0.0","scope":"global","manifest":{"$schema":"https://qian.dev/schemas/ui/v2","federation":{"manifest":"/remotes/qian.sample.crm/mf-manifest.json","exposes":["CustomersPage"]}}},
-          {"id":"cdn.remote","version":"1.0.0","scope":"global","manifest":{"federation":{"manifest":"https://cdn.example/mf-manifest.json","exposes":["Page"]}}},
-          {"id":"relative.remote","version":"1.0.0","scope":"tenant:TENANT-A","manifest":{"federation":{"manifest":"//evil.example/mf-manifest.json","exposes":["Page"]}}},
-          {"id":"missing.federation","version":"1.0.0","scope":"global","manifest":{}}]}
-        """;
-
     [Fact]
     public async Task 外壳bootstrap下游404与缺路由按空处理_清单地址不是同源路径的远程不交给外壳_都记警告()
     {
@@ -201,9 +195,21 @@ public sealed partial class CustomerCommandTests
         Assert.Equal(new[] { (62, LogLevel.Warning), (63, LogLevel.Warning) }, logs.Entries.Select(entry => (entry.EventId, entry.Level)).Order());
         Assert.Equal("cdn.remote,relative.remote,missing.federation", (string?)logs.Entries.Single(entry => entry.EventId == 63).Values["Components"]);
     }
+}
+
+public abstract partial class CustomerCommandTests
+{
+    // 外壳目录替身：一个同源远程与三个清单地址不合格的远程（绝对地址、协议相对、缺 federation）；租户与 scope 都合法，只有清单地址不合格。
+    private protected const string ShellCatalogWithForeignManifests = """
+        {"tenant":{"id":"TENANT-A","name":"甲方"},"remotes":[
+          {"id":"qian.sample.crm","version":"1.0.0","scope":"global","manifest":{"$schema":"https://qian.dev/schemas/ui/v2","federation":{"manifest":"/remotes/qian.sample.crm/mf-manifest.json","exposes":["CustomersPage"]}}},
+          {"id":"cdn.remote","version":"1.0.0","scope":"global","manifest":{"federation":{"manifest":"https://cdn.example/mf-manifest.json","exposes":["Page"]}}},
+          {"id":"relative.remote","version":"1.0.0","scope":"tenant:TENANT-A","manifest":{"federation":{"manifest":"//evil.example/mf-manifest.json","exposes":["Page"]}}},
+          {"id":"missing.federation","version":"1.0.0","scope":"global","manifest":{}}]}
+        """;
 
     // 与浏览器直调同一路由、同一受众：session 与 GET /auth/session 逐字段相同；remotes 与外壳目录、navigation 与能力导航、permissions 与有效权限里放行的权限码一致。
-    private static async Task<string[]> AssertConsistent(HttpClient browser, Uri address, JsonNode bootstrap, string tenantId, string displayName)
+    private protected static async Task<string[]> AssertConsistent(HttpClient browser, Uri address, JsonNode bootstrap, string tenantId, string displayName)
     {
         Assert.Equal(await SessionSnapshot(browser, address), bootstrap["session"]!.ToJsonString());
         Assert.Equal((tenantId, displayName, "user"), ((string?)bootstrap["session"]!["tenantId"], (string?)bootstrap["session"]!["displayName"], (string?)bootstrap["session"]!["kind"]));
@@ -226,10 +232,10 @@ public sealed partial class CustomerCommandTests
         return permissions;
     }
 
-    private static async Task<JsonNode> Bootstrap(HttpClient browser, Uri address, CookieContainer cookies) => (await BootstrapText(browser, address, cookies)).Node;
+    private protected static async Task<JsonNode> Bootstrap(HttpClient browser, Uri address, CookieContainer cookies) => (await BootstrapText(browser, address, cookies)).Node;
 
     // 200、private no-store；响应体不含令牌样式串、不含 qian.sid 的值，也不出现令牌字段名。
-    private static async Task<(JsonNode Node, string Text)> BootstrapText(HttpClient browser, Uri address, CookieContainer cookies)
+    private protected static async Task<(JsonNode Node, string Text)> BootstrapText(HttpClient browser, Uri address, CookieContainer cookies)
     {
         using var response = await browser.GetAsync(new Uri(address, "api/shell/bootstrap"), Ct);
         var text = await response.Content.ReadAsStringAsync(Ct);
@@ -243,9 +249,9 @@ public sealed partial class CustomerCommandTests
         return (JsonNode.Parse(text)!, text);
     }
 
-    private static async Task<string> SessionSnapshot(HttpClient browser, Uri address) => JsonNode.Parse(await Through(browser, address, "auth/session"))!.ToJsonString();
+    private protected static async Task<string> SessionSnapshot(HttpClient browser, Uri address) => JsonNode.Parse(await Through(browser, address, "auth/session"))!.ToJsonString();
 
-    private static async Task<string> Through(HttpClient browser, Uri address, string path)
+    private protected static async Task<string> Through(HttpClient browser, Uri address, string path)
     {
         using var response = await browser.GetAsync(new Uri(address, path), Ct);
         var text = await response.Content.ReadAsStringAsync(Ct);
@@ -254,7 +260,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // POST /auth/session/refresh：先取防伪令牌（Kun Cookie 中间件对已认证的非安全方法校验）。
-    private static async Task<string> RefreshSession(HttpClient browser, Uri address)
+    private protected static async Task<string> RefreshSession(HttpClient browser, Uri address)
     {
         var csrf = JsonNode.Parse(await Through(browser, address, "auth/csrf"))!;
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(address, "auth/session/refresh"));
@@ -266,7 +272,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 在发行方的账号接口完成密码登录（先取防伪令牌）；tenant 为 null 即平台身份。
-    private static async Task ShellSignIn(HttpClient browser, RunningApp host, string phone, string? tenant)
+    private protected static async Task ShellSignIn(HttpClient browser, RunningApp host, string phone, string? tenant)
     {
         var issuer = new Uri(host.Identity.Issuer);
         using var csrf = await browser.GetAsync(new Uri(issuer, "api/identity/csrf"), Ct); csrf.EnsureSuccessStatusCode();
@@ -281,7 +287,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 网关外壳 bootstrap 的两条警告（事件 62 平台表面缺失、63 清单地址不是同源路径）：级别与结构化参数。
-    private sealed class ShellLogs : ILoggerProvider
+    private protected sealed class ShellLogs : ILoggerProvider
     {
         internal ConcurrentQueue<(int EventId, LogLevel Level, IReadOnlyDictionary<string, object?> Values)> Entries { get; } = new();
         public ILogger CreateLogger(string categoryName) => new Sink(categoryName, Entries);
@@ -299,7 +305,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 平台表面宿主收到的每个请求（路径），证明匿名与平台身份的 bootstrap 不调下游。
-    private sealed class RequestLog(ConcurrentQueue<string> seen) : IStartupFilter
+    private protected sealed class RequestLog(ConcurrentQueue<string> seen) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
         {

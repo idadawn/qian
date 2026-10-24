@@ -16,7 +16,7 @@ using Qian.Runtime;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class LifecycleProfileTests
 {
     // R68 的 TCK 平台组合包宿主装配了登记期契约检查（AddQianCapabilities）：容器里只有一个检查实例，组件上下文经宿主服务拿到同一个；
     // 不合格的契约在该宿主下于登记期被拒，组件挂载失败。platform 宿主漏掉装配时 Capabilities 组件拒绝挂载，不能退化为首次请求才检查。

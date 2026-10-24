@@ -33,20 +33,19 @@ using Qian.Identity.Server;
 using Qian.Runtime;
 using Qian.Runtime.Errors;
 using Qian.Tenancy;
+using Qian.Testing.Containers;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Qian.Sample.Crm.Tests;
 
-// 内置账号模型挂进真实的 CRM 参考宿主：租户目录、配额与开通编排都是宿主里真实的 Tenancy，
-// 用来验收需要「身份 × 租户」两边都是真的才能证明的几条（R81 / R95 / R97 与开通编排第 5 步）。
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private const string IdentityPassword = "Correct-Horse-9";
-    private const string IdentityResource = "https://api.qian.test";
-    private const string GatewayClientId = "qian-web";
+    private protected const string IdentityPassword = "Correct-Horse-9";
+    private protected const string IdentityResource = "https://api.qian.test";
+    private protected const string GatewayClientId = "qian-web";
 
     /// <summary>身份侧的测试句柄：发行方、客户端密钥、签名证书，以及挂载后可用的账号端口。</summary>
-    private sealed class IdentityParts : IDisposable
+    private protected sealed class IdentityParts : IDisposable
     {
         private readonly RSA _key;
         internal IdentityParts(string issuer, string secret, X509Certificate2 certificate, RSA key) { Issuer = issuer; Secret = secret; Certificate = certificate; _key = key; }
@@ -60,7 +59,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 协议库只在开发环境允许回环 HTTP 发行方；测试宿主本身不改环境，只在注册时声明这一点。
-    private sealed class DevelopmentEnvironment : IHostEnvironment
+    private protected sealed class DevelopmentEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = Environments.Development;
         public string ApplicationName { get; set; } = "qian.sample.crm.tests";
@@ -69,7 +68,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 发行方即宿主的监听地址，端口由 Start 经 LoopbackPort 取得（被占时换端口重建宿主，S1-QA-014）。
-    private static IdentityParts NewIdentityParts(int port)
+    private protected static IdentityParts NewIdentityParts(int port)
     {
         var key = RSA.Create(2048);
         var certificate = new CertificateRequest("CN=Qian crm identity", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
@@ -78,7 +77,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // relyingParty 给出时另登记一个机密客户端 qian-web（回调即该地址，与 web 同一密钥），供网关 BFF 走完整的授权码登录（外壳 bootstrap 验收）。
-    private void ConfigureIdentity(WebApplicationBuilder builder, IdentityParts parts, Uri? relyingParty = null)
+    private protected void ConfigureIdentity(WebApplicationBuilder builder, IdentityParts parts, Uri? relyingParty = null)
     {
         builder.Services.AddQianData<IdentityDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(IdentityDbContext.Schema));
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
@@ -109,11 +108,11 @@ public sealed partial class CustomerCommandTests
     }
 
     // 身份库的建表脚本（与生产同一套迁移）与应用角色授权。
-    private static string IdentitySchemaSql(IServiceProvider services) =>
+    private protected static string IdentitySchemaSql(IServiceProvider services) =>
         services.GetRequiredService<IdentityDbContext>().GetService<IMigrator>().GenerateScript() +
         "GRANT USAGE ON SCHEMA plugin_qian_identity TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_identity TO qian_app;";
 
-    private static void MapIdentity(WebApplication app, IdentityParts parts)
+    private protected static void MapIdentity(WebApplication app, IdentityParts parts)
     {
         // 测试里的资源服务：像任何 Qian 业务服务一样，只认已验签的用户令牌，租户只取自令牌，数据由 RLS 隔离。
         async Task<Guid?> TokenTenant(HttpContext http)
@@ -148,7 +147,7 @@ public sealed partial class CustomerCommandTests
         });
     }
 
-    private static async Task MountIdentity(WebApplication app, IdentityParts parts)
+    private protected static async Task MountIdentity(WebApplication app, IdentityParts parts)
     {
         var loader = app.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.identity.server/.qian-plugin/plugin.json")));
@@ -163,7 +162,7 @@ public sealed partial class CustomerCommandTests
         parts.Loader = loader;
     }
 
-    private sealed class IdentityBranchFilter : IStartupFilter
+    private protected sealed class IdentityBranchFilter : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
         {
@@ -176,10 +175,10 @@ public sealed partial class CustomerCommandTests
         };
     }
 
-    private static string NewPhone() => "139" + RandomNumberGenerator.GetInt32(10_000_000, 99_999_999);
+    private protected static string NewPhone() => "139" + RandomNumberGenerator.GetInt32(10_000_000, 99_999_999);
 
     // 建一个带手机号与密码的 Person；成员身份由调用方（或开通编排）另行建立。
-    private static async Task<(Person Person, string Phone)> NewPerson(RunningApp host, string name, bool platform = false)
+    private protected static async Task<(Person Person, string Phone)> NewPerson(RunningApp host, string name, bool platform = false)
     {
         var phone = NewPhone();
         using var proof = new AuthenticationProof(Encoding.UTF8.GetBytes(IdentityPassword));
@@ -188,14 +187,14 @@ public sealed partial class CustomerCommandTests
     }
 
     // 在租户的作用域里为 Person 建立成员身份（成员身份是租户表，只能在目标租户上下文中创建）。
-    private static async Task<Membership> Join(RunningApp host, string tenant, Guid person, string name, bool administrator = false)
+    private protected static async Task<Membership> Join(RunningApp host, string tenant, Guid person, string name, bool administrator = false)
     {
         using var scope = host.App.Services.GetRequiredService<ITenantContext>().BeginScope(tenant);
         return await host.Identity.Accounts.CreateMembershipAsync(new CreateMembership(person, name) { IsTenantAdministrator = administrator }, Ct);
     }
 
     // 走完整的 HTTP 路径：防伪令牌 → 登录 → 授权码（PKCE + nonce）→ 已发布的 Kun 客户端换取令牌。
-    private static async Task<OidcTokenResponse> UserTokens(RunningApp host, string phone)
+    private protected static async Task<OidcTokenResponse> UserTokens(RunningApp host, string phone)
     {
         var parts = host.Identity;
         using var browser = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = true, CookieContainer = new() }) { BaseAddress = new Uri(parts.Issuer) };
@@ -219,7 +218,7 @@ public sealed partial class CustomerCommandTests
         return await kun.ExchangeCodeAsync(new(code, parts.Issuer + "callback", verifier, nonce), Ct);
     }
 
-    private static Task<HttpResponseMessage> AsUser(RunningApp host, string? token, string path)
+    private protected static Task<HttpResponseMessage> AsUser(RunningApp host, string? token, string path)
     {
         var message = new HttpRequestMessage(HttpMethod.Get, path);
         if (token is not null) message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -227,14 +226,19 @@ public sealed partial class CustomerCommandTests
     }
 
     // 保留签名、只改载荷里的 tenant_id：任何一位的改动都必须使验签失败。
-    private static string WithForgedTenant(string token, string tenant)
+    private protected static string WithForgedTenant(string token, string tenant)
     {
         var parts = token.Split('.');
         var payload = System.Text.Json.Nodes.JsonNode.Parse(Base64UrlEncoder.DecodeBytes(parts[1]))!.AsObject();
         payload["tenant_id"] = tenant;
         return string.Join('.', parts[0], Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(payload.ToJsonString())), parts[2]);
     }
+}
 
+// 内置账号模型挂进真实的 CRM 参考宿主：租户目录、配额与开通编排都是宿主里真实的 Tenancy，
+// 用来验收需要「身份 × 租户」两边都是真的才能证明的几条（R81 / R95 / R97 与开通编排第 5 步）。
+public sealed partial class IdentityAuthzTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
+{
     [Fact]
     public async Task 租户管理员经统一登录流水线登录_令牌只带本租户_只看到本租户数据_以A的令牌请求B的记录id是404()
     {

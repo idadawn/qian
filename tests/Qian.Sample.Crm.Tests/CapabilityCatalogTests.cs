@@ -27,14 +27,18 @@ using Qian.Runtime;
 using Qian.Surfaces;
 using Qian.Surfaces.Abstractions;
 using Qian.Tenancy;
+using Qian.Testing.Containers;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
-    private const string CreateId = "qian.sample.crm/customer.create";
-    private static readonly string[] CatalogScopes = ["global", "tenant"];
+    private protected const string CreateId = "qian.sample.crm/customer.create";
+    private protected static readonly string[] CatalogScopes = ["global", "tenant"];
+}
 
+public sealed partial class CatalogContractTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
+{
     [Fact]
     public async Task 目录别名与真实调用共享授权_生成条目满足冻结契约_无权限与缺scope均无能力()
     {
@@ -246,8 +250,33 @@ public sealed partial class CustomerCommandTests
         Assert.Equal(HttpStatusCode.OK, created.StatusCode);
     }
 
+    [Fact]
+    public async Task 完整HTTP制品独立于调用者权限_原生路由删除在挂载前被拒绝()
+    {
+        await using var host = await Start(capabilities: true);
+        using var limited = await CatalogRequest(host, B, "/api/capabilities/openapi.json");
+        Assert.False((await limited.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").GetProperty("/api/customers").TryGetProperty("post", out _));
+        var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
+        var repository = runtime.GetContext("capabilities", ScopeKey.Global).Contracts();
+        var baseline = repository.Find("qian.sample.crm", "0.9.0", "qian.sample.crm.http/v1"); Assert.NotNull(baseline);
+        using var full = JsonDocument.Parse(baseline.ReadContent());
+        Assert.True(full.RootElement.GetProperty("paths").GetProperty("/api/customers").TryGetProperty("post", out _));
+        Assert.True((await repository.CheckOpenApiAsync("qian.sample.crm", "0.9.0", "1.0.0", "qian.sample.crm.http/v1", Ct)).IsCompatible);
+        Assert.False((await repository.CheckOpenApiAsync("qian.sample.crm", "0.9.0", "1.1.0", "qian.sample.crm.http/v1", Ct)).IsCompatible);
+        var entry = runtime.DumpConfig().Single(item => item.Id == "crm");
+        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
+        await runtime.MountAsync([new PluginDefinition(entry with { Version = "1.1.0" },
+            OpenApiContractPlugin.FromRepository(new CrmPlugin(), repository, "qian.sample.crm", "0.9.0", "1.1.0", "qian.sample.crm.http/v1"), [CrmDefinition.Key])], Ct);
+        Assert.Equal(PluginState.Failed, runtime.GetState("crm", ScopeKey.Global));
+        using var rejected = await host.Post(A, new CreateCustomerCommand(Guid.CreateVersion7(), "must not exist"));
+        Assert.Equal(HttpStatusCode.NotFound, rejected.StatusCode);
+    }
+}
+
+public abstract partial class CustomerCommandTests
+{
     // 在真实 CRM 组件之后再登记一个输入带租户字段的能力（租户只能来自令牌，PRD 7.2.1）。
-    private sealed class TenantFieldProbePlugin(IQianPlugin inner) : IQianPlugin
+    private protected sealed class TenantFieldProbePlugin(IQianPlugin inner) : IQianPlugin
     {
         public IReadOnlyList<ServiceKey> Inject => inner.Inject;
         public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
@@ -270,29 +299,7 @@ public sealed partial class CustomerCommandTests
     [JsonSerializable(typeof(TenantProbeQuery))]
     internal sealed partial class ProbeJson : JsonSerializerContext;
 
-    [Fact]
-    public async Task 完整HTTP制品独立于调用者权限_原生路由删除在挂载前被拒绝()
-    {
-        await using var host = await Start(capabilities: true);
-        using var limited = await CatalogRequest(host, B, "/api/capabilities/openapi.json");
-        Assert.False((await limited.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").GetProperty("/api/customers").TryGetProperty("post", out _));
-        var runtime = host.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
-        var repository = runtime.GetContext("capabilities", ScopeKey.Global).Contracts();
-        var baseline = repository.Find("qian.sample.crm", "0.9.0", "qian.sample.crm.http/v1"); Assert.NotNull(baseline);
-        using var full = JsonDocument.Parse(baseline.ReadContent());
-        Assert.True(full.RootElement.GetProperty("paths").GetProperty("/api/customers").TryGetProperty("post", out _));
-        Assert.True((await repository.CheckOpenApiAsync("qian.sample.crm", "0.9.0", "1.0.0", "qian.sample.crm.http/v1", Ct)).IsCompatible);
-        Assert.False((await repository.CheckOpenApiAsync("qian.sample.crm", "0.9.0", "1.1.0", "qian.sample.crm.http/v1", Ct)).IsCompatible);
-        var entry = runtime.DumpConfig().Single(item => item.Id == "crm");
-        await runtime.UnmountAsync("crm", ScopeKey.Global, Ct);
-        await runtime.MountAsync([new PluginDefinition(entry with { Version = "1.1.0" },
-            OpenApiContractPlugin.FromRepository(new CrmPlugin(), repository, "qian.sample.crm", "0.9.0", "1.1.0", "qian.sample.crm.http/v1"), [CrmDefinition.Key])], Ct);
-        Assert.Equal(PluginState.Failed, runtime.GetState("crm", ScopeKey.Global));
-        using var rejected = await host.Post(A, new CreateCustomerCommand(Guid.CreateVersion7(), "must not exist"));
-        Assert.Equal(HttpStatusCode.NotFound, rejected.StatusCode);
-    }
-
-    private static HashSet<string> ReferencedBusinessSchemas(JsonElement document)
+    private protected static HashSet<string> ReferencedBusinessSchemas(JsonElement document)
     {
         var names = new HashSet<string>(StringComparer.Ordinal); var pending = new Queue<string>();
         foreach (var path in document.GetProperty("paths").EnumerateObject())
@@ -312,7 +319,7 @@ public sealed partial class CustomerCommandTests
         }
     }
 
-    private static async Task AssertAbsent(RunningApp host, string tenant)
+    private protected static async Task AssertAbsent(RunningApp host, string tenant)
     {
         using var list = await CatalogRequest(host, tenant, "/api/capabilities"); Assert.Equal(HttpStatusCode.OK, list.StatusCode);
         Assert.Empty((await list.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("items").EnumerateArray());
@@ -320,20 +327,20 @@ public sealed partial class CustomerCommandTests
         Assert.DoesNotContain("qian.sample.crm/", await prompt.Content.ReadAsStringAsync(Ct), StringComparison.Ordinal);
         using var invoke = await Invoke(host, tenant); Assert.Equal(HttpStatusCode.NotFound, invoke.StatusCode);
     }
-    private static Task<HttpResponseMessage> CatalogRequest(RunningApp host, string tenant, string path, string scopes = "crm.read crm.write")
+    private protected static Task<HttpResponseMessage> CatalogRequest(RunningApp host, string tenant, string path, string scopes = "crm.read crm.write")
     {
         var request = new HttpRequestMessage(HttpMethod.Get, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenant, scopes));
         return host.Send(request);
     }
-    private static Task<HttpResponseMessage> Invoke(RunningApp host, string tenant)
+    private protected static Task<HttpResponseMessage> Invoke(RunningApp host, string tenant)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/capabilities/qian.sample.crm/customer.create/invoke")
             { Content = JsonContent.Create(new CreateCustomerCommand(Guid.CreateVersion7(), "catalog customer")) };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(tenant, "crm.read crm.write"));
         return host.Send(request);
     }
-    private static void ConfigureCapabilities(WebApplicationBuilder builder, string connection, string navigationConnection, string migrations)
+    private protected static void ConfigureCapabilities(WebApplicationBuilder builder, string connection, string navigationConnection, string migrations)
     {
         builder.Services.AddKunSecurity();
         builder.Services.AddQianHttpContracts();
@@ -350,13 +357,13 @@ public sealed partial class CustomerCommandTests
         builder.Services.AddSingleton<IOpenApiCompatibilityProbe>(_ => new OasDiffOpenApiProbe(Environment.GetEnvironmentVariable("QIAN_OASDIFF_PATH")
             ?? throw new InvalidOperationException("契约检查器必须预装。")));
     }
-    private static IPluginContext CapabilitySource(HttpContext http)
+    private protected static IPluginContext CapabilitySource(HttpContext http)
     {
         var services = http.RequestServices;
         var tenant = services.GetRequiredService<ITenantContext>().TenantId!;
         return services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("capabilities", ScopeKey.Global).Scoped(new ScopeKey("tenant", tenant));
     }
-    private static void MapCapabilities(WebApplication app)
+    private protected static void MapCapabilities(WebApplication app)
     {
         app.Use(async (http, next) =>
         {
@@ -377,7 +384,7 @@ public sealed partial class CustomerCommandTests
         }).RequireAuthorization();
     }
     // probes 随 crm 条目一起登记（同一组件、同一安装条目）；capabilitiesConfig 是 qian.capabilities 条目的组件配置，缺省为 {}。
-    private static async Task AttachCapabilities(WebApplication app, IReadOnlyList<IExecutableCapability> probes, object? capabilitiesConfig = null)
+    private protected static async Task AttachCapabilities(WebApplication app, IReadOnlyList<IExecutableCapability> probes, object? capabilitiesConfig = null)
     {
         var loader = app.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var directory = Path.Combine(Path.GetTempPath(), "qian-capabilities-" + Guid.NewGuid().ToString("N"));
@@ -509,7 +516,7 @@ public sealed partial class CustomerCommandTests
             var file = Path.Combine(directory, path); Directory.CreateDirectory(Path.GetDirectoryName(file)!); File.WriteAllText(file, content);
         }
     }
-    private static string RepositoryRoot()
+    private protected static string RepositoryRoot()
     {
         var root = new DirectoryInfo(AppContext.BaseDirectory);
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;

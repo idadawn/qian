@@ -10,7 +10,7 @@ using Qian.Testing.Containers;
 namespace Qian.Config.Tests;
 
 [Collection(RealApolloGroup.Name)]
-public sealed class RealApolloFeatureFlagsTests(RealApolloFixture apollo) : IClassFixture<RealApolloFixture>
+public sealed class RealApolloFeatureFlagsTests(RealApolloPortalFixture apollo)
 {
     [Fact]
     public async Task 真实公共namespace跨应用灰度_挂载与消费侧权益结果不改变求值_坏规则拒绝并保留缓存()

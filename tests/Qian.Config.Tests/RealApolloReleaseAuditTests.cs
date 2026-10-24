@@ -23,9 +23,9 @@ namespace Qian.Config.Tests;
 
 // S1-CFG-003 验收 3 后半句：真实 Apollo 2.5.2（AdminService 编辑并发布）一次发布 → 平台审计链多一条记录、链校验通过、记录不含配置值。
 // 平台链按 Qian.Audit.Tests 的 AuditPlatformTests 装配：受限 NOINHERIT 登录角色、两条独立凭据、global AuditPlugin 显式配置 chain.platformRole。
-// 与 RealApolloTests 同一集合，两套真实 Apollo 不并发启动。
+// 与另外三个真实 Apollo 类同一集合、共用一套栈（RealApolloGroup）：计数只取本用例 appId 的配置发布记录，平台链在本类自己的 PostgreSQL 里。
 [Collection(RealApolloGroup.Name)]
-public sealed class RealApolloReleaseAuditTests(RealApolloFixture apollo, PostgresFixture postgres) : IClassFixture<RealApolloFixture>, IClassFixture<PostgresFixture>
+public sealed class RealApolloReleaseAuditTests(RealApolloPortalFixture apollo, PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static readonly string[] s_application = ["application"];
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -69,9 +69,9 @@ public sealed class RealApolloReleaseAuditTests(RealApolloFixture apollo, Postgr
             var audit = reader.Context!.Audit();
 
             // 启动时实例拉取的快照先入链（回读信号），随后真实发布一次。
-            var initial = await WaitForAsync(audit, reader.Context!, 1);
+            var initial = await WaitForAsync(audit, reader.Context!, appId, 1);
             await apollo.PublishAsync(appId, "Sample:PageSize", "25", Ct);
-            var entries = await WaitForAsync(audit, reader.Context!, initial.Count + 1);
+            var entries = await WaitForAsync(audit, reader.Context!, appId, initial.Count + 1);
             Assert.Equal("25", configuration["Sample:PageSize"]);
             var released = entries[^1].Record;
             Assert.Equal((null, "service", appId, ConfigEvents.ReleaseAppliedCapabilityId, "event", "applied"),
@@ -92,13 +92,14 @@ public sealed class RealApolloReleaseAuditTests(RealApolloFixture apollo, Postgr
         finally { Directory.Delete(directory, true); }
     }
 
-    private static async Task<IReadOnlyList<AuditChainEntry>> WaitForAsync(IAuditService audit, IPluginContext producer, int count)
+    private static async Task<IReadOnlyList<AuditChainEntry>> WaitForAsync(IAuditService audit, IPluginContext producer, string appId, int count)
     {
         var deadline = DateTime.UtcNow.AddSeconds(90);
         AuditChainEntry[] entries = [];
         while (DateTime.UtcNow < deadline)
         {
-            entries = (await audit.ReadPlatformAsync(producer, 0, 100, cancellationToken: Ct)).Where(entry => entry.Record.CapabilityId.StartsWith("qian.config/", StringComparison.Ordinal)).ToArray();
+            entries = (await audit.ReadPlatformAsync(producer, 0, 100, cancellationToken: Ct)).Where(entry => entry.Record.CapabilityId.StartsWith("qian.config/", StringComparison.Ordinal)
+                && entry.Record.Resource?.StartsWith("apollo://" + appId + "/", StringComparison.Ordinal) == true).ToArray();
             if (entries.Length >= count) return entries;
             await Task.Delay(200, Ct);
         }
@@ -139,11 +140,4 @@ public sealed class RealApolloReleaseAuditTests(RealApolloFixture apollo, Postgr
         public IReadOnlyList<ServiceKey> Inject => [AuditDefinition.Key];
         public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct) { Context = ctx; return ValueTask.CompletedTask; }
     }
-}
-
-/// <summary>真实 Apollo 测试类共用的集合：类夹具各自启动一套 Apollo，集合保证同一时刻只有一套。</summary>
-public static class RealApolloGroup
-{
-    /// <summary>集合名。</summary>
-    public const string Name = "real-apollo";
 }

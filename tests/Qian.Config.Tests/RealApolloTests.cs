@@ -11,7 +11,7 @@ using Qian.Testing.Containers;
 namespace Qian.Config.Tests;
 
 [Collection(RealApolloGroup.Name)]
-public sealed class RealApolloTests(RealApolloFixture apollo) : IClassFixture<RealApolloFixture>
+public sealed class RealApolloTests(RealApolloPortalFixture apollo)
 {
     [Fact]
     public async Task 真实Apollo发版推动IOptionsMonitor_离线缓存可启动_无缓存失败()
@@ -67,6 +67,7 @@ public sealed class RealApolloTests(RealApolloFixture apollo) : IClassFixture<Re
                     }), ct);
                 }
             }
+            // 集合共用一套栈：本类由 RealApolloClassOrderer 排在集合最后，停掉 ConfigService 不影响其他类。
             await apollo.Container.StopAsync(ct);
             var cached = Build("cache");
             using (var owner = (IDisposable)cached) Assert.Equal("25", cached["Sample:PageSize"]);

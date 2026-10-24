@@ -46,33 +46,43 @@ public class RealApolloFixture : ContainerFixture<IContainer>
         _mysql = mysql.Build();
         await _mysql.StartAsync(cancellationToken).ConfigureAwait(false);
         _admin = Service(Image("QIAN_TEST_IMAGE_APOLLO_ADMIN", "apolloconfig/apollo-adminservice:2.5.2"), 8090, "apollo-admin").Build();
-        await _admin.StartAsync(cancellationToken).ConfigureAwait(false);
-        _control = new HttpClient { BaseAddress = Address(_admin, 8090), Timeout = TimeSpan.FromSeconds(30) };
     }
+
+    /// <inheritdoc />
+    /// <remarks>AdminService 与 ConfigService 都只依赖 MySQL，两者并行启动（S1-QA-017）。</remarks>
+    protected override ValueTask StartAlongsideAsync(CancellationToken cancellationToken) => new(_admin!.StartAsync(cancellationToken));
 
     /// <inheritdoc />
     protected override IContainer CreateContainer() =>
         Service(Image("QIAN_TEST_IMAGE_APOLLO_CONFIG", "apolloconfig/apollo-configservice:2.5.2"), 8080, "apollo-config").Build();
 
-    private ContainerBuilder Service(string image, ushort port, string alias) => new ContainerBuilder(image)
-        .WithNetwork(_network!).WithNetworkAliases(alias)
-        .WithEnvironment("SPRING_DATASOURCE_URL", "jdbc:mysql://apollo-mysql:3306/ApolloConfigDB?characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC")
-        .WithEnvironment("SPRING_DATASOURCE_USERNAME", "apollo").WithEnvironment("SPRING_DATASOURCE_PASSWORD", _databasePassword)
-        .WithEnvironment("JAVA_OPTS", "-Xms128m -Xmx384m")
-        // ConfigService 自带 Eureka Server，不能禁用其必需的 Client bean；只关闭外部注册与拉取。
-        .WithEnvironment("EUREKA_CLIENT_REGISTERWITHEUREKA", EnablePortal && alias == "apollo-admin" ? "true" : "false")
-        .WithEnvironment("EUREKA_CLIENT_SERVICEURL_DEFAULTZONE", "http://apollo-config:8080/eureka/")
-        .WithEnvironment("EUREKA_INSTANCE_HOSTNAME", alias)
-        .WithEnvironment("EUREKA_INSTANCE_PREFERIPADDRESS", "false")
-        .WithEnvironment("EUREKA_CLIENT_FETCHREGISTRY", EnablePortal ? "true" : "false")
-        .WithPortBinding(port, assignRandomHostPort: true)
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(request => request.ForPort(port).ForPath("/health"),
-            wait => wait.WithTimeout(TimeSpan.FromMinutes(3))));
+    private ContainerBuilder Service(string image, ushort port, string alias)
+    {
+        var builder = new ContainerBuilder(image)
+            .WithNetwork(_network!).WithNetworkAliases(alias)
+            .WithEnvironment("SPRING_DATASOURCE_URL", "jdbc:mysql://apollo-mysql:3306/ApolloConfigDB?characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC")
+            .WithEnvironment("SPRING_DATASOURCE_USERNAME", "apollo").WithEnvironment("SPRING_DATASOURCE_PASSWORD", _databasePassword)
+            .WithEnvironment("JAVA_OPTS", "-Xms128m -Xmx384m")
+            .WithPortBinding(port, assignRandomHostPort: true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(request => request.ForPort(port).ForPath("/health"),
+                wait => wait.WithTimeout(TimeSpan.FromMinutes(3))));
+        // Portal 经 Meta 服务发现 AdminService：用 Apollo 自带的数据库服务发现，注册与发现都走 ApolloConfigDB.ServiceRegistry，AdminService 启动即可被发现。
+        // Eureka 的注册重试、服务端响应缓存与客户端注册表刷新各以 30 秒计，夹具曾为此等近一分钟（S1-QA-017）。
+        if (EnablePortal) return builder.WithEnvironment("SPRING_PROFILES_ACTIVE", "github,database-discovery");
+        // 不起 Portal 时没有服务发现：ConfigService 自带 Eureka Server，不能禁用其必需的 Client bean；只关闭外部注册与拉取。
+        return builder
+            .WithEnvironment("EUREKA_CLIENT_REGISTERWITHEUREKA", "false")
+            .WithEnvironment("EUREKA_CLIENT_SERVICEURL_DEFAULTZONE", "http://apollo-config:8080/eureka/")
+            .WithEnvironment("EUREKA_INSTANCE_HOSTNAME", alias)
+            .WithEnvironment("EUREKA_INSTANCE_PREFERIPADDRESS", "false")
+            .WithEnvironment("EUREKA_CLIENT_FETCHREGISTRY", "false");
+    }
 
     /// <inheritdoc />
     protected override async ValueTask OnStartedAsync(IContainer container, CancellationToken cancellationToken)
     {
         ConfigServiceUri = Address(container, 8080);
+        _control = new HttpClient { BaseAddress = Address(_admin!, 8090), Timeout = TimeSpan.FromSeconds(30) };
         if (!EnablePortal) return;
         using var meta = new HttpClient { BaseAddress = ConfigServiceUri };
         var deadline = DateTimeOffset.UtcNow.AddSeconds(90);
@@ -80,7 +90,7 @@ public class RealApolloFixture : ContainerFixture<IContainer>
         {
             using var response = await meta.GetAsync("services/admin?appId=qian-flags-fixture", cancellationToken).ConfigureAwait(false);
             if (response.IsSuccessStatusCode && (await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)).Contains("apollo-admin", StringComparison.Ordinal)) break;
-            if (DateTimeOffset.UtcNow > deadline) throw new InvalidOperationException("真实 Apollo AdminService 未通过 Eureka 出现在 Meta 服务发现中。");
+            if (DateTimeOffset.UtcNow > deadline) throw new InvalidOperationException("真实 Apollo AdminService 未出现在 Meta 服务发现中。");
             await Task.Delay(500, cancellationToken).ConfigureAwait(false);
         }
         _portal = new ContainerBuilder(Image("QIAN_TEST_IMAGE_APOLLO_PORTAL", "apolloconfig/apollo-portal:2.5.2"))

@@ -11,7 +11,7 @@ using Qian.Runtime;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class IdentityAuthzTests
 {
     [Fact]
     public async Task 真实认证meta端点返回可离线使用的契约_匿名拒绝_卸载隐藏_数据执行仍缺省拒绝()

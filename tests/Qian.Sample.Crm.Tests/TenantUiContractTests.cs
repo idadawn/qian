@@ -10,7 +10,7 @@ using Qian.Tenancy;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class CatalogContractTests
 {
     [Fact]
     public async Task TenantUi_筛选总数稳定分页_字段错误指针_响应与输入Schema来自真实宿主()

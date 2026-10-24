@@ -18,7 +18,7 @@ namespace Qian.Sample.Crm.Tests;
 // - refresh 拿到新修订，并被两侧放行。
 // PEP 侧直接调三处入口共用的执行端口，主体与修订取自真实的身份令牌：参考宿主的 REST 端点按设计只收机器主体，
 // 陈旧令牌在 HTTP 映射为 401、在 gRPC 映射为 Unauthenticated，由 AuthzEnforcementTests 覆盖。
-public sealed partial class CustomerCommandTests
+public sealed partial class IdentityAuthzTests
 {
     [Fact]
     public async Task 撤销授予后三秒内身份修订递增_旧令牌在userinfo与PEP执行端口都被拒_refresh拿到新修订并被放行_非user与无成员身份的主体不递增()
@@ -85,12 +85,15 @@ public sealed partial class CustomerCommandTests
         Assert.Equal("3", await MemberRevision());
         Assert.Equal("0", await Text($"SELECT count(*) FROM plugin_qian_identity.memberships WHERE person_id = '{stranger.Id:D}'::uuid"));
     }
+}
 
-    private static long TokenRevision(string accessToken) =>
+public abstract partial class CustomerCommandTests
+{
+    private protected static long TokenRevision(string accessToken) =>
         long.Parse(new JsonWebToken(accessToken).GetClaim("identity_revision").Value, NumberStyles.None, CultureInfo.InvariantCulture);
 
     // 以 web 客户端用 refresh token 换令牌，返回新的访问令牌。
-    private static async Task<string> RefreshAccessToken(RunningApp host, string refreshToken)
+    private protected static async Task<string> RefreshAccessToken(RunningApp host, string refreshToken)
     {
         using var http = new HttpClient { BaseAddress = new Uri(host.Identity.Issuer) };
         using var response = await http.PostAsync("connect/token", new FormUrlEncodedContent(new Dictionary<string, string>

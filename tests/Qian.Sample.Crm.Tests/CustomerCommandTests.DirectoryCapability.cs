@@ -19,7 +19,7 @@ using Qian.Surfaces;
 
 namespace Qian.Sample.Crm.Tests;
 
-public sealed partial class CustomerCommandTests
+public sealed partial class IdentityAuthzTests
 {
     [Fact]
     public async Task 目录禁用标准生成能力经真实授权与PG回执执行_重放不重新吊销_绑定不能绕过管理员与会话()
@@ -116,9 +116,12 @@ public sealed partial class CustomerCommandTests
             { Assert.True(DateTimeOffset.UtcNow < deadline, "成员吊销旁路未写入同租户 Outbox"); await Task.Delay(50, Ct); }
         }
     }
+}
 
+public abstract partial class CustomerCommandTests
+{
     // 先以真实密码进入生产 SignInPipeline；这里只把认证结果接入测试宿主的 ICurrentUser，未从请求体生成身份。
-    private static async Task<DirectoryCurrentUser> DirectoryUser(RunningApp host, string phone, string tenant)
+    private protected static async Task<DirectoryCurrentUser> DirectoryUser(RunningApp host, string phone, string tenant)
     {
         using var proof = new AuthenticationProof(Encoding.UTF8.GetBytes(IdentityPassword));
         var login = await host.Identity.SignIn.SignInAsync(new LoginInput("web", Guid.Parse(tenant), null, null, proof) { Identifier = phone }, new LoginContext(null, null), Ct);
@@ -130,7 +133,7 @@ public sealed partial class CustomerCommandTests
             Roles = [], Scope = "qian.api", SessionId = session.SessionId.ToString("D"), TokenId = Guid.NewGuid().ToString("D"), IssuedAt = now, NotBefore = now, ExpiresAt = now + 60
         });
     }
-    private sealed class DirectoryCurrentUser(ITenantContext tenant, Principal principal) : ICurrentUser
+    private protected sealed class DirectoryCurrentUser(ITenantContext tenant, Principal principal) : ICurrentUser
     {
         internal Principal Snapshot { get; set; } = principal;
         public Principal Principal => Snapshot;
@@ -138,7 +141,7 @@ public sealed partial class CustomerCommandTests
         public string UserId => Snapshot.Subject;
         public IReadOnlyList<string> Roles => Snapshot.Roles;
     }
-    private sealed class DirectoryInvocationServices(IServiceProvider services, ICurrentUser user) : IServiceProvider
+    private protected sealed class DirectoryInvocationServices(IServiceProvider services, ICurrentUser user) : IServiceProvider
     {
         public object? GetService(Type serviceType) => serviceType == typeof(ICurrentUser) ? user : services.GetService(serviceType);
     }

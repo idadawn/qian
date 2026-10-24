@@ -7,12 +7,10 @@ using Qian.Tenancy;
 
 namespace Qian.Sample.Crm.Tests;
 
-// 会话中心挂进真实的 CRM 参考宿主（S1-IDP-004，R95）：租户冻结 / 恢复走真实 Tenancy 的状态机，
-// 身份侧的会话校验读真实的租户目录，后台对账把失效持久化并发出事件。
-public sealed partial class CustomerCommandTests
+public abstract partial class CustomerCommandTests
 {
     // 以 web 客户端的身份用 refresh token 换令牌，返回状态码（被拒是 400）。
-    private static async Task<HttpStatusCode> RefreshStatus(RunningApp host, string refreshToken)
+    private protected static async Task<HttpStatusCode> RefreshStatus(RunningApp host, string refreshToken)
     {
         using var http = new HttpClient { BaseAddress = new Uri(host.Identity.Issuer) };
         using var response = await http.PostAsync("connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
@@ -23,7 +21,7 @@ public sealed partial class CustomerCommandTests
     }
 
     // 用访问令牌请求 userinfo：令牌仍对应有效会话是 200，会话失效或修订过期是 401。
-    private static async Task<HttpStatusCode> UserInfoStatus(RunningApp host, string accessToken)
+    private protected static async Task<HttpStatusCode> UserInfoStatus(RunningApp host, string accessToken)
     {
         using var http = new HttpClient { BaseAddress = new Uri(host.Identity.Issuer) };
         using var request = new HttpRequestMessage(HttpMethod.Get, "connect/userinfo");
@@ -31,7 +29,12 @@ public sealed partial class CustomerCommandTests
         using var response = await http.SendAsync(request, Ct);
         return response.StatusCode;
     }
+}
 
+// 会话中心挂进真实的 CRM 参考宿主（S1-IDP-004，R95）：租户冻结 / 恢复走真实 Tenancy 的状态机，
+// 身份侧的会话校验读真实的租户目录，后台对账把失效持久化并发出事件。
+public sealed partial class IdentityAuthzTests
+{
     [Fact]
     public async Task 真实Tenancy冻结租户后该租户的会话失效_refresh被拒_对账持久吊销并发事件_别的租户不受影响_恢复后可重新登录()
     {

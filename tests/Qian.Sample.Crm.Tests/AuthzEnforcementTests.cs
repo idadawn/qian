@@ -23,14 +23,17 @@ using Qian.Runtime.Errors;
 
 namespace Qian.Sample.Crm.Tests;
 
+public abstract partial class CustomerCommandTests
+{
+    private protected const string Reader = "crm-command-reader";
+    private protected const string CustomerRead = "qian.sample.crm:customer:read";
+    private protected const string CustomerWrite = "qian.sample.crm:customer:write";
+}
+
 // S1-AZ-004：参考宿主按生产模式运行的三处 PEP。HTTP 端点以 RequireQianPermission 声明权限点，gRPC 方法以 [RequiresPermission] 声明，
 // 两者经同一执行端口对同一权限点结论一致；未声明权限点的组件端点与方法缺省拒绝；每次拒绝都有决策日志；旧令牌按服务端 identity_revision 下限拒绝。
-public sealed partial class CustomerCommandTests
+public sealed partial class IdentityAuthzTests
 {
-    private const string Reader = "crm-command-reader";
-    private const string CustomerRead = "qian.sample.crm:customer:read";
-    private const string CustomerWrite = "qian.sample.crm:customer:write";
-
     [Fact]
     public async Task gRPC与HTTP对同一权限点判定一致_未声明权限点的组件端点与方法在生产模式缺省拒绝_每次判定都有决策日志()
     {
@@ -152,25 +155,28 @@ public sealed partial class CustomerCommandTests
             }
         Assert.Equal(new Dictionary<string, string> { ["GET /api/customers"] = CustomerRead, ["GET /api/customers/{id}"] = CustomerRead, ["POST /api/customers"] = CustomerWrite }, declared);
     }
+}
 
-    private static HttpRequestMessage Get(string path, string token)
+public abstract partial class CustomerCommandTests
+{
+    private protected static HttpRequestMessage Get(string path, string token)
     {
         var message = new HttpRequestMessage(HttpMethod.Get, path);
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return message;
     }
-    private static CallOptions Call(string token) => new(new Metadata { { "authorization", "Bearer " + token } }, cancellationToken: Ct);
-    private static void AssertDenied(RpcException error, string code, int status, StatusCode grpc = StatusCode.PermissionDenied)
+    private protected static CallOptions Call(string token) => new(new Metadata { { "authorization", "Bearer " + token } }, cancellationToken: Ct);
+    private protected static void AssertDenied(RpcException error, string code, int status, StatusCode grpc = StatusCode.PermissionDenied)
     {
         Assert.Equal(grpc, error.StatusCode); Assert.Equal(code, error.Status.Detail);
         var trailer = Assert.Single(error.Trailers, entry => entry.Key == AuthzGrpcServerInterceptor.ErrorDetailTrailer);
         var detail = ErrorDetailJson.Deserialize(Encoding.UTF8.GetString(trailer.ValueBytes)); Assert.NotNull(detail);
         Assert.Equal((code, status), (detail.Code, detail.Status));
     }
-    private static CrmCommandRuntime Runtime(RunningApp host) => host.App.Services.GetRequiredService<CrmCommandRuntime>();
-    private static Qian.Runtime.IPluginContext Source(RunningApp host) => Runtime(host).Source();
+    private protected static CrmCommandRuntime Runtime(RunningApp host) => host.App.Services.GetRequiredService<CrmCommandRuntime>();
+    private protected static Qian.Runtime.IPluginContext Source(RunningApp host) => Runtime(host).Source();
     // 当前租户链里的决策日志（按链序）。
-    private static async Task<(string Actor, string Result, string EntryPoint, string Target, string Reason)[]> Decisions(RunningApp host, string tenantId)
+    private protected static async Task<(string Actor, string Result, string EntryPoint, string Target, string Reason)[]> Decisions(RunningApp host, string tenantId)
     {
         var records = await Runtime(host).Loader.GetContext("authz", Qian.Runtime.ScopeKey.Global).Scoped(new Qian.Runtime.ScopeKey("tenant", tenantId)).Audit().ReadAsync(0, 100, cancellationToken: Ct);
         return [.. records.Select(entry => entry.Record).Where(record => record.CapabilityId == AuthzEnforcement.DecisionCapabilityId)
