@@ -77,7 +77,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: 构建 CLI
         run: pnpm --filter qian... build
-      - name: 空白宿主经签名市场安装 data / events / config 与 data / files（standalone），运行 Provider 后逆序卸载
+      - name: 空白宿主经签名市场安装 data / events / config、data / files（standalone）与 identity，运行 Provider 后逆序卸载
         env:
           QIAN_FEED_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm --filter qian test:feed
