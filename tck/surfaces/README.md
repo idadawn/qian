@@ -1,6 +1,6 @@
 # 声明式表面共同验收
 
-`cases.json` 由 `scripts/generate_surface_fixtures.py` 生成，包含 129 个独立组件场景（110 个反例）。fixture 保存完整文件内容与宿主目录选项，两端都写入临时组件目录后运行真实文件解析器。`jcs-vectors.json` 另提供独立文字规范值，覆盖浮点、负零、最小非零浮点、Unicode 和 UTF-16 属性顺序。
+`cases.json` 由 `scripts/generate_surface_fixtures.py` 生成，包含 225 个独立组件场景（194 个反例）。fixture 保存完整文件内容与宿主目录选项，两端都写入临时组件目录后运行真实文件解析器。`files` 中的值为字符串时写 UTF-8 文本，为 `{ "base64": "…" }` 时解码后按字节原样写入，禁止再转成文本。`jcs-vectors.json` 另提供独立文字规范值，覆盖浮点、负零、最小非零浮点、Unicode 和 UTF-16 属性顺序。
 
 ```bash
 python3 scripts/generate_surface_fixtures.py
@@ -11,6 +11,8 @@ node packages/qian-surfaces/scripts/compare-fixtures.mjs /tmp/surfaces-dotnet.js
 ```
 
 对比有效性、错误码、文件、JSON Pointer、行号与 error/warning 级别；文案和每次生成的 trace-id 不参与对比。期望里写明行号的反例，两端还各自核对该行号。另以冻结 error-detail Schema 验证 .NET 错误体，并验证技能目录的租户隔离和 Effect 卸载。
+
+文件解码（S1-RT-027）增加 68 个场景，覆盖清单、JSON 元数据、Markdown 和配置 Schema：UTF-8 有/无 BOM，UTF-16LE/BE 与 UTF-32LE/BE 有/无 BOM，以及非法起始字节、孤立续接字节、不完整序列、过长编码、代理项编码、超过 Unicode 上限的编码。合法中文、emoji 与 U+FFFD 为正例；JSON 重复 BOM 与 Schema 指向目录为反例。非法解码报文件根的 `SURFACE_PATH_INVALID`（第 1 行）；无 BOM 的 UTF-16/32 ASCII 文本含 NUL，由解析器报 `SURFACE_SYNTAX_INVALID`。格式与诊断边界统一维护在 [Provider 主文档](../../packages/Qian.Surfaces/README.md#校验与诊断)。
 
 元数据场景覆盖默认、自定义及根目录、目录类型、JSON 语法、重复键、敏感值和符号链接；原始快照与诊断均参加两侧比较，业务 Schema 由相应 seam 的验收负责。
 

@@ -50,9 +50,8 @@ public sealed partial class SurfaceValidator
                     var path = Safe(schema.GetString()!, ManifestFile, "/runtime/configSchema", required: true);
                     if (path is not null)
                     {
-                        var parsed = SurfaceReader.Parse(Relative(path), File.ReadAllText(path), false, trace);
-                        _diagnostics.AddRange(parsed.Diagnostics);
-                        if (parsed.Syntax is { } syntax && !validator._schemas.IsSchema(syntax.Data))
+                        var syntax = Read(Relative(path), null, false, ManifestFile, "/runtime/configSchema");
+                        if (syntax is not null && !validator._schemas.IsSchema(syntax.Data))
                             Error(Relative(path), "", SurfaceErrors.Schema, "配置 Schema 无效。");
                     }
                 }

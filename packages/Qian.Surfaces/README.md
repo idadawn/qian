@@ -30,6 +30,8 @@ if (result.IsValid)
 
 ## 校验与诊断
 
+清单、所有声明式表面和 `runtime.configSchema` 指向的文件均按严格 UTF-8 解码，不根据 BOM 切换编码，也不将非法字节替换成 U+FFFD。允许文件开头的一个 UTF-8 BOM，由解析器统一去掉；合法中文、emoji 与实际编码的 U+FFFD 字符照常接受。带 BOM 的 UTF-16/UTF-32、非法或不完整的 UTF-8 字节返回 `SURFACE_PATH_INVALID`，指针为该文件根、行号为 1，不回显原始字节；无 BOM 的 UTF-16/UTF-32 文本若字节仍可按 UTF-8 解码，则由 JSON/YAML 解析器拒绝其中的 NUL。配置 Schema 复用相同的路径、文件类型、1 MiB 上限和读取失败处理。
+
 支持 skill、agent、command 的 front matter 与原样正文，以及 hooks、MCP、tool、UI、patch、metadata；清单接受缺省或覆盖的表面指针。JSON 重复键、YAML 重复键或 alias 被拒绝；单文件最多 1 MiB，容器最多嵌套 64 层。字符串与键名不能含未成对的 UTF-16 代理项（`\u` 转义出的 D800–DFFF 码元没有配对）：JSON 在所在行报「JSON 字符串或键名含未成对的代理项。」，语法错误、过深与非有限数值优先；YAML 双引号标量里的这类转义按语法错误报在标量起始行（YamlDotNet 拒绝，`yaml` 包原本接受），转义的代理对照常解码；直接传入的字符串含字面量的未成对代理项时按值无效处理。致命错误（语法、大小、嵌套、值、代理项）只报告它自己，先前发现的重复键不再列出。两端的检查顺序与行号约定见下文。路径须存在于组件内，不能逃逸或经过符号链接，检查大小写以保持跨平台一致。
 
 `ui/manifest.json` 默认被发现，也可由 `surfaces.ui` 指定组件内其它 JSON 文件；两端真正读取内容、校验 `ui/v2` 并返回 `kind: ui` 文档。清单须有 `$schema`、`federation.manifest/exposes` 与 `engines.yue`，保留规格中的 pages、widgets、settingsCards。桥接字段可省略以描述只供静态索引的 UI；声明 contributions 时必须同时声明完整 bridge。未知字段、缺少必填属性、非法路由、未声明 expose、重复路由/控件类型/同 scope 设置卡片/插槽贡献、重复桥接能力和桥接未允许的插槽均拒绝。公共校验不联网读取 MF 清单，也不等同于加载器验证远程产物、版本或来源。
@@ -96,7 +98,7 @@ JSON 的语法错误（含根值之后多余的内容）、第 65 层容器与�
 
 ## 验证
 
-[共同 fixture](../../tck/surfaces/README.md) 覆盖所有支持表面、129 个组件场景（110 个反例）、无 src 组件、自定义指针、两侧精确诊断对比、74 条解析诊断向量与 16 条 YAML 取值向量，以及独立 JCS 浮点／Unicode 向量。.NET 还验证租户 A/B 隔离与卸载撤销。
+[共同 fixture](../../tck/surfaces/README.md) 覆盖所有支持表面、225 个组件场景（194 个反例）、无 src 组件、自定义指针、两侧精确诊断对比、74 条解析诊断向量与 16 条 YAML 取值向量，以及独立 JCS 浮点／Unicode 向量。其中 68 个场景验证文件编码与配置 Schema 读取边界。.NET 还验证租户 A/B 隔离与卸载撤销。
 
 ## 已知限制与延期项
 
