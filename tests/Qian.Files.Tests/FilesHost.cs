@@ -113,7 +113,7 @@ internal sealed class FilesHost : IAsyncDisposable
         builder.Logging.ClearProviders();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddQianErrors();
-        // 身份适配器先于数据约定登记，避免框架的匿名兜底占住当前主体端口。
+        // 身份适配器登记在数据约定之前，次序已不承重：Kun 2026.10.25 起数据约定不再以匿名兜底占住框架当前主体端口（S1-KUN-017），先后都生效。
         builder.Services.AddKunSecurity();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ICurrentUser, FilesCurrentUser>();
