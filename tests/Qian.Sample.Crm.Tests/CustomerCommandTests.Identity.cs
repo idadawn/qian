@@ -43,6 +43,7 @@ public abstract partial class CustomerCommandTests
     private protected const string IdentityPassword = "Correct-Horse-9";
     private protected const string IdentityResource = "https://api.qian.test";
     private protected const string GatewayClientId = "qian-web";
+    private protected const string MachineClientId = "crm-shell-machine";
 
     /// <summary>身份侧的测试句柄：发行方、客户端密钥、签名证书，以及挂载后可用的账号端口。</summary>
     private protected sealed class IdentityParts : IDisposable
@@ -76,7 +77,8 @@ public abstract partial class CustomerCommandTests
         return new IdentityParts($"http://127.0.0.1:{port}/", Convert.ToHexString(RandomNumberGenerator.GetBytes(32)), certificate, key);
     }
 
-    // relyingParty 给出时另登记一个机密客户端 qian-web（回调即该地址，与 web 同一密钥），供网关 BFF 走完整的授权码登录（外壳 bootstrap 验收）。
+    // relyingParty 给出时（网关在前）另登记两个机密客户端，与 web 同一密钥：qian-web 回调即该地址，供网关 BFF 走完整的授权码登录（外壳 bootstrap 验收）；
+    // crm-shell-machine 是归属甲方的机器客户端，供外部机器客户端取 client_credentials 令牌、带 Bearer 经网关执行能力（S1-YUE-016）。
     private protected void ConfigureIdentity(WebApplicationBuilder builder, IdentityParts parts, Uri? relyingParty = null)
     {
         builder.Services.AddQianData<IdentityDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(IdentityDbContext.Schema));
@@ -94,7 +96,11 @@ public abstract partial class CustomerCommandTests
             Issuer = new Uri(parts.Issuer), AllowLoopbackHttp = true, SigningCertificates = [parts.Certificate], EncryptionCertificates = [parts.Certificate],
             // 租户状态对账缩到 1 秒，联调测试不必等满默认的 30 秒（生产的上限就是 30 秒）。
             Accounts = new IdentityAccountOptions { Session = new SessionPolicy { ReconcileInterval = TimeSpan.FromSeconds(1) } },
-            Clients = [new() { Application = web, Resources = [IdentityResource] }, .. relyingParty is null ? [] : new[] { new IdentityClientRegistration { Application = Gateway(relyingParty), Resources = [IdentityResource] } }]
+            Clients = [new() { Application = web, Resources = [IdentityResource] }, .. relyingParty is null ? [] : new[]
+            {
+                new IdentityClientRegistration { Application = Gateway(relyingParty), Resources = [IdentityResource] },
+                new IdentityClientRegistration { Application = Machine(), Resources = [IdentityResource], TenantId = Guid.Parse(A) }
+            }]
         }, new DevelopmentEnvironment());
 
         OpenIddictApplicationDescriptor Gateway(Uri callback)
@@ -103,6 +109,12 @@ public abstract partial class CustomerCommandTests
             // 外壳客户端还可申请参考应用的两个 scope（经 bridge.invoke 执行能力，S1-YUE-015）；申请与否由网关的 Identity.Client 配置决定。
             descriptor.RedirectUris.Add(callback); descriptor.Permissions.UnionWith(web.Permissions);
             descriptor.Permissions.UnionWith([Permissions.Prefixes.Scope + "crm.read", Permissions.Prefixes.Scope + "crm.write"]);
+            return descriptor;
+        }
+        OpenIddictApplicationDescriptor Machine()
+        {
+            var descriptor = new OpenIddictApplicationDescriptor { ClientId = MachineClientId, ClientSecret = parts.Secret, ClientType = ClientTypes.Confidential, ConsentType = ConsentTypes.Implicit };
+            descriptor.Permissions.UnionWith([Permissions.Endpoints.Token, Permissions.GrantTypes.ClientCredentials, Permissions.Prefixes.Scope + "crm.read", Permissions.Prefixes.Scope + "crm.write"]);
             return descriptor;
         }
     }

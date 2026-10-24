@@ -159,7 +159,8 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   //    列表经 bridge.invoke 调 customer.list：外壳先取防伪令牌、按规范路径经网关发到平台表面的通用执行入口（能力对该用户可见：scope crm.read + customer:read），
   //    平台表面把验证过的用户主体交给参考应用的命令管道，能力以调用者本人执行（S1-YUE-015）：列表里有开通钩子为甲方种下的示例客户，条目都属于甲方。
   //    「新建客户」页同样由远程渲染：经 customer.create 新建（外壳补幂等键，请求头与正文同值），成功后通知并回到列表，新客户就在其中。
-  //    联调栈可能被同一次 up 反复用来跑验收，列表只按「多了这一条」断言，不假定条数。
+  //    联调栈可能被同一次 up 反复用来跑验收，列表只按「多了这一条」断言，不假定条数；以 take = 100 为界：页面只取第一页（按 Id 升序），
+  //    甲方客户满 100 条后新客户落在第二页，「多了这一条」不再成立，所以先断言条数没满（满了就重建联调栈再跑）。
   const invoked = (capability: string) => page.waitForResponse(response => new URL(response.url()).pathname === `/api/capabilities/qian.sample.crm/${capability}/invoke`);
   const invocations = (capability: string) => apiCalls.filter(call => call.path === `/api/capabilities/qian.sample.crm/${capability}/invoke`).map(call => `${call.method} ${call.status}`);
   type CustomerPage = { total: number; items: { id: string; tenantId: string; name: string }[] };
@@ -177,6 +178,7 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   expect(list.request().headers()['x-csrf-token']).toBeTruthy();
   expect(list.status(), await list.text()).toBe(200);
   const firstPage = await list.json() as CustomerPage;
+  expect(firstPage.total, '甲方客户已满一页（take = 100），新客户会落在第二页：重建联调栈再跑').toBeLessThan(100);
   expect(firstPage.items.map(item => item.name)).toContain('示例客户');
   expect(firstPage.items.filter(item => item.tenantId !== tenantA)).toEqual([]);
   const rows = customers.getByRole('list', { name: '客户列表' }).getByRole('listitem');
@@ -191,7 +193,10 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   await accessible(page, '远程页面');
   const customerName = `外壳新建客户 ${Date.now()}`;
   await create.getByLabel('客户名称').fill(customerName);
-  const notified = page.evaluate(() => new Promise(resolve => addEventListener('qian:notification', event => resolve((event as CustomEvent).detail), { once: true })));
+  // 先在页面里挂好通知监听再点击：evaluateHandle 等函数在页面里执行完才返回，返回值只是包着未兑现承诺的对象，监听因此一定早于点击。
+  const notified = await page.evaluateHandle(() => ({
+    detail: new Promise(resolve => addEventListener('qian:notification', event => resolve((event as CustomEvent).detail), { once: true })),
+  }));
   const created = invoked('customer.create'); const relisted = invoked('customer.list');
   await create.getByRole('button', { name: '创建', exact: true }).click();
   const creation = await created;
@@ -201,7 +206,7 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   expect(sent).toEqual({ name: customerName, idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/) });
   expect(creation.request().headers()['idempotency-key']).toBe(sent.idempotencyKey);
   expect(await creation.json()).toMatchObject({ tenantId: tenantA, name: customerName });
-  expect(await notified).toEqual({ level: 'success', message: '客户已创建' });
+  expect(await notified.evaluate(holder => holder.detail)).toEqual({ level: 'success', message: '客户已创建' });
   await expect(page).toHaveURL(origin + '/customers');
   await expect(rows).toHaveCount(existing + 1);
   await expect(rows.filter({ hasText: customerName })).toHaveCount(1);
