@@ -170,6 +170,7 @@ Data 的两项依赖保留现有实现与公开 API；本任务不通过删除�
 
 - 构建与门禁：还原 → 构建（PublicAPI 门禁）→ 入口清单 → 明文密钥扫描 → namespace 骨架 → 依赖图门禁 → 门禁自测 → 触发过滤自检。
 - 单元与集成测试，分三个分片：各自还原、构建，再用 `scripts/dotnet_ci.py shard` 写出的解决方案筛选文件只跑本分片的模块。作业开头在后台预拉本分片用到的测试镜像，测试前有界等待。分片清单是脚本里的 `SHARDS`，新加的测试项目不用登记，自动落入其余分片。
+  - 测试命令带 `-p:QianTrxPerModule=true`，每个模块的 TRX 按项目名命名（`<项目名>.trx`，见 [Directory.Build.props](Directory.Build.props)）。xUnit 缺省文件名只有用户、机器和时间戳，同时启动的模块会撞名，后写完的覆盖先写完的（S1-QA-017）。
 - 测试分片汇总核对：`Qian.slnx` 里每个测试项目恰好在所属分片跑过一次、没有失败；各分片的 TRX 与证据合并为 `test-results` 构件。
 
 只改 `pm/**`、`docs/**` 或根目录 Markdown 的 PR 不触发这个工作流。`docs/generated/**` 与测试读取的文档仍会触发：测试新读一个文档时，把它加进 `pull_request.paths`，门禁作业的触发过滤自检会核对。push 到 main 不过滤。

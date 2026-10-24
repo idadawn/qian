@@ -9,4 +9,13 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
+  <!--
+    xUnit 的 TRX 缺省文件名只有「用户_机器_时间戳」。dotnet test 同时启动的几个模块会撞名，后写完的覆盖先写完的，
+    该模块就没有测试结果（S1-QA-017）。CI 的分片作业传 -p:QianTrxPerModule=true，每个测试应用改按项目名写 TRX。
+    文件名选项只能和 report-xunit-trx 一起给，所以默认不开：本机运行与 dotnet run 照旧。
+  -->
+  <PropertyGroup Label="Per-module TRX" Condition="'$(QianTrxPerModule)' == 'true'">
+    <RunArguments>$(RunArguments) --report-xunit-trx-filename $(MSBuildProjectName).trx</RunArguments>
+  </PropertyGroup>
+
 </Project>
