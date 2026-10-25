@@ -11,7 +11,9 @@ on:
     branches: [main]
   pull_request:
     # 只改任务文件、设计文档或根目录 Markdown 的 PR 不跑本工作流，合并时按「未触发」处理。
-    # docs/generated 由 Qian.Docs.Tests 比对；测试读取的其他文档也要在这里重新纳入（构建与门禁作业的「触发过滤自检」核对）。
+    # 本工作流读到的这类文件在下面重新纳入，构建与门禁作业的「触发过滤自检」核对没有漏（认得的写法见 tests/README.md §5.1）：
+    # docs/generated/config-catalog.md 由 Qian.Tenancy.Tests 的 TenancyConfigurationTests 读取，配置运维手册由 CRM 的 CapabilityInvokeTests 读取。
+    # docs/generated 与源码是否一致（派生文档新鲜度）不在这里查，由 documentation.yml 重新生成后比对，它自带 docs/generated/** 路径过滤。
     # push 到 main 不过滤：dotnet-release.yml 要求发布提交本身有通过的 push 运行。
     paths:
       - '**'
@@ -70,7 +72,7 @@ jobs:
       - name: 门禁自测（tests/gates 样例项目）
         run: python3 -m unittest discover -s tests/gates -v
 
-      - name: 触发过滤自检（.NET 源码读取的 docs/、pm/ 文件改动仍触发本工作流）
+      - name: 触发过滤自检（.NET 源码、MSBuild 项与本工作流运行的 Python 读取的 pm/、docs/、根目录 Markdown 改动仍触发本工作流）
         run: python3 scripts/dotnet_ci.py paths-check
 
       - name: 上传 namespace 骨架
@@ -173,7 +175,7 @@ jobs:
           pattern: test-results-*
           path: ${{ runner.temp }}/test-results
 
-      - name: Qian.slnx 里每个测试项目恰好在所属分片跑过一次、没有失败（少一个模块即失败）
+      - name: Qian.slnx 里每个测试项目恰好在所属分片跑过一次、没有失败（少一个模块即失败；tests/ 下不在 Qian.slnx 的测试项目告警）
         run: python3 scripts/dotnet_ci.py verify "$RUNNER_TEMP/test-results"
 
       - name: 合并为 test-results 构件（各分片的 TRX 与证据、门禁作业的 namespace 骨架）
