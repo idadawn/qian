@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>§10 S4 AI 原生 Agent 平台与模型服务网关 - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<link href="/pr-preview/pr-202/static/css/styles.6fe70ee060.css" rel="stylesheet">
+<link rel="preload" href="/pr-preview/pr-202/static/js/async/route-ffea9aacee97.3138aa7753.js" as="script">
+<script defer src="/pr-preview/pr-202/static/js/styles.82d8051f13.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/lib-react.50abd11734.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/lib-router.081cdedb3d.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/6.69fa91b589.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/index.1f8f231f48.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/pr-preview/pr-202/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/pr-preview/pr-202/design/prd/10-s4-agent.md">
+<link rel="describedby" href="/pr-preview/pr-202/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="§10 S4 AI 原生 Agent 平台与模型服务网关 - Qian 文档">
+<meta name="description" content="组件模型 v2 口径（ADR-020 D20.9）。Agent 表面从 S1 起即是一等公民：skills / agents / commands / hooks / MCP / tools 是组件文件夹里的声明式表面（§07 7.2.2…">
+<meta property="og:description" content="组件模型 v2 口径（ADR-020 D20.9）。Agent 表面从 S1 起即是一等公民：skills / agents / commands / hooks / MCP / tools 是组件文件夹里的声明式表面（§07 7.2.2…"></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/pr-preview/pr-202/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /pr-preview/pr-202/llms.txt, the full documentation bundle is available at /pr-preview/pr-202/llms-full.txt, and this page is available as Markdown at /pr-preview/pr-202/design/prd/10-s4-agent.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/pr-preview/pr-202/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/pr-preview/pr-202/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/pr-preview/pr-202/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/pr-preview/pr-202/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><button type="button" class="rp-switch-appearance" aria-label="切换主题"><span aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 19 19" class="rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></span></button><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/pr-preview/pr-202/design/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">文档索引</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/roadmap.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">路线图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/changelog.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">架构决策（ADR）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/adr/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-001-kun-relationship.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-001 Qian 与 Kun 的关系</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-002-plugin-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-002 插件模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-003-kernel-boundary-s1-services.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-003 内核边界与 S1 服务拆分</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-004-database-tenant-isolation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-004 数据库与租户隔离</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-005-identity-sso.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-005 身份与 SSO</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-006-authorization-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-006 鉴权模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-007-config-center-apollo.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-007 配置中心</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-008-events-messaging.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-008 事件与消息</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-009-audit.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-009 审计</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-010-gateway-layers.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-010 网关分层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-011-metadata-dynamic-data.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-011 元数据与动态数据层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-012-workflow-engine.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-012 流程引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-013-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-013 前端与 yue</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-014-marketplace.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-014 应用市场形态</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-015-model-gateway.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-015 模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-016-iclaw-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-016 与 iClaw 的边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-017-deployment.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-017 部署</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-018-stages-s1-scope.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-018 阶段切分与 S1 范围</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-019-library-first-packages.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-019 库优先（Library-first）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-020-component-model-v2.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-020 组件模型 v2</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-021-product-family-structure.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-021 产品族结构</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-022-rspress-unified-component-docs.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-022 统一 Rspress 组件文档与验收</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-202/design/prd/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">产品需求（PRD）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/prd/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/01-vision.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">1. 愿景与定位</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/02-principles.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">2. 设计原则</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/03-concepts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">3. 核心概念模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/04-market.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">4. 形态与目标市场</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/05-differentiators.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">5. 核心差异化</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/06-users-scenarios.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">6. 用户与场景</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/07-s1-foundation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§07 S1 技术底座功能规格</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/08-s2-lowcode.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§08 S2 低代码构建</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/09-s3-customer.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§09 S3 面向客户</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/10-s4-agent.html" class="rp-sidebar-item rp-sidebar-item--active rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§10 S4 AI 原生 Agent 平台与模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/11-ux-glossary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">11. 体验原则与产品词表</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/12-boundaries.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§12 能力边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/13-security.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§13 权限与安全</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/14-quality.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§14 质量与评估</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/15-roadmap.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">15. 演进路线（指针）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/16-metrics.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">16. 成功指标</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/17-references.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">17. 借鉴声明</span></div><div class="rp-sidebar-item__right"></div></a><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">专题规格</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/prd/specs/component-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 组件模型 v2（清单 · 表面 · 运行时 · profile · 市场 · CLI）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/specs/data-contracts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">数据过滤与记录扩展契约 v1</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/specs/docs-site.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">文档站信息架构与规范（Rspress 2.0）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/specs/plugin-manifest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 插件清单 v1（<code>qian-plugin.yaml</code>）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/specs/yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · yue 组件库</span></div><div class="rp-sidebar-item__right"></div></a></div></div></div></div><a href="/pr-preview/pr-202/design/migration/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移方案</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/migration/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/01-tenant-identity-access.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 01 · 租户、组织、身份与 SSO、权限、系统管理、控制台与个人中心、消息入口、移动端</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/02-app-form-list.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 02 · 应用、表单设计、列表设计、视图、功能发布、运行时数据引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/03-workflow.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 03 · 流程与审批</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/04-data-integration-presentation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 04 · 数据中心、集成中心、消息与调度、门户、报表、打印、大屏、文件预览、AI 中心清单</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/05-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 05 · 参考平台前端组件与设计器全集 → yue 分层与阶段、工程化、移动端策略</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">决策清单</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/decisions/component-entry-metadata.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">组件清单入口与程序集内多个插件实现</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/decisions/key-decisions-v0.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 关键决策清单 v0（已全部拍板，作为历史记录保留）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/decisions/tenancy-http-v1-schema-correction.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">租户 HTTP v1 校验声明的首次发布基线纠偏</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">调研基线</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/research/baseline-digest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 调研基线要点汇编</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">generated</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/generated/config-catalog.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置目录</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/generated/event-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">事件图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/generated/module-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模块图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/generated/seam-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">seam 图</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">ops</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/ops/configuration-runbook.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置开发、运行与故障处置（S1-CFG-001 / 002 / 003）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/ops/k3s-control-plane-recovery.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">K3s 控制面故障处置方案（S1-DEP-007）</span></div><div class="rp-sidebar-item__right"></div></a></div></div></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="10-s4-ai-原生-agent-平台与模型服务网关"><a href="#10-s4-ai-原生-agent-平台与模型服务网关" class="rp-header-anchor rp-link" aria-label="链接到 §10 S4 AI 原生 Agent 平台与模型服务网关">#</a>§10 S4 AI 原生 Agent 平台与模型服务网关<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><a class="rp-llms-button" href="/pr-preview/pr-202/design/prd/10-s4-agent.md" aria-label="查看本页 Markdown">Markdown 链接</a></div>
+<blockquote>
+<p>本页由构建脚本镜像自仓库 <a href="https://github.com/idadawn/qian/blob/main/docs/prd/10-s4-agent.md" target="_blank" rel="noopener noreferrer" class="rp-link"><code>docs/prd/10-s4-agent.md</code></a>，请修改源文件，不要改本页。</p>
+</blockquote>
+<blockquote>
+<p>本章粒度：S4 写到范围与退出标准；<strong>模型服务网关（10.5）是本期唯一详细规划的 AI 范围</strong>，按《GPUStack + Higress 模型服务整合方案》写细，并结合现网已有 Higress 设施的差距分析。决策引用写 <code>ADR-0xx</code>（ADR-015 模型网关、ADR-016 iClaw 边界、ADR-010 网关分层、ADR-007 配置中心、ADR-009 审计、ADR-018 阶段）。S1 底座见 §07，S2 低代码构建见 §08，S3 市场与计量见 §09。网关地址一律用占位 <code>gw.example.com</code>，不出现任何内部域名与密钥。决策清单主表的待拍板问题写 <code>Q1–Q18</code>，补充裁决（基线汇编编号）写 <code>补充裁决 Qxx</code>。</p>
+<p>优先级口径同 §08：P0 = S4 退出标准关键路径；P1 = S4 必做非关键路径；P2 = S4 可选。10.5 另按整合方案的「第 1–4 阶段」标注，第 1–2 阶段为本期必做（接入范围先 LLM + Embedding，Q17）。</p>
+</blockquote>
+<h3 class="rp-toc-include" id="101-目标与边界"><a href="#101-目标与边界" class="rp-header-anchor rp-link" aria-label="链接到 10.1 目标与边界">#</a>10.1 目标与边界</h3>
+<p><strong>组件模型 v2 口径（ADR-020 D20.9）</strong>。Agent 表面从 S1 起即是一等公民：skills / agents / commands / hooks / MCP / tools 是组件文件夹里的声明式表面（§07 7.2.2），所有模型可见的东西注册在 <code>ctx.Tools</code> 等注册表里并受 scope 过滤。S4 增加的是三件事：<code>extensions</code>（模型在策略下挂载与卸载插件、运行时自修改，建立在 S1 同一套装载器上，S1 只开放给人类 CLI）、每租户 MCP 门面（由 <code>ctx.Tools</code> 的租户 scope 视图派生，不是另一套注册表）、Agent 生成组件（产物落为草稿组件文件夹，经与人工相同的校验器与 TCK）。本章凡写「能力目录」「工具」处，均指 S1 已有注册表的 scope 视图。</p>
+<h4 class="rp-toc-include" id="1011-目标adr-018"><a href="#1011-目标adr-018" class="rp-header-anchor rp-link" aria-label="链接到 10.1.1 目标（ADR-018）">#</a>10.1.1 目标（ADR-018）</h4>
+<p>S4 退出标准：<strong>Agent 能发现、调用、编排乃至生成平台能力与应用</strong>——</p>
+<ol>
+<li>发现：Agent 经每租户 MCP 门面列出该租户已启用插件的能力（按用户委托作用域过滤），拿到 schema、副作用、所需 scope、示例。</li>
+<li>调用：Agent 以委托某用户的身份调用一个写类能力（如新增记录、发起审批），审计记录「哪个 Agent 以谁的名义做了什么」，权限 = 委托人权限 ∩ 授予 scope。</li>
+<li>编排：Agent 按 Arazzo 描述完成一个跨三个能力的多步业务（查 → 建 → 发起审批），审批人工步骤以 Operation <code>input_required</code> 中断并恢复。</li>
+<li>生成：Agent 根据自然语言生成一个 <code>package</code> 应用包（数据模型 + 表单 + 列表 + 流程），经校验 + TCK + 差异审阅 + 人工确认后安装到租户。</li>
+</ol>
+<h4 class="rp-toc-include" id="1012-边界adr-016"><a href="#1012-边界adr-016" class="rp-header-anchor rp-link" aria-label="链接到 10.1.2 边界（ADR-016）">#</a>10.1.2 边界（ADR-016）</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>能力</th><th>归属</th><th>说明</th></tr></thead><tbody><tr><td>Agent 推理引擎、Sub-agent、Workflow 编排、路由器、记忆四层、Execution Trace、Skills 引擎、工具协议与门禁（ToolSpec / ToolPolicy / RiskGate / confirm）</td><td><strong>iClaw</strong></td><td>Qian 不写任何 Agent loop</td></tr><tr><td>沙箱</td><td>iClaw 已接的 CubeSandbox（E2B 兼容 API）</td><td>Qian 只做对接层 <code>qian.sandbox</code></td></tr><tr><td>模型数据面</td><td><strong>Higress</strong>（共用，10.5）</td><td>Higress 对租户无感；租户/配额/计量在平台侧</td></tr><tr><td>身份/审计/Outbox 基座</td><td><strong>Kun</strong>（共用）</td><td>S2S claim 同形、事件信封同形</td></tr><tr><td>能力提供方 + 业务主数据权威（租户、组织、元数据、数据、流程）</td><td><strong>Qian</strong></td><td>以 MCP + 事件暴露；租户主数据权威归 Qian（Q15）</td></tr><tr><td>插件机制、应用市场、私有 MCP registry</td><td>Qian</td><td>注册表形状对齐 iClaw 的 Package / Release / Publication / Installation 四层</td></tr></tbody></table></div>
+<p>一句话：<strong>Qian = 能力提供方 + 业务主数据权威；iClaw = Agent 运行时 + AI 资产控制面；Higress = 共用数据面；Kun = 共用基座。</strong> 与 iClaw 的对齐项：S2S JWT claim 形状（<code>iss / aud[] / sub / tenant_id / project_id? / roles[] / scope / session_id / jti</code>，exp−iat ≤ 300s）、事件信封（<code>version / event_id / subject / occurred_at / tenant_id / payload</code>）、工具元数据（<code>sideEffect / policyHint / requiredScopes / requiredSecrets / schemaSha256 / contractVersion</code>）、契约格式（OpenAPI 3.1 + JSON Schema 2020-12，<code>additionalProperties: false</code>）、协议版本（MCP 2026-07-28，见 10.2）。</p>
+<p><strong>AI 资产注册权威（R12）</strong>。Qian 自身能力（插件、能力目录、由其派生的 MCP 工具与 resources、应用市场条目）以 Qian 注册表为真相源，向 Nacos AI Registry / iClaw Platform facade 的注册只是经 adapter 的投影，投影失败或滞后不改变 Qian 侧状态；iClaw 自有 AI 资产（智能体、提示词库、知识库、Skills、工具策略）的权威归 iClaw，Qian 只消费其只读视图，不复制、不改写（ADR-016 D16.8）。</p>
+<h4 class="rp-toc-include" id="1013-s4-新增单元与插件"><a href="#1013-s4-新增单元与插件" class="rp-header-anchor rp-link" aria-label="链接到 10.1.3 S4 新增单元与插件">#</a>10.1.3 S4 新增单元与插件</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>单元 / 插件</th><th>形态</th><th>职责</th><th>级别</th></tr></thead><tbody><tr><td><code>qian.mcp-facade</code></td><td>service（可放非 AOT 独立服务，若 C# MCP SDK 过不了 Kun 的 AOT 门禁；<code>runtime.form: service</code>，自带 profile）</td><td>每租户逻辑 MCP 门面：由 <code>ctx.Tools</code> 的租户 scope 视图派生工具 / resources（§07 7.2.1），经 Higress MCP 路由暴露</td><td>P0</td></tr><tr><td><code>extensions</code>（<code>Qian.Runtime</code> 装载器的 Agent 入口）</td><td>运行时能力</td><td>模型在策略（<code>policyHint</code>、租户管理员批准）下挂载与卸载组件到 Agent 会话 scope（<code>agent-session:&lt;id&gt;</code>），会话结束逆序撤销；挂载到应用 scope 需应用管理员确认、租户 scope 需租户管理员确认（R36）</td><td>P1</td></tr><tr><td><code>qian.identity</code>（S4 增量）</td><td>module</td><td>Agent 客户端类型、RFC 8693 令牌交换与 <code>act</code> 链、CIMD、租户自助 Agent 授权管理页（P2）</td><td>P0</td></tr><tr><td><code>qian.metadata</code>（S4 增量）</td><td>module</td><td>Agent 用的元数据生成闭环（人用版 S2 已有）：Agent 生成的组件落为草稿组件文件夹并经 §07 7.2.2 同一校验器、<code>generatedBy / promptHash / 审核人</code>、AI 生成内容标识</td><td>P0</td></tr><tr><td><code>qian.skills</code></td><td>打包能力</td><td><code>skills/&lt;name&gt;/SKILL.md</code> 自 S1 起即是组件表面（§07 7.2.2，agentskills.io 格式）；S4 增加 Skills over MCP 分发与摘要清单</td><td>P1</td></tr><tr><td><code>qian.sandbox</code></td><td>对接层</td><td>代码模式：契约生成的强类型 SDK 在 CubeSandbox 执行</td><td>P2</td></tr><tr><td><code>qian.model-gateway</code>（S4 完整）</td><td>service adapter</td><td>10.5</td><td>P0</td></tr><tr><td><code>qian.operations</code>（S4 增量）</td><td>module</td><td>Tasks / MRTR 映射、A2A Task 中断态；急停与监督收件箱（P2）</td><td>P1 / P2</td></tr><tr><td><code>qian.shell</code>（S4 增量）</td><td>ui</td><td><code>@yue/agent</code>、MCP Apps 视图（P2）、WebMCP（P2）</td><td>P2</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="102-发现--调用--编排--生成四条路径与每租户-mcp-门面p0--s4"><a href="#102-发现--调用--编排--生成四条路径与每租户-mcp-门面p0--s4" class="rp-header-anchor rp-link" aria-label="链接到 10.2 发现 / 调用 / 编排 / 生成四条路径与每租户 MCP 门面（P0 · S4）">#</a>10.2 发现 / 调用 / 编排 / 生成四条路径与每租户 MCP 门面（P0 · S4）</h3>
+<h4 class="rp-toc-include" id="范围与边界"><a href="#范围与边界" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<p><strong>发现</strong></p>
+<ul>
+<li>✅ 能力目录（S1 起）是发现入口：<code>list/search</code> 返回 schema、副作用、所需 scope、示例；结果按调用者权限过滤并带 <code>ttlMs / cacheScope: private</code>（MCP 2026-07-28 要求列表可缓存，按授权变化的列表须标 private）。</li>
+<li>✅ <strong>每租户一个逻辑 MCP 门面</strong>：工具 = <code>ctx.Tools</code> 注册表在租户 scope 下的视图（已挂载组件的工具 ∩ 租户 scope <code>restrict</code> ∩ 用户委托作用域，§07 7.2.1）；元数据（实体 Schema、流程定义、控件目录）以 MCP resources 只读暴露；Higress 托管，客户端指向 <code>https://gw.example.com/mcp/&lt;tenant-facade&gt;</code>。</li>
+<li>✅ <strong>S4 启动前置（R14）</strong>：Higress 升级到 ≥ 2.2.4 并开启 MCP 托管，列为 S3 末 / S4 启动前置项（10.5.8 第 4 阶段、10.5.10；ROADMAP S3 核心交付与 S3-M3）；未完成不进入 S4-M1。</li>
+<li>✅ 不只暴露 CRUD：流程发起、审批动作、列表动作、数据接口都直接成为工具（「元数据资产 = 工具库」）；平台级同时提供 (a) 精选意图级工具 (b) 能力目录搜索工具 (c) 契约生成的强类型 SDK + 沙箱执行（代码模式，P2）；不做「每操作一个工具」的全量平铺。</li>
+<li>✅ 能力随组件携带 <code>skills/</code>（S1 起即是声明式表面，§07 7.2.2），S4 经 Skills over MCP 分发（带摘要清单）。</li>
+<li>✅ 市场兼任私有 MCP registry（<code>server.json</code> 兼容，§09）。</li>
+</ul>
+<p><strong>调用</strong></p>
+<ul>
+<li>✅ Agent 不直连 Qian 服务裸 URL，一律经 Higress MCP 路由（chokepoint、出网 deny-by-default、consumer 头计量）。</li>
+<li>✅ 「知道 ID 不构成权限」：授权来自「发起用户的委托 + 本 run 的授权快照」；Qian RBAC 接受 S2S JWT 的 <code>sub + tenant_id + scope</code> 做用户态鉴权（10.3）。</li>
+<li>✅ 令牌受众绑定（RFC 8707）、禁止令牌透传、最小 scope + 逐步提权（403，<code>WWW-Authenticate</code> 的 <code>error=&quot;insufficient_scope&quot;</code>，响应体 <code>code = INSUFFICIENT_SCOPE</code>，R45）；网关按 <code>Mcp-Method / Mcp-Name</code> 头鉴权限流（配置方式需 PoC，敏感参数不得映射到头）。</li>
+<li>✅ 写类工具必须幂等（<code>idempotencyKey</code>）：2026-07-28 删除了 SSE 断点续传，断流重发会重复执行。</li>
+</ul>
+<p><strong>编排</strong></p>
+<ul>
+<li>✅ 多步业务流程用 Arazzo 描述（<code>agent.workflows</code> 清单字段），供 Agent 按确定性步骤编排；已发布流程本身是一个意图级能力（「工作流即工具」，§08 8.14）。</li>
+<li>✅ 长任务与审批 = Operation/Task 资源（§08 8.12），<code>input_required</code> 携带结构化输入请求，对齐 MCP Tasks（<code>tasks/get/update/cancel</code>）与 A2A Task 两个中断态。</li>
+<li>❌ A2A 作为 Qian 内部编排协议（只作 S4 对外互通，签名 Agent Card，P2）。</li>
+</ul>
+<p><strong>生成</strong></p>
+<ul>
+<li>✅ Agent 生成应用 = 生成 <code>package</code> 插件包（10.4）；Agent 生成的代码只允许落在 <code>function</code>（Wasm 沙箱）——S4 不放松任何 S3 的安全边界。</li>
+</ul>
+<p><strong>协议版本</strong></p>
+<ul>
+<li>✅ 目标 <strong>MCP 2026-07-28</strong>：无状态、<code>server/discover</code>、MRTR 取代服务端反向请求、头部路由、列表可缓存、JSON Schema 2020-12、Tasks/Apps/Skills 为官方扩展；经 <code>server/discover</code> 兼容旧客户端。iClaw 客户端仍钉旧版，与 iClaw 制定协议对齐计划（ADR-016）。Higress 自 v2.2.4 起实现该版本并支持新旧双模式。</li>
+<li>✅ 官方 C# MCP SDK 能否过 Kun <code>PublishAot /warnaserror</code> 门禁需实测；若不能，MCP 端点放在非 AOT 独立服务或交给 Higress 由契约生成。</li>
+</ul>
+<h4 class="rp-toc-include" id="验收标准"><a href="#验收标准" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 租户 A 的用户 U 授权 Agent 后，Agent 经 <code>https://gw.example.com/mcp/&lt;A&gt;</code> 列出的工具恰为 U 有权限的能力；租户 B 的能力不可见；U 权限变更后 <code>ttlMs</code> 内列表刷新。<strong>测法</strong>：两租户 + 权限变更。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 同一写类工具带相同 <code>idempotencyKey</code> 调用两次只执行一次。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 旧版 MCP 客户端经 <code>server/discover</code> 协商后可完成一次工具调用。<strong>测法</strong>：双版本客户端。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> Arazzo 描述的「查员工 → 建请假单 → 发起审批」被 Agent 执行，审批节点以 Operation <code>input_required</code> 中断，审批人处理后 Agent 恢复并拿到结果。<strong>测法</strong>：端到端（S4 退出标准第 3 条）。</li>
+</ul>
+<h3 class="rp-toc-include" id="103-agent-主体与委托链授权快照安全防线p0--s4"><a href="#103-agent-主体与委托链授权快照安全防线p0--s4" class="rp-header-anchor rp-link" aria-label="链接到 10.3 Agent 主体与委托链、授权快照、安全防线（P0 · S4）">#</a>10.3 Agent 主体与委托链、授权快照、安全防线（P0 · S4）</h3>
+<h4 class="rp-toc-include" id="范围与边界-1"><a href="#范围与边界-1" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ <strong>统一主体模型</strong>（S1 设计、S4 启用）：<code>user / service / agent</code> 三类 actor；Agent 是客户端注册表中的一种客户端类型（有归属人、可吊销、可审计）；代表用户执行用 RFC 8693 令牌交换，令牌带 <code>act</code> 委托链；客户端注册优先 CIMD，DCR 兼容保留。</li>
+<li>✅ <strong>有效权限 = 委托人权限 ∩ 授予 Agent 的 scope</strong>；权限点带风险级别与 step-up；危险操作 Agent 只能发起申请（「待确认票据」契约）；签名类动作 <code>humanOnly</code>；转审、协办、撤销对 Agent 禁止（补充裁决 Q26）。</li>
+<li>✅ <strong>运行授权快照</strong>：工具 schema 哈希进入 <code>ToolGrant</code>，schema 变即授权失效；工具描述哈希钉死（§09）是其供给侧。</li>
+<li>✅ <strong>审计</strong>：<code>actor_type=agent</code>、<code>on_behalf_of</code>、<code>capability_id</code>、<code>contract_version</code>、输入哈希、来源通道（UI / API / MCP / A2A），接入 ADR-009 哈希链；<code>trace_id</code> 与 iClaw Execution Trace 贯通。</li>
+<li>✅ <strong>授权服务器对齐 MCP</strong>（S3 必做、S4 前验证）：RFC 8414 / OIDC 发现、PKCE、<code>resource</code> 参数、RFC 9728 受保护资源元数据、<code>iss</code> 回传。</li>
+<li>✅ <code>Check / ListAllowedActions / Explain</code> 以工具形式暴露；结构化错误码与多语言文案导出为 JSON。</li>
+<li>❌ Qian 侧实现 ToolPolicy / RiskGate 运行时权威（归 iClaw；Qian 只提供 <code>sideEffect / policyHint</code> 默认值）。</li>
+</ul>
+<h4 class="rp-toc-include" id="安全防线表确定性控制优先"><a href="#安全防线表确定性控制优先" class="rp-header-anchor rp-link" aria-label="链接到 安全防线表（确定性控制优先）">#</a>安全防线表（确定性控制优先）</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>风险</th><th>平台防线</th><th>阶段</th></tr></thead><tbody><tr><td>提示注入（直接/间接，含工具描述藏指令）</td><td>外部内容与工具返回视为不可信；摄入不可信内容后对后续动作降权（Rule of Two）；高风险动作强制人工确认；不依赖检测器</td><td>S4（S1 起副作用分级就位）</td></tr><tr><td>工具投毒 / rug pull</td><td>已批准工具「名称 + 描述 + 规范化 schema」哈希钉死，变更即下线复审；Skills 清单摘要校验</td><td>S3 必做</td></tr><tr><td>越权 / 混淆代理</td><td>令牌受众绑定 + 禁止透传；下游各跳重新验签；最小 scope + 逐步提权；按调用者权限过滤工具列表；句柄绑定主体；Agent 只拿委托人权限子集</td><td>S1（令牌与权限）/ S4（列表过滤）</td></tr><tr><td>数据外泄</td><td>沙箱与连接器出网白名单/出口代理（阻断私网与云元数据；平台自有 S1 见 §13.8，低代码与第三方出网点 S2 见 §08 8.14）；字段敏感度驱动脱敏；敏感参数不入 HTTP 头；对外发送类工具默认需确认</td><td>S1 / S2 基线 / S4</td></tr><tr><td>破坏性操作 / 失控循环</td><td>副作用分级 + 默认策略（读放行、写确认、破坏性二次确认或禁止）；<code>dryRun</code>；软删除与回收站；元数据版本回滚；调用频率上限；急停开关（按 Agent/租户/工具，P2）</td><td>S1（分级）/ S4（急停）</td></tr><tr><td>成本失控</td><td>Higress token 限流与缓存（10.5）；租户/应用/Agent 预算与告警；工具列表确定性排序提高提示缓存命中；渐进式发现/代码模式</td><td>S3 必做</td></tr><tr><td>供应链</td><td>插件签名与哈希、命名空间验证、安装时展示完整权限与命令、沙箱默认最小权限、按 digest 引用</td><td>S1 必做</td></tr><tr><td>第三方插件代码</td><td>永不进共享进程；<code>service</code> 独立工作负载身份；每插件独立 PG schema 与数据库角色；事件主题 ACL；出口 NetworkPolicy；CSP 由清单生成；Wasm 燃料/内存/超时限额</td><td>S1 规范 / S3 对第三方生效</td></tr><tr><td>合规</td><td>AI 生成内容显式/隐式标识；模型路由按数据驻留策略；审计留痕</td><td>S4</td></tr></tbody></table></div>
+<h4 class="rp-toc-include" id="验收标准-1"><a href="#验收标准-1" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> Agent 以委托 U 的令牌调用 U 无权限的能力返回 403 <code>INSUFFICIENT_SCOPE</code>（头部 <code>error=&quot;insufficient_scope&quot;</code>，R45）；调用 <code>humanOnly</code> 动作返回 <code>ACTION_HUMAN_ONLY</code>；审计条目含 <code>actor=agent, on_behalf_of=U, channel=MCP</code>。<strong>测法</strong>：S2S 令牌模拟。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 已授权工具的 schema 变更后，旧 <code>ToolGrant</code> 失效，再次调用要求重新授权。<strong>测法</strong>：注册表接口。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 带指令的工具返回内容不会触发后续破坏性动作（策略降权生效）。<strong>测法</strong>：注入用例集（与 iClaw 联测）。</li>
+</ul>
+<h3 class="rp-toc-include" id="104-agent-生成应用--生成-package-的闭环p0--s4"><a href="#104-agent-生成应用--生成-package-的闭环p0--s4" class="rp-header-anchor rp-link" aria-label="链接到 10.4 Agent 生成应用 = 生成 package 的闭环（P0 · S4）">#</a>10.4 Agent 生成应用 = 生成 package 的闭环（P0 · S4）</h3>
+<h4 class="rp-toc-include" id="范围与边界-2"><a href="#范围与边界-2" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ 产物形态：<code>template</code> 或 <code>managed</code> 的 <code>package</code> 组件（数据模型、表单、列表、流程、菜单、角色模板、种子数据），<strong>生成格式 = 导入格式</strong>（§08 8.1）；代码只能落 <code>function</code> Wasm。产物落为<strong>草稿组件文件夹</strong>（<code>.qian-plugin/plugin.json</code> + <code>forms/</code> <code>lists/</code> <code>flows/</code> <code>pages/</code> + 可选 <code>skills/</code>），经 §07 7.2.2 的同一校验器与 7.2.3 TCK，再进 marketplace 条目（ADR-020 D20.9）。</li>
+<li>✅ <code>extensions</code>：模型在策略下经同一装载器把组件挂载到 Agent 会话 scope（<code>agent-session:&lt;id&gt;</code>），会话结束即逆序撤销；挂载到应用 scope 需应用管理员确认、租户 scope 需租户管理员确认（R36）；S1 的装载器不开放给模型。</li>
+<li>✅ 闭环：Agent 提交 patch/包 → Schema 与语义校验（控件目录、Field Type Catalog、节点 Schema 全部是数据，Agent 只能产出目录内类型）→ TCK（清单、契约、幂等、越权探测）→ 预览（表单/列表渲染、流程节点树）→ 差异审阅（JSON Patch + 人读摘要）→ 人工确认 → 安装/发布 → 可回滚。校验是发布前的强制门禁。</li>
+<li>✅ 元数据记录 <code>generatedBy / promptHash / 审核人</code>；按《人工智能生成合成内容标识办法》做显式/隐式标识。</li>
+<li>✅ 工具最小集（§08 预留契约落地）：<code>listWidgets</code>、<code>listDataSources</code>、<code>generateFormFromTable</code>、<code>insertFields</code>、<code>validateForm / validateList</code>、<code>previewForm</code>、<code>publish(dryRun)</code>、<code>mountMenu</code>、<code>workflow:validate</code>、<code>bundles.install(dryRun)</code>；AI 建表/生成字段、AI 建流程（只生成「设计中」草稿，标出待补项）、OCR 控件库在此阶段落地，模型调用全部经 10.5。</li>
+<li>✅ 市场可被 Agent 检索（机器可读包摘要）；Agent 只能提议安装/升级，付费与权限动作需人工批准；Agent 生成的应用上架走同一审核流水线与自动审核门禁（<code>generatedBy</code> 包的权限最小化检查）。</li>
+<li>❌ Agent 直接写运行时数据库或绕过发布向导；Agent 生成的进程内代码（module/service）；Agent 绕过装载器直接改 profile / patch 文件或 <code>scope_patches</code> 表。</li>
+</ul>
+<h4 class="rp-toc-include" id="验收标准-2"><a href="#验收标准-2" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 输入「做一个报销申请应用：报销单含明细子表、金额公式、部门主管审批、财务复核」，Agent 产出 package 通过校验与 TCK，预览可见，人工确认后安装到租户并可完整走一遍审批；元数据带 <code>generatedBy / promptHash</code>。<strong>测法</strong>：S4 退出标准第 4 条端到端。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 产物中出现目录外控件类型或含 <code>module</code> 组件时，在校验步被拒且错误可被 Agent 据以自纠正（结构化、带允许值）。<strong>测法</strong>：坏样例。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 安装到两个租户后，其中一个租户的 <code>tenantEditable</code> 修改在包升级后保留（复用 §08 退出标准第 2 条脚本）。<strong>测法</strong>：脚本复用。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> Agent 产出的草稿组件文件夹不过 §07 7.2.2 校验器时被拒并返回带文件路径与 JSON Pointer 的错误；通过后 <code>qian add</code> 到沙箱租户 scope 可用，会话结束后 <code>extensions</code> 挂载的组件被逆序撤销且 <code>dump-config</code> 无残留。<strong>测法</strong>：坏样例 + scope 断言。</li>
+</ul>
+<h3 class="rp-toc-include" id="105-模型服务网关p0--本期唯一详细规划的-ai-范围"><a href="#105-模型服务网关p0--本期唯一详细规划的-ai-范围" class="rp-header-anchor rp-link" aria-label="链接到 10.5 模型服务网关（P0 · 本期唯一详细规划的 AI 范围）">#</a>10.5 模型服务网关（P0 · 本期唯一详细规划的 AI 范围）</h3>
+<blockquote>
+<p>依据：ADR-015（并入团队现有 Higress / MaaS 基础设施；GPUStack 作为 OpenAI 兼容上游 + Provider Adapter；不自写模型代理；不把 SSO 交给 Higress）、《GPUStack + Higress 模型服务整合方案》第 1–4 阶段、K 基线 §6.4 现网基线。接入范围先 <strong>LLM + Embedding</strong>（Q17），多模态按需。Qian 侧交付见 10.5.11。</p>
+</blockquote>
+<h4 class="rp-toc-include" id="1051-目标架构与四条约定"><a href="#1051-目标架构与四条约定" class="rp-header-anchor rp-link" aria-label="链接到 10.5.1 目标架构与四条约定">#</a>10.5.1 目标架构与四条约定</h4>
+<p>三层：<strong>所有客户端只对接 Higress；Higress 后面挂 GPUStack（自建 GPU 推理）与云 API（OpenAI、Anthropic、OpenRouter 作 fallback）；GPUStack 只管 GPU 与模型。</strong> 实线主路、虚线 fallback；Redis 与观测栈只服务于网关，客户端和后端都不直接碰它们。</p>
+<p>四条约定，任何一条破了，换网关或换模型都会牵动客户端：</p>
+<ol>
+<li><strong>客户端只用两种协议</strong>：OpenAI（<code>/v1/chat/completions</code>、<code>/v1/embeddings</code>、<code>/v1/images/*</code>、<code>/v1/audio/*</code>）与 Anthropic（<code>/v1/messages</code>）；不出现任何供应商私有格式。</li>
+<li><strong>客户端只用逻辑模型名</strong>（<code>chat-default</code>、<code>chat-strong</code>、<code>chat-reasoning</code>、<code>vision-default</code>、<code>embed-default</code>、<code>image-gen-default</code>、<code>tts-default</code>、<code>asr-default</code>、<code>rerank-default</code>……），真实模型名只在 Higress 的模型映射里出现。</li>
+<li><strong>一把 key 对应一个消费者</strong>（一个平台或一个 Agent 工具），由 Higress 消费者签发；GPUStack 与云 API 的 key 只有 Higress 持有。</li>
+<li><strong>Higress 是逻辑模型名的唯一真源</strong>：映射、fallback、配额都只在这一层配，GPUStack 里不做任何路由。</li>
+</ol>
+<p>与 ADR-010 的关系：<code>qian.gateway</code>（Kun.Gateway 加固）是业务 API 边界（外部 JWT → S2S），Higress 只管模型与 MCP 流量；两套网关职责从 S1 画清、不互相承担；Higress 对租户无感，租户/配额/计量在平台侧归集。</p>
+<h4 class="rp-toc-include" id="1052-组件清单与阶段"><a href="#1052-组件清单与阶段" class="rp-header-anchor rp-link" aria-label="链接到 10.5.2 组件清单与阶段">#</a>10.5.2 组件清单与阶段</h4>
+<p>最小可上线集合 5 个组件：Higress Gateway、Higress Console、Redis、GPUStack Server、GPUStack Worker；其余按阶段加。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>组件</th><th>作用</th><th>部署位置</th><th>阶段</th><th>现网状态（K §6.4）</th></tr></thead><tbody><tr><td>Higress Gateway（Envoy 数据面）</td><td>唯一对外入口：认证、路由、fallback、配额、限流、统计</td><td>CPU 节点，2 副本起</td><td>第 1 阶段</td><td><strong>已有</strong> 2.2.3 两副本 + PDB</td></tr><tr><td>Higress Console</td><td>配置供应商、路由、消费者、插件</td><td>同集群内网</td><td>第 1 阶段</td><td><strong>已有</strong>（内网）</td></tr><tr><td>Redis</td><td>ai-quota 配额、token 限流、语义缓存存储</td><td>同集群，主从/哨兵</td><td>第 1 阶段</td><td><strong>已有</strong> 网关专用 Redis HA</td></tr><tr><td>GPUStack Server</td><td>模型目录、调度、API key、用量看板</td><td>CPU 节点或 GPU 主节点</td><td>第 1 阶段</td><td><strong>缺</strong>（推理层现为其他方案，需切换；GPU 归属待定）</td></tr><tr><td>GPUStack Worker</td><td>拉起 vLLM / SGLang / 自定义后端</td><td>每台 GPU 机器一个</td><td>第 1 阶段</td><td><strong>缺</strong></td></tr><tr><td>Prometheus + Grafana（或日志服务）</td><td>AI 大盘、按消费者 Token 统计、计费数据源</td><td>同集群</td><td>第 1 阶段</td><td><strong>已有</strong> 官方 AI 大盘 + Loki 90 天访问日志</td></tr><tr><td>价格表 + 账单脚本</td><td>ai-statistics 数据算金额，出周账单</td><td>一个定时任务（走 §07 调度）</td><td>第 2 阶段</td><td><strong>缺</strong></td></tr><tr><td>对象存储（MinIO / OSS）</td><td>多模态输入输出文件，预签名 URL</td><td>与 GPU 同机房</td><td>第 3 阶段</td><td>复用 <code>qian.files</code> 的 S3/OSS provider</td></tr><tr><td>开发者门户（HiMarket，可选）</td><td>自助注册、订阅模型产品、领凭证、看用量</td><td>同集群</td><td>第 3 阶段</td><td><strong>缺</strong>；平台超过 5 个或需自助领 key 时再评估</td></tr><tr><td>视频任务服务（自建）</td><td>统一提交/查状态/取结果，适配各视频供应商</td><td>普通服务，注册为 Higress 路由</td><td>第 4 阶段</td><td><strong>缺</strong>；本期不做</td></tr></tbody></table></div>
+<p>部署形态：沿用现有 K3s，Helm 装 Higress 并兼作模型流量 Ingress，GPUStack 用其 K8s 方式装 Worker。网络只开三条线：公网到 Higress 的 443；Higress 到 GPUStack API 端口；Higress 到公网（云供应商出口，含 OpenRouter 出网白名单放行）。GPUStack 端口不对外、也不对其他内网服务开放。</p>
+<h4 class="rp-toc-include" id="1053-higress-配置方案"><a href="#1053-higress-配置方案" class="rp-header-anchor rp-link" aria-label="链接到 10.5.3 Higress 配置方案">#</a>10.5.3 Higress 配置方案</h4>
+<p>配置分六块，顺序即上线顺序：<strong>供应商 → 路由 → 模型映射 → 消费者 → 配额限流 → 可观测</strong>；MCP 托管放最后。全部配置导出进 git（GitOps，ADR-017），Higress 锁定小版本，升级前预发验证。</p>
+<p><strong>（1）AI 服务提供者（4 个）</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>供应商</th><th>插件 type</th><th>地址</th><th>说明</th></tr></thead><tbody><tr><td>gpustack</td><td>openai</td><td><code>http://&lt;gpustack-server&gt;/v1</code>（集群内服务名）</td><td>自定义 OpenAI 兼容地址，token 为 GPUStack 签发的唯一一把 <code>higress-gateway</code> key（secretRef）</td></tr><tr><td>openai</td><td>openai</td><td>官方</td><td>配 2 个以上 token，插件随机轮换</td></tr><tr><td>anthropic</td><td>claude</td><td>官方</td><td><code>/v1/messages</code> 原生转发</td></tr><tr><td>openrouter</td><td>openai</td><td>官方</td><td>自定义地址；模型名带厂商前缀；只作 fallback</td></tr></tbody></table></div>
+<p>每个供应商开启令牌降级策略：异常响应超阈值后暂停该 token，健康检查连续正常后恢复。</p>
+<p><strong>（2）AI 路由（一条路由 = 一个逻辑模型）</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>路由</th><th>主目标</th><th>fallback</th><th>允许的消费者</th><th>本期</th></tr></thead><tbody><tr><td>chat-default</td><td>gpustack</td><td>openrouter</td><td>全部平台</td><td>第 1 阶段必做</td></tr><tr><td>chat-strong</td><td>anthropic</td><td>openrouter</td><td>全部平台</td><td>第 1 阶段必做</td></tr><tr><td>chat-reasoning</td><td>openai</td><td>openrouter</td><td>按需授权</td><td>第 2 阶段</td></tr><tr><td>embed-default</td><td>gpustack</td><td>无</td><td>全部平台</td><td>第 1 阶段必做</td></tr><tr><td>rerank-default</td><td>gpustack（普通路由直转）</td><td>无</td><td>按需授权</td><td>可选（Q17）</td></tr><tr><td>vision-default</td><td>gpustack</td><td>openrouter</td><td>全部平台</td><td>第 3 阶段</td></tr><tr><td>image-gen-default</td><td>openai</td><td>无</td><td>按需授权</td><td>第 3 阶段</td></tr><tr><td>tts-default / asr-default</td><td>gpustack</td><td>openai</td><td>按需授权</td><td>第 3 阶段（可选）</td></tr></tbody></table></div>
+<p>模型匹配用精确匹配逻辑名；同一域名下所有路由共用 <code>/v1</code> 前缀，客户端只改 <code>model</code> 字段就切模型；沿用现网 <code>maas-*</code> 路由前缀约定。</p>
+<p><strong>（3）模型映射</strong>：每个供应商的 ai-proxy 里配 <code>modelMapping</code>，把逻辑名翻译成该供应商的真实模型名；fallback 到 OpenRouter 时映射到同款模型。真实模型名以后只在这里改，换模型不通知任何平台。示意（字段名以部署版本的插件文档为准）：</p>
+<div class="rp-codeblock language-yaml"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="yaml"><code><span class="line"><span style="color:var(--shiki-token-keyword)">provider</span><span style="color:var(--shiki-token-keyword)">:</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  type</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> openai</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  apiTokens</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-foreground)"> [</span><span style="color:var(--shiki-token-string-expression)">&quot;&lt;secretRef:gpustack-higress-gateway-key&gt;&quot;</span><span style="color:var(--shiki-foreground)">]</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  openaiCustomUrl</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;http://&lt;gpustack-server&gt;/v1&quot;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  modelMapping</span><span style="color:var(--shiki-token-keyword)">:</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    chat-default</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;&lt;gpustack 中的部署名，如 qwen3-32b&gt;&quot;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    vision-default</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;&lt;如 qwen3-vl-32b&gt;&quot;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">    embed-default</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> &quot;&lt;如 bge-m3&gt;&quot;</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p><strong>（4）消费者（一平台一个，一 Agent 工具一个）</strong>：用 key-auth 创建，例如 <code>platform-qian</code>（Qian 平台自身：AI 建表、公式建议等 S4 功能）、<code>platform-&lt;其他内部平台&gt;</code>、<code>agent-&lt;iClaw 工具名&gt;</code>、<code>billing-admin</code>（只用于配额管理接口）。key-auth 同时识别 <code>Authorization: Bearer</code> 与 <code>x-api-key</code>，OpenAI SDK 与 Anthropic SDK 用同一把 key。消费者授权在路由上勾选，勾了哪些路由就是该消费者的模型白名单。沿用现网 key-auth 双形态 consumer。</p>
+<p><strong>（5）配额与限流（都要 Redis）</strong></p>
+<ul>
+<li>ai-quota：每个消费者一个固定 token 配额；<code>admin_consumer</code> 设为 <code>billing-admin</code>，经 <code>&lt;路由&gt;/quota/refresh</code>、<code>/quota/delta</code>、<code>/quota</code> 三个管理接口刷新、增减、查询；月初由账单脚本按预算换算后刷新。</li>
+<li>ai-token-ratelimit：按消费者限每分钟 token 数；Agent 工具的额度给平台的 3 到 5 倍（长工具循环、突发多）。</li>
+<li>key-rate-limit：普通 QPS 限流兜底防打爆。</li>
+<li>Redis 不可达时按放行处理并告警（可用性优先于配额精确）。</li>
+</ul>
+<p><strong>（6）可观测</strong></p>
+<ul>
+<li>ai-statistics 全局开启，日志带消费者、路由（逻辑模型）、真实模型、输入/输出 token、首包时间、总耗时、是否 fallback（<code>x-higress-fallback-from</code>）。</li>
+<li>指标推 Prometheus，导入 Higress AI 大盘：按消费者、模型看 Token 用量、QPS、成功率、首包响应、限流次数。</li>
+<li>日志落 Loki（现网 MaaS 90 天）或日志服务，按请求 ID 去重，是账单的原始数据。</li>
+</ul>
+<p><strong>（7）MCP 托管（整合方案第 4 阶段；Qian S4 的 10.2 依赖它）</strong>：MCP Server 在 Higress 上注册后走同一套消费者和 key；Agent 的 MCP 客户端直接指向 <code>https://gw.example.com/mcp/&lt;name&gt;</code>；现有 REST API 可用 openapi-to-mcp 转工具，但 Qian 的工具一律由能力目录派生（不手写）。Higress v2.2.4 起支持 MCP 2026-07-28 双模式；按 <code>Mcp-Method / Mcp-Name</code> 头路由限流的配置方式需 PoC。</p>
+<h4 class="rp-toc-include" id="1054-gpustack-配置与网络隔离"><a href="#1054-gpustack-配置与网络隔离" class="rp-header-anchor rp-link" aria-label="链接到 10.5.4 GPUStack 配置与网络隔离">#</a>10.5.4 GPUStack 配置与网络隔离</h4>
+<p>GPUStack 只做三件事：<strong>部署模型、给 Higress 一把 key、把用量看板留给自己排障</strong>；所有路由、配额、别名都不在这里配。</p>
+<ul>
+<li><strong>首批模型</strong>（按显存从小到大上；Q17 先 LLM + Embedding）：<code>chat-default</code>（单卡 80 GB 可跑的中文与工具调用均衡开源模型，vLLM，先上验证整条链路）；<code>embed-default / rerank-default</code>（显存小、可同卡）；第二阶段视 GPU 归属补 <code>chat-fast</code>（高并发廉价任务）；<code>vision-default</code>、<code>asr/tts</code>、图片/视频生成为第 3–4 阶段按需。GPUStack 里的<strong>部署名就是 Higress <code>modelMapping</code> 右边的真实名</strong>，两边一致避免多一层翻译。</li>
+<li><strong>API key</strong>：GPUStack 只签发一把 key，命名 <code>higress-gateway</code>，以 secretRef 填进 Higress 的 gpustack 供应商；不给任何平台或个人发 GPUStack 的 key；调试临时 key 用完即删。GPUStack 自带 Usage 页按这把 key 统计 = 网关总量，用于对账。</li>
+<li><strong>网络隔离</strong>：GPUStack Server API 端口只允许 Higress 网关地址段访问（K8s NetworkPolicy）；控制台走内网/VPN；Worker 与 Server 间端口只在 GPU 网段开放；GPUStack 不访问公网，模型文件经内网镜像仓库或预下载到共享存储。</li>
+<li><strong>对接检查</strong>：<code>GET /v1/models</code> 用 <code>higress-gateway</code> key 能列出全部部署；流式请求最后一个 chunk 带 <code>usage</code>（Higress 统计依赖它）；一台 Worker 停掉后 GPUStack 在其他 Worker 重新拉起模型，Higress 路由不需要改。</li>
+</ul>
+<h4 class="rp-toc-include" id="1055-计费与用量核算"><a href="#1055-计费与用量核算" class="rp-header-anchor rp-link" aria-label="链接到 10.5.5 计费与用量核算">#</a>10.5.5 计费与用量核算</h4>
+<p>Higress 记用量不算钱，金额化计费由<strong>一张价格表 + 一个账单脚本</strong>补上，配额控制仍交给 ai-quota。分工：<strong>Higress 统计 → 脚本算钱 → 脚本反过来刷新 Higress 的 token 配额</strong>。</p>
+<ul>
+<li><strong>数据源</strong>：ai-statistics 每条记录至少含消费者、路由、真实模型、输入 token、输出 token、是否 fallback、首包时间、总耗时；按天聚合为「日期 × 消费者 × 真实模型 → 输入 token、输出 token、请求数」。</li>
+<li><strong>价格表（git 维护）</strong>：单位元 / 百万 token，按次计费用 <code>per_call</code>；自建模型单价按 GPU 成本摊（月 GPU 费 ÷ 月总 token，季度校一次）；云 API 按官网价；OpenRouter 用其响应里的实际成本 × 系数（如 1.1）。示意：</li>
+</ul>
+<div class="rp-codeblock language-yaml"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="yaml"><code><span class="line"><span style="color:var(--shiki-token-keyword)">&lt;自建模型部署名&gt;</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-foreground)">   { </span><span style="color:var(--shiki-token-keyword)">input</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> 0.5</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)">  output</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> 1.5</span><span style="color:var(--shiki-foreground)"> }</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">&lt;云端强模型名&gt;</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-foreground)">     { </span><span style="color:var(--shiki-token-keyword)">input</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> 21</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)">   output</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> 105</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-keyword)"> cache_read</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> 2.1</span><span style="color:var(--shiki-foreground)"> }</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">&lt;图片生成模型名&gt;</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-foreground)">   { </span><span style="color:var(--shiki-token-keyword)">per_call</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> 0.3</span><span style="color:var(--shiki-foreground)"> }</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">openrouter/*</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-foreground)">        { </span><span style="color:var(--shiki-token-keyword)">markup</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> 1.1</span><span style="color:var(--shiki-foreground)"> }</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<ul>
+<li><strong>账单脚本</strong>（每周跑，月初结账；以 §07 调度器任务承载）：拉取上一周期聚合表 → 金额 = Σ（输入 token × 输入单价 + 输出 token × 输出单价）+ Σ（按次请求数 × 单价）→ 按消费者出账单（附 top 模型与 fallback 占比）→ 月初按预算换算 token 数调用 <code>/quota/refresh</code>。</li>
+<li><strong>配额换算取舍</strong>：ai-quota 按 token 不按金额。先用简单做法（按该消费者上月加权平均单价换算，误差 10–20%，对内部结算够用）上线；有超支争议再切精确做法（脚本每小时算实际金额，超预算把配额刷成 0，相当于金额停机）。</li>
+<li><strong>对账</strong>：每月拿 GPUStack Usage 总 token 与 Higress 按 gpustack 供应商汇总的 token 对一次，差异 &gt; 2% 说明有请求绕过网关或丢了流式 usage。</li>
+<li><strong>与 Qian 计量的衔接</strong>（§09 9.12）：Higress 消费者 = 平台级粒度；租户/项目级归集在平台侧——Qian 的模型调用经 <code>platform-qian</code> 消费者，由 <code>qian.model-gateway</code> 在请求侧打 <code>tenant_id / project_id?</code> 标签（请求头或自有日志）并把用量写入 Qian 计量事件；Usage Ledger 是否与 iClaw 共用待拍板（Q15）。</li>
+</ul>
+<h4 class="rp-toc-include" id="1056-多模态接入路径第-34-阶段按需"><a href="#1056-多模态接入路径第-34-阶段按需" class="rp-header-anchor rp-link" aria-label="链接到 10.5.6 多模态接入路径（第 3–4 阶段，按需）">#</a>10.5.6 多模态接入路径（第 3–4 阶段，按需）</h4>
+<p>图片与语音走 OpenAI 标准端点直通，Higress 原生够用；视频没有标准端点，需自建任务服务（本期不做）。文件一律走对象存储 URL，不让 base64 穿过网关。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>模态</th><th>客户端端点</th><th>Higress 处理</th><th>后端</th><th>阶段</th></tr></thead><tbody><tr><td>图片理解</td><td><code>/v1/chat/completions</code> 带 <code>image_url</code></td><td>ai-proxy 正常转发</td><td>GPUStack 视觉模型、OpenAI、Anthropic</td><td>第 1 阶段即可（随 vision 模型上线）</td></tr><tr><td>图片生成</td><td><code>/v1/images/generations</code></td><td>capabilities 直通原生兼容的供应商</td><td>OpenAI；后续 GPUStack 自定义后端</td><td>第 3 阶段</td></tr><tr><td>语音合成 / 识别</td><td><code>/v1/audio/speech</code>、<code>/v1/audio/transcriptions</code></td><td>同上</td><td>GPUStack 自定义后端、OpenAI</td><td>第 3 阶段（可选）</td></tr><tr><td>实时语音</td><td><code>/v1/realtime</code> WebSocket</td><td>普通路由直通，不经 ai-proxy</td><td>OpenAI</td><td>按需</td></tr><tr><td>视频 / 3D / 音乐生成</td><td><code>/v1/tasks</code>（自建）</td><td>普通路由 + 消费者认证 → 任务服务</td><td>各云供应商；后续自建</td><td>第 4 阶段，本期不做</td></tr></tbody></table></div>
+<p>验证点：capabilities 直通是按供应商声明的——OpenAI 与 GPUStack 原生兼容这些路径，OpenRouter 与 Anthropic 不提供；每条路由上线前用真实文件跑一遍，确认响应体与 <code>usage</code> 完整；图片生成按次计费记请求数。文件流转：输入先传对象存储、请求只传 URL；输出写对象存储返回带过期时间（默认 7 天）的预签名 URL。内容审核：文本用 Higress 的内容安全插件在网关层拦截；图片/视频审核放在生成返回路径。</p>
+<h4 class="rp-toc-include" id="1057-客户端接入模板要点"><a href="#1057-客户端接入模板要点" class="rp-header-anchor rp-link" aria-label="链接到 10.5.7 客户端接入模板要点">#</a>10.5.7 客户端接入模板要点</h4>
+<p>客户端只需要两样东西：网关地址与消费者 key。</p>
+<ul>
+<li><strong>OpenAI SDK</strong>：<code>base_url=&quot;https://gw.example.com/v1&quot;</code>，<code>model=&quot;chat-default&quot;</code>，流式请求<strong>必带</strong> <code>stream_options={&quot;include_usage&quot;: True}</code>，否则 token 统计缺最后一段。</li>
+<li><strong>Anthropic SDK</strong>：<code>base_url=&quot;https://gw.example.com&quot;</code>（不带 <code>/v1</code>，SDK 自己拼），<code>model=&quot;chat-strong&quot;</code>；<code>cache_control</code> 原样到达 Anthropic，prompt caching 生效。</li>
+<li><strong>Agent 运行时（iClaw 及其他）</strong>：按 API 形态拆两个 provider、同一把 key：<code>openai-completions</code> 形态 baseUrl 带 <code>/v1</code>，<code>anthropic-messages</code> 形态不带；每个逻辑模型声明 <code>reasoning / input 模态 / contextWindow / maxTokens</code>。</li>
+<li><strong>Qian 平台自身</strong>（<code>qian.model-gateway</code> 的 .NET 客户端）：只用逻辑模型名；用途槽位（如 <code>form-generation → chat-default</code>、<code>embedding → embed-default</code>）在平台配置 Schema 中声明，不在代码写死。</li>
+<li><strong>发 key 时一并交付</strong>：网关地址、key、被授权的逻辑模型列表、每分钟 token 上限与月配额、<code>/v1/models</code> 可自助列出可用模型、出问题联系谁（日志按消费者名检索）。</li>
+<li>已知坑：个别 Agent 运行时的 custom provider 指向网关后会先探测 Ollama 风格端点，404 后曾静默挂起——接入时验证第一条请求 30 秒内返回。</li>
+</ul>
+<h4 class="rp-toc-include" id="1058-实施阶段与放行标准"><a href="#1058-实施阶段与放行标准" class="rp-header-anchor rp-link" aria-label="链接到 10.5.8 实施阶段与放行标准">#</a>10.5.8 实施阶段与放行标准</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>阶段</th><th>内容</th><th>放行标准</th><th>本期</th></tr></thead><tbody><tr><td>第 1 阶段：文本链路打通（约 1 周）</td><td>装/复用 Higress + Redis；GPUStack Server + 1 台 Worker；部署 chat-default 与 embed-default；签发 <code>higress-gateway</code> key；配 4 个供应商、chat-default / chat-strong / embed-default 三条路由与映射；1 个测试消费者，OpenAI 与 Anthropic SDK 各跑通一次流式；停掉 GPUStack 确认 fallback；AI 大盘可见消费者与模型维度 token</td><td>连续 24 小时压测无 5xx；fallback 切换客户端无感知</td><td><strong>必做</strong></td></tr><tr><td>第 2 阶段：给平台发 key（约 1 周）</td><td>每平台一个消费者并按需勾选路由；ai-quota 与 ai-token-ratelimit 上线，<code>billing-admin</code> 能刷新配额；价格表进 git，账单脚本出第一份周账单；接入 Qian（<code>platform-qian</code>）与一个 Agent 工具试点；日志按消费者可检索单次请求</td><td>第一份账单与 GPUStack Usage 对得上，差异 &lt; 2%</td><td><strong>必做</strong></td></tr><tr><td>第 3 阶段：多模态与门户（约 2 周）</td><td>对象存储预签名流程；图片生成、TTS、ASR 直通验证（OpenAI 先行，GPUStack 后端跟上）；vision-default 上线；评估开发者门户</td><td>三种多模态请求用量出现在账单，图片按次计费正确</td><td>可选（Q17）</td></tr><tr><td>第 4 阶段：视频、MCP、审核（按需）</td><td>视频任务服务；第一批 MCP Server 在 Higress 托管并被 Agent 接入；文本审核插件；评估自建视频生成</td><td>Agent 工具通过同一把 key 同时拿到模型和工具</td><td>MCP 托管（含 Higress ≥ 2.2.4）为 S4 启动前置，排在 S3 末（R14）；视频本期不做</td></tr></tbody></table></div>
+<h4 class="rp-toc-include" id="1059-风险与必验清单"><a href="#1059-风险与必验清单" class="rp-header-anchor rp-link" aria-label="链接到 10.5.9 风险与必验清单">#</a>10.5.9 风险与必验清单</h4>
+<p>最大风险不在功能，在<strong>统计口径</strong>：流式请求丢了 usage，账单和配额就全错。</p>
+<p><strong>上线前必验</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> SSE 流式：网关不缓冲，首 token 延迟比直连 GPUStack 增加 ≤ 20 ms。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 流式 usage：OpenAI 格式带 <code>stream_options.include_usage</code>，Claude 格式 <code>message_delta</code> 里有 usage，两种都进 ai-statistics。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> <code>/v1/messages</code> 透传：<code>cache_control</code>、<code>thinking</code>、<code>tool_use / tool_result</code>、图片块原样到达，响应 <code>cache_read_input_tokens</code> 不为 0。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 路由超时：chat 类 600 秒，图片 300 秒，任务提交接口 30 秒。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 请求体上限：默认值下带 3 张 URL 图片正常；base64 大图被拒并返回明确错误。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> Realtime：WebSocket 升级经 Higress 成功，10 分钟长连接不断。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> fallback：GPUStack 5xx 或超时后切 OpenRouter，<code>x-higress-fallback-from</code> 出现在日志。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 配额：消费者 token 用尽返回 429，<code>/quota/refresh</code> 后立即恢复。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> Agent 运行时两种 provider 形态各跑一次模型状态检查。</li>
+</ul>
+<p><strong>风险与对策</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>风险</th><th>影响</th><th>对策</th></tr></thead><tbody><tr><td>Redis 单点</td><td>配额与限流失效，请求放行或全拒</td><td>复用现网网关专用 Redis HA；插件配置 Redis 不可达时按放行处理并告警</td></tr><tr><td>ai-quota 按 token 不按金额</td><td>高价模型用得多的平台超预算</td><td>账单脚本每小时算金额，超预算刷配额为 0</td></tr><tr><td>OpenRouter 同一模型换底层供应商</td><td>输出风格与价格波动</td><td>只作 fallback 不作主路；需固定时在请求里指定 provider</td></tr><tr><td>出口网络</td><td>国内部署时云供应商不可达</td><td>网关放可直连节点，或给供应商配出口代理（出网白名单）</td></tr><tr><td>GPUStack key 泄漏</td><td>绕过网关直接调用</td><td>只有网关持有；端口网段限制；每月对账发现绕行</td></tr><tr><td>Higress 版本升级改插件字段</td><td>路由或映射失效</td><td>锁定小版本，配置导出进 git，升级前预发验证</td></tr><tr><td>图片/语音 capabilities 直通对部分供应商不生效</td><td>路由 404 或格式错</td><td>逐供应商验证，不生效的先只挂 OpenAI</td></tr><tr><td>GPU 归属未定（首节点两块卡已借出一块）</td><td>第 1 阶段无法起 Worker</td><td>拍板 GPU 归属（Q17）；过渡期 chat-default 主路暂指 OpenRouter</td></tr><tr><td>开发者门户较新</td><td>功能变动快</td><td>第 3 阶段再评估，先用控制台手工发 key</td></tr></tbody></table></div>
+<p><strong>明确放弃</strong>：充值与兑换码、渠道模型一键拉取、价格倍率同步、Gemini 原生入口、第三方绘图/音乐代理、渠道余额查询。若将来需要，在 Higress 后面再加一层专门运营层，客户端不改。</p>
+<h4 class="rp-toc-include" id="10510-与现网已有-higress-设施的差距与复用k-基线-64"><a href="#10510-与现网已有-higress-设施的差距与复用k-基线-64" class="rp-header-anchor rp-link" aria-label="链接到 10.5.10 与现网已有 Higress 设施的差距与复用（K 基线 §6.4）">#</a>10.5.10 与现网已有 Higress 设施的差距与复用（K 基线 §6.4）</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>项</th><th>现网</th><th>处理</th></tr></thead><tbody><tr><td>Higress 2.2.3 两副本 + PDB、Console 内网</td><td>已有</td><td><strong>复用</strong>；升级到 ≥ 2.2.4 以获得 MCP 2026-07-28 双模式并开启 MCP 托管（S4 启动前置，排在 S3 末，R14）</td></tr><tr><td><code>maas-*</code> 路由前缀、key-auth 双形态 consumer</td><td>已有</td><td><strong>复用</strong>命名与消费者形态；逻辑模型名路由按 10.5.3 补齐</td></tr><tr><td>网关专用 Redis HA</td><td>已有</td><td><strong>复用</strong>为 ai-quota / ai-token-ratelimit 存储</td></tr><tr><td>MaaS Loki 90 天访问日志（按请求 ID 去重）、官方 AI 大盘</td><td>已有</td><td><strong>复用</strong>为账单原始数据与可观测</td></tr><tr><td>McpBridge 上游注册</td><td>已有</td><td><strong>复用</strong>为 GPUStack 上游与 S4 MCP Server 注册方式</td></tr><tr><td>ai-proxy 供应商与逻辑模型名映射入 git</td><td>缺</td><td>第 1 阶段补齐</td></tr><tr><td>ai-quota / ai-token-ratelimit / ai-statistics 绑定</td><td>缺</td><td>第 2 阶段补齐</td></tr><tr><td>价格表与账单脚本</td><td>缺</td><td>第 2 阶段补齐（走 §07 调度）</td></tr><tr><td>推理层：现为其他推理方案</td><td>需切换到 GPUStack</td><td>第 1 阶段；GPU 归属待确认；仓外是否已有 GPUStack 控制面待确认</td></tr><tr><td>OpenRouter 出网白名单放行</td><td>缺</td><td>第 1 阶段随出口策略补齐</td></tr><tr><td>SSO / S2S 交给 Higress</td><td>不做</td><td>ADR-015：S1 不把 SSO/S2S 交给 Higress；Agent 鉴权在 S4 走 MCP 授权（10.2/10.3）</td></tr></tbody></table></div>
+<h4 class="rp-toc-include" id="10511-qian-侧交付qianmodel-gateway"><a href="#10511-qian-侧交付qianmodel-gateway" class="rp-header-anchor rp-link" aria-label="链接到 10.5.11 Qian 侧交付（qian.model-gateway）">#</a>10.5.11 Qian 侧交付（<code>qian.model-gateway</code>）</h4>
+<p>Qian <strong>只做</strong>以下四件事，不另写模型代理层：</p>
+<ol>
+<li><strong>GPUStack 作为 OpenAI 兼容上游注册进 Higress</strong>（McpBridge / 供应商配置经 GitOps 落地）。</li>
+<li><strong>Provider Adapter</strong>（<code>model-gateway</code> 组合包，<code>runtime.form: service</code>，默认挂在 <code>platform</code> profile，可选独立 profile <code>model-gateway</code>（镜像 <code>qian-model-gateway-adapter</code>），S1 已预留，R31）：发现 GPUStack 模型部署、健康探测、生命周期（上线/下线/替换）同步到 Higress 映射的变更提案（人工批准后入 git），不直接改数据面。</li>
+<li><strong>填写 <code>model-capabilities</code> 契约</strong>（对齐 iClaw）：模型目录含逻辑名、类型（chat / embedding / rerank / vision / tts / asr）、能力标签（工具调用、视觉、推理、缓存）、上下文长度、最大输出、配额、可用租户；用途槽位（<code>form-generation</code>、<code>flow-generation</code>、<code>embedding</code>、<code>ocr</code> 等）→ 逻辑名的映射放平台配置 Schema。</li>
+<li><strong>租户/配额/计量在平台侧</strong>：Qian 的所有模型调用经 <code>platform-qian</code> 消费者；<code>qian.model-gateway</code> 客户端为每次调用打 <code>tenant_id / project_id?</code> 并写计量事件（§09 9.12）；租户级配额与预算告警在平台执行，Higress 对租户无感；密钥全部 secretRef（ADR-007）。</li>
+</ol>
+<p><strong>验收标准</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 以 <code>platform-qian</code> 消费者用 OpenAI SDK 与 Anthropic SDK 各跑通流式调用，<code>usage</code> 进入 ai-statistics；账单脚本输出与 AI 大盘一致。<strong>测法</strong>：第 1–2 阶段放行脚本。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> <code>GET /model-gateway/catalog</code> 返回按 <code>model-capabilities</code> 契约的目录，租户 A 只看到其可用模型；用途槽位 <code>form-generation</code> 改指向另一逻辑名后，S4 的 AI 建表调用随之切换且无需改代码。<strong>测法</strong>：配置切换 + 接口。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 租户 A 当月模型用量 ≥ 预算时平台返回 <code>MODEL_BUDGET_EXCEEDED</code> 并发告警，租户 B 不受影响；Higress 消费者配额未触发。<strong>测法</strong>：注入用量。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 任意平台代码、配置、日志中不出现 GPUStack 或云供应商 key 明文；GPUStack 端口对网关之外的 Pod 不可达。<strong>测法</strong>：密钥扫描 + NetworkPolicy 探测。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 月度对账 GPUStack Usage 与 Higress 汇总差异 &lt; 2%。<strong>测法</strong>：对账脚本。</li>
+</ul>
+<h3 class="rp-toc-include" id="106-s4-范围外"><a href="#106-s4-范围外" class="rp-header-anchor rp-link" aria-label="链接到 10.6 S4 范围外">#</a>10.6 S4 范围外</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>不做</th><th>理由</th><th>替代</th></tr></thead><tbody><tr><td>自建 Agent 运行时（推理引擎、Sub-agent、Workflow 编排、路由器）</td><td>ADR-016：复用 iClaw</td><td>S4 经 MCP/HTTP 对接 iClaw</td></tr><tr><td>自建沙箱、记忆、技能引擎、工具门禁运行时</td><td>同上</td><td>CubeSandbox、iClaw 记忆四层、Skills、ToolPolicy/RiskGate</td></tr><tr><td>自写模型代理层（绕过 Higress）</td><td>ADR-015</td><td>Higress 是唯一模型与 MCP chokepoint</td></tr><tr><td>把 SSO / S2S 交给 Higress</td><td>ADR-015 / ADR-010</td><td>业务鉴权在 <code>qian.gateway</code> 与 <code>qian.identity</code></td></tr><tr><td>视频/3D/音乐生成任务服务、HiMarket 开发者门户</td><td>本期范围外（Q17 先 LLM + Embedding）</td><td>第 3–4 阶段按需</td></tr><tr><td>智能体管理、提示词库、知识库、MCP 工具目录 UI（参考平台 AI 中心形态）</td><td>归 iClaw 的 AI 资产控制面</td><td>Qian 的能力注册表是其唯一来源</td></tr><tr><td>「每插件一个 MCP Server、每操作一个工具」全量平铺</td><td>工具列表膨胀、提示缓存命中差</td><td>意图级工具 + 目录搜索 + 代码模式</td></tr><tr><td>A2A 作为内部编排协议、WebMCP、MCP Apps 视图作为必做</td><td>协议工具链仍预览级</td><td>P2，待浏览器与宿主支持稳定</td></tr><tr><td>自研 OCR 识别服务</td><td>视觉模型经模型网关即可</td><td>OCR 控件库经 10.5 vision 路由</td></tr><tr><td>以 OTel GenAI 语义约定属性名作持久化 schema</td><td>约定仍为 Development 级</td><td>计量与审计用 Qian 自有 schema</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="107-待确认"><a href="#107-待确认" class="rp-header-anchor rp-link" aria-label="链接到 10.7 待确认">#</a>10.7 待确认</h3>
+<ol>
+<li><strong>GPU 归属与接入范围</strong>（Q17 默认先 LLM + Embedding，GPU 归属由产品负责人定）：决定第 1 阶段能否起 GPUStack Worker；过渡方案是 chat-default 主路暂指 OpenRouter。Rerank 是否随 Embedding 一并接入（成本极低）待确认。</li>
+<li><strong>Usage Ledger / 租户 API Key 是否与 iClaw 共用</strong>（Q15）：决定 10.5.5 的租户归集落在 Qian 自有 Ledger 还是 iClaw；本章按 Qian 自有写。</li>
+<li><strong>Provider Adapter 由谁维护</strong>（D15 待拍板）：Qian 团队还是 MaaS 基础设施团队；影响 <code>qian-model-gateway-adapter</code> 的发布节奏。</li>
+<li><strong>MCP 托管的阶段对齐</strong>：已裁决（R14）——Higress ≥ 2.2.4 升级与开启 MCP 托管列为 S4 启动前置，放在 S3 末（ROADMAP S3 核心交付「S4 启动前置」行与 S3-M3）。</li>
+<li><strong>按 <code>Mcp-Method / Mcp-Name</code> 头路由限流的配置方式</strong>与 <strong>C# MCP SDK 能否过 Kun AOT 门禁</strong>需 PoC；结论决定 <code>qian.mcp-facade</code> 的部署形态。</li>
+<li><strong>iClaw 协议对齐计划</strong>（其 MCP 客户端钉旧版且只有 stdio）：谁牵头、何时切到 2026-07-28；否则 S4 发现/调用路径只能靠 <code>server/discover</code> 兼容。</li>
+<li><strong>是否与 iClaw 共用同一 Higress 实例</strong>（Q16 默认共用集群、独立节点池）：影响消费者命名空间与配额隔离。</li>
+<li><strong>MaaS 现网推理层切换到 GPUStack 的窗口</strong>与「仓外是否已有 GPUStack 控制面」需与基础设施团队确认。</li>
+<li><strong>组件模型 v2 对本章的影响（ADR-020）</strong>：(a) 已裁决（R36）——<code>extensions</code> 的自动挂载边界：Agent 会话 scope 自动、应用 scope 需应用管理员确认、租户 scope 需租户管理员确认；Agent 会话 scope 的生命周期与审计字段随 specs/component-model.md 定稿；(b) 草稿组件文件夹的存放：沿 R36 租户私有市场默认平台托管（Agent 产物上传为组件文件夹，平台生成私有 marketplace 条目），进入官方市场前的审核流水线归 §09 9.1 审核台；(c) 已拍板（ADR-020 §7 第 1 条）：TS 侧公共 API 为 <code>@qian/runtime</code>、S1 内部以固定版本 vendor 的 Cordis 作为实现，<code>@yue/agent</code> 与 MCP Apps 视图作为 <code>@qian/runtime</code> 插件树成员交付，不依赖实现选择；(d) 每租户 MCP 门面派生自 <code>ctx.Tools</code> scope 视图后，10.3 的 <code>ToolGrant</code> 哈希与 §07 <code>schemaSha256</code> 需同一计算口径（与 §09 9.14 第 8 条合并处理）。</li>
+</ol><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/pr-preview/pr-202/design/prd/09-s3-customer.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>§09 S3 面向客户</span></span></a><a href="/pr-preview/pr-202/design/prd/11-ux-glossary.html" class="rp-prev-next-page__item rp-prev-next-page__next rp-link"><span class="rp-prev-next-page__item__desc">下一页</span><span class="rp-prev-next-page__item__title"><span>11. 体验原则与产品词表</span><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></span></a></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#101-目标与边界" class="rp-toc-item rp-link" title="10.1 目标与边界" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">10.1 目标与边界</span></a><a href="#1011-目标adr-018" class="rp-toc-item rp-link" title="10.1.1 目标（ADR-018）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.1.1 目标（ADR-018）</span></a><a href="#1012-边界adr-016" class="rp-toc-item rp-link" title="10.1.2 边界（ADR-016）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.1.2 边界（ADR-016）</span></a><a href="#1013-s4-新增单元与插件" class="rp-toc-item rp-link" title="10.1.3 S4 新增单元与插件" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.1.3 S4 新增单元与插件</span></a><a href="#102-发现--调用--编排--生成四条路径与每租户-mcp-门面p0--s4" class="rp-toc-item rp-link" title="10.2 发现 / 调用 / 编排 / 生成四条路径与每租户 MCP 门面（P0 · S4）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">10.2 发现 / 调用 / 编排 / 生成四条路径与每租户 MCP 门面（P0 · S4）</span></a><a href="#范围与边界" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#验收标准" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#103-agent-主体与委托链授权快照安全防线p0--s4" class="rp-toc-item rp-link" title="10.3 Agent 主体与委托链、授权快照、安全防线（P0 · S4）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">10.3 Agent 主体与委托链、授权快照、安全防线（P0 · S4）</span></a><a href="#范围与边界-1" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#安全防线表确定性控制优先" class="rp-toc-item rp-link" title="安全防线表（确定性控制优先）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">安全防线表（确定性控制优先）</span></a><a href="#验收标准-1" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#104-agent-生成应用--生成-package-的闭环p0--s4" class="rp-toc-item rp-link" title="10.4 Agent 生成应用 = 生成 package 的闭环（P0 · S4）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">10.4 Agent 生成应用 = 生成 package 的闭环（P0 · S4）</span></a><a href="#范围与边界-2" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#验收标准-2" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#105-模型服务网关p0--本期唯一详细规划的-ai-范围" class="rp-toc-item rp-link" title="10.5 模型服务网关（P0 · 本期唯一详细规划的 AI 范围）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">10.5 模型服务网关（P0 · 本期唯一详细规划的 AI 范围）</span></a><a href="#1051-目标架构与四条约定" class="rp-toc-item rp-link" title="10.5.1 目标架构与四条约定" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.1 目标架构与四条约定</span></a><a href="#1052-组件清单与阶段" class="rp-toc-item rp-link" title="10.5.2 组件清单与阶段" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.2 组件清单与阶段</span></a><a href="#1053-higress-配置方案" class="rp-toc-item rp-link" title="10.5.3 Higress 配置方案" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.3 Higress 配置方案</span></a><a href="#1054-gpustack-配置与网络隔离" class="rp-toc-item rp-link" title="10.5.4 GPUStack 配置与网络隔离" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.4 GPUStack 配置与网络隔离</span></a><a href="#1055-计费与用量核算" class="rp-toc-item rp-link" title="10.5.5 计费与用量核算" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.5 计费与用量核算</span></a><a href="#1056-多模态接入路径第-34-阶段按需" class="rp-toc-item rp-link" title="10.5.6 多模态接入路径（第 3–4 阶段，按需）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.6 多模态接入路径（第 3–4 阶段，按需）</span></a><a href="#1057-客户端接入模板要点" class="rp-toc-item rp-link" title="10.5.7 客户端接入模板要点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.7 客户端接入模板要点</span></a><a href="#1058-实施阶段与放行标准" class="rp-toc-item rp-link" title="10.5.8 实施阶段与放行标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.8 实施阶段与放行标准</span></a><a href="#1059-风险与必验清单" class="rp-toc-item rp-link" title="10.5.9 风险与必验清单" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.9 风险与必验清单</span></a><a href="#10510-与现网已有-higress-设施的差距与复用k-基线-64" class="rp-toc-item rp-link" title="10.5.10 与现网已有 Higress 设施的差距与复用（K 基线 §6.4）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.10 与现网已有 Higress 设施的差距与复用（K 基线 §6.4）</span></a><a href="#10511-qian-侧交付qianmodel-gateway" class="rp-toc-item rp-link" title="10.5.11 Qian 侧交付（qian.model-gateway）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">10.5.11 Qian 侧交付（<code>qian.model-gateway</code>）</span></a><a href="#106-s4-范围外" class="rp-toc-item rp-link" title="10.6 S4 范围外" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">10.6 S4 范围外</span></a><a href="#107-待确认" class="rp-toc-item rp-link" title="10.7 待确认" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">10.7 待确认</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>

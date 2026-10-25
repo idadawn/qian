@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>§08 S2 低代码构建 - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<link href="/static/css/styles.6fe70ee060.css" rel="stylesheet">
+<link rel="preload" href="/static/js/async/route-94bb25aa3ca4.6518e93b8f.js" as="script">
+<script defer src="/static/js/styles.6c2e798d13.js"></script>
+<script defer src="/static/js/lib-react.3a03aaf12f.js"></script>
+<script defer src="/static/js/lib-router.80316d8e03.js"></script>
+<script defer src="/static/js/hq.1398cf1414.js"></script>
+<script defer src="/static/js/index.1101795edd.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/design/prd/08-s2-lowcode.md">
+<link rel="describedby" href="/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="§08 S2 低代码构建 - Qian 文档">
+<meta name="description" content="把 S1 交付给开发人员的技术底座，变成不写代码的搭建者也能用的低代码构建能力：元数据驱动运行时为主轨（ADR-011），搭建产物是可打包、可安装到多个租户、可独立升级的应用包（ADR-014，经 ADR-020 修订）。">
+<meta property="og:description" content="把 S1 交付给开发人员的技术底座，变成不写代码的搭建者也能用的低代码构建能力：元数据驱动运行时为主轨（ADR-011），搭建产物是可打包、可安装到多个租户、可独立升级的应用包（ADR-014，经 ADR-020 修订）。"></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /llms.txt, the full documentation bundle is available at /llms-full.txt, and this page is available as Markdown at /design/prd/08-s2-lowcode.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item"><a href="/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item"><a href="/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><button type="button" class="rp-switch-appearance" aria-label="切换主题"><span aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 19 19" class="rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></span></button><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/design/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">文档索引</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/roadmap.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">路线图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/changelog.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">架构决策（ADR）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/adr/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-001-kun-relationship.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-001 Qian 与 Kun 的关系</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-002-plugin-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-002 插件模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-003-kernel-boundary-s1-services.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-003 内核边界与 S1 服务拆分</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-004-database-tenant-isolation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-004 数据库与租户隔离</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-005-identity-sso.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-005 身份与 SSO</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-006-authorization-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-006 鉴权模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-007-config-center-apollo.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-007 配置中心</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-008-events-messaging.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-008 事件与消息</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-009-audit.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-009 审计</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-010-gateway-layers.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-010 网关分层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-011-metadata-dynamic-data.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-011 元数据与动态数据层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-012-workflow-engine.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-012 流程引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-013-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-013 前端与 yue</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-014-marketplace.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-014 应用市场形态</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-015-model-gateway.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-015 模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-016-iclaw-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-016 与 iClaw 的边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-017-deployment.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-017 部署</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-018-stages-s1-scope.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-018 阶段切分与 S1 范围</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-019-library-first-packages.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-019 库优先（Library-first）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-020-component-model-v2.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-020 组件模型 v2</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-021-product-family-structure.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-021 产品族结构</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-022-rspress-unified-component-docs.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-022 统一 Rspress 组件文档与验收</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/design/prd/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">产品需求（PRD）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/prd/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/01-vision.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">1. 愿景与定位</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/02-principles.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">2. 设计原则</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/03-concepts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">3. 核心概念模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/04-market.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">4. 形态与目标市场</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/05-differentiators.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">5. 核心差异化</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/06-users-scenarios.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">6. 用户与场景</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/07-s1-foundation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§07 S1 技术底座功能规格</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/08-s2-lowcode.html" class="rp-sidebar-item rp-sidebar-item--active rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§08 S2 低代码构建</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/09-s3-customer.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§09 S3 面向客户</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/10-s4-agent.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§10 S4 AI 原生 Agent 平台与模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/11-ux-glossary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">11. 体验原则与产品词表</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/12-boundaries.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§12 能力边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/13-security.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§13 权限与安全</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/14-quality.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§14 质量与评估</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/15-roadmap.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">15. 演进路线（指针）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/16-metrics.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">16. 成功指标</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/17-references.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">17. 借鉴声明</span></div><div class="rp-sidebar-item__right"></div></a><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">专题规格</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/prd/specs/component-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 组件模型 v2（清单 · 表面 · 运行时 · profile · 市场 · CLI）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/data-contracts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">数据过滤与记录扩展契约 v1</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/docs-site.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">文档站信息架构与规范（Rspress 2.0）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/plugin-manifest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 插件清单 v1（<code>qian-plugin.yaml</code>）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · yue 组件库</span></div><div class="rp-sidebar-item__right"></div></a></div></div></div></div><a href="/design/migration/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移方案</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/migration/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/01-tenant-identity-access.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 01 · 租户、组织、身份与 SSO、权限、系统管理、控制台与个人中心、消息入口、移动端</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/02-app-form-list.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 02 · 应用、表单设计、列表设计、视图、功能发布、运行时数据引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/03-workflow.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 03 · 流程与审批</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/04-data-integration-presentation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 04 · 数据中心、集成中心、消息与调度、门户、报表、打印、大屏、文件预览、AI 中心清单</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/05-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 05 · 参考平台前端组件与设计器全集 → yue 分层与阶段、工程化、移动端策略</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">决策清单</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/decisions/authz-identity-revision-wiring.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">授权变更 → 身份修订递增的接线口径</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/component-entry-metadata.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">组件清单入口与程序集内多个插件实现</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/feature-flags-write-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">特性开关写入与发布边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/gateway-native-aot-options.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">网关完整依赖的 NativeAOT 实施路径</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/key-decisions-v0.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 关键决策清单 v0（已全部拍板，作为历史记录保留）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/runtime-profile-metadata.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">真实组件清单启用后的开发 profile 与 AOT 验收</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/tenancy-http-v1-schema-correction.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">租户 HTTP v1 校验声明的首次发布基线纠偏</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">调研基线</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/research/baseline-digest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 调研基线要点汇编</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">generated</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/generated/config-catalog.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置目录</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/event-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">事件图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/module-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模块图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/seam-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">seam 图</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">ops</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/ops/configuration-runbook.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置开发、运行与故障处置（S1-CFG-001 / 002 / 003）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/ops/k3s-control-plane-recovery.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">K3s 控制面故障处置方案（S1-DEP-007）</span></div><div class="rp-sidebar-item__right"></div></a></div></div></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="08-s2-低代码构建"><a href="#08-s2-低代码构建" class="rp-header-anchor rp-link" aria-label="链接到 §08 S2 低代码构建">#</a>§08 S2 低代码构建<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><a class="rp-llms-button" href="/design/prd/08-s2-lowcode.md" aria-label="查看本页 Markdown">Markdown 链接</a></div>
+<blockquote>
+<p>本页由构建脚本镜像自仓库 <a href="https://github.com/idadawn/qian/blob/main/docs/prd/08-s2-lowcode.md" target="_blank" rel="noopener noreferrer" class="rp-link"><code>docs/prd/08-s2-lowcode.md</code></a>，请修改源文件，不要改本页。</p>
+</blockquote>
+<blockquote>
+<p>本章粒度：范围清楚、关键模型与契约定型，比 §07（S1 技术底座）粗一级，但功能清单必须完整。决策引用写 <code>ADR-0xx</code>（ADR-011 元数据与动态数据、ADR-012 流程、ADR-013 前端与 yue、ADR-014 市场、ADR-006 鉴权、ADR-002 插件模型、ADR-018 阶段），基线与参考平台只作依据不作规范。决策清单主表的待拍板问题写 <code>Q1–Q18</code>，补充裁决（基线汇编编号）写 <code>补充裁决 Qxx</code>，两套编号互不混用。被借鉴的商业低代码产品一律称「参考平台」。</p>
+<p>优先级口径：<strong>P0</strong> = S2 退出标准关键路径，不做则 S2 不能验收；<strong>P1</strong> = S2 必做但不在关键路径，可在 S2 内后置；<strong>P2</strong> = S2 可选，可滑到 S3。阶段归属以 ADR-018 与补充裁决为准，与基线冲突处在 8.16 注明。</p>
+<p>功能项固定小节：设计理念 / 范围与边界 / 技术落点 / 插件化定位 / Agent 契约 / 验收标准。验收标准写可观察行为与测法，供 TCK 与验收脚本直接引用。</p>
+</blockquote>
+<h3 class="rp-toc-include" id="80-目标与退出标准"><a href="#80-目标与退出标准" class="rp-header-anchor rp-link" aria-label="链接到 8.0 目标与退出标准">#</a>8.0 目标与退出标准</h3>
+<h4 class="rp-toc-include" id="801-s2-的一句话目标"><a href="#801-s2-的一句话目标" class="rp-header-anchor rp-link" aria-label="链接到 8.0.1 S2 的一句话目标">#</a>8.0.1 S2 的一句话目标</h4>
+<p>把 S1 交付给开发人员的技术底座，变成<strong>不写代码的搭建者</strong>也能用的低代码构建能力：元数据驱动运行时为主轨（ADR-011），搭建产物是可打包、可安装到多个租户、可独立升级的应用包（ADR-014，经 ADR-020 修订）。</p>
+<p><strong>组件模型 v2 口径（ADR-020）</strong>。表单 / 列表 / 流程 / 页面是声明式表面（组件文件夹里的 <code>forms/</code>、<code>lists/</code>、<code>flows/</code>、<code>pages/</code>，与 S1 的 <code>skills/</code> <code>commands/</code> <code>hooks/</code> <code>.mcp.json</code> 同级，§07 7.2.2）：设计器保存即产出组件文件夹（<code>.qian-plugin/plugin.json</code> + 上述目录），可进 git、进市场（marketplace 条目）、被 patch；元数据注册表（8.1）是这些表面的运行态真相源与版本仓，文件夹是分发形态、git 修订是分发版本，二者由同一校验器守门，8.1 的 Release / Pointer 不改（R35）。可部署单元 = profile：<code>lowcode</code>、<code>workflow</code>（镜像 <code>qian-lowcode</code>、<code>qian-workflow</code>）以 profile 形式新增，<code>file-preview</code> 作为组合包挂在 <code>lowcode</code>（8.0.3，R31），每个 profile 只是一个 profile 文件 + 组合包。元数据的「包层 / 租户层」分层与 ADR-020 的 scope 模型是同一件事的两种说法：包层 = 组合包装载的全局注册，租户层 = 租户 scope 的遮蔽注册（8.1）。官方代码插件在 <code>platform</code> / <code>lowcode</code> 等 JIT profile 内的热装卸不进 S2 核心交付（S2 内 RT 领域 5 天 spike）、生产默认滚动重启，第三方代码与可 AOT 的边缘 profile 永不热插（R27；8.0.4，ADR-020 §7 第 5 条已拍板）。</p>
+<h4 class="rp-toc-include" id="802-退出标准adr-018"><a href="#802-退出标准adr-018" class="rp-header-anchor rp-link" aria-label="链接到 8.0.2 退出标准（ADR-018）">#</a>8.0.2 退出标准（ADR-018）</h4>
+<p>S2 结束时，以下两条必须在预发环境被第三方按脚本复现：</p>
+<ol>
+<li><strong>主链路</strong>：租户管理员或开发者在平台上「建应用 → 建表单与列表 → 走审批 → 授权给租户用户使用」，全程不写代码；租户普通用户登录后能在被授权的菜单下新增记录、发起审批、审批人在工作台处理、发起人看到结果。</li>
+<li><strong>多租户独立性</strong>：同一应用包（bundle v1）在两个租户分别安装，各自修改表单布局与审批人配置，其中一个租户升级到应用新版本后，另一个租户的行为与数据不受任何影响；两个租户的升级都可回滚。</li>
+</ol>
+<p>退出标准之外、但 S2 必须「做对否则 S4 返工」的设计见 8.14。</p>
+<h4 class="rp-toc-include" id="803-s2-新增-profile可部署单元"><a href="#803-s2-新增-profile可部署单元" class="rp-header-anchor rp-link" aria-label="链接到 8.0.3 S2 新增 profile（可部署单元）">#</a>8.0.3 S2 新增 profile（可部署单元）</h4>
+<p>按 ADR-020 D20.7，可部署单元 = profile（§07 7.0.4）。S1 的 profile（<code>platform</code>、<code>gateway</code>、<code>identity</code>、<code>standalone</code>、<code>minimal</code>）与 <code>shell</code> / <code>model-gateway</code> 组合包不变（R31）。S2 新增 2 个必做 profile（<code>lowcode</code>、<code>workflow</code>）、1 个挂在 <code>lowcode</code> 的组合包（<code>file-preview</code>）与 1 个可选 profile（<code>wasm-runtime</code>）——每个 profile 只是一个 profile 文件 + 组合包，不需改 ADR；profile 可被 patch 合并或拆分，表中为 S2 默认——仍遵守 ADR-017 的 K3s/ArgoCD/Kustomize 约定与「每服务 <code>/healthz</code> <code>/readyz</code>、default-deny NetworkPolicy、ResourceQuota」。表中 <code>qian-xxx</code> 为镜像名。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>profile（镜像）</th><th>形态</th><th>承载的组件（组合包）</th><th>为什么单独成 profile</th><th>级别</th></tr></thead><tbody><tr><td><code>lowcode</code>（<code>qian-lowcode</code>）</td><td>service，JIT 宿主（Kun 允许的「非 AOT 孤岛」）</td><td><code>qian.metadata</code>、<code>qian.dynamic-data</code>、<code>qian.schema-migrator</code>、<code>qian.expression</code>、<code>qian.forms</code>（服务端部分）、<code>qian.lists</code>（服务端部分）、<code>qian.widgets</code>（Field Type Provider 部分）、<code>qian.data-model</code>、<code>qian.data-api</code>、<code>qian.print</code>（服务端数据组装）</td><td>动态 SQL 生成、反射式 JSON、运行时元数据编译都不能进 <code>qian-platform</code> 的 AOT 边界；低代码查询是热点，需要独立水平扩展与故障域</td><td>P0</td></tr><tr><td><code>workflow</code>（<code>qian-workflow</code>）</td><td>service</td><td><code>qian.workflow</code> 全部（定义、引擎、运行态、解析器、通知绑定、SLA、子流程）</td><td>审批域体量大（基线估 12–15k 行）、计时器与令牌推进有自己的伸缩曲线；与表单运行时解耦便于单独回滚</td><td>P0</td></tr><tr><td><code>file-preview</code> 组合包（挂在 <code>lowcode</code>，非 profile；预览进程镜像 <code>qian-file-preview</code>）</td><td>service（第三方预览进程 + Qian 薄插件）</td><td><code>qian.file-preview</code> 的提供者实现</td><td>预览后端是可替换的外部进程，Helm 子 chart 钉版本随组件安装（补充裁决 Q34）；Qian 侧薄插件随 <code>lowcode</code> 装载（R31）</td><td>P1</td></tr><tr><td><code>wasm-runtime</code>（<code>qian-wasm-runtime</code>）</td><td>service（可选）</td><td><code>runtime.form: function</code> 组件宿主</td><td>ABI（Extism 或 WIT 组件）在 S2 中期拍板，之前公式与规则先用 JSON AST 解释器（补充裁决「Wasm function 运行时」）</td><td>P2</td></tr></tbody></table></div>
+<p>前端不新增 profile：<code>shell</code> 组合包（<code>platform</code> 的静态前端制品，<code>@qian/runtime</code> 上的 TS 插件树，经 <code>gateway</code> 提供）以 Module Federation 2 远程模块形式新增 <code>@qian/designer</code>（三大设计器）、<code>@qian/lowcode-runtime</code>（表单/列表渲染器与控件集）、<code>@qian/workflow-ui</code>（工作台与审批详情），静态制品随 <code>platform</code> 的 <code>shell</code> 组合包发布（R31）。</p>
+<h4 class="rp-toc-include" id="804-s2-新增与升级的插件"><a href="#804-s2-新增与升级的插件" class="rp-header-anchor rp-link" aria-label="链接到 8.0.4 S2 新增与升级的插件">#</a>8.0.4 S2 新增与升级的插件</h4>
+<p>命名以 ADR-003 的 <code>qian.</code> 前缀与决策清单用名为准（决策写 <code>qian.dynamic-data</code>，P 基线附录 B 中的 <code>qian.data-engine</code> 视为同一插件的别名）。全部 <code>policy.tier: system</code>；表中「形态」为 <code>runtime.form</code>（ADR-020 后 <code>kind</code> 退为实现细节），<code>module@&lt;镜像&gt;</code> 读作「默认进该 profile 的组合包」；每个有代码的组件按 ADR-019 拆 <code>Qian.&lt;X&gt;.Abstractions</code>（服务键 <code>ctx.&lt;X&gt;</code>）+ Provider 包（<code>Qian.Metadata</code>、<code>Qian.DynamicData</code>、<code>Qian.Forms</code>、<code>Qian.Workflow</code> 等），可独立安装但设计器与低代码运行时需要 <code>lowcode</code> profile（ADR-019 D19.9）；清单统一为 <code>.qian-plugin/plugin.json</code>。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>插件</th><th>形态</th><th>S2 职责一句话</th><th>级别</th><th>详见</th></tr></thead><tbody><tr><td><code>qian.metadata</code></td><td>module@<code>qian-lowcode</code></td><td>元数据注册表：每类元数据的 JSON Schema、语义校验、草稿/发布/版本/回滚、patch/diff、包层/租户层分层与 manageability、template/managed、发布编排、字段敏感度</td><td>P0</td><td>8.1、8.7、8.10</td></tr><tr><td><code>qian.dynamic-data</code></td><td>module@<code>qian-lowcode</code></td><td>动态数据引擎：Records API、Filter AST → SQL、唯一入口三段式鉴权、混合存储、系统列、乐观锁、服务端 Hook、信封事件、导入导出接入、批量 Resolver</td><td>P0</td><td>8.2</td></tr><tr><td><code>qian.schema-migrator</code></td><td>module@<code>qian-lowcode</code></td><td>元数据 diff → 迁移计划 → 审核 → 逐租户分批执行 → 记录；表名规范校验；dry-run</td><td>P0</td><td>8.3</td></tr><tr><td><code>qian.widgets</code></td><td>ui + module</td><td>控件注册表（单一事实源）、S2 控件集、每控件配对的 Field Type Provider</td><td>P0</td><td>8.4</td></tr><tr><td><code>qian.expression</code></td><td>module@<code>qian-lowcode</code></td><td>表达式/公式 JSON AST 解释器、函数注册表、运算符矩阵、系统变量目录、试算端点、执行预算</td><td>P0</td><td>8.5、8.8</td></tr><tr><td><code>qian.forms</code></td><td>module + ui</td><td>表单引擎：四段 Schema、校验器（前后端共用）、三态渲染器、子表、联动三层策略、声明式规则、引用关系图、从表生成</td><td>P0</td><td>8.5</td></tr><tr><td><code>qian.lists</code></td><td>module + ui</td><td>列表引擎：布局提供者、查询/列表字段、动作编排、标准操作集、权限四开关产出可授权项、一份语义 + 端覆盖</td><td>P0</td><td>8.6</td></tr><tr><td><code>qian.designer</code></td><td>ui（MF2 远程）</td><td>表单、列表、审批流三大设计器与设计器基础设施（嵌套拖拽、撤销重做、Schema 驱动属性面板、校验定位）</td><td>P0</td><td>8.5、8.6、8.8、8.13</td></tr><tr><td><code>qian.workflow</code></td><td>service@<code>qian-workflow</code></td><td>自研 .NET 轻量审批内核 + 审批域最小集（含子流程、超时催办）</td><td>P0</td><td>8.8</td></tr><tr><td><code>qian.authz</code>（S2 增量）</td><td>module@<code>qian-platform</code></td><td>数据权限编译器、字段权限、授权界面（含字段/数据维度）、创建者自动 Owner、数据权限方案自动生成</td><td>P0</td><td>8.9</td></tr><tr><td><code>qian.navigation</code>（S2 增量；S1 为 <code>qian.capabilities</code> 内「菜单由清单贡献 + URN 目录 + 用户偏好」的逻辑名，S2 允许拆出，R26）</td><td>module + ui</td><td>应用菜单管理界面、多端维度、菜单类型扩展点接入低代码功能、跨应用引用挂菜单</td><td>P0</td><td>8.10</td></tr><tr><td><code>qian.identity</code> 组织目录子模块（S2 增量；§07 7.4.3 把组织目录最小集放在 <code>qian.identity</code>，若独立为 <code>qian.directory</code> 本章随之改名）</td><td>module</td><td>责任岗位/责任人/主管解析契约与「第 N 级责任人」查询；导入向导接入</td><td>P0</td><td>8.8</td></tr><tr><td><code>qian.operations</code></td><td>module@<code>qian-platform</code></td><td>Operation/Task 资源：长任务与人工步骤资源化，<code>input_required</code>，对齐 MCP Tasks</td><td>P0</td><td>8.12</td></tr><tr><td><code>qian.entitlement</code>（S2 增量）</td><td>module</td><td>应用包安装到租户时的权益检查、升级同意规则（新增反向权限需重批）</td><td>P1</td><td>8.10</td></tr><tr><td><code>qian.print</code></td><td>module + ui</td><td>打印模板实体、版本、组件 Schema、数据绑定、挂载到列表按钮与流程节点、浏览器打印；打印设计器 S2 后期</td><td>P1</td><td>8.11</td></tr><tr><td><code>qian.file-preview</code></td><td>module + service</td><td>预览票据、提供者接口、格式清单、来源白名单</td><td>P1</td><td>8.11</td></tr><tr><td><code>qian.data-model</code></td><td>module + ui</td><td>数据建模器：可视化建表/字段/主键、浏览数据、控件映射与基准字段 UI、模型导入导出序列化器</td><td>P1</td><td>8.11</td></tr><tr><td><code>qian.data-api</code></td><td>module + ui</td><td>接口设计器：SQL（高级权限）/API/静态三类执行器、参数与返回字段、分页、值翻译、执行日志；S1 契约见 §07</td><td>P1</td><td>8.11</td></tr><tr><td><code>qian.notify</code>（S2 增量）</td><td>module + ui</td><td>短信通道 UI、群机器人（出站 Webhook）、第三方模板同步、监控 UI</td><td>P1</td><td>8.11</td></tr><tr><td><code>qian.scheduler</code>（S2 增量）</td><td>module + ui</td><td>数据接口型任务、任务管理 UI、作业定义与触发器状态拆分</td><td>P1</td><td>8.11</td></tr><tr><td><code>qian.realtime</code>（S2 增量）</td><td>module</td><td>Redis/MQ 背板替代进程内连接池；在线状态；事件类型目录</td><td>P1</td><td>8.11</td></tr><tr><td><code>qian.identity.connector.dingtalk</code> / <code>.feishu</code> / <code>.wechat-web</code></td><td>为 <code>ctx.Identity</code> seam 提供 Provider 的组件（<code>provides[]</code> + <code>policy.egress</code>；<code>connector</code> 非 <code>runtime.form</code>，R31）</td><td>钉钉、飞书扫码与工作台免登（S2 P0）；微信网站扫码（S2 P1，R4）</td><td>P0 / P1</td><td>§07 连接器 SPI</td></tr><tr><td><code>qian.model-gateway</code>（S2 增量）</td><td>service adapter</td><td>模型目录与按用途路由的<strong>契约</strong>（逻辑模型名、能力标签、用途槽位），为 §10.5 预留；租户可见在 S3</td><td>P2</td><td>§10.5</td></tr><tr><td><code>qian.wasm-runtime</code></td><td>service</td><td><code>function</code> 型 Wasm 运行时</td><td>P2</td><td>8.5、8.15</td></tr><tr><td><code>qian.automation</code></td><td>module@<code>qian-workflow</code></td><td>任务流程（事件/定时/WebHook 触发 + 数据四动作 + 接口 + 消息 + 发起审批）</td><td>P2（S3 必做，补充裁决 Q28）</td><td>8.8</td></tr><tr><td><code>qian.portal</code>（配置路径型） / <code>qian.report</code>（子集）</td><td>module + ui</td><td>固定模板 + 配置的应用首页；列表 + 分组汇总 + 导出 XLSX</td><td>P2（补充裁决 Q29）</td><td>8.11</td></tr><tr><td><code>qian.codegen</code></td><td>开发者工具</td><td>调用运行时 SDK 的薄壳脚手架导出</td><td>P2，不早于 S2 后期（Q11）</td><td>8.15</td></tr><tr><td><code>qian.script-runtime</code></td><td>ui</td><td>QuickJS 前端沙箱（白名单 API、超时、内存上限、不暴露令牌）</td><td>P2（补充裁决 Q18）</td><td>8.5</td></tr><tr><td><code>Qian.Runtime</code> 官方代码插件热装卸（S2 可选）</td><td>运行时</td><td>仅限 <code>platform</code> / <code>lowcode</code> 等 JIT profile 内的官方代码插件，collectible <code>AssemblyLoadContext</code> 装卸，默认仍走进程重启；第三方代码与可 AOT 的边缘 profile 永不热插（R27）；S1 只对声明式表面承诺热重载；不进 S2 核心交付，S2 内由 RT 领域做 5 天时间盒 spike 验证与 Kun 约束的兼容、结论写回 ADR-020（ADR-020 §7 第 5 条已拍板）</td><td>P2</td><td>§07 7.2.1</td></tr></tbody></table></div>
+<p>同期交付、但不属于低代码域的 S2 增量（归 §07 各插件，本章只列不展开）：<code>qian.gateway</code> 多 Pod 共享限流计数与密钥热轮换（P 基线 B.2 标 S2 必做）；<code>qian.files</code> 分片上传与用途目录；<code>qian.identity</code> 个人中心扩展（我的组织/身份/偏好/消息接收）；<code>qian.i18n</code> 在线翻译管理（可选）；<code>qian</code> CLI / <code>Qian.Plugin.Sdk</code> 开发者租户与远程调试通道（可选）；<code>qian init --template package</code> 模板与 <code>forms/</code> <code>lists/</code> <code>flows/</code> <code>pages/</code> 四种表面的校验器接入 <code>qian doctor</code>（必做，随 8.1 / 8.5 / 8.6 / 8.8 交付）。</p>
+<h4 class="rp-toc-include" id="805-s2-的横切约束从-s1-继承在-s2-首次被低代码运行时大规模消费"><a href="#805-s2-的横切约束从-s1-继承在-s2-首次被低代码运行时大规模消费" class="rp-header-anchor rp-link" aria-label="链接到 8.0.5 S2 的横切约束（从 S1 继承、在 S2 首次被低代码运行时大规模消费）">#</a>8.0.5 S2 的横切约束（从 S1 继承、在 S2 首次被低代码运行时大规模消费）</h4>
+<ul>
+<li>租户上下文只来自已校验令牌，<code>inputSchema</code> 禁止出现租户字段；动态数据引擎的每条 SQL 强制注入 <code>tenant_id</code> 谓词并叠加 PostgreSQL RLS（ADR-004、ADR-006）。</li>
+<li>所有写操作走带 Schema 的命令，携带 <code>sideEffect / idempotencyKey / dryRun</code>，UI 也不例外（ADR-018「S4 防返工」清单第 1 条）。</li>
+<li>结构化错误：<code>ProblemDetails</code> 扩展 + 错误码 + JSON Pointer 定位，设计器浮层与 Agent 消费同一份。</li>
+<li>审计含主体链（user / service / agent）、<code>capability_id</code>、<code>contract_version</code>、来源通道（UI / API / MCP）（ADR-009）。</li>
+<li>一份契约多处生成：控件注册表、Field Type Catalog、Filter AST、流程节点 Schema 既是设计器数据源，也是 <code>GET /registry/*</code> 的响应，也是 S4 工具描述的来源。</li>
+</ul>
+<h3 class="rp-toc-include" id="81-元数据注册表与版本模型p0--s2"><a href="#81-元数据注册表与版本模型p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.1 元数据注册表与版本模型（P0 · S2）">#</a>8.1 元数据注册表与版本模型（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念"><a href="#设计理念" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>元数据是 Qian 的一等资产：版本化、可校验、可 diff、可回滚的<strong>文档</strong>，而不是散落在若干 JSON 文本列里的隐式契约（参考平台 77 个无 Schema 的 JSON 列是反例）。注册表是所有 <code>package</code> 型插件的地基（ADR-002、ADR-011），表单、列表、流程、打印、菜单、数据模型全部走同一套「草稿 → 不可变发布快照 → 当前生效指针」心智；S4 让 Agent 改元数据时，校验、预览、回滚必须已经存在（ADR-018 防返工第 12 条）。</p>
+<h4 class="rp-toc-include" id="范围与边界"><a href="#范围与边界" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ <strong>元数据类型注册</strong>：每类元数据（<code>FormSchema</code>、<code>ListSchema</code>、<code>DataModel</code>、<code>FlowDefinition</code>、<code>PrintTemplate</code>、<code>MenuSet</code>、<code>RoleTemplate</code>、<code>App</code>、<code>CapabilityManifest</code>）在 <code>qian.capabilities</code>（§07 7.2.1）登记一份带 <code>$schema</code> 与 <code>schemaVersion</code> 的 JSON Schema 2020-12，加一个语义校验器（引用存在性、命名规范、依赖闭包）。保存时服务端校验，拒绝一切不过校验的写入。</li>
+<li>✅ <strong>三态 + 不可变快照</strong>：保留参考平台「未发布 / 已发布 / 已修改」的用户心智，底层升级为每次发布一条不可变 <code>Release</code> 快照、版本号递增、变更摘要、发布人、发布日志；运行时除设计器预览外一律读当前生效版本（F 基线裁决 C-5）。</li>
+<li>✅ <strong>回滚到任意版本并可 diff</strong>：两个版本间输出结构化 JSON Patch（RFC 6902）与人读摘要；回滚 = 把生效指针指回旧快照 + 触发 8.3 的前向兼容迁移评估，不做自动数据回滚。</li>
+<li>✅ <strong>patch 式写入</strong>：设计器与 Agent 都以 JSON Patch 提交增量；每个 patch 记来源（人 / Agent / 导入）、时间、审批记录（S2 人用即「保存人」，S4 扩为审批链）。</li>
+<li>✅ <strong>依赖图与删除保护</strong>：引用登记（表单引用数据接口、流程引用表单、菜单引用功能、打印引用表单）由 <code>qian.capabilities</code> 的引用登记契约统一查询；被引用对象不可删，提示解除路径。</li>
+<li>✅ <strong>分层与 manageability</strong>：有效元数据 = 系统基础层 → 按依赖拓扑排序的包层 → 租户定制层；每个组件与属性带 <code>manageability: locked | developerEditable | tenantEditable | protected</code>，由 bundle 清单声明、平台强制；容器型组件（表单、列表、菜单）做结构化合并（以子元素稳定 ID 为键），其余上层优先。与 ADR-020 scope 模型的关系：包层 = 组合包装载的全局注册（表单 / 列表 / 流程 / 页面以 <code>forms/</code> <code>lists/</code> <code>flows/</code> <code>pages/</code> 文件夹进入组件），租户层 = 租户 scope 的遮蔽注册（带作用域的 patch，存 <code>scope_patches</code>，与文件 patch 同格式、同校验器，§07 7.2.1）；<code>manageability</code> 决定租户 scope 允许遮蔽哪些属性——<code>locked</code> 即「该属性不可被 scope 遮蔽」，<code>tenantEditable</code> 即「允许租户 scope 遮蔽」；scope 不继承，应用 scope 与租户 scope 之间的关系用 lineage 数据表达。</li>
+<li>✅ <strong>template / managed 两种分发</strong>（ADR-014，默认 <code>managed</code>，<code>template</code> 可选）：<code>template</code> 拷贝即拥有，升级只能同源导入（合并或覆盖）；<code>managed</code> 锁定命名空间、可升级、租户只能改 <code>tenantEditable</code> 项。</li>
+<li>✅ <strong>字段敏感度标签</strong>：<code>dataClassification: public | internal | pii | finance | secret</code> 进入字段元数据，供 8.9 脱敏与导出策略消费。</li>
+<li>✅ <strong>元数据即能力</strong>：实体 CRUD、表单提交、流程动作在发布时自动登记进能力目录（命令/查询/事件/实体四类），能力按租户安装状态可见。</li>
+<li>❌ 用户个性化层（S3 可选）；三方合并冲突预检报告与升级前快照（S3 必做，见 §09）；在线多人协同编辑（本期不做，设计器用乐观锁 + 冲突提示）。</li>
+<li>❌ 元数据存业务库：元数据用普通 EF 聚合存在平台库 <code>metadata</code> schema，按 ADR-004 schema-per-service；动态业务表才走 8.2。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点"><a href="#技术落点" class="rp-header-anchor rp-link" aria-label="链接到 技术落点">#</a>技术落点</h4>
+<ul>
+<li>核心对象：<code>MetadataType</code>（类型注册）、<code>Asset</code>（稳定 ID、命名空间化编码 <code>tenant.app.local</code>、类型、所属应用、层级、manageability）、<code>Draft</code>、<code>Release</code>（不可变快照、版本号、<code>compiledModelRef</code>）、<code>ActivePointer</code>、<code>Patch</code>（JSON Patch + 来源 + 审批）、<code>Reference</code>（依赖边）、<code>Layer</code>（系统 / 包 / 租户）。</li>
+<li><strong>编译产物（Compiled Model）</strong>：发布时把 FormSchema/ListSchema/DataModel 编译成运行时直接消费的紧凑模型（字段投影、标识符白名单、规则表、权限资源清单），按「租户 + 版本指纹」缓存；8.2 的 SQL 生成只信任编译产物中的标识符。</li>
+<li>编码规则：名称应用内唯一、编码全局唯一；未填编码时自动「前缀 + YYYYMMDD + 六位序列」（序号服务见 §07）；复制加「.副本 + 五位随机」且默认未发布；跨应用导入用命名空间化稳定编码 + id 重映射表（补充裁决 Q20）。</li>
+<li>事件：<code>qian.metadata.released.v1</code>、<code>qian.metadata.rolledback.v1</code>、<code>qian.metadata.patched.v1</code>，信封对齐 ADR-008。</li>
+</ul>
+<h4 class="rp-toc-include" id="插件化定位"><a href="#插件化定位" class="rp-header-anchor rp-link" aria-label="链接到 插件化定位">#</a>插件化定位</h4>
+<p><code>qian.metadata</code>（Definition <code>Qian.Metadata.Abstractions</code>，服务键 <code>ctx.Metadata</code> + Provider <code>Qian.Metadata</code>）是 <code>lowcode</code> profile 组合包的成员，<code>policy.tier: system</code>。<code>qian.capabilities</code>（§07 7.2.1）只保留契约（类型注册接口、校验器接口、Release/Pointer 语义、引用登记）；各低代码组件通过 SPI 贡献自己的元数据类型与序列化器；<code>runtime.form: package</code> 组件安装 = 把包内 <code>forms/</code> <code>lists/</code> <code>flows/</code> <code>pages/</code> 表面实例化为该租户的包层记录（全局注册），租户定制写为租户 scope 的遮蔽注册；元数据类型的校验器同时是 <code>qian doctor</code> 对这四种表面的校验器。</p>
+<h4 class="rp-toc-include" id="agent-契约"><a href="#agent-契约" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<ul>
+<li><code>GET /metadata/types</code> 返回每类元数据的 JSON Schema 与示例；<code>POST /metadata/{type}/{id}:validate</code> 返回结构化错误（错误码 + JSON Pointer + 允许值）。</li>
+<li><code>POST /metadata/{type}/{id}/patches</code>（带 <code>idempotencyKey</code>、<code>dryRun</code>）→ 返回校验结果与预览 diff；<code>POST …:release</code> 与 <code>…:rollback</code> 均为带副作用等级 <code>write</code> 的命令。</li>
+<li><code>GET /metadata/{type}/{id}/releases/{a}/diff/{b}</code> 返回 JSON Patch 与人读摘要，供 Agent 解释「为什么某字段不存在了」。</li>
+<li>生成格式 = 导入格式：Agent 生成的元数据与导入包用同一 Schema、同一校验器。</li>
+</ul>
+<h4 class="rp-toc-include" id="验收标准"><a href="#验收标准" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 任一类元数据提交不满足 Schema 或语义校验的内容，服务端返回 422，<code>errors[]</code> 含错误码与 JSON Pointer；设计器浮层能据此定位到控件。<strong>测法</strong>：TCK 用 20 个坏样例逐类打接口。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 同一功能连续发布 3 次后，<code>releases</code> 列表有 3 条不可变记录；回滚到第 1 版后运行时读到第 1 版布局，第 2、3 版快照仍可查。<strong>测法</strong>：脚本发布 → 改字段 → 发布 → 回滚 → 比对 <code>GET /functions/{id}/compiled</code> 与快照。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 两个版本 diff 输出的 JSON Patch 回放到旧版等于新版（幂等重放）。<strong>测法</strong>：属性测试 200 次随机编辑。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> <code>managed</code> 包中 <code>locked</code> 属性在租户层写入被拒绝并返回 <code>METADATA_LOCKED</code>；<code>tenantEditable</code> 属性写入成功并在包升级后保留。<strong>测法</strong>：两租户安装同一包，分别改一个 locked 与一个 tenantEditable 属性，升级后比对。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 被流程引用的表单删除返回 <code>METADATA_REFERENCED</code> 并列出引用方。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 发布后能力目录出现该功能的 <code>records.*</code> 能力条目，卸载后消失。<strong>测法</strong>：查 <code>GET /capabilities?app=…</code>。</li>
+</ul>
+<h3 class="rp-toc-include" id="82-动态数据引擎p0--s2"><a href="#82-动态数据引擎p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.2 动态数据引擎（P0 · S2）">#</a>8.2 动态数据引擎（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-1"><a href="#设计理念-1" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>元数据驱动运行时的核心是一组<strong>住在非 AOT 孤岛里的 Kun 消费方模块</strong>：不走 EF 模型，按实体编码读写 JSON 行，用统一 Filter AST 生成参数化 SQL，所有通道（PC、移动、API、流程回调、导入、Agent）共用一个入口并在入口做「资源 + 动作 + 行级」三段式鉴权（ADR-011、ADR-006）。参考平台 47 处拼 SQL、鉴权散落控制器、按 id 读改删不过数据权限、全量用户表进缓存，全部是反向约束。</p>
+<h4 class="rp-toc-include" id="范围与边界-1"><a href="#范围与边界-1" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ <strong>Records API</strong>（每个已发布功能自动获得）：<code>list</code>（Filter AST + 排序 + 分页 + 关键词）、<code>get</code>、<code>create</code>、<code>update</code>（乐观锁）、<code>delete</code>（按策略逻辑/物理）、<code>batchDelete</code>、<code>batchSave</code>、<code>import</code>、<code>export</code>、<code>startFlow</code>（委托 8.8）、<code>relatedQuery</code>（关联查询，P2）。注册为少量泛型命令 <code>CreateRecord / UpdateRecord / DeleteRecord / QueryRecords</code>，内部按元数据分派，Pipeline 行为（校验/UoW/审计/追踪）照常复用。</li>
+<li>✅ <strong>统一 Filter AST</strong>（引用 S1 <a href="/design/prd/specs/data-contracts.html" class="rp-link">数据契约</a> 的 Schema、矩阵、系统变量与校验器）：<code>{logic, groups[{logic, conditions[{field, op, value | sysVar}]}]}</code>，13 个运算符（eq ne like notLike isNull notNull in notIn ge gt le lt between）× 字段类型矩阵机器可读；系统变量目录（currentUser 及下属/子孙、currentOrg 及子/子孙、currentPosition 及子/子孙、currentManagedOrgs、formId、keyword、flowId、taskId、launchUserId）。数据过滤、高级查询、数据权限、启用规则、流程条件五处共用（S1 定义，见 §07）。</li>
+<li>✅ <strong>唯一入口三段式鉴权</strong>：资源（功能/菜单）→ 动作（标准操作或自定义动作）→ 行级（8.9 编译出的谓词）；字段权限在读投影与写白名单处执行；鉴权不依赖客户端传入的 <code>menuId / flowIds</code>，也不依赖设计者是否勾选「权限开关」。内部调用（流程回调、调度）走服务身份 + <code>on_behalf_of</code>。</li>
+<li>✅ <strong>混合存储模型</strong>：每个实体一张物理主表（副表一对一、子表一对多各自成表，外键 <code>f_foreign_id</code>）；多值字段（多选、人员多选、文件列表）用原生 <code>jsonb</code> 列并建 GIN 索引，或在 Field Type Provider 声明 <code>multiValueStrategy: relationTable</code> 时走关联表。</li>
+<li>✅ <strong>系统列约定</strong>：<code>id</code>、<code>tenant_id</code>（联合主键）、<code>created_at/by</code>、<code>updated_at/by</code>、<code>is_deleted/deleted_at/deleted_by</code>（按开关）、<code>row_version</code>（乐观锁，整型自增）、<code>flow_task_id/flow_id/flow_state</code>（主表、流程表单）、<code>org_snapshot_id/position_snapshot_id</code>（新建时快照）。列名沿用 Kun 约定，RLS 策略随建表写入。</li>
+<li>✅ <strong>乐观锁</strong>：原子 <code>UPDATE … WHERE id=@id AND row_version=@v</code>，影响行数为 0 返回 <code>RECORD_CONFLICT</code>，不做「先查后改」。</li>
+<li>✅ <strong>记录生命周期</strong>（F 基线 §3.3 升级）：新建 = 字段权限裁剪 → 必填 → 唯一/业务主键 → 系统字段填充（单据号、创建人、快照、租户、版本=0、雪花 id）→ 主副子表同事务写入 → <code>before</code> Hook → 提交 → <code>qian.record.changed.v1</code>；编辑 = 乐观锁 → 子表按 id 比对增删改（删除策略 cascade / restrict / keep）→ 字段级数据日志 → 事件；删除 = 有在途流程则拒绝 → 逻辑或物理删除 → 事件。</li>
+<li>✅ <strong>服务端 Hook</strong>：<code>before.create/update/delete</code>（可拒绝、可改写载荷，同事务）与 <code>after.*</code>（事务提交后经 Outbox 异步）；Hook 实现只能是：声明式规则、已注册的平台能力（如调用数据接口、发起流程）、S2 可选的 <code>function</code> Wasm；不允许进程内任意脚本。</li>
+<li>✅ <strong>信封事件</strong> <code>qian.record.changed.v1</code>：<code>{entityCode, recordId, op: created|updated|deleted|imported, tenantId, actor, before?, after?, changedFields[]}</code>，静态注册一次，Outbox 同事务投递（需要面向 <code>NpgsqlTransaction</code> 的 <code>IOutboxWriter</code> 实现）。</li>
+<li>✅ <strong>按需批量 Resolver</strong>：字典、组织、用户、关联表单、数据集的 id→名称翻译按请求批量解析、租户维度分布式缓存，不做全量预热。</li>
+<li>✅ <strong>导入导出接入</strong>：复用 §07 的导入导出引擎——模板派生（必填强制勾选、不可导入控件黑名单）、名称→存储值转义、预览 dry-run、错误报告与模板同构、仅新增/更新或新增（先判业务主键再判唯一）、流程表单导入后待提交；导出当前页/全部/当前选择 + 字段勾选，分批流式生成不先取全量。</li>
+<li>✅ <strong>数据日志</strong>：字段级差异（新建/编辑/删除/导入都覆盖），走 ADR-009 实体级审计同事务写入。</li>
+<li>✅ <strong>唯一性与业务主键</strong>：单字段唯一（空值不校验、主副表按库表查重且数据过滤隐藏的记录也参与、子表仅同主记录内）；业务主键多字段联合、导入同校验。</li>
+<li>❌ 匿名外链填单/公开查询（S2 可选 → S3，用服务端签发的能力令牌重做；不照搬读草稿、不校验的实现）；租户自带业务库连接（待 ADR-004 拍板，本期不做）；MySQL/国产库方言（ADR-004）；跨库数据同步（本期不做）。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点-1"><a href="#技术落点-1" class="rp-header-anchor rp-link" aria-label="链接到 技术落点">#</a>技术落点</h4>
+<ul>
+<li><code>IDynamicRecordStore</code>（按 <code>entityCode</code> 读写 <code>JsonObject</code> 行）、<code>IQueryDsl → SqlBuilder</code>（参数化 + 标识符白名单，白名单只来自编译产物）、<code>IMetadataValidator(entityDef, payload)</code>（字段级错误码 <code>{entity}.{field}.{constraint}</code>）、<code>IRecordHookRegistry</code>、<code>IValueResolver</code>（Field Type Provider 提供）。</li>
+<li>连接打开时设置 RLS GUC（Dapper 版租户拦截器），强制 <code>tenant_id = @tenant AND is_deleted = false</code>；复用 Kun 双 SQL 分页。</li>
+<li>分页上限、导出行数上限、<code>in</code> 列表长度上限、查询超时为租户级配置（§07 配置 Schema）。</li>
+<li>多副本：雪花 WorkerId 分配沿用 §07；单据序号原子取号沿用 §07 序号服务。</li>
+</ul>
+<h4 class="rp-toc-include" id="插件化定位-1"><a href="#插件化定位-1" class="rp-header-anchor rp-link" aria-label="链接到 插件化定位">#</a>插件化定位</h4>
+<p><code>qian.dynamic-data</code>（module@<code>qian-lowcode</code>，<code>tier: system</code>）。扩展点：Field Type Provider（8.4）、Hook 实现（能力引用）、数据源提供者（静态/字典/数据集/组织树）。Definition 层（<code>Qian.Data.Abstractions</code> / <code>Qian.Authz.Abstractions</code>，§07 7.5、7.6）只持有 Filter AST Schema、运算符矩阵、系统变量目录与鉴权判定端口，实现全部在本组件。</p>
+<h4 class="rp-toc-include" id="agent-契约-1"><a href="#agent-契约-1" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<ul>
+<li>每个已发布功能自动产出：JSON Schema（字段、类型、枚举/字典、必填、唯一、关联、敏感度）+ OpenAPI 3.1（<code>records.*</code> 端点，查询参数 = Filter AST Schema）+ 语义描述（label、描述、示例）。</li>
+<li><code>records.*</code> 的 <code>inputSchema</code> 不含租户字段；<code>create/update/delete</code> 带 <code>idempotencyKey</code> 与 <code>dryRun</code>；<code>sideEffect</code> 分别为 <code>write / write / destructive</code>，<code>delete</code> 默认 <code>policyHint: confirm</code>。</li>
+<li>错误枚举化：<code>RECORD_CONFLICT</code>、<code>RECORD_REFERENCED_BY_FLOW</code>、<code>BUSINESS_KEY_DUPLICATE</code>、<code>SUBTABLE_ROW_LIMIT</code>、<code>FIELD_FORBIDDEN</code>、<code>ROW_SCOPE_DENIED</code>，附字段 JSON Pointer。</li>
+<li><code>qian.record.changed.v1</code> 可被 Agent 订阅；Hook 可注册为「调用能力」，S4 时能力可以是 Agent 工具。</li>
+</ul>
+<h4 class="rp-toc-include" id="验收标准-1"><a href="#验收标准-1" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 任意组合的 Filter AST 生成的 SQL 全部参数化，标识符不在编译产物白名单时返回 <code>FILTER_FIELD_UNKNOWN</code>。<strong>测法</strong>：模糊测试 10k 随机 AST + SQL 文本断言无字面量拼接。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 以租户 A 的令牌访问租户 B 的记录 id：<code>get/update/delete</code> 均 404/403，且即使绕过应用层谓词，RLS 仍阻断。<strong>测法</strong>：跨租户越权探测（TCK 内置）+ 直接 SQL 旁路验证。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 不带 <code>menuId</code> 的请求、移动端通道、流程回调通道对同一记录的读写结果与 PC 通道一致（都受行级与字段权限约束）。<strong>测法</strong>：同一用户四通道回归。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 两客户端并发更新同一记录，后提交者收到 <code>RECORD_CONFLICT</code>，数据库 <code>row_version</code> 只递增一次。<strong>测法</strong>：并发测试 100 轮。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 新建含 50 行子表的记录后，<code>qian.record.changed.v1</code> 恰好一条进入 Outbox 并被消费一次；消费端故障重启后不丢不重（至少一次 + 幂等）。<strong>测法</strong>：注入消费端崩溃。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 10 万行主表、列表页含 5 个 id→名称字段时，一次 <code>list</code> 对翻译源的查询次数 ≤ 5（无 N+1）。<strong>测法</strong>：SQL 计数断言。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 导入 1 万行，其中 100 行违反业务主键：返回与模板同构的错误报告，成功行可见，失败行可修正重导。<strong>测法</strong>：导入脚本。</li>
+</ul>
+<h3 class="rp-toc-include" id="83-schema-migratorp0--s2"><a href="#83-schema-migratorp0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.3 Schema Migrator（P0 · S2）">#</a>8.3 Schema Migrator（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-2"><a href="#设计理念-2" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>参考平台「改表 = 删表重建、只允许空表、业务列不迁移」是本领域最大实现差距的来源。Qian 的迁移是正式管道：<strong>元数据 diff → 迁移计划 → 审核 → 逐租户分批执行 → 记录</strong>，遵守「扩展 → 迁移数据 → 收缩」且不承诺自动回滚（ADR-011、P 基线 §4.3）。</p>
+<h4 class="rp-toc-include" id="范围与边界-2"><a href="#范围与边界-2" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ 自动建表（无表模式）：发布时按 DataModel 建主/副/子表，带系统列、RLS 策略、外键与索引；表名可自定义或默认「前缀 + 功能稳定编码」。</li>
+<li>✅ 手动选表（有表模式）：从数据建模（8.11）已有表勾选主/子表，发布时校验主键存在、系统列齐备（缺失则由计划补齐）。</li>
+<li>✅ 表名与字段名规范校验服务：字母开头、字母数字下划线、长度上限、非保留字、不重复；前端实时 + 后端发布时双层，错误带「去修改」定位。</li>
+<li>✅ 迁移计划：<code>steps[{op: createTable|addColumn|alterColumn|dropColumn|addIndex|dropIndex|addRlsPolicy, table, column?, from?, to?, dataLoss: bool, lockLevel}]</code>，<code>tenantsAffected</code>，预估耗时；<code>dryRun</code> 只出计划不执行。</li>
+<li>✅ 审核门：<code>dataLoss=true</code> 的步骤（删列、缩短度、类型不兼容）必须人工批准；默认策略是「先加新列、后台迁移数据、旧列标记弃用，N 天后收缩」。</li>
+<li>✅ 逐租户分批执行：共享库 + RLS 下一次 DDL 即全租户生效；SchemaPerTenant / 独立库（S3）下循环所有租户 schema，批次大小、并发上限、失败重试、半升级状态可观测、人工介入点（继续/跳过/回退本批）。</li>
+<li>✅ <code>CREATE INDEX CONCURRENTLY</code>、<code>ALTER TABLE … ADD COLUMN</code> 等低锁操作优先；高锁操作标记并建议维护窗口。</li>
+<li>✅ <code>schema_change_log</code>：每步执行记录（租户、版本、SQL、耗时、结果、操作者），按「租户 × 版本」幂等——重放已执行步骤为 no-op。</li>
+<li>✅ 方言子插件：S2 只有 PostgreSQL 16（ADR-004）；方言接口预留。</li>
+<li>❌ 自动数据回滚；跨库事务；在线把共享库租户迁到独立库（S3 评估是否作服务）；MySQL/国产库方言。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点-2"><a href="#技术落点-2" class="rp-header-anchor rp-link" aria-label="链接到 技术落点">#</a>技术落点</h4>
+<p><code>ISchemaMigrator.Plan(fromRelease, toDraft) → MigrationPlan</code>、<code>Approve</code>、<code>Apply(plan, tenantBatch)</code>、<code>Status</code>。DDL 经 K8s 迁移 Job 先行（ADR-017），应用发布的「切流」步骤等待迁移完成。字段类型与长度精度来自 8.4 的 Field Type Catalog。</p>
+<h4 class="rp-toc-include" id="插件化定位-2"><a href="#插件化定位-2" class="rp-header-anchor rp-link" aria-label="链接到 插件化定位">#</a>插件化定位</h4>
+<p><code>qian.schema-migrator</code>（module@<code>qian-lowcode</code>，<code>tier: system</code>），被 <code>qian.metadata</code> 的发布编排调用（8.7），也被 <code>qian.data-model</code> 的建模器调用；对 <code>qian.lifecycle</code>（§07 7.2.1）暴露「逐租户批量迁移」执行器，供 <code>runtime.form: package</code> 组件的租户级钩子复用。</p>
+<h4 class="rp-toc-include" id="agent-契约-2"><a href="#agent-契约-2" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<p><code>POST /functions/{id}:publish?dryRun=true</code> 返回迁移计划与影响面；计划的 <code>dataLoss</code> 步骤带人话解释；<code>GET /migrations/{planId}</code> 暴露执行状态机。Agent 只能提交 dry-run 与请求审批，不能直接 <code>Apply</code> <code>dataLoss=true</code> 的计划（<code>policyHint: confirm</code>）。</p>
+<h4 class="rp-toc-include" id="验收标准-2"><a href="#验收标准-2" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 表单新增控件 → 发布：目标表新增列，已有数据不变；删除控件 → 发布：计划含 <code>dropColumn(dataLoss=true)</code>，未审批不执行，旧数据仍可查。<strong>测法</strong>：发布脚本 + 表结构比对。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 数字字段精度从 2 改为 4：计划为 <code>alterColumn</code> 无数据丢失，执行后原值精度保留。<strong>测法</strong>：数据比对。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 1000 个租户（SchemaPerTenant 模拟）分 20 批迁移，第 7 批人为失败：状态显示 6 批完成、第 7 批失败、其余未开始；修复后「继续」只跑剩余批次。<strong>测法</strong>：故障注入。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 同一迁移计划重复 <code>Apply</code> 两次，第二次全部 no-op，<code>schema_change_log</code> 不新增成功记录。<strong>测法</strong>：幂等重放。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 非法表名（保留字、超长、重名）在设计器实时提示并在发布时被后端拒绝。<strong>测法</strong>：接口与 UI 双测。</li>
+</ul>
+<h3 class="rp-toc-include" id="84-field-type-catalog-与控件注册表p0--s2"><a href="#84-field-type-catalog-与控件注册表p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.4 Field Type Catalog 与控件注册表（P0 · S2）">#</a>8.4 Field Type Catalog 与控件注册表（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-3"><a href="#设计理念-3" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>控件目录是<strong>数据而不是代码</strong>：一份注册表同时是设计器左栏、<code>GET /registry/widgets</code> 响应、运行时三态渲染来源、Field Type Provider 的类型映射来源，也是 S4 Agent 的词典（参考平台把 23 个控件名硬编码进提示词是反例）。每个控件包 = <code>meta + Runtime + Designer 面板 + toSearchControl + toColumnRenderer + 服务端 Field Type Provider</code>，前后端同名同版本发布（ADR-013）。</p>
+<h4 class="rp-toc-include" id="范围与边界-3"><a href="#范围与边界-3" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ <strong>Field Type Catalog</strong>（S1 契约，S2 全量）：条目 <code>{key, displayName, dbType, defaultLength, defaultPrecision, indexable, multiValueStrategy: json|relationTable|none, provider: {toStorage, fromStorage, toQuery, toDisplay, validate}}</code>；控件 → 字段类型映射只在此一处声明，无代码 switch 兜底；基准类型集（int/float/decimal/datetime/varchar/text/bigint/jsonb/bool/uuid）与 PostgreSQL 方言映射归 <code>qian.data</code>（§07）。</li>
+<li>✅ <strong>控件注册表</strong> <code>registerWidget(type, {meta, Runtime, Designer, toSearchControl, toCellRenderer})</code>，<code>meta = {type, name, category, description(一句话用途与场景), props: JSONSchema(默认值与枚举), valueType, events, devices[], supports: {pc, mobile, subtable, listColumn, query, group, condition, linkage, import, export, inlineEdit, anonymous}, acceptsDataSources[], defaultOperators, authAware, i18nKeys, compatWith[]}</code>。能力矩阵由引擎与 Agent 机器判定，不写在文档里。</li>
+<li>✅ <strong>三态渲染一次声明</strong>：<code>edit / readonly / cell</code>，不再出现独立的详情渲染器。</li>
+<li>✅ <strong>查询用控件</strong>：日期区间、时间区间、关键词属于列表引擎的查询控件，不是表单控件。</li>
+<li>✅ <strong>控件分级表</strong>（下表）；P0 控件集 = S2 退出标准主链路所需，P1 = S2 内交付的常用控件，P2 = S2 可选或 S3。</li>
+<li>❌ OCR 控件库（9 种，S4，经模型服务网关）；签章/签名/定位（S3 可选，合规与移动场景）；H5 专属渲染器（补充裁决 Q13：S2 只做 PC 响应式，<code>devices[]</code> 与端覆盖预留）。</li>
+</ul>
+<p><strong>控件分级表</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>类别</th><th>P0（S2 必做，关键路径）</th><th>P1（S2 必做）</th><th>P2（S2 可选 / S3）</th></tr></thead><tbody><tr><td>基础 · 输入</td><td>单行输入、多行输入、数字输入、开关</td><td>—</td><td>—</td></tr><tr><td>基础 · 选择</td><td>单选框组、多选框组、下拉选择</td><td>级联选择</td><td>—</td></tr><tr><td>基础 · 日期时间</td><td>日期选择、时间选择</td><td>—</td><td>—</td></tr><tr><td>基础 · 上传</td><td>文件上传、图片上传（策略对象归 <code>qian.files</code>）</td><td>—</td><td>—</td></tr><tr><td>基础 · 杂项</td><td>—</td><td>—</td><td>颜色选择、评分、滑块、富文本（选型调研后，补充裁决 Q39）</td></tr><tr><td>基础 · 展示</td><td>文本、提示</td><td>链接</td><td>按钮（优先挂声明式动作）、轮播图</td></tr><tr><td>基础 · 码类</td><td>—</td><td>—</td><td>二维码、条形码（不建列）</td></tr><tr><td>高级 · 组织类</td><td>用户选择、组织选择</td><td>岗位选择、角色选择、分组选择</td><td>—</td></tr><tr><td>高级 · 主从</td><td>设计子表（表格布局、合计、条数限制、删除策略、底部按钮）</td><td>子表平铺布局、「选择数据」批量回填</td><td>—</td></tr><tr><td>高级 · 数据源选择</td><td>下拉树形</td><td>弹窗选择 + 弹窗选择属性</td><td>下拉表格、下拉补全（<code>@keyword</code> 契约）</td></tr><tr><td>高级 · 关联</td><td>关联表单</td><td>关联表单属性</td><td>关联查询（与页签管理合并设计）</td></tr><tr><td>高级 · 计算</td><td>数字公式、日期公式（服务端复算）</td><td>—</td><td>—</td></tr><tr><td>高级 · 其他</td><td>—</td><td>—</td><td>省市区域（行政区划数据包）、Iframe（URL 白名单 + CSP）；签章/签名/定位 S3</td></tr><tr><td>系统</td><td>创建人员、创建时间、修改人员、修改时间、所属组织、所属岗位、单据组件</td><td>—</td><td>—</td></tr><tr><td>布局</td><td>分组标题、分割线、栅格容器、卡片容器</td><td>折叠面板、标签面板</td><td>步骤条、表格容器（仅 PC）</td></tr><tr><td>查询专用</td><td>日期区间、时间区间、关键词（列表引擎）</td><td>—</td><td>—</td></tr><tr><td>OCR</td><td>—</td><td>—</td><td>S4 全部</td></tr></tbody></table></div>
+<p>分级依据：F 基线附录 A 的 59 + 9 控件目录为基线口径；P0/P1 的划分以「退出标准脚本需要什么」为唯一标准（建请假单：输入/选择/日期/人员/子表/公式/系统列/布局；建列表：查询控件）。</p>
+<h4 class="rp-toc-include" id="技术落点-3"><a href="#技术落点-3" class="rp-header-anchor rp-link" aria-label="链接到 技术落点">#</a>技术落点</h4>
+<ul>
+<li>控件包目录结构与 <code>qian pack</code> 的 TCK 检查：meta 必须有 props Schema、三态实现、Field Type Provider 同名；<code>supports</code> 与实际实现一致性由 TCK 渲染探针验证。</li>
+<li>注册表持久化为数据（含版本），设计器与 <code>GET /registry/widgets</code> 都读它；平台升级新增控件 = 发布新控件包，不改引擎。</li>
+<li>第三方控件（S3，<code>partner/private</code> tier）只允许 <code>ui</code> 形态走 Worker 远程渲染白名单；服务端 Field Type Provider 只能由 <code>system/official</code> 提供，第三方控件复用已有 Field Type。</li>
+</ul>
+<h4 class="rp-toc-include" id="插件化定位-3"><a href="#插件化定位-3" class="rp-header-anchor rp-link" aria-label="链接到 插件化定位">#</a>插件化定位</h4>
+<p><code>qian.widgets</code>（<code>ui + module</code>，<code>tier: system</code>）持有注册表与官方控件集；每个控件分组是一个子包（<code>widgets-input/choice/datetime/upload/display/org/subtable/datasource/relation/formula/system/layout</code>）。扩展点 <code>qian.form.field-type/v1</code> 面向第三方。</p>
+<h4 class="rp-toc-include" id="agent-契约-3"><a href="#agent-契约-3" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<ul>
+<li><code>GET /registry/widgets</code> 返回 type、用途、props Schema、能力矩阵、可接受数据源、默认运算符、示例；<code>GET /registry/field-types</code> 返回 Catalog。</li>
+<li>控件 meta 的 <code>description</code> 面向 Agent 写成「何时使用/何时不用」；<code>compatWith</code> 与 <code>supports</code> 让 Agent 在生成前自检而非撞错。</li>
+<li>S4 的 <code>generateFormFromTable</code> 与 <code>insertFields</code> 工具只能产出注册表内的控件类型。</li>
+</ul>
+<h4 class="rp-toc-include" id="验收标准-3"><a href="#验收标准-3" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 注册表中每个控件都能在设计器左栏出现、能被拖入画布、能以 edit/readonly/cell 三态渲染，且与 <code>GET /registry/widgets</code> 返回一致。<strong>测法</strong>：TCK 渲染探针遍历全部控件。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 声明 <code>supports.query=false</code> 的控件不出现在查询字段候选；<code>supports.subtable=false</code> 的控件拖入子表被拒绝并提示。<strong>测法</strong>：UI 自动化。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 数字控件精度 4 建表得到 <code>numeric(?,4)</code>；多选控件默认建 <code>jsonb</code> 列并有 GIN 索引；Catalog 改映射后新建表随之变化而旧表不变。<strong>测法</strong>：表结构断言。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 新增一个官方控件包并发布，不重启 <code>qian-lowcode</code> 即可在设计器使用（控件包是 <code>ui</code> + Field Type 数据，不是进程内代码热插）。<strong>测法</strong>：发布控件包后刷新设计器。</li>
+</ul>
+<h3 class="rp-toc-include" id="85-表单引擎与设计器p0--s2"><a href="#85-表单引擎与设计器p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.5 表单引擎与设计器（P0 · S2）">#</a>8.5 表单引擎与设计器（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-4"><a href="#设计理念-4" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>一套表单引擎贯穿 S1 后台 CRUD 与 S2 低代码运行时（ADR-013），表单是四段 Schema 的文档：<strong>Data</strong>（字段与约束）、<strong>UI</strong>（布局与呈现）、<strong>Rule</strong>（声明式行为）、<strong>Binding</strong>（物理绑定与数据源）。设计器只是 Schema 的编辑器之一，Agent 是另一个；两者产物过同一个校验器。声明式优先于脚本（补充裁决 Q18）。</p>
+<h4 class="rp-toc-include" id="范围与边界-4"><a href="#范围与边界-4" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ <strong>四段 Schema</strong>（F 基线附录 B.3 为轮廓，定稿于本章）：
+<ul>
+<li><code>dataSchema</code>：<code>fields[{name, type: FieldType, label, required, unique, precision?, length?, enum?/dictionary?/dataset?, defaultValue, validations[], dataClassification}]</code>、<code>businessKey[]</code>、<code>subTables[{name, fields, maxRows, deletePolicy}]</code>。数据部分对齐 JSON Schema 2020-12。</li>
+<li><code>uiSchema</code>：<code>appearance{size, labelAlign, labelWidth, labelSuffix, gutter, popupType: center|drawer|fullscreen, style: default|official, className}</code>、<code>tree[WidgetNode{widgetType, fieldRef?, props, style, channels{pc, mobile: bool|override}, children?}]</code>、<code>detailTabs?</code>（P2）。</li>
+<li><code>ruleSchema</code>：<code>formRules[{scene: create|edit, action: disable|require|hide, fields}]</code>、<code>linkages[{when: FilterExpression, then: Action[]}]</code>、<code>formulas[{field, expr: AST, mode: display|store}]</code>、<code>buttons{confirm, cancel, print?, continueGroup, custom[≤5]}</code>、<code>hooks{onLoad?, beforeSubmit?, afterSubmit?}</code>（引用，可空）。</li>
+<li><code>bindingSchema</code>：<code>primaryKeyPolicy: snowflake|identity</code>、<code>concurrencyLock</code>、<code>logicalDelete</code>、<code>dataLog: bool</code>、<code>tables[{table, role: main|aux|sub, foreignKey?, fieldMap}]</code>、<code>dataSources[{id, kind: static|dictionary|dataset|org, params[], valueField, labelField, cache}]</code>。</li>
+</ul>
+</li>
+<li>✅ <strong>纯表单 / 列表表单两种模式</strong>，可互切；向导式三步「基础设置 → 表单设计 → 列表设计」，进入下一步有前置校验。</li>
+<li>✅ <strong>三栏设计器</strong>：左控件库（分组）+ 大纲树 + 模板套件（P2）；中画布，PC/移动一键切换外观但绑定<strong>同一份</strong>控件树（一份 Schema + 端可见性/端覆盖，F 基线裁决 C-3）；右侧 Schema 驱动的属性面板（组件属性 / 组件样式 / 表单属性），面板由控件 <code>props</code> Schema 与 <code>visibleWhen</code> 自动生成。</li>
+<li>✅ <strong>撤销/重做覆盖属性变更</strong>（参考平台只记控件增减）、复制/删除、清空、预览（PC 全屏，复用运行时渲染器，禁止落库）。</li>
+<li>✅ <strong>校验器前后端共用</strong>：保存/下一步/发布时校验字段名规范、必填配置、绑定完整性、容器守则（空容器不可存、仅剩一个子面板不可删），浮层列出控件与原因并「去填写」定位；后端返回同构的结构化错误。</li>
+<li>✅ <strong>三态渲染器</strong>：<code>schema → React 树</code>，edit / readonly / cell 由注册表提供；布局容器（栅格/卡片/折叠/标签/步骤/表格）；系统字段默认值；i18n 替换；按 8.9 字段权限裁剪；<code>formApi = {values, setValues, setVisible, setRequired, setDisabled, utils}</code>。</li>
+<li>✅ <strong>子表</strong>：行内编辑、增删复制、批量删除、合计（单行/数字/存储型公式）、条数限制默认 1000、校验汇总、删除策略；主表引用子表公式先求和。</li>
+<li>✅ <strong>联动三层策略</strong>：① 声明式动作（设值/显隐/必填/禁用/调用数据服务/打开表单/发起流程）→ ② 可序列化表达式 DSL（JSON AST，用于条件、公式、<code>ifShow</code>、<code>dynamicRules</code>）→ ③ QuickJS 沙箱脚本（P2 兜底：白名单 API、超时、内存上限、不暴露令牌）。优先级：脚本 &gt; 表单规则 &gt; 控件属性。</li>
+<li>✅ <strong>公式</strong>：数字（精度、千位、大写金额、四种舍入、日期间隔）与日期（<code>+1y-1M+2d</code>，单位大小写敏感，源空则空，溢出进位）；<code>store</code> 型可被引用、入库并由服务端复算防篡改；<code>display</code> 型只前端。函数起步集 <code>SUM / SUBTRACT / PRODUCT / DIVIDE / COUNT</code> + 日期函数，目录机器可读。</li>
+<li>✅ <strong>数据源三选一</strong>（静态 / 字典 / 数据集）面板被全部选择类复用；数据集必须设回显；参数来源「字段 / 自定义 / 系统变量 / 为空」。</li>
+<li>✅ <strong>表单间引用</strong>：关联表单（当前应用或跨应用白名单内已发布表单、填充规则主副→主副、子→子、被引用方数据过滤生效）；引用关系图独立机器可读。</li>
+<li>✅ <strong>从数据表生成表单</strong>（确定性生成，最适合先暴露给 Agent）；插入字段不覆盖已有。</li>
+<li>✅ <strong>表单按钮与自定义按钮</strong>：确定/取消改名、打印（依赖 8.11）、「确定并继续」组；自定义按钮 ≤5，类型弹窗 / 接口 / 发起审批 走 8.6 的动作契约，自由 JS 按钮不做。</li>
+<li>✅ <strong>数据规则透传</strong>：主键策略保存后不可改、乐观锁、逻辑删除、修改记录、业务主键四开关落到 bindingSchema，由 8.2 执行。</li>
+<li>❌ 控件级/表单级自由 JS 事件（S2 声明式规则必做，脚本沙箱 P2）；OCR、签章、定位；页签管理（P2，与关联查询合并）；H5 渲染器（Q13）；AI 建表/生成字段（S4，S2 只保证 Schema 可生成可校验）。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点-4"><a href="#技术落点-4" class="rp-header-anchor rp-link" aria-label="链接到 技术落点">#</a>技术落点</h4>
+<ul>
+<li>前端：<code>@yue/form</code>（react-hook-form + 解释型 JSON Schema 校验）为底座，<code>@qian/lowcode-runtime</code> 的表单渲染器只做叶子与容器编排，不新建引擎；设计器基于 dnd-kit 嵌套拖拽，撤销栈以 JSON Patch 记录。</li>
+<li>后端：<code>qian.forms</code> 在 <code>qian-lowcode</code> 提供校验器（与前端共用同一 Schema 包 <code>@qian/metadata-contracts</code> 生成 TS 与 C# 类型）、规则编译（声明式规则编译进 Compiled Model）、公式服务端复算、引用图维护、<code>generateFromTable</code>。</li>
+<li>服务端 Hook 与前端联动的边界：校验与计算以服务端为准，前端只做体验。</li>
+</ul>
+<h4 class="rp-toc-include" id="插件化定位-4"><a href="#插件化定位-4" class="rp-header-anchor rp-link" aria-label="链接到 插件化定位">#</a>插件化定位</h4>
+<p><code>qian.forms</code>（module + ui）+ <code>qian.designer</code>（ui）。扩展点：控件类型（8.4）、动作类型（8.6）、数据源提供者、公式函数包。模板套件、数据浏览器、脚本沙箱为可选子插件。</p>
+<h4 class="rp-toc-include" id="agent-契约-4"><a href="#agent-契约-4" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<ul>
+<li>工具最小集（S4 落地，S2 契约就位）：<code>listWidgets()</code>、<code>listDataSources()</code>、<code>generateFormFromTable(tableId, options)</code>、<code>insertFields(formId, fields[])</code>、<code>validateForm(schema)</code>、<code>previewForm(formId)</code>、<code>forms.references(formId)</code>。</li>
+<li>每个 Schema 带 <code>$schema</code> 与版本；错误枚举化（<code>WIDGET_NOT_ALLOWED_IN_SUBTABLE</code>、<code>CONTAINER_EMPTY</code>、<code>FIELD_NAME_INVALID</code>、<code>DATASOURCE_ECHO_REQUIRED</code> 等）+ JSON Pointer。</li>
+<li>脚本（若启用）标记为不透明并附结构化描述（用途、读写字段）。</li>
+</ul>
+<h4 class="rp-toc-include" id="验收标准-4"><a href="#验收标准-4" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 用设计器搭出「请假单」（含人员选择、日期、数字公式、子表、折叠面板），保存 → 发布 → 运行时新增一条记录，服务端复算的 <code>store</code> 公式值与前端一致。<strong>测法</strong>：端到端脚本。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 同一表单在 PC 与移动端预览时渲染同一份控件树，仅按 <code>channels</code> 显隐与覆盖；修改一处字段标签两端同步。<strong>测法</strong>：UI 自动化比对 Schema 与 DOM。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 以 Agent 方式提交（不经设计器）一份与设计器产物等价的 FormSchema，通过校验并发布后行为一致；提交 10 个坏样例均被拒并带 JSON Pointer。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 撤销 20 步属性变更与控件增删后 Schema 与初始一致。<strong>测法</strong>：属性测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 声明式联动「当请假类型 = 病假 则附件必填」在新增与编辑场景、PC 与移动端、服务端校验三处一致生效。<strong>测法</strong>：四路回归。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 关联表单引用一个已发布表单，被引用方「数据过滤」在选择弹窗生效；被引用表单删除被拒。<strong>测法</strong>：接口与 UI。</li>
+</ul>
+<h3 class="rp-toc-include" id="86-列表引擎与设计器p0--s2"><a href="#86-列表引擎与设计器p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.6 列表引擎与设计器（P0 · S2）">#</a>8.6 列表引擎与设计器（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-5"><a href="#设计理念-5" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>列表是「一份语义配置 + 端覆盖」（<code>base + overrides.mobile</code>），不是 PC/移动两份完整配置；布局、数据来源、动作、权限资源种类都是扩展点而非写死枚举。视图（数据集驱动的纯列表）归入列表引擎的「只读数据源」形态，不单独立项（补充裁决 Q17）。</p>
+<h4 class="rp-toc-include" id="范围与边界-5"><a href="#范围与边界-5" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ <strong>ListSchema</strong>：<code>base{layout{type, params}, table{page, pageSize, sort[], resizable, ellipsis, summary[], complexHeaders[], tabs?, subTableStyle}, filter: FilterExpression, search[{field, matchType: like|eq|range, defaultValue|sysVar, keyword, multiple, hidden}], columns[{field, label, width, align, fixed, sortable, filterable, visible}], buttons{standard[], custom[ActionRef]}, permissionFlags{button, column, form, data}, superQuery, scripts?}</code>、<code>overrides{mobile?: Partial&lt;base&gt;}</code>。</li>
+<li>✅ <strong>布局提供者</strong>：普通表格（P0）；左侧树 + 表格、编辑表格（行内）、分组表格、树形表格（P2，各自声明能力矩阵：是否支持分页/合计/复杂表头/子表/头部按钮）；卡片（S3）。树形表格不得以清空数据权限换取全量（参考平台反例）。</li>
+<li>✅ <strong>表格配置</strong>：数据过滤（设计期固定条件，Filter AST，运算符随控件类型，PC/移动分开）、默认排序（多字段，仅主表）、列宽拖拽与溢出省略、分页（默认开）、合计（P1）、复杂表头（P2，仅 PC）、标签面板（P2）、子表样式（P2）。</li>
+<li>✅ <strong>查询字段</strong>：显示/顺序/改名（可翻译）/隐藏；条件类型模糊/等于/范围；默认值支持系统变量；关键词查询 ≤3 字段；多选查询。</li>
+<li>✅ <strong>列表字段</strong>：排序（仅主表、多列按点击先后）、冻结（仅 PC、主副表）、对齐、宽度、表头内联筛选（同字段 OR、跨字段 AND）。</li>
+<li>✅ <strong>固定按钮 + 启用规则</strong>：新增/编辑/删除/详情/导出/导入/批量删除/批量打印/审批，可改名、可配启用规则（Filter AST）；CRUD 由 8.2 统一实现。</li>
+<li>✅ <strong>动作编排契约</strong>（自定义按钮，列内/头部）：<code>Action{id, label, type: openForm|callService|startFlow|setField|toggleVisible|setRequired|script, input[{param, source: field|const|sysVar|null, value}], confirm?, refresh, position: row|toolbar, enableWhen?, failures[]}</code>；弹窗（打开另一表单并赋值）、接口（调用数据接口）、发起审批 为 P0，脚本为 P2。</li>
+<li>✅ <strong>权限四开关</strong>：按钮/列表/表单/数据开关只决定「设计器产出哪些可授权项清单」，不决定是否鉴权；鉴权恒在 8.2 唯一入口（F 基线 §3.10「双重门」升级）。</li>
+<li>✅ <strong>运行期高级查询</strong>（P2，同一 <a href="/design/prd/specs/data-contracts.html" class="rp-link">Filter AST 契约</a>）；查询方案保存（S3，按「菜单 + 用户」私有）；个人视图（S3）。</li>
+<li>✅ <strong>流程状态 → 操作矩阵</strong>由 8.8 下发，列表按矩阵置灰并给原因（「流程已受理，无法删除」），列表引擎与 Agent 共用。</li>
+<li>✅ <strong>视图形态</strong>：数据源为数据集（8.11 数据接口），参数来源「自定义 / 系统变量 / 为空 / 作为查询字段」，数据集自带分页则真分页；视图同样是资源，走统一鉴权（无免鉴权资源类型）。P2。</li>
+<li>✅ <strong>数据管理页</strong>（设计器侧对已发布列表表单的数据后台，P2）。</li>
+<li>❌ 两份完整的 PC/移动配置；表格/行/单元格自由脚本（P2 沙箱兜底）；卡片布局（S3）。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点-5"><a href="#技术落点-5" class="rp-header-anchor rp-link" aria-label="链接到 技术落点">#</a>技术落点</h4>
+<p><code>@yue/data</code> DataTable（TanStack Table v9 + Virtual）进阶：树表、列权限、行内编辑、复杂表头为 S2 必做；<code>SuperQuery</code>、<code>ConditionBuilder</code>、<code>ImportWizard</code>、<code>ExportDialog</code> 为公共交互组件（8.13）。服务端 <code>qian.lists</code> 把 ListSchema 编译为查询计划（投影、过滤、排序、分页、合计），交 8.2 执行；动作执行器 <code>IActionExecutor</code> 按 <code>type</code> 分派到表单、数据接口、流程。</p>
+<h4 class="rp-toc-include" id="插件化定位-5"><a href="#插件化定位-5" class="rp-header-anchor rp-link" aria-label="链接到 插件化定位">#</a>插件化定位</h4>
+<p><code>qian.lists</code>（module + ui）+ <code>qian.designer</code>。扩展点：<code>layouts.register</code>（布局提供者）、动作类型、数据源提供者、权限资源类型。</p>
+<h4 class="rp-toc-include" id="agent-契约-5"><a href="#agent-契约-5" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<p><code>validateList(schema)</code>、<code>invokeAction(actionId, input)</code>（受同一 ACL 约束，动作自带 <code>inputSchema / preconditions / sideEffect / idempotent / failures[]</code>）；布局能力矩阵、运算符矩阵、流程状态矩阵以元数据接口发布；S4 可注册「调用 Agent」动作类型。</p>
+<h4 class="rp-toc-include" id="验收标准-5"><a href="#验收标准-5" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 请假单列表配置查询字段（申请人、日期范围、状态）、列表字段、固定按钮与「发起审批」自定义按钮，发布后租户用户按权限只看到被授权的按钮与列，且直接调 <code>records.list</code> 也只拿到被授权列。<strong>测法</strong>：UI + API 双路。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 移动端覆盖只改列表字段子集，PC 配置不受影响；移动端 <code>overrides</code> 为空时完整继承 PC。<strong>测法</strong>：Schema 与渲染比对。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 启用规则「状态 ≠ 进行中 才可编辑」在 UI 置灰且服务端执行同一规则（直接调接口返回 <code>ACTION_PRECONDITION_FAILED</code>）。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 树形表格布局对无数据权限用户返回空而非全量。<strong>测法</strong>：权限回归。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 视图绑定一个自带分页的数据集，翻页请求透传分页参数且总数正确。<strong>测法</strong>：接口计数。</li>
+</ul>
+<h3 class="rp-toc-include" id="87-功能发布向导p0--s2"><a href="#87-功能发布向导p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.7 功能发布向导（P0 · S2）">#</a>8.7 功能发布向导（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-6"><a href="#设计理念-6" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>发布不是一次「保存到线上表」的写操作，而是四个可重放、幂等的步骤：<strong>编译 → 迁移 → 切流 → 挂载</strong>，全程有发布日志与 dry-run；参考平台发布跨十几张表无事务、建表 DDL 不可回滚是反例（ADR-011）。</p>
+<h4 class="rp-toc-include" id="范围与边界-6"><a href="#范围与边界-6" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ 步骤：① 编译（校验 Schema，生成 Compiled Model 与权限资源清单）→ ② 迁移（8.3 计划与执行，可能等待审批）→ ③ 切流（生效指针指向新 Release，运行时缓存按版本指纹失效）→ ④ 挂载（生成/更新菜单 PC/移动、多上级；同步按钮/列/字段权限项；按创建人/所属组织/岗位控件自动生成数据权限方案「全部数据 + 六个相对范围」；授权提示）。</li>
+<li>✅ 每步幂等、可重放；失败停在该步，修复后从该步继续；步骤状态进 Operation 资源（8.12）。</li>
+<li>✅ <code>dryRun</code> 返回迁移计划、权限资源变更、菜单变更的影响面。</li>
+<li>✅ 记忆型发布弹窗：记住上次勾选的端、展示已发布路径、二次发布确认覆盖；上级菜单被删则挂载步骤失败并提示。</li>
+<li>✅ 回滚 = 8.1 指针回切 + 挂载步骤重放（菜单与权限项按旧快照补全）；迁移不自动回滚。</li>
+<li>❌ 无表模式之外的「发布即建库」；跨租户灰度发布（S3 随 managed 包推送升级）。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点--插件化定位"><a href="#技术落点--插件化定位" class="rp-header-anchor rp-link" aria-label="链接到 技术落点 / 插件化定位">#</a>技术落点 / 插件化定位</h4>
+<p><code>qian.metadata</code> 的发布编排器调用 <code>qian.schema-migrator</code>、<code>qian.navigation</code>、<code>qian.authz</code>；以 Saga 风格的 Operation 记录步骤，Outbox 发 <code>qian.function.published.v1</code>。发布的 Release 同时写回所属应用的组件文件夹（<code>forms/</code> <code>lists/</code> <code>flows/</code> <code>pages/</code>，ADR-020 D20.6），使设计器的产出可进 git、进市场、被 patch；文件夹与注册表的一致性由同一校验器保证。</p>
+<h4 class="rp-toc-include" id="agent-契约-6"><a href="#agent-契约-6" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<p><code>publish(functionId, {dryRun})</code> 返回计划与影响面；<code>mountMenu(functionId, parents[])</code> 独立可调；发布为 <code>sideEffect: write</code>、<code>policyHint: confirm</code>。</p>
+<h4 class="rp-toc-include" id="验收标准-6"><a href="#验收标准-6" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 发布过程中在「迁移」步骤人为杀掉进程，重启后从迁移步骤继续，最终菜单、权限项、数据权限方案齐备且只有一份。<strong>测法</strong>：故障注入 + 幂等断言。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 发布含删列的草稿：<code>dryRun</code> 列出 <code>dataLoss</code> 步骤；未审批时发布停在迁移步骤，运行时仍读旧版。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 手工删除某个权限项后再次发布，权限项被补全而已有授权不丢。<strong>测法</strong>：数据库比对。</li>
+</ul>
+<h3 class="rp-toc-include" id="88-审批流程p0--s2"><a href="#88-审批流程p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.8 审批流程（P0 · S2）">#</a>8.8 审批流程（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-7"><a href="#设计理念-7" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>自研 .NET 轻量审批内核（ADR-012）：节点树 JSON 定义保存时编译成内部有向图，令牌推进、单库单事务、条件走内存表达式引擎；「中国式审批」的工作量在审批域（或签/会签/依次/退回/转审/抄送/子流程/超时催办）而不在引擎。简单流程与标准流程<strong>合并为一套 JSON 定义</strong>，S2 只交付纵向节点树设计器（DOM 自绘，对 Agent 生成最友好，补充裁决 Q22），自由画布 S3 可选。参考平台 14 处做法（兜底全局 admin、会签停滞、转审改写记录、拼 SQL 判条件、V8 任意脚本、匿名回调等）全部修正。</p>
+<h4 class="rp-toc-include" id="范围与边界-7"><a href="#范围与边界-7" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<p><strong>定义与设计</strong></p>
+<ul>
+<li>✅ 一套 JSON 流程定义：<code>FlowDefinition{code, name, category, type, visibility, launchScope, activeVersionId, appId}</code>；<code>FlowVersion{version, state: designing|active|archived, definitionJson, refs[]}</code>；<code>NodeDefinition{code, type, formRef, configJson}</code>；<code>Edge{from, to, name, condition: FilterExpression, isDefault}</code>；<code>GlobalProperties{titleTemplate, rejectPolicy, withdrawPolicy, fallbackPolicy, autoApproveRules[], flags, variables[]}</code>。</li>
+<li>✅ <strong>节点类型注册表</strong> <code>NodeType{type, title, description, configSchema, uiMeta, constraints, executor}</code>：S2 内置 <code>start / approval / gateway(exclusive|inclusive|parallel) / subflow / end</code>；抄送是节点属性不单设节点；<code>task(办理)</code>、<code>choosePath</code>、<code>external</code>、<code>trigger</code>、<code>decision-call</code>、<code>free</code> 为扩展点预留（P2/S3）。每种节点类型发布 JSON Schema + <code>uiMeta</code>，属性面板按 Schema 生成，<code>:validate</code> 把全部拓扑约束（默认分支仅一条、并行连线不可配条件、选择分支前后不可加网关等）变成结构化错误。</li>
+<li>✅ 版本三态<strong>后端强制</strong>：只有 <code>designing</code> 可写，对其他状态写入返回 <code>FLOW_VERSION_READONLY</code>；新增版本 = 复制为草稿、版本号递增；在途实例绑定发起时版本；有实例引用的版本不可删。</li>
+<li>✅ 启用/停用（替代「上架/下架」，补充裁决 Q27）：停用最小语义 = 不能新发起，在途照常；「隐藏审批数据」模式 P2。</li>
+<li>✅ 发布范围：公开 / 授权，授权走统一鉴权权限点 <code>qian.workflow:flow:launch</code>（按 §07 7.5 命名规范 <code>&lt;plugin-id&gt;:&lt;resource&gt;:&lt;action&gt;</code>，由 <code>qian.workflow</code> 清单声明；具体流程以资源引用 <code>flow/{code}</code> 传入 <code>Check</code>，R9）。</li>
+<li>✅ 纵向节点树设计器：节点「+」只列合法后续节点类型；点空白进全局属性、点节点进多页签配置（基础/审批人/审批方式/表单权限/通知/超时/子流程）；保存/发布即校验并可定位；版本下拉驱动按钮；基础缩放/撤销重做。</li>
+</ul>
+<p><strong>人员解析</strong></p>
+<ul>
+<li>✅ 审批人四来源（<code>IAssigneeResolver</code>）：指定成员（用户/组织含子/岗位/角色/用户组五维度 + 范围过滤：同一公司/同一部门/同一岗位/发起人上级/发起人下属）、发起者本人、上级责任人（多级，按<strong>岗位链</strong>推导：岗位 → 上级责任岗位 → 现任责任人，依赖 §07 7.4.3 组织目录在 S2 补齐的解析契约）、表单变量（主副表人员类字段）。</li>
+<li>✅ 兜底链（<code>IAssigneeFallbackPolicy</code>，补充裁决 Q25）：节点指定异常处理人 → 租户管理员角色 → 「无法提交」结构化错误 <code>FLOW_ASSIGNEE_UNRESOLVED</code>；不再兜底到全局管理员；解析结果与有效用户取交集；结果附来源链解释。</li>
+<li>✅ 抄送：指定成员 / 发起人 / 表单变量 + 范围过滤；自选抄送人 P2。</li>
+<li>❌ P2：流程环节、数据接口、逐级审批来源；候选人开关（按决策保持可选）；委托/代理（S3，grant 原语 S2 可选）。</li>
+</ul>
+<p><strong>审批方式与动作</strong></p>
+<ul>
+<li>✅ 或签（任一人<strong>首个终结动作</strong>结束本节点，其余作废）、会签（人数或百分比，实时计算；两阈值都不可达时发 <code>node.stalled</code> 并按租户策略转人工队列或自动判定，不得静默停滞）、依次（仅全为具体用户时可排序）。</li>
+<li>✅ 动作最小集（<code>IWorkItemAction{id, label, inputSchema, preconditions, sideEffects, humanOnly, recordType}</code>）：同意、拒绝（<code>terminate</code> 策略；<code>continue</code> 枚举预留 S3）、退回（「重新审批」模式，目标发起/上一节点/指定节点；「从当前节点审批」模式 P2 需路径快照）、转审（单人、不可转本人、接收人不可再转；记录<strong>只追加不改写</strong>）、暂存、撤回（发起节点；下一节点发生任何动作即不可撤回）、管理员终止、管理员指派；审批意见（不启用/非必填/必填）；按钮由动作注册表 + 前置条件计算，可改显示名。</li>
+<li>✅ 节点字段权限矩阵（查看/编辑/必填，一键全选）后端强制：审批保存时只写有编辑权限的字段。</li>
+<li>✅ 实例标题模板（<code>{发起人}的{流程名}</code> + 字段）；全局变量 + 节点参数赋值；条件组（组间/组内 且/或；左值字段/公式；右值自定义/字段/系统变量/全局变量）复用 <a href="/design/prd/specs/data-contracts.html" class="rp-link">Filter AST 契约</a> 与 <code>qian.expression</code>。</li>
+<li>❌ P2：会签延后计算、不同意规则、系统审批、自动审批去重、节点独立表单与数据传递、汇合归并、加签/减签（决策：保持可选）、自选抄送人、审批附件、拓展字段、评论；S3：协办、签收、撤销申请、暂停/恢复/复活、批量审批、签名、归档、节点打印、拒绝后继续、自由流程、决策。</li>
+</ul>
+<p><strong>子流程（P0，按决策升为必做）</strong></p>
+<ul>
+<li>✅ 同步子流程节点：只选当前应用内已发布且启用的流程；父 → 子字段映射；发起人来源复用审批人四来源；多发起人 → 多实例（同时）；发起权限校验；父子实例关联（<code>parentInstanceId + parentNodeCode</code>），子流程结束经事件推进父流程；子流程为末节点时父结论由最后一个同步子流程决定；子流程停用时父流程上节点提交被阻断并提示。</li>
+<li>❌ 异步子流程、依次创建、自动提交 → P2。</li>
+</ul>
+<p><strong>时效与催办（P0，按决策升为必做）</strong></p>
+<ul>
+<li>✅ 限时：起算点接收时间/发起时间/表单日期字段；截止 + 提醒（首次 + 间隔，间隔 0 只一次；进入时已过首次提醒点立即补发）；超时通知（截止 + 超时时长首发，按间隔重复）。</li>
+<li>✅ 催办：节点超时后发起人可多次催办，仅站内信，不改流转。</li>
+<li>✅ 计时重置规则事件驱动：加签/指派/转审/退回/撤回重新生效；再次到达同一节点重新生效；停用的流程继续计时但不发通知。计时器走 §07 调度（按业务键取消/重置，多副本安全），不用进程内延时队列。</li>
+<li>❌ 超时自动审批/自动转审（S3）。</li>
+</ul>
+<p><strong>运行态与工作台</strong></p>
+<ul>
+<li>✅ 对象：<code>FlowInstance</code>（状态：待提交/进行中/已通过/已拒绝/已终止/已撤回/已退回，其余枚举预留）、<code>NodeInstance</code>（含完成策略进度）、<code>WorkItem</code>（来源类型、父工作项、草稿、截止）、<code>OperationRecord</code>（只追加；<code>actor</code> 人/Agent/系统 + 委托人 + 解释信息）、<code>CcRecord</code>、<code>EdgeTrace</code>、<code>Timer</code>、<code>LaunchUserSnapshot</code>。全部带 <code>tenant_id</code> 走 RLS。</li>
+<li>✅ 工作台四列表：待办、已办、我发起的（按状态出现撤回/催办）、抄送我的；审批详情页 = 表单（按字段权限）+ 动作区 + 意见 + 流转记录时间线（子流程可钻取）。</li>
+<li>✅ 流程监控最小集（管理员）：实例列表、节点树着色、终止、指派。</li>
+<li>✅ 通知六状态（待办/结束/同意/拒绝/退回/抄送）绑定消息模板，节点级四态继承（同步流程配置/自定义/默认/关闭），经 §07 消息中心发送；超时/提醒通知随时效能力。</li>
+<li>✅ 领域事件（CloudEvents 风格、带租户与幂等键，经 Outbox）：<code>instance.started/ended/withdrawn/terminated/returnedToStart</code>、<code>node.entered/completed{reason}/returned/stalled</code>、<code>workitem.created/completed/transferred/returned/reminded/overdue/urged</code>、<code>assignee.unresolved</code>、<code>subflow.spawned/completed</code>。</li>
+<li>✅ 流程状态 → 列表操作矩阵由本插件下发（8.6 消费）。</li>
+<li>❌ 待签、批量审批、辅助信息侧栏、工作交接（S3）；移动端特性（本期不做）。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点-6"><a href="#技术落点-6" class="rp-header-anchor rp-link" aria-label="链接到 技术落点">#</a>技术落点</h4>
+<ul>
+<li><code>qian-workflow</code> 独立 service；引擎：令牌 + 持久化，节点级版本号做乐观并发替代「正在审批中」缓存锁；条件判定 = Filter AST + <code>qian.expression</code> 内存求值（执行预算）；表 7–8 张（借鉴开源轻量审批流表模型，不引入其代码）。</li>
+<li>表单 × 流程接缝：流程绑定「数据模型」而非具体表单版本（可换表单视图）；字段元数据与类型族由 <code>qian.forms</code> 提供；流程状态回写记录的 <code>flow_*</code> 系统列经 8.2 的服务身份调用。</li>
+<li>Elsa 3 PoC 对照在 S1 末完成（§07），结论进 ADR-012；Flowable 只作「BPMN 合规」可选适配器，BPMN 导出不早于 S3。</li>
+<li>逆向操作交叉语义（退回 × 子流程 × 计时重置）需场景回归集与属性测试。</li>
+</ul>
+<h4 class="rp-toc-include" id="插件化定位-6"><a href="#插件化定位-6" class="rp-header-anchor rp-link" aria-label="链接到 插件化定位">#</a>插件化定位</h4>
+<p><code>qian.workflow</code> 内含 <code>workflow-core / designer / workbench / admin / assignee / notify / sla / node-subflow</code> 子模块（S2 必做），<code>data-mapping / actions-advanced / integration / automation</code> 为可选子模块。内核不内置通知、打印、归档、签名逻辑，只提供扩展点：<code>NodeType</code>、<code>IAssigneeResolver</code>、<code>IAssigneeFallbackPolicy</code>、<code>ICompletionPolicy</code>、<code>IAutoCompletePolicy</code>、<code>IWorkItemAction</code>、<code>GatewayStrategy</code>、<code>VariableSource</code>、<code>TimeoutHandler</code>、事件消费者、函数注册表。</p>
+<h4 class="rp-toc-include" id="agent-契约-7"><a href="#agent-契约-7" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<ul>
+<li>定义层：<code>GET/POST /workflow/definitions</code>、<code>:validate / :publish / :enable / :disable</code>；注册表 <code>GET /workflow/node-types | assignee-strategies | gateway-types | actions</code>；<code>POST /workflow/assignees:resolve</code>（试算审批人，返回来源链）。</li>
+<li>运行层：<code>GET /workflow/workitems/{id}/actions → [{id, label, inputSchema, preconditions, humanOnly}]</code>（动作即工具）；<code>POST …/actions/{key}</code>（带 <code>idempotencyKey</code>）；<code>GET …/{id}/progress</code>（会签票数、是否可能停滞）；<code>GET /workflows?launchable=true</code> + <code>startFormSchema</code>。</li>
+<li>「工作流即能力」：已发布流程自动登记为意图级能力（发起 = 一个工具；人工节点 = Operation <code>input_required</code>，见 8.12）。</li>
+<li>Agent 代办（补充裁决 Q26）：actor 三类；Agent 有效权限 = 委托人权限 ∩ 授予 scope；签名类动作 <code>humanOnly</code>；转审、协办、撤销对 Agent 禁止（S4 前）；生成的定义只能落 <code>designing</code> 并经 <code>:validate</code>。</li>
+</ul>
+<h4 class="rp-toc-include" id="验收标准-7"><a href="#验收标准-7" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 用节点树设计器搭「请假审批」（发起 → 部门主管（上级责任人）→ 条件网关（天数 &gt; 3 走总监会签 2/3，否则直达）→ 子流程「HR 备案」→ 结束），<code>:validate</code> 通过、发布、启用；租户用户在列表发起，各审批人在工作台处理，发起人看到「已通过」。<strong>测法</strong>：端到端脚本（S2 退出标准主链路）。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 删除默认分支或给并行连线配条件，<code>:validate</code> 返回对应错误码与节点路径。<strong>测法</strong>：坏样例集。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 对 <code>active</code> 版本发 PATCH 返回 <code>FLOW_VERSION_READONLY</code>。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 上级责任人节点：发起人岗位无上级责任岗位时按兜底链走到租户管理员；租户管理员角色为空时发起返回 <code>FLOW_ASSIGNEE_UNRESOLVED</code>，不落到任何全局账号。<strong>测法</strong>：组织数据三组用例。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 会签 2/3，三人中两人拒绝：节点以拒绝结束；配置「3/3 同意且 1 人拒绝」不可达时发 <code>node.stalled</code> 并进入人工队列。<strong>测法</strong>：接口模拟。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 转审后流转记录保留原处理人与接收人两条，原记录不被改写。<strong>测法</strong>：记录比对。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 节点限时 10 分钟、提醒 5 分钟：到点收到提醒与超时站内信各一次；多副本（3 个 <code>qian-workflow</code> 实例）下不重复发送；发起人催办后审批人收到催办站内信。<strong>测法</strong>：时钟注入 + 多副本。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 子流程结束后父流程自动推进；子流程被停用时父流程上节点提交被拒并提示。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 以 Agent 主体（委托某用户）调用 <code>actions/approve</code> 成功且记录 <code>actor=agent, onBehalfOf=user</code>；调用 <code>transfer</code> 返回 <code>ACTION_HUMAN_ONLY</code>。<strong>测法</strong>：S2S 令牌模拟。</li>
+</ul>
+<h3 class="rp-toc-include" id="89-数据权限与字段权限p0--s2"><a href="#89-数据权限与字段权限p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.9 数据权限与字段权限（P0 · S2）">#</a>8.9 数据权限与字段权限（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-8"><a href="#设计理念-8" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>权限七层（L0 租户隔离 → L6 ABAC，见 §07）中 S2 落地 L4 行级与 L5 字段级，复用 S1 已冻结的 <a href="/design/prd/specs/data-contracts.html#9-%E6%95%B0%E6%8D%AE%E6%9D%83%E9%99%90%E8%8C%83%E5%9B%B4s1-az-006" class="rp-link">DataScopeRule 与 authz/meta</a>：数据权限 = 条件树 + 系统变量，编译为查询谓词在本地执行并与 RLS 叠加，不交给远程引擎；字段权限读投影/写白名单；合并语义固定「同角色 AND / 跨角色 OR / 任一全部数据则放开」，不可配置（补充裁决 Q19）。权限不进令牌，变更靠 <code>identity_revision</code> 即时失效（ADR-006）。</p>
+<h4 class="rp-toc-include" id="范围与边界-8"><a href="#范围与边界-8" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ 数据权限方案 <code>DataAuthScheme{name, code, allData: bool, condition: FilterExpression, menuId}</code>；系统变量目录与 8.2 共用；相对范围条件（当前用户及下属等）不可用等于/不等于。</li>
+<li>✅ 编译器 <code>IDataPermissionFilter</code>：主体有效角色 → 每角色的方案 AND → 角色间 OR → 任一 <code>allData</code> 放开 → 输出谓词 AST 并合入 8.2 查询；无方案 = 查不到数据；覆盖 list/get/update/delete/export/import 全部路径（参考平台只管列表是反例）。</li>
+<li>✅ 字段权限 <code>FieldPolicy{resource, field, read: visible|masked|hidden, write: allow|deny}</code>：读时投影或按敏感度脱敏规则，写时白名单；yue 按元数据渲染但以服务端为准。</li>
+<li>✅ 授权界面（多步向导：菜单 → 按钮 → 列表 → 表单字段 → 数据方案；大树勾选；授权人只能授出自己拥有的，其余置灰不隐藏）；资源管理页按菜单类型给出可配项与类型化空态。</li>
+<li>✅ 创建者自动成为应用 Owner（资源实例级 ACL 简版：所有者 + 共享，<code>qian.authz</code> 平台库表实现）。</li>
+<li>✅ 数据权限方案自动生成（8.7 挂载步骤）；手删后再发布补全。</li>
+<li>✅ 字段敏感度驱动默认脱敏（<code>pii</code> 字段对无读权限者返回掩码而非空）；导出遵守同一策略。</li>
+<li>✅ 决策审计：每次 <code>Check</code> 记录命中规则，接入 ADR-009 哈希链。</li>
+<li>❌ 组织角色/岗位角色/逐级递减/身份切换（S3 可选）；OpenFGA 资源实例共享（S3）；Explain 工具（S3，<code>ListPermissions</code> S1 已有）。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点--插件化定位-1"><a href="#技术落点--插件化定位-1" class="rp-header-anchor rp-link" aria-label="链接到 技术落点 / 插件化定位">#</a>技术落点 / 插件化定位</h4>
+<p><code>qian.authz</code> S2 增量，住 <code>qian-platform</code>；编译器输出与 ORM 无关的谓词 AST，由 <code>qian.dynamic-data</code> 翻译为 SQL；主体权限按 <code>identity_revision</code> 缓存。</p>
+<h4 class="rp-toc-include" id="agent-契约-8"><a href="#agent-契约-8" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<p><code>authz.check(action, resource)</code> 可预检；<code>ListAllowedActions</code> 过滤工具列表；数据权限 AST 可序列化并带自然语言描述，Agent 生成查询时作为强制过滤合入（而非由 Agent 自行拼条件）。</p>
+<h4 class="rp-toc-include" id="验收标准-8"><a href="#验收标准-8" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 用户 A 有角色 R1（方案「本部门」+「本人创建」）与 R2（方案「全部数据」）：A 看到全部；移除 R2 后只看到「本部门 AND 本人创建」。<strong>测法</strong>：权限回归集 12 场景（含 F 基线 C-1 裁决）。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 无任何方案的用户 <code>list</code> 返回空、<code>get</code> 返回 404、<code>export</code> 为空文件。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 字段「身份证号」对无读权限者在 list/get/export 三处均为掩码；写入该字段返回 <code>FIELD_FORBIDDEN</code>。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 授权变更后 ≤ 3 秒内（<code>identity_revision</code> 推送）该用户新请求按新权限执行，无需重新登录。<strong>测法</strong>：计时断言。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 建应用者无需手工授权即可打开自己应用的全部菜单。<strong>测法</strong>：UI 自动化。</li>
+</ul>
+<h3 class="rp-toc-include" id="810-应用与菜单系统表单式清单接入应用包-bundle-v1-与安装到租户p0--s2"><a href="#810-应用与菜单系统表单式清单接入应用包-bundle-v1-与安装到租户p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.10 应用与菜单、系统表单式清单接入、应用包 bundle v1 与安装到租户（P0 · S2）">#</a>8.10 应用与菜单、系统表单式清单接入、应用包 bundle v1 与安装到租户（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-9"><a href="#设计理念-9" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>应用是租户内权限与元数据的作用域容器，一个应用 = 一个 bundle（ADR-014）；功能编码命名空间化（<code>tenant.app.function</code>）并只归属一个应用，其他应用通过「跨应用引用」挂菜单（补充裁决 Q20）；手写代码页面通过<strong>插件清单</strong>接入平台治理（替代参考平台手填的「系统表单登记」），与低代码功能享受同一套菜单、权限、流程引用。S2 必须跑通「同一包装进两个租户、各自配置、独立升级」。</p>
+<h4 class="rp-toc-include" id="范围与边界-9"><a href="#范围与边界-9" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<p><strong>应用与菜单</strong></p>
+<ul>
+<li>✅ 应用实体（§07 契约）S2 升级为一等元数据对象：名称（可重复）、编码（全局唯一、不可改、可自动生成）、图标、排序、PC/移动首页（默认为应用默认首页 = 菜单 + 功能列表，可改指任一菜单或 8.11.7 配置路径型门户，R16）、负责人（可移交）、开发者（全部/名单）、使用授权、跨应用引用白名单。</li>
+<li>✅ 应用菜单管理界面：PC/移动两棵树；菜单类型为扩展点（目录、页面、在线功能、代码页面、流程、报表、门户、字典、外链、视图……各类型注册运行时视图与配置面板）；路由应用内唯一；启用/禁用/隐藏（父禁用仍可挂子但授权不可见；所有菜单需授权才可访问，开发者不例外）；菜单与资源 URN 目录联动（见 §07 统一资源引用 URN）。</li>
+<li>✅ 统一壳按「平台控制台 / 应用」上下文切换（补充裁决 Q37），不采用三面新窗口；应用切换器为 S2 必做。</li>
+<li>✅ 跨应用引用：白名单允许引用其他应用「已发布」表单（关联表单、关联查询、子表选择数据生效）与把功能挂到本应用菜单（引用而非归属）。</li>
+<li>❌ 应用中心入口体验（置顶/筛选/排序，S3）；应用级多身份切换（S3 可选）。</li>
+</ul>
+<p><strong>系统表单式清单接入（代码页面）</strong></p>
+<ul>
+<li>✅ 开发者用 SDK 注解在代码中声明 <code>CapabilityManifest{code, kind: page|api|action, routes{pc?, mobile?}, api?: OpenAPIRef, buttons[], formFields[], listFields[], flowForm, anonymous, permissionKinds[], dependsOn[]}</code>，由 <code>qian pack</code> 生成清单片段并在部署时注册（§07 能力目录）；S2 增加：清单登记的页面可生成菜单、生成按钮/列/字段权限项、被流程作为流程表单引用、被打印引用。</li>
+<li>✅ 数据权限对代码页面同样在数据引擎入口统一执行（代码页面通过运行时 SDK 访问数据，不自带 CRUD）。</li>
+<li>❌ 手工填写的登记界面（清单只从代码派生）。</li>
+</ul>
+<p><strong>应用包 bundle v1 与安装到租户</strong></p>
+<ul>
+<li>✅ bundle = 组件文件夹（<code>.qian-plugin/plugin.json</code>，<code>runtime.form: package</code>；v1 <code>qian-plugin.yaml</code> 的 <code>kind: bundle</code> 仅作字段对照）+ <code>forms/</code> <code>lists/</code> <code>flows/</code> <code>pages/</code> 等声明式表面（数据模型、表单、列表、流程、菜单、角色模板、打印模板、数据接口、字典引用、种子数据）+ <code>ui/</code>（可选 MF 远程）+ 可选 <code>function</code> + 迁移脚本 + 依赖清单 + <strong>id 重映射表</strong> + marketplace 条目（ADR-020 D20.8 对 ADR-014 的修订：应用包格式 = 组件文件夹 + marketplace 条目）。S1 的 v0 格式在 S2 定稿为 v1：补 <code>distribution</code>、<code>components.packages</code>、<code>marketplace.manageability</code>、<code>provides.resources</code>、<code>lifecycle.migrations.tenant</code>（字段落位以 specs/component-model.md 为准）。</li>
+<li>✅ 导出：从应用导出 bundle（含菜单、权限模板、字典引用、数据接口、表结构 DDL 计划——参考平台不含这些是反例）；复制「.副本 + 五位随机」默认未发布。</li>
+<li>✅ 导入/安装到租户：解析依赖图（检测环与冲突）→ 展示所需反向权限（<code>permissions.platform/data/egress/secrets</code>）由租户管理员批准 → 8.3 逐租户迁移 → 实例化包层元数据 → 挂菜单与默认角色模板 → 写租户 scope 挂载 patch 并发 <code>registry.scope.mounted.v1</code>（原 <code>tenant.plugin.enabled</code>，§07 7.2.1）。导入策略「跳过 / 追加」，跨应用导入重生 id 并输出「待重连依赖清单」。</li>
+<li>✅ <code>template</code> 与 <code>managed</code> 两种分发（默认 <code>managed</code>，补充裁决 Q10）；<code>managed</code> 包升级：平台级激活新修订 → 逐租户 <code>tenantUpgrade(fromVersion)</code> → 包层替换、租户层保留（8.1 分层）→ 可回切；无新增反向权限可自动推送，新增则需租户管理员重批（升级同意规则）。<code>template</code> 升级 = 同源导入合并/覆盖，可选升级前快照。</li>
+<li>✅ 权益检查：安装前查询 <code>qian.entitlement</code>（S1 授权 v0：<code>tenant × plugin × plan</code> 手工授予）；Entitled（授权，<code>qian.entitlement</code>）与 Enabled（租户 scope 是否挂载，scope patch，ADR-020 D20.5）分开存，「未挂载」在网关路由、SDK 入口、前端外壳三处拦截。</li>
+<li>✅ 平台自营应用吃自己的狗粮：S2 至少一个官方业务应用（如「请假与考勤」示例应用）以 bundle 交付并走同一安装链路。</li>
+<li>❌ 三方合并冲突预检报告（S3）；市场目录与安装向导 UI（S3，§09）；禁止导出 managed 应用（S3 可选）；用户个性化层（S3 可选）。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点-7"><a href="#技术落点-7" class="rp-header-anchor rp-link" aria-label="链接到 技术落点">#</a>技术落点</h4>
+<ul>
+<li>包内全部引用用命名空间化稳定编码，安装时经 id 重映射表落为租户内 id；<code>manageability</code> 由 8.1 强制。</li>
+<li>安装编排走 <code>qian.lifecycle</code> 的租户级状态机 <code>Available → Entitled → Provisioning → Installed → Upgrading → Installed / Uninstalled → Purged</code>（§07 7.2.1；<code>Enabled ⇄ Disabled</code> 已从表中删除，由租户 scope patch 的挂载 / 卸载表达，R34），底层 <code>ITenantProvisioner</code> 钩子幂等。</li>
+<li>制品：bundle 的代码部分（<code>ui/</code>、<code>function</code>、迁移脚本）作 OCI artifact 推 Harbor（ADR-017），按 <code>@sha256:</code> 引用，强制验签；声明式表面随 git / marketplace 分发并以「文件 URI + SHA-256 + 字节数」清单 + Ed25519 签名验签（ADR-020 D20.8：OCI 制品只用于代码部分）。</li>
+</ul>
+<h4 class="rp-toc-include" id="插件化定位-7"><a href="#插件化定位-7" class="rp-header-anchor rp-link" aria-label="链接到 插件化定位">#</a>插件化定位</h4>
+<p><code>qian.metadata</code>（分层、manageability、安装实例化、同源导入）+ <code>qian.registry</code> / <code>qian.lifecycle</code>（注册表、状态机、scope patch、重映射，§07 7.2.1）+ <code>qian.navigation</code>（菜单）+ <code>qian.entitlement</code>（权益）+ <code>qian.schema-migrator</code>（租户迁移）。</p>
+<h4 class="rp-toc-include" id="agent-契约-9"><a href="#agent-契约-9" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<p><code>bundles.export(appId)</code>、<code>bundles.install(bundleRef, tenantId, {dryRun})</code> 返回依赖、反向权限、迁移计划；安装与升级 <code>policyHint: confirm</code>（付费与权限动作永远需要人）；<code>generatedBy / promptHash</code> 字段在 v1 清单预留（S4 Agent 生成包）。</p>
+<h4 class="rp-toc-include" id="验收标准-9"><a href="#验收标准-9" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 从租户 A 的「请假与考勤」应用导出 bundle，在租户 B、C 分别安装：B 改表单布局（tenantEditable），C 改审批人；发布应用 v1.1（新增字段 + 新审批节点）→ 升级 B，C 不受影响；B 的布局修改保留且新字段出现；回滚 B 到 v1.0 后布局仍保留。<strong>测法</strong>：S2 退出标准第二条脚本。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> v1.2 新增 <code>permissions.egress</code>：推送升级对 B 停在「待管理员重批」，批准后继续。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 包含循环依赖或缺失依赖的 bundle 安装被拒并列出依赖图。<strong>测法</strong>：坏样例。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 一个代码页面（SDK 注解声明 2 个按钮、3 个表单字段）部署后：菜单可生成、权限项出现在资源管理、可被流程选为流程表单。<strong>测法</strong>：示例插件 + UI。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 应用 X 引用应用 Y 的已发布表单挂菜单，Y 的表单改版发布后 X 处读到新版；取消白名单后 X 的引用失效并提示。<strong>测法</strong>：接口测试。</li>
+</ul>
+<h3 class="rp-toc-include" id="811-打印文件预览数据建模与接口设计器消息模板与渠道-ui任务管理-uip1--s2"><a href="#811-打印文件预览数据建模与接口设计器消息模板与渠道-ui任务管理-uip1--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.11 打印、文件预览、数据建模与接口设计器、消息模板与渠道 UI、任务管理 UI（P1 · S2）">#</a>8.11 打印、文件预览、数据建模与接口设计器、消息模板与渠道 UI、任务管理 UI（P1 · S2）</h3>
+<blockquote>
+<p>本节六个功能项共用小节结构，各自给出范围与验收；横切规则（编码生成、唯一性、复制命名、导入策略、被引用保护、可发布元数据三态）全部复用 8.1 与 §07 7.2.1 <code>qian.capabilities</code> 的可发布元数据 / 导入导出框架契约，只实现一次。</p>
+</blockquote>
+<h4 class="rp-toc-include" id="8111-打印p1模板与浏览器打印打印设计器-s2-后期"><a href="#8111-打印p1模板与浏览器打印打印设计器-s2-后期" class="rp-header-anchor rp-link" aria-label="链接到 8.11.1 打印（P1，模板与浏览器打印；打印设计器 S2 后期）">#</a>8.11.1 打印（P1，模板与浏览器打印；打印设计器 S2 后期）</h4>
+<ul>
+<li><strong>范围</strong> ✅ 打印模板实体（名称/分类/编码 <code>DY+日期+序列</code>、应用内唯一名、全局唯一编码）、版本生命周期（设计中 → 已发布锁定 → 新版本复制 → 旧版归档可启用）、模板 Schema（辅助线/矩形/圆、文本/长文本/二维码/条码/图片/图片组/表格、系统元素：打印时间/人员/审批记录/多联页码；纸型 A3–B5）、数据绑定（数据接口 + 查询设置把当前记录 id/当前用户传入；数据集名称模板内唯一）、数据转换（消费 §07 值翻译）、组件声明「可接受字段类型」、挂载扩展点（列表「批量打印」多模板、表单打印按钮、流程节点打印条件 S3）、预览 → 浏览器打印/导出 PDF（浏览器端）。多联 ≤2 P2。❌ 服务端 HTML→PDF（S3 可选，补充裁决 Q33）；打印文件与发布范围（S3）。</li>
+<li><strong>技术落点</strong> 模板 Schema 由 Qian 定义（声明式格式化，禁函数字符串），前端设计器取开源 JSON 打印设计器的核心库或自研（React 栈，许可宽松者优先），条码/二维码用 MIT 库；服务端只组装数据。</li>
+<li><strong>Agent 契约</strong> <code>print.validate(template)</code>、<code>print.render(templateId, recordIds) → html</code>、<code>print.explain</code>；模板 Schema 公开。</li>
+<li><strong>验收</strong> - [ ] 为请假单建打印模板（文本 + 表格绑子表 + 审批记录），从列表勾选 3 行批量打印得到 3 页；模板发布新版本后旧版仍可启用。<strong>测法</strong>：UI + 快照比对。 - [ ] 绑定的数据接口未配查询条件时保存被拒。<strong>测法</strong>：接口测试。</li>
+</ul>
+<h4 class="rp-toc-include" id="8112-文件预览p1"><a href="#8112-文件预览p1" class="rp-header-anchor rp-link" aria-label="链接到 8.11.2 文件预览（P1）">#</a>8.11.2 文件预览（P1）</h4>
+<ul>
+<li><strong>范围</strong> ✅ 预览票据（<code>qian.file-preview</code> 的 Qian 侧薄插件签发：单文件、单用户、短时效、签名；预览服务验签或经网关校验；禁止 URL 带登录令牌）、提供者接口（自建开源预览服务 / 文档服务器 / 商业云预览三选一可替换；首选 .NET 生态，Java 进程只作可选 sidecar——补充裁决 Q34）、<code>qian-file-preview</code> Helm 子 chart 随插件安装、配置入 Apollo、钉版本跟随上游、来源主机白名单、支持格式清单机器可读、按许可裁剪（关闭 CAD 与可能含 GPL 组件的视频转码）。❌ 在线编辑（本期不做）。</li>
+<li><strong>验收</strong> - [ ] 上传控件的文件在详情页可预览，预览 URL 中无登录令牌，票据过期后 401。<strong>测法</strong>：抓包 + 时钟。 - [ ] 替换提供者实现（配置切换）后预览功能不变。<strong>测法</strong>：两提供者回归。</li>
+</ul>
+<h4 class="rp-toc-include" id="8113-数据建模p1"><a href="#8113-数据建模p1" class="rp-header-anchor rp-link" aria-label="链接到 8.11.3 数据建模（P1）">#</a>8.11.3 数据建模（P1）</h4>
+<ul>
+<li><strong>范围</strong> ✅ 可视化建表/字段/主键/索引（经 8.3 迁移计划执行，不直接 DDL）、浏览数据（受数据权限）、复制表（仅结构/结构 + 数据，限同库）、基准字段（缺省/常用，内置不可删；系统列由 8.2 约定强制带入）、控件映射维护页（读写 8.4 Catalog）、模型导入导出并入统一元数据包格式。❌ 私有 <code>.bdb</code> 后缀；MySQL/国产库；跨库同步。</li>
+<li><strong>验收</strong> - [ ] 建模器新建含 10 字段的表 → 表单「手动选表」绑定 → 发布运行；建模器再加一列后表单侧「从表生成」能看到新列。<strong>测法</strong>：端到端。</li>
+</ul>
+<h4 class="rp-toc-include" id="8114-接口设计器数据接口p1"><a href="#8114-接口设计器数据接口p1" class="rp-header-anchor rp-link" aria-label="链接到 8.11.4 接口设计器（数据接口，P1）">#</a>8.11.4 接口设计器（数据接口，P1）</h4>
+<ul>
+<li><strong>范围</strong> ✅ 三类执行器：配置式查询（实体 + Filter AST，默认开放）、SQL 文本（<strong>高级权限</strong>：独立权限点 <code>qian.data-api:sql:author</code>，默认不在开发者角色内、由租户管理员显式授予具体人员；只读数据库账号由平台供给——平台 PG 中为每租户绑定 RLS 的只读角色、运行时按租户切换，租户自带连接的只读账号 S3 随 D4 评估；超时与行数上限、参数化 <code>${参数}</code>、审计、发布需租户管理员批准——补充裁决 Q32 / R11 / R25）、API（相对/绝对地址、Header/Query/Body 参数来源、返回字段与总数字段、异常验证、处理脚本需沙箱 P2）、静态/Mock（P2）；写接口（P2，叠加鉴权/审计/事务/危险级别/「需人工确认」）；参数（类型、默认值、必填、来源：自定义/系统变量/服务出参）、分页开关自动加入参、返回字段语义类型驱动值翻译、「服务出参」保存后不可改、启用/禁用、复制/导入导出、执行日志。消费侧统一叫「数据绑定」。❌ 任意 URL 代理携带用户令牌；匿名执行。</li>
+<li><strong>Agent 契约</strong> 每个接口 <code>Describe(id) → JSON Schema</code>、<code>Query(id, params)</code>、<code>Execute(id, params)</code>，元数据含用途说明、读写与危险级别、幂等性、scope、限速——「数据接口 = 工具」，自动生成 OpenAPI，S4 映射为 MCP 工具。</li>
+<li><strong>验收</strong> - [ ] 无 SQL 高级权限的开发者只能建配置式接口；有权限者建 SQL 接口，执行超过行数上限返回截断提示并记审计。<strong>测法</strong>：权限 + 接口。 - [ ] 下拉树形控件绑定一个数据集接口，参数来自表单字段，联动刷新。<strong>测法</strong>：UI。</li>
+</ul>
+<h4 class="rp-toc-include" id="8115-消息模板与渠道-uip1"><a href="#8115-消息模板与渠道-uip1" class="rp-header-anchor rp-link" aria-label="链接到 8.11.5 消息模板与渠道 UI（P1）">#</a>8.11.5 消息模板与渠道 UI（P1）</h4>
+<ul>
+<li><strong>范围</strong> ✅ 短信通道配置 UI（基于 §07 Provider：地域/参数、同步已审核签名与模板、被引用只能改次要字段）、群机器人出站 Webhook（钉钉/企微/飞书，加签，唯一默认不可删）、第三方模板同步（结果分成功/失败带原因，解析变量结构）、监控 UI（一次发送一条监控 + 每收件人一条记录、「发送中」态、按失败收件人定向重试、清空只清监控数据）、测试发送两步（返回待填参数 → 逐渠道发送并回报）。接收配置/用户订阅矩阵 P2；公告 S3 可选；钉钉/企微/飞书应用消息、公众号 S3。</li>
+<li><strong>验收</strong> - [ ] 流程「待办」通知绑定站内信 + 群机器人模板，审批人收到两渠道消息，监控页两条记录；机器人地址错误时只重试该渠道。<strong>测法</strong>：Mock Webhook。</li>
+</ul>
+<h4 class="rp-toc-include" id="8116-任务管理-uip1"><a href="#8116-任务管理-uip1" class="rp-header-anchor rp-link" aria-label="链接到 8.11.6 任务管理 UI（P1）">#</a>8.11.6 任务管理 UI（P1）</h4>
+<ul>
+<li><strong>范围</strong> ✅ 作业定义（名称、cron/间隔/一次性、任务类型：数据接口 / 本地方法、参数、超时、重试、并发策略、执行身份为受限服务身份）与触发器状态（就绪/暂停/归档）两个聚合、启停/立即执行/查看日志、结构化执行记录（状态码、耗时、错误分类、业务结果回写）。❌ 脚本型任务（任意代码执行，不做）。</li>
+<li><strong>验收</strong> - [ ] 创建每分钟调用某数据接口的任务，3 个副本下每分钟恰执行一次，业务失败在日志中可见。<strong>测法</strong>：多副本 + 计数。</li>
+</ul>
+<h4 class="rp-toc-include" id="8117-配置路径型门户与报表子集p2补充裁决-q29q30"><a href="#8117-配置路径型门户与报表子集p2补充裁决-q29q30" class="rp-header-anchor rp-link" aria-label="链接到 8.11.7 配置路径型门户与报表子集（P2，补充裁决 Q29/Q30）">#</a>8.11.7 配置路径型门户与报表子集（P2，补充裁决 Q29/Q30）</h4>
+<blockquote>
+<p>已裁决（R16）：本节保持 S2 可选（P2）。S2 验收演示所需的「可用首页」由应用默认首页（菜单 + 功能列表，8.10）满足，不依赖本节门户；<code>@yue/charts</code> 维持 S2 可选。</p>
+</blockquote>
+<ul>
+<li><strong>范围</strong> ✅ 门户配置路径型（固定模板 + 配置：指向页面/外链/功能，发布即挂菜单，作应用首页）；报表子集（列表 + 分组汇总 + 导出 XLSX，消费数据接口，服务端渲染）。❌ 门户设计型、交叉表/父子格/分栏、大屏（S3）。</li>
+<li><strong>验收</strong> - [ ] 应用首页指向配置路径型门户后，租户用户登录进应用落在该页。<strong>测法</strong>：UI。</li>
+</ul>
+<h3 class="rp-toc-include" id="812-operationtask-资源与人在回路p0--s2"><a href="#812-operationtask-资源与人在回路p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.12 Operation/Task 资源与人在回路（P0 · S2）">#</a>8.12 Operation/Task 资源与人在回路（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-10"><a href="#设计理念-10" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>长任务（发布、迁移、导入导出、批量迁移）与人工步骤（流程待办）统一为 <strong>Operation/Task 资源</strong>，状态机 <code>working / input_required / completed / failed / cancelled</code>，<code>input_required</code> 携带结构化输入请求；S2 的「待办」与 S4 Agent 的「中断」是同一个模型，不做两套（ADR-018 防返工第 13 条）。</p>
+<h4 class="rp-toc-include" id="范围与边界-10"><a href="#范围与边界-10" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ <code>Operation{id, kind, status, progress{percent, message}, inputRequest?{schema, prompt, actions[]}, result?, error?, startedBy(actor 三类), tenantId, idempotencyKey, cancelable}</code>；<code>GET /operations/{id}</code>、<code>:cancel</code>、<code>:provideInput</code>；列表按租户/发起人过滤。</li>
+<li>✅ 接入点：8.7 发布向导、8.3 批量迁移、8.2 导入导出、8.10 安装/升级、8.8 工作项（<code>WorkItem</code> 投影为 <code>input_required</code> 的 Operation，<code>actions</code> 即允许的输入动作）。</li>
+<li>✅ 进度推送经 <code>qian.realtime</code>；完成/失败发事件。</li>
+<li>✅ SDK：<code>StartOperation / ReportProgress / RequireInput / Complete</code>。</li>
+<li>❌ MCP Tasks（<code>tasks/get/update/cancel</code>）与 A2A Task 的协议映射实现（S4，S2 只保证状态机字段对齐）。</li>
+</ul>
+<h4 class="rp-toc-include" id="技术落点--插件化定位-2"><a href="#技术落点--插件化定位-2" class="rp-header-anchor rp-link" aria-label="链接到 技术落点 / 插件化定位">#</a>技术落点 / 插件化定位</h4>
+<p><code>qian.operations</code>（module@<code>qian-platform</code>，<code>policy.tier: system</code>），契约由 <code>qian.capabilities</code> 在 S1 预留（§07 7.2.1）；持久化在平台库；长任务执行体在各自插件，Operation 只做状态与输入请求的权威记录。</p>
+<h4 class="rp-toc-include" id="agent-契约-10"><a href="#agent-契约-10" class="rp-header-anchor rp-link" aria-label="链接到 Agent 契约">#</a>Agent 契约</h4>
+<p>Operation 是 Agent 感知长任务与审批中断的唯一方式：<code>async: task</code> 的能力返回 <code>operationId</code>；<code>input_required</code> 的 <code>inputRequest.schema</code> 即 Agent 需要补充的输入；<code>humanOnly</code> 的输入动作对 Agent 不可用。</p>
+<h4 class="rp-toc-include" id="验收标准-10"><a href="#验收标准-10" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 一次导入 5 万行作为 Operation 可查进度、可取消，取消后已导入行按策略保留或回滚并在结果中说明。<strong>测法</strong>：接口 + 计时。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 流程待办在 <code>GET /operations?status=input_required</code> 中可见，其 <code>inputRequest.actions</code> 与 <code>GET /workflow/workitems/{id}/actions</code> 一致。<strong>测法</strong>：接口比对。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 同一 <code>idempotencyKey</code> 重复发起 Operation 返回同一 <code>operationId</code>。<strong>测法</strong>：接口测试。</li>
+</ul>
+<h3 class="rp-toc-include" id="813-yue-s2-交付p0--s2"><a href="#813-yue-s2-交付p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.13 yue S2 交付（P0 · S2）">#</a>8.13 yue S2 交付（P0 · S2）</h3>
+<h4 class="rp-toc-include" id="设计理念-11"><a href="#设计理念-11" class="rp-header-anchor rp-link" aria-label="链接到 设计理念">#</a>设计理念</h4>
+<p>沿用 ADR-013：React 19 + Vite + Tailwind v4 + Base UI + shadcn 源码自有化，六层分层用 lint 强制（tokens → core → shell/data/form/charts/code-editor → biz → runtime/widgets → designer）；只保留一套表单/表格/弹层引擎；控件注册表与 yue 组件 props 的 JSON Schema 机器可读，设计器、远程渲染白名单、S4 Agent 生成 UI 共用一份契约。S1 首迭代的 Base UI 验证门结论（§07）决定 S2 是否整体切 Radix，不混用。</p>
+<h4 class="rp-toc-include" id="范围与边界-11"><a href="#范围与边界-11" class="rp-header-anchor rp-link" aria-label="链接到 范围与边界">#</a>范围与边界</h4>
+<ul>
+<li>✅ <strong>控件集</strong>（8.4 分级表 P0/P1 全部）：每控件 <code>meta + Runtime + Designer + toSearchControl + toCellRenderer</code>，<code>data-slot/data-testid</code> 齐备，端支持矩阵显式降级。</li>
+<li>✅ <strong>渲染器</strong>：表单渲染器三态、子表（InputTable）、三层联动、公式控件；列表渲染器（普通表格 P0；左树/树形/行内编辑/分组 P2）、动作执行器；流程表单宿主（按节点字段权限渲染）；审批中心基础（四列表 + 详情页）。</li>
+<li>✅ <strong>三大设计器</strong>：表单、列表、审批流（纵向节点树），共用设计器基础设施（dnd-kit 嵌套拖拽、撤销重做、Schema 驱动属性面板、校验浮层与定位、版本下拉、预览矩阵）。</li>
+<li>✅ <strong>通用交互组件</strong>：<code>ConditionBuilder</code>（条件组构造器，被数据过滤/高级查询/数据权限/启用规则/流程条件五处复用）、<code>ParamBinding</code>（参数绑定表格，来源五选一）、<code>SuperQuery</code>、<code>ImportWizard</code> / <code>ExportDialog</code>、<code>PopupSelect</code> 族、<code>RelationForm</code>、<code>InterfaceSelect</code>、<code>PosSelect / GroupSelect / UsersSelect</code>、授权树族（菜单/按钮/列/字段/数据权限页签）、字段权限矩阵、人员选择器 + 范围过滤、「只列已发布资源」选择弹窗、字段映射表格、弹窗三件套。</li>
+<li>✅ <strong><code>@yue/data</code> 进阶</strong>：树表、列级权限、行内编辑、复杂表头、列宽拖拽与列序、虚拟滚动；合计与个人视图 P2。</li>
+<li>✅ <strong><code>@yue/core</code> 补充</strong>：Steps、Descriptions、Timeline 必做；Slider/Rate/ColorPicker/Watermark/Transfer/Command Palette 可选。</li>
+<li>✅ <strong><code>@yue/code-editor</code></strong>：Monaco（桌面，SQL/表达式带白名单 <code>.d.ts</code> 补全）+ CodeMirror 6（轻量）、Cron 可视化；富文本/Markdown 选型调研后决定（补充裁决 Q39）。</li>
+<li>✅ <strong>元数据契约包</strong> <code>@qian/metadata-contracts</code>：FormSchema / ListSchema / FlowDefinition / PrintTemplate 的 JSON Schema 定稿（S1 草案 → S2 定稿），生成 TS 与 C# 类型，校验器前后端共用。</li>
+<li>✅ <strong>组件 manifest 全量</strong>：yue 组件目录（组件、props JSON Schema）机器可读，发布到私有 npm；应用切换器；视觉回归进 CI。</li>
+<li>❌ <code>@yue/mobile</code> H5 渲染器（Q13）；<code>@yue/charts</code> 完整版（S2 可选，门户/报表 S3 必做）；门户/报表/打印/大屏设计器（S3）；不可信 UI 沙箱（S3）；bpmn-js（许可证要求水印可见）、Formily/amis 等自带体系的低代码引擎。</li>
+</ul>
+<h4 class="rp-toc-include" id="验收标准-11"><a href="#验收标准-11" class="rp-header-anchor rp-link" aria-label="链接到 验收标准">#</a>验收标准</h4>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> eslint-plugin-boundaries / dependency-cruiser 在 CI 阻断任何反向依赖。<strong>测法</strong>：注入一条 <code>core → designer</code> 导入应失败。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 平台控制台的 S1 后台 CRUD 表单与低代码运行时表单由同一 <code>SchemaForm</code> 渲染（无第二套表单引擎）。<strong>测法</strong>：代码审计脚本统计引擎入口数 = 1。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 全部 P0/P1 控件通过 axe 无严重违规、Lighthouse 预算达标；三大设计器在 1366 宽度可用。<strong>测法</strong>：CI 报告。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> <code>ConditionBuilder</code> 在五处落点输出同一 Filter AST 并通过同一校验器。<strong>测法</strong>：快照比对。</li>
+</ul>
+<h3 class="rp-toc-include" id="814-s2-的-agent-就绪项p0--s2"><a href="#814-s2-的-agent-就绪项p0--s2" class="rp-header-anchor rp-link" aria-label="链接到 8.14 S2 的 Agent 就绪项（P0 · S2）">#</a>8.14 S2 的 Agent 就绪项（P0 · S2）</h3>
+<p>S2 不做任何 Agent 功能（§10），但以下四项必须在 S2 做对，否则 S4 返工（ADR-018、ADR-016）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>项</th><th>S2 交付（人用版）</th><th>S4 复用方式</th><th>归属</th></tr></thead><tbody><tr><td><strong>元数据生成闭环（人用版）</strong></td><td>patch → 校验 → 预览 → 人工批准 → 发布 → 可回滚（8.1、8.7）；设计器与导入都走它</td><td>Agent 提交 patch 走同一门禁；生成产物记 <code>generatedBy / promptHash / 审核人</code></td><td><code>qian.metadata</code></td></tr><tr><td><strong>字段敏感度标签</strong></td><td><code>dataClassification</code> 进字段元数据，驱动 8.9 脱敏与导出策略</td><td>工具返回按敏感度脱敏；对外发送类工具默认需确认</td><td><code>qian.metadata</code> + <code>qian.authz</code></td></tr><tr><td><strong>工作流即能力</strong></td><td>已发布流程自动登记为意图级能力；<code>actions</code> 契约带 <code>inputSchema / preconditions / humanOnly</code>；待办 = Operation <code>input_required</code>（8.8、8.12）</td><td>流程发起与审批动作直接成为 MCP 工具；人工节点映射 MCP Tasks</td><td><code>qian.workflow</code> + <code>qian.operations</code></td></tr><tr><td><strong>出网 SSRF 基线</strong></td><td>§13.8 已把平台自有出网点（OIDC 发现、企业微信、SMTP、短信、Apollo、对象存储）的出口代理与 SSRF 基线定为 S1 必做（R10）；S2 把低代码新增的出网点（数据接口 API 执行器、群机器人 Webhook、流程外部节点、第三方 <code>connector</code>）全部接入同一出口代理：私网与云元数据地址默认阻断、按插件清单 <code>permissions.egress</code> 白名单放行、不携带用户令牌外发、出网审计</td><td>连接器与 Agent 工具的出网走同一基线</td><td><code>Qian.Runtime</code> 装载器对 <code>plugin.json</code> <code>permissions.egress</code> 的校验 + K3s 基础设施（NetworkPolicy / 出口网关），规范见 §13.8</td></tr></tbody></table></div>
+<p>此外 S2 继续遵守 S1 起生效的防返工清单（8.0.5），并把控件目录、Field Type Catalog、运算符矩阵、系统变量目录、流程节点 Schema、布局能力矩阵全部以元数据接口发布（「目录是数据不是代码」）。</p>
+<p><strong>验收标准</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled=""/> 任一出网点请求 <code>169.254.169.254</code>、<code>10.0.0.0/8</code> 或未在白名单的域名被阻断并记审计。<strong>测法</strong>：SSRF 探测用例。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 发布一个流程后 <code>GET /capabilities</code> 出现 <code>workflow.&lt;code&gt;.launch</code> 能力（能力 ID 保持插件内短名，URN <code>qian.workflow/workflow.&lt;code&gt;.launch</code>；其权限点为 <code>qian.workflow:flow:launch</code>，R23）且带 <code>inputSchema</code>（= 发起表单 Schema）。<strong>测法</strong>：接口测试。</li>
+<li class="task-list-item"><input type="checkbox" disabled=""/> 以非设计器通道提交 patch 的全部流程产物带 <code>source</code> 与审批记录。<strong>测法</strong>：审计查询。</li>
+</ul>
+<h3 class="rp-toc-include" id="815-s2-明确不做与理由"><a href="#815-s2-明确不做与理由" class="rp-header-anchor rp-link" aria-label="链接到 8.15 S2 明确不做与理由">#</a>8.15 S2 明确不做与理由</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>不做</th><th>理由</th><th>何时再议</th></tr></thead><tbody><tr><td>参考平台形态的代码生成（完整 CRUD 源码 + 手工接入）</td><td>制造第二份真相源与能力漂移；与微服务拆分冲突（Q11）</td><td>「调用运行时 SDK 的薄壳脚手架」S2 后期可选</td></tr><tr><td>前端自由 JS 按钮 / 控件事件 / 表格脚本（<code>eval</code>）</td><td>多租户安全面大、暴露令牌、Agent 不可发现（补充裁决 Q18）</td><td>QuickJS 沙箱 P2 兜底；声明式规则是首选</td></tr><tr><td>进程共享的服务端脚本引擎（V8/Jint 任意脚本）</td><td>违反「第三方代码永不进共享进程」（ADR-002）</td><td>重脚本走 <code>function</code> Wasm（ABI S2 中期拍板）</td></tr><tr><td>匿名外链照搬（读草稿、不校验开关/密码、无有效期）</td><td>安全缺陷</td><td>S3 用服务端签发的能力令牌 + 网关匿名路由重做</td></tr><tr><td>H5 表单渲染器与移动端专属配置</td><td>S2 只做 PC 响应式（Q13）；两份配置是反例</td><td><code>devices[]</code> 与端覆盖预留，S3 评估</td></tr><tr><td>自由画布流程设计器、BPMN 导出、bpmn-js</td><td>一套 DSL 两种视图，纵向节点树先行（补充裁决 Q22）；bpmn-js 许可证要求水印</td><td>自由画布 S3 可选（React Flow）；BPMN 只作导出器不早于 S3</td></tr><tr><td>加签/减签、候选人、拒绝后继续、委托代理、签收、撤销申请、协办</td><td>不在退出标准关键路径（Q14 / 补充裁决 Q24）</td><td>加签减签与候选人 P2；其余 S3</td></tr><tr><td>定时器节点、嵌入式决策流程、简单→标准切换</td><td>参考平台亦未实现 / 与调用式重复 / 一套 DSL 无需切换</td><td>不做</td></tr><tr><td>树形表格以清空数据权限换全量</td><td>鉴权不得有旁路</td><td>不做</td></tr><tr><td>门户设计型、报表交叉表/分栏、大屏</td><td>阶段归 S3（补充裁决 Q29/Q30/Q31）；大屏不复用参考平台源码</td><td>S3</td></tr><tr><td>服务端 HTML→PDF</td><td>无头浏览器在 K3s 的成本未评估（补充裁决 Q33）</td><td>S3 可选</td></tr><tr><td>MySQL/国产库方言、租户自带业务库</td><td>ADR-004 PostgreSQL 唯一一等库；RLS 无等价物</td><td>本期不做</td></tr><tr><td>在途流程实例迁移到新版本</td><td>需求不明；版本隔离已足够</td><td>不做（本期）</td></tr><tr><td>元数据多人实时协同编辑</td><td>乐观锁 + 冲突提示足够</td><td>不做</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="816-待确认"><a href="#816-待确认" class="rp-header-anchor rp-link" aria-label="链接到 8.16 待确认">#</a>8.16 待确认</h3>
+<ol>
+<li><strong><code>function</code> Wasm 运行时的阶段</strong>：已裁决（R2）——统一为 S2 可选（P2），不计入 S2 核心交付，ABI 在 S2 中期拍板；本章 8.0.3 的 <code>qian-wasm-runtime</code> 可选单元与 8.2 / 8.5 的落点不变，服务端公式与规则先用 JSON AST 解释器。</li>
+<li><strong>模型目录与按用途路由的阶段</strong>：D 基线把「模型目录 / 上游凭证 / 按用途路由 / 默认参数 / 租户配额计量」标 S2 必做；P 基线与 ADR-015/018 把 <code>qian.model-gateway</code> 定为 S1 可选接线、S3 必做租户可见。本章按决策列 P2（只定契约），实现细节以 §10.5 为准。</li>
+<li><strong>插件命名与 App / 导航归属</strong>：已裁决（R18 / R1 / R26）——统一用 <code>qian.dynamic-data</code> 与 <code>qian.plugin-sdk</code>（P 基线别名说明仅保留在 8.0.4 一处）；组织目录作为 <code>qian.identity</code> 子模块、不独立成插件；App 实体契约由 <code>qian.capabilities</code>（原 <code>qian.kernel</code>，ADR-020）在 S1 预留（<code>runtime.form: package</code> 组件的租户内安装记录，持有默认首页、菜单根与权限点归属），本章 8.10 在 <code>qian.metadata</code> 升为一等元数据对象；<code>qian.navigation</code> 在 S1 是 <code>qian.capabilities</code> 内「菜单由清单贡献 + URN 目录 + 用户偏好」的逻辑名（S1 菜单贡献走 <code>qian.shell.nav</code> 插槽、权限资源注册走 <code>qian.authz</code>），S2 允许拆出为独立插件。</li>
+<li><strong>权限点命名</strong>：已裁决（R9）——统一为 <code>&lt;plugin-id&gt;:&lt;resource&gt;:&lt;action&gt;</code>（§07 7.5）；本章 8.8 的流程发起权限点已改为 <code>qian.workflow:flow:launch</code>。</li>
+<li><strong>数据接口 SQL 文本模式</strong>：已裁决（R11 / R25）——高级权限为独立权限点 <code>qian.data-api:sql:author</code>，默认不在开发者角色内，由租户管理员显式授予具体人员；只读数据库账号由平台供给（平台 PG 中每租户绑定 RLS 的只读角色，运行时按租户切换），租户自带连接的只读账号 S3 随 D4 评估；发布需租户管理员批准。</li>
+<li><strong>门户配置路径型与报表子集</strong>：已裁决（R16）——保持 S2 可选（P2）；S2 验收演示的「可用首页」由应用默认首页（菜单 + 功能列表）满足，不依赖门户；<code>@yue/charts</code> 维持 S2 可选。</li>
+<li><strong>富文本 / Markdown 编辑器选型</strong>（补充裁决 Q39）：S2 前补选型调研，结论决定 8.4 富文本控件能否进 P1。</li>
+<li><strong>S2 示例自营应用的选题</strong>（本章假定「请假与考勤」）与其是否随 S2 对外交付，待产品负责人确认。</li>
+<li><strong>组件模型 v2 对本章的影响（ADR-020）</strong>：(a) 已裁决（R35）——<code>forms/</code> <code>lists/</code> <code>flows/</code> <code>pages/</code> 组件文件夹是分发形态、注册表是运行态真相源、同一校验器；git 修订是分发版本，8.1 的 Release / Pointer 不改；(b) <code>lowcode</code> / <code>workflow</code> profile 的组合包边界与是否允许租户私有市场分发 <code>package</code> 组件（S3）；(c) 已拍板（ADR-020 §7 第 5 条）：官方代码插件热装卸不进 S2 核心交付，S2 内由 RT 领域做 5 天时间盒 spike 验证 collectible <code>AssemblyLoadContext</code> 与 Kun 约束、结论写回 ADR-020，生产默认滚动重启（R27；8.0.4 列为 P2 spike）；(d) 已拍板（ADR-020 §7 第 2 条）：清单为 <code>.qian-plugin/plugin.json</code>（JSON），8.10 bundle 定义的字段按此落位；(e) 已拍板（ADR-020 §7 第 1 条）：TS 侧公共 API 为 <code>@qian/runtime</code>、S1 内部 vendor Cordis 实现，<code>@qian/designer</code> 与 <code>@qian/lowcode-runtime</code> 作为 <code>@qian/runtime</code> 插件树成员交付，不依赖实现选择。</li>
+</ol><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/design/prd/07-s1-foundation.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>§07 S1 技术底座功能规格</span></span></a><a href="/design/prd/09-s3-customer.html" class="rp-prev-next-page__item rp-prev-next-page__next rp-link"><span class="rp-prev-next-page__item__desc">下一页</span><span class="rp-prev-next-page__item__title"><span>§09 S3 面向客户</span><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></span></a></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#80-目标与退出标准" class="rp-toc-item rp-link" title="8.0 目标与退出标准" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.0 目标与退出标准</span></a><a href="#801-s2-的一句话目标" class="rp-toc-item rp-link" title="8.0.1 S2 的一句话目标" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.0.1 S2 的一句话目标</span></a><a href="#802-退出标准adr-018" class="rp-toc-item rp-link" title="8.0.2 退出标准（ADR-018）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.0.2 退出标准（ADR-018）</span></a><a href="#803-s2-新增-profile可部署单元" class="rp-toc-item rp-link" title="8.0.3 S2 新增 profile（可部署单元）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.0.3 S2 新增 profile（可部署单元）</span></a><a href="#804-s2-新增与升级的插件" class="rp-toc-item rp-link" title="8.0.4 S2 新增与升级的插件" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.0.4 S2 新增与升级的插件</span></a><a href="#805-s2-的横切约束从-s1-继承在-s2-首次被低代码运行时大规模消费" class="rp-toc-item rp-link" title="8.0.5 S2 的横切约束（从 S1 继承、在 S2 首次被低代码运行时大规模消费）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.0.5 S2 的横切约束（从 S1 继承、在 S2 首次被低代码运行时大规模消费）</span></a><a href="#81-元数据注册表与版本模型p0--s2" class="rp-toc-item rp-link" title="8.1 元数据注册表与版本模型（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.1 元数据注册表与版本模型（P0 · S2）</span></a><a href="#设计理念" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点" class="rp-toc-item rp-link" title="技术落点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点</span></a><a href="#插件化定位" class="rp-toc-item rp-link" title="插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">插件化定位</span></a><a href="#agent-契约" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#82-动态数据引擎p0--s2" class="rp-toc-item rp-link" title="8.2 动态数据引擎（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.2 动态数据引擎（P0 · S2）</span></a><a href="#设计理念-1" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-1" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点-1" class="rp-toc-item rp-link" title="技术落点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点</span></a><a href="#插件化定位-1" class="rp-toc-item rp-link" title="插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">插件化定位</span></a><a href="#agent-契约-1" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-1" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#83-schema-migratorp0--s2" class="rp-toc-item rp-link" title="8.3 Schema Migrator（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.3 Schema Migrator（P0 · S2）</span></a><a href="#设计理念-2" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-2" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点-2" class="rp-toc-item rp-link" title="技术落点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点</span></a><a href="#插件化定位-2" class="rp-toc-item rp-link" title="插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">插件化定位</span></a><a href="#agent-契约-2" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-2" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#84-field-type-catalog-与控件注册表p0--s2" class="rp-toc-item rp-link" title="8.4 Field Type Catalog 与控件注册表（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.4 Field Type Catalog 与控件注册表（P0 · S2）</span></a><a href="#设计理念-3" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-3" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点-3" class="rp-toc-item rp-link" title="技术落点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点</span></a><a href="#插件化定位-3" class="rp-toc-item rp-link" title="插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">插件化定位</span></a><a href="#agent-契约-3" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-3" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#85-表单引擎与设计器p0--s2" class="rp-toc-item rp-link" title="8.5 表单引擎与设计器（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.5 表单引擎与设计器（P0 · S2）</span></a><a href="#设计理念-4" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-4" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点-4" class="rp-toc-item rp-link" title="技术落点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点</span></a><a href="#插件化定位-4" class="rp-toc-item rp-link" title="插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">插件化定位</span></a><a href="#agent-契约-4" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-4" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#86-列表引擎与设计器p0--s2" class="rp-toc-item rp-link" title="8.6 列表引擎与设计器（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.6 列表引擎与设计器（P0 · S2）</span></a><a href="#设计理念-5" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-5" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点-5" class="rp-toc-item rp-link" title="技术落点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点</span></a><a href="#插件化定位-5" class="rp-toc-item rp-link" title="插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">插件化定位</span></a><a href="#agent-契约-5" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-5" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#87-功能发布向导p0--s2" class="rp-toc-item rp-link" title="8.7 功能发布向导（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.7 功能发布向导（P0 · S2）</span></a><a href="#设计理念-6" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-6" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点--插件化定位" class="rp-toc-item rp-link" title="技术落点 / 插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点 / 插件化定位</span></a><a href="#agent-契约-6" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-6" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#88-审批流程p0--s2" class="rp-toc-item rp-link" title="8.8 审批流程（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.8 审批流程（P0 · S2）</span></a><a href="#设计理念-7" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-7" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点-6" class="rp-toc-item rp-link" title="技术落点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点</span></a><a href="#插件化定位-6" class="rp-toc-item rp-link" title="插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">插件化定位</span></a><a href="#agent-契约-7" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-7" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#89-数据权限与字段权限p0--s2" class="rp-toc-item rp-link" title="8.9 数据权限与字段权限（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.9 数据权限与字段权限（P0 · S2）</span></a><a href="#设计理念-8" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-8" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点--插件化定位-1" class="rp-toc-item rp-link" title="技术落点 / 插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点 / 插件化定位</span></a><a href="#agent-契约-8" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-8" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#810-应用与菜单系统表单式清单接入应用包-bundle-v1-与安装到租户p0--s2" class="rp-toc-item rp-link" title="8.10 应用与菜单、系统表单式清单接入、应用包 bundle v1 与安装到租户（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.10 应用与菜单、系统表单式清单接入、应用包 bundle v1 与安装到租户（P0 · S2）</span></a><a href="#设计理念-9" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-9" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点-7" class="rp-toc-item rp-link" title="技术落点" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点</span></a><a href="#插件化定位-7" class="rp-toc-item rp-link" title="插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">插件化定位</span></a><a href="#agent-契约-9" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-9" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#811-打印文件预览数据建模与接口设计器消息模板与渠道-ui任务管理-uip1--s2" class="rp-toc-item rp-link" title="8.11 打印、文件预览、数据建模与接口设计器、消息模板与渠道 UI、任务管理 UI（P1 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.11 打印、文件预览、数据建模与接口设计器、消息模板与渠道 UI、任务管理 UI（P1 · S2）</span></a><a href="#8111-打印p1模板与浏览器打印打印设计器-s2-后期" class="rp-toc-item rp-link" title="8.11.1 打印（P1，模板与浏览器打印；打印设计器 S2 后期）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.11.1 打印（P1，模板与浏览器打印；打印设计器 S2 后期）</span></a><a href="#8112-文件预览p1" class="rp-toc-item rp-link" title="8.11.2 文件预览（P1）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.11.2 文件预览（P1）</span></a><a href="#8113-数据建模p1" class="rp-toc-item rp-link" title="8.11.3 数据建模（P1）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.11.3 数据建模（P1）</span></a><a href="#8114-接口设计器数据接口p1" class="rp-toc-item rp-link" title="8.11.4 接口设计器（数据接口，P1）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.11.4 接口设计器（数据接口，P1）</span></a><a href="#8115-消息模板与渠道-uip1" class="rp-toc-item rp-link" title="8.11.5 消息模板与渠道 UI（P1）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.11.5 消息模板与渠道 UI（P1）</span></a><a href="#8116-任务管理-uip1" class="rp-toc-item rp-link" title="8.11.6 任务管理 UI（P1）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.11.6 任务管理 UI（P1）</span></a><a href="#8117-配置路径型门户与报表子集p2补充裁决-q29q30" class="rp-toc-item rp-link" title="8.11.7 配置路径型门户与报表子集（P2，补充裁决 Q29/Q30）" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">8.11.7 配置路径型门户与报表子集（P2，补充裁决 Q29/Q30）</span></a><a href="#812-operationtask-资源与人在回路p0--s2" class="rp-toc-item rp-link" title="8.12 Operation/Task 资源与人在回路（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.12 Operation/Task 资源与人在回路（P0 · S2）</span></a><a href="#设计理念-10" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-10" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#技术落点--插件化定位-2" class="rp-toc-item rp-link" title="技术落点 / 插件化定位" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">技术落点 / 插件化定位</span></a><a href="#agent-契约-10" class="rp-toc-item rp-link" title="Agent 契约" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">Agent 契约</span></a><a href="#验收标准-10" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#813-yue-s2-交付p0--s2" class="rp-toc-item rp-link" title="8.13 yue S2 交付（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.13 yue S2 交付（P0 · S2）</span></a><a href="#设计理念-11" class="rp-toc-item rp-link" title="设计理念" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">设计理念</span></a><a href="#范围与边界-11" class="rp-toc-item rp-link" title="范围与边界" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">范围与边界</span></a><a href="#验收标准-11" class="rp-toc-item rp-link" title="验收标准" style="padding-left:24px" data-depth="2"><span class="rp-toc-item__text rp-doc">验收标准</span></a><a href="#814-s2-的-agent-就绪项p0--s2" class="rp-toc-item rp-link" title="8.14 S2 的 Agent 就绪项（P0 · S2）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.14 S2 的 Agent 就绪项（P0 · S2）</span></a><a href="#815-s2-明确不做与理由" class="rp-toc-item rp-link" title="8.15 S2 明确不做与理由" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.15 S2 明确不做与理由</span></a><a href="#816-待确认" class="rp-toc-item rp-link" title="8.16 待确认" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">8.16 待确认</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>
