@@ -45,7 +45,7 @@ IScheduler 提供 ScheduleOnce、ScheduleCron、ScheduleInterval、Cancel。call
 
 ## 验证
 
-专项复用 Qian.Testing.Containers.PostgresFixture，不重复创建容器框架。正常调度运行3个独立进程、两个租户、100个真实每分钟触发器，连续两个分钟各100次；实际杀进程检查租约到期接管。另覆盖业务键并发与取消、超时/重试、misfire、RLS原始SQL、组合外键、SET ROLE与成员关系、过量列权限、过期租约/旧owner、租户等待期冻结和目录过滤。仅让真实续租抛一次 PostgreSQL 暂态错误的反例，验证原进程继续运行和更换进程两种路径都保留同一 run，第二次尝试仅产生一个幂等效果；不与普通 CI 超时作未经证明的因果归并。SDK/ManifestTool 用真实 Roslyn 与子进程验证生成、同步、漂移、手改保护、多组件归属和删除。
+专项复用 Qian.Testing.Containers.PostgresFixture，不重复创建容器框架；用例按主题分四个类，各自一个容器并行，类内串行（S1-QA-022）。正常调度运行3个独立进程、两个租户、100个真实每分钟触发器，连续两个分钟各100次；实际杀进程检查租约到期接管。另覆盖业务键并发与取消、超时/重试、misfire、RLS原始SQL、组合外键、SET ROLE与成员关系、过量列权限、过期租约/旧owner、租户等待期冻结和目录过滤。仅让真实续租抛一次 PostgreSQL 暂态错误的反例，验证原进程继续运行和更换进程两种路径都保留同一 run，第二次尝试仅产生一个幂等效果；不与普通 CI 超时作未经证明的因果归并。SDK/ManifestTool 用真实 Roslyn 与子进程验证生成、同步、漂移、手改保护、多组件归属和删除。
 
 ```bash
 QIAN_REQUIRE_DOCKER=1 dotnet run --project tests/Qian.Scheduler.Tests -c Release

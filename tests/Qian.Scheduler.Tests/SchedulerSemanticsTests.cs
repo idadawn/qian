@@ -1,139 +1,79 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
 using Qian.Data;
+using Qian.Plugin.Sdk;
 using Qian.Runtime;
+using Qian.Runtime.Errors;
 using Qian.Scheduler.TestHost;
+using static Qian.Scheduler.Tests.SchedulerScenario;
 
 namespace Qian.Scheduler.Tests;
 
-public sealed partial class SchedulerTests
+// 调度语义、准入与隔离：业务键幂等与取消、目录准入、迁移模型与 cron 解析、过期租约围栏、三表 RLS 与组合外键、
+// worker 专用登录的列权限、租户冻结、超时重试与取消终态、misfire。
+public sealed class SchedulerSemanticsTests(SchedulerFixture fixture) : IClassFixture<SchedulerFixture>
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task 续租一次暂态异常_不归档once_保留同run等待租约恢复(bool replaceWorker)
-    {
-        await fixture.Reset();
-        await fixture.Admin("""
-            CREATE SEQUENCE plugin_qian_scheduler.renewal_probe_calls;
-            GRANT USAGE ON SEQUENCE plugin_qian_scheduler.renewal_probe_calls TO qian_app;
-            CREATE FUNCTION plugin_qian_scheduler.fail_one_renewal() RETURNS trigger LANGUAGE plpgsql AS $$
-            BEGIN
-              -- 领取会改变 generation，完成会清空 lease_until；两条路径都不注入异常。
-              -- 只有真实处理器进入后的续租才消耗计数，避免把冷启动时间当成本反例。
-              IF NEW.generation=OLD.generation AND NEW.lease_owner=OLD.lease_owner AND NEW.lease_until>OLD.lease_until
-                AND EXISTS(SELECT 1 FROM public.sch_probe_attempts WHERE run_id=NEW.active_run_id)
-              THEN
-                -- 先放行一次真实续租，确认该 run 的续租循环已经建立，再向下一次续租注入故障。
-                IF nextval('plugin_qian_scheduler.renewal_probe_calls')=2
-                THEN RAISE EXCEPTION 'expected transient lease renewal failure' USING ERRCODE='40001'; END IF;
-              END IF;
-              RETURN NEW;
-            END $$;
-            CREATE TRIGGER fail_one_renewal BEFORE UPDATE OF lease_until ON plugin_qian_scheduler.job_triggers
-              FOR EACH ROW EXECUTE FUNCTION plugin_qian_scheduler.fail_one_renewal();
-            """);
-        try
-        {
-            await using var producer = await ProbeHost.CreateAsync(fixture.Config, false, Ct);
-            await using var worker = await WorkerProcess.Start(fixture.Config, TenantA);
-            WorkerProcess? successor = null;
-            var workers = new List<WorkerProcess> { worker };
-            var phases = new Dictionary<string, DateTimeOffset> { ["workerReady"] = DateTimeOffset.UtcNow };
-            try
-            {
-                using (producer.Tenant.BeginScope(TenantA))
-                {
-                    var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantA));
-                    await caller.Scheduler().ScheduleOnce(caller, "renewal-error", DateTimeOffset.UtcNow, Target,
-                        JsonSerializer.SerializeToElement(new { mode = "hold-first", delayMs = 0 }), new JobOptions { Timeout = TimeSpan.FromMinutes(3) }, Ct);
-                }
-                await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts") == 1, TimeSpan.FromSeconds(10));
-                var originalRun = await fixture.Scalar<Guid>("SELECT run_id FROM public.sch_probe_attempts");
-                phases["handlerEntered"] = DateTimeOffset.UtcNow;
-                await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<bool>("SELECT is_called AND last_value>=2 FROM plugin_qian_scheduler.renewal_probe_calls"), TimeSpan.FromSeconds(10));
-                phases["renewalExceptionInjected"] = DateTimeOffset.UtcNow;
-                if (replaceWorker)
-                {
-                    // 保留不停止原 worker 的独立分支作红/绿判据，防止 Stop 的围栏掩盖错误归档。
-                    // 此分支另证明持久的同一 run 可以交给第二个实际进程。
-                    Assert.Equal("ready", await fixture.Scalar<string>("SELECT state FROM plugin_qian_scheduler.job_triggers"));
-                    Assert.Equal(originalRun, await fixture.Scalar<Guid>("SELECT active_run_id FROM plugin_qian_scheduler.job_triggers"));
-                    await worker.Stop();
-                    successor = await WorkerProcess.Start(fixture.Config, TenantA); workers.Add(successor);
-                    phases["replacementReady"] = DateTimeOffset.UtcNow;
-                }
-                await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs WHERE status IN ('succeeded','failed','cancelled')") == 1, TimeSpan.FromSeconds(15));
-                var status = await fixture.Scalar<string>("SELECT status FROM plugin_qian_scheduler.job_runs");
-                var effects = await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects");
-                var recoveredProcess = await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1");
-                SchedulerFixture.Evidence("renewal-error-result-" + replaceWorker, new
-                {
-                    status, effects, originalRun, firstProcess = worker.Id, recoveredProcess,
-                    state = await fixture.Scalar<string>("SELECT state FROM plugin_qian_scheduler.job_triggers"),
-                    runCount = await fixture.Scalar<long>("SELECT run_count FROM plugin_qian_scheduler.job_triggers"),
-                    attempts = await fixture.Scalar<int>("SELECT attempts FROM plugin_qian_scheduler.job_runs"),
-                    errorClass = await fixture.Scalar<string>("SELECT coalesce(error_class,'') FROM plugin_qian_scheduler.job_runs"),
-                    renewalCalls = await fixture.Scalar<long>("SELECT last_value FROM plugin_qian_scheduler.renewal_probe_calls")
-                });
-                Assert.Equal("succeeded", status);
-                Assert.Equal(1, effects);
-                Assert.Equal(originalRun, await fixture.Scalar<Guid>("SELECT id FROM plugin_qian_scheduler.job_runs"));
-                Assert.Equal(2, await fixture.Scalar<int>("SELECT attempts FROM plugin_qian_scheduler.job_runs"));
-                Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
-                Assert.Equal(1, await fixture.Scalar<long>("SELECT run_count FROM plugin_qian_scheduler.job_triggers"));
-                Assert.Equal(successor?.Id ?? worker.Id, recoveredProcess);
-                if (replaceWorker) Assert.NotEqual(worker.Id, recoveredProcess);
-            }
-            catch
-            {
-                phases["failed"] = DateTimeOffset.UtcNow;
-                await fixture.CaptureFailure("renewal-error-" + replaceWorker, phases, null, workers.ToArray());
-                throw;
-            }
-            finally { if (successor is not null) await successor.DisposeAsync(); }
-        }
-        finally
-        {
-            await fixture.Admin("DROP TRIGGER fail_one_renewal ON plugin_qian_scheduler.job_triggers; DROP FUNCTION plugin_qian_scheduler.fail_one_renewal(); DROP SEQUENCE plugin_qian_scheduler.renewal_probe_calls;");
-        }
-    }
-
-    [Theory]
-    [InlineData("hold-first", 0)]
-    [InlineData("effect-then-hold", 1)]
-    public async Task 正常Stop无需异常收尾_保留同run供另一真实worker接管(string mode, long effectsBeforeStop)
+    [Fact]
+    public async Task 同业务键并发幂等_取消到点不执行_不同租户同键互不影响()
     {
         await fixture.Reset(); await using var producer = await ProbeHost.CreateAsync(fixture.Config, false, Ct);
-        await using var first = await WorkerProcess.Start(fixture.Config, TenantA);
+        var due = DateTimeOffset.UtcNow.AddSeconds(4);
+        var ids = await Task.WhenAll(Enumerable.Range(0, 20).Select(async _ =>
+        {
+            using var scope = producer.Tenant.BeginScope(TenantA); var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantA));
+            return (await caller.Scheduler().ScheduleOnce(caller, "same", due, Target, Parameters, cancellationToken: Ct)).Id;
+        }));
+        Assert.Single(ids.Distinct());
         using (producer.Tenant.BeginScope(TenantA))
         {
             var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantA));
-            await caller.Scheduler().ScheduleOnce(caller, "normal-stop", DateTimeOffset.UtcNow, Target,
-                JsonSerializer.SerializeToElement(new { mode, delayMs = 0 }), new JobOptions { Timeout = TimeSpan.FromMinutes(3) }, Ct);
+            var conflict = await Assert.ThrowsAsync<QianErrorException>(() => caller.Scheduler().ScheduleOnce(caller, "same", due.AddMinutes(1), Target, Parameters, cancellationToken: Ct).AsTask());
+            Assert.Equal("CONFLICT", conflict.Error.Code.Code);
+            Assert.True(await caller.Scheduler().Cancel(caller, "same", Ct)); Assert.True(await caller.Scheduler().Cancel(caller, "same", Ct));
         }
-        await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts") == 1, TimeSpan.FromSeconds(10));
-        await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == effectsBeforeStop, TimeSpan.FromSeconds(3));
-        var run = await fixture.Scalar<Guid>("SELECT active_run_id FROM plugin_qian_scheduler.job_triggers");
-        // 第二副本先完成真实预热，不能把它的启动时间算进“到期前尚未接管”观测。
-        await using var second = await WorkerProcess.Start(fixture.Config, TenantA);
-        var beforeStop = await fixture.RenewedLease(run);
-        var owner = beforeStop.GetProperty("lease_owner").GetString();
-        var stoppedProcess = first.Id;
-        var errors = await first.Stop();
-        Assert.DoesNotContain("ObjectDisposedException", errors, StringComparison.Ordinal);
-        Assert.DoesNotContain("收尾失败", errors, StringComparison.Ordinal);
-        var frozenLease = await fixture.LeaseSnapshot(run);
-        var leaseUntil = SchedulerFixture.AssertLiveFirstLease(frozenLease, run, owner).UtcDateTime;
-        await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_runs WHERE status='succeeded'") == 1, TimeSpan.FromSeconds(15));
-        Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_attempts"));
-        Assert.Equal(1, await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects"));
-        Assert.Equal(run, await fixture.Scalar<Guid>("SELECT id FROM plugin_qian_scheduler.job_runs"));
-        Assert.Equal(2, await fixture.Scalar<int>("SELECT attempts FROM plugin_qian_scheduler.job_runs"));
-        Assert.Equal(second.Id, await fixture.Scalar<int>("SELECT process_id FROM public.sch_probe_attempts ORDER BY id DESC LIMIT 1"));
-        var recoveredStartedAt = await fixture.Scalar<DateTime>("SELECT started_at FROM plugin_qian_scheduler.job_runs");
-        Assert.True(recoveredStartedAt >= leaseUntil, "接管的持久 StartedAt 不得早于冻结的租约到期点。");
-        SchedulerFixture.Evidence("normal-stop-" + mode, new { stoppedProcess, recoveredProcess = second.Id, runId = run, leaseExpiresAtUtc = leaseUntil, recoveredStartedAt, beforeStop, frozenLease, attempts = 2, effects = 1, shutdownErrors = errors });
+        using (producer.Tenant.BeginScope(TenantB))
+        {
+            var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantB)); await caller.Scheduler().ScheduleOnce(caller, "same", due, Target, Parameters, cancellationToken: Ct);
+        }
+        await using var worker = await WorkerProcess.Start(fixture.Config, TenantA, TenantB);
+        await SchedulerFixture.WaitUntil(async () => await fixture.Scalar<long>("SELECT count(*) FROM public.sch_probe_effects") == 1, TimeSpan.FromSeconds(15));
+        Assert.Equal(TenantB, await fixture.Scalar<string>("SELECT tenant_id FROM public.sch_probe_effects"));
+        Assert.Equal(2, await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_definitions"));
+    }
+
+    [Fact]
+    public async Task 真实目录准入与执行_拒绝任意URL_未挂载与restrict不执行缓存处理器()
+    {
+        await fixture.Reset(); await using var producer = await ProbeHost.CreateAsync(fixture.Config, false, Ct);
+        using var scope = producer.Tenant.BeginScope(TenantA); var caller = producer.Caller.Scoped(new ScopeKey("tenant", TenantA));
+        foreach (var target in new[] { "https://example.com/job", "http://localhost/run", "https://127.0.0.1/run", "file:///tmp/job", "//example.com/run", "qian.missing/run" })
+            await Assert.ThrowsAsync<QianErrorException>(() => caller.Scheduler().ScheduleOnce(caller, "invalid", DateTimeOffset.UtcNow.AddMinutes(1), target, Parameters, cancellationToken: Ct).AsTask());
+        var good = PostgresScheduler.Resolve(caller, Target); Assert.Equal("probe", good.Code);
+        using (producer.Caller.Restrict(new ScopeKey("tenant", TenantA), registration => registration.Key != JobBindingRegistration.Key))
+        {
+            var error = await Assert.ThrowsAsync<QianErrorException>(() => caller.Scheduler().ScheduleOnce(caller, "hidden", DateTimeOffset.UtcNow, Target, Parameters, cancellationToken: Ct).AsTask());
+            Assert.Equal("NOT_FOUND", error.Error.Code.Code);
+        }
+        await producer.Runtime.UnmountAsync("probe", ScopeKey.Global, Ct);
+        Assert.Throws<ObjectDisposedException>(() => PostgresScheduler.Resolve(caller, Target));
+        Assert.Equal(0, await fixture.Scalar<long>("SELECT count(*) FROM plugin_qian_scheduler.job_definitions"));
+    }
+
+    [Fact]
+    public void 生成迁移模型与三表强制RLS一致_分钟和七段年cron不混为每秒()
+    {
+        using var db = new SchedulerDesignTimeFactory().CreateDbContext([]); Assert.False(db.Database.HasPendingModelChanges());
+        var script = db.GetService<IMigrator>().GenerateScript();
+        foreach (var table in new[] { "job_definitions", "job_triggers", "job_runs" }) Assert.Contains("ALTER TABLE plugin_qian_scheduler." + table + " FORCE ROW LEVEL SECURITY", script, StringComparison.Ordinal);
+        var now = new DateTimeOffset(2026, 10, 23, 12, 0, 12, TimeSpan.Zero);
+        Assert.Equal(new DateTimeOffset(2026, 10, 23, 12, 1, 0, TimeSpan.Zero), JobSchedule.Next("0 * * * * ?", now));
+        Assert.Equal(new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero), JobSchedule.Next("0 0 0 1 1 ? 2027", now));
+        Assert.Null(JobSchedule.Next("0 0 0 1 1 ? 2025", now));
+        Assert.Throws<QianErrorException>(() => JobSchedule.Validate("* * * * *"));
+        Assert.Equal(now.AddSeconds(15), SchedulerWorker.NextOccurrence("interval:50000000", now, now.AddSeconds(12)));
     }
 
     [Fact]

@@ -118,6 +118,15 @@ PRD §14.2 规定集成测试层的 Apollo 用 mock server。[apollo_mock.py](Qi
 - 照拆类前的写法声明 `sealed partial class CustomerCommandTests` 会与抽象基类冲突，编译报 CS0418；漏写 `sealed` 的 `partial class CustomerCommandTests` 却能静默编译通过（`abstract` 写在其他部分上同样生效），里面的用例就进了基类。后一种由守卫用例 `CustomerCommandLayoutTests` 拦下，它断言基类不含测试方法（S1-QA-020）。
 - 新增主题类前先看耗时：程序集并发上限 `MaxThreads = 8`，xUnit 按集合分槽位（这里一个类一个集合），类多于 8 个时排在后面的类要等前面的类跑完；各类的耗时分布与重新平衡见 S1-QA-019。
 
+### 调度验收的用例写法
+
+`Qian.Scheduler.Tests` 的用例按主题分在四个 sealed 类里，各自一个 `SchedulerFixture`（独立的 PostgreSQL 容器、角色与 schema），类之间并行、类内串行（S1-QA-022）；各类的范围见 [SchedulerScenario.cs](Qian.Scheduler.Tests/SchedulerScenario.cs) 开头的注释。
+
+- 共用的租户、作业目标与参数是静态类 `SchedulerScenario` 的只读成员，各文件 `using static` 引用；没有公共基类，新用例直接写进对应主题类。
+- 分钟验收 `SchedulerMinuteTests` 要等两个真实分钟边界（CI 上 90–143 秒），是程序集的长杆，独占一个类；不往里加用例，其他类的总时长也要留在它之下。
+- 同一个类的用例共用一个库：用到库的用例都先 `Reset()` 清表，有的还建删触发器、改授权，所以只能串行。要并行就新开类、配自己的夹具，并同步调高程序集并发上限 `MaxThreads`（现为 4，按容器数定）。
+- 接管与准备用例的时序判据建立在测试宿主的 6 秒租约（`HostConfig.LeaseSeconds`）上：续租后至少还剩 3 秒才算观测到有效续租，有效准备只留 1.5 秒、小于首个续租周期 2 秒。改租约要同步重算这些阈值。
+
 ## 4 门禁
 
 ### 4.1 PublicAPI（C1 / G4）
