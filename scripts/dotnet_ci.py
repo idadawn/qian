@@ -50,19 +50,20 @@ SOLUTION = ROOT / "Qian.slnx"
 WORKFLOW = ROOT / ".github" / "workflows" / "dotnet.yml"
 CONTAINERS = ROOT / "tests" / "Qian.Testing.Containers"
 
-# 按基线运行 40034799307 的模块壁钟配平。每个分片同时跑 4 个模块，模块启动顺序由 dotnet test 决定、每次不同，
-# 所以重模块（Config、Scheduler、Sample.Crm、Identity.Server，各 250–400 秒）所在分片的轻模块越少，重模块越早开跑。
+# 按 S1-QA-022 合入后 main 运行 40211664083、40212216918、40213012218 的模块耗时配平（S1-QA-021）。每个分片同时跑 4 个模块，
+# 模块启动顺序由 dotnet test 决定、每次不同：14 个模块的分片里，重模块要等前面的模块让出槽位才开跑（Scheduler 在原分片 a 晚了 27–108 秒）。
+# 所以把最长的两个模块 Sample.Crm 与 Scheduler（各约 130–190 秒）放进只有 4 个模块的分片 b，一开始就跑。
 # 值为 None 的分片收下其余全部项目。改分片只改这里；工作流的矩阵只列分片名。
 SHARDS: Dict[str, Optional[List[str]]] = {
-    # 真实 Apollo 与调度两个重模块都以等待为主，另配一批不起容器或只起 PostgreSQL 的轻模块。
+    # 真实 Apollo 的 Config 是这里最重的模块，另配事件与一批不起容器或只起 PostgreSQL 的轻模块。
     "a": [
-        "Qian.Config.Tests", "Qian.Scheduler.Tests", "Qian.Lifecycle.Tests", "Qian.Plugin.Sdk.Tests",
+        "Qian.Config.Tests", "Qian.Events.Tests", "Qian.Lifecycle.Tests", "Qian.Plugin.Sdk.Tests",
         "Qian.Profiles.Tests", "Qian.Gateway.Tests", "Qian.Common.Tests", "Qian.Docs.Tests", "Qian.Runtime.Tests",
         "Qian.Capabilities.Tests", "Qian.Tenancy.Tests", "Qian.Runtime.Errors.Tests", "Qian.Surfaces.Tests",
         "Qian.Config.Secrets.Tests",
     ],
     # 恰好 4 个模块，全部一开始就跑。Sample.Crm 与 Registry 的用例调真实 qian CLI，工作流只在这个分片构建它。
-    "b": ["Qian.Sample.Crm.Tests", "Qian.Registry.Tests", "Qian.Events.Tests", "Qian.Files.Tests"],
+    "b": ["Qian.Sample.Crm.Tests", "Qian.Scheduler.Tests", "Qian.Registry.Tests", "Qian.Files.Tests"],
     # 身份、鉴权、审计、数据、容器夹具自测，以及今后新增的测试项目。
     "c": None,
 }
