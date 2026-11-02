@@ -29,6 +29,8 @@ export interface SchemaFormProps {
   submitLabel?: string;
   /** 抽屉内的子步骤表单（如「查找账号」）：操作按钮紧跟表单、不带抽屉级的「取消」，也不占抽屉页脚。 @default false */
   inlineActions?: boolean;
+  /** 字段说明下方的附加内容（如租户号的实时可用性提示），按字段路径与当前值给出；内容经 aria-describedby 关联到输入框。 */
+  fieldExtra?: (path: string, value: unknown) => ReactNode;
   children?: ReactNode;
 }
 
@@ -43,18 +45,29 @@ function addError(errors: FieldErrors<FormValues>, segments: string[], message: 
 function hasType(schema: DataSchema, type: string): boolean {
   return Array.isArray(schema.type) ? schema.type.includes(type) : schema.type === type;
 }
-function fields(data: DataSchema, nodes: UiNode[], prefix = ''): { path: string; schema: DataSchema; ui: UiNode; required: boolean }[] {
-  const flatten = (items: UiNode[]): UiNode[] => items.flatMap((node) => node.field ? [node] : flatten(node.children ?? []));
-  const layout = flatten(nodes);
+interface FieldDefinition { path: string; schema: DataSchema; ui: UiNode; required: boolean; group?: UiNode }
+// 不带 field 的布局节点是分组：带 labelKey 时渲染成有标题的字段组，否则只是透明容器。
+function fields(data: DataSchema, nodes: UiNode[], prefix = '', group?: UiNode): FieldDefinition[] {
+  const flatten = (items: UiNode[], owner?: UiNode): { node: UiNode; group?: UiNode }[] => items.flatMap((node) => node.field ? [{ node, group: owner }] : flatten(node.children ?? [], node.labelKey ? node : owner));
+  const layout = flatten(nodes, group);
   const definitions = data.properties ?? {};
-  const ordered = layout.length ? layout.filter((node) => node.field).map((node) => ({ key: node.field!, ui: node })) : Object.keys(definitions).map((key) => ({ key, ui: { field: key } as UiNode }));
-  return ordered.flatMap(({ key, ui }) => {
+  const ordered = layout.length ? layout.map(({ node, group: owner }) => ({ key: node.field!, ui: node, group: owner })) : Object.keys(definitions).map((key) => ({ key, ui: { field: key } as UiNode, group }));
+  return ordered.flatMap(({ key, ui, group: owner }) => {
     const schema = definitions[key];
     if (!schema) throw new Error('form.error.field');
     const path = prefix ? `${prefix}.${key}` : key;
-    if (hasType(schema, 'object')) return fields(schema, ui.children ?? [], path);
-    return [{ path, schema, ui, required: data.required?.includes(key) ?? false }];
+    if (hasType(schema, 'object')) return fields(schema, ui.children ?? [], path, owner);
+    return [{ path, schema, ui, required: data.required?.includes(key) ?? false, group: owner }];
   });
+}
+/** 相邻且同组的字段合成一段，按布局顺序渲染。 */
+function blocks(definitions: FieldDefinition[]): { group?: UiNode; items: FieldDefinition[] }[] {
+  const result: { group?: UiNode; items: FieldDefinition[] }[] = [];
+  for (const item of definitions) {
+    const last = result.at(-1);
+    if (last && last.group === item.group) last.items.push(item); else result.push({ group: item.group, items: [item] });
+  }
+  return result;
 }
 function defaults(schema: DataSchema): FormValues {
   return Object.fromEntries(Object.entries(schema.properties ?? {}).flatMap(([key, field]) => {
@@ -64,8 +77,23 @@ function defaults(schema: DataSchema): FormValues {
   }));
 }
 
+/** 有标题的字段组：fieldset 以组标题命名，可带说明与序号（props.marker）；相邻两组之间用分隔线隔开。 */
+function FieldGroup({ id, node, i18n, testId, children }: { id: string; node: UiNode; i18n: PlatformI18n; testId: string; children: ReactNode }) {
+  const marker = typeof node.props?.marker === 'string' || typeof node.props?.marker === 'number' ? node.props.marker : undefined;
+  const description = node.descriptionKey ? i18n.t(node.descriptionKey) : undefined;
+  return <fieldset aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} data-slot="schema-group" data-testid={testId}
+    className="m-0 grid min-w-0 gap-4 border-0 border-t border-border p-0 pt-5 first:border-t-0 first:pt-0">
+    <div className="flex items-start gap-3" data-slot="schema-group-header" data-testid={`${testId}-header`}>
+      {marker !== undefined && <span aria-hidden="true" data-slot="schema-group-marker" data-testid={`${testId}-marker`} className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-info-bg text-xs font-semibold text-info">{marker}</span>}
+      <div className="grid min-w-0 gap-0.5"><h3 id={`${id}-title`} className="text-[15px] font-semibold leading-6">{i18n.t(node.labelKey!)}</h3>
+        {description && <p id={`${id}-description`} className="text-[13px] text-muted-foreground">{description}</p>}</div>
+    </div>
+    {children}
+  </fieldset>;
+}
+
 /** 编辑、只读与字段错误共享同一份 Schema、RHF 状态和字段目录。 */
-export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmit, onError, apiRef, className, testId = 'yue-schema-form', submitLabel, inlineActions = false, children }: SchemaFormProps) {
+export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmit, onError, apiRef, className, testId = 'yue-schema-form', submitLabel, inlineActions = false, fieldExtra, children }: SchemaFormProps) {
   useMemo(() => assertFormSchema(schema), [schema]);
   const id = useId();
   const overlay = useContext(OverlayFormContext);
@@ -137,8 +165,7 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
   const footer = inlineActions ? null : overlay?.footer ?? null;
   const formId = `${id}-form`;
   const actions = hasActions ? <div data-slot="schema-form-actions" className={footer ? 'contents' : inlineActions ? 'flex flex-wrap gap-2' : 'flex justify-end gap-2 border-t border-border pt-4'}>{inlineActions ? null : overlay?.cancel}{children}<Button type="submit" form={formId} disabled={isSubmitting} testId={`${testId}-submit`}>{submitLabel ?? i18n.t('common.save')}</Button></div> : children;
-  return <form id={formId} className={className ?? 'grid gap-4'} data-slot="schema-form" data-testid={testId} onSubmit={submit} noValidate>
-    {definitions.map(({ path, schema: fieldSchema, ui, required }) => {
+  const renderField = ({ path, schema: fieldSchema, ui, required }: FieldDefinition) => {
       const state = effective.states[path];
       const access = schema.auth.fields?.[path];
       if (state?.visible === false || (access && !access.includes('read'))) return null;
@@ -152,7 +179,9 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       // 枚举选项的显示文字：UI 元数据给出语言包前缀（props.optionLabelKey）时按「前缀.值」取文案，否则显示原值。
       const optionLabel = (value: unknown) => typeof ui.props?.optionLabelKey === 'string' ? i18n.t(`${ui.props.optionLabelKey}.${String(value)}`) : String(value);
       const description = ui.descriptionKey ? i18n.t(ui.descriptionKey) : undefined;
-      const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : ''].filter(Boolean).join(' ') || undefined;
+      const extra = fieldExtra?.(path, getValue(values, path));
+      const hasExtra = extra !== undefined && extra !== null && extra !== false;
+      const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : '', hasExtra ? `${fieldId}-extra` : ''].filter(Boolean).join(' ') || undefined;
       return <CoreField className={horizontal ? 'grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2' : undefined} key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
         <FieldLabel className={horizontal ? 'col-start-2 row-start-1 leading-5' : undefined} htmlFor={fieldId}>{label}{required ? <span aria-hidden className="text-destructive"> *</span> : null}</FieldLabel>
         <Controller name={path} control={form.control} render={({ field }) => {
@@ -169,9 +198,9 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
           const numeric = hasType(fieldSchema, 'number') || hasType(fieldSchema, 'integer');
           const dateTime = fieldSchema.format === 'date-time';
           const type = numeric ? 'number' : dateTime ? 'datetime-local' : fieldSchema.format === 'date' ? 'date' : password ? 'password' : 'text';
-          // UI 元数据不透传任意 DOM 属性；这里只开放认证表单需要的浏览器自动填充语义。
+          // UI 元数据不透传任意 DOM 属性；这里只开放认证与注册表单需要的浏览器自动填充语义。
           const autoComplete = (type === 'text' || type === 'password') && typeof ui.props?.autoComplete === 'string'
-            && ['on', 'off', 'username', 'current-password', 'new-password'].includes(ui.props.autoComplete) ? ui.props.autoComplete : undefined;
+            && ['on', 'off', 'username', 'current-password', 'new-password', 'name', 'email', 'tel', 'organization', 'one-time-code'].includes(ui.props.autoComplete) ? ui.props.autoComplete : undefined;
           let display = typeof field.value === 'number' || typeof field.value === 'string' ? field.value : '';
           if (dateTime && typeof display === 'string' && display) {
             const date = new Date(display);
@@ -183,9 +212,12 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
           }} />;
         }} />
         {description && <FieldDescription className={horizontal ? 'col-start-2' : undefined} id={`${fieldId}-description`}>{description}</FieldDescription>}
+        {hasExtra && <div id={`${fieldId}-extra`} data-slot="schema-field-extra" data-testid={`${testId}-extra-${path}`} className={horizontal ? 'col-start-2 text-sm' : 'text-sm'}>{extra}</div>}
         {error?.message && <p id={`${fieldId}-error`} role="alert" data-slot="schema-field-error" data-testid={`${testId}-error-${path}`} className={horizontal ? 'col-start-2 text-sm text-destructive' : 'text-sm text-destructive'}>{error.message}</p>}
       </CoreField>;
-    })}
+  };
+  return <form id={formId} className={className ?? 'grid gap-4'} data-slot="schema-form" data-testid={testId} onSubmit={submit} noValidate>
+    {blocks(definitions).map((block, index) => block.group ? <FieldGroup key={index} id={`${id}-group-${index}`} node={block.group} i18n={i18n} testId={`${testId}-group-${index}`}>{block.items.map(renderField)}</FieldGroup> : block.items.map(renderField))}
     {errors.root?.message && <p role="alert" className="text-sm text-destructive" data-slot="schema-form-error">{String(errors.root.message)}</p>}
     {hasActions && footer ? createPortal(actions, footer) : actions}
   </form>;

@@ -170,3 +170,25 @@ it('抽屉里的子步骤表单（inlineActions）按钮紧跟表单、不带取
   const result = await axe.run(dialog);
   expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
 });
+
+it('带 labelKey 的无字段布局节点渲染成字段组；fieldExtra 按当前值给出附加提示并关联到输入框', async () => {
+  i18n.addLanguagePack('zh-CN', { 'test.account': '管理员账号', 'test.accountHint': '用于登录和管理企业', 'test.company': '企业信息' });
+  const grouped: FormSchema = { ...credentialSchema, ui: { layout: [
+    { labelKey: 'test.account', descriptionKey: 'test.accountHint', props: { marker: 1 }, children: [{ field: 'username', labelKey: 'test.username', props: { autoComplete: 'tel' } }] },
+    { labelKey: 'test.company', props: { marker: 2 }, children: [{ field: 'password', labelKey: 'test.password', props: { type: 'password' } }] },
+  ] } };
+  render(<SchemaForm schema={grouped} i18n={i18n} testId="grouped" onSubmit={vi.fn()} fieldExtra={(path, value) => path === 'username' && value ? <span role="status">可以使用：{String(value)}</span> : null} />);
+  const account = screen.getByRole('group', { name: '管理员账号' });
+  expect(account.getAttribute('aria-describedby')).toBe(screen.getByText('用于登录和管理企业').id);
+  expect(screen.getByTestId('grouped-group-0-marker').textContent).toBe('1');
+  const username = within(account).getByLabelText('账号 *');
+  expect(within(screen.getByRole('group', { name: '企业信息' })).getByLabelText('密码 *')).toBeTruthy();
+  expect(username.getAttribute('autocomplete')).toBe('tel');
+  expect(screen.queryByTestId('grouped-extra-username')).toBeNull();
+  await userEvent.fill(username, 'xinghe');
+  const extra = await screen.findByTestId('grouped-extra-username');
+  expect(extra.textContent).toBe('可以使用：xinghe');
+  expect(username.getAttribute('aria-describedby')?.split(' ')).toContain(extra.id);
+  const result = await axe.run(document.body);
+  expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+});

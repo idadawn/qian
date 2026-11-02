@@ -40,4 +40,6 @@ S1 支持字符串、数字、布尔、枚举、日期与嵌套对象；数组�
 
 `useModal` / `useDrawer` / `usePopup` 中的编辑表单自动共享一个页脚，取消在左、保存或确认在右；取消不提交并恢复原触发器焦点。只读详情保留关闭操作。直接使用 SchemaForm 时，宿主仍可通过 `children` 放置附加动作，公开 API 与提交协议不变。
 
+布局里不带 `field`、带 `labelKey` 的节点渲染成字段组：`fieldset` 以组标题命名，可带说明（`descriptionKey`）与序号（`props.marker`），相邻两组之间画分隔线。不带 `labelKey` 的分组节点仍是透明容器。`fieldExtra(path, value)` 在字段说明下方放附加内容（如租户号的实时可用性提示），内容随字段当前值重算，并经 `aria-describedby` 关联到输入框。
+
 抽屉里的中间步骤（如先「查找账号」再填主表单）给 SchemaForm 加 `inlineActions`：按钮紧跟表单，不带抽屉级的取消，也不占页脚；页脚照常显示「关闭」，主表单出现后换成它的取消与提交。
