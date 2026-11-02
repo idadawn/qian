@@ -27,3 +27,16 @@ public interface ISuperadminBypass
 /// Resource 为可选资源引用（写入审计）；Channel 为调用通道（ui / api / mcp / a2a / job / event / hook）。
 /// </summary>
 public sealed record SuperadminAccess(AuthorizationSubject Subject, string Permission, string? TenantId, string? Resource, string Channel);
+
+/// <summary>
+/// 平台超管的只读判定（S1-YUE-018）：对平台资源给出与 <see cref="ISuperadminBypass"/> 同一套条件下的结论（平台用户主体、无租户上下文、权限点已登记、持有效 platform.superadmin、审计可用），
+/// 但不写审计，也不放行任何操作。供外壳决定给平台身份展示哪些平台控制台页面与菜单；页面里的每次操作仍须逐次经旁路判定并写平台审计链。
+/// </summary>
+public interface ISuperadminCheck
+{
+    /// <summary>
+    /// 返回 <paramref name="permissions"/> 中此刻旁路会对该主体放行的平台权限点（去重、按 Ordinal 排序）。主体不是平台用户（有租户、非 user 或标识无效）、
+    /// 当前处在某个租户的上下文中、未配置平台角色登录、不持角色、审计不可用或权限点未登记时，相应权限点不在结果里；全部不满足时返回空。
+    /// </summary>
+    ValueTask<IReadOnlyList<string>> AllowedAsync(AuthorizationSubject subject, IReadOnlyCollection<string> permissions, CancellationToken cancellationToken = default);
+}

@@ -34,8 +34,8 @@ internal sealed class DevGatewayHost(WebApplication app, PluginLoader loader) : 
 }
 
 // 网关 BFF 宿主，照安全验收夹具 tests/Shared/GatewayTestHost：同一份 Gateway / Identity.Client / Config 生产入口。
-// 浏览器只持有 qian.sid（HttpOnly、Secure）；/api 经会话换 60 秒 S2S 转发到业务宿主，令牌只在服务端。外壳静态托管（入口、带哈希资源、/app-config.json、
-// 参考应用的远程制品）与 bootstrap 聚合端点都是产品扩展（S1-YUE-012），与生产网关同一份代码。
+// 浏览器只持有 qian.sid（HttpOnly、Secure）；/api 经会话换 60 秒 S2S 按前缀分簇转发（业务宿主、平台表面宿主、运营宿主），令牌只在服务端。外壳静态托管
+// （入口、带哈希资源、/app-config.json、参考应用与平台组件的远程制品）与 bootstrap 聚合端点都是产品扩展（S1-YUE-012 / S1-YUE-018），与生产网关同一份代码。
 // 额外只有三件开发期的事：/api-alt 第二个 API 前缀（验收 4 改 apiBase 后仍可用）、/__dev/session/* 把当前会话的访问令牌改成已到期（验收 1 的刷新与过期对话框）、
 // /__dev/identity/* 递增身份修订或只抬平台表面的修订下限（验收 1 的会话刷新后重拉与「刷新成功但平台表面持续 401」）。
 internal static class DevGateway
@@ -43,12 +43,14 @@ internal static class DevGateway
     internal const string Issuer = "https://gateway.qian.local/s2s";
     internal const string Resource = "https://api.qian.local";
     internal const string Cluster = "qian.sample.crm";
+    /// <summary>运营宿主（租户运营与开通申请的运营接口，平台控制台的页面调用它们）的簇，即它验 S2S 的受众。</summary>
+    internal const string OperationsCluster = "qian-operations";
     private const string SecretReference = "secretRef://platform/identity/client-secret";
     /// <summary>运行时配置的缺省内容（K8s ConfigMap 的本机替身）：四个地址取外壳缺省值，只给品牌。</summary>
     internal const string DefaultAppConfig = """{ "brand": "Qian 乾" }""" + "\n";
 
-    internal static async Task<DevGatewayHost> StartAsync(Uri address, DevGatewayKeys keys, Uri identityIssuer, string businessAddress, string platformAddress, ShellStaticOptions shell,
-        Func<Principal, CancellationToken, Task<long>> bump, int redisPort, CancellationToken ct)
+    internal static async Task<DevGatewayHost> StartAsync(Uri address, DevGatewayKeys keys, Uri identityIssuer, string businessAddress, string platformAddress, string operationsAddress,
+        ShellStaticOptions shell, Func<Principal, CancellationToken, Task<long>> bump, int redisPort, CancellationToken ct)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
         builder.WebHost.ConfigureKestrel(kestrel =>
@@ -74,9 +76,10 @@ internal static class DevGateway
             Authority = identityIssuer, ClientId = DevIdentity.ClientId, Resource = Resource, RedirectUri = new Uri(address, "auth/callback"),
             Scopes = ["openid", "offline_access", "qian.api", .. DevIdentity.ApplicationScopes], RequireHttpsMetadata = false, UseInMemorySessionStore = true, DefaultReturnPath = "/"
         });
-        // 受众分簇：面向用户的平台表面（能力目录 / 导航 / 外壳目录、有效权限）走平台表面宿主，其余 /api 走参考应用的命令宿主；/api-alt 是同一组路由的第二个前缀。
+        // 受众分簇：面向用户的平台表面（能力目录 / 导航 / 外壳目录 / 平台控制台目录、有效权限）走平台表面宿主，租户运营与开通申请的运营接口走运营宿主，
+        // 其余 /api 走参考应用的命令宿主；/api-alt 是同一组路由的第二个前缀。
         var configuration = new GatewayConfiguration(identityIssuer.AbsoluteUri, Resource, Issuer, keys.SigningKeyPath, keys.PublicKeyPath, [],
-            [.. Routes("api"), .. Routes("api-alt")], [new(Cluster, businessAddress), new(PlatformSurfaceHost.Audience, platformAddress)]);
+            [.. Routes("api"), .. Routes("api-alt")], [new(Cluster, businessAddress), new(PlatformSurfaceHost.Audience, platformAddress), new(OperationsCluster, operationsAddress)]);
         builder.Services.AddQianGateway(configuration, IdentityClientDefaults.SessionScheme);
         builder.Services.AddSingleton<ITransformProvider, AlternatePrefixTransform>();
         var app = builder.Build();
@@ -117,6 +120,9 @@ internal static class DevGateway
     [
         new(prefix + "-capabilities", "/" + prefix + "/capabilities/{**rest}", PlatformSurfaceHost.Audience) { RateLimiterPolicy = "user" },
         new(prefix + "-authz", "/" + prefix + "/authz/{**rest}", PlatformSurfaceHost.Audience) { RateLimiterPolicy = "user" },
+        new(prefix + "-tenancy", "/" + prefix + "/tenancy/{**rest}", OperationsCluster) { RateLimiterPolicy = "user" },
+        new(prefix + "-signup-applications", "/" + prefix + "/signup/applications/{**rest}", OperationsCluster) { RateLimiterPolicy = "user" },
+        new(prefix + "-signup-meta", "/" + prefix + "/signup/meta/{**rest}", OperationsCluster) { RateLimiterPolicy = "user" },
         new(prefix, "/" + prefix + "/{**rest}", Cluster) { RateLimiterPolicy = "user" }
     ];
 

@@ -177,6 +177,23 @@ override Qian.Capabilities.ShellTenant.GetHashCode() -> int
 override Qian.Capabilities.ShellTenant.ToString() -> string!
 static Qian.Capabilities.ShellTenant.operator !=(Qian.Capabilities.ShellTenant? left, Qian.Capabilities.ShellTenant? right) -> bool
 static Qian.Capabilities.ShellTenant.operator ==(Qian.Capabilities.ShellTenant? left, Qian.Capabilities.ShellTenant? right) -> bool
+Qian.Capabilities.PlatformConsoleCatalog
+Qian.Capabilities.PlatformConsoleCatalog.<Clone>$() -> Qian.Capabilities.PlatformConsoleCatalog!
+Qian.Capabilities.PlatformConsoleCatalog.CacheScope.get -> string!
+Qian.Capabilities.PlatformConsoleCatalog.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Capabilities.ShellRemote!>! Remotes, out System.Collections.Generic.IReadOnlyList<Qian.Capabilities.NavigationItem!>! Navigation, out System.Collections.Generic.IReadOnlyList<string!>! Permissions) -> void
+Qian.Capabilities.PlatformConsoleCatalog.Equals(Qian.Capabilities.PlatformConsoleCatalog? other) -> bool
+Qian.Capabilities.PlatformConsoleCatalog.Navigation.get -> System.Collections.Generic.IReadOnlyList<Qian.Capabilities.NavigationItem!>!
+Qian.Capabilities.PlatformConsoleCatalog.Navigation.init -> void
+Qian.Capabilities.PlatformConsoleCatalog.Permissions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Capabilities.PlatformConsoleCatalog.Permissions.init -> void
+Qian.Capabilities.PlatformConsoleCatalog.PlatformConsoleCatalog(System.Collections.Generic.IReadOnlyList<Qian.Capabilities.ShellRemote!>! Remotes, System.Collections.Generic.IReadOnlyList<Qian.Capabilities.NavigationItem!>! Navigation, System.Collections.Generic.IReadOnlyList<string!>! Permissions) -> void
+Qian.Capabilities.PlatformConsoleCatalog.Remotes.get -> System.Collections.Generic.IReadOnlyList<Qian.Capabilities.ShellRemote!>!
+Qian.Capabilities.PlatformConsoleCatalog.Remotes.init -> void
+override Qian.Capabilities.PlatformConsoleCatalog.Equals(object? obj) -> bool
+override Qian.Capabilities.PlatformConsoleCatalog.GetHashCode() -> int
+override Qian.Capabilities.PlatformConsoleCatalog.ToString() -> string!
+static Qian.Capabilities.PlatformConsoleCatalog.operator !=(Qian.Capabilities.PlatformConsoleCatalog? left, Qian.Capabilities.PlatformConsoleCatalog? right) -> bool
+static Qian.Capabilities.PlatformConsoleCatalog.operator ==(Qian.Capabilities.PlatformConsoleCatalog? left, Qian.Capabilities.PlatformConsoleCatalog? right) -> bool
 Qian.Capabilities.ShellRemote
 Qian.Capabilities.ShellRemote.<Clone>$() -> Qian.Capabilities.ShellRemote!
 Qian.Capabilities.ShellRemote.Deconstruct(out string! Id, out string! Version, out string! Scope, out System.Text.Json.JsonElement Manifest) -> void
@@ -196,4 +213,5 @@ override Qian.Capabilities.ShellRemote.ToString() -> string!
 static Qian.Capabilities.ShellRemote.operator !=(Qian.Capabilities.ShellRemote? left, Qian.Capabilities.ShellRemote? right) -> bool
 static Qian.Capabilities.ShellRemote.operator ==(Qian.Capabilities.ShellRemote? left, Qian.Capabilities.ShellRemote? right) -> bool
 Qian.Capabilities.INavigationService.GetShellAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.ShellCatalog!>
+Qian.Capabilities.INavigationService.GetConsoleAsync(Qian.Runtime.IPluginContext! caller, Qian.Identity.Abstractions.ICurrentUser! user, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Capabilities.PlatformConsoleCatalog!>
 static readonly Qian.Capabilities.CapabilitiesDefinition.ShellRemotesKey -> Qian.Runtime.ServiceKey

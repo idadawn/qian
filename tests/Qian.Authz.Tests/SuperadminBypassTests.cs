@@ -38,7 +38,7 @@ public sealed partial class SuperadminBypassTests(PostgresFixture postgres, Redi
     private const string A = "7a1c0e52-3b6d-4f1e-9c2a-00000000000a";
     private const string B = "7a1c0e52-3b6d-4f1e-9c2a-00000000000b";
     private const string Read = "qian.sample.crm:customer:read";
-    private static readonly ServiceKey[] AuthzKeys = [AuthzDefinition.Key, AuthzDefinition.PermissionsKey, AuthzDefinition.ResourceTypesKey, AuthzDefinition.SuperadminBypassKey];
+    private static readonly ServiceKey[] AuthzKeys = [AuthzDefinition.Key, AuthzDefinition.PermissionsKey, AuthzDefinition.ResourceTypesKey, AuthzDefinition.SuperadminBypassKey, AuthzDefinition.SuperadminCheckKey];
     private static readonly AuthorizationSubject Root = new("root", null, "user");
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 

@@ -47,6 +47,7 @@ Qian.Registry.InstalledComponentMetadata.PluginId.get -> string!
 Qian.Registry.InstalledComponentMetadata.Version.get -> string!
 override Qian.Registry.InstalledComponentMetadata.ToString() -> string!
 Qian.Registry.IRegistryService.GetScopeEntriesAsync(Qian.Runtime.ScopeKey scope, Qian.Runtime.ServiceKey key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryScopeEntry!>!>
+Qian.Registry.IRegistryService.GetGlobalEntriesAsync(Qian.Runtime.ServiceKey key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Registry.RegistryScopeEntry!>!>
 Qian.Registry.RegistryScopeEntry
 Qian.Registry.RegistryScopeEntry.<Clone>$() -> Qian.Registry.RegistryScopeEntry!
 Qian.Registry.RegistryScopeEntry.Deconstruct(out string! EntryId, out string! PluginId, out string! Version, out Qian.Runtime.ScopeKey Scope, out Qian.Runtime.ServiceKey Key, out string! Name) -> void

@@ -27,6 +27,11 @@ public interface IRegistryService : IAsyncDisposable
     ValueTask SynchronizeAsync(ScopeKey scope, CancellationToken cancellationToken = default);
     /// <summary>同步当前已验证租户的数据库 scope 后，读取已挂载且未被遮蔽/restrict 过滤的服务绑定；不可把预装清单作为此视图。</summary>
     ValueTask<IReadOnlyList<RegistryScopeEntry>> GetScopeEntriesAsync(ScopeKey scope, ServiceKey key, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 全局 scope 视图（S1-YUE-018 平台控制台）：Runtime 里全局条目实际登记的服务绑定，条目须 Ready 且属于宿主预装的组件版本，不合入任何租户 scope。
+    /// 只在无租户上下文中可读（平台身份的请求），处在某个租户的上下文中一律 NOT_FOUND；Registry 未启动时 <see cref="ServiceNotReadyException"/>。
+    /// </summary>
+    ValueTask<IReadOnlyList<RegistryScopeEntry>> GetGlobalEntriesAsync(ServiceKey key, CancellationToken cancellationToken = default);
     /// <summary>可信平台插件使用的合成配置读模型，只接受当前租户 scope；外部 HTTP 必须使用已授权的 GetScopeViewAsync。</summary>
     ValueTask<IReadOnlyList<RegistryEntryView>> GetConfigurationViewAsync(ScopeKey scope, CancellationToken cancellationToken = default);
     /// <summary>

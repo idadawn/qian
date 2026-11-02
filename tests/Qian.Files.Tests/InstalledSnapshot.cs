@@ -27,6 +27,7 @@ internal sealed class InstalledSnapshot(IReadOnlyList<InstalledComponentMetadata
     public ValueTask StartAsync(CancellationToken cancellationToken = default) => throw Unsupported();
     public ValueTask SynchronizeAsync(ScopeKey scope, CancellationToken cancellationToken = default) => throw Unsupported();
     public ValueTask<IReadOnlyList<RegistryScopeEntry>> GetScopeEntriesAsync(ScopeKey scope, ServiceKey key, CancellationToken cancellationToken = default) => throw Unsupported();
+    public ValueTask<IReadOnlyList<RegistryScopeEntry>> GetGlobalEntriesAsync(ServiceKey key, CancellationToken cancellationToken = default) => throw Unsupported();
     // 租户配置（Tenancy 的 ITenantSettings）经它读合成视图：替身里没有任何条目，读取得到 NOT_FOUND，文件组件回退组件配置的配额。
     public ValueTask<IReadOnlyList<RegistryEntryView>> GetConfigurationViewAsync(ScopeKey scope, CancellationToken cancellationToken = default) =>
         ValueTask.FromResult<IReadOnlyList<RegistryEntryView>>([]);

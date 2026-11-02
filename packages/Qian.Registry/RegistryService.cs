@@ -238,6 +238,27 @@ internal sealed partial class RegistryService : IRegistryService
         return await _artifacts.ManifestAsync(digest, cancellationToken).ConfigureAwait(false) is { } artifact ? Permissions(artifact) : null;
     }
 
+    // 全局视图（S1-YUE-018）：与租户 scope 视图同一组条件——Runtime 里实际登记、条目 Ready、属于宿主预装的组件版本——只是不合入任何租户 scope。
+    // 只给平台上下文（无租户）读：租户请求一律经 GetScopeEntriesAsync 读本租户合成后的视图，不能借全局视图绕过遮蔽与 restrict。
+    public ValueTask<IReadOnlyList<RegistryScopeEntry>> GetGlobalEntriesAsync(ServiceKey key, CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _lifetime.IsCancellationRequested || _listener is null) throw new ServiceNotReadyException();
+        if (!string.IsNullOrEmpty(_tenant.TenantId)) throw NotFound();
+        ArgumentException.ThrowIfNullOrWhiteSpace(key.Name);
+        cancellationToken.ThrowIfCancellationRequested();
+        var live = _options.Runtime.DumpConfig().Where(entry => entry.Scope == ScopeKey.Global).ToDictionary(entry => entry.Id, StringComparer.Ordinal);
+        var result = new List<RegistryScopeEntry>();
+        foreach (var registration in _context.List(key))
+        {
+            if (registration.Scope != ScopeKey.Global || !live.TryGetValue(registration.OwnerEntryId, out var entry)) continue;
+            try { if (_options.Runtime.GetState(entry.Id, entry.Scope) != PluginState.Ready) continue; }
+            catch (InvalidOperationException) { continue; } // 宿主可能在两个快照之间撤销全局节点。
+            if (!_installed.Any(component => component.PluginId == entry.Plugin && component.Version == entry.Version)) continue;
+            result.Add(new RegistryScopeEntry(entry.Id, entry.Plugin, entry.Version, entry.Scope, registration.Key, registration.Name));
+        }
+        return ValueTask.FromResult<IReadOnlyList<RegistryScopeEntry>>(result.AsReadOnly());
+    }
+
     // 清单已过 plugin/v2 与 permissions/v2 Schema，这里只按形状取值：缺省的类别为空数组，x- 扩展字段不计入，顺序同清单。
     private static RegistryArtifactPermissions Permissions((string Digest, string PluginId, string Version, JsonElement Manifest) artifact)
     {

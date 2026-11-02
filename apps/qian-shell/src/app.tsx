@@ -16,6 +16,8 @@ import type { ShellRuntime, ShellState } from './runtime';
 
 // 会话过期对话框只在会话结束时需要：按需加载，不进首屏。
 const SessionExpiredDialog = lazy(() => import('@idadawn/yue-shell/session-dialog').then(module => ({ default: module.SessionExpiredDialog })));
+// 平台身份的首页（平台控制台，S1-YUE-018）只给平台会话：同样按需加载，不进租户会话的首屏。
+const PlatformHome = lazy(() => import('./console').then(module => ({ default: module.PlatformHome })));
 type PageComponent = ComponentType<{ client: PlatformClient; bridge: RemoteBridge }>;
 type RemotePage = { route: string; contribution?: SlotContribution<PageComponent>; failed?: boolean };
 
@@ -84,7 +86,9 @@ function Shell({ runtime }: { runtime: ShellRuntime }) {
       userName={session.displayName ?? session.subject} userDescription={platform ? i18n.t('shell.platform') : undefined} onSignOut={() => void runtime.signOut()} managed={runtime.config.managed ?? bootstrap.managed}
       userMenu={<MenuItem onClick={() => runtime.switchTenant()} testId="shell-switch-tenant">{i18n.t('shell.tenant')}</MenuItem>}>
       <OfflineBanner i18n={i18n} />
-      <ShellErrorBoundary i18n={i18n} resetKey={pathname}>{content}</ShellErrorBoundary>
+      <ShellErrorBoundary i18n={i18n} resetKey={pathname}>{platform && pathname === '/' && typeof state.status !== 'number'
+        ? <Suspense fallback={<Spinner label={i18n.t('common.loading')} />}><PlatformHome i18n={i18n} session={session} menu={menu} managed={bootstrap.managed} onNavigate={href => runtime.router.navigate(href)} /></Suspense>
+        : content}</ShellErrorBoundary>
     </AppShell>
     {state.expired && <Expired runtime={runtime} i18n={i18n} />}
   </>;

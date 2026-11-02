@@ -143,7 +143,7 @@ scripts/dev-tenant-ops.sh smoke
 
 CRM 命令宿主充当运行时容器，同时是身份发行方：监听 `QIAN_DEV_IDENTITY_URL`，挂真实 qian.identity（与生产同一套迁移建表，在线连接是受限应用登录），只开账号接口 `/api/identity` 与目录接口 `/api/directory`。开户第 05 步经它建管理员成员，配额用量经它读真实人数。
 
-外壳认证联调环境 [tools/Qian.Dev.Shell](../Qian.Dev.Shell/README.md)（S1-YUE-002）复用这里的开发库、平台插件树与运营前置（`InternalsVisibleTo`），身份服务换成自己那份带认证页族与上游连接器的装配、把参考应用作为 system 组件制品登记，并起网关 BFF；两套环境各用自己的容器、端口与状态目录，可同时运行。
+外壳认证联调环境 [tools/Qian.Dev.Shell](../Qian.Dev.Shell/README.md)（S1-YUE-002）复用这里的开发库、平台插件树与运营前置（`InternalsVisibleTo`），身份服务换成自己那份带认证页族与上游连接器的装配、把参考应用作为 system 组件制品登记，并起网关 BFF；平台控制台（S1-YUE-018）另让 Tenancy 与开通申请带 UI 清单挂在全局 scope（`DevPlatform.Console`，本宿主不开），种子平台运营经 `DevOperations.GrantSuperadminAsync` 授平台超管，运营宿主直接复用参考运营宿主 `TenantOperationsHost`；两套环境各用自己的容器、端口与状态目录，可同时运行。
 
 ## 数据与密钥
 

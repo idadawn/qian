@@ -55,6 +55,25 @@ internal sealed class SuperadminBypassService(IDataService data, ITenantContext 
         return new PermissionDecision(true, "superadmin_bypass", Policies);
     }
 
+    // 平台超管只读判定（S1-YUE-018）：与旁路对平台资源同一套条件——平台用户主体、无租户上下文、权限点已登记、持有效角色、审计可用——但不写审计、不放行任何操作。
+    // 角色只查一次；登记按一条查询取出候选权限点在已持久化目录里的全部版本，再逐个核对活动登记（与 RegisteredAsync 的平台资源分支同口径）。
+    internal async ValueTask<IReadOnlyList<string>> AllowedPlatformAsync(AuthorizationSubject subject, IReadOnlyCollection<string> permissions, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(permissions);
+        if (platform is null || subject is null || subject.TenantId is not null || subject.Kind != "user" || !Identifier(subject.Id, 200)) return [];
+        if (!string.IsNullOrEmpty(tenant.TenantId)) return [];
+        var candidates = permissions.Where(PermissionCode.IsValid).Distinct(StringComparer.Ordinal).ToArray();
+        if (candidates.Length == 0 || !await platform.IsSuperadminAsync(subject.Id, ct).ConfigureAwait(false)) return [];
+        // 审计不可用时旁路一律拒绝，页面里的任何操作都做不成，同样不交出。
+        if (producer.TryInject<IAuditService>(AuditDefinition.Key) is null) return [];
+        await using var session = await data.OpenAsync<AuthzDbContext>(ct).ConfigureAwait(false);
+        var rows = await session.Context.Permissions.AsNoTracking().Where(row => candidates.Contains(row.Code))
+            .Select(row => new { row.PluginId, row.Version, row.Code }).ToArrayAsync(ct).ConfigureAwait(false);
+        var registered = rows.Where(row => row.PluginId == row.Code.Split(':')[0] && registry.Find(row.Code, row.Version) is not null)
+            .Select(row => row.Code).ToHashSet(StringComparer.Ordinal);
+        return Array.AsReadOnly(candidates.Where(registered.Contains).Order(StringComparer.Ordinal).ToArray());
+    }
+
     // 租户资源：该组件策略须已装进目标租户，且权限点在当前活动登记中；平台资源：权限点须在已持久化目录的某个版本中且该版本仍处于活动登记。
     private async Task<bool> RegisteredAsync(SuperadminAccess access, CancellationToken ct)
     {
@@ -85,4 +104,11 @@ internal sealed class SuperadminBypassService(IDataService data, ITenantContext 
 
     private static bool Identifier(string? value, int max) => !string.IsNullOrWhiteSpace(value) && value.Length <= max && !value.Any(char.IsControl);
     private static PermissionDecision Deny(string reason) => new(false, reason, []);
+}
+
+// 只读判定端口的独立外观（S1-YUE-018）：持有者只能问「旁路此刻会不会放行」，拿不到旁路本身，也就不能借它放行或写审计。
+internal sealed class SuperadminCheck(SuperadminBypassService bypass) : ISuperadminCheck
+{
+    public ValueTask<IReadOnlyList<string>> AllowedAsync(AuthorizationSubject subject, IReadOnlyCollection<string> permissions, CancellationToken cancellationToken = default) =>
+        bypass.AllowedPlatformAsync(subject, permissions, cancellationToken);
 }
