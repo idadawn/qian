@@ -144,3 +144,29 @@ it('枚举按 optionLabelKey 取文案；qian.segmented 渲染分段控件；抽
   await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
   expect(submit.mock.calls[0]?.[0]).toEqual({ plan: 'formal', size: 'large' });
 });
+
+it('抽屉里的子步骤表单（inlineActions）按钮紧跟表单、不带取消，页脚照常只有关闭', async () => {
+  const submit = vi.fn();
+  const lookup: FormSchema = { ...credentialSchema, data: { type: 'object', additionalProperties: false, required: ['username'], properties: { username: { type: 'string', minLength: 1 } } }, ui: { layout: [{ field: 'username', labelKey: 'test.username' }] } };
+  function Host() {
+    const drawer = useDrawer(i18n);
+    return <><button type="button" onClick={() => drawer.open({ title: '选择管理员', content: <SchemaForm schema={lookup} i18n={i18n} inlineActions onSubmit={submit} submitLabel="查找账号" testId="lookup" /> })}>打开</button>{drawer.holder}</>;
+  }
+  render(<Host />);
+  await userEvent.click(screen.getByRole('button', { name: '打开' }));
+  const dialog = await screen.findByRole('dialog', { name: '选择管理员' });
+  const form = within(dialog).getByTestId('lookup');
+  const footer = within(dialog).getByTestId('yue-sheet-footer');
+  expect(within(form).queryByRole('button', { name: '取消' })).toBeNull();
+  expect(within(footer).queryByRole('button', { name: '查找账号' })).toBeNull();
+  expect(within(footer).getByRole('button', { name: '关闭' })).toBeTruthy();
+  await userEvent.fill(within(form).getByLabelText('账号 *'), 'adminc');
+  await userEvent.click(within(form).getByRole('button', { name: '查找账号' }));
+  await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+  expect(submit.mock.calls[0]?.[0]).toEqual({ username: 'adminc' });
+  // 等抽屉入场动画与提交态结束再查对比度，免得取到半透明的中间帧。
+  await vi.waitFor(() => expect(within(form).getByRole('button', { name: '查找账号' }).hasAttribute('disabled')).toBe(false));
+  await Promise.all(document.getAnimations().map((animation) => animation.finished));
+  const result = await axe.run(dialog);
+  expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+});

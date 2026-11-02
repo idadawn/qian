@@ -27,7 +27,7 @@ export interface SchemaFormProps {
   className?: string;
   testId?: string;
   submitLabel?: string;
-  /** 在抽屉里也把操作按钮留在表单末尾，而不是送进抽屉页脚；用于抽屉内的子步骤表单（如「查找账号」）。 @default false */
+  /** 抽屉内的子步骤表单（如「查找账号」）：操作按钮紧跟表单、不带抽屉级的「取消」，也不占抽屉页脚。 @default false */
   inlineActions?: boolean;
   children?: ReactNode;
 }
@@ -71,7 +71,8 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
   const overlay = useContext(OverlayFormContext);
   const register = overlay?.register;
   const hasActions = mode === 'edit' && !!onSubmit;
-  useEffect(() => { if (hasActions) return register?.(); }, [register, hasActions]);
+  // 子步骤表单（inlineActions）不占抽屉页脚：不登记，页脚照常显示「关闭」或主表单的操作。
+  useEffect(() => { if (hasActions && !inlineActions) return register?.(); }, [register, hasActions, inlineActions]);
   const resolver: Resolver<FormValues> = (values) => {
     const errors: FieldErrors<FormValues> = Object.create(null) as FieldErrors<FormValues>;
     for (const error of validateValues(schema, values)) {
@@ -135,7 +136,7 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
   // 抽屉提供页脚容器时，操作按钮渲染进页脚并经 form 属性关联本表单（回车提交照常生效）；否则留在表单末尾。
   const footer = inlineActions ? null : overlay?.footer ?? null;
   const formId = `${id}-form`;
-  const actions = hasActions ? <div data-slot="schema-form-actions" className={footer ? 'contents' : 'flex justify-end gap-2 border-t border-border pt-4'}>{overlay?.cancel}{children}<Button type="submit" form={formId} disabled={isSubmitting} testId={`${testId}-submit`}>{submitLabel ?? i18n.t('common.save')}</Button></div> : children;
+  const actions = hasActions ? <div data-slot="schema-form-actions" className={footer ? 'contents' : inlineActions ? 'flex flex-wrap gap-2' : 'flex justify-end gap-2 border-t border-border pt-4'}>{inlineActions ? null : overlay?.cancel}{children}<Button type="submit" form={formId} disabled={isSubmitting} testId={`${testId}-submit`}>{submitLabel ?? i18n.t('common.save')}</Button></div> : children;
   return <form id={formId} className={className ?? 'grid gap-4'} data-slot="schema-form" data-testid={testId} onSubmit={submit} noValidate>
     {definitions.map(({ path, schema: fieldSchema, ui, required }) => {
       const state = effective.states[path];
