@@ -64,6 +64,7 @@ export async function exercise(name: string, frame: FrameLocator, state = 'Defau
     case 'BackTop': await main.getByText('长页面末尾').scrollIntoViewIfNeeded(); await expect.poll(() => main.evaluate(element => element.ownerDocument.defaultView!.scrollY)).toBeGreaterThan(0); await main.getByRole('button', { name: '返回顶部' }).click(); await expect.poll(() => main.evaluate(element => element.ownerDocument.defaultView!.scrollY)).toBe(0); break;
     case 'FullScreen': await main.getByRole('button', { name: '进入全屏' }).click(); await expect(frame.getByRole('button', { name: '退出全屏' }).or(frame.getByRole('alert'))).toBeVisible(); if (await frame.getByRole('button', { name: '退出全屏' }).isVisible()) await frame.getByRole('button', { name: '退出全屏' }).click(); break;
     case 'Tokens': await expect(main.getByRole('heading', { name: 'yue 设计令牌' })).toBeVisible(); break;
+    case 'Steps': await expect(main.getByRole('list', { name: '开通进度' }).locator('[aria-current="step"]')).toContainText('平台审核（进行中）'); break;
     case 'Badge': case 'Avatar': case 'Skeleton': case 'Spinner': case 'Progress': case 'Alert': case 'Icon': case 'Descriptions': case 'Separator': await expect(main.locator('[data-slot]').first()).toBeVisible(); break;
     default: throw new Error(`缺少组件交互验收 ${name}`);
   }
