@@ -65,6 +65,11 @@ const server = createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json');
     response.end(JSON.stringify({ channel: 'window-bridge-http', idempotencyKey: input.idempotencyKey, tenant: request.headers['x-tenant-id'] })); return;
   }
+  // 新建租户先选管理员（S1-TEN-010）：查找账号按任意标识回同一个账号，只让表单校验用例走到租户主档，不是身份组件替身。
+  if (url.pathname === '/api/tenancy/admin-accounts:lookup' && request.method === 'POST') {
+    response.setHeader('Content-Type', 'application/json');
+    response.end(JSON.stringify({ subjectId: '33333333-3333-4333-8333-333333333333', displayName: '验收管理员', status: 'active', identifiers: [{ kind: 'username', masked: 'ac****in', verified: false }] })); return;
+  }
   if (url.pathname === '/api/tenancy/tenants') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ items: [], total: 0 })); return; }
   if (url.pathname === '/api/tenancy/meta/state-machine') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ transitions: [], actions: [], states: [] })); return; }
   const remoteRequest = url.pathname.startsWith('/remotes/qian.tenancy/');
