@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config';
 // - yue-gates：门禁自测（分层边界、循环依赖、包形状），Node 环境；
 // - yue-ssr：组件在 Node 里 renderToString（SSR 兼容是验证门的一项）；
 // - qian-shell-kit：外壳的 Qian 专有接线（运行时配置、BFF 会话、bootstrap、请求中间件、认证页族适配），Node 环境、fetch 由用例注入；
-// - packages/yue/*/vitest.config.ts、packages/qian-identity-ui/vitest.config.ts：各包的浏览器测试（Vitest browser mode + Playwright）。
+// - packages/yue/*/vitest.config.ts、packages/qian-identity-ui/vitest.config.ts、packages/qian-tenancy-signup-ui/vitest.config.ts：各包的浏览器测试（Vitest browser mode + Playwright）。
 export default defineConfig({
   test: {
     projects: [
@@ -16,6 +16,7 @@ export default defineConfig({
       { test: { name: 'qian-shell-kit', environment: 'node', include: ['packages/qian-shell-kit/src/**/*.test.ts'] } },
       'packages/yue/*/vitest.config.ts',
       'packages/qian-identity-ui/vitest.config.ts',
+      'packages/qian-tenancy-signup-ui/vitest.config.ts',
     ],
   },
 });

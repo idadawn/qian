@@ -68,7 +68,29 @@ export function LoginPage({ entry: injectedEntry, provider: injectedProvider }: 
         ? <div className="flex flex-wrap gap-2">{connectors.map(item => <Button key={item.id} variant="outline" onClick={() => begin(item.id)}>{item.displayName}</Button>)}</div>
         : tenantCode !== '' && listedFor === tenantCode ? <p role="status" className="text-sm text-muted-foreground" data-testid="identity-connectors-none">{i18n.t('identity.connectorsNone')}</p> : null}
     </section>
+    <SignupLinks mode="login" />
   </div>;
+}
+
+/**
+ * 自助开通入口（S1-TEN-020，规格 §8）：开通组件装在本宿主时（申请人会话端点答 200 或 401）才显示；`next` 带上当前登录地址，
+ * 申请获批后进度页的「去登录」回到同一个授权请求。没有登录成员身份的账号（NO_AVAILABLE_TENANT）从这里查看申请进度。
+ */
+function SignupLinks({ mode }: { mode: 'login' | 'select' }) {
+  const [available, setAvailable] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/signup/session', { credentials: 'same-origin', redirect: 'error', signal: controller.signal })
+      .then(response => { void response.body?.cancel(); if (!controller.signal.aborted) setAvailable(response.status === 200 || response.status === 401); }, () => { /* 没有开通组件时不显示入口。 */ });
+    return () => controller.abort();
+  }, []);
+  if (!available) return null;
+  const next = encodeURIComponent(location.pathname + location.search);
+  return <p className="text-center text-sm text-muted-foreground" data-testid="identity-signup-links">
+    {mode === 'login' ? <>{i18n.t('identity.noCompany')} <a className="font-medium text-primary underline-offset-4 hover:underline" href={`/signup?next=${next}`}>{i18n.t('identity.applyCompany')}</a>
+      <span aria-hidden="true"> · </span><a className="font-medium text-primary underline-offset-4 hover:underline" href={`/signup/status?next=${next}`}>{i18n.t('identity.signupProgress')}</a></>
+      : <a className="font-medium text-primary underline-offset-4 hover:underline" href={`/signup?next=${next}`}>{i18n.t('identity.applyNewCompany')}</a>}
+  </p>;
 }
 
 function unauthenticated(error: unknown): boolean {
@@ -103,6 +125,7 @@ function SelectTenantPage() {
       provider.selectTenant(id, new AbortController().signal).then(() => browser.assign(entry.returnUrl)).catch(() => { setBusy(false); setError(true); });
     }} />
     <p className="text-center text-xs text-muted-foreground">{i18n.t('identity.switchHelp')}</p>
+    <SignupLinks mode="select" />
   </div>;
 }
 
