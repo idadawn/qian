@@ -245,7 +245,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **设计理念**。租户是平台可信计算基的第一道边界：租户上下文只来自已校验令牌，解析不到即拒绝（fail-closed），非 HTTP 入口（消费者、作业、Agent）显式传播并逐跳校验。租户控制面与业务面分离，业务面只消费「租户上下文契约」（租户号、隔离策略与连接、生效插件清单、配额、状态）。参考平台的租户解析缓存未命中静默落默认库、到期不踢已登录用户、「永久删除」实为软删不清库，是反例。
 
-**范围与边界**。✅ 做：租户主档（租户号小写字母数字、创建后不可改，兼作登录租户标识）；隔离策略装配（默认共享库 + `tenant_id` + PG RLS，创建时一次性决定，ADR-004）；显式状态机与事件；开通编排（幂等步骤表）；单管理员 + 用户配额（不计平台超管、计租户管理员，补充裁决 Q12）；租户配置服务（租户级在线配置，不进 Apollo，ADR-007）；租户事件与配额查询契约；运营后台最小 CRUD；切换租户的令牌重签模型（与 7.4 共担）。❌ 不做：自助申请/审核/加入/退出 UI（S3）；多管理员、邀请链接（S3）；完整状态机尾部（只读、注销与数据销毁，S3）；品牌与自定义登录域（S3，Q4）；套餐下发（S3）；DatabasePerTenant 高隔离档（S3）；SchemaPerTenant 真库验证（P2，仅集成测试）；域名/子域名解析租户（S3）；租户层级多级隔离（不做，用组织树与 `project_id` 在 7.5 解决）。
+**范围与边界**。✅ 做：租户主档（租户号小写字母数字、创建后不可改，兼作登录租户标识）；隔离策略装配（默认共享库 + `tenant_id` + PG RLS，创建时一次性决定，ADR-004）；显式状态机与事件；开通编排（幂等步骤表）；单管理员 + 用户配额（不计平台超管、计租户管理员，补充裁决 Q12）；租户配置服务（租户级在线配置，不进 Apollo，ADR-007）；租户事件与配额查询契约；运营后台最小 CRUD；切换租户的令牌重签模型（与 7.4 共担）；租户自助开通——申请人验证手机号后提交申请、平台超管审核、通过即开通并激活（S1-DEC-032 自 S3 提前，规格 [specs/tenant-signup.md](specs/tenant-signup.md)，组件 `qian.tenancy.signup`）。❌ 不做：加入/退出与邀请 UI（S3）；多管理员、邀请链接（S3）；完整状态机尾部（只读、注销与数据销毁，S3）；品牌与自定义登录域（S3，Q4）；套餐下发（S3）；DatabasePerTenant 高隔离档（S3）；SchemaPerTenant 真库验证（P2，仅集成测试）；域名/子域名解析租户（S3）；租户层级多级隔离（不做，用组织树与 `project_id` 在 7.5 解决）。
 
 **技术落点**。组件 `qian.tenancy`：Definition `Qian.Tenancy.Abstractions`（服务键 `ctx.Tenancy`）+ Provider `Qian.Tenancy`，默认进 `platform` profile 的 base 组合包，可独立安装（`qian add tenancy`；独立模式下宿主可改提供自己的 `ITenantContext` 或选 `SingleTenant`）；schema `tenancy`；依赖 `Kun.MultiTenancy`（修复后）、`Kun.EntityFrameworkCore` 三策略 Provisioner、`Kun.EventBus`。
 
