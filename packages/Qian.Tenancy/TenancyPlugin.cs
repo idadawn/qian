@@ -42,6 +42,7 @@ public sealed class TenancyPlugin : IQianPlugin
         var administration = new TenantAdministrationService(ctx, directory);
         ctx.Provide<ITenantOperations>(TenantOperations.Key, new TenantOperationsService(ctx, directory, administration));
         ctx.Provide<ITenantAdministration>(TenantAdministration.Key, administration);
+        ctx.Provide<ITenantSummaries>(TenantSummaries.Key, new TenantSummaryService(ctx, administration));
         var provisioning = new TenantProvisioningOrchestrator(ctx, directory, initializationCapabilities);
         ctx.Effect(provisioning.Dispose);
         ctx.Provide<ITenantProvisioning>(TenantProvisioning.Key, provisioning);

@@ -3,6 +3,7 @@ import { ShellHost, type RemoteRegistration, type ShellContext, type ShellScope 
 import { createBrowserRouter, type ShellRouter } from '@idadawn/yue-shell/router';
 import { apiPrefixMiddleware, createBffSessionClient, createSessionExpiryGuard, csrfMiddleware, fetchBootstrap, type AppConfig, type BffSessionClient, type ShellBootstrap } from '@qian/shell-kit';
 import { createHostFederation } from './shared';
+import type { TenantSummary } from './welcome';
 
 export type LoadStatus = 'loading' | 'ready' | 403 | 500;
 export interface ShellState {
@@ -11,12 +12,15 @@ export interface ShellState {
   bootstrap: ShellBootstrap | null;
   /** 可见能力条数（辅助接口）：undefined 为加载中，null 为不可用——失败不影响整页状态。 */
   capabilities: number | null | undefined;
+  /** 本租户摘要（辅助接口，S1-TEN-021）：undefined 为加载中或平台身份，null 为不可用——失败不影响整页状态。 */
+  summary: TenantSummary | null | undefined;
   reloading: boolean;
   expired: boolean;
   signedOut: boolean;
 }
 interface CatalogPaths { '/api/capabilities': { get: { responses: { 200: { content: { 'application/json': { items: unknown[] } } } } } } }
 type AuditPaths = Record<string, { post: { requestBody: { content: { 'application/json': unknown } }; responses: { 204: { content: never } } } }>;
+interface SummaryPaths { '/api/tenancy/tenants/{id}/summary': { get: { parameters: { path: { id: string } }; responses: { 200: { content: { 'application/json': TenantSummary } } } } } }
 
 const EMPTY_CONTEXT: ShellContext = { tenant: null, membership: null, app: null, locale: 'zh-CN', theme: 'light' };
 const key = (id: string, scope: ShellScope) => `${scope}|${id}`;
@@ -36,7 +40,7 @@ export function createShellRuntime(config: AppConfig) {
   const bff: BffSessionClient = createBffSessionClient({ authBase: config.authBase });
   const guard = createSessionExpiryGuard(bff);
   const listeners = new Set<() => void>();
-  let state: ShellState = { status: 'loading', bootstrap: null, capabilities: undefined, reloading: false, expired: false, signedOut: false };
+  let state: ShellState = { status: 'loading', bootstrap: null, capabilities: undefined, summary: undefined, reloading: false, expired: false, signedOut: false };
   // 宿主（上下文、挂载 / 权益 / 权限判定、请求的租户头）看到的 bootstrap：先于 React 状态更新，远程按它登记完再一次性通知界面。
   let view: ShellBootstrap | null = null;
   let presentation: Pick<ShellContext, 'locale' | 'theme'> | null = null;
@@ -92,7 +96,12 @@ export function createShellRuntime(config: AppConfig) {
     catch { return null; }
   }
 
-  /** 拉一轮工作区（bootstrap，再对成员拉能力目录条数）；进行中再来一次就排队、结束后再完整拉一次，不与重放并行。 */
+  async function summary(tenant: string): Promise<TenantSummary | null> {
+    try { return (await client.api<SummaryPaths>().GET('/api/tenancy/tenants/{id}/summary', { params: { path: { id: tenant } } })).data ?? null; }
+    catch { return null; }
+  }
+
+  /** 拉一轮工作区（bootstrap，再对成员拉能力目录条数与本租户摘要）；进行中再来一次就排队、结束后再完整拉一次，不与重放并行。 */
   async function load(): Promise<void> {
     if (ended) return;
     if (inFlight) { queued = true; return; }
@@ -104,10 +113,11 @@ export function createShellRuntime(config: AppConfig) {
       await reconcile(bootstrap.remotes);
       host.refreshContext();
       everReady = true;
-      set({ status: 'ready', bootstrap, capabilities: bootstrap.session.tenantId === null ? undefined : state.capabilities });
-      if (bootstrap.session.tenantId !== null) {
-        const count = await capabilities();
-        if (!ended) set({ capabilities: count });
+      const tenant = bootstrap.session.tenantId;
+      set({ status: 'ready', bootstrap, capabilities: tenant === null ? undefined : state.capabilities, summary: tenant === null ? undefined : state.summary });
+      if (tenant !== null) {
+        const [count, current] = await Promise.all([capabilities(), summary(tenant)]);
+        if (!ended) set({ capabilities: count, summary: current });
       }
     } catch (error) {
       const code = status(error);

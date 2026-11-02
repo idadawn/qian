@@ -551,3 +551,33 @@ override Qian.Tenancy.TenantOverviewPage.Equals(object? obj) -> bool
 Qian.Tenancy.TenantOverviewPage.Equals(Qian.Tenancy.TenantOverviewPage? other) -> bool
 Qian.Tenancy.TenantOverviewPage.<Clone>$() -> Qian.Tenancy.TenantOverviewPage!
 Qian.Tenancy.TenantOverviewPage.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantOverview!>! Items, out int Total, out Qian.Tenancy.TenantStatusCounts! Counts) -> void
+Qian.Tenancy.TenantSummaries
+static readonly Qian.Tenancy.TenantSummaries.Key -> Qian.Runtime.ServiceKey
+Qian.Tenancy.ITenantSummaries
+Qian.Tenancy.ITenantSummaries.CurrentAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantSummary!>
+Qian.Tenancy.TenantSummary
+Qian.Tenancy.TenantSummary.TenantSummary(System.Guid Id, string! Code, string! Name, Qian.Tenancy.TenantStatus Status) -> void
+Qian.Tenancy.TenantSummary.Id.get -> System.Guid
+Qian.Tenancy.TenantSummary.Id.init -> void
+Qian.Tenancy.TenantSummary.Code.get -> string!
+Qian.Tenancy.TenantSummary.Code.init -> void
+Qian.Tenancy.TenantSummary.Name.get -> string!
+Qian.Tenancy.TenantSummary.Name.init -> void
+Qian.Tenancy.TenantSummary.Status.get -> Qian.Tenancy.TenantStatus
+Qian.Tenancy.TenantSummary.Status.init -> void
+Qian.Tenancy.TenantSummary.ValidUntil.get -> System.DateTimeOffset?
+Qian.Tenancy.TenantSummary.ValidUntil.init -> void
+Qian.Tenancy.TenantSummary.UsersLimit.get -> int?
+Qian.Tenancy.TenantSummary.UsersLimit.init -> void
+Qian.Tenancy.TenantSummary.UsersUsed.get -> int?
+Qian.Tenancy.TenantSummary.UsersUsed.init -> void
+Qian.Tenancy.TenantSummary.AdministratorName.get -> string?
+Qian.Tenancy.TenantSummary.AdministratorName.init -> void
+Qian.Tenancy.TenantSummary.<Clone>$() -> Qian.Tenancy.TenantSummary!
+Qian.Tenancy.TenantSummary.Deconstruct(out System.Guid Id, out string! Code, out string! Name, out Qian.Tenancy.TenantStatus Status) -> void
+Qian.Tenancy.TenantSummary.Equals(Qian.Tenancy.TenantSummary? other) -> bool
+override Qian.Tenancy.TenantSummary.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantSummary.GetHashCode() -> int
+override Qian.Tenancy.TenantSummary.ToString() -> string!
+static Qian.Tenancy.TenantSummary.operator !=(Qian.Tenancy.TenantSummary? left, Qian.Tenancy.TenantSummary? right) -> bool
+static Qian.Tenancy.TenantSummary.operator ==(Qian.Tenancy.TenantSummary? left, Qian.Tenancy.TenantSummary? right) -> bool

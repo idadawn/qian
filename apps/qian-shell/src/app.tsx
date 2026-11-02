@@ -13,6 +13,7 @@ import { toMenu, type BffSession } from '@qian/shell-kit';
 import type { RemoteBridge, SlotContribution } from '@idadawn/qian-plugin-sdk';
 import { installAppLanguagePacks } from './locales';
 import type { ShellRuntime, ShellState } from './runtime';
+import { Welcome } from './welcome';
 
 // 会话过期对话框只在会话结束时需要：按需加载，不进首屏。
 const SessionExpiredDialog = lazy(() => import('@idadawn/yue-shell/session-dialog').then(module => ({ default: module.SessionExpiredDialog })));
@@ -75,7 +76,8 @@ function Shell({ runtime }: { runtime: ShellRuntime }) {
   const platform = session.tenantId === null;
   const content = state.status === 403 ? <FallbackPage status={403} i18n={i18n} onRetry={() => void runtime.load()} />
     : state.status === 500 ? <FallbackPage status={500} i18n={i18n} onRetry={() => void runtime.load()} />
-    : pathname === '/' ? <Home i18n={i18n} session={session} menu={menu} permissions={bootstrap.permissions} capabilities={state.capabilities} loading={state.reloading} platform={platform} onReload={() => void runtime.load()} />
+    : pathname === '/' ? <Home i18n={i18n} session={session} menu={menu} permissions={bootstrap.permissions} capabilities={state.capabilities} summary={state.summary} loading={state.reloading} platform={platform}
+      onReload={() => void runtime.load()} onNavigate={target => runtime.router.navigate(target)} />
     : match ? <Remote i18n={i18n} page={page} client={runtime.client} />
     : <FallbackPage status={404} i18n={i18n} onHome={() => runtime.router.navigate('/')} />;
   return <>
@@ -132,12 +134,19 @@ function Remote({ i18n, page, client }: { i18n: PlatformI18n; page: RemotePage |
   return <Component key={`${contribution.scope}:${contribution.remoteId}`} client={client} bridge={contribution.bridge} />;
 }
 
-interface HomeProps { i18n: PlatformI18n; session: BffSession; menu: readonly ShellMenuItem[]; permissions: readonly string[]; capabilities: ShellState['capabilities']; loading: boolean; platform: boolean; onReload: () => void }
-function Home({ i18n, session, menu, permissions, capabilities, loading, platform, onReload }: HomeProps) {
+interface HomeProps {
+  i18n: PlatformI18n; session: BffSession; menu: readonly ShellMenuItem[]; permissions: readonly string[]; capabilities: ShellState['capabilities']; summary: ShellState['summary'];
+  loading: boolean; platform: boolean; onReload: () => void; onNavigate: (target: string) => void;
+}
+/** 租户会话的首页：本租户摘要可用时先给欢迎、试用提示、开通引导与企业信息（S1-TEN-021），会话与权限信息照常列在下面；摘要不可用只少欢迎区。 */
+function Home({ i18n, session, menu, permissions, capabilities, summary, loading, platform, onReload, onNavigate }: HomeProps) {
   const card = 'space-y-2 rounded-xl border border-border bg-card p-5';
+  // 试用剩余天数按进入首页的时刻算一次。
+  const [now] = useState(() => Date.now());
   return <Page header={<PageHeader title={i18n.t('app.workspace')} description={i18n.t(platform ? 'app.platformHelp' : 'app.workspaceHelp')}
     actions={platform ? undefined : <Button variant="outline" loading={loading} onClick={onReload} testId="shell-reload">{i18n.t('app.refresh')}</Button>} />}>
-    <div className="grid gap-4 md:grid-cols-2">
+    {!platform && summary && <Welcome i18n={i18n} summary={summary} displayName={session.displayName ?? session.subject} menu={menu} now={now} onNavigate={onNavigate} />}
+    <div className={`grid gap-4 md:grid-cols-2${!platform && summary ? ' mt-6' : ''}`}>
       <section className={card} data-testid="shell-session">
         <h2 className="text-lg font-semibold">{i18n.t('app.session')}</h2>
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">

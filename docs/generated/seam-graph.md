@@ -21,6 +21,7 @@
 | ` TenancyQuota ` | ` global/tenancy ` |  |
 | ` TenancySettings ` | ` global/tenancy ` |  |
 | ` TenancySettingsOperations ` | ` global/tenancy ` |  |
+| ` TenancySummary ` | ` global/tenancy ` |  |
 | ` Identity ` | ` global/identity ` |  |
 | ` Authz ` | ` global/authz ` |  |
 | ` AuthzEnforcement ` | ` global/authz ` |  |
@@ -92,58 +93,60 @@ flowchart LR
   n4 --> s13
   s14(("TenancySettingsOperations"))
   n4 --> s14
-  s15(("Identity"))
-  n5 --> s15
-  s16(("Authz"))
-  n6 --> s16
-  s17(("AuthzEnforcement"))
+  s15(("TenancySummary"))
+  n4 --> s15
+  s16(("Identity"))
+  n5 --> s16
+  s17(("Authz"))
   n6 --> s17
-  s18(("AuthzPermissions"))
+  s18(("AuthzEnforcement"))
   n6 --> s18
-  s19(("AuthzResourceTypes"))
+  s19(("AuthzPermissions"))
   n6 --> s19
-  s20(("AuthzSuperadminBypass"))
+  s20(("AuthzResourceTypes"))
   n6 --> s20
-  s21(("AuthzTenantRoleGrant"))
+  s21(("AuthzSuperadminBypass"))
   n6 --> s21
-  s22(("CommandAuthorization"))
+  s22(("AuthzTenantRoleGrant"))
   n6 --> s22
-  s23(("Data"))
-  n7 --> s23
-  s24(("Files"))
-  n8 --> s24
-  s25(("Files.Backends:local"))
+  s23(("CommandAuthorization"))
+  n6 --> s23
+  s24(("Data"))
+  n7 --> s24
+  s25(("Files"))
   n8 --> s25
-  s26(("Config"))
-  n9 --> s26
-  s27(("Events"))
-  n10 --> s27
-  s28(("Audit"))
-  n11 --> s28
-  s29(("CommandAudit"))
+  s26(("Files.Backends:local"))
+  n8 --> s26
+  s27(("Config"))
+  n9 --> s27
+  s28(("Events"))
+  n10 --> s28
+  s29(("Audit"))
   n11 --> s29
-  s30(("Scheduler"))
-  n17 --> s30
-  s31(("Shell"))
-  n20 --> s31
-  s23 --> n0
-  s26 --> n1
-  s23 --> n1
+  s30(("CommandAudit"))
+  n11 --> s30
+  s31(("Scheduler"))
+  n17 --> s31
+  s32(("Shell"))
+  n20 --> s32
+  s24 --> n0
+  s27 --> n1
+  s24 --> n1
   s0 --> n1
-  s28 --> n2
   s29 --> n2
-  s22 --> n2
-  s6 --> n2
+  s30 --> n2
   s23 --> n2
+  s6 --> n2
+  s24 --> n2
   s0 --> n2
   s7 --> n2
-  s23 --> n4
-  s23 --> n6
-  s23 --> n8
-  s23 --> n11
-  s23 --> n17
+  s24 --> n4
+  s24 --> n6
+  s24 --> n8
+  s24 --> n11
+  s24 --> n17
   s7 --> n17
-  s28 -.-> n1
-  s20 -.-> n1
+  s29 -.-> n1
+  s21 -.-> n1
 ```
 

@@ -59,6 +59,7 @@ public static partial class TenancyEndpoints
         MapState(endpoints, source);
         MapSettings(endpoints, source);
         MapAdministrators(endpoints, source);
+        MapSummary(endpoints, source);
         return endpoints;
     }
     private static RouteHandlerBuilder Bind(RouteHandlerBuilder route) => route.RequireAuthorization().WithMetadata(new PlatformHttpContract("qian.tenancy"))
@@ -75,9 +76,7 @@ public static partial class TenancyEndpoints
         http.Response.Headers.CacheControl = "private, no-store";
         try
         {
-            var user = http.RequestServices.GetRequiredService<ICurrentUser>(); var principal = user.Principal;
-            if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject || http.User.Identity?.IsAuthenticated != true ||
-                http.User.FindFirst("sub")?.Value != principal.Subject) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
+            var principal = Authenticated(http);
             if (principal.TenantId is not null || principal.Actor is not null || principal.Kind != PrincipalKind.User ||
                 http.User.Claims.Any(claim => claim.Type == "tenant_id" && !string.IsNullOrEmpty(claim.Value)) ||
                 http.RequestServices.GetRequiredService<ITenantContext>().TenantId is not null)
@@ -100,6 +99,14 @@ public static partial class TenancyEndpoints
         catch (QianErrorException error) { return QianResults.Error(error.Error); }
         catch (Exception error) when (error is ServiceNotReadyException or ObjectDisposedException)
         { return QianResults.Error(new QianError(PlatformErrors.NotFound)); }
+    }
+    // 宿主已验签的主体快照与认证结果须一致，否则一律按未认证处理。
+    private static Principal Authenticated(HttpContext http)
+    {
+        var user = http.RequestServices.GetRequiredService<ICurrentUser>(); var principal = user.Principal;
+        if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject || http.User.Identity?.IsAuthenticated != true ||
+            http.User.FindFirst("sub")?.Value != principal.Subject) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
+        return principal;
     }
     private static void ValidateQuery(HttpContext http, string name, object? value)
     {

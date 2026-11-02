@@ -102,7 +102,7 @@ public sealed partial class TenantOperationsTests(PostgresFixture postgres) : Cu
         Assert.Equal("create,read,read,edit,edit,edit,read", string.Join(",", records.Select(entry => entry.Record.Payload.GetProperty("permission").GetString()!.Split(':')[^1])));
         Assert.All(records, entry => Assert.Equal("superadmin", entry.Record.Payload.GetProperty("bypass").GetString()));
         var contract = await management.Services.GetRequiredService<IHttpContractSource>().CompileDocumentAsync("qian.tenancy", Ct);
-        Assert.Equal(12, contract.GetProperty("paths").EnumerateObject().Count());
+        Assert.Equal(13, contract.GetProperty("paths").EnumerateObject().Count());
         Assert.True(contract.GetProperty("paths").GetProperty(path).TryGetProperty("post", out var post));
         Assert.True(contract.GetProperty("paths").GetProperty(path + "/{id}").TryGetProperty("put", out _));
         var document = JsonNode.Parse(contract.GetRawText())!;

@@ -17,6 +17,7 @@ namespace Qian.Tenancy;
 [Provides(typeof(TenantLifecycle), nameof(TenantLifecycle.Key))]
 [Provides(typeof(TenantOperations), nameof(TenantOperations.Key))]
 [Provides(typeof(TenantAdministration), nameof(TenantAdministration.Key))]
+[Provides(typeof(TenantSummaries), nameof(TenantSummaries.Key))]
 [Provides(typeof(TenantProvisioning), nameof(TenantProvisioning.Key))]
 [Provides(typeof(CommandPolicies), nameof(CommandPolicies.TenancyKey))]
 public sealed class TenancyComponent : IQianPlugin

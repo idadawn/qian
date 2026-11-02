@@ -149,8 +149,26 @@ R113 的处理顺序固定为：认证及平台主体检查 → 请求绑定与�
 
 超管旁路审计记的是放行决定：放行后才得出的 404、409、422 同样在平台链上留有记录（R97）；入口校验失败的 400 没有。
 
+## 本租户摘要（S1-TEN-021）
+
+`GET /api/tenancy/tenants/{id}/summary` 是本组件唯一给租户主体用的接口，供外壳首页显示试用提示、开通引导与企业信息。它同在 `MapQianTenancy` 里，但不走超管旁路：
+
+- 只收同一租户的人类用户：令牌里的租户须与路径一致，主体类型为 user 且不带 Agent 委托。
+- 平台主体（超管与否）读租户仍走上面的运营接口，有旁路审计，这里一律 403。
+- 其它租户的成员、Agent 与服务主体也是 403，且不区分目标租户是否存在。无凭据 401。
+- 拒绝原因只写结构化日志 Qian.Tenancy.Summary / 1002，不进响应。
+
+处理器按已验证令牌进入该租户上下文，再调 `ITenantSummaries.CurrentAsync`（服务键 `TenancySummary`）。端口只认当前租户上下文，没有就是未认证，不能按参数读别的租户。
+
+返回 id、code、name、status、validUntil、usersLimit、usersUsed 与 administratorName，口径与运营列表的同名列一致：
+
+- 用量经身份侧计数端口统计，端口缺席为 null。
+- 管理员名取指针所指成员的显示名。
+
+令牌与路径一致但主档不存在时 404。响应 `Cache-Control: private, no-store`。
+
 ## 清单入口与代码派生
 
-`plugins/qian.tenancy/.qian-plugin/plugin.json` 的稳定入口是 `TenancyComponent`，允许 global scope，依赖 `Data`，提供 租户目录、设置、运营、管理员维护、配额、状态机、开户与 `CommandTenancy`。固定委托无参 `TenancyPlugin`。扫描到期租户的工具由实现共用的静态 `TenantExpiryCapability.Definition` 派生；可执行绑定属于 SDK 能力协议，不伪装成普通服务键。
+`plugins/qian.tenancy/.qian-plugin/plugin.json` 的稳定入口是 `TenancyComponent`，允许 global scope，依赖 `Data`，提供 租户目录、设置、运营、管理员维护、本租户摘要、配额、状态机、开户与 `CommandTenancy`。固定委托无参 `TenancyPlugin`。扫描到期租户的工具由实现共用的静态 `TenantExpiryCapability.Definition` 派生；可执行绑定属于 SDK 能力协议，不伪装成普通服务键。
 
 入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
