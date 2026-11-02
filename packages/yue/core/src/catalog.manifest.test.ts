@@ -50,7 +50,7 @@ describe('组件机器目录', () => {
   it('全部清单符合统一 Schema，名称唯一，示例通过自己的 props Schema，令牌均登记', () => {
     const names = CORE_COMPONENT_MANIFESTS.map(item => item.name);
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(51);
+    expect(names).toHaveLength(52);
     const tokens = new Set([...primitiveColors().keys(), ...[...TOKEN_REGISTRY.primitives, ...TOKEN_REGISTRY.semantics, ...TOKEN_REGISTRY.components].map(item => item.name)]);
     for (const manifest of CORE_COMPONENT_MANIFESTS) {
       expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);

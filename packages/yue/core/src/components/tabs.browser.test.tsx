@@ -92,3 +92,17 @@ describe('Tabs（Base UI 验证门）', () => {
     expect(violations, describeViolations(violations)).toHaveLength(0);
   });
 });
+
+describe('TabsList variant="line"', () => {
+  it('线形标签带计数：计数在 tab 的可访问名称里，选中项有 data-active，axe 通过', async () => {
+    render(<Tabs defaultValue="pending"><TabsList variant="line" aria-label="申请状态"><TabsTab value="pending" count={3}>待审核</TabsTab><TabsTab value="all" count={18}>全部</TabsTab></TabsList>
+      <TabsPanel value="pending">待审核列表</TabsPanel><TabsPanel value="all">全部列表</TabsPanel></Tabs>);
+    expect(screen.getByRole('tablist').getAttribute('data-variant')).toBe('line');
+    expect(tab('待审核 3').hasAttribute('data-active')).toBe(true);
+    expect(screen.getAllByTestId('yue-tabs-tab-count').map(node => node.textContent)).toEqual(['3', '18']);
+    await userEvent.click(tab('全部 18'));
+    expect(screen.getByRole('tabpanel').textContent).toBe('全部列表');
+    const violations = blockingViolations(await runAxe());
+    expect(violations, describeViolations(violations)).toHaveLength(0);
+  });
+});

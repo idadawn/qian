@@ -81,7 +81,7 @@ function Shell({ runtime }: { runtime: ShellRuntime }) {
   return <>
     <AppShell i18n={i18n} brand={runtime.config.brand ?? 'Qian'} menu={menu} activePath={match?.href ?? pathname} onNavigate={href => runtime.router.navigate(href)}
       toolbar={<><InboxPopover i18n={i18n} messages={[]} /><PreferenceControls i18n={i18n} /></>}
-      userName={session.displayName ?? session.subject} onSignOut={() => void runtime.signOut()} managed={runtime.config.managed ?? bootstrap.managed}
+      userName={session.displayName ?? session.subject} userDescription={platform ? i18n.t('shell.platform') : undefined} onSignOut={() => void runtime.signOut()} managed={runtime.config.managed ?? bootstrap.managed}
       userMenu={<MenuItem onClick={() => runtime.switchTenant()} testId="shell-switch-tenant">{i18n.t('shell.tenant')}</MenuItem>}>
       <OfflineBanner i18n={i18n} />
       <ShellErrorBoundary i18n={i18n} resetKey={pathname}>{content}</ShellErrorBoundary>

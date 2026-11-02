@@ -1,6 +1,7 @@
 import { useContext, useEffect, useId, useImperativeHandle, useMemo, useRef, type BaseSyntheticEvent, type ReactNode, type Ref } from 'react';
+import { createPortal } from 'react-dom';
 import { Controller, useForm, useWatch, type FieldErrors, type Resolver } from 'react-hook-form';
-import { Button, Checkbox, Field as CoreField, FieldDescription, FieldLabel, Input, Select, SelectContent, SelectItem, SelectTrigger, Textarea } from '@idadawn/yue-core';
+import { Button, Checkbox, Field as CoreField, FieldDescription, FieldLabel, Input, Segmented, SegmentedItem, Select, SelectContent, SelectItem, SelectTrigger, Textarea } from '@idadawn/yue-core';
 import { PlatformError, pointerSegments, type ErrorDetail, type PlatformI18n } from '@idadawn/yue-sdk';
 import type { FormSchema, UiNode } from '@idadawn/yue-contracts';
 import { OverlayFormContext } from './overlay-form-context';
@@ -26,6 +27,8 @@ export interface SchemaFormProps {
   className?: string;
   testId?: string;
   submitLabel?: string;
+  /** 在抽屉里也把操作按钮留在表单末尾，而不是送进抽屉页脚；用于抽屉内的子步骤表单（如「查找账号」）。 @default false */
+  inlineActions?: boolean;
   children?: ReactNode;
 }
 
@@ -62,7 +65,7 @@ function defaults(schema: DataSchema): FormValues {
 }
 
 /** 编辑、只读与字段错误共享同一份 Schema、RHF 状态和字段目录。 */
-export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmit, onError, apiRef, className, testId = 'yue-schema-form', submitLabel, children }: SchemaFormProps) {
+export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmit, onError, apiRef, className, testId = 'yue-schema-form', submitLabel, inlineActions = false, children }: SchemaFormProps) {
   useMemo(() => assertFormSchema(schema), [schema]);
   const id = useId();
   const overlay = useContext(OverlayFormContext);
@@ -129,7 +132,11 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
   useImperativeHandle(apiRef, () => api);
   const definitions = fields(effective.data, schema.ui.layout);
 
-  return <form className={className ?? 'grid gap-4'} data-slot="schema-form" data-testid={testId} onSubmit={submit} noValidate>
+  // 抽屉提供页脚容器时，操作按钮渲染进页脚并经 form 属性关联本表单（回车提交照常生效）；否则留在表单末尾。
+  const footer = inlineActions ? null : overlay?.footer ?? null;
+  const formId = `${id}-form`;
+  const actions = hasActions ? <div data-slot="schema-form-actions" className={footer ? 'contents' : 'flex justify-end gap-2 border-t border-border pt-4'}>{overlay?.cancel}{children}<Button type="submit" form={formId} disabled={isSubmitting} testId={`${testId}-submit`}>{submitLabel ?? i18n.t('common.save')}</Button></div> : children;
+  return <form id={formId} className={className ?? 'grid gap-4'} data-slot="schema-form" data-testid={testId} onSubmit={submit} noValidate>
     {definitions.map(({ path, schema: fieldSchema, ui, required }) => {
       const state = effective.states[path];
       const access = schema.auth.fields?.[path];
@@ -141,6 +148,8 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       const fieldId = `${id}-${path}`;
       const error = getValue(errors, path) as { message?: string } | undefined;
       const label = i18n.t(ui.labelKey ?? fieldSchema.title ?? path);
+      // 枚举选项的显示文字：UI 元数据给出语言包前缀（props.optionLabelKey）时按「前缀.值」取文案，否则显示原值。
+      const optionLabel = (value: unknown) => typeof ui.props?.optionLabelKey === 'string' ? i18n.t(`${ui.props.optionLabelKey}.${String(value)}`) : String(value);
       const description = ui.descriptionKey ? i18n.t(ui.descriptionKey) : undefined;
       const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : ''].filter(Boolean).join(' ') || undefined;
       return <CoreField className={horizontal ? 'grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2' : undefined} key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
@@ -149,8 +158,11 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
           if (readonly) return <output id={fieldId} className="min-h-9 rounded-md bg-muted/40 px-3 py-2 text-sm text-foreground" data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, password ? 'full' : typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
           const common = { id: fieldId, name: field.name, ref: field.ref, onBlur: field.onBlur, disabled: state?.disabled || isSubmitting, 'aria-required': required, 'aria-invalid': !!error, 'aria-describedby': describedBy };
           if (hasType(fieldSchema, 'boolean')) return <Checkbox {...common} className="col-start-1 row-start-1" checked={!!field.value} onCheckedChange={field.onChange} aria-label={label} />;
-          if (fieldSchema.enum) return <Select value={field.value ?? null} onValueChange={field.onChange} items={fieldSchema.enum.map((value) => ({ value, label: String(value) }))} disabled={common.disabled}>
-            <SelectTrigger {...common} aria-label={label} /><SelectContent>{fieldSchema.enum.map((value) => <SelectItem key={String(value)} value={value}>{String(value)}</SelectItem>)}</SelectContent>
+          if (fieldSchema.enum && ui.widget === 'qian.segmented') return <Segmented id={fieldId} value={field.value ?? null} onValueChange={field.onChange} disabled={common.disabled} aria-label={label} aria-describedby={describedBy} aria-invalid={!!error} className="flex w-full">
+            {/* Field 会把字段标签挂到组内每个单选上；每项改由自己的文字命名，字段标签留给整组。 */}
+            {fieldSchema.enum.filter((value) => value !== null).map((value, index) => <SegmentedItem key={String(value)} value={value} aria-labelledby={`${fieldId}-option-${index}`} className="flex-1"><span id={`${fieldId}-option-${index}`}>{optionLabel(value)}</span></SegmentedItem>)}</Segmented>;
+          if (fieldSchema.enum) return <Select value={field.value ?? null} onValueChange={field.onChange} items={fieldSchema.enum.map((value) => ({ value, label: optionLabel(value) }))} disabled={common.disabled}>
+            <SelectTrigger {...common} aria-label={label} /><SelectContent>{fieldSchema.enum.map((value) => <SelectItem key={String(value)} value={value}>{optionLabel(value)}</SelectItem>)}</SelectContent>
           </Select>;
           if (ui.widget === 'qian.textarea') return <Textarea {...common} value={String(field.value ?? '')} onChange={field.onChange} />;
           const numeric = hasType(fieldSchema, 'number') || hasType(fieldSchema, 'integer');
@@ -174,6 +186,6 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       </CoreField>;
     })}
     {errors.root?.message && <p role="alert" className="text-sm text-destructive" data-slot="schema-form-error">{String(errors.root.message)}</p>}
-    {hasActions ? <div data-slot="schema-form-actions" className="flex justify-end gap-2 border-t border-border pt-4">{overlay?.cancel}{children}<Button type="submit" disabled={isSubmitting} testId={`${testId}-submit`}>{submitLabel ?? i18n.t('common.save')}</Button></div> : children}
+    {hasActions && footer ? createPortal(actions, footer) : actions}
   </form>;
 }

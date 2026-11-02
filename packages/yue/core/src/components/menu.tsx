@@ -5,6 +5,8 @@ import type {
   MenuItemProps,
   MenuPopupProps,
   MenuPositionerProps,
+  MenuRadioGroupProps,
+  MenuRadioItemProps,
   MenuRootProps,
   MenuSubmenuRootProps,
   MenuSubmenuTriggerProps,
@@ -14,6 +16,7 @@ import type { ComponentProps } from 'react';
 import { cn } from '../lib/cn';
 import { button, surface, menuItem } from '../lib/styles';
 import type { YueProps } from '../lib/test-id';
+import { Icon } from './icon';
 
 // 下拉菜单（Base UI Menu）。验证门项：键盘导航、焦点管理、ARIA、子菜单（docs/prd/specs/yue.md §4.4）。
 
@@ -96,6 +99,25 @@ export function MenuGroupLabel({ className, testId, ...props }: YueProps<MenuGro
       data-testid={testId ?? 'yue-menu-group-label'}
       className={cn('px-2 py-1.5 text-xs text-muted-foreground', className)}
     />
+  );
+}
+
+/** 单选组：value / onValueChange 与 Select 同形；组内每项是 menuitemradio，读屏按「已选中」读出。 */
+export function MenuRadioGroup({ className, testId, ...props }: YueProps<MenuRadioGroupProps>) {
+  return <BaseMenu.RadioGroup {...props} data-slot="menu-radio-group" data-testid={testId ?? 'yue-menu-radio-group'} className={className} />;
+}
+
+/** 单选项：选中时右侧显示勾，状态不只靠颜色。 */
+export function MenuRadioItem({ className, testId, children, ...props }: YueProps<MenuRadioItemProps>) {
+  return (
+    <BaseMenu.RadioItem {...props}
+      data-slot="menu-radio-item"
+      data-testid={testId ?? 'yue-menu-radio-item'}
+      className={cn(menuItem, 'justify-between gap-6 data-[checked]:font-medium', className)}
+    >
+      {children}
+      <BaseMenu.RadioItemIndicator data-slot="menu-radio-item-indicator" data-testid={`${testId ?? 'yue-menu-radio-item'}-indicator`} className="inline-flex text-primary"><Icon name="check" /></BaseMenu.RadioItemIndicator>
+    </BaseMenu.RadioItem>
   );
 }
 

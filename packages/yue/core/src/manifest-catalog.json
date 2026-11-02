@@ -55,11 +55,12 @@
             "secondary",
             "outline",
             "ghost",
-            "destructive"
+            "destructive",
+            "link"
           ],
           "default": "primary",
           "title": "variant",
-          "description": "按钮强调程度。"
+          "description": "按钮强调程度；link 是主色文字按钮，用于行内操作与「重置」一类的次要动作。"
         },
         "size": {
           "enum": [
@@ -3319,6 +3320,12 @@
             "neutral"
           ],
           "title": "tone"
+        },
+        "dot": {
+          "type": "boolean",
+          "default": false,
+          "title": "dot",
+          "description": "在文字前显示同色圆点，用于状态列。"
         }
       },
       "additionalProperties": false
@@ -3360,6 +3367,14 @@
       {
         "title": "Badge 基础示例",
         "props": {}
+      },
+      {
+        "title": "Badge 状态圆点",
+        "props": {
+          "tone": "ok",
+          "dot": true,
+          "children": "正常"
+        }
       }
     ],
     "status": "stable"
@@ -3900,7 +3915,13 @@
         },
         "title": {
           "type": "string",
-          "title": "title"
+          "title": "title",
+          "description": "加粗的标题行；有标题时正文在其下方。"
+        },
+        "action": {
+          "type": "string",
+          "title": "action",
+          "description": "右侧操作，例如「重试」「刷新页面」按钮；窄屏时换到正文下方。"
         },
         "aria-label": {
           "type": "string",
@@ -3939,6 +3960,12 @@
           ],
           "title": "tone"
         },
+        "icon": {
+          "type": "boolean",
+          "default": true,
+          "title": "icon",
+          "description": "是否在左侧显示按语气选择的图标。"
+        },
         "role": {
           "enum": [
             "alert",
@@ -3950,7 +3977,8 @@
       "additionalProperties": false
     },
     "slots": [
-      "alert"
+      "alert",
+      "alert-action"
     ],
     "events": [],
     "a11y": {
@@ -4813,11 +4841,16 @@
         "name": {
           "enum": [
             "arrowUp",
+            "arrowRight",
             "check",
             "chevronDown",
             "chevronLeft",
             "chevronRight",
+            "chevronsUpDown",
             "alert",
+            "circleCheck",
+            "circleX",
+            "help",
             "eye",
             "eyeOff",
             "info",
@@ -4825,7 +4858,38 @@
             "maximize",
             "minimize",
             "minus",
-            "close"
+            "plus",
+            "close",
+            "home",
+            "dashboard",
+            "building",
+            "users",
+            "user",
+            "inbox",
+            "clipboardCheck",
+            "settings",
+            "package",
+            "fileText",
+            "search",
+            "refresh",
+            "more",
+            "columns",
+            "pencil",
+            "undo",
+            "logOut",
+            "bell",
+            "sun",
+            "moon",
+            "monitor",
+            "languages",
+            "shieldCheck",
+            "clock",
+            "calendar",
+            "mail",
+            "phone",
+            "externalLink",
+            "panelLeftClose",
+            "panelLeftOpen"
           ],
           "title": "name"
         },
@@ -4950,6 +5014,15 @@
             "additionalProperties": false
           },
           "title": "items"
+        },
+        "layout": {
+          "enum": [
+            "inline",
+            "stacked"
+          ],
+          "default": "inline",
+          "title": "layout",
+          "description": "inline：标签与值同行两列；stacked：小号标签在上、值在下，按可用宽度自动分栏。"
         }
       },
       "additionalProperties": false,
@@ -4989,6 +5062,192 @@
               "key": "name",
               "label": "名称",
               "children": "示例"
+            }
+          ]
+        }
+      }
+    ],
+    "status": "stable"
+  },
+  "Steps": {
+    "name": "Steps",
+    "props": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id"
+        },
+        "testId": {
+          "type": "string",
+          "title": "testId",
+          "description": "覆盖默认的 `data-testid`（默认 `yue-<组件>-<部件>`）。"
+        },
+        "className": {
+          "type": "string",
+          "title": "className"
+        },
+        "title": {
+          "type": "string",
+          "title": "title"
+        },
+        "aria-label": {
+          "type": "string",
+          "title": "aria-label",
+          "description": "Defines a string value that labels the current element."
+        },
+        "aria-labelledby": {
+          "type": "string",
+          "title": "aria-labelledby",
+          "description": "Identifies the element (or elements) that labels the current element."
+        },
+        "aria-describedby": {
+          "type": "string",
+          "title": "aria-describedby",
+          "description": "Identifies the element (or elements) that describes the object."
+        },
+        "aria-invalid": {
+          "type": "boolean",
+          "title": "aria-invalid",
+          "description": "Indicates the entered value does not conform to the format expected by the application."
+        },
+        "label": {
+          "type": "string",
+          "title": "label",
+          "description": "列表的可访问名称，例如「开通进度」。"
+        },
+        "items": {
+          "type": "array",
+          "title": "items",
+          "items": {
+            "type": "object",
+            "required": [
+              "key",
+              "title",
+              "status"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "title": "key"
+              },
+              "title": {
+                "type": "string",
+                "title": "title"
+              },
+              "description": {
+                "type": "string",
+                "title": "description"
+              },
+              "status": {
+                "enum": [
+                  "done",
+                  "current",
+                  "failed",
+                  "todo"
+                ],
+                "title": "status"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "statusLabels": {
+          "type": "object",
+          "title": "statusLabels",
+          "required": [
+            "done",
+            "current",
+            "failed",
+            "todo"
+          ],
+          "properties": {
+            "done": {
+              "type": "string",
+              "title": "done"
+            },
+            "current": {
+              "type": "string",
+              "title": "current"
+            },
+            "failed": {
+              "type": "string",
+              "title": "failed"
+            },
+            "todo": {
+              "type": "string",
+              "title": "todo"
+            }
+          },
+          "additionalProperties": false,
+          "description": "每种状态读给辅助技术的文字，由宿主本地化。"
+        },
+        "orientation": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "default": "horizontal",
+          "title": "orientation"
+        }
+      },
+      "required": [
+        "label",
+        "items",
+        "statusLabels"
+      ],
+      "additionalProperties": false
+    },
+    "slots": [
+      "steps",
+      "steps-item",
+      "steps-marker",
+      "steps-connector"
+    ],
+    "events": [],
+    "a11y": {
+      "role": "list",
+      "keyboard": []
+    },
+    "tokens": [
+      "--yue-background",
+      "--yue-border",
+      "--yue-destructive",
+      "--yue-destructive-foreground",
+      "--yue-foreground",
+      "--yue-muted-foreground",
+      "--yue-primary",
+      "--yue-primary-foreground"
+    ],
+    "examples": [
+      {
+        "title": "Steps 基础示例",
+        "props": {
+          "label": "开通进度",
+          "statusLabels": {
+            "done": "已完成",
+            "current": "进行中",
+            "failed": "未通过",
+            "todo": "未开始"
+          },
+          "items": [
+            {
+              "key": "submit",
+              "title": "提交申请",
+              "description": "10-20 14:32",
+              "status": "done"
+            },
+            {
+              "key": "review",
+              "title": "平台审核",
+              "description": "进行中",
+              "status": "current"
+            },
+            {
+              "key": "provision",
+              "title": "开通企业",
+              "status": "todo"
             }
           ]
         }

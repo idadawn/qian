@@ -918,5 +918,19 @@
     "state": "Dark",
     "theme": "dark",
     "props": {}
+  },
+  {
+    "id": "Steps/Default",
+    "component": "Steps",
+    "state": "Default",
+    "theme": "light",
+    "props": {}
+  },
+  {
+    "id": "Steps/Dark",
+    "component": "Steps",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {}
   }
 ]

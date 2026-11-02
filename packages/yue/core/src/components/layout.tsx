@@ -27,8 +27,14 @@ export function CardDescription({ className, testId, ...props }: CardDescription
 export function CardContent({ className, testId, ...props }: CardProps) { return <div {...props} data-slot="card-content" data-testid={testId ?? 'yue-card-content'} className={cn('p-6 pt-0', className)} />; }
 export function CardFooter({ className, testId, ...props }: CardProps) { return <div {...props} data-slot="card-footer" data-testid={testId ?? 'yue-card-footer'} className={cn('flex items-center gap-2 p-6 pt-0', className)} />; }
 export interface DescriptionItem { key: string; label: ReactNode; children: ReactNode }
-export type DescriptionsProps = YueProps<ComponentProps<'dl'>> & { items: readonly DescriptionItem[] };
-export function Descriptions({ className, testId, items, ...props }: DescriptionsProps) {
+export type DescriptionsProps = YueProps<ComponentProps<'dl'>> & {
+  items: readonly DescriptionItem[];
+  /** inline：标签与值同行两列；stacked：小号标签在上、值在下，按可用宽度自动分栏。 @default 'inline' */
+  layout?: 'inline' | 'stacked';
+};
+export function Descriptions({ className, testId, items, layout = 'inline', ...props }: DescriptionsProps) {
   const prefix = useId();
+  if (layout === 'stacked') return <dl {...props} data-slot="descriptions" data-layout="stacked" data-testid={testId ?? 'yue-descriptions'} className={cn('m-0 grid grid-cols-[repeat(auto-fit,minmax(min(15rem,100%),1fr))] gap-x-6 gap-y-3 text-sm', className)}>
+    {items.map(item => <div key={item.key} className="flex min-w-0 flex-col"><dt id={`${prefix}-${item.key}`} className="text-xs leading-[18px] text-muted-foreground">{item.label}</dt><dd aria-labelledby={`${prefix}-${item.key}`} className="m-0 min-w-0 break-words">{item.children}</dd></div>)}</dl>;
   return <dl {...props} data-slot="descriptions" data-testid={testId ?? 'yue-descriptions'} className={cn('grid grid-cols-[max-content_1fr] gap-x-6 gap-y-3 text-sm', className)}>{items.map(item => <div key={item.key} className="contents"><dt id={`${prefix}-${item.key}`} className="text-muted-foreground">{item.label}</dt><dd aria-labelledby={`${prefix}-${item.key}`}>{item.children}</dd></div>)}</dl>;
 }

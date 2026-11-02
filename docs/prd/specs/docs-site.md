@@ -218,7 +218,7 @@ website/
     index.mdx                  首页
     start/                     1 开始（family.md 产品族地图；versions.md 由 build-versions.ts 生成，不进 Git）
     components/                2 组件目录（生成，勿手改；收集脚本输出）
-      yue/core/<name>.mdx       51 个 core 入口；yue/api/ 共享继承属性表
+      yue/core/<name>.mdx       52 个 core 入口；yue/api/ 共享继承属性表
       platform/<id>.mdx
     sdk/                       3 SDK
       kun/                     Kun 框架小节：sync-kun-docs.ts 按 KunVersion 镜像 kun 仓库 docs/（生成，勿手改）；with-qian.mdx 为唯一手写页

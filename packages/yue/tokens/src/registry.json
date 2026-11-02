@@ -385,6 +385,15 @@
       "contrast": "text"
     },
     {
+      "name": "--yue-canvas",
+      "kind": "color",
+      "light": "--yue-p-neutral-75",
+      "dark": "--yue-p-neutral-975",
+      "meaning": "应用画布背景：外壳主区与页面底色，卡片与表格浮在其上",
+      "contrastWith": "--yue-foreground",
+      "contrast": "text"
+    },
+    {
       "name": "--yue-card",
       "kind": "color",
       "light": "--yue-p-white",
@@ -542,7 +551,7 @@
     {
       "name": "--yue-sidebar",
       "kind": "color",
-      "light": "--yue-p-neutral-50",
+      "light": "--yue-p-white",
       "dark": "--yue-p-neutral-925",
       "meaning": "侧栏背景",
       "contrastWith": "--yue-sidebar-foreground",
@@ -810,6 +819,10 @@
     {
       "name": "--foreground",
       "target": "--yue-foreground"
+    },
+    {
+      "name": "--canvas",
+      "target": "--yue-canvas"
     },
     {
       "name": "--card",

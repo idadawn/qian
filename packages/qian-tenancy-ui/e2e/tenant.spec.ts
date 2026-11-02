@@ -234,7 +234,7 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   await expect.poll(() => lists.at(-1)).toEqual({ skip: '10', take: '10' });
   await expect(page.getByRole('row').filter({ hasText: 'zpage13' })).toBeVisible(); await expect(rowA).toHaveCount(0);
   await page.getByRole('combobox', { name: '每页条数', exact: true }).click();
-  await page.getByRole('option', { name: '20', exact: true }).click();
+  await page.getByRole('option', { name: '20 条/页', exact: true }).click();
   await expect.poll(() => lists.at(-1)).toEqual({ skip: '0', take: '20' });
   await expect(page.getByRole('row').filter({ hasText: 'zpage13' })).toBeVisible(); await expect(rowA).toBeVisible();
 

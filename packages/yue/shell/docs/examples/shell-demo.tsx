@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Button, Card } from '@idadawn/yue-core';
+import { Breadcrumb, Button, Card } from '@idadawn/yue-core';
 import { createI18n, createMockTransport, PlatformClient } from '@idadawn/yue-sdk';
 import { initializeTheme } from '@idadawn/yue-tokens';
-import { AppShell, Authentication, ColPage, FallbackPage, initPreferences, installShellLanguagePacks, LeftTree, OfflineBanner, Page, PageHeader, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, TenantSwitcher, UpdateBanner, usePreferences, type AuthProvider, type AuthSession, type FallbackStatus } from '@idadawn/yue-shell';
+import { AppShell, Authentication, ColPage, FallbackPage, InboxPopover, initPreferences, installShellLanguagePacks, LeftTree, OfflineBanner, Page, PageHeader, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, TenantSwitcher, UpdateBanner, usePreferences, type AuthProvider, type AuthSession, type FallbackStatus } from '@idadawn/yue-shell';
 
 interface DemoProps { kind?: string; status?: number | string; authenticated?: boolean; multiTenant?: boolean; callbackFailure?: boolean; managed?: boolean; offline?: boolean; invalid?: boolean; disabled?: boolean }
 type Post<Input, Output> = { post: { requestBody: { content: { 'application/json': Input } }; responses: { 200: { content: { 'application/json': Output } } } } };
@@ -82,8 +82,14 @@ function Demo({ initial }: { initial: DemoProps }) {
   if (fallback) return <main><FallbackPage status={fallback} i18n={i18n} onHome={() => setFallback(null)} onRetry={() => { setFallback(null); setPing('已重试'); }} /></main>;
   if (!session && initial.kind !== 'FallbackPage') return <main className="space-y-4 p-4"><Authentication provider={mock.provider} i18n={i18n} callback={callback} onAuthenticated={authenticate} onRedirect={url => location.assign(url)} onCallbackConsumed={clearCallback} /><p className="text-center text-sm text-muted-foreground">演示账号 demo，密码 demo-password。认证请求使用 SDK mock。</p></main>;
   if (!session) return <main><p role="status">{ping || '已返回工作台'}</p></main>;
-  return <><AppShell i18n={i18n} brand="Qian 工作台" className="min-h-96" menu={[{ id: 'home', labelKey: 'demo.home', type: 'page', target: '/workspace' }, { id: 'settings', labelKey: 'demo.settings', type: 'page', target: '/settings' }, { id: 'docs', labelKey: 'demo.docs', type: 'external', target: 'https://qian.dev/' }]} activePath={path} onNavigate={setPath} managed={initial.managed} userName={session.displayName} onSignOut={() => { mock.signOut(); setSession(null); }} toolbar={<><TenantSwitcher i18n={i18n} provider={mock.provider} session={session} onChanged={next => { setSession(next); setPing(''); }} /><PreferenceControls i18n={i18n} /></>}>
-    <Page header={<PageHeader title={path === '/settings' ? '应用设置' : '工作台'} description="同一外壳维护导航、租户上下文与页面布局。" />}>
+  const title = path === '/settings' ? '应用设置' : '工作台';
+  return <><AppShell i18n={i18n} brand="Qian 工作台" className="min-h-96" activePath={path} onNavigate={setPath} managed={initial.managed} userName={session.displayName} userDescription={session.tenants.find(tenant => tenant.id === session.tenantId)?.name} onSignOut={() => { mock.signOut(); setSession(null); }}
+    menu={[{ id: 'home', labelKey: 'demo.home', type: 'page', target: '/workspace', icon: 'home' }, { id: 'todo', labelKey: 'demo.todo', label: '待办', type: 'page', target: '/todo', icon: 'inbox', badge: 3 },
+      { id: 'settings', labelKey: 'demo.settings', type: 'page', target: '/settings', icon: 'settings', group: '应用' }, { id: 'docs', labelKey: 'demo.docs', type: 'external', target: 'https://qian.dev/', icon: 'fileText', group: '应用' }]}
+    workspace={<TenantSwitcher i18n={i18n} provider={mock.provider} session={session} onChanged={next => { setSession(next); setPing(''); }} className="[&_[data-slot=select-trigger]]:w-full" />}
+    breadcrumb={<Breadcrumb label="面包屑" items={[{ key: 'root', label: 'Qian 工作台', href: '#' }, { key: 'page', label: title }]} />}
+    toolbar={<><InboxPopover i18n={i18n} messages={[{ id: '1', title: '审批提醒', body: '有 1 条待办', time: '09:00', unread: true }]} /><PreferenceControls i18n={i18n} /></>}>
+    <Page header={<PageHeader title={title} description="同一外壳维护导航、租户上下文与页面布局。" />}>
       <OfflineBanner i18n={i18n} offline={initial.offline} />
       <UpdateBanner i18n={i18n} available={update} onReload={() => setUpdate(false)} />
       <ColPage aside={<LeftTree label="资源目录"><p className="font-medium">资源目录</p><p className="mt-2 text-sm text-muted-foreground">由消费方在此插入 data Tree。</p></LeftTree>}>

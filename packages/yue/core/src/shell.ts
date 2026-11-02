@@ -2,7 +2,7 @@
 export { cn } from './lib/cn';
 export { Alert, Badge, Spinner } from './components/feedback';
 export { Button, IconButton } from './components/button';
-export { Icon } from './components/icon';
-export { Menu, MenuContent, MenuItem, MenuTrigger } from './components/menu';
+export { Icon, isIconName, type IconName } from './components/icon';
+export { Menu, MenuContent, MenuItem, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from './components/menu';
 export { Select, SelectContent, SelectItem, SelectTrigger } from './components/select';
 export { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from './components/popover';

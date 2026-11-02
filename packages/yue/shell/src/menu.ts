@@ -1,7 +1,15 @@
 import { Registry, type RegistrationMeta } from '@idadawn/yue-sdk';
 
 /** `label` 是后端已本地化的显示文字（能力导航目录的页面标题），给出时优先于 `labelKey`。 */
-export interface ShellMenuItem { id: string; labelKey: string; label?: string; type: string; target: string; children?: readonly ShellMenuItem[] }
+export interface ShellMenuItem {
+  id: string; labelKey: string; label?: string; type: string; target: string; children?: readonly ShellMenuItem[];
+  /** yue 图标名（例如 `building`）；未登记的名称按缺省图标显示。 */
+  icon?: string;
+  /** 已本地化的分组标题；相邻同组的项归在同一个标题下。 */
+  group?: string;
+  /** 角标，例如待处理条数；只展示，不参与路由。 */
+  badge?: string | number;
+}
 export interface MenuDestination { href: string; external?: boolean }
 export type MenuTypeResolver = (item: ShellMenuItem) => MenuDestination;
 

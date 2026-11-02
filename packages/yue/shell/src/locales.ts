@@ -17,6 +17,7 @@ export const shellLanguagePacks: Record<Locale, LanguagePack> = {
     'shell.inbox': '站内信', 'shell.inboxEmpty': '暂无消息', 'shell.changePassword': '设置新密码', 'shell.changePasswordHelp': '首次登录或密码已被重置，请先设置新密码再继续。',
     'shell.newPassword': '新密码', 'shell.confirmPassword': '确认新密码', 'shell.passwordMismatch': '两次输入的密码不一致。', 'shell.changePasswordError': '新密码不符合策略或曾经使用过，请换一个。',
     'shell.platform': '平台身份', 'shell.switching': '正在切换租户',
+    'shell.locale.zh-CN': '简体中文', 'shell.locale.zh-TW': '繁體中文', 'shell.locale.en-US': 'English',
   },
   'zh-TW': {
     'shell.nav': '主要導覽', 'shell.skip': '跳到頁面內容', 'shell.collapse': '收起側欄', 'shell.expand': '展開側欄',
@@ -34,6 +35,7 @@ export const shellLanguagePacks: Record<Locale, LanguagePack> = {
     'shell.inbox': '站內信', 'shell.inboxEmpty': '暫無訊息', 'shell.changePassword': '設定新密碼', 'shell.changePasswordHelp': '首次登入或密碼已被重設，請先設定新密碼再繼續。',
     'shell.newPassword': '新密碼', 'shell.confirmPassword': '確認新密碼', 'shell.passwordMismatch': '兩次輸入的密碼不一致。', 'shell.changePasswordError': '新密碼不符合策略或曾經使用過，請換一個。',
     'shell.platform': '平台身分', 'shell.switching': '正在切換租戶',
+    'shell.locale.zh-CN': '简体中文', 'shell.locale.zh-TW': '繁體中文', 'shell.locale.en-US': 'English',
   },
   'en-US': {
     'shell.nav': 'Main navigation', 'shell.skip': 'Skip to page content', 'shell.collapse': 'Collapse sidebar', 'shell.expand': 'Expand sidebar',
@@ -51,6 +53,7 @@ export const shellLanguagePacks: Record<Locale, LanguagePack> = {
     'shell.inbox': 'Inbox', 'shell.inboxEmpty': 'No messages', 'shell.changePassword': 'Set a new password', 'shell.changePasswordHelp': 'This is your first sign-in or your password was reset. Set a new password to continue.',
     'shell.newPassword': 'New password', 'shell.confirmPassword': 'Confirm new password', 'shell.passwordMismatch': 'The two passwords do not match.', 'shell.changePasswordError': 'The new password violates the policy or was used before. Choose another one.',
     'shell.platform': 'Platform identity', 'shell.switching': 'Switching tenant',
+    'shell.locale.zh-CN': '简体中文', 'shell.locale.zh-TW': '繁體中文', 'shell.locale.en-US': 'English',
   },
 };
 

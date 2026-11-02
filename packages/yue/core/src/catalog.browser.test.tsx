@@ -155,3 +155,15 @@ describe('基础交互', () => {
     await vi.waitFor(() => expect(rejected).toHaveBeenCalledOnce());
   });
 });
+
+describe('Steps', () => {
+  it('当前步骤带 aria-current="step"，状态以文字读出，失败与完成用不同标记', () => {
+    render(<C.Steps label="开通进度" statusLabels={{ done: '已完成', current: '进行中', failed: '未通过', todo: '未开始' }} items={[
+      { key: 'a', title: '提交申请', status: 'done' }, { key: 'b', title: '平台审核', status: 'failed' }, { key: 'c', title: '开通企业', status: 'current' }, { key: 'd', title: '登录使用', status: 'todo' }]} />);
+    const list = screen.getByRole('list', { name: '开通进度' });
+    const items = [...list.querySelectorAll('li')];
+    expect(items.map(item => item.getAttribute('aria-current'))).toEqual([null, null, 'step', null]);
+    expect(items.map(item => item.textContent)).toEqual(['提交申请（已完成）', '平台审核（未通过）', '3开通企业（进行中）', '4登录使用（未开始）']);
+    expect(screen.getAllByTestId('yue-steps-connector')).toHaveLength(3);
+  });
+});

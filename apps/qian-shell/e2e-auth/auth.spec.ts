@@ -308,21 +308,21 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   // 9. 侧栏 / 主题 / 语言：顶栏控件切换即时生效（侧栏宽度、html[data-theme]、全部文案），偏好只落这三项非敏感值。
   await page.getByRole('button', { name: '收起侧栏' }).click();
   await expect(page.getByRole('button', { name: '展开侧栏' })).toBeVisible();
-  await page.getByRole('combobox', { name: '主题' }).click();
-  await page.getByRole('option', { name: '暗色' }).click();
+  await page.getByRole('button', { name: '主题' }).click();
+  await page.getByRole('menuitemradio', { name: '暗色' }).click();
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe('dark');
-  await page.getByRole('combobox', { name: '语言' }).click();
-  await page.getByRole('option', { name: 'en-US' }).click();
+  await page.getByRole('button', { name: '语言' }).click();
+  await page.getByRole('menuitemradio', { name: 'English' }).click();
   await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Workspace', exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.lang)).toBe('en-US');
-  await page.getByRole('combobox', { name: 'Language' }).click();
-  await page.getByRole('option', { name: 'zh-CN' }).click();
+  await page.getByRole('button', { name: 'Language' }).click();
+  await page.getByRole('menuitemradio', { name: '简体中文' }).click();
   await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.lang)).toBe('zh-CN');
   await page.getByRole('button', { name: '展开侧栏' }).click();
-  await page.getByRole('combobox', { name: '主题' }).click();
-  await page.getByRole('option', { name: '明亮' }).click();
+  await page.getByRole('button', { name: '主题' }).click();
+  await page.getByRole('menuitemradio', { name: '明亮' }).click();
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe('light');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('yue.preferences.qian-shell') ?? '{}') as unknown)).toEqual({ theme: 'light', locale: 'zh-CN', sidebarCollapsed: false });
   // 代码审查项的自动检查：期间所有同源 JSON 响应体都不含令牌；存储、URL、iframe 同样干净。
