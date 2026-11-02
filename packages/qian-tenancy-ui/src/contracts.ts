@@ -3,6 +3,7 @@ import type { FormSchema, UiNode } from '@idadawn/yue-contracts';
 import type { paths } from './api.generated';
 
 export type Tenant = NonNullable<paths['/api/tenancy/tenants']['get']['responses'][200]['content']['application/json']['items']>[number];
+export type TenantCounts = NonNullable<paths['/api/tenancy/tenants']['get']['responses'][200]['content']['application/json']['counts']>;
 export type StateMachine = paths['/api/tenancy/meta/state-machine']['get']['responses'][200]['content']['application/json'];
 export type Quota = paths['/api/tenancy/tenants/{id}/quota']['get']['responses'][200]['content']['application/json'];
 export type CreateRequest = paths['/api/tenancy/tenants']['post']['requestBody']['content']['application/json'];

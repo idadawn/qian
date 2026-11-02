@@ -71,6 +71,16 @@ test('真实官方租户 MF 制品按页面加载，同一 React / SDK 实例与
   expect(writes).toEqual(['/api/tenancy/admin-accounts:lookup']);
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   await expect(dialog).toHaveCount(0);
+  // 远程页面跟随外壳语言（S1-TEN-018）：切到 English 后标题、页签与按钮改用英文，切回简体中文后复原。
+  const remote = page.getByTestId('qian-tenancy-remote');
+  await page.getByRole('button', { name: '语言', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: 'English', exact: true }).click();
+  await expect(remote.getByRole('heading', { level: 1 })).toHaveText('Tenants');
+  await expect(remote.getByRole('tablist', { name: 'Tenant status' })).toBeVisible();
+  await expect(remote.getByRole('button', { name: 'New tenant', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Language', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: '简体中文', exact: true }).click();
+  await expect(remote.getByRole('heading', { level: 1 })).toHaveText('租户管理');
   await page.evaluate(() => window.__qianAcceptance.unload('qian.tenancy', 'tenant:11111111-1111-4111-8111-111111111111'));
   await expect(page.getByTestId('qian-tenancy-remote')).toHaveCount(0);
   await expect(page.getByRole('link', { name: '租户管理' })).toHaveCount(0);

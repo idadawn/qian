@@ -97,6 +97,10 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   const rowB = page.getByRole('row').filter({ hasText: '租户 B' });
   await expect(rowA.getByText('待激活', { exact: true })).toBeVisible();
   await expect(rowB).toBeVisible();
+  // 列表列（S1-TEN-018）：管理员姓名与用户用量来自身份组件的真实数据（各有开户管理员一人），上限取配额；没有截止时间即长期有效。
+  await expect(rowA).toContainText('管理员甲'); await expect(rowA).toContainText('1 / 20'); await expect(rowA).toContainText('长期有效');
+  await expect(rowB).toContainText('管理员乙'); await expect(rowB).toContainText('1 / 30');
+  await expect(rowA).toContainText(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
   const listed = await (await context.request.get(baseURL + '/api/tenancy/tenants')).json();
   expect(listed.total).toBe(2);
   const a = listed.items.find((item: { code: string }) => item.code === 'tenanta');
@@ -130,12 +134,18 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   await expect(rowA.getByText('已冻结', { exact: true })).toBeVisible();
   await rowA.getByRole('button', { name: '恢复', exact: true }).click();
   await expect(rowA.getByText('正常', { exact: true })).toBeVisible();
-  await page.getByRole('combobox', { name: '状态', exact: true }).click();
-  await page.getByRole('option', { name: '待激活', exact: true }).click();
+  // 状态页签：计数来自宿主按状态的统计（A 已恢复为正常，B 仍待激活）；切换页签以 status 交给宿主过滤。
+  const tab = (name: RegExp) => page.getByRole('tab', { name });
+  await expect(tab(/^全部/).getByTestId('yue-tabs-tab-count')).toHaveText('2');
+  await expect(tab(/^正常/).getByTestId('yue-tabs-tab-count')).toHaveText('1');
+  await expect(tab(/^待激活/).getByTestId('yue-tabs-tab-count')).toHaveText('1');
+  await expect(tab(/^已冻结/).getByTestId('yue-tabs-tab-count')).toHaveText('0');
+  await tab(/^待激活/).click();
   await expect.poll(() => lists.at(-1)).toEqual({ skip: '0', take: '10', status: 'pending' });
   await expect(rowA).toHaveCount(0); await expect(rowB).toBeVisible();
-  await page.getByRole('combobox', { name: '状态', exact: true }).click();
-  await page.getByRole('option', { name: '全部状态', exact: true }).click();
+  await expect(tab(/^待激活/)).toHaveAttribute('aria-selected', 'true');
+  await tab(/^全部/).click();
+  await expect.poll(() => lists.at(-1)).toEqual({ skip: '0', take: '10' });
   await expect(rowA).toBeVisible();
 
   // 第 3 步「服务端拒绝时显示结构化错误」：另一处先激活再冻结 B，页面仍按待激活给出「激活」，提交得到真实 409。
@@ -194,6 +204,9 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   await expect(dialog.getByText('1', { exact: true })).toBeVisible();
   const admin = dialog.getByTestId('tenant-admin-details');
   await expect(admin).toContainText('管理员甲'); await expect(admin).not.toContainText(phoneA);
+  await expect(dialog.getByTestId('tenant-detail')).toContainText('长期有效');
+  await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+  await page.screenshot({ path: resolve('../../TestResults/tenant-ui/tenant-detail.png') });
   // 验收 2 的页面部分：重置管理员密码要二次确认，取消时不发请求；确认后旧密码与原会话立即失效，临时密码登录必须先改密。
   const resets = () => calls.filter((item) => item.path.endsWith(':reset-password'));
   await admin.getByRole('button', { name: '重置密码', exact: true }).click();
