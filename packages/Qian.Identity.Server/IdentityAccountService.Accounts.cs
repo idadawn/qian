@@ -135,6 +135,15 @@ internal sealed partial class IdentityAccountService
         return id is null ? null : await LoadPersonAsync(session.Context, id.Value, cancellationToken).ConfigureAwait(false);
     }
 
+    // 登录索引即 Person 上的租户集合（建立成员时同事务追加，只增不减）；只读，不进入任何租户作用域。
+    public async ValueTask<IReadOnlyList<Guid>?> ListPersonTenantsAsync(Guid personId, CancellationToken cancellationToken = default)
+    {
+        using var neutral = TenantScope(null);
+        await using var session = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var tenants = await session.Context.Persons.AsNoTracking().Where(p => p.Id == personId).Select(p => p.TenantIds).SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        return Array.AsReadOnly((tenants ?? []).Select(raw => Guid.TryParseExact(raw, "D", out var tenant) ? tenant : Guid.Empty).Where(tenant => tenant != Guid.Empty).Distinct().ToArray());
+    }
+
     // ---- 标识绑定：软删除、占用冲突、绑定守卫 ----
 
     public async ValueTask<Person> BindIdentifierAsync(Guid personId, IdentifierInput identifier, CancellationToken cancellationToken = default)
