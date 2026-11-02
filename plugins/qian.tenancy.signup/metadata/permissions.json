@@ -1,0 +1,14 @@
+[
+  {
+    "resource": "application",
+    "actions": [
+      "read",
+      "approve",
+      "reject"
+    ],
+    "risk": {
+      "approve": "critical",
+      "reject": "high"
+    }
+  }
+]

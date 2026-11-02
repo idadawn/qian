@@ -1,0 +1,7 @@
+{
+  "$schema": "https://qian.dev/schemas/ui/v2",
+  "federation": { "manifest": "/remotes/qian.tenancy.signup/mf-manifest.json", "exposes": ["ApplicationsPage"] },
+  "engines": { "yue": "^0.1.0" },
+  "pages": [{ "route": "/tenant-applications", "expose": "ApplicationsPage", "permission": "qian.tenancy.signup:application:read", "nav": { "title": "开通申请", "icon": "inbox", "order": 20 } }],
+  "bridge": { "slots": ["qian.shell.nav/v1"], "navigate": ["/tenant-applications"], "notify": false, "capabilities": [] }
+}

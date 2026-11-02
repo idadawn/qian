@@ -224,7 +224,7 @@ public abstract partial class CustomerCommandTests
     }
 
     private protected static async Task<WebApplication> ManagementHost(RunningApp business, LifecyclePlatform platform, OperationsLog? logs = null, Func<IPluginContext>? context = null,
-        string? expectedIssuer = null, string? expectedAudience = null, Action<WebApplication>? configurePipeline = null)
+        string? expectedIssuer = null, string? expectedAudience = null, Action<WebApplication>? configurePipeline = null, IReadOnlyList<PermissionCatalog>? catalogs = null)
     {
         var loader = business.App.Services.GetRequiredService<CrmCommandRuntime>().Loader;
         var permissions = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy/metadata/permissions.json")));
@@ -235,7 +235,7 @@ public abstract partial class CustomerCommandTests
         await loader.UnmountAsync("authz", ScopeKey.Global, Ct); await loader.UnmountAsync("audit", ScopeKey.Global, Ct);
         await loader.MountAsync([
             new PluginDefinition(new PluginEntry("audit", "qian.audit", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { chain = new { platformRole = platform.AuditRole } })), new AuditPlugin(), [AuditDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.AuditKey]),
-            new PluginDefinition(new PluginEntry("authz", "qian.authz", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { platformRole = platform.AuthzRole })), new AuthzPlugin([CrmPermissions.Compile(), catalog, registryCatalog]), [AuthzDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.AuthorizationKey])], Ct);
+            new PluginDefinition(new PluginEntry("authz", "qian.authz", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { platformRole = platform.AuthzRole })), new AuthzPlugin([CrmPermissions.Compile(), catalog, registryCatalog, .. catalogs ?? []]), [AuthzDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.AuthorizationKey])], Ct);
         Assert.Equal(PluginState.Ready, loader.GetState("authz", ScopeKey.Global));
         await new PostgresPlatformRoleStore(business.App.Services.GetRequiredService<IDataService>(), business.App.Services.GetRequiredService<ITenantContext>(), platform.AuthzRole).AssignSuperadminAsync("root", "operator", Ct);
         var lifecycle = LifecyclePlatform.Lifecycle(business);

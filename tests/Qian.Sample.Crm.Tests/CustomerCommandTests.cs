@@ -286,7 +286,7 @@ public abstract partial class CustomerCommandTests
     private protected async Task<RunningApp> Start(bool concurrentWrites = false, bool capabilities = false, bool hooks = false, string? runtimeProfile = null, string? events = null,
         HumanOnlyProbe? humanOnlyProbe = null, IReadOnlyList<IExecutableCapability>? probes = null, object? capabilitiesConfig = null, string? pathBase = null,
         LifecyclePlatform? lifecycle = null, bool contractExclusion = false, bool identity = false, bool grpc = false, Action<WebApplication>? map = null, double decisionLogSampling = 0,
-        Action<WebApplicationBuilder>? configure = null, Uri? relyingParty = null)
+        Action<WebApplicationBuilder>? configure = null, Uri? relyingParty = null, Func<IServiceProvider, string>? schema = null)
     {
         if (grpc && identity) throw new ArgumentException("gRPC 验收宿主不挂身份组件：身份签发者占用固定监听地址，h2c 需要独占端点。", nameof(grpc));
         if (lifecycle is not null) await PreparePlatformLogins(lifecycle);
@@ -367,6 +367,8 @@ public abstract partial class CustomerCommandTests
                     // 能力上下文随包提供迁移，下面经迁移器建表，不用 GenerateCreateScript。
                     if (platform) sql += scope.ServiceProvider.GetRequiredService<Qian.Registry.RegistryDbContext>().Database.GenerateCreateScript();
                     if (identity) sql += IdentitySchemaSql(scope.ServiceProvider);
+                    // 用例自己登记的上下文（如开通申请组件，S1-TEN-019）：建表脚本自带清理与授权，在宿主启动校验迁移之前执行。
+                    if (schema is not null) sql += schema(scope.ServiceProvider);
                     await Admin(sql);
                     if (platform) await Admin("GRANT USAGE ON SCHEMA plugin_qian_registry TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_registry TO qian_app;");
                     await Admin($"GRANT USAGE ON SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_sample_crm TO \"{role}\"; GRANT USAGE ON SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA plugin_qian_authz, plugin_qian_tenancy, plugin_qian_audit TO qian_app;");

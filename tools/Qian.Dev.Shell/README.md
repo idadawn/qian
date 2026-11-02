@@ -12,6 +12,7 @@
 - **种子**：按 [seed/accounts.json](seed/accounts.json) 建自然人（用户名 + 初始密码，不要求首登改密），经真实开通编排建租户（第 05 步经身份的成员开户端口建管理员成员，第 07 步授予 tenant.owner），随后激活并挂载参考应用；其余成员与 tenant.user 授权由种子直接补齐。缺省：`demo` 是甲方科技（acme）的管理员、乙方贸易（beta）与丙方物流（gamma）的普通成员，`second` 是乙方管理员，`third` 是丙方管理员，`operator` 是平台身份。丙方开通后不挂参考应用（`mountReference: false`）：这是 S1-YUE-002 验收 2 的「未挂载」形态，外壳在那里既不登记也不请求参考应用的远程制品。
 - **平台表面宿主**（随机回环端口）：参考宿主 `PlatformSurfaceHost`（[samples/Qian.Sample.Crm](../../samples/Qian.Sample.Crm/README.md)），复用同一运行时，只认网关 S2S（受众 `qian-platform`），接受用户主体并按令牌 `tenant_id` 进入租户 scope，提供能力目录 / 导航 / 外壳目录（`/api/capabilities/**`，含 `GET /api/capabilities/shell`）、能力执行入口与有效权限（`/api/authz/**`）。授权 PEP 按生产模式装配：处理器内判定的端点也比对身份修订下限，旧修订 401 `UNAUTHENTICATED`。参考应用的命令宿主只认机器身份（service / agent），用户主体的这些表面因此由平台表面宿主提供，与网关 S2S 的受众分簇一致；平台表面宿主验证过的主体同时交给参考应用的身份适配器，经执行入口调用的能力以调用者本人执行（S1-YUE-015）。生产里的平台表面宿主归 S1-DEP-009。
 - **网关 BFF**（缺省 `https://localhost:5443`，自签名证书）：同一份 Identity.Client / Qian.Gateway 生产入口——`/auth/login` 发起 code + PKCE（外壳客户端另申请参考应用能力声明的 scope `crm.read` / `crm.write`）、服务端换码、`qian.sid` HttpOnly Cookie、refresh 单飞；bootstrap 聚合端点 `GET /api/shell/bootstrap`；`/api/**` 经会话换 60 秒 S2S 按前缀分簇转发（能力 / 授权表面 → 平台表面宿主，其余 → 业务宿主）；产品扩展 `UseQianShell` / `MapQianShell` 静态托管外壳 [apps/qian-shell](../../apps/qian-shell/README.md) 的 `dist/host`、参考应用远程制品（`/remotes/qian.sample.crm/**`，取自 `samples/qian-sample-crm-ui/dist/remote`）与 `/app-config.json`（取自状态目录，K8s ConfigMap 的本机替身）。浏览器只持有 Cookie，不接触任何令牌。
+- **租户自助开通**（[S1-TEN-019](../../pm/tasks/S1-TEN-019.md)，组件 [qian.tenancy.signup](../../plugins/qian.tenancy.signup/README.md)）：与身份同宿主（identity profile 的形状）。申请人接口 `/api/signup/verifications`、`/api/signup/session`、`/api/signup/code-availability`、`/api/signup/me/**` 走身份的公开分支，不经业务的租户入口管线，分支里自带 ErrorDetail 映射；申请人只凭核验手机号后得到的 `qian.signup` 会话 Cookie（HttpOnly、SameSite=Strict、Path=/api/signup），写请求只收 `application/json` 且要同源。公开页 `/signup` 只在有构建产物时托管（S1-TEN-020 交付前没有，见下文 `QIAN_DEV_SIGNUP_UI_DIST`）。发件端口由开发期发件箱提供：只以开发环境声明、只在回环宿主上登记，验证码与审核结果只留在宿主进程内存里，读取路由见下文「开发路由」。运营接口（`/api/signup/applications/**`）随平台控制台（S1-YUE-018）交付，本环境暂不暴露；运营侧行为由集成测试 `TenantSignupTests` 覆盖。
 
 身份修订下限走真实 PEP：平台表面宿主的 `IdentityRevisionGuard` 见到已验证的更高修订就抬高下限（懒抬高），之后低于下限的令牌一律 401 `UNAUTHENTICATED`。开发路由只负责「让 PEP 见到更高修订」：`/__dev/identity/bump` 先经真实身份端口递增修订，`/__dev/identity/stale` 不递增；两者都由网关用自己的 S2S 签发器为当前主体签一枚只改了修订的令牌，调一次平台表面的 `GET /api/authz/me/permissions`。修订递增、refresh 换到带新修订的令牌、S2S 转发修订与下限比对都是真实链路；S1-YUE-012 起不再有开发宿主代做的下限表。
 
@@ -59,12 +60,24 @@ scripts/dev-shell.sh e2e
 | POST | `/__dev/identity/bump` | 经真实身份端口递增当前成员的 `identity_revision`（授权变更后身份侧就是这样做的，S1-DEC-027），再让平台表面的 PEP 见到新修订、把下限抬上去：下一批请求带着旧修订 401 → SDK 合并成一次 `POST /auth/session/refresh` → 依赖方换到带新修订的令牌 → 重放 200 → 外壳重拉 bootstrap 并刷新会话快照。平台身份没有成员修订，409。响应 `{ "identityRevision": 新修订 }` |
 | POST | `/__dev/identity/stale` | 只把平台表面的下限抬到当前令牌修订 + 1，不递增身份修订：依赖方刷新仍成功，换到的令牌修订不变，平台表面持续 401（模拟下限高于身份侧已签发修订）→ SDK 只刷新一次、重放仍 401 → 只弹一个过期对话框，外壳之后不再发起新一轮（会话结束对外壳是粘性的，只有整页重新登录才复位）。平台身份 409。响应 `{ "identityRevision": 当前修订, "floor": 下限 }` |
 
+开通申请的开发期发件箱在身份 / 业务宿主上（不经网关），产品契约里同样没有：
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| GET | `/__dev/signup/outbox?phone=<手机号>` | 该号码最近的验证码与审核结果通知（各最多 20 条，新的在前，按消息 Id 去重，`no-store`）；手机号按发码时的规则归一（`139…` 与 `+86139…` 是同一个号） |
+
+申请人在核验之前没有会话，这条路由无法沿用网关的「已认证 + 防伪」，改为三条同时满足：连接两端都是回环地址且请求的 Host 是回环名；请求头 `X-Qian-Dev-Token` 等于状态目录里 `signup-outbox.token` 的内容（每次启动随机生成，仅本人可读，常量时间比较）——自定义请求头跨源发不出来，令牌文件只有本人读得到，强度不低于会话 Cookie 加防伪令牌；任一条不满足一律 404，不暴露路由是否存在。E2E 与手测都这样取码：
+
+```bash
+curl --noproxy '*' -s -H "X-Qian-Dev-Token: $(cat .qian-dev/shell/signup-outbox.token)" 'http://127.0.0.1:5090/__dev/signup/outbox?phone=13900000000'
+```
+
 ## up 做了什么
 
 1. 起 Redis 容器 `qian-dev-shell-redis`（`redis:7-alpine`，仅绑定回环地址），供真实网关共享限流；起容器 `qian-dev-shell-pg`（`postgres:16-alpine`），只绑 `127.0.0.1`；管理员口令随机生成，存在 `.qian-dev/shell/pg-admin-password`，仅本人可读。重建容器 `qian-dev-shell-dex`（`ghcr.io/dexidp/dex:v2.41.1`，只绑 `127.0.0.1`）：客户端密钥随机生成到 `dex-client-secret`，配置由种子文件渲染到 `dex.yaml` 并经 `docker cp` 放进容器，不挂载宿主目录。
 2. 构建 `packages/qian-identity-ui`、`samples/qian-sample-crm-ui` 与 `apps/qian-shell`（`QIAN_DEV_SHELL_SKIP_UI_BUILD=1` 跳过），构建本工程。
-3. 重建开发库 `qian_dev` 与受限角色（同 Qian.Dev.TenantOps），用生产同一套迁移建身份库并授权给应用登录；Capabilities / Lifecycle 由迁移属主执行包内迁移。
-4. 启动身份 / 业务宿主，装平台插件树与参考应用制品，挂载身份组件与指向 Dex 的通用 OIDC 连接器，引导平台超管并经 Lifecycle 安装、激活全部 system 组件，按种子建账号与租户（丙方不挂参考应用）。
+3. 重建开发库 `qian_dev` 与受限角色（同 Qian.Dev.TenantOps），用生产同一套迁移建身份库与开通申请库（`plugin_qian_tenancy_signup`）并授权给应用登录；Capabilities / Lifecycle 由迁移属主执行包内迁移。
+4. 启动身份 / 业务宿主，装平台插件树与参考应用制品，挂载身份组件与指向 Dex 的通用 OIDC 连接器，引导平台超管并经 Lifecycle 安装、激活全部 system 组件（平台权限目录含开通申请的运营权限点），再挂开发期发件箱与 `qian.tenancy.signup`（发件箱令牌写进状态目录的 `signup-outbox.token`），按种子建账号与租户（丙方不挂参考应用）。
 5. 启动平台表面宿主；生成网关材料（S2S 签名钥、外壳客户端密钥、TLS 证书，都在 `.qian-dev/shell/gateway/`，仅本人可读），首次启动写缺省 `app-config.json`，再启动网关 BFF。
 
 每次 `up` 都从空库开始，数据不跨次保留；会话存储是进程内的，重启后要重新登录。
@@ -84,8 +97,9 @@ scripts/dev-shell.sh e2e
 | `QIAN_DEV_DEX_PORT` | `55556` | Dex 映射到本机的端口（issuer `http://127.0.0.1:<端口>/dex`） |
 | `QIAN_DEV_DEX_CONTAINER` | `qian-dev-shell-dex` | Dex 容器名 |
 | `QIAN_DEV_DEX_IMAGE` | `ghcr.io/dexidp/dex:v2.41.1`，未设时沿用 `QIAN_TEST_IMAGE_DEX` | Dex 镜像 |
-| `QIAN_DEV_STATE` | `.qian-dev/shell` | 本机状态目录（口令、网关密钥、Dex 客户端密钥与配置、`app-config.json`） |
+| `QIAN_DEV_STATE` | `.qian-dev/shell` | 本机状态目录（口令、网关密钥、Dex 客户端密钥与配置、`app-config.json`、开发期发件箱令牌 `signup-outbox.token`） |
 | `QIAN_DEV_SHELL_SKIP_UI_BUILD` | 未设 | 设为 `1` 时 `up` 不重复构建前端制品 |
+| `QIAN_DEV_SIGNUP_UI_DIST` | `packages/qian-tenancy-signup-ui/dist/public` | 开通申请公开页的构建产物目录（含 `index.html`）；不存在时不托管 `/signup`，申请人接口照常 |
 | `QIAN_OASDIFF_PATH` | 未设 | 设了就接入契约检查器（只在组件升级准入时调用） |
 
 ## 常见问题
@@ -96,4 +110,5 @@ scripts/dev-shell.sh e2e
 - **「客户」页显示列表加载失败**：用户主体经外壳以本人执行 customer.list（S1-YUE-015）。先看浏览器里那次 `POST /api/capabilities/qian.sample.crm/customer.list/invoke` 的状态与问题码：404 `NOT_FOUND` 是能力对该主体不可见（缺权限点、缺 scope 或组件未挂载），决策在审计链里查；403 `AUTHZ_DENIED` 是命令管道或命令 PEP 判拒（身份适配器没拿到平台表面交来的快照、角色在可见性判定后变化；框架当前主体端口被匿名兜底占住时宿主在启动时就已失败，见 Qian.Plugin.Sdk），管道层的判拒不写终端日志，看审计链的决策记录与宿主异常日志；其余看宿主日志。
 - **连接器按钮不见了 / SSO 发起失败**：`scripts/dev-shell.sh status` 看 Dex 容器是否在跑；连接器按钮要先填租户代码才能发起（绑定键是 租户 × 连接器 × 上游主体）。
 - **改了 `app-config.json` 没生效**：确认改的是 `QIAN_DEV_STATE` 指向的那个文件，再刷新；响应是 `no-store`，不会被缓存。内容不合法时外壳只显示配置错误页。
+- **开发期发件箱一直 404**：确认请求发到身份 / 业务宿主（不是网关）的回环地址、带了 `X-Qian-Dev-Token`，且令牌取自本次启动的状态目录（每次 `up` 都会换）。
 - **端口被占用**：设 `QIAN_DEV_SHELL_API_URL` / `QIAN_DEV_SHELL_URL` / `QIAN_DEV_PG_PORT`；各个子命令要用同一组变量。

@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "trialDays": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3650,
+      "default": 30,
+      "description": "试用开通的缺省天数：到期日缺省为审核当时加这么多天。"
+    },
+    "defaultUsers": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "default": 20,
+      "description": "缺省用户配额，含租户管理员、不含平台超管。"
+    },
+    "code": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "申请人可用的租户号：小写字母或数字，长度与保留字。",
+      "properties": {
+        "minLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64,
+          "default": 3
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64,
+          "default": 32
+        },
+        "reserved": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 1000,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]{1,64}$"
+          },
+          "default": [
+            "admin",
+            "api",
+            "app",
+            "assets",
+            "console",
+            "default",
+            "help",
+            "internal",
+            "login",
+            "mail",
+            "platform",
+            "portal",
+            "public",
+            "qian",
+            "root",
+            "signup",
+            "static",
+            "support",
+            "system",
+            "test",
+            "www"
+          ]
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "短信验证码：位数、有效期、错误上限、重发间隔与限流。",
+      "properties": {
+        "length": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 8,
+          "default": 6
+        },
+        "lifetimeSeconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600,
+          "default": 300
+        },
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 5
+        },
+        "resendSeconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 3600,
+          "default": 60
+        },
+        "perPhonePerHour": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 5
+        },
+        "perSourcePerHour": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "default": 20
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "申请人会话（只属于本组件，不是登录会话）。",
+      "properties": {
+        "lifetimeMinutes": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 1440,
+          "default": 30
+        }
+      }
+    },
+    "codeAvailability": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "租户号可用性查询按来源地址限流。",
+      "properties": {
+        "perSourcePerMinute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "default": 30
+        }
+      }
+    },
+    "defaultCountryCode": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,2}$",
+      "default": "86",
+      "description": "手机号不带国家码时补的国家码，与身份服务相同。"
+    }
+  }
+}

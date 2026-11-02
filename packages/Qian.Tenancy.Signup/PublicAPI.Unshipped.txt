@@ -1,0 +1,23 @@
+#nullable enable
+const Qian.Tenancy.Signup.TenancySignupDbContext.Schema = "plugin_qian_tenancy_signup" -> string!
+const Qian.Tenancy.Signup.TenancySignupEndpoints.CookieName = "qian.signup" -> string!
+const Qian.Tenancy.Signup.TenancySignupEndpoints.CookiePath = "/api/signup" -> string!
+const Qian.Tenancy.Signup.TenancySignupPagesHosting.PagesPath = "/signup" -> string!
+Qian.Tenancy.Signup.TenancySignupComponent
+Qian.Tenancy.Signup.TenancySignupComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.Signup.TenancySignupComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Tenancy.Signup.TenancySignupComponent.TenancySignupComponent() -> void
+Qian.Tenancy.Signup.TenancySignupDbContext
+Qian.Tenancy.Signup.TenancySignupDbContext.TenancySignupDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Qian.Tenancy.Signup.TenancySignupDbContext!>! options, Kun.Core.MultiTenancy.ITenantContext! tenant) -> void
+Qian.Tenancy.Signup.TenancySignupEndpoints
+Qian.Tenancy.Signup.TenancySignupPagesHosting
+Qian.Tenancy.Signup.TenancySignupPlugin
+Qian.Tenancy.Signup.TenancySignupPlugin.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.Signup.TenancySignupPlugin.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+Qian.Tenancy.Signup.TenancySignupPlugin.TenancySignupPlugin() -> void
+static Qian.Tenancy.Signup.TenancySignupComponent.OptionalInject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+static Qian.Tenancy.Signup.TenancySignupEndpoints.IsApplicantPath(Microsoft.AspNetCore.Http.PathString path) -> bool
+static Qian.Tenancy.Signup.TenancySignupEndpoints.MapQianTenancySignupApplicant(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Tenancy.Signup.TenancySignupEndpoints.MapQianTenancySignupOperations(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, Qian.Runtime.IPluginContext!>! source) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Qian.Tenancy.Signup.TenancySignupPagesHosting.UseQianTenancySignupPages(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app, string! root) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+static Qian.Tenancy.Signup.TenancySignupPlugin.OptionalInject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!

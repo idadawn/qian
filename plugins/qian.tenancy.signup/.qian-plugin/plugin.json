@@ -1,0 +1,69 @@
+{
+  "$schema": "https://qian.dev/schemas/plugin/v2",
+  "id": "qian.tenancy.signup",
+  "version": "1.0.0",
+  "description": "租户自助开通：公开的注册申请与申请进度、平台运营审核，通过后经开通编排建立租户与管理员成员；装入即开放公开申请接口，不装即不提供自助开通。",
+  "author": {
+    "name": "Qian"
+  },
+  "license": "Apache-2.0",
+  "interface": {
+    "displayName": "tenancy.signup",
+    "category": "platform"
+  },
+  "inject": [
+    "Data",
+    "IdentityAccounts",
+    "Tenancy",
+    "TenancyLifecycle",
+    "TenancyOperations",
+    "TenancyProvisioning"
+  ],
+  "optionalInject": [
+    "AuthzSuperadminBypass",
+    "TenancySignupMessenger"
+  ],
+  "provides": [
+    "TenancySignup"
+  ],
+  "policy": {
+    "tier": "system",
+    "sandbox": "none",
+    "authentication": "ON_INSTALL",
+    "required": false
+  },
+  "scopes": [
+    "global"
+  ],
+  "x-skeleton": true,
+  "surfaces": {
+    "ui": "./ui/manifest.json"
+  },
+  "runtime": {
+    "form": "module",
+    "entry": "Qian.Tenancy.Signup.TenancySignupComponent, Qian.Tenancy.Signup",
+    "configSchema": "./schemas/config.schema.json"
+  },
+  "x-qian-generated": {
+    "$generated": true,
+    "fields": [
+      "/inject",
+      "/provides",
+      "/runtime/form",
+      "/runtime/entry",
+      "/runtime/configSchema"
+    ],
+    "tools": [],
+    "metadata": {
+      "schemas/config.schema.json": {
+        "$generated": true,
+        "component": "qian.tenancy.signup",
+        "source": "Qian.Tenancy.Signup.TenancySignupComponent, Qian.Tenancy.Signup",
+        "sha256": "c632dd449ff18c9d327f51d0b5eddcd00dd6b3d53f1e237907070a58dfc8e5ac",
+        "fields": [
+          ""
+        ]
+      }
+    }
+  }
+}

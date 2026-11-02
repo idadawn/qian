@@ -27,7 +27,9 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
         IReadOnlyList<PluginDefinition> providers = [
             Define("data", "qian.data", new DataPlugin(), [DataDefinition.Key]),
             Define("events", "qian.events", new EventsPlugin(), [EventsDefinition.Key]),
-            Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey], TenancyConfiguration(services.GetRequiredService<IConfiguration>())),
+            // 声明 Tenancy 的全部输出（与 TenancyComponent 的 Provides 一致）：依赖开通编排、状态机或运营端口的组件（如 qian.tenancy.signup）挂进同一棵树时按声明校验依赖。
+            Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, TenantSettings.Key, TenantSettings.OperationsKey, TenantSettings.QuotaKey, TenantLifecycle.Key,
+                TenantOperations.Key, TenantAdministration.Key, TenantProvisioning.Key, CommandPolicies.TenancyKey], TenancyConfiguration(services.GetRequiredService<IConfiguration>())),
             // 完整 Authz Provider：持久化并登记本应用 metadata 编译出的权限目录、注册命令 PEP、提供 ctx.Authz，并监听 tenant/provisioned 实例化默认角色。
             // 与分发入口使用同一组服务输出；这个程序化适配器额外接受本应用的权限目录。
             Define("authz", "qian.authz", new AuthzPlugin([catalog]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key, AuthzDefinition.PermissionsKey, AuthzDefinition.ResourceTypesKey, AuthzDefinition.SuperadminBypassKey, AuthzEnforcement.Key, TenantRoleGrant.Key], AuthzConfiguration(services.GetRequiredService<IConfiguration>())),
