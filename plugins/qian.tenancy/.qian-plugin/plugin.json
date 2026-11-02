@@ -17,6 +17,7 @@
   "provides": [
     "CommandTenancy",
     "Tenancy",
+    "TenancyAdministration",
     "TenancyLifecycle",
     "TenancyOperations",
     "TenancyProvisioning",

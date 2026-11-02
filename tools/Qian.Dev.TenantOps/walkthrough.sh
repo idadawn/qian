@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # 租户运营手测脚本（S1-QA-012）。先在另一个终端运行 scripts/dev-tenant-ops.sh up，再运行 scripts/dev-tenant-ops.sh walkthrough。
 #
-# 顺序：建租户 → 开通步骤 → 激活 → 写设置 / 读配额 → 冻结 / 恢复 → 扫描到期，最后是权限反例。
-# 覆盖运营契约 plugins/qian.tenancy/contracts/http-v1.openapi.json 的 8 个路径、11 个操作；
+# 顺序：建租户 → 开通步骤 → 激活 → 写设置 / 读配额 → 管理员维护 → 冻结 / 恢复 → 扫描到期，最后是权限反例。
+# 覆盖运营契约 plugins/qian.tenancy/contracts/http-v1.openapi.json 的 12 个路径、16 个操作；
 # 「开通步骤」「扫描到期」没有产品端点，调用的是本机手测宿主的 /__dev/ 开发路由（见 README.md）。
 # 每步先打印等价的 curl 命令（令牌写成 $TOKEN），再打印响应并核对状态码与关键字段。
 # 交互终端里每步前暂停；加 --yes 或在非交互环境里一口气跑完。任一检查不符时退出码为 1。
@@ -84,16 +84,23 @@ printf '想自己重放下面的 curl：export TOKEN=$(scripts/dev-tenant-ops.sh
 
 section "1 建租户"
 call "1.1 列表（GET /api/tenancy/tenants）" GET "/api/tenancy/tenants?skip=0&take=50" 200
-call "1.2 新建（POST /api/tenancy/tenants）：开通编排同步执行，返回 pending" POST /api/tenancy/tenants 201 \
-  "{\"code\":\"$CODE\",\"name\":\"Acme 手测租户\",\"administrator\":{\"membershipId\":\"$(uuid)\",\"subjectId\":\"owner-$CODE\"},\"quotas\":{\"users\":5}}"
+call "1.2 新建管理员账号（POST /api/tenancy/admin-accounts）：经身份组件建自然人，初始密码首次登录必须修改" POST /api/tenancy/admin-accounts 201 \
+  "{\"displayName\":\"Acme 管理员\",\"identifierKind\":\"username\",\"identifier\":\"admin$CODE\",\"initialPassword\":\"Init-Pass-2026\"}"
+SUBJECT="$(field subjectId)"
+[ -n "$SUBJECT" ] || stop "新建管理员账号没有成功，开户依赖它，走查到此停止。"
+call "1.3 按登录标识查找账号（POST /api/tenancy/admin-accounts:lookup）：标识放请求体，响应只有掩码" POST /api/tenancy/admin-accounts:lookup 200 \
+  "{\"identifier\":\"admin$CODE\"}"
+check "找到的账号" "$(field subjectId)" "$SUBJECT"
+call "1.4 新建（POST /api/tenancy/tenants）：开通编排同步执行，返回 pending" POST /api/tenancy/tenants 201 \
+  "{\"code\":\"$CODE\",\"name\":\"Acme 手测租户\",\"administrator\":{\"membershipId\":\"$(uuid)\",\"subjectId\":\"$SUBJECT\"},\"quotas\":{\"users\":5}}"
 TENANT="$(field id)"
 [ -n "$TENANT" ] || stop "新建租户没有成功，后面的步骤都依赖它，走查到此停止。"
 check "新租户状态" "$(field status)" pending
-call "1.3 详情（GET /api/tenancy/tenants/{id}）" GET "/api/tenancy/tenants/$TENANT" 200
+call "1.5 详情（GET /api/tenancy/tenants/{id}）" GET "/api/tenancy/tenants/$TENANT" 200
 REVISION="$(field revision)"; REVISION="${REVISION:-0}"
-call "1.4 改名（PUT /api/tenancy/tenants/{id}）：带当前修订号" PUT "/api/tenancy/tenants/$TENANT" 200 \
+call "1.6 改名（PUT /api/tenancy/tenants/{id}）：带当前修订号" PUT "/api/tenancy/tenants/$TENANT" 200 \
   "{\"name\":\"Acme 手测租户（改名）\",\"expectedRevision\":$REVISION,\"quotas\":{\"users\":5}}"
-call "1.5 反例：拿旧修订号再改一次，并发保护返回 409" PUT "/api/tenancy/tenants/$TENANT" 409 \
+call "1.7 反例：拿旧修订号再改一次，并发保护返回 409" PUT "/api/tenancy/tenants/$TENANT" 409 \
   "{\"name\":\"过期的编辑\",\"expectedRevision\":$REVISION,\"quotas\":{\"users\":5}}"
 check "错误码" "$(field code)" CONFLICT
 
@@ -123,35 +130,55 @@ call "4.3 写租户设置（PUT …/settings/qian.audit）" PUT "/api/tenancy/te
   "{\"config\":{\"chain\":{\"store\":\"pg\"}},\"expectedRevision\":$SETTINGS_REVISION}"
 call "4.4 再读一次设置，确认已生效" GET "/api/tenancy/tenants/$TENANT/settings/qian.audit" 200
 check "chain.store" "$(field config.chain.store)" pg
-call "4.5 读配额（GET …/quota）：Identity 未接入，已用人数如实为 null" GET "/api/tenancy/tenants/$TENANT/quota" 200
+call "4.5 读配额（GET …/quota）：已用人数来自身份组件的真实成员数，管理员计入" GET "/api/tenancy/tenants/$TENANT/quota" 200
 check "用户上限" "$(field limits.users)" 5
-check "用量可得" "$(field usageAvailable)" False
+check "用量可得" "$(field usageAvailable)" True
+check "已用人数" "$(field usersUsed)" 1
 
-section "5 冻结 / 恢复"
-call "5.1 冻结（POST …:suspend）" POST "/api/tenancy/tenants/$TENANT:suspend" 200
+section "5 管理员维护"
+call "5.1 当前管理员（GET …/admins）：成员指针加掩码标识" GET "/api/tenancy/tenants/$TENANT/admins" 200
+check "管理员账号" "$(field items.0.subjectId)" "$SUBJECT"
+MEMBER="$(field items.0.membershipId)"
+call "5.2 重置管理员密码（POST …/admins/{membershipId}:reset-password）：旧密码与会话立即失效，下次登录强制改密" \
+  POST "/api/tenancy/tenants/$TENANT/admins/$MEMBER:reset-password" 204 "{\"newPassword\":\"Reset-Pass-2026\"}"
+call "5.3 再建一个账号，准备替换管理员" POST /api/tenancy/admin-accounts 201 \
+  "{\"displayName\":\"Acme 新管理员\",\"identifierKind\":\"username\",\"identifier\":\"deputy$CODE\",\"initialPassword\":\"Init-Pass-2026\"}"
+DEPUTY="$(field subjectId)"
+call "5.4 更换管理员（PUT …/admins）：新管理员得到 tenant.owner，原管理员撤销 owner 与管理员标志、保留成员身份" PUT "/api/tenancy/tenants/$TENANT/admins" 200 \
+  "{\"items\":[{\"subjectId\":\"$DEPUTY\"}]}"
+check "新管理员" "$(field items.0.subjectId)" "$DEPUTY"
+call "5.5 反例：请求体带目标租户字段，返回 400（目标租户只取自路径）" PUT "/api/tenancy/tenants/$TENANT/admins" 400 \
+  "{\"items\":[{\"subjectId\":\"$DEPUTY\"}],\"tenantId\":\"$TENANT\"}"
+call "5.6 反例：重置的已不是当前管理员，返回 404" POST "/api/tenancy/tenants/$TENANT/admins/$MEMBER:reset-password" 404 "{\"newPassword\":\"Reset-Pass-2026\"}"
+check "错误码" "$(field code)" NOT_FOUND
+
+section "6 冻结 / 恢复"
+call "6.1 冻结（POST …:suspend）" POST "/api/tenancy/tenants/$TENANT:suspend" 200
 check "状态" "$(field status)" suspended
-call "5.2 恢复（POST …:resume）：回到冻结前的状态" POST "/api/tenancy/tenants/$TENANT:resume" 200
+call "6.2 恢复（POST …:resume）：回到冻结前的状态" POST "/api/tenancy/tenants/$TENANT:resume" 200
 check "状态" "$(field status)" active
 
-section "6 扫描到期（开发路由，代调度器触发）"
+section "7 扫描到期（开发路由，代调度器触发）"
 WAIT="$(seconds_until "$VALID_UNTIL")"
 if [ "$WAIT" -gt 0 ]; then printf '\n等待 %s 秒，让有效期（%s）过去 ...\n' "$WAIT" "$VALID_UNTIL"; sleep "$((WAIT + 1))"; fi
-call "6.1 扫描到期（POST /__dev/tenancy/scan-expired）" POST /__dev/tenancy/scan-expired 200
+call "7.1 扫描到期（POST /__dev/tenancy/scan-expired）" POST /__dev/tenancy/scan-expired 200
 # 同一次 up 里中断过的旧租户也会在这次扫描中到期，所以只要求至少一个。
 EXPIRED="$(field expired)"
 check "本次进入宽限的租户数 ≥ 1" "$([ "${EXPIRED:-0}" -ge 1 ] 2>/dev/null && echo 是 || echo 否)" 是
-call "6.2 详情：到期租户进入宽限" GET "/api/tenancy/tenants/$TENANT" 200
+call "7.2 详情：到期租户进入宽限" GET "/api/tenancy/tenants/$TENANT" 200
 check "状态" "$(field status)" grace
-call "6.3 反例：宽限中的租户不能再激活，返回 409" POST "/api/tenancy/tenants/$TENANT:activate" 409 \
+call "7.3 反例：宽限中的租户不能再激活，返回 409" POST "/api/tenancy/tenants/$TENANT:activate" 409 \
   "{\"trial\":false,\"validUntil\":\"$(now_plus 86400)\"}"
 check "错误码" "$(field code)" TENANCY_STATE_CONFLICT
 
-section "7 权限反例"
-call "7.1 不带令牌：401" GET /api/tenancy/tenants 401 "" none
+section "8 权限反例"
+call "8.1 不带令牌：401" GET /api/tenancy/tenants 401 "" none
 check "错误码" "$(field code)" UNAUTHENTICATED
-call "7.2 不是平台超管的用户（sub=intruder）：403；拒绝原因只进宿主日志" GET /api/tenancy/tenants 403 "" "$(token --sub intruder)"
+call "8.2 不是平台超管的用户（sub=intruder）：403；拒绝原因只进宿主日志" GET /api/tenancy/tenants 403 "" "$(token --sub intruder)"
 check "错误码" "$(field code)" AUTHZ_DENIED
-call "7.3 带 tenant_id 的租户主体：运营接口一律 403" GET /api/tenancy/tenants 403 "" "$(token --tenant "$TENANT")"
+call "8.3 带 tenant_id 的租户主体：运营接口一律 403" GET /api/tenancy/tenants 403 "" "$(token --tenant "$TENANT")"
+check "错误码" "$(field code)" AUTHZ_DENIED
+call "8.4 租户主体读管理员：同样 403" GET "/api/tenancy/tenants/$TENANT/admins" 403 "" "$(token --tenant "$TENANT")"
 check "错误码" "$(field code)" AUTHZ_DENIED
 
 printf '\n%s汇总：%s 项通过，%s 项不符%s\n' "$BOLD" "$PASSED" "$FAILED" "$RESET"

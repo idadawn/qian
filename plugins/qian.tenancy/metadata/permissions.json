@@ -18,5 +18,19 @@
       "resume": "high",
       "scan": "high"
     }
+  },
+  {
+    "resource": "admin",
+    "actions": [
+      "read",
+      "create",
+      "assign",
+      "reset-credential"
+    ],
+    "risk": {
+      "create": "high",
+      "assign": "critical",
+      "reset-credential": "critical"
+    }
   }
 ]

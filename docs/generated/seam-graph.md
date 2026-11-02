@@ -14,6 +14,7 @@
 | ` Navigation ` | ` global/capabilities ` |  |
 | ` CommandTenancy ` | ` global/tenancy ` | ` global/capabilities ` |
 | ` Tenancy ` | ` global/tenancy ` | ` global/capabilities `、` global/scheduler ` |
+| ` TenancyAdministration ` | ` global/tenancy ` |  |
 | ` TenancyLifecycle ` | ` global/tenancy ` |  |
 | ` TenancyOperations ` | ` global/tenancy ` |  |
 | ` TenancyProvisioning ` | ` global/tenancy ` |  |
@@ -77,70 +78,72 @@ flowchart LR
   n4 --> s6
   s7(("Tenancy"))
   n4 --> s7
-  s8(("TenancyLifecycle"))
+  s8(("TenancyAdministration"))
   n4 --> s8
-  s9(("TenancyOperations"))
+  s9(("TenancyLifecycle"))
   n4 --> s9
-  s10(("TenancyProvisioning"))
+  s10(("TenancyOperations"))
   n4 --> s10
-  s11(("TenancyQuota"))
+  s11(("TenancyProvisioning"))
   n4 --> s11
-  s12(("TenancySettings"))
+  s12(("TenancyQuota"))
   n4 --> s12
-  s13(("TenancySettingsOperations"))
+  s13(("TenancySettings"))
   n4 --> s13
-  s14(("Identity"))
-  n5 --> s14
-  s15(("Authz"))
-  n6 --> s15
-  s16(("AuthzEnforcement"))
+  s14(("TenancySettingsOperations"))
+  n4 --> s14
+  s15(("Identity"))
+  n5 --> s15
+  s16(("Authz"))
   n6 --> s16
-  s17(("AuthzPermissions"))
+  s17(("AuthzEnforcement"))
   n6 --> s17
-  s18(("AuthzResourceTypes"))
+  s18(("AuthzPermissions"))
   n6 --> s18
-  s19(("AuthzSuperadminBypass"))
+  s19(("AuthzResourceTypes"))
   n6 --> s19
-  s20(("AuthzTenantRoleGrant"))
+  s20(("AuthzSuperadminBypass"))
   n6 --> s20
-  s21(("CommandAuthorization"))
+  s21(("AuthzTenantRoleGrant"))
   n6 --> s21
-  s22(("Data"))
-  n7 --> s22
-  s23(("Files"))
-  n8 --> s23
-  s24(("Files.Backends:local"))
+  s22(("CommandAuthorization"))
+  n6 --> s22
+  s23(("Data"))
+  n7 --> s23
+  s24(("Files"))
   n8 --> s24
-  s25(("Config"))
-  n9 --> s25
-  s26(("Events"))
-  n10 --> s26
-  s27(("Audit"))
-  n11 --> s27
-  s28(("CommandAudit"))
+  s25(("Files.Backends:local"))
+  n8 --> s25
+  s26(("Config"))
+  n9 --> s26
+  s27(("Events"))
+  n10 --> s27
+  s28(("Audit"))
   n11 --> s28
-  s29(("Scheduler"))
-  n17 --> s29
-  s30(("Shell"))
-  n20 --> s30
-  s22 --> n0
-  s25 --> n1
-  s22 --> n1
+  s29(("CommandAudit"))
+  n11 --> s29
+  s30(("Scheduler"))
+  n17 --> s30
+  s31(("Shell"))
+  n20 --> s31
+  s23 --> n0
+  s26 --> n1
+  s23 --> n1
   s0 --> n1
-  s27 --> n2
   s28 --> n2
-  s21 --> n2
-  s6 --> n2
+  s29 --> n2
   s22 --> n2
+  s6 --> n2
+  s23 --> n2
   s0 --> n2
   s7 --> n2
-  s22 --> n4
-  s22 --> n6
-  s22 --> n8
-  s22 --> n11
-  s22 --> n17
+  s23 --> n4
+  s23 --> n6
+  s23 --> n8
+  s23 --> n11
+  s23 --> n17
   s7 --> n17
-  s27 -.-> n1
-  s19 -.-> n1
+  s28 -.-> n1
+  s20 -.-> n1
 ```
 

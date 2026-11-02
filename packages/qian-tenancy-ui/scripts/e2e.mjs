@@ -16,8 +16,8 @@ async function port() {
   await new Promise((ok) => server.close(ok));
   return address.port;
 }
-const [apiPort, pgPort, uiPort] = await Promise.all([port(), port(), port()]);
-const env = { ...process.env, QIAN_DEV_STATE: state, QIAN_DEV_PG_CONTAINER: 'cody-ten005-' + randomUUID().slice(0, 8), QIAN_DEV_PG_PORT: String(pgPort), QIAN_DEV_OPS_URL: `http://127.0.0.1:${apiPort}`, QIAN_DEV_UI_PORT: String(uiPort), QIAN_UI_STOP_FILE: resolve(state, 'stop-host'), QIAN_UI_STOPPED_FILE: resolve(state, 'host-stopped') };
+const [apiPort, pgPort, uiPort, identityPort] = await Promise.all([port(), port(), port(), port()]);
+const env = { ...process.env, QIAN_DEV_STATE: state, QIAN_DEV_PG_CONTAINER: 'cody-ten005-' + randomUUID().slice(0, 8), QIAN_DEV_PG_PORT: String(pgPort), QIAN_DEV_OPS_URL: `http://127.0.0.1:${apiPort}`, QIAN_DEV_IDENTITY_URL: `http://127.0.0.1:${identityPort}`, QIAN_DEV_UI_PORT: String(uiPort), QIAN_UI_STOP_FILE: resolve(state, 'stop-host'), QIAN_UI_STOPPED_FILE: resolve(state, 'host-stopped') };
 const log = await open(resolve(state, 'host.log'), 'w', 0o600);
 const host = spawn('bash', [script, 'up'], { cwd: root, env, stdio: ['ignore', log.fd, log.fd] });
 let ended = false;

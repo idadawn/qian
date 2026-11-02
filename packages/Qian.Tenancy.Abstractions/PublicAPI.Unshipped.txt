@@ -334,3 +334,149 @@ static readonly Qian.Tenancy.TenantSettings.QuotaKey -> Qian.Runtime.ServiceKey
 static readonly Qian.Tenancy.TenantSettings.UserCounterKey -> Qian.Runtime.ServiceKey
 Qian.Tenancy.ITenantOperations.QueryAsync(int skip, int take, Qian.Tenancy.TenantStatus? status = null, string? keyword = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantDescriptor!>! Items, int Total)>
 static Qian.Tenancy.TenantStateMetadata.Schema.get -> System.Text.Json.JsonElement
+Qian.Tenancy.CreateTenantAdminAccount
+Qian.Tenancy.CreateTenantAdminAccount.<Clone>$() -> Qian.Tenancy.CreateTenantAdminAccount!
+Qian.Tenancy.CreateTenantAdminAccount.CreateTenantAdminAccount(string! DisplayName, Qian.Tenancy.TenantAdminIdentifierKind IdentifierKind, string! Identifier, string! InitialPassword) -> void
+Qian.Tenancy.CreateTenantAdminAccount.Deconstruct(out string! DisplayName, out Qian.Tenancy.TenantAdminIdentifierKind IdentifierKind, out string! Identifier, out string! InitialPassword) -> void
+Qian.Tenancy.CreateTenantAdminAccount.DisplayName.get -> string!
+Qian.Tenancy.CreateTenantAdminAccount.DisplayName.init -> void
+Qian.Tenancy.CreateTenantAdminAccount.Equals(Qian.Tenancy.CreateTenantAdminAccount? other) -> bool
+Qian.Tenancy.CreateTenantAdminAccount.Identifier.get -> string!
+Qian.Tenancy.CreateTenantAdminAccount.Identifier.init -> void
+Qian.Tenancy.CreateTenantAdminAccount.IdentifierKind.get -> Qian.Tenancy.TenantAdminIdentifierKind
+Qian.Tenancy.CreateTenantAdminAccount.IdentifierKind.init -> void
+Qian.Tenancy.CreateTenantAdminAccount.InitialPassword.get -> string!
+Qian.Tenancy.CreateTenantAdminAccount.InitialPassword.init -> void
+Qian.Tenancy.ITenantAdministration
+Qian.Tenancy.ITenantAdministration.CreateAccountAsync(Qian.Tenancy.CreateTenantAdminAccount! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantAdminAccount!>
+Qian.Tenancy.ITenantAdministration.FindAccountAsync(Qian.Tenancy.TenantAdminAccountLookup! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantAdminAccount?>
+Qian.Tenancy.ITenantAdministration.GetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantAdminList!>
+Qian.Tenancy.ITenantAdministration.ReplaceAsync(System.Guid id, Qian.Tenancy.ReplaceTenantAdmins! request, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantAdminList!>
+Qian.Tenancy.ITenantAdministration.ResetPasswordAsync(System.Guid id, System.Guid membershipId, Qian.Tenancy.ResetTenantAdminPassword! request, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.ReplaceTenantAdmins
+Qian.Tenancy.ReplaceTenantAdmins.<Clone>$() -> Qian.Tenancy.ReplaceTenantAdmins!
+Qian.Tenancy.ReplaceTenantAdmins.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminDesignation!>! Items) -> void
+Qian.Tenancy.ReplaceTenantAdmins.Equals(Qian.Tenancy.ReplaceTenantAdmins? other) -> bool
+Qian.Tenancy.ReplaceTenantAdmins.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminDesignation!>!
+Qian.Tenancy.ReplaceTenantAdmins.Items.init -> void
+Qian.Tenancy.ReplaceTenantAdmins.ReplaceTenantAdmins(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminDesignation!>! Items) -> void
+Qian.Tenancy.ResetTenantAdminPassword
+Qian.Tenancy.ResetTenantAdminPassword.<Clone>$() -> Qian.Tenancy.ResetTenantAdminPassword!
+Qian.Tenancy.ResetTenantAdminPassword.Deconstruct(out string! NewPassword) -> void
+Qian.Tenancy.ResetTenantAdminPassword.Equals(Qian.Tenancy.ResetTenantAdminPassword? other) -> bool
+Qian.Tenancy.ResetTenantAdminPassword.NewPassword.get -> string!
+Qian.Tenancy.ResetTenantAdminPassword.NewPassword.init -> void
+Qian.Tenancy.ResetTenantAdminPassword.ResetTenantAdminPassword(string! NewPassword) -> void
+Qian.Tenancy.TenantAdmin
+Qian.Tenancy.TenantAdmin.<Clone>$() -> Qian.Tenancy.TenantAdmin!
+Qian.Tenancy.TenantAdmin.Account.get -> string!
+Qian.Tenancy.TenantAdmin.Account.init -> void
+Qian.Tenancy.TenantAdmin.Deconstruct(out System.Guid MembershipId, out System.Guid SubjectId, out string! DisplayName, out string! Account, out string! Status, out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminIdentifier!>! Identifiers) -> void
+Qian.Tenancy.TenantAdmin.DisplayName.get -> string!
+Qian.Tenancy.TenantAdmin.DisplayName.init -> void
+Qian.Tenancy.TenantAdmin.Equals(Qian.Tenancy.TenantAdmin? other) -> bool
+Qian.Tenancy.TenantAdmin.Identifiers.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminIdentifier!>!
+Qian.Tenancy.TenantAdmin.Identifiers.init -> void
+Qian.Tenancy.TenantAdmin.MembershipId.get -> System.Guid
+Qian.Tenancy.TenantAdmin.MembershipId.init -> void
+Qian.Tenancy.TenantAdmin.Status.get -> string!
+Qian.Tenancy.TenantAdmin.Status.init -> void
+Qian.Tenancy.TenantAdmin.SubjectId.get -> System.Guid
+Qian.Tenancy.TenantAdmin.SubjectId.init -> void
+Qian.Tenancy.TenantAdmin.TenantAdmin(System.Guid MembershipId, System.Guid SubjectId, string! DisplayName, string! Account, string! Status, System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminIdentifier!>! Identifiers) -> void
+Qian.Tenancy.TenantAdminAccount
+Qian.Tenancy.TenantAdminAccount.<Clone>$() -> Qian.Tenancy.TenantAdminAccount!
+Qian.Tenancy.TenantAdminAccount.Deconstruct(out System.Guid SubjectId, out string! DisplayName, out string! Status, out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminIdentifier!>! Identifiers) -> void
+Qian.Tenancy.TenantAdminAccount.DisplayName.get -> string!
+Qian.Tenancy.TenantAdminAccount.DisplayName.init -> void
+Qian.Tenancy.TenantAdminAccount.Equals(Qian.Tenancy.TenantAdminAccount? other) -> bool
+Qian.Tenancy.TenantAdminAccount.Identifiers.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminIdentifier!>!
+Qian.Tenancy.TenantAdminAccount.Identifiers.init -> void
+Qian.Tenancy.TenantAdminAccount.Status.get -> string!
+Qian.Tenancy.TenantAdminAccount.Status.init -> void
+Qian.Tenancy.TenantAdminAccount.SubjectId.get -> System.Guid
+Qian.Tenancy.TenantAdminAccount.SubjectId.init -> void
+Qian.Tenancy.TenantAdminAccount.TenantAdminAccount(System.Guid SubjectId, string! DisplayName, string! Status, System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdminIdentifier!>! Identifiers) -> void
+Qian.Tenancy.TenantAdminAccountLookup
+Qian.Tenancy.TenantAdminAccountLookup.<Clone>$() -> Qian.Tenancy.TenantAdminAccountLookup!
+Qian.Tenancy.TenantAdminAccountLookup.Deconstruct(out string! Identifier) -> void
+Qian.Tenancy.TenantAdminAccountLookup.Equals(Qian.Tenancy.TenantAdminAccountLookup? other) -> bool
+Qian.Tenancy.TenantAdminAccountLookup.Identifier.get -> string!
+Qian.Tenancy.TenantAdminAccountLookup.Identifier.init -> void
+Qian.Tenancy.TenantAdminAccountLookup.TenantAdminAccountLookup(string! Identifier) -> void
+Qian.Tenancy.TenantAdminDesignation
+Qian.Tenancy.TenantAdminDesignation.<Clone>$() -> Qian.Tenancy.TenantAdminDesignation!
+Qian.Tenancy.TenantAdminDesignation.Deconstruct(out System.Guid SubjectId) -> void
+Qian.Tenancy.TenantAdminDesignation.Equals(Qian.Tenancy.TenantAdminDesignation? other) -> bool
+Qian.Tenancy.TenantAdminDesignation.SubjectId.get -> System.Guid
+Qian.Tenancy.TenantAdminDesignation.SubjectId.init -> void
+Qian.Tenancy.TenantAdminDesignation.TenantAdminDesignation(System.Guid SubjectId) -> void
+Qian.Tenancy.TenantAdminIdentifier
+Qian.Tenancy.TenantAdminIdentifier.<Clone>$() -> Qian.Tenancy.TenantAdminIdentifier!
+Qian.Tenancy.TenantAdminIdentifier.Deconstruct(out Qian.Tenancy.TenantAdminIdentifierKind Kind, out string! Masked, out bool Verified) -> void
+Qian.Tenancy.TenantAdminIdentifier.Equals(Qian.Tenancy.TenantAdminIdentifier? other) -> bool
+Qian.Tenancy.TenantAdminIdentifier.Kind.get -> Qian.Tenancy.TenantAdminIdentifierKind
+Qian.Tenancy.TenantAdminIdentifier.Kind.init -> void
+Qian.Tenancy.TenantAdminIdentifier.Masked.get -> string!
+Qian.Tenancy.TenantAdminIdentifier.Masked.init -> void
+Qian.Tenancy.TenantAdminIdentifier.TenantAdminIdentifier(Qian.Tenancy.TenantAdminIdentifierKind Kind, string! Masked, bool Verified) -> void
+Qian.Tenancy.TenantAdminIdentifier.Verified.get -> bool
+Qian.Tenancy.TenantAdminIdentifier.Verified.init -> void
+Qian.Tenancy.TenantAdminIdentifierKind
+Qian.Tenancy.TenantAdminIdentifierKind.Email = 2 -> Qian.Tenancy.TenantAdminIdentifierKind
+Qian.Tenancy.TenantAdminIdentifierKind.Phone = 1 -> Qian.Tenancy.TenantAdminIdentifierKind
+Qian.Tenancy.TenantAdminIdentifierKind.Username = 0 -> Qian.Tenancy.TenantAdminIdentifierKind
+Qian.Tenancy.TenantAdminList
+Qian.Tenancy.TenantAdminList.<Clone>$() -> Qian.Tenancy.TenantAdminList!
+Qian.Tenancy.TenantAdminList.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdmin!>! Items) -> void
+Qian.Tenancy.TenantAdminList.Equals(Qian.Tenancy.TenantAdminList? other) -> bool
+Qian.Tenancy.TenantAdminList.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdmin!>!
+Qian.Tenancy.TenantAdminList.Items.init -> void
+Qian.Tenancy.TenantAdminList.TenantAdminList(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantAdmin!>! Items) -> void
+Qian.Tenancy.TenantAdministration
+override Qian.Tenancy.CreateTenantAdminAccount.Equals(object? obj) -> bool
+override Qian.Tenancy.CreateTenantAdminAccount.GetHashCode() -> int
+override Qian.Tenancy.CreateTenantAdminAccount.ToString() -> string!
+override Qian.Tenancy.ReplaceTenantAdmins.Equals(object? obj) -> bool
+override Qian.Tenancy.ReplaceTenantAdmins.GetHashCode() -> int
+override Qian.Tenancy.ReplaceTenantAdmins.ToString() -> string!
+override Qian.Tenancy.ResetTenantAdminPassword.Equals(object? obj) -> bool
+override Qian.Tenancy.ResetTenantAdminPassword.GetHashCode() -> int
+override Qian.Tenancy.ResetTenantAdminPassword.ToString() -> string!
+override Qian.Tenancy.TenantAdmin.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantAdmin.GetHashCode() -> int
+override Qian.Tenancy.TenantAdmin.ToString() -> string!
+override Qian.Tenancy.TenantAdminAccount.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantAdminAccount.GetHashCode() -> int
+override Qian.Tenancy.TenantAdminAccount.ToString() -> string!
+override Qian.Tenancy.TenantAdminAccountLookup.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantAdminAccountLookup.GetHashCode() -> int
+override Qian.Tenancy.TenantAdminAccountLookup.ToString() -> string!
+override Qian.Tenancy.TenantAdminDesignation.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantAdminDesignation.GetHashCode() -> int
+override Qian.Tenancy.TenantAdminDesignation.ToString() -> string!
+override Qian.Tenancy.TenantAdminIdentifier.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantAdminIdentifier.GetHashCode() -> int
+override Qian.Tenancy.TenantAdminIdentifier.ToString() -> string!
+override Qian.Tenancy.TenantAdminList.Equals(object? obj) -> bool
+override Qian.Tenancy.TenantAdminList.GetHashCode() -> int
+override Qian.Tenancy.TenantAdminList.ToString() -> string!
+static Qian.Tenancy.CreateTenantAdminAccount.operator !=(Qian.Tenancy.CreateTenantAdminAccount? left, Qian.Tenancy.CreateTenantAdminAccount? right) -> bool
+static Qian.Tenancy.CreateTenantAdminAccount.operator ==(Qian.Tenancy.CreateTenantAdminAccount? left, Qian.Tenancy.CreateTenantAdminAccount? right) -> bool
+static Qian.Tenancy.ReplaceTenantAdmins.operator !=(Qian.Tenancy.ReplaceTenantAdmins? left, Qian.Tenancy.ReplaceTenantAdmins? right) -> bool
+static Qian.Tenancy.ReplaceTenantAdmins.operator ==(Qian.Tenancy.ReplaceTenantAdmins? left, Qian.Tenancy.ReplaceTenantAdmins? right) -> bool
+static Qian.Tenancy.ResetTenantAdminPassword.operator !=(Qian.Tenancy.ResetTenantAdminPassword? left, Qian.Tenancy.ResetTenantAdminPassword? right) -> bool
+static Qian.Tenancy.ResetTenantAdminPassword.operator ==(Qian.Tenancy.ResetTenantAdminPassword? left, Qian.Tenancy.ResetTenantAdminPassword? right) -> bool
+static Qian.Tenancy.TenantAdmin.operator !=(Qian.Tenancy.TenantAdmin? left, Qian.Tenancy.TenantAdmin? right) -> bool
+static Qian.Tenancy.TenantAdmin.operator ==(Qian.Tenancy.TenantAdmin? left, Qian.Tenancy.TenantAdmin? right) -> bool
+static Qian.Tenancy.TenantAdminAccount.operator !=(Qian.Tenancy.TenantAdminAccount? left, Qian.Tenancy.TenantAdminAccount? right) -> bool
+static Qian.Tenancy.TenantAdminAccount.operator ==(Qian.Tenancy.TenantAdminAccount? left, Qian.Tenancy.TenantAdminAccount? right) -> bool
+static Qian.Tenancy.TenantAdminAccountLookup.operator !=(Qian.Tenancy.TenantAdminAccountLookup? left, Qian.Tenancy.TenantAdminAccountLookup? right) -> bool
+static Qian.Tenancy.TenantAdminAccountLookup.operator ==(Qian.Tenancy.TenantAdminAccountLookup? left, Qian.Tenancy.TenantAdminAccountLookup? right) -> bool
+static Qian.Tenancy.TenantAdminDesignation.operator !=(Qian.Tenancy.TenantAdminDesignation? left, Qian.Tenancy.TenantAdminDesignation? right) -> bool
+static Qian.Tenancy.TenantAdminDesignation.operator ==(Qian.Tenancy.TenantAdminDesignation? left, Qian.Tenancy.TenantAdminDesignation? right) -> bool
+static Qian.Tenancy.TenantAdminIdentifier.operator !=(Qian.Tenancy.TenantAdminIdentifier? left, Qian.Tenancy.TenantAdminIdentifier? right) -> bool
+static Qian.Tenancy.TenantAdminIdentifier.operator ==(Qian.Tenancy.TenantAdminIdentifier? left, Qian.Tenancy.TenantAdminIdentifier? right) -> bool
+static Qian.Tenancy.TenantAdminList.operator !=(Qian.Tenancy.TenantAdminList? left, Qian.Tenancy.TenantAdminList? right) -> bool
+static Qian.Tenancy.TenantAdminList.operator ==(Qian.Tenancy.TenantAdminList? left, Qian.Tenancy.TenantAdminList? right) -> bool
+static readonly Qian.Tenancy.TenantAdministration.Key -> Qian.Runtime.ServiceKey

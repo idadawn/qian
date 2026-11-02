@@ -171,7 +171,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 
 - **S1-TEN-003**：`ITenantMembershipProvisioner`（服务键 `TenantProvisioning.MembershipKey`）按 (成员 ID, Person) 幂等建立租户管理员 Membership；`TenantAdministrator.SubjectId` 即 Person 的 `sub`，必须是已存在的 Person，也是开通第 7 步授予 `tenant.owner` 的主体。组件就位后第 5 步由 `skipped` 变为 `succeeded`。
 - **S1-TEN-004**：成员创建经 `ITenantQuota.EnsureCanAddUserAsync(currentUsers, kind)`，在同一事务内持租户级计数锁；租户管理员计入，具备平台资格的 Person 不计；`ITenantUserCounter`（`TenantSettings.UserCounterKey`）给出真实人数。
-- **S1-TEN-010**（R110）：`IIdentityAccounts.ResetPasswordAsync` 是运营重置密码的端口——旧凭据立即失效、默认下次登录强制改密、使既有会话失效、发布不含密码的改密事件。
+- **S1-TEN-010**（R110）：`IIdentityAccounts.ResetPasswordAsync` 是运营重置密码的端口——旧凭据立即失效、默认下次登录强制改密、使既有会话失效、发布不含密码的改密事件。运营替换租户管理员时，新管理员经 `CreateMembershipAsync` 建立或补齐管理员成员；原管理员的管理员标志经本任务新增的 `SetTenantAdministratorAsync(membershipId, false)` 撤销。它与成员创建持同一把计数锁、不做配额判定，标志变化才递增成员修订；已清除或已从目录删除的成员返回 `NOT_FOUND`。
 - **S1-IDP-004**（本任务）：会话中心已就位，见上文「会话中心」。对其他任务登记的接口见下面三条。
 - **授权任务（S1-AZ-004 / S1-AZ-009）**：同进程宿主里，`qian.authz` 在授予变更提交后，对受影响的 user 主体在其租户作用域内调用 `IIdentityAccounts.BumpIdentityRevisionAsync`。主体不是 GUID 或返回 `NOT_FOUND` 时跳过。之后用返回值抬高 PEP 的修订下限。PEP 比对令牌 `identity_revision` 与缓存快照由授权侧负责，陈旧令牌回 401。拆分部署下，本组件对 `authz.grant.changed.v1` 的订阅处理器由 S1-IDP-012 交付；同进程宿主不登记它。
 - **S1-EVT-002（事件消费端）**：宿主在事件总线配置里调用 `AddQianIdentitySessionHandlers()`；订阅投递由消费端接线，在此之前租户冻结 / 到期靠后台对账兜底。

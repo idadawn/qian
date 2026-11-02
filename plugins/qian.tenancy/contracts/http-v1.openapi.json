@@ -984,6 +984,470 @@
           }
         }
       }
+    },
+    "/api/tenancy/admin-accounts:lookup": {
+      "post": {
+        "operationId": "H8ecda9a6b94f4dcf0b3ba3123d1744496aa689c21706099504d4933e7c93d8b7",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H11e324bb8bdedf6911c6cffec5ff242665c3215c5cf5bc260869fd93cc664923"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha1f7edb4129ea197e5e477d3774dd11d19a48e19776337d5003e43a7144cc9a0"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/admin-accounts": {
+      "post": {
+        "operationId": "H2de9f42fa23f4a129a730895f52190bdee4fccb3123c68063553938cd1b4a48d",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H0201fa003cd7379f0f735aee14c7ff16e4fbc7b050b40be9ce21a73c6b22b287"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "HTTP 201",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha1f7edb4129ea197e5e477d3774dd11d19a48e19776337d5003e43a7144cc9a0"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "HTTP 422",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}/admins": {
+      "get": {
+        "operationId": "Hf6d90ba241fbb8aad901e2660704d4710a1d2af4fd9601f2c4c35a899c8fe1e8",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H0eb4f7f18b6ab2ee20ea8f549eed4a9178f157b777fe77c9ffc57ebc23344920"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Hb4391e639d6f2aecd6af5b7150e5e8b15e77103b0895c71d03742630e6f9248d",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/He5970457e9817c96e5fc2e1e1232f10d3028572a81c76b8b1cd79a8ae151919f"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/H0eb4f7f18b6ab2ee20ea8f549eed4a9178f157b777fe77c9ffc57ebc23344920"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "HTTP 422",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenancy/tenants/{id}/admins/{membershipId}:reset-password": {
+      "post": {
+        "operationId": "H0d50c6458dc0456a17b1778ac4e2fdfec0daf83542a0f7d3420682f66f73fdde",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/H23c7f11ec74b95209c749beb6fc14fd174ee7732d194121e24b269c2dff60f2c"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          },
+          {
+            "name": "membershipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "HTTP 204"
+          },
+          "422": {
+            "description": "HTTP 422",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1546,6 +2010,209 @@
           "usersUsed",
           "usageAvailable"
         ]
+      },
+      "H11e324bb8bdedf6911c6cffec5ff242665c3215c5cf5bc260869fd93cc664923": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
+      },
+      "Ha1f7edb4129ea197e5e477d3774dd11d19a48e19776337d5003e43a7144cc9a0": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "identifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "username",
+                    "phone",
+                    "email"
+                  ]
+                },
+                "masked": {
+                  "type": "string"
+                },
+                "verified": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "kind",
+                "masked",
+                "verified"
+              ]
+            }
+          }
+        },
+        "required": [
+          "subjectId",
+          "displayName",
+          "status",
+          "identifiers"
+        ]
+      },
+      "H0201fa003cd7379f0f735aee14c7ff16e4fbc7b050b40be9ce21a73c6b22b287": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "identifierKind": {
+            "enum": [
+              "username",
+              "phone",
+              "email"
+            ]
+          },
+          "identifier": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254
+          },
+          "initialPassword": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "displayName",
+          "identifierKind",
+          "identifier",
+          "initialPassword"
+        ],
+        "additionalProperties": false
+      },
+      "H0eb4f7f18b6ab2ee20ea8f549eed4a9178f157b777fe77c9ffc57ebc23344920": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "membershipId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "subjectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "displayName": {
+                  "type": "string"
+                },
+                "account": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "identifiers": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "username",
+                          "phone",
+                          "email"
+                        ]
+                      },
+                      "masked": {
+                        "type": "string"
+                      },
+                      "verified": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "masked",
+                      "verified"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "membershipId",
+                "subjectId",
+                "displayName",
+                "account",
+                "status",
+                "identifiers"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "He5970457e9817c96e5fc2e1e1232f10d3028572a81c76b8b1cd79a8ae151919f": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "subjectId": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "subjectId"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 1
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "H23c7f11ec74b95209c749beb6fc14fd174ee7732d194121e24b269c2dff60f2c": {
+        "type": "object",
+        "properties": {
+          "newPassword": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "newPassword"
+        ],
+        "additionalProperties": false
       }
     },
     "securitySchemes": {

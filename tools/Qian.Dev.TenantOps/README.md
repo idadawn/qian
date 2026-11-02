@@ -1,6 +1,6 @@
 # 本机租户运营手测环境
 
-一条命令在本机起 PostgreSQL 与租户运营宿主，再用开发令牌按顺序调用 S1-TEN-006 / 002 / 004 交付的运营 HTTP。不用写代码，也不用等页面、staging 或真实登录。任务见 [S1-QA-012](../../pm/tasks/S1-QA-012.md)。
+一条命令在本机起 PostgreSQL、租户运营宿主与真实 qian.identity，再用开发令牌按顺序调用 S1-TEN-006 / 002 / 004 / 010 交付的运营 HTTP。不用写代码，也不用等页面、staging 或真实登录。任务见 [S1-QA-012](../../pm/tasks/S1-QA-012.md)。
 
 ## 这是什么，不是什么
 
@@ -16,7 +16,7 @@
 
 - `qian dev`：正式的本地编排归 S1-RT-013，那是 Aspire AppHost，会同时拉起 PG / Redis / RabbitMQ / Apollo；
 - 部署：staging 与 K3s 归 S1-DEP-002 / 005；
-- 登录：开发令牌由本机私钥签发，不代表 Identity 已签发或登录（S1-IDP-002 / 003）；
+- 登录：运营调用的开发令牌由本机私钥签发，不代表 Identity 签发了平台令牌（S1-IDP-002 / 003）。管理员维护（S1-TEN-010）用的是同一宿主上的真实 qian.identity：账号、成员与密码都经它，管理员可经账号接口 `/api/identity/login` 登录；本宿主不托管认证页族，也不签发外壳令牌，那些在外壳联调环境；
 - 页面：运营后台页面归 S1-TEN-005；
 - 产品契约：下文两条 `/__dev/` 开发路由只存在于本手测宿主。
 
@@ -25,7 +25,7 @@
 - Docker 引擎在运行；
 - .NET 10 SDK，版本见仓库根目录 `global.json`；
 - curl 与 python3（macOS 自带 `/usr/bin/python3` 即可）；
-- 两个本机端口：PostgreSQL 用 `127.0.0.1:55432`，运营宿主用 `127.0.0.1:5080`。被占用时用下文环境变量改。
+- 三个本机端口：PostgreSQL 用 `127.0.0.1:55432`，运营宿主用 `127.0.0.1:5080`，身份发行方用 `127.0.0.1:5081`。被占用时用下文环境变量改。
 
 ## 三步用起来
 
@@ -41,7 +41,7 @@
    scripts/dev-tenant-ops.sh walkthrough
    ```
 
-   顺序是：建租户 → 开通步骤 → 激活 → 写设置 / 读配额 → 冻结 / 恢复 → 扫描到期 → 权限反例。加 `--yes` 一口气跑完；任一检查不符时退出码为 1。
+   顺序是：建租户（含新建、查找管理员账号）→ 开通步骤 → 激活 → 写设置 / 读配额 → 管理员维护 → 冻结 / 恢复 → 扫描到期 → 权限反例。加 `--yes` 一口气跑完；任一检查不符时退出码为 1。
 
 3. 用完在第一个终端按 Ctrl+C 停宿主，再删容器：
 
@@ -96,23 +96,28 @@ scripts/dev-tenant-ops.sh smoke
 
 ## 接口一览
 
-运营契约 [http-v1.openapi.json](../../plugins/qian.tenancy/contracts/http-v1.openapi.json) 的 8 个路径、11 个操作都在走查里，另有两条开发路由：
+运营契约 [http-v1.openapi.json](../../plugins/qian.tenancy/contracts/http-v1.openapi.json) 的 12 个路径、16 个操作都在走查里，另有两条开发路由：
 
 | 方法 | 路径 | 用途 | 走查步骤 |
 |---|---|---|---|
-| GET | `/api/tenancy/tenants?skip=&take=` | 租户列表（take 1–100，默认 50） | 1.1、7.1–7.3 |
-| POST | `/api/tenancy/tenants` | 新建，同步跑开通编排，返回 201 与 pending | 1.2 |
-| GET | `/api/tenancy/tenants/{id}` | 详情 | 1.3、6.2 |
-| PUT | `/api/tenancy/tenants/{id}` | 改名、改配额，需带 `expectedRevision` | 1.4、1.5 |
-| POST | `/api/tenancy/tenants/{id}:activate` | 激活（`trial`、`validUntil`） | 3.2、6.3 |
-| POST | `/api/tenancy/tenants/{id}:suspend` | 冻结 | 5.1 |
-| POST | `/api/tenancy/tenants/{id}:resume` | 恢复到冻结前的状态 | 5.2 |
+| GET | `/api/tenancy/tenants?skip=&take=` | 租户列表（take 1–100，默认 50） | 1.1、8.1–8.3 |
+| POST | `/api/tenancy/admin-accounts` | 新建管理员账号：一个登录标识加初始密码，首次登录强制改密 | 1.2、5.3 |
+| POST | `/api/tenancy/admin-accounts:lookup` | 按登录标识查找可任管理员的账号，标识放请求体 | 1.3 |
+| POST | `/api/tenancy/tenants` | 新建，同步跑开通编排，返回 201 与 pending | 1.4 |
+| GET | `/api/tenancy/tenants/{id}` | 详情 | 1.5、7.2 |
+| PUT | `/api/tenancy/tenants/{id}` | 改名、改配额，需带 `expectedRevision` | 1.6、1.7 |
+| POST | `/api/tenancy/tenants/{id}:activate` | 激活（`trial`、`validUntil`） | 3.2、7.3 |
+| POST | `/api/tenancy/tenants/{id}:suspend` | 冻结 | 6.1 |
+| POST | `/api/tenancy/tenants/{id}:resume` | 恢复到冻结前的状态 | 6.2 |
 | GET | `/api/tenancy/meta/state-machine` | 状态与合法迁移 | 3.1 |
 | GET | `/api/tenancy/tenants/{id}/settings/{plugin}` | 读租户设置 | 4.1、4.4 |
 | PUT | `/api/tenancy/tenants/{id}/settings/{plugin}` | 写租户设置，按组件 configSchema 校验 | 4.2、4.3 |
-| GET | `/api/tenancy/tenants/{id}/quota` | 配额与用量 | 4.5 |
+| GET | `/api/tenancy/tenants/{id}/quota` | 配额与用量（已用人数来自身份组件） | 4.5 |
+| GET | `/api/tenancy/tenants/{id}/admins` | 当前管理员 | 5.1、8.4 |
+| PUT | `/api/tenancy/tenants/{id}/admins` | 更换管理员（S1 单管理员） | 5.4、5.5 |
+| POST | `/api/tenancy/tenants/{id}/admins/{membershipId}:reset-password` | 重置当前管理员的密码 | 5.2、5.6 |
 | GET | `/__dev/tenancy/tenants/{id}/provision-steps` | 开发路由：开通步骤表 | 2.1 |
-| POST | `/__dev/tenancy/scan-expired?limit=` | 开发路由：代调度器触发到期扫描 | 6.1 |
+| POST | `/__dev/tenancy/scan-expired?limit=` | 开发路由：代调度器触发到期扫描 | 7.1 |
 
 ## 两条开发路由
 
@@ -136,9 +141,9 @@ scripts/dev-tenant-ops.sh smoke
 4. 装平台插件树：Data、Tenancy、Authz、Audit、Config、Registry、Capabilities、Lifecycle。组件文件夹写进临时 platform profile，制品摘要用本次启动生成的 Ed25519 平台钥签名；公钥按生产形状放进 K8s Secret 挂载目录，经 `secretRef` 引用。
 5. 引导平台超管 `root`，经 Lifecycle 安装并激活全部 system 组件制品，然后启动运营宿主。
 
-CRM 命令宿主只充当运行时容器，监听随机本机端口，手测流程不用它。
+CRM 命令宿主充当运行时容器，同时是身份发行方：监听 `QIAN_DEV_IDENTITY_URL`，挂真实 qian.identity（与生产同一套迁移建表，在线连接是受限应用登录），只开账号接口 `/api/identity` 与目录接口 `/api/directory`。开户第 05 步经它建管理员成员，配额用量经它读真实人数。
 
-外壳认证联调环境 [tools/Qian.Dev.Shell](../Qian.Dev.Shell/README.md)（S1-YUE-002）复用这里的开发库、平台插件树与运营前置（`InternalsVisibleTo`），另在同一业务宿主上挂真实身份服务、把参考应用作为 system 组件制品登记，并起网关 BFF；两套环境各用自己的容器、端口与状态目录，可同时运行。
+外壳认证联调环境 [tools/Qian.Dev.Shell](../Qian.Dev.Shell/README.md)（S1-YUE-002）复用这里的开发库、平台插件树与运营前置（`InternalsVisibleTo`），身份服务换成自己那份带认证页族与上游连接器的装配、把参考应用作为 system 组件制品登记，并起网关 BFF；两套环境各用自己的容器、端口与状态目录，可同时运行。
 
 ## 数据与密钥
 
@@ -152,7 +157,7 @@ CRM 命令宿主只充当运行时容器，监听随机本机端口，手测流�
 - **403 看不出原因**：按设计，拒绝原因只进宿主日志，响应统一是 `AUTHZ_DENIED`。看 `up` 那个终端，例如 `not_superadmin`。
 - **激活返回 400**：`validUntil` 必须晚于当前时间。
 - **想让到期来得更快或更慢**：走查默认激活 30 秒后到期，用 `QIAN_DEV_VALID_SECONDS` 调整。
-- **端口被占用**：设 `QIAN_DEV_OPS_URL` 或 `QIAN_DEV_PG_PORT`。各个子命令要用同一组变量。
+- **端口被占用**：设 `QIAN_DEV_OPS_URL`、`QIAN_DEV_IDENTITY_URL` 或 `QIAN_DEV_PG_PORT`。各个子命令要用同一组变量。
 - **系统代理**：脚本里的 curl 都带 `--noproxy '*'`，只访问本机。
 
 ## 环境变量
@@ -160,6 +165,7 @@ CRM 命令宿主只充当运行时容器，监听随机本机端口，手测流�
 | 变量 | 默认值 | 作用 |
 |---|---|---|
 | `QIAN_DEV_OPS_URL` | `http://127.0.0.1:5080` | 运营宿主监听地址 |
+| `QIAN_DEV_IDENTITY_URL` | `http://127.0.0.1:5081` | 身份发行方（业务宿主）监听地址，只接受回环 http |
 | `QIAN_DEV_PG_PORT` | `55432` | PostgreSQL 映射到本机的端口 |
 | `QIAN_DEV_PG_CONTAINER` | `qian-dev-tenant-ops-pg` | 容器名 |
 | `QIAN_DEV_PG_IMAGE` | `postgres:16-alpine`，未设时沿用 `QIAN_TEST_IMAGE_POSTGRES` | PostgreSQL 镜像 |

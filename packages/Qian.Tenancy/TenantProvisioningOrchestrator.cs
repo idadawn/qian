@@ -190,23 +190,7 @@ internal sealed class TenantProvisioningOrchestrator(IPluginContext context, Pos
             .Select(x => new TenantProvisionStep(x.Step, x.Status, x.Attempts, x.Reason)).ToArrayAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<T> Locked<T>(string key, Func<Task<T>> work, CancellationToken ct)
-    {
-        await using var session = await context.Data().OpenAsync<TenancyDbContext>(ct).ConfigureAwait(false);
-        await session.Context.Database.OpenConnectionAsync(ct).ConfigureAwait(false);
-        var connection = session.Context.Database.GetDbConnection();
-        var lockKey = "qian.tenancy:" + key;
-        await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT pg_advisory_lock(hashtextextended(@key, 0))";
-        var parameter = command.CreateParameter(); parameter.ParameterName = "key"; parameter.Value = lockKey; command.Parameters.Add(parameter);
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        try { return await work().ConfigureAwait(false); }
-        finally
-        {
-            command.CommandText = "SELECT pg_advisory_unlock(hashtextextended(@key, 0))";
-            await command.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
-        }
-    }
+    private Task<T> Locked<T>(string key, Func<Task<T>> work, CancellationToken ct) => TenancyLocks.RunAsync(context, key, work, ct);
     private static void ValidateActor(string actor)
     { if (string.IsNullOrWhiteSpace(actor) || actor.Length > 200 || actor.Any(char.IsControl)) throw Error(PlatformErrors.InputInvalid); }
     private static QianErrorException Error(ErrorCode code) => new(new QianError(code));

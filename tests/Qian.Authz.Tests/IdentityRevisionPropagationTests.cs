@@ -170,6 +170,7 @@ public sealed partial class SuperadminBypassTests
             public ValueTask ResetPasswordAsync(Guid personId, PasswordReset reset, CancellationToken cancellationToken = default) => throw new NotSupportedException();
             public ValueTask<Person> SetPersonStatusAsync(Guid personId, string status, string reason, CancellationToken cancellationToken = default) => throw new NotSupportedException();
             public ValueTask<Membership> SetMembershipStatusAsync(Guid membershipId, string status, string reason, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+            public ValueTask<Membership> SetTenantAdministratorAsync(Guid membershipId, bool administrator, CancellationToken cancellationToken = default) => throw new NotSupportedException();
             public ValueTask LinkExternalIdentityAsync(ExternalIdentityLink link, CancellationToken cancellationToken = default) => throw new NotSupportedException();
             public ValueTask UnlinkExternalIdentityAsync(Guid membershipId, string connectorId, string subject, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         }

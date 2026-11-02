@@ -16,7 +16,7 @@
 
 内置 Provider 额外提供三个端口，服务键在 `IdentityDefinition` 上，`ctx.IdentityAccounts()` / `ctx.IdentitySignIn()` / `ctx.IdentityFactors()` 按当前 scope 注入：
 
-- `IIdentityAccounts`：创建 Person（多标识，初始密码，可选平台资格）、按标识查找、在当前租户建立成员（经租户配额判定，幂等）、绑定 / 解绑 / 换绑标识、自助改密、运营重置密码、状态变更、外部身份绑定，以及 `BumpIdentityRevisionAsync(personId, reason)`——授权变更后递增该 Person 在当前租户的身份修订（返回新的 `identity_revision`），旧令牌随即被服务端拒绝。`sub`（Person.Id）创建后永不改写；解绑最后一个已验证标识返回结构化的 `LAST_VERIFIED_IDENTIFIER`。返回值只含掩码后的标识。
+- `IIdentityAccounts`：创建 Person（多标识，初始密码，可选平台资格）、按标识查找、在当前租户建立成员（经租户配额判定，幂等）、绑定 / 解绑 / 换绑标识、自助改密、运营重置密码、状态变更、设置成员的租户管理员标志（`SetTenantAdministratorAsync`，运营替换管理员时撤销原管理员的标志，S1-TEN-010）、外部身份绑定，以及 `BumpIdentityRevisionAsync(personId, reason)`——授权变更后递增该 Person 在当前租户的身份修订（返回新的 `identity_revision`），旧令牌随即被服务端拒绝。`sub`（Person.Id）创建后永不改写；解绑最后一个已验证标识返回结构化的 `LAST_VERIFIED_IDENTIFIER`。返回值只含掩码后的标识。
 - `ISignInPipeline`：`SignInAsync(LoginInput, LoginContext)`、`SelectAsync`（用 5 分钟选择令牌换具体 Membership 或平台身份，切换租户同样走这里）、`ChangeInitialPasswordAsync`、`BeginSwitchAsync`。结果 `SignInResult` 的 `Status` 为 `Authenticated`（带 `AccountSession`）/ `SelectionRequired`（带票据与可选身份）/ `PasswordChangeRequired` / `Failed`（带 `QianError`，锁定时带 `RetryAfter`）。所有登录方式构造同一个 `LoginInput`，临时证明（`AuthenticationProof`）使用后由调用方释放。
 - `IAuthenticatorFactorRegistry`：认证因子注册表，同名独占、可撤销；内置的 `password` 由身份 Provider 占用，短信 OTP、TOTP 由各自组件注册。
 

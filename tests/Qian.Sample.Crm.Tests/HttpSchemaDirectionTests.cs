@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Builder;
@@ -33,4 +34,26 @@ public sealed class HttpSchemaDirectionTests
     {
         [DisallowNull] public string? Name { get; set; }
     }
+
+    [Fact]
+    public async Task 集合属性的MinLength与MaxLength写成条数约束_字符串仍是长度约束_元素不继承()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Services.AddAuthorization(); builder.Services.AddQianHttpContracts();
+        await using var app = builder.Build();
+        app.MapPost("/lengths", (Lengths input) => Results.NoContent()).WithMetadata(new PlatformHttpContract("qian.test"));
+        await app.StartAsync(TestContext.Current.CancellationToken);
+        var contract = await app.Services.GetRequiredService<IHttpContractSource>().CompileDocumentAsync("qian.test", TestContext.Current.CancellationToken);
+        var document = JsonNode.Parse(contract.GetRawText())!;
+        var request = TenantContractSchemaTests.Resolve(document, document["paths"]!["/lengths"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]!);
+        var items = request["properties"]!["items"]!.AsObject();
+        Assert.Equal((1, 3), (items["minItems"]!.GetValue<int>(), items["maxItems"]!.GetValue<int>()));
+        Assert.False(items.ContainsKey("minLength") || items.ContainsKey("maxLength"));
+        Assert.False(items["items"]!.AsObject().ContainsKey("minItems") || items["items"]!.AsObject().ContainsKey("minLength"));
+        var name = request["properties"]!["name"]!.AsObject();
+        Assert.Equal((2, 8, "^[a-z]+$"), (name["minLength"]!.GetValue<int>(), name["maxLength"]!.GetValue<int>(), name["pattern"]!.GetValue<string>()));
+        Assert.False(name.ContainsKey("minItems"));
+    }
+    public sealed record Lengths([property: MinLength(1), MaxLength(3)] IReadOnlyList<string> Items, [property: MinLength(2), MaxLength(8), RegularExpression("^[a-z]+$")] string Name);
 }

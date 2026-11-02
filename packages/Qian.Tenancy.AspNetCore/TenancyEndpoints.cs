@@ -58,12 +58,18 @@ public static partial class TenancyEndpoints
                 .UpdateAsync(id, input, http.RequestAborted).ConfigureAwait(false))))).Produces<TenantDescriptor>();
         MapState(endpoints, source);
         MapSettings(endpoints, source);
+        MapAdministrators(endpoints, source);
         return endpoints;
     }
     private static RouteHandlerBuilder Bind(RouteHandlerBuilder route) => route.RequireAuthorization().WithMetadata(new PlatformHttpContract("qian.tenancy"))
         .Produces<ErrorDetail>(400, ErrorDetailJson.MediaType).Produces<ErrorDetail>(401, ErrorDetailJson.MediaType)
         .Produces<ErrorDetail>(403, ErrorDetailJson.MediaType).Produces<ErrorDetail>(404, ErrorDetailJson.MediaType).Produces<ErrorDetail>(409, ErrorDetailJson.MediaType);
-    private static async Task<IResult> Respond(HttpContext http, Func<HttpContext, IPluginContext> source, string action, Guid? id,
+    // 租户主档、状态与设置的权限点是 qian.tenancy:tenant:<action>，旁路审计的资源是目标租户路径。
+    private static Task<IResult> Respond(HttpContext http, Func<HttpContext, IPluginContext> source, string action, Guid? id,
+        Func<IPluginContext, Principal, Task<IResult>> execute, Action? validate = null) =>
+        Execute(http, source, "qian.tenancy:tenant:" + action, id is null ? "tenancy/tenants" : "tenancy/tenants/" + id, execute, validate);
+    // R113 的处理顺序：认证及平台主体检查 → 输入校验 → 组件上下文核对 → 超管旁路与审计 → 执行。
+    private static async Task<IResult> Execute(HttpContext http, Func<HttpContext, IPluginContext> source, string permission, string resource,
         Func<IPluginContext, Principal, Task<IResult>> execute, Action? validate = null)
     {
         http.Response.Headers.CacheControl = "private, no-store";
@@ -81,15 +87,13 @@ public static partial class TenancyEndpoints
             if (ctx.Scope != ScopeKey.Global || ctx.Entry.Plugin != "qian.tenancy")
             { Denied("context_mismatch"); throw new QianErrorException(new QianError(PlatformErrors.NotFound)); }
             var decision = await ctx.Inject<ISuperadminBypass>(AuthzDefinition.SuperadminBypassKey).AuthorizeAsync(
-                new SuperadminAccess(new AuthorizationSubject(principal.Subject, null, "user"), "qian.tenancy:tenant:" + action,
-                    null, id is null ? "tenancy/tenants" : "tenancy/tenants/" + id, "api"), http.RequestAborted).ConfigureAwait(false);
+                new SuperadminAccess(new AuthorizationSubject(principal.Subject, null, "user"), permission, null, resource, "api"), http.RequestAborted).ConfigureAwait(false);
             if (!decision.Allow)
             {
-                LogDenied(http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Qian.Tenancy.Operations"),
-                    decision.Reason, principal.Subject, "qian.tenancy:tenant:" + action);
+                LogDenied(http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Qian.Tenancy.Operations"), decision.Reason, principal.Subject, permission);
                 throw new QianErrorException(new QianError(PlatformErrors.AuthzDenied));
             }
-            void Denied(string reason) => LogDenied(http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Qian.Tenancy.Operations"), reason, principal.Subject, "qian.tenancy:tenant:" + action);
+            void Denied(string reason) => LogDenied(http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Qian.Tenancy.Operations"), reason, principal.Subject, permission);
             using var origin = EventEnvelopeScope.Begin(new EventOrigin("qian.tenancy", EventActor.User(principal.Subject)));
             return await execute(ctx, principal).ConfigureAwait(false);
         }

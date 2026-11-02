@@ -1,9 +1,25 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, request as http } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { randomInt, randomUUID } from 'node:crypto';
 import { writeFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身份与错误态', async ({ page, context, baseURL }) => {
+// 统一登录流水线：身份组件的账号接口（防伪令牌 → 登录 → 必要时修改初始密码 → 账号会话），认证页族调用的也是这一组接口。
+async function signIn(identifier: string, password: string, next?: string) {
+  if (!process.env.QIAN_DEV_IDENTITY_URL) throw new Error('请经 e2e.mjs 启动独立宿主');
+  const session = await http.newContext({ baseURL: process.env.QIAN_DEV_IDENTITY_URL });
+  const csrf = await (await session.get('/api/identity/csrf')).json() as { header: string; token: string };
+  const headers = { [csrf.header]: csrf.token };
+  let result = await session.post('/api/identity/login', { headers, data: { client_id: 'qian-tenant-ops', identifier, password } });
+  let body = await result.json();
+  if (result.ok() && body.status === 'password_change_required' && next) {
+    result = await session.post('/api/identity/login/password', { headers, data: { ticket: body.ticket, new_password: next } });
+    body = await result.json();
+  }
+  return { session, status: result.status(), body };
+}
+
+test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并发、配额、管理员登录与重置、身份与错误态', async ({ page, context, baseURL }) => {
   const calls: { method: string; path: string; status: number }[] = [];
   page.on('request', (request) => { if (new URL(request.url()).pathname.startsWith('/api/tenancy')) expect(Boolean(request.headers().authorization)).toBe(false); });
   page.on('response', (response) => { const url = new URL(response.url()); if (url.pathname.startsWith('/api/tenancy')) calls.push({ method: response.request().method(), path: url.pathname, status: response.status() }); });
@@ -21,28 +37,60 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   await page.unroute('**/api/tenancy/tenants?*');
   const create = page.getByRole('button', { name: '新建租户', exact: true });
   const dialog = page.getByRole('dialog');
-  async function form(code: string, name: string, quota = '20') {
+  const confirmation = page.getByRole('alertdialog');
+  const opened = () => calls.filter((item) => item.method === 'POST' && item.path === '/api/tenancy/tenants');
+  // 管理员账号（S1-TEN-010）：A 的管理员在开户抽屉里新建；B 的管理员、其余租户共用的账号与替换用的丙先经运营接口建好，抽屉里按登录标识查找。
+  const phoneA = '139' + String(randomInt(10_000_000, 99_999_999));
+  async function account(displayName: string, identifier: string, initialPassword: string): Promise<string> {
+    const created = await context.request.post(baseURL + '/api/tenancy/admin-accounts', { data: { displayName, identifierKind: 'username', identifier, initialPassword } });
+    expect(created.status()).toBe(201);
+    return (await created.json()).subjectId;
+  }
+  const shared = await account('公共管理员', 'tenantui', 'Init-Pass-S-2026');
+  await account('管理员乙', 'adminb', 'Init-Pass-B-2026');
+  const subjectC = await account('管理员丙', 'adminc', 'Init-Pass-C-2026');
+  async function pick(identifier: string) {
+    await dialog.getByLabel('登录标识').fill(identifier);
+    await dialog.getByRole('button', { name: '查找账号', exact: true }).click();
+    await dialog.getByRole('button', { name: '选为管理员', exact: true }).click();
+  }
+  async function form(code: string, name: string, quota = '20', admin = 'tenantui') {
     await create.click();
+    await pick(admin);
     await dialog.getByLabel('租户号').fill(code);
     await dialog.getByLabel('租户名称').fill(name);
-    await dialog.getByLabel('管理员成员 ID').fill('01900000-0000-7000-8000-000000000101');
-    await dialog.getByLabel('管理员主体 ID').fill('tenant-ui-owner-' + code);
     await dialog.getByLabel('用户配额').fill(quota);
   }
   await create.click();
+  await dialog.getByRole('button', { name: '查找账号', exact: true }).click();
+  await expect(dialog.getByText('此项必填', { exact: true }).first()).toBeVisible();
+  await dialog.getByLabel('登录标识').fill('nobody');
+  await dialog.getByRole('button', { name: '查找账号', exact: true }).click();
+  await expect(dialog.getByText('没有找到可以担任管理员的账号，可以新建一个。', { exact: true })).toBeVisible();
+  await pick('tenantui');
   await dialog.getByRole('button', { name: '保存', exact: true }).click();
   await expect(dialog.getByText('此项必填', { exact: true }).first()).toBeVisible();
-  expect(calls.filter((item) => item.method === 'POST')).toHaveLength(0);
+  expect(opened()).toHaveLength(0);
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
-  await form('tenanta', '租户 A');
+  // 验收 3：开户时经身份组件新建管理员账号；抽屉里只显示掩码，不回显手机号与初始密码。
+  await create.click();
+  await dialog.getByRole('button', { name: '新建账号', exact: true }).click();
+  await dialog.getByLabel('姓名').fill('管理员甲');
+  await dialog.getByLabel('登录标识').fill(phoneA);
+  await dialog.getByLabel('初始密码').fill('Init-Pass-A-2026');
+  await dialog.getByRole('button', { name: '新建账号', exact: true }).click();
+  await expect(dialog.getByTestId('tenant-admin-card')).toContainText('管理员甲');
+  await expect(dialog.getByTestId('tenant-admin-card')).not.toContainText(phoneA);
   await dialog.getByLabel('租户号').fill('UPPER');
+  await dialog.getByLabel('租户名称').fill('租户 A');
+  await dialog.getByLabel('用户配额').fill('20');
   await dialog.getByRole('button', { name: '保存', exact: true }).click();
   await expect(dialog.getByLabel('租户号')).toHaveAttribute('aria-invalid', 'true');
-  expect(calls.filter((item) => item.method === 'POST')).toHaveLength(0);
+  expect(opened()).toHaveLength(0);
   await dialog.getByLabel('租户号').fill('tenanta');
   await dialog.getByRole('button', { name: '保存', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await form('tenantb', '租户 B', '30');
+  await form('tenantb', '租户 B', '30', 'adminb');
   await dialog.getByRole('button', { name: '保存', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   const rowA = page.getByRole('row').filter({ hasText: '租户 A' });
@@ -107,6 +155,23 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   await page.getByRole('button', { name: '刷新', exact: true }).click();
   await expect(rowB.getByText('已冻结', { exact: true })).toBeVisible();
 
+  // 验收 3：恢复 B 后，两位开户管理员经统一登录流水线登录（首次登录先改初始密码），各自只看到本租户的数据。
+  expect((await context.request.post(baseURL + '/api/tenancy/tenants/' + b.id + ':resume')).status()).toBe(200);
+  const signedA = await signIn(phoneA, 'Init-Pass-A-2026', 'Next-Pass-A-2026');
+  const signedB = await signIn('adminb', 'Init-Pass-B-2026', 'Next-Pass-B-2026');
+  for (const [signed, own, other, name] of [[signedA, a, b, '管理员甲'], [signedB, b, a, '管理员乙']] as const) {
+    expect(signed).toMatchObject({ status: 200, body: { status: 'authenticated', tenant_id: own.id } });
+    expect((await (await signed.session.get('/api/identity/me')).json()).tenant_id).toBe(own.id);
+    // 请求里写别的租户也不起作用：目录只按会话的租户读，成员只有本租户的管理员。
+    for (const query of ['', '?tenant_id=' + other.id]) {
+      const members = await (await signed.session.get('/api/directory/members' + query)).json();
+      expect(members.items.map((item: { membership: { display_name: string } }) => item.membership.display_name)).toEqual([name]);
+    }
+  }
+  await signedB.session.dispose();
+  await page.getByRole('button', { name: '刷新', exact: true }).click();
+  await expect(rowB.getByText('正常', { exact: true })).toBeVisible();
+
   await rowA.getByRole('button', { name: '编辑', exact: true }).click();
   await dialog.getByLabel('租户名称').fill('租户 A 已编辑');
   await dialog.getByLabel('用户配额').fill('25');
@@ -124,16 +189,43 @@ test('R110 真实宿主七步：列表、创建、迁移、并发、配额、身
   await dialog.getByRole('button', { name: '刷新', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
   await rowA.getByRole('button', { name: '租户 A 他人更新', exact: true }).click();
-  await expect(dialog.getByText('用量不可用', { exact: true })).toBeVisible();
+  // 用量来自身份组件的真实成员数：只有开户管理员一人。
   await expect(dialog.getByText('25', { exact: true })).toBeVisible();
-  // 只读抽屉没有表单，底部另有一个「关闭」按钮；与上面几处一样点表头关闭按钮。
-  await dialog.getByTestId('yue-form-drawer-close').click();
+  await expect(dialog.getByText('1', { exact: true })).toBeVisible();
+  const admin = dialog.getByTestId('tenant-admin-details');
+  await expect(admin).toContainText('管理员甲'); await expect(admin).not.toContainText(phoneA);
+  // 验收 2 的页面部分：重置管理员密码要二次确认，取消时不发请求；确认后旧密码与原会话立即失效，临时密码登录必须先改密。
+  const resets = () => calls.filter((item) => item.path.endsWith(':reset-password'));
+  await admin.getByRole('button', { name: '重置密码', exact: true }).click();
+  await dialog.getByLabel('临时密码').fill('Temp-Pass-A-2026');
+  await dialog.getByRole('button', { name: '重置密码', exact: true }).click();
+  await confirmation.getByRole('button', { name: '取消', exact: true }).click();
+  expect(resets()).toHaveLength(0);
+  await dialog.getByRole('button', { name: '重置密码', exact: true }).click();
+  await confirmation.getByRole('button', { name: '确认', exact: true }).click();
+  await expect(page.getByText('管理员密码已重置', { exact: true })).toBeVisible();
+  expect(resets().map((item) => item.status)).toEqual([204]);
+  expect((await signedA.session.get('/api/identity/me')).status()).toBe(401);
+  await signedA.session.dispose();
+  const stale = await signIn(phoneA, 'Next-Pass-A-2026');
+  expect(stale).toMatchObject({ status: 401, body: { code: 'INVALID_CREDENTIALS' } });
+  const temporary = await signIn(phoneA, 'Temp-Pass-A-2026');
+  expect(temporary.body).toMatchObject({ status: 'password_change_required' });
+  for (const signed of [stale, temporary]) await signed.session.dispose();
+  // 更换管理员：查找已有账号、选为管理员、二次确认；B 的管理员换成丙。
+  await rowB.getByRole('button', { name: '租户 B', exact: true }).click();
+  await dialog.getByTestId('tenant-admin-details').getByRole('button', { name: '更换管理员', exact: true }).click();
+  await pick('adminc');
+  await confirmation.getByRole('button', { name: '确认', exact: true }).click();
+  await expect(page.getByText('管理员已更换', { exact: true })).toBeVisible();
+  const admins = await (await context.request.get(baseURL + '/api/tenancy/tenants/' + b.id + '/admins')).json();
+  expect(admins.items.map((item: { subjectId: string }) => item.subjectId)).toEqual([subjectC]);
 
   // 第 1 步服务端分页：再建 13 个（租户号排在 tenanta / tenantb 之后），共 15 个。
   // 总数取自响应而不是本页行数；第 2 页与每页条数都以 skip / take 交给宿主。
   for (let index = 1; index <= 13; index++) {
     const code = 'zpage' + String(index).padStart(2, '0');
-    const created = await context.request.post(baseURL + '/api/tenancy/tenants', { data: { code, name: '分页租户 ' + code, isolation: 'row', administrator: { membershipId: '01900000-0000-7000-8000-000000000101', subjectId: 'tenant-ui-owner-' + code } } });
+    const created = await context.request.post(baseURL + '/api/tenancy/tenants', { data: { code, name: '分页租户 ' + code, isolation: 'row', administrator: { membershipId: randomUUID(), subjectId: shared } } });
     expect(created.status()).toBe(201);
   }
   await page.getByRole('button', { name: '刷新', exact: true }).click();

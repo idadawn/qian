@@ -13,6 +13,11 @@ public interface ITenantRoleGrant
     /// 给租户最后一个成员管理绑定加有效期上限视为降级，以 AUTHZ_LAST_ADMIN_LOCKOUT 拒绝。
     /// </summary>
     ValueTask BindAsync(RoleBinding binding, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 在当前租户撤销直接主体的内置角色绑定，不存在时返回 false；调用方须完成授权。撤销租户最后一个成员管理绑定
+    /// 以 AUTHZ_LAST_ADMIN_LOCKOUT 拒绝（防自锁）。运营替换租户管理员时撤销原管理员的 tenant.owner（S1-TEN-010）。
+    /// </summary>
+    ValueTask<bool> RevokeAsync(string roleCode, string subjectType, string subjectId, string actor, CancellationToken cancellationToken = default);
 }
 
 /// <summary>一次角色绑定的描述；Scope 为绑定作用域，null 表示租户本身。</summary>

@@ -10,6 +10,8 @@ CONTAINER="${QIAN_DEV_PG_CONTAINER:-qian-dev-tenant-ops-pg}"
 PG_PORT="${QIAN_DEV_PG_PORT:-55432}"
 PG_IMAGE="${QIAN_DEV_PG_IMAGE:-${QIAN_TEST_IMAGE_POSTGRES:-postgres:16-alpine}}"
 OPS_URL="${QIAN_DEV_OPS_URL:-http://127.0.0.1:5080}"
+# 真实 qian.identity 的发行方（S1-TEN-010）：业务宿主监听此地址，账号接口 /api/identity、目录 /api/directory。
+IDENTITY_URL="${QIAN_DEV_IDENTITY_URL:-http://127.0.0.1:5081}"
 PROJECT="$ROOT/tools/Qian.Dev.TenantOps"
 DLL="$PROJECT/bin/Debug/net10.0/Qian.Dev.TenantOps.dll"
 PASSWORD_FILE="$STATE/pg-admin-password"
@@ -18,7 +20,7 @@ usage() {
   cat <<EOF
 用法：scripts/dev-tenant-ops.sh <命令>
 
-  up                    起 PostgreSQL 16 容器（只绑 127.0.0.1:${PG_PORT}），重建开发库，前台启动运营宿主（${OPS_URL}）
+  up                    起 PostgreSQL 16 容器（只绑 127.0.0.1:${PG_PORT}），重建开发库，前台启动运营宿主（${OPS_URL}）与身份发行方（${IDENTITY_URL}）
   walkthrough [--yes]   另开一个终端运行：按「建租户 → 开通步骤 → 激活 → 写设置/读配额 → 冻结/恢复 → 扫描到期」逐步调用
   api 方法 路径 [JSON]   以平台超管身份调用一次运营宿主，例如：api GET /api/tenancy/tenants
   token [选项]          打印本机开发令牌；选项 --sub、--tenant、--kind、--ttl（分钟），默认是平台超管 root
@@ -45,6 +47,8 @@ container_state() {
 
 # 探测运营宿主，输出 HTTP 状态码，没有响应时是 000。运营端点不带令牌应答 401，据此认出是本宿主在监听。
 ops_probe() { curl --noproxy '*' -s -o /dev/null -w '%{http_code}' --max-time 2 "$OPS_URL/api/tenancy/meta/state-machine" || true; }
+# 探测身份发行方的发现文档，没有响应时是 000。
+identity_probe() { curl --noproxy '*' -s -o /dev/null -w '%{http_code}' --max-time 2 "$IDENTITY_URL/.well-known/openid-configuration" || true; }
 
 start_postgres() {
   need docker "安装并启动 Docker Desktop 或其他 Docker 引擎"
@@ -78,10 +82,13 @@ cmd_up() {
   if [ "$(ops_probe)" != 000 ]; then
     echo "$OPS_URL 已有服务在监听；先停掉它（或设 QIAN_DEV_OPS_URL 换端口）。" >&2; exit 1
   fi
+  if [ "$(identity_probe)" != 000 ]; then
+    echo "$IDENTITY_URL 已有服务在监听；先停掉它（或设 QIAN_DEV_IDENTITY_URL 换端口）。" >&2; exit 1
+  fi
   start_postgres
   build
   QIAN_DEV_PG_ADMIN="Host=127.0.0.1;Port=$PG_PORT;Username=qian;Password=$(cat "$PASSWORD_FILE");Database=postgres" \
-    exec dotnet "$DLL" serve --urls "$OPS_URL" --state "$STATE"
+    exec dotnet "$DLL" serve --urls "$OPS_URL" --identity-urls "$IDENTITY_URL" --state "$STATE"
 }
 
 cmd_down() {
@@ -145,8 +152,8 @@ stop_host() {
 # CI 工作流与本机执行的是同一条命令；结束后容器保留，用 down 删除。
 cmd_smoke() {
   local log="${QIAN_DEV_SMOKE_LOG:-$STATE/smoke-up.log}" timeout="${QIAN_DEV_SMOKE_TIMEOUT:-600}" waited=0 code=0 pid
-  if [ "$(ops_probe)" != 000 ]; then
-    echo "$OPS_URL 已有服务在监听；冒烟要自己起宿主，先停掉它（或设 QIAN_DEV_OPS_URL 换端口）。" >&2; exit 1
+  if [ "$(ops_probe)" != 000 ] || [ "$(identity_probe)" != 000 ]; then
+    echo "$OPS_URL 或 $IDENTITY_URL 已有服务在监听；冒烟要自己起宿主，先停掉它（或设 QIAN_DEV_OPS_URL / QIAN_DEV_IDENTITY_URL 换端口）。" >&2; exit 1
   fi
   mkdir -p "$(dirname "$log")"
   bash "$ROOT/scripts/dev-tenant-ops.sh" up > "$log" 2>&1 &
@@ -160,7 +167,7 @@ cmd_smoke() {
     sleep 2; waited=$((waited + 2))
   done
   echo "运营宿主已就绪（约 $waited 秒），开始走查。"
-  QIAN_DEV_VALID_SECONDS="${QIAN_DEV_VALID_SECONDS:-5}" QIAN_DEV_OPS_URL="$OPS_URL" QIAN_DEV_STATE="$STATE" \
+  QIAN_DEV_VALID_SECONDS="${QIAN_DEV_VALID_SECONDS:-5}" QIAN_DEV_OPS_URL="$OPS_URL" QIAN_DEV_IDENTITY_URL="$IDENTITY_URL" QIAN_DEV_STATE="$STATE" \
     bash "$PROJECT/walkthrough.sh" --yes || code=$?
   stop_host "$pid"
   if [ "$code" != 0 ]; then printf '\n--- 宿主日志（%s）---\n' "$log"; cat "$log"; fi
@@ -173,7 +180,7 @@ case "$command" in
   down) cmd_down "$@" ;;
   token) cmd_token "$@" ;;
   api) cmd_api "$@" ;;
-  walkthrough) ensure_built; QIAN_DEV_OPS_URL="$OPS_URL" QIAN_DEV_STATE="$STATE" exec bash "$PROJECT/walkthrough.sh" "$@" ;;
+  walkthrough) ensure_built; QIAN_DEV_OPS_URL="$OPS_URL" QIAN_DEV_IDENTITY_URL="$IDENTITY_URL" QIAN_DEV_STATE="$STATE" exec bash "$PROJECT/walkthrough.sh" "$@" ;;
   status) cmd_status ;;
   smoke) cmd_smoke ;;
   *) usage; [ -z "$command" ] || exit 2 ;;

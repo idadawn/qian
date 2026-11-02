@@ -100,6 +100,12 @@ public interface IIdentityAccounts
     ValueTask<Person> SetPersonStatusAsync(Guid personId, string status, string reason, CancellationToken cancellationToken = default);
     /// <summary>变更当前租户内成员状态；递增成员修订。</summary>
     ValueTask<Membership> SetMembershipStatusAsync(Guid membershipId, string status, string reason, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 设置或撤销当前租户内成员的租户管理员标志；有变化时递增成员修订，使此前签发的令牌失效。不改变成员状态与授权，
+    /// 也不经配额判定（成员已计入）；新建或绑定管理员成员仍用 <see cref="CreateMembershipAsync"/>。
+    /// 成员不存在、已清除或已从目录删除返回 NOT_FOUND。运营替换租户管理员时用它撤销原管理员（S1-TEN-010）。
+    /// </summary>
+    ValueTask<Membership> SetTenantAdministratorAsync(Guid membershipId, bool administrator, CancellationToken cancellationToken = default);
     /// <summary>绑定外部身份到当前租户的成员；同租户 connector × subject 已被绑定返回 IDENTIFIER_IN_USE。</summary>
     ValueTask LinkExternalIdentityAsync(ExternalIdentityLink link, CancellationToken cancellationToken = default);
     /// <summary>解绑外部身份（软删除）；若这是 Person 仅剩的登录方式则拒绝。</summary>
