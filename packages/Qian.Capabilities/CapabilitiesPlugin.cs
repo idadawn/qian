@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Qian.Plugin.Sdk;
 using Qian.Registry;
 using Qian.Audit;
+using Qian.Authz.Abstractions;
 using Qian.Data;
 using Qian.Tenancy;
 using Qian.Runtime;
@@ -18,6 +19,11 @@ public sealed class CapabilitiesPlugin : IQianPlugin
 {
     /// <inheritdoc />
     public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key, AuditDefinition.Key, RegistryDefinition.Key, TenancyDefinition.Key, CommandPolicies.TenancyKey, CommandPolicies.AuthorizationKey, CommandPolicies.AuditKey];
+    /// <summary>
+    /// 可选依赖，与清单的 optionalInject 同一份：Authz 的平台超管只读判定（S1-YUE-018 平台控制台目录按它过滤平台组件的远程、菜单与权限码）。
+    /// 缺席时仍装载，按调用解析；缺判定端口时平台控制台目录为空。
+    /// </summary>
+    public static IReadOnlyList<ServiceKey> OptionalInject => [AuthzDefinition.SuperadminCheckKey];
     /// <inheritdoc />
     public async ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {

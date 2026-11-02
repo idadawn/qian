@@ -16,7 +16,8 @@ namespace Qian.Sample.Crm;
 
 // 面向用户的平台表面参考宿主（S1-YUE-012）：能力目录 / 导航 / 外壳目录（MapQianCapabilities）与有效权限（MapQianAuthz）。
 // 与 TenantOperationsHost 同形：复用已装配的 Runtime（Registry / Capabilities / Authz），只认网关签发的 S2S（RS256、issuer、受众、有效期），
-// 接受 user / service / agent 主体，主体快照取自令牌，按其 tenant_id 进入租户 scope；平台身份（tenant_id 为 null）没有租户表面，按未认证拒绝。
+// 接受 user / service / agent 主体，主体快照取自令牌，按其 tenant_id 进入租户 scope；平台身份（tenant_id 为 null）没有租户表面，按未认证拒绝，
+// 只读平台控制台目录（GET /api/capabilities/console，S1-YUE-018）：用 Capabilities 的全局上下文，按平台超管只读判定列出平台组件的远程与菜单，带租户的请求按不存在拒绝。
 // 授权 PEP 按生产模式装配：处理器内判定的端点也比对 identity_revision，旧修订的令牌 401 UNAUTHENTICATED（客户端据此换令牌）。
 // 参考应用的命令宿主（受众 qian.sample.crm）验签只认机器身份，用户主体的平台表面因此单独成宿主，网关按受众分簇转发；本宿主借用它的运行时，
 // 验证过的主体同时交给参考应用的身份适配器，经通用执行入口调用的能力在应用命令管道里以调用者本人执行（S1-YUE-015）。生产宿主由 platform profile 的平台镜像提供（S1-DEP-009）。
@@ -67,8 +68,18 @@ public static class PlatformSurfaceHost
         });
         app.UseAuthorization(); app.UseQianPluginEndpoints(); app.UseQianAuthzEnforcement();
         app.MapQianCapabilities(http => Scoped(component, "capabilities", http));
+        app.MapQianPlatformConsole(http => Global(component, "capabilities", http));
         app.MapQianAuthz(http => Scoped(component, "authz", http));
         return app;
+    }
+
+    // 平台控制台用组件的全局上下文，只给不带租户的请求（平台身份）；租户成员的请求按不存在拒绝，与目录服务自己的主体检查一致。
+    private static IPluginContext Global(Func<string, IPluginContext> component, string id, HttpContext http)
+    {
+        if (!string.IsNullOrEmpty(http.RequestServices.GetRequiredService<ITenantContext>().TenantId)) throw new QianErrorException(new QianError(PlatformErrors.NotFound));
+        try { return component(id); }
+        catch (Exception error) when (error is KeyNotFoundException or ObjectDisposedException or InvalidOperationException)
+        { throw new QianErrorException(new QianError(PlatformErrors.NotFound)); }
     }
 
     // 与参考宿主的 CapabilitySource / AuthzSource 同形：全局 Provider 上下文按请求租户收窄；没有租户（平台身份）即未认证，组件不在即 404。

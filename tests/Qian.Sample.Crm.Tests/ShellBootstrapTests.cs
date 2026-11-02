@@ -36,7 +36,7 @@ public abstract partial class CustomerCommandTests
 public sealed partial class ShellSurfaceTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
 {
     [Fact]
-    public async Task 外壳bootstrap经网关聚合会话目录导航与权限_匿名401_平台身份代管_切换租户后远程与权限随之变化_旧修订401刷新后恢复_不含令牌()
+    public async Task 外壳bootstrap经网关聚合会话目录导航与权限_匿名401_不持角色的平台身份代管_切换租户后远程与权限随之变化_旧修订401刷新后恢复_不含令牌()
     {
         using var tls = GatewayTestHost.Certificate(); using var reservation = LoopbackPort.Reserve();
         var address = new Uri($"https://localhost:{reservation.Port}/");
@@ -71,7 +71,7 @@ public sealed partial class ShellSurfaceTests(PostgresFixture postgres) : Custom
         }
         Assert.Empty(seen);
 
-        // 平台身份（没有成员身份）：代管上下文，不调任何下游。
+        // 不持平台超管的平台身份（没有成员身份）：只问平台控制台目录（S1-YUE-018，为空），回代管上下文；不调租户的三条平台表面。
         var (operatorPerson, operatorPhone) = await NewPerson(business, "平台运营", platform: true);
         var (operatorClient, operatorCookies) = GatewayTestHost.Browser(tls); using (operatorClient)
         {
@@ -83,7 +83,8 @@ public sealed partial class ShellSurfaceTests(PostgresFixture postgres) : Custom
             Assert.True((bool)managed["managed"]!);
             Assert.Null(managed["context"]!["tenant"]); Assert.Null(managed["context"]!["membership"]); Assert.Null(managed["navigation"]);
             foreach (var name in new[] { "remotes", "mounted", "entitled", "permissions" }) Assert.Empty(managed[name]!.AsArray());
-            Assert.Empty(seen);
+            Assert.Equal(["/api/capabilities/console"], seen);
+            seen.Clear();
         }
 
         // 成员：A（tenant.user，只读）与 B（tenant.user）两个成员身份；B 的 scope 禁用参考应用（未挂载）。
@@ -304,7 +305,7 @@ public abstract partial class CustomerCommandTests
         }
     }
 
-    // 平台表面宿主收到的每个请求（路径），证明匿名与平台身份的 bootstrap 不调下游。
+    // 平台表面宿主收到的每个请求（路径）：匿名的 bootstrap 不调下游，平台身份的只调平台控制台目录。
     private protected sealed class RequestLog(ConcurrentQueue<string> seen) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>

@@ -1,9 +1,10 @@
 {
-  "$comment": "外壳认证联调环境的种子账号（S1-YUE-002 / S1-YUE-012）。只在本机开发库与 CI E2E 里存在，每次 up 重建；E2E 读同一文件取用户名与密码。丙方（gamma）不挂参考应用：验收 2 的「未挂载」形态。",
+  "$comment": "外壳认证联调环境的种子账号（S1-YUE-002 / S1-YUE-012）。只在本机开发库与 CI E2E 里存在，每次 up 重建；E2E 读同一文件取用户名与密码。丙方（gamma）不挂参考应用：验收 2 的「未挂载」形态。operator 持平台超管（平台控制台，S1-YUE-018），visitor 是不持角色的平台身份（代管）。",
   "persons": [
     { "key": "owner", "displayName": "演示用户", "username": "demo", "password": "Demo-Horse-2026", "platform": false },
     { "key": "second", "displayName": "乙方管理员", "username": "second", "password": "Second-Horse-2026", "platform": false },
-    { "key": "operator", "displayName": "平台运营", "username": "operator", "password": "Operator-Horse-2026", "platform": true },
+    { "key": "operator", "displayName": "平台运营", "username": "operator", "password": "Operator-Horse-2026", "platform": true, "superadmin": true },
+    { "key": "visitor", "displayName": "平台访客", "username": "visitor", "password": "Visitor-Horse-2026", "platform": true },
     { "key": "third", "displayName": "丙方管理员", "username": "third", "password": "Third-Horse-2026", "platform": false }
   ],
   "tenants": [

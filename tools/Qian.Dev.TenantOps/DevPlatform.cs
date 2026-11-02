@@ -27,7 +27,7 @@ namespace Qian.Dev.TenantOps;
 
 // 平台插件树，照集成测试 LifecycleAcceptanceTests 的 AttachLifecycle 装配：Data / Tenancy / Authz / Audit / Config / Registry /
 // Capabilities / Lifecycle 都是实际 Provider，组件文件夹写进临时 platform profile，制品摘要经本次启动的平台钥签名后交给 Lifecycle 安装。
-// 与测试不同的只有两处：不预装参考应用的多个版本（手测不涉及 CRM 升级），也不给示例租户授予诊断权限。
+// 与测试不同的只有两处：不预装参考应用的多个版本（手测不涉及 CRM 升级），也不给示例租户授予诊断权限。外壳联调环境另开平台控制台（Console，同测试的 LifecyclePlatform.Console）。
 internal sealed class DevPlatform(string repository) : IDisposable
 {
     private static readonly string[] CatalogScopes = ["global", "tenant"];
@@ -40,6 +40,14 @@ internal sealed class DevPlatform(string repository) : IDisposable
     /// 租户运营手测不开通参考应用，缺省关闭。
     /// </summary>
     internal bool IncludeReferenceApplication { get; init; }
+    /// <summary>
+    /// 平台控制台（S1-YUE-018，外壳联调环境）：Tenancy 带上仓库里的 UI 清单（清单 scopes 只含 global，即平台组件），以包装后的定义重挂（声明沿用业务宿主的条目）；
+    /// 给出 <see cref="Signup"/> 时开通申请组件同样带 UI 清单登记预装绑定，包装后的定义见 <see cref="SignupConsole"/>，由调用方在它的依赖（身份组件）挂好之后挂载。
+    /// 开通申请不经 Lifecycle 安装（不是 system 制品，租户开通第 03 步不碰它）。租户运营手测宿主不开。
+    /// </summary>
+    internal bool Console { get; init; }
+    internal PluginDefinition? Signup { get; init; }
+    internal PluginDefinition? SignupConsole { get; private set; }
 
     internal async Task AttachAsync(PluginLoader loader, IReadOnlyDictionary<string, PluginDefinition> business, DevTrustRoot trust, CancellationToken ct, IServiceProvider? services = null)
     {
@@ -73,6 +81,8 @@ internal sealed class DevPlatform(string repository) : IDisposable
         Write("profiles/platform/qian.profile.yml", """{"name":"platform","bundles":[],"patch":"./qian.patch.yml","hmr":{"surfaces":true,"code":false},"build":{"aot":false},"hooks":{"allowCommand":false}}""");
         Write("profiles/platform/qian.patch.yml", JsonSerializer.Serialize(definitions.Values.Select(item => new { id = item.Entry.Id, plugin = item.Entry.Plugin + "@" + item.Entry.Version, config = item.Entry.Config })));
         var surface = new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true };
+        if (Console) Write("plugins/tenancy/ui/manifest.json", File.ReadAllText(Path.Combine(repository, "plugins/qian.tenancy/ui/manifest.json")));
+        PluginDefinition? tenancy = null;
         foreach (var definition in definitions.Values)
         {
             var folder = Path.Combine(_directory.FullName, "plugins", definition.Entry.Id);
@@ -81,14 +91,22 @@ internal sealed class DevPlatform(string repository) : IDisposable
             var files = Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).ToDictionary(
                 file => Path.GetRelativePath(folder, file).Replace(Path.DirectorySeparatorChar, '/'), file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
             var digest = ArtifactDigest(files);
-            installed.Add(RegistryComponentBinding.FromArtifact(definition, files, digest, validator, surface));
+            var binding = RegistryComponentBinding.FromArtifact(definition, files, digest, validator, surface);
+            installed.Add(binding);
             SystemArtifacts[definition.Entry.Plugin] = new PluginArtifact(files, digest, trust.Sign(digest));
+            // 业务宿主启动时挂的 Tenancy 条目换成带 UI 清单的包装（同一 Provider、配置与全部服务声明）。
+            if (Console && definition.Entry.Id == "tenancy")
+                tenancy = business["tenancy"] with { Plugin = new NavigationManifestPlugin(business["tenancy"].Plugin, binding.Metadata, validator) };
         }
+        if (tenancy is not null) definitions["tenancy"] = tenancy;
+        if (Console && Signup is not null) SignupConsole = PlatformComponent(Signup, "plugins/qian.tenancy.signup/ui/manifest.json", validator, installed, surface);
         if (IncludeReferenceApplication) reference = await ReferenceApplication(validator, installed, trust, services, ct).ConfigureAwait(false);
         // 参考应用只经 Lifecycle 进租户 scope；撤下 CRM 宿主启动时挂的全局条目（手测不开通它；联调环境由开通编排装进租户）。
         await loader.UnmountAsync("crm", ScopeKey.Global, ct).ConfigureAwait(false);
-        await loader.MountAsync([definitions["config"], definitions["registry"], definitions["capabilities"], definitions["lifecycle"]], ct).ConfigureAwait(false);
-        foreach (var id in new[] { "config", "registry", "capabilities", "lifecycle" }) EnsureReady(loader, id);
+        // 平台控制台：此时还没有别的条目依赖 Tenancy（参考应用刚撤下，身份组件随后才挂），重挂不牵动其它条目。
+        if (tenancy is not null) await loader.UnmountAsync("tenancy", ScopeKey.Global, ct).ConfigureAwait(false);
+        await loader.MountAsync([.. tenancy is null ? [] : new[] { tenancy }, definitions["config"], definitions["registry"], definitions["capabilities"], definitions["lifecycle"]], ct).ConfigureAwait(false);
+        foreach (var id in new[] { "tenancy", "config", "registry", "capabilities", "lifecycle" }) EnsureReady(loader, id);
         await loader.GetContext("registry", ScopeKey.Global).Registry().StartAsync(ct).ConfigureAwait(false);
 
         void Add(string id, string component, IQianPlugin plugin, ServiceKey[] provides, object? config = null)
@@ -140,6 +158,29 @@ internal sealed class DevPlatform(string repository) : IDisposable
         var binding = RegistryComponentBinding.FromArtifact(definition, files, digest, validator, surface);
         installed.Add(binding);
         SystemArtifacts[definition.Entry.Plugin] = new PluginArtifact(files, digest, trust.Sign(digest));
+        return definition with { Plugin = new NavigationManifestPlugin(definition.Plugin, binding.Metadata, validator) };
+    }
+
+    // 平台组件（清单 scopes 只含 global）的组件文件夹：清单照条目的实际依赖与声明生成（official：不经 Lifecycle 安装），ui/manifest.json 取自仓库里的组件目录；
+    // 登记预装绑定（平台控制台目录只收已安装制品里的组件），返回带 UI 清单的包装定义。
+    private PluginDefinition PlatformComponent(PluginDefinition definition, string manifest, SurfaceValidator validator, List<RegistryComponentBinding> installed, SurfaceValidationOptions surface)
+    {
+        var id = definition.Entry.Id;
+        Write($"plugins/{id}/.qian-plugin/plugin.json", JsonSerializer.Serialize(new
+        {
+            id = definition.Entry.Plugin, version = definition.Entry.Version, description = "外壳联调环境挂在全局 scope 的平台组件（平台控制台）。", author = new { name = "Qian" }, license = "Apache-2.0",
+            @interface = new { displayName = id, category = "testing" }, inject = definition.Plugin.Inject.Select(key => key.Name), provides = definition.Provides.Select(key => key.Name),
+            policy = new { tier = "official", sandbox = "none", authentication = "ON_INSTALL", required = false }, scopes = GlobalSettingsScopes,
+            runtime = new { form = "module", entry = definition.Plugin.GetType().FullName + ", " + definition.Plugin.GetType().Assembly.GetName().Name }
+        }));
+        Write($"plugins/{id}/ui/manifest.json", File.ReadAllText(Path.Combine(repository, manifest)));
+        var folder = Path.Combine(_directory.FullName, "plugins", id);
+        var validation = validator.ValidateComponent(folder, surface);
+        if (!validation.IsValid) throw new InvalidOperationException(id + " 组件文件夹不合格：" + JsonSerializer.Serialize(validation.Diagnostics));
+        var files = Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).ToDictionary(
+            file => Path.GetRelativePath(folder, file).Replace(Path.DirectorySeparatorChar, '/'), file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
+        var binding = RegistryComponentBinding.FromArtifact(definition, files, ArtifactDigest(files), validator, surface);
+        installed.Add(binding);
         return definition with { Plugin = new NavigationManifestPlugin(definition.Plugin, binding.Metadata, validator) };
     }
 

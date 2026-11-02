@@ -10,12 +10,15 @@ import { expect, test, type Page } from '@playwright/test';
 // （平台表面宿主的授权 PEP 按生产模式比对修订下限）：SDK 合并成一次刷新、换到新修订后重放，外壳随即重拉 bootstrap（裁决 ④）→ refresh 失效时依赖方
 // 结束会话，401 合并成一次刷新尝试（探测即 401、不再 POST）并只弹一次过期对话框 → 代码审查项的自动检查（存储、URL、iframe、响应体里都没有令牌，
 // 会话 Cookie 对脚本不可见，构建产物的 meta CSP 零违规）→ 改运行时配置 /app-config.json 的 apiBase 后刷新页面即走新前缀，不重编译。
-// 另几条用例：平台身份（operator）只有代管横幅与会话卡片、bootstrap 不调任何下游；刷新成功但平台表面持续 401 时只刷新一次、只弹一个过期对话框、之后不再请求，整页重载也不跳登录、点「重新登录」只跳一次；
+// 另几条用例：平台控制台（S1-YUE-018）——持平台超管的平台身份（operator）侧栏只有「租户管理」「开通申请」、不代管，打开即经 MF2 按需加载平台组件的远程并经运营接口
+// 列出真实租户与开通申请，不持角色的平台身份（visitor）仍只有代管横幅与会话卡片、直达平台页面 404，两者的 bootstrap 都只问平台控制台目录；
+// 刷新成功但平台表面持续 401 时只刷新一次、只弹一个过期对话框、之后不再请求，整页重载也不跳登录、点「重新登录」只跳一次；
 // SSO 跳转回调经真实上游 Dex（通用 OIDC 连接器）首次确认绑定、再次直接进入；验收 2：甲方已挂载参考应用时远程按需加载、丙方未挂载时 mf-manifest.json 从不请求；零令牌检测式自检不需要真实栈。
 const root = resolve(import.meta.dirname, '../../..');
 const seed = JSON.parse(readFileSync(resolve(root, 'tools/Qian.Dev.Shell/seed/accounts.json'), 'utf8')) as { persons: { key: string; username: string; password: string }[]; tenants: { code: string; name: string }[] };
 const owner = seed.persons.find(person => person.key === 'owner')!;
 const operator = seed.persons.find(person => person.key === 'operator')!;
+const visitor = seed.persons.find(person => person.key === 'visitor')!;
 const second = seed.persons.find(person => person.key === 'second')!;
 // 上游 Dex 本地密码库里的用户（scripts/dev-shell.sh 用同一文件渲染 Dex 配置）。
 const dex = JSON.parse(readFileSync(resolve(root, 'tools/Qian.Dev.Shell/seed/dex.json'), 'utf8')) as { email: string; password: string };
@@ -351,21 +354,69 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   await noCredentials(page, '退出后');
 });
 
-test('平台身份（operator）：只有代管横幅与会话卡片，bootstrap 不调任何下游、不拉能力目录，不出现过期对话框，零令牌', async ({ page, baseURL }) => {
+test('平台控制台（operator 持平台超管）：侧栏只有「租户管理」「开通申请」、不代管；打开租户管理经 MF2 按需加载租户运营远程并列出真实租户，开通申请页同样可用；不出现过期对话框，零令牌', async ({ page, baseURL }) => {
   const origin = baseURL!.replace(/\/$/, '');
-  const { refreshes, apiCalls, bodies } = observe(page, origin);
+  const { refreshes, apiCalls, bodies, remotes } = observe(page, origin);
+  const nav = page.getByTestId('yue-app-shell-sidebar').getByRole('link');
   await page.goto('/');
   await expect(page).toHaveURL(loginPage);
   await fillLogin(page, operator);
-  // 平台身份没有租户成员身份，不经过选择页；网关回调建会话后外壳只调一次 bootstrap：网关对无租户主体不调任何下游，直接回代管上下文
-  // （平台表面宿主对无租户主体一律 401，否则就会弹过期对话框），外壳也不再拉能力目录。
+  // 平台身份没有租户成员身份，不经过选择页。网关的 bootstrap 只问平台控制台目录：持平台超管即交出平台组件（租户运营、开通申请）的远程、菜单与权限码，不代管。
   await expect(page).toHaveURL(origin + '/');
-  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
-  await expect(page.getByTestId('yue-app-shell-managed')).toContainText('当前处于平台代管模式');
+  await expect(page.getByRole('heading', { name: '平台控制台', exact: true })).toBeVisible();
+  await expect(page.getByTestId('yue-app-shell-managed')).toHaveCount(0);
+  await expect(nav).toHaveText(['租户管理', '开通申请']);
+  await expect(page.getByTestId('console-pages').getByRole('listitem')).toHaveCount(2);
   const sessionCard = page.getByTestId('shell-session');
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('平台运营');
   await expect(sessionCard.locator('[data-field=tenantId]')).toHaveText('平台身份');
   await expect(sessionCard.locator('[data-field=kind]')).toHaveText('user');
+  await accessible(page, '平台控制台');
+  // 控制台首页不请求任何远程制品；进入「租户管理」才按需加载 qian.tenancy 的远程（manifest → remoteEntry → expose），
+  // 页面经网关调运营接口（运营宿主，超管旁路逐次放行并记平台审计）列出种子里的真实租户。
+  expect(remotes).toEqual([]);
+  await nav.filter({ hasText: /^租户管理$/ }).click();
+  await expect(page).toHaveURL(origin + '/tenants');
+  const tenancy = page.getByTestId('qian-tenancy-remote');
+  await expect(tenancy).toBeVisible();
+  await expect(tenancy).toHaveAttribute('data-scope', 'global');
+  for (const tenant of seed.tenants) await expect(tenancy.getByText(tenant.name, { exact: true }).first()).toBeVisible();
+  expect(remotes[0]).toBe('/remotes/qian.tenancy/mf-manifest.json');
+  expect(remotes).toContain('/remotes/qian.tenancy/remoteEntry.js');
+  // 「开通申请」同样按需加载 qian.tenancy.signup 的远程，经运营接口读申请列表。
+  await nav.filter({ hasText: /^开通申请$/ }).click();
+  await expect(page).toHaveURL(origin + '/tenant-applications');
+  await expect(page.getByTestId('qian-tenancy-signup-remote')).toBeVisible();
+  await expect.poll(() => apiCalls.some(call => call.path === '/api/signup/applications')).toBe(true);
+  expect(remotes).toContain('/remotes/qian.tenancy.signup/mf-manifest.json');
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  // 外壳经网关发出的请求：匿名首访的 bootstrap 401、登录后恰好一次 bootstrap 200；之后只有两个页面调的运营接口，全部 200。
+  const calls = apiCalls.filter(call => call.origin === origin && /^\/(api|api-alt)\//.test(call.path));
+  expect(calls.slice(0, 2)).toEqual([{ origin, method: 'GET', path: '/api/shell/bootstrap', status: 401 }, { origin, method: 'GET', path: '/api/shell/bootstrap', status: 200 }]);
+  expect(calls.slice(2).filter(call => !/^\/api\/(tenancy|signup)\//.test(call.path) || call.status !== 200), JSON.stringify(calls)).toEqual([]);
+  expect(calls.map(call => call.path)).toEqual(expect.arrayContaining(['/api/tenancy/tenants', '/api/signup/applications']));
+  expect(refreshes).toHaveLength(0);
+  for (const body of bodies) expect(body).not.toMatch(tokenLike);
+  await noCredentials(page, '平台控制台');
+});
+
+test('不持平台超管的平台身份（visitor）：只有代管横幅、说明与会话卡片，没有菜单与平台页面；bootstrap 只问控制台目录、不拉能力目录，直达平台页面 404，不出现过期对话框，零令牌', async ({ page, baseURL }) => {
+  const origin = baseURL!.replace(/\/$/, '');
+  const { refreshes, apiCalls, bodies, remotes } = observe(page, origin);
+  await page.goto('/');
+  await expect(page).toHaveURL(loginPage);
+  await fillLogin(page, visitor);
+  // 平台身份没有租户成员身份，不经过选择页；网关的 bootstrap 只问平台控制台目录，不持角色时目录为空，仍回代管上下文（平台表面对无租户主体的其它表面一律拒绝，
+  // 否则就会弹过期对话框），外壳也不再拉能力目录。
+  await expect(page).toHaveURL(origin + '/');
+  await expect(page.getByRole('heading', { name: '平台工作台', exact: true })).toBeVisible();
+  await expect(page.getByTestId('yue-app-shell-managed')).toContainText('当前处于平台代管模式');
+  const sessionCard = page.getByTestId('shell-session');
+  await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('平台访客');
+  await expect(sessionCard.locator('[data-field=tenantId]')).toHaveText('平台身份');
+  await expect(sessionCard.locator('[data-field=kind]')).toHaveText('user');
+  await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveCount(0);
+  await expect(page.getByTestId('console-pages')).toHaveCount(0);
   await expect(page.getByTestId('shell-permissions')).toHaveCount(0);
   await expect(page.getByTestId('shell-pages')).toHaveCount(0);
   await expect(page.getByTestId('shell-reload')).toHaveCount(0);
@@ -376,6 +427,10 @@ test('平台身份（operator）：只有代管横幅与会话卡片，bootstrap
   expect(apiCalls.filter(call => call.origin === origin && /^\/(api|api-alt)\//.test(call.path)))
     .toEqual([{ origin, method: 'GET', path: '/api/shell/bootstrap', status: 401 }, { origin, method: 'GET', path: '/api/shell/bootstrap', status: 200 }]);
   expect(refreshes).toHaveLength(0);
+  // 直达平台页面：菜单里没有，外壳给 404，也不请求平台组件的远程制品。
+  await page.goto('/tenants');
+  await expect(page.getByRole('heading', { name: '页面不存在', exact: true })).toBeVisible();
+  expect(remotes).toEqual([]);
   for (const body of bodies) expect(body).not.toMatch(tokenLike);
   await noCredentials(page, '平台身份');
 });
@@ -548,6 +603,9 @@ test('验收 2（S1-YUE-012 补验）：甲方已挂载参考应用时远程按�
   await page.goto('/customers');
   await expect(page.getByRole('heading', { name: '页面不存在', exact: true })).toBeVisible();
   await page.goto('/customers/new');
+  await expect(page.getByRole('heading', { name: '页面不存在', exact: true })).toBeVisible();
+  // 租户成员看不到平台控制台的页面（S1-YUE-018）：平台组件不进租户的外壳目录与菜单，直达同样是 404。
+  await page.goto('/tenants');
   await expect(page.getByRole('heading', { name: '页面不存在', exact: true })).toBeVisible();
   expect(remotes.slice(switched)).toEqual([]);
   for (const text of bodies) expect(text).not.toMatch(tokenLike);

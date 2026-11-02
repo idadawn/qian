@@ -100,6 +100,8 @@ public sealed class AuthzPlugin : IQianPlugin
         var enforcement = new AuthorizationEnforcer(ctx, checker, bypass, tenant, new IdentityRevisionGuard(ctx.Data(), tenant), sampling);
         CommandPolicies.Register(ctx, CommandPolicyKind.Authorization, new RbacCommandPolicy(enforcement).Handle);
         ctx.Provide<ISuperadminBypass>(AuthzDefinition.SuperadminBypassKey, bypass);
+        // 平台控制台的只读判定（S1-YUE-018）与旁路同一套条件、同一份平台角色存储，但不写审计、不放行；外壳目录据此决定给平台身份哪些页面。
+        ctx.Provide<ISuperadminCheck>(AuthzDefinition.SuperadminCheckKey, new SuperadminCheck(bypass));
         ctx.Provide<IAuthzEnforcement>(AuthzEnforcement.Key, enforcement);
         ctx.Provide(AuthzDefinition.PermissionsKey, registry);
         ctx.Provide<IResourceTypeRegistry>(AuthzDefinition.ResourceTypesKey, registry);

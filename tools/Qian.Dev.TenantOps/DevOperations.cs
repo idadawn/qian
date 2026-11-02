@@ -61,6 +61,14 @@ internal static partial class DevOperations
         }
     }
 
+    /// <summary>
+    /// 给一个平台自然人授平台超管（外壳联调环境的种子运营账号，平台控制台 S1-YUE-018）：与引导超管同一个内部平台角色存储，须在无租户上下文中、
+    /// 在 <see cref="PrepareAsync"/> 换上带平台角色登录的 Authz 之后调用。
+    /// </summary>
+    internal static Task GrantSuperadminAsync(IServiceProvider services, string subject, CancellationToken ct) =>
+        new PostgresPlatformRoleStore(services.GetRequiredService<IDataService>(), services.GetRequiredService<ITenantContext>(), DevDatabase.AuthzPlatformRole)
+            .AssignSuperadminAsync(subject, "dev-bootstrap", ct);
+
     private static PermissionCatalog Catalog(string repository, string component, bool roles)
     {
         var permissions = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(repository, $"plugins/{component}/metadata/permissions.json")));

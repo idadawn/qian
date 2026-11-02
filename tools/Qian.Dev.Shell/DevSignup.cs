@@ -14,7 +14,8 @@ namespace Qian.Dev.Shell;
 // 租户自助开通（S1-TEN-019）挂进身份 / 业务宿主：与身份服务同宿主（identity profile 的形状），申请人接口（/api/signup/verifications、
 // /session、/code-availability、/me/**）与公开页（/signup，有构建产物时）走身份的公开分支，不经业务管线；
 // 发件端口由开发期发件箱提供（只在 Development、只在回环宿主上登记），读取路由 GET /__dev/signup/outbox 要带状态目录里的开发令牌。
-// 运营接口（/api/signup/applications/**）在平台控制台交付（S1-YUE-018）之前不在本环境暴露。
+// 运营接口（/api/signup/applications/**、/api/signup/meta/**）挂在运营宿主上（参考运营宿主 TenantOperationsHost，与租户运营同一宿主），
+// 网关按前缀转给它；运营页面经平台控制台进外壳（S1-YUE-018）：组件以带 UI 清单的包装挂载（DevPlatform.SignupConsole）。
 internal sealed class DevSignup
 {
     internal const string TokenFileName = "signup-outbox.token";
@@ -48,15 +49,20 @@ internal sealed class DevSignup
             $"GRANT USAGE ON SCHEMA {TenancySignupDbContext.Schema} TO {DevDatabase.AppRole}; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA {TenancySignupDbContext.Schema} TO {DevDatabase.AppRole};";
     }
 
-    // 身份组件之后挂：先挂发件箱（提供 TenancySignupMessenger），再挂开通申请组件。
-    internal async Task MountAsync(PluginLoader loader, CancellationToken ct)
+    /// <summary>
+    /// 开通申请组件的条目（交给平台插件树登记预装绑定与 UI 清单，见 DevPlatform.Signup）。同一号码的验证码重发间隔取配置允许的最小值 10 秒（生产缺省 60 秒），
+    /// 手测与开通流程 E2E 在同一号码上再次核验时不必干等；其余规则用组件缺省。
+    /// </summary>
+    internal static PluginDefinition Definition => new(new PluginEntry("tenancy.signup", TenancySignupDefinition.ComponentId, "1.0.0", ScopeKey.Global, 1,
+        JsonSerializer.SerializeToElement(new { verification = new { resendSeconds = 10 } })), new TenancySignupPlugin(), [TenancySignupDefinition.Key]);
+
+    // 身份组件之后挂：先挂发件箱（提供 TenancySignupMessenger），再挂开通申请组件（平台控制台下是带 UI 清单的包装定义）。
+    internal async Task MountAsync(PluginLoader loader, PluginDefinition signup, CancellationToken ct)
     {
         await loader.MountAsync([
             new PluginDefinition(new PluginEntry("tenancy.signup.outbox", "qian.dev.signup-outbox", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { })),
-                new OutboxPlugin(Outbox), [TenancySignupDefinition.MessengerKey]),
-            new PluginDefinition(new PluginEntry("tenancy.signup", TenancySignupDefinition.ComponentId, "1.0.0", ScopeKey.Global, 1, JsonSerializer.SerializeToElement(new { })),
-                new TenancySignupPlugin(), [TenancySignupDefinition.Key])], ct).ConfigureAwait(false);
-        DevPlatform.EnsureReady(loader, "tenancy.signup.outbox"); DevPlatform.EnsureReady(loader, "tenancy.signup");
+                new OutboxPlugin(Outbox), [TenancySignupDefinition.MessengerKey]), signup], ct).ConfigureAwait(false);
+        DevPlatform.EnsureReady(loader, "tenancy.signup.outbox"); DevPlatform.EnsureReady(loader, signup.Entry.Id);
     }
 
     /// <summary>身份公开分支要接手的路径：申请人接口、公开页与开发期发件箱的读取路由。</summary>

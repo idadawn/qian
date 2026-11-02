@@ -34,6 +34,7 @@ using Qian.Runtime.Errors;
 using Qian.Surfaces;
 using Qian.Surfaces.Abstractions;
 using Qian.Tenancy;
+using Qian.Tenancy.Signup;
 using Qian.Testing.Containers;
 using Qian.Audit;
 using Npgsql;
@@ -362,6 +363,7 @@ public abstract partial class CustomerCommandTests
         var options = new ProfileLoadOptions { WorkingDirectory = directory, Profile = "platform", IncludeHomePatch = false };
         var definitions = new Dictionary<string, PluginDefinition>(StringComparer.Ordinal);
         var versions = new Dictionary<string, PluginDefinition>(StringComparer.Ordinal);
+        PluginDefinition? tenancy = null;
         Add("data", "qian.data", new DataPlugin(), [DataDefinition.Key]);
         Add("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, CommandPolicies.TenancyKey], CrmCommandRuntime.TenancyConfiguration(app.Configuration));
         Add("authz", "qian.authz", new AuthzPlugin([CrmPermissions.Compile()]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key]);
@@ -374,7 +376,7 @@ public abstract partial class CustomerCommandTests
             {
                 var reference = entry.Plugin.Split('@');
                 var scope = entry.Scope == "global" ? ScopeKey.Global : new ScopeKey(entry.Scope.Split(':', 2)[0], entry.Scope.Split(':', 2)[1]);
-                var definition = reference[0] == "qian.sample.crm" ? versions[reference[1]] : definitions[entry.Id];
+                var definition = reference[0] == "qian.sample.crm" ? versions[reference[1]] : entry.Id == "tenancy" && tenancy is not null ? tenancy : definitions[entry.Id];
                 return definition with { Entry = new PluginEntry(entry.Id, reference[0], reference[1], scope, entry.Layer, entry.Config) };
             }
         };
@@ -403,6 +405,30 @@ public abstract partial class CustomerCommandTests
         Write("plugins/crm/contracts/http-v1.openapi.json", contract.GetRawText());
         Write("plugins/crm/contracts/rest-v1.openapi.json", (await app.Services.GetRequiredService<IHttpContractSource>().CompileDocumentAsync("qian.sample.crm", Ct)).GetRawText());
         Write("plugins/crm/ui/manifest.json", """{"$schema":"https://qian.dev/schemas/ui/v2","federation":{"manifest":"/remotes/qian.sample.crm/mf-manifest.json","exposes":["CustomersPage"]},"engines":{"yue":"^0.1.0"},"pages":[{"route":"/customers","expose":"CustomersPage","permission":"qian.sample.crm:customer:read","nav":{"title":"客户","icon":"users","order":10}}]}""");
+        // 平台控制台（S1-YUE-018）：Tenancy 带上仓库里的 UI 清单（清单 scopes 只含 global，即平台组件）；开通申请组件只登记预装绑定，由用例登记数据上下文后挂载。
+        // 开通申请不是经 Lifecycle 安装的 system 制品：标 official，租户开通第 03 步不会去给它开通。
+        if (platform.Console)
+        {
+            Write("plugins/tenancy/ui/manifest.json", File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy/ui/manifest.json")));
+            var signup = new TenancySignupPlugin();
+            Write("plugins/signup/.qian-plugin/plugin.json", JsonSerializer.Serialize(new
+            {
+                id = TenancySignupDefinition.ComponentId, version = "1.0.0", description = "平台控制台验收挂在全局 scope 的开通申请组件。", author = new { name = "Qian" }, license = "Apache-2.0",
+                @interface = new { displayName = "signup", category = "testing" }, inject = signup.Inject.Select(key => key.Name), provides = new[] { TenancySignupDefinition.Key.Name },
+                policy = new { tier = "official", sandbox = "none", authentication = "ON_INSTALL", required = false }, scopes = GlobalSettingsScopes,
+                runtime = new { form = "module", entry = typeof(TenancySignupPlugin).FullName + ", " + typeof(TenancySignupPlugin).Assembly.GetName().Name }
+            }));
+            Write("plugins/signup/ui/manifest.json", File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy.signup/ui/manifest.json")));
+            var folder = Path.Combine(directory, "plugins", "signup");
+            var files = Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).ToDictionary(
+                file => Path.GetRelativePath(folder, file).Replace(Path.DirectorySeparatorChar, '/'), file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
+            var definition = new PluginDefinition(new PluginEntry("signup", TenancySignupDefinition.ComponentId, "1.0.0", ScopeKey.Global, 1, JsonSerializer.SerializeToElement(new { })),
+                signup, [TenancySignupDefinition.Key]);
+            var binding = RegistryComponentBinding.FromArtifact(definition, files, LifecycleArtifactDigest(files), validator,
+                new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
+            installed.Add(binding);
+            platform.Signup = definition with { Plugin = new NavigationManifestPlugin(signup, binding.Metadata, validator) };
+        }
         foreach (var definition in definitions.Values)
         {
             var validation = validator.ValidateComponent(Path.Combine(directory, "plugins", definition.Entry.Id),
@@ -411,8 +437,11 @@ public abstract partial class CustomerCommandTests
             var files = Directory.EnumerateFiles(Path.Combine(directory, "plugins", definition.Entry.Id), "*", SearchOption.AllDirectories).ToDictionary(
                 file => Path.GetRelativePath(Path.Combine(directory, "plugins", definition.Entry.Id), file).Replace(Path.DirectorySeparatorChar, '/'), file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
             var digest = LifecycleArtifactDigest(files);
-            installed.Add(RegistryComponentBinding.FromArtifact(definition, files, digest, validator, new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true }));
+            var binding = RegistryComponentBinding.FromArtifact(definition, files, digest, validator, new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", CatalogComplete = true });
+            installed.Add(binding);
             platform.SystemArtifacts[definition.Entry.Plugin] = new PluginArtifact(files, digest, platform.Sign(digest));
+            // 平台控制台：Tenancy 以带 UI 清单的包装重挂，声明与参考宿主启动时的条目相同（全部输出，开通申请组件按声明校验依赖）。
+            if (platform.Console && definition.Entry.Id == "tenancy") tenancy = definition with { Plugin = new NavigationManifestPlugin(definition.Plugin, binding.Metadata, validator), Provides = CrmCommandRuntime.TenancyKeys };
         }
         foreach (var version in new[] { "1.0.0", "1.0.1", "1.1.0" })
         {
@@ -431,9 +460,10 @@ public abstract partial class CustomerCommandTests
         await loader.UnmountAsync("crm", ScopeKey.Global, Ct);
         // 业务宿主启动时挂的 audit 条目没有平台链：换成带 chain.platformRole 的条目，平台级生命周期操作才能入平台链（S1-RT-037）；管理面宿主之后再换一次带 Authz 平台角色的组合。
         await loader.UnmountAsync("audit", ScopeKey.Global, Ct);
-        await loader.MountAsync([definitions["audit"], definitions["config"], definitions["registry"], definitions["capabilities"], definitions["lifecycle"]], Ct);
-        foreach (var id in new[] { "audit", "config", "registry", "capabilities", "lifecycle" })
-            Assert.True(loader.GetState(id, ScopeKey.Global) == PluginState.Ready, id + ": " + loader.GetFailure(id, ScopeKey.Global));
+        if (tenancy is not null) await loader.UnmountAsync("tenancy", ScopeKey.Global, Ct);
+        await loader.MountAsync([.. tenancy is null ? [] : new[] { tenancy }, definitions["audit"], definitions["config"], definitions["registry"], definitions["capabilities"], definitions["lifecycle"]], Ct);
+        foreach (var entry in loader.DumpConfig().Where(entry => entry.Scope == ScopeKey.Global))
+            Assert.True(loader.GetState(entry.Id, ScopeKey.Global) == PluginState.Ready, entry.Id + ": " + loader.GetFailure(entry.Id, ScopeKey.Global));
         await loader.GetContext("registry", ScopeKey.Global).Registry().StartAsync(Ct);
         await GrantDiagnostics(app);
         return;
@@ -519,6 +549,9 @@ public abstract partial class CustomerCommandTests
         internal bool Management { get; init; }
         internal string[] InitializationCapabilities { get; init; } = [];
         internal bool ProvisionCrmByDefault { get; init; }
+        /// <summary>平台控制台（S1-YUE-018）：Tenancy 带 UI 清单重挂，开通申请组件登记预装绑定（<see cref="Signup"/> 为它带 UI 清单的包装定义，由用例挂载）。</summary>
+        internal bool Console { get; init; }
+        internal PluginDefinition? Signup { get; set; }
         internal RegistryRuntimeOptions RegistryOptions { get; set; } = null!;
         internal string AuthzRole { get; set; } = "";
         internal string AuditRole { get; set; } = "";

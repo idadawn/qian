@@ -17,6 +17,8 @@ import { Welcome } from './welcome';
 
 // 会话过期对话框只在会话结束时需要：按需加载，不进首屏。
 const SessionExpiredDialog = lazy(() => import('@idadawn/yue-shell/session-dialog').then(module => ({ default: module.SessionExpiredDialog })));
+// 平台身份的首页（平台控制台，S1-YUE-018）只给平台会话：同样按需加载，不进租户会话的首屏。
+const PlatformHome = lazy(() => import('./console').then(module => ({ default: module.PlatformHome })));
 type PageComponent = ComponentType<{ client: PlatformClient; bridge: RemoteBridge }>;
 type RemotePage = { route: string; contribution?: SlotContribution<PageComponent>; failed?: boolean };
 
@@ -76,8 +78,10 @@ function Shell({ runtime }: { runtime: ShellRuntime }) {
   const platform = session.tenantId === null;
   const content = state.status === 403 ? <FallbackPage status={403} i18n={i18n} onRetry={() => void runtime.load()} />
     : state.status === 500 ? <FallbackPage status={500} i18n={i18n} onRetry={() => void runtime.load()} />
-    : pathname === '/' ? <Home i18n={i18n} session={session} menu={menu} permissions={bootstrap.permissions} capabilities={state.capabilities} summary={state.summary} loading={state.reloading} platform={platform}
-      onReload={() => void runtime.load()} onNavigate={target => runtime.router.navigate(target)} />
+    : pathname === '/' ? platform
+      ? <Suspense fallback={<Spinner label={i18n.t('common.loading')} />}><PlatformHome i18n={i18n} session={session} menu={menu} managed={bootstrap.managed} onNavigate={href => runtime.router.navigate(href)} /></Suspense>
+      : <Home i18n={i18n} session={session} menu={menu} permissions={bootstrap.permissions} capabilities={state.capabilities} summary={state.summary} loading={state.reloading}
+        onReload={() => void runtime.load()} onNavigate={target => runtime.router.navigate(target)} />
     : match ? <Remote i18n={i18n} page={page} client={runtime.client} />
     : <FallbackPage status={404} i18n={i18n} onHome={() => runtime.router.navigate('/')} />;
   return <>
@@ -136,38 +140,41 @@ function Remote({ i18n, page, client }: { i18n: PlatformI18n; page: RemotePage |
 
 interface HomeProps {
   i18n: PlatformI18n; session: BffSession; menu: readonly ShellMenuItem[]; permissions: readonly string[]; capabilities: ShellState['capabilities']; summary: ShellState['summary'];
-  loading: boolean; platform: boolean; onReload: () => void; onNavigate: (target: string) => void;
+  loading: boolean; onReload: () => void; onNavigate: (target: string) => void;
 }
-/** 租户会话的首页：本租户摘要可用时先给欢迎、试用提示、开通引导与企业信息（S1-TEN-021），会话与权限信息照常列在下面；摘要不可用只少欢迎区。 */
-function Home({ i18n, session, menu, permissions, capabilities, summary, loading, platform, onReload, onNavigate }: HomeProps) {
+/**
+ * 租户会话的首页（平台身份的首页是 console.tsx 的平台控制台）：本租户摘要可用时先给欢迎、试用提示、开通引导与企业信息（S1-TEN-021），
+ * 会话、权限与可用页面卡片照常列在下面；摘要不可用只少欢迎区。
+ */
+function Home({ i18n, session, menu, permissions, capabilities, summary, loading, onReload, onNavigate }: HomeProps) {
   const card = 'space-y-2 rounded-xl border border-border bg-card p-5';
   // 试用剩余天数按进入首页的时刻算一次。
   const [now] = useState(() => Date.now());
-  return <Page header={<PageHeader title={i18n.t('app.workspace')} description={i18n.t(platform ? 'app.platformHelp' : 'app.workspaceHelp')}
-    actions={platform ? undefined : <Button variant="outline" loading={loading} onClick={onReload} testId="shell-reload">{i18n.t('app.refresh')}</Button>} />}>
-    {!platform && summary && <Welcome i18n={i18n} summary={summary} displayName={session.displayName ?? session.subject} menu={menu} now={now} onNavigate={onNavigate} />}
-    <div className={`grid gap-4 md:grid-cols-2${!platform && summary ? ' mt-6' : ''}`}>
+  return <Page header={<PageHeader title={i18n.t('app.workspace')} description={i18n.t('app.workspaceHelp')}
+    actions={<Button variant="outline" loading={loading} onClick={onReload} testId="shell-reload">{i18n.t('app.refresh')}</Button>} />}>
+    {summary && <Welcome i18n={i18n} summary={summary} displayName={session.displayName ?? session.subject} menu={menu} now={now} onNavigate={onNavigate} />}
+    <div className={`grid gap-4 md:grid-cols-2${summary ? ' mt-6' : ''}`}>
       <section className={card} data-testid="shell-session">
         <h2 className="text-lg font-semibold">{i18n.t('app.session')}</h2>
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
           <dt className="text-muted-foreground">{i18n.t('app.displayName')}</dt><dd data-field="displayName">{session.displayName ?? '—'}</dd>
           <dt className="text-muted-foreground">{i18n.t('app.subject')}</dt><dd className="truncate" data-field="subject">{session.subject}</dd>
-          <dt className="text-muted-foreground">{i18n.t('app.tenant')}</dt><dd className="truncate" data-field="tenantId">{session.tenantId ?? i18n.t('shell.platform')}</dd>
+          <dt className="text-muted-foreground">{i18n.t('app.tenant')}</dt><dd className="truncate" data-field="tenantId">{session.tenantId}</dd>
           <dt className="text-muted-foreground">{i18n.t('app.kind')}</dt><dd data-field="kind">{session.kind}</dd>
           <dt className="text-muted-foreground">{i18n.t('app.revision')}</dt><dd data-field="identityRevision">{session.identityRevision === null ? '—' : String(session.identityRevision)}</dd>
         </dl>
       </section>
-      {!platform && <section className={card} data-testid="shell-permissions">
+      <section className={card} data-testid="shell-permissions">
         <h2 className="text-lg font-semibold">{i18n.t('app.permissions')}</h2>
         <p className="text-sm text-muted-foreground" data-testid="shell-capabilities">{capabilities === undefined ? i18n.t('common.loading') : capabilities === null ? i18n.t('app.capabilitiesUnavailable') : i18n.t('app.capabilities', { count: capabilities })}</p>
         {permissions.length === 0 ? <p className="text-sm text-muted-foreground">{i18n.t('common.empty')}</p>
           : <ul className="space-y-1 text-sm">{permissions.map(permission => <li key={permission} data-permission={permission} data-allowed="true"><code>{permission}</code></li>)}</ul>}
-      </section>}
-      {!platform && <section className={`${card} md:col-span-2`} data-testid="shell-pages">
+      </section>
+      <section className={`${card} md:col-span-2`} data-testid="shell-pages">
         <h2 className="text-lg font-semibold">{i18n.t('app.pages')}</h2>
         {menu.length === 0 ? <p className="text-sm text-muted-foreground">{i18n.t('common.empty')}</p>
           : <ul className="space-y-1 text-sm">{menu.map(item => <li key={item.id} data-route={item.target}>{item.label ?? item.labelKey}<code className="ml-2 text-muted-foreground">{item.target}</code></li>)}</ul>}
-      </section>}
+      </section>
     </div>
   </Page>;
 }

@@ -79,6 +79,8 @@ Qian.Authz.Abstractions.IAuthzExecutionConstraints
 Qian.Authz.Abstractions.IAuthzExecutionConstraints.CheckAsync(Kun.Authorization.AuthorizationSubject! subject, Qian.Authz.Abstractions.PermissionDefinition! permission, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kun.Authorization.PermissionDecision!>
 Qian.Authz.Abstractions.ISuperadminBypass
 Qian.Authz.Abstractions.ISuperadminBypass.AuthorizeAsync(Qian.Authz.Abstractions.SuperadminAccess! access, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kun.Authorization.PermissionDecision!>
+Qian.Authz.Abstractions.ISuperadminCheck
+Qian.Authz.Abstractions.ISuperadminCheck.AllowedAsync(Kun.Authorization.AuthorizationSubject! subject, System.Collections.Generic.IReadOnlyCollection<string!>! permissions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
 Qian.Authz.Abstractions.PlatformRoles
 Qian.Authz.Abstractions.SuperadminAccess
 Qian.Authz.Abstractions.SuperadminAccess.<Clone>$() -> Qian.Authz.Abstractions.SuperadminAccess!
@@ -103,6 +105,7 @@ override Qian.Authz.Abstractions.SuperadminAccess.ToString() -> string!
 static Qian.Authz.Abstractions.SuperadminAccess.operator !=(Qian.Authz.Abstractions.SuperadminAccess? left, Qian.Authz.Abstractions.SuperadminAccess? right) -> bool
 static Qian.Authz.Abstractions.SuperadminAccess.operator ==(Qian.Authz.Abstractions.SuperadminAccess? left, Qian.Authz.Abstractions.SuperadminAccess? right) -> bool
 static readonly Qian.Authz.Abstractions.AuthzDefinition.SuperadminBypassKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Authz.Abstractions.AuthzDefinition.SuperadminCheckKey -> Qian.Runtime.ServiceKey
 Qian.Authz.Abstractions.EffectiveGrant
 Qian.Authz.Abstractions.EffectiveGrant.<Clone>$() -> Qian.Authz.Abstractions.EffectiveGrant!
 Qian.Authz.Abstractions.EffectiveGrant.Allowed.get -> bool

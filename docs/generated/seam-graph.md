@@ -28,6 +28,7 @@
 | ` AuthzPermissions ` | ` global/authz ` |  |
 | ` AuthzResourceTypes ` | ` global/authz ` |  |
 | ` AuthzSuperadminBypass ` | ` global/authz ` | ` global/lifecycle `（可选） |
+| ` AuthzSuperadminCheck ` | ` global/authz ` | ` global/capabilities `（可选） |
 | ` AuthzTenantRoleGrant ` | ` global/authz ` |  |
 | ` CommandAuthorization ` | ` global/authz ` | ` global/capabilities ` |
 | ` Data ` | ` global/data ` | ` global/registry `、` global/lifecycle `、` global/capabilities `、` global/tenancy `、` global/authz `、` global/files `、` global/audit `、` global/scheduler ` |
@@ -107,46 +108,49 @@ flowchart LR
   n6 --> s20
   s21(("AuthzSuperadminBypass"))
   n6 --> s21
-  s22(("AuthzTenantRoleGrant"))
+  s22(("AuthzSuperadminCheck"))
   n6 --> s22
-  s23(("CommandAuthorization"))
+  s23(("AuthzTenantRoleGrant"))
   n6 --> s23
-  s24(("Data"))
-  n7 --> s24
-  s25(("Files"))
-  n8 --> s25
-  s26(("Files.Backends:local"))
+  s24(("CommandAuthorization"))
+  n6 --> s24
+  s25(("Data"))
+  n7 --> s25
+  s26(("Files"))
   n8 --> s26
-  s27(("Config"))
-  n9 --> s27
-  s28(("Events"))
-  n10 --> s28
-  s29(("Audit"))
-  n11 --> s29
-  s30(("CommandAudit"))
+  s27(("Files.Backends:local"))
+  n8 --> s27
+  s28(("Config"))
+  n9 --> s28
+  s29(("Events"))
+  n10 --> s29
+  s30(("Audit"))
   n11 --> s30
-  s31(("Scheduler"))
-  n17 --> s31
-  s32(("Shell"))
-  n20 --> s32
-  s24 --> n0
-  s27 --> n1
-  s24 --> n1
+  s31(("CommandAudit"))
+  n11 --> s31
+  s32(("Scheduler"))
+  n17 --> s32
+  s33(("Shell"))
+  n20 --> s33
+  s25 --> n0
+  s28 --> n1
+  s25 --> n1
   s0 --> n1
-  s29 --> n2
   s30 --> n2
-  s23 --> n2
-  s6 --> n2
+  s31 --> n2
   s24 --> n2
+  s6 --> n2
+  s25 --> n2
   s0 --> n2
   s7 --> n2
-  s24 --> n4
-  s24 --> n6
-  s24 --> n8
-  s24 --> n11
-  s24 --> n17
+  s25 --> n4
+  s25 --> n6
+  s25 --> n8
+  s25 --> n11
+  s25 --> n17
   s7 --> n17
-  s29 -.-> n1
+  s30 -.-> n1
   s21 -.-> n1
+  s22 -.-> n2
 ```
 

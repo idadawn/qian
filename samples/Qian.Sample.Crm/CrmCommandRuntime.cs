@@ -28,11 +28,10 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
             Define("data", "qian.data", new DataPlugin(), [DataDefinition.Key]),
             Define("events", "qian.events", new EventsPlugin(), [EventsDefinition.Key]),
             // 声明 Tenancy 的全部输出（与 TenancyComponent 的 Provides 一致）：依赖开通编排、状态机或运营端口的组件（如 qian.tenancy.signup）挂进同一棵树时按声明校验依赖。
-            Define("tenancy", "qian.tenancy", new TenancyPlugin(), [TenancyDefinition.Key, TenantSettings.Key, TenantSettings.OperationsKey, TenantSettings.QuotaKey, TenantLifecycle.Key,
-                TenantOperations.Key, TenantAdministration.Key, TenantProvisioning.Key, CommandPolicies.TenancyKey], TenancyConfiguration(services.GetRequiredService<IConfiguration>())),
+            Define("tenancy", "qian.tenancy", new TenancyPlugin(), TenancyKeys, TenancyConfiguration(services.GetRequiredService<IConfiguration>())),
             // 完整 Authz Provider：持久化并登记本应用 metadata 编译出的权限目录、注册命令 PEP、提供 ctx.Authz，并监听 tenant/provisioned 实例化默认角色。
             // 与分发入口使用同一组服务输出；这个程序化适配器额外接受本应用的权限目录。
-            Define("authz", "qian.authz", new AuthzPlugin([catalog]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key, AuthzDefinition.PermissionsKey, AuthzDefinition.ResourceTypesKey, AuthzDefinition.SuperadminBypassKey, AuthzEnforcement.Key, TenantRoleGrant.Key], AuthzConfiguration(services.GetRequiredService<IConfiguration>())),
+            Define("authz", "qian.authz", new AuthzPlugin([catalog]), [CommandPolicies.AuthorizationKey, AuthzDefinition.Key, AuthzDefinition.PermissionsKey, AuthzDefinition.ResourceTypesKey, AuthzDefinition.SuperadminBypassKey, AuthzDefinition.SuperadminCheckKey, AuthzEnforcement.Key, TenantRoleGrant.Key], AuthzConfiguration(services.GetRequiredService<IConfiguration>())),
             Define("audit", "qian.audit", new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]),
             Define("crm", "qian.sample.crm", new CrmPlugin(), [CrmDefinition.Key])];
         var assembly = services.GetService<ICrmRuntimeAssembly>();
@@ -70,6 +69,9 @@ public sealed class CrmCommandRuntime(IServiceProvider services, ITenantContext 
     {
         await _loader.DisposeAsync().ConfigureAwait(false); Interlocked.Exchange(ref _permissions, null)?.Dispose();
     }
+    // Tenancy 条目声明的全部服务输出；平台控制台（S1-YUE-018）的验收宿主把同一条目换成带 UI 清单的包装时沿用同一组声明。
+    internal static IReadOnlyList<ServiceKey> TenancyKeys { get; } = [TenancyDefinition.Key, TenantSettings.Key, TenantSettings.OperationsKey, TenantSettings.QuotaKey, TenantLifecycle.Key,
+        TenantOperations.Key, TenantAdministration.Key, TenantProvisioning.Key, CommandPolicies.TenancyKey];
     // 决策审计采样（S1-AZ-004）：放行判定写入审计链的比例，缺省 1 全记；拒绝必记，不受此项影响。
     internal static JsonElement AuthzConfiguration(IConfiguration configuration) => JsonSerializer.SerializeToElement(new
     {
