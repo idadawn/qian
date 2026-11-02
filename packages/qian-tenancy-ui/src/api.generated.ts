@@ -227,8 +227,23 @@ export interface components {
                 /** @enum {unknown} */
                 status: "pending" | "trial" | "active" | "grace" | "suspended";
                 revision?: string | number;
+                /** Format: date-time */
+                createdAt?: string;
+                /** Format: date-time */
+                validUntil?: string | null;
+                usersLimit?: string | number | null;
+                usersUsed?: string | number | null;
+                administratorName?: string | null;
             }[];
             total?: string | number;
+            counts?: {
+                all: string | number;
+                pending: string | number;
+                trial: string | number;
+                active: string | number;
+                grace: string | number;
+                suspended: string | number;
+            };
         };
         Hd23762d7d3c9ec88577858c45d6a88fd7f574569381c9fd4921a6fedd762932c: {
             code: string;

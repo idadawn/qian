@@ -92,6 +92,9 @@ public sealed class TenantAdminTests(PostgresFixture postgres) : CustomerCommand
         Assert.Equal((memberA, accountA.SubjectId, "管理员甲", AccountStatuses.Active), (initial.MembershipId, initial.SubjectId, initial.DisplayName, initial.Status));
         Assert.Equal(TenantAdminIdentifierKind.Phone, Assert.Single(initial.Identifiers).Kind);
         Assert.Equal(accountA.SubjectId.ToString("D"), await Owners(id));
+        // 运营列表（S1-TEN-018）：管理员列取当前成员的显示名，用量经身份侧计数端口统计，开户管理员计 1。
+        var listed = Assert.Single((await Read<JsonElement>(await Send(client, HttpMethod.Get, "/api/tenancy/tenants?keyword=admins", root), HttpStatusCode.OK)).GetProperty("items").EnumerateArray());
+        Assert.Equal(("管理员甲", 1), (listed.GetProperty("administratorName").GetString(), listed.GetProperty("usersUsed").GetInt32()));
 
         // 替换为已有账号：新管理员建立成员并得到 tenant.owner；原管理员撤销 owner 与管理员标志，成员身份保留。
         var (personB, phoneB) = await NewPerson(business, "管理员乙");

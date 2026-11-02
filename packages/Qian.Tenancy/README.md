@@ -112,6 +112,13 @@ R113 的处理顺序固定为：认证及平台主体检查 → 请求绑定与�
 
 列表增加可选 status（五种租户状态）和 keyword（租户号或名称，最长 200），按 code、id 稳定排序；total 与当前页在同一 RepeatableRead 快照读取，空页仍保留总数。百分号、下划线和反斜杠按字面量搜索。状态机元数据的实际 Document 不变，响应 Schema 来自 Definition 嵌入资源；主档校验失败保持 INPUT_INVALID/400，补逐字段错误码与 JSON Pointer。名称长度的服务端历史口径是 UTF-16 单元数（String.Length），标准 maxLength 声明是其 Unicode 字符数上界，超出服务端单元数的补充字符输入仍由同一 400/pointer 拒绝；本次不改变接受范围。
 
+运营列表（S1-TEN-018）由 `ITenantOperations.OverviewAsync` 提供，`GET /api/tenancy/tenants` 改用它，响应只增不减。
+- 每行在主档字段之外带 createdAt、validUntil、usersLimit（来自配额）、usersUsed 与 administratorName。
+- 用量经身份侧 `TenancyUserCounter` 在目标租户上下文里统计；管理员名取当前指针所指成员的显示名。
+- 身份组件缺席、没有指针或成员已清除时，这两列为 null，不报 0，也不让整页失败。
+- counts 给出全部与五种状态的条数，随 keyword 收窄、不随 status 变化，与当前页、total 读自同一 RepeatableRead 快照。
+- 用量与管理员名逐行取，单页至多 100 行。
+
 契约门禁的词表、递归遍历和示例跳过规则统一由 TenantInputContract 提供，能力编译器与 HTTP 契约测试共用。请求体嵌套字段、参数名称及参数 schema 都纳入扫描，本地引用有循环守卫；example/examples/default/const/enum 中的实例数据不当成字段定义。输入的非空写入约束不再改变响应的可空读取类型。
 
 开户失败先通过 ITenantProvisioning.GetStepsAsync 或步骤表查看 04:provisioned 的 Reason，再核对配置清单与实际能力元数据。二次 Enter、能力不在 initializationCapabilities、destructive/external 三种拒绝对外都是 AUTHZ_DENIED，分别核对本次已消费能力、清单的精确能力 ID、sideEffect。高风险能力在消费一次性槽位之前被拒；改为合法元数据后同一派发仍只能成功消费一次。

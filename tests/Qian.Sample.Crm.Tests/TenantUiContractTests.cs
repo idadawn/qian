@@ -36,6 +36,17 @@ public sealed partial class CatalogContractTests
         var active = await Get(path + "?keyword=uifilter&status=active");
         Assert.Equal(1, active.GetProperty("total").GetInt32());
         Assert.Equal(a, Assert.Single(active.GetProperty("items").EnumerateArray()).GetProperty("id").GetGuid());
+        // S1-TEN-018：状态计数随关键字收窄、不随状态筛选变化；行上带创建时间与有效期，未设配额的上限为 null。
+        // 这个宿主没有身份组件：用量与管理员名都是 null，不能报成 0 或空串。
+        foreach (var page in new[] { active, await Get(path + "?keyword=uifilter") })
+        {
+            var counts = page.GetProperty("counts");
+            Assert.Equal((2, 1, 1, 0, 0, 0), (counts.GetProperty("all").GetInt32(), counts.GetProperty("pending").GetInt32(), counts.GetProperty("active").GetInt32(),
+                counts.GetProperty("trial").GetInt32(), counts.GetProperty("grace").GetInt32(), counts.GetProperty("suspended").GetInt32()));
+        }
+        var row = Assert.Single(active.GetProperty("items").EnumerateArray());
+        Assert.InRange(row.GetProperty("createdAt").GetDateTimeOffset(), DateTimeOffset.UtcNow.AddMinutes(-10), DateTimeOffset.UtcNow.AddMinutes(1));
+        foreach (var name in new[] { "validUntil", "usersLimit", "usersUsed", "administratorName" }) Assert.Equal(JsonValueKind.Null, row.GetProperty(name).ValueKind);
         Assert.Equal(1, (await Get(path + "?keyword=100%25")).GetProperty("total").GetInt32());
         Assert.Equal(0, (await Get(path + "?keyword=_")).GetProperty("total").GetInt32());
         var outOfPage = await Get(path + "?keyword=uifilter&skip=50");

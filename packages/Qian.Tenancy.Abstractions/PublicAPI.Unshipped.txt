@@ -480,3 +480,74 @@ static Qian.Tenancy.TenantAdminIdentifier.operator ==(Qian.Tenancy.TenantAdminId
 static Qian.Tenancy.TenantAdminList.operator !=(Qian.Tenancy.TenantAdminList? left, Qian.Tenancy.TenantAdminList? right) -> bool
 static Qian.Tenancy.TenantAdminList.operator ==(Qian.Tenancy.TenantAdminList? left, Qian.Tenancy.TenantAdminList? right) -> bool
 static readonly Qian.Tenancy.TenantAdministration.Key -> Qian.Runtime.ServiceKey
+Qian.Tenancy.TenantOverviewPage.Total.get -> int
+Qian.Tenancy.TenantOverviewPage.Total.init -> void
+Qian.Tenancy.TenantOverviewPage.Counts.get -> Qian.Tenancy.TenantStatusCounts!
+Qian.Tenancy.TenantOverviewPage.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantOverview!>!
+Qian.Tenancy.TenantOverviewPage.Counts.init -> void
+Qian.Tenancy.TenantOverviewPage.Items.init -> void
+Qian.Tenancy.TenantOverview.Id.get -> System.Guid
+Qian.Tenancy.TenantOverview.Id.init -> void
+Qian.Tenancy.TenantOverview.Code.get -> string!
+Qian.Tenancy.TenantOverview.Name.get -> string!
+Qian.Tenancy.TenantOverview.Code.init -> void
+Qian.Tenancy.TenantOverview.Isolation.get -> Qian.Tenancy.TenantIsolation
+Qian.Tenancy.TenantOverview.Name.init -> void
+Qian.Tenancy.TenantOverview.Status.get -> Qian.Tenancy.TenantStatus
+Qian.Tenancy.TenantOverview.Isolation.init -> void
+Qian.Tenancy.TenantOverview.Status.init -> void
+Qian.Tenancy.TenantStatusCounts.Grace.get -> int
+Qian.Tenancy.TenantStatusCounts.Suspended.get -> int
+Qian.Tenancy.TenantStatusCounts.Trial.get -> int
+Qian.Tenancy.TenantStatusCounts.Pending.get -> int
+Qian.Tenancy.TenantStatusCounts.Grace.init -> void
+Qian.Tenancy.TenantStatusCounts.Suspended.init -> void
+Qian.Tenancy.TenantStatusCounts.Trial.init -> void
+Qian.Tenancy.TenantStatusCounts.Pending.init -> void
+Qian.Tenancy.TenantStatusCounts.All.get -> int
+Qian.Tenancy.TenantStatusCounts.Active.get -> int
+Qian.Tenancy.TenantStatusCounts.All.init -> void
+Qian.Tenancy.TenantOverview
+Qian.Tenancy.TenantStatusCounts.Active.init -> void
+override Qian.Tenancy.TenantOverview.ToString() -> string!
+static Qian.Tenancy.TenantOverview.operator !=(Qian.Tenancy.TenantOverview? left, Qian.Tenancy.TenantOverview? right) -> bool
+static Qian.Tenancy.TenantOverview.operator ==(Qian.Tenancy.TenantOverview? left, Qian.Tenancy.TenantOverview? right) -> bool
+override Qian.Tenancy.TenantOverview.GetHashCode() -> int
+override Qian.Tenancy.TenantOverview.Equals(object? obj) -> bool
+Qian.Tenancy.TenantOverview.Equals(Qian.Tenancy.TenantOverview? other) -> bool
+Qian.Tenancy.TenantOverview.<Clone>$() -> Qian.Tenancy.TenantOverview!
+Qian.Tenancy.TenantOverview.Deconstruct(out System.Guid Id, out string! Code, out string! Name, out Qian.Tenancy.TenantIsolation Isolation, out Qian.Tenancy.TenantStatus Status) -> void
+Qian.Tenancy.TenantStatusCounts
+override Qian.Tenancy.TenantStatusCounts.ToString() -> string!
+static Qian.Tenancy.TenantStatusCounts.operator !=(Qian.Tenancy.TenantStatusCounts? left, Qian.Tenancy.TenantStatusCounts? right) -> bool
+static Qian.Tenancy.TenantStatusCounts.operator ==(Qian.Tenancy.TenantStatusCounts? left, Qian.Tenancy.TenantStatusCounts? right) -> bool
+override Qian.Tenancy.TenantStatusCounts.GetHashCode() -> int
+override Qian.Tenancy.TenantStatusCounts.Equals(object? obj) -> bool
+Qian.Tenancy.TenantStatusCounts.Equals(Qian.Tenancy.TenantStatusCounts? other) -> bool
+Qian.Tenancy.TenantStatusCounts.<Clone>$() -> Qian.Tenancy.TenantStatusCounts!
+Qian.Tenancy.TenantStatusCounts.Deconstruct(out int All, out int Pending, out int Trial, out int Active, out int Grace, out int Suspended) -> void
+Qian.Tenancy.ITenantOperations.OverviewAsync(int skip, int take, Qian.Tenancy.TenantStatus? status = null, string? keyword = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.TenantOverviewPage!>
+Qian.Tenancy.TenantOverview.TenantOverview(System.Guid Id, string! Code, string! Name, Qian.Tenancy.TenantIsolation Isolation, Qian.Tenancy.TenantStatus Status) -> void
+Qian.Tenancy.TenantOverview.CreatedAt.get -> System.DateTimeOffset
+Qian.Tenancy.TenantStatusCounts.TenantStatusCounts(int All, int Pending, int Trial, int Active, int Grace, int Suspended) -> void
+Qian.Tenancy.TenantOverview.Revision.init -> void
+Qian.Tenancy.TenantOverview.ValidUntil.get -> System.DateTimeOffset?
+Qian.Tenancy.TenantOverview.CreatedAt.init -> void
+Qian.Tenancy.TenantOverview.ValidUntil.init -> void
+Qian.Tenancy.TenantOverview.UsersLimit.get -> int?
+Qian.Tenancy.TenantOverview.Revision.get -> uint
+Qian.Tenancy.TenantOverview.UsersLimit.init -> void
+Qian.Tenancy.TenantOverviewPage.TenantOverviewPage(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantOverview!>! Items, int Total, Qian.Tenancy.TenantStatusCounts! Counts) -> void
+Qian.Tenancy.TenantOverview.UsersUsed.get -> int?
+Qian.Tenancy.TenantOverview.UsersUsed.init -> void
+Qian.Tenancy.TenantOverview.AdministratorName.get -> string?
+Qian.Tenancy.TenantOverview.AdministratorName.init -> void
+Qian.Tenancy.TenantOverviewPage
+override Qian.Tenancy.TenantOverviewPage.ToString() -> string!
+static Qian.Tenancy.TenantOverviewPage.operator !=(Qian.Tenancy.TenantOverviewPage? left, Qian.Tenancy.TenantOverviewPage? right) -> bool
+static Qian.Tenancy.TenantOverviewPage.operator ==(Qian.Tenancy.TenantOverviewPage? left, Qian.Tenancy.TenantOverviewPage? right) -> bool
+override Qian.Tenancy.TenantOverviewPage.GetHashCode() -> int
+override Qian.Tenancy.TenantOverviewPage.Equals(object? obj) -> bool
+Qian.Tenancy.TenantOverviewPage.Equals(Qian.Tenancy.TenantOverviewPage? other) -> bool
+Qian.Tenancy.TenantOverviewPage.<Clone>$() -> Qian.Tenancy.TenantOverviewPage!
+Qian.Tenancy.TenantOverviewPage.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.TenantOverview!>! Items, out int Total, out Qian.Tenancy.TenantStatusCounts! Counts) -> void

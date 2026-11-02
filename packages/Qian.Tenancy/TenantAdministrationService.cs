@@ -139,6 +139,15 @@ internal sealed class TenantAdministrationService(IPluginContext context, Postgr
         var done = await session.Context.ProvisionSteps.AsNoTracking().CountAsync(step => AdministratorSteps.Contains(step.Step) && step.Status == "succeeded", ct).ConfigureAwait(false);
         if (done != AdministratorSteps.Length) throw Error(PlatformErrors.Conflict);
     }
+    // 运营列表的管理员列：只读成员显示名；没有指针、身份组件缺席或成员已清除都返回 null，不让整页失败。
+    internal async Task<string?> AdministratorNameAsync(Guid id, CancellationToken ct)
+    {
+        using var scope = _tenant.BeginScope(id.ToString());
+        if (await PointerAsync(ct).ConfigureAwait(false) is not { } membershipId) return null;
+        if (context.TryInject<IIdentityService>(IdentityDefinition.Key) is not { } identity) return null;
+        var membership = await identity.GetMembershipAsync(membershipId, ct).ConfigureAwait(false);
+        return membership is null || membership.Status == AccountStatuses.Purged ? null : membership.DisplayName;
+    }
     private async Task<Guid?> PointerAsync(CancellationToken ct)
     {
         await using var session = await context.Data().OpenAsync<TenancyDbContext>(ct).ConfigureAwait(false);
