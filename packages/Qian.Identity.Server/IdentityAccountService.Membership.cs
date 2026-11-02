@@ -48,6 +48,26 @@ internal sealed partial class IdentityAccountService
         await CreateMembershipCoreAsync(tenantId, personId, person.DisplayName, null, true, administrator.MembershipId, cancellationToken).ConfigureAwait(false);
     }
 
+    // 运营替换租户管理员时撤销原管理员的标志（S1-TEN-010）：与成员创建持同一把计数锁，标志变化才递增成员修订。
+    public async ValueTask<Membership> SetTenantAdministratorAsync(Guid membershipId, bool administrator, CancellationToken cancellationToken = default)
+    {
+        var tenantId = RequireTenant();
+        using var scope = TenantScope(tenantId);
+        await using var session = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var db = session.Context;
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await IdentitySql.LockAsync(db, "members:" + tenantId.ToString("D"), cancellationToken).ConfigureAwait(false);
+        var row = await db.Memberships.SingleOrDefaultAsync(m => m.Id == membershipId, cancellationToken).ConfigureAwait(false);
+        if (row is null || row.Status == AccountStatuses.Purged || row.DirectoryDeleted) throw Error(PlatformErrors.NotFound);
+        if (row.IsTenantAdministrator != administrator)
+        {
+            row.IsTenantAdministrator = administrator; row.IdentityRevision++;
+            await session.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return ToMembership(row);
+    }
+
     private async Task<Membership> CreateMembershipCoreAsync(Guid tenantId, Guid personId, string displayName, string? account, bool administrator, Guid? membershipId, CancellationToken ct)
     {
         using var scope = TenantScope(tenantId);

@@ -47,7 +47,7 @@ public sealed class TenantContractSchemaTests
                     Assert.Contains(TenantFields(candidate), pointer => pointer.EndsWith("/nested/properties/" + field, StringComparison.Ordinal));
                     tested++;
                 }
-        Assert.Equal(4, tested); // 创建、PUT 编辑、激活、PUT 设置。
+        Assert.Equal(8, tested); // 创建、PUT 编辑、激活、PUT 设置；查找账号、新建账号、PUT 管理员、重置密码（S1-TEN-010）。
     }
 
     internal static IReadOnlyList<string> TenantFields(JsonNode document)

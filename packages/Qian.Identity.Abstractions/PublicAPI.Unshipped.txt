@@ -1203,3 +1203,4 @@ static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryCycle -> Qian
 static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryDepthExceeded -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryHasMembers -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryTransitionInvalid -> Qian.Runtime.Errors.ErrorCode!
+Qian.Identity.Abstractions.IIdentityAccounts.SetTenantAdministratorAsync(System.Guid membershipId, bool administrator, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.Membership!>

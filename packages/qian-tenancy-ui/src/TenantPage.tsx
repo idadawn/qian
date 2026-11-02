@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { Alert, Badge, Button, Input, Label, Result, Select, SelectContent, SelectItem, SelectTrigger, Spinner } from '@idadawn/yue-core';
 import { DataTable, type DataColumn, type DataTableQuery } from '@idadawn/yue-data';
 import { FeedbackProvider, SchemaForm, useConfirm, useDrawer } from '@idadawn/yue-form';
 import { HttpResponseError, PlatformError, type PlatformClient } from '@idadawn/yue-sdk';
 import type { paths } from './api.generated';
-import { activateSchema, createSchema, detailSchema, editSchema, legalActions, type ActivateRequest, type CreateRequest, type Quota, type StateMachine, type Tenant, type TenantAction, type UpdateRequest } from './contracts';
+import { accountSchema, activateSchema, createSchema, detailSchema, editSchema, legalActions, lookupSchema, resetSchema, type AccountRequest, type ActivateRequest, type AdminAccount, type CreateRequest,
+  type LookupRequest, type Quota, type ResetRequest, type StateMachine, type Tenant, type TenantAction, type TenantAdmin, type UpdateRequest } from './contracts';
 import { i18n } from './i18n';
 
 interface Issue { status?: number; code?: string; message: string }
@@ -19,9 +20,15 @@ function conflict(error: PlatformError, creating = false): string {
 }
 function data<T>(result: { data?: T }): T { if (result.data === undefined) throw new Error('tenant.contract.response'); return result.data; }
 const tone = { pending: 'neutral', trial: 'info', active: 'ok', grace: 'warn', suspended: 'error' } as const;
+function apiOf(client: PlatformClient) { return client.api<paths>(); }
+type Api = ReturnType<typeof apiOf>;
+// 管理员替换与重置按状态机元数据确认（R52 requiresConfirmation）；元数据缺席时仍然确认。
+function needsConfirmation(machine: StateMachine | undefined, name: string): boolean {
+  return machine?.actions.find((item) => item.name === name)?.agent.requiresConfirmation ?? true;
+}
 
 function TenantContent({ client, embedded = false }: { client: PlatformClient; embedded?: boolean }) {
-  const api = useMemo(() => client.api<paths>(), [client]);
+  const api = useMemo(() => apiOf(client), [client]);
   const [query, setQuery] = useState<DataTableQuery>({ pageIndex: 0, pageSize: 10, sorting: [], filters: {} });
   const [revision, setRevision] = useState(0);
   const [view, setView] = useState<Screen>({ rows: [], total: 0, loading: true });
@@ -60,10 +67,7 @@ function TenantContent({ client, embedded = false }: { client: PlatformClient; e
   }
   function create() {
     setNotice(null);
-    drawer.open({ title: i18n.t('tenant.create'), content: <TenantForm creating refresh={() => { drawer.close(); setNotice(null); refresh(); }} schema={createSchema} i18n={i18n} initialValues={{ isolation: 'row' }} testId="tenant-create-form" onSubmit={async (values) => {
-      await api.POST('/api/tenancy/tenants', { body: values as CreateRequest });
-      completed('tenant.created');
-    }} /> });
+    drawer.open({ title: i18n.t('tenant.create'), content: <CreateTenant api={api} refresh={() => { drawer.close(); setNotice(null); refresh(); }} done={() => completed('tenant.created')} /> });
   }
   async function edit(row: Tenant) {
     setNotice(null);
@@ -81,15 +85,29 @@ function TenantContent({ client, embedded = false }: { client: PlatformClient; e
     const title = i18n.t('tenant.detail');
     drawer.open({ title, content: <Spinner label={i18n.t('common.loading')} /> });
     try {
-      const [current, quota] = await Promise.all([
+      // 身份组件缺席或管理员读取失败时详情照常展示，管理员一栏标为不可用。
+      const [current, quota, admins] = await Promise.all([
         api.GET('/api/tenancy/tenants/{id}', { params: { path: { id: row.id } } }),
         api.GET('/api/tenancy/tenants/{id}/quota', { params: { path: { id: row.id } } }),
+        api.GET('/api/tenancy/tenants/{id}/admins', { params: { path: { id: row.id } } }).then((result) => data(result).items, () => undefined),
       ]);
       const record = data(current);
       drawer.open({ title, content: <div className="grid gap-6"><Badge tone={tone[record.status]}>{i18n.t(`tenant.status.${record.status}`)}</Badge>
         <SchemaForm schema={detailSchema} i18n={i18n} initialValues={{ code: record.code, name: record.name }} mode="readonly" />
-        <QuotaDetails quota={data(quota)} /></div> });
+        <QuotaDetails quota={data(quota)} />
+        <AdminDetails admins={admins} onReplace={() => replaceAdmin(record)} onReset={(admin) => resetPassword(record, admin)} /></div> });
     } catch (error) { drawer.open({ title, content: <Alert tone="error" role="alert">{issue(error).message}</Alert> }); }
+  }
+  function replaceAdmin(row: Tenant) {
+    drawer.open({ title: i18n.t('tenant.adminReplace'), description: row.name, content: <ReplaceAdmin api={api} tenant={row} machine={view.machine} done={() => completed('tenant.adminChanged')} /> });
+  }
+  function resetPassword(row: Tenant, admin: TenantAdmin) {
+    drawer.open({ title: i18n.t('tenant.adminResetPassword'), description: `${row.name} · ${admin.displayName}`, content: <TenantForm refresh={() => { drawer.close(); setNotice(null); refresh(); }} schema={resetSchema} i18n={i18n}
+      testId="tenant-admin-reset-form" submitLabel={i18n.t('tenant.adminResetPassword')} onSubmit={async (values) => {
+        if (needsConfirmation(view.machine, 'reset-admin-password') && !await confirm({ title: i18n.t('tenant.confirmReset'), description: i18n.t('tenant.confirmResetDescription') })) return;
+        await api.POST('/api/tenancy/tenants/{id}/admins/{membershipId}:reset-password', { params: { path: { id: row.id, membershipId: admin.membershipId } }, body: values as ResetRequest });
+        completed('tenant.passwordReset');
+      }} /> });
   }
   async function transition(row: Tenant, action: TenantAction) {
     setNotice(null);
@@ -155,6 +173,79 @@ function TenantForm({ creating = false, refresh, onSubmit, ...props }: Component
     {failure && <Alert tone="error" role="alert"><span>{failure.message}</span>
       {failure.conflict && <Button variant="outline" className="mt-3" onClick={refresh}>{i18n.t('tenant.refresh')}</Button>}</Alert>}
   </div>;
+}
+
+// 新建租户：先选定管理员，再填主档。成员 ID 在选定管理员时生成一次，同一份开户请求重复提交保持幂等。
+function CreateTenant({ api, refresh, done }: { api: Api; refresh(): void; done(): void }) {
+  const [chosen, setChosen] = useState<{ account: AdminAccount; membershipId: string }>();
+  if (!chosen) return <AdminPicker api={api} onPick={(account) => setChosen({ account, membershipId: crypto.randomUUID() })} />;
+  return <div className="grid gap-4">
+    <AccountCard account={chosen.account} action={<Button variant="ghost" size="sm" onClick={() => setChosen(undefined)}>{i18n.t('tenant.adminRepick')}</Button>} />
+    <TenantForm creating refresh={refresh} schema={createSchema} i18n={i18n} initialValues={{ isolation: 'row' }} testId="tenant-create-form" onSubmit={async (values) => {
+      await api.POST('/api/tenancy/tenants', { body: { ...values, administrator: { membershipId: chosen.membershipId, subjectId: chosen.account.subjectId } } as CreateRequest });
+      done();
+    }} />
+  </div>;
+}
+
+// 管理员账号经身份组件选择或新建：先按登录标识查找；没有合适的账号时新建（初始密码，首次登录强制修改）。
+// 同一时刻只显示一张表单，抽屉页脚只有一个取消按钮；两张表单的 key 不同，切换时不沿用另一张的表单状态。
+function AdminPicker({ api, onPick }: { api: Api; onPick(account: AdminAccount): void | Promise<void> }) {
+  const [creating, setCreating] = useState(false);
+  const [found, setFound] = useState<AdminAccount | null>();
+  if (creating) return <div className="grid gap-4">
+    <SchemaForm key="account" schema={accountSchema} i18n={i18n} initialValues={{ identifierKind: 'phone' }} testId="tenant-admin-account-form" submitLabel={i18n.t('tenant.adminCreate')} onSubmit={async (values) => {
+      await onPick(data(await api.POST('/api/tenancy/admin-accounts', { body: values as AccountRequest })));
+    }} />
+    <Button variant="ghost" onClick={() => setCreating(false)}>{i18n.t('tenant.adminBack')}</Button>
+  </div>;
+  return <div className="grid gap-4">
+    <SchemaForm key="lookup" schema={lookupSchema} i18n={i18n} testId="tenant-admin-lookup-form" submitLabel={i18n.t('tenant.adminLookup')} onSubmit={async (values) => {
+      setFound(undefined);
+      try { setFound(data(await api.POST('/api/tenancy/admin-accounts:lookup', { body: values as LookupRequest }))); }
+      catch (error) { if (error instanceof PlatformError && error.status === 404) setFound(null); else throw error; }
+    }} />
+    {found && <AccountCard account={found} action={<Button size="sm" onClick={() => void onPick(found)} testId="tenant-admin-use">{i18n.t('tenant.adminUse')}</Button>} />}
+    {found === null && <Alert tone="warn">{i18n.t('tenant.adminMissing')}</Alert>}
+    <Button variant="outline" onClick={() => setCreating(true)} testId="tenant-admin-new">{i18n.t('tenant.adminCreate')}</Button>
+  </div>;
+}
+
+// 替换管理员：新管理员得到 tenant.owner，原管理员撤销 owner 与管理员标志；满额、开通未完成等拒绝显示服务端原文。
+function ReplaceAdmin({ api, tenant, machine, done }: { api: Api; tenant: Tenant; machine?: StateMachine; done(): void }) {
+  const confirm = useConfirm();
+  const [failure, setFailure] = useState<string>();
+  return <div className="grid gap-4">
+    <AdminPicker api={api} onPick={async (account) => {
+      setFailure(undefined);
+      if (needsConfirmation(machine, 'assign-admin') && !await confirm({ title: i18n.t('tenant.confirmAssign'), description: i18n.t('tenant.confirmAssignDescription') })) return;
+      try {
+        await api.PUT('/api/tenancy/tenants/{id}/admins', { params: { path: { id: tenant.id } }, body: { items: [{ subjectId: account.subjectId }] } });
+        done();
+      } catch (error) { setFailure(issue(error).message); }
+    }} />
+    {failure && <Alert tone="error" role="alert">{failure}</Alert>}
+  </div>;
+}
+
+// 管理员只显示掩码标识；原值与密码都不出身份组件。
+function AccountCard({ account, action }: { account: Pick<AdminAccount, 'displayName' | 'status' | 'identifiers'> & { account?: string }; action?: ReactNode }) {
+  return <section className="grid gap-2 rounded-xl border border-[var(--border)] p-4" data-testid="tenant-admin-card">
+    <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold">{account.displayName}</span><Badge tone={account.status === 'active' ? 'ok' : 'warn'}>{i18n.t(`tenant.member.${account.status}`)}</Badge></div>
+    {account.account && <span className="font-mono text-xs">{account.account}</span>}
+    <ul className="grid gap-1 text-sm text-[var(--muted-foreground)]">{account.identifiers.map((item) => <li key={item.kind + item.masked}>
+      {i18n.t(`tenant.identifier.${item.kind}`)} <span className="font-mono">{item.masked}</span> · {i18n.t(item.verified ? 'tenant.verified' : 'tenant.unverified')}</li>)}</ul>
+    {action && <div className="flex flex-wrap gap-2">{action}</div>}
+  </section>;
+}
+
+function AdminDetails({ admins, onReplace, onReset }: { admins?: TenantAdmin[]; onReplace(): void; onReset(admin: TenantAdmin): void }) {
+  return <section className="grid gap-3 rounded-xl border border-[var(--border)] p-4" data-testid="tenant-admin-details"><h3 className="font-semibold">{i18n.t('tenant.admin')}</h3>
+    {admins === undefined ? <p className="text-sm text-[var(--muted-foreground)]">{i18n.t('tenant.adminUnavailable')}</p>
+      : admins.length === 0 ? <p className="text-sm text-[var(--muted-foreground)]">{i18n.t('tenant.adminNone')}</p>
+      : admins.map((admin) => <AccountCard key={admin.membershipId} account={admin} action={<Button size="sm" variant="outline" onClick={() => onReset(admin)} testId="tenant-admin-reset">{i18n.t('tenant.adminResetPassword')}</Button>} />)}
+    {admins !== undefined && <div><Button size="sm" variant="outline" onClick={onReplace} testId="tenant-admin-replace">{i18n.t(admins.length ? 'tenant.adminReplace' : 'tenant.adminAssign')}</Button></div>}
+  </section>;
 }
 
 function QuotaDetails({ quota }: { quota: Quota }) {

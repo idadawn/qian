@@ -9,6 +9,8 @@ using Qian.Capabilities.AspNetCore;
 using Qian.Config;
 using Qian.Config.Secrets;
 using Qian.Data;
+using Qian.Identity.Abstractions;
+using Qian.Identity.Server;
 using Qian.Lifecycle;
 using Qian.Plugin.Sdk.AspNetCore;
 using Qian.Registry;
@@ -23,7 +25,7 @@ namespace Qian.Dev.TenantOps;
 // 产品负责人调用的是另起的运营宿主 TenantOperationsHost。不是产品宿主，不替代 qian dev（S1-RT-013）与 K3s 部署（S1-DEP-002）。
 internal static class DevHost
 {
-    internal static async Task<int> RunAsync(string state, string adminConnection, string url, CancellationToken ct)
+    internal static async Task<int> RunAsync(string state, string adminConnection, string url, Uri identityUrl, CancellationToken ct)
     {
         var repository = RepositoryRoot();
         var key = DevKeys.LoadOrCreate(state);
@@ -32,10 +34,16 @@ internal static class DevHost
         using var trust = new DevTrustRoot();
         using var platform = new DevPlatform(repository);
         var assembly = new DevRuntimeAssembly();
-        await using var business = Business(database, trust, assembly, new BusinessS2s(DevKeys.Issuer, DevKeys.BusinessAudience, DevKeys.PublicJwks(key)));
+        // 业务宿主同时是身份发行方（S1-TEN-010）：监听地址即 issuer，账号与目录接口走身份自己的分支。
+        using var identity = new DevTenantIdentity(identityUrl);
+        await using var business = Business(database, trust, assembly, new BusinessS2s(DevKeys.Issuer, DevKeys.BusinessAudience, DevKeys.PublicJwks(key)), identityUrl.AbsoluteUri,
+            builder => identity.Configure(builder, database), registrar => registrar.RegisterIdentityEvents(), mediator => mediator.AddQianIdentityEvents());
+        // 身份库与生产同一套迁移，先于迁移器建表；在线连接仍是受限应用登录。
+        await database.ExecuteAdminAsync(DevTenantIdentity.SchemaSql(business.Services), ct).ConfigureAwait(false);
         await database.CreateSchemasAsync(business.Services, ct).ConfigureAwait(false);
         await business.StartAsync(ct).ConfigureAwait(false);
         await platform.AttachAsync(assembly.Loader, assembly.Providers, trust, ct).ConfigureAwait(false);
+        await identity.MountAsync(assembly.Loader, ct).ConfigureAwait(false);
         await using var operations = await DevOperations.StartAsync(assembly.Loader, business.Services, platform, key, repository, url, Logging, ct).ConfigureAwait(false);
         Console.WriteLine($"""
 
@@ -43,7 +51,7 @@ internal static class DevHost
               运营宿主     {operations.Urls.Single()}
               平台超管     sub={DevKeys.Superadmin}（principal_kind=user，无 tenant_id）
               令牌签发方   iss={DevKeys.Issuer}，aud={DevKeys.OperationsAudience}，RS256，kid={key.KeyId}
-              业务宿主     {Address(business)}（CRM 运行时容器，手测流程不用）
+              身份 / 业务  {identity.Issuer}（真实 qian.identity：账号接口 /api/identity、目录 /api/directory；CRM 运行时容器）
             下一步：scripts/dev-tenant-ops.sh walkthrough
             """);
         await operations.WaitForShutdownAsync(ct).ConfigureAwait(false);

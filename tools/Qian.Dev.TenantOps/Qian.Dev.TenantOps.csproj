@@ -12,6 +12,8 @@
     <ProjectReference Include="../../packages/Qian.Lifecycle/Qian.Lifecycle.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
     <ProjectReference Include="../../packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
+    <!-- 管理员维护（S1-TEN-010）的账号、成员与凭据经真实 qian.identity。 -->
+    <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
     <PackageReference Include="BouncyCastle.Cryptography" />
   </ItemGroup>
 </Project>

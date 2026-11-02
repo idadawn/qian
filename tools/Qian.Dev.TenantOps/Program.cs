@@ -9,7 +9,11 @@ switch (args.FirstOrDefault())
         // 管理员连接含口令，只经环境变量传入，不放命令行参数。
         var admin = Environment.GetEnvironmentVariable("QIAN_DEV_PG_ADMIN");
         if (string.IsNullOrWhiteSpace(admin)) return Fail("缺少环境变量 QIAN_DEV_PG_ADMIN（开发 PostgreSQL 的管理员连接串）；请用 scripts/dev-tenant-ops.sh up 启动。");
-        return await DevHost.RunAsync(state, admin, options.GetValueOrDefault("urls") ?? "http://127.0.0.1:5080", CancellationToken.None);
+        // 身份发行方只接受回环 http 地址：手测宿主放行了明文发行方，不得暴露到本机之外。
+        if (!Uri.TryCreate(options.GetValueOrDefault("identity-urls") ?? "http://127.0.0.1:5081", UriKind.Absolute, out var identity) || identity.Scheme != "http" ||
+            identity.PathAndQuery != "/" || !(identity.Host == "localhost" || System.Net.IPAddress.TryParse(identity.Host, out var address) && System.Net.IPAddress.IsLoopback(address)))
+            return Fail("--identity-urls 必须是不含路径的回环 http 地址。");
+        return await DevHost.RunAsync(state, admin, options.GetValueOrDefault("urls") ?? "http://127.0.0.1:5080", identity, CancellationToken.None);
     case "token":
         var kind = options.GetValueOrDefault("kind") ?? "user";
         if (kind is not ("user" or "service" or "agent")) return Fail("--kind 只接受 user、service、agent。");
@@ -21,7 +25,8 @@ switch (args.FirstOrDefault())
     default:
         Console.Error.WriteLine("""
             用法：
-              serve [--urls http://127.0.0.1:5080] [--state 目录]      重建开发库并启动运营宿主（需 QIAN_DEV_PG_ADMIN）
+              serve [--urls http://127.0.0.1:5080] [--identity-urls http://127.0.0.1:5081] [--state 目录]
+                                                                       重建开发库并启动运营宿主与身份发行方（需 QIAN_DEV_PG_ADMIN）
               token [--sub root] [--tenant 租户UUID] [--kind user] [--ttl 480] [--state 目录]
                                                                        签发本机开发令牌；默认是平台超管 root
             """);

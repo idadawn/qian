@@ -9,6 +9,8 @@
     <ProjectReference Include="../Qian.Lifecycle.Abstractions/Qian.Lifecycle.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Registry.Abstractions/Qian.Registry.Abstractions.csproj" />
     <ProjectReference Include="../Qian.Surfaces.Abstractions/Qian.Surfaces.Abstractions.csproj" />
+    <!-- 管理员维护（S1-TEN-010）经身份端口读写账号、成员与凭据；只依赖 Definition，不引用身份 Provider。 -->
+    <ProjectReference Include="../Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
     <PackageReference Include="Kun.MultiTenancy" /><PackageReference Include="Grpc.AspNetCore.Server" /><PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <InternalsVisibleTo Include="Qian.Tenancy.Tests" />

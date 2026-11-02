@@ -6,7 +6,7 @@
 
 代码目录包含 Provider、租户入口边界、传播器、gRPC 适配器、主档上下文及内部持久化实现。TenancyPlugin 消费 Data、提供 Tenancy 服务键，目录挂在 global scope，供 Identity 等可信服务读取最小投影；不把联系方式、管理员、连接凭据或完整租户列表暴露给匿名调用方。物理 schema 遵循 Data 的插件命名规则，使用 plugin_qian_tenancy。
 
-默认目标为 platform profile。当前尚未完成管理员维护、真实 Identity 联调和 qian add tenancy（包已随 0.1.0 发到 GitHub Packages，R93），因此 plugins/qian.tenancy 保留 x-skeleton，不能视为已安装的完整平台组件。主档目录先提供稳定端口，避免 Identity 登录前查目录依赖尚未创建的 Membership。
+默认目标为 platform profile。管理员维护已由 S1-TEN-010 交付（见下文）；权益授予（S1-TEN-015）、拆分部署下的 Identity 联调（S1-IDP-012）和 qian add tenancy 尚未完成（包已随 0.1.0 发到 GitHub Packages，R93），因此 plugins/qian.tenancy 保留 x-skeleton，不能视为已安装的完整平台组件。主档目录先提供稳定端口，避免 Identity 登录前查目录依赖尚未创建的 Membership。
 
 ## 主档存储
 
@@ -90,7 +90,7 @@ GET/PUT /api/tenancy/tenants/{id}/settings/{plugin} 使用同一平台超管授�
 
 一次派发中每个初始化能力只能被消费一次；若两组 hooks 引用同一能力，第二次会返回 `AUTHZ_DENIED`，步骤停在 `04:provisioned`。排查时检查该事件的所有 matcher 命中组及 handler 到能力的映射，合并重复引用后再重试；反复重试不会改变一次性语义。并发消费、嵌套 Begin/Enter、重复 Claim、作用域关闭后的逃逸执行均拒绝。
 
-按 R105，九个单例服务键为 `TenancyProvisioning`、`TenancyMembershipProvisioner`、`TenancyProvisionedNotifier`、`TenancyOperations`、`TenancyLifecycle`、`TenancySettings`、`TenancySettingsOperations`、`TenancyQuota`、`TenancyUserCounter`。消费者使用 Definition 的现有静态字段，字段签名没有改变；未发布旧键不保留别名。`AuthzTenantRoleGrant` 也已按 S1-RT-033 改为单段键，开户编排继续通过 `TenantRoleGrant.Key` 解析。
+按 R105，九个单例服务键为 `TenancyProvisioning`、`TenancyMembershipProvisioner`、`TenancyProvisionedNotifier`、`TenancyOperations`、`TenancyLifecycle`、`TenancySettings`、`TenancySettingsOperations`、`TenancyQuota`、`TenancyUserCounter`；S1-TEN-010 按同一命名规则新增 `TenancyAdministration`（管理员维护）。消费者使用 Definition 的现有静态字段，字段签名没有改变；未发布旧键不保留别名。`AuthzTenantRoleGrant` 也已按 S1-RT-033 改为单段键，开户编排继续通过 `TenantRoleGrant.Key` 解析。
 
 standalone 组合包移除从未被运行时消费的 `resolver.mode: single-tenant` 占位配置；独立宿主仍显式选择自己的 `ITenantContext` / SingleTenant 实现，不能以配置字符串切换可信租户边界。各 profile 的现有 Tenancy 配置均经实际 Apply 回归。
 
@@ -118,8 +118,32 @@ R113 的处理顺序固定为：认证及平台主体检查 → 请求绑定与�
 
 契约发布前必须带齐已有服务端校验约束并通过真实端点与快照一致性测试。S1-DEC-025 只允许在 qian.tenancy 从未进入平台契约仓库时纠偏一次；后续 v1 收窄必须走 v2，并提供 R33 的别名、Deprecation 和 successor-version Link。TEN-005 消费 TEN-011 统一快照，不再另改同一 v1 基线。
 
+## 管理员维护（S1-TEN-010）
+
+运营入口新增五个操作，同在 `MapQianTenancy` 里，沿用 R113 的处理顺序与超管旁路审计，权限点为 `qian.tenancy:admin:<action>`（read / create / assign / reset-credential）：
+
+- `POST /api/tenancy/admin-accounts:lookup`：按手机号、邮箱或用户名查找可任管理员的账号。标识放请求体，不进 URL 与访问日志；不存在、已清除或具备平台访问资格的都是 404。
+- `POST /api/tenancy/admin-accounts`：经 `IIdentityAccounts.CreatePersonAsync` 新建自然人，一个登录标识加初始密码，下次登录强制改密，不建成员。运营录入的手机号、邮箱没有经过验证码核验，按未验证保存。
+- `GET/PUT /api/tenancy/tenants/{id}/admins`：读取与替换租户管理员。S1 单管理员（Q12），`items` 恰好一项，契约写明 `minItems` / `maxItems` 为 1；多管理员属于以后放宽。
+- `POST /api/tenancy/tenants/{id}/admins/{membershipId}:reset-password`：重置当前管理员的密码。
+
+账号、成员与凭据都经 qian.identity 的端口读写，本组件只改 `tenant_admins` 指针。`ITenantAdministration` 由 TenancyPlugin 提供（服务键 `TenancyAdministration`）；身份组件缺席时这组接口返回 404。响应只有掩码标识，原值与密码不出身份组件。身份组件给出的错误位置换成运营请求体的字段，例如 `#/initialPassword`、`#/newPassword`、`#/identifier`。
+
+替换按「新管理员成员 → 新 tenant.owner → 撤销原管理员的 tenant.owner 与管理员标志 → 改指针 → 租户链补 admin.assign」的顺序执行。每步幂等、指针最后才改，中途失败用同一请求重试即可收敛。它与开通续跑共用同一把租户会话锁；开通第 05–07 步没有全部成功时返回 409，先续跑开通。
+
+- 新成员经身份组件的计数锁与配额判定，满额返回 422 `CARDINALITY_USER_LIMIT`，此时什么都没改；已是成员的人不占新名额。
+- 建立或绑定成员用 `IIdentityAccounts.CreateMembershipAsync`，不用开户的 `ITenantMembershipProvisioner`：后者要求调用方先给成员 ID，替换为已在租户内的成员会冲突。两者走同一把计数锁与配额判定。
+- 原管理员保留成员身份与其它角色，会话不吊销；授权变更照常递增 identity_revision（PRD 13.3.3）。
+- 平台身份、停用或锁定的账号不能被指定，返回 400，pointer `#/items/0/subjectId`。
+
+重置只对当前管理员：路径里的成员 ID 须等于指针，否则 404，免得借任一租户的路径重置任意自然人的密码。重置经 `IIdentityAccounts.ResetPasswordAsync`：旧密码立即失效，下次登录强制改密，该自然人的全部会话吊销。自然人全局唯一，他在其它租户的登录也随之改变。租户链补 admin.reset-password，只记成员指针，不含密码。
+
+权限风险表里重置的动作叫 `reset-credential`：组件表面的明文扫描把以 password 结尾的键当敏感字段，`risk` 里不能出现 `reset-password` 键。路由与审计能力名仍用 reset-password。状态机元数据新增 assign-admin、reset-admin-password 两个动作：`agent.expose=false` 即 humanOnly，`requiresConfirmation=true`（R52）。运营入口本就只收人类平台用户，页面据元数据二次确认。
+
+超管旁路审计记的是放行决定：放行后才得出的 404、409、422 同样在平台链上留有记录（R97）；入口校验失败的 400 没有。
+
 ## 清单入口与代码派生
 
-`plugins/qian.tenancy/.qian-plugin/plugin.json` 的稳定入口是 `TenancyComponent`，允许 global scope，依赖 `Data`，提供 租户目录、设置、运营、配额、状态机、开户与 `CommandTenancy`。固定委托无参 `TenancyPlugin`。扫描到期租户的工具由实现共用的静态 `TenantExpiryCapability.Definition` 派生；可执行绑定属于 SDK 能力协议，不伪装成普通服务键。
+`plugins/qian.tenancy/.qian-plugin/plugin.json` 的稳定入口是 `TenancyComponent`，允许 global scope，依赖 `Data`，提供 租户目录、设置、运营、管理员维护、配额、状态机、开户与 `CommandTenancy`。固定委托无参 `TenancyPlugin`。扫描到期租户的工具由实现共用的静态 `TenantExpiryCapability.Definition` 派生；可执行绑定属于 SDK 能力协议，不伪装成普通服务键。
 
 入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

@@ -124,7 +124,7 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
                 if (type is null) continue;
                 var schema = Export(type, component, options, schemas, parameter.Source == BindingSource.Body);
                 var parameterInfo = api.ActionDescriptor.EndpointMetadata.OfType<IParameterBindingMetadata>().SingleOrDefault(binding => binding.Name == parameter.Name)?.ParameterInfo;
-                StringConstraints(schema, parameterInfo, type);
+                LengthConstraints(schema, parameterInfo, type);
                 if (parameterInfo?.GetCustomAttribute<AllowedValuesAttribute>() is { } allowedParameter)
                     schema["enum"] = JsonSerializer.SerializeToNode(allowedParameter.Values, options);
                 if (parameterInfo?.GetCustomAttribute<RangeAttribute>() is { } range)
@@ -195,7 +195,7 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
                 TreatNullObliviousAsNonNullable = true,
                 TransformSchemaNode = (context, schema) =>
                 {
-                    StringConstraints(schema, context.PropertyInfo?.AttributeProvider, context.PropertyInfo?.PropertyType);
+                    LengthConstraints(schema, context.PropertyInfo?.AttributeProvider, context.PropertyInfo?.PropertyType);
                     if (context.PropertyInfo?.AttributeProvider?.GetCustomAttributes(typeof(AllowedValuesAttribute), true).OfType<AllowedValuesAttribute>().SingleOrDefault() is { } allowed)
                         schema["enum"] = JsonSerializer.SerializeToNode(allowed.Values, options);
                     // 输入属性可写性以 DisallowNull 为准；内部读取仍可能是 nullable。
@@ -211,14 +211,17 @@ internal sealed class AspNetCoreHttpContractSource(IApiDescriptionGroupCollectio
         }
         return new JsonObject { ["$ref"] = "#/components/schemas/" + key };
     }
-    private static void StringConstraints(JsonNode schema, ICustomAttributeProvider? provider, Type? type)
+    private static void LengthConstraints(JsonNode schema, ICustomAttributeProvider? provider, Type? type)
     {
-        if (provider is null || schema is not JsonObject || type != typeof(string)) return;
+        if (provider is null || schema is not JsonObject || type is null) return;
+        // 集合属性上的 MinLength / MaxLength 是条数约束（DataAnnotations 同样按元素个数校验），写成 minItems / maxItems。
+        var text = type == typeof(string);
+        if (!text && !typeof(System.Collections.IEnumerable).IsAssignableFrom(type)) return;
         foreach (var attribute in provider.GetCustomAttributes(true))
         {
-            if (attribute is MinLengthAttribute minimum) schema["minLength"] = minimum.Length;
-            else if (attribute is MaxLengthAttribute maximum) schema["maxLength"] = maximum.Length;
-            else if (attribute is RegularExpressionAttribute expression) schema["pattern"] = expression.Pattern;
+            if (attribute is MinLengthAttribute minimum) schema[text ? "minLength" : "minItems"] = minimum.Length;
+            else if (attribute is MaxLengthAttribute maximum) schema[text ? "maxLength" : "maxItems"] = maximum.Length;
+            else if (text && attribute is RegularExpressionAttribute expression) schema["pattern"] = expression.Pattern;
         }
     }
     private static bool SameIdentity(System.Security.Claims.ClaimsPrincipal principal, ICurrentUser user)

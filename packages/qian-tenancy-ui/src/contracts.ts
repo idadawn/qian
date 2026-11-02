@@ -8,6 +8,11 @@ export type Quota = paths['/api/tenancy/tenants/{id}/quota']['get']['responses']
 export type CreateRequest = paths['/api/tenancy/tenants']['post']['requestBody']['content']['application/json'];
 export type UpdateRequest = paths['/api/tenancy/tenants/{id}']['put']['requestBody']['content']['application/json'];
 export type ActivateRequest = paths['/api/tenancy/tenants/{id}:activate']['post']['requestBody']['content']['application/json'];
+export type AdminAccount = paths['/api/tenancy/admin-accounts']['post']['responses'][201]['content']['application/json'];
+export type TenantAdmin = paths['/api/tenancy/tenants/{id}/admins']['get']['responses'][200]['content']['application/json']['items'][number];
+export type LookupRequest = paths['/api/tenancy/admin-accounts:lookup']['post']['requestBody']['content']['application/json'];
+export type AccountRequest = paths['/api/tenancy/admin-accounts']['post']['requestBody']['content']['application/json'];
+export type ResetRequest = paths['/api/tenancy/tenants/{id}/admins/{membershipId}:reset-password']['post']['requestBody']['content']['application/json'];
 type ObjectNode = Record<string, unknown>;
 function object(value: unknown): ObjectNode {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('tenant.contract.invalid');
@@ -35,13 +40,27 @@ export function requestForm(path: keyof paths, method: 'post' | 'put', id: strin
   return { $schema: 'https://schema.qian.dev/form/v1', version: '1.0.0', id, data: data as FormSchema['data'], ui: { layout }, rules: {}, binding: {}, auth: {} };
 }
 const quota: UiNode = { field: 'quotas', children: [{ field: 'users', labelKey: 'tenant.quota', descriptionKey: 'tenant.quotaHint' }] };
-export const createSchema = requestForm('/api/tenancy/tenants', 'post', 'qian.tenancy.create', [
-  { field: 'code', labelKey: 'tenant.code', descriptionKey: 'tenant.codeHint' }, { field: 'name', labelKey: 'tenant.name' },
-  { field: 'administrator', children: [{ field: 'membershipId', labelKey: 'tenant.membership' }, { field: 'subjectId', labelKey: 'tenant.subject' }] }, quota,
-]);
+// 开户管理员由页面经身份组件查找或新建后填入（S1-TEN-010），表单只收主档与配额；其余字段仍按契约校验。
+function omit(form: FormSchema, field: string): FormSchema {
+  const { [field]: _omitted, ...properties } = form.data.properties;
+  const required = Array.isArray(form.data.required) ? form.data.required.filter((name) => name !== field) : form.data.required;
+  return { ...form, data: { ...form.data, properties, required } };
+}
+export const createSchema = omit(requestForm('/api/tenancy/tenants', 'post', 'qian.tenancy.create', [
+  { field: 'code', labelKey: 'tenant.code', descriptionKey: 'tenant.codeHint' }, { field: 'name', labelKey: 'tenant.name' }, quota,
+]), 'administrator');
 export const editSchema = requestForm('/api/tenancy/tenants/{id}', 'put', 'qian.tenancy.edit', [{ field: 'name', labelKey: 'tenant.name' }, quota]);
 export const activateSchema = requestForm('/api/tenancy/tenants/{id}:activate', 'post', 'qian.tenancy.activate', [{ field: 'trial', labelKey: 'tenant.trial' }, { field: 'validUntil', labelKey: 'tenant.validUntil', descriptionKey: 'tenant.validUntilHint' }]);
 export const detailSchema: FormSchema = { ...createSchema, id: 'qian.tenancy.detail', ui: { layout: [{ field: 'code', labelKey: 'tenant.code' }, { field: 'name', labelKey: 'tenant.name' }] } };
+const secret = { type: 'password', autoComplete: 'new-password' };
+export const lookupSchema = requestForm('/api/tenancy/admin-accounts:lookup', 'post', 'qian.tenancy.admin.lookup', [{ field: 'identifier', labelKey: 'tenant.adminIdentifier', descriptionKey: 'tenant.adminIdentifierHint' }]);
+export const accountSchema = requestForm('/api/tenancy/admin-accounts', 'post', 'qian.tenancy.admin.account', [
+  { field: 'displayName', labelKey: 'tenant.adminDisplayName' }, { field: 'identifierKind', labelKey: 'tenant.adminIdentifierKind' },
+  { field: 'identifier', labelKey: 'tenant.adminIdentifier' }, { field: 'initialPassword', labelKey: 'tenant.adminInitialPassword', descriptionKey: 'tenant.adminInitialPasswordHint', props: secret },
+]);
+export const resetSchema = requestForm('/api/tenancy/tenants/{id}/admins/{membershipId}:reset-password', 'post', 'qian.tenancy.admin.reset', [
+  { field: 'newPassword', labelKey: 'tenant.adminNewPassword', descriptionKey: 'tenant.adminNewPasswordHint', props: secret },
+]);
 
 export type TenantAction = 'activate' | 'suspend' | 'resume';
 export function legalActions(machine: StateMachine, status: Tenant['status']): TenantAction[] {
