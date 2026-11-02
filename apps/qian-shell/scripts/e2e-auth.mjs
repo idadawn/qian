@@ -68,7 +68,8 @@ try {
   }
   if (!ready) throw new Error('真实宿主未在 600 秒内就绪');
   await mkdir(resolve(root, 'TestResults/shell-auth'), { recursive: true });
-  await run('pnpm', ['exec', 'playwright', 'test', '--config', 'playwright.auth.config.ts'], { cwd: resolve(root, 'apps/qian-shell') });
+  // 额外参数原样交给 Playwright，便于只跑某个文件或用例（例如 `pnpm --filter qian-shell e2e:auth -- e2e-auth/signup.spec.ts`）；CI 不带参数，跑全部。
+  await run('pnpm', ['exec', 'playwright', 'test', '--config', 'playwright.auth.config.ts', ...process.argv.slice(2).filter(arg => arg !== '--')], { cwd: resolve(root, 'apps/qian-shell') });
   succeeded = true;
 } finally {
   await stopHost(); await log.close();

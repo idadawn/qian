@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { accessible, collectCspViolations, fillLogin, identity, loginPage, person, root, seed, state } from './support';
 
 // 外壳真实流程验收（S1-YUE-002 验收 1–4；S1-YUE-012 把薄入口与 MF2 宿主融合进 apps/qian-shell 后迁入）：账号密码经 qian-identity 的 OIDC code + PKCE 登录
 // （网关 BFF 换码，浏览器零令牌）→ 多租户选择 → 网关 bootstrap 聚合端点一次给出会话、上下文、已挂载远程、权限与能力导航 → 菜单命中的页面由参考应用的
@@ -14,17 +14,10 @@ import { expect, test, type Page } from '@playwright/test';
 // 列出真实租户与开通申请，不持角色的平台身份（visitor）仍只有代管横幅与会话卡片、直达平台页面 404，两者的 bootstrap 都只问平台控制台目录；
 // 刷新成功但平台表面持续 401 时只刷新一次、只弹一个过期对话框、之后不再请求，整页重载也不跳登录、点「重新登录」只跳一次；
 // SSO 跳转回调经真实上游 Dex（通用 OIDC 连接器）首次确认绑定、再次直接进入；验收 2：甲方已挂载参考应用时远程按需加载、丙方未挂载时 mf-manifest.json 从不请求；零令牌检测式自检不需要真实栈。
-const root = resolve(import.meta.dirname, '../../..');
-const seed = JSON.parse(readFileSync(resolve(root, 'tools/Qian.Dev.Shell/seed/accounts.json'), 'utf8')) as { persons: { key: string; username: string; password: string }[]; tenants: { code: string; name: string }[] };
-const owner = seed.persons.find(person => person.key === 'owner')!;
-const operator = seed.persons.find(person => person.key === 'operator')!;
-const visitor = seed.persons.find(person => person.key === 'visitor')!;
-const second = seed.persons.find(person => person.key === 'second')!;
+const owner = person('owner'); const operator = person('operator'); const visitor = person('visitor'); const second = person('second');
 // 上游 Dex 本地密码库里的用户（scripts/dev-shell.sh 用同一文件渲染 Dex 配置）。
 const dex = JSON.parse(readFileSync(resolve(root, 'tools/Qian.Dev.Shell/seed/dex.json'), 'utf8')) as { email: string; password: string };
 const acme = seed.tenants[0]!; const beta = seed.tenants[1]!; const gamma = seed.tenants[2]!;
-const identity = (process.env.QIAN_DEV_SHELL_API_URL ?? 'http://127.0.0.1:5090').replace(/\/$/, '');
-const state = process.env.QIAN_DEV_STATE ?? resolve(root, '.qian-dev/shell');
 // 令牌检测：JWT（JWS / JWE 紧凑序列化）各段是 base64url，头段是 JSON，编码后以 eyJ 起头。两种形状都算令牌：令牌边界上的 eyJ 长串（JSON 字符串、URL、
 // Bearer 头里的整段令牌，或单独的载荷段）；任何位置的 eyJ 段后接点号与下一段（百分号编码里 eyJ 前一个字符也可能是字母数字）。防伪令牌这类数据保护的
 // 随机 base64url 串没有点号，中段偶然出现的 eyJ 不是令牌（S1-YUE-012 全量门禁实测误报过一次，见下面的检测式自检）。
@@ -32,35 +25,7 @@ const tokenLike = /(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{20,}|eyJ[A-Za-z0-9_-]{10,}
 const bootstrapPath = /^\/api(-alt)?\/shell\/bootstrap$/;
 
 // 外壳构建产物带 meta CSP（apps/qian-shell/vite.config.ts）：每个文档都收集 securitypolicyviolation，用例结束时必须为零（认证页族在身份服务源上，不带这条 meta CSP）。
-const violations: string[] = [];
-test.beforeEach(async ({ page }) => {
-  violations.length = 0;
-  await page.exposeFunction('qianCspViolation', (detail: string) => { violations.push(detail); });
-  await page.addInitScript(() => document.addEventListener('securitypolicyviolation', event => {
-    (window as unknown as { qianCspViolation(detail: string): void }).qianCspViolation(`${location.origin} ${event.violatedDirective} ${event.blockedURI} ${event.sourceFile}:${event.lineNumber}`);
-  }));
-});
-test.afterEach(() => { expect(violations, 'CSP 违规').toEqual([]); });
-// Base UI 的 Tab 哨兵立即转移焦点；与靶场门禁一致，只排除这一类内部哨兵。
-const focusGuards = '[data-base-ui-focus-guard]';
-
-// 与 @yue/shell 浏览器测试的 axe 门一致：开场 / 退场属性清除后 opacity 过渡才开始，等真实动画结束再扫描，否则慢机器上会在半透明过渡中测出 color-contrast。
-async function settled(page: Page) {
-  await expect.poll(() => page.evaluate(() => document.querySelector('[data-starting-style], [data-ending-style]') === null)).toBe(true);
-  await page.evaluate(async () => {
-    let stableFrames = 0;
-    while (stableFrames < 2) {
-      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-      const finite = document.getAnimations().filter(animation => animation.playState !== 'finished' && Number.isFinite(Number(animation.effect?.getComputedTiming().endTime)));
-      if (finite.length) { await Promise.all(finite.map(animation => animation.finished.catch(() => undefined))); stableFrames = 0; } else stableFrames++;
-    }
-  });
-}
-async function accessible(page: Page, step: string) {
-  await settled(page);
-  const results = await new AxeBuilder({ page }).exclude(focusGuards).analyze();
-  expect(results.violations.filter(violation => violation.impact === 'critical' || violation.impact === 'serious').map(violation => `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join('; ')}`), step).toEqual([]);
-}
+collectCspViolations();
 async function noCredentials(page: Page, step: string) {
   const exposed = await page.evaluate(() => ({ url: location.href, cookie: document.cookie, frames: [...document.querySelectorAll('iframe')].map(frame => frame.src), local: JSON.stringify(localStorage), session: JSON.stringify(sessionStorage) }));
   expect(exposed.frames, step).toEqual([]);
@@ -79,12 +44,6 @@ async function devPost(page: Page, path: string) {
 }
 async function devSession(page: Page, action: 'expire' | 'break') {
   expect((await devPost(page, `/__dev/session/${action}`)).status).toBe(204);
-}
-async function fillLogin(page: Page, person = owner) {
-  await page.getByLabel(/账号/).fill(person.username);
-  await page.getByLabel(/密码/).fill(person.password);
-  await expect(page.getByLabel(/密码/)).toHaveAttribute('type', 'password');
-  await page.getByRole('button', { name: '登录', exact: true }).click();
 }
 // 页面侧观测：外壳自己发出的刷新 POST、防伪探测（SDK 的会话刷新与写请求的防伪头都先 GET /auth/csrf，按步骤取基线比较）、/api 与 /auth 调用、
 // 远程制品请求、全部同源 JSON 响应体；每个响应都断言请求不带 Authorization。上游 Dex 是别的源，不在其中。
@@ -108,7 +67,6 @@ function observe(page: Page, origin: string) {
   });
   return { refreshes, probes, apiCalls, bodies, remotes, logins };
 }
-const loginPage = new RegExp(`^${identity.replaceAll('.', '\\.')}/login\\?ReturnUrl=`);
 
 // 不需要真实栈：零令牌断言靠这条检测式，先证明它对泄漏敏感、对防伪令牌不误报。JWS 的载荷段也以 eyJ 起头；JWE（OpenIddict 默认加密访问令牌）
 // 只有头段以 eyJ 起头，百分号编码里它前面是字母数字，只能靠「eyJ 段后接点号」那一支命中。
