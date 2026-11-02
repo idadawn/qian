@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../../packages/Qian.Tenancy.Signup/Qian.Tenancy.Signup.csproj" />
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" IncludeAssets="all" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+  <!-- 开发宿主的开发期发件箱：门禁（只在 Development、只认回环）在这里单测，源文件随 tools/Qian.Dev.Shell 一起编译。 -->
+  <ItemGroup>
+    <Compile Include="../../tools/Qian.Dev.Shell/DevSignupOutbox.cs" Link="DevSignupOutbox.cs" />
+    <!-- 源文件依赖 Web SDK 的隐式 using。 -->
+    <Using Include="Microsoft.AspNetCore.Http" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+</Project>

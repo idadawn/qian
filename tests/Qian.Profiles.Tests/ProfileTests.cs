@@ -59,7 +59,7 @@ public sealed class ProfileTests
     // 警告只来自仍带骨架标记的条目；qian.data / qian.events / qian.config / qian.files / qian.identity.client 经真实安装后不再是骨架。
     [InlineData("platform", 21, 17)]
     [InlineData("gateway", 6, 5)]
-    [InlineData("identity", 8, 6)]
+    [InlineData("identity", 9, 7)]
     [InlineData("standalone", 3, 1)]
     [InlineData("minimal", 0, 0)]
     public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count, int skeletons)

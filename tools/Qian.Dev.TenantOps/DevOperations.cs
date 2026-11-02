@@ -41,12 +41,14 @@ internal static partial class DevOperations
     internal static async Task PrepareAsync(PluginLoader loader, IServiceProvider services, DevPlatform platform, string repository, CancellationToken ct)
     {
         var tenancy = Catalog(repository, "qian.tenancy", roles: false); var registry = Catalog(repository, "qian.registry", roles: true);
+        // 开通申请（S1-TEN-019）的运营权限点也进平台目录：超管旁路只放行已登记的权限点。只读组件目录里的元数据，不引用开通申请组件。
+        var signup = Catalog(repository, "qian.tenancy.signup", roles: false);
         await loader.UnmountAsync("authz", ScopeKey.Global, ct).ConfigureAwait(false); await loader.UnmountAsync("audit", ScopeKey.Global, ct).ConfigureAwait(false);
         await loader.MountAsync([
             new PluginDefinition(new PluginEntry("audit", "qian.audit", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { chain = new { platformRole = DevDatabase.AuditPlatformRole } })),
                 new AuditPlugin(), [AuditDefinition.Key, CommandPolicies.AuditKey]),
             new PluginDefinition(new PluginEntry("authz", "qian.authz", "1.0.0", ScopeKey.Global, 0, JsonSerializer.SerializeToElement(new { platformRole = DevDatabase.AuthzPlatformRole })),
-                new AuthzPlugin([CrmPermissions.Compile(), tenancy, registry]), [AuthzDefinition.Key, CommandPolicies.AuthorizationKey])], ct).ConfigureAwait(false);
+                new AuthzPlugin([CrmPermissions.Compile(), tenancy, registry, signup]), [AuthzDefinition.Key, CommandPolicies.AuthorizationKey])], ct).ConfigureAwait(false);
         DevPlatform.EnsureReady(loader, "audit"); DevPlatform.EnsureReady(loader, "authz");
         // 平台超管只经内部平台角色存储授予（S1-AZ-005 的管理 API 交付前，平台运营流程与测试引导都走这里），且必须在无租户上下文中。
         await new PostgresPlatformRoleStore(services.GetRequiredService<IDataService>(), services.GetRequiredService<ITenantContext>(), DevDatabase.AuthzPlatformRole)
