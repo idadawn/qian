@@ -418,7 +418,7 @@ public abstract partial class CustomerCommandTests
                 policy = new { tier = "official", sandbox = "none", authentication = "ON_INSTALL", required = false }, scopes = GlobalSettingsScopes,
                 runtime = new { form = "module", entry = typeof(TenancySignupPlugin).FullName + ", " + typeof(TenancySignupPlugin).Assembly.GetName().Name }
             }));
-            Write("plugins/signup/ui/manifest.json", File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy.signup/ui/manifest.json")));
+            Write("plugins/signup/ui/manifest.json", platform.SignupUi ?? File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy.signup/ui/manifest.json")));
             var folder = Path.Combine(directory, "plugins", "signup");
             var files = Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).ToDictionary(
                 file => Path.GetRelativePath(folder, file).Replace(Path.DirectorySeparatorChar, '/'), file => new ReadOnlyMemory<byte>(File.ReadAllBytes(file)), StringComparer.Ordinal);
@@ -551,6 +551,8 @@ public abstract partial class CustomerCommandTests
         internal bool ProvisionCrmByDefault { get; init; }
         /// <summary>平台控制台（S1-YUE-018）：Tenancy 带 UI 清单重挂，开通申请组件登记预装绑定（<see cref="Signup"/> 为它带 UI 清单的包装定义，由用例挂载）。</summary>
         internal bool Console { get; init; }
+        /// <summary>开通申请组件制品里的 UI 清单原文；缺省为仓库里的清单。</summary>
+        internal string? SignupUi { get; init; }
         internal PluginDefinition? Signup { get; set; }
         internal RegistryRuntimeOptions RegistryOptions { get; set; } = null!;
         internal string AuthzRole { get; set; } = "";

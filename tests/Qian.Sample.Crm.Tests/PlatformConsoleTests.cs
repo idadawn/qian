@@ -89,6 +89,25 @@ public sealed partial class ShellSurfaceTests
     }
 
     [Fact]
+    public async Task 平台控制台菜单按只读判定逐页筛选_组件有放行的权限点时权限点未登记的页面仍不进菜单_远程与权限码照常()
+    {
+        // 开通申请组件的 UI 清单多一个页面，它的权限点不在组件的权限目录里（没有登记）：只读判定不放行它，同一组件的读取权限点照常放行。
+        var manifest = JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.tenancy.signup/ui/manifest.json")))!;
+        manifest["pages"]!.AsArray().Add(JsonNode.Parse("""
+            { "route": "/tenant-applications/export", "expose": "ApplicationsPage", "permission": "qian.tenancy.signup:application:export", "nav": { "title": "导出申请", "icon": "download", "order": 30 } }
+            """));
+        await using var console = await StartConsole(signupUi: manifest.ToJsonString());
+        using var direct = new HttpClient { BaseAddress = new Uri(console.Surface.Urls.Single()) };
+        var granted = await ConsoleCatalog(direct, SurfacePlatformToken(console.Business, "user", "root"));
+
+        // 两个组件都有放行的权限点，远程照交（清单原文含那个页面，外壳再按权限码逐项过滤）；菜单只列放行的两页，权限码里也没有未登记的那个。
+        Assert.Equal(["qian.tenancy", "qian.tenancy.signup"], granted["remotes"]!.AsArray().Select(remote => (string)remote!["id"]!));
+        Assert.True(JsonNode.DeepEquals(manifest, granted["remotes"]![1]!["manifest"]), granted["remotes"]![1]!["manifest"]!.ToJsonString());
+        Assert.Equal(["/tenants", "/tenant-applications"], granted["navigation"]!.AsArray().Select(item => (string)item!["route"]!));
+        Assert.Equal(["qian.tenancy.signup:application:read", "qian.tenancy:tenant:read"], granted["permissions"]!.AsArray().Select(item => (string)item!));
+    }
+
+    [Fact]
     public async Task 外壳bootstrap给持平台超管的平台身份交出平台组件的远程菜单与权限码_不代管且与控制台目录一致_不持角色的平台身份仍代管_租户成员看不到平台组件_不含令牌()
     {
         using var tls = GatewayTestHost.Certificate(); using var reservation = LoopbackPort.Reserve();
@@ -166,9 +185,9 @@ public abstract partial class CustomerCommandTests
 {
     // 平台控制台的验收宿主：生命周期平台（管理面：Authz 带平台角色登录与 Tenancy / 开通申请两份权限目录，引导时给 root 授平台超管）+ 内置账号模型；
     // Tenancy 以带 UI 清单的包装重挂，开通申请组件（数据上下文与建表脚本同 S1-TEN-019 的验收宿主）带 UI 清单挂在全局 scope；平台表面参考宿主复用同一 Runtime。
-    private protected async Task<ConsoleHost> StartConsole(Uri? relyingParty = null, ConcurrentQueue<string>? seen = null)
+    private protected async Task<ConsoleHost> StartConsole(Uri? relyingParty = null, ConcurrentQueue<string>? seen = null, string? signupUi = null)
     {
-        var platform = new LifecyclePlatform { Management = true, Console = true };
+        var platform = new LifecyclePlatform { Management = true, Console = true, SignupUi = signupUi };
         RunningApp? business = null; WebApplication? management = null; WebApplication? surface = null;
         try
         {

@@ -11,7 +11,7 @@ namespace Qian.Sample.Crm.Tests;
 public sealed partial class TenantAdminTests
 {
     [Fact]
-    public async Task 本租户摘要只给同租户用户_平台主体其它租户Agent与无凭据被拒_不写旁路审计_字段与运营列表同口径()
+    public async Task 本租户摘要只给同租户用户_平台主体其它租户Agent与无凭据被拒_不写旁路审计_字段与运营列表同口径_计数端口缺席时用量为null()
     {
         await using var ops = await StartOps();
         var (business, client) = (ops.Business, ops.Client);
@@ -57,11 +57,32 @@ public sealed partial class TenantAdminTests
         }
         var missing = Guid.NewGuid();
         await Rejected(await Send(client, HttpMethod.Get, Summary(missing), business.Token(missing.ToString(), "", Guid.CreateVersion7().ToString(), "user")), HttpStatusCode.NotFound, "NOT_FOUND");
+
+        // 本租户 scope 里看不到身份侧的用户计数端口（restrict 隐去）：用量为 null（页面显示「—」），不是 0，其它字段照旧；端口恢复后又是 1。
+        var identity = business.Identity.Loader!.GetContext("identity", ScopeKey.Global);
+        using (identity.Restrict(new ScopeKey("tenant", first.Id.ToString()), registration => registration.Key != TenantSettings.UserCounterKey))
+        {
+            var absent = await Read<JsonElement>(await Send(client, HttpMethod.Get, Summary(first.Id), business.Token(first.Id.ToString(), "", Guid.CreateVersion7().ToString(), "user")), HttpStatusCode.OK);
+            Assert.False(absent.TryGetProperty("usersUsed", out var used) && used.ValueKind != JsonValueKind.Null, absent.GetRawText());
+            Assert.Equal(("summarya", 20, "管理员甲"), (absent.GetProperty("code").GetString(), absent.GetProperty("usersLimit").GetInt32(), absent.GetProperty("administratorName").GetString()));
+        }
+        Assert.Equal(1, (await Read<TenantSummary>(await Send(client, HttpMethod.Get, Summary(first.Id), business.Token(first.Id.ToString(), "", Guid.CreateVersion7().ToString(), "user")), HttpStatusCode.OK)).UsersUsed);
         // 摘要不经超管旁路：平台链上没有新增记录。
         Assert.Equal(before, await PlatformEntries(source));
     }
 
     private static string Summary(Guid tenant) => $"/api/tenancy/tenants/{tenant}/summary";
 
-    private static async Task<int> PlatformEntries(IPluginContext source) => (await source.Audit().ReadPlatformAsync(source, 0, 200, cancellationToken: Ct)).Count;
+    // 平台链的条数：分页读到末尾（每页 200），链上记录再多也不会少算。
+    private static async Task<int> PlatformEntries(IPluginContext source)
+    {
+        var count = 0; long after = 0;
+        while (true)
+        {
+            var page = await source.Audit().ReadPlatformAsync(source, after, 200, cancellationToken: Ct);
+            count += page.Count;
+            if (page.Count < 200) return count;
+            after = page[^1].Sequence;
+        }
+    }
 }
