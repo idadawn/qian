@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
-using Qian.Audit;
 using Qian.Runtime;
 using Qian.Tenancy;
 
@@ -28,7 +27,7 @@ public sealed partial class TenantAdminTests
         var (person, _) = await NewPerson(business, "管理员乙");
         var second = await Read<TenantDescriptor>(await Send(client, HttpMethod.Post, "/api/tenancy/tenants", root,
             new CreateTenant("summaryb", "摘要乙") { Administrator = new(Guid.CreateVersion7(), person.Id.ToString("D")) }), HttpStatusCode.Created);
-        var before = await PlatformEntries(source);
+        var before = (await PlatformChain(source)).Count;
 
         // 同租户的用户只读到本租户：字段与运营列表同口径（开户管理员计 1 人），不带隔离策略与并发版本。
         using (var response = await Send(client, HttpMethod.Get, Summary(first.Id), business.Token(first.Id.ToString(), "", Guid.CreateVersion7().ToString(), "user")))
@@ -68,21 +67,8 @@ public sealed partial class TenantAdminTests
         }
         Assert.Equal(1, (await Read<TenantSummary>(await Send(client, HttpMethod.Get, Summary(first.Id), business.Token(first.Id.ToString(), "", Guid.CreateVersion7().ToString(), "user")), HttpStatusCode.OK)).UsersUsed);
         // 摘要不经超管旁路：平台链上没有新增记录。
-        Assert.Equal(before, await PlatformEntries(source));
+        Assert.Equal(before, (await PlatformChain(source)).Count);
     }
 
     private static string Summary(Guid tenant) => $"/api/tenancy/tenants/{tenant}/summary";
-
-    // 平台链的条数：分页读到末尾（每页 200），链上记录再多也不会少算。
-    private static async Task<int> PlatformEntries(IPluginContext source)
-    {
-        var count = 0; long after = 0;
-        while (true)
-        {
-            var page = await source.Audit().ReadPlatformAsync(source, after, 200, cancellationToken: Ct);
-            count += page.Count;
-            if (page.Count < 200) return count;
-            after = page[^1].Sequence;
-        }
-    }
 }

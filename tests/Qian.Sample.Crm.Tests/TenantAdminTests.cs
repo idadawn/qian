@@ -226,7 +226,7 @@ public sealed partial class TenantAdminTests(PostgresFixture postgres) : Custome
         var resets = (await Bypasses(source)).Where(record => record.Payload.GetProperty("permission").GetString() == "qian.tenancy:admin:reset-credential").ToArray();
         Assert.Equal(5, resets.Length);
         Assert.Equal(2, resets.Count(record => record.Resource == $"tenancy/tenants/{id}/admins/{member}"));
-        Assert.All(await source.Audit().ReadPlatformAsync(source, 0, 200, cancellationToken: Ct), entry => Assert.DoesNotContain(TemporaryPassword, entry.Record.Payload.GetRawText(), StringComparison.Ordinal));
+        Assert.All(await PlatformChain(source), entry => Assert.DoesNotContain(TemporaryPassword, entry.Record.Payload.GetRawText(), StringComparison.Ordinal));
 
         // 机器可读的操作描述：替换与重置都不对模型暴露（humanOnly）且要求确认，页面据此弹出二次确认。
         var machine = await Read<JsonElement>(await Send(client, HttpMethod.Get, "/api/tenancy/meta/state-machine", root), HttpStatusCode.OK);
@@ -273,9 +273,22 @@ public sealed partial class TenantAdminTests(PostgresFixture postgres) : Custome
 
     // 平台链上管理员维护的超管旁路记录；引导时安装、激活 system 组件的生命周期条目（S1-RT-037）与租户主档的放行不算。
     private static async Task<AuditRecord[]> Bypasses(IPluginContext source) =>
-        [.. (await source.Audit().ReadPlatformAsync(source, 0, 200, cancellationToken: Ct)).Select(entry => entry.Record)
+        [.. (await PlatformChain(source)).Select(entry => entry.Record)
             .Where(record => record.Payload.ValueKind == JsonValueKind.Object && record.Payload.TryGetProperty("permission", out var permission) &&
                 permission.GetString()!.StartsWith("qian.tenancy:admin:", StringComparison.Ordinal))];
+
+    // 平台链上的全部记录：分页读到末尾（每页 200），链上记录再多也不会漏读。
+    private static async Task<List<AuditChainEntry>> PlatformChain(IPluginContext source)
+    {
+        var entries = new List<AuditChainEntry>(); long after = 0;
+        while (true)
+        {
+            var page = await source.Audit().ReadPlatformAsync(source, after, 200, cancellationToken: Ct);
+            entries.AddRange(page);
+            if (page.Count < 200) return entries;
+            after = page[^1].Sequence;
+        }
+    }
 
     private static async Task<HttpResponseMessage> Send(HttpClient client, HttpMethod method, string url, string? token, object? body = null)
     {
