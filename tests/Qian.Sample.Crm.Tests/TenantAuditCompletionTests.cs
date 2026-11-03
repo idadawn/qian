@@ -48,7 +48,7 @@ public sealed partial class TenantOperationsTests
         await Assert.ThrowsAsync<QianErrorException>(() => scan.InvokeAsync(loader.GetContext("registry", ScopeKey.Global), input, Ct).AsTask());
         await Assert.ThrowsAsync<QianErrorException>(() => scan.InvokeAsync(scheduler,
             JsonSerializer.SerializeToElement(new { idempotencyKey = Guid.CreateVersion7(), limit = 0 }), Ct).AsTask());
-        var entries = (await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct))
+        var entries = (await ReadPlatformChain(source))
             .Where(entry => entry.Record.CapabilityId == scan.Contract.Id).Select(entry => entry.Record).ToArray();
         Assert.Equal(6, entries.Length);
         Assert.Equal(["started", "success", "started", "success", "started", "failure"], entries.Select(record => record.Result));
@@ -109,7 +109,7 @@ public sealed partial class TenantOperationsTests
                 Assert.DoesNotContain(await source.Audit().ReadAsync(0, 100, cancellationToken: Ct), record => record.Record.CapabilityId == "qian.tenancy/settings.write");
                 Assert.True((await source.Audit().VerifyAsync(Ct)).Valid);
             }
-            Assert.Contains(await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct), entry =>
+            Assert.Contains(await ReadPlatformChain(source), entry =>
                 entry.Record.Payload.TryGetProperty("permission", out var permission) && permission.GetString() == "qian.tenancy:tenant:edit");
         }
         finally

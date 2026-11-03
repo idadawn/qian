@@ -41,7 +41,7 @@ public sealed partial class TenantOperationsTests(PostgresFixture postgres) : Cu
         var path = "/api/tenancy/tenants";
         var source = business.App.Services.GetRequiredService<CrmCommandRuntime>().Loader.GetContext("tenancy", ScopeKey.Global);
         // 放行审计的条数：平台链上引导时安装、激活 system 组件的生命周期条目（S1-RT-037）不算。
-        async Task<int> AuditCount() => (await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct))
+        async Task<int> AuditCount() => (await ReadPlatformChain(source))
             .Count(entry => !entry.Record.CapabilityId.StartsWith("qian.lifecycle/plugin-revision.", StringComparison.Ordinal));
         foreach (var token in new[] { (string?)null, business.Token(A, "", "root", "user"), business.Token(null, "", "intruder", "user") })
         {
@@ -96,7 +96,7 @@ public sealed partial class TenantOperationsTests(PostgresFixture postgres) : Cu
             Assert.Empty((await visible.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("paths").EnumerateObject());
         }
         // 放行审计：平台链上引导时安装、激活 system 组件的生命周期条目（S1-RT-037）另算。
-        var records = (await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct))
+        var records = (await ReadPlatformChain(source))
             .Where(entry => !entry.Record.CapabilityId.StartsWith("qian.lifecycle/plugin-revision.", StringComparison.Ordinal)).ToList();
         Assert.Equal(7, records.Count);
         Assert.Equal("create,read,read,edit,edit,edit,read", string.Join(",", records.Select(entry => entry.Record.Payload.GetProperty("permission").GetString()!.Split(':')[^1])));
@@ -182,7 +182,7 @@ public sealed partial class TenantOperationsTests(PostgresFixture postgres) : Cu
         await loader.MountAsync([new PluginDefinition(audit, new AuditPlugin(), [AuditDefinition.Key, Qian.Plugin.Sdk.CommandPolicies.AuditKey])], Ct);
         Assert.Equal(PluginState.Ready, loader.GetState("audit", ScopeKey.Global));
         // 平台链上只有引导时安装、激活 system 组件的生命周期条目（S1-RT-037），没有放行审计。
-        Assert.All(await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct), entry => Assert.StartsWith("qian.lifecycle/plugin-revision.", entry.Record.CapabilityId, StringComparison.Ordinal));
+        Assert.All(await ReadPlatformChain(source), entry => Assert.StartsWith("qian.lifecycle/plugin-revision.", entry.Record.CapabilityId, StringComparison.Ordinal));
         Assert.Equal(3, logs.Entries.Count);
 
         async Task Authz(bool role, bool declared)
@@ -287,5 +287,18 @@ public abstract partial class CustomerCommandTests
     {
         using (response)
         { var body = await response.Content.ReadAsStringAsync(Ct); Assert.True(response.StatusCode == status, body); Assert.Equal(code, ErrorDetailJson.Deserialize(body)!.Code); }
+    }
+
+    // 平台链上的全部记录：分页读到末尾（每页 200）。只读第一页时，链上记录一多，Assert.All 与「没有新增」恒真，Assert.Contains 与条数误报失败（S1-QA-024）。
+    private protected static async Task<List<AuditChainEntry>> ReadPlatformChain(IPluginContext source)
+    {
+        var entries = new List<AuditChainEntry>(); long after = 0;
+        while (true)
+        {
+            var page = await source.Audit().ReadPlatformAsync(source, after, 200, cancellationToken: Ct);
+            entries.AddRange(page);
+            if (page.Count < 200) return entries;
+            after = page[^1].Sequence;
+        }
     }
 }
