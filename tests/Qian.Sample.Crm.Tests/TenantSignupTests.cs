@@ -271,6 +271,47 @@ public sealed partial class TenantSignupTests(PostgresFixture postgres) : Custom
         }
     }
 
+    [Fact]
+    public async Task 申请人会话随号码归属作废_号码从绑定的自然人上换掉或改绑给别人后旧会话读申请人与本人申请都401_重新核验的会话属于新主人()
+    {
+        await using var ops = await StartOps();
+        var address = ops.Business.Client.BaseAddress!;
+        var accounts = ops.Business.Identity.Accounts;
+
+        // 甲以既有账号核验并提交：会话绑定甲（提交后轮换，仍绑定甲），本人的申请里有这一条。
+        var (jia, phone) = await NewPerson(ops.Business, "原主人");
+        using var stale = new Browser(address);
+        Assert.True((await Verify(ops, stale, phone)).GetProperty("existingAccount").GetBoolean());
+        var applied = (await Json(await Submit(stale, ExistingBody("ownerco")), HttpStatusCode.Created)).GetProperty("id").GetGuid();
+        Assert.Equal([applied], (await Json(await stale.Send(HttpMethod.Get, Mine), HttpStatusCode.OK)).GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetGuid()));
+        var token = stale.Token!;
+
+        // 甲把手机号换成别的号码：这个号码不再属于会话绑定的自然人，旧会话随即作废——不再代表甲，也不退回成未注册号码的会话。
+        await accounts.ReplaceIdentifierAsync(jia.Id, IdentifierKind.Phone, phone, new IdentifierInput(IdentifierKind.Phone, NewPhone(), true), Ct);
+        Assert.Null(await accounts.FindPersonAsync(phone, Ct));
+        await Expired();
+
+        // 号码再绑给乙：旧会话仍然作废，拿不到乙的身份与申请；乙重新核验得到的会话才属于乙。
+        var (yi, _) = await NewPerson(ops.Business, "新主人");
+        await accounts.BindIdentifierAsync(yi.Id, new IdentifierInput(IdentifierKind.Phone, phone, true), Ct);
+        await Expired();
+        await Age($"phone = '+86{phone}'", "2 minutes");
+        using var fresh = new Browser(address);
+        var current = await Verify(ops, fresh, phone);
+        Assert.Equal((Mask(phone), true, "新主人"), (current.GetProperty("phone").GetString(), current.GetProperty("existingAccount").GetBoolean(), current.GetProperty("displayName").GetString()));
+        Assert.Empty((await Json(await fresh.Send(HttpMethod.Get, Mine), HttpStatusCode.OK)).GetProperty("items").EnumerateArray());
+
+        // 401 会顺带清掉浏览器里的 Cookie：每次都把旧令牌放回去，确认作废的是服务端判定，而不是请求没带 Cookie。
+        async Task Expired()
+        {
+            foreach (var path in new[] { Session, Mine })
+            {
+                stale.Restore(token);
+                await Rejected(await stale.Send(HttpMethod.Get, path), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+            }
+        }
+    }
+
     // ---- 宿主与辅助 ----
 
     private const string Verifications = "/api/signup/verifications";
