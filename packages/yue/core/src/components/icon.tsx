@@ -1,10 +1,20 @@
-import { ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Eye, EyeOff, Info, LoaderCircle, Maximize, Minimize, Minus, X } from 'lucide-react';
+import { ArrowRight, ArrowUp, Bell, Building2, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, CircleX, ClipboardCheck, Clock, Columns3, Ellipsis, ExternalLink, Eye, EyeOff,
+  FileText, House, Inbox, Info, Languages, LayoutDashboard, LoaderCircle, LogOut, Mail, Maximize, Minimize, Minus, Monitor, Moon, Package, PanelLeftClose, PanelLeftOpen, Pencil, Plus, RotateCw, Search, Settings, ShieldCheck, Smartphone, Sun,
+  Undo2, User, Users, X } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { cn } from '../lib/cn';
 import type { YueProps } from '../lib/test-id';
 
-const icons = { arrowUp: ArrowUp, check: Check, chevronDown: ChevronDown, chevronLeft: ChevronLeft, chevronRight: ChevronRight, alert: CircleAlert, eye: Eye, eyeOff: EyeOff, info: Info, spinner: LoaderCircle, maximize: Maximize, minimize: Minimize, minus: Minus, close: X };
+const icons = {
+  arrowUp: ArrowUp, arrowRight: ArrowRight, check: Check, chevronDown: ChevronDown, chevronLeft: ChevronLeft, chevronRight: ChevronRight, chevronsUpDown: ChevronsUpDown,
+  alert: CircleAlert, circleCheck: CircleCheck, circleX: CircleX, help: CircleHelp, eye: Eye, eyeOff: EyeOff, info: Info, spinner: LoaderCircle, maximize: Maximize, minimize: Minimize, minus: Minus, plus: Plus, close: X,
+  home: House, dashboard: LayoutDashboard, building: Building2, users: Users, user: User, inbox: Inbox, clipboardCheck: ClipboardCheck, settings: Settings, package: Package, fileText: FileText,
+  search: Search, refresh: RotateCw, more: Ellipsis, columns: Columns3, pencil: Pencil, undo: Undo2, logOut: LogOut, bell: Bell, sun: Sun, moon: Moon, monitor: Monitor, languages: Languages,
+  shieldCheck: ShieldCheck, clock: Clock, calendar: Calendar, mail: Mail, phone: Smartphone, externalLink: ExternalLink, panelLeftClose: PanelLeftClose, panelLeftOpen: PanelLeftOpen,
+};
 export type IconName = keyof typeof icons;
+/** 后端或清单给出的图标名是任意字符串：先用它判断是否已登记，未登记的按调用方的缺省图标显示。 */
+export function isIconName(value: unknown): value is IconName { return typeof value === 'string' && Object.hasOwn(icons, value); }
 export type IconProps = YueProps<Omit<ComponentProps<'svg'>, 'name'>> & {
   name: IconName; label?: string; size?: number;
   /** 透传 SVG 的 title 属性；可访问名称由 label 提供。 */

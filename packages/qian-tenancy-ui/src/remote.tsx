@@ -17,7 +17,7 @@ export function connectShell(caller: BridgeCaller) {
 }
 export default function TenantRemote({ client, bridge }: TenantRemoteProps) {
   const context = connectShell(bridge.caller).getContext();
-  return <section data-testid="qian-tenancy-remote" data-scope={context.tenant?.id ?? 'global'}><TenantPage client={client} embedded /></section>;
+  return <section data-testid="qian-tenancy-remote" data-scope={context.tenant?.id ?? 'global'}><TenantPage client={client} embedded locale={context.locale} /></section>;
 }
 /** 消费者可验证 MF 共享引用；不导出令牌或宿主身份。 */
 export const sharedIdentity = { Button, useState: React.useState, createElement: React.createElement, PlatformClient, sdkVersion: SDK_VERSION };

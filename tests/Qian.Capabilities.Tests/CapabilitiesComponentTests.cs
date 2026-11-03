@@ -23,6 +23,28 @@ public sealed class CapabilitiesComponentTests
         Assert.Null(loader.GetContext("prerequisites", ScopeKey.Global).TryInject<object>(CapabilitiesDefinition.Key));
     }
 
+    [Fact]
+    public void 清单的optionalInject与入口代码一致_Authz超管只读判定是可选依赖_不与必需依赖和提供项相交()
+    {
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins/qian.capabilities/.qian-plugin/plugin.json")));
+        var optional = manifest.RootElement.GetProperty("optionalInject").EnumerateArray().Select(key => key.GetString()!).ToArray();
+        var inject = manifest.RootElement.GetProperty("inject").EnumerateArray().Select(key => key.GetString()!).ToArray();
+        var provides = manifest.RootElement.GetProperty("provides").EnumerateArray().Select(key => key.GetString()!).ToArray();
+        // 平台控制台目录（S1-YUE-018）按调用解析 Authz 的只读判定；缺席时目录为空，不阻塞装载。
+        Assert.Equal(["AuthzSuperadminCheck"], optional);
+        Assert.Equal(optional, CapabilitiesComponent.OptionalInject.Select(key => key.Name));
+        Assert.Equal(optional, CapabilitiesPlugin.OptionalInject.Select(key => key.Name));
+        Assert.Equal(inject, new CapabilitiesComponent().Inject.Select(key => key.Name).Order(StringComparer.Ordinal));
+        Assert.Empty(optional.Intersect(inject, StringComparer.Ordinal)); Assert.Empty(optional.Intersect(provides, StringComparer.Ordinal));
+    }
+
+    private static string RepositoryRoot()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Qian.slnx"))) root = root.Parent;
+        return root?.FullName ?? throw new InvalidOperationException("找不到仓库根目录。");
+    }
+
     // 只验证宿主门：这些占位项让装载器越过依赖检查，错误必须发生在使用任何 Provider 之前。
     private sealed class Prerequisites(IReadOnlyList<ServiceKey> keys) : IQianPlugin
     {

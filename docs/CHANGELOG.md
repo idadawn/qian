@@ -2,6 +2,14 @@
 
 > 记录对读者可见的变化：新文档与新规格、新组件与命令、破坏性变更。按日期倒序，每条一个二级标题 `## YYYY-MM-DD 标题`，下面一两行说明并链接到详情。文档站首页「最新动态」取最近 4 条（[docs-site.md](prd/specs/docs-site.md) §2a.1）。
 
+## 2026-11-03 管理台样式刷新：外壳、表格、抽屉与步骤条（S1-YUE-017）
+
+[yue 外壳](../packages/yue/shell/README.md)改为白色侧栏（品牌、工作区卡片、分组导航带图标与角标、底部账号卡）加 56px 顶栏（侧栏开关、面包屑、站内信、主题与语言图标菜单），主区使用新令牌 `--yue-canvas` 画布底色。[core](../packages/yue/core/README.md) 新增 Steps 与单选菜单，Badge、Alert、Result、Tabs、Sheet、Pagination、Descriptions 换新样式；DataTable 改为卡片，抽屉表单的按钮固定在页脚。原有属性保持兼容，视觉基线随之更新。
+
+## 2026-11-03 租户自助开通规格：注册申请、平台审核与首次进入（S1-DEC-032）
+
+自助申请与平台审核从 S3 提前到 S1。[规格](prd/specs/tenant-signup.md)写明申请状态机、新组件 `qian.tenancy.signup` 的四问、申请人与运营接口、获批前申请人凭手机验证码查看进度、通知与开发期发件箱，以及平台控制台与 yue 组件的视觉口径。实现分为 S1-YUE-017 / 018 与 S1-TEN-018–021，技术口径 D2–D8 待产品负责人确认。
+
 ## 2026-10-25 身份适配器与数据组件的登记先后不再影响能力执行（S1-KUN-017）
 
 Kun 升到 2026.10.25：数据约定与实体审计不再以匿名兜底占住框架当前主体端口，宿主先登记数据组件、后登记身份适配器时能力照常执行（此前一律 403 `AUTHZ_DENIED`），参考应用、测试宿主与联调栈的绕开写法已撤销。能力宿主的框架当前主体端口若仍解析为匿名兜底，启动即失败并写明改法；只装数据组件、没有身份适配器的宿主照常可用，审计与删除主体写 null。详见 [Qian.Plugin.Sdk](../packages/Qian.Plugin.Sdk/README.md)、[Qian.Data](../packages/Qian.Data/README.md)。

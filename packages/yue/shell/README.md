@@ -19,6 +19,12 @@ AuthProvider 由宿主注入，认证页族不持有令牌。登录表单使用 
 - `InboxPopover`（子路径 `./inbox`）：顶栏站内信弹窗，消息源由宿主注入（S1 没有站内信接口）。
 - `initPreferences({ namespace, overrides, defaults })`：`defaults` 是部署缺省（例如运行时配置的语言），低于用户已保存的偏好，也不写进存储：存储只记用户自己改过的键（`update` 增量合并），`reset` 写空对象。
 
+### 管理台布局（S1-YUE-017）
+
+- AppShell 侧栏自上而下是品牌（`logo` 缺省为主色方块）、`workspace` 卡片（例如租户切换，侧栏收起时隐藏）、导航和账号卡（`userName` / `userDescription`，「用户菜单」里放 `userMenu` 与退出登录）。顶栏放侧栏开关、`breadcrumb` 与 `toolbar`；主区使用 `--yue-canvas` 画布底色。
+- `ShellMenuItem` 新增 `icon`（yue 图标名，未登记的名称回落为缺省图标）、`group`（相邻同组项共用一个分组标题）和 `badge`（只展示，收起时变成圆点并保留读屏文字）。
+- PreferenceControls 改为主题、语言两个图标按钮，展开为单选菜单（`menuitemradio`，选中即关闭）；语言以各自本名列出。
+
 子路径让外壳首屏只拉需要的部分（首屏 JS 预算 250 KiB gzip）。Qian 的可部署外壳是 [apps/qian-shell](../../../apps/qian-shell/README.md)，认证页族是 [packages/qian-identity-ui](../../qian-identity-ui/README.md)；真实流程验收 `pnpm yue:auth` 对 [tools/Qian.Dev.Shell](../../../tools/Qian.Dev.Shell/README.md) 拉起的真实 qian.identity、平台表面宿主与网关 BFF 运行。
 
 ## 模型体验

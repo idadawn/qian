@@ -17,4 +17,26 @@ public interface ITenantOperations
     ValueTask<(IReadOnlyList<TenantDescriptor> Items, int Total)> QueryAsync(int skip, int take, TenantStatus? status = null, string? keyword = null, CancellationToken cancellationToken = default);
     /// <summary>目标租户仅由控制面路径给出；复用 UpdateTenant 与 xmin 乐观并发。</summary>
     ValueTask<TenantDescriptor> UpdateAsync(Guid id, UpdateTenant request, CancellationToken cancellationToken = default);
+    /// <summary>运营列表：在 QueryAsync 的筛选与排序之上带出有效期、创建时间、用户上限与用量、管理员显示名，并给出各状态计数。</summary>
+    ValueTask<TenantOverviewPage> OverviewAsync(int skip, int take, TenantStatus? status = null, string? keyword = null, CancellationToken cancellationToken = default);
 }
+/// <summary>运营列表的一行：字段与 <see cref="TenantDescriptor"/> 同名同义，另加列表页需要的几列。</summary>
+public sealed record TenantOverview(Guid Id, string Code, string Name, TenantIsolation Isolation, TenantStatus Status)
+{
+    /// <summary>与 TenantDescriptor.Revision 相同，编辑时作 ExpectedRevision。</summary>
+    public uint Revision { get; init; }
+    /// <summary>主档创建时间（UTC）。</summary>
+    public DateTimeOffset CreatedAt { get; init; }
+    /// <summary>试用或正式期的截止时间；null 表示不限期。</summary>
+    public DateTimeOffset? ValidUntil { get; init; }
+    /// <summary>用户数上限；null 表示不限。</summary>
+    public int? UsersLimit { get; init; }
+    /// <summary>当前用户数；身份侧计数端口缺席时为 null，不报 0。</summary>
+    public int? UsersUsed { get; init; }
+    /// <summary>当前管理员的显示名；没有指针、身份组件缺席或成员已清除时为 null。</summary>
+    public string? AdministratorName { get; init; }
+}
+/// <summary>各状态的租户数：受关键字筛选影响、不受状态筛选影响，供列表页签显示。</summary>
+public sealed record TenantStatusCounts(int All, int Pending, int Trial, int Active, int Grace, int Suspended);
+/// <summary>运营列表的一页：当前页、筛选后总数与各状态计数读自同一数据库快照。</summary>
+public sealed record TenantOverviewPage(IReadOnlyList<TenantOverview> Items, int Total, TenantStatusCounts Counts);

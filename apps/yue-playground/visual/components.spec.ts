@@ -44,8 +44,8 @@ for (const name of ['DataTable', 'SchemaForm']) for (const state of statesFor(na
     await expect(page).toHaveScreenshot(`${name}-${state}-${theme}.png`, { fullPage: true });
   });
 }
-test('基线覆盖全部 51 个 core 入口，状态清单无遗漏', () => {
-  expect(names).toHaveLength(51);
+test('基线覆盖全部 52 个 core 入口，状态清单无遗漏', () => {
+  expect(names).toHaveLength(52);
   for (const name of names) expect(coreScenarios.some(s => s.component === name && s.state === 'Default')).toBe(true);
 });
 

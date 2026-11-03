@@ -30,7 +30,9 @@ export function readYueDocs(repoRoot = REPO_ROOT): YueData {
   const manifests = readJson<Record<string, { a11y: { keyboard: string[] } }>>(path.join(core, 'src/manifest-catalog.json'));
   const scenarios = readJson<Scenario[]>(path.join(core, 'docs/scenarios.json'));
   if (JSON.stringify(Object.keys(catalog).sort()) !== JSON.stringify(Object.keys(manifests).sort())) throw new Error('组件文档与 manifest 入口不一致');
-  if (scenarios.length !== 126 || new Set(scenarios.map(s => s.id)).size !== 126) throw new Error('原 126 条场景迁移清单不完整或重复');
+  // 原 126 条迁移场景，加 S1-YUE-017 新增的 Steps 默认 / 暗色两条。
+  const expected = 126 + 2;
+  if (scenarios.length !== expected || new Set(scenarios.map(s => s.id)).size !== expected) throw new Error(`场景清单应为 ${expected} 条且不重复（原 126 条迁移 + Steps 2 条）`);
   const config = ts.readConfigFile(path.join(core, 'tsconfig.json'), ts.sys.readFile);
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, core);
   const entry = path.join(core, 'src/index.ts');

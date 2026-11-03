@@ -202,5 +202,9 @@
   "Descriptions": {
     "label": "描述列表",
     "description": "展示多项字段名称与对应内容。"
+  },
+  "Steps": {
+    "label": "步骤条",
+    "description": "展示多步流程的进度：已完成、进行中、未通过与未开始。"
   }
 }

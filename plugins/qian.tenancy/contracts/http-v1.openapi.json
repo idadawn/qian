@@ -1448,6 +1448,89 @@
           }
         }
       }
+    },
+    "/api/tenancy/tenants/{id}/summary": {
+      "get": {
+        "operationId": "H0dad2d4f1c2a907936436caac9a9aa704088f11b213a0b40148bcec73440aeee",
+        "x-qian-plugin": "qian.tenancy",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "HTTP 400",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HTTP 401",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "HTTP 403",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HTTP 404",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HTTP 409",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "HTTP 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hda47a3df6e972db73c63b7bfe8593c8f8561532d93fc471c31da49d30a979bb6"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1592,6 +1675,39 @@
                     "integer"
                   ],
                   "pattern": "^-?(?:0|[1-9]\\d*)$"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "validUntil": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "usersLimit": {
+                  "type": [
+                    "string",
+                    "integer",
+                    "null"
+                  ],
+                  "pattern": "^-?(?:0|[1-9]\\d*)$"
+                },
+                "usersUsed": {
+                  "type": [
+                    "string",
+                    "integer",
+                    "null"
+                  ],
+                  "pattern": "^-?(?:0|[1-9]\\d*)$"
+                },
+                "administratorName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
@@ -1609,6 +1725,61 @@
               "integer"
             ],
             "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "all": {
+                "type": [
+                  "string",
+                  "integer"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$"
+              },
+              "pending": {
+                "type": [
+                  "string",
+                  "integer"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$"
+              },
+              "trial": {
+                "type": [
+                  "string",
+                  "integer"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$"
+              },
+              "active": {
+                "type": [
+                  "string",
+                  "integer"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$"
+              },
+              "grace": {
+                "type": [
+                  "string",
+                  "integer"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$"
+              },
+              "suspended": {
+                "type": [
+                  "string",
+                  "integer"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$"
+              }
+            },
+            "required": [
+              "all",
+              "pending",
+              "trial",
+              "active",
+              "grace",
+              "suspended"
+            ]
           }
         },
         "required": [
@@ -2213,6 +2384,65 @@
           "newPassword"
         ],
         "additionalProperties": false
+      },
+      "Hda47a3df6e972db73c63b7bfe8593c8f8561532d93fc471c31da49d30a979bb6": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "trial",
+              "active",
+              "grace",
+              "suspended"
+            ]
+          },
+          "validUntil": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "usersLimit": {
+            "type": [
+              "string",
+              "integer",
+              "null"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "usersUsed": {
+            "type": [
+              "string",
+              "integer",
+              "null"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "administratorName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "status"
+        ]
       }
     },
     "securitySchemes": {

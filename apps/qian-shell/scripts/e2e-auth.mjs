@@ -40,9 +40,13 @@ function probe(url) {
     req.once('error', () => ok(0)); req.once('timeout', () => { req.destroy(); ok(0); }); req.end();
   });
 }
-// 前端构建产物先于宿主：宿主启动时检查三个 dist 存在（认证页族、参考应用远程制品、外壳）；构建只在这里做一次，up 不重复构建。
+// 前端构建产物先于宿主：宿主启动时检查五个 dist 存在（认证页族、参考应用远程制品、平台控制台的两个远程制品、外壳），申请人公开页（开通申请组件的 dist/public）
+// 存在就由身份公开入口托管（开通流程 E2E 要用）；构建只在这里做一次，up 不重复构建。
 await run('pnpm', ['--filter', '@qian/identity-ui', 'build']);
+await run('pnpm', ['--filter', '@qian/tenancy-signup-ui', 'build']);
 await run('pnpm', ['--filter', '@qian/sample-crm-ui', 'build']);
+await run('pnpm', ['--filter', '@qian/tenancy-ui', 'build:remote']);
+await run('pnpm', ['--filter', '@qian/tenancy-signup-ui', 'build:remote']);
 await run('pnpm', ['--filter', 'qian-shell', 'build']);
 const log = await open(resolve(state, 'host.log'), 'w', 0o600);
 const host = spawn('bash', [script, 'up'], { cwd: root, env, stdio: ['ignore', log.fd, log.fd] });
@@ -64,7 +68,8 @@ try {
   }
   if (!ready) throw new Error('真实宿主未在 600 秒内就绪');
   await mkdir(resolve(root, 'TestResults/shell-auth'), { recursive: true });
-  await run('pnpm', ['exec', 'playwright', 'test', '--config', 'playwright.auth.config.ts'], { cwd: resolve(root, 'apps/qian-shell') });
+  // 额外参数原样交给 Playwright，便于只跑某个文件或用例（例如 `pnpm --filter qian-shell e2e:auth -- e2e-auth/signup.spec.ts`）；CI 不带参数，跑全部。
+  await run('pnpm', ['exec', 'playwright', 'test', '--config', 'playwright.auth.config.ts', ...process.argv.slice(2).filter(arg => arg !== '--')], { cwd: resolve(root, 'apps/qian-shell') });
   succeeded = true;
 } finally {
   await stopHost(); await log.close();

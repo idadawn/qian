@@ -30,6 +30,7 @@ public static partial class GatewayShellHosting
     internal const string ShellCatalogPath = "/api/capabilities/shell";
     internal const string NavigationPath = "/api/capabilities/navigation";
     internal const string PermissionsPath = "/api/authz/me/permissions";
+    internal const string ConsolePath = "/api/capabilities/console";
     private const string Theme = "light";
     private const string Locale = "zh-CN";
     [GeneratedRegex("^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$")]
@@ -37,9 +38,11 @@ public static partial class GatewayShellHosting
 
     /// <summary>
     /// 登记 <c>GET {path}</c>：外壳 bootstrap 聚合端点。会话取自 Identity.Client 的 Cookie 会话（字段与 <c>GET /auth/session</c> 相同，不含令牌），
-    /// 未认证 401。平台身份（没有租户）不调下游，回代管上下文。租户成员：按本网关的路由表为平台表面的三条路径（外壳目录、能力导航、有效权限）选 cluster，
+    /// 未认证 401。租户成员：按本网关的路由表为平台表面的三条路径（外壳目录、能力导航、有效权限）选 cluster，
     /// 换该 cluster 受众的 60 秒 S2S 后并发调用并组合——与浏览器直调同一路由、同一受众；任一下游 401 即 401（客户端刷新会话后重放），
     /// 外壳目录或有效权限 403 即 403，其余失败 502；能力导航失败降级为 null；下游 404（组件未挂载）按空处理。
+    /// 平台身份（没有租户，S1-YUE-018）：人类用户按同一方式只调平台控制台目录，持平台超管时交出平台组件的远程、菜单与可用权限码（不代管）；
+    /// 目录为空（不持角色）、下游 404 或没有路由时回代管上下文；401 / 403 / 其余失败与租户成员同一映射。平台服务主体不调下游，直接代管。
     /// 权益（entitled）的真实来源归 S1-ENT-002，此前与 mounted 等价。须在 <see cref="GatewayHosting.AddQianGateway"/> 之后、与其它端点一起映射。
     /// </summary>
     public static IEndpointRouteBuilder MapQianShellBootstrap(this IEndpointRouteBuilder endpoints, string path = BootstrapPath)
@@ -149,12 +152,8 @@ public static partial class GatewayShellHosting
         { await Error(http, PlatformErrors.AuthzDenied).ConfigureAwait(false); return; }
         var session = new ShellSessionView(principal.Subject, principal.Kind == PrincipalKind.Service ? "service" : "user", principal.TenantId, principal.MembershipId,
             principal.IdentityRevision, http.User.FindFirst(ClaimTypes.Name)?.Value);
-        // 平台身份没有租户表面：不调任何下游，只给代管上下文（平台表面对无租户主体一律拒绝）。
-        if (principal.TenantId is not { } tenantId)
-        {
-            await Write(http, new ShellBootstrapView(session, new ShellContextView(null, null, null, Locale, Theme), [], [], [], [], null, true)).ConfigureAwait(false);
-            return;
-        }
+        // 平台身份没有租户表面：只问平台控制台目录（S1-YUE-018），没有可用页面时回代管上下文。
+        if (principal.TenantId is not { } tenantId) { await PlatformAsync(http, runtime, session, principal.Kind).ConfigureAwait(false); return; }
         var client = services.GetRequiredService<GatewayShellClient>();
         Downstream shell, navigation, permissions;
         try
@@ -201,6 +200,39 @@ public static partial class GatewayShellHosting
         finally { shell.Body?.Dispose(); navigation.Body?.Dispose(); permissions.Body?.Dispose(); }
     }
 
+    private static async Task PlatformAsync(HttpContext http, GatewayRuntime runtime, ShellSessionView session, PrincipalKind kind)
+    {
+        var services = http.RequestServices;
+        var managed = new ShellBootstrapView(session, new ShellContextView(null, null, null, Locale, Theme), [], [], [], [], null, true);
+        if (kind != PrincipalKind.User) { await Write(http, managed).ConfigureAwait(false); return; }
+        var console = Downstream.Unrouted;
+        if (Target(runtime.Configuration, ConsolePath) is { } cluster)
+        {
+            try
+            {
+                var token = await services.GetRequiredService<S2sTokenIssuer>().IssueForAudienceAsync(http.User, runtime.AudienceFor(cluster.Id), http.RequestAborted).ConfigureAwait(false);
+                console = await services.GetRequiredService<GatewayShellClient>().GetAsync(http, runtime.Configuration, cluster, token, ConsolePath).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException) { await Error(http, PlatformErrors.Unauthenticated).ConfigureAwait(false); return; }
+        }
+        using (console.Body)
+        {
+            if (console.Status == HttpStatusCode.Unauthorized) { await Error(http, PlatformErrors.Unauthenticated).ConfigureAwait(false); return; }
+            if (console.Status == HttpStatusCode.Forbidden) { await Error(http, PlatformErrors.AuthzDenied).ConfigureAwait(false); return; }
+            var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Qian.Gateway");
+            // 控制台目录未部署、Capabilities 未挂载或网关没有对应路由：与租户成员的 404 同样按空处理并记警告，平台身份回代管上下文。
+            if (console.Status == HttpStatusCode.NotFound) { Log.ConsoleMissing(logger, Describe(console)); await Write(http, managed).ConfigureAwait(false); return; }
+            if (console.Body is null) { Log.ConsoleFailed(logger, (int)console.Status); await Error(http, PlatformErrors.BadGateway).ConfigureAwait(false); return; }
+            if (!TryConsole(console.Body, out var remotes, out var navigation, out var allowed, out var foreign))
+            { Log.DownstreamInvalid(logger); await Error(http, PlatformErrors.BadGateway).ConfigureAwait(false); return; }
+            if (foreign.Count > 0) Log.RemoteManifestNotLocal(logger, string.Join(",", foreign));
+            // 不持平台超管（或没有任何可用的平台页面）：目录为空，仍是代管上下文。
+            if (remotes.Count == 0) { await Write(http, managed).ConfigureAwait(false); return; }
+            var mounted = remotes.Select(remote => remote.Scope + "|" + remote.Id).ToArray();
+            await Write(http, new ShellBootstrapView(session, new ShellContextView(null, null, null, Locale, Theme), remotes, mounted, mounted, allowed, navigation, false)).ConfigureAwait(false);
+        }
+    }
+
     // 与反向代理同一张路由表与同一优先级规则（字面段优先于参数、参数优先于通配）选目标 cluster；没有路由时视为该平台表面未部署。
     internal static GatewayCluster? Target(GatewayConfiguration configuration, string path)
     {
@@ -227,18 +259,45 @@ public static partial class GatewayShellHosting
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("tenant", out var tenant) || tenant.ValueKind != JsonValueKind.Object ||
             Text(tenant, "id") != tenantId || Text(tenant, "name") is not { Length: > 0 } tenantName || !root.TryGetProperty("remotes", out var items) || items.ValueKind != JsonValueKind.Array)
             return false;
+        // 只收当前租户与全局 scope 的条目；别的租户的 scope 出现在这里说明下游有误，整体按无效处理。
+        if (!TryRemotes(items, scope => scope == "global" || scope == "tenant:" + tenantId, out remotes, out foreign)) return false;
+        name = tenantName;
+        return true;
+    }
+
+    // 平台控制台目录（S1-YUE-018）：远程只能是全局 scope；菜单原样交给外壳（形状与能力导航的条目相同），权限码是只读判定放行的那些。
+    private static bool TryConsole(JsonDocument document, out IReadOnlyList<ShellRemoteView> remotes, out JsonElement? navigation, out IReadOnlyList<string> allowed, out IReadOnlyList<string> foreign)
+    {
+        remotes = []; navigation = null; allowed = []; foreign = [];
+        var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("remotes", out var items) || items.ValueKind != JsonValueKind.Array ||
+            !root.TryGetProperty("navigation", out var menu) || menu.ValueKind != JsonValueKind.Array ||
+            !root.TryGetProperty("permissions", out var codes) || codes.ValueKind != JsonValueKind.Array) return false;
+        var permissions = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var code in codes.EnumerateArray())
+        {
+            if (code.ValueKind != JsonValueKind.String || code.GetString() is not { Length: > 0 and <= 384 } permission) return false;
+            permissions.Add(permission);
+        }
+        if (!TryRemotes(items, scope => scope == "global", out remotes, out foreign)) return false;
+        navigation = menu.Clone(); allowed = permissions.ToArray();
+        return true;
+    }
+
+    // 外壳目录与平台控制台目录共用的远程条目检查：形状不符或 scope 不被接受时整体无效；远程清单地址不是同源路径的组件跳过并交回组件 id。
+    private static bool TryRemotes(JsonElement items, Func<string, bool> accept, out IReadOnlyList<ShellRemoteView> remotes, out IReadOnlyList<string> foreign)
+    {
+        remotes = []; foreign = [];
         var result = new List<ShellRemoteView>(); var rejected = new List<string>();
         foreach (var item in items.EnumerateArray())
         {
             if (item.ValueKind != JsonValueKind.Object || Text(item, "id") is not { } id || !ComponentId().IsMatch(id) || Text(item, "version") is not { Length: > 0 and <= 64 } version ||
-                Text(item, "scope") is not { } scope || !item.TryGetProperty("manifest", out var manifest) || manifest.ValueKind != JsonValueKind.Object) return false;
-            // 只收当前租户与全局 scope 的条目；别的租户的 scope 出现在这里说明下游有误，整体按无效处理。
-            if (scope != "global" && scope != "tenant:" + tenantId) return false;
+                Text(item, "scope") is not { } scope || !accept(scope) || !item.TryGetProperty("manifest", out var manifest) || manifest.ValueKind != JsonValueKind.Object) return false;
             if (!manifest.TryGetProperty("federation", out var federation) || federation.ValueKind != JsonValueKind.Object || !IsLocalPath(Text(federation, "manifest")))
             { rejected.Add(id); continue; }
             result.Add(new ShellRemoteView(id, version, scope, manifest.Clone()));
         }
-        name = tenantName; remotes = result.AsReadOnly(); foreign = rejected.AsReadOnly();
+        remotes = result.AsReadOnly(); foreign = rejected.AsReadOnly();
         return true;
     }
 
@@ -284,6 +343,10 @@ public static partial class GatewayShellHosting
         internal static partial void SurfaceMissing(ILogger logger, string shell, string navigation, string permissions);
         [LoggerMessage(EventId = 63, Level = LogLevel.Warning, Message = "外壳 bootstrap 跳过远程清单地址不是同源路径的组件（外壳只从网关同源加载远程）：{Components}。")]
         internal static partial void RemoteManifestNotLocal(ILogger logger, string components);
+        [LoggerMessage(EventId = 64, Level = LogLevel.Warning, Message = "外壳 bootstrap 的平台控制台目录调用失败；console={Console}。")]
+        internal static partial void ConsoleFailed(ILogger logger, int console);
+        [LoggerMessage(EventId = 65, Level = LogLevel.Warning, Message = "外壳 bootstrap 的平台控制台目录未部署或组件未挂载（下游 404），或网关没有对应路由（unrouted），平台身份按代管处理；console={Console}。")]
+        internal static partial void ConsoleMissing(ILogger logger, string console);
     }
 }
 

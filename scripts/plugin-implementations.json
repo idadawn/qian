@@ -13,6 +13,7 @@
   "Qian.Registry:Qian.Registry.RegistryScopeReconciler+AdmissionUnavailablePlugin": {"owner":"qian.registry","reason":"scope 重放中的准入失败占位，归属被包装组件。"},
   "Qian.Registry:Qian.Registry.RegistryScopeReconciler+ScopedPlugin": {"owner":"qian.registry","reason":"scope 重放适配器，归属被包装组件。"},
   "Qian.Tenancy:Qian.Tenancy.TenancyPlugin": {"owner":"qian.tenancy","reason":"TenancyComponent 的租户目录与开户编排实现。"},
+  "Qian.Tenancy.Signup:Qian.Tenancy.Signup.TenancySignupPlugin": {"owner":"qian.tenancy.signup","reason":"TenancySignupComponent 的程序化实现，由唯一组件入口承担依赖与清单派生。"},
   "Qian.Identity.Server:Qian.Identity.Server.IdentityServerPlugin": {"owner":"qian.identity.server","reason":"IdentityServerComponent 固定内置账户模式；传入账户服务的构造器只用于程序化组合。"},
   "Qian.Identity.Connector.Oidc:Qian.Identity.Connector.Oidc.OidcConnectorPlugin": {"owner":"qian.identity.connector.oidc","reason":"OidcConnectorComponent 固定 oidc 注册名；原实现支持宿主自定义连接器与密钥解析。"},
   "Qian.Surfaces:Qian.Surfaces.DeclarativeSurfacePlugin": {"owner":"组件快照","reason":"已校验声明式表面快照的适配器，ID 与依赖来自输入组件。"},

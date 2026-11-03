@@ -23,7 +23,8 @@
     "TenancyProvisioning",
     "TenancyQuota",
     "TenancySettings",
-    "TenancySettingsOperations"
+    "TenancySettingsOperations",
+    "TenancySummary"
   ],
   "policy": {
     "tier": "system",

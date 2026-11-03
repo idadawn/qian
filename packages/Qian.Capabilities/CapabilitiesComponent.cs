@@ -20,6 +20,8 @@ public sealed class CapabilitiesComponent : IQianPlugin
 {
     /// <inheritdoc />
     public IReadOnlyList<ServiceKey> Inject => [DataDefinition.Key, AuditDefinition.Key, RegistryDefinition.Key, TenancyDefinition.Key, CommandPolicies.TenancyKey, CommandPolicies.AuthorizationKey, CommandPolicies.AuditKey];
+    /// <summary>可选依赖（清单 optionalInject）：AuthzSuperadminCheck，含义见 <see cref="CapabilitiesPlugin.OptionalInject"/>。</summary>
+    public static IReadOnlyList<ServiceKey> OptionalInject => CapabilitiesPlugin.OptionalInject;
     /// <inheritdoc />
     public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
     {

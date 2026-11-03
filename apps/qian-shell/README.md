@@ -6,7 +6,7 @@ Qian 唯一可部署的外壳入口（S1-YUE-012 把 S1-YUE-001 的 MF2 静态�
 
 1. 读同源 `/app-config.json`（`no-store`、同源、不跟随重定向）并校验；不合法只渲染配置错误页，不建客户端、不发任何别的请求。文件不存在（404）即全部缺省值。
 2. 建外壳运行时（`src/runtime.ts`，整页只建一次）：一个依赖方会话客户端、一个平台客户端、一个 MF2 宿主；`host.start()` 之后才登记远程。
-3. 拉一轮工作区：`GET {apiBase}/shell/bootstrap`（网关聚合端点）一次给出会话快照、上下文、已挂载远程、挂载 / 权益键、已放行权限码与能力导航；远程按差异登记 / 卸载后再一次性通知界面；租户成员再拉一次能力目录条数（辅助接口，失败只在卡片上显示「不可用」，不影响整页）。
+3. 拉一轮工作区：`GET {apiBase}/shell/bootstrap`（网关聚合端点）一次给出会话快照、上下文、已挂载远程、挂载 / 权益键、已放行权限码与能力导航；远程按差异登记 / 卸载后再一次性通知界面；租户成员再并行拉能力目录条数与本租户摘要（`GET {apiBase}/tenancy/tenants/{tenantId}/summary`，S1-TEN-021）。两者都是辅助接口：能力目录失败只在卡片上显示「不可用」，摘要失败只少首页的欢迎区，都不影响整页。
 
 ## 接线
 
@@ -17,7 +17,11 @@ Qian 唯一可部署的外壳入口（S1-YUE-012 把 S1-YUE-001 的 MF2 静态�
 - **刷新合并与粘性结束**：`PlatformClient({ sessionProvider })` 把并发 401 合并成一次会话刷新（先取防伪令牌再 `POST {authBase}/session/refresh`），成功重放并通知外壳重拉 bootstrap（进行中的一轮结束后再完整拉一次）；失败或重放仍 401 只弹一次「登录已过期」对话框。工作台从未就绪（首载、整页重载）时由 `@qian/shell-kit` 的会话过期守卫区分：依赖方说会话已结束才顶层跳登录；依赖方刷新成功、重放仍 401（平台表面拒绝）只弹对话框，不跳转，否则账号 Cookie 仍有效时登录端点静默签码、回调后照样 401，整页无界循环。会话结束对外壳是粘性的：之后刷新通知与排队的重拉都不再发起请求，只有整页重新登录才复位（`packages/yue/sdk/README.md` 的宿主契约）。
 - **远程模块**：bootstrap 的 `remotes` 按 `scope|id` 与版本、清单比对差异后登记或卸载；菜单命中的页面才 `loadSlot`（manifest → remoteEntry → expose），未挂载、无权益或无权限的远程完全不请求。已加载的页面只要还在宿主里（同一 bridge）就继续用，重拉 bootstrap 不会让页面重新挂载；加载失败对同一页面是粘性的，显示「插件未能加载」。远程页面收到外壳的平台客户端与宿主闭包绑定的 bridge；`window.__qian.bridge` 只含受控调用入口。
 - **菜单与路由**：真实平台给出能力导航（含菜单偏好与权限过滤）时以它为准，否则由宿主按已登记远程的清单、挂载、权益与权限算出。路由是 `@idadawn/yue-shell` 的最小历史路由：按 pathname 精确匹配、再最长前缀；根路径带查询串仍是工作台；未命中走 404 兜底，渲染异常由错误边界兜成 500 页。
-- **平台身份**：会话 `tenantId` 为空即平台代管：bootstrap 不调下游、直接回代管上下文，外壳只显示代管横幅与会话卡片，不拉能力目录。
+- **租户首页**（S1-TEN-021）：本租户摘要可用时，工作台先显示欢迎区，会话、权限与可用页面卡片照常列在下面。欢迎区包括：
+  - 试用提示：剩余天数按自然日向上取整，7 天内转为警示色，并给出到期日；宽限期另有提示。
+  - 问候与开通引导：管理员已就绪；成员数大于 1 视为已邀请同事；「开始使用应用」只链接菜单里第一个已有页面。
+  - 企业信息：名称、租户号、状态、到期日、用户数与上限、管理员。
+- **平台身份与平台控制台**（S1-YUE-018）：会话 `tenantId` 为空即平台身份，bootstrap 只问平台控制台目录（`GET /api/capabilities/console`），外壳不拉能力目录。持平台超管时目录交出平台组件（租户运营 `qian.tenancy` 的「租户管理」、开通申请 `qian.tenancy.signup` 的「开通申请」）的全局远程、菜单与权限码，`managed` 为 false：侧栏就是这几项，进入页面才按需加载远程，页面里的每次操作由运营接口逐次经超管旁路并写平台审计链；首页换成平台控制台概览（`src/console.tsx`，懒加载的独立分块，不进首屏预算）：平台页面入口与会话卡片。目录为空（不持角色、Authz 判定端口缺席）或目录端口不在时仍是代管上下文：首页「平台工作台」只有代管横幅、说明与会话卡片，没有菜单，直达平台页面 404。`managed` 的取舍：交出控制台目录即表示平台身份在以自己的角色操作平台页面，不再是「代管某个租户」，所以不显示代管横幅；为空时沿用原来的代管上下文。
 - **切换租户**：用户菜单「切换租户」→ `{authBase}/login?returnTo=/&prompt=select_account` → 身份服务同源选择页 → 新授权码 → 网关回调重建会话 → 整页回到工作台（新文档、新宿主）。
 - **偏好**：命名空间 `qian-shell`，只存 theme / locale / sidebarCollapsed；`html[lang]` 与界面文案随语言即时切换；首帧主题脚本在样式之前按已存主题设好 `data-theme`。
 
@@ -34,7 +38,7 @@ node apps/qian-shell/scripts/package-static.mjs
 
 ## 本机运行
 
-先按 [联调环境说明](../../tools/Qian.Dev.Shell/README.md) 运行 `scripts/dev-shell.sh up`（它构建认证页族、参考应用远程模块与本外壳，并经网关静态托管 `dist/host/`），浏览器打开 <https://localhost:5443/>。改前端代码后 `pnpm --filter qian-shell build`，刷新即可。`pnpm --filter qian-shell dev` 的开发服务器用缺省配置顶替 `/app-config.json`，并把 `/api`、`/api-alt`、`/auth`、`/__dev`、`/remotes` 代理到本机网关（只许回环地址）；开发服务器不带 meta CSP。
+先按 [联调环境说明](../../tools/Qian.Dev.Shell/README.md) 运行 `scripts/dev-shell.sh up`（它构建认证页族、申请人公开页、参考应用与平台控制台的远程模块和本外壳，并经网关静态托管 `dist/host/`），浏览器打开 <https://localhost:5443/>。改前端代码后 `pnpm --filter qian-shell build`，刷新即可。`pnpm --filter qian-shell dev` 的开发服务器用缺省配置顶替 `/app-config.json`，并把 `/api`、`/api-alt`、`/auth`、`/__dev`、`/remotes` 代理到本机网关（只许回环地址）；开发服务器不带 meta CSP。
 
 ## 验收
 
@@ -43,7 +47,7 @@ node apps/qian-shell/scripts/package-static.mjs
 | 门禁 | 入口 | 内容 |
 |---|---|---|
 | `pnpm yue:mf`（CI `shell-federation`） | `scripts/e2e.mjs` → `playwright.config.ts` + `e2e/` | 夹具 bootstrap（`scripts/serve-acceptance.mjs`）+ 真实审计宿主：官方租户远程按页面加载；共享 React、PlatformClient、SDK 与 Button 引用一致；scope 遮蔽与卸载恢复；租户 B 未挂载时 manifest 请求为零；`engines.yue` 拒绝并在控制台与真实 PostgreSQL 审计链留痕；window bridge 的 getContext / navigate / invoke 与撤销；运行时配置不合法时只有配置错误页、零请求；全程零 CSP 违规（含一次真实 SchemaForm 提交校验）；首屏 JS gzip ≤ 250 KiB（`acceptance-results/first-screen.json`）。验收控制面只由 `--mode acceptance` 引用。 |
-| `pnpm yue:auth`（CI `shell-auth`） | `scripts/e2e-auth.mjs` → `playwright.auth.config.ts` + `e2e-auth/` | 对 `tools/Qian.Dev.Shell` 拉起的真实 qian.identity + 平台表面宿主 + 上游 Dex + 网关 BFF 跑完整浏览器流程，见下表。失败时宿主、PostgreSQL 与 Dex 的日志在 `TestResults/shell-auth/logs`。 |
+| `pnpm yue:auth`（CI `shell-auth`） | `scripts/e2e-auth.mjs` → `playwright.auth.config.ts` + `e2e-auth/` | 对 `tools/Qian.Dev.Shell` 拉起的真实 qian.identity + 平台表面宿主 + 上游 Dex + 网关 BFF 跑完整浏览器流程，见下表。失败时宿主、PostgreSQL 与 Dex 的日志在 `TestResults/shell-auth/logs`。只跑某个文件或用例时把参数交给 Playwright：`pnpm --filter qian-shell e2e:auth -- e2e-auth/signup.spec.ts`。 |
 
 真实流程（S1-YUE-002 验收 1–4）：
 
@@ -52,10 +56,14 @@ node apps/qian-shell/scripts/package-static.mjs
 | 1 真实流程 | 匿名 → 身份服务同源登录页 → 账号密码（OIDC code + PKCE，网关换码）→ 多租户选择 → 工作台（会话、菜单、权限来自 bootstrap，浏览器不再分别直调导航与权限）→「客户」页由参考应用远程模块经 MF2 按需加载并真实渲染（导航高亮、`data-tenant` 为甲方），列表经 `bridge.invoke` 带防伪头调 customer.list，以本人执行（200，有开通钩子种下的「示例客户」，条目都属于甲方）；「新建客户」页同样由远程模块渲染，提交 customer.create（200，幂等键请求头与正文同值）后发成功通知、回到列表，新客户就在其中 → 404 与带查询串的根路径 → `prompt=select_account` 切换到乙方，菜单 / 权限随之变化，乙方「客户」页条目都属乙方、含乙方的示例客户、看不到甲方刚建的客户、没有「新建客户」入口 → 服务端令牌到期透明刷新（0 次浏览器刷新、无对话框）→ 会话仍在时强制刷新回快照不回令牌 → 身份修订递增（`/__dev/identity/bump`）后旧令牌 401：1 次刷新、重放后再拉一轮 bootstrap、会话卡片修订 +1、无对话框 → refresh 失效：探测 401、不再 POST、只弹 1 个过期对话框且 Esc 关不掉 → 重新登录回到乙方 |
 | 1 SSO 跳转回调 | 登录页填租户代码 →「Dex 本机身份源」→ 上游 Dex 登录 → 落点首次确认绑定 → 工作台；清掉全部 Cookie 再走一次 → 绑定已存在，直接进入 |
 | 刷新成功但平台表面持续 401 | `second`（只属于乙方）登录 → `/__dev/identity/stale` 只抬平台表面修订下限 → bootstrap 401 → 恰好 1 次刷新（成功）→ 重放仍 401 → 恰好 1 个过期对话框；静置 3 秒请求数不变（共 2 条 bootstrap，均 401）。随后整页重载：不顶层跳登录，同样 1 次刷新、2 条 401、1 个对话框，静置 3 秒不变；再点「重新登录」：恰好 1 次顶层跳 `/auth/login`，回到工作台后对话框再现、整页稳定 |
-| 平台身份 | `operator` 登录 → 代管横幅 + 会话卡片；登录后只有 1 次 bootstrap、0 次刷新、无过期对话框 |
-| 2 远程按挂载加载 | 甲方已挂载参考应用：导航有「客户」，工作台不请求远程制品，进入页面才请求 `mf-manifest.json` 与 `remoteEntry.js`；切到丙方（未挂载）：bootstrap 的远程 / 挂载 / 权益 / 导航全空、不含 manifest 地址，导航为空，直达页面路由是 404，丙方会话里远程制品请求为零 |
+| 平台控制台（S1-YUE-018） | `operator`（种子里持平台超管）登录 → 不经选择页直达「平台控制台」，无代管横幅，侧栏恰好「租户管理」「开通申请」，概览列出这两个页面与会话卡片，控制台首页不请求远程制品 → 点「租户管理」：按需加载 `qian.tenancy` 的远程（manifest → remoteEntry），`data-scope` 为 global，经运营接口列出种子里的全部真实租户 → 点「开通申请」：按需加载 `qian.tenancy.signup` 的远程，经运营接口读申请列表；登录后只有 1 次 bootstrap，其余都是两个页面调的运营接口且全部 200，0 次刷新、无过期对话框、零令牌 |
+| 不持角色的平台身份 | `visitor`（平台身份、不持平台超管）登录 →「平台工作台」：代管横幅、说明与会话卡片，没有菜单与页面入口；登录后只有 1 次 bootstrap、0 次刷新、无过期对话框；直达 `/tenants` 是 404，远程制品请求为零 |
+| 2 远程按挂载加载 | 甲方已挂载参考应用：导航有「客户」，工作台不请求远程制品，进入页面才请求 `mf-manifest.json` 与 `remoteEntry.js`；切到丙方（未挂载）：bootstrap 的远程 / 挂载 / 权益 / 导航全空、不含 manifest 地址，导航为空，直达页面路由是 404（平台控制台的 `/tenants` 同样 404，租户成员看不到平台页面），丙方会话里远程制品请求为零 |
 | 3 代码审查项 | 全程同源 JSON 响应体、存储、URL、iframe 都不含令牌；`document.cookie` 看不到 `qian.sid`；请求不带 `Authorization`；零 CSP 违规；顶栏切换侧栏 / 主题 / 语言即时生效（`html[lang]` 跟随），偏好只存三项 |
 | 4 运行时配置 | 改状态目录 `app-config.json` 的 `apiBase` 为 `/api-alt` → 刷新 → 品牌与菜单照常，bootstrap 与能力目录全部走 `/api-alt/**`，没有一条再走 `/api/**`；构建产物不变 |
+| 租户自助开通主线（S1-TEN-020 / S1-TEN-021，`e2e-auth/signup.spec.ts`） | 外壳 → 身份服务登录页「申请开通」→ 公开页 `/signup?next=/login…`：新号码发验证码（从开发期发件箱 `/__dev/signup/outbox` 读取，回环地址 + 状态目录里的开发令牌）→ 核验 → 填姓名、密码与企业信息（租户号实时提示「可以使用」）→ 提交 → 进度页「等待平台审核」、没有「去登录」→ `operator` 在另一个浏览器上下文登录平台控制台「开通申请」→ 审核抽屉（租户号、缺省试用、配额 20）→ 通过并确认 → 发件箱收到获批通知（含到期日）→ 申请人进度页「已开通」、到期日一致 →「去登录」→ 凭手机号与密码登录，只有这一家企业、直接进入 → 首页欢迎区：试用提示的剩余天数与到期日一致，开通引导（管理员已完成、成员 1 人未完成），企业信息（名称、租户号、到期日、`1 / 20`、管理员），会话与权限卡片仍在 → 回到申请页：账号区收起为「以某某的身份申请」，换个账号后重新核验同一号码仍收起、表单没有姓名与密码 → 提交后撤回，租户号释放 |
+| 驳回与重新提交 | 新号码核验 → 租户号依次提示「格式或长度不符合要求」「这是保留字」「已被占用」→ 用已占用的租户号提交：错误落在「租户号」→ 换成可用的、密码不满足策略：错误落在「设置密码」→ 提交成功 → 运营驳回并写原因 → 申请人看到原因、租户号释放 →「修改后重新提交」以原申请为底稿（账号已在第一次提交时建立，账号区收起）→ 提交后是新的申请编号 |
+| 正式租户首页 | `demo` 进甲方（正式开通、不限期）：欢迎区有企业信息（「长期有效」「正常」），没有试用提示，开通引导的应用入口是「打开客户」，会话与权限卡片照常 |
 
 另一条用例检查认证页族的入口边界：没有 ReturnUrl、跨源、非授权端点或带令牌参数的回跳都不渲染登录表单。
 

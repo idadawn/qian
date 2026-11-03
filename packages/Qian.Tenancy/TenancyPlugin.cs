@@ -39,8 +39,10 @@ public sealed class TenancyPlugin : IQianPlugin
         ctx.Effect(scanner.Dispose);
         ctx.Services.GetService<ICapabilityContractCheck>()?.Check(scanner.Contract);
         ctx.Provide<IExecutableCapability>(CapabilityBindingRegistration.Key, scanner.Contract.Id, scanner);
-        ctx.Provide<ITenantOperations>(TenantOperations.Key, new TenantOperationsService(ctx, directory));
-        ctx.Provide<ITenantAdministration>(TenantAdministration.Key, new TenantAdministrationService(ctx, directory));
+        var administration = new TenantAdministrationService(ctx, directory);
+        ctx.Provide<ITenantOperations>(TenantOperations.Key, new TenantOperationsService(ctx, directory, administration));
+        ctx.Provide<ITenantAdministration>(TenantAdministration.Key, administration);
+        ctx.Provide<ITenantSummaries>(TenantSummaries.Key, new TenantSummaryService(ctx, administration));
         var provisioning = new TenantProvisioningOrchestrator(ctx, directory, initializationCapabilities);
         ctx.Effect(provisioning.Dispose);
         ctx.Provide<ITenantProvisioning>(TenantProvisioning.Key, provisioning);

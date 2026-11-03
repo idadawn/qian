@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Kun.Core.MultiTenancy;
 using Qian.Authz.Abstractions;
+using Qian.Dev.TenantOps;
 using Qian.Identity.Abstractions;
 using Qian.Lifecycle;
 using Qian.Runtime;
@@ -9,7 +10,8 @@ using Qian.Tenancy;
 
 namespace Qian.Dev.Shell;
 
-internal sealed record SeedPerson(string Key, string DisplayName, string Username, string Password, bool Platform);
+/// <summary>种子自然人；<paramref name="Superadmin"/> 为 true 的平台身份另授平台超管（平台控制台 S1-YUE-018），只对平台身份有意义。</summary>
+internal sealed record SeedPerson(string Key, string DisplayName, string Username, string Password, bool Platform, bool Superadmin = false);
 internal sealed record SeedMember(string Person, string Role, string DisplayName);
 /// <summary>种子租户；<paramref name="MountReference"/> 为 false 时开通后不把参考应用挂进租户 scope（验收 2 的「未挂载」形态）。</summary>
 internal sealed record SeedTenant(string Code, string Name, string Administrator, IReadOnlyList<SeedMember> Members, bool MountReference = true);
@@ -29,6 +31,7 @@ internal static class DevSeed
     {
         var seed = JsonSerializer.Deserialize<SeedFile>(File.ReadAllText(path), Json) ?? throw new InvalidOperationException("种子文件为空：" + path);
         if (seed.Persons.Count == 0 || seed.Tenants.Count == 0) throw new InvalidOperationException("种子文件至少要有一个自然人与一个租户：" + path);
+        if (seed.Persons.Any(person => person.Superadmin && !person.Platform)) throw new InvalidOperationException("平台超管只能授给平台身份（platform 为 true）：" + path);
         foreach (var tenant in seed.Tenants)
             if (!seed.Persons.Any(person => person.Key == tenant.Administrator) || tenant.Members.Any(member => !seed.Persons.Any(person => person.Key == member.Person)))
                 throw new InvalidOperationException($"租户 {tenant.Code} 引用了不存在的自然人。");
@@ -49,6 +52,8 @@ internal static class DevSeed
             using var proof = new AuthenticationProof(Encoding.UTF8.GetBytes(item.Password));
             persons[item.Key] = await accounts.CreatePersonAsync(new CreatePerson(item.DisplayName, [new IdentifierInput(IdentifierKind.Username, item.Username, true)])
                 { InitialPassword = proof, RequirePasswordChange = false, PlatformAccess = item.Platform }, ct).ConfigureAwait(false);
+            // 平台运营：经内部平台角色存储授平台超管（与引导超管同一条路），外壳里即出现平台控制台的页面与菜单。
+            if (item.Superadmin) await DevOperations.GrantSuperadminAsync(services, persons[item.Key].Id.ToString("D"), ct).ConfigureAwait(false);
         }
         var result = new List<SeededTenant>();
         foreach (var tenant in seed.Tenants)

@@ -161,6 +161,10 @@
     ],
     "Descriptions": [
       "field"
+    ],
+    "Steps": [
+      "badge",
+      "separator"
     ]
   },
   "sources": {
@@ -212,6 +216,7 @@
     "使用系统字体；不下载字体。",
     "Button 维持既有 API，尺寸按任务要求为 32 / 36 / 40px。",
     "复合组件沿用 yue API、data-slot、testId、i18n 与 Base UI 1.8；采用对应基础组件的样式配方。",
-    "弹层用 Base UI starting-style / ending-style 过渡；reduced-motion 可关闭动效。"
+    "弹层用 Base UI starting-style / ending-style 过渡；reduced-motion 可关闭动效。",
+    "Steps 在基准里没有对应组件：圆形标记沿用 badge 的配方，连接线沿用 separator。"
   ]
 }

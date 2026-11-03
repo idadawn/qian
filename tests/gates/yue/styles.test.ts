@@ -22,7 +22,7 @@ describe('yue 视觉配方门禁', () => {
     const violations = ['packages/yue', 'apps/yue-playground'].flatMap(directory => sources(path.join(root, directory))).flatMap(file => prohibited(readFileSync(file, 'utf8')).map(value => `${path.relative(root, file)}: ${value}`));
     expect(violations).toEqual([]);
   });
-  it('51 个入口均登记官方基准的对应组件与有意偏离', () => {
+  it('52 个入口均登记官方基准的对应组件与有意偏离', () => {
     expect(Object.keys(reference.components).sort()).toEqual(Object.keys(manifest).sort());
     expect(reference.style).toBe('base-nova');
     for (const sources of Object.values(reference.components)) for (const source of sources) expect(reference.sources[source as keyof typeof reference.sources]).toMatch(/^[a-f0-9]{64}$/);

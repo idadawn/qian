@@ -1,0 +1,49 @@
+{
+  "name": "@qian/tenancy-signup-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "qian.tenancy.signup 的页面：申请人公开页（/signup、/signup/status，由申请人接口所在宿主同源托管）与平台运营的开通申请页（MF2 远程 ApplicationsPage）。",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "build:remote": "vite build --config vite.remote.config.ts && node scripts/verify-remote-types.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "contracts:generate": "pnpm --workspace-root openapi:generate --source plugins/qian.tenancy.signup/contracts/http-v1.openapi.json --output packages/qian-tenancy-signup-ui/src/api.generated.ts --schema-output packages/qian-tenancy-signup-ui/src/http-contract.generated.json",
+    "contracts:check": "pnpm --workspace-root openapi:generate --source plugins/qian.tenancy.signup/contracts/http-v1.openapi.json --output packages/qian-tenancy-signup-ui/src/api.generated.ts --schema-output packages/qian-tenancy-signup-ui/src/http-contract.generated.json --check"
+  },
+  "dependencies": {
+    "@idadawn/yue-core": "workspace:^",
+    "@idadawn/yue-form": "workspace:^",
+    "@idadawn/yue-data": "workspace:^",
+    "@idadawn/yue-sdk": "workspace:^",
+    "@idadawn/yue-contracts": "workspace:^",
+    "@idadawn/yue-tokens": "workspace:^",
+    "@idadawn/qian-plugin-sdk": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@module-federation/vite": "catalog:",
+    "vitest": "catalog:",
+    "@vitest/browser": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "axe-core": "catalog:",
+    "playwright": "catalog:"
+  }
+}

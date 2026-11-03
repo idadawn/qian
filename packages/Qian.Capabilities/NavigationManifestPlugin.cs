@@ -29,8 +29,11 @@ public sealed class NavigationManifestPlugin : IQianPlugin
         if (component.ArtifactDigest is null || bytes.Length > 1_048_576) throw Invalid();
         var parsed = reader.Parse(path, new UTF8Encoding(false, true).GetString(bytes));
         if (parsed.Syntax is null || parsed.Diagnostics.Any(item => item.Severity == "error") || parsed.Syntax.Data.ValueKind != JsonValueKind.Object) throw Invalid();
+        // 平台组件（清单 scopes 只含 global，S1-YUE-018）：页面属于平台控制台，只给持平台超管的平台身份，永不进租户的菜单与外壳目录。
+        var platform = component.Manifest.TryGetProperty("scopes", out var scopes) && scopes.ValueKind == JsonValueKind.Array && scopes.GetArrayLength() > 0 &&
+            scopes.EnumerateArray().All(scope => scope.ValueKind == JsonValueKind.String && scope.GetString() == "global");
         // 外壳目录交出的是制品快照里的清单原文（只读副本）；远程地址、插槽与桥接声明由外壳宿主再校验一次。
-        _shell = new ShellRemoteContribution(component.PluginId, parsed.Syntax.Data.Clone());
+        _shell = new ShellRemoteContribution(component.PluginId, parsed.Syntax.Data.Clone(), platform, Permissions(parsed.Syntax.Data));
         if (!parsed.Syntax.Data.TryGetProperty("pages", out var pages)) { _items = []; return; }
         if (pages.ValueKind != JsonValueKind.Array || pages.GetArrayLength() > 256) throw Invalid();
         var items = new List<NavigationContribution>(); var routes = new HashSet<string>(StringComparer.Ordinal);
@@ -49,7 +52,7 @@ public sealed class NavigationManifestPlugin : IQianPlugin
             if (nav.TryGetProperty("icon", out _) && (icon is null || icon.Length is 0 or > 80 || icon.Any(char.IsControl))) throw Invalid();
             var order = 0;
             if (nav.TryGetProperty("order", out var orderValue) && (orderValue.ValueKind != JsonValueKind.Number || !orderValue.TryGetInt32(out order) || order is < -10000 or > 10000)) throw Invalid();
-            items.Add(new NavigationContribution(component.PluginId, route, title, icon, order, permission));
+            items.Add(new NavigationContribution(component.PluginId, route, title, icon, order, permission, platform));
         }
         _items = items.AsReadOnly();
     }
@@ -66,11 +69,25 @@ public sealed class NavigationManifestPlugin : IQianPlugin
         if (_shell is not null) ctx.Provide(CapabilitiesDefinition.ShellRemotesKey, _shell.PluginId, _shell);
     }
     private static string Text(JsonElement value, string name) => value.TryGetProperty(name, out var item) && item.ValueKind == JsonValueKind.String ? item.GetString()! : throw Invalid();
+    // 清单里外壳按权限过滤的全部声明（页面与插槽贡献）用到的权限点：平台控制台按它们问只读判定，放行的才交给外壳。形状已经 UI v2 Schema 校验，这里只取合法的权限码。
+    private static System.Collections.ObjectModel.ReadOnlyCollection<string> Permissions(JsonElement manifest)
+    {
+        var result = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var name in new[] { "pages", "contributions" })
+        {
+            if (!manifest.TryGetProperty(name, out var list) || list.ValueKind != JsonValueKind.Array) continue;
+            foreach (var item in list.EnumerateArray())
+                if (item.ValueKind == JsonValueKind.Object && item.TryGetProperty("permission", out var permission) && permission.ValueKind == JsonValueKind.String &&
+                    PermissionCode.IsValid(permission.GetString()!)) result.Add(permission.GetString()!);
+        }
+        return Array.AsReadOnly(result.ToArray());
+    }
     private static QianErrorException Invalid() => new(new QianError(PlatformErrors.InputInvalid));
 }
-internal sealed record ShellRemoteContribution(string PluginId, JsonElement Manifest);
-internal sealed record NavigationContribution(string PluginId, string Route, string Title, string? Icon, int Order, string Permission)
+internal sealed record ShellRemoteContribution(string PluginId, JsonElement Manifest, bool Platform, IReadOnlyList<string> Permissions);
+internal sealed record NavigationContribution(string PluginId, string Route, string Title, string? Icon, int Order, string Permission, bool Platform)
 {
     internal string Name => PluginId + "/page" + Route;
-    internal NavigationItem Describe(string tenant) => new("qian:" + tenant + ":" + PluginId + ":page:" + Uri.EscapeDataString(Route), PluginId, Route, Title, Icon, Order);
+    /// <summary>租户菜单用租户 id，平台控制台用 global（与外壳目录的 scope 写法一致）。</summary>
+    internal NavigationItem Describe(string owner) => new("qian:" + owner + ":" + PluginId + ":page:" + Uri.EscapeDataString(Route), PluginId, Route, Title, Icon, Order);
 }

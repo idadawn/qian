@@ -18,6 +18,7 @@ public static class CapabilityEndpoints
     // 目录、OpenAPI、菜单与执行入口没有单一权限点：可见集合与执行都按调用者权限在处理器内判定（S1-AZ-004 的 HTTP PEP 据此不缺省拒绝）。
     private static readonly PermissionEnforcedInHandlerAttribute InHandler = new("能力目录、菜单与执行入口按调用者可见能力过滤并逐能力判定，不对应单一权限点。");
     private static readonly PermissionEnforcedInHandlerAttribute ShellInHandler = new("外壳目录只给带本租户上下文的用户或服务主体（无委托）列出本租户实际挂载且带 UI 清单的组件与其远程清单，不按 RBAC 过滤：不含能力、数据或权限码，菜单与页面的权限由能力导航与有效权限另行判定；主体与租户上下文不符时按不存在拒绝。");
+    private static readonly PermissionEnforcedInHandlerAttribute ConsoleInHandler = new("平台控制台目录只给人类平台用户（无租户、无委托）列出全局 scope 实际挂载的平台组件远程、菜单与可用权限码，按 Authz 的平台超管只读判定过滤（不写审计、不放行任何操作），页面里的每次操作仍逐次经超管旁路判定并审计；其它主体按不存在拒绝。");
 
     /// <summary>登记认证目录、菜单、偏好、旧别名和实际调用。宿主须先配置身份、租户和 ErrorDetail 中间件。</summary>
     public static IEndpointRouteBuilder MapQianCapabilities(this IEndpointRouteBuilder endpoints, Func<HttpContext, IPluginContext> source)
@@ -90,6 +91,27 @@ public static class CapabilityEndpoints
             // 直接写出声明的具名类型；源生成契约固定成员名，不受宿主 JSON 命名策略影响。
             return Results.Json(result, CapabilityHttpJson.Default.CapabilityCatalog);
         }
+    }
+
+    /// <summary>
+    /// 登记平台控制台目录 <c>GET /api/capabilities/console</c>（S1-YUE-018）。<paramref name="source"/> 返回 Capabilities 组件的全局上下文：请求不带租户、不经插件端点绑定，
+    /// 端点归属平台契约（<see cref="PlatformHttpContract"/>），不进租户可见的组件 HTTP 聚合。宿主须先配置身份与 ErrorDetail 中间件。
+    /// </summary>
+    public static IEndpointRouteBuilder MapQianPlatformConsole(this IEndpointRouteBuilder endpoints, Func<HttpContext, IPluginContext> source)
+    {
+        ArgumentNullException.ThrowIfNull(endpoints); ArgumentNullException.ThrowIfNull(source);
+        endpoints.MapGet("/api/capabilities/console", (Func<HttpContext, Task<IResult>>)(async http =>
+        {
+            http.Response.Headers.CacheControl = "private, no-store";
+            try
+            {
+                var caller = source(http);
+                return Results.Json(await caller.Navigation().GetConsoleAsync(caller, http.RequestServices.GetRequiredService<ICurrentUser>(), http.RequestAborted).ConfigureAwait(false));
+            }
+            // Capabilities 或 Registry 尚未就绪、已停止时与不存在无法区分。
+            catch (Exception error) when (error is ServiceNotReadyException or ObjectDisposedException) { throw new QianErrorException(new QianError(PlatformErrors.NotFound)); }
+        })).RequireAuthorization().WithMetadata(ConsoleInHandler, new PlatformHttpContract("qian.capabilities")).Produces<PlatformConsoleCatalog>();
+        return endpoints;
     }
 
     // 别名响应带 Deprecation 与指向后继路径的 Link（规格 §9.5），与其它 v1 别名共用 SDK 的同一实现。

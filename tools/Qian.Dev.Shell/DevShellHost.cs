@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Qian.Gateway;
 using Qian.Runtime;
 using Qian.Sample.Crm;
+using Qian.Tenancy.Signup;
 
 namespace Qian.Dev.Shell;
 
@@ -16,11 +17,15 @@ internal sealed record DevShellSettings(string State, string Admin, string Urls,
 // 外壳认证联调环境（S1-YUE-002 / S1-YUE-012）。装配照搬租户运营手测宿主（S1-QA-012）与集成测试：
 //   1. 重建开发库，CRM 参考命令宿主充当运行时容器，并在同一宿主上挂真实 qian.identity（内置账号模型，账号 Cookie 的登录页指向同源静态认证页族 /login），
 //      再挂通用 OIDC 连接器 dex 指向脚本拉起的 CNCF Dex（SSO 跳转回调的真实上游）；
-//   2. 平台插件树（Data / Tenancy / Authz / Audit / Config / Registry / Capabilities / Lifecycle）加参考应用制品，经超管安装激活；
-//   3. 按种子文件建自然人、经真实开通编排建租户（成员与 tenant.owner 授权由编排完成），种子再把参考应用挂进租户 scope（丙方不挂：验收 2 的「未挂载」形态），补其余成员与 tenant.user 授权；
-//   4. 起面向用户的平台表面宿主（参考宿主 PlatformSurfaceHost：能力目录 / 导航 / 外壳目录与有效权限，授权 PEP 按生产模式执行身份修订下限）；
-//   5. 起 Identity.Client / Qian.Gateway BFF 宿主（HTTPS 自签名）：产品扩展静态托管外壳（apps/qian-shell）与参考应用的远程制品（samples/qian-sample-crm-ui），
-//      /app-config.json 取自状态目录，bootstrap 聚合端点，/api 经 S2S 按受众分簇转发到业务宿主与平台表面宿主。
+//   2. 平台插件树（Data / Tenancy / Authz / Audit / Config / Registry / Capabilities / Lifecycle）加参考应用制品，经超管安装激活；Tenancy 与开通申请
+//      带 UI 清单挂在全局 scope（平台组件，只进平台控制台目录）；
+//   3. 按种子文件建自然人（operator 另授平台超管）、经真实开通编排建租户（成员与 tenant.owner 授权由编排完成），种子再把参考应用挂进租户 scope
+//      （丙方不挂：验收 2 的「未挂载」形态），补其余成员与 tenant.user 授权；
+//   4. 起面向用户的平台表面宿主（参考宿主 PlatformSurfaceHost：能力目录 / 导航 / 外壳目录 / 平台控制台目录与有效权限，授权 PEP 按生产模式执行身份修订下限），
+//      与运营宿主（参考运营宿主 TenantOperationsHost + 开通申请的运营接口：平台控制台的页面经它们运营租户与开通申请，S1-YUE-018）；
+//   5. 起 Identity.Client / Qian.Gateway BFF 宿主（HTTPS 自签名）：产品扩展静态托管外壳（apps/qian-shell）、参考应用的远程制品（samples/qian-sample-crm-ui）
+//      与平台组件的远程制品（packages/qian-tenancy-ui、packages/qian-tenancy-signup-ui），/app-config.json 取自状态目录，bootstrap 聚合端点，
+//      /api 经 S2S 按受众分簇转发到业务宿主、平台表面宿主与运营宿主。
 // 不是产品宿主，不替代 qian dev（S1-RT-013）与 K3s 部署（S1-DEP-002）；浏览器只持有 HttpOnly Cookie，不接触任何令牌。
 internal static class DevShellHost
 {
@@ -32,25 +37,34 @@ internal static class DevShellHost
         var shellDist = Dist(repository, "apps/qian-shell/dist/host", "index.html", "qian-shell");
         var identityDist = Dist(repository, "packages/qian-identity-ui/dist", "index.html", "@qian/identity-ui");
         var crmRemote = Dist(repository, "samples/qian-sample-crm-ui/dist/remote", "mf-manifest.json", "@qian/sample-crm-ui");
+        // 平台控制台（S1-YUE-018）的两个平台组件远程：租户运营与开通申请的运营页（各自 build:remote 的产物）。
+        var tenancyRemote = Dist(repository, "packages/qian-tenancy-ui/dist/remote", "mf-manifest.json", "@qian/tenancy-ui", "build:remote");
+        var signupRemote = Dist(repository, "packages/qian-tenancy-signup-ui/dist/remote", "mf-manifest.json", "@qian/tenancy-signup-ui", "build:remote");
+        // 开通申请的公开页（S1-TEN-020 的构建产物）可选：QIAN_DEV_SIGNUP_UI_DIST 指定目录，缺省找 packages/qian-tenancy-signup-ui/dist/public；没有就只开放申请人接口。
+        var signupDist = OptionalDist(repository, Environment.GetEnvironmentVariable("QIAN_DEV_SIGNUP_UI_DIST") ?? "packages/qian-tenancy-signup-ui/dist/public");
         var seed = DevSeed.Load(Path.Combine(repository, "tools", "Qian.Dev.Shell", "seed", "accounts.json"));
         Directory.CreateDirectory(settings.State);
         Console.WriteLine("重建开发库 " + DevDatabase.Name + "（每次启动都从空库开始）……");
         var database = await DevDatabase.ResetAsync(settings.Admin, ct).ConfigureAwait(false);
         using var trust = new DevTrustRoot();
-        using var platform = new DevPlatform(repository) { IncludeReferenceApplication = true };
+        using var platform = new DevPlatform(repository) { IncludeReferenceApplication = true, Console = true, Signup = DevSignup.Definition };
         var assembly = new DevRuntimeAssembly();
         using var keys = DevGatewayKeys.Create(settings.State);
         var dex = settings.Dex is null ? null : new DevDexConnector(Loopback(settings.Dex, "--dex", https: false, allowPath: true), settings.DexSecret!);
-        using var identity = new DevIdentity(issuer, new Uri(gateway, "auth/callback"), identityDist, keys.ClientSecret, dex);
+        var signup = new DevSignup(issuer, settings.State, signupDist, () => assembly.Loader);
+        using var identity = new DevIdentity(issuer, new Uri(gateway, "auth/callback"), identityDist, keys.ClientSecret, dex, signup);
         await using var business = DevHost.Business(database, trust, assembly, new BusinessS2s(DevGateway.Issuer, DevGateway.Cluster, keys.PublicJwks), issuer.AbsoluteUri,
-            builder => identity.Configure(builder, database), registrar => registrar.RegisterIdentityEvents(), mediator => mediator.AddQianIdentityEvents());
-        // 身份库与生产同一套迁移，先于迁移器建表（迁移器只对 Capabilities / Lifecycle 用属主连接）；在线连接仍是受限应用登录。
+            builder => { identity.Configure(builder, database); DevSignup.Configure(builder, database); }, registrar => registrar.RegisterIdentityEvents(), mediator => mediator.AddQianIdentityEvents());
+        // 身份库与开通申请库与生产同一套迁移，先于迁移器建表（迁移器只对 Capabilities / Lifecycle 用属主连接）；在线连接仍是受限应用登录。
         await database.ExecuteAdminAsync(DevIdentity.SchemaSql(business.Services), ct).ConfigureAwait(false);
+        await database.ExecuteAdminAsync(DevSignup.SchemaSql(business.Services), ct).ConfigureAwait(false);
         await database.CreateSchemasAsync(business.Services, ct).ConfigureAwait(false);
         await business.StartAsync(ct).ConfigureAwait(false);
         await platform.AttachAsync(assembly.Loader, assembly.Providers, trust, ct, business.Services).ConfigureAwait(false);
         await identity.MountAsync(assembly.Loader, ct).ConfigureAwait(false);
         await DevOperations.PrepareAsync(assembly.Loader, business.Services, platform, repository, ct).ConfigureAwait(false);
+        // 开通申请在运营前置（重挂带平台角色的 Authz / Audit）之后挂载：运营旁路与平台审计按请求解析，不随重挂抖动。
+        await signup.MountAsync(assembly.Loader, platform.SignupConsole!, ct).ConfigureAwait(false);
         var tenants = await DevSeed.ApplyAsync(seed, assembly.Loader, business.Services, ct).ConfigureAwait(false);
         // 开发路由 /__dev/identity/bump 经真实身份端口递增当前成员的 identity_revision（授权变更后身份侧就是这样做的），网关随即经平台表面的 PEP 把修订下限抬上去。
         var accounts = assembly.Loader.GetContext("identity", ScopeKey.Global).IdentityAccounts();
@@ -68,20 +82,39 @@ internal static class DevShellHost
             RequireExpirationTime = true, ClockSkew = TimeSpan.Zero
         }, builder => { builder.WebHost.UseUrls("http://127.0.0.1:0"); DevHost.Logging(builder.Logging); });
         await platformApi.StartAsync(ct).ConfigureAwait(false);
+        // 运营宿主：直接复用参考运营宿主 TenantOperationsHost（同集成测试的管理面宿主），再挂开通申请的运营接口；只认网关签发、受众为运营簇的 S2S。
+        // 平台控制台的页面经网关调它，每次操作经超管旁路判定并写平台审计链（种子 operator 持平台超管）。
+        await using var operations = TenantOperationsHost.Build(() => assembly.Loader.GetContext("tenancy", ScopeKey.Global), new TokenValidationParameters
+        {
+            ValidateIssuer = true, ValidIssuer = DevGateway.Issuer, ValidateAudience = true, ValidAudience = DevGateway.OperationsCluster, ValidateLifetime = true,
+            ValidateIssuerSigningKey = true, IssuerSigningKey = keys.PublicKey, ValidAlgorithms = [SecurityAlgorithms.RsaSha256], RequireSignedTokens = true,
+            RequireExpirationTime = true, ClockSkew = TimeSpan.Zero
+        }, builder => { builder.WebHost.UseUrls("http://127.0.0.1:0"); DevHost.Logging(builder.Logging); });
+        operations.MapQianTenancySignupOperations(_ => assembly.Loader.GetContext("tenancy.signup", ScopeKey.Global));
+        await operations.StartAsync(ct).ConfigureAwait(false);
         // 运行时配置：K8s 里是 ConfigMap 挂成同源的 /app-config.json；这里取状态目录里的文件（网关每次现读，改完刷新即生效）。首次启动写缺省值，之后不覆盖。
         var appConfig = Path.Combine(settings.State, "app-config.json");
         if (!File.Exists(appConfig)) await File.WriteAllTextAsync(appConfig, DevGateway.DefaultAppConfig, ct).ConfigureAwait(false);
-        var shell = new ShellStaticOptions { Root = shellDist, ConfigFile = appConfig, Remotes = new Dictionary<string, string>(StringComparer.Ordinal) { ["qian.sample.crm"] = crmRemote } };
-        await using var bff = await DevGateway.StartAsync(gateway, keys, issuer, DevHost.Address(business), DevHost.Address(platformApi), shell, Bump, settings.RedisPort, ct).ConfigureAwait(false);
+        var shell = new ShellStaticOptions
+        {
+            Root = shellDist, ConfigFile = appConfig,
+            Remotes = new Dictionary<string, string>(StringComparer.Ordinal) { ["qian.sample.crm"] = crmRemote, ["qian.tenancy"] = tenancyRemote, ["qian.tenancy.signup"] = signupRemote }
+        };
+        await using var bff = await DevGateway.StartAsync(gateway, keys, issuer, DevHost.Address(business), DevHost.Address(platformApi), DevHost.Address(operations), shell, Bump,
+            settings.RedisPort, ct).ConfigureAwait(false);
         Console.WriteLine($"""
 
             外壳认证联调环境已就绪（本机开发环境，Ctrl+C 停止）
               外壳 / 网关 BFF   {gateway}（自签名证书 {keys.TlsCertificatePath}）
               身份 / 业务宿主    {issuer}（OIDC 发行方；认证页族 /login，账号接口 /api/identity）
-              平台表面宿主      {DevHost.Address(platformApi)}（能力目录 / 导航 / 外壳目录与有效权限，受众 {PlatformSurfaceHost.Audience}；网关按前缀分簇转发）
+              平台表面宿主      {DevHost.Address(platformApi)}（能力目录 / 导航 / 外壳目录 / 平台控制台目录与有效权限，受众 {PlatformSurfaceHost.Audience}；网关按前缀分簇转发）
+              运营宿主          {DevHost.Address(operations)}（租户运营 /api/tenancy/**，开通申请运营 /api/signup/applications/**、/api/signup/meta/**；受众 {DevGateway.OperationsCluster}）
+              平台控制台        {string.Join("、", seed.Persons.Where(person => person.Superadmin).Select(person => person.Username))} 持平台超管，外壳里有「租户管理」「开通申请」；其余平台身份代管
               运行时配置        {appConfig}（改 apiBase 后刷新页面即生效，不重编译）
               种子账号          tools/Qian.Dev.Shell/seed/accounts.json（{string.Join("、", seed.Persons.Select(person => person.Username))}）
               上游 Dex          {(dex is null ? "未配置（不登记连接器）" : dex.Issuer.AbsoluteUri + "（通用 OIDC 连接器 dex；用户见 seed/dex.json）")}
+              开通申请          申请人接口 {issuer}api/signup/**；公开页 {(signup.HostsPages ? issuer + "signup" : "未构建（只开放申请人接口）")}
+              开发期发件箱      GET {issuer}__dev/signup/outbox?phone=（请求头 {DevSignupOutbox.TokenHeader}，令牌在 {signup.TokenFile}）
               租户              {string.Join("  ", tenants.Select(tenant => tenant.Code + "=" + tenant.Id.ToString("D")))}
             下一步：浏览器打开外壳地址，或 scripts/dev-shell.sh e2e
             """);
@@ -99,10 +132,16 @@ internal static class DevShellHost
         return uri;
     }
 
-    private static string Dist(string repository, string directory, string marker, string filter)
+    private static string? OptionalDist(string repository, string directory)
+    {
+        var dist = Path.IsPathRooted(directory) ? directory : Path.Combine(repository, directory.Replace('/', Path.DirectorySeparatorChar));
+        return File.Exists(Path.Combine(dist, "index.html")) ? dist : null;
+    }
+
+    private static string Dist(string repository, string directory, string marker, string filter, string script = "build")
     {
         var dist = Path.Combine(repository, directory.Replace('/', Path.DirectorySeparatorChar));
-        if (!File.Exists(Path.Combine(dist, marker))) throw new InvalidOperationException($"缺少前端构建产物 {directory}/{marker}；先运行：pnpm --filter {filter} build");
+        if (!File.Exists(Path.Combine(dist, marker))) throw new InvalidOperationException($"缺少前端构建产物 {directory}/{marker}；先运行：pnpm --filter {filter} {script}");
         return dist;
     }
 }

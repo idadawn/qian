@@ -9,7 +9,7 @@ test('DataTable 对 SDK mock 完成服务端分页、排序、筛选、列显隐
   await page.getByRole('button', { name: '下一页' }).click();
   await expect(page.getByRole('cell', { name: '客户 06', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '名称', exact: true }).click();
-  await expect(page.getByText('第 1 页', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '第 1 页', exact: true })).toHaveAttribute('aria-current', 'page');
   await page.getByRole('button', { name: '名称 ↑', exact: true }).click();
   await expect(page.getByRole('cell', { name: '客户 24', exact: true })).toBeVisible();
   await page.getByRole('textbox', { name: '筛选 名称' }).fill('23');
@@ -41,9 +41,9 @@ test('页长切换与紧凑密度使用同一表格协议，选择态有一致�
   await expect(page.getByTestId('yue-data-table-row')).toHaveCount(5);
   const normal = await page.getByTestId('yue-data-table-row').first().evaluate(row => row.getBoundingClientRect().height);
   await page.getByRole('combobox', { name: '每页条数' }).click();
-  await page.getByRole('option', { name: '10', exact: true }).click();
+  await page.getByRole('option', { name: '10 条/页', exact: true }).click();
   await expect(page.getByTestId('yue-data-table-row')).toHaveCount(10);
-  await expect(page.getByText('第 1 页', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '第 1 页', exact: true })).toHaveAttribute('aria-current', 'page');
   await page.getByRole('checkbox', { name: '选择第 1 行' }).check();
   await expect(page.getByTestId('yue-data-table-row').first()).toHaveAttribute('data-state', 'selected');
   await page.goto('/data.html?state=Compact');

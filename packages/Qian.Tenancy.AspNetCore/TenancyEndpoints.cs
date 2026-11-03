@@ -35,8 +35,8 @@ public static partial class TenancyEndpoints
                     "active" => TenantStatus.Active, "grace" => TenantStatus.Grace, "suspended" => TenantStatus.Suspended,
                     _ => throw new QianErrorException(new QianError(PlatformErrors.InputInvalid) { Errors = [new QianFieldError(PlatformErrors.ValueNotAllowed, "#/status")] })
                 };
-                var result = await ctx.Inject<ITenantOperations>(TenantOperations.Key).QueryAsync(skip, take, filter, keyword, http.RequestAborted).ConfigureAwait(false);
-                return Results.Ok(new TenantList(result.Items) { Total = result.Total });
+                var result = await ctx.Inject<ITenantOperations>(TenantOperations.Key).OverviewAsync(skip, take, filter, keyword, http.RequestAborted).ConfigureAwait(false);
+                return Results.Ok(new TenantList(result.Items) { Total = result.Total, Counts = result.Counts });
             },
                 () => { ValidateQuery(http, nameof(skip), skip); ValidateQuery(http, nameof(take), take); ValidateQuery(http, nameof(status), status); ValidateQuery(http, nameof(keyword), keyword); }))).Produces<TenantList>();
         Bind(endpoints.MapPost("/api/tenancy/tenants", (HttpContext http, CreateTenant input) =>
@@ -59,6 +59,7 @@ public static partial class TenancyEndpoints
         MapState(endpoints, source);
         MapSettings(endpoints, source);
         MapAdministrators(endpoints, source);
+        MapSummary(endpoints, source);
         return endpoints;
     }
     private static RouteHandlerBuilder Bind(RouteHandlerBuilder route) => route.RequireAuthorization().WithMetadata(new PlatformHttpContract("qian.tenancy"))
@@ -75,9 +76,7 @@ public static partial class TenancyEndpoints
         http.Response.Headers.CacheControl = "private, no-store";
         try
         {
-            var user = http.RequestServices.GetRequiredService<ICurrentUser>(); var principal = user.Principal;
-            if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject || http.User.Identity?.IsAuthenticated != true ||
-                http.User.FindFirst("sub")?.Value != principal.Subject) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
+            var principal = Authenticated(http);
             if (principal.TenantId is not null || principal.Actor is not null || principal.Kind != PrincipalKind.User ||
                 http.User.Claims.Any(claim => claim.Type == "tenant_id" && !string.IsNullOrEmpty(claim.Value)) ||
                 http.RequestServices.GetRequiredService<ITenantContext>().TenantId is not null)
@@ -101,6 +100,14 @@ public static partial class TenancyEndpoints
         catch (Exception error) when (error is ServiceNotReadyException or ObjectDisposedException)
         { return QianResults.Error(new QianError(PlatformErrors.NotFound)); }
     }
+    // 宿主已验签的主体快照与认证结果须一致，否则一律按未认证处理。
+    private static Principal Authenticated(HttpContext http)
+    {
+        var user = http.RequestServices.GetRequiredService<ICurrentUser>(); var principal = user.Principal;
+        if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject || http.User.Identity?.IsAuthenticated != true ||
+            http.User.FindFirst("sub")?.Value != principal.Subject) throw new QianErrorException(new QianError(PlatformErrors.Unauthenticated));
+        return principal;
+    }
     private static void ValidateQuery(HttpContext http, string name, object? value)
     {
         var parameter = http.GetEndpoint()!.Metadata.OfType<IParameterBindingMetadata>().Single(item => item.Name == name).ParameterInfo;
@@ -112,9 +119,11 @@ public static partial class TenancyEndpoints
     private static partial void LogDenied(ILogger logger, string reason, string subject, string permission);
 }
 
-/// <summary>平台租户列表的非敏感投影。</summary>
-public sealed record TenantList(IReadOnlyList<TenantDescriptor> Items)
+/// <summary>平台租户列表的非敏感投影：条目在主档字段之外带有效期、创建时间、用户上限与用量、管理员显示名。</summary>
+public sealed record TenantList(IReadOnlyList<TenantOverview> Items)
 {
     /// <summary>筛选后总数，与当前页读取自同一数据库快照。</summary>
     public int Total { get; init; }
+    /// <summary>各状态计数：受关键字筛选影响、不受状态筛选影响，与当前页同一快照。</summary>
+    public TenantStatusCounts Counts { get; init; } = new(0, 0, 0, 0, 0, 0);
 }

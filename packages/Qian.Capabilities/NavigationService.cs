@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Storage;
 using Qian.Audit;
+using Qian.Authz.Abstractions;
 using Npgsql;
 using System.Text;
 using Kun.Authorization;
@@ -88,7 +89,8 @@ internal sealed class NavigationService(IRegistryService registry, IPermissionCh
         var result = new List<ShellRemote>();
         foreach (var registration in caller.List(CapabilitiesDefinition.ShellRemotesKey))
         {
-            if (registration.Value is not ShellRemoteContribution contribution || contribution.PluginId != registration.Name) continue;
+            // 平台组件（S1-YUE-018）只进平台控制台目录：全局注册在租户 scope 里同样可见，这里显式排除。
+            if (registration.Value is not ShellRemoteContribution contribution || contribution.PluginId != registration.Name || contribution.Platform) continue;
             var entry = view.FirstOrDefault(item => item.EntryId == registration.OwnerEntryId && item.Scope == registration.Scope && item.Name == registration.Name && item.PluginId == contribution.PluginId);
             if (entry is null) continue;
             try
@@ -100,6 +102,61 @@ internal sealed class NavigationService(IRegistryService registry, IPermissionCh
         }
         linked.Token.ThrowIfCancellationRequested(); Check(user, actor);
         return new ShellCatalog(current, result.OrderBy(item => item.Id, StringComparer.Ordinal).ThenBy(item => item.Scope, StringComparer.Ordinal).ToArray());
+    }
+    public async ValueTask<PlatformConsoleCatalog> GetConsoleAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default)
+    {
+        using var linked = Link(cancellationToken); var actor = PlatformSubject(caller, user);
+        // 判定端口是可选依赖：Authz 未挂载或已卸载时按不持角色处理，不报错、不回落到别的判定。
+        var check = caller.TryInject<ISuperadminCheck>(AuthzDefinition.SuperadminCheckKey);
+        if (check is null) { Check(user, actor); return new PlatformConsoleCatalog([], [], []); }
+        // 与租户菜单同一来源：Registry 的全局视图（已挂载、Ready、属于已安装制品）与 Runtime 里实际登记的贡献取交集，只收平台组件。
+        var remotesView = await registry.GetGlobalEntriesAsync(CapabilitiesDefinition.ShellRemotesKey, linked.Token).ConfigureAwait(false);
+        var navigationView = await registry.GetGlobalEntriesAsync(CapabilitiesDefinition.NavigationItemsKey, linked.Token).ConfigureAwait(false);
+        var candidates = new List<(ShellRemoteContribution Contribution, RegistryScopeEntry Entry)>();
+        foreach (var registration in caller.List(CapabilitiesDefinition.ShellRemotesKey))
+        {
+            if (registration.Value is not ShellRemoteContribution { Platform: true } contribution || contribution.PluginId != registration.Name || registration.Scope != ScopeKey.Global) continue;
+            var entry = remotesView.FirstOrDefault(item => item.EntryId == registration.OwnerEntryId && item.Scope == registration.Scope && item.Name == registration.Name && item.PluginId == contribution.PluginId);
+            if (entry is null || !Current(caller, CapabilitiesDefinition.ShellRemotesKey, contribution.PluginId, contribution)) continue;
+            candidates.Add((contribution, entry));
+        }
+        var declared = candidates.SelectMany(item => item.Contribution.Permissions).Distinct(StringComparer.Ordinal).ToArray();
+        // 只读判定：与超管旁路同一套条件（平台用户主体、权限点已登记、持有效 platform.superadmin），不写审计、不放行任何操作。
+        var allowed = declared.Length == 0 ? new HashSet<string>(StringComparer.Ordinal)
+            : (await check.AllowedAsync(actor, declared, linked.Token).ConfigureAwait(false)).ToHashSet(StringComparer.Ordinal);
+        // 组件清单里至少一个声明可用才把它的远程交给外壳；页面与插槽仍由外壳按下面的权限码逐项过滤。
+        var kept = candidates.Where(item => item.Contribution.Permissions.Any(allowed.Contains)).ToArray();
+        var plugins = kept.Select(item => item.Contribution.PluginId).ToHashSet(StringComparer.Ordinal);
+        var navigation = new List<NavigationItem>();
+        foreach (var registration in caller.List(CapabilitiesDefinition.NavigationItemsKey))
+        {
+            if (registration.Value is not NavigationContribution { Platform: true } contribution || contribution.Name != registration.Name || registration.Scope != ScopeKey.Global ||
+                !plugins.Contains(contribution.PluginId) || !allowed.Contains(contribution.Permission) ||
+                !navigationView.Any(entry => entry.EntryId == registration.OwnerEntryId && entry.Scope == registration.Scope && entry.Name == registration.Name && entry.PluginId == contribution.PluginId) ||
+                !Current(caller, CapabilitiesDefinition.NavigationItemsKey, contribution.Name, contribution)) continue;
+            navigation.Add(contribution.Describe("global"));
+        }
+        var permissions = kept.SelectMany(item => item.Contribution.Permissions).Where(allowed.Contains).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+        linked.Token.ThrowIfCancellationRequested(); Check(user, actor);
+        return new PlatformConsoleCatalog(
+            kept.Select(item => new ShellRemote(item.Contribution.PluginId, item.Entry.Version, "global", item.Contribution.Manifest)).OrderBy(item => item.Id, StringComparer.Ordinal).ToArray(),
+            navigation.OrderBy(item => item.Order).ThenBy(item => item.ResourceRef, StringComparer.Ordinal).ToArray(), permissions);
+    }
+    // 判定期间贡献被撤销或替换（组件卸载、重新 Apply）时不交出旧实例。
+    private static bool Current<TService>(IPluginContext caller, ServiceKey key, string name, TService contribution) where TService : class
+    {
+        try { return ReferenceEquals(caller.Inject<TService>(key, name), contribution); }
+        catch (Exception error) when (error is QianErrorException or ObjectDisposedException) { return false; }
+    }
+    // 平台控制台只给人类平台用户：无租户、无委托、全局上下文；租户主体、服务、Agent 与委托一律按不存在拒绝。
+    private AuthorizationSubject PlatformSubject(IPluginContext caller, ICurrentUser user)
+    {
+        ArgumentNullException.ThrowIfNull(caller); ArgumentNullException.ThrowIfNull(user);
+        var principal = user.Principal;
+        if (!user.IsAuthenticated || principal is null || user.UserId != principal.Subject || principal.Subject.Length is 0 or > 200) throw Error(PlatformErrors.Unauthenticated);
+        if (principal.Kind != PrincipalKind.User || principal.Actor is not null || principal.TenantId is not null || caller.Scope != ScopeKey.Global ||
+            !ReferenceEquals(caller.TryInject<IRegistryService>(RegistryDefinition.Key), registry)) throw Error(PlatformErrors.NotFound);
+        return new AuthorizationSubject(principal.Subject, null, "user");
     }
     private static string ScopeText(ScopeKey scope) => scope == ScopeKey.Global ? "global" : scope.Kind + ":" + scope.Id;
     private async Task<(AuthorizationSubject Actor, TenantDescriptor? Tenant)> Subject(IPluginContext caller, ICurrentUser user, CancellationToken ct)
@@ -121,7 +178,7 @@ internal sealed class NavigationService(IRegistryService registry, IPermissionCh
         var result = new List<NavigationItem>();
         foreach (var registration in caller.List(CapabilitiesDefinition.NavigationItemsKey))
         {
-            if (registration.Value is not NavigationContribution contribution || contribution.Name != registration.Name ||
+            if (registration.Value is not NavigationContribution contribution || contribution.Name != registration.Name || contribution.Platform ||
                 !view.Any(entry => entry.EntryId == registration.OwnerEntryId && entry.Scope == registration.Scope && entry.Name == registration.Name && entry.PluginId == contribution.PluginId)) continue;
             if (!(await permissions.CheckAsync(new PermissionRequest(actor, contribution.Permission), ct).ConfigureAwait(false)).Allow) continue;
             try

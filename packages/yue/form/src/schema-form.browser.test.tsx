@@ -1,10 +1,12 @@
 import { createRef } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import axe from 'axe-core';
 import { afterEach, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { PlatformError } from '@idadawn/yue-sdk';
+import type { FormSchema } from '@idadawn/yue-contracts';
 import { SchemaForm, type FormApi } from './schema-form';
+import { useDrawer } from './overlays';
 import { credentialSchema, i18n, schema } from './test/fixture';
 
 afterEach(cleanup);
@@ -112,4 +114,81 @@ it('可空布尔字段与布尔字段同样横排', () => {
   const field = screen.getByTestId('nullable-field-enabled');
   expect(field.className).toContain('grid-cols-');
   expect(field.className).toBe(screen.getByTestId('plain-field-enabled').className);
+});
+
+it('枚举按 optionLabelKey 取文案；qian.segmented 渲染分段控件；抽屉里的提交按钮进固定页脚并仍提交本表单', async () => {
+  i18n.addLanguagePack('zh-CN', { 'test.plan': '开通方式', 'test.size': '企业规模', 'test.plans.trial': '试用', 'test.plans.formal': '正式', 'test.sizes.small': '1–20 人', 'test.sizes.large': '500 人以上' });
+  const enumSchema: FormSchema = {
+    $schema: 'https://schema.qian.dev/form/v1', version: '1.0.0', id: 'qian.test.enum',
+    data: { type: 'object', additionalProperties: false, required: ['plan', 'size'], properties: { plan: { type: 'string', enum: ['trial', 'formal'] }, size: { type: 'string', enum: ['small', 'large'] } } },
+    ui: { layout: [{ field: 'plan', labelKey: 'test.plan', widget: 'qian.segmented', props: { optionLabelKey: 'test.plans' } }, { field: 'size', labelKey: 'test.size', props: { optionLabelKey: 'test.sizes' } }] },
+    rules: {}, binding: {}, auth: {},
+  };
+  const submit = vi.fn();
+  function Host() {
+    const drawer = useDrawer(i18n);
+    return <><button type="button" onClick={() => drawer.open({ title: '审核申请', size: 'md', content: <SchemaForm schema={enumSchema} i18n={i18n} initialValues={{ plan: 'trial', size: 'small' }} onSubmit={submit} submitLabel="确认开通" /> })}>打开</button>{drawer.holder}</>;
+  }
+  render(<Host />);
+  await userEvent.click(screen.getByRole('button', { name: '打开' }));
+  const dialog = await screen.findByRole('dialog', { name: '审核申请' });
+  expect(within(dialog).getByRole('radio', { name: '试用' }).getAttribute('aria-checked')).toBe('true');
+  await userEvent.click(within(dialog).getByRole('radio', { name: '正式' }));
+  await userEvent.click(within(dialog).getByRole('combobox', { name: /企业规模/ }));
+  await userEvent.click(await screen.findByRole('option', { name: '500 人以上' }));
+  const footer = within(dialog).getByTestId('yue-sheet-footer');
+  const confirm = within(footer).getByRole('button', { name: '确认开通' });
+  expect(within(footer).getByRole('button', { name: '取消' })).toBeTruthy();
+  expect(confirm.getAttribute('form')).toBe(dialog.querySelector('form')?.id);
+  await userEvent.click(confirm);
+  await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+  expect(submit.mock.calls[0]?.[0]).toEqual({ plan: 'formal', size: 'large' });
+});
+
+it('抽屉里的子步骤表单（inlineActions）按钮紧跟表单、不带取消，页脚照常只有关闭', async () => {
+  const submit = vi.fn();
+  const lookup: FormSchema = { ...credentialSchema, data: { type: 'object', additionalProperties: false, required: ['username'], properties: { username: { type: 'string', minLength: 1 } } }, ui: { layout: [{ field: 'username', labelKey: 'test.username' }] } };
+  function Host() {
+    const drawer = useDrawer(i18n);
+    return <><button type="button" onClick={() => drawer.open({ title: '选择管理员', content: <SchemaForm schema={lookup} i18n={i18n} inlineActions onSubmit={submit} submitLabel="查找账号" testId="lookup" /> })}>打开</button>{drawer.holder}</>;
+  }
+  render(<Host />);
+  await userEvent.click(screen.getByRole('button', { name: '打开' }));
+  const dialog = await screen.findByRole('dialog', { name: '选择管理员' });
+  const form = within(dialog).getByTestId('lookup');
+  const footer = within(dialog).getByTestId('yue-sheet-footer');
+  expect(within(form).queryByRole('button', { name: '取消' })).toBeNull();
+  expect(within(footer).queryByRole('button', { name: '查找账号' })).toBeNull();
+  expect(within(footer).getByRole('button', { name: '关闭' })).toBeTruthy();
+  await userEvent.fill(within(form).getByLabelText('账号 *'), 'adminc');
+  await userEvent.click(within(form).getByRole('button', { name: '查找账号' }));
+  await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+  expect(submit.mock.calls[0]?.[0]).toEqual({ username: 'adminc' });
+  // 等抽屉入场动画与提交态结束再查对比度，免得取到半透明的中间帧。
+  await vi.waitFor(() => expect(within(form).getByRole('button', { name: '查找账号' }).hasAttribute('disabled')).toBe(false));
+  await Promise.all(document.getAnimations().map((animation) => animation.finished));
+  const result = await axe.run(dialog);
+  expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+});
+
+it('带 labelKey 的无字段布局节点渲染成字段组；fieldExtra 按当前值给出附加提示并关联到输入框', async () => {
+  i18n.addLanguagePack('zh-CN', { 'test.account': '管理员账号', 'test.accountHint': '用于登录和管理企业', 'test.company': '企业信息' });
+  const grouped: FormSchema = { ...credentialSchema, ui: { layout: [
+    { labelKey: 'test.account', descriptionKey: 'test.accountHint', props: { marker: 1 }, children: [{ field: 'username', labelKey: 'test.username', props: { autoComplete: 'tel' } }] },
+    { labelKey: 'test.company', props: { marker: 2 }, children: [{ field: 'password', labelKey: 'test.password', props: { type: 'password' } }] },
+  ] } };
+  render(<SchemaForm schema={grouped} i18n={i18n} testId="grouped" onSubmit={vi.fn()} fieldExtra={(path, value) => path === 'username' && value ? <span role="status">可以使用：{String(value)}</span> : null} />);
+  const account = screen.getByRole('group', { name: '管理员账号' });
+  expect(account.getAttribute('aria-describedby')).toBe(screen.getByText('用于登录和管理企业').id);
+  expect(screen.getByTestId('grouped-group-0-marker').textContent).toBe('1');
+  const username = within(account).getByLabelText('账号 *');
+  expect(within(screen.getByRole('group', { name: '企业信息' })).getByLabelText('密码 *')).toBeTruthy();
+  expect(username.getAttribute('autocomplete')).toBe('tel');
+  expect(screen.queryByTestId('grouped-extra-username')).toBeNull();
+  await userEvent.fill(username, 'xinghe');
+  const extra = await screen.findByTestId('grouped-extra-username');
+  expect(extra.textContent).toBe('可以使用：xinghe');
+  expect(username.getAttribute('aria-describedby')?.split(' ')).toContain(extra.id);
+  const result = await axe.run(document.body);
+  expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
 });

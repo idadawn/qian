@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { blockingViolations, describeViolations, runAxe } from '../test/axe';
-import { Menu, MenuContent, MenuItem, MenuSeparator, MenuSub, MenuSubTrigger, MenuTrigger } from './menu';
+import { Menu, MenuContent, MenuItem, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuSub, MenuSubTrigger, MenuTrigger } from './menu';
 
 afterEach(cleanup);
 
@@ -104,5 +104,24 @@ describe('Menu（Base UI 验证门）', () => {
     await screen.findByRole('menu');
     const violations = blockingViolations(await runAxe());
     expect(violations, describeViolations(violations)).toHaveLength(0);
+  });
+});
+
+describe('MenuRadioGroup / MenuRadioItem', () => {
+  it('单选项是 menuitemradio，aria-checked 跟随受控值；closeOnClick 选中即关闭并交回焦点', async () => {
+    const onValueChange = vi.fn();
+    render(<Menu><MenuTrigger>主题</MenuTrigger><MenuContent><MenuRadioGroup value="light" onValueChange={onValueChange}>
+      <MenuRadioItem value="light" closeOnClick>明亮</MenuRadioItem><MenuRadioItem value="dark" closeOnClick>暗色</MenuRadioItem>
+    </MenuRadioGroup></MenuContent></Menu>);
+    await userEvent.click(screen.getByRole('button', { name: '主题' }));
+    const light = await screen.findByRole('menuitemradio', { name: '明亮' });
+    expect(light.getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('menuitemradio', { name: '暗色' }).getAttribute('aria-checked')).toBe('false');
+    expect(within(light).getByTestId('yue-menu-radio-item-indicator')).toBeTruthy();
+    const violations = blockingViolations(await runAxe());
+    expect(violations, describeViolations(violations)).toHaveLength(0);
+    await userEvent.click(screen.getByRole('menuitemradio', { name: '暗色' }));
+    expect(onValueChange).toHaveBeenCalledWith('dark', expect.anything());
+    await vi.waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   });
 });

@@ -192,6 +192,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tenancy/tenants/{id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["H0dad2d4f1c2a907936436caac9a9aa704088f11b213a0b40148bcec73440aeee"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -227,8 +243,23 @@ export interface components {
                 /** @enum {unknown} */
                 status: "pending" | "trial" | "active" | "grace" | "suspended";
                 revision?: string | number;
+                /** Format: date-time */
+                createdAt?: string;
+                /** Format: date-time */
+                validUntil?: string | null;
+                usersLimit?: string | number | null;
+                usersUsed?: string | number | null;
+                administratorName?: string | null;
             }[];
             total?: string | number;
+            counts?: {
+                all: string | number;
+                pending: string | number;
+                trial: string | number;
+                active: string | number;
+                grace: string | number;
+                suspended: string | number;
+            };
         };
         Hd23762d7d3c9ec88577858c45d6a88fd7f574569381c9fd4921a6fedd762932c: {
             code: string;
@@ -364,6 +395,19 @@ export interface components {
         };
         H23c7f11ec74b95209c749beb6fc14fd174ee7732d194121e24b269c2dff60f2c: {
             newPassword: string;
+        };
+        Hda47a3df6e972db73c63b7bfe8593c8f8561532d93fc471c31da49d30a979bb6: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            /** @enum {unknown} */
+            status: "pending" | "trial" | "active" | "grace" | "suspended";
+            /** Format: date-time */
+            validUntil?: string | null;
+            usersLimit?: string | number | null;
+            usersUsed?: string | number | null;
+            administratorName?: string | null;
         };
     };
     responses: never;
@@ -1492,6 +1536,73 @@ export interface operations {
             };
             /** @description HTTP 422 */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"];
+                };
+            };
+        };
+    };
+    H0dad2d4f1c2a907936436caac9a9aa704088f11b213a0b40148bcec73440aeee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["H875d18ad73a6647bb01b2262ae6f3d4f4e7320aaf1223e60ad82e25b12f80b6b"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description HTTP 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hda47a3df6e972db73c63b7bfe8593c8f8561532d93fc471c31da49d30a979bb6"];
+                };
+            };
+            /** @description HTTP 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"];
+                };
+            };
+            /** @description HTTP 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"];
+                };
+            };
+            /** @description HTTP 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"];
+                };
+            };
+            /** @description HTTP 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Ha9725c39f8a61813c2c829aa37ed10cb8657265c7c692e19402dbc6efa42bf36"];
+                };
+            };
+            /** @description HTTP 409 */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

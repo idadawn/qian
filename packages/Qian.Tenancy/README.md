@@ -112,6 +112,13 @@ R113 的处理顺序固定为：认证及平台主体检查 → 请求绑定与�
 
 列表增加可选 status（五种租户状态）和 keyword（租户号或名称，最长 200），按 code、id 稳定排序；total 与当前页在同一 RepeatableRead 快照读取，空页仍保留总数。百分号、下划线和反斜杠按字面量搜索。状态机元数据的实际 Document 不变，响应 Schema 来自 Definition 嵌入资源；主档校验失败保持 INPUT_INVALID/400，补逐字段错误码与 JSON Pointer。名称长度的服务端历史口径是 UTF-16 单元数（String.Length），标准 maxLength 声明是其 Unicode 字符数上界，超出服务端单元数的补充字符输入仍由同一 400/pointer 拒绝；本次不改变接受范围。
 
+运营列表（S1-TEN-018）由 `ITenantOperations.OverviewAsync` 提供，`GET /api/tenancy/tenants` 改用它，响应只增不减。
+- 每行在主档字段之外带 createdAt、validUntil、usersLimit（来自配额）、usersUsed 与 administratorName。
+- 用量经身份侧 `TenancyUserCounter` 在目标租户上下文里统计；管理员名取当前指针所指成员的显示名。
+- 身份组件缺席、没有指针或成员已清除时，这两列为 null，不报 0，也不让整页失败。
+- counts 给出全部与五种状态的条数，随 keyword 收窄、不随 status 变化，与当前页、total 读自同一 RepeatableRead 快照。
+- 用量与管理员名逐行取，单页至多 100 行。
+
 契约门禁的词表、递归遍历和示例跳过规则统一由 TenantInputContract 提供，能力编译器与 HTTP 契约测试共用。请求体嵌套字段、参数名称及参数 schema 都纳入扫描，本地引用有循环守卫；example/examples/default/const/enum 中的实例数据不当成字段定义。输入的非空写入约束不再改变响应的可空读取类型。
 
 开户失败先通过 ITenantProvisioning.GetStepsAsync 或步骤表查看 04:provisioned 的 Reason，再核对配置清单与实际能力元数据。二次 Enter、能力不在 initializationCapabilities、destructive/external 三种拒绝对外都是 AUTHZ_DENIED，分别核对本次已消费能力、清单的精确能力 ID、sideEffect。高风险能力在消费一次性槽位之前被拒；改为合法元数据后同一派发仍只能成功消费一次。
@@ -142,8 +149,26 @@ R113 的处理顺序固定为：认证及平台主体检查 → 请求绑定与�
 
 超管旁路审计记的是放行决定：放行后才得出的 404、409、422 同样在平台链上留有记录（R97）；入口校验失败的 400 没有。
 
+## 本租户摘要（S1-TEN-021）
+
+`GET /api/tenancy/tenants/{id}/summary` 是本组件唯一给租户主体用的接口，供外壳首页显示试用提示、开通引导与企业信息。它同在 `MapQianTenancy` 里，但不走超管旁路：
+
+- 只收同一租户的人类用户：令牌里的租户须与路径一致，主体类型为 user 且不带 Agent 委托。
+- 平台主体（超管与否）读租户仍走上面的运营接口，有旁路审计，这里一律 403。
+- 其它租户的成员、Agent 与服务主体也是 403，且不区分目标租户是否存在。无凭据 401。
+- 拒绝原因只写结构化日志 Qian.Tenancy.Summary / 1002，不进响应。
+
+处理器按已验证令牌进入该租户上下文，再调 `ITenantSummaries.CurrentAsync`（服务键 `TenancySummary`）。端口只认当前租户上下文，没有就是未认证，不能按参数读别的租户。
+
+返回 id、code、name、status、validUntil、usersLimit、usersUsed 与 administratorName，口径与运营列表的同名列一致：
+
+- 用量经身份侧计数端口统计，端口缺席为 null。
+- 管理员名取指针所指成员的显示名。
+
+令牌与路径一致但主档不存在时 404。响应 `Cache-Control: private, no-store`。
+
 ## 清单入口与代码派生
 
-`plugins/qian.tenancy/.qian-plugin/plugin.json` 的稳定入口是 `TenancyComponent`，允许 global scope，依赖 `Data`，提供 租户目录、设置、运营、管理员维护、配额、状态机、开户与 `CommandTenancy`。固定委托无参 `TenancyPlugin`。扫描到期租户的工具由实现共用的静态 `TenantExpiryCapability.Definition` 派生；可执行绑定属于 SDK 能力协议，不伪装成普通服务键。
+`plugins/qian.tenancy/.qian-plugin/plugin.json` 的稳定入口是 `TenancyComponent`，允许 global scope，依赖 `Data`，提供 租户目录、设置、运营、管理员维护、本租户摘要、配额、状态机、开户与 `CommandTenancy`。固定委托无参 `TenancyPlugin`。扫描到期租户的工具由实现共用的静态 `TenantExpiryCapability.Definition` 派生；可执行绑定属于 SDK 能力协议，不伪装成普通服务键。
 
 入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。

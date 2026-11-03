@@ -9,8 +9,8 @@ import { compactTables } from './compact-yue-markdown.ts';
 describe('真实组件文档契约', () => {
   const data = readYueDocs();
   const pages = collectYuePages();
-  it('51 个入口、全部公开组合部件与 126 条历史场景都可寻址', () => {
-    assert.equal(data.docs.length, 51); assert.equal(data.scenarios.length, 126);
+  it('52 个入口、全部公开组合部件与 128 条历史场景都可寻址', () => {
+    assert.equal(data.docs.length, 52); assert.equal(data.scenarios.length, 128);
     assert.equal(fs.existsSync(path.join(REPO_ROOT, 'apps/yue-storybook')), false);
     assert.doesNotMatch(fs.readFileSync(path.join(REPO_ROOT, 'pnpm-lock.yaml'), 'utf8'), /@storybook\/|^\s+storybook@/m);
     for (const doc of data.docs) assert.ok(pages.some(p => p.path === `yue/core/${doc.name.toLowerCase()}.mdx`));

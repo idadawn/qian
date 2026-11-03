@@ -1,0 +1,664 @@
+#nullable enable
+const Qian.Tenancy.Signup.SignupCheckKinds.Code = "code" -> string!
+const Qian.Tenancy.Signup.SignupCheckKinds.DuplicateName = "duplicateName" -> string!
+const Qian.Tenancy.Signup.SignupCheckKinds.ExistingMemberships = "existingMemberships" -> string!
+const Qian.Tenancy.Signup.SignupCheckLevels.Error = "error" -> string!
+const Qian.Tenancy.Signup.SignupCheckLevels.Info = "info" -> string!
+const Qian.Tenancy.Signup.SignupCheckLevels.Pass = "pass" -> string!
+const Qian.Tenancy.Signup.SignupCheckLevels.Warning = "warning" -> string!
+const Qian.Tenancy.Signup.SignupCodeReasons.Invalid = "invalid" -> string!
+const Qian.Tenancy.Signup.SignupCodeReasons.Reserved = "reserved" -> string!
+const Qian.Tenancy.Signup.SignupCodeReasons.Taken = "taken" -> string!
+const Qian.Tenancy.Signup.SignupCompanySizes.Enterprise = "1000+" -> string!
+const Qian.Tenancy.Signup.SignupCompanySizes.Large = "501-1000" -> string!
+const Qian.Tenancy.Signup.SignupCompanySizes.Medium = "101-500" -> string!
+const Qian.Tenancy.Signup.SignupCompanySizes.Micro = "1-20" -> string!
+const Qian.Tenancy.Signup.SignupCompanySizes.Small = "21-100" -> string!
+const Qian.Tenancy.Signup.TenancySignupDefinition.ComponentId = "qian.tenancy.signup" -> string!
+const Qian.Tenancy.Signup.TenancySignupErrors.RetryAfterDataKey = "qian.signup.retryAfter" -> string!
+override Qian.Tenancy.Signup.ApproveSignupApplication.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.ApproveSignupApplication.GetHashCode() -> int
+override Qian.Tenancy.Signup.ApproveSignupApplication.ToString() -> string!
+override Qian.Tenancy.Signup.OpenSignupSession.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.OpenSignupSession.GetHashCode() -> int
+override Qian.Tenancy.Signup.OpenSignupSession.ToString() -> string!
+override Qian.Tenancy.Signup.RejectSignupApplication.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.RejectSignupApplication.GetHashCode() -> int
+override Qian.Tenancy.Signup.RejectSignupApplication.ToString() -> string!
+override Qian.Tenancy.Signup.SignupAction.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupAction.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupAction.ToString() -> string!
+override Qian.Tenancy.Signup.SignupActionAgent.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupActionAgent.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupActionAgent.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicant.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicant.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicant.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicantApplication.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicantApplication.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicantApplication.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicantApplications.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicantApplications.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicantApplications.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicantProfile.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicantProfile.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicantProfile.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicationCounts.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicationCounts.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicationCounts.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicationDetail.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicationDetail.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicationDetail.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicationList.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicationList.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicationList.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicationQuery.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicationQuery.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicationQuery.ToString() -> string!
+override Qian.Tenancy.Signup.SignupApplicationSummary.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupApplicationSummary.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupApplicationSummary.ToString() -> string!
+override Qian.Tenancy.Signup.SignupCheck.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupCheck.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupCheck.ToString() -> string!
+override Qian.Tenancy.Signup.SignupCodeAvailability.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupCodeAvailability.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupCodeAvailability.ToString() -> string!
+override Qian.Tenancy.Signup.SignupCompany.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupCompany.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupCompany.ToString() -> string!
+override Qian.Tenancy.Signup.SignupProvisioning.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupProvisioning.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupProvisioning.ToString() -> string!
+override Qian.Tenancy.Signup.SignupProvisionStep.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupProvisionStep.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupProvisionStep.ToString() -> string!
+override Qian.Tenancy.Signup.SignupRequestContext.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupRequestContext.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupRequestContext.ToString() -> string!
+override Qian.Tenancy.Signup.SignupResultMessage.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupResultMessage.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupResultMessage.ToString() -> string!
+override Qian.Tenancy.Signup.SignupReview.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupReview.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupReview.ToString() -> string!
+override Qian.Tenancy.Signup.SignupReviewDefaults.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupReviewDefaults.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupReviewDefaults.ToString() -> string!
+override Qian.Tenancy.Signup.SignupSessionGrant.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupSessionGrant.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupSessionGrant.ToString() -> string!
+override Qian.Tenancy.Signup.SignupStateMachine.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupStateMachine.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupStateMachine.ToString() -> string!
+override Qian.Tenancy.Signup.SignupSubmission.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupSubmission.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupSubmission.ToString() -> string!
+override Qian.Tenancy.Signup.SignupTransition.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupTransition.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupTransition.ToString() -> string!
+override Qian.Tenancy.Signup.SignupVerificationMessage.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupVerificationMessage.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupVerificationMessage.ToString() -> string!
+override Qian.Tenancy.Signup.SignupVerificationTicket.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SignupVerificationTicket.GetHashCode() -> int
+override Qian.Tenancy.Signup.SignupVerificationTicket.ToString() -> string!
+override Qian.Tenancy.Signup.StartSignupVerification.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.StartSignupVerification.GetHashCode() -> int
+override Qian.Tenancy.Signup.StartSignupVerification.ToString() -> string!
+override Qian.Tenancy.Signup.SubmitSignupApplication.Equals(object? obj) -> bool
+override Qian.Tenancy.Signup.SubmitSignupApplication.GetHashCode() -> int
+override Qian.Tenancy.Signup.SubmitSignupApplication.ToString() -> string!
+Qian.Tenancy.Signup.ApproveSignupApplication
+Qian.Tenancy.Signup.ApproveSignupApplication.<Clone>$() -> Qian.Tenancy.Signup.ApproveSignupApplication!
+Qian.Tenancy.Signup.ApproveSignupApplication.ApproveSignupApplication() -> void
+Qian.Tenancy.Signup.ApproveSignupApplication.Code.get -> string?
+Qian.Tenancy.Signup.ApproveSignupApplication.Code.init -> void
+Qian.Tenancy.Signup.ApproveSignupApplication.Equals(Qian.Tenancy.Signup.ApproveSignupApplication? other) -> bool
+Qian.Tenancy.Signup.ApproveSignupApplication.Note.get -> string?
+Qian.Tenancy.Signup.ApproveSignupApplication.Note.init -> void
+Qian.Tenancy.Signup.ApproveSignupApplication.Plan.get -> Qian.Tenancy.Signup.SignupPlan
+Qian.Tenancy.Signup.ApproveSignupApplication.Plan.init -> void
+Qian.Tenancy.Signup.ApproveSignupApplication.Users.get -> int?
+Qian.Tenancy.Signup.ApproveSignupApplication.Users.init -> void
+Qian.Tenancy.Signup.ApproveSignupApplication.ValidUntil.get -> System.DateTimeOffset?
+Qian.Tenancy.Signup.ApproveSignupApplication.ValidUntil.init -> void
+Qian.Tenancy.Signup.ISignupMessenger
+Qian.Tenancy.Signup.ISignupMessenger.SendResultAsync(Qian.Tenancy.Signup.SignupResultMessage! message, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.Signup.ISignupMessenger.SendVerificationCodeAsync(Qian.Tenancy.Signup.SignupVerificationMessage! message, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.Signup.ITenantSignup
+Qian.Tenancy.Signup.ITenantSignup.ApproveAsync(System.Guid id, Qian.Tenancy.Signup.ApproveSignupApplication! request, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupApplicationDetail!>
+Qian.Tenancy.Signup.ITenantSignup.CheckCodeAsync(string! code, Qian.Tenancy.Signup.SignupRequestContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupCodeAvailability!>
+Qian.Tenancy.Signup.ITenantSignup.CloseSessionAsync(string! sessionToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Qian.Tenancy.Signup.ITenantSignup.GetApplicantAsync(string! sessionToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupApplicant?>
+Qian.Tenancy.Signup.ITenantSignup.GetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupApplicationDetail!>
+Qian.Tenancy.Signup.ITenantSignup.ListMineAsync(string! sessionToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupApplicantApplications!>
+Qian.Tenancy.Signup.ITenantSignup.OpenSessionAsync(Qian.Tenancy.Signup.OpenSignupSession! request, Qian.Tenancy.Signup.SignupRequestContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupSessionGrant!>
+Qian.Tenancy.Signup.ITenantSignup.QueryAsync(Qian.Tenancy.Signup.SignupApplicationQuery! query, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupApplicationList!>
+Qian.Tenancy.Signup.ITenantSignup.RejectAsync(System.Guid id, Qian.Tenancy.Signup.RejectSignupApplication! request, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupApplicationDetail!>
+Qian.Tenancy.Signup.ITenantSignup.RetryAsync(System.Guid id, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupApplicationDetail!>
+Qian.Tenancy.Signup.ITenantSignup.StartVerificationAsync(Qian.Tenancy.Signup.StartSignupVerification! request, Qian.Tenancy.Signup.SignupRequestContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupVerificationTicket!>
+Qian.Tenancy.Signup.ITenantSignup.SubmitAsync(string! sessionToken, Qian.Tenancy.Signup.SubmitSignupApplication! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupSubmission!>
+Qian.Tenancy.Signup.ITenantSignup.WithdrawAsync(string! sessionToken, System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Tenancy.Signup.SignupApplicantApplication!>
+Qian.Tenancy.Signup.OpenSignupSession
+Qian.Tenancy.Signup.OpenSignupSession.<Clone>$() -> Qian.Tenancy.Signup.OpenSignupSession!
+Qian.Tenancy.Signup.OpenSignupSession.Code.get -> string!
+Qian.Tenancy.Signup.OpenSignupSession.Code.init -> void
+Qian.Tenancy.Signup.OpenSignupSession.Deconstruct(out System.Guid VerificationId, out string! Code) -> void
+Qian.Tenancy.Signup.OpenSignupSession.Equals(Qian.Tenancy.Signup.OpenSignupSession? other) -> bool
+Qian.Tenancy.Signup.OpenSignupSession.OpenSignupSession(System.Guid VerificationId, string! Code) -> void
+Qian.Tenancy.Signup.OpenSignupSession.VerificationId.get -> System.Guid
+Qian.Tenancy.Signup.OpenSignupSession.VerificationId.init -> void
+Qian.Tenancy.Signup.RejectSignupApplication
+Qian.Tenancy.Signup.RejectSignupApplication.<Clone>$() -> Qian.Tenancy.Signup.RejectSignupApplication!
+Qian.Tenancy.Signup.RejectSignupApplication.Deconstruct(out string! Reason) -> void
+Qian.Tenancy.Signup.RejectSignupApplication.Equals(Qian.Tenancy.Signup.RejectSignupApplication? other) -> bool
+Qian.Tenancy.Signup.RejectSignupApplication.Note.get -> string?
+Qian.Tenancy.Signup.RejectSignupApplication.Note.init -> void
+Qian.Tenancy.Signup.RejectSignupApplication.Reason.get -> string!
+Qian.Tenancy.Signup.RejectSignupApplication.Reason.init -> void
+Qian.Tenancy.Signup.RejectSignupApplication.RejectSignupApplication(string! Reason) -> void
+Qian.Tenancy.Signup.SignupAction
+Qian.Tenancy.Signup.SignupAction.<Clone>$() -> Qian.Tenancy.Signup.SignupAction!
+Qian.Tenancy.Signup.SignupAction.Actor.get -> string!
+Qian.Tenancy.Signup.SignupAction.Actor.init -> void
+Qian.Tenancy.Signup.SignupAction.Agent.get -> Qian.Tenancy.Signup.SignupActionAgent!
+Qian.Tenancy.Signup.SignupAction.Agent.init -> void
+Qian.Tenancy.Signup.SignupAction.Deconstruct(out string! Name, out string! Actor, out string! SideEffect, out Qian.Tenancy.Signup.SignupActionAgent! Agent) -> void
+Qian.Tenancy.Signup.SignupAction.Equals(Qian.Tenancy.Signup.SignupAction? other) -> bool
+Qian.Tenancy.Signup.SignupAction.Name.get -> string!
+Qian.Tenancy.Signup.SignupAction.Name.init -> void
+Qian.Tenancy.Signup.SignupAction.SideEffect.get -> string!
+Qian.Tenancy.Signup.SignupAction.SideEffect.init -> void
+Qian.Tenancy.Signup.SignupAction.SignupAction(string! Name, string! Actor, string! SideEffect, Qian.Tenancy.Signup.SignupActionAgent! Agent) -> void
+Qian.Tenancy.Signup.SignupActionAgent
+Qian.Tenancy.Signup.SignupActionAgent.<Clone>$() -> Qian.Tenancy.Signup.SignupActionAgent!
+Qian.Tenancy.Signup.SignupActionAgent.Deconstruct(out bool Expose, out bool RequiresConfirmation) -> void
+Qian.Tenancy.Signup.SignupActionAgent.Equals(Qian.Tenancy.Signup.SignupActionAgent? other) -> bool
+Qian.Tenancy.Signup.SignupActionAgent.Expose.get -> bool
+Qian.Tenancy.Signup.SignupActionAgent.Expose.init -> void
+Qian.Tenancy.Signup.SignupActionAgent.RequiresConfirmation.get -> bool
+Qian.Tenancy.Signup.SignupActionAgent.RequiresConfirmation.init -> void
+Qian.Tenancy.Signup.SignupActionAgent.SignupActionAgent(bool Expose, bool RequiresConfirmation) -> void
+Qian.Tenancy.Signup.SignupApplicant
+Qian.Tenancy.Signup.SignupApplicant.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicant!
+Qian.Tenancy.Signup.SignupApplicant.Deconstruct(out string! Phone, out bool ExistingAccount) -> void
+Qian.Tenancy.Signup.SignupApplicant.DisplayName.get -> string?
+Qian.Tenancy.Signup.SignupApplicant.DisplayName.init -> void
+Qian.Tenancy.Signup.SignupApplicant.Equals(Qian.Tenancy.Signup.SignupApplicant? other) -> bool
+Qian.Tenancy.Signup.SignupApplicant.ExistingAccount.get -> bool
+Qian.Tenancy.Signup.SignupApplicant.ExistingAccount.init -> void
+Qian.Tenancy.Signup.SignupApplicant.Phone.get -> string!
+Qian.Tenancy.Signup.SignupApplicant.Phone.init -> void
+Qian.Tenancy.Signup.SignupApplicant.SignupApplicant(string! Phone, bool ExistingAccount) -> void
+Qian.Tenancy.Signup.SignupApplicantApplication
+Qian.Tenancy.Signup.SignupApplicantApplication.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicantApplication!
+Qian.Tenancy.Signup.SignupApplicantApplication.Code.get -> string!
+Qian.Tenancy.Signup.SignupApplicantApplication.Code.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.CompanyName.get -> string!
+Qian.Tenancy.Signup.SignupApplicantApplication.CompanyName.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.CompletedAt.get -> System.DateTimeOffset?
+Qian.Tenancy.Signup.SignupApplicantApplication.CompletedAt.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.ContactName.get -> string!
+Qian.Tenancy.Signup.SignupApplicantApplication.ContactName.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Deconstruct(out System.Guid Id, out string! Number, out Qian.Tenancy.Signup.SignupApplicationStatus Status, out string! CompanyName, out string! Code, out string! Size, out string! ContactName, out string! Phone, out System.DateTimeOffset SubmittedAt) -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Description.get -> string?
+Qian.Tenancy.Signup.SignupApplicantApplication.Description.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Email.get -> string?
+Qian.Tenancy.Signup.SignupApplicantApplication.Email.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Equals(Qian.Tenancy.Signup.SignupApplicantApplication? other) -> bool
+Qian.Tenancy.Signup.SignupApplicantApplication.Id.get -> System.Guid
+Qian.Tenancy.Signup.SignupApplicantApplication.Id.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Industry.get -> string?
+Qian.Tenancy.Signup.SignupApplicantApplication.Industry.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Number.get -> string!
+Qian.Tenancy.Signup.SignupApplicantApplication.Number.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Phone.get -> string!
+Qian.Tenancy.Signup.SignupApplicantApplication.Phone.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Plan.get -> Qian.Tenancy.Signup.SignupPlan?
+Qian.Tenancy.Signup.SignupApplicantApplication.Plan.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.RejectReason.get -> string?
+Qian.Tenancy.Signup.SignupApplicantApplication.RejectReason.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.SignupApplicantApplication(System.Guid Id, string! Number, Qian.Tenancy.Signup.SignupApplicationStatus Status, string! CompanyName, string! Code, string! Size, string! ContactName, string! Phone, System.DateTimeOffset SubmittedAt) -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Size.get -> string!
+Qian.Tenancy.Signup.SignupApplicantApplication.Size.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.Status.get -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicantApplication.Status.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.SubmittedAt.get -> System.DateTimeOffset
+Qian.Tenancy.Signup.SignupApplicantApplication.SubmittedAt.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplication.ValidUntil.get -> System.DateTimeOffset?
+Qian.Tenancy.Signup.SignupApplicantApplication.ValidUntil.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplications
+Qian.Tenancy.Signup.SignupApplicantApplications.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicantApplications!
+Qian.Tenancy.Signup.SignupApplicantApplications.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicantApplication!>! Items) -> void
+Qian.Tenancy.Signup.SignupApplicantApplications.Equals(Qian.Tenancy.Signup.SignupApplicantApplications? other) -> bool
+Qian.Tenancy.Signup.SignupApplicantApplications.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicantApplication!>!
+Qian.Tenancy.Signup.SignupApplicantApplications.Items.init -> void
+Qian.Tenancy.Signup.SignupApplicantApplications.SignupApplicantApplications(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicantApplication!>! Items) -> void
+Qian.Tenancy.Signup.SignupApplicantProfile
+Qian.Tenancy.Signup.SignupApplicantProfile.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicantProfile!
+Qian.Tenancy.Signup.SignupApplicantProfile.ContactName.get -> string!
+Qian.Tenancy.Signup.SignupApplicantProfile.ContactName.init -> void
+Qian.Tenancy.Signup.SignupApplicantProfile.Deconstruct(out System.Guid SubjectId, out string! ContactName, out string! Phone, out bool ExistingAccount) -> void
+Qian.Tenancy.Signup.SignupApplicantProfile.Email.get -> string?
+Qian.Tenancy.Signup.SignupApplicantProfile.Email.init -> void
+Qian.Tenancy.Signup.SignupApplicantProfile.Equals(Qian.Tenancy.Signup.SignupApplicantProfile? other) -> bool
+Qian.Tenancy.Signup.SignupApplicantProfile.ExistingAccount.get -> bool
+Qian.Tenancy.Signup.SignupApplicantProfile.ExistingAccount.init -> void
+Qian.Tenancy.Signup.SignupApplicantProfile.Phone.get -> string!
+Qian.Tenancy.Signup.SignupApplicantProfile.Phone.init -> void
+Qian.Tenancy.Signup.SignupApplicantProfile.SignupApplicantProfile(System.Guid SubjectId, string! ContactName, string! Phone, bool ExistingAccount) -> void
+Qian.Tenancy.Signup.SignupApplicantProfile.SubjectId.get -> System.Guid
+Qian.Tenancy.Signup.SignupApplicantProfile.SubjectId.init -> void
+Qian.Tenancy.Signup.SignupApplicationCounts
+Qian.Tenancy.Signup.SignupApplicationCounts.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicationCounts!
+Qian.Tenancy.Signup.SignupApplicationCounts.All.get -> int
+Qian.Tenancy.Signup.SignupApplicationCounts.All.init -> void
+Qian.Tenancy.Signup.SignupApplicationCounts.Approved.get -> int
+Qian.Tenancy.Signup.SignupApplicationCounts.Approved.init -> void
+Qian.Tenancy.Signup.SignupApplicationCounts.Deconstruct(out int All, out int Submitted, out int Provisioning, out int Approved, out int Failed, out int Rejected, out int Withdrawn) -> void
+Qian.Tenancy.Signup.SignupApplicationCounts.Equals(Qian.Tenancy.Signup.SignupApplicationCounts? other) -> bool
+Qian.Tenancy.Signup.SignupApplicationCounts.Failed.get -> int
+Qian.Tenancy.Signup.SignupApplicationCounts.Failed.init -> void
+Qian.Tenancy.Signup.SignupApplicationCounts.Provisioning.get -> int
+Qian.Tenancy.Signup.SignupApplicationCounts.Provisioning.init -> void
+Qian.Tenancy.Signup.SignupApplicationCounts.Rejected.get -> int
+Qian.Tenancy.Signup.SignupApplicationCounts.Rejected.init -> void
+Qian.Tenancy.Signup.SignupApplicationCounts.SignupApplicationCounts(int All, int Submitted, int Provisioning, int Approved, int Failed, int Rejected, int Withdrawn) -> void
+Qian.Tenancy.Signup.SignupApplicationCounts.Submitted.get -> int
+Qian.Tenancy.Signup.SignupApplicationCounts.Submitted.init -> void
+Qian.Tenancy.Signup.SignupApplicationCounts.Withdrawn.get -> int
+Qian.Tenancy.Signup.SignupApplicationCounts.Withdrawn.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail
+Qian.Tenancy.Signup.SignupApplicationDetail.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicationDetail!
+Qian.Tenancy.Signup.SignupApplicationDetail.Applicant.get -> Qian.Tenancy.Signup.SignupApplicantProfile!
+Qian.Tenancy.Signup.SignupApplicationDetail.Applicant.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Checks.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupCheck!>!
+Qian.Tenancy.Signup.SignupApplicationDetail.Checks.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Company.get -> Qian.Tenancy.Signup.SignupCompany!
+Qian.Tenancy.Signup.SignupApplicationDetail.Company.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.CompletedAt.get -> System.DateTimeOffset?
+Qian.Tenancy.Signup.SignupApplicationDetail.CompletedAt.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Deconstruct(out System.Guid Id, out string! Number, out Qian.Tenancy.Signup.SignupApplicationStatus Status, out Qian.Tenancy.Signup.SignupCompany! Company, out Qian.Tenancy.Signup.SignupApplicantProfile! Applicant, out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupCheck!>! Checks, out Qian.Tenancy.Signup.SignupReviewDefaults! Defaults, out System.DateTimeOffset SubmittedAt) -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Defaults.get -> Qian.Tenancy.Signup.SignupReviewDefaults!
+Qian.Tenancy.Signup.SignupApplicationDetail.Defaults.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Equals(Qian.Tenancy.Signup.SignupApplicationDetail? other) -> bool
+Qian.Tenancy.Signup.SignupApplicationDetail.Id.get -> System.Guid
+Qian.Tenancy.Signup.SignupApplicationDetail.Id.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Number.get -> string!
+Qian.Tenancy.Signup.SignupApplicationDetail.Number.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Provisioning.get -> Qian.Tenancy.Signup.SignupProvisioning?
+Qian.Tenancy.Signup.SignupApplicationDetail.Provisioning.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Review.get -> Qian.Tenancy.Signup.SignupReview?
+Qian.Tenancy.Signup.SignupApplicationDetail.Review.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.SignupApplicationDetail(System.Guid Id, string! Number, Qian.Tenancy.Signup.SignupApplicationStatus Status, Qian.Tenancy.Signup.SignupCompany! Company, Qian.Tenancy.Signup.SignupApplicantProfile! Applicant, System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupCheck!>! Checks, Qian.Tenancy.Signup.SignupReviewDefaults! Defaults, System.DateTimeOffset SubmittedAt) -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.Status.get -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationDetail.Status.init -> void
+Qian.Tenancy.Signup.SignupApplicationDetail.SubmittedAt.get -> System.DateTimeOffset
+Qian.Tenancy.Signup.SignupApplicationDetail.SubmittedAt.init -> void
+Qian.Tenancy.Signup.SignupApplicationList
+Qian.Tenancy.Signup.SignupApplicationList.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicationList!
+Qian.Tenancy.Signup.SignupApplicationList.Counts.get -> Qian.Tenancy.Signup.SignupApplicationCounts!
+Qian.Tenancy.Signup.SignupApplicationList.Counts.init -> void
+Qian.Tenancy.Signup.SignupApplicationList.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationSummary!>! Items, out int Total, out Qian.Tenancy.Signup.SignupApplicationCounts! Counts) -> void
+Qian.Tenancy.Signup.SignupApplicationList.Equals(Qian.Tenancy.Signup.SignupApplicationList? other) -> bool
+Qian.Tenancy.Signup.SignupApplicationList.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationSummary!>!
+Qian.Tenancy.Signup.SignupApplicationList.Items.init -> void
+Qian.Tenancy.Signup.SignupApplicationList.SignupApplicationList(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationSummary!>! Items, int Total, Qian.Tenancy.Signup.SignupApplicationCounts! Counts) -> void
+Qian.Tenancy.Signup.SignupApplicationList.Total.get -> int
+Qian.Tenancy.Signup.SignupApplicationList.Total.init -> void
+Qian.Tenancy.Signup.SignupApplicationQuery
+Qian.Tenancy.Signup.SignupApplicationQuery.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicationQuery!
+Qian.Tenancy.Signup.SignupApplicationQuery.Deconstruct(out int Skip, out int Take) -> void
+Qian.Tenancy.Signup.SignupApplicationQuery.Equals(Qian.Tenancy.Signup.SignupApplicationQuery? other) -> bool
+Qian.Tenancy.Signup.SignupApplicationQuery.Keyword.get -> string?
+Qian.Tenancy.Signup.SignupApplicationQuery.Keyword.init -> void
+Qian.Tenancy.Signup.SignupApplicationQuery.SignupApplicationQuery(int Skip = 0, int Take = 50) -> void
+Qian.Tenancy.Signup.SignupApplicationQuery.Size.get -> string?
+Qian.Tenancy.Signup.SignupApplicationQuery.Size.init -> void
+Qian.Tenancy.Signup.SignupApplicationQuery.Skip.get -> int
+Qian.Tenancy.Signup.SignupApplicationQuery.Skip.init -> void
+Qian.Tenancy.Signup.SignupApplicationQuery.Status.get -> Qian.Tenancy.Signup.SignupApplicationStatus?
+Qian.Tenancy.Signup.SignupApplicationQuery.Status.init -> void
+Qian.Tenancy.Signup.SignupApplicationQuery.Take.get -> int
+Qian.Tenancy.Signup.SignupApplicationQuery.Take.init -> void
+Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationStatus.Approved = 2 -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationStatus.Failed = 3 -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationStatus.Provisioning = 1 -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationStatus.Rejected = 4 -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationStatus.Submitted = 0 -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationStatus.Withdrawn = 5 -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationSummary
+Qian.Tenancy.Signup.SignupApplicationSummary.<Clone>$() -> Qian.Tenancy.Signup.SignupApplicationSummary!
+Qian.Tenancy.Signup.SignupApplicationSummary.Check.get -> Qian.Tenancy.Signup.SignupCheck?
+Qian.Tenancy.Signup.SignupApplicationSummary.Check.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.Code.get -> string!
+Qian.Tenancy.Signup.SignupApplicationSummary.Code.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.CompanyName.get -> string!
+Qian.Tenancy.Signup.SignupApplicationSummary.CompanyName.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.ContactName.get -> string!
+Qian.Tenancy.Signup.SignupApplicationSummary.ContactName.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.Deconstruct(out System.Guid Id, out string! Number, out Qian.Tenancy.Signup.SignupApplicationStatus Status, out string! CompanyName, out string! Code, out string! Size, out string! ContactName, out string! Phone, out System.DateTimeOffset SubmittedAt, out Qian.Tenancy.Signup.SignupCheck? Check) -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.Equals(Qian.Tenancy.Signup.SignupApplicationSummary? other) -> bool
+Qian.Tenancy.Signup.SignupApplicationSummary.Id.get -> System.Guid
+Qian.Tenancy.Signup.SignupApplicationSummary.Id.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.Industry.get -> string?
+Qian.Tenancy.Signup.SignupApplicationSummary.Industry.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.Number.get -> string!
+Qian.Tenancy.Signup.SignupApplicationSummary.Number.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.Phone.get -> string!
+Qian.Tenancy.Signup.SignupApplicationSummary.Phone.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.SignupApplicationSummary(System.Guid Id, string! Number, Qian.Tenancy.Signup.SignupApplicationStatus Status, string! CompanyName, string! Code, string! Size, string! ContactName, string! Phone, System.DateTimeOffset SubmittedAt, Qian.Tenancy.Signup.SignupCheck? Check) -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.Size.get -> string!
+Qian.Tenancy.Signup.SignupApplicationSummary.Size.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.Status.get -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupApplicationSummary.Status.init -> void
+Qian.Tenancy.Signup.SignupApplicationSummary.SubmittedAt.get -> System.DateTimeOffset
+Qian.Tenancy.Signup.SignupApplicationSummary.SubmittedAt.init -> void
+Qian.Tenancy.Signup.SignupCheck
+Qian.Tenancy.Signup.SignupCheck.<Clone>$() -> Qian.Tenancy.Signup.SignupCheck!
+Qian.Tenancy.Signup.SignupCheck.Count.get -> int?
+Qian.Tenancy.Signup.SignupCheck.Count.init -> void
+Qian.Tenancy.Signup.SignupCheck.Deconstruct(out string! Kind, out string! Level) -> void
+Qian.Tenancy.Signup.SignupCheck.Equals(Qian.Tenancy.Signup.SignupCheck? other) -> bool
+Qian.Tenancy.Signup.SignupCheck.Kind.get -> string!
+Qian.Tenancy.Signup.SignupCheck.Kind.init -> void
+Qian.Tenancy.Signup.SignupCheck.Level.get -> string!
+Qian.Tenancy.Signup.SignupCheck.Level.init -> void
+Qian.Tenancy.Signup.SignupCheck.Reason.get -> string?
+Qian.Tenancy.Signup.SignupCheck.Reason.init -> void
+Qian.Tenancy.Signup.SignupCheck.SignupCheck(string! Kind, string! Level) -> void
+Qian.Tenancy.Signup.SignupCheckKinds
+Qian.Tenancy.Signup.SignupCheckLevels
+Qian.Tenancy.Signup.SignupCodeAvailability
+Qian.Tenancy.Signup.SignupCodeAvailability.<Clone>$() -> Qian.Tenancy.Signup.SignupCodeAvailability!
+Qian.Tenancy.Signup.SignupCodeAvailability.Available.get -> bool
+Qian.Tenancy.Signup.SignupCodeAvailability.Available.init -> void
+Qian.Tenancy.Signup.SignupCodeAvailability.Code.get -> string!
+Qian.Tenancy.Signup.SignupCodeAvailability.Code.init -> void
+Qian.Tenancy.Signup.SignupCodeAvailability.Deconstruct(out string! Code, out bool Available) -> void
+Qian.Tenancy.Signup.SignupCodeAvailability.Equals(Qian.Tenancy.Signup.SignupCodeAvailability? other) -> bool
+Qian.Tenancy.Signup.SignupCodeAvailability.Reason.get -> string?
+Qian.Tenancy.Signup.SignupCodeAvailability.Reason.init -> void
+Qian.Tenancy.Signup.SignupCodeAvailability.SignupCodeAvailability(string! Code, bool Available) -> void
+Qian.Tenancy.Signup.SignupCodeReasons
+Qian.Tenancy.Signup.SignupCompany
+Qian.Tenancy.Signup.SignupCompany.<Clone>$() -> Qian.Tenancy.Signup.SignupCompany!
+Qian.Tenancy.Signup.SignupCompany.Code.get -> string!
+Qian.Tenancy.Signup.SignupCompany.Code.init -> void
+Qian.Tenancy.Signup.SignupCompany.Deconstruct(out string! Name, out string! Code, out string! Size) -> void
+Qian.Tenancy.Signup.SignupCompany.Description.get -> string?
+Qian.Tenancy.Signup.SignupCompany.Description.init -> void
+Qian.Tenancy.Signup.SignupCompany.Equals(Qian.Tenancy.Signup.SignupCompany? other) -> bool
+Qian.Tenancy.Signup.SignupCompany.Industry.get -> string?
+Qian.Tenancy.Signup.SignupCompany.Industry.init -> void
+Qian.Tenancy.Signup.SignupCompany.Name.get -> string!
+Qian.Tenancy.Signup.SignupCompany.Name.init -> void
+Qian.Tenancy.Signup.SignupCompany.SignupCompany(string! Name, string! Code, string! Size) -> void
+Qian.Tenancy.Signup.SignupCompany.Size.get -> string!
+Qian.Tenancy.Signup.SignupCompany.Size.init -> void
+Qian.Tenancy.Signup.SignupCompanySizes
+Qian.Tenancy.Signup.SignupPlan
+Qian.Tenancy.Signup.SignupPlan.Formal = 1 -> Qian.Tenancy.Signup.SignupPlan
+Qian.Tenancy.Signup.SignupPlan.Trial = 0 -> Qian.Tenancy.Signup.SignupPlan
+Qian.Tenancy.Signup.SignupProvisioning
+Qian.Tenancy.Signup.SignupProvisioning.<Clone>$() -> Qian.Tenancy.Signup.SignupProvisioning!
+Qian.Tenancy.Signup.SignupProvisioning.Attempts.get -> int
+Qian.Tenancy.Signup.SignupProvisioning.Attempts.init -> void
+Qian.Tenancy.Signup.SignupProvisioning.Deconstruct(out int Attempts, out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupProvisionStep!>! Steps) -> void
+Qian.Tenancy.Signup.SignupProvisioning.Equals(Qian.Tenancy.Signup.SignupProvisioning? other) -> bool
+Qian.Tenancy.Signup.SignupProvisioning.FailureReason.get -> string?
+Qian.Tenancy.Signup.SignupProvisioning.FailureReason.init -> void
+Qian.Tenancy.Signup.SignupProvisioning.MembershipId.get -> System.Guid?
+Qian.Tenancy.Signup.SignupProvisioning.MembershipId.init -> void
+Qian.Tenancy.Signup.SignupProvisioning.SignupProvisioning(int Attempts, System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupProvisionStep!>! Steps) -> void
+Qian.Tenancy.Signup.SignupProvisioning.Steps.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupProvisionStep!>!
+Qian.Tenancy.Signup.SignupProvisioning.Steps.init -> void
+Qian.Tenancy.Signup.SignupProvisioning.TenantId.get -> System.Guid?
+Qian.Tenancy.Signup.SignupProvisioning.TenantId.init -> void
+Qian.Tenancy.Signup.SignupProvisionStep
+Qian.Tenancy.Signup.SignupProvisionStep.<Clone>$() -> Qian.Tenancy.Signup.SignupProvisionStep!
+Qian.Tenancy.Signup.SignupProvisionStep.Attempts.get -> int
+Qian.Tenancy.Signup.SignupProvisionStep.Attempts.init -> void
+Qian.Tenancy.Signup.SignupProvisionStep.Deconstruct(out string! Step, out string! Status, out int Attempts) -> void
+Qian.Tenancy.Signup.SignupProvisionStep.Equals(Qian.Tenancy.Signup.SignupProvisionStep? other) -> bool
+Qian.Tenancy.Signup.SignupProvisionStep.Reason.get -> string?
+Qian.Tenancy.Signup.SignupProvisionStep.Reason.init -> void
+Qian.Tenancy.Signup.SignupProvisionStep.SignupProvisionStep(string! Step, string! Status, int Attempts) -> void
+Qian.Tenancy.Signup.SignupProvisionStep.Status.get -> string!
+Qian.Tenancy.Signup.SignupProvisionStep.Status.init -> void
+Qian.Tenancy.Signup.SignupProvisionStep.Step.get -> string!
+Qian.Tenancy.Signup.SignupProvisionStep.Step.init -> void
+Qian.Tenancy.Signup.SignupRequestContext
+Qian.Tenancy.Signup.SignupRequestContext.<Clone>$() -> Qian.Tenancy.Signup.SignupRequestContext!
+Qian.Tenancy.Signup.SignupRequestContext.Deconstruct(out string? SourceAddress) -> void
+Qian.Tenancy.Signup.SignupRequestContext.Equals(Qian.Tenancy.Signup.SignupRequestContext? other) -> bool
+Qian.Tenancy.Signup.SignupRequestContext.SignupRequestContext(string? SourceAddress) -> void
+Qian.Tenancy.Signup.SignupRequestContext.SourceAddress.get -> string?
+Qian.Tenancy.Signup.SignupRequestContext.SourceAddress.init -> void
+Qian.Tenancy.Signup.SignupResultKind
+Qian.Tenancy.Signup.SignupResultKind.Approved = 0 -> Qian.Tenancy.Signup.SignupResultKind
+Qian.Tenancy.Signup.SignupResultKind.Rejected = 1 -> Qian.Tenancy.Signup.SignupResultKind
+Qian.Tenancy.Signup.SignupResultMessage
+Qian.Tenancy.Signup.SignupResultMessage.<Clone>$() -> Qian.Tenancy.Signup.SignupResultMessage!
+Qian.Tenancy.Signup.SignupResultMessage.ApplicationNumber.get -> string!
+Qian.Tenancy.Signup.SignupResultMessage.ApplicationNumber.init -> void
+Qian.Tenancy.Signup.SignupResultMessage.Deconstruct(out System.Guid Id, out string! Phone, out string! ApplicationNumber, out Qian.Tenancy.Signup.SignupResultKind Kind) -> void
+Qian.Tenancy.Signup.SignupResultMessage.Equals(Qian.Tenancy.Signup.SignupResultMessage? other) -> bool
+Qian.Tenancy.Signup.SignupResultMessage.Id.get -> System.Guid
+Qian.Tenancy.Signup.SignupResultMessage.Id.init -> void
+Qian.Tenancy.Signup.SignupResultMessage.Kind.get -> Qian.Tenancy.Signup.SignupResultKind
+Qian.Tenancy.Signup.SignupResultMessage.Kind.init -> void
+Qian.Tenancy.Signup.SignupResultMessage.Phone.get -> string!
+Qian.Tenancy.Signup.SignupResultMessage.Phone.init -> void
+Qian.Tenancy.Signup.SignupResultMessage.Reason.get -> string?
+Qian.Tenancy.Signup.SignupResultMessage.Reason.init -> void
+Qian.Tenancy.Signup.SignupResultMessage.SignupResultMessage(System.Guid Id, string! Phone, string! ApplicationNumber, Qian.Tenancy.Signup.SignupResultKind Kind) -> void
+Qian.Tenancy.Signup.SignupResultMessage.TenantCode.get -> string?
+Qian.Tenancy.Signup.SignupResultMessage.TenantCode.init -> void
+Qian.Tenancy.Signup.SignupResultMessage.ValidUntil.get -> System.DateTimeOffset?
+Qian.Tenancy.Signup.SignupResultMessage.ValidUntil.init -> void
+Qian.Tenancy.Signup.SignupReview
+Qian.Tenancy.Signup.SignupReview.<Clone>$() -> Qian.Tenancy.Signup.SignupReview!
+Qian.Tenancy.Signup.SignupReview.Deconstruct(out string! Reviewer, out System.DateTimeOffset ReviewedAt) -> void
+Qian.Tenancy.Signup.SignupReview.Equals(Qian.Tenancy.Signup.SignupReview? other) -> bool
+Qian.Tenancy.Signup.SignupReview.Note.get -> string?
+Qian.Tenancy.Signup.SignupReview.Note.init -> void
+Qian.Tenancy.Signup.SignupReview.Plan.get -> Qian.Tenancy.Signup.SignupPlan?
+Qian.Tenancy.Signup.SignupReview.Plan.init -> void
+Qian.Tenancy.Signup.SignupReview.RejectReason.get -> string?
+Qian.Tenancy.Signup.SignupReview.RejectReason.init -> void
+Qian.Tenancy.Signup.SignupReview.ReviewedAt.get -> System.DateTimeOffset
+Qian.Tenancy.Signup.SignupReview.ReviewedAt.init -> void
+Qian.Tenancy.Signup.SignupReview.Reviewer.get -> string!
+Qian.Tenancy.Signup.SignupReview.Reviewer.init -> void
+Qian.Tenancy.Signup.SignupReview.SignupReview(string! Reviewer, System.DateTimeOffset ReviewedAt) -> void
+Qian.Tenancy.Signup.SignupReview.Users.get -> int?
+Qian.Tenancy.Signup.SignupReview.Users.init -> void
+Qian.Tenancy.Signup.SignupReview.ValidUntil.get -> System.DateTimeOffset?
+Qian.Tenancy.Signup.SignupReview.ValidUntil.init -> void
+Qian.Tenancy.Signup.SignupReviewDefaults
+Qian.Tenancy.Signup.SignupReviewDefaults.<Clone>$() -> Qian.Tenancy.Signup.SignupReviewDefaults!
+Qian.Tenancy.Signup.SignupReviewDefaults.Deconstruct(out int TrialDays, out int Users) -> void
+Qian.Tenancy.Signup.SignupReviewDefaults.Equals(Qian.Tenancy.Signup.SignupReviewDefaults? other) -> bool
+Qian.Tenancy.Signup.SignupReviewDefaults.SignupReviewDefaults(int TrialDays, int Users) -> void
+Qian.Tenancy.Signup.SignupReviewDefaults.TrialDays.get -> int
+Qian.Tenancy.Signup.SignupReviewDefaults.TrialDays.init -> void
+Qian.Tenancy.Signup.SignupReviewDefaults.Users.get -> int
+Qian.Tenancy.Signup.SignupReviewDefaults.Users.init -> void
+Qian.Tenancy.Signup.SignupSessionGrant
+Qian.Tenancy.Signup.SignupSessionGrant.<Clone>$() -> Qian.Tenancy.Signup.SignupSessionGrant!
+Qian.Tenancy.Signup.SignupSessionGrant.Applicant.get -> Qian.Tenancy.Signup.SignupApplicant!
+Qian.Tenancy.Signup.SignupSessionGrant.Applicant.init -> void
+Qian.Tenancy.Signup.SignupSessionGrant.Deconstruct(out string! Token, out System.DateTimeOffset ExpiresAt, out Qian.Tenancy.Signup.SignupApplicant! Applicant) -> void
+Qian.Tenancy.Signup.SignupSessionGrant.Equals(Qian.Tenancy.Signup.SignupSessionGrant? other) -> bool
+Qian.Tenancy.Signup.SignupSessionGrant.ExpiresAt.get -> System.DateTimeOffset
+Qian.Tenancy.Signup.SignupSessionGrant.ExpiresAt.init -> void
+Qian.Tenancy.Signup.SignupSessionGrant.SignupSessionGrant(string! Token, System.DateTimeOffset ExpiresAt, Qian.Tenancy.Signup.SignupApplicant! Applicant) -> void
+Qian.Tenancy.Signup.SignupSessionGrant.Token.get -> string!
+Qian.Tenancy.Signup.SignupSessionGrant.Token.init -> void
+Qian.Tenancy.Signup.SignupStateMachine
+Qian.Tenancy.Signup.SignupStateMachine.<Clone>$() -> Qian.Tenancy.Signup.SignupStateMachine!
+Qian.Tenancy.Signup.SignupStateMachine.Actions.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupAction!>!
+Qian.Tenancy.Signup.SignupStateMachine.Actions.init -> void
+Qian.Tenancy.Signup.SignupStateMachine.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>! States, out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>! Terminal, out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupTransition!>! Transitions, out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupAction!>! Actions) -> void
+Qian.Tenancy.Signup.SignupStateMachine.Equals(Qian.Tenancy.Signup.SignupStateMachine? other) -> bool
+Qian.Tenancy.Signup.SignupStateMachine.SignupStateMachine(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>! States, System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>! Terminal, System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupTransition!>! Transitions, System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupAction!>! Actions) -> void
+Qian.Tenancy.Signup.SignupStateMachine.States.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>!
+Qian.Tenancy.Signup.SignupStateMachine.States.init -> void
+Qian.Tenancy.Signup.SignupStateMachine.Terminal.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>!
+Qian.Tenancy.Signup.SignupStateMachine.Terminal.init -> void
+Qian.Tenancy.Signup.SignupStateMachine.Transitions.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupTransition!>!
+Qian.Tenancy.Signup.SignupStateMachine.Transitions.init -> void
+Qian.Tenancy.Signup.SignupSubmission
+Qian.Tenancy.Signup.SignupSubmission.<Clone>$() -> Qian.Tenancy.Signup.SignupSubmission!
+Qian.Tenancy.Signup.SignupSubmission.Application.get -> Qian.Tenancy.Signup.SignupApplicantApplication!
+Qian.Tenancy.Signup.SignupSubmission.Application.init -> void
+Qian.Tenancy.Signup.SignupSubmission.Deconstruct(out Qian.Tenancy.Signup.SignupApplicantApplication! Application, out Qian.Tenancy.Signup.SignupSessionGrant! Session) -> void
+Qian.Tenancy.Signup.SignupSubmission.Equals(Qian.Tenancy.Signup.SignupSubmission? other) -> bool
+Qian.Tenancy.Signup.SignupSubmission.Session.get -> Qian.Tenancy.Signup.SignupSessionGrant!
+Qian.Tenancy.Signup.SignupSubmission.Session.init -> void
+Qian.Tenancy.Signup.SignupSubmission.SignupSubmission(Qian.Tenancy.Signup.SignupApplicantApplication! Application, Qian.Tenancy.Signup.SignupSessionGrant! Session) -> void
+Qian.Tenancy.Signup.SignupTransition
+Qian.Tenancy.Signup.SignupTransition.<Clone>$() -> Qian.Tenancy.Signup.SignupTransition!
+Qian.Tenancy.Signup.SignupTransition.Action.get -> string!
+Qian.Tenancy.Signup.SignupTransition.Action.init -> void
+Qian.Tenancy.Signup.SignupTransition.Deconstruct(out System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>! From, out string! Action, out Qian.Tenancy.Signup.SignupApplicationStatus To) -> void
+Qian.Tenancy.Signup.SignupTransition.Equals(Qian.Tenancy.Signup.SignupTransition? other) -> bool
+Qian.Tenancy.Signup.SignupTransition.From.get -> System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>!
+Qian.Tenancy.Signup.SignupTransition.From.init -> void
+Qian.Tenancy.Signup.SignupTransition.SignupTransition(System.Collections.Generic.IReadOnlyList<Qian.Tenancy.Signup.SignupApplicationStatus>! From, string! Action, Qian.Tenancy.Signup.SignupApplicationStatus To) -> void
+Qian.Tenancy.Signup.SignupTransition.To.get -> Qian.Tenancy.Signup.SignupApplicationStatus
+Qian.Tenancy.Signup.SignupTransition.To.init -> void
+Qian.Tenancy.Signup.SignupVerificationMessage
+Qian.Tenancy.Signup.SignupVerificationMessage.<Clone>$() -> Qian.Tenancy.Signup.SignupVerificationMessage!
+Qian.Tenancy.Signup.SignupVerificationMessage.Code.get -> string!
+Qian.Tenancy.Signup.SignupVerificationMessage.Code.init -> void
+Qian.Tenancy.Signup.SignupVerificationMessage.Deconstruct(out System.Guid Id, out string! Phone, out string! Code, out System.DateTimeOffset ExpiresAt) -> void
+Qian.Tenancy.Signup.SignupVerificationMessage.Equals(Qian.Tenancy.Signup.SignupVerificationMessage? other) -> bool
+Qian.Tenancy.Signup.SignupVerificationMessage.ExpiresAt.get -> System.DateTimeOffset
+Qian.Tenancy.Signup.SignupVerificationMessage.ExpiresAt.init -> void
+Qian.Tenancy.Signup.SignupVerificationMessage.Id.get -> System.Guid
+Qian.Tenancy.Signup.SignupVerificationMessage.Id.init -> void
+Qian.Tenancy.Signup.SignupVerificationMessage.Phone.get -> string!
+Qian.Tenancy.Signup.SignupVerificationMessage.Phone.init -> void
+Qian.Tenancy.Signup.SignupVerificationMessage.SignupVerificationMessage(System.Guid Id, string! Phone, string! Code, System.DateTimeOffset ExpiresAt) -> void
+Qian.Tenancy.Signup.SignupVerificationTicket
+Qian.Tenancy.Signup.SignupVerificationTicket.<Clone>$() -> Qian.Tenancy.Signup.SignupVerificationTicket!
+Qian.Tenancy.Signup.SignupVerificationTicket.Deconstruct(out System.Guid Id, out System.DateTimeOffset ExpiresAt, out System.DateTimeOffset ResendAfter) -> void
+Qian.Tenancy.Signup.SignupVerificationTicket.Equals(Qian.Tenancy.Signup.SignupVerificationTicket? other) -> bool
+Qian.Tenancy.Signup.SignupVerificationTicket.ExpiresAt.get -> System.DateTimeOffset
+Qian.Tenancy.Signup.SignupVerificationTicket.ExpiresAt.init -> void
+Qian.Tenancy.Signup.SignupVerificationTicket.Id.get -> System.Guid
+Qian.Tenancy.Signup.SignupVerificationTicket.Id.init -> void
+Qian.Tenancy.Signup.SignupVerificationTicket.ResendAfter.get -> System.DateTimeOffset
+Qian.Tenancy.Signup.SignupVerificationTicket.ResendAfter.init -> void
+Qian.Tenancy.Signup.SignupVerificationTicket.SignupVerificationTicket(System.Guid Id, System.DateTimeOffset ExpiresAt, System.DateTimeOffset ResendAfter) -> void
+Qian.Tenancy.Signup.StartSignupVerification
+Qian.Tenancy.Signup.StartSignupVerification.<Clone>$() -> Qian.Tenancy.Signup.StartSignupVerification!
+Qian.Tenancy.Signup.StartSignupVerification.Deconstruct(out string! Phone) -> void
+Qian.Tenancy.Signup.StartSignupVerification.Equals(Qian.Tenancy.Signup.StartSignupVerification? other) -> bool
+Qian.Tenancy.Signup.StartSignupVerification.Phone.get -> string!
+Qian.Tenancy.Signup.StartSignupVerification.Phone.init -> void
+Qian.Tenancy.Signup.StartSignupVerification.StartSignupVerification(string! Phone) -> void
+Qian.Tenancy.Signup.SubmitSignupApplication
+Qian.Tenancy.Signup.SubmitSignupApplication.<Clone>$() -> Qian.Tenancy.Signup.SubmitSignupApplication!
+Qian.Tenancy.Signup.SubmitSignupApplication.AcceptTerms.get -> bool
+Qian.Tenancy.Signup.SubmitSignupApplication.AcceptTerms.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.Code.get -> string!
+Qian.Tenancy.Signup.SubmitSignupApplication.Code.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.CompanyName.get -> string!
+Qian.Tenancy.Signup.SubmitSignupApplication.CompanyName.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.Deconstruct(out string! CompanyName, out string! Code, out string! Size, out bool AcceptTerms) -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.Description.get -> string?
+Qian.Tenancy.Signup.SubmitSignupApplication.Description.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.DisplayName.get -> string?
+Qian.Tenancy.Signup.SubmitSignupApplication.DisplayName.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.Email.get -> string?
+Qian.Tenancy.Signup.SubmitSignupApplication.Email.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.Equals(Qian.Tenancy.Signup.SubmitSignupApplication? other) -> bool
+Qian.Tenancy.Signup.SubmitSignupApplication.Industry.get -> string?
+Qian.Tenancy.Signup.SubmitSignupApplication.Industry.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.Password.get -> string?
+Qian.Tenancy.Signup.SubmitSignupApplication.Password.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.Size.get -> string!
+Qian.Tenancy.Signup.SubmitSignupApplication.Size.init -> void
+Qian.Tenancy.Signup.SubmitSignupApplication.SubmitSignupApplication(string! CompanyName, string! Code, string! Size, bool AcceptTerms) -> void
+Qian.Tenancy.Signup.TenancySignupDefinition
+Qian.Tenancy.Signup.TenancySignupErrors
+static Qian.Tenancy.Signup.ApproveSignupApplication.operator !=(Qian.Tenancy.Signup.ApproveSignupApplication? left, Qian.Tenancy.Signup.ApproveSignupApplication? right) -> bool
+static Qian.Tenancy.Signup.ApproveSignupApplication.operator ==(Qian.Tenancy.Signup.ApproveSignupApplication? left, Qian.Tenancy.Signup.ApproveSignupApplication? right) -> bool
+static Qian.Tenancy.Signup.OpenSignupSession.operator !=(Qian.Tenancy.Signup.OpenSignupSession? left, Qian.Tenancy.Signup.OpenSignupSession? right) -> bool
+static Qian.Tenancy.Signup.OpenSignupSession.operator ==(Qian.Tenancy.Signup.OpenSignupSession? left, Qian.Tenancy.Signup.OpenSignupSession? right) -> bool
+static Qian.Tenancy.Signup.RejectSignupApplication.operator !=(Qian.Tenancy.Signup.RejectSignupApplication? left, Qian.Tenancy.Signup.RejectSignupApplication? right) -> bool
+static Qian.Tenancy.Signup.RejectSignupApplication.operator ==(Qian.Tenancy.Signup.RejectSignupApplication? left, Qian.Tenancy.Signup.RejectSignupApplication? right) -> bool
+static Qian.Tenancy.Signup.SignupAction.operator !=(Qian.Tenancy.Signup.SignupAction? left, Qian.Tenancy.Signup.SignupAction? right) -> bool
+static Qian.Tenancy.Signup.SignupAction.operator ==(Qian.Tenancy.Signup.SignupAction? left, Qian.Tenancy.Signup.SignupAction? right) -> bool
+static Qian.Tenancy.Signup.SignupActionAgent.operator !=(Qian.Tenancy.Signup.SignupActionAgent? left, Qian.Tenancy.Signup.SignupActionAgent? right) -> bool
+static Qian.Tenancy.Signup.SignupActionAgent.operator ==(Qian.Tenancy.Signup.SignupActionAgent? left, Qian.Tenancy.Signup.SignupActionAgent? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicant.operator !=(Qian.Tenancy.Signup.SignupApplicant? left, Qian.Tenancy.Signup.SignupApplicant? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicant.operator ==(Qian.Tenancy.Signup.SignupApplicant? left, Qian.Tenancy.Signup.SignupApplicant? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicantApplication.operator !=(Qian.Tenancy.Signup.SignupApplicantApplication? left, Qian.Tenancy.Signup.SignupApplicantApplication? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicantApplication.operator ==(Qian.Tenancy.Signup.SignupApplicantApplication? left, Qian.Tenancy.Signup.SignupApplicantApplication? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicantApplications.operator !=(Qian.Tenancy.Signup.SignupApplicantApplications? left, Qian.Tenancy.Signup.SignupApplicantApplications? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicantApplications.operator ==(Qian.Tenancy.Signup.SignupApplicantApplications? left, Qian.Tenancy.Signup.SignupApplicantApplications? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicantProfile.operator !=(Qian.Tenancy.Signup.SignupApplicantProfile? left, Qian.Tenancy.Signup.SignupApplicantProfile? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicantProfile.operator ==(Qian.Tenancy.Signup.SignupApplicantProfile? left, Qian.Tenancy.Signup.SignupApplicantProfile? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationCounts.operator !=(Qian.Tenancy.Signup.SignupApplicationCounts? left, Qian.Tenancy.Signup.SignupApplicationCounts? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationCounts.operator ==(Qian.Tenancy.Signup.SignupApplicationCounts? left, Qian.Tenancy.Signup.SignupApplicationCounts? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationDetail.operator !=(Qian.Tenancy.Signup.SignupApplicationDetail? left, Qian.Tenancy.Signup.SignupApplicationDetail? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationDetail.operator ==(Qian.Tenancy.Signup.SignupApplicationDetail? left, Qian.Tenancy.Signup.SignupApplicationDetail? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationList.operator !=(Qian.Tenancy.Signup.SignupApplicationList? left, Qian.Tenancy.Signup.SignupApplicationList? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationList.operator ==(Qian.Tenancy.Signup.SignupApplicationList? left, Qian.Tenancy.Signup.SignupApplicationList? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationQuery.operator !=(Qian.Tenancy.Signup.SignupApplicationQuery? left, Qian.Tenancy.Signup.SignupApplicationQuery? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationQuery.operator ==(Qian.Tenancy.Signup.SignupApplicationQuery? left, Qian.Tenancy.Signup.SignupApplicationQuery? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationSummary.operator !=(Qian.Tenancy.Signup.SignupApplicationSummary? left, Qian.Tenancy.Signup.SignupApplicationSummary? right) -> bool
+static Qian.Tenancy.Signup.SignupApplicationSummary.operator ==(Qian.Tenancy.Signup.SignupApplicationSummary? left, Qian.Tenancy.Signup.SignupApplicationSummary? right) -> bool
+static Qian.Tenancy.Signup.SignupCheck.operator !=(Qian.Tenancy.Signup.SignupCheck? left, Qian.Tenancy.Signup.SignupCheck? right) -> bool
+static Qian.Tenancy.Signup.SignupCheck.operator ==(Qian.Tenancy.Signup.SignupCheck? left, Qian.Tenancy.Signup.SignupCheck? right) -> bool
+static Qian.Tenancy.Signup.SignupCodeAvailability.operator !=(Qian.Tenancy.Signup.SignupCodeAvailability? left, Qian.Tenancy.Signup.SignupCodeAvailability? right) -> bool
+static Qian.Tenancy.Signup.SignupCodeAvailability.operator ==(Qian.Tenancy.Signup.SignupCodeAvailability? left, Qian.Tenancy.Signup.SignupCodeAvailability? right) -> bool
+static Qian.Tenancy.Signup.SignupCompany.operator !=(Qian.Tenancy.Signup.SignupCompany? left, Qian.Tenancy.Signup.SignupCompany? right) -> bool
+static Qian.Tenancy.Signup.SignupCompany.operator ==(Qian.Tenancy.Signup.SignupCompany? left, Qian.Tenancy.Signup.SignupCompany? right) -> bool
+static Qian.Tenancy.Signup.SignupCompanySizes.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static Qian.Tenancy.Signup.SignupProvisioning.operator !=(Qian.Tenancy.Signup.SignupProvisioning? left, Qian.Tenancy.Signup.SignupProvisioning? right) -> bool
+static Qian.Tenancy.Signup.SignupProvisioning.operator ==(Qian.Tenancy.Signup.SignupProvisioning? left, Qian.Tenancy.Signup.SignupProvisioning? right) -> bool
+static Qian.Tenancy.Signup.SignupProvisionStep.operator !=(Qian.Tenancy.Signup.SignupProvisionStep? left, Qian.Tenancy.Signup.SignupProvisionStep? right) -> bool
+static Qian.Tenancy.Signup.SignupProvisionStep.operator ==(Qian.Tenancy.Signup.SignupProvisionStep? left, Qian.Tenancy.Signup.SignupProvisionStep? right) -> bool
+static Qian.Tenancy.Signup.SignupRequestContext.operator !=(Qian.Tenancy.Signup.SignupRequestContext? left, Qian.Tenancy.Signup.SignupRequestContext? right) -> bool
+static Qian.Tenancy.Signup.SignupRequestContext.operator ==(Qian.Tenancy.Signup.SignupRequestContext? left, Qian.Tenancy.Signup.SignupRequestContext? right) -> bool
+static Qian.Tenancy.Signup.SignupResultMessage.operator !=(Qian.Tenancy.Signup.SignupResultMessage? left, Qian.Tenancy.Signup.SignupResultMessage? right) -> bool
+static Qian.Tenancy.Signup.SignupResultMessage.operator ==(Qian.Tenancy.Signup.SignupResultMessage? left, Qian.Tenancy.Signup.SignupResultMessage? right) -> bool
+static Qian.Tenancy.Signup.SignupReview.operator !=(Qian.Tenancy.Signup.SignupReview? left, Qian.Tenancy.Signup.SignupReview? right) -> bool
+static Qian.Tenancy.Signup.SignupReview.operator ==(Qian.Tenancy.Signup.SignupReview? left, Qian.Tenancy.Signup.SignupReview? right) -> bool
+static Qian.Tenancy.Signup.SignupReviewDefaults.operator !=(Qian.Tenancy.Signup.SignupReviewDefaults? left, Qian.Tenancy.Signup.SignupReviewDefaults? right) -> bool
+static Qian.Tenancy.Signup.SignupReviewDefaults.operator ==(Qian.Tenancy.Signup.SignupReviewDefaults? left, Qian.Tenancy.Signup.SignupReviewDefaults? right) -> bool
+static Qian.Tenancy.Signup.SignupSessionGrant.operator !=(Qian.Tenancy.Signup.SignupSessionGrant? left, Qian.Tenancy.Signup.SignupSessionGrant? right) -> bool
+static Qian.Tenancy.Signup.SignupSessionGrant.operator ==(Qian.Tenancy.Signup.SignupSessionGrant? left, Qian.Tenancy.Signup.SignupSessionGrant? right) -> bool
+static Qian.Tenancy.Signup.SignupStateMachine.Current.get -> Qian.Tenancy.Signup.SignupStateMachine!
+static Qian.Tenancy.Signup.SignupStateMachine.operator !=(Qian.Tenancy.Signup.SignupStateMachine? left, Qian.Tenancy.Signup.SignupStateMachine? right) -> bool
+static Qian.Tenancy.Signup.SignupStateMachine.operator ==(Qian.Tenancy.Signup.SignupStateMachine? left, Qian.Tenancy.Signup.SignupStateMachine? right) -> bool
+static Qian.Tenancy.Signup.SignupSubmission.operator !=(Qian.Tenancy.Signup.SignupSubmission? left, Qian.Tenancy.Signup.SignupSubmission? right) -> bool
+static Qian.Tenancy.Signup.SignupSubmission.operator ==(Qian.Tenancy.Signup.SignupSubmission? left, Qian.Tenancy.Signup.SignupSubmission? right) -> bool
+static Qian.Tenancy.Signup.SignupTransition.operator !=(Qian.Tenancy.Signup.SignupTransition? left, Qian.Tenancy.Signup.SignupTransition? right) -> bool
+static Qian.Tenancy.Signup.SignupTransition.operator ==(Qian.Tenancy.Signup.SignupTransition? left, Qian.Tenancy.Signup.SignupTransition? right) -> bool
+static Qian.Tenancy.Signup.SignupVerificationMessage.operator !=(Qian.Tenancy.Signup.SignupVerificationMessage? left, Qian.Tenancy.Signup.SignupVerificationMessage? right) -> bool
+static Qian.Tenancy.Signup.SignupVerificationMessage.operator ==(Qian.Tenancy.Signup.SignupVerificationMessage? left, Qian.Tenancy.Signup.SignupVerificationMessage? right) -> bool
+static Qian.Tenancy.Signup.SignupVerificationTicket.operator !=(Qian.Tenancy.Signup.SignupVerificationTicket? left, Qian.Tenancy.Signup.SignupVerificationTicket? right) -> bool
+static Qian.Tenancy.Signup.SignupVerificationTicket.operator ==(Qian.Tenancy.Signup.SignupVerificationTicket? left, Qian.Tenancy.Signup.SignupVerificationTicket? right) -> bool
+static Qian.Tenancy.Signup.StartSignupVerification.operator !=(Qian.Tenancy.Signup.StartSignupVerification? left, Qian.Tenancy.Signup.StartSignupVerification? right) -> bool
+static Qian.Tenancy.Signup.StartSignupVerification.operator ==(Qian.Tenancy.Signup.StartSignupVerification? left, Qian.Tenancy.Signup.StartSignupVerification? right) -> bool
+static Qian.Tenancy.Signup.SubmitSignupApplication.operator !=(Qian.Tenancy.Signup.SubmitSignupApplication? left, Qian.Tenancy.Signup.SubmitSignupApplication? right) -> bool
+static Qian.Tenancy.Signup.SubmitSignupApplication.operator ==(Qian.Tenancy.Signup.SubmitSignupApplication? left, Qian.Tenancy.Signup.SubmitSignupApplication? right) -> bool
+static Qian.Tenancy.Signup.TenancySignupDefinition.TenancySignup(this Qian.Runtime.IPluginContext! context) -> Qian.Tenancy.Signup.ITenantSignup!
+static Qian.Tenancy.Signup.TenancySignupErrors.All.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.Errors.ErrorCode!>!
+static readonly Qian.Tenancy.Signup.TenancySignupDefinition.Key -> Qian.Runtime.ServiceKey
+static readonly Qian.Tenancy.Signup.TenancySignupDefinition.MessengerKey -> Qian.Runtime.ServiceKey
+static readonly Qian.Tenancy.Signup.TenancySignupErrors.AccountUnavailable -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Tenancy.Signup.TenancySignupErrors.ApplicationOpen -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Tenancy.Signup.TenancySignupErrors.CodeExpired -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Tenancy.Signup.TenancySignupErrors.CodeInvalid -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Tenancy.Signup.TenancySignupErrors.CodeTaken -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Tenancy.Signup.TenancySignupErrors.StateConflict -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Tenancy.Signup.TenancySignupErrors.Unavailable -> Qian.Runtime.Errors.ErrorCode!

@@ -13,6 +13,7 @@ namespace Qian.Authz;
 [Provides(typeof(AuthzDefinition), nameof(AuthzDefinition.Key))]
 [Provides(typeof(AuthzDefinition), nameof(AuthzDefinition.PermissionsKey))]
 [Provides(typeof(AuthzDefinition), nameof(AuthzDefinition.SuperadminBypassKey))]
+[Provides(typeof(AuthzDefinition), nameof(AuthzDefinition.SuperadminCheckKey))]
 [Provides(typeof(AuthzDefinition), nameof(AuthzDefinition.ResourceTypesKey))]
 [Provides(typeof(AuthzEnforcement), nameof(AuthzEnforcement.Key))]
 [Provides(typeof(TenantRoleGrant), nameof(TenantRoleGrant.Key))]

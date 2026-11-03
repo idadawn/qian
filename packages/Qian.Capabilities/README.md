@@ -119,6 +119,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 ## 菜单贡献、资源引用与个人偏好
 
 `NavigationManifestPlugin` 从 `RegistryComponentBinding.FromArtifact` 捕获的 UI 文件读取 `pages[].route / expose / permission / nav`，与实际业务插件共同 Apply，并把菜单登记到 `NavigationItems` 具名集合，把清单原文登记到 `ShellRemotes` 具名集合（外壳目录的来源）。它是平台装配器使用的普通包装，不修改 Runtime，也不把清单里的声明自动当成已挂载状态。此包装验证自己消费的菜单字段，不代替完整 MF2 制品、UI 脚本或前端渲染验收。
+组件清单 `scopes` 只含 `global` 的是**平台组件**（如租户运营 `qian.tenancy`、开通申请 `qian.tenancy.signup`，S1-YUE-018）：它们的菜单与远程同样登记，但全局注册在租户 scope 里也可见，所以租户的菜单与外壳目录显式排除它们，只由下面的平台控制台目录交出。
 
 `Navigation` 服务先读取真实 Registry Ready 视图，再应用 scope 遮蔽、restriction 交集、租户状态和真实 RBAC。业务插件卸载或被租户禁用后，菜单不会从预装清单、个人偏好或被遮蔽的全局项恢复。菜单资源引用采用 `qian:{tenant}:{app}:page:{id}`；本期 tenant 菜单的 app 为组件 ID，id 是规范化编码后的路由，完整引用最多 512 字符。当前提供页面菜单；外壳的页面渲染、外链类型与 App scope 归属仍由相应外壳/应用能力接入。
 
@@ -127,7 +128,8 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 - `GET /api/capabilities/navigation` 返回当前实际可见的菜单，缓存声明为 private；隐藏偏好在权限过滤之后应用。
 - `GET /api/capabilities/navigation/item?resourceRef=...` 解析当前有权限的资源，未知、无权限与未挂载统一 404。个人隐藏是展示偏好，不影响此访问判定。
 - `PUT /api/capabilities/navigation/preference?resourceRef=...` 只接受 `{ hidden, order? }`，修改当前主体的偏好。租户、主体类型和主体 ID 来自已验证的端口，不能从请求体指定。
-- `GET /api/capabilities/shell`（外壳目录，S1-YUE-012）：`{ tenant: { id, name }, remotes: [{ id, version, scope, manifest }], cacheScope: "private" }`，`private, no-store`。与菜单同一来源：Registry 的租户 scope 视图（已挂载、Ready、按遮蔽与 restrict 合入）与 Runtime 里实际登记的 UI 清单贡献取交集；`manifest` 是制品快照里 `ui/manifest.json` 的原文。未挂载、被 restrict 隐藏或已卸载的组件不出现，它们的远程清单地址也就不交给外壳；租户不在启用或试用状态时 `remotes` 为空。页面是否可见仍由外壳按有效权限过滤，网关的 bootstrap 聚合端点（Qian.Gateway 的 `MapQianShellBootstrap`）以它为远程来源。
+- `GET /api/capabilities/shell`（外壳目录，S1-YUE-012）：`{ tenant: { id, name }, remotes: [{ id, version, scope, manifest }], cacheScope: "private" }`，`private, no-store`。与菜单同一来源：Registry 的租户 scope 视图（已挂载、Ready、按遮蔽与 restrict 合入）与 Runtime 里实际登记的 UI 清单贡献取交集；`manifest` 是制品快照里 `ui/manifest.json` 的原文。未挂载、被 restrict 隐藏或已卸载的组件不出现，它们的远程清单地址也就不交给外壳；租户不在启用或试用状态时 `remotes` 为空。页面是否可见仍由外壳按有效权限过滤，网关的 bootstrap 聚合端点（Qian.Gateway 的 `MapQianShellBootstrap`）以它为远程来源。平台组件不在其中。
+- `GET /api/capabilities/console`（平台控制台目录，S1-YUE-018，`MapQianPlatformConsole` 单独登记）：`{ remotes: [{ id, version, scope: "global", manifest }], navigation: [{ resourceRef, pluginId, route, title, icon, order }], permissions: [...], cacheScope: "private" }`，`private, no-store`。只给人类平台用户（`tenant_id` 为 null、`principal_kind` 为 user、无委托）：租户主体、服务、Agent 与委托一律 404。来源是 Registry 的全局视图（`IRegistryService.GetGlobalEntriesAsync`：已挂载、Ready、属于已安装制品）与 Runtime 里实际登记的平台组件贡献的交集，再按 Authz 的**平台超管只读判定**（`ISuperadminCheck`，与超管旁路同一套条件：持有效 `platform.superadmin`、权限点已登记、审计可用、无租户上下文）过滤：组件清单里至少一个权限点可用才交出它的远程，菜单只留权限点可用的页面，`permissions` 是可用权限码。判定只读、不写任何审计，也不放行任何操作——页面里的每次操作仍由组件的运营端点逐次经超管旁路判定并写平台审计链。判定端口是可选依赖（清单 `optionalInject: AuthzSuperadminCheck`），缺席时与不持角色一样三者皆空；菜单资源引用写作 `qian:global:{组件}:page:{路由}`。端点归属平台契约（`PlatformHttpContract`），不进租户可见的组件 HTTP 聚合；宿主给它组件的全局上下文（参考宿主 `PlatformSurfaceHost` 只对不带租户的请求这样做）。网关的 bootstrap 对平台身份以它为来源（Qian.Gateway）。
 
 偏好保存在 `CapabilitiesDbContext` 的 `plugin_qian_capabilities.navigation_preferences`。表强制租户 RLS，服务查询另按 `principal_kind + sub` 过滤；这也让同名用户与服务拥有独立空间。偏好行不会授予权限，另一租户的资源引用不能写入。
 
@@ -135,7 +137,7 @@ Capabilities 同时提供 `Contracts` 服务键（`ctx.Contracts()` / `IContract
 
 偏好更新与 `qian.capabilities/navigation.preference` 审计在同一个 PostgreSQL Serializable 事务中提交。审计只写已知非敏感输入的规范化哈希，字段为 hidden、order 和 ASCII 资源引用，payload 不复制输入。审计失败时偏好回滚；序列化、死锁及目标键冲突会重新验证资格并重试整笔更新，耗尽后返回 CONFLICT。宿主需给本上下文的受限应用角色配置既有审计事务函数权限，不授予审计历史 DML。
 
-真实 Kestrel/PostgreSQL 用例覆盖两个租户、两个服务主体的展示隔离，版本化租户菜单替换、禁用不回退、restriction、卸载、偏好恢复、审计失败回滚和并发更新单行；外壳目录另有用例覆盖只列本租户实际挂载的组件、restrict 与卸载后不出现、未挂载组件的远程地址不交出。前端远程模块的真实加载与用户交互登录由外壳的真实流程验收（`apps/qian-shell`，`pnpm yue:auth`）覆盖。
+真实 Kestrel/PostgreSQL 用例覆盖两个租户、两个服务主体的展示隔离，版本化租户菜单替换、禁用不回退、restriction、卸载、偏好恢复、审计失败回滚和并发更新单行；外壳目录另有用例覆盖只列本租户实际挂载的组件、restrict 与卸载后不出现、未挂载组件的远程地址不交出；平台控制台目录的用例（`tests/Qian.Sample.Crm.Tests/PlatformConsoleTests.cs`）覆盖持角色的平台身份拿到两个平台组件的远程、菜单与权限码且不写审计，不持角色为空、撤销角色后立即为空，租户主体、服务与 Agent 404，租户外壳目录与菜单不含平台组件。前端远程模块的真实加载与用户交互登录由外壳的真实流程验收（`apps/qian-shell`，`pnpm yue:auth`）覆盖。
 
 ## proto 与实际 gRPC 服务探测
 

@@ -72,5 +72,6 @@ flowchart LR
   n4 -->|"Tenancy"| n17
   n11 -.->|"Audit"| n1
   n6 -.->|"AuthzSuperadminBypass"| n1
+  n6 -.->|"AuthzSuperadminCheck"| n2
 ```
 

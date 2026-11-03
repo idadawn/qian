@@ -142,6 +142,8 @@ scope patch 单条 HTTP 写入与运营 CLI 已交付（S1-RT-029）。App / 会
 
 GetScopeEntriesAsync 接受已验证租户的 scope 和服务键，在与重合入相同的串行锁中读取数据库层、完成真实装载，再从 Runtime 的遮蔽/restrict 后注册快照返回已安装且 Ready 的绑定。返回仅含条目、组件、版本、scope、服务键及贡献名，不包含配置或服务对象；坏配置阻断的 scope 返回空视图，管理诊断保留在管理路径。查询另一租户或未经归属验证的 app/session 被拒绝。
 
+GetGlobalEntriesAsync（S1-YUE-018，平台控制台目录的来源）只接受服务键，返回 Runtime 里全局条目实际登记的同形绑定：条目须 Ready 且属于宿主预装的组件版本，不合入任何租户 scope，所以租户的停用、局部条目与 restrict 都不改变它。只在无租户上下文中可读（平台身份的请求），处在某个租户的上下文中一律 `NOT_FOUND`——租户请求只能经 GetScopeEntriesAsync 读本租户合成后的视图，不能借全局视图绕过遮蔽与 restrict；Registry 未启动或已停止时抛 `ServiceNotReadyException`。用例 `ScopeViewTests.cs` 覆盖：租户 A 停用全局条目并加局部条目后全局视图不变、A 的上下文里 404；宿主另挂的非预装全局条目即使已登记也不交出；全局条目卸载后不再交出；停止后失效。
+
 GetInstalledComponents 仍是可信安装声明集合：预装未挂载、或已被租户停用的组件可以保留其中，不能据此放行业务入口。SDK HTTP 门禁已用真实 Kestrel、S2S 验签、受限 PG 和运行时验证禁用/未知同为 404、租户 B 不受影响、restrict 交集及中间件漏装/错序不能执行 handler。此证据不关闭完整 platform、权限管理或提示词/能力三处过滤验收。
 
 ## 原始制品文件的预装快照

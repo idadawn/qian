@@ -18,6 +18,9 @@
     resolver:
       mode: production
       allowHeaderFallback: false
+- id: tenancy.signup
+  plugin: qian.tenancy.signup
+  config: {}
 - id: data
   plugin: qian.data
   config:

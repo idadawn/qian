@@ -1,6 +1,6 @@
 # @idadawn/yue-core
 
-Qian 的基础组件层，基于 Base UI 1.8、统一 yue 令牌与 Lucide 图标。S1-YUE-005 提供 51 个组件入口及配套部件、机器可读 manifest、Rspress 组件文档、SSR/键盘与无障碍验收。设计文档中的 `@yue/core` 是本包简称。
+Qian 的基础组件层，基于 Base UI 1.8、统一 yue 令牌与 Lucide 图标。S1-YUE-005 提供 51 个组件入口及配套部件（S1-YUE-017 增加 Steps，现为 52 个）、机器可读 manifest、Rspress 组件文档、SSR/键盘与无障碍验收。设计文档中的 `@yue/core` 是本包简称。
 
 ## 边界与安装
 
@@ -83,7 +83,7 @@ Props 从真实 TypeScript checker 提取；相同的 DOM/ARIA/事件声明按�
 
 ## 视觉配方与回归（S1-YUE-011）
 
-基础配方以官方 shadcn CLI 4.21.5 的 `base-nova` / `neutral` / `cssVariables: true` 为来源；[逐组件对应与来源摘要](docs/visual-reference.json) 覆盖全部 51 个入口。复合入口使用对应基础组件组合，保留 yue 公开 API、标识、国际化与受控协议。品牌蓝、系统字体、Button 的 32 / 36 / 40px 尺寸，以及优先满足 4.5:1 / 3:1 的颜色是已说明的差异。
+基础配方以官方 shadcn CLI 4.21.5 的 `base-nova` / `neutral` / `cssVariables: true` 为来源；[逐组件对应与来源摘要](docs/visual-reference.json) 覆盖全部 52 个入口（Steps 在基准里没有对应组件，组合 badge 与 separator 的配方）。复合入口使用对应基础组件组合，保留 yue 公开 API、标识、国际化与受控协议。品牌蓝、系统字体、Button 的 32 / 36 / 40px 尺寸，以及优先满足 4.5:1 / 3:1 的颜色是已说明的差异。
 
 宿主导入 `@idadawn/yue-tokens/theme.css`。颜色使用 `bg-primary`、`text-muted-foreground`、`border-input` 等语义工具类，透明度使用 `/90`、`/50`；尺寸与位置变量用 Tailwind v4 的括号语法。门禁拒绝变量颜色任意值和 `brightness-*` 配方。弹层以 Base UI 的 `data-starting-style` / `data-ending-style` 过渡，尊重 reduced-motion；无障碍测试等待有限动画和焦点安排完成后检查完整规则。
 

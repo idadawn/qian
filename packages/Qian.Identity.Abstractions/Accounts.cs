@@ -84,6 +84,12 @@ public interface IIdentityAccounts
     ValueTask<Person> CreatePersonAsync(CreatePerson request, CancellationToken cancellationToken = default);
     /// <summary>按手机、邮箱或用户名解析 Person；不存在返回 null。</summary>
     ValueTask<Person?> FindPersonAsync(string identifier, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Person 已加入的租户（登录索引：建立过成员身份的租户，含成员已停用的），供平台审核「申请人是否已加入其它企业」这类只读检查；
+    /// Person 不存在返回空集合。缺省实现返回 null，表示该身份 Provider 不提供这项查询，调用方按「无法判定」处理。
+    /// </summary>
+    ValueTask<IReadOnlyList<Guid>?> ListPersonTenantsAsync(Guid personId, CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult<IReadOnlyList<Guid>?>(null);
     /// <summary>在当前租户建立成员，经租户配额判定端口计数（同一事务内持计数锁）；同一 Person 重复建立时幂等返回既有成员。</summary>
     ValueTask<Membership> CreateMembershipAsync(CreateMembership request, CancellationToken cancellationToken = default);
     /// <summary>绑定标识（软删除模型下的新增）；已被占用返回 IDENTIFIER_IN_USE。</summary>

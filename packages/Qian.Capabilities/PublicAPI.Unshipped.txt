@@ -39,3 +39,5 @@ Qian.Capabilities.CapabilitiesComponent
 Qian.Capabilities.CapabilitiesComponent.CapabilitiesComponent() -> void
 Qian.Capabilities.CapabilitiesComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
 Qian.Capabilities.CapabilitiesComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+static Qian.Capabilities.CapabilitiesComponent.OptionalInject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
+static Qian.Capabilities.CapabilitiesPlugin.OptionalInject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!

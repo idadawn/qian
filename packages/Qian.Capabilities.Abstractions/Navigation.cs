@@ -28,6 +28,17 @@ public sealed record ShellCatalog(ShellTenant Tenant, IReadOnlyList<ShellRemote>
 /// <summary>当前租户的标识与显示名。</summary>
 public sealed record ShellTenant(string Id, string Name);
 
+/// <summary>
+/// 平台控制台目录（<c>GET /api/capabilities/console</c>，S1-YUE-018）：给持平台超管的平台身份列出全局 scope 实际挂载、Ready、带 UI 清单的平台组件
+/// （清单 <c>scopes</c> 只含 <c>global</c>）的远程、菜单与可用权限码。三者都按 Authz 的平台超管只读判定过滤（不写审计、不放行任何操作），
+/// 页面里的每次操作仍逐次经超管旁路判定并写平台审计链；不持角色、或没有任何可用页面时三者都为空。菜单的资源引用是 <c>qian:global:{组件}:page:{路由}</c>。
+/// </summary>
+public sealed record PlatformConsoleCatalog(IReadOnlyList<ShellRemote> Remotes, IReadOnlyList<NavigationItem> Navigation, IReadOnlyList<string> Permissions)
+{
+    /// <summary>固定为 private。</summary>
+    public string CacheScope { get; } = "private";
+}
+
 /// <summary>一个已挂载组件的 UI 远程：组件 id、实际挂载的版本、所在 scope（<c>global</c> 或 <c>tenant:{id}</c>）与制品快照里 ui/manifest.json 的原文。</summary>
 public sealed record ShellRemote(string Id, string Version, string Scope, JsonElement Manifest);
 
@@ -44,6 +55,11 @@ public interface INavigationService
     ValueTask<NavigationItem> GetAsync(IPluginContext caller, ICurrentUser user, string resourceRef, CancellationToken cancellationToken = default);
     /// <summary>修改当前主体的展示偏好；只接受当前实际可访问的资源。</summary>
     ValueTask SetPreferenceAsync(IPluginContext caller, ICurrentUser user, string resourceRef, NavigationPreference preference, CancellationToken cancellationToken = default);
-    /// <summary>外壳目录：当前租户与本租户 scope 实际挂载的 UI 远程；租户不在启用或试用状态时远程为空。主体与租户只来自已认证调用者。</summary>
+    /// <summary>外壳目录：当前租户与本租户 scope 实际挂载的 UI 远程；租户不在启用或试用状态时远程为空。主体与租户只来自已认证调用者。平台组件（清单 scopes 只含 global）不在其中。</summary>
     ValueTask<ShellCatalog> GetShellAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 平台控制台目录（S1-YUE-018）：<paramref name="caller"/> 是全局上下文，主体只能是人类平台用户（无租户、无委托），否则 NOT_FOUND。
+    /// 远程、菜单与权限码按平台超管只读判定过滤，判定端口缺席或主体不持角色时全部为空；只读，不写任何审计。
+    /// </summary>
+    ValueTask<PlatformConsoleCatalog> GetConsoleAsync(IPluginContext caller, ICurrentUser user, CancellationToken cancellationToken = default);
 }

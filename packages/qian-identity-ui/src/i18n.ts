@@ -19,6 +19,7 @@ i18n.addLanguagePack('zh-CN', {
   'identity.bindTitle': '确认绑定', 'identity.bindHelp': '上游身份 {{name}} 尚未绑定账号，请选择处理方式。', 'identity.verifyHelp': '先用账号密码验证身份，再完成绑定。',
   'identity.bindLink': '绑定到已验证账号', 'identity.bindCreate': '创建新账号并绑定', 'identity.bindCancel': '放弃本次登录',
   'identity.flowError': '上游登录失败或已失效。', 'identity.restart': '重新发起登录',
+  'identity.noCompany': '还没有企业？', 'identity.applyCompany': '申请开通', 'identity.signupProgress': '查看开通申请进度', 'identity.applyNewCompany': '申请开通新企业',
 });
 i18n.addLanguagePack('zh-TW', {
   'identity.invalidEntry': '登入入口無效', 'identity.invalidEntryHelp': '請從應用重新發起登入；本頁只接受應用的授權請求。',
@@ -28,6 +29,7 @@ i18n.addLanguagePack('zh-TW', {
   'identity.bindTitle': '確認綁定', 'identity.bindHelp': '上游身分 {{name}} 尚未綁定帳號，請選擇處理方式。', 'identity.verifyHelp': '先用帳號密碼驗證身分，再完成綁定。',
   'identity.bindLink': '綁定到已驗證帳號', 'identity.bindCreate': '建立新帳號並綁定', 'identity.bindCancel': '放棄本次登入',
   'identity.flowError': '上游登入失敗或已失效。', 'identity.restart': '重新發起登入',
+  'identity.noCompany': '還沒有企業？', 'identity.applyCompany': '申請開通', 'identity.signupProgress': '查看開通申請進度', 'identity.applyNewCompany': '申請開通新企業',
 });
 i18n.addLanguagePack('en-US', {
   'identity.invalidEntry': 'Invalid sign-in entry', 'identity.invalidEntryHelp': 'Start sign-in from the application again; this page only accepts authorization requests from applications.',
@@ -37,4 +39,5 @@ i18n.addLanguagePack('en-US', {
   'identity.bindTitle': 'Confirm binding', 'identity.bindHelp': 'The upstream identity {{name}} is not bound to an account yet. Choose how to proceed.', 'identity.verifyHelp': 'Verify with your account password first, then complete the binding.',
   'identity.bindLink': 'Bind to the verified account', 'identity.bindCreate': 'Create a new account and bind', 'identity.bindCancel': 'Abandon this sign-in',
   'identity.flowError': 'The upstream sign-in failed or expired.', 'identity.restart': 'Start sign-in again',
+  'identity.noCompany': 'No company yet?', 'identity.applyCompany': 'Apply for a workspace', 'identity.signupProgress': 'Check your application', 'identity.applyNewCompany': 'Apply for another company',
 });

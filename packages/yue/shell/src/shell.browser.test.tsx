@@ -124,7 +124,7 @@ it('AppShell 单侧栏、页面族、导航、偏好和用户菜单通过键盘�
   expect(screen.getByRole('link', { name: '文档' }).getAttribute('rel')).toContain('noopener');
   await userEvent.click(screen.getByRole('button', { name: '收起侧栏' })); expect(store.getSnapshot().sidebarCollapsed).toBe(true);
   expect(screen.getByRole('button', { name: '展开侧栏' }).getAttribute('aria-expanded')).toBe('false');
-  await userEvent.click(screen.getByRole('combobox', { name: '主题' })); await accessible(); await userEvent.click(screen.getByRole('option', { name: '暗色' })); expect(store.getSnapshot().theme).toBe('dark');
+  await userEvent.click(screen.getByRole('button', { name: '主题' })); await accessible(); expect(screen.getByRole('menuitemradio', { name: '跟随系统' }).getAttribute('aria-checked')).toBe('true'); await userEvent.click(screen.getByRole('menuitemradio', { name: '暗色' })); expect(store.getSnapshot().theme).toBe('dark');
   await userEvent.click(screen.getByRole('button', { name: '用户菜单' })); await accessible(); await userEvent.click(screen.getByRole('menuitem', { name: '退出登录' })); expect(signOut).toHaveBeenCalledOnce();
 });
 it.each([403, 404, 500, 'offline'] as const)('兜底 %s 有标题、可操作出口并通过 axe', async status => {

@@ -21,12 +21,12 @@ export function OfflineBanner({ i18n, offline, onRetry, className, testId = 'yue
   useShellLocale(i18n);
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   if (!(offline ?? !online)) return null;
-  return <div data-slot="offline-banner" data-testid={testId}><Alert tone="warn" className={cn('flex flex-wrap items-center justify-between gap-3', className)}>{i18n.t('shell.offline')}{onRetry && <Button variant="outline" onClick={onRetry}>{i18n.t('common.retry')}</Button>}</Alert></div>;
+  return <div data-slot="offline-banner" data-testid={testId}><Alert tone="warn" className={cn('items-center', className)} action={onRetry && <Button variant="outline" onClick={onRetry}>{i18n.t('common.retry')}</Button>}>{i18n.t('shell.offline')}</Alert></div>;
 }
 export function UpdateBanner({ i18n, available, onReload, className, testId = 'yue-update-banner' }: ShellPartProps & { i18n: PlatformI18n; available: boolean; onReload: () => void }) {
   useShellLocale(i18n);
   if (!available) return null;
-  return <div data-slot="update-banner" data-testid={testId}><Alert className={cn('flex flex-wrap items-center justify-between gap-3', className)}>{i18n.t('shell.update')}<Button variant="outline" onClick={onReload}>{i18n.t('shell.reload')}</Button></Alert></div>;
+  return <div data-slot="update-banner" data-testid={testId}><Alert className={cn('items-center', className)} action={<Button variant="outline" onClick={onReload}>{i18n.t('shell.reload')}</Button>}>{i18n.t('shell.update')}</Alert></div>;
 }
 export interface ShellErrorBoundaryProps { i18n: PlatformI18n; children: ReactNode; resetKey?: unknown; onError?: (error: Error, info: ErrorInfo) => void; onReset?: () => void }
 export class ShellErrorBoundary extends Component<ShellErrorBoundaryProps, { failed: boolean }> {

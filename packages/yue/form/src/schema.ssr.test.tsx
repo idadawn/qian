@@ -21,6 +21,16 @@ describe('表单与元数据契约', () => {
     expect(rendered).not.toContain('example.invalid');
   });
 
+  it('字段组与附加提示支持 SSR：fieldset 以组标题命名，附加内容带 data-slot', () => {
+    const grouped: typeof credentialSchema = { ...credentialSchema, ui: { layout: [{ labelKey: 'test.username', props: { marker: 1 }, children: [{ field: 'username' }] }, { field: 'password', props: { type: 'password' } }] } };
+    const html = renderToString(<SchemaForm schema={grouped} i18n={i18n} initialValues={{ username: 'alice' }} fieldExtra={(path, value) => path === 'username' ? `extra:${String(value)}` : null} />);
+    expect(html).toContain('data-slot="schema-group"');
+    expect(html).toContain('data-slot="schema-group-marker"');
+    expect(html).toContain('data-slot="schema-field-extra"');
+    expect(html).toContain('extra:alice');
+    expect(html.match(/data-slot="schema-group"/g)).toHaveLength(1);
+  });
+
   it('同一引擎 SSR 支持编辑和只读，数据不需要浏览器全局对象', () => {
     const props = { schema, i18n, initialValues: { code: 'a', name: '甲', phone: '13812345678' } };
     expect(renderToString(<SchemaForm {...props} />)).toContain('input');

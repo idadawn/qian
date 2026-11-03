@@ -28,7 +28,8 @@ internal sealed record DevDexConnector(Uri Issuer, string SecretFile);
 // 真实 qian.identity 挂进 CRM 参考宿主（照集成测试 CustomerCommandTests.Identity 的 ConfigureIdentity / MountIdentity）：
 // 内置账号模型 + OpenIddict 协议面 + 账号 HTTP 接口，身份请求走自己的分支，不经过业务管线；同一分支经产品扩展 UseQianIdentityPages 同源托管认证页族（/login，S1-YUE-012）。
 // 给出上游 Dex 时再挂 S1-IDP-007 的通用 OIDC 连接器组件（注册名 dex），SSO 跳转回调走真实的发起 → 上游登录 → /connect/callback/dex → 落点流程。
-internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, string clientSecret, DevDexConnector? dex = null) : IDisposable
+// 给出开通申请组件时（S1-TEN-019），它的申请人接口、公开页与开发期发件箱的读取路由也走身份的公开分支。
+internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, string clientSecret, DevDexConnector? dex = null, DevSignup? signup = null) : IDisposable
 {
     internal const string ClientId = "qian-shell";
     /// <summary>
@@ -58,7 +59,7 @@ internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, strin
         shell.Permissions.UnionWith([Permissions.Endpoints.Authorization, Permissions.Endpoints.Token, Permissions.Endpoints.EndSession, Permissions.Endpoints.Revocation,
             Permissions.GrantTypes.AuthorizationCode, Permissions.GrantTypes.RefreshToken, Permissions.ResponseTypes.Code, Permissions.Prefixes.Scope + "qian.api",
             .. ApplicationScopes.Select(scope => Permissions.Prefixes.Scope + scope)]);
-        builder.Services.AddSingleton<IStartupFilter>(new IdentityBranchFilter(uiDist));
+        builder.Services.AddSingleton<IStartupFilter>(new IdentityBranchFilter(uiDist, signup));
         builder.Services.AddQianIdentityServer(new IdentityServerOptions
         {
             Issuer = issuer, AllowLoopbackHttp = true, SigningCertificates = [_certificate], EncryptionCertificates = [_certificate],
@@ -108,8 +109,8 @@ internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, strin
             .CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(7));
     }
 
-    // 协议库只在开发环境允许回环 HTTP 发行方；宿主本身不改环境，只在注册时声明这一点。
-    private sealed class DevelopmentEnvironment : IHostEnvironment
+    // 协议库只在开发环境允许回环 HTTP 发行方；宿主本身不改环境，只在注册时声明这一点（开发期发件箱的登记同样以它声明开发环境）。
+    internal sealed class DevelopmentEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = Environments.Development;
         public string ApplicationName { get; set; } = "qian.dev.shell";
@@ -119,17 +120,19 @@ internal sealed class DevIdentity(Uri issuer, Uri callback, string uiDist, strin
 
     // 同机混合部署：身份的账号接口在 /api 之下，而业务宿主对 /api 一律要求已认证的租户；身份请求与认证页族走自己的分支。
     // 认证页族的托管与安全头是产品扩展（入口与深链接 no-store、/login/assets 长缓存、frame-ancestors 'none'、Referrer-Policy、nosniff），与生产镜像同一份代码。
-    private sealed class IdentityBranchFilter(string uiDist) : IStartupFilter
+    private sealed class IdentityBranchFilter(string uiDist, DevSignup? signup) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
         {
             app.MapWhen(http => http.Request.Path.StartsWithSegments("/api/identity") || http.Request.Path.StartsWithSegments("/connect") ||
-                http.Request.Path.StartsWithSegments("/.well-known") || http.Request.Path.StartsWithSegments(IdentityPagesHosting.PagesPath), branch =>
+                http.Request.Path.StartsWithSegments("/.well-known") || http.Request.Path.StartsWithSegments(IdentityPagesHosting.PagesPath) ||
+                signup?.Owns(http.Request.Path) == true, branch =>
             {
                 branch.UseQianIdentityServer();
                 branch.UseQianIdentityPages(uiDist);
+                signup?.Use(branch);
                 branch.UseRouting(); branch.UseAuthentication();
-                branch.UseEndpoints(endpoints => { endpoints.MapQianIdentityServer(); endpoints.MapQianIdentityAccounts(); });
+                branch.UseEndpoints(endpoints => { endpoints.MapQianIdentityServer(); endpoints.MapQianIdentityAccounts(); signup?.Map(endpoints); });
             });
             next(app);
         };

@@ -1,9 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
-import { AlertDialog, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, Button, Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, ToastList, ToastProvider, useToast } from '@idadawn/yue-core';
+import { AlertDialog, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, Button, Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, Sheet, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, ToastList, ToastProvider, useToast } from '@idadawn/yue-core';
 import { OverlayFormContext } from './overlay-form-context';
 import type { PlatformI18n } from '@idadawn/yue-sdk';
 
-export interface OverlayOptions { title: string; description?: string; content: ReactNode; onClose?: () => void }
+export interface OverlayOptions {
+  title: string; description?: string; content: ReactNode; onClose?: () => void;
+  /** 抽屉宽度档（仅 useDrawer）。 @default 'sm' */
+  size?: 'sm' | 'md' | 'lg';
+  /** 跟在标题后的附加内容，例如状态徽标（仅 useDrawer）。 */
+  extra?: ReactNode;
+}
 export interface OverlayApi { open(options: OverlayOptions): void; close(): void; holder: ReactNode }
 
 /** 三种 API 共享状态与生命周期，焦点、键盘及 ARIA 由 core 原语负责。 */
@@ -15,17 +21,27 @@ function useOverlay(kind: 'modal' | 'drawer' | 'popup', i18n: PlatformI18n, trig
   const lastFocus = useRef<HTMLElement | null>(null);
   const close = () => { const current = activeOptions.current; activeOptions.current = null; setOptions(null); current?.onClose?.(); lastFocus.current?.focus(); };
   const open = (next: OverlayOptions) => { if (!activeOptions.current) lastFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; activeOptions.current = next; setOptions(next); };
+  const [footer, setFooter] = useState<HTMLElement | null>(null);
   const Root = kind === 'drawer' ? Sheet : kind === 'popup' ? Popover : Dialog;
   const Content = kind === 'drawer' ? SheetContent : kind === 'popup' ? PopoverContent : DialogContent;
   const Title = kind === 'drawer' ? SheetTitle : kind === 'popup' ? PopoverTitle : DialogTitle;
   const Description = kind === 'drawer' ? SheetDescription : kind === 'popup' ? PopoverDescription : DialogDescription;
   const Close = kind === 'drawer' ? SheetClose : kind === 'popup' ? PopoverClose : DialogClose;
+  const cancel = <Close render={<Button variant="outline" type="button" />}>{i18n.t('common.cancel')}</Close>;
+  // 抽屉：页头 / 可滚动主体 / 固定页脚；主体里的表单把操作按钮送进页脚（SchemaForm 读 footer）。
+  if (kind === 'drawer') return { open, close, holder: <Sheet open={!!options} onOpenChange={(value) => { if (!value) close(); }}>
+    {options && <SheetContent closeLabel={i18n.t('common.close')} size={options.size} data-slot="form-drawer" testId="yue-form-drawer">
+      <SheetHeader><div className="flex flex-wrap items-center gap-3"><SheetTitle>{options.title}</SheetTitle>{options.extra}</div>{options.description && <SheetDescription>{options.description}</SheetDescription>}</SheetHeader>
+      <SheetBody><OverlayFormContext value={{ cancel, register, footer }}>{options.content}</OverlayFormContext></SheetBody>
+      <SheetFooter>{forms === 0 && <Close render={<Button variant="outline" />}>{i18n.t('common.close')}</Close>}<div ref={setFooter} data-slot="form-drawer-actions" className="contents" /></SheetFooter>
+    </SheetContent>}
+  </Sheet> };
   return { open, close, holder: <Root open={!!options} onOpenChange={(value) => { if (!value) close(); else if (defaultOptions) open(defaultOptions); }}>
     {kind === 'popup' && <PopoverTrigger render={trigger} />}
     {options && <Content {...(kind === 'popup' ? {} : { closeLabel: i18n.t('common.close') })} data-slot={`form-${kind}`} testId={`yue-form-${kind}`}>
       <Title>{options.title}</Title>
       {options.description && <Description>{options.description}</Description>}
-      <OverlayFormContext value={{ cancel: <Close render={<Button variant="outline" type="button" />}>{i18n.t('common.cancel')}</Close>, register }}><div className="my-4">{options.content}</div></OverlayFormContext>
+      <OverlayFormContext value={{ cancel, register }}><div className="my-4">{options.content}</div></OverlayFormContext>
       {forms === 0 && <div className="flex justify-end gap-2"><Close render={<Button variant="outline" />}>{i18n.t('common.close')}</Close></div>}
     </Content>}
   </Root> };

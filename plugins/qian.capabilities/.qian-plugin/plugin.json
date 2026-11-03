@@ -20,6 +20,9 @@
     "Registry",
     "Tenancy"
   ],
+  "optionalInject": [
+    "AuthzSuperadminCheck"
+  ],
   "provides": [
     "Capabilities",
     "ContractAdmission",

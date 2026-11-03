@@ -14,6 +14,8 @@ public static class AuthzDefinition
     public static readonly ServiceKey ResourceTypesKey = new("AuthzResourceTypes");
     /// <summary>平台超管显式旁路端口（<see cref="ISuperadminBypass"/>）；缺失时调用方须 fail-closed。</summary>
     public static readonly ServiceKey SuperadminBypassKey = new("AuthzSuperadminBypass");
+    /// <summary>平台超管只读判定端口（<see cref="ISuperadminCheck"/>，S1-YUE-018）；缺失时调用方按不持角色处理。</summary>
+    public static readonly ServiceKey SuperadminCheckKey = new("AuthzSuperadminCheck");
     /// <summary>解析当前 scope 的授权服务；没有 Provider 时沿用运行时的缺失服务错误。</summary>
     public static IAuthzService Authz(this IPluginContext context) => context.Inject<IAuthzService>(Key);
 }

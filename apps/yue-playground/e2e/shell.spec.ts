@@ -7,7 +7,9 @@ async function login(page: Page) {
   await expect(page.getByLabel(/密码/)).toHaveAttribute('type', 'password');
   await page.getByRole('button', { name: '登录', exact: true }).click();
 }
-async function accessible(page: Page) { await settleVisuals(page); const result = await new AxeBuilder({ page }).analyze(); expect(result.violations.filter(value => ['critical', 'serious'].includes(value.impact ?? ''))).toEqual([]); }
+// 与 gate.spec 相同：只排除 Base UI 立即转移焦点的四类内部 Tab 哨兵，aria-hidden-focus 规则本身保留。
+const focusGuards = '[data-base-ui-focus-guard][aria-hidden="true"][data-type]';
+async function accessible(page: Page) { await settleVisuals(page); const result = await new AxeBuilder({ page }).exclude(focusGuards).analyze(); expect(result.violations.filter(value => ['critical', 'serious'].includes(value.impact ?? ''))).toEqual([]); }
 async function noCredentials(page: Page) {
   const exposed = await page.evaluate(() => ({ url: location.href, frames: [...document.querySelectorAll('iframe')].map(frame => frame.src), local: JSON.stringify(localStorage), session: JSON.stringify(sessionStorage) }));
   expect(JSON.stringify(exposed)).not.toMatch(/mock-(?:access|refreshed)-only-in-memory|access_token|refresh_token|selection_token|demo-password/);
@@ -72,12 +74,12 @@ test('菜单路由、侧栏、偏好、代管横幅及异常恢复可操作', as
   await expect(page.getByRole('link', { name: '应用设置', exact: true })).toHaveAttribute('aria-current', 'page');
   await expect(page.getByRole('link', { name: '开发文档' })).toHaveAttribute('rel', 'noopener noreferrer');
   await page.getByRole('button', { name: '收起侧栏' }).click(); await expect(page.getByRole('button', { name: '展开侧栏' })).toHaveAttribute('aria-expanded', 'false');
-  await page.getByRole('combobox', { name: '主题', exact: true }).click(); await accessible(page); await page.getByRole('option', { name: '暗色' }).click(); await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: '主题', exact: true }).click(); await accessible(page); await page.getByRole('menuitemradio', { name: '暗色' }).click(); await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.getByRole('button', { name: '刷新页面', exact: true }).click(); await expect(page.getByTestId('yue-update-banner')).not.toBeVisible();
   await page.getByRole('button', { name: '模拟渲染失败' }).click(); await expect(page.getByRole('heading', { name: '页面暂时无法使用' })).toBeVisible(); await expect(page.locator('body')).not.toContainText('internal-stack');
   await page.getByRole('button', { name: '重试', exact: true }).click(); await expect(page.getByTestId('yue-fallback-page')).not.toBeVisible();
   await page.getByRole('button', { name: '用户菜单' }).click(); await accessible(page); await page.keyboard.press('Escape');
-  await page.getByRole('combobox', { name: '语言' }).click(); await page.getByRole('option', { name: 'en-US' }).click(); await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible(); await noCredentials(page);
+  await page.getByRole('button', { name: '语言' }).click(); await page.getByRole('menuitemradio', { name: 'English' }).click(); await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible(); await noCredentials(page);
 });
 
 test('浏览器离线事件显示横幅，恢复后保留页面', async ({ page, context }) => {

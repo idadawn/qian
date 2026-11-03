@@ -210,6 +210,7 @@
   --yue-p-brand-975: var(--yue-p-blue-975);
   --yue-background: var(--yue-p-white);
   --yue-foreground: var(--yue-p-neutral-975);
+  --yue-canvas: var(--yue-p-neutral-75);
   --yue-card: var(--yue-p-white);
   --yue-card-foreground: var(--yue-p-neutral-975);
   --yue-popover: var(--yue-p-white);
@@ -227,7 +228,7 @@
   --yue-border: var(--yue-p-neutral-175);
   --yue-input: var(--yue-p-neutral-450);
   --yue-ring: var(--yue-p-brand-600);
-  --yue-sidebar: var(--yue-p-neutral-50);
+  --yue-sidebar: var(--yue-p-white);
   --yue-sidebar-foreground: var(--yue-p-neutral-975);
   --yue-sidebar-primary: var(--yue-p-brand-600);
   --yue-sidebar-primary-foreground: var(--yue-p-white);
@@ -260,6 +261,7 @@
   --yue-table-header-background: color-mix(in srgb, oklch(var(--yue-muted)) 50%, oklch(var(--yue-background)));
   --background: oklch(var(--yue-background));
   --foreground: oklch(var(--yue-foreground));
+  --canvas: oklch(var(--yue-canvas));
   --card: oklch(var(--yue-card));
   --card-foreground: oklch(var(--yue-card-foreground));
   --popover: oklch(var(--yue-popover));
@@ -306,6 +308,7 @@ html.dark, html[data-theme="dark"] {
   color-scheme: dark;
   --yue-background: var(--yue-p-neutral-975);
   --yue-foreground: var(--yue-p-neutral-50);
+  --yue-canvas: var(--yue-p-neutral-975);
   --yue-card: var(--yue-p-neutral-925);
   --yue-card-foreground: var(--yue-p-neutral-50);
   --yue-popover: var(--yue-p-neutral-925);
