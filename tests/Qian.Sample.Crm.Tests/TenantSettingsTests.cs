@@ -139,7 +139,7 @@ public sealed partial class TenantOperationsTests
         // 以仍 active 的 B 请求 A 的客户，和不存在的记录同为404。
         var recordA = await Text($"SELECT id::text FROM plugin_qian_sample_crm.customers WHERE tenant_id='{a.Id}' LIMIT 1");
         using (var cross = await business.Get(b.Id.ToString(), "/api/customers/" + recordA)) Assert.Equal(HttpStatusCode.NotFound, cross.StatusCode);
-        var audit = await source.Audit().ReadPlatformAsync(source, 0, 100, cancellationToken: Ct);
+        var audit = await ReadPlatformChain(source);
         Assert.Contains(audit, entry => entry.Record.Payload.TryGetProperty("bypass", out var bypass) && bypass.GetString() == "superadmin");
         TestContext.Current.TestOutputHelper?.WriteLine($"跨宿主配置生效 {propagation.TotalMilliseconds:F0} ms，Identity 用量缺席，六步流程通过。");
 
