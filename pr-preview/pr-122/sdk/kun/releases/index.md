@@ -1,0 +1,1224 @@
+> For AI agents: the complete documentation index is available at /pr-preview/pr-122/llms.txt, the full documentation bundle is available at /pr-preview/pr-122/llms-full.txt.
+
+# Changelog
+
+:::info 镜像页
+本页镜像自 kun 仓库 [`CHANGELOG.md`](https://github.com/idadawn/kun/blob/v2026.10.14/CHANGELOG.md)（`v2026.10.14`）。Kun 文档与代码不一致处以代码为准（[ADR-001 D1.8](/pr-preview/pr-122/design/adr/adr-001-kun-relationship.md)）；Qian 对 Kun 的选用与约束见[与 Qian 的关系](/pr-preview/pr-122/sdk/kun/with-qian.md)。改动请提到 kun 仓库。
+:::
+
+本文档记录 Kun Framework 的所有显著变更。
+
+格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。版本号采用 **CalVer**（`vYYYY.M.D[-hotfix.N|-beta.N]`，从 `main` 打 tag，见 `CONTRIBUTING.md`）；更早的历史条目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
+
+## [Unreleased]
+
+## \[2026.10.14] - 2026-10-14
+
+### Added — 事件契约独立包（S1-KUN-010）
+
+- 新增 `Kun.EventBus.Abstractions`，提供稳定事件标记、事件类型查询及含 `JsonTypeInfo<T>` 的注册端口，只依赖 `Kun.Core`；事件契约包不再传递引入 Redis 或宿主实现。
+- `IIntegrationEvent` 复用 Core 中既有类型并通过新包导出；原 `Kun.EventBus` 对迁移类型保留转发，命名空间、公开签名和持久化事件 ID 均兼容。宿主继续引用 `Kun.EventBus`。
+
+## [2026.10.13] - 2026-10-13
+
+### Fixed — 受保护请求的运行期兜底（S1-KUN-014）
+
+- `KunMediatorBuilder` 构建 Mediator 时核对：实现 `IPermissionProtectedRequest` 的请求必须同时经 `AddPermissionBehavior<TRequest, TResponse>(denied)` 装配权限行为，否则首次解析 `ISender` / `IPublisher` 即抛出 `InvalidOperationException` 并列出漏装的请求类型，处理器不会执行。直接或经反射调用 `AddRequestHandler` 绕过下游编译期门禁的注册同样被拒绝。**行为变更**：此前漏装权限行为的受保护请求会被直接执行，升级后须补齐 `AddPermissionBehavior`。
+
+### Changed — 同日修复版之后的无后缀正式版
+
+- 首个包含 `2026.10.12-hotfix.2`（共享 EF 模型的租户上下文绑定）与 `2026.10.12-hotfix.3`（授权主体类型透传）修复的无后缀版本。`-hotfix.N` 在 NuGet 中按预发布排序，此前 nuget.org 的最新稳定版仍是不含这两处修复的 `2026.10.12`。
+
+## [2026.10.12-hotfix.3] - 2026-10-12
+
+### Fixed — 授权主体类型透传
+
+- HTTP、四种 gRPC 与 Mediator PEP 保留已认证主体的 user/service/agent 类型，服务身份不再默认按同名 user 查权限。未知或歧义类型在进入处理器前拒绝；不改变 S2S 签发端对 Agent 的保留限制。
+- ICurrentUser 增加来自 principal_kind 的只读 PrincipalKind，旧适配器通过默认接口实现保持 user；JWT 和浏览器适配器读取已认证主身份，拒绝冲突标识与重复关键 claim，不从次身份拼接权限主体。没有类型声明的旧浏览器身份继续按 user 处理，机器身份适配器必须提供真实类型。
+- 宿主复用 Kun.Security 的离线 claim 读取器；不增加身份接口族，不从普通请求头推断身份。回归覆盖真实 RSA 签名 HTTP、gRPC 四形态及 Mediator 的同名主体隔离。
+- 补记：该标签发布时本节仍留在 [Unreleased]，2026-10-13 随 2026.10.13 归入本版本。
+
+## [2026.10.12-hotfix.2] - 2026-10-12
+
+### Fixed — 同日修复版发布校验
+
+- 原尝试标签 `v2026.10.12-2` 因纯数字后缀被 nuget.org 的包清单校验拒绝，保留该失败标签。改用字母加点分段的 `hotfix.N`，脚本与 CI 复用版本/日期校验；推送前核对实际包、符号包和 Kun 内部依赖的版本及发行物完整性。
+
+### Fixed — 共享 EF 模型的租户上下文绑定
+
+- `KunDbContext` 查询过滤器改从当前执行查询的 DbContext 读取租户，修复缓存模型继续引用旧宿主或旧请求访问器的问题。旧访问器退出或换租户时，新请求不再查询空集或错误租户。
+- `ApplyKunMultiTenantFilters` 增加 DbContext 重载。**迁移要求**：原访问器重载标记 KUNTENANT001 并在模型构建时明确拒绝；非 KunDbContext 消费者须实现 IKunMultiTenantDbContext 并改传 `this`。仅捕获常量值无法兼容默认共享模型，因此不保留会固定到旧租户的降级路径。KunDbContext 消费者自动获得修复，RLS 双层装配保留。
+- 真实 PostgreSQL 回归验证同一模型在独立租户访问器之间复用的两种失效场景；NuGet 消费者应精确钉定 `2026.10.12-hotfix.2`，避免版本排序选回同日基础版。
+
+## [2026.10.12] - 2026-10-12
+
+### Fixed — Apollo 原始 namespace 校验
+
+- 增加可选 `ValidateNamespace`，在合并、缓存写入和离线缓存读取前逐份检查原始配置。宿主的敏感数据规则因此可以拦截被后续 namespace 覆盖的明文；任何一份被拒绝都不替换最后有效快照。
+
+## [2026.10.11] - 2026-10-11
+
+### Fixed — Mediator 权限行为启动校验
+
+- `AddPermissionBehavior` 移除通用管道登记附带的构造器注册，只保留能处理可选权限／身份／租户端口及拒绝回调的工厂。开启 `ValidateOnBuild` 时不再因重复登记报缺少服务；重复登记仍能通过依赖校验，缺少身份或引擎继续在 handler 前拒绝。
+
+### Fixed — Identity 客户端与唯一 S2S 签发入口（S1-KUN-004）
+
+- 授权码交换必须发送原始 PKCE verifier 并验证签名/issuer/audience/nonce；补 refresh、client credentials 与有期限的 discovery 缓存。浏览器事务受保护并防重放，完成辅助服务与认证方案可直接解析，保留宿主显式方案。
+- 内存与 Redis 会话增加原子续期、按用户吊销及带重放保护的后通道登出；吊销后续期不得复活会话。默认验证 cookie 写请求的防跨站令牌；sid 日志只记 SHA256 与错误类型，并加入静态门禁。
+- 网关统一封闭 S2S 形状：aud/roles 数组、规范 UUID、用户/服务主体、会话/修订/成员上下文、1–300 秒 TTL 与每跳受众。拒绝缺失身份，不再转发任意 permission/email/trace 字段；两套旧签发入口标 KUNS2S001。
+- Sandbox 默认模板改为 kun-default，增加调用方命名的 JSON 扩展并防止覆盖核心字段；保留显式旧扩展的兼容序列化，标记废弃。
+- 此版本有迁移要求：规范身份字段、旧 cookie 重新登录、Redis 新键空间和原子接口、Data Protection 共享密钥。详见 [Identity 客户端指南](/pr-preview/pr-122/sdk/kun/guides/identity-client.md)。框架协议夹具不能替代尚未交付的真实 Qian 身份服务联调。
+
+### Fixed — 网关与流式 gRPC 边界（S1-KUN-003）
+
+- 网关业务路由默认认证并绑定限流，显式匿名白名单保留；超限返回 429 和可用的 Retry-After，匿名路由不透传未验证凭据。
+- 转发头只接受配置的代理 IP/CIDR，空名单关闭处理；IP 分区只读归一化地址，阻止伪造 X-Forwarded-For 切桶。
+- 签发与 JWKS 共用 RSA 热轮换状态，无重启发布新 kid，重叠窗口保留旧公钥、到期移除；坏替换保留最后有效密钥。跨副本轮换与消费者缓存边界见安全文档。
+- gRPC 认证、Result 映射与追踪覆盖 unary、客户端流、服务端流和双向流，缺少租户在 handler/应用首帧前拒绝；独立网关启用观测并保持 AOT 门禁。EF 观测路径由运行时特性守卫从原生二进制裁掉；AOT 宿主须显式关闭该选项。
+- 新增真实 Kestrel/HTTP2 网关和 gRPC 回归，覆盖匿名 401、默认/自定义限流、代理信任、密钥轮换及四种 RPC 的认证/映射/trace。
+
+### Fixed — Saga 作用域与步骤可靠性（S1-KUN-007）
+
+- Saga 改为实际作用域工厂，移除注册期临时容器，持久化稳定 `ISaga.Name` 并兼容旧类名实例。
+- PostgreSQL 实例行锁覆盖步骤与状态/队列提交，超时检测共用行锁并复核状态，阻止双副本重复执行与陈旧条目倒退状态。
+- 成功、部分失败及补偿均回写上下文；失败本地写入回滚至保存点。步骤遵守单步取消期限，宿主关闭回滚待恢复，不触发业务补偿。
+- 增加可配置、有持久化退避的步骤重试；默认一次保持兼容，附 Order 示例的 NextAttemptAt 迁移。远程副作用仍需幂等键。
+
+## [2026.10.9] - 2026-10-10
+
+### Added / Fixed — 平台基础端口（S1-KUN-006）
+
+- 配置重载失败保留最后有效值并告警，支持关键／可选配置与源生成 JSON Schema；新增 Apollo HTTP provider（长轮询、AccessKey、通知修订、快照校验与缓存）。
+- 新增 `Kun.Authorization` 权限／数据／字段端口及 HTTP、Mediator、gRPC 四种调用形态集成，缺失引擎时拒绝；不内置 RBAC/ABAC 实现。
+- handler 注册支持 `JsonTypeInfo` 与稳定能力 ID，通过 `ICapabilityRegistry` 枚举请求和响应 Schema。
+- `KunExceptionHandler` 改经 `IProblemDetailsService`，允许宿主接管错误体；Dapper 新增不可变 options 工厂重载；慢调用阈值可配置。
+- 旧基础设施接口与旧存储接口标记 `KUNLEGACY001`，保留兼容实现。下游门禁应区分旧接口 `Kun.Storage.Abstractions.IFileStorage` 与新包中的 `Kun.Storage.IFileStorage`。
+
+### Fixed — 审计原子性与数据约定（S1-KUN-005）
+
+- `AddKunAuditing<TContext>()` 将实体 `AuditLog` 与 `kun.audit.event.v2` Outbox 消息直接登记到业务上下文；保存失败会撤销暂存记录，避免重试生成重复审计。租户、用户来自当前上下文，v2 支持字符串标识；旧 v1 类型保留读取兼容。
+- 事后写入的 `AuditSaveChangesInterceptor`、旧 `UseEventBus()` 与 `kun.audit.record.v1` 路径标记废弃，迁移指引见 [审计文档](/pr-preview/pr-122/sdk/kun/security/audit-log.md)。
+- `PostgresAuditChain` 在事务里按租户行锁串行化读取链头、写记录并推进链头，保存原始时间 ticks，支持多副本与哈希重放。`AuditEntry.ActorType` 支持 `agent` 并纳入新哈希，历史 unknown 条目维持旧算法。
+- `EfAuditReader<TContext>` 在数据库端按当前租户、主体、资源、时间窗口过滤并限量。
+- 显式数据约定提供 snake_case、Guid v7 默认主键、可空审计主体及 PostgreSQL `xmin`；`SaveChangesResultAsync()` 将并发冲突映射为 `Result` 的 Conflict。已有非空主键保持不变，旧非空数值主体需要显式迁移。
+
+### Fixed — Outbox 与消费可靠性（S1-KUN-002）
+
+- Catalog 真库测试确认旧领域通知路径会丢失集成事件；领域通知改为提交前同 scope 派发，失败时禁止提交半个通知链。
+- 默认 EF Outbox 存储使用 PostgreSQL `FOR UPDATE SKIP LOCKED` 领取与提交批次；新增持久化 `NextAttemptAt` 指数退避，附两份示例迁移。自定义非事务存储不再默认无锁。
+- RabbitMQ 开启发布确认与 mandatory 路由，消费者成功后才记录幂等并 ack，失败经持久化 quorum 队列退避后进 DLX；保留共享连接自动恢复。业务 handler 仍需幂等。
+- 恢复原先跳过的幂等测试，补齐双副本发布、handler 失败重试与 broker 重启验收；见 [消息指南](/pr-preview/pr-122/sdk/kun/guides/outbox-and-integration-events.md) 的迁移边界。
+
+## [2026.10.8] - 2026-10-08
+
+### Fixed — 多租户后台链路（S1-KUN-001）
+
+- `ITenantContext.BeginScope` 使消息消费、Outbox 发布和 Saga 执行／补偿显式恢复租户；租户校验复用同一白名单，缺少租户的多租户消息直接进入死信队列。
+- `AddKunSecurity` 与 `AddKunMultiTenancy` 共用 `AsyncLocalTenantContext`，JWT 仅提供已认证的解析来源；显式后台作用域优先且结束后恢复原值。
+- `Production` 模式只接受合法令牌的唯一 `tenant_id`，忽略请求头与默认租户回退，失败返回 401；开发兼容模式仍可显式配置旧 claim 和请求头。
+- 新增 `AddKunTenantRls<TContext>()` 自动装配连接版、事务版拦截器和 `KunMultiTenantModelCacheKeyFactory`；`KunDbContext` 实现统一缓存键接口。无泛型旧重载保留注册语义，已有手动装配继续兼容。
+- RabbitMQ 新增 `tenant_id` 信封头，兼容读取与发送旧 `tenantId` 头（至少两个小版本）；本次不变更 ack／重试／幂等语义。
+
+### Changed — 仓库地址
+
+- 仓库于 2026-10-08 从 CavaiLAB 组织迁回 `idadawn/kun`（[https://github.com/idadawn/kun](https://github.com/idadawn/kun)），与 iclaw、iclaw-deploy 同一所有者；旧地址自动重定向。GitHub Packages 镜像自下一个版本起发布在 idadawn 名下，nuget.org 上的 `Kun.*` 不受影响。本文件的版本比较链接已改为新地址。
+
+### Fixed — 发布配置隔离
+
+- GitHub Packages 发布使用当前步骤专属的临时 NuGet 配置，并在步骤退出时删除，避免把短期凭据和额外包源遗留在共享执行器，导致后续还原触发 NU1507。
+
+### Fixed — 文档
+
+- 修正本文件两处越出仓库根目录的相对链接；`docs/architecture/when-to-use-currentuser.md` 的决策表补齐两行缺失的列（#42）。
+
+## [2026.9.13] - 2026-09-13
+
+### Fixed — 测试依赖漏洞门禁
+
+- 将 Testcontainers 引入的 SSH.NET 在四个测试项目中明确锁定到修复版本 2026.0.0，保留 NU1903 检测；不向生产包添加该依赖。参见 [GHSA-q939-rpr3-3284](https://github.com/sshnet/SSH.NET/security/advisories/GHSA-q939-rpr3-3284)。
+
+### Fixed — 网关与服务的身份上下文一致性
+
+- 网关保留可执行宿主，同时支持 NuGet 打包，便于消费方复用既有 AddKunGateway、发行器和公钥端点，而不复制网关实现。
+- 统一网关和下游对 role / roles / ClaimTypes.Role 的处理并去重，避免内部令牌携带的角色在 ICurrentUser 中丢失。
+- 新增显式 ForwardedClaimTypes 白名单，支持会话标识、授权版本和权限字段；保留声明、数量和有效期边界，默认不转发额外字段。
+- 公钥端点明确使用已有源生成序列化上下文，修复 Native AOT 程序实际调用 JWKS 返回 500。
+- 内部令牌增加与 JWKS 一致的 kid 及独立 jti，拒绝超过五分钟或非正的 TTL；YARP 转换改为等待异步解析并传播请求取消。
+- 增加实际 JWT 中间件的网关签发到下游身份读取回归，验证角色、租户、会话版本和选定权限字段。
+
+### Added — OSS Live Smoke 按需 CI 工作流
+
+- 新增 `.github/workflows/oss-live-smoke.yml`：把既有的 `OssFileStorageLiveSmokeTests`（实弹 OSS 预签名 PUT/GET 验证）接入 `workflow_dispatch` + 每日定时（03:27 UTC）的可选 job。此前该测试只能在本地或下游消费者手动跑，从不被任何 CI 触发（见 PR #12 遗留的"实弹 OSS e2e"项）。
+- 仅当配置了 `OSS_SMOKE_*` 四个仓库 secrets 时真正验证；缺失时测试自跳过，job 仍绿，并由 "Check credentials" 步骤打印警告，避免把"跳过"误读为"已验证"。定时任务以 `if: github.repository == 'idadawn/kun'` 限定，fork 不触发。
+
+## \[2026.6.12] - 2026-06-12
+
+首个 CalVer 版本，也是全部可打包模块首次推送 NuGet.org 的正式版。除下列当日变更外，本版还包含此前积压在 Unreleased 的全部 2026-04-22 ～ 04-24 交付（见本节后半部分）。
+
+### Fixed — Kun.sln 完整性：20 个 src/tests 项目纳入 CI 构建与测试门禁 (#24)
+
+- `Kun.sln` 此前缺失 11 个 src 项目（Audit.EntityFrameworkCore、Caching、Configuration、Identity、Identity.AspNetCore、MultiTenancy、MultiTenancy.EntityFrameworkCore、Observability、RateLimit、Sandbox、Storage）与 9 个测试项目——CI 按 sln 构建，这些测试（200+ 用例，仅 Kun.Identity.Tests 即 47 个）从未在 CI 运行，src 侧仅靠 AOT audit 矩阵兜底。
+- 同步修复缺失测试项目在 Release + TreatWarningsAsErrors 下积累的分析器违规（CA1305 / CA1861 / IDE0005）。
+
+### Added — benchmarks 项目纳入 CI 编译门禁 (#25)
+
+- `Kun.Benchmarks` 与 `Kun.Benchmarks.Grpc` 加入 `Kun.sln`，并修复其相对 `Kun.Storage` 现行 API 的编译漂移，防止基准代码静默腐烂。
+
+### Fixed — Kun.Observability 稳定版打包被 NU5104 阻断 (#26)
+
+- `OpenTelemetry.Instrumentation.EntityFrameworkCore` 上游从未发布稳定版（beta-only，当前 1.15.1-beta.1）。`Kun.Observability` 入 sln 后首次被 `dotnet pack` 打包，即触发 NU5104（稳定包不得携带预发布依赖）并被 TreatWarningsAsErrors 升级为错误，阻断发版。在该 csproj 定点 `NoWarn` 并以注释记录上游现状（上游转正后应回顾移除）。
+
+### Fixed — 测试稳定性：消除两处高频 CI flaky (#27 / #28 / #29)
+
+- `LogBaggageEnrichmentTests` 从未启动自身 trace 管道，依赖同程序集并行测试的进程级 ActivitySource 监听器“碰巧在场”；无监听器瞬间 `StartActivity` 返回 null，断言失败。现于 `BuildLoggerFactory` 中 eager resolve `TracerProvider` 使测试自给自足，静默 null 守卫改为显式断言 (#27)。
+- PgBouncer 100 并发压测的 TCP+auth 风暴在高负载共享 runner 上压垮单线程 pgbouncer 的 accept 循环，内核重置表现为 `Exception while reading from stream`：并发收敛到 30 限流闸门（仍高于 25 个后端槽，连接换绑的被测语义不变）+ 仅对 transient 异常 ≤3 次退避重试，prepared-statement 错误（PostgresException）永不重试 (#28)；fixture 补 `UntilPortIsAvailable(6432)` 等待策略，关闭“容器进程已起、监听 socket 未绑定”的启动竞态窗口 (#29)。
+
+### Added — Kun.Testing.EntityFrameworkCore module with OutboxAssertions (2026-04-24)
+
+- **KN-SELF-014 (scaffold) + KN-SELF-016 (tests + docs) together
+  close ADR-015 §F3**. Ships the sibling module to
+  `Kun.Testing` for EF-persisted Outbox assertion helpers.
+- **New `src/Kun.Testing.EntityFrameworkCore/` module** —
+  `IsAotCandidate=false` (matches `Kun.EntityFrameworkCore`),
+  `IsPackable=true`, `HasPublicApi=true`. ProjectReferences
+  `Kun.Testing` (reuses `KunAssertionException`) +
+  `Kun.EventBus` (the `OutboxMessage` type under test).
+  PackageReference `Microsoft.EntityFrameworkCore`.
+- **`OutboxAssertions` class** — six extension methods, 3
+  helpers × 2 overload families:
+  - `IEnumerable<OutboxMessage>` overloads (primary, no
+    `DbContext` dep required): `ShouldHaveOutboxMessage(eventTypeId)`,
+    `ShouldHaveExactlyOneOutboxMessage(eventTypeId)` (returns
+    the matched `OutboxMessage`), `ShouldNotHaveOutboxMessage(eventTypeId)`.
+  - `DbContext` overloads (one-liner convenience — delegate
+    to `db.Set<OutboxMessage>().AsEnumerable().ShouldXxx(...)`):
+    same three helpers.
+- **Mismatch-message shape**: helper name + expected
+  `EventTypeId` + observed match count + distinct
+  `EventTypeId`s actually present (sorted, comma-joined).
+  That last field tells the consumer what WAS staged on
+  failure — dramatically shorter round-trip when the test
+  was set up wrong.
+- **Tests** (`tests/Kun.Testing.EntityFrameworkCore.Tests/`):
+  11 tests covering every helper × overload × pass/fail path;
+  `UseInMemoryDatabase(Guid.NewGuid().ToString())` per test
+  keeps the `DbContext` overload fixtures hermetic.
+- **Cross-links**: `Kun.EventBus/AGENTS.md` §Testing
+  Requirements now points at the new module as the canonical
+  Outbox test-helper surface; `Kun.Testing/AGENTS.md`
+  sibling-module note links to the EntityFrameworkCore
+  variant for tests that need an EF-Core dependency.
+- **Consumer usage**:
+  ```csharp
+  await _mediator.Send(new PlaceOrderCommand(...), ct);
+  _dbContext.ShouldHaveExactlyOneOutboxMessage("order.placed.v1");
+  ```
+
+### Security — Resolve NU1902 / GHSA-g94r-2vxg-569j on OpenTelemetry.Api 1.12.0 (2026-04-24)
+
+- **KN-SELF-015** closes the NU1902 advisory
+  ([GHSA-g94r-2vxg-569j](https://github.com/advisories/GHSA-g94r-2vxg-569j),
+  moderate severity) against `OpenTelemetry.Api 1.12.0`, which
+  was entering the transitive graph of `Kun.Sample.Catalog` +
+  `Kun.Sample.Tests` via
+  `OpenTelemetry.Instrumentation.EntityFrameworkCore 1.12.0-beta.1`.
+- **Fix** (`ce910a4`): `Directory.Packages.props` OpenTelemetry
+  group bumped — `OpenTelemetry.Api` explicitly pinned to
+  **1.15.3** (patched), plus companion pins on `OpenTelemetry` /
+  `OpenTelemetry.Extensions.Hosting` / `OpenTelemetry.Exporter.*`
+  to 1.12.0 to keep the group coherent. CPM now force-resolves
+  the transitive dependency up to the patched line.
+- **Operator impact**: `dotnet build Kun.sln -c Release
+  -p:TreatWarningsAsErrors=true` returns to 0 errors
+  (NuGetAudit no longer promotes NU1902 to error). No source-
+  or behaviour-level changes; purely a dependency graph
+  tightening. Downstream consumers of Kun that pin
+  `OpenTelemetry.Api` directly should align on 1.15.3 to
+  avoid a version conflict at restore.
+
+### Added — Non-generic `Result` variant of ValidationResultPipelineBehavior (2026-04-24)
+
+- **KN-SELF-012** closes **ADR-014 §F1** — the deferred
+  non-generic `Result` variant of the Result-returning validation
+  pipeline behavior originally shipped by KN-SELF-007.
+- **`Kun.Validation.Behaviors.ValidationResultPipelineBehavior<TRequest>`** —
+  new sibling class in the same file as the generic
+  `ValidationResultPipelineBehavior<TRequest, TValue>`, constrained
+  as `IPipelineBehavior<TRequest, Result>` where
+  `TRequest : IRequest<Result>`. Same validator loop, same
+  `"; "`-joined `Error.Validation("request.invalid", …)` shape;
+  returns `Result.Fail(...)` instead of `Result<TValue>.Fail(...)`.
+- **`KunMediatorBuilder.AddValidationResultBehavior<TRequest>()`** —
+  new single-type-param overload on
+  `KunValidationServiceCollectionExtensions`, closing for
+  `IRequest<Result>` specifically. Mirrors the existing
+  two-type-param overload's registration pattern.
+- **Consumer impact**: void-returning commands (e.g.
+  `DeleteUserCommand : IRequest<Result>`) that want validation
+  failures surfaced as `Result.Fail` no longer need to either
+  throw `ValidationException` (via the legacy
+  `ValidationPipelineBehavior`) or hand-roll a try/catch
+  adapter. Register per-request exactly like the generic
+  variant: `builder.AddValidator<DeleteUserCommand, DeleteUserValidator>()
+  .AddValidationResultBehavior<DeleteUserCommand>();`.
+- **Tests**: `tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs`
+  picks up 3 new scenarios mirroring the generic-variant path —
+  validator-fail → `Result.Fail(request.invalid)`, multi-validator
+  aggregation, and handler-level `Result.Fail` preserved
+  untouched. 20/20 Kun.Validation tests pass (17 existing + 3 new).
+- **AOT**: behavior and DI overload are both AOT-safe — no
+  reflection, closed generics compile-time-known,
+  `Kun.Validation` ILC 0-warning.
+
+### Changed — HasPublicApi sweep complete across all framework modules (2026-04-24)
+
+- **KN-SELF-010** finished the pilot started by KN-SELF-008
+  (Kun.Observability) and KN-SELF-009 (Kun.Sandbox). The remaining
+  11 modules now track strict public API via
+  `PublicApiAnalyzers`:
+  - `Kun.Audit`, `Kun.Audit.EntityFrameworkCore`
+  - `Kun.Caching`, `Kun.Configuration`
+  - `Kun.Identity`, `Kun.Identity.AspNetCore`
+  - `Kun.MultiTenancy`, `Kun.MultiTenancy.EntityFrameworkCore`
+  - `Kun.RateLimit`, `Kun.Security`, `Kun.Storage`
+- Each got its csproj flag flipped to `<HasPublicApi>true</HasPublicApi>`,
+  a seeded empty `PublicAPI.Shipped.txt`, and an auto-populated
+  `PublicAPI.Unshipped.txt` (via `dotnet format analyzers --diagnostics=RS0016` — the Roslyn code fix walks the assembly
+  and writes canonical entries in one pass).
+- **`Kun.Identity.AspNetCore/SignInHelper.cs`** picked up a
+  file-level `#pragma warning disable RS0026` (same
+  shape-distinguished dual overload pattern as
+  `Kun.Sandbox/Abstractions/IProcesses.cs`).
+- **Post-sweep invariant**: `grep -rE
+  "<HasPublicApi>false</HasPublicApi>" src/` now returns zero.
+  Any new framework module must ship with the flag on, matching
+  the convention across the entire `src/Kun.*` tree.
+- **Operator impact**: any future public-symbol change across
+  any Kun module fails the analyzer gate until reviewed and
+  added to the relevant `PublicAPI.Unshipped.txt`. Closes the
+  drift surface that existed before KN-SELF-008.
+
+### Changed — Kun.Sandbox now tracks public API strictly (2026-04-24)
+
+- **`src/Kun.Sandbox/Kun.Sandbox.csproj`** flipped
+  `<HasPublicApi>false</HasPublicApi>` → `true`.
+- **Seeded `PublicAPI.Shipped.txt`** (empty) and
+  **`PublicAPI.Unshipped.txt`** enumerating the ≈15 public types
+  and their members — `ISandboxProvider` / `ISandboxHandle` /
+  `IProcesses` / `IFiles` / `SandboxState`, the three
+  implementations (`SupervisorSandboxProvider`,
+  `E2BCloudSandboxProvider`, `InMemorySandboxProvider`), the
+  E2B-shaped DTOs (`SandboxCreateOptions`,
+  `NeuroagentSandboxExtension`, `SecretScopeConfig`,
+  `BrowserSessionConfig`, `FileEntry`, `ProcessRunOptions`,
+  `ProcessResult`), `KunSandboxOptions`, and the
+  `AddKunSandbox` extension. 120 entries; auto-emitted by
+  `dotnet format analyzers --diagnostics=RS0016` (the Roslyn
+  code fix) rather than hand-written.
+- **`IProcesses.RunAsync` pre-existing dual-overload**
+  (`string[]` vs `string` first param) suppressed with a
+  file-level `#pragma warning disable RS0026` and an explanatory
+  comment — overload resolution is unambiguous on parameter
+  shape, not optional-param count, so the analyzer's
+  backcompat rule does not apply.
+- **Operator impact**: any future public-symbol change in
+  `Kun.Sandbox` now fails the `PublicApiAnalyzers` check until
+  reviewed and added. No runtime behaviour changes.
+- Second module in the KN-SELF-008 pilot sweep. Remaining
+  `HasPublicApi=false` modules are the `*.EntityFrameworkCore`
+  family + `Kun.AspNetCore`; next cycle evaluates per-module.
+
+### Changed — Kun.Observability now tracks public API strictly (2026-04-24)
+
+- **`src/Kun.Observability/Kun.Observability.csproj`** flipped
+  `<HasPublicApi>false</HasPublicApi>` → `true`.
+- **Seeded `PublicAPI.Shipped.txt`** (empty — convention for a new
+  tracking file) and **`PublicAPI.Unshipped.txt`** enumerating the
+  current public surface: `KunObservabilityOptions` + every
+  property, `KunObservabilityServiceCollectionExtensions.AddKunObservability`,
+  `Enrichment.KunBaggageKeys` + `TenantId` / `UserId` /
+  `OutboxMessageId` constants + `All` array.
+- **Operator impact**: any future public-symbol change in
+  `Kun.Observability` now fails the `PublicApiAnalyzers` check
+  until the diff is reviewed and added to the `.Unshipped.txt`,
+  matching the discipline in place on `Kun.Core`, `Kun.Mediator`,
+  `Kun.Validation`, and other user-facing modules. No runtime
+  behaviour changes.
+- **Scope note**: pilot for the remaining
+  `HasPublicApi=false` modules (e.g. `Kun.Sandbox`). Those flips
+  will land as separate KN-SELF-xxx tasks — one module at a time
+  to keep each `PublicAPI.Unshipped.txt` review small.
+
+### Added — ADR-014 Result-returning validation behavior (2026-04-24)
+
+- **docs/architecture/ADR-014-Validation-Result-behavior.md** —
+  accepted. Design for a sibling pipeline behavior to the existing
+  exception-throwing `ValidationPipelineBehavior`: on validator
+  failure, returns
+  `Result<TValue>.Fail(Error.Validation("request.invalid", ...))`
+  instead of throwing. Directly consumes ADR-011 `Result<T>`
+  composition.
+- **`Kun.Validation.Behaviors.ValidationResultPipelineBehavior<TRequest, TValue>`** —
+  new sealed class implementing
+  `IPipelineBehavior<TRequest, Result<TValue>>` with
+  `where TRequest : IRequest<Result<TValue>>`. Aggregates
+  validator errors into one joined message; empty-validators
+  fast-path.
+- **`AddValidationResultBehavior<TRequest, TValue>`** extension on
+  `KunMediatorBuilder` — explicit per-request-type registration,
+  matches the existing `AddValidator<>` / `AddValidationBehavior<>`
+  pattern. The generic constraint on `TResponse` cannot be
+  expressed at the open-generic DI layer (ADR-014 §DI
+  registration).
+- **5 new tests** in
+  `tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs`
+  covering: empty validators pass-through, validator pass, validator
+  fail → Result.Fail with `request.invalid` code, multi-validator
+  aggregation with `;` separator, handler-level `Result.Fail` is
+  **not** intercepted (domain error preserved).
+- **Coexistence rule** with the throwing `ValidationPipelineBehavior`:
+  register one or the other per request type, not both — doc
+  guardrail in `src/Kun.Validation/AGENTS.md`.
+- **Scope notes**: non-generic `Result` variant deferred as ADR-014
+  §F1. Structured per-field error payload deferred as §F2. Source-
+  generator-based bulk registration deferred as §F3. No new
+  `<PackageReference>`; `Kun.Validation` keeps
+  `IsAotCandidate=true`.
+
+### Added — ADR-013 §F1 log-record enricher (2026-04-24)
+
+- **docs/architecture/ADR-013-Kun.Observability-enricher.md** —
+  amended with a new §F1 resolution section. The prior §Follow-ups
+  F1 entry is now annotated "Resolved 2026-04-24 (KN-SELF-006)"
+  with a pointer to the new section.
+- **`Kun.Observability.Enrichment.KunBaggageLogRecordProcessor`**
+  (internal) — `BaseProcessor<LogRecord>` that runs at `OnEnd`,
+  reads `Activity.Current?.Baggage`, and mirrors whitelisted keys
+  (`tenant.id`, `user.id`, `outbox.message_id`) onto
+  `LogRecord.Attributes`. Idempotent: never overwrites an
+  attribute the log statement set explicitly. No-op when no
+  `Activity.Current` exists.
+- **`KunObservabilityOptions.EnrichLogsFromBaggage`** — new flag,
+  default `false` (opt-in, mirrors `EnrichActivitiesFromBaggage`
+  posture). Setting it to `true` registers the processor into the
+  logging pipeline at `AddKunObservability` time.
+- **4 new tests** in `tests/Kun.Observability.Tests/LogBaggageEnrichmentTests.cs`
+  via `OpenTelemetry.Logs.InMemoryExporter`: baggage→attribute
+  happy path, flag-off path, caller-set-attribute-preserved path,
+  no-active-activity no-crash path.
+- **AOT / package deltas**: zero new `<PackageReference>`;
+  processor and tests use only already-referenced OpenTelemetry
+  APIs. `Kun.Observability` keeps `IsAotCandidate=true`.
+- **Operator impact**: flipping both
+  `EnrichActivitiesFromBaggage = true` and
+  `EnrichLogsFromBaggage = true` on `AddKunObservability`
+  options now produces Aspire / Jaeger / Kibana queries where the
+  same `tenant.id=…` filter works uniformly across the trace UI
+  and the log view — no hand-joining.
+
+### Added — ADR-013 Kun.Observability baggage enricher (2026-04-24)
+
+- **docs/architecture/ADR-013-Kun.Observability-enricher.md** —
+  accepted. Baggage-driven activity enrichment: consumer code
+  pushes `tenant.id` / `user.id` / `outbox.message_id` into
+  OpenTelemetry baggage at the request boundary; the framework
+  mirrors those whitelisted keys onto Kun-sourced span tags so
+  Aspire / Jaeger operators can filter by tenant / user without
+  hand-correlating spans to logs.
+- **`Kun.Observability.Enrichment.KunBaggageKeys`** — public
+  static class exposing the canonical baggage key names and
+  `All` array for iteration.
+- **`Kun.Observability.Enrichment.KunBaggageActivityProcessor`**
+  (internal) — `BaseProcessor<Activity>` that runs at `OnEnd`
+  for activities whose `ActivitySource.Name` is in
+  `KunActivitySources.All` and mirrors the whitelisted baggage
+  subset to span tags.
+- **`KunObservabilityOptions.EnrichActivitiesFromBaggage`** —
+  new flag, default `false` (opt-in per ADR-013 §Default
+  posture). Setting it to `true` registers the processor into
+  the `TracerProviderBuilder` at `AddKunObservability` time.
+- **7 new tests in `tests/Kun.Observability.Tests/BaggageEnrichmentTests.cs`**
+  — processor-level unit tests (manual `TracerProviderBuilder` +
+  `AlwaysOnSampler` + `OpenTelemetry.Exporter.InMemory`) plus
+  DI-wired integration tests verifying the option flag both on
+  and off.
+- **AOT / package deltas**: zero new `<PackageReference>` on
+  `Kun.Observability.csproj`; module stays `IsAotCandidate=true`.
+  `HasPublicApi` stays `false` for this module — tracking a
+  future flip as a separate framework-wide task so every
+  `Kun.*` module adopts strict API tracking together.
+- **Out of scope** (ADR-013 F1–F3): log-record enricher,
+  metric-dimension enricher, Aspire sample-dashboard demo.
+
+### Added — ADR-012 Kun.Testing module (2026-04-24)
+
+- **docs/architecture/ADR-012-Kun.Testing-module.md** — accepted. New
+  top-level `Kun.Testing` module at the Abstraction layer:
+  AOT-candidate, packable, depends on `Kun.Core` only, takes no
+  third-party runtime `PackageReference`. Framework-agnostic
+  (`KunAssertionException` on mismatch rather than xUnit-coupled
+  throws) so consumers on any test framework consume uniformly.
+- **`src/Kun.Testing`** — new project wired into `Kun.sln` in the
+  `src/` folder. `IsAotCandidate=true`, `IsPackable=true`,
+  `HasPublicApi=true`.
+- **`Kun.Testing.KunAssertionException`** — framework-agnostic
+  assertion failure type.
+- **`Kun.Testing.Results.ResultAssertions`** — fluent extensions on
+  `Result` and `Result<T>`: `ShouldBeSuccess` (returns `T` on
+  generic variant for chaining), `ShouldBeFailure`,
+  `ShouldHaveErrorCode(string)`, `ShouldHaveErrorType(ErrorType)`.
+- **`Kun.Testing.Domain.DomainEventAssertions`** — fluent extensions
+  on `IAggregateRoot`: `ShouldRaise<TEvent>`,
+  `ShouldRaiseExactly<TEvent>(int count)`, `ShouldNotRaise<TEvent>`.
+  AOT-safe via compile-time-known `OfType<TEvent>()` filtering.
+- **30 new tests in `tests/Kun.Testing.Tests`** — every helper on
+  both pass-through and mismatch paths, exception-message shape
+  anchored per ADR-012 §Error-message contract.
+- **Smoke-adoption in `tests/Kun.Core.Tests`** — 4 existing
+  assertions in `Results/ResultTests.cs` converted to Kun.Testing
+  helpers. Validates cross-project consumption before other tests
+  pull it in; 85 Kun.Core.Tests still pass.
+- **Out of scope** (follow-ups F1–F3 in ADR-012): Outbox message
+  assertions (would require a non-AOT companion module
+  `Kun.Testing.EntityFrameworkCore`), Testcontainers fixtures,
+  `WebApplicationFactory<T>` wrappers, repo-wide mass conversion
+  sweep.
+
+### Added — ADR-011 Result\<T> composition extensions (2026-04-24)
+
+- **docs/architecture/ADR-011-Result-async-extensions.md** — accepted.
+  Specifies the canonical Map / Bind / Tap / Ensure / Match surface
+  (sync + async) for `Kun.Core.Results` before more downstream consumers
+  hand-roll their own. Normative short-circuit and cancellation
+  semantics; alternatives (`Then`, LINQ `Select`/`SelectMany`,
+  `Flatten`) explicitly deferred.
+- **`Kun.Core.Results.ResultExtensions`** — synchronous extensions on
+  `Result` and `Result<T>`: `Tap`, `Ensure`, `Match`, `Bind` (plus
+  `Result<T>.Map` / `Result<T>.Bind` into `Result<TOut>` or `Result`).
+- **`Kun.Core.Results.TaskResultExtensions`** — async extensions on
+  `Task<Result>` / `Task<Result<T>>` receivers. Each op has two
+  overloads: a sync-delegate variant and an async-delegate variant
+  with required `CancellationToken`. Return type stays on the Task
+  rail.
+- **`Kun.Core.Results.ValueTaskResultExtensions`** — mirror of
+  `TaskResultExtensions` for hot-path handlers that return
+  `ValueTask<…>` (Mediator pipeline, Saga step executors). Same
+  two-overload shape per op; async-delegate variant accepts
+  `Func<…, ValueTask<…>>` and returns `ValueTask<…>`.
+- **Deliberate deviation from ADR-011 sketch**: `CancellationToken`
+  on async-delegate overloads is required, not `= default`. RS0026
+  (PublicAPI analyzer "do not add multiple overloads with optional
+  parameters") flags the alternative; we prefer passing the analyzer
+  over masking it with a blanket suppression. Callers who want no
+  token pass `default` or `CancellationToken.None` explicitly.
+- **41 new tests in `tests/Kun.Core.Tests/Results/ResultExtensionsTests.cs`**
+  — sync success / failure / short-circuit, async Task + ValueTask
+  parity, CT forwarding, pre-cancelled CT surfaces
+  `OperationCanceledException`, null-argument guards.
+- **Scope note**: additive only. `Kun.Core` stays AOT-candidate with
+  zero third-party deps; `PublicAPI.Unshipped.txt` listing every new
+  symbol. Migration of `neuroagent-csharp` handlers off hand-rolled
+  patterns is a separate follow-up task (ADR-011 §Follow-ups F1).
+
+### Added — P2-A Part 2 benchmarks CI workflow (2026-04-24)
+
+- **.github/workflows/benchmarks.yml** — weekly cron (Mon 06:00 UTC) + PR-label
+  trigger (`benchmarks` label) + manual dispatch. Runs the
+  `Kun.Benchmarks.Grpc` project with `--exporters json markdown` and uploads
+  `BenchmarkDotNet.Artifacts/**` as a named artifact (30-day retention).
+- Matrix includes `jit` only for now; the `aot` matrix entry is sketched in a
+  comment and unlocks once a `PublishAot=true` variant of the benchmarks
+  project lands (Part 2 follow-up).
+- Out of scope (future Part 3): a runbook that downloads the artifact + diffs
+  against a stored baseline to fail PRs on allocation regression.
+
+### Added — P2-A Part 1 BenchmarkDotNet scaffold (2026-04-24)
+
+- **benchmarks/Kun.Benchmarks.Grpc** — new standalone BenchmarkDotNet console project
+  (intentionally NOT in Kun.sln so routine `dotnet build Kun.sln` ignores it).
+  Builds clean at `dotnet build benchmarks/Kun.Benchmarks.Grpc -c Release`.
+- `ResultToRpcInterceptorBenchmarks` — microbenchmarks the public `Result<T>` pattern
+  (the internal `KunResultToRpcInterceptor` is not benchmarkable from a non-friend
+  assembly; the `Result<T>` paths are the real hot path the translator catches).
+  Compares `Result<T>.Ok` / `Fail` / `EnsureSuccess` / IsFailure+Error.Code against
+  a plain-return baseline. `[MemoryDiagnoser]` attached so allocation deltas are
+  visible.
+- Directory.Packages.props centrally pins `BenchmarkDotNet` to `0.14.0` under a new
+  "Benchmarks" label.
+- **docs/benchmarks/grpc-aot.md** — methodology doc + run command + Part-2-plan
+  (AOT matrix in CI, cold-start target \<100ms).
+- **Scope note**: Part 1 is scaffolding. Part 2 adds the AOT publish matrix on CI,
+  JIT-vs-AOT comparison tables, and a `.github/workflows/benchmarks.yml` weekly +
+  PR-label trigger. Kun.sln integration is intentionally deferred — benchmarks are
+  run on-demand, not as part of the regular build matrix.
+
+### Added — P2-C Part 3 Redis-backed rate-limit store + guide (2026-04-24)
+
+- **Kun.Gateway.RateLimiting.IRedisRateLimitStore** + `RateLimitHitResult` record —
+  low-level primitive for distributed rate limiting across multiple Gateway pods.
+- **RedisFixedWindowRateLimitStore** — default implementation using atomic
+  `INCR` + `EXPIRE`-on-first-hit semantics so counters self-expire when the window
+  elapses (no cleanup job required). Key format `{KeyPrefix}:{partitionKey}`,
+  default prefix `"kun:rl"`.
+- **RedisRateLimitStoreOptions** — `KeyPrefix` knob, bound from
+  `Kun:Gateway:RateLimit:Redis` configuration section.
+- **AddKunRedisRateLimitStore** DI extension — `TryAddSingleton` so consumer
+  pre-registrations win. Requires `IConnectionMultiplexer` to be registered
+  separately by the consumer.
+- **Kun.Gateway** csproj: new `StackExchange.Redis` `PackageReference` (version
+  already centrally pinned to 2.8.16).
+- **Scope note**: this is a primitive, not a full `PartitionedRateLimiter<HttpContext>`
+  integration. Consumers today call `store.HitAsync(...)` from custom middleware
+  and translate rejections to HTTP 429. Framework-level integration with
+  `AddRateLimiter` named policies is tracked as Part 3b (requires a custom
+  `RateLimiter` subclass with 5+ abstract members).
+- Tests: 11 new facts in `tests/Kun.Gateway.Tests` (argument guards, first-hit
+  TTL behavior, subsequent-hit TTL preservation, key-prefix application, DI
+  registration). Gateway test total 48 → 59, all green.
+- **docs**: new `docs/guides/gateway-rate-limit.md` covering the 3×3 resolver ×
+  policy matrix + Redis store recipe + landing checklist.
+
+### Added — P2-C Part 2 sliding-window + token-bucket rate-limit policies (2026-04-24)
+
+- **Kun.Gateway.RateLimiting.KunSlidingWindowRateLimiterPolicy** (internal) + public
+  `KunSlidingWindowOptions` + `AddKunSlidingWindowRateLimiter()` DI extension. Named
+  policy `kun-sliding-window`. Defaults: 100 permits per 1-minute window split into
+  6 segments, immediate rejection on exceed (QueueLimit=0). Smoother enforcement than
+  fixed-window at the cost of proportionally higher memory per partition.
+- **Kun.Gateway.RateLimiting.KunTokenBucketRateLimiterPolicy** (internal) + public
+  `KunTokenBucketOptions` + `AddKunTokenBucketRateLimiter()` DI extension. Named
+  policy `kun-token-bucket`. Defaults: 100-token burst budget refilled at 20 tokens
+  every 10 seconds (≈120/min steady state) with `AutoReplenishment=true`. Absorbs
+  bursty traffic; use for webhook fanout / batch import APIs.
+- Both policies reuse the existing `IRateLimitPartitionResolver` abstraction so the
+  three partition resolvers (Tenant / IP / UserPrincipal) compose freely with any
+  of the three policies (fixed-window / sliding-window / token-bucket) via the
+  matching `AddKunXxxRateLimiter` call.
+- Tests: 9 new unit tests in `tests/Kun.Gateway.Tests`. P2-C remaining for Part 3:
+  Redis-backed shared counter for distributed rate limiting + Testcontainers
+  concurrent-precision test + dedicated guides.
+
+### Added — P2-C Part 1 user-principal rate-limit partition resolver (2026-04-23)
+
+- **Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver** —
+  third partition resolver flavour, alongside the existing IP and tenant resolvers.
+  Reads the authenticated user's `sub` claim and returns it as the rate-limit
+  partition key; falls back to `"anonymous"` when the claim is absent. Pair with
+  `AddKunRateLimiter` for free-tier APIs where rate limits are per-account rather
+  than per-organization.
+- Tests: 6 new unit tests in `tests/Kun.Gateway.Tests`. P2-C remaining items
+  (sliding-window / token-bucket policies, Redis-backed shared counter,
+  Testcontainers concurrent-precision test, dedicated guides) tracked for Part 2.
+
+### Added — P2-D Part 3 DatabasePerTenant runtime (2026-04-23)
+
+- **Kun.EntityFrameworkCore.MultiTenancy** (additive):
+  - `IDbConnectionResolver` — resolves per-tenant connection strings at runtime.
+  - `TenantsConnectionOptions` — static tenant → connection-string map, bound via
+    `Configure<TenantsConnectionOptions>` from the `Kun:MultiTenancy:Tenants` config
+    section. Suitable for small deployments; larger setups swap in a custom resolver.
+  - `OptionsBasedTenantConnectionResolver` — default resolver reading from
+    `IOptionsMonitor<TenantsConnectionOptions>`; supports on-the-fly reloads.
+  - `DatabasePerTenantProvisioner<TContext>` — `ITenantProvisioner` that runs
+    `Database.MigrateAsync()` against the tenant's database. `DeprovisionAsync` is a
+    no-op by design (dropping a tenant database is an operations concern requiring
+    admin credentials and coordinated cleanup). Both methods are `virtual` for
+    subclassing when the app owns DB lifecycle end-to-end.
+  - `AddKunMultiTenancy<TContext>` DatabasePerTenant branch now registers the default
+    resolver + provisioner (TryAddSingleton, so consumer pre-registrations win).
+- **docs**: ADR status upgraded to Part 3 Accepted; roadmap-p2 Part 3 row updated.
+
+### Added — P2-D Part 2 SchemaPerTenant runtime (2026-04-23)
+
+- **Kun.EntityFrameworkCore.MultiTenancy** (additive, existing Kun.EntityFrameworkCore is
+  trim-safe / non-AOT; no new external dependencies):
+  - `ITenantDbContextFactory<TContext>` — explicit factory for tenant-scoped DbContext
+    construction, used by provisioning / admin flows that target a specific tenant
+    regardless of the ambient `ITenantContext`.
+  - `TenantAwareModelCacheKeyFactory` — `IModelCacheKeyFactory` implementation that
+    partitions EF Core's compiled-model cache by `KunDbContext.TenantIdForModelCacheKey`
+    in addition to context type + design-time flag.
+  - `SchemaPerTenantProvisioner<TContext>` — `ITenantProvisioner` implementation that
+    runs `CREATE SCHEMA IF NOT EXISTS "{tenantId}"` + `Database.MigrateAsync()` at
+    provisioning time. Deprovisioning is gated behind
+    `KunMultiTenancyOptions.AllowDestructiveDeprovision` (default false); unsafe tenant
+    IDs (anything outside `[A-Za-z_][A-Za-z0-9_-]{0,62}`) are rejected with
+    `ArgumentException` before reaching the database.
+  - `KunMultiTenancyOptions` — `Strategy` + `AllowDestructiveDeprovision` knobs.
+  - `AddKunMultiTenancy<TContext>(options => ...)` DI entry: Shared delegates to
+    the existing `AddKunTenantRls()` + `NullTenantProvisioner`; SchemaPerTenant registers
+    the factory + RLS interceptor (defence-in-depth) + SchemaPerTenantProvisioner;
+    DatabasePerTenant throws `NotImplementedException` at resolution time pointing to
+    the pending Part 3 track.
+- **docs**: `docs/architecture/adr-p2d-multitenancy.md` status upgraded to Part 2 Accepted;
+  `docs/roadmap-p2.md` P2-D table row updated.
+
+### Added — P2-D Part 1 multi-tenancy foundation types (2026-04-23)
+
+- **Kun.Core.MultiTenancy** (additive, AOT-safe, zero new dependencies):
+  - `TenantIsolationStrategy` enum — `Shared` / `SchemaPerTenant` / `DatabasePerTenant`.
+    Part 1 lands the type; runtime wiring for `SchemaPerTenant` / `DatabasePerTenant`
+    is deferred to P2-D Part 2 / Part 3 (see ADR below).
+  - `TenantInfo` sealed record — `(string TenantId, string? DisplayName)` with a null /
+    empty / whitespace guard on `TenantId`. DTO crossing module boundaries.
+  - `ITenantProvisioner` interface — `ProvisionAsync(TenantInfo)` / `DeprovisionAsync(string)`
+    idempotent tenant lifecycle hook. Non-null implementations land with Part 2 / Part 3.
+  - `NullTenantProvisioner` no-op default (Singleton `.Instance`) for Shared strategy
+    consumers who don't need tenant lifecycle plumbing.
+- **docs**:
+  - `docs/architecture/adr-p2d-multitenancy.md` — ADR for the 3-strategy architecture,
+    including the explicit YAGNI decision that Shared remains on the existing
+    `AddKunTenantRls()` entry point (no wrapper API is added until a second strategy
+    ships).
+  - `docs/roadmap-p2.md` P2-D section updated with the Part 1 / Part 2 / Part 3 split.
+
+### Added — Sprint 1 gap-closure (2026-04-22)
+
+- **Kun.Storage.Abstractions / Kun.Storage.Local / Kun.Storage.S3** (P0-1): three
+  new packages landing `IFileStorage` with the seven SAD §6.4 operations, a
+  `FrozenSet` of the four canonical "active web" MIME types that trigger
+  force-download on S3 presigned URLs, a dev-grade local filesystem
+  implementation, and an AWSSDK-based S3 implementation. S3 is the repo's first
+  non-AOT library module (A6) — explicitly excluded from the CI AOT-zero-warning
+  matrix; documented in `src/Kun.Storage.S3/AGENTS.md`.
+- **Kun.EntityFrameworkCore**:
+  - `KunDbContext.DefaultSchema` virtual property + auto-registered
+    `SchemaConsistencyInterceptor` (P0-3 M5). Overriding `DefaultSchema` without
+    calling `.UseKunSchema(schema)` on the options builder now throws
+    `InvalidOperationException` with a remediation message at the first
+    `SaveChangesAsync`. Outbox rows, tenant/audit columns, and the migrations
+    history table all co-locate under the service schema.
+  - `UseKunSchema(schema)` extension method on `DbContextOptionsBuilder` that
+    wires `MigrationsHistoryTableSchema` through `RelationalOptionsExtension`.
+    Provider-agnostic — stays out of the Npgsql dependency.
+  - `TenantRlsTransactionInterceptor` + `AddKunTenantRls()` (P1-4). Opt-in
+    defence-in-depth layer that emits
+    `SELECT set_config('app.current_tenant_id', @tenant, true)` at every
+    transaction start so PostgreSQL RLS policies enforce isolation even when a
+    caller bypasses the EF global query filter. Hooks
+    `DbTransactionInterceptor.TransactionStartedAsync` — PgBouncer
+    transaction-pool safe.
+- **Kun.EventBus**: `IEventTypeRegistry.GetAll()` returns every registered
+  `(eventId, clrType)` pair in stable alphabetical order, enabling the
+  `tools/Kun.IntegrationEvents.SchemaGen` JSON-Schema export tool (P1-1).
+- **Kun.Gateway**:
+  - `ITracedCurrentUser` sub-interface + `trace_id` claim on the minted S2S
+    JWT (P0-2). Default `EmitTraceIdClaim = true`; kill-switchable.
+  - `KunInternalJwksEndpoint.MapKunInternalJwks()` — internal-network JWKS
+    route gated on `IHostEnvironment.IsDevelopment()` OR
+    `KunGatewayOptions.ExposeInternalJwks = true` (P1-3). Fail-closed:
+    Production returns 404 unless opted in.
+  - `IS2sPrincipalResolver` + `NoOpS2sPrincipalResolver` (P1-6). Optional
+    enrichment hook the issuer runs before claim mapping. Default registered
+    via DI. `S2sTokenIssuer` grows a 4-arg ctor taking the resolver; the
+    3-arg overload is kept obsolete with `DiagnosticId = "KUN0002"` for one
+    release, scheduled for removal in `0.2.0`.
+- **Kun.EventBus.Outbox**: `IOutboxWriter` primitive (P0-4). Non-aggregate
+  enqueuers (future audit interceptor, storage event adapters) can drop
+  `OutboxMessage` rows into the current transaction without implementing the
+  full `IIntegrationEventBus` surface. `IntegrationEventOutboxAccumulator`
+  resolves to both `IIntegrationEventBus` and `IOutboxWriter` from a single
+  scoped instance so aggregates and non-aggregate collaborators share one
+  in-request buffer.
+- **samples/Kun.Sample.Catalog** and **samples/Kun.Sample.Order**: override
+  `DefaultSchema => "catalog"` / `"order"`; design-time factories chain
+  `.UseKunSchema(...)`. Migrations regenerated; outbox, saga, business tables,
+  and `__ef_migrations_history` all land under the service schema.
+- **samples/Kun.Sample.Catalog**: `AddOpenApi()` + `MapOpenApi()` guarded on
+  `IsDevelopment()` as the reference wiring for **P1-7** (OpenAPI pipeline
+  template).
+- **samples/Kun.Sample.Storage**: new Minimal API sample demonstrating
+  force-download via `Kun.Storage.Local` — no AWS credentials required.
+- **tools/Kun.IntegrationEvents.SchemaGen**: console tool (non-AOT) that emits
+  `{eventId}.schema.json` per registered integration event using
+  `JsonSchema.Net.Generation`. Consumers provide a public static zero-arg
+  factory method that returns `IEventTypeRegistry` (P1-1).
+- **docs**:
+  - `docs/roadmap.md` — consolidated public roadmap (replaces the 495-line
+    `TODO.md` at repo root, merged 2026-04-22).
+  - `docs/schema-per-service.md` (P1-8) — end-to-end recipe for running many
+    Kun services against one Postgres with service-scoped schemas.
+  - `docs/openapi-template.md` (P1-7) — source-gen-friendly OpenAPI wiring
+    guidance with environment gating + CI smoke-test recipe.
+  - `src/Kun.EntityFrameworkCore/README.md` (P1-5) — PgBouncer transaction-pool
+    compatibility notes (required connection-string parameters) +
+    RLS-with-explicit-transactions contract.
+- **tests**:
+  - `tests/Kun.EntityFrameworkCore.Tests` — new xunit.v3 project with schema /
+    interceptor / RLS unit coverage (11 cases).
+  - `tests/Kun.IntegrationTests/Persistence/{RlsEnforcementTests,TenantRlsInterceptorPgBouncerTests,PgBouncerCompatTests,SchemaPerServiceTests}` +
+    `tests/Kun.IntegrationTests/Fixtures/PgBouncerPostgresFixture` — acceptance
+    paths for P0-3 / P1-4 / P1-5, Docker-gated with `Assert.Skip` when
+    containers aren't reachable.
+  - `tests/Kun.Gateway.Tests` grows five new cases for
+    `KunInternalJwksEndpoint` (gating matrix + document shape) and five for
+    `IS2sPrincipalResolver` / obsolete-ctor compat.
+- **Kun.Auditing** (P1-2): new AOT-candidate module wiring an EF Core
+  `SavingChanges` interceptor that iterates `ChangeTracker.Entries()`,
+  keeps only entity types registered via explicit
+  `services.AddAuditable<TEntity>()` (no runtime attribute scan — A3
+  path c), and enqueues one `AuditEventIntegrationEvent` per mutation
+  through `IOutboxWriter` (the P0-4 primitive). Payload is the M4
+  13-field record with stable event id `kun.audit.event.v1`; JSON via a
+  source-generated `AuditJsonContext`. `AuditContextMiddleware` captures
+  IP / User-Agent / TraceId into a scoped `AuditContext` before the EF
+  interceptor runs. DI helpers: `AddKunAuditing`, `AddAuditable<T>`,
+  `AddAuditingInterceptor(DbContextOptionsBuilder, IServiceProvider)`;
+  stable event id wired via `IEventTypeRegistrar.RegisterAuditing()`.
+- **Kun.EventBus** (architect M2): `IEventTypeRegistrar.Register<TEvent>`
+  gains an overload that accepts a source-generated `JsonTypeInfo<TEvent>`;
+  `IEventTypeRegistry.GetJsonTypeInfo(Type)` exposes it. The outbox
+  accumulator now prefers the typed serializer when registered and falls
+  back to reflection-based `JsonSerializer.Serialize(obj)` only when no
+  info is supplied — the fallback path carries `[RequiresUnreferencedCode]`
+  and `[RequiresDynamicCode]` annotations so the AOT analyzer flags
+  callers that haven't migrated.
+- **Kun.Gateway** (review #7): `MapKunJwks` + `MapKunInternalJwks` accept
+  an optional `Func<HttpContext, bool>? additionalGate` that runs after
+  the environment / `ExposeInternalJwks` check. Typical use: RFC1918
+  allow-list for production deployments without service-mesh isolation.
+- **Kun.Gateway** (review #2): `S2sTokenIssuer.IssueForAsync(ClaimsPrincipal, CancellationToken)`
+  lets callers await the configured `IS2sPrincipalResolver` without
+  `.GetAwaiter().GetResult()` blocking. The sync `IssueFor` stays for
+  back-compat and delegates to the async path internally.
+- **Kun.Gateway** (review #1): both JWKS endpoints share a DI-registered
+  `JwksResponseBuilder` singleton that caches the JWK response keyed on
+  public-key-file mtime. Rebuilds only on key rotation; typical downstream
+  JWKS fetch is a single `File.GetLastWriteTimeUtc` stat.
+- **Kun.Storage.Local** (review #3): streaming `MaxBytes` enforcement.
+  `UploadAsync` now rejects oversized uploads mid-copy via a chunked
+  `ReadAsync` loop backed by `ArrayPool<byte>` — no more "park a 1 GB
+  payload on disk before deleting it" failure mode.
+- **Kun.Storage** (review #6): `ObjectMetadata.ContentType` is now
+  `string?`. `S3FileStorage.ListAsync` reports `null` instead of a
+  synthetic `"application/octet-stream"` when the S3 listing API omits
+  the content type — callers needing it follow up with
+  `GetMetadataAsync` per item.
+
+### Migration guide — `alpha.1` → `alpha.2`
+
+All Sprint 1 changes are **additive**. `PublicAPI.Shipped.txt` is untouched;
+every new member lives in `PublicAPI.Unshipped.txt`. Consumers upgrading
+from `0.1.0-alpha.1` do not need to change code to keep the old behaviour,
+but the new capabilities below require explicit opt-in:
+
+1. **Per-service schemas** (P0-3). To run multiple Kun services against one
+   Postgres instance without name collisions:
+   - Override `DefaultSchema` on your `KunDbContext` subclass: `protected override string? DefaultSchema => "catalog";`.
+   - Chain `.UseKunSchema("catalog")` on the options builder alongside
+     `.UseNpgsql(...)`.
+   - Regenerate migrations so they emit `schema: "catalog"` — see
+     [docs/schema-per-service.md](/pr-preview/pr-122/sdk/kun/guides/schema-per-service.md).
+   - `SchemaConsistencyInterceptor` auto-registers via `KunDbContext.OnConfiguring`
+     and will throw at first `SaveChangesAsync` if you miss either step.
+2. **trace_id claim** (P0-2). `S2sTokenIssuer` now emits a `trace_id` claim
+   when `Activity.Current` is live AND an HTTP context is in scope (M3
+   guard). Downstream services see it on `JwtCurrentUser` via
+   `ITracedCurrentUser.TraceId`. Default on; kill-switch via
+   `KunGatewayOptions.EmitTraceIdClaim = false`.
+3. **IFileStorage** (P0-1). Add `.AddKunLocalFileStorage(...)` (dev) or
+   `.AddKunS3FileStorage(...)` (prod) to compose storage. `Kun.Storage.S3`
+   is non-AOT — exclude from your AOT publish matrix if you have one.
+4. **IOutboxWriter** (P0-4). Non-aggregate code can now enqueue outbox
+   messages via `IOutboxWriter.Enqueue<TEvent>(evt)`. Existing
+   `IIntegrationEventBus.Publish<T>` remains — both resolve to the same
+   scoped accumulator instance. Prefer `IOutboxWriter` from interceptors
+   and infrastructure code; `IIntegrationEventBus` for aggregate flows.
+5. **Tenant RLS** (P1-4). Opt-in via `services.AddKunTenantRls()`. Wire the
+   resulting interceptor into your DbContext options with
+   `.AddInterceptors(sp.GetRequiredService<TenantRlsTransactionInterceptor>())`.
+   Only needed when the database has `CREATE POLICY` rules using
+   `app.current_tenant_id`.
+6. **IS2sPrincipalResolver** (P1-6). `S2sTokenIssuer`'s 3-arg ctor is
+   marked `[Obsolete(DiagnosticId = "KUN0002")]` and scheduled for removal
+   in `0.2.0`. Switch manual construction sites to the 4-arg ctor, passing
+   `NoOpS2sPrincipalResolver.Instance` for the identity transform. Custom
+   enrichment: register your own `IS2sPrincipalResolver` implementation
+   before `AddKunGateway`. DI-wired consumers do not need code changes.
+7. **Internal JWKS endpoint** (P1-3). `app.MapKunInternalJwks()` at
+   `/internal/.well-known/jwks.json`. Gated: Development auto-on, Production
+   returns 404 unless `KunGatewayOptions.ExposeInternalJwks = true`. The
+   existing public `/.well-known/jwks.json` route is unchanged.
+8. **PgBouncer transaction mode** (P1-5). Append
+   `No Reset On Close=true;Max Auto Prepare=0` to any Npgsql connection
+   string routed through PgBouncer; see
+   [src/Kun.EntityFrameworkCore/README.md](https://github.com/idadawn/kun/blob/v2026.10.14/src/Kun.EntityFrameworkCore/README.md).
+9. **OpenAPI** (P1-7). `builder.Services.AddOpenApi();` +
+   `if (app.Environment.IsDevelopment()) app.MapOpenApi();`. Requires the
+   `Microsoft.AspNetCore.OpenApi` package.
+10. **JSON Schema export** (P1-1). `IEventTypeRegistry.GetAll()` enumerates
+    every `(eventId, clrType)` pair in stable order — used by
+    `tools/Kun.IntegrationEvents.SchemaGen`. Provide a public static
+    zero-arg factory method that returns your registry to plug into the
+    tool; see `tools/Kun.IntegrationEvents.SchemaGen/README.md`.
+11. **Auditing** (P1-2). Opt-in via `services.AddKunAuditing()` +
+    `services.AddAuditable<YourEntity>()` for each entity you want audited.
+    Attach the interceptor to your DbContext with
+    `options.AddAuditingInterceptor(sp)` inside the factory lambda.
+    Wire the stable event id via
+    `services.AddKunEventBus(b => b.RegisterAuditing())`.
+12. **AOT-safe outbox serialization** (architect M2). Upgrade existing
+    `bus.Register<T>("t")` calls to
+    `bus.Register<T>("t", MyJsonContext.Default.T)` to thread a
+    source-generated `JsonTypeInfo<T>` through the outbox accumulator.
+    Reflection fallback still works for non-AOT consumers but now warns
+    via `[RequiresUnreferencedCode]` at call sites.
+13. **JWKS `additionalGate`** (review #7, optional). Pass a predicate to
+    `MapKunJwks` / `MapKunInternalJwks` to restrict by IP range or header
+    when NetworkPolicy / mesh isn't available. Default behavior unchanged
+    when the parameter is omitted.
+14. **`S2sTokenIssuer.IssueForAsync`** (review #2). Prefer the async
+    overload for hot-path token minting; the sync `IssueFor` delegates to
+    it via `.GetAwaiter().GetResult()` and stays available for existing
+    synchronous call sites.
+
+### Highlights (2026-04-24 / 04-25)
+
+**Phase 1 neuroagent-consumer gap fully closed.** Five tickets landed in one burst (23 commits on `main`, all pushed to `origin`):
+
+- **P1-KN-001** `Kun.Storage` — new 15th module (`IFileStorage` 7-method contract + `ContentDispositionPolicy` + S3/MinIO/Local backends).
+- **P1-KN-002** S2S JWT claims alignment (`Kun.Security.S2SJwt` rewritten around `S2SJwtIssueRequest`, emits `roles`/`membership_id`/`trace_id`, default TTL 15 min, multi-aud header bug fixed).
+- **P1-KN-003** Attribute-driven integration-event registration (`[IntegrationEventId("event.v1")]` + `Register<TEvent>()` overload).
+- **P1-CS-011** `TenantRlsConnectionInterceptor` — opt-in defence-in-depth behind the EF global filter; PG-only, whitelist-guarded.
+- **P1-CS-019** `Kun.Audit` — new 16th-slot abstraction module (tamper-evident hash-chained operation audit + Mediator pipeline behaviour + 21 xunit cases).
+
+Framework module count: 13 → 15. Test projects: 11 → 13. Validation / AOT publish matrix / NuGet release / Aspire runtime drill / SG regression remain open — see `docs/roadmap.md` for the outstanding-work roadmap（原 `TODO-remaining.md` 已于 2026-06-12 并入该文件）.
+
+### Added — Kun.Audit module (Phase 1 P1-CS-019)
+
+- New `Kun.Audit` abstraction module (IsAotCandidate=true, HasPublicApi=true): tamper-evident operation audit for CQRS commands via a Mediator pipeline behaviour + pluggable `IAuditSink`. Matches SAD v3.0 §15.5 `audit.operations` contract (prev_hash + content_hash).
+- `AuditContentHasher.Compute`: canonical `id|tenant|actor|command|ISO-timestamp|latency|outcome|errorCode` + SHA-256 over `prev || canonical`, lower-case hex. Timestamp pinned to round-trip `O` format with `InvariantCulture` so hashes are stable across culture / timezone.
+- `IAuditChainState.AppendAsync`: atomic read-previous / compute-new / commit-new, serialised per tenant key so concurrent commands on the same tenant cannot fork the chain. `InMemoryAuditChainState` uses per-tenant `SemaphoreSlim`; production deployments are expected to back this with a durable DB-level coordinator (documented in `docs/security/audit-log.md`).
+- `AuditLogPipelineBehavior<TRequest, TResponse>`: captures actor/tenant/timing/outcome per handler invocation. Original handler exception is preserved via `ExceptionDispatchInfo`. Audit-write failures are logged at Warning and swallowed — audit MUST NOT convert a successful handler into a failure nor mask a business exception.
+- DI: `AddKunAudit()` wires `InMemoryAuditChainState` + `InMemoryAuditSink` + `TimeProvider.System` as `TryAdd` defaults; `AddAuditBehavior<TCommand, TResponse>()` on `KunMediatorBuilder` opts one command in at a time so queries stay unaudited.
+- New doc `docs/security/audit-log.md` covers record shape, chain semantics, serialisation contract, in-memory limitations, production shape, wiring, failure semantics, and chain-verification procedure.
+- 21 xunit cases in `tests/Kun.Audit.Tests` cover the hash matrix, concurrent chain serialisation (100-task storm), sink ordering/null-guards, behaviour success/exception paths, sink-failure non-propagation, consecutive-entry linking, and per-tenant chain isolation.
+- Registered in `Kun.sln` under GUID `{A100000E-...}`; `src/AGENTS.md` / `README.md` module matrix / `docs/architecture/module-map.md` updated.
+
+### Added — Kun.EntityFrameworkCore tenant-RLS interceptor (Phase 1 P1-CS-011)
+
+- New `Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor`: opt-in EF `DbConnectionInterceptor` that pushes `ITenantContext.TenantId` into the PostgreSQL session variable `app.current_tenant_id` on connection open and RESETs it on close. Gives NeuroAgent a second isolation layer behind the existing EF global query filter when paired with RLS policies on the database schema.
+- Activates only on Npgsql connections (nominal FQN check) so `Kun.EntityFrameworkCore` does not need a direct Npgsql package dependency; MySQL / SQL Server / other providers silently no-op.
+- Tenant id is whitelisted against `^[A-Za-z0-9._-]{1,128}$` before inlining into the `SET` command (PostgreSQL `SET` cannot be parameterised); unsafe values throw `InvalidOperationException` rather than being coerced.
+- Registered as Scoped by `AddKunEntityFrameworkCore`; callers opt in per `DbContextOptionsBuilder` via `opts.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>())`.
+- New doc `docs/security/multi-tenancy-rls.md` covers defence-in-depth rationale, policy template (ENABLE + FORCE ROW LEVEL SECURITY + USING + WITH CHECK), wiring, and ops notes.
+- Three xunit integration cases in `tests/Kun.IntegrationTests/MultiTenancy/TenantRlsTests.cs` run against a live Postgres 16 container: RLS isolation proven _without_ the EF filter (test entity deliberately omits `IMultiTenant`), cross-tenant write rejection via WITH CHECK, and whitelist rejection of unsafe tenant ids.
+
+### Added — Kun.EventBus attribute-driven registration (Phase 1 P1-KN-003)
+
+- New `[IntegrationEventId("bounded-context.event.v1")]` attribute so the stable token lives next to the event record instead of being repeated in DI wiring.
+- `IEventTypeRegistrar.Register<TEvent>()` no-arg overload reads the attribute at DI-registration time. Marked `[RequiresUnreferencedCode]`; AOT-strict consumers can keep calling `Register<TEvent>(string)` to stay reflection-free. The resulting runtime registry is still the zero-reflection `FrozenDictionary`-backed `EventTypeRegistry`.
+- Missing attribute yields an actionable `InvalidOperationException` pointing the caller at either decorating the type or using the explicit string overload.
+- Samples (`Kun.Sample.Catalog.Contracts`, `Kun.Sample.Order.Contracts`) migrated to the attribute so the pattern is visible to framework users.
+- 7 new xunit cases in `Kun.EventBus.Tests/IntegrationEventIdAttributeTests.cs` cover attribute validation, presence/absence, attribute-vs-string equivalence, and fluent chaining.
+
+### Changed — Kun.Security.S2SJwt (Phase 1 P1-KN-002)
+
+- `IS2SJwtIssuer.IssueAsync` now takes a single `S2SJwtIssueRequest` record. The prior 5-positional-parameter signature is removed (API was in `PublicAPI.Unshipped.txt` with no in-repo consumers besides tests).
+- New claim emission, aligned with SAD v3.0 §12: `roles` (multi-valued), `membership_id`, `trace_id` — all optional via the request record. Pre-existing `sub`, `jti`, `tenant_id`, `scope`, `session_id` remain.
+- Multi-audience tokens now fold `aud` into the payload as a JSON array (previously, multi-audience tokens leaked `aud` into the JWT _header_ — correctness bug, now fixed).
+- `S2SJwtOptions.DefaultLifetimeSeconds` default bumped from 300 → **900** (15 minutes) per SAD §12; individual calls can still override via `S2SJwtIssueRequest.Lifetime`.
+- `docs/security/s2s-jwt.md` extended with a NeuroAgent Set B section explaining why both `Kun.Gateway.S2sTokenIssuer` (RS256, 60s) and `Kun.Security.S2SJwt.S2SJwtIssuer` (ES256, 15min) coexist and when to use each.
+
+### Added — Kun.Storage (Phase 1 P1-KN-001)
+
+- **Kun.Storage** module (trim-safe, `IsAotCandidate=false` due to AWSSDK.S3 reflection):
+  - `IFileStorage` seven-method contract: `PutObject` / `GetObject` / `HeadObject` / `DeleteObject` / `ListObjects` / `CreatePresignedUploadUrl` / `CreatePresignedDownloadUrl`.
+  - Supporting types: `ObjectMetadata` / `ObjectSummary` / `ObjectDownload` (IAsyncDisposable) / `PutObjectOptions` / `PresignedUploadRequest+Url` / `PresignedDownloadRequest+Url`.
+  - `ContentDispositionPolicy`: active-web MIME whitelist (HTML/SVG/XML/JS/WASM/XHTML/ECMAScript) + RFC 5987 attachment builder. Enforced at every write path and every presigned-download URL so user-uploaded content cannot render inline.
+  - `S3FileStorage` (AWSSDK.S3, compatible with MinIO via path-style + custom endpoint). Auto-probes stored MIME on presigned GET to inject `ResponseContentDisposition` attachment override.
+  - `LocalFileStorage`: 2-layer path-traversal defense (syntactic + semantic), `.kunmeta` JSON sidecar for metadata, HMAC-SHA256-signed `kun-local://` stub URLs for presigned ops (dev-only).
+  - DI: `AddKunStorage` / `AddLocalStorage` / `AddS3Storage` with central `StorageOptions`.
+- **Tests**:
+  - `tests/Kun.Storage.Tests`: ContentDispositionPolicy matrix, LocalFileStorage round-trips + traversal + attachment enforcement, mocked-S3 unit tests, DI resolution tests.
+  - `tests/Kun.IntegrationTests/Storage/S3FileStorageIntegrationTests.cs` + `Fixtures/MinioFixture.cs`: MinIO Testcontainer with real `HttpClient` round-trips against presigned URLs.
+- **Docs**: new `src/Kun.Storage/AGENTS.md`, module added to `src/AGENTS.md`, README, `docs/architecture/module-map.md`; `docs/neuroagent-phase1-gap.md` updated to mark P1-KN-001 complete.
+
+### Merge — main → develop reconciliation (2026-04-25, `sync-main-into-develop`)
+
+- Union merge across five design-divergent groups, arbitrated against `docs/whitepaper.md`:
+  - **Kun.Audit** — writer/reader abstraction (develop) + hash-chain pipeline behaviour (main) coexist in one module. `AddKunAudit().UseEventBus()` and `AddAuditBehavior<TReq,TResp>()` both available.
+  - **Kun.EventBus** — three `Register<TEvent>` overloads (string / string+JsonTypeInfo / \[IntegrationEventId] attribute) all retained.
+  - **Kun.EntityFrameworkCore** — `TenantRlsConnectionInterceptor` (connection-scoped) + `TenantRlsTransactionInterceptor` + `SchemaConsistencyInterceptor` all retained; consumers pick per-deployment.
+  - **Kun.Security.S2SJwt** — dual `IssueAsync` overloads (record `S2SJwtIssueRequest` + legacy 5-param). `DefaultLifetimeSeconds` set to **300** per whitepaper §9.6 zero-trust TTL upper bound (60–300s).
+  - **Kun.Storage** — main's 7-method `IFileStorage` contract wins (whitepaper §13.1; develop's variant lacked `RequiredHeaders` on presigned upload, making SigV4 S3 uploads unreliable, and had no response-Content-Disposition override for active-MIME attachment enforcement). develop's split-module skeleton `Kun.Storage.Abstractions` / `.Local` / `.S3` preserved for Phase 2 implementation; `src/Kun.Storage/` old legacy files removed.
+- **P1-KN-002 TTL correction** — the main-side note about `DefaultLifetimeSeconds` bumping to 900 is superseded: per whitepaper §9.6 ("TTL 控制在 60 秒到 5 分钟"), default is 300 seconds. Explicit callers may still override via `S2SJwtIssueRequest.Lifetime`.
+- Pre-push hook installed at `.git/hooks/pre-push` to refuse direct pushes to `main`.
+
+### Fixed
+
+- **Kun.Gateway**: `S2sTokenIssuer` now injects `IHostEnvironment` and throws `InvalidOperationException` when the signing key file is missing in non-Development environments, preventing silent ephemeral-key self-signing in production.
+
+- **Kun.Gateway**: `AddKunGateway` without a `reverseProxyConfig` section now registers a startup-time `IHostedService` that fails fast with a user-friendly message if no `IProxyConfigProvider` is registered, instead of deferring the error to the first proxied request.
+
+- **Kun.Gateway.Tests**: regression tests added for production key-file safety guard, startup config validation, and double-registration behavior.
+
+- **Kun.Saga**: registered `ISystemClock` in `AddKunSaga` (required by
+  `SagaOrchestrator`); `SagaStepExecutor` now persists state via
+  `DbContext.SaveChangesAsync` after each entry; forward execution advances
+  step index and marks completed; reverse compensation walks back to 0 and
+  marks compensated; `ISagaOrchestrator` moved from Singleton to Scoped to
+  match its Scoped dependency `ISagaInstanceStore`.
+
+### Added — M1 交付（阶段一：奠基）
+
+**Kun.Core** (v1.1)
+
+- `Domain/DomainException`：带 `Code` 字段的领域异常基类
+- `Domain/IDomainEventDispatcher`：同进程内领域事件分发接口
+- `MultiTenancy/NullTenantContext`：非多租户默认实现
+- `Security/AnonymousCurrentUser`：未认证默认实现
+- `Time/ISystemClock` + `Time/SystemClock`：可注入时钟，默认由 `TimeProvider.System` 支持
+- 为已有公开类型（AggregateRoot / Entity / ValueObject / Result / Error / Auditing 标记）补齐 XML 注释
+- 单元测试 32/32（Domain + Results）
+
+**Kun.Mediator** (v1.2)
+
+- 核心接口：`ISender`、`IPublisher`、`INotification`、`INotificationHandler<T>`、`IPipelineBehavior<TRequest, TResponse>`、`RequestHandlerDelegate<TResponse>`
+- `KunMediator`：基于 `FrozenDictionary<Type, RequestHandlerBase>` 的 O(1) 无反射调度
+- `KunMediatorBuilder`：手工注册 API —— `AddRequestHandler<TReq, TResp, THandler>()`、`AddPipelineBehavior<TReq, TResp, TBehavior>()`、`AddNotificationHandler<TNotification, THandler>()`
+- `DependencyInjection/AddKunMediator` DI 入口
+- 内置 Behavior：`LoggingBehavior`、`PerformanceBehavior`（500ms 阈值）、`TracingBehavior`（`ActivitySource("Kun.Mediator")`）
+- AOT 安全：所有泛型类型参数带 `[DynamicallyAccessedMembers(PublicConstructors)]`，构建时零 trim 警告
+- 单元测试 8/8（Dispatch + Pipeline 洋葱顺序）
+
+**Kun.Validation** (v1.3)
+
+- `IValidator<T>` + `ValidationResult` + `ValidationError` + `ValidationException`
+- `Behaviors/ValidationPipelineBehavior<TReq, TResp>`：聚合所有验证器，invalid 时抛 `ValidationException`
+- `DependencyInjection/KunValidationServiceCollectionExtensions`：`AddValidator<T, TValidator>()` + `AddValidationBehavior<TReq, TResp>()`
+- 单元测试 12/12
+
+**Kun.Sample.Minimal**（新增）
+
+- AOT 候选的控制台样例，演示 Command / Query / Notification 经 `KunMediator` 的完整调度链路
+- 附带 `ActivityListener` 观察 `TracingBehavior` 输出
+- `dotnet run` 本地验证通过
+
+### Added — 基础设施
+
+- 项目初始化：13 个核心模块骨架
+- 白皮书、贡献指南、6 个 Claude 专属 Skills
+- `Directory.Build.props` / `Directory.Packages.props` 集中化构建与依赖管理
+- CI 工作流：build、test、AOT 发布验证、layering 检查、dotnet format
+- `Microsoft.CodeAnalysis.PublicApiAnalyzers` 接入 Kun.Core / Kun.Mediator / Kun.Infrastructure / Kun.EventBus / Kun.Validation
+- `scripts/check-layering.sh`：强制 Kun.Core 无第三方 PackageReference
+- `CLAUDE.md` 顶层 + 30 个 `AGENTS.md` 分层导航文档
+- `Version`：`VersionPrefix=0.1.0`，本地 `VersionSuffix=alpha.1`
+- `develop` 分支作为开发主干
+
+### Changed
+
+- `Kun.AspNetCore` / `Kun.Grpc` csproj：从 `Microsoft.NET.Sdk.Web` 修正为 `Microsoft.NET.Sdk`（它们是库，不是 Host）
+- `PublicAPI.Unshipped.txt` → `PublicAPI.Shipped.txt`：Kun.Core (137)、Kun.Mediator (32)、Kun.Validation (25) 的 API 冻结入库
+
+### Deferred（M1 已决定延后的项，详见 docs/roadmap.md）
+
+- `Kun.Mediator.SourceGenerator` / `Kun.Validation.SourceGenerator`：当前用手工注册 API 替代，SG 作为 stretch goal（ralplan ADR fallback 路径）
+- `Kun.Validation` 属性包（`[Required]`、`[MaxLength]` 等）：无 SG 时属性无运行时意义，与 SG 一同回归
+- Result-aware 验证 Behavior（返回 `Result.Fail(Error.Validation(...))`）：可在核心抛异常 Behavior 之上封装，follow-up
+- AOT 启动时间 benchmark：本地 Windows 缺 C++ linker，延至 CI 或用户本地 Linux 跑
+
+### Added — M2 交付（阶段二：持久化双引擎）
+
+**Kun.EventBus** (v2.1, AOT-candidate abstractions)
+
+- `OutboxMessage`：富领域模型，含 `MarkPublished` / `MarkFailed` / `IncrementAttempt` 状态转换方法
+- `OutboxStatus`：`Pending` / `Published` / `Failed` 枚举
+- `IntegrationEventBuffer`：scoped 累加器，在 `SaveChangesAsync` 前收集待发事件
+- `EventTypeRegistry`：`FrozenDictionary<string, Type>` 支持的 O(1) 稳定事件类型查找；`IEventTypeRegistry` / `IEventTypeRegistrar` 接口
+- `IIntegrationEventHandler<TEvent>` + `MessageContext`：消费端处理器契约
+- `IIntegrationEventPublisher`：每条消息的 broker 传输抽象
+- `IProcessedMessageStore`：幂等消费存储抽象；`InMemoryProcessedMessageStore`（测试用）、`RedisProcessedMessageStore`（SETNX + EX，键格式 `idemp:{consumer}:{messageId}`）
+- `IOutboxMessageStore`：持久层扫描抽象
+- `OutboxPublisherBackgroundService`：BackgroundService，可配置批量大小、轮询间隔、最大重试次数、指数退避；每条消息启动 `ActivitySource("Kun.EventBus.Outbox")` span，从 `TraceParent`/`TraceState` 列恢复父 trace
+- `OutboxPublisherOptions`：BatchSize=50 / PollInterval=2s / MaxAttempts=5 / RetryBaseDelay=1s
+- DI 构建器：`KunEventBusBuilder`（`.UseInMemoryIdempotency()` / `.UseRedisIdempotency()`）、`KunEventBusServiceCollectionExtensions`、`KunOutboxPublisherExtensions`
+- 单元测试 11/11
+
+**Kun.EntityFrameworkCore** (v2.2, trim-safe, IsAotCandidate=false)
+
+- `KunDbContext`：`IMultiTenant` 全局查询过滤器 + `ISoftDelete` 软删除过滤器
+- `OutboxMessageConfiguration`：EF Core `IEntityTypeConfiguration<OutboxMessage>`，含索引
+- `EfUnitOfWork`：单次 `SaveChangesAsync` 原子提交聚合变更 + Outbox 行 + 领域事件分发
+- `IntegrationEventOutboxAccumulator`：W3C `TraceParent`/`TraceState` 捕获（via `Activity.Current`）
+- `UnitOfWorkPipelineBehavior`：Mediator pipeline behavior，写命令专用
+- `NoOpDomainEventDispatcher`：默认无操作实现；`MediatorDomainEventDispatcher` 由样例服务提供
+- `IUnitOfWork` 接口
+- DI：`KunEntityFrameworkCoreServiceCollectionExtensions`
+- 单元测试集成（Testcontainers PostgreSQL，Docker 不可用时自动跳过）
+
+**Kun.Dapper** (v2.3, AOT-candidate)
+
+- `IReadDbConnectionFactory`：读端连接工厂抽象；调用方负责 dispose
+- `PageRequest`：1-based 页码 + `Offset` 计算属性
+- `PagedResult<T>`：`TotalPages` / `HasNextPage` / `HasPreviousPage` + `Empty(PageRequest)` 工厂方法
+- `ReadDbOptions`：`ConnectionString` 配置
+- DI：`KunDapperServiceCollectionExtensions.AddKunDapper`
+- 单元测试 10/10
+
+### Added — M3 交付（阶段三：消息总线）
+
+**Kun.EventBus** (v3.x 追加)
+
+- `IIntegrationEventPublisher`：每条消息的 broker 传输接口（从 M2 正式确定契约）
+- `IProcessedMessageStore` 完整实现（InMemory + Redis），含幂等键格式文档
+
+**Kun.EventBus.RabbitMQ** (AOT-candidate，RabbitMQ.Client 7.x)
+
+- `RabbitMqOptions`：ConnectionString / ExchangeName / ConsumerName / PrefetchCount / MaxDeliveryAttempts / IdempotencyTtl
+- `RabbitMqConnectionProvider`：单例懒初始化连接，`AutomaticRecoveryEnabled=true`，`IAsyncDisposable`
+- `RabbitMqIntegrationEventPublisher`：`IIntegrationEventPublisher` 实现；topic exchange；headers 含 traceparent/tracestate/tenantId/messageId/occurredAt；持久化消息
+- `RabbitMqIntegrationEventSubscriber`：BackgroundService；`AsyncEventingBasicConsumer`；per-type durable 队列 + binding；prefetch；W3C trace 恢复；x-death 计数 → DLX
+- `IdempotentConsumerDecorator`：handler 成功后调用 `IProcessedMessageStore.TryMarkProcessedAsync`
+- `DeadLetterHandler`：`{exchange}.dlx` fanout + `{consumer}.dead-letter` 队列
+- `ISubscriptionDispatcher` + `TypedSubscriptionDispatcher<TEvent>`：AOT 安全有类型调度，无 `MakeGenericType`
+- `KunRabbitMqBuilder`：`.Subscribe<TEvent, THandler>(eventTypeId, typeInfo)` 流式注册
+- `KunRabbitMqServiceCollectionExtensions.AddRabbitMq`
+- 单元测试新增 6 个，总计 79/79 通过
+- M3 3.4（Testcontainers.RabbitMq 轮转测试）延后至 CI
+
+### Added — M4 交付（阶段四：Saga 编排器）
+
+**Kun.Saga** (AOT-candidate)
+
+- 抽象：`ISagaContext` / `ISaga<TContext>` / `ISagaStep<TContext>` / `ISagaOrchestrator`
+- 异常：`SagaStepFailedException` / `SagaNotFoundException`
+- 持久化：`SagaInstance`（富状态转换：`StartCompensating` / `Complete` / `Fail`）、`SagaStepQueueEntry`、`SagaState`（Running/Compensating/Completed/Compensated/Failed）、`StepDirection`（Execute/Compensate）
+- `ISagaInstanceStore`：持久层抽象；`EfSagaInstanceStore`：EF Core 实现，含 `(state, timeout_at)` 和 `(processed_at, enqueued_at)` 索引
+- `SagaOrchestrator`：原子 start + 首步 enqueue（与触发命令同一 EF Core 事务）
+- `SagaStepExecutor`：BackgroundService，正向执行 + 逆序补偿；`ActivitySource("Kun.Saga")`，span 名 `saga.step.execute` / `saga.step.compensate`，tags: `saga.step_index` / `saga.saga_id` / `saga.direction` / `saga.name`
+- `SagaTimeoutDetector`：BackgroundService，每 5 秒扫描超时实例并触发补偿
+- `SagaRegistry`：`FrozenDictionary` + 闭包泛型委托，AOT 安全，无 `MakeGenericType`
+- DI：`KunSagaBuilder` + `AddKunSaga` 扩展
+- 单元测试 18/18
+
+### Added — M5 交付（阶段五：宿主层、RPC 与安全网关）
+
+**Kun.Security** (M5.1, AOT-candidate)
+
+- `S2sTokenOptions`：Issuer / Audience（默认 `kun-internal`）/ Lifetime（默认 60s）/ SigningAlgorithm（默认 RS256，HS256 明确禁止）/ JwksUri / ValidIssuers
+- `IKunJwksProvider` + `FileKunJwksProvider`：文件监视 JWKS 提供者
+- `KunServiceAuthenticationExtensions.AddKunServiceAuthentication`：JwtBearer 验证，`ValidAlgorithms=["RS256","ES256"]`，HS256 被拒绝
+- `JwtTenantContext`：从 `ClaimsPrincipal` 提取 `tenant_id` 实现 `ITenantContext`
+- `JwtCurrentUser`：从 `ClaimsPrincipal` 提取 `sub` / `name` / `roles` 实现 `ICurrentUser`
+- `PropagateS2sTokenHandler`：`DelegatingHandler`，将入站 `Authorization` 头复制到出站请求
+- DI：`AddKunSecurity`（注册 `ITenantContext` + `ICurrentUser`）/ `HttpClientBuilder.AddKunServiceAuth`
+- 单元测试 7/7（valid、HS256 拒绝、wrong aud、expired、key rotation）
+
+**Kun.AspNetCore** (M5.2, AOT-candidate)
+
+- `KunEndpointRouteBuilderExtensions`：`MapCommand<TCommand, TResp>` + `MapQuery<TQuery, TResp>`（ISender glue）
+- `ErrorToProblemDetailsExtensions`：`Error.ToProblemDetails()` 映射（Validation→400 / NotFound→404 / Conflict→409 / Unauthorized→401 / Forbidden→403）
+- `KunExceptionHandler`：`DomainException` → 400 ProblemDetails
+- `KunHealthChecksExtensions`：健康检查注册
+- DI：`KunAspNetCoreServiceCollectionExtensions`
+- 单元测试 11/11
+
+**Kun.Grpc** (M5.3, AOT-candidate)
+
+- `KunResultToRpcInterceptor`：`ResultFailureException` → `RpcException` 状态码映射；`Error.Code` 复制到 trailers
+- `KunServerAuthInterceptor`：强制 `HttpContext.User` 已认证且含 `tenant_id` claim
+- `KunTracingInterceptor`：`ActivitySource("Kun.Grpc")` span，`rpc.system=grpc` / `rpc.method` tags；拦截器顺序：Tracing → Auth → ResultMapping
+- DI：`AddKunGrpc` 链式注册三个拦截器
+- 单元测试 13/13
+
+**Kun.Gateway** (M5.4, AOT-candidate，Web Host)
+
+- `KunGatewayOptions`：ExternalIssuer / ExternalAudience / ExternalJwksUri / InternalIssuer / InternalAudience / InternalTokenLifetime(60s) / SigningKeyPath / PublicKeyPath
+- `S2sTokenIssuer`：加载 PEM RSA 私钥，铸造 RS256 JWT，复制 `sub` / `tenant_id` / `roles` 声明
+- `S2sAuthTransform`：YARP `RequestTransform`，将 Authorization 头替换为内部 token
+- `JwksEndpoint.MapKunJwks`：`/.well-known/jwks.json`，`kid` = SHA-256(modulus) 前 16 字符，AOT 安全（`JwksJsonContext`）
+- `IRateLimitPartitionResolver` + `TenantRateLimitPartitionResolver`（claim-based）+ `IpRateLimitPartitionResolver`（X-Forwarded-For aware）
+- `KunRateLimiterExtensions`：固定窗口 100 req/min，可插拔分区解析器
+- DI：`AddKunGateway` 配置 YARP + S2S issuer + transform
+- `Program.cs` 组合根 + `appsettings.json` 骨架
+- 单元测试 12/12
+- M5 5.5 合约测试（Docker 依赖，延后）
+
+全解决方案：0 错误，0 警告，140/140 测试通过 + 2 集成跳过
+
+### Added — M6 交付（阶段六：示例应用）
+
+**Kun.Sample.Catalog** (M6.1)
+
+- 领域：`Product` AggregateRoot，`Create` / `ChangePrice` / `AdjustStock` 触发 `ProductCreatedDomainEvent` / `PriceChangedDomainEvent` / `StockChangedDomainEvent`
+- 契约：`ProductPublishedIntegrationEvent`（稳定 ID `product.published.v1`）/ `InventoryChangedIntegrationEvent`（`inventory.changed.v1`）
+- 应用层：`CreateProductCommand` + 验证器 + Handler；`AdjustStockCommand`；`GetProductByIdQuery`（Dapper 读端）；`ProductCreatedHandler`（领域事件 → `IIntegrationEventBus` 桥接）
+- 基础设施：`CatalogDbContext`（继承 `KunDbContext`）/ `ProductConfiguration` / `NpgsqlReadDbConnectionFactory` / `MediatorDomainEventDispatcher`
+- API：`Program.cs` 组合根；`EnsureCreated` 启动引导；`POST /products` / `GET /products/{id}` / `/health`
+
+**Kun.Sample.Order** (M6.2, Saga 展示)
+
+- 领域：`Order` AggregateRoot，`MarkReserved` / `Paid` / `Shipped` / `Completed` + `Cancel`；`OrderLine` owned value object；`OrderPlaced` / `OrderCancelled` 领域事件
+- Saga：`OrderCreationSaga`（4 步，`DefaultStepTimeout=30s`）
+  - `ReserveInventoryStep` → `ProcessPaymentStep` → `ShipOrderStep` → `NotifyCustomerStep`
+  - 每步含 `ExecuteAsync` + 幂等 `CompensateAsync`
+  - `ProcessPaymentStep` 在 `SimulateFailure=="payment"` 时抛异常（演示补偿）
+  - `ShipOrderStep` 在 `SimulateFailure=="timeout"` 时 sleep 60s（演示超时）
+- 契约：`OrderCompletedIntegrationEvent`（`order.completed.v1`）
+- 应用层：`PlaceOrderCommand` / `GetOrderById` / `GetSagaStatus` 查询
+- 基础设施：`OrderDbContext` 应用 `ApplyKunSagaConfiguration`；`EfOutboxMessageStore`
+- API Endpoints：`POST /demo/happy-path` / `POST /demo/trigger-payment-failure` / `POST /demo/trigger-timeout` / `GET /demo/sagas/{id}`
+
+**Kun.Sample.AppHost** (M6.3, .NET Aspire 9.0)
+
+- 编排：PostgreSQL（+pgAdmin）/ RabbitMQ（+management plugin）/ Redis / Catalog / Order / Gateway
+- `WaitFor` 依赖链：各服务等待 postgres + rabbitmq 就绪后启动
+- Gateway 引用 catalog + order 用于 YARP 服务发现
+- 单命令启动：`dotnet run --project samples/Kun.Sample.AppHost`
+
+**Kun.Sample.Shared** (M6.4, IsAotCandidate=false)
+
+- `OpenTelemetryExtensions.AddKunObservability(serviceName)`：
+  - Tracing：ActivitySources `Kun.Mediator` / `Kun.EventBus.Outbox` / `Kun.Grpc` / `Kun.Saga` + AspNetCore + HttpClient + gRPC client
+  - Metrics：AspNetCore + HttpClient
+  - OTLP exporter（默认指向 Aspire Dashboard collector）
+- 框架模块（`src/Kun.*`）保持无 OTel 包依赖；OTel 仅在样例组合根注入
+- Gateway 未注入可观测性（AOT-candidate，OTel 包尚未 AOT 安全）
+- `OpenTelemetry.Api` 升级至 1.11.x（修复 GHSA-8785-wc3w-h8q6）
+
+### Changed（M2–M6 期间）
+
+- `Directory.Packages.props`：新增 Dapper 2.1.35 / RabbitMQ.Client 7.x / OpenTelemetry 1.11.x / YARP 等包版本
+- `Kun.AspNetCore` / `Kun.Grpc` csproj：`IsAotCandidate=true` 确认（库，非 Host）
+- `Kun.EntityFrameworkCore` csproj：`IsAotCandidate=false`（trim-safe but not AOT）
+- `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`：Kun.Dapper / Kun.EventBus / Kun.EntityFrameworkCore / Kun.Saga / Kun.Security / Kun.Gateway / Kun.Grpc 接入 RS0016 公开 API 追踪
+
+### Deferred（M2–M6 已决定延后的项）
+
+- Source Generators（Mediator / Validation / Saga）：按 ADR fallback 路径继续使用手工注册
+- Testcontainers 集成测试（M2 2.4 / M3 3.4 / M5 5.5）：Docker 依赖，CI 环境运行，本地跳过
+- `AddKunDapper` API rework：`ReadDbOptions.ConnectionString` 为 `required init`，消费方需在回调内设置（当前 API 略显冗余）
+- `IReadDbConnectionFactory` 默认 Npgsql 实现：框架不内置，由消费方提供（参见样例 `NpgsqlReadDbConnectionFactory`）
+- `MapQuery` nullable TResponse via JsonTypeInfo：类型系统限制，follow-up
+- Gateway 可观测性：OTel 包达到 AOT parity 后追加
+- NuGet 发布仪式（手动，TBD）
+
+## [0.1.0-phase1] - 2026-04-23
+
+Phase 1 首个可对 NeuroAgent 集成发版。10 个新模块落地（Storage / Identity /
+MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configuration /
+Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
+`aot-audit` 矩阵 job 与 `sample-aot-integration` job。
+
+[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.13...HEAD
+
+[2026.10.13]: https://github.com/idadawn/kun/compare/v2026.10.12-hotfix.3...v2026.10.13
+
+[2026.10.12-hotfix.3]: https://github.com/idadawn/kun/compare/v2026.10.12-hotfix.2...v2026.10.12-hotfix.3
+
+[2026.10.12-hotfix.2]: https://github.com/idadawn/kun/compare/v2026.10.12...v2026.10.12-hotfix.2
+
+[2026.10.12]: https://github.com/idadawn/kun/compare/v2026.10.11...v2026.10.12
+
+[2026.10.11]: https://github.com/idadawn/kun/compare/v2026.10.9...v2026.10.11
+
+[2026.10.9]: https://github.com/idadawn/kun/compare/v2026.10.8...v2026.10.9
+
+[2026.10.8]: https://github.com/idadawn/kun/compare/v2026.9.13...v2026.10.8
+
+[2026.9.13]: https://github.com/idadawn/kun/compare/v2026.6.12...v2026.9.13
+
+[0.1.0-phase1]: https://github.com/idadawn/kun/releases/tag/v0.1.0-phase1

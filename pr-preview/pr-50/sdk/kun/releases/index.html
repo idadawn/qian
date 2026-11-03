@@ -1,0 +1,1245 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changelog - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<script>(function(){var r=document.documentElement;function s(){var t=r.classList.contains('dark')?'dark':'light';if(r.getAttribute('data-theme')!==t)r.setAttribute('data-theme',t)}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['class']})})();</script>
+<link href="/pr-preview/pr-50/static/css/styles.b0a6adadfb.css" rel="stylesheet">
+<link rel="preload" href="/pr-preview/pr-50/static/js/async/route-697177ba2c1e.8fff4fa2bf.js" as="script">
+<script defer src="/pr-preview/pr-50/static/js/styles.e17d1103f0.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/lib-react.50abd11734.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/lib-router.081cdedb3d.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/l.17b56459a8.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/index.9cbf315c7d.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/pr-preview/pr-50/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/pr-preview/pr-50/sdk/kun/releases/index.md">
+<link rel="describedby" href="/pr-preview/pr-50/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Changelog - Qian 文档">
+<meta name="description" content="本文档记录 Kun Framework 的所有显著变更。">
+<meta property="og:description" content="本文档记录 Kun Framework 的所有显著变更。"></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/pr-preview/pr-50/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /pr-preview/pr-50/llms.txt, the full documentation bundle is available at /pr-preview/pr-50/llms-full.txt, and this page is available as Markdown at /pr-preview/pr-50/sdk/kun/releases/index.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/pr-preview/pr-50/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/pr-preview/pr-50/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/pr-preview/pr-50/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/pr-preview/pr-50/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><div class="rp-switch-appearance"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" class="rp-switch-appearance__icon rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="currentColor" viewBox="0 0 19 19" class="rp-switch-appearance__icon rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></div><div class="rp-social-links"><a href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" class="rp-social-links__item"><div class="rp-social-links__icon"><div class="rp-social-links__icon"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></div></div></a><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"></ul></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" class="rp-social-links__item"><div class="rp-social-links__icon"><div class="rp-social-links__icon"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></div></div></a><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"></ul></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/pr-preview/pr-50/sdk/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">Kun 框架</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/with-qian.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">与 Qian 的关系</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/getting-started.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">上手</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/modules.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模块地图</span></div><div class="rp-sidebar-item__right"></div></a><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">指南</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/guides/gateway-rate-limit.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Gateway 限流策略指南</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/identity-client.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Identity 客户端、浏览器会话与迁移</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/orchestrating-sagas.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Saga 编排指南（Orchestration）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/outbox-and-integration-events.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Outbox + Integration Events 指南</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/read-side-patterns.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Read-Side Patterns: Writing Query Handlers</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/saas-multitenancy.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">SaaS 多租户策略选型指南</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/schema-per-service.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Schema-per-service with KunDbContext</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/tracing-tour.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Tracing Tour: Reading Distributed Traces in the Aspire Dashboard</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/validating-commands.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Command 校验指南（Kun.Validation）</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">安全</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/security/audit-log.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">审计：同事务实体记录与 PostgreSQL 命令哈希链</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/security/multi-tenancy-rls.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Multi-Tenancy: Row-Level Security as Defence in Depth</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/security/s2s-jwt.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Service-to-Service JWT Authentication</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">设计说明与 ADR</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/architecture/why-cqrs.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Why Kun Splits Writes from Reads</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/why-outbox.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Why Kun Uses the Outbox Pattern</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/why-saga.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Why Kun Uses Saga Orchestration</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/when-to-use-currentuser.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">When to use ICurrentUser vs IAuthenticatedUser</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-001-kun-identity-module-decision.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-001 Do Not Introduce a New Kun.Identity Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-003-kun-audit-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-003 Introduce Kun.Audit and Kun.Audit.EntityFrameworkCore Modules</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-004-kun-observability-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-004 Introduce Kun.Observability Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-005-kun-caching-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-005 Introduce Kun.Caching Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-006-kun-ratelimit-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-006 Introduce Kun.RateLimit Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-007-kun-multitenancy-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-007 Introduce Kun.MultiTenancy and Kun.MultiTenancy.EntityFrameworkCore Modules</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-008-kun-identity-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-008 Introduce Kun.Identity Module — Reversing ADR-001</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-009-kun-configuration-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-009 Introduce Kun.Configuration Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-010-kun-identity-cookie-session.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-010 Add Cookie Session + IAuthenticatedUser to Kun.Identity</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-011-result-async-extensions.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-011 Result&lt;T&gt; composition extensions (sync + async)</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-012-kun-testing-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-012 Introduce Kun.Testing module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-013-kun-observability-enricher.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-013 Baggage-driven activity enricher for Kun.Observability</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-014-validation-result-behavior.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-014 Result-returning validation pipeline behavior</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-015-outbox-pattern.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-015 Outbox pattern design for Kun.EventBus</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-016-platform-ports.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-016 配置可靠性、权限端口与能力目录</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-p2d-multitenancy.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR P2-D SaaS 多租户 3-策略架构</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-s02-kun-sandbox-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-S02 Introduce Kun.Sandbox Module — E2B-compatible sandbox abstraction for Kun consumers</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/kun/whitepaper.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">白皮书</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/releases/index.html" class="rp-sidebar-item rp-sidebar-item--active rp-sidebar-group rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志与发布说明</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/releases/index.html" class="rp-sidebar-item rp-sidebar-item--active rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/releases/v0-1-0-phase1.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Kun Framework — v0.1.0-phase1</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/api/kun/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">API 参考</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/dotnet/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">后端 SDK（.NET）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/dotnet/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">编程模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/dotnet/capabilities.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">能力与函数</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/dotnet/events.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">事件与中间件</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/frontend/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">前端 SDK</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/frontend/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">编程模型</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/ai/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">AI SDK</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/ai/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">AI SDK 概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/ai/gateway.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模型网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/ai/agent-runtime.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Agent 运行时对接</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/ai/mcp.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">MCP</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/ai/sandbox.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">沙箱</span></div><div class="rp-sidebar-item__right"><span class="rp-badge rp-badge--info">S4</span></div></a></div></div><a href="/pr-preview/pr-50/sdk/api/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">API 参考</span></div><div class="rp-sidebar-item__right"></div></a></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="changelog"><a href="#changelog" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Changelog<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><button class="rp-llms-button rp-llms-view-options__trigger "><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-llms-view-options__arrow "><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></button></div>
+<div class="rp-callout rp-callout--info"><div class="rp-callout__title">镜像页</div><div class="rp-callout__content"><p>
+本页镜像自 kun 仓库 <a href="https://github.com/idadawn/kun/blob/v2026.10.12-hotfix.3/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="rp-link"><code>CHANGELOG.md</code></a>（<code>v2026.10.12-hotfix.3</code>）。Kun 文档与代码不一致处以代码为准（<a href="/pr-preview/pr-50/design/adr/adr-001-kun-relationship.html" class="rp-link">ADR-001 D1.8</a>）；Qian 对 Kun 的选用与约束见<a href="/pr-preview/pr-50/sdk/kun/with-qian.html" class="rp-link">与 Qian 的关系</a>。改动请提到 kun 仓库。</p></div></div>
+<p>本文档记录 Kun Framework 的所有显著变更。</p>
+<p>格式基于 <a href="https://keepachangelog.com/zh-CN/1.1.0/" target="_blank" rel="noopener noreferrer" class="rp-link">Keep a Changelog</a>。版本号采用 <strong>CalVer</strong>（<code>vYYYY.M.D[-hotfix.N|-beta.N]</code>，从 <code>main</code> 打 tag，见 <code>CONTRIBUTING.md</code>）；更早的历史条目遵循 <a href="https://semver.org/lang/zh-CN/" target="_blank" rel="noopener noreferrer" class="rp-link">Semantic Versioning</a>。</p>
+<h2 class="rp-toc-include" id="unreleased"><a href="#unreleased" class="rp-header-anchor rp-link" aria-hidden="true">#</a><a href="https://github.com/idadawn/kun/compare/v2026.10.11...HEAD" target="_blank" rel="noopener noreferrer" class="rp-link">Unreleased</a></h2>
+<h3 class="rp-toc-include" id="fixed--授权主体类型透传"><a href="#fixed--授权主体类型透传" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 授权主体类型透传</h3>
+<ul>
+<li>HTTP、四种 gRPC 与 Mediator PEP 保留已认证主体的 user/service/agent 类型，服务身份不再默认按同名 user 查权限。未知或歧义类型在进入处理器前拒绝；不改变 S2S 签发端对 Agent 的保留限制。</li>
+<li>ICurrentUser 增加来自 principal_kind 的只读 PrincipalKind，旧适配器通过默认接口实现保持 user；JWT 和浏览器适配器读取已认证主身份，拒绝冲突标识与重复关键 claim，不从次身份拼接权限主体。没有类型声明的旧浏览器身份继续按 user 处理，机器身份适配器必须提供真实类型。</li>
+<li>宿主复用 Kun.Security 的离线 claim 读取器；不增加身份接口族，不从普通请求头推断身份。回归覆盖真实 RSA 签名 HTTP、gRPC 四形态及 Mediator 的同名主体隔离。</li>
+</ul>
+<h2 class="rp-toc-include" id="20261012-hotfix2---2026-10-12"><a href="#20261012-hotfix2---2026-10-12" class="rp-header-anchor rp-link" aria-hidden="true">#</a>[2026.10.12-hotfix.2] - 2026-10-12</h2>
+<h3 class="rp-toc-include" id="fixed--同日修复版发布校验"><a href="#fixed--同日修复版发布校验" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 同日修复版发布校验</h3>
+<ul>
+<li>原尝试标签 <code>v2026.10.12-2</code> 因纯数字后缀被 nuget.org 的包清单校验拒绝，保留该失败标签。改用字母加点分段的 <code>hotfix.N</code>，脚本与 CI 复用版本/日期校验；推送前核对实际包、符号包和 Kun 内部依赖的版本及发行物完整性。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--共享-ef-模型的租户上下文绑定"><a href="#fixed--共享-ef-模型的租户上下文绑定" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 共享 EF 模型的租户上下文绑定</h3>
+<ul>
+<li><code>KunDbContext</code> 查询过滤器改从当前执行查询的 DbContext 读取租户，修复缓存模型继续引用旧宿主或旧请求访问器的问题。旧访问器退出或换租户时，新请求不再查询空集或错误租户。</li>
+<li><code>ApplyKunMultiTenantFilters</code> 增加 DbContext 重载。<strong>迁移要求</strong>：原访问器重载标记 KUNTENANT001 并在模型构建时明确拒绝；非 KunDbContext 消费者须实现 IKunMultiTenantDbContext 并改传 <code>this</code>。仅捕获常量值无法兼容默认共享模型，因此不保留会固定到旧租户的降级路径。KunDbContext 消费者自动获得修复，RLS 双层装配保留。</li>
+<li>真实 PostgreSQL 回归验证同一模型在独立租户访问器之间复用的两种失效场景；NuGet 消费者应精确钉定 <code>2026.10.12-hotfix.2</code>，避免版本排序选回同日基础版。</li>
+</ul>
+<h2 class="rp-toc-include" id="20261012---2026-10-12"><a href="#20261012---2026-10-12" class="rp-header-anchor rp-link" aria-hidden="true">#</a>[2026.10.12] - 2026-10-12</h2>
+<h3 class="rp-toc-include" id="fixed--apollo-原始-namespace-校验"><a href="#fixed--apollo-原始-namespace-校验" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — Apollo 原始 namespace 校验</h3>
+<ul>
+<li>增加可选 <code>ValidateNamespace</code>，在合并、缓存写入和离线缓存读取前逐份检查原始配置。宿主的敏感数据规则因此可以拦截被后续 namespace 覆盖的明文；任何一份被拒绝都不替换最后有效快照。</li>
+</ul>
+<h2 class="rp-toc-include" id="20261011---2026-10-11"><a href="#20261011---2026-10-11" class="rp-header-anchor rp-link" aria-hidden="true">#</a><a href="https://github.com/idadawn/kun/compare/v2026.10.9...v2026.10.11" target="_blank" rel="noopener noreferrer" class="rp-link">2026.10.11</a> - 2026-10-11</h2>
+<h3 class="rp-toc-include" id="fixed--mediator-权限行为启动校验"><a href="#fixed--mediator-权限行为启动校验" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — Mediator 权限行为启动校验</h3>
+<ul>
+<li><code>AddPermissionBehavior</code> 移除通用管道登记附带的构造器注册，只保留能处理可选权限／身份／租户端口及拒绝回调的工厂。开启 <code>ValidateOnBuild</code> 时不再因重复登记报缺少服务；重复登记仍能通过依赖校验，缺少身份或引擎继续在 handler 前拒绝。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--identity-客户端与唯一-s2s-签发入口s1-kun-004"><a href="#fixed--identity-客户端与唯一-s2s-签发入口s1-kun-004" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — Identity 客户端与唯一 S2S 签发入口（S1-KUN-004）</h3>
+<ul>
+<li>授权码交换必须发送原始 PKCE verifier 并验证签名/issuer/audience/nonce；补 refresh、client credentials 与有期限的 discovery 缓存。浏览器事务受保护并防重放，完成辅助服务与认证方案可直接解析，保留宿主显式方案。</li>
+<li>内存与 Redis 会话增加原子续期、按用户吊销及带重放保护的后通道登出；吊销后续期不得复活会话。默认验证 cookie 写请求的防跨站令牌；sid 日志只记 SHA256 与错误类型，并加入静态门禁。</li>
+<li>网关统一封闭 S2S 形状：aud/roles 数组、规范 UUID、用户/服务主体、会话/修订/成员上下文、1–300 秒 TTL 与每跳受众。拒绝缺失身份，不再转发任意 permission/email/trace 字段；两套旧签发入口标 KUNS2S001。</li>
+<li>Sandbox 默认模板改为 kun-default，增加调用方命名的 JSON 扩展并防止覆盖核心字段；保留显式旧扩展的兼容序列化，标记废弃。</li>
+<li>此版本有迁移要求：规范身份字段、旧 cookie 重新登录、Redis 新键空间和原子接口、Data Protection 共享密钥。详见 <a href="/pr-preview/pr-50/sdk/kun/guides/identity-client.html" class="rp-link">Identity 客户端指南</a>。框架协议夹具不能替代尚未交付的真实 Qian 身份服务联调。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--网关与流式-grpc-边界s1-kun-003"><a href="#fixed--网关与流式-grpc-边界s1-kun-003" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 网关与流式 gRPC 边界（S1-KUN-003）</h3>
+<ul>
+<li>网关业务路由默认认证并绑定限流，显式匿名白名单保留；超限返回 429 和可用的 Retry-After，匿名路由不透传未验证凭据。</li>
+<li>转发头只接受配置的代理 IP/CIDR，空名单关闭处理；IP 分区只读归一化地址，阻止伪造 X-Forwarded-For 切桶。</li>
+<li>签发与 JWKS 共用 RSA 热轮换状态，无重启发布新 kid，重叠窗口保留旧公钥、到期移除；坏替换保留最后有效密钥。跨副本轮换与消费者缓存边界见安全文档。</li>
+<li>gRPC 认证、Result 映射与追踪覆盖 unary、客户端流、服务端流和双向流，缺少租户在 handler/应用首帧前拒绝；独立网关启用观测并保持 AOT 门禁。EF 观测路径由运行时特性守卫从原生二进制裁掉；AOT 宿主须显式关闭该选项。</li>
+<li>新增真实 Kestrel/HTTP2 网关和 gRPC 回归，覆盖匿名 401、默认/自定义限流、代理信任、密钥轮换及四种 RPC 的认证/映射/trace。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--saga-作用域与步骤可靠性s1-kun-007"><a href="#fixed--saga-作用域与步骤可靠性s1-kun-007" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — Saga 作用域与步骤可靠性（S1-KUN-007）</h3>
+<ul>
+<li>Saga 改为实际作用域工厂，移除注册期临时容器，持久化稳定 <code>ISaga.Name</code> 并兼容旧类名实例。</li>
+<li>PostgreSQL 实例行锁覆盖步骤与状态/队列提交，超时检测共用行锁并复核状态，阻止双副本重复执行与陈旧条目倒退状态。</li>
+<li>成功、部分失败及补偿均回写上下文；失败本地写入回滚至保存点。步骤遵守单步取消期限，宿主关闭回滚待恢复，不触发业务补偿。</li>
+<li>增加可配置、有持久化退避的步骤重试；默认一次保持兼容，附 Order 示例的 NextAttemptAt 迁移。远程副作用仍需幂等键。</li>
+</ul>
+<h2 class="rp-toc-include" id="2026109---2026-10-10"><a href="#2026109---2026-10-10" class="rp-header-anchor rp-link" aria-hidden="true">#</a><a href="https://github.com/idadawn/kun/compare/v2026.10.8...v2026.10.9" target="_blank" rel="noopener noreferrer" class="rp-link">2026.10.9</a> - 2026-10-10</h2>
+<h3 class="rp-toc-include" id="added--fixed--平台基础端口s1-kun-006"><a href="#added--fixed--平台基础端口s1-kun-006" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added / Fixed — 平台基础端口（S1-KUN-006）</h3>
+<ul>
+<li>配置重载失败保留最后有效值并告警，支持关键／可选配置与源生成 JSON Schema；新增 Apollo HTTP provider（长轮询、AccessKey、通知修订、快照校验与缓存）。</li>
+<li>新增 <code>Kun.Authorization</code> 权限／数据／字段端口及 HTTP、Mediator、gRPC 四种调用形态集成，缺失引擎时拒绝；不内置 RBAC/ABAC 实现。</li>
+<li>handler 注册支持 <code>JsonTypeInfo</code> 与稳定能力 ID，通过 <code>ICapabilityRegistry</code> 枚举请求和响应 Schema。</li>
+<li><code>KunExceptionHandler</code> 改经 <code>IProblemDetailsService</code>，允许宿主接管错误体；Dapper 新增不可变 options 工厂重载；慢调用阈值可配置。</li>
+<li>旧基础设施接口与旧存储接口标记 <code>KUNLEGACY001</code>，保留兼容实现。下游门禁应区分旧接口 <code>Kun.Storage.Abstractions.IFileStorage</code> 与新包中的 <code>Kun.Storage.IFileStorage</code>。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--审计原子性与数据约定s1-kun-005"><a href="#fixed--审计原子性与数据约定s1-kun-005" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 审计原子性与数据约定（S1-KUN-005）</h3>
+<ul>
+<li><code>AddKunAuditing&lt;TContext&gt;()</code> 将实体 <code>AuditLog</code> 与 <code>kun.audit.event.v2</code> Outbox 消息直接登记到业务上下文；保存失败会撤销暂存记录，避免重试生成重复审计。租户、用户来自当前上下文，v2 支持字符串标识；旧 v1 类型保留读取兼容。</li>
+<li>事后写入的 <code>AuditSaveChangesInterceptor</code>、旧 <code>UseEventBus()</code> 与 <code>kun.audit.record.v1</code> 路径标记废弃，迁移指引见 <a href="/pr-preview/pr-50/sdk/kun/security/audit-log.html" class="rp-link">审计文档</a>。</li>
+<li><code>PostgresAuditChain</code> 在事务里按租户行锁串行化读取链头、写记录并推进链头，保存原始时间 ticks，支持多副本与哈希重放。<code>AuditEntry.ActorType</code> 支持 <code>agent</code> 并纳入新哈希，历史 unknown 条目维持旧算法。</li>
+<li><code>EfAuditReader&lt;TContext&gt;</code> 在数据库端按当前租户、主体、资源、时间窗口过滤并限量。</li>
+<li>显式数据约定提供 snake_case、Guid v7 默认主键、可空审计主体及 PostgreSQL <code>xmin</code>；<code>SaveChangesResultAsync()</code> 将并发冲突映射为 <code>Result</code> 的 Conflict。已有非空主键保持不变，旧非空数值主体需要显式迁移。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--outbox-与消费可靠性s1-kun-002"><a href="#fixed--outbox-与消费可靠性s1-kun-002" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — Outbox 与消费可靠性（S1-KUN-002）</h3>
+<ul>
+<li>Catalog 真库测试确认旧领域通知路径会丢失集成事件；领域通知改为提交前同 scope 派发，失败时禁止提交半个通知链。</li>
+<li>默认 EF Outbox 存储使用 PostgreSQL <code>FOR UPDATE SKIP LOCKED</code> 领取与提交批次；新增持久化 <code>NextAttemptAt</code> 指数退避，附两份示例迁移。自定义非事务存储不再默认无锁。</li>
+<li>RabbitMQ 开启发布确认与 mandatory 路由，消费者成功后才记录幂等并 ack，失败经持久化 quorum 队列退避后进 DLX；保留共享连接自动恢复。业务 handler 仍需幂等。</li>
+<li>恢复原先跳过的幂等测试，补齐双副本发布、handler 失败重试与 broker 重启验收；见 <a href="/pr-preview/pr-50/sdk/kun/guides/outbox-and-integration-events.html" class="rp-link">消息指南</a> 的迁移边界。</li>
+</ul>
+<h2 class="rp-toc-include" id="2026108---2026-10-08"><a href="#2026108---2026-10-08" class="rp-header-anchor rp-link" aria-hidden="true">#</a><a href="https://github.com/idadawn/kun/compare/v2026.9.13...v2026.10.8" target="_blank" rel="noopener noreferrer" class="rp-link">2026.10.8</a> - 2026-10-08</h2>
+<h3 class="rp-toc-include" id="fixed--多租户后台链路s1-kun-001"><a href="#fixed--多租户后台链路s1-kun-001" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 多租户后台链路（S1-KUN-001）</h3>
+<ul>
+<li><code>ITenantContext.BeginScope</code> 使消息消费、Outbox 发布和 Saga 执行／补偿显式恢复租户；租户校验复用同一白名单，缺少租户的多租户消息直接进入死信队列。</li>
+<li><code>AddKunSecurity</code> 与 <code>AddKunMultiTenancy</code> 共用 <code>AsyncLocalTenantContext</code>，JWT 仅提供已认证的解析来源；显式后台作用域优先且结束后恢复原值。</li>
+<li><code>Production</code> 模式只接受合法令牌的唯一 <code>tenant_id</code>，忽略请求头与默认租户回退，失败返回 401；开发兼容模式仍可显式配置旧 claim 和请求头。</li>
+<li>新增 <code>AddKunTenantRls&lt;TContext&gt;()</code> 自动装配连接版、事务版拦截器和 <code>KunMultiTenantModelCacheKeyFactory</code>；<code>KunDbContext</code> 实现统一缓存键接口。无泛型旧重载保留注册语义，已有手动装配继续兼容。</li>
+<li>RabbitMQ 新增 <code>tenant_id</code> 信封头，兼容读取与发送旧 <code>tenantId</code> 头（至少两个小版本）；本次不变更 ack／重试／幂等语义。</li>
+</ul>
+<h3 class="rp-toc-include" id="changed--仓库地址"><a href="#changed--仓库地址" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Changed — 仓库地址</h3>
+<ul>
+<li>仓库于 2026-10-08 从 CavaiLAB 组织迁回 <code>idadawn/kun</code>（<a href="https://github.com/idadawn/kun" target="_blank" rel="noopener noreferrer" class="rp-link">https://github.com/idadawn/kun</a>），与 iclaw、iclaw-deploy 同一所有者；旧地址自动重定向。GitHub Packages 镜像自下一个版本起发布在 idadawn 名下，nuget.org 上的 <code>Kun.*</code> 不受影响。本文件的版本比较链接已改为新地址。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--发布配置隔离"><a href="#fixed--发布配置隔离" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 发布配置隔离</h3>
+<ul>
+<li>GitHub Packages 发布使用当前步骤专属的临时 NuGet 配置，并在步骤退出时删除，避免把短期凭据和额外包源遗留在共享执行器，导致后续还原触发 NU1507。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--文档"><a href="#fixed--文档" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 文档</h3>
+<ul>
+<li>修正本文件两处越出仓库根目录的相对链接；<code>docs/architecture/when-to-use-currentuser.md</code> 的决策表补齐两行缺失的列（#42）。</li>
+</ul>
+<h2 class="rp-toc-include" id="2026913---2026-09-13"><a href="#2026913---2026-09-13" class="rp-header-anchor rp-link" aria-hidden="true">#</a><a href="https://github.com/idadawn/kun/compare/v2026.6.12...v2026.9.13" target="_blank" rel="noopener noreferrer" class="rp-link">2026.9.13</a> - 2026-09-13</h2>
+<h3 class="rp-toc-include" id="fixed--测试依赖漏洞门禁"><a href="#fixed--测试依赖漏洞门禁" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 测试依赖漏洞门禁</h3>
+<ul>
+<li>将 Testcontainers 引入的 SSH.NET 在四个测试项目中明确锁定到修复版本 2026.0.0，保留 NU1903 检测；不向生产包添加该依赖。参见 <a href="https://github.com/sshnet/SSH.NET/security/advisories/GHSA-q939-rpr3-3284" target="_blank" rel="noopener noreferrer" class="rp-link">GHSA-q939-rpr3-3284</a>。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--网关与服务的身份上下文一致性"><a href="#fixed--网关与服务的身份上下文一致性" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 网关与服务的身份上下文一致性</h3>
+<ul>
+<li>网关保留可执行宿主，同时支持 NuGet 打包，便于消费方复用既有 AddKunGateway、发行器和公钥端点，而不复制网关实现。</li>
+<li>统一网关和下游对 role / roles / ClaimTypes.Role 的处理并去重，避免内部令牌携带的角色在 ICurrentUser 中丢失。</li>
+<li>新增显式 ForwardedClaimTypes 白名单，支持会话标识、授权版本和权限字段；保留声明、数量和有效期边界，默认不转发额外字段。</li>
+<li>公钥端点明确使用已有源生成序列化上下文，修复 Native AOT 程序实际调用 JWKS 返回 500。</li>
+<li>内部令牌增加与 JWKS 一致的 kid 及独立 jti，拒绝超过五分钟或非正的 TTL；YARP 转换改为等待异步解析并传播请求取消。</li>
+<li>增加实际 JWT 中间件的网关签发到下游身份读取回归，验证角色、租户、会话版本和选定权限字段。</li>
+</ul>
+<h3 class="rp-toc-include" id="added--oss-live-smoke-按需-ci-工作流"><a href="#added--oss-live-smoke-按需-ci-工作流" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — OSS Live Smoke 按需 CI 工作流</h3>
+<ul>
+<li>新增 <code>.github/workflows/oss-live-smoke.yml</code>：把既有的 <code>OssFileStorageLiveSmokeTests</code>（实弹 OSS 预签名 PUT/GET 验证）接入 <code>workflow_dispatch</code> + 每日定时（03:27 UTC）的可选 job。此前该测试只能在本地或下游消费者手动跑，从不被任何 CI 触发（见 PR #12 遗留的&quot;实弹 OSS e2e&quot;项）。</li>
+<li>仅当配置了 <code>OSS_SMOKE_*</code> 四个仓库 secrets 时真正验证；缺失时测试自跳过，job 仍绿，并由 &quot;Check credentials&quot; 步骤打印警告，避免把&quot;跳过&quot;误读为&quot;已验证&quot;。定时任务以 <code>if: github.repository == &#x27;idadawn/kun&#x27;</code> 限定，fork 不触发。</li>
+</ul>
+<h2 class="rp-toc-include" id="2026612---2026-06-12"><a href="#2026612---2026-06-12" class="rp-header-anchor rp-link" aria-hidden="true">#</a>[2026.6.12] - 2026-06-12</h2>
+<p>首个 CalVer 版本，也是全部可打包模块首次推送 NuGet.org 的正式版。除下列当日变更外，本版还包含此前积压在 Unreleased 的全部 2026-04-22 ～ 04-24 交付（见本节后半部分）。</p>
+<h3 class="rp-toc-include" id="fixed--kunsln-完整性20-个-srctests-项目纳入-ci-构建与测试门禁-24"><a href="#fixed--kunsln-完整性20-个-srctests-项目纳入-ci-构建与测试门禁-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — Kun.sln 完整性：20 个 src/tests 项目纳入 CI 构建与测试门禁 (#24)</h3>
+<ul>
+<li><code>Kun.sln</code> 此前缺失 11 个 src 项目（Audit.EntityFrameworkCore、Caching、Configuration、Identity、Identity.AspNetCore、MultiTenancy、MultiTenancy.EntityFrameworkCore、Observability、RateLimit、Sandbox、Storage）与 9 个测试项目——CI 按 sln 构建，这些测试（200+ 用例，仅 Kun.Identity.Tests 即 47 个）从未在 CI 运行，src 侧仅靠 AOT audit 矩阵兜底。</li>
+<li>同步修复缺失测试项目在 Release + TreatWarningsAsErrors 下积累的分析器违规（CA1305 / CA1861 / IDE0005）。</li>
+</ul>
+<h3 class="rp-toc-include" id="added--benchmarks-项目纳入-ci-编译门禁-25"><a href="#added--benchmarks-项目纳入-ci-编译门禁-25" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — benchmarks 项目纳入 CI 编译门禁 (#25)</h3>
+<ul>
+<li><code>Kun.Benchmarks</code> 与 <code>Kun.Benchmarks.Grpc</code> 加入 <code>Kun.sln</code>，并修复其相对 <code>Kun.Storage</code> 现行 API 的编译漂移，防止基准代码静默腐烂。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--kunobservability-稳定版打包被-nu5104-阻断-26"><a href="#fixed--kunobservability-稳定版打包被-nu5104-阻断-26" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — Kun.Observability 稳定版打包被 NU5104 阻断 (#26)</h3>
+<ul>
+<li><code>OpenTelemetry.Instrumentation.EntityFrameworkCore</code> 上游从未发布稳定版（beta-only，当前 1.15.1-beta.1）。<code>Kun.Observability</code> 入 sln 后首次被 <code>dotnet pack</code> 打包，即触发 NU5104（稳定包不得携带预发布依赖）并被 TreatWarningsAsErrors 升级为错误，阻断发版。在该 csproj 定点 <code>NoWarn</code> 并以注释记录上游现状（上游转正后应回顾移除）。</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed--测试稳定性消除两处高频-ci-flaky-27--28--29"><a href="#fixed--测试稳定性消除两处高频-ci-flaky-27--28--29" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed — 测试稳定性：消除两处高频 CI flaky (#27 / #28 / #29)</h3>
+<ul>
+<li><code>LogBaggageEnrichmentTests</code> 从未启动自身 trace 管道，依赖同程序集并行测试的进程级 ActivitySource 监听器“碰巧在场”；无监听器瞬间 <code>StartActivity</code> 返回 null，断言失败。现于 <code>BuildLoggerFactory</code> 中 eager resolve <code>TracerProvider</code> 使测试自给自足，静默 null 守卫改为显式断言 (#27)。</li>
+<li>PgBouncer 100 并发压测的 TCP+auth 风暴在高负载共享 runner 上压垮单线程 pgbouncer 的 accept 循环，内核重置表现为 <code>Exception while reading from stream</code>：并发收敛到 30 限流闸门（仍高于 25 个后端槽，连接换绑的被测语义不变）+ 仅对 transient 异常 ≤3 次退避重试，prepared-statement 错误（PostgresException）永不重试 (#28)；fixture 补 <code>UntilPortIsAvailable(6432)</code> 等待策略，关闭“容器进程已起、监听 socket 未绑定”的启动竞态窗口 (#29)。</li>
+</ul>
+<h3 class="rp-toc-include" id="added--kuntestingentityframeworkcore-module-with-outboxassertions-2026-04-24"><a href="#added--kuntestingentityframeworkcore-module-with-outboxassertions-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — Kun.Testing.EntityFrameworkCore module with OutboxAssertions (2026-04-24)</h3>
+<ul>
+<li><strong>KN-SELF-014 (scaffold) + KN-SELF-016 (tests + docs) together
+close ADR-015 §F3</strong>. Ships the sibling module to
+<code>Kun.Testing</code> for EF-persisted Outbox assertion helpers.</li>
+<li><strong>New <code>src/Kun.Testing.EntityFrameworkCore/</code> module</strong> —
+<code>IsAotCandidate=false</code> (matches <code>Kun.EntityFrameworkCore</code>),
+<code>IsPackable=true</code>, <code>HasPublicApi=true</code>. ProjectReferences
+<code>Kun.Testing</code> (reuses <code>KunAssertionException</code>) +
+<code>Kun.EventBus</code> (the <code>OutboxMessage</code> type under test).
+PackageReference <code>Microsoft.EntityFrameworkCore</code>.</li>
+<li><strong><code>OutboxAssertions</code> class</strong> — six extension methods, 3
+helpers × 2 overload families:
+<ul>
+<li><code>IEnumerable&lt;OutboxMessage&gt;</code> overloads (primary, no
+<code>DbContext</code> dep required): <code>ShouldHaveOutboxMessage(eventTypeId)</code>,
+<code>ShouldHaveExactlyOneOutboxMessage(eventTypeId)</code> (returns
+the matched <code>OutboxMessage</code>), <code>ShouldNotHaveOutboxMessage(eventTypeId)</code>.</li>
+<li><code>DbContext</code> overloads (one-liner convenience — delegate
+to <code>db.Set&lt;OutboxMessage&gt;().AsEnumerable().ShouldXxx(...)</code>):
+same three helpers.</li>
+</ul>
+</li>
+<li><strong>Mismatch-message shape</strong>: helper name + expected
+<code>EventTypeId</code> + observed match count + distinct
+<code>EventTypeId</code>s actually present (sorted, comma-joined).
+That last field tells the consumer what WAS staged on
+failure — dramatically shorter round-trip when the test
+was set up wrong.</li>
+<li><strong>Tests</strong> (<code>tests/Kun.Testing.EntityFrameworkCore.Tests/</code>):
+11 tests covering every helper × overload × pass/fail path;
+<code>UseInMemoryDatabase(Guid.NewGuid().ToString())</code> per test
+keeps the <code>DbContext</code> overload fixtures hermetic.</li>
+<li><strong>Cross-links</strong>: <code>Kun.EventBus/AGENTS.md</code> §Testing
+Requirements now points at the new module as the canonical
+Outbox test-helper surface; <code>Kun.Testing/AGENTS.md</code>
+sibling-module note links to the EntityFrameworkCore
+variant for tests that need an EF-Core dependency.</li>
+<li><strong>Consumer usage</strong>:
+<div class="rp-codeblock language-csharp"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="csharp"><code><span class="line"><span style="color:var(--shiki-token-keyword)">await</span><span style="color:var(--shiki-token-constant)"> _mediator</span><span style="color:var(--shiki-foreground)">.</span><span style="color:var(--shiki-token-function)">Send</span><span style="color:var(--shiki-foreground)">(</span><span style="color:var(--shiki-token-keyword)">new</span><span style="color:var(--shiki-token-function)"> PlaceOrderCommand</span><span style="color:var(--shiki-foreground)">(</span><span style="color:var(--shiki-token-keyword)">..</span><span style="color:var(--shiki-foreground)">.)</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> ct);</span></span>
+<span class="line"><span style="color:var(--shiki-token-constant)">_dbContext</span><span style="color:var(--shiki-foreground)">.</span><span style="color:var(--shiki-token-function)">ShouldHaveExactlyOneOutboxMessage</span><span style="color:var(--shiki-foreground)">(</span><span style="color:var(--shiki-token-string-expression)">&quot;order.placed.v1&quot;</span><span style="color:var(--shiki-foreground)">);</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+</li>
+</ul>
+<h3 class="rp-toc-include" id="security--resolve-nu1902--ghsa-g94r-2vxg-569j-on-opentelemetryapi-1120-2026-04-24"><a href="#security--resolve-nu1902--ghsa-g94r-2vxg-569j-on-opentelemetryapi-1120-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Security — Resolve NU1902 / GHSA-g94r-2vxg-569j on OpenTelemetry.Api 1.12.0 (2026-04-24)</h3>
+<ul>
+<li><strong>KN-SELF-015</strong> closes the NU1902 advisory
+(<a href="https://github.com/advisories/GHSA-g94r-2vxg-569j" target="_blank" rel="noopener noreferrer" class="rp-link">GHSA-g94r-2vxg-569j</a>,
+moderate severity) against <code>OpenTelemetry.Api 1.12.0</code>, which
+was entering the transitive graph of <code>Kun.Sample.Catalog</code> +
+<code>Kun.Sample.Tests</code> via
+<code>OpenTelemetry.Instrumentation.EntityFrameworkCore 1.12.0-beta.1</code>.</li>
+<li><strong>Fix</strong> (<code>ce910a4</code>): <code>Directory.Packages.props</code> OpenTelemetry
+group bumped — <code>OpenTelemetry.Api</code> explicitly pinned to
+<strong>1.15.3</strong> (patched), plus companion pins on <code>OpenTelemetry</code> /
+<code>OpenTelemetry.Extensions.Hosting</code> / <code>OpenTelemetry.Exporter.*</code>
+to 1.12.0 to keep the group coherent. CPM now force-resolves
+the transitive dependency up to the patched line.</li>
+<li><strong>Operator impact</strong>: <code>dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true</code> returns to 0 errors
+(NuGetAudit no longer promotes NU1902 to error). No source-
+or behaviour-level changes; purely a dependency graph
+tightening. Downstream consumers of Kun that pin
+<code>OpenTelemetry.Api</code> directly should align on 1.15.3 to
+avoid a version conflict at restore.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--non-generic-result-variant-of-validationresultpipelinebehavior-2026-04-24"><a href="#added--non-generic-result-variant-of-validationresultpipelinebehavior-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — Non-generic <code>Result</code> variant of ValidationResultPipelineBehavior (2026-04-24)</h3>
+<ul>
+<li><strong>KN-SELF-012</strong> closes <strong>ADR-014 §F1</strong> — the deferred
+non-generic <code>Result</code> variant of the Result-returning validation
+pipeline behavior originally shipped by KN-SELF-007.</li>
+<li><strong><code>Kun.Validation.Behaviors.ValidationResultPipelineBehavior&lt;TRequest&gt;</code></strong> —
+new sibling class in the same file as the generic
+<code>ValidationResultPipelineBehavior&lt;TRequest, TValue&gt;</code>, constrained
+as <code>IPipelineBehavior&lt;TRequest, Result&gt;</code> where
+<code>TRequest : IRequest&lt;Result&gt;</code>. Same validator loop, same
+<code>&quot;; &quot;</code>-joined <code>Error.Validation(&quot;request.invalid&quot;, …)</code> shape;
+returns <code>Result.Fail(...)</code> instead of <code>Result&lt;TValue&gt;.Fail(...)</code>.</li>
+<li><strong><code>KunMediatorBuilder.AddValidationResultBehavior&lt;TRequest&gt;()</code></strong> —
+new single-type-param overload on
+<code>KunValidationServiceCollectionExtensions</code>, closing for
+<code>IRequest&lt;Result&gt;</code> specifically. Mirrors the existing
+two-type-param overload&#x27;s registration pattern.</li>
+<li><strong>Consumer impact</strong>: void-returning commands (e.g.
+<code>DeleteUserCommand : IRequest&lt;Result&gt;</code>) that want validation
+failures surfaced as <code>Result.Fail</code> no longer need to either
+throw <code>ValidationException</code> (via the legacy
+<code>ValidationPipelineBehavior</code>) or hand-roll a try/catch
+adapter. Register per-request exactly like the generic
+variant: <code>builder.AddValidator&lt;DeleteUserCommand, DeleteUserValidator&gt;() .AddValidationResultBehavior&lt;DeleteUserCommand&gt;();</code>.</li>
+<li><strong>Tests</strong>: <code>tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs</code>
+picks up 3 new scenarios mirroring the generic-variant path —
+validator-fail → <code>Result.Fail(request.invalid)</code>, multi-validator
+aggregation, and handler-level <code>Result.Fail</code> preserved
+untouched. 20/20 Kun.Validation tests pass (17 existing + 3 new).</li>
+<li><strong>AOT</strong>: behavior and DI overload are both AOT-safe — no
+reflection, closed generics compile-time-known,
+<code>Kun.Validation</code> ILC 0-warning.</li>
+</ul>
+<h3 class="rp-toc-include" id="changed--haspublicapi-sweep-complete-across-all-framework-modules-2026-04-24"><a href="#changed--haspublicapi-sweep-complete-across-all-framework-modules-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Changed — HasPublicApi sweep complete across all framework modules (2026-04-24)</h3>
+<ul>
+<li><strong>KN-SELF-010</strong> finished the pilot started by KN-SELF-008
+(Kun.Observability) and KN-SELF-009 (Kun.Sandbox). The remaining
+11 modules now track strict public API via
+<code>PublicApiAnalyzers</code>:
+<ul>
+<li><code>Kun.Audit</code>, <code>Kun.Audit.EntityFrameworkCore</code></li>
+<li><code>Kun.Caching</code>, <code>Kun.Configuration</code></li>
+<li><code>Kun.Identity</code>, <code>Kun.Identity.AspNetCore</code></li>
+<li><code>Kun.MultiTenancy</code>, <code>Kun.MultiTenancy.EntityFrameworkCore</code></li>
+<li><code>Kun.RateLimit</code>, <code>Kun.Security</code>, <code>Kun.Storage</code></li>
+</ul>
+</li>
+<li>Each got its csproj flag flipped to <code>&lt;HasPublicApi&gt;true&lt;/HasPublicApi&gt;</code>,
+a seeded empty <code>PublicAPI.Shipped.txt</code>, and an auto-populated
+<code>PublicAPI.Unshipped.txt</code> (via <code>dotnet format analyzers --diagnostics=RS0016</code> — the Roslyn code fix walks the assembly
+and writes canonical entries in one pass).</li>
+<li><strong><code>Kun.Identity.AspNetCore/SignInHelper.cs</code></strong> picked up a
+file-level <code>#pragma warning disable RS0026</code> (same
+shape-distinguished dual overload pattern as
+<code>Kun.Sandbox/Abstractions/IProcesses.cs</code>).</li>
+<li><strong>Post-sweep invariant</strong>: <code>grep -rE &quot;&lt;HasPublicApi&gt;false&lt;/HasPublicApi&gt;&quot; src/</code> now returns zero.
+Any new framework module must ship with the flag on, matching
+the convention across the entire <code>src/Kun.*</code> tree.</li>
+<li><strong>Operator impact</strong>: any future public-symbol change across
+any Kun module fails the analyzer gate until reviewed and
+added to the relevant <code>PublicAPI.Unshipped.txt</code>. Closes the
+drift surface that existed before KN-SELF-008.</li>
+</ul>
+<h3 class="rp-toc-include" id="changed--kunsandbox-now-tracks-public-api-strictly-2026-04-24"><a href="#changed--kunsandbox-now-tracks-public-api-strictly-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Changed — Kun.Sandbox now tracks public API strictly (2026-04-24)</h3>
+<ul>
+<li><strong><code>src/Kun.Sandbox/Kun.Sandbox.csproj</code></strong> flipped
+<code>&lt;HasPublicApi&gt;false&lt;/HasPublicApi&gt;</code> → <code>true</code>.</li>
+<li><strong>Seeded <code>PublicAPI.Shipped.txt</code></strong> (empty) and
+<strong><code>PublicAPI.Unshipped.txt</code></strong> enumerating the ≈15 public types
+and their members — <code>ISandboxProvider</code> / <code>ISandboxHandle</code> /
+<code>IProcesses</code> / <code>IFiles</code> / <code>SandboxState</code>, the three
+implementations (<code>SupervisorSandboxProvider</code>,
+<code>E2BCloudSandboxProvider</code>, <code>InMemorySandboxProvider</code>), the
+E2B-shaped DTOs (<code>SandboxCreateOptions</code>,
+<code>NeuroagentSandboxExtension</code>, <code>SecretScopeConfig</code>,
+<code>BrowserSessionConfig</code>, <code>FileEntry</code>, <code>ProcessRunOptions</code>,
+<code>ProcessResult</code>), <code>KunSandboxOptions</code>, and the
+<code>AddKunSandbox</code> extension. 120 entries; auto-emitted by
+<code>dotnet format analyzers --diagnostics=RS0016</code> (the Roslyn
+code fix) rather than hand-written.</li>
+<li><strong><code>IProcesses.RunAsync</code> pre-existing dual-overload</strong>
+(<code>string[]</code> vs <code>string</code> first param) suppressed with a
+file-level <code>#pragma warning disable RS0026</code> and an explanatory
+comment — overload resolution is unambiguous on parameter
+shape, not optional-param count, so the analyzer&#x27;s
+backcompat rule does not apply.</li>
+<li><strong>Operator impact</strong>: any future public-symbol change in
+<code>Kun.Sandbox</code> now fails the <code>PublicApiAnalyzers</code> check until
+reviewed and added. No runtime behaviour changes.</li>
+<li>Second module in the KN-SELF-008 pilot sweep. Remaining
+<code>HasPublicApi=false</code> modules are the <code>*.EntityFrameworkCore</code>
+family + <code>Kun.AspNetCore</code>; next cycle evaluates per-module.</li>
+</ul>
+<h3 class="rp-toc-include" id="changed--kunobservability-now-tracks-public-api-strictly-2026-04-24"><a href="#changed--kunobservability-now-tracks-public-api-strictly-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Changed — Kun.Observability now tracks public API strictly (2026-04-24)</h3>
+<ul>
+<li><strong><code>src/Kun.Observability/Kun.Observability.csproj</code></strong> flipped
+<code>&lt;HasPublicApi&gt;false&lt;/HasPublicApi&gt;</code> → <code>true</code>.</li>
+<li><strong>Seeded <code>PublicAPI.Shipped.txt</code></strong> (empty — convention for a new
+tracking file) and <strong><code>PublicAPI.Unshipped.txt</code></strong> enumerating the
+current public surface: <code>KunObservabilityOptions</code> + every
+property, <code>KunObservabilityServiceCollectionExtensions.AddKunObservability</code>,
+<code>Enrichment.KunBaggageKeys</code> + <code>TenantId</code> / <code>UserId</code> /
+<code>OutboxMessageId</code> constants + <code>All</code> array.</li>
+<li><strong>Operator impact</strong>: any future public-symbol change in
+<code>Kun.Observability</code> now fails the <code>PublicApiAnalyzers</code> check
+until the diff is reviewed and added to the <code>.Unshipped.txt</code>,
+matching the discipline in place on <code>Kun.Core</code>, <code>Kun.Mediator</code>,
+<code>Kun.Validation</code>, and other user-facing modules. No runtime
+behaviour changes.</li>
+<li><strong>Scope note</strong>: pilot for the remaining
+<code>HasPublicApi=false</code> modules (e.g. <code>Kun.Sandbox</code>). Those flips
+will land as separate KN-SELF-xxx tasks — one module at a time
+to keep each <code>PublicAPI.Unshipped.txt</code> review small.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--adr-014-result-returning-validation-behavior-2026-04-24"><a href="#added--adr-014-result-returning-validation-behavior-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — ADR-014 Result-returning validation behavior (2026-04-24)</h3>
+<ul>
+<li><strong>docs/architecture/ADR-014-Validation-Result-behavior.md</strong> —
+accepted. Design for a sibling pipeline behavior to the existing
+exception-throwing <code>ValidationPipelineBehavior</code>: on validator
+failure, returns
+<code>Result&lt;TValue&gt;.Fail(Error.Validation(&quot;request.invalid&quot;, ...))</code>
+instead of throwing. Directly consumes ADR-011 <code>Result&lt;T&gt;</code>
+composition.</li>
+<li><strong><code>Kun.Validation.Behaviors.ValidationResultPipelineBehavior&lt;TRequest, TValue&gt;</code></strong> —
+new sealed class implementing
+<code>IPipelineBehavior&lt;TRequest, Result&lt;TValue&gt;&gt;</code> with
+<code>where TRequest : IRequest&lt;Result&lt;TValue&gt;&gt;</code>. Aggregates
+validator errors into one joined message; empty-validators
+fast-path.</li>
+<li><strong><code>AddValidationResultBehavior&lt;TRequest, TValue&gt;</code></strong> extension on
+<code>KunMediatorBuilder</code> — explicit per-request-type registration,
+matches the existing <code>AddValidator&lt;&gt;</code> / <code>AddValidationBehavior&lt;&gt;</code>
+pattern. The generic constraint on <code>TResponse</code> cannot be
+expressed at the open-generic DI layer (ADR-014 §DI
+registration).</li>
+<li><strong>5 new tests</strong> in
+<code>tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs</code>
+covering: empty validators pass-through, validator pass, validator
+fail → Result.Fail with <code>request.invalid</code> code, multi-validator
+aggregation with <code>;</code> separator, handler-level <code>Result.Fail</code> is
+<strong>not</strong> intercepted (domain error preserved).</li>
+<li><strong>Coexistence rule</strong> with the throwing <code>ValidationPipelineBehavior</code>:
+register one or the other per request type, not both — doc
+guardrail in <code>src/Kun.Validation/AGENTS.md</code>.</li>
+<li><strong>Scope notes</strong>: non-generic <code>Result</code> variant deferred as ADR-014
+§F1. Structured per-field error payload deferred as §F2. Source-
+generator-based bulk registration deferred as §F3. No new
+<code>&lt;PackageReference&gt;</code>; <code>Kun.Validation</code> keeps
+<code>IsAotCandidate=true</code>.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--adr-013-f1-log-record-enricher-2026-04-24"><a href="#added--adr-013-f1-log-record-enricher-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — ADR-013 §F1 log-record enricher (2026-04-24)</h3>
+<ul>
+<li><strong>docs/architecture/ADR-013-Kun.Observability-enricher.md</strong> —
+amended with a new §F1 resolution section. The prior §Follow-ups
+F1 entry is now annotated &quot;Resolved 2026-04-24 (KN-SELF-006)&quot;
+with a pointer to the new section.</li>
+<li><strong><code>Kun.Observability.Enrichment.KunBaggageLogRecordProcessor</code></strong>
+(internal) — <code>BaseProcessor&lt;LogRecord&gt;</code> that runs at <code>OnEnd</code>,
+reads <code>Activity.Current?.Baggage</code>, and mirrors whitelisted keys
+(<code>tenant.id</code>, <code>user.id</code>, <code>outbox.message_id</code>) onto
+<code>LogRecord.Attributes</code>. Idempotent: never overwrites an
+attribute the log statement set explicitly. No-op when no
+<code>Activity.Current</code> exists.</li>
+<li><strong><code>KunObservabilityOptions.EnrichLogsFromBaggage</code></strong> — new flag,
+default <code>false</code> (opt-in, mirrors <code>EnrichActivitiesFromBaggage</code>
+posture). Setting it to <code>true</code> registers the processor into the
+logging pipeline at <code>AddKunObservability</code> time.</li>
+<li><strong>4 new tests</strong> in <code>tests/Kun.Observability.Tests/LogBaggageEnrichmentTests.cs</code>
+via <code>OpenTelemetry.Logs.InMemoryExporter</code>: baggage→attribute
+happy path, flag-off path, caller-set-attribute-preserved path,
+no-active-activity no-crash path.</li>
+<li><strong>AOT / package deltas</strong>: zero new <code>&lt;PackageReference&gt;</code>;
+processor and tests use only already-referenced OpenTelemetry
+APIs. <code>Kun.Observability</code> keeps <code>IsAotCandidate=true</code>.</li>
+<li><strong>Operator impact</strong>: flipping both
+<code>EnrichActivitiesFromBaggage = true</code> and
+<code>EnrichLogsFromBaggage = true</code> on <code>AddKunObservability</code>
+options now produces Aspire / Jaeger / Kibana queries where the
+same <code>tenant.id=…</code> filter works uniformly across the trace UI
+and the log view — no hand-joining.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--adr-013-kunobservability-baggage-enricher-2026-04-24"><a href="#added--adr-013-kunobservability-baggage-enricher-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — ADR-013 Kun.Observability baggage enricher (2026-04-24)</h3>
+<ul>
+<li><strong>docs/architecture/ADR-013-Kun.Observability-enricher.md</strong> —
+accepted. Baggage-driven activity enrichment: consumer code
+pushes <code>tenant.id</code> / <code>user.id</code> / <code>outbox.message_id</code> into
+OpenTelemetry baggage at the request boundary; the framework
+mirrors those whitelisted keys onto Kun-sourced span tags so
+Aspire / Jaeger operators can filter by tenant / user without
+hand-correlating spans to logs.</li>
+<li><strong><code>Kun.Observability.Enrichment.KunBaggageKeys</code></strong> — public
+static class exposing the canonical baggage key names and
+<code>All</code> array for iteration.</li>
+<li><strong><code>Kun.Observability.Enrichment.KunBaggageActivityProcessor</code></strong>
+(internal) — <code>BaseProcessor&lt;Activity&gt;</code> that runs at <code>OnEnd</code>
+for activities whose <code>ActivitySource.Name</code> is in
+<code>KunActivitySources.All</code> and mirrors the whitelisted baggage
+subset to span tags.</li>
+<li><strong><code>KunObservabilityOptions.EnrichActivitiesFromBaggage</code></strong> —
+new flag, default <code>false</code> (opt-in per ADR-013 §Default
+posture). Setting it to <code>true</code> registers the processor into
+the <code>TracerProviderBuilder</code> at <code>AddKunObservability</code> time.</li>
+<li><strong>7 new tests in <code>tests/Kun.Observability.Tests/BaggageEnrichmentTests.cs</code></strong>
+— processor-level unit tests (manual <code>TracerProviderBuilder</code> +
+<code>AlwaysOnSampler</code> + <code>OpenTelemetry.Exporter.InMemory</code>) plus
+DI-wired integration tests verifying the option flag both on
+and off.</li>
+<li><strong>AOT / package deltas</strong>: zero new <code>&lt;PackageReference&gt;</code> on
+<code>Kun.Observability.csproj</code>; module stays <code>IsAotCandidate=true</code>.
+<code>HasPublicApi</code> stays <code>false</code> for this module — tracking a
+future flip as a separate framework-wide task so every
+<code>Kun.*</code> module adopts strict API tracking together.</li>
+<li><strong>Out of scope</strong> (ADR-013 F1–F3): log-record enricher,
+metric-dimension enricher, Aspire sample-dashboard demo.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--adr-012-kuntesting-module-2026-04-24"><a href="#added--adr-012-kuntesting-module-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — ADR-012 Kun.Testing module (2026-04-24)</h3>
+<ul>
+<li><strong>docs/architecture/ADR-012-Kun.Testing-module.md</strong> — accepted. New
+top-level <code>Kun.Testing</code> module at the Abstraction layer:
+AOT-candidate, packable, depends on <code>Kun.Core</code> only, takes no
+third-party runtime <code>PackageReference</code>. Framework-agnostic
+(<code>KunAssertionException</code> on mismatch rather than xUnit-coupled
+throws) so consumers on any test framework consume uniformly.</li>
+<li><strong><code>src/Kun.Testing</code></strong> — new project wired into <code>Kun.sln</code> in the
+<code>src/</code> folder. <code>IsAotCandidate=true</code>, <code>IsPackable=true</code>,
+<code>HasPublicApi=true</code>.</li>
+<li><strong><code>Kun.Testing.KunAssertionException</code></strong> — framework-agnostic
+assertion failure type.</li>
+<li><strong><code>Kun.Testing.Results.ResultAssertions</code></strong> — fluent extensions on
+<code>Result</code> and <code>Result&lt;T&gt;</code>: <code>ShouldBeSuccess</code> (returns <code>T</code> on
+generic variant for chaining), <code>ShouldBeFailure</code>,
+<code>ShouldHaveErrorCode(string)</code>, <code>ShouldHaveErrorType(ErrorType)</code>.</li>
+<li><strong><code>Kun.Testing.Domain.DomainEventAssertions</code></strong> — fluent extensions
+on <code>IAggregateRoot</code>: <code>ShouldRaise&lt;TEvent&gt;</code>,
+<code>ShouldRaiseExactly&lt;TEvent&gt;(int count)</code>, <code>ShouldNotRaise&lt;TEvent&gt;</code>.
+AOT-safe via compile-time-known <code>OfType&lt;TEvent&gt;()</code> filtering.</li>
+<li><strong>30 new tests in <code>tests/Kun.Testing.Tests</code></strong> — every helper on
+both pass-through and mismatch paths, exception-message shape
+anchored per ADR-012 §Error-message contract.</li>
+<li><strong>Smoke-adoption in <code>tests/Kun.Core.Tests</code></strong> — 4 existing
+assertions in <code>Results/ResultTests.cs</code> converted to Kun.Testing
+helpers. Validates cross-project consumption before other tests
+pull it in; 85 Kun.Core.Tests still pass.</li>
+<li><strong>Out of scope</strong> (follow-ups F1–F3 in ADR-012): Outbox message
+assertions (would require a non-AOT companion module
+<code>Kun.Testing.EntityFrameworkCore</code>), Testcontainers fixtures,
+<code>WebApplicationFactory&lt;T&gt;</code> wrappers, repo-wide mass conversion
+sweep.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--adr-011-resultt-composition-extensions-2026-04-24"><a href="#added--adr-011-resultt-composition-extensions-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — ADR-011 Result&lt;T&gt; composition extensions (2026-04-24)</h3>
+<ul>
+<li><strong>docs/architecture/ADR-011-Result-async-extensions.md</strong> — accepted.
+Specifies the canonical Map / Bind / Tap / Ensure / Match surface
+(sync + async) for <code>Kun.Core.Results</code> before more downstream consumers
+hand-roll their own. Normative short-circuit and cancellation
+semantics; alternatives (<code>Then</code>, LINQ <code>Select</code>/<code>SelectMany</code>,
+<code>Flatten</code>) explicitly deferred.</li>
+<li><strong><code>Kun.Core.Results.ResultExtensions</code></strong> — synchronous extensions on
+<code>Result</code> and <code>Result&lt;T&gt;</code>: <code>Tap</code>, <code>Ensure</code>, <code>Match</code>, <code>Bind</code> (plus
+<code>Result&lt;T&gt;.Map</code> / <code>Result&lt;T&gt;.Bind</code> into <code>Result&lt;TOut&gt;</code> or <code>Result</code>).</li>
+<li><strong><code>Kun.Core.Results.TaskResultExtensions</code></strong> — async extensions on
+<code>Task&lt;Result&gt;</code> / <code>Task&lt;Result&lt;T&gt;&gt;</code> receivers. Each op has two
+overloads: a sync-delegate variant and an async-delegate variant
+with required <code>CancellationToken</code>. Return type stays on the Task
+rail.</li>
+<li><strong><code>Kun.Core.Results.ValueTaskResultExtensions</code></strong> — mirror of
+<code>TaskResultExtensions</code> for hot-path handlers that return
+<code>ValueTask&lt;…&gt;</code> (Mediator pipeline, Saga step executors). Same
+two-overload shape per op; async-delegate variant accepts
+<code>Func&lt;…, ValueTask&lt;…&gt;&gt;</code> and returns <code>ValueTask&lt;…&gt;</code>.</li>
+<li><strong>Deliberate deviation from ADR-011 sketch</strong>: <code>CancellationToken</code>
+on async-delegate overloads is required, not <code>= default</code>. RS0026
+(PublicAPI analyzer &quot;do not add multiple overloads with optional
+parameters&quot;) flags the alternative; we prefer passing the analyzer
+over masking it with a blanket suppression. Callers who want no
+token pass <code>default</code> or <code>CancellationToken.None</code> explicitly.</li>
+<li><strong>41 new tests in <code>tests/Kun.Core.Tests/Results/ResultExtensionsTests.cs</code></strong>
+— sync success / failure / short-circuit, async Task + ValueTask
+parity, CT forwarding, pre-cancelled CT surfaces
+<code>OperationCanceledException</code>, null-argument guards.</li>
+<li><strong>Scope note</strong>: additive only. <code>Kun.Core</code> stays AOT-candidate with
+zero third-party deps; <code>PublicAPI.Unshipped.txt</code> listing every new
+symbol. Migration of <code>neuroagent-csharp</code> handlers off hand-rolled
+patterns is a separate follow-up task (ADR-011 §Follow-ups F1).</li>
+</ul>
+<h3 class="rp-toc-include" id="added--p2-a-part-2-benchmarks-ci-workflow-2026-04-24"><a href="#added--p2-a-part-2-benchmarks-ci-workflow-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — P2-A Part 2 benchmarks CI workflow (2026-04-24)</h3>
+<ul>
+<li><strong>.github/workflows/benchmarks.yml</strong> — weekly cron (Mon 06:00 UTC) + PR-label
+trigger (<code>benchmarks</code> label) + manual dispatch. Runs the
+<code>Kun.Benchmarks.Grpc</code> project with <code>--exporters json markdown</code> and uploads
+<code>BenchmarkDotNet.Artifacts/**</code> as a named artifact (30-day retention).</li>
+<li>Matrix includes <code>jit</code> only for now; the <code>aot</code> matrix entry is sketched in a
+comment and unlocks once a <code>PublishAot=true</code> variant of the benchmarks
+project lands (Part 2 follow-up).</li>
+<li>Out of scope (future Part 3): a runbook that downloads the artifact + diffs
+against a stored baseline to fail PRs on allocation regression.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--p2-a-part-1-benchmarkdotnet-scaffold-2026-04-24"><a href="#added--p2-a-part-1-benchmarkdotnet-scaffold-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — P2-A Part 1 BenchmarkDotNet scaffold (2026-04-24)</h3>
+<ul>
+<li><strong>benchmarks/Kun.Benchmarks.Grpc</strong> — new standalone BenchmarkDotNet console project
+(intentionally NOT in Kun.sln so routine <code>dotnet build Kun.sln</code> ignores it).
+Builds clean at <code>dotnet build benchmarks/Kun.Benchmarks.Grpc -c Release</code>.</li>
+<li><code>ResultToRpcInterceptorBenchmarks</code> — microbenchmarks the public <code>Result&lt;T&gt;</code> pattern
+(the internal <code>KunResultToRpcInterceptor</code> is not benchmarkable from a non-friend
+assembly; the <code>Result&lt;T&gt;</code> paths are the real hot path the translator catches).
+Compares <code>Result&lt;T&gt;.Ok</code> / <code>Fail</code> / <code>EnsureSuccess</code> / IsFailure+Error.Code against
+a plain-return baseline. <code>[MemoryDiagnoser]</code> attached so allocation deltas are
+visible.</li>
+<li>Directory.Packages.props centrally pins <code>BenchmarkDotNet</code> to <code>0.14.0</code> under a new
+&quot;Benchmarks&quot; label.</li>
+<li><strong>docs/benchmarks/grpc-aot.md</strong> — methodology doc + run command + Part-2-plan
+(AOT matrix in CI, cold-start target &lt;100ms).</li>
+<li><strong>Scope note</strong>: Part 1 is scaffolding. Part 2 adds the AOT publish matrix on CI,
+JIT-vs-AOT comparison tables, and a <code>.github/workflows/benchmarks.yml</code> weekly +
+PR-label trigger. Kun.sln integration is intentionally deferred — benchmarks are
+run on-demand, not as part of the regular build matrix.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--p2-c-part-3-redis-backed-rate-limit-store--guide-2026-04-24"><a href="#added--p2-c-part-3-redis-backed-rate-limit-store--guide-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — P2-C Part 3 Redis-backed rate-limit store + guide (2026-04-24)</h3>
+<ul>
+<li><strong>Kun.Gateway.RateLimiting.IRedisRateLimitStore</strong> + <code>RateLimitHitResult</code> record —
+low-level primitive for distributed rate limiting across multiple Gateway pods.</li>
+<li><strong>RedisFixedWindowRateLimitStore</strong> — default implementation using atomic
+<code>INCR</code> + <code>EXPIRE</code>-on-first-hit semantics so counters self-expire when the window
+elapses (no cleanup job required). Key format <code>{KeyPrefix}:{partitionKey}</code>,
+default prefix <code>&quot;kun:rl&quot;</code>.</li>
+<li><strong>RedisRateLimitStoreOptions</strong> — <code>KeyPrefix</code> knob, bound from
+<code>Kun:Gateway:RateLimit:Redis</code> configuration section.</li>
+<li><strong>AddKunRedisRateLimitStore</strong> DI extension — <code>TryAddSingleton</code> so consumer
+pre-registrations win. Requires <code>IConnectionMultiplexer</code> to be registered
+separately by the consumer.</li>
+<li><strong>Kun.Gateway</strong> csproj: new <code>StackExchange.Redis</code> <code>PackageReference</code> (version
+already centrally pinned to 2.8.16).</li>
+<li><strong>Scope note</strong>: this is a primitive, not a full <code>PartitionedRateLimiter&lt;HttpContext&gt;</code>
+integration. Consumers today call <code>store.HitAsync(...)</code> from custom middleware
+and translate rejections to HTTP 429. Framework-level integration with
+<code>AddRateLimiter</code> named policies is tracked as Part 3b (requires a custom
+<code>RateLimiter</code> subclass with 5+ abstract members).</li>
+<li>Tests: 11 new facts in <code>tests/Kun.Gateway.Tests</code> (argument guards, first-hit
+TTL behavior, subsequent-hit TTL preservation, key-prefix application, DI
+registration). Gateway test total 48 → 59, all green.</li>
+<li><strong>docs</strong>: new <code>docs/guides/gateway-rate-limit.md</code> covering the 3×3 resolver ×
+policy matrix + Redis store recipe + landing checklist.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--p2-c-part-2-sliding-window--token-bucket-rate-limit-policies-2026-04-24"><a href="#added--p2-c-part-2-sliding-window--token-bucket-rate-limit-policies-2026-04-24" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — P2-C Part 2 sliding-window + token-bucket rate-limit policies (2026-04-24)</h3>
+<ul>
+<li><strong>Kun.Gateway.RateLimiting.KunSlidingWindowRateLimiterPolicy</strong> (internal) + public
+<code>KunSlidingWindowOptions</code> + <code>AddKunSlidingWindowRateLimiter()</code> DI extension. Named
+policy <code>kun-sliding-window</code>. Defaults: 100 permits per 1-minute window split into
+6 segments, immediate rejection on exceed (QueueLimit=0). Smoother enforcement than
+fixed-window at the cost of proportionally higher memory per partition.</li>
+<li><strong>Kun.Gateway.RateLimiting.KunTokenBucketRateLimiterPolicy</strong> (internal) + public
+<code>KunTokenBucketOptions</code> + <code>AddKunTokenBucketRateLimiter()</code> DI extension. Named
+policy <code>kun-token-bucket</code>. Defaults: 100-token burst budget refilled at 20 tokens
+every 10 seconds (≈120/min steady state) with <code>AutoReplenishment=true</code>. Absorbs
+bursty traffic; use for webhook fanout / batch import APIs.</li>
+<li>Both policies reuse the existing <code>IRateLimitPartitionResolver</code> abstraction so the
+three partition resolvers (Tenant / IP / UserPrincipal) compose freely with any
+of the three policies (fixed-window / sliding-window / token-bucket) via the
+matching <code>AddKunXxxRateLimiter</code> call.</li>
+<li>Tests: 9 new unit tests in <code>tests/Kun.Gateway.Tests</code>. P2-C remaining for Part 3:
+Redis-backed shared counter for distributed rate limiting + Testcontainers
+concurrent-precision test + dedicated guides.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--p2-c-part-1-user-principal-rate-limit-partition-resolver-2026-04-23"><a href="#added--p2-c-part-1-user-principal-rate-limit-partition-resolver-2026-04-23" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — P2-C Part 1 user-principal rate-limit partition resolver (2026-04-23)</h3>
+<ul>
+<li><strong>Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver</strong> —
+third partition resolver flavour, alongside the existing IP and tenant resolvers.
+Reads the authenticated user&#x27;s <code>sub</code> claim and returns it as the rate-limit
+partition key; falls back to <code>&quot;anonymous&quot;</code> when the claim is absent. Pair with
+<code>AddKunRateLimiter</code> for free-tier APIs where rate limits are per-account rather
+than per-organization.</li>
+<li>Tests: 6 new unit tests in <code>tests/Kun.Gateway.Tests</code>. P2-C remaining items
+(sliding-window / token-bucket policies, Redis-backed shared counter,
+Testcontainers concurrent-precision test, dedicated guides) tracked for Part 2.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--p2-d-part-3-databasepertenant-runtime-2026-04-23"><a href="#added--p2-d-part-3-databasepertenant-runtime-2026-04-23" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — P2-D Part 3 DatabasePerTenant runtime (2026-04-23)</h3>
+<ul>
+<li><strong>Kun.EntityFrameworkCore.MultiTenancy</strong> (additive):
+<ul>
+<li><code>IDbConnectionResolver</code> — resolves per-tenant connection strings at runtime.</li>
+<li><code>TenantsConnectionOptions</code> — static tenant → connection-string map, bound via
+<code>Configure&lt;TenantsConnectionOptions&gt;</code> from the <code>Kun:MultiTenancy:Tenants</code> config
+section. Suitable for small deployments; larger setups swap in a custom resolver.</li>
+<li><code>OptionsBasedTenantConnectionResolver</code> — default resolver reading from
+<code>IOptionsMonitor&lt;TenantsConnectionOptions&gt;</code>; supports on-the-fly reloads.</li>
+<li><code>DatabasePerTenantProvisioner&lt;TContext&gt;</code> — <code>ITenantProvisioner</code> that runs
+<code>Database.MigrateAsync()</code> against the tenant&#x27;s database. <code>DeprovisionAsync</code> is a
+no-op by design (dropping a tenant database is an operations concern requiring
+admin credentials and coordinated cleanup). Both methods are <code>virtual</code> for
+subclassing when the app owns DB lifecycle end-to-end.</li>
+<li><code>AddKunMultiTenancy&lt;TContext&gt;</code> DatabasePerTenant branch now registers the default
+resolver + provisioner (TryAddSingleton, so consumer pre-registrations win).</li>
+</ul>
+</li>
+<li><strong>docs</strong>: ADR status upgraded to Part 3 Accepted; roadmap-p2 Part 3 row updated.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--p2-d-part-2-schemapertenant-runtime-2026-04-23"><a href="#added--p2-d-part-2-schemapertenant-runtime-2026-04-23" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — P2-D Part 2 SchemaPerTenant runtime (2026-04-23)</h3>
+<ul>
+<li><strong>Kun.EntityFrameworkCore.MultiTenancy</strong> (additive, existing Kun.EntityFrameworkCore is
+trim-safe / non-AOT; no new external dependencies):
+<ul>
+<li><code>ITenantDbContextFactory&lt;TContext&gt;</code> — explicit factory for tenant-scoped DbContext
+construction, used by provisioning / admin flows that target a specific tenant
+regardless of the ambient <code>ITenantContext</code>.</li>
+<li><code>TenantAwareModelCacheKeyFactory</code> — <code>IModelCacheKeyFactory</code> implementation that
+partitions EF Core&#x27;s compiled-model cache by <code>KunDbContext.TenantIdForModelCacheKey</code>
+in addition to context type + design-time flag.</li>
+<li><code>SchemaPerTenantProvisioner&lt;TContext&gt;</code> — <code>ITenantProvisioner</code> implementation that
+runs <code>CREATE SCHEMA IF NOT EXISTS &quot;{tenantId}&quot;</code> + <code>Database.MigrateAsync()</code> at
+provisioning time. Deprovisioning is gated behind
+<code>KunMultiTenancyOptions.AllowDestructiveDeprovision</code> (default false); unsafe tenant
+IDs (anything outside <code>[A-Za-z_][A-Za-z0-9_-]{0,62}</code>) are rejected with
+<code>ArgumentException</code> before reaching the database.</li>
+<li><code>KunMultiTenancyOptions</code> — <code>Strategy</code> + <code>AllowDestructiveDeprovision</code> knobs.</li>
+<li><code>AddKunMultiTenancy&lt;TContext&gt;(options =&gt; ...)</code> DI entry: Shared delegates to
+the existing <code>AddKunTenantRls()</code> + <code>NullTenantProvisioner</code>; SchemaPerTenant registers
+the factory + RLS interceptor (defence-in-depth) + SchemaPerTenantProvisioner;
+DatabasePerTenant throws <code>NotImplementedException</code> at resolution time pointing to
+the pending Part 3 track.</li>
+</ul>
+</li>
+<li><strong>docs</strong>: <code>docs/architecture/adr-p2d-multitenancy.md</code> status upgraded to Part 2 Accepted;
+<code>docs/roadmap-p2.md</code> P2-D table row updated.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--p2-d-part-1-multi-tenancy-foundation-types-2026-04-23"><a href="#added--p2-d-part-1-multi-tenancy-foundation-types-2026-04-23" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — P2-D Part 1 multi-tenancy foundation types (2026-04-23)</h3>
+<ul>
+<li><strong>Kun.Core.MultiTenancy</strong> (additive, AOT-safe, zero new dependencies):
+<ul>
+<li><code>TenantIsolationStrategy</code> enum — <code>Shared</code> / <code>SchemaPerTenant</code> / <code>DatabasePerTenant</code>.
+Part 1 lands the type; runtime wiring for <code>SchemaPerTenant</code> / <code>DatabasePerTenant</code>
+is deferred to P2-D Part 2 / Part 3 (see ADR below).</li>
+<li><code>TenantInfo</code> sealed record — <code>(string TenantId, string? DisplayName)</code> with a null /
+empty / whitespace guard on <code>TenantId</code>. DTO crossing module boundaries.</li>
+<li><code>ITenantProvisioner</code> interface — <code>ProvisionAsync(TenantInfo)</code> / <code>DeprovisionAsync(string)</code>
+idempotent tenant lifecycle hook. Non-null implementations land with Part 2 / Part 3.</li>
+<li><code>NullTenantProvisioner</code> no-op default (Singleton <code>.Instance</code>) for Shared strategy
+consumers who don&#x27;t need tenant lifecycle plumbing.</li>
+</ul>
+</li>
+<li><strong>docs</strong>:
+<ul>
+<li><code>docs/architecture/adr-p2d-multitenancy.md</code> — ADR for the 3-strategy architecture,
+including the explicit YAGNI decision that Shared remains on the existing
+<code>AddKunTenantRls()</code> entry point (no wrapper API is added until a second strategy
+ships).</li>
+<li><code>docs/roadmap-p2.md</code> P2-D section updated with the Part 1 / Part 2 / Part 3 split.</li>
+</ul>
+</li>
+</ul>
+<h3 class="rp-toc-include" id="added--sprint-1-gap-closure-2026-04-22"><a href="#added--sprint-1-gap-closure-2026-04-22" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — Sprint 1 gap-closure (2026-04-22)</h3>
+<ul>
+<li><strong>Kun.Storage.Abstractions / Kun.Storage.Local / Kun.Storage.S3</strong> (P0-1): three
+new packages landing <code>IFileStorage</code> with the seven SAD §6.4 operations, a
+<code>FrozenSet</code> of the four canonical &quot;active web&quot; MIME types that trigger
+force-download on S3 presigned URLs, a dev-grade local filesystem
+implementation, and an AWSSDK-based S3 implementation. S3 is the repo&#x27;s first
+non-AOT library module (A6) — explicitly excluded from the CI AOT-zero-warning
+matrix; documented in <code>src/Kun.Storage.S3/AGENTS.md</code>.</li>
+<li><strong>Kun.EntityFrameworkCore</strong>:
+<ul>
+<li><code>KunDbContext.DefaultSchema</code> virtual property + auto-registered
+<code>SchemaConsistencyInterceptor</code> (P0-3 M5). Overriding <code>DefaultSchema</code> without
+calling <code>.UseKunSchema(schema)</code> on the options builder now throws
+<code>InvalidOperationException</code> with a remediation message at the first
+<code>SaveChangesAsync</code>. Outbox rows, tenant/audit columns, and the migrations
+history table all co-locate under the service schema.</li>
+<li><code>UseKunSchema(schema)</code> extension method on <code>DbContextOptionsBuilder</code> that
+wires <code>MigrationsHistoryTableSchema</code> through <code>RelationalOptionsExtension</code>.
+Provider-agnostic — stays out of the Npgsql dependency.</li>
+<li><code>TenantRlsTransactionInterceptor</code> + <code>AddKunTenantRls()</code> (P1-4). Opt-in
+defence-in-depth layer that emits
+<code>SELECT set_config(&#x27;app.current_tenant_id&#x27;, @tenant, true)</code> at every
+transaction start so PostgreSQL RLS policies enforce isolation even when a
+caller bypasses the EF global query filter. Hooks
+<code>DbTransactionInterceptor.TransactionStartedAsync</code> — PgBouncer
+transaction-pool safe.</li>
+</ul>
+</li>
+<li><strong>Kun.EventBus</strong>: <code>IEventTypeRegistry.GetAll()</code> returns every registered
+<code>(eventId, clrType)</code> pair in stable alphabetical order, enabling the
+<code>tools/Kun.IntegrationEvents.SchemaGen</code> JSON-Schema export tool (P1-1).</li>
+<li><strong>Kun.Gateway</strong>:
+<ul>
+<li><code>ITracedCurrentUser</code> sub-interface + <code>trace_id</code> claim on the minted S2S
+JWT (P0-2). Default <code>EmitTraceIdClaim = true</code>; kill-switchable.</li>
+<li><code>KunInternalJwksEndpoint.MapKunInternalJwks()</code> — internal-network JWKS
+route gated on <code>IHostEnvironment.IsDevelopment()</code> OR
+<code>KunGatewayOptions.ExposeInternalJwks = true</code> (P1-3). Fail-closed:
+Production returns 404 unless opted in.</li>
+<li><code>IS2sPrincipalResolver</code> + <code>NoOpS2sPrincipalResolver</code> (P1-6). Optional
+enrichment hook the issuer runs before claim mapping. Default registered
+via DI. <code>S2sTokenIssuer</code> grows a 4-arg ctor taking the resolver; the
+3-arg overload is kept obsolete with <code>DiagnosticId = &quot;KUN0002&quot;</code> for one
+release, scheduled for removal in <code>0.2.0</code>.</li>
+</ul>
+</li>
+<li><strong>Kun.EventBus.Outbox</strong>: <code>IOutboxWriter</code> primitive (P0-4). Non-aggregate
+enqueuers (future audit interceptor, storage event adapters) can drop
+<code>OutboxMessage</code> rows into the current transaction without implementing the
+full <code>IIntegrationEventBus</code> surface. <code>IntegrationEventOutboxAccumulator</code>
+resolves to both <code>IIntegrationEventBus</code> and <code>IOutboxWriter</code> from a single
+scoped instance so aggregates and non-aggregate collaborators share one
+in-request buffer.</li>
+<li><strong>samples/Kun.Sample.Catalog</strong> and <strong>samples/Kun.Sample.Order</strong>: override
+<code>DefaultSchema =&gt; &quot;catalog&quot;</code> / <code>&quot;order&quot;</code>; design-time factories chain
+<code>.UseKunSchema(...)</code>. Migrations regenerated; outbox, saga, business tables,
+and <code>__ef_migrations_history</code> all land under the service schema.</li>
+<li><strong>samples/Kun.Sample.Catalog</strong>: <code>AddOpenApi()</code> + <code>MapOpenApi()</code> guarded on
+<code>IsDevelopment()</code> as the reference wiring for <strong>P1-7</strong> (OpenAPI pipeline
+template).</li>
+<li><strong>samples/Kun.Sample.Storage</strong>: new Minimal API sample demonstrating
+force-download via <code>Kun.Storage.Local</code> — no AWS credentials required.</li>
+<li><strong>tools/Kun.IntegrationEvents.SchemaGen</strong>: console tool (non-AOT) that emits
+<code>{eventId}.schema.json</code> per registered integration event using
+<code>JsonSchema.Net.Generation</code>. Consumers provide a public static zero-arg
+factory method that returns <code>IEventTypeRegistry</code> (P1-1).</li>
+<li><strong>docs</strong>:
+<ul>
+<li><code>docs/roadmap.md</code> — consolidated public roadmap (replaces the 495-line
+<code>TODO.md</code> at repo root, merged 2026-04-22).</li>
+<li><code>docs/schema-per-service.md</code> (P1-8) — end-to-end recipe for running many
+Kun services against one Postgres with service-scoped schemas.</li>
+<li><code>docs/openapi-template.md</code> (P1-7) — source-gen-friendly OpenAPI wiring
+guidance with environment gating + CI smoke-test recipe.</li>
+<li><code>src/Kun.EntityFrameworkCore/README.md</code> (P1-5) — PgBouncer transaction-pool
+compatibility notes (required connection-string parameters) +
+RLS-with-explicit-transactions contract.</li>
+</ul>
+</li>
+<li><strong>tests</strong>:
+<ul>
+<li><code>tests/Kun.EntityFrameworkCore.Tests</code> — new xunit.v3 project with schema /
+interceptor / RLS unit coverage (11 cases).</li>
+<li><code>tests/Kun.IntegrationTests/Persistence/{RlsEnforcementTests,TenantRlsInterceptorPgBouncerTests,PgBouncerCompatTests,SchemaPerServiceTests}</code> +
+<code>tests/Kun.IntegrationTests/Fixtures/PgBouncerPostgresFixture</code> — acceptance
+paths for P0-3 / P1-4 / P1-5, Docker-gated with <code>Assert.Skip</code> when
+containers aren&#x27;t reachable.</li>
+<li><code>tests/Kun.Gateway.Tests</code> grows five new cases for
+<code>KunInternalJwksEndpoint</code> (gating matrix + document shape) and five for
+<code>IS2sPrincipalResolver</code> / obsolete-ctor compat.</li>
+</ul>
+</li>
+<li><strong>Kun.Auditing</strong> (P1-2): new AOT-candidate module wiring an EF Core
+<code>SavingChanges</code> interceptor that iterates <code>ChangeTracker.Entries()</code>,
+keeps only entity types registered via explicit
+<code>services.AddAuditable&lt;TEntity&gt;()</code> (no runtime attribute scan — A3
+path c), and enqueues one <code>AuditEventIntegrationEvent</code> per mutation
+through <code>IOutboxWriter</code> (the P0-4 primitive). Payload is the M4
+13-field record with stable event id <code>kun.audit.event.v1</code>; JSON via a
+source-generated <code>AuditJsonContext</code>. <code>AuditContextMiddleware</code> captures
+IP / User-Agent / TraceId into a scoped <code>AuditContext</code> before the EF
+interceptor runs. DI helpers: <code>AddKunAuditing</code>, <code>AddAuditable&lt;T&gt;</code>,
+<code>AddAuditingInterceptor(DbContextOptionsBuilder, IServiceProvider)</code>;
+stable event id wired via <code>IEventTypeRegistrar.RegisterAuditing()</code>.</li>
+<li><strong>Kun.EventBus</strong> (architect M2): <code>IEventTypeRegistrar.Register&lt;TEvent&gt;</code>
+gains an overload that accepts a source-generated <code>JsonTypeInfo&lt;TEvent&gt;</code>;
+<code>IEventTypeRegistry.GetJsonTypeInfo(Type)</code> exposes it. The outbox
+accumulator now prefers the typed serializer when registered and falls
+back to reflection-based <code>JsonSerializer.Serialize(obj)</code> only when no
+info is supplied — the fallback path carries <code>[RequiresUnreferencedCode]</code>
+and <code>[RequiresDynamicCode]</code> annotations so the AOT analyzer flags
+callers that haven&#x27;t migrated.</li>
+<li><strong>Kun.Gateway</strong> (review #7): <code>MapKunJwks</code> + <code>MapKunInternalJwks</code> accept
+an optional <code>Func&lt;HttpContext, bool&gt;? additionalGate</code> that runs after
+the environment / <code>ExposeInternalJwks</code> check. Typical use: RFC1918
+allow-list for production deployments without service-mesh isolation.</li>
+<li><strong>Kun.Gateway</strong> (review #2): <code>S2sTokenIssuer.IssueForAsync(ClaimsPrincipal, CancellationToken)</code>
+lets callers await the configured <code>IS2sPrincipalResolver</code> without
+<code>.GetAwaiter().GetResult()</code> blocking. The sync <code>IssueFor</code> stays for
+back-compat and delegates to the async path internally.</li>
+<li><strong>Kun.Gateway</strong> (review #1): both JWKS endpoints share a DI-registered
+<code>JwksResponseBuilder</code> singleton that caches the JWK response keyed on
+public-key-file mtime. Rebuilds only on key rotation; typical downstream
+JWKS fetch is a single <code>File.GetLastWriteTimeUtc</code> stat.</li>
+<li><strong>Kun.Storage.Local</strong> (review #3): streaming <code>MaxBytes</code> enforcement.
+<code>UploadAsync</code> now rejects oversized uploads mid-copy via a chunked
+<code>ReadAsync</code> loop backed by <code>ArrayPool&lt;byte&gt;</code> — no more &quot;park a 1 GB
+payload on disk before deleting it&quot; failure mode.</li>
+<li><strong>Kun.Storage</strong> (review #6): <code>ObjectMetadata.ContentType</code> is now
+<code>string?</code>. <code>S3FileStorage.ListAsync</code> reports <code>null</code> instead of a
+synthetic <code>&quot;application/octet-stream&quot;</code> when the S3 listing API omits
+the content type — callers needing it follow up with
+<code>GetMetadataAsync</code> per item.</li>
+</ul>
+<h3 class="rp-toc-include" id="migration-guide--alpha1--alpha2"><a href="#migration-guide--alpha1--alpha2" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Migration guide — <code>alpha.1</code> → <code>alpha.2</code></h3>
+<p>All Sprint 1 changes are <strong>additive</strong>. <code>PublicAPI.Shipped.txt</code> is untouched;
+every new member lives in <code>PublicAPI.Unshipped.txt</code>. Consumers upgrading
+from <code>0.1.0-alpha.1</code> do not need to change code to keep the old behaviour,
+but the new capabilities below require explicit opt-in:</p>
+<ol>
+<li><strong>Per-service schemas</strong> (P0-3). To run multiple Kun services against one
+Postgres instance without name collisions:
+<ul>
+<li>Override <code>DefaultSchema</code> on your <code>KunDbContext</code> subclass: <code>protected override string? DefaultSchema =&gt; &quot;catalog&quot;;</code>.</li>
+<li>Chain <code>.UseKunSchema(&quot;catalog&quot;)</code> on the options builder alongside
+<code>.UseNpgsql(...)</code>.</li>
+<li>Regenerate migrations so they emit <code>schema: &quot;catalog&quot;</code> — see
+<a href="/pr-preview/pr-50/sdk/kun/guides/schema-per-service.html" class="rp-link">docs/schema-per-service.md</a>.</li>
+<li><code>SchemaConsistencyInterceptor</code> auto-registers via <code>KunDbContext.OnConfiguring</code>
+and will throw at first <code>SaveChangesAsync</code> if you miss either step.</li>
+</ul>
+</li>
+<li><strong>trace_id claim</strong> (P0-2). <code>S2sTokenIssuer</code> now emits a <code>trace_id</code> claim
+when <code>Activity.Current</code> is live AND an HTTP context is in scope (M3
+guard). Downstream services see it on <code>JwtCurrentUser</code> via
+<code>ITracedCurrentUser.TraceId</code>. Default on; kill-switch via
+<code>KunGatewayOptions.EmitTraceIdClaim = false</code>.</li>
+<li><strong>IFileStorage</strong> (P0-1). Add <code>.AddKunLocalFileStorage(...)</code> (dev) or
+<code>.AddKunS3FileStorage(...)</code> (prod) to compose storage. <code>Kun.Storage.S3</code>
+is non-AOT — exclude from your AOT publish matrix if you have one.</li>
+<li><strong>IOutboxWriter</strong> (P0-4). Non-aggregate code can now enqueue outbox
+messages via <code>IOutboxWriter.Enqueue&lt;TEvent&gt;(evt)</code>. Existing
+<code>IIntegrationEventBus.Publish&lt;T&gt;</code> remains — both resolve to the same
+scoped accumulator instance. Prefer <code>IOutboxWriter</code> from interceptors
+and infrastructure code; <code>IIntegrationEventBus</code> for aggregate flows.</li>
+<li><strong>Tenant RLS</strong> (P1-4). Opt-in via <code>services.AddKunTenantRls()</code>. Wire the
+resulting interceptor into your DbContext options with
+<code>.AddInterceptors(sp.GetRequiredService&lt;TenantRlsTransactionInterceptor&gt;())</code>.
+Only needed when the database has <code>CREATE POLICY</code> rules using
+<code>app.current_tenant_id</code>.</li>
+<li><strong>IS2sPrincipalResolver</strong> (P1-6). <code>S2sTokenIssuer</code>&#x27;s 3-arg ctor is
+marked <code>[Obsolete(DiagnosticId = &quot;KUN0002&quot;)]</code> and scheduled for removal
+in <code>0.2.0</code>. Switch manual construction sites to the 4-arg ctor, passing
+<code>NoOpS2sPrincipalResolver.Instance</code> for the identity transform. Custom
+enrichment: register your own <code>IS2sPrincipalResolver</code> implementation
+before <code>AddKunGateway</code>. DI-wired consumers do not need code changes.</li>
+<li><strong>Internal JWKS endpoint</strong> (P1-3). <code>app.MapKunInternalJwks()</code> at
+<code>/internal/.well-known/jwks.json</code>. Gated: Development auto-on, Production
+returns 404 unless <code>KunGatewayOptions.ExposeInternalJwks = true</code>. The
+existing public <code>/.well-known/jwks.json</code> route is unchanged.</li>
+<li><strong>PgBouncer transaction mode</strong> (P1-5). Append
+<code>No Reset On Close=true;Max Auto Prepare=0</code> to any Npgsql connection
+string routed through PgBouncer; see
+<a href="https://github.com/idadawn/kun/blob/v2026.10.12-hotfix.3/src/Kun.EntityFrameworkCore/README.md" target="_blank" rel="noopener noreferrer" class="rp-link">src/Kun.EntityFrameworkCore/README.md</a>.</li>
+<li><strong>OpenAPI</strong> (P1-7). <code>builder.Services.AddOpenApi();</code> +
+<code>if (app.Environment.IsDevelopment()) app.MapOpenApi();</code>. Requires the
+<code>Microsoft.AspNetCore.OpenApi</code> package.</li>
+<li><strong>JSON Schema export</strong> (P1-1). <code>IEventTypeRegistry.GetAll()</code> enumerates
+every <code>(eventId, clrType)</code> pair in stable order — used by
+<code>tools/Kun.IntegrationEvents.SchemaGen</code>. Provide a public static
+zero-arg factory method that returns your registry to plug into the
+tool; see <code>tools/Kun.IntegrationEvents.SchemaGen/README.md</code>.</li>
+<li><strong>Auditing</strong> (P1-2). Opt-in via <code>services.AddKunAuditing()</code> +
+<code>services.AddAuditable&lt;YourEntity&gt;()</code> for each entity you want audited.
+Attach the interceptor to your DbContext with
+<code>options.AddAuditingInterceptor(sp)</code> inside the factory lambda.
+Wire the stable event id via
+<code>services.AddKunEventBus(b =&gt; b.RegisterAuditing())</code>.</li>
+<li><strong>AOT-safe outbox serialization</strong> (architect M2). Upgrade existing
+<code>bus.Register&lt;T&gt;(&quot;t&quot;)</code> calls to
+<code>bus.Register&lt;T&gt;(&quot;t&quot;, MyJsonContext.Default.T)</code> to thread a
+source-generated <code>JsonTypeInfo&lt;T&gt;</code> through the outbox accumulator.
+Reflection fallback still works for non-AOT consumers but now warns
+via <code>[RequiresUnreferencedCode]</code> at call sites.</li>
+<li><strong>JWKS <code>additionalGate</code></strong> (review #7, optional). Pass a predicate to
+<code>MapKunJwks</code> / <code>MapKunInternalJwks</code> to restrict by IP range or header
+when NetworkPolicy / mesh isn&#x27;t available. Default behavior unchanged
+when the parameter is omitted.</li>
+<li><strong><code>S2sTokenIssuer.IssueForAsync</code></strong> (review #2). Prefer the async
+overload for hot-path token minting; the sync <code>IssueFor</code> delegates to
+it via <code>.GetAwaiter().GetResult()</code> and stays available for existing
+synchronous call sites.</li>
+</ol>
+<h3 class="rp-toc-include" id="highlights-2026-04-24--04-25"><a href="#highlights-2026-04-24--04-25" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Highlights (2026-04-24 / 04-25)</h3>
+<p><strong>Phase 1 neuroagent-consumer gap fully closed.</strong> Five tickets landed in one burst (23 commits on <code>main</code>, all pushed to <code>origin</code>):</p>
+<ul>
+<li><strong>P1-KN-001</strong> <code>Kun.Storage</code> — new 15th module (<code>IFileStorage</code> 7-method contract + <code>ContentDispositionPolicy</code> + S3/MinIO/Local backends).</li>
+<li><strong>P1-KN-002</strong> S2S JWT claims alignment (<code>Kun.Security.S2SJwt</code> rewritten around <code>S2SJwtIssueRequest</code>, emits <code>roles</code>/<code>membership_id</code>/<code>trace_id</code>, default TTL 15 min, multi-aud header bug fixed).</li>
+<li><strong>P1-KN-003</strong> Attribute-driven integration-event registration (<code>[IntegrationEventId(&quot;event.v1&quot;)]</code> + <code>Register&lt;TEvent&gt;()</code> overload).</li>
+<li><strong>P1-CS-011</strong> <code>TenantRlsConnectionInterceptor</code> — opt-in defence-in-depth behind the EF global filter; PG-only, whitelist-guarded.</li>
+<li><strong>P1-CS-019</strong> <code>Kun.Audit</code> — new 16th-slot abstraction module (tamper-evident hash-chained operation audit + Mediator pipeline behaviour + 21 xunit cases).</li>
+</ul>
+<p>Framework module count: 13 → 15. Test projects: 11 → 13. Validation / AOT publish matrix / NuGet release / Aspire runtime drill / SG regression remain open — see <code>docs/roadmap.md</code> for the outstanding-work roadmap（原 <code>TODO-remaining.md</code> 已于 2026-06-12 并入该文件）.</p>
+<h3 class="rp-toc-include" id="added--kunaudit-module-phase-1-p1-cs-019"><a href="#added--kunaudit-module-phase-1-p1-cs-019" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — Kun.Audit module (Phase 1 P1-CS-019)</h3>
+<ul>
+<li>New <code>Kun.Audit</code> abstraction module (IsAotCandidate=true, HasPublicApi=true): tamper-evident operation audit for CQRS commands via a Mediator pipeline behaviour + pluggable <code>IAuditSink</code>. Matches SAD v3.0 §15.5 <code>audit.operations</code> contract (prev_hash + content_hash).</li>
+<li><code>AuditContentHasher.Compute</code>: canonical <code>id|tenant|actor|command|ISO-timestamp|latency|outcome|errorCode</code> + SHA-256 over <code>prev || canonical</code>, lower-case hex. Timestamp pinned to round-trip <code>O</code> format with <code>InvariantCulture</code> so hashes are stable across culture / timezone.</li>
+<li><code>IAuditChainState.AppendAsync</code>: atomic read-previous / compute-new / commit-new, serialised per tenant key so concurrent commands on the same tenant cannot fork the chain. <code>InMemoryAuditChainState</code> uses per-tenant <code>SemaphoreSlim</code>; production deployments are expected to back this with a durable DB-level coordinator (documented in <code>docs/security/audit-log.md</code>).</li>
+<li><code>AuditLogPipelineBehavior&lt;TRequest, TResponse&gt;</code>: captures actor/tenant/timing/outcome per handler invocation. Original handler exception is preserved via <code>ExceptionDispatchInfo</code>. Audit-write failures are logged at Warning and swallowed — audit MUST NOT convert a successful handler into a failure nor mask a business exception.</li>
+<li>DI: <code>AddKunAudit()</code> wires <code>InMemoryAuditChainState</code> + <code>InMemoryAuditSink</code> + <code>TimeProvider.System</code> as <code>TryAdd</code> defaults; <code>AddAuditBehavior&lt;TCommand, TResponse&gt;()</code> on <code>KunMediatorBuilder</code> opts one command in at a time so queries stay unaudited.</li>
+<li>New doc <code>docs/security/audit-log.md</code> covers record shape, chain semantics, serialisation contract, in-memory limitations, production shape, wiring, failure semantics, and chain-verification procedure.</li>
+<li>21 xunit cases in <code>tests/Kun.Audit.Tests</code> cover the hash matrix, concurrent chain serialisation (100-task storm), sink ordering/null-guards, behaviour success/exception paths, sink-failure non-propagation, consecutive-entry linking, and per-tenant chain isolation.</li>
+<li>Registered in <code>Kun.sln</code> under GUID <code>{A100000E-...}</code>; <code>src/AGENTS.md</code> / <code>README.md</code> module matrix / <code>docs/architecture/module-map.md</code> updated.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--kunentityframeworkcore-tenant-rls-interceptor-phase-1-p1-cs-011"><a href="#added--kunentityframeworkcore-tenant-rls-interceptor-phase-1-p1-cs-011" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — Kun.EntityFrameworkCore tenant-RLS interceptor (Phase 1 P1-CS-011)</h3>
+<ul>
+<li>New <code>Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor</code>: opt-in EF <code>DbConnectionInterceptor</code> that pushes <code>ITenantContext.TenantId</code> into the PostgreSQL session variable <code>app.current_tenant_id</code> on connection open and RESETs it on close. Gives NeuroAgent a second isolation layer behind the existing EF global query filter when paired with RLS policies on the database schema.</li>
+<li>Activates only on Npgsql connections (nominal FQN check) so <code>Kun.EntityFrameworkCore</code> does not need a direct Npgsql package dependency; MySQL / SQL Server / other providers silently no-op.</li>
+<li>Tenant id is whitelisted against <code>^[A-Za-z0-9._-]{1,128}$</code> before inlining into the <code>SET</code> command (PostgreSQL <code>SET</code> cannot be parameterised); unsafe values throw <code>InvalidOperationException</code> rather than being coerced.</li>
+<li>Registered as Scoped by <code>AddKunEntityFrameworkCore</code>; callers opt in per <code>DbContextOptionsBuilder</code> via <code>opts.AddInterceptors(sp.GetRequiredService&lt;TenantRlsConnectionInterceptor&gt;())</code>.</li>
+<li>New doc <code>docs/security/multi-tenancy-rls.md</code> covers defence-in-depth rationale, policy template (ENABLE + FORCE ROW LEVEL SECURITY + USING + WITH CHECK), wiring, and ops notes.</li>
+<li>Three xunit integration cases in <code>tests/Kun.IntegrationTests/MultiTenancy/TenantRlsTests.cs</code> run against a live Postgres 16 container: RLS isolation proven <em>without</em> the EF filter (test entity deliberately omits <code>IMultiTenant</code>), cross-tenant write rejection via WITH CHECK, and whitelist rejection of unsafe tenant ids.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--kuneventbus-attribute-driven-registration-phase-1-p1-kn-003"><a href="#added--kuneventbus-attribute-driven-registration-phase-1-p1-kn-003" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — Kun.EventBus attribute-driven registration (Phase 1 P1-KN-003)</h3>
+<ul>
+<li>New <code>[IntegrationEventId(&quot;bounded-context.event.v1&quot;)]</code> attribute so the stable token lives next to the event record instead of being repeated in DI wiring.</li>
+<li><code>IEventTypeRegistrar.Register&lt;TEvent&gt;()</code> no-arg overload reads the attribute at DI-registration time. Marked <code>[RequiresUnreferencedCode]</code>; AOT-strict consumers can keep calling <code>Register&lt;TEvent&gt;(string)</code> to stay reflection-free. The resulting runtime registry is still the zero-reflection <code>FrozenDictionary</code>-backed <code>EventTypeRegistry</code>.</li>
+<li>Missing attribute yields an actionable <code>InvalidOperationException</code> pointing the caller at either decorating the type or using the explicit string overload.</li>
+<li>Samples (<code>Kun.Sample.Catalog.Contracts</code>, <code>Kun.Sample.Order.Contracts</code>) migrated to the attribute so the pattern is visible to framework users.</li>
+<li>7 new xunit cases in <code>Kun.EventBus.Tests/IntegrationEventIdAttributeTests.cs</code> cover attribute validation, presence/absence, attribute-vs-string equivalence, and fluent chaining.</li>
+</ul>
+<h3 class="rp-toc-include" id="changed--kunsecuritys2sjwt-phase-1-p1-kn-002"><a href="#changed--kunsecuritys2sjwt-phase-1-p1-kn-002" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Changed — Kun.Security.S2SJwt (Phase 1 P1-KN-002)</h3>
+<ul>
+<li><code>IS2SJwtIssuer.IssueAsync</code> now takes a single <code>S2SJwtIssueRequest</code> record. The prior 5-positional-parameter signature is removed (API was in <code>PublicAPI.Unshipped.txt</code> with no in-repo consumers besides tests).</li>
+<li>New claim emission, aligned with SAD v3.0 §12: <code>roles</code> (multi-valued), <code>membership_id</code>, <code>trace_id</code> — all optional via the request record. Pre-existing <code>sub</code>, <code>jti</code>, <code>tenant_id</code>, <code>scope</code>, <code>session_id</code> remain.</li>
+<li>Multi-audience tokens now fold <code>aud</code> into the payload as a JSON array (previously, multi-audience tokens leaked <code>aud</code> into the JWT <em>header</em> — correctness bug, now fixed).</li>
+<li><code>S2SJwtOptions.DefaultLifetimeSeconds</code> default bumped from 300 → <strong>900</strong> (15 minutes) per SAD §12; individual calls can still override via <code>S2SJwtIssueRequest.Lifetime</code>.</li>
+<li><code>docs/security/s2s-jwt.md</code> extended with a NeuroAgent Set B section explaining why both <code>Kun.Gateway.S2sTokenIssuer</code> (RS256, 60s) and <code>Kun.Security.S2SJwt.S2SJwtIssuer</code> (ES256, 15min) coexist and when to use each.</li>
+</ul>
+<h3 class="rp-toc-include" id="added--kunstorage-phase-1-p1-kn-001"><a href="#added--kunstorage-phase-1-p1-kn-001" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — Kun.Storage (Phase 1 P1-KN-001)</h3>
+<ul>
+<li><strong>Kun.Storage</strong> module (trim-safe, <code>IsAotCandidate=false</code> due to AWSSDK.S3 reflection):
+<ul>
+<li><code>IFileStorage</code> seven-method contract: <code>PutObject</code> / <code>GetObject</code> / <code>HeadObject</code> / <code>DeleteObject</code> / <code>ListObjects</code> / <code>CreatePresignedUploadUrl</code> / <code>CreatePresignedDownloadUrl</code>.</li>
+<li>Supporting types: <code>ObjectMetadata</code> / <code>ObjectSummary</code> / <code>ObjectDownload</code> (IAsyncDisposable) / <code>PutObjectOptions</code> / <code>PresignedUploadRequest+Url</code> / <code>PresignedDownloadRequest+Url</code>.</li>
+<li><code>ContentDispositionPolicy</code>: active-web MIME whitelist (HTML/SVG/XML/JS/WASM/XHTML/ECMAScript) + RFC 5987 attachment builder. Enforced at every write path and every presigned-download URL so user-uploaded content cannot render inline.</li>
+<li><code>S3FileStorage</code> (AWSSDK.S3, compatible with MinIO via path-style + custom endpoint). Auto-probes stored MIME on presigned GET to inject <code>ResponseContentDisposition</code> attachment override.</li>
+<li><code>LocalFileStorage</code>: 2-layer path-traversal defense (syntactic + semantic), <code>.kunmeta</code> JSON sidecar for metadata, HMAC-SHA256-signed <code>kun-local://</code> stub URLs for presigned ops (dev-only).</li>
+<li>DI: <code>AddKunStorage</code> / <code>AddLocalStorage</code> / <code>AddS3Storage</code> with central <code>StorageOptions</code>.</li>
+</ul>
+</li>
+<li><strong>Tests</strong>:
+<ul>
+<li><code>tests/Kun.Storage.Tests</code>: ContentDispositionPolicy matrix, LocalFileStorage round-trips + traversal + attachment enforcement, mocked-S3 unit tests, DI resolution tests.</li>
+<li><code>tests/Kun.IntegrationTests/Storage/S3FileStorageIntegrationTests.cs</code> + <code>Fixtures/MinioFixture.cs</code>: MinIO Testcontainer with real <code>HttpClient</code> round-trips against presigned URLs.</li>
+</ul>
+</li>
+<li><strong>Docs</strong>: new <code>src/Kun.Storage/AGENTS.md</code>, module added to <code>src/AGENTS.md</code>, README, <code>docs/architecture/module-map.md</code>; <code>docs/neuroagent-phase1-gap.md</code> updated to mark P1-KN-001 complete.</li>
+</ul>
+<h3 class="rp-toc-include" id="merge--main--develop-reconciliation-2026-04-25-sync-main-into-develop"><a href="#merge--main--develop-reconciliation-2026-04-25-sync-main-into-develop" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Merge — main → develop reconciliation (2026-04-25, <code>sync-main-into-develop</code>)</h3>
+<ul>
+<li>Union merge across five design-divergent groups, arbitrated against <code>docs/whitepaper.md</code>:
+<ul>
+<li><strong>Kun.Audit</strong> — writer/reader abstraction (develop) + hash-chain pipeline behaviour (main) coexist in one module. <code>AddKunAudit().UseEventBus()</code> and <code>AddAuditBehavior&lt;TReq,TResp&gt;()</code> both available.</li>
+<li><strong>Kun.EventBus</strong> — three <code>Register&lt;TEvent&gt;</code> overloads (string / string+JsonTypeInfo / [IntegrationEventId] attribute) all retained.</li>
+<li><strong>Kun.EntityFrameworkCore</strong> — <code>TenantRlsConnectionInterceptor</code> (connection-scoped) + <code>TenantRlsTransactionInterceptor</code> + <code>SchemaConsistencyInterceptor</code> all retained; consumers pick per-deployment.</li>
+<li><strong>Kun.Security.S2SJwt</strong> — dual <code>IssueAsync</code> overloads (record <code>S2SJwtIssueRequest</code> + legacy 5-param). <code>DefaultLifetimeSeconds</code> set to <strong>300</strong> per whitepaper §9.6 zero-trust TTL upper bound (60–300s).</li>
+<li><strong>Kun.Storage</strong> — main&#x27;s 7-method <code>IFileStorage</code> contract wins (whitepaper §13.1; develop&#x27;s variant lacked <code>RequiredHeaders</code> on presigned upload, making SigV4 S3 uploads unreliable, and had no response-Content-Disposition override for active-MIME attachment enforcement). develop&#x27;s split-module skeleton <code>Kun.Storage.Abstractions</code> / <code>.Local</code> / <code>.S3</code> preserved for Phase 2 implementation; <code>src/Kun.Storage/</code> old legacy files removed.</li>
+</ul>
+</li>
+<li><strong>P1-KN-002 TTL correction</strong> — the main-side note about <code>DefaultLifetimeSeconds</code> bumping to 900 is superseded: per whitepaper §9.6 (&quot;TTL 控制在 60 秒到 5 分钟&quot;), default is 300 seconds. Explicit callers may still override via <code>S2SJwtIssueRequest.Lifetime</code>.</li>
+<li>Pre-push hook installed at <code>.git/hooks/pre-push</code> to refuse direct pushes to <code>main</code>.</li>
+</ul>
+<h3 class="rp-toc-include" id="fixed"><a href="#fixed" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Fixed</h3>
+<ul>
+<li>
+<p><strong>Kun.Gateway</strong>: <code>S2sTokenIssuer</code> now injects <code>IHostEnvironment</code> and throws <code>InvalidOperationException</code> when the signing key file is missing in non-Development environments, preventing silent ephemeral-key self-signing in production.</p>
+</li>
+<li>
+<p><strong>Kun.Gateway</strong>: <code>AddKunGateway</code> without a <code>reverseProxyConfig</code> section now registers a startup-time <code>IHostedService</code> that fails fast with a user-friendly message if no <code>IProxyConfigProvider</code> is registered, instead of deferring the error to the first proxied request.</p>
+</li>
+<li>
+<p><strong>Kun.Gateway.Tests</strong>: regression tests added for production key-file safety guard, startup config validation, and double-registration behavior.</p>
+</li>
+<li>
+<p><strong>Kun.Saga</strong>: registered <code>ISystemClock</code> in <code>AddKunSaga</code> (required by
+<code>SagaOrchestrator</code>); <code>SagaStepExecutor</code> now persists state via
+<code>DbContext.SaveChangesAsync</code> after each entry; forward execution advances
+step index and marks completed; reverse compensation walks back to 0 and
+marks compensated; <code>ISagaOrchestrator</code> moved from Singleton to Scoped to
+match its Scoped dependency <code>ISagaInstanceStore</code>.</p>
+</li>
+</ul>
+<h3 class="rp-toc-include" id="added--m1-交付阶段一奠基"><a href="#added--m1-交付阶段一奠基" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — M1 交付（阶段一：奠基）</h3>
+<p><strong>Kun.Core</strong> (v1.1)</p>
+<ul>
+<li><code>Domain/DomainException</code>：带 <code>Code</code> 字段的领域异常基类</li>
+<li><code>Domain/IDomainEventDispatcher</code>：同进程内领域事件分发接口</li>
+<li><code>MultiTenancy/NullTenantContext</code>：非多租户默认实现</li>
+<li><code>Security/AnonymousCurrentUser</code>：未认证默认实现</li>
+<li><code>Time/ISystemClock</code> + <code>Time/SystemClock</code>：可注入时钟，默认由 <code>TimeProvider.System</code> 支持</li>
+<li>为已有公开类型（AggregateRoot / Entity / ValueObject / Result / Error / Auditing 标记）补齐 XML 注释</li>
+<li>单元测试 32/32（Domain + Results）</li>
+</ul>
+<p><strong>Kun.Mediator</strong> (v1.2)</p>
+<ul>
+<li>核心接口：<code>ISender</code>、<code>IPublisher</code>、<code>INotification</code>、<code>INotificationHandler&lt;T&gt;</code>、<code>IPipelineBehavior&lt;TRequest, TResponse&gt;</code>、<code>RequestHandlerDelegate&lt;TResponse&gt;</code></li>
+<li><code>KunMediator</code>：基于 <code>FrozenDictionary&lt;Type, RequestHandlerBase&gt;</code> 的 O(1) 无反射调度</li>
+<li><code>KunMediatorBuilder</code>：手工注册 API —— <code>AddRequestHandler&lt;TReq, TResp, THandler&gt;()</code>、<code>AddPipelineBehavior&lt;TReq, TResp, TBehavior&gt;()</code>、<code>AddNotificationHandler&lt;TNotification, THandler&gt;()</code></li>
+<li><code>DependencyInjection/AddKunMediator</code> DI 入口</li>
+<li>内置 Behavior：<code>LoggingBehavior</code>、<code>PerformanceBehavior</code>（500ms 阈值）、<code>TracingBehavior</code>（<code>ActivitySource(&quot;Kun.Mediator&quot;)</code>）</li>
+<li>AOT 安全：所有泛型类型参数带 <code>[DynamicallyAccessedMembers(PublicConstructors)]</code>，构建时零 trim 警告</li>
+<li>单元测试 8/8（Dispatch + Pipeline 洋葱顺序）</li>
+</ul>
+<p><strong>Kun.Validation</strong> (v1.3)</p>
+<ul>
+<li><code>IValidator&lt;T&gt;</code> + <code>ValidationResult</code> + <code>ValidationError</code> + <code>ValidationException</code></li>
+<li><code>Behaviors/ValidationPipelineBehavior&lt;TReq, TResp&gt;</code>：聚合所有验证器，invalid 时抛 <code>ValidationException</code></li>
+<li><code>DependencyInjection/KunValidationServiceCollectionExtensions</code>：<code>AddValidator&lt;T, TValidator&gt;()</code> + <code>AddValidationBehavior&lt;TReq, TResp&gt;()</code></li>
+<li>单元测试 12/12</li>
+</ul>
+<p><strong>Kun.Sample.Minimal</strong>（新增）</p>
+<ul>
+<li>AOT 候选的控制台样例，演示 Command / Query / Notification 经 <code>KunMediator</code> 的完整调度链路</li>
+<li>附带 <code>ActivityListener</code> 观察 <code>TracingBehavior</code> 输出</li>
+<li><code>dotnet run</code> 本地验证通过</li>
+</ul>
+<h3 class="rp-toc-include" id="added--基础设施"><a href="#added--基础设施" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — 基础设施</h3>
+<ul>
+<li>项目初始化：13 个核心模块骨架</li>
+<li>白皮书、贡献指南、6 个 Claude 专属 Skills</li>
+<li><code>Directory.Build.props</code> / <code>Directory.Packages.props</code> 集中化构建与依赖管理</li>
+<li>CI 工作流：build、test、AOT 发布验证、layering 检查、dotnet format</li>
+<li><code>Microsoft.CodeAnalysis.PublicApiAnalyzers</code> 接入 Kun.Core / Kun.Mediator / Kun.Infrastructure / Kun.EventBus / Kun.Validation</li>
+<li><code>scripts/check-layering.sh</code>：强制 Kun.Core 无第三方 PackageReference</li>
+<li><code>CLAUDE.md</code> 顶层 + 30 个 <code>AGENTS.md</code> 分层导航文档</li>
+<li><code>Version</code>：<code>VersionPrefix=0.1.0</code>，本地 <code>VersionSuffix=alpha.1</code></li>
+<li><code>develop</code> 分支作为开发主干</li>
+</ul>
+<h3 class="rp-toc-include" id="changed"><a href="#changed" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Changed</h3>
+<ul>
+<li><code>Kun.AspNetCore</code> / <code>Kun.Grpc</code> csproj：从 <code>Microsoft.NET.Sdk.Web</code> 修正为 <code>Microsoft.NET.Sdk</code>（它们是库，不是 Host）</li>
+<li><code>PublicAPI.Unshipped.txt</code> → <code>PublicAPI.Shipped.txt</code>：Kun.Core (137)、Kun.Mediator (32)、Kun.Validation (25) 的 API 冻结入库</li>
+</ul>
+<h3 class="rp-toc-include" id="deferredm1-已决定延后的项详见-docsroadmapmd"><a href="#deferredm1-已决定延后的项详见-docsroadmapmd" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Deferred（M1 已决定延后的项，详见 docs/roadmap.md）</h3>
+<ul>
+<li><code>Kun.Mediator.SourceGenerator</code> / <code>Kun.Validation.SourceGenerator</code>：当前用手工注册 API 替代，SG 作为 stretch goal（ralplan ADR fallback 路径）</li>
+<li><code>Kun.Validation</code> 属性包（<code>[Required]</code>、<code>[MaxLength]</code> 等）：无 SG 时属性无运行时意义，与 SG 一同回归</li>
+<li>Result-aware 验证 Behavior（返回 <code>Result.Fail(Error.Validation(...))</code>）：可在核心抛异常 Behavior 之上封装，follow-up</li>
+<li>AOT 启动时间 benchmark：本地 Windows 缺 C++ linker，延至 CI 或用户本地 Linux 跑</li>
+</ul>
+<h3 class="rp-toc-include" id="added--m2-交付阶段二持久化双引擎"><a href="#added--m2-交付阶段二持久化双引擎" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — M2 交付（阶段二：持久化双引擎）</h3>
+<p><strong>Kun.EventBus</strong> (v2.1, AOT-candidate abstractions)</p>
+<ul>
+<li><code>OutboxMessage</code>：富领域模型，含 <code>MarkPublished</code> / <code>MarkFailed</code> / <code>IncrementAttempt</code> 状态转换方法</li>
+<li><code>OutboxStatus</code>：<code>Pending</code> / <code>Published</code> / <code>Failed</code> 枚举</li>
+<li><code>IntegrationEventBuffer</code>：scoped 累加器，在 <code>SaveChangesAsync</code> 前收集待发事件</li>
+<li><code>EventTypeRegistry</code>：<code>FrozenDictionary&lt;string, Type&gt;</code> 支持的 O(1) 稳定事件类型查找；<code>IEventTypeRegistry</code> / <code>IEventTypeRegistrar</code> 接口</li>
+<li><code>IIntegrationEventHandler&lt;TEvent&gt;</code> + <code>MessageContext</code>：消费端处理器契约</li>
+<li><code>IIntegrationEventPublisher</code>：每条消息的 broker 传输抽象</li>
+<li><code>IProcessedMessageStore</code>：幂等消费存储抽象；<code>InMemoryProcessedMessageStore</code>（测试用）、<code>RedisProcessedMessageStore</code>（SETNX + EX，键格式 <code>idemp:{consumer}:{messageId}</code>）</li>
+<li><code>IOutboxMessageStore</code>：持久层扫描抽象</li>
+<li><code>OutboxPublisherBackgroundService</code>：BackgroundService，可配置批量大小、轮询间隔、最大重试次数、指数退避；每条消息启动 <code>ActivitySource(&quot;Kun.EventBus.Outbox&quot;)</code> span，从 <code>TraceParent</code>/<code>TraceState</code> 列恢复父 trace</li>
+<li><code>OutboxPublisherOptions</code>：BatchSize=50 / PollInterval=2s / MaxAttempts=5 / RetryBaseDelay=1s</li>
+<li>DI 构建器：<code>KunEventBusBuilder</code>（<code>.UseInMemoryIdempotency()</code> / <code>.UseRedisIdempotency()</code>）、<code>KunEventBusServiceCollectionExtensions</code>、<code>KunOutboxPublisherExtensions</code></li>
+<li>单元测试 11/11</li>
+</ul>
+<p><strong>Kun.EntityFrameworkCore</strong> (v2.2, trim-safe, IsAotCandidate=false)</p>
+<ul>
+<li><code>KunDbContext</code>：<code>IMultiTenant</code> 全局查询过滤器 + <code>ISoftDelete</code> 软删除过滤器</li>
+<li><code>OutboxMessageConfiguration</code>：EF Core <code>IEntityTypeConfiguration&lt;OutboxMessage&gt;</code>，含索引</li>
+<li><code>EfUnitOfWork</code>：单次 <code>SaveChangesAsync</code> 原子提交聚合变更 + Outbox 行 + 领域事件分发</li>
+<li><code>IntegrationEventOutboxAccumulator</code>：W3C <code>TraceParent</code>/<code>TraceState</code> 捕获（via <code>Activity.Current</code>）</li>
+<li><code>UnitOfWorkPipelineBehavior</code>：Mediator pipeline behavior，写命令专用</li>
+<li><code>NoOpDomainEventDispatcher</code>：默认无操作实现；<code>MediatorDomainEventDispatcher</code> 由样例服务提供</li>
+<li><code>IUnitOfWork</code> 接口</li>
+<li>DI：<code>KunEntityFrameworkCoreServiceCollectionExtensions</code></li>
+<li>单元测试集成（Testcontainers PostgreSQL，Docker 不可用时自动跳过）</li>
+</ul>
+<p><strong>Kun.Dapper</strong> (v2.3, AOT-candidate)</p>
+<ul>
+<li><code>IReadDbConnectionFactory</code>：读端连接工厂抽象；调用方负责 dispose</li>
+<li><code>PageRequest</code>：1-based 页码 + <code>Offset</code> 计算属性</li>
+<li><code>PagedResult&lt;T&gt;</code>：<code>TotalPages</code> / <code>HasNextPage</code> / <code>HasPreviousPage</code> + <code>Empty(PageRequest)</code> 工厂方法</li>
+<li><code>ReadDbOptions</code>：<code>ConnectionString</code> 配置</li>
+<li>DI：<code>KunDapperServiceCollectionExtensions.AddKunDapper</code></li>
+<li>单元测试 10/10</li>
+</ul>
+<h3 class="rp-toc-include" id="added--m3-交付阶段三消息总线"><a href="#added--m3-交付阶段三消息总线" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — M3 交付（阶段三：消息总线）</h3>
+<p><strong>Kun.EventBus</strong> (v3.x 追加)</p>
+<ul>
+<li><code>IIntegrationEventPublisher</code>：每条消息的 broker 传输接口（从 M2 正式确定契约）</li>
+<li><code>IProcessedMessageStore</code> 完整实现（InMemory + Redis），含幂等键格式文档</li>
+</ul>
+<p><strong>Kun.EventBus.RabbitMQ</strong> (AOT-candidate，RabbitMQ.Client 7.x)</p>
+<ul>
+<li><code>RabbitMqOptions</code>：ConnectionString / ExchangeName / ConsumerName / PrefetchCount / MaxDeliveryAttempts / IdempotencyTtl</li>
+<li><code>RabbitMqConnectionProvider</code>：单例懒初始化连接，<code>AutomaticRecoveryEnabled=true</code>，<code>IAsyncDisposable</code></li>
+<li><code>RabbitMqIntegrationEventPublisher</code>：<code>IIntegrationEventPublisher</code> 实现；topic exchange；headers 含 traceparent/tracestate/tenantId/messageId/occurredAt；持久化消息</li>
+<li><code>RabbitMqIntegrationEventSubscriber</code>：BackgroundService；<code>AsyncEventingBasicConsumer</code>；per-type durable 队列 + binding；prefetch；W3C trace 恢复；x-death 计数 → DLX</li>
+<li><code>IdempotentConsumerDecorator</code>：handler 成功后调用 <code>IProcessedMessageStore.TryMarkProcessedAsync</code></li>
+<li><code>DeadLetterHandler</code>：<code>{exchange}.dlx</code> fanout + <code>{consumer}.dead-letter</code> 队列</li>
+<li><code>ISubscriptionDispatcher</code> + <code>TypedSubscriptionDispatcher&lt;TEvent&gt;</code>：AOT 安全有类型调度，无 <code>MakeGenericType</code></li>
+<li><code>KunRabbitMqBuilder</code>：<code>.Subscribe&lt;TEvent, THandler&gt;(eventTypeId, typeInfo)</code> 流式注册</li>
+<li><code>KunRabbitMqServiceCollectionExtensions.AddRabbitMq</code></li>
+<li>单元测试新增 6 个，总计 79/79 通过</li>
+<li>M3 3.4（Testcontainers.RabbitMq 轮转测试）延后至 CI</li>
+</ul>
+<h3 class="rp-toc-include" id="added--m4-交付阶段四saga-编排器"><a href="#added--m4-交付阶段四saga-编排器" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — M4 交付（阶段四：Saga 编排器）</h3>
+<p><strong>Kun.Saga</strong> (AOT-candidate)</p>
+<ul>
+<li>抽象：<code>ISagaContext</code> / <code>ISaga&lt;TContext&gt;</code> / <code>ISagaStep&lt;TContext&gt;</code> / <code>ISagaOrchestrator</code></li>
+<li>异常：<code>SagaStepFailedException</code> / <code>SagaNotFoundException</code></li>
+<li>持久化：<code>SagaInstance</code>（富状态转换：<code>StartCompensating</code> / <code>Complete</code> / <code>Fail</code>）、<code>SagaStepQueueEntry</code>、<code>SagaState</code>（Running/Compensating/Completed/Compensated/Failed）、<code>StepDirection</code>（Execute/Compensate）</li>
+<li><code>ISagaInstanceStore</code>：持久层抽象；<code>EfSagaInstanceStore</code>：EF Core 实现，含 <code>(state, timeout_at)</code> 和 <code>(processed_at, enqueued_at)</code> 索引</li>
+<li><code>SagaOrchestrator</code>：原子 start + 首步 enqueue（与触发命令同一 EF Core 事务）</li>
+<li><code>SagaStepExecutor</code>：BackgroundService，正向执行 + 逆序补偿；<code>ActivitySource(&quot;Kun.Saga&quot;)</code>，span 名 <code>saga.step.execute</code> / <code>saga.step.compensate</code>，tags: <code>saga.step_index</code> / <code>saga.saga_id</code> / <code>saga.direction</code> / <code>saga.name</code></li>
+<li><code>SagaTimeoutDetector</code>：BackgroundService，每 5 秒扫描超时实例并触发补偿</li>
+<li><code>SagaRegistry</code>：<code>FrozenDictionary</code> + 闭包泛型委托，AOT 安全，无 <code>MakeGenericType</code></li>
+<li>DI：<code>KunSagaBuilder</code> + <code>AddKunSaga</code> 扩展</li>
+<li>单元测试 18/18</li>
+</ul>
+<h3 class="rp-toc-include" id="added--m5-交付阶段五宿主层rpc-与安全网关"><a href="#added--m5-交付阶段五宿主层rpc-与安全网关" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — M5 交付（阶段五：宿主层、RPC 与安全网关）</h3>
+<p><strong>Kun.Security</strong> (M5.1, AOT-candidate)</p>
+<ul>
+<li><code>S2sTokenOptions</code>：Issuer / Audience（默认 <code>kun-internal</code>）/ Lifetime（默认 60s）/ SigningAlgorithm（默认 RS256，HS256 明确禁止）/ JwksUri / ValidIssuers</li>
+<li><code>IKunJwksProvider</code> + <code>FileKunJwksProvider</code>：文件监视 JWKS 提供者</li>
+<li><code>KunServiceAuthenticationExtensions.AddKunServiceAuthentication</code>：JwtBearer 验证，<code>ValidAlgorithms=[&quot;RS256&quot;,&quot;ES256&quot;]</code>，HS256 被拒绝</li>
+<li><code>JwtTenantContext</code>：从 <code>ClaimsPrincipal</code> 提取 <code>tenant_id</code> 实现 <code>ITenantContext</code></li>
+<li><code>JwtCurrentUser</code>：从 <code>ClaimsPrincipal</code> 提取 <code>sub</code> / <code>name</code> / <code>roles</code> 实现 <code>ICurrentUser</code></li>
+<li><code>PropagateS2sTokenHandler</code>：<code>DelegatingHandler</code>，将入站 <code>Authorization</code> 头复制到出站请求</li>
+<li>DI：<code>AddKunSecurity</code>（注册 <code>ITenantContext</code> + <code>ICurrentUser</code>）/ <code>HttpClientBuilder.AddKunServiceAuth</code></li>
+<li>单元测试 7/7（valid、HS256 拒绝、wrong aud、expired、key rotation）</li>
+</ul>
+<p><strong>Kun.AspNetCore</strong> (M5.2, AOT-candidate)</p>
+<ul>
+<li><code>KunEndpointRouteBuilderExtensions</code>：<code>MapCommand&lt;TCommand, TResp&gt;</code> + <code>MapQuery&lt;TQuery, TResp&gt;</code>（ISender glue）</li>
+<li><code>ErrorToProblemDetailsExtensions</code>：<code>Error.ToProblemDetails()</code> 映射（Validation→400 / NotFound→404 / Conflict→409 / Unauthorized→401 / Forbidden→403）</li>
+<li><code>KunExceptionHandler</code>：<code>DomainException</code> → 400 ProblemDetails</li>
+<li><code>KunHealthChecksExtensions</code>：健康检查注册</li>
+<li>DI：<code>KunAspNetCoreServiceCollectionExtensions</code></li>
+<li>单元测试 11/11</li>
+</ul>
+<p><strong>Kun.Grpc</strong> (M5.3, AOT-candidate)</p>
+<ul>
+<li><code>KunResultToRpcInterceptor</code>：<code>ResultFailureException</code> → <code>RpcException</code> 状态码映射；<code>Error.Code</code> 复制到 trailers</li>
+<li><code>KunServerAuthInterceptor</code>：强制 <code>HttpContext.User</code> 已认证且含 <code>tenant_id</code> claim</li>
+<li><code>KunTracingInterceptor</code>：<code>ActivitySource(&quot;Kun.Grpc&quot;)</code> span，<code>rpc.system=grpc</code> / <code>rpc.method</code> tags；拦截器顺序：Tracing → Auth → ResultMapping</li>
+<li>DI：<code>AddKunGrpc</code> 链式注册三个拦截器</li>
+<li>单元测试 13/13</li>
+</ul>
+<p><strong>Kun.Gateway</strong> (M5.4, AOT-candidate，Web Host)</p>
+<ul>
+<li><code>KunGatewayOptions</code>：ExternalIssuer / ExternalAudience / ExternalJwksUri / InternalIssuer / InternalAudience / InternalTokenLifetime(60s) / SigningKeyPath / PublicKeyPath</li>
+<li><code>S2sTokenIssuer</code>：加载 PEM RSA 私钥，铸造 RS256 JWT，复制 <code>sub</code> / <code>tenant_id</code> / <code>roles</code> 声明</li>
+<li><code>S2sAuthTransform</code>：YARP <code>RequestTransform</code>，将 Authorization 头替换为内部 token</li>
+<li><code>JwksEndpoint.MapKunJwks</code>：<code>/.well-known/jwks.json</code>，<code>kid</code> = SHA-256(modulus) 前 16 字符，AOT 安全（<code>JwksJsonContext</code>）</li>
+<li><code>IRateLimitPartitionResolver</code> + <code>TenantRateLimitPartitionResolver</code>（claim-based）+ <code>IpRateLimitPartitionResolver</code>（X-Forwarded-For aware）</li>
+<li><code>KunRateLimiterExtensions</code>：固定窗口 100 req/min，可插拔分区解析器</li>
+<li>DI：<code>AddKunGateway</code> 配置 YARP + S2S issuer + transform</li>
+<li><code>Program.cs</code> 组合根 + <code>appsettings.json</code> 骨架</li>
+<li>单元测试 12/12</li>
+<li>M5 5.5 合约测试（Docker 依赖，延后）</li>
+</ul>
+<p>全解决方案：0 错误，0 警告，140/140 测试通过 + 2 集成跳过</p>
+<h3 class="rp-toc-include" id="added--m6-交付阶段六示例应用"><a href="#added--m6-交付阶段六示例应用" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Added — M6 交付（阶段六：示例应用）</h3>
+<p><strong>Kun.Sample.Catalog</strong> (M6.1)</p>
+<ul>
+<li>领域：<code>Product</code> AggregateRoot，<code>Create</code> / <code>ChangePrice</code> / <code>AdjustStock</code> 触发 <code>ProductCreatedDomainEvent</code> / <code>PriceChangedDomainEvent</code> / <code>StockChangedDomainEvent</code></li>
+<li>契约：<code>ProductPublishedIntegrationEvent</code>（稳定 ID <code>product.published.v1</code>）/ <code>InventoryChangedIntegrationEvent</code>（<code>inventory.changed.v1</code>）</li>
+<li>应用层：<code>CreateProductCommand</code> + 验证器 + Handler；<code>AdjustStockCommand</code>；<code>GetProductByIdQuery</code>（Dapper 读端）；<code>ProductCreatedHandler</code>（领域事件 → <code>IIntegrationEventBus</code> 桥接）</li>
+<li>基础设施：<code>CatalogDbContext</code>（继承 <code>KunDbContext</code>）/ <code>ProductConfiguration</code> / <code>NpgsqlReadDbConnectionFactory</code> / <code>MediatorDomainEventDispatcher</code></li>
+<li>API：<code>Program.cs</code> 组合根；<code>EnsureCreated</code> 启动引导；<code>POST /products</code> / <code>GET /products/{id}</code> / <code>/health</code></li>
+</ul>
+<p><strong>Kun.Sample.Order</strong> (M6.2, Saga 展示)</p>
+<ul>
+<li>领域：<code>Order</code> AggregateRoot，<code>MarkReserved</code> / <code>Paid</code> / <code>Shipped</code> / <code>Completed</code> + <code>Cancel</code>；<code>OrderLine</code> owned value object；<code>OrderPlaced</code> / <code>OrderCancelled</code> 领域事件</li>
+<li>Saga：<code>OrderCreationSaga</code>（4 步，<code>DefaultStepTimeout=30s</code>）
+<ul>
+<li><code>ReserveInventoryStep</code> → <code>ProcessPaymentStep</code> → <code>ShipOrderStep</code> → <code>NotifyCustomerStep</code></li>
+<li>每步含 <code>ExecuteAsync</code> + 幂等 <code>CompensateAsync</code></li>
+<li><code>ProcessPaymentStep</code> 在 <code>SimulateFailure==&quot;payment&quot;</code> 时抛异常（演示补偿）</li>
+<li><code>ShipOrderStep</code> 在 <code>SimulateFailure==&quot;timeout&quot;</code> 时 sleep 60s（演示超时）</li>
+</ul>
+</li>
+<li>契约：<code>OrderCompletedIntegrationEvent</code>（<code>order.completed.v1</code>）</li>
+<li>应用层：<code>PlaceOrderCommand</code> / <code>GetOrderById</code> / <code>GetSagaStatus</code> 查询</li>
+<li>基础设施：<code>OrderDbContext</code> 应用 <code>ApplyKunSagaConfiguration</code>；<code>EfOutboxMessageStore</code></li>
+<li>API Endpoints：<code>POST /demo/happy-path</code> / <code>POST /demo/trigger-payment-failure</code> / <code>POST /demo/trigger-timeout</code> / <code>GET /demo/sagas/{id}</code></li>
+</ul>
+<p><strong>Kun.Sample.AppHost</strong> (M6.3, .NET Aspire 9.0)</p>
+<ul>
+<li>编排：PostgreSQL（+pgAdmin）/ RabbitMQ（+management plugin）/ Redis / Catalog / Order / Gateway</li>
+<li><code>WaitFor</code> 依赖链：各服务等待 postgres + rabbitmq 就绪后启动</li>
+<li>Gateway 引用 catalog + order 用于 YARP 服务发现</li>
+<li>单命令启动：<code>dotnet run --project samples/Kun.Sample.AppHost</code></li>
+</ul>
+<p><strong>Kun.Sample.Shared</strong> (M6.4, IsAotCandidate=false)</p>
+<ul>
+<li><code>OpenTelemetryExtensions.AddKunObservability(serviceName)</code>：
+<ul>
+<li>Tracing：ActivitySources <code>Kun.Mediator</code> / <code>Kun.EventBus.Outbox</code> / <code>Kun.Grpc</code> / <code>Kun.Saga</code> + AspNetCore + HttpClient + gRPC client</li>
+<li>Metrics：AspNetCore + HttpClient</li>
+<li>OTLP exporter（默认指向 Aspire Dashboard collector）</li>
+</ul>
+</li>
+<li>框架模块（<code>src/Kun.*</code>）保持无 OTel 包依赖；OTel 仅在样例组合根注入</li>
+<li>Gateway 未注入可观测性（AOT-candidate，OTel 包尚未 AOT 安全）</li>
+<li><code>OpenTelemetry.Api</code> 升级至 1.11.x（修复 GHSA-8785-wc3w-h8q6）</li>
+</ul>
+<h3 class="rp-toc-include" id="changedm2m6-期间"><a href="#changedm2m6-期间" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Changed（M2–M6 期间）</h3>
+<ul>
+<li><code>Directory.Packages.props</code>：新增 Dapper 2.1.35 / RabbitMQ.Client 7.x / OpenTelemetry 1.11.x / YARP 等包版本</li>
+<li><code>Kun.AspNetCore</code> / <code>Kun.Grpc</code> csproj：<code>IsAotCandidate=true</code> 确认（库，非 Host）</li>
+<li><code>Kun.EntityFrameworkCore</code> csproj：<code>IsAotCandidate=false</code>（trim-safe but not AOT）</li>
+<li><code>PublicAPI.Shipped.txt</code> / <code>PublicAPI.Unshipped.txt</code>：Kun.Dapper / Kun.EventBus / Kun.EntityFrameworkCore / Kun.Saga / Kun.Security / Kun.Gateway / Kun.Grpc 接入 RS0016 公开 API 追踪</li>
+</ul>
+<h3 class="rp-toc-include" id="deferredm2m6-已决定延后的项"><a href="#deferredm2m6-已决定延后的项" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Deferred（M2–M6 已决定延后的项）</h3>
+<ul>
+<li>Source Generators（Mediator / Validation / Saga）：按 ADR fallback 路径继续使用手工注册</li>
+<li>Testcontainers 集成测试（M2 2.4 / M3 3.4 / M5 5.5）：Docker 依赖，CI 环境运行，本地跳过</li>
+<li><code>AddKunDapper</code> API rework：<code>ReadDbOptions.ConnectionString</code> 为 <code>required init</code>，消费方需在回调内设置（当前 API 略显冗余）</li>
+<li><code>IReadDbConnectionFactory</code> 默认 Npgsql 实现：框架不内置，由消费方提供（参见样例 <code>NpgsqlReadDbConnectionFactory</code>）</li>
+<li><code>MapQuery</code> nullable TResponse via JsonTypeInfo：类型系统限制，follow-up</li>
+<li>Gateway 可观测性：OTel 包达到 AOT parity 后追加</li>
+<li>NuGet 发布仪式（手动，TBD）</li>
+</ul>
+<h2 class="rp-toc-include" id="010-phase1---2026-04-23"><a href="#010-phase1---2026-04-23" class="rp-header-anchor rp-link" aria-hidden="true">#</a><a href="https://github.com/idadawn/kun/releases/tag/v0.1.0-phase1" target="_blank" rel="noopener noreferrer" class="rp-link">0.1.0-phase1</a> - 2026-04-23</h2>
+<p>Phase 1 首个可对 NeuroAgent 集成发版。10 个新模块落地（Storage / Identity /
+MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configuration /
+Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
+<code>aot-audit</code> 矩阵 job 与 <code>sample-aot-integration</code> job。</p><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/pr-preview/pr-50/sdk/kun/whitepaper.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>白皮书</span></span></a><a href="/pr-preview/pr-50/sdk/kun/releases/index.html" class="rp-prev-next-page__item rp-prev-next-page__next rp-link"><span class="rp-prev-next-page__item__desc">下一页</span><span class="rp-prev-next-page__item__title"><span>变更日志</span><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></span></a></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#" class="rp-toc-item rp-link" title="" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc"></span></a><a href="#fixed--授权主体类型透传" class="rp-toc-item rp-link" title="Fixed — 授权主体类型透传" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 授权主体类型透传</span></a><a href="#20261012-hotfix2---2026-10-12" class="rp-toc-item rp-link" title="[2026.10.12-hotfix.2] - 2026-10-12" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">[2026.10.12-hotfix.2] - 2026-10-12</span></a><a href="#fixed--同日修复版发布校验" class="rp-toc-item rp-link" title="Fixed — 同日修复版发布校验" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 同日修复版发布校验</span></a><a href="#fixed--共享-ef-模型的租户上下文绑定" class="rp-toc-item rp-link" title="Fixed — 共享 EF 模型的租户上下文绑定" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 共享 EF 模型的租户上下文绑定</span></a><a href="#20261012---2026-10-12" class="rp-toc-item rp-link" title="[2026.10.12] - 2026-10-12" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">[2026.10.12] - 2026-10-12</span></a><a href="#fixed--apollo-原始-namespace-校验" class="rp-toc-item rp-link" title="Fixed — Apollo 原始 namespace 校验" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — Apollo 原始 namespace 校验</span></a><a href="#--2026-10-11" class="rp-toc-item rp-link" title="- 2026-10-11" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">- 2026-10-11</span></a><a href="#fixed--mediator-权限行为启动校验" class="rp-toc-item rp-link" title="Fixed — Mediator 权限行为启动校验" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — Mediator 权限行为启动校验</span></a><a href="#fixed--identity-客户端与唯一-s2s-签发入口s1-kun-004" class="rp-toc-item rp-link" title="Fixed — Identity 客户端与唯一 S2S 签发入口（S1-KUN-004）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — Identity 客户端与唯一 S2S 签发入口（S1-KUN-004）</span></a><a href="#fixed--网关与流式-grpc-边界s1-kun-003" class="rp-toc-item rp-link" title="Fixed — 网关与流式 gRPC 边界（S1-KUN-003）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 网关与流式 gRPC 边界（S1-KUN-003）</span></a><a href="#fixed--saga-作用域与步骤可靠性s1-kun-007" class="rp-toc-item rp-link" title="Fixed — Saga 作用域与步骤可靠性（S1-KUN-007）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — Saga 作用域与步骤可靠性（S1-KUN-007）</span></a><a href="#--2026-10-10" class="rp-toc-item rp-link" title="- 2026-10-10" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">- 2026-10-10</span></a><a href="#added--fixed--平台基础端口s1-kun-006" class="rp-toc-item rp-link" title="Added / Fixed — 平台基础端口（S1-KUN-006）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added / Fixed — 平台基础端口（S1-KUN-006）</span></a><a href="#fixed--审计原子性与数据约定s1-kun-005" class="rp-toc-item rp-link" title="Fixed — 审计原子性与数据约定（S1-KUN-005）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 审计原子性与数据约定（S1-KUN-005）</span></a><a href="#fixed--outbox-与消费可靠性s1-kun-002" class="rp-toc-item rp-link" title="Fixed — Outbox 与消费可靠性（S1-KUN-002）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — Outbox 与消费可靠性（S1-KUN-002）</span></a><a href="#--2026-10-08" class="rp-toc-item rp-link" title="- 2026-10-08" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">- 2026-10-08</span></a><a href="#fixed--多租户后台链路s1-kun-001" class="rp-toc-item rp-link" title="Fixed — 多租户后台链路（S1-KUN-001）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 多租户后台链路（S1-KUN-001）</span></a><a href="#changed--仓库地址" class="rp-toc-item rp-link" title="Changed — 仓库地址" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Changed — 仓库地址</span></a><a href="#fixed--发布配置隔离" class="rp-toc-item rp-link" title="Fixed — 发布配置隔离" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 发布配置隔离</span></a><a href="#fixed--文档" class="rp-toc-item rp-link" title="Fixed — 文档" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 文档</span></a><a href="#--2026-09-13" class="rp-toc-item rp-link" title="- 2026-09-13" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">- 2026-09-13</span></a><a href="#fixed--测试依赖漏洞门禁" class="rp-toc-item rp-link" title="Fixed — 测试依赖漏洞门禁" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 测试依赖漏洞门禁</span></a><a href="#fixed--网关与服务的身份上下文一致性" class="rp-toc-item rp-link" title="Fixed — 网关与服务的身份上下文一致性" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 网关与服务的身份上下文一致性</span></a><a href="#added--oss-live-smoke-按需-ci-工作流" class="rp-toc-item rp-link" title="Added — OSS Live Smoke 按需 CI 工作流" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — OSS Live Smoke 按需 CI 工作流</span></a><a href="#2026612---2026-06-12" class="rp-toc-item rp-link" title="[2026.6.12] - 2026-06-12" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">[2026.6.12] - 2026-06-12</span></a><a href="#fixed--kunsln-完整性20-个-srctests-项目纳入-ci-构建与测试门禁-24" class="rp-toc-item rp-link" title="Fixed — Kun.sln 完整性：20 个 src/tests 项目纳入 CI 构建与测试门禁 (#24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — Kun.sln 完整性：20 个 src/tests 项目纳入 CI 构建与测试门禁 (#24)</span></a><a href="#added--benchmarks-项目纳入-ci-编译门禁-25" class="rp-toc-item rp-link" title="Added — benchmarks 项目纳入 CI 编译门禁 (#25)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — benchmarks 项目纳入 CI 编译门禁 (#25)</span></a><a href="#fixed--kunobservability-稳定版打包被-nu5104-阻断-26" class="rp-toc-item rp-link" title="Fixed — Kun.Observability 稳定版打包被 NU5104 阻断 (#26)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — Kun.Observability 稳定版打包被 NU5104 阻断 (#26)</span></a><a href="#fixed--测试稳定性消除两处高频-ci-flaky-27--28--29" class="rp-toc-item rp-link" title="Fixed — 测试稳定性：消除两处高频 CI flaky (#27 / #28 / #29)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed — 测试稳定性：消除两处高频 CI flaky (#27 / #28 / #29)</span></a><a href="#added--kuntestingentityframeworkcore-module-with-outboxassertions-2026-04-24" class="rp-toc-item rp-link" title="Added — Kun.Testing.EntityFrameworkCore module with OutboxAssertions (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — Kun.Testing.EntityFrameworkCore module with OutboxAssertions (2026-04-24)</span></a><a href="#security--resolve-nu1902--ghsa-g94r-2vxg-569j-on-opentelemetryapi-1120-2026-04-24" class="rp-toc-item rp-link" title="Security — Resolve NU1902 / GHSA-g94r-2vxg-569j on OpenTelemetry.Api 1.12.0 (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Security — Resolve NU1902 / GHSA-g94r-2vxg-569j on OpenTelemetry.Api 1.12.0 (2026-04-24)</span></a><a href="#added--non-generic-result-variant-of-validationresultpipelinebehavior-2026-04-24" class="rp-toc-item rp-link" title="Added — Non-generic Result variant of ValidationResultPipelineBehavior (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — Non-generic <code>Result</code> variant of ValidationResultPipelineBehavior (2026-04-24)</span></a><a href="#changed--haspublicapi-sweep-complete-across-all-framework-modules-2026-04-24" class="rp-toc-item rp-link" title="Changed — HasPublicApi sweep complete across all framework modules (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Changed — HasPublicApi sweep complete across all framework modules (2026-04-24)</span></a><a href="#changed--kunsandbox-now-tracks-public-api-strictly-2026-04-24" class="rp-toc-item rp-link" title="Changed — Kun.Sandbox now tracks public API strictly (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Changed — Kun.Sandbox now tracks public API strictly (2026-04-24)</span></a><a href="#changed--kunobservability-now-tracks-public-api-strictly-2026-04-24" class="rp-toc-item rp-link" title="Changed — Kun.Observability now tracks public API strictly (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Changed — Kun.Observability now tracks public API strictly (2026-04-24)</span></a><a href="#added--adr-014-result-returning-validation-behavior-2026-04-24" class="rp-toc-item rp-link" title="Added — ADR-014 Result-returning validation behavior (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — ADR-014 Result-returning validation behavior (2026-04-24)</span></a><a href="#added--adr-013-f1-log-record-enricher-2026-04-24" class="rp-toc-item rp-link" title="Added — ADR-013 §F1 log-record enricher (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — ADR-013 §F1 log-record enricher (2026-04-24)</span></a><a href="#added--adr-013-kunobservability-baggage-enricher-2026-04-24" class="rp-toc-item rp-link" title="Added — ADR-013 Kun.Observability baggage enricher (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — ADR-013 Kun.Observability baggage enricher (2026-04-24)</span></a><a href="#added--adr-012-kuntesting-module-2026-04-24" class="rp-toc-item rp-link" title="Added — ADR-012 Kun.Testing module (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — ADR-012 Kun.Testing module (2026-04-24)</span></a><a href="#added--adr-011-resultt-composition-extensions-2026-04-24" class="rp-toc-item rp-link" title="Added — ADR-011 Result&lt;T&gt; composition extensions (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — ADR-011 Result&lt;T&gt; composition extensions (2026-04-24)</span></a><a href="#added--p2-a-part-2-benchmarks-ci-workflow-2026-04-24" class="rp-toc-item rp-link" title="Added — P2-A Part 2 benchmarks CI workflow (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — P2-A Part 2 benchmarks CI workflow (2026-04-24)</span></a><a href="#added--p2-a-part-1-benchmarkdotnet-scaffold-2026-04-24" class="rp-toc-item rp-link" title="Added — P2-A Part 1 BenchmarkDotNet scaffold (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — P2-A Part 1 BenchmarkDotNet scaffold (2026-04-24)</span></a><a href="#added--p2-c-part-3-redis-backed-rate-limit-store--guide-2026-04-24" class="rp-toc-item rp-link" title="Added — P2-C Part 3 Redis-backed rate-limit store + guide (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — P2-C Part 3 Redis-backed rate-limit store + guide (2026-04-24)</span></a><a href="#added--p2-c-part-2-sliding-window--token-bucket-rate-limit-policies-2026-04-24" class="rp-toc-item rp-link" title="Added — P2-C Part 2 sliding-window + token-bucket rate-limit policies (2026-04-24)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — P2-C Part 2 sliding-window + token-bucket rate-limit policies (2026-04-24)</span></a><a href="#added--p2-c-part-1-user-principal-rate-limit-partition-resolver-2026-04-23" class="rp-toc-item rp-link" title="Added — P2-C Part 1 user-principal rate-limit partition resolver (2026-04-23)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — P2-C Part 1 user-principal rate-limit partition resolver (2026-04-23)</span></a><a href="#added--p2-d-part-3-databasepertenant-runtime-2026-04-23" class="rp-toc-item rp-link" title="Added — P2-D Part 3 DatabasePerTenant runtime (2026-04-23)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — P2-D Part 3 DatabasePerTenant runtime (2026-04-23)</span></a><a href="#added--p2-d-part-2-schemapertenant-runtime-2026-04-23" class="rp-toc-item rp-link" title="Added — P2-D Part 2 SchemaPerTenant runtime (2026-04-23)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — P2-D Part 2 SchemaPerTenant runtime (2026-04-23)</span></a><a href="#added--p2-d-part-1-multi-tenancy-foundation-types-2026-04-23" class="rp-toc-item rp-link" title="Added — P2-D Part 1 multi-tenancy foundation types (2026-04-23)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — P2-D Part 1 multi-tenancy foundation types (2026-04-23)</span></a><a href="#added--sprint-1-gap-closure-2026-04-22" class="rp-toc-item rp-link" title="Added — Sprint 1 gap-closure (2026-04-22)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — Sprint 1 gap-closure (2026-04-22)</span></a><a href="#migration-guide--alpha1--alpha2" class="rp-toc-item rp-link" title="Migration guide — alpha.1 → alpha.2" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Migration guide — <code>alpha.1</code> → <code>alpha.2</code></span></a><a href="#highlights-2026-04-24--04-25" class="rp-toc-item rp-link" title="Highlights (2026-04-24 / 04-25)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Highlights (2026-04-24 / 04-25)</span></a><a href="#added--kunaudit-module-phase-1-p1-cs-019" class="rp-toc-item rp-link" title="Added — Kun.Audit module (Phase 1 P1-CS-019)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — Kun.Audit module (Phase 1 P1-CS-019)</span></a><a href="#added--kunentityframeworkcore-tenant-rls-interceptor-phase-1-p1-cs-011" class="rp-toc-item rp-link" title="Added — Kun.EntityFrameworkCore tenant-RLS interceptor (Phase 1 P1-CS-011)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — Kun.EntityFrameworkCore tenant-RLS interceptor (Phase 1 P1-CS-011)</span></a><a href="#added--kuneventbus-attribute-driven-registration-phase-1-p1-kn-003" class="rp-toc-item rp-link" title="Added — Kun.EventBus attribute-driven registration (Phase 1 P1-KN-003)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — Kun.EventBus attribute-driven registration (Phase 1 P1-KN-003)</span></a><a href="#changed--kunsecuritys2sjwt-phase-1-p1-kn-002" class="rp-toc-item rp-link" title="Changed — Kun.Security.S2SJwt (Phase 1 P1-KN-002)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Changed — Kun.Security.S2SJwt (Phase 1 P1-KN-002)</span></a><a href="#added--kunstorage-phase-1-p1-kn-001" class="rp-toc-item rp-link" title="Added — Kun.Storage (Phase 1 P1-KN-001)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — Kun.Storage (Phase 1 P1-KN-001)</span></a><a href="#merge--main--develop-reconciliation-2026-04-25-sync-main-into-develop" class="rp-toc-item rp-link" title="Merge — main → develop reconciliation (2026-04-25, sync-main-into-develop)" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Merge — main → develop reconciliation (2026-04-25, <code>sync-main-into-develop</code>)</span></a><a href="#fixed" class="rp-toc-item rp-link" title="Fixed" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Fixed</span></a><a href="#added--m1-交付阶段一奠基" class="rp-toc-item rp-link" title="Added — M1 交付（阶段一：奠基）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — M1 交付（阶段一：奠基）</span></a><a href="#added--基础设施" class="rp-toc-item rp-link" title="Added — 基础设施" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — 基础设施</span></a><a href="#changed" class="rp-toc-item rp-link" title="Changed" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Changed</span></a><a href="#deferredm1-已决定延后的项详见-docsroadmapmd" class="rp-toc-item rp-link" title="Deferred（M1 已决定延后的项，详见 docs/roadmap.md）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Deferred（M1 已决定延后的项，详见 docs/roadmap.md）</span></a><a href="#added--m2-交付阶段二持久化双引擎" class="rp-toc-item rp-link" title="Added — M2 交付（阶段二：持久化双引擎）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — M2 交付（阶段二：持久化双引擎）</span></a><a href="#added--m3-交付阶段三消息总线" class="rp-toc-item rp-link" title="Added — M3 交付（阶段三：消息总线）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — M3 交付（阶段三：消息总线）</span></a><a href="#added--m4-交付阶段四saga-编排器" class="rp-toc-item rp-link" title="Added — M4 交付（阶段四：Saga 编排器）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — M4 交付（阶段四：Saga 编排器）</span></a><a href="#added--m5-交付阶段五宿主层rpc-与安全网关" class="rp-toc-item rp-link" title="Added — M5 交付（阶段五：宿主层、RPC 与安全网关）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — M5 交付（阶段五：宿主层、RPC 与安全网关）</span></a><a href="#added--m6-交付阶段六示例应用" class="rp-toc-item rp-link" title="Added — M6 交付（阶段六：示例应用）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Added — M6 交付（阶段六：示例应用）</span></a><a href="#changedm2m6-期间" class="rp-toc-item rp-link" title="Changed（M2–M6 期间）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Changed（M2–M6 期间）</span></a><a href="#deferredm2m6-已决定延后的项" class="rp-toc-item rp-link" title="Deferred（M2–M6 已决定延后的项）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Deferred（M2–M6 已决定延后的项）</span></a><a href="#--2026-04-23" class="rp-toc-item rp-link" title="- 2026-04-23" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">- 2026-04-23</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>
