@@ -63,11 +63,15 @@ test('角色授予：全程键盘完成选部门、选人、选角色与授权�
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(role).toContainText('销售经理');
+  // 单选回车后弹层先播关闭动画、卸载时才把焦点还给触发器；慢机器上在这之前按 Tab 会落到弹层的焦点守卫上，
+  // 守卫随弹层卸载、焦点掉到 body。与上面选人后按 Escape 一样，先等焦点回到触发器再继续。
+  await expect(role).toBeFocused();
 
   // 授权树：该角色已有客户的查看与写入；Tab 进树，勾选「导出」后客户菜单变为全选；取消「查看」连带取消该菜单的按钮。
   const permissions = page.getByRole('tree', { name: '角色权限' });
   await expect(permissions.getByRole('treeitem', { name: '客户' })).toHaveAttribute('aria-checked', 'mixed');
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: '清空角色' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(permissions.getByRole('treeitem', { name: '客户' })).toBeFocused();
   await page.keyboard.press('ArrowDown');
