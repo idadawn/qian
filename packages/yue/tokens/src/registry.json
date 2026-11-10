@@ -6,6 +6,11 @@
       "chroma": 0
     },
     {
+      "name": "slate",
+      "hue": 248,
+      "chroma": 0.02
+    },
+    {
       "name": "blue",
       "hue": 260,
       "chroma": 0.18
@@ -101,6 +106,11 @@
       "step": 600,
       "lightness": 0.52,
       "chromaFactor": 0.95
+    },
+    {
+      "step": 650,
+      "lightness": 0.475,
+      "chromaFactor": 0.875
     },
     {
       "step": 700,
@@ -387,7 +397,7 @@
     {
       "name": "--yue-canvas",
       "kind": "color",
-      "light": "--yue-p-neutral-75",
+      "light": "--yue-p-slate-75",
       "dark": "--yue-p-neutral-975",
       "meaning": "应用画布背景：外壳主区与页面底色，卡片与表格浮在其上",
       "contrastWith": "--yue-foreground",
@@ -504,7 +514,7 @@
     {
       "name": "--yue-destructive",
       "kind": "color",
-      "light": "--yue-p-red-700",
+      "light": "--yue-p-red-600",
       "dark": "--yue-p-red-300",
       "meaning": "破坏性操作背景",
       "contrastWith": "--yue-destructive-foreground",
@@ -669,91 +679,371 @@
     {
       "name": "--yue-ok",
       "kind": "color",
-      "light": "--yue-p-green-800",
+      "light": "--yue-p-green-700",
       "dark": "--yue-p-green-200",
-      "meaning": "ok 状态文字",
+      "meaning": "ok 状态文字：徽标、标签与行内状态的文字（配 ok-bg）",
       "contrastWith": "--yue-ok-bg",
       "contrast": "text"
     },
     {
       "name": "--yue-ok-bg",
       "kind": "color",
-      "light": "--yue-p-green-50",
+      "light": "--yue-p-green-75",
       "dark": "--yue-p-green-950",
-      "meaning": "ok 状态背景",
+      "meaning": "ok 状态背景：徽标、标签、提示条与状态图标的底色",
       "contrastWith": "--yue-ok",
       "contrast": "text"
     },
     {
       "name": "--yue-warn",
       "kind": "color",
-      "light": "--yue-p-amber-800",
+      "light": "--yue-p-amber-700",
       "dark": "--yue-p-amber-200",
-      "meaning": "warn 状态文字",
+      "meaning": "warn 状态文字：徽标、标签与行内状态的文字（配 warn-bg）",
       "contrastWith": "--yue-warn-bg",
       "contrast": "text"
     },
     {
       "name": "--yue-warn-bg",
       "kind": "color",
-      "light": "--yue-p-amber-50",
+      "light": "--yue-p-amber-75",
       "dark": "--yue-p-amber-950",
-      "meaning": "warn 状态背景",
+      "meaning": "warn 状态背景：徽标、标签、提示条与状态图标的底色",
       "contrastWith": "--yue-warn",
       "contrast": "text"
     },
     {
       "name": "--yue-error",
       "kind": "color",
-      "light": "--yue-p-red-800",
+      "light": "--yue-p-red-700",
       "dark": "--yue-p-red-200",
-      "meaning": "error 状态文字",
+      "meaning": "error 状态文字：徽标、标签与行内状态的文字（配 error-bg）",
       "contrastWith": "--yue-error-bg",
       "contrast": "text"
     },
     {
       "name": "--yue-error-bg",
       "kind": "color",
-      "light": "--yue-p-red-50",
+      "light": "--yue-p-red-75",
       "dark": "--yue-p-red-950",
-      "meaning": "error 状态背景",
+      "meaning": "error 状态背景：徽标、标签、提示条与状态图标的底色",
       "contrastWith": "--yue-error",
       "contrast": "text"
     },
     {
       "name": "--yue-info",
       "kind": "color",
-      "light": "--yue-p-blue-800",
+      "light": "--yue-p-blue-700",
       "dark": "--yue-p-blue-200",
-      "meaning": "info 状态文字",
+      "meaning": "info 状态文字：徽标、标签与行内状态的文字（配 info-bg）",
       "contrastWith": "--yue-info-bg",
       "contrast": "text"
     },
     {
       "name": "--yue-info-bg",
       "kind": "color",
-      "light": "--yue-p-blue-50",
+      "light": "--yue-p-blue-75",
       "dark": "--yue-p-blue-950",
-      "meaning": "info 状态背景",
+      "meaning": "info 状态背景：徽标、标签、提示条与状态图标的底色",
       "contrastWith": "--yue-info",
       "contrast": "text"
     },
     {
       "name": "--yue-neutral",
       "kind": "color",
-      "light": "--yue-p-neutral-800",
+      "light": "--yue-p-neutral-700",
       "dark": "--yue-p-neutral-200",
-      "meaning": "neutral 状态文字",
+      "meaning": "neutral 状态文字：徽标、标签与行内状态的文字（配 neutral-bg）",
       "contrastWith": "--yue-neutral-bg",
       "contrast": "text"
     },
     {
       "name": "--yue-neutral-bg",
       "kind": "color",
-      "light": "--yue-p-neutral-50",
+      "light": "--yue-p-neutral-75",
       "dark": "--yue-p-neutral-950",
-      "meaning": "neutral 状态背景",
+      "meaning": "neutral 状态背景：徽标、标签、提示条与状态图标的底色",
       "contrastWith": "--yue-neutral",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-control-foreground",
+      "kind": "color",
+      "light": "--yue-p-neutral-890",
+      "dark": "--yue-p-neutral-100",
+      "meaning": "控件文字：字段标签、描边按钮、选择器取值与可选标签",
+      "contrastWith": "--yue-background",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-subtle-foreground",
+      "kind": "color",
+      "light": "--yue-p-neutral-800",
+      "dark": "--yue-p-neutral-200",
+      "meaning": "次要界面文字：导航项、图标按钮、复选框说明与次要链接",
+      "contrastWith": "--yue-background",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-caption-foreground",
+      "kind": "color",
+      "light": "--yue-p-neutral-650",
+      "dark": "--yue-p-neutral-300",
+      "meaning": "说明文字：表头、分页、页签与卡片内的说明",
+      "contrastWith": "--yue-background",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-border-strong",
+      "kind": "color",
+      "light": "--yue-p-neutral-200",
+      "dark": "--yue-p-white",
+      "meaning": "强边界：描边按钮、可选标签与分页按钮的边框",
+      "contrastWith": "--yue-background",
+      "contrast": "decorative",
+      "darkAlpha": 0.16
+    },
+    {
+      "name": "--yue-primary-subtle",
+      "kind": "color",
+      "light": "--yue-p-brand-50",
+      "dark": "--yue-p-brand-950",
+      "meaning": "主色浅底：主色柔和按钮与入口卡片的底色",
+      "contrastWith": "--yue-primary-soft-foreground",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-primary-soft",
+      "kind": "color",
+      "light": "--yue-p-brand-100",
+      "dark": "--yue-p-brand-900",
+      "meaning": "主色柔底：导航当前项、计数胶囊、序号与头像的底色",
+      "contrastWith": "--yue-primary-soft-foreground",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-primary-soft-foreground",
+      "kind": "color",
+      "light": "--yue-p-brand-700",
+      "dark": "--yue-p-brand-200",
+      "meaning": "主色柔底上的文字：导航当前项、柔和按钮与当前页码",
+      "contrastWith": "--yue-primary-soft",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-primary-border",
+      "kind": "color",
+      "light": "--yue-p-brand-200",
+      "dark": "--yue-p-brand-800",
+      "meaning": "主色浅边框：主色浅底卡片的边框",
+      "contrastWith": "--yue-primary-subtle",
+      "contrast": "decorative"
+    },
+    {
+      "name": "--yue-primary-border-strong",
+      "kind": "color",
+      "light": "--yue-p-brand-300",
+      "dark": "--yue-p-brand-700",
+      "meaning": "主色强边框：柔和按钮与可选卡片悬停时的边框",
+      "contrastWith": "--yue-background",
+      "contrast": "decorative"
+    },
+    {
+      "name": "--yue-ok-strong",
+      "kind": "color",
+      "light": "--yue-p-green-800",
+      "dark": "--yue-p-green-100",
+      "meaning": "ok 深色文字：提示条与成块区域内的文字（配 ok-bg）",
+      "contrastWith": "--yue-ok-bg",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-ok-border",
+      "kind": "color",
+      "light": "--yue-p-green-175",
+      "dark": "--yue-p-green-800",
+      "meaning": "ok 边框：徽标、提示条与成块区域的边框",
+      "contrastWith": "--yue-ok-bg",
+      "contrast": "decorative"
+    },
+    {
+      "name": "--yue-ok-solid",
+      "kind": "color",
+      "light": "--yue-p-green-600",
+      "dark": "--yue-p-green-400",
+      "meaning": "ok 实色：状态圆点、状态图标与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-warn-strong",
+      "kind": "color",
+      "light": "--yue-p-amber-800",
+      "dark": "--yue-p-amber-100",
+      "meaning": "warn 深色文字：提示条与成块区域内的文字（配 warn-bg）",
+      "contrastWith": "--yue-warn-bg",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-warn-border",
+      "kind": "color",
+      "light": "--yue-p-amber-175",
+      "dark": "--yue-p-amber-800",
+      "meaning": "warn 边框：徽标、提示条与成块区域的边框",
+      "contrastWith": "--yue-warn-bg",
+      "contrast": "decorative"
+    },
+    {
+      "name": "--yue-warn-solid",
+      "kind": "color",
+      "light": "--yue-p-amber-500",
+      "dark": "--yue-p-amber-400",
+      "meaning": "warn 实色：状态圆点、状态图标与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-error-strong",
+      "kind": "color",
+      "light": "--yue-p-red-800",
+      "dark": "--yue-p-red-100",
+      "meaning": "error 深色文字：提示条与成块区域内的文字（配 error-bg）",
+      "contrastWith": "--yue-error-bg",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-error-border",
+      "kind": "color",
+      "light": "--yue-p-red-175",
+      "dark": "--yue-p-red-800",
+      "meaning": "error 边框：徽标、提示条与成块区域的边框",
+      "contrastWith": "--yue-error-bg",
+      "contrast": "decorative"
+    },
+    {
+      "name": "--yue-error-solid",
+      "kind": "color",
+      "light": "--yue-p-red-600",
+      "dark": "--yue-p-red-400",
+      "meaning": "error 实色：状态圆点、状态图标与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-info-strong",
+      "kind": "color",
+      "light": "--yue-p-blue-800",
+      "dark": "--yue-p-blue-100",
+      "meaning": "info 深色文字：提示条与成块区域内的文字（配 info-bg）",
+      "contrastWith": "--yue-info-bg",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-info-border",
+      "kind": "color",
+      "light": "--yue-p-blue-200",
+      "dark": "--yue-p-blue-800",
+      "meaning": "info 边框：徽标、提示条与成块区域的边框",
+      "contrastWith": "--yue-info-bg",
+      "contrast": "decorative"
+    },
+    {
+      "name": "--yue-info-solid",
+      "kind": "color",
+      "light": "--yue-p-blue-600",
+      "dark": "--yue-p-blue-400",
+      "meaning": "info 实色：状态圆点、状态图标与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-neutral-strong",
+      "kind": "color",
+      "light": "--yue-p-neutral-800",
+      "dark": "--yue-p-neutral-100",
+      "meaning": "neutral 深色文字：提示条与成块区域内的文字（配 neutral-bg）",
+      "contrastWith": "--yue-neutral-bg",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-neutral-border",
+      "kind": "color",
+      "light": "--yue-p-neutral-175",
+      "dark": "--yue-p-neutral-800",
+      "meaning": "neutral 边框：徽标、提示条与成块区域的边框",
+      "contrastWith": "--yue-neutral-bg",
+      "contrast": "decorative"
+    },
+    {
+      "name": "--yue-neutral-solid",
+      "kind": "color",
+      "light": "--yue-p-neutral-450",
+      "dark": "--yue-p-neutral-400",
+      "meaning": "neutral 实色：状态圆点、状态图标与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-tint-violet",
+      "kind": "color",
+      "light": "--yue-p-violet-100",
+      "dark": "--yue-p-violet-900",
+      "meaning": "紫色点缀底：头像与标识色块",
+      "contrastWith": "--yue-tint-violet-foreground",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-tint-violet-foreground",
+      "kind": "color",
+      "light": "--yue-p-violet-700",
+      "dark": "--yue-p-violet-200",
+      "meaning": "紫色点缀文字：头像与标识色块上的字",
+      "contrastWith": "--yue-tint-violet",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-tint-teal",
+      "kind": "color",
+      "light": "--yue-p-teal-75",
+      "dark": "--yue-p-teal-900",
+      "meaning": "青色点缀底：头像与标识色块",
+      "contrastWith": "--yue-tint-teal-foreground",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-tint-teal-foreground",
+      "kind": "color",
+      "light": "--yue-p-teal-700",
+      "dark": "--yue-p-teal-200",
+      "meaning": "青色点缀文字：头像与标识色块上的字",
+      "contrastWith": "--yue-tint-teal",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-inverse",
+      "kind": "color",
+      "light": "--yue-p-brand-800",
+      "dark": "--yue-p-brand-800",
+      "meaning": "品牌深色面：认证与申请页的侧栏底色",
+      "contrastWith": "--yue-inverse-foreground",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-inverse-foreground",
+      "kind": "color",
+      "light": "--yue-p-white",
+      "dark": "--yue-p-white",
+      "meaning": "品牌深色面上的文字",
+      "contrastWith": "--yue-inverse",
+      "contrast": "text"
+    },
+    {
+      "name": "--yue-inverse-muted-foreground",
+      "kind": "color",
+      "light": "--yue-p-brand-200",
+      "dark": "--yue-p-brand-200",
+      "meaning": "品牌深色面上的次要文字",
+      "contrastWith": "--yue-inverse",
       "contrast": "text"
     },
     {
@@ -799,6 +1089,11 @@
       "name": "--yue-table-header-background",
       "value": "color-mix(in srgb, oklch(var(--yue-muted)) 50%, oklch(var(--yue-background)))",
       "meaning": "表头背景：预合成的不透明 muted 半色，固定列与普通列共用"
+    },
+    {
+      "name": "--yue-input-height",
+      "value": "var(--yue-p-space-9)",
+      "meaning": "输入类控件标准高度：输入框、选择器、密码与数字输入；表单与抽屉按场景整体调档"
     }
   ],
   "brands": [
@@ -983,6 +1278,130 @@
     {
       "name": "--neutral-bg",
       "target": "--yue-neutral-bg"
+    },
+    {
+      "name": "--control-foreground",
+      "target": "--yue-control-foreground"
+    },
+    {
+      "name": "--subtle-foreground",
+      "target": "--yue-subtle-foreground"
+    },
+    {
+      "name": "--caption-foreground",
+      "target": "--yue-caption-foreground"
+    },
+    {
+      "name": "--border-strong",
+      "target": "--yue-border-strong"
+    },
+    {
+      "name": "--primary-subtle",
+      "target": "--yue-primary-subtle"
+    },
+    {
+      "name": "--primary-soft",
+      "target": "--yue-primary-soft"
+    },
+    {
+      "name": "--primary-soft-foreground",
+      "target": "--yue-primary-soft-foreground"
+    },
+    {
+      "name": "--primary-border",
+      "target": "--yue-primary-border"
+    },
+    {
+      "name": "--primary-border-strong",
+      "target": "--yue-primary-border-strong"
+    },
+    {
+      "name": "--ok-strong",
+      "target": "--yue-ok-strong"
+    },
+    {
+      "name": "--ok-border",
+      "target": "--yue-ok-border"
+    },
+    {
+      "name": "--ok-solid",
+      "target": "--yue-ok-solid"
+    },
+    {
+      "name": "--warn-strong",
+      "target": "--yue-warn-strong"
+    },
+    {
+      "name": "--warn-border",
+      "target": "--yue-warn-border"
+    },
+    {
+      "name": "--warn-solid",
+      "target": "--yue-warn-solid"
+    },
+    {
+      "name": "--error-strong",
+      "target": "--yue-error-strong"
+    },
+    {
+      "name": "--error-border",
+      "target": "--yue-error-border"
+    },
+    {
+      "name": "--error-solid",
+      "target": "--yue-error-solid"
+    },
+    {
+      "name": "--info-strong",
+      "target": "--yue-info-strong"
+    },
+    {
+      "name": "--info-border",
+      "target": "--yue-info-border"
+    },
+    {
+      "name": "--info-solid",
+      "target": "--yue-info-solid"
+    },
+    {
+      "name": "--neutral-strong",
+      "target": "--yue-neutral-strong"
+    },
+    {
+      "name": "--neutral-border",
+      "target": "--yue-neutral-border"
+    },
+    {
+      "name": "--neutral-solid",
+      "target": "--yue-neutral-solid"
+    },
+    {
+      "name": "--tint-violet",
+      "target": "--yue-tint-violet"
+    },
+    {
+      "name": "--tint-violet-foreground",
+      "target": "--yue-tint-violet-foreground"
+    },
+    {
+      "name": "--tint-teal",
+      "target": "--yue-tint-teal"
+    },
+    {
+      "name": "--tint-teal-foreground",
+      "target": "--yue-tint-teal-foreground"
+    },
+    {
+      "name": "--inverse",
+      "target": "--yue-inverse"
+    },
+    {
+      "name": "--inverse-foreground",
+      "target": "--yue-inverse-foreground"
+    },
+    {
+      "name": "--inverse-muted-foreground",
+      "target": "--yue-inverse-muted-foreground"
     },
     {
       "name": "--radius",

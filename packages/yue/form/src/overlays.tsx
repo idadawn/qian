@@ -31,7 +31,7 @@ function useOverlay(kind: 'modal' | 'drawer' | 'popup', i18n: PlatformI18n, trig
   // 抽屉：页头 / 可滚动主体 / 固定页脚；主体里的表单把操作按钮送进页脚（SchemaForm 读 footer）。
   if (kind === 'drawer') return { open, close, holder: <Sheet open={!!options} onOpenChange={(value) => { if (!value) close(); }}>
     {options && <SheetContent closeLabel={i18n.t('common.close')} size={options.size} data-slot="form-drawer" testId="yue-form-drawer">
-      <SheetHeader><div className="flex flex-wrap items-center gap-3"><SheetTitle>{options.title}</SheetTitle>{options.extra}</div>{options.description && <SheetDescription>{options.description}</SheetDescription>}</SheetHeader>
+      <SheetHeader><div className="flex min-h-8 flex-wrap items-center gap-3"><SheetTitle>{options.title}</SheetTitle>{options.extra}</div>{options.description && <SheetDescription>{options.description}</SheetDescription>}</SheetHeader>
       <SheetBody><OverlayFormContext value={{ cancel, register, footer }}>{options.content}</OverlayFormContext></SheetBody>
       <SheetFooter>{forms === 0 && <Close render={<Button variant="outline" />}>{i18n.t('common.close')}</Close>}<div ref={setFooter} data-slot="form-drawer-actions" className="contents" /></SheetFooter>
     </SheetContent>}

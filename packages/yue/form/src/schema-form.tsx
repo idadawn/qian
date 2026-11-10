@@ -1,7 +1,7 @@
-import { useContext, useEffect, useId, useImperativeHandle, useMemo, useRef, type BaseSyntheticEvent, type ReactNode, type Ref } from 'react';
+import { Fragment, useContext, useEffect, useId, useImperativeHandle, useMemo, useRef, type BaseSyntheticEvent, type ReactNode, type Ref } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm, useWatch, type FieldErrors, type Resolver } from 'react-hook-form';
-import { Button, Checkbox, Field as CoreField, FieldDescription, FieldLabel, Input, Segmented, SegmentedItem, Select, SelectContent, SelectItem, SelectTrigger, Textarea } from '@idadawn/yue-core';
+import { Button, Checkbox, cn, Field as CoreField, FieldDescription, FieldLabel, Input, Segmented, SegmentedItem, Select, SelectContent, SelectItem, SelectTrigger, Textarea } from '@idadawn/yue-core';
 import { PlatformError, pointerSegments, type ErrorDetail, type PlatformI18n } from '@idadawn/yue-sdk';
 import type { FormSchema, UiNode } from '@idadawn/yue-contracts';
 import { OverlayFormContext } from './overlay-form-context';
@@ -29,10 +29,21 @@ export interface SchemaFormProps {
   submitLabel?: string;
   /** 抽屉内的子步骤表单（如「查找账号」）：操作按钮紧跟表单、不带抽屉级的「取消」，也不占抽屉页脚。 @default false */
   inlineActions?: boolean;
-  /** 字段说明下方的附加内容（如租户号的实时可用性提示），按字段路径与当前值给出；内容经 aria-describedby 关联到输入框。 */
+  /** 输入框下方、字段说明之前的附加内容（如密码强度），按字段路径与当前值给出；内容经 aria-describedby 关联到输入框。 */
   fieldExtra?: (path: string, value: unknown) => ReactNode;
+  /** 输入框的修饰：suffix 显示在输入框内的末端（如单位「人」、「✓ 可以使用」），addon 排在输入框右侧（如「重新发送」按钮）；suffix 经 aria-describedby 关联到输入框。 */
+  fieldAdornment?: (path: string, value: unknown) => FieldAdornment | null | undefined;
+  /** 控件尺寸：md 36px（默认，抽屉内为 38px）、lg 40px（申请表单，操作按钮 44px）、xl 44px（认证页）。 @default 'md' */
+  size?: 'md' | 'lg' | 'xl';
+  /** stack：字段逐行排列；grid：按可用宽度自动分栏（单栏最小宽度见 columnWidth），多行文本与 props.span 为 full 的字段独占一行。 @default 'stack' */
+  layout?: 'stack' | 'grid';
+  /** grid 布局的单栏最小宽度：sm 240px（抽屉），md 280px（页面）。 @default 'md' */
+  columnWidth?: 'sm' | 'md';
+  /** 字段组外观：divided 用分隔线隔开；card 每组一张卡片（申请页的分节表单），操作按钮在卡片外。 @default 'divided' */
+  groupVariant?: 'divided' | 'card';
   children?: ReactNode;
 }
+export interface FieldAdornment { suffix?: ReactNode; addon?: ReactNode }
 
 function addError(errors: FieldErrors<FormValues>, segments: string[], message: string): void {
   let target = errors as Record<string, unknown>;
@@ -77,23 +88,27 @@ function defaults(schema: DataSchema): FormValues {
   }));
 }
 
-/** 有标题的字段组：fieldset 以组标题命名，可带说明与序号（props.marker）；相邻两组之间用分隔线隔开。 */
-function FieldGroup({ id, node, i18n, testId, children }: { id: string; node: UiNode; i18n: PlatformI18n; testId: string; children: ReactNode }) {
+/** 有标题的字段组：fieldset 以组标题命名，可带说明与序号（props.marker）；divided 时相邻两组用分隔线隔开，card 时每组一张卡片。 */
+function FieldGroup({ id, node, i18n, testId, variant, children }: { id: string; node: UiNode; i18n: PlatformI18n; testId: string; variant: 'divided' | 'card'; children: ReactNode }) {
   const marker = typeof node.props?.marker === 'string' || typeof node.props?.marker === 'number' ? node.props.marker : undefined;
   const description = node.descriptionKey ? i18n.t(node.descriptionKey) : undefined;
-  return <fieldset aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} data-slot="schema-group" data-testid={testId}
-    className="m-0 grid min-w-0 gap-4 border-0 border-t border-border p-0 pt-5 first:border-t-0 first:pt-0">
+  const card = variant === 'card';
+  return <fieldset aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} data-slot="schema-group" data-variant={variant} data-testid={testId}
+    className={card ? 'm-0 grid min-w-0 gap-5 rounded-xl border border-border bg-card p-6' : 'm-0 grid min-w-0 gap-4 border-0 border-t border-border p-0 pt-5 first:border-t-0 first:pt-0'}>
     <div className="flex items-start gap-3" data-slot="schema-group-header" data-testid={`${testId}-header`}>
-      {marker !== undefined && <span aria-hidden="true" data-slot="schema-group-marker" data-testid={`${testId}-marker`} className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-info-bg text-xs font-semibold text-info">{marker}</span>}
-      <div className="grid min-w-0 gap-0.5"><h3 id={`${id}-title`} className="text-[15px] font-semibold leading-6">{i18n.t(node.labelKey!)}</h3>
-        {description && <p id={`${id}-description`} className="text-[13px] text-muted-foreground">{description}</p>}</div>
+      {marker !== undefined && <span aria-hidden="true" data-slot="schema-group-marker" data-testid={`${testId}-marker`} className={card ? 'inline-flex size-6.5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[13px] font-bold text-primary-soft-foreground' : 'inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary-soft-foreground'}>{marker}</span>}
+      <div className="grid min-w-0 gap-0.5"><h3 id={`${id}-title`} className={card ? 'm-0 text-base font-semibold leading-6' : 'm-0 text-[15px] font-semibold leading-6'}>{i18n.t(node.labelKey!)}</h3>
+        {description && <p id={`${id}-description`} className="m-0 text-[13px] text-muted-foreground">{description}</p>}</div>
     </div>
     {children}
   </fieldset>;
 }
+// lg：控件 40px、操作按钮 44px（申请表单）；xl：控件与按钮都是 44px（认证页）。
+const heights = { md: '', lg: '[--yue-input-height:2.5rem] [--yue-button-height:2.75rem]', xl: '[--yue-input-height:2.75rem] [--yue-button-height:2.75rem]' } as const;
+const columns = { sm: 'grid-cols-[repeat(auto-fit,minmax(min(15rem,100%),1fr))] gap-x-5 gap-y-3.5', md: 'grid-cols-[repeat(auto-fit,minmax(min(17.5rem,100%),1fr))] gap-x-5 gap-y-4.5' } as const;
 
 /** 编辑、只读与字段错误共享同一份 Schema、RHF 状态和字段目录。 */
-export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmit, onError, apiRef, className, testId = 'yue-schema-form', submitLabel, inlineActions = false, fieldExtra, children }: SchemaFormProps) {
+export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmit, onError, apiRef, className, testId = 'yue-schema-form', submitLabel, inlineActions = false, fieldExtra, fieldAdornment, size = 'md', layout = 'stack', columnWidth = 'md', groupVariant = 'divided', children }: SchemaFormProps) {
   useMemo(() => assertFormSchema(schema), [schema]);
   const id = useId();
   const overlay = useContext(OverlayFormContext);
@@ -164,7 +179,7 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
   // 抽屉提供页脚容器时，操作按钮渲染进页脚并经 form 属性关联本表单（回车提交照常生效）；否则留在表单末尾。
   const footer = inlineActions ? null : overlay?.footer ?? null;
   const formId = `${id}-form`;
-  const actions = hasActions ? <div data-slot="schema-form-actions" className={footer ? 'contents' : inlineActions ? 'flex flex-wrap gap-2' : 'flex justify-end gap-2 border-t border-border pt-4'}>{inlineActions ? null : overlay?.cancel}{children}<Button type="submit" form={formId} disabled={isSubmitting} testId={`${testId}-submit`}>{submitLabel ?? i18n.t('common.save')}</Button></div> : children;
+  const actions = hasActions ? <div data-slot="schema-form-actions" className={footer ? 'contents' : inlineActions ? 'flex flex-wrap gap-2' : groupVariant === 'card' ? 'flex flex-wrap items-center justify-end gap-3' : 'flex justify-end gap-2 border-t border-border pt-4'}>{inlineActions ? null : overlay?.cancel}{children}<Button type="submit" form={formId} disabled={isSubmitting} testId={`${testId}-submit`} className={size === 'md' ? undefined : 'px-7'}>{submitLabel ?? i18n.t('common.save')}</Button></div> : children;
   const renderField = ({ path, schema: fieldSchema, ui, required }: FieldDefinition) => {
       const state = effective.states[path];
       const access = schema.auth.fields?.[path];
@@ -181,11 +196,14 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       const description = ui.descriptionKey ? i18n.t(ui.descriptionKey) : undefined;
       const extra = fieldExtra?.(path, getValue(values, path));
       const hasExtra = extra !== undefined && extra !== null && extra !== false;
-      const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : '', hasExtra ? `${fieldId}-extra` : ''].filter(Boolean).join(' ') || undefined;
-      return <CoreField className={horizontal ? 'grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2' : undefined} key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
+      const adornment = readonly ? undefined : fieldAdornment?.(path, getValue(values, path)) ?? undefined;
+      const suffix = adornment?.suffix ?? null;
+      const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : '', hasExtra ? `${fieldId}-extra` : '', suffix ? `${fieldId}-suffix` : ''].filter(Boolean).join(' ') || undefined;
+      const full = ui.props?.span === 'full' || ui.widget === 'qian.textarea';
+      return <CoreField className={horizontal ? cn('grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2', full && 'col-span-full') : full ? 'col-span-full' : undefined} key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
         <FieldLabel className={horizontal ? 'col-start-2 row-start-1 leading-5' : undefined} htmlFor={fieldId}>{label}{required ? <span aria-hidden className="text-destructive"> *</span> : null}</FieldLabel>
-        <Controller name={path} control={form.control} render={({ field }) => {
-          if (readonly) return <output id={fieldId} className="min-h-9 rounded-md bg-muted/40 px-3 py-2 text-sm text-foreground" data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, password ? 'full' : typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
+        {(() => { const control = <Controller name={path} control={form.control} render={({ field }) => {
+          if (readonly) return <output id={fieldId} className="min-h-(--yue-input-height) rounded-md bg-muted/40 px-3 py-2 text-sm text-foreground" data-slot="schema-field-readonly" data-testid={`${testId}-readonly-${path}`} aria-describedby={describedBy}>{maskValue(field.value, password ? 'full' : typeof ui.props?.readonlyMask === 'string' ? ui.props.readonlyMask : 'none')}</output>;
           const common = { id: fieldId, name: field.name, ref: field.ref, onBlur: field.onBlur, disabled: state?.disabled || isSubmitting, 'aria-required': required, 'aria-invalid': !!error, 'aria-describedby': describedBy };
           if (hasType(fieldSchema, 'boolean')) return <Checkbox {...common} className="col-start-1 row-start-1" checked={!!field.value} onCheckedChange={field.onChange} aria-label={label} />;
           if (fieldSchema.enum && ui.widget === 'qian.segmented') return <Segmented id={fieldId} value={field.value ?? null} onValueChange={field.onChange} disabled={common.disabled} aria-label={label} aria-describedby={describedBy} aria-invalid={!!error} className="flex w-full">
@@ -206,18 +224,26 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
             const date = new Date(display);
             if (!Number.isNaN(date.getTime())) display = new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
           }
-          return <Input {...common} type={type} autoComplete={autoComplete} value={display} onChange={(event) => {
+          return <Input {...common} type={type} autoComplete={autoComplete} value={display} className={suffix ? 'pe-26' : undefined} onChange={(event) => {
             const value = event.target.value;
             field.onChange(numeric ? value === '' ? undefined : Number(value) : dateTime ? value ? new Date(value).toISOString() : undefined : value);
           }} />;
-        }} />
+        }} />;
+          if (!adornment) return control;
+          return <div className="flex min-w-0 gap-2" data-slot="schema-field-control">
+            <div className="relative flex min-w-0 flex-1 items-center">{control}{suffix && <span id={`${fieldId}-suffix`} data-slot="schema-field-suffix" data-testid={`${testId}-suffix-${path}`} className="pointer-events-none absolute end-3 inline-flex max-w-24 items-center gap-1 truncate text-[13px] text-muted-foreground">{suffix}</span>}</div>
+            {adornment.addon && <div className="flex shrink-0 items-stretch [--yue-button-height:var(--yue-input-height)]" data-slot="schema-field-addon">{adornment.addon}</div>}
+          </div>;
+        })()}
+        {hasExtra && <div id={`${fieldId}-extra`} data-slot="schema-field-extra" data-testid={`${testId}-extra-${path}`} className={horizontal ? 'col-start-2 text-xs leading-4.5' : 'text-xs leading-4.5'}>{extra}</div>}
         {description && <FieldDescription className={horizontal ? 'col-start-2' : undefined} id={`${fieldId}-description`}>{description}</FieldDescription>}
-        {hasExtra && <div id={`${fieldId}-extra`} data-slot="schema-field-extra" data-testid={`${testId}-extra-${path}`} className={horizontal ? 'col-start-2 text-sm' : 'text-sm'}>{extra}</div>}
-        {error?.message && <p id={`${fieldId}-error`} role="alert" data-slot="schema-field-error" data-testid={`${testId}-error-${path}`} className={horizontal ? 'col-start-2 text-sm text-destructive' : 'text-sm text-destructive'}>{error.message}</p>}
+        {error?.message && <p id={`${fieldId}-error`} role="alert" data-slot="schema-field-error" data-testid={`${testId}-error-${path}`} className={horizontal ? 'col-start-2 text-xs leading-4.5 text-destructive' : 'text-xs leading-4.5 text-destructive'}>{error.message}</p>}
       </CoreField>;
   };
-  return <form id={formId} className={className ?? 'grid gap-4'} data-slot="schema-form" data-testid={testId} onSubmit={submit} noValidate>
-    {blocks(definitions).map((block, index) => block.group ? <FieldGroup key={index} id={`${id}-group-${index}`} node={block.group} i18n={i18n} testId={`${testId}-group-${index}`}>{block.items.map(renderField)}</FieldGroup> : block.items.map(renderField))}
+  const grid = layout === 'grid' ? cn('grid', columns[columnWidth]) : null;
+  const items = (fields: FieldDefinition[]) => grid ? <div className={grid} data-slot="schema-fields">{fields.map(renderField)}</div> : fields.map(renderField);
+  return <form id={formId} className={cn(className ?? (groupVariant === 'card' ? 'flex flex-col gap-5' : 'grid gap-4'), heights[size])} data-slot="schema-form" data-size={size} data-testid={testId} onSubmit={submit} noValidate>
+    {blocks(definitions).map((block, index) => block.group ? <FieldGroup key={index} id={`${id}-group-${index}`} node={block.group} i18n={i18n} testId={`${testId}-group-${index}`} variant={groupVariant}>{items(block.items)}</FieldGroup> : <Fragment key={index}>{items(block.items)}</Fragment>)}
     {errors.root?.message && <p role="alert" className="text-sm text-destructive" data-slot="schema-form-error">{String(errors.root.message)}</p>}
     {hasActions && footer ? createPortal(actions, footer) : actions}
   </form>;

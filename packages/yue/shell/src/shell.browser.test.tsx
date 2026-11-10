@@ -61,24 +61,24 @@ it('用户菜单清理开场属性后仍等待真实 opacity 过渡结束再运�
   }
 });
 
-it('密码表单复用 SchemaForm，必填焦点、密码掩码与一次提交', async () => {
+it('密码表单：必填焦点、密码掩码与一次提交，提交后清空密码', async () => {
   const provider = makeProvider(); const authenticated = vi.fn();
   render(<Authentication i18n={makeI18n()} provider={provider} onAuthenticated={authenticated} onRedirect={vi.fn()} />); await screen.findByLabelText(/账号/);
   await userEvent.click(screen.getByRole('button', { name: '登录' }));
   expect(document.activeElement).toBe(screen.getByLabelText(/账号/));
-  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText(/密码/), 'secret');
-  expect(screen.getByLabelText(/密码/).getAttribute('type')).toBe('password');
+  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText('密码'), 'secret');
+  expect(screen.getByLabelText('密码').getAttribute('type')).toBe('password');
   await accessible(); await userEvent.click(screen.getByRole('button', { name: '登录' }));
   await waitFor(() => expect(authenticated).toHaveBeenCalledWith(session));
   expect(provider.signIn).toHaveBeenCalledTimes(1); expect(provider.signIn).toHaveBeenCalledWith({ username: 'demo', password: 'secret' }, expect.any(AbortSignal));
-  expect((screen.getByLabelText(/密码/) as HTMLInputElement).value).toBe('');
+  expect((screen.getByLabelText('密码') as HTMLInputElement).value).toBe('');
 });
 it('密码失败不输出异常细节；多租户二次选择可键盘完成', async () => {
   const provider = makeProvider(); vi.mocked(provider.signIn).mockRejectedValueOnce(new Error('internal-secret')).mockResolvedValue({ kind: 'select-tenant', tenants: session.tenants });
   const complete = vi.fn(); render(<Authentication i18n={makeI18n()} provider={provider} onAuthenticated={complete} onRedirect={vi.fn()} />); await screen.findByLabelText(/账号/);
-  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText(/密码/), 'bad'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
+  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText('密码'), 'bad'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
   await screen.findByRole('alert'); expect(document.body.textContent).not.toContain('internal-secret');
-  await userEvent.fill(screen.getByLabelText(/密码/), 'good'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
+  await userEvent.fill(screen.getByLabelText('密码'), 'good'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
   const tenant = await screen.findByRole('button', { name: '租户 B' }); tenant.focus(); await userEvent.keyboard('{Enter}');
   await waitFor(() => expect(complete).toHaveBeenCalledWith({ ...session, tenantId: 'b' }));
   await accessible();
@@ -98,8 +98,8 @@ it.each(['/auth?access_token=secret', '/auth#/callback?access_token=secret'])('S
   const provider = makeProvider(); const redirect = vi.fn();
   vi.mocked(provider.beginSso!).mockResolvedValueOnce(unsafe);
   render(<Authentication i18n={makeI18n()} provider={provider} onAuthenticated={vi.fn()} onRedirect={redirect} />); await screen.findByLabelText(/账号/);
-  await userEvent.click(screen.getByRole('button', { name: '企业单点登录' })); await screen.findByRole('alert'); expect(redirect).not.toHaveBeenCalled();
-  vi.mocked(provider.beginSso!).mockResolvedValue('/auth?code=c&state=s'); await userEvent.click(screen.getByRole('button', { name: '企业单点登录' }));
+  await userEvent.click(screen.getByRole('button', { name: '单点登录' })); await screen.findByRole('alert'); expect(redirect).not.toHaveBeenCalled();
+  vi.mocked(provider.beginSso!).mockResolvedValue('/auth?code=c&state=s'); await userEvent.click(screen.getByRole('button', { name: '单点登录' }));
   await waitFor(() => expect(redirect).toHaveBeenCalledWith('/auth?code=c&state=s'));
 });
 it('租户切换失败保留当前值，成功更新会话且打开态无障碍通过', async () => {
@@ -146,7 +146,7 @@ it('同一认证实例收到新 callback 时处理新回调，不被已消费状
   const i18n = makeI18n(); const provider = makeProvider(); const complete = vi.fn();
   vi.mocked(provider.completeSso!).mockResolvedValueOnce({ kind: 'select-tenant', tenants: session.tenants }).mockResolvedValue({ kind: 'authenticated', session });
   const view = render(<Authentication i18n={i18n} provider={provider} callback={{ code: 'first', state: 'one' }} onAuthenticated={complete} onRedirect={vi.fn()} />);
-  await screen.findByRole('heading', { name: '选择租户' });
+  await screen.findByRole('heading', { name: '选择要进入的工作空间' });
   view.rerender(<Authentication i18n={i18n} provider={provider} callback={{ code: 'second', state: 'two' }} onAuthenticated={complete} onRedirect={vi.fn()} />);
   await waitFor(() => expect(complete).toHaveBeenCalledWith(session));
   expect(provider.completeSso).toHaveBeenNthCalledWith(2, { code: 'second', state: 'two' }, expect.any(AbortSignal));
@@ -157,7 +157,7 @@ it('强制改密：两次输入不一致只提示不提交；一致后经 provid
   vi.mocked(provider.signIn).mockResolvedValue({ kind: 'change-password' });
   const changePassword = vi.fn(async () => ({ kind: 'authenticated' as const, session }));
   render(<Authentication i18n={makeI18n()} provider={{ ...provider, changePassword }} onAuthenticated={authenticated} onRedirect={vi.fn()} />); await screen.findByLabelText(/账号/);
-  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText(/密码/), 'initial'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
+  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText('密码'), 'initial'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
   await screen.findByRole('heading', { name: '设置新密码' }); await accessible();
   await userEvent.fill(screen.getByLabelText(/^新密码/), 'Longer-Pass-9'); await userEvent.fill(screen.getByLabelText(/确认新密码/), 'Different-1');
   await userEvent.click(screen.getByRole('button', { name: '设置新密码' }));
@@ -172,7 +172,7 @@ it('强制改密：两次输入不一致只提示不提交；一致后经 provid
 it('没有 changePassword 的 provider 收到改密要求时按登录失败提示', async () => {
   const provider = makeProvider(); vi.mocked(provider.signIn).mockResolvedValue({ kind: 'change-password' });
   render(<Authentication i18n={makeI18n()} provider={provider} onAuthenticated={vi.fn()} onRedirect={vi.fn()} />); await screen.findByLabelText(/账号/);
-  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText(/密码/), 'initial'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
+  await userEvent.fill(screen.getByLabelText(/账号/), 'demo'); await userEvent.fill(screen.getByLabelText('密码'), 'initial'); await userEvent.click(screen.getByRole('button', { name: '登录' }));
   await screen.findByRole('alert'); expect(screen.queryByRole('heading', { name: '设置新密码' })).toBeNull();
 });
 it('站内信弹窗：未读角标、空态与消息条目键盘可达，axe 通过', async () => {
