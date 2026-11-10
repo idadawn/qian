@@ -1,4 +1,4 @@
-import { test, expect, request as http } from '@playwright/test';
+import { test, expect, request as http, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { randomInt, randomUUID } from 'node:crypto';
 import { writeFile, access } from 'node:fs/promises';
@@ -38,6 +38,11 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   const create = page.getByRole('button', { name: '新建租户', exact: true });
   const dialog = page.getByRole('dialog');
   const confirmation = page.getByRole('alertdialog');
+  // 行内只留「详情」「编辑」，合法迁移与管理员维护收进「更多」菜单（S1-YUE-019 按原型）；cell 按列序取单元格：0 租户 … 2 有效期 … 5 创建时间。
+  const menu = page.getByRole('menu');
+  const more = (row: Locator) => row.getByRole('button', { name: /的更多操作$/ });
+  async function act(row: Locator, action: string) { await more(row).click(); await menu.getByRole('menuitem', { name: action, exact: true }).click(); }
+  const cell = (row: Locator, index: number) => row.getByRole('cell').nth(index);
   const opened = () => calls.filter((item) => item.method === 'POST' && item.path === '/api/tenancy/tenants');
   // 管理员账号（S1-TEN-010）：A 的管理员在开户抽屉里新建；B 的管理员、其余租户共用的账号与替换用的丙先经运营接口建好，抽屉里按登录标识查找。
   const phoneA = '139' + String(randomInt(10_000_000, 99_999_999));
@@ -97,17 +102,23 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   const rowB = page.getByRole('row').filter({ hasText: '租户 B' });
   await expect(rowA.getByText('待激活', { exact: true })).toBeVisible();
   await expect(rowB).toBeVisible();
-  // 列表列（S1-TEN-018）：管理员姓名与用户用量来自身份组件的真实数据（各有开户管理员一人），上限取配额；没有截止时间即长期有效。
-  await expect(rowA).toContainText('管理员甲'); await expect(rowA).toContainText('1 / 20'); await expect(rowA).toContainText('长期有效');
+  // 列表列（S1-TEN-018）：管理员姓名与用户用量来自身份组件的真实数据（各有开户管理员一人），上限取配额。
+  // 按原型（S1-YUE-019）：待激活且没有截止时间的有效期显示破折号（读屏读「未激活」），创建时间只显示日期。
+  await expect(rowA).toContainText('管理员甲'); await expect(rowA).toContainText('1 / 20'); await expect(cell(rowA, 2)).toHaveText('—未激活，尚无有效期');
   await expect(rowB).toContainText('管理员乙'); await expect(rowB).toContainText('1 / 30');
-  await expect(rowA).toContainText(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+  await expect(cell(rowA, 5)).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
   const listed = await (await context.request.get(baseURL + '/api/tenancy/tenants')).json();
   expect(listed.total).toBe(2);
   const a = listed.items.find((item: { code: string }) => item.code === 'tenanta');
-  await page.getByLabel('搜索租户号或名称').fill('tenantb');
+  const search = page.getByLabel('搜索租户', { exact: true });
+  await expect(search).toHaveAttribute('placeholder', '搜索租户名称或租户号');
+  await search.fill('tenantb');
   await expect.poll(() => lists.at(-1)).toEqual({ skip: '0', take: '10', keyword: 'tenantb' });
   await expect(rowB).toBeVisible(); await expect(rowA).toHaveCount(0);
-  await page.getByLabel('搜索租户号或名称').fill('');
+  // 工具行的「重置」清空关键字。
+  await page.getByRole('button', { name: '重置', exact: true }).click();
+  await expect(search).toHaveValue('');
+  await expect.poll(() => lists.at(-1)).toEqual({ skip: '0', take: '10' });
   await expect(rowA).toBeVisible();
 
   await form('tenanta', '重复租户');
@@ -125,14 +136,19 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   await page.unroute('**/api/tenancy/tenants');
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
 
-  await rowA.getByRole('button', { name: '激活', exact: true }).click();
+  await act(rowA, '激活');
   await dialog.getByRole('button', { name: '保存', exact: true }).click();
   await expect(rowA.getByText('正常', { exact: true })).toBeVisible();
-  await expect(rowA.getByRole('button', { name: '激活', exact: true })).toHaveCount(0);
-  await rowA.getByRole('button', { name: '冻结', exact: true }).click();
-  await page.getByRole('alertdialog').getByRole('button', { name: '确认', exact: true }).click();
+  await expect(cell(rowA, 2)).toHaveText('长期');
+  // 菜单只列当前状态的合法迁移：激活后没有「激活」，冻结在分隔线后。
+  await more(rowA).click();
+  await expect(menu.getByRole('menuitem', { name: '冻结', exact: true })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: '激活', exact: true })).toHaveCount(0);
+  await menu.getByRole('menuitem', { name: '冻结', exact: true }).click();
+  // 冻结是危险操作：确认按钮写明「冻结」并用危险色（useConfirm 的 tone: 'danger'）。
+  await page.getByRole('alertdialog').getByRole('button', { name: '冻结', exact: true }).click();
   await expect(rowA.getByText('已冻结', { exact: true })).toBeVisible();
-  await rowA.getByRole('button', { name: '恢复', exact: true }).click();
+  await act(rowA, '恢复');
   await expect(rowA.getByText('正常', { exact: true })).toBeVisible();
   // 状态页签：计数来自宿主按状态的统计（A 已恢复为正常，B 仍待激活）；切换页签以 status 交给宿主过滤。
   const tab = (name: RegExp) => page.getByRole('tab', { name });
@@ -152,7 +168,7 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   const b = listed.items.find((item: { code: string }) => item.code === 'tenantb');
   expect((await context.request.post(baseURL + '/api/tenancy/tenants/' + b.id + ':activate', { data: { trial: false } })).status()).toBe(200);
   expect((await context.request.post(baseURL + '/api/tenancy/tenants/' + b.id + ':suspend')).status()).toBe(200);
-  await rowB.getByRole('button', { name: '激活', exact: true }).click();
+  await act(rowB, '激活');
   const rejected = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/tenancy/tenants/' + b.id + ':activate');
   await dialog.getByRole('button', { name: '保存', exact: true }).click();
   expect(await (await rejected).json()).toMatchObject({ status: 409, code: 'TENANCY_STATE_CONFLICT', message: '当前租户状态不允许该操作。' });
@@ -204,7 +220,8 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   await expect(dialog.getByText('1', { exact: true })).toBeVisible();
   const admin = dialog.getByTestId('tenant-admin-details');
   await expect(admin).toContainText('管理员甲'); await expect(admin).not.toContainText(phoneA);
-  await expect(dialog.getByTestId('tenant-detail')).toContainText('长期有效');
+  await expect(admin.getByRole('button', { name: '更换管理员', exact: true })).toBeVisible();
+  await expect(dialog.getByTestId('tenant-detail')).toContainText('长期');
   await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
   await page.screenshot({ path: resolve('../../TestResults/tenant-ui/tenant-detail.png') });
   // 验收 2 的页面部分：重置管理员密码要二次确认，取消时不发请求；确认后旧密码与原会话立即失效，临时密码登录必须先改密。
@@ -225,9 +242,15 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   const temporary = await signIn(phoneA, 'Temp-Pass-A-2026');
   expect(temporary.body).toMatchObject({ status: 'password_change_required' });
   for (const signed of [stale, temporary]) await signed.session.dispose();
-  // 更换管理员：查找已有账号、选为管理员、二次确认；B 的管理员换成丙。
-  await rowB.getByRole('button', { name: '租户 B', exact: true }).click();
-  await dialog.getByTestId('tenant-admin-details').getByRole('button', { name: '更换管理员', exact: true }).click();
+  // 行内「更多」里的重置管理员密码：只有一位管理员时直接给出重置表单，取消不发请求。
+  await act(rowB, '重置管理员密码');
+  await expect(dialog.getByLabel('临时密码')).toBeVisible();
+  await expect(dialog).toContainText('租户 B · 管理员乙');
+  await dialog.getByRole('button', { name: '取消', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(resets()).toHaveLength(1);
+  // 更换管理员（行内「更多」）：查找已有账号、选为管理员、二次确认；B 的管理员换成丙。
+  await act(rowB, '更换管理员');
   await pick('adminc');
   await confirmation.getByRole('button', { name: '确认', exact: true }).click();
   await expect(page.getByText('管理员已更换', { exact: true })).toBeVisible();
@@ -268,9 +291,9 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
   // 行内动作没有抽屉可承载，出错报页面级提示：身份仍是租户主体，冻结 A 得到真实 403。提示显示状态码与服务端原文，A 仍为正常。
-  await rowA.getByRole('button', { name: '冻结', exact: true }).click();
+  await act(rowA, '冻结');
   const refused = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/tenancy/tenants/' + a.id + ':suspend');
-  await page.getByRole('alertdialog').getByRole('button', { name: '确认', exact: true }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: '冻结', exact: true }).click();
   const refusal = await (await refused).json();
   expect(refusal).toMatchObject({ status: 403, code: 'AUTHZ_DENIED' });
   await expect(page.locator('main [role="alert"]')).toHaveText('403' + refusal.message);

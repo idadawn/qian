@@ -82,7 +82,7 @@ export function PasswordLogin({ i18n, onSubmit, onSso, busy, error, title, descr
     </form>
     {(onSso || alternatives) && <div className="flex flex-col gap-3" data-slot="password-login-alternatives">
       <div className="flex items-center gap-3 text-[13px] text-muted-foreground"><span aria-hidden="true" className="h-px flex-1 bg-border" /><span>{i18n.t('shell.otherMethods')}</span><span aria-hidden="true" className="h-px flex-1 bg-border" /></div>
-      <div className="flex flex-wrap gap-3">{onSso && <Button variant="outline" size="xl" className="flex-[1_1_160px] [&_svg]:size-4.5" disabled={busy} onClick={onSso} testId={`${testId}-sso`}><Icon name="key" />{i18n.t('shell.sso')}</Button>}</div>
+      {onSso && <div className="flex flex-wrap gap-3"><Button variant="outline" size="xl" className="flex-[1_1_160px] [&_svg]:size-4.5" disabled={busy} onClick={onSso} testId={`${testId}-sso`}><Icon name="key" />{i18n.t('shell.sso')}</Button></div>}
       {alternatives}
     </div>}
     {footer}

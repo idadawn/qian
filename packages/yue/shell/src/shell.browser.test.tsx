@@ -3,7 +3,7 @@ import { userEvent } from 'vitest/browser';
 import axe from 'axe-core';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useState } from 'react';
-import { AppShell, Authentication, ColPage, FallbackPage, InboxPopover, initPreferences, LeftTree, OfflineBanner, Page, PageHeader, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, SsoCallback, TenantSwitcher, UpdateBanner } from './index';
+import { AppShell, Authentication, AuthLayout, ColPage, FallbackPage, InboxPopover, initPreferences, LeftTree, LocaleMenu, OfflineBanner, Page, PageHeader, PasswordLogin, PlainLayout, PreferenceControls, PreferencesProvider, SessionExpiredDialog, ShellErrorBoundary, SsoCallback, TenantSelection, TenantSwitcher, UpdateBanner, WorkspaceCard } from './index';
 import { makeI18n, makeProvider, session } from './test/fixture';
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 // Base UI 浮层的 Tab 哨兵（aria-hidden 且可聚焦，立即转移焦点）与靶场 a11y 门禁一样排除，aria-hidden-focus 规则本身保留。
@@ -184,4 +184,73 @@ it('站内信弹窗：未读角标、空态与消息条目键盘可达，axe 通
   view.unmount(); render(<InboxPopover i18n={i18n} messages={[]} />);
   expect(screen.queryByTestId('yue-inbox-unread')).toBeNull();
   await userEvent.click(screen.getByRole('button', { name: '站内信' })); await screen.findByText('暂无消息');
+});
+
+it('认证页布局：登录（深色品牌面、语言标签按钮、记住账号与其他登录方式）与申请表单布局通过 axe，语言切换写入偏好', async () => {
+  const store = initPreferences({ namespace: 'test-auth-layout', storage: null }); const i18n = makeI18n();
+  const view = render(<PreferencesProvider store={store}><AuthLayout brand="Qian 乾" headline="为 Agent 时代准备的多租户平台" description="一个账号可以加入多家企业。" footer={<span>© 2026 Qian</span>}
+    toolbar={<PreferenceControls i18n={i18n} localeStyle="label" />} legal="登录即表示你同意服务条款。">
+    <PasswordLogin i18n={i18n} onSubmit={vi.fn(async () => {})} rememberKey="yue.test.remember" forgotHref="#forgot" alternatives={<button type="button">单点登录</button>} footer={<p>还没有企业账号？</p>} />
+  </AuthLayout></PreferencesProvider>);
+  expect(screen.getByTestId('yue-auth-layout').getAttribute('data-variant')).toBe('sign-in');
+  expect(screen.getByRole('heading', { level: 1, name: '登录' })).toBeTruthy();
+  expect(screen.getByRole('heading', { level: 2, name: '为 Agent 时代准备的多租户平台' })).toBeTruthy();
+  expect(screen.getByRole('link', { name: '忘记密码？' }).getAttribute('href')).toBe('#forgot');
+  expect(screen.getByText('其他登录方式')).toBeTruthy();
+  await accessible();
+  // 语言标签按钮：可见文字是当前语言名，读屏名称以「语言」开头（可见文字包含在名称里）。
+  const locale = screen.getByTestId('yue-preference-controls-locale');
+  expect(locale.textContent).toContain('简体中文');
+  expect(locale.textContent).toContain('语言');
+  await userEvent.click(locale); await accessible();
+  await userEvent.click(screen.getByRole('menuitemradio', { name: 'English' }));
+  expect(store.getSnapshot().locale).toBe('en-US');
+  view.unmount();
+  render(<PreferencesProvider store={store}><AuthLayout variant="form" brand="Qian 乾" brandHref="#login" headline="申请开通企业" aside={<ol><li>验证手机号</li><li>填写企业信息</li></ol>} toolbar={<a href="#login">已有账号？登录</a>}>
+    <section aria-label="申请表单"><p>表单内容</p></section>
+  </AuthLayout></PreferencesProvider>);
+  expect(screen.getByTestId('yue-auth-layout').getAttribute('data-variant')).toBe('form');
+  expect(screen.getByRole('link', { name: 'Qian 乾' }).getAttribute('href')).toBe('#login');
+  await accessible();
+});
+
+it('选择工作空间：简单布局里平台控制台与企业各是一张卡片，隐藏「返回登录」时仍有申请入口，键盘可选并通过 axe', async () => {
+  const select = vi.fn(); const i18n = makeI18n();
+  render(<PlainLayout brand="Qian 乾" account={<span>李雷</span>}><TenantSelection i18n={i18n} onSelect={select} onBack={vi.fn()} applyHref="#apply" hideBack
+    tenants={[{ id: 'platform', name: 'platform', platform: true }, { id: 't1', name: '星河科技', code: 'xinghe', admin: true }, { id: 't2', name: '云帆物流', code: 'yunfan' }]} /></PlainLayout>);
+  expect(screen.getByRole('heading', { level: 1, name: '选择要进入的工作空间' })).toBeTruthy();
+  expect(screen.queryByTestId('yue-tenant-selection-back')).toBeNull();
+  expect(screen.getByTestId('yue-tenant-selection-apply').getAttribute('href')).toBe('#apply');
+  const company = screen.getByRole('button', { name: '星河科技' });
+  expect(company.getAttribute('aria-describedby')).toBeTruthy();
+  await accessible();
+  company.focus(); await userEvent.keyboard('{Enter}');
+  expect(select).toHaveBeenCalledWith('t1');
+  await userEvent.click(screen.getByRole('button', { name: '平台控制台' }));
+  expect(select).toHaveBeenLastCalledWith('platform');
+});
+
+it('AppShell 工作空间卡片、导航分组与角标、账号菜单里的语言子菜单：键盘与 axe 通过', async () => {
+  const store = initPreferences({ namespace: 'test-workspace', storage: null }); const i18n = makeI18n(); const switched = vi.fn();
+  render(<PreferencesProvider store={store}><AppShell i18n={i18n} brand="Qian 乾" activePath="/applications" userName="王敏" userDescription="平台运营" onSignOut={vi.fn()}
+    menu={[{ id: 'home', labelKey: 'test.home', type: 'page', target: '/', icon: 'home' }, { id: 'tenants', labelKey: 'tenants', label: '租户管理', type: 'page', target: '/tenants', icon: 'building', group: '租户' },
+      { id: 'applications', labelKey: 'applications', label: '开通申请', type: 'page', target: '/applications', icon: 'clipboardCheck', group: '租户', badge: 3 }]}
+    workspace={<WorkspaceCard title="平台控制台" description="平台运营" label="切换工作空间" tile={<span className="inline-flex size-8 rounded-md bg-primary" />} onClick={switched} />}
+    breadcrumb={<span>开通申请</span>} toolbar={<PreferenceControls i18n={i18n} locale={false} />} userMenu={<LocaleMenu i18n={i18n} />}>内容</AppShell></PreferencesProvider>);
+  expect(screen.getByRole('group', { name: '租户' })).toBeTruthy();
+  expect(screen.getByRole('link', { name: /开通申请/ }).getAttribute('aria-current')).toBe('page');
+  expect(screen.getByRole('link', { name: '工作台' }).getAttribute('aria-current')).toBeNull();
+  expect(screen.getByTestId('yue-app-shell-menu-badge').textContent).toBe('3');
+  expect(screen.queryByRole('button', { name: '语言' })).toBeNull();
+  await accessible();
+  await userEvent.click(screen.getByRole('button', { name: /切换工作空间/ })); expect(switched).toHaveBeenCalledOnce();
+  await userEvent.click(screen.getByRole('button', { name: '用户菜单' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: '语言' }));
+  await screen.findByRole('menuitemradio', { name: 'English' }); await accessible();
+  await userEvent.click(screen.getByRole('menuitemradio', { name: 'English' }));
+  expect(store.getSnapshot().locale).toBe('en-US');
+  // 侧栏收起后工作空间卡片隐藏，分组标题只留给读屏。
+  await userEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+  expect(screen.queryByRole('button', { name: /切换工作空间/ })).toBeNull();
+  expect(screen.getByRole('group', { name: '租户' })).toBeTruthy();
 });

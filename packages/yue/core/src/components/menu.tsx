@@ -63,14 +63,19 @@ export function MenuContent({ className, side, align, sideOffset = 4, alignOffse
   );
 }
 
-export type MenuItemType = YueProps<MenuItemProps>;
-export function MenuItem({ className, testId, ...props }: MenuItemType) {
+export type MenuItemType = YueProps<MenuItemProps> & {
+  /** destructive：危险操作（如「冻结」「删除」），文字用危险色，高亮时为错误浅底。 @default 'default' */
+  variant?: 'default' | 'destructive';
+};
+export function MenuItem({ className, testId, variant = 'default', ...props }: MenuItemType) {
   return (
     <BaseMenu.Item {...props}
       data-slot="menu-item"
+      data-variant={variant}
       data-testid={testId ?? 'yue-menu-item'}
       className={cn(
         menuItem,
+        variant === 'destructive' && 'text-destructive data-[highlighted]:bg-error-bg data-[highlighted]:text-destructive',
         className,
       )}
     />
@@ -126,15 +131,19 @@ export function MenuSub(props: MenuSubProps) {
   return <BaseMenu.SubmenuRoot {...props} />;
 }
 
-export function MenuSubTrigger({ className, testId, ...props }: YueProps<MenuSubmenuTriggerProps>) {
+/** 子菜单入口：图标与文字靠左，末尾一个指向子菜单的箭头（随书写方向翻转）。 */
+export function MenuSubTrigger({ className, testId, children, ...props }: YueProps<MenuSubmenuTriggerProps>) {
   return (
     <BaseMenu.SubmenuTrigger {...props}
       data-slot="menu-sub-trigger"
       data-testid={testId ?? 'yue-menu-sub-trigger'}
       className={cn(
-        menuItem, 'justify-between data-[popup-open]:bg-accent',
+        menuItem, 'data-[popup-open]:bg-accent',
         className,
       )}
-    />
+    >
+      {children}
+      <Icon name="chevronRight" size={14} className="ms-auto text-muted-foreground rtl:rotate-180" />
+    </BaseMenu.SubmenuTrigger>
   );
 }

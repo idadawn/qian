@@ -49,7 +49,8 @@ test('页长切换与紧凑密度使用同一表格协议，选择态有一致�
   await page.goto('/data.html?state=Compact');
   await expect(page.getByTestId('yue-data-table-row')).toHaveCount(5);
   const compact = await page.getByTestId('yue-data-table-row').first().evaluate(row => row.getBoundingClientRect().height);
-  expect(normal).toBe(40); expect(compact).toBe(32);
+  // 标准密度按原型：单元格上下 12px、正文 22px 行高，单行 47px（含 1px 分隔线）；紧凑密度取 32px 最小行高。
+  expect(normal).toBe(47); expect(compact).toBe(32);
 });
 
 
@@ -62,5 +63,5 @@ for (const theme of ['light', 'dark']) test(`固定列表头 ${theme} 使用与�
     const context = canvas.getContext('2d')!; context.fillStyle = getComputedStyle(fixed).backgroundColor; context.fillRect(0, 0, 1, 1);
     return { background, height: header.getBoundingClientRect().height, fixed: getComputedStyle(fixed).backgroundColor, alpha: context.getImageData(0, 0, 1, 1).data[3] };
   });
-  expect(colors.fixed).toBe(colors.background); expect(colors.alpha).toBe(255); expect(colors.height).toBe(40);
+  expect(colors.fixed).toBe(colors.background); expect(colors.alpha).toBe(255); expect(colors.height).toBe(43);
 });

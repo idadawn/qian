@@ -84,6 +84,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 2px);
+  --text-sm--line-height: 1.375rem;
   --shadow-xs: var(--yue-p-shadow-xs);
   --shadow-sm: var(--yue-p-shadow-sm);
   --shadow-md: var(--yue-p-shadow-md);
@@ -95,5 +96,5 @@
   --ease-standard: var(--yue-p-ease-standard);
 }
 @layer base {
-  body { @apply font-sans text-sm antialiased bg-background text-foreground; }
+  body { @apply font-sans text-sm bg-background text-foreground; }
 }

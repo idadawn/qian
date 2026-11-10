@@ -17,8 +17,9 @@ const tones: Record<Tone, string> = {
 const borders: Record<Tone, string> = { ok: 'border-ok-border', warn: 'border-warn-border', error: 'border-error-border', info: 'border-info-border', neutral: 'border-neutral-border' };
 const solids: Record<Tone, string> = { ok: 'bg-ok-solid', warn: 'bg-warn-solid', error: 'bg-error-solid', info: 'bg-info-solid', neutral: 'bg-neutral-solid' };
 const strongs: Record<Tone, string> = { ok: 'text-ok-strong', warn: 'text-warn-strong', error: 'text-error-strong', info: 'text-info-strong', neutral: 'text-neutral-strong' };
+const texts: Record<Tone, string> = { ok: 'text-ok', warn: 'text-warn', error: 'text-error', info: 'text-info', neutral: 'text-neutral' };
 const icons: Record<Tone, string> = { ok: 'text-ok-solid', warn: 'text-warn-solid', error: 'text-error-solid', info: 'text-info-solid', neutral: 'text-neutral-solid' };
-const toneIcons: Record<Tone, IconName> = { ok: 'circleCheck', warn: 'alert', error: 'circleX', info: 'info', neutral: 'info' };
+const toneIcons: Record<Tone, IconName> = { ok: 'circleCheck', warn: 'alert', error: 'alert', info: 'info', neutral: 'info' };
 export type BadgeProps = YueProps<ComponentProps<'span'>> & {
   tone?: Tone;
   /** 在文字前显示同色圆点，用于状态列。 @default false */
@@ -53,11 +54,11 @@ export type AlertProps = Omit<YueProps<ComponentProps<'div'>>, 'title'> & {
   /** 尺寸：sm 用在表单内（13px、紧凑内边距），md 用在页面与卡片。 @default 'md' */
   size?: 'sm' | 'md';
 };
-/** 提示条：状态底色与边框，文字取深一档；图标用状态实色。 */
+/** 提示条：状态底色与边框，图标跟随文字色。md 文字取深一档（strong），带标题时是块级消息（上下 14px、图标与文字间距 10px、标题与正文间距 2px），不带标题时是一行横幅（上下 12px、间距 12px）；sm 用在表单内，文字取状态文字色。 */
 export function Alert({ tone = 'info', role = 'status', title, icon = true, action, size = 'md', className, testId, children, ...props }: AlertProps) {
-  return <div {...props} role={role} data-slot="alert" data-size={size} data-testid={testId ?? 'yue-alert'} className={cn('relative flex w-full flex-wrap items-start border', size === 'sm' ? 'gap-x-2.5 gap-y-1.5 rounded-md px-3 py-2.5 text-[13px] leading-5' : 'gap-x-3 gap-y-2 rounded-lg px-4 py-3 text-sm', tones[tone], borders[tone], strongs[tone], className)}>
-    {icon && <Icon name={toneIcons[tone]} size={size === 'sm' ? 16 : 18} className={cn('shrink-0', size === 'sm' ? 'mt-0.5' : 'mt-0.5', icons[tone])} />}
-    <div className="min-w-0 flex-1 basis-48">{title && <p data-slot="alert-title" data-testid={`${testId ?? 'yue-alert'}-title`} className="mb-1 font-semibold">{title}</p>}{children}</div>
+  return <div {...props} role={role} data-slot="alert" data-size={size} data-testid={testId ?? 'yue-alert'} className={cn('relative flex w-full flex-wrap items-start border', size === 'sm' ? 'gap-x-2.5 gap-y-1.5 rounded-md px-3 py-2.5 text-[13px] leading-5' : title ? 'gap-x-2.5 gap-y-2.5 rounded-lg px-4 py-3.5 text-sm' : 'gap-x-3 gap-y-2.5 rounded-lg px-4 py-3 text-sm', tones[tone], borders[tone], size === 'sm' ? texts[tone] : strongs[tone], className)}>
+    {icon && <Icon name={toneIcons[tone]} size={size === 'sm' ? 16 : 18} className="mt-0.5 shrink-0" />}
+    <div className="min-w-0 flex-1 basis-48">{title && <p data-slot="alert-title" data-testid={`${testId ?? 'yue-alert'}-title`} className="mb-0.5 font-semibold">{title}</p>}{children}</div>
     {action && <div data-slot="alert-action" data-testid={`${testId ?? 'yue-alert'}-action`} className="flex shrink-0 flex-wrap items-center gap-2 self-center">{action}</div>}
   </div>;
 }
@@ -69,7 +70,7 @@ export interface ResultProps extends EmptyProps { tone?: Tone }
 export function Result({ title, description, action, icon = 'check', tone = 'ok', className, testId }: ResultProps) {
   const id = useId();
   return <section aria-labelledby={id} data-slot="result" data-testid={testId ?? 'yue-result'} className={cn('flex flex-col items-center justify-center gap-3 px-6 py-10 text-center', className)}>
-    <span data-slot="result-icon" data-testid={`${testId ?? 'yue-result'}-icon`} className={cn('mb-1 inline-flex size-16 items-center justify-center rounded-full', tones[tone], icons[tone])}><Icon name={icon} size={30} /></span>
-    <h2 id={id} className="text-2xl font-bold tracking-tight">{title}</h2>{description && <div className="max-w-lg text-muted-foreground">{description}</div>}{action && <div className="mt-3 flex flex-wrap justify-center gap-3">{action}</div>}
+    <span data-slot="result-icon" data-testid={`${testId ?? 'yue-result'}-icon`} className={cn('inline-flex size-16 items-center justify-center rounded-full', tones[tone], icons[tone])}><Icon name={icon} size={30} /></span>
+    <h2 id={id} className="text-2xl font-bold">{title}</h2>{description && <div className="max-w-130 text-caption-foreground">{description}</div>}{action && <div className="mt-3 flex flex-wrap justify-center gap-3">{action}</div>}
   </section>;
 }

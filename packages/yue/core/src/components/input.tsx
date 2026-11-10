@@ -10,7 +10,8 @@ import { IconButton } from './button';
 import { Icon } from './icon';
 
 export type InputProps = YueProps<ComponentProps<typeof BaseInput>>;
-export function Input({ className, testId, ...props }: InputProps) { return <BaseInput {...props} data-slot="input" data-testid={testId ?? 'yue-input'} className={cn(control, 'h-(--yue-input-height) w-full min-w-0 px-3 text-sm', className)} />; }
+/** type="search" 去掉浏览器自带、不跟随主题的清除按钮与装饰，清空交给页面的「重置」或自带的清除按钮。 */
+export function Input({ className, testId, ...props }: InputProps) { return <BaseInput {...props} data-slot="input" data-testid={testId ?? 'yue-input'} className={cn(control, 'h-(--yue-input-height) w-full min-w-0 px-3 text-sm [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none', className)} />; }
 export type TextareaProps = YueProps<ComponentProps<typeof BaseField.Control>> & { rows?: number };
 export function Textarea({ className, testId, rows = 3, ...props }: TextareaProps) { return <BaseField.Control {...props} render={<textarea rows={rows} />} data-slot="textarea" data-testid={testId ?? 'yue-textarea'} className={cn(control, 'min-h-20 w-full resize-y px-3 py-2.5 text-sm', className)} />; }
 export type InputPasswordProps = Omit<InputProps, 'type'> & { showLabel: string; hideLabel: string };

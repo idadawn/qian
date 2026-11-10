@@ -24,8 +24,9 @@ export function PopoverDescription({ className, testId, ...props }: PopoverDescr
 }
 
 export type PopoverCloseProps = YueProps<ComponentProps<typeof Base.Close>>;
-export function PopoverClose({ className, testId, ...props }: PopoverCloseProps) {
-  return <ButtonIdentity slot="popover-close" testId={testId ?? 'yue-popover-close'}><Base.Close {...props} data-slot="popover-close" data-testid={testId ?? 'yue-popover-close'} className={cn(button, className)} /></ButtonIdentity>;
+// 经 render 交给 Button 渲染时不再叠基础按钮类：Button 自带一套，再叠会让基础类里的 border-transparent 盖掉描边变体的边框。
+export function PopoverClose({ className, testId, render, ...props }: PopoverCloseProps) {
+  return <ButtonIdentity slot="popover-close" testId={testId ?? 'yue-popover-close'}><Base.Close {...props} data-slot="popover-close" data-testid={testId ?? 'yue-popover-close'} render={render} className={render ? className : cn(button, className)} /></ButtonIdentity>;
 }
 
 export type PopoverContentProps = YueProps<ComponentProps<typeof Base.Popup>> & { side?: "top" | "right" | "bottom" | "left"; align?: "start" | "center" | "end"; sideOffset?: number };

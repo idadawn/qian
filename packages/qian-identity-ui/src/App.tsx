@@ -1,24 +1,43 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Field, FieldError, FieldLabel, Input, Spinner } from '@idadawn/yue-core';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
+import { Alert, Avatar, AvatarFallback, Button, Field, FieldError, FieldLabel, Icon, Input, Spinner } from '@idadawn/yue-core';
 import { HttpResponseError, PlatformError } from '@idadawn/yue-sdk';
-import { Authentication, PasswordLogin, safeNavigationUrl, TenantSelection, type AuthTenant } from '@idadawn/yue-shell';
+import { Authentication, AuthLayout, PasswordLogin, PlainLayout, PreferenceControls, PreferencesProvider, safeNavigationUrl, TenantSelection, type AuthTenant } from '@idadawn/yue-shell';
 import { createIdentityAuthProvider, type ConnectorFlow, type IdentityAuthProvider, type IdentityConnector } from '@qian/shell-kit/identity';
 import { authorizeEntry, loginUrl, type AuthorizeEntry } from './entry';
 import { i18n } from './i18n';
 import { browser } from './navigation';
+import { preferences } from './preferences';
+
+/** 记住账号存在本机的键；只存账号，不存密码。 */
+const REMEMBER_KEY = 'qian.identity.remember';
 
 /** 页面只有三个落点：/login、/login/select-tenant、/login/connector/{connectorId}；其余路径按无效入口呈现。 */
 export function App() {
   const pathname = location.pathname.replace(/\/+$/, '') || '/';
   const connector = /^\/login\/connector\/([^/]+)$/.exec(pathname);
-  return <main className="flex min-h-dvh items-start justify-center bg-background p-4 text-foreground sm:items-center">
-    {pathname === '/login' ? <LoginPage /> : pathname === '/login/select-tenant' ? <SelectTenantPage /> : connector ? <ConnectorPage connectorId={decodeURIComponent(connector[1]!)} flowId={new URLSearchParams(location.search).get('flow')} /> : <InvalidEntry />}
-  </main>;
+  if (pathname === '/login') return <LoginPage />;
+  if (pathname === '/login/select-tenant') return <SelectTenantPage />;
+  return <SignInFrame>{connector ? <ConnectorPage connectorId={decodeURIComponent(connector[1]!)} flowId={new URLSearchParams(location.search).get('flow')} /> : <InvalidEntry />}</SignInFrame>;
+}
+
+/** 登录一类页面的框架：左侧品牌深色面，右上语言与主题。 */
+function SignInFrame({ children }: { children: ReactNode }) {
+  return <PreferencesProvider store={preferences}><AuthLayout brand={i18n.t('identity.brand')} headline={i18n.t('identity.headline')} description={i18n.t('identity.tagline')}
+    toolbar={<PreferenceControls i18n={i18n} localeStyle="label" />} footer={<span>{i18n.t('identity.copyright')}</span>}>{children}</AuthLayout></PreferencesProvider>;
+}
+
+/** 选择工作空间的框架：顶栏右侧是当前账号与「返回登录」。 */
+function WorkspaceFrame({ tenants, onBack, children }: { tenants: readonly AuthTenant[]; onBack: () => void; children: ReactNode }) {
+  const name = tenants.find(tenant => tenant.displayName)?.displayName;
+  return <PlainLayout brand={i18n.t('identity.brand')} account={<>
+    {name && <span className="inline-flex items-center gap-2" data-testid="identity-account"><Avatar aria-hidden="true" tint="primary" className="size-7.5"><AvatarFallback className="text-[13px] font-bold">{Array.from(name.trim())[0]}</AvatarFallback></Avatar><span>{name}</span></span>}
+    <Button variant="ghost" className="h-8.5 gap-1.5 px-2.5 font-normal" onClick={onBack} testId="identity-back-login"><Icon name="logOut" />{i18n.t('shell.backLogin')}</Button>
+  </>}>{children}</PlainLayout>;
 }
 
 function InvalidEntry() {
-  return <section role="alert" data-testid="identity-invalid-entry" className="mx-auto w-full max-w-md space-y-3 rounded-xl border border-border bg-card p-6">
-    <h1 className="text-xl font-semibold">{i18n.t('identity.invalidEntry')}</h1><p className="text-sm text-muted-foreground">{i18n.t('identity.invalidEntryHelp')}</p>
+  return <section role="alert" data-testid="identity-invalid-entry" className="flex flex-col gap-1.5">
+    <h1 className="m-0 text-[28px] font-bold leading-9 tracking-[-0.01em]">{i18n.t('identity.invalidEntry')}</h1><p className="m-0 text-muted-foreground">{i18n.t('identity.invalidEntryHelp')}</p>
   </section>;
 }
 
@@ -26,57 +45,11 @@ function useProvider(entry: AuthorizeEntry | null): IdentityAuthProvider {
   return useMemo(() => createIdentityAuthProvider({ clientId: entry?.clientId ?? 'unknown', platformLabel: i18n.t('shell.platform') }), [entry?.clientId]);
 }
 
-/** 登录页；`entry` / `provider` 可注入（组件测试），缺省取自地址栏与同源账号接口。 */
-export function LoginPage({ entry: injectedEntry, provider: injectedProvider }: { entry?: AuthorizeEntry | null; provider?: IdentityAuthProvider } = {}) {
-  const entry = useMemo(() => injectedEntry === undefined ? authorizeEntry(location.search, location.origin) : injectedEntry, [injectedEntry]);
-  const created = useProvider(entry);
-  const provider = injectedProvider ?? created;
-  // 连接器登录的绑定键是 租户 × 连接器 × 上游主体，发起前必须知道租户：登录页由用户填写租户代码；目录按该租户 scope 过滤（租户项遮蔽全局同名项）。
-  const [tenant, setTenant] = useState('');
-  const [tenantMissing, setTenantMissing] = useState(false);
-  const [connectors, setConnectors] = useState<IdentityConnector[]>([]);
-  // 最近一次目录结果对应的租户代码：填了租户、该租户的目录也已回来却为空时才提示「没有可用的单点登录方式」，防抖途中不提示。
-  const [listedFor, setListedFor] = useState<string | null>(null);
-  const [connectorError, setConnectorError] = useState(false);
-  const tenantCode = tenant.trim();
-  useEffect(() => {
-    if (!entry) return;
-    const controller = new AbortController();
-    const timer = setTimeout(() => {
-      provider.listConnectors(controller.signal, tenantCode || null).then(items => { if (!controller.signal.aborted) { setConnectors(items); setListedFor(tenantCode); } }).catch(() => { /* 连接器目录不可用时只剩账号密码登录。 */ });
-    }, tenantCode ? 300 : 0);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [provider, entry, tenantCode]);
-  if (!entry) return <InvalidEntry />;
-  const begin = (connectorId: string) => {
-    setConnectorError(false);
-    if (!tenantCode) { setTenantMissing(true); return; }
-    provider.beginConnector(connectorId, new AbortController().signal, { tenant: tenantCode, returnUrl: entry.returnUrl }).then(url => browser.assign(url)).catch(() => setConnectorError(true));
-  };
-  return <div className="w-full max-w-md space-y-4">
-    <Authentication provider={provider} i18n={i18n} onAuthenticated={() => browser.assign(entry.returnUrl)} onRedirect={url => browser.assign(url)} />
-    {/* 入口有效就始终渲染连接器区与租户代码：全局目录为空时，只挂了租户 scope 连接器的租户也要能填代码重列；目录被租户过滤为空时输入框不随之卸载。 */}
-    <section aria-label={i18n.t('identity.connectors')} data-testid="identity-connectors" className="space-y-3 rounded-xl border border-border bg-card p-4">
-      <p className="text-sm text-muted-foreground">{i18n.t('identity.connectors')}</p>
-      {connectorError && <Alert tone="error" role="alert">{i18n.t('identity.connectorError')}</Alert>}
-      <Field invalid={tenantMissing} testId="identity-connector-tenant">
-        <FieldLabel>{i18n.t('identity.tenantCode')}</FieldLabel>
-        <Input name="tenant" autoComplete="organization" value={tenant} onChange={event => { setTenant(event.currentTarget.value); if (event.currentTarget.value.trim()) setTenantMissing(false); }} aria-describedby={tenantMissing ? undefined : 'identity-connector-tenant-help'} />
-        {tenantMissing ? <FieldError match>{i18n.t('identity.tenantRequired')}</FieldError> : <p id="identity-connector-tenant-help" className="text-sm text-muted-foreground">{i18n.t('identity.tenantCodeHelp')}</p>}
-      </Field>
-      {connectors.length > 0
-        ? <div className="flex flex-wrap gap-2">{connectors.map(item => <Button key={item.id} variant="outline" onClick={() => begin(item.id)}>{item.displayName}</Button>)}</div>
-        : tenantCode !== '' && listedFor === tenantCode ? <p role="status" className="text-sm text-muted-foreground" data-testid="identity-connectors-none">{i18n.t('identity.connectorsNone')}</p> : null}
-    </section>
-    <SignupLinks mode="login" />
-  </div>;
-}
-
 /**
- * 自助开通入口（S1-TEN-020，规格 §8）：开通组件装在本宿主时（申请人会话端点答 200 或 401）才显示；`next` 带上当前登录地址，
- * 申请获批后进度页的「去登录」回到同一个授权请求。没有登录成员身份的账号（NO_AVAILABLE_TENANT）从这里查看申请进度。
+ * 自助开通组件是否装在本宿主（S1-TEN-020，规格 §8）：申请人会话端点答 200 或 401 才显示开通入口。
+ * `next` 带上当前登录地址，申请获批后进度页的「去登录」回到同一个授权请求。
  */
-function SignupLinks({ mode }: { mode: 'login' | 'select' }) {
+function useSignup(): { apply: string; progress: string } | null {
   const [available, setAvailable] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
@@ -86,11 +59,69 @@ function SignupLinks({ mode }: { mode: 'login' | 'select' }) {
   }, []);
   if (!available) return null;
   const next = encodeURIComponent(location.pathname + location.search);
-  return <p className="text-center text-sm text-muted-foreground" data-testid="identity-signup-links">
-    {mode === 'login' ? <>{i18n.t('identity.noCompany')} <a className="font-medium text-primary underline-offset-4 hover:underline" href={`/signup?next=${next}`}>{i18n.t('identity.applyCompany')}</a>
-      <span aria-hidden="true"> · </span><a className="font-medium text-primary underline-offset-4 hover:underline" href={`/signup/status?next=${next}`}>{i18n.t('identity.signupProgress')}</a></>
-      : <a className="font-medium text-primary underline-offset-4 hover:underline" href={`/signup?next=${next}`}>{i18n.t('identity.applyNewCompany')}</a>}
+  return { apply: `/signup?next=${next}`, progress: `/signup/status?next=${next}` };
+}
+
+/** 登录页下方的开通入口；没有登录成员身份的账号（NO_AVAILABLE_TENANT）从「查看申请进度」进入进度页。 */
+function SignupLinks({ signup }: { signup: { apply: string; progress: string } }) {
+  return <p className="m-0 text-center text-subtle-foreground" data-testid="identity-signup-links">
+    {i18n.t('identity.noCompany')}<a className="font-semibold text-primary no-underline hover:underline" href={signup.apply}>{i18n.t('identity.applyCompany')}</a>
+    <span aria-hidden="true" className="text-muted-foreground"> · </span><a className="text-primary no-underline hover:underline" href={signup.progress}>{i18n.t('identity.signupProgress')}</a>
   </p>;
+}
+
+/**
+ * 「其他登录方式」：连接器登录的绑定键是 租户 × 连接器 × 上游主体，发起前必须知道租户。「单点登录」展开面板：租户代码在上，目录先按全局列出；
+ * 填了租户代码就按该租户重列（租户项遮蔽全局同名项），输入框不随目录变空而卸载。没填租户代码就点连接器只提示并聚焦租户代码，不发起。
+ */
+function Connectors({ entry, provider }: { entry: AuthorizeEntry; provider: IdentityAuthProvider }) {
+  const panelId = useId();
+  const [open, setOpen] = useState(false);
+  const [tenant, setTenant] = useState('');
+  const [tenantMissing, setTenantMissing] = useState(false);
+  const [connectors, setConnectors] = useState<IdentityConnector[]>([]);
+  // 最近一次目录结果对应的租户代码：填了租户、该租户的目录也已回来却为空时才提示「没有可用的单点登录方式」，防抖途中不提示。
+  const [listedFor, setListedFor] = useState<string | null>(null);
+  const [connectorError, setConnectorError] = useState(false);
+  const tenantCode = tenant.trim();
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      provider.listConnectors(controller.signal, tenantCode || null).then(items => { if (!controller.signal.aborted) { setConnectors(items); setListedFor(tenantCode); } }).catch(() => { /* 连接器目录不可用时只剩账号密码登录。 */ });
+    }, tenantCode ? 300 : 0);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [provider, tenantCode]);
+  const begin = (connectorId: string) => {
+    setConnectorError(false);
+    if (!tenantCode) { setTenantMissing(true); document.getElementById(`${panelId}-tenant`)?.focus(); return; }
+    provider.beginConnector(connectorId, new AbortController().signal, { tenant: tenantCode, returnUrl: entry.returnUrl }).then(url => browser.assign(url)).catch(() => setConnectorError(true));
+  };
+  return <div className="flex flex-col gap-3">
+    <Button variant="outline" size="xl" className="w-full [&_svg]:size-4.5" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(value => !value)} testId="identity-sso"><Icon name="key" />{i18n.t('shell.sso')}</Button>
+    {open && <section id={panelId} aria-label={i18n.t('identity.connectors')} data-testid="identity-connectors" className="flex flex-col gap-3 rounded-lg border border-border bg-muted/50 p-4">
+      {connectorError && <Alert tone="error" role="alert" size="sm">{i18n.t('identity.connectorError')}</Alert>}
+      <Field invalid={tenantMissing} testId="identity-connector-tenant">
+        <FieldLabel htmlFor={`${panelId}-tenant`}>{i18n.t('identity.tenantCode')}</FieldLabel>
+        <Input id={`${panelId}-tenant`} name="tenant" autoComplete="organization" className="bg-background font-mono" value={tenant} onChange={event => { setTenant(event.currentTarget.value); if (event.currentTarget.value.trim()) setTenantMissing(false); }} aria-describedby={tenantMissing ? undefined : `${panelId}-tenant-help`} />
+        {tenantMissing ? <FieldError match>{i18n.t('identity.tenantRequired')}</FieldError> : <p id={`${panelId}-tenant-help`} className="m-0 text-xs leading-4.5 text-muted-foreground">{i18n.t('identity.tenantCodeHelp')}</p>}
+      </Field>
+      {connectors.length > 0
+        ? <div className="flex flex-wrap gap-2">{connectors.map(item => <Button key={item.id} variant="outline" size="lg" className="flex-[1_1_160px] bg-background" onClick={() => begin(item.id)}>{item.displayName}</Button>)}</div>
+        : tenantCode !== '' && listedFor === tenantCode && <p role="status" className="m-0 text-[13px] text-muted-foreground" data-testid="identity-connectors-none">{i18n.t('identity.connectorsNone')}</p>}
+    </section>}
+  </div>;
+}
+
+/** 登录页；`entry` / `provider` 可注入（组件测试），缺省取自地址栏与同源账号接口。 */
+export function LoginPage({ entry: injectedEntry, provider: injectedProvider }: { entry?: AuthorizeEntry | null; provider?: IdentityAuthProvider } = {}) {
+  const entry = useMemo(() => injectedEntry === undefined ? authorizeEntry(location.search, location.origin) : injectedEntry, [injectedEntry]);
+  const created = useProvider(entry);
+  const provider = injectedProvider ?? created;
+  const signup = useSignup();
+  if (!entry) return <SignInFrame><InvalidEntry /></SignInFrame>;
+  return <Authentication provider={provider} i18n={i18n} onAuthenticated={() => browser.assign(entry.returnUrl)} onRedirect={url => browser.assign(url)} selectionProps={{ applyHref: signup?.apply, hideBack: true }}
+    loginProps={{ description: i18n.t('identity.loginHelp'), rememberKey: REMEMBER_KEY, alternatives: <Connectors entry={entry} provider={provider} />, footer: signup ? <SignupLinks signup={signup} /> : undefined }}
+    frame={(view, content, { tenants, back }) => view === 'select-tenant' && tenants ? <WorkspaceFrame tenants={tenants} onBack={back}>{content}</WorkspaceFrame> : <SignInFrame>{content}</SignInFrame>} />;
 }
 
 function unauthenticated(error: unknown): boolean {
@@ -101,6 +132,7 @@ function unauthenticated(error: unknown): boolean {
 function SelectTenantPage() {
   const entry = useMemo(() => authorizeEntry(location.search, location.origin), []);
   const provider = useProvider(entry);
+  const signup = useSignup();
   const [tenants, setTenants] = useState<readonly AuthTenant[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -114,19 +146,18 @@ function SelectTenantPage() {
     });
     return () => controller.abort();
   }, [provider, entry]);
-  if (!entry) return <InvalidEntry />;
-  if (!tenants) return error
-    ? <section className="mx-auto w-full max-w-md space-y-3 rounded-xl border border-border bg-card p-6"><Alert tone="error" role="alert">{i18n.t('shell.switchError')}</Alert><Button variant="ghost" onClick={() => browser.assign(loginUrl(entry.returnUrl))}>{i18n.t('shell.backLogin')}</Button></section>
-    : <Spinner label={i18n.t('shell.switching')} />;
-  return <div className="w-full max-w-md space-y-2">
-    <TenantSelection i18n={i18n} tenants={tenants} busy={busy} error={error} onBack={() => browser.assign(loginUrl(entry.returnUrl))} onSelect={id => {
+  if (!entry) return <SignInFrame><InvalidEntry /></SignInFrame>;
+  const back = () => browser.assign(loginUrl(entry.returnUrl));
+  if (!tenants) return <WorkspaceFrame tenants={[]} onBack={back}>{error
+    ? <div className="flex flex-col gap-3"><Alert tone="error" role="alert">{i18n.t('shell.switchError')}</Alert><div><Button variant="outline" onClick={back}>{i18n.t('shell.backLogin')}</Button></div></div>
+    : <Spinner label={i18n.t('shell.switching')} />}</WorkspaceFrame>;
+  return <WorkspaceFrame tenants={tenants} onBack={back}>
+    <TenantSelection i18n={i18n} tenants={tenants} busy={busy} error={error} hideBack applyHref={signup?.apply} onBack={back} onSelect={id => {
       if (busy || !tenants.some(tenant => tenant.id === id)) return;
       setBusy(true); setError(false);
       provider.selectTenant(id, new AbortController().signal).then(() => browser.assign(entry.returnUrl)).catch(() => { setBusy(false); setError(true); });
     }} />
-    <p className="text-center text-xs text-muted-foreground">{i18n.t('identity.switchHelp')}</p>
-    <SignupLinks mode="select" />
-  </div>;
+  </WorkspaceFrame>;
 }
 
 export interface ConnectorPageProps {

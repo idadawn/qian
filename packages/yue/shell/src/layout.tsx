@@ -45,21 +45,24 @@ export function PreferenceControls({ i18n, locale = true, localeStyle = 'icon', 
   const { preferences, updatePreferences } = usePreferences();
   useShellLocale(i18n);
   const trigger = cn(quietTrigger, 'size-9 text-subtle-foreground hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent [&_svg]:size-4.5');
-  return <div data-slot="preference-controls" data-testid={testId} className={cn('flex items-center gap-1', className)}>
-    <Menu>
+  const themeMenu = <Menu>
       <MenuTrigger aria-label={i18n.t('shell.theme')} testId={`${testId}-theme`} className={trigger}><Icon name={themeIcons[preferences.theme]} /></MenuTrigger>
       <MenuContent align="end" className="w-auto">
         <MenuRadioGroup value={preferences.theme} onValueChange={(theme: Preferences['theme']) => updatePreferences({ theme })}>
           {(Object.keys(themeIcons) as Preferences['theme'][]).map(theme => <MenuRadioItem key={theme} value={theme} closeOnClick><span className="inline-flex items-center gap-2"><Icon name={themeIcons[theme]} />{i18n.t(`shell.${theme}`)}</span></MenuRadioItem>)}
         </MenuRadioGroup>
       </MenuContent>
-    </Menu>
-    {locale && <Menu>
+    </Menu>;
+  const localeMenu = locale && <Menu>
       {localeStyle === 'label'
-        ? <MenuTrigger aria-label={i18n.t('shell.language')} testId={`${testId}-locale`} className={cn(quietTrigger, 'h-9 gap-1.5 px-3 font-normal text-subtle-foreground hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent')}><Icon name="globe" /><span>{i18n.t(`shell.locale.${preferences.locale}`)}</span><Icon name="chevronDown" size={14} /></MenuTrigger>
+        ? <MenuTrigger testId={`${testId}-locale`} className={cn(quietTrigger, 'h-9 gap-1.5 px-3 font-normal text-subtle-foreground hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent')}><Icon name="globe" /><span className="sr-only">{i18n.t('shell.language')}</span><span lang={preferences.locale}>{i18n.t(`shell.locale.${preferences.locale}`)}</span><Icon name="chevronDown" size={14} /></MenuTrigger>
         : <MenuTrigger aria-label={i18n.t('shell.language')} testId={`${testId}-locale`} className={trigger}><Icon name="languages" /></MenuTrigger>}
       <MenuContent align="end" className="w-auto"><LocaleRadioGroup i18n={i18n} /></MenuContent>
-    </Menu>}
+    </Menu>;
+  return <div data-slot="preference-controls" data-testid={testId} className={cn('flex items-center gap-1', className)}>
+    {localeStyle === 'label' && localeMenu}
+    {themeMenu}
+    {localeStyle !== 'label' && localeMenu}
   </div>;
 }
 function LocaleRadioGroup({ i18n }: { i18n: PlatformI18n }) {

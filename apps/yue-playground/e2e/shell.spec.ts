@@ -3,8 +3,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { settleVisuals } from './settle';
 
 async function login(page: Page) {
-  await page.getByLabel(/账号/).fill('demo'); await page.getByLabel(/密码/).fill('demo-password');
-  await expect(page.getByLabel(/密码/)).toHaveAttribute('type', 'password');
+  await page.getByLabel('账号', { exact: true }).fill('demo'); await page.getByLabel('密码', { exact: true }).fill('demo-password');
+  await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
   await page.getByRole('button', { name: '登录', exact: true }).click();
 }
 // 与 gate.spec 相同：只排除 Base UI 立即转移焦点的四类内部 Tab 哨兵，aria-hidden-focus 规则本身保留。
@@ -20,14 +20,14 @@ test('外壳首屏不请求表单引擎，进入登录页才加载', async ({ pa
   await page.goto('/shell.html'); await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
   expect(urls.some(url => /schema-form-|password-login-/.test(url))).toBe(false);
   await page.getByRole('button', { name: '用户菜单' }).click(); await page.getByRole('menuitem', { name: '退出登录' }).click();
-  await expect(page.getByLabel(/密码/)).toBeVisible(); expect(urls.some(url => /schema-form-|password-login-/.test(url))).toBe(true);
+  await expect(page.getByLabel('密码', { exact: true })).toBeVisible(); expect(urls.some(url => /schema-form-|password-login-/.test(url))).toBe(true);
 });
 
 test('密码登录校验与错误恢复，经 SDK mock 成功后进入单侧栏外壳', async ({ page }) => {
   await page.goto('/shell.html?component=Authentication');
-  await page.getByRole('button', { name: '登录', exact: true }).click(); await expect(page.getByLabel(/账号/)).toBeFocused();
-  await page.getByLabel(/账号/).fill('demo'); await page.getByLabel(/密码/).fill('wrong'); await page.getByRole('button', { name: '登录', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('登录失败'); await expect(page.getByLabel(/密码/)).toHaveValue(''); await accessible(page);
+  await page.getByRole('button', { name: '登录', exact: true }).click(); await expect(page.getByLabel('账号', { exact: true })).toBeFocused();
+  await page.getByLabel('账号', { exact: true }).fill('demo'); await page.getByLabel('密码', { exact: true }).fill('wrong'); await page.getByRole('button', { name: '登录', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('登录失败'); await expect(page.getByLabel('密码', { exact: true })).toHaveValue(''); await accessible(page);
   await login(page); await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '读取受保护数据' }).click(); await expect(page.getByRole('status').filter({ hasText: '请求租户：tenant-a' })).toBeVisible();
   await accessible(page); await noCredentials(page);
@@ -35,7 +35,7 @@ test('密码登录校验与错误恢复，经 SDK mock 成功后进入单侧栏�
 
 test('多租户二次选择及切换后，UI 与 SDK 请求头一起更新', async ({ page }) => {
   await page.goto('/shell.html?component=Authentication&state=MultiTenant'); await login(page);
-  await expect(page.getByRole('heading', { name: '选择租户', exact: true })).toBeVisible(); await accessible(page);
+  await expect(page.getByRole('heading', { name: '选择要进入的工作空间', exact: true })).toBeVisible(); await accessible(page);
   await page.getByRole('button', { name: '生产租户', exact: true }).focus(); await page.keyboard.press('Enter');
   await page.getByRole('button', { name: '读取受保护数据' }).click(); await expect(page.getByText('请求租户：tenant-b', { exact: true })).toBeVisible();
   await page.getByRole('combobox', { name: '切换租户' }).click(); await accessible(page); await page.getByRole('option', { name: '研发租户' }).click();
@@ -45,7 +45,7 @@ test('多租户二次选择及切换后，UI 与 SDK 请求头一起更新', asy
 for (const state of ['Default', 'MultiTenant']) test(`SSO 真跳转到回调页并完成 ${state}`, async ({ page }) => {
   await page.goto(`/shell.html?component=Authentication&state=${state}`);
   const navigations: string[] = []; page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations.push(frame.url()); });
-  await page.getByRole('button', { name: '企业单点登录' }).click();
+  await page.getByRole('button', { name: '单点登录', exact: true }).click();
   if (state === 'MultiTenant') await page.getByRole('button', { name: '研发租户', exact: true }).click();
   await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
   expect(navigations.some(url => url.includes('code=mock-code') && url.includes('auth_state=mock-state'))).toBe(true);
@@ -54,9 +54,9 @@ for (const state of ['Default', 'MultiTenant']) test(`SSO 真跳转到回调页�
 
 for (const query of ['state=CallbackFailure', 'code=invalid&auth_state=bad']) test(`SSO 回调失败有错误态和返回路径 ${query}`, async ({ page }) => {
   await page.goto(`/shell.html?component=Authentication&${query}`);
-  if (query.startsWith('state=')) await page.getByRole('button', { name: '企业单点登录' }).click();
+  if (query.startsWith('state=')) await page.getByRole('button', { name: '单点登录', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('单点登录未完成'); await accessible(page);
-  await page.getByRole('button', { name: '返回登录' }).click(); await expect(page.getByLabel(/账号/)).toBeVisible(); await noCredentials(page);
+  await page.getByRole('button', { name: '返回登录' }).click(); await expect(page.getByLabel('账号', { exact: true })).toBeVisible(); await noCredentials(page);
 });
 
 test('401 且刷新失败只弹一个过期弹窗，明确重新登录后恢复', async ({ page }) => {
@@ -79,7 +79,8 @@ test('菜单路由、侧栏、偏好、代管横幅及异常恢复可操作', as
   await page.getByRole('button', { name: '模拟渲染失败' }).click(); await expect(page.getByRole('heading', { name: '页面暂时无法使用' })).toBeVisible(); await expect(page.locator('body')).not.toContainText('internal-stack');
   await page.getByRole('button', { name: '重试', exact: true }).click(); await expect(page.getByTestId('yue-fallback-page')).not.toBeVisible();
   await page.getByRole('button', { name: '用户菜单' }).click(); await accessible(page); await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: '语言' }).click(); await page.getByRole('menuitemradio', { name: 'English' }).click(); await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible(); await noCredentials(page);
+  // 语言在账号菜单的子菜单里（S1-YUE-019 按原型），顶栏只留主题；子菜单用方向键打开（合成点击瞬移指针会被悬停判定关掉，见 qian-shell federation.spec）。
+  await page.getByRole('button', { name: '用户菜单' }).click(); await page.getByRole('menuitem', { name: '语言', exact: true }).press('ArrowRight'); await page.getByRole('menuitemradio', { name: 'English' }).click(); await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible(); await noCredentials(page);
 });
 
 test('浏览器离线事件显示横幅，恢复后保留页面', async ({ page, context }) => {

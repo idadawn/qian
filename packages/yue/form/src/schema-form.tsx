@@ -31,7 +31,7 @@ export interface SchemaFormProps {
   inlineActions?: boolean;
   /** 输入框下方、字段说明之前的附加内容（如密码强度），按字段路径与当前值给出；内容经 aria-describedby 关联到输入框。 */
   fieldExtra?: (path: string, value: unknown) => ReactNode;
-  /** 输入框的修饰：suffix 显示在输入框内的末端（如单位「人」、「✓ 可以使用」），addon 排在输入框右侧（如「重新发送」按钮）；suffix 经 aria-describedby 关联到输入框。 */
+  /** 输入框的修饰：suffix 显示在输入框内的末端（如「✓ 可以使用」），unit 是输入框右侧的单位文字（如「人」），addon 排在输入框右侧（如「重新发送」按钮）；suffix 与 unit 经 aria-describedby 关联到输入框。 */
   fieldAdornment?: (path: string, value: unknown) => FieldAdornment | null | undefined;
   /** 控件尺寸：md 36px（默认，抽屉内为 38px）、lg 40px（申请表单，操作按钮 44px）、xl 44px（认证页）。 @default 'md' */
   size?: 'md' | 'lg' | 'xl';
@@ -43,7 +43,7 @@ export interface SchemaFormProps {
   groupVariant?: 'divided' | 'card';
   children?: ReactNode;
 }
-export interface FieldAdornment { suffix?: ReactNode; addon?: ReactNode }
+export interface FieldAdornment { suffix?: ReactNode; unit?: ReactNode; addon?: ReactNode }
 
 function addError(errors: FieldErrors<FormValues>, segments: string[], message: string): void {
   let target = errors as Record<string, unknown>;
@@ -97,7 +97,7 @@ function FieldGroup({ id, node, i18n, testId, variant, children }: { id: string;
     className={card ? 'm-0 grid min-w-0 gap-5 rounded-xl border border-border bg-card p-6' : 'm-0 grid min-w-0 gap-4 border-0 border-t border-border p-0 pt-5 first:border-t-0 first:pt-0'}>
     <div className="flex items-start gap-3" data-slot="schema-group-header" data-testid={`${testId}-header`}>
       {marker !== undefined && <span aria-hidden="true" data-slot="schema-group-marker" data-testid={`${testId}-marker`} className={card ? 'inline-flex size-6.5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[13px] font-bold text-primary-soft-foreground' : 'inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary-soft-foreground'}>{marker}</span>}
-      <div className="grid min-w-0 gap-0.5"><h3 id={`${id}-title`} className={card ? 'm-0 text-base font-semibold leading-6' : 'm-0 text-[15px] font-semibold leading-6'}>{i18n.t(node.labelKey!)}</h3>
+      <div className={cn('grid min-w-0', !card && 'gap-0.5')}><h3 id={`${id}-title`} className={card ? 'm-0 text-base font-semibold leading-6' : 'm-0 text-[15px] font-semibold leading-6'}>{i18n.t(node.labelKey!)}</h3>
         {description && <p id={`${id}-description`} className="m-0 text-[13px] text-muted-foreground">{description}</p>}</div>
     </div>
     {children}
@@ -198,7 +198,8 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
       const hasExtra = extra !== undefined && extra !== null && extra !== false;
       const adornment = readonly ? undefined : fieldAdornment?.(path, getValue(values, path)) ?? undefined;
       const suffix = adornment?.suffix ?? null;
-      const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : '', hasExtra ? `${fieldId}-extra` : '', suffix ? `${fieldId}-suffix` : ''].filter(Boolean).join(' ') || undefined;
+      const unit = adornment?.unit ?? null;
+      const describedBy = [error ? `${fieldId}-error` : '', description ? `${fieldId}-description` : '', hasExtra ? `${fieldId}-extra` : '', suffix ? `${fieldId}-suffix` : '', unit ? `${fieldId}-unit` : ''].filter(Boolean).join(' ') || undefined;
       const full = ui.props?.span === 'full' || ui.widget === 'qian.textarea';
       return <CoreField className={horizontal ? cn('grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2', full && 'col-span-full') : full ? 'col-span-full' : undefined} key={path} name={path} invalid={!!error} data-slot="schema-field" testId={`${testId}-field-${path}`}>
         <FieldLabel className={horizontal ? 'col-start-2 row-start-1 leading-5' : undefined} htmlFor={fieldId}>{label}{required ? <span aria-hidden className="text-destructive"> *</span> : null}</FieldLabel>
@@ -232,6 +233,7 @@ export function SchemaForm({ schema, i18n, initialValues, mode = 'edit', onSubmi
           if (!adornment) return control;
           return <div className="flex min-w-0 gap-2" data-slot="schema-field-control">
             <div className="relative flex min-w-0 flex-1 items-center">{control}{suffix && <span id={`${fieldId}-suffix`} data-slot="schema-field-suffix" data-testid={`${testId}-suffix-${path}`} className="pointer-events-none absolute end-3 inline-flex max-w-24 items-center gap-1 truncate text-[13px] text-muted-foreground">{suffix}</span>}</div>
+            {unit && <span id={`${fieldId}-unit`} data-slot="schema-field-unit" data-testid={`${testId}-unit-${path}`} className="inline-flex shrink-0 items-center text-caption-foreground">{unit}</span>}
             {adornment.addon && <div className="flex shrink-0 items-stretch [--yue-button-height:var(--yue-input-height)]" data-slot="schema-field-addon">{adornment.addon}</div>}
           </div>;
         })()}

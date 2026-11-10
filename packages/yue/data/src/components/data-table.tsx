@@ -94,7 +94,8 @@ export function DataTable<T extends object>({ columns, data, total, query, onQue
         {toolbarEnd}
       </div>}
     </div>
-    <div className="overflow-auto outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50" tabIndex={0} role="region" aria-label={label}>
+    {/* 横向滚动区可聚焦以便键盘滚动；外层 section 已是同名地标，这里用 group，避免出现两个同名 region。 */}
+    <div className="overflow-auto outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50" tabIndex={0} role="group" aria-label={label}>
       <table dir={direction} className="w-full caption-bottom border-collapse text-sm" aria-label={label}>
         <thead className="bg-table-header"><tr className="border-y border-border text-[13px] text-caption-foreground">{selectable && <th scope="col" className={cn(cell, 'w-10 py-2.5')}><Checkbox aria-label={i18n.t('data.selectAll')} checked={table.getIsAllPageRowsSelected()} indeterminate={table.getIsSomePageRowsSelected()} onCheckedChange={checked => table.toggleAllPageRowsSelected(!!checked)} /></th>}
           {visible.map(column => <th scope="col" key={column.id} style={pinned(column.id)} className={cn(cell, 'py-2.5 text-[13px] font-medium', align(column.id), column.getIsPinned() && 'bg-table-header')} aria-sort={column.getIsSorted() === 'asc' ? 'ascending' : column.getIsSorted() === 'desc' ? 'descending' : undefined}>

@@ -13,7 +13,8 @@ const tints: Record<AvatarTint, string> = {
   amber: 'bg-warn-bg text-warn',
   violet: 'bg-tint-violet text-tint-violet-foreground',
   teal: 'bg-tint-teal text-tint-teal-foreground',
-  gray: 'bg-neutral-bg text-neutral',
+  // 停用对象：浅灰底（白底上即 #ededed）配次要文字色，与原型冻结租户的标识一致。
+  gray: 'bg-border/70 text-subtle-foreground',
 };
 /** 按名称轮换的点缀色，供列表里的租户、应用等标识色块使用。 */
 export const AVATAR_TINTS: readonly AvatarTint[] = ['blue', 'amber', 'green', 'violet', 'teal'];

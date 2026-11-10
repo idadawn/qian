@@ -43,4 +43,5 @@ export function SheetTitle({ className, testId, ...props }: SheetTitleProps) { r
 export type SheetDescriptionProps = YueProps<ComponentProps<typeof Base.Description>>;
 export function SheetDescription({ className, testId, ...props }: SheetDescriptionProps) { return <Base.Description {...props} data-slot="sheet-description" data-testid={testId ?? 'yue-sheet-description'} className={cn('text-[13px] text-muted-foreground', className)} />; }
 export type SheetCloseProps = YueProps<ComponentProps<typeof Base.Close>>;
-export function SheetClose({ className, testId, ...props }: SheetCloseProps) { return <ButtonIdentity slot="sheet-close" testId={testId ?? 'yue-sheet-close'}><Base.Close {...props} data-slot="sheet-close" data-testid={testId ?? 'yue-sheet-close'} className={cn(button, className)} /></ButtonIdentity>; }
+// 经 render 交给 Button 渲染时不再叠基础按钮类：Button 自带一套，再叠会让基础类里的 border-transparent 盖掉描边变体的边框。
+export function SheetClose({ className, testId, render, ...props }: SheetCloseProps) { return <ButtonIdentity slot="sheet-close" testId={testId ?? 'yue-sheet-close'}><Base.Close {...props} data-slot="sheet-close" data-testid={testId ?? 'yue-sheet-close'} render={render} className={render ? className : cn(button, className)} /></ButtonIdentity>; }
