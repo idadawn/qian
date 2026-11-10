@@ -245,7 +245,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **设计理念**。租户是平台可信计算基的第一道边界：租户上下文只来自已校验令牌，解析不到即拒绝（fail-closed），非 HTTP 入口（消费者、作业、Agent）显式传播并逐跳校验。租户控制面与业务面分离，业务面只消费「租户上下文契约」（租户号、隔离策略与连接、生效插件清单、配额、状态）。参考平台的租户解析缓存未命中静默落默认库、到期不踢已登录用户、「永久删除」实为软删不清库，是反例。
 
-**范围与边界**。✅ 做：租户主档（租户号小写字母数字、创建后不可改，兼作登录租户标识）；隔离策略装配（默认共享库 + `tenant_id` + PG RLS，创建时一次性决定，ADR-004）；显式状态机与事件；开通编排（幂等步骤表）；单管理员 + 用户配额（不计平台超管、计租户管理员，补充裁决 Q12）；租户配置服务（租户级在线配置，不进 Apollo，ADR-007）；租户事件与配额查询契约；运营后台最小 CRUD；切换租户的令牌重签模型（与 7.4 共担）；租户自助开通——申请人验证手机号后提交申请、平台超管审核、通过即开通并激活（S1-DEC-032 自 S3 提前，规格 [specs/tenant-signup.md](specs/tenant-signup.md)，组件 `qian.tenancy.signup`）。❌ 不做：加入/退出与邀请 UI（S3）；多管理员、邀请链接（S3）；完整状态机尾部（只读、注销与数据销毁，S3）；品牌与自定义登录域（S3，Q4）；套餐下发（S3）；DatabasePerTenant 高隔离档（S3）；SchemaPerTenant 真库验证（P2，仅集成测试）；域名/子域名解析租户（S3）；租户层级多级隔离（不做，用组织树与 `project_id` 在 7.5 解决）。
+**范围与边界**。✅ 做：租户主档（租户号小写字母数字、创建后不可改，兼作登录租户标识）；隔离策略装配（默认共享库 + `tenant_id` + PG RLS，创建时一次性决定，ADR-004）；显式状态机与事件；开通编排（幂等步骤表）；单管理员 + 用户配额（不计平台超管、计租户管理员，补充裁决 Q12）；租户配置服务（租户级在线配置，不进 Apollo，ADR-007）；租户事件与配额查询契约；运营后台最小 CRUD；切换租户的令牌重签模型（与 7.4 共担）；租户自助开通——申请人验证手机号后提交申请、平台超管审核、通过即开通并激活（S1-DEC-032 自 S3 提前，规格 [specs/tenant-signup.md](specs/tenant-signup.md)，组件 `qian.tenancy.signup`）。❌ 不做：加入/退出与邀请 UI（S3；租户管理员直接新增成员已提前到 S1，见 7.4.3）；多管理员、邀请链接（S3）；完整状态机尾部（只读、注销与数据销毁，S3）；品牌与自定义登录域（S3，Q4）；套餐下发（S3）；DatabasePerTenant 高隔离档（S3）；SchemaPerTenant 真库验证（P2，仅集成测试）；域名/子域名解析租户（S3）；租户层级多级隔离（不做，用组织树与 `project_id` 在 7.5 解决）。
 
 **技术落点**。组件 `qian.tenancy`：Definition `Qian.Tenancy.Abstractions`（服务键 `ctx.Tenancy`）+ Provider `Qian.Tenancy`，默认进 `platform` profile 的 base 组合包，可独立安装（`qian add tenancy`；独立模式下宿主可改提供自己的 `ITenantContext` 或选 `SingleTenant`）；schema `tenancy`；依赖 `Kun.MultiTenancy`（修复后）、`Kun.EntityFrameworkCore` 三策略 Provisioner、`Kun.EventBus`。
 
@@ -327,7 +327,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 **设计理念**。组织树、岗位、用户档案是 RBAC 主体、审批人解析与数据权限变量的基础主体；ADR-012 要求「组织模型含岗位/责任岗位/组织类型与上级查询契约」在 S1 落地。档案与凭据分离：HR 字段不进平台插件。S1 把目录作为 `qian.identity` 的子模块交付，不独立成插件（ADR-003 已裁决，R1；见章末待确认第 2 条）。
 
-**范围与边界**。✅ 做：单棵组织树（类型为租户可配字典，层级上限默认 9，路径冗余，主管字段，子树有人则拒删）；岗位树（默认岗位、责任岗位标记、责任人）；用户档案 `UserProfile`（1:1 Membership，姓名、拼音、联系方式、扩展 jsonb）；成员多组织多岗位归属 + 主归属；用户状态机 `启用 ⇄ 禁用 → 锁定`，「删除」= 禁用 + 标记；用户组（纯集合，P1）；派生查询契约（直属主管、上级链、部门负责人、`@下属 / @子孙`）；目录变更事件（CloudEvents）；批量操作三态结果。❌ 不做：岗位/角色约束互斥、基数、先决（S3）；Excel 导入向导（S2，框架契约在 7.2.1）；工作交接（S3，扩展点 `IUserAssetHandover` S2 预留）；目录同步企微/钉钉/飞书/SCIM/LDAP（S3）；通讯录页面（S3）。
+**范围与边界**。✅ 做：单棵组织树（类型为租户可配字典，层级上限默认 9，路径冗余，主管字段，子树有人则拒删）；岗位树（默认岗位、责任岗位标记、责任人）；用户档案 `UserProfile`（1:1 Membership，姓名、拼音、联系方式、扩展 jsonb）；成员多组织多岗位归属 + 主归属；用户状态机 `启用 ⇄ 禁用 → 锁定`，「删除」= 禁用 + 标记；用户组（纯集合，P1）；派生查询契约（直属主管、上级链、部门负责人、`@下属 / @子孙`）；目录变更事件（CloudEvents）；批量操作三态结果；成员管理最小集（S1-DEC-033 D5 自 S3 提前，R145）：租户管理员直接新增成员（新建账号或绑定已有自然人，受用户配额约束）与成员管理页（列表、新增、启停、组织与岗位归属）。❌ 不做：岗位/角色约束互斥、基数、先决（S3）；Excel 导入向导（S2，框架契约在 7.2.1）；工作交接（S3，扩展点 `IUserAssetHandover` S2 预留）；目录同步企微/钉钉/飞书/SCIM/LDAP（S3）；面向全体成员的通讯录页面（S3）；邀请链接、自助加入与退出（S3，见 7.3）。
 
 **技术落点**。表 `organizations`（含 `path`、`org_type`、`manager_membership_id`、`responsible_position_id`）、`org_types`、`positions`、`groups`、`member_relations`（membership × objectType × objectId × isPrimary）、`user_profiles`；API `GET /api/directory/orgs/tree`、`/orgs/{id}/members`、`/members/{id}/manager`、`/members/{id}/superiors`、`/positions/{id}/holders`、`/me/subordinates?depth=`；事件 `directory.org.*`、`directory.position.*`、`directory.member.*.v1`；SCIM 2.0 核心 schema 作为对外契约（S3 实现 Server）。责任人解析契约在 S1 定义、S2 由流程消费。
 
@@ -340,6 +340,7 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - [ ] IT：`/members/{id}/superiors` 按岗位链返回上级责任人序列；主归属变化后结果随之变化。
 - [ ] IT：批量禁用 10 人其中 2 人为租户管理员，返回 `PARTIAL_SUCCESS` + 逐条 items[]。
 - [ ] E2E：参考应用用 `OrganizeSelect` 选部门、`UserSelect` 选人，数据来自本租户目录。
+- [ ] E2E：租户管理员在成员管理页新增成员（新建账号与绑定已有自然人两条路径），新成员能登录本租户；用户配额已满时返回结构化错误且无写入（S1-IDP-017 / S1-IDP-018，R145）。
 
 ### 7.5 qian.authz 鉴权引擎（P0 · S1）
 
@@ -743,6 +744,8 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 - 环境：同集群按 ns 分 staging / prod；生产建议独立节点池（按物理宿主计故障域；现网三节点只跨两台宿主、几乎全钉首节点、唯一存储类 local-path）。
 
 过渡态（2026-10）：现网无 Apollo、无 MySQL、无 Alertmanager、K3s 上无 RabbitMQ、Infisical 注入未接通、业务 ns NetworkPolicy 为零、无 ResourceQuota/LimitRange/HPA、多处 `:latest`；首节点同时是唯一 GPU 节点与 CI runner。Qian 多租户上线前必须先补上述治理项。
+
+staging 首次部署（2026-11，S1-DEC-033 D2，R143）：「初步可用」里程碑期间，staging 先按平台与身份同进程、网关独立的过渡形状部署，清单手写（S1-DEP-011，ADR-017 §10）。它不计入本节验收：三镜像形状、发布链与四依赖联调仍按下列验收标准，由 S1-DEP-005 把关。
 
 **插件化定位**。部署物料不是组件，但 `qian pack` 的生成器与 `qian.lifecycle` 的 `IDeploymentExecutor`（7.2.1）是它的入口；每个 `runtime.form: service` 组件自带部署段（镜像 digest、资源、Secret 键名、健康端点）。
 

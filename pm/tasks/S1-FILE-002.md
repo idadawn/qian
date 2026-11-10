@@ -5,7 +5,7 @@ status: todo
 stage: S1
 area: FILE
 wave: 2
-priority: P0
+priority: P1
 type: feature
 owner: ""
 estimate: 3d
@@ -13,7 +13,7 @@ depends: [S1-FILE-001, S1-CFG-002, S1-RT-002]
 refs:
   - docs/prd/07-s1-foundation.md#7.7
   - docs/adr/ADR-020-component-model-v2.md#2
-updated: 2026-10-06
+updated: 2026-11-11
 ---
 
 ## 背景
@@ -29,3 +29,4 @@ ADR-020 D20.4 的样例 seam：`Qian.Files.Oss`（现网对象存储）/ `Qian.F
 ## 进度日志
 
 - 2026-10-06 planner：创建任务
+- 2026-11-11 claude：优先级 P0 → P1：不在「初步可用」里程碑路径上，只改先后、不改 S1 退出标准，里程碑达成后复核（S1-DEC-033 D1）
