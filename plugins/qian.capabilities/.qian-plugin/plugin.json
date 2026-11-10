@@ -38,7 +38,6 @@
   "scopes": [
     "global"
   ],
-  "x-skeleton": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Capabilities.CapabilitiesComponent, Qian.Capabilities",

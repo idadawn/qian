@@ -42,7 +42,7 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
 });
 test('交付的五个 profile 具有正确业务边界及骨架警告',()=>{
  // [条目数, 骨架警告数]：qian.data / qian.events / qian.config / qian.files / qian.identity.client 经真实安装后不再是骨架；identity 含开通申请组件 qian.tenancy.signup（S1-TEN-019，骨架）。
- for(const[profile,[count,skeletons]]of Object.entries({platform:[21,17],gateway:[6,5],identity:[9,7],standalone:[3,1],minimal:[0,0]})){
+ for(const[profile,[count,skeletons]]of Object.entries({platform:[21,11],gateway:[6,5],identity:[9,5],standalone:[3,0],minimal:[0,0]})){
   const result=loadProfile({workingDirectory:root,profile,includeHomePatch:false});
   assert.ok(result.isValid,JSON.stringify(result));assert.equal(result.snapshot.entries.length,count);assert.equal(result.diagnostics.filter(d=>d.severity==='warning').length,skeletons);
   if(profile!=='platform')assert.ok(!result.snapshot.entries.some(e=>/^qian\.(registry|lifecycle|capabilities)@/.test(e.plugin)));

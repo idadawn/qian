@@ -33,7 +33,6 @@
   "scopes": [
     "global"
   ],
-  "x-skeleton": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Authz.AuthzComponent, Qian.Authz",

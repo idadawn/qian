@@ -67,7 +67,7 @@ roles、role_assignments、grants 保留可空 tenant_id 的平台角色存储�
 
 数据与字段端口在 S2 编译器交付前恒拒绝：`GetExpressionAsync` 返回恒假表达式，`GetPredicateAsync` 抛 AUTHZ_DENIED（谓词 AST 还没有「恒假」的约定词汇，返回任何谓词都可能被编译器当作放宽），`IFieldPolicy` 不给任何可读、可写字段。
 
-`plugins/qian.authz` 的代码字段与配置 Schema 已派生，provides 包含上述七个服务键与 `CommandAuthorization`；`x-skeleton: true` 仅表示 `qian add authz` 的完整安装与 Ready 承诺仍待独立验收。配置 Schema 对应 advancedMode、decisionLogSampling 与 platformRole 三个实际解析字段。
+`plugins/qian.authz` 的代码字段与配置 Schema 已派生，provides 包含上述七个服务键与 `CommandAuthorization`；清单已去掉 `x-skeleton`（R144 ③，平台镜像预装、经平台生产宿主装配）；`qian add authz` 的独立安装仍待 S1-RT-040。配置 Schema 对应 advancedMode、decisionLogSampling 与 platformRole 三个实际解析字段。
 
 ## 租户开通（tenant/provisioned）
 
@@ -187,4 +187,4 @@ S1-YUE-012：Qian.Sample.Crm.Tests/AuthzRevisionGuardTests.cs（参考宿主，�
 
 `plugins/qian.authz/.qian-plugin/plugin.json` 的稳定入口是 `AuthzComponent`，允许 global scope，依赖 `Data`，提供 `Authz`、`AuthzPermissions`、`AuthzResourceTypes`、`AuthzSuperadminBypass`、`AuthzSuperadminCheck`、`AuthzEnforcement`、`AuthzTenantRoleGrant` 与 `CommandAuthorization`。固定委托无参 `AuthzPlugin`，不预置权限目录；宿主可单独登记活动目录。`AuthzPlugin(catalogs)` 与 `FromInstalledComponents()` 保留为程序化装配构件，后者的额外 `Registry` 依赖不合并进此入口。
 
-入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代 `qian add` 的真实安装验收：清单已去掉 `x-skeleton`（R144 ③），安装路径是平台镜像预装，启动证据是[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)的 profile 装配与集成测试；`qian add` 独立安装另见 S1-RT-040。

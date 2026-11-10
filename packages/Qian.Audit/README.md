@@ -82,4 +82,4 @@ RT-009 的已授权 hook 调用使用 hook 审计通道；SDK 可信适配器与
 
 `plugins/qian.audit/.qian-plugin/plugin.json` 的稳定入口是 `AuditComponent`，允许 global / tenant scope，依赖 `Data`，提供 `Audit` 与 `CommandAudit`。固定委托无参 `AuditPlugin`；宿主仍准备受限数据上下文与可选的平台审计登录。
 
-入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代 `qian add` 的真实安装验收：清单已去掉 `x-skeleton`（R144 ③），安装路径是平台镜像预装，启动证据是[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)的 profile 装配与集成测试；`qian add` 独立安装另见 S1-RT-040。

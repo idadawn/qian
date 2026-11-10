@@ -1,6 +1,6 @@
 # Qian.Lifecycle
 
-平台生命周期控制器是 `Lifecycle` seam 的 Provider（服务键 `ctx.Lifecycle`），只进入 `platform` profile 的 base 组合包。Definition 在 `Qian.Lifecycle.Abstractions`，管理面 HTTP 适配器在 `Qian.Lifecycle.AspNetCore`。分发表面 `plugins/qian.lifecycle` 已带完整的配置 Schema 与诊断、批准两个权限声明，代码字段与配置 Schema 已由稳定入口派生；尚未通过完整安装门，清单继续保留 `x-skeleton`。设计依据：PRD 7.2.1 / 7.17、ADR-020 §2、组件规格 §7.6，任务 S1-RT-005。
+平台生命周期控制器是 `Lifecycle` seam 的 Provider（服务键 `ctx.Lifecycle`），只进入 `platform` profile 的 base 组合包。Definition 在 `Qian.Lifecycle.Abstractions`，管理面 HTTP 适配器在 `Qian.Lifecycle.AspNetCore`。分发表面 `plugins/qian.lifecycle` 已带完整的配置 Schema 与诊断、批准两个权限声明，代码字段与配置 Schema 已由稳定入口派生；清单已去掉 `x-skeleton`（R144 ③）：安装路径是平台镜像预装，启动证据是[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)的 profile 装配与集成测试。设计依据：PRD 7.2.1 / 7.17、ADR-020 §2、组件规格 §7.6，任务 S1-RT-005。
 
 控制器管三件事：
 
@@ -251,4 +251,4 @@ S1-RT-029 的 Registry 管理写入通过 `MountAtRevisionAsync` / `UnmountAtRev
 
 `plugins/qian.lifecycle/.qian-plugin/plugin.json` 的稳定入口是 `LifecycleComponent`，允许 global scope，依赖 `Data`、`Registry` 与 `Config`，可选依赖 `Audit` 与 `AuthzSuperadminBypass`（`optionalInject`），提供 `Lifecycle`。使用宿主登记的 `LifecycleRuntimeOptions`，未登记时采用空钩子解析器，再委托 `LifecyclePlugin`。
 
-入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。`optionalInject` 不由生成器派生，手写在清单里，与 `LifecyclePlugin.OptionalInject` 的一致性由 `LifecycleUnitTests` 守住；seam 图把它画成虚线并标「（可选）」，profile 装配在 Provider 在树里时把它排在本组件之前。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。`optionalInject` 不由生成器派生，手写在清单里，与 `LifecyclePlugin.OptionalInject` 的一致性由 `LifecycleUnitTests` 守住；seam 图把它画成虚线并标「（可选）」，profile 装配在 Provider 在树里时把它排在本组件之前。元数据补齐不替代真实安装验收：清单已去掉 `x-skeleton`（R144 ③），本组件只在平台宿主里运行，安装路径是平台镜像预装，启动证据是[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)的 profile 装配与集成测试，不提供 `qian add` 独立安装。
