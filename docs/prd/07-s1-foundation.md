@@ -744,6 +744,8 @@ S1 的 profile 与组合包落位（R31；三节点 K3s 的现实仍然成立：
 
 过渡态（2026-10）：现网无 Apollo、无 MySQL、无 Alertmanager、K3s 上无 RabbitMQ、Infisical 注入未接通、业务 ns NetworkPolicy 为零、无 ResourceQuota/LimitRange/HPA、多处 `:latest`；首节点同时是唯一 GPU 节点与 CI runner。Qian 多租户上线前必须先补上述治理项。
 
+staging 首次部署（2026-11，S1-DEC-033 D2，R143）：「初步可用」里程碑期间，staging 先按平台与身份同进程、网关独立的过渡形状部署，清单手写（S1-DEP-011，ADR-017 §10）。它不计入本节验收：三镜像形状、发布链与四依赖联调仍按下列验收标准，由 S1-DEP-005 把关。
+
 **插件化定位**。部署物料不是组件，但 `qian pack` 的生成器与 `qian.lifecycle` 的 `IDeploymentExecutor`（7.2.1）是它的入口；每个 `runtime.form: service` 组件自带部署段（镜像 digest、资源、Secret 键名、健康端点）。
 
 **Agent 契约**。发布事件、Argo 状态、健康端点机器可读；部署操作全部 `destructive` + `humanOnly`（S4 不开放给 Agent）。
