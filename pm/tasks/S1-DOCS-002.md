@@ -5,7 +5,7 @@ status: todo
 stage: S1
 area: DOCS
 wave: 2
-priority: P0
+priority: P1
 type: feature
 owner: ""
 estimate: 5d
@@ -17,7 +17,7 @@ refs:
   - docs/prd/specs/component-model.md#2
   - docs/adr/ADR-013-frontend-yue.md#D13.18
   - docs/prd/07-s1-foundation.md#7.2.2
-updated: 2026-10-15
+updated: 2026-11-11
 ---
 
 ## 背景
@@ -40,3 +40,4 @@ updated: 2026-10-15
 - 2026-10-08 claude：S1-DEC-011 裁决：API 参考统一挂 /sdk/api/{dotnet,frontend,http}/（R56），API 页不进侧栏、不渲染侧栏（R54），验收已按此改；产物总大小预算 100 MB（R55），加 Qian.* 与组件页后若超出，先查重复渲染再调预算
 - 2026-10-14 cody：按用户要求与 ADR-022 对齐：复用 YUE-005 的 Rspress core 接入，不再引入 Storybook；保留通用收集和多语言 API 文档范围，补入 Props 完整性、离线及双产物验收。
 - 2026-10-15 cody：按 S1-QA-010 验收要求加入其前置依赖，文档预算整改复核完成后才能开工
+- 2026-11-11 claude：优先级 P0 → P1：不在「初步可用」里程碑路径上，只改先后、不改 S1 退出标准，里程碑达成后复核（S1-DEC-033 D1）
