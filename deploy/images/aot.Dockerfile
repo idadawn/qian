@@ -1,8 +1,9 @@
 # profile 镜像的 NativeAOT 构建模板（S1-DEP-003 / R106），供 qian-gateway 与 AOT 自检镜像使用。
 # 统一入口是 scripts/images.py build。构建阶段用带原生工具链的 SDK 镜像，按目标架构发布 Linux NativeAOT；
 # 运行镜像是 distroless 的 runtime-deps chiseled，只含原生可执行文件，以非 root 用户运行，部署时根文件系统只读。
-ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0-noble-aot@sha256:62a3ebde694544ae0790b5ca2ffd56db04298af5652b7295c88fd61097752664
-ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled@sha256:8d23bb82cd8345ee51738b36c6da8e2f89ded7a547bc25fa52d5cc60e37f6d7a
+# 当前钉定 .NET 10.0.15（SDK 10.0.404）。2026-11-11 从 10.0.13 升级：GHSA-p3jp-9v83-76w9 影响 10.0.14 以前的 ILCompiler 与运行时，NuGet 审计在 AOT 发布时报 NU1903。
+ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0-noble-aot@sha256:7d223c2b945173edb8c73e5f5d48a64e7cd0ca632ccf95170b857e8eea78913c
+ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled@sha256:40eba5db69594d517c3a61e96bdacc2e3d6f8c99a44b52d55edee844d33518d0
 
 FROM ${SDK_IMAGE} AS build
 ARG PROJECT
