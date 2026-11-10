@@ -13,6 +13,7 @@
     "lighthouse": "lhci autorun"
   },
   "dependencies": {
+    "@idadawn/yue-biz": "workspace:^",
     "@idadawn/yue-shell": "workspace:^",
     "@idadawn/yue-core": "workspace:^",
     "@idadawn/yue-data": "workspace:^",

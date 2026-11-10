@@ -13,6 +13,8 @@ const icons = {
   shieldCheck: ShieldCheck, clock: Clock, calendar: Calendar, mail: Mail, phone: Smartphone, externalLink: ExternalLink, panelLeftClose: PanelLeftClose, panelLeftOpen: PanelLeftOpen,
 };
 export type IconName = keyof typeof icons;
+/** 已登记的全部图标名（登记顺序），供图标选择器等列出可选项；与清单 Icon 的 name 枚举一致。 */
+export const ICON_NAMES: readonly IconName[] = Object.freeze(Object.keys(icons) as IconName[]);
 /** 后端或清单给出的图标名是任意字符串：先用它判断是否已登记，未登记的按调用方的缺省图标显示。 */
 export function isIconName(value: unknown): value is IconName { return typeof value === 'string' && Object.hasOwn(icons, value); }
 export type IconProps = YueProps<Omit<ComponentProps<'svg'>, 'name'>> & {

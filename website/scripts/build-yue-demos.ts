@@ -13,11 +13,14 @@ fs.mkdirSync(cache, { recursive: true });
 const data = readYueDocs();
 const dataSource = fs.readFileSync(path.join(WEBSITE_ROOT, '../packages/yue/data/docs/examples/data-demo.tsx'), 'utf8');
 const shellSource = fs.readFileSync(path.join(WEBSITE_ROOT, '../packages/yue/shell/docs/examples/shell-demo.tsx'), 'utf8');
+const bizSource = fs.readFileSync(path.join(WEBSITE_ROOT, '../packages/yue/biz/docs/examples/biz-demo.tsx'), 'utf8');
+const bizComponents = ['ApiSelect', 'DictSelect', 'OrganizeSelect', 'UserSelect', 'RoleSelect', 'AuthorizationTree', 'IconPicker'];
 const dataComponents = ['DataTable', 'Tree', 'TreeSelect', 'Cascader', 'DatePicker', 'DateRange', 'TimePicker', 'TimeRange', 'Upload', 'ImagePreview'];
 fs.writeFileSync(path.join(cache, 'sources.json'), JSON.stringify({
   ...Object.fromEntries(data.docs.map(d => [d.name, d.source])),
   ...Object.fromEntries(dataComponents.map(name => [name, dataSource])),
   ...Object.fromEntries(['AppShell', 'Authentication', 'FallbackPage'].map(name => [name, shellSource])),
+  ...Object.fromEntries(bizComponents.map(name => [name, bizSource])),
   SchemaForm: fs.readFileSync(path.join(WEBSITE_ROOT, '../packages/yue/form/docs/examples/schema-form-demo.tsx'), 'utf8'),
 }));
 const vendor = path.join(WEBSITE_ROOT, 'docs/public/yue-vendor');

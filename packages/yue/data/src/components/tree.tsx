@@ -27,6 +27,8 @@ export interface TreeProps extends TestIdProps {
   onSelectedChange?: ((id: string | null) => void) | undefined;
   checkedIds?: string[];
   onCheckedChange?: (ids: string[]) => void;
+  /** 复选是否级联：默认 true，勾选分支连同未禁用的后代一起勾选、分支显示后代的合成状态；false 时每个节点独立勾选（如成员的多组织归属）。 */
+  cascade?: boolean;
   virtual?: boolean;
   height?: number;
   rowHeight?: number;
@@ -76,6 +78,7 @@ export function Tree({
   onSelectedChange,
   checkedIds,
   onCheckedChange,
+  cascade = true,
   virtual,
   height = 320,
   rowHeight = 32,
@@ -99,7 +102,7 @@ export function Tree({
   const rendered = virtualized ? virtualizer.getVirtualItems().map((item) => ({ item: visible[item.index]!, index: item.index, start: item.start }))
     : visible.map((item, index) => ({ item, index, start: 0 }));
   const checked = new Set(checkedIds ?? []);
-  const descendants = (node: TreeNode): string[] => node.disabled ? [] : [node.id, ...(node.children ?? []).flatMap(descendants)];
+  const descendants = (node: TreeNode): string[] => node.disabled ? [] : cascade ? [node.id, ...(node.children ?? []).flatMap(descendants)] : [node.id];
   const toggleChecked = (node: TreeNode) => {
     const ids = descendants(node);
     const all = ids.every((id) => checked.has(id));

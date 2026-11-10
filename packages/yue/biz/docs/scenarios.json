@@ -1,0 +1,168 @@
+[
+  {
+    "id": "ApiSelect.Default",
+    "component": "ApiSelect",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "ApiSelect"
+    }
+  },
+  {
+    "id": "ApiSelect.Dark",
+    "component": "ApiSelect",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "ApiSelect"
+    }
+  },
+  {
+    "id": "DictSelect.Default",
+    "component": "DictSelect",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "DictSelect"
+    }
+  },
+  {
+    "id": "DictSelect.Dark",
+    "component": "DictSelect",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "DictSelect"
+    }
+  },
+  {
+    "id": "OrganizeSelect.Default",
+    "component": "OrganizeSelect",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "OrganizeSelect"
+    }
+  },
+  {
+    "id": "OrganizeSelect.Dark",
+    "component": "OrganizeSelect",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "OrganizeSelect"
+    }
+  },
+  {
+    "id": "OrganizeSelect.Multiple",
+    "component": "OrganizeSelect",
+    "state": "Multiple",
+    "theme": "light",
+    "props": {
+      "kind": "OrganizeSelect",
+      "multiple": true
+    }
+  },
+  {
+    "id": "UserSelect.Default",
+    "component": "UserSelect",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "UserSelect"
+    }
+  },
+  {
+    "id": "UserSelect.Dark",
+    "component": "UserSelect",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "UserSelect"
+    }
+  },
+  {
+    "id": "UserSelect.Multiple",
+    "component": "UserSelect",
+    "state": "Multiple",
+    "theme": "light",
+    "props": {
+      "kind": "UserSelect",
+      "multiple": true
+    }
+  },
+  {
+    "id": "UserSelect.Error",
+    "component": "UserSelect",
+    "state": "Error",
+    "theme": "light",
+    "props": {
+      "kind": "UserSelect",
+      "invalid": true
+    }
+  },
+  {
+    "id": "RoleSelect.Default",
+    "component": "RoleSelect",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "RoleSelect"
+    }
+  },
+  {
+    "id": "RoleSelect.Dark",
+    "component": "RoleSelect",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "RoleSelect"
+    }
+  },
+  {
+    "id": "RoleSelect.Multiple",
+    "component": "RoleSelect",
+    "state": "Multiple",
+    "theme": "light",
+    "props": {
+      "kind": "RoleSelect",
+      "multiple": true
+    }
+  },
+  {
+    "id": "AuthorizationTree.Default",
+    "component": "AuthorizationTree",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "AuthorizationTree"
+    }
+  },
+  {
+    "id": "AuthorizationTree.Dark",
+    "component": "AuthorizationTree",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "AuthorizationTree"
+    }
+  },
+  {
+    "id": "IconPicker.Default",
+    "component": "IconPicker",
+    "state": "Default",
+    "theme": "light",
+    "props": {
+      "kind": "IconPicker"
+    }
+  },
+  {
+    "id": "IconPicker.Dark",
+    "component": "IconPicker",
+    "state": "Dark",
+    "theme": "dark",
+    "props": {
+      "kind": "IconPicker"
+    }
+  }
+]

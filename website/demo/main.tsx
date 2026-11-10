@@ -5,12 +5,15 @@ import * as Form from '@idadawn/yue-form';
 import * as Sdk from '@idadawn/yue-sdk';
 import * as Data from '@idadawn/yue-data';
 import * as Shell from '@idadawn/yue-shell';
+import * as Biz from '@idadawn/yue-biz';
 import { SHELL_DEMOS } from '../../packages/yue/shell/docs/examples/shell-demo';
 import shellScenarios from '../../packages/yue/shell/docs/scenarios.json';
 import { DATA_DEMOS } from '../../packages/yue/data/docs/examples/data-demo';
 import dataScenarios from '../../packages/yue/data/docs/scenarios.json';
 import SchemaFormDemo from '../../packages/yue/form/docs/examples/schema-form-demo';
 import formScenarios from '../../packages/yue/form/docs/scenarios.json';
+import { BIZ_DEMOS } from '../../packages/yue/biz/docs/examples/biz-demo';
+import bizScenarios from '../../packages/yue/biz/docs/scenarios.json';
 import { TOKEN_REGISTRY, initializeTheme } from '@idadawn/yue-tokens';
 import { DEMOS, type DemoProps } from '../../packages/yue/core/docs/examples/catalog';
 import scenarios from '../../packages/yue/core/docs/scenarios.json';
@@ -21,9 +24,9 @@ const query = new URLSearchParams(location.search);
 const name = query.get('component') ?? 'Button';
 const initialState = query.get('state') ?? (name === 'Tokens' ? 'Light' : name === 'FallbackPage' ? 'Forbidden' : 'Default');
 const themes = ['light', 'dark'] as const;
-const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空', Compact: '紧凑', Managed: '平台代管', Offline: '离线', MultiTenant: '多租户', CallbackFailure: '回调失败', Forbidden: '403 无权限', NotFound: '404 不存在', ServerError: '500 错误' };
-const modules: Record<string, unknown> = { react: React, '@idadawn/yue-core': Core, '@idadawn/yue-form': Form, '@idadawn/yue-data': Data, '@idadawn/yue-sdk': Sdk, '@idadawn/yue-shell': Shell, '@idadawn/yue-tokens': { TOKEN_REGISTRY, initializeTheme } };
-const states = [...scenarios, ...formScenarios, ...dataScenarios, ...shellScenarios].filter(s => s.component === name);
+const labels: Record<string, string> = { Default: '默认', Light: '明亮', Dark: '暗色', Disabled: '禁用', Error: '错误', Hover: '悬停', Readonly: '只读', Loading: '加载', Empty: '空', Compact: '紧凑', Multiple: '多选', Managed: '平台代管', Offline: '离线', MultiTenant: '多租户', CallbackFailure: '回调失败', Forbidden: '403 无权限', NotFound: '404 不存在', ServerError: '500 错误' };
+const modules: Record<string, unknown> = { react: React, '@idadawn/yue-core': Core, '@idadawn/yue-form': Form, '@idadawn/yue-data': Data, '@idadawn/yue-sdk': Sdk, '@idadawn/yue-shell': Shell, '@idadawn/yue-biz': Biz, '@idadawn/yue-tokens': { TOKEN_REGISTRY, initializeTheme } };
+const states = [...scenarios, ...formScenarios, ...dataScenarios, ...shellScenarios, ...bizScenarios].filter(s => s.component === name);
 let editorPromise: Promise<void> | undefined;
 function script(url: string) {
   return new Promise<void>((resolve, reject) => {
@@ -58,7 +61,7 @@ function App() {
   const [edited, setEdited] = React.useState<React.ComponentType<DemoProps> | null>(null);
   const editorHost = React.useRef<HTMLDivElement>(null);
   const editor = React.useRef<ReturnType<Window['monaco']['editor']['create']> | null>(null);
-  const original = name === 'Tokens' ? Tokens : name === 'SchemaForm' ? SchemaFormDemo : SHELL_DEMOS[name as keyof typeof SHELL_DEMOS] ?? DATA_DEMOS[name] ?? DEMOS[name as keyof typeof DEMOS];
+  const original = name === 'Tokens' ? Tokens : name === 'SchemaForm' ? SchemaFormDemo : SHELL_DEMOS[name as keyof typeof SHELL_DEMOS] ?? DATA_DEMOS[name] ?? BIZ_DEMOS[name] ?? DEMOS[name as keyof typeof DEMOS];
   const Demo = edited ?? original;
   const scenario = states.find(s => s.state === state) ?? states[0];
   React.useEffect(() => {

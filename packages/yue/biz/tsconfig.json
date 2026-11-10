@@ -1,8 +1,14 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "types": [
+      "vitest/browser",
+      "node"
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "vitest.config.ts"
+  ]
 }
