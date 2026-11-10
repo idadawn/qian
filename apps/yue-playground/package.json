@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --config vite.shell.config.ts",
+    "build": "vite build && vite build --config vite.shell.config.ts && vite build --config vite.biz.config.ts",
     "preview": "vite preview --strictPort --host 127.0.0.1 --port 4173",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "e2e": "playwright test",

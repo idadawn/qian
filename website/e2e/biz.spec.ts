@@ -24,7 +24,8 @@ for (const scenario of scenarios) test(`${scenario.component}/${scenario.state} 
       await page.getByRole('button', { name: '重试' }).click();
     }
     await page.getByRole('combobox', { name: labels[scenario.component], exact: true }).click();
-    const option = page.getByRole('option').first();
+    // 选项只在选择器弹层里找：演示工具栏的原生 <select> 也有 option 角色。
+    const option = page.getByRole('dialog', { name: `${labels[scenario.component]}选项` }).getByRole('option').first();
     await expect(option).toBeVisible();
     await option.click();
     await expect(value).not.toHaveText('');
