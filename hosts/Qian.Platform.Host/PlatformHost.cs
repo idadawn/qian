@@ -24,20 +24,31 @@ namespace Qian.Platform.Host;
 /// </summary>
 public static class PlatformHost
 {
-    /// <summary>宿主入口：<c>--migrate-only</c> 只执行包内迁移后退出，否则装配、监听直到停机。</summary>
+    /// <summary>
+    /// 宿主入口：<c>--migrate-only</c> 只执行包内迁移后退出，否则装配、监听直到停机。装配、迁移或启动失败时把异常写到标准错误并返回 1，不让异常逃出 Main：
+    /// 容器里宿主是 PID 1，未处理异常走 abort，内核对 PID 1 忽略这个信号，进程不退出、占满一个 CPU（镜像实测）；返回退出码，编排器才看得到失败并按策略重启。
+    /// </summary>
     public static async Task<int> RunAsync(string[] args, Action<PlatformHostComposition>? extend = null, Action<WebApplicationBuilder>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(args);
-        await using var app = Build(args, extend, configure);
-        if (QianDataMigrationExtensions.IsMigrateOnly(args))
+        try
         {
-            // K8s 迁移 Job 先行：只在 advisory lock 下执行有包内迁移的上下文，不启动宿主；在线副本启动时只校验。
-            await app.Services.GetRequiredService<IDataMigrator>().MigrateAsync().ConfigureAwait(false);
+            await using var app = Build(args, extend, configure);
+            if (QianDataMigrationExtensions.IsMigrateOnly(args))
+            {
+                // K8s 迁移 Job 先行：只在 advisory lock 下执行有包内迁移的上下文，不启动宿主；在线副本启动时只校验。
+                await app.Services.GetRequiredService<IDataMigrator>().MigrateAsync().ConfigureAwait(false);
+                return 0;
+            }
+            // 先停止 HTTP，再逆序释放插件树（运行时是托管服务，随宿主停止释放）；DI 容器最后释放。
+            await app.RunAsync().ConfigureAwait(false);
             return 0;
         }
-        // 先停止 HTTP，再逆序释放插件树（运行时是托管服务，随宿主停止释放）；DI 容器最后释放。
-        await app.RunAsync().ConfigureAwait(false);
-        return 0;
+        catch (Exception error)
+        {
+            await System.Console.Error.WriteLineAsync("平台宿主未能启动或运行失败，退出码 1：" + Environment.NewLine + error).ConfigureAwait(false);
+            return 1;
+        }
     }
 
     /// <summary>按 Program 的顺序装配出完整宿主（未启动）。</summary>

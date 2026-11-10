@@ -58,7 +58,7 @@ profile 的合成顺序是：platform profile 的组合包（base / shell / mode
 | `ConnectionFiles:App` | 应用登录（受限角色，按租户 RLS）的连接串 Secret 文件；Tenancy、Authz、Audit、Registry、Capabilities、Lifecycle 与 module 应用都用它。 |
 | `ConnectionFiles:PlatformAuthz` / `ConnectionFiles:PlatformAudit` | authz 条目配置了 `platformRole`、audit 条目配置了 `chain.platformRole` 时，两个平台登录的连接串文件。 |
 | `ConnectionFiles:Migrations` | 迁移属主的连接串文件，只在 `--migrate-only` 时读。 |
-| `ConnectionFiles:Redis` / `ConnectionFiles:EventsBroker` | events 条目用 Redis 领取 Outbox、配置了 broker 时才读。 |
+| `ConnectionFiles:Redis` / `ConnectionFiles:EventsBroker` | events 条目用 Redis 领取 Outbox、配置了 broker 时才读。platform profile 缺省两者都要：base 组合包给 events 配了 `outbox.lock: redis` 与 `broker`，环境 overlay 改成 `skip-locked`、去掉 broker 时才不需要。 |
 | `Secrets:MountRoot`、`Trust:PlatformKeys` | 平台信任根公钥的 Secret 挂载点与引用（Lifecycle 核验系统制品签名时解析，每次解析写平台审计链）。 |
 | `Profile:Patches`、`Profile:ComponentDirectories`、`Profile:HostOverlay` | 环境 overlay、额外组件目录、宿主 overlay 路径（缺省为程序目录下的 `platform.overlay.yml`）。 |
 
@@ -80,6 +80,8 @@ dotnet run --project hosts/Qian.Platform.Host -c Release -- --urls http://0.0.0.
 ```bash
 dotnet run --project hosts/Qian.Platform.Host -c Release -- --migrate-only --patch /etc/qian/platform/environment.yml
 ```
+
+装配、迁移或启动失败时，异常写到标准错误，进程以退出码 1 结束。入口不让异常逃出 Main：容器里宿主是 PID 1，未处理异常走 abort 时内核忽略这个信号，进程不退出、占满一个 CPU。
 
 在线副本启动时只校验（受限角色、模型、没有待执行的迁移），不建表、不迁移。目前随包带迁移的只有 Capabilities 与 Lifecycle；Tenancy、Authz、Audit、Registry 的建表、RLS 与两个平台登录的授权脚本（`AuthzPlatformAccess` / `AuditPlatformAccess` / `AuditTransactionAccess`）还要由部署侧的离线迁移执行，见下文「已知限制」。
 

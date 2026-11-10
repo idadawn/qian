@@ -1,5 +1,6 @@
 # 构建上下文白名单（S1-DEP-003）：只送镜像构建需要的 .NET 源码、Schema 与 profile 内容，
 # 不送 .git、node_modules、构建产物与前端工作区。新增宿主项目时在这里放行它的目录。
+# contracts/ 整个放行：Abstractions 包把 contracts/{v0,data,authz,identity} 下的 Schema 编进程序集资源，缺了要么编译失败、要么资源静默缺失。
 *
 !global.json
 !NuGet.config
@@ -15,7 +16,7 @@
 !tools/Qian.Image.SelfCheck/**
 !tools/Qian.Image.SelfCheck.Aot/**
 !schemas/**
-!contracts/v0/**
+!contracts/**
 !profiles/**
 !plugins/**
 **/bin
