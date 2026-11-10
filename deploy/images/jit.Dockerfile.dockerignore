@@ -10,6 +10,7 @@
 !.editorconfig
 !packages/Common/**
 !packages/Qian.*/**
+!hosts/Qian.Platform.Host/**
 !tools/Qian.Build.Analyzers/**
 !tools/Qian.Image.SelfCheck/**
 !tools/Qian.Image.SelfCheck.Aot/**

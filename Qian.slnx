@@ -62,6 +62,7 @@
   </Folder>
   <Folder Name="/hosts/">
     <Project Path="hosts/Qian.Gateway.Host/Qian.Gateway.Host.csproj" />
+    <Project Path="hosts/Qian.Platform.Host/Qian.Platform.Host.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Qian.Audit.Native.Tests/Qian.Audit.Native.Tests.csproj" />

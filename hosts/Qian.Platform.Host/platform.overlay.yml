@@ -1,0 +1,39 @@
+# platform 生产宿主的宿主 overlay（S1-DEP-009）。宿主总是先应用它，再应用扩展 overlay 与环境 overlay（--patch）。
+# 它只做两件与环境无关的事：
+# 1. 关掉本宿主没有 Provider 的条目。它们的组件清单仍是骨架，或属于别的宿主（外壳由网关托管、身份客户端随 S1-IDP-005）；
+#    组件交付后从这里删掉对应项即可启用。宿主遇到没有 Provider 的启用条目时拒绝启动，不会静默跳过。
+# 2. data 条目不带 connection：平台宿主按登录分别绑定数据上下文（应用登录、平台授权登录、平台审计登录）。
+# Apollo 配置源与 qian.config.apollo 的联调归 S1-DEP-005；在那之前 config 条目用读宿主配置根的 qian.config。
+# 角色名（authz 的 platformRole、audit 的 chain.platformRole）与 events 的 broker / 领取方式随环境定，写在环境 overlay。
+- id: config
+  plugin: qian.config
+  config: {}
+- id: data
+  config:
+    dialect: pg
+    rls:
+      enforce: true
+- id: hooks
+  disabled: true
+- id: identity
+  disabled: true
+- id: files
+  disabled: true
+- id: observability
+  disabled: true
+- id: notify
+  disabled: true
+- id: notify.inbox
+  disabled: true
+- id: notify.email
+  disabled: true
+- id: notify.sms
+  disabled: true
+- id: scheduler
+  disabled: true
+- id: realtime
+  disabled: true
+- id: entitlement
+  disabled: true
+- id: shell
+  disabled: true
