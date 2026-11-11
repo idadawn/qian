@@ -18,6 +18,7 @@
     "@idadawn/yue-form": "workspace:^",
     "@idadawn/yue-data": "workspace:^",
     "@idadawn/yue-sdk": "workspace:^",
+    "@idadawn/yue-shell": "workspace:^",
     "@idadawn/yue-contracts": "workspace:^",
     "@idadawn/yue-tokens": "workspace:^",
     "@idadawn/qian-plugin-sdk": "workspace:^"

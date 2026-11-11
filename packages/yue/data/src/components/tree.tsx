@@ -206,7 +206,8 @@ export function Tree({
             data-node-id={node.id}
             data-level={level}
             className={cn(
-              'flex cursor-default select-none items-center gap-1 rounded-sm py-1 pe-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              // 行不换行：虚拟化时行高固定，换行的文字会溢出盖住相邻行。
+              'flex cursor-default select-none items-center gap-1 whitespace-nowrap rounded-sm py-1 pe-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
               selected === node.id && 'bg-accent font-medium',
               node.disabled && 'opacity-50',
             )}

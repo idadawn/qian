@@ -26,8 +26,9 @@ export function AlertDialogDescription({ className, testId, ...props }: AlertDia
 }
 
 export type AlertDialogCloseProps = YueProps<ComponentProps<typeof Base.Close>>;
-export function AlertDialogClose({ className, testId, ...props }: AlertDialogCloseProps) {
-  return <ButtonIdentity slot="alert-dialog-close" testId={testId ?? 'yue-alert-dialog-close'}><Base.Close {...props} data-slot="alert-dialog-close" data-testid={testId ?? 'yue-alert-dialog-close'} className={cn(button, className)} /></ButtonIdentity>;
+// 经 render 交给 Button 渲染时不再叠基础按钮类：Button 自带一套，再叠会让基础类里的 border-transparent 盖掉描边变体的边框。
+export function AlertDialogClose({ className, testId, render, ...props }: AlertDialogCloseProps) {
+  return <ButtonIdentity slot="alert-dialog-close" testId={testId ?? 'yue-alert-dialog-close'}><Base.Close {...props} data-slot="alert-dialog-close" data-testid={testId ?? 'yue-alert-dialog-close'} render={render} className={render ? className : cn(button, className)} /></ButtonIdentity>;
 }
 
 export type AlertDialogContentProps = YueProps<ComponentProps<typeof Base.Popup>> & {

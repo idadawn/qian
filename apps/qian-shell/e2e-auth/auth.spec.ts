@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { accessible, collectCspViolations, fillLogin, identity, loginPage, person, root, seed, state } from './support';
+import { accessible, collectCspViolations, fillLogin, identity, loginPage, openSession, person, root, seed, state } from './support';
 
 // 外壳真实流程验收（S1-YUE-002 验收 1–4；S1-YUE-012 把薄入口与 MF2 宿主融合进 apps/qian-shell 后迁入）：账号密码经 qian-identity 的 OIDC code + PKCE 登录
 // （网关 BFF 换码，浏览器零令牌）→ 多租户选择 → 网关 bootstrap 聚合端点一次给出会话、上下文、已挂载远程、权限与能力导航 → 菜单命中的页面由参考应用的
@@ -94,26 +94,31 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   await accessible(page, '登录页');
   await fillLogin(page);
   // 2. demo 同时属于两个租户：二次选择。
-  await expect(page.getByRole('heading', { name: '选择租户', exact: true })).toBeVisible();
-  await accessible(page, '选择租户');
+  await expect(page.getByRole('heading', { name: '选择要进入的工作空间', exact: true })).toBeVisible();
+  await accessible(page, '选择工作空间');
   await page.getByRole('button', { name: acme.name, exact: true }).click();
-  // 3. 回到授权请求签码 → 网关回调建 qian.sid → 工作台：会话快照、菜单与权限都来自网关 bootstrap（聚合真实平台表面），浏览器不再分别直调导航与权限。
+  // 3. 回到授权请求签码 → 网关回调建 qian.sid → 工作台（首页只有欢迎区，侧栏第一项是工作台）；会话快照、菜单与权限都来自网关 bootstrap（聚合真实平台表面），
+  //    浏览器不再分别直调导航与权限；会话与权限卡片在账号菜单的「会话信息」页（站内路由，不重拉 bootstrap）。
   await expect(page).toHaveURL(origin + '/');
-  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
+  await expect(page.getByTestId('shell-home')).toBeVisible();
+  await expect(page.getByTestId('shell-breadcrumb')).toHaveText('工作台');
+  const nav = page.getByTestId('yue-app-shell-sidebar').getByRole('link');
+  await expect(nav).toHaveText(['工作台', '客户', '新建客户']);
+  await expect(page.getByRole('link', { name: '工作台', exact: true })).toHaveAttribute('aria-current', 'page');
+  await accessible(page, '工作台');
+  await openSession(page);
   const sessionCard = page.getByTestId('shell-session');
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('演示用户');
   await expect(sessionCard.locator('[data-field=kind]')).toHaveText('user');
   const tenantA = await sessionCard.locator('[data-field=tenantId]').textContent();
   expect(tenantA).toMatch(/^[0-9a-f-]{36}$/);
-  const nav = page.getByTestId('yue-app-shell-sidebar').getByRole('link');
-  await expect(nav).toHaveText(['客户', '新建客户']);
   await expect(page.getByTestId('shell-permissions').locator('[data-permission="qian.sample.crm:customer:write"]')).toHaveAttribute('data-allowed', 'true');
   await expect(page.getByTestId('shell-capabilities')).not.toHaveText('加载中');
-  await accessible(page, '工作台');
+  await accessible(page, '会话信息');
   await noCredentials(page, '登录后');
   expect(bootstraps(0)).toBeGreaterThan(0);
   expect(apiCalls.filter(call => ['/api/capabilities/navigation', '/api/authz/me/permissions'].includes(call.path))).toEqual([]);
-  // 远程模块按需加载：工作台上还没有任何远程制品请求。
+  // 远程模块按需加载：工作台与会话信息页上还没有任何远程制品请求。
   expect(remotes).toEqual([]);
 
   // 4. 菜单 → 路由（pushState）：「客户」页由参考应用的远程模块真实渲染（MF2 manifest → remoteEntry → expose），远程拿到的上下文是当前租户；
@@ -180,19 +185,20 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   await expect(page).toHaveURL(origin + '/');
   // 带查询串的根路径仍是工作台（路由按 pathname 匹配）。
   await page.goto('/?x=1');
-  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
+  await expect(page.getByTestId('shell-home')).toBeVisible();
 
   // 5. 切换租户：prompt=select_account → 身份服务同源选择页 → 乙方 → 新授权码 → 回调重建会话 → 菜单与权限随之刷新（乙方只有 customer:read）。
   await page.getByRole('button', { name: '用户菜单' }).click();
   await page.getByRole('menuitem', { name: '切换租户' }).click();
   await expect(page).toHaveURL(new RegExp(`^${identity.replaceAll('.', '\\.')}/login/select-tenant\\?return_url=`));
-  await expect(page.getByRole('heading', { name: '选择租户', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '选择要进入的工作空间', exact: true })).toBeVisible();
   await page.getByRole('button', { name: beta.name, exact: true }).click();
   await expect(page).toHaveURL(origin + '/');
+  await openSession(page);
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('演示用户（乙方）');
   const tenantB = await sessionCard.locator('[data-field=tenantId]').textContent();
   expect(tenantB).toMatch(/^[0-9a-f-]{36}$/); expect(tenantB).not.toBe(tenantA);
-  await expect(nav).toHaveText(['客户']);
+  await expect(nav).toHaveText(['工作台', '客户']);
   await expect(page.getByTestId('shell-permissions').locator('[data-permission="qian.sample.crm:customer:write"]')).toHaveCount(0);
   await expect(page.getByTestId('shell-permissions').locator('[data-permission="qian.sample.crm:customer:read"]')).toHaveAttribute('data-allowed', 'true');
   await noCredentials(page, '切换租户后');
@@ -211,7 +217,9 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   await expect(rows.filter({ hasText: customerName })).toHaveCount(0);
   await expect(customers.getByRole('button', { name: '新建客户', exact: true })).toHaveCount(0);
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
+  await expect(page.getByTestId('shell-home')).toBeVisible();
+  // 以下几步在「会话信息」页上点「刷新」重拉一轮工作区。
+  await openSession(page);
 
   // 6. 服务端访问令牌到期：下一批请求由依赖方透明刷新（单飞），页面无感，浏览器不发刷新请求、不探测，也没有对话框。
   //    一轮工作区 = bootstrap（聚合会话、上下文、远程、权限与导航）+ 能力目录条数（辅助接口）两条 GET。
@@ -245,7 +253,7 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   expect(bootstraps(afterBump, 401)).toBe(1);
   expect(probes.slice(probesBump)).toEqual([200]);
   await expect(sessionCard.locator('[data-field=identityRevision]')).toHaveText(String(revision + 1));
-  await expect(nav).toHaveText(['客户']);
+  await expect(nav).toHaveText(['工作台', '客户']);
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
   // 7. refresh token 失效：依赖方刷新失败即结束会话，bootstrap 401；SDK 的刷新尝试——会话已不在，取防伪令牌这一步即 401、不再发 POST——只弹一个过期对话框；
   //    对话框不可被 Esc 关掉。
@@ -260,27 +268,31 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
   await page.keyboard.press('Escape');
   await expect(dialog).toBeVisible();
   await accessible(page, '过期对话框');
-  // 8. 重新登录：身份服务的账号 Cookie 仍绑定乙方会话，直接签新授权码回到工作台，不再要求选择。
+  // 8. 重新登录：身份服务的账号 Cookie 仍绑定乙方会话，直接签新授权码回到原来的页面（会话信息），不再要求选择。
   await dialog.getByRole('button', { name: '重新登录' }).click();
-  await expect(page).toHaveURL(origin + '/');
+  await expect(page).toHaveURL(origin + '/session');
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('演示用户（乙方）');
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
 
-  // 9. 侧栏 / 主题 / 语言：顶栏控件切换即时生效（侧栏宽度、html[data-theme]、全部文案），偏好只落这三项非敏感值。
+  // 9. 侧栏 / 主题 / 语言：侧栏开关在品牌行、主题在顶栏、语言在账号菜单（原型），切换即时生效（侧栏宽度、html[data-theme]、全部文案），偏好只落这三项非敏感值。
   await page.getByRole('button', { name: '收起侧栏' }).click();
   await expect(page.getByRole('button', { name: '展开侧栏' })).toBeVisible();
   await page.getByRole('button', { name: '主题' }).click();
   await page.getByRole('menuitemradio', { name: '暗色' }).click();
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe('dark');
-  await page.getByRole('button', { name: '语言' }).click();
+  await page.getByRole('button', { name: '用户菜单' }).click();
+  await page.getByRole('menuitem', { name: '语言' }).press('ArrowRight');
   await page.getByRole('menuitemradio', { name: 'English' }).click();
   await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Workspace', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Session info', exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.lang)).toBe('en-US');
-  await page.getByRole('button', { name: 'Language' }).click();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'User menu' }).click();
+  await page.getByRole('menuitem', { name: 'Language' }).press('ArrowRight');
   await page.getByRole('menuitemradio', { name: '简体中文' }).click();
-  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '会话信息', exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.lang)).toBe('zh-CN');
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '展开侧栏' }).click();
   await page.getByRole('button', { name: '主题' }).click();
   await page.getByRole('menuitemradio', { name: '明亮' }).click();
@@ -298,7 +310,7 @@ test('验收 1 / 3 / 4：真实 OIDC 登录、多租户选择、远程页面真�
     const mark = apiCalls.length;
     await page.reload();
     await expect(page.getByTestId('yue-app-shell-sidebar')).toContainText('Qian 乾（alt）');
-    await expect(nav).toHaveText(['客户']);
+    await expect(nav).toHaveText(['工作台', '客户']);
     await expect.poll(() => apiCalls.slice(mark).filter(call => call.path.startsWith('/api-alt/') && call.status === 200).length).toBeGreaterThanOrEqual(2);
     expect(apiCalls.slice(mark).filter(call => call.path === '/api-alt/shell/bootstrap' && call.status === 200)).toHaveLength(1);
     expect(apiCalls.slice(mark).filter(call => call.path.startsWith('/api/'))).toEqual([]);
@@ -323,7 +335,7 @@ test('平台控制台（operator 持平台超管）：侧栏只有「租户管�
   await expect(page).toHaveURL(origin + '/');
   await expect(page.getByRole('heading', { name: '平台控制台', exact: true })).toBeVisible();
   await expect(page.getByTestId('yue-app-shell-managed')).toHaveCount(0);
-  await expect(nav).toHaveText(['租户管理', '开通申请']);
+  await expect(nav).toHaveText(['工作台', '租户管理', '开通申请']);
   await expect(page.getByTestId('console-pages').getByRole('listitem')).toHaveCount(2);
   const sessionCard = page.getByTestId('shell-session');
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('平台运营');
@@ -373,7 +385,7 @@ test('不持平台超管的平台身份（visitor）：只有代管横幅、说�
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('平台访客');
   await expect(sessionCard.locator('[data-field=tenantId]')).toHaveText('平台身份');
   await expect(sessionCard.locator('[data-field=kind]')).toHaveText('user');
-  await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveCount(0);
+  await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveText(['工作台']);
   await expect(page.getByTestId('console-pages')).toHaveCount(0);
   await expect(page.getByTestId('shell-permissions')).toHaveCount(0);
   await expect(page.getByTestId('shell-pages')).toHaveCount(0);
@@ -401,8 +413,9 @@ test('刷新成功但平台表面持续 401：恰好一次刷新、一个过期�
   await page.goto('/');
   await expect(page).toHaveURL(loginPage);
   await fillLogin(page, second);
-  // second 只属于乙方：不经过选择页，回调后直接进工作台，首轮 bootstrap 与能力目录两条 200。
+  // second 只属于乙方：不经过选择页，回调后直接进工作台，首轮 bootstrap 与能力目录两条 200；之后在「会话信息」页上操作。
   await expect(page).toHaveURL(origin + '/');
+  await openSession(page);
   const sessionCard = page.getByTestId('shell-session');
   await expect(sessionCard.locator('[data-field=kind]')).toHaveText('user');
   await expect(page.getByTestId('shell-capabilities')).not.toHaveText('加载中');
@@ -440,8 +453,8 @@ test('刷新成功但平台表面持续 401：恰好一次刷新、一个过期�
   expect(reloaded.logins - beforeReload.logins, '重载后顶层跳 /auth/login 的次数').toBe(0);
   expect(reloaded.refreshes - beforeReload.refreshes).toBe(1);
   expect(tenantCalls().slice(beforeReload.calls).map(call => `${call.path} ${call.status}`)).toEqual(['/api/shell/bootstrap 401', '/api/shell/bootstrap 401']);
-  await expect(page).toHaveURL(origin + '/');
-  // 对话框里点「重新登录」：恰好一次顶层跳转（账号 Cookie 仍有效，依赖方静默签码、回调回到工作台），平台表面仍 401 → 再弹对话框，之后整页稳定。
+  await expect(page).toHaveURL(origin + '/session');
+  // 对话框里点「重新登录」：恰好一次顶层跳转（账号 Cookie 仍有效，依赖方静默签码、回调回到原来的页面），平台表面仍 401 → 再弹对话框，之后整页稳定。
   const beforeSignIn = counts();
   await dialog.getByRole('button', { name: '重新登录' }).click();
   await expect.poll(() => tenantCalls().length - beforeSignIn.calls).toBe(2);
@@ -451,7 +464,7 @@ test('刷新成功但平台表面持续 401：恰好一次刷新、一个过期�
   expect(counts(), '重新登录后静置 3 秒').toEqual(signedIn);
   expect(signedIn.logins - beforeSignIn.logins, '重新登录后顶层跳 /auth/login 的次数').toBe(1);
   expect(signedIn.refreshes - beforeSignIn.refreshes).toBe(1);
-  await expect(page).toHaveURL(origin + '/');
+  await expect(page).toHaveURL(origin + '/session');
   for (const body of bodies) expect(body).not.toMatch(tokenLike);
   await noCredentials(page, '平台表面持续 401');
 });
@@ -465,6 +478,7 @@ test('验收 1（SSO 跳转回调）：连接器按钮 → Dex 上游登录 → 
   async function throughDex() {
     await page.goto('/');
     await expect(page).toHaveURL(loginPage);
+    await page.getByTestId('identity-sso').click();
     const connectors = page.getByTestId('identity-connectors');
     await expect(connectors.getByRole('button', { name: 'Dex 本机身份源' })).toBeVisible();
     await connectors.getByLabel('租户代码').fill(acme.code);
@@ -482,22 +496,23 @@ test('验收 1（SSO 跳转回调）：连接器按钮 → Dex 上游登录 → 
   await expect(bind).toContainText('尚未绑定账号');
   await accessible(page, '确认绑定');
   await noCredentials(page, '连接器落点');
-  await bind.getByLabel(/账号/).fill(owner.username);
-  await bind.getByLabel(/密码/).fill(owner.password);
+  await bind.getByLabel('手机号或邮箱').fill(owner.username);
+  await bind.getByLabel('密码', { exact: true }).fill(owner.password);
   await bind.getByRole('button', { name: '登录', exact: true }).click();
   const link = bind.getByRole('button', { name: /^绑定到已验证账号/ });
   await expect(link).toContainText('演示用户');
   await link.click();
   await expect(page).toHaveURL(origin + '/');
+  await openSession(page);
   const sessionCard = page.getByTestId('shell-session');
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('演示用户');
   await expect(sessionCard.locator('[data-field=kind]')).toHaveText('user');
-  await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveText(['客户', '新建客户']);
+  await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveText(['工作台', '客户', '新建客户']);
   await noCredentials(page, 'SSO 首次登录后');
   // 2. 再次：清掉全部 Cookie（网关会话、账号 Cookie、浏览器流程密钥）后重走；绑定已存在，回调直接签发会话，落点读到完成态即回授权请求，不再确认绑定。
   // 落点一读到完成态就跳走，事后在外壳源上查不到它：途中记录主框架经过的地址，并在每个文档里观察是否出现过绑定卡片。
   // 网关的每个响应都续写 qian.sid：外壳文档还有在途请求（工作台的 /api/capabilities）时清 Cookie，迟到的响应会把会话写回来，第二遍就直接进了工作台
-  // （CI 实测过一次）。先等工作台加载完，再离开外壳文档，之后才清。
+  // （CI 实测过一次）。先等工作台加载完（会话信息页上能力条数不再是「加载中」），再离开外壳文档，之后才清。
   await expect(page.getByTestId('shell-capabilities')).not.toHaveText('加载中');
   await page.goto('about:blank');
   await page.context().clearCookies();
@@ -514,10 +529,11 @@ test('验收 1（SSO 跳转回调）：连接器按钮 → Dex 上游登录 → 
   });
   await throughDex();
   await expect(page).toHaveURL(origin + '/');
+  await openSession(page);
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('演示用户');
   expect(visited.filter(url => landing.test(url)), '第二遍经过连接器落点').toHaveLength(1);
   expect(bindSeen, '第二遍的落点不出现绑定卡片').toEqual([]);
-  await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveText(['客户', '新建客户']);
+  await expect(page.getByTestId('yue-app-shell-sidebar').getByRole('link')).toHaveText(['工作台', '客户', '新建客户']);
   await expect.poll(() => apiCalls.filter(call => bootstrapPath.test(call.path) && call.status === 200).length).toBeGreaterThanOrEqual(2);
   for (const body of bodies) expect(body).not.toMatch(tokenLike);
   await noCredentials(page, 'SSO 再次登录后');
@@ -531,12 +547,12 @@ test('验收 2（S1-YUE-012 补验）：甲方已挂载参考应用时远程按�
   await page.goto('/');
   await expect(page).toHaveURL(loginPage);
   await fillLogin(page);
-  await expect(page.getByRole('heading', { name: '选择租户', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '选择要进入的工作空间', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: gamma.name, exact: true })).toBeVisible();
   await page.getByRole('button', { name: acme.name, exact: true }).click();
   await expect(page).toHaveURL(origin + '/');
   // 1. 甲方 scope 已挂载参考应用：导航里有「客户」，但工作台上不请求任何远程制品；进入页面才 loadRemote（manifest → remoteEntry → expose）。
-  await expect(nav).toHaveText(['客户', '新建客户']);
+  await expect(nav).toHaveText(['工作台', '客户', '新建客户']);
   expect(remotes).toEqual([]);
   await nav.filter({ hasText: /^客户$/ }).click();
   await expect(page.getByTestId('qian-sample-crm-customers')).toBeVisible();
@@ -545,19 +561,20 @@ test('验收 2（S1-YUE-012 补验）：甲方已挂载参考应用时远程按�
   // 2. 切到丙方：prompt=select_account → 选择页 → 丙方 → 回调整页回到工作台（新文档、新宿主）。
   await page.getByRole('button', { name: '用户菜单' }).click();
   await page.getByRole('menuitem', { name: '切换租户' }).click();
-  await expect(page.getByRole('heading', { name: '选择租户', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '选择要进入的工作空间', exact: true })).toBeVisible();
   const switched = remotes.length;
   const bootstrap = page.waitForResponse(response => bootstrapPath.test(new URL(response.url()).pathname) && response.status() === 200);
   await page.getByRole('button', { name: gamma.name, exact: true }).click();
   const body = await (await bootstrap).json() as { context: { tenant: { name: string } }; remotes: unknown[]; mounted: string[]; entitled: string[]; navigation: unknown[] };
   await expect(page).toHaveURL(origin + '/');
+  await openSession(page);
   await expect(sessionCard.locator('[data-field=displayName]')).toHaveText('演示用户（丙方）');
   // 3. 丙方 scope 没有挂载参考应用：bootstrap 不含它（远程、挂载、权益、导航都空，响应里没有它的 mf-manifest.json 地址），导航为空，直达页面路由是 404，
   //    整个丙方会话里没有一条远程制品请求。
   expect(body.context.tenant.name).toBe(gamma.name);
   expect({ remotes: body.remotes, mounted: body.mounted, entitled: body.entitled, navigation: body.navigation }).toEqual({ remotes: [], mounted: [], entitled: [], navigation: [] });
   expect(JSON.stringify(body)).not.toContain('mf-manifest.json');
-  await expect(nav).toHaveCount(0);
+  await expect(nav).toHaveText(['工作台']);
   await page.goto('/customers');
   await expect(page.getByRole('heading', { name: '页面不存在', exact: true })).toBeVisible();
   await page.goto('/customers/new');
@@ -574,6 +591,6 @@ test('无效入口不渲染登录表单；跨源与非授权端点的回跳一�
   for (const query of ['', '?ReturnUrl=https%3A%2F%2Fevil.example%2F', '?ReturnUrl=%2Fsomewhere%3Fclient_id%3Dqian-shell', '?ReturnUrl=%2Fconnect%2Fauthorize%3Faccess_token%3Dx']) {
     await page.goto(`${identity}/login${query}`);
     await expect(page.getByTestId('identity-invalid-entry')).toBeVisible();
-    await expect(page.getByLabel(/密码/)).toHaveCount(0);
+    await expect(page.getByLabel('密码', { exact: true })).toHaveCount(0);
   }
 });

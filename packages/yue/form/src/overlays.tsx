@@ -4,7 +4,9 @@ import { OverlayFormContext } from './overlay-form-context';
 import type { PlatformI18n } from '@idadawn/yue-sdk';
 
 export interface OverlayOptions {
-  title: string; description?: string; content: ReactNode; onClose?: () => void;
+  title: string;
+  /** 标题下的说明；可以是带格式的内容，例如等宽显示的申请编号。 */
+  description?: ReactNode; content: ReactNode; onClose?: () => void;
   /** 抽屉宽度档（仅 useDrawer）。 @default 'sm' */
   size?: 'sm' | 'md' | 'lg';
   /** 跟在标题后的附加内容，例如状态徽标（仅 useDrawer）。 */
@@ -31,7 +33,7 @@ function useOverlay(kind: 'modal' | 'drawer' | 'popup', i18n: PlatformI18n, trig
   // 抽屉：页头 / 可滚动主体 / 固定页脚；主体里的表单把操作按钮送进页脚（SchemaForm 读 footer）。
   if (kind === 'drawer') return { open, close, holder: <Sheet open={!!options} onOpenChange={(value) => { if (!value) close(); }}>
     {options && <SheetContent closeLabel={i18n.t('common.close')} size={options.size} data-slot="form-drawer" testId="yue-form-drawer">
-      <SheetHeader><div className="flex flex-wrap items-center gap-3"><SheetTitle>{options.title}</SheetTitle>{options.extra}</div>{options.description && <SheetDescription>{options.description}</SheetDescription>}</SheetHeader>
+      <SheetHeader><div className="flex min-h-8 flex-wrap items-center gap-3"><SheetTitle>{options.title}</SheetTitle>{options.extra}</div>{options.description && <SheetDescription>{options.description}</SheetDescription>}</SheetHeader>
       <SheetBody><OverlayFormContext value={{ cancel, register, footer }}>{options.content}</OverlayFormContext></SheetBody>
       <SheetFooter>{forms === 0 && <Close render={<Button variant="outline" />}>{i18n.t('common.close')}</Close>}<div ref={setFooter} data-slot="form-drawer-actions" className="contents" /></SheetFooter>
     </SheetContent>}
@@ -50,7 +52,13 @@ export function useModal(i18n: PlatformI18n): OverlayApi { return useOverlay('mo
 export function useDrawer(i18n: PlatformI18n): OverlayApi { return useOverlay('drawer', i18n); }
 export function usePopup(i18n: PlatformI18n, trigger: ReactElement<Record<string, unknown>>, options?: OverlayOptions): OverlayApi { return useOverlay('popup', i18n, trigger, options); }
 
-export interface ConfirmOptions { title: string; description?: string }
+export interface ConfirmOptions {
+  title: string; description?: string;
+  /** danger：确认按钮用危险色（冻结、删除一类不可轻易撤回的操作）。 @default 'default' */
+  tone?: 'default' | 'danger';
+  /** 确认按钮的文字（已本地化），缺省为「确定」；危险操作建议写明动作，如「冻结」。 */
+  confirmLabel?: string;
+}
 export interface MessageApi { info(key: string): void; success(key: string): void; error(key: string): void; notification(key: string): void }
 interface Feedback { message: MessageApi; confirm(options: ConfirmOptions): Promise<boolean> }
 const FeedbackContext = createContext<Feedback | null>(null);
@@ -75,7 +83,7 @@ function FeedbackContent({ i18n, children }: { i18n: PlatformI18n; children: Rea
     <AlertDialog open={!!confirmation} onOpenChange={(open) => { if (!open) finish(false); }}>
       {confirmation && <AlertDialogContent closeLabel={i18n.t('common.close')} testId="yue-form-confirm"><AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
         {confirmation.description && <AlertDialogDescription>{confirmation.description}</AlertDialogDescription>}
-        <div className="mt-4 flex justify-end gap-2"><AlertDialogClose render={<Button variant="outline" />}>{i18n.t('common.cancel')}</AlertDialogClose><Button onClick={() => finish(true)}>{i18n.t('common.confirm')}</Button></div>
+        <div className="mt-4 flex justify-end gap-2"><AlertDialogClose render={<Button variant="outline" />}>{i18n.t('common.cancel')}</AlertDialogClose><Button variant={confirmation.tone === 'danger' ? 'destructive' : 'primary'} onClick={() => finish(true)} testId="yue-form-confirm-ok">{confirmation.confirmLabel ?? i18n.t('common.confirm')}</Button></div>
       </AlertDialogContent>}
     </AlertDialog>
   </FeedbackContext.Provider>;

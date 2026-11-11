@@ -770,6 +770,9 @@ importers:
       '@idadawn/yue-sdk':
         specifier: workspace:^
         version: link:../yue/sdk
+      '@idadawn/yue-shell':
+        specifier: workspace:^
+        version: link:../yue/shell
       '@idadawn/yue-tokens':
         specifier: workspace:^
         version: link:../yue/tokens

@@ -56,22 +56,26 @@
             "outline",
             "ghost",
             "destructive",
+            "destructive-outline",
+            "soft",
             "link"
           ],
           "default": "primary",
           "title": "variant",
-          "description": "按钮强调程度；link 是主色文字按钮，用于行内操作与「重置」一类的次要动作。"
+          "description": "按钮强调程度：soft 是主色浅底按钮，用于表格行内的主操作（如「审核」）；destructive-outline 是描边的危险操作（如抽屉页脚的「驳回」）；link 是主色文字按钮，用于「重置」一类的次要动作。"
         },
         "size": {
           "enum": [
+            "xs",
             "sm",
             "md",
             "lg",
+            "xl",
             "icon"
           ],
           "default": "md",
           "title": "size",
-          "description": "按钮尺寸。"
+          "description": "按钮尺寸：xs 30px、sm 32px、md 36px、lg 40px、xl 44px（认证与申请表单的主按钮）；icon 为 36px 方形。"
         },
         "disabled": {
           "type": "boolean",
@@ -112,17 +116,26 @@
       "--yue-accent-foreground",
       "--yue-background",
       "--yue-border",
+      "--yue-border-strong",
       "--yue-button-radius",
+      "--yue-control-foreground",
       "--yue-destructive",
       "--yue-destructive-foreground",
+      "--yue-error",
+      "--yue-error-bg",
       "--yue-foreground",
       "--yue-popover",
       "--yue-popover-foreground",
       "--yue-primary",
+      "--yue-primary-border-strong",
       "--yue-primary-foreground",
+      "--yue-primary-soft",
+      "--yue-primary-soft-foreground",
+      "--yue-primary-subtle",
       "--yue-ring",
       "--yue-secondary",
-      "--yue-secondary-foreground"
+      "--yue-secondary-foreground",
+      "--yue-subtle-foreground"
     ],
     "examples": [
       {
@@ -223,17 +236,26 @@
       "--yue-accent-foreground",
       "--yue-background",
       "--yue-border",
+      "--yue-border-strong",
       "--yue-button-radius",
+      "--yue-control-foreground",
       "--yue-destructive",
       "--yue-destructive-foreground",
+      "--yue-error",
+      "--yue-error-bg",
       "--yue-foreground",
       "--yue-popover",
       "--yue-popover-foreground",
       "--yue-primary",
+      "--yue-primary-border-strong",
       "--yue-primary-foreground",
+      "--yue-primary-soft",
+      "--yue-primary-soft-foreground",
+      "--yue-primary-subtle",
       "--yue-ring",
       "--yue-secondary",
-      "--yue-secondary-foreground"
+      "--yue-secondary-foreground",
+      "--yue-subtle-foreground"
     ],
     "examples": [
       {
@@ -1659,7 +1681,8 @@
       "--yue-popover-foreground",
       "--yue-primary",
       "--yue-primary-foreground",
-      "--yue-ring"
+      "--yue-ring",
+      "--yue-subtle-foreground"
     ],
     "examples": [
       {
@@ -2039,6 +2062,7 @@
       "--yue-background",
       "--yue-border",
       "--yue-button-radius",
+      "--yue-control-foreground",
       "--yue-destructive",
       "--yue-foreground",
       "--yue-muted-foreground",
@@ -2745,12 +2769,16 @@
       "--yue-background",
       "--yue-border",
       "--yue-button-radius",
+      "--yue-caption-foreground",
       "--yue-destructive",
       "--yue-foreground",
+      "--yue-muted",
       "--yue-muted-foreground",
       "--yue-popover",
       "--yue-popover-foreground",
       "--yue-primary",
+      "--yue-primary-soft",
+      "--yue-primary-soft-foreground",
       "--yue-ring"
     ],
     "examples": [
@@ -3347,21 +3375,31 @@
       "--yue-destructive",
       "--yue-error",
       "--yue-error-bg",
+      "--yue-error-border",
+      "--yue-error-solid",
       "--yue-foreground",
       "--yue-info",
       "--yue-info-bg",
+      "--yue-info-border",
+      "--yue-info-solid",
       "--yue-muted",
       "--yue-muted-foreground",
       "--yue-neutral",
       "--yue-neutral-bg",
+      "--yue-neutral-border",
+      "--yue-neutral-solid",
       "--yue-ok",
       "--yue-ok-bg",
+      "--yue-ok-border",
+      "--yue-ok-solid",
       "--yue-popover",
       "--yue-popover-foreground",
       "--yue-primary",
       "--yue-ring",
       "--yue-warn",
-      "--yue-warn-bg"
+      "--yue-warn-bg",
+      "--yue-warn-border",
+      "--yue-warn-solid"
     ],
     "examples": [
       {
@@ -3442,6 +3480,12 @@
         "removeLabel": {
           "type": "string",
           "title": "removeLabel"
+        },
+        "dot": {
+          "type": "boolean",
+          "default": false,
+          "title": "dot",
+          "description": "在文字前显示同色圆点，用于状态列。"
         }
       },
       "additionalProperties": false
@@ -3465,21 +3509,26 @@
       "--yue-destructive",
       "--yue-error",
       "--yue-error-bg",
+      "--yue-error-solid",
       "--yue-foreground",
       "--yue-info",
       "--yue-info-bg",
+      "--yue-info-solid",
       "--yue-muted",
       "--yue-muted-foreground",
       "--yue-neutral",
       "--yue-neutral-bg",
+      "--yue-neutral-solid",
       "--yue-ok",
       "--yue-ok-bg",
+      "--yue-ok-solid",
       "--yue-popover",
       "--yue-popover-foreground",
       "--yue-primary",
       "--yue-ring",
       "--yue-warn",
-      "--yue-warn-bg"
+      "--yue-warn-bg",
+      "--yue-warn-solid"
     ],
     "examples": [
       {
@@ -3538,6 +3587,29 @@
             "number"
           ],
           "title": "children"
+        },
+        "tint": {
+          "enum": [
+            "primary",
+            "solid",
+            "blue",
+            "green",
+            "amber",
+            "violet",
+            "teal",
+            "gray"
+          ],
+          "title": "tint",
+          "description": "无图片时的底色与文字色。"
+        },
+        "shape": {
+          "enum": [
+            "circle",
+            "square"
+          ],
+          "default": "circle",
+          "title": "shape",
+          "description": "circle 用于人，square 用于企业、应用等对象的标识色块。"
         }
       },
       "additionalProperties": false
@@ -3560,11 +3632,27 @@
       "--yue-button-radius",
       "--yue-destructive",
       "--yue-foreground",
+      "--yue-info",
+      "--yue-info-bg",
       "--yue-muted",
       "--yue-muted-foreground",
+      "--yue-neutral",
+      "--yue-neutral-bg",
+      "--yue-ok",
+      "--yue-ok-bg",
       "--yue-popover",
       "--yue-popover-foreground",
-      "--yue-ring"
+      "--yue-primary",
+      "--yue-primary-foreground",
+      "--yue-primary-soft",
+      "--yue-primary-soft-foreground",
+      "--yue-ring",
+      "--yue-tint-teal",
+      "--yue-tint-teal-foreground",
+      "--yue-tint-violet",
+      "--yue-tint-violet-foreground",
+      "--yue-warn",
+      "--yue-warn-bg"
     ],
     "examples": [
       {
@@ -3972,6 +4060,15 @@
             "status"
           ],
           "title": "role"
+        },
+        "size": {
+          "enum": [
+            "sm",
+            "md"
+          ],
+          "default": "md",
+          "title": "size",
+          "description": "尺寸：sm 用在表单内（13px、紧凑内边距），md 用在页面与卡片。"
         }
       },
       "additionalProperties": false
@@ -3994,21 +4091,36 @@
       "--yue-destructive",
       "--yue-error",
       "--yue-error-bg",
+      "--yue-error-border",
+      "--yue-error-solid",
+      "--yue-error-strong",
       "--yue-foreground",
       "--yue-info",
       "--yue-info-bg",
+      "--yue-info-border",
+      "--yue-info-solid",
+      "--yue-info-strong",
       "--yue-muted",
       "--yue-muted-foreground",
       "--yue-neutral",
       "--yue-neutral-bg",
+      "--yue-neutral-border",
+      "--yue-neutral-solid",
+      "--yue-neutral-strong",
       "--yue-ok",
       "--yue-ok-bg",
+      "--yue-ok-border",
+      "--yue-ok-solid",
+      "--yue-ok-strong",
       "--yue-popover",
       "--yue-popover-foreground",
       "--yue-primary",
       "--yue-ring",
       "--yue-warn",
-      "--yue-warn-bg"
+      "--yue-warn-bg",
+      "--yue-warn-border",
+      "--yue-warn-solid",
+      "--yue-warn-strong"
     ],
     "examples": [
       {
@@ -4636,13 +4748,17 @@
       "--yue-accent-foreground",
       "--yue-background",
       "--yue-border",
+      "--yue-border-strong",
       "--yue-button-radius",
+      "--yue-control-foreground",
       "--yue-destructive",
       "--yue-foreground",
       "--yue-muted-foreground",
       "--yue-popover",
       "--yue-popover-foreground",
-      "--yue-ring"
+      "--yue-primary-soft-foreground",
+      "--yue-ring",
+      "--yue-subtle-foreground"
     ],
     "examples": [
       {
@@ -4889,7 +5005,15 @@
             "phone",
             "externalLink",
             "panelLeftClose",
-            "panelLeftOpen"
+            "panelLeftOpen",
+            "globe",
+            "key",
+            "lock",
+            "message",
+            "network",
+            "shield",
+            "sliders",
+            "layoutGrid"
           ],
           "title": "name"
         },
@@ -5009,6 +5133,13 @@
               "children": {
                 "type": "string",
                 "title": "children"
+              },
+              "span": {
+                "enum": [
+                  "full"
+                ],
+                "title": "span",
+                "description": "独占一整行（stacked 与 grid 布局），用于申请说明一类的长文本。"
               }
             },
             "additionalProperties": false
@@ -5018,11 +5149,13 @@
         "layout": {
           "enum": [
             "inline",
-            "stacked"
+            "stacked",
+            "grid",
+            "justified"
           ],
           "default": "inline",
           "title": "layout",
-          "description": "inline：标签与值同行两列；stacked：小号标签在上、值在下，按可用宽度自动分栏。"
+          "description": "inline：标签与值同行两列；stacked：小号标签在上、值在下，按可用宽度自动分栏；grid：定宽标签在左、值在右，按可用宽度自动分栏（摘要框）；justified：每行标签靠左、值靠右（侧栏信息卡）。"
         }
       },
       "additionalProperties": false,
@@ -5190,6 +5323,24 @@
           ],
           "default": "horizontal",
           "title": "orientation"
+        },
+        "tone": {
+          "enum": [
+            "default",
+            "inverse"
+          ],
+          "default": "default",
+          "title": "tone",
+          "description": "配色：inverse 用在品牌深色面上（认证与申请页的侧栏）。"
+        },
+        "size": {
+          "enum": [
+            "md",
+            "lg"
+          ],
+          "default": "md",
+          "title": "size",
+          "description": "标记尺寸：md 为 28px、说明 12px；lg 为 32px、说明 13px。"
         }
       },
       "required": [
@@ -5213,12 +5364,18 @@
     "tokens": [
       "--yue-background",
       "--yue-border",
+      "--yue-border-strong",
       "--yue-destructive",
       "--yue-destructive-foreground",
       "--yue-foreground",
+      "--yue-inverse",
+      "--yue-inverse-foreground",
+      "--yue-inverse-muted-foreground",
       "--yue-muted-foreground",
       "--yue-primary",
-      "--yue-primary-foreground"
+      "--yue-primary-foreground",
+      "--yue-primary-soft",
+      "--yue-primary-soft-foreground"
     ],
     "examples": [
       {

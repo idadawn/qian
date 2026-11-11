@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Button, Icon, Steps, type StepStatus } from '@idadawn/yue-core';
+import { Avatar, AvatarFallback, Button, Icon, Steps, type StepStatus } from '@idadawn/yue-core';
+import { AuthLayout, PlainLayout } from '@idadawn/yue-shell';
 import type { Applicant } from '../contracts';
 import { i18n } from '../i18n';
 
@@ -7,49 +8,30 @@ export function statusLabels(): Record<StepStatus, string> {
   return { done: i18n.t('signup.step.done'), current: i18n.t('signup.step.current'), failed: i18n.t('signup.step.failed'), todo: i18n.t('signup.step.todo') };
 }
 
-export function Brand() {
-  return <span className="flex items-center gap-2.5 text-[15px] font-bold" data-testid="signup-brand">
-    <span aria-hidden="true" className="inline-flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Icon name="building" /></span>{i18n.t('signup.brand')}
-  </span>;
+/**
+ * 注册页：左侧品牌深色面写开通的三步，右侧是 720px 的申请表单；窄屏时侧栏折到上方。
+ * 带同源登录页地址（next）时，品牌与右上角「登录后申请」回到登录页；没有时不给入口（登录页只接受应用发起的授权请求）。
+ */
+export function SignupFrame({ next, children }: { next?: string; children: ReactNode }) {
+  return <AuthLayout variant="form" brand={i18n.t('signup.brand')} brandHref={next} headline={i18n.t('signup.heroTitle')} description={i18n.t('signup.heroText')} testId="signup-layout"
+    toolbar={next ? <span className="inline-flex items-center gap-1" data-testid="signup-login-entry">{i18n.t('signup.hasAccount')}<a href={next} data-testid="signup-login-link" className="font-semibold text-primary no-underline hover:underline">{i18n.t('signup.loginToApply')}</a></span> : undefined}
+    aside={<Steps orientation="vertical" tone="inverse" size="lg" label={i18n.t('signup.flow')} statusLabels={statusLabels()} testId="signup-flow" items={[
+      { key: 'apply', title: i18n.t('signup.flowApply'), description: i18n.t('signup.flowApplyHint'), status: 'current' },
+      { key: 'review', title: i18n.t('signup.flowReview'), description: i18n.t('signup.flowReviewHint'), status: 'todo' },
+      { key: 'use', title: i18n.t('signup.flowUse'), description: i18n.t('signup.flowUseHint'), status: 'todo' },
+    ]} />}>{children}</AuthLayout>;
 }
 
-/** 与 SchemaForm 字段组同一版式的分段标题（序号、标题与说明），用于表单之外的分段。 */
-export function SectionHeader({ id, marker, title, description }: { id?: string; marker?: number; title: string; description?: string }) {
-  return <div className="flex items-start gap-3">
-    {marker !== undefined && <span aria-hidden="true" className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-info-bg text-xs font-semibold text-info">{marker}</span>}
-    <div className="grid min-w-0 gap-0.5"><h3 id={id} className="text-[15px] font-semibold leading-6">{title}</h3>{description && <p className="text-[13px] text-muted-foreground">{description}</p>}</div>
-  </div>;
-}
+/** 新号码的申请人还没有姓名：头像用图标、名字位置显示掩码号码。 */
+function initialOf(applicant: Applicant): ReactNode { return applicant.displayName ? Array.from(applicant.displayName.trim())[0] : <Icon name="user" />; }
 
-/** 注册页：左侧说明开通的三步，右侧是表单卡片；窄屏上下排列。 */
-export function SignupFrame({ progressHref, children }: { progressHref: string; children: ReactNode }) {
-  return <div className="min-h-dvh bg-canvas text-foreground lg:grid lg:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
-    <aside className="flex flex-col gap-8 border-b border-border bg-background px-6 py-8 lg:sticky lg:top-0 lg:h-dvh lg:border-e lg:border-b-0 lg:px-10 lg:py-12">
-      <Brand />
-      <div className="grid gap-2"><h1 className="text-2xl font-bold leading-9 tracking-tight">{i18n.t('signup.heroTitle')}</h1><p className="text-sm leading-6 text-muted-foreground">{i18n.t('signup.heroText')}</p></div>
-      <Steps orientation="vertical" label={i18n.t('signup.flow')} statusLabels={statusLabels()} items={[
-        { key: 'apply', title: i18n.t('signup.flowApply'), description: i18n.t('signup.flowApplyHint'), status: 'current' },
-        { key: 'review', title: i18n.t('signup.flowReview'), description: i18n.t('signup.flowReviewHint'), status: 'todo' },
-        { key: 'use', title: i18n.t('signup.flowUse'), description: i18n.t('signup.flowUseHint'), status: 'todo' },
-      ]} />
-      <p className="text-sm text-muted-foreground lg:mt-auto">{i18n.t('signup.submittedBefore')} <a href={progressHref} className="font-medium text-primary underline-offset-4 hover:underline">{i18n.t('signup.checkProgress')}</a></p>
-    </aside>
-    <main className="min-w-0 px-4 py-8 sm:px-8 lg:py-12"><div className="mx-auto max-w-2xl">{children}</div></main>
-  </div>;
-}
-
-/** 进度页：顶栏放品牌、申请人与退出，内容居中。 */
+/** 进度页：60px 顶栏放品牌，右侧是申请人与「退出登录」（结束申请人会话），内容 760px 居中。 */
 export function StatusFrame({ applicant, onSignOut, children }: { applicant?: Applicant; onSignOut(): void; children: ReactNode }) {
-  const name = applicant ? applicant.displayName ?? applicant.phone : undefined;
-  // 新号码的申请人还没有姓名，头像用图标而不是号码的首位数字。
-  return <div className="min-h-dvh bg-canvas text-foreground">
-    <header className="border-b border-border bg-background"><div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-4 px-4 sm:px-6"><Brand />
-      {name && <div className="flex items-center gap-2" data-testid="signup-status-user">
-        <span aria-hidden="true" className="inline-flex size-8 items-center justify-center rounded-full bg-info-bg text-[13px] font-bold text-info">{applicant?.displayName ? Array.from(applicant.displayName)[0] : <Icon name="user" />}</span>
-        <span className="hidden text-sm font-medium sm:inline">{name}</span>
-        <Button variant="ghost" size="sm" onClick={onSignOut}><Icon name="logOut" />{i18n.t('signup.signOut')}</Button>
-      </div>}
-    </div></header>
-    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:py-12">{children}</main>
-  </div>;
+  return <PlainLayout brand={i18n.t('signup.brand')} width="md" testId="signup-status-layout" account={applicant ? <>
+    <span className="inline-flex items-center gap-2" data-testid="signup-status-user">
+      <Avatar aria-hidden="true" tint="primary" className="size-7.5"><AvatarFallback className="text-[13px] font-bold">{initialOf(applicant)}</AvatarFallback></Avatar>
+      <span className="hidden sm:inline">{applicant.displayName ?? applicant.phone}</span>
+    </span>
+    <Button variant="ghost" className="h-8.5 gap-1.5 px-2.5" onClick={onSignOut} testId="signup-sign-out"><Icon name="logOut" />{i18n.t('signup.signOut')}</Button>
+  </> : undefined}>{children}</PlainLayout>;
 }
