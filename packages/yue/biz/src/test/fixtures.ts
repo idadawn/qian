@@ -28,7 +28,7 @@ export const CATALOG: PermissionCatalog = {
 };
 
 export interface FixtureOptions {
-  /** 覆盖成员列表（例如生成大量成员测截断）。 */
+  /** 覆盖成员列表（例如生成大量成员测「后面还有」的提示）。 */
   members?: { member: DirectoryMember; org: number }[] | undefined;
   /** 这些路径第一次请求返回 503（非 ErrorDetail），之后正常。 */
   failOnce?: string[] | undefined;
@@ -45,11 +45,17 @@ export function createFixture({ members = MEMBERS, failOnce = [], routes = [] }:
   const requests: Fixture['requests'] = [];
   const pending = new Set(failOnce);
   const fail = (path: string) => { if (!pending.has(path)) return false; pending.delete(path); return true; };
+  const problem = (code: string, pointer: string) => new Response(JSON.stringify({ type: `https://qian.dev/problems/protocol/${code}`, title: '请求无效', status: 400, code, message: '请求无效', trace_id: '0123456789abcdef0123456789abcdef', pointer }), { status: 400, headers: { 'content-type': 'application/problem+json' } });
+  // 与 Identity Server 相同的检索口径：q 按显示名与账号忽略大小写包含匹配（夹具没有拼音），ids / person_ids 按 id 过滤；三者至多一个，越界即 400。
   const page = (request: Request, rows: typeof members) => {
     const query = new URL(request.url).searchParams;
     const offset = Number(query.get('offset') ?? 0); const limit = Number(query.get('limit') ?? 50);
-    if (limit > 200 || limit < 1 || offset < 0) return new Response(JSON.stringify({ type: 'https://qian.dev/problems/protocol/BAD_REQUEST', title: '请求无效', status: 400, code: 'BAD_REQUEST', message: '请求无效', trace_id: '0123456789abcdef0123456789abcdef', pointer: '#/page' }), { status: 400, headers: { 'content-type': 'application/problem+json' } });
-    return Response.json({ items: rows.slice(offset, offset + limit).map((row) => row.member) });
+    if (limit > 200 || limit < 1 || offset < 0) return problem('BAD_REQUEST', '#/page');
+    const keyword = query.get('q')?.trim().toLocaleLowerCase(); const ids = query.getAll('ids'); const persons = query.getAll('person_ids');
+    if ([query.has('q'), ids.length > 0, persons.length > 0].filter(Boolean).length > 1 || keyword !== undefined && (keyword.length < 1 || keyword.length > 64) || ids.length > 100 || persons.length > 100) return problem('INPUT_INVALID', '#/q');
+    const matched = rows.filter(({ member: { membership } }) => (keyword === undefined || membership.display_name.toLocaleLowerCase().includes(keyword) || membership.account.toLocaleLowerCase().includes(keyword))
+      && (ids.length === 0 || ids.includes(membership.id)) && (persons.length === 0 || persons.includes(membership.person_id)));
+    return Response.json({ items: matched.slice(offset, offset + limit).map((row) => row.member) });
   };
   const transport = createMockTransport([
     ...routes,

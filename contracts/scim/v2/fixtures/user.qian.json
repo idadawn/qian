@@ -1,0 +1,46 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:User",
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+  ],
+  "id": "0193a000-0000-7000-8000-000000000104",
+  "userName": "zhaoliu",
+  "name": {
+    "formatted": "赵六"
+  },
+  "displayName": "赵六",
+  "active": true,
+  "emails": [
+    {
+      "value": "zhaoliu@example.test",
+      "type": "work",
+      "primary": true
+    }
+  ],
+  "phoneNumbers": [
+    {
+      "value": "tel:+86-138-1234-5678",
+      "type": "work"
+    }
+  ],
+  "groups": [
+    {
+      "value": "0193a000-0000-7000-8000-000000000021",
+      "$ref": "https://qian.example.test/scim/v2/Groups/0193a000-0000-7000-8000-000000000021",
+      "display": "项目组",
+      "type": "direct"
+    }
+  ],
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    "department": "前端组",
+    "manager": {
+      "value": "0193a000-0000-7000-8000-000000000102",
+      "$ref": "https://qian.example.test/scim/v2/Users/0193a000-0000-7000-8000-000000000102",
+      "displayName": "李四"
+    }
+  },
+  "meta": {
+    "resourceType": "User",
+    "location": "https://qian.example.test/scim/v2/Users/0193a000-0000-7000-8000-000000000104"
+  }
+}

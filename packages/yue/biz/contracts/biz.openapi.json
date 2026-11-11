@@ -3,7 +3,7 @@
   "info": {
     "title": "业务选择器取数契约",
     "version": "0.1.0",
-    "description": "S1-YUE-010 的组件取数契约与 mock 夹具。/api/directory/** 与身份组件 Identity Server 的目录 API（PRD 7.4.3，IdentityDirectoryEndpoints）逐字段一致：snake_case、空值字段省略，S1-IDP-010 对真实目录验收。/api/authz/roles 与 /api/authz/permissions 是 PRD 7.5 角色目录与权限点目录的草案：字段取自 roles 与 permission_definitions 表，线上形状沿用 GET /api/authz/me/permissions 的 camelCase；路径与字段待 S1-AZ-005 接线时确认，不宣称后端已经交付。"
+    "description": "S1-YUE-010 的组件取数契约与 mock 夹具。/api/directory/** 与身份组件 Identity Server 的目录 API（PRD 7.4.3，IdentityDirectoryEndpoints）逐字段一致：snake_case、空值字段省略，由 Identity Server 的单测与 contracts/identity/v1/directory.openapi.json 逐字段比对，S1-IDP-010 对真实目录验收。/api/authz/roles 与 /api/authz/permissions 是 PRD 7.5 角色目录与权限点目录的草案：字段取自 roles 与 permission_definitions 表，线上形状沿用 GET /api/authz/me/permissions 的 camelCase；路径与字段待 S1-AZ-005 接线时确认，不宣称后端已经交付。"
   },
   "paths": {
     "/api/directory/orgs/tree": {
@@ -22,9 +22,12 @@
     },
     "/api/directory/members": {
       "get": {
-        "summary": "分页读取本租户成员",
-        "description": "按账号、成员 id 排序；不含已删除与已清除的成员，也不合成平台管理员。",
+        "summary": "分页读取或检索本租户成员",
+        "description": "按账号、成员 id 排序；不含已删除与已清除的成员，也不合成平台管理员。q、ids、person_ids 至多给一个。",
         "parameters": [
+          { "$ref": "#/components/parameters/Keyword" },
+          { "name": "ids", "in": "query", "required": false, "description": "按目录成员 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "minItems": 1, "maxItems": 100 } },
+          { "name": "person_ids", "in": "query", "required": false, "description": "按自然人 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "minItems": 1, "maxItems": 100 } },
           { "$ref": "#/components/parameters/Offset" },
           { "$ref": "#/components/parameters/Limit" }
         ],
@@ -42,10 +45,11 @@
     "/api/directory/orgs/{id}/members": {
       "get": {
         "summary": "分页读取组织下的成员",
-        "description": "descendants 为 true 时包含整棵子树的成员。",
+        "description": "descendants 为 true 时包含整棵子树的成员；q 在该范围内检索。",
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
           { "name": "descendants", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "$ref": "#/components/parameters/Keyword" },
           { "$ref": "#/components/parameters/Offset" },
           { "$ref": "#/components/parameters/Limit" }
         ],
@@ -105,6 +109,7 @@
   },
   "components": {
     "parameters": {
+      "Keyword": { "name": "q", "in": "query", "required": false, "description": "关键字，去掉首尾空白后 1–64 字；按显示名、账号与档案拼音做忽略大小写的包含匹配，不检索手机号与邮箱。", "schema": { "type": "string", "minLength": 1, "maxLength": 64 } },
       "Offset": { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 0, "default": 0 } },
       "Limit": { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 } }
     },

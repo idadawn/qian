@@ -23,12 +23,12 @@ import { ComponentDemo } from '@theme';
 | 接口 | 来源 | 用途 |
 |---|---|---|
 | `GET /api/directory/orgs/tree` | 身份组件目录 API（已交付） | OrganizeSelect：按 path 排序的扁平列表，以 parent_id 组树 |
-| `GET /api/directory/members`、`GET /api/directory/orgs/{id}/members` | 身份组件目录 API（已交付） | UserSelect：offset / limit 分页，limit 不超过 200 |
+| `GET /api/directory/members`、`GET /api/directory/orgs/{id}/members` | 身份组件目录 API（已交付） | UserSelect：`q` 服务端检索（显示名、账号、拼音），`ids` / `person_ids` 按 id 批量回显已选值；offset / limit 分页，limit 不超过 200 |
 | `GET /api/directory/org-types` | 身份组件目录 API（已交付） | 内置字典 orgTypeDictionary |
 | `GET /api/authz/roles` | PRD 7.5 角色目录草案 | RoleSelect |
 | `GET /api/authz/permissions` | PRD 7.5 权限点目录草案 | 授权树 |
 
-目录接口与身份组件逐字段一致（snake_case，空值字段省略），真实目录的 E2E 在 S1-IDP-010。角色与权限点目录尚无服务端实现：草案字段取自 PRD 7.5 的 roles 与 permission_definitions 表，线上形状沿用 `GET /api/authz/me/permissions` 的 camelCase，路径与字段由 S1-AZ-005 接线时确认。
+目录接口与身份组件逐字段一致（snake_case，空值字段省略）：身份组件的单测把这里的目录部分与 `contracts/identity/v1/directory.openapi.json` 逐字段比对，真实目录的 E2E 见靶场的真实目录页（S1-IDP-010）。角色与权限点目录尚无服务端实现：草案字段取自 PRD 7.5 的 roles 与 permission_definitions 表，线上形状沿用 `GET /api/authz/me/permissions` 的 camelCase，路径与字段由 S1-AZ-005 接线时确认。
 
 ## 取值口径
 
@@ -66,7 +66,7 @@ import { ComponentDemo } from '@theme';
 
 ## UserSelect
 
-用户选择器：按页读取本租户目录成员（`organizationId` 限定组织，`descendants` 默认含子树），按姓名与账号在本地过滤；停用、锁定的成员带状态说明。目录接口暂无关键字搜索与按 id 批量查询，组件最多加载 `max`（默认 1000）位成员，超出时提示按组织缩小范围。
+用户选择器：输入去抖（`debounceMs`，默认 250）后交给目录接口按显示名、账号与拼音检索，`organizationId` 限定组织，`descendants` 默认含子树；停用、锁定的成员带状态说明。每次显示第一页 50 位，后面还有时在触发器旁提示继续输入。已选值不在检索过的结果里时（初始值、换了组织范围）按 id 批量回查显示名，`valueKey="person"` 时按自然人 id 回查；查不到的值显示原值，不重复请求。
 
 <ComponentDemo name="UserSelect" />
 
@@ -92,4 +92,4 @@ AuthorizationTree 接收 `client`、`i18n`、`label`、`value`（已授予的权
 
 ## 限制
 
-岗位、用户组选择器，弹窗式多选（UsersSelect、PopupSelect 族）与授权树的列 / 字段 / 数据页签留给 S2。目录成员接口没有关键字搜索，UserSelect 在已加载的成员里过滤。角色与权限点目录是草案，服务端由 S1-AZ-005 交付。所有示例与浏览器测试共用源码，场景登记在 biz/docs/scenarios.json。
+岗位、用户组选择器，弹窗式多选（UsersSelect、PopupSelect 族）与授权树的列 / 字段 / 数据页签留给 S2。UserSelect 只显示检索结果的第一页，不做滚动加载。角色与权限点目录是草案，服务端由 S1-AZ-005 交付。所有示例与浏览器测试共用源码，场景登记在 biz/docs/scenarios.json。

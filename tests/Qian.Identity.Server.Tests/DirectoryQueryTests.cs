@@ -225,6 +225,61 @@ public sealed class DirectoryQueryTests(PostgresFixture postgres) : IClassFixtur
         Assert.Empty(await Find("members?q=" + new string('长', 64)));
     }
 
+    // Agent 契约（S1-IDP-010 验收 4）的真实响应侧：契约里登记的每个 GET 端点都用真实会话调到，不带参数调一次、每个查询参数各单独调一次，
+    // 响应都必须通过契约 Schema 的严格校验（根与嵌套对象都不许多字段）；错误响应符合 ErrorDetail。
+    [Fact]
+    public async Task 目录查询的真实响应符合Agent契约Schema_契约里的每个GET端点与查询参数都调到()
+    {
+        await using var host = await AccountsHost.Start(postgres); var w = await Build(host, "directory-contract");
+        using (host.Tenant.BeginScope(w.Tenant.Id.ToString("D")))
+        {
+            await host.Service.SetProfileAsync(w.M("zhaoliu"), new("赵六", "zhaoliu", "13812345678", "zhaoliu@example.test", JsonSerializer.SerializeToElement(new { locale = "zh-CN" })), Ct);
+            _ = await host.Service.CreateGroupAsync("项目组", Ct);
+        }
+        var admin = host.NewBrowser(); await admin.Login(w.Phones["zhangsan"], Password, tenant: w.Tenant.Id);
+        var contract = DirectoryContract.Load();
+        var subjects = new Dictionary<string, Guid> { ["members"] = w.M("zhaoliu"), ["orgs"] = w.Orgs["rd"], ["positions"] = w.Positions["engineer"] };
+        var queries = new Dictionary<string, string>
+        {
+            ["q"] = "q=zhao", ["ids"] = $"ids={w.M("zhaoliu"):D}&ids={w.M("lisi"):D}", ["person_ids"] = $"person_ids={w.Members["zhaoliu"].PersonId:D}", ["descendants"] = "descendants=true",
+            ["offset"] = "offset=1", ["limit"] = "limit=2", ["position_id"] = $"position_id={w.Positions["salesStaff"]:D}", ["depth"] = "depth=2",
+        };
+        var exercised = 0;
+        foreach (var (path, _, operation) in contract.Operations())
+        {
+            var concrete = path.Contains("{id}", StringComparison.Ordinal) ? path.Replace("{id}", subjects[path.Split('/')[3]].ToString("D"), StringComparison.Ordinal) : path;
+            var schema = contract.ResponseSchema(operation, "200")!;
+            var variants = contract.Parameters(operation).Where(parameter => parameter["in"]!.GetValue<string>() == "query").Select(parameter => queries[parameter["name"]!.GetValue<string>()]).Prepend("");
+            foreach (var query in variants)
+            {
+                var url = concrete.TrimStart('/') + (query.Length == 0 ? "" : "?" + query);
+                var response = await admin.Json(HttpMethod.Get, url);
+                Assert.True(response.Status == HttpStatusCode.OK, url + " → " + response.Status);
+                Assert.True(contract.Validate(schema, response.Body) is [], url + " 不符合契约：" + string.Join(" | ", contract.Validate(schema, response.Body)) + " 响应：" + response.Body.GetRawText());
+                // 不带参数的那次必须有数据，免得空列表让校验空转。
+                if (query.Length == 0 && response.Body.TryGetProperty("items", out var items)) Assert.True(items.GetArrayLength() > 0, url + " 没有数据");
+            }
+            exercised++;
+        }
+        Assert.Equal(13, exercised);
+        // 错误响应：参数无效 400、不存在 404、未登录 401、平台会话 403，都符合契约里的 ErrorDetail。
+        var (_, platformPhone) = await CreatePerson(host, platform: true);
+        var operations = host.NewBrowser(); await operations.Login(platformPhone, Password);
+        foreach (var (browser, url, status, template) in new[]
+        {
+            (admin, "api/directory/members?ids=not-a-uuid", HttpStatusCode.BadRequest, "/api/directory/members"),
+            (admin, $"api/directory/members/{Guid.NewGuid():D}/superiors", HttpStatusCode.NotFound, "/api/directory/members/{id}/superiors"),
+            (host.NewBrowser(), $"api/directory/orgs/{w.Orgs["fe"]:D}/head", HttpStatusCode.Unauthorized, "/api/directory/orgs/{id}/head"),
+            (operations, "api/directory/me/subordinates", HttpStatusCode.Forbidden, "/api/directory/me/subordinates"),
+        })
+        {
+            var response = await browser.Json(HttpMethod.Get, url);
+            Assert.Equal(status, response.Status);
+            var problem = contract.ResponseSchema(contract.Document["paths"]![template]!["get"]!.AsObject(), ((int)status).ToString(System.Globalization.CultureInfo.InvariantCulture), "application/problem+json")!;
+            Assert.True(contract.Validate(problem, response.Body) is [], url + "：" + string.Join(" | ", contract.Validate(problem, response.Body)));
+        }
+    }
+
     private static async Task<(HttpStatusCode, string)> Status(AccountsHost.Browser browser, string query)
     {
         var response = await browser.Json(HttpMethod.Get, "api/directory/" + query);

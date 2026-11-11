@@ -12,6 +12,7 @@ import { IconPicker } from './icon-picker';
 import { OrganizeSelect, buildOrganizationTree } from './organize-select';
 import { RoleSelect } from './role-select';
 import { UserSelect } from './user-select';
+import { loadMembersByIds, memberKeyword, searchMembers } from '../api';
 
 afterEach(cleanup);
 const i18n = createBizI18n();
@@ -103,49 +104,89 @@ describe('OrganizeSelect', () => {
 });
 
 describe('UserSelect', () => {
-  it('键盘打开、按姓名或账号过滤、回车选中；显示停用状态；回写成员 id', async () => {
+  it('键盘打开列出第一页、输入后由服务端按姓名或账号检索、回车选中；显示停用状态；回写成员 id', async () => {
     const { client, requests } = createFixture();
-    function Example() { const [selected, setSelected] = useState<string | null>(null); return <><UserSelect client={client} i18n={i18n} label="成员" value={selected} onChange={setSelected} /><Value value={selected} /></>; }
+    function Example() { const [selected, setSelected] = useState<string | null>(null); return <><UserSelect client={client} i18n={i18n} label="成员" debounceMs={0} value={selected} onChange={setSelected} /><Value value={selected} /></>; }
     render(<Example />);
     await vi.waitFor(() => expect(requests).toHaveLength(1));
-    expect(requests[0]!.url).toBe('/api/directory/members?offset=0&limit=200');
+    expect(requests[0]!.url).toBe('/api/directory/members?offset=0&limit=51');
     const trigger = screen.getByRole('combobox', { name: '成员' });
     trigger.focus();
     await userEvent.keyboard('{ArrowDown}');
     await screen.findByRole('listbox');
     expect(options()).toEqual(['李四lisi', '钱七qianqi · 已锁定', '王五wangwu', '张三zhangsan', '赵六zhaoliu · 已停用']);
-    await userEvent.keyboard('wang');
+    await userEvent.keyboard('WANG');
     await vi.waitFor(() => expect(options()).toEqual(['王五wangwu']));
+    expect(requests.at(-1)!.url).toBe('/api/directory/members?q=WANG&offset=0&limit=51');
+    // 本地不再过滤：服务端没匹配上就是没有选项。
+    await userEvent.keyboard('{Backspace}{Backspace}{Backspace}{Backspace}李');
+    await vi.waitFor(() => expect(options()).toEqual(['李四lisi']));
     await userEvent.keyboard('{ArrowDown}{Enter}');
-    expect(value()).toBe(uuid(103));
-    await vi.waitFor(() => expect(trigger.textContent).toContain('王五'));
+    expect(value()).toBe(uuid(101));
+    await vi.waitFor(() => expect(trigger.textContent).toContain('李四'));
+    expect(requests.every((request) => !request.url.includes('ids='))).toBe(true);
   });
 
-  it('按组织（含子树）取成员；valueKey=person 回写自然人 id；多选可切换多项', async () => {
+  it('按组织（含子树）检索；valueKey=person 回写自然人 id；多选可切换多项', async () => {
     const { client, requests } = createFixture();
-    function Example() { const [selected, setSelected] = useState<string[]>([]); return <><UserSelect client={client} i18n={i18n} label="成员" organizationId={uuid(2)} valueKey="person" multiple value={selected} onChange={setSelected} /><Value value={selected} /></>; }
+    function Example() { const [selected, setSelected] = useState<string[]>([]); return <><UserSelect client={client} i18n={i18n} label="成员" organizationId={uuid(2)} valueKey="person" debounceMs={0} multiple value={selected} onChange={setSelected} /><Value value={selected} /></>; }
     render(<Example />);
     await vi.waitFor(() => expect(requests).toHaveLength(1));
-    expect(requests[0]!.url).toBe(`/api/directory/orgs/${uuid(2)}/members?descendants=true&offset=0&limit=200`);
+    expect(requests[0]!.url).toBe(`/api/directory/orgs/${uuid(2)}/members?descendants=true&offset=0&limit=51`);
     await userEvent.click(screen.getByRole('combobox', { name: '成员' }));
     await vi.waitFor(() => expect(options()).toHaveLength(3));
     await userEvent.click(screen.getByRole('option', { name: /李四/ }));
     await userEvent.click(screen.getByRole('option', { name: /王五/ }));
     expect(value()).toBe(`${uuid(201)},${uuid(203)}`);
     expect(screen.getByRole('option', { name: /李四/ }).getAttribute('aria-selected')).toBe('true');
+    await userEvent.keyboard('wang');
+    await vi.waitFor(() => expect(requests.at(-1)!.url).toBe(`/api/directory/orgs/${uuid(2)}/members?descendants=true&q=wang&offset=0&limit=51`));
+    await vi.waitFor(() => expect(options()).toEqual(['王五wangwu']));
     await expectAccessible();
     await userEvent.keyboard('{Escape}');
+    // 李四已不在当前结果里，摘要仍用检索过的结果显示名字，不回查。
     await vi.waitFor(() => expect(screen.getByRole('combobox', { name: '成员' }).textContent).toContain('李四'));
+    expect(requests.every((request) => !request.url.includes('ids='))).toBe(true);
     await userEvent.click(screen.getByRole('button', { name: '清空成员' }));
     expect(value()).toBe('');
   });
 
-  it('成员超过上限时停在上限并提示缩小范围，页大小不超过目录接口的 200', async () => {
-    const many = Array.from({ length: 450 }, (_, index) => ({ member: directoryMember(1000 + index, `成员${index}`, `user${String(index).padStart(3, '0')}`), org: 1 }));
+  it('已选值不在检索结果里时按 id 批量回查显示名：按 valueKey 用 ids 或 person_ids，查不到的与非 UUID 的值显示原值且不重复请求', async () => {
+    const { client, requests } = createFixture();
+    const absent = uuid(999);
+    render(<>
+      <UserSelect client={client} i18n={i18n} label="前端组成员" organizationId={uuid(3)} debounceMs={0} multiple value={[uuid(105), 'not-a-uuid']} onChange={() => {}} />
+      <UserSelect client={client} i18n={i18n} label="自然人" organizationId={uuid(3)} valueKey="person" debounceMs={0} value={uuid(204)} onChange={() => {}} />
+      <UserSelect client={client} i18n={i18n} label="已删除" organizationId={uuid(3)} debounceMs={0} value={absent} onChange={() => {}} />
+    </>);
+    // 前端组只有王五：赵六（成员 id）与张三（自然人 id）要回查，回查等第一页回来之后才发。
+    await vi.waitFor(() => expect(screen.getByRole('combobox', { name: '前端组成员' }).textContent).toContain('赵六'));
+    expect(screen.getByRole('combobox', { name: '前端组成员' }).textContent).toContain('not-a-uuid');
+    await vi.waitFor(() => expect(screen.getByRole('combobox', { name: '自然人' }).textContent).toContain('张三'));
+    const lookups = () => requests.filter((request) => request.url.startsWith('/api/directory/members?')).map((request) => request.url).sort();
+    await vi.waitFor(() => expect(lookups()).toEqual([`/api/directory/members?ids=${uuid(105)}&limit=1`, `/api/directory/members?ids=${absent}&limit=1`, `/api/directory/members?person_ids=${uuid(204)}&limit=1`]));
+    expect(screen.getByRole('combobox', { name: '已删除' }).textContent).toContain(absent);
+    await userEvent.click(screen.getByRole('combobox', { name: '前端组成员' }));
+    await vi.waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('搜索前端组成员'));
+    await vi.waitFor(() => expect(options()).toEqual(['王五wangwu']));
+    await userEvent.keyboard('wang');
+    await vi.waitFor(() => expect(requests.at(-1)!.url).toBe(`/api/directory/orgs/${uuid(3)}/members?descendants=true&q=wang&offset=0&limit=51`));
+    await userEvent.keyboard('{Escape}');
+    expect(lookups()).toHaveLength(3);
+  });
+
+  it('检索结果超过一页时只显示前 50 位并提示继续输入，输入关键字后提示消失；页大小在目录接口上限内', async () => {
+    const many = Array.from({ length: 120 }, (_, index) => ({ member: directoryMember(1000 + index, `成员${index}`, `user${String(index).padStart(3, '0')}`), org: 1 }));
     const { client, requests } = createFixture({ members: many });
-    render(<UserSelect client={client} i18n={i18n} label="成员" max={300} value={null} onChange={() => {}} />);
-    expect(await screen.findByText('只加载了前 300 位成员，可按组织缩小范围')).toBeTruthy();
-    expect(requests.map((request) => request.url)).toEqual(['/api/directory/members?offset=0&limit=200', '/api/directory/members?offset=200&limit=100', '/api/directory/members?offset=300&limit=1']);
+    render(<UserSelect client={client} i18n={i18n} label="成员" debounceMs={0} value={null} onChange={() => {}} />);
+    expect(await screen.findByText('只显示前 50 位成员，继续输入可缩小范围')).toBeTruthy();
+    await userEvent.click(screen.getByRole('combobox', { name: '成员' }));
+    await vi.waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('搜索成员'));
+    await vi.waitFor(() => expect(options()).toHaveLength(50));
+    await userEvent.keyboard('user11');
+    await vi.waitFor(() => expect(options()).toHaveLength(10));
+    expect(screen.queryByText('只显示前 50 位成员，继续输入可缩小范围')).toBeNull();
+    expect(requests.map((request) => request.url)).toEqual(['/api/directory/members?offset=0&limit=51', '/api/directory/members?q=user11&offset=0&limit=51']);
   });
 
   it('请求失败：触发器旁出现错误与重试按钮，重试后加载成功', async () => {
@@ -156,6 +197,32 @@ describe('UserSelect', () => {
     await vi.waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
     await userEvent.click(screen.getByRole('combobox', { name: '成员' }));
     await vi.waitFor(() => expect(options()).toHaveLength(5));
+  });
+});
+
+describe('成员检索与按 id 批量的取数函数', () => {
+  it('关键字整理：控制字符换空格、去首尾空白、超长截到 64 个码元且不切断代理对，空白不带 q', () => {
+    expect(memberKeyword('  张三\t ')).toBe('张三');
+    expect(memberKeyword('张\u0000三')).toBe('张 三');
+    expect(memberKeyword('   ')).toBeUndefined();
+    expect(memberKeyword('长'.repeat(70))).toBe('长'.repeat(64));
+    const emoji = '😀'.repeat(40);
+    expect(memberKeyword(emoji)).toBe('😀'.repeat(32));
+    expect(memberKeyword('a'.repeat(63) + '😀')).toBe('a'.repeat(63));
+  });
+
+  it('按 id 批量：去重、跳过非 UUID 与全零 UUID，每批至多 100 个，按 valueKey 选 ids 或 person_ids', async () => {
+    const { client, requests } = createFixture();
+    const ids = Array.from({ length: 230 }, (_, index) => uuid(5000 + index));
+    expect(await loadMembersByIds(client, [...ids, ids[0]!, 'x', '00000000-0000-0000-0000-000000000000'])).toEqual([]);
+    expect(requests.map((request) => new URL(request.url, 'https://tenant.test').searchParams.getAll('ids').length)).toEqual([100, 100, 30]);
+    expect((await loadMembersByIds(client, [uuid(203)], 'person')).map((member) => member.membership.account)).toEqual(['wangwu']);
+    expect(requests.at(-1)!.url).toBe(`/api/directory/members?person_ids=${uuid(203)}&limit=1`);
+    expect(await loadMembersByIds(client, ['x'])).toEqual([]);
+    expect(requests).toHaveLength(4);
+    const page = await searchMembers(client, { keyword: ' z ', limit: 2 });
+    expect([page.items.map((member) => member.membership.account), page.more]).toEqual([['zhangsan', 'zhaoliu'], false]);
+    expect(requests.at(-1)!.url).toBe('/api/directory/members?q=z&offset=0&limit=3');
   });
 });
 

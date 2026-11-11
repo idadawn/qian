@@ -1,0 +1,117 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+  "name": "EnterpriseUser",
+  "description": "SCIM 2.0 企业用户扩展（RFC 7643 第 4.3 节）。",
+  "attributes": [
+    {
+      "name": "employeeNumber",
+      "type": "string",
+      "multiValued": false,
+      "description": "组织分配的工号。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "costCenter",
+      "type": "string",
+      "multiValued": false,
+      "description": "成本中心。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "organization",
+      "type": "string",
+      "multiValued": false,
+      "description": "所属组织（法人或公司）的名称。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "division",
+      "type": "string",
+      "multiValued": false,
+      "description": "事业部。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "department",
+      "type": "string",
+      "multiValued": false,
+      "description": "部门名称。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "manager",
+      "type": "complex",
+      "multiValued": false,
+      "description": "用户的直属主管。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "multiValued": false,
+          "description": "主管 User 资源的 id。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "$ref",
+          "type": "reference",
+          "multiValued": false,
+          "description": "主管 User 资源的地址。",
+          "required": false,
+          "caseExact": false,
+          "referenceTypes": [
+            "User"
+          ],
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "displayName",
+          "type": "string",
+          "multiValued": false,
+          "description": "主管的显示名称，只读。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    }
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "location": "/v2/Schemas/urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+  }
+}

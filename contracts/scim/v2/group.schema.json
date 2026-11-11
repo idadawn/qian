@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/scim/v2/group.schema.json",
+  "title": "SCIM 2.0 Group",
+  "description": "SCIM 2.0 Group 资源的 JSON 表示，由 group.scim-schema.json 推导，单测逐属性比对。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemas",
+    "displayName"
+  ],
+  "properties": {
+    "schemas": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "urn:ietf:params:scim:schemas:core:2.0:Group"
+        ]
+      },
+      "contains": {
+        "const": "urn:ietf:params:scim:schemas:core:2.0:Group"
+      },
+      "description": "资源采用的 Schema URN；必须含核心 Schema，带扩展时也要列出扩展的 URN。"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "readOnly": true,
+      "description": "服务提供方分配的资源 id，大小写敏感、不可改。"
+    },
+    "externalId": {
+      "type": "string",
+      "description": "调用方（外部身份源）为资源分配的标识，大小写敏感。"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "readOnly": true,
+      "description": "资源元数据，由服务提供方维护。",
+      "properties": {
+        "resourceType": {
+          "type": "string",
+          "description": "资源类型名称：User 或 Group。"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "创建时间。"
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time",
+          "description": "最后修改时间。"
+        },
+        "location": {
+          "type": "string",
+          "format": "uri",
+          "description": "资源的完整地址。"
+        },
+        "version": {
+          "type": "string",
+          "description": "资源版本（ETag）。"
+        }
+      }
+    },
+    "displayName": {
+      "type": "string",
+      "description": "组的显示名称，必填（RFC 7643 第 4.2 节正文）。"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "成员资源的 id。"
+          },
+          "$ref": {
+            "type": "string",
+            "format": "uri-reference",
+            "description": "成员资源的地址。"
+          },
+          "type": {
+            "type": "string",
+            "description": "成员资源的类型。"
+          },
+          "display": {
+            "type": "string",
+            "readOnly": true,
+            "description": "成员的显示名称，只读（RFC 7643 第 2.4 节的缺省子属性）。"
+          }
+        }
+      },
+      "description": "组的成员。"
+    }
+  }
+}

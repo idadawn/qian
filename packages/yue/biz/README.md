@@ -21,7 +21,7 @@ const i18n = createBizI18n(); // 已有 PlatformI18n 实例时改用 addBizLangu
 - **取值**：OrganizeSelect 给组织 id；UserSelect 默认给目录成员 id，`valueKey="person"` 给自然人 id（授权侧 user 主体的 subjectId）；RoleSelect 给角色 code；授权树给权限点全名数组。
 - **文案**：组件不写死面向用户的文字，key 前缀 `biz.`，内置 zh-CN / zh-TW / en-US（`bizLanguagePacks`）。
 - **树**：OrganizeSelect 单选复用 `@idadawn/yue-data` 的 TreeSelect，多选与授权树用同一 Tree 的复选（多选组织 `cascade={false}`），不另做一套树（规格 D3）。
-- **可复用的数据口径**：`buildOrganizationTree`、`memberOption`、`roleLabel`、`groupPermissionCatalog`、`buildAuthorizationTree`、`linkAuthorization` 与各 `load*` 加载函数。
+- **可复用的数据口径**：`buildOrganizationTree`、`memberOption`、`roleLabel`、`groupPermissionCatalog`、`buildAuthorizationTree`、`linkAuthorization`、成员检索 `searchMembers` / 按 id 批量 `loadMembersByIds` 与各 `load*` 加载函数。
 
 ## 验证
 
@@ -31,7 +31,7 @@ const i18n = createBizI18n(); // 已有 PlatformI18n 实例时改用 addBizLangu
 
 ## 已知限制与延期项
 
-- 目录成员接口暂无关键字搜索与按 id 批量查询：UserSelect 最多加载 `max`（默认 1000）位成员并在本地过滤，超出时提示按组织缩小范围。服务端搜索可在 S1-IDP-010 补充后改用 ApiSelect 的服务端模式。
-- 角色与权限点目录的服务端尚未交付（S1-AZ-005）；真实目录数据的 E2E 在 S1-IDP-010，角色授予与服务端生效的 E2E 在 S1-AZ-005。
+- UserSelect 由服务端检索（S1-IDP-010 的 `q`，按显示名、账号与拼音），每次只显示第一页 50 位，后面还有时提示继续输入，不做滚动加载；已选值的显示名按 `ids` / `person_ids` 批量回查。
+- 角色与权限点目录的服务端尚未交付（S1-AZ-005）；真实目录数据的 E2E 见靶场的真实目录页（S1-IDP-010），角色授予与服务端生效的 E2E 在 S1-AZ-005。
 - PosSelect / GroupSelect / UsersSelect、PopupSelect 族、RelationForm、InterfaceSelect 与授权树的列 / 字段 / 数据页签留给 S2。
 - 版本 0.1.0 尚未发布。

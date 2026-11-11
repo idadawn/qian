@@ -1,0 +1,36 @@
+[
+  {
+    "schemas": [
+      "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
+    ],
+    "id": "User",
+    "name": "User",
+    "endpoint": "/Users",
+    "description": "用户账号；Qian 中对应租户目录成员。",
+    "schema": "urn:ietf:params:scim:schemas:core:2.0:User",
+    "schemaExtensions": [
+      {
+        "schema": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+        "required": false
+      }
+    ],
+    "meta": {
+      "resourceType": "ResourceType",
+      "location": "/v2/ResourceTypes/User"
+    }
+  },
+  {
+    "schemas": [
+      "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
+    ],
+    "id": "Group",
+    "name": "Group",
+    "endpoint": "/Groups",
+    "description": "组；Qian 中对应租户目录的用户组。",
+    "schema": "urn:ietf:params:scim:schemas:core:2.0:Group",
+    "meta": {
+      "resourceType": "ResourceType",
+      "location": "/v2/ResourceTypes/Group"
+    }
+  }
+]

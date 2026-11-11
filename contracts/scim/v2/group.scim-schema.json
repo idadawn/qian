@@ -1,0 +1,89 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:ietf:params:scim:schemas:core:2.0:Group",
+  "name": "Group",
+  "description": "SCIM 2.0 核心 Group 资源（RFC 7643 第 4.2 节）。",
+  "attributes": [
+    {
+      "name": "displayName",
+      "type": "string",
+      "multiValued": false,
+      "description": "组的显示名称，必填（RFC 7643 第 4.2 节正文）。",
+      "required": true,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "members",
+      "type": "complex",
+      "multiValued": true,
+      "description": "组的成员。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "multiValued": false,
+          "description": "成员资源的 id。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "immutable",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "$ref",
+          "type": "reference",
+          "multiValued": false,
+          "description": "成员资源的地址。",
+          "required": false,
+          "caseExact": false,
+          "referenceTypes": [
+            "User",
+            "Group"
+          ],
+          "mutability": "immutable",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "成员资源的类型。",
+          "required": false,
+          "canonicalValues": [
+            "User",
+            "Group"
+          ],
+          "caseExact": false,
+          "mutability": "immutable",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "成员的显示名称，只读（RFC 7643 第 2.4 节的缺省子属性）。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    }
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "location": "/v2/Schemas/urn:ietf:params:scim:schemas:core:2.0:Group"
+  }
+}
