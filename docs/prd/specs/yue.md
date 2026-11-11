@@ -503,7 +503,7 @@ S1 起预留三件事：机器可读 manifest、带版本的 Schema 与校验器
 - [ ] 校验规则目录与脱敏规则目录可枚举（带 id 与参数 Schema），前后端同一份
 
 **业务选择器与认证**
-- [ ] OrganizeSelect / UserSelect / RoleSelect 经 `PlatformClient` 取数，不直连 URL
+- [x] OrganizeSelect / UserSelect / RoleSelect 经 `PlatformClient` 取数，不直连 URL（S1-YUE-010，PR #298：对 `@yue/sdk` 的 mock 中间件验收；真实目录数据的 E2E 在 S1-IDP-010）
 - [ ] 菜单 / 按钮授权树完成一次真实授权并在服务端生效（不是仅前端勾选）
 - [ ] 账号密码 + SSO（通用 OIDC）+ 多租户选择 + 登录过期弹窗 E2E 通过；令牌不出现在 URL
 
