@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderToString } from 'react-dom/server';
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { createMockTransport, PlatformClient } from '@idadawn/yue-sdk';
 import { ApiSelect, AuthorizationTree, DictSelect, IconPicker, OrganizeSelect, RoleSelect, UserSelect, bizLanguagePacks, createBizI18n, orgTypeDictionary } from './index';
@@ -57,5 +58,31 @@ describe('源码约束', () => {
     for (const status of ['disabled', 'locked']) expect(keys.has(`biz.member.status.${status}`)).toBe(true);
     for (const risk of ['high', 'critical']) expect(keys.has(`biz.risk.${risk}`)).toBe(true);
     for (const role of ['tenant.owner', 'tenant.admin', 'tenant.developer', 'tenant.user']) expect(keys.has(`biz.role.${role}`)).toBe(true);
+  });
+
+  it('没有写死面向用户的文案：注释以外不出现中日韩文字，JSX 文本与可读属性不含字母', () => {
+    // 与伪语言包用例互补：那条按渲染结果检查，这条覆盖用例没有渲染到的分支。英文字面量与类名、标识无法区分，只查 JSX 文本与可读属性。
+    // 中日韩文字按 Unicode 文字系统判断；全角与中文标点按码点区间判断，区间写成数字，源码里不出现会被 no-irregular-whitespace 拦下的全角空格。
+    const han = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+    const cjk = (value: string) => han.test(value) || [...value].some((char) => { const code = char.codePointAt(0)!; return (code >= 0x3000 && code <= 0x303f) || (code >= 0xff00 && code <= 0xffef); });
+    const readable = new Set(['aria-label', 'aria-description', 'aria-roledescription', 'aria-valuetext', 'placeholder', 'title', 'alt', 'label']);
+    const findings: string[] = [];
+    for (const { file, text } of sources) {
+      if (file === 'locales.ts' || file.endsWith('.generated.ts')) continue;
+      const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+      const report = (node: ts.Node, value: string) => findings.push(`${file}:${source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1} ${JSON.stringify(value.trim())}`);
+      const attribute = (node: ts.Node) => ts.isJsxAttribute(node.parent) ? node.parent : ts.isJsxExpression(node.parent) && ts.isJsxAttribute(node.parent.parent) ? node.parent.parent : undefined;
+      const visit = (node: ts.Node): void => {
+        if (ts.isJsxText(node)) {
+          if (/\p{L}/u.test(node.text)) report(node, node.text);
+        } else if (ts.isStringLiteralLike(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
+          const owner = attribute(node);
+          if (cjk(node.text) || (owner && readable.has(owner.name.getText(source)) && /\p{L}/u.test(node.text))) report(node, node.text);
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(source);
+    }
+    expect(findings).toEqual([]);
   });
 });

@@ -18,14 +18,13 @@ test('角色授予：全程键盘完成选部门、选人、选角色与授权�
   const organization = page.getByRole('button', { name: /^部门/ });
   await expect(organization).toHaveAccessibleName('部门 请选择');
 
-  // 部门：Tab 到组织选择器，Enter 打开，方向键在组织树里展开并选中「研发中心」。
+  // 部门：Tab 到组织选择器，Enter 打开（焦点落在树的首项），方向键在组织树里展开并选中「研发中心」。
   await page.keyboard.press('Tab');
   await expect(organization).toBeFocused();
   await page.keyboard.press('Enter');
   const tree = page.getByRole('tree', { name: '部门' });
-  await expect(tree.getByRole('treeitem', { name: '总部' })).toBeVisible();
+  await expect(tree.getByRole('treeitem', { name: '总部' })).toBeFocused();
   await expectNoBlocking(page, '组织树打开');
-  await tree.getByRole('treeitem', { name: '总部' }).focus();
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowDown');
   await expect(tree.getByRole('treeitem', { name: '研发中心' })).toBeFocused();
@@ -67,7 +66,7 @@ test('角色授予：全程键盘完成选部门、选人、选角色与授权�
   // 守卫随弹层卸载、焦点掉到 body。与上面选人后按 Escape 一样，先等焦点回到触发器再继续。
   await expect(role).toBeFocused();
 
-  // 授权树：该角色已有客户的查看与写入；Tab 进树，勾选「导出」后客户菜单变为全选；取消「查看」连带取消该菜单的按钮。
+  // 授权树：该角色已有客户的查看与写入；Tab 进树，空格勾选「导出」后客户菜单变为全选；回车勾选成员菜单的「新建」，自动带上「查看」，成员菜单变为半选。
   const permissions = page.getByRole('tree', { name: '角色权限' });
   await expect(permissions.getByRole('treeitem', { name: '客户' })).toHaveAttribute('aria-checked', 'mixed');
   await page.keyboard.press('Tab');
@@ -100,7 +99,11 @@ test('成员加载失败时触发器旁给出可键盘到达的重试，重试�
   const alert = page.getByRole('alert');
   await expect(alert).toContainText('加载失败');
   await expectNoBlocking(page, '成员加载失败');
-  await alert.getByRole('button', { name: '重试' }).focus();
+  // 键盘可达：Tab 先到成员触发器，再到错误旁的「重试」。
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('combobox', { name: '成员', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(alert.getByRole('button', { name: '重试' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(alert).toHaveCount(0);
   await page.getByRole('combobox', { name: '成员', exact: true }).click();
