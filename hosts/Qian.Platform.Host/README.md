@@ -47,7 +47,7 @@ profile 的合成顺序是：platform profile 的组合包（base / shell / mode
 
 同进程后，经本宿主做的授权变更由 Authz 经进程内的身份账号端口递增该成员在租户内的身份修订，并抬高 PEP 的修订下限（S1-DEC-027 / S1-AZ-009）：旧令牌经网关调平台表面一律 401，网关换令牌后恢复。本宿主不登记身份侧的授权事件订阅，避免双递增。
 
-身份分支要求 HTTPS issuer 与 RSA 签名、加密证书（含私钥）。`Identity:AllowLoopbackHttp` 只在 Development 且 issuer 是回环地址时生效，只给集成测试用。TLS 在反向代理上终止时（staging 是边缘 hub → frp → Traefik），配置 `Identity:TrustedProxyNetworks` 与 `Identity:ForwardLimit`，分支从可信代理的 `X-Forwarded-Proto` 恢复 HTTPS、从 `X-Forwarded-For` 恢复客户端地址；不配置时不采信任何转发头。转发头只在身份分支里处理，平台管线只认网关 S2S，不需要它们。
+身份分支要求 HTTPS issuer 与 RSA 签名、加密证书（含私钥）。`Identity:AllowLoopbackHttp` 只在 Development 且 issuer 是回环地址时生效，只给集成测试用。TLS 在反向代理上终止时（staging 是边缘 hub → WireGuard → Traefik），配置 `Identity:TrustedProxyNetworks` 与 `Identity:ForwardLimit`，分支从可信代理的 `X-Forwarded-Proto` 恢复 HTTPS、从 `X-Forwarded-For` 恢复客户端地址；不配置时不采信任何转发头。转发头只在身份分支里处理，平台管线只认网关 S2S，不需要它们。
 
 ## 认证
 

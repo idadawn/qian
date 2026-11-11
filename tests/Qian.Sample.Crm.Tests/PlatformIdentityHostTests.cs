@@ -299,7 +299,7 @@ public sealed class PlatformIdentityHostTests(PostgresFixture postgres) : IClass
         {
             ["Root"] = RepositoryRoot(), ["S2S:Issuer"] = S2sIssuer, ["S2S:AllowHttpJwks"] = "true", ["Secrets:MountRoot"] = directory,
             ["Identity:InProcess"] = "true", ["Identity:AllowLoopbackHttp"] = "true", ["Identity:PagesRoot"] = Pages(directory, "identity-pages"),
-            // 可信代理链（staging 是 hub → frp → Traefik）：测试客户端在回环上充当最后一跳代理，192.0.2.0/24 充当上一跳；回溯两跳。
+            // 可信代理链（staging 是 hub → WireGuard → Traefik）：测试客户端在回环上充当最后一跳代理，192.0.2.0/24 充当上一跳；回溯两跳。
             ["Identity:TrustedProxyNetworks:0"] = "127.0.0.0/8", ["Identity:TrustedProxyNetworks:1"] = "192.0.2.0/24", ["Identity:ForwardLimit"] = "2",
             ["Identity:Clients:0:ClientId"] = GatewayClientId, ["Identity:Clients:0:RedirectUri"] = new Uri(shell, "auth/callback").AbsoluteUri, ["Identity:Clients:0:Resource"] = Resource,
             ["Migrations:AppRole"] = PostgresFixture.AppRoleName, ["Migrations:AuditWriterRole"] = AuditWriter,

@@ -66,7 +66,7 @@ public static class PlatformIdentity
         builder.Services.AddSingleton<IStartupFilter>(new IdentityBranch(pages, signupPages, ProxyHeaders(builder.Configuration)));
     }
 
-    // 身份分支信任的反向代理（staging：边缘 hub 终止 TLS → frp → Traefik → 本宿主）。身份服务只收 HTTPS，要由可信代理的 X-Forwarded-Proto 恢复原始 scheme，
+    // 身份分支信任的反向代理（staging：边缘 hub 终止 TLS → WireGuard → Traefik → 本宿主）。身份服务只收 HTTPS，要由可信代理的 X-Forwarded-Proto 恢复原始 scheme，
     // X-Forwarded-For 恢复客户端地址（登录审计、会话与申请人限流都记它）。只信任 Identity:TrustedProxyNetworks 列出的网段（CIDR，前缀长度不能为 0）；
     // 没有配置时不处理任何转发头——清空 ASP.NET 的缺省名单不等于拒绝全部，所以干脆不挂中间件。Identity:ForwardLimit（1–5，缺省 1）是从右往左回溯的跳数上限，
     // 每回溯一跳，上一跳的地址都必须在可信网段里；客户端自己塞进 X-Forwarded-For 的条目在上限之外，不会被采信。

@@ -29,11 +29,11 @@
 - 外壳与网关：`https://qian-staging.deepsingularity.cn`
 - 身份发行方：`https://qian-staging-id.deepsingularity.cn/`
 
-公网链路与现有站点相同：浏览器 → hub nginx（43.180.203.135，TLS 在此终止，Let's Encrypt 证书）→ 隧道 → MetalLB `192.168.1.200` → Traefik（按 Host 分流）→ 两个 Service。
+公网链路与现有站点相同：浏览器 → hub nginx（43.180.203.135，TLS 在此终止，Let's Encrypt 证书）→ WireGuard → qd → MetalLB `192.168.1.200` → Traefik（按 Host 分流）→ 两个 Service。
 
 **转发头。** Traefik 对 web / websecure 入口信任节点网段与 Pod 网段的转发头（部署仓库 `0-cluster/traefik-helm-config.yaml`，2026-11-12 只读核对过运行参数），hub 设的 `X-Forwarded-Proto: https` 会原样到 Pod。
 
-- 平台宿主：身份服务只收 HTTPS，所以身份分支要从可信代理的转发头恢复原始 scheme 和客户端地址。staging 配 `Identity:TrustedProxyNetworks` = `10.42.0.0/16`（直连的 Traefik Pod）与 `192.168.1.0/24`（Traefik 看到的隧道一跳），`Identity:ForwardLimit=2`。
+- 平台宿主：身份服务只收 HTTPS，所以身份分支要从可信代理的转发头恢复原始 scheme 和客户端地址。staging 配 `Identity:TrustedProxyNetworks` = `10.42.0.0/16`（直连的 Traefik Pod）与 `192.168.1.0/24`（Traefik 看到的 WireGuard 一跳），`Identity:ForwardLimit=2`。
 - 网关：配 `Gateway:TrustedProxyNetworks=["10.42.0.0/16"]`。
 
 **回环与依赖。**
@@ -96,28 +96,35 @@
    ```bash
    ssh qd 'cd qian-build && git clone -b <分支> qian.bundle qian'
    ```
-3. 构建与推送（qd 的 `~/qian-build/qian`）。`build` 构建完即推送到标签所在的仓库，再从推送结果取 digest：
+3. 构建与推送（qd 的 `~/qian-build/qian`）。`build` 构建完即推送到标签所在的仓库，再从推送结果取 digest。推送的标签写 `192.168.1.201:80/…`：Harbor 只开 HTTP 80，qd 的 Docker 用 containerd 镜像存储，不带端口时先连 443、连不上也不回落到 HTTP（与部署仓库流水线的 `HARBOR_PUSH_HOST` 相同）。清单里写不带端口的 `192.168.1.201/qian/…@sha256:…`，节点的 `registries.yaml` 把它映射到 HTTP 端点，两种写法是同一个仓库、同一个 digest。
    ```bash
-   python3 scripts/images.py build --kind jit --project hosts/Qian.Platform.Host/Qian.Platform.Host.csproj --assembly Qian.Platform.Host --tag 192.168.1.201/qian/qian-platform:<短 SHA> --web ../web-platform
+   python3 scripts/images.py build --kind jit --project hosts/Qian.Platform.Host/Qian.Platform.Host.csproj --assembly Qian.Platform.Host --tag 192.168.1.201:80/qian/qian-platform:<短 SHA> --web ../web-platform
    ```
    ```bash
-   python3 scripts/images.py build --kind aot --project hosts/Qian.Gateway.Host/Qian.Gateway.Host.csproj --assembly Qian.Gateway.Host --tag 192.168.1.201/qian/qian-gateway:<短 SHA> --web ../web-gateway
+   python3 scripts/images.py build --kind aot --project hosts/Qian.Gateway.Host/Qian.Gateway.Host.csproj --assembly Qian.Gateway.Host --tag 192.168.1.201:80/qian/qian-gateway:<短 SHA> --web ../web-gateway
    ```
    - 每条命令打印一段 JSON：`ref` 是按 digest 的引用，`build` 是构建证据（源码 SHA、KunVersion、profile 与组件目录修订、`webDigest`）。两段都记进任务进度日志。
    - 推送失败时命令以非零退出、不打印 JSON，镜像留在本机；修好仓库权限后重跑，BuildKit 缓存让重跑很快。
    - 清单只按 `ref` 里的 digest 引用镜像，标签只用来推送。部署仓库里 digest 只写在 `env-ds/qian-staging/kustomization.yaml` 的 `images` 段这一处。
 4. 签名清单（qd）。对推送后的同一个 digest 生成签名清单并自查，结果放进部署仓库的签名清单 ConfigMap：
    ```bash
-   python3 scripts/sign-system-revisions.py sign --key ~/.qian/staging-system-revisions.pem --image 192.168.1.201/qian/qian-platform@sha256:<digest> --out system-revisions.json
+   python3 scripts/sign-system-revisions.py sign --key ~/.qian/staging-system-revisions.pem --image 192.168.1.201:80/qian/qian-platform@sha256:<digest> --out system-revisions.json
    ```
    ```bash
-   python3 scripts/sign-system-revisions.py verify --public-key ~/.qian/staging-system-revisions.pub.pem --signatures system-revisions.json --image 192.168.1.201/qian/qian-platform@sha256:<digest>
+   python3 scripts/sign-system-revisions.py verify --public-key ~/.qian/staging-system-revisions.pub.pem --signatures system-revisions.json --image 192.168.1.201:80/qian/qian-platform@sha256:<digest>
    ```
    签名清单是公开数据（组件标识、版本、目录摘要与签名），可以进 git。平台镜像里的组件文件夹一变，摘要就变，所以每换一次平台镜像都要重签。
 
 ## 4 部署顺序
 
-部署仓库的 PR 由产品负责人合并，之后逐步执行；每一步都先确认再执行。每步做完用只读命令检查：
+部署仓库里应用层清单在 `2-qian/app/`，环境配置在 `env-ds/qian-staging/`，由 Argo Application `qian-staging-baseline` 手动同步。同步时依次执行：
+- 配置 ConfigMap（sync-wave -5）；
+- 三个 Sync 钩子 Job：建角色（-3）、迁移（-2）、系统组件修订（-1）；
+- 工作负载与入口。
+
+钩子 Job 不自动重试（`backoffLimit: 0`），任一失败即中止本次同步，工作负载不变更；看过日志、修好原因后重新同步。首个运营引导不随同步执行，是一个挂起的 CronJob 模板，手动创建一次。
+
+每一步都先经产品负责人确认再执行；做完用只读命令检查：
 ```bash
 kubectl -n qian-staging get jobs,pods -o wide
 ```
@@ -125,35 +132,42 @@ kubectl -n qian-staging get jobs,pods -o wide
 kubectl -n qian-staging logs job/<Job 名>
 ```
 
-1. **Secret。** 部署仓库的 `scripts/bootstrap-qian-secrets.py --context <上下文> --namespace qian-staging --create-missing` 只建缺失项，不覆盖、不打印值。它生成：
+1. **Secret（同步前）。** 部署仓库的 `scripts/bootstrap-qian-secrets.py --context <上下文> --namespace qian-staging --create-missing --app --trust-public-key <公钥.pem>` 只建缺失项，不覆盖、不打印值。它生成：
    - 新登录的口令与连接串文件；
    - 网关 S2S 的私钥与公钥；
    - 官方客户端（网关 BFF）的密钥；
    - 身份服务的签名、加密证书与私钥（RSA）；
-   - 首个平台运营的初始密码。
+   - 首个平台运营的初始密码；
+   - Lifecycle 信任根公钥：运维从 qd 导出后经 `--trust-public-key` 传入，脚本不生成私钥。
 
-   Lifecycle 信任根的公钥由运维从 qd 导出后传给脚本，脚本不生成私钥。Harbor 拉取 Secret 另建（第 2 节）。
-2. **建角色 Job。** 用基线的管理员 Secret 建以下角色，口令取自第 1 步：
+   脚本输出信任根的 keyId，核对它与签名清单的 `keyId` 一致。Harbor 拉取 Secret `qian-harbor-pull` 另建（第 2 节）。各 Secret 的键与挂载位置见部署仓库 `2-qian/README.md`。
+2. **改 Application 的 revision 并同步。** 应用层清单与镜像 digest 经部署仓库 PR 合入后，另开一个小 PR，把 `env-ds/argocd/qian-staging-baseline-application.yaml` 的 `targetRevision` 改到那次合入的提交。合入后应用这个 Application，再手动同步。基线清单在原先钉定的 revision 与当前 main 之间没有差异，同步只新增应用层，不重启 PG 与 Redis。
+3. **建角色 Job（钩子，-3）。** 用基线的管理员 Secret 执行 `db-roles.sql`，口令取自第 1 步。建的角色：
    - 迁移属主：可在库上建 schema；
    - 两个平台登录：`qian_platform_authz`、`qian_platform_audit`；
    - 网关原生审计的两个登录；
    - 两个 NOLOGIN 的审计函数属主。
 
    应用登录 `qian_app` 由基线初始化。受限登录都是 `NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION`，函数属主没有任何成员关系。可重复执行：已存在的角色只校正属性与口令。
-3. **迁移 Job（`--migrate-only`）。** 三步，都可重复执行：
+4. **迁移 Job（钩子，-2，`--migrate-only`）。** 三步，都可重复执行：
    1. 管理员连接做离线 DDL 与授权，包括网关原生审计的离线迁移；
    2. 迁移属主执行包内迁移；
    3. 管理员把业务 schema 授给应用登录。
 
-   在线副本不挂迁移属主与管理员的凭据。离线 DDL 不做跨版本的表结构升级，详见[平台宿主的 Job](../../hosts/Qian.Platform.Host/README.md#job)。
-4. **系统组件修订 Job（`--install-system-revisions`）。** 每次换平台镜像都要跑，而且在迁移之后。
+   - 迁移 Job 除了迁移属主与管理员的连接串，也挂在线登录的连接串：宿主建数据上下文时就读取它们。
+   - 在线副本不挂迁移属主与管理员的凭据。
+   - 离线 DDL 不做跨版本的表结构升级，详见[平台宿主的 Job](../../hosts/Qian.Platform.Host/README.md#job)。
+5. **系统组件修订 Job（钩子，-1，`--install-system-revisions`）。** 每次同步都跑，在迁移之后。
    - 它按签名清单把镜像预装的 system 级组件装成修订并激活：同摘要已激活则不动，新摘要安装后激活。
-   - 签名清单缺项、验签失败或摘要对不上，都会列出组件并以退出码 1 失败。此时先核对 ConfigMap 里的清单是否对应当前镜像 digest。
-5. **首个运营引导 Job（`--bootstrap-operator`，只在首次）。** 见第 5 节。
-6. **在线副本。** 依次是 `qian-platform`、`qian-gateway` 两个 Deployment，都用 Recreate、钉在 worker01，`/readyz` 返回 `ready` 后才就绪。
+   - 签名清单缺项、验签失败或摘要对不上，都会列出组件并以退出码 1 失败。此时先核对签名清单 ConfigMap 是否对应当前平台镜像 digest。
+6. **在线副本。** `qian-platform` 与 `qian-gateway` 两个 Deployment，都用 Recreate、钉在 worker01，`/readyz` 返回 `ready` 后才就绪。
    - 平台在线副本启动时只校验（受限角色、模型、没有待执行的迁移），不建表；迁移没跑或没跑完就拒绝启动。
    - 网关在登录时才取身份发行方的发现文档（之后定期刷新），不阻塞就绪；平台就绪、Ingress 与 hub vhost 生效之前，登录会失败。
-7. **入口。** 两个主机名的 Traefik Ingress 随清单下发；hub vhost 按第 2 节第 3 步部署。
+7. **入口。** 两个主机名的 Traefik Ingress 随清单下发。身份主机只暴露身份分支的路径：`/connect`、`/.well-known`、`/login`、`/api/identity`、`/signup` 与四个申请人接口。hub vhost 按第 2 节第 3 步部署。
+8. **首个运营引导（只在首次，手动）。** 两个工作负载都就绪后执行，见第 5 节：
+   ```bash
+   kubectl --context <上下文> -n qian-staging create job qian-bootstrap-operator-1 --from=cronjob/qian-bootstrap-operator
+   ```
 
 ## 5 首个平台运营账号
 
@@ -237,7 +251,9 @@ python3 scripts/staging-e2e.py --shell https://qian-staging.deepsingularity.cn -
 ## 9 已知限制
 
 - 平台与网关的数据保护密钥都放在临时卷：Pod 重建后，账号 Cookie 与网关会话解不开，用户要重新登录。多副本之前要改成共享目录。
-- 网关的转发头只回溯一跳（Kun 网关 `ForwardLimit` 固定为 1），按 IP 的限流把全部外部请求算在隧道那一跳的地址上。staging 用户少，暂不处理。
+- 网关的转发头只回溯一跳（Kun 网关 `ForwardLimit` 固定为 1），按 IP 的限流把全部外部请求算在 WireGuard 那一跳的地址上。staging 用户少，暂不处理。
 - LAN 内（192.168.1.x）的主机也在 Traefik 的可信网段里，能伪造转发头直连 Traefik；staging 接受这个暴露面。
+- 基线给 `qian-platform` 预置了 `minAvailable: 1` 的 PDB，而 staging 只有一个副本：`kubectl drain` worker01 会一直等待。节点维护前先临时放宽或删除这个 PDB，维护后恢复。
+- 平台镜像的三个 Job 也挂身份服务的签名、加密证书与客户端密钥（宿主装配身份分支时就读取），以及在线登录的连接串。
 - K3s 的 Secret 静态加密（`--secrets-encryption`）状态本次没有核对（需要 root）。
 - 没有装配 OpenAPI / proto 兼容检查器，组件跨版本升级会拒绝执行（fail-closed）；换镜像只能是同版本组件的重签与重装。
