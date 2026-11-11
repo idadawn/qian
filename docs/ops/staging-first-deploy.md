@@ -175,6 +175,13 @@ kubectl -n qian-staging logs job/<Job 名>
 
 逐条对应任务验收，结果记进 `pm/tasks/S1-DEP-011.md` 的进度日志。
 
+E2E 部分由 [scripts/staging-e2e.py](../../scripts/staging-e2e.py) 经公网主机名、照外壳的真实路径跑一遍，在 qd 上执行。证据 JSON 进进度日志，测试账号与租户留在 staging，代码带运行后缀：
+```bash
+python3 scripts/staging-e2e.py --shell https://qian-staging.deepsingularity.cn --issuer https://qian-staging-id.deepsingularity.cn --operator <平台运营用户名> --operator-password-file <当前密码文件> --operator-new-password-file ~/.qian/staging-operator-password --out staging-e2e.json
+```
+- 平台运营若还没首登，脚本按要求改密：新密码生成后写进 `--operator-new-password-file`（0600，不打印），之后用这个文件登录。
+- 首登完成后，删除初始密码的 Secret（第 5 节）。
+
 - **就绪与镜像。** 只读确认以下几项，并核对 Deployment 和 Job 里没有 `:latest`：
   - 两个 Pod Ready；
   - 镜像按 digest 引用；
