@@ -9,7 +9,7 @@ const i18n = createDataI18n();
 i18n.addLanguagePack('zh-CN', { 'demo.id': '编号', 'demo.name': '名称' });
 export const DATA_COMPONENTS = ['DataTable', 'Tree', 'TreeSelect', 'Cascader', 'DatePicker', 'DateRange', 'TimePicker', 'TimeRange', 'Upload', 'ImagePreview'] as const;
 
-export default function DataDemo({ kind = 'DataTable', loading = false, empty = false, invalid = false, compact = false }: { kind?: string; loading?: boolean; empty?: boolean; invalid?: boolean; compact?: boolean }) {
+export default function DataDemo({ kind = 'DataTable', loading = false, empty = false, invalid = false, compact = false, tools = false }: { kind?: string; loading?: boolean; empty?: boolean; invalid?: boolean; compact?: boolean; tools?: boolean }) {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [query, setQuery] = useState<DataTableQuery>({ pageIndex: 0, pageSize: 5, sorting: [], filters: {} });
   const [response, setResponse] = useState<{ items: Row[]; total: number; loading: boolean; error?: string }>({ items: [], total: 0, loading: true });
@@ -62,7 +62,9 @@ export default function DataDemo({ kind = 'DataTable', loading = false, empty = 
   if (kind === 'TimeRange') return <TimeRange label="时间范围" value={timeRange} onChange={setTimeRange} i18n={i18n} />;
   if (kind === 'Upload') return <><Upload client={client} i18n={i18n} label="上传文件" onComplete={(file) => setUploaded(file.id)} /><p role="status">{uploaded}</p></>;
   if (kind === 'ImagePreview') return <ImagePreview i18n={i18n} alt="示例图片" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />;
-  return <div data-yue-density={compact ? 'compact' : 'default'}><DataTable columns={[{ field: 'id', titleKey: 'demo.id', fixed: 'left', width: 100 }, { field: 'name', titleKey: 'demo.name', sortable: true, filterable: true }]} data={empty ? [] : response.items} total={empty ? 0 : response.total} query={query} onQueryChange={(next) => { setResponse((current) => ({ ...current, loading: true })); setQuery(next); }} getRowId={(row) => row.id} i18n={i18n} label="客户列表" loading={loading || response.loading} error={invalid ? '加载失败' : response.error} selectedIds={selectedRows} onSelectionChange={setSelectedRows} toolbar={<><Button variant="outline" size="sm" disabled={!selectedRows.length} onClick={() => setSelectedRows([])}>清空选择</Button><span className="text-sm text-muted-foreground">已选 {selectedRows.length} 条</span></>} selectable /></div>;
+  // 工具行场景：「显示列」之后接刷新按钮（toolbarEnd），行距用 comfortable（两行内容的审核列表）。
+  const toolProps = tools ? { density: 'comfortable' as const, toolbarEnd: <Button variant="outline" size="sm" onClick={() => { setResponse((current) => ({ ...current, loading: true })); setQuery((current) => ({ ...current })); }}>刷新</Button> } : {};
+  return <div data-yue-density={compact ? 'compact' : 'default'}><DataTable {...toolProps} columns={[{ field: 'id', titleKey: 'demo.id', fixed: 'left', width: 100 }, { field: 'name', titleKey: 'demo.name', sortable: true, filterable: true }]} data={empty ? [] : response.items} total={empty ? 0 : response.total} query={query} onQueryChange={(next) => { setResponse((current) => ({ ...current, loading: true })); setQuery(next); }} getRowId={(row) => row.id} i18n={i18n} label="客户列表" loading={loading || response.loading} error={invalid ? '加载失败' : response.error} selectedIds={selectedRows} onSelectionChange={setSelectedRows} toolbar={<><Button variant="outline" size="sm" disabled={!selectedRows.length} onClick={() => setSelectedRows([])}>清空选择</Button><span className="text-sm text-muted-foreground">已选 {selectedRows.length} 条</span></>} selectable /></div>;
 }
 
 export const DATA_DEMOS = Object.fromEntries(DATA_COMPONENTS.map((name) => [name, DataDemo]));

@@ -68,6 +68,16 @@ describe('基础交互', () => {
     expect(getComputedStyle(cancel).borderTopColor).not.toBe('rgba(0, 0, 0, 0)');
   });
 
+  it('Result 的状态图标取图标档：warn 比徽标圆点深一档，ok 与圆点同色', () => {
+    render(<><C.Result tone="warn" icon="clock" title="审核中" testId="pending" /><C.Badge tone="warn" dot testId="pending-badge">待审核</C.Badge>
+      <C.Result tone="ok" title="已开通" testId="approved" /><C.Badge tone="ok" dot testId="approved-badge">已开通</C.Badge></>);
+    const glyph = (id: string) => getComputedStyle(screen.getByTestId(id)).color;
+    const dot = (id: string) => getComputedStyle(screen.getByTestId(id)).backgroundColor;
+    expect(screen.getByTestId('pending-icon').className).toContain('text-warn-icon');
+    expect(glyph('pending-icon')).not.toBe(dot('pending-badge-dot'));
+    expect(glyph('approved-icon')).toBe(dot('approved-badge-dot'));
+  });
+
   it('testId 可以覆盖默认标识，data-slot 保持组件身份', () => {
     render(<><C.Button data-slot="injected" data-testid="injected" testId="save-button">保存</C.Button><C.Select items={[{ value: 'a', label: 'A' }]}><C.SelectTrigger aria-label="选择" data-slot="injected" testId="select-control" /></C.Select></>);
     expect(screen.getByTestId('save-button').getAttribute('data-slot')).toBe('button');

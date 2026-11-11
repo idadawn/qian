@@ -222,7 +222,7 @@ test('R110 真实宿主七步与管理员维护：列表、创建、迁移、并
   await expect(admin).toContainText('管理员甲'); await expect(admin).not.toContainText(phoneA);
   await expect(admin.getByRole('button', { name: '更换管理员', exact: true })).toBeVisible();
   await expect(dialog.getByTestId('tenant-detail')).toContainText('长期');
-  await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+  await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => {}))));
   await page.screenshot({ path: resolve('../../TestResults/tenant-ui/tenant-detail.png') });
   // 验收 2 的页面部分：重置管理员密码要二次确认，取消时不发请求；确认后旧密码与原会话立即失效，临时密码登录必须先改密。
   const resets = () => calls.filter((item) => item.path.endsWith(':reset-password'));

@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { userEvent } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import axe from 'axe-core';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useState } from 'react';
@@ -212,6 +212,27 @@ it('认证页布局：登录（深色品牌面、语言标签按钮、记住账�
   expect(screen.getByTestId('yue-auth-layout').getAttribute('data-variant')).toBe('form');
   expect(screen.getByRole('link', { name: 'Qian 乾' }).getAttribute('href')).toBe('#login');
   await accessible();
+});
+
+it('认证页与外壳的几何：登录版标题在侧栏中部、不压住装饰条（传不传 footer 都一样），分隔线到单点登录 24px，外壳顶栏 56px', async () => {
+  await page.viewport(1440, 900);
+  try {
+    const store = initPreferences({ namespace: 'test-auth-geometry', storage: null }); const i18n = makeI18n();
+    const box = (selector: string) => document.querySelector(selector)!.getBoundingClientRect();
+    for (const footer of [undefined, <span key="footer">© 2026 Qian</span>]) {
+      const view = render(<PreferencesProvider store={store}><AuthLayout brand="Qian 乾" headline="为 Agent 时代准备的多租户平台" description="一个账号可以加入多家企业。" footer={footer}>
+        <PasswordLogin i18n={i18n} onSubmit={vi.fn(async () => {})} onSso={vi.fn()} />
+      </AuthLayout></PreferencesProvider>);
+      const aside = box('[data-slot="auth-layout-aside"]'), headline = box('[data-slot="auth-layout-headline"]'), decoration = box('[data-slot="auth-layout-decoration"]');
+      expect(headline.bottom).toBeLessThanOrEqual(decoration.top);
+      expect(Math.abs((headline.top + headline.bottom) / 2 - (aside.top + aside.bottom) / 2)).toBeLessThan(60);
+      const divider = box('[data-slot="password-login-alternatives"] > :first-child');
+      expect(screen.getByTestId('yue-password-login-sso').getBoundingClientRect().top - divider.bottom).toBeCloseTo(24, 0);
+      view.unmount();
+    }
+    render(<PreferencesProvider store={store}><AppShell i18n={i18n} brand="Qian" menu={[]} managed userName="用户" breadcrumb={<span>首页</span>} toolbar={<PreferenceControls i18n={i18n} locale={false} />}>内容</AppShell></PreferencesProvider>);
+    expect(box('[data-slot="shell-toolbar"]').height).toBe(56);
+  } finally { await page.viewport(414, 896); }
 });
 
 it('选择工作空间：简单布局里平台控制台与企业各是一张卡片，隐藏「返回登录」时仍有申请入口，键盘可选并通过 axe', async () => {

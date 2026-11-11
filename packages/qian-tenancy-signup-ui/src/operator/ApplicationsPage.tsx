@@ -35,9 +35,9 @@ function ago(value: string, now: number): string {
 }
 
 // 自动检查（规格 §5.2）：租户号可用、同名企业、申请人已加入的企业；级别从轻到重 pass / info / warning / error。
-const levels: Record<string, { tone: 'ok' | 'info' | 'warn' | 'error'; icon: IconName; solid: string }> = {
-  pass: { tone: 'ok', icon: 'circleCheck', solid: 'text-ok-solid' }, info: { tone: 'info', icon: 'info', solid: 'text-info-solid' },
-  warning: { tone: 'warn', icon: 'alert', solid: 'text-warn-solid' }, error: { tone: 'error', icon: 'circleX', solid: 'text-error-solid' },
+const levels: Record<string, { tone: 'ok' | 'info' | 'warn' | 'error'; icon: IconName; iconColor: string }> = {
+  pass: { tone: 'ok', icon: 'circleCheck', iconColor: 'text-ok-icon' }, info: { tone: 'info', icon: 'info', iconColor: 'text-info-icon' },
+  warning: { tone: 'warn', icon: 'alert', iconColor: 'text-warn-icon' }, error: { tone: 'error', icon: 'circleX', iconColor: 'text-error-icon' },
 };
 const reasonOf = (check: Check) => check.reason === 'taken' || check.reason === 'reserved' ? check.reason : 'invalid';
 // 文案里的租户号用等宽字：按占位标记切开译文，把租户号放回去。
@@ -136,7 +136,7 @@ function ApplicationsContent({ client, embedded = false }: { client: PlatformCli
     { field: 'code', titleKey: 'applications.code', width: 115, render: (row) => <span className="font-mono">{row.code}</span> },
     // 申请都经过短信核验：掩码号码后的绿色对勾读作「已验证」。
     { field: 'contactName', titleKey: 'applications.applicant', width: 140, render: (row) => <span className="flex flex-col"><span>{row.contactName}</span>
-      <span className="inline-flex items-center gap-1 text-xs leading-4.5 whitespace-nowrap text-muted-foreground">{row.phone}<Icon name="check" size={12} strokeWidth={2.5} label={i18n.t('applications.verified')} className="text-ok-solid" /></span></span> },
+      <span className="inline-flex items-center gap-1 text-xs leading-4.5 whitespace-nowrap text-muted-foreground">{row.phone}<Icon name="check" size={12} strokeWidth={2.5} label={i18n.t('applications.verified')} className="text-ok-icon" /></span></span> },
     { field: 'size', titleKey: 'applications.sizeColumn', width: 120, render: (row) => <span className="whitespace-nowrap text-subtle-foreground">{known('signup.sizes', row.size)}</span> },
     { field: 'submittedAt', titleKey: 'applications.submittedAt', width: 127, render: (row) => <span className="flex flex-col whitespace-nowrap">
       <span className="tabular-nums">{stamp(row.submittedAt, now)}</span><span className="text-xs leading-4.5 text-muted-foreground">{ago(row.submittedAt, now)}</span></span> },
@@ -270,7 +270,7 @@ function Review({ api, state, machine, done, onClose }: { api: Api; state: Revie
           {/* 宿主只对进行中的申请做自动检查；已结束的申请没有检查项，不留空区块。 */}
           {detail.checks.length > 0 && <DetailSection title={i18n.t('applications.checks')} testId="application-checks" className="gap-2.5">
             <ul className="m-0 flex list-none flex-col rounded-lg border border-border p-0">{detail.checks.map((check) => { const level = levels[check.level] ?? levels.info!; return <li key={check.kind} data-level={check.level} className="flex items-center gap-2.5 border-b border-border/70 px-3.5 py-2.5 last:border-b-0">
-              <Icon name={level.icon} size={18} strokeWidth={2} className={level.solid} /><span>{checkText(check, company.code)}</span></li>; })}</ul>
+              <Icon name={level.icon} size={18} strokeWidth={2} className={level.iconColor} /><span>{checkText(check, company.code)}</span></li>; })}</ul>
           </DetailSection>}
           {!reviewing ? <Outcome detail={detail} />
             : mode === 'approve' ? <DetailSection title={i18n.t('applications.settings')} className="gap-3.5">

@@ -48,6 +48,16 @@
     }
   },
   {
+    "id": "DataTable.Tools",
+    "component": "DataTable",
+    "state": "Tools",
+    "theme": "light",
+    "props": {
+      "kind": "DataTable",
+      "tools": true
+    }
+  },
+  {
     "id": "Tree.Default",
     "component": "Tree",
     "state": "Default",

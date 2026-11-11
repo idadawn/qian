@@ -174,7 +174,8 @@ export function AppShell({ i18n, brand, menu, activePath, registry = menuTypeReg
       </div>
     </aside>
     <div className="flex min-w-0 flex-1 flex-col">
-      <header className="sticky top-0 z-30 flex min-h-14 shrink-0 flex-wrap items-center gap-4 border-b border-border bg-background px-4 py-2.5 md:px-6" data-slot="shell-toolbar" data-testid={`${testId}-toolbar`}>
+      {/* 顶栏 56px 含 1px 底边：36px 按钮加上下 8px 内边距不足 56px，由 min-h-14 撑到 56px；换行时按内容增高。 */}
+      <header className="sticky top-0 z-30 flex min-h-14 shrink-0 flex-wrap items-center gap-4 border-b border-border bg-background px-4 py-2 md:px-6" data-slot="shell-toolbar" data-testid={`${testId}-toolbar`}>
         <div className="min-w-0 flex-1" data-slot="shell-breadcrumb" data-testid={`${testId}-breadcrumb`}>{breadcrumb}</div>
         {toolbar && <div className="flex shrink-0 flex-wrap items-center gap-1">{toolbar}</div>}
       </header>

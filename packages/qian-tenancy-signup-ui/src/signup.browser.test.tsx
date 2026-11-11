@@ -14,7 +14,9 @@ import { application, fakeHost } from './test/fake-host';
 
 afterEach(async () => { cleanup(); vi.restoreAllMocks(); history.replaceState(null, '', '/'); await i18n.changeLanguage('zh-CN'); });
 async function serious(root: Element = document.body) {
-  await Promise.all(document.getAnimations().map((animation) => animation.finished));
+  // 等动画结束再跑 axe。过渡被打断时 animation.finished 以 AbortError 拒绝（Chromium 的消息是「The user aborted a request.」，没有调用栈），
+  // 被取消的动画不算失败；不接住它，CI 上偶发的打断会让用例整条失败（S1-YUE-019 验收缺陷 8）。
+  await Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => {})));
   return (await axe.run(root)).violations.filter((item) => item.impact === 'critical' || item.impact === 'serious');
 }
 const posted = (host: ReturnType<typeof fakeHost>, path: string) => host.calls.filter((call) => call.method === 'POST' && call.path === path);
@@ -38,6 +40,20 @@ async function sendCode(form: HTMLElement, phone = '13800006021') {
   await userEvent.click(within(form).getByRole('button', { name: '获取验证码' }));
   await vi.waitFor(() => expect(screen.getByTestId('signup-send-code-status').textContent).toBe(`验证码已发送到 ${phone}。`));
 }
+
+it('axe 前等待动画：被打断的过渡不算失败（打断时 animation.finished 以 AbortError 拒绝）', async () => {
+  const box = document.createElement('div');
+  box.textContent = '过渡'; box.style.cssText = 'width:10px;transition:width 2s';
+  document.body.append(box);
+  try {
+    box.getBoundingClientRect(); box.style.width = '200px';
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(document.getAnimations().length).toBeGreaterThan(0);
+    const pending = serious(box);
+    box.style.transition = 'none'; box.style.width = '50px';
+    await expect(pending).resolves.toEqual([]);
+  } finally { box.remove(); }
+});
 
 it('新号码：手机号与验证码在账号区，发码后倒计时；提交时先用验证码换会话再提交申请；租户号实时提示与密码强度；字段错误落在对应输入框', async () => {
   history.replaceState(null, '', '/signup?next=' + encodeURIComponent('/login?client_id=qian-shell'));

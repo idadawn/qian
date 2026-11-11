@@ -51,7 +51,7 @@ export function Welcome({ i18n, summary, displayName, menu, now, onNavigate }: {
         </div>
         <ol className="m-0 list-none p-0">{steps.map((step, index) => <li key={step.key} data-step={step.key} data-done={step.done} className="flex items-center gap-3.5 border-b border-border/70 px-5 py-3.5 last:border-b-0">
           {step.done
-            ? <span aria-hidden="true" className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-ok-bg text-ok-solid"><Icon name="check" strokeWidth={2.25} /></span>
+            ? <span aria-hidden="true" className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-ok-bg text-ok-icon"><Icon name="check" strokeWidth={2.25} /></span>
             : <span aria-hidden="true" className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-border-strong text-[13px] font-semibold text-caption-foreground">{index + 1}</span>}
           <span className="flex min-w-0 flex-1 flex-col">
             <span className={cn(step.done ? 'text-caption-foreground line-through' : 'font-semibold')}>{step.title}<span className="sr-only">{i18n.t(step.done ? 'app.welcome.done' : 'app.welcome.todo')}</span></span>

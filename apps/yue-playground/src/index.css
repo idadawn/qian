@@ -2,4 +2,4 @@
 @import '@idadawn/yue-tokens/theme.css';
 @source '../../../packages/yue';
 
-body { @apply font-sans text-sm antialiased bg-background text-foreground; }
+body { @apply font-sans text-sm bg-background text-foreground; }

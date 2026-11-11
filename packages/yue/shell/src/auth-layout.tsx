@@ -3,8 +3,8 @@ import { cn } from '@idadawn/yue-core/shell';
 import type { ShellPartProps } from './layout';
 
 /** 品牌标识：圆角方块加三道横线。inverse 用在品牌深色面上（白底、深色横线）。 */
-export function BrandMark({ size = 28, inverse = false, className }: { size?: number; inverse?: boolean; className?: string }) {
-  return <svg viewBox="0 0 36 36" width={size} height={size} className={cn('shrink-0', className)} aria-hidden="true" focusable="false">
+export function BrandMark({ size = 28, inverse = false, className, testId = 'yue-brand-mark' }: { size?: number; inverse?: boolean; className?: string; testId?: string }) {
+  return <svg viewBox="0 0 36 36" width={size} height={size} data-slot="brand-mark" data-testid={testId} className={cn('shrink-0', className)} aria-hidden="true" focusable="false">
     <rect width="36" height="36" rx="9" className={inverse ? 'fill-inverse-foreground' : 'fill-primary'} />
     {[10, 16.5, 23].map(y => <rect key={y} x="9" y={y} width="18" height="3" rx="1.5" className={inverse ? 'fill-inverse' : 'fill-primary-foreground'} />)}
   </svg>;
@@ -37,11 +37,12 @@ export function AuthLayout({ brand, brandHref, headline, description, aside, foo
   const brandRow = <><BrandMark size={36} inverse /><span className="text-lg font-bold tracking-[0.02em]">{brand}</span></>;
   return <div data-slot="auth-layout" data-variant={variant} data-testid={testId} className={cn('flex min-h-dvh flex-wrap text-foreground', signIn ? 'bg-background' : 'bg-canvas', className)}>
     <aside data-slot="auth-layout-aside" data-testid={`${testId}-aside`} className={cn('relative flex min-h-80 max-w-full flex-col overflow-hidden bg-inverse bg-[radial-gradient(rgb(255_255_255/0.09)_1px,transparent_1px)] bg-[size:22px_22px] py-10 text-inverse-foreground',
-      signIn ? 'flex-[1_1_440px] justify-between gap-12 px-6 sm:px-14' : 'flex-[1_1_360px] gap-14 px-6 sm:px-12')}>
-      {signIn && <div aria-hidden="true" className="absolute -end-18 bottom-24 flex flex-col gap-7.5 opacity-12">{[0, 1, 2].map(index => <span key={index} className="block h-8.5 w-105 rounded-[17px] bg-inverse-foreground" />)}</div>}
+      signIn ? 'flex-[1_1_440px] gap-12 px-6 sm:px-14' : 'flex-[1_1_360px] gap-14 px-6 sm:px-12')}>
+      {signIn && <div aria-hidden="true" data-slot="auth-layout-decoration" className="absolute -end-18 bottom-24 flex flex-col gap-7.5 opacity-12">{[0, 1, 2].map(index => <span key={index} className="block h-8.5 w-105 rounded-[17px] bg-inverse-foreground" />)}</div>}
       {brandHref ? <a href={brandHref} data-slot="auth-layout-brand" className="relative flex w-fit items-center gap-3 text-inverse-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inverse-foreground">{brandRow}</a>
         : <div data-slot="auth-layout-brand" className="relative flex items-center gap-3">{brandRow}</div>}
-      <div className={cn('relative flex flex-col', signIn ? 'max-w-115 gap-4' : 'gap-3')}>
+      {/* 登录版标题用上下自动外边距居中：有 footer 时位置与两端对齐相同，不传 footer 时也不会被推到底部压住装饰条。 */}
+      <div data-slot="auth-layout-headline" className={cn('relative flex flex-col', signIn ? 'my-auto max-w-115 gap-4' : 'gap-3')}>
         <h2 className={cn('m-0 font-bold text-balance', signIn ? 'text-[34px] leading-11 tracking-[-0.01em]' : 'text-[30px] leading-10')}>{headline}</h2>
         {description && <p className={cn('m-0 text-inverse-muted-foreground', signIn ? 'text-base leading-6.5' : 'text-[15px] leading-6')}>{description}</p>}
       </div>
