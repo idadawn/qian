@@ -116,8 +116,8 @@ describe('UserSelect', () => {
     await screen.findByRole('listbox');
     expect(options()).toEqual(['李四lisi', '钱七qianqi · 已锁定', '王五wangwu', '张三zhangsan', '赵六zhaoliu · 已停用']);
     await userEvent.keyboard('WANG');
+    await vi.waitFor(() => expect(requests.at(-1)!.url).toBe('/api/directory/members?q=WANG&offset=0&limit=51'));
     await vi.waitFor(() => expect(options()).toEqual(['王五wangwu']));
-    expect(requests.at(-1)!.url).toBe('/api/directory/members?q=WANG&offset=0&limit=51');
     // 本地不再过滤：服务端没匹配上就是没有选项。
     await userEvent.keyboard('{Backspace}{Backspace}{Backspace}{Backspace}李');
     await vi.waitFor(() => expect(options()).toEqual(['李四lisi']));
@@ -184,9 +184,12 @@ describe('UserSelect', () => {
     await vi.waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('搜索成员'));
     await vi.waitFor(() => expect(options()).toHaveLength(50));
     await userEvent.keyboard('user11');
+    await vi.waitFor(() => expect(requests.at(-1)!.url).toBe('/api/directory/members?q=user11&offset=0&limit=51'));
     await vi.waitFor(() => expect(options()).toHaveLength(10));
     expect(screen.queryByText('只显示前 50 位成员，继续输入可缩小范围')).toBeNull();
-    expect(requests.map((request) => request.url)).toEqual(['/api/directory/members?offset=0&limit=51', '/api/directory/members?q=user11&offset=0&limit=51']);
+    // 去抖为 0 时逐字输入可能带出中间关键字的请求，不断言请求条数；每次都只比显示的 50 位多取一条，在目录接口每页 100 的上限内。
+    expect(requests[0]!.url).toBe('/api/directory/members?offset=0&limit=51');
+    expect(requests.every((request) => request.url.endsWith('&limit=51'))).toBe(true);
   });
 
   it('请求失败：触发器旁出现错误与重试按钮，重试后加载成功', async () => {

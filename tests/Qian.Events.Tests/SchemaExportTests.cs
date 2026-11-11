@@ -17,7 +17,8 @@ public sealed class SchemaExportTests
         var declared = typeof(IdentityLoginEvent).Assembly.GetTypes()
             .Select(type => type.GetCustomAttributes(typeof(IntegrationEventIdAttribute), false).OfType<IntegrationEventIdAttribute>().SingleOrDefault()?.EventType)
             .OfType<string>().Order(StringComparer.Ordinal).ToArray();
-        Assert.Equal(IdentityEventIds.All.Order(StringComparer.Ordinal), declared);
+        // 身份组件程序集声明的事件 = 身份事件 + 目录事件（S1-IDP-010），两者都随 RegisterIdentityEvents 登记。
+        Assert.Equal(IdentityEventIds.All.Concat(DirectoryEventIds.All).Order(StringComparer.Ordinal), declared);
         Assert.Equal(declared, catalog.Select(item => item.Type));
         foreach (var item in catalog)
         {
@@ -31,6 +32,9 @@ public sealed class SchemaExportTests
         var schema = JsonSchema.FromText(catalog.Single(item => item.Type == IdentityEventIds.Login).PayloadSchema.GetRawText());
         var instance = JsonSerializer.SerializeToElement(login, IdentityJson.EventTypeInfo(IdentityEventIds.Login)!);
         Assert.True(schema.Evaluate(instance).IsValid);
+        var created = new DirectoryMemberCreatedEvent(7, Guid.CreateVersion7(), Guid.CreateVersion7(), "active", 3);
+        var createdSchema = JsonSchema.FromText(catalog.Single(item => item.Type == DirectoryEventIds.MemberCreated).PayloadSchema.GetRawText());
+        Assert.True(createdSchema.Evaluate(JsonSerializer.SerializeToElement(created, IdentityJson.EventTypeInfo(DirectoryEventIds.MemberCreated)!)).IsValid);
     }
 
     [Fact]
