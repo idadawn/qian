@@ -25,7 +25,7 @@
 
 [directory.openapi.json](directory.openapi.json) 是目录只读接口的 OpenAPI 3.1 契约：组织类型、组织树、岗位、用户组、成员检索与按 id 批量、部门成员、岗位任职、成员归属、成员档案，以及派生查询——按岗位链的上级责任人、直属主管、部门负责人、我的下属（S1-IDP-010）。每个查询带意图式 description（回答什么问题、什么时候用、什么时候改用别的查询）与请求 / 响应示例，供 Agent 选用查询。
 
-`Qian.Identity.Server.Tests` 的 `DirectoryContractTests` 核对契约登记的路径与 Identity Server 实际的 GET 端点逐一对应、每个查询都有描述与示例、示例符合 Schema、Schema 与目录记录的序列化逐字段一致，以及 yue 业务组件契约（`packages/yue/biz/contracts/biz.openapi.json`）的目录部分与本契约逐字段一致；`DirectoryQueryTests` 用真实会话调遍每个端点与查询参数，响应都要通过契约 Schema 的严格校验。
+`Qian.Identity.Server.Tests` 的 `DirectoryAgentContractTests` 核对契约登记的路径与 Identity Server 实际的 GET 端点逐一对应、每个查询都有描述与示例、示例符合 Schema、Schema 与目录记录的序列化逐字段一致，以及 yue 业务组件契约（`packages/yue/biz/contracts/biz.openapi.json`）的目录部分与本契约逐字段一致；`DirectoryQueryTests` 用真实会话调遍每个端点与查询参数，响应都要通过契约 Schema 的严格校验。
 
 ## 共同约定
 

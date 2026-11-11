@@ -6,7 +6,7 @@ namespace Qian.Identity.Server.Tests;
 
 // contracts/identity/v1/directory.openapi.json 的读取与校验（S1-IDP-010 验收 4）。OpenAPI 3.1 的 Schema 对象就是 JSON Schema 2020-12：
 // 校验时把 components.schemas 改写成 $defs 拼进同一份文档，ErrorDetail 按 $id 预先登记，格式（uuid 等）严格校验。
-internal sealed class DirectoryContract
+internal sealed class DirectoryAgentContract
 {
     internal const string RelativePath = "contracts/identity/v1/directory.openapi.json";
     internal const string ErrorDetailId = "https://qian.dev/contracts/v0/error-detail.schema.json";
@@ -15,7 +15,7 @@ internal sealed class DirectoryContract
     private readonly JsonObject _definitions;
     private int _built;
 
-    private DirectoryContract(JsonNode document)
+    private DirectoryAgentContract(JsonNode document)
     {
         Document = document;
         _ = JsonSchema.FromText(File.ReadAllText(Path.Combine(Root, "contracts/v0/error-detail.schema.json")), _options);
@@ -25,8 +25,7 @@ internal sealed class DirectoryContract
     internal static string Root { get; } = FindRoot();
     internal JsonNode Document { get; }
 
-    internal static DirectoryContract Load(string relativePath = RelativePath) => new(JsonNode.Parse(File.ReadAllText(Path.Combine(Root, relativePath)))!);
-    internal static DirectoryContract From(JsonNode document) => new(document);
+    internal static DirectoryAgentContract Load(string relativePath = RelativePath) => new(JsonNode.Parse(File.ReadAllText(Path.Combine(Root, relativePath)))!);
 
     internal IEnumerable<(string Path, string Method, JsonObject Operation)> Operations() =>
         Document["paths"]!.AsObject().SelectMany(path => path.Value!.AsObject().Select(operation => (path.Key, operation.Key, operation.Value!.AsObject())));

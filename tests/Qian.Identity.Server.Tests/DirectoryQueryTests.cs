@@ -237,7 +237,7 @@ public sealed class DirectoryQueryTests(PostgresFixture postgres) : IClassFixtur
             _ = await host.Service.CreateGroupAsync("项目组", Ct);
         }
         var admin = host.NewBrowser(); await admin.Login(w.Phones["zhangsan"], Password, tenant: w.Tenant.Id);
-        var contract = DirectoryContract.Load();
+        var contract = DirectoryAgentContract.Load();
         var subjects = new Dictionary<string, Guid> { ["members"] = w.M("zhaoliu"), ["orgs"] = w.Orgs["rd"], ["positions"] = w.Positions["engineer"] };
         var queries = new Dictionary<string, string>
         {

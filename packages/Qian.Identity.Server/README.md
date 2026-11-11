@@ -23,7 +23,7 @@
 
 ## 账号模型
 
-全局表（不适用 RLS；其中 `sessions`、`login_audits`、`login_tickets`、`connector_flows` 只带可空的 `tenant_id` 作记录）：`persons`、`person_identifiers`、`password_history`、`clients`、`sessions`、`login_audits`、`login_tickets`、`login_captchas`、`connector_flows`。租户表（`tenant_id` 列，强制 RLS，只能在对应租户上下文中读写）：`memberships`、`external_identities` 及目录的六张表（见下）。
+全局表（不适用 RLS；其中 `sessions`、`login_audits`、`login_tickets`、`connector_flows` 只带可空的 `tenant_id` 作记录）：`persons`、`person_identifiers`、`password_history`、`clients`、`sessions`、`login_audits`、`login_tickets`、`login_captchas`、`connector_flows`。租户表（`tenant_id` 列，强制 RLS，只能在对应租户上下文中读写）：`memberships`、`external_identities` 及目录的七张表（见下）。
 
 - **Person** 是全局自然人，`Id` 即令牌的 `sub`，创建后永不改写；换绑标识不改 `sub`。`sub` 用 UUID v7 生成，主键冲突时换号重试，绝不覆盖既有账号；并发创建同一标识只有一个成功。
 - **标识**：手机（规范化为 E.164，缺省国家码取 `DefaultPhoneCountryCode`）、邮箱（小写）、用户名（字母开头 3–32 位，不会形似手机或邮箱，所以按语法即可判定类型，无需用户选择）。同一标识同一时刻只属于一个有效 Person（唯一索引加软删除，解绑后释放）。
@@ -38,13 +38,17 @@
 
 目录作为本组件子模块进入 `identity` profile，无第二个 issuer 或独立插件；`ctx.IdentityDirectory()` 解析 Definition 的 `IdentityDirectory` 服务键。目录表、HTTP 面与操作描述随 Identity Server 同装同卸，`qian add identity` 的完整安装仍沿用文末验收门。
 
-- 表 `organizations`、`org_types`、`positions`、`groups`、`member_relations`、`user_profiles` 全部启用 FORCE RLS 与严格租户守卫。关联外键包含 `tenant_id`，受限应用角色即使知道其他租户的 UUID 也不能建立跨租户关联；迁移新增成员 `(tenant_id, id)` 唯一键，不改已有成员 ID。
+- 表 `organizations`、`org_types`、`positions`、`groups`、`member_relations`、`user_profiles` 与目录修订 `directory_revisions` 全部启用 FORCE RLS 与严格租户守卫。关联外键包含 `tenant_id`，受限应用角色即使知道其他租户的 UUID 也不能建立跨租户关联；迁移新增成员 `(tenant_id, id)` 唯一键，不改已有成员 ID。
 - **组织树**：每个租户至多一个根，根深度 1，最大深度 9；类型编码来自本租户字典，名称可修改，已被使用的类型不能删除。组织保存主管成员与责任岗位，责任岗位必须属于该组织并标为责任岗位。更新 `parent_id` 即移动，同一事务内更新整棵子树的 `path` 和深度；把节点放入其后代或导致任一后代超过深度上限时拒绝。
 - **岗位树**：同一租户内可维护跨组织父子岗位及责任人，每个组织至多一个默认岗位。移动维护完整岗位子树；更改一个岗位的组织不隐式改变其后代的组织，迁出责任岗位前须先解除原组织的责任岗位引用。删除组织时，若其岗位仍被其他组织的子岗位引用，要求先调整父链，不能级联误删其他组织的岗位。组织/岗位删除检查全部后代的组织归属、岗位归属及主管/责任人，有任何成员就返回 `DIRECTORY_HAS_MEMBERS`（409）。空子树按深度逆序删除，事务失败全部回滚。
 - **多归属**：一个成员可加入多个组织、岗位、用户组；每种目标类型至多一个 `is_primary`。`PUT /members/{id}/relations` 原子替换集合，先校验全部目标属于本租户，再替换，不会因其中一项错误丢失旧归属。每次变更递增成员修订。用户组是纯集合，只有空组可删除。所有目录写入使用同一把租户事务锁，删除与归属、互相移动并发时不能形成悬空引用或环。
 - **档案**：`user_profiles` 与 Membership 一对一，姓名同步成员显示名，拼音、联系方式、扩展 JSON 与 Person 凭据分开；更新联系方式不修改登录标识和验证状态。电话和邮箱对外仅返回掩码，扩展限 16 KiB JSON 对象，档案接口只向租户管理员开放；不得在扩展里存密码或令牌。普通成员列表只有现有 Membership 投影，不返回档案扩展。
 - **状态与删除**：目录入口允许 `active ⇄ disabled → locked`（同态幂等）；锁定后只能经受信任的账号管理端口先解除锁定。目录入口拒绝停用或删除租户管理员，逐项返回 `DIRECTORY_ADMINISTRATOR_PROTECTED`。删除是 `status=disabled` 加 `directory_deleted=true`，账号、档案和历史归属仍保留；普通列表不显示已标记成员，账号开户或状态入口也不能将其意外恢复。管理员仍可将已标记成员的归属替换为空，解除引用后才能删除空组织。
-- **会话与事件**：成员状态变更沿用账号服务的事务内吊销 `RevokeSessionRowsAsync`；只吊销该租户成员的会话，同一 Person 在其他租户的会话继续有效。现有会话中心负责在原租户作用域发布 `identity.session_revoked.v1`，HTTP 调用者写入事件 actor。组织/岗位/成员的 `directory.*.v1` 事件、SCIM、上级链及前端真实选择器仍由 S1-IDP-010 交付。
+- **目录事件（S1-IDP-010）**：组织、岗位的新建 / 修改 / 移动 / 删除与成员的加入、归属变化、状态变化、档案变化发出十二种 `directory.*.v1`（Schema 与发出规则见 `contracts/identity/v1/README.md`），由 `RegisterIdentityEvents` / `AddQianIdentityEvents` 一并登记，嵌入内置账号的宿主不需另外接线。事件挂在每租户一行的目录修订 `directory_revisions` 上：每次有事件的目录写入在同一事务里原子递增修订（行锁持有到提交，并发写入按修订排队），载荷带 `directory_revision`，随会话保存经领域通知写进同一事务的 Outbox；宿主漏装事件处理器时写入回滚而不是静默丢事件。载荷只有 id 与结构字段，不带名称、姓名、账号与联系方式。
+- **派生查询（S1-IDP-010，口径由产品负责人 2026-11-11 确认）**：上级链从主岗位（或 `position_id` 指定的本人岗位，不是本人岗位 404）起算，没有主岗位时从主组织起算，都没有则为空；先沿岗位父链向上（不含起点，父岗位在别的组织也照走），每个责任岗位算一级；到顶后从最上层岗位所属组织起逐级取各组织的责任岗位，已出现的岗位跳过。责任岗位没有责任人或责任人已停用、锁定、删除时照样占一级并给出 `vacancy`（`unassigned` / `inactive`），不返回人。直属主管取主组织（没有时取主岗位所属组织）的主管字段，本人就是主管、未设或主管已停用时逐级向上。部门负责人是责任岗位的现任责任人加组织主管。下属是上级链的反查：`depth=1` 为以我为第 1 级的成员，`depth=n` 为前 n 级，缺省为任一级；只有在岗的责任人才有下属。派生查询一次读出本租户的组织与岗位结构在内存里推导，不逐级往返查询。
+- **成员检索（S1-IDP-010）**：`q` 去掉首尾空白后 1–64 字，按显示名、账号与档案拼音做忽略大小写的包含匹配，`%`、`_`、`\` 按字面处理，不检索手机号与邮箱；`ids` / `person_ids` 按目录成员 id / 自然人 id 批量查询（可重复，1–100 个且不重复），查不到、别的租户或已删除的 id 直接省略；三者至多给一个。结果仍是 `{items:[DirectoryMember]}`，按账号、成员 id 排序分页。
+- **Agent 契约与 SCIM**：目录全部 GET 查询的 OpenAPI 3.1 契约在 `contracts/identity/v1/directory.openapi.json`，每个查询带意图式描述与示例；SCIM 2.0 核心 Schema 与目录映射在 `contracts/scim/v2`（服务由 S3 实现）。
+- **会话与事件**：成员状态变更沿用账号服务的事务内吊销 `RevokeSessionRowsAsync`；只吊销该租户成员的会话，同一 Person 在其他租户的会话继续有效。现有会话中心负责在原租户作用域发布 `identity.session_revoked.v1`，HTTP 调用者写入事件 actor。
 
 `MapQianIdentityAccounts()` 同时映射 `/api/directory`。目录读接口要求数据库实时校验通过的本租户成员会话；写入和档案读取要求本租户管理员。平台 Cookie 没有租户 Membership，不能以 `tenant_id` 参数获得目录权限，也不会被合成为租户成员。请求中的租户字段拒绝；租户上下文只由当前会话恢复。写入沿用 JSON 类型、16 KiB 请求体上限和防伪校验；所有响应 no-store，组件卸载后 404。下表路径均相对于 `/api/directory`，字段使用 snake_case。
 
@@ -54,7 +58,10 @@
 | `GET /orgs/tree`、`POST /orgs`、`PUT /orgs/{id}`、`DELETE /orgs/{id}` | 组织树（`items[]` 含 parent_id/path/depth）及维护；写入 `{name,type_code,parent_id?,manager_membership_id?,responsible_position_id?}` |
 | `GET /positions`、`POST /positions`、`PUT /positions/{id}`、`DELETE /positions/{id}` | 岗位树及维护；写入 `{name,organization_id,parent_id?,is_default?,is_responsible?,responsible_membership_id?}` |
 | `GET /groups`、`POST /groups`、`DELETE /groups/{id}` | 纯成员集合；创建 `{name}` |
-| `GET /members`、`GET /orgs/{id}/members`、`GET /positions/{id}/holders` | 真实租户成员列表（`items[].membership`）；分页 offset 默认 0、limit 默认 50 且上限 200；组织成员支持 `descendants=true` |
+| `GET /members`、`GET /orgs/{id}/members`、`GET /positions/{id}/holders` | 真实租户成员列表（`items[].membership`）；分页 offset 默认 0、limit 默认 50 且上限 200；组织成员支持 `descendants=true`；`/members` 与组织成员支持关键字 `q`，`/members` 另支持 `ids` / `person_ids` 批量 |
+| `GET /members/{id}/superiors`、`GET /members/{id}/manager` | 按岗位链的上级责任人序列 `{membership_id,start_position_id?,start_organization_id?,items:[{level,position_id,organization_id,responsible?,vacancy?}]}`（可带 `position_id`）；直属主管 `{membership_id,manager?,source_organization_id?}` |
+| `GET /orgs/{id}/head` | 部门负责人 `{organization_id,responsible_position_id?,responsible?,vacancy?,manager?}` |
+| `GET /me/subordinates` | 当前成员的下属（上级链反查），`depth` 为正整数、缺省为任一级，分页同成员列表 |
 | `GET /members/{id}/relations`、`PUT /members/{id}/relations` | 读取/原子替换 `{items:[{target_type,target_id,is_primary}]}`，目标类型 organization/position/group，最多 100 项 |
 | `GET /members/{id}/profile`、`PUT /members/{id}/profile` | 管理员读写档案 `{name,pinyin?,phone?,email?,extensions?}`，读取返回联系方式掩码 |
 | `POST /members/{id}/status`、`DELETE /members/{id}` | 按 `{status,reason}` 改状态；删除为禁用+标记，无物理清除路由 |
@@ -184,7 +191,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 
 ## 验收
 
-`DirectoryTests` 使用实际 PostgreSQL 16、受限角色、生产迁移与 Kestrel：覆盖组织/岗位移动、循环和深度拒绝、含成员拒删、租户类型字典、责任人、多归属/主归属、档案 1:1、直连 RLS 与跨租户复合外键、10 人含 2 管理员的批量三态、同租户会话吊销且其他租户不受影响、软删除不复活、平台超管不出现在成员列表、CSRF/未知字段/卸载 404、并发归属与删除及互相移动。`CustomerCommandTests.DirectoryCapability.cs` 在真实 Identity/Registry/Authz/Capabilities/PostgreSQL 装配下验证实际生成 tool 与冻结目录 Schema、同键回放/变更冲突、重新启用后重放不再次禁用、吊销事件与审计不重复、非管理员/跨 scope/已吊销会话/卸载拒绝；测试使用真实生成表面组装独立测试制品，产品 x-skeleton 不变。`DirectoryContractTests` 覆盖深度与状态机及物理清除安全边界，迁移测试校验模型无漂移及八张租户表的 FORCE RLS。
+`DirectoryTests` 使用实际 PostgreSQL 16、受限角色、生产迁移与 Kestrel：覆盖组织/岗位移动、循环和深度拒绝、含成员拒删、租户类型字典、责任人、多归属/主归属、档案 1:1、直连 RLS 与跨租户复合外键、10 人含 2 管理员的批量三态、同租户会话吊销且其他租户不受影响、软删除不复活、平台超管不出现在成员列表、CSRF/未知字段/卸载 404、并发归属与删除及互相移动。`CustomerCommandTests.DirectoryCapability.cs` 在真实 Identity/Registry/Authz/Capabilities/PostgreSQL 装配下验证实际生成 tool 与冻结目录 Schema、同键回放/变更冲突、重新启用后重放不再次禁用、吊销事件与审计不重复、非管理员/跨 scope/已吊销会话/卸载拒绝；测试使用真实生成表面组装独立测试制品，产品 x-skeleton 不变。`DirectoryContractTests` 覆盖深度与状态机及物理清除安全边界，迁移测试校验模型无漂移及九张租户表的 FORCE RLS。S1-IDP-010：`DirectoryQueryTests` 在同样的真实环境里验证上级链（空缺占位、跨组织父链、组织回溯去重、主岗位变化后随之变化）、直属主管与部门负责人、下属与子孙是上级链的反查、成员检索与按 id 批量（不搜联系方式、通配符按字面、只回本租户可见成员），以及用真实会话调遍目录契约的每个 GET 端点与查询参数、响应按契约 Schema 严格校验；`DirectoryEventTests` 验证目录写入同事务发出 `directory.*.v1`（载荷符合 Schema、不含名称姓名、失败写入不留事件）、账号入口的状态变化与重新启用同样发事件、修订行受 RLS 保护；`DirectoryAgentContractTests` 核对 Agent 契约与实际 GET 端点逐一对应、示例符合 Schema、Schema 与目录记录序列化逐字段一致、yue 业务组件契约的目录部分逐字段一致。
 
 真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签；RFC 8707 resource 的白名单、两层检查、多资源客户端必须指定与收窄见 `ResourceIndicatorTests`）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）；连接器登录（`ConnectorFlowTests`：假连接器 TCK 的清单校验、state 篡改拒绝、回调幂等含并发，确认绑定、冲突不泄露、过期与重新认证窗口、取消、JIT 与配额、租户 scope 过滤与遮蔽、详情不回传密钥；`AuthentikConnectorTests`：容器里的真实 Authentik 经通用 OIDC 连接器走完首次绑定、再次登录与同租户重复绑定被拒）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
 

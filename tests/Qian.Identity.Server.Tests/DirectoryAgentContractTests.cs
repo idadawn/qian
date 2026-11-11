@@ -10,7 +10,7 @@ namespace Qian.Identity.Server.Tests;
 // 目录查询的 Agent 契约（S1-IDP-010 验收 4）：contracts/identity/v1/directory.openapi.json 与 IdentityDirectoryEndpoints 的 GET 端点逐一对应，
 // 每个查询带意图式 description 与请求 / 响应示例，示例符合契约 Schema，契约 Schema 与目录记录的序列化逐字段一致；
 // yue 业务组件契约（packages/yue/biz/contracts/biz.openapi.json）的目录部分与它逐字段一致。真实响应的符合性在 DirectoryQueryTests 里验。
-public sealed partial class DirectoryContractTests
+public sealed partial class DirectoryAgentContractTests
 {
     private static readonly Guid A = Guid.Parse("0193a000-0000-7000-8000-000000000001"), B = Guid.Parse("0193a000-0000-7000-8000-000000000002"),
         C = Guid.Parse("0193a000-0000-7000-8000-000000000003"), D = Guid.Parse("0193a000-0000-7000-8000-000000000004");
@@ -33,7 +33,7 @@ public sealed partial class DirectoryContractTests
     [Fact]
     public async Task 目录查询契约与GET端点逐一对应_每个查询带意图描述与参数示例_响应示例符合Schema()
     {
-        var contract = DirectoryContract.Load();
+        var contract = DirectoryAgentContract.Load();
         Assert.Equal("3.1.0", contract.Document["openapi"]!.GetValue<string>());
         var routes = await Routes();
         var gets = routes.Where(route => route.Method == "GET").Select(route => route.Path).Order(StringComparer.Ordinal).ToArray();
@@ -90,7 +90,7 @@ public sealed partial class DirectoryContractTests
             Assert.Contains("401", statuses); Assert.Contains("403", statuses);
             Assert.Equal(path.Contains("{id}", StringComparison.Ordinal), statuses.Contains("404"));
             foreach (var status in statuses)
-                Assert.Equal(DirectoryContract.ErrorDetailId, contract.ResponseSchema(operation, status, "application/problem+json")?["$ref"]?.GetValue<string>());
+                Assert.Equal(DirectoryAgentContract.ErrorDetailId, contract.ResponseSchema(operation, status, "application/problem+json")?["$ref"]?.GetValue<string>());
         }
         Assert.True(examples >= 17, "响应示例数：" + examples);
     }
@@ -98,7 +98,7 @@ public sealed partial class DirectoryContractTests
     [Fact]
     public void 目录契约Schema与目录记录的序列化逐字段一致_派生查询的空缺与可选字段()
     {
-        var contract = DirectoryContract.Load();
+        var contract = DirectoryAgentContract.Load();
         var member = new Membership(A, B, C, "张三", AccountStatuses.Active, true) { Account = "zhangsan", IdentityRevision = 3 };
         // 每条记录把可选字段都填上，序列化后的字段集合必须与契约 Schema 的 properties 完全相同，并通过严格校验。
         (string Schema, object Value)[] samples =
@@ -137,8 +137,8 @@ public sealed partial class DirectoryContractTests
     [Fact]
     public void yue业务组件契约的目录部分与目录契约逐字段一致()
     {
-        var identity = DirectoryContract.Load();
-        var biz = DirectoryContract.Load("packages/yue/biz/contracts/biz.openapi.json");
+        var identity = DirectoryAgentContract.Load();
+        var biz = DirectoryAgentContract.Load("packages/yue/biz/contracts/biz.openapi.json");
         var shared = biz.Operations().Where(operation => operation.Path.StartsWith("/api/directory/", StringComparison.Ordinal)).ToArray();
         Assert.True(shared.Length >= 4, "业务组件契约的目录路径数：" + shared.Length);
         foreach (var (path, method, operation) in shared)
@@ -151,9 +151,9 @@ public sealed partial class DirectoryContractTests
         }
     }
 
-    private static JsonNode Resolve(DirectoryContract contract, JsonNode node) => contract.Resolve(node);
+    private static JsonNode Resolve(DirectoryAgentContract contract, JsonNode node) => contract.Resolve(node);
 
-    private static string[] ParameterShapes(DirectoryContract contract, JsonObject operation) =>
+    private static string[] ParameterShapes(DirectoryAgentContract contract, JsonObject operation) =>
         [.. contract.Parameters(operation).Select(parameter =>
         {
             var location = parameter["in"]!.GetValue<string>();
@@ -165,9 +165,9 @@ public sealed partial class DirectoryContractTests
     // 结构化比较用的规范形：展开引用，只保留影响线上形状的关键字（类型、格式、枚举、范围、必填、字段、数组项、缺省值），去掉描述与示例。
     private static readonly string[] Structural = ["type", "format", "enum", "minimum", "maximum", "minLength", "maxLength", "minItems", "maxItems", "default", "pattern"];
 
-    private static string Shape(DirectoryContract contract, JsonNode schema) => Canonical(contract, schema, 0).ToJsonString();
+    private static string Shape(DirectoryAgentContract contract, JsonNode schema) => Canonical(contract, schema, 0).ToJsonString();
 
-    private static JsonObject Canonical(DirectoryContract contract, JsonNode schema, int depth)
+    private static JsonObject Canonical(DirectoryAgentContract contract, JsonNode schema, int depth)
     {
         Assert.True(depth < 32, "Schema 嵌套过深或存在环");
         var resolved = contract.Resolve(schema).AsObject();
