@@ -96,21 +96,16 @@
    ```bash
    ssh qd 'cd qian-build && git clone -b <分支> qian.bundle qian'
    ```
-3. 构建与推送（qd 的 `~/qian-build/qian`）：
+3. 构建与推送（qd 的 `~/qian-build/qian`）。`build` 构建完即推送到标签所在的仓库，再从推送结果取 digest：
    ```bash
    python3 scripts/images.py build --kind jit --project hosts/Qian.Platform.Host/Qian.Platform.Host.csproj --assembly Qian.Platform.Host --tag 192.168.1.201/qian/qian-platform:<短 SHA> --web ../web-platform
    ```
    ```bash
    python3 scripts/images.py build --kind aot --project hosts/Qian.Gateway.Host/Qian.Gateway.Host.csproj --assembly Qian.Gateway.Host --tag 192.168.1.201/qian/qian-gateway:<短 SHA> --web ../web-gateway
    ```
-   ```bash
-   docker push 192.168.1.201/qian/qian-platform:<短 SHA> && docker push 192.168.1.201/qian/qian-gateway:<短 SHA>
-   ```
-   ```bash
-   docker inspect --format '{{index .RepoDigests 0}}' 192.168.1.201/qian/qian-platform:<短 SHA> 192.168.1.201/qian/qian-gateway:<短 SHA>
-   ```
-   - `build` 打印的 JSON 记进任务进度日志，内容包括源码 SHA、KunVersion、profile 与组件目录修订、`webDigest`。
-   - 清单只按 `RepoDigests` 给出的 digest 引用镜像，标签只用来推送。部署仓库里 digest 只写在 `env-ds/qian-staging/kustomization.yaml` 的 `images` 段这一处。
+   - 每条命令打印一段 JSON：`ref` 是按 digest 的引用，`build` 是构建证据（源码 SHA、KunVersion、profile 与组件目录修订、`webDigest`）。两段都记进任务进度日志。
+   - 推送失败时命令以非零退出、不打印 JSON，镜像留在本机；修好仓库权限后重跑，BuildKit 缓存让重跑很快。
+   - 清单只按 `ref` 里的 digest 引用镜像，标签只用来推送。部署仓库里 digest 只写在 `env-ds/qian-staging/kustomization.yaml` 的 `images` 段这一处。
 4. 签名清单（qd）。对推送后的同一个 digest 生成签名清单并自查，结果放进部署仓库的签名清单 ConfigMap：
    ```bash
    python3 scripts/sign-system-revisions.py sign --key ~/.qian/staging-system-revisions.pem --image 192.168.1.201/qian/qian-platform@sha256:<digest> --out system-revisions.json
