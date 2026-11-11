@@ -1,6 +1,6 @@
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { AppShell, Authentication, ColPage, createMenuTypeRegistry, FallbackPage, initPreferences, LeftTree, OfflineBanner, Page, PageHeader, PasswordLogin, PreferenceControls, PreferencesProvider, safeNavigationUrl, SessionExpiredDialog, ShellErrorBoundary, SsoCallback, TenantSelection, TenantSwitcher, UpdateBanner, usePreferences } from './index';
+import { AppShell, AuthLayout, Authentication, BrandMark, ColPage, createMenuTypeRegistry, FallbackPage, initPreferences, LeftTree, LocaleMenu, OfflineBanner, Page, PageHeader, PasswordLogin, PlainLayout, PreferenceControls, PreferencesProvider, safeNavigationUrl, SessionExpiredDialog, ShellErrorBoundary, SsoCallback, TenantSelection, TenantSwitcher, UpdateBanner, usePreferences, WorkspaceCard } from './index';
 import { makeI18n, makeProvider, session } from './test/fixture';
 
 describe('菜单类型注册表', () => {
@@ -86,4 +86,23 @@ it('全部外壳、页面、认证与反馈组件可 SSR，密码不出现在 HT
   expect(renderToString(<UpdateBanner i18n={i18n} available onReload={noop} />)).toContain('新版本');
   expect(renderToString(<ShellErrorBoundary i18n={i18n}><span>可用</span></ShellErrorBoundary>)).toContain('可用');
   expect(() => renderToString(<SessionExpiredDialog i18n={i18n} open={false} onSignIn={noop} />)).not.toThrow();
+});
+
+it('认证页布局、简单布局、品牌标识与工作空间卡片可 SSR；账号菜单收起时语言子菜单不渲染', () => {
+  const i18n = makeI18n(); const noop = () => {};
+  const signIn = renderToString(<AuthLayout brand="Qian" headline="标题" description="说明" footer={<span>版权</span>} toolbar={<span>工具</span>} legal="条款">表单</AuthLayout>);
+  for (const slot of ['auth-layout', 'auth-layout-aside', 'auth-layout-main', 'auth-layout-brand', 'auth-layout-toolbar']) expect(signIn).toContain(`data-slot="${slot}"`);
+  expect(signIn).toContain('data-variant="sign-in"'); expect(signIn).toContain('表单'); expect(signIn).toContain('条款'); expect(signIn).toContain('yue-auth-layout');
+  const form = renderToString(<AuthLayout brand="Qian" brandHref="/login" headline="申请开通" variant="form">内容</AuthLayout>);
+  expect(form).toContain('data-variant="form"'); expect(form).toContain('href="/login"');
+  const plain = renderToString(<PlainLayout brand="Qian" account={<span>李雷</span>} width="md">进度</PlainLayout>);
+  for (const slot of ['plain-layout', 'plain-layout-main']) expect(plain).toContain(`data-slot="${slot}"`);
+  expect(plain).toContain('李雷'); expect(plain).toContain('进度');
+  expect(renderToString(<BrandMark />)).toContain('aria-hidden="true"');
+  const card = renderToString(<WorkspaceCard title="星河科技" description="试用 · xinghe" tile={<span>星</span>} label="切换工作空间" onClick={noop} />);
+  expect(card).toContain('data-slot="workspace-card"'); expect(card).toContain('<button'); expect(card).toContain('yue-workspace-card');
+  expect(renderToString(<WorkspaceCard title="平台控制台" tile={<span>平</span>} label="切换工作空间" href="/select" />)).toContain('href="/select"');
+  const shell = renderToString(<PreferencesProvider store={initPreferences({ namespace: 'ssr-locale', storage: null })}><AppShell i18n={i18n} brand="Qian" menu={[]} userName="李雷"
+    workspace={<WorkspaceCard title="星河科技" tile={<span>星</span>} label="切换工作空间" onClick={noop} />} userMenu={<LocaleMenu i18n={i18n} />} /></PreferencesProvider>);
+  expect(shell).toContain('data-slot="workspace-card"'); expect(shell).not.toContain('yue-locale-menu');
 });

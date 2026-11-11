@@ -67,7 +67,7 @@ try {
   const requests = []; const errors = []; page.on('request', request => requests.push(new URL(request.url()).pathname)); page.on('pageerror', error => errors.push(error.message));
   await page.goto('http://127.0.0.1:' + server.address().port + '/'); await page.getByRole('heading', { name: '已登录外壳' }).waitFor();
   const initialRequests = [...requests]; assert.ok(!initialRequests.includes('/' + passwordEntry.file), '首屏不得请求密码表单');
-  await page.getByRole('button', { name: '进入登录页' }).click(); await page.getByLabel(/密码/).waitFor();
+  await page.getByRole('button', { name: '进入登录页' }).click(); await page.getByLabel('密码', { exact: true }).waitFor();
   assert.ok(requests.includes('/' + passwordEntry.file), '认证页应真正加载密码表单'); assert.deepEqual(errors, []);
   const report = { source: 'pnpm pack + 独立消费者安装构建 + Chromium', passwordChunk: passwordEntry.file, initialRequests, afterLoginRequests: requests, errors, result: 'passed' };
   await writeFile(join(root, 'report.json'), JSON.stringify(report, null, 2)); console.log(JSON.stringify(report, null, 2));

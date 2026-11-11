@@ -57,8 +57,8 @@ it('确认绑定：先用账号密码验证，再绑定到已验证账号；绑�
   expect(screen.queryByRole('button', { name: /绑定到已验证账号/ })).toBeNull();
   expect(screen.queryByRole('button', { name: '创建新账号并绑定' })).toBeNull();
   await accessible();
-  await userEvent.fill(screen.getByLabelText(/账号/), 'demo');
-  await userEvent.fill(screen.getByLabelText(/密码/), 'secret');
+  await userEvent.fill(screen.getByLabelText('手机号或邮箱'), 'demo');
+  await userEvent.fill(screen.getByLabelText('密码'), 'secret');
   await userEvent.click(screen.getByRole('button', { name: '登录' }));
   await waitFor(() => expect(flowSignIn).toHaveBeenCalledWith('f1', { username: 'demo', password: 'secret' }, expect.any(AbortSignal)));
   const link = await screen.findByRole('button', { name: /绑定到已验证账号/ });
@@ -99,11 +99,17 @@ it('没有 flow 参数、流程不存在、落点与流程的连接器不一致�
   expect(assign).not.toHaveBeenCalled();
 });
 
-it('登录页的连接器区：没填租户代码不发起；按填写的租户列目录并发起，上游地址只经出口跳转', async () => {
+it('登录页的连接器区：「单点登录」展开面板；没填租户代码不发起；按填写的租户列目录并发起，上游地址只经出口跳转', async () => {
   const assign = leave();
   const listConnectors = vi.fn(async () => [{ id: 'dex', displayName: 'Dex 本机身份源', protocol: 'oidc', terminals: ['pc'] }]);
   const beginConnector = vi.fn(async () => 'https://idp.example.test/auth?state=x');
   render(<LoginPage entry={{ returnUrl, clientId: 'qian-shell' }} provider={provider({ listConnectors, beginConnector })} />);
+  // 面板收起时连接器不露出；点「单点登录」才出现租户代码与连接器按钮。
+  const toggle = await screen.findByTestId('identity-sso');
+  expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  expect(screen.queryByRole('button', { name: 'Dex 本机身份源' })).toBeNull();
+  await userEvent.click(toggle);
+  expect(toggle.getAttribute('aria-expanded')).toBe('true');
   await userEvent.click(await screen.findByRole('button', { name: 'Dex 本机身份源' }));
   expect(beginConnector).not.toHaveBeenCalled();
   expect((await screen.findByTestId('identity-connector-tenant')).textContent).toContain('请填写租户代码');
@@ -115,13 +121,15 @@ it('登录页的连接器区：没填租户代码不发起；按填写的租户�
   expect(assign).toHaveBeenCalledTimes(1);
 });
 
-it('登录页的连接器区：全局目录为空也渲染租户代码；租户过滤为空时输入框不卸载并提示，填对租户后重列并可发起', async () => {
+it('登录页的连接器区：全局目录为空时面板只有租户代码；租户过滤为空时输入框不卸载并提示，填对租户后重列并可发起', async () => {
   const assign = leave();
   const corp = { id: 'corp', displayName: '甲方企业身份源', protocol: 'oidc', terminals: ['pc'] };
   const listConnectors = vi.fn(async (_signal: AbortSignal, tenant: string | null) => tenant === 'acme' ? [corp] : []);
   const beginConnector = vi.fn(async () => 'https://idp.example.test/auth?state=y');
   render(<LoginPage entry={{ returnUrl, clientId: 'qian-shell' }} provider={provider({ listConnectors, beginConnector })} />);
   await waitFor(() => expect(listConnectors).toHaveBeenCalledWith(expect.any(AbortSignal), null));
+  // 点开「单点登录」：全局目录为空，面板里只有租户代码。
+  await userEvent.click(await screen.findByTestId('identity-sso'));
   const input = await screen.findByLabelText('租户代码');
   expect(screen.queryByTestId('identity-connectors-none')).toBeNull();
   await userEvent.fill(input, 'nobody');

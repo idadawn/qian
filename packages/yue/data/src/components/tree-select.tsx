@@ -26,7 +26,8 @@ export function TreeSelect({ nodes, value, onChange, label, i18n, disabled, clas
   const path = value ? findTreePath(nodes, value) : [];
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger render={<Button variant="outline" className="border-input" />} className={className} testId={testId} aria-label={label} disabled={disabled}>{path.at(-1)?.label ?? i18n.t('data.select')}</PopoverTrigger>
-    <PopoverContent aria-label={label} testId={`${testId}-popup`}>
+    {/* 虚拟化的行是绝对定位，撑不开浮层宽度：浮层给定宽度。 */}
+    <PopoverContent aria-label={label} className="w-72 max-w-[90vw]" testId={`${testId}-popup`}>
       <Tree nodes={nodes} selectedId={value ?? null} defaultExpandedIds={path.slice(0, -1).map((node) => node.id)} onSelectedChange={(id) => { onChange?.(id); setOpen(false); }} aria-label={label} />
       <Button variant="ghost" size="sm" className="mt-3" onClick={() => { onChange?.(null); setOpen(false); }}>{i18n.t('data.clear')}</Button>
     </PopoverContent>

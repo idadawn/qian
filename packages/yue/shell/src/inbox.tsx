@@ -1,4 +1,4 @@
-import { Badge, cn, Icon, Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@idadawn/yue-core/shell';
+import { cn, Icon, Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@idadawn/yue-core/shell';
 import type { PlatformI18n } from '@idadawn/yue-sdk';
 import { useShellLocale, type ShellPartProps } from './layout';
 
@@ -10,8 +10,10 @@ export function InboxPopover({ i18n, messages, onOpen, onOpenChange, className, 
   useShellLocale(i18n);
   const unread = messages.filter(message => message.unread).length;
   return <Popover onOpenChange={onOpenChange}>
-    <PopoverTrigger testId={`${testId}-trigger`} className={cn('relative inline-flex size-9 items-center justify-center rounded-(--yue-button-radius) text-foreground/80 transition-colors duration-fast hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring data-[popup-open]:bg-accent motion-reduce:transition-none', className)}>
-      <Icon name="bell" /><span className="sr-only">{i18n.t('shell.inbox')}</span>{unread > 0 && <Badge tone="error" testId={`${testId}-unread`} className="absolute -end-0.5 -top-0.5 h-4 min-w-4 border-0 px-1 text-[10px] leading-none">{unread}</Badge>}
+    <PopoverTrigger testId={`${testId}-trigger`} className={cn('relative inline-flex size-9 items-center justify-center rounded-(--yue-button-radius) text-subtle-foreground transition-colors duration-fast hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring data-[popup-open]:bg-accent motion-reduce:transition-none', className)}>
+      <Icon name="bell" size={18} /><span className="sr-only">{i18n.t('shell.inbox')}</span>
+      {/* 未读只画一个红点（原型），条数留给读屏。 */}
+      {unread > 0 && <><span aria-hidden="true" data-slot="inbox-unread-dot" data-testid={`${testId}-unread-dot`} className="absolute end-2.25 top-2 size-[7px] rounded-full border-[1.5px] border-background bg-error-solid" /><span data-slot="inbox-unread" data-testid={`${testId}-unread`} className="sr-only">{unread}</span></>}
     </PopoverTrigger>
     <PopoverContent align="end" testId={`${testId}-content`} className="w-80 space-y-3 p-4">
       <PopoverTitle>{i18n.t('shell.inbox')}</PopoverTitle>

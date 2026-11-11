@@ -159,11 +159,11 @@ describe('身份服务同源 AuthProvider', () => {
     const provider = createIdentityAuthProvider({ clientId: 'qian-web', fetch: fetchImpl, platformLabel: '平台身份' });
     const signal = new AbortController().signal;
     const first = await provider.signIn({ username: 'demo', password: 'pw' }, signal);
-    expect(first).toEqual({ kind: 'select-tenant', tenants: [{ id: 't-a', name: '甲公司' }, { id: PLATFORM_TENANT, name: '平台身份' }] });
+    expect(first).toEqual({ kind: 'select-tenant', tenants: [{ id: 't-a', name: '甲公司', code: 'alpha', admin: true, displayName: '甲方成员' }, { id: PLATFORM_TENANT, name: '平台身份', platform: true, displayName: '运营' }] });
     await expect(provider.selectTenant('t-unknown', signal)).rejects.toThrow('shell.error.tenant');
     const session = await provider.selectTenant('t-a', signal);
     expect(selected).toEqual({ ticket: 'ticket-1', membership_id: 'm-a' });
-    expect(session).toEqual({ subjectId: 'p-1', displayName: '甲方成员', tenantId: 't-a', tenants: [{ id: 't-a', name: '甲公司' }, { id: PLATFORM_TENANT, name: '平台身份' }] });
+    expect(session).toEqual({ subjectId: 'p-1', displayName: '甲方成员', tenantId: 't-a', tenants: [{ id: 't-a', name: '甲公司', code: 'alpha', admin: true, displayName: '甲方成员' }, { id: PLATFORM_TENANT, name: '平台身份', platform: true, displayName: '运营' }] });
     expect(calls.every(call => !call.url.includes('pw') && !call.url.includes('ticket'))).toBe(true);
     expect(await provider.me(signal)).toMatchObject({ personId: 'p-1', identityRevision: 2 });
     // 票据一次性：会话建立后即作废，再选只能重新登录。

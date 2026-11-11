@@ -13,9 +13,9 @@ for (const scenario of scenarios) for (const theme of ['light', 'dark']) test(`$
     await page.getByRole('button', { name: '模拟会话过期' }).click(); await expect(page.getByRole('alertdialog', { name: '登录已过期' })).toBeVisible();
   } else if (scenario.component === 'Authentication') {
     if (scenario.state === 'CallbackFailure') {
-      await page.getByRole('button', { name: '企业单点登录' }).click(); await expect(page.getByRole('alert')).toContainText('单点登录未完成');
+      await page.getByRole('button', { name: '单点登录', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('单点登录未完成');
     } else {
-      await page.getByLabel(/账号/).fill('demo'); await page.getByLabel(/密码/).fill('demo-password'); await page.getByRole('button', { name: '登录', exact: true }).click();
+      await page.getByLabel('账号', { exact: true }).fill('demo'); await page.getByLabel('密码', { exact: true }).fill('demo-password'); await page.getByRole('button', { name: '登录', exact: true }).click();
       if (scenario.state === 'MultiTenant') await page.getByRole('button', { name: '生产租户', exact: true }).click();
       await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
     }
@@ -34,9 +34,9 @@ test('静态 Rspress 外壳文档可发现，三个 iframe 使用同源示例且
   const auth = page.frameLocator('iframe[title="Authentication 交互预览"]');
   await expect(page.locator('iframe[title="Authentication 交互预览"]')).toHaveAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
   for (const name of ['AppShell', 'FallbackPage']) await expect(page.locator(`iframe[title="${name} 交互预览"]`)).toHaveAttribute('sandbox', 'allow-scripts allow-same-origin');
-  await auth.getByLabel(/账号/).fill('demo'); await auth.getByLabel(/密码/).fill('demo-password'); await auth.getByRole('button', { name: '登录', exact: true }).click(); await expect(auth.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
+  await auth.getByLabel('账号', { exact: true }).fill('demo'); await auth.getByLabel('密码', { exact: true }).fill('demo-password'); await auth.getByRole('button', { name: '登录', exact: true }).click(); await expect(auth.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
   await auth.getByRole('button', { name: '用户菜单' }).click(); await auth.getByRole('menuitem', { name: '退出登录' }).click();
-  await auth.getByRole('button', { name: '企业单点登录' }).click(); await expect(auth.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
+  await auth.getByRole('button', { name: '单点登录', exact: true }).click(); await expect(auth.getByRole('heading', { name: '工作台', exact: true })).toBeVisible();
   const fallback = page.frameLocator('iframe[title="FallbackPage 交互预览"]');
   for (const state of ['Forbidden', 'NotFound', 'ServerError', 'Offline']) { await fallback.getByLabel('示例状态').selectOption(state); await expect(fallback.getByTestId('yue-fallback-page')).toBeVisible(); }
   const result = await new AxeBuilder({ page }).analyze(); expect(result.violations.filter(value => ['critical', 'serious'].includes(value.impact ?? ''))).toEqual([]);

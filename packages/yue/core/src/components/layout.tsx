@@ -1,7 +1,7 @@
 import { Separator as BaseSeparator } from '@base-ui/react/separator';
 import { ScrollArea as BaseScrollArea } from '@base-ui/react/scroll-area';
 import { Group, Panel, Separator as ResizeSeparator } from 'react-resizable-panels';
-import { useId, type ComponentProps, type ReactNode } from 'react';
+import type { ComponentProps } from 'react';
 import { cn } from '../lib/cn';
 import type { YueProps } from '../lib/test-id';
 
@@ -18,7 +18,7 @@ export function ResizablePanel({ className, testId, ...props }: ResizablePanelPr
 export type ResizableHandleProps = YueProps<ComponentProps<typeof ResizeSeparator>> & { label: string };
 export function ResizableHandle({ className, testId, label, ...props }: ResizableHandleProps) { return <ResizeSeparator {...props} aria-label={label} data-slot="resizable-handle" data-testid={testId ?? 'yue-resizable-handle'} className={cn('w-1 bg-input outline-none aria-[orientation=horizontal]:h-1 aria-[orientation=horizontal]:w-full focus-visible:bg-ring', className)} />; }
 export type CardProps = YueProps<ComponentProps<'div'>>;
-export function Card({ className, testId, ...props }: CardProps) { return <div {...props} data-slot="card" data-testid={testId ?? 'yue-card'} className={cn('rounded-xl border border-border bg-card text-card-foreground shadow-sm', className)} />; }
+export function Card({ className, testId, ...props }: CardProps) { return <div {...props} data-slot="card" data-testid={testId ?? 'yue-card'} className={cn('rounded-xl border border-border bg-card text-card-foreground', className)} />; }
 export function CardHeader({ className, testId, ...props }: CardProps) { return <div {...props} data-slot="card-header" data-testid={testId ?? 'yue-card-header'} className={cn('flex flex-col gap-2 p-6', className)} />; }
 export type CardTitleProps = YueProps<ComponentProps<'h3'>>;
 export function CardTitle({ className, testId, ...props }: CardTitleProps) { return <h3 {...props} data-slot="card-title" data-testid={testId ?? 'yue-card-title'} className={cn('text-base font-semibold leading-none', className)} />; }
@@ -26,15 +26,4 @@ export type CardDescriptionProps = YueProps<ComponentProps<'p'>>;
 export function CardDescription({ className, testId, ...props }: CardDescriptionProps) { return <p {...props} data-slot="card-description" data-testid={testId ?? 'yue-card-description'} className={cn('text-sm text-muted-foreground', className)} />; }
 export function CardContent({ className, testId, ...props }: CardProps) { return <div {...props} data-slot="card-content" data-testid={testId ?? 'yue-card-content'} className={cn('p-6 pt-0', className)} />; }
 export function CardFooter({ className, testId, ...props }: CardProps) { return <div {...props} data-slot="card-footer" data-testid={testId ?? 'yue-card-footer'} className={cn('flex items-center gap-2 p-6 pt-0', className)} />; }
-export interface DescriptionItem { key: string; label: ReactNode; children: ReactNode }
-export type DescriptionsProps = YueProps<ComponentProps<'dl'>> & {
-  items: readonly DescriptionItem[];
-  /** inline：标签与值同行两列；stacked：小号标签在上、值在下，按可用宽度自动分栏。 @default 'inline' */
-  layout?: 'inline' | 'stacked';
-};
-export function Descriptions({ className, testId, items, layout = 'inline', ...props }: DescriptionsProps) {
-  const prefix = useId();
-  if (layout === 'stacked') return <dl {...props} data-slot="descriptions" data-layout="stacked" data-testid={testId ?? 'yue-descriptions'} className={cn('m-0 grid grid-cols-[repeat(auto-fit,minmax(min(15rem,100%),1fr))] gap-x-6 gap-y-3 text-sm', className)}>
-    {items.map(item => <div key={item.key} className="flex min-w-0 flex-col"><dt id={`${prefix}-${item.key}`} className="text-xs leading-[18px] text-muted-foreground">{item.label}</dt><dd aria-labelledby={`${prefix}-${item.key}`} className="m-0 min-w-0 break-words">{item.children}</dd></div>)}</dl>;
-  return <dl {...props} data-slot="descriptions" data-testid={testId ?? 'yue-descriptions'} className={cn('grid grid-cols-[max-content_1fr] gap-x-6 gap-y-3 text-sm', className)}>{items.map(item => <div key={item.key} className="contents"><dt id={`${prefix}-${item.key}`} className="text-muted-foreground">{item.label}</dt><dd aria-labelledby={`${prefix}-${item.key}`}>{item.children}</dd></div>)}</dl>;
-}
+export { Descriptions, type DescriptionItem, type DescriptionsProps } from './descriptions';

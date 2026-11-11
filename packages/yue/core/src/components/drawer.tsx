@@ -24,8 +24,9 @@ export function DrawerDescription({ className, testId, ...props }: DrawerDescrip
 }
 
 export type DrawerCloseProps = YueProps<ComponentProps<typeof Base.Close>>;
-export function DrawerClose({ className, testId, ...props }: DrawerCloseProps) {
-  return <ButtonIdentity slot="drawer-close" testId={testId ?? 'yue-drawer-close'}><Base.Close {...props} data-slot="drawer-close" data-testid={testId ?? 'yue-drawer-close'} className={cn(button, className)} /></ButtonIdentity>;
+// 经 render 交给 Button 渲染时不再叠基础按钮类：Button 自带一套，再叠会让基础类里的 border-transparent 盖掉描边变体的边框。
+export function DrawerClose({ className, testId, render, ...props }: DrawerCloseProps) {
+  return <ButtonIdentity slot="drawer-close" testId={testId ?? 'yue-drawer-close'}><Base.Close {...props} data-slot="drawer-close" data-testid={testId ?? 'yue-drawer-close'} render={render} className={render ? className : cn(button, className)} /></ButtonIdentity>;
 }
 
 export type DrawerContentProps = YueProps<ComponentProps<typeof Base.Popup>>;

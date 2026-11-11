@@ -6,7 +6,7 @@ import { userEvent } from 'vitest/browser';
 import { PlatformError } from '@idadawn/yue-sdk';
 import type { FormSchema } from '@idadawn/yue-contracts';
 import { SchemaForm, type FormApi } from './schema-form';
-import { useDrawer } from './overlays';
+import { FeedbackProvider, useConfirm, useDrawer } from './overlays';
 import { credentialSchema, i18n, schema } from './test/fixture';
 
 afterEach(cleanup);
@@ -191,4 +191,53 @@ it('带 labelKey 的无字段布局节点渲染成字段组；fieldExtra 按当�
   expect(username.getAttribute('aria-describedby')?.split(' ')).toContain(extra.id);
   const result = await axe.run(document.body);
   expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+});
+
+it('fieldAdornment：后缀在输入框内、单位在输入框右侧、附加按钮排在最右；后缀与单位都关联到输入框', async () => {
+  render(<SchemaForm schema={credentialSchema} i18n={i18n} testId="adorned" onSubmit={vi.fn()}
+    fieldAdornment={(path) => path === 'username' ? { suffix: '可以使用', unit: '人', addon: <button type="button">重新发送</button> } : null} />);
+  const username = screen.getByLabelText('账号 *');
+  const suffix = screen.getByTestId('adorned-suffix-username');
+  const unit = screen.getByTestId('adorned-unit-username');
+  const addon = screen.getByRole('button', { name: '重新发送' });
+  expect(username.getAttribute('aria-describedby')?.split(' ')).toEqual(expect.arrayContaining([suffix.id, unit.id]));
+  const input = username.getBoundingClientRect();
+  const suffixBox = suffix.getBoundingClientRect();
+  const unitBox = unit.getBoundingClientRect();
+  // 后缀叠在输入框里（右端），单位紧跟输入框之外，附加按钮在单位之后。
+  expect(suffixBox.left).toBeGreaterThan(input.left);
+  expect(suffixBox.right).toBeLessThanOrEqual(input.right);
+  expect(unitBox.left).toBeGreaterThanOrEqual(input.right);
+  expect(addon.getBoundingClientRect().left).toBeGreaterThanOrEqual(unitBox.right);
+  expect(screen.getByTestId('adorned-unit-username').closest('[data-slot="schema-field-control"]')).toBe(username.closest('[data-slot="schema-field-control"]'));
+  expect(screen.queryByTestId('adorned-unit-password')).toBeNull();
+  const result = await axe.run(document.body);
+  expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+});
+
+it('确认框：危险操作的确认按钮用危险色并写明动作，取消按钮保留描边边框；抽屉说明可以是带格式的内容', async () => {
+  const results: boolean[] = [];
+  function Host() {
+    const confirm = useConfirm(); const drawer = useDrawer(i18n);
+    return <><button type="button" onClick={() => void confirm({ title: '冻结租户', description: '冻结后该租户的成员都无法登录。', tone: 'danger', confirmLabel: '冻结' }).then(value => results.push(value))}>冻结</button>
+      <button type="button" onClick={() => drawer.open({ title: '审核申请', description: <>申请编号 <span className="font-mono" data-testid="application-number">SQ-20261111-0001</span></>, content: <p>内容</p> })}>审核</button>{drawer.holder}</>;
+  }
+  render(<FeedbackProvider i18n={i18n}><Host /></FeedbackProvider>);
+  await userEvent.click(screen.getByRole('button', { name: '冻结' }));
+  const dialog = await screen.findByRole('alertdialog', { name: '冻结租户' });
+  const ok = within(dialog).getByTestId('yue-form-confirm-ok');
+  expect(ok.textContent).toBe('冻结');
+  expect(ok.className).toContain('bg-destructive');
+  const cancel = within(dialog).getByRole('button', { name: '取消' });
+  expect(cancel.className).toContain('border-border-strong');
+  expect(cancel.className).not.toContain('border-transparent');
+  await vi.waitFor(() => expect(document.querySelector('[data-starting-style]')).toBeNull());
+  await Promise.all(document.getAnimations().map((animation) => animation.finished));
+  const result = await axe.run(dialog);
+  expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+  await userEvent.click(ok);
+  await vi.waitFor(() => expect(results).toEqual([true]));
+  await userEvent.click(screen.getByRole('button', { name: '审核' }));
+  const sheet = await screen.findByRole('dialog', { name: '审核申请' });
+  expect(within(sheet).getByTestId('application-number').textContent).toBe('SQ-20261111-0001');
 });

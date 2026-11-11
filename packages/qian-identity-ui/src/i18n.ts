@@ -19,7 +19,11 @@ i18n.addLanguagePack('zh-CN', {
   'identity.bindTitle': '确认绑定', 'identity.bindHelp': '上游身份 {{name}} 尚未绑定账号，请选择处理方式。', 'identity.verifyHelp': '先用账号密码验证身份，再完成绑定。',
   'identity.bindLink': '绑定到已验证账号', 'identity.bindCreate': '创建新账号并绑定', 'identity.bindCancel': '放弃本次登录',
   'identity.flowError': '上游登录失败或已失效。', 'identity.restart': '重新发起登录',
-  'identity.noCompany': '还没有企业？', 'identity.applyCompany': '申请开通', 'identity.signupProgress': '查看开通申请进度', 'identity.applyNewCompany': '申请开通新企业',
+  'identity.noCompany': '还没有企业账号？', 'identity.applyCompany': '申请开通', 'identity.signupProgress': '查看申请进度', 'identity.applyNewCompany': '申请开通新企业',
+  'identity.brand': 'Qian 乾', 'identity.copyright': '© 2026 Qian',
+  'identity.headline': '为 Agent 时代准备的多租户平台', 'identity.tagline': '一个账号可以加入多家企业。平台运营与企业管理在同一个控制台里切换。',
+  'identity.loginHelp': '使用手机号或邮箱登录，一个账号可进入你加入的所有企业。',
+  'shell.username': '手机号或邮箱', 'shell.platformConsoleHelp': '平台超级管理员 · 租户、开通申请与平台组件',
 });
 i18n.addLanguagePack('zh-TW', {
   'identity.invalidEntry': '登入入口無效', 'identity.invalidEntryHelp': '請從應用重新發起登入；本頁只接受應用的授權請求。',
@@ -29,7 +33,11 @@ i18n.addLanguagePack('zh-TW', {
   'identity.bindTitle': '確認綁定', 'identity.bindHelp': '上游身分 {{name}} 尚未綁定帳號，請選擇處理方式。', 'identity.verifyHelp': '先用帳號密碼驗證身分，再完成綁定。',
   'identity.bindLink': '綁定到已驗證帳號', 'identity.bindCreate': '建立新帳號並綁定', 'identity.bindCancel': '放棄本次登入',
   'identity.flowError': '上游登入失敗或已失效。', 'identity.restart': '重新發起登入',
-  'identity.noCompany': '還沒有企業？', 'identity.applyCompany': '申請開通', 'identity.signupProgress': '查看開通申請進度', 'identity.applyNewCompany': '申請開通新企業',
+  'identity.noCompany': '還沒有企業帳號？', 'identity.applyCompany': '申請開通', 'identity.signupProgress': '查看申請進度', 'identity.applyNewCompany': '申請開通新企業',
+  'identity.brand': 'Qian 乾', 'identity.copyright': '© 2026 Qian',
+  'identity.headline': '為 Agent 時代準備的多租戶平台', 'identity.tagline': '一個帳號可以加入多家企業。平台營運與企業管理在同一個控制台裡切換。',
+  'identity.loginHelp': '使用手機號碼或電子郵件登入，一個帳號可進入你加入的所有企業。',
+  'shell.username': '手機號碼或電子郵件', 'shell.platformConsoleHelp': '平台超級管理員 · 租戶、開通申請與平台元件',
 });
 i18n.addLanguagePack('en-US', {
   'identity.invalidEntry': 'Invalid sign-in entry', 'identity.invalidEntryHelp': 'Start sign-in from the application again; this page only accepts authorization requests from applications.',
@@ -39,5 +47,9 @@ i18n.addLanguagePack('en-US', {
   'identity.bindTitle': 'Confirm binding', 'identity.bindHelp': 'The upstream identity {{name}} is not bound to an account yet. Choose how to proceed.', 'identity.verifyHelp': 'Verify with your account password first, then complete the binding.',
   'identity.bindLink': 'Bind to the verified account', 'identity.bindCreate': 'Create a new account and bind', 'identity.bindCancel': 'Abandon this sign-in',
   'identity.flowError': 'The upstream sign-in failed or expired.', 'identity.restart': 'Start sign-in again',
-  'identity.noCompany': 'No company yet?', 'identity.applyCompany': 'Apply for a workspace', 'identity.signupProgress': 'Check your application', 'identity.applyNewCompany': 'Apply for another company',
+  'identity.noCompany': 'No company account yet? ', 'identity.applyCompany': 'Apply for one', 'identity.signupProgress': 'Check your application', 'identity.applyNewCompany': 'Apply for another company',
+  'identity.brand': 'Qian', 'identity.copyright': '© 2026 Qian',
+  'identity.headline': 'A multi-tenant platform built for the agent era', 'identity.tagline': 'One account can join many companies. Switch between platform operations and company administration in one console.',
+  'identity.loginHelp': 'Sign in with your phone number or email. One account opens every company you belong to.',
+  'shell.username': 'Phone or email', 'shell.platformConsoleHelp': 'Platform super admin · tenants, applications and platform components',
 });

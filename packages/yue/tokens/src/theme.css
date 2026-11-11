@@ -46,13 +46,45 @@
   --color-info-bg: var(--info-bg);
   --color-neutral: var(--neutral);
   --color-neutral-bg: var(--neutral-bg);
+  --color-control-foreground: var(--control-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-caption-foreground: var(--caption-foreground);
+  --color-border-strong: var(--border-strong);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-primary-border: var(--primary-border);
+  --color-primary-border-strong: var(--primary-border-strong);
+  --color-ok-strong: var(--ok-strong);
+  --color-ok-border: var(--ok-border);
+  --color-ok-solid: var(--ok-solid);
+  --color-warn-strong: var(--warn-strong);
+  --color-warn-border: var(--warn-border);
+  --color-warn-solid: var(--warn-solid);
+  --color-error-strong: var(--error-strong);
+  --color-error-border: var(--error-border);
+  --color-error-solid: var(--error-solid);
+  --color-info-strong: var(--info-strong);
+  --color-info-border: var(--info-border);
+  --color-info-solid: var(--info-solid);
+  --color-neutral-strong: var(--neutral-strong);
+  --color-neutral-border: var(--neutral-border);
+  --color-neutral-solid: var(--neutral-solid);
+  --color-tint-violet: var(--tint-violet);
+  --color-tint-violet-foreground: var(--tint-violet-foreground);
+  --color-tint-teal: var(--tint-teal);
+  --color-tint-teal-foreground: var(--tint-teal-foreground);
+  --color-inverse: var(--inverse);
+  --color-inverse-foreground: var(--inverse-foreground);
+  --color-inverse-muted-foreground: var(--inverse-muted-foreground);
   --color-table-header: var(--yue-table-header-background);
   --font-sans: var(--yue-p-font-sans);
   --font-mono: var(--yue-p-font-mono);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 2px);
+  --text-sm--line-height: 1.375rem;
   --shadow-xs: var(--yue-p-shadow-xs);
   --shadow-sm: var(--yue-p-shadow-sm);
   --shadow-md: var(--yue-p-shadow-md);
@@ -64,5 +96,5 @@
   --ease-standard: var(--yue-p-ease-standard);
 }
 @layer base {
-  body { @apply font-sans text-sm antialiased bg-background text-foreground; }
+  body { @apply font-sans text-sm bg-background text-foreground; }
 }

@@ -74,9 +74,10 @@ export function createIdentityAuthProvider(options: IdentityAuthProviderOptions)
   let ticket: string | null = null;
   let choices: readonly IdentityChoice[] = [];
   const choice = (raw: RawChoice): IdentityChoice => ({ membershipId: raw.membership_id, tenantId: raw.tenant_id, tenantCode: raw.tenant_code, tenantName: raw.tenant_name, displayName: raw.display_name, platform: raw.platform, tenantAdmin: raw.tenant_admin });
+  // 选择工作空间页的卡片要显示租户号、角色与该身份的显示名。
   const tenants = (): AuthTenant[] => choices.map(item => item.platform
-    ? { id: PLATFORM_TENANT, name: options.platformLabel ?? PLATFORM_TENANT }
-    : { id: item.tenantId ?? '', name: item.tenantName ?? item.tenantCode ?? item.tenantId ?? '' });
+    ? { id: PLATFORM_TENANT, name: options.platformLabel ?? PLATFORM_TENANT, platform: true, displayName: item.displayName }
+    : { id: item.tenantId ?? '', name: item.tenantName ?? item.tenantCode ?? item.tenantId ?? '', ...(item.tenantCode ? { code: item.tenantCode } : {}), admin: item.tenantAdmin, displayName: item.displayName });
   async function csrf(signal: AbortSignal): Promise<[string, string]> {
     const response = await send('/csrf', { signal, headers: { Accept: 'application/json' } });
     if (!response.ok) return fail(response);

@@ -28,4 +28,4 @@ Upload 只经注入的 PlatformClient 请求四个 FILE-003 端点，SHA-256 摘
 
 DataTable 在表格上方显示查询条件与重置，工具栏保留宿主操作槽，右侧为列显隐。表头与行使用水平分隔线；固定列表头与普通表头共用预合成的不透明底色，避免半透明背景重复叠加。分页条左侧是总数和 yue Select 页长选择，右侧复用 core Pagination。服务端查询与选择回调不变。
 
-默认行高由 `--yue-table-row-height` 提供。宿主在表格外设置 `data-yue-density="compact"` 使用 32px 档，`default` 使用 40px 档；单元格内容超过最小高度时按内容撑开。无需第二套表格或新的公开属性。共用示例的「紧凑」状态与明暗截图已进入视觉回归。
+行高由单元格内边距撑开：`density` 为 standard 时上下 12px、comfortable 时 14px，配正文 22px 行高，单行内容的行高 47px（含 1px 分隔线），表头 43px，与开通流程原型一致。`--yue-table-row-height` 是最小行高（default 40px）；宿主在表格外设置 `data-yue-density="compact"` 时单元格上下 4px、最小行高 32px。无需第二套表格或新的公开属性。共用示例的「紧凑」状态与明暗截图已进入视觉回归。

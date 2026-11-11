@@ -5,10 +5,10 @@ for (const scenario of scenarios) for (const theme of ['light', 'dark'] as const
   await page.emulateMedia({ colorScheme: theme });
   await page.goto(`/shell.html?${new URLSearchParams({ component: scenario.component, state: scenario.state, theme })}`);
   if (scenario.state === 'MultiTenant') {
-    await page.getByLabel(/账号/).fill('demo'); await page.getByLabel(/密码/).fill('demo-password'); await page.getByRole('button', { name: '登录', exact: true }).click();
-    await expect(page.getByRole('heading', { name: '选择租户', exact: true })).toBeVisible();
+    await page.getByLabel('账号', { exact: true }).fill('demo'); await page.getByLabel('密码', { exact: true }).fill('demo-password'); await page.getByRole('button', { name: '登录', exact: true }).click();
+    await expect(page.getByRole('heading', { name: '选择要进入的工作空间', exact: true })).toBeVisible();
   } else if (scenario.state === 'CallbackFailure') {
-    await page.getByRole('button', { name: '企业单点登录' }).click(); await expect(page.getByRole('alert')).toContainText('单点登录未完成');
+    await page.getByRole('button', { name: '单点登录', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('单点登录未完成');
   } else await expect(page.locator('[data-slot="app-shell"], [data-slot="authentication"], [data-slot="fallback-page"]').first()).toBeVisible();
   await expect(page.locator('[data-starting-style], [data-ending-style]')).toHaveCount(0);
   await expect(page).toHaveScreenshot(`shell-${scenario.id}-${theme}.png`, { fullPage: true });
