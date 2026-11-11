@@ -42,4 +42,11 @@ describe('collectComponents（S1-DOCS-002 之前的占位目录）', () => {
     assert.ok(byPath.get('yue/index.md')?.includes('/components/yue/shell'));
     assert.ok(JSON.parse(byPath.get('yue/_meta.json') ?? '[]').includes('shell'));
   });
+
+  it('业务选择器页来自包目录且在索引、侧栏与七个共用示例中可发现', () => {
+    const biz = byPath.get('yue/biz.mdx') ?? '';
+    for (const name of ['ApiSelect', 'DictSelect', 'OrganizeSelect', 'UserSelect', 'RoleSelect', 'AuthorizationTree', 'IconPicker']) assert.ok(biz.includes(`name="${name}"`));
+    assert.ok(byPath.get('yue/index.md')?.includes('/components/yue/biz'));
+    assert.ok(JSON.parse(byPath.get('yue/_meta.json') ?? '[]').includes('biz'));
+  });
 });

@@ -56,7 +56,7 @@ export const YUE_PACKAGES: Array<{ name: string; stage: Stage; summary: string }
   { name: '@idadawn/yue-shell', stage: 'S1', summary: 'AppShell 单一侧栏布局、页面骨架、租户切换器与兜底页。' },
   { name: '@idadawn/yue-data', stage: 'S1', summary: 'DataTable 基础版、树与级联、日期时间、分片上传。' },
   { name: '@idadawn/yue-form', stage: 'S1', summary: 'SchemaForm 基础版、校验与基础联动、弹层 API。' },
-  { name: '@idadawn/yue-biz', stage: 'S1', summary: '业务选择器（字典、组织、用户、角色）、菜单与按钮授权树。' },
+  { name: '@idadawn/yue-biz', stage: 'S1', summary: '业务选择器（远程选项、字典、组织、用户、角色）、菜单与按钮授权树、IconPicker。' },
   { name: '@idadawn/yue-sdk', stage: 'S1', summary: '注册表 API、PlatformClient、请求拦截器链与 i18n。' },
 ];
 
@@ -142,6 +142,8 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
 
   files.push({ path: 'yue/shell.mdx', content: fs.readFileSync(path.join(repoRoot, 'packages/yue/shell/docs/index.mdx'), 'utf8') });
 
+  files.push({ path: 'yue/biz.mdx', content: fs.readFileSync(path.join(repoRoot, 'packages/yue/biz/docs/index.mdx'), 'utf8') });
+
   const yueRows = YUE_PACKAGES.map((p) => `| \`${p.name}\` | ${p.stage} | ${p.summary} |`).join('\n');
   files.push({
     path: 'yue/index.md',
@@ -171,6 +173,7 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
       '- [SchemaForm 表单与弹层](/components/yue/form)',
       '- [数据组件](/components/yue/data)',
       '- [外壳与认证](/components/yue/shell)',
+      '- [业务选择器](/components/yue/biz)',
       '',
     ].join('\n'),
   });
@@ -201,6 +204,6 @@ export function collectComponents(repoRoot: string = REPO_ROOT): GeneratedFile[]
 
   files.push({ path: '_meta.json', content: `${JSON.stringify(['index', { type: 'dir', name: 'platform', label: '平台插件' }, { type: 'dir', name: 'yue', label: 'yue 组件库' }], null, 2)}\n` });
   files.push({ path: 'platform/_meta.json', content: `${JSON.stringify(['index', ...PLATFORM_COMPONENTS.map((c) => c.id)], null, 2)}\n` });
-  files.push({ path: 'yue/_meta.json', content: `${JSON.stringify(['index', 'tokens', 'form', 'data', 'shell', { type: 'dir', name: 'core', label: '基础组件' }], null, 2)}\n` });
+  files.push({ path: 'yue/_meta.json', content: `${JSON.stringify(['index', 'tokens', 'form', 'data', 'shell', 'biz', { type: 'dir', name: 'core', label: '基础组件' }], null, 2)}\n` });
   return [...files, ...collectYuePages(repoRoot)];
 }

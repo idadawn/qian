@@ -9,7 +9,7 @@
   "scripts": {
     "yue:lint": "pnpm --filter @idadawn/yue-tokens tokens:check && eslint packages/yue apps packages/qian-tenancy-ui packages/qian-tenancy-signup-ui packages/qian-plugin-sdk packages/qian-identity-ui packages/qian-shell-kit samples/qian-sample-crm-ui",
     "yue:typecheck": "turbo run typecheck --filter=./packages/yue/* --filter=@idadawn/qian-plugin-sdk --filter=./apps/* --filter=@qian/tenancy-ui --filter=@qian/tenancy-signup-ui --filter=@qian/identity-ui --filter=@qian/shell-kit --filter=@qian/sample-crm-ui && tsc -p tests/gates/yue/tsconfig.json",
-    "yue:test": "pnpm --filter @idadawn/qian-runtime build && pnpm --filter @idadawn/yue-data contracts:check && pnpm --filter @qian/tenancy-ui contracts:check && pnpm --filter @qian/tenancy-signup-ui contracts:check && vitest run",
+    "yue:test": "pnpm --filter @idadawn/qian-runtime build && pnpm --filter @idadawn/yue-data contracts:check && pnpm --filter @idadawn/yue-biz contracts:check && pnpm --filter @qian/tenancy-ui contracts:check && pnpm --filter @qian/tenancy-signup-ui contracts:check && vitest run",
     "yue:a11y": "pnpm --filter yue-playground e2e",
     "yue:lighthouse": "pnpm --filter yue-playground lighthouse",
     "yue:boundaries": "pnpm --filter @idadawn/yue-tokens build && eslint --config eslint.boundaries.config.mjs packages/yue apps packages/qian-tenancy-ui packages/qian-tenancy-signup-ui packages/qian-plugin-sdk packages/qian-identity-ui packages/qian-shell-kit samples/qian-sample-crm-ui",

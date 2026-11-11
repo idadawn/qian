@@ -6,7 +6,7 @@ S1-YUE-008：DataTable、Tree / TreeSelect / Cascader、日期时间范围、Upl
 
 DataTable 基于 TanStack Table 9.3，声明式列的 JSON Schema 和生成类型在 contracts 包；render 作为宿主函数单独注入。消费方持有 query，通过 PlatformClient 获取 data 与 total，表格不会二次处理服务端当前页。提供加载、空、错误、重试、行选择、列显隐、固定列与工具栏。文案使用 SDK i18n；先调用 addDataLanguagePacks，或直接 createDataI18n。
 
-Tree 延续既有键盘与 ARIA 实现，使用 TanStack Virtual 对超过 100 个可见节点默认虚拟化，固定行高；也支持受控展开、选择与复选，禁用节点不参与级联勾选。TreeSelect 和 Cascader 复用它，一万节点下只渲染窗口。日期、时间控件使用原生输入和 core 样式；范围无效时显示错误。ImagePreview 复用 core Dialog。
+Tree 延续既有键盘与 ARIA 实现，使用 TanStack Virtual 对超过 100 个可见节点默认虚拟化，固定行高；也支持受控展开、选择与复选，禁用节点不参与级联勾选；`cascade={false}` 时每个节点独立勾选（S1-YUE-010：成员的多组织归属）。TreeSelect 和 Cascader 复用它，一万节点下只渲染窗口；两者的触发器是按钮，可访问名称取「标签 + 当前值」（aria-labelledby），可见文字始终包含在名称里（WCAG 2.5.3，axe-core 4.14 起 label-content-name-mismatch 默认按 serious 检查）。日期、时间控件使用原生输入和 core 样式；范围无效时显示错误。ImagePreview 复用 core Dialog。
 
 ## 上传契约与模型体验
 

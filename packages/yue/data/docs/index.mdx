@@ -36,11 +36,11 @@ import { ComponentDemo } from '@theme';
 
 ## Tree、TreeSelect 与 Cascader
 
-Tree 在可见节点超过 100 时默认虚拟化，也可用 virtual 指定；height、rowHeight 控制窗口和固定行高。保留完整 aria-level / setsize / posinset，End / Home 跨窗口移动焦点。checkedIds / onCheckedChange 复用同一棵树做复选，禁用节点不参与分支勾选。
+Tree 在可见节点超过 100 时默认虚拟化，也可用 virtual 指定；height、rowHeight 控制窗口和固定行高。保留完整 aria-level / setsize / posinset，End / Home 跨窗口移动焦点。checkedIds / onCheckedChange 复用同一棵树做复选，禁用节点不参与分支勾选；cascade 默认 true，设为 false 时每个节点独立勾选、分支不显示半选。
 
 <ComponentDemo name="Tree" />
 
-TreeSelect 接收 nodes、value、onChange、label、i18n；Cascader 的 value / onChange 为 id 路径数组，各层复用虚拟化 Tree。两者支持 disabled、className、testId。
+TreeSelect 接收 nodes、value、onChange、label、i18n；Cascader 的 value / onChange 为 id 路径数组，各层复用虚拟化 Tree。两者支持 disabled、className、testId。触发器的可访问名称是「label + 当前值」，例如「组织 研发部」。
 
 <ComponentDemo name="TreeSelect" />
 

@@ -49,17 +49,40 @@ it('TreeSelect 与 Cascader 一万节点复用同一虚拟化树，选择值可�
   const select = vi.fn();
   const cascade = vi.fn();
   render(<><TreeSelect nodes={nodes} i18n={i18n} label="组织" onChange={select} /><Cascader nodes={[{ id: 'root', label: '总部', children: nodes }]} i18n={i18n} label="层级" onChange={cascade} /></>);
-  await userEvent.click(screen.getByRole('button', { name: '组织' }));
+  await userEvent.click(screen.getByRole('button', { name: '组织 请选择' }));
   await vi.waitFor(() => expect(screen.getAllByRole('treeitem').length).toBeGreaterThan(0));
   expect(screen.getAllByRole('treeitem').length).toBeLessThan(40);
   await userEvent.click(screen.getByRole('treeitem', { name: '节点 2' }));
   expect(select).toHaveBeenCalledWith('2');
   await vi.waitFor(() => expect(screen.queryByTestId('yue-tree-select-popup')).toBeNull());
-  await userEvent.click(screen.getByRole('button', { name: '层级' }));
+  await userEvent.click(screen.getByRole('button', { name: '层级 请选择' }));
   await userEvent.click(screen.getByRole('treeitem', { name: '总部' }));
   expect(screen.getAllByRole('treeitem').length).toBeLessThan(45);
   await userEvent.click(screen.getByRole('treeitem', { name: '节点 3' }));
   expect(cascade).toHaveBeenCalledWith(['root', '3']);
+});
+
+it('TreeSelect 与 Cascader 的可访问名称为「标签 + 当前值」，可见文字包含在名称里（WCAG 2.5.3）', async () => {
+  const tree = [{ id: 'hq', label: '总部', children: [{ id: 'rd', label: '研发部' }] }];
+  render(<><TreeSelect nodes={tree} i18n={i18n} label="组织" value="rd" /><Cascader nodes={tree} i18n={i18n} label="层级" value={['hq', 'rd']} /></>);
+  expect(screen.getByRole('button', { name: '组织 研发部' }).textContent).toBe('研发部');
+  expect(screen.getByRole('button', { name: '层级 总部 / 研发部' })).toBeTruthy();
+  const violations = (await runAxe()).violations.filter((v) => ['critical', 'serious'].includes(v.impact ?? ''));
+  expect(violations.map((v) => v.id)).toEqual([]);
+});
+
+it('复选可关闭级联：每个节点独立勾选，分支不带上后代、也不显示半选', async () => {
+  function Example() {
+    const [checked, setChecked] = useState<string[]>(['a']);
+    return <Tree nodes={[{ id: 'parent', label: '总部', children: [{ id: 'a', label: '甲' }, { id: 'b', label: '乙' }] }]} defaultExpandedIds={['parent']} checkedIds={checked} onCheckedChange={setChecked} cascade={false} aria-label="归属" />;
+  }
+  render(<Example />);
+  expect(screen.getByRole('treeitem', { name: '总部' }).getAttribute('aria-checked')).toBe('false');
+  screen.getByRole('treeitem', { name: '总部' }).focus();
+  await userEvent.keyboard(' ');
+  expect(screen.getByRole('treeitem', { name: '总部' }).getAttribute('aria-checked')).toBe('true');
+  expect(screen.getByRole('treeitem', { name: '乙' }).getAttribute('aria-checked')).toBe('false');
+  expect(screen.getByRole('treeitem', { name: '甲' }).getAttribute('aria-checked')).toBe('true');
 });
 
 it('表格分页和排序只改变查询，不在客户端切掉服务端当前页；显隐与行选择有效', async () => {

@@ -1,0 +1,224 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "业务选择器取数契约",
+    "version": "0.1.0",
+    "description": "S1-YUE-010 的组件取数契约与 mock 夹具。/api/directory/** 与身份组件 Identity Server 的目录 API（PRD 7.4.3，IdentityDirectoryEndpoints）逐字段一致：snake_case、空值字段省略，S1-IDP-010 对真实目录验收。/api/authz/roles 与 /api/authz/permissions 是 PRD 7.5 角色目录与权限点目录的草案：字段取自 roles 与 permission_definitions 表，线上形状沿用 GET /api/authz/me/permissions 的 camelCase；路径与字段待 S1-AZ-005 接线时确认，不宣称后端已经交付。"
+  },
+  "paths": {
+    "/api/directory/orgs/tree": {
+      "get": {
+        "summary": "读取本租户完整组织树",
+        "description": "按 path 排序的扁平列表，以 parent_id 关联；根组织没有 parent_id。调用方须持本租户有效成员会话。",
+        "responses": {
+          "200": {
+            "description": "组织列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationList" } } }
+          },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/directory/members": {
+      "get": {
+        "summary": "分页读取本租户成员",
+        "description": "按账号、成员 id 排序；不含已删除与已清除的成员，也不合成平台管理员。",
+        "parameters": [
+          { "$ref": "#/components/parameters/Offset" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成员当前页",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemberList" } } }
+          },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/directory/orgs/{id}/members": {
+      "get": {
+        "summary": "分页读取组织下的成员",
+        "description": "descendants 为 true 时包含整棵子树的成员。",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "descendants", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "$ref": "#/components/parameters/Offset" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成员当前页",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemberList" } } }
+          },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "404": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/directory/org-types": {
+      "get": {
+        "summary": "读取租户组织类型字典",
+        "responses": {
+          "200": {
+            "description": "组织类型",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationTypeList" } } }
+          },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/authz/roles": {
+      "get": {
+        "summary": "读取本租户角色目录（草案）",
+        "description": "内置角色与自定义角色；角色以 code 标识，授予与撤销沿用 ITenantRoleGrant 的 roleCode。",
+        "responses": {
+          "200": {
+            "description": "角色列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RoleList" } } }
+          },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/authz/permissions": {
+      "get": {
+        "summary": "读取本租户可授予的权限点目录（草案）",
+        "description": "条目形状同 GET /api/authz/me/permissions 去掉 allowed / reason；resources 给出资源类型名称，供授权树分组显示。",
+        "responses": {
+          "200": {
+            "description": "权限点目录",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PermissionCatalog" } } }
+          },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "Offset": { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 0, "default": 0 } },
+      "Limit": { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 } }
+    },
+    "responses": {
+      "Problem": {
+        "description": "ErrorDetail",
+        "content": { "application/problem+json": { "schema": { "$ref": "../../contracts/src/error-detail.schema.json" } } }
+      }
+    },
+    "schemas": {
+      "Organization": {
+        "type": "object",
+        "description": "组织投影；path 以斜线包围祖先链 UUID，depth 从 1 开始。",
+        "required": ["id", "name", "type_code", "path", "depth"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type_code": { "type": "string" },
+          "parent_id": { "type": "string", "format": "uuid", "description": "根组织省略。" },
+          "path": { "type": "string" },
+          "depth": { "type": "integer", "minimum": 1, "maximum": 9 },
+          "manager_membership_id": { "type": "string", "format": "uuid" },
+          "responsible_position_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "OrganizationList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Organization" } } }
+      },
+      "OrganizationType": {
+        "type": "object",
+        "required": ["code", "name"],
+        "properties": { "code": { "type": "string" }, "name": { "type": "string" } }
+      },
+      "OrganizationTypeList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrganizationType" } } }
+      },
+      "Membership": {
+        "type": "object",
+        "description": "租户成员；id 是目录侧的成员标识，person_id 是自然人标识（即令牌 sub，也是授权侧 user 主体的 subjectId）。",
+        "required": ["id", "person_id", "tenant_id", "display_name", "status", "is_tenant_administrator", "account", "identity_revision"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "person_id": { "type": "string", "format": "uuid" },
+          "tenant_id": { "type": "string", "format": "uuid" },
+          "display_name": { "type": "string" },
+          "status": { "type": "string", "enum": ["active", "disabled", "locked"] },
+          "is_tenant_administrator": { "type": "boolean" },
+          "account": { "type": "string" },
+          "identity_revision": { "type": "integer", "format": "int64" }
+        }
+      },
+      "DirectoryMember": {
+        "type": "object",
+        "required": ["membership", "deleted"],
+        "properties": {
+          "membership": { "$ref": "#/components/schemas/Membership" },
+          "deleted": { "type": "boolean" }
+        }
+      },
+      "MemberList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/DirectoryMember" } } }
+      },
+      "Role": {
+        "type": "object",
+        "description": "角色目录条目（草案）。内置角色为 tenant.owner / tenant.admin / tenant.developer / tenant.user，界面按 code 取文案；name 供自定义角色显示。",
+        "required": ["code", "builtin"],
+        "properties": {
+          "code": { "type": "string", "maxLength": 128 },
+          "name": { "type": "string", "maxLength": 200 },
+          "builtin": { "type": "boolean" },
+          "sourcePack": { "type": "string", "description": "来自插件默认角色模板时为策略包标识。" }
+        }
+      },
+      "RoleList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Role" } } }
+      },
+      "PermissionDefinition": {
+        "type": "object",
+        "description": "权限点（PRD 7.5 permission_definitions）。permission 为全名 <plugin-id>:<resource>:<action>，resource 为带组件前缀的资源类型。",
+        "required": ["permission", "resource", "action", "risk", "stepUp", "terminals"],
+        "properties": {
+          "permission": { "type": "string", "maxLength": 512 },
+          "resource": { "type": "string", "maxLength": 384 },
+          "action": { "type": "string", "maxLength": 128 },
+          "risk": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+          "stepUp": { "type": "boolean" },
+          "terminals": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "ResourceType": {
+        "type": "object",
+        "description": "资源类型（PRD 7.5 resource_types）。",
+        "required": ["resource", "name"],
+        "properties": {
+          "resource": { "type": "string", "maxLength": 384 },
+          "name": { "type": "string", "maxLength": 128 }
+        }
+      },
+      "PermissionCatalog": {
+        "type": "object",
+        "required": ["items", "resources"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/PermissionDefinition" } },
+          "resources": { "type": "array", "items": { "$ref": "#/components/schemas/ResourceType" } }
+        }
+      }
+    }
+  }
+}

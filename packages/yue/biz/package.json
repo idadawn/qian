@@ -1,7 +1,7 @@
 {
   "name": "@idadawn/yue-biz",
   "version": "0.1.0",
-  "description": "业务选择器：组织 / 用户 / 角色 / 岗位 / 字典 / 远程选项、授权树、IconPicker。",
+  "description": "业务选择器：远程选项、字典、组织 / 用户 / 角色选择器、菜单与按钮授权树、IconPicker。",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -32,12 +32,14 @@
   "scripts": {
     "build": "rslib build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "publint": "publint --strict --pack pnpm"
+    "publint": "publint --strict --pack pnpm",
+    "test": "vitest run",
+    "contracts:generate": "pnpm --workspace-root openapi:generate --source packages/yue/biz/contracts/biz.openapi.json --output packages/yue/biz/src/biz.generated.ts",
+    "contracts:check": "pnpm --workspace-root openapi:generate --source packages/yue/biz/contracts/biz.openapi.json --output packages/yue/biz/src/biz.generated.ts --check"
   },
   "dependencies": {
     "@idadawn/yue-core": "workspace:^",
     "@idadawn/yue-data": "workspace:^",
-    "@idadawn/yue-form": "workspace:^",
     "@idadawn/yue-sdk": "workspace:^"
   },
   "peerDependencies": {
@@ -45,12 +47,23 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@idadawn/yue-tokens": "workspace:^",
     "@rslib/core": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "axe-core": "catalog:",
+    "playwright": "catalog:",
     "publint": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "typescript": "catalog:"
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
