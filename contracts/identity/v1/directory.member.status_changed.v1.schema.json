@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/identity/v1/directory.member.status_changed.v1.schema.json",
+  "description": "成员状态或目录删除标记已变化；deleted 为 true 表示已从目录删除（禁用 + 标记）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "directory_revision",
+    "membership_id",
+    "person_id",
+    "status",
+    "previous_status",
+    "deleted",
+    "identity_revision"
+  ],
+  "properties": {
+    "directory_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "membership_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "person_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "disabled",
+        "locked"
+      ]
+    },
+    "previous_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "disabled",
+        "locked"
+      ]
+    },
+    "deleted": {
+      "type": "boolean"
+    },
+    "identity_revision": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

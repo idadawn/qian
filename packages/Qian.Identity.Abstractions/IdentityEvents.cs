@@ -123,7 +123,10 @@ public static class IdentityRuntimeEvents
 /// <summary>框架事件目录注册；只登记元数据，不启动 broker 或后台发布器。</summary>
 public static class IdentityEventRegistration
 {
-    /// <summary>显式传入源生成 JsonTypeInfo，避免 Attribute 反射或序列化回退。</summary>
+    /// <summary>
+    /// 显式传入源生成 JsonTypeInfo，避免 Attribute 反射或序列化回退。组织目录是身份组件的子模块（R1），
+    /// <see cref="DirectoryEventIds"/> 的目录事件随同一入口登记，宿主不需要另配。
+    /// </summary>
     public static IEventTypeRegistrar RegisterIdentityEvents(this IEventTypeRegistrar registrar)
     {
         ArgumentNullException.ThrowIfNull(registrar);
@@ -131,6 +134,18 @@ public static class IdentityEventRegistration
         registrar.Register(IdentityEventIds.Logout, IdentityJson.Context.IdentityLogoutEvent);
         registrar.Register(IdentityEventIds.PasswordChanged, IdentityJson.Context.IdentityPasswordChangedEvent);
         registrar.Register(IdentityEventIds.Locked, IdentityJson.Context.IdentityLockedEvent);
-        return registrar.Register(IdentityEventIds.SessionRevoked, IdentityJson.Context.IdentitySessionRevokedEvent);
+        registrar.Register(IdentityEventIds.SessionRevoked, IdentityJson.Context.IdentitySessionRevokedEvent);
+        registrar.Register(DirectoryEventIds.OrganizationCreated, IdentityJson.Context.DirectoryOrganizationCreatedEvent);
+        registrar.Register(DirectoryEventIds.OrganizationUpdated, IdentityJson.Context.DirectoryOrganizationUpdatedEvent);
+        registrar.Register(DirectoryEventIds.OrganizationMoved, IdentityJson.Context.DirectoryOrganizationMovedEvent);
+        registrar.Register(DirectoryEventIds.OrganizationDeleted, IdentityJson.Context.DirectoryOrganizationDeletedEvent);
+        registrar.Register(DirectoryEventIds.PositionCreated, IdentityJson.Context.DirectoryPositionCreatedEvent);
+        registrar.Register(DirectoryEventIds.PositionUpdated, IdentityJson.Context.DirectoryPositionUpdatedEvent);
+        registrar.Register(DirectoryEventIds.PositionMoved, IdentityJson.Context.DirectoryPositionMovedEvent);
+        registrar.Register(DirectoryEventIds.PositionDeleted, IdentityJson.Context.DirectoryPositionDeletedEvent);
+        registrar.Register(DirectoryEventIds.MemberCreated, IdentityJson.Context.DirectoryMemberCreatedEvent);
+        registrar.Register(DirectoryEventIds.MemberRelationsChanged, IdentityJson.Context.DirectoryMemberRelationsChangedEvent);
+        registrar.Register(DirectoryEventIds.MemberStatusChanged, IdentityJson.Context.DirectoryMemberStatusChangedEvent);
+        return registrar.Register(DirectoryEventIds.MemberProfileUpdated, IdentityJson.Context.DirectoryMemberProfileUpdatedEvent);
     }
 }

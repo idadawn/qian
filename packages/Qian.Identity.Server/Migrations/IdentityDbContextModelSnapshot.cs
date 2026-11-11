@@ -637,6 +637,31 @@ namespace Qian.Identity.Server.Migrations
                     b.HasAnnotation("Qian:MultiTenant", true);
                 });
 
+            modelBuilder.Entity("Qian.Identity.Server.DirectoryRevisionRow", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(36)
+                        .HasColumnType("character varying(36)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint")
+                        .HasColumnName("revision");
+
+                    b.HasKey("TenantId")
+                        .HasName("pk_directory_revisions");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_directory_revisions_tenant_id");
+
+                    b.ToTable("directory_revisions", "plugin_qian_identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_directory_revisions_revision", "revision >= 1");
+                        });
+
+                    b.HasAnnotation("Qian:MultiTenant", true);
+                });
+
             modelBuilder.Entity("Qian.Identity.Server.ExternalIdentityRow", b =>
                 {
                     b.Property<Guid>("Id")

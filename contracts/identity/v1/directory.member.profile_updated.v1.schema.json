@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/identity/v1/directory.member.profile_updated.v1.schema.json",
+  "description": "成员档案已更新；档案内容（姓名、拼音、联系方式、扩展）不在载荷里，需经档案接口读取。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "directory_revision",
+    "membership_id",
+    "person_id"
+  ],
+  "properties": {
+    "directory_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "membership_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "person_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    }
+  }
+}

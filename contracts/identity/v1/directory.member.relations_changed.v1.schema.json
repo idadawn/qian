@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/identity/v1/directory.member.relations_changed.v1.schema.json",
+  "description": "成员的组织 / 岗位 / 用户组归属已整体替换；relations 与 previous_relations 是替换前后的完整集合。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "directory_revision",
+    "membership_id",
+    "person_id",
+    "identity_revision",
+    "relations",
+    "previous_relations"
+  ],
+  "properties": {
+    "directory_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "membership_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "person_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "identity_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "relations": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_type",
+          "target_id",
+          "is_primary"
+        ],
+        "properties": {
+          "target_type": {
+            "type": "string",
+            "enum": [
+              "organization",
+              "position",
+              "group"
+            ]
+          },
+          "target_id": {
+            "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+          },
+          "is_primary": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "previous_relations": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_type",
+          "target_id",
+          "is_primary"
+        ],
+        "properties": {
+          "target_type": {
+            "type": "string",
+            "enum": [
+              "organization",
+              "position",
+              "group"
+            ]
+          },
+          "target_id": {
+            "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+          },
+          "is_primary": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

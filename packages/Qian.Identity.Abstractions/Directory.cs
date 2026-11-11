@@ -49,6 +49,49 @@ public sealed record DirectoryMember(Membership Membership, bool Deleted);
 public sealed record DirectoryBatchItem(Guid MembershipId, bool Succeeded, string? ErrorCode);
 /// <summary>批量回执：SUCCESS / PARTIAL_SUCCESS / FAILED；每个输入成员恰好对应一项。</summary>
 public sealed record DirectoryBatchResult(string Status, IReadOnlyList<DirectoryBatchItem> Items);
+/// <summary>
+/// 成员查询条件。Keyword、MembershipIds、PersonIds 至多给一个：关键字按显示名、账号与拼音做忽略大小写的包含匹配，不匹配手机号与邮箱；
+/// 按 id 批量时只返回当前租户的可见成员，查不到的 id 直接省略。结果按账号、成员 id 排序后分页。
+/// </summary>
+public sealed record DirectoryMemberQuery
+{
+    /// <summary>每批 id 的上限。</summary>
+    public const int MaximumIds = 100;
+    /// <summary>关键字长度上限（去掉首尾空白后）。</summary>
+    public const int MaximumKeywordLength = 64;
+    /// <summary>只取该组织下的成员（含经该组织岗位归属的成员）；为空时取全租户。</summary>
+    public Guid? OrganizationId { get; init; }
+    /// <summary>组织范围是否含整棵子树。</summary>
+    public bool Descendants { get; init; }
+    /// <summary>关键字，去掉首尾空白后 1–64 字。</summary>
+    public string? Keyword { get; init; }
+    /// <summary>按目录成员 id 批量查询，1–100 个且不重复。</summary>
+    public IReadOnlyList<Guid>? MembershipIds { get; init; }
+    /// <summary>按自然人 id 批量查询，1–100 个且不重复。</summary>
+    public IReadOnlyList<Guid>? PersonIds { get; init; }
+    /// <summary>跳过的条数。</summary>
+    public int Offset { get; init; }
+    /// <summary>本页条数，1–200。</summary>
+    public int Limit { get; init; } = 50;
+}
+/// <summary>上级链与部门负责人里「责任岗位空缺」的原因。</summary>
+public static class DirectoryVacancies
+{
+    /// <summary>责任岗位没有设责任人。</summary>
+    public const string Unassigned = "unassigned";
+    /// <summary>责任人已禁用、锁定或已从目录删除；不返回其信息。</summary>
+    public const string Inactive = "inactive";
+}
+/// <summary>上级链的一级：一个责任岗位及其现任责任人；空缺时 Responsible 为空、Vacancy 给原因，级次照样保留。</summary>
+public sealed record DirectorySuperior(int Level, Guid PositionId, Guid OrganizationId, Membership? Responsible, string? Vacancy);
+/// <summary>
+/// 按岗位链推导的上级责任人序列。起点是成员的主岗位（或调用方指定的本人岗位），没有主岗位时从主组织起算，两者都没有则为空序列。
+/// </summary>
+public sealed record DirectorySuperiors(Guid MembershipId, Guid? StartPositionId, Guid? StartOrganizationId, IReadOnlyList<DirectorySuperior> Items);
+/// <summary>直属主管：主组织的主管字段，本人即主管、未设或主管已停用时逐级取上级组织的主管；SourceOrganizationId 是主管所在组织。</summary>
+public sealed record DirectoryManager(Guid MembershipId, Membership? Manager, Guid? SourceOrganizationId);
+/// <summary>部门负责人：组织责任岗位的现任责任人（空缺时给原因）与组织的主管字段。</summary>
+public sealed record OrganizationHead(Guid OrganizationId, Guid? ResponsiblePositionId, Membership? Responsible, string? Vacancy, Membership? Manager);
 /// <summary>目录操作的机器可读安全元数据；Executable 为 false 时只是预留契约，不存在执行入口。</summary>
 public sealed record DirectoryOperation(string Name, string Description, string SideEffect, string PolicyHint, bool AgentExpose, bool RequiresConfirmation, bool Executable, string Example);
 /// <summary>目录未实现操作的安全边界，不是可执行能力目录。</summary>
@@ -105,6 +148,18 @@ public interface IIdentityDirectory
     ValueTask<IReadOnlyList<DirectoryMember>> GetOrganizationMembersAsync(Guid organizationId, bool descendants = false, int offset = 0, int limit = 50, CancellationToken cancellationToken = default);
     /// <summary>读取岗位直接任职成员。</summary>
     ValueTask<IReadOnlyList<DirectoryMember>> GetPositionHoldersAsync(Guid positionId, int offset = 0, int limit = 50, CancellationToken cancellationToken = default);
+    /// <summary>按组织范围、关键字或 id 批量查询真实租户成员；条件互斥规则见 <see cref="DirectoryMemberQuery"/>。</summary>
+    ValueTask<IReadOnlyList<DirectoryMember>> QueryMembersAsync(DirectoryMemberQuery query, CancellationToken cancellationToken = default);
+    /// <summary>按岗位链返回上级责任人序列；positionId 须是该成员担任的岗位，缺省取主岗位。</summary>
+    ValueTask<DirectorySuperiors> GetSuperiorsAsync(Guid membershipId, Guid? positionId = null, CancellationToken cancellationToken = default);
+    /// <summary>直属主管：主组织（无主组织取主岗位所属组织）起逐级上溯的主管字段。</summary>
+    ValueTask<DirectoryManager> GetManagerAsync(Guid membershipId, CancellationToken cancellationToken = default);
+    /// <summary>部门负责人：责任岗位的现任责任人与主管。</summary>
+    ValueTask<OrganizationHead> GetOrganizationHeadAsync(Guid organizationId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 上级链的反查：depth 为 1 时是以该成员为第 1 级上级责任人的成员（@下属），为 n 时是前 n 级，为空时是任一级（@子孙）；不含本人，按账号、成员 id 分页。
+    /// </summary>
+    ValueTask<IReadOnlyList<DirectoryMember>> GetSubordinatesAsync(Guid membershipId, int? depth = null, int offset = 0, int limit = 50, CancellationToken cancellationToken = default);
     /// <summary>按目录状态机变更成员；禁用/锁定即时吊销会话。</summary>
     ValueTask<Membership> SetDirectoryMemberStatusAsync(Guid membershipId, string status, string reason, CancellationToken cancellationToken = default);
     /// <summary>批量禁用（最多 100）；租户管理员逐项拒绝，其余各自独立事务。</summary>

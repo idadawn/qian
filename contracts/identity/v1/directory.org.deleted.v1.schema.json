@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/identity/v1/directory.org.deleted.v1.schema.json",
+  "description": "组织已删除；删除子树时每个组织各一条。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "directory_revision",
+    "organization_id",
+    "path"
+  ],
+  "properties": {
+    "directory_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "organization_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)+$"
+    },
+    "parent_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    }
+  }
+}

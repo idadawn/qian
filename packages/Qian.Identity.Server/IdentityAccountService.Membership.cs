@@ -70,7 +70,7 @@ internal sealed partial class IdentityAccountService
 
     private async Task<Membership> CreateMembershipCoreAsync(Guid tenantId, Guid personId, string displayName, string? account, bool administrator, Guid? membershipId, CancellationToken ct)
     {
-        using var scope = TenantScope(tenantId);
+        using var scope = TenantScope(tenantId); using var origin = OpenOrigin();
         for (var attempt = 0; ; attempt++)
         {
             await using var session = await OpenAsync(ct).ConfigureAwait(false);
@@ -87,8 +87,14 @@ internal sealed partial class IdentityAccountService
                 if (existing.Status == AccountStatuses.Purged || existing.DirectoryDeleted || membershipId is { } wanted && wanted != existing.Id) throw Error(PlatformErrors.Conflict);
                 if (administrator && !existing.IsTenantAdministrator || existing.Status != AccountStatuses.Active)
                 {
+                    var previousStatus = existing.Status;
                     existing.IsTenantAdministrator |= administrator; existing.Status = AccountStatuses.Active; existing.IdentityRevision++;
+                    var reactivated = new DirectoryEventBatch();
+                    if (previousStatus != existing.Status)
+                        reactivated.Add(revision => new DirectoryMemberStatusChangedEvent(revision, existing.Id, existing.PersonId, existing.Status, previousStatus, false, existing.IdentityRevision));
+                    var changed = await RaiseDirectoryEventsAsync(db, tenantId, reactivated, ct).ConfigureAwait(false);
                     await session.SaveChangesAsync(ct).ConfigureAwait(false);
+                    EnsurePublished(changed);
                 }
                 await transaction.CommitAsync(ct).ConfigureAwait(false);
                 return ToMembership(existing);
@@ -104,7 +110,11 @@ internal sealed partial class IdentityAccountService
                 Account = account ?? await DefaultAccountAsync(db, personId, attempt, ct).ConfigureAwait(false)
             };
             db.Memberships.Add(row);
-            try { await session.SaveChangesAsync(ct).ConfigureAwait(false); }
+            // 新成员即目录变更：directory.member.created.v1 随成员行同事务进入 Outbox；唯一约束冲突时整个事务回滚、换会话重试，事件不会残留。
+            var created = new DirectoryEventBatch();
+            created.Add(revision => new DirectoryMemberCreatedEvent(revision, row.Id, row.PersonId, row.Status, row.IdentityRevision));
+            var changes = await RaiseDirectoryEventsAsync(db, tenantId, created, ct).ConfigureAwait(false);
+            try { await session.SaveChangesAsync(ct).ConfigureAwait(false); EnsurePublished(changes); }
             catch (DbUpdateException error) when (IsUniqueViolation(error))
             {
                 var constraint = (error.InnerException as PostgresException)?.ConstraintName ?? "";
