@@ -79,7 +79,8 @@ internal sealed partial class IdentityAccountService
                 : responsible.TryGetValue(holder, out var member)
                     ? new DirectorySuperior(index + 1, position.Id, position.OrganizationId, member, null)
                     : new DirectorySuperior(index + 1, position.Id, position.OrganizationId, null, DirectoryVacancies.Inactive)).ToArray();
-        var origin = startPosition is { } start ? graph.Positions[start].OrganizationId : startOrganization;
+        // 结构快照与归属分两条语句读；其间并发新建的岗位不在快照里，此时链为空、起点组织未知，而不是 500。
+        var origin = startPosition is { } start ? graph.Positions.GetValueOrDefault(start)?.OrganizationId : startOrganization;
         return new DirectorySuperiors(membershipId, startPosition, origin, items);
     }, cancellationToken);
 
