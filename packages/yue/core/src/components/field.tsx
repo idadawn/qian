@@ -6,27 +6,27 @@ import { control } from '../lib/styles';
 
 export type FieldProps = YueProps<ComponentProps<typeof BaseField.Root>>;
 export function Field({ className, testId, ...props }: FieldProps) {
-  return <BaseField.Root {...props} data-slot="field" data-testid={testId ?? 'yue-field'} className={cn('flex flex-col gap-2', className)} />;
+  return <BaseField.Root {...props} data-slot="field" data-testid={testId ?? 'yue-field'} className={cn('flex flex-col gap-1.5', className)} />;
 }
 
 export type FieldLabelProps = YueProps<ComponentProps<typeof BaseField.Label>>;
 export function FieldLabel({ className, testId, ...props }: FieldLabelProps) {
-  return <BaseField.Label {...props} data-slot="field-label" data-testid={testId ?? 'yue-field-label'} className={cn('text-sm font-medium leading-none data-[disabled]:opacity-50', className)} />;
+  return <BaseField.Label {...props} data-slot="field-label" data-testid={testId ?? 'yue-field-label'} className={cn('text-[13px] font-medium leading-5.5 text-control-foreground data-[disabled]:opacity-50', className)} />;
 }
 
 export type FieldDescriptionProps = YueProps<ComponentProps<typeof BaseField.Description>>;
 export function FieldDescription({ className, testId, ...props }: FieldDescriptionProps) {
-  return <BaseField.Description {...props} data-slot="field-description" data-testid={testId ?? 'yue-field-description'} className={cn('text-sm text-muted-foreground', className)} />;
+  return <BaseField.Description {...props} data-slot="field-description" data-testid={testId ?? 'yue-field-description'} className={cn('text-xs leading-4.5 text-muted-foreground', className)} />;
 }
 
 export type FieldErrorProps = YueProps<ComponentProps<typeof BaseField.Error>>;
 export function FieldError({ className, testId, ...props }: FieldErrorProps) {
-  return <BaseField.Error {...props} data-slot="field-error" data-testid={testId ?? 'yue-field-error'} className={cn('text-sm text-destructive', className)} />;
+  return <BaseField.Error {...props} data-slot="field-error" data-testid={testId ?? 'yue-field-error'} className={cn('text-xs leading-4.5 text-destructive', className)} />;
 }
 
 export type FieldControlProps = YueProps<ComponentProps<typeof BaseField.Control>>;
 export function FieldControl({ className, testId, ...props }: FieldControlProps) {
-  return <BaseField.Control {...props} data-slot="field-control" data-testid={testId ?? 'yue-field-control'} className={cn(control + ' h-9 px-3', className)} />;
+  return <BaseField.Control {...props} data-slot="field-control" data-testid={testId ?? 'yue-field-control'} className={cn(control, 'h-(--yue-input-height) px-3', className)} />;
 }
 
 export type FieldItemProps = YueProps<ComponentProps<typeof BaseField.Item>>;

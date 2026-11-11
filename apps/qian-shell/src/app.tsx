@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useState, useSyncExternalStore, type ComponentType } from 'react';
-import { Alert, Button, MenuItem, Spinner } from '@idadawn/yue-core/shell';
+import { Alert, Avatar, AvatarFallback, Breadcrumb, Button, Icon, MenuItem, Spinner } from '@idadawn/yue-core/shell';
 import { createI18n, type PlatformClient, type PlatformI18n } from '@idadawn/yue-sdk';
 import { initializeTheme } from '@idadawn/yue-tokens';
-import { AppShell, Page, PageHeader, PreferenceControls } from '@idadawn/yue-shell/layout';
+import { AppShell, LocaleMenu, Page, PreferenceControls, WorkspaceCard } from '@idadawn/yue-shell/layout';
 import { initPreferences, PreferencesProvider, usePreferences } from '@idadawn/yue-shell/preferences';
 import { FallbackPage, OfflineBanner, ShellErrorBoundary } from '@idadawn/yue-shell/fallback';
 import { installShellLanguagePacks } from '@idadawn/yue-shell/locales';
@@ -13,14 +13,20 @@ import { toMenu, type BffSession } from '@qian/shell-kit';
 import type { RemoteBridge, SlotContribution } from '@idadawn/qian-plugin-sdk';
 import { installAppLanguagePacks } from './locales';
 import type { ShellRuntime, ShellState } from './runtime';
-import { Welcome } from './welcome';
+import type { TenantSummary } from './welcome';
 
 // 会话过期对话框只在会话结束时需要：按需加载，不进首屏。
 const SessionExpiredDialog = lazy(() => import('@idadawn/yue-shell/session-dialog').then(module => ({ default: module.SessionExpiredDialog })));
 // 平台身份的首页（平台控制台，S1-YUE-018）只给平台会话：同样按需加载，不进租户会话的首屏。
 const PlatformHome = lazy(() => import('./console').then(module => ({ default: module.PlatformHome })));
+// 企业首页的欢迎区要等本租户摘要（bootstrap 之后才拉），会话信息页从账号菜单进入：两者都按需加载，不占首屏预算。
+const Welcome = lazy(() => import('./welcome').then(module => ({ default: module.Welcome })));
+const SessionPage = lazy(() => import('./session').then(module => ({ default: module.SessionPage })));
 type PageComponent = ComponentType<{ client: PlatformClient; bridge: RemoteBridge }>;
 type RemotePage = { route: string; contribution?: SlotContribution<PageComponent>; failed?: boolean };
+// 外壳自带的两个页面：首页（工作台）是侧栏第一项；会话信息（会话、有效权限与可用页面）从账号菜单进入，菜单里有同路由的远程页面时让给远程。
+const HOME = 'qian:home';
+const SESSION_PATH = '/session';
 
 function languages(locale?: Parameters<typeof createI18n>[0]): PlatformI18n {
   const i18n = createI18n(locale); installShellLanguagePacks(i18n); installAppLanguagePacks(i18n);
@@ -62,10 +68,13 @@ function Shell({ runtime }: { runtime: ShellRuntime }) {
 
   const bootstrap = state.bootstrap;
   // 菜单：真实平台给出能力导航（含菜单偏好与权限过滤）时以它为准；没有（下游失败或验收夹具）时由宿主按已登记远程的清单、挂载、权益与权限算出（随宿主 revision 变化）。
-  const menu: ShellMenuItem[] = bootstrap?.navigation ? toMenu(bootstrap.navigation)
+  const nav: ShellMenuItem[] = bootstrap?.navigation ? toMenu(bootstrap.navigation)
     : runtime.host.catalog('qian.shell.nav/v1').map(({ descriptor }) => ({ id: descriptor.id, labelKey: descriptor.id, label: descriptor.title, type: 'page', target: descriptor.route! }));
+  // 侧栏第一项固定是工作台（根路径只精确命中，见 matchMenuItem）；能力导航跟在后面。
+  const menu: ShellMenuItem[] = [{ id: HOME, labelKey: 'app.workspace', label: i18n.t('app.workspace'), type: 'page', target: '/', icon: 'home' }, ...nav];
   const match = matchMenuItem(menu, path);
-  const page = useRemotePage(runtime, match?.item.target);
+  const remote = match && match.item.id !== HOME ? match : undefined;
+  const page = useRemotePage(runtime, remote?.item.target);
 
   if (state.signedOut) return <main className="flex min-h-dvh items-center justify-center p-4"><section className="w-full max-w-md space-y-4 rounded-xl border border-border bg-card p-6" data-testid="shell-signed-out">
     <p>{i18n.t('app.signedOut')}</p><Button onClick={() => runtime.signIn()}>{i18n.t('shell.login')}</Button>
@@ -76,19 +85,29 @@ function Shell({ runtime }: { runtime: ShellRuntime }) {
 
   const session = bootstrap.session;
   const platform = session.tenantId === null;
+  const sessionPage = !platform && !remote && pathname === SESSION_PATH;
   const content = state.status === 403 ? <FallbackPage status={403} i18n={i18n} onRetry={() => void runtime.load()} />
     : state.status === 500 ? <FallbackPage status={500} i18n={i18n} onRetry={() => void runtime.load()} />
     : pathname === '/' ? platform
-      ? <Suspense fallback={<Spinner label={i18n.t('common.loading')} />}><PlatformHome i18n={i18n} session={session} menu={menu} managed={bootstrap.managed} onNavigate={href => runtime.router.navigate(href)} /></Suspense>
-      : <Home i18n={i18n} session={session} menu={menu} permissions={bootstrap.permissions} capabilities={state.capabilities} summary={state.summary} loading={state.reloading}
-        onReload={() => void runtime.load()} onNavigate={target => runtime.router.navigate(target)} />
-    : match ? <Remote i18n={i18n} page={page} client={runtime.client} />
+      ? <Suspense fallback={<Spinner label={i18n.t('common.loading')} />}><PlatformHome i18n={i18n} session={session} menu={nav} managed={bootstrap.managed} onNavigate={href => runtime.router.navigate(href)} /></Suspense>
+      : <Home i18n={i18n} session={session} menu={nav} summary={state.summary} onNavigate={target => runtime.router.navigate(target)} />
+    : remote ? <Remote i18n={i18n} page={page} client={runtime.client} />
+    : sessionPage ? <Suspense fallback={<Page><Spinner label={i18n.t('common.loading')} /></Page>}><SessionPage i18n={i18n} session={session} menu={nav} permissions={bootstrap.permissions} capabilities={state.capabilities} loading={state.reloading} onReload={() => void runtime.load()} /></Suspense>
     : <FallbackPage status={404} i18n={i18n} onHome={() => runtime.router.navigate('/')} />;
+  // 面包屑：分组（有的话）› 当前页；首页与会话信息页只有一级。
+  const current = pathname === '/' ? i18n.t('app.workspace') : remote ? remote.item.label ?? i18n.t(remote.item.labelKey) : sessionPage ? i18n.t('app.sessionInfo') : undefined;
+  const breadcrumb = current === undefined ? undefined
+    : <Breadcrumb label={i18n.t('app.breadcrumb')} testId="shell-breadcrumb" items={[...(remote?.item.group ? [{ key: 'group', label: remote.item.group }] : []), { key: 'page', label: current }]} />;
   return <>
     <AppShell i18n={i18n} brand={runtime.config.brand ?? 'Qian'} menu={menu} activePath={match?.href ?? pathname} onNavigate={href => runtime.router.navigate(href)}
-      toolbar={<><InboxPopover i18n={i18n} messages={[]} /><PreferenceControls i18n={i18n} /></>}
+      workspace={<Workspace i18n={i18n} platform={platform} summary={state.summary} onSwitch={() => runtime.switchTenant()} />} breadcrumb={breadcrumb}
+      toolbar={<><InboxPopover i18n={i18n} messages={[]} /><PreferenceControls i18n={i18n} locale={false} /></>}
       userName={session.displayName ?? session.subject} userDescription={platform ? i18n.t('shell.platform') : undefined} onSignOut={() => void runtime.signOut()} managed={runtime.config.managed ?? bootstrap.managed}
-      userMenu={<MenuItem onClick={() => runtime.switchTenant()} testId="shell-switch-tenant">{i18n.t('shell.tenant')}</MenuItem>}>
+      userMenu={<>
+        <MenuItem onClick={() => runtime.switchTenant()} testId="shell-switch-tenant"><Icon name="building" />{i18n.t('shell.tenant')}</MenuItem>
+        {!platform && <MenuItem onClick={() => runtime.router.navigate(SESSION_PATH)} testId="shell-session-info"><Icon name="user" />{i18n.t('app.sessionInfo')}</MenuItem>}
+        <LocaleMenu i18n={i18n} testId="shell-locale" />
+      </>}>
       <OfflineBanner i18n={i18n} />
       <ShellErrorBoundary i18n={i18n} resetKey={pathname}>{content}</ShellErrorBoundary>
     </AppShell>
@@ -138,43 +157,22 @@ function Remote({ i18n, page, client }: { i18n: PlatformI18n; page: RemotePage |
   return <Component key={`${contribution.scope}:${contribution.remoteId}`} client={client} bridge={contribution.bridge} />;
 }
 
-interface HomeProps {
-  i18n: PlatformI18n; session: BffSession; menu: readonly ShellMenuItem[]; permissions: readonly string[]; capabilities: ShellState['capabilities']; summary: ShellState['summary'];
-  loading: boolean; onReload: () => void; onNavigate: (target: string) => void;
-}
 /**
- * 租户会话的首页（平台身份的首页是 console.tsx 的平台控制台）：本租户摘要可用时先给欢迎、试用提示、开通引导与企业信息（S1-TEN-021），
- * 会话、权限与可用页面卡片照常列在下面；摘要不可用只少欢迎区。
+ * 侧栏的工作空间卡片：平台会话是「平台控制台 · 平台运营」，租户会话是企业名称与「状态 · 租户号」（本租户摘要不可用时只写「企业工作空间」）。
+ * 点按经 prompt=select_account 回到身份服务的选择页切换。
  */
-function Home({ i18n, session, menu, permissions, capabilities, summary, loading, onReload, onNavigate }: HomeProps) {
-  const card = 'space-y-2 rounded-xl border border-border bg-card p-5';
+function Workspace({ i18n, platform, summary, onSwitch }: { i18n: PlatformI18n; platform: boolean; summary: TenantSummary | null | undefined; onSwitch(): void }) {
+  if (platform) return <WorkspaceCard title={i18n.t('app.platformConsole')} description={i18n.t('app.platformOperations')} label={i18n.t('app.switchWorkspace')} onClick={onSwitch} testId="shell-workspace"
+    tile={<span className="inline-flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground"><Icon name="shield" size={18} /></span>} />;
+  const initial = Array.from(summary?.name.trim() ?? '')[0];
+  return <WorkspaceCard title={summary?.name ?? i18n.t('app.tenantWorkspace')} label={i18n.t('app.switchWorkspace')} onClick={onSwitch} testId="shell-workspace"
+    description={summary ? <>{i18n.t(`app.workspaceStatus.${summary.status}`)} · <span className="font-mono">{summary.code}</span></> : undefined}
+    tile={<Avatar shape="square" tint="primary"><AvatarFallback className="font-bold">{initial ?? <Icon name="building" />}</AvatarFallback></Avatar>} />;
+}
+
+/** 租户会话的首页（平台身份的首页是 console.tsx 的平台控制台）：问候，本租户摘要可用时再给试用提示、开通引导与企业信息（S1-TEN-021）。 */
+function Home({ i18n, session, menu, summary, onNavigate }: { i18n: PlatformI18n; session: BffSession; menu: readonly ShellMenuItem[]; summary: ShellState['summary']; onNavigate(target: string): void }) {
   // 试用剩余天数按进入首页的时刻算一次。
   const [now] = useState(() => Date.now());
-  return <Page header={<PageHeader title={i18n.t('app.workspace')} description={i18n.t('app.workspaceHelp')}
-    actions={<Button variant="outline" loading={loading} onClick={onReload} testId="shell-reload">{i18n.t('app.refresh')}</Button>} />}>
-    {summary && <Welcome i18n={i18n} summary={summary} displayName={session.displayName ?? session.subject} menu={menu} now={now} onNavigate={onNavigate} />}
-    <div className={`grid gap-4 md:grid-cols-2${summary ? ' mt-6' : ''}`}>
-      <section className={card} data-testid="shell-session">
-        <h2 className="text-lg font-semibold">{i18n.t('app.session')}</h2>
-        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
-          <dt className="text-muted-foreground">{i18n.t('app.displayName')}</dt><dd data-field="displayName">{session.displayName ?? '—'}</dd>
-          <dt className="text-muted-foreground">{i18n.t('app.subject')}</dt><dd className="truncate" data-field="subject">{session.subject}</dd>
-          <dt className="text-muted-foreground">{i18n.t('app.tenant')}</dt><dd className="truncate" data-field="tenantId">{session.tenantId}</dd>
-          <dt className="text-muted-foreground">{i18n.t('app.kind')}</dt><dd data-field="kind">{session.kind}</dd>
-          <dt className="text-muted-foreground">{i18n.t('app.revision')}</dt><dd data-field="identityRevision">{session.identityRevision === null ? '—' : String(session.identityRevision)}</dd>
-        </dl>
-      </section>
-      <section className={card} data-testid="shell-permissions">
-        <h2 className="text-lg font-semibold">{i18n.t('app.permissions')}</h2>
-        <p className="text-sm text-muted-foreground" data-testid="shell-capabilities">{capabilities === undefined ? i18n.t('common.loading') : capabilities === null ? i18n.t('app.capabilitiesUnavailable') : i18n.t('app.capabilities', { count: capabilities })}</p>
-        {permissions.length === 0 ? <p className="text-sm text-muted-foreground">{i18n.t('common.empty')}</p>
-          : <ul className="space-y-1 text-sm">{permissions.map(permission => <li key={permission} data-permission={permission} data-allowed="true"><code>{permission}</code></li>)}</ul>}
-      </section>
-      <section className={`${card} md:col-span-2`} data-testid="shell-pages">
-        <h2 className="text-lg font-semibold">{i18n.t('app.pages')}</h2>
-        {menu.length === 0 ? <p className="text-sm text-muted-foreground">{i18n.t('common.empty')}</p>
-          : <ul className="space-y-1 text-sm">{menu.map(item => <li key={item.id} data-route={item.target}>{item.label ?? item.labelKey}<code className="ml-2 text-muted-foreground">{item.target}</code></li>)}</ul>}
-      </section>
-    </div>
-  </Page>;
+  return <Page testId="shell-home"><Suspense fallback={null}><Welcome i18n={i18n} summary={summary} displayName={session.displayName ?? session.subject} menu={menu} now={now} onNavigate={onNavigate} /></Suspense></Page>;
 }

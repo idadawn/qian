@@ -93,9 +93,12 @@ export function generateThemeCss(registry: TokenRegistry = TOKEN_REGISTRY): stri
   const lines = ['/* 由 registry.json 生成；运行 tokens:generate。 */', "@import './index.css';", "@import 'tw-animate-css';", '@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));', '@theme inline {'];
   for (const alias of registry.aliases) if (registry.semantics.find(token => token.name === alias.target)?.kind === 'color') lines.push(`  --color-${alias.name.slice(2)}: var(${alias.name});`);
   lines.push('  --color-table-header: var(--yue-table-header-background);');
-  lines.push('  --font-sans: var(--yue-p-font-sans);', '  --font-mono: var(--yue-p-font-mono);', '  --radius-sm: calc(var(--radius) - 4px);', '  --radius-md: calc(var(--radius) - 2px);', '  --radius-lg: var(--radius);', '  --radius-xl: calc(var(--radius) + 4px);');
+  lines.push('  --font-sans: var(--yue-p-font-sans);', '  --font-mono: var(--yue-p-font-mono);', '  --radius-sm: calc(var(--radius) - 4px);', '  --radius-md: calc(var(--radius) - 2px);', '  --radius-lg: var(--radius);', '  --radius-xl: calc(var(--radius) + 2px);');
+  // 正文 14px 配 22px 行高（开通流程原型的全页基准）。用绝对值而不是倍数：继承它的 13px 文字也按 22px 排（倍数会按各自字号重算成约 20.4px），
+  // 表头、列表行与说明行的高度与原型一致。
+  lines.push('  --text-sm--line-height: 1.375rem;');
   for (const size of ['xs', 'sm', 'md', 'lg', 'xl']) lines.push(`  --shadow-${size}: var(--yue-p-shadow-${size});`);
   for (const speed of ['fast', 'normal', 'slow']) lines.push(`  --transition-duration-${speed}: var(--yue-p-duration-${speed});`);
-  lines.push('  --ease-standard: var(--yue-p-ease-standard);', '}', '@layer base {', '  body { @apply font-sans text-sm antialiased bg-background text-foreground; }', '}', '');
+  lines.push('  --ease-standard: var(--yue-p-ease-standard);', '}', '@layer base {', '  body { @apply font-sans text-sm bg-background text-foreground; }', '}', '');
   return lines.join('\n');
 }

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { control, surface, menuItem } from '../lib/styles';
 import type { YueProps } from '../lib/test-id';
+import { Icon } from './icon';
 
 // 单选下拉（Base UI Select）。验证门项：键盘打开 / 选择、类型提前、受控 / 非受控、ARIA listbox。
 
@@ -22,15 +23,15 @@ export function SelectTrigger({ className, children, placeholder, testId, ...pro
       data-slot="select-trigger"
       data-testid={testId ?? 'yue-select-trigger'}
       className={cn(
-        control, 'inline-flex h-9 min-w-40 items-center justify-between gap-2 px-3 text-sm data-[placeholder]:text-muted-foreground',
+        control, 'inline-flex h-(--yue-input-height) min-w-40 items-center justify-between gap-2 px-3 text-sm data-[placeholder]:text-muted-foreground',
         className,
       )}
     >
       <BaseSelect.Value data-slot="select-value" data-testid="yue-select-value" placeholder={placeholder}>
         {children}
       </BaseSelect.Value>
-      <BaseSelect.Icon data-slot="select-icon" data-testid="yue-select-icon" className="text-muted-foreground" aria-hidden>
-        ▾
+      <BaseSelect.Icon data-slot="select-icon" data-testid="yue-select-icon" className="flex text-muted-foreground" aria-hidden>
+        <Icon name="chevronDown" />
       </BaseSelect.Icon>
     </BaseSelect.Trigger>
   );

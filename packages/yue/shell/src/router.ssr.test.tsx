@@ -14,6 +14,13 @@ describe('菜单 → 路由', () => {
     expect(matchMenuItem(withExternal, '/orders')).toBeUndefined();
     expect(() => matchMenuItem([{ id: 'x', labelKey: 'x', type: 'page', target: 'javascript:alert(1)' }], '/')).toThrow();
   });
+  it('根路径的首页项只精确命中，不作为其它路径的前缀', () => {
+    const withHome = [{ id: 'home', labelKey: 'home', label: '工作台', type: 'page', target: '/' }, ...menu];
+    expect(matchMenuItem(withHome, '/')?.item.label).toBe('工作台');
+    expect(matchMenuItem(withHome, '/?x=1')?.item.label).toBe('工作台');
+    expect(matchMenuItem(withHome, '/customers/42')?.item.label).toBe('客户');
+    expect(matchMenuItem(withHome, '/orders')).toBeUndefined();
+  });
   it('历史路由：导航校验同源地址并通知订阅者，popstate 回退', () => {
     const listeners = new Map<string, () => void>(); const history: string[] = [];
     const win = { location: { pathname: '/', search: '', hash: '' }, history: { pushState: (_: unknown, __: string, url?: string | URL | null) => { history.push('push:' + url); win.location.pathname = String(url); }, replaceState: (_: unknown, __: string, url?: string | URL | null) => { history.push('replace:' + url); } },

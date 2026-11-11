@@ -46,7 +46,8 @@ export function matchMenuItem(menu: readonly ShellMenuItem[], path: string, regi
       if (!destination.external) {
         const target = new URL(destination.href, 'https://yue.local').pathname;
         if (target === pathname) return { item, href: destination.href };
-        if (pathname.startsWith(target.endsWith('/') ? target : `${target}/`) && (!best || target.length > new URL(best.href, 'https://yue.local').pathname.length)) best = { item, href: destination.href };
+        // 根路径「/」只精确命中：否则它是所有路径的前缀，没有更具体的菜单项时任何地址都会落到首页项上。
+        if (target !== '/' && pathname.startsWith(target.endsWith('/') ? target : `${target}/`) && (!best || target.length > new URL(best.href, 'https://yue.local').pathname.length)) best = { item, href: destination.href };
       }
       if (item.children) { const exact = visit(item.children); if (exact) return exact; }
     }

@@ -26,8 +26,9 @@ export function DialogDescription({ className, testId, ...props }: DialogDescrip
 }
 
 export type DialogCloseProps = YueProps<ComponentProps<typeof Base.Close>>;
-export function DialogClose({ className, testId, ...props }: DialogCloseProps) {
-  return <ButtonIdentity slot="dialog-close" testId={testId ?? 'yue-dialog-close'}><Base.Close {...props} data-slot="dialog-close" data-testid={testId ?? 'yue-dialog-close'} className={cn(button, className)} /></ButtonIdentity>;
+// 经 render 交给 Button 渲染时不再叠基础按钮类：Button 自带一套，再叠会让基础类里的 border-transparent 盖掉描边变体的边框。
+export function DialogClose({ className, testId, render, ...props }: DialogCloseProps) {
+  return <ButtonIdentity slot="dialog-close" testId={testId ?? 'yue-dialog-close'}><Base.Close {...props} data-slot="dialog-close" data-testid={testId ?? 'yue-dialog-close'} render={render} className={render ? className : cn(button, className)} /></ButtonIdentity>;
 }
 
 export type DialogContentProps = YueProps<ComponentProps<typeof Base.Popup>> & {

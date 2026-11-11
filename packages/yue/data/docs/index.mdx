@@ -4,7 +4,7 @@ description: 服务端分页表格、虚拟化树选择、日期范围和分片�
 part: components
 project: yue
 audience: [developer]
-updated: 2026-10-17
+updated: 2026-11-11
 component: '@idadawn/yue-data'
 ---
 
@@ -22,7 +22,7 @@ import { ComponentDemo } from '@theme';
 
 | 属性 | 说明 |
 |---|---|
-| columns | field、titleKey、sortable、filterable、width、fixed；可序列化部分由 dataColumnSchema 定义，render 是宿主注入的单元格渲染函数 |
+| columns | field、titleKey、sortable、filterable、width、fixed、align（start 或 end，操作列用 end 靠右）；可序列化部分由 dataColumnSchema 定义，render 是宿主注入的单元格渲染函数 |
 | data / total | 服务端当前页与筛选后的总数 |
 | query / onQueryChange | pageIndex、pageSize、sorting、filters；排序和筛选后回第一页 |
 | getRowId | 稳定记录 id，行选择以它为准 |
@@ -30,6 +30,9 @@ import { ComponentDemo } from '@theme';
 | loading / error / onRetry | 加载、错误与重试；空态由当前页为空决定 |
 | selectable / selectedIds / onSelectionChange | 行选择；可受控或由表格维护 |
 | toolbar / className / testId | 工具栏内容、样式字符串与稳定测试标识 |
+| header | 卡片顶部、工具行之上的区域，例如按状态切换的下划线页签 |
+| toolbarEnd / columnToggle | 工具行右端、「显示列」之后的内容（如刷新按钮）；columnToggle 控制是否提供「显示列」开关，默认 true |
+| density | 行的上下内边距：standard 12px（默认，单行行高 47px），comfortable 14px（两行内容的审核列表）；全局紧凑密度下为 4px |
 
 ## Tree、TreeSelect 与 Cascader
 

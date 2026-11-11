@@ -58,6 +58,16 @@ describe('基础交互', () => {
     await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
+  it('Close 经 render 交给描边 Button 时保留描边变体的边框（不被基础按钮类的透明边框盖掉）', async () => {
+    render(<C.Sheet defaultOpen><C.SheetContent closeLabel="关闭侧栏"><C.SheetHeader><C.SheetTitle>筛选</C.SheetTitle></C.SheetHeader><C.SheetFooter>
+      <C.SheetClose render={<C.Button variant="outline" />} testId="sheet-cancel">取消</C.SheetClose></C.SheetFooter></C.SheetContent></C.Sheet>);
+    const cancel = await screen.findByTestId('sheet-cancel');
+    expect(cancel.getAttribute('data-slot')).toBe('sheet-close');
+    expect(cancel.className).toContain('border-border-strong');
+    expect(cancel.className).not.toContain('border-transparent');
+    expect(getComputedStyle(cancel).borderTopColor).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
   it('testId 可以覆盖默认标识，data-slot 保持组件身份', () => {
     render(<><C.Button data-slot="injected" data-testid="injected" testId="save-button">保存</C.Button><C.Select items={[{ value: 'a', label: 'A' }]}><C.SelectTrigger aria-label="选择" data-slot="injected" testId="select-control" /></C.Select></>);
     expect(screen.getByTestId('save-button').getAttribute('data-slot')).toBe('button');

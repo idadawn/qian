@@ -46,10 +46,17 @@ export async function accessible(page: Page, step: string) {
   expect(results.violations.filter(violation => violation.impact === 'critical' || violation.impact === 'serious').map(violation => `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join('; ')}`), step).toEqual([]);
 }
 
-/** 身份服务同源登录页：账号可以是用户名或已验证的手机号；缺省用种子里的演示用户。 */
+/** 身份服务同源登录页：账号框标作「手机号或邮箱」，用户名同样可以登录；缺省用种子里的演示用户。密码框旁有「显示密码」按钮，按标签精确匹配。 */
 export async function fillLogin(page: Page, account: { username: string; password: string } = person('owner')) {
-  await page.getByLabel(/账号/).fill(account.username);
-  await page.getByLabel(/密码/).fill(account.password);
-  await expect(page.getByLabel(/密码/)).toHaveAttribute('type', 'password');
+  await page.getByLabel('手机号或邮箱').fill(account.username);
+  await page.getByLabel('密码', { exact: true }).fill(account.password);
+  await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
   await page.getByRole('button', { name: '登录', exact: true }).click();
+}
+
+/** 租户会话的首页只有欢迎区（S1-YUE-019 按原型）：会话、有效权限与可用页面卡片在「会话信息」页，经账号菜单进入（站内路由，不重拉 bootstrap）。 */
+export async function openSession(page: Page) {
+  await page.getByRole('button', { name: '用户菜单' }).click();
+  await page.getByRole('menuitem', { name: '会话信息' }).click();
+  await expect(page.getByRole('heading', { name: '会话信息', exact: true })).toBeVisible();
 }
