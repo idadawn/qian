@@ -75,18 +75,19 @@ public sealed class PlatformHostComposition
     /// <summary>Lifecycle 的 module 钩子：按组件 ID 与精确版本返回实现，没有返回 null。</summary>
     public PlatformHostComposition AddLifecycleHooks(Func<string, string, IPluginLifecycleHooks?> hooks) { ArgumentNullException.ThrowIfNull(hooks); Open(); _hooks.Add(hooks); return this; }
     /// <summary>
-    /// 运营接口：<paramref name="prefix"/> 下的请求只收受众 <c>qian-operations</c> 的 S2S，<paramref name="map"/> 在运营端点之后映射。
-    /// S1-DEP-011 并入身份分支后，开通申请的运营接口（<c>/api/signup/applications</c>、<c>/api/signup/meta</c>）经这里挂上。
+    /// 运营接口：<paramref name="map"/> 映射到运营端点组（在租户运营接口之后），组里的端点只收受众 <c>qian-operations</c> 的 S2S——受众按路由匹配到的端点选，
+    /// 不按路径写法。<paramref name="prefix"/> 声明这组端点所在的路径范围，与网关路由表里指向运营簇的前缀对应：启动时核对组里的端点都在声明的前缀下、前缀下的端点都在组里，
+    /// 没有匹配到端点的请求也按前缀选运营受众（得到 404 / 405 而不是 401）。S1-DEP-011 并入身份分支后，开通申请的运营接口（<c>/api/signup/applications</c>、<c>/api/signup/meta</c>）经这里挂上。
     /// </summary>
     public PlatformHostComposition AddOperations(PathString prefix, Action<IEndpointRouteBuilder, PlatformRuntime>? map = null)
     {
-        if (!prefix.HasValue || prefix.Value == "/") throw new ArgumentException("运营前缀必须是非根路径。", nameof(prefix));
+        if (!prefix.HasValue || prefix.Value == "/" || prefix.Value.EndsWith('/')) throw new ArgumentException("运营前缀必须是非根路径，且不以斜杠结尾。", nameof(prefix));
         Open();
         if (!_operations.Contains(prefix)) _operations.Add(prefix);
         if (map is not null) _operationEndpoints.Add(map);
         return this;
     }
-    /// <summary>其它端点（走平台受众）；在平台表面之后映射。</summary>
+    /// <summary>其它端点（走平台受众）；在平台表面之后映射，不能放在运营前缀下（启动时核对）。</summary>
     public PlatformHostComposition MapEndpoints(Action<IEndpointRouteBuilder, PlatformRuntime> map) { ArgumentNullException.ThrowIfNull(map); Open(); _endpoints.Add(map); return this; }
 
     internal IReadOnlyList<PathString> OperationPrefixes => _operations;

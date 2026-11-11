@@ -58,9 +58,18 @@ public static class PlatformHost
         configure?.Invoke(builder);
         var composition = builder.AddQianPlatform(args, extend);
         var app = builder.Build();
-        app.UseQianPlatform();
-        app.MapQianPlatform(composition);
-        return app;
+        try
+        {
+            app.UseQianPlatform();
+            app.MapQianPlatform(composition);
+            return app;
+        }
+        catch
+        {
+            // 中间件或端点装配失败（如运营端点组与声明的运营前缀不一致）：先释放已建好的宿主再抛出。
+            ((IDisposable)app).Dispose();
+            throw;
+        }
     }
 
     /// <summary>配置源与网关宿主相同：<c>appsettings.json</c>（及环境名文件）→ <c>QIAN_</c> 前缀环境变量 → 命令行；内容根是程序目录。</summary>
@@ -86,13 +95,15 @@ public static class PlatformHost
     }
 
     /// <summary>
-    /// 中间件：ErrorDetail → 网关 S2S 认证 → 按令牌 <c>tenant_id</c> 进入租户 scope（平台身份不进任何租户）→ 授权 → 插件端点可见性 → 授权 PEP（生产模式，处理器内判定的端点也比对身份修订下限）。
+    /// 中间件：路由 → ErrorDetail → 网关 S2S 认证（按匹配到的端点选受众）→ 按令牌 <c>tenant_id</c> 进入租户 scope（平台身份不进任何租户）→ 授权 → 插件端点可见性 →
+    /// 授权 PEP（生产模式，处理器内判定的端点也比对身份修订下限）。
     /// </summary>
     public static WebApplication UseQianPlatform(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
         var tenantContext = app.Services.GetRequiredService<ITenantContext>();
-        app.UseQianErrors(); app.UseAuthentication();
+        // 路由必须先于认证：受众按路由实际匹配到的端点选（GatewayS2s.Select），不按路径写法。WebApplication 缺省也把路由放在最前，这里显式写出这个依赖。
+        app.UseRouting(); app.UseQianErrors(); app.UseAuthentication();
         app.Use(async (http, next) =>
         {
             if (GatewayS2s.Principal(http) is { TenantId: { } tenant })
@@ -106,7 +117,10 @@ public static class PlatformHost
         return app;
     }
 
-    /// <summary>健康端点（匿名）、平台表面（受众 <c>qian-platform</c>）、平台运营接口（受众 <c>qian-operations</c>）与扩展端点。</summary>
+    /// <summary>
+    /// 健康端点（匿名）、平台表面（受众 <c>qian-platform</c>）、扩展端点（平台受众），以及运营端点组（受众 <c>qian-operations</c>）：租户运营接口与经
+    /// <see cref="PlatformHostComposition.AddOperations"/> 挂上的端点。映射完核对运营端点组与声明的运营前缀一致，不一致即抛错。
+    /// </summary>
     public static WebApplication MapQianPlatform(this WebApplication app, PlatformHostComposition composition)
     {
         ArgumentNullException.ThrowIfNull(app); ArgumentNullException.ThrowIfNull(composition);
@@ -119,8 +133,11 @@ public static class PlatformHost
         app.MapQianPlatformConsole(http => Console(http, runtime));
         app.MapQianAuthz(http => Scoped(http, "authz"));
         foreach (var map in composition.Endpoints) map(app, runtime);
-        app.MapQianTenancy(_ => runtime.Global("tenancy"));
-        foreach (var map in composition.OperationEndpoints) map(app, runtime);
+        // 运营端点组：不加路由前缀，只给组里每个端点加运营受众元数据，认证按匹配到的端点选方案（GatewayS2s.Select）。
+        var operations = app.MapGroup("").WithMetadata(OperationsAudience.Instance);
+        operations.MapQianTenancy(_ => runtime.Global("tenancy"));
+        foreach (var map in composition.OperationEndpoints) map(operations, runtime);
+        GatewayS2s.CheckOperations(app, composition.OperationPrefixes);
         return app;
     }
 
@@ -132,7 +149,9 @@ public static class PlatformHost
         return http.RequestServices.GetRequiredService<PlatformRuntime>().Global(id).Scoped(new ScopeKey("tenant", tenant!));
     }
 
-    // 平台控制台目录用 Capabilities 的全局上下文，只给不带租户的请求（平台身份）；租户成员的请求按不存在拒绝，与目录服务自己的主体检查一致。
+    // 平台控制台目录用 Capabilities 的全局上下文，只给不带租户的请求（平台身份）；租户成员的请求按不存在拒绝。
+    // 这是纵深防御，与目录服务自己的主体检查重叠（验收复核 M4 判为等价突变）：NavigationService.GetConsoleAsync 一开始就对带租户、非用户或带委托的主体按不存在拒绝，
+    // 去掉这里结果不变（同为 404 NOT_FOUND）；外部契约由 PlatformHostTests 第一例「租户主体访问平台控制台目录 404」钉住。
     private static IPluginContext Console(HttpContext http, PlatformRuntime runtime)
     {
         if (!string.IsNullOrEmpty(http.RequestServices.GetRequiredService<ITenantContext>().TenantId)) throw new QianErrorException(new QianError(PlatformErrors.NotFound));

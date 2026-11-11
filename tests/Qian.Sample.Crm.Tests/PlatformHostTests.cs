@@ -27,6 +27,7 @@ using Qian.Gateway;
 using Qian.Lifecycle;
 using Qian.Platform.Host;
 using Qian.Plugin.Sdk;
+using Qian.Plugin.Sdk.AspNetCore;
 using Qian.Registry;
 using Qian.Runtime;
 using Qian.Surfaces;
@@ -42,12 +43,23 @@ namespace Qian.Sample.Crm.Tests;
 public sealed class PlatformHostTests(PostgresFixture postgres) : CustomerCommandTests(postgres), IClassFixture<PostgresFixture>
 {
     [Fact]
-    public async Task 生产平台宿主按platform_profile装配平台插件树_运行期连接都是受限登录_只收网关S2S且按路径分受众_错误签发方受众过期算法签名与Cookie外部令牌都401_平台身份访问租户表面401()
+    public async Task 生产平台宿主按platform_profile装配平台插件树_运行期连接都是受限登录_只收网关S2S且按匹配到的端点分受众_错误签发方受众过期算法签名与Cookie外部令牌都401_扩展端点兜底要求认证且未声明权限点缺省拒绝_平台身份访问租户表面401()
     {
         await using var business = await Start(identity: true, relyingParty: new Uri("https://localhost/auth/callback"));
         var signing = business.ManagementSigningKey;
         await using var jwks = await JwksServer(signing);
-        await using var platform = await StartPlatformHost(business, new Uri(new Uri(jwks.Urls.Single()), ".well-known/jwks.json"));
+        var jwksUri = new Uri(new Uri(jwks.Urls.Single()), ".well-known/jwks.json");
+        // 用例自己的扩展端点（四、七用）：平台扩展端点一个不带组件绑定，一个带组件端点绑定却不声明权限点，一个带路由参数、能匹配运营前缀下的路径；
+        // 一个运营扩展端点经 AddOperations 挂在 /api/host-operations 下。
+        var binding = new PluginEndpointBinding("crm", "qian.sample.crm", CapabilityBindingRegistration.Key, ListId);
+        await using var platform = await StartPlatformHost(business, jwksUri, extend: composition => composition
+            .MapEndpoints((endpoints, _) =>
+            {
+                endpoints.MapGet("/api/host-extension/plain", () => Results.Text("plain"));
+                endpoints.MapGet("/api/host-extension/component", () => Results.Text("component")).RequireQianPlugin(binding);
+                endpoints.MapGet("/api/{area}/host-extension-probe", (string area) => Results.Text(area));
+            })
+            .AddOperations("/api/host-operations", (endpoints, _) => endpoints.MapGet("/api/host-operations/ping", () => Results.Text("operations"))));
         var runtime = platform.Runtime;
 
         // 一、插件树：仓库交付的 platform profile（base / shell / model-gateway 三个组合包）经宿主 overlay 关掉没有 Provider 的条目，config 换成 qian.config；
@@ -94,9 +106,43 @@ public sealed class PlatformHostTests(PostgresFixture postgres) : CustomerComman
         var member = PlatformS2s(signing, A, Writer, "service");
         var root = PlatformS2s(signing, null, "root", audience: PlatformHostSettings.OperationsAudience);
         Assert.Contains(CreateId, JsonNode.Parse(await PlatformText(client, Catalog, member))!["items"]!.AsArray().Select(item => (string?)item!["id"]));
-        Assert.NotNull(JsonNode.Parse(await PlatformText(client, Tenants, root))!["items"]);
+        var tenantIds = Ids(await PlatformText(client, Tenants, root));
+        Assert.Contains(A, tenantIds);
 
-        // 四、令牌不合格一律 401 UNAUTHENTICATED：没有令牌、签发方不对、受众不对（运营受众到平台路径、平台受众到运营路径、两个受众）、过期、尚未生效、
+        // 四、受众按路由实际匹配到的端点选，不按路径写法（R144 ①）：端点路由不区分大小写、忽略结尾斜杠，同一端点的各种写法受众相同。
+        //     运营端点的大小写与结尾斜杠变体：平台受众 401，运营受众与规范路径同样放行、结果相同；平台端点的大小写变体：平台受众照常放行，运营受众 401。
+        //     没有匹配到端点的运营前缀路径（含大小写变体）与方法不符的运营路径：运营受众得到 404 / 405（不是会被外壳当成会话失效的 401），平台受众 401。
+        var platformRoot = PlatformS2s(signing, null, "root");
+        var memberOperations = PlatformS2s(signing, A, Writer, "service", audience: PlatformHostSettings.OperationsAudience);
+        foreach (var path in new[] { "/api/Tenancy/tenants", "/API/tenancy/tenants", "/Api/TENANCY/Tenants", "/api/tenancy/tenants/" })
+        {
+            await AssertHttp(await PlatformGet(client, path, platformRoot), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+            Assert.Equal(tenantIds, Ids(await PlatformText(client, path, root)));
+        }
+        var stateMachine = await PlatformText(client, "/api/tenancy/meta/state-machine", root);
+        await AssertHttp(await PlatformGet(client, "/api/TENANCY/meta/state-machine", platformRoot), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        Assert.Equal(stateMachine, await PlatformText(client, "/api/TENANCY/meta/state-machine", root));
+        Assert.Contains(CreateId, JsonNode.Parse(await PlatformText(client, "/API/Capabilities", member))!["items"]!.AsArray().Select(item => (string?)item!["id"]));
+        foreach (var (path, token) in new[] { ("/api/Capabilities", memberOperations), ("/API/capabilities/navigation", memberOperations), ("/api/AUTHZ/me/permissions", memberOperations),
+            ("/API/capabilities/console", root) })
+            await AssertHttp(await PlatformGet(client, path, token), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        // 运营前缀下匹配到的是平台端点（带路由参数的平台扩展端点）：受众跟端点走，仍只收平台受众，运营受众 401——按路径前缀选就会把运营受众放进平台端点。
+        Assert.Equal("tenancy", await PlatformText(client, "/api/tenancy/host-extension-probe", member));
+        await AssertHttp(await PlatformGet(client, "/api/tenancy/host-extension-probe", root), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        foreach (var path in new[] { "/api/tenancy/no-such-endpoint", "/api/TENANCY/no-such-endpoint" })
+        {
+            using (var missing = await PlatformGet(client, path, root)) Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+            await AssertHttp(await PlatformGet(client, path, platformRoot), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        }
+        foreach (var (token, status) in new[] { (root, HttpStatusCode.MethodNotAllowed), (platformRoot, HttpStatusCode.Unauthorized) })
+            using (var request = new HttpRequestMessage(HttpMethod.Delete, "/api/Tenancy/tenants"))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                using var response = await client.SendAsync(request, Ct);
+                Assert.Equal(status, response.StatusCode);
+            }
+
+        // 五、令牌不合格一律 401 UNAUTHENTICATED：没有令牌、签发方不对、受众不对（运营受众到平台端点、平台受众到运营端点、两个受众）、过期、尚未生效、
         //     非 RS256（RS384 / HS256 / 不签名）、未知密钥签名、改过载荷；浏览器 Cookie 与身份服务签发的外部访问令牌都不是本宿主的凭据。
         using var unknown = RSA.Create(2048);
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -107,8 +153,8 @@ public sealed class PlatformHostTests(PostgresFixture postgres) : CustomerComman
         {
             ("没有令牌", Catalog, null),
             ("签发方", Catalog, PlatformS2s(signing, A, Writer, "service", issuer: "https://other-gateway.qian.test/s2s")),
-            ("运营受众到平台路径", Catalog, PlatformS2s(signing, A, Writer, "service", audience: PlatformHostSettings.OperationsAudience)),
-            ("平台受众到运营路径", Tenants, PlatformS2s(signing, null, "root")),
+            ("运营受众到平台端点", Catalog, PlatformS2s(signing, A, Writer, "service", audience: PlatformHostSettings.OperationsAudience)),
+            ("平台受众到运营端点", Tenants, PlatformS2s(signing, null, "root")),
             ("两个受众", Catalog, PlatformS2s(signing, A, Writer, "service", edit: payload => payload["aud"] = new[] { PlatformHostSettings.PlatformAudience, PlatformHostSettings.OperationsAudience })),
             ("过期", Catalog, PlatformS2s(signing, A, Writer, "service", edit: payload => { payload["iat"] = payload["nbf"] = now - 120; payload["exp"] = now - 60; })),
             ("尚未生效", Catalog, PlatformS2s(signing, A, Writer, "service", edit: payload => { payload["nbf"] = now + 60; payload["exp"] = now + 120; })),
@@ -132,11 +178,36 @@ public sealed class PlatformHostTests(PostgresFixture postgres) : CustomerComman
             await AssertHttp(await client.SendAsync(cookie, Ct), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
         }
 
-        // 五、平台身份（没有租户）访问租户表面：能力目录、导航、外壳目录、有效权限都 401（平台身份没有租户表面）。
-        var operatorToken = PlatformS2s(signing, null, "root");
+        // 六、平台身份（没有租户）访问租户表面：能力目录、导航、外壳目录、有效权限都 401（平台身份没有租户表面）；租户主体访问平台控制台目录按不存在 404。
         foreach (var path in new[] { Catalog, "/api/capabilities/navigation", "/api/capabilities/shell", "/api/authz/me/permissions" })
-            await AssertHttp(await PlatformGet(client, path, operatorToken), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+            await AssertHttp(await PlatformGet(client, path, platformRoot), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        await AssertHttp(await PlatformGet(client, "/api/capabilities/console", member), HttpStatusCode.NotFound, "NOT_FOUND");
+
+        // 七、扩展端点（经 MapEndpoints / AddOperations 挂上）：宿主的兜底授权策略要求已认证，匿名一律 401。不带组件绑定的平台扩展端点对平台受众放行、对运营受众 401；
+        //     带组件端点绑定却没有声明权限点的端点，PEP 按生产模式缺省拒绝，已认证的租户主体也是 403；运营扩展端点与租户运营接口同在运营端点组，只收运营受众（大小写变体同样）。
+        foreach (var path in new[] { "/api/host-extension/plain", "/api/host-extension/component", "/api/host-operations/ping" })
+            await AssertHttp(await PlatformGet(client, path, null), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        Assert.Equal("plain", await PlatformText(client, "/api/host-extension/plain", member));
+        await AssertHttp(await PlatformGet(client, "/api/host-extension/plain", memberOperations), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        await AssertHttp(await PlatformGet(client, "/api/host-extension/component", member), HttpStatusCode.Forbidden, "AUTHZ_DENIED");
+        foreach (var path in new[] { "/api/host-operations/ping", "/API/Host-Operations/PING" })
+        {
+            Assert.Equal("operations", await PlatformText(client, path, root));
+            await AssertHttp(await PlatformGet(client, path, platformRoot), HttpStatusCode.Unauthorized, "UNAUTHENTICATED");
+        }
+
+        // 八、运营端点组与声明的运营前缀不一致时宿主不启动：平台扩展端点放在运营前缀下（大小写不同也算），或运营扩展端点不在它声明的前缀下；运营前缀不能以斜杠结尾。
+        foreach (var rogue in new Action<PlatformHostComposition>[]
+        {
+            composition => composition.MapEndpoints((endpoints, _) => endpoints.MapGet("/API/Tenancy/rogue", () => Results.Text("rogue"))),
+            composition => composition.AddOperations("/api/host-operations", (endpoints, _) => endpoints.MapGet("/api/elsewhere", () => Results.Text("rogue")))
+        })
+            Assert.Contains("运营", (await Assert.ThrowsAsync<InvalidOperationException>(() => StartPlatformHost(business, jwksUri, extend: rogue))).Message, StringComparison.Ordinal);
+        await Assert.ThrowsAsync<ArgumentException>(() => StartPlatformHost(business, jwksUri, extend: composition => composition.AddOperations("/api/host-operations/")));
     }
+
+    // 租户列表响应里的租户 Id（按响应顺序）。
+    private static string[] Ids(string list) => [.. JsonNode.Parse(list)!["items"]!.AsArray().Select(item => (string)item!["id"]!)];
 
     // 网关用网关宿主 appsettings.json 的生产路由表（R144 ②：能力与有效权限进 qian-platform，租户运营进 qian-operations，两个簇同一服务地址），
     // 只把簇地址换成本宿主的回环地址；本宿主经网关的 JWKS 验签。与参考宿主的外壳 bootstrap（ShellBootstrapTests）、经外壳执行应用能力（ShellInvokeTests）同一契约。
@@ -198,9 +269,17 @@ public sealed class PlatformHostTests(PostgresFixture postgres) : CustomerComman
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "plugins", "qian.tenancy", "ui", "manifest.json"))), console["manifest"]));
             Assert.Equal(["/tenants"], granted["navigation"]!.AsArray().Select(item => (string)item!["route"]!));
             Assert.Equal(["qian.tenancy:tenant:read"], granted["permissions"]!.AsArray().Select(item => (string)item!));
-            var tenants = JsonNode.Parse(await Through(operatorClient, address, "api/tenancy/tenants"))!;
-            Assert.Contains(tenants["items"]!.AsArray(), item => (string?)item!["id"] == A);
+            var tenants = Ids(await Through(operatorClient, address, "api/tenancy/tenants"));
+            Assert.Contains(A, tenants);
             Assert.Equal(["/api/tenancy/tenants"], seen); seen.Clear();
+            // 网关路由不区分大小写：运营路径的大小写与结尾斜杠变体同样经运营簇（受众 qian-operations）原样转给本宿主，本宿主按匹配到的端点选运营受众，结果与规范路径相同。
+            foreach (var variant in new[] { "api/Tenancy/tenants", "API/tenancy/tenants", "api/tenancy/tenants/" })
+            {
+                Assert.Equal(tenants, Ids(await Through(operatorClient, address, variant)));
+                Assert.Equal(["/" + variant], seen); seen.Clear();
+            }
+            Assert.Equal(await Through(operatorClient, address, "api/tenancy/meta/state-machine"), await Through(operatorClient, address, "api/TENANCY/meta/state-machine"));
+            Assert.Equal(["/api/tenancy/meta/state-machine", "/api/TENANCY/meta/state-machine"], seen); seen.Clear();
         }
 
         // 四、用户经网关与本宿主的通用执行入口执行 module 应用能力，以本人执行（S1-YUE-015 裁决 ④）。甲方：所有者（tenant.owner）与使用者（tenant.user，只读）；
@@ -451,7 +530,9 @@ public abstract partial class CustomerCommandTests
     // 起生产平台宿主：受限登录（应用登录、平台授权与平台审计登录、审计函数属主、迁移属主）各建一个，连接串写成 0600 的 Secret 文件；
     // 环境 overlay 给两个平台登录的角色名、events 不接 broker（Outbox 用 skip-locked 领取）；参考应用以 module 应用的组件文件夹与扩展 overlay 加进全局 scope。
     // 没有包内迁移的 Registry 由管理员建表，Capabilities / Lifecycle 经宿主的 IDataMigrator 以迁移属主执行（与 --migrate-only 同一入口），之后才授权、启动。
-    private protected async Task<PlatformHostRun> StartPlatformHost(RunningApp business, Uri jwks, LoopbackPort.Reservation? port = null, ConcurrentQueue<string>? seen = null)
+    // extend 在参考应用之后再加扩展登记（用例自己的扩展端点等）。
+    private protected async Task<PlatformHostRun> StartPlatformHost(RunningApp business, Uri jwks, LoopbackPort.Reservation? port = null, ConcurrentQueue<string>? seen = null,
+        Action<PlatformHostComposition>? extend = null)
     {
         var suffix = Guid.NewGuid().ToString("N")[..8];
         string app = "qian_plat_app_" + suffix, writer = "qian_plat_fn_" + suffix, authz = "qian_plat_az_" + suffix, audit = "qian_plat_au_" + suffix, migrator = "qian_plat_mig_" + suffix;
@@ -494,17 +575,21 @@ public abstract partial class CustomerCommandTests
             CrmComponent(Path.Combine(components, "crm"));
             var modules = Path.Combine(directory.FullName, "modules.yml");
             await File.WriteAllTextAsync(modules, """[{"id":"crm","plugin":"qian.sample.crm","config":{}}]""", Ct);
-            var host = PlatformHost.Build(["--patch", environment], composition => composition
-                .AddComponentDirectory(components).AddPatch(modules)
-                .AddComponent(new PlatformComponent("qian.sample.crm", "Qian.Sample.Crm.CrmPlugin, Qian.Sample.Crm", _ => new CrmPlugin(),
-                    services => services.AddAppData<CrmDbContext>(CrmDbContext.Schema)))
-                .AddEvents(registrar => registrar.RegisterCrmEvents())
-                .AddMediator(mediator => mediator
-                    .AddQianCapability<CreateCustomerCommand, CustomerItem, CreateCustomerHandler, CrmDbContext>(Crm)
-                    .AddQianCapability<ListCustomersQuery, CustomerPage, ListCustomersHandler, CrmDbContext>(Crm)
-                    .AddQianCapability<GetCustomerQuery, CustomerItem, GetCustomerHandler, CrmDbContext>(Crm)
-                    .AddQianCapability<PurgeCustomersCommand, CustomerPurgeResult, PurgeCustomersHandler, CrmDbContext>(Crm))
-                .AddLifecycleHooks((id, _) => id == "qian.sample.crm" ? new CrmPlugin() : null), builder =>
+            var host = PlatformHost.Build(["--patch", environment], composition =>
+            {
+                composition
+                    .AddComponentDirectory(components).AddPatch(modules)
+                    .AddComponent(new PlatformComponent("qian.sample.crm", "Qian.Sample.Crm.CrmPlugin, Qian.Sample.Crm", _ => new CrmPlugin(),
+                        services => services.AddAppData<CrmDbContext>(CrmDbContext.Schema)))
+                    .AddEvents(registrar => registrar.RegisterCrmEvents())
+                    .AddMediator(mediator => mediator
+                        .AddQianCapability<CreateCustomerCommand, CustomerItem, CreateCustomerHandler, CrmDbContext>(Crm)
+                        .AddQianCapability<ListCustomersQuery, CustomerPage, ListCustomersHandler, CrmDbContext>(Crm)
+                        .AddQianCapability<GetCustomerQuery, CustomerItem, GetCustomerHandler, CrmDbContext>(Crm)
+                        .AddQianCapability<PurgeCustomersCommand, CustomerPurgeResult, PurgeCustomersHandler, CrmDbContext>(Crm))
+                    .AddLifecycleHooks((id, _) => id == "qian.sample.crm" ? new CrmPlugin() : null);
+                extend?.Invoke(composition);
+            }, builder =>
             {
                 builder.WebHost.UseUrls(port is null ? "http://127.0.0.1:0" : $"http://127.0.0.1:{port.Port}"); builder.Logging.ClearProviders();
                 if (seen is not null) builder.Services.AddSingleton<IStartupFilter>(new RequestLog(seen));

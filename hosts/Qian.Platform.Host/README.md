@@ -31,8 +31,10 @@ profile 的合成顺序是：platform profile 的组合包（base / shell / mode
 | `AddComponentDirectory` / `AddPatch` | 额外的组件根目录与扩展 overlay（例如把 module 应用的条目加进全局 scope）。 |
 | `AddEvents` / `AddMediator` | 并进同一次 `AddKunEventBus` / `AddKunMediator`（Kun 的事件类型表只认第一次、中介者只认最后一次）。module 应用的能力处理器经 `PlatformRuntime.Tenant(id)` 取租户视角的上下文。 |
 | `AddLifecycleHooks` | Lifecycle 的 module 钩子。 |
-| `AddOperations` | 新的运营前缀：该前缀下只收受众 `qian-operations`。S1-DEP-011 用它挂开通申请的运营接口。 |
-| `MapEndpoints` | 其它端点（走平台受众）。 |
+| `AddOperations` | 运营接口：`map` 映射到运营端点组，组里的端点只收受众 `qian-operations`；`prefix` 声明这组端点所在的路径范围（与网关路由表里指向运营簇的前缀对应，不以斜杠结尾）。S1-DEP-011 用它挂开通申请的运营接口。 |
+| `MapEndpoints` | 其它端点（走平台受众），不能放在运营前缀下。 |
+
+运营端点组与声明的运营前缀在启动时核对：组里的端点必须在某个运营前缀下，运营前缀下的端点必须都在组里（与路由一样不区分大小写），不一致即拒绝启动。
 
 集成测试 `PlatformHostTests` 就是这样把参考应用作为 module 应用并进插件树的。
 
@@ -40,7 +42,9 @@ profile 的合成顺序是：platform profile 的组合包（base / shell / mode
 
 只装网关 S2S 的两个 JWT 方案，共用网关的签发方与 JWKS（`S2S:JwksUri`，网关的 `/.well-known/jwks.json`，未知 kid 时刷新）：
 
-- 运营前缀（`/api/tenancy`，以及经 `AddOperations` 加的前缀）只收受众 `qian-operations`，其余路径只收 `qian-platform`（R144）。受众错配、多受众、签发方不符、过期或未生效、非 RS256、签名不符都是 401。
+- 受众按路由实际匹配到的端点选，不按路径写法（R144）：运营端点组（租户运营接口，以及经 `AddOperations` 挂上的端点）只收受众 `qian-operations`，其余端点只收 `qian-platform`。端点路由不区分大小写、忽略结尾斜杠，所以 `/api/Tenancy/tenants/` 与 `/api/tenancy/tenants` 是同一个端点、受众相同；认证排在路由之后。受众错配、多受众、签发方不符、过期或未生效、非 RS256、签名不符都是 401。
+- 没有匹配到端点的请求（404，方法不符的 405）不执行任何处理器，按声明的运营前缀（`/api/tenancy` 与经 `AddOperations` 声明的前缀，不区分大小写）选运营受众，其余选平台受众：网关签运营受众转来的这类请求得到 404 / 405，不会被外壳当成会话失效的 401。
+- 兜底授权策略要求已认证：没有声明授权要求的扩展端点也拒绝匿名；带组件端点绑定却没有声明权限点的端点由 PEP 按生产模式缺省拒绝（已认证也 403）。
 - 不认浏览器 Cookie，也不认身份服务签发的外部访问令牌；载荷即主体快照，接受 user / service / agent 主体。
 - 带 `act` 的委托主体由能力目录、执行入口、有效权限、运营接口与命令管道各自拒绝（执行入口与不存在一样 404），与参考宿主相同；S1 不开放委托。
 - 平台身份（没有租户）访问租户表面 401；平台控制台目录只给平台身份，带租户的请求 404。
@@ -93,7 +97,9 @@ dotnet run --project hosts/Qian.Platform.Host -c Release -- --migrate-only --pat
 | `/api/capabilities/**` | `qian-platform` | 能力目录、通用执行入口、导航、外壳目录（`MapQianCapabilities`）。 |
 | `GET /api/capabilities/console` | `qian-platform` | 平台控制台目录（`MapQianPlatformConsole`），只给平台身份。 |
 | `/api/authz/**` | `qian-platform` | 有效权限（`MapQianAuthz`）。 |
-| `/api/tenancy/**` | `qian-operations` | 租户运营接口（`MapQianTenancy`），平台超管显式旁路，放行写平台审计链。 |
+| `/api/tenancy/**` | `qian-operations` | 租户运营接口（`MapQianTenancy`，在运营端点组里），平台超管显式旁路，放行写平台审计链。 |
+
+表里的受众是对端点说的：路径的大小写与结尾斜杠变体路由到同一个端点，受众也相同。
 
 网关宿主的路由表（[`hosts/Qian.Gateway.Host/appsettings.json`](../Qian.Gateway.Host/appsettings.json)）按簇转发：能力与有效权限进 `qian-platform`，租户运营进 `qian-operations`，两个簇指向本宿主的同一个服务地址；以后要拆只改簇地址。
 
@@ -104,7 +110,7 @@ dotnet run --project hosts/Qian.Platform.Host -c Release -- --migrate-only --pat
 | 方面 | 参考宿主 | 本宿主 |
 |---|---|---|
 | 插件树 | 借用 CRM 参考宿主已装配的运行时（测试里手工挂载的 Provider 与临时组件文件夹） | 按仓库交付的 platform profile 与组件文件夹自行装配，条目缺 Provider 即拒绝启动 |
-| 进程与受众 | 平台表面与运营各成一个宿主，各认一个受众 | 同一进程、同一插件树、同一端口，按路径分两个受众（R144） |
+| 进程与受众 | 平台表面与运营各成一个宿主，各认一个受众 | 同一进程、同一插件树、同一端口，按匹配到的端点分两个受众（R144） |
 | 验签 | 测试直接给签名公钥 | 取网关公开的 JWKS，钥轮换时按 kid 刷新 |
 | 身份适配器 | 平台表面验签后把快照交给参考应用的适配器（依赖 HttpContextAccessor 的静态 AsyncLocal） | 根容器里只有一个适配器，平台表面、运营接口与 module 应用共用 |
 | 数据库登录 | 测试里的应用角色 | 应用登录与两个平台登录分别绑定，连接串只从 Secret 文件读，迁移属主只给迁移 Job |
