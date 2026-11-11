@@ -166,7 +166,7 @@ it('抽屉里的子步骤表单（inlineActions）按钮紧跟表单、不带取
   expect(submit.mock.calls[0]?.[0]).toEqual({ username: 'adminc' });
   // 等抽屉入场动画与提交态结束再查对比度，免得取到半透明的中间帧。
   await vi.waitFor(() => expect(within(form).getByRole('button', { name: '查找账号' }).hasAttribute('disabled')).toBe(false));
-  await Promise.all(document.getAnimations().map((animation) => animation.finished));
+  await Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => {})));
   const result = await axe.run(dialog);
   expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
 });
@@ -232,7 +232,7 @@ it('确认框：危险操作的确认按钮用危险色并写明动作，取消�
   expect(cancel.className).toContain('border-border-strong');
   expect(cancel.className).not.toContain('border-transparent');
   await vi.waitFor(() => expect(document.querySelector('[data-starting-style]')).toBeNull());
-  await Promise.all(document.getAnimations().map((animation) => animation.finished));
+  await Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => {})));
   const result = await axe.run(dialog);
   expect(result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
   await userEvent.click(ok);
