@@ -103,6 +103,12 @@ public sealed class DirectoryQueryTests(PostgresFixture postgres) : IClassFixtur
         await d.SetRelationsAsync(w.M("nobody"), [new("position", intern.Id, true)], Ct);
         Assert.Equal([(w.Positions["salesManager"], w.Orgs["sales"], w.M("qianqi"), null), (w.Positions["ceo"], w.Orgs["hq"], w.M("zhangsan"), null)],
             Levels(await d.GetSuperiorsAsync(w.M("nobody"), cancellationToken: Ct)));
+        // 起点只认主岗位标记，不看行的先后：分两条语句先插非主岗位、后插主岗位，读回时非主岗位在前。
+        await d.SetRelationsAsync(w.M("nobody"), [], Ct);
+        foreach (var (position, primary) in new[] { (w.Positions["engineer"], false), (w.Positions["salesStaff"], true) })
+            await host.Exec("INSERT INTO plugin_qian_identity.member_relations (id, tenant_id, membership_id, target_type, position_id, is_primary) VALUES (@id, @tenant, @member, 'position', @position, @primary)",
+                ("id", Guid.CreateVersion7()), ("tenant", w.Tenant.Id.ToString("D")), ("member", w.M("nobody")), ("position", position), ("primary", primary));
+        Assert.Equal(w.Positions["salesStaff"], (await d.GetSuperiorsAsync(w.M("nobody"), cancellationToken: Ct)).StartPositionId);
     }
 
     [Fact]
