@@ -102,12 +102,13 @@ internal sealed partial class LifecycleController
         return await Approval(pluginId, version, cancellationToken).ConfigureAwait(false);
     }
 
-    // 开通与升级的第二道门（在权益之后、置 Provisioning / Upgrading 之前，与安装行同一把锁）：policy.required 的平台组件、没有声明反向权限的组件不经批准；
+    // 开通与升级的第二道门（在权益之后、置 Provisioning / Upgrading 之前，与安装行同一把锁）：policy.required 的平台组件、宿主预装的 system 级组件（R151 ③，
+    // 判据同授权）、没有声明反向权限的组件不经批准；
     // 否则目标版本声明的每一项都须已批准。目标版本没有自己的批准记录时沿用该租户对该组件最近一次的批准，所以升级只有新增项才须重批（D7），
     // 连续升级不因中间版本没有记录而受阻。S1 只在错误里列出缺失项，不合并批准记录。
     private async Task RequireApproval(LifecycleDbContext db, PluginRevisionRow target, CancellationToken ct)
     {
-        if (target.Required) return;
+        if (target.Required || SystemPreinstalled(target)) return;
         var declared = await Declared(target, ct).ConfigureAwait(false);
         if (declared.IsEmpty) return;
         var rows = await db.PermissionApprovals.AsNoTracking().Where(row => row.PluginId == target.PluginId).ToListAsync(ct).ConfigureAwait(false);

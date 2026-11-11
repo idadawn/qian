@@ -59,8 +59,8 @@ internal sealed partial class LifecycleController
                 if (active.Form == "service" && active.Health != DeploymentHealthStates.Healthy) throw Conflict("激活的 service 修订尚未健康。");
                 if (install is null)
                 {
-                    // policy.required 的平台组件恒视为已授权；其余组件须先经 qian.entitlement 授权。
-                    if (!active.Required) throw new QianErrorException(new QianError(LifecycleErrors.NotEntitled));
+                    // policy.required 的平台组件与宿主预装的 system 级组件恒视为已授权（组件规格 plugin-manifest 4.5，R151 ②）；其余组件须先经 qian.entitlement 授权。
+                    if (!active.Required && !SystemPreinstalled(active)) throw new QianErrorException(new QianError(LifecycleErrors.NotEntitled));
                     install = new TenantInstallRow { TenantId = tenantId, PluginId = pluginId };
                     db.Installs.Add(install);
                 }
@@ -88,6 +88,13 @@ internal sealed partial class LifecycleController
                 LifecyclePayload(pluginId, actor, ("version", plan.Version)), plan.Version!));
         }, cancellationToken).ConfigureAwait(false);
     }
+
+    // 宿主预装的 system 级组件：修订的组件、版本与制品摘要都等于 Registry 的预装绑定（随平台镜像发布的那份组件文件夹），且预装清单的 policy.tier 是 system。
+    // 只比对预装绑定，不读修订自己的清单：同摘要即同一份清单，修订表不必为此增加列。
+    private bool SystemPreinstalled(PluginRevisionRow revision) => context.Registry().GetInstalledComponents().Any(component =>
+        component.PluginId == revision.PluginId && component.Version == revision.Version && component.ArtifactDigest == revision.ArtifactDigest &&
+        component.Manifest.TryGetProperty("policy", out var policy) && policy.ValueKind == JsonValueKind.Object &&
+        policy.TryGetProperty("tier", out var tier) && tier.ValueKind == JsonValueKind.String && tier.GetString() == "system");
 
     public async ValueTask<TenantPluginInstallView> UpgradeAsync(string tenantId, string pluginId, string fromVersion, string toVersion, string actor, CancellationToken cancellationToken = default)
     {

@@ -23,10 +23,19 @@
     <ProjectReference Include="../../packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
     <ProjectReference Include="../../packages/Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
+    <!-- 同进程身份分支（S1-DEP-011，R150 ①）：身份服务、开通申请与网关原生审计的离线迁移。 -->
+    <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
+    <ProjectReference Include="../../packages/Qian.Tenancy.Signup/Qian.Tenancy.Signup.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit.Native/Qian.Audit.Native.csproj" />
     <PackageReference Include="Kun.Security" />
     <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
   <ItemGroup>
+    <!-- 同进程形状的集成测试直接驱动迁移 Job 与引导 Job 的入口（PlatformMigrations / PlatformOperatorBootstrap）。 -->
+    <InternalsVisibleTo Include="Qian.Sample.Crm.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="platform.overlay.yml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="identity.overlay.yml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

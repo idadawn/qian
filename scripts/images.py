@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """profile 镜像的统一构建入口与供应链门禁（S1-DEP-003 / R106）。
 
-  python3 scripts/images.py build --kind jit|aot --project <csproj> --assembly <程序集名> --tag <registry/名称:标签>
+  python3 scripts/images.py build --kind jit|aot --project <csproj> --assembly <程序集名> --tag <registry/名称:标签> [--web <目录>]
   python3 scripts/images.py selfcheck --tools <目录> [--out TestResults/images] [--fail-on high]
 
 build：按 deploy/images/<kind>.Dockerfile 构建并推送，输出按 digest 的引用与构建证据（源码 SHA、KunVersion、
 profile 与组件目录的 git 树修订）。推到哪个 registry 由 --tag 决定；向外部 registry 发布归 S1-DEP-008 / S1-DEP-005。
+--web 给出前端构建产物目录（S1-DEP-011），以命名构建上下文 web 送入镜像的 /app/web，证据里记该目录的 D4 摘要；
+不给时送一个空目录（总是显式给出，避免 BuildKit 把空阶段与上一次的前端层当成同一缓存）。
 
 selfcheck：CI 自检（.github/workflows/images.yml）。在本机起临时 registry，构建 JIT 与 AOT 两个自检镜像，依次跑：
   1. Syft 按 digest 生成 SBOM，Grype 扫描；达到 --fail-on 的漏洞即失败，豁免写在
@@ -26,6 +28,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import datetime as dt
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -240,18 +243,31 @@ def push_digest(tag, log):
     raise StepFailed(f"推送后取不到 {tag} 的 digest。")
 
 
-def docker_build(kind, project, assembly, tag, evidence, role, log=None):
-    command = ["docker", "build", "-f", ROOT / "deploy" / "images" / f"{kind}.Dockerfile", "-t", tag,
-               "--build-arg", f"PROJECT={project}", "--build-arg", f"ASSEMBLY={assembly}",
-               "--build-arg", f"SOURCE_SHA={evidence['sourceSha']}", "--build-arg", f"KUN_VERSION={evidence['kunVersion']}",
-               "--build-arg", f"PROFILE_REVISION={evidence['profileRevision']}",
-               "--build-arg", f"PLUGINS_REVISION={evidence['pluginsRevision']}", "--build-arg", f"IMAGE_ROLE={role}", "."]
-    run(command, env={"DOCKER_BUILDKIT": "1"}, log=log)
+def web_digest(directory):
+    """前端产物目录的 D4 摘要：按序数路径排序的「路径\t字节数\tSHA-256」清单再取 SHA-256（与组件制品同一算法）。"""
+    files = sorted((path.relative_to(directory).as_posix(), path) for path in directory.rglob("*") if path.is_file())
+    inventory = "".join(f"{name}\t{path.stat().st_size}\t{hashlib.sha256(path.read_bytes()).hexdigest()}\n"
+                        for name, path in sorted(files, key=lambda item: item[0].encode("utf-16-be")))
+    return "sha256:" + hashlib.sha256(inventory.encode("utf-8")).hexdigest()
 
 
-def build_image(kind, project, assembly, tag, evidence, role, log=None):
+def docker_build(kind, project, assembly, tag, evidence, role, log=None, web=None):
+    with tempfile.TemporaryDirectory(prefix="qian-web-") as empty:
+        context = Path(web).resolve() if web else Path(empty)
+        if not context.is_dir():
+            raise StepFailed(f"前端产物目录不存在：{context}")
+        command = ["docker", "build", "-f", ROOT / "deploy" / "images" / f"{kind}.Dockerfile", "-t", tag,
+                   "--build-context", f"web={context}",
+                   "--build-arg", f"PROJECT={project}", "--build-arg", f"ASSEMBLY={assembly}",
+                   "--build-arg", f"SOURCE_SHA={evidence['sourceSha']}", "--build-arg", f"KUN_VERSION={evidence['kunVersion']}",
+                   "--build-arg", f"PROFILE_REVISION={evidence['profileRevision']}",
+                   "--build-arg", f"PLUGINS_REVISION={evidence['pluginsRevision']}", "--build-arg", f"IMAGE_ROLE={role}", "."]
+        run(command, env={"DOCKER_BUILDKIT": "1"}, log=log)
+
+
+def build_image(kind, project, assembly, tag, evidence, role, log=None, web=None):
     """统一构建入口：按模板构建、推送，返回按 digest 的引用。"""
-    docker_build(kind, project, assembly, tag, evidence, role, log)
+    docker_build(kind, project, assembly, tag, evidence, role, log, web)
     return push_digest(tag, log)
 
 
@@ -384,7 +400,9 @@ def build_tampered(base_ref, tag, log):
 
 def cmd_build(args):
     evidence = build_evidence()
-    ref, digest = build_image(args.kind, args.project, args.assembly, args.tag, evidence, args.role)
+    if args.web:
+        evidence["webDigest"] = web_digest(Path(args.web).resolve())
+    ref, digest = build_image(args.kind, args.project, args.assembly, args.tag, evidence, args.role, web=args.web)
     print(json.dumps({"ref": ref, "digest": digest, "build": evidence}, ensure_ascii=False, indent=2))
     return 0
 
@@ -514,6 +532,7 @@ def main():
     build.add_argument("--assembly", required=True, help="程序集名（apphost 或原生可执行文件名）")
     build.add_argument("--tag", required=True, help="registry/名称:标签")
     build.add_argument("--role", choices=("product", "selfcheck"), default="product")
+    build.add_argument("--web", help="前端构建产物目录，送入镜像的 /app/web（S1-DEP-011）")
     check = sub.add_parser("selfcheck", help="CI 自检：构建自检镜像并跑全部供应链门禁与反例")
     check.add_argument("--tools", type=Path, default=Path(os.environ.get("QIAN_IMAGE_TOOLS", "")), help="syft / grype / cosign 所在目录")
     check.add_argument("--out", type=Path, default=ROOT / "TestResults" / "images")

@@ -33,6 +33,36 @@ internal sealed class PostgresPlatformRoleStore(IDataService data, ITenantContex
         }, ct);
     }
 
+    // 库里是否已有平台超管授予（不论有效期）：引导前的只读预检，授予时同一把锁里还会再判一次。
+    internal async Task<bool> AnySuperadminAsync(CancellationToken ct)
+    {
+        using var neutral = tenant.BeginScope(null);
+        await using var session = await data.OpenAsync<PlatformAuthzDbContext>(ct).ConfigureAwait(false);
+        var db = session.Context;
+        await db.Database.OpenConnectionAsync(ct).ConfigureAwait(false);
+        await AuthzPlatformAccess.ValidateConnectionAsync(db.Database.GetDbConnection(), platformRole, ct).ConfigureAwait(false);
+        return await (from assignment in db.RoleAssignments.AsNoTracking()
+                      join role in db.Roles.AsNoTracking() on assignment.RoleId equals role.Id
+                      where role.Code == PlatformRoles.Superadmin
+                      select assignment.Id).AnyAsync(ct).ConfigureAwait(false);
+    }
+
+    // 首个平台超管的一次性引导（S1-DEP-011，R150 ③）：与授予同一把平台角色锁、同一个事务里先确认库里没有任何平台超管授予（不论有效期），再授予。
+    // 已有任何授予即不改动、返回 false，所以引导入口不能拿来给第二个人提权；之后的授予与撤销仍走平台运营流程。
+    internal async Task<bool> AssignFirstSuperadminAsync(string userId, string actor, CancellationToken ct)
+    {
+        Identifier(userId); var assigned = false;
+        await Write(actor, async db =>
+        {
+            var role = await db.Roles.SingleOrDefaultAsync(row => row.Code == PlatformRoles.Superadmin, ct).ConfigureAwait(false);
+            if (role is not null && await db.RoleAssignments.AnyAsync(row => row.RoleId == role.Id, ct).ConfigureAwait(false)) return;
+            if (role is null) db.Roles.Add(role = new AuthzRoleRow { TenantId = null, Code = PlatformRoles.Superadmin, Builtin = true });
+            db.RoleAssignments.Add(new RoleAssignmentRow { TenantId = null, RoleId = role.Id, SubjectType = "user", SubjectId = userId, AssignedBy = actor });
+            assigned = true;
+        }, ct).ConfigureAwait(false);
+        return assigned;
+    }
+
     internal async Task<bool> RevokeSuperadminAsync(string userId, string actor, CancellationToken ct)
     {
         Identifier(userId); var removed = false;

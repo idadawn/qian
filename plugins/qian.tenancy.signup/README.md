@@ -9,4 +9,4 @@
 - `metadata/permissions.json`：资源 `application` 的 read / approve / reject；approve 风险 critical、reject high，重试按 approve 授权。
 - `ui/manifest.json`：运营页的 MF2 远程（`/remotes/qian.tenancy.signup/mf-manifest.json`，暴露 `ApplicationsPage`，路由 `/tenant-applications`，导航「开通申请」）。申请人公开页（`/signup`、`/signup/status`）是同一 UI 包构建的静态页，由申请人接口所在宿主经 `UseQianTenancySignupPages` 托管，不在这份清单里。
 
-装进 identity profile（`qian.bundle.identity-server`）：申请人接口必须在身份服务的公开入口上，建账号与开通都要进程内调用身份与租户组件的端口。清单保留 `x-skeleton`：真实 `qian add` 安装验收尚未完成。
+装进 identity profile（`qian.bundle.identity-server`）：申请人接口必须在身份服务的公开入口上，建账号与开通都要进程内调用身份与租户组件的端口。staging 首次部署（S1-DEP-011）由平台宿主的同进程身份分支装配（内置扩展 overlay 加 `tenancy.signup` 条目，运营接口挂运营端点组）。清单已去掉 `x-skeleton`（R150 ①）：启动证据是平台宿主的装配与同进程集成测试，`qian add` 独立安装验收尚未完成。

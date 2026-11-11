@@ -25,7 +25,8 @@ namespace Qian.Platform.Host;
 public static class PlatformHost
 {
     /// <summary>
-    /// 宿主入口：<c>--migrate-only</c> 只执行包内迁移后退出，否则装配、监听直到停机。装配、迁移或启动失败时把异常写到标准错误并返回 1，不让异常逃出 Main：
+    /// 宿主入口：<c>--migrate-only</c> 只执行迁移后退出，<c>--bootstrap-operator</c> 只引导首个平台运营账号后退出，<c>--install-system-revisions</c> 只安装并激活系统组件修订后退出，
+    /// 否则装配、监听直到停机。装配、迁移或启动失败时把异常写到标准错误并返回 1，不让异常逃出 Main：
     /// 容器里宿主是 PID 1，未处理异常走 abort，内核对 PID 1 忽略这个信号，进程不退出、占满一个 CPU（镜像实测）；返回退出码，编排器才看得到失败并按策略重启。
     /// </summary>
     public static async Task<int> RunAsync(string[] args, Action<PlatformHostComposition>? extend = null, Action<WebApplicationBuilder>? configure = null)
@@ -36,8 +37,20 @@ public static class PlatformHost
             await using var app = Build(args, extend, configure);
             if (QianDataMigrationExtensions.IsMigrateOnly(args))
             {
-                // K8s 迁移 Job 先行：只在 advisory lock 下执行有包内迁移的上下文，不启动宿主；在线副本启动时只校验。
-                await app.Services.GetRequiredService<IDataMigrator>().MigrateAsync().ConfigureAwait(false);
+                // K8s 迁移 Job 先行：配置了管理员连接时先做离线 DDL 与平台登录授权，再在 advisory lock 下执行包内迁移，最后授权给应用登录；不启动宿主，在线副本启动时只校验。
+                await PlatformMigrations.RunAsync(app).ConfigureAwait(false);
+                return 0;
+            }
+            if (PlatformOperatorBootstrap.IsRequested(args))
+            {
+                // 首个平台运营账号的一次性引导 Job（R150 ③）：挂载插件树、建平台身份并授平台超管，不监听 HTTP。
+                await PlatformOperatorBootstrap.RunAsync(app).ConfigureAwait(false);
+                return 0;
+            }
+            if (PlatformSystemRevisions.IsRequested(args))
+            {
+                // 系统组件修订的安装 Job（R151 ①）：每次部署在迁移之后运行，按签名清单幂等地安装并激活与镜像一致的预装组件修订，不监听 HTTP。
+                await PlatformSystemRevisions.RunAsync(app).ConfigureAwait(false);
                 return 0;
             }
             // 先停止 HTTP，再逆序释放插件树（运行时是托管服务，随宿主停止释放）；DI 容器最后释放。
@@ -72,15 +85,22 @@ public static class PlatformHost
         }
     }
 
-    /// <summary>配置源与网关宿主相同：<c>appsettings.json</c>（及环境名文件）→ <c>QIAN_</c> 前缀环境变量 → 命令行；内容根是程序目录。</summary>
+    // 不带值的 Job 开关：迁移、首个平台运营账号的引导、系统组件修订的安装。
+    private static readonly string[] JobSwitches = ["--migrate-only", PlatformOperatorBootstrap.Argument, PlatformSystemRevisions.Argument];
+
+    /// <summary>
+    /// 配置源与网关宿主相同：<c>appsettings.json</c>（及环境名文件）→ <c>QIAN_</c> 前缀环境变量 → 命令行；内容根是程序目录。
+    /// Job 开关（<c>--migrate-only</c>、<c>--bootstrap-operator</c>、<c>--install-system-revisions</c>）不带值，交给命令行配置之前先去掉——否则它们会把紧跟的参数（如 <c>--environment=…</c>）吞成自己的值。
+    /// </summary>
     public static WebApplicationBuilder CreateBuilder(string[] args)
     {
         ArgumentNullException.ThrowIfNull(args);
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = AppContext.BaseDirectory });
+        var settings = args.Where(arg => !JobSwitches.Contains(arg, StringComparer.Ordinal)).ToArray();
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = settings, ContentRootPath = AppContext.BaseDirectory });
         builder.Configuration.Sources.Clear();
         builder.Configuration.SetBasePath(AppContext.BaseDirectory).AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .AddJsonFile("appsettings." + builder.Environment.EnvironmentName + ".json", optional: true, reloadOnChange: false)
-            .AddEnvironmentVariables("QIAN_").AddCommandLine(args.Where(arg => arg != "--migrate-only").ToArray());
+            .AddEnvironmentVariables("QIAN_").AddCommandLine(settings);
         return builder;
     }
 

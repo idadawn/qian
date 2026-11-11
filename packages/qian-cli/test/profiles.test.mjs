@@ -41,8 +41,9 @@ test('共用分层 TCK 并输出逐字段一致性报告',()=>{
  if(process.env.QIAN_PROFILE_REPORT){mkdirSync(path.dirname(process.env.QIAN_PROFILE_REPORT),{recursive:true});writeFileSync(process.env.QIAN_PROFILE_REPORT,JSON.stringify(report,null,2));}
 });
 test('交付的五个 profile 具有正确业务边界及骨架警告',()=>{
- // [条目数, 骨架警告数]：qian.data / qian.events / qian.config / qian.files / qian.identity.client 经真实安装后不再是骨架；identity 含开通申请组件 qian.tenancy.signup（S1-TEN-019，骨架）。
- for(const[profile,[count,skeletons]]of Object.entries({platform:[21,11],gateway:[6,5],identity:[9,5],standalone:[3,0],minimal:[0,0]})){
+ // [条目数, 骨架警告数]：qian.data / qian.events / qian.config / qian.files / qian.identity.client 经真实安装后不再是骨架；identity 含开通申请组件 qian.tenancy.signup（S1-TEN-019），
+ // 它与 qian.identity.server 以平台宿主同进程身份分支为启动证据去标（R150 ①），identity 的骨架警告 5→3。
+ for(const[profile,[count,skeletons]]of Object.entries({platform:[21,11],gateway:[6,5],identity:[9,3],standalone:[3,0],minimal:[0,0]})){
   const result=loadProfile({workingDirectory:root,profile,includeHomePatch:false});
   assert.ok(result.isValid,JSON.stringify(result));assert.equal(result.snapshot.entries.length,count);assert.equal(result.diagnostics.filter(d=>d.severity==='warning').length,skeletons);
   if(profile!=='platform')assert.ok(!result.snapshot.entries.some(e=>/^qian\.(registry|lifecycle|capabilities)@/.test(e.plugin)));

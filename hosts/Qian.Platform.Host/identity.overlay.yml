@@ -1,0 +1,13 @@
+# 同进程身份分支的内置扩展 overlay（S1-DEP-011，R150 ①）。只在 Identity:InProcess=true 时由 PlatformIdentity.Extend 加载：在宿主 overlay 之后、环境 overlay 之前应用。
+# 1. platform profile 的 identity 条目由 RP 客户端换成身份服务本身：同进程时平台宿主不需要依赖方客户端（它只认网关 S2S），身份服务提供账号、成员开户与用户计数端口，
+#    开通编排第 05 步与授权变更的身份修订递增都经它进行。宿主 overlay 把 identity 关掉了，这里显式启用。
+# 2. 加开通申请组件（identity profile 的形状）：申请人接口与公开页走身份分支，运营接口进平台宿主的运营端点组。
+# issuer 是占位值：环境 overlay 必须给出本环境的规范 HTTPS 身份发行方地址。
+- id: identity
+  plugin: qian.identity.server
+  disabled: false
+  config:
+    issuer: https://id.example.internal/
+- id: tenancy.signup
+  plugin: qian.tenancy.signup
+  config: {}

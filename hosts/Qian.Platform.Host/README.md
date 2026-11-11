@@ -1,6 +1,6 @@
 # platform 生产宿主
 
-入口是本目录 `Program.cs`，可执行项目为 `Qian.Platform.Host.csproj`，是 platform profile 的生产启动项目（S1-DEP-009），随 qian-platform 镜像发布。它按仓库交付的 platform profile 装配平台插件树，只认网关签发的 S2S，承载面向用户的平台表面（能力目录、导航、外壳目录、平台控制台目录、有效权限）与平台运营接口（租户运营）。组件的契约与安全行为以各组件的主文档为准，本宿主只做组合。
+入口是本目录 `Program.cs`，可执行项目为 `Qian.Platform.Host.csproj`，是 platform profile 的生产启动项目（S1-DEP-009），随 qian-platform 镜像发布。它按仓库交付的 platform profile 装配平台插件树，只认网关签发的 S2S，承载面向用户的平台表面（能力目录、导航、外壳目录、平台控制台目录、有效权限）与平台运营接口（租户运营）。组件的契约与安全行为以各组件的主文档为准，本宿主只做组合。staging 首次部署（S1-DEP-011，R143 / R150）用同一宿主并入身份分支：配置 `Identity:InProcess=true` 后，身份服务与开通申请组件进同一插件树，见下文「同进程身份分支」；不配置时宿主保持 S1-DEP-009 的形状。
 
 ## 装配
 
@@ -38,6 +38,17 @@ profile 的合成顺序是：platform profile 的组合包（base / shell / mode
 
 集成测试 `PlatformHostTests` 就是这样把参考应用作为 module 应用并进插件树的。
 
+### 同进程身份分支（S1-DEP-011）
+
+`Program.cs` 把 [`PlatformIdentity`](PlatformIdentity.cs) 的 `Extend` 与 `Configure` 交给 `RunAsync`。两者只在 `Identity:InProcess=true` 时生效（R150 ①）：
+
+- `Extend`：经 `AddComponent` 登记 `qian.identity.server` 与 `qian.tenancy.signup` 的目录项与数据上下文；内置扩展 overlay [`identity.overlay.yml`](identity.overlay.yml) 把 `identity` 条目由 `qian.identity.client` 换成 `qian.identity.server`、启用它，并加 `tenancy.signup` 条目，issuer 由环境 overlay 给；身份事件并进同一次 `AddEvents` / `AddMediator`；开通申请的运营接口经 `AddOperations` 挂在 `/api/signup/applications`、`/api/signup/meta` 两个运营前缀下（受众 `qian-operations`）。
+- `Configure`：身份分支以 `IStartupFilter` 排在平台管线之前，按路径接手 `/api/identity/**`、`/connect/**`、`/.well-known/**`、认证页族 `/login`、申请人接口（`/api/signup/verifications`、`/session`、`/code-availability`、`/me/**`），给出公开页构建产物时还有 `/signup/**`。这些请求不经平台管线（网关 S2S、租户 scope、授权 PEP），各自用身份服务与开通申请组件的认证。目录接口 `/api/directory/**` 不在分支里，由网关以 S2S 转来、走平台管线。
+
+同进程后，经本宿主做的授权变更由 Authz 经进程内的身份账号端口递增该成员在租户内的身份修订，并抬高 PEP 的修订下限（S1-DEC-027 / S1-AZ-009）：旧令牌经网关调平台表面一律 401，网关换令牌后恢复。本宿主不登记身份侧的授权事件订阅，避免双递增。
+
+身份分支要求 HTTPS issuer 与 RSA 签名、加密证书（含私钥）。`Identity:AllowLoopbackHttp` 只在 Development 且 issuer 是回环地址时生效，只给集成测试用。TLS 在反向代理上终止时（staging 是边缘 hub → frp → Traefik），配置 `Identity:TrustedProxyNetworks` 与 `Identity:ForwardLimit`，分支从可信代理的 `X-Forwarded-Proto` 恢复 HTTPS、从 `X-Forwarded-For` 恢复客户端地址；不配置时不采信任何转发头。转发头只在身份分支里处理，平台管线只认网关 S2S，不需要它们。
+
 ## 认证
 
 只装网关 S2S 的两个 JWT 方案，共用网关的签发方与 JWKS（`S2S:JwksUri`，网关的 `/.well-known/jwks.json`，未知 kid 时刷新）：
@@ -63,8 +74,18 @@ profile 的合成顺序是：platform profile 的组合包（base / shell / mode
 | `ConnectionFiles:PlatformAuthz` / `ConnectionFiles:PlatformAudit` | authz 条目配置了 `platformRole`、audit 条目配置了 `chain.platformRole` 时，两个平台登录的连接串文件。 |
 | `ConnectionFiles:Migrations` | 迁移属主的连接串文件，只在 `--migrate-only` 时读。 |
 | `ConnectionFiles:Redis` / `ConnectionFiles:EventsBroker` | events 条目用 Redis 领取 Outbox、配置了 broker 时才读。platform profile 缺省两者都要：base 组合包给 events 配了 `outbox.lock: redis` 与 `broker`，环境 overlay 改成 `skip-locked`、去掉 broker 时才不需要。 |
-| `Secrets:MountRoot`、`Trust:PlatformKeys` | 平台信任根公钥的 Secret 挂载点与引用（Lifecycle 核验系统制品签名时解析，每次解析写平台审计链）。 |
+| `Secrets:MountRoot`、`Trust:PlatformKeys` | 平台信任根公钥的 Secret 挂载点与引用（Lifecycle 核验系统制品签名时解析，每次解析写平台审计链）。宿主固定把 `secretRef://platform/trust/platform` 绑到 `<MountRoot>/qian/trust-platform/public-key`，配置写 `Trust:PlatformKeys:0:PublicKey: secretRef://platform/trust/platform`。 |
 | `Profile:Patches`、`Profile:ComponentDirectories`、`Profile:HostOverlay` | 环境 overlay、额外组件目录、宿主 overlay 路径（缺省为程序目录下的 `platform.overlay.yml`）。 |
+| `ConnectionFiles:MigrationAdmin`、`Migrations:AppRole`、`Migrations:AuditWriterRole`、`Migrations:GatewayAudit:{TenantRole,PlatformRole,FunctionOwner}` | 只在 `--migrate-only` 时读：数据库管理员连接（离线 DDL 与授权，见下文「Job」）、应用登录的角色名、审计同事务函数属主（独立 NOLOGIN 角色）、网关原生审计的三个角色。不给 `MigrationAdmin` 时只执行包内迁移。 |
+| `Identity:InProcess` | 为 `true` 时并入身份分支（S1-DEP-011）。 |
+| `Identity:PagesRoot`、`Identity:SignupPagesRoot` | 认证页族与开通申请公开页的构建产物目录（必须带 `index.html`；镜像里在 `/app/web` 下）。认证页族必填，公开页可省。 |
+| `Identity:SigningCertificate` / `Identity:SigningKey`、`Identity:EncryptionCertificate` / `Identity:EncryptionKey` | 身份服务签名与加密证书、私钥的 PEM Secret 文件（RSA，绝对路径）。 |
+| `Identity:Clients:N:{ClientId,SecretFile,RedirectUri,Resource,DisplayName,Scopes}` | 官方客户端（网关 BFF）：机密客户端，授权码 + PKCE 与 refresh，密钥只从 Secret 文件读，回调与 resource 精确登记。 |
+| `Identity:DataProtectionKeysDirectory` | 账号 Cookie 与防伪令牌的数据保护密钥目录。只读根文件系统下必须给出可写目录；多副本时须共享。 |
+| `Identity:TrustedProxyNetworks`、`Identity:ForwardLimit` | 身份分支信任的反向代理网段（CIDR 数组，前缀长度不能为 0）与从右往左回溯的跳数上限（1–5，缺省 1；每回溯一跳，上一跳都必须在这些网段里）。恢复出的 scheme 与客户端地址供 OIDC 的 HTTPS 要求、Secure Cookie、登录审计、会话与申请人限流使用。staging 的取值与理由见[运维手册](../../docs/ops/staging-first-deploy.md)。 |
+| `Identity:Overlay` | 替换内置扩展 overlay 的路径（缺省为程序目录下的 `identity.overlay.yml`）。 |
+| `Bootstrap:Username`、`Bootstrap:DisplayName`、`Bootstrap:PasswordFile` | 只在 `--bootstrap-operator` 时读：首个平台运营账号的用户名、显示名与初始密码 Secret 文件。 |
+| `SystemRevisions:SignaturesFile` | 只在 `--install-system-revisions` 时读：系统组件修订的签名清单（ConfigMap 挂载）。 |
 
 连接串只从 Secret 文件读，每次建上下文时现读，便于轮换。角色名（authz 的 `platformRole`、audit 的 `chain.platformRole`）与 events 的 broker、Outbox 领取方式写在环境 overlay，例如：
 
@@ -79,15 +100,25 @@ profile 的合成顺序是：platform profile 的组合包（base / shell / mode
 dotnet run --project hosts/Qian.Platform.Host -c Release -- --urls http://0.0.0.0:8080 --patch /etc/qian/platform/environment.yml
 ```
 
-数据库迁移是独立的 Job，用迁移属主的登录执行包内迁移后退出：
+### Job
+
+三个 Job 与在线副本用同一镜像、同一份配置与 Secret，只多一个开关；跑完退出（成功 0，失败 1），不监听 HTTP。部署顺序是迁移 → 系统组件修订 → （首次）引导首个平台运营账号 → 在线副本。
 
 ```bash
 dotnet run --project hosts/Qian.Platform.Host -c Release -- --migrate-only --patch /etc/qian/platform/environment.yml
+dotnet run --project hosts/Qian.Platform.Host -c Release -- --install-system-revisions --patch /etc/qian/platform/environment.yml
+dotnet run --project hosts/Qian.Platform.Host -c Release -- --bootstrap-operator --patch /etc/qian/platform/environment.yml
 ```
+
+- `--migrate-only`（[`PlatformMigrations`](PlatformMigrations.cs)）：三步，都可重复执行。① 配置了 `ConnectionFiles:MigrationAdmin` 时用管理员连接做离线 DDL：没有包内迁移的上下文（Tenancy、Authz、Audit、Registry）按 EF 模型建 schema 与表（含 RLS），schema 已在时只核对表都在；再执行两个平台登录与审计同事务函数的授权脚本，配置了网关审计角色时执行网关原生审计的离线迁移（`NativeAuditStorage`）。审计函数的属主必须是没有任何成员关系的 NOLOGIN 角色，改函数属主只能由管理员做，所以这一步不交给迁移属主。审计租户守卫带原生审计标记后不再重放 Audit 的平台访问脚本（否则原生迁移判为漂移）。② 迁移属主执行包内迁移（Capabilities、Lifecycle、身份、开通申请等）。③ 管理员把全部业务 schema 的表与序列授给应用登录，迁移历史表只读。离线 DDL 不做跨版本的表结构升级：schema 已在而缺表时拒绝执行，正式迁移链归 S1-DEP-005。
+- `--install-system-revisions`（[`PlatformSystemRevisions`](PlatformSystemRevisions.cs)，R151 ①）：开户编排第 03 步把宿主预装的 system 级组件逐个开通进租户，Lifecycle 要求每个组件有已激活、经信任根验签、摘要等于预装组件文件夹的修订。这个 Job 按签名清单（[`scripts/sign-system-revisions.py`](../../scripts/sign-system-revisions.py) 在构建机上对同一镜像生成，私钥不进集群）幂等地安装并激活这些修订：同摘要已激活则不动，新摘要安装后激活；清单缺任何一项即失败并列出缺项。安装与激活写平台审计链。
+- `--bootstrap-operator`（[`PlatformOperatorBootstrap`](PlatformOperatorBootstrap.cs)，R150 ③）：要求身份分支在进程内。库里已有平台超管时拒绝执行（退出码 1），不能拿它二次提权；否则经身份账号端口建平台身份（要求首登改密），在平台角色锁里授平台超管，写一条平台审计链记录。同名平台身份已存在（上次在授权之前失败）时沿用、不重置密码。跑完删除初始密码的 Secret。
+
+三个开关都不带值，宿主把它们从命令行配置里去掉再交给配置源，紧跟其后的参数（如 `--environment=…`）不会被吞掉。
 
 装配、迁移或启动失败时，异常写到标准错误，进程以退出码 1 结束。入口不让异常逃出 Main：容器里宿主是 PID 1，未处理异常走 abort 时内核忽略这个信号，进程不退出、占满一个 CPU。
 
-在线副本启动时只校验（受限角色、模型、没有待执行的迁移），不建表、不迁移。目前随包带迁移的只有 Capabilities 与 Lifecycle；Tenancy、Authz、Audit、Registry 的建表、RLS 与两个平台登录的授权脚本（`AuthzPlatformAccess` / `AuditPlatformAccess` / `AuditTransactionAccess`）还要由部署侧的离线迁移执行，见下文「已知限制」。
+在线副本启动时只校验（受限角色、模型、没有待执行的迁移），不建表、不迁移。
 
 ## 端点
 
@@ -98,6 +129,8 @@ dotnet run --project hosts/Qian.Platform.Host -c Release -- --migrate-only --pat
 | `GET /api/capabilities/console` | `qian-platform` | 平台控制台目录（`MapQianPlatformConsole`），只给平台身份。 |
 | `/api/authz/**` | `qian-platform` | 有效权限（`MapQianAuthz`）。 |
 | `/api/tenancy/**` | `qian-operations` | 租户运营接口（`MapQianTenancy`，在运营端点组里），平台超管显式旁路，放行写平台审计链。 |
+| `/api/signup/applications/**`、`/api/signup/meta/**` | `qian-operations` | 开通申请的运营接口（身份分支并入时，`MapQianTenancySignupOperations`），同样经超管旁路、写平台审计链。 |
+| `/api/identity/**`、`/connect/**`、`/.well-known/**`、`/login`、申请人接口、`/signup/**` | 身份分支自己的认证 | 身份分支并入时：OIDC 协议面、账号接口、认证页族、申请人接口与公开页（见上文）。 |
 
 表里的受众是对端点说的：路径的大小写与结尾斜杠变体路由到同一个端点，受众也相同。
 
@@ -114,13 +147,15 @@ dotnet run --project hosts/Qian.Platform.Host -c Release -- --migrate-only --pat
 | 验签 | 测试直接给签名公钥 | 取网关公开的 JWKS，钥轮换时按 kid 刷新 |
 | 身份适配器 | 平台表面验签后把快照交给参考应用的适配器（依赖 HttpContextAccessor 的静态 AsyncLocal） | 根容器里只有一个适配器，平台表面、运营接口与 module 应用共用 |
 | 数据库登录 | 测试里的应用角色 | 应用登录与两个平台登录分别绑定，连接串只从 Secret 文件读，迁移属主只给迁移 Job |
-| 身份服务 | 同进程（内置账号模型） | 不在进程内（S1-DEP-011 并入），见下文 |
+| 身份服务 | 同进程（内置账号模型） | `Identity:InProcess=true` 时同进程（S1-DEP-011），否则不在进程内 |
 | 开发期内容 | 开发路由、种子与开发期发件箱 | 没有 |
 
 ## 已知限制与接续
 
-- 身份服务不在本宿主进程内：经本宿主自己的接口做的授权变更不会递增身份修订（身份端口只有同进程实现），旧令牌在会话刷新前仍有效；开通申请的运营接口（必需身份账号端口）也还没挂。两者都随 S1-DEP-011 把身份分支并入本宿主解决。集成测试里的授权变更由身份侧（参考宿主）执行，本宿主的 PEP 每次判定读库比对修订下限。
-- Tenancy、Authz、Audit、Registry 没有随包迁移，部署侧的离线迁移与授权脚本还没有交付（S1-DEP-011 的 staging 部署一并处理）。
-- 网关进程托管外壳与远程制品（`UseQianShell` / `MapQianShell` / `MapQianShellBootstrap`）归 S1-DEP-011；镜像上的实测与供应链检查归 S1-DEP-008。
+- 不并入身份分支时，经本宿主自己的接口做的授权变更不会递增身份修订（身份端口只有同进程实现），旧令牌在会话刷新前仍有效，开通申请的运营接口也不挂。同进程形状（S1-DEP-011）的集成测试 `PlatformIdentityHostTests` 覆盖递增与 401。
+- Tenancy、Authz、Audit、Registry 没有随包迁移，由迁移 Job 的离线 DDL 首装；跨版本的表结构升级归 S1-DEP-005 的正式迁移链。
+- 系统组件修订的签名用 staging 专用钥（R151 ①），正式的发布链签名与信任根轮换归 S1-DEP-005。
+- 数据保护密钥在 staging 放在 Pod 的临时卷：重启即需重新登录；多副本前须改为共享目录。
+- 镜像上的实测与供应链检查归 S1-DEP-008。
 - 没有装配 OpenAPI 与 proto 的兼容检查器：组件升级时的契约兼容判定会拒绝执行（fail-closed），在镜像带上检查器之前不能在本宿主上做跨版本升级。
 - 平台组件以平台镜像预装为安装路径（R144 ③）；`qian add` 独立安装 tenancy / authz / audit 另见 S1-RT-040。

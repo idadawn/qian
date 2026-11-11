@@ -76,9 +76,19 @@ builder.Services.AddQianIdentityClient(new IdentityClientOptions
     AllowedReturnPaths = ["/"], DefaultReturnPath = "/", SessionKeyPrefix = "qian:gateway:sessions:"
 });
 builder.Services.AddQianGateway(gateway, IdentityClientDefaults.SessionScheme);
+// 外壳与已部署组件的远程制品（S1-DEP-011，R144 ②）：shell 组合包的静态制品随网关镜像发布，运行时配置由 ConfigMap 挂成 /app-config.json；没有给出外壳目录时不托管。
+var shell = builder.Configuration["Shell:Root"] is { Length: > 0 } shellRoot ? new ShellStaticOptions
+{
+    Root = shellRoot, ConfigFile = builder.Configuration["Shell:ConfigFile"] is { Length: > 0 } shellConfig ? shellConfig : null,
+    Remotes = builder.Configuration.GetSection("Shell:Remotes").GetChildren().Where(item => !string.IsNullOrEmpty(item.Value))
+        .ToDictionary(item => item.Key, item => item.Value!, StringComparer.Ordinal)
+} : null;
 await using var app = builder.Build();
-app.UseForwardedHeaders(); app.UseRouting(); app.UseQianIdentityClient(); app.UseQianGateway();
+app.UseForwardedHeaders();
+if (shell is not null) app.UseQianShell(shell);
+app.UseRouting(); app.UseQianIdentityClient(); app.UseQianGateway();
 app.MapQianIdentityClient(); app.MapQianGateway();
+if (shell is not null) { app.MapQianShellBootstrap(); app.MapQianShell(shell); }
 await using var loader = new PluginLoader(app.Services);
 observer.Source = () => loader.GetContext("config", ScopeKey.Global);
 using var dataConfig = JsonDocument.Parse("""{"connections":["audit_tenant","audit_platform"]}""");
@@ -92,15 +102,18 @@ using var auditConfig = JsonDocument.Parse(new JsonObject
     ["tenantRole"] = auditRoles.TenantLogin, ["functionOwner"] = auditRoles.FunctionOwner,
     ["platformRole"] = auditRoles.PlatformLogin, ["maxAttempts"] = 6
 }.ToJsonString());
-using var apolloConfig = JsonDocument.Parse(new JsonObject
+// 配置组件跟随配置源：Apollo（缺省）或只读宿主配置根的 qian.config（staging 过渡形状，R150 ①）。
+using var configConfig = JsonDocument.Parse(configurationOptions.UseApollo ? new JsonObject
 {
     ["appId"] = Required("Apollo:AppId"), ["env"] = Required("Apollo:Env"),
     ["meta"] = Required("Apollo:ConfigServer:0"),
     ["namespaces"] = new JsonArray(builder.Configuration.GetSection("Apollo:Namespaces").GetChildren().Select(item => (JsonNode?)JsonValue.Create(item.Value)).ToArray())
-}.ToJsonString());
+}.ToJsonString() : "{}");
 await loader.MountAsync([
     Definition("data", "qian.data.native", new NativeDataComponent(), dataConfig.RootElement, NativeDataDefinition.Key),
-    Definition("config", "qian.config.apollo", new ApolloConfigurationPlugin(), apolloConfig.RootElement, ConfigDefinition.Key),
+    configurationOptions.UseApollo
+        ? Definition("config", "qian.config.apollo", new ApolloConfigurationPlugin(), configConfig.RootElement, ConfigDefinition.Key)
+        : Definition("config", "qian.config", new ConfigurationPlugin(), configConfig.RootElement, ConfigDefinition.Key),
     Definition("audit", "qian.audit.native", new NativeAuditComponent(), auditConfig.RootElement, AuditDefinition.Key, CommandPolicies.AuditKey),
     Definition("identity", "qian.identity.client", new IdentityClientComponent(), identityConfig.RootElement, IdentityDefinition.Key),
     Definition("gateway", "qian.gateway", new GatewayComponent(), gatewayJson, GatewayDefinition.Key)

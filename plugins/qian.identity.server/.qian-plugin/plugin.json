@@ -33,7 +33,6 @@
   "scopes": [
     "global"
   ],
-  "x-skeleton": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Identity.Server.IdentityServerComponent, Qian.Identity.Server",

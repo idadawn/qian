@@ -6,16 +6,24 @@ namespace Qian.Gateway.Host;
 internal static class GatewayBootstrap
 {
     internal const string AccessKeyReference = "secretRef://platform/apollo/access-key";
+    internal const string ConfigSourceKey = "Config:Source";
+    internal const string ApolloSource = "apollo";
+    internal const string HostSource = "host";
     internal static QianConfigurationOptions CreateOptions(string basePath, string? environmentName, IReadOnlyList<string> arguments)
     {
         var root = Path.GetFullPath(basePath);
         if (environmentName is not null && (environmentName.Length == 0 || environmentName.IndexOfAny(['/', '\\']) >= 0))
             throw new ArgumentException("宿主环境名无效。", nameof(environmentName));
         // 目录本身只从宿主 JSON、带前缀环境变量及 CLI 获取；目录内的 Secret 文件不能递归改变目录。
-        string? secretDirectory;
+        string? secretDirectory; string source;
         var initial = Sources().AddEnvironmentVariables("QIAN_").AddCommandLine(arguments.ToArray()).Build();
         using ((IDisposable)initial)
+        {
             secretDirectory = initial["Secrets:Directory"] is { Length: > 0 } directory ? Path.GetFullPath(directory, root) : null;
+            // 配置源（R150 ①）：缺省 apollo；host 只读宿主配置（JSON、Secret 目录、环境变量、命令行），是 staging 在 Apollo 联调（S1-DEP-005）之前的过渡形状。
+            source = initial[ConfigSourceKey] ?? ApolloSource;
+        }
+        if (source is not (ApolloSource or HostSource)) throw new InvalidOperationException(ConfigSourceKey + " 只能是 " + ApolloSource + " 或 " + HostSource + "。");
         var bootstrapSources = Sources();
         if (secretDirectory is not null) bootstrapSources.AddKeyPerFile(secretDirectory, optional: false);
         var bootstrap = bootstrapSources.AddEnvironmentVariables("QIAN_").AddCommandLine(arguments.ToArray()).Build();
@@ -24,6 +32,7 @@ internal static class GatewayBootstrap
         return new QianConfigurationOptions
         {
             BasePath = root, EnvironmentName = environmentName, SecretDirectory = secretDirectory, EnvironmentPrefix = "QIAN_", Arguments = arguments.ToArray(),
+            UseApollo = source == ApolloSource,
             ResolveAccessKey = reference => reference == AccessKeyReference
                 ? ReadCredential(accessKeyPath ?? throw new InvalidOperationException("缺少网关引导配置：ConnectionFiles:ApolloAccessKey。"))
                 : throw new InvalidOperationException("Apollo 引导密钥引用未登记。")

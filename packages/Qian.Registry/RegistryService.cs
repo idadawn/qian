@@ -22,6 +22,7 @@ internal sealed partial class RegistryService : IRegistryService
     private readonly IReadOnlyList<InstalledComponentMetadata> _installed;
     private readonly IReadOnlySet<string> _installedEntries;
     private readonly IReadOnlyList<string> _serviceKeys;
+    private readonly Dictionary<string, IReadOnlyList<string>> _preinstalledCapabilities;
     private readonly PostgresArtifactCatalog _artifacts;
     private readonly PostgresPatchRepository _patches;
     private readonly RegistryProfileComposer _composer;
@@ -49,6 +50,10 @@ internal sealed partial class RegistryService : IRegistryService
         // 候选制品的 inject 只能由本宿主预装组件提供（PRD 7.2.1）；provides 与 profile 装配器同样按服务键原文匹配。
         _serviceKeys = Array.AsReadOnly(_installed.SelectMany(component => component.Manifest.GetProperty("provides").EnumerateArray().Select(key => key.GetString()!))
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray());
+        // 预装绑定的制品摘要 → 宿主装配时校验它所用的代码派生能力（同摘要即同一份字节）。
+        _preinstalledCapabilities = options.InstalledComponents.Where(binding => binding.Metadata.ArtifactDigest is not null)
+            .GroupBy(binding => binding.Metadata.ArtifactDigest!, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().CodeCapabilities, StringComparer.Ordinal);
         _artifacts = new PostgresArtifactCatalog(data);
         _patches = new PostgresPatchRepository(data, tenant, options.Surfaces);
         _composer = new RegistryProfileComposer(_patches, options.Profiles, options.Profile);
@@ -140,8 +145,13 @@ internal sealed partial class RegistryService : IRegistryService
         if (_disposed || _lifetime.IsCancellationRequested) throw new ServiceNotReadyException();
         ArgumentNullException.ThrowIfNull(files);
         // 候选制品尚不属于本宿主的完整目录，跨组件引用按离线目录给 warning；inject 的 Provider 必须已在预装集合中。
-        var content = RegistryArtifactContent.Read(files, digest, _options.Surfaces,
-            new SurfaceValidationOptions { Profile = "platform", ExecutionPlane = "server", ServiceKeys = _serviceKeys });
+        // 与某个预装绑定同摘要（同一份字节，宿主装配时已按组件代码派生的能力校验过）时沿用那份能力清单，命令型工具的绑定才能通过——
+        // 平台镜像预装的组件经 Lifecycle 装成修订时就是这种情况（R151 ①）；其余候选制品不带代码能力，命令型工具照旧被拒。
+        var content = RegistryArtifactContent.Read(files, digest, _options.Surfaces, new SurfaceValidationOptions
+        {
+            Profile = "platform", ExecutionPlane = "server", ServiceKeys = _serviceKeys,
+            Capabilities = _preinstalledCapabilities.TryGetValue(digest, out var capabilities) ? capabilities : []
+        });
         var saved = await _artifacts.SubmitAsync(content, actor, cancellationToken).ConfigureAwait(false);
         return new RegistryArtifactEntry(saved.Digest, saved.Component.Id, saved.Component.Manifest.GetProperty("version").GetString()!,
             saved.State, saved.SubmittedBy, saved.SubmittedAt);

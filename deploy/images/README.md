@@ -47,7 +47,10 @@ python3 scripts/images.py build --kind jit --project <csproj> --assembly <程序
 - 入口固定为 `/app/entrypoint`；用户为 chiseled 镜像内置的非 root 用户 `$APP_UID`；
 - profile 与组件目录随镜像发布到 `/app/qian`（`QIAN_ROOT`），环境级 overlay 由 ConfigMap 挂载后经 `--patch` 传入；
 - 部署时 `readOnlyRootFilesystem: true`，只为标签 `io.qian.writable-paths` 列出的目录（目前只有 `/tmp`）挂临时卷；
-- 标签记录源码 SHA（`org.opencontainers.image.revision`）、KunVersion、profile 与组件目录修订和镜像角色（`io.qian.image-role`：`product` 或 `selfcheck`）。
+- 标签记录源码 SHA（`org.opencontainers.image.revision`）、KunVersion、profile 与组件目录修订和镜像角色（`io.qian.image-role`：`product` 或 `selfcheck`）；
+- 前端构建产物（S1-DEP-011）经 `--web <目录>` 以命名构建上下文 `web` 送入 `/app/web`，构建证据记该目录的 D4 摘要（`webDigest`）；不给 `--web` 时送空目录。平台镜像的目录里是 `identity/`（`packages/qian-identity-ui/dist`）与 `signup/`（`packages/qian-tenancy-signup-ui/dist/public`），网关镜像是 `shell/`（`apps/qian-shell/dist/host`）与 `remotes/qian.tenancy/`、`remotes/qian.tenancy.signup/`（两个 UI 包的 `dist/remote`）。前端在构建机之外先用 pnpm 构建好再拷过去，组装与构建命令见 [staging 运维手册](../../docs/ops/staging-first-deploy.md)。
+
+AOT 模板的构建上下文白名单放行了网关宿主（`hosts/Qian.Gateway.Host`）与全部 `contracts/`（S1-DEP-011），`--kind aot --project hosts/Qian.Gateway.Host/Qian.Gateway.Host.csproj --assembly Qian.Gateway.Host` 可以直接构建 qian-gateway；JIT 模板早已放行平台宿主（S1-DEP-009）。
 
 ### 门禁
 
@@ -78,4 +81,6 @@ macOS 的 Docker Desktop 守护进程运行在虚拟机里，推不到宿主机�
 
 ## 接入真实镜像（S1-DEP-008）
 
-前置任务完成后，重新核对三件事：有效 profile 中每个必需叶节点的交付状态、三个宿主的发布入口、shell 制品路径；核对无误后再认领 S1-DEP-008。三项验收保持 DEP-003 的原文，只有真实镜像及其验证证据全部齐全，才可勾选和关闭。截至 2026-10-16，没有构建、发布或签署任何业务镜像，也没有修改集群。
+前置任务完成后，重新核对三件事：有效 profile 中每个必需叶节点的交付状态、三个宿主的发布入口、shell 制品路径；核对无误后再认领 S1-DEP-008。三项验收保持 DEP-003 的原文，只有真实镜像及其验证证据全部齐全，才可勾选和关闭。
+
+S1-DEP-011（staging 首次部署，R143）在 qd 上用 `build` 构建了 qian-platform（含同进程身份分支）与 qian-gateway 两个镜像，推到 Harbor 私有项目 `192.168.1.201/qian`、按 digest 部署，构建证据记在该任务的进度日志与[运维手册](../../docs/ops/staging-first-deploy.md)。它们没有经过 SBOM、漏洞扫描与 Cosign 签名，也没有 qian-identity 镜像，不满足本节的验收；S1-DEP-008 的范围不变。
