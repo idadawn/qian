@@ -55,9 +55,9 @@ export default function Workspace() {
 | PreferenceControls | 必填 i18n；可选 locale（是否显示语言按钮，语言放进账号菜单时传 false，默认 true）、localeStyle（icon 或 label，label 显示地球图标、当前语言名与箭头，用在认证页）、className、testId；消费 PreferencesProvider |
 | WorkspaceCard | 必填 title、tile、label；可选 description、href、onClick、className、testId；按钮名称为 label 加 title 与 description，tile 只作装饰 |
 | LocaleMenu | 必填 i18n；可选 testId；放进 AppShell 的 userMenu，与顶栏语言按钮共用同一份偏好 |
-| AuthLayout | 必填 brand、headline；可选 brandHref、description、aside、footer、toolbar、legal、variant（sign-in：侧栏 440px 起、内容 400px 宽并垂直居中；form：侧栏 360px 起、内容 720px 宽）、children、className、testId；窄屏时品牌面折到上方 |
+| AuthLayout | 必填 brand、headline；可选 brandHref、description、aside、footer、toolbar、legal、variant（sign-in：侧栏 440px 起、内容 400px 宽并垂直居中；form：侧栏 360px 起、内容 720px 宽）、children、className、testId；sign-in 的侧栏标题在品牌行与底部之间垂直居中，传不传 footer 都不会压住底部装饰条；窄屏时品牌面折到上方 |
 | PlainLayout | 必填 brand；可选 account（顶栏右侧）、width（sm 600px、md 760px）、children、className、testId |
-| BrandMark | 可选 size、inverse、className；装饰图形，可访问名称由旁边的品牌名提供 |
+| BrandMark | 可选 size、inverse、className、testId（默认 yue-brand-mark，data-slot 为 brand-mark）；装饰图形，可访问名称由旁边的品牌名提供 |
 
 ### 菜单与 Preferences
 

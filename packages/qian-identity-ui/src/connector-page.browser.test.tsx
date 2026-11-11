@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from 'vitest/browser';
 import axe from 'axe-core';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
@@ -141,5 +141,22 @@ it('登录页的连接器区：全局目录为空时面板只有租户代码；�
   expect(screen.queryByTestId('identity-connectors-none')).toBeNull();
   await waitFor(() => expect(beginConnector).toHaveBeenCalledWith('corp', expect.any(AbortSignal), { tenant: 'acme', returnUrl }));
   await waitFor(() => expect(assign).toHaveBeenCalledWith('https://idp.example.test/auth?state=y'));
+  await accessible();
+});
+
+it('登录页的开通入口：申请人会话端点答 401 才显示「申请开通 · 查看申请进度」并带回当前登录地址；没装开通组件（404）时不显示，探测请求不落到开发服务器', async () => {
+  const listConnectors = vi.fn(async () => []);
+  const probe = vi.spyOn(globalThis, 'fetch');
+  const view = render(<LoginPage entry={{ returnUrl, clientId: 'qian-shell' }} provider={provider({ listConnectors })} />);
+  await waitFor(() => expect(probe).toHaveBeenCalledWith('/api/signup/session', expect.objectContaining({ credentials: 'same-origin' })));
+  expect((await probe.mock.results[0]!.value as Response).status).toBe(404);
+  await new Promise(resolve => setTimeout(resolve, 20));
+  expect(screen.queryByTestId('identity-signup-links')).toBeNull();
+  view.unmount(); probe.mockResolvedValue(new Response(null, { status: 401 }));
+  render(<LoginPage entry={{ returnUrl, clientId: 'qian-shell' }} provider={provider({ listConnectors })} />);
+  const links = await screen.findByTestId('identity-signup-links');
+  const next = encodeURIComponent(location.pathname + location.search);
+  expect(within(links).getByRole('link', { name: '申请开通' }).getAttribute('href')).toBe(`/signup?next=${next}`);
+  expect(within(links).getByRole('link', { name: '查看申请进度' }).getAttribute('href')).toBe(`/signup/status?next=${next}`);
   await accessible();
 });

@@ -4531,21 +4531,26 @@
       "--yue-destructive",
       "--yue-error",
       "--yue-error-bg",
+      "--yue-error-icon",
       "--yue-foreground",
       "--yue-info",
       "--yue-info-bg",
+      "--yue-info-icon",
       "--yue-muted",
       "--yue-muted-foreground",
       "--yue-neutral",
       "--yue-neutral-bg",
+      "--yue-neutral-icon",
       "--yue-ok",
       "--yue-ok-bg",
+      "--yue-ok-icon",
       "--yue-popover",
       "--yue-popover-foreground",
       "--yue-primary",
       "--yue-ring",
       "--yue-warn",
-      "--yue-warn-bg"
+      "--yue-warn-bg",
+      "--yue-warn-icon"
     ],
     "examples": [
       {

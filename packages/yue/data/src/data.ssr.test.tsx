@@ -21,6 +21,14 @@ it('表格、树选择、日期、图片与上传可 SSR，不依赖浏览器全
   </>);
   for (const slot of ['data-table', 'tree', 'tree-select', 'cascader', 'date-picker', 'date-range', 'time-picker', 'time-range', 'image-preview', 'upload']) expect(markup).toContain(`yue-${slot}`);
 });
+it('表格工具行右端、「显示列」开关与 comfortable 行距可 SSR；columnToggle=false 时不渲染「显示列」', () => {
+  const props = { columns: [{ field: 'id', titleKey: 'common.detail' }], data: [{ id: 'a' }], total: 1, query: { pageIndex: 0, pageSize: 5, sorting: [], filters: {} }, onQueryChange: () => undefined, getRowId: (row: { id: string }) => row.id, i18n, label: '表格' };
+  const cell = (markup: string) => (/<td[^>]*class="([^"]*)"/.exec(markup)?.[1] ?? '').split(' ');
+  const tools = renderToString(<DataTable {...props} toolbarEnd={<button type="button">刷新</button>} density="comfortable" />);
+  expect(tools).toContain('刷新'); expect(tools).toContain('yue-data-table-columns'); expect(cell(tools)).toContain('py-3.5');
+  const plain = renderToString(<DataTable {...props} columnToggle={false} />);
+  expect(plain).not.toContain('yue-data-table-columns'); expect(cell(plain)).toContain('py-3'); expect(cell(plain)).not.toContain('py-3.5');
+});
 it.each(['loading', 'empty', 'error'] as const)('表格 %s 状态有稳定可寻址出口', (state) => {
   const markup = renderToString(<DataTable columns={[{ field: 'id', titleKey: 'common.detail' }]} data={[]} total={0} query={{ pageIndex: 0, pageSize: 5, sorting: [], filters: {} }} onQueryChange={() => undefined} getRowId={(row: { id: string }) => row.id} i18n={i18n} label="表格" loading={state === 'loading'} error={state === 'error' ? i18n.t('data.error') : null} />);
   expect(markup).toContain(`data-table-${state}`);

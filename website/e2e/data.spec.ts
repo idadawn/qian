@@ -9,6 +9,16 @@ for (const scenario of scenarios) test(`${scenario.component}/${scenario.state} 
     if (scenario.state === 'Loading') await expect(page.getByTestId('yue-data-table-loading')).toBeVisible();
     else if (scenario.state === 'Empty') await expect(page.getByTestId('yue-data-table-empty')).toBeVisible();
     else if (scenario.state === 'Error') await expect(page.getByTestId('yue-data-table-error')).toBeVisible();
+    else if (scenario.state === 'Tools') {
+      // 工具行右端的刷新按钮重新取数；「显示列」之后接 toolbarEnd，comfortable 行距让单元格上下各 14px。
+      await expect(page.getByText('共 24 条')).toBeVisible();
+      await page.getByRole('button', { name: '刷新' }).click();
+      await expect(page.getByRole('cell', { name: '客户 01', exact: true })).toBeVisible();
+      await expect(page.getByRole('cell', { name: '客户 01', exact: true })).toHaveCSS('padding-top', '14px');
+      await page.getByText('显示列', { exact: true }).click();
+      await page.getByRole('checkbox', { name: '名称', exact: true }).uncheck();
+      await expect(page.getByRole('cell', { name: '客户 01', exact: true })).not.toBeVisible();
+    }
     else await expect(page.getByText('共 24 条')).toBeVisible();
   } else if (scenario.component === 'TreeSelect') await page.getByRole('button', { name: '组织选择' }).click();
   else if (scenario.component === 'Cascader') { await page.getByRole('button', { name: '层级选择' }).click(); await page.getByRole('treeitem', { name: '总部' }).click(); }

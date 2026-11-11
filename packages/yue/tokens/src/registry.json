@@ -871,7 +871,16 @@
       "kind": "color",
       "light": "--yue-p-green-600",
       "dark": "--yue-p-green-400",
-      "meaning": "ok 实色：状态圆点、状态图标与进度填充",
+      "meaning": "ok 实色：状态圆点与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-ok-icon",
+      "kind": "color",
+      "light": "--yue-p-green-600",
+      "dark": "--yue-p-green-400",
+      "meaning": "ok 图标色：结果页、检查列表等处的状态图标字形",
       "contrastWith": "--yue-background",
       "contrast": "boundary"
     },
@@ -898,7 +907,16 @@
       "kind": "color",
       "light": "--yue-p-amber-500",
       "dark": "--yue-p-amber-400",
-      "meaning": "warn 实色：状态圆点、状态图标与进度填充",
+      "meaning": "warn 实色：状态圆点与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-warn-icon",
+      "kind": "color",
+      "light": "--yue-p-amber-600",
+      "dark": "--yue-p-amber-400",
+      "meaning": "warn 图标色：结果页、检查列表等处的状态图标字形；比圆点深一档（amber-600），大图标在浅底上更清楚",
       "contrastWith": "--yue-background",
       "contrast": "boundary"
     },
@@ -925,7 +943,16 @@
       "kind": "color",
       "light": "--yue-p-red-600",
       "dark": "--yue-p-red-400",
-      "meaning": "error 实色：状态圆点、状态图标与进度填充",
+      "meaning": "error 实色：状态圆点与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-error-icon",
+      "kind": "color",
+      "light": "--yue-p-red-600",
+      "dark": "--yue-p-red-400",
+      "meaning": "error 图标色：结果页、检查列表等处的状态图标字形",
       "contrastWith": "--yue-background",
       "contrast": "boundary"
     },
@@ -952,7 +979,16 @@
       "kind": "color",
       "light": "--yue-p-blue-600",
       "dark": "--yue-p-blue-400",
-      "meaning": "info 实色：状态圆点、状态图标与进度填充",
+      "meaning": "info 实色：状态圆点与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-info-icon",
+      "kind": "color",
+      "light": "--yue-p-blue-600",
+      "dark": "--yue-p-blue-400",
+      "meaning": "info 图标色：结果页、检查列表等处的状态图标字形",
       "contrastWith": "--yue-background",
       "contrast": "boundary"
     },
@@ -979,7 +1015,16 @@
       "kind": "color",
       "light": "--yue-p-neutral-450",
       "dark": "--yue-p-neutral-400",
-      "meaning": "neutral 实色：状态圆点、状态图标与进度填充",
+      "meaning": "neutral 实色：状态圆点与进度填充",
+      "contrastWith": "--yue-background",
+      "contrast": "boundary"
+    },
+    {
+      "name": "--yue-neutral-icon",
+      "kind": "color",
+      "light": "--yue-p-neutral-450",
+      "dark": "--yue-p-neutral-400",
+      "meaning": "neutral 图标色：结果页、检查列表等处的状态图标字形",
       "contrastWith": "--yue-background",
       "contrast": "boundary"
     },
@@ -1328,6 +1373,10 @@
       "target": "--yue-ok-solid"
     },
     {
+      "name": "--ok-icon",
+      "target": "--yue-ok-icon"
+    },
+    {
       "name": "--warn-strong",
       "target": "--yue-warn-strong"
     },
@@ -1338,6 +1387,10 @@
     {
       "name": "--warn-solid",
       "target": "--yue-warn-solid"
+    },
+    {
+      "name": "--warn-icon",
+      "target": "--yue-warn-icon"
     },
     {
       "name": "--error-strong",
@@ -1352,6 +1405,10 @@
       "target": "--yue-error-solid"
     },
     {
+      "name": "--error-icon",
+      "target": "--yue-error-icon"
+    },
+    {
       "name": "--info-strong",
       "target": "--yue-info-strong"
     },
@@ -1364,6 +1421,10 @@
       "target": "--yue-info-solid"
     },
     {
+      "name": "--info-icon",
+      "target": "--yue-info-icon"
+    },
+    {
       "name": "--neutral-strong",
       "target": "--yue-neutral-strong"
     },
@@ -1374,6 +1435,10 @@
     {
       "name": "--neutral-solid",
       "target": "--yue-neutral-solid"
+    },
+    {
+      "name": "--neutral-icon",
+      "target": "--yue-neutral-icon"
     },
     {
       "name": "--tint-violet",

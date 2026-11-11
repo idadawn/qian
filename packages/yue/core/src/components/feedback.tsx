@@ -6,7 +6,7 @@ import type { YueProps } from '../lib/test-id';
 import { Icon, type IconName } from './icon';
 import { IconButton } from './button';
 
-// 状态色四档：底（-bg）、边框（-border）、文字（tone 本名）、实色（-solid，圆点与图标）；提示条的文字用深一档的 -strong。
+// 状态色：底（-bg）、边框（-border）、文字（tone 本名）、实色（-solid，圆点与进度填充）、图标（-icon，状态图标字形；warn 比圆点深一档）；提示条的文字用深一档的 -strong。
 const tones: Record<Tone, string> = {
   ok: 'bg-ok-bg text-ok',
   warn: 'bg-warn-bg text-warn',
@@ -18,7 +18,7 @@ const borders: Record<Tone, string> = { ok: 'border-ok-border', warn: 'border-wa
 const solids: Record<Tone, string> = { ok: 'bg-ok-solid', warn: 'bg-warn-solid', error: 'bg-error-solid', info: 'bg-info-solid', neutral: 'bg-neutral-solid' };
 const strongs: Record<Tone, string> = { ok: 'text-ok-strong', warn: 'text-warn-strong', error: 'text-error-strong', info: 'text-info-strong', neutral: 'text-neutral-strong' };
 const texts: Record<Tone, string> = { ok: 'text-ok', warn: 'text-warn', error: 'text-error', info: 'text-info', neutral: 'text-neutral' };
-const icons: Record<Tone, string> = { ok: 'text-ok-solid', warn: 'text-warn-solid', error: 'text-error-solid', info: 'text-info-solid', neutral: 'text-neutral-solid' };
+const icons: Record<Tone, string> = { ok: 'text-ok-icon', warn: 'text-warn-icon', error: 'text-error-icon', info: 'text-info-icon', neutral: 'text-neutral-icon' };
 const toneIcons: Record<Tone, IconName> = { ok: 'circleCheck', warn: 'alert', error: 'alert', info: 'info', neutral: 'info' };
 export type BadgeProps = YueProps<ComponentProps<'span'>> & {
   tone?: Tone;
