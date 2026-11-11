@@ -70,6 +70,26 @@ describe('OrganizeSelect', () => {
     expect(value()).toBe('');
   });
 
+  it('组织超过 100 个时树按窗口虚拟化，多选浮层与单选（TreeSelect）同宽，不被绝对定位的行压窄', async () => {
+    const many = Array.from({ length: 150 }, (_, index) => ({ ...ORGANIZATIONS[0]!, id: uuid(1000 + index), name: `事业部 ${index + 1}`, path: `/${uuid(1000 + index)}/` }));
+    const { client } = createFixture({ routes: [{ method: 'GET', path: '/api/directory/orgs/tree', respond: () => Response.json({ items: many }) }] });
+    render(<><OrganizeSelect client={client} i18n={i18n} label="部门" value={null} onChange={() => {}} /><OrganizeSelect client={client} i18n={i18n} label="归属组织" multiple value={[]} onChange={() => {}} /></>);
+    await vi.waitFor(() => expect(screen.queryAllByTestId('yue-organize-select-loading')).toHaveLength(0));
+    async function popupWidth(label: string) {
+      await userEvent.click(screen.getByRole('button', { name: new RegExp(`^${label}`) }));
+      const tree = await screen.findByRole('tree', { name: label });
+      expect(within(tree).getAllByRole('treeitem').length).toBeLessThan(many.length);
+      // offsetWidth 不受打开动画里 scale 的影响。
+      const width = tree.closest<HTMLElement>('[data-slot="popover-content"]')!.offsetWidth;
+      await userEvent.keyboard('{Escape}');
+      await vi.waitFor(() => expect(screen.queryByRole('tree', { name: label })).toBeNull());
+      return width;
+    }
+    const single = await popupWidth('部门');
+    expect(single).toBeGreaterThan(200);
+    expect(await popupWidth('归属组织')).toBe(single);
+  });
+
   it('加载失败显示可访问的错误与重试，重试后可用', async () => {
     const { client } = createFixture({ failOnce: ['/api/directory/orgs/tree'] });
     render(<OrganizeSelect client={client} i18n={i18n} label="部门" value={null} onChange={() => {}} />);

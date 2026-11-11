@@ -48,7 +48,8 @@ export function OrganizeSelect(props: OrganizeSelectProps) {
         <span id={valueId} className={cn('truncate', values.length === 0 && 'text-muted-foreground')}>{summary}</span><Icon name="chevronsUpDown" className="text-muted-foreground" />
       </PopoverTrigger>
       <span id={labelId} hidden>{label}</span>
-      <PopoverContent aria-label={label} testId={`${id}-trigger-popup`}>
+      {/* 与 TreeSelect 同宽：组织多时 Tree 虚拟化，绝对定位的行撑不开浮层宽度，浮层给定宽度。 */}
+      <PopoverContent aria-label={label} className="w-72 max-w-[90vw]" testId={`${id}-trigger-popup`}>
         <Tree nodes={nodes} checkedIds={props.value} onCheckedChange={props.onChange} cascade={false} defaultExpandedIds={expanded} aria-label={label} testId={`${id}-tree`} />
         <Button variant="ghost" size="sm" className="mt-3" disabled={values.length === 0} onClick={() => props.onChange([])}>{i18n.t('data.clear')}</Button>
       </PopoverContent>
