@@ -98,6 +98,11 @@ public sealed class DirectoryQueryTests(PostgresFixture postgres) : IClassFixtur
         Assert.Equal([(w.Positions["ceo"], w.Orgs["hq"], w.M("zhangsan"), null)], Levels(await d.GetSuperiorsAsync(w.M("qianqi"), cancellationToken: Ct)));
         Assert.Empty((await d.GetSuperiorsAsync(w.M("zhangsan"), cancellationToken: Ct)).Items);
         await Rejected("NOT_FOUND", () => d.GetSuperiorsAsync(Guid.NewGuid(), cancellationToken: Ct).AsTask());
+        // 父链上的非责任岗位不算一级：销售实习生 → 销售专员（非责任）→ 到顶，从销售部的责任岗位回溯。
+        var intern = await d.CreatePositionAsync(new("销售实习生", w.Orgs["sales"], w.Positions["salesStaff"]), Ct);
+        await d.SetRelationsAsync(w.M("nobody"), [new("position", intern.Id, true)], Ct);
+        Assert.Equal([(w.Positions["salesManager"], w.Orgs["sales"], w.M("qianqi"), null), (w.Positions["ceo"], w.Orgs["hq"], w.M("zhangsan"), null)],
+            Levels(await d.GetSuperiorsAsync(w.M("nobody"), cancellationToken: Ct)));
     }
 
     [Fact]
