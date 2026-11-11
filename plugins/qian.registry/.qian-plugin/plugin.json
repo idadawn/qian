@@ -26,7 +26,6 @@
   "scopes": [
     "global"
   ],
-  "x-skeleton": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Registry.RegistryComponent, Qian.Registry",

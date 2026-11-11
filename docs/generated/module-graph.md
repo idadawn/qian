@@ -6,18 +6,18 @@
 
 | 条目 | 组件 | 来源层 | 状态 |
 |---|---|---|---|
-| ` global/registry ` | ` qian.registry@1.0.0 ` | 0（bundle） | 配置骨架 |
-| ` global/lifecycle ` | ` qian.lifecycle@1.0.0 ` | 0（bundle） | 配置骨架 |
-| ` global/capabilities ` | ` qian.capabilities@1.0.0 ` | 0（bundle） | 配置骨架 |
+| ` global/registry ` | ` qian.registry@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
+| ` global/lifecycle ` | ` qian.lifecycle@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
+| ` global/capabilities ` | ` qian.capabilities@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/hooks ` | ` qian.hooks@1.0.0 ` | 0（bundle） | 配置骨架 |
-| ` global/tenancy ` | ` qian.tenancy@1.0.0 ` | 0（bundle） | 配置骨架 |
+| ` global/tenancy ` | ` qian.tenancy@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/identity ` | ` qian.identity.client@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
-| ` global/authz ` | ` qian.authz@1.0.0 ` | 0（bundle） | 配置骨架 |
+| ` global/authz ` | ` qian.authz@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/data ` | ` qian.data@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/files ` | ` qian.files@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/config ` | ` qian.config.apollo@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/events ` | ` qian.events@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
-| ` global/audit ` | ` qian.audit@1.0.0 ` | 0（bundle） | 配置骨架 |
+| ` global/audit ` | ` qian.audit@1.0.0 ` | 0（bundle） | 已解析，尚未执行 |
 | ` global/observability ` | ` qian.observability@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/notify ` | ` qian.notify@1.0.0 ` | 0（bundle） | 配置骨架 |
 | ` global/notify.inbox ` | ` qian.notify.channel.inbox@1.0.0 ` | 0（bundle） | 配置骨架 |

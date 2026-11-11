@@ -186,4 +186,4 @@ TenantInputContract 是能力 inputSchema 与 HTTP 契约检查共用的租户�
 
 `plugins/qian.capabilities/.qian-plugin/plugin.json` 的稳定入口是 `CapabilitiesComponent`，允许 global scope，依赖 `Data`、`Audit`、`Registry`、`Tenancy` 及三种命令策略键，提供 能力目录、契约仓库、契约准入与导航的四个 Definition 服务键。固定委托无参 `CapabilitiesPlugin`，宿主必须先调用 `AddQianCapabilities()`。OpenAPI / gRPC / 导航包装器和准入失败占位是实现构件，不是独立组件。
 
-入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收：清单已去掉 `x-skeleton`（R144 ③），本组件只在平台宿主里运行，安装路径是平台镜像预装，启动证据是[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)的 profile 装配与集成测试，不提供 `qian add` 独立安装。

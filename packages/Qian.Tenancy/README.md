@@ -6,7 +6,7 @@
 
 代码目录包含 Provider、租户入口边界、传播器、gRPC 适配器、主档上下文及内部持久化实现。TenancyPlugin 消费 Data、提供 Tenancy 服务键，目录挂在 global scope，供 Identity 等可信服务读取最小投影；不把联系方式、管理员、连接凭据或完整租户列表暴露给匿名调用方。物理 schema 遵循 Data 的插件命名规则，使用 plugin_qian_tenancy。
 
-默认目标为 platform profile。管理员维护已由 S1-TEN-010 交付（见下文）；权益授予（S1-TEN-015）、拆分部署下的 Identity 联调（S1-IDP-012）和 qian add tenancy 尚未完成（包已随 0.1.0 发到 GitHub Packages，R93），因此 plugins/qian.tenancy 保留 x-skeleton，不能视为已安装的完整平台组件。主档目录先提供稳定端口，避免 Identity 登录前查目录依赖尚未创建的 Membership。
+默认目标为 platform profile。管理员维护已由 S1-TEN-010 交付（见下文）；权益授予（S1-TEN-015）、拆分部署下的 Identity 联调（S1-IDP-012）和 qian add tenancy（S1-RT-040）尚未完成（包已随 0.1.0 发到 GitHub Packages，R93）。plugins/qian.tenancy 已去掉 x-skeleton（R144 ③）：平台镜像预装、经[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)装配是它的安装与启动路径（S1-DEP-009），独立宿主经 qian add 安装仍待 S1-RT-040。主档目录先提供稳定端口，避免 Identity 登录前查目录依赖尚未创建的 Membership。
 
 ## 主档存储
 
@@ -171,4 +171,4 @@ R113 的处理顺序固定为：认证及平台主体检查 → 请求绑定与�
 
 `plugins/qian.tenancy/.qian-plugin/plugin.json` 的稳定入口是 `TenancyComponent`，允许 global scope，依赖 `Data`，提供 租户目录、设置、运营、管理员维护、本租户摘要、配额、状态机、开户与 `CommandTenancy`。固定委托无参 `TenancyPlugin`。扫描到期租户的工具由实现共用的静态 `TenantExpiryCapability.Definition` 派生；可执行绑定属于 SDK 能力协议，不伪装成普通服务键。
 
-入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代 `qian add` 的真实安装验收：清单已去掉 `x-skeleton`（R144 ③），安装路径是平台镜像预装，启动证据是[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)的 profile 装配与集成测试；`qian add` 独立安装另见 S1-RT-040。

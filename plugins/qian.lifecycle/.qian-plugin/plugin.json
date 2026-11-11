@@ -32,7 +32,6 @@
   "scopes": [
     "global"
   ],
-  "x-skeleton": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Lifecycle.LifecycleComponent, Qian.Lifecycle",

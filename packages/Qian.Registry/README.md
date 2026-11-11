@@ -1,6 +1,6 @@
 # Qian.Registry
 
-注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，代码字段与配置 Schema 已派生，清单因尚未通过完整安装门而保留 `x-skeleton`，消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面 scope 视图与条件写入（HTTP 适配器为 `Qian.Registry.AspNetCore`）、候选制品的清单准入、供可信平台插件调用的公开挂载 / 卸载与契约准入已接入，安装链由 [Qian.Lifecycle](../Qian.Lifecycle/README.md) 编排（S1-RT-005）。scope patch 的 HTTP 与运营 CLI 已接入；挂载只作用于平台已安装、租户已开通的组件，不代表从正式源安装。
+注册表属于 `Registry` seam 的 Provider，只进入 `platform` 的 base 组合包；Definition 为 `Qian.Registry.Abstractions`。分发表面位于 `plugins/qian.registry`，代码字段与配置 Schema 已派生，清单已去掉 `x-skeleton`（R144 ③）：安装路径是平台镜像预装，启动证据是[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)的 profile 装配与集成测试；消费者的 standalone profile 不独立安装这项平台插件（R34）。已提供 `RegistryPlugin` 与宿主 scope 同步服务，并接通真实 Data / Runtime；管理面 scope 视图与条件写入（HTTP 适配器为 `Qian.Registry.AspNetCore`）、候选制品的清单准入、供可信平台插件调用的公开挂载 / 卸载与契约准入已接入，安装链由 [Qian.Lifecycle](../Qian.Lifecycle/README.md) 编排（S1-RT-005）。scope patch 的 HTTP 与运营 CLI 已接入；挂载只作用于平台已安装、租户已开通的组件，不代表从正式源安装。
 
 ## 已实现的持久化基础
 
@@ -162,4 +162,4 @@ S1-TEN-004（R97）增加 GetConfigurationViewAsync：可信平台组件在当�
 
 `plugins/qian.registry/.qian-plugin/plugin.json` 的稳定入口是 `RegistryComponent`，允许 global scope，依赖 `Data`，提供 `Registry`。从宿主读取必需的 `RegistryRuntimeOptions`，再委托 `RegistryPlugin`；选定 platform profile、运行时工厂和已安装组件目录仍由宿主装配。
 
-入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收，本组件继续保留 `x-skeleton`。
+入口的 `Inject`、独立服务声明与 `ComponentConfiguration.Schema` 是清单代码字段及配置 Schema 的来源；通过 `qian-plugin sync` 更新组件目录，再用 `check` 验证漂移。元数据补齐不替代真实安装验收：清单已去掉 `x-skeleton`（R144 ③），本组件只在平台宿主里运行，安装路径是平台镜像预装，启动证据是[平台生产宿主](../../hosts/Qian.Platform.Host/README.md)的 profile 装配与集成测试，不提供 `qian add` 独立安装。

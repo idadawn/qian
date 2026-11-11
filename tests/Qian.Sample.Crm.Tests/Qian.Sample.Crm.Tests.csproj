@@ -26,6 +26,7 @@
     <ProjectReference Include="../../packages/Qian.Identity.Server/Qian.Identity.Server.csproj" />
     <ProjectReference Include="../../packages/Qian.Identity.Client/Qian.Identity.Client.csproj" />
     <ProjectReference Include="../../packages/Qian.Gateway/Qian.Gateway.csproj" />
+    <ProjectReference Include="../../hosts/Qian.Platform.Host/Qian.Platform.Host.csproj" />
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="Kun.Identity" />
     <PackageReference Include="Kun.Gateway" />

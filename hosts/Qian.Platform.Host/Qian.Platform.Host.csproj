@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- platform profile 的生产宿主（S1-DEP-009，qian-platform 镜像，JIT）：按 platform profile 装配平台插件树，只接受网关 S2S。 -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Description>platform profile 的生产宿主：能力目录、导航、外壳目录、有效权限与平台运营接口。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../packages/Qian.Data/Qian.Data.csproj" />
+    <ProjectReference Include="../../packages/Qian.Events/Qian.Events.csproj" />
+    <ProjectReference Include="../../packages/Qian.Tenancy/Qian.Tenancy.csproj" />
+    <ProjectReference Include="../../packages/Qian.Tenancy.AspNetCore/Qian.Tenancy.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Authz/Qian.Authz.csproj" />
+    <ProjectReference Include="../../packages/Qian.Authz.AspNetCore/Qian.Authz.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Audit/Qian.Audit.csproj" />
+    <ProjectReference Include="../../packages/Qian.Config.Apollo/Qian.Config.Apollo.csproj" />
+    <ProjectReference Include="../../packages/Qian.Config.Secrets/Qian.Config.Secrets.csproj" />
+    <ProjectReference Include="../../packages/Qian.Registry/Qian.Registry.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities/Qian.Capabilities.csproj" />
+    <ProjectReference Include="../../packages/Qian.Capabilities.AspNetCore/Qian.Capabilities.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Lifecycle/Qian.Lifecycle.csproj" />
+    <ProjectReference Include="../../packages/Qian.Profiles/Qian.Profiles.csproj" />
+    <ProjectReference Include="../../packages/Qian.Surfaces/Qian.Surfaces.csproj" />
+    <ProjectReference Include="../../packages/Qian.Plugin.Sdk.AspNetCore/Qian.Plugin.Sdk.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Runtime.Errors.AspNetCore/Qian.Runtime.Errors.AspNetCore.csproj" />
+    <ProjectReference Include="../../packages/Qian.Identity.Abstractions/Qian.Identity.Abstractions.csproj" />
+    <PackageReference Include="Kun.Security" />
+    <PackageReference Include="StackExchange.Redis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="platform.overlay.yml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

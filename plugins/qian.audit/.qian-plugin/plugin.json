@@ -28,7 +28,6 @@
     "global",
     "tenant"
   ],
-  "x-skeleton": true,
   "runtime": {
     "form": "module",
     "entry": "Qian.Audit.AuditComponent, Qian.Audit",

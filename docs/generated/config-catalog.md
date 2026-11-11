@@ -8,8 +8,6 @@
 
 组件：` qian.registry@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
 
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
-
 ### 生效配置
 
 ```json
@@ -39,8 +37,6 @@
 ## global/lifecycle
 
 组件：` qian.lifecycle@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
-
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
 
 ### 生效配置
 
@@ -180,8 +176,6 @@
 
 组件：` qian.capabilities@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
 
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
-
 ### 生效配置
 
 ```json
@@ -247,8 +241,6 @@
 ## global/tenancy
 
 组件：` qian.tenancy@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
-
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
 
 ### 生效配置
 
@@ -353,8 +345,6 @@
 ## global/authz
 
 组件：` qian.authz@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
-
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
 
 ### 生效配置
 
@@ -679,8 +669,6 @@
 ## global/audit
 
 组件：` qian.audit@1.0.0 `；来源：` bundle ` / ` plugins/qian.bundle.base/config/qian.patch.yml `。
-
-此条目为业务配置骨架，未证明 Provider 已实现或 Ready。
 
 ### 生效配置
 
