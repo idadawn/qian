@@ -1,0 +1,61 @@
+> For AI agents: the complete documentation index is available at /llms.txt, the full documentation bundle is available at /llms-full.txt.
+
+# Namespace Kun.Identity.Configuration
+
+:::info 生成页
+本页由 DocFX 从 nuget.org 上 `Kun.Identity` 2026.10.25 的 XML 注释生成，源码在 kun 仓库 [`src/Kun.Identity`](https://github.com/idadawn/kun/tree/v2026.10.25/src/Kun.Identity)（`v2026.10.25`）。Kun 文档与代码不一致处以代码为准（[ADR-001 D1.8](/design/adr/adr-001-kun-relationship.md)）；Qian 对 Kun 的选用与约束见[与 Qian 的关系](/sdk/kun/with-qian.md)。
+:::
+
+### Classes
+
+[KunCookieAuthOptions](/sdk/api/kun/kun-identity-configuration/kuncookieauthoptions.md)
+
+Options for the cookie session layer wired by
+`AddKunIdentity(id => id.AddCookieSession(...))`. The defaults
+encode the zero-trust baseline `Kun.Gateway` already applies to
+outbound cookies.
+
+[KunCookieSessionBuilder](/sdk/api/kun/kun-identity-configuration/kuncookiesessionbuilder.md)
+
+Configuration surface exposed by
+`KunIdentityBuilder.AddCookieSession(opts => ...)`. Inherits
+every [KunCookieAuthOptions](/sdk/api/kun/kun-identity-configuration/kuncookieauthoptions.md) field (so callers write
+`opts.CookieName = "kun.sid"; opts.SessionTtl = ...;` as
+expected) and adds the backend-selection methods
+[KunCookieSessionBuilder.UseInMemoryStore](/sdk/api/kun/kun-identity-configuration/kuncookiesessionbuilder.md#Kun_Identity_Configuration_KunCookieSessionBuilder_UseInMemoryStore) and [KunCookieSessionBuilder.UseRedisStore](/sdk/api/kun/kun-identity-configuration/kuncookiesessionbuilder.md#Kun_Identity_Configuration_KunCookieSessionBuilder_UseRedisStore).
+Exactly one backend call should be made — multiple calls take
+last-wins semantics because each call replaces the
+[ISessionStore](/sdk/api/kun/kun-identity-abstractions-session/isessionstore.md) registration on the underlying service
+collection.
+
+[KunIdentityBuilder](/sdk/api/kun/kun-identity-configuration/kunidentitybuilder.md)
+
+Fluent builder surfaced by `AddKunIdentity`.
+
+[KunJwtBearerOptions](/sdk/api/kun/kun-identity-configuration/kunjwtbeareroptions.md)
+
+Validation parameters for external Bearer JWTs issued by an OIDC
+provider (Authentik, Keycloak, Auth0, Azure AD, …). Feeds
+`KunJwtValidator`.
+
+[KunJwtIssuerOptions](/sdk/api/kun/kun-identity-configuration/kunjwtissueroptions.md)
+
+Signing / claims configuration for `KunJwtIssuer`.
+
+[KunOidcClientOptions](/sdk/api/kun/kun-identity-configuration/kunoidcclientoptions.md)
+
+Per-provider configuration for `KunOidcClient`.
+
+### Enums
+
+[KunCookieSecurePolicy](/sdk/api/kun/kun-identity-configuration/kuncookiesecurepolicy.md)
+
+Secure-policy for [KunCookieAuthOptions.Secure](/sdk/api/kun/kun-identity-configuration/kuncookieauthoptions.md#Kun_Identity_Configuration_KunCookieAuthOptions_Secure). Mirrors
+ASP.NET Core's `CookieSecurePolicy` shape without taking a
+dependency on that package from the core abstractions.
+
+[KunSameSiteMode](/sdk/api/kun/kun-identity-configuration/kunsamesitemode.md)
+
+`SameSite` policy for [KunCookieAuthOptions.SameSite](/sdk/api/kun/kun-identity-configuration/kuncookieauthoptions.md#Kun_Identity_Configuration_KunCookieAuthOptions_SameSite).
+Mirrors ASP.NET Core's `SameSiteMode` shape without taking a
+dependency on that package from the core abstractions.

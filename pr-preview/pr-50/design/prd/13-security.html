@@ -1,0 +1,1326 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>§13 权限与安全 - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<script>(function(){var r=document.documentElement;function s(){var t=r.classList.contains('dark')?'dark':'light';if(r.getAttribute('data-theme')!==t)r.setAttribute('data-theme',t)}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['class']})})();</script>
+<link href="/pr-preview/pr-50/static/css/styles.b0a6adadfb.css" rel="stylesheet">
+<link rel="preload" href="/pr-preview/pr-50/static/js/async/route-b8a0cadcbac7.8611717189.js" as="script">
+<script defer src="/pr-preview/pr-50/static/js/styles.e17d1103f0.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/lib-react.50abd11734.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/lib-router.081cdedb3d.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/l.17b56459a8.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/index.9cbf315c7d.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/pr-preview/pr-50/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/pr-preview/pr-50/design/prd/13-security.md">
+<link rel="describedby" href="/pr-preview/pr-50/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="§13 权限与安全 - Qian 文档">
+<meta name="description" content="一个请求的审计主体链写法：actor（实际执行者）+ on_behalf_of（代表谁）+ channel（来源通道 UI / API / MCP / A2A / job / event）。人直接操作时 actor = on_behalf…">
+<meta property="og:description" content="一个请求的审计主体链写法：actor（实际执行者）+ on_behalf_of（代表谁）+ channel（来源通道 UI / API / MCP / A2A / job / event）。人直接操作时 actor = on_behalf…"></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/pr-preview/pr-50/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /pr-preview/pr-50/llms.txt, the full documentation bundle is available at /pr-preview/pr-50/llms-full.txt, and this page is available as Markdown at /pr-preview/pr-50/design/prd/13-security.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/pr-preview/pr-50/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/pr-preview/pr-50/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/pr-preview/pr-50/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/pr-preview/pr-50/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><div class="rp-switch-appearance"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" class="rp-switch-appearance__icon rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="currentColor" viewBox="0 0 19 19" class="rp-switch-appearance__icon rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></div><div class="rp-social-links"><a href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" class="rp-social-links__item"><div class="rp-social-links__icon"><div class="rp-social-links__icon"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></div></div></a><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"></ul></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" class="rp-social-links__item"><div class="rp-social-links__icon"><div class="rp-social-links__icon"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></div></div></a><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"></ul></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/pr-preview/pr-50/design/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">文档索引</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/roadmap.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">路线图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/changelog.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">架构决策（ADR）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/design/adr/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-001-kun-relationship.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-001 Qian 与 Kun 的关系</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-002-plugin-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-002 插件模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-003-kernel-boundary-s1-services.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-003 内核边界与 S1 服务拆分</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-004-database-tenant-isolation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-004 数据库与租户隔离</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-005-identity-sso.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-005 身份与 SSO</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-006-authorization-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-006 鉴权模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-007-config-center-apollo.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-007 配置中心</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-008-events-messaging.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-008 事件与消息</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-009-audit.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-009 审计</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-010-gateway-layers.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-010 网关分层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-011-metadata-dynamic-data.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-011 元数据与动态数据层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-012-workflow-engine.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-012 流程引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-013-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-013 前端与 yue</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-014-marketplace.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-014 应用市场形态</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-015-model-gateway.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-015 模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-016-iclaw-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-016 与 iClaw 的边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-017-deployment.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-017 部署</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-018-stages-s1-scope.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-018 阶段切分与 S1 范围</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-019-library-first-packages.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-019 库优先（Library-first）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-020-component-model-v2.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-020 组件模型 v2</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/adr/adr-021-product-family-structure.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-021 产品族结构</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/design/prd/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">产品需求（PRD）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/design/prd/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/01-vision.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">1. 愿景与定位</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/02-principles.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">2. 设计原则</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/03-concepts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">3. 核心概念模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/04-market.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">4. 形态与目标市场</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/05-differentiators.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">5. 核心差异化</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/06-users-scenarios.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">6. 用户与场景</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/07-s1-foundation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§07 S1 技术底座功能规格</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/08-s2-lowcode.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§08 S2 低代码构建</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/09-s3-customer.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§09 S3 面向客户</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/10-s4-agent.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§10 S4 AI 原生 Agent 平台与模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/11-ux-glossary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">11. 体验原则与产品词表</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/12-boundaries.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§12 能力边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/13-security.html" class="rp-sidebar-item rp-sidebar-item--active rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§13 权限与安全</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/14-quality.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§14 质量与评估</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/15-roadmap.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">15. 演进路线（指针）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/16-metrics.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">16. 成功指标</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/17-references.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">17. 借鉴声明</span></div><div class="rp-sidebar-item__right"></div></a><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">专题规格</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/design/prd/specs/component-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 组件模型 v2（清单 · 表面 · 运行时 · profile · 市场 · CLI）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/specs/docs-site.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">文档站信息架构与规范（Rspress 2.0）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/specs/plugin-manifest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 插件清单 v1（<code>qian-plugin.yaml</code>）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/prd/specs/yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · yue 组件库</span></div><div class="rp-sidebar-item__right"></div></a></div></div></div></div><a href="/pr-preview/pr-50/design/migration/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移方案</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/design/migration/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/migration/01-tenant-identity-access.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 01 · 租户、组织、身份与 SSO、权限、系统管理、控制台与个人中心、消息入口、移动端</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/migration/02-app-form-list.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 02 · 应用、表单设计、列表设计、视图、功能发布、运行时数据引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/migration/03-workflow.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 03 · 流程与审批</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/migration/04-data-integration-presentation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 04 · 数据中心、集成中心、消息与调度、门户、报表、打印、大屏、文件预览、AI 中心清单</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/migration/05-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 05 · 参考平台前端组件与设计器全集 → yue 分层与阶段、工程化、移动端策略</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">决策清单</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/design/decisions/key-decisions-v0.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 关键决策清单 v0（已全部拍板，作为历史记录保留）</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">调研基线</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/design/research/baseline-digest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 调研基线要点汇编</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">generated</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/design/generated/config-catalog.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置目录</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/generated/event-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">事件图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/generated/module-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模块图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/design/generated/seam-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">seam 图</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">ops</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/design/ops/configuration-runbook.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置开发、运行与故障处置（S1-CFG-001 / 002）</span></div><div class="rp-sidebar-item__right"></div></a></div></div></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="13-权限与安全"><a href="#13-权限与安全" class="rp-header-anchor rp-link" aria-hidden="true">#</a>§13 权限与安全<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><button class="rp-llms-button rp-llms-view-options__trigger "><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-llms-view-options__arrow "><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></button></div>
+<blockquote>
+<p>本页由构建脚本镜像自仓库 <a href="https://github.com/idadawn/qian/blob/main/docs/prd/13-security.md" target="_blank" rel="noopener noreferrer" class="rp-link"><code>docs/prd/13-security.md</code></a>，请修改源文件，不要改本页。</p>
+</blockquote>
+<blockquote>
+<p>状态：草案 v0（2026-10-06）。依据：ADR-004（数据库与隔离）、ADR-005（身份）、ADR-006（鉴权）、ADR-007（Apollo）、ADR-009（审计）、ADR-010（网关）、ADR-002（插件模型）、ADR-020（组件模型 v2）、ADR-016（iClaw 边界）、ADR-017（部署）、ADR-018（阶段）及补充裁决。本章是平台的<strong>可信计算基</strong>规范：描述目标态；Kun 当前缺口写成「过渡态（2026-10）」并集中在 §13.14。</p>
+<p>四条总原则：</p>
+<ol>
+<li><strong>身份 ≠ 授权</strong>：身份记录结构上不携带授权载荷；授权来自判定端口 + 委托链 + 运行时授权快照。</li>
+<li><strong>租户只来自令牌</strong>：任何入口（HTTP、gRPC、消息、作业、Agent）都不信任请求头或默认值。</li>
+<li><strong>缺省拒绝、确定性控制优先</strong>：没有权限点声明的端点不可达；安全控制不依赖检测器或模型判断。</li>
+<li><strong>一个权限引擎服务三个入口</strong>：UI、API、MCP 使用同一判定服务；低代码数据引擎在唯一入口做三段式校验。</li>
+</ol>
+</blockquote>
+<hr/>
+<h2 class="rp-toc-include" id="131-角色与主体模型"><a href="#131-角色与主体模型" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.1 角色与主体模型</h2>
+<h3 class="rp-toc-include" id="1311-主体类型"><a href="#1311-主体类型" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.1.1 主体类型</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>主体类型</th><th>载体</th><th>凭据</th><th>阶段</th></tr></thead><tbody><tr><td><code>user</code></td><td>Person（全局自然人）+ Membership（租户成员）</td><td>密码 / 短信 / TOTP / 上游连接器断言</td><td>S1</td></tr><tr><td><code>service</code></td><td>平台服务、平台插件（原称系统插件）、ISV <code>runtime.form: service</code> 组件、外部系统的 OAuth client</td><td>client_credentials；网关换签的 S2S 令牌；K8s ServiceAccount（工作负载身份）</td><td>S1</td></tr><tr><td><code>agent</code></td><td>有归属人、可吊销的 Agent 客户端</td><td>RFC 8693 令牌交换，令牌带 <code>act</code> 链</td><td>S1 字段预留 / S4 启用</td></tr><tr><td><code>system</code></td><td>平台自身的定时任务、状态机迁移、迁移 Job</td><td>内部服务身份，审计 <code>actor_type=system</code></td><td>S1</td></tr></tbody></table></div>
+<p>一个请求的审计主体链写法：<code>actor</code>（实际执行者）+ <code>on_behalf_of</code>（代表谁）+ <code>channel</code>（来源通道 UI / API / MCP / A2A / job / event）。人直接操作时 <code>actor = on_behalf_of</code>。</p>
+<h3 class="rp-toc-include" id="1312-角色权限表"><a href="#1312-角色权限表" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.1.2 角色权限表</h3>
+<p>角色以租户为域（平台角色的租户为空）。「能做」是该角色内置权限点的上限，具体授权仍要经 §13.2 的 L1–L6 判定。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>角色</th><th>域</th><th>能做</th><th>不能做</th><th>对租户的可见性</th><th>阶段</th></tr></thead><tbody><tr><td>平台超管</td><td>平台</td><td>创建 / 冻结 / 注销租户；平台级配置与密钥引用；平台插件修订与回切；查看全平台审计；旁路租户权限（策略显式声明、每次审计）</td><td>以租户成员身份出现在业务数据中；绕过审计；读取密钥明文</td><td>对租户不可见，审计可见；不计入租户配额（Q12）</td><td>S1</td></tr><tr><td>平台运营</td><td>平台</td><td>租户主档 CRUD、开通白名单、套餐下发、管理员重置密码、运营看板、审核自助申请、市场审核台</td><td>读取租户业务数据；修改平台插件；旁路租户权限</td><td>不可见</td><td>S1 最小 / S3 完整</td></tr><tr><td>平台开发者</td><td>平台</td><td>用 SDK 开发官方插件、出修订、跑 TCK、在开发者租户调试</td><td>直接向生产租户安装未签名制品；访问他人租户数据</td><td>仅开发者租户</td><td>S1</td></tr><tr><td>ISV</td><td>平台（外部）</td><td>入驻、上传声明式表面、<code>package</code> / <code>function</code> / 受限 <code>ui</code> 与 seam Provider 组件（原 connector）、查看自己制品的审核与安装统计、席位与分成</td><td>上传任意代码容器（Q9）；访问安装方租户数据；修改已批准能力的描述或 Schema 而不触发复审</td><td>不可见</td><td>S3</td></tr><tr><td>租户管理员</td><td>租户</td><td>组织 / 岗位 / 用户 / 角色 / 授权；挂载（租户 scope patch）已授权插件 / 应用并批准反向权限；租户级登录与密码策略、IdP 连接器（S3）；查看本租户审计；强制下线；工作交接</td><td>创建租户；跨租户操作；修改隔离策略；读取密钥明文；删除审计</td><td>本租户</td><td>S1</td></tr><tr><td>业务搭建者（租户开发者）</td><td>租户</td><td>建应用、设计表单 / 列表 / 流程、发布、生成菜单与权限资源、配置数据接口（SQL 文本模式需额外高级权限）、打包导出 <code>template</code></td><td>授予自己没有的权限；绕过发布流程直接改线上元数据；配置出网域名（需管理员批准）</td><td>本租户内其拥有 / 被授权的应用</td><td>S2</td></tr><tr><td>终端用户</td><td>租户</td><td>使用被授权的应用、菜单、按钮、字段、数据范围；发起 / 处理审批；管理个人中心与偏好</td><td>一切未授权项（缺省拒绝）</td><td>本租户内授权范围</td><td>S1</td></tr><tr><td>Agent 主体</td><td>租户（有归属人）</td><td>委托人权限 ∩ 授予 scope 内的读与可逆写；发起申请类动作；查询 <code>Check / ListAllowedActions / Explain</code></td><td>标 <code>humanOnly</code> 的动作（签名、签章、转审、协办、撤销等 S4 前一律禁止）；破坏性动作（只能发起申请）；获取委托人以外的权限</td><td>继承委托人可见性</td><td>S4（字段 S1）</td></tr><tr><td>服务主体</td><td>平台 / 租户</td><td>清单声明的 <code>permissions.platform / data / egress / secrets</code> 范围；以自身工作负载身份调用其他能力</td><td>直连其他插件的数据表；透传用户令牌；超出事件主题 ACL 发布 / 订阅</td><td>按租户上下文传播</td><td>S1</td></tr></tbody></table></div>
+<p>补充规则：</p>
+<ul>
+<li>平台超管与租户管理员在策略中显式表达，不做代码 <code>IsAdministrator</code> 特判。</li>
+<li>「使用应用」与「管理应用」是两类权限（S3 市场买家与管理员不同角色）。</li>
+<li>创建者自动成为应用 Owner（L3 简版，S2）。</li>
+<li>用户「删除」= 禁用 + 标记；SSO 同步删除只置禁用；基数超限直接拒绝并返回结构化错误，不静默截断。</li>
+</ul>
+<hr/>
+<h2 class="rp-toc-include" id="132-权限七层模型-l0l6"><a href="#132-权限七层模型-l0l6" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.2 权限七层模型 L0–L6</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>层</th><th>对象</th><th>判定点（PEP）</th><th>决策依据与存储</th><th>阶段</th></tr></thead><tbody><tr><td><strong>L0 租户隔离</strong></td><td>所有业务数据</td><td>① <code>qian.gateway</code> 验签后注入 <code>tenant_id</code>；② 每服务入口的租户解析中间件 / 消息订阅器 / Saga 执行器建作用域；③ EF 全局过滤 + 插入自动填充；④ PostgreSQL RLS（<code>FORCE ROW LEVEL SECURITY</code> + <code>WITH CHECK</code>）</td><td>令牌 claim <code>tenant_id</code>；<code>tenancy.tenant</code>；每张业务表的 <code>tenant_id</code> 列与 RLS 策略</td><td>S1</td></tr><tr><td><strong>L1 角色</strong></td><td>平台超管；租户 Owner / Admin / 开发者 / 使用者；自定义角色</td><td><code>qian.authz</code> 求值：有效角色 = 直接授予 ∪ 经组织 / 岗位 / 用户组获得</td><td><code>authz.role</code>、<code>authz.role_assignment</code>（主体类型 × 主体 id）</td><td>S1（职责分离约束 S3）</td></tr><tr><td><strong>L2 功能权限</strong></td><td>应用、菜单、页面、按钮、API 端点、流程、打印等（资源类型由插件注册）</td><td>端点声明权限点 → ASP.NET Core 策略 / Mediator 行为 / gRPC 拦截器调用 <code>IPermissionChecker.Check</code>；缺省拒绝</td><td><code>authz.permission_definition</code>（清单派生）、<code>authz.grant</code>、<code>authz.resource_type</code></td><td>S1</td></tr><tr><td><strong>L3 资源实例</strong></td><td>应用 / 表单 / 流程 / 报表 / 文件夹的所有者、编辑者、查看者、共享人；市场授权</td><td><code>qian.authz</code> 内置 ACL 表查询（S2）；OpenFGA 适配插件（S3，仅层级继承与共享，不做行过滤）</td><td><code>authz.resource_acl</code>；OpenFGA 元组经 Outbox 同步</td><td>S2 可选 / S3</td></tr><tr><td><strong>L4 数据权限（行级）</strong></td><td>列表、查询、导出、报表、API 的记录集</td><td><code>IDataPermissionFilter</code> 把条件树 + 系统变量编译为 EF / SQL 谓词，在数据引擎唯一入口注入；与 L0 RLS 叠加；覆盖读、改、删、导出全部路径</td><td><code>authz.data_scope_rule</code>（条件树 JSON、全部数据标志）；系统变量目录</td><td>S2（契约 S1）</td></tr><tr><td><strong>L5 字段</strong></td><td>字段可见 / 可编辑 / 脱敏</td><td>读：投影或按脱敏规则替换；写：白名单之外的字段拒绝；yue 按元数据渲染，以服务端为准</td><td><code>authz.field_policy</code>；字段敏感度标签</td><td>S2</td></tr><tr><td><strong>L6 上下文条件（ABAC）</strong></td><td>IP、时间窗、端类型、套餐、数据密级、step-up、Agent 委派</td><td>作为条件挂在 L1–L4 规则上；Agent 有效权限 = 委托人权限 ∩ scope</td><td>规则 JSON 中的 <code>conditions[]</code>；令牌 <code>acr / amr / act / profile</code></td><td>S1 部分（IP、端、step-up）/ S4</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="1321-求值规则"><a href="#1321-求值规则" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.2.1 求值规则</h3>
+<ol>
+<li>功能权限：<code>Check(principal, action, resource)</code> 缺省拒绝；权限点 = 有效角色授权的并集。</li>
+<li>数据权限合并（补充裁决 Q19，不做可配置）：同一角色内多个方案 <strong>AND</strong>；不同角色之间 <strong>OR</strong>；任一方案为「全部数据」则整体放开；资源开启了数据权限但主体无任何方案 → 查不到数据；未开启 → 不过滤（仍受 L0）。</li>
+<li>多表：数据权限条件按表拆分条件组；主表直接字段名，副表 / 子表「表名.字段」。</li>
+<li>端维度：菜单与权限点带 <code>terminals</code>，PC 只读取含 PC 入口的授权，移动端同理。</li>
+<li>身份（权限分区，S3 可选）：有效对象 = 身份所挂对象 ∩ 自身拥有对象；当前身份进令牌 <code>profile</code>，不按终端持久化。</li>
+<li>逐级递减（S3 可选）：下级可授范围 ⊆ 上级授权 ∪ 上级角色授权；授权人只能授出自己拥有的，其余置灰不隐藏。</li>
+<li>「双重门」：按钮 / 列 / 字段既要在设计器勾选显示、又要被授权；但鉴权<strong>不依赖</strong>设计器勾选与客户端传参（<code>menuId / flowIds</code> 之类一律视为提示），资源化 ACL 在数据引擎唯一入口执行。</li>
+<li>判定结果缓存按主体，以 <code>identity_revision</code> 失效；跨服务一致。</li>
+<li>每次判定产出可解释结构 <code>{ allowed, matchedRules[], missingPermissions[], evaluatedAt, identityRevision }</code>，拒绝时随结构化错误返回给调用方（不泄露他人授权），并进审计。</li>
+</ol>
+<hr/>
+<h3 class="rp-toc-include" id="1322-判定端口语义"><a href="#1322-判定端口语义" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.2.2 判定端口语义</h3>
+<p><code>Kun.Authorization</code> 只定义端口，<code>qian.authz</code> 提供内置实现，OpenFGA / OPA 为 S3 可选适配插件。端口语义如下，所有入口（ASP.NET Core 策略、Mediator 行为、gRPC 拦截器、数据引擎、MCP 门面）只能经它们判定，不得自行读取授权表：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>方法</th><th>输入</th><th>输出</th><th>用途</th></tr></thead><tbody><tr><td><code>Check</code></td><td>主体、动作、资源引用、上下文（端、IP、时间、<code>acr</code>）</td><td><code>{ allowed, matchedRules[], missingPermissions[], identityRevision }</code></td><td>单次判定；拒绝时结构体随错误返回</td></tr><tr><td><code>BatchCheck</code></td><td>同上的数组</td><td>逐项结果</td><td>列表页按钮矩阵、菜单裁剪，避免 N 次往返</td></tr><tr><td><code>ListAllowedActions</code></td><td>主体、资源引用</td><td>允许的动作集合</td><td>前端按状态渲染合法按钮；Agent 先查后调</td></tr><tr><td><code>ListPermissions</code></td><td>主体、可选 <code>profile</code></td><td>有效权限点集合与来源</td><td>权限透视；S1 可选</td></tr><tr><td><code>Explain</code></td><td>主体、动作、资源引用</td><td>命中链（角色 → 授权 → 规则 → 条件）与缺失项</td><td>排障；S3 UI、S4 作为工具</td></tr><tr><td><code>IDataPermissionFilter.Compile</code></td><td>主体、资源引用、目标表集合</td><td>谓词 AST 或 EF 表达式</td><td>数据引擎唯一入口注入</td></tr><tr><td><code>IFieldPolicy.Resolve</code></td><td>主体、资源引用、字段集合</td><td>每字段 读 / 写 / 脱敏规则</td><td>读投影与写白名单</td></tr></tbody></table></div>
+<p>缓存由实现负责：按主体缓存有效角色与权限点，以 <code>identity_revision</code> 作版本号；<code>Compile</code> 结果按（主体、资源、规则版本）缓存。端口调用必须带 <code>tenant_id</code> 作用域，跨租户判定（平台运营）走显式的平台作用域并审计。</p>
+<hr/>
+<h2 class="rp-toc-include" id="133-令牌与会话"><a href="#133-令牌与会话" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.3 令牌与会话</h2>
+<h3 class="rp-toc-include" id="1331-令牌内容"><a href="#1331-令牌内容" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.3.1 令牌内容</h3>
+<p><strong>用户访问令牌</strong>（<code>qian.identity</code> 签发，非对称签名，短时）：</p>
+<div class="rp-codeblock language-txt"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="txt"><code><span class="line"><span>iss   规范 issuer（每环境一个）</span></span>
+<span class="line"><span>sub   person_id</span></span>
+<span class="line"><span>aud[] 资源标识（RFC 8707 resource）</span></span>
+<span class="line"><span>tenant_id, membership_id</span></span>
+<span class="line"><span>scope           OAuth scope 串</span></span>
+<span class="line"><span>identity_revision  整数，权限 / 身份变更即递增</span></span>
+<span class="line"><span>profile?        当前身份（S3 可选，S1 预留）</span></span>
+<span class="line"><span>acr / amr       认证强度与方式（step-up 判定）</span></span>
+<span class="line"><span>act?            委托链（S4，RFC 8693）</span></span>
+<span class="line"><span>sid, iat, nbf, exp, jti</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p><strong>不进令牌的东西</strong>：权限点、角色列表（除 S2S 中的粗粒度 <code>roles[]</code>）、组织归属、任何业务字段。理由：权限变更即时失效、令牌体积、以及「令牌被当作权限载体」会让所有服务各自解释权限。</p>
+<p><strong>选择令牌</strong>：命中多个 Membership 时签发 5 分钟、只能换正式令牌的受限令牌。</p>
+<p><strong>S2S 令牌</strong>（<code>qian.gateway</code> 换签下行，与 iClaw 契约同形、各签各的，Q15）：</p>
+<div class="rp-codeblock language-txt"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="txt"><code><span class="line"><span>iss / aud[]（每服务一个）/ sub / tenant_id / project_id? / roles[]（粗粒度角色代码）/ scope / session_id / iat, nbf, exp, jti</span></span>
+<span class="line"><span>exp − iat ≤ 300s（网关换签默认 60s）</span></span>
+<span class="line"><span>plugin_id（服务主体为插件时）</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p>新能力授权 = 增加 scope 串，不新增 claim。下游每一跳重新验签；禁止把上游令牌透传给下游（混淆代理防线）。<code>roles[]</code> 是与 iClaw 同形的例外：只放粗粒度角色代码，不是权限点集合；Qian 服务不得仅凭它放行，必须调用 <code>Kun.Authorization</code> 决策端口，时效性由 <code>identity_revision</code> 管；<code>project_id</code> 为可选 claim，Qian 只透传不解释（R24）。</p>
+<h3 class="rp-toc-include" id="1332-会话"><a href="#1332-会话" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.3.2 会话</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>规则</th><th>内容</th></tr></thead><tbody><tr><td>两类会话</td><td>SSO 会话（<code>qian.identity</code> 持有，sid cookie 不透明）与应用会话（各前端 / 插件）分离</td></tr><tr><td>refresh</td><td>设备级 refresh 令牌、轮换、重用检测即吊销整族</td></tr><tr><td>索引</td><td>服务端会话表 + 用户 → 会话索引，可按用户、按租户、按设备吊销</td></tr><tr><td>登录策略（租户可覆盖）</td><td>单端登录（同端类型后踢先，PC / 移动分别判定）或并发上限 2–10（默认 5）；空闲 / 绝对超时；IP 白名单（超管例外须策略显式）；上次登录提示</td></tr><tr><td>密码策略</td><td>强度与最小长度；锁定阈值与方式（锁账号 / 延时）；历史密码禁用最近 N 个；周期更新与站内信提前提醒；初始密码强制修改（不可取消）</td></tr><tr><td>MFA</td><td>TOTP S1；短信 / 邮箱 OTP、Passkey、恢复码 S3；租户级强制策略；敏感操作 step-up 以 <code>acr / amr</code> 判定</td></tr><tr><td>登录流水线</td><td>密码、第三方、扫码、企业 IdP 最终构造同一「登录输入」走同一签发路径，统一审计、限流与单端策略</td></tr><tr><td>日志</td><td>只记 sid 哈希，不记明文 sid 与令牌</td></tr><tr><td>CSRF</td><td>Cookie 方案上线即带 CSRF 防护与安全响应头</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="1333-会话失效触发清单"><a href="#1333-会话失效触发清单" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.3.3 会话失效触发清单</h3>
+<p>以下任一事件发生 → 服务端会话失效（或 <code>identity_revision</code> 递增）+ 向在线客户端推送刷新 / 登出：</p>
+<ol>
+<li>用户改密、重置密码（含管理员重置）</li>
+<li>用户被禁用、锁定、注销</li>
+<li>租户进入宽限 / 只读 / 冻结 / 注销，或被运营方 Suspend</li>
+<li>管理员对该用户 / 该租户执行强制下线</li>
+<li>用户的角色、授权、组织 / 岗位归属变更（<code>identity_revision</code> 递增并推送，≤ 3 秒内对新请求按新权限执行；令牌本身可继续用到刷新）</li>
+<li>第三方身份解绑、上游连接器被禁用（对应会话吊销）</li>
+<li>refresh 令牌重用检测命中</li>
+<li>并发上限触发（踢最早会话）</li>
+<li>后通道登出：上游 IdP 发起（入站）或 Qian 发起向下游应用传播（出站），双向</li>
+</ol>
+<hr/>
+<h2 class="rp-toc-include" id="134-纵深防御分层"><a href="#134-纵深防御分层" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.4 纵深防御分层</h2>
+<div class="rp-codeblock language-txt"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="txt"><code><span class="line"><span>┌──────────────────────────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│ 0. Traefik（北向公网入口）                                                  │</span></span>
+<span class="line"><span>│    TLS 终止、HTTP 安全头、连接级限流、WAF 规则（可选）                        │</span></span>
+<span class="line"><span>│    不做：鉴权、租户解析、业务路由                                            │</span></span>
+<span class="line"><span>├──────────────────────────────────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│ 1. qian.gateway（Kun.Gateway 加固；业务 API 边界）                           │</span></span>
+<span class="line"><span>│    强制认证（只信任 qian.identity 单 issuer）、aud 校验、identity_revision   │</span></span>
+<span class="line"><span>│    白名单转发、路由级限流、可信代理、私钥热轮换、Cookie 会话换 60s S2S、      │</span></span>
+<span class="line"><span>│    「插件未挂载」路由拦截（R32）、匿名路由只放行标「匿名可用」的能力（S3 外链）  │</span></span>
+<span class="line"><span>│    不做：业务权限判定、行级过滤                                              │</span></span>
+<span class="line"><span>│    旁路：Higress 只承载模型与 MCP 流量，对租户无感，不做 SSO                  │</span></span>
+<span class="line"><span>├──────────────────────────────────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│ 2. 服务 PEP（每个 Kun 服务 / 平台插件入口）                                   │</span></span>
+<span class="line"><span>│    重新验签 S2S、租户作用域建立（fail-closed）、端点权限点 → IPermissionChecker │</span></span>
+<span class="line"><span>│    .Check、Mediator 授权行为、gRPC 一元 / 流式拦截器、命令 Schema 校验、       │</span></span>
+<span class="line"><span>│    幂等键、dryRun；非 HTTP 入口（消费者 / Saga / Outbox / 作业）按消息或实例的  │</span></span>
+<span class="line"><span>│    tenant_id 回灌作用域                                                     │</span></span>
+<span class="line"><span>├──────────────────────────────────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│ 3. 数据引擎唯一入口（qian.dynamic-data，S2；S1 为 qian.data 的仓储层）         │</span></span>
+<span class="line"><span>│    「资源 + 动作 + 行级」三段式：L2 资源动作 → L4 谓词注入 → L5 字段投影 /       │</span></span>
+<span class="line"><span>│    写白名单；Filter AST → 参数化 SQL + 标识符白名单；强制租户与软删谓词；        │</span></span>
+<span class="line"><span>│    值翻译按需批量；数据日志同事务                                             │</span></span>
+<span class="line"><span>├──────────────────────────────────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│ 4. PostgreSQL RLS（最后一道）                                              │</span></span>
+<span class="line"><span>│    FORCE ROW LEVEL SECURITY + USING / WITH CHECK (tenant_id =               │</span></span>
+<span class="line"><span>│    current_setting(&#x27;app.current_tenant_id&#x27;, true))；                       │</span></span>
+<span class="line"><span>│    每服务独立 schema 与数据库角色；                                       │</span></span>
+<span class="line"><span>│    显式写入他租户 id 被 WITH CHECK 拒绝；事务外读返回空视为缺陷而非兜底         │</span></span>
+<span class="line"><span>└──────────────────────────────────────────────────────────────────────────┘</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p>设计意图：任一层被绕过，下一层仍拒绝。例如客户端省略 <code>menuId</code> 不会导致不裁列（第 3 层不信客户端），迁移脚本忘记租户过滤会被第 4 层挡住，消费者忘记建作用域会在第 2 层 fail-closed 而不是落到默认租户。</p>
+<p>各层的失败模式与处置：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>层</th><th>典型失败</th><th>处置</th></tr></thead><tbody><tr><td>Traefik</td><td>证书过期、安全头缺失</td><td>可观测告警；不影响鉴权正确性</td></tr><tr><td><code>qian.gateway</code></td><td>配置了多 issuer 过渡开关未关闭；<code>aud</code> 未校验；限流未挂路由</td><td>生产环境以「强制装配」替代 opt-in；配置项由 Apollo 校验器拒绝不安全值</td></tr><tr><td>服务 PEP</td><td>新端点忘记声明权限点；流式方法绕过拦截器</td><td>C3 / C4 门禁扫描 100% 端点；缺省拒绝使漏声明表现为 403 而不是放行</td></tr><tr><td>数据引擎</td><td>Filter AST 透传客户端 <code>tenant_id</code>；标识符未走白名单</td><td>契约 lint 拒绝租户字段；SQL 生成只接受编译后模型中的标识符</td></tr><tr><td>RLS</td><td>新表未建策略；事务外读到空集被当成「没数据」</td><td>C8 门禁；事务外读在集成测试中断言为缺陷</td></tr></tbody></table></div>
+<p>非 HTTP 入口单独说明：消息消费者按消息信封 <code>tenant_id</code> 建作用域，缺失即进死信并告警；Saga 执行器按实例 <code>TenantId</code>；定时作业按作业定义的租户范围逐租户执行；Agent 调用经 MCP 门面时租户来自令牌，<code>inputSchema</code> 中不存在租户字段。</p>
+<hr/>
+<h2 class="rp-toc-include" id="135-需二次确认--人工审批的场景"><a href="#135-需二次确认--人工审批的场景" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.5 需二次确认 / 人工审批的场景</h2>
+<p>「二次确认」= 同一操作者在 UI 再次确认（可要求 step-up）；「人工审批」= 另一主体批准后才执行；「confirm-required」= Agent 发起时平台返回 <code>input_required</code>，由人确认后继续；「禁止」= 对 Agent 返回结构化拒绝。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>场景</th><th>触发者</th><th>人操作</th><th>Agent 行为</th><th>阶段</th></tr></thead><tbody><tr><td>冻结 / 注销租户、触发数据销毁</td><td>平台运营 / 超管</td><td>二次确认 + step-up + 人工审批（第二运营人员）</td><td>禁止（只能发起申请）</td><td>S1</td></tr><tr><td>修改租户隔离策略、租户号</td><td>—</td><td>不允许（创建后不可改）</td><td>禁止</td><td>S1</td></tr><tr><td>批量强制下线、清空缓存（影响全员）</td><td>管理员 / 运维</td><td>二次确认，标「影响全员」</td><td>confirm-required</td><td>S1</td></tr><tr><td>重置他人密码、解绑他人第三方身份</td><td>租户管理员</td><td>二次确认；通知当事人</td><td>禁止</td><td>S1</td></tr><tr><td>平台超管旁路租户权限</td><td>超管</td><td>策略显式 + 每次审计 + 二次确认</td><td>禁止</td><td>S1</td></tr><tr><td>安装 / 升级插件并批准反向权限（platform / data / egress / secrets / ui）</td><td>租户管理员</td><td>逐项勾选批准；升级新增项即重批</td><td>confirm-required（展示完整权限 diff）</td><td>S1</td></tr><tr><td>平台插件修订激活 / 回切</td><td>平台超管</td><td>二次确认 + 变更记录</td><td>禁止</td><td>S1</td></tr><tr><td>修改 Apollo 公共 namespace、密钥引用指向</td><td>平台运维</td><td>发布审核（Apollo 自带）+ 审计</td><td>禁止</td><td>S1</td></tr><tr><td>删除被引用的模板 / 字典 / 流程定义</td><td>搭建者</td><td>引用保护：列出引用方后方可强制</td><td>confirm-required</td><td>S1</td></tr><tr><td>导出全量数据、导出含 pii / finance 字段</td><td>用户 / 管理员</td><td>二次确认；审计导出范围与行数</td><td>confirm-required；对外发送类默认需确认</td><td>S2</td></tr><tr><td>数据接口 SQL 文本模式保存与发布</td><td>搭建者（高级权限）</td><td>只读账号、限额、审计；发布需管理员批准</td><td>禁止</td><td>S2</td></tr><tr><td>Schema Migrator 执行迁移计划（含收缩步骤）</td><td>搭建者 → 管理员</td><td>审核计划 → 分批执行；收缩步骤单独确认</td><td>禁止（只能产出计划）</td><td>S2</td></tr><tr><td>破坏性命令（<code>sideEffect: destructive</code>，如清空表、批量删除、全表更新）</td><td>任何</td><td>二次确认 + 试运行 + 影响行数预估</td><td>二次确认或禁止（默认策略 deny）</td><td>S1 分级 / S2</td></tr><tr><td>流程：转审、协办、撤销申请、终止、签名 / 签章</td><td>审批人</td><td>按动作前置条件；签名类 <code>humanOnly</code></td><td><code>humanOnly</code> 一律禁止（Q26）</td><td>S2</td></tr><tr><td>流程：同意 / 拒绝 / 退回（Agent 代办）</td><td>委托人授权的 Agent</td><td>—</td><td>confirm-required，流转记录 <code>actor=agent, on_behalf_of=委托人</code></td><td>S4</td></tr><tr><td>向外部系统发送（邮件 / 短信 / Webhook / 连接器写）</td><td>任何</td><td>按渠道策略</td><td>对外发送类工具默认 confirm-required</td><td>S2</td></tr><tr><td>开放出网域名、新增连接器凭据</td><td>管理员</td><td>二次确认；凭据只填 secretRef</td><td>禁止</td><td>S1</td></tr><tr><td>租户自助申请审核、ISV 上架审核</td><td>运营</td><td>人工审批（可配自动规则）</td><td>禁止</td><td>S3</td></tr><tr><td>费用与席位变更、套餐降级</td><td>租户 Owner</td><td>二次确认 + 账单预览</td><td>禁止</td><td>S3</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="136-插件安全"><a href="#136-插件安全" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.6 插件安全</h2>
+<h3 class="rp-toc-include" id="1361-信任等级--允许形态--沙箱--签名"><a href="#1361-信任等级--允许形态--沙箱--签名" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.6.1 信任等级 × 允许形态 × 沙箱 × 签名</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th><code>policy.tier</code></th><th>谁</th><th>组合包 / 声明式表面 / 无代码组件</th><th>允许的 <code>runtime.form</code>（代码部分；原 <code>kind</code>）</th><th><code>policy.sandbox</code> 与 hooks <code>type</code></th><th>审核与签名</th><th>运行时身份</th></tr></thead><tbody><tr><td><code>system</code></td><td>平台团队（平台插件 = <code>platform</code> profile base 组合包）</td><td>均可</td><td><code>module</code> / <code>service</code> / <code>package</code> / <code>function</code> / <code>ui</code>（seam Provider 组件按实现取 <code>module</code> / <code>service</code>，R28）</td><td><code>none</code>（MF2；<code>service</code> 为 <code>workload</code>）；hooks <code>command</code> / <code>http</code> / <code>plugin</code></td><td>平台密钥签名，随发行版（profile）发版</td><td>宿主进程身份；<code>policy.required: true</code>（原 <code>alwaysEnabled</code>，R34）</td></tr><tr><td><code>official</code></td><td>平台团队业务插件</td><td>均可</td><td>同上</td><td>同上</td><td>同上</td><td>同上或独立 <code>service</code></td></tr><tr><td><code>partner</code></td><td>认证 ISV</td><td>均可</td><td><code>package</code> / <code>function</code> / <code>ui</code>；不允许 <code>module</code> 进共享进程；<code>service</code> 仅在 S3 沙箱策略另行开放（<code>workload</code>）</td><td><code>ui</code>：<code>worker</code>（审核后可 <code>none</code>）；<code>function</code>：<code>wasm</code>；hooks <code>http</code> / <code>plugin</code></td><td>发布者认证 + 扫描 + TCK + 人工审核；cosign</td><td>独立工作负载身份</td></tr><tr><td><code>private</code></td><td>租户自建</td><td>均可</td><td><code>package</code> / <code>function</code> / <code>ui</code>；不允许 <code>module</code>、<code>service</code>（<code>service</code> 仅在 S3 沙箱策略另行开放）</td><td><code>ui</code>：<code>worker | iframe</code>；<code>function</code>：<code>wasm</code>；hooks <code>http</code></td><td>租户内可见；自动 TCK；租户密钥签名</td><td>独立工作负载身份</td></tr><tr><td><code>community</code></td><td>公开社区</td><td>均可；<strong>S1 只接受无代码组件</strong>（<code>runtime</code> 为空）</td><td>同 <code>private</code>（S1 不接受任何代码部分）</td><td>同 <code>private</code>；hooks <code>http</code></td><td>自动扫描 + TCK；「未认证」标识</td><td>不进任何共享进程</td></tr></tbody></table></div>
+<p>规则：</p>
+<ul>
+<li><strong>第三方代码永不进共享进程</strong>；组合包与声明式表面对所有 tier 开放（应用 = 组合包 + marketplace 条目，ISV 应用即 <code>policy.tier: partner</code> 的组合包，R28；原「<code>bundle</code> 对所有 tier 开放」R22 据此改读），按 tier 收紧的是组合包内各组件的 <code>runtime.form</code> 与 <code>policy.sandbox</code>：<code>partner / private / community</code> 的组件不得使用 <code>module</code>，<code>service</code> 仅在 S3 沙箱策略另行开放；校验器与装载器（Resolve 阶段拒绝为非 <code>system / official</code> 组件加载程序集）两道检查互为冗余（specs/component-model.md §11.1）。</li>
+<li><strong>默认强制验签</strong>：未签名或签名不符直接安装失败，不是警告。签名在清单外：代码制品 = 清单 + 文件摘要 + SBOM 打成 OCI 制品，cosign 出独立签名与证明；元数据包与 SKILL.md 用「文件 URI + SHA-256 + 字节数」清单 + 分离签名；市场文件 <code>.qian/marketplace.json</code> 用 Ed25519 分离签名，公钥须命中客户端信任根（specs/component-model.md §11.5）。</li>
+<li><strong>按 digest 引用</strong>：清单里只接受 <code>@sha256:</code>；标签引用安装失败。</li>
+<li><strong>审核分级</strong>：免费元数据模板快审；付费或带代码走安全审查；权限扩大、付费模式变更触发复审。</li>
+<li><strong>工具描述哈希钉死</strong>（S3）：注册表保存已批准能力的「名称 + 描述 + 规范化 inputSchema」哈希，变更即下线待复审；<code>schemaSha256</code> 变即旧授权失效。</li>
+<li><strong>发布者撤销与黑名单</strong>：命中即自动卸载并通知租户管理员。</li>
+<li><strong>未验签市场条目只允许无代码组件</strong>（R40）：未签名市场或未命中信任根的条目需 <code>--allow-unverified</code> 才参与 <code>qian add</code> 解析，且只允许安装无代码组件（<code>runtime</code> 为空）、tier 最高 <code>community</code>；<code>qian list</code> 持续标记 <code>unverified</code>。</li>
+<li><strong>hooks <code>command</code> 类型仅限 <code>system / official</code>，argv 不经 shell</strong>（R41）：<code>hooks.json</code> 的 <code>command</code> 是 argv 数组，不经 shell 解释（无管道、重定向、通配），在受限执行器中运行（工作目录为组件目录、环境变量白名单、默认超时 30s / 上限 600s、无网络除非 <code>policy.egress</code> 非空）；平台宿主默认关闭 <code>command</code> 执行，<code>platform</code> profile 需显式开启，<code>gateway</code> / <code>identity</code> profile 拒绝开启；<code>commands/*.md</code> 的内联 shell 遵守同一规则并须被 <code>allowed-tools</code> 逐条覆盖，<code>community / private</code> 组件出现内联 shell 即校验失败。</li>
+<li><strong>连接器 = 为某个 seam 注册 Provider 的组件</strong>（R28 / R38）：<code>connector</code> 不是 <code>runtime.form</code>；清单上 <code>provides[]</code> 写「注册表键:名称」（如 <code>Identity.Connectors:oidc</code>）向该 seam 的注册表子服务按名称注册，<code>policy.egress[]</code> 声明允许的出网目标（为空 = 默认拒绝出网），<code>runtime.form</code> 按实现取 <code>module</code> 或 <code>service</code>；出网只经出口代理，白名单来自 <code>policy.egress</code>（§13.8）。</li>
+</ul>
+<h3 class="rp-toc-include" id="1362-反向权限审批"><a href="#1362-反向权限审批" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.6.2 反向权限审批</h3>
+<p>清单 <code>policy.permissions</code> 段（原 <code>permissions</code>，R37）声明插件向平台申请什么，租户管理员挂载时逐项批准，升级新增即重新批准：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>段</th><th>内容</th><th>运行时强制点</th></tr></thead><tbody><tr><td><code>platform[]</code></td><td>如 <code>tenant:read</code>、<code>user:read</code>、<code>file:write</code>、<code>notify:send</code></td><td>服务 PEP 以插件主体身份判定</td></tr><tr><td><code>data[]</code></td><td><code>{ entity, access: r / rw }</code></td><td>数据引擎唯一入口；每插件独立 PG schema 与数据库角色，不得直连他人表</td></tr><tr><td><code>policy.egress[]</code>（原 <code>permissions.egress</code>，R28 升为 <code>policy</code> 顶层字段；seam Provider 组件必填）</td><td>允许出网目标 <code>&lt;host&gt;[:&lt;port&gt;]</code>；为空 = 默认拒绝出网</td><td>生成 NetworkPolicy / 出口网关规则；私网与云元数据地址默认阻断；<code>hooks.json</code>、<code>.mcp.json</code> 的 <code>url</code> 域名必须在其中</td></tr><tr><td><code>secrets[]</code></td><td><code>{ name, scope }</code> 只有名字</td><td><code>ISecretResolver</code> 在使用点解析，永不回传明文</td></tr><tr><td><code>ui.connectSrc[]</code></td><td>前端允许连接的源</td><td>生成 CSP <code>connect-src</code>；MF2 远程只能从白名单加载</td></tr></tbody></table></div>
+<p>与之相对，<code>metadata/permissions.json</code>（原 <code>provides.permissions</code>，R37）是插件定义的、可被授予他人的权限点；两者都由 <code>qian.authz</code> 登记。</p>
+<h3 class="rp-toc-include" id="1363-运行时强制点"><a href="#1363-运行时强制点" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.6.3 运行时强制点</h3>
+<ul>
+<li><code>runtime.form: service</code> 组件：独立 K8s ServiceAccount + 含 <code>plugin_id</code> 的 S2S 令牌；每插件独立 Deployment、ResourceQuota、default-deny NetworkPolicy + 清单派生的放行规则；健康 = K8s 状态 + <code>/health</code> 双条件。</li>
+<li><code>function</code>（Wasm）：燃料、内存、超时限额来自清单 <code>runtime.limits</code>；无网络与文件系统能力，除非清单声明并被批准。</li>
+<li>事件：发布 / 订阅主题 ACL 来自 <code>metadata/events.json</code>（原 <code>provides.events</code>，R37）；越权主题在总线层拒绝。</li>
+<li>前端：<code>system / official</code> 以 MF2 挂载并共享 singleton 依赖；其余按 tier 走 Worker 远程渲染（白名单组件目录 = yue manifest）或 iframe（无 <code>allow-same-origin</code>，postMessage 握手）。</li>
+<li>「未挂载」（租户 scope 未挂载，或被 <code>restrict</code> 过滤）在网关路由、SDK 入口、前端外壳三处同时拦截，一律 404、与不存在无法区分（管理面 403 原因码 <code>PLUGIN_NOT_MOUNTED</code> 等，R32 / R48）。</li>
+</ul>
+<hr/>
+<h2 class="rp-toc-include" id="137-密钥与配置安全"><a href="#137-密钥与配置安全" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.7 密钥与配置安全</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>规则</th><th>内容</th><th>阶段</th></tr></thead><tbody><tr><td>唯一来源</td><td>密钥只能来自 K8s Secret（或后续的 Infisical 运行时解析）；配置、清单、事件、日志、审计中只出现 <code>secretRef{ name, backend, version }</code></td><td>S1</td></tr><tr><td>Apollo 边界</td><td>只存平台 / 服务级非敏感配置与 secretRef；租户级配置不进 Apollo；Portal 接运维侧 Authentik OIDC、不公网；发布事件进 <code>qian.audit</code>；webhook 扫描拦截疑似密钥键名与值</td><td>S1</td></tr><tr><td>配置 Schema</td><td>插件配置以 JSON Schema 2020-12 声明，<code>sensitive: true</code> 字段只能填 secretRef；取值范围进 Schema；运行期变更先校验、失败保留上一份有效值并告警</td><td>S1</td></tr><tr><td>K8s Secret</td><td>K3s 开启静态加密（<code>--secrets-encryption</code>）；仓库只存模板 / 键名 / secretRef；Secret 以文件形式挂载（KeyPerFile），不进环境变量明文日志</td><td>S1</td></tr><tr><td>Infisical</td><td>现状为「纸面权威」；补 Operator / ESO 或应用内 <code>ISecretResolver</code> 解析后才算运行时权威 —— <strong>过渡态（2026-10）</strong></td><td>S1 评估</td></tr><tr><td>轮换</td><td><code>qian.identity</code> JWKS 轮换（新旧并存窗口）；<code>qian.gateway</code> S2S 私钥热轮换；连接器凭据按 <code>version</code> 轮换，旧版本保留一个过渡窗口</td><td>S1</td></tr><tr><td>凭据回传</td><td>任何详情接口不回传密钥 / 密码 / 连接串明文；参考平台「数据库连接密码可回传还原」是反例</td><td>S1</td></tr><tr><td>服务间信任</td><td>控制面 ↔ 数据面走 S2S 令牌（mTLS 可选）；回调（调度、外部任务、Webhook）带签名或令牌 + 幂等键 + 超时 + 租户路由；不接受「请求头存在即信任」</td><td>S1</td></tr><tr><td>对称密钥</td><td>不使用共享对称密钥作跨服务信任；不存在带默认值的 AES Key</td><td>S1</td></tr><tr><td>开发环境</td><td>测试凭据只存项目种子 / 示例配置文件；mock 模式强制关代理</td><td>S1</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="138-数据安全"><a href="#138-数据安全" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.8 数据安全</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>主题</th><th>规则</th><th>阶段</th></tr></thead><tbody><tr><td>字段敏感度</td><td>元数据字段带 <code>sensitivity: public / internal / pii / finance / secret</code>；清单 <code>resources[].sensitivity</code> 同义；查询、导出、日志、MCP resources 据此脱敏或拒绝</td><td>S2（标签）/ S1（契约）</td></tr><tr><td>脱敏规则目录</td><td>姓名 / 手机 / 邮箱 / 身份证 / IP / 车牌 / 银行卡等规则可枚举、带 id 与参数 Schema；前后端共用一份；服务端脱敏为准，前端只负责展示</td><td>S1</td></tr><tr><td>导出审计</td><td>每次导出记录主体、资源、过滤条件、字段列表、行数、文件哈希；含 pii / finance 的导出需二次确认；导出文件走预览票据，不出匿名 URL</td><td>S2</td></tr><tr><td>数据保留与销毁</td><td>租户注销 = 软删 + 保留期（清单 <code>dataRetentionDays</code>，平台默认 30 天，合同可覆盖）+ 到期销毁任务 + 销毁记录；文案与行为一致（不把软删叫「永久删除」）</td><td>S1 最小 / S3 完整</td></tr><tr><td>用户注销</td><td>注销 = 停用 + 脱敏 + 数据导出（PIPL）；管理员禁止自助注销；SSO 同步删除只置禁用</td><td>S3</td></tr><tr><td>软删与回收站</td><td>业务记录软删为默认；破坏性命令带试运行与影响行数预估；元数据版本可回滚</td><td>S1</td></tr><tr><td>数据日志</td><td>新建 / 编辑 / 删除 / 导入写字段级差异，同事务；不覆盖删除与导入的做法是反例</td><td>S1 schema / S2 接入</td></tr><tr><td>数据接口 SQL 文本</td><td>只读数据库账号由平台供给（平台 PG 中每租户绑定 RLS 的只读角色，运行时按租户切换）、语句超时、行数上限、参数化、禁止多语句、审计；高级权限 = 独立权限点 <code>qian.data-api:sql:author</code>（默认不在开发者角色内，租户管理员显式授予）；发布需租户管理员批准（R11 / R25）</td><td>S2</td></tr><tr><td>出网与 SSRF</td><td>连接器 / Webhook / 任意 URL 代理一律经出口代理：域名白名单（清单 <code>egress</code>）、阻断私网与云元数据地址、不携带用户令牌外发</td><td>S1（平台自有出网点：OIDC 发现、企业微信、SMTP、短信、Apollo、对象存储）/ S2（低代码连接器与第三方出网点）</td></tr><tr><td>备份与恢复</td><td>专属 PG 的备份加密、恢复演练纳入阶段退出准则（§14）；高隔离档独立备份</td><td>S1</td></tr><tr><td>多租户缓存 / 存储</td><td>缓存键与对象存储路径带租户前缀；共享 Redis 不与 L1 平台组件混用 <code>allkeys-lru</code> 实例</td><td>S1</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="139-审计"><a href="#139-审计" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.9 审计</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>规则</th><th>内容</th></tr></thead><tbody><tr><td>只有一套</td><td>命令 / 能力级 <code>AuditEntry</code> 哈希链（<code>prev_hash → hash</code>），链状态持久化在 PostgreSQL；实体级 <code>AuditLog</code> 与业务同事务写入并经 Outbox 发事件；弃用事后不同事务的拦截器路径</td></tr><tr><td>主体链</td><td><code>actor_type ∈ { user, service, agent, system }</code>、<code>actor_id</code>、<code>on_behalf_of</code>（Membership / Person）、<code>act_chain</code>（S4）、<code>channel ∈ { ui, api, mcp, a2a, job, event }</code></td></tr><tr><td>能力定位</td><td><code>capability_id</code>、<code>contract_version</code>、<code>plugin_id</code>、<code>input_hash</code>（规范化输入 SHA-256，不存明文敏感参数）、<code>idempotency_key</code>、<code>dry_run</code></td></tr><tr><td>结果</td><td><code>outcome ∈ { success, denied, failed, partial }</code>、<code>error_code</code>、受影响资源引用（URN）、行数</td></tr><tr><td>判定审计</td><td>每次 <code>Check</code> 的 <code>{ matchedRules, missingPermissions, identityRevision }</code>；超管旁路单独类型</td></tr><tr><td>登录审计</td><td>成功 / 失败、grant 类型、连接器、IP 归属、UA、设备；只记 sid 哈希</td></tr><tr><td>来源自动化</td><td>由能力契约的 <code>audit.emits</code> 与命令元数据自动记录，不靠开发者手工加特性</td></tr><tr><td>保留与查询</td><td>按租户与类型配置保留天数；<strong>不提供「一键清空」</strong>；<code>IAuditReader</code> 分平台 / 租户两种视角；跨租户只对平台超管可见</td></tr><tr><td>完整性</td><td>哈希链 100% 可验证是阶段退出准则（§14）；断链告警</td></tr><tr><td>可观测衔接</td><td><code>trace_id</code> 贯通；请求 / 异常日志进可观测栈，不落业务库</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="1310-前端安全硬线"><a href="#1310-前端安全硬线" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.10 前端安全硬线</h2>
+<ol>
+<li><strong>不 <code>eval</code></strong>：不用 <code>eval</code> / <code>new Function</code> 执行租户脚本；联动三层（声明式动作 → 可序列化表达式 DSL → QuickJS 沙箱，白名单 API、超时、内存上限、不暴露令牌）。</li>
+<li><strong>令牌不进 URL / iframe</strong>：嵌入页面、大屏、报表、外链、文件预览用一次性票据或 postMessage 握手；禁止 URL 带 token。</li>
+<li><strong>CSP 由清单生成</strong>：<code>connect-src / frame-src / script-src</code> 来自清单 <code>permissions.ui</code> 与 MF2 远程白名单；不可信 UI 走 iframe sandbox（无 <code>allow-same-origin</code>）或 Worker 远程渲染。</li>
+<li><strong>前端裁剪只是体验层</strong>：菜单 / 按钮 / 列 / 字段隐藏只影响体验；服务端缺省拒绝是唯一防线；<code>auth</code> 是引擎一等字段但不参与服务端判定。</li>
+<li><strong>不在前端持有加密密钥</strong>；不把接口体加密当安全。</li>
+<li><strong>不持久化敏感字段</strong>：不把 access token、锁屏密码写入 localStorage 明文；refresh 令牌只在安全存储（HttpOnly cookie 或设备安全区）。</li>
+<li><strong>第三方 UI 零隔离即零信任</strong>：<code>partner</code> 以下的 UI 不直接 MF 挂载。</li>
+<li><strong>可寻址但不泄露</strong>：<code>data-testid / data-slot</code> 不包含业务数据。</li>
+<li><strong>依赖供应链</strong>：锁定版本、publint、SBOM；重型物料独立包懒加载。</li>
+</ol>
+<hr/>
+<h2 class="rp-toc-include" id="1311-agent-相关威胁与防线"><a href="#1311-agent-相关威胁与防线" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.11 Agent 相关威胁与防线</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>威胁</th><th>平台防线（确定性控制优先）</th><th>阶段</th></tr></thead><tbody><tr><td>提示注入（直接 / 间接，含工具描述藏指令）</td><td>所有外部内容与工具返回视为不可信数据；摄入不可信内容后对后续动作降权（高风险动作强制人工确认）；不依赖检测器</td><td>S4（S1 起副作用分级就位）</td></tr><tr><td>工具投毒 / rug pull</td><td>已批准工具「名称 + 描述 + 规范化 schema」哈希钉死，变更即下线复审；Skills 清单摘要校验；<code>schemaSha256</code> 变即授权失效</td><td>S3</td></tr><tr><td>越权 / 混淆代理</td><td>令牌受众绑定 + 禁止令牌透传；下游各跳重新验签；最小 scope 与逐步提权；按调用者权限过滤工具列表；句柄绑定主体；Agent 只拿委托人权限子集</td><td>S1（令牌与权限）/ S4（工具列表过滤）</td></tr><tr><td>数据外泄</td><td>沙箱与连接器出网白名单 / 出口代理；字段敏感度驱动脱敏；敏感参数不入 HTTP 头；对外发送类工具默认需确认</td><td>S2 / S4</td></tr><tr><td>破坏性操作 / 失控循环</td><td>副作用分级 + 默认策略（read 放行、write 确认、destructive 二次确认或禁止）；<code>dryRun</code>；软删与回收站；元数据版本回滚；调用频率上限；急停开关（按 Agent / 租户 / 工具）</td><td>S1（分级）/ S4（急停）</td></tr><tr><td>成本失控</td><td>Higress token 限流与缓存；租户 / 应用 / Agent 预算与告警；工具列表确定性排序提高缓存命中</td><td>S3</td></tr><tr><td>供应链</td><td>插件签名与哈希、市场条目验签（未验签只允许无代码组件，R40）、命名空间验证、安装时展示完整权限；沙箱默认最小权限；按 digest 引用</td><td>S1</td></tr><tr><td>第三方插件代码</td><td>永不进共享进程；独立工作负载身份；独立 schema 与数据库角色；事件主题 ACL；出口 NetworkPolicy；CSP 由清单生成；Wasm 限额</td><td>S1 规范 / S3 对第三方生效</td></tr><tr><td>身份冒用（Agent 冒充人）</td><td>Agent 主体独立 client 类型、有归属人、可吊销；<code>act</code> 链进令牌；审计 <code>actor_type=agent</code>；<code>humanOnly</code> 动作服务端拒绝</td><td>S1 字段 / S4</td></tr><tr><td>合规</td><td>AI 生成内容显式 / 隐式标识；模型路由按数据驻留策略；审计留痕</td><td>S4</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="1312-合规占位"><a href="#1312-合规占位" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.12 合规占位</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>项</th><th>现状</th><th>对设计的影响</th><th>待确认人</th></tr></thead><tbody><tr><td>等保 2.0</td><td>未确认是否有定级要求</td><td>日志保留 ≥ 6 个月、登录策略、密码策略、审计不可删除——本章设计已满足常见三级要求的技术侧</td><td>产品负责人</td></tr><tr><td>商用密码（SM2 / SM3 / SM4）</td><td>不做假设（Q18）</td><td>若要求：令牌签名算法、哈希链算法、TLS 套件需支持国密；OpenIddict 需扩展签名提供方</td><td>产品负责人</td></tr><tr><td>PIPL / 个人信息保护</td><td>设计已含自助注销、数据导出、字段敏感度、脱敏</td><td>隐私政策链接进清单 <code>links.privacyPolicy</code>；数据驻留按租户标注</td><td>法务</td></tr><tr><td>AI 生成内容标识</td><td>S4</td><td>审计 <code>createdBy.kind=agent</code>；UI 显式标识；元数据记录 <code>generatedBy / promptHash</code></td><td>S4 前</td></tr><tr><td>私有化 / 离线交付</td><td>假定有（Q3）</td><td>影响第三方组件许可证（已避开 AGPL / 商业许可）；签名根密钥分发方案</td><td>产品负责人</td></tr><tr><td>数据跨境</td><td>未知</td><td>若有境外租户：模型路由与存储区域策略</td><td>产品负责人</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="1313-关键表-ddl-片段示意"><a href="#1313-关键表-ddl-片段示意" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.13 关键表 DDL 片段（示意）</h2>
+<p>PostgreSQL 16；只列安全相关字段，省略索引与注释；<code>row_version</code> 用于乐观锁。每张业务表遵循「<code>tenant_id</code> + RLS」约定，平台表（如 <code>tenancy.tenant</code>）不启用 RLS 但只对平台服务角色可见。</p>
+<div class="rp-codeblock language-sql"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="sql"><code><span class="line"><span style="color:var(--shiki-token-comment)">-- 租户（控制面，平台表，不启用 RLS）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> tenancy</span><span style="color:var(--shiki-foreground)">.tenant (</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  id              uuid </span><span style="color:var(--shiki-token-keyword)">PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  code            </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> UNIQUE</span><span style="color:var(--shiki-foreground)">,                    </span><span style="color:var(--shiki-token-comment)">-- 租户号：小写字母数字，创建后不可改</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  name</span><span style="color:var(--shiki-token-keyword)">            text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  isolation</span><span style="color:var(--shiki-token-keyword)">       text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-keyword)">isolation</span><span style="color:var(--shiki-token-keyword)"> IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;shared&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;schema&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;database&#x27;</span><span style="color:var(--shiki-foreground)">)),  </span><span style="color:var(--shiki-token-comment)">-- 创建后不可改</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  status</span><span style="color:var(--shiki-token-keyword)">          text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-keyword)">status</span><span style="color:var(--shiki-token-keyword)"> IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;pending&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;trial&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;active&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;grace&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;readonly&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;suspended&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;purged&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  valid_from      </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  valid_to        </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  quota           jsonb </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-string-expression)"> &#x27;{&quot;users&quot;:0}&#x27;</span><span style="color:var(--shiki-foreground)">,    </span><span style="color:var(--shiki-token-comment)">-- 0 = 不限；不计平台超管，计租户管理员</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  branding        jsonb,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  retention_days  </span><span style="color:var(--shiki-token-keyword)">int</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-constant)"> 30</span><span style="color:var(--shiki-foreground)">,                 </span><span style="color:var(--shiki-token-comment)">-- 注销后数据保留期</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  created_at      </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-keyword)"> now</span><span style="color:var(--shiki-foreground)">(),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  updated_at      </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  row_version     </span><span style="color:var(--shiki-token-keyword)">int</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-constant)"> 0</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-comment)">-- 自然人与租户成员</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> identity</span><span style="color:var(--shiki-foreground)">.person (</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  id                 uuid </span><span style="color:var(--shiki-token-keyword)">PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  identifiers        jsonb </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-foreground)">,                       </span><span style="color:var(--shiki-token-comment)">-- [{type: phone|email|username, value, verified_at}]</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  password_hash      </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,                                 </span><span style="color:var(--shiki-token-comment)">-- Argon2id；NULL = 仅上游登录</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  password_history   jsonb </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-string-expression)"> &#x27;[]&#x27;</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  password_changed_at </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  mfa_factors        jsonb </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-string-expression)"> &#x27;[]&#x27;</span><span style="color:var(--shiki-foreground)">,          </span><span style="color:var(--shiki-token-comment)">-- [{type: totp|sms|passkey, enrolled_at}]；秘密只存 secretRef</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  status</span><span style="color:var(--shiki-token-keyword)">             text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-keyword)">status</span><span style="color:var(--shiki-token-keyword)"> IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;active&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;disabled&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;locked&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;purged&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  created_at         </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-keyword)"> now</span><span style="color:var(--shiki-foreground)">()</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> identity</span><span style="color:var(--shiki-foreground)">.membership (</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  id                 uuid </span><span style="color:var(--shiki-token-keyword)">PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  tenant_id          uuid </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-token-keyword)"> REFERENCES</span><span style="color:var(--shiki-foreground)"> tenancy.tenant(id),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  person_id          uuid </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-token-keyword)"> REFERENCES</span><span style="color:var(--shiki-foreground)"> identity.person(id),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  account            </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,                        </span><span style="color:var(--shiki-token-comment)">-- 租户内唯一、不可改</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  display_name       </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  status</span><span style="color:var(--shiki-token-keyword)">             text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-keyword)">status</span><span style="color:var(--shiki-token-keyword)"> IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;active&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;disabled&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;locked&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;handover&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;purged&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  is_tenant_admin    </span><span style="color:var(--shiki-token-keyword)">boolean</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-foreground)"> false,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  identity_revision  </span><span style="color:var(--shiki-token-keyword)">bigint</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-constant)"> 0</span><span style="color:var(--shiki-foreground)">,            </span><span style="color:var(--shiki-token-comment)">-- 权限/身份变更即递增；进令牌</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  current_profile    </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,                                 </span><span style="color:var(--shiki-token-comment)">-- 身份（权限分区），S3</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  created_at         </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-keyword)"> now</span><span style="color:var(--shiki-foreground)">(),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  row_version        </span><span style="color:var(--shiki-token-keyword)">int</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-constant)"> 0</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  UNIQUE</span><span style="color:var(--shiki-foreground)"> (tenant_id, account),</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  UNIQUE</span><span style="color:var(--shiki-foreground)"> (tenant_id, person_id)</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-comment)">-- 会话（SSO 会话；user → sessions 索引）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> identity</span><span style="color:var(--shiki-foreground)">.</span><span style="color:var(--shiki-token-keyword)">session</span><span style="color:var(--shiki-foreground)"> (</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  sid_hash           </span><span style="color:var(--shiki-token-keyword)">bytea</span><span style="color:var(--shiki-token-keyword)"> PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,                    </span><span style="color:var(--shiki-token-comment)">-- 只存哈希，不存明文 sid</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  person_id          uuid </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  membership_id      uuid,                                 </span><span style="color:var(--shiki-token-comment)">-- 选择令牌阶段可为空</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  tenant_id          uuid,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  client_id          </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  device             jsonb,                                </span><span style="color:var(--shiki-token-comment)">-- {type: pc|mobile|agent, ua, ip, geo}</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  amr                </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">[] </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-foreground)">,                      </span><span style="color:var(--shiki-token-comment)">-- 认证方式，step-up 依据</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  acr                </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  identity_revision  </span><span style="color:var(--shiki-token-keyword)">bigint</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  refresh_family     uuid,                                 </span><span style="color:var(--shiki-token-comment)">-- refresh 轮换族；重用检测即整族吊销</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  created_at         </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-keyword)"> now</span><span style="color:var(--shiki-foreground)">(),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  last_seen_at       </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-keyword)"> now</span><span style="color:var(--shiki-foreground)">(),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  absolute_expires_at </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  revoked_at         </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  revoke_reason      </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-comment)">                                  -- password_changed|disabled|tenant_suspended|forced|concurrency|backchannel|...</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> INDEX</span><span style="color:var(--shiki-token-function)"> ON</span><span style="color:var(--shiki-foreground)"> identity.session (person_id) </span><span style="color:var(--shiki-token-keyword)">WHERE</span><span style="color:var(--shiki-foreground)"> revoked_at </span><span style="color:var(--shiki-token-keyword)">IS</span><span style="color:var(--shiki-token-keyword)"> NULL</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> INDEX</span><span style="color:var(--shiki-token-function)"> ON</span><span style="color:var(--shiki-foreground)"> identity.session (tenant_id) </span><span style="color:var(--shiki-token-keyword)">WHERE</span><span style="color:var(--shiki-foreground)"> revoked_at </span><span style="color:var(--shiki-token-keyword)">IS</span><span style="color:var(--shiki-token-keyword)"> NULL</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-comment)">-- 权限点（由插件清单派生，平台表）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> authz</span><span style="color:var(--shiki-foreground)">.permission_definition (</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  code               </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,                     </span><span style="color:var(--shiki-token-comment)">-- 如 qian.crm:customer.export</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  plugin_id          </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  resource_type      </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,                        </span><span style="color:var(--shiki-token-comment)">-- 由插件注册的资源类型</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  action</span><span style="color:var(--shiki-token-keyword)">             text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  display_name       jsonb </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-foreground)">,                       </span><span style="color:var(--shiki-token-comment)">-- 多语言</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  description</span><span style="color:var(--shiki-foreground)">        jsonb,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  risk_level         </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (risk_level </span><span style="color:var(--shiki-token-keyword)">IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;low&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;medium&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;high&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;critical&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  requires_step_up   </span><span style="color:var(--shiki-token-keyword)">boolean</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-foreground)"> false,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  side_effect        </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (side_effect </span><span style="color:var(--shiki-token-keyword)">IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;read&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;write&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;external&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;destructive&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  terminals          </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">[] </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-string-expression)"> &#x27;{pc,mobile,api}&#x27;</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  contract_version   </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  schema_sha256      </span><span style="color:var(--shiki-token-keyword)">bytea</span><span style="color:var(--shiki-token-comment)">                                 -- 规范化 inputSchema 哈希；变更即旧授权失效</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-comment)">-- 授权关系（租户表，RLS）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> authz</span><span style="color:var(--shiki-foreground)">.</span><span style="color:var(--shiki-token-keyword)">grant</span><span style="color:var(--shiki-foreground)"> (</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  id                 uuid </span><span style="color:var(--shiki-token-keyword)">PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  tenant_id          </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  subject_type       </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (subject_type </span><span style="color:var(--shiki-token-keyword)">IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;membership&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;org&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;position&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;group&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;role&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;client&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;agent&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  subject_id         uuid </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  permission_code    </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> REFERENCES</span><span style="color:var(--shiki-foreground)"> authz.permission_definition(code),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  resource_ref       </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,                                 </span><span style="color:var(--shiki-token-comment)">-- URN qian:{tenant}:{app}:{type}:{id}；L3 实例授权时使用</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  conditions         jsonb,                                </span><span style="color:var(--shiki-token-comment)">-- L6 上下文条件（IP、时间窗、端）</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  source             </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (source </span><span style="color:var(--shiki-token-keyword)">IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;direct&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;policy_pack&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;default_role&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;entitlement&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  granted_by         uuid </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  granted_at         </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-keyword)"> now</span><span style="color:var(--shiki-foreground)">(),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  valid_from         </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  valid_to           </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  CHECK</span><span style="color:var(--shiki-foreground)"> (permission_code </span><span style="color:var(--shiki-token-keyword)">IS NOT NULL</span><span style="color:var(--shiki-token-keyword)"> OR</span><span style="color:var(--shiki-foreground)"> resource_ref </span><span style="color:var(--shiki-token-keyword)">IS NOT NULL</span><span style="color:var(--shiki-foreground)">)</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">ALTER</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-foreground)"> authz.grant </span><span style="color:var(--shiki-token-keyword)">ENABLE</span><span style="color:var(--shiki-token-keyword)"> ROW</span><span style="color:var(--shiki-token-keyword)"> LEVEL</span><span style="color:var(--shiki-token-keyword)"> SECURITY</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">ALTER</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-foreground)"> authz.grant </span><span style="color:var(--shiki-token-keyword)">FORCE</span><span style="color:var(--shiki-token-keyword)"> ROW</span><span style="color:var(--shiki-token-keyword)"> LEVEL</span><span style="color:var(--shiki-token-keyword)"> SECURITY</span><span style="color:var(--shiki-foreground)">;</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> POLICY</span><span style="color:var(--shiki-foreground)"> tenant_isolation </span><span style="color:var(--shiki-token-keyword)">ON</span><span style="color:var(--shiki-foreground)"> authz.grant</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  USING</span><span style="color:var(--shiki-foreground)"> (tenant_id </span><span style="color:var(--shiki-token-keyword)">=</span><span style="color:var(--shiki-token-function)"> NULLIF</span><span style="color:var(--shiki-foreground)">(current_setting(</span><span style="color:var(--shiki-token-string-expression)">&#x27;app.current_tenant_id&#x27;</span><span style="color:var(--shiki-foreground)">, true), </span><span style="color:var(--shiki-token-string-expression)">&#x27;&#x27;</span><span style="color:var(--shiki-foreground)">))</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  WITH</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (tenant_id </span><span style="color:var(--shiki-token-keyword)">=</span><span style="color:var(--shiki-token-function)"> NULLIF</span><span style="color:var(--shiki-foreground)">(current_setting(</span><span style="color:var(--shiki-token-string-expression)">&#x27;app.current_tenant_id&#x27;</span><span style="color:var(--shiki-foreground)">, true), </span><span style="color:var(--shiki-token-string-expression)">&#x27;&#x27;</span><span style="color:var(--shiki-foreground)">));</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-comment)">-- 数据权限方案（租户表，RLS）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> authz</span><span style="color:var(--shiki-foreground)">.data_scope_rule (</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  id                 uuid </span><span style="color:var(--shiki-token-keyword)">PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  tenant_id          </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  resource_ref       </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,                        </span><span style="color:var(--shiki-token-comment)">-- 列表 / 模型 / 菜单的 URN</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  role_id            uuid </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-foreground)">,                        </span><span style="color:var(--shiki-token-comment)">-- 同角色内 AND、跨角色 OR</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  name</span><span style="color:var(--shiki-token-keyword)">               text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  all_data           </span><span style="color:var(--shiki-token-keyword)">boolean</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-foreground)"> false,       </span><span style="color:var(--shiki-token-comment)">-- 任一为 true 则整体放开</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  filter_ast         jsonb,                                </span><span style="color:var(--shiki-token-comment)">-- Filter AST：{logic, groups[{logic, conditions[{field, op, value|sysVar}]}]}</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  tables             jsonb,                                </span><span style="color:var(--shiki-token-comment)">-- 涉及的表与连接（多表按表拆条件组）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  description</span><span style="color:var(--shiki-token-keyword)">        text</span><span style="color:var(--shiki-foreground)">,                                 </span><span style="color:var(--shiki-token-comment)">-- 可读描述，供 Explain 与 Agent</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  created_by         uuid </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  created_at         </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-keyword)"> now</span><span style="color:var(--shiki-foreground)">(),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  row_version        </span><span style="color:var(--shiki-token-keyword)">int</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-constant)"> 0</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  CHECK</span><span style="color:var(--shiki-foreground)"> (all_data </span><span style="color:var(--shiki-token-keyword)">OR</span><span style="color:var(--shiki-foreground)"> filter_ast </span><span style="color:var(--shiki-token-keyword)">IS NOT NULL</span><span style="color:var(--shiki-foreground)">)</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line"><span style="color:var(--shiki-token-comment)">-- 同样的 ENABLE / FORCE ROW LEVEL SECURITY 与 tenant_isolation 策略</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--shiki-token-comment)">-- 命令级审计（哈希链；租户视角受 RLS 限制，平台超管经平台服务角色读取）</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> audit</span><span style="color:var(--shiki-foreground)">.audit_entry (</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  seq                </span><span style="color:var(--shiki-token-keyword)">bigint</span><span style="color:var(--shiki-token-keyword)"> GENERATED</span><span style="color:var(--shiki-token-keyword)"> ALWAYS</span><span style="color:var(--shiki-token-keyword)"> AS</span><span style="color:var(--shiki-token-keyword)"> IDENTITY</span><span style="color:var(--shiki-token-keyword)"> PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  id                 uuid </span><span style="color:var(--shiki-token-keyword)">NOT NULL</span><span style="color:var(--shiki-token-keyword)"> UNIQUE</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  occurred_at        </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-token-keyword)"> now</span><span style="color:var(--shiki-foreground)">(),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  tenant_id          uuid,                                 </span><span style="color:var(--shiki-token-comment)">-- 平台级操作可为空</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  actor_type         </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (actor_type </span><span style="color:var(--shiki-token-keyword)">IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;user&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;service&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;agent&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;system&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  actor_id           </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  on_behalf_of       uuid,                                 </span><span style="color:var(--shiki-token-comment)">-- 代表的 Membership</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  act_chain          jsonb,                                </span><span style="color:var(--shiki-token-comment)">-- RFC 8693 act 链（S4）</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  channel            </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (channel </span><span style="color:var(--shiki-token-keyword)">IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;ui&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;api&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;mcp&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;a2a&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;job&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;event&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  capability_id      </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  contract_version   </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  plugin_id          </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  resource_refs      </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">[],</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  input_hash         </span><span style="color:var(--shiki-token-keyword)">bytea</span><span style="color:var(--shiki-foreground)">,                                </span><span style="color:var(--shiki-token-comment)">-- 规范化输入 SHA-256；不存明文敏感参数</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  idempotency_key    </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  dry_run            </span><span style="color:var(--shiki-token-keyword)">boolean</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> DEFAULT</span><span style="color:var(--shiki-foreground)"> false,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  decision           jsonb,                                </span><span style="color:var(--shiki-token-comment)">-- {allowed, matchedRules[], missingPermissions[], identityRevision}</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  outcome            </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-keyword)"> CHECK</span><span style="color:var(--shiki-foreground)"> (outcome </span><span style="color:var(--shiki-token-keyword)">IN</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-string-expression)">&#x27;success&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;denied&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;failed&#x27;</span><span style="color:var(--shiki-foreground)">,</span><span style="color:var(--shiki-token-string-expression)">&#x27;partial&#x27;</span><span style="color:var(--shiki-foreground)">)),</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  error_code         </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  trace_id           </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  client             jsonb,                                </span><span style="color:var(--shiki-token-comment)">-- {ip, ua, device}</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  prev_hash          </span><span style="color:var(--shiki-token-keyword)">bytea</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">  hash</span><span style="color:var(--shiki-token-keyword)">               bytea</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-token-comment)">                        -- SHA-256(prev_hash || 规范化记录)</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">CREATE</span><span style="color:var(--shiki-token-keyword)"> TABLE</span><span style="color:var(--shiki-token-function)"> audit</span><span style="color:var(--shiki-foreground)">.chain_state (                           </span><span style="color:var(--shiki-token-comment)">-- 链头持久化，重启不丢</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  partition_key      </span><span style="color:var(--shiki-token-keyword)">text</span><span style="color:var(--shiki-token-keyword)"> PRIMARY KEY</span><span style="color:var(--shiki-foreground)">,                     </span><span style="color:var(--shiki-token-comment)">-- 按租户或按服务分链</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  last_seq           </span><span style="color:var(--shiki-token-keyword)">bigint</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  last_hash          </span><span style="color:var(--shiki-token-keyword)">bytea</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span><span style="color:var(--shiki-foreground)">,</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">  updated_at         </span><span style="color:var(--shiki-token-keyword)">timestamptz</span><span style="color:var(--shiki-token-keyword)"> NOT NULL</span></span>
+<span class="line"><span style="color:var(--shiki-foreground)">);</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p>补充说明：</p>
+<ul>
+<li><code>authz.role</code>、<code>authz.role_assignment</code>、<code>authz.resource_type</code>、<code>authz.field_policy</code>、<code>authz.resource_acl</code>、<code>identity.external_identity</code>、<code>identity.client</code> 结构见 ADR-005 / ADR-006 附录，此处省略。</li>
+<li>商密要求若确认，<code>hash / prev_hash / input_hash</code> 的算法由 SHA-256 切换为 SM3，列类型不变。</li>
+<li>哈希链按 <code>partition_key</code> 分链（默认按租户），避免单链成为写入热点；跨链完整性由 <code>chain_state</code> 的周期快照签名保证。</li>
+</ul>
+<hr/>
+<h2 class="rp-toc-include" id="1314-过渡态2026-10"><a href="#1314-过渡态2026-10" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.14 过渡态（2026-10）</h2>
+<p>以下为 Kun 当前代码确认的缺口；S1 退出前必须消除，否则 §13 的目标态不成立。修复优先走上游 PR，一个迭代未合入则以 <code>Kun.*.Patches</code> 补丁包承载（Q7）。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>#</th><th>过渡态</th><th>目标态</th><th>落点</th></tr></thead><tbody><tr><td>G1</td><td>无任何鉴权抽象（无 <code>IPermissionChecker</code>、策略、<code>[Authorize]</code>）</td><td><code>Kun.Authorization</code> 端口 + <code>qian.authz</code> 实现</td><td>ADR-006</td></tr><tr><td>G2</td><td>网关外部 issuer 只能配一个</td><td><code>qian.identity</code> 唯一 issuer；多 issuer 仅作过渡开关</td><td>ADR-005</td></tr><tr><td>G3</td><td>OIDC 客户端不发 <code>code_verifier</code>、不校验 nonce、无 refresh / client_credentials、discovery 不刷新</td><td>全部补齐；OIDC 一致性测试</td><td>ADR-005</td></tr><tr><td>G4</td><td>会话无用户 → 会话索引；无后通道登出；日志打印明文 sid</td><td>会话中心重做；只记 sid 哈希</td><td>§13.3</td></tr><tr><td>G5</td><td>CSRF 推迟</td><td>Cookie 方案上线即带 CSRF</td><td>§13.3</td></tr><tr><td>G6</td><td>三套 S2S 签发器并存（RS256/60s、ES256/15min、Identity）</td><td>收敛为一套，claim 对齐 iClaw 形状</td><td>§13.3.1</td></tr><tr><td>G7</td><td>租户 claim 名不统一（<code>tid</code> vs <code>tenant_id</code>）；<code>X-Tenant-Id</code> 头回退与 <code>FallbackTenantId=&quot;default&quot;</code> fail-open</td><td>统一 <code>tenant_id</code>；生产禁用头回退，fail-closed</td><td>§13.4</td></tr><tr><td>G8</td><td><code>SessionData</code> 单 TenantId，无一人多租户模型</td><td>引入 <code>membership_id</code>；切换租户重签</td><td>ADR-005</td></tr><tr><td>G9</td><td>消费端 <code>MessageContext</code> 无 <code>TenantId</code>、Saga 执行器不建作用域、Outbox 发布器自建 scope → 后台链路丢租户</td><td>订阅器建作用域后回灌；Saga 按实例 <code>TenantId</code> 开作用域</td><td>ADR-008</td></tr><tr><td>G10</td><td>网关默认不强制认证；限流未挂路由；私钥不能热轮换；gRPC 流式绕过鉴权</td><td>全部改为强制装配</td><td>ADR-010</td></tr><tr><td>G11</td><td>RLS 拦截器与模型缓存键 opt-in；忘记 <code>ReplaceService&lt;IModelCacheKeyFactory&gt;</code> 即跨租户泄漏</td><td><code>AddKunTenantRls</code> 自动挂载并强制缓存键；CI 检查多租户基类</td><td>ADR-004</td></tr><tr><td>G12</td><td>多条审计路径并存（事后拦截器、哈希链无持久化）</td><td>一套：同事务 <code>AuditLog</code> + 持久化哈希链</td><td>ADR-009</td></tr><tr><td>G13</td><td>Infisical 为纸面权威；现网无 default-deny / ResourceQuota / Alertmanager；K3s 未开 Secret 加密</td><td>§13.7、ADR-017 的部署基线</td><td>ADR-017</td></tr><tr><td>G14</td><td>缓存 / 存储键无租户维度</td><td>租户感知装饰器</td><td>ADR-004</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="1315-待确认"><a href="#1315-待确认" class="rp-header-anchor rp-link" aria-hidden="true">#</a>13.15 待确认</h2>
+<ol>
+<li>商密（SM2 / SM3）与等保定级：决定签名与哈希算法、日志保留期；本章按「不做假设」写，需产品负责人确认（Q18）。</li>
+<li>已裁决（R24）：S2S 令牌与 iClaw 同形，<code>roles[]</code> 作为例外保留但限定为粗粒度角色代码，Qian 服务不得仅凭它放行、必须调用 <code>Kun.Authorization</code> 决策端口；<code>project_id</code> 保留为可选 claim，Qian 只透传不解释（§13.3、ADR-010 D10.4）。</li>
+<li>平台超管对租户「不可见、审计可见」（Q12）与「旁路须每次审计」在 UI 上如何呈现（审计条目是否对租户管理员展示超管身份），需产品决定。</li>
+<li>Agent 在 S4 前对转审 / 协办 / 撤销一律禁止（Q26）；S2 流程动作枚举需预留 <code>humanOnly</code> 与 <code>agentPolicy</code> 字段，与 ADR-012 核对。</li>
+<li>哈希链分链粒度（按租户 vs 按服务）影响跨租户操作（平台运营）的链归属，本章默认按租户并对平台级操作使用 <code>platform</code> 分区，需与 ADR-009 核对。</li>
+<li>已裁决（R10）：出网 SSRF 基线分两步——平台自有出网点（OIDC 发现、企业微信、SMTP、短信、Apollo、对象存储）S1 必做，低代码连接器与第三方出网点 S2（§13.8）。</li>
+<li>已裁决（R11）：数据接口 SQL 文本模式 = 高级权限 + 只读数据库账号 + 超时与行数上限 + 参数化 + 审计 + 发布需租户管理员批准；补充裁决 Q32 文本已同步。</li>
+</ol><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/pr-preview/pr-50/design/prd/12-boundaries.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>§12 能力边界</span></span></a><a href="/pr-preview/pr-50/design/prd/14-quality.html" class="rp-prev-next-page__item rp-prev-next-page__next rp-link"><span class="rp-prev-next-page__item__desc">下一页</span><span class="rp-prev-next-page__item__title"><span>§14 质量与评估</span><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></span></a></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#131-角色与主体模型" class="rp-toc-item rp-link" title="13.1 角色与主体模型" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.1 角色与主体模型</span></a><a href="#1311-主体类型" class="rp-toc-item rp-link" title="13.1.1 主体类型" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.1.1 主体类型</span></a><a href="#1312-角色权限表" class="rp-toc-item rp-link" title="13.1.2 角色权限表" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.1.2 角色权限表</span></a><a href="#132-权限七层模型-l0l6" class="rp-toc-item rp-link" title="13.2 权限七层模型 L0–L6" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.2 权限七层模型 L0–L6</span></a><a href="#1321-求值规则" class="rp-toc-item rp-link" title="13.2.1 求值规则" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.2.1 求值规则</span></a><a href="#1322-判定端口语义" class="rp-toc-item rp-link" title="13.2.2 判定端口语义" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.2.2 判定端口语义</span></a><a href="#133-令牌与会话" class="rp-toc-item rp-link" title="13.3 令牌与会话" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.3 令牌与会话</span></a><a href="#1331-令牌内容" class="rp-toc-item rp-link" title="13.3.1 令牌内容" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.3.1 令牌内容</span></a><a href="#1332-会话" class="rp-toc-item rp-link" title="13.3.2 会话" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.3.2 会话</span></a><a href="#1333-会话失效触发清单" class="rp-toc-item rp-link" title="13.3.3 会话失效触发清单" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.3.3 会话失效触发清单</span></a><a href="#134-纵深防御分层" class="rp-toc-item rp-link" title="13.4 纵深防御分层" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.4 纵深防御分层</span></a><a href="#135-需二次确认--人工审批的场景" class="rp-toc-item rp-link" title="13.5 需二次确认 / 人工审批的场景" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.5 需二次确认 / 人工审批的场景</span></a><a href="#136-插件安全" class="rp-toc-item rp-link" title="13.6 插件安全" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.6 插件安全</span></a><a href="#1361-信任等级--允许形态--沙箱--签名" class="rp-toc-item rp-link" title="13.6.1 信任等级 × 允许形态 × 沙箱 × 签名" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.6.1 信任等级 × 允许形态 × 沙箱 × 签名</span></a><a href="#1362-反向权限审批" class="rp-toc-item rp-link" title="13.6.2 反向权限审批" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.6.2 反向权限审批</span></a><a href="#1363-运行时强制点" class="rp-toc-item rp-link" title="13.6.3 运行时强制点" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">13.6.3 运行时强制点</span></a><a href="#137-密钥与配置安全" class="rp-toc-item rp-link" title="13.7 密钥与配置安全" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.7 密钥与配置安全</span></a><a href="#138-数据安全" class="rp-toc-item rp-link" title="13.8 数据安全" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.8 数据安全</span></a><a href="#139-审计" class="rp-toc-item rp-link" title="13.9 审计" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.9 审计</span></a><a href="#1310-前端安全硬线" class="rp-toc-item rp-link" title="13.10 前端安全硬线" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.10 前端安全硬线</span></a><a href="#1311-agent-相关威胁与防线" class="rp-toc-item rp-link" title="13.11 Agent 相关威胁与防线" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.11 Agent 相关威胁与防线</span></a><a href="#1312-合规占位" class="rp-toc-item rp-link" title="13.12 合规占位" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.12 合规占位</span></a><a href="#1313-关键表-ddl-片段示意" class="rp-toc-item rp-link" title="13.13 关键表 DDL 片段（示意）" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.13 关键表 DDL 片段（示意）</span></a><a href="#1314-过渡态2026-10" class="rp-toc-item rp-link" title="13.14 过渡态（2026-10）" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.14 过渡态（2026-10）</span></a><a href="#1315-待确认" class="rp-toc-item rp-link" title="13.15 待确认" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">13.15 待确认</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>
