@@ -120,6 +120,14 @@ public static class IdentityErrors
     /// <summary>不允许该成员状态迁移。</summary>
     public static readonly ErrorCode DirectoryTransitionInvalid = Business("DIRECTORY_TRANSITION_INVALID", 409,
         "不允许该成员状态迁移", "不允许该成员状态迁移。", "The member state transition is not allowed.", "The member state transition is not allowed.");
+    /// <summary>新增成员时该自然人已是本租户成员，含已停用、已锁定与已从目录删除的；不新建也不恢复。</summary>
+    public static readonly ErrorCode DirectoryMemberExists = Business("DIRECTORY_MEMBER_EXISTS", 409,
+        "已是本租户成员", "该账号已是本租户成员，可在成员列表里查看或启用。",
+        "Already a member", "The account is already a member of this tenant; find or re-enable it in the member list.");
+    /// <summary>新增成员时标识对应的账号不能加入本租户：平台身份，或账号已被停用、锁定；不区分具体原因。</summary>
+    public static readonly ErrorCode DirectoryMemberIneligible = Business("DIRECTORY_MEMBER_INELIGIBLE", 422,
+        "该账号不能加入", "该账号当前不能加入本租户，请联系平台运营。",
+        "Account cannot join", "The account cannot join this tenant at present; contact platform operations.");
 
     /// <summary>可登记和导出的完整错误词汇。</summary>
     public static IReadOnlyList<ErrorCode> All { get; } = Array.AsReadOnly(new[]
@@ -128,7 +136,8 @@ public static class IdentityErrors
         OidcIssuerMismatch, OidcTokenInvalid, OperationUnsupported,
         PasswordPolicyViolation, PasswordReused, CurrentPasswordInvalid, IdentifierInUse, LastVerifiedIdentifier, LastLoginMethod, AccountInUse,
         ConnectorStateInvalid, ConnectorDenied, BindingConflict, BindingExpired,
-        DirectoryHasMembers, DirectoryDepthExceeded, DirectoryCycle, DirectoryAdministratorProtected, DirectoryTransitionInvalid
+        DirectoryHasMembers, DirectoryDepthExceeded, DirectoryCycle, DirectoryAdministratorProtected, DirectoryTransitionInvalid,
+        DirectoryMemberExists, DirectoryMemberIneligible
     });
 
     /// <summary>成组登记本组件错误码；失败撤销已登记项，返回可交给 ctx.Effect 的幂等释放句柄。</summary>

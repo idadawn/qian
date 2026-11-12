@@ -1595,3 +1595,40 @@ static Qian.Identity.Abstractions.OrganizationHead.operator ==(Qian.Identity.Abs
 virtual Qian.Identity.Abstractions.DirectoryIntegrationEvent.EqualityContract.get -> System.Type!
 virtual Qian.Identity.Abstractions.DirectoryIntegrationEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
 virtual Qian.Identity.Abstractions.DirectoryIntegrationEvent.PrintMembers(System.Text.StringBuilder! builder) -> bool
+Qian.Identity.Abstractions.DirectoryMemberAdded
+Qian.Identity.Abstractions.DirectoryMemberAdded.<Clone>$() -> Qian.Identity.Abstractions.DirectoryMemberAdded!
+Qian.Identity.Abstractions.DirectoryMemberAdded.Deconstruct(out Qian.Identity.Abstractions.Membership! Membership, out bool PersonCreated, out System.Collections.Generic.IReadOnlyList<string!>! GrantedRoles) -> void
+Qian.Identity.Abstractions.DirectoryMemberAdded.DirectoryMemberAdded(Qian.Identity.Abstractions.Membership! Membership, bool PersonCreated, System.Collections.Generic.IReadOnlyList<string!>! GrantedRoles) -> void
+Qian.Identity.Abstractions.DirectoryMemberAdded.Equals(Qian.Identity.Abstractions.DirectoryMemberAdded? other) -> bool
+Qian.Identity.Abstractions.DirectoryMemberAdded.GrantedRoles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Qian.Identity.Abstractions.DirectoryMemberAdded.GrantedRoles.init -> void
+Qian.Identity.Abstractions.DirectoryMemberAdded.Membership.get -> Qian.Identity.Abstractions.Membership!
+Qian.Identity.Abstractions.DirectoryMemberAdded.Membership.init -> void
+Qian.Identity.Abstractions.DirectoryMemberAdded.PersonCreated.get -> bool
+Qian.Identity.Abstractions.DirectoryMemberAdded.PersonCreated.init -> void
+Qian.Identity.Abstractions.DirectoryMemberInput
+Qian.Identity.Abstractions.DirectoryMemberInput.<Clone>$() -> Qian.Identity.Abstractions.DirectoryMemberInput!
+Qian.Identity.Abstractions.DirectoryMemberInput.Account.get -> string?
+Qian.Identity.Abstractions.DirectoryMemberInput.Account.init -> void
+Qian.Identity.Abstractions.DirectoryMemberInput.Deconstruct(out string! Identifier, out string! DisplayName) -> void
+Qian.Identity.Abstractions.DirectoryMemberInput.DirectoryMemberInput(string! Identifier, string! DisplayName) -> void
+Qian.Identity.Abstractions.DirectoryMemberInput.DisplayName.get -> string!
+Qian.Identity.Abstractions.DirectoryMemberInput.DisplayName.init -> void
+Qian.Identity.Abstractions.DirectoryMemberInput.Equals(Qian.Identity.Abstractions.DirectoryMemberInput? other) -> bool
+Qian.Identity.Abstractions.DirectoryMemberInput.Identifier.get -> string!
+Qian.Identity.Abstractions.DirectoryMemberInput.Identifier.init -> void
+Qian.Identity.Abstractions.DirectoryMemberInput.InitialPassword.get -> Qian.Identity.Abstractions.AuthenticationProof?
+Qian.Identity.Abstractions.DirectoryMemberInput.InitialPassword.init -> void
+Qian.Identity.Abstractions.IIdentityDirectory.AddMemberAsync(Qian.Identity.Abstractions.DirectoryMemberInput! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.DirectoryMemberAdded!>
+override Qian.Identity.Abstractions.DirectoryMemberAdded.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryMemberAdded.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryMemberAdded.ToString() -> string!
+override Qian.Identity.Abstractions.DirectoryMemberInput.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryMemberInput.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryMemberInput.ToString() -> string!
+static Qian.Identity.Abstractions.DirectoryMemberAdded.operator !=(Qian.Identity.Abstractions.DirectoryMemberAdded? left, Qian.Identity.Abstractions.DirectoryMemberAdded? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberAdded.operator ==(Qian.Identity.Abstractions.DirectoryMemberAdded? left, Qian.Identity.Abstractions.DirectoryMemberAdded? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberInput.operator !=(Qian.Identity.Abstractions.DirectoryMemberInput? left, Qian.Identity.Abstractions.DirectoryMemberInput? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberInput.operator ==(Qian.Identity.Abstractions.DirectoryMemberInput? left, Qian.Identity.Abstractions.DirectoryMemberInput? right) -> bool
+static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryMemberExists -> Qian.Runtime.Errors.ErrorCode!
+static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryMemberIneligible -> Qian.Runtime.Errors.ErrorCode!

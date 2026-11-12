@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kun.Core.MultiTenancy;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Qian.Audit;
 using Qian.Events;
 using Qian.Identity.Abstractions;
 using Qian.Runtime.Errors;
@@ -42,6 +44,8 @@ internal static class IdentityDirectoryEndpoints
         {
             items = await directory.QueryMembersAsync(MemberQuery(http), ct).ConfigureAwait(false)
         })));
+        // 新增成员（S1-IDP-017）：手机号或用户名已对应自然人时绑定为本租户成员，否则新建自然人并设初始密码、首次登录强制修改；只收本租户管理员。
+        endpoints.MapPost(Prefix + "/members", (Delegate)AddMember);
         endpoints.MapGet(Prefix + "/orgs/{id:guid}/members", (Delegate)((HttpContext http, Guid id) => Run(http, false, async (directory, ct) => new
         {
             items = await directory.QueryMembersAsync(new DirectoryMemberQuery
@@ -69,6 +73,11 @@ internal static class IdentityDirectoryEndpoints
     }
 
     private sealed record GroupBody(string Name);
+    // 请求体的服务端绑定；契约测试按它核对 directory-members.openapi.json 的请求 Schema。
+    internal sealed record AddMemberBody(string Identifier, string DisplayName, string? InitialPassword = null, string? Account = null)
+    {
+        public override string ToString() => "AddMemberBody(redacted)";
+    }
     private sealed record RelationsBody(IReadOnlyList<MemberRelation> Items);
     private sealed record StatusBody(string Status, string Reason);
     private sealed record DisableBody(IReadOnlyList<Guid> MembershipIds, string Reason);
@@ -111,6 +120,27 @@ internal static class IdentityDirectoryEndpoints
         using var scope = http.RequestServices.GetRequiredService<ITenantContext>().BeginScope(tenant.ToString("D"));
         using var origin = EventEnvelopeScope.Begin(new EventOrigin("qian.identity", EventActor.User(caller.PersonId.ToString("D"))));
         return Results.Json(await action(service, caller, http.RequestAborted).ConfigureAwait(false), Json);
+    }
+
+    // 审计输入的脱敏投影：初始密码按敏感字段遮盖，哈希里没有它；字段都可缺省，缺失与非法由业务规则给出结构化错误。
+    private static readonly AuditInputProjection AddMemberProjection = new(JsonElement.Parse("""
+        {"type":"object","additionalProperties":false,"properties":{"identifier":{"type":"string"},"display_name":{"type":"string"},"initial_password":{"type":"string","sensitive":true},"account":{"type":"string"}}}
+        """), isCommand: true);
+
+    // 请求体 {identifier, display_name, initial_password?, account?}，租户只取自会话；响应 {membership, person_created, granted_roles}，不含密码。
+    // 防伪与请求体检查在前，管理员资格（实时校验会话）在读请求体之前；审计与标准能力共用 DirectoryMemberAddition。
+    private static async Task<IResult> AddMember(HttpContext http)
+    {
+        if (await IdentityAccountEndpoints.Guard(http).ConfigureAwait(false) is { } rejected) return rejected;
+        return await Run(http, true, async (_, caller, ct) =>
+        {
+            var body = await IdentityAccountEndpoints.Read<AddMemberBody>(http, Json).ConfigureAwait(false) ?? throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
+            var service = IdentityAccountEndpoints.Service(http); var tenant = caller.TenantId!.Value;
+            var fingerprint = AddMemberProjection.InputHash(JsonSerializer.SerializeToElement(body, Json))!;
+            using var password = body.InitialPassword is null ? null : new AuthenticationProof(Encoding.UTF8.GetBytes(body.InitialPassword));
+            return await DirectoryMemberAddition.RunAsync(service, service.TenantAudit(tenant), tenant, caller.PersonId, "ui", fingerprint, null,
+                new DirectoryMemberInput(body.Identifier, body.DisplayName) { InitialPassword = password, Account = body.Account }, ct).ConfigureAwait(false);
+        }).ConfigureAwait(false);
     }
 
     private static async Task<IResult> Write<T>(HttpContext http, Func<IIdentityDirectory, T, CancellationToken, Task<object>> action) where T : class
