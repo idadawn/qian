@@ -45,10 +45,16 @@
 ## 2 一次性前置（产品负责人）
 
 1. DNS：两个主机名的 A 记录指向 43.180.203.135。
-2. Harbor：
-   - 建私有项目 `qian`；
-   - 给 qd 一个推送账号（qd 上执行 `docker login 192.168.1.201`）；
-   - 建一个只读 `qian` 项目的机器人账号，凭据建成 `qian-staging` 里的 `kubernetes.io/dockerconfigjson` Secret（名称见部署仓库清单）。项目是私有的，而节点的 `registries.yaml` 只给了 HTTP 端点、没有凭据，这一点与公开的 `iclaw` 项目不同。
+2. Harbor（`http://192.168.1.201`）：
+   - 建私有项目 `qian`。
+   - 推送：qd 上的 Docker 已登录 `192.168.1.201:80`，登录的是 Harbor 管理员，推得进 `qian`，不用另配账号。要收窄权限，可另建一个只对 `qian` 有推送权限的机器人账号，在 qd 上用它重新 `docker login 192.168.1.201:80`。
+   - 拉取用机器人账号加 Secret（产品负责人 2026-11-12 确认）。项目是私有的，而节点的 `registries.yaml` 对 192.168.1.201 只配了 HTTP 端点、没有凭据，这一点与公开的 `iclaw` 项目不同。
+     1. 在项目 `qian` 的机器人账号页新建一个，权限只勾仓库的拉取。记下 Harbor 显示的完整名称（形如 `robot$qian+staging-pull`）和只显示一次的令牌。
+     2. 在有集群 kubeconfig 的机器上（qd 即可）建 `qian-staging` 里的 `qian-harbor-pull`。执行下面这条后粘贴令牌、回车：`read -rs` 不回显，令牌也不进 shell 历史。用户名换成上一步记下的完整名称，单引号不能省，因为名称里有 `$`。
+        ```bash
+        read -rs QIAN_PULL_TOKEN && kubectl --context <上下文> -n qian-staging create secret docker-registry qian-harbor-pull --docker-server=192.168.1.201 --docker-username='robot$qian+staging-pull' --docker-password="$QIAN_PULL_TOKEN"; unset QIAN_PULL_TOKEN
+        ```
+     3. `--docker-server` 写不带端口的 `192.168.1.201`，与清单里的镜像引用一致。凭据对不对，要到首次同步、Pod 拉镜像时才见分晓：失败时 Pod 停在 `ImagePullBackOff`，`kubectl describe pod` 的事件里能看到 401。
 3. hub 证书：DNS 生效后，按部署仓库 `env-ds/edge/qdal/` 的流程签发两个主机名的证书，再部署两个 vhost。hub 上的部署脚本先 `nginx -t`、自带备份，失败会回滚。
 4. 系统组件修订的签名钥（R151 ①）。在 qd 上生成一次，私钥只留在 qd，不进集群、不进 git：
    ```bash
