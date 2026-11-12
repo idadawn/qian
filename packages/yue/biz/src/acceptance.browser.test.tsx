@@ -35,7 +35,7 @@ function AllSelectors({ client, i18n }: { client: PlatformClient; i18n: Platform
 }
 
 const customersRoute = { method: 'GET', path: '/api/customers', respond: () => Response.json({ items: CUSTOMERS }) };
-const EXPECTED = ['/api/authz/permissions', '/api/authz/roles', '/api/customers?keyword=', '/api/directory/members?offset=0&limit=200', '/api/directory/org-types', '/api/directory/orgs/tree'];
+const EXPECTED = ['/api/authz/permissions', '/api/authz/roles', '/api/customers?keyword=', '/api/directory/members?offset=0&limit=51', '/api/directory/org-types', '/api/directory/orgs/tree'];
 
 async function settle(requests: { url: string }[]) {
   await vi.waitFor(() => expect([...new Set(requests.map((request) => request.url))].sort()).toEqual(EXPECTED));
@@ -130,7 +130,7 @@ describe('i18n 全部走 key', () => {
     }
   });
 
-  it('伪语言包下，组件各个状态（正常、已选多项、无匹配、空、加载中、错误与重试、成员截断）的文字与可访问名称只有 key 标记、注入的 label 与目录数据', async () => {
+  it('伪语言包下，组件各个状态（正常、已选多项、无匹配、空、加载中、错误与重试、成员后面还有）的文字与可访问名称只有 key 标记、注入的 label 与目录数据', async () => {
     const i18n = pseudoI18n();
     const texts: string[] = [];
     const collect = () => {
@@ -246,10 +246,10 @@ describe('i18n 全部走 key', () => {
       cleanup();
     }
 
-    // ⑥ 成员超过上限：触发器旁的截断提示。
+    // ⑥ 成员超过一页：触发器旁提示继续输入。
     {
-      const { client } = createFixture();
-      render(<UserSelect client={client} i18n={i18n} label="L-user" value={null} onChange={() => {}} max={2} />);
+      const { client } = createFixture({ members: Array.from({ length: 60 }, (_, index) => MEMBERS[index % MEMBERS.length]!) });
+      render(<UserSelect client={client} i18n={i18n} label="L-user" value={null} onChange={() => {}} />);
       await screen.findByTestId('yue-user-select-notice');
       collect();
       cleanup();

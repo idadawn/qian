@@ -16,21 +16,30 @@ internal sealed partial class IdentityAccountService
     private static DirectoryPosition Position(PositionRow row) => new(row.Id, row.Name, row.OrganizationId, row.ParentId, row.Path, row.Depth, row.IsDefault, row.IsResponsible, row.ResponsibleMembershipId);
 
     // 所有目录写入共用租户事务锁，树移动、成员归属与删除不会相互穿插。锁内查询始终保留 EF 过滤与 FORCE RLS。
-    private async ValueTask<T> DirectoryWrite<T>(Func<IdentityDbContext, CancellationToken, Task<T>> action, CancellationToken ct)
+    // 写入产生的 directory.*.v1 事件与业务数据同一事务进入 Outbox；写入失败、回滚时一条也不留。
+    private async ValueTask<T> DirectoryWrite<T>(Func<IdentityDbContext, DirectoryEventBatch, CancellationToken, Task<T>> action, CancellationToken ct)
     {
-        var tenant = RequireTenant(); using var scope = TenantScope(tenant);
+        // 事件来源沿用调用方已打开的信封作用域（HTTP 入口是调用者本人）；进程内调用没有作用域时记为身份服务主体。
+        var tenant = RequireTenant(); using var scope = TenantScope(tenant); using var origin = OpenOrigin();
         await using var session = await OpenAsync(ct).ConfigureAwait(false);
         await using var transaction = await session.Context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
-        await IdentitySql.LockAsync(session.Context, "directory:" + tenant.ToString("D"), ct).ConfigureAwait(false);
+        var directoryLock = await LockDirectoryAsync(session.Context, tenant, ct).ConfigureAwait(false);
         try
         {
-            var result = await action(session.Context, ct).ConfigureAwait(false);
+            var events = new DirectoryEventBatch();
+            var result = await action(session.Context, events, ct).ConfigureAwait(false);
+            var changes = await RaiseDirectoryEventsAsync(session.Context, directoryLock, events, ct).ConfigureAwait(false);
             await session.SaveChangesAsync(ct).ConfigureAwait(false);
+            EnsurePublished(changes);
             await transaction.CommitAsync(ct).ConfigureAwait(false);
             return result;
         }
         catch (DbUpdateException error) when (IsUniqueViolation(error)) { throw Error(PlatformErrors.Conflict); }
     }
+
+    // 组织类型字典与用户组不在 S1 目录事件清单里（产品负责人 2026-11-11 确认的事件集合）。
+    private ValueTask<T> DirectoryWrite<T>(Func<IdentityDbContext, CancellationToken, Task<T>> action, CancellationToken ct) =>
+        DirectoryWrite<T>((db, _, token) => action(db, token), ct);
 
     private async ValueTask<T> DirectoryRead<T>(Func<IdentityDbContext, CancellationToken, Task<T>> action, CancellationToken ct)
     {
@@ -75,7 +84,7 @@ internal sealed partial class IdentityAccountService
     private ValueTask<Organization> SaveOrganization(Guid? id, OrganizationInput request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request); var name = DirectoryName(request.Name); var code = TypeCode(request.TypeCode);
-        return DirectoryWrite(async (db, ct) =>
+        return DirectoryWrite(async (db, events, ct) =>
         {
             if (!await db.Set<OrganizationTypeRow>().AnyAsync(row => row.Code == code, ct).ConfigureAwait(false)) throw Error(PlatformErrors.NotFound);
             OrganizationRow? parent = null;
@@ -89,16 +98,24 @@ internal sealed partial class IdentityAccountService
             if (request.ManagerMembershipId is { } manager) await DirectoryMemberRow(db, manager, ct).ConfigureAwait(false);
             if (request.ResponsiblePositionId is { } responsible && !await db.Set<PositionRow>().AnyAsync(position => position.Id == responsible && position.OrganizationId == row.Id && position.IsResponsible, ct).ConfigureAwait(false)) throw Error(PlatformErrors.NotFound);
             var oldPath = row.Path; var path = PathFor(parent?.Path, row.Id); var depth = (parent?.Depth ?? 0) + 1; var shift = depth - row.Depth;
+            var oldParent = row.ParentId;
+            var attributesChanged = row.Name != name || row.TypeCode != code || row.ManagerMembershipId != request.ManagerMembershipId || row.ResponsiblePositionId != request.ResponsiblePositionId;
             foreach (var child in descendants) { child.Path = path + child.Path[oldPath.Length..]; child.Depth += shift; }
             row.Name = name; row.TypeCode = code; row.ParentId = parent?.Id; row.Path = path; row.Depth = depth;
             row.ManagerMembershipId = request.ManagerMembershipId; row.ResponsiblePositionId = request.ResponsiblePositionId;
-            if (id is null) db.Add(row); return Org(row);
+            if (id is null) { db.Add(row); events.Add(revision => OrganizationCreated(revision, row)); }
+            else
+            {
+                if (oldParent != row.ParentId) events.Add(revision => new DirectoryOrganizationMovedEvent(revision, row.Id, row.ParentId, oldParent, row.Path, oldPath, row.Depth));
+                if (attributesChanged) events.Add(revision => OrganizationUpdated(revision, row));
+            }
+            return Org(row);
         }, cancellationToken);
     }
 
     public async ValueTask DeleteOrganizationAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await DirectoryWrite(async (db, ct) =>
+        await DirectoryWrite(async (db, events, ct) =>
         {
             var root = await db.Set<OrganizationRow>().SingleOrDefaultAsync(row => row.Id == id, ct).ConfigureAwait(false) ?? throw Error(PlatformErrors.NotFound);
             var organizations = await db.Set<OrganizationRow>().Where(row => row.Path.StartsWith(root.Path)).ToListAsync(ct).ConfigureAwait(false);
@@ -112,11 +129,25 @@ internal sealed partial class IdentityAccountService
                 throw Error(IdentityErrors.DirectoryHasMembers);
             foreach (var org in organizations) org.ResponsiblePositionId = null;
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
-            // 分层删除避免自引用外键依赖数据库对 DELETE 顺序的猜测；全程在同一事务内。
+            // 分层删除避免自引用外键依赖数据库对 DELETE 顺序的猜测；全程在同一事务内。事件按实际删除顺序逐个发，载荷取删除前的值。
             foreach (var depth in positions.Select(row => row.Depth).Distinct().OrderDescending())
-            { db.RemoveRange(positions.Where(row => row.Depth == depth)); await db.SaveChangesAsync(ct).ConfigureAwait(false); }
+            {
+                foreach (var position in positions.Where(row => row.Depth == depth).OrderBy(row => row.Path, StringComparer.Ordinal))
+                {
+                    var (positionId, organizationId, parentId, path) = (position.Id, position.OrganizationId, position.ParentId, position.Path);
+                    events.Add(revision => new DirectoryPositionDeletedEvent(revision, positionId, organizationId, parentId, path));
+                }
+                db.RemoveRange(positions.Where(row => row.Depth == depth)); await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
             foreach (var depth in organizations.Select(row => row.Depth).Distinct().OrderDescending())
-            { db.RemoveRange(organizations.Where(row => row.Depth == depth)); await db.SaveChangesAsync(ct).ConfigureAwait(false); }
+            {
+                foreach (var org in organizations.Where(row => row.Depth == depth).OrderBy(row => row.Path, StringComparer.Ordinal))
+                {
+                    var (organizationId, parentId, path) = (org.Id, org.ParentId, org.Path);
+                    events.Add(revision => new DirectoryOrganizationDeletedEvent(revision, organizationId, parentId, path));
+                }
+                db.RemoveRange(organizations.Where(row => row.Depth == depth)); await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
             return true;
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -129,7 +160,7 @@ internal sealed partial class IdentityAccountService
     private ValueTask<DirectoryPosition> SavePosition(Guid? id, PositionInput request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request); var name = DirectoryName(request.Name);
-        return DirectoryWrite(async (db, ct) =>
+        return DirectoryWrite(async (db, events, ct) =>
         {
             if (!await db.Set<OrganizationRow>().AnyAsync(row => row.Id == request.OrganizationId, ct).ConfigureAwait(false)) throw Error(PlatformErrors.NotFound);
             var parent = request.ParentId is { } parentId ? await db.Set<PositionRow>().SingleOrDefaultAsync(row => row.Id == parentId, ct).ConfigureAwait(false) ?? throw Error(PlatformErrors.NotFound) : null;
@@ -142,24 +173,42 @@ internal sealed partial class IdentityAccountService
             if (request.ResponsibleMembershipId is { } member) await DirectoryMemberRow(db, member, ct).ConfigureAwait(false);
             if (!request.IsResponsible && (request.ResponsibleMembershipId is not null || await db.Set<OrganizationRow>().AnyAsync(org => org.ResponsiblePositionId == row.Id, ct).ConfigureAwait(false))) throw Error(PlatformErrors.Conflict);
             var oldPath = row.Path; var path = PathFor(parent?.Path, row.Id); var depth = (parent?.Depth ?? 0) + 1; var shift = depth - row.Depth;
+            var oldParent = row.ParentId;
+            var attributesChanged = row.Name != name || row.OrganizationId != request.OrganizationId || row.IsDefault != request.IsDefault ||
+                row.IsResponsible != request.IsResponsible || row.ResponsibleMembershipId != request.ResponsibleMembershipId;
             foreach (var child in children) { child.Path = path + child.Path[oldPath.Length..]; child.Depth += shift; }
             row.Name = name; row.OrganizationId = request.OrganizationId; row.ParentId = parent?.Id; row.Path = path; row.Depth = depth;
             row.IsDefault = request.IsDefault; row.IsResponsible = request.IsResponsible; row.ResponsibleMembershipId = request.ResponsibleMembershipId;
-            if (id is null) db.Add(row); return Position(row);
+            if (id is null) { db.Add(row); events.Add(revision => PositionCreated(revision, row)); }
+            else
+            {
+                if (oldParent != row.ParentId) events.Add(revision => new DirectoryPositionMovedEvent(revision, row.Id, row.OrganizationId, row.ParentId, oldParent, row.Path, oldPath, row.Depth));
+                if (attributesChanged) events.Add(revision => PositionUpdated(revision, row));
+            }
+            return Position(row);
         }, cancellationToken);
     }
 
     public async ValueTask DeletePositionAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await DirectoryWrite(async (db, ct) =>
+        await DirectoryWrite(async (db, events, ct) =>
         {
             var root = await db.Set<PositionRow>().SingleOrDefaultAsync(row => row.Id == id, ct).ConfigureAwait(false) ?? throw Error(PlatformErrors.NotFound);
             var rows = await db.Set<PositionRow>().Where(row => row.Path.StartsWith(root.Path)).ToListAsync(ct).ConfigureAwait(false); var ids = rows.Select(row => row.Id).ToArray();
             if (rows.Any(row => row.ResponsibleMembershipId is not null) || await db.Set<MemberRelationRow>().AnyAsync(row => row.PositionId != null && ids.Contains(row.PositionId.Value), ct).ConfigureAwait(false)) throw Error(IdentityErrors.DirectoryHasMembers);
-            foreach (var org in await db.Set<OrganizationRow>().Where(row => row.ResponsiblePositionId != null && ids.Contains(row.ResponsiblePositionId.Value)).ToListAsync(ct).ConfigureAwait(false)) org.ResponsiblePositionId = null;
+            // 仍以被删岗位为责任岗位的组织随之解除引用：这些组织的 responsible_position_id 变了，各发一条 updated。
+            foreach (var org in await db.Set<OrganizationRow>().Where(row => row.ResponsiblePositionId != null && ids.Contains(row.ResponsiblePositionId.Value)).ToListAsync(ct).ConfigureAwait(false))
+            { org.ResponsiblePositionId = null; events.Add(revision => OrganizationUpdated(revision, org)); }
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
             foreach (var depth in rows.Select(row => row.Depth).Distinct().OrderDescending())
-            { db.RemoveRange(rows.Where(row => row.Depth == depth)); await db.SaveChangesAsync(ct).ConfigureAwait(false); }
+            {
+                foreach (var position in rows.Where(row => row.Depth == depth).OrderBy(row => row.Path, StringComparer.Ordinal))
+                {
+                    var (positionId, organizationId, parentId, path) = (position.Id, position.OrganizationId, position.ParentId, position.Path);
+                    events.Add(revision => new DirectoryPositionDeletedEvent(revision, positionId, organizationId, parentId, path));
+                }
+                db.RemoveRange(rows.Where(row => row.Depth == depth)); await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
             return true;
         }, cancellationToken).ConfigureAwait(false);
     }

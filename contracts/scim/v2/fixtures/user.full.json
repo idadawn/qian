@@ -1,0 +1,114 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:User",
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+  ],
+  "id": "0193a000-0000-7000-8000-000000000110",
+  "externalId": "hr-000110",
+  "userName": "wangxiaoming",
+  "name": {
+    "formatted": "王小明",
+    "familyName": "王",
+    "givenName": "小明",
+    "middleName": "",
+    "honorificPrefix": "",
+    "honorificSuffix": ""
+  },
+  "displayName": "王小明",
+  "nickName": "小明",
+  "profileUrl": "https://people.example.test/wangxiaoming",
+  "title": "前端工程师",
+  "userType": "Employee",
+  "preferredLanguage": "zh-CN",
+  "locale": "zh-CN",
+  "timezone": "Asia/Shanghai",
+  "active": true,
+  "emails": [
+    {
+      "value": "wangxiaoming@example.test",
+      "type": "work",
+      "primary": true
+    },
+    {
+      "value": "xiaoming@home.example.test",
+      "type": "home"
+    }
+  ],
+  "phoneNumbers": [
+    {
+      "value": "tel:+86-10-5555-0100",
+      "type": "work"
+    },
+    {
+      "value": "tel:+86-139-0000-0000",
+      "type": "mobile"
+    }
+  ],
+  "ims": [
+    {
+      "value": "wangxiaoming",
+      "type": "qq"
+    }
+  ],
+  "photos": [
+    {
+      "value": "https://photos.example.test/wangxiaoming.jpg",
+      "type": "photo"
+    }
+  ],
+  "addresses": [
+    {
+      "formatted": "北京市海淀区示例路 1 号",
+      "streetAddress": "示例路 1 号",
+      "locality": "海淀区",
+      "region": "北京市",
+      "postalCode": "100000",
+      "country": "CN",
+      "type": "work",
+      "primary": true
+    }
+  ],
+  "groups": [
+    {
+      "value": "0193a000-0000-7000-8000-000000000021",
+      "$ref": "https://qian.example.test/scim/v2/Groups/0193a000-0000-7000-8000-000000000021",
+      "display": "项目组",
+      "type": "direct"
+    }
+  ],
+  "entitlements": [
+    {
+      "value": "vpn"
+    }
+  ],
+  "roles": [
+    {
+      "value": "developer",
+      "type": "app"
+    }
+  ],
+  "x509Certificates": [
+    {
+      "value": "MIIBszCCAVmgAwIBAgIUZXhhbXBsZQ=="
+    }
+  ],
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    "employeeNumber": "000110",
+    "costCenter": "RD-01",
+    "organization": "示例科技",
+    "division": "研发中心",
+    "department": "前端组",
+    "manager": {
+      "value": "0193a000-0000-7000-8000-000000000102",
+      "$ref": "https://qian.example.test/scim/v2/Users/0193a000-0000-7000-8000-000000000102",
+      "displayName": "李四"
+    }
+  },
+  "meta": {
+    "resourceType": "User",
+    "created": "2026-11-11T08:00:00Z",
+    "lastModified": "2026-11-11T09:30:00Z",
+    "location": "https://qian.example.test/scim/v2/Users/0193a000-0000-7000-8000-000000000110",
+    "version": "W/\"3\""
+  }
+}

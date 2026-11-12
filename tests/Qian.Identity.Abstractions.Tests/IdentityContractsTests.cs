@@ -101,7 +101,8 @@ public sealed class IdentityContractsTests
             new IdentityLockedEvent(PersonId, 4, "policy"),
             new IdentitySessionRevokedEvent(PersonId, 5, SessionId, "password-changed")
         ];
-        Assert.Equal(IdentityEventIds.All.Order(), registry.GetAll().Select(e => e.EventId).Order());
+        // 目录事件（S1-IDP-010）随同一入口登记，宿主不另配；它们的逐项校验在 DirectoryContractsTests。
+        Assert.Equal(IdentityEventIds.All.Concat(DirectoryEventIds.All).Order(), registry.GetAll().Select(e => e.EventId).Order());
         // event_id、occurred_at 与 tenant_id 只在写入端生成的信封上（S1-DEC-020），载荷类型不再是 Kun 的 IIntegrationEvent。
         Assert.False(typeof(IIntegrationEvent).IsAssignableFrom(typeof(IdentityIntegrationEvent)));
         foreach (var value in events)

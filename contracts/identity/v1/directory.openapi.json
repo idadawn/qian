@@ -1,0 +1,1604 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "组织目录查询契约",
+    "version": "1.0.0",
+    "description": "身份组件 Identity Server 的组织目录只读接口（PRD 7.4.3，S1-IDP-010），也是目录查询的 Agent 契约：每个查询带意图式 description（何时用、何时不用）与请求 / 响应示例。调用方须持本租户有效成员会话（身份服务的登录 Cookie，每次请求对照数据库实时校验），租户只取自会话，请求里的租户字段不被采纳；档案只对租户管理员开放。字段 snake_case，空值字段省略；所有响应 no-store；错误一律是 ErrorDetail。写入接口见 packages/Qian.Identity.Server/README.md「组织目录」，批量禁用另有标准写能力 tools/directory.member.disable.json。单测核对这里登记的路径与实际 GET 端点逐一对应、示例符合 Schema。"
+  },
+  "tags": [
+    {
+      "name": "directory",
+      "description": "组织目录查询"
+    }
+  ],
+  "paths": {
+    "/api/directory/org-types": {
+      "get": {
+        "operationId": "directory.orgTypes.list",
+        "summary": "读取组织类型字典",
+        "description": "读取本租户的组织类型字典（编码与名称）。把组织的 type_code 显示成名称、给组织类型下拉取数时用；不返回组织本身，组织用 /api/directory/orgs/tree。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "responses": {
+          "200": {
+            "description": "组织类型",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationTypeList"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "公司、部门、小组三种类型",
+                    "value": {
+                      "items": [
+                        {
+                          "code": "company",
+                          "name": "公司"
+                        },
+                        {
+                          "code": "dept",
+                          "name": "部门"
+                        },
+                        {
+                          "code": "team",
+                          "name": "小组"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          }
+        }
+      }
+    },
+    "/api/directory/orgs/tree": {
+      "get": {
+        "operationId": "directory.orgs.tree",
+        "summary": "读取组织树",
+        "description": "读取本租户完整组织树：按 path 排序的扁平列表，以 parent_id 关联，根组织没有 parent_id。找某个部门的 id、渲染组织选择器、判断两个部门的上下级关系时用；要部门里的人用 /api/directory/orgs/{id}/members，要部门负责人用 /api/directory/orgs/{id}/head。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "responses": {
+          "200": {
+            "description": "组织列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationList"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "总部 → 研发中心 → 前端组",
+                    "value": {
+                      "items": [
+                        {
+                          "id": "0193a000-0000-7000-8000-000000000001",
+                          "name": "总部",
+                          "type_code": "company",
+                          "path": "/0193a000-0000-7000-8000-000000000001/",
+                          "depth": 1,
+                          "manager_membership_id": "0193a000-0000-7000-8000-000000000101",
+                          "responsible_position_id": "0193a000-0000-7000-8000-000000000011"
+                        },
+                        {
+                          "id": "0193a000-0000-7000-8000-000000000002",
+                          "name": "研发中心",
+                          "type_code": "dept",
+                          "parent_id": "0193a000-0000-7000-8000-000000000001",
+                          "path": "/0193a000-0000-7000-8000-000000000001/0193a000-0000-7000-8000-000000000002/",
+                          "depth": 2,
+                          "manager_membership_id": "0193a000-0000-7000-8000-000000000102",
+                          "responsible_position_id": "0193a000-0000-7000-8000-000000000012"
+                        },
+                        {
+                          "id": "0193a000-0000-7000-8000-000000000003",
+                          "name": "前端组",
+                          "type_code": "team",
+                          "parent_id": "0193a000-0000-7000-8000-000000000002",
+                          "path": "/0193a000-0000-7000-8000-000000000001/0193a000-0000-7000-8000-000000000002/0193a000-0000-7000-8000-000000000003/",
+                          "depth": 3,
+                          "responsible_position_id": "0193a000-0000-7000-8000-000000000013"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          }
+        }
+      }
+    },
+    "/api/directory/positions": {
+      "get": {
+        "operationId": "directory.positions.list",
+        "summary": "读取岗位",
+        "description": "读取本租户全部岗位：父子关系可以跨组织，带默认岗位、责任岗位标记与责任人。找某个岗位的 id、某组织有哪些岗位时用；要岗位上的人用 /api/directory/positions/{id}/holders。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "responses": {
+          "200": {
+            "description": "岗位列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionList"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "总经理 → 研发总监 → 前端组长（空缺）→ 前端工程师",
+                    "value": {
+                      "items": [
+                        {
+                          "id": "0193a000-0000-7000-8000-000000000011",
+                          "name": "总经理",
+                          "organization_id": "0193a000-0000-7000-8000-000000000001",
+                          "path": "/0193a000-0000-7000-8000-000000000011/",
+                          "depth": 1,
+                          "is_default": true,
+                          "is_responsible": true,
+                          "responsible_membership_id": "0193a000-0000-7000-8000-000000000101"
+                        },
+                        {
+                          "id": "0193a000-0000-7000-8000-000000000012",
+                          "name": "研发总监",
+                          "organization_id": "0193a000-0000-7000-8000-000000000002",
+                          "parent_id": "0193a000-0000-7000-8000-000000000011",
+                          "path": "/0193a000-0000-7000-8000-000000000011/0193a000-0000-7000-8000-000000000012/",
+                          "depth": 2,
+                          "is_default": true,
+                          "is_responsible": true,
+                          "responsible_membership_id": "0193a000-0000-7000-8000-000000000102"
+                        },
+                        {
+                          "id": "0193a000-0000-7000-8000-000000000013",
+                          "name": "前端组长",
+                          "organization_id": "0193a000-0000-7000-8000-000000000003",
+                          "parent_id": "0193a000-0000-7000-8000-000000000012",
+                          "path": "/0193a000-0000-7000-8000-000000000011/0193a000-0000-7000-8000-000000000012/0193a000-0000-7000-8000-000000000013/",
+                          "depth": 3,
+                          "is_default": false,
+                          "is_responsible": true
+                        },
+                        {
+                          "id": "0193a000-0000-7000-8000-000000000014",
+                          "name": "前端工程师",
+                          "organization_id": "0193a000-0000-7000-8000-000000000003",
+                          "parent_id": "0193a000-0000-7000-8000-000000000013",
+                          "path": "/0193a000-0000-7000-8000-000000000011/0193a000-0000-7000-8000-000000000012/0193a000-0000-7000-8000-000000000013/0193a000-0000-7000-8000-000000000014/",
+                          "depth": 4,
+                          "is_default": true,
+                          "is_responsible": false
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          }
+        }
+      }
+    },
+    "/api/directory/groups": {
+      "get": {
+        "operationId": "directory.groups.list",
+        "summary": "读取用户组",
+        "description": "读取本租户的用户组（纯成员集合，按名称排序）。按项目或兴趣组圈人时用；用户组不参与上级链与主管推导。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "responses": {
+          "200": {
+            "description": "用户组列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupList"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "一个项目组",
+                    "value": {
+                      "items": [
+                        {
+                          "id": "0193a000-0000-7000-8000-000000000021",
+                          "name": "项目组"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          }
+        }
+      }
+    },
+    "/api/directory/members": {
+      "get": {
+        "operationId": "directory.members.query",
+        "summary": "读取或检索成员",
+        "description": "分页读取或检索本租户成员，按账号、成员 id 排序。选人、按名字或账号找某人时用：q 按显示名、账号与拼音做忽略大小写的包含匹配（找「张三」「zhangsan」）；ids / person_ids 按 id 批量取成员（选择器回显已选值的显示名），不分页，这批 id 里的可见成员一次全部返回，查不到的 id 直接省略，不能再带 offset / limit；q、ids、person_ids 至多给一个。不含已从目录删除的成员与平台管理员，不检索手机号与邮箱。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "关键字，去掉首尾空白后 1–64 字；按显示名、账号与档案拼音匹配，% 与 _ 按字面处理。",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "example": "张"
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": false,
+            "description": "按目录成员 id 批量查询，可重复（?ids=a&ids=b），1–100 个且不重复。不分页：这批 id 里的可见成员全部返回；同时带 offset 或 limit 时 400。",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "minItems": 1,
+              "maxItems": 100
+            },
+            "style": "form",
+            "explode": true,
+            "example": [
+              "0193a000-0000-7000-8000-000000000104",
+              "0193a000-0000-7000-8000-000000000102"
+            ]
+          },
+          {
+            "name": "person_ids",
+            "in": "query",
+            "required": false,
+            "description": "按自然人 id 批量查询（授权侧 user 主体的 subjectId），可重复，1–100 个且不重复。不分页：这批 id 里的可见成员全部返回；同时带 offset 或 limit 时 400。",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "minItems": 1,
+              "maxItems": 100
+            },
+            "style": "form",
+            "explode": true,
+            "example": [
+              "0193a000-0000-7000-8000-000000000201"
+            ]
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成员当前页",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberList"
+                },
+                "examples": {
+                  "keyword": {
+                    "summary": "q=张：显示名含「张」的成员",
+                    "value": {
+                      "items": [
+                        {
+                          "membership": {
+                            "id": "0193a000-0000-7000-8000-000000000101",
+                            "person_id": "0193a000-0000-7000-8000-000000000201",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "张三",
+                            "status": "active",
+                            "is_tenant_administrator": true,
+                            "account": "zhangsan",
+                            "identity_revision": 1
+                          },
+                          "deleted": false
+                        }
+                      ]
+                    }
+                  },
+                  "ids": {
+                    "summary": "ids=赵六&ids=李四：按账号排序返回",
+                    "value": {
+                      "items": [
+                        {
+                          "membership": {
+                            "id": "0193a000-0000-7000-8000-000000000102",
+                            "person_id": "0193a000-0000-7000-8000-000000000202",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "李四",
+                            "status": "active",
+                            "is_tenant_administrator": false,
+                            "account": "lisi",
+                            "identity_revision": 1
+                          },
+                          "deleted": false
+                        },
+                        {
+                          "membership": {
+                            "id": "0193a000-0000-7000-8000-000000000104",
+                            "person_id": "0193a000-0000-7000-8000-000000000204",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "赵六",
+                            "status": "active",
+                            "is_tenant_administrator": false,
+                            "account": "zhaoliu",
+                            "identity_revision": 3
+                          },
+                          "deleted": false
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          }
+        }
+      }
+    },
+    "/api/directory/orgs/{id}/members": {
+      "get": {
+        "operationId": "directory.orgs.members",
+        "summary": "读取部门成员",
+        "description": "读取某个组织（部门）的成员，含经该组织岗位任职的成员；descendants=true 时含全部下级部门。找「研发中心有哪些人」、按部门缩小选人范围时用；q 在该范围内按显示名、账号与拼音检索。组织不存在或不属于本租户时 404。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "组织 id。",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0193a000-0000-7000-8000-000000000002"
+          },
+          {
+            "name": "descendants",
+            "in": "query",
+            "required": false,
+            "description": "是否包含整棵子树的成员，默认 false。",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "example": true
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "在组织范围内检索，规则同 /api/directory/members 的 q。",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "example": "zhao"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成员当前页",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberList"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "研发中心及下级部门里账号含 zhao 的成员",
+                    "value": {
+                      "items": [
+                        {
+                          "membership": {
+                            "id": "0193a000-0000-7000-8000-000000000104",
+                            "person_id": "0193a000-0000-7000-8000-000000000204",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "赵六",
+                            "status": "active",
+                            "is_tenant_administrator": false,
+                            "account": "zhaoliu",
+                            "identity_revision": 3
+                          },
+                          "deleted": false
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          }
+        }
+      }
+    },
+    "/api/directory/positions/{id}/holders": {
+      "get": {
+        "operationId": "directory.positions.holders",
+        "summary": "读取岗位任职成员",
+        "description": "读取某个岗位的直接任职成员（不含下级岗位）。找「某岗位的所有人」时用；岗位的责任人在岗位本身的 responsible_membership_id 上，不一定任职该岗位。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "岗位 id。",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0193a000-0000-7000-8000-000000000014"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成员当前页",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberList"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "前端工程师岗位上的成员",
+                    "value": {
+                      "items": [
+                        {
+                          "membership": {
+                            "id": "0193a000-0000-7000-8000-000000000104",
+                            "person_id": "0193a000-0000-7000-8000-000000000204",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "赵六",
+                            "status": "active",
+                            "is_tenant_administrator": false,
+                            "account": "zhaoliu",
+                            "identity_revision": 3
+                          },
+                          "deleted": false
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          }
+        }
+      }
+    },
+    "/api/directory/members/{id}/relations": {
+      "get": {
+        "operationId": "directory.members.relations",
+        "summary": "读取成员归属",
+        "description": "读取某成员的组织、岗位与用户组归属；每种目标类型至多一个主归属（is_primary）。判断某人属于哪个部门、主岗位是什么时用；上级链从主岗位起算。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "目录成员 id。",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0193a000-0000-7000-8000-000000000104"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "归属列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRelationList"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "赵六：主组织前端组、主岗位前端工程师",
+                    "value": {
+                      "items": [
+                        {
+                          "target_type": "organization",
+                          "target_id": "0193a000-0000-7000-8000-000000000003",
+                          "is_primary": true
+                        },
+                        {
+                          "target_type": "position",
+                          "target_id": "0193a000-0000-7000-8000-000000000014",
+                          "is_primary": true
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          }
+        }
+      }
+    },
+    "/api/directory/members/{id}/profile": {
+      "get": {
+        "operationId": "directory.members.profile",
+        "summary": "读取成员档案",
+        "description": "读取某成员的档案（姓名、拼音、联系方式掩码与扩展字段），管理员核对成员资料时用，只对本租户管理员开放；联系方式只给掩码，不能用来取完整手机号或邮箱。普通成员要显示名用成员列表即可。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "目录成员 id。",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0193a000-0000-7000-8000-000000000104"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "档案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "联系方式为掩码",
+                    "value": {
+                      "membership_id": "0193a000-0000-7000-8000-000000000104",
+                      "name": "赵六",
+                      "pinyin": "zhaoliu",
+                      "phone": "+86138****5678",
+                      "extensions": {
+                        "locale": "zh-CN"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          }
+        }
+      }
+    },
+    "/api/directory/members/{id}/superiors": {
+      "get": {
+        "operationId": "directory.members.superiors",
+        "summary": "按岗位链读取上级责任人",
+        "description": "按岗位链推导某成员的上级责任人序列（第 1..N 级）：从主岗位（或 position_id 指定的本人岗位）沿岗位父链向上，每个责任岗位算一级，父岗位在别的组织也照走；岗位链到顶后，从最上层岗位所属组织起逐级取各组织的责任岗位，已出现的岗位跳过。没有主岗位时从主组织起算，都没有则 items 为空。责任岗位没有责任人或责任人不在任（成员被停用、锁定或已从目录删除，或其平台账号被停用、锁定）时照样占一级，给出 vacancy 而不返回人。审批「上级责任人」、回答「我的上级链」「第 N 级上级是谁」时用；只要直接上级用 /api/directory/members/{id}/manager。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "目录成员 id。",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0193a000-0000-7000-8000-000000000104"
+          },
+          {
+            "name": "position_id",
+            "in": "query",
+            "required": false,
+            "description": "从该成员担任的另一个岗位起算；不是本人岗位时 404。缺省取主岗位。",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0193a000-0000-7000-8000-000000000014"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "上级责任人序列",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Superiors"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "赵六：前端组长空缺，再往上是李四、张三",
+                    "value": {
+                      "membership_id": "0193a000-0000-7000-8000-000000000104",
+                      "start_position_id": "0193a000-0000-7000-8000-000000000014",
+                      "start_organization_id": "0193a000-0000-7000-8000-000000000003",
+                      "items": [
+                        {
+                          "level": 1,
+                          "position_id": "0193a000-0000-7000-8000-000000000013",
+                          "organization_id": "0193a000-0000-7000-8000-000000000003",
+                          "vacancy": "unassigned"
+                        },
+                        {
+                          "level": 2,
+                          "position_id": "0193a000-0000-7000-8000-000000000012",
+                          "organization_id": "0193a000-0000-7000-8000-000000000002",
+                          "responsible": {
+                            "id": "0193a000-0000-7000-8000-000000000102",
+                            "person_id": "0193a000-0000-7000-8000-000000000202",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "李四",
+                            "status": "active",
+                            "is_tenant_administrator": false,
+                            "account": "lisi",
+                            "identity_revision": 1
+                          }
+                        },
+                        {
+                          "level": 3,
+                          "position_id": "0193a000-0000-7000-8000-000000000011",
+                          "organization_id": "0193a000-0000-7000-8000-000000000001",
+                          "responsible": {
+                            "id": "0193a000-0000-7000-8000-000000000101",
+                            "person_id": "0193a000-0000-7000-8000-000000000201",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "张三",
+                            "status": "active",
+                            "is_tenant_administrator": true,
+                            "account": "zhangsan",
+                            "identity_revision": 1
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "organization": {
+                    "summary": "孙八只挂在研发中心、没有岗位：从研发中心的责任岗位起算",
+                    "value": {
+                      "membership_id": "0193a000-0000-7000-8000-000000000106",
+                      "start_organization_id": "0193a000-0000-7000-8000-000000000002",
+                      "items": [
+                        {
+                          "level": 1,
+                          "position_id": "0193a000-0000-7000-8000-000000000012",
+                          "organization_id": "0193a000-0000-7000-8000-000000000002",
+                          "responsible": {
+                            "id": "0193a000-0000-7000-8000-000000000102",
+                            "person_id": "0193a000-0000-7000-8000-000000000202",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "李四",
+                            "status": "active",
+                            "is_tenant_administrator": false,
+                            "account": "lisi",
+                            "identity_revision": 1
+                          }
+                        },
+                        {
+                          "level": 2,
+                          "position_id": "0193a000-0000-7000-8000-000000000011",
+                          "organization_id": "0193a000-0000-7000-8000-000000000001",
+                          "responsible": {
+                            "id": "0193a000-0000-7000-8000-000000000101",
+                            "person_id": "0193a000-0000-7000-8000-000000000201",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "张三",
+                            "status": "active",
+                            "is_tenant_administrator": true,
+                            "account": "zhangsan",
+                            "identity_revision": 1
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          }
+        }
+      }
+    },
+    "/api/directory/members/{id}/manager": {
+      "get": {
+        "operationId": "directory.members.manager",
+        "summary": "读取直属主管",
+        "description": "读取某成员的直属主管：主组织（没有主组织时取主岗位所属组织）的主管字段；本人就是该组织主管、组织未设主管或主管不在任（成员被停用、锁定或已从目录删除，或其平台账号被停用、锁定）时，逐级取上级组织的主管。回答「某人的直属领导是谁」时用；按岗位链的多级上级用 /api/directory/members/{id}/superiors。找不到时没有 manager 字段。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "目录成员 id。",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0193a000-0000-7000-8000-000000000104"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "直属主管",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Manager"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "前端组未设主管，取研发中心的主管李四",
+                    "value": {
+                      "membership_id": "0193a000-0000-7000-8000-000000000104",
+                      "manager": {
+                        "id": "0193a000-0000-7000-8000-000000000102",
+                        "person_id": "0193a000-0000-7000-8000-000000000202",
+                        "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                        "display_name": "李四",
+                        "status": "active",
+                        "is_tenant_administrator": false,
+                        "account": "lisi",
+                        "identity_revision": 1
+                      },
+                      "source_organization_id": "0193a000-0000-7000-8000-000000000002"
+                    }
+                  },
+                  "none": {
+                    "summary": "顶层组织的主管本人没有直属主管",
+                    "value": {
+                      "membership_id": "0193a000-0000-7000-8000-000000000101"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          }
+        }
+      }
+    },
+    "/api/directory/orgs/{id}/head": {
+      "get": {
+        "operationId": "directory.orgs.head",
+        "summary": "读取部门负责人",
+        "description": "读取某个组织（部门）的负责人：责任岗位的现任责任人（空缺时给 vacancy），以及组织的主管字段。回答「某部门负责人是谁」时用；组织没有设责任岗位时没有 responsible_position_id。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "组织 id。",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0193a000-0000-7000-8000-000000000002"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "部门负责人",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationHead"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "研发中心：研发总监李四，主管也是李四",
+                    "value": {
+                      "organization_id": "0193a000-0000-7000-8000-000000000002",
+                      "responsible_position_id": "0193a000-0000-7000-8000-000000000012",
+                      "responsible": {
+                        "id": "0193a000-0000-7000-8000-000000000102",
+                        "person_id": "0193a000-0000-7000-8000-000000000202",
+                        "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                        "display_name": "李四",
+                        "status": "active",
+                        "is_tenant_administrator": false,
+                        "account": "lisi",
+                        "identity_revision": 1
+                      },
+                      "manager": {
+                        "id": "0193a000-0000-7000-8000-000000000102",
+                        "person_id": "0193a000-0000-7000-8000-000000000202",
+                        "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                        "display_name": "李四",
+                        "status": "active",
+                        "is_tenant_administrator": false,
+                        "account": "lisi",
+                        "identity_revision": 1
+                      }
+                    }
+                  },
+                  "vacant": {
+                    "summary": "前端组：责任岗位前端组长空缺，未设主管",
+                    "value": {
+                      "organization_id": "0193a000-0000-7000-8000-000000000003",
+                      "responsible_position_id": "0193a000-0000-7000-8000-000000000013",
+                      "vacancy": "unassigned"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          }
+        }
+      }
+    },
+    "/api/directory/me/subordinates": {
+      "get": {
+        "operationId": "directory.me.subordinates",
+        "summary": "读取我的下属",
+        "description": "读取当前登录成员的下属，是上级链的反查：depth=1 时是以我为第 1 级上级责任人的成员（@下属），depth=n 时是前 n 级，缺省时是任一级（@子孙）；不含本人，按账号、成员 id 分页。回答「我的下属有哪些」、给 @下属 / @子孙 取人时用；只有担任责任岗位责任人且在任的成员才有下属，查别人的下属不提供。",
+        "tags": [
+          "directory"
+        ],
+        "x-qian-side-effect": "read",
+        "parameters": [
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "description": "反查的级数，正整数；缺省为任一级。",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下属当前页",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberList"
+                },
+                "examples": {
+                  "default": {
+                    "summary": "张三的直属下属（depth=1）",
+                    "value": {
+                      "items": [
+                        {
+                          "membership": {
+                            "id": "0193a000-0000-7000-8000-000000000102",
+                            "person_id": "0193a000-0000-7000-8000-000000000202",
+                            "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                            "display_name": "李四",
+                            "status": "active",
+                            "is_tenant_administrator": false,
+                            "account": "lisi",
+                            "identity_revision": 1
+                          },
+                          "deleted": false
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "Offset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "跳过的条数，默认 0。",
+        "schema": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "example": 0
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "本页条数，默认 50，上限 200。",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50
+        },
+        "example": 50
+      }
+    },
+    "responses": {
+      "Problem400": {
+        "description": "参数无效（ErrorDetail：BAD_REQUEST 或 INPUT_INVALID）",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+            }
+          }
+        }
+      },
+      "Problem401": {
+        "description": "没有有效会话（UNAUTHENTICATED）",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+            }
+          }
+        }
+      },
+      "Problem403": {
+        "description": "会话没有本租户成员身份或不是管理员（AUTHZ_DENIED）",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+            }
+          }
+        }
+      },
+      "Problem404": {
+        "description": "成员、组织或岗位不存在或不属于本租户（NOT_FOUND）",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "OrganizationType": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "租户组织类型；code 不可改，name 可改。",
+        "required": [
+          "code",
+          "name"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "OrganizationTypeList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationType"
+            }
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "组织投影；path 以斜线包围祖先链 UUID，depth 从 1 开始。",
+        "required": [
+          "id",
+          "name",
+          "type_code",
+          "path",
+          "depth"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type_code": {
+            "type": "string"
+          },
+          "parent_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "根组织省略。"
+          },
+          "path": {
+            "type": "string"
+          },
+          "depth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "manager_membership_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "组织的主管字段。"
+          },
+          "responsible_position_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "组织的责任岗位。"
+          }
+        }
+      },
+      "OrganizationList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Organization"
+            }
+          }
+        }
+      },
+      "Position": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "岗位投影；父岗位可以在同租户的其他组织，path 是岗位树的祖先链。",
+        "required": [
+          "id",
+          "name",
+          "organization_id",
+          "path",
+          "depth",
+          "is_default",
+          "is_responsible"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parent_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "path": {
+            "type": "string"
+          },
+          "depth": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "is_responsible": {
+            "type": "boolean",
+            "description": "责任岗位：上级链只计责任岗位。"
+          },
+          "responsible_membership_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "责任岗位的责任人。"
+          }
+        }
+      },
+      "PositionList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Position"
+            }
+          }
+        }
+      },
+      "Group": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            }
+          }
+        }
+      },
+      "Membership": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "租户成员；id 是目录侧的成员标识，person_id 是自然人标识（即令牌 sub，也是授权侧 user 主体的 subjectId）。",
+        "required": [
+          "id",
+          "person_id",
+          "tenant_id",
+          "display_name",
+          "status",
+          "is_tenant_administrator",
+          "account",
+          "identity_revision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "person_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled",
+              "locked"
+            ]
+          },
+          "is_tenant_administrator": {
+            "type": "boolean"
+          },
+          "account": {
+            "type": "string"
+          },
+          "identity_revision": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "DirectoryMember": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "membership",
+          "deleted"
+        ],
+        "properties": {
+          "membership": {
+            "$ref": "#/components/schemas/Membership"
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MemberList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirectoryMember"
+            }
+          }
+        }
+      },
+      "MemberRelation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_type",
+          "target_id",
+          "is_primary"
+        ],
+        "properties": {
+          "target_type": {
+            "type": "string",
+            "enum": [
+              "organization",
+              "position",
+              "group"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "is_primary": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MemberRelationList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberRelation"
+            }
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "成员档案；联系方式只给掩码。",
+        "required": [
+          "membership_id",
+          "name",
+          "extensions"
+        ],
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pinyin": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "description": "掩码。"
+          },
+          "email": {
+            "type": "string",
+            "description": "掩码。"
+          },
+          "extensions": {
+            "type": "object"
+          }
+        }
+      },
+      "Vacancy": {
+        "type": "string",
+        "enum": [
+          "unassigned",
+          "inactive"
+        ],
+        "description": "责任岗位空缺的原因：unassigned 没有设责任人；inactive 责任人不在任：成员被停用、锁定或已从目录删除，或其平台账号被停用、锁定（不返回其信息）。"
+      },
+      "Superior": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "上级链的一级：一个责任岗位及其现任责任人；空缺时没有 responsible、给出 vacancy，级次照样保留。",
+        "required": [
+          "level",
+          "position_id",
+          "organization_id"
+        ],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "position_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/Membership"
+          },
+          "vacancy": {
+            "$ref": "#/components/schemas/Vacancy"
+          }
+        }
+      },
+      "Superiors": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "membership_id",
+          "items"
+        ],
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "start_position_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "起点岗位：主岗位或调用方指定的本人岗位；从主组织起算时省略。"
+          },
+          "start_organization_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "起点所在组织；从岗位起算时是该岗位所属组织。两者都省略表示没有归属，items 为空。"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Superior"
+            }
+          }
+        }
+      },
+      "Manager": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "membership_id"
+        ],
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "manager": {
+            "$ref": "#/components/schemas/Membership"
+          },
+          "source_organization_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "主管所在的组织（可能是上级组织）。"
+          }
+        }
+      },
+      "OrganizationHead": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsible_position_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/Membership"
+          },
+          "vacancy": {
+            "$ref": "#/components/schemas/Vacancy"
+          },
+          "manager": {
+            "$ref": "#/components/schemas/Membership"
+          }
+        }
+      }
+    }
+  }
+}

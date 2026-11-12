@@ -61,3 +61,15 @@ internal sealed class UserProfileRow : IMultiTenant
     public string? Email { get; set; }
     public string Extensions { get; set; } = "{}";
 }
+
+// 租户目录修订：每次产生目录事件的写入加一（原子 upsert，行锁随事务释放），同时充当目录事件的聚合根——
+// 目录写入里会先删除再保存的行（删子树、替换归属）无法携带领域事件，事件统一挂在这一行上，随最后一次会话保存进入 Outbox。
+internal sealed class DirectoryRevisionRow : IMultiTenant, IAggregateRoot
+{
+    public string TenantId { get; set; } = "";
+    public long Revision { get; set; }
+    private readonly List<IDomainEvent> _events = [];
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _events;
+    public void ClearDomainEvents() => _events.Clear();
+    internal void Raise(IDomainEvent change) => _events.Add(change);
+}

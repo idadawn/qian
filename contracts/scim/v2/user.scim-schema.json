@@ -1,0 +1,789 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:ietf:params:scim:schemas:core:2.0:User",
+  "name": "User",
+  "description": "SCIM 2.0 核心 User 资源（RFC 7643 第 4.1 节）。",
+  "attributes": [
+    {
+      "name": "userName",
+      "type": "string",
+      "multiValued": false,
+      "description": "用户在服务提供方内的唯一标识，通常直接用于登录；不得为空。",
+      "required": true,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "server"
+    },
+    {
+      "name": "name",
+      "type": "complex",
+      "multiValued": false,
+      "description": "用户姓名的组成部分。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "formatted",
+          "type": "string",
+          "multiValued": false,
+          "description": "完整姓名，适合直接显示。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "familyName",
+          "type": "string",
+          "multiValued": false,
+          "description": "姓。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "givenName",
+          "type": "string",
+          "multiValued": false,
+          "description": "名。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "middleName",
+          "type": "string",
+          "multiValued": false,
+          "description": "中间名。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "honorificPrefix",
+          "type": "string",
+          "multiValued": false,
+          "description": "称谓前缀。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "honorificSuffix",
+          "type": "string",
+          "multiValued": false,
+          "description": "称谓后缀。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "displayName",
+      "type": "string",
+      "multiValued": false,
+      "description": "供界面显示的用户名称。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "nickName",
+      "type": "string",
+      "multiValued": false,
+      "description": "昵称。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "profileUrl",
+      "type": "reference",
+      "multiValued": false,
+      "description": "用户在线主页的地址。",
+      "required": false,
+      "caseExact": false,
+      "referenceTypes": [
+        "external"
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "title",
+      "type": "string",
+      "multiValued": false,
+      "description": "职务头衔。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "userType",
+      "type": "string",
+      "multiValued": false,
+      "description": "用户与组织的关系类型，取值由服务提供方定义。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "preferredLanguage",
+      "type": "string",
+      "multiValued": false,
+      "description": "首选的书面或口头语言，取值形如 zh-CN。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "locale",
+      "type": "string",
+      "multiValued": false,
+      "description": "本地化设置（数字、日期等格式），取值形如 zh-CN。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "timezone",
+      "type": "string",
+      "multiValued": false,
+      "description": "IANA 时区名称，例如 Asia/Shanghai。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "active",
+      "type": "boolean",
+      "multiValued": false,
+      "description": "账号是否处于可用状态。",
+      "required": false,
+      "mutability": "readWrite",
+      "returned": "default"
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "multiValued": false,
+      "description": "用户的明文密码，只写、永不返回。",
+      "required": false,
+      "caseExact": false,
+      "mutability": "writeOnly",
+      "returned": "never",
+      "uniqueness": "none"
+    },
+    {
+      "name": "emails",
+      "type": "complex",
+      "multiValued": true,
+      "description": "电子邮件地址。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "multiValued": false,
+          "description": "邮件地址，规范形式按 RFC 5321。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "供显示的文本。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "值的用途标签。",
+          "required": false,
+          "canonicalValues": [
+            "work",
+            "home",
+            "other"
+          ],
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "primary",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "是否为首选值；同一属性至多一个值为 true。",
+          "required": false,
+          "mutability": "readWrite",
+          "returned": "default"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "phoneNumbers",
+      "type": "complex",
+      "multiValued": true,
+      "description": "电话号码。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "multiValued": false,
+          "description": "电话号码，规范形式按 RFC 3966。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "供显示的文本。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "值的用途标签。",
+          "required": false,
+          "canonicalValues": [
+            "work",
+            "home",
+            "mobile",
+            "fax",
+            "pager",
+            "other"
+          ],
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "primary",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "是否为首选值；同一属性至多一个值为 true。",
+          "required": false,
+          "mutability": "readWrite",
+          "returned": "default"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "ims",
+      "type": "complex",
+      "multiValued": true,
+      "description": "即时通讯账号。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "multiValued": false,
+          "description": "即时通讯账号。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "供显示的文本。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "值的用途标签。",
+          "required": false,
+          "canonicalValues": [
+            "aim",
+            "gtalk",
+            "icq",
+            "xmpp",
+            "msn",
+            "skype",
+            "qq",
+            "yahoo"
+          ],
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "primary",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "是否为首选值；同一属性至多一个值为 true。",
+          "required": false,
+          "mutability": "readWrite",
+          "returned": "default"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "photos",
+      "type": "complex",
+      "multiValued": true,
+      "description": "用户照片的地址。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "reference",
+          "multiValued": false,
+          "description": "照片资源的地址。",
+          "required": false,
+          "caseExact": false,
+          "referenceTypes": [
+            "external"
+          ],
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "供显示的文本。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "值的用途标签。",
+          "required": false,
+          "canonicalValues": [
+            "photo",
+            "thumbnail"
+          ],
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "primary",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "是否为首选值；同一属性至多一个值为 true。",
+          "required": false,
+          "mutability": "readWrite",
+          "returned": "default"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "addresses",
+      "type": "complex",
+      "multiValued": true,
+      "description": "通讯地址。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "formatted",
+          "type": "string",
+          "multiValued": false,
+          "description": "完整地址，适合直接显示，可含换行。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "streetAddress",
+          "type": "string",
+          "multiValued": false,
+          "description": "街道门牌。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "locality",
+          "type": "string",
+          "multiValued": false,
+          "description": "城市。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "region",
+          "type": "string",
+          "multiValued": false,
+          "description": "省、州或地区。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "postalCode",
+          "type": "string",
+          "multiValued": false,
+          "description": "邮政编码。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "multiValued": false,
+          "description": "国家，取 ISO 3166-1 两字母代码。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "地址用途标签。",
+          "required": false,
+          "canonicalValues": [
+            "work",
+            "home",
+            "other"
+          ],
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "primary",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "是否为首选地址。",
+          "required": false,
+          "mutability": "readWrite",
+          "returned": "default"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "groups",
+      "type": "complex",
+      "multiValued": true,
+      "description": "用户所属的组，由服务提供方维护，只读；增删成员走 Group 资源。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "multiValued": false,
+          "description": "组的 id。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "$ref",
+          "type": "reference",
+          "multiValued": false,
+          "description": "组资源的地址。",
+          "required": false,
+          "caseExact": false,
+          "referenceTypes": [
+            "User",
+            "Group"
+          ],
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "组的显示名称。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "直接成员还是经嵌套组间接成员。",
+          "required": false,
+          "canonicalValues": [
+            "direct",
+            "indirect"
+          ],
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        }
+      ],
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "entitlements",
+      "type": "complex",
+      "multiValued": true,
+      "description": "用户拥有的权益。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "multiValued": false,
+          "description": "权益的取值。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "供显示的文本。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "值的用途标签。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "primary",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "是否为首选值；同一属性至多一个值为 true。",
+          "required": false,
+          "mutability": "readWrite",
+          "returned": "default"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "roles",
+      "type": "complex",
+      "multiValued": true,
+      "description": "用户的角色。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "multiValued": false,
+          "description": "角色的取值。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "供显示的文本。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "值的用途标签。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "primary",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "是否为首选值；同一属性至多一个值为 true。",
+          "required": false,
+          "mutability": "readWrite",
+          "returned": "default"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
+      "name": "x509Certificates",
+      "type": "complex",
+      "multiValued": true,
+      "description": "用户的 X.509 证书。",
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "binary",
+          "multiValued": false,
+          "description": "DER 编码证书的 base64 文本。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "multiValued": false,
+          "description": "供显示的文本。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "值的用途标签。",
+          "required": false,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "primary",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "是否为首选值；同一属性至多一个值为 true。",
+          "required": false,
+          "mutability": "readWrite",
+          "returned": "default"
+        }
+      ],
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none"
+    }
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "location": "/v2/Schemas/urn:ietf:params:scim:schemas:core:2.0:User"
+  }
+}

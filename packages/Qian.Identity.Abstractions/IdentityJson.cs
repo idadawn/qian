@@ -27,16 +27,29 @@ public static class IdentityJson
         IdentityEventIds.PasswordChanged => Context.IdentityPasswordChangedEvent,
         IdentityEventIds.Locked => Context.IdentityLockedEvent,
         IdentityEventIds.SessionRevoked => Context.IdentitySessionRevokedEvent,
+        DirectoryEventIds.OrganizationCreated => Context.DirectoryOrganizationCreatedEvent,
+        DirectoryEventIds.OrganizationUpdated => Context.DirectoryOrganizationUpdatedEvent,
+        DirectoryEventIds.OrganizationMoved => Context.DirectoryOrganizationMovedEvent,
+        DirectoryEventIds.OrganizationDeleted => Context.DirectoryOrganizationDeletedEvent,
+        DirectoryEventIds.PositionCreated => Context.DirectoryPositionCreatedEvent,
+        DirectoryEventIds.PositionUpdated => Context.DirectoryPositionUpdatedEvent,
+        DirectoryEventIds.PositionMoved => Context.DirectoryPositionMovedEvent,
+        DirectoryEventIds.PositionDeleted => Context.DirectoryPositionDeletedEvent,
+        DirectoryEventIds.MemberCreated => Context.DirectoryMemberCreatedEvent,
+        DirectoryEventIds.MemberRelationsChanged => Context.DirectoryMemberRelationsChangedEvent,
+        DirectoryEventIds.MemberStatusChanged => Context.DirectoryMemberStatusChangedEvent,
+        DirectoryEventIds.MemberProfileUpdated => Context.DirectoryMemberProfileUpdatedEvent,
         _ => null
     };
 }
-/// <summary>随 Definition 分发的身份事件 payload Schema。</summary>
+/// <summary>随 Definition 分发的身份与目录事件 payload Schema。</summary>
 public static class IdentitySchemas
 {
-    /// <summary>取回稳定事件对应的 JSON Schema 2020-12。</summary>
+    /// <summary>取回稳定事件对应的 JSON Schema 2020-12（身份事件与目录事件）。</summary>
     public static string Event(string eventId)
     {
-        if (!IdentityEventIds.All.Contains(eventId, StringComparer.Ordinal)) throw new ArgumentException("未登记的身份事件。", nameof(eventId));
+        if (!IdentityEventIds.All.Contains(eventId, StringComparer.Ordinal) && !DirectoryEventIds.All.Contains(eventId, StringComparer.Ordinal))
+            throw new ArgumentException("未登记的身份或目录事件。", nameof(eventId));
         using var stream = typeof(IdentitySchemas).Assembly.GetManifestResourceStream("identity/" + eventId + ".schema.json")
             ?? throw new InvalidOperationException("事件 Schema 未打包。");
         using var reader = new StreamReader(stream);
@@ -52,4 +65,16 @@ public static class IdentitySchemas
 [JsonSerializable(typeof(IdentityPasswordChangedEvent))]
 [JsonSerializable(typeof(IdentityLockedEvent))]
 [JsonSerializable(typeof(IdentitySessionRevokedEvent))]
+[JsonSerializable(typeof(DirectoryOrganizationCreatedEvent))]
+[JsonSerializable(typeof(DirectoryOrganizationUpdatedEvent))]
+[JsonSerializable(typeof(DirectoryOrganizationMovedEvent))]
+[JsonSerializable(typeof(DirectoryOrganizationDeletedEvent))]
+[JsonSerializable(typeof(DirectoryPositionCreatedEvent))]
+[JsonSerializable(typeof(DirectoryPositionUpdatedEvent))]
+[JsonSerializable(typeof(DirectoryPositionMovedEvent))]
+[JsonSerializable(typeof(DirectoryPositionDeletedEvent))]
+[JsonSerializable(typeof(DirectoryMemberCreatedEvent))]
+[JsonSerializable(typeof(DirectoryMemberRelationsChangedEvent))]
+[JsonSerializable(typeof(DirectoryMemberStatusChangedEvent))]
+[JsonSerializable(typeof(DirectoryMemberProfileUpdatedEvent))]
 internal sealed partial class IdentityJsonContext : JsonSerializerContext;

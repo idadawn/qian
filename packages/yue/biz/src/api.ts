@@ -25,32 +25,70 @@ export async function loadOrganizationTypes(client: PlatformClient, signal?: Abo
   return data?.items ?? [];
 }
 
-export interface MemberScope {
-  /** 只取该组织下的成员；不传取全租户。 */
+/** 成员检索每页显示的条数；请求时多取一条，用来判断后面是否还有。 */
+export const MEMBER_SEARCH_LIMIT = 50;
+/** 关键字长度上限，与 Identity Server 一致（按 UTF-16 码元计）。 */
+export const MEMBER_KEYWORD_MAX_LENGTH = 64;
+/** 按 id 批量查询每批的上限，与 Identity Server 一致。 */
+export const MEMBER_IDS_MAX = 100;
+
+/**
+ * 把输入整理成目录接口接受的关键字：控制字符换成空格、去掉首尾空白，过长时截到 64 个码元（不切断代理对）。
+ * 整理后为空返回 undefined，调用方据此不带 q、按页列出成员。
+ */
+export function memberKeyword(input: string): string | undefined {
+  let keyword = input.replace(/\p{Cc}/gu, ' ').trim();
+  if (keyword.length > MEMBER_KEYWORD_MAX_LENGTH) {
+    keyword = keyword.slice(0, MEMBER_KEYWORD_MAX_LENGTH);
+    if (/[\uD800-\uDBFF]$/.test(keyword)) keyword = keyword.slice(0, -1);
+    keyword = keyword.trim();
+  }
+  return keyword || undefined;
+}
+
+export interface MemberSearch {
+  /** 只在该组织下检索；不传在全租户检索。 */
   organizationId?: string | null | undefined;
   /** 组织范围是否含整棵子树，默认 true。 */
   descendants?: boolean | undefined;
-  /** 最多加载的成员数，默认 1000；达到上限且后面还有成员时 truncated 为 true。 */
-  max?: number | undefined;
+  /** 关键字，按显示名、账号与拼音由服务端匹配；空白时按页列出。 */
+  keyword?: string | undefined;
+  /** 本页条数，默认 50。 */
+  limit?: number | undefined;
 }
 
-export interface MemberPage { items: DirectoryMember[]; truncated: boolean }
+export interface MemberSearchPage { items: DirectoryMember[]; more: boolean }
 
-/** 目录接口没有关键字与按 id 查询，选择器按页读到上限后在本地过滤；页序与服务端一致（账号、成员 id）。 */
-export async function loadMembers(client: PlatformClient, { organizationId, descendants = true, max = 1000 }: MemberScope = {}, signal?: AbortSignal): Promise<MemberPage> {
+/** 成员检索（S1-IDP-010 的 q 参数）：取第一页，按账号、成员 id 排序；more 为 true 表示后面还有，应提示继续输入。 */
+export async function searchMembers(client: PlatformClient, { organizationId, descendants = true, keyword, limit = MEMBER_SEARCH_LIMIT }: MemberSearch = {}, signal?: AbortSignal): Promise<MemberSearchPage> {
   const api = client.api<paths>();
-  const page = async (offset: number, limit: number) => (organizationId
-    ? await api.GET('/api/directory/orgs/{id}/members', { params: { path: { id: organizationId }, query: { descendants, offset, limit } }, signal })
-    : await api.GET('/api/directory/members', { params: { query: { offset, limit } }, signal })).data?.items ?? [];
-  const cap = Math.max(1, Math.floor(max));
+  const q = memberKeyword(keyword ?? '');
+  const size = Math.min(DIRECTORY_PAGE_LIMIT - 1, Math.max(1, Math.floor(limit)));
+  const query = { ...(q === undefined ? {} : { q }), offset: 0, limit: size + 1 };
+  const rows = (organizationId
+    ? await api.GET('/api/directory/orgs/{id}/members', { params: { path: { id: organizationId }, query: { descendants, ...query } }, signal })
+    : await api.GET('/api/directory/members', { params: { query }, signal })).data?.items ?? [];
+  return { items: rows.slice(0, size), more: rows.length > size };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * 按 id 批量取成员，选择器用它回显已选值的显示名：membership 用 ids、person 用 person_ids，每批至多 100 个。
+ * 按 id 批量不分页，目录接口一次返回这批 id 里的全部可见成员，所以不带 offset / limit（带了是 400）。
+ * 不是 UUID 的值不发送；别的租户、不存在或已从目录删除的 id 不在结果里。
+ */
+export async function loadMembersByIds(client: PlatformClient, ids: readonly string[], key: 'membership' | 'person' = 'membership', signal?: AbortSignal): Promise<DirectoryMember[]> {
+  const wanted = [...new Set(ids.filter((id) => UUID.test(id) && id !== NIL_UUID))];
+  const api = client.api<paths>();
   const items: DirectoryMember[] = [];
-  while (items.length < cap) {
-    const limit = Math.min(DIRECTORY_PAGE_LIMIT, cap - items.length);
-    const rows = await page(items.length, limit);
-    items.push(...rows);
-    if (rows.length < limit) return { items, truncated: false };
+  for (let start = 0; start < wanted.length; start += MEMBER_IDS_MAX) {
+    const batch = wanted.slice(start, start + MEMBER_IDS_MAX);
+    const query = key === 'person' ? { person_ids: batch } : { ids: batch };
+    items.push(...(await api.GET('/api/directory/members', { params: { query }, signal })).data?.items ?? []);
   }
-  return { items, truncated: (await page(cap, 1)).length > 0 };
+  return items;
 }
 
 export async function loadRoles(client: PlatformClient, signal?: AbortSignal): Promise<AuthzRole[]> {

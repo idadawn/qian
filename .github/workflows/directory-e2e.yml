@@ -1,0 +1,41 @@
+name: directory-e2e
+# 真实目录 E2E（S1-IDP-010 验收 2，R109）：靶场的真实目录页经 PlatformClient 读 dev-tenant-ops.sh 装配的真实身份组件。
+# 宿主编译与装配用到的后端、插件元数据和构建基线，以及 yue 组件与靶场的真实目录页改动后都要重跑。
+on:
+  push:
+    branches: [main]
+    paths: ['apps/yue-playground/directory.html', 'apps/yue-playground/src/directory-main.tsx', 'apps/yue-playground/src/index.css', 'apps/yue-playground/vite.config.ts', 'apps/yue-playground/vite.directory.config.ts', 'apps/yue-playground/playwright.directory.config.ts', 'apps/yue-playground/e2e-directory/**', 'apps/yue-playground/scripts/directory-e2e.mjs', 'apps/yue-playground/package.json', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'turbo.json', '.github/workflows/directory-e2e.yml']
+  pull_request:
+    paths: ['apps/yue-playground/directory.html', 'apps/yue-playground/src/directory-main.tsx', 'apps/yue-playground/src/index.css', 'apps/yue-playground/vite.config.ts', 'apps/yue-playground/vite.directory.config.ts', 'apps/yue-playground/playwright.directory.config.ts', 'apps/yue-playground/e2e-directory/**', 'apps/yue-playground/scripts/directory-e2e.mjs', 'apps/yue-playground/package.json', 'packages/yue/**', 'packages/Qian.*/**', 'packages/Common/**', 'samples/Qian.Sample.Crm/**', 'plugins/**', 'schemas/**', 'contracts/**', 'tools/Qian.Dev.TenantOps/**', 'tools/Qian.Build.Analyzers/**', 'tools/openapi-codegen/**', 'scripts/dev-tenant-ops.sh', 'Directory.*.props', 'Directory.Build.targets', 'global.json', 'NuGet.config', 'BannedSymbols.txt', '.editorconfig', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'turbo.json', '.github/workflows/directory-e2e.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: directory-e2e-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  acceptance:
+    name: 真实目录选择器验收
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter yue-playground exec playwright install --with-deps chromium
+      - run: pnpm --filter @idadawn/yue-biz contracts:check && pnpm --filter yue-playground typecheck
+      - run: pnpm --filter yue-playground e2e:directory
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: directory-e2e
+          path: TestResults/directory-e2e/
+          if-no-files-found: ignore

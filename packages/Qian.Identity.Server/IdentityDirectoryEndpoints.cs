@@ -37,9 +37,25 @@ internal static class IdentityDirectoryEndpoints
         endpoints.MapGet(Prefix + "/groups", (Delegate)((HttpContext http) => Run(http, false, async (directory, ct) => new { items = await directory.ListGroupsAsync(ct).ConfigureAwait(false) })));
         endpoints.MapPost(Prefix + "/groups", (Delegate)((HttpContext http) => Write<GroupBody>(http, async (directory, request, ct) => await directory.CreateGroupAsync(request.Name, ct).ConfigureAwait(false))));
         endpoints.MapDelete(Prefix + "/groups/{id:guid}", (Delegate)((HttpContext http, Guid id) => Delete(http, (directory, ct) => directory.DeleteGroupAsync(id, ct).AsTask())));
-        endpoints.MapGet(Prefix + "/members", (Delegate)((HttpContext http) => Run(http, false, async (directory, ct) => new { items = await directory.ListMembersAsync(Page(http, "offset", 0), Page(http, "limit", 50), ct).ConfigureAwait(false) })));
+        // 成员检索（S1-IDP-010）：q 为关键字，ids / person_ids 为按 id 批量；三者至多给一个，规则见 DirectoryMemberQuery。
+        endpoints.MapGet(Prefix + "/members", (Delegate)((HttpContext http) => Run(http, false, async (directory, ct) => new
+        {
+            items = await directory.QueryMembersAsync(MemberQuery(http), ct).ConfigureAwait(false)
+        })));
         endpoints.MapGet(Prefix + "/orgs/{id:guid}/members", (Delegate)((HttpContext http, Guid id) => Run(http, false, async (directory, ct) => new
-        { items = await directory.GetOrganizationMembersAsync(id, Descendants(http), Page(http, "offset", 0), Page(http, "limit", 50), ct).ConfigureAwait(false) })));
+        {
+            items = await directory.QueryMembersAsync(new DirectoryMemberQuery
+            { OrganizationId = id, Descendants = Descendants(http), Keyword = One(http, "q"), Offset = Page(http, "offset", 0), Limit = Page(http, "limit", 50) }, ct).ConfigureAwait(false)
+        })));
+        // 派生查询（S1-IDP-010）：上级链、直属主管、部门负责人、@下属 / @子孙；口径见 IIdentityDirectory 与 Identity Server README。
+        endpoints.MapGet(Prefix + "/members/{id:guid}/superiors", (Delegate)((HttpContext http, Guid id) => Run(http, false, async (directory, ct) =>
+            await directory.GetSuperiorsAsync(id, Uuid(http, "position_id"), ct).ConfigureAwait(false))));
+        endpoints.MapGet(Prefix + "/members/{id:guid}/manager", (Delegate)((HttpContext http, Guid id) => Run(http, false, async (directory, ct) =>
+            await directory.GetManagerAsync(id, ct).ConfigureAwait(false))));
+        endpoints.MapGet(Prefix + "/orgs/{id:guid}/head", (Delegate)((HttpContext http, Guid id) => Run(http, false, async (directory, ct) =>
+            await directory.GetOrganizationHeadAsync(id, ct).ConfigureAwait(false))));
+        endpoints.MapGet(Prefix + "/me/subordinates", (Delegate)((HttpContext http) => Run(http, false, async (directory, caller, ct) => new
+        { items = await directory.GetSubordinatesAsync(caller.MembershipId!.Value, Depth(http), Page(http, "offset", 0), Page(http, "limit", 50), ct).ConfigureAwait(false) })));
         endpoints.MapGet(Prefix + "/positions/{id:guid}/holders", (Delegate)((HttpContext http, Guid id) => Run(http, false, async (directory, ct) => new
         { items = await directory.GetPositionHoldersAsync(id, Page(http, "offset", 0), Page(http, "limit", 50), ct).ConfigureAwait(false) })));
         endpoints.MapGet(Prefix + "/members/{id:guid}/relations", (Delegate)((HttpContext http, Guid id) => Run(http, false, async (directory, ct) => new { items = await directory.GetRelationsAsync(id, ct).ConfigureAwait(false) })));
@@ -61,8 +77,29 @@ internal static class IdentityDirectoryEndpoints
         int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) ? parsed : throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
     private static bool Descendants(HttpContext http) => !http.Request.Query.TryGetValue("descendants", out var value) ? false :
         bool.TryParse(value, out var parsed) ? parsed : throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
+    // 单值参数重复出现即 400，不猜取哪一个。
+    private static string? One(HttpContext http, string key) => !http.Request.Query.TryGetValue(key, out var value) ? null :
+        value.Count == 1 ? value[0] : throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
+    private static Guid? Uuid(HttpContext http, string key) => One(http, key) is not { } value ? null :
+        Guid.TryParseExact(value, "D", out var parsed) ? parsed : throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
+    // 可重复的 id 参数（?ids=a&ids=b）；每项必须是规范 UUID，数量与重复由 DirectoryMemberQuery 的规则判定。
+    private static Guid[]? Ids(HttpContext http, string key) => !http.Request.Query.TryGetValue(key, out var values) ? null :
+        [.. values.Select(value => Guid.TryParseExact(value, "D", out var parsed) ? parsed : throw new QianErrorException(new QianError(PlatformErrors.BadRequest)))];
+    // 按 id 批量不分页，总是回这批 id 里的全部可见成员：同时带 offset / limit 说明调用方以为会分页，400，不猜按哪一种处理。
+    private static readonly string[] PagingKeys = ["offset", "limit"];
+    private static DirectoryMemberQuery MemberQuery(HttpContext http)
+    {
+        var ids = Ids(http, "ids"); var persons = Ids(http, "person_ids");
+        if ((ids is not null || persons is not null) && PagingKeys.FirstOrDefault(http.Request.Query.ContainsKey) is { } paging) throw IdentifierRules.Invalid("#/" + paging);
+        return new DirectoryMemberQuery { Keyword = One(http, "q"), MembershipIds = ids, PersonIds = persons, Offset = Page(http, "offset", 0), Limit = Page(http, "limit", 50) };
+    }
+    private static int? Depth(HttpContext http) => One(http, "depth") is not { } value ? null :
+        int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) ? parsed : throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
 
-    private static async Task<IResult> Run(HttpContext http, bool administrator, Func<IIdentityDirectory, CancellationToken, Task<object>> action)
+    private static Task<IResult> Run(HttpContext http, bool administrator, Func<IIdentityDirectory, CancellationToken, Task<object>> action) =>
+        Run(http, administrator, (directory, _, ct) => action(directory, ct));
+
+    private static async Task<IResult> Run(HttpContext http, bool administrator, Func<IIdentityDirectory, IdentityAccountService.SessionCaller, CancellationToken, Task<object>> action)
     {
         var service = IdentityAccountEndpoints.Service(http);
         if (service is null) return Results.NotFound();
@@ -73,13 +110,13 @@ internal static class IdentityDirectoryEndpoints
             return QianResults.Error(new QianError(PlatformErrors.AuthzDenied));
         using var scope = http.RequestServices.GetRequiredService<ITenantContext>().BeginScope(tenant.ToString("D"));
         using var origin = EventEnvelopeScope.Begin(new EventOrigin("qian.identity", EventActor.User(caller.PersonId.ToString("D"))));
-        return Results.Json(await action(service, http.RequestAborted).ConfigureAwait(false), Json);
+        return Results.Json(await action(service, caller, http.RequestAborted).ConfigureAwait(false), Json);
     }
 
     private static async Task<IResult> Write<T>(HttpContext http, Func<IIdentityDirectory, T, CancellationToken, Task<object>> action) where T : class
     {
         if (await IdentityAccountEndpoints.Guard(http).ConfigureAwait(false) is { } rejected) return rejected;
-        return await Run(http, true, async (directory, ct) =>
+        return await Run(http, true, async (IIdentityDirectory directory, CancellationToken ct) =>
         {
             var body = await IdentityAccountEndpoints.Read<T>(http, Json).ConfigureAwait(false) ?? throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
             try { return await action(directory, body, ct).ConfigureAwait(false); }
@@ -90,6 +127,6 @@ internal static class IdentityDirectoryEndpoints
     private static async Task<IResult> Delete(HttpContext http, Func<IIdentityDirectory, CancellationToken, Task> action)
     {
         if (await IdentityAccountEndpoints.GuardAction(http).ConfigureAwait(false) is { } rejected) return rejected;
-        return await Run(http, true, async (directory, ct) => { await action(directory, ct).ConfigureAwait(false); return new { deleted = true }; }).ConfigureAwait(false);
+        return await Run(http, true, async (IIdentityDirectory directory, CancellationToken ct) => { await action(directory, ct).ConfigureAwait(false); return new { deleted = true }; }).ConfigureAwait(false);
     }
 }

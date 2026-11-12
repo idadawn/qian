@@ -12,7 +12,10 @@
   "include": [
     "src",
     "e2e",
+    "e2e-directory",
     "vite.config.ts",
+    "vite.directory.config.ts",
+    "playwright.directory.config.ts",
     "vite.shell.config.ts",
     "vite.biz.config.ts",
     "playwright.config.ts",

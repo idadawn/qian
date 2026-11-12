@@ -44,10 +44,12 @@ internal static class AccountsHost
     internal static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     // 发行方带端口，构建宿主前就要确定：端口在建表、挂载期间被占时换端口从头启动（S1-QA-014）。
-    internal static Task<Running> Start(PostgresFixture postgres, IdentityAccountOptions? accounts = null, string flavor = "default", string? redis = null, LogLevel logLevel = LogLevel.Warning) =>
-        LoopbackPort.StartAsync(port => StartOn(port, postgres, accounts, redis, logLevel));
+    // identityEvents: false 模拟宿主漏装 AddQianIdentityEvents（没有把身份与目录事件写进 Outbox 的处理器）。
+    internal static Task<Running> Start(PostgresFixture postgres, IdentityAccountOptions? accounts = null, string flavor = "default", string? redis = null, LogLevel logLevel = LogLevel.Warning,
+        bool identityEvents = true) =>
+        LoopbackPort.StartAsync(port => StartOn(port, postgres, accounts, redis, logLevel, identityEvents));
 
-    private static async Task<Running> StartOn(int port, PostgresFixture postgres, IdentityAccountOptions? accounts, string? redis, LogLevel logLevel)
+    private static async Task<Running> StartOn(int port, PostgresFixture postgres, IdentityAccountOptions? accounts, string? redis, LogLevel logLevel, bool identityEvents)
     {
         var issuer = $"http://127.0.0.1:{port}/";
         using var rsa = RSA.Create(2048);
@@ -59,7 +61,7 @@ internal static class AccountsHost
         var logs = new CapturedLogs(); builder.Logging.AddProvider(logs);
         builder.Services.AddSingleton<ITenantContext>(new AsyncLocalTenantContext());
         builder.Services.AddKunEventBus(events => events.RegisterIdentityEvents());
-        builder.Services.AddKunMediator(mediator => mediator.AddQianIdentityEvents());
+        builder.Services.AddKunMediator(mediator => { if (identityEvents) mediator.AddQianIdentityEvents(); });
         builder.Services.AddQianEvents();
         builder.Services.AddQianData<IdentityDbContext>((_, options) => options.UseNpgsql(postgres.AppConnectionString).UseKunSchema(IdentityDbContext.Schema));
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
