@@ -54,6 +54,7 @@ public sealed partial class IdentityAuthzTests
         await new PostgresPermissionCatalogStore(data).PutAsync(catalog, Ct);
         var (admin, adminPhone) = await NewPerson(host, "目录管理员"); await Join(host, A, admin.Id, "管理员", administrator: true);
         var (member, memberPhone) = await NewPerson(host, "普通成员"); await Join(host, A, member.Id, "普通成员");
+        var (bare, barePhone) = await NewPerson(host, "未授角色的管理员"); await Join(host, A, bare.Id, "未授角色的管理员", administrator: true);
         var (outsider, _) = await NewPerson(host, "乙方老员工"); await Join(host, B, outsider.Id, "乙方老员工");
         using var tenantScope = tenant.BeginScope(A);
         var roles = new PostgresTenantRoleStore(data, tenant);
@@ -62,6 +63,7 @@ public sealed partial class IdentityAuthzTests
         // 对照：普通成员虽经真实 RBAC 持有 member:create，仍不能越过 Identity 的租户管理员守卫。
         await roles.AssignAsync("tenant.admin", "user", member.Id.ToString("D"), "member-add-acceptance", Ct);
         var administrator = await DirectoryUser(host, adminPhone, A); var nonAdministrator = await DirectoryUser(host, memberPhone, A);
+        var unauthorized = await DirectoryUser(host, barePhone, A);
         var loader = host.Identity.Loader!; var caller = loader.GetContext("capabilities", ScopeKey.Global).Scoped(new ScopeKey("tenant", A));
         var service = caller.Capabilities(); var binding = caller.Inject<IExecutableCapability>(CapabilityBindingRegistration.Key, id);
         Assert.True(JsonElement.DeepEquals(contract.Metadata, binding.Contract.Metadata));
@@ -82,8 +84,10 @@ public sealed partial class IdentityAuthzTests
             var check = schema.Evaluate(entry, new EvaluationOptions { OutputFormat = OutputFormat.List }); Assert.True(check.IsValid, JsonSerializer.Serialize(check));
             var phone = NewPhone(); var key = Guid.CreateVersion7();
             var request = JsonSerializer.SerializeToElement(new { idempotencyKey = key, identifier = phone, displayName = "新同事", initialPassword = initial });
-            // 非管理员（有权限点）与跨租户作用域：被拒，不建自然人与成员，不写审计。
+            // 非管理员（有权限点）、管理员但没有权限点（未授任何角色）与跨租户作用域：都被拒，不建自然人与成员，不写审计。
             current.Snapshot = nonAdministrator.Principal!;
+            Assert.Equal("AUTHZ_DENIED", (await Assert.ThrowsAsync<QianErrorException>(() => binding.InvokeAsync(caller, request, Ct).AsTask())).Error.Code.Code);
+            current.Snapshot = unauthorized.Principal!;
             Assert.Equal("AUTHZ_DENIED", (await Assert.ThrowsAsync<QianErrorException>(() => binding.InvokeAsync(caller, request, Ct).AsTask())).Error.Code.Code);
             current.Snapshot = administrator.Principal!;
             Assert.Equal("NOT_FOUND", (await Assert.ThrowsAsync<QianErrorException>(() => binding.InvokeAsync(caller.Scoped(new ScopeKey("tenant", B)), request, Ct).AsTask())).Error.Code.Code);

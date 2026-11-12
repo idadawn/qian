@@ -69,11 +69,16 @@ public sealed class DirectoryMemberAddTests(PostgresFixture postgres) : IClassFi
         Assert.Equal("True", await host.Text("SELECT must_change_password FROM plugin_qian_identity.persons WHERE id = @p", ("p", personId)));
         Assert.StartsWith("$argon2id$", await host.Text("SELECT password_hash FROM plugin_qian_identity.persons WHERE id = @p", ("p", personId)), StringComparison.Ordinal);
         Assert.Equal(tenant.Id.ToString("D"), await host.Text("SELECT array_to_string(tenant_ids, ',') FROM plugin_qian_identity.persons WHERE id = @p", ("p", personId)));
-        // 新成员登录：先被引导修改初始密码，此前没有会话；改密后建立本租户会话，授权端点签发授权码。
+        // 初始密码进密码历史（与开户同口径），之后几次改密都不能改回它。
+        Assert.Equal("1", await host.Text("SELECT count(*) FROM plugin_qian_identity.password_history h JOIN plugin_qian_identity.persons p ON p.id = h.person_id " +
+            "WHERE h.person_id = @p AND h.hash = p.password_hash", ("p", personId)));
+        // 新成员登录：先被引导修改初始密码，此前没有会话；不能「改」成初始密码本身（票据不因此作废），改密后建立本租户会话，授权端点签发授权码。
         var member = host.NewBrowser();
         var login = await member.Login(phone, Initial);
         Assert.Equal("password_change_required", login.Body.GetProperty("status").GetString());
         Assert.False(member.HasAccountCookie); Assert.Null(await member.Code());
+        var kept = await member.Json(HttpMethod.Post, "api/identity/login/password", new { ticket = login.Body.GetProperty("ticket").GetString(), new_password = Initial });
+        Assert.Equal("PASSWORD_REUSED", Code(kept.Body)); Assert.False(member.HasAccountCookie);
         var changed = await member.Json(HttpMethod.Post, "api/identity/login/password", new { ticket = login.Body.GetProperty("ticket").GetString(), new_password = "Brand-New-Pass-7" });
         Assert.Equal("authenticated", changed.Body.GetProperty("status").GetString());
         var me = await member.Json(HttpMethod.Get, "api/identity/me");
