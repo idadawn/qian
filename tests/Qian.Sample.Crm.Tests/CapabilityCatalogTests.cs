@@ -412,7 +412,7 @@ public abstract partial class CustomerCommandTests
                 if (relative != ".qian-plugin/plugin.json") Write("plugins/" + identity.Id + "/" + relative, File.ReadAllText(file));
             }
             // 与本宿主的其它 Provider 一样使用独立测试清单，真实代码字段和表面保持原样。
-            // 产品清单的 x-skeleton 继续保留：此运行态验收不声称正式 qian add/安装验收完成。
+            // 产品清单已按 R150 ① 去掉 x-skeleton（平台宿主预装为启动证据）；此运行态验收仍不声称正式 qian add/安装验收完成。
             var testManifestPath = "plugins/" + identity.Id + "/.qian-plugin/plugin.json";
             var testManifest = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(directory, testManifestPath)))!;
             testManifest["runtime"] = new System.Text.Json.Nodes.JsonObject { ["form"] = "module", ["entry"] = metadata.RuntimeEntry, ["configSchema"] = "./schemas/config.schema.json" };

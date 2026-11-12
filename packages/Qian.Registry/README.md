@@ -83,7 +83,7 @@ S1 不产生另外两个原因码：profile 没有 restriction 声明来源，`P
 
 ## 候选制品登记入口（清单准入）
 
-`SubmitArtifactAsync` 供 Lifecycle 等可信平台插件登记候选制品，调用方负责权限：先核验 D4 摘要，再以 platform / server 做共用静态校验，`SurfaceValidationOptions.ServiceKeys` 取预装组件的 provides，inject 无 Provider 即被拒；通过后幂等写入 `Submitted`。不合格时抛 `INPUT_INVALID`，`errors[]` 为 `REGISTRY_INPUT_INVALID`，pointer 是指向制品文件的 JSON Pointer，候选目录不留记录。
+`SubmitArtifactAsync` 供 Lifecycle 等可信平台插件登记候选制品，调用方负责权限：先核验 D4 摘要，再以 platform / server 做共用静态校验，`SurfaceValidationOptions.ServiceKeys` 取预装组件的 provides，inject 无 Provider 即被拒；通过后幂等写入 `Submitted`。候选制品与某个预装绑定同摘要（同一份字节，宿主装配时已按组件代码派生的能力校验过）时，校验沿用那份能力清单，命令型工具与服务键方法的绑定才能通过——平台镜像预装的组件经 Lifecycle 装成修订（平台宿主的 `--install-system-revisions`，R151 ①）就是这种情况；其余候选制品不带代码能力，命令型工具照旧被拒。不合格时抛 `INPUT_INVALID`，`errors[]` 为 `REGISTRY_INPUT_INVALID`，pointer 是指向制品文件的 JSON Pointer，候选目录不留记录。
 
 `tck/surfaces/cases.json` 中清单准入的五类反例——缺任一 S1 必填字段（按 Schema 的 required 逐个覆盖）、OCI 引用用 tag、`scopes[]` 含非法种类、工具顶层输入含租户字段、`inject[]` 无 Provider——在 .NET 与 TS 校验器上逐项一致，并经本入口全部拒绝、pointer 与 fixture 相同；digest 引用与 inject 有 Provider 的对照正例登记为 `Submitted`（`ManifestIntakeTests`）。工具输入的租户字段（顶层、嵌套、`$defs`、数组项与组合子句，四种名称写法；以及 `required`、`dependentRequired`、`dependentSchemas`、`patternProperties`、`propertyNames` 等 properties 之外的写法）另经 Lifecycle 的 `InstallAsync` 验证同一拒绝（`tests/Qian.Lifecycle.Tests/TenantFieldInstallTests.cs`）。登记不等于验签、发布、安装或任何租户已挂载。
 

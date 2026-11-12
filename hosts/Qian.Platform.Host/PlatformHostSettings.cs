@@ -72,10 +72,13 @@ public sealed class PlatformHostSettings
         };
     }
 
-    /// <summary>读一个连接的 Secret 文件；迁移模式下在线登录改用迁移属主的连接（迁移器只用它执行有包内迁移的上下文，其余上下文不连库）。</summary>
+    /// <summary>
+    /// 读一个连接的 Secret 文件；迁移模式下在线登录改用迁移属主的连接（迁移器只用它执行有包内迁移的上下文，其余上下文不连库），
+    /// 管理员连接（<c>MigrationAdmin</c>，只给迁移 Job 的离线 DDL 与授权用）照原样读。
+    /// </summary>
     public string Connection(string name)
     {
-        if (MigrateOnly && name != "Migrations") name = "Migrations";
+        if (MigrateOnly && name is not ("Migrations" or "MigrationAdmin")) name = "Migrations";
         return ConnectionFiles.TryGetValue(name, out var path) ? ReadSecret(path)
             : throw new InvalidOperationException("缺少平台宿主配置：ConnectionFiles:" + name + (MigrateOnly ? "（迁移任务只需要迁移属主的连接）。" : "。"));
     }

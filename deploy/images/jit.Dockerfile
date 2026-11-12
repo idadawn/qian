@@ -6,6 +6,10 @@
 ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0-noble@sha256:fe0fd4e93bd2fbb47c883b7a6369e5c8d3db8bf01cdc5981f6ee35fbdf3ff4fb
 ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra@sha256:cae5b962bfb786606def03d250c6a645cc98839095c89e806e4bd8978a68115b
 
+# 前端构建产物（S1-DEP-011）：scripts/images.py build 总以 --build-context web=<目录> 覆盖这个空阶段（没给 --web 时是空目录），产物落在 /app/web。
+# 平台镜像带认证页族与开通申请公开页（/app/web/identity、/app/web/signup），网关镜像带外壳与已部署组件的远程（/app/web/shell、/app/web/remotes/<组件>）。
+FROM scratch AS web
+
 FROM ${SDK_IMAGE} AS build
 ARG PROJECT
 ARG ASSEMBLY
@@ -39,6 +43,7 @@ COPY --from=build --chown=$APP_UID:$APP_UID /probe /app/.write-probe
 # profile、组合包与组件清单随镜像发布（环境级 overlay 由 ConfigMap 挂载），漂移门禁在镜像内对它们执行 dump-config。
 COPY profiles/ /app/qian/profiles/
 COPY plugins/ /app/qian/plugins/
+COPY --from=web / /app/web/
 ENV QIAN_ROOT=/app/qian
 USER $APP_UID
 ENTRYPOINT ["/app/entrypoint"]

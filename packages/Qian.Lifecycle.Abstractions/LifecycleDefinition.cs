@@ -51,8 +51,9 @@ public interface IPluginLifecycleController
     /// 开通当前 Active 修订：Entitled → Provisioning → 执行 tenant-provision 钩子 → Installed。钩子以 (tenant, plugin, hook, toVersion) 为幂等键记入
     /// lifecycle_runs，成功后不再执行；已 Installed 时直接返回、无副作用（换版本用 <see cref="UpgradeAsync"/>）；钩子失败时停在 Provisioning，
     /// 重试沿用原目标版本。开通不挂载，挂载用 <see cref="MountAsync(ScopeKey, JsonElement, string, CancellationToken)"/>。权益之后还有第二道门：
-    /// 修订声明了反向权限（policy.permissions / policy.egress）且不是 policy.required 的平台组件时，每一项都须已由 <see cref="ApprovePermissionsAsync"/> 批准，
-    /// 否则 LIFECYCLE_PERMISSIONS_UNAPPROVED 且不写任何记录。
+    /// 修订声明了反向权限（policy.permissions / policy.egress）、既不是 policy.required 的平台组件也不是宿主预装的 system 级组件时，每一项都须已由
+    /// <see cref="ApprovePermissionsAsync"/> 批准，否则 LIFECYCLE_PERMISSIONS_UNAPPROVED 且不写任何记录。权益一道同样对这两类组件免除（宿主预装的判据：
+    /// 修订的组件、版本与制品摘要都等于 Registry 的预装绑定，且预装清单的 policy.tier 是 system；R151）。
     /// </summary>
     ValueTask<TenantPluginInstallView> ProvisionAsync(string tenantId, string pluginId, string actor, CancellationToken cancellationToken = default);
     /// <summary>

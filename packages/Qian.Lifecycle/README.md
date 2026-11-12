@@ -83,7 +83,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 
 租户安装状态为 `Entitled → Provisioning → Installed ⇄ Upgrading → Uninstalled → Purged`，没有 Enabled / Disabled：挂载与否只在 Registry 的 `scope_patches`（R34）。租户级方法由控制器自己进入目标租户的数据上下文，`tenant_plugin_installs`、`lifecycle_runs`、`mount_failures` 都是强制 RLS 的租户表。
 
-- `EntitleAsync` 记录授权，由 `qian.entitlement`（S1-ENT-001）的授予调用。`policy.required` 的平台组件恒视为已授权。
+- `EntitleAsync` 记录授权，由 `qian.entitlement`（S1-ENT-001）的授予调用。`policy.required` 的平台组件与宿主预装的 system 级组件恒视为已授权（组件规格 plugin-manifest 4.5，R151 ②）。宿主预装的判据：修订的组件、版本与制品摘要都等于 Registry 的预装绑定，且预装清单的 `policy.tier` 是 `system`；只比对预装绑定，修订表不为此加列。
 - `ProvisionAsync` 开通当前 Active 修订，执行 `tenant-provision` 钩子。权益之后还要核对反向权限批准，见下一节。
   - 已 Installed 时直接返回，不认领执行记录、不调钩子、不写记录。
   - 钩子失败时停在 Provisioning，重试沿用原目标版本；重试同样先核对反向权限批准（两次尝试之间批准可能已被收窄），未批准时仍停在 Provisioning，不认领执行记录。
@@ -117,7 +117,7 @@ app.MapQianLifecycle(http => runtime.GetContext("lifecycle", ScopeKey.Global));
 
 `ProvisionAsync` 与 `UpgradeAsync` 在权益之后、置 Provisioning / Upgrading 之前核对批准，与安装行用同一把锁：
 
-- `policy.required` 的平台组件、没有声明反向权限（或五类都为空）的组件不经批准。
+- `policy.required` 的平台组件、宿主预装的 system 级组件（判据同上，R151 ③）、没有声明反向权限（或五类都为空）的组件不经批准。
 - 否则目标版本声明的每一项都须已批准。缺任一项为 422 `LIFECYCLE_PERMISSIONS_UNAPPROVED`，`missing` 按类别列出缺失项；不写任何记录，也不认领执行记录。
 - 目标版本没有自己的批准记录时，沿用该租户对该组件最近一次的批准。所以升级只有新增项才须重批，连续升级不会因中间版本没有记录而受阻。
 - `authentication: ON_USE` 在 S1 同样在开通与升级时核对（fail-closed）。

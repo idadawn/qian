@@ -145,6 +145,7 @@ public sealed class PlatformHostComposition
     private void Register(PlatformComposition composed)
     {
         var services = Services; var settings = Settings;
+        services.AddSingleton(settings);
         services.TryAddSingleton<ITenantContext>(new AsyncLocalTenantContext());
         services.AddHttpContextAccessor();
         services.AddQianErrors();

@@ -47,3 +47,6 @@ Qian.Authz.AuthzComponent
 Qian.Authz.AuthzComponent.AuthzComponent() -> void
 Qian.Authz.AuthzComponent.Inject.get -> System.Collections.Generic.IReadOnlyList<Qian.Runtime.ServiceKey>!
 Qian.Authz.AuthzComponent.ApplyAsync(Qian.Runtime.IPluginContext! ctx, System.Text.Json.JsonElement config, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Qian.Authz.PlatformSuperadminBootstrap
+static Qian.Authz.PlatformSuperadminBootstrap.AssignFirstAsync(System.IServiceProvider! services, string! platformRole, string! userId, string! actor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+static Qian.Authz.PlatformSuperadminBootstrap.ExistsAsync(System.IServiceProvider! services, string! platformRole, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!

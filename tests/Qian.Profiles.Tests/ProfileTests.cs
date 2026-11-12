@@ -57,10 +57,11 @@ public sealed class ProfileTests
 
     [Theory]
     // 警告只来自仍带骨架标记的条目；qian.data / qian.events / qian.config / qian.files / qian.identity.client 经真实安装后不再是骨架，
-    // qian.tenancy / qian.authz / qian.audit / qian.registry / qian.capabilities / qian.lifecycle 以平台宿主的 profile 装配与集成测试为启动证据去标（R144）。
+    // qian.tenancy / qian.authz / qian.audit / qian.registry / qian.capabilities / qian.lifecycle 以平台宿主的 profile 装配与集成测试为启动证据去标（R144），
+    // qian.identity.server / qian.tenancy.signup 以平台宿主同进程身份分支的装配与集成测试为启动证据去标（R150 ①），identity profile 的骨架警告随之 5→3。
     [InlineData("platform", 21, 11)]
     [InlineData("gateway", 6, 5)]
-    [InlineData("identity", 9, 5)]
+    [InlineData("identity", 9, 3)]
     [InlineData("standalone", 3, 0)]
     [InlineData("minimal", 0, 0)]
     public void Shipped_profiles_resolve_with_correct_business_boundaries(string profile, int count, int skeletons)
