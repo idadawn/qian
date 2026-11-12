@@ -27,6 +27,16 @@
 
 `Qian.Identity.Server.Tests` 的 `DirectoryAgentContractTests` 核对契约登记的路径与 Identity Server 实际的 GET 端点逐一对应、每个查询都有描述与示例、示例符合 Schema、Schema 与目录记录的序列化逐字段一致，以及 yue 业务组件契约（`packages/yue/biz/contracts/biz.openapi.json`）的目录部分与本契约逐字段一致；`DirectoryQueryTests` 用真实会话调遍每个端点与查询参数，响应都要通过契约 Schema 的严格校验。
 
+## 成员管理契约
+
+[directory-members.openapi.json](directory-members.openapi.json) 是「新增成员」的 OpenAPI 3.1 契约（S1-IDP-017）：
+- **操作**：`POST /api/directory/members`，标 `x-qian-side-effect: write`；`x-qian-capability` 指向规则相同的标准能力 `qian.identity.server/directory.member.add`。
+- **请求**：标识、显示名、初始密码（writeOnly）与可选账号，不允许多余字段，所以也没有租户字段。
+- **响应**：`membership`、`person_created`、`granted_roles`。`membership` 与目录查询契约的 `Membership` 是同一份定义。
+- **错误**：一律是 ErrorDetail，字段错误的位置用请求字段名。
+
+`Qian.Identity.Server.Tests` 的 `DirectoryMemberContractTests` 核对以下几项：契约登记的操作与实际端点一致；请求 Schema 与服务端绑定的请求体逐字段一致；响应 Schema 与新增结果的序列化逐字段一致；`Membership` 与查询契约结构相同；示例符合 Schema。`DirectoryMemberAddTests` 里的真实响应同样按契约 Schema 校验。
+
 ## 共同约定
 
 载荷不含信封字段（[S1-DEC-020](../../../pm/tasks/S1-DEC-020.md)）：`event_id`、`occurred_at` 由 Qian.Events 写入端入队时生成，`tenant_id` 取发布时的租户上下文，三者只在信封上，消费端从信封读取。生产方在事件所属租户的作用域内入队；平台级身份事件在租户作用域外入队，信封 `tenant_id` 为 null。目录事件一律在所属租户作用域内入队。
