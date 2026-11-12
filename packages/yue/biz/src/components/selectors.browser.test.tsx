@@ -142,9 +142,12 @@ describe('UserSelect', () => {
     await userEvent.keyboard('wang');
     await vi.waitFor(() => expect(requests.at(-1)!.url).toBe(`/api/directory/orgs/${uuid(2)}/members?descendants=true&q=wang&offset=0&limit=51`));
     await vi.waitFor(() => expect(options()).toEqual(['王五wangwu']));
+    // 换了关键字，李四已不在当前结果里：摘要仍用此前检索过的结果显示名字，不显示成 id，也不回查。
+    expect(screen.getByRole('combobox', { name: '成员' }).textContent).toContain('李四');
+    expect(screen.getByRole('combobox', { name: '成员' }).textContent).not.toContain(uuid(201));
     await expectAccessible();
     await userEvent.keyboard('{Escape}');
-    // 李四已不在当前结果里，摘要仍用检索过的结果显示名字，不回查。
+    // 关闭后同样显示名字，不回查。
     await vi.waitFor(() => expect(screen.getByRole('combobox', { name: '成员' }).textContent).toContain('李四'));
     expect(requests.every((request) => !request.url.includes('ids='))).toBe(true);
     await userEvent.click(screen.getByRole('button', { name: '清空成员' }));
@@ -164,7 +167,8 @@ describe('UserSelect', () => {
     expect(screen.getByRole('combobox', { name: '前端组成员' }).textContent).toContain('not-a-uuid');
     await vi.waitFor(() => expect(screen.getByRole('combobox', { name: '自然人' }).textContent).toContain('张三'));
     const lookups = () => requests.filter((request) => request.url.startsWith('/api/directory/members?')).map((request) => request.url).sort();
-    await vi.waitFor(() => expect(lookups()).toEqual([`/api/directory/members?ids=${uuid(105)}&limit=1`, `/api/directory/members?ids=${absent}&limit=1`, `/api/directory/members?person_ids=${uuid(204)}&limit=1`]));
+    // 按 id 批量不分页，回查不带 offset / limit。
+    await vi.waitFor(() => expect(lookups()).toEqual([`/api/directory/members?ids=${absent}`, `/api/directory/members?ids=${uuid(105)}`, `/api/directory/members?person_ids=${uuid(204)}`].sort()));
     expect(screen.getByRole('combobox', { name: '已删除' }).textContent).toContain(absent);
     await userEvent.click(screen.getByRole('combobox', { name: '前端组成员' }));
     await vi.waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('搜索前端组成员'));
@@ -187,7 +191,7 @@ describe('UserSelect', () => {
     await vi.waitFor(() => expect(requests.at(-1)!.url).toBe('/api/directory/members?q=user11&offset=0&limit=51'));
     await vi.waitFor(() => expect(options()).toHaveLength(10));
     expect(screen.queryByText('只显示前 50 位成员，继续输入可缩小范围')).toBeNull();
-    // 去抖为 0 时逐字输入可能带出中间关键字的请求，不断言请求条数；每次都只比显示的 50 位多取一条，在目录接口每页 100 的上限内。
+    // 去抖为 0 时逐字输入可能带出中间关键字的请求，不断言请求条数；每次都只比显示的 50 位多取一条，在目录接口每页 200 的上限内。
     expect(requests[0]!.url).toBe('/api/directory/members?offset=0&limit=51');
     expect(requests.every((request) => request.url.endsWith('&limit=51'))).toBe(true);
   });
@@ -214,13 +218,15 @@ describe('成员检索与按 id 批量的取数函数', () => {
     expect(memberKeyword('a'.repeat(63) + '😀')).toBe('a'.repeat(63));
   });
 
-  it('按 id 批量：去重、跳过非 UUID 与全零 UUID，每批至多 100 个，按 valueKey 选 ids 或 person_ids', async () => {
+  it('按 id 批量：去重、跳过非 UUID 与全零 UUID，每批至多 100 个，按 valueKey 选 ids 或 person_ids，不带分页参数', async () => {
     const { client, requests } = createFixture();
     const ids = Array.from({ length: 230 }, (_, index) => uuid(5000 + index));
     expect(await loadMembersByIds(client, [...ids, ids[0]!, 'x', '00000000-0000-0000-0000-000000000000'])).toEqual([]);
-    expect(requests.map((request) => new URL(request.url, 'https://tenant.test').searchParams.getAll('ids').length)).toEqual([100, 100, 30]);
+    const params = requests.map((request) => new URL(request.url, 'https://tenant.test').searchParams);
+    expect(params.map((query) => query.getAll('ids').length)).toEqual([100, 100, 30]);
+    expect(params.every((query) => !query.has('offset') && !query.has('limit'))).toBe(true);
     expect((await loadMembersByIds(client, [uuid(203)], 'person')).map((member) => member.membership.account)).toEqual(['wangwu']);
-    expect(requests.at(-1)!.url).toBe(`/api/directory/members?person_ids=${uuid(203)}&limit=1`);
+    expect(requests.at(-1)!.url).toBe(`/api/directory/members?person_ids=${uuid(203)}`);
     expect(await loadMembersByIds(client, ['x'])).toEqual([]);
     expect(requests).toHaveLength(4);
     const page = await searchMembers(client, { keyword: ' z ', limit: 2 });

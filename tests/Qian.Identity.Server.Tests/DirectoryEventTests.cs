@@ -145,4 +145,39 @@ public sealed class DirectoryEventTests(PostgresFixture postgres) : IClassFixtur
         await using var set = new Npgsql.NpgsqlCommand("SELECT set_config('app.current_tenant_id', @tenant, false)", connection); set.Parameters.AddWithValue("tenant", Guid.NewGuid().ToString("D")); await set.ExecuteNonQueryAsync(Ct);
         await using var count = new Npgsql.NpgsqlCommand("SELECT count(*) FROM plugin_qian_identity.directory_revisions", connection); Assert.Equal(0L, await count.ExecuteScalarAsync(Ct));
     }
+
+    // 宿主漏装 AddQianIdentityEvents（没有把目录事件写进 Outbox 的处理器）时，会发目录事件的四个写入入口（目录写入、成员新建、
+    // 状态变更、重新启用）都在提交前抛错回滚：业务数据、修订行与 Outbox 一条都不留，不会静默丢事件（S1-IDP-010 第一轮复核补的用例）。
+    [Fact]
+    public async Task 宿主漏装目录事件处理器时_目录写入_成员新建_状态变更与重新启用都整体回滚()
+    {
+        await using var host = await AccountsHost.Start(postgres, identityEvents: false); var tenant = host.Tenants.Add("directory-no-handler");
+        var scopeId = tenant.Id.ToString("D");
+        Task<string> Count(string table) => host.Text($"SELECT count(*)::text FROM plugin_qian_identity.{table} WHERE tenant_id=@t", ("t", scopeId));
+        Task<string> Status(Guid id) => host.Text("SELECT status FROM plugin_qian_identity.memberships WHERE id=@id", ("id", id));
+        var (person, _) = await CreatePerson(host, "成员乙");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Join(host, tenant, person.Id, "成员乙"));
+        Assert.Equal("0", await Count("memberships"));
+        using (host.Tenant.BeginScope(scopeId))
+        {
+            // 组织类型字典不发事件，照常写入；建组织要发 directory.org.created.v1，整体回滚。
+            await host.Service.SetOrganizationTypeAsync(new("dept", "部门"), Ct);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Service.CreateOrganizationAsync(new("总部", "dept"), Ct).AsTask());
+        }
+        Assert.Equal(("1", "0"), (await Count("org_types"), await Count("organizations")));
+        // 这个宿主上建立入口走不通，成员行由超级用户直接写入，再走状态变更与重新启用。
+        var id = Guid.CreateVersion7();
+        await host.Exec("""
+            INSERT INTO plugin_qian_identity.memberships (id, tenant_id, person_id, account, display_name, status, is_tenant_administrator, identity_revision, directory_deleted, created_at)
+            VALUES (@id, @t, @person, 'memberb', '成员乙', 'active', false, 1, false, now())
+            """, ("id", id), ("t", scopeId), ("person", person.Id));
+        using (host.Tenant.BeginScope(scopeId))
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Accounts.SetMembershipStatusAsync(id, AccountStatuses.Locked, "no_handler", Ct).AsTask());
+        Assert.Equal("active", await Status(id));
+        await host.Exec("UPDATE plugin_qian_identity.memberships SET status = 'locked' WHERE id=@id", ("id", id));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Join(host, tenant, person.Id, "成员乙"));
+        Assert.Equal("locked", await Status(id));
+        Assert.Equal("0", await Count("directory_revisions"));
+        Assert.Empty(await DirectoryEvents(host, tenant.Id));
+    }
 }

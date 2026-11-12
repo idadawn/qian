@@ -23,12 +23,12 @@ internal sealed partial class IdentityAccountService
         var tenant = RequireTenant(); using var scope = TenantScope(tenant); using var origin = OpenOrigin();
         await using var session = await OpenAsync(ct).ConfigureAwait(false);
         await using var transaction = await session.Context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
-        await IdentitySql.LockAsync(session.Context, "directory:" + tenant.ToString("D"), ct).ConfigureAwait(false);
+        var directoryLock = await LockDirectoryAsync(session.Context, tenant, ct).ConfigureAwait(false);
         try
         {
             var events = new DirectoryEventBatch();
             var result = await action(session.Context, events, ct).ConfigureAwait(false);
-            var changes = await RaiseDirectoryEventsAsync(session.Context, tenant, events, ct).ConfigureAwait(false);
+            var changes = await RaiseDirectoryEventsAsync(session.Context, directoryLock, events, ct).ConfigureAwait(false);
             await session.SaveChangesAsync(ct).ConfigureAwait(false);
             EnsurePublished(changes);
             await transaction.CommitAsync(ct).ConfigureAwait(false);

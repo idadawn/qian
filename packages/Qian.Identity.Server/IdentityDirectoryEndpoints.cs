@@ -40,8 +40,7 @@ internal static class IdentityDirectoryEndpoints
         // 成员检索（S1-IDP-010）：q 为关键字，ids / person_ids 为按 id 批量；三者至多给一个，规则见 DirectoryMemberQuery。
         endpoints.MapGet(Prefix + "/members", (Delegate)((HttpContext http) => Run(http, false, async (directory, ct) => new
         {
-            items = await directory.QueryMembersAsync(new DirectoryMemberQuery
-            { Keyword = One(http, "q"), MembershipIds = Ids(http, "ids"), PersonIds = Ids(http, "person_ids"), Offset = Page(http, "offset", 0), Limit = Page(http, "limit", 50) }, ct).ConfigureAwait(false)
+            items = await directory.QueryMembersAsync(MemberQuery(http), ct).ConfigureAwait(false)
         })));
         endpoints.MapGet(Prefix + "/orgs/{id:guid}/members", (Delegate)((HttpContext http, Guid id) => Run(http, false, async (directory, ct) => new
         {
@@ -86,6 +85,14 @@ internal static class IdentityDirectoryEndpoints
     // 可重复的 id 参数（?ids=a&ids=b）；每项必须是规范 UUID，数量与重复由 DirectoryMemberQuery 的规则判定。
     private static Guid[]? Ids(HttpContext http, string key) => !http.Request.Query.TryGetValue(key, out var values) ? null :
         [.. values.Select(value => Guid.TryParseExact(value, "D", out var parsed) ? parsed : throw new QianErrorException(new QianError(PlatformErrors.BadRequest)))];
+    // 按 id 批量不分页，总是回这批 id 里的全部可见成员：同时带 offset / limit 说明调用方以为会分页，400，不猜按哪一种处理。
+    private static readonly string[] PagingKeys = ["offset", "limit"];
+    private static DirectoryMemberQuery MemberQuery(HttpContext http)
+    {
+        var ids = Ids(http, "ids"); var persons = Ids(http, "person_ids");
+        if ((ids is not null || persons is not null) && PagingKeys.FirstOrDefault(http.Request.Query.ContainsKey) is { } paging) throw IdentifierRules.Invalid("#/" + paging);
+        return new DirectoryMemberQuery { Keyword = One(http, "q"), MembershipIds = ids, PersonIds = persons, Offset = Page(http, "offset", 0), Limit = Page(http, "limit", 50) };
+    }
     private static int? Depth(HttpContext http) => One(http, "depth") is not { } value ? null :
         int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) ? parsed : throw new QianErrorException(new QianError(PlatformErrors.BadRequest));
 

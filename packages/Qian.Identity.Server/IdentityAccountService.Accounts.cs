@@ -310,7 +310,7 @@ internal sealed partial class IdentityAccountService
             await using var session = await OpenAsync(cancellationToken).ConfigureAwait(false);
             var db = session.Context;
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-            await IdentitySql.LockAsync(db, "directory:" + tenantId.ToString("D"), cancellationToken).ConfigureAwait(false);
+            var directoryLock = await LockDirectoryAsync(db, tenantId, cancellationToken).ConfigureAwait(false);
             var locked = await IdentitySql.QueryAsync(db, $"SELECT id FROM {IdentitySql.Memberships} WHERE id = @id FOR UPDATE", reader => reader.GetGuid(0), cancellationToken, ("id", membershipId)).ConfigureAwait(false);
             if (locked.Count == 0) throw Error(PlatformErrors.NotFound);
             var row = await db.Memberships.SingleAsync(m => m.Id == membershipId, cancellationToken).ConfigureAwait(false);
@@ -328,7 +328,7 @@ internal sealed partial class IdentityAccountService
             var events = new DirectoryEventBatch();
             if (previousStatus != row.Status || wasDeleted != row.DirectoryDeleted)
                 events.Add(revision => new DirectoryMemberStatusChangedEvent(revision, row.Id, row.PersonId, row.Status, previousStatus, row.DirectoryDeleted, row.IdentityRevision));
-            var changes = await RaiseDirectoryEventsAsync(db, tenantId, events, cancellationToken).ConfigureAwait(false);
+            var changes = await RaiseDirectoryEventsAsync(db, directoryLock, events, cancellationToken).ConfigureAwait(false);
             await session.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             EnsurePublished(changes);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

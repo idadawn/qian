@@ -51,7 +51,8 @@ public sealed record DirectoryBatchItem(Guid MembershipId, bool Succeeded, strin
 public sealed record DirectoryBatchResult(string Status, IReadOnlyList<DirectoryBatchItem> Items);
 /// <summary>
 /// 成员查询条件。Keyword、MembershipIds、PersonIds 至多给一个：关键字按显示名、账号与拼音做忽略大小写的包含匹配，不匹配手机号与邮箱；
-/// 按 id 批量时只返回当前租户的可见成员，查不到的 id 直接省略。结果按账号、成员 id 排序后分页。
+/// 按 id 批量时只返回当前租户的可见成员，查不到的 id 直接省略。结果按账号、成员 id 排序；按 id 批量不分页，这批 id 里的可见成员全部返回
+/// （Offset、Limit 不生效，HTTP 入口同时带 offset / limit 时 400），其余查询按 Offset、Limit 分页。
 /// </summary>
 public sealed record DirectoryMemberQuery
 {
@@ -69,9 +70,9 @@ public sealed record DirectoryMemberQuery
     public IReadOnlyList<Guid>? MembershipIds { get; init; }
     /// <summary>按自然人 id 批量查询，1–100 个且不重复。</summary>
     public IReadOnlyList<Guid>? PersonIds { get; init; }
-    /// <summary>跳过的条数。</summary>
+    /// <summary>跳过的条数；按 id 批量时不生效。</summary>
     public int Offset { get; init; }
-    /// <summary>本页条数，1–200。</summary>
+    /// <summary>本页条数，1–200；按 id 批量时不生效。</summary>
     public int Limit { get; init; } = 50;
 }
 /// <summary>上级链与部门负责人里「责任岗位空缺」的原因。</summary>

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Qian.Identity.Abstractions;
@@ -142,7 +143,27 @@ public sealed class DirectoryQueryTests(PostgresFixture postgres) : IClassFixtur
         // 按账号分页：lisi、qianqi、sunba、zhoujiu 的第 4 个。
         Assert.Equal(Ids(w, "zhoujiu"), Ids(await d.GetSubordinatesAsync(w.M("zhangsan"), 2, offset: 3, limit: 1, cancellationToken: Ct)));
         await Rejected("INPUT_INVALID", () => d.GetSubordinatesAsync(w.M("zhangsan"), 0, cancellationToken: Ct).AsTask());
-        // 主管或责任人停用后视同未设：赵六的主管越过李四到张三；李四不再有下属。
+        // 直属主管以主组织优先，不看主岗位所属组织：吴十的主组织是销售部、主岗位是前端组的前端工程师，主管取销售部的钱七
+        // （若从前端组起算，前端组未设主管，会上溯到研发中心的李四）。
+        await d.SetRelationsAsync(w.M("nobody"), [new("organization", w.Orgs["sales"], true), new("position", w.Positions["engineer"], true)], Ct);
+        Assert.Equal((w.M("qianqi"), w.Orgs["sales"]), Manager(await d.GetManagerAsync(w.M("nobody"), Ct)));
+        // 下属不含本人：钱七改以销售专员为主岗位、仍担任责任岗位销售经理，于是自己出现在自己上级链的第 1 级（本人就是责任人照常返回），
+        // 他的直属下属却只有主岗位为销售专员的周九，没有他自己。
+        await d.SetRelationsAsync(w.M("qianqi"), [new("organization", w.Orgs["sales"], true), new("position", w.Positions["salesStaff"], true), new("position", w.Positions["salesManager"])], Ct);
+        Assert.Equal(w.M("qianqi"), (await d.GetSuperiorsAsync(w.M("qianqi"), cancellationToken: Ct)).Items[0].Responsible!.Id);
+        Assert.Equal(Ids(w, "zhoujiu"), Ids(await d.GetSubordinatesAsync(w.M("qianqi"), 1, cancellationToken: Ct)));
+        // 只有 active 算在任：主管兼责任人李四被锁定后视同未设——赵六上级链的研发总监一级成了 inactive 空缺，主管越过李四到张三，
+        // 研发中心的负责人空缺且没有主管，李四不再有下属；恢复后照常。
+        await host.Accounts.SetMembershipStatusAsync(w.M("lisi"), AccountStatuses.Locked, "managers", Ct);
+        var locked = await d.GetSuperiorsAsync(w.M("zhaoliu"), cancellationToken: Ct);
+        Assert.Equal((w.Positions["director"], (Guid?)null, DirectoryVacancies.Inactive), (locked.Items[1].PositionId, locked.Items[1].Responsible?.Id, locked.Items[1].Vacancy));
+        Assert.Equal((w.M("zhangsan"), w.Orgs["hq"]), Manager(await d.GetManagerAsync(w.M("zhaoliu"), Ct)));
+        var lockedHead = await d.GetOrganizationHeadAsync(w.Orgs["rd"], Ct);
+        Assert.Equal(((Guid?)null, DirectoryVacancies.Inactive, (Guid?)null), (lockedHead.Responsible?.Id, lockedHead.Vacancy, lockedHead.Manager?.Id));
+        Assert.Empty(await d.GetSubordinatesAsync(w.M("lisi"), cancellationToken: Ct));
+        await host.Accounts.SetMembershipStatusAsync(w.M("lisi"), AccountStatuses.Active, "managers", Ct);
+        Assert.Equal((w.M("lisi"), w.Orgs["rd"]), Manager(await d.GetManagerAsync(w.M("zhaoliu"), Ct)));
+        // 停用同样视同未设：赵六的主管越过李四到张三；李四不再有下属。
         await d.SetDirectoryMemberStatusAsync(w.M("lisi"), AccountStatuses.Disabled, "managers", Ct);
         Assert.Equal((w.M("zhangsan"), w.Orgs["hq"]), Manager(await d.GetManagerAsync(w.M("zhaoliu"), Ct)));
         Assert.Null((await d.GetOrganizationHeadAsync(w.Orgs["rd"], Ct)).Manager);
@@ -236,6 +257,39 @@ public sealed class DirectoryQueryTests(PostgresFixture postgres) : IClassFixtur
         Assert.Empty(await Find("members?q=" + new string('长', 64)));
     }
 
+    // 按 id 批量不分页（S1-IDP-010 第一轮复核缺陷 ②）：55 个 id 不带 limit 也全部返回，不被缺省每页 50 条悄悄截断；同时带 offset 或 limit
+    // 时 400（调用方以为会分页）；进程内调用的 Offset / Limit 对按 id 批量不生效。不带 id 的检索照常按缺省每页 50 条分页。
+    [Fact]
+    public async Task 按id批量不分页_超过缺省页大小也全部返回_同时带offset或limit时400()
+    {
+        await using var host = await AccountsHost.Start(postgres); var tenant = host.Tenants.Add("member-batch");
+        var (viewer, phone) = await CreatePerson(host, "查看者"); await Join(host, tenant, viewer.Id, "查看者", account: "viewer");
+        var members = new List<Membership>();
+        for (var index = 0; index < 55; index++)
+        {
+            // 不设密码：55 次密码哈希只会拖慢用例。
+            var number = index.ToString("D2", CultureInfo.InvariantCulture);
+            var person = await host.Accounts.CreatePersonAsync(new CreatePerson("批量" + number, [new(IdentifierKind.Phone, NextPhone(), true)]), Ct);
+            members.Add(await Join(host, tenant, person.Id, "批量" + number, account: "batch" + number));
+        }
+        var browser = host.NewBrowser(); await browser.Login(phone, Password, tenant: tenant.Id);
+        Guid[] expected = [.. members.Select(member => member.Id)];
+        foreach (var query in new[] { string.Join('&', members.Select(member => $"ids={member.Id:D}")), string.Join('&', members.Select(member => $"person_ids={member.PersonId:D}")) })
+        {
+            var response = await browser.Json(HttpMethod.Get, "api/directory/members?" + query);
+            Assert.Equal(HttpStatusCode.OK, response.Status);
+            Assert.Equal(expected, response.Body.GetProperty("items").EnumerateArray().Select(row => row.GetProperty("membership").GetProperty("id").GetGuid()));
+            foreach (var paging in new[] { "limit=55", "limit=2", "offset=0", "offset=10" })
+                Assert.Equal((HttpStatusCode.BadRequest, "INPUT_INVALID"), await Status(browser, "members?" + query + "&" + paging));
+        }
+        using (host.Tenant.BeginScope(tenant.Id.ToString("D")))
+        {
+            var batch = await host.Service.QueryMembersAsync(new DirectoryMemberQuery { MembershipIds = [.. members.Select(member => member.Id)], Offset = 50, Limit = 2 }, Ct);
+            Assert.Equal(expected, batch.Select(member => member.Membership.Id));
+        }
+        Assert.Equal(50, (await browser.Json(HttpMethod.Get, "api/directory/members")).Body.GetProperty("items").GetArrayLength());
+    }
+
     // Agent 契约（S1-IDP-010 验收 4）的真实响应侧：契约里登记的每个 GET 端点都用真实会话调到，不带参数调一次、每个查询参数各单独调一次，
     // 响应都必须通过契约 Schema 的严格校验（根与嵌套对象都不许多字段）；错误响应符合 ErrorDetail。
     [Fact]
@@ -294,6 +348,6 @@ public sealed class DirectoryQueryTests(PostgresFixture postgres) : IClassFixtur
     private static async Task<(HttpStatusCode, string)> Status(AccountsHost.Browser browser, string query)
     {
         var response = await browser.Json(HttpMethod.Get, "api/directory/" + query);
-        return (response.Status, response.Body.ValueKind == JsonValueKind.Object ? response.Body.GetProperty("code").GetString()! : "");
+        return (response.Status, response.Body.ValueKind == JsonValueKind.Object && response.Body.TryGetProperty("code", out var code) ? code.GetString()! : "");
     }
 }

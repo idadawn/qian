@@ -31,7 +31,7 @@ const i18n = createBizI18n(); // 已有 PlatformI18n 实例时改用 addBizLangu
 
 ## 已知限制与延期项
 
-- UserSelect 由服务端检索（S1-IDP-010 的 `q`，按显示名、账号与拼音），每次只显示第一页 50 位，后面还有时提示继续输入，不做滚动加载；已选值的显示名按 `ids` / `person_ids` 批量回查。
+- UserSelect 由服务端检索（S1-IDP-010 的 `q`，按显示名、账号与拼音），每次只显示第一页 50 位，后面还有时提示继续输入，不做滚动加载；已选值的显示名按 `ids` / `person_ids` 批量回查（目录接口按 id 批量不分页，回查不带 offset / limit）。
 - 角色与权限点目录的服务端尚未交付（S1-AZ-005）；真实目录数据的 E2E 见靶场的真实目录页（S1-IDP-010），角色授予与服务端生效的 E2E 在 S1-AZ-005。
 - PosSelect / GroupSelect / UsersSelect、PopupSelect 族、RelationForm、InterfaceSelect 与授权树的列 / 字段 / 数据页签留给 S2。
 - 版本 0.1.0 尚未发布。

@@ -76,6 +76,7 @@ const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 
 /**
  * 按 id 批量取成员，选择器用它回显已选值的显示名：membership 用 ids、person 用 person_ids，每批至多 100 个。
+ * 按 id 批量不分页，目录接口一次返回这批 id 里的全部可见成员，所以不带 offset / limit（带了是 400）。
  * 不是 UUID 的值不发送；别的租户、不存在或已从目录删除的 id 不在结果里。
  */
 export async function loadMembersByIds(client: PlatformClient, ids: readonly string[], key: 'membership' | 'person' = 'membership', signal?: AbortSignal): Promise<DirectoryMember[]> {
@@ -84,7 +85,7 @@ export async function loadMembersByIds(client: PlatformClient, ids: readonly str
   const items: DirectoryMember[] = [];
   for (let start = 0; start < wanted.length; start += MEMBER_IDS_MAX) {
     const batch = wanted.slice(start, start + MEMBER_IDS_MAX);
-    const query = key === 'person' ? { person_ids: batch, limit: batch.length } : { ids: batch, limit: batch.length };
+    const query = key === 'person' ? { person_ids: batch } : { ids: batch };
     items.push(...(await api.GET('/api/directory/members', { params: { query }, signal })).data?.items ?? []);
   }
   return items;

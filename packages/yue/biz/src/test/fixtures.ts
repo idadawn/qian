@@ -47,15 +47,19 @@ export function createFixture({ members = MEMBERS, failOnce = [], routes = [] }:
   const fail = (path: string) => { if (!pending.has(path)) return false; pending.delete(path); return true; };
   const problem = (code: string, pointer: string) => new Response(JSON.stringify({ type: `https://qian.dev/problems/protocol/${code}`, title: '请求无效', status: 400, code, message: '请求无效', trace_id: '0123456789abcdef0123456789abcdef', pointer }), { status: 400, headers: { 'content-type': 'application/problem+json' } });
   // 与 Identity Server 相同的检索口径：q 按显示名与账号忽略大小写包含匹配（夹具没有拼音），ids / person_ids 按 id 过滤；三者至多一个，越界即 400。
+  // 按 id 批量不分页，这批 id 里的成员全部返回；同时带 offset / limit 即 400。
   const page = (request: Request, rows: typeof members) => {
     const query = new URL(request.url).searchParams;
     const offset = Number(query.get('offset') ?? 0); const limit = Number(query.get('limit') ?? 50);
     if (limit > 200 || limit < 1 || offset < 0) return problem('BAD_REQUEST', '#/page');
     const keyword = query.get('q')?.trim().toLocaleLowerCase(); const ids = query.getAll('ids'); const persons = query.getAll('person_ids');
     if ([query.has('q'), ids.length > 0, persons.length > 0].filter(Boolean).length > 1 || keyword !== undefined && (keyword.length < 1 || keyword.length > 64) || ids.length > 100 || persons.length > 100) return problem('INPUT_INVALID', '#/q');
+    const batch = ids.length > 0 || persons.length > 0;
+    const paging = ['offset', 'limit'].find((key) => query.has(key));
+    if (batch && paging) return problem('INPUT_INVALID', `#/${paging}`);
     const matched = rows.filter(({ member: { membership } }) => (keyword === undefined || membership.display_name.toLocaleLowerCase().includes(keyword) || membership.account.toLocaleLowerCase().includes(keyword))
       && (ids.length === 0 || ids.includes(membership.id)) && (persons.length === 0 || persons.includes(membership.person_id)));
-    return Response.json({ items: matched.slice(offset, offset + limit).map((row) => row.member) });
+    return Response.json({ items: (batch ? matched : matched.slice(offset, offset + limit)).map((row) => row.member) });
   };
   const transport = createMockTransport([
     ...routes,

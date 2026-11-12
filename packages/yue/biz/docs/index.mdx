@@ -23,7 +23,7 @@ import { ComponentDemo } from '@theme';
 | 接口 | 来源 | 用途 |
 |---|---|---|
 | `GET /api/directory/orgs/tree` | 身份组件目录 API（已交付） | OrganizeSelect：按 path 排序的扁平列表，以 parent_id 组树 |
-| `GET /api/directory/members`、`GET /api/directory/orgs/{id}/members` | 身份组件目录 API（已交付） | UserSelect：`q` 服务端检索（显示名、账号、拼音），`ids` / `person_ids` 按 id 批量回显已选值；offset / limit 分页，limit 不超过 200 |
+| `GET /api/directory/members`、`GET /api/directory/orgs/{id}/members` | 身份组件目录 API（已交付） | UserSelect：`q` 服务端检索（显示名、账号、拼音），`ids` / `person_ids` 按 id 批量回显已选值（不分页，不带 offset / limit）；检索按 offset / limit 分页，limit 不超过 200 |
 | `GET /api/directory/org-types` | 身份组件目录 API（已交付） | 内置字典 orgTypeDictionary |
 | `GET /api/authz/roles` | PRD 7.5 角色目录草案 | RoleSelect |
 | `GET /api/authz/permissions` | PRD 7.5 权限点目录草案 | 授权树 |

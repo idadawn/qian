@@ -253,7 +253,7 @@
       "get": {
         "operationId": "directory.members.query",
         "summary": "读取或检索成员",
-        "description": "分页读取或检索本租户成员，按账号、成员 id 排序。选人、按名字或账号找某人时用：q 按显示名、账号与拼音做忽略大小写的包含匹配（找「张三」「zhangsan」）；ids / person_ids 按 id 批量取成员（选择器回显已选值的显示名），查不到的 id 直接省略；q、ids、person_ids 至多给一个。不含已从目录删除的成员与平台管理员，不检索手机号与邮箱。",
+        "description": "分页读取或检索本租户成员，按账号、成员 id 排序。选人、按名字或账号找某人时用：q 按显示名、账号与拼音做忽略大小写的包含匹配（找「张三」「zhangsan」）；ids / person_ids 按 id 批量取成员（选择器回显已选值的显示名），不分页，这批 id 里的可见成员一次全部返回，查不到的 id 直接省略，不能再带 offset / limit；q、ids、person_ids 至多给一个。不含已从目录删除的成员与平台管理员，不检索手机号与邮箱。",
         "tags": [
           "directory"
         ],
@@ -275,7 +275,7 @@
             "name": "ids",
             "in": "query",
             "required": false,
-            "description": "按目录成员 id 批量查询，可重复（?ids=a&ids=b），1–100 个且不重复。",
+            "description": "按目录成员 id 批量查询，可重复（?ids=a&ids=b），1–100 个且不重复。不分页：这批 id 里的可见成员全部返回；同时带 offset 或 limit 时 400。",
             "schema": {
               "type": "array",
               "items": {
@@ -296,7 +296,7 @@
             "name": "person_ids",
             "in": "query",
             "required": false,
-            "description": "按自然人 id 批量查询（授权侧 user 主体的 subjectId），可重复，1–100 个且不重复。",
+            "description": "按自然人 id 批量查询（授权侧 user 主体的 subjectId），可重复，1–100 个且不重复。不分页：这批 id 里的可见成员全部返回；同时带 offset 或 limit 时 400。",
             "schema": {
               "type": "array",
               "items": {

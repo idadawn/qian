@@ -26,8 +26,8 @@
         "description": "按账号、成员 id 排序；不含已删除与已清除的成员，也不合成平台管理员。q、ids、person_ids 至多给一个。",
         "parameters": [
           { "$ref": "#/components/parameters/Keyword" },
-          { "name": "ids", "in": "query", "required": false, "description": "按目录成员 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "minItems": 1, "maxItems": 100 } },
-          { "name": "person_ids", "in": "query", "required": false, "description": "按自然人 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "minItems": 1, "maxItems": 100 } },
+          { "name": "ids", "in": "query", "required": false, "description": "按目录成员 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。不分页，不能与 offset / limit 同时给。", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "minItems": 1, "maxItems": 100 } },
+          { "name": "person_ids", "in": "query", "required": false, "description": "按自然人 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。不分页，不能与 offset / limit 同时给。", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "minItems": 1, "maxItems": 100 } },
           { "$ref": "#/components/parameters/Offset" },
           { "$ref": "#/components/parameters/Limit" }
         ],

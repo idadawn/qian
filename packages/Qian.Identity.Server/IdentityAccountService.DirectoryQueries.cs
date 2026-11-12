@@ -51,6 +51,9 @@ internal sealed partial class IdentityAccountService
             }
             if (ids is not null) members = members.Where(row => ids.Contains(row.Id));
             if (persons is not null) members = members.Where(row => persons.Contains(row.PersonId));
+            // 按 id 批量不分页：一批至多 100 个 id，每个 id（每个自然人在本租户）至多对应一位成员，结果全部返回。
+            // 套用缺省每页 50 条会把多出的悄悄截掉，调用方分不清是截断还是查不到（S1-IDP-010 第一轮复核缺陷 ②）。
+            if (ids is not null || persons is not null) return await MembersPage(members, 0, DirectoryMemberQuery.MaximumIds, ct).ConfigureAwait(false);
             return await MembersPage(members, query.Offset, query.Limit, ct).ConfigureAwait(false);
         }, cancellationToken);
     }

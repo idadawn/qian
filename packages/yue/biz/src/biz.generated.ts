@@ -57,9 +57,9 @@ export interface paths {
                 query?: {
                     /** @description 关键字，去掉首尾空白后 1–64 字；按显示名、账号与档案拼音做忽略大小写的包含匹配，不检索手机号与邮箱。 */
                     q?: components["parameters"]["Keyword"];
-                    /** @description 按目录成员 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。 */
+                    /** @description 按目录成员 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。不分页，不能与 offset / limit 同时给。 */
                     ids?: string[];
-                    /** @description 按自然人 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。 */
+                    /** @description 按自然人 id 批量查询，可重复，1–100 个且不重复；查不到的 id 省略。不分页，不能与 offset / limit 同时给。 */
                     person_ids?: string[];
                     offset?: components["parameters"]["Offset"];
                     limit?: components["parameters"]["Limit"];

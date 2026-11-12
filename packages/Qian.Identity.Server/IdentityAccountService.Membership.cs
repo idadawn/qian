@@ -78,8 +78,13 @@ internal sealed partial class IdentityAccountService
             await using var transaction = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
             // 同租户的成员创建串行：计数、配额判定与插入在同一把事务锁内。
             await IdentitySql.LockAsync(db, "members:" + tenantId.ToString("D"), ct).ConfigureAwait(false);
+            // 新建与重新启用都会递增目录修订行，所以接着取目录锁，并且先于任何行锁（加锁顺序见 LockDirectoryAsync）。
+            var directoryLock = await LockDirectoryAsync(db, tenantId, ct).ConfigureAwait(false);
             var person = await db.Persons.AsNoTracking().SingleOrDefaultAsync(p => p.Id == personId, ct).ConfigureAwait(false);
             if (person is null || person.Status == AccountStatuses.Purged) throw Error(PlatformErrors.NotFound);
+            // 已有的成员行先加行锁再读：重新启用改的就是这一行，读到的是最新值，不会因为不取目录锁的成员行写入
+            // （如 BumpIdentityRevisionAsync）在读与存之间提交而乐观并发冲突。
+            await IdentitySql.QueryAsync(db, $"SELECT id FROM {IdentitySql.Memberships} WHERE person_id = @person FOR UPDATE", reader => reader.GetGuid(0), ct, ("person", personId)).ConfigureAwait(false);
             var existing = await db.Memberships.SingleOrDefaultAsync(m => m.PersonId == personId, ct).ConfigureAwait(false);
             if (existing is not null)
             {
@@ -92,7 +97,7 @@ internal sealed partial class IdentityAccountService
                     var reactivated = new DirectoryEventBatch();
                     if (previousStatus != existing.Status)
                         reactivated.Add(revision => new DirectoryMemberStatusChangedEvent(revision, existing.Id, existing.PersonId, existing.Status, previousStatus, false, existing.IdentityRevision));
-                    var changed = await RaiseDirectoryEventsAsync(db, tenantId, reactivated, ct).ConfigureAwait(false);
+                    var changed = await RaiseDirectoryEventsAsync(db, directoryLock, reactivated, ct).ConfigureAwait(false);
                     await session.SaveChangesAsync(ct).ConfigureAwait(false);
                     EnsurePublished(changed);
                 }
@@ -113,7 +118,7 @@ internal sealed partial class IdentityAccountService
             // 新成员即目录变更：directory.member.created.v1 随成员行同事务进入 Outbox；唯一约束冲突时整个事务回滚、换会话重试，事件不会残留。
             var created = new DirectoryEventBatch();
             created.Add(revision => new DirectoryMemberCreatedEvent(revision, row.Id, row.PersonId, row.Status, row.IdentityRevision));
-            var changes = await RaiseDirectoryEventsAsync(db, tenantId, created, ct).ConfigureAwait(false);
+            var changes = await RaiseDirectoryEventsAsync(db, directoryLock, created, ct).ConfigureAwait(false);
             try { await session.SaveChangesAsync(ct).ConfigureAwait(false); EnsurePublished(changes); }
             catch (DbUpdateException error) when (IsUniqueViolation(error))
             {
