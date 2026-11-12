@@ -13,23 +13,11 @@ internal sealed partial class IdentityAccountService
     private static async Task<IReadOnlyList<DirectoryMember>> MembersPage(IQueryable<MembershipRow> query, int offset, int limit, CancellationToken ct) =>
         (await query.OrderBy(row => row.Account).ThenBy(row => row.Id).Skip(offset).Take(limit).ToArrayAsync(ct).ConfigureAwait(false)).Select(row => new DirectoryMember(ToMembership(row), row.DirectoryDeleted)).ToArray();
 
-    public ValueTask<IReadOnlyList<DirectoryMember>> ListMembersAsync(int offset = 0, int limit = 50, CancellationToken cancellationToken = default)
-    {
-        DirectoryPage(offset, limit); return DirectoryRead((db, ct) => MembersPage(VisibleMembers(db), offset, limit, ct), cancellationToken);
-    }
+    public ValueTask<IReadOnlyList<DirectoryMember>> ListMembersAsync(int offset = 0, int limit = 50, CancellationToken cancellationToken = default) =>
+        QueryMembersAsync(new DirectoryMemberQuery { Offset = offset, Limit = limit }, cancellationToken);
 
-    public ValueTask<IReadOnlyList<DirectoryMember>> GetOrganizationMembersAsync(Guid organizationId, bool descendants = false, int offset = 0, int limit = 50, CancellationToken cancellationToken = default)
-    {
-        DirectoryPage(offset, limit);
-        return DirectoryRead(async (db, ct) =>
-        {
-            var root = await db.Set<OrganizationRow>().AsNoTracking().SingleOrDefaultAsync(row => row.Id == organizationId, ct).ConfigureAwait(false) ?? throw Error(PlatformErrors.NotFound);
-            var orgIds = descendants ? await db.Set<OrganizationRow>().Where(row => row.Path.StartsWith(root.Path)).Select(row => row.Id).ToArrayAsync(ct).ConfigureAwait(false) : [organizationId];
-            var relationIds = db.Set<MemberRelationRow>().Where(row => row.OrganizationId != null && orgIds.Contains(row.OrganizationId.Value) ||
-                row.PositionId != null && db.Set<PositionRow>().Any(position => position.Id == row.PositionId && orgIds.Contains(position.OrganizationId))).Select(row => row.MembershipId);
-            return await MembersPage(VisibleMembers(db).Where(row => relationIds.Contains(row.Id)), offset, limit, ct).ConfigureAwait(false);
-        }, cancellationToken);
-    }
+    public ValueTask<IReadOnlyList<DirectoryMember>> GetOrganizationMembersAsync(Guid organizationId, bool descendants = false, int offset = 0, int limit = 50, CancellationToken cancellationToken = default) =>
+        QueryMembersAsync(new DirectoryMemberQuery { OrganizationId = organizationId, Descendants = descendants, Offset = offset, Limit = limit }, cancellationToken);
 
     public ValueTask<IReadOnlyList<DirectoryMember>> GetPositionHoldersAsync(Guid positionId, int offset = 0, int limit = 50, CancellationToken cancellationToken = default)
     {
@@ -72,7 +60,7 @@ internal sealed partial class IdentityAccountService
         if (relations.Count > 100 || relations.Any(row => row is null || row.TargetId == Guid.Empty || row.TargetType is not ("organization" or "position" or "group")) ||
             relations.Select(row => (row.TargetType, row.TargetId)).Distinct().Count() != relations.Count || relations.Where(row => row.IsPrimary).GroupBy(row => row.TargetType).Any(group => group.Count() > 1)) throw IdentifierRules.Invalid("#/relations");
         var snapshot = relations.ToArray();
-        return DirectoryWrite<IReadOnlyList<MemberRelation>>(async (db, ct) =>
+        return DirectoryWrite<IReadOnlyList<MemberRelation>>(async (db, events, ct) =>
         {
             // 标记删除后的成员仍允许解除历史归属，不能再新增归属或恢复账号。
             var member = await db.Memberships.SingleOrDefaultAsync(row => row.Id == membershipId && row.Status != AccountStatuses.Purged, ct).ConfigureAwait(false) ?? throw Error(PlatformErrors.NotFound);
@@ -88,6 +76,8 @@ internal sealed partial class IdentityAccountService
                 if (!exists) throw Error(PlatformErrors.NotFound);
             }
             var previous = await db.Set<MemberRelationRow>().Where(row => row.MembershipId == membershipId).ToArrayAsync(ct).ConfigureAwait(false);
+            var before = previous.OrderBy(row => row.TargetType, StringComparer.Ordinal).ThenBy(row => row.Id)
+                .Select(row => new MemberRelation(row.TargetType, row.OrganizationId ?? row.PositionId ?? row.GroupId!.Value, row.IsPrimary)).ToArray();
             // 先删除旧主归属再写新归属，避免唯一索引受 EF INSERT/DELETE 排序影响；同一事务失败即全部回滚。
             db.RemoveRange(previous); await db.SaveChangesAsync(ct).ConfigureAwait(false);
             foreach (var relation in snapshot) db.Add(new MemberRelationRow
@@ -97,7 +87,11 @@ internal sealed partial class IdentityAccountService
                 PositionId = relation.TargetType == "position" ? relation.TargetId : null,
                 GroupId = relation.TargetType == "group" ? relation.TargetId : null
             });
-            member.IdentityRevision++; return snapshot;
+            member.IdentityRevision++;
+            // 集合真的变了才发事件（与顺序无关）；主归属的变化也是集合变化。
+            if (!before.ToHashSet().SetEquals(snapshot))
+                events.Add(revision => new DirectoryMemberRelationsChangedEvent(revision, member.Id, member.PersonId, member.IdentityRevision, snapshot, before));
+            return snapshot;
         }, cancellationToken);
     }
 
@@ -123,15 +117,22 @@ internal sealed partial class IdentityAccountService
         var email = request.Email is null ? null : IdentifierRules.Normalize(IdentifierKind.Email, request.Email, _account.DefaultPhoneCountryCode) ?? throw IdentifierRules.Invalid("#/email");
         var extra = request.Extensions?.GetRawText() ?? "{}";
         if (request.Extensions is { ValueKind: not JsonValueKind.Object } || System.Text.Encoding.UTF8.GetByteCount(extra) > 16384) throw IdentifierRules.Invalid("#/extensions");
-        return DirectoryWrite(async (db, ct) =>
+        return DirectoryWrite(async (db, events, ct) =>
         {
             var member = await DirectoryMemberRow(db, membershipId, ct).ConfigureAwait(false);
             var row = await db.Set<UserProfileRow>().SingleOrDefaultAsync(row => row.MembershipId == membershipId, ct).ConfigureAwait(false);
+            // 档案有实际变化才发事件；扩展按 JSON 语义比较，不受空白与键序影响。载荷不含任何档案字段。
+            var changed = row is null || row.Name != name || row.Pinyin != pinyin || row.Phone != phone || row.Email != email || !SameJson(row.Extensions, extra);
             if (row is null) db.Add(row = new UserProfileRow { MembershipId = membershipId });
             row.Name = name; row.Pinyin = pinyin; row.Phone = phone; row.Email = email; row.Extensions = extra;
-            member.DisplayName = name; return Profile(row);
+            member.DisplayName = name;
+            if (changed) events.Add(revision => new DirectoryMemberProfileUpdatedEvent(revision, member.Id, member.PersonId));
+            return Profile(row);
         }, cancellationToken);
     }
+
+    private static bool SameJson(string left, string right) =>
+        System.Text.Json.Nodes.JsonNode.DeepEquals(System.Text.Json.Nodes.JsonNode.Parse(left), System.Text.Json.Nodes.JsonNode.Parse(right));
 
     public ValueTask<Membership> SetDirectoryMemberStatusAsync(Guid membershipId, string status, string reason, CancellationToken cancellationToken = default) =>
         SetMembershipStatusCoreAsync(membershipId, status, reason, true, false, cancellationToken);

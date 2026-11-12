@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/identity/v1/directory.position.updated.v1.schema.json",
+  "description": "岗位的名称、所属组织、默认 / 责任标记或责任人已修改（不含移动）；字段是修改后的当前值，名称不在载荷里。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "directory_revision",
+    "position_id",
+    "organization_id",
+    "path",
+    "depth",
+    "is_default",
+    "is_responsible"
+  ],
+  "properties": {
+    "directory_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "position_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "organization_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)+$"
+    },
+    "depth": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "is_default": {
+      "type": "boolean"
+    },
+    "is_responsible": {
+      "type": "boolean"
+    },
+    "parent_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    },
+    "responsible_membership_id": {
+      "$ref": "https://qian.dev/contracts/v0/s2s-claims.schema.json#/$defs/Uuid"
+    }
+  }
+}

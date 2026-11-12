@@ -54,6 +54,11 @@ internal static class DirectoryModel
             entity.HasOne<PositionRow>().WithMany().HasForeignKey(row => new { row.TenantId, row.PositionId }).HasPrincipalKey(row => new { row.TenantId, row.Id }).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<DirectoryGroupRow>().WithMany().HasForeignKey(row => new { row.TenantId, row.GroupId }).HasPrincipalKey(row => new { row.TenantId, row.Id }).OnDelete(DeleteBehavior.Restrict);
         });
+        model.Entity<DirectoryRevisionRow>(entity =>
+        {
+            entity.ToTable("directory_revisions", table => table.HasCheckConstraint("ck_directory_revisions_revision", "revision >= 1"));
+            entity.HasKey(row => row.TenantId); entity.Property(row => row.TenantId).HasMaxLength(36);
+        });
         model.Entity<UserProfileRow>(entity =>
         {
             entity.ToTable("user_profiles"); entity.HasKey(row => new { row.TenantId, row.MembershipId });

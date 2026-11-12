@@ -16,6 +16,7 @@ internal static class IdentitySql
     internal const string Tickets = $"{IdentityDbContext.Schema}.login_tickets";
     internal const string Captchas = $"{IdentityDbContext.Schema}.login_captchas";
     internal const string ConnectorFlows = $"{IdentityDbContext.Schema}.connector_flows";
+    internal const string DirectoryRevisions = $"{IdentityDbContext.Schema}.directory_revisions";
 
     internal static async Task<int> ExecuteAsync(DbContext db, string sql, CancellationToken ct, params (string Name, object? Value)[] args)
     {

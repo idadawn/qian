@@ -16,8 +16,9 @@ public static class IdentityEventHandlers
     /// 与 <c>RegisterIdentityEvents</c>、<c>AddQianEvents</c> 共用；漏装时保存回滚，不会静默丢事件。
     /// 登录、锁定、改密事件由聚合根的领域通知在同一数据会话内转成集成事件，随业务数据一起落入 Outbox。
     /// </summary>
+    /// <remarks>组织目录的 <c>directory.*.v1</c> 事件走同一入口：目录写入在租户目录修订行上记领域通知，同事务进入 Outbox。</remarks>
     public static KunMediatorBuilder AddQianIdentityEvents(this KunMediatorBuilder builder) =>
-        builder.AddNotificationHandler<IdentityChange, IdentityChangeHandler>();
+        builder.AddNotificationHandler<IdentityChange, IdentityChangeHandler>().AddNotificationHandler<DirectoryChange, DirectoryChangeHandler>();
 
     /// <summary>
     /// 会话中心订阅租户事件的处理器：<c>tenant.suspended.v1</c> 与 <c>tenant.expired.v1</c> 到达后，该租户的全部登录会话立即吊销，
@@ -83,6 +84,39 @@ internal sealed class IdentityChangeHandler(IIntegrationEventBus events) : INoti
             case IdentityLockedEvent locked: events.Publish(locked); break;
             case IdentitySessionRevokedEvent revoked: events.Publish(revoked); break;
             default: throw new InvalidOperationException("未登记的身份集成事件。");
+        }
+        notification.Published = true;
+        return ValueTask.CompletedTask;
+    }
+}
+
+internal sealed class DirectoryChange(DirectoryIntegrationEvent payload) : IDomainEvent, INotification
+{
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    internal DirectoryIntegrationEvent Payload { get; } = payload;
+    internal bool Published { get; set; }
+}
+
+internal sealed class DirectoryChangeHandler(IIntegrationEventBus events) : INotificationHandler<DirectoryChange>
+{
+    public ValueTask Handle(DirectoryChange notification, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        switch (notification.Payload)
+        {
+            case DirectoryOrganizationCreatedEvent created: events.Publish(created); break;
+            case DirectoryOrganizationUpdatedEvent updated: events.Publish(updated); break;
+            case DirectoryOrganizationMovedEvent moved: events.Publish(moved); break;
+            case DirectoryOrganizationDeletedEvent deleted: events.Publish(deleted); break;
+            case DirectoryPositionCreatedEvent created: events.Publish(created); break;
+            case DirectoryPositionUpdatedEvent updated: events.Publish(updated); break;
+            case DirectoryPositionMovedEvent moved: events.Publish(moved); break;
+            case DirectoryPositionDeletedEvent deleted: events.Publish(deleted); break;
+            case DirectoryMemberCreatedEvent created: events.Publish(created); break;
+            case DirectoryMemberRelationsChangedEvent relations: events.Publish(relations); break;
+            case DirectoryMemberStatusChangedEvent status: events.Publish(status); break;
+            case DirectoryMemberProfileUpdatedEvent profile: events.Publish(profile); break;
+            default: throw new InvalidOperationException("未登记的目录集成事件。");
         }
         notification.Published = true;
         return ValueTask.CompletedTask;

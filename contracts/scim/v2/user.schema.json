@@ -1,0 +1,464 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/scim/v2/user.schema.json",
+  "title": "SCIM 2.0 User",
+  "description": "SCIM 2.0 User 资源的 JSON 表示：核心 User 属性加可选的企业用户扩展，属性名按规范大小写。由 user.scim-schema.json 与 enterprise-user.scim-schema.json 推导，单测逐属性比对。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemas",
+    "userName"
+  ],
+  "properties": {
+    "schemas": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "urn:ietf:params:scim:schemas:core:2.0:User",
+          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+        ]
+      },
+      "contains": {
+        "const": "urn:ietf:params:scim:schemas:core:2.0:User"
+      },
+      "description": "资源采用的 Schema URN；必须含核心 Schema，带扩展时也要列出扩展的 URN。"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "readOnly": true,
+      "description": "服务提供方分配的资源 id，大小写敏感、不可改。"
+    },
+    "externalId": {
+      "type": "string",
+      "description": "调用方（外部身份源）为资源分配的标识，大小写敏感。"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "readOnly": true,
+      "description": "资源元数据，由服务提供方维护。",
+      "properties": {
+        "resourceType": {
+          "type": "string",
+          "description": "资源类型名称：User 或 Group。"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "创建时间。"
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time",
+          "description": "最后修改时间。"
+        },
+        "location": {
+          "type": "string",
+          "format": "uri",
+          "description": "资源的完整地址。"
+        },
+        "version": {
+          "type": "string",
+          "description": "资源版本（ETag）。"
+        }
+      }
+    },
+    "userName": {
+      "type": "string",
+      "description": "用户在服务提供方内的唯一标识，通常直接用于登录；不得为空。"
+    },
+    "name": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "formatted": {
+          "type": "string",
+          "description": "完整姓名，适合直接显示。"
+        },
+        "familyName": {
+          "type": "string",
+          "description": "姓。"
+        },
+        "givenName": {
+          "type": "string",
+          "description": "名。"
+        },
+        "middleName": {
+          "type": "string",
+          "description": "中间名。"
+        },
+        "honorificPrefix": {
+          "type": "string",
+          "description": "称谓前缀。"
+        },
+        "honorificSuffix": {
+          "type": "string",
+          "description": "称谓后缀。"
+        }
+      },
+      "description": "用户姓名的组成部分。"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "供界面显示的用户名称。"
+    },
+    "nickName": {
+      "type": "string",
+      "description": "昵称。"
+    },
+    "profileUrl": {
+      "type": "string",
+      "format": "uri-reference",
+      "description": "用户在线主页的地址。"
+    },
+    "title": {
+      "type": "string",
+      "description": "职务头衔。"
+    },
+    "userType": {
+      "type": "string",
+      "description": "用户与组织的关系类型，取值由服务提供方定义。"
+    },
+    "preferredLanguage": {
+      "type": "string",
+      "description": "首选的书面或口头语言，取值形如 zh-CN。"
+    },
+    "locale": {
+      "type": "string",
+      "description": "本地化设置（数字、日期等格式），取值形如 zh-CN。"
+    },
+    "timezone": {
+      "type": "string",
+      "description": "IANA 时区名称，例如 Asia/Shanghai。"
+    },
+    "active": {
+      "type": "boolean",
+      "description": "账号是否处于可用状态。"
+    },
+    "password": {
+      "type": "string",
+      "writeOnly": true,
+      "description": "用户的明文密码，只写、永不返回。"
+    },
+    "emails": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "邮件地址，规范形式按 RFC 5321。"
+          },
+          "display": {
+            "type": "string",
+            "description": "供显示的文本。"
+          },
+          "type": {
+            "type": "string",
+            "description": "值的用途标签。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "是否为首选值；同一属性至多一个值为 true。"
+          }
+        }
+      },
+      "description": "电子邮件地址。"
+    },
+    "phoneNumbers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "电话号码，规范形式按 RFC 3966。"
+          },
+          "display": {
+            "type": "string",
+            "description": "供显示的文本。"
+          },
+          "type": {
+            "type": "string",
+            "description": "值的用途标签。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "是否为首选值；同一属性至多一个值为 true。"
+          }
+        }
+      },
+      "description": "电话号码。"
+    },
+    "ims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "即时通讯账号。"
+          },
+          "display": {
+            "type": "string",
+            "description": "供显示的文本。"
+          },
+          "type": {
+            "type": "string",
+            "description": "值的用途标签。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "是否为首选值；同一属性至多一个值为 true。"
+          }
+        }
+      },
+      "description": "即时通讯账号。"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uri-reference",
+            "description": "照片资源的地址。"
+          },
+          "display": {
+            "type": "string",
+            "description": "供显示的文本。"
+          },
+          "type": {
+            "type": "string",
+            "description": "值的用途标签。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "是否为首选值；同一属性至多一个值为 true。"
+          }
+        }
+      },
+      "description": "用户照片的地址。"
+    },
+    "addresses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "formatted": {
+            "type": "string",
+            "description": "完整地址，适合直接显示，可含换行。"
+          },
+          "streetAddress": {
+            "type": "string",
+            "description": "街道门牌。"
+          },
+          "locality": {
+            "type": "string",
+            "description": "城市。"
+          },
+          "region": {
+            "type": "string",
+            "description": "省、州或地区。"
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "邮政编码。"
+          },
+          "country": {
+            "type": "string",
+            "description": "国家，取 ISO 3166-1 两字母代码。"
+          },
+          "type": {
+            "type": "string",
+            "description": "地址用途标签。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "是否为首选地址。"
+          }
+        }
+      },
+      "description": "通讯地址。"
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "readOnly": true,
+            "description": "组的 id。"
+          },
+          "$ref": {
+            "type": "string",
+            "format": "uri-reference",
+            "readOnly": true,
+            "description": "组资源的地址。"
+          },
+          "display": {
+            "type": "string",
+            "readOnly": true,
+            "description": "组的显示名称。"
+          },
+          "type": {
+            "type": "string",
+            "readOnly": true,
+            "description": "直接成员还是经嵌套组间接成员。"
+          }
+        }
+      },
+      "readOnly": true,
+      "description": "用户所属的组，由服务提供方维护，只读；增删成员走 Group 资源。"
+    },
+    "entitlements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "权益的取值。"
+          },
+          "display": {
+            "type": "string",
+            "description": "供显示的文本。"
+          },
+          "type": {
+            "type": "string",
+            "description": "值的用途标签。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "是否为首选值；同一属性至多一个值为 true。"
+          }
+        }
+      },
+      "description": "用户拥有的权益。"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "角色的取值。"
+          },
+          "display": {
+            "type": "string",
+            "description": "供显示的文本。"
+          },
+          "type": {
+            "type": "string",
+            "description": "值的用途标签。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "是否为首选值；同一属性至多一个值为 true。"
+          }
+        }
+      },
+      "description": "用户的角色。"
+    },
+    "x509Certificates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "description": "DER 编码证书的 base64 文本。"
+          },
+          "display": {
+            "type": "string",
+            "description": "供显示的文本。"
+          },
+          "type": {
+            "type": "string",
+            "description": "值的用途标签。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "是否为首选值；同一属性至多一个值为 true。"
+          }
+        }
+      },
+      "description": "用户的 X.509 证书。"
+    },
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "employeeNumber": {
+          "type": "string",
+          "description": "组织分配的工号。"
+        },
+        "costCenter": {
+          "type": "string",
+          "description": "成本中心。"
+        },
+        "organization": {
+          "type": "string",
+          "description": "所属组织（法人或公司）的名称。"
+        },
+        "division": {
+          "type": "string",
+          "description": "事业部。"
+        },
+        "department": {
+          "type": "string",
+          "description": "部门名称。"
+        },
+        "manager": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "主管 User 资源的 id。"
+            },
+            "$ref": {
+              "type": "string",
+              "format": "uri-reference",
+              "description": "主管 User 资源的地址。"
+            },
+            "displayName": {
+              "type": "string",
+              "readOnly": true,
+              "description": "主管的显示名称，只读。"
+            }
+          },
+          "description": "用户的直属主管。"
+        }
+      },
+      "description": "企业用户扩展属性（RFC 7643 第 4.3 节）。"
+    }
+  },
+  "dependentSchemas": {
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+      "properties": {
+        "schemas": {
+          "contains": {
+            "const": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+          }
+        }
+      }
+    }
+  }
+}

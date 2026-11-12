@@ -1,0 +1,19 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Group"
+  ],
+  "id": "0193a000-0000-7000-8000-000000000021",
+  "displayName": "项目组",
+  "members": [
+    {
+      "value": "0193a000-0000-7000-8000-000000000104",
+      "$ref": "https://qian.example.test/scim/v2/Users/0193a000-0000-7000-8000-000000000104",
+      "type": "User",
+      "display": "赵六"
+    }
+  ],
+  "meta": {
+    "resourceType": "Group",
+    "location": "https://qian.example.test/scim/v2/Groups/0193a000-0000-7000-8000-000000000021"
+  }
+}

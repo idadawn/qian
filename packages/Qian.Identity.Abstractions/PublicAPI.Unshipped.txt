@@ -1205,3 +1205,393 @@ static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryDepthExceeded
 static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryHasMembers -> Qian.Runtime.Errors.ErrorCode!
 static readonly Qian.Identity.Abstractions.IdentityErrors.DirectoryTransitionInvalid -> Qian.Runtime.Errors.ErrorCode!
 Qian.Identity.Abstractions.IIdentityAccounts.SetTenantAdministratorAsync(System.Guid membershipId, bool administrator, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.Membership!>
+Qian.Identity.Abstractions.DirectoryEventIds
+Qian.Identity.Abstractions.DirectoryIntegrationEvent
+Qian.Identity.Abstractions.DirectoryIntegrationEvent.Deconstruct(out long DirectoryRevision) -> void
+Qian.Identity.Abstractions.DirectoryIntegrationEvent.DirectoryIntegrationEvent(Qian.Identity.Abstractions.DirectoryIntegrationEvent! original) -> void
+Qian.Identity.Abstractions.DirectoryIntegrationEvent.DirectoryIntegrationEvent(long DirectoryRevision) -> void
+Qian.Identity.Abstractions.DirectoryIntegrationEvent.DirectoryRevision.get -> long
+Qian.Identity.Abstractions.DirectoryIntegrationEvent.DirectoryRevision.init -> void
+Qian.Identity.Abstractions.DirectoryManager
+Qian.Identity.Abstractions.DirectoryManager.<Clone>$() -> Qian.Identity.Abstractions.DirectoryManager!
+Qian.Identity.Abstractions.DirectoryManager.Deconstruct(out System.Guid MembershipId, out Qian.Identity.Abstractions.Membership? Manager, out System.Guid? SourceOrganizationId) -> void
+Qian.Identity.Abstractions.DirectoryManager.DirectoryManager(System.Guid MembershipId, Qian.Identity.Abstractions.Membership? Manager, System.Guid? SourceOrganizationId) -> void
+Qian.Identity.Abstractions.DirectoryManager.Equals(Qian.Identity.Abstractions.DirectoryManager? other) -> bool
+Qian.Identity.Abstractions.DirectoryManager.Manager.get -> Qian.Identity.Abstractions.Membership?
+Qian.Identity.Abstractions.DirectoryManager.Manager.init -> void
+Qian.Identity.Abstractions.DirectoryManager.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryManager.MembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryManager.SourceOrganizationId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryManager.SourceOrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.Deconstruct(out long DirectoryRevision, out System.Guid MembershipId, out System.Guid PersonId, out string! Status, out long IdentityRevision) -> void
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.DirectoryMemberCreatedEvent(long DirectoryRevision, System.Guid MembershipId, System.Guid PersonId, string! Status, long IdentityRevision) -> void
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.Equals(Qian.Identity.Abstractions.DirectoryMemberCreatedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.IdentityRevision.get -> long
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.IdentityRevision.init -> void
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.MembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.PersonId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.PersonId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.Status.get -> string!
+Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.Status.init -> void
+Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent
+Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.Deconstruct(out long DirectoryRevision, out System.Guid MembershipId, out System.Guid PersonId) -> void
+Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.DirectoryMemberProfileUpdatedEvent(long DirectoryRevision, System.Guid MembershipId, System.Guid PersonId) -> void
+Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.Equals(Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.MembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.PersonId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.PersonId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberQuery
+Qian.Identity.Abstractions.DirectoryMemberQuery.<Clone>$() -> Qian.Identity.Abstractions.DirectoryMemberQuery!
+Qian.Identity.Abstractions.DirectoryMemberQuery.Descendants.get -> bool
+Qian.Identity.Abstractions.DirectoryMemberQuery.Descendants.init -> void
+Qian.Identity.Abstractions.DirectoryMemberQuery.DirectoryMemberQuery() -> void
+Qian.Identity.Abstractions.DirectoryMemberQuery.Equals(Qian.Identity.Abstractions.DirectoryMemberQuery? other) -> bool
+Qian.Identity.Abstractions.DirectoryMemberQuery.Keyword.get -> string?
+Qian.Identity.Abstractions.DirectoryMemberQuery.Keyword.init -> void
+Qian.Identity.Abstractions.DirectoryMemberQuery.Limit.get -> int
+Qian.Identity.Abstractions.DirectoryMemberQuery.Limit.init -> void
+Qian.Identity.Abstractions.DirectoryMemberQuery.MembershipIds.get -> System.Collections.Generic.IReadOnlyList<System.Guid>?
+Qian.Identity.Abstractions.DirectoryMemberQuery.MembershipIds.init -> void
+Qian.Identity.Abstractions.DirectoryMemberQuery.Offset.get -> int
+Qian.Identity.Abstractions.DirectoryMemberQuery.Offset.init -> void
+Qian.Identity.Abstractions.DirectoryMemberQuery.OrganizationId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryMemberQuery.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberQuery.PersonIds.get -> System.Collections.Generic.IReadOnlyList<System.Guid>?
+Qian.Identity.Abstractions.DirectoryMemberQuery.PersonIds.init -> void
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.Deconstruct(out long DirectoryRevision, out System.Guid MembershipId, out System.Guid PersonId, out long IdentityRevision, out System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>! Relations, out System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>! PreviousRelations) -> void
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.DirectoryMemberRelationsChangedEvent(long DirectoryRevision, System.Guid MembershipId, System.Guid PersonId, long IdentityRevision, System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>! Relations, System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>! PreviousRelations) -> void
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.Equals(Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.IdentityRevision.get -> long
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.IdentityRevision.init -> void
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.MembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.PersonId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.PersonId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.PreviousRelations.get -> System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>!
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.PreviousRelations.init -> void
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.Relations.get -> System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.MemberRelation!>!
+Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.Relations.init -> void
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.Deconstruct(out long DirectoryRevision, out System.Guid MembershipId, out System.Guid PersonId, out string! Status, out string! PreviousStatus, out bool Deleted, out long IdentityRevision) -> void
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.Deleted.get -> bool
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.Deleted.init -> void
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.DirectoryMemberStatusChangedEvent(long DirectoryRevision, System.Guid MembershipId, System.Guid PersonId, string! Status, string! PreviousStatus, bool Deleted, long IdentityRevision) -> void
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.Equals(Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.IdentityRevision.get -> long
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.IdentityRevision.init -> void
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.MembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.PersonId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.PersonId.init -> void
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.PreviousStatus.get -> string!
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.PreviousStatus.init -> void
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.Status.get -> string!
+Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.Status.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.Deconstruct(out long DirectoryRevision, out System.Guid OrganizationId, out System.Guid? ParentId, out string! TypeCode, out string! Path, out int Depth, out System.Guid? ManagerMembershipId, out System.Guid? ResponsiblePositionId) -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.Depth.get -> int
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.Depth.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.DirectoryOrganizationCreatedEvent(long DirectoryRevision, System.Guid OrganizationId, System.Guid? ParentId, string! TypeCode, string! Path, int Depth, System.Guid? ManagerMembershipId = null, System.Guid? ResponsiblePositionId = null) -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.Equals(Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.ManagerMembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.ManagerMembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.Path.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.ResponsiblePositionId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.ResponsiblePositionId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.TypeCode.get -> string!
+Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.TypeCode.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.Deconstruct(out long DirectoryRevision, out System.Guid OrganizationId, out System.Guid? ParentId, out string! Path) -> void
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.DirectoryOrganizationDeletedEvent(long DirectoryRevision, System.Guid OrganizationId, System.Guid? ParentId, string! Path) -> void
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.Equals(Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.Path.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.Deconstruct(out long DirectoryRevision, out System.Guid OrganizationId, out System.Guid? ParentId, out System.Guid? PreviousParentId, out string! Path, out string! PreviousPath, out int Depth) -> void
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.Depth.get -> int
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.Depth.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.DirectoryOrganizationMovedEvent(long DirectoryRevision, System.Guid OrganizationId, System.Guid? ParentId, System.Guid? PreviousParentId, string! Path, string! PreviousPath, int Depth) -> void
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.Equals(Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.Path.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.PreviousParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.PreviousParentId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.PreviousPath.get -> string!
+Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.PreviousPath.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.Deconstruct(out long DirectoryRevision, out System.Guid OrganizationId, out System.Guid? ParentId, out string! TypeCode, out string! Path, out int Depth, out System.Guid? ManagerMembershipId, out System.Guid? ResponsiblePositionId) -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.Depth.get -> int
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.Depth.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.DirectoryOrganizationUpdatedEvent(long DirectoryRevision, System.Guid OrganizationId, System.Guid? ParentId, string! TypeCode, string! Path, int Depth, System.Guid? ManagerMembershipId = null, System.Guid? ResponsiblePositionId = null) -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.Equals(Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.ManagerMembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.ManagerMembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.Path.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.ResponsiblePositionId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.ResponsiblePositionId.init -> void
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.TypeCode.get -> string!
+Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.TypeCode.init -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.Deconstruct(out long DirectoryRevision, out System.Guid PositionId, out System.Guid OrganizationId, out System.Guid? ParentId, out string! Path, out int Depth, out bool IsDefault, out bool IsResponsible, out System.Guid? ResponsibleMembershipId) -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.Depth.get -> int
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.Depth.init -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.DirectoryPositionCreatedEvent(long DirectoryRevision, System.Guid PositionId, System.Guid OrganizationId, System.Guid? ParentId, string! Path, int Depth, bool IsDefault, bool IsResponsible, System.Guid? ResponsibleMembershipId = null) -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.Equals(Qian.Identity.Abstractions.DirectoryPositionCreatedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.IsDefault.get -> bool
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.IsDefault.init -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.IsResponsible.get -> bool
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.IsResponsible.init -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.Path.init -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.PositionId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.PositionId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.ResponsibleMembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.ResponsibleMembershipId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.Deconstruct(out long DirectoryRevision, out System.Guid PositionId, out System.Guid OrganizationId, out System.Guid? ParentId, out string! Path) -> void
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.DirectoryPositionDeletedEvent(long DirectoryRevision, System.Guid PositionId, System.Guid OrganizationId, System.Guid? ParentId, string! Path) -> void
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.Equals(Qian.Identity.Abstractions.DirectoryPositionDeletedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.Path.init -> void
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.PositionId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.PositionId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.Deconstruct(out long DirectoryRevision, out System.Guid PositionId, out System.Guid OrganizationId, out System.Guid? ParentId, out System.Guid? PreviousParentId, out string! Path, out string! PreviousPath, out int Depth) -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.Depth.get -> int
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.Depth.init -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.DirectoryPositionMovedEvent(long DirectoryRevision, System.Guid PositionId, System.Guid OrganizationId, System.Guid? ParentId, System.Guid? PreviousParentId, string! Path, string! PreviousPath, int Depth) -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.Equals(Qian.Identity.Abstractions.DirectoryPositionMovedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.Path.init -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.PositionId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.PositionId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.PreviousParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.PreviousParentId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.PreviousPath.get -> string!
+Qian.Identity.Abstractions.DirectoryPositionMovedEvent.PreviousPath.init -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.Deconstruct(out long DirectoryRevision, out System.Guid PositionId, out System.Guid OrganizationId, out System.Guid? ParentId, out string! Path, out int Depth, out bool IsDefault, out bool IsResponsible, out System.Guid? ResponsibleMembershipId) -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.Depth.get -> int
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.Depth.init -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.DirectoryPositionUpdatedEvent(long DirectoryRevision, System.Guid PositionId, System.Guid OrganizationId, System.Guid? ParentId, string! Path, int Depth, bool IsDefault, bool IsResponsible, System.Guid? ResponsibleMembershipId = null) -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.Equals(Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent? other) -> bool
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.IsDefault.get -> bool
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.IsDefault.init -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.IsResponsible.get -> bool
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.IsResponsible.init -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.ParentId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.ParentId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.Path.get -> string!
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.Path.init -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.PositionId.get -> System.Guid
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.PositionId.init -> void
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.ResponsibleMembershipId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.ResponsibleMembershipId.init -> void
+Qian.Identity.Abstractions.DirectorySuperior
+Qian.Identity.Abstractions.DirectorySuperior.<Clone>$() -> Qian.Identity.Abstractions.DirectorySuperior!
+Qian.Identity.Abstractions.DirectorySuperior.Deconstruct(out int Level, out System.Guid PositionId, out System.Guid OrganizationId, out Qian.Identity.Abstractions.Membership? Responsible, out string? Vacancy) -> void
+Qian.Identity.Abstractions.DirectorySuperior.DirectorySuperior(int Level, System.Guid PositionId, System.Guid OrganizationId, Qian.Identity.Abstractions.Membership? Responsible, string? Vacancy) -> void
+Qian.Identity.Abstractions.DirectorySuperior.Equals(Qian.Identity.Abstractions.DirectorySuperior? other) -> bool
+Qian.Identity.Abstractions.DirectorySuperior.Level.get -> int
+Qian.Identity.Abstractions.DirectorySuperior.Level.init -> void
+Qian.Identity.Abstractions.DirectorySuperior.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.DirectorySuperior.OrganizationId.init -> void
+Qian.Identity.Abstractions.DirectorySuperior.PositionId.get -> System.Guid
+Qian.Identity.Abstractions.DirectorySuperior.PositionId.init -> void
+Qian.Identity.Abstractions.DirectorySuperior.Responsible.get -> Qian.Identity.Abstractions.Membership?
+Qian.Identity.Abstractions.DirectorySuperior.Responsible.init -> void
+Qian.Identity.Abstractions.DirectorySuperior.Vacancy.get -> string?
+Qian.Identity.Abstractions.DirectorySuperior.Vacancy.init -> void
+Qian.Identity.Abstractions.DirectorySuperiors
+Qian.Identity.Abstractions.DirectorySuperiors.<Clone>$() -> Qian.Identity.Abstractions.DirectorySuperiors!
+Qian.Identity.Abstractions.DirectorySuperiors.Deconstruct(out System.Guid MembershipId, out System.Guid? StartPositionId, out System.Guid? StartOrganizationId, out System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectorySuperior!>! Items) -> void
+Qian.Identity.Abstractions.DirectorySuperiors.DirectorySuperiors(System.Guid MembershipId, System.Guid? StartPositionId, System.Guid? StartOrganizationId, System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectorySuperior!>! Items) -> void
+Qian.Identity.Abstractions.DirectorySuperiors.Equals(Qian.Identity.Abstractions.DirectorySuperiors? other) -> bool
+Qian.Identity.Abstractions.DirectorySuperiors.Items.get -> System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectorySuperior!>!
+Qian.Identity.Abstractions.DirectorySuperiors.Items.init -> void
+Qian.Identity.Abstractions.DirectorySuperiors.MembershipId.get -> System.Guid
+Qian.Identity.Abstractions.DirectorySuperiors.MembershipId.init -> void
+Qian.Identity.Abstractions.DirectorySuperiors.StartOrganizationId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectorySuperiors.StartOrganizationId.init -> void
+Qian.Identity.Abstractions.DirectorySuperiors.StartPositionId.get -> System.Guid?
+Qian.Identity.Abstractions.DirectorySuperiors.StartPositionId.init -> void
+Qian.Identity.Abstractions.DirectoryVacancies
+Qian.Identity.Abstractions.IIdentityDirectory.GetManagerAsync(System.Guid membershipId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.DirectoryManager!>
+Qian.Identity.Abstractions.IIdentityDirectory.GetOrganizationHeadAsync(System.Guid organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.OrganizationHead!>
+Qian.Identity.Abstractions.IIdentityDirectory.GetSubordinatesAsync(System.Guid membershipId, int? depth = null, int offset = 0, int limit = 50, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryMember!>!>
+Qian.Identity.Abstractions.IIdentityDirectory.GetSuperiorsAsync(System.Guid membershipId, System.Guid? positionId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Qian.Identity.Abstractions.DirectorySuperiors!>
+Qian.Identity.Abstractions.IIdentityDirectory.QueryMembersAsync(Qian.Identity.Abstractions.DirectoryMemberQuery! query, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Qian.Identity.Abstractions.DirectoryMember!>!>
+Qian.Identity.Abstractions.OrganizationHead
+Qian.Identity.Abstractions.OrganizationHead.<Clone>$() -> Qian.Identity.Abstractions.OrganizationHead!
+Qian.Identity.Abstractions.OrganizationHead.Deconstruct(out System.Guid OrganizationId, out System.Guid? ResponsiblePositionId, out Qian.Identity.Abstractions.Membership? Responsible, out string? Vacancy, out Qian.Identity.Abstractions.Membership? Manager) -> void
+Qian.Identity.Abstractions.OrganizationHead.Equals(Qian.Identity.Abstractions.OrganizationHead? other) -> bool
+Qian.Identity.Abstractions.OrganizationHead.Manager.get -> Qian.Identity.Abstractions.Membership?
+Qian.Identity.Abstractions.OrganizationHead.Manager.init -> void
+Qian.Identity.Abstractions.OrganizationHead.OrganizationHead(System.Guid OrganizationId, System.Guid? ResponsiblePositionId, Qian.Identity.Abstractions.Membership? Responsible, string? Vacancy, Qian.Identity.Abstractions.Membership? Manager) -> void
+Qian.Identity.Abstractions.OrganizationHead.OrganizationId.get -> System.Guid
+Qian.Identity.Abstractions.OrganizationHead.OrganizationId.init -> void
+Qian.Identity.Abstractions.OrganizationHead.Responsible.get -> Qian.Identity.Abstractions.Membership?
+Qian.Identity.Abstractions.OrganizationHead.Responsible.init -> void
+Qian.Identity.Abstractions.OrganizationHead.ResponsiblePositionId.get -> System.Guid?
+Qian.Identity.Abstractions.OrganizationHead.ResponsiblePositionId.init -> void
+Qian.Identity.Abstractions.OrganizationHead.Vacancy.get -> string?
+Qian.Identity.Abstractions.OrganizationHead.Vacancy.init -> void
+abstract Qian.Identity.Abstractions.DirectoryIntegrationEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryIntegrationEvent!
+const Qian.Identity.Abstractions.DirectoryEventIds.MemberCreated = "directory.member.created.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.MemberProfileUpdated = "directory.member.profile_updated.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.MemberRelationsChanged = "directory.member.relations_changed.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.MemberStatusChanged = "directory.member.status_changed.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.OrganizationCreated = "directory.org.created.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.OrganizationDeleted = "directory.org.deleted.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.OrganizationMoved = "directory.org.moved.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.OrganizationUpdated = "directory.org.updated.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.PositionCreated = "directory.position.created.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.PositionDeleted = "directory.position.deleted.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.PositionMoved = "directory.position.moved.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryEventIds.PositionUpdated = "directory.position.updated.v1" -> string!
+const Qian.Identity.Abstractions.DirectoryMemberQuery.MaximumIds = 100 -> int
+const Qian.Identity.Abstractions.DirectoryMemberQuery.MaximumKeywordLength = 64 -> int
+const Qian.Identity.Abstractions.DirectoryVacancies.Inactive = "inactive" -> string!
+const Qian.Identity.Abstractions.DirectoryVacancies.Unassigned = "unassigned" -> string!
+override Qian.Identity.Abstractions.DirectoryIntegrationEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryIntegrationEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryManager.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryManager.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryManager.ToString() -> string!
+override Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryMemberCreatedEvent!
+override Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent!
+override Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryMemberQuery.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryMemberQuery.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryMemberQuery.ToString() -> string!
+override Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent!
+override Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent!
+override Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent!
+override Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent!
+override Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent!
+override Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent!
+override Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryPositionCreatedEvent!
+override Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryPositionDeletedEvent!
+override Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryPositionMovedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryPositionMovedEvent!
+override Qian.Identity.Abstractions.DirectoryPositionMovedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryPositionMovedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.<Clone>$() -> Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent!
+override Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectorySuperior.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectorySuperior.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectorySuperior.ToString() -> string!
+override Qian.Identity.Abstractions.DirectorySuperiors.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.DirectorySuperiors.GetHashCode() -> int
+override Qian.Identity.Abstractions.DirectorySuperiors.ToString() -> string!
+override Qian.Identity.Abstractions.OrganizationHead.Equals(object? obj) -> bool
+override Qian.Identity.Abstractions.OrganizationHead.GetHashCode() -> int
+override Qian.Identity.Abstractions.OrganizationHead.ToString() -> string!
+override sealed Qian.Identity.Abstractions.DirectoryIntegrationEvent.ToString() -> string!
+override sealed Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryPositionMovedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+override sealed Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+static Qian.Identity.Abstractions.DirectoryEventIds.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static Qian.Identity.Abstractions.DirectoryIntegrationEvent.operator !=(Qian.Identity.Abstractions.DirectoryIntegrationEvent? left, Qian.Identity.Abstractions.DirectoryIntegrationEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryIntegrationEvent.operator ==(Qian.Identity.Abstractions.DirectoryIntegrationEvent? left, Qian.Identity.Abstractions.DirectoryIntegrationEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryManager.operator !=(Qian.Identity.Abstractions.DirectoryManager? left, Qian.Identity.Abstractions.DirectoryManager? right) -> bool
+static Qian.Identity.Abstractions.DirectoryManager.operator ==(Qian.Identity.Abstractions.DirectoryManager? left, Qian.Identity.Abstractions.DirectoryManager? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.operator !=(Qian.Identity.Abstractions.DirectoryMemberCreatedEvent? left, Qian.Identity.Abstractions.DirectoryMemberCreatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberCreatedEvent.operator ==(Qian.Identity.Abstractions.DirectoryMemberCreatedEvent? left, Qian.Identity.Abstractions.DirectoryMemberCreatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.operator !=(Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent? left, Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent.operator ==(Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent? left, Qian.Identity.Abstractions.DirectoryMemberProfileUpdatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberQuery.operator !=(Qian.Identity.Abstractions.DirectoryMemberQuery? left, Qian.Identity.Abstractions.DirectoryMemberQuery? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberQuery.operator ==(Qian.Identity.Abstractions.DirectoryMemberQuery? left, Qian.Identity.Abstractions.DirectoryMemberQuery? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.operator !=(Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent? left, Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent.operator ==(Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent? left, Qian.Identity.Abstractions.DirectoryMemberRelationsChangedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.operator !=(Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent? left, Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent.operator ==(Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent? left, Qian.Identity.Abstractions.DirectoryMemberStatusChangedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.operator !=(Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent? left, Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent.operator ==(Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent? left, Qian.Identity.Abstractions.DirectoryOrganizationCreatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.operator !=(Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent? left, Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent.operator ==(Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent? left, Qian.Identity.Abstractions.DirectoryOrganizationDeletedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.operator !=(Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent? left, Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent.operator ==(Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent? left, Qian.Identity.Abstractions.DirectoryOrganizationMovedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.operator !=(Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent? left, Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent.operator ==(Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent? left, Qian.Identity.Abstractions.DirectoryOrganizationUpdatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.operator !=(Qian.Identity.Abstractions.DirectoryPositionCreatedEvent? left, Qian.Identity.Abstractions.DirectoryPositionCreatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPositionCreatedEvent.operator ==(Qian.Identity.Abstractions.DirectoryPositionCreatedEvent? left, Qian.Identity.Abstractions.DirectoryPositionCreatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.operator !=(Qian.Identity.Abstractions.DirectoryPositionDeletedEvent? left, Qian.Identity.Abstractions.DirectoryPositionDeletedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPositionDeletedEvent.operator ==(Qian.Identity.Abstractions.DirectoryPositionDeletedEvent? left, Qian.Identity.Abstractions.DirectoryPositionDeletedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPositionMovedEvent.operator !=(Qian.Identity.Abstractions.DirectoryPositionMovedEvent? left, Qian.Identity.Abstractions.DirectoryPositionMovedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPositionMovedEvent.operator ==(Qian.Identity.Abstractions.DirectoryPositionMovedEvent? left, Qian.Identity.Abstractions.DirectoryPositionMovedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.operator !=(Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent? left, Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent.operator ==(Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent? left, Qian.Identity.Abstractions.DirectoryPositionUpdatedEvent? right) -> bool
+static Qian.Identity.Abstractions.DirectorySuperior.operator !=(Qian.Identity.Abstractions.DirectorySuperior? left, Qian.Identity.Abstractions.DirectorySuperior? right) -> bool
+static Qian.Identity.Abstractions.DirectorySuperior.operator ==(Qian.Identity.Abstractions.DirectorySuperior? left, Qian.Identity.Abstractions.DirectorySuperior? right) -> bool
+static Qian.Identity.Abstractions.DirectorySuperiors.operator !=(Qian.Identity.Abstractions.DirectorySuperiors? left, Qian.Identity.Abstractions.DirectorySuperiors? right) -> bool
+static Qian.Identity.Abstractions.DirectorySuperiors.operator ==(Qian.Identity.Abstractions.DirectorySuperiors? left, Qian.Identity.Abstractions.DirectorySuperiors? right) -> bool
+static Qian.Identity.Abstractions.OrganizationHead.operator !=(Qian.Identity.Abstractions.OrganizationHead? left, Qian.Identity.Abstractions.OrganizationHead? right) -> bool
+static Qian.Identity.Abstractions.OrganizationHead.operator ==(Qian.Identity.Abstractions.OrganizationHead? left, Qian.Identity.Abstractions.OrganizationHead? right) -> bool
+virtual Qian.Identity.Abstractions.DirectoryIntegrationEvent.EqualityContract.get -> System.Type!
+virtual Qian.Identity.Abstractions.DirectoryIntegrationEvent.Equals(Qian.Identity.Abstractions.DirectoryIntegrationEvent? other) -> bool
+virtual Qian.Identity.Abstractions.DirectoryIntegrationEvent.PrintMembers(System.Text.StringBuilder! builder) -> bool

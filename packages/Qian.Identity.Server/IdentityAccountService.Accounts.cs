@@ -305,24 +305,32 @@ internal sealed partial class IdentityAccountService
         var tenantId = RequireTenant(); var now = Now;
         Membership result;
         using (var scope = TenantScope(tenantId))
+        using (var origin = OpenOrigin())
         {
             await using var session = await OpenAsync(cancellationToken).ConfigureAwait(false);
             var db = session.Context;
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-            await IdentitySql.LockAsync(db, "directory:" + tenantId.ToString("D"), cancellationToken).ConfigureAwait(false);
+            var directoryLock = await LockDirectoryAsync(db, tenantId, cancellationToken).ConfigureAwait(false);
             var locked = await IdentitySql.QueryAsync(db, $"SELECT id FROM {IdentitySql.Memberships} WHERE id = @id FOR UPDATE", reader => reader.GetGuid(0), cancellationToken, ("id", membershipId)).ConfigureAwait(false);
             if (locked.Count == 0) throw Error(PlatformErrors.NotFound);
             var row = await db.Memberships.SingleAsync(m => m.Id == membershipId, cancellationToken).ConfigureAwait(false);
             if (row.Status == AccountStatuses.Purged || row.DirectoryDeleted && !deleted) throw Error(PlatformErrors.NotFound);
             if (directoryRules && status != AccountStatuses.Active && row.IsTenantAdministrator) throw Error(IdentityErrors.DirectoryAdministratorProtected);
             if (directoryRules && !DirectoryRules.CanTransition(row.Status, status)) throw Error(IdentityErrors.DirectoryTransitionInvalid);
+            var (previousStatus, wasDeleted) = (row.Status, row.DirectoryDeleted);
             if (deleted) row.DirectoryDeleted = true;
             if (row.Status != status)
             {
                 row.Status = status; row.IdentityRevision++;
                 if (status != AccountStatuses.Active) await RevokeSessionRowsAsync(db, row.PersonId, null, row.Id, "member_" + status, now, cancellationToken).ConfigureAwait(false);
             }
+            // 目录入口与受信账号入口共用这里：状态或删除标记真的变了才发 directory.member.status_changed.v1，与写入同事务。
+            var events = new DirectoryEventBatch();
+            if (previousStatus != row.Status || wasDeleted != row.DirectoryDeleted)
+                events.Add(revision => new DirectoryMemberStatusChangedEvent(revision, row.Id, row.PersonId, row.Status, previousStatus, row.DirectoryDeleted, row.IdentityRevision));
+            var changes = await RaiseDirectoryEventsAsync(db, directoryLock, events, cancellationToken).ConfigureAwait(false);
             await session.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            EnsurePublished(changes);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             result = ToMembership(row);
         }

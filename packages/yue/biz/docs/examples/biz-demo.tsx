@@ -27,13 +27,18 @@ const CATALOG = {
 const GRANTS: Record<string, string[]> = { 'tenant.user': ['qian.sample.crm:customer:read'], 'sales.manager': ['qian.sample.crm:customer:read', 'qian.sample.crm:customer:write'] };
 const CUSTOMERS = ['华东贸易', '华南物流', '北方制造', '西部能源', '东海科技', '南山食品'].map((name, index) => ({ id: `customer-${index + 1}`, name }));
 
-/** 与 Identity Server 相同的 ErrorDetail：limit 越界返回 400。 */
-const problem = (status: number, code: string, message: string) => new Response(JSON.stringify({ type: `https://qian.dev/problems/protocol/${code}`, title: message, status, code, message, trace_id: '0123456789abcdef0123456789abcdef', pointer: '#/page' }), { status, headers: { 'content-type': 'application/problem+json' } });
+/** 与 Identity Server 相同的 ErrorDetail：limit 越界、检索条件冲突或越界返回 400。 */
+const problem = (status: number, code: string, message: string, pointer = '#/page') => new Response(JSON.stringify({ type: `https://qian.dev/problems/protocol/${code}`, title: message, status, code, message, trace_id: '0123456789abcdef0123456789abcdef', pointer }), { status, headers: { 'content-type': 'application/problem+json' } });
+/** 与 Identity Server 相同的检索口径：q 按显示名与账号忽略大小写包含匹配，ids / person_ids 按 id 过滤，三者至多一个。 */
 function page(request: Request, rows: typeof MEMBERS) {
   const query = new URL(request.url).searchParams;
   const offset = Number(query.get('offset') ?? 0); const limit = Number(query.get('limit') ?? 50);
   if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 200) return problem(400, 'BAD_REQUEST', '请求参数无效');
-  return Response.json({ items: rows.slice(offset, offset + limit).map((row) => ({ membership: row.membership, deleted: false })) });
+  const keyword = query.get('q')?.trim().toLocaleLowerCase(); const ids = query.getAll('ids'); const persons = query.getAll('person_ids');
+  if ([query.has('q'), ids.length > 0, persons.length > 0].filter(Boolean).length > 1 || keyword !== undefined && (keyword.length < 1 || keyword.length > 64) || ids.length > 100 || persons.length > 100) return problem(400, 'INPUT_INVALID', '检索条件无效', '#/q');
+  const matched = rows.filter(({ membership }) => (keyword === undefined || membership.display_name.toLocaleLowerCase().includes(keyword) || membership.account.toLocaleLowerCase().includes(keyword))
+    && (ids.length === 0 || ids.includes(membership.id)) && (persons.length === 0 || persons.includes(membership.person_id)));
+  return Response.json({ items: matched.slice(offset, offset + limit).map((row) => ({ membership: row.membership, deleted: false })) });
 }
 
 export function createBizMockClient({ failMembersOnce = false } = {}): PlatformClient {
