@@ -5,6 +5,8 @@ using System.Text.Json;
 using Qian.Audit;
 using Qian.Identity.Abstractions;
 using Qian.Runtime;
+using Qian.Surfaces.Abstractions;
+using Qian.Tenancy;
 using Qian.Tenancy.Signup;
 
 namespace Qian.Sample.Crm.Tests;
@@ -276,6 +278,53 @@ public sealed partial class TenantSignupTests
             record.Resource == "signup/applications/" + id.ToString("D")));
     }
 
+    [Fact]
+    public async Task 开通编排正常返回但第05步被跳过时转failed且原因码取自步骤表_租户不激活也没有管理员成员_成员开户端口恢复后重试收敛到approved()
+    {
+        await using var ops = await StartOps();
+        var (business, client) = (ops.Business, ops.Client);
+        string Root() => business.Token(null, "", "root", "user");
+        using var applicant = new Browser(business.Client.BaseAddress!);
+        var phone = NewPhone();
+        await Verify(ops, applicant, phone);
+        var id = (await Json(await Submit(applicant, Body("skipco", company: "跳步科技")), HttpStatusCode.Created)).GetProperty("id").GetGuid();
+        var person = await business.Identity.Accounts.FindPersonAsync(phone, Ct) ?? throw new InvalidOperationException("没有建自然人。");
+
+        // 新租户里看不到身份组件的成员开户端口：第 05 步按端口缺席记 skipped，第 06、07 步照常成功，编排正常返回，没有异常可接。
+        await Mount(business, MembershipHiddenDefinition());
+        var failed = await Json(await Operate(client, HttpMethod.Post, Act(id, "approve"), Root(), new { plan = "trial" }), HttpStatusCode.OK);
+        Assert.Equal("failed", failed.GetProperty("status").GetString());
+        var provisioning = failed.GetProperty("provisioning");
+        // 原因码取自步骤表：被跳过的第 05 步记的 identity_unavailable。
+        Assert.Equal(("identity_unavailable", 1), (provisioning.GetProperty("failureReason").GetString(), provisioning.GetProperty("attempts").GetInt32()));
+        var steps = provisioning.GetProperty("steps").EnumerateArray().ToDictionary(step => step.GetProperty("step").GetString()!,
+            step => (step.GetProperty("status").GetString(), Has(step, "reason") ? step.GetProperty("reason").GetString() : null));
+        Assert.Equal<(string?, string?)>([("skipped", "identity_unavailable"), ("succeeded", null), ("succeeded", null)], AdministratorSteps.Select(step => steps[step]));
+        var tenant = provisioning.GetProperty("tenantId").GetGuid(); var membership = provisioning.GetProperty("membershipId").GetGuid();
+        // 没有激活，管理员成员也没有建；申请人看到的仍是开通中、没有内部原因，还不能登录，也没有结果通知。
+        Assert.Equal("pending", await Text($"SELECT status FROM plugin_qian_tenancy.tenants WHERE id = '{tenant}'"));
+        Assert.Equal("0", await Text($"SELECT count(*) FROM plugin_qian_identity.memberships WHERE tenant_id = '{tenant}'"));
+        var waiting = Assert.Single((await Json(await applicant.Send(HttpMethod.Get, Mine), HttpStatusCode.OK)).GetProperty("items").EnumerateArray());
+        Assert.Equal("provisioning", waiting.GetProperty("status").GetString());
+        Assert.DoesNotContain(Strings(waiting), value => value.Contains("identity_unavailable", StringComparison.Ordinal));
+        Assert.NotEqual(SignInStatus.Authenticated, (await SignIn(business, phone, Password)).Status);
+        Assert.Empty(ops.Outbox.Results);
+
+        // 卸下后新租户里重新看得到端口：重试补上第 05 步（成员 ID 沿用申请上那一个）再激活，收敛到 approved，申请人能登录新租户。
+        await Loader(business).UnmountAsync(MembershipHiddenEntry, ScopeKey.Global, Ct);
+        var retried = await Json(await Operate(client, HttpMethod.Post, Act(id, "retry"), Root()), HttpStatusCode.OK);
+        Assert.Equal("approved", retried.GetProperty("status").GetString());
+        var after = retried.GetProperty("provisioning");
+        Assert.Equal((tenant, membership, 2), (after.GetProperty("tenantId").GetGuid(), after.GetProperty("membershipId").GetGuid(), after.GetProperty("attempts").GetInt32()));
+        Assert.False(Has(after, "failureReason"));
+        foreach (var step in AdministratorSteps) Assert.Equal("succeeded", Steps(after)[step]);
+        Assert.Equal("trial", await Text($"SELECT status FROM plugin_qian_tenancy.tenants WHERE id = '{tenant}'"));
+        Assert.Equal($"{membership}|{person.Id}", await Text($"SELECT string_agg(id::text || '|' || person_id::text, ',') FROM plugin_qian_identity.memberships WHERE tenant_id = '{tenant}'"));
+        var signedIn = await SignIn(business, phone, Password);
+        Assert.Equal((SignInStatus.Authenticated, tenant, membership), (signedIn.Status, signedIn.Session!.TenantId, signedIn.Session.MembershipId));
+        Assert.Single(ops.Outbox.Results, message => message.Id == id && message.Kind == SignupResultKind.Approved);
+    }
+
     // ---- 运营侧辅助 ----
 
     private static async Task<HttpResponseMessage> Operate(HttpClient client, HttpMethod method, string path, string? token, object? body = null)
@@ -304,6 +353,26 @@ public sealed partial class TenantSignupTests
 
     private Task<string?> Owners(Guid tenant) => Text("SELECT string_agg(a.subject_id, ',' ORDER BY a.subject_id) FROM plugin_qian_authz.role_assignments a " +
         $"JOIN plugin_qian_authz.roles r ON a.role_id = r.id WHERE a.tenant_id = '{tenant}' AND r.code = 'tenant.owner'");
+
+    private const string MembershipHiddenEntry = "signup.membership-hidden";
+
+    private static PluginDefinition MembershipHiddenDefinition() => new(new PluginEntry(MembershipHiddenEntry, "qian.tests.membership-hidden", "1.0.0", ScopeKey.Global, 0,
+        JsonSerializer.SerializeToElement(new { })), new MembershipHiddenPlugin(), []);
+
+    // 新开通的租户里看不到身份组件的成员开户端口：开通第 04 步的「租户已开通」通知到达时，对该租户 scope 加 restrict 隐去它；卸下本插件即撤销。
+    private sealed class MembershipHiddenPlugin : IQianPlugin
+    {
+        public IReadOnlyList<ServiceKey> Inject => [];
+        public ValueTask ApplyAsync(IPluginContext ctx, JsonElement config, CancellationToken ct)
+        {
+            ctx.On(SurfaceHookEvents.TenantProvisioned, DispatchMode.Serial, (Func<HookNotification, ValueTask<JsonElement>>)(notification =>
+            {
+                ctx.Restrict(notification.Source.Scope, registration => registration.Key != TenantProvisioning.MembershipKey);
+                return ValueTask.FromResult(JsonSerializer.SerializeToElement<object?>(null));
+            }));
+            return ValueTask.CompletedTask;
+        }
+    }
 
     private static int Counted(JsonElement list, string status) => list.GetProperty("counts").GetProperty(status).GetInt32();
 
