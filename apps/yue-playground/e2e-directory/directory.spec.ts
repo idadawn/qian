@@ -5,13 +5,14 @@ import { expect, request as http, test, type APIRequestContext, type APIResponse
 
 // S1-IDP-010 验收 2（R109）：OrganizeSelect 选部门、UserSelect 选人，经 PlatformClient 访问真实目录 API，数据来自本租户目录。
 // 宿主是 dev-tenant-ops.sh 装配的真实身份组件（真实 PostgreSQL、生产迁移），由 scripts/directory-e2e.mjs 启动。
-// 租户 A、B 经运营接口开通；目录没有新建成员的接口，成员经运营的「更换租户管理员」接口建立——换下来的管理员留作普通成员；
+// 租户 A、B 与各自的管理员经运营接口开通；成员由租户管理员经新增成员接口建立（S1-IDP-017，R153 ①），
 // 组织与主归属经真实目录写接口建立。B 的数据只作隔离对照。
 const root = resolve(import.meta.dirname, '../../..');
 const PASSWORD = 'Init-Pass-2026';
 const NEXT_PASSWORD = 'Next-Pass-2026';
 
 interface Member { membership: { id: string; account: string; display_name: string } }
+interface Added extends Member { person_created: boolean; granted_roles: string[] }
 interface Organization { id: string; name: string; path: string; depth: number }
 type Headers = Record<string, string>;
 
@@ -35,7 +36,13 @@ async function signIn(api: APIRequestContext, identifier: string): Promise<{ ten
   return { tenant: result.tenant_id!, headers: await csrf() };
 }
 
-async function seedDirectory(api: APIRequestContext, headers: Headers, orgs: [key: string, name: string, type: string, parent?: string][], primary: [account: string, org: string][]) {
+// 成员经新增成员接口建立：标识是没人用过的用户名，所以新建自然人并设初始密码（这些成员在本用例里不登录），账号缺省取用户名；
+// 宿主装了授权组件，新成员都得到初始角色 tenant.user（R158）。之后建组织类型与组织，按账号查到成员 id 写主归属。
+async function seedDirectory(api: APIRequestContext, headers: Headers, people: [identifier: string, name: string][], orgs: [key: string, name: string, type: string, parent?: string][], primary: [account: string, org: string][]) {
+  for (const [identifier, display_name] of people) {
+    const added = await ok<Added>(await api.post('/api/directory/members', { headers, data: { identifier, display_name, initial_password: PASSWORD } }), '新增成员 ' + identifier);
+    expect(added).toMatchObject({ membership: { account: identifier, display_name }, person_created: true, granted_roles: ['tenant.user'] });
+  }
   for (const [code, name] of [['company', '公司'], ['dept', '部门'], ['team', '小组']]) await ok(await api.put('/api/directory/org-types', { headers, data: { code, name } }), '组织类型 ' + code);
   const ids: Record<string, string> = {};
   for (const [key, name, type, parent] of orgs)
@@ -50,30 +57,30 @@ async function seedDirectory(api: APIRequestContext, headers: Headers, orgs: [ke
 const optionTexts = (page: Page) => page.getByRole('option').allInnerTexts().then((texts) => texts.map((text) => text.replace(/\s+/g, '')));
 
 test('R109 真实目录：OrganizeSelect 选部门、UserSelect 选人，经 PlatformClient 只读本租户目录，关键字由服务端检索', async ({ page }) => {
-  // 1. 运营开通租户 A、B，经更换管理员建立成员，最后换回各自的管理员。
+  // 1. 运营给张三、张外建管理员账号，以他们为管理员开通并激活租户 A、B。
   const ops = await http.newContext({ baseURL: process.env.QIAN_DEV_OPS_URL, extraHTTPHeaders: { authorization: 'Bearer ' + platformToken() } });
-  const person = async (displayName: string, identifier: string) =>
-    (await ok<{ subjectId: string }>(await ops.post('/api/tenancy/admin-accounts', { data: { displayName, identifierKind: 'username', identifier, initialPassword: PASSWORD } }), '新建账号 ' + identifier)).subjectId;
-  async function openTenant(code: string, name: string, admin: string, members: string[]) {
-    const tenant = await ok<{ id: string }>(await ops.post('/api/tenancy/tenants', { data: { code, name, isolation: 'row', administrator: { membershipId: randomUUID(), subjectId: admin }, quotas: { users: 20 } } }), '开通 ' + code);
+  const administrator = async (displayName: string, identifier: string) =>
+    (await ok<{ subjectId: string }>(await ops.post('/api/tenancy/admin-accounts', { data: { displayName, identifierKind: 'username', identifier, initialPassword: PASSWORD } }), '新建管理员账号 ' + identifier)).subjectId;
+  async function openTenant(code: string, name: string, subjectId: string) {
+    const tenant = await ok<{ id: string }>(await ops.post('/api/tenancy/tenants', { data: { code, name, isolation: 'row', administrator: { membershipId: randomUUID(), subjectId }, quotas: { users: 20 } } }), '开通 ' + code);
     await ok(await ops.post(`/api/tenancy/tenants/${tenant.id}:activate`, { data: { trial: false } }), '激活 ' + code);
-    for (const subjectId of [...members, admin]) await ok(await ops.put(`/api/tenancy/tenants/${tenant.id}/admins`, { data: { items: [{ subjectId }] } }), '更换管理员 ' + code);
     return tenant.id;
   }
-  const tenantA = await openTenant('direa', '目录租户 A', await person('张三', 'zhangsan'), [await person('李四', 'lisi'), await person('王五', 'wangwu'), await person('赵六', 'zhaoliu')]);
-  const tenantB = await openTenant('direb', '目录租户 B', await person('张外', 'zhangwai'), [await person('王外', 'wangwai')]);
+  const tenantA = await openTenant('direa', '目录租户 A', await administrator('张三', 'zhangsan'));
+  const tenantB = await openTenant('direb', '目录租户 B', await administrator('张外', 'zhangwai'));
   await ops.dispose();
 
-  // 2. B 的管理员直接对身份宿主登录并写 B 的目录，作隔离对照。
+  // 2. B 的管理员直接对身份宿主登录，新增成员王外并写 B 的目录，作隔离对照。
   const identityB = await http.newContext({ baseURL: process.env.QIAN_DEV_IDENTITY_URL });
   const b = await signIn(identityB, 'zhangwai');
   expect(b.tenant).toBe(tenantB);
-  await seedDirectory(identityB, b.headers, [['hq', '外部集团', 'company'], ['rd', '外部研发', 'dept', 'hq']], [['zhangwai', 'hq'], ['wangwai', 'rd']]);
+  await seedDirectory(identityB, b.headers, [['wangwai', '王外']], [['hq', '外部集团', 'company'], ['rd', '外部研发', 'dept', 'hq']], [['zhangwai', 'hq'], ['wangwai', 'rd']]);
 
-  // 3. A 的管理员在本页源上登录（会话 Cookie 落在页面源），写 A 的目录：总部 → 研发中心 → 前端组；总部 → 销售部。
+  // 3. A 的管理员在本页源上登录（会话 Cookie 落在页面源），新增成员李四、王五、赵六，写 A 的目录：总部 → 研发中心 → 前端组；总部 → 销售部。
   const a = await signIn(page.request, 'zhangsan');
   expect(a.tenant).toBe(tenantA);
-  const seeded = await seedDirectory(page.request, a.headers, [['hq', '总部', 'company'], ['rd', '研发中心', 'dept', 'hq'], ['fe', '前端组', 'team', 'rd'], ['sales', '销售部', 'dept', 'hq']],
+  const seeded = await seedDirectory(page.request, a.headers, [['lisi', '李四'], ['wangwu', '王五'], ['zhaoliu', '赵六']],
+    [['hq', '总部', 'company'], ['rd', '研发中心', 'dept', 'hq'], ['fe', '前端组', 'team', 'rd'], ['sales', '销售部', 'dept', 'hq']],
     [['zhangsan', 'hq'], ['lisi', 'rd'], ['wangwu', 'fe'], ['zhaoliu', 'sales']]);
   expect(Object.keys(seeded.members).sort()).toEqual(['lisi', 'wangwu', 'zhangsan', 'zhaoliu']);
   const tree = (await ok<{ items: Organization[] }>(await page.request.get('/api/directory/orgs/tree'), 'A 的组织树')).items;
