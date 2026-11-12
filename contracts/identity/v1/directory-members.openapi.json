@@ -1,0 +1,291 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "组织目录成员管理契约",
+    "version": "1.0.0",
+    "description": "身份组件 Identity Server 的目录成员管理写入接口（PRD 7.4.3，S1-IDP-017，R145 / R158），供成员管理页（S1-IDP-018）生成客户端。调用方须是本租户管理员的有效会话（身份服务的登录 Cookie，每次请求对照数据库实时校验），写请求须带防伪头（先 GET /api/identity/csrf 取令牌），请求体 JSON、不超过 16 KiB。租户只取自会话，请求里的租户字段一律拒绝；平台会话没有租户成员身份，一律 403。字段 snake_case，空值字段省略；所有响应 no-store；错误一律是 ErrorDetail。目录查询见 directory.openapi.json，同一操作的标准写能力见 plugins/qian.identity.server/tools/directory.member.add.json（不对 Agent 暴露）。单测核对这里登记的路径与实际端点、请求体字段与服务端绑定、响应 Schema 与真实响应一致。"
+  },
+  "tags": [
+    {
+      "name": "directory-members",
+      "description": "目录成员管理"
+    }
+  ],
+  "paths": {
+    "/api/directory/members": {
+      "post": {
+        "operationId": "directory.members.add",
+        "summary": "新增成员",
+        "description": "租户管理员在本租户直接新增成员。identifier 是手机号或用户名（按语法判定类型，不收邮箱）：已对应自然人时把他绑定为本租户成员，不改动他的凭据，请求里的 initial_password 不使用、不保存；否则新建自然人，以 initial_password 为初始密码（新建时必填，须符合密码策略），首次登录强制修改。新成员获得初始角色 tenant.user（同一运行时没有授权组件时不授予，granted_roles 为空），其余角色在角色授权页授予。受租户用户配额约束：满额返回 422 CARDINALITY_USER_LIMIT，此时什么都不写。该自然人已是本租户成员（含已停用、已从目录删除的）返回 409 DIRECTORY_MEMBER_EXISTS；平台身份、已停用或已锁定的账号返回 422 DIRECTORY_MEMBER_INELIGIBLE，不区分原因。成功时同一事务发出 directory.member.created.v1，并写本租户审计。",
+        "tags": [
+          "directory-members"
+        ],
+        "x-qian-side-effect": "write",
+        "x-qian-capability": "qian.identity.server/directory.member.add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMemberRequest"
+              },
+              "examples": {
+                "create": {
+                  "summary": "新号码：新建自然人并设初始密码",
+                  "value": {
+                    "identifier": "13800138000",
+                    "display_name": "王五",
+                    "initial_password": "Initial-Pass-2026",
+                    "account": "wangwu"
+                  }
+                },
+                "bind": {
+                  "summary": "号码已对应自然人：绑定为本租户成员，不设密码",
+                  "value": {
+                    "identifier": "zhaoliu",
+                    "display_name": "赵六"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "新增成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddMemberResult"
+                },
+                "examples": {
+                  "created": {
+                    "summary": "新建了自然人，首次登录须修改初始密码",
+                    "value": {
+                      "membership": {
+                        "id": "0193a000-0000-7000-8000-000000000105",
+                        "person_id": "0193a000-0000-7000-8000-000000000205",
+                        "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                        "display_name": "王五",
+                        "status": "active",
+                        "is_tenant_administrator": false,
+                        "account": "wangwu",
+                        "identity_revision": 0
+                      },
+                      "person_created": true,
+                      "granted_roles": [
+                        "tenant.user"
+                      ]
+                    }
+                  },
+                  "bound": {
+                    "summary": "绑定了已有自然人，沿用其原有密码",
+                    "value": {
+                      "membership": {
+                        "id": "0193a000-0000-7000-8000-000000000106",
+                        "person_id": "0193a000-0000-7000-8000-000000000206",
+                        "tenant_id": "0193a000-0000-7000-8000-000000000900",
+                        "display_name": "赵六",
+                        "status": "active",
+                        "is_tenant_administrator": false,
+                        "account": "zhaoliu",
+                        "identity_revision": 0
+                      },
+                      "person_created": false,
+                      "granted_roles": [
+                        "tenant.user"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求体或字段无效（ErrorDetail：BAD_REQUEST，或 INPUT_INVALID 带字段位置 #/identifier、#/display_name、#/initial_password、#/account；新建时缺初始密码为 REQUIRED）；防伪令牌缺失或无效也是 INPUT_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "没有有效会话（UNAUTHENTICATED）",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "会话没有本租户成员身份（含平台会话）或不是本租户管理员（AUTHZ_DENIED）",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "该自然人已是本租户成员（DIRECTORY_MEMBER_EXISTS，位置 #/identifier），或指定的账号已被本租户成员占用（ACCOUNT_IN_USE，位置 #/account）",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求体超过 16 KiB（PAYLOAD_TOO_LARGE）",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "请求体不是 JSON（UNSUPPORTED_MEDIA_TYPE）",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "达到用户配额（CARDINALITY_USER_LIMIT），账号不能加入（DIRECTORY_MEMBER_INELIGIBLE，位置 #/identifier），或初始密码不符合策略（PASSWORD_POLICY_VIOLATION，位置 #/initial_password）",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "https://qian.dev/contracts/v0/error-detail.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddMemberRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "新增成员请求；没有租户字段，租户只取自会话。",
+        "required": [
+          "identifier",
+          "display_name"
+        ],
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 320,
+            "description": "手机号或用户名。手机号可写国内写法（缺省国家码 86），用户名字母开头 3–32 位。"
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "成员在本租户的显示名。"
+          },
+          "initial_password": {
+            "type": "string",
+            "description": "初始密码：新建自然人时必填并须符合密码策略，首次登录强制修改；标识已对应自然人时不使用、不保存。",
+            "writeOnly": true
+          },
+          "account": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.@-]{0,63}$",
+            "description": "租户内账号，大写字母存为小写，租户内唯一、创建后不可改；缺省取用户名（未被本租户占用时），否则随机生成。"
+          }
+        }
+      },
+      "AddMemberResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "新增结果；不含任何密码。",
+        "required": [
+          "membership",
+          "person_created",
+          "granted_roles"
+        ],
+        "properties": {
+          "membership": {
+            "$ref": "#/components/schemas/Membership"
+          },
+          "person_created": {
+            "type": "boolean",
+            "description": "true 表示新建了自然人（首次登录须修改初始密码），false 表示绑定了已有自然人。"
+          },
+          "granted_roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "本次授予的初始角色：tenant.user；同一运行时没有授权组件时为空。"
+          }
+        }
+      },
+      "Membership": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "租户成员；id 是目录侧的成员标识，person_id 是自然人标识（即令牌 sub，也是授权侧 user 主体的 subjectId）。",
+        "required": [
+          "id",
+          "person_id",
+          "tenant_id",
+          "display_name",
+          "status",
+          "is_tenant_administrator",
+          "account",
+          "identity_revision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "person_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled",
+              "locked"
+            ]
+          },
+          "is_tenant_administrator": {
+            "type": "boolean"
+          },
+          "account": {
+            "type": "string"
+          },
+          "identity_revision": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      }
+    }
+  }
+}

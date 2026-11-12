@@ -202,6 +202,10 @@ public sealed class IdentityServerPlugin : IQianPlugin
             ctx.Effect(disable.Dispose);
             ctx.Services.GetService<Qian.Plugin.Sdk.ICapabilityContractCheck>()?.Check(disable.Contract);
             ctx.Provide<Qian.Plugin.Sdk.IExecutableCapability>(Qian.Plugin.Sdk.CapabilityBindingRegistration.Key, disable.Contract.Id, disable);
+            var add = new DirectoryAddCapability(ctx, built);
+            ctx.Effect(add.Dispose);
+            ctx.Services.GetService<Qian.Plugin.Sdk.ICapabilityContractCheck>()?.Check(add.Contract);
+            ctx.Provide<Qian.Plugin.Sdk.IExecutableCapability>(Qian.Plugin.Sdk.CapabilityBindingRegistration.Key, add.Contract.Id, add);
             ctx.Provide<ISignInPipeline>(IdentityDefinition.SignInKey, built);
             ctx.Provide<IAuthenticatorFactorRegistry>(IdentityDefinition.FactorsKey, built.Factors);
             ctx.Provide<ITenantMembershipProvisioner>(TenantProvisioning.MembershipKey, built);

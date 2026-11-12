@@ -44,6 +44,11 @@
 - **多归属**：一个成员可加入多个组织、岗位、用户组；每种目标类型至多一个 `is_primary`。`PUT /members/{id}/relations` 原子替换集合，先校验全部目标属于本租户，再替换，不会因其中一项错误丢失旧归属。每次变更递增成员修订。用户组是纯集合，只有空组可删除。所有目录写入使用同一把租户事务锁，删除与归属、互相移动并发时不能形成悬空引用或环。
 - **档案**：`user_profiles` 与 Membership 一对一，姓名同步成员显示名，拼音、联系方式、扩展 JSON 与 Person 凭据分开；更新联系方式不修改登录标识和验证状态。电话和邮箱对外仅返回掩码，扩展限 16 KiB JSON 对象，档案接口只向租户管理员开放；不得在扩展里存密码或令牌。普通成员列表只有现有 Membership 投影，不返回档案扩展。
 - **状态与删除**：目录入口允许 `active ⇄ disabled → locked`（同态幂等）；锁定后只能经受信任的账号管理端口先解除锁定。目录入口拒绝停用或删除租户管理员，逐项返回 `DIRECTORY_ADMINISTRATOR_PROTECTED`。删除是 `status=disabled` 加 `directory_deleted=true`，账号、档案和历史归属仍保留；普通列表不显示已标记成员，账号开户或状态入口也不能将其意外恢复。管理员仍可将已标记成员的归属替换为空，解除引用后才能删除空组织。
+- **新增成员（S1-IDP-017）**：租户管理员经 `POST /members` 或标准能力 `directory.member.add` 给本租户加人。标识只收手机号或用户名，按语法判定，邮箱与其他格式报 `#/identifier`。
+  - **绑定已有自然人**：标识已对应自然人时，不新建自然人，也不改他的凭据；账号取请求里的 `account`，没给就取他的用户名（本租户未被占用时）或随机生成。他在本租户已有成员时返回 409 `DIRECTORY_MEMBER_EXISTS`，已停用或已从目录删除的成员同样算已有，本接口不复活已删除成员。他具备平台资格，或平台账号已停用、锁定时，返回 422 `DIRECTORY_MEMBER_INELIGIBLE`（与 Q12 同口径）。
+  - **新建自然人**：标识没有对应自然人时新建，必须给 `initial_password`（缺了报 `REQUIRED`）。初始密码按密码策略校验，新自然人首次登录必须改密。用户名标识记为已验证，手机号标识不记验证；账号取请求里的 `account`，没给就取用户名（未被占用时）或随机生成。
+  - 两条路径都受用户配额约束，满额返回 `CARDINALITY_USER_LIMIT` 且无写入。加锁顺序与开户相同：先成员计数锁，再目录锁。同一事务内发 `directory.member.created.v1`。
+  - **初始授权（R158）**：提交身份事务前，身份组件经 `ITenantRoleGrant`（`TenantRoleGrant.Key`，由 `qian.authz` 提供）给新成员授予内置角色 `tenant.user`，新建与绑定两条路径相同。结果的 `granted_roles` 列出本次授予的角色；授予失败则整笔回滚，可以重试。宿主没装 `qian.authz` 时不授予，`granted_roles` 为空。其他角色由租户管理员在授权页授予（S1-AZ-005）。
 - **目录事件（S1-IDP-010）**：组织、岗位的新建 / 修改 / 移动 / 删除与成员的加入、归属变化、状态变化、档案变化发出十二种 `directory.*.v1`（Schema 与发出规则见 `contracts/identity/v1/README.md`），由 `RegisterIdentityEvents` / `AddQianIdentityEvents` 一并登记，嵌入内置账号的宿主不需另外接线。事件挂在每租户一行的目录修订 `directory_revisions` 上：每次有事件的目录写入在同一事务里原子递增修订（行锁持有到提交，并发写入按修订排队），载荷带 `directory_revision`。会递增修订的入口（目录写入、成员状态变更、成员建立与重新启用）都先取同一把租户目录咨询锁，再锁业务行、最后递增修订，修订行只在持有这把锁时被锁住，同租户的这些写入因此整体串行、不会死锁；成员建立先取成员计数锁再取目录锁。事件随会话保存经领域通知写进同一事务的 Outbox；宿主漏装事件处理器时写入回滚而不是静默丢事件。载荷只有 id 与结构字段，不带名称、姓名、账号与联系方式。
 - **派生查询（S1-IDP-010，口径由产品负责人 2026-11-11 确认）**：上级链从主岗位（或 `position_id` 指定的本人岗位，不是本人岗位 404）起算，没有主岗位时从主组织起算，都没有则为空；先沿岗位父链向上（不含起点，父岗位在别的组织也照走），每个责任岗位算一级；到顶后从最上层岗位所属组织起逐级取各组织的责任岗位，已出现的岗位跳过。在任指成员启用、未从目录删除，且自然人的平台账号也启用：运营在账号层停用或锁定的人（`SetPersonStatusAsync`），成员状态虽仍是 `active`，也不在任（R154）；错误次数触发的限时锁定不影响在任。责任岗位没有责任人或责任人不在任时照样占一级并给出 `vacancy`（`unassigned` / `inactive`），不返回人。直属主管取主组织（没有时取主岗位所属组织）的主管字段，本人就是主管、未设或主管不在任时逐级向上。部门负责人是责任岗位的现任责任人加组织主管。下属是上级链的反查：`depth=1` 为以我为第 1 级的成员，`depth=n` 为前 n 级，缺省为任一级；只有在任的责任人才有下属。派生查询一次读出本租户的组织与岗位结构在内存里推导，不逐级往返查询。
 - **成员检索（S1-IDP-010）**：`q` 去掉首尾空白后 1–64 字，按显示名、账号与档案拼音做忽略大小写的包含匹配，`%`、`_`、`\` 按字面处理，不检索手机号与邮箱；`ids` / `person_ids` 按目录成员 id / 自然人 id 批量查询（可重复，1–100 个且不重复），查不到、别的租户或已删除的 id 直接省略；三者至多给一个。结果仍是 `{items:[DirectoryMember]}`，按账号、成员 id 排序；按 id 批量不分页，这批 id 里的可见成员全部返回（至多 100 条），同时带 `offset` / `limit` 时 400 `INPUT_INVALID`，免得调用方分不清被截断还是查不到；其余检索照常分页。
@@ -64,6 +69,7 @@
 | `GET /me/subordinates` | 当前成员的下属（上级链反查），`depth` 为正整数、缺省为任一级，分页同成员列表 |
 | `GET /members/{id}/relations`、`PUT /members/{id}/relations` | 读取/原子替换 `{items:[{target_type,target_id,is_primary}]}`，目标类型 organization/position/group，最多 100 项 |
 | `GET /members/{id}/profile`、`PUT /members/{id}/profile` | 管理员读写档案 `{name,pinyin?,phone?,email?,extensions?}`，读取返回联系方式掩码 |
+| `POST /members` | 新增成员 `{identifier,display_name,initial_password?,account?}`，回 `{membership,person_created,granted_roles}`；契约见 `contracts/identity/v1/directory-members.openapi.json` |
 | `POST /members/{id}/status`、`DELETE /members/{id}` | 按 `{status,reason}` 改状态；删除为禁用+标记，无物理清除路由 |
 | `POST /members:disable` | `{membership_ids:[...],reason}`，1–100 个不同成员；逐项独立事务，回 `{status,items[]}`，状态 SUCCESS/PARTIAL_SUCCESS/FAILED，单项带 membership_id/succeeded/error_code |
 
@@ -72,6 +78,14 @@
 通用入口通过既有 `ICapabilityService` 执行和持久回执：相同主体、能力与 Idempotency-Key 的成功响应保留 24 小时，同键同输入直接回放、改输入返回 409，不再次进入业务或写吊销事件。绑定还会重验运行态可见性、当前租户、宿主认证后的 `ICurrentUser`、实际服务端会话与身份修订、真实 `qian.identity.server:member:disable` 权限和租户管理员资格；只有权限而不是 Identity 管理员的用户仍被拒绝。S1 暂不执行 Agent/委托主体，Agent 字段为已冻结的后续调用安全契约。
 
 能力的 audit=true 由已有 Audit 定义端口落实：开始记录失败不执行，收尾有界写完成或失败记录，reason 在计算输入哈希前脱敏；通用入口重放发生在绑定之前，不重复记录审计。执行宿主须提供标准能力目录、受信当前用户、授权与租户审计端口，Identity 不引用这些 Provider。原 `/api/directory/members:disable` Cookie 接口仍由实时管理员校验与防伪保护，复用相同 `DisableMembersAsync` 业务规则，但不是通用回执入口，不宣称有 24 小时重放。
+
+**标准新增能力（S1-IDP-017）**：`DirectoryAddCapability` 同样经 `[CapabilitySource]` 派生 `tools/directory.member.add.json`，权限点 `qian.identity.server:member:create`（中风险）一并派生到 `metadata/permissions.json`；`roles.json` 把它与 `member:disable` 一起给 `tenant.owner` / `tenant.admin`。
+- **契约**：`write`、`policyHint=confirm`、`idempotent=true`、`dataClassification=pii`、`agent.expose=false`、`agent.requiresConfirmation=true`。输入含初始密码，按 7.4.1「危险操作 humanOnly」不对 Agent 暴露。
+- **输入输出**：输入 `{idempotencyKey,identifier,displayName,initialPassword?,account?}`，initialPassword 标敏感；输出 `{membershipId,personId,account,status,personCreated,grantedRoles}`。错误位置换成能力输入的字段名。
+- **回执**：分级为 pii，通用入口的回执不存响应体。同键同输入返回 409 `CAPABILITY_REPLAY_UNAVAILABLE`，不再执行；同键改输入返回 409 `CONFLICT`。
+- **守卫**：与禁用能力相同（`DirectoryCapabilityGuard`），依次校验租户作用域、宿主认证后的用户主体、真实权限点、服务端会话与身份修订、租户管理员资格。
+- **审计**：HTTP 入口与能力共用 `DirectoryMemberAddition`，在目标租户的审计链写开始、成功或失败记录。actor 是操作人；载荷带成员 id、自然人 id、是否新建与本次授予的角色，不含标识原值、姓名与密码；输入只留脱敏投影的哈希；开始记录写不进去就不执行。能力入口必须有审计端口；HTTP 入口在宿主没挂 Audit 组件时不写审计。
+- **平台超管**：没有旁路入口（R158）。平台会话调目录接口照旧被拒，不写入。
 
 物理清除仅在 Definition 的 `DirectoryOperations` 保留 `destructive`、AgentExpose=false（humanOnly）、Executable=false 的安全边界；没有对应 HTTP 操作目录、执行路由、`ExecutableCapabilities` 注册或可调用工具。
 
@@ -172,7 +186,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 
 ## 错误码
 
-`IdentityErrors` 在挂载时登记到 `ErrorCatalog`，卸载即撤销：`INVALID_CREDENTIALS` 401、`ACCOUNT_LOCKED` 423（可重试）、`ACCOUNT_DISABLED` 403、`LOGIN_TICKET_INVALID` 401、`TENANT_NOT_ACTIVE` 403、`NO_AVAILABLE_TENANT` 403、`CAPTCHA_REQUIRED` 428、`CAPTCHA_INVALID` 400、`MFA_UNAVAILABLE` 503；业务类 `PASSWORD_POLICY_VIOLATION`（参数 `rule`）、`PASSWORD_REUSED`（参数 `count`）、`CURRENT_PASSWORD_INVALID`、`IDENTIFIER_IN_USE` 409、`LAST_VERIFIED_IDENTIFIER` 422、`LAST_LOGIN_METHOD` 422、`ACCOUNT_IN_USE` 409；连接器登录（业务类）`AUTH_CONNECTOR_STATE_INVALID` 422、`AUTH_CONNECTOR_DENIED` 422、`AUTH_BINDING_CONFLICT` 409、`AUTH_BINDING_EXPIRED` 422，这四个码沿用认证页族规格的 `AUTH_` 前缀，与上面不带前缀的登录码命名不同；配额满额复用 Tenancy 的 `CARDINALITY_USER_LIMIT`（422，参数 `limit`）。这些码都归本组件（owner `qian.identity`），不进平台内置目录 `contracts/v0/error-codes.json`；连接器四个码的导出样例在 `contracts/v0/fixtures/error-catalog.valid.json`，测试比对防漂移。
+`IdentityErrors` 在挂载时登记到 `ErrorCatalog`，卸载即撤销：`INVALID_CREDENTIALS` 401、`ACCOUNT_LOCKED` 423（可重试）、`ACCOUNT_DISABLED` 403、`LOGIN_TICKET_INVALID` 401、`TENANT_NOT_ACTIVE` 403、`NO_AVAILABLE_TENANT` 403、`CAPTCHA_REQUIRED` 428、`CAPTCHA_INVALID` 400、`MFA_UNAVAILABLE` 503；业务类 `PASSWORD_POLICY_VIOLATION`（参数 `rule`）、`PASSWORD_REUSED`（参数 `count`）、`CURRENT_PASSWORD_INVALID`、`IDENTIFIER_IN_USE` 409、`LAST_VERIFIED_IDENTIFIER` 422、`LAST_LOGIN_METHOD` 422、`ACCOUNT_IN_USE` 409；连接器登录（业务类）`AUTH_CONNECTOR_STATE_INVALID` 422、`AUTH_CONNECTOR_DENIED` 422、`AUTH_BINDING_CONFLICT` 409、`AUTH_BINDING_EXPIRED` 422，这四个码沿用认证页族规格的 `AUTH_` 前缀，与上面不带前缀的登录码命名不同；目录新增成员（业务类，S1-IDP-017）`DIRECTORY_MEMBER_EXISTS` 409、`DIRECTORY_MEMBER_INELIGIBLE` 422；配额满额复用 Tenancy 的 `CARDINALITY_USER_LIMIT`（422，参数 `limit`）。这些码都归本组件（owner `qian.identity`），不进平台内置目录 `contracts/v0/error-codes.json`；连接器四个码的导出样例在 `contracts/v0/fixtures/error-catalog.valid.json`，测试比对防漂移。
 
 ## 对其他任务登记的接口
 
@@ -188,16 +202,22 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - **S1-IDP-008（企业微信）**：实现 `IIdentityConnector`（工作台免登另实现 `IImplicitIdentityConnector`），在自己的 Apply 里 `ctx.IdentityConnectors().Register("wecom", …)`；回调、绑定与会话签发都复用这里，不另起回调路由。
 - **yue / 外壳（S1-YUE-002 / S1-YUE-012）**：认证页族作为本宿主同源的静态制品（工作区包 `packages/qian-identity-ui`，经 `UseQianIdentityPages` 托管，账号 Cookie scheme 的 `LoginPath` 指到 `/login`，选择页为 `Accounts.SelectionPath`）：登录页按 `GET /connectors?tenant=` 渲染连接器按钮；界面落点路由 `/login/connector/{connectorId}?flow=` 读流程并按 `next` 驱动确认绑定页；选择页 `/login/select-tenant?return_url=` 调 `POST /session/switch` → `/login/select` 后回到 return_url。外壳本身只经依赖方（Identity.Client / 网关 BFF）的 `/auth/login?prompt=select_account` 发起切换，浏览器零令牌。
 - **S1-IDP-006**：JIT 的租户策略目前读本组件在租户设置里的 `connectors:jitProvisioning`；租户级设置 Schema 与运营界面随 IDP-006 一起接入。
+- **S1-IDP-018（成员管理页）/ S1-AZ-005（授权页）**（S1-IDP-017）：新增成员走 `POST /api/directory/members`，契约在 `contracts/identity/v1/directory-members.openapi.json`。字段错误的位置是 `#/identifier`、`#/display_name`、`#/initial_password`、`#/account`，可以直接落到表单项上。新成员已有 `tenant.user`（R158），授权页只管其他角色。外壳经网关调目录接口的方式待 S1-IDP-021。
 
 ## 验收
 
 `DirectoryTests` 使用实际 PostgreSQL 16、受限角色、生产迁移与 Kestrel：覆盖组织/岗位移动、循环和深度拒绝、含成员拒删、租户类型字典、责任人、多归属/主归属、档案 1:1、直连 RLS 与跨租户复合外键、10 人含 2 管理员的批量三态、同租户会话吊销且其他租户不受影响、软删除不复活、平台超管不出现在成员列表、CSRF/未知字段/卸载 404、并发归属与删除及互相移动。`CustomerCommandTests.DirectoryCapability.cs` 在真实 Identity/Registry/Authz/Capabilities/PostgreSQL 装配下验证实际生成 tool 与冻结目录 Schema、同键回放/变更冲突、重新启用后重放不再次禁用、吊销事件与审计不重复、非管理员/跨 scope/已吊销会话/卸载拒绝；测试使用真实生成表面组装独立测试制品，产品 x-skeleton 不变。`DirectoryContractTests` 覆盖深度与状态机及物理清除安全边界，迁移测试校验模型无漂移及九张租户表的 FORCE RLS。S1-IDP-010：`DirectoryQueryTests` 在同样的真实环境里验证上级链（空缺占位、跨组织父链、组织回溯去重、主岗位变化后随之变化）、直属主管与部门负责人、下属与子孙是上级链的反查、成员检索与按 id 批量（不搜联系方式、通配符按字面、只回本租户可见成员），以及用真实会话调遍目录契约的每个 GET 端点与查询参数、响应按契约 Schema 严格校验；`DirectoryEventTests` 验证目录写入同事务发出 `directory.*.v1`（载荷符合 Schema、不含名称姓名、失败写入不留事件）、账号入口的状态变化与重新启用同样发事件、修订行受 RLS 保护；`DirectoryAgentContractTests` 核对 Agent 契约与实际 GET 端点逐一对应、示例符合 Schema、Schema 与目录记录序列化逐字段一致、yue 业务组件契约的目录部分逐字段一致。
 
+S1-IDP-017 的用例同样跑在真实环境里：
+- `DirectoryMemberAddTests`：新建与绑定两条路径；新成员登录本租户、首登改密并拿到授权码；响应、Outbox 与日志不含密码；重复、已停用与已删除成员的冲突；配额满额与并发争抢最后一个名额；平台身份与停用、锁定账号不能加入；非管理员、平台会话、匿名、缺防伪与多余字段都无写入；跨租户不可见；两个租户并发加同一个新号码。
+- `DirectoryMemberContractTests`：成员管理契约与实际端点、请求体和响应逐字段一致。
+- `CustomerCommandTests.DirectoryMemberAdd.cs`：在真实 Authz、Audit 与能力目录下验证初始角色 `tenant.user` 的实际判定、能力元数据（write、confirm、pii、不对 Agent 暴露）、回执口径、绑定其他租户的老员工只在本租户授予，以及审计记录的操作人、成员与条数。
+
 真实 PostgreSQL（受限应用角色、强制 RLS）、真实 Redis、Kestrel、OpenIddict 与已发布 Kun 2026.10.14 客户端：协议面（PKCE、nonce、refresh 轮换与跨宿主整族吊销、机器身份、受众、撤销与内省、CSRF 与后通道验签；RFC 8707 resource 的白名单、两层检查、多资源客户端必须指定与收窄见 `ResourceIndicatorTests`）；账号模型（并发创建不碰撞、绑定守卫的结构化错误、历史不可复用、状态与修订、外部身份）；登录流水线（审计、限流与并发、强制改密、选择与切换、租户状态、平台身份、MFA 不降级、其他因子、验证码、会话有效性）；账号 HTTP 面端到端（登录 → 选择 → 授权码 → 令牌 → 切换 → 旧刷新被拒）；会话中心（改密 / 强制下线 / 登出后即时失效与旁路送达、并发上限含并发登录、单端模式、修订递增与旧令牌被拒、租户冻结的处理器与对账、Redis 索引的登记 / 墓碑 / 修复 / 宕机降级、管理面三种视角、两个副本竞争同一批吊销时事件恰好一条、日志卫生）；连接器登录（`ConnectorFlowTests`：假连接器 TCK 的清单校验、state 篡改拒绝、回调幂等含并发，确认绑定、冲突不泄露、过期与重新认证窗口、取消、JIT 与配额、租户 scope 过滤与遮蔽、详情不回传密钥；`AuthentikConnectorTests`：容器里的真实 Authentik 经通用 OIDC 连接器走完首次绑定、再次登录与同租户重复绑定被拒）。CRM 联调把本组件挂进真实的 Tenancy 宿主：开通编排第 5 步、用户配额 5 的第 6 个成员被拒、真实租户目录对 pending 租户拒绝登录，以及租户管理员登录后只看到本租户数据、以 A 的令牌请求 B 的记录是 404，以及真实 Tenancy 状态机冻结租户后该租户会话立即失效、refresh 被拒、对账持久吊销并发出事件，恢复后可重新登录。
 
 ## 模型体验
 
-协议与账号端点不派生登录、刷新或密码相关 capability；模型不会由本组件获得签发、重置密码或登录能力。目录禁用是经 SDK 从实际绑定派生的标准写能力，带 confirm 和人工确认元数据，实际 S1 执行只接受已认证并仍有效的租户管理员。
+协议与账号端点不派生登录、刷新或密码相关 capability；模型不会由本组件获得签发、重置密码或登录能力。目录禁用是经 SDK 从实际绑定派生的标准写能力，带 confirm 和人工确认元数据，实际 S1 执行只接受已认证并仍有效的租户管理员。新增成员同样是标准写能力，但输入含初始密码，不对 Agent 暴露（humanOnly）。
 
 ## 已知限制与延期项
 
@@ -206,6 +226,7 @@ OpenIddict 的低级日志及 ASP.NET Hosting 的请求日志可能包含令牌�
 - 管理面的权限判定是内置规则（本人 / 平台身份 / 租户管理员），待授权引擎的 PEP 接入后改为权限点加数据范围。
 - 账号合并不在 S1。JIT 建号是先建 Person、再建成员并绑定的几步操作（Person 与成员分属全局与租户作用域）；配额已预先检查，但若建成员时并发撞上配额或数据库出错，会留下一个只带上游邮箱标识的 Person，需要运营清理。一个成员在同一连接器下可以绑定多个外部身份，是否限制为一个待产品裁决。RP/外壳接入属于 IDP-005 与 yue 任务。
 - 连接器流程表的过期行在每次发起时顺带清理（结束超过一天的），没有独立的后台清理任务。
+- 新增成员的初始角色授予与身份事务不是同一个数据库事务。授予成功后、身份事务提交失败时，会留下一条指向非成员的 `tenant.user` 绑定：没有成员资格就登录不了本租户，所以它不起作用；重试绑定同一个人时复用这条绑定。租户的内置角色由开通时的授权步骤建立，没建内置角色的租户（例如挂 Authz 之前开通的）新增成员时授予报 `NOT_FOUND`，整笔回滚。
 - 登录失败的 IP 维度限流与设备指纹不在本任务内（账号维度的限流、锁定与验证码已交付）。
 - identity profile 的完整宿主组装与 `qian add` 产品入口仍待上述组件接入；本任务没有发布 NuGet 制品或部署到集群。
 
