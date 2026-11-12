@@ -45,6 +45,22 @@ public sealed record UserProfile(Guid MembershipId, string Name, string? Pinyin,
 }
 /// <summary>目录成员投影，只来源于真实租户 Membership。</summary>
 public sealed record DirectoryMember(Membership Membership, bool Deleted);
+/// <summary>
+/// 租户管理员在本租户直接新增成员（S1-IDP-017，R145）。<see cref="Identifier"/> 是手机号或用户名，按语法判定类型，不收邮箱：
+/// 已对应自然人时把他绑定为本租户成员，不改动他的凭据；否则新建自然人，以 <see cref="InitialPassword"/> 为初始密码，首次登录强制修改。
+/// <see cref="DisplayName"/> 是成员在本租户的显示名。租户只取自当前已验证的租户上下文，不接受请求字段。
+/// </summary>
+public sealed record DirectoryMemberInput(string Identifier, string DisplayName)
+{
+    /// <summary>新建自然人时必填的初始密码；绑定已有自然人时不使用、不保存。使用后由调用方释放。</summary>
+    public AuthenticationProof? InitialPassword { get; init; }
+    /// <summary>租户内账号，租户内唯一、创建后不可改；缺省取用户名（未被占用时），否则随机生成不透明账号。</summary>
+    public string? Account { get; init; }
+    /// <inheritdoc />
+    public override string ToString() => "DirectoryMemberInput(redacted)";
+}
+/// <summary>新增成员的结果：成员投影、是否新建了自然人，以及本次授予的初始角色（同一运行时没有授权组件时为空）。</summary>
+public sealed record DirectoryMemberAdded(Membership Membership, bool PersonCreated, IReadOnlyList<string> GrantedRoles);
 /// <summary>批量操作单项回执；失败仅给稳定错误码，不携带异常或个人信息。</summary>
 public sealed record DirectoryBatchItem(Guid MembershipId, bool Succeeded, string? ErrorCode);
 /// <summary>批量回执：SUCCESS / PARTIAL_SUCCESS / FAILED；每个输入成员恰好对应一项。</summary>
@@ -161,6 +177,13 @@ public interface IIdentityDirectory
     /// 上级链的反查：depth 为 1 时是以该成员为第 1 级上级责任人的成员（@下属），为 n 时是前 n 级，为空时是任一级（@子孙）；不含本人，按账号、成员 id 分页。
     /// </summary>
     ValueTask<IReadOnlyList<DirectoryMember>> GetSubordinatesAsync(Guid membershipId, int? depth = null, int offset = 0, int limit = 50, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 租户管理员直接新增成员（S1-IDP-017）：标识已对应自然人时绑定为本租户成员，否则新建自然人并设初始密码、首次登录强制修改。
+    /// 经租户配额判定，满额返回 CARDINALITY_USER_LIMIT 且什么都不写；该自然人已是本租户成员（含已停用、已从目录删除）返回 DIRECTORY_MEMBER_EXISTS；
+    /// 平台身份、已停用或已锁定的账号返回 DIRECTORY_MEMBER_INELIGIBLE。新成员与 <c>directory.member.created.v1</c> 同事务写入；
+    /// 同一运行时装了授权组件时在提交前授予初始角色 <c>tenant.user</c>（R158），授予失败则整体不落库。
+    /// </summary>
+    ValueTask<DirectoryMemberAdded> AddMemberAsync(DirectoryMemberInput request, CancellationToken cancellationToken = default);
     /// <summary>按目录状态机变更成员；禁用/锁定即时吊销会话。</summary>
     ValueTask<Membership> SetDirectoryMemberStatusAsync(Guid membershipId, string status, string reason, CancellationToken cancellationToken = default);
     /// <summary>批量禁用（最多 100）；租户管理员逐项拒绝，其余各自独立事务。</summary>

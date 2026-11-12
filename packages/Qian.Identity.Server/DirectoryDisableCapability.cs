@@ -1,9 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Kun.Core.MultiTenancy;
-using Kun.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Qian.Audit;
 using Qian.Authz.Abstractions;
 using Qian.Events;
@@ -37,23 +33,8 @@ internal sealed class DirectoryDisableCapability(IPluginContext owner, IdentityA
         }
         catch (ObjectDisposedException) { throw Missing(); }
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
-        var services = caller.Services.GetService<IHttpContextAccessor>()?.HttpContext?.RequestServices ?? caller.Services;
-        var user = services.GetService<ICurrentUser>(); var principal = user?.Principal;
-        var tenant = services.GetRequiredService<ITenantContext>().TenantId;
-        if (string.IsNullOrWhiteSpace(tenant) || caller.Scope.Kind != "tenant" || caller.Scope.Id != tenant) throw Missing();
         // 服务端口的可信快照来自已完成的宿主认证；输入中没有主体、租户或 session 字段。S1 不执行 Agent 委托。
-        if (user is not { IsAuthenticated: true } || principal is not { Kind: PrincipalKind.User, Actor: null } || user.UserId != principal.Subject ||
-            principal.TenantId != tenant ||
-            !Guid.TryParseExact(tenant, "D", out var tenantId) || !Guid.TryParseExact(principal.Subject, "D", out var personId) ||
-            !Guid.TryParseExact(principal.MembershipId, "D", out var memberId) || !Guid.TryParseExact(principal.SessionId, "D", out var sessionId) || principal.IdentityRevision is not { } revision)
-            throw Denied();
-        var permissions = services.GetService<IPermissionChecker>() ?? throw Denied();
-        if (!(await permissions.CheckAsync(new PermissionRequest(new AuthorizationSubject(principal.Subject, tenant, "user"), Permission), linked.Token).ConfigureAwait(false)).Allow) throw Denied();
-        var validation = await accounts.ValidateAsync(sessionId, personId, memberId, linked.Token).ConfigureAwait(false);
-        if (validation is null || validation.TenantId != tenantId || validation.IdentityRevision != revision) throw Denied();
-        var session = new AccountSession(personId, tenantId, memberId, sessionId, revision, [], null, default, default, "", "");
-        var actor = await accounts.ResolveCallerAsync(session, linked.Token).ConfigureAwait(false);
-        if (actor is not { TenantAdministrator: true } || actor.TenantId != tenantId) throw Denied();
+        var (tenantId, personId) = await DirectoryCapabilityGuard.AuthorizeAsync(caller, accounts, Permission, linked.Token).ConfigureAwait(false);
         DisableDirectoryMembers request;
         try { request = input.Deserialize(DirectoryCapabilityJson.Default.DisableDirectoryMembers) ?? throw new JsonException(); }
         catch (JsonException) { throw new QianErrorException(new QianError(PlatformErrors.InputInvalid)); }
@@ -82,8 +63,7 @@ internal sealed class DirectoryDisableCapability(IPluginContext owner, IdentityA
         if (Interlocked.Exchange(ref _disposed, 1) == 0) { _lifetime.Source.Cancel(); _lifetime.Source.Dispose(); }
     }
     private static (CancellationTokenSource Source, CancellationToken Token) CreateLifetime() { var source = new CancellationTokenSource(); return (source, source.Token); }
-    private static QianErrorException Missing() => new(new QianError(PlatformErrors.NotFound));
-    private static QianErrorException Denied() => new(new QianError(PlatformErrors.AuthzDenied));
+    private static QianErrorException Missing() => DirectoryCapabilityGuard.Missing();
 }
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 internal sealed record DisableDirectoryMembers(Guid IdempotencyKey, IReadOnlyList<Guid> MembershipIds, string Reason);
@@ -91,4 +71,6 @@ internal sealed record DisableDirectoryMembers(Guid IdempotencyKey, IReadOnlyLis
     RespectRequiredConstructorParameters = true, RespectNullableAnnotations = true)]
 [JsonSerializable(typeof(DisableDirectoryMembers))]
 [JsonSerializable(typeof(DirectoryBatchResult))]
+[JsonSerializable(typeof(AddDirectoryMember))]
+[JsonSerializable(typeof(DirectoryMemberAddResult))]
 internal sealed partial class DirectoryCapabilityJson : JsonSerializerContext;

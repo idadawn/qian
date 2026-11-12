@@ -1,0 +1,104 @@
+{
+  "name": "directory.member.add",
+  "description": "在当前租户新增成员：手机号或用户名已对应自然人时绑定为本租户成员，否则新建自然人并设初始密码、首次登录强制修改；受用户配额约束，新成员获得初始角色 tenant.user。",
+  "sideEffect": "write",
+  "policyHint": "confirm",
+  "idempotent": true,
+  "async": "none",
+  "requiredScopes": [],
+  "requiredSecrets": [],
+  "dataClassification": "pii",
+  "costTier": "low",
+  "contractVersion": "directory-v1",
+  "audit": true,
+  "agent": {
+    "expose": false,
+    "requiresConfirmation": true
+  },
+  "binding": {
+    "kind": "command",
+    "id": "qian.identity.server/directory.member.add"
+  },
+  "requiredPermission": "qian.identity.server:member:create",
+  "$schema": "https://qian.dev/schemas/tool/v2",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "idempotencyKey": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "identifier": {
+        "type": "string"
+      },
+      "displayName": {
+        "type": "string"
+      },
+      "initialPassword": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null,
+        "sensitive": true
+      },
+      "account": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "idempotencyKey",
+      "identifier",
+      "displayName"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "membershipId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "personId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "account": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      },
+      "personCreated": {
+        "type": "boolean"
+      },
+      "grantedRoles": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "membershipId",
+      "personId",
+      "account",
+      "status",
+      "personCreated",
+      "grantedRoles"
+    ],
+    "additionalProperties": false,
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "schemaSha256": "6150ecec2c47ac916ae67841e16e9f0513b1c0cd01d1c563ef0bff74f0e0a169",
+  "x-qian-generated": {
+    "$generated": true,
+    "component": "qian.identity.server"
+  }
+}

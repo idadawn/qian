@@ -49,6 +49,7 @@
       "/runtime/configSchema"
     ],
     "tools": [
+      "tools/directory.member.add.json",
       "tools/directory.member.disable.json"
     ],
     "metadata": {
@@ -56,7 +57,7 @@
         "$generated": true,
         "component": "qian.identity.server",
         "source": "Qian.Identity.Server.IdentityServerComponent, Qian.Identity.Server",
-        "sha256": "c469af46938a6cda7f8b4a08e2b0eaee72ae5a059b4c4cb7c44a0cab3d225214",
+        "sha256": "2b5f0514ef4ae71c15c00993e88c74dda857248080474bc0f834b95602130df3",
         "fields": [
           ""
         ]

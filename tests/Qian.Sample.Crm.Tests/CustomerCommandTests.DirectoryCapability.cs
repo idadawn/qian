@@ -43,7 +43,8 @@ public sealed partial class IdentityAuthzTests
         using var actualRoles = JsonDocument.Parse(File.ReadAllText(Path.Combine(artifact, "metadata/roles.json")));
         var catalog = new PermissionCatalogCompiler(new SurfaceValidator()).FromMetadata(metadata.ComponentId, "1.0.0", metadata.Permissions, actualRoles.RootElement);
         Assert.Equal(["tenant.admin", "tenant.owner"], catalog.Roles.Select(role => role.Role));
-        Assert.All(catalog.Roles, role => Assert.Equal(["qian.identity.server:member:disable"], role.Grants));
+        // S1-IDP-017 起默认角色还带新增成员（member:create），禁用仍只给这两个管理角色。
+        Assert.All(catalog.Roles, role => Assert.Equal(["qian.identity.server:member:create", "qian.identity.server:member:disable"], role.Grants.Order(StringComparer.Ordinal)));
         using var registration = permissions.Register(catalog.Version, catalog.Permissions);
         await new PostgresPermissionCatalogStore(data).PutAsync(catalog, Ct);
         var (admin, adminPhone) = await NewPerson(host, "目录管理员"); var adminMember = await Join(host, A, admin.Id, "管理员", administrator: true);
