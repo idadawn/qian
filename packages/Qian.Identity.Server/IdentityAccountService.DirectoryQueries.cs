@@ -94,7 +94,7 @@ internal sealed partial class IdentityAccountService
         var primaries = await db.Set<MemberRelationRow>().AsNoTracking().Where(row => row.MembershipId == membershipId && row.IsPrimary && row.TargetType != "group").ToArrayAsync(ct).ConfigureAwait(false);
         var start = primaries.FirstOrDefault(row => row.OrganizationId is not null)?.OrganizationId ??
             (primaries.FirstOrDefault(row => row.PositionId is not null)?.PositionId is { } position && graph.Positions.TryGetValue(position, out var held) ? held.OrganizationId : null);
-        // 从起点组织逐级向上：本人就是主管、未设主管或主管已停用 / 删除时继续取上级组织的主管。
+        // 从起点组织逐级向上：本人就是主管、未设主管或主管不在任（见 InOfficeMembers）时继续取上级组织的主管。
         var candidates = graph.OrganizationChain(start).Where(org => org.ManagerMembershipId is { } manager && manager != membershipId).ToArray();
         var managers = await ActiveMembersAsync(db, candidates.Select(org => org.ManagerMembershipId), ct).ConfigureAwait(false);
         foreach (var org in candidates)
@@ -119,9 +119,9 @@ internal sealed partial class IdentityAccountService
         if (depth is < 1) throw IdentifierRules.Invalid("#/depth");
         return DirectoryRead(async (db, ct) =>
         {
-            var me = await DirectoryMemberRow(db, membershipId, ct).ConfigureAwait(false);
-            // 停用或锁定的成员在别人的上级链里是空缺（inactive），因此没有下属。
-            if (me.Status != AccountStatuses.Active) return [];
+            await DirectoryMemberRow(db, membershipId, ct).ConfigureAwait(false);
+            // 不在任的成员（成员或平台账号被停用、锁定）在别人的上级链里是空缺（inactive），因此没有下属。
+            if (!await InOfficeMembers(db).AnyAsync(row => row.Id == membershipId, ct).ConfigureAwait(false)) return [];
             var graph = await DirectoryGraph.LoadAsync(db, ct).ConfigureAwait(false);
             var mine = graph.Positions.Values.Where(row => row.ResponsibleMembershipId == membershipId).Select(row => row.Id).ToHashSet();
             if (mine.Count == 0) return [];
@@ -146,13 +146,19 @@ internal sealed partial class IdentityAccountService
         }, cancellationToken);
     }
 
-    // 只返回启用且未从目录删除的成员；停用、锁定、删除或已清除的一律不在结果里（调用方据此判为空缺）。
+    // 在任：成员启用且未从目录删除，自然人的平台账号也启用（R154）。成员或账号被停用、锁定（管理员锁定，不含错误次数触发的限时锁定），
+    // 成员被删除或已清除，都不在任：在别人的上级链与部门负责人里是 inactive 空缺，直属主管越过他，他也没有下属。
+    // 账号层状态由运营经 SetPersonStatusAsync 改，跨租户生效，成员行上的状态不跟着变，所以要连 persons 一起看。
+    private static IQueryable<MembershipRow> InOfficeMembers(IdentityDbContext db) =>
+        db.Memberships.AsNoTracking().Where(row => row.Status == AccountStatuses.Active && !row.DirectoryDeleted &&
+            db.Persons.Any(person => person.Id == row.PersonId && person.Status == AccountStatuses.Active));
+
+    // 只返回在任的成员；不在任的一律不在结果里（调用方据此判为空缺）。
     private static async Task<Dictionary<Guid, Membership>> ActiveMembersAsync(IdentityDbContext db, IEnumerable<Guid?> ids, CancellationToken ct)
     {
         var wanted = ids.OfType<Guid>().Distinct().ToArray();
         if (wanted.Length == 0) return [];
-        return (await db.Memberships.AsNoTracking().Where(row => wanted.Contains(row.Id) && row.Status == AccountStatuses.Active && !row.DirectoryDeleted).ToArrayAsync(ct).ConfigureAwait(false))
-            .ToDictionary(row => row.Id, ToMembership);
+        return (await InOfficeMembers(db).Where(row => wanted.Contains(row.Id)).ToArrayAsync(ct).ConfigureAwait(false)).ToDictionary(row => row.Id, ToMembership);
     }
 
     // 本租户的组织与岗位结构快照；写入路径已保证无环，遍历仍带访问集合兜底。

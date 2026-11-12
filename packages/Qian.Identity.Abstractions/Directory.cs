@@ -80,7 +80,7 @@ public static class DirectoryVacancies
 {
     /// <summary>责任岗位没有设责任人。</summary>
     public const string Unassigned = "unassigned";
-    /// <summary>责任人已禁用、锁定或已从目录删除；不返回其信息。</summary>
+    /// <summary>责任人不在任：成员被停用、锁定或已从目录删除，或其平台账号被停用、锁定；不返回其信息。</summary>
     public const string Inactive = "inactive";
 }
 /// <summary>上级链的一级：一个责任岗位及其现任责任人；空缺时 Responsible 为空、Vacancy 给原因，级次照样保留。</summary>
@@ -89,7 +89,7 @@ public sealed record DirectorySuperior(int Level, Guid PositionId, Guid Organiza
 /// 按岗位链推导的上级责任人序列。起点是成员的主岗位（或调用方指定的本人岗位），没有主岗位时从主组织起算，两者都没有则为空序列。
 /// </summary>
 public sealed record DirectorySuperiors(Guid MembershipId, Guid? StartPositionId, Guid? StartOrganizationId, IReadOnlyList<DirectorySuperior> Items);
-/// <summary>直属主管：主组织的主管字段，本人即主管、未设或主管已停用时逐级取上级组织的主管；SourceOrganizationId 是主管所在组织。</summary>
+/// <summary>直属主管：主组织的主管字段，本人即主管、未设或主管不在任（成员或其平台账号被停用、锁定，或已从目录删除）时逐级取上级组织的主管；SourceOrganizationId 是主管所在组织。</summary>
 public sealed record DirectoryManager(Guid MembershipId, Membership? Manager, Guid? SourceOrganizationId);
 /// <summary>部门负责人：组织责任岗位的现任责任人（空缺时给原因）与组织的主管字段。</summary>
 public sealed record OrganizationHead(Guid OrganizationId, Guid? ResponsiblePositionId, Membership? Responsible, string? Vacancy, Membership? Manager);

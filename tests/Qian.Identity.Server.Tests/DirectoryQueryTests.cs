@@ -163,6 +163,23 @@ public sealed class DirectoryQueryTests(PostgresFixture postgres) : IClassFixtur
         Assert.Empty(await d.GetSubordinatesAsync(w.M("lisi"), cancellationToken: Ct));
         await host.Accounts.SetMembershipStatusAsync(w.M("lisi"), AccountStatuses.Active, "managers", Ct);
         Assert.Equal((w.M("lisi"), w.Orgs["rd"]), Manager(await d.GetManagerAsync(w.M("zhaoliu"), Ct)));
+        // 平台账号被停用或锁定同样不在任（R154）：运营在账号层停用 / 锁定李四，他在本租户的成员状态仍是 active，
+        // 结果与成员被锁定时一样——研发总监一级成了 inactive 空缺，主管越过李四到张三，研发中心负责人空缺且没有主管，李四没有下属；恢复后照常。
+        foreach (var status in new[] { AccountStatuses.Disabled, AccountStatuses.Locked })
+        {
+            await host.Accounts.SetPersonStatusAsync(w.Members["lisi"].PersonId, status, "managers", Ct);
+            Assert.Equal(AccountStatuses.Active, (await d.QueryMembersAsync(new DirectoryMemberQuery { MembershipIds = [w.M("lisi")] }, Ct)).Single().Membership.Status);
+            var chain = await d.GetSuperiorsAsync(w.M("zhaoliu"), cancellationToken: Ct);
+            Assert.Equal((w.Positions["director"], (Guid?)null, DirectoryVacancies.Inactive), (chain.Items[1].PositionId, chain.Items[1].Responsible?.Id, chain.Items[1].Vacancy));
+            Assert.Equal((w.M("zhangsan"), w.Orgs["hq"]), Manager(await d.GetManagerAsync(w.M("zhaoliu"), Ct)));
+            var head = await d.GetOrganizationHeadAsync(w.Orgs["rd"], Ct);
+            Assert.Equal(((Guid?)null, DirectoryVacancies.Inactive, (Guid?)null), (head.Responsible?.Id, head.Vacancy, head.Manager?.Id));
+            Assert.Empty(await d.GetSubordinatesAsync(w.M("lisi"), cancellationToken: Ct));
+            await host.Accounts.SetPersonStatusAsync(w.Members["lisi"].PersonId, AccountStatuses.Active, "managers", Ct);
+            Assert.Equal((w.M("lisi"), w.Orgs["rd"]), Manager(await d.GetManagerAsync(w.M("zhaoliu"), Ct)));
+            Assert.Equal(w.M("lisi"), (await d.GetOrganizationHeadAsync(w.Orgs["rd"], Ct)).Responsible?.Id);
+            Assert.Equal(Ids(w, "sunba"), Ids(await d.GetSubordinatesAsync(w.M("lisi"), 1, cancellationToken: Ct)));
+        }
         // 停用同样视同未设：赵六的主管越过李四到张三；李四不再有下属。
         await d.SetDirectoryMemberStatusAsync(w.M("lisi"), AccountStatuses.Disabled, "managers", Ct);
         Assert.Equal((w.M("zhangsan"), w.Orgs["hq"]), Manager(await d.GetManagerAsync(w.M("zhaoliu"), Ct)));
