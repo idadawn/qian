@@ -38,7 +38,7 @@
 
 **回环与依赖。**
 
-- 网关取发现文档、换码、刷新都走身份发行方的公网地址，要经 hub 绕一圈回来：网关的出口策略要放行 hub 公网地址的 443。
+- 网关取发现文档、换码、刷新都走身份发行方的公网地址，要经 hub 绕一圈回来：网关的出口策略要放行 hub 公网地址的 443。网关的就绪检查也要取到发现文档与 JWKS，所以 DNS、hub 的 `443` vhost 与证书就位之前，网关不就绪。
 - 平台取网关的 JWKS 走集群内的 `http://qian-gateway:8080/.well-known/jwks.json`（`S2S:AllowHttpJwks=true`）。
 - 平台不连 Redis：环境 overlay 把 events 条目的配置置空，Outbox 用 skip-locked、不带 broker。网关连 Redis（会话、限流）与 PostgreSQL（原生审计）。
 
@@ -55,7 +55,12 @@
         read -rs QIAN_PULL_TOKEN && kubectl --context <上下文> -n qian-staging create secret docker-registry qian-harbor-pull --docker-server=192.168.1.201 --docker-username='robot$qian+staging-pull' --docker-password="$QIAN_PULL_TOKEN"; unset QIAN_PULL_TOKEN
         ```
      3. `--docker-server` 写不带端口的 `192.168.1.201`，与清单里的镜像引用一致。凭据对不对，要到首次同步、Pod 拉镜像时才见分晓：失败时 Pod 停在 `ImagePullBackOff`，`kubectl describe pod` 的事件里能看到 401。
-3. hub 证书：DNS 生效后，按部署仓库 `env-ds/edge/qdal/` 的流程签发两个主机名的证书，再部署两个 vhost。hub 上的部署脚本先 `nginx -t`、自带备份，失败会回滚。
+3. hub 证书与 vhost，分两步（部署仓库 `2-qian/README.md` 上线顺序第 4 步）：
+   1. DNS 生效后，在 hub 控制台按部署仓库 `env-ds/edge/README.md` 跑 `deploy.sh --apply`，发布两个 vhost 的 `:80` 段。这一段只服务 ACME 验证、其余跳转 https，不引用证书。
+   2. 用 webroot 签发两个主机名的证书：`certbot certonly --webroot -w /var/www/letsencrypt -d <主机名>`，各一条。
+   3. 证书就位后，合并补 `443` 段的部署仓库 PR，再跑一次 `deploy.sh --apply`。
+
+   部署脚本先 `nginx -t`、自带备份，失败整体回滚。`443` 段引用的证书文件不存在时 `nginx -t` 必然失败，还会挡住 hub 上其它 vhost 的发布，所以 `443` 段不能先于证书合入。
 4. 系统组件修订的签名钥（R151 ①）。在 qd 上生成一次，私钥只留在 qd，不进集群、不进 git：
    ```bash
    install -d -m 700 ~/.qian
@@ -130,6 +135,8 @@
 
 钩子 Job 不自动重试（`backoffLimit: 0`），任一失败即中止本次同步，工作负载不变更；看过日志、修好原因后重新同步。首个运营引导不随同步执行，是一个挂起的 CronJob 模板，手动创建一次。
 
+只做完整同步。选择性同步不执行 Sync 钩子，迁移与修订 Job 不会跑；工作负载是 Recreate，旧副本先停，新副本又因待执行的迁移拒绝启动，平台会中断到下一次完整同步。配置 ConfigMap 名带内容哈希，换配置后旧的那份要在同步时勾选 Prune 才会删除。
+
 每一步都先经产品负责人确认再执行；做完用只读命令检查：
 ```bash
 kubectl -n qian-staging get jobs,pods -o wide
@@ -147,7 +154,7 @@ kubectl -n qian-staging logs job/<Job 名>
    - Lifecycle 信任根公钥：运维从 qd 导出后经 `--trust-public-key` 传入，脚本不生成私钥。
 
    脚本输出信任根的 keyId，核对它与签名清单的 `keyId` 一致。Harbor 拉取 Secret `qian-harbor-pull` 另建（第 2 节）。各 Secret 的键与挂载位置见部署仓库 `2-qian/README.md`。
-2. **改 Application 的 revision 并同步。** 应用层清单与镜像 digest 经部署仓库 PR 合入后，另开一个小 PR，把 `env-ds/argocd/qian-staging-baseline-application.yaml` 的 `targetRevision` 改到那次合入的提交。合入后应用这个 Application，再手动同步。基线清单在原先钉定的 revision 与当前 main 之间没有差异，同步只新增应用层，不重启 PG 与 Redis。
+2. **改 Application 的 revision 并同步。** 应用层清单与镜像 digest 经部署仓库 PR 合入后，另开一个小 PR，把 `env-ds/argocd/qian-staging-baseline-application.yaml` 的 `targetRevision` 改到那次合入的提交。合入后由自动同步的 Argo 应用 `platform-apps`（管 `env-ds/argocd`）把它应用到集群，不用手工 apply；再手动同步 `qian-staging-baseline`。基线清单在原先钉定的 revision 与当前 main 之间没有差异，同步只新增应用层，不重启 PG 与 Redis。
 3. **建角色 Job（钩子，-3）。** 用基线的管理员 Secret 执行 `db-roles.sql`，口令取自第 1 步。建的角色：
    - 迁移属主：可在库上建 schema；
    - 两个平台登录：`qian_platform_authz`、`qian_platform_audit`；
@@ -160,7 +167,7 @@ kubectl -n qian-staging logs job/<Job 名>
    2. 迁移属主执行包内迁移；
    3. 管理员把业务 schema 授给应用登录。
 
-   - 迁移 Job 除了迁移属主与管理员的连接串，也挂在线登录的连接串：宿主建数据上下文时就读取它们。
+   - 迁移 Job 只挂迁移属主与管理员的连接串。迁移模式下宿主把在线登录的连接一律改读迁移属主的连接串（`PlatformHostSettings.Connection`），在线登录的口令不给迁移 Job。
    - 在线副本不挂迁移属主与管理员的凭据。
    - 离线 DDL 不做跨版本的表结构升级，详见[平台宿主的 Job](../../hosts/Qian.Platform.Host/README.md#job)。
 5. **系统组件修订 Job（钩子，-1，`--install-system-revisions`）。** 每次同步都跑，在迁移之后。
@@ -168,7 +175,8 @@ kubectl -n qian-staging logs job/<Job 名>
    - 签名清单缺项、验签失败或摘要对不上，都会列出组件并以退出码 1 失败。此时先核对签名清单 ConfigMap 是否对应当前平台镜像 digest。
 6. **在线副本。** `qian-platform` 与 `qian-gateway` 两个 Deployment，都用 Recreate、钉在 worker01，`/readyz` 返回 `ready` 后才就绪。
    - 平台在线副本启动时只校验（受限角色、模型、没有待执行的迁移），不建表；迁移没跑或没跑完就拒绝启动。
-   - 网关在登录时才取身份发行方的发现文档（之后定期刷新），不阻塞就绪；平台就绪、Ingress 与 hub vhost 生效之前，登录会失败。
+   - 网关启动不等发行方（挂载身份客户端不联网），但 `/readyz` 含身份客户端检查，要经 hub 取到发现文档与 JWKS。平台、Ingress、DNS 与 hub 的 `443` vhost 和证书都就位之前，网关不就绪，外壳主机名整体 503。
+   - 网关就绪探针超时 10 秒。启动探针 90 秒：网关入口不拦截未处理异常，依赖挂载失败时 PID 1 可能空转，靠探针超时重启。
 7. **入口。** 两个主机名的 Traefik Ingress 随清单下发。身份主机只暴露身份分支的路径：`/connect`、`/.well-known`、`/login`、`/api/identity`、`/signup` 与四个申请人接口。hub vhost 按第 2 节第 3 步部署。
 8. **首个运营引导（只在首次，手动）。** 两个工作负载都就绪后执行，见第 5 节：
    ```bash
@@ -219,7 +227,7 @@ python3 scripts/staging-e2e.py --shell https://qian-staging.deepsingularity.cn -
   - `/__dev/` 下的路由都不是 200；
   - 平台 profile 没有开发种子，也没有开发期发件箱；
   - 运行期连接串只用受限登录（`rolsuper`、`rolbypassrls` 都为假）；
-  - 密钥只以 Secret 卷挂载，ConfigMap 与环境变量里没有凭据。
+  - 凭据只经 Secret 进入：在线副本与平台镜像 Job 以 Secret 卷挂载，建角色 Job 用 `secretKeyRef` 环境变量（唯一的例外）；ConfigMap 与清单里没有明文凭据。
 - **迁移、审计链与超管旁路。**
   - Job 完成时间早于在线副本启动；
   - 平台宿主日志里审计与授权条目已就绪；
@@ -230,7 +238,7 @@ python3 scripts/staging-e2e.py --shell https://qian-staging.deepsingularity.cn -
 - **只换回应用版本。** 在部署仓库把 `images` 段的 digest 改回上一版（git revert 那次写回），合并后同步；然后对上一版平台镜像重跑系统组件修订 Job。旧修订仍在 Lifecycle 里，Job 会把它切回激活。
   - 迁移只向前：上一版能跑在新表结构上时才能直接回退。
   - 离线 DDL 不做跨版本升级，所以首个版本之后凡是改表结构的部署，都要在迁移 Job 前先备份：在 `qian-postgres` Pod 里用 `pg_dump`，备份落在 qd 之外。
-- **撤掉整套应用。** 停止同步，再 revert 部署仓库里本任务新增的应用清单：两个 Deployment、Job、ConfigMap、Ingress、应用的网络策略。按基线手册，Namespace、PVC 与基线 Secret 一律不删。hub 上撤掉两个 vhost 时，用部署脚本的备份回滚。
+- **撤掉整套应用。** 停止同步，再 revert 部署仓库里本任务新增的应用清单：两个 Deployment、Job、ConfigMap、Ingress、应用的网络策略。按基线手册，Namespace、PVC 与基线 Secret 一律不删。hub 上撤掉两个 vhost 时，`deploy.sh` 不会删除 live 目录里多出的文件：先在部署仓库删掉两个文件，再在 hub 上手工删除 `/etc/nginx/conf.d/` 里对应的两个文件，`nginx -t` 后 reload。
 - **数据恢复。** 用迁移前的 `pg_dump` 恢复；没有备份时只能清库重来（staging 可以接受，但要先经产品负责人确认）。
 - **签名钥泄露或丢失。** 在 qd 上重新生成钥对，换掉信任根公钥的 Secret，对当前镜像重签并重跑系统组件修订 Job。旧修订的签名不会被重新核验；正式的信任根轮换归 S1-DEP-005。
 
@@ -258,8 +266,10 @@ python3 scripts/staging-e2e.py --shell https://qian-staging.deepsingularity.cn -
 
 - 平台与网关的数据保护密钥都放在临时卷：Pod 重建后，账号 Cookie 与网关会话解不开，用户要重新登录。多副本之前要改成共享目录。
 - 网关的转发头只回溯一跳（Kun 网关 `ForwardLimit` 固定为 1），按 IP 的限流把全部外部请求算在 WireGuard 那一跳的地址上。staging 用户少，暂不处理。
-- LAN 内（192.168.1.x）的主机也在 Traefik 的可信网段里，能伪造转发头直连 Traefik；staging 接受这个暴露面。
-- 基线给 `qian-platform` 预置了 `minAvailable: 1` 的 PDB，而 staging 只有一个副本：`kubectl drain` worker01 会一直等待。节点维护前先临时放宽或删除这个 PDB，维护后恢复。
-- 平台镜像的三个 Job 也挂身份服务的签名、加密证书与客户端密钥（宿主装配身份分支时就读取），以及在线登录的连接串。
+- Traefik 信任节点网段与 Pod 网段（10.42.0.0/16）的转发头，平台身份分支也把 Pod 网段当可信的第二跳。LAN 内（192.168.1.x）的主机与集群里任何命名空间的 Pod，直连 Traefik 时都能伪造 `X-Forwarded-For` 与 `X-Forwarded-Proto`，影响登录限流与审计里的来源地址。现有配置收不窄，staging 接受这个暴露面。
+- 基线给 `qian-platform`、`qian-postgres`、`qian-redis` 都预置了 `minAvailable: 1` 的 PDB，而它们都只有一个副本：`kubectl drain` worker01 会一直等待。节点维护前先临时放宽或删除这三个 PDB，维护后恢复。
+- 网关的就绪依赖 hub 与身份发行方：hub 或身份服务故障时，网关被摘出 Service 端点，外壳整体不可用，连静态页也打不开。要改需要 Qian 侧调整就绪检查的口径。
+- 网关入口（`hosts/Qian.Gateway.Host/Program.cs`）没有像平台宿主那样拦截未处理异常：依赖挂载失败时，容器里的 PID 1 可能空转不退出，要等 90 秒启动探针超时才被重启。
+- 平台镜像的三个 Job 也挂身份服务的签名、加密证书与客户端密钥（宿主装配身份分支时就读取）；修订 Job 与引导模板另挂在线登录的连接串，迁移 Job 不挂。
 - K3s 的 Secret 静态加密（`--secrets-encryption`）状态本次没有核对（需要 root）。
 - 没有装配 OpenAPI / proto 兼容检查器，组件跨版本升级会拒绝执行（fail-closed）；换镜像只能是同版本组件的重签与重装。
